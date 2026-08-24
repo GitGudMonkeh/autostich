@@ -9,7 +9,7 @@ import { computeFormations } from "./game/formations.js"; // #201.8 Stufe B: Dec
 import { formatSeed } from "./game/rng.js"; // #205 Challenger Mode: Seed anzeigen (Base32)
 import { randomSeed } from "./ui/seedShare.js"; // #229 N7: Lauf-Seed würfeln (UI-Layer — Math.random raus aus game/)
 import { loadGhost, saveGhost, loadHighscores, recordHighscore, recordRun, recordChampionWeeks, loadOptions, saveOptions, loadUsername, saveUsername, loadProfile, saveProfile, wipeProfileStorage, saveActiveRun, loadActiveRun, clearActiveRun, loadTutorialDone, saveTutorialDone, loadRunHistory } from "./game/storage.js";
-import { unlockAllProfile, skipOnboardingProfile, ONBOARDING_LINKS, nextOnboardingReward, ownedCount } from "./game/progression.js"; // Test-Codes: unlock (alles frei) / onboarding (skip +10 SP/+50 DP) / reset (Wipe) · §6 Meilenstein-Balken-Gate · #304 Onboarding-Fortschritt
+import { unlockAllProfile, skipOnboardingProfile, ONBOARDING_LINKS, nextOnboardingReward, ownedCount, unlockedArchetypes } from "./game/progression.js"; // Test-Codes: unlock (alles frei) / onboarding (skip +10 SP/+50 DP) / reset (Wipe) · §6 Meilenstein-Balken-Gate · #304 Onboarding-Fortschritt
 import { currentWeek } from "./game/weeklySeed.js"; // §7 Meister-Rangliste: Wochen-Seed (für alle gleich)
 import { leaderboardConfigured, publishRun } from "./game/leaderboard.js";
 import { isAllowedUsername } from "./game/profanity.js"; // #174 gilt auch für Altnamen aus dem localStorage
@@ -19,7 +19,7 @@ import { fmtDuration } from "./game/deck.js";
 import { setLocale, t } from "./i18n/index.js"; // #sprache: Anzeigesprache aus den Optionen
 import { useBackGuard } from "./ui/useBackGuard.js";
 import { StatusRail } from "./ui/StatusRail.jsx";
-import { useIsWide } from "./ui/useIsWide.js"; // #buehne: Musik/Meilenstein ziehen ab 1280 px in die Leiste (DOM-Umzug)
+import { useIsWide, DESKTOP_MIN, PHONE_MAX } from "./ui/useIsWide.js"; // #buehne: Musik/Meilenstein ziehen ab 1280 px in die Leiste (DOM-Umzug) · #mobil-emblem: dieselben zwei Schwellen für den Emblem-Vorlader
 import { StatusBar } from "./ui/StatusBar.jsx"; // Gameplay-Neu-Aufbau Phase 1: schwebende Kompakt-Leiste (Vitals + Pause/Tempo/Karten)
 import { architectCoverFor } from "./ui/architectCover.js"; // Lauf-Details: Gebäude-Overlay in den Snapshot persistieren
 import { Battlefield, OPP_SKIN_URLS } from "./ui/Battlefield.jsx";
@@ -32,6 +32,7 @@ import { BuildPanel } from "./ui/BuildPanel.jsx";
 import { WeekModPanel } from "./ui/WeekMods.jsx"; // #381 Ranked-Modifikatoren-Panel (unter den Perks)
 import { PerkSelect } from "./ui/PerkSelect.jsx";
 import { SkillSelect } from "./ui/SkillSelect.jsx";
+import { skillArtUrls } from "./ui/skillArt.js"; // #mobil-emblem: Emblem-URLs je Archetyp für den Leerlauf-Vorlader
 import { AbortConfirm, RestartConfirm } from "./ui/RunConfirm.jsx"; // #run-dialoge: Beenden/Neustarten (Desktop-Fassung)
 import { LegendarySelect } from "./ui/LegendarySelect.jsx"; // #272 Legendär-Phase (Runde 29)
 import { FormationPhase } from "./ui/FormationPhase.jsx";
@@ -101,6 +102,47 @@ const OptionsModal     = lazy(() => importOptions().then((m) => ({ default: m.Op
 const FeedbackModal    = lazy(() => importFeedback().then((m) => ({ default: m.FeedbackModal })));
 const PrivacyModal     = lazy(() => importPrivacy().then((m) => ({ default: m.PrivacyModal })));
 const LAZY_PREFETCH = [importOptions, importStats, importLeaderboard, importUpgrade, importCustomize, importChronik, importDevSetup, importArchitect];
+
+/* #mobil-emblem — die Kachel-Embleme der Skill-Wahl in denselben Leerlauf hängen wie die Module oben.
+   Am Telefon standen sie beim ersten Angebot rund eine Sekunde lang nicht da: das <img> entsteht erst,
+   wenn die Auswahl aufgeht, und der Lauf ist genau der Moment, in dem NICHTS nachgeladen werden soll
+   (der Kommentar am Vorlade-Effekt unten sagt, warum). Vorgeladen wird deshalb im Menü.
+
+   WELCHE Bilder — die Teilmenge ist eine Entscheidung, keine Bequemlichkeit:
+
+     · Nur wo eine Fassung überhaupt rendert. `phone` (< 640 px) und `wide` (≥ 1280 px) sind die zwei
+       Gates in SkillSelect.jsx; das Band dazwischen zeigt kein <img> und bekommt deshalb auch keine
+       Bytes. Bewusst KEINE Verneinung des Desktop-Gates — dieselbe Falle, die dort beschrieben ist.
+     · Nur FREIGESCHALTETE Archetypen. Der Angebots-Pool ist darauf begrenzt (buildSkillOffer), also
+       ist alles andere Bytes für Kacheln, die dieser Spieler diesen Lauf gar nicht sehen kann. Früh
+       im Baum ist das ein Los statt vier.
+     · Nichts bei `saveData`. Alle vier Lose wiegen 1,28 MB (gemessen, s. skillArt.js) — kein Nulltarif
+       auf Mobilfunk. Wer Datensparen anhat, bekommt weiter das alte Verhalten (Nachladen beim Öffnen).
+
+   Verworfen: (a) alle vier Lose blind — 1,28 MB, davon meist drei ungenutzt; (b) Vorladen erst beim
+   Rundenstart, wenn die Archetypen feststehen — das liegt in `phase:levelup`, also mitten im Lauf, und
+   damit genau in dem Idle-Slot, den der Fix unten ausschließt; (c) zusätzlich `img.decode()` wie im
+   RunLoader — hält 84 fertige Bitmaps im Speicher, ohne dass die Anzeige spürbar früher käme; der
+   Netzweg ist der teure Teil, und den erledigt der HTTP-Cache.
+
+   Der Halter gibt das Bild wieder frei, sobald es da ist: die Bytes leben danach im Cache, nicht in
+   einem Objekt, das die App weiter festhält. */
+const warmingEmblems = new Set();
+function emblemPrefetchTasks(profile) {
+  if (typeof window === "undefined" || !window.matchMedia) return [];
+  const showsEmblem = window.matchMedia(`(max-width: ${PHONE_MAX}px)`).matches
+    || window.matchMedia(`(min-width: ${DESKTOP_MIN}px)`).matches;
+  if (!showsEmblem) return [];
+  if (navigator.connection && navigator.connection.saveData) return [];
+  return skillArtUrls(unlockedArchetypes(profile)).map((url) => () => {
+    const im = new Image();
+    warmingEmblems.add(im);
+    const done = () => warmingEmblems.delete(im);
+    im.onload = done;
+    im.onerror = done;
+    im.src = url;
+  });
+}
 
 // #372 Prewarm der In-Game-Archetyp-Karteneffekte: Chunk laden UND den teuren Erst-Bitmap-Aufbau im Leerlauf erledigen,
 // BEVOR die erste Archetyp-Karte im Stichspiel kommt → kein synchroner Erst-Render-Ruckler auf dem Deal-Frame mehr.
@@ -244,11 +286,15 @@ function AutostichGame() {
     if (state.phase !== "menu" && state.phase !== "gameover") return undefined; // im Lauf nichts vorladen
     prefetchedRef.current = true;
     const idle = window.requestIdleCallback || ((fn) => setTimeout(fn, 1500));
+    // #mobil-emblem: die Embleme hängen HINTEN dran — ein Modul-Chunk kostet einen Frame, ein Bild
+    // kostet einen Request. Die Bildschirme bleiben also so schnell wie bisher, und die Bilder nehmen
+    // den Leerlauf danach mit (ein Posten je Idle-Slot wie gehabt, kein Burst).
+    const queue = [...LAZY_PREFETCH, ...emblemPrefetchTasks(profile)];
     let i = 0;
-    const step = () => { if (i >= LAZY_PREFETCH.length) return; try { LAZY_PREFETCH[i++](); } catch (e) { /* Prefetch nie kritisch */ } idle(step); };
+    const step = () => { if (i >= queue.length) return; try { queue[i++](); } catch (e) { /* Prefetch nie kritisch */ } idle(step); };
     const id = idle(step);
     return () => (window.cancelIdleCallback || clearTimeout)(id);
-  }, [state.phase]);
+  }, [state.phase, profile]);
   const [highscores, setHighscores] = useState(() => loadHighscores());
   const [isRecord, setIsRecord] = useState(false);
   // Globaler Highscore (#14): lokaler Nickname + Ersteinrichtungs-Modal.

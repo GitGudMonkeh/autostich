@@ -15,8 +15,18 @@
    Karte wie der restliche FX-Stack, und es braucht keinen Alphakanal.
 
    Kosten: `import.meta.glob` mit `?url` + `eager` liefert nur die URL-Strings (ein paar hundert Byte),
-   nicht die Bilddaten. Die Bytes holt der Browser erst, wenn ein <img> wirklich rendert — und das tut
-   es nur ab 1280 px (Gate in SkillSelect.jsx). Am Handy wird also kein einziges Emblem geladen. */
+   nicht die Bilddaten. Die Bytes holt der Browser erst, wenn ein <img> wirklich rendert.
+
+   CORRECTED 2026-08-23 (playtest-fixes) — two claims in this header had gone stale:
+
+     1. "Am Handy wird also kein einziges Emblem geladen" was true only while there was no fassung
+        below 1280 px. Since `#mobil-emblem` there are TWO, one gate each (SkillSelect.jsx): the head
+        strip from 1280 px up, the corner emblem below 640 px. The band 640-1279 px is the only width
+        that renders no <img> at all.
+     2. The delivery is heavier than the 192 px calculation above predicted. Measured 2026-08-23:
+        lightning 422 kB across its 21 files (~20 kB each), ice 365 kB, plant 268 kB, fire 224 kB —
+        1.28 MB for all 84, not 121 kB per lot. That number is why `skillArtUrls` below hands out one
+        archetype at a time instead of everything at once. */
 
 const FILES = import.meta.glob("../assets/skills/*/*.webp", { eager: true, query: "?url", import: "default" });
 
@@ -32,10 +42,23 @@ export function artIdFromFile(name) {
 }
 
 const ART = {};
+/* Emblem-URLs je Archetyp. Der ORDNERNAME unter `src/assets/skills/` ist die Archetyp-ID — dieselbe
+   Fügepunkt-Regel wie beim Dateinamen oben, also auch hier keine abgetippte Liste. Ein neuer
+   Archetyp bekommt seinen Eintrag allein dadurch, dass sein Ordner richtig heißt. */
+const BY_ARCH = {};
 for (const path of Object.keys(FILES)) {
   const id = artIdFromFile(path.slice(path.lastIndexOf("/") + 1));
   if (id) ART[id] = FILES[path];
+  const arch = /\/skills\/([^/]+)\/[^/]+$/.exec(path);
+  if (id && arch) (BY_ARCH[arch[1]] ||= []).push(FILES[path]);
 }
 
 /** URL des Emblems eines Skills — `null`, solange keins vorliegt (Feuer/Eis/Pflanze folgen). */
 export const skillArt = (id) => ART[id] || null;
+
+/* Emblem-URLs der genannten Archetypen, in stabiler Reihenfolge. Für den Idle-Vorlader in App.jsx:
+   der braucht die Bilder eines Archetyps, ohne die Skill-Registry zu kennen, und er darf NICHT
+   einfach alles nehmen — die vier Lose zusammen wiegen 1,28 MB (s. Kopf). Unbekannte Archetypen
+   werden still übersprungen; ein Vorlader ist nie kritisch. */
+export const skillArtUrls = (archetypes) =>
+  (archetypes || []).flatMap((a) => BY_ARCH[a] || []);

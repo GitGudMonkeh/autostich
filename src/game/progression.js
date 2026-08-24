@@ -291,8 +291,11 @@ export const ONBOARDING_ARCH_UNLOCK = { plant: 2, ice: 4 };
 export const ONBOARDING_RARITY_UNLOCK = { 3: 3, 5: 4 };
 
 // SP-Quellen (envNum-tunebar). Grundstock je abgeschlossenem SP-Lauf + kumulative Score-Meilensteine +
-// Treue-Drip je N SP-Läufe. Defaults = docs §6: +1/Lauf; +1/+1/+1/+2 bei 25/50/75/100 Mio; +5 je 10.
-export const SP_PER_RUN = envNum("PROG_SP_PER_RUN", 1);
+// Treue-Drip je N SP-Läufe. Defaults = docs §6: +1/+1/+1/+2 bei 25/50/75/100 Mio; +5 je 10.
+// Base yield 1 -> 5 per run (owner decision, playtest-fixes, 2026-08-23): a completed run paid less
+// than a single score milestone. This deliberately diverges from docs §6 (+1/run); the ENV knob
+// PROG_SP_PER_RUN is untouched and still overrides the default.
+export const SP_PER_RUN = envNum("PROG_SP_PER_RUN", 5);
 export const SP_MILESTONES = [
   { at: envNum("PROG_SP_MS0_AT", 10_000_000),  sp: envNum("PROG_SP_MS0_SP", 1) },
   { at: envNum("PROG_SP_MS1_AT", 25_000_000),  sp: envNum("PROG_SP_MS1_SP", 1) },

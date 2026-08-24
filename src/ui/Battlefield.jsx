@@ -1718,7 +1718,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
                      animation: fx(`as-krit ${clamp(flipMs * 0.8, 400, 900) + 1000}ms ease-out forwards`) }}>
             {/* #ios-word: Glow bewusst auf einem INNEREN Element — Filter und (skalierende) Animation am selben Knoten
                 lassen WebKit die Filter-Region unvollständig invalidieren (Geister-Kopie, s. GottChromeWord.jsx). */}
-            <span className="neon-num" style={floatNumStyle(critColor, 1.5, 1.4)}>{reduced ? `Kritisch ×${critMultStr}` : "Kritisch!"}</span>
+            <span className="neon-num" style={floatNumStyle(critColor, 1.5, 1.4)}>{reduced ? tr("bf.crit.mult", { n: critMultStr }) : tr("bf.crit")}</span>
           </div>
         )}
 

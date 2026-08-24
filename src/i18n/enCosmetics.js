@@ -100,7 +100,7 @@ export default {
   "fx.neonsurf.name": "Neon Surf",
   "fx.neonsurf.desc": "A plasma sea along the bottom edge — a neon river with a bright waterline; on big announcements a pulse presses the water down in the middle and sends it climbing up the sides. In the deck colour.",
   "fx.starfield.name": "Starfield",
-  "fx.starfield.desc": "A dense starfield drifts across three depth layers behind a veil of nebula; every trick a meteor shoots through the field — larger the higher the score tier, and from FIERCE upwards with an impact flash and sparks that scatter with trails. White-blue by default, in the deck colour if you prefer.",
+  "fx.starfield.desc": "A dense starfield drifts across three depth layers behind a veil of nebula; every trick a meteor shoots through the field — larger the higher the score tier, and from NICE upwards with an impact flash and sparks that scatter with trails. White-blue by default, in the deck colour if you prefer.",
   "fx.edgeglow.name": "Edge Glow",
   "fx.edgeglow.desc": "A soft neon edge glows around the card in the deck colour — permanent, calmly breathing, additively stacked (no blur). Not tied to the trick.",
   "fx.holo.name": "Holo",

@@ -12,7 +12,7 @@
       jedes Emblem ein schwarzer Kasten. */
 import { describe, it, expect } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
-import { artIdFromFile } from "../src/ui/skillArt.js";
+import { artIdFromFile, skillArtUrls } from "../src/ui/skillArt.js";
 import { SKILL_DEFS } from "../src/game/skills.js";
 
 const src = (p) => readFileSync(new URL(`../src/${p}`, import.meta.url), "utf8");
@@ -113,6 +113,56 @@ describe("#skillart — Vollständigkeit", () => {
       });
     });
   }
+});
+
+describe("#skillart — der Leerlauf-Vorlader (#mobil-emblem, playtest-fixes)", () => {
+  /* Zwei Hälften, zwei Prüfarten — dieselbe Trennung wie oben in dieser Datei.
+
+     Die REINE Hälfte (`skillArtUrls`) wird nachgerechnet: sie ist eine Funktion über die
+     Auslieferungs-Ordner, also wird sie mit den echten Archetyp-IDs gefüttert.
+
+     Die VERDRAHTUNG in App.jsx wird als Quelltext-Ratsche gelesen, weil das Projekt kein
+     Component-Test-Setup hat (s. Kopf dieser Datei). Gemessen 2026-08-23: ein Browser-Beleg ist hier
+     NICHT zu haben — unter `--headless=new` feuert `requestIdleCallback` nicht, und zwar auch für den
+     Modul-Vorlader, den es lange vor dieser Aufgabe schon gab. Ein Wächter, der die drei Bedingungen
+     festhält, ist deshalb der belastbarere Teil des Belegs, nicht der schwächere. */
+  const app = src("App.jsx");
+
+  it("liefert die Embleme des genannten Archetyps und nur die", () => {
+    const fire = skillArtUrls(["fire"]);
+    expect(fire.length).toBe(dir("assets/skills/fire").length);
+    expect(fire.every((u) => /\/fire\//.test(u) || /fire/i.test(u))).toBe(true);
+    // Zwei Archetypen = die Summe der beiden Lose, ohne Doppelte.
+    const two = skillArtUrls(["fire", "ice"]);
+    expect(two.length).toBe(dir("assets/skills/fire").length + dir("assets/skills/ice").length);
+    expect(new Set(two).size).toBe(two.length);
+  });
+
+  it("ein unbekannter oder fehlender Archetyp kostet nichts — ein Vorlader ist nie kritisch", () => {
+    expect(skillArtUrls([])).toEqual([]);
+    expect(skillArtUrls(null)).toEqual([]);
+    expect(skillArtUrls(["gibtesnicht"])).toEqual([]);
+  });
+
+  it("vorgeladen wird NUR im Menü — dieselbe Regel wie für die Module", () => {
+    /* Der Grund steht im Quelltext an Ort und Stelle: ein Chunk-Parse in einem Idle-Slot mitten in
+       den Animationsframes hat mehrere Frames blockiert. Die Skill-Auswahl liegt in `phase:levelup`,
+       also IM Lauf — vorgeladen wird deshalb dort, wo nichts läuft, nicht dort, wo es gebraucht wird. */
+    expect(app).toContain('if (state.phase !== "menu" && state.phase !== "gameover") return undefined;');
+    expect(app).toContain("const queue = [...LAZY_PREFETCH, ...emblemPrefetchTasks(profile)];");
+  });
+
+  it("die Teilmenge ist begrenzt: zwei Gates, freigeschaltete Archetypen, kein Datensparen", () => {
+    /* Ohne die erste Zeile zahlt das Band 640–1279 px für Bilder, die es nie zeigt; ohne die zweite
+       lädt ein frisches Profil alle vier Lose (1,28 MB gemessen) statt seiner ein bis zwei; ohne die
+       dritte gilt das auch für Spieler, die ausdrücklich Daten sparen wollen. */
+    expect(app).toContain("window.matchMedia(`(max-width: ${PHONE_MAX}px)`).matches");
+    expect(app).toContain("window.matchMedia(`(min-width: ${DESKTOP_MIN}px)`).matches");
+    expect(app).toContain("skillArtUrls(unlockedArchetypes(profile))");
+    expect(app).toContain("if (navigator.connection && navigator.connection.saveData) return [];");
+    // Keine Verneinung des Desktop-Gates — dieselbe Falle wie in SkillSelect.jsx.
+    expect(app).not.toMatch(/emblemPrefetchTasks[\s\S]{0,400}!wide/);
+  });
 });
 
 describe("#skillart — Verdrahtung", () => {

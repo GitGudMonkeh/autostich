@@ -356,11 +356,32 @@ describe("i18n · Terminologie", () => {
   /* Die Score-Ansagen sind eingefroren (Übersetzerpaket §3.6, Freigabe 15.08.2026). Sie stehen
      heute noch als BIG_SCORE_TIERS in Battlefield.jsx und wandern bei deren Migration in den
      Katalog — dieser Test hält die Zuordnung fest, damit sie den Umzug unverändert übersteht.
-     „STRONG" ist bewusst NICHT die unterste Stufe: die Kette muss hörbar steigern. */
+     „STRONG" ist bewusst NICHT die unterste Stufe: die Kette muss hörbar steigern.
+
+     AMENDED 2026-08-23 (playtest-fixes). The owner renamed the lowest English step FIERCE -> NICE.
+     The pair below was pulled FORWARD to the new value, not relaxed: the guard still fails the
+     moment a German announcement and its English counterpart stop matching, and it still holds
+     „Stark" as the German side. The two prose strings that name the ladder — `options.float.desc`
+     and `fx.starfield.desc` — were carried along in the same change; the first of them is what
+     this guard catches when it is forgotten. */
   it("die Score-Ansagen halten die freigegebene Eskalationskette", () => {
-    const CHAIN = [["Stark", "FIERCE"], ["Brutal", "BRUTAL"], ["Irre", "INSANE"], ["Gottgleich", "GODLIKE"],
+    const CHAIN = [["Stark", "NICE"], ["Brutal", "BRUTAL"], ["Irre", "INSANE"], ["Gottgleich", "GODLIKE"],
       ["Lawine", "AVALANCHE"], ["Gönn dir", "LET’S GO!"]];
-    // Geprüft werden nur Texte, die ÜBER die Ansagen reden — erkennbar daran, dass sie mindestens
+    /* FIRST the announcements THEMSELVES, by key. Counter-checked 2026-08-23 while renaming the
+       lowest step: setting `bf.big.fierce` back to "FIERCE" left the loop below GREEN, because
+       `isAbout` only looks at strings that already name a step — a value that drifts OFF the chain
+       names none of them and was skipped. The loop guarded the prose about the ladder and never the
+       ladder itself. This block closes that hole: every `bf.big.*` key must carry a released pair,
+       and there must be exactly as many of them as the chain has steps. */
+    const bigKeys = KEYS_DE.filter((k) => k.startsWith("bf.big."));
+    expect(bigKeys.length, `bf.big.*-Schlüssel: ${bigKeys.join(", ")}`).toBe(CHAIN.length);
+    for (const k of bigKeys) {
+      const pair = CHAIN.find(([deWord]) => deWord === de[k]);
+      expect(pair, `${k}: „${de[k]}" steht nicht in der freigegebenen Kette`).toBeTruthy();
+      expect(en[k], `${k}: „${de[k]}" → muss „${pair[1]}" sein`).toBe(pair[1]);
+    }
+
+    // Dann die Texte, die ÜBER die Ansagen reden — erkennbar daran, dass sie mindestens
     // eine Stufe in Versalien nennen. Ohne diese Einschränkung schlüge das Adverb „stark" in
     // beliebigen Sätzen an („entlastet schwache Geräte stark").
     const isAbout = (s) => CHAIN.some(([, enWord]) => s.includes(enWord.replace("!", "")));

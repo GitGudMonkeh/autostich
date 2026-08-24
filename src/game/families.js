@@ -804,8 +804,8 @@ const E_FAMILIES = {
     tiers: {
       1: { desc: "Wähle 2 Farben: sie zählen in allen Farb-Wertungen als dieselbe Farbe — außer bei Farbverstärkung/Farbduell.", pickTarget: { suits: 2 } },
       2: { desc: "Wähle 3 Farben: sie zählen in allen Farb-Wertungen als dieselbe Farbe — außer bei Farbverstärkung/Farbduell.", pickTarget: { suits: 3 } },
-      3: { desc: "Wähle 4 Farben: alle vier zählen in allen Farb-Wertungen als dieselbe Farbe — außer bei Farbverstärkung/Farbduell.", pickTarget: { suits: 4 } },
-      4: { desc: "Wähle 4 Farben: alle vier zählen als dieselbe Farbe, Farbblöcke starten bei ×1,55 (statt ×1,35) — außer bei Farbverstärkung/Farbduell.", pickTarget: { suits: 4 }, farbblockBonus: 0.20 },
+      3: { desc: "Alle vier zählen in allen Farb-Wertungen als dieselbe Farbe — außer bei Farbverstärkung/Farbduell.", pickTarget: { suits: 4 } },
+      4: { desc: "Alle vier zählen als dieselbe Farbe, Farbblöcke starten bei ×1,55 (statt ×1,35) — außer bei Farbverstärkung/Farbduell.", pickTarget: { suits: 4 }, farbblockBonus: 0.20 },
     },
   },
   E_CORE: {

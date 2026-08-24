@@ -9,7 +9,7 @@ import { rankHighscores, loadGhost, saveGhost, loadHighscores, recordHighscore,
   maybeResetForEpoch, RESET_EPOCH,
   migrateReducedFx, deviceDefaultReducedFx } from "../src/game/storage.js";
 import { GHOST_STEP } from "../src/game/constants.js";
-import { WELCOME_DP, ONBOARDING_LINKS, NODE_IDS } from "../src/game/progression.js";
+import { WELCOME_DP, ONBOARDING_LINKS, NODE_IDS, SP_PER_RUN } from "../src/game/progression.js";
 
 // #152: node-Env hat kein localStorage → die Persistenz-Funktionen fielen bisher nur in ihre try/catch-Defaults
 // und blieben ungetestet. Minimaler Map-basierter Mock, den die bare-`localStorage`-Zugriffe in storage.js sehen.
@@ -208,27 +208,32 @@ describe("Progression/Upgrades — Profil-Felder, Migration, SP-Ernte, Onboardin
 
   it("#316: SP werden ab dem ERSTEN abgeschlossenen Lauf verdient (kein Onboarding-Delay)", () => {
     veteran();
-    // 1. Lauf: +1 Grundstock + 6 Meilenstein-SP (100 Mio: 1+1+1+1+2) = 7.
+    /* Der Grundstock steht als SP_PER_RUN, nicht als Zahl: geprüft wird, DASS jeder abgeschlossene
+       Lauf ihn genau einmal zahlt, nicht wie hoch er gerade steht. Bis 23.08.2026 stand hier die 1
+       ausgeschrieben, und eine Balance-Drehung (playtest-fixes: 1 → 5) machte fünf Tests rot, die
+       über den Grundstock gar nichts aussagen wollten. Die Meilensteine bleiben ausgeschrieben —
+       ihre Staffel IST die Aussage dieses Tests. */
+    // 1. Lauf: Grundstock + 6 Meilenstein-SP (100 Mio: 1+1+1+1+2).
     let p = recordRun(runRec({ ts: 1, score: 100_000_000 })).profile;
-    expect(p.stichPoints).toBe(7);
+    expect(p.stichPoints).toBe(SP_PER_RUN + 6);
     expect(p.spRuns).toBe(1);
-    // Nächster, kleiner Lauf: nur +1.
+    // Nächster, kleiner Lauf: nur der Grundstock.
     p = recordRun(runRec({ ts: 2, score: 10_000 })).profile;
-    expect(p.stichPoints).toBe(8);
+    expect(p.stichPoints).toBe(SP_PER_RUN * 2 + 6);
     expect(p.spRuns).toBe(2);
   });
 
   it("Treue-Drip: der 10. SP-Lauf gibt +5 extra", () => {
     veteran();
     let p;
-    // 9 SP-Läufe à +1 → 9 SP (kein Onboarding-Vorlauf mehr — jeder abgeschlossene Lauf ist ein SP-Lauf).
+    // 9 SP-Läufe à Grundstock (kein Onboarding-Vorlauf mehr — jeder abgeschlossene Lauf ist ein SP-Lauf).
     for (let i = 0; i < 9; i++) p = recordRun(runRec({ ts: 100 + i })).profile;
-    expect(p.stichPoints).toBe(9);
+    expect(p.stichPoints).toBe(SP_PER_RUN * 9);
     expect(p.spRuns).toBe(9);
-    // 10. SP-Lauf → +1 Grundstock + 5 Drip = +6 → 15.
+    // 10. SP-Lauf → Grundstock + 5 Drip. Die 5 ist die Aussage des Tests und bleibt ausgeschrieben.
     p = recordRun(runRec({ ts: 200 })).profile;
     expect(p.spRuns).toBe(10);
-    expect(p.stichPoints).toBe(15);
+    expect(p.stichPoints).toBe(SP_PER_RUN * 10 + 5);
   });
 
   it("#316: frisches Profil ist bereits 6/6 — recordRun meldet keine Onboarding-Unlocks; Genesis via onboardingDone frei", () => {
@@ -244,7 +249,7 @@ describe("Progression/Upgrades — Profil-Felder, Migration, SP-Ernte, Onboardin
     expect(p.deckPoints).toBe(50);         // Startbonus
     p = recordRun(runRec({ ts: 1, score: 55_000_000 })).profile;
     expect(p.deckPoints).toBe(50 + 3 + 5); // 55 Mio → +3 DP (Meilensteine 10M+25M+50M) + #382 Abschluss-Bonus 5
-    expect(p.stichPoints).toBe(1 + 3);     // +1 Grundstock + 3 Meilensteine (10M+25M+50M)
+    expect(p.stichPoints).toBe(SP_PER_RUN + 3);     // Grundstock + 3 Meilensteine (10M+25M+50M)
   });
 
   it("#382 Abschluss-Bonus: +5 DP je abgeschlossenem Nicht-Ranked-Lauf (nicht bei Abbruch)", () => {
@@ -260,7 +265,7 @@ describe("Progression/Upgrades — Profil-Felder, Migration, SP-Ernte, Onboardin
     veteran({ onboarding: 6, nodes: allNodes, stichPoints: 100, deckPoints: 0 });
     const p = recordRun(runRec({ ts: 1, score: 100_000_000 })).profile;
     expect(p.stichPoints).toBe(0);         // SP nutzlos → Rest zu DP gefegt
-    expect(p.deckPoints).toBe(100 + 6 + 1 + 5); // gefegte 100 SP + 6 Meilenstein-DP + 1 restliche SP-Ökonomie (Grundstock) + #382 Abschluss-Bonus 5
+    expect(p.deckPoints).toBe(100 + 6 + SP_PER_RUN + 5); // gefegte 100 SP + 6 Meilenstein-DP + der Grundstock der SP-Ökonomie + #382 Abschluss-Bonus 5
   });
 
   it("recordRun lässt gekaufte Knoten + ausgegebene SP unangetastet (nur Kauf/Respec ändern sie)", () => {
@@ -269,7 +274,7 @@ describe("Progression/Upgrades — Profil-Felder, Migration, SP-Ernte, Onboardin
     const p = recordRun(runRec({ ts: 1, score: 0 })).profile;
     expect(p.nodes).toEqual({ B1: 1 }); // Knoten bleiben
     expect(p.stichSpent).toBe(2);        // ausgegeben bleibt
-    expect(p.stichPoints).toBe(4);       // +1 Grundstock (Onboarding war fertig)
+    expect(p.stichPoints).toBe(3 + SP_PER_RUN);       // Grundstock auf die 3 mitgegebenen (Onboarding war fertig)
   });
 
   /* ---- Willkommensbonus (WELCOME_DP) ---- */
@@ -277,10 +282,10 @@ describe("Progression/Upgrades — Profil-Felder, Migration, SP-Ernte, Onboardin
   it("Willkommensbonus: einmalig DECKPUNKTE nach dem ERSTEN abgeschlossenen Lauf, danach nie wieder", () => {
     const dp0 = loadProfile().deckPoints;                 // Fresh-Start-Guthaben (START_DECK_POINTS)
     expect(loadProfile().welcomeBonusPaid).toBe(false);   // frisches Profil hat ihn noch offen
-    // Erster abgeschlossener Lauf: Bonus auf die DP, SP bekommen nur ihren Grundstock (+1).
+    // Erster abgeschlossener Lauf: Bonus auf die DP, SP bekommen nur ihren Grundstock.
     const first = recordRun(runRec({ ts: 1, score: 0 }));
     expect(first.earn.welcomeDp).toBe(WELCOME_DP);
-    expect(first.profile.stichPoints).toBe(1);            // der Bonus liegt NICHT mehr auf den SP
+    expect(first.profile.stichPoints).toBe(SP_PER_RUN);   // der Bonus liegt NICHT mehr auf den SP
     expect(first.profile.welcomeBonusPaid).toBe(true);
     // Zweiter Lauf: kein Bonus mehr. Gemessen wird die DIFFERENZ der beiden Läufe — beide tragen den
     // #382-Abschluss-Bonus, der Unterschied ist also genau der Willkommensbonus.
@@ -289,7 +294,7 @@ describe("Progression/Upgrades — Profil-Felder, Migration, SP-Ernte, Onboardin
     const d1 = first.profile.deckPoints - dp0;
     const d2 = second.profile.deckPoints - first.profile.deckPoints;
     expect(d1 - d2).toBe(WELCOME_DP);
-    expect(second.profile.stichPoints).toBe(2);
+    expect(second.profile.stichPoints).toBe(SP_PER_RUN * 2);
   });
 
   it("Willkommensbonus hängt an ABGESCHLOSSEN — ein Abbruch löst ihn nicht aus", () => {
