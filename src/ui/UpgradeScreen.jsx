@@ -273,13 +273,26 @@ function verteilung(node) {
   return [1, 2, 3, 4].map((tier) => ({ tier, pct: Math.round((w[tier] / summe) * 100) })).filter((x) => x.pct > 0);
 }
 
+const SEP = /[\s·→—–-]/;
 const stufeOf = (lane, label) => {
   const a = String(lane || "").toLowerCase(), b = String(label || "").toLowerCase();
   let i = 0;
   while (i < a.length && i < b.length && a[i] === b[i]) i++;
   if (i < 3) return label;
+  /* NUR AN EINER WORTGRENZE SCHNEIDEN, und diese Zeile ist in Englisch bezahlt worden: „Rarity" und
+     „Rare" teilen genau drei Zeichen, und ohne diese Bedingung stand unter der Spalte „Rarity" ein
+     Knoten namens „e". Im Deutschen faellt das nie auf — „Rarität"/„Selten" teilen nichts. Der
+     gemeinsame Anfang darf also nur weg, wenn im ETIKETT danach ein Trenner kommt (oder es zu Ende
+     ist); mitten in einem Wort zu schneiden ist kein Kuerzen, sondern ein Verstuemmeln. */
+  if (i < label.length && !SEP.test(label[i])) return label;
   const rest = label.slice(i).replace(/^[\s·→—–-]+/, "").trim();
-  return rest || label;
+  if (!rest) return label;
+  /* Der Rest stand mitten im Satz und steht jetzt am Anfang eines Etiketts: „2nd perk -> legendary"
+     wird „legendary", und das las sich als einziges kleingeschriebenes Etikett im Raster. Nur das
+     ERSTE Zeichen, und nur wenn wirklich gekuerzt wurde — im Deutschen ist es ohnehin schon gross,
+     dort tut die Zeile nichts. `text-transform: capitalize` waere das falsche Mittel: es trifft
+     JEDES Wort und machte aus „Reroll · 2nd perk phase" ein „Reroll · 2Nd Perk Phase". */
+  return rest.charAt(0).toUpperCase() + rest.slice(1);
 };
 
 function VNode({ node, st, accent, selected, onSelect, label = null }) {
