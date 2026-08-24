@@ -1,0 +1,3929 @@
+{
+ "generated": null,
+ "frozen": "2026-08-24T12:00:00.000Z",
+ "base": "/autostich/",
+ "norun": false,
+ "sizes": [
+  "1280x720",
+  "1400x700",
+  "1536x791",
+  "1600x900",
+  "1920x1080"
+ ],
+ "langs": [
+  "de",
+  "en"
+ ],
+ "cells": {
+  "de/1280x720/erststart": {
+   "reached": true,
+   "seeded": {
+    "username": null
+   },
+   "probe": {
+    "overlay": {
+     "present": true,
+     "box": [
+      0,
+      0,
+      1280,
+      720
+     ],
+     "backgroundColor": "rgba(12, 12, 16, 0.94)",
+     "backdropFilter": "none"
+    },
+    "card": {
+     "present": true,
+     "box": [
+      190,
+      145.47,
+      900,
+      429.05
+     ],
+     "width": "900px",
+     "height": "429.047px",
+     "borderRadius": "16px",
+     "borderTopWidth": "1px",
+     "borderTopColor": "rgba(0, 0, 0, 0)",
+     "backgroundColor": "rgba(0, 0, 0, 0)"
+    },
+    "body-grid": {
+     "present": true,
+     "box": [
+      191,
+      149.47,
+      898,
+      424.05
+     ],
+     "gridTemplateColumns": "340px 464px",
+     "columnGap": "34px",
+     "padding": "22px 30px 30px"
+    },
+    "eyebrow": {
+     "present": true,
+     "box": [
+      221,
+      248.61,
+      340,
+      17.33
+     ],
+     "color": "rgb(38, 198, 230)",
+     "fontSize": "13px"
+    },
+    "wordmark": {
+     "present": true,
+     "box": [
+      221,
+      275.94,
+      340,
+      48.3
+     ],
+     "width": "340px",
+     "height": "48.2969px"
+    },
+    "title": {
+     "present": true,
+     "box": [
+      221,
+      340.23,
+      340,
+      31.5
+     ],
+     "fontSize": "22.5px",
+     "filter": "drop-shadow(rgba(155, 130, 240, 0.18) 0px 0px 8px)",
+     "color": "rgba(0, 0, 0, 0)",
+     "backgroundImage": "linear-gradient(90deg, rgb(38, 198, 230), rgb(255, 46, 200), rgb(38, 198, 230))"
+    },
+    "subline": {
+     "present": false,
+     "sel": ".un-first .un-sub"
+    },
+    "input": {
+     "present": true,
+     "box": [
+      595,
+      274.11,
+      464,
+      50.14
+     ],
+     "backgroundColor": "rgb(14, 27, 34)",
+     "borderTopColor": "rgb(38, 198, 230)",
+     "color": "rgb(168, 236, 247)",
+     "height": "50.1406px"
+    },
+    "lang-wrap": {
+     "present": true,
+     "box": [
+      595,
+      396.88,
+      464,
+      46.14
+     ],
+     "borderTopColor": "rgb(44, 44, 54)",
+     "borderRadius": "10px",
+     "height": "46.1406px"
+    },
+    "lang-off": {
+     "present": true,
+     "box": [
+      827,
+      397.88,
+      231,
+      44.14
+     ],
+     "backgroundColor": "rgb(19, 19, 24)",
+     "color": "rgb(154, 154, 168)",
+     "borderLeftColor": "rgb(44, 44, 54)",
+     "boxShadow": "none",
+     "height": "44.1406px"
+    },
+    "lang-on": {
+     "present": true,
+     "box": [
+      596,
+      397.88,
+      231,
+      44.14
+     ],
+     "backgroundColor": "rgb(25, 25, 34)",
+     "color": "rgb(234, 244, 255)",
+     "borderLeftColor": "rgb(234, 244, 255)",
+     "boxShadow": "rgb(38, 198, 230) 0px -2px 0px 0px inset",
+     "height": "44.1406px"
+    },
+    "preview": {
+     "present": true,
+     "box": [
+      595,
+      492.52,
+      464,
+      51
+     ],
+     "backgroundColor": "rgb(19, 19, 24)",
+     "borderTopColor": "rgb(38, 38, 47)",
+     "borderRadius": "12px"
+    },
+    "preview-score": {
+     "present": true,
+     "box": [
+      961.3,
+      506.94,
+      83.7,
+      22.14
+     ],
+     "color": "rgb(168, 220, 192)"
+    },
+    "save": {
+     "present": true,
+     "box": [
+      923.2,
+      181.47,
+      135.8,
+      44.14
+     ],
+     "backgroundImage": "none",
+     "backgroundColor": "rgb(42, 42, 51)",
+     "boxShadow": "none",
+     "borderRadius": "12px"
+    },
+    "hint": {
+     "present": true,
+     "box": [
+      595,
+      332.25,
+      464,
+      15.13
+     ],
+     "fontSize": "11px"
+    }
+   }
+  },
+  "de/1280x720/feedback": {
+   "reached": true,
+   "seeded": {
+    "username": "M9",
+    "runs": 1
+   },
+   "probe": {
+    "overlay": {
+     "present": true,
+     "box": [
+      0,
+      0,
+      1280,
+      720
+     ],
+     "backgroundColor": "rgba(12, 12, 16, 0.94)",
+     "backdropFilter": "none"
+    },
+    "card": {
+     "present": true,
+     "box": [
+      100,
+      102.17,
+      1080,
+      515.66
+     ],
+     "width": "1080px",
+     "borderRadius": "16px",
+     "backgroundColor": "rgba(0, 0, 0, 0)",
+     "borderTopColor": "rgba(0, 0, 0, 0)"
+    },
+    "form-grid": {
+     "present": true,
+     "box": [
+      131,
+      195,
+      1018,
+      393.83
+     ],
+     "gridTemplateColumns": "592px 400px",
+     "columnGap": "26px",
+     "gap": "26px"
+    },
+    "textarea": {
+     "present": true,
+     "box": [
+      131,
+      295.33,
+      592,
+      268
+     ],
+     "height": "268px",
+     "backgroundColor": "rgb(15, 15, 20)",
+     "borderTopColor": "rgb(51, 51, 62)",
+     "borderRadius": "8px",
+     "padding": "8px 12px"
+    },
+    "name-input": {
+     "present": true,
+     "box": [
+      749,
+      220.5,
+      400,
+      40.14
+     ],
+     "backgroundColor": "rgb(15, 15, 20)",
+     "borderTopColor": "rgb(51, 51, 62)",
+     "borderRadius": "8px",
+     "padding": "8px 12px"
+    },
+    "run-row": {
+     "present": true,
+     "box": [
+      749,
+      272.64,
+      400,
+      99.25
+     ],
+     "backgroundColor": "rgba(15, 15, 21, 0.72)",
+     "borderTopColor": "rgba(150, 150, 170, 0.12)",
+     "borderRadius": "12px",
+     "padding": "13px 14px",
+     "opacity": "1"
+    },
+    "kind-on": {
+     "present": true,
+     "box": [
+      132,
+      221.5,
+      146.75,
+      35.33
+     ],
+     "backgroundColor": "rgba(32, 32, 44, 0.95)",
+     "borderLeftColor": "rgb(240, 238, 252)",
+     "borderRadius": "0px",
+     "height": "35.3281px"
+    },
+    "kind-off": {
+     "present": true,
+     "box": [
+      278.75,
+      221.5,
+      147.75,
+      35.33
+     ],
+     "backgroundColor": "rgba(19, 19, 26, 0.9)",
+     "borderLeftColor": "rgba(150, 150, 170, 0.14)",
+     "borderRadius": "0px",
+     "height": "35.3281px"
+    },
+    "kinds-wrap": {
+     "present": true,
+     "box": [
+      131,
+      220.5,
+      592,
+      37.33
+     ],
+     "borderTopColor": "rgba(150, 150, 170, 0.14)",
+     "borderRadius": "10px",
+     "height": "37.3281px",
+     "display": "flex"
+    },
+    "send": {
+     "present": true,
+     "box": [
+      749,
+      383.89,
+      400,
+      48.14
+     ],
+     "backgroundColor": "rgb(42, 39, 51)",
+     "color": "rgb(109, 106, 128)",
+     "borderRadius": "12px",
+     "height": "48.1406px"
+    },
+    "label": {
+     "present": true,
+     "box": [
+      131,
+      195,
+      592,
+      16.5
+     ],
+     "fontSize": "11px",
+     "letterSpacing": "2.2px",
+     "color": "rgb(232, 232, 234)",
+     "opacity": "0.5",
+     "textTransform": "uppercase"
+    },
+    "readout": {
+     "present": true,
+     "box": [
+      343.61,
+      124.17,
+      645.64,
+      52.83
+     ],
+     "borderLeftWidth": "0px",
+     "paddingLeft": "0px",
+     "fontSize": "13px"
+    },
+    "bar": {
+     "present": true,
+     "box": [
+      1011.25,
+      124.17,
+      137.75,
+      52.83
+     ],
+     "display": "flex",
+     "height": "52.8281px"
+    }
+   }
+  },
+  "de/1280x720/privacy": {
+   "reached": true,
+   "seeded": {
+    "username": "M9",
+    "runs": 1
+   },
+   "probe": {
+    "overlay": {
+     "present": true,
+     "box": [
+      0,
+      0,
+      1280,
+      720
+     ],
+     "backgroundColor": "rgba(12, 12, 16, 0.8)",
+     "backdropFilter": "none"
+    },
+    "panel": {
+     "present": true,
+     "box": [
+      210,
+      36,
+      860,
+      648
+     ],
+     "backgroundColor": "rgba(0, 0, 0, 0)",
+     "borderTopColor": "rgba(0, 0, 0, 0)",
+     "borderRadius": "16px",
+     "boxShadow": "color(srgb 0.14902 0.776471 0.901961 / 0.22) 0px 0px 14px 0px"
+    }
+   }
+  },
+  "de/1400x700/erststart": {
+   "reached": true,
+   "seeded": {
+    "username": null
+   },
+   "probe": {
+    "overlay": {
+     "present": true,
+     "box": [
+      0,
+      0,
+      1392,
+      700
+     ],
+     "backgroundColor": "rgba(12, 12, 16, 0.94)",
+     "backdropFilter": "none"
+    },
+    "card": {
+     "present": true,
+     "box": [
+      246,
+      135.47,
+      900,
+      429.05
+     ],
+     "width": "900px",
+     "height": "429.047px",
+     "borderRadius": "16px",
+     "borderTopWidth": "1px",
+     "borderTopColor": "rgba(0, 0, 0, 0)",
+     "backgroundColor": "rgba(0, 0, 0, 0)"
+    },
+    "body-grid": {
+     "present": true,
+     "box": [
+      247,
+      139.47,
+      898,
+      424.05
+     ],
+     "gridTemplateColumns": "340px 464px",
+     "columnGap": "34px",
+     "padding": "22px 30px 30px"
+    },
+    "eyebrow": {
+     "present": true,
+     "box": [
+      277,
+      238.61,
+      340,
+      17.33
+     ],
+     "color": "rgb(38, 198, 230)",
+     "fontSize": "13px"
+    },
+    "wordmark": {
+     "present": true,
+     "box": [
+      277,
+      265.94,
+      340,
+      48.3
+     ],
+     "width": "340px",
+     "height": "48.2969px"
+    },
+    "title": {
+     "present": true,
+     "box": [
+      277,
+      330.23,
+      340,
+      31.5
+     ],
+     "fontSize": "22.5px",
+     "filter": "drop-shadow(rgba(155, 130, 240, 0.18) 0px 0px 8px)",
+     "color": "rgba(0, 0, 0, 0)",
+     "backgroundImage": "linear-gradient(90deg, rgb(38, 198, 230), rgb(255, 46, 200), rgb(38, 198, 230))"
+    },
+    "subline": {
+     "present": false,
+     "sel": ".un-first .un-sub"
+    },
+    "input": {
+     "present": true,
+     "box": [
+      651,
+      264.11,
+      464,
+      50.14
+     ],
+     "backgroundColor": "rgb(14, 27, 34)",
+     "borderTopColor": "rgb(38, 198, 230)",
+     "color": "rgb(168, 236, 247)",
+     "height": "50.1406px"
+    },
+    "lang-wrap": {
+     "present": true,
+     "box": [
+      651,
+      386.88,
+      464,
+      46.14
+     ],
+     "borderTopColor": "rgb(44, 44, 54)",
+     "borderRadius": "10px",
+     "height": "46.1406px"
+    },
+    "lang-off": {
+     "present": true,
+     "box": [
+      883,
+      387.88,
+      231,
+      44.14
+     ],
+     "backgroundColor": "rgb(19, 19, 24)",
+     "color": "rgb(154, 154, 168)",
+     "borderLeftColor": "rgb(44, 44, 54)",
+     "boxShadow": "none",
+     "height": "44.1406px"
+    },
+    "lang-on": {
+     "present": true,
+     "box": [
+      652,
+      387.88,
+      231,
+      44.14
+     ],
+     "backgroundColor": "rgb(25, 25, 34)",
+     "color": "rgb(234, 244, 255)",
+     "borderLeftColor": "rgb(234, 244, 255)",
+     "boxShadow": "rgb(38, 198, 230) 0px -2px 0px 0px inset",
+     "height": "44.1406px"
+    },
+    "preview": {
+     "present": true,
+     "box": [
+      651,
+      482.52,
+      464,
+      51
+     ],
+     "backgroundColor": "rgb(19, 19, 24)",
+     "borderTopColor": "rgb(38, 38, 47)",
+     "borderRadius": "12px"
+    },
+    "preview-score": {
+     "present": true,
+     "box": [
+      1017.3,
+      496.94,
+      83.7,
+      22.14
+     ],
+     "color": "rgb(168, 220, 192)"
+    },
+    "save": {
+     "present": true,
+     "box": [
+      979.2,
+      171.47,
+      135.8,
+      44.14
+     ],
+     "backgroundImage": "none",
+     "backgroundColor": "rgb(42, 42, 51)",
+     "boxShadow": "none",
+     "borderRadius": "12px"
+    },
+    "hint": {
+     "present": true,
+     "box": [
+      651,
+      322.25,
+      464,
+      15.13
+     ],
+     "fontSize": "11px"
+    }
+   }
+  },
+  "de/1400x700/feedback": {
+   "reached": true,
+   "seeded": {
+    "username": "M9",
+    "runs": 1
+   },
+   "probe": {
+    "overlay": {
+     "present": true,
+     "box": [
+      0,
+      0,
+      1392,
+      700
+     ],
+     "backgroundColor": "rgba(12, 12, 16, 0.94)",
+     "backdropFilter": "none"
+    },
+    "card": {
+     "present": true,
+     "box": [
+      156,
+      92.17,
+      1080,
+      515.66
+     ],
+     "width": "1080px",
+     "borderRadius": "16px",
+     "backgroundColor": "rgba(0, 0, 0, 0)",
+     "borderTopColor": "rgba(0, 0, 0, 0)"
+    },
+    "form-grid": {
+     "present": true,
+     "box": [
+      187,
+      185,
+      1018,
+      393.83
+     ],
+     "gridTemplateColumns": "592px 400px",
+     "columnGap": "26px",
+     "gap": "26px"
+    },
+    "textarea": {
+     "present": true,
+     "box": [
+      187,
+      285.33,
+      592,
+      268
+     ],
+     "height": "268px",
+     "backgroundColor": "rgb(15, 15, 20)",
+     "borderTopColor": "rgb(51, 51, 62)",
+     "borderRadius": "8px",
+     "padding": "8px 12px"
+    },
+    "name-input": {
+     "present": true,
+     "box": [
+      805,
+      210.5,
+      400,
+      40.14
+     ],
+     "backgroundColor": "rgb(15, 15, 20)",
+     "borderTopColor": "rgb(51, 51, 62)",
+     "borderRadius": "8px",
+     "padding": "8px 12px"
+    },
+    "run-row": {
+     "present": true,
+     "box": [
+      805,
+      262.64,
+      400,
+      99.25
+     ],
+     "backgroundColor": "rgba(15, 15, 21, 0.72)",
+     "borderTopColor": "rgba(150, 150, 170, 0.12)",
+     "borderRadius": "12px",
+     "padding": "13px 14px",
+     "opacity": "1"
+    },
+    "kind-on": {
+     "present": true,
+     "box": [
+      188,
+      211.5,
+      146.75,
+      35.33
+     ],
+     "backgroundColor": "rgba(32, 32, 44, 0.95)",
+     "borderLeftColor": "rgb(240, 238, 252)",
+     "borderRadius": "0px",
+     "height": "35.3281px"
+    },
+    "kind-off": {
+     "present": true,
+     "box": [
+      334.75,
+      211.5,
+      147.75,
+      35.33
+     ],
+     "backgroundColor": "rgba(19, 19, 26, 0.9)",
+     "borderLeftColor": "rgba(150, 150, 170, 0.14)",
+     "borderRadius": "0px",
+     "height": "35.3281px"
+    },
+    "kinds-wrap": {
+     "present": true,
+     "box": [
+      187,
+      210.5,
+      592,
+      37.33
+     ],
+     "borderTopColor": "rgba(150, 150, 170, 0.14)",
+     "borderRadius": "10px",
+     "height": "37.3281px",
+     "display": "flex"
+    },
+    "send": {
+     "present": true,
+     "box": [
+      805,
+      373.89,
+      400,
+      48.14
+     ],
+     "backgroundColor": "rgb(42, 39, 51)",
+     "color": "rgb(109, 106, 128)",
+     "borderRadius": "12px",
+     "height": "48.1406px"
+    },
+    "label": {
+     "present": true,
+     "box": [
+      187,
+      185,
+      592,
+      16.5
+     ],
+     "fontSize": "11px",
+     "letterSpacing": "2.2px",
+     "color": "rgb(232, 232, 234)",
+     "opacity": "0.5",
+     "textTransform": "uppercase"
+    },
+    "readout": {
+     "present": true,
+     "box": [
+      399.61,
+      114.17,
+      645.64,
+      52.83
+     ],
+     "borderLeftWidth": "0px",
+     "paddingLeft": "0px",
+     "fontSize": "13px"
+    },
+    "bar": {
+     "present": true,
+     "box": [
+      1067.25,
+      114.17,
+      137.75,
+      52.83
+     ],
+     "display": "flex",
+     "height": "52.8281px"
+    }
+   }
+  },
+  "de/1400x700/privacy": {
+   "reached": true,
+   "seeded": {
+    "username": "M9",
+    "runs": 1
+   },
+   "probe": {
+    "overlay": {
+     "present": true,
+     "box": [
+      0,
+      0,
+      1392,
+      700
+     ],
+     "backgroundColor": "rgba(12, 12, 16, 0.8)",
+     "backdropFilter": "none"
+    },
+    "panel": {
+     "present": true,
+     "box": [
+      266,
+      35,
+      860,
+      630
+     ],
+     "backgroundColor": "rgba(0, 0, 0, 0)",
+     "borderTopColor": "rgba(0, 0, 0, 0)",
+     "borderRadius": "16px",
+     "boxShadow": "color(srgb 0.14902 0.776471 0.901961 / 0.22) 0px 0px 14px 0px"
+    }
+   }
+  },
+  "de/1536x791/erststart": {
+   "reached": true,
+   "seeded": {
+    "username": null
+   },
+   "probe": {
+    "overlay": {
+     "present": true,
+     "box": [
+      0,
+      0,
+      1536,
+      791
+     ],
+     "backgroundColor": "rgba(12, 12, 16, 0.94)",
+     "backdropFilter": "none"
+    },
+    "card": {
+     "present": true,
+     "box": [
+      318,
+      180.97,
+      900,
+      429.05
+     ],
+     "width": "900px",
+     "height": "429.047px",
+     "borderRadius": "16px",
+     "borderTopWidth": "1px",
+     "borderTopColor": "rgba(0, 0, 0, 0)",
+     "backgroundColor": "rgba(0, 0, 0, 0)"
+    },
+    "body-grid": {
+     "present": true,
+     "box": [
+      319,
+      184.97,
+      898,
+      424.05
+     ],
+     "gridTemplateColumns": "340px 464px",
+     "columnGap": "34px",
+     "padding": "22px 30px 30px"
+    },
+    "eyebrow": {
+     "present": true,
+     "box": [
+      349,
+      284.11,
+      340,
+      17.33
+     ],
+     "color": "rgb(38, 198, 230)",
+     "fontSize": "13px"
+    },
+    "wordmark": {
+     "present": true,
+     "box": [
+      349,
+      311.44,
+      340,
+      48.3
+     ],
+     "width": "340px",
+     "height": "48.2969px"
+    },
+    "title": {
+     "present": true,
+     "box": [
+      349,
+      375.73,
+      340,
+      31.5
+     ],
+     "fontSize": "22.5px",
+     "filter": "drop-shadow(rgba(155, 130, 240, 0.18) 0px 0px 8px)",
+     "color": "rgba(0, 0, 0, 0)",
+     "backgroundImage": "linear-gradient(90deg, rgb(38, 198, 230), rgb(255, 46, 200), rgb(38, 198, 230))"
+    },
+    "subline": {
+     "present": false,
+     "sel": ".un-first .un-sub"
+    },
+    "input": {
+     "present": true,
+     "box": [
+      723,
+      309.61,
+      464,
+      50.14
+     ],
+     "backgroundColor": "rgb(14, 27, 34)",
+     "borderTopColor": "rgb(38, 198, 230)",
+     "color": "rgb(168, 236, 247)",
+     "height": "50.1406px"
+    },
+    "lang-wrap": {
+     "present": true,
+     "box": [
+      723,
+      432.38,
+      464,
+      46.14
+     ],
+     "borderTopColor": "rgb(44, 44, 54)",
+     "borderRadius": "10px",
+     "height": "46.1406px"
+    },
+    "lang-off": {
+     "present": true,
+     "box": [
+      955,
+      433.38,
+      231,
+      44.14
+     ],
+     "backgroundColor": "rgb(19, 19, 24)",
+     "color": "rgb(154, 154, 168)",
+     "borderLeftColor": "rgb(44, 44, 54)",
+     "boxShadow": "none",
+     "height": "44.1406px"
+    },
+    "lang-on": {
+     "present": true,
+     "box": [
+      724,
+      433.38,
+      231,
+      44.14
+     ],
+     "backgroundColor": "rgb(25, 25, 34)",
+     "color": "rgb(234, 244, 255)",
+     "borderLeftColor": "rgb(234, 244, 255)",
+     "boxShadow": "rgb(38, 198, 230) 0px -2px 0px 0px inset",
+     "height": "44.1406px"
+    },
+    "preview": {
+     "present": true,
+     "box": [
+      723,
+      528.02,
+      464,
+      51
+     ],
+     "backgroundColor": "rgb(19, 19, 24)",
+     "borderTopColor": "rgb(38, 38, 47)",
+     "borderRadius": "12px"
+    },
+    "preview-score": {
+     "present": true,
+     "box": [
+      1089.3,
+      542.44,
+      83.7,
+      22.14
+     ],
+     "color": "rgb(168, 220, 192)"
+    },
+    "save": {
+     "present": true,
+     "box": [
+      1051.2,
+      216.97,
+      135.8,
+      44.14
+     ],
+     "backgroundImage": "none",
+     "backgroundColor": "rgb(42, 42, 51)",
+     "boxShadow": "none",
+     "borderRadius": "12px"
+    },
+    "hint": {
+     "present": true,
+     "box": [
+      723,
+      367.75,
+      464,
+      15.13
+     ],
+     "fontSize": "11px"
+    }
+   }
+  },
+  "de/1536x791/feedback": {
+   "reached": true,
+   "seeded": {
+    "username": "M9",
+    "runs": 1
+   },
+   "probe": {
+    "overlay": {
+     "present": true,
+     "box": [
+      0,
+      0,
+      1536,
+      791
+     ],
+     "backgroundColor": "rgba(12, 12, 16, 0.94)",
+     "backdropFilter": "none"
+    },
+    "card": {
+     "present": true,
+     "box": [
+      228,
+      137.67,
+      1080,
+      515.66
+     ],
+     "width": "1080px",
+     "borderRadius": "16px",
+     "backgroundColor": "rgba(0, 0, 0, 0)",
+     "borderTopColor": "rgba(0, 0, 0, 0)"
+    },
+    "form-grid": {
+     "present": true,
+     "box": [
+      259,
+      230.5,
+      1018,
+      393.83
+     ],
+     "gridTemplateColumns": "592px 400px",
+     "columnGap": "26px",
+     "gap": "26px"
+    },
+    "textarea": {
+     "present": true,
+     "box": [
+      259,
+      330.83,
+      592,
+      268
+     ],
+     "height": "268px",
+     "backgroundColor": "rgb(15, 15, 20)",
+     "borderTopColor": "rgb(51, 51, 62)",
+     "borderRadius": "8px",
+     "padding": "8px 12px"
+    },
+    "name-input": {
+     "present": true,
+     "box": [
+      877,
+      256,
+      400,
+      40.14
+     ],
+     "backgroundColor": "rgb(15, 15, 20)",
+     "borderTopColor": "rgb(51, 51, 62)",
+     "borderRadius": "8px",
+     "padding": "8px 12px"
+    },
+    "run-row": {
+     "present": true,
+     "box": [
+      877,
+      308.14,
+      400,
+      99.25
+     ],
+     "backgroundColor": "rgba(15, 15, 21, 0.72)",
+     "borderTopColor": "rgba(150, 150, 170, 0.12)",
+     "borderRadius": "12px",
+     "padding": "13px 14px",
+     "opacity": "1"
+    },
+    "kind-on": {
+     "present": true,
+     "box": [
+      260,
+      257,
+      146.75,
+      35.33
+     ],
+     "backgroundColor": "rgba(32, 32, 44, 0.95)",
+     "borderLeftColor": "rgb(240, 238, 252)",
+     "borderRadius": "0px",
+     "height": "35.3281px"
+    },
+    "kind-off": {
+     "present": true,
+     "box": [
+      406.75,
+      257,
+      147.75,
+      35.33
+     ],
+     "backgroundColor": "rgba(19, 19, 26, 0.9)",
+     "borderLeftColor": "rgba(150, 150, 170, 0.14)",
+     "borderRadius": "0px",
+     "height": "35.3281px"
+    },
+    "kinds-wrap": {
+     "present": true,
+     "box": [
+      259,
+      256,
+      592,
+      37.33
+     ],
+     "borderTopColor": "rgba(150, 150, 170, 0.14)",
+     "borderRadius": "10px",
+     "height": "37.3281px",
+     "display": "flex"
+    },
+    "send": {
+     "present": true,
+     "box": [
+      877,
+      419.39,
+      400,
+      48.14
+     ],
+     "backgroundColor": "rgb(42, 39, 51)",
+     "color": "rgb(109, 106, 128)",
+     "borderRadius": "12px",
+     "height": "48.1406px"
+    },
+    "label": {
+     "present": true,
+     "box": [
+      259,
+      230.5,
+      592,
+      16.5
+     ],
+     "fontSize": "11px",
+     "letterSpacing": "2.2px",
+     "color": "rgb(232, 232, 234)",
+     "opacity": "0.5",
+     "textTransform": "uppercase"
+    },
+    "readout": {
+     "present": true,
+     "box": [
+      471.61,
+      159.67,
+      645.64,
+      52.83
+     ],
+     "borderLeftWidth": "0px",
+     "paddingLeft": "0px",
+     "fontSize": "13px"
+    },
+    "bar": {
+     "present": true,
+     "box": [
+      1139.25,
+      159.67,
+      137.75,
+      52.83
+     ],
+     "display": "flex",
+     "height": "52.8281px"
+    }
+   }
+  },
+  "de/1536x791/privacy": {
+   "reached": true,
+   "seeded": {
+    "username": "M9",
+    "runs": 1
+   },
+   "probe": {
+    "overlay": {
+     "present": true,
+     "box": [
+      0,
+      0,
+      1536,
+      791
+     ],
+     "backgroundColor": "rgba(12, 12, 16, 0.8)",
+     "backdropFilter": "none"
+    },
+    "panel": {
+     "present": true,
+     "box": [
+      338,
+      39.55,
+      860,
+      711.89
+     ],
+     "backgroundColor": "rgba(0, 0, 0, 0)",
+     "borderTopColor": "rgba(0, 0, 0, 0)",
+     "borderRadius": "16px",
+     "boxShadow": "color(srgb 0.14902 0.776471 0.901961 / 0.22) 0px 0px 14px 0px"
+    }
+   }
+  },
+  "de/1600x900/erststart": {
+   "reached": true,
+   "seeded": {
+    "username": null
+   },
+   "probe": {
+    "overlay": {
+     "present": true,
+     "box": [
+      0,
+      0,
+      1600,
+      900
+     ],
+     "backgroundColor": "rgba(12, 12, 16, 0.94)",
+     "backdropFilter": "none"
+    },
+    "card": {
+     "present": true,
+     "box": [
+      350,
+      235.47,
+      900,
+      429.05
+     ],
+     "width": "900px",
+     "height": "429.047px",
+     "borderRadius": "16px",
+     "borderTopWidth": "1px",
+     "borderTopColor": "rgba(0, 0, 0, 0)",
+     "backgroundColor": "rgba(0, 0, 0, 0)"
+    },
+    "body-grid": {
+     "present": true,
+     "box": [
+      351,
+      239.47,
+      898,
+      424.05
+     ],
+     "gridTemplateColumns": "340px 464px",
+     "columnGap": "34px",
+     "padding": "22px 30px 30px"
+    },
+    "eyebrow": {
+     "present": true,
+     "box": [
+      381,
+      338.61,
+      340,
+      17.33
+     ],
+     "color": "rgb(38, 198, 230)",
+     "fontSize": "13px"
+    },
+    "wordmark": {
+     "present": true,
+     "box": [
+      381,
+      365.94,
+      340,
+      48.3
+     ],
+     "width": "340px",
+     "height": "48.2969px"
+    },
+    "title": {
+     "present": true,
+     "box": [
+      381,
+      430.23,
+      340,
+      31.5
+     ],
+     "fontSize": "22.5px",
+     "filter": "drop-shadow(rgba(155, 130, 240, 0.18) 0px 0px 8px)",
+     "color": "rgba(0, 0, 0, 0)",
+     "backgroundImage": "linear-gradient(90deg, rgb(38, 198, 230), rgb(255, 46, 200), rgb(38, 198, 230))"
+    },
+    "subline": {
+     "present": false,
+     "sel": ".un-first .un-sub"
+    },
+    "input": {
+     "present": true,
+     "box": [
+      755,
+      364.11,
+      464,
+      50.14
+     ],
+     "backgroundColor": "rgb(14, 27, 34)",
+     "borderTopColor": "rgb(38, 198, 230)",
+     "color": "rgb(168, 236, 247)",
+     "height": "50.1406px"
+    },
+    "lang-wrap": {
+     "present": true,
+     "box": [
+      755,
+      486.88,
+      464,
+      46.14
+     ],
+     "borderTopColor": "rgb(44, 44, 54)",
+     "borderRadius": "10px",
+     "height": "46.1406px"
+    },
+    "lang-off": {
+     "present": true,
+     "box": [
+      987,
+      487.88,
+      231,
+      44.14
+     ],
+     "backgroundColor": "rgb(19, 19, 24)",
+     "color": "rgb(154, 154, 168)",
+     "borderLeftColor": "rgb(44, 44, 54)",
+     "boxShadow": "none",
+     "height": "44.1406px"
+    },
+    "lang-on": {
+     "present": true,
+     "box": [
+      756,
+      487.88,
+      231,
+      44.14
+     ],
+     "backgroundColor": "rgb(25, 25, 34)",
+     "color": "rgb(234, 244, 255)",
+     "borderLeftColor": "rgb(234, 244, 255)",
+     "boxShadow": "rgb(38, 198, 230) 0px -2px 0px 0px inset",
+     "height": "44.1406px"
+    },
+    "preview": {
+     "present": true,
+     "box": [
+      755,
+      582.52,
+      464,
+      51
+     ],
+     "backgroundColor": "rgb(19, 19, 24)",
+     "borderTopColor": "rgb(38, 38, 47)",
+     "borderRadius": "12px"
+    },
+    "preview-score": {
+     "present": true,
+     "box": [
+      1121.3,
+      596.94,
+      83.7,
+      22.14
+     ],
+     "color": "rgb(168, 220, 192)"
+    },
+    "save": {
+     "present": true,
+     "box": [
+      1083.2,
+      271.47,
+      135.8,
+      44.14
+     ],
+     "backgroundImage": "none",
+     "backgroundColor": "rgb(42, 42, 51)",
+     "boxShadow": "none",
+     "borderRadius": "12px"
+    },
+    "hint": {
+     "present": true,
+     "box": [
+      755,
+      422.25,
+      464,
+      15.13
+     ],
+     "fontSize": "11px"
+    }
+   }
+  },
+  "de/1600x900/feedback": {
+   "reached": true,
+   "seeded": {
+    "username": "M9",
+    "runs": 1
+   },
+   "probe": {
+    "overlay": {
+     "present": true,
+     "box": [
+      0,
+      0,
+      1600,
+      900
+     ],
+     "backgroundColor": "rgba(12, 12, 16, 0.94)",
+     "backdropFilter": "none"
+    },
+    "card": {
+     "present": true,
+     "box": [
+      260,
+      192.17,
+      1080,
+      515.66
+     ],
+     "width": "1080px",
+     "borderRadius": "16px",
+     "backgroundColor": "rgba(0, 0, 0, 0)",
+     "borderTopColor": "rgba(0, 0, 0, 0)"
+    },
+    "form-grid": {
+     "present": true,
+     "box": [
+      291,
+      285,
+      1018,
+      393.83
+     ],
+     "gridTemplateColumns": "592px 400px",
+     "columnGap": "26px",
+     "gap": "26px"
+    },
+    "textarea": {
+     "present": true,
+     "box": [
+      291,
+      385.33,
+      592,
+      268
+     ],
+     "height": "268px",
+     "backgroundColor": "rgb(15, 15, 20)",
+     "borderTopColor": "rgb(51, 51, 62)",
+     "borderRadius": "8px",
+     "padding": "8px 12px"
+    },
+    "name-input": {
+     "present": true,
+     "box": [
+      909,
+      310.5,
+      400,
+      40.14
+     ],
+     "backgroundColor": "rgb(15, 15, 20)",
+     "borderTopColor": "rgb(51, 51, 62)",
+     "borderRadius": "8px",
+     "padding": "8px 12px"
+    },
+    "run-row": {
+     "present": true,
+     "box": [
+      909,
+      362.64,
+      400,
+      99.25
+     ],
+     "backgroundColor": "rgba(15, 15, 21, 0.72)",
+     "borderTopColor": "rgba(150, 150, 170, 0.12)",
+     "borderRadius": "12px",
+     "padding": "13px 14px",
+     "opacity": "1"
+    },
+    "kind-on": {
+     "present": true,
+     "box": [
+      292,
+      311.5,
+      146.75,
+      35.33
+     ],
+     "backgroundColor": "rgba(32, 32, 44, 0.95)",
+     "borderLeftColor": "rgb(240, 238, 252)",
+     "borderRadius": "0px",
+     "height": "35.3281px"
+    },
+    "kind-off": {
+     "present": true,
+     "box": [
+      438.75,
+      311.5,
+      147.75,
+      35.33
+     ],
+     "backgroundColor": "rgba(19, 19, 26, 0.9)",
+     "borderLeftColor": "rgba(150, 150, 170, 0.14)",
+     "borderRadius": "0px",
+     "height": "35.3281px"
+    },
+    "kinds-wrap": {
+     "present": true,
+     "box": [
+      291,
+      310.5,
+      592,
+      37.33
+     ],
+     "borderTopColor": "rgba(150, 150, 170, 0.14)",
+     "borderRadius": "10px",
+     "height": "37.3281px",
+     "display": "flex"
+    },
+    "send": {
+     "present": true,
+     "box": [
+      909,
+      473.89,
+      400,
+      48.14
+     ],
+     "backgroundColor": "rgb(42, 39, 51)",
+     "color": "rgb(109, 106, 128)",
+     "borderRadius": "12px",
+     "height": "48.1406px"
+    },
+    "label": {
+     "present": true,
+     "box": [
+      291,
+      285,
+      592,
+      16.5
+     ],
+     "fontSize": "11px",
+     "letterSpacing": "2.2px",
+     "color": "rgb(232, 232, 234)",
+     "opacity": "0.5",
+     "textTransform": "uppercase"
+    },
+    "readout": {
+     "present": true,
+     "box": [
+      503.61,
+      214.17,
+      645.64,
+      52.83
+     ],
+     "borderLeftWidth": "0px",
+     "paddingLeft": "0px",
+     "fontSize": "13px"
+    },
+    "bar": {
+     "present": true,
+     "box": [
+      1171.25,
+      214.17,
+      137.75,
+      52.83
+     ],
+     "display": "flex",
+     "height": "52.8281px"
+    }
+   }
+  },
+  "de/1600x900/privacy": {
+   "reached": true,
+   "seeded": {
+    "username": "M9",
+    "runs": 1
+   },
+   "probe": {
+    "overlay": {
+     "present": true,
+     "box": [
+      0,
+      0,
+      1600,
+      900
+     ],
+     "backgroundColor": "rgba(12, 12, 16, 0.8)",
+     "backdropFilter": "none"
+    },
+    "panel": {
+     "present": true,
+     "box": [
+      370,
+      45,
+      860,
+      810
+     ],
+     "backgroundColor": "rgba(0, 0, 0, 0)",
+     "borderTopColor": "rgba(0, 0, 0, 0)",
+     "borderRadius": "16px",
+     "boxShadow": "color(srgb 0.14902 0.776471 0.901961 / 0.22) 0px 0px 14px 0px"
+    }
+   }
+  },
+  "de/1920x1080/erststart": {
+   "reached": true,
+   "seeded": {
+    "username": null
+   },
+   "probe": {
+    "overlay": {
+     "present": true,
+     "box": [
+      0,
+      0,
+      1920,
+      1080
+     ],
+     "backgroundColor": "rgba(12, 12, 16, 0.94)",
+     "backdropFilter": "none"
+    },
+    "card": {
+     "present": true,
+     "box": [
+      510,
+      325.47,
+      900,
+      429.05
+     ],
+     "width": "900px",
+     "height": "429.047px",
+     "borderRadius": "16px",
+     "borderTopWidth": "1px",
+     "borderTopColor": "rgba(0, 0, 0, 0)",
+     "backgroundColor": "rgba(0, 0, 0, 0)"
+    },
+    "body-grid": {
+     "present": true,
+     "box": [
+      511,
+      329.47,
+      898,
+      424.05
+     ],
+     "gridTemplateColumns": "340px 464px",
+     "columnGap": "34px",
+     "padding": "22px 30px 30px"
+    },
+    "eyebrow": {
+     "present": true,
+     "box": [
+      541,
+      428.61,
+      340,
+      17.33
+     ],
+     "color": "rgb(38, 198, 230)",
+     "fontSize": "13px"
+    },
+    "wordmark": {
+     "present": true,
+     "box": [
+      541,
+      455.94,
+      340,
+      48.3
+     ],
+     "width": "340px",
+     "height": "48.2969px"
+    },
+    "title": {
+     "present": true,
+     "box": [
+      541,
+      520.23,
+      340,
+      31.5
+     ],
+     "fontSize": "22.5px",
+     "filter": "drop-shadow(rgba(155, 130, 240, 0.18) 0px 0px 8px)",
+     "color": "rgba(0, 0, 0, 0)",
+     "backgroundImage": "linear-gradient(90deg, rgb(38, 198, 230), rgb(255, 46, 200), rgb(38, 198, 230))"
+    },
+    "subline": {
+     "present": false,
+     "sel": ".un-first .un-sub"
+    },
+    "input": {
+     "present": true,
+     "box": [
+      915,
+      454.11,
+      464,
+      50.14
+     ],
+     "backgroundColor": "rgb(14, 27, 34)",
+     "borderTopColor": "rgb(38, 198, 230)",
+     "color": "rgb(168, 236, 247)",
+     "height": "50.1406px"
+    },
+    "lang-wrap": {
+     "present": true,
+     "box": [
+      915,
+      576.88,
+      464,
+      46.14
+     ],
+     "borderTopColor": "rgb(44, 44, 54)",
+     "borderRadius": "10px",
+     "height": "46.1406px"
+    },
+    "lang-off": {
+     "present": true,
+     "box": [
+      1147,
+      577.88,
+      231,
+      44.14
+     ],
+     "backgroundColor": "rgb(19, 19, 24)",
+     "color": "rgb(154, 154, 168)",
+     "borderLeftColor": "rgb(44, 44, 54)",
+     "boxShadow": "none",
+     "height": "44.1406px"
+    },
+    "lang-on": {
+     "present": true,
+     "box": [
+      916,
+      577.88,
+      231,
+      44.14
+     ],
+     "backgroundColor": "rgb(25, 25, 34)",
+     "color": "rgb(234, 244, 255)",
+     "borderLeftColor": "rgb(234, 244, 255)",
+     "boxShadow": "rgb(38, 198, 230) 0px -2px 0px 0px inset",
+     "height": "44.1406px"
+    },
+    "preview": {
+     "present": true,
+     "box": [
+      915,
+      672.52,
+      464,
+      51
+     ],
+     "backgroundColor": "rgb(19, 19, 24)",
+     "borderTopColor": "rgb(38, 38, 47)",
+     "borderRadius": "12px"
+    },
+    "preview-score": {
+     "present": true,
+     "box": [
+      1281.3,
+      686.94,
+      83.7,
+      22.14
+     ],
+     "color": "rgb(168, 220, 192)"
+    },
+    "save": {
+     "present": true,
+     "box": [
+      1243.2,
+      361.47,
+      135.8,
+      44.14
+     ],
+     "backgroundImage": "none",
+     "backgroundColor": "rgb(42, 42, 51)",
+     "boxShadow": "none",
+     "borderRadius": "12px"
+    },
+    "hint": {
+     "present": true,
+     "box": [
+      915,
+      512.25,
+      464,
+      15.13
+     ],
+     "fontSize": "11px"
+    }
+   }
+  },
+  "de/1920x1080/feedback": {
+   "reached": true,
+   "seeded": {
+    "username": "M9",
+    "runs": 1
+   },
+   "probe": {
+    "overlay": {
+     "present": true,
+     "box": [
+      0,
+      0,
+      1920,
+      1080
+     ],
+     "backgroundColor": "rgba(12, 12, 16, 0.94)",
+     "backdropFilter": "none"
+    },
+    "card": {
+     "present": true,
+     "box": [
+      420,
+      282.17,
+      1080,
+      515.66
+     ],
+     "width": "1080px",
+     "borderRadius": "16px",
+     "backgroundColor": "rgba(0, 0, 0, 0)",
+     "borderTopColor": "rgba(0, 0, 0, 0)"
+    },
+    "form-grid": {
+     "present": true,
+     "box": [
+      451,
+      375,
+      1018,
+      393.83
+     ],
+     "gridTemplateColumns": "592px 400px",
+     "columnGap": "26px",
+     "gap": "26px"
+    },
+    "textarea": {
+     "present": true,
+     "box": [
+      451,
+      475.33,
+      592,
+      268
+     ],
+     "height": "268px",
+     "backgroundColor": "rgb(15, 15, 20)",
+     "borderTopColor": "rgb(51, 51, 62)",
+     "borderRadius": "8px",
+     "padding": "8px 12px"
+    },
+    "name-input": {
+     "present": true,
+     "box": [
+      1069,
+      400.5,
+      400,
+      40.14
+     ],
+     "backgroundColor": "rgb(15, 15, 20)",
+     "borderTopColor": "rgb(51, 51, 62)",
+     "borderRadius": "8px",
+     "padding": "8px 12px"
+    },
+    "run-row": {
+     "present": true,
+     "box": [
+      1069,
+      452.64,
+      400,
+      99.25
+     ],
+     "backgroundColor": "rgba(15, 15, 21, 0.72)",
+     "borderTopColor": "rgba(150, 150, 170, 0.12)",
+     "borderRadius": "12px",
+     "padding": "13px 14px",
+     "opacity": "1"
+    },
+    "kind-on": {
+     "present": true,
+     "box": [
+      452,
+      401.5,
+      146.75,
+      35.33
+     ],
+     "backgroundColor": "rgba(32, 32, 44, 0.95)",
+     "borderLeftColor": "rgb(240, 238, 252)",
+     "borderRadius": "0px",
+     "height": "35.3281px"
+    },
+    "kind-off": {
+     "present": true,
+     "box": [
+      598.75,
+      401.5,
+      147.75,
+      35.33
+     ],
+     "backgroundColor": "rgba(19, 19, 26, 0.9)",
+     "borderLeftColor": "rgba(150, 150, 170, 0.14)",
+     "borderRadius": "0px",
+     "height": "35.3281px"
+    },
+    "kinds-wrap": {
+     "present": true,
+     "box": [
+      451,
+      400.5,
+      592,
+      37.33
+     ],
+     "borderTopColor": "rgba(150, 150, 170, 0.14)",
+     "borderRadius": "10px",
+     "height": "37.3281px",
+     "display": "flex"
+    },
+    "send": {
+     "present": true,
+     "box": [
+      1069,
+      563.89,
+      400,
+      48.14
+     ],
+     "backgroundColor": "rgb(42, 39, 51)",
+     "color": "rgb(109, 106, 128)",
+     "borderRadius": "12px",
+     "height": "48.1406px"
+    },
+    "label": {
+     "present": true,
+     "box": [
+      451,
+      375,
+      592,
+      16.5
+     ],
+     "fontSize": "11px",
+     "letterSpacing": "2.2px",
+     "color": "rgb(232, 232, 234)",
+     "opacity": "0.5",
+     "textTransform": "uppercase"
+    },
+    "readout": {
+     "present": true,
+     "box": [
+      663.61,
+      304.17,
+      645.64,
+      52.83
+     ],
+     "borderLeftWidth": "0px",
+     "paddingLeft": "0px",
+     "fontSize": "13px"
+    },
+    "bar": {
+     "present": true,
+     "box": [
+      1331.25,
+      304.17,
+      137.75,
+      52.83
+     ],
+     "display": "flex",
+     "height": "52.8281px"
+    }
+   }
+  },
+  "de/1920x1080/privacy": {
+   "reached": true,
+   "seeded": {
+    "username": "M9",
+    "runs": 1
+   },
+   "probe": {
+    "overlay": {
+     "present": true,
+     "box": [
+      0,
+      0,
+      1920,
+      1080
+     ],
+     "backgroundColor": "rgba(12, 12, 16, 0.8)",
+     "backdropFilter": "none"
+    },
+    "panel": {
+     "present": true,
+     "box": [
+      530,
+      54,
+      860,
+      972
+     ],
+     "backgroundColor": "rgba(0, 0, 0, 0)",
+     "borderTopColor": "rgba(0, 0, 0, 0)",
+     "borderRadius": "16px",
+     "boxShadow": "color(srgb 0.14902 0.776471 0.901961 / 0.22) 0px 0px 14px 0px"
+    }
+   }
+  },
+  "en/1280x720/erststart": {
+   "reached": true,
+   "seeded": {
+    "username": null
+   },
+   "probe": {
+    "overlay": {
+     "present": true,
+     "box": [
+      0,
+      0,
+      1280,
+      720
+     ],
+     "backgroundColor": "rgba(12, 12, 16, 0.94)",
+     "backdropFilter": "none"
+    },
+    "card": {
+     "present": true,
+     "box": [
+      190,
+      137.91,
+      900,
+      444.17
+     ],
+     "width": "900px",
+     "height": "444.172px",
+     "borderRadius": "16px",
+     "borderTopWidth": "1px",
+     "borderTopColor": "rgba(0, 0, 0, 0)",
+     "backgroundColor": "rgba(0, 0, 0, 0)"
+    },
+    "body-grid": {
+     "present": true,
+     "box": [
+      191,
+      141.91,
+      898,
+      439.17
+     ],
+     "gridTemplateColumns": "340px 464px",
+     "columnGap": "34px",
+     "padding": "22px 30px 30px"
+    },
+    "eyebrow": {
+     "present": true,
+     "box": [
+      221,
+      241.05,
+      340,
+      17.33
+     ],
+     "color": "rgb(38, 198, 230)",
+     "fontSize": "13px"
+    },
+    "wordmark": {
+     "present": true,
+     "box": [
+      221,
+      268.38,
+      340,
+      48.3
+     ],
+     "width": "340px",
+     "height": "48.2969px"
+    },
+    "title": {
+     "present": true,
+     "box": [
+      221,
+      332.67,
+      340,
+      31.5
+     ],
+     "fontSize": "22.5px",
+     "filter": "drop-shadow(rgba(155, 130, 240, 0.18) 0px 0px 8px)",
+     "color": "rgba(0, 0, 0, 0)",
+     "backgroundImage": "linear-gradient(90deg, rgb(38, 198, 230), rgb(255, 46, 200), rgb(38, 198, 230))"
+    },
+    "subline": {
+     "present": false,
+     "sel": ".un-first .un-sub"
+    },
+    "input": {
+     "present": true,
+     "box": [
+      595,
+      266.55,
+      464,
+      50.14
+     ],
+     "backgroundColor": "rgb(14, 27, 34)",
+     "borderTopColor": "rgb(38, 198, 230)",
+     "color": "rgb(168, 236, 247)",
+     "height": "50.1406px"
+    },
+    "lang-wrap": {
+     "present": true,
+     "box": [
+      595,
+      404.44,
+      464,
+      46.14
+     ],
+     "borderTopColor": "rgb(44, 44, 54)",
+     "borderRadius": "10px",
+     "height": "46.1406px"
+    },
+    "lang-off": {
+     "present": true,
+     "box": [
+      596,
+      405.44,
+      231,
+      44.14
+     ],
+     "backgroundColor": "rgb(19, 19, 24)",
+     "color": "rgb(154, 154, 168)",
+     "borderLeftColor": "rgb(154, 154, 168)",
+     "boxShadow": "none",
+     "height": "44.1406px"
+    },
+    "lang-on": {
+     "present": true,
+     "box": [
+      827,
+      405.44,
+      231,
+      44.14
+     ],
+     "backgroundColor": "rgb(25, 25, 34)",
+     "color": "rgb(234, 244, 255)",
+     "borderLeftColor": "rgb(44, 44, 54)",
+     "boxShadow": "rgb(38, 198, 230) 0px -2px 0px 0px inset",
+     "height": "44.1406px"
+    },
+    "preview": {
+     "present": true,
+     "box": [
+      595,
+      500.08,
+      464,
+      51
+     ],
+     "backgroundColor": "rgb(19, 19, 24)",
+     "borderTopColor": "rgb(38, 38, 47)",
+     "borderRadius": "12px"
+    },
+    "preview-score": {
+     "present": true,
+     "box": [
+      961.3,
+      514.5,
+      83.7,
+      22.14
+     ],
+     "color": "rgb(168, 220, 192)"
+    },
+    "save": {
+     "present": true,
+     "box": [
+      961.42,
+      173.91,
+      97.58,
+      44.14
+     ],
+     "backgroundImage": "none",
+     "backgroundColor": "rgb(42, 42, 51)",
+     "boxShadow": "none",
+     "borderRadius": "12px"
+    },
+    "hint": {
+     "present": true,
+     "box": [
+      595,
+      324.69,
+      464,
+      30.25
+     ],
+     "fontSize": "11px"
+    }
+   }
+  },
+  "en/1280x720/feedback": {
+   "reached": true,
+   "seeded": {
+    "username": "M9",
+    "runs": 1
+   },
+   "probe": {
+    "overlay": {
+     "present": true,
+     "box": [
+      0,
+      0,
+      1280,
+      720
+     ],
+     "backgroundColor": "rgba(12, 12, 16, 0.94)",
+     "backdropFilter": "none"
+    },
+    "card": {
+     "present": true,
+     "box": [
+      100,
+      102.17,
+      1080,
+      515.66
+     ],
+     "width": "1080px",
+     "borderRadius": "16px",
+     "backgroundColor": "rgba(0, 0, 0, 0)",
+     "borderTopColor": "rgba(0, 0, 0, 0)"
+    },
+    "form-grid": {
+     "present": true,
+     "box": [
+      131,
+      195,
+      1018,
+      393.83
+     ],
+     "gridTemplateColumns": "592px 400px",
+     "columnGap": "26px",
+     "gap": "26px"
+    },
+    "textarea": {
+     "present": true,
+     "box": [
+      131,
+      295.33,
+      592,
+      268
+     ],
+     "height": "268px",
+     "backgroundColor": "rgb(15, 15, 20)",
+     "borderTopColor": "rgb(51, 51, 62)",
+     "borderRadius": "8px",
+     "padding": "8px 12px"
+    },
+    "name-input": {
+     "present": true,
+     "box": [
+      749,
+      220.5,
+      400,
+      40.14
+     ],
+     "backgroundColor": "rgb(15, 15, 20)",
+     "borderTopColor": "rgb(51, 51, 62)",
+     "borderRadius": "8px",
+     "padding": "8px 12px"
+    },
+    "run-row": {
+     "present": true,
+     "box": [
+      749,
+      272.64,
+      400,
+      79.75
+     ],
+     "backgroundColor": "rgba(15, 15, 21, 0.72)",
+     "borderTopColor": "rgba(150, 150, 170, 0.12)",
+     "borderRadius": "12px",
+     "padding": "13px 14px",
+     "opacity": "1"
+    },
+    "kind-on": {
+     "present": true,
+     "box": [
+      132,
+      221.5,
+      146.75,
+      35.33
+     ],
+     "backgroundColor": "rgba(32, 32, 44, 0.95)",
+     "borderLeftColor": "rgb(240, 238, 252)",
+     "borderRadius": "0px",
+     "height": "35.3281px"
+    },
+    "kind-off": {
+     "present": true,
+     "box": [
+      278.75,
+      221.5,
+      147.75,
+      35.33
+     ],
+     "backgroundColor": "rgba(19, 19, 26, 0.9)",
+     "borderLeftColor": "rgba(150, 150, 170, 0.14)",
+     "borderRadius": "0px",
+     "height": "35.3281px"
+    },
+    "kinds-wrap": {
+     "present": true,
+     "box": [
+      131,
+      220.5,
+      592,
+      37.33
+     ],
+     "borderTopColor": "rgba(150, 150, 170, 0.14)",
+     "borderRadius": "10px",
+     "height": "37.3281px",
+     "display": "flex"
+    },
+    "send": {
+     "present": true,
+     "box": [
+      749,
+      364.39,
+      400,
+      48.14
+     ],
+     "backgroundColor": "rgb(42, 39, 51)",
+     "color": "rgb(109, 106, 128)",
+     "borderRadius": "12px",
+     "height": "48.1406px"
+    },
+    "label": {
+     "present": true,
+     "box": [
+      131,
+      195,
+      592,
+      16.5
+     ],
+     "fontSize": "11px",
+     "letterSpacing": "2.2px",
+     "color": "rgb(232, 232, 234)",
+     "opacity": "0.5",
+     "textTransform": "uppercase"
+    },
+    "readout": {
+     "present": true,
+     "box": [
+      316.09,
+      124.17,
+      704.98,
+      52.83
+     ],
+     "borderLeftWidth": "0px",
+     "paddingLeft": "0px",
+     "fontSize": "13px"
+    },
+    "bar": {
+     "present": true,
+     "box": [
+      1043.08,
+      124.17,
+      105.92,
+      52.83
+     ],
+     "display": "flex",
+     "height": "52.8281px"
+    }
+   }
+  },
+  "en/1280x720/privacy": {
+   "reached": true,
+   "seeded": {
+    "username": "M9",
+    "runs": 1
+   },
+   "probe": {
+    "overlay": {
+     "present": true,
+     "box": [
+      0,
+      0,
+      1280,
+      720
+     ],
+     "backgroundColor": "rgba(12, 12, 16, 0.8)",
+     "backdropFilter": "none"
+    },
+    "panel": {
+     "present": true,
+     "box": [
+      210,
+      36,
+      860,
+      648
+     ],
+     "backgroundColor": "rgba(0, 0, 0, 0)",
+     "borderTopColor": "rgba(0, 0, 0, 0)",
+     "borderRadius": "16px",
+     "boxShadow": "color(srgb 0.14902 0.776471 0.901961 / 0.22) 0px 0px 14px 0px"
+    }
+   }
+  },
+  "en/1400x700/erststart": {
+   "reached": true,
+   "seeded": {
+    "username": null
+   },
+   "probe": {
+    "overlay": {
+     "present": true,
+     "box": [
+      0,
+      0,
+      1392,
+      700
+     ],
+     "backgroundColor": "rgba(12, 12, 16, 0.94)",
+     "backdropFilter": "none"
+    },
+    "card": {
+     "present": true,
+     "box": [
+      246,
+      127.91,
+      900,
+      444.17
+     ],
+     "width": "900px",
+     "height": "444.172px",
+     "borderRadius": "16px",
+     "borderTopWidth": "1px",
+     "borderTopColor": "rgba(0, 0, 0, 0)",
+     "backgroundColor": "rgba(0, 0, 0, 0)"
+    },
+    "body-grid": {
+     "present": true,
+     "box": [
+      247,
+      131.91,
+      898,
+      439.17
+     ],
+     "gridTemplateColumns": "340px 464px",
+     "columnGap": "34px",
+     "padding": "22px 30px 30px"
+    },
+    "eyebrow": {
+     "present": true,
+     "box": [
+      277,
+      231.05,
+      340,
+      17.33
+     ],
+     "color": "rgb(38, 198, 230)",
+     "fontSize": "13px"
+    },
+    "wordmark": {
+     "present": true,
+     "box": [
+      277,
+      258.38,
+      340,
+      48.3
+     ],
+     "width": "340px",
+     "height": "48.2969px"
+    },
+    "title": {
+     "present": true,
+     "box": [
+      277,
+      322.67,
+      340,
+      31.5
+     ],
+     "fontSize": "22.5px",
+     "filter": "drop-shadow(rgba(155, 130, 240, 0.18) 0px 0px 8px)",
+     "color": "rgba(0, 0, 0, 0)",
+     "backgroundImage": "linear-gradient(90deg, rgb(38, 198, 230), rgb(255, 46, 200), rgb(38, 198, 230))"
+    },
+    "subline": {
+     "present": false,
+     "sel": ".un-first .un-sub"
+    },
+    "input": {
+     "present": true,
+     "box": [
+      651,
+      256.55,
+      464,
+      50.14
+     ],
+     "backgroundColor": "rgb(14, 27, 34)",
+     "borderTopColor": "rgb(38, 198, 230)",
+     "color": "rgb(168, 236, 247)",
+     "height": "50.1406px"
+    },
+    "lang-wrap": {
+     "present": true,
+     "box": [
+      651,
+      394.44,
+      464,
+      46.14
+     ],
+     "borderTopColor": "rgb(44, 44, 54)",
+     "borderRadius": "10px",
+     "height": "46.1406px"
+    },
+    "lang-off": {
+     "present": true,
+     "box": [
+      652,
+      395.44,
+      231,
+      44.14
+     ],
+     "backgroundColor": "rgb(19, 19, 24)",
+     "color": "rgb(154, 154, 168)",
+     "borderLeftColor": "rgb(154, 154, 168)",
+     "boxShadow": "none",
+     "height": "44.1406px"
+    },
+    "lang-on": {
+     "present": true,
+     "box": [
+      883,
+      395.44,
+      231,
+      44.14
+     ],
+     "backgroundColor": "rgb(25, 25, 34)",
+     "color": "rgb(234, 244, 255)",
+     "borderLeftColor": "rgb(44, 44, 54)",
+     "boxShadow": "rgb(38, 198, 230) 0px -2px 0px 0px inset",
+     "height": "44.1406px"
+    },
+    "preview": {
+     "present": true,
+     "box": [
+      651,
+      490.08,
+      464,
+      51
+     ],
+     "backgroundColor": "rgb(19, 19, 24)",
+     "borderTopColor": "rgb(38, 38, 47)",
+     "borderRadius": "12px"
+    },
+    "preview-score": {
+     "present": true,
+     "box": [
+      1017.3,
+      504.5,
+      83.7,
+      22.14
+     ],
+     "color": "rgb(168, 220, 192)"
+    },
+    "save": {
+     "present": true,
+     "box": [
+      1017.42,
+      163.91,
+      97.58,
+      44.14
+     ],
+     "backgroundImage": "none",
+     "backgroundColor": "rgb(42, 42, 51)",
+     "boxShadow": "none",
+     "borderRadius": "12px"
+    },
+    "hint": {
+     "present": true,
+     "box": [
+      651,
+      314.69,
+      464,
+      30.25
+     ],
+     "fontSize": "11px"
+    }
+   }
+  },
+  "en/1400x700/feedback": {
+   "reached": true,
+   "seeded": {
+    "username": "M9",
+    "runs": 1
+   },
+   "probe": {
+    "overlay": {
+     "present": true,
+     "box": [
+      0,
+      0,
+      1392,
+      700
+     ],
+     "backgroundColor": "rgba(12, 12, 16, 0.94)",
+     "backdropFilter": "none"
+    },
+    "card": {
+     "present": true,
+     "box": [
+      156,
+      92.17,
+      1080,
+      515.66
+     ],
+     "width": "1080px",
+     "borderRadius": "16px",
+     "backgroundColor": "rgba(0, 0, 0, 0)",
+     "borderTopColor": "rgba(0, 0, 0, 0)"
+    },
+    "form-grid": {
+     "present": true,
+     "box": [
+      187,
+      185,
+      1018,
+      393.83
+     ],
+     "gridTemplateColumns": "592px 400px",
+     "columnGap": "26px",
+     "gap": "26px"
+    },
+    "textarea": {
+     "present": true,
+     "box": [
+      187,
+      285.33,
+      592,
+      268
+     ],
+     "height": "268px",
+     "backgroundColor": "rgb(15, 15, 20)",
+     "borderTopColor": "rgb(51, 51, 62)",
+     "borderRadius": "8px",
+     "padding": "8px 12px"
+    },
+    "name-input": {
+     "present": true,
+     "box": [
+      805,
+      210.5,
+      400,
+      40.14
+     ],
+     "backgroundColor": "rgb(15, 15, 20)",
+     "borderTopColor": "rgb(51, 51, 62)",
+     "borderRadius": "8px",
+     "padding": "8px 12px"
+    },
+    "run-row": {
+     "present": true,
+     "box": [
+      805,
+      262.64,
+      400,
+      79.75
+     ],
+     "backgroundColor": "rgba(15, 15, 21, 0.72)",
+     "borderTopColor": "rgba(150, 150, 170, 0.12)",
+     "borderRadius": "12px",
+     "padding": "13px 14px",
+     "opacity": "1"
+    },
+    "kind-on": {
+     "present": true,
+     "box": [
+      188,
+      211.5,
+      146.75,
+      35.33
+     ],
+     "backgroundColor": "rgba(32, 32, 44, 0.95)",
+     "borderLeftColor": "rgb(240, 238, 252)",
+     "borderRadius": "0px",
+     "height": "35.3281px"
+    },
+    "kind-off": {
+     "present": true,
+     "box": [
+      334.75,
+      211.5,
+      147.75,
+      35.33
+     ],
+     "backgroundColor": "rgba(19, 19, 26, 0.9)",
+     "borderLeftColor": "rgba(150, 150, 170, 0.14)",
+     "borderRadius": "0px",
+     "height": "35.3281px"
+    },
+    "kinds-wrap": {
+     "present": true,
+     "box": [
+      187,
+      210.5,
+      592,
+      37.33
+     ],
+     "borderTopColor": "rgba(150, 150, 170, 0.14)",
+     "borderRadius": "10px",
+     "height": "37.3281px",
+     "display": "flex"
+    },
+    "send": {
+     "present": true,
+     "box": [
+      805,
+      354.39,
+      400,
+      48.14
+     ],
+     "backgroundColor": "rgb(42, 39, 51)",
+     "color": "rgb(109, 106, 128)",
+     "borderRadius": "12px",
+     "height": "48.1406px"
+    },
+    "label": {
+     "present": true,
+     "box": [
+      187,
+      185,
+      592,
+      16.5
+     ],
+     "fontSize": "11px",
+     "letterSpacing": "2.2px",
+     "color": "rgb(232, 232, 234)",
+     "opacity": "0.5",
+     "textTransform": "uppercase"
+    },
+    "readout": {
+     "present": true,
+     "box": [
+      372.09,
+      114.17,
+      704.98,
+      52.83
+     ],
+     "borderLeftWidth": "0px",
+     "paddingLeft": "0px",
+     "fontSize": "13px"
+    },
+    "bar": {
+     "present": true,
+     "box": [
+      1099.08,
+      114.17,
+      105.92,
+      52.83
+     ],
+     "display": "flex",
+     "height": "52.8281px"
+    }
+   }
+  },
+  "en/1400x700/privacy": {
+   "reached": true,
+   "seeded": {
+    "username": "M9",
+    "runs": 1
+   },
+   "probe": {
+    "overlay": {
+     "present": true,
+     "box": [
+      0,
+      0,
+      1392,
+      700
+     ],
+     "backgroundColor": "rgba(12, 12, 16, 0.8)",
+     "backdropFilter": "none"
+    },
+    "panel": {
+     "present": true,
+     "box": [
+      266,
+      35,
+      860,
+      630
+     ],
+     "backgroundColor": "rgba(0, 0, 0, 0)",
+     "borderTopColor": "rgba(0, 0, 0, 0)",
+     "borderRadius": "16px",
+     "boxShadow": "color(srgb 0.14902 0.776471 0.901961 / 0.22) 0px 0px 14px 0px"
+    }
+   }
+  },
+  "en/1536x791/erststart": {
+   "reached": true,
+   "seeded": {
+    "username": null
+   },
+   "probe": {
+    "overlay": {
+     "present": true,
+     "box": [
+      0,
+      0,
+      1536,
+      791
+     ],
+     "backgroundColor": "rgba(12, 12, 16, 0.94)",
+     "backdropFilter": "none"
+    },
+    "card": {
+     "present": true,
+     "box": [
+      318,
+      173.41,
+      900,
+      444.17
+     ],
+     "width": "900px",
+     "height": "444.172px",
+     "borderRadius": "16px",
+     "borderTopWidth": "1px",
+     "borderTopColor": "rgba(0, 0, 0, 0)",
+     "backgroundColor": "rgba(0, 0, 0, 0)"
+    },
+    "body-grid": {
+     "present": true,
+     "box": [
+      319,
+      177.41,
+      898,
+      439.17
+     ],
+     "gridTemplateColumns": "340px 464px",
+     "columnGap": "34px",
+     "padding": "22px 30px 30px"
+    },
+    "eyebrow": {
+     "present": true,
+     "box": [
+      349,
+      276.55,
+      340,
+      17.33
+     ],
+     "color": "rgb(38, 198, 230)",
+     "fontSize": "13px"
+    },
+    "wordmark": {
+     "present": true,
+     "box": [
+      349,
+      303.88,
+      340,
+      48.3
+     ],
+     "width": "340px",
+     "height": "48.2969px"
+    },
+    "title": {
+     "present": true,
+     "box": [
+      349,
+      368.17,
+      340,
+      31.5
+     ],
+     "fontSize": "22.5px",
+     "filter": "drop-shadow(rgba(155, 130, 240, 0.18) 0px 0px 8px)",
+     "color": "rgba(0, 0, 0, 0)",
+     "backgroundImage": "linear-gradient(90deg, rgb(38, 198, 230), rgb(255, 46, 200), rgb(38, 198, 230))"
+    },
+    "subline": {
+     "present": false,
+     "sel": ".un-first .un-sub"
+    },
+    "input": {
+     "present": true,
+     "box": [
+      723,
+      302.05,
+      464,
+      50.14
+     ],
+     "backgroundColor": "rgb(14, 27, 34)",
+     "borderTopColor": "rgb(38, 198, 230)",
+     "color": "rgb(168, 236, 247)",
+     "height": "50.1406px"
+    },
+    "lang-wrap": {
+     "present": true,
+     "box": [
+      723,
+      439.94,
+      464,
+      46.14
+     ],
+     "borderTopColor": "rgb(44, 44, 54)",
+     "borderRadius": "10px",
+     "height": "46.1406px"
+    },
+    "lang-off": {
+     "present": true,
+     "box": [
+      724,
+      440.94,
+      231,
+      44.14
+     ],
+     "backgroundColor": "rgb(19, 19, 24)",
+     "color": "rgb(154, 154, 168)",
+     "borderLeftColor": "rgb(154, 154, 168)",
+     "boxShadow": "none",
+     "height": "44.1406px"
+    },
+    "lang-on": {
+     "present": true,
+     "box": [
+      955,
+      440.94,
+      231,
+      44.14
+     ],
+     "backgroundColor": "rgb(25, 25, 34)",
+     "color": "rgb(234, 244, 255)",
+     "borderLeftColor": "rgb(44, 44, 54)",
+     "boxShadow": "rgb(38, 198, 230) 0px -2px 0px 0px inset",
+     "height": "44.1406px"
+    },
+    "preview": {
+     "present": true,
+     "box": [
+      723,
+      535.58,
+      464,
+      51
+     ],
+     "backgroundColor": "rgb(19, 19, 24)",
+     "borderTopColor": "rgb(38, 38, 47)",
+     "borderRadius": "12px"
+    },
+    "preview-score": {
+     "present": true,
+     "box": [
+      1089.3,
+      550,
+      83.7,
+      22.14
+     ],
+     "color": "rgb(168, 220, 192)"
+    },
+    "save": {
+     "present": true,
+     "box": [
+      1089.42,
+      209.41,
+      97.58,
+      44.14
+     ],
+     "backgroundImage": "none",
+     "backgroundColor": "rgb(42, 42, 51)",
+     "boxShadow": "none",
+     "borderRadius": "12px"
+    },
+    "hint": {
+     "present": true,
+     "box": [
+      723,
+      360.19,
+      464,
+      30.25
+     ],
+     "fontSize": "11px"
+    }
+   }
+  },
+  "en/1536x791/feedback": {
+   "reached": true,
+   "seeded": {
+    "username": "M9",
+    "runs": 1
+   },
+   "probe": {
+    "overlay": {
+     "present": true,
+     "box": [
+      0,
+      0,
+      1536,
+      791
+     ],
+     "backgroundColor": "rgba(12, 12, 16, 0.94)",
+     "backdropFilter": "none"
+    },
+    "card": {
+     "present": true,
+     "box": [
+      228,
+      137.67,
+      1080,
+      515.66
+     ],
+     "width": "1080px",
+     "borderRadius": "16px",
+     "backgroundColor": "rgba(0, 0, 0, 0)",
+     "borderTopColor": "rgba(0, 0, 0, 0)"
+    },
+    "form-grid": {
+     "present": true,
+     "box": [
+      259,
+      230.5,
+      1018,
+      393.83
+     ],
+     "gridTemplateColumns": "592px 400px",
+     "columnGap": "26px",
+     "gap": "26px"
+    },
+    "textarea": {
+     "present": true,
+     "box": [
+      259,
+      330.83,
+      592,
+      268
+     ],
+     "height": "268px",
+     "backgroundColor": "rgb(15, 15, 20)",
+     "borderTopColor": "rgb(51, 51, 62)",
+     "borderRadius": "8px",
+     "padding": "8px 12px"
+    },
+    "name-input": {
+     "present": true,
+     "box": [
+      877,
+      256,
+      400,
+      40.14
+     ],
+     "backgroundColor": "rgb(15, 15, 20)",
+     "borderTopColor": "rgb(51, 51, 62)",
+     "borderRadius": "8px",
+     "padding": "8px 12px"
+    },
+    "run-row": {
+     "present": true,
+     "box": [
+      877,
+      308.14,
+      400,
+      79.75
+     ],
+     "backgroundColor": "rgba(15, 15, 21, 0.72)",
+     "borderTopColor": "rgba(150, 150, 170, 0.12)",
+     "borderRadius": "12px",
+     "padding": "13px 14px",
+     "opacity": "1"
+    },
+    "kind-on": {
+     "present": true,
+     "box": [
+      260,
+      257,
+      146.75,
+      35.33
+     ],
+     "backgroundColor": "rgba(32, 32, 44, 0.95)",
+     "borderLeftColor": "rgb(240, 238, 252)",
+     "borderRadius": "0px",
+     "height": "35.3281px"
+    },
+    "kind-off": {
+     "present": true,
+     "box": [
+      406.75,
+      257,
+      147.75,
+      35.33
+     ],
+     "backgroundColor": "rgba(19, 19, 26, 0.9)",
+     "borderLeftColor": "rgba(150, 150, 170, 0.14)",
+     "borderRadius": "0px",
+     "height": "35.3281px"
+    },
+    "kinds-wrap": {
+     "present": true,
+     "box": [
+      259,
+      256,
+      592,
+      37.33
+     ],
+     "borderTopColor": "rgba(150, 150, 170, 0.14)",
+     "borderRadius": "10px",
+     "height": "37.3281px",
+     "display": "flex"
+    },
+    "send": {
+     "present": true,
+     "box": [
+      877,
+      399.89,
+      400,
+      48.14
+     ],
+     "backgroundColor": "rgb(42, 39, 51)",
+     "color": "rgb(109, 106, 128)",
+     "borderRadius": "12px",
+     "height": "48.1406px"
+    },
+    "label": {
+     "present": true,
+     "box": [
+      259,
+      230.5,
+      592,
+      16.5
+     ],
+     "fontSize": "11px",
+     "letterSpacing": "2.2px",
+     "color": "rgb(232, 232, 234)",
+     "opacity": "0.5",
+     "textTransform": "uppercase"
+    },
+    "readout": {
+     "present": true,
+     "box": [
+      444.09,
+      159.67,
+      704.98,
+      52.83
+     ],
+     "borderLeftWidth": "0px",
+     "paddingLeft": "0px",
+     "fontSize": "13px"
+    },
+    "bar": {
+     "present": true,
+     "box": [
+      1171.08,
+      159.67,
+      105.92,
+      52.83
+     ],
+     "display": "flex",
+     "height": "52.8281px"
+    }
+   }
+  },
+  "en/1536x791/privacy": {
+   "reached": true,
+   "seeded": {
+    "username": "M9",
+    "runs": 1
+   },
+   "probe": {
+    "overlay": {
+     "present": true,
+     "box": [
+      0,
+      0,
+      1536,
+      791
+     ],
+     "backgroundColor": "rgba(12, 12, 16, 0.8)",
+     "backdropFilter": "none"
+    },
+    "panel": {
+     "present": true,
+     "box": [
+      338,
+      39.55,
+      860,
+      711.89
+     ],
+     "backgroundColor": "rgba(0, 0, 0, 0)",
+     "borderTopColor": "rgba(0, 0, 0, 0)",
+     "borderRadius": "16px",
+     "boxShadow": "color(srgb 0.14902 0.776471 0.901961 / 0.22) 0px 0px 14px 0px"
+    }
+   }
+  },
+  "en/1600x900/erststart": {
+   "reached": true,
+   "seeded": {
+    "username": null
+   },
+   "probe": {
+    "overlay": {
+     "present": true,
+     "box": [
+      0,
+      0,
+      1600,
+      900
+     ],
+     "backgroundColor": "rgba(12, 12, 16, 0.94)",
+     "backdropFilter": "none"
+    },
+    "card": {
+     "present": true,
+     "box": [
+      350,
+      227.91,
+      900,
+      444.17
+     ],
+     "width": "900px",
+     "height": "444.172px",
+     "borderRadius": "16px",
+     "borderTopWidth": "1px",
+     "borderTopColor": "rgba(0, 0, 0, 0)",
+     "backgroundColor": "rgba(0, 0, 0, 0)"
+    },
+    "body-grid": {
+     "present": true,
+     "box": [
+      351,
+      231.91,
+      898,
+      439.17
+     ],
+     "gridTemplateColumns": "340px 464px",
+     "columnGap": "34px",
+     "padding": "22px 30px 30px"
+    },
+    "eyebrow": {
+     "present": true,
+     "box": [
+      381,
+      331.05,
+      340,
+      17.33
+     ],
+     "color": "rgb(38, 198, 230)",
+     "fontSize": "13px"
+    },
+    "wordmark": {
+     "present": true,
+     "box": [
+      381,
+      358.38,
+      340,
+      48.3
+     ],
+     "width": "340px",
+     "height": "48.2969px"
+    },
+    "title": {
+     "present": true,
+     "box": [
+      381,
+      422.67,
+      340,
+      31.5
+     ],
+     "fontSize": "22.5px",
+     "filter": "drop-shadow(rgba(155, 130, 240, 0.18) 0px 0px 8px)",
+     "color": "rgba(0, 0, 0, 0)",
+     "backgroundImage": "linear-gradient(90deg, rgb(38, 198, 230), rgb(255, 46, 200), rgb(38, 198, 230))"
+    },
+    "subline": {
+     "present": false,
+     "sel": ".un-first .un-sub"
+    },
+    "input": {
+     "present": true,
+     "box": [
+      755,
+      356.55,
+      464,
+      50.14
+     ],
+     "backgroundColor": "rgb(14, 27, 34)",
+     "borderTopColor": "rgb(38, 198, 230)",
+     "color": "rgb(168, 236, 247)",
+     "height": "50.1406px"
+    },
+    "lang-wrap": {
+     "present": true,
+     "box": [
+      755,
+      494.44,
+      464,
+      46.14
+     ],
+     "borderTopColor": "rgb(44, 44, 54)",
+     "borderRadius": "10px",
+     "height": "46.1406px"
+    },
+    "lang-off": {
+     "present": true,
+     "box": [
+      756,
+      495.44,
+      231,
+      44.14
+     ],
+     "backgroundColor": "rgb(19, 19, 24)",
+     "color": "rgb(154, 154, 168)",
+     "borderLeftColor": "rgb(154, 154, 168)",
+     "boxShadow": "none",
+     "height": "44.1406px"
+    },
+    "lang-on": {
+     "present": true,
+     "box": [
+      987,
+      495.44,
+      231,
+      44.14
+     ],
+     "backgroundColor": "rgb(25, 25, 34)",
+     "color": "rgb(234, 244, 255)",
+     "borderLeftColor": "rgb(44, 44, 54)",
+     "boxShadow": "rgb(38, 198, 230) 0px -2px 0px 0px inset",
+     "height": "44.1406px"
+    },
+    "preview": {
+     "present": true,
+     "box": [
+      755,
+      590.08,
+      464,
+      51
+     ],
+     "backgroundColor": "rgb(19, 19, 24)",
+     "borderTopColor": "rgb(38, 38, 47)",
+     "borderRadius": "12px"
+    },
+    "preview-score": {
+     "present": true,
+     "box": [
+      1121.3,
+      604.5,
+      83.7,
+      22.14
+     ],
+     "color": "rgb(168, 220, 192)"
+    },
+    "save": {
+     "present": true,
+     "box": [
+      1121.42,
+      263.91,
+      97.58,
+      44.14
+     ],
+     "backgroundImage": "none",
+     "backgroundColor": "rgb(42, 42, 51)",
+     "boxShadow": "none",
+     "borderRadius": "12px"
+    },
+    "hint": {
+     "present": true,
+     "box": [
+      755,
+      414.69,
+      464,
+      30.25
+     ],
+     "fontSize": "11px"
+    }
+   }
+  },
+  "en/1600x900/feedback": {
+   "reached": true,
+   "seeded": {
+    "username": "M9",
+    "runs": 1
+   },
+   "probe": {
+    "overlay": {
+     "present": true,
+     "box": [
+      0,
+      0,
+      1600,
+      900
+     ],
+     "backgroundColor": "rgba(12, 12, 16, 0.94)",
+     "backdropFilter": "none"
+    },
+    "card": {
+     "present": true,
+     "box": [
+      260,
+      192.17,
+      1080,
+      515.66
+     ],
+     "width": "1080px",
+     "borderRadius": "16px",
+     "backgroundColor": "rgba(0, 0, 0, 0)",
+     "borderTopColor": "rgba(0, 0, 0, 0)"
+    },
+    "form-grid": {
+     "present": true,
+     "box": [
+      291,
+      285,
+      1018,
+      393.83
+     ],
+     "gridTemplateColumns": "592px 400px",
+     "columnGap": "26px",
+     "gap": "26px"
+    },
+    "textarea": {
+     "present": true,
+     "box": [
+      291,
+      385.33,
+      592,
+      268
+     ],
+     "height": "268px",
+     "backgroundColor": "rgb(15, 15, 20)",
+     "borderTopColor": "rgb(51, 51, 62)",
+     "borderRadius": "8px",
+     "padding": "8px 12px"
+    },
+    "name-input": {
+     "present": true,
+     "box": [
+      909,
+      310.5,
+      400,
+      40.14
+     ],
+     "backgroundColor": "rgb(15, 15, 20)",
+     "borderTopColor": "rgb(51, 51, 62)",
+     "borderRadius": "8px",
+     "padding": "8px 12px"
+    },
+    "run-row": {
+     "present": true,
+     "box": [
+      909,
+      362.64,
+      400,
+      79.75
+     ],
+     "backgroundColor": "rgba(15, 15, 21, 0.72)",
+     "borderTopColor": "rgba(150, 150, 170, 0.12)",
+     "borderRadius": "12px",
+     "padding": "13px 14px",
+     "opacity": "1"
+    },
+    "kind-on": {
+     "present": true,
+     "box": [
+      292,
+      311.5,
+      146.75,
+      35.33
+     ],
+     "backgroundColor": "rgba(32, 32, 44, 0.95)",
+     "borderLeftColor": "rgb(240, 238, 252)",
+     "borderRadius": "0px",
+     "height": "35.3281px"
+    },
+    "kind-off": {
+     "present": true,
+     "box": [
+      438.75,
+      311.5,
+      147.75,
+      35.33
+     ],
+     "backgroundColor": "rgba(19, 19, 26, 0.9)",
+     "borderLeftColor": "rgba(150, 150, 170, 0.14)",
+     "borderRadius": "0px",
+     "height": "35.3281px"
+    },
+    "kinds-wrap": {
+     "present": true,
+     "box": [
+      291,
+      310.5,
+      592,
+      37.33
+     ],
+     "borderTopColor": "rgba(150, 150, 170, 0.14)",
+     "borderRadius": "10px",
+     "height": "37.3281px",
+     "display": "flex"
+    },
+    "send": {
+     "present": true,
+     "box": [
+      909,
+      454.39,
+      400,
+      48.14
+     ],
+     "backgroundColor": "rgb(42, 39, 51)",
+     "color": "rgb(109, 106, 128)",
+     "borderRadius": "12px",
+     "height": "48.1406px"
+    },
+    "label": {
+     "present": true,
+     "box": [
+      291,
+      285,
+      592,
+      16.5
+     ],
+     "fontSize": "11px",
+     "letterSpacing": "2.2px",
+     "color": "rgb(232, 232, 234)",
+     "opacity": "0.5",
+     "textTransform": "uppercase"
+    },
+    "readout": {
+     "present": true,
+     "box": [
+      476.09,
+      214.17,
+      704.98,
+      52.83
+     ],
+     "borderLeftWidth": "0px",
+     "paddingLeft": "0px",
+     "fontSize": "13px"
+    },
+    "bar": {
+     "present": true,
+     "box": [
+      1203.08,
+      214.17,
+      105.92,
+      52.83
+     ],
+     "display": "flex",
+     "height": "52.8281px"
+    }
+   }
+  },
+  "en/1600x900/privacy": {
+   "reached": true,
+   "seeded": {
+    "username": "M9",
+    "runs": 1
+   },
+   "probe": {
+    "overlay": {
+     "present": true,
+     "box": [
+      0,
+      0,
+      1600,
+      900
+     ],
+     "backgroundColor": "rgba(12, 12, 16, 0.8)",
+     "backdropFilter": "none"
+    },
+    "panel": {
+     "present": true,
+     "box": [
+      370,
+      45,
+      860,
+      810
+     ],
+     "backgroundColor": "rgba(0, 0, 0, 0)",
+     "borderTopColor": "rgba(0, 0, 0, 0)",
+     "borderRadius": "16px",
+     "boxShadow": "color(srgb 0.14902 0.776471 0.901961 / 0.22) 0px 0px 14px 0px"
+    }
+   }
+  },
+  "en/1920x1080/erststart": {
+   "reached": true,
+   "seeded": {
+    "username": null
+   },
+   "probe": {
+    "overlay": {
+     "present": true,
+     "box": [
+      0,
+      0,
+      1920,
+      1080
+     ],
+     "backgroundColor": "rgba(12, 12, 16, 0.94)",
+     "backdropFilter": "none"
+    },
+    "card": {
+     "present": true,
+     "box": [
+      510,
+      317.91,
+      900,
+      444.17
+     ],
+     "width": "900px",
+     "height": "444.172px",
+     "borderRadius": "16px",
+     "borderTopWidth": "1px",
+     "borderTopColor": "rgba(0, 0, 0, 0)",
+     "backgroundColor": "rgba(0, 0, 0, 0)"
+    },
+    "body-grid": {
+     "present": true,
+     "box": [
+      511,
+      321.91,
+      898,
+      439.17
+     ],
+     "gridTemplateColumns": "340px 464px",
+     "columnGap": "34px",
+     "padding": "22px 30px 30px"
+    },
+    "eyebrow": {
+     "present": true,
+     "box": [
+      541,
+      421.05,
+      340,
+      17.33
+     ],
+     "color": "rgb(38, 198, 230)",
+     "fontSize": "13px"
+    },
+    "wordmark": {
+     "present": true,
+     "box": [
+      541,
+      448.38,
+      340,
+      48.3
+     ],
+     "width": "340px",
+     "height": "48.2969px"
+    },
+    "title": {
+     "present": true,
+     "box": [
+      541,
+      512.67,
+      340,
+      31.5
+     ],
+     "fontSize": "22.5px",
+     "filter": "drop-shadow(rgba(155, 130, 240, 0.18) 0px 0px 8px)",
+     "color": "rgba(0, 0, 0, 0)",
+     "backgroundImage": "linear-gradient(90deg, rgb(38, 198, 230), rgb(255, 46, 200), rgb(38, 198, 230))"
+    },
+    "subline": {
+     "present": false,
+     "sel": ".un-first .un-sub"
+    },
+    "input": {
+     "present": true,
+     "box": [
+      915,
+      446.55,
+      464,
+      50.14
+     ],
+     "backgroundColor": "rgb(14, 27, 34)",
+     "borderTopColor": "rgb(38, 198, 230)",
+     "color": "rgb(168, 236, 247)",
+     "height": "50.1406px"
+    },
+    "lang-wrap": {
+     "present": true,
+     "box": [
+      915,
+      584.44,
+      464,
+      46.14
+     ],
+     "borderTopColor": "rgb(44, 44, 54)",
+     "borderRadius": "10px",
+     "height": "46.1406px"
+    },
+    "lang-off": {
+     "present": true,
+     "box": [
+      916,
+      585.44,
+      231,
+      44.14
+     ],
+     "backgroundColor": "rgb(19, 19, 24)",
+     "color": "rgb(154, 154, 168)",
+     "borderLeftColor": "rgb(154, 154, 168)",
+     "boxShadow": "none",
+     "height": "44.1406px"
+    },
+    "lang-on": {
+     "present": true,
+     "box": [
+      1147,
+      585.44,
+      231,
+      44.14
+     ],
+     "backgroundColor": "rgb(25, 25, 34)",
+     "color": "rgb(234, 244, 255)",
+     "borderLeftColor": "rgb(44, 44, 54)",
+     "boxShadow": "rgb(38, 198, 230) 0px -2px 0px 0px inset",
+     "height": "44.1406px"
+    },
+    "preview": {
+     "present": true,
+     "box": [
+      915,
+      680.08,
+      464,
+      51
+     ],
+     "backgroundColor": "rgb(19, 19, 24)",
+     "borderTopColor": "rgb(38, 38, 47)",
+     "borderRadius": "12px"
+    },
+    "preview-score": {
+     "present": true,
+     "box": [
+      1281.3,
+      694.5,
+      83.7,
+      22.14
+     ],
+     "color": "rgb(168, 220, 192)"
+    },
+    "save": {
+     "present": true,
+     "box": [
+      1281.42,
+      353.91,
+      97.58,
+      44.14
+     ],
+     "backgroundImage": "none",
+     "backgroundColor": "rgb(42, 42, 51)",
+     "boxShadow": "none",
+     "borderRadius": "12px"
+    },
+    "hint": {
+     "present": true,
+     "box": [
+      915,
+      504.69,
+      464,
+      30.25
+     ],
+     "fontSize": "11px"
+    }
+   }
+  },
+  "en/1920x1080/feedback": {
+   "reached": true,
+   "seeded": {
+    "username": "M9",
+    "runs": 1
+   },
+   "probe": {
+    "overlay": {
+     "present": true,
+     "box": [
+      0,
+      0,
+      1920,
+      1080
+     ],
+     "backgroundColor": "rgba(12, 12, 16, 0.94)",
+     "backdropFilter": "none"
+    },
+    "card": {
+     "present": true,
+     "box": [
+      420,
+      282.17,
+      1080,
+      515.66
+     ],
+     "width": "1080px",
+     "borderRadius": "16px",
+     "backgroundColor": "rgba(0, 0, 0, 0)",
+     "borderTopColor": "rgba(0, 0, 0, 0)"
+    },
+    "form-grid": {
+     "present": true,
+     "box": [
+      451,
+      375,
+      1018,
+      393.83
+     ],
+     "gridTemplateColumns": "592px 400px",
+     "columnGap": "26px",
+     "gap": "26px"
+    },
+    "textarea": {
+     "present": true,
+     "box": [
+      451,
+      475.33,
+      592,
+      268
+     ],
+     "height": "268px",
+     "backgroundColor": "rgb(15, 15, 20)",
+     "borderTopColor": "rgb(51, 51, 62)",
+     "borderRadius": "8px",
+     "padding": "8px 12px"
+    },
+    "name-input": {
+     "present": true,
+     "box": [
+      1069,
+      400.5,
+      400,
+      40.14
+     ],
+     "backgroundColor": "rgb(15, 15, 20)",
+     "borderTopColor": "rgb(51, 51, 62)",
+     "borderRadius": "8px",
+     "padding": "8px 12px"
+    },
+    "run-row": {
+     "present": true,
+     "box": [
+      1069,
+      452.64,
+      400,
+      79.75
+     ],
+     "backgroundColor": "rgba(15, 15, 21, 0.72)",
+     "borderTopColor": "rgba(150, 150, 170, 0.12)",
+     "borderRadius": "12px",
+     "padding": "13px 14px",
+     "opacity": "1"
+    },
+    "kind-on": {
+     "present": true,
+     "box": [
+      452,
+      401.5,
+      146.75,
+      35.33
+     ],
+     "backgroundColor": "rgba(32, 32, 44, 0.95)",
+     "borderLeftColor": "rgb(240, 238, 252)",
+     "borderRadius": "0px",
+     "height": "35.3281px"
+    },
+    "kind-off": {
+     "present": true,
+     "box": [
+      598.75,
+      401.5,
+      147.75,
+      35.33
+     ],
+     "backgroundColor": "rgba(19, 19, 26, 0.9)",
+     "borderLeftColor": "rgba(150, 150, 170, 0.14)",
+     "borderRadius": "0px",
+     "height": "35.3281px"
+    },
+    "kinds-wrap": {
+     "present": true,
+     "box": [
+      451,
+      400.5,
+      592,
+      37.33
+     ],
+     "borderTopColor": "rgba(150, 150, 170, 0.14)",
+     "borderRadius": "10px",
+     "height": "37.3281px",
+     "display": "flex"
+    },
+    "send": {
+     "present": true,
+     "box": [
+      1069,
+      544.39,
+      400,
+      48.14
+     ],
+     "backgroundColor": "rgb(42, 39, 51)",
+     "color": "rgb(109, 106, 128)",
+     "borderRadius": "12px",
+     "height": "48.1406px"
+    },
+    "label": {
+     "present": true,
+     "box": [
+      451,
+      375,
+      592,
+      16.5
+     ],
+     "fontSize": "11px",
+     "letterSpacing": "2.2px",
+     "color": "rgb(232, 232, 234)",
+     "opacity": "0.5",
+     "textTransform": "uppercase"
+    },
+    "readout": {
+     "present": true,
+     "box": [
+      636.09,
+      304.17,
+      704.98,
+      52.83
+     ],
+     "borderLeftWidth": "0px",
+     "paddingLeft": "0px",
+     "fontSize": "13px"
+    },
+    "bar": {
+     "present": true,
+     "box": [
+      1363.08,
+      304.17,
+      105.92,
+      52.83
+     ],
+     "display": "flex",
+     "height": "52.8281px"
+    }
+   }
+  },
+  "en/1920x1080/privacy": {
+   "reached": true,
+   "seeded": {
+    "username": "M9",
+    "runs": 1
+   },
+   "probe": {
+    "overlay": {
+     "present": true,
+     "box": [
+      0,
+      0,
+      1920,
+      1080
+     ],
+     "backgroundColor": "rgba(12, 12, 16, 0.8)",
+     "backdropFilter": "none"
+    },
+    "panel": {
+     "present": true,
+     "box": [
+      530,
+      54,
+      860,
+      972
+     ],
+     "backgroundColor": "rgba(0, 0, 0, 0)",
+     "borderTopColor": "rgba(0, 0, 0, 0)",
+     "borderRadius": "16px",
+     "boxShadow": "color(srgb 0.14902 0.776471 0.901961 / 0.22) 0px 0px 14px 0px"
+    }
+   }
+  }
+ }
+}
