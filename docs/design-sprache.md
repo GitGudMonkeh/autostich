@@ -23,6 +23,7 @@ Zugehörige Aufträge, die auf diesem Dokument aufsetzen:
 | Erststart | `docs/erststart-redesign.md` |
 | Statistik | `docs/statistik-redesign.md` |
 | Bestenliste | `docs/bestenliste-redesign.md` |
+| Deck-Werkstatt | `docs/werkstatt-redesign.md` |
 
 Mockups: https://claude.ai/code/artifact/2e09b642-9197-42b1-81c5-dd41618c5ad8 (Marke, Mainscreen,
 Melder, Baum) und https://claude.ai/code/artifact/c8328e42-db0b-411f-b26e-ec72a60a17ec (Optionen).
@@ -187,6 +188,44 @@ noch im Panel stand, klappt auf je eine Zeile zusammen statt zu verschwinden.
 **Kein Overlay dafür.** Ein Überzug nimmt den halben Bildschirm, um ein paar Zeilen zu zeigen, und
 verdeckt genau das, wozu die Liste gehört. Ein Panel, das umschaltet, verdeckt nichts und braucht
 keine dritte Ebene.
+
+### Die Kachel ist der Köder, die Ansicht ist das Bild
+
+Wo ein Katalog aus **Bildern** besteht, gewinnt man Bildwirkung **nicht**, indem man die Kacheln
+vergrößert. Eine Kachel wächst in der Breite und kostet Sichtbarkeit im Quadrat: jede gewonnene
+Reihe Kachelbreite nimmt eine Reihe Kacheln aus dem ersten Bildschirm. Die Wirkung entsteht in der
+**Detailansicht** — und dort dadurch, dass **ein** Bild führt statt drei gleich großer.
+
+*Gemessen an der Werkstatt bei 1280 × 720:* fünf statt sechs Katalogspalten hätten der Kachel 40 px
+gebracht und **sieben von zwölf** ohne Scrollen sichtbaren Decks gekostet. Dasselbe Panel mit dem
+Kartenrücken als Hochformat und Vorderseite plus Spielfeld als Beiwerk daneben bringt dem
+Hauptbild **155 → 250 px** — die 2,6-fache Fläche — und kostet den Katalog **keinen Pixel**.
+
+Daraus die allgemeine Form: **eine Ansicht, die ein Objekt verkaufen soll, führt genau ein Bild.**
+Drei gleich große Bilder nebeneinander sind ein Inventar, kein Angebot.
+
+**Und die Gegenprobe gehört dazu:** die schmale Spalte zu kürzen, um dem Katalog Breite zu geben,
+war der naheliegende Schluss und war falsch. Ein Block, dessen Schrumpffaktor sich aus dem
+Verhältnis von Inhalt zu Fläche ergibt, ist **breitengebunden** — kürzt man die Spalte, schrumpft er
+im selben Verhältnis mit. Bei 520 → 424 px verliert die Vorschau 20 % und der Katalog gewinnt nichts,
+was er zeigen könnte.
+
+### Ein Textfeld, das schmaler ist als sein längstes Wort, ist kein Textfeld
+
+Bevor eine Spaltenzahl entschieden wird, wird die **ungekürzte Breite der längsten Beschriftung
+gemessen** — Klon ohne `truncate` in einen freien Messrahmen, im Produktionsbuild, in der Schrift,
+die dort wirklich steht. Geschätzt wird sie nicht: an der Werkstatt lag die Schätzung um 12 px
+daneben, und 12 px waren der Unterschied zwischen „ein Name abgeschnitten" und „fünf".
+
+Zwei Befunde, die daran hängen und über den Screen hinausgehen:
+
+- **`hyphens: auto` ist kein Mittel.** *Gemessen:* an allen sechs zu langen Namen ändert es nichts —
+  der Browser bringt kein deutsches Wörterbuch mit. Wer auf automatische Trennung baut, baut auf
+  nichts.
+- **Eine Farbkante darf auch nicht wiederholen, was das Element schon zeigt.** Die Regel oben sagt,
+  eine Kante muss etwas *unterscheiden*; der zweite Fall ist die Kante, die etwas **doppelt**. Die
+  Pack-Kachel trug die Akzentfarbe ihres Decks als 4-px-Kante — über einem Coverbild, das dieselbe
+  Farbe großflächig zeigt. Die vier Pixel sind am Text besser aufgehoben.
 
 ### Haarlinie
 
@@ -498,6 +537,22 @@ Daraus die allgemeine Regel: **erklärt sich ein Element nur woanders, gehört d
 Element.** Ein Bedienelement, das seinen ganzen Inhalt tragen kann, braucht keine aufklappende Zeile
 in einer anderen Spalte.
 
+### Bedingung und Fortschritt sind zwei Dinge
+
+Eine **Bedingung ist ein Satz** und passt nicht auf eine Kachel. Ein **Fortschritt ist eine Zahl**
+und passt immer. *Gemessen an den zwölf Herausforderungen der Werkstatt:* der Bedingungssatz ist im
+Mittel 142,5 px breit und im schlimmsten Fall 344,4 px — auf einem Feld von 71,3 px. **Elf von zwölf
+sind abgeschnitten.** Die zugehörigen Zähler sind **keiner breiter als 62 px**.
+
+Also: **die Kachel trägt den Fortschritt** — ein schmaler Balken in der Deckfarbe und ein Zähler in
+Geist Mono —, und der **Satz steht in der dauerhaft sichtbaren Ansicht daneben**, als
+Abschluss-Sektion mit Trennlinie.
+
+Das ist keine Ausnahme von *„erklärt sich ein Element nur woanders, gehört die Erklärung an das
+Element"*, sondern ihre Bedingung: die Erklärung darf danebenstehen, solange sie **ohne Klick und
+ohne Wechsel** im Bild ist. Was die Regel verbietet, ist die Erklärung, die man erst **aufklappen**
+muss — nicht die, die immer schon dasteht.
+
 ### Abhängigkeiten sichtbar machen
 
 Wo A B steuert, muss man das **sehen**, nicht nur merken: Ton aus → beide Regler auf 42 % und ihr
@@ -548,9 +603,24 @@ gedämpft und sagt das — sie ist nicht bei null.
 
 ## 9. Offene Punkte
 
-Zurzeit keine.
+**1 — Welche Farbe hat ein DP-Preis?** §2 sagt, die Farbe der Währung bleibt screen-eigen (SP gold,
+DP cyan); §3 sagt, Cyan gehört dem Hub und darf in Menüs nicht für Beschriftungen ausgegeben werden,
+und weist Preisschilder dem Gold zu. In der Werkstatt treffen beide Sätze hart aufeinander: auf dem
+Packs-Reiter stehen **17 cyane Preisschilder plus das Guthaben**, damit ist die Handlungsfarbe des
+Hubs das am häufigsten wiederholte Farbsignal des Screens. Im Mockup ist **Gold** gezeichnet. Fällt
+die Entscheidung auf Cyan, gehört der genaue Ton hierher — im Code stehen mit `#26c6e6` und
+`#35c6e6` zwei.
 
-Was hier stand, ist abgearbeitet: die Haarlinien-Höhe (§1), die Ziel-Helligkeit der Deckfarbe (§3),
+**2 — Darf ein weiches Trennzeichen in einen spielersichtbaren String?** Sechs Deck- und
+Herausforderungsnamen sind ein einziges Wort, das breiter ist als seine Kachel (Kosmospanther,
+Laternenfest, Nachtklinge, Moonwhale, Quecksilber, Kataklysmus). Mit einem weichen Trennzeichen
+(`U+00AD`) an der Silbengrenze passen *gemessen* **alle 42**; ohne es sechs nicht. §7 sagt „kein
+Layout im String". Ein weiches Trennzeichen ist unsichtbar und ändert das Wort nicht — aber es ist
+Layout, und die Regel kennt keine Ausnahme.
+
+---
+
+Was vorher hier stand, ist abgearbeitet: die Haarlinien-Höhe (§1), die Ziel-Helligkeit der Deckfarbe (§3),
 die Eyebrow-Wörter (§2) und der Zwei-Farben-Verlauf bei Genesis-artigen Decks (§1). Neue Punkte
 entstehen bei jedem Screen, den wir uns vornehmen — sie gehören hierher, nicht in den Auftrag.
 
@@ -560,6 +630,10 @@ entstehen bei jedem Screen, den wir uns vornehmen — sie gehören hierher, nich
 
 | Datum | Was |
 | --- | --- |
+| 24.08.2026 | **Deck-Werkstatt entworfen**, Auftrag unter `docs/werkstatt-redesign.md`. Der am weitesten gebaute der sieben Screens — Überzug, Panel-Aufteilung, schmale Spalte links, kein Blur, Haarlinie 2 px sind bereits richtig. Drei Löcher: acht von dreißig Pack-Namen abgeschnitten, elf von zwölf Freischalt-Bedingungen abgeschnitten, und der Effekte-Reiter endet 153 px vor dem Bildschirmende (226 px bei 1536 × 791). |
+| 24.08.2026 | Zwei Regeln daraus in §1: **die Kachel ist der Köder, die Ansicht ist das Bild** (samt der gemessenen Gegenprobe, dass die schmale Spalte zu kürzen die Vorschau kostet und dem Katalog nichts bringt) und **ein Textfeld, das schmaler ist als sein längstes Wort, ist kein Textfeld** (mit den zwei Befunden: `hyphens: auto` wirkt nicht, und eine Farbkante darf auch nicht wiederholen, was das Element schon zeigt). |
+| 24.08.2026 | Eine Regel in §5: **Bedingung und Fortschritt sind zwei Dinge** — die Kachel trägt den Zähler, der Satz steht in der dauerhaft sichtbaren Ansicht daneben. Dazu die Klarstellung, wann eine Erklärung danebenstehen darf: ohne Klick und ohne Wechsel im Bild. |
+| 24.08.2026 | **Zwei offene Punkte neu in §9** — die Farbe eines DP-Preises (§2 und §3 widersprechen sich) und das weiche Trennzeichen gegen §7. Beide gehören dem Owner. |
 | 24.08.2026 | Angelegt. Fundament, Kopf-Kanon, Farbrollen, Komponenten aus den Aufträgen Optionen, Melder, Mainscreen und Baum-Reiter 1–2 zusammengeführt. |
 | 24.08.2026 | Farbentscheidung Upgrade-Baum: **eine** Struktur-Farbe, und die ist die Deckfarbe. Feste Fremdtöne (Cyan/Violett) für Struktur entfallen. |
 | 24.08.2026 | **Zählen statt aufzählen** (§1) — das Muster hinter dem Build-Panel des Lauf-Fensters: bekannte Kategorien werden zu Zählfeldern, die Liste öffnet im selben Panel und die Felder werden zur Reiterzeile. Kein Overlay, keine dritte Ebene. Idee des Owners. |
