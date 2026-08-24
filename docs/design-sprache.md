@@ -179,6 +179,36 @@ color: #d5d5df;
 
 Gezeichnetes ✕ vor dem Wort. Zweitaktionen tragen dieselbe Größe, aber eine 3-px-Kante.
 
+### Die Eyebrow-Wörter
+
+Der Eyebrow nennt den **Bereich**, der Titel den **Screen**. Wo der Bereich denselben Namen trägt wie
+der Screen, nimmt der Eyebrow die kürzere, im Hub gebräuchliche Form — deshalb bleiben „Optionen"
+und „Upgrades", obwohl sie fast wie ihre Titel klingen.
+
+| Eyebrow | Titel | Unterzeile |
+| --- | --- | --- |
+| Upgrades | Upgrade-Baum | Dauerhafte Verbesserungen für jeden Lauf. |
+| Kosmetik | Deck-Werkstatt | Decks, Spielfelder, Effekte. |
+| Rückblick | Statistiken | *neu* — „Was du bisher gespielt hast." |
+| Vergleich | Bestenliste | *neu* — „Die besten Läufe aller Spieler." |
+| Nachschlagen | Glossar | Begriffe & Sonderregeln — keine einzelnen Perks/Skills |
+| Nachschlagen | Leitfaden | So spielst du jeden Archetyp. |
+| Optionen | Einstellungen | Alles sofort wirksam und gespeichert. |
+| Playtest | Feedback senden | Geht direkt an die Entwicklung. |
+
+**Glossar und Leitfaden teilen sich einen Eyebrow.** Das ist kein Versehen: sie sind derselbe Bereich,
+und der geteilte Kicker sagt genau das. Zwei Beiträge einer Rubrik tragen dieselbe Rubrik.
+
+**Warum nicht ein einziges System für alle acht:** „Optionen" und „Upgrades" sind der kurze Name des
+Screens, „Playtest" und „Rückblick" der Bereich. Ein durchgehendes Bereichs-System hätte zwei bereits
+freigegebene Wörter umgeworfen, ohne dass ein Spieler etwas davon hat. Die Regel oben deckt beide
+Fälle ab und ist die schmalere.
+
+**Geprüft und verworfen:** „Verlauf" für Statistiken (zu nah am Titel und für die Lauf-Historie
+belegt), „Sammlung" für die Werkstatt („Kosmetik" sagt zusätzlich, dass hier nichts das Spiel
+verändert), „Weltweit" für die Bestenliste (kollidiert mit „Globale Highscores" darunter),
+„Fortschritt" für den Baum (die Ablesung im selben Kopf heißt schon so).
+
 ### Ablesungen im Kopf
 
 Währung und Fortschritt stehen als **benannte Ablesung**, nicht als nackte Zahl am Titel:
@@ -414,9 +444,7 @@ gedämpft und sagt das — sie ist nicht bei null.
 
 ## 9. Offene Punkte
 
-1. **Eyebrow-Wörter** für Screens, die heute keinen haben (Werkstatt, Statistik, Glossar, Leitfaden,
-   Bestenliste). Vorschläge liegen als Mockup vor, sind aber neue Copy.
-3. Ob **Genesis-artige Decks** (a1 und a2 fast gegenüber) den Zwei-Farben-Verlauf so behalten sollen.
+1. Ob **Genesis-artige Decks** (a1 und a2 fast gegenüber) den Zwei-Farben-Verlauf so behalten sollen.
 
 ---
 
@@ -426,6 +454,7 @@ gedämpft und sagt das — sie ist nicht bei null.
 | --- | --- |
 | 24.08.2026 | Angelegt. Fundament, Kopf-Kanon, Farbrollen, Komponenten aus den Aufträgen Optionen, Melder, Mainscreen und Baum-Reiter 1–2 zusammengeführt. |
 | 24.08.2026 | Farbentscheidung Upgrade-Baum: **eine** Struktur-Farbe, und die ist die Deckfarbe. Feste Fremdtöne (Cyan/Violett) für Struktur entfallen. |
+| 24.08.2026 | **Eyebrow-Wörter für alle acht Overlays festgelegt** (§2) — der letzte offene Punkt der Kopfzeile. Regel: der Eyebrow nennt den Bereich, der Titel den Screen; wo beide gleich heißen, nimmt der Eyebrow die kurze Hub-Form. Glossar und Leitfaden teilen sich einen. Vier verworfene Wörter sind mit notiert. Zwei Unterzeilen sind neue Copy und stehen als solche markiert. |
 | 24.08.2026 | Zur Ziel-Helligkeit zwei Gegenproben, beide gemessen und beide ohne Änderung: der **Rahmen** bleibt ungemischt (Spanne nur 1,9-fach), und **ein einziger Mischwert für alles** ist verworfen — er nimmt Farbe dort weg, wo der Kontrast schon erfüllt war. Beides in §3 notiert, damit es nicht wiederkommt. |
 | 24.08.2026 | **Ziel-Helligkeit der Deckfarbe entschieden** (§3), damit ist offener Punkt 3 erledigt. Gemessen über alle 42 Decks mit eigenem Akzent: der Kontrast von `a1` gegen den Zeilengrund schwankt um den Faktor 7,9, drei Decks liegen unter 4,5 : 1. Mischung auf Weiß, zwei Werte: **62 %** für Schrift (schlechtestes Deck dann 4,65 : 1), **70 %** für Flächen und Kanten (3,80 : 1). Die Tönung bleibt ungemischt. Kosten: rund vierzig Prozent der Sättigung. |
 | 24.08.2026 | **Haarlinie einheitlich 2 px** (§1), offener Punkt 1 erledigt. 3 px war an die Zweitaktions-Kante vergeben, und auf einem 1200-px-Panel wird daraus ein Balken. Dazu die Strichstärken-Leiter 1 / 2 / 3 / 4 px mit je einer Bedeutung. |
