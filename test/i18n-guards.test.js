@@ -82,7 +82,6 @@ describe("i18n · Katalog-Parität", () => {
     "upgrades.deckLead",     // „Deck" — dasselbe Wort in beiden Sprachen
     "upgrades.lane.rerolls", // „Rerolls" — im Deutschen bereits das englische Wort
     "shop.tab.packs",        // „Packs" — dasselbe Wort in beiden Sprachen
-    "tutorial.eyebrow",      // dito (Kopfzeile des Tutorial-Fensters)
     "formation.wechsel.abbr", // Wechsel/Zigzag → beide Z
     "formation.anker.abbr",   // Anker/Anchor  → beide A
     "perkcat.A.name",         // „Deck" ist in beiden Sprachen dasselbe Wort
@@ -536,8 +535,12 @@ describe("i18n · Ratsche gegen neue deutsche Inline-Texte", () => {
     "src/ui/Glossary.jsx", "src/ui/GuideOverlay.jsx", "src/ui/Controls.jsx", "src/ui/PwaInstall.jsx",
     "src/ui/PerfOverlay.jsx", "src/ui/MusicBar.jsx", "src/ui/RunLoader.jsx",
     "src/ui/DevPerkCatalog.jsx", "src/ui/DevRunSetup.jsx",
-    // Tutorial (geführter Lauf) — von der ersten Zeile an zweisprachig gebaut.
-    "src/ui/tutorial/TutorialOverlay.jsx",
+    /* Hier stand `src/ui/tutorial/TutorialOverlay.jsx`, bis der geführte Lauf zurückgebaut wurde.
+       Der Eintrag ist MIT der Datei gegangen, und das ist keine Aufweichung der Ratsche: der Wächter
+       darunter heißt „zeigt nur auf existierende, i18n-nutzende Dateien" und liest jede Zeile mit
+       readFileSync — ein Eintrag ohne Datei WIRFT, er wird nicht rot. Die Invariante der Liste ist
+       „in einer migrierten Datei steht kein Text als Literal"; eine Datei, die es nicht mehr gibt,
+       kann keinen halten. Kein anderer Eintrag wurde angefasst. */
     // Der Meilenstein-Balken lief bis zuletzt einsprachig mit — im Stichspiel dauerhaft sichtbar.
     "src/ui/ScoreMilestoneBar.jsx",
     // Build-Übersicht unter dem Brett und die zwei Listen, die sie teilt (#sprache-Nachzügler).

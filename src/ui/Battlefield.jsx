@@ -1501,7 +1501,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
 
   return (
    <>
-    <div ref={panelRef} data-tut="bf-board" className="bf-panel rounded-xl p-6 overflow-hidden as-panel as-panel-deck relative"
+    <div ref={panelRef} className="bf-panel rounded-xl p-6 overflow-hidden as-panel as-panel-deck relative"
       style={{ background: "radial-gradient(360px 130px at 50% 0%, rgba(155,130,240,.10), transparent 70%), linear-gradient(180deg,#1b1a24,#141019)",
                // #296: eigener Stacking-Context → die Panel-Overlays (Schwarzes Loch/BounceBurst/PrunkFx mit hohem
                // zIndex) bleiben INNERHALB des Battlefields und liegen nie über anderen Screens (z. B. Perk-Auswahl).

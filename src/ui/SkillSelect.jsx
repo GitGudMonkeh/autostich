@@ -212,7 +212,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
         {(wide || phone) && curG && <CardCorners artKey={curG.arch} />}
         <GlossaryPanel className="absolute top-3 right-3 z-10" />
         <div className="co-head text-center mb-1 pt-6">
-          <div className="text-body-5 uppercase tracking-widest" data-tut="skill-slots" style={{ color: LIGHT }}>{t("skill.eyebrow", { cycle: (state.cycle || 0) + 1, held: skills.length, slots: slotsShown })}</div>
+          <div className="text-body-5 uppercase tracking-widest" style={{ color: LIGHT }}>{t("skill.eyebrow", { cycle: (state.cycle || 0) + 1, held: skills.length, slots: slotsShown })}</div>
           <h2 className="text-title-6 font-bold mt-1">{t("skill.title")}</h2>
           {/* Ohne diesen Satz steht mitten in einer PERK-Runde plötzlich eine Skill-Wahl — der Spieler sucht
               sonst den Fehler bei sich. */}
@@ -257,7 +257,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
               längste Fall (Blitz) braucht 58 Zeichen DE / 60 EN auf ~181 px Textbreite, wäre also zweizeilig,
               und die Zeile war vor allem Unruhe. Wer wissen will, was drin liegt, klickt den Reiter an. */}
           {wide && nPages > 0 && curG && (
-            <div className="sk-tabs mt-2 grid gap-2" data-tut="skill-offer"
+            <div className="sk-tabs mt-2 grid gap-2"
                  style={{ gridTemplateColumns: `repeat(${nPages}, minmax(0,1fr))` }}>
               {groups.map((g, i) => {
                 const on = i === page;
@@ -284,7 +284,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
           {/* Archetyp-Navi (Indikator): aktueller Typ mittig (mit i-Chip → passender Leitfaden), Nachbarn links/rechts
               im Endlos-Ring, Punkte für die Position (#12/#UI). */}
           {!wide && nPages > 0 && curG && (
-            <div className="mt-2" data-tut="skill-offer">
+            <div className="mt-2">
               <div className="grid items-center gap-2" style={{ gridTemplateColumns: "1fr auto 1fr" }}>
                 {nPages > 1 ? (
                   <button type="button" onClick={() => go(-1)}

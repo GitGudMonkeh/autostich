@@ -249,11 +249,15 @@ describe("#sk-reiter — die Fraktionsreiter der Skill-Wahl", () => {
     expect(skill, "kein zweiter Seiten-State neben pageState").not.toMatch(/useState\([^)]*\)\s*;\s*\/\/\s*tab/);
   });
 
-  it("nur EINE Navigation ist gerendert (sonst zwei Tab-Reihenfolgen und zwei Tutorial-Ziele)", () => {
-    expect(skill).toMatch(/\{wide && nPages > 0 && curG && \(/);
-    expect(skill).toMatch(/\{!wide && nPages > 0 && curG && \(/);
-    expect(skill.match(/data-tut="skill-offer"/g) || [], "der Tutorial-Mark darf nur einmal im Bild sein")
-      .toHaveLength(2); // je Zweig einer — gerendert wird immer nur einer davon
+  /* Die dritte Zusicherung zählte bis zum Rückbau des geführten Laufs die `data-tut="skill-offer"`-Anker
+     (zwei Stück, je Zweig einer). Der Anker existiert nicht mehr; die Invariante schon. Sie hängt jetzt
+     an den Zweigen selbst — GENAU EINER je Breite. Das ist auf dieser Achse eher strenger als vorher:
+     `toMatch` ließ einen zweiten `{wide && …}`-Zweig durchgehen, `toHaveLength(1)` nicht. */
+  it("nur EINE Navigation ist gerendert (sonst zwei Tab-Reihenfolgen)", () => {
+    expect(skill.match(/\{wide && nPages > 0 && curG && \(/g) || [], "genau eine Desktop-Navigation")
+      .toHaveLength(1);
+    expect(skill.match(/\{!wide && nPages > 0 && curG && \(/g) || [], "genau eine Handy-Navigation")
+      .toHaveLength(1);
   });
 
   it("der Leitfaden bleibt erreichbar (der i-Chip am Pager-Badge fällt auf dem Desktop weg)", () => {

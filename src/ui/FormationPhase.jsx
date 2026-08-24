@@ -215,7 +215,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
         {/* Sticky-Aktionsleiste (#161 FB-4): Aktionen bleiben oben erreichbar — bei 8 Segmenten kein Scrollen nötig.
             #UI-Redesign: entschlackt — Δ steht jetzt im Hero-Wert, der Fortfahren-Untertitel entfällt (Energie/Formationen
             stehen oben in der Leiste). */}
-        <div className="sticky top-0 z-20 -mx-5 px-5 py-2.5 mt-3 mb-3 flex flex-col gap-2" data-tut="form-energy"
+        <div className="sticky top-0 z-20 -mx-5 px-5 py-2.5 mt-3 mb-3 flex flex-col gap-2"
              style={{ background: PANEL_BG, borderBottom: "1px solid #2a2a34" }}>
           {/* Rückgängig + Zurücksetzen teilen sich die volle Breite. */}
           <div className="flex gap-2">
@@ -246,7 +246,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
 
         <div className="md:flex md:gap-4 md:items-start">
           {/* Karten-Grid (links auf Desktop, kompakt) */}
-          <div className="md:w-1/2 md:shrink-0" data-tut="form-board">
+          <div className="md:w-1/2 md:shrink-0">
             {/* Architekt-Overlay-Steuerung (#202): welche Karten liegen unter welchem Gebäude? Toggle + Kategorie-Legende. */}
             {hasArch && <ArchToggle on={showArch} onToggle={() => setShowArch((v) => !v)} />}
             <CardGrid cards={cards} formations={formations} roles={state.roles} anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }} selectedPos={sel} onTilePick={clickPos} quietTiles openSegments={segInfo} swappedIds={swappedIds} disabledPos={chLockFormSet} lockedPos={chLockFormSet} segStrength={segStrength} segDelta={segDelta} flashPos={flash.pos} flashKey={flash.key} architectCover={hasArch && showArch ? architectCover : null} structPos={hasArch && showArch ? structLitPos : null} distrPos={hasArch && showArch ? distrLitPos : null} glowBid={hasArch && showArch ? inspectBid : null}
@@ -264,7 +264,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
             {/* #UI-Redesign: Referenz-Legende (Formationen & Rahmenfarben) einklappbar — default zu, damit die
                 Aufstellung nicht von der 7-zeiligen Textwand zugestellt wird. Wer's kennt, sieht sie nie. */}
             {/* Wrapper trägt den Tutorial-Anker: FormCollapse reicht keine Fremd-Props durch. */}
-            <div data-tut="form-legend">
+            <div>
               <FormCollapse label={t("form.legend")} chipWord={t("form.legend.chip")} color="#5ab87a"
                 open={openLegend} onToggle={() => setOpenLegend((o) => !o)}>
                 {/* #UI: geteilte Legende (ArchPanels) — dieselbe Erklärung in Aufstellphase & Chronik. */}

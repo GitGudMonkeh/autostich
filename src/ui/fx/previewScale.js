@@ -4,7 +4,8 @@
    Verhältnis nachrechnen kann, statt Quelltext zu vergleichen. Dieselbe Trennung wie bei
    `starfieldBudget.js`, `mobileTier.js` und `gottTiming.js`.
 
-   DIE MESSUNG, aus der alles folgt (Battlefield-Panel `[data-tut="bf-board"]`, Produktionspfad):
+   DIE MESSUNG, aus der alles folgt (Battlefield-Panel `.bf-panel`, Produktionspfad — gemessen wurde
+   seinerzeit über `[data-tut="bf-board"]`; dieser Anker ging mit dem geführten Lauf, das Panel bleibt):
      1920 × 1080 → 668 × 347 · 1536 × 791 → 668 × 347 · Handy 390 → 358 × 347.
    Auf dem Desktop ist das Brett also FEST — es sitzt in der 1fr-Spalte eines `[1fr_340px]`-Rasters
    mit gedeckelter Seitenbreite. Die Karte ist dort immer 104 × 144 (Card.jsx setzt beides fest),
