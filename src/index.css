@@ -4899,7 +4899,10 @@ b, strong { font-weight: 600; }
   /* ---- gemeinsame Schale der drei randverankerten Screens ---------------- */
   .st-root, .lb-root, .go-root {
     padding: 16px 48px 18px !important;
-    background: rgba(12, 12, 16, .94) !important;   /* s. #ueberzug an .up-root */
+    /* #menu-rework M7 — der Ueberzug ist `--sf-scrim-desk`, wertgleich (rgba(12, 12, 16, .94)).
+       `!important` bleibt: die drei Screens setzen ihren Grund INLINE, und der Inline-Wert ist dort
+       ein LITERAL, das unter 1280 px die Handy-Fassung traegt (s. den Eintrag in panel-tokens). */
+    background: var(--sf-scrim-desk) !important;   /* s. #ueberzug an .up-root */
     /* #perf-blur: kein backdrop-filter (gemessen der teuerste Posten des Desktop-Passes); `none !important`,
        weil die Overlays ihren Blur INLINE setzen. Präfix zuerst, Standard zuletzt (lightningcss behält den letzten). */
     -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
@@ -4946,7 +4949,7 @@ b, strong { font-weight: 600; }
     grid-column: 1 / -1; grid-row: 1;
     margin: 0 !important;
     padding: 10px 0 8px !important;
-    background: linear-gradient(180deg, rgba(18, 18, 26, .92) 62%, rgba(18, 18, 26, 0)) !important;
+    background: var(--sf-head-fade) !important;   /* wertgleich, s. @theme */
     display: grid;
     column-gap: 22px;
   }
@@ -4985,12 +4988,15 @@ b, strong { font-weight: 600; }
      start` oben ueberhaupt herstellt. */
   .st-close { grid-column: 2; grid-row: 1 / span 3; justify-self: end; align-self: start; }
   .st-head > h2, .lb-head > h2 { font-size: var(--text-figure-1); font-weight: 600; }
-  .st-close, .lb-head > button { font-size: var(--text-body-lg-3) !important; padding: 11px 18px !important; border-radius: 8px; }
+  .st-close, .lb-head > button { font-size: var(--text-body-lg-3) !important; padding: 11px 18px !important; border-radius: var(--rd-md); }
   /* Der Ranglisten-Kopf hat nur zwei Kinder (Titel · Schließen) — ohne festen Platz landete der Knopf in der
      1fr-Spalte und zog sich über die halbe Breite. */
   .lb-head > button { grid-column: 3; justify-self: end; }
   /* Panel-Schale für alle Inhaltsblöcke der vier Screens. */
-  .st-sec, .lb-tabs, .lb-page, .go-heroblock, .go-earn, .go-best, .go-origin, .go-build, .go-stats, .go-layout {
+  /* #menu-rework M7 — `.st-sec` ist HIER RAUS und hat seine eigene Regel: die fünf Sektionen der
+     Statistik werden Panels (Tönung + Rahmen), die übrigen bleiben, wie sie sind. Bestenliste und
+     Siegesbildschirm gehören nicht zu diesem Auftrag. */
+  .lb-tabs, .lb-page, .go-heroblock, .go-earn, .go-best, .go-origin, .go-build, .go-stats, .go-layout {
     border-radius: 14px;
     background: linear-gradient(rgba(27, 26, 36, .93), rgba(22, 22, 32, .95));
   }
@@ -5052,7 +5058,32 @@ b, strong { font-weight: 600; }
     overflow-y: auto;
     overflow-x: hidden;
   }
-  .st-sec { margin-top: 22px !important; padding: 15px 17px 17px; }
+  /* #menu-rework M7 — DIE SEKTION IST EIN PANEL (design-sprache.md §1).
+
+     GEMESSEN war sie keins: `border-top-width: 0px`, `background-color: transparent` und Radius 14 —
+     eine reine Abstandsklammer über dem Glasverlauf. Deshalb las sich der ungleiche Spaltenfuß als
+     Fehler statt als Kante. (Der Entwurf sagt „Hintergrund transparent"; präzise ist: die FARBE ist
+     transparent, das BILD trug den Glasverlauf. Was fehlte, war der Rahmen.)
+
+     Ziel und Umsetzung: die Deck-Tönung und der 26-%-Rahmen, beide aus dem Vokabular — `--sf-deck`
+     ist genau dieses Rezept, `--ed-deck-panel` genau dieser Rahmen. Sie sind kein neuer Wert: die
+     Optionen tragen `--sf-deck` seit M1, und `--ed-deck-panel` steht seit dem Freeze im Annex und
+     hatte bis hierher keine Fundstelle.
+
+     ABWEICHUNG, benannt: das Vokabular tönt 9 / 5 %, `design-sprache.md` §1 sagt 5 / 1 %. Der Wert
+     eines ausgelieferten Tokens zu ändern ist ausdrücklich nicht Sache dieses Auftrags, und die
+     Optionen stehen bereits auf 9 / 5. Als Befund gemeldet (M7-F07), nicht an der Fundstelle
+     umschifft — Letzteres wäre Tripwire 1 mit Hut.
+
+     Der Innenabstand geht auf `--in-base` (18 px, vorher 15/17/17) — dieselbe bewusste Abweichung,
+     die M3 an den Baum-Panels gemessen und benannt hat. */
+  .st-sec {
+    margin-top: 22px !important;
+    padding: var(--in-base);
+    border-radius: var(--rd-lg);
+    background: var(--sf-deck);
+    border: 1px solid var(--ed-deck-panel);
+  }
   /* Ueberblick ueber die volle Breite: Kennzahlen links, Score-Verlauf RECHTS DANEBEN statt darunter.
      Das ist der eigentliche Gewinn der Breite - beides ist dieselbe Frage ("wie laeuft es gerade?")
      und wurde vorher durch 90 px Abstand getrennt. */
@@ -5072,7 +5103,8 @@ b, strong { font-weight: 600; }
      Flaeche, Rahmen und Radius stehen NICHT hier, sondern EINMAL an `.st-box` (#st-ruhe unten) - die
      Kacheln teilen sie sich mit den uebrigen Kaesten des Screens. */
   .st-kpis > div {
-    padding: 12px 15px 13px !important;
+    /* Der Innenabstand eines inneren Kastens ist `--in-snug` (13 px, vorher 12/15/13). */
+    padding: var(--in-snug) !important;
     text-align: left !important;
   }
   .st-kpis > div > div:first-child {
@@ -5119,7 +5151,9 @@ b, strong { font-weight: 600; }
      Ausnahme. Als `min-height` und nicht ueber die Polsterung: das Klickziel ist die volle Hoehe,
      sichtbar bleibt dasselbe, und die abgestimmte Polsterung bleibt unangetastet. */
   .st-sec[data-sec="runs"] button {
-    padding-top: 7px; padding-bottom: 7px;
+    /* Eine Zeile polstert mit `--in-tight` (11 px, vorher 7). Sichtbar aendert das nichts: das
+       Klickziel steht auf 44 px, und die Zeile war mit 33,3 px ohnehin darunter. */
+    padding-top: var(--in-tight); padding-bottom: var(--in-tight);
     min-height: 44px;
   }
   /* In der ~500 px schmalen Spalte stehen Skills und Perks UNTEREINANDER - nebeneinander bleiben von
@@ -5416,7 +5450,7 @@ b, strong { font-weight: 600; }
        mit der Begründung, die Detailansicht liege über der Statistik statt über dem Hub — am Gerät las sich
        genau das als „schwarzer Kasten", während jeder Nachbar-Screen leicht durchscheint. Der Blur fällt
        weiter weg (#perf-blur); `!important`, weil der Grund inline am Wurzelknoten steht. */
-    background: rgba(12, 12, 16, .94) !important;
+    background: var(--sf-scrim-desk) !important;
     -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
     /* Der Screen MUSS scrollen können. Die Karte scrollte auf dem Handy in sich; auf dem Desktop hat sie
        das abgegeben (`overflow: visible`, sonst klippte sie die Kopfzeile) — und der Wurzelknoten hatte
@@ -5466,7 +5500,7 @@ b, strong { font-weight: 600; }
      ein 11-px-Label allein in einer 480-px-Spalte neben einer 46-px-Zahl. */
   .rd-title { grid-column: 1; grid-row: 1; align-self: end; }
   .rd-close { grid-column: 3; grid-row: 1 / span 2; justify-self: end; align-self: center;
-    font-size: var(--text-body-lg-3) !important; padding: 11px 18px !important; border-radius: 8px; }
+    font-size: var(--text-body-lg-3) !important; padding: 11px 18px !important; border-radius: var(--rd-md); }
   .rd-card::before {
     content: "";
     grid-column: 1 / -1; grid-row: 3;
@@ -5485,13 +5519,16 @@ b, strong { font-weight: 600; }
   }
   .rd-kpi-i > div:first-child { font-size: var(--text-title-3) !important; }
 
+  /* Dieselbe Panel-Fassung wie die Sektionen der Statistik, und aus demselben Grund: es ist eine
+     Bildsprache, kein Screen-Detail. `!important` an Flaeche und Rahmen, weil `.rd-c3` ein `details`
+     mit eigenem Inline-Stil ist. */
   .rd-c1, .rd-c2, .rd-c3, .rd-c4 {
     display: block;
-    border-radius: 14px;
-    padding: 15px 17px 17px;
+    border-radius: var(--rd-lg);
+    padding: var(--in-base);
     margin-top: 0 !important;
-    background: linear-gradient(rgba(27, 26, 36, .93), rgba(22, 22, 32, .95)) !important;
-    border: 0 !important;
+    background: var(--sf-deck) !important;
+    border: 1px solid var(--ed-deck-panel) !important;
   }
   /* WER SCROLLT UND WER WAECHST, und `min-height` ist hier der Schalter - gemessen, nicht geraten.
 
@@ -5561,6 +5598,10 @@ b, strong { font-weight: 600; }
      Reihen bleibt: sie gibt dem Hochformat den hochformatigen Platz. Gefuellt wird sie nicht. */
   .rd-c3 { grid-column: 3; grid-row: 1 / span 2; align-self: start; }
   .rd-body[data-lanes="2"] .rd-c4 { grid-row: 2; }
+  /* Ziel-Helligkeit der Deckfarbe fuer den Eyebrow (design-sprache.md §3): 62 % auf Weiss, weil er
+     als SCHRIFT gelesen wird. Unter 1280 px bleibt er ungemischt — die Handy-Fassung wird in diesem
+     Umbau nicht angefasst. */
+  .rd-eyebrow { color: color-mix(in srgb, var(--deck-a1, #8a7de0) 62%, #ffffff); }
   /* Panel-Überschriften wie in den anderen Screens; die Texte kommen aus dem Victory-Katalog (kein neuer Text). */
   .rd-ph {
     font-size: var(--text-meta-4); letter-spacing: .2em; text-transform: uppercase; font-weight: 600;
@@ -5621,9 +5662,9 @@ b, strong { font-weight: 600; }
      Beschriftung bleibt neutral, damit die Zeile nicht zur Farbwolke wird. */
   .rd-bf {
     display: grid; grid-template-rows: auto auto; row-gap: 2px;
-    padding: 9px 10px; border-radius: 6px; text-align: left; min-height: 44px;
+    padding: 9px 10px; border-radius: var(--rd-sm); text-align: left; min-height: 44px;
     background: rgba(255, 255, 255, .012);
-    border: 1px solid rgba(150, 150, 170, .12);
+    border: 1px solid var(--ed-quiet);
     transition: background .12s ease;
   }
   .rd-bf:hover { background: rgba(255, 255, 255, .045); }
@@ -5639,7 +5680,7 @@ b, strong { font-weight: 600; }
     grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto;
     align-items: baseline; column-gap: 6px; row-gap: 0;
     min-height: 0; padding: 7px 9px;
-    background: none; border: 0; border-radius: 6px 6px 0 0;
+    background: none; border: 0; border-radius: var(--rd-sm) var(--rd-sm) 0 0;
     box-shadow: inset 0 -2px 0 transparent;
   }
   .rd-bf-tab .rd-bf-n { font-size: var(--text-body-lg-3); }
@@ -5653,12 +5694,14 @@ b, strong { font-weight: 600; }
      sein darf. Sie bekommt die Resthoehe, damit das Panel seine 380 px behaelt. */
   .rd-blist2 {
     flex: 1 1 auto; min-height: 0; overflow-y: auto;
-    margin-top: 12px; display: flex; flex-direction: column; gap: 1px;
-    border-top: 1px solid rgba(150, 150, 170, .12); padding-top: 10px;
+    margin-top: 12px; display: flex; flex-direction: column; gap: 10px;
+    border-top: 1px solid var(--ed-quiet); padding-top: 10px;
   }
+  /* Der Abstand zwischen zwei Eintraegen ist eine FUGE und kein Innenabstand — er steht deshalb als
+     `gap` an der Liste und nicht als `padding` an der Zeile. Die Unterscheidung ist die, die 2c
+     zwischen „Innenabstand" und „Anordnung" zieht, und sie ist hier auch die einfachere Regel. */
   .rd-bl-row {
     display: grid; grid-template-columns: minmax(0, auto) auto; column-gap: 8px;
-    padding: 5px 0;
   }
   .rd-bl-n { font-size: var(--text-body-3); font-weight: 600; }
   .rd-bl-t {
@@ -5695,14 +5738,16 @@ b, strong { font-weight: 600; }
   .rd-card .rs-cell, .rd-card .rs-tree, .rd-card .rs-note, .rd-card .rd-blist {
     background: rgba(255, 255, 255, .012) !important;
     box-shadow: none !important;
-    border-radius: 6px !important;
+    border-radius: var(--rd-sm) !important;
   }
   /* Rahmen NUR dort abräumen, wo er nichts sagt. Die Gebäudeliste behält ihren blauen (Architekt) und
      die Hinweiszeilen ihre farbige bzw. gestrichelte Kante — die trägt dort die Aussage. */
-  .rd-card .rs-cell, .rd-card .rs-tree { border: 1px solid rgba(150, 150, 170, .12) !important; }
-  /* Der Rest des Radien-Zoos: Perk-/Skill-Chips und die Einträge der Gebäudeliste. Kein `!important`
-     nötig — index.css steht ungelayert hinter `@import "tailwindcss"` und schlägt die Utilities. */
-  .rd-card .rs-chips > *, .rd-card .rd-blist button { border-radius: 6px; }
+  .rd-card .rs-cell, .rd-card .rs-tree { border: 1px solid var(--ed-quiet) !important; }
+  /* Der Rest des Radien-Zoos: die Einträge der Gebäudeliste. Kein `!important` nötig — index.css
+     steht ungelayert hinter `@import "tailwindcss"` und schlägt die Utilities.
+     #menu-rework M7 — `.rs-chips` ist hier raus: ab 1280 px rendert das Build-Panel keine Chips
+     mehr, es zählt. Die Chips bleiben der schmalen Fassung, und die hat diese Regel nie gesehen. */
+  .rd-card .rd-blist button { border-radius: var(--rd-sm); }
 
   /* Schließen ist ein Werkzeug am Rand, kein Angebot (dieselbe Entscheidung wie `.st-close`,
      `.up-actions > *`). Die Polsterung darüber bleibt — flach heißt leiser, nicht kleiner. */
@@ -6487,11 +6532,25 @@ b, strong { font-weight: 600; }
   /* Rekordlauf-Karte (`rounded-xl`) und die zehn Lauf-Zeilen (`rounded`) tragen ihren Radius als
      Tailwind-Utility; index.css steht ungelayert hinter `@import "tailwindcss"` und schlägt sie
      deshalb ohne `!important`. */
-  .st-sec[data-sec="best"] button, .st-sec[data-sec="runs"] button { border-radius: 6px; }
+  .st-sec[data-sec="best"] button, .st-sec[data-sec="runs"] button { border-radius: var(--rd-sm); }
 
+  /* #menu-rework M7 — DER RAHMEN GEHT UEBER EINE UMDEFINITION, NICHT UEBER `!important`.
+
+     `MENU_PANEL` emittiert `1px solid var(--ed-strong)` INLINE. Die Regel definiert den Schritt am
+     Element um; der Inline-Stil liest die Variable dort und nimmt den neuen Wert, mit intakter
+     Kaskade und ohne `!important`. Das ist die Bauart, die conventions.md 2c als die richtige Antwort
+     auf einen Inline-Stil nennt, und sie ersetzt hier eine, die es nicht war.
+
+     GEMESSENE FOLGE: aus `rgba(150, 150, 170, .12)` wird `--ed-quiet` (#2a2a34) — dieselbe
+     Umstellung, die M2a an der Werkstatt gemessen (rund 9/255) und der Owner abgenommen hat, und die
+     M3 vierzehnmal am Baum gezogen hat. Ein Literal weniger aus der MENU-38-Familie.
+
+     Die FLAECHE bleibt, wie sie ist: `rgba(255, 255, 255, .012)` ist ein weisser Hauch UEBER dem
+     Glas, und `--sf-sunken` ist deckend — es naehme ihr genau das. Gezaehlt statt gepraegt
+     (M7-G2, dieselbe Familie wie M3-G2). */
   .st-box {
     background: rgba(255, 255, 255, .012) !important;
-    border: 1px solid rgba(150, 150, 170, .12) !important;
+    --ed-strong: var(--ed-quiet);
     box-shadow: none;
   }
 
@@ -6819,7 +6878,9 @@ b, strong { font-weight: 600; }
    zwischen den Panels, kein Inhalt. Reicht es nicht, scrollt der jeweilige Rumpf weiter. */
 @media (min-width: 1280px) and (max-height: 950px) {
   .st-root, .lb-root, .go-root { padding: 10px 36px 12px !important; }
-  .st-sec, .go-earn, .go-best, .go-origin, .go-build, .go-stats, .go-layout { margin-top: 14px !important; padding: 12px 15px 14px; }
+  .go-earn, .go-best, .go-origin, .go-build, .go-stats, .go-layout { margin-top: 14px !important; padding: 12px 15px 14px; }
+  /* Die gestraffte Fassung der Sektion auf flachen Fenstern — `--in-snug` statt 12/15/14. */
+  .st-sec { margin-top: 14px !important; padding: var(--in-snug); }
   .st-card, .lb-card, .go-card { column-gap: 16px; }
   /* Flaches Fenster: das Brett wird KLEINER statt zu scrollen — 40 Karten sind acht Reihen, und die
      Übersicht ist der Zweck des Panels. Bei 260 px Rasterbreite ist eine Karte ~48 px breit; die Zahl bleibt

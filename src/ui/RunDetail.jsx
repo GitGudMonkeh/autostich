@@ -384,7 +384,11 @@ export function RunDetail({ entry, rank = null, onClose, anonymized = false, onP
 
               {/* Gebäude-Liste: welche Gebäude auf welcher Stufe. Antippen lässt den Rahmen am Brett cyan leuchten. */}
               {hasArch && (
-                <div className="rd-blist mt-3 rounded-lg p-2.5" style={{ background: "#17171c", border: "1px solid #5a8ade" }}>
+                /* #menu-rework M7: die Flaeche ist `--sf-base` — WERTGLEICH, `#17171c` IST der Schritt.
+                   Der blaue Rahmen bleibt ein Literal und bleibt es dauerhaft: er ist das Signal des
+                   Architekten, also eine bedeutungskodierte Kante, und die stehen in conventions.md 2c
+                   ausdruecklich ausserhalb der Leiter. */
+                <div className="rd-blist mt-3 rounded-lg p-2.5" style={{ background: "var(--sf-base)", border: "1px solid #5a8ade" }}>
                   <div className="text-meta-3 uppercase tracking-wide font-bold mb-0.5" style={{ color: "#6f9bec" }}>🏗 {t("arch.buildingsN", { n: archBuildings.length })}</div>
                   <div className="text-meta-1 opacity-45 mb-1.5">{t("gameover.layout.hint")}</div>
                   <div className="grid gap-1">
@@ -397,7 +401,14 @@ export function RunDetail({ entry, rank = null, onClose, anonymized = false, onP
                       return (
                         <button key={b.id} onClick={() => { if (!on) setShowArch(true); setInspectBid(on ? null : b.id); }}
                           className="w-full text-left rounded-lg px-2.5 py-1.5 text-meta-3 leading-snug flex flex-col gap-0.5 transition-all"
-                          style={{ background: on ? "#12313f" : "#191922", border: `1px solid ${on ? "#5ec8f0" : "#2a2a34"}`, boxShadow: on ? "0 0 8px #5ec8f055" : undefined }}>
+                          /* Die RUHENDE Kante ist `--ed-quiet` — wertgleich, `#2a2a34` IST der Schritt.
+                             Flaeche, Aktiv-Kante und Schein bleiben Literale und sind gezaehlt statt
+                             gepraegt (M7-G4): sie sind ein ZUSTANDSPAAR („dieses Gebaeude ist
+                             angetippt, und dort am Brett leuchtet es"), und fuer ein Zustandspaar hat
+                             die Leiter keinen Schritt — dieselbe Lage wie MENU-46/48. Der Schein ist
+                             ausserdem `--el-glow-*` verwehrt: der gehoert nach #ruhe dem primaeren
+                             CTA und nichts anderem (MENU-50, richtig verweigert). */
+                          style={{ background: on ? "#12313f" : "#191922", border: `1px solid ${on ? "#5ec8f0" : "var(--ed-quiet)"}`, boxShadow: on ? "0 0 8px #5ec8f055" : undefined }}>
                           <span className="inline-flex items-center gap-1.5 flex-wrap">
                             <FormIcon form={fam.form} color={fam.legendary ? "#d4a63a" : (meta.color || "#8a8a92")} title={`${fam.name} · ${fam.form}`} />
                             <b>{fam.name}</b>

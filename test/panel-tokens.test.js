@@ -101,6 +101,28 @@ const MIGRATED_JSX = [
      Schritt entfernt — was ihn migriert, macht das Vokabular an seiner Quelle wahr statt an einer
      Kopie. */
   { path: "src/ui/UpgradeScreen.jsx" },
+  /* #menu-rework M7 — DIE STATISTIK UND DAS LAUF-FENSTER, die zwei Screens, die dieser Auftrag
+     GESTALTET. Die drei GETEILTEN Komponenten (`RunStats`, `RunGraphs`, `Sparkline`) kommen einen
+     Commit spaeter dazu und sind dort ausdruecklich wertetreu umgestellt, nicht umgestaltet: ihr
+     Aussehen gehoert der Laufbuehne und dem Siegesbildschirm. Die Trennung steht hier als zwei
+     Eintragsgruppen, weil sie genau der Naht folgt, an der der Auftrag entschieden wird.
+
+     `stateLiterals` traegt zwei Sorten, und beide sind gezaehlt statt gepraegt:
+
+       DIE HANDY-WAESCHE. Der Ueberzug beider Screens steht INLINE, und der Inline-Wert ist der Wert
+         der SCHMALEN Fassung: ab 1280 px ueberschreibt ihn `.st-root`/`.rd-root` mit
+         `--sf-scrim-desk`. Wirksam ist das Literal also ausschliesslich unter 1280 px — und was dort
+         steht, ist in 2c ausdruecklich dauerhaft ausgenommen. Es auf einen Schritt zu ziehen hiesse,
+         die Handy-Fassung zu bewegen, um einen Waechter gruen zu bekommen: beim Lauf-Fenster von
+         DECKEND auf 94 %, was man sieht.
+       M7-G4, DAS ZUSTANDSPAAR DER GEBAEUDELISTE. „angetippt" gegen „ruhend", plus der Schein, der am
+         Brett dazu leuchtet. Fuer ein Zustandspaar hat die Leiter keinen Schritt (MENU-46/47/48),
+         und `--el-glow-*` ist nach #ruhe dem primaeren CTA vorbehalten (MENU-50). Die RUHENDE Kante
+         ist umgestellt — sie war `#2a2a34`, und das IST `--ed-quiet`. */
+  { path: "src/ui/StatsScreen.jsx", stateLiterals: ["#0c0c10ee"] },
+  { path: "src/ui/RunDetail.jsx",
+    stateLiterals: ["#0c0c10", "#12313f", "#191922", "#5ec8f0", "#5ec8f055", "#5a8ade", "#141419", "#2a2a34"] },
+  { path: "src/ui/SeedChip.jsx" },
 ];
 /* Ein Haken trifft ein Tag, wenn dessen Klassen ihn als GANZES Wort fuehren: `cz-main` darf
    `cz-mainscroll` nicht mitnehmen, sonst haengt der eine Eintrag am anderen. */
@@ -120,7 +142,13 @@ const MIGRATED_SELECTORS = [/\.op-/, /\.as-opt-/, /\.as-panel-sunken/, /\.as-she
   /* M3: `.up-` MEINT DEN GANZEN SCREEN, wie `.cz-` seit M2b. Ein Screen ist entweder migriert oder
      nicht; eine Aufzaehlung einzelner Bausteine waere eine halbe Migration, und eine halbe Migration
      ist, wie die 43 Schatten entstanden sind. */
-  /\.up-(?!banner)/];
+  /\.up-(?!banner)/,
+  /* M7: `.st-` und `.rd-` MEINEN DIE ZWEI SCREENS, wie `.cz-` und `.up-` ihre. `.rs-` und `.rg-`
+     gehoeren dazu, aber nur SO WEIT SIE DIESER SCREEN FAERBT: die drei Komponenten teilen sich
+     Victory und Chronik, und jede Regel, die sie anfasst, ist deshalb ohnehin auf `.rd-`/`.go-`
+     eingegrenzt (Waechter: rd-ruhe). Ein blosser `/\.rs-/` wuerde die Victory-Regeln mit
+     einsammeln, die dieser Runde nicht gehoeren — deshalb der Praefix mit Screen davor. */
+  /\.st-/, /\.rd-/];
 /* `.up-banner` ist NICHT dieser Screen. Es ist die „Neue Version verfuegbar"-Leiste
    (`UpdateBanner.jsx`) und teilt mit dem Baum nur die zwei Buchstaben des Praefixes. Sie gehoert
    keinem migrierten Screen, also darf die Erlaubnisliste sie nicht einsammeln. Gefunden, weil der
@@ -186,6 +214,19 @@ const INSET_EXEMPT = [
   /* Steuerelement */ /^\.up-actions > \*$/, /^\.up-page-guide$/,
   /* Layout       */ /^\.up-root$/, /^\.up-readout$/, /^\.up-varrow$/, /^\.up-skills$/,
   /* Ueberschrift */ /^\.up-head$/, /^\.up-navhead$/, /^\.up-vlane-h$/, /^\.up-skills-h\.is-leg$/,
+  /* --- M7, Statistik und Lauf-Fenster. Dieselben drei Sorten, dieselben drei Gruende. ---
+     Steuerelement: die zwei Schliessen-Knoepfe (11/18) und die Zaehlfelder des Build-Panels (9/10
+       geschlossen, 7/9 als Reiter) polstern gegen ihre BESCHRIFTUNG — genau der Fall, fuer den 2c
+       `--btn-pad-*` ausserhalb der Leiter fuehrt. Beide Knoepfe tragen ihr 44-px-Klickziel darueber.
+     Layout: `.st-root`/`.rd-root` sind der Rand des Screens im Fenster (und seine Straffung auf
+       flachen Fenstern), und `.rd-blist2` setzt die Liste von ihrer Trennlinie ab — das ist eine
+       Fuge, keine Panelkante, dieselbe Unterscheidung wie bei `.up-readout`.
+     Ueberschrift: `.st-head` (sein Polster gehoert zum Kopf), und die zwei `summary`, die in diesem
+       Screen die Panel-Ueberschrift SIND — vertikaler Rhythmus einer Textzeile, und der gehoert dem
+       Typografie-System, das dieser Auftrag ausdruecklich nicht anfasst. */
+  /* Steuerelement */ /^\.st-close, \.lb-head > button$/, /^\.rd-close$/, /^\.rd-bf$/, /^\.rd-bf-tab$/,
+  /* Layout       */ /^\.st-root, \.lb-root, \.go-root$/, /^\.rd-root$/, /^\.rd-blist2$/,
+  /* Ueberschrift */ /^\.st-head, \.lb-head$/, /^\.rd-c3 > summary$/, /^\.rd-c4 \.rg-perTrick > summary$/,
 ];
 
 /* WAS DIE HOEHEN-ACHSE MEINT — und die eine Regel der Werkstatt, die daneben steht.
@@ -230,11 +271,38 @@ const M3_EDGE_EXEMPT = [
   /* permanent */ /^\.up-leg\.is-buy$/, /^\.up-leg\.is-owned$/,
 ];
 
+/* --- M7, die Statistik und das Lauf-Fenster. Drei Sorten, drei Gruende. ---
+
+   M7-G1 — DER GRUND EINES GRAPHEN. `#0c0d14` traegt die Spur eines Anteil-Balkens und den Grund des
+     gestapelten Herkunft-Balkens; `#26262e` ist seine Kante. Der naechste Schritt ist `--sf-sunken`
+     (`#141320`) und liegt 8/6/12 daneben — auf einer Flaeche, die zu grossen Teilen von farbigen
+     Segmenten verdeckt ist, waere das trotzdem eine Bewegung, und beide Regeln sind AUCH UNTER
+     1280 px sichtbar. Der Grund eines Graphen ist dunkler als jeder Panel-Schritt und hat keinen;
+     erste Sichtung, also gezaehlt (Schwellenregel in 2c).
+   M7-G2 — DER WEISSE HAUCH UEBER DEM GLAS. `rgba(255, 255, 255, .012)` (ruhend) und `.045`
+     (ueberfahren / gewaehlt) sind die flache Kachelform, die #st-ruhe, #go-ruhe und #rd-ruhe seit
+     19.08.2026 teilen. `--sf-sunken` ist DECKEND und naehme ihnen genau das, was sie sind. Dieselbe
+     Familie wie M3-G2, und dieselbe Antwort.
+   PERMANENT — die Haarlinien-Rundung. `border-radius: 2px` auf einer 3 px hohen Linie ist kein
+     Panel-Radius: `--rd-sm` (6 px) machte daraus eine Kapsel. Die Regel gehoert ausserdem zu dritt
+     mit `.lb-body::before` und `.go-card::before` zusammen, die dieser Runde nicht gehoeren. */
+const M7_SURFACE_EXEMPT = [
+  /* M7-G1 */ /^\.st-hbar$/, /^\.st-track$/,
+  /* M7-G2 */ /^\.st-box$/, /^\.rd-bf$/, /^\.rd-bf:hover$/, /^\.rd-bf-tab\.is-on$/,
+  /^\.rd-card \.rs-cell, \.rd-card \.rs-tree, \.rd-card \.rs-note, \.rd-card \.rd-blist$/,
+];
+const M7_EDGE_EXEMPT = [
+  /* M7-G1 */ /^\.st-hbar$/,
+];
+const M7_RADIUS_EXEMPT = [
+  /* permanent */ /^\.st-card::before, \.lb-body::before, \.go-card::before$/, /^\.rd-card::before$/,
+];
+
 const CSS_AXES = [
   { axis: "Flaeche", re: /(?:^|[;{\s])background(?:-color|-image)?\s*:[^;}]*(#[0-9a-fA-F]{3,8}|\brgba?\()/g,
-    exempt: M3_SURFACE_EXEMPT },
+    exempt: [...M3_SURFACE_EXEMPT, ...M7_SURFACE_EXEMPT] },
   { axis: "Kante",   re: /(?:^|[;{\s])border(?:-top|-right|-bottom|-left)?(?:-color)?\s*:[^;}]*(#[0-9a-fA-F]{3,8}|\brgba?\()/g,
-    exempt: M3_EDGE_EXEMPT },
+    exempt: [...M3_EDGE_EXEMPT, ...M7_EDGE_EXEMPT] },
   /* `inset` ist ausgenommen, und das ist eine Unterscheidung, keine Nachsicht: die Hoehenleiter misst
      ABHEBEN von der Flaeche. Ein Innenschatten hebt nichts — er zeichnet eine Kante (die 2-px-
      Unterstreichung der aktiven Auswahl) oder eine Mulde, und beides hat eigene Gruende. */
@@ -245,7 +313,8 @@ const CSS_AXES = [
      Ausnahme etwas weiter gefasst ist — H-b in Regex-Form, an der eigenen Ratsche gefunden.
      Der Lookahead wird jetzt genau einmal ausgewertet, direkt hinter dem Doppelpunkt. */
   { axis: "Hoehe",   re: /(?:^|[;{\s])box-shadow\s*:(?!\s*(?:var\(|none|inset\b))[^;}]*\d/g, exempt: ELEV_EXEMPT },
-  { axis: "Radius",  re: /(?:^|[;{\s])border-radius\s*:(?!\s*(?:var\(|0\s*[;}]))[^;}]*[1-9]/g },
+  { axis: "Radius",  re: /(?:^|[;{\s])border-radius\s*:(?!\s*(?:var\(|0\s*[;}]))[^;}]*[1-9]/g,
+    exempt: M7_RADIUS_EXEMPT },
   { axis: "Innenabstand", re: /(?:^|[;{\s])padding(?:-top|-right|-bottom|-left)?\s*:(?!\s*(?:var\(|0\s*[;}]))[^;}]*[1-9]/g, exempt: INSET_EXEMPT },
 ];
 
@@ -272,7 +341,8 @@ describe("#menu-rework — migrierte CSS-Regeln fuehren keine Werte ein", () => 
        genau das faellt hier auf. Beide Achsen mit Ausnahmen werden geprueft, nicht nur die neue.
        Der Anlass ist MENU-37: derselbe Waechter meldete einmal Erfolg fuer eine Liste, von der nur
        ein Teil noch etwas traf. */
-    for (const [name, liste] of [["Innenabstand", INSET_EXEMPT], ["Hoehe", ELEV_EXEMPT]]) {
+    for (const [name, liste] of [["Innenabstand", INSET_EXEMPT], ["Hoehe", ELEV_EXEMPT],
+      ["Flaeche", M7_SURFACE_EXEMPT], ["Kante", M7_EDGE_EXEMPT], ["Radius", M7_RADIUS_EXEMPT]]) {
       const tot = liste.filter((re) => !mine.some(([sel]) => re.test(sel)));
       expect(tot, `${name}: Ausnahme trifft keine migrierte Regel:\n  ${tot.map(String).join("\n  ")}`).toEqual([]);
     }
@@ -617,6 +687,15 @@ describe("#menu-rework — die Tinten-Ratsche: Textfarb-Literale wachsen nicht",
        Die Ratsche kostet dagegen nichts und uebergibt M5 eine GEMESSENE Zahl statt eines Eindrucks —
        dieselbe Antwort, die MENU-38 und die Tinte schon bekommen haben: zaehlen, nicht praegen. */
     ["src/ui/DeckDetail.jsx (ganze Datei, NICHT migriert)", () => inkOfJsx("src/ui/DeckDetail.jsx"), 12],
+    /* #menu-rework M7 — die zwei Screens, die dieser Auftrag gestaltet. Tinte ist eine benannte
+       Luecke des Vokabulars (2c), das Fenster ist zu, und diese zwei Screens sind zahlen- und
+       farbreich: jede Fraktion, jede Kategorie und jede Raritaet bringt ihre eigene mit. Gezaehlt
+       statt gepraegt — der Nachfolger erbt eine gemessene Zahl statt eines Eindrucks. */
+    ["src/ui/StatsScreen.jsx (ganze Datei)", () => inkOfJsx("src/ui/StatsScreen.jsx"), 4],
+    ["src/ui/RunDetail.jsx (ganze Datei)", () => inkOfJsx("src/ui/RunDetail.jsx"), 4],
+    ["src/ui/SeedChip.jsx (ganze Datei)", () => inkOfJsx("src/ui/SeedChip.jsx"), 1],
+    ["index.css — .st-* (M7)", () => inkOfCss([/\.st-/]), 3],
+    ["index.css — .rd-* (M7)", () => inkOfCss([/\.rd-/]), 10],
   ];
 
   for (const [name, count, cap] of CAP) {
@@ -713,6 +792,15 @@ describe("#menu-rework — die Kanten-Ratsche (MENU-38): durchsichtige neutrale 
     ["index.css — .up-* (M3)", () => edgeOfCss([/\.up-(?!banner)/]), 0],
     /* Dieselbe Lage wie bei der Tinte: gezaehlt, nicht migriert — Begruendung dort. */
     ["src/ui/DeckDetail.jsx (ganze Datei, NICHT migriert)", () => edgeOfJsx("src/ui/DeckDetail.jsx"), 0],
+    /* #menu-rework M7. Die CSS-Seite beider Screens steht auf null, und diese Null ist ein
+       ERREICHTER Zustand: die durchsichtigen neutralen Kanten von `.st-box`, `.rd-bf`, `.rd-blist2`
+       und den geteilten Kacheln sind auf `--ed-quiet` gezogen — dieselbe Umstellung, die M2a
+       gemessen (rund 9/255) und der Owner abgenommen hat, und die M3 vierzehnmal gezogen hat. */
+    ["src/ui/StatsScreen.jsx (ganze Datei)", () => edgeOfJsx("src/ui/StatsScreen.jsx"), 0],
+    ["src/ui/RunDetail.jsx (ganze Datei)", () => edgeOfJsx("src/ui/RunDetail.jsx"), 0],
+    ["src/ui/SeedChip.jsx (ganze Datei)", () => edgeOfJsx("src/ui/SeedChip.jsx"), 0],
+    ["index.css — .st-* (M7)", () => edgeOfCss([/\.st-/]), 0],
+    ["index.css — .rd-* (M7)", () => edgeOfCss([/\.rd-/]), 0],
   ];
 
   for (const [name, count, cap] of CAP) {
