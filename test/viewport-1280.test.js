@@ -112,9 +112,9 @@ describe("#viewport-1280 — the threshold moved completely", () => {
     /* `ui/tutorial` stood here until the guided run was retired and the directory ceased to exist.
        It was one of five SAMPLES of "the walk descends"; the property it sampled is still covered —
        `ui/fx/cardFx` proves three levels, `ui/indicators` two. When `src/ui/tutorial-sections/`
-       lands, add it here: a fifth sample costs nothing and this list is the only thing standing
-       between a flat walk and a file of vacuous assertions. */
-    for (const deep of ["ui/fx/cardFx", "ui/indicators", "i18n", "game"]) {
+       landed with T1, so it is back in the list — added at INTEGRATION, because neither branch could
+       see the other's change: T2 removed the directory, T1 created its successor. */
+    for (const deep of ["ui/fx/cardFx", "ui/indicators", "ui/tutorial-sections", "i18n", "game"]) {
       expect(FILES.some((f) => f.rel.startsWith(deep + "/")), `the walk never reached src/${deep}/`).toBe(true);
     }
   });

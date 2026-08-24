@@ -5339,6 +5339,7 @@ b, strong { font-weight: 600; }
   .as-actbtn,
   .up-close, .gd-close, .gl-close, .cz-close, .st-close, .lb-head > button { border-radius: 6px; }
 
+
   /* #up-untertitel — der Archetyp-Untertitel im Baum bricht UM statt abzuschneiden.
      Er stand auf `white-space: nowrap` + Ellipse, weil der „Leitfaden ›"-Knopf die rechte Ecke braucht.
      Der Blitz-Text ist mit Abstand der längste und wurde damit auf jedem realen Fenster gekürzt — mitten
@@ -6147,3 +6148,14 @@ b, strong { font-weight: 600; }
     --text-figure-3: var(--text-figure);
   }
 }
+
+/* #tut-tippziel — 44 px für alles, was in den Tutorial-Sektionen eine Entscheidung trägt.
+   GEMESSEN: `ActionButton` steht app-weit auf `py-2.5` und ergibt damit 42 px; im echten Glossar
+   misst der Schließen-Knopf ebenfalls 42 und die Kategorie-Chips 26,5. design-sprache.md §4 nennt
+   44 px, ist aber ausdrücklich auf ≥ 1280 px bezogen — für das Telefon gibt es bislang keine Regel
+   (planning-report.md §5, H2).
+   BEWUSST NUR HIER, nicht an `.as-actbtn` selbst: die Metrik einer app-weit benutzten Komponente
+   unter dem Deckmantel eines neuen Features zu ändern, wäre genau die Drift, gegen die das
+   Design-Dokument steht. Ob 44 px für die ganze App gelten, entscheidet §11 (T9) — dann fällt diese
+   Regel hier wieder weg. */
+.tut-card .as-actbtn { padding-top: 11.5px; padding-bottom: 11.5px; }

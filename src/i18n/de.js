@@ -1077,6 +1077,38 @@ export default {
   "milestone.next": "→ {at} +{sp}",
   "milestone.title.max": "Alle Score-Meilensteine erreicht",
   "milestone.title.next": "Nächster Meilenstein: {at} (+{sp} SP)",
+  /* ===================== TUTORIAL-SEKTIONEN (#tutorial-sections) =====================
+     Die Sektionen sind die dritte Lehr-Ebene: Glossar = nachschlagen · Leitfaden = Strategie ·
+     Tutorial = einmal machen. Eine Lektion sind DREI Takte — ein Satz, ein Bild oder Probierfeld,
+     ein Merksatz — und höchstens 400 px bei 390 × 844 auf Deutsch (Budget in catalog.js).
+     Deutsch ist die Budget-Sprache, weil sie die längere von beiden ist.
+     Zahlen NIE abtippen: Platzhalter aus constants.js (text-style-guide.md §4). */
+  "tut.eyebrow": "Tutorial",
+  "tut.title": "Lerne Autostich",
+  "tut.sub": "Einzelne Themen, jedes in einer Minute.",
+  "tut.merksatz": "Merksatz",
+  "tut.back": "Zurück",
+  "tut.next": "Weiter",
+  "tut.progress": "{n} / {total}",
+  "tut.allTopics": "Alle Themen",
+  "tut.openGlossary": "Glossar öffnen",
+  "tut.probe.title": "Probierfeld · ein Segment",
+  "tut.probe.readout": "Erkannt",
+  "tut.probe.none": "keine Formation",
+  // -- Sektionen und ihre Platzhalter-Lektionen (T1 baut die Schale; T3-T8 füllen sie) --
+  "tut.grundlagen.title": "Grundlagen",
+  "tut.grundlagen.sub": "Was Autostich ist, wie ein Stich läuft, wovon dein Score kommt.",
+  "tut.grundlagen.wasist.title": "Was ist Autostich",
+  "tut.grundlagen.wasist.0": "Dein Deck spielt von selbst gegen ein zweites, Karte gegen Karte. Du greifst nicht in den Stich ein — du baust vorher das Deck, das ihn gewinnt.",
+  "tut.grundlagen.wasist.1": "Fünf deiner Positionen — ein Segment.",
+  "tut.grundlagen.wasist.2": "Es gibt kein Verlieren. Es gibt nur mehr oder weniger Score.",
+  "tut.aufstellung.title": "Aufstellung",
+  "tut.aufstellung.sub": "Kartenreihenfolge, Energie, Formationen, Segmente.",
+  "tut.aufstellung.formationen.title": "Was sind Formationen",
+  "tut.aufstellung.formationen.0": "Eine Formation ist ein Muster in deiner Kartenreihenfolge. Erkennt das Spiel eins, multipliziert es den Score.",
+  "tut.aufstellung.formationen.1": "Tippe zwei Karten an, um sie zu tauschen.",
+  "tut.aufstellung.formationen.2": "Der Multiplikator zählt nur, wenn du den Stich auch gewinnst.",
+
   /* ===================== TUTORIAL =====================
      Die 42 Schlüssel des geführten Laufs sind mit ihm gegangen (Rückbau T2). Was hier steht, sind die
      HUB-EINSTIEGE — sie überleben den Rückbau, weil StartScreen.jsx sie weiter aufruft. Der Handler

@@ -77,6 +77,8 @@ describe("i18n · Katalog-Parität", () => {
     "start.tile.upgrades",   // „Upgrades" ist im Deutschen der etablierte Begriff (§3.5)
     "start.board.last.none", // Gedankenstrich als Platzhalter „noch kein Lauf" — Zeichen, kein Wort
     "start.tutorial",        // „Tutorial" ebenso — dasselbe Wort in beiden Sprachen
+    "tut.eyebrow",           // dito — die Kopfzeile der Tutorial-Sektionen
+    "tut.progress",          // „{n} / {total}" — nur Zahlen und ein Schrägstrich
     "upgrades.tab.decks",    // „Decks" — dasselbe Wort in beiden Sprachen
     "upgrades.nav.decks",    // dito — Überschrift der Deck-Spalte in der Desktop-Fassung
     "upgrades.deckLead",     // „Deck" — dasselbe Wort in beiden Sprachen
@@ -548,7 +550,9 @@ describe("i18n · Ratsche gegen neue deutsche Inline-Texte", () => {
     // #lv-fluegel: die zwei Seitenleisten der Level-up-Karte.
     "src/ui/LevelupWings.jsx",
     // Datenschutz-Hinweis (#datenschutz) — von der ersten Zeile an zweisprachig gebaut.
-    "src/ui/PrivacyModal.jsx"];
+    "src/ui/PrivacyModal.jsx",
+    // Tutorial-Sektionen (#tutorial-sections) — von der ersten Zeile an zweisprachig gebaut.
+    "src/ui/tutorial-sections/TutorialSections.jsx", "src/ui/tutorial-sections/beats.jsx"];
 
   /* In einer migrierten Datei steht KEIN Wort mehr als Literal — egal welcher Sprache. Deshalb
      wird nicht auf „deutsch aussehend" geprüft (das ließe „Normaler Lauf" durch, kein Umlaut),
