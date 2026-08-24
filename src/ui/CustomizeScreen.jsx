@@ -1383,8 +1383,12 @@ function PacksView({ p, deckId, list, cat, onOpen, onEquip = null, options = nul
   return (
     <>
       {!challenge && options && onOption && (
+        /* #menu-rework M2b: die AUS-Hälfte kommt aus dem Vokabular — die Zeile ist ein in das Panel
+           eingelassener Kasten (`--sf-sunken`) mit einer leisen Kante (`--ed-quiet`). Die AN-Hälfte
+           bleibt Literal und ist als MENU-46 gemeldet: eine akzentgetönte Zustandsfläche mit ihrer
+           Kante ist keine der fünf Achsen, und das Fenster ist zu. */
         <div className="mt-3 rounded-xl p-3 flex items-center gap-3"
-          style={{ background: randomOn ? "#1a1330" : "#14131c", border: `1px solid ${randomOn ? "#9b82f0aa" : "#2a2836"}` }}>
+          style={{ background: randomOn ? "#1a1330" : "var(--sf-sunken)", border: `1px solid ${randomOn ? "#9b82f0aa" : "var(--ed-quiet)"}` }}>
           <div className="flex-1 min-w-0">
             <div className="text-body-3 font-extrabold">{t("shop.randomDeck.title")}</div>
             <div className="text-meta-3 leading-snug" style={{ color: "#9a97ab" }}>{t("shop.randomDeck.desc")}</div>
@@ -1392,9 +1396,12 @@ function PacksView({ p, deckId, list, cat, onOpen, onEquip = null, options = nul
           <button type="button" role="switch" aria-checked={randomOn} aria-label={t("shop.randomDeck.aria")}
             onClick={() => onOption({ randomDeckEachRun: !randomOn })}
             className="relative shrink-0 rounded-full transition-colors"
-            style={{ width: 46, height: 26, background: randomOn ? "#9b82f0" : "#2a2836", border: `1px solid ${randomOn ? "#b9a6ff" : "#3a3a44"}` }}>
+            /* Derselbe Schalter wie `.op-switch` im Optionen-Screen, bis auf die Zahlen: 46 × 26 mit
+               einem 20 × 20-Knopf. Die AUS-Hälfte nimmt jetzt dieselben Schritte (`--ctl-off`,
+               `--ctl-edge`, `--ctl-knob`) — ein Widget, eine Fassung. Die AN-Hälfte ist MENU-46. */
+            style={{ width: 46, height: 26, background: randomOn ? "#9b82f0" : "var(--ctl-off)", border: `1px solid ${randomOn ? "#b9a6ff" : "var(--ctl-edge)"}` }}>
             <span className="absolute top-1/2 rounded-full transition-all"
-              style={{ width: 20, height: 20, background: "#fff", transform: "translateY(-50%)", left: randomOn ? 23 : 3 }} />
+              style={{ width: 20, height: 20, background: "var(--ctl-knob)", transform: "translateY(-50%)", left: randomOn ? 23 : 3 }} />
           </button>
         </div>
       )}
@@ -1413,7 +1420,7 @@ function PacksView({ p, deckId, list, cat, onOpen, onEquip = null, options = nul
             Beschriftung = was der NÄCHSTE Klick tut (sortLabelKey), nicht der aktuelle Zustand. */}
         {onSort && (
           <>
-            <span aria-hidden className="self-stretch w-px mx-0.5 rounded" style={{ background: "#2a2a34" }} />
+            <span aria-hidden className="self-stretch w-px mx-0.5 rounded" style={{ background: "var(--ed-quiet)" }} />
             {/* KEINE Aktiv-Kante wie bei den Filtern: die trüge hier eine Lüge — sie säße neben der
                 Beschriftung des NÄCHSTEN Klicks („Preis" leuchtet, sortiert ist aber nach Farbe).
                 Die Rückmeldung ist die Umsortierung der Kacheln selbst. */}
@@ -1485,7 +1492,7 @@ function PacksView({ p, deckId, list, cat, onOpen, onEquip = null, options = nul
         <div className="text-center text-body-1 py-6" style={{ color: "#6d6a80" }}>{t("shop.emptyView")}</div>
       )}
 
-      <p className="text-meta-3 mt-4 leading-snug pt-3" style={{ color: "#9a97ab", borderTop: "1px solid #2a2836" }}>
+      <p className="text-meta-3 mt-4 leading-snug pt-3" style={{ color: "#9a97ab", borderTop: "1px solid var(--ed-quiet)" }}>
         {challenge
           ? t("shop.hint.challenge")
           : t("shop.hint.pack")}
@@ -1644,20 +1651,20 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
             <>
               {/* Großes Preview mit ‹ › — feste Höhe (Karte↔BF springt nicht) */}
               <div className="flex items-center gap-2" style={{ height: 252 }}>
-                <button onClick={() => onStep(-1)} className="shrink-0 grid place-items-center rounded-full text-body-lg-3" style={{ width: 30, height: 30, background: "#20202c", border: "1px solid #3a3a46" }}>‹</button>
+                <button onClick={() => onStep(-1)} className="shrink-0 grid place-items-center rounded-full text-body-lg-3" style={{ width: 30, height: 30, background: "var(--ctl-face-on)", border: "1px solid var(--ctl-edge)" }}>‹</button>
                 <div className="flex-1 min-w-0 h-full flex items-center justify-center">
                   {activeSel === "bg"
                     ? <BfPreview bfId={viewPack.bfId} a1={viewPack.a1} className="w-full" showVersion />
                     : <CardPreview deckId={viewPack.deckId} a1={viewPack.a1} face={activeSel} className="h-[248px] max-h-[46vh]" />}
                 </div>
-                <button onClick={() => onStep(1)} className="shrink-0 grid place-items-center rounded-full text-body-lg-3" style={{ width: 30, height: 30, background: "#20202c", border: "1px solid #3a3a46" }}>›</button>
+                <button onClick={() => onStep(1)} className="shrink-0 grid place-items-center rounded-full text-body-lg-3" style={{ width: 30, height: 30, background: "var(--ctl-face-on)", border: "1px solid var(--ctl-edge)" }}>›</button>
               </div>
 
               {/* Umschalter Karte vorne / hinten / Hintergrund */}
               <div className="flex gap-1.5 justify-center mt-2.5">
                 {segs.map(([k, label]) => (
                   <button key={k} onClick={() => setSel(k)} className="flex-1 max-w-[120px] py-1.5 rounded-lg text-meta-3 font-extrabold transition-colors"
-                    style={{ background: activeSel === k ? "#211f2e" : "#14131c", border: `1px solid ${activeSel === k ? "var(--deck-a1, #9b82f0)" : "#2a2836"}`, color: activeSel === k ? "#e8e6ff" : "#9a97ab" }}>{label}</button>
+                    style={{ background: activeSel === k ? "var(--ctl-face-on)" : "var(--ctl-off-alt)", border: `1px solid ${activeSel === k ? "var(--deck-a1, #9b82f0)" : "var(--ed-quiet)"}`, color: activeSel === k ? "#e8e6ff" : "#9a97ab" }}>{label}</button>
                 ))}
               </div>
             </>
@@ -1675,7 +1682,7 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
                 return (
                   <button key={ti.deckId} onClick={() => setSelDeck(ti.deckId)}
                     className="flex-1 max-w-[96px] py-1.5 rounded-lg text-meta-3 font-extrabold transition-colors"
-                    style={{ background: on ? "#211f2e" : "#14131c", border: `1px solid ${on ? "var(--deck-a1, #9b82f0)" : "#2a2836"}`,
+                    style={{ background: on ? "var(--ctl-face-on)" : "var(--ctl-off-alt)", border: `1px solid ${on ? "var(--deck-a1, #9b82f0)" : "var(--ed-quiet)"}`,
                       color: on ? "#e8e6ff" : (free ? "#c9c6dd" : "#8b88a0") }}>
                     {free ? "" : "🔒 "}{ti.roman}{isEq ? " ✓" : ""}
                   </button>
@@ -1688,7 +1695,7 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
               zählen sie eine Liste ab, die vollständig danebensteht. */}
           {!inline && (
             <div className="flex gap-1.5 justify-center my-2.5">
-              {Array.from({ length: count }).map((_, i) => <span key={i} className="rounded-full transition-all" style={{ width: i === idx ? 16 : 6, height: 6, background: i === idx ? "var(--deck-a1, #9b82f0)" : "#3a3947" }} />)}
+              {Array.from({ length: count }).map((_, i) => <span key={i} className="rounded-full transition-all" style={{ width: i === idx ? 16 : 6, height: 6, background: i === idx ? "var(--deck-a1, #9b82f0)" : "var(--ctl-edge)" }} />)}
             </div>
           )}
           {inline && <div className="mt-3" />}
@@ -1706,9 +1713,9 @@ function PackDetail({ pack, idx, count, p, dpBal, deckId, sel, setSel, onStep, o
             ) : selTierUnlocked ? (
               <button onClick={() => { onActivateTier(pack, selTier); if (!inline) onClose(); }} className="w-full rounded-xl font-extrabold text-body-3 py-3"
                 /* #deckui: Ausrüsten-Angebot in Deckfarbe (war Violett). */
-                style={{ background: "#20202c", border: `1px solid ${STATE_OFF}`, color: "#e8e6ff" }}>{t("shop.tier.activate", { roman: selTier.roman })}</button>
+                style={{ background: "var(--ctl-face-on)", border: `1px solid ${STATE_OFF}`, color: "#e8e6ff" }}>{t("shop.tier.activate", { roman: selTier.roman })}</button>
             ) : (
-              <div className="w-full rounded-xl font-extrabold text-body-1 py-3 text-center leading-snug" style={{ background: "#1c1b24", color: "#9a97ab", border: "1px solid #2e2d38" }}>
+              <div className="w-full rounded-xl font-extrabold text-body-1 py-3 text-center leading-snug" style={{ background: "var(--sf-sunken)", color: "#9a97ab", border: "1px solid var(--ed-quiet)" }}>
                 {t("shop.unlock", { cond: unlockLabel(selTierLock) })}
                 {selTierLock.target > 1 && <span className="opacity-70"> · {fmtNum(selTierLock.cur)} / {fmtNum(selTierLock.target)}</span>}
               </div>
@@ -1861,7 +1868,7 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0, wide = false }) 
         <div className="cz-fxlist mt-3">
           <div className={EYEBROW} style={{ color: "#9a97ab" }}>
             {selGroup.title}
-            <span className="flex-1 h-px" style={{ background: "#2a2836" }} />
+            <span className="flex-1 h-px" style={{ background: "var(--ed-quiet)" }} />
             <span className="normal-case tracking-normal font-semibold text-meta-1" style={{ color: "#6d6a80" }}>{selGroup.hint}</span>
           </div>
           <div className="flex flex-col gap-2">
@@ -1876,7 +1883,7 @@ function FxView({ p, options, onChoose, onBuyFx, stickyTop = 0, wide = false }) 
           </div>
         </div>
 
-        <p className="cz-fxhint text-meta-3 mt-4 leading-snug pt-3" style={{ color: "#9a97ab", borderTop: "1px solid #2a2836" }}>
+        <p className="cz-fxhint text-meta-3 mt-4 leading-snug pt-3" style={{ color: "#9a97ab", borderTop: "1px solid var(--ed-quiet)" }}>
           {t("shop.fx.hint")}
         </p>
       </div>
@@ -1965,11 +1972,11 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
     action = !finDeckOpt ? chooseBtn : (
       <div className="flex flex-col gap-2">
         {chooseBtn}
-        <div className="flex rounded-lg overflow-hidden self-center" style={{ border: "1px solid #33324a" }}>
+        <div className="flex rounded-lg overflow-hidden self-center" style={{ border: "1px solid var(--ctl-edge)" }}>
           {[{ v: false, l: t("shop.color.standard") }, { v: true, l: t("shop.color.deck") }].map((o) => {
             const on = finDeckOn === o.v;
             return <button key={o.l} onClick={() => onChoose({ [finDeckOpt]: o.v })} className="px-3.5 py-1.5 text-meta-3 font-extrabold"
-              style={{ background: on ? "#211f2e" : "#16151f", color: on ? "#e8e6ff" : "#8a879a" }}>{o.l}</button>;
+              style={{ background: on ? "var(--ctl-face-on)" : "var(--ctl-off-alt)", color: on ? "#e8e6ff" : "#8a879a" }}>{o.l}</button>;
           })}
         </div>
       </div>
@@ -1986,21 +1993,21 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
       action = !deckOpt ? chooseBtn : (
         <div className="flex flex-col gap-2">
           {chooseBtn}
-          <div className="flex rounded-lg overflow-hidden self-center" style={{ border: "1px solid #33324a" }}>
+          <div className="flex rounded-lg overflow-hidden self-center" style={{ border: "1px solid var(--ctl-edge)" }}>
             {[{ v: false, l: t("shop.color.standard") }, { v: true, l: t("shop.color.deck") }].map((o) => {
               const on = deckTintOn === o.v;
               return <button key={o.l} onClick={() => onChoose({ [deckOpt]: o.v })} className="px-3.5 py-1.5 text-meta-3 font-extrabold"
-                style={{ background: on ? "#211f2e" : "#16151f", color: on ? "#e8e6ff" : "#8a879a" }}>{o.l}</button>;
+                style={{ background: on ? "var(--ctl-face-on)" : "var(--ctl-off-alt)", color: on ? "#e8e6ff" : "#8a879a" }}>{o.l}</button>;
             })}
           </div>
           {fx.key === "cubematrix" && (
             <div className="flex flex-wrap gap-2 justify-center">
               {/* #317 Würfel-Optik: gefüllt (solide) vs. nur leuchtende Neon-Rahmen (Drahtgitter, keine Füllung). */}
-              <div className="flex rounded-lg overflow-hidden" style={{ border: "1px solid #33324a" }}>
+              <div className="flex rounded-lg overflow-hidden" style={{ border: "1px solid var(--ctl-edge)" }}>
                 {[{ v: false, l: t("shop.cube.filled") }, { v: true, l: t("shop.cube.wire") }].map((o) => {
                   const on = wireOn === o.v;
                   return <button key={o.l} onClick={() => onChoose({ fxCubeMatrixWire: o.v })} className="px-3 py-1.5 text-meta-3 font-extrabold"
-                    style={{ background: on ? "#211f2e" : "#16151f", color: on ? "#e8e6ff" : "#8a879a" }}>{o.l}</button>;
+                    style={{ background: on ? "var(--ctl-face-on)" : "var(--ctl-off-alt)", color: on ? "#e8e6ff" : "#8a879a" }}>{o.l}</button>;
                 })}
               </div>
             </div>
@@ -2015,11 +2022,11 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
     action = !deckOpt ? chooseBtn : (
       <div className="flex flex-col gap-2">
         {chooseBtn}
-        <div className="flex rounded-lg overflow-hidden self-center" style={{ border: "1px solid #33324a" }}>
+        <div className="flex rounded-lg overflow-hidden self-center" style={{ border: "1px solid var(--ctl-edge)" }}>
           {[{ v: false, l: t("shop.color.standard") }, { v: true, l: t("shop.color.deck") }].map((o) => {
             const on = deckTintOn === o.v;
             return <button key={o.l} onClick={() => onChoose({ [deckOpt]: o.v })} className="px-3.5 py-1.5 text-meta-3 font-extrabold"
-              style={{ background: on ? "#211f2e" : "#16151f", color: on ? "#e8e6ff" : "#8a879a" }}>{o.l}</button>;
+              style={{ background: on ? "var(--ctl-face-on)" : "var(--ctl-off-alt)", color: on ? "#e8e6ff" : "#8a879a" }}>{o.l}</button>;
           })}
         </div>
       </div>
@@ -2028,11 +2035,11 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
     // #328 Skill-Effekt (immer aktiv) → KEIN „auswählen"-Button, nur die Farbwahl als Segmented-Control (schreibt archColor).
     action = (
       <div className="flex justify-center">
-        <div className="flex rounded-lg overflow-hidden" style={{ border: "1px solid #33324a" }}>
+        <div className="flex rounded-lg overflow-hidden" style={{ border: "1px solid var(--ctl-edge)" }}>
           {[{ v: "standard", l: t("shop.color.standard") }, { v: "deck", l: t("shop.color.deck") }].map((o) => {
             const on = spezialSel === o.v;
             return <button key={o.v} onClick={() => onChoose(spezialFlags(o.v))} className="px-3.5 py-1.5 text-meta-3 font-extrabold"
-              style={{ background: on ? "#211f2e" : "#16151f", color: on ? "#e8e6ff" : "#8a879a" }}>{o.l}</button>;
+              style={{ background: on ? "var(--ctl-face-on)" : "var(--ctl-off-alt)", color: on ? "#e8e6ff" : "#8a879a" }}>{o.l}</button>;
           })}
         </div>
       </div>
@@ -2056,7 +2063,7 @@ function FxStage({ fx, group, p, active, onChoose, onBuyFx, options }) {
           (`--bf-ratio`, s. .cz-fxpreview in index.css); der Handy-Deckel hier ist inline und braucht
           deshalb `!important` drüben. */}
       <div ref={previewRef} className="cz-fxpreview relative w-full rounded-xl overflow-hidden"
-        style={{ height: "clamp(146px, 22vh, 208px)", border: "1px solid #34324a", "--bf-ratio": BOARD_RATIO_CSS }}>
+        style={{ height: "clamp(146px, 22vh, 208px)", border: "1px solid var(--ed-strong)", "--bf-ratio": BOARD_RATIO_CSS }}>
         {/* #313: Der Key trägt den Farbmodus mit → beim Toggle Standard↔Deckfarbe remountet die Vorschau sofort
             (frische Effekt-Bühne mit der neuen Farbe). Ohne das übernahm der Effekt-Canvas den
             Farbwechsel nicht, man musste erst weg- und zurückwechseln. Für Effekte ohne Farbmodus bleibt deckTintOn
