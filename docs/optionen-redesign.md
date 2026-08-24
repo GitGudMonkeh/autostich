@@ -20,6 +20,8 @@ Spieler-Optionen — siehe *Deck-Tönung*.
 Bezug: die Fassung **ab 1280 px** (drei Panels nebeneinander). Die schmale Fassung ist nicht Teil
 dieses Entwurfs; siehe *Abgrenzung*.
 
+> **Grünton:** Die Rolle „an / gekauft“ ist `#54e08a`. Der zuvor hier genannte Ton `#5ab87a` ist die Fraktionsfarbe von Pflanze und bleibt Inhalt — Begründung in `docs/design-sprache.md` §3.
+
 ---
 
 ## Ausgangsproblem
@@ -137,7 +139,7 @@ ist jeweils weniger, das Klickziel ist die volle Höhe.
 | Spur | 46 × 26 px, vollrund |
 | Klickfläche | 46 × 44 px |
 | Griff | 20 × 20 px, `#f2f2f4`, 2 px Innenabstand an beiden Enden |
-| an | Fläche und Rand `#5ab87a` |
+| an | Fläche und Rand `#54e08a` |
 | aus | Fläche `#30303a`, Rand `#3a3a44` |
 | gesperrt | Zustandsbild bleibt, Deckkraft 42 %, nimmt keine Eingabe an — **auch nicht per Tastatur** |
 
@@ -192,7 +194,7 @@ Grün bleibt den Schaltern vorbehalten, Gold der Währung.
 
 ### Zeilen-Zeichen
 
-28 × 28 px Kachel, Radius 8, Zeichen 16 px. Farbe folgt dem Zeilenzustand: **an `#5ab87a`**,
+28 × 28 px Kachel, Radius 8, Zeichen 16 px. Farbe folgt dem Zeilenzustand: **an `#54e08a`**,
 **aus / gesperrt `#3a3a48`**; der Rand ist eine 42-%-Mischung derselben Farbe, die Fläche
 `rgba(255,255,255,.03)`.
 

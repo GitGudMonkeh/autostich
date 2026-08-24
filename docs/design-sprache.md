@@ -14,7 +14,7 @@ Zugehörige Aufträge, die auf diesem Dokument aufsetzen:
 | Optionen | `docs/optionen-redesign.md` |
 | Feedback-Melder | `docs/feedback-redesign.md` |
 | Mainscreen & Marke | `docs/mainscreen-marke.md` |
-| Upgrade-Baum | in Arbeit — Reiter für Reiter |
+| Upgrade-Baum | alle vier Schritte entschieden: Kopf & Legende, Allgemein-Seite, Fraktionsseite, Legendär-Phase |
 
 Mockups: https://claude.ai/code/artifact/2e09b642-9197-42b1-81c5-dd41618c5ad8 (Marke, Mainscreen,
 Melder, Baum) und https://claude.ai/code/artifact/c8328e42-db0b-411f-b26e-ec72a60a17ec (Optionen).
@@ -68,6 +68,11 @@ abgesetzt werden muss (Auswertungskasten, Zusammenfassung), trennt ihn eine **Li
 Der Grund ist im Vergleich Optionen ↔ Upgrade-Baum sichtbar geworden: bei gleichen Werten wirkte der
 Baum kräftiger, weil er zwei Tönungsebenen übereinander legte. Eine Ebene reicht.
 
+**Damit endet jede Seite gleich:** ein abschließender Bereich — Auswertung, Zusammenfassung, ein
+Verweis — hängt als Sektion mit Trennlinie am Fuß des Panels, nicht als Kasten darin. Zwei Fälle im
+Baum: der Auswirkungs-Kasten der Allgemein-Seite und die Challenge der Fraktionsseite
+(`.up-impact`, `.up-chall` — beide heute mit eigener Fläche `#12121a` und eigenem Rahmen).
+
 ### Sektions-Überschrift
 
 ```
@@ -90,6 +95,13 @@ border: 1px solid rgba(150, 150, 170, .12);
 
 - Titel: `13.5px / 600 / #e8e8ea`
 - Beschreibung: `12px / line-height 1.38 / #8a8a95`, `margin-top: 2px`
+
+**Eine Farbkante an einer Zeile muss etwas unterscheiden.** Tragen alle Zeilen einer Liste dieselbe
+Kante, unterscheidet sie nichts und summiert nur zu einer Farbwolke — die Beobachtung, aus der
+`#kante-anlauf` entstanden ist. Fundstelle: die 17 Fähigkeiten der Fraktionsseite tragen alle die
+Kante ihrer Fraktion, auf einer Seite, die nur diese Fraktion zeigt (`index.css:2571`). Dort bleiben
+die 17 neutral, und die vier legendären behalten ihre goldene Kante — damit sagt Gold auf der Seite
+wieder etwas.
 
 ### Haarlinie
 
@@ -158,7 +170,7 @@ Das ist die wichtigste Seite dieses Dokuments. Eine Farbe, eine Rolle.
 | --- | --- | --- |
 | **Struktur / Chrome** | **die Deckfarbe** `var(--deck-a1)` | Eyebrows, Sektions-Überschriften, Lane-Überschriften, Haarlinie, Aktiv-Kante der Auswahl, Regler-Füllung, Haken im Dropdown, Panel-Tönung |
 | **Kaufbar / Währung** | Gold | Preisschilder, Kaufen-Knopf, SP-Guthaben |
-| **An / gekauft** | Grün `#5ab87a` | Schalter „an", gekaufte Knoten, Zeichenkachel einer aktiven Zeile |
+| **An / gekauft** | Grün `#54e08a` | Schalter „an", gekaufte Knoten, Zeichenkachel einer aktiven Zeile |
 | **Gesperrt** | Grau `#8a8a95` / `#3a3a48` | Zeichen und Marken gesperrter Zeilen |
 | **Inhalt** | Raritätstöne (`tierColor`), Fraktionsfarben (`FACTION_GLOW`) | nur dort, wo die Farbe **das Gemeinte ist** — eine blaue Rarität, eine Fraktions-Identität |
 
@@ -168,6 +180,21 @@ anwendet — mit dem Kommentar *„Struktur, kein Spiel-Signal"*. Der Desktop zi
 
 **Cyan `#26c6e6` gehört dem Hub.** Laut `#ruhe` ist es dort die Handlungsfarbe und die einzige auf
 voller Sättigung. Es darf in Menüs nicht für Beschriftungen ausgegeben werden.
+
+**Das Grün der Rolle ist `#54e08a`, nicht `#5ab87a`.** Dieses Dokument hat zuerst den falschen Ton
+genannt. `#5ab87a` ist im Code dreifach als **Inhalt** belegt — Fraktion Pflanze
+(`FactionIcon.jsx:34`, `skills.js:287`, `glossary.js:43`), die Kartenfarbe „Grün"
+(`constants.js:717`) und eine Perk-Kategorie (`perks.js:50`). Eine Farbe, eine Rolle: dieser Ton hat
+schon drei, und keine davon ist „Zustand". Auf der Pflanzen-Seite des Baums fielen Rollenfarbe und
+Fraktions-Identität deshalb zusammen.
+
+`#54e08a` **ist** die Zustandsfarbe, schon heute und dreimal: `STATE_ON` „ausgerüstet / läuft
+gerade" (`CustomizeScreen.jsx:71`), `GRUEN` „gekauft" (`UpgradeScreen.jsx:35`) und das Häkchen im
+Melder (`FeedbackModal.jsx:139`). Der hellere, sattere Ton sitzt zudem **über** den Pigmenttönen
+statt zwischen ihnen — genau das, was ein Zustandslicht tun soll.
+
+Dazu, damit es nicht wieder abgeleitet wird: das **Aktiv-Abzeichen** der Werkstatt ist
+Fläche `#123a25` · Schrift `#54e08a` · Rand `#2f7a4f` (`CustomizeScreen.jsx:1430`).
 
 **Zwei Goldtöne, klar getrennt:** Währung `#d6ab6b`, kaufbare Kante `#d4a63a`. Ein dritter Ton
 (`#f2a83a` mit Schein, heute im Baum-Kopf) entfällt.
@@ -190,7 +217,7 @@ volle Höhe. Diese Regel hat keine Ausnahme.
 | Spur | 46 × 26 px, vollrund |
 | Klickfläche | 46 × 44 px |
 | Griff | 20 × 20 px, `#f2f2f4`, 2 px Innenabstand |
-| an | Fläche und Rand `#5ab87a` |
+| an | Fläche und Rand `#54e08a` |
 | aus | Fläche `#30303a`, Rand `#3a3a44` |
 
 ### Segmented
@@ -255,6 +282,17 @@ gesperrt und tatsächlich fokussierbar ist kein Zustand, sondern eine Falle.
 
 Der Titel sagt **warum** gesperrt ist, nicht nur *dass*: „Kein Lauf zum Anhängen gefunden",
 „öffnet sich mit Rarität · Legendär".
+
+**Der Zustand steht auf dem Bedienelement, nicht erst in einer Erklärung daneben.** Eine Kachel, die
+gesperrt ist und trotzdem ihren Preis in Gold zeigt, sagt „kaufbar" — und die Wahrheit steht dann
+irgendwo anders. Konkret: **Gold nur bei `buy`.** Gesperrt, zu teuer und kaufbar sind drei Zustände
+und brauchen drei Bilder. Anlass: das Kärtchen der Legendär-Phase im Baum zeigte „5 SP" in Gold,
+während sein Gate unerfüllt war; der Grund stand 71 px tiefer und 330 px weiter rechts, in der Seite,
+die gerade offen war (`UpgradeScreen.jsx:515` / `:576`).
+
+Daraus die allgemeine Regel: **erklärt sich ein Element nur woanders, gehört die Erklärung an das
+Element.** Ein Bedienelement, das seinen ganzen Inhalt tragen kann, braucht keine aufklappende Zeile
+in einer anderen Spalte.
 
 ### Abhängigkeiten sichtbar machen
 
@@ -322,4 +360,9 @@ gedämpft und sagt das — sie ist nicht bei null.
 | --- | --- |
 | 24.08.2026 | Angelegt. Fundament, Kopf-Kanon, Farbrollen, Komponenten aus den Aufträgen Optionen, Melder, Mainscreen und Baum-Reiter 1–2 zusammengeführt. |
 | 24.08.2026 | Farbentscheidung Upgrade-Baum: **eine** Struktur-Farbe, und die ist die Deckfarbe. Feste Fremdtöne (Cyan/Violett) für Struktur entfallen. |
+| 24.08.2026 | **Legendär-Phase des Baums (Reiter 4).** Kein Reiter, sondern zwei Kärtchen am Fuß der Navigationsspalte. Sie tragen künftig Text und Zustand selbst; die Detailzeile im Panel entfällt für sie. Marke in Gold nur bei `buy`, gesperrt auf 42 % und aus der Tastatur-Reihenfolge, gekauft mit gezeichnetem Haken in `#54e08a`. Die Höhe hat den ersten Entwurf verworfen: mit Kaufknopf in eigener Zeile lief die Spalte 16 px aus dem Panel (gemessen). Mit dem Knopf **in** der Zeile und ohne den Platzhalter `synLeg` sind es 545 px — einen Pixel weniger als heute, bei 73 px Luft. |
+| 24.08.2026 | Zwei Regeln aus Reiter 4 nachgetragen (§5): **der Zustand steht auf dem Bedienelement**, und **erklärt sich ein Element nur woanders, gehört die Erklärung an das Element.** |
+| 24.08.2026 | **Fraktionsseite des Baums (Reiter 3).** Die Challenge-Karte fällt: sie zeigte bei 1280 × 720 nur ihr Deckbild, 151 px ihres Inhalts waren verborgen (238 px mit angetipptem Knoten). An ihrer Stelle eine 44-px-Zeile am Fuß mit Bedingung, Fortschritt und Verweis auf die Werkstatt, wo dieselben Daten einen eigenen Reiter haben (`CustomizeScreen.jsx:299`/`:1313`). Damit bekommen die Fähigkeiten die volle Breite: 480 → 830 px, zwei Textspuren statt einer, legendäre Kachel 114 → 202 px, Scrollen 4,5× → 2,96×. Gemessen im Produktionsbuild an 1280 × 720 und 1536 × 791, der Vorschlag als Stil-Überzug eingehängt und nachgemessen. |
+| 24.08.2026 | **Die Rolle „an / gekauft" ist `#54e08a`, nicht `#5ab87a`.** Das Dokument hatte sich die Fraktionsfarbe von Pflanze geliehen; `#54e08a` ist im Code längst die Zustandsfarbe. Begründung in §3. Reiner Dokument-Fehler — der Code war richtig. |
+| 24.08.2026 | Zwei Regeln nachgetragen: **jede Seite endet gleich** (abschließender Bereich als Sektion mit Trennlinie, §1) und **eine Farbkante muss etwas unterscheiden** (§1, Zeile). |
 | 24.08.2026 | Panel-Tönung von 9 / 5 % auf **5 / 1 %** zurückgenommen, nach dem direkten Vergleich Optionen ↔ Upgrade-Baum im selben Deck. Dazu die Regel **kein Panel im Panel**: abgesetzte Bereiche bekommen eine Trennlinie statt eines zweiten Rahmens. |

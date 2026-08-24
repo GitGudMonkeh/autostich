@@ -14,6 +14,8 @@ ist nicht Teil dieses Entwurfs; siehe *Abgrenzung*.
 > Komponenten-Maße (Schalter, Segmented, Zeilen, Zeichenkacheln) stehen dort und werden hier **nicht
 > wiederholt**. Dieses Dokument beschreibt nur, was am Melder anders wird.
 
+> **Grünton:** Die Rolle „an / gekauft“ ist `#54e08a`. Der zuvor hier genannte Ton `#5ab87a` ist die Fraktionsfarbe von Pflanze und bleibt Inhalt — Begründung in `docs/design-sprache.md` §3.
+
 ---
 
 ## Ausgangsproblem
@@ -102,7 +104,7 @@ Rückfall-Schrift anders aus.
 
 | Zustand | Bild |
 | --- | --- |
-| Lauf vorhanden | Zeichenkachel grün (`#5ab87a`), Schalter an, Titel nennt Seed und Durchlauf |
+| Lauf vorhanden | Zeichenkachel grün (`#54e08a`), Schalter an, Titel nennt Seed und Durchlauf |
 | Kein Lauf | Zeile auf **42 % Deckkraft**, Zeichenkachel stumm (`#3a3a48`), Schalter gesperrt und nicht fokussierbar, Titel „Kein Lauf zum Anhängen gefunden" |
 
 Das ist exakt der Sperr-Zustand aus dem Optionen-Kanon — kein Sonderfall, sondern dieselbe Regel.

@@ -68,8 +68,12 @@ These are settled. Do not re-open them without a reason.
 2. **No panel inside a panel.** Nested areas get a top divider, never a second frame.
 3. **One structural colour, and it is the deck colour.** Fixed foreign hues (cyan `#26c6e6`,
    violet `#9b82f0`) are out for structure. Cyan belongs to the hub as the action colour (`#ruhe`).
-4. **Colour roles:** deck = structure · gold = buyable/currency · green `#5ab87a` = on/owned ·
+4. **Colour roles:** deck = structure · gold = buyable/currency · green **`#54e08a`** = on/owned ·
    grey = locked · rarity and faction colours only where the colour *is* the content.
+   *Revised 24.08.2026:* the role green was `#5ab87a` until it was noticed that this is the plant
+   faction's own hex (`FactionIcon.jsx:34`), the "Grün" card colour (`constants.js:717`) and a perk
+   category (`perks.js:50`). `#54e08a` is already the state colour in code (`CustomizeScreen.jsx:71`,
+   `UpgradeScreen.jsx:35`). A document error, not a code error — see `docs/design-sprache.md` §3.
 5. **Head canon:** eyebrow · title · subline on the left, action zone **top-aligned**
    (`align-items: start`), close always last, one build at 44 px.
 6. **Everything interactive is 44 px tall.** No exceptions.
@@ -90,8 +94,11 @@ Working through it **tab by tab, desktop only**. Steps 1 and 2 are designed; 3 a
 | --- | --- |
 | 1 — Head & legend | designed |
 | 2 — Allgemein page | designed, including colour and impact box |
-| **3 — Faction page** | **next** |
-| 4 — Legendary phase | not started |
+| 3 — Faction page | designed and measured — artboard *Baum 3/4* |
+| 4 — Legendary phase | designed and measured — artboard *Baum 4/4* |
+
+**All four steps are done.** What is open is no longer design but the branch question in §5 and the
+two spec items below (the `gate` mechanism and the `de.js:1025` glyph).
 
 ### Facts already established about the tree (*measured*)
 
@@ -119,12 +126,115 @@ Working through it **tab by tab, desktop only**. Steps 1 and 2 are designed; 3 a
 - `node.*` catalog keys exist **only in `enMeta.js`**. The German node text is the hardcoded fallback
   in `progression.js`.
 
-### Faction page — what to look at first (not yet analysed in depth)
+### Faction page — decided 24.08.2026 (*measured*, production build, real CDP viewport)
+
+The page is **884 × 618 px** at 1280×720 and 1140 × 689 at 1536×791. Nothing overflows: the document
+scrolls 0 px in all 16 measured cells, so the `#flach` clamp holds here too. The subtitle is never
+truncated (2 lines at 1280, 1 at 1536) — `#up-untertitel` is fine.
+
+**Decision: the `ChallengeBox` goes; a 44 px line at the foot replaces it.** Why:
+
+- At 1280×720 the card is 402 px tall visible against 553 px of content — **151 px hidden**, and
+  **238 px** with a node selected. The deck image alone is 290 × 401 px, so what is hidden is
+  everything that says anything: name, condition, bar, counter. At 1536×791 it is still 80 / 167 px.
+- The card is a **panel inside a panel** (`index.css:2582`), which §1 of the design language rules out.
+- The information is **not lost**: the Werkstatt has its own Challenges tab and all four faction decks
+  are in it — `CHALLENGES_TAB` (`CustomizeScreen.jsx:299`), rendered at `:1313`, condition and
+  progress at `:1441` and `:1528`, from the same `packUnlock()` the tree uses. `feuer`, `eis`,
+  `blitz`, `pflanze` are all `kind: "cond"` (*verified*).
+- A separate tree tab was **rejected**: a second entrance to a list that already exists — the same
+  reasoning that removed the "Details ›" button (`UpgradeScreen.jsx:552`).
+
+**Measured outcome** (proposal injected as a style overlay into the real screen, then re-measured):
+
+| at 1280 × 720 | today | proposal |
+| --- | --- | --- |
+| skill width | 480 px | 830 px |
+| tracks | 1 | 2 (411 px cards) |
+| legendary tile | 114 px | 202 px |
+| skill window | 404 px | 344 px |
+| scroll | 4,5× (5,8× selected) | 2,96× (3,96× selected) |
+
+All four factions: 2,7–3,0× instead of 4,1–4,5×. At 1536×791: three tracks, 1086 px, 1,8–1,9×
+instead of 2,1–2,3×, legendary tile 266 px. Last element at 693 px against a panel edge at 707 px.
+
+**Two further findings recorded in the artboard:**
+
+- The legend paints "owned" in `UI1` = `var(--deck-a1)` (`UpgradeScreen.jsx:369`, line 42) while the
+  faction page paints owned nodes in `FACTION_GLOW[arch]` (`nodeAccent`, line 62, called at line 562).
+  The dot never carries the colour it names.
+- All 17 skill tiles carry the same faction edge (`index.css:2571`) on a page that shows only that
+  faction. They go neutral; the four legendary ones keep gold.
+
+**Correction to §3 above:** "the same node in two colours" applies to the **Allgemein** page only. On
+the faction page `nodeAccent(selDeskNode, VI)` (`UpgradeScreen.jsx:578`) returns the same value as the
+grid, because every chain node carries `n.arch` and the lane colour never applies.
+
+**Also verified, because it looks like an invisible dependency and is not one:** the faction
+`Legendär I/II` nodes do **not** depend on `legLayer` — `fireLeg1.prereq: null`,
+`iceLeg1.prereq: "iceDeck"`, and `archLegPhaseOn` (`progression.js:191`) is set by the faction nodes
+alone. "Legendär" simply means three different things on this screen (faction candidates
+`progression.js:60–71`, the nav section `UpgradeScreen.jsx:508`, and the legendary *perk* layer
+`progression.js:89`). A naming problem for the spec, not a mechanics hole.
+
+Measurement scripts are session-scoped and were not committed; they drive the app through
+`scripts/cdp.mjs` against a production build on port 5188, navigate hub tile 0 → `.up-navrow[n]`, and
+read boxes out of the tree. Re-derivable in an hour if the numbers are ever doubted.
+
+### Faction page — what was looked at first
 
 `UpgradeScreen.jsx` around lines 536–572: chain across the top (`up-chain-row`), then `up-facbody`
 with `SkillGrid` and `ChallengeBox`. Known trouble spots recorded in `index.css`: the challenge card
 with the big deck image pulled the whole grid row out of the panel on flat windows, and the skill
 list needed a column flow because the grid clamped descriptions.
+
+### Legendary phase — decided 24.08.2026 (*measured*)
+
+It is **not a tab and not a page**: two tiles at the foot of the nav column
+(`UpgradeScreen.jsx:507`). One buyable node — `deckReroll`, 5 SP — and one placeholder, `synLeg`
+(`progression.js:73` / `:75`).
+
+**Findings:**
+
+- The tile shows **"5 SP" in gold** (`rgb(212,166,58)`, *measured*) while the node is gated. The mark
+  only distinguishes `owned` / `placeholder` / everything else (`UpgradeScreen.jsx:515`), so locked,
+  unaffordable and buyable look identical.
+- **A second gating mechanism exists, and §3 above only checked the first.** `deckReroll` hangs on
+  `gate: { type: "anyLeg" }`, not on `prereq` — its own path (`progression.js:155`), its own state
+  `lock-gate` (`:232`), its own sentence. The only occurrence in the tree. The `prereq` conclusion in
+  §3 stands for the Allgemein page; it was never the whole picture.
+- You click in the left column and the answer appears in the right one: *measured* **71 px down and
+  330 px across** at 1280×720 (142 px down at 1536×791), inside whatever page happens to be open —
+  measured identical on the Allgemein page and on a faction page.
+- The detail row's title is the **last violet in the screen**, `rgb(155,130,240)` = `VI`
+  (`nodeAccent` falls through to the lane accent, `UpgradeScreen.jsx:62`). Edge and status line are
+  grey and correct.
+- Selected tile `rgba(255,255,255,.05)` vs active nav row `.07` vs resting `.018` (`index.css:5207`).
+  Two meanings two per cent apart.
+- The locked tile is an ordinary `<button>`, so it is keyboard-reachable — §5 forbids exactly that.
+- `upgrades.state.owned` is `"✓ Gekauft"` — a text glyph in the catalog (`de.js:1025`).
+
+**Decision:** the tile carries its own text and its own state; the detail row goes for these two.
+Gold only on `buy`; locked at 42 % and out of the tab order with a sentence naming the gate
+("öffnet sich mit der ersten Legendär-Stufe einer Fraktion" — `anyLegOwned` wants `legLevel === 1` of
+any faction, `progression.js:151`); owned in `#54e08a` with a drawn check.
+
+**The height decided the shape, not taste** (*measured*, proposal injected as a style overlay):
+
+| nav column | height | air to the panel edge at 1280×720 |
+| --- | --- | --- |
+| today | 546 px | 72 px |
+| proposal at rest | 614 px | 4 px |
+| proposal, buy button on its **own row** | 634 px | −16 px, card overflows 3 px |
+| **buy button in the row, `synLeg` dropped** | **545 px** | **73 px** |
+
+So the buy button replaces the mark in the same row, and `synLeg` goes until it exists — those are
+the 57 px that make the rest fit. Reversing it is one line in the array at `UpgradeScreen.jsx:509`.
+At 1536×791 there are 144 px of air.
+
+**Rejected:** moving the section to the foot of the Allgemein page. `deckReroll` sits in
+`branch: "deck"` and hangs on the faction legendary steps, and in the column it is visible from every
+page — which suits a cross-faction purchase.
 
 ---
 
