@@ -64,7 +64,9 @@ describe("i18n · Katalog-Parität", () => {
     "board.col.pilot",       // Spaltenkopf „Pilot" — in beiden Sprachen dasselbe Wort
     "start.onb.reroll",      // „Reroll" ist im Deutschen bereits das englische Wort
     "options.rfx.mobile",    // Zustandsname, in beiden Sprachen „Mobile"
-    "options.float.score.title", // „↳ Score" — Score bleibt Score (Begriffstabelle §3.1)
+    "options.float.score.title", // „Score" — Score bleibt Score (Begriffstabelle §3.1)
+    "options.sec.display",   // „HUD & Text" — HUD ist auch im Deutschen das englische Kürzel
+    "options.chip.display",  // dito, die Kurzform der Sprungleiste
     "start.progress.onboarding", // „Onboarding" ist im Deutschen der etablierte Begriff (§3.5)
     "start.progress.links",  // reine Zahlenzeile „{done} / {total}"
     "start.board.week.val",  // dito „{have}/{max}" — nur Ziffern und ein Schrägstrich

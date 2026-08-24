@@ -3,7 +3,9 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { OptionsModal } from "../src/ui/OptionsModal.jsx";
 import { setLocale, SOURCE_LOCALE } from "../src/i18n/index.js";
+import { readFileSync } from "node:fs";
 import { DEFAULT_OPTIONS } from "../src/game/storage.js";
+import { DESKTOP_AT } from "./desktopBreakpoint.js";
 
 /* #395: Das Optionen-Overlay ist in vier Sektionen mit klebender Überschrift gegliedert.
    Der Test hält die REIHENFOLGE und die Zuordnung fest — beides ist im Issue festgelegt und
@@ -18,10 +20,26 @@ const ascending = (xs) => xs.every((v, i) => v >= 0 && (i === 0 || v > xs[i - 1]
 describe("Optionen-Overlay — Sektionen (#395)", () => {
   beforeEach(() => setLocale(SOURCE_LOCALE));
 
-  it("rendert die vier Sektionen in der festgelegten Reihenfolge", () => {
+  it("rendert die vier Sektionen in der festgelegten DOM-Reihenfolge", () => {
     const s = html();
     // Auf die ÜBERSCHRIFTEN ankern (…</h3>): die Chip-Marken tragen dieselben Wörter und stehen weiter oben.
-    expect(ascending(orderOf(s, "Allgemein</h3>", "Grafik &amp; Leistung</h3>", "Ton</h3>", "Anzeige</h3>"))).toBe(true);
+    expect(ascending(orderOf(s, "Allgemein</h3>", "Grafik &amp; Leistung</h3>", "Ton</h3>", "HUD &amp; Text</h3>"))).toBe(true);
+  });
+
+  /* #optionen-redesign: Ab 1280 px steht „Ton" ÜBER „Grafik & Leistung". Das macht `order` im
+     Stylesheet und NICHT das DOM — die schmale Fassung ist abgenommen und bleibt Zeile für Zeile,
+     wie sie war. Genau diese Trennung hält der Test darüber (DOM unverändert) zusammen mit dem hier
+     (die Umkehr existiert, und sie existiert im Stylesheet). Fiele einer von beiden weg, wäre die
+     Reihenfolge wieder an einer Stelle, an der sie das Handy mitzieht. */
+  it("die Umkehr Ton/Grafik steht im Stylesheet, nicht im DOM", () => {
+    const css = readFileSync(new URL("../src/index.css", import.meta.url), "utf8");
+    const desk = css.slice(css.indexOf(DESKTOP_AT));
+    const ton = desk.match(/\.op-col2 > \.op-sec\[data-sec="sound"\]\s*\{([^}]*)\}/);
+    const gfx = desk.match(/\.op-col2 > \.op-sec\[data-sec="graphics"\]\s*\{([^}]*)\}/);
+    expect(ton, "die order-Regel fuer die Ton-Sektion fehlt").toBeTruthy();
+    expect(gfx, "die order-Regel fuer die Grafik-Sektion fehlt").toBeTruthy();
+    const n = (m) => Number((m[1].match(/order:\s*(\d+)/) || [])[1]);
+    expect(n(ton), "Ton steht am Desktop nicht mehr oben").toBeLessThan(n(gfx));
   });
 
   it("jede Einstellung sitzt in ihrer Sektion (Zuordnung aus dem Issue)", () => {
@@ -31,11 +49,13 @@ describe("Optionen-Overlay — Sektionen (#395)", () => {
     expect(general).toBeLessThan(sprache);
     expect(sprache).toBeLessThan(haptik);
     expect(haptik).toBeLessThan(graphics);
-    // Ton-Sektion trägt die drei Ton-Zeilen, danach erst „Anzeige".
-    const [ton, stumm, anzeige, zahlen] = orderOf(s, "Ton</h3>", "Ton stumm", "Anzeige</h3>", "Zahlengröße");
-    expect(ton).toBeLessThan(stumm);
-    expect(stumm).toBeLessThan(anzeige);
-    expect(anzeige).toBeLessThan(zahlen);
+    /* Ton-Sektion trägt die drei Ton-Zeilen, danach erst „HUD & Text". Angekert wird auf die
+       Effekt-Lautstärke statt auf die erste Zeile: die heißt seit #optionen-redesign „Ton" und damit
+       genauso wie ihre Sektion — ein Anker, der beides trifft, prüft nichts. */
+    const [ton, sfx, hud, zahlen] = orderOf(s, "Ton</h3>", "Effekt-Lautstärke", "HUD &amp; Text</h3>", "Zahlengröße");
+    expect(ton).toBeLessThan(sfx);
+    expect(sfx).toBeLessThan(hud);
+    expect(hud).toBeLessThan(zahlen);
   });
 
   it("Sprung-Chips: eine Marke je Sektion, die erste ist aktiv", () => {
@@ -53,7 +73,7 @@ describe("Optionen-Overlay — Sektionen (#395)", () => {
   it("englisch: dieselbe Struktur, übersetzte Marken", () => {
     setLocale("en");
     const s = html();
-    expect(ascending(orderOf(s, "General</h3>", "Graphics &amp; performance</h3>", "Sound</h3>", "Display</h3>"))).toBe(true);
+    expect(ascending(orderOf(s, "General</h3>", "Graphics &amp; performance</h3>", "Sound</h3>", "HUD &amp; Text</h3>"))).toBe(true);
     setLocale(SOURCE_LOCALE);
   });
 });

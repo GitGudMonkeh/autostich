@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { phaseCard, PHASE_ACCENTS } from "../src/ui/modalStyle.jsx";
 import { DESKTOP_BLOCK_AT } from "./desktopBreakpoint.js";
+import { themeTokens, resolveStyle } from "./cssTokens.js";
 
 /* ============================================================
    #lv-ruhe (19.08.2026) — Perk- und Skill-Wahl im Desktop-Ton.
@@ -29,15 +30,28 @@ const deskBlock = (() => {
 describe("#lv-ruhe — die Karte ist EINE Fassung mit einem Schalter", () => {
   it("`quiet` nimmt Schein und Rahmenstärke zurück, laut bleibt der Default", () => {
     /* Gerechnet statt verglichen: die zwei Fassungen müssen sich in genau diesen drei Punkten
-       unterscheiden — sonst ist der Schalter da und tut nichts. */
-    const laut = phaseCard(PHASE_ACCENTS.red);
-    const leise = phaseCard(PHASE_ACCENTS.red, undefined, { quiet: true });
+       unterscheiden — sonst ist der Schalter da und tut nichts.
+
+       #menu-rework M1: `phaseCard` gibt seit der Vokabular-Umstellung `var(--el-halo)` &c. zurück
+       statt der Zahlen. Geprüft werden weiter die ZAHLEN — die Referenzen werden dafür durch den
+       @theme-Block aufgelöst (test/cssTokens.js). Auf die Token-NAMEN zu prüfen wäre die schwache
+       Reparatur: sie ginge auch grün durch, wenn das Token `none` hieße. So prüft der Wächter
+       zusätzlich, dass es die Tokens überhaupt gibt — bleibt eines unaufgelöst, steht `var(` im
+       Wert und keine der Zahlen-Zusicherungen greift. */
+    const theme = themeTokens(css);
+    const laut = resolveStyle(phaseCard(PHASE_ACCENTS.red), theme);
+    const leise = resolveStyle(phaseCard(PHASE_ACCENTS.red, undefined, { quiet: true }), theme);
+    for (const [name, v] of [["laut", laut], ["leise", leise]])
+      for (const k of ["background", "border", "boxShadow"])
+        expect(v[k], `${name}.${k} löst nicht auf — ein Token fehlt im @theme-Block: ${v[k]}`)
+          .not.toMatch(/var\(/);
     expect(laut.boxShadow, "die laute Fassung hat ihren farbigen Schein verloren").toMatch(/rgba\(224,85,85/);
     expect(leise.boxShadow, "die leise Fassung leuchtet noch").not.toMatch(/224,85,85/);
-    expect(leise.boxShadow, "ohne Schlagschatten löst sich die Karte nicht mehr vom Brett").toMatch(/rgba\(0,0,0/);
-    expect(laut.border).toMatch(/\.42\)/);
-    expect(leise.border).toMatch(/\.18\)/);
-    expect(leise.background, "der Lichtkegel am Kopf ist nicht schwächer").toMatch(/,\.06\)/);
+    expect(leise.boxShadow, "ohne Schlagschatten löst sich die Karte nicht mehr vom Brett").toMatch(/rgba\(0,\s*0,\s*0/);
+    expect(laut.border).toMatch(/,\s*\.42\)/);
+    expect(leise.border).toMatch(/,\s*\.18\)/);
+    expect(leise.background, "der Lichtkegel am Kopf ist nicht schwächer").toMatch(/,\s*\.06\)/);
+    expect(laut.background, "der laute Lichtkegel ist nicht mehr der kräftigere").toMatch(/,\s*\.14\)/);
   });
 
   it("beide Karten schalten am BREITEN-Gate, nicht am Flügel-Zustand", () => {

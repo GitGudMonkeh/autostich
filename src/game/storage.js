@@ -668,6 +668,39 @@ export function migrateReducedFx(raw) {
   if (REDUCED_FX_VALUES.includes(raw)) return raw;
   return deviceDefaultReducedFx();
 }
+/* #optionen-redesign: EXACTLY the keys the options screen owns, at their defaults.
+
+   The reset button in that screen's footer writes these and nothing else. DEFAULT_OPTIONS also holds
+   the chosen deck, the battlefield, the finisher, the archetype colour and a dozen collapse states —
+   a "reset settings" button that discarded a player's cosmetic choices would be a different button
+   than its label promises. Note the direction: the COSMETIC_OPTION_KEYS reset above clears exactly
+   the set this one leaves alone, and vice versa. Two resets, disjoint, and neither is the other.
+
+   `lang` is deliberately absent. The player just used it to read the button.
+
+   `reducedFx` resolves through deviceDefaultReducedFx() rather than the raw literal, because the
+   effective default is device-dependent (phone "mobile", desktop "aus") and a reset that ignored
+   that would hand a phone the desktop's effect budget.
+
+   `numScale` is 0.75 and that is not a typo: the smallest step is the deliberate default (see the
+   comment at the key itself). */
+export function defaultScreenOptions() {
+  return {
+    muted: DEFAULT_OPTIONS.muted,
+    sfxVol: DEFAULT_OPTIONS.sfxVol,
+    musicVol: DEFAULT_OPTIONS.musicVol,
+    haptics: DEFAULT_OPTIONS.haptics,
+    calmMusic: DEFAULT_OPTIONS.calmMusic,
+    telemetry: DEFAULT_OPTIONS.telemetry,
+    reducedFx: deviceDefaultReducedFx(),
+    hideFloatScore: DEFAULT_OPTIONS.hideFloatScore,
+    hideFloatMult: DEFAULT_OPTIONS.hideFloatMult,
+    hideFloatWinLose: DEFAULT_OPTIONS.hideFloatWinLose,
+    hideBreakdown: DEFAULT_OPTIONS.hideBreakdown,
+    numScale: DEFAULT_OPTIONS.numScale,
+  };
+}
+
 export function loadOptions() {
   try {
     const raw = localStorage.getItem(k("as_options"));

@@ -12,12 +12,16 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { BOARD_W, BOARD_H, CARD_H, BOARD_RATIO_CSS, sceneScale, kartenAnteil } from "../src/ui/fx/previewScale.js";
 import { DESKTOP_AT } from "./desktopBreakpoint.js";
+import { resolve } from "./cssTokens.js";
 
 const src = (p) => readFileSync(new URL(`../src/${p}`, import.meta.url), "utf8");
 const jsx = src("ui/CustomizeScreen.jsx");
 const css = src("index.css");
 // Nur der 1280er-Block — sonst prüfte man Regeln, die am Handy stehen.
 const desktop = css.slice(css.indexOf(DESKTOP_AT));
+// Kommentarfrei, wo eine Regel ZERLEGT wird: eine Begründung, die eine Eigenschaft beim Namen nennt,
+// darf einen Wächter nicht erfüllen (Hausgefahr: Ratschen haben schon ihre eigenen Kommentare getroffen).
+const desktopBare = desktop.replace(/\/\*[\s\S]*?\*\//g, "");
 
 describe("#vorschau-brett — der Maßstab, nachgerechnet", () => {
   it("die Karte hat in der Vorschau denselben Anteil wie auf dem Brett (jede Desktop-Breite)", () => {
@@ -77,11 +81,22 @@ describe("#fx-panel — zwei Panels, beide enden am Inhalt", () => {
   it("Bühne und Liste sind eigene Panels und strecken sich NICHT auf Rasterhöhe", () => {
     // Ohne `align-self: start` stünden rechts wieder 568 px leeres Panel unter fünf Zeilen
     // (69 % der Spalte, gemessen auf 1920 × 1080).
-    const regel = desktop.match(/\.cz-stage,\s*\.cz-fxside\s*\{([^}]*)\}/);
+    const regel = desktopBare.match(/\.cz-stage,\s*\.cz-fxside\s*\{([^}]*)\}/);
     expect(regel, ".cz-stage/.cz-fxside-Regel fehlt").toBeTruthy();
     expect(regel[1]).toMatch(/align-self:\s*start/);
     expect(regel[1]).toMatch(/border-radius:\s*14px/);
-    expect(regel[1]).toMatch(/background:\s*linear-gradient/);
+    /* #menu-rework M1 — die FÜLLUNG wird weiter geprüft, der Weg dahin nicht mehr vorgeschrieben.
+       `.cz-stage` setzt seine Fläche INLINE (STICKY_HEAD_BG); die Regel gewann dagegen früher mit
+       `!important` und gewinnt jetzt, indem sie die Variable umdefiniert, die der Inline-Wert liest.
+       Beides erfüllt dieselbe Aussage — beide Panels stehen auf dem Glas-Verlauf —, und die wird hier
+       AUSGERECHNET statt abgeschrieben: die lokalen Custom Properties der Regel werden in den
+       `background`-Wert eingesetzt, und das Ergebnis muss ein Verlauf sein. Fällt die Füllung ganz
+       weg, bleibt nichts zum Einsetzen und der Wächter fällt. */
+    const lokal = Object.fromEntries(
+      [...regel[1].matchAll(/(--[a-zA-Z0-9-]+)\s*:\s*([^;]+);/g)].map((m) => [m[1], m[2].trim()]));
+    const bg = (regel[1].match(/(?:^|[;\s])background:\s*([^;]+);/) || [])[1];
+    expect(bg, "beide Panels haben ihre Füllung verloren").toBeTruthy();
+    expect(resolve(bg, lokal), `die Füllung ist kein Verlauf mehr: ${bg}`).toMatch(/linear-gradient/);
   });
 
   it("die Spaltenbreite ist dieselbe 520 wie beim Pack-Detail — und die schmale Spur steht LINKS", () => {

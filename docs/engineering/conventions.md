@@ -179,6 +179,216 @@ weight ladder is enforced by review.
 
 ---
 
+## 2c. Panels — surface, edge, elevation, radius, inset
+
+Five axes, nineteen steps, defined in the `@theme` block of `src/index.css`. This is §2b applied to
+surfaces: the same shape, the same rule with one noun changed, the same escape hatch and its price.
+
+Two layers, and they must not merge.
+
+| Layer | Carries | Written as |
+| --- | --- | --- |
+| **Step** `--sf-*` `--ed-*` `--el-*` `--rd-*` `--in-*` | one value on one axis | a custom property: `var(--sf-base)` |
+| **Role** `.as-panel`, `.as-shell`, … | all five at once, for one kind of box | a class: `as-panel-sunken` |
+
+A role is four steps that belong together. Pick the role when a box *is* one of these things; pick a
+step when you are dressing something that is not.
+
+### Why custom properties and not utility classes
+
+Three consumers have to reach the same value: a Tailwind utility, a stylesheet rule, and an **inline
+style** emitted from `src/ui/modalStyle.jsx`. A class cannot reach the third, and half the menu
+surfaces in this tree are set inline.
+
+The indirection also removes the reason `!important` kept appearing. An inline **literal** beats every
+stylesheet rule; an inline `var(--sf-head)` does not, because a rule can redefine `--sf-head` **on the
+element** and the inline declaration picks up the new value with the cascade intact. Measured, three
+cases, `#menu-rework` planning report §2.1.
+
+### The steps
+
+| Axis | Token | Value | For |
+| --- | --- | --- | --- |
+| **Surface** | `--sf-sunken` | `#141320` | an **inset panel** inside another surface: readouts, list rows, tiles |
+| | `--sf-base` | `#17171c` | the neutral panel fill |
+| | `--sf-head` | `#1b1a24` | a sticky head |
+| | `--sf-raised` | `#1b1a24 → #141019` | the card or overlay shell above a panel |
+| **Edge** | `--ed-quiet` | `#2a2a34` | a divider inside a panel |
+| | `--ed-base` | `#2c2a3a` | the standard frame |
+| | `--ed-strong` | `#302d40` | the crisp frame that carries the framed look |
+| | `--ed-deck` | `var(--deck-border)` | deck-tinted, **neutral structure panels only** |
+| **Elevation** | `--el-flat` | `none` | on the board — and the desktop's `#ruhe` choice |
+| | `--el-rest` | `0 0 14px` deck 22 % | a panel at rest |
+| | `--el-float` | `0 14px 44px rgba(0,0,0,.42)` | a card off the board |
+| | `--el-modal` | `0 18px 48px rgba(0,0,0,.5)` | an overlay over it all |
+| | `--el-glow-blur` · `--el-glow-spread` | `16px` · `-8px` | **the primary CTA, and nothing else.** Two scalars, not one composite — see below |
+| **Radius** | `--rd-sm` | `6px` | tiles, buttons, rows, chips |
+| | `--rd-md` | `0.5rem` | a control that is not a tile |
+| | `--rd-lg` | `14px` | a panel |
+| **Inset** | `--in-tight` | `11px` | a row or a chip |
+| | `--in-snug` | `13px` | an inner box |
+| | `--in-base` | `18px` | a panel |
+
+The values are **derived by counting call sites**, not chosen. `--sf-base` is `#17171c` because that
+is what all 30 `.as-panel` sites carry *and* the dark half of `--deck-border`'s colour mix — the tree
+had written its panel ground down twice, in two unrelated places, with the same value.
+
+`--sf-head` is **defined as** `--sf-raised`'s opening stop. That is what makes the head/card seam
+invisible, and it is now true by construction rather than by two numbers someone keeps in step.
+
+**Mixed units are deliberate**, exactly as in §2b: `--rd-md` replaces Tailwind's `rounded-lg`, which
+emits `0.5rem`. Writing it as `8px` would compute identically today and differently for a reader who
+has changed their browser's base size. Value-preserving means preserving the value, not its current
+evaluation.
+
+### Outside the ladder, deliberately
+
+The same distinction §2b draws between its seven roles and `text-display-*`. These are not steps and
+not choices: composites built from steps, or values a ladder cannot rank.
+
+| Token | What it is |
+| --- | --- |
+| `--sf-glass` · `--sf-head-fade` | the **desktop translucencies**: what `--sf-base` and `--sf-head` look like above 1280 px. Outside the ladder because a translucency depends on what is behind it. Neither is invented — 13 rules already carried the glass gradient verbatim and 7 carried the fade |
+| `--sf-deck` · `--ed-deck-panel` | a panel tinted with the active deck colour, 9/5 % over the glass with a 26 % border. The `.as-hub-tile` recipe at a lower strength. **Rows inside a tinted panel stay neutral** |
+| `--sf-scrim` · `--sf-scrim-desk` | the full-screen overlay wash, phone and desktop |
+| `--sf-ground` | what a panel *sits on*: the application's own background |
+| `--sf-deep` | internal — `--sf-raised`'s closing stop. No call site names it |
+| `--sf-cone-*` | the light cone at the head of a card, as scalars — see *A token only sees what is present where it is declared* for why it is not one composite |
+| `--ed-accent-a` · `--ed-accent-a-quiet` | the two accent-edge opacities |
+| `--el-halo-blur` · `--el-halo-a` | the coloured halo of a **loud** phase card — the value `#ruhe` removes |
+| `--rd-shell` | the overlay shell's outer corner. Not chosen, **matched**: the hairline clips against it |
+| `--btn-pad-y` · `--btn-pad-x` | a button pads against its **label**, not against a panel edge |
+| `--ctl-*` | switches, segments, dropdowns, sliders. A control is not a panel |
+| `--ac-*` | the six phase identity colours. Not a ladder — each says which phase you are in |
+
+### The rule
+
+> **A menu picks a token, or changes a token for everyone. A menu does not introduce a value.**
+
+**The escape hatch, and its price.** Where a screen genuinely needs a surface no token provides, it
+proposes a **new token** — reviewed once by the planner, then available everywhere. Never a value at
+the call site. A worker that builds its own panel stops and reports; extensions go through the
+planner, not around the pilot.
+
+**Where a value is changed:** one edit, in the `@theme` block of `src/index.css`. Changing it anywhere
+else is a bug.
+
+**A screen may re-point a step on its own root**, inside the desktop block — but only **to another
+named token**, never to a fresh literal:
+
+```css
+.op-head { --sf-head: var(--sf-head-fade); background: var(--sf-head); }
+```
+
+That is the sanctioned form, and it is how the desktop's translucent variants reach a screen.
+
+`test/panel-tokens.test.js` guards all of it, in migrated files only. Its allowlist grows by one entry
+per worker, so it tightens as the round proceeds and never blocks work that has not happened yet.
+
+### A token only sees what is present where it is *declared*
+
+**The single most expensive thing to learn twice.** A custom property that references another custom
+property is substituted **on the element that declares it**, and the resolved string then inherits.
+
+```css
+:root { --cone: rgba(var(--ac-rgb, 155,130,240), .14); }   /* --ac-rgb resolved HERE, at :root */
+```
+
+An element further down that sets `--ac-rgb` on itself arrives far too late: `:root` already baked in
+the fallback. This cost `#menu-rework` M1 a full capture run — 120 nodes went violet.
+
+Two shapes that **do** work:
+
+- redefine a **flat** property on the element (`.op-head { --sf-head: … }`) — this is the mechanism the
+  whole vocabulary rests on;
+- declare the composite **on a class the element carries**, so both live on the same element.
+
+Anything parameterised at runtime — an accent colour from game data — therefore **decomposes**: every
+length and every alpha is a token, and only the colour is assembled at the call site.
+
+### The geometry hook — `--ui-scale`
+
+Every **length** in every token is defined through `calc(N * var(--ui-scale, 1))`, so a later
+UI-scaling feature is one variable instead of a sweep over nineteen values.
+
+**The rule is about values, not families.** A length scales wherever it sits, including the gradient
+axes of the light cone. A colour, an opacity or a percentage does not — a percentage is already
+relative.
+
+**One deliberate exception: `--text-*` stays out.** Those are lengths, and typography is frozen with
+its own ladder and its own workstream. Without this sentence the value-shaped rule above would sweep
+it in.
+
+`--ui-scale` is a **reserved hook, not a control**. No screen and no worker sets it. A per-screen
+`--ui-scale` is the tripwire in a new costume.
+
+### `#ruhe`, stated beside `--el-glow`
+
+> **Only the primary CTA glows.**
+
+`--el-glow-*` exists so that rule stays expressible, and a step named for a rule is harder to spread
+than a shadow value copied. A desktop panel at rest is `--el-flat`, which is exactly what
+`as-ring-quiet` already sets — so the rule is a step you *pick*, not an absence you have to remember.
+
+**It is two scalars rather than one composite**, and that is the substitution rule above, not
+untidiness: the glow's *colour* is `--c`, which the call site sets on the button itself, because the
+colour is the signal — it says which CTA this is. A composite declared at `:root` would resolve
+`var(--c)` there and freeze the grey fallback. It did exactly that on a victory-screen button, in the
+same task that wrote the rule down, until the zero-delta gate said so. The shape lives in the
+vocabulary; the colour belongs to the call site.
+
+`--el-halo-*` is the other half of the same decision: the loud phase card's coloured halo, kept so the
+phone branch stays value-preserving, and it is what `quiet` takes away. Nothing new takes it.
+
+### The role classes
+
+| Class | Composition | For |
+| --- | --- | --- |
+| `.as-panel` | `--sf-base` + the animated deck frame | the neutral content panel |
+| `.as-panel-sunken` | `--sf-sunken` `--ed-quiet` `--rd-sm` `--el-flat` | **an inset panel** — a readout, a list row, a tile sunk into the surface it sits on, wherever that surface is |
+| `.as-shell` | `--sf-raised` `--ed-base` `--rd-shell` `--el-modal` | the overlay card itself |
+| `.as-head` | `--sf-head` + bottom `--ed-quiet` | sticky heads |
+| `.as-ring` | `--el-rest`; `.as-ring-quiet` stills it to `--el-flat` | the running deck ring |
+| `.as-edge-*` | "Kante statt Fläche" — one colour signal as a left edge; `--el-glow` on the strong one | buttons and choice cards |
+
+**`.as-shell`, not `.as-card`.** `.as-card` was already taken by the **game card** in
+`src/ui/Card.jsx` and by a CRT rule that gives it a neon glow. A bare class selector cannot avoid
+either.
+
+### What the vocabulary does not claim
+
+Both are real gaps, named rather than hidden, and both belong to the planner:
+
+- **Text colour.** Seven ink values remain literal on the pilot screen alone. The five axes are
+  surface, edge, elevation, radius and inset; the tripwire names background, border, radius and
+  shadow. Ink is the nearest extension and has not been taken.
+- **Padding that is not a box inset.** Three steps cannot cover every padding on a screen and were
+  never meant to. A control pads against its **label** (which is why `--btn-pad-*` sits outside the
+  ladder), screen margins are layout, heading spacing belongs to the type system.
+
+### What is permanently exempt
+
+- **`PHASE_ACCENTS` in `modalStyle.jsx`** keeps its six colours as literal strings. `.c` is handed to
+  `LevelupWings.jsx`, which builds an 8-digit hex by concatenation (`${accent}4d`) — `var(--ac-red)4d`
+  is not a colour — and two more screens build the same shape from game data at runtime. The colours
+  are mirrored as `--ac-*` for the CSS side.
+- **Everything below 1280 px.** The phone keeps its own values *and its own Tailwind padding
+  utilities*, exactly as §2b's `-N` size variants do. A token that a phone-visible call site reads
+  therefore carries the **phone's** value, and the desktop block re-points it. Where the tree has two
+  values for one role below 1280, the vocabulary keeps both until a mobile strand collapses them —
+  that is what `--ctl-off` and `--ctl-off-alt` are.
+- **Meaning-coded borders** — rarity, faction, ice, state. They encode information, not depth.
+- **`--deck-border`** keeps its name; `--ed-deck` is its vocabulary alias.
+
+### A token you do not use does not ship
+
+Tailwind 4 prunes `@theme` variables that nothing references. A step defined here but never written as
+`var(--step)` in `index.html` or `src/**` is **absent from the built stylesheet** — correct (it is
+dead-code elimination) and occasionally surprising. Writing `var(--in-base)` anywhere Tailwind scans
+brings it back. Nothing else is needed.
+
+---
+
 ## 3. Language layers
 
 Three layers, one rule each.
