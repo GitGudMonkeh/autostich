@@ -2893,10 +2893,21 @@ b, strong { font-weight: 600; }
   /* Der Knopf polstert gegen seine BESCHRIFTUNG, nicht gegen eine Panelkante — 2c laesst genau
      diese Sorte ausserhalb der Leiter (`--btn-pad-*`). Der Radius ist `--rd-md`, wertgleich 8 px:
      „ein Steuerelement, das keine Kachel ist". */
+  /* #menu-rework M3 — DIE 44 px STEHEN JETZT DA, STATT SICH ZU ERGEBEN.
+     Die Polsterung 11/18 war als „damit kommen wir auf 44" gedacht und stand so auch im Kommentar.
+     VON HAND NACHGEMESSEN im Produktionsbuild bei 1280 x 720: 42,7 px. Sie ergab die Zahl nicht,
+     weil die Hoehe an der Zeilenhoehe der Beschriftung haengt und nicht an der Polsterung allein —
+     und der Zustands-Gate sieht Bedienelemente ueberhaupt nicht („Surfaces only. Control states are
+     not captured and are verified by hand.").
+     `min-height` sagt die Regel jetzt selbst, wie es der Kopf-Kanon vorschreibt (design-sprache.md
+     §2/§4: „Alles Bedienbare misst 44 px in der Hoehe. Diese Regel hat keine Ausnahme."). Die
+     Polsterung bleibt unangetastet — sie ist das Sichtbare, `min-height` das Klickziel. */
   .up-actions > * {
     font-size: var(--text-body-lg-3) !important;
     padding: 11px 18px !important;
     border-radius: var(--rd-md);
+    min-height: 44px;
+    display: inline-flex; align-items: center;
   }
   /* Die Haarlinie sitzt an der Kartenecke; ohne Karte hat sie dort nichts mehr zu suchen. */
   .up-head > div[aria-hidden="true"]:first-child { display: none; }
@@ -3211,7 +3222,9 @@ b, strong { font-weight: 600; }
   .up-page-guide {
     flex: none;
     margin-left: auto;
+    /* Ebenfalls von Hand nachgemessen: 43,3 px. Dieselbe Regel, dieselbe Begruendung wie am Kopf. */
     font-size: var(--text-body-lg-1); font-weight: 600; padding: 9px 16px; border-radius: var(--rd-sm); cursor: pointer; white-space: nowrap;
+    min-height: 44px; display: inline-flex; align-items: center;
     background: var(--sf-sunken);
     border: 1px solid var(--ed-quiet); border-left: 4px solid var(--c);
     color: color-mix(in srgb, var(--c) 45%, #ffffff);
