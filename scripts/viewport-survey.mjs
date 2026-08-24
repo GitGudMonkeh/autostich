@@ -51,6 +51,30 @@ import { probeSource } from "./surveyProbe.js";
 /* #menu-rework M1: the surface axes the geometry probe does not see. See surfaceProbe.js
    for why this is a second probe and not an edit to the first. */
 import { surfaceProbeSource } from "./surfaceProbe.js";
+/* #menu-rework MH2. Three fixes to this instrument, and the header above states what each replaces.
+
+   THE STUB (item 1) — promoted from M8's task-local seed, see survey-stub.mjs for the full reasoning.
+   The one line that matters here: THIS SURVEY USED TO WRITE TO THE LIVE LEADERBOARD. It measures the
+   PRODUCTION build on purpose (see the paragraph on DevRunSetup below), `publishRun` is gated by
+   `VITE_PREVIEW` alone, and the `victory` cell ends a real run — so a full matrix posted up to ten
+   rows into `autostich_scores` under the seeded name "SURVEY", invisible in every gate because the
+   score never reaches the top twenty. Three workers and the planner ran it that way. The stub answers
+   the insert locally, so it never leaves the browser, and it holds the board's twenty rows still
+   (TYPO-08) into the bargain.
+
+   THE CLOCK (item 1, second half) — `freezeClockSource()` pins `Date.now()` and `new Date()`. The hub
+   reads the ISO week behind every overlay; one `<span>` crossing midnight cost this workstream 72 box
+   deltas across 37 cells and 10 surfaces (MENU-30). With this installed on EVERY run, the standing
+   instruction to take both halves of a comparison on the same side of a week boundary is retired —
+   the two halves now carry the same frozen instant whatever days they were taken on.
+
+   THE BUNDLE (item 2, M3-F09) — see survey-bundle.mjs. `ensureServer()` asked whether something
+   answers on the port; it now asks whether that something serves the bundle in `dist/`.
+
+   THE RUN COUNT (item 3, §8.12) — `runCountSource()`. The cells are not independent; the number that
+   makes them comparable is now written into each of them rather than left to be guessed at. */
+import { fetchStubSource, freezeClockSource, runCountSource, FROZEN_MS } from "./survey-stub.mjs";
+import { assertServesDist } from "./survey-bundle.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 /* `--out <dir>` added 2026-08-23 (#typo-system S0), and it fixes a real accident rather than adding
@@ -73,6 +97,10 @@ const BASE = (() => {
   return m && m[1] ? `${m[1]}/` : "/";
 })();
 const ORIGIN = `http://localhost:${PORT}${BASE}`;
+/* Scheme, host and port with NO base path. `assertServesDist` joins this to hrefs that already carry
+   the base; handing it ORIGIN would ask for "/autostich/autostich/assets/…". */
+const HOST = `http://localhost:${PORT}`;
+const DIST = join(ROOT, "dist");
 
 /* Contract §5.1. 1920 first — it is the reference for the shrinkage criterion. */
 const SIZES = [[1920, 1080], [1600, 900], [1536, 791], [1400, 700], [1280, 720]];
@@ -198,8 +226,27 @@ const SURFACES = [
 async function serverAlive() {
   try { return (await fetch(ORIGIN, { signal: AbortSignal.timeout(1500) })).ok; } catch { return false; }
 }
+
+/* #menu-rework MH2 item 2 — M3-F09. This function used to end at the first line of its body: something
+   answered on the port, so the survey used it. An inherited server serving an abandoned `dist/` is
+   indistinguishable from a fresh one by that test, and M3 lost its gate to it.
+
+   AN INHERITED SERVER IS NOW REFUSED, NOT REUSED, and the refusal is a throw rather than a fallback.
+   There is nothing to fall back TO: the port is held with --strictPort, so a second server cannot be
+   started beside the first, and whether the process holding it may be killed is not this script's
+   decision to take. `assertServesDist` names which document mismatched and by how much, so the
+   operator is not left guessing at which of the two servers is theirs.
+
+   OUR OWN SERVER IS CHECKED TOO, and that is not belt-and-braces. `--base` is the failure this
+   function already documents below: get it wrong and every asset comes back as the SPA fallback with
+   status 200, so `serverAlive()` is satisfied and the page merely looks slow. The same assertion
+   catches both cases, which is why it sits after the spawn as well as before it. */
 async function ensureServer() {
-  if (await serverAlive()) return { stop: async () => {} };
+  if (await serverAlive()) {
+    await assertServesDist(HOST, DIST, { when: "inherited server, checked before the run" });
+    process.stdout.write(`  reusing the server on ${PORT} — verified against dist/\n`);
+    return { stop: async () => {} };
+  }
   const viteBin = join(ROOT, "node_modules", "vite", "bin", "vite.js");
   if (!existsSync(viteBin)) throw new Error("vite not found — run `npm ci` in this worktree first.");
   /* --base is not optional: vite.config.js only applies the deploy base for `build`, so `preview`
@@ -209,7 +256,13 @@ async function ensureServer() {
   const proc = spawn(process.execPath, [viteBin, "preview", "--port", String(PORT), "--strictPort", "--base", BASE],
     { cwd: ROOT, stdio: "ignore" });
   for (let i = 0; i < 150; i++) {
-    if (await serverAlive()) return { stop: async () => { proc.kill(); await sleep(300); } };
+    if (await serverAlive()) {
+      const stop = async () => { proc.kill(); await sleep(300); };
+      try { await assertServesDist(HOST, DIST, { when: "own server, checked before the run" }); }
+      catch (e) { await stop(); throw e; }
+      process.stdout.write(`  started a server on ${PORT} — verified against dist/\n`);
+      return { stop };
+    }
     await sleep(200);
   }
   proc.kill();
@@ -292,6 +345,13 @@ async function measure(c, surface) {
      afterwards — the start button becomes "continue". Clearing it per surface is what keeps the
      in-run cells from silently contaminating the menu cells. */
   await evaluate(c, `(() => { try { localStorage.removeItem("as_activerun"); } catch (e) {} return 1; })()`);
+  /* #menu-rework MH2 item 3, §8.12. Read BEFORE the navigation and again at the probe, because those
+     are two different numbers for the two cells that write one: `victory` ends a run, so it enters
+     with N and is captured at N+1, and `runs.capture` is the number the surface on screen was
+     actually reading. Every other cell has them equal. Reported, not corrected — the accumulation is
+     deterministic and cancels between comparison halves, and this task's job is to make it visible
+     rather than to reset it, which would be a change to what is measured. */
+  const runsAtEntry = await evaluate(c, runCountSource());
   await goto(c, ORIGIN, { settleMs: 900 });
   const trace = [];
   for (const step of surface.steps) {
@@ -315,16 +375,18 @@ async function measure(c, surface) {
       r = await evaluate(c, clickText(step.text));
     }
     trace.push({ step, ...r });
-    if (!r.ok) return { reached: false, trace, why: r.why };
+    if (!r.ok) return { reached: false, trace, why: r.why, runs: { entry: runsAtEntry } };
     await sleep(step.settle || 700);
   }
   const settled = await evaluate(c, SETTLE);
   if (!await evaluate(c, hasMarker(surface.marker))) {
-    return { reached: false, trace, why: `marker ${surface.marker} absent after navigation` };
+    return { reached: false, trace, why: `marker ${surface.marker} absent after navigation`,
+             runs: { entry: runsAtEntry } };
   }
   const probe = await evaluate(c, probeSource());
   const surf = await evaluate(c, surfaceProbeSource());
-  return { reached: true, trace, settled, ...probe, ...surf };
+  const runs = { entry: runsAtEntry, capture: await evaluate(c, runCountSource()) };
+  return { reached: true, trace, settled, runs, ...probe, ...surf };
 }
 
 /* Every cell runs against a wall-clock deadline, and this is not belt-and-braces — it cost 53
@@ -401,6 +463,14 @@ try {
   await reduceMotion(c);
   await seedRandom(c);
   await suppressInstallPrompt(c);
+  /* #menu-rework MH2 item 1. INIT SCRIPTS, so both are in place before the module graph runs:
+     `leaderboard.js` reads `import.meta.env` at module scope and the hub reads the ISO week on its
+     first render — a stub installed after either has already missed it. Order does not matter between
+     the two; that they precede the first navigation does. See survey-stub.mjs. */
+  await c.send("Page.addScriptToEvaluateOnNewDocument", { source: freezeClockSource() });
+  await c.send("Page.addScriptToEvaluateOnNewDocument", { source: fetchStubSource() });
+  process.stdout.write(`  clock pinned to ${new Date(FROZEN_MS).toISOString()} · autostich_scores answered locally`
+    + ` (this run writes NOTHING to the live board)\n`);
 
   for (const lang of langs) {
     await setViewport(c, { width: 1280, height: 720, deviceScaleFactor: 1 });
@@ -430,6 +500,7 @@ try {
           process.stdout.write(`    ${s.id.padEnd(14)} scroll ${sc.x}x${sc.y}px · `
             + `${cell.overflows.length} overflow · ${cell.outside.length} outside · `
             + `${cell.truncated.length} truncated · ${cell.type.length} text`
+            + ` · ${cell.runs.capture} runs`
             + `${cell.surface ? ` · ${cell.surface.length} surf` : ""}`
             + `${cell.shrunk && cell.shrunk.length ? ` · ${cell.shrunk.length} SHRUNK` : ""}\n`);
           /* #typo-system S0: capture the V1/V2 screenshot pair for the human visual gate.
@@ -470,6 +541,18 @@ try {
       }
     }
   }
+  /* #menu-rework MH2 item 2, second half. The check at startup cannot see a `npm run build` that lands
+     in the MIDDLE of a run — the hazard M3's record spends a paragraph on: the early cells measure the
+     old bundle, the late cells the new one, and the matrix is a blend of two states that never existed
+     together. Green, plausible, and meaningless. Verified again here, at the end of the try and so
+     before anything is written, which makes a contaminated run refuse to produce evidence rather than
+     produce it quietly.
+
+     INSIDE the try and not the finally, deliberately: a throw from a finally block REPLACES whatever
+     exception was already travelling, so a browser that died mid-run would be reported as a bundle
+     mismatch. The server is stopped either way by the finally below. */
+  await assertServesDist(HOST, DIST, { when: "after the last cell — was the bundle swapped mid-run?" });
+  process.stdout.write(`\n  bundle re-verified after the last cell — same dist/ throughout\n`);
 } finally {
   await c.close();
   await server.stop();
