@@ -3030,11 +3030,15 @@ b, strong { font-weight: 600; }
     border-left: 3px solid var(--ed-quiet);
   }
   /* Die Zeile ist das Klickziel und misst die vollen 44 px (§4) — sichtbar ist weniger. */
+  /* Die Zeile ist ein `<button>`, WENN es etwas zu tun gibt, und sonst ein `<div>` (s. LegCard).
+     Der Zeigefinger haengt deshalb am Element und nicht an der Klasse: ein `cursor: pointer` auf
+     einem Kaertchen, das nichts tut, verspricht eine Handlung, die es nicht gibt. */
   .up-leg-row {
     display: flex; align-items: center; gap: 8px; width: 100%;
-    min-height: 44px; text-align: left; cursor: pointer;
+    min-height: 44px; text-align: left;
     background: none; border: 0; padding: 0; color: inherit;
   }
+  button.up-leg-row { cursor: pointer; }
   .up-leg-n { flex: 1; min-width: 0; font-size: var(--text-body-3); font-weight: 600; }
   .up-leg-m { flex: none; display: flex; align-items: center; font-size: var(--text-body-2); font-weight: 600; }
   /* Der Kaufknopf ersetzt die Marke IN DERSELBEN ZEILE. In eigener Zeile waere die Spalte 634 px
@@ -3058,7 +3062,6 @@ b, strong { font-weight: 600; }
   /* gesperrt — 42 % Deckkraft. Die Eingabe nimmt `disabled` am Knopf weg, nicht `pointer-events`:
      optisch gesperrt und trotzdem per Tastatur erreichbar ist kein Zustand, sondern eine Falle (§5). */
   .up-leg.is-locked { opacity: .42; }
-  .up-leg.is-locked .up-leg-row { cursor: default; }
 
   /* #flach (18.08.2026) — DER INHALT BLEIBT IM RAHMEN.
      Auf flachen Fenstern (gemeldet von einem Laptop mit 1920 x 1200 bei 125 % Skalierung = CSS-Viewport

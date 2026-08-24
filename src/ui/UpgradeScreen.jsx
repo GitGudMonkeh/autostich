@@ -566,21 +566,26 @@ function LegCard({ node, st, armed, onArm, onBuy, sp }) {
   let marke = t("upgrades.buy.short", { cost: node.cost });
   if (owned) marke = <Mark name="check" />;
   else if (locked) marke = <Mark name="lock" />;
+  /* GENAU EIN BEDIENELEMENT, UND NUR WO ES ETWAS ZU TUN GIBT.
+     Die erste Fassung war ein `<button>` mit einem `role="button"`-Span DARIN — verschachtelte
+     Bedienelemente, ungueltiges HTML, und der Kaufklick haing an `stopPropagation`. Dazu stand im
+     Zustand „Geld fehlt" ein aktivierbarer Knopf, der nichts tat.
+     Jetzt traegt die Zeile die Handlung selbst: kaufbar und noch nicht angetippt -> antippen bewaffnet,
+     kaufbar und bewaffnet -> derselbe Klick kauft. Ist nichts zu tun (gesperrt, zu teuer, gekauft),
+     wird gar kein Knopf gerendert, sondern ein `<div>` — damit ist „keine Eingabe, auch nicht per
+     Tastatur" (design-sprache.md §5) nicht zugesichert, sondern strukturell wahr, und ein toter
+     Knopf kann hier nicht entstehen. */
+  const aktion = buy ? () => (armed ? onBuy(node.id) : onArm(node.id)) : null;
+  const Row = aktion ? "button" : "div";
   return (
     <div className={`up-leg${owned ? " is-owned" : buy ? " is-buy" : poor ? " is-poor" : " is-locked"}`}
       style={{ "--c": mark }}>
-      <button type="button" className="up-leg-row" disabled={locked}
-        onClick={() => (buy ? onArm(node.id) : undefined)}>
+      <Row className="up-leg-row" {...(aktion ? { type: "button", onClick: aktion } : {})}>
         <span className="up-leg-n">{node.label}</span>
         {buy && armed
-          ? <span className="up-leg-buy as-edge-strong" style={{ "--c": GOLD }}
-              onClick={(e) => { e.stopPropagation(); onBuy(node.id); }}
-              role="button" tabIndex={0}
-              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); onBuy(node.id); } }}>
-              {t("upgrades.buy", { cost: node.cost })}
-            </span>
+          ? <span className="up-leg-buy as-edge-strong" style={{ "--c": GOLD }}>{t("upgrades.buy", { cost: node.cost })}</span>
           : <span className="up-leg-m" style={{ color: mark }}>{marke}</span>}
-      </button>
+      </Row>
       {grund && <span className="up-leg-why">{grund}</span>}
     </div>
   );
