@@ -1003,12 +1003,21 @@ export default {
   "guide.nav.note": "Der Leitfaden erklärt das Spielprinzip. Begriffe und Sonderregeln stehen im Glossar.",
 
   /* ---- Upgrade-Baum (UpgradeScreen) ---- */
-  "upgrades.title": "Upgrades",
+  "upgrades.eyebrow": "Upgrades",
+  "upgrades.title": "Upgrade-Baum",
+  "upgrades.subtitle": "Dauerhafte Verbesserungen für jeden Lauf.",
   "upgrades.respec": "↺ Zurücksetzen",
-  "upgrades.nodes": " / {total} Knoten · Ranglisten-Lauf",
-  "upgrades.ranked.free": "frei",
-  "upgrades.ranked.at": "bei {total}/{total} Knoten",
+  /* #menu-rework M3 — zwei benannte Ablesungen statt einer nackten Zahl am Titel. Der alte
+     `upgrades.nodes` begann mit einem Leerzeichen, wurde an eine Zahl geklebt und ergab zusammen mit
+     `upgrades.ranked.at` dreimal „Knoten" und zweimal dieselbe Zahl (design-sprache.md §7). */
+  "upgrades.readout.sp": "Guthaben",
+  "upgrades.readout.nodes": "Knoten",
+  "upgrades.readout.nodes.val": "{owned} / {total}",
+  "upgrades.ranked.label": "Ranglisten-Lauf",
+  "upgrades.ranked.open": "Noch nicht freigeschaltet",
+  "upgrades.ranked.free": "Freigeschaltet",
   "upgrades.tapHint": "Knoten antippen zeigt, was er bewirkt.",
+  "upgrades.legend.hint": "Klick auf einen Knoten erklärt ihn.",
   "upgrades.details": "Details ›",
   "upgrades.legPhase": "Legendär-Phase",
   "upgrades.tab.decks": "Decks",
@@ -1019,10 +1028,10 @@ export default {
   "upgrades.lane.rarity": "Rarität",
   "upgrades.lane.drops": "Drop-Raten",
   "upgrades.lane.perk2": "2. Perk-Phase",
-  "upgrades.lane.note.afterLeg": "öffnet sich nach dem Legendär-Unlock",
+  "upgrades.lane.note.afterLeg": "öffnet sich mit Rarität · Legendär",
   "upgrades.free": "frei",
   "upgrades.state.soon": "Bald",
-  "upgrades.state.owned": "✓ Gekauft",
+  "upgrades.state.owned": "Gekauft",
   "upgrades.state.soonFull": "Bald verfügbar",
   "upgrades.state.buyable": "Kaufbar",
   "upgrades.state.lockSp": "Zu wenig SP — kostet {cost} SP",
@@ -1050,8 +1059,15 @@ export default {
   "upgrades.skills.legendary": "Legendäre Skills",
   "upgrades.owned": "gekauft",
   "upgrades.buyable": "kaufbar",
-  "upgrades.locked": "🔒 gesperrt ·",
+  "upgrades.locked": "gesperrt",
   "upgrades.soon": "Bald = Platzhalter",
+  /* #menu-rework M3 — die Fraktionsseite: Challenge als Zeile am Fuß statt als Karte im Panel.
+     Der Bedingungssatz und der Zähler kommen unverändert aus `packUnlock()`; neu ist nur der Rahmen. */
+  "upgrades.chall.label": "Herausforderung",
+  "upgrades.chall.link": "Werkstatt ›",
+  "upgrades.chall.done": "Freigeschaltet",
+  /* Die zwei Kärtchen der Legendär-Phase tragen ihren Zustand selbst (design-sprache.md §5). */
+  "upgrades.leg.missing": "{n} SP fehlen",
 
   /* ---- Deck-Detail (DeckDetail) ---- */
   "deckdetail.back": "‹ Zurück",

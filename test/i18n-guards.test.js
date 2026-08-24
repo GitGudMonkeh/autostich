@@ -130,6 +130,8 @@ describe("i18n · Katalog-Parität", () => {
     "formpanel.count",        // reine Zahlenzeile „{n} · max ×{max}"
     // Menü-/Werkstatt-Bildschirme: Fremdwörter und Eigennamen, die im Englischen genauso lauten.
     "upgrades.title",         // „Upgrades" ist im Deutschen der etablierte Begriff (§3.5)
+    "upgrades.eyebrow",       // dito — der Eyebrow trägt genau dieses Wort (design-sprache.md §2)
+    "upgrades.readout.nodes.val", // reine Zahlenzeile „{owned} / {total}" (wie start.progress.links)
     "upgrades.details",       // „Details ›"
     "deckdetail.deck",        // „Deck" ist in beiden Sprachen dasselbe Wort
     "deckdetail.tab.skills",  // „Skills" (§3.1)

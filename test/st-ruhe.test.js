@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { DESKTOP_BLOCK_AT } from "./desktopBreakpoint.js";
 import { inlineValueOf, overridesInline } from "./inlineOverride.js";
+import { resolve, themeTokens } from "./cssTokens.js";
 
 /* ============================================================
    #st-ruhe (19.08.2026) — die Statistik im Desktop-Ton.
@@ -49,9 +50,19 @@ describe("#st-ruhe — der Ring steht still", () => {
 describe("#st-ruhe — EINE Kachelform für alles im Panel", () => {
   /* Die LETZTE Regel gewinnt: `.up-vnode` steht im Desktop-Block zweimal (eigene Regel, dann die
      Sammelregel von #up-form). Ein Test, der die erste liest, misst den Wert von vor dem Umbau. */
+  /* #menu-rework M3 — der Radius wird AUFGELOEST, nicht abgelesen. Seit der Baum auf das
+     Panel-Vokabular umgestellt ist, steht an `.up-vnode` `var(--rd-sm)`, und die alte Ablesung
+     (`[\d.]+px`) lieferte `null` — der Waechter fiel, waehrend die Zusicherung, die er schuetzt
+     („dieselbe Kachelform wie im Baum"), voellig intakt war. Genau der Fall, fuer den
+     test/cssTokens.js geschrieben wurde: der Referenz folgen statt den Token-NAMEN zu pruefen.
+     Der Waechter rechnet damit weiter mit echten Zahlen und faengt zusaetzlich den Fall ab, dass
+     der Schritt aus dem `@theme`-Block verschwindet. */
   const radius = (sel) => {
-    const alle = desk.match(new RegExp(`(^|,)\\s*${sel}\\s*(,[^{}]*)?\\{[^}]*border-radius:\\s*[\\d.]+px`, "gm")) || [];
-    const m = alle.length ? alle[alle.length - 1].match(/border-radius:\s*([\d.]+)px/) : null;
+    const alle = desk.match(new RegExp(`(^|,)\\s*${sel}\\s*(,[^{}]*)?\\{[^}]*border-radius:\\s*[^;}]+`, "gm")) || [];
+    if (!alle.length) return null;
+    const roh = alle[alle.length - 1].match(/border-radius:\s*([^;}]+)/);
+    if (!roh) return null;
+    const m = resolve(roh[1].trim(), themeTokens(css)).match(/([\d.]+)px/);
     return m ? Number(m[1]) : null;
   };
 

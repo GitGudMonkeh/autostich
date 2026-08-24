@@ -136,9 +136,23 @@ describe("#flach — der Baum haelt seinen Inhalt im Rahmen", () => {
   it("Panel klemmt, Knotenspalten scrollen, die Rasterzeile waechst nicht mit dem Bild", () => {
     expect(css).toMatch(/\.up-page \{[^}]*overflow:\s*hidden/);
     expect(css).toMatch(/\.up-vgrid \{[^}]*overflow-y:\s*auto/);
-    // Der Kern: ohne die Zeilenangabe zieht die Challenge-Karte das ganze Raster aus dem Panel.
+    // Der Kern: ohne die Zeilenangabe waechst die einzige Rasterzeile nach ihrem hoechsten Kind.
     expect(css).toMatch(/\.up-facbody \{[^}]*grid-template-rows:\s*minmax\(0,\s*1fr\)/);
-    expect(css).toMatch(/\.up-chall \{[^}]*max-height:\s*100%/);
+    /* #menu-rework M3 — hier stand `.up-chall { max-height: 100% }`, und das war der MECHANISMUS,
+       nicht die Zusicherung: die Challenge war eine Karte IM Rasterkoerper, mit einem Deckbild, das
+       auf flachen Fenstern hoeher war als der ganze Platz — der Deckel hielt sie im Rahmen.
+       Die Karte ist gefallen (sie verbarg gemessen 151 px ihres eigenen Inhalts bei 1280 x 720); die
+       Challenge ist jetzt eine Zeile am FUSS des Panels und steht gar nicht mehr im Raster.
+       Damit haengt die Zusicherung an zwei anderen Stellen, und beide werden hier geprueft statt der
+       alten Zeile: der Scroller, der die Resthoehe jetzt allein traegt, und die Gegenprobe, dass in
+       den Rasterkoerper NICHTS ausser der Skill-Liste zurueckwandert. Die zweite ist die wichtigere —
+       ein zweites Kind mit Bild waere genau der alte Fehler in neuem Gewand. */
+    expect(css).toMatch(/\.up-skills \{[^}]*min-height:\s*0[^}]*overflow-y:\s*auto/);
+    const jsx = src("ui/UpgradeScreen.jsx");
+    const body = jsx.match(/className="up-facbody">([\s\S]*?)<\/div>/);
+    expect(body, ".up-facbody nicht mehr gefunden").toBeTruthy();
+    const kinder = [...body[1].matchAll(/<([A-Z][A-Za-z0-9]*)/g)].map((m) => m[1]);
+    expect(kinder, "im Rasterkoerper steht etwas anderes als die Skill-Liste").toEqual(["SkillGrid"]);
   });
 });
 
