@@ -90,8 +90,10 @@ Paar-plus-Band zu hoch wurde. Nebeneinander passt er ohne Schrumpfen.
 - **Das ausgerüstete Deck trägt stattdessen einen Ring** in der Deckfarbe (2 px), zusätzlich zum
   `AKTIV`-Abzeichen.
 - **Der Name bekommt zwei feste Zeilen.** Mit den 70 px passen *gemessen* **alle 42** Deck- und
-  Herausforderungsnamen — sechs davon nur mit einem weichen Trennzeichen (offener Punkt 2).
-  `hyphens: auto` löst es nicht: *gemessen*, es ändert bei allen sechs nichts.
+  Herausforderungsnamen — sechs davon nur mit einem **weichen Trennzeichen** (`U+00AD`):
+  Kosmospanther, Laternenfest, Nachtklinge, Moonwhale, Quecksilber, Kataklysmus. Das ist am
+  24.08.2026 entschieden und steht als benannte Ausnahme in `design-sprache.md` §7.
+  `hyphens: auto` ist kein Ersatz: *gemessen*, es ändert bei allen sechs nichts.
 - **Die Kachelhöhe bleibt 162 px**, es stehen weiter **12 Kacheln ohne Scrollen** im Bild.
 
 **Die Spaltenzahl darf später der Fensterbreite folgen** (Entscheidung des Owners: keine Präferenz,
