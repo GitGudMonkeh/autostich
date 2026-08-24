@@ -666,6 +666,18 @@ findings table useful rather than a list:
 
 **Only the first returns as work in the task.**
 
+**The comparison set shrinks from M3 on — owner decision, 2026-08-24.** The machine half stays in
+full: the zero-delta claim, and the proof that *only* the migrated screen moved. That is what catches
+a token leaking onto a screen nobody touched, and it earns its keep whatever happens later.
+
+The **owner-facing** half does not. Every remaining menu gets a design pass of its own afterwards, so
+a before/after of the re-plumbing shows a state that is not the target anyway. From M3: **the migrated
+screen, both languages, two sizes** — not a full pair set. The owner sees what there is to decide,
+not what the machine already checked.
+
+*This is the largest single saving left in the plan: one capture round and one review round per screen,
+across nine screens.*
+
 **Part 3 re-measures the decision block.** Every number a task put to the owner is re-stated in the
 measurement record as *measured*, with the delta named where it moved.
 
@@ -789,7 +801,7 @@ Three things carry it, and each has an address in this report:
 
 | # | What | Consequence if left |
 | --- | --- | --- |
-| **1** | **The survey has a surface axis and no state axis** (MENU-56). No cell state renders the segment controls, so the gate **cannot see the largest change the owner approved on that screen**. M2b measured it in a browser and said so, rather than letting the gate feign coverage | Nine screens remain, and every one of them has controls with states. A green gate that never rendered the thing it is guarding is worse than no gate — it reports coverage it does not have |
+| **1** | **The survey has a surface axis and no state axis** (MENU-56). **Owner decision, 2026-08-24: not built.** Its payoff lands in the design rework, which will know which states carry a decision; guessing them now means touching it twice. The fix is to **label the blind spot** — *surfaces only, control states verified by hand* — where a reader of the output sees it. A gate that names what it does not cover is honest; one that does not feigns coverage | Handled by labelling, and carried to the design rework as a named input |
 | **2** | **`surface-delta.mjs` truncates** (MENU-55). It prints 200 of 410. Read as complete, the output looked like *"deltas only in German, a hole at 1920×1080"* — a finding that was not there. M2b caught it by re-aggregating | The next worker writes that finding down. A tool that silently truncates a comparison manufactures false findings, and they are expensive precisely because they look measured |
 | **3** | **MENU-38's ratchet was ruled at the freeze and never built** — and the family has an **eighth** alpha the ruling did not know about (MENU-44) | The planner's own ruling, unexecuted. M2b's region needed it zero times, so nothing broke; the next region may not be so lucky |
 
