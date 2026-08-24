@@ -69,7 +69,19 @@ Der Grund ist im Vergleich Optionen ↔ Upgrade-Baum sichtbar geworden: bei glei
 Baum kräftiger, weil er zwei Tönungsebenen übereinander legte. Eine Ebene reicht.
 
 **Damit endet jede Seite gleich:** ein abschließender Bereich — Auswertung, Zusammenfassung, ein
-Verweis — hängt als Sektion mit Trennlinie am Fuß des Panels, nicht als Kasten darin. Zwei Fälle im
+Verweis — hängt als Sektion mit Trennlinie am Fuß des Panels, nicht als Kasten darin.
+
+**Und in dieser Reihenfolge**, von innen nach außen:
+
+1. der Inhalt der Seite,
+2. was zum angetippten Element gehört (die Detailzeile) — sie steht direkt bei dem, was sie erklärt,
+3. die Abschluss-Sektion der Seite (Auswertung, Challenge),
+4. die Zeichenerklärung.
+
+Der Grund ist die Blickrichtung: Punkt 2 gehört zu einem einzelnen Element und muss neben ihm stehen;
+Punkt 3 gilt für die ganze Seite und darf ans Ende; Punkt 4 gilt für den ganzen Screen. Wer die
+Reihenfolge tauscht, schiebt die Erklärung eines Knotens hinter die Zusammenfassung der Seite — genau
+der Fehler, den `UpgradeScreen.jsx:576` heute macht. Zwei Fälle im
 Baum: der Auswirkungs-Kasten der Allgemein-Seite und die Challenge der Fraktionsseite
 (`.up-impact`, `.up-chall` — beide heute mit eigener Fläche `#12121a` und eigenem Rahmen).
 
@@ -105,8 +117,21 @@ wieder etwas.
 
 ### Haarlinie
 
-Unter dem Kopf, über die volle Breite: `linear-gradient(90deg, a1, a2, a1)`, Deckkraft `.85`.
-Höhe 3 px in Modals, 2 px im Baum — **zu vereinheitlichen**, siehe *Offene Punkte*.
+Unter dem Kopf, über die volle Breite: `linear-gradient(90deg, a1, a2, a1)`, Deckkraft `.85`,
+**Höhe 2 px, überall.**
+
+Der Wert ist nicht beliebig: die Strichstärken dieser Sprache sind eine Leiter mit vier Sprossen, und
+jede Sprosse ist belegt.
+
+| Stärke | Bedeutung |
+| --- | --- |
+| 1 px | neutrale Trennlinie (`rgba(150,150,170,.14)`) — trennt, ohne zu betonen |
+| **2 px** | **die Haarlinie in der Deckfarbe** — trennt und sagt, wo man ist |
+| 3 px | Kante einer Zweitaktion |
+| 4 px | Kante der Hauptsache — Schließen, aktive Zeile, gewählter Knoten |
+
+3 px war für die Haarlinie schon vergeben. Und auf einem 1200 px breiten Panel wird aus einer 3-px-Linie
+ein Balken: sie soll den Kopf absetzen, nicht ihn unterstreichen.
 
 ---
 
@@ -198,6 +223,39 @@ Fläche `#123a25` · Schrift `#54e08a` · Rand `#2f7a4f` (`CustomizeScreen.jsx:1
 
 **Zwei Goldtöne, klar getrennt:** Währung `#d6ab6b`, kaufbare Kante `#d4a63a`. Ein dritter Ton
 (`#f2a83a` mit Schein, heute im Baum-Kopf) entfällt.
+
+### Ziel-Helligkeit der Deckfarbe
+
+Wenn Struktur immer die Deckfarbe ist, hängt die Lesbarkeit der Menüs an einer Farbe, die der Spieler
+aussucht. **Gemessen über alle 42 Decks mit eigenem Akzent**, Kontrast von `a1` gegen den Zeilengrund
+`#16161f`:
+
+| | Spanne | darunter |
+| --- | --- | --- |
+| ungemischt | **1,94 : 1** (Thron `#8f0f2a`) bis **15,31 : 1** (Origami `#f4ecdd`) — Faktor 7,9 | 3 Decks unter 4,5 : 1, davon 2 unter 3 : 1 |
+
+Dieselbe Regel, dasselbe Panel, und einmal steht der Text da und einmal nicht. **Das Mittel ist eine
+Mischung auf Weiß**, wie `.as-hub-glyph` sie schon benutzt. Es sind zwei Werte, weil es zwei Aufgaben
+gibt:
+
+| Rolle | Mischung | Ergebnis über alle 42 Decks |
+| --- | --- | --- |
+| **Deckfarbe als Schrift** — Eyebrows, Sektions- und Lane-Überschriften | `color-mix(in srgb, var(--deck-a1) 62%, #ffffff)` | schlechtestes Deck **4,65 : 1**, alle 42 über 4,5 |
+| **Deckfarbe als Fläche oder Kante** — Haarlinie, Aktiv-Kante, Regler-Füllung, Haken im Dropdown | `color-mix(in srgb, var(--deck-a1) 70%, #ffffff)` | schlechtestes Deck **3,80 : 1**, alle 42 über 3 |
+
+4,5 für Schrift, 3 für alles, was man nur sehen und nicht lesen muss — zwei Zahlen für zwei
+Aufgaben, nicht zwei Zahlen aus Geschmack. Die 62 % sind kein übernommener Wert: es ist genau die
+Mischung, bei der das dunkelste Deck über 4,5 : 1 kommt.
+
+**Nicht gemischt wird die Tönung**: die 5 / 1 % der Panel-Fläche und die 26 % des Rahmens bleiben, wie
+sie sind. Sie sollen nicht gelesen werden, sie sind die Zugehörigkeit — und sie sind selbst schon
+Mischungen.
+
+**Was es kostet, ehrlich:** die Mischung nimmt Farbe. Über alle 42 Decks fällt die mittlere Sättigung
+von 0,65 auf 0,39, bei 62 % also gut vierzig Prozent. Am stärksten trifft es die dunklen, kräftigen
+Decks — Thron geht von tiefem Burgunder in ein staubiges Rosé. Das ist der Preis dafür, dass die
+Menüs auf jedem Deck funktionieren, und er wird bewusst bezahlt: **die drei Decks, die die Regel
+nötig machen, sind drei von 42 — aber wer Thron spielt, spielt immer Thron.**
 
 ### Was ausdrücklich NICHT deck-getönt wird
 
@@ -344,13 +402,9 @@ gedämpft und sagt das — sie ist nicht bei null.
 
 ## 9. Offene Punkte
 
-1. **Haarlinien-Höhe** vereinheitlichen: 3 px in den Modals, 2 px im Baum.
-2. **Eyebrow-Wörter** für Screens, die heute keinen haben (Werkstatt, Statistik, Glossar, Leitfaden,
+1. **Eyebrow-Wörter** für Screens, die heute keinen haben (Werkstatt, Statistik, Glossar, Leitfaden,
    Bestenliste). Vorschläge liegen als Mockup vor, sind aber neue Copy.
-3. **Ziel-Helligkeit der Deckfarbe** auf gefüllten Knöpfen — über die 52 Deck-Looks schwankt sie so
-   stark, dass ein Knopf bei Obsidian fast weiß und bei Thron fast unsichtbar wird. Mittel wäre eine
-   Mischung auf Weiß, wie `.as-hub-glyph` sie schon benutzt.
-4. Ob **Genesis-artige Decks** (a1 und a2 fast gegenüber) den Zwei-Farben-Verlauf so behalten sollen.
+3. Ob **Genesis-artige Decks** (a1 und a2 fast gegenüber) den Zwei-Farben-Verlauf so behalten sollen.
 
 ---
 
@@ -360,6 +414,9 @@ gedämpft und sagt das — sie ist nicht bei null.
 | --- | --- |
 | 24.08.2026 | Angelegt. Fundament, Kopf-Kanon, Farbrollen, Komponenten aus den Aufträgen Optionen, Melder, Mainscreen und Baum-Reiter 1–2 zusammengeführt. |
 | 24.08.2026 | Farbentscheidung Upgrade-Baum: **eine** Struktur-Farbe, und die ist die Deckfarbe. Feste Fremdtöne (Cyan/Violett) für Struktur entfallen. |
+| 24.08.2026 | **Ziel-Helligkeit der Deckfarbe entschieden** (§3), damit ist offener Punkt 3 erledigt. Gemessen über alle 42 Decks mit eigenem Akzent: der Kontrast von `a1` gegen den Zeilengrund schwankt um den Faktor 7,9, drei Decks liegen unter 4,5 : 1. Mischung auf Weiß, zwei Werte: **62 %** für Schrift (schlechtestes Deck dann 4,65 : 1), **70 %** für Flächen und Kanten (3,80 : 1). Die Tönung bleibt ungemischt. Kosten: rund vierzig Prozent der Sättigung. |
+| 24.08.2026 | **Haarlinie einheitlich 2 px** (§1), offener Punkt 1 erledigt. 3 px war an die Zweitaktions-Kante vergeben, und auf einem 1200-px-Panel wird daraus ein Balken. Dazu die Strichstärken-Leiter 1 / 2 / 3 / 4 px mit je einer Bedeutung. |
+| 24.08.2026 | **Reihenfolge am Fuß einer Seite festgelegt** (§1): Inhalt, Detailzeile des angetippten Elements, Abschluss-Sektion, Zeichenerklärung. |
 | 24.08.2026 | **Legendär-Phase des Baums (Reiter 4).** Kein Reiter, sondern zwei Kärtchen am Fuß der Navigationsspalte. Sie tragen künftig Text und Zustand selbst; die Detailzeile im Panel entfällt für sie. Marke in Gold nur bei `buy`, gesperrt auf 42 % und aus der Tastatur-Reihenfolge, gekauft mit gezeichnetem Haken in `#54e08a`. Die Höhe hat den ersten Entwurf verworfen: mit Kaufknopf in eigener Zeile lief die Spalte 16 px aus dem Panel (gemessen). Mit dem Knopf **in** der Zeile und ohne den Platzhalter `synLeg` sind es 545 px — einen Pixel weniger als heute, bei 73 px Luft. |
 | 24.08.2026 | Zwei Regeln aus Reiter 4 nachgetragen (§5): **der Zustand steht auf dem Bedienelement**, und **erklärt sich ein Element nur woanders, gehört die Erklärung an das Element.** |
 | 24.08.2026 | **Fraktionsseite des Baums (Reiter 3).** Die Challenge-Karte fällt: sie zeigte bei 1280 × 720 nur ihr Deckbild, 151 px ihres Inhalts waren verborgen (238 px mit angetipptem Knoten). An ihrer Stelle eine 44-px-Zeile am Fuß mit Bedingung, Fortschritt und Verweis auf die Werkstatt, wo dieselben Daten einen eigenen Reiter haben (`CustomizeScreen.jsx:299`/`:1313`). Damit bekommen die Fähigkeiten die volle Breite: 480 → 830 px, zwei Textspuren statt einer, legendäre Kachel 114 → 202 px, Scrollen 4,5× → 2,96×. Gemessen im Produktionsbuild an 1280 × 720 und 1536 × 791, der Vorschlag als Stil-Überzug eingehängt und nachgemessen. |
