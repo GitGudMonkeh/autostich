@@ -1,6 +1,6 @@
 # Handoff — M3 · Upgrade tree
 
-**Done.** The approved redesign is built and the screen is on the vocabulary, in seven commits on
+**Done.** The approved redesign is built and the screen is on the vocabulary, in ten commits on
 `task/menu-m3-upgrades` (base `cf7c3083`): the contract's three — structure · vocabulary · deck
 detail — plus four defects its own checks uncovered: a 44 px click target, an English label bug, an
 unnecessary `!important`, and a control nested inside a control on the legendary card. Four gates green, `typo-tokens.test.js` unmodified, `@theme`
@@ -38,6 +38,17 @@ number is why every prediction in its decision block lands short · **M3-F03/04/
 **unreachable above 1280 px** and `GuideOverlay` does not mount it · M3-F06/07/08 · M3-G1/G2/G3.
 Every "before" number the document stated is confirmed, several to the decimal; its *predictions*
 are uniformly ~24 px optimistic. Nothing it recommended was wrong in sign.
+
+**Zero-delta gate — it needed correcting, not defending (M3-F09).** 160 cells, 5269 deltas:
+`upgrades` 2811 (by design — Tier C), `guide` 2410, `options` 48. `guide` is **this screen seen
+underneath the overlay**: the survey navigates to it *through* the upgrade screen
+(`viewport-survey.mjs:105`), and the delta contents are my own edge migration, click-target fix and
+target-brightness mix — 241 in every one of ten cells. `options` is **not mine**: between the
+baseline matrix (`d2b2143e`) and this base (`cf7c3083`), `options.float.desc` changed `FIERCE` →
+`NICE`, which is the whole of the English-only 6.84 px reflow. My CSS touches no `.op-*` selector and
+every i18n key I changed is `upgrades.*`. **So no surface moved because of M3 except `upgrades`.**
+**M3-F10:** the baseline predates this base, so that drift is in every comparison built on it — M7
+should expect it, not re-derive it. Two independent full runs agree to the delta.
 
 **Owner:** two stops, both in `measurements/M3.md`. (1) What should happen to `DeckDetail`, now that
 it is measurably unreachable on the desktop. (2) Two remaining copy decisions — the challenge row's
