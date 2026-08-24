@@ -364,17 +364,19 @@ describe("#menu-rework — migriertes JSX fuehrt keine Werte ein", () => {
        verlangte nur EINEN Treffer und war damit blind: umbenannt man `cz-root`, passten die
        uebrigen sechzehn Haken weiter, der Waechter blieb gruen und die Wurzel war unbewacht.
        Gefunden beim Gegenpruefen dieses Waechters — genau dafuer ist das Gegenpruefen da.
-       Seit M2b nennt KEIN Eintrag mehr Haken (die Werkstatt ist ganz migriert). Die Pruefung bleibt
-       fuer M3–M11 stehen; dass sie gerade auf nichts passt, sagt der Zaehler unten laut. */
-    let geprueft = 0;
+
+       SEIT M2B NENNT KEIN EINTRAG MEHR HAKEN — die Werkstatt ist ganz migriert, und das ist der
+       einzige Grund, aus dem diese Schleife gerade leer laeuft. Sie bleibt fuer M3–M11 stehen.
+       Hier steht BEWUSST kein `expect(geprueft).toBe(0)`: das waere eine Ratsche auf den heutigen
+       Zustand, und der naechste Worker, der voellig zu Recht `hooks` mitbringt, liefe dagegen. Der
+       Kopf dieses Waechters verlangt ausdruecklich das Gegenteil — er darf nie Arbeit blockieren,
+       die noch nicht passiert ist. Die lebende Gegenprobe des Mechanismus ist `exemptFns` unten. */
     for (const [path, src, e] of sources) {
       if (!e.hooks) continue;
-      geprueft++;
       const alle = tags(src);
       const tot = e.hooks.filter((h) => !alle.some((t) => hookRe(h).test(t.text)));
       expect(tot, `${path}: Haken zeigt ins Leere:\n  ${tot.join("\n  ")}`).toEqual([]);
     }
-    expect(geprueft, "kein Eintrag nennt Haken — das ist derzeit richtig, s. Kopf").toBe(0);
   });
 
   it("JEDER Name in exemptFns trifft eine echte Funktion — eine Ausnahme zeigt nicht ins Leere", () => {
