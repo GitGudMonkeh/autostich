@@ -94,6 +94,19 @@ Paar-plus-Band zu hoch wurde. Nebeneinander passt er ohne Schrumpfen.
   `hyphens: auto` löst es nicht: *gemessen*, es ändert bei allen sechs nichts.
 - **Die Kachelhöhe bleibt 162 px**, es stehen weiter **12 Kacheln ohne Scrollen** im Bild.
 
+**Die Spaltenzahl darf später der Fensterbreite folgen** (Entscheidung des Owners: keine Präferenz,
+später). Zwei Dinge gehören dann dazu, sonst wird daraus der Fehler, den die Rechnung unten
+verwirft:
+
+- **Über Haltepunkte, nicht über `minmax()`.** Eine Mindestbreite je Kachel würde bei 1280 px auf
+  vier bis fünf Spalten fallen und dort **weniger** Decks zeigen — genau die Richtung, die gemessen
+  verworfen ist. Die Spaltenzahl darf mit der Breite nur **steigen**.
+- **Erst messen, dann festlegen.** *Gemessen* liefert die feste Sechserteilung 86 px (1280 × 720),
+  104,7 (1400 × 700) und 128,7 (1536 × 791) — ein brauchbares Band. Oberhalb von 1536 px ist nichts
+  gemessen; am Breiten-Deckel (1720 px) käme die Sechserteilung rechnerisch auf rund 176 px, also
+  über das Band hinaus. Der Ansatz wäre dort eine siebte und achte Spalte. **Gerechnet, nicht
+  gemessen** — vor der Umsetzung an echten Viewports nachzumessen.
+
 ### Die Rechnung — warum die Kacheln nicht größer werden
 
 Der naheliegende Schluss war: Detailspalte kürzen, Kacheln vergrößern. *Alle Varianten als
@@ -266,11 +279,24 @@ Ausnahme; die Spur des Schalters bleibt sichtbar 46 × 26, die Klickfläche wird
 
 ## Offene Punkte für den Owner
 
-1. **Die Farbe eines DP-Preises.** §2 und §3 widersprechen sich; im Mockup ist Gold gezeichnet.
-   Steht auch in `design-sprache.md` §9 als offener Punkt 1.
-2. **Das weiche Trennzeichen.** Sechs Namen brauchen es, §7 verbietet Layout im String.
-   `design-sprache.md` §9, offener Punkt 2.
+1. **Die Farbe eines DP-Preises.** §2 und §3 widersprechen sich. *Nachgeschlagen:* DP trägt heute
+   drei Farben, und auf dem **Hub** ist es bereits `#d6ab6b`, das Währungsgold des Kanons
+   (`StartScreen.jsx:55`, `:774`); cyan ist es nur auf dem Endscreen und hier. Die
+   Unterscheidungsaufgabe aus §2 tritt in der Werkstatt nicht ein, weil SP hier nie gezeigt wird
+   (`CustomizeScreen.jsx:1256`). **Empfehlung: Gold**, so ist es im Mockup gezeichnet. Steht als
+   offener Punkt 1 in `design-sprache.md` §9, samt Kosten.
+2. ~~Das weiche Trennzeichen.~~ **Entschieden am 24.08.2026: erlaubt.** Als benannte Ausnahme in
+   §7 des Kanons eingetragen — nur dort, wo ein einzelnes Wort breiter ist als sein Feld.
 3. **Die neuen Wortlaute.** „Decks, Spielfelder, Effekte." als Unterzeile, „immer an" für den
    Skill-Effekt, die Bedingungstexte als ganze Sätze mit Punkt („Erreiche Score 25.000.000" →
    „Erreiche 25 Millionen Punkte in einem Lauf."), und die gekürzten Fußnoten. Alles neue Copy und
    im Mockup als solche markiert.
+
+---
+
+## Folgepunkte außerhalb dieses Auftrags
+
+- **Der Endscreen trägt drei Farbtöne für zwei Währungen** — SP als `#d4a63a` mit Wert `#f2c14a`,
+  DP als `#35c6e6` (`GameOver.jsx`). Weder der Kanon-Goldton `#d6ab6b` noch eine einheitliche
+  Cyan-Fassung. Er ist von jeder Antwort auf offenen Punkt 1 betroffen und wird hier **nicht**
+  angefasst.

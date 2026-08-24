@@ -583,6 +583,12 @@ gedämpft und sagt das — sie ist nicht bei null.
 - **Ein String ist ein ganzer Satz.** Keine Fragmente, die erst durch Aneinanderkleben Sinn ergeben
   (`" / {total} Knoten · Ranglisten-Lauf"` + `"bei {total}/{total} Knoten"` ist der Gegenentwurf).
 - **Kein Layout im String.** Kein führendes Leerzeichen, kein angehängter Mittelpunkt, kein Emoji.
+  **Eine benannte Ausnahme: das weiche Trennzeichen** (`U+00AD`). Es ist unsichtbar, ändert das Wort
+  nicht und wirkt nur an der Stelle, an der die Zeile ohnehin bräche. Es ist Typografie, kein Layout.
+  Erlaubt ist es dort, wo ein **einzelnes Wort breiter ist als sein Feld** und die Alternative ein
+  abgeschnittener Name wäre — nicht als Bequemlichkeit. *Gemessen:* `hyphens: auto` ist dafür kein
+  Ersatz; der Browser bringt kein deutsches Wörterbuch mit und ändert an keinem der sechs Fälle
+  etwas. Erster Fall: sechs Deck- und Herausforderungsnamen der Werkstatt in einer 70-px-Kachel.
 - **Beschriftung statt nackter Zahl.** Eine Ablesung ohne Wort daneben ist Rätselraten.
 - Wiederholt ein Element den Namen seines Containers, streicht man ihn: die Spalte trägt den Namen,
   der Eintrag die Stufe.
@@ -605,18 +611,27 @@ gedämpft und sagt das — sie ist nicht bei null.
 
 **1 — Welche Farbe hat ein DP-Preis?** §2 sagt, die Farbe der Währung bleibt screen-eigen (SP gold,
 DP cyan); §3 sagt, Cyan gehört dem Hub und darf in Menüs nicht für Beschriftungen ausgegeben werden,
-und weist Preisschilder dem Gold zu. In der Werkstatt treffen beide Sätze hart aufeinander: auf dem
-Packs-Reiter stehen **17 cyane Preisschilder plus das Guthaben**, damit ist die Handlungsfarbe des
-Hubs das am häufigsten wiederholte Farbsignal des Screens. Im Mockup ist **Gold** gezeichnet. Fällt
-die Entscheidung auf Cyan, gehört der genaue Ton hierher — im Code stehen mit `#26c6e6` und
-`#35c6e6` zwei.
+und weist Preisschilder dem Gold zu.
 
-**2 — Darf ein weiches Trennzeichen in einen spielersichtbaren String?** Sechs Deck- und
-Herausforderungsnamen sind ein einziges Wort, das breiter ist als seine Kachel (Kosmospanther,
-Laternenfest, Nachtklinge, Moonwhale, Quecksilber, Kataklysmus). Mit einem weichen Trennzeichen
-(`U+00AD`) an der Silbengrenze passen *gemessen* **alle 42**; ohne es sechs nicht. §7 sagt „kein
-Layout im String". Ein weiches Trennzeichen ist unsichtbar und ändert das Wort nicht — aber es ist
-Layout, und die Regel kennt keine Ausnahme.
+*Nachgeschlagen, nicht erschlossen:* **DP trägt heute drei Farben.** Auf dem **Hub** — der Stelle,
+an der ein Spieler sein Guthaben im normalen Ablauf sieht — ist es `#d6ab6b`, exakt das Währungsgold
+dieses Dokuments (`StartScreen.jsx:55`, `:774`). Auf dem **Endscreen** ist es `#35c6e6`
+(`GameOver.jsx`), in der **Werkstatt** ebenfalls `#35c6e6`. Es gibt also keine gewachsene
+DP-Identität, die eine Umstellung bräche.
+
+Dazu: die Unterscheidungsaufgabe, für die §2 die screen-eigene Farbe vorsieht, tritt in der Werkstatt
+gar nicht ein — SP wird dort nie gezeigt (`CustomizeScreen.jsx:1256`).
+
+**Empfehlung: Gold.** Im Mockup ist Gold gezeichnet. **Kosten, ehrlich:** auf dem Endscreen stehen
+SP und DP untereinander; dort ist die Unterscheidung echt und liefe künftig über die Beschriftung
+statt über die Farbe. Der Endscreen trägt dort heute ohnehin `#d4a63a`, `#f2c14a` und `#35c6e6` —
+drei Töne für zwei Währungen — und ist ein eigener Folgepunkt.
+
+Fällt die Entscheidung stattdessen auf Cyan, gehören zwei Dinge hierher: **welcher** Ton
+(`#26c6e6` und `#35c6e6` stehen beide im Code), und die Bestätigung, dass Cyan damit gleichzeitig
+aus jeder Strukturrolle im Menü verschwindet.
+
+---
 
 ---
 
@@ -630,6 +645,8 @@ entstehen bei jedem Screen, den wir uns vornehmen — sie gehören hierher, nich
 
 | Datum | Was |
 | --- | --- |
+| 24.08.2026 | **Das weiche Trennzeichen ist erlaubt** (§7, benannte Ausnahme) — Entscheidung des Owners. Nur dort, wo ein einzelnes Wort breiter ist als sein Feld und die Alternative ein abgeschnittener Name wäre. `hyphens: auto` ist dafür geprüft und wirkungslos. Damit ist der zweite offene Punkt der Werkstatt erledigt. |
+| 24.08.2026 | Zum ersten offenen Punkt (**Farbe eines DP-Preises**) nachgeschlagen statt erschlossen: DP trägt heute **drei** Farben, und auf dem Hub ist es bereits das Währungsgold `#d6ab6b`. Damit gibt es keine DP-Identität, die eine Umstellung bräche. Empfehlung Gold, mit den Kosten am Endscreen notiert. Entscheidung steht noch aus. |
 | 24.08.2026 | **Deck-Werkstatt entworfen**, Auftrag unter `docs/werkstatt-redesign.md`. Der am weitesten gebaute der sieben Screens — Überzug, Panel-Aufteilung, schmale Spalte links, kein Blur, Haarlinie 2 px sind bereits richtig. Drei Löcher: acht von dreißig Pack-Namen abgeschnitten, elf von zwölf Freischalt-Bedingungen abgeschnitten, und der Effekte-Reiter endet 153 px vor dem Bildschirmende (226 px bei 1536 × 791). |
 | 24.08.2026 | Zwei Regeln daraus in §1: **die Kachel ist der Köder, die Ansicht ist das Bild** (samt der gemessenen Gegenprobe, dass die schmale Spalte zu kürzen die Vorschau kostet und dem Katalog nichts bringt) und **ein Textfeld, das schmaler ist als sein längstes Wort, ist kein Textfeld** (mit den zwei Befunden: `hyphens: auto` wirkt nicht, und eine Farbkante darf auch nicht wiederholen, was das Element schon zeigt). |
 | 24.08.2026 | Eine Regel in §5: **Bedingung und Fortschritt sind zwei Dinge** — die Kachel trägt den Zähler, der Satz steht in der dauerhaft sichtbaren Ansicht daneben. Dazu die Klarstellung, wann eine Erklärung danebenstehen darf: ohne Klick und ohne Wechsel im Bild. |
