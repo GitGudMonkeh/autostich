@@ -98,14 +98,43 @@ const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], sele
   // Architekt-Gebäude-Overlay (#202/#UI): der RAHMEN in Gebäude-Form wird jetzt als durchgezogene SVG-Kontur ÜBER dem
   // Grid gezeichnet (CardGrid, archFrameLines) — nicht mehr als Kasten je Karte. Die Kachel selbst bekommt nur noch
   // einen sehr dezenten Kategorie-Farbwash, damit man abgedeckte Zellen auch als Fläche erkennt (Legendär = Gold).
-  const archShadow = arch ? `inset 0 0 0 9999px ${(arch.legendary ? "#c8962f" : arch.color)}1f` : null;
   // #UI: Distrikt-Bonus (gleiche Kategorie aneinander) → Kachel glüht in ihrer Typ-Farbe (etwas kräftig), analog zum
   // Architekt-Screen. Der rote Struktur-Kombi-Wash (arch-struct-lit) bleibt davon getrennt.
   const distrShadow = distrLit && arch ? `0 0 16px 2px ${arch.color}cc, inset 0 0 9px ${arch.color}66, inset 0 0 0 1px ${arch.color}` : null;
-  // F4 Farballianz (#125): diagonaler Zweifarben-Split auch in der Grid-Kachel (obere Hälfte Eigen-, untere Partnerfarbe).
-  const tileBg = allyColor
-    ? `linear-gradient(135deg, ${col}30 0%, ${col}30 49%, ${allyColor}30 51%, ${allyColor}30 100%), #20202a`
-    : "#20202a";
+  /* #kachel-wash (24.08.2026) — die zwei FLÄCHEN der Kachel sind Hintergrund-Ebenen, kein Schatten.
+
+     Bis hierher standen beide als `inset 0 0 0 9999px <Farbe>` im `box-shadow`: ein Schatten, dessen
+     Streuung so groß ist, dass er die Kachel füllt. Optisch tadellos, im Malwerk nicht — die 9999 px
+     Streuung blähen das Ink-Overflow-Rechteck der ~50 px breiten Kachel auf rund 20 000 px in jede
+     Richtung. Im komponierten Scroller der Aufstellungs-/Architekten-Karte (beide haben eine sticky
+     Leiste, die den Container komponieren lässt; im Architekten sogar NUR unter `md`) fielen auf
+     Android-Chrome nach dem Scrollen einzelne solcher Kacheln aus dem Bild und kamen nicht zurück.
+     Gemeldet aus einem Lauf in Durchlauf 36 (Report #9, Chrome 151 / Android, 394x734, keine
+     JS-Fehler) und am Gerät beobachtet: die Gebäude-Kontur — die aus GEMESSENEN Zellrechtecken
+     entsteht — lag um leere Stellen, die Kacheln waren also da und wurden nur nicht gemalt.
+
+     Als Hintergrund-Ebene ist die Fläche pixelgleich (eine Ebene über `#20202a`, unter dem Inhalt,
+     am Radius geclippt wie der Inset-Schatten) und das Malrechteck wieder so groß wie die Kachel.
+     Reihenfolge wie vorher: Firn liegt über dem Gebäude-Wash (im `box-shadow` malte der zuerst
+     genannte Schatten oben, bei `background` die zuerst genannte Ebene). */
+  const washes = [
+    firn ? "#5ec8f014" : null,
+    arch ? `${arch.legendary ? "#c8962f" : arch.color}1f` : null,
+  ].filter(Boolean);
+  /* F4 Farballianz (#125): diagonaler Zweifarben-Split auch in der Grid-Kachel (obere Hälfte Eigen-, untere
+     Partnerfarbe). Der Grundton steht als eigene EBENE statt als `background-color`, damit `background-clip`
+     ihn eigenständig ansprechen kann — s. `tileClip`. */
+  const tileBg = [
+    ...washes.map((w) => `linear-gradient(0deg, ${w}, ${w})`),
+    allyColor ? `linear-gradient(135deg, ${col}30 0%, ${col}30 49%, ${allyColor}30 51%, ${allyColor}30 100%)` : null,
+    "linear-gradient(0deg, #20202a, #20202a)",
+  ].join(", ");
+  /* Die Wash-Ebenen enden an der PADDING-Box, alles andere an der Border-Box. Das ist kein Detail: ein
+     `inset`-Schatten wird an der Padding-Box geclippt, eine Hintergrund-Ebene standardmäßig an der Border-Box.
+     Der Kachelrahmen ist ohne Formation/Auswahl halbdurchlässig (`col + "55"`) — ohne diese Zeile läge der
+     Wash plötzlich AUCH unter dem Rahmen und die abgedeckte Kachel bekäme einen 2 px breiten, leicht anderen
+     Rand als vorher. Mit ihr ist der Tausch Schatten → Ebene pixelgleich. */
+  const tileClip = [...washes.map(() => "padding-box"), ...(allyColor ? ["border-box"] : []), "border-box"].join(", ");
   return (
     <button onClick={onClick} disabled={disabled} data-sfx={quiet ? "none" : undefined} data-pos={arch ? pos : undefined}
       title={anchorType ? t("cardgrid.anchor.title", { type: anchorLabel(anchorType) }) : ring ? (ringTitle || undefined) : undefined}
@@ -115,12 +144,14 @@ const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], sele
          Auszeichnung mehr, sondern eine Flimmerfläche. Der Rahmen wird dünner UND der FORMATIONS-Schein
          fällt weg — die ZUSTANDS-Scheine (gewählt · getippt · Gletscher · Gebäude) bleiben, sie sind
          selten und genau das, was man dort sucht. Auf dem Brett ändert sich nichts (Default false). */
-      style={{ background: tileBg, border: `${quietFrames ? 1 : 2}px ${borderStyle} ${borderColor}`,
+      style={{ background: tileBg, backgroundClip: tileClip, border: `${quietFrames ? 1 : 2}px ${borderStyle} ${borderColor}`,
                // #201.4: getauschte Karte dezent ausgrauen (rein kosmetisch, bleibt klickbar). Eis-Neudesign: Gletscher
                // ebenso ausgrauen → Signal „starr, nicht tauschbar". picked(gold)/selected(weiß) haben Vorrang; disabled (0,45) sticht durch.
                opacity: disabled ? 0.45 : ((dimmed || glacier) && !selected && !picked ? 0.55 : 1), cursor: !onClick ? "default" : (disabled ? "not-allowed" : "pointer"),
                ...(anchorRing || {}),
-               boxShadow: [picked ? "0 0 10px #d4a63a66" : selected ? "0 0 10px #ffffff66" : glacier ? "0 0 8px #5ec8f066" : (fb.color && !fb.dashed && !quietFrames) ? `0 0 8px ${fb.color}55` : null, firn ? "inset 0 0 0 9999px #5ec8f014" : null, distrShadow, archShadow].filter(Boolean).join(", ") || undefined }}>
+               // #kachel-wash: hier stehen nur noch SCHEINE (Zustand · Formation · Distrikt). Die zwei Flächen
+               // — Gebäude-Wash und Firn — liegen als Hintergrund-Ebenen in `tileBg`, s. oben.
+               boxShadow: [picked ? "0 0 10px #d4a63a66" : selected ? "0 0 10px #ffffff66" : glacier ? "0 0 8px #5ec8f066" : (fb.color && !fb.dashed && !quietFrames) ? `0 0 8px ${fb.color}55` : null, distrShadow].filter(Boolean).join(", ") || undefined }}>
       <span className="absolute top-0.5 left-1 text-[8px] opacity-40 tabular-nums">{pos + 1}</span>
       {/* #301 C3: fixierte Aufstell-Zelle — rote Diagonal-Schraffur (Querbalken) + Rim, KEIN Schloss (wie beim Architekten). */}
       {locked && (
