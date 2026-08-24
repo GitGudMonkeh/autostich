@@ -1051,6 +1051,37 @@ export default {
      order energy · build space · structure · blueprint. Tone: second person, present tense,
      condition → effect; at most three sentences per pop-up, exactly one per coach mark. */
   // Hub entries: the quiet chip (always) + the loud first-contact offer (only before the first finished run).
+  /* ===================== TUTORIAL SECTIONS (#tutorial-sections) =====================
+     The sections are the third teaching layer: glossary = look up · guide = strategy ·
+     tutorial = do it once. A lesson is THREE beats — one Satz, one picture or Probierfeld, one
+     Merksatz — and at most 400 px at 390 × 844 in German (budget in catalog.js). German is the
+     budget language because it is the longer of the two.
+     Never type a number: placeholders from constants.js (text-style-guide.md §4). */
+  "tut.eyebrow": "Tutorial",
+  "tut.title": "Learn Autotrick",
+  "tut.sub": "One topic at a time, a minute each.",
+  "tut.merksatz": "Remember",
+  "tut.back": "Back",
+  "tut.next": "Next",
+  "tut.progress": "{n} / {total}",
+  "tut.allTopics": "All topics",
+  "tut.openGlossary": "Open the glossary",
+  "tut.probe.title": "Try it · one segment",
+  "tut.probe.readout": "Detected",
+  "tut.probe.none": "no formation",
+  // -- Sections and their placeholder lessons (T1 builds the shell; T3-T8 fill it) --
+  "tut.grundlagen.title": "Basics",
+  "tut.grundlagen.sub": "What Autotrick is, how a trick plays, where your score comes from.",
+  "tut.grundlagen.wasist.title": "What Autotrick is",
+  "tut.grundlagen.wasist.0": "Your deck plays itself against a second one, card against card. You never touch a trick — you build the deck that wins it beforehand.",
+  "tut.grundlagen.wasist.1": "Five of your positions — one segment.",
+  "tut.grundlagen.wasist.2": "There is no losing. There is only more score or less.",
+  "tut.aufstellung.title": "Order phase",
+  "tut.aufstellung.sub": "Card order, energy, formations, segments.",
+  "tut.aufstellung.formationen.title": "What formations are",
+  "tut.aufstellung.formationen.0": "A formation is a pattern in your card order. When the game spots one, it multiplies the score.",
+  "tut.aufstellung.formationen.1": "Tap two cards to swap them.",
+  "tut.aufstellung.formationen.2": "The multiplier only counts if you win the trick as well.",
   "start.tutorial": "Tutorial",
   "start.tutorial.offer": "Start the tutorial",
   "start.tutorial.offer.sub": "A guided run walks you through everything, step by step",
