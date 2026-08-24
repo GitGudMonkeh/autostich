@@ -251,6 +251,18 @@ Mischung, bei der das dunkelste Deck über 4,5 : 1 kommt.
 sie sind. Sie sollen nicht gelesen werden, sie sind die Zugehörigkeit — und sie sind selbst schon
 Mischungen.
 
+Der Rahmen ist dabei ausdrücklich geprüft worden, nicht bloß ausgelassen. *Gemessen* über alle 42
+Decks, Rahmen gegen die Panelfläche: **1,25 : 1 bis 2,33 : 1, Faktor 1,9** — nicht 7,9 wie bei der
+Schrift. Kein Rahmen verschwindet; sie sind alle leise, und leise ist ihre Aufgabe. Eine Mischung
+würde alle 42 anheben, um bei zwei Decks 0,3 zu gewinnen.
+
+**Verworfen: ein einziger Wert für alles.** 62 % auch für Flächen und Kanten wäre eine Zahl statt
+zweien, und der Unterschied in der Sättigung ist klein (Mittel 0,44 gegen 0,39). Trotzdem nein:
+Haarlinie, Regler-Füllung und Aktiv-Kante sind das, was vom Deck überhaupt noch zu sehen ist, nachdem
+die Schrift weichgezeichnet wurde. Ihr Kontrast war ohnehin erfüllt — dort Farbe wegzunehmen kostet
+etwas und bringt nichts. Die zwei Zahlen sind keine Komplexität, sie sind die Trennung zwischen
+**lesen** und **sehen**.
+
 **Was es kostet, ehrlich:** die Mischung nimmt Farbe. Über alle 42 Decks fällt die mittlere Sättigung
 von 0,65 auf 0,39, bei 62 % also gut vierzig Prozent. Am stärksten trifft es die dunklen, kräftigen
 Decks — Thron geht von tiefem Burgunder in ein staubiges Rosé. Das ist der Preis dafür, dass die
@@ -414,6 +426,7 @@ gedämpft und sagt das — sie ist nicht bei null.
 | --- | --- |
 | 24.08.2026 | Angelegt. Fundament, Kopf-Kanon, Farbrollen, Komponenten aus den Aufträgen Optionen, Melder, Mainscreen und Baum-Reiter 1–2 zusammengeführt. |
 | 24.08.2026 | Farbentscheidung Upgrade-Baum: **eine** Struktur-Farbe, und die ist die Deckfarbe. Feste Fremdtöne (Cyan/Violett) für Struktur entfallen. |
+| 24.08.2026 | Zur Ziel-Helligkeit zwei Gegenproben, beide gemessen und beide ohne Änderung: der **Rahmen** bleibt ungemischt (Spanne nur 1,9-fach), und **ein einziger Mischwert für alles** ist verworfen — er nimmt Farbe dort weg, wo der Kontrast schon erfüllt war. Beides in §3 notiert, damit es nicht wiederkommt. |
 | 24.08.2026 | **Ziel-Helligkeit der Deckfarbe entschieden** (§3), damit ist offener Punkt 3 erledigt. Gemessen über alle 42 Decks mit eigenem Akzent: der Kontrast von `a1` gegen den Zeilengrund schwankt um den Faktor 7,9, drei Decks liegen unter 4,5 : 1. Mischung auf Weiß, zwei Werte: **62 %** für Schrift (schlechtestes Deck dann 4,65 : 1), **70 %** für Flächen und Kanten (3,80 : 1). Die Tönung bleibt ungemischt. Kosten: rund vierzig Prozent der Sättigung. |
 | 24.08.2026 | **Haarlinie einheitlich 2 px** (§1), offener Punkt 1 erledigt. 3 px war an die Zweitaktions-Kante vergeben, und auf einem 1200-px-Panel wird daraus ein Balken. Dazu die Strichstärken-Leiter 1 / 2 / 3 / 4 px mit je einer Bedeutung. |
 | 24.08.2026 | **Reihenfolge am Fuß einer Seite festgelegt** (§1): Inhalt, Detailzeile des angetippten Elements, Abschluss-Sektion, Zeichenerklärung. |
