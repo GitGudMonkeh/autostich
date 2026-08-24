@@ -24,7 +24,9 @@
      node docs/workstreams/desktop-menus/evidence/M7/measure.mjs --out <dir> [--shots]
 
    `--shots` additionally writes PNGs for the owner-facing set. Without it the run is geometry only,
-   which is what the before/after table needs.
+   which is what the before/after table needs. `screenshot()` returns BASE64 — the encoding argument
+   is not optional decoration; without it the file is a text file with a .png name, and every viewer
+   reports it as a corrupt image rather than as the wrong encoding.
 
    DETERMINISM is inherited from `viewport-survey.mjs` and is not optional: reduced motion, seeded
    `Math.random`, every animation pinned to time 0, fonts and images awaited. The profile is fixed
@@ -298,7 +300,7 @@ async function main() {
             + `Check as_reset_epoch against RESET_EPOCH in src/game/storage.js.`);
         }
         out.cells[`${key}/stats`] = { reached: true, ...probe };
-        if (SHOTS) await screenshot(c, null, {}).then((b) => writeFileSync(join(OUT, `stats-${lang}-${w}x${h}.png`), b));
+        if (SHOTS) await screenshot(c, null, {}).then((b) => writeFileSync(join(OUT, `stats-${lang}-${w}x${h}.png`), b, "base64"));
 
         for (const [name, row] of [["run-full", 0], ["run-thin", 6]]) {
           const r = await evaluate(c, clickRun(row));
@@ -306,7 +308,7 @@ async function main() {
           await sleep(700);
           await evaluate(c, SETTLE);
           out.cells[`${key}/${name}`] = { reached: true, ...(await evaluate(c, RD_PROBE)) };
-          if (SHOTS) await screenshot(c, null, {}).then((b) => writeFileSync(join(OUT, `${name}-${lang}-${w}x${h}.png`), b));
+          if (SHOTS) await screenshot(c, null, {}).then((b) => writeFileSync(join(OUT, `${name}-${lang}-${w}x${h}.png`), b, "base64"));
           /* CLOSE THE WINDOW, DO NOT ESCAPE IT. A synthetic Escape on `document` was the obvious
              move and it closed BOTH layers — `useEscape` is mounted by the statistics screen as
              well, and the run window is a portal on `document.body`, so one key event reaches two

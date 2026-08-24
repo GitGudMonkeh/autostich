@@ -5663,8 +5663,19 @@ b, strong { font-weight: 600; }
      (design-sprache.md 1). Was umschaltet, ist der INHALT: fuenfzehn Kacheln, oder eine Reiterzeile
      plus zwei zusammengeklappte Zeilen plus die Liste. */
   .rd-c2 { display: flex; flex-direction: column; }
-  .rd-bfs { display: flex; flex-direction: column; gap: 14px; }
-  .rd-bg { display: grid; grid-template-rows: auto auto; row-gap: 7px; }
+  /* Der Feldblock scrollt, wenn er doch nicht passt. Gemessen war er 422 px hoch in einem 380-px-
+     Panel, und weil ein Block mit `overflow: visible` nicht klemmt, sondern HERAUSLAEUFT, stand die
+     Gebaeude-Zeile ueber dem Verlauf-Panel darunter. Auf den Uebergabe-Aufnahmen zu sehen, nicht in
+     einer Zahl — Fenster passen ist kein Zustand, den der Zustandsdurchlauf abfragt. */
+  .rd-bfs { display: flex; flex-direction: column; gap: 14px; min-height: 0; overflow-y: auto; }
+  /* Die Gruppenbeschriftung steht NEBEN ihren Feldern, nicht darueber — dieselbe Zeilenform, die der
+     geoeffnete Zustand fuer die zwei nicht gewaehlten Gruppen ohnehin benutzt. Sie spart die drei
+     Beschriftungszeilen (rund 69 px) und ist genau das, was die fuenfzehn Felder brauchen, um in die
+     vom Entwurf gesetzten 380 px zu passen. Eine Bauform weniger, nicht eine mehr. */
+  .rd-bg {
+    display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto;
+    align-items: center; column-gap: 10px;
+  }
   .rd-bg-k {
     font-size: var(--text-meta-1); letter-spacing: .14em; text-transform: uppercase;
     color: #5c5c68; font-family: var(--font-mono, ui-monospace, monospace);
@@ -5703,10 +5714,6 @@ b, strong { font-weight: 600; }
      sie bleiben sichtbar und anklickbar, und genau das ist der Unterschied zu einem Overlay. Ihre
      Beschriftung wandert dabei neben die Felder, damit die Zeile wirklich eine ist. */
   .rd-bg-tab { row-gap: 0; }
-  .rd-bg-tab:not(.is-open) {
-    grid-template-rows: auto; grid-template-columns: auto minmax(0, 1fr);
-    align-items: center; column-gap: 10px;
-  }
   .rd-bfs .rd-bg-tab:not(.is-open) .rd-bf-tab { opacity: .7; }
   .rd-bfs .rd-bg-tab:not(.is-open) .rd-bf-k { display: none; }
   /* Die Liste scrollt IM Panel - die einzige Stelle dieses Screens, an der eine Liste beliebig lang
