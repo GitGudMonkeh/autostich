@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { DESKTOP_BLOCK_AT } from "./desktopBreakpoint.js";
 import { inlineValueOf, overridesInline } from "./inlineOverride.js";
+import { resolve, themeTokens } from "./cssTokens.js";
 
 /* ============================================================
    #go-ruhe (19.08.2026) — der Siegesbildschirm im Desktop-Ton.
@@ -41,9 +42,20 @@ const deskBlock = (src) => {
   return "";
 };
 const desk = deskBlock(cssBare);
+/* #menu-rework M3 — der Radius wird AUFGELOEST, nicht abgelesen.
+   Diese Hilfsfunktion las `border-radius:\s*[\d.]+px` und gab die Zahl zurueck. Seit der Baum auf
+   das Panel-Vokabular umgestellt ist, steht dort `var(--rd-sm)`, und die Ablesung lieferte `null` —
+   der Waechter fiel, waehrend die Zusicherung, die er schuetzt („eine Kachelform fuer alles"),
+   voellig intakt war. Genau der Fall, fuer den `test/cssTokens.js` geschrieben wurde.
+   Aufloesen statt den Token-NAMEN zu pruefen: der Waechter rechnet weiter mit echten Zahlen, und er
+   gewinnt eine zweite Regression dazu — fehlt der Schritt im `@theme`-Block, bleibt die Ersetzung
+   stehen und die Zusicherung faellt. */
 const radius = (sel) => {
-  const alle = desk.match(new RegExp(`(^|,)\\s*${sel}\\s*(,[^{}]*)?\\{[^}]*border-radius:\\s*[\\d.]+px`, "gm")) || [];
-  const m = alle.length ? alle[alle.length - 1].match(/border-radius:\s*([\d.]+)px/) : null;
+  const alle = desk.match(new RegExp(`(^|,)\\s*${sel}\\s*(,[^{}]*)?\\{[^}]*border-radius:\\s*[^;}]+`, "gm")) || [];
+  if (!alle.length) return null;
+  const roh = alle[alle.length - 1].match(/border-radius:\s*([^;}]+)/);
+  if (!roh) return null;
+  const m = resolve(roh[1].trim(), themeTokens(css)).match(/([\d.]+)px/);
   return m ? Number(m[1]) : null;
 };
 

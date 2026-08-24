@@ -620,8 +620,9 @@ export function UpgradeScreen({ onClose, profile, onProfileChange }) {
 
   return overlayPortal((
    <>
+    {/* #menu-rework M3: der Überzug emittiert ein Token — Wert an `.up-root` in index.css. */}
     <div className="fixed inset-0 overlay-root up-root z-40 flex items-start justify-center p-3 sm:p-6 overflow-y-auto"
-      style={{ background: "#0c0c10ee", backdropFilter: "blur(3px)" }} onClick={onClose}>
+      style={{ background: "var(--sf-scrim)", backdropFilter: "blur(3px)" }} onClick={onClose}>
       <div className="w-full max-w-xl dt:max-w-none rounded-2xl px-5 pb-6 sm:px-6 overlay-card as-panel as-panel-deck up-card relative"
         style={MODAL_CARD} onClick={(e) => e.stopPropagation()} {...tabSwipe}>
 

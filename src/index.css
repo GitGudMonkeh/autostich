@@ -2332,6 +2332,17 @@ b, strong { font-weight: 600; }
    Umgeschaltet wird in der 1280-px-Sektion — sichtbar ist immer genau eine. */
 .up-legend-page { display: none; }
 
+/* #menu-rework M3 — der Ueberzug ist ein SCHRITT, nicht ein Literal. Er stand inline am Wurzelknoten
+   (`#0c0c10ee`) und wurde ab 1280 px per `!important` ueberschrieben — genau die Naht, die die
+   Architektur verbietet: `!important` ist nicht die Antwort auf einen Inline-Stil, das Umhaengen der
+   Eigenschaft ist es. Der Inline-Stil emittiert jetzt `var(--sf-scrim)`, und der Screen haengt den
+   Schritt hier an seiner eigenen Wurzel um — auf jeder Breite derselbe Wert, wie es die Werkstatt
+   seit M2a tut und wie `#ueberzug` es fuer alle Overlays ueber dem Hauptschirm festgehalten hat.
+   GEMESSENE FOLGE UNTER 1280 px: die Deckkraft geht von .933 auf .94. Das beruehrt die
+   Handy-Fassung und steht deshalb im Nachweis als bewusste Abweichung — der Unterschied ist 0,007
+   der Alpha, also hoechstens 1,8/255 und nur auf einem reinweissen Bildpunkt dahinter. */
+.up-root { --sf-scrim: var(--sf-scrim-desk); }
+
 /* #menu-rework M3 — dieselbe Technik fuer die Teile, die der Kopf-Kanon ab 1280 px dazubekommt.
    Eyebrow, Unterzeile, die zwei benannten Ablesungen und der Ranglisten-Chip stehen im DOM, sind
    aber bis 1279 px AUS DEM LAYOUT: die Handy-Fassung wird in diesem Umbau nicht angefasst, und ein
@@ -2721,7 +2732,8 @@ b, strong { font-weight: 600; }
        „Statistiken") lesbar hinter den Panels, weil dort mehr Überzug frei liegt als im dicht gefüllten Baum.
        Gemessen sind die Panels beider Screens identisch (rgba(27,26,36,.93)→rgba(22,22,32,.95)) — der
        Unterschied kam allein vom freien Überzug. EIN Wert für alle Overlays, die über dem Hauptschirm liegen. */
-    background: rgba(12, 12, 16, .94) !important;
+    /* #menu-rework M3: die Flaeche steht nicht mehr hier. Der Schritt haengt an `.up-root` in der
+       Basis, der Inline-Stil liest ihn, und damit faellt das `!important` mit dem Literal weg. */
     /* #perf-blur: KEIN backdrop-filter. Er stand hier bis 18.08.2026 und war der teuerste Posten des
        Desktop-Passes — gemessen im Produktionspfad (1723 x 1030): Werkstatt 12,3 -> 26,1 fps, Baum
        8,1 -> 22,8 fps, sobald er weg ist. Grund ist die Kombination mit den laufenden Animationen
@@ -2776,7 +2788,12 @@ b, strong { font-weight: 600; }
      nebeneinander setzen, ohne die DOM-Reihenfolge anzufassen (unter 1280 px muss sie die alte
      bleiben). Spart rund 95 px, die der Baum auf flachen Fenstern zum Scrollen gebraucht hätte. */
   .up-head {
-    background: linear-gradient(180deg, rgba(18, 18, 26, .92) 62%, rgba(18, 18, 26, 0)) !important;
+    /* #menu-rework M3 — der auslaufende Kopf IST `--sf-head-fade`, wertgleich. Der Kopf setzt seine
+       Flaeche inline (`STICKY_HEAD_BG`), und diese Konstante emittiert seit M1 `var(--sf-head)`:
+       diese Regel haengt den Schritt AM ELEMENT um, der Inline-Stil liest ihn dort und nimmt den
+       neuen Wert an — Kaskade intakt, `!important` unnoetig. Dieselbe Naht wie `.op-head`/`.cz-head`. */
+    --sf-head: var(--sf-head-fade);
+    background: var(--sf-head);
     margin-left: 0 !important;
     margin-right: 0 !important;
     padding-left: 0 !important;
@@ -2831,7 +2848,12 @@ b, strong { font-weight: 600; }
   .up-bal-v { line-height: 1.1; }
   .up-readout {
     grid-column: 3; grid-row: 1 / span 3;
-    padding-left: 22px; border-left: 1px solid rgba(150, 150, 170, .18);
+    /* Der senkrechte Strich ist `--ed-quiet` — „ein Trenner innerhalb eines Panels", genau seine
+       Rolle. Er stand als Durchsichtigkeit da; ueber dem Kopf malt sie [49,48,61], der Schritt malt
+       [42,42,52]. Dieselben 9/255 auf einer 1-px-Linie, die M2a am Werkstatt-Kopf gemessen und der
+       Owner abgenommen hat. Das `padding-left` bleibt Zahl: es setzt die Auskunftsspalte vom Strich
+       ab, ist also Anordnung im Kopfraster und keine Panel-Polsterung. */
+    padding-left: 22px; border-left: 1px solid var(--ed-quiet);
     display: flex; align-items: flex-start; gap: 22px;
   }
   .up-readout > div { margin-top: 0 !important; }
@@ -2849,13 +2871,16 @@ b, strong { font-weight: 600; }
     font-size: var(--text-body-3); font-weight: 600; color: #a6a6b0; line-height: 1.35;
   }
   .up-rank.is-done .up-rank-v { color: #54e08a; }
+  /* Die Balkenspur ist eine eingelassene Flaeche — `--sf-sunken`, ihre Rolle. Der Radius ist
+     `--rd-sm`: auf einem 3-px-Balken klemmt jeder Radius ueber 1,5 px auf die halbe Hoehe, 99 px und
+     6 px malen dort also DASSELBE. Wertgleich, nicht bloss aehnlich. */
   .up-rank-b {
-    display: block; height: 3px; border-radius: 99px; overflow: hidden;
-    background: rgba(150, 150, 170, .18); margin-top: 6px;
+    display: block; height: 3px; border-radius: var(--rd-sm); overflow: hidden;
+    background: var(--sf-sunken); margin-top: 6px;
   }
   .up-rank-b > i {
-    display: block; height: 100%; border-radius: 99px;
-    background: color-mix(in srgb, var(--deck-a1, #9b82f0) 70%, #ffffff);
+    display: block; height: 100%; border-radius: var(--rd-sm);
+    background: color-mix(in srgb, var(--deck-a1, #9b82f0) 70%, #ffffff);   /* M3-G1 */
   }
   .up-rank.is-done .up-rank-b > i { background: #54e08a; }
 
@@ -2865,10 +2890,13 @@ b, strong { font-weight: 600; }
   /* Respec und Schließen waren 80 × 30 bzw. 106 × 42 px — ungleich hoch und beide unter dem
      44-px-Mindestklickziel, das für den Rest des Desktop-Passes gilt. Ab hier tragen beide dieselbe
      Größe; `.up-actions > *` trifft sie, ohne dass eine der beiden Knopf-Sorten ihre Optik verliert. */
+  /* Der Knopf polstert gegen seine BESCHRIFTUNG, nicht gegen eine Panelkante — 2c laesst genau
+     diese Sorte ausserhalb der Leiter (`--btn-pad-*`). Der Radius ist `--rd-md`, wertgleich 8 px:
+     „ein Steuerelement, das keine Kachel ist". */
   .up-actions > * {
     font-size: var(--text-body-lg-3) !important;
     padding: 11px 18px !important;
-    border-radius: 8px;
+    border-radius: var(--rd-md);
   }
   /* Die Haarlinie sitzt an der Kartenecke; ohne Karte hat sie dort nichts mehr zu suchen. */
   .up-head > div[aria-hidden="true"]:first-child { display: none; }
@@ -2876,36 +2904,16 @@ b, strong { font-weight: 600; }
   /* Die Reiterzeile hat nichts mehr zu schalten. */
   .up-tabs { display: none; }
 
-  /* Zwei Spalten, oben bündig. Gedeckelt wie das Spaltenpaar des Startbildschirms, damit der Screen
-     auf Ultrawide nicht auseinanderläuft. */
-  .up-branches {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 30px;
-    align-items: start;
-    width: min(1720px, 100%);
-    margin-inline: auto;
-    margin-top: 4px;
-  }
-  .up-branch.is-off { display: block; }   /* ab hier sind IMMER beide Zweige zu sehen */
-  .up-branch {
-    border-radius: 14px;
-    padding: 16px 20px 20px;
-    background: linear-gradient(180deg, rgba(27, 26, 36, .72), rgba(22, 22, 32, .78));
-    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
-  }
-  /* Spaltenüberschrift statt Reiter: dieselbe Schriftbehandlung wie das „Legendär-Phase"-Etikett im
-     Screen (gesperrt, versal) — kein neues Typo-Vokabular für zwei Wörter. */
-  .up-branch-h {
-    display: block;
-    margin: 0;
-    font-size: var(--text-body-lg-3);
-    font-weight: 600;
-    letter-spacing: .18em;
-    text-transform: uppercase;
-  }
-  /* Der erste Panel-Block im Zweig bringt `mt-4` mit — unter der Überschrift ist das zu viel. */
-  .up-branch > .mt-4 { margin-top: 12px; }
+  /* #menu-rework M3 — HIER STANDEN DIE REGELN DES ZWEIG-PFADS, UND SIE HABEN NIE ETWAS GEMALT.
+     `.up-branches` / `.up-branch` werden nur gerendert, wenn `wide` FALSCH ist (UpgradeScreen.jsx
+     schaltet zwischen zwei Renderpfaden, nicht zwischen zwei Anordnungen) — ab 1280 px steht dort
+     `.up-desk`. GEMESSEN im Produktionsbuild an allen drei flachen Fenstern des Auftrags:
+     `.up-branch` und `.up-branches` sind im DOM nicht vorhanden, also `null`. Die Zahlen dazu stehen
+     im Nachweis (`measurements/M3.md`) und nicht hier — dieser Kommentar nennt keine Schwelle.
+     Sie standen aus der Zeit vor der Navigationsspalte hier und trugen eine Flaeche (.72/.78), die
+     das Vokabular gar nicht kennt. Tote Regeln zu tokenisieren hiesse, dem Vokabular eine Fundstelle
+     zuzuschreiben, die es nicht gibt — deshalb entfernt statt umgeschrieben. Die Basis-Regeln des
+     Zweig-Pfads (unter 1280 px) bleiben unberuehrt. */
 
   .up-legend { margin-top: 16px !important; font-size: var(--text-body-3) !important; }
   /* #menu-rework M3 — Farbschluessel links, Bedienhinweis rechts. Der Hinweis stand bis hierher im
@@ -2953,30 +2961,33 @@ b, strong { font-weight: 600; }
     min-height: 0;
   }
   .up-nav { align-self: start; }   /* die Spalte selbst soll NICHT auf volle Höhe gezogen werden */
+  /* #menu-rework M3 — `--sf-glass` IST dieser Verlauf, Zeichen fuer Zeichen: er ist einer der 13,
+     aus denen der Schritt abgeleitet wurde. Die Spalte liest ihn jetzt, statt ihn zu wiederholen.
+     Der Innenabstand geht auf `--in-snug`: 14/12 wird 13/13. Die Leiter hat drei Sprossen und keine
+     davon ist 14/12 — die naechste ist `--in-snug`, und die Spalte ist ein innerer Kasten. */
   .up-nav {
-    border-radius: 14px; padding: 14px 12px;
+    border-radius: var(--rd-lg); padding: var(--in-snug);
     display: flex; flex-direction: column; gap: 7px;
-    background: linear-gradient(180deg, rgba(27, 26, 36, .93), rgba(22, 22, 32, .95));
+    background: var(--sf-glass);
   }
   .up-navhead {
     font-size: var(--text-meta-4); letter-spacing: .2em; text-transform: uppercase; font-weight: 600;
     color: #82828f; margin-top: 10px; padding-top: 10px;
-    border-top: 1px solid rgba(150, 150, 170, .14);
+    border-top: 1px solid var(--ed-quiet);
   }
+  /* #menu-rework M3 — der 90-Grad-Farbanlauf und der Radius 11 standen hier und wurden BEIDE schon
+     ueberschrieben: `#up-form` weiter unten setzt die Flaeche auf einen weissen Hauch und den Radius
+     ueber die Sammelregel auf `--rd-sm`. Was hier stand, war seit jenem Griff wirkungslos. Es zu
+     tokenisieren haette dem Vokabular eine Fundstelle zugeschrieben, die nichts malt — also
+     entfernt. Was BLEIBT, ist das, was die spaetere Regel nicht anfasst: Anordnung, Kante, Uebergang. */
   .up-navrow {
     display: flex; align-items: center; gap: 10px; text-align: left;
-    padding: 12px 13px; border-radius: 11px; cursor: pointer;
-    background: linear-gradient(90deg, color-mix(in srgb, var(--c) 12%, #12121a) 0%, #12121a 46%);
-    border: 1px solid rgba(150, 150, 170, .14);
+    padding: var(--in-tight); cursor: pointer;
+    border: 1px solid var(--ed-quiet);
     border-left: 4px solid color-mix(in srgb, var(--c) 70%, transparent);
     transition: background .14s ease, box-shadow .14s ease;
   }
-  .up-navrow:hover { background: linear-gradient(90deg, color-mix(in srgb, var(--c) 20%, #12121a) 0%, #12121a 50%); }
-  .up-navrow.is-on {
-    border-left-color: var(--c);
-    background: linear-gradient(90deg, color-mix(in srgb, var(--c) 26%, #12121a) 0%, #12121a 52%);
-    box-shadow: inset 0 0 24px -14px var(--c), 0 0 18px -10px var(--c);
-  }
+  .up-navrow.is-on { border-left-color: var(--c); }
   .up-navtext { display: flex; flex-direction: column; line-height: 1.25; }
   .up-navtext b { font-size: var(--text-body-lg-4); font-weight: 600; }
   .up-navtext i { font-style: normal; font-size: var(--text-body-2); color: #8a8a95; font-variant-numeric: tabular-nums; }
@@ -2998,12 +3009,14 @@ b, strong { font-weight: 600; }
      war — die Marke unterschied nur gekauft / Platzhalter / alles andere. Gesperrt, zu teuer und
      kaufbar sind DREI Zustaende und brauchen drei Bilder.
      ========================================================================== */
+  /* Radius aus der Sammelregel (`--rd-sm`), Innenabstand `--in-tight` — das Kaertchen IST eine Zeile.
+     Die Flaeche ist `--sf-sunken`: eine eingelassene Kachel in der Spalte, genau ihre Rolle. */
   .up-leg {
     display: flex; flex-direction: column;
-    padding: 9px 12px; border-radius: 9px;
-    background: #12121a;
-    border: 1px solid rgba(150, 150, 170, .12);
-    border-left: 3px solid rgba(150, 150, 170, .3);
+    padding: var(--in-tight);
+    background: var(--sf-sunken);
+    border: 1px solid var(--ed-quiet);
+    border-left: 3px solid var(--ed-quiet);
   }
   /* Die Zeile ist das Klickziel und misst die vollen 44 px (§4) — sichtbar ist weniger. */
   .up-leg-row {
@@ -3017,7 +3030,7 @@ b, strong { font-weight: 600; }
      hoch und liefe 16 px aus der Karte — gemessen, und der Grund, warum der erste Entwurf fiel. */
   .up-leg-buy {
     flex: none; display: flex; align-items: center;
-    padding: 0 11px; min-height: 34px; border-radius: 6px;
+    padding: 0 var(--in-tight); min-height: 34px; border-radius: var(--rd-sm);
     font-size: var(--text-body-1); font-weight: 800; cursor: pointer;
     white-space: nowrap;
   }
@@ -3030,7 +3043,7 @@ b, strong { font-weight: 600; }
   /* gekauft — Kante und Marke in der Zustandsfarbe */
   .up-leg.is-owned { border-left-color: #54e08a; }
   /* Geld fehlt — volle Deckkraft, graue Marke, der Grund darunter */
-  .up-leg.is-poor { border-left-color: rgba(150, 150, 170, .3); }
+  .up-leg.is-poor { border-left-color: var(--ed-quiet); }
   /* gesperrt — 42 % Deckkraft. Die Eingabe nimmt `disabled` am Knopf weg, nicht `pointer-events`:
      optisch gesperrt und trotzdem per Tastatur erreichbar ist kein Zustand, sondern eine Falle (§5). */
   .up-leg.is-locked { opacity: .42; }
@@ -3045,11 +3058,12 @@ b, strong { font-weight: 600; }
      Hier klemmt das Panel selbst, damit ein künftiger dritter Fall nicht wieder nach draußen läuft;
      gescrollt wird eine Ebene tiefer, sonst wanderte die Ringkante mitten durch den Inhalt.
      Auf 1536 x 960 und 1920 x 1080 ändern die vier Regeln nichts (nachgemessen, identische Werte). */
+  /* Dasselbe Glas, derselbe Schritt. `--in-base` ist der Panel-Innenabstand; 16/20/14 wird 18. */
   .up-page {
-    border-radius: 14px; padding: 16px 20px 14px; min-height: 0;
+    border-radius: var(--rd-lg); padding: var(--in-base); min-height: 0;
     display: flex; flex-direction: column;
     overflow: hidden;
-    background: linear-gradient(180deg, rgba(27, 26, 36, .93), rgba(22, 22, 32, .95));
+    background: var(--sf-glass);
   }
   .up-page-h { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
   .up-page-eyebrow { font-size: var(--text-body-lg-3); letter-spacing: .16em; text-transform: uppercase; font-weight: 600; }
@@ -3075,16 +3089,18 @@ b, strong { font-weight: 600; }
     letter-spacing: 0; text-transform: none; color: #71717c; line-height: 1.25;
   }
   .up-vchain { display: flex; flex-direction: column; }
+  /* Radius aus der Sammelregel (`--rd-sm`); 11 px hier war seit `#up-form` ohnehin ueberschrieben.
+     Innenabstand `--in-tight` — eine Kachel: 11/10 wird 11. */
   .up-vnode {
     display: flex; flex-direction: column; align-items: center; text-align: center; gap: 3px;
-    padding: 11px 10px; border-radius: 11px; cursor: pointer;
+    padding: var(--in-tight); cursor: pointer;
     transition: transform .12s ease, box-shadow .12s ease;
   }
   .up-vnode:hover { transform: translateY(-1px); }
   /* Kaufbar = NUR die goldene Kante auf flachem Grund. Der Farbanlauf der Kanten-Karte bleibt den
      GEKAUFTEN vorbehalten; solange beide ihn trugen, war im Raster nicht zu sehen, was einem schon
      gehört und was man sich gerade leisten kann. */
-  .up-vnode.is-buy { background: #12121a; }
+  .up-vnode.is-buy { background: var(--sf-sunken); }
   /* Feuer und Blitz sind von Beginn an spielbar — ihre Kette startet mit einem Deck, das nie gekauft
      wurde. Sieht aus wie „gehört dir", ist aber nichts zum Anklicken. */
   .up-vnode.is-lead { cursor: default; }
@@ -3136,12 +3152,18 @@ b, strong { font-weight: 600; }
      zeilenweise. Für einen Katalog ist das die übliche Ordnung. */
   .up-skillgrid { display: block; columns: 320px; column-gap: 8px; }
   .up-skillgrid > * { break-inside: avoid; margin-bottom: 8px; }
+  /* #menu-rework M3 — die 17 normalen Kacheln sind neutral (s. SkillGrid): ohne `--c` malte der
+     90-Grad-Anlauf ohnehin nur noch seinen Endpunkt. Aus dem Verlauf wird deshalb die Flaeche, die
+     er am Ende trug — und die ist `--sf-sunken`, eine eingelassene Kachel im Panel. Die vier
+     legendaeren setzen `--c` und behalten ihre Kante (`.up-skill.is-leg` unten).
+     Radius aus der Sammelregel, Innenabstand `--in-tight`: 9/11 wird 11. */
   .up-skill {
-    display: flex; flex-direction: column; gap: 3px; padding: 9px 11px; border-radius: 9px;
-    background: linear-gradient(90deg, color-mix(in srgb, var(--c) 9%, #12121a) 0%, #12121a 44%);
-    border: 1px solid rgba(150, 150, 170, .1);
-    border-left: 3px solid color-mix(in srgb, var(--c) 65%, transparent);
+    display: flex; flex-direction: column; gap: 3px; padding: var(--in-tight);
+    background: var(--sf-sunken);
+    border: 1px solid var(--ed-quiet);
+    border-left: 3px solid var(--ed-quiet);
   }
+  .up-skill.is-leg { border-left-color: color-mix(in srgb, var(--c) 65%, transparent); }
   .up-skill-n { font-size: var(--text-body-4); font-weight: 600; line-height: 1.2; }
   /* Ungeklemmt — Begründung am `.up-skillgrid` oben. (Die alte Fassung klemmte auf drei Zeilen, weil im
      Raster die höchste Zelle die Reihenhöhe bestimmt; im Spaltenfluss gibt es keine Reihe mehr.) */
@@ -3155,8 +3177,8 @@ b, strong { font-weight: 600; }
      Die 44 px sind das Mindestklickziel (§4) und zugleich die Zeilenhoehe — nichts darin klappt auf. */
   .up-chall {
     display: flex; align-items: center; gap: 13px;
-    min-height: 44px; margin-top: 12px; padding-top: 12px;
-    border-top: 1px solid rgba(150, 150, 170, .14);
+    min-height: 44px; margin-top: 12px; padding-top: var(--in-snug);
+    border-top: 1px solid var(--ed-quiet);
     font-size: var(--text-body-2);
   }
   .up-chall-k {
@@ -3169,12 +3191,12 @@ b, strong { font-weight: 600; }
      der Zeile, dessen Laenge vom Deck abhaengt, und die Zeile darf davon nicht umbrechen. */
   .up-chall-b { flex: 1; min-width: 0; color: #9a97ab; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .up-chall-bar {
-    flex: none; width: 96px; height: 3px; border-radius: 99px; overflow: hidden;
-    background: rgba(150, 150, 170, .18);
+    flex: none; width: 96px; height: 3px; border-radius: var(--rd-sm); overflow: hidden;
+    background: var(--sf-sunken);
   }
   .up-chall-bar > i {
-    display: block; height: 100%; border-radius: 99px;
-    background: color-mix(in srgb, var(--deck-a1, #9b82f0) 70%, #ffffff);
+    display: block; height: 100%; border-radius: var(--rd-sm);
+    background: color-mix(in srgb, var(--deck-a1, #9b82f0) 70%, #ffffff);   /* M3-G1 */
   }
   .up-chall.is-done .up-chall-bar > i { background: #54e08a; }
   .up-chall-f {
@@ -3189,9 +3211,9 @@ b, strong { font-weight: 600; }
   .up-page-guide {
     flex: none;
     margin-left: auto;
-    font-size: var(--text-body-lg-1); font-weight: 600; padding: 9px 16px; border-radius: 9px; cursor: pointer; white-space: nowrap;
-    background: linear-gradient(90deg, color-mix(in srgb, var(--c) 22%, #0e0e14) 0%, #0e0e14 34%);
-    border: 1px solid rgba(150, 150, 170, .16); border-left: 4px solid var(--c);
+    font-size: var(--text-body-lg-1); font-weight: 600; padding: 9px 16px; border-radius: var(--rd-sm); cursor: pointer; white-space: nowrap;
+    background: var(--sf-sunken);
+    border: 1px solid var(--ed-quiet); border-left: 4px solid var(--c);
     color: color-mix(in srgb, var(--c) 45%, #ffffff);
   }
 
@@ -3213,27 +3235,27 @@ b, strong { font-weight: 600; }
      `margin-top: auto` bleibt: die Restluft der Seite sammelt sich UEBER der Auswertung, nicht
      unter ihr — sonst laese sich der Rahmen unten offen. */
   .up-impact {
-    margin-top: auto; padding: 13px 0 0;
-    border-top: 1px solid rgba(150, 150, 170, .14);
+    margin-top: auto; padding: var(--in-snug) 0 0;
+    border-top: 1px solid var(--ed-quiet);
   }
   .up-impact-h { font-size: var(--text-meta-4); letter-spacing: .2em; text-transform: uppercase; font-weight: 600; color: #b9b3cf; margin-bottom: 10px; }
   .up-impact-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 13px; }
-  .up-stat { display: flex; flex-direction: column; gap: 3px; padding: 9px 11px; border-radius: 9px; background: #14131c; }
+  .up-stat { display: flex; flex-direction: column; gap: 3px; padding: var(--in-tight); background: var(--sf-sunken); }
   .up-stat-k { font-size: var(--text-body-2); color: #8a8a95; }
   .up-stat-v { font-size: var(--text-figure-2); font-weight: 600; line-height: 1; display: flex; align-items: baseline; gap: 7px; font-variant-numeric: tabular-nums; }
   .up-stat-v i { font-style: normal; font-size: var(--text-body-2); font-weight: 600; color: #71717c; }
-  .up-stat-b { height: 6px; border-radius: 99px; background: #23222e; overflow: hidden; margin-top: 3px; }
-  .up-stat-b i { display: block; height: 100%; border-radius: 99px; }
+  .up-stat-b { height: 6px; border-radius: var(--rd-sm); background: var(--sf-sunken); overflow: hidden; margin-top: 3px; }
+  .up-stat-b i { display: block; height: 100%; border-radius: var(--rd-sm); }
   /* Nur noch EIN Balken (der zweite war im Vollausbau eine Kopie, s. UpgradeScreen.jsx) — er läuft
      jetzt über die ganze Panelbreite. Der frühere Zweispalter `.up-droppair` ist damit entfallen. */
-  .up-dropbox { padding: 9px 11px; border-radius: 9px; background: #14131c; }
+  .up-dropbox { padding: var(--in-tight); background: var(--sf-sunken); }
   .up-dropnow { margin-top: 11px; }
   .up-drop-t { font-size: var(--text-body-2); color: #8a8a95; display: block; margin-bottom: 6px; }
-  .up-dropbar { display: flex; height: 12px; border-radius: 4px; overflow: hidden; }
+  .up-dropbar { display: flex; height: 12px; border-radius: var(--rd-sm); overflow: hidden; }
   .up-dropbar i { display: block; height: 100%; }
   .up-droplegend { display: flex; flex-wrap: wrap; gap: 3px 13px; margin-top: 6px; font-size: var(--text-meta-4); color: #9a97ab; }
   .up-droplegend span { display: flex; align-items: center; gap: 5px; }
-  .up-droplegend span > i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
+  .up-droplegend span > i { width: 9px; height: 9px; border-radius: var(--rd-sm); display: inline-block; }
   .up-droplegend b { color: #d8d8e0; font-variant-numeric: tabular-nums; }
 
   /* #menu-rework M3 — DIE VERTEILUNG IN DER DETAILZEILE. Sie bekommt eine EIGENE Form: sie ist eine
@@ -3241,20 +3263,20 @@ b, strong { font-weight: 600; }
      Deshalb Segmente ueber die volle Breite mit sichtbaren Fugen statt eines Balkens mit Rest. */
   .up-dist { display: block; }
   .up-distbar { display: flex; gap: 2px; height: 6px; }
-  .up-distbar > i { display: block; height: 100%; border-radius: 2px; }
+  .up-distbar > i { display: block; height: 100%; border-radius: var(--rd-sm); }
   .up-distkey {
     display: flex; flex-wrap: wrap; gap: 2px 11px; margin-top: 5px;
     font-size: var(--text-micro-4); color: #9a97ab;
   }
   .up-distkey > span { display: flex; align-items: center; gap: 4px; }
-  .up-distkey > span > i { width: 7px; height: 7px; border-radius: 2px; display: inline-block; }
+  .up-distkey > span > i { width: 7px; height: 7px; border-radius: var(--rd-sm); display: inline-block; }
   .up-distkey b { color: #d8d8e0; font-variant-numeric: tabular-nums; }
 
   /* Die Auswertung reagiert auf die Auswahl: das Stueck, das der Kauf dazulegen wuerde, steht als
      goldenes Endstueck AM Balken und als „-> n" hinter der Zahl. Gold heisst hier dasselbe wie
      ueberall auf diesem Screen: kaufbar. */
   .up-stat-next { font-style: normal; font-weight: 600; font-size: var(--text-body-2); margin-left: 5px; }
-  .up-stat-b > u { display: block; height: 100%; border-radius: 99px; text-decoration: none; opacity: .55; }
+  .up-stat-b > u { display: block; height: 100%; border-radius: var(--rd-sm); text-decoration: none; opacity: .55; }
   .up-stat-b { display: flex; }
 
   /* ==========================================================================
@@ -5964,9 +5986,12 @@ b, strong { font-weight: 600; }
   /* Auswertung: aus gefüllten Blöcken werden flache Kacheln mit Haarlinie — gleiche Bauform wie die
      Kennzahlen-Kacheln der StatusRail, und sie trennt die vier Werte sauberer als der Farbunterschied
      zum Kastengrund allein. */
+  /* #menu-rework M3 — die Kante ist `--ed-quiet`. Die FLAECHE bleibt der weisse Hauch und ist als
+     Befund M3-G2 gemeldet: ein Zustands-/Ruhe-Hauch ueber einer getoenten Flaeche hat in der Leiter
+     keinen Schritt — `--sf-sunken` ist deckend und naehme der Kachel genau das, was sie tut. */
   .up-stat, .up-dropbox {
     background: rgba(255, 255, 255, .012);
-    border: 1px solid rgba(150, 150, 170, .12);
+    border: 1px solid var(--ed-quiet);
   }
   /* #up-still: Der Balken wird zur Haarlinie (6 → 3 px) — er soll den Anteil zeigen, nicht die Kachel
      füllen. Ist die Achse voll, steht statt seiner das Wort (s. UpgradeScreen.jsx); der Platz bleibt
@@ -6033,8 +6058,11 @@ b, strong { font-weight: 600; }
   .gd-navrow, .gl-navrow,
   /* Die Inhaltskacheln des Leitfadens tragen ihren Radius als Tailwind-Utility (`rounded-xl`); index.css
      steht ungelayert hinter `@import "tailwindcss"` und schlägt sie deshalb ohne `!important`. */
-  .gd-bar, .gd-pillar, .gd-valve, .gd-princ, .gloss-term-row { border-radius: 6px; }
-  .up-impact, .up-chall { border-radius: 8px; }
+  /* #menu-rework M3: die 6 IST `--rd-sm` — „#eckig: tiles, buttons, rows, chips" ist der eigene
+     Satz dieser Regel, einmal im Vokabular geschrieben statt hier als Zahl. Wertgleich. */
+  .gd-bar, .gd-pillar, .gd-valve, .gd-princ, .gloss-term-row { border-radius: var(--rd-sm); }
+  /* `.up-impact` und `.up-chall` sind seit M3 SEKTIONEN mit Trennlinie, keine Kaesten: ohne Flaeche
+     und ohne Rahmen malt ein Radius nichts. Die Regel ist mit ihrem Kasten entfallen. */
 
   /* 2 — gleiche Kachelhöhe je Reihe */
   .up-vgrid { --up-rows: 8; grid-template-rows: repeat(var(--up-rows), auto); align-items: stretch; }
@@ -6049,7 +6077,7 @@ b, strong { font-weight: 600; }
   /* 4 — legendäre Skills als eigene Reihe */
   .up-skills-h.is-leg {
     margin-top: 18px; padding-top: 14px;
-    border-top: 1px solid rgba(150, 150, 170, .14);
+    border-top: 1px solid var(--ed-quiet);
   }
   .up-skillgrid.is-leg {
     display: grid; columns: auto;
@@ -6456,8 +6484,7 @@ b, strong { font-weight: 600; }
    nur, den Rand zusammenzuziehen, damit möglichst viel Inhalt in den ersten Bildschirm fällt. */
 @media (min-width: 1280px) and (max-height: 950px) {
   .up-root { padding: 10px 36px 12px !important; }
-  .up-branches { gap: 22px; }
-  .up-branch { padding: 12px 16px 16px; }
+
   /* 8 statt 12 px: nach dem Kopfumbau blieben exakt 2 px Überhang stehen — und 2 px genügen, damit
      der Browser eine Scrollleiste einblendet. Die vier Pixel hier sind billiger als jede Kürzung am
      Inhalt. */
@@ -6468,9 +6495,7 @@ b, strong { font-weight: 600; }
      Spiel: Panel-Polster 36 px, Panel-Abstand 15 px, flachere Pillen 22 px, macht 0 px Überhang.
      Sie greifen NUR auf flachen Fenstern; auf 1920 × 1080 passte der Baum schon vorher und behält
      dort seinen luftigen Rhythmus. */
-  .up-branch .rounded-2xl { padding: 9px; }
-  .up-branch .grid { gap: 7px; }
-  .up-branch .as-edge-card { padding-top: 6px; padding-bottom: 6px; }
+  /* #menu-rework M3: die drei Straffungen des Zweig-Pfads sind mit ihm entfallen — s. oben. */
 }
 
 /* Flache Desktop-Fenster: Auf 1080 px Höhe geht der Startbildschirm mit großzügigem Rhythmus genau auf.

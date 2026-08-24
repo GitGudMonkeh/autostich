@@ -106,11 +106,22 @@ describe("#up-form — eine Kachelform, gleiche Reihen, eigene Legendär-Reihe",
   it("alle Kacheln tragen denselben Radius wie die Perk-/Skill-Angebote (6 px)", () => {
     const r = deskBlock.match(/\.up-vnode,[^{]*\{([^}]*)\}/);
     expect(r, "die Sammelregel der Kachelform fehlt").toBeTruthy();
-    expect(r[1]).toMatch(/border-radius:\s*6px/);
+    /* #menu-rework M3 — dieselbe Behandlung, die der `#eckig`-Zwilling weiter unten seit M2a hat:
+       die 6 wird weiter geprüft, ihre Schreibweise nicht mehr vorgeschrieben. Die Aussage dieses
+       Wächters ist „EIN Radius für alle Kacheln, über EINE Regel", nicht „dort stehen die Zeichen
+       6px" — seit der Baum das Vokabular liest, nennt die Regel den Schritt beim Namen. Aufgelöst
+       durch den @theme-Block muss trotzdem 6 px herauskommen; fehlt der Schritt oder steht er auf
+       einem anderen Wert, endet die Ersetzung woanders und der Wächter fällt. */
+    const radius = resolve((r[1].match(/border-radius:\s*([^;]+);/) || [])[1] || "", themeTokens(css));
+    expect(radius, `der Sammelradius ist nicht mehr 6 px: ${radius}`).toMatch(/\b6px\b/);
     for (const k of ["up-navrow", "up-leg", "up-skill", "up-stat", "gd-navrow", "gl-navrow"])
       expect(r[0], `${k} fehlt in der Sammelregel`).toMatch(new RegExp(`\\.${k}[,\\s]`));
-    /* Die PANELS behalten ihre 14 px — sie sind der Rahmen, nicht der Inhalt. */
-    expect(deskBlock).toMatch(/\.up-page\s*\{[^}]*border-radius:\s*14px/);
+    /* Die PANELS behalten ihre 14 px — sie sind der Rahmen, nicht der Inhalt. Auch hier aufgelöst
+       statt abgelesen: das Panel liest seit M3 `--rd-lg`, und 14 px ist genau, was dieser Schritt
+       ist. Die Zusicherung „Panel und Inhalt tragen VERSCHIEDENE Radien" bleibt damit prüfbar. */
+    const rdPage = resolve(
+      (deskBlock.match(/\.up-page\s*\{[^}]*?border-radius:\s*([^;]+);/) || [])[1] || "", themeTokens(css));
+    expect(rdPage, `der Panel-Radius ist nicht mehr 14 px: ${rdPage}`).toMatch(/\b14px\b/);
   });
 
   it("die Knoten einer Reihe sind gleich hoch (subgrid über alle sechs Spalten)", () => {

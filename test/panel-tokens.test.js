@@ -95,6 +95,12 @@ const MIGRATED_JSX = [
        = 2, py-1 = 4). Gemeldet als MENU-51 statt umgeschrieben: 1 px auf einer Pille zu verschieben,
        die auch unter 1280 px steht, ist eine Bewegung, die niemand bestellt hat. */
     utilExempt: ["py-[3px]"] },
+  /* #menu-rework M3 — der Upgrade-Baum. Er ist der Screen, von dem die Werte STAMMEN: `index.css`
+     sagt an zehn Stellen „Werte 1:1 von `.up-*` uebernommen", und M1 hat die Schritte durch Zaehlen
+     von Fundstellen abgeleitet. Ein Token traegt hier also oft den Wert dieses Screens, einen
+     Schritt entfernt — was ihn migriert, macht das Vokabular an seiner Quelle wahr statt an einer
+     Kopie. */
+  { path: "src/ui/UpgradeScreen.jsx" },
 ];
 /* Ein Haken trifft ein Tag, wenn dessen Klassen ihn als GANZES Wort fuehren: `cz-main` darf
    `cz-mainscroll` nicht mitnehmen, sonst haengt der eine Eintrag am anderen. */
@@ -110,7 +116,16 @@ const M2A_SHELL_SELECTORS = [/\.cz-root/, /\.cz-card/, /\.cz-scroll/, /\.cz-head
   /\.cz-headrow/, /\.cz-bal/, /\.cz-readout/, /\.cz-close/, /\.cz-hair/, /\.cz-tabs/, /\.cz-split/,
   /\.cz-main/, /\.cz-side/, /\.cz-stage/, /\.cz-fxside/];
 const MIGRATED_SELECTORS = [/\.op-/, /\.as-opt-/, /\.as-panel-sunken/, /\.as-shell/, /\.as-head\b/,
-  /\.cz-/];
+  /\.cz-/,
+  /* M3: `.up-` MEINT DEN GANZEN SCREEN, wie `.cz-` seit M2b. Ein Screen ist entweder migriert oder
+     nicht; eine Aufzaehlung einzelner Bausteine waere eine halbe Migration, und eine halbe Migration
+     ist, wie die 43 Schatten entstanden sind. */
+  /\.up-(?!banner)/];
+/* `.up-banner` ist NICHT dieser Screen. Es ist die „Neue Version verfuegbar"-Leiste
+   (`UpdateBanner.jsx`) und teilt mit dem Baum nur die zwei Buchstaben des Praefixes. Sie gehoert
+   keinem migrierten Screen, also darf die Erlaubnisliste sie nicht einsammeln. Gefunden, weil der
+   Waechter sie meldete — und es ist dieselbe Sorte Fehler wie bei MENU-38: eine Grenze, die nach dem
+   sichtbarsten Traeger gezogen wird, trifft irgendwann etwas, das nur so heisst. */
 
 /* ---------------------------------------------------------------- die vier Achsen */
 /* EIN WERT IN EINEM var()-RUECKFALL IST KEIN WERT AN DER FUNDSTELLE. `var(--c, #8a8a95)` holt seine
@@ -157,6 +172,20 @@ const INSET_EXEMPT = [
        gar nicht, sie setzen `margin-top`. */
   /* Steuerelement */ /\.cz-fxcats button/, /\.cz-actbtn/,
   /* Layout       */ /\.cz-fxlist$/,
+  /* --- M3, der Upgrade-Baum. Dieselben drei Sorten, dieselben drei Gruende. ---
+     Steuerelement: die Kopf-Werkzeuge (`.up-actions > *`, 11/18) und der Leitfaden-Knopf (9/16)
+       polstern gegen ihre BESCHRIFTUNG — beide tragen ihr 44-px-Klickziel ueber diese Polsterung,
+       und eine Panelkante ist weit und breit nicht beteiligt.
+     Layout: `.up-root` ist der Rand des Screens im Fenster (und seine Straffung auf flachen
+       Fenstern), `.up-readout` setzt die Auskunftsspalte vom senkrechten Strich ab — eine Rasterfuge,
+       kein Inset —, `.up-varrow` ist der Abstand zwischen zwei Kettengliedern, und `.up-skills` haelt
+       rechts 6 px frei, damit die Rollleiste nicht auf den Kacheln sitzt. Eine Rinne ist Anordnung.
+     Ueberschrift: `.up-head` (sein Polster gehoert zum sticky Kopf und faehrt mit ihm), `.up-navhead`,
+       `.up-vlane-h` und `.up-skills-h.is-leg` — vertikaler Rhythmus einer Textzeile, und der gehoert
+       dem Typografie-System, das dieser Auftrag ausdruecklich nicht anfasst. */
+  /* Steuerelement */ /^\.up-actions > \*$/, /^\.up-page-guide$/,
+  /* Layout       */ /^\.up-root$/, /^\.up-readout$/, /^\.up-varrow$/, /^\.up-skills$/,
+  /* Ueberschrift */ /^\.up-head$/, /^\.up-navhead$/, /^\.up-vlane-h$/, /^\.up-skills-h\.is-leg$/,
 ];
 
 /* WAS DIE HOEHEN-ACHSE MEINT — und die eine Regel der Werkstatt, die daneben steht.
@@ -177,9 +206,35 @@ const INSET_EXEMPT = [
    und das Fenster ist zu. Einzeln aufgezaehlt, damit die Ausnahme keine zweite Regel mitnimmt. */
 const ELEV_EXEMPT = [/^\.cz-shown$/];
 
+/* --- M3, die Flaechen- und Kanten-Ausnahmen. Drei Sorten, drei Gruende, einzeln aufgezaehlt. ---
+
+   M3-G1 — DIE ZIEL-HELLIGKEIT DER DECKFARBE. `design-sprache.md` §3 schreibt fuer jede Struktur in
+     Deckfarbe eine Mischung auf Weiss vor: 62 % als Schrift, 70 % als Flaeche oder Kante. Ohne sie
+     faellt der Kontrast bei drei von 42 Decks unter 4,5 : 1 (dort gemessen). Das `#ffffff` ist der
+     MISCHPARTNER einer Farbraum-Rechnung, keine Fuellung — die Leiter hat dafuer keinen Schritt, und
+     dieser Screen ist der ERSTE, der ihn braucht. Nach der Schwellenregel (2c: „a gap becomes a
+     token on the third independent sighting") wird gezaehlt, nicht gepraegt.
+   M3-G2 — DER WEISSE ZUSTANDS-HAUCH. Die Navigationszeile (ruhend / ueberfahren / gewaehlt) und die
+     Auswertungskacheln liegen als sehr schwacher weisser Hauch UEBER dem Glas. `--sf-sunken` ist
+     deckend und naehme ihnen genau das. Vier Alphas, eine Familie, gemeldet statt gepraegt.
+   PERMANENT — BEDEUTUNGSKODIERTE ZUSTANDSFARBEN. `#54e08a` „gekauft/an" und `#d4a63a` „kaufbar" sind
+     Rollenfarben aus design-sprache.md §3 und stehen in 2c ausdruecklich unter „Meaning-coded
+     borders — rarity, faction, ice, state. They encode information, not depth." Sie sind kein Chrome
+     und bekommen keinen Schritt — nicht heute und nicht beim dritten Auftreten. */
+const M3_SURFACE_EXEMPT = [
+  /* M3-G1 */ /^\.up-rank-b > i$/, /^\.up-chall-bar > i$/,
+  /* M3-G2 */ /^\.up-navrow$/, /^\.up-navrow:hover$/, /^\.up-navrow\.is-on$/, /^\.up-stat, \.up-dropbox$/,
+  /* permanent */ /^\.up-rank\.is-done \.up-rank-b > i$/, /^\.up-chall\.is-done \.up-chall-bar > i$/,
+];
+const M3_EDGE_EXEMPT = [
+  /* permanent */ /^\.up-leg\.is-buy$/, /^\.up-leg\.is-owned$/,
+];
+
 const CSS_AXES = [
-  { axis: "Flaeche", re: /(?:^|[;{\s])background(?:-color|-image)?\s*:[^;}]*(#[0-9a-fA-F]{3,8}|\brgba?\()/g },
-  { axis: "Kante",   re: /(?:^|[;{\s])border(?:-top|-right|-bottom|-left)?(?:-color)?\s*:[^;}]*(#[0-9a-fA-F]{3,8}|\brgba?\()/g },
+  { axis: "Flaeche", re: /(?:^|[;{\s])background(?:-color|-image)?\s*:[^;}]*(#[0-9a-fA-F]{3,8}|\brgba?\()/g,
+    exempt: M3_SURFACE_EXEMPT },
+  { axis: "Kante",   re: /(?:^|[;{\s])border(?:-top|-right|-bottom|-left)?(?:-color)?\s*:[^;}]*(#[0-9a-fA-F]{3,8}|\brgba?\()/g,
+    exempt: M3_EDGE_EXEMPT },
   /* `inset` ist ausgenommen, und das ist eine Unterscheidung, keine Nachsicht: die Hoehenleiter misst
      ABHEBEN von der Flaeche. Ein Innenschatten hebt nichts — er zeichnet eine Kante (die 2-px-
      Unterstreichung der aktiven Auswahl) oder eine Mulde, und beides hat eigene Gruende. */
@@ -543,6 +598,12 @@ describe("#menu-rework — die Tinten-Ratsche: Textfarb-Literale wachsen nicht",
     ["index.css — .op-* (M1)", () => inkOfCss([/\.op-/, /\.as-opt-/]), 16],
     ["index.css — .cz-* Schale (M2a)", () => inkOfCss(M2A_SHELL_SELECTORS), 2],
     ["index.css — .cz-* Inhalte (M2b)", () => inkOfCss([/\.cz-/], M2A_SHELL_SELECTORS), 1],
+    /* #menu-rework M3 — der Baum. Seine Zahl ist die hoechste der Runde, und das ist kein Versaeumnis
+       dieses Auftrags: Tinte ist eine benannte Luecke des Vokabulars (2c, „What the vocabulary does
+       not claim"), das Fenster ist zu, und der Baum ist der textreichste der migrierten Screens.
+       Gezaehlt statt gepraegt — der Nachfolger erbt damit eine gemessene Zahl statt eines Eindrucks. */
+    ["src/ui/UpgradeScreen.jsx (ganze Datei)", () => inkOfJsx("src/ui/UpgradeScreen.jsx"), 9],
+    ["index.css — .up-* (M3)", () => inkOfCss([/\.up-(?!banner)/]), 35],
   ];
 
   for (const [name, count, cap] of CAP) {
@@ -630,6 +691,13 @@ describe("#menu-rework — die Kanten-Ratsche (MENU-38): durchsichtige neutrale 
     ["index.css — .op-* (M1)", () => edgeOfCss([/\.op-/, /\.as-opt-/]), 0],
     ["index.css — .cz-* Schale (M2a)", () => edgeOfCss(M2A_SHELL_SELECTORS), 0],
     ["index.css — .cz-* Inhalte (M2b)", () => edgeOfCss([/\.cz-/], M2A_SHELL_SELECTORS), 0],
+    /* #menu-rework M3 — der Baum. Die CSS-Seite steht auf 0, und diese Null ist ein ERREICHTER
+       Zustand, keine Abwesenheit: M3 hat vierzehn durchsichtige neutrale Kanten auf `--ed-quiet`
+       gezogen. Die JSX-Seite steht NICHT auf 0 — `panelStyle()` traegt eine, und die gehoert dem
+       Zweig-Pfad unter 1280 px, den dieser Auftrag ausdruecklich nicht anfasst. Sie steht deshalb
+       als gemessene Eins da statt als stillschweigende Null. */
+    ["src/ui/UpgradeScreen.jsx (ganze Datei)", () => edgeOfJsx("src/ui/UpgradeScreen.jsx"), 1],
+    ["index.css — .up-* (M3)", () => edgeOfCss([/\.up-(?!banner)/]), 0],
   ];
 
   for (const [name, count, cap] of CAP) {
@@ -647,10 +715,29 @@ describe("#menu-rework — die Kanten-Ratsche (MENU-38): durchsichtige neutrale 
     expect(edgeIn(strip(css)), "der Ausdruck der Kanten-Familie findet nichts mehr").toBeGreaterThan(30);
   });
 
-  it("die migrierten Einheiten sind zusammen auf null — der Startwert, den M3 erbt", () => {
-    /* Ausdruecklich als eigene Zeile und nicht nur als sieben Einzelzeilen: DAS ist die Zahl, die
-       MENU-38 dem Nachfolge-Workstream uebergeben soll. Sie ist erreicht, nicht angenommen. */
-    expect(CAP.reduce((n, [, c]) => n + c(), 0), "eine migrierte Einheit traegt wieder eine Kante").toBe(0);
+  it("die migrierten Einheiten sind zusammen auf null — bis auf die EINE benannte Ausnahme", () => {
+    /* Ausdruecklich als eigene Zeile und nicht nur als Einzelzeilen: DAS ist die Zahl, die MENU-38
+       dem Nachfolge-Workstream uebergeben soll. Sie ist erreicht, nicht angenommen.
+
+       #menu-rework M3 — SIE IST NICHT MEHR GLATT NULL, und das ist ein Befund, keine Aufweichung.
+       MH1 hat diese Zeile geschrieben, als sieben Einheiten migriert waren, und sie „der Startwert,
+       den M3 erbt" genannt. M3 misst seine eigene Einheit und findet EINE Kante: `panelStyle()` in
+       UpgradeScreen.jsx, und die gehoert dem Zweig-Pfad unter 1280 px, den dieser Auftrag
+       ausdruecklich nicht anfasst. Sie auf `--ed-quiet` zu ziehen waere eine Bewegung an der
+       Handy-Fassung (durchsichtig -> deckend, rund 9/255), die niemand bestellt hat.
+       Die Summe wird deshalb OHNE diese eine gebildet — und die eine wird einzeln nachgewiesen,
+       damit sie nicht als „irgendwo eine" stehenbleibt und still auf zwei wachsen kann. */
+    const AUSNAHME = "src/ui/UpgradeScreen.jsx (ganze Datei)";
+    const rest = CAP.filter(([name]) => name !== AUSNAHME);
+    expect(rest.reduce((n, [, c]) => n + c(), 0), "eine migrierte Einheit traegt wieder eine Kante").toBe(0);
+
+    /* Die Gegenprobe zur Ausnahme: sie ist genau eine, und sie steht genau dort, wo die Begruendung
+       sie behauptet. Waechst sie, oder wandert sie aus `panelStyle` heraus, faellt diese Zeile. */
+    const up = strip(read("src/ui/UpgradeScreen.jsx"));
+    expect(edgeIn(up), "die benannte Ausnahme ist nicht mehr genau eine").toBe(1);
+    const ps = up.match(/const panelStyle[\s\S]*?\n\}\);/);
+    expect(ps, "panelStyle nicht mehr gefunden").toBeTruthy();
+    expect(edgeIn(ps[0]), "die eine Kante steht nicht mehr in panelStyle").toBe(1);
   });
 });
 
