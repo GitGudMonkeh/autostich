@@ -53,3 +53,8 @@ __pycache__/
 # Bild-Originale vor `scripts/normalize-art.py --apply`. Lokale Bequemlichkeit —
 # die echte Sicherung ist der Commit vor dem Bake, deshalb nicht im Repo.
 src/assets/**/_raw/
+
+# Arbeitsausgabe von scripts/bf-beitrag.mjs (Messwerte + Vorher/Nachher-Aufnahmen).
+# Die Belege, die bleiben sollen, stehen als Begruendung an den Eintraegen in
+# src/ui/cosmeticAssets.js — so wie bei BATTLEFIELD_VEIL.
+test/evidence/

@@ -82,7 +82,10 @@ print(json.dumps(out))
 let res, lastErr;
 for (const bin of ["python3", "python", "py"]) {
   try {
-    res = JSON.parse(execFileSync(bin, ["-c", PY, JSON.stringify(CFG)], { encoding: "utf8" }));
+    // stderr wird abgefangen statt geerbt: der Windows-Store-Alias für `python3` druckt sonst
+    // seinen „Python was not found"-Banner, bevor der nächste Name überhaupt probiert wird.
+    res = JSON.parse(execFileSync(bin, ["-c", PY, JSON.stringify(CFG)],
+      { encoding: "utf8", stdio: ["pipe", "pipe", "pipe"] }));
     break;
   } catch (e) { lastErr = e; res = undefined; }
 }

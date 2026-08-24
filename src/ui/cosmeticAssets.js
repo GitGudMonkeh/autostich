@@ -412,3 +412,54 @@ const BATTLEFIELD_VEIL = {
   bf_nimbus:     1.28, // gemessen 27,1 — Median +30 %, s. Begründung oben (Fläche der Quallenglocke)
 };
 export const battlefieldVeil = (id) => BATTLEFIELD_VEIL[id] || 1;
+
+/* #bf-desktop — Dämpfung der zu hellen Spielfelder auf dem DESKTOP.
+   ===================================================================================
+   Warum das neben `BATTLEFIELD_VEIL` steht und nicht darin: der Schleier oben gilt nur für
+   den HANDY-Hub (`.as-hub-bg*`, in StartScreen.jsx an `dt:hidden` gehängt). Ab 1280 px zeigt
+   die Seite ein anderes Element mit einem anderen, FESTEN Schleier — und im LAUF ist es noch
+   einmal ein drittes (Battlefield.jsx) mit einem dritten. Die per-Deck-Korrektur gab es dort
+   bisher gar nicht.
+
+   Anderer Mechanismus, aus einem gemessenen Grund. Auf dem Handy verstärkt `--vk` die
+   Schleier-Deckkraft. Am Desktop geht das nicht: der Schleier endet dort schon bei 82 %, ein
+   Faktor über ~1,2 klemmt ihn auf 100 %, und dann steht statt des Bildes nur noch Schleierfarbe
+   — die untere Bildhälfte war in der Gegenprobe schlicht tot. Gedämpft wird deshalb das BILD
+   (`filter: brightness()`), nicht der Schleier: Verlauf und Zeichnung bleiben, nur die
+   Leuchtkraft sinkt.
+
+   Gemessen mit `node scripts/bf-beitrag.mjs` bei 1280×720 — nicht die Helligkeit des Bildes,
+   sondern wie viel Licht es der FERTIGEN Seite hinzufügt (Aufnahme mit brightness(1) minus
+   Aufnahme mit brightness(0)). Das musste so sein, weil die Panels im Hub je nach Spielfeld
+   19–73 % des Hintergrunds verdecken; eine Messung am nackten Band gewichtet Flächen, die
+   niemand sieht, und liefert viel zu harte Faktoren.
+
+   Zwei Tabellen, weil die Lage sich unterscheidet — dieselbe Einsicht wie oben, eine Ebene
+   weiter: `bf_seedrache` fällt nur im Hub auf, `bf_geometrie` nur im Lauf. Und `bf_origami`,
+   mobil mit 1,57 der STÄRKSTE Eintrag, steht auf dem Desktop in beiden Listen NICHT drin: auf
+   dem Handy-Ausschnitt ist er fast weiß, im Desktop-Band liegt er dunkel. Er war Kandidat und
+   ist nach dem Blick auf die Aufnahmen wieder rausgeflogen.
+
+   Kandidat war, was >60 % über dem Median lag; eingetragen ist, was man in den Vorher/Nachher-
+   Aufnahmen SIEHT (`test/evidence/bf-beitrag/`). Ziel der Dämpfung ist Median +25 %.
+   Nicht eingetragen = Faktor 1.
+
+   NICHT abgedeckt: der Lauf am Handy (<640 px). Dort greift die Dämpfung bewusst nicht, weil
+   für diese Oberfläche keine Messung vorliegt — `scripts/bf-beitrag.mjs` misst bei 1280×720. */
+const BATTLEFIELD_DIM_HUB = {
+  bf_gottgleich: 0.56, // Beitrag 0.0332 — Median +123 %, mit Abstand der hellste (goldener Lichtdom)
+  bf_nimbus:     0.64, // Beitrag 0.0292 — Median +96 %
+  bf_seedrache:  0.66, // Beitrag 0.0283 — Median +90 %; im Lauf unauffällig, nur hier
+  bf_eis:        0.66, // Beitrag 0.0283 — Median +90 %, Polarlicht steht hinter der Wortmarke
+};
+
+const BATTLEFIELD_DIM_RUN = {
+  bf_gottgleich: 0.37, // Beitrag 0.0378 — Median +234 %; die Karten standen im Lichtdom
+  bf_geometrie:  0.49, // Beitrag 0.0287 — Median +154 %; im Hub unauffällig, nur hier
+  bf_eis:        0.53, // Beitrag 0.0266 — Median +135 %
+  bf_nimbus:     0.66, // Beitrag 0.0214 — Median +90 %
+};
+
+/** Helligkeits-Faktor für das Spielfeld-Bild. `surface`: "hub" | "run". */
+export const battlefieldDim = (id, surface) =>
+  (surface === "run" ? BATTLEFIELD_DIM_RUN : BATTLEFIELD_DIM_HUB)[id] || 1;

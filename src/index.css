@@ -1340,6 +1340,21 @@ b, strong { font-weight: 600; }
     rgb(17 17 22 / min(1, calc(.62 * var(--vk)))) 62%,
     rgb(17 17 22 / min(1, calc(.78 * var(--vk)))) 100%);
 }
+
+/* #bf-desktop: Dämpfung der zu hellen Spielfelder ab dem Desktop-Bruchpunkt. Der Faktor kommt aus
+   `battlefieldDim()` (cosmeticAssets.js) als `--bfdim`; die Begründung und die Messung stehen dort.
+   Klasse statt inline-`filter`, damit die Media-Query unten überhaupt greifen kann.
+
+   `.as-bf-dim` sitzt am Hub-Bild, das ohnehin erst ab 1280 px gezeigt wird (`hidden dt:block`) —
+   dort braucht es keine eigene Query. `.as-bf-dim-run` sitzt am Spielfeld IM LAUF, und das läuft
+   auf jeder Breite; die Query hält die Dämpfung deshalb von der Handy-Fassung fern. 641 px ist
+   kein runder Wert, sondern genau die Kante, an der `<source media="(max-width: 640px)">` in
+   Battlefield.jsx auf `mobile.jpg` umschaltet: gedämpft wird nur, was auch gemessen wurde. */
+.as-bf-dim { filter: brightness(var(--bfdim, 1)); }
+
+@media (min-width: 641px) {
+  .as-bf-dim-run { filter: brightness(var(--bfdim, 1)); }
+}
 /* Guthaben-Zahlen (SP/DP). Ebenfalls Klasse statt inline-style, und aus demselben Grund: ab 1280 px ziehen
    sie den Ton ihrer Listenzeile, und ein inline gesetztes `color` ließe sich davon nicht überschreiben.
 
