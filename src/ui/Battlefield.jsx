@@ -10,6 +10,7 @@ import { gottSpeedFor } from "./fx/gottTiming.js"; // #prunk-laenge: In-Game-Spi
 import { formationLabel } from "./formationLabels.js";
 import { audio } from "./audio.js";
 import { useFxLevel } from "./useReducedFx.js";
+import { battlefieldDim } from "./cosmeticAssets.js"; // #bf-desktop: gemessene Bild-Daempfung im Lauf
 // Pixi-Umbau Phase 0/1: koexistierende GPU-Bühne. LAZY geladen → Pixi (~200 KB) landet in einem eigenen Chunk,
 // der NUR im Preview/Dev geladen wird (der Mount ist env-gegatet). Produktion (main) zieht Pixi nie in den Bundle.
 const PixiStage = lazy(() => import("./fx/PixiStage.jsx").then((m) => ({ default: m.PixiStage })));
@@ -685,7 +686,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   growth = {}, colonized = {},
   // #190 Kosmetik: gewähltes Spieler-Deck (front=Rahmen, back=Cover) + Battlefield-Skin ({desktop,mobile}|null).
   // Defaults = bestehende Karten → ohne Auswahl identisches Verhalten (Gegner-Deck bleibt OPP_DECK_SKINS).
-  deckFront = cardFrontImg, deckBack = cardBackImg, battlefield = null,
+  // #bf-desktop: `bfId` dient allein der gemessenen Helligkeits-Dämpfung (battlefieldDim) — das
+  // Bild selbst kommt weiter über `battlefield`. Default null → Faktor 1, also unverändert.
+  deckFront = cardFrontImg, deckBack = cardBackImg, battlefield = null, bfId = null,
   // #deckshop: Deck-Werkstatt-Animationen (an das aktive Theme gekoppelt): deckA1 = Deck-Hauptfarbe für
   // #kategorien: zwei UNABHÄNGIGE Feld-Slots — bgFx = reiner Hintergrund-Effekt (Aurora), bgFinisher = Hintergrund-
   // Finisher mit Stich-Interaktion (Glutfunken). Beide können gleichzeitig aktiv sein (bg hinter Finisher gerendert).
@@ -1695,9 +1698,14 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           und den Karten (z-10). Dunkler Scrim hält Karten/Text lesbar. Ohne Skin (null) → nichts, Standard bleibt. */}
       {battlefield && (
         <div aria-hidden="true" className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none" style={{ zIndex: 0 }}>
+          {/* #bf-desktop: Dämpfung der gemessenen Ausreißer. Hier stehen die Karten DIREKT auf dem
+              Bild, deshalb sind die Faktoren härter als im Hub (Ascension 0.37 gegen 0.56). Die
+              Klasse greift erst ab 641 px — genau dort, wo `source` von `mobile.jpg` wegschaltet;
+              für den Lauf am Handy liegt keine Messung vor, also bleibt er unverändert. */}
           <picture>
             <source media="(max-width: 640px)" srcSet={battlefield.mobile} />
-            <img src={battlefield.desktop} alt="" className="w-full h-full object-cover" />
+            <img src={battlefield.desktop} alt="" className="as-bf-dim-run w-full h-full object-cover"
+              style={{ "--bfdim": battlefieldDim(bfId, "run") }} />
           </picture>
           <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(12,12,16,0.55) 0%, rgba(12,12,16,0.38) 45%, rgba(12,12,16,0.62) 100%)" }} />
         </div>
