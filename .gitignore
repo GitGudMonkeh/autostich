@@ -49,3 +49,7 @@ Thumbs.db
 # statt es aufzurufen — z. B. beim Nachmessen). Gehoert nie in den Baum.
 __pycache__/
 *.pyc
+
+# Bild-Originale vor `scripts/normalize-art.py --apply`. Lokale Bequemlichkeit —
+# die echte Sicherung ist der Commit vor dem Bake, deshalb nicht im Repo.
+src/assets/**/_raw/

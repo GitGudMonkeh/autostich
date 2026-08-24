@@ -45,13 +45,19 @@ blind: an earlier revision aligned the 85th percentile over a saturation mask
 and measured the mean over a brightness mask, which pushed convergence down
 from 20% to 8%.
 
-Caution: `a1`/`a2` are derived from these images
-------------------------------------------------
-The deck accents in `src/game/themes.js` are derived from the luminous mass of
-the images - see the comment there on the Genesis hue moving from 54 to 8
-degrees. This treatment leaves HUE untouched but shifts brightness and
-saturation. After `--apply`, re-run `npm run bf:helligkeit` and re-check the
-a1/a2 pairs.
+What this tool does NOT invalidate, and what it would
+-----------------------------------------------------
+The deck accents `a1`/`a2` in `src/game/themes.js` are derived from the
+BATTLEFIELD images, not from the cards - the Genesis comment there reasons about
+`bf_onboarding`, and `npm run bf:helligkeit` reads `battlefields/*/mobile.jpg`.
+Treating cards therefore leaves that derivation untouched.
+
+It would matter if this tool were ever extended to the battlefields. Do not do
+that without reading the veil first: those images already carry a measured
+per-deck runtime correction (`BATTLEFIELD_VEIL` in `src/ui/cosmeticAssets.js`),
+which converges the set harder than any bake here does, and whose factors were
+measured against the CURRENT image brightness. Baking underneath it would darken
+everything twice and silently invalidate every one of those numbers.
 
 Usage
 -----
@@ -360,9 +366,8 @@ def main():
                   f"{RAW.relative_to(ROOT).as_posix()}")
 
     if args.apply:
-        print("\nNext: re-run `npm run bf:helligkeit` and re-check the a1/a2 pairs in "
-              "src/game/themes.js - they are derived from the luminous mass of these "
-              "images.")
+        print("\nOriginals are kept locally and are gitignored; the durable rollback is "
+              "the commit before the bake.")
 
     if args.check and not ok:
         sys.exit(1)
