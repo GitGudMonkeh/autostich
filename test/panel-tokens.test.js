@@ -41,24 +41,60 @@ const strip = (src) => src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$
    EIN EINTRAG JE WORKER. M1 hat modalStyle.jsx (Commit 1) und den Optionen-Screen (2a/2b)
    umgestellt; M2a bis M11 haengen ihre Datei und ihr Selektor-Praefix hier an.
 
-   EIN EINTRAG DARF EINEN TEIL EINER DATEI MEINEN, und das ist M2as Beitrag zu dieser Liste. Die
-   Werkstatt ist auf ZWEI Worker aufgeteilt — M2a die Schale, M2b die Inhalte —, und beide leben in
-   derselben Datei. Gemessen: `CustomizeScreen.jsx` traegt 68 Literale auf den vier Achsen, und
-   66 davon gehoeren den Vorschau-Szenen, den Pack-Kacheln und den Effekt-Zeilen. Ein Eintrag ueber
-   die ganze Datei wuerde also Arbeit blockieren, die noch nicht passiert ist — genau das, was der
-   Kopf dieses Waechters ausschliesst. `hooks` grenzt deshalb auf die Klassenhaken der Schale ein;
-   M2b haengt seine an und die Einschraenkung faellt von selbst weg, sobald beide Haelften stehen. */
+   M2A HATTE `hooks`, M2B HAT ES NICHT MEHR. Die Werkstatt war auf zwei Worker aufgeteilt und beide
+   leben in derselben Datei, also grenzte M2a auf die Klassenhaken der Schale ein — ein Eintrag ueber
+   die ganze Datei haette Arbeit blockiert, die noch nicht passiert war. Sie ist jetzt passiert, also
+   ist die Region die ganze Datei, und `hooks` ist weg statt erweitert.
+
+   WAS `exemptFns` MEINT, und warum es keine kleinere Region ist. Von den 67 Achsen-Literalen der
+   Datei zeichnen 32 NICHT das Menue, sondern das nachgestellte Spielbrett: `#0b0a16` ist der Grund
+   UNTER einem Battlefield-Bild, die dreistufigen Verlaeufe sind die Abdunkelung darueber, damit die
+   Demo-Karte dagegen liest, und `linear-gradient(180deg,#26304a,#141a28)` mit `0 2px 9px #000a` ist
+   eine SPIELKARTE, die auf dem Brett steht. Die fuenf Achsen kleiden Panels; `--sf-ground` (#141419)
+   ist die Flaeche der Anwendung und liegt 11/10/3 daneben. Diese Werte auf die Leiter zu ziehen
+   hiesse, Spielgrafik an ein Menue-Vokabular anzugleichen.
+
+   Das ist dieselbe Sorte Ausnahme wie `PHASE_ACCENTS` in conventions.md 2c — dauerhaft, mit Grund,
+   und EINZELN AUFGEZAEHLT. Eine `hooks`-Region nimmt alles aus, was sie nicht nennt, und zwar
+   stillschweigend; fuenfzehn Namen sind enger und lauter, und jeder von ihnen muss unten eine echte
+   Funktion treffen, sonst faellt der Waechter.
+
+   `stateLiterals` ist die zweite Haelfte und die Form von MENU-38: was WIRKLICH fehlt, wird gezaehlt
+   statt gepraegt. Drei Zustandsfarben-Paare haben keinen Schritt fuer ihre Rolle (s. Befunde
+   MENU-46/47/48), das Fenster ist zu, und ein Wert an der Fundstelle waere Tripwire 1 mit Hut. Sie
+   stehen deshalb WOERTLICH hier. Neue Literale fallen; diese sind benannt und koennen nicht wachsen,
+   ohne dass jemand diese Liste anfasst — und jedes muss unten noch in der Datei stehen. */
+const CZ_SCENES = [
+  /* Die Buehnen: Brettgrund, Abdunkelung, Deckfarb-Kulisse, und die Karten darauf. */
+  "FinisherScene", "ScorchScene", "HologridScene", "BlackholeScene", "GottScene",
+  "StandardFinisherScene", "CubeMatrixPreview", "SpezialScene", "GlobalFxScenePreview",
+  "FieldFxPreview", "CardAnimPreview",
+  /* Bildhalter: eine transparente PNG vor demselben Brettgrund. */
+  "CardPreview", "BfPreview", "DeckThumb",
+  /* Das Schildchen, das die Buehne UEBER die Grafik legt — seine Flaeche haengt an dem, was
+     dahinter liegt, und das ist ein Bild, kein Panel. */
+  "PanelChip",
+];
+const CZ_STATE_LITERALS = [
+  /* MENU-46 — die akzentgetoente Zustandsflaeche mit ihrer Kante (Zufalls-Deck-Zeile, Schalter AN). */
+  "#1a1330", "#9b82f0aa", "#9b82f0", "#b9a6ff",
+  /* MENU-47 — Stufen-Pillen: freigeschaltet gegen gesperrt. */
+  "#1a1330e6", "#0a0a12e6", "#6a4fb0", "#33313f",
+  /* MENU-48 — das bejahende Gegenstueck zu --ctl-danger / --ctl-danger-wash. Es gibt keins. */
+  "#123a25", "#2f7a4f",
+];
 const MIGRATED_JSX = [
   { path: "src/ui/modalStyle.jsx" },
   { path: "src/ui/OptionsModal.jsx" },
   { path: "src/ui/optionsBits.jsx" },
-  { path: "src/ui/CustomizeScreen.jsx",
-    /* Einzeln aufgezaehlt und nicht als eine Alternative geschrieben, damit der Waechter JEDEN Haken
-       einzeln nachweisen kann. Eine Sammel-Regex weist nur nach, dass IRGENDEINER passt — dann faellt
-       ein umbenannter Haken still aus der Pruefung, und die Box, an der er hing, ist unbewacht. */
-    hooks: ["cz-root", "cz-card", "cz-scroll", "cz-head", "cz-topline", "cz-headrow", "cz-bal",
-            "cz-readout", "cz-close", "cz-hair", "cz-tabs", "cz-split", "cz-main", "cz-mainscroll",
-            "cz-side", "cz-stage", "cz-fxside"] },
+  { path: "src/ui/CustomizeScreen.jsx", exemptFns: CZ_SCENES, stateLiterals: CZ_STATE_LITERALS,
+    /* Die Stufen-Pille (I / II / III) polstert `px-1 py-[3px]` gegen zwei roemische Zeichen. Das ist
+       die Sorte Polsterung, die 2c ausdruecklich AUSSERHALB der Leiter laesst — ein Steuerelement
+       polstert gegen seine Beschriftung —, und die Leiter hat dafuer auch nichts: `--btn-pad-y`
+       (0.625rem) ist das Fuenffache. Die benannte Tailwind-Skala trifft es ebenfalls nicht (py-0.5
+       = 2, py-1 = 4). Gemeldet als MENU-51 statt umgeschrieben: 1 px auf einer Pille zu verschieben,
+       die auch unter 1280 px steht, ist eine Bewegung, die niemand bestellt hat. */
+    utilExempt: ["py-[3px]"] },
 ];
 /* Ein Haken trifft ein Tag, wenn dessen Klassen ihn als GANZES Wort fuehren: `cz-main` darf
    `cz-mainscroll` nicht mitnehmen, sonst haengt der eine Eintrag am anderen. */
@@ -66,12 +102,15 @@ const hookRe = (h) => new RegExp(`\\b${h}\\b`);
 const anyHook = (hooks) => (hooks ? new RegExp(`\\b(${hooks.join("|")})\\b`) : undefined);
 /* Selektor-Praefixe statt Dateien, weil index.css JEDEN Screen enthaelt: geprueft werden nur die
    Regeln, deren Selektor einem migrierten Screen gehoert.
-   M2a haengt die Schale der Werkstatt an — die Boxen, nicht ihren Inhalt. `.cz-detailcard`,
-   `.cz-fxrow`, `.cz-shot*` und `.cz-actbtn` stehen bewusst NICHT hier: sie sind M2bs. */
+   M2a hat die Schale der Werkstatt einzeln aufgezaehlt, weil ihr Inhalt noch nicht umgestellt war.
+   M2b stellt ihn um, und damit faellt die Aufzaehlung weg: `.cz-` MEINT JETZT DEN GANZEN SCREEN.
+   Das ist die CSS-Seite derselben Aussage wie der Datei-Eintrag unten — ein Screen ist entweder
+   migriert oder nicht, und ab hier ist die Werkstatt es. */
+const M2A_SHELL_SELECTORS = [/\.cz-root/, /\.cz-card/, /\.cz-scroll/, /\.cz-head/, /\.cz-topline/,
+  /\.cz-headrow/, /\.cz-bal/, /\.cz-readout/, /\.cz-close/, /\.cz-hair/, /\.cz-tabs/, /\.cz-split/,
+  /\.cz-main/, /\.cz-side/, /\.cz-stage/, /\.cz-fxside/];
 const MIGRATED_SELECTORS = [/\.op-/, /\.as-opt-/, /\.as-panel-sunken/, /\.as-shell/, /\.as-head\b/,
-  /\.cz-root/, /\.cz-card/, /\.cz-scroll/, /\.cz-head/, /\.cz-topline/, /\.cz-headrow/, /\.cz-bal/,
-  /\.cz-readout/, /\.cz-close/, /\.cz-hair/, /\.cz-tabs/, /\.cz-split/, /\.cz-main/, /\.cz-side/,
-  /\.cz-stage/, /\.cz-fxside/];
+  /\.cz-/];
 
 /* ---------------------------------------------------------------- die vier Achsen */
 /* EIN WERT IN EINEM var()-RUECKFALL IST KEIN WERT AN DER FUNDSTELLE. `var(--c, #8a8a95)` holt seine
@@ -108,7 +147,35 @@ const INSET_EXEMPT = [
   /* Steuerelement */ /\.cz-close/, /\.cz-head \[role="tab"\]/,
   /* Layout       */ /\.cz-root/, /\.cz-readout/,
   /* Ueberschrift */ /\.cz-head\b/,
+  /* --- M2b, die Werkstatt-Inhalte. Zwei der drei Sorten, dieselben Gruende.
+     Steuerelement: die Kategorie-Reiter des rechten Panels stehen auf 6/6, der Aktionsknopf der
+       Buehne auf 22 seitlich. Beide polstern gegen ihre BESCHRIFTUNG — der Knopf misst sich sogar
+       ausdruecklich am Text (`width: auto`, `min-width: 210px`), nicht an einer Panelkante.
+     Layout: `.cz-fxlist` haelt rechts 6 px frei, damit die Rollleiste nicht auf den Zeilen sitzt.
+       Eine Rinne ist Anordnung, kein Inset — dieselbe Unterscheidung wie bei `.cz-readout`.
+     KEINE Ueberschrift-Zeile hier: die Fusszeilen der Inhalte (`.cz-fxhint`, `.cz-fxfoot`) polstern
+       gar nicht, sie setzen `margin-top`. */
+  /* Steuerelement */ /\.cz-fxcats button/, /\.cz-actbtn/,
+  /* Layout       */ /\.cz-fxlist$/,
 ];
+
+/* WAS DIE HOEHEN-ACHSE MEINT — und die eine Regel der Werkstatt, die daneben steht.
+
+   Die Achse misst ABHEBEN von der Flaeche. `inset` ist deshalb schon ausgenommen (s. unten): ein
+   Innenschatten hebt nichts, er zeichnet eine Kante. `.cz-shown` ist derselbe Gedanke ohne das
+   Schluesselwort — `0 0 0 2px` hat weder Weichzeichnung noch Streuung und ist ein RING, also eine
+   Kante, die als Schatten geschrieben ist, weil sie die Kachel nicht groesser machen darf.
+
+   Der zweite Teil, `0 0 18px -6px`, ist ein Schein, und dafuer hat das Vokabular `--el-glow-*`.
+   Uebernommen wurde er trotzdem nicht, und das ist keine Bequemlichkeit: `#ruhe` sagt „nur der
+   primaere CTA leuchtet", und `--el-glow-*` steht in 2c ausdruecklich als „the primary CTA, and
+   nothing else". Diesen Schritt an einen Auswahl-Marker zu haengen hiesse, genau die Regel zu
+   brechen, fuer die es ihn gibt — der Marker faerbt seinen Schein ausserdem mit `--c`, der Rarity-
+   Farbe der Kachel, nicht mit der Signalfarbe eines CTA.
+
+   Gemeldet als MENU-50, nicht gepraegt: ein Auswahl-RING ist eine echte Luecke der fuenf Achsen,
+   und das Fenster ist zu. Einzeln aufgezaehlt, damit die Ausnahme keine zweite Regel mitnimmt. */
+const ELEV_EXEMPT = [/^\.cz-shown$/];
 
 const CSS_AXES = [
   { axis: "Flaeche", re: /(?:^|[;{\s])background(?:-color|-image)?\s*:[^;}]*(#[0-9a-fA-F]{3,8}|\brgba?\()/g },
@@ -122,7 +189,7 @@ const CSS_AXES = [
      ausgenommen sein sollte. Dieselbe Luecke laesst umgekehrt ein echtes Literal durch, sobald die
      Ausnahme etwas weiter gefasst ist — H-b in Regex-Form, an der eigenen Ratsche gefunden.
      Der Lookahead wird jetzt genau einmal ausgewertet, direkt hinter dem Doppelpunkt. */
-  { axis: "Hoehe",   re: /(?:^|[;{\s])box-shadow\s*:(?!\s*(?:var\(|none|inset\b))[^;}]*\d/g },
+  { axis: "Hoehe",   re: /(?:^|[;{\s])box-shadow\s*:(?!\s*(?:var\(|none|inset\b))[^;}]*\d/g, exempt: ELEV_EXEMPT },
   { axis: "Radius",  re: /(?:^|[;{\s])border-radius\s*:(?!\s*(?:var\(|0\s*[;}]))[^;}]*[1-9]/g },
   { axis: "Innenabstand", re: /(?:^|[;{\s])padding(?:-top|-right|-bottom|-left)?\s*:(?!\s*(?:var\(|0\s*[;}]))[^;}]*[1-9]/g, exempt: INSET_EXEMPT },
 ];
@@ -142,6 +209,19 @@ describe("#menu-rework — migrierte CSS-Regeln fuehren keine Werte ein", () => 
   const css = read("src/index.css");
   const all = rules(css);
   const mine = all.filter(([sel]) => MIGRATED_SELECTORS.some((re) => re.test(sel)));
+
+  it("JEDE Ausnahme trifft eine migrierte Regel — keine zeigt ins Leere", () => {
+    /* Die Gegenprobe zu den Ausnahmelisten, und die zweite Haelfte von „die Erlaubnisliste trifft
+       etwas". Eine Ausnahme, deren Selektor es nicht mehr gibt, nimmt nichts mehr aus — harmlos.
+       Eine, die umbenannt wurde und jetzt auf etwas ANDERES passt, nimmt still das Falsche aus, und
+       genau das faellt hier auf. Beide Achsen mit Ausnahmen werden geprueft, nicht nur die neue.
+       Der Anlass ist MENU-37: derselbe Waechter meldete einmal Erfolg fuer eine Liste, von der nur
+       ein Teil noch etwas traf. */
+    for (const [name, liste] of [["Innenabstand", INSET_EXEMPT], ["Hoehe", ELEV_EXEMPT]]) {
+      const tot = liste.filter((re) => !mine.some(([sel]) => re.test(sel)));
+      expect(tot, `${name}: Ausnahme trifft keine migrierte Regel:\n  ${tot.map(String).join("\n  ")}`).toEqual([]);
+    }
+  });
 
   it("die Erlaubnisliste trifft ueberhaupt etwas", () => {
     /* Gegenprobe gegen die stillste Art, diesen Waechter wirkungslos zu machen: eine Erlaubnisliste,
@@ -208,10 +288,24 @@ function tags(src) {
       else if (ch === ">" && depth === 0) break;
       i++;
     }
-    out.push(src.slice(m.index, i));
+    /* Der Versatz haengt am Tag, damit `exemptFns` es seiner Komponente zuordnen kann. Ueber den
+       VERSATZ und nicht ueber eine Textsuche: zwei Komponenten duerfen dasselbe Tag schreiben. */
+    out.push({ text: src.slice(m.index, i), at: m.index });
   }
   return out;
 }
+
+/* Die Anfaenge der Funktionen oberster Ebene, in Quelltext-Reihenfolge. Ein Tag gehoert der letzten
+   Funktion, die vor ihm beginnt — top-level-Funktionen liegen hintereinander, also grenzt die
+   naechste die vorige ab. */
+function fnStarts(src) {
+  return [...src.matchAll(/^(?:export\s+)?function\s+([A-Za-z0-9_]+)\s*\(/gm)].map((m) => [m.index, m[1]]);
+}
+const fnNameAt = (starts, at) => {
+  let name = null;
+  for (const [i, n] of starts) { if (i <= at) name = n; else break; }
+  return name;
+};
 
 /* Das Stil-OBJEKT aus einem Tag, ueber Klammerzaehlung statt `[\s\S]*}}`. Gierig gelesen frisst der
    Ausdruck bis zum letzten `}}` des Tags — und das steht bei `onClick={() => {}}` hinter dem Stil.
@@ -229,56 +323,141 @@ function styleObject(tag) {
   return tag.slice(start + 1, i - 1);
 }
 
-function styledTags(src, hookRx) {
-  return tags(src).filter((t) => !hookRx || hookRx.test(t))
-    .map(styleObject).filter((b) => b !== undefined);
+/* Die Tags eines Eintrags: erst die Haken-Region (wo einer sie nennt), dann die ausgenommenen
+   Komponenten heraus. Beide Filter sind additiv — ein spaeterer Worker darf beides gleichzeitig
+   brauchen, ohne dass hier etwas umgebaut wird. */
+function tagsOf(src, entry) {
+  const hookRx = anyHook(entry.hooks);
+  const ex = new Set(entry.exemptFns || []);
+  const starts = ex.size ? fnStarts(src) : null;
+  return tags(src)
+    .filter((t) => !hookRx || hookRx.test(t.text))
+    .filter((t) => !ex.size || !ex.has(fnNameAt(starts, t.at)));
 }
 
-/* Fuer die beiden Utility-Pruefungen: der ganze Quelltext, wo der Eintrag keine Haken nennt, sonst
-   die Tags, die einen fuehren. Eine Utility steht im Klassen-Literal, nicht im Stil-Objekt. */
-function classScopes(src, hookRx) {
-  if (!hookRx) return [src];
-  return tags(src).filter((t) => hookRx.test(t));
+function styledTags(src, entry) {
+  return tagsOf(src, entry).map((t) => styleObject(t.text)).filter((b) => b !== undefined);
 }
+
+/* Fuer die beiden Utility-Pruefungen: der ganze Quelltext, wo der Eintrag weder Haken noch
+   Ausnahmen nennt, sonst die Tags der Region. Eine Utility steht im Klassen-Literal, nicht im
+   Stil-Objekt. */
+function classScopes(src, entry) {
+  if (!entry.hooks && !entry.exemptFns) return [src];
+  return tagsOf(src, entry).map((t) => t.text);
+}
+
+/* Die Literale eines Inline-Werts, NACHDEM die var()-Rueckfaelle heraus sind. Die erste Fassung
+   fragte `!/var\(/.test(val)` und liess damit jeden Wert durch, in dem NEBEN einem var() noch ein
+   Literal stand: `1px solid ${on ? "var(--deck-a1, #9b82f0)" : "#2a2836"}` war fuer sie sauber.
+   Gemessen an CustomizeScreen.jsx verdeckte das drei Fundstellen — H-b zum fuenften Mal in diesem
+   Repository (TYPO-12, MENU-15, MENU-29, MENU-33/34, und das hier). Ein Waechter fragt nicht, OB
+   ein Token vorkommt, sondern ob noch ein Wert danebensteht. */
+const literalsIn = (val) =>
+  [...withoutFallbacks(val).matchAll(/#[0-9a-fA-F]{3,8}\b|\brgba?\([^()]*\)/g)].map((m) => m[0]);
 
 describe("#menu-rework — migriertes JSX fuehrt keine Werte ein", () => {
-  const sources = MIGRATED_JSX.map((e) => [e.path, strip(read(e.path)), anyHook(e.hooks), e.hooks]);
+  const sources = MIGRATED_JSX.map((e) => [e.path, strip(read(e.path)), e]);
 
   it("JEDER Klassenhaken der Erlaubnisliste trifft ein Tag — nicht nur irgendeiner", () => {
     /* Dieselbe Gegenprobe wie auf der CSS-Seite, und fuer M2a die wichtigere. Die erste Fassung
        verlangte nur EINEN Treffer und war damit blind: umbenannt man `cz-root`, passten die
        uebrigen sechzehn Haken weiter, der Waechter blieb gruen und die Wurzel war unbewacht.
-       Gefunden beim Gegenpruefen dieses Waechters — genau dafuer ist das Gegenpruefen da. */
-    for (const [path, src, , hooks] of sources) {
-      if (!hooks) continue;
+       Gefunden beim Gegenpruefen dieses Waechters — genau dafuer ist das Gegenpruefen da.
+
+       SEIT M2B NENNT KEIN EINTRAG MEHR HAKEN — die Werkstatt ist ganz migriert, und das ist der
+       einzige Grund, aus dem diese Schleife gerade leer laeuft. Sie bleibt fuer M3–M11 stehen.
+       Hier steht BEWUSST kein `expect(geprueft).toBe(0)`: das waere eine Ratsche auf den heutigen
+       Zustand, und der naechste Worker, der voellig zu Recht `hooks` mitbringt, liefe dagegen. Der
+       Kopf dieses Waechters verlangt ausdruecklich das Gegenteil — er darf nie Arbeit blockieren,
+       die noch nicht passiert ist. Die lebende Gegenprobe des Mechanismus ist `exemptFns` unten. */
+    for (const [path, src, e] of sources) {
+      if (!e.hooks) continue;
       const alle = tags(src);
-      const tot = hooks.filter((h) => !alle.some((t) => hookRe(h).test(t)));
+      const tot = e.hooks.filter((h) => !alle.some((t) => hookRe(h).test(t.text)));
       expect(tot, `${path}: Haken zeigt ins Leere:\n  ${tot.join("\n  ")}`).toEqual([]);
+    }
+  });
+
+  it("JEDER Name in exemptFns trifft eine echte Funktion — eine Ausnahme zeigt nicht ins Leere", () => {
+    /* Die Gegenprobe, die `exemptFns` ueberhaupt erst verantwortbar macht. Eine Ausnahmeliste, deren
+       Namen niemand mehr traegt, nimmt still nichts aus — und der Tag, an dem jemand eine Szene
+       umbenennt, ist der Tag, an dem sie unbemerkt in die Pruefung faellt ODER, schlimmer, ein neuer
+       Name still danebensteht und alles darunter ausnimmt. Beide Richtungen fallen hier auf. */
+    for (const [path, src, e] of sources) {
+      if (!e.exemptFns) continue;
+      const namen = new Set(fnStarts(src).map(([, n]) => n));
+      const tot = e.exemptFns.filter((n) => !namen.has(n));
+      expect(tot, `${path}: exemptFns zeigt ins Leere:\n  ${tot.join("\n  ")}`).toEqual([]);
+    }
+  });
+
+  it("die Ausnahme TRAEGT etwas — sonst ist sie Zierrat", () => {
+    /* Ohne diese Pruefung koennte `exemptFns` bestehen bleiben, nachdem jemand die Szenen umgestellt
+       hat, und dann naehme sie kuenftige Arbeit aus, ohne dass es jemand merkt. Sie muss also
+       WIRKEND sein: ohne sie faende der Waechter etwas. Werden die Szenen eines Tages migriert,
+       faellt diese Zeile — und die richtige Antwort ist dann, die Namen zu loeschen. */
+    for (const [path, src, e] of sources) {
+      if (!e.exemptFns) continue;
+      const ohne = { ...e, exemptFns: undefined };
+      const zahl = styledTags(src, ohne).filter((body) =>
+        ["background", "border", "boxShadow", "borderRadius", "padding"].some((p) => {
+          const v = styleValue(body, p);
+          return v !== null && literalsIn(v).length > 0;
+        })).length;
+      const mit = styledTags(src, e).filter((body) =>
+        ["background", "border", "boxShadow", "borderRadius", "padding"].some((p) => {
+          const v = styleValue(body, p);
+          return v !== null && literalsIn(v).length > 0;
+        })).length;
+      expect(zahl - mit, `${path}: exemptFns nimmt nichts aus`).toBeGreaterThan(0);
     }
   });
 
   it("Inline-Stile tragen keine Literale auf den vier Achsen", () => {
     const bad = [];
-    for (const [path, src, hookRx] of sources) {
-      for (const body of styledTags(src, hookRx)) {
+    for (const [path, src, e] of sources) {
+      const erlaubt = new Set(e.stateLiterals || []);
+      for (const body of styledTags(src, e)) {
         for (const prop of ["background", "border", "boxShadow", "borderRadius", "padding"]) {
           const val = styleValue(body, prop);
           if (val === null) continue;
-          if (/#[0-9a-fA-F]{3,8}|\brgba?\(/.test(val) && !/var\(/.test(val)) {
-            bad.push(`${path}: ${prop} -> ${val.slice(0, 60)}`);
-          }
+          const fremd = literalsIn(val).filter((l) => !erlaubt.has(l));
+          if (fremd.length) bad.push(`${path}: ${prop} -> ${val.slice(0, 60)}   [${fremd.join(" ")}]`);
         }
       }
     }
     expect(bad, `Inline-Wert statt Token:\n  ${bad.join("\n  ")}`).toEqual([]);
   });
 
+  it("JEDE utilExempt-Utility steht noch in der Datei", () => {
+    /* Gleiche Begruendung wie bei stateLiterals: eine benannte Ausnahme, die niemand nachzieht,
+       deckt irgendwann etwas, das gar nicht mehr gemeint war. */
+    for (const [path, src, e] of sources) {
+      if (!e.utilExempt) continue;
+      const tot = e.utilExempt.filter((u) => !src.includes(u));
+      expect(tot, `${path}: utilExempt zeigt ins Leere — streichen:\n  ${tot.join("\n  ")}`).toEqual([]);
+    }
+  });
+
+  it("JEDES stateLiteral steht noch in der Datei — die Ratsche dreht nur nach unten", () => {
+    /* Dieselbe Logik wie bei der Tinten-Ratsche und aus demselben Grund: eine Liste benannter
+       Luecken, die niemand nachzieht, wird zur Fiktion und deckt irgendwann etwas, das gar nicht
+       mehr gemeint war. Wer eine Zustandsfarbe aufloest, streicht sie hier. */
+    for (const [path, src, e] of sources) {
+      if (!e.stateLiterals) continue;
+      const tot = e.stateLiterals.filter((l) => !src.includes(l));
+      expect(tot, `${path}: stateLiteral nicht mehr vorhanden — streichen:\n  ${tot.join("\n  ")}`).toEqual([]);
+    }
+  });
+
   it("keine willkuerlichen Utilities (rounded-[…], p-[…], shadow-[…], bg-[…])", () => {
     const bad = [];
-    for (const [path, src, hookRx] of sources) {
-      for (const scope of classScopes(src, hookRx)) {
+    for (const [path, src, e] of sources) {
+      const erlaubt = new Set(e.utilExempt || []);
+      for (const scope of classScopes(src, e)) {
         for (const m of scope.matchAll(/\b(?:dt:)?(rounded|p|px|py|pt|pb|pl|pr|shadow|bg)-\[[^\]]+\]/g)) {
-          bad.push(`${path}: ${m[0]}`);
+          if (!erlaubt.has(m[0])) bad.push(`${path}: ${m[0]}`);
         }
       }
     }
@@ -289,8 +468,8 @@ describe("#menu-rework — migriertes JSX fuehrt keine Werte ein", () => {
     /* OHNE Praefix sind diese Utilities die Wertetraeger der schmalen Fassung und ausdruecklich
        erlaubt (s. Kopf). MIT `dt:` treffen sie den Desktop, und dort gilt das Vokabular. */
     const bad = [];
-    for (const [path, src, hookRx] of sources) {
-      for (const scope of classScopes(src, hookRx)) {
+    for (const [path, src, e] of sources) {
+      for (const scope of classScopes(src, e)) {
         for (const m of scope.matchAll(/\bdt:(rounded|shadow|p|px|py|pt|pb|pl|pr|bg)-[a-z0-9]+/g)) {
           bad.push(`${path}: ${m[0]}`);
         }
@@ -325,35 +504,45 @@ describe("#menu-rework — migriertes JSX fuehrt keine Werte ein", () => {
    ============================================================================ */
 const INK_CSS = /(?:^|[;{\s])color\s*:[^;}]*(#[0-9a-fA-F]{3,8}|\brgba?\()/g;
 
-function inkOfJsx(path, hookRx) {
+/* DIE TINTE ZAEHLT UEBER DIE GANZE DATEI, auch wo die Achsen-Pruefung eine Komponente ausnimmt.
+   `exemptFns` sagt „das ist kein Panel", nicht „hier schaut niemand hin": eine Textfarbe in einer
+   Vorschau-Szene ist genauso Tinte wie eine in einer Pack-Kachel, und die Ratsche uebergibt dem
+   Nachfolge-Workstream eine Zahl fuer die DATEI. Deshalb hier bewusst ein leerer Eintrag. */
+function inkOfJsx(path, entry = {}) {
   const src = strip(read(path));
   let n = 0;
-  for (const body of styledTags(src, hookRx)) {
+  for (const body of styledTags(src, entry)) {
     const v = styleValue(body, "color");
-    if (v !== null && /#[0-9a-fA-F]{3,8}|\brgba?\(/.test(v) && !/var\(/.test(v)) n++;
+    if (v !== null && literalsIn(v).length > 0) n++;
   }
   /* Die willkuerliche Text-Utility ist die zweite Schreibweise derselben Sache — sie hier zu
      vergessen waere H-b an der Ratsche selbst. */
-  for (const scope of classScopes(src, hookRx)) n += [...scope.matchAll(/\b(?:dt:)?text-\[#[0-9a-fA-F]{3,8}\]/g)].length;
+  for (const scope of classScopes(src, entry)) n += [...scope.matchAll(/\b(?:dt:)?text-\[#[0-9a-fA-F]{3,8}\]/g)].length;
   return n;
 }
 
 describe("#menu-rework — die Tinten-Ratsche: Textfarb-Literale wachsen nicht", () => {
   const css = read("src/index.css");
   const all = rules(css);
-  const inkOfCss = (res) => all.filter(([sel]) => res.some((r) => r.test(sel)))
+  const inkOfCss = (res, ausser = []) => all
+    .filter(([sel]) => res.some((r) => r.test(sel)) && !ausser.some((r) => r.test(sel)))
     .reduce((n, [, body]) => n + [...withoutFallbacks(body).matchAll(new RegExp(INK_CSS.source, "g"))].length, 0);
 
   /* Gemessen am Stand von M2a. Wer eine Zeile hinzufuegt, faellt hier — und wer eine entfernt, zieht
      die Zahl nach. Die Werkstatt-Schale steht auf zwei: beide sind die Reiterfarben, und beide
-     kodieren einen Zustand (aktiv / inaktiv), nicht eine Flaeche. */
+     kodieren einen Zustand (aktiv / inaktiv), nicht eine Flaeche.
+     M2b HAT DIE SCHALE NICHT MIT SICH GEZOGEN: `.cz-` meint jetzt den ganzen Screen, also stuende
+     M2as gemessene Zwei sonst ploetzlich auf der Summe beider Haelften. Die Schale behaelt darum
+     ihre eigene Selektorliste und die Inhalte sind ausdruecklich „alles .cz-, das nicht Schale ist".
+     Zusammen decken die beiden Eintraege denselben Bereich ab wie die Achsen-Pruefung. */
   const CAP = [
-    ["src/ui/modalStyle.jsx", () => inkOfJsx("src/ui/modalStyle.jsx", undefined), 0],
-    ["src/ui/OptionsModal.jsx", () => inkOfJsx("src/ui/OptionsModal.jsx", undefined), 0],
-    ["src/ui/optionsBits.jsx", () => inkOfJsx("src/ui/optionsBits.jsx", undefined), 0],
-    ["src/ui/CustomizeScreen.jsx (ganze Datei)", () => inkOfJsx("src/ui/CustomizeScreen.jsx", undefined), 27],
+    ["src/ui/modalStyle.jsx", () => inkOfJsx("src/ui/modalStyle.jsx"), 0],
+    ["src/ui/OptionsModal.jsx", () => inkOfJsx("src/ui/OptionsModal.jsx"), 0],
+    ["src/ui/optionsBits.jsx", () => inkOfJsx("src/ui/optionsBits.jsx"), 0],
+    ["src/ui/CustomizeScreen.jsx (ganze Datei)", () => inkOfJsx("src/ui/CustomizeScreen.jsx"), 27],
     ["index.css — .op-* (M1)", () => inkOfCss([/\.op-/, /\.as-opt-/]), 16],
-    ["index.css — .cz-* Schale (M2a)", () => inkOfCss(MIGRATED_SELECTORS.filter((r) => /cz-/.test(r.source))), 2],
+    ["index.css — .cz-* Schale (M2a)", () => inkOfCss(M2A_SHELL_SELECTORS), 2],
+    ["index.css — .cz-* Inhalte (M2b)", () => inkOfCss([/\.cz-/], M2A_SHELL_SELECTORS), 1],
   ];
 
   for (const [name, count, cap] of CAP) {

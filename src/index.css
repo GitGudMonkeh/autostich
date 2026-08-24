@@ -3419,7 +3419,7 @@ b, strong { font-weight: 600; }
      Rahmen des Panels bekäme einen zweiten, 6 px weiter innen. */
   .cz-detail, .cz-detailcard { max-width: none; }
   .cz-detailcard {
-    border-radius: 14px;
+    border-radius: var(--rd-lg);
     background: none !important;
     border-color: transparent !important;
     box-shadow: none !important;
@@ -5631,18 +5631,25 @@ b, strong { font-weight: 600; }
      kein Radius, kein Abstand — getrennt wird durch Haarlinien, und das EINE Farbsignal bleibt die
      Rarity-Kante links (`--c`, kommt aus `.as-edge-card`). Die letzte Zeile trägt keine Linie.
      `!important` an der Fläche, weil `.as-edge-card` sie im selben Ungeschichteten setzt. */
+  /* #menu-rework M2b — die Haarlinie und der Innenabstand kommen aus dem Vokabular.
+     Die Linie war als Durchsichtigkeit geschrieben (MENU-38s Familie), aber ihre ROLLE ist die
+     Definition von `--ed-quiet`: eine Trennlinie in einem Panel. Gemessen ueber der Panelflaeche
+     3/255 auseinander — dieselbe Rechnung, mit der M2a `.cz-readout` einsammelte. Deshalb faellt
+     dieses Mitglied der Familie auf den Schritt, ohne dass die Familie ein Token bekommt.
+     Der Innenabstand ist die Sprosse fuer EINE ZEILE, `--in-tight`; vorher standen hier drei Zahlen
+     auf vier Seiten. Kosten gemessen: 2 px Hoehe je Zeile, Beschriftung 2 px nach links. */
   .cz-fxlist .cz-fxrow {
     border-radius: 0 !important;
     border-top: 0 !important; border-right: 0 !important;
-    border-bottom: 1px solid rgba(150, 150, 170, .13) !important;
+    border-bottom: 1px solid var(--ed-quiet) !important;
     background: none !important;
-    padding: 12px 12px 12px 13px !important;
+    padding: var(--in-tight) !important;
   }
   .cz-fxlist .cz-fxrow:last-child { border-bottom: 0 !important; }
   /* Der Behälter setzt `gap-2` als Utility — hier zusammenrücken, sonst hängen die Haarlinien in der Luft. */
   .cz-fxlist .flex.flex-col { gap: 0; }
   /* Gewählt = hellere Fläche statt eines zweiten Rahmens; die Kante links sagt bereits, welcher es ist. */
-  .cz-fxlist .cz-fxrow.is-sel { background: rgba(255, 255, 255, .045) !important; }
+  .cz-fxlist .cz-fxrow.is-sel { background: var(--ctl-chip) !important; }
 
   /* Luftigeres Kachelraster (der Katalog ist das einzige Raster im Panel — der Greifer darf so grob sein). */
   .cz-mainscroll .grid { gap: 16px; }
