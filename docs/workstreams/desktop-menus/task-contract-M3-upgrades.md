@@ -16,7 +16,7 @@ ID, reported — never a value at the call site.
 | **Branch** | `task/menu-m3-upgrades` — create it yourself |
 | **Feature branch** | `feature/desktop-menus` |
 | **Base SHA** | tip of `feature/desktop-menus` at start. Record it here |
-| **Tier** | C |
+| **Tier** | C — absorbs the approved redesign, so pixels move by design as well as by migration |
 | **Owner stops** | Two |
 | **Concurrency** | **Exclusive** |
 | **Worktree** | `C:/Code/Autostich-worktrees/menu-rework` — shared, **leave it in place** |
@@ -28,47 +28,55 @@ Confirm your branch and an empty `git status --short` before the first edit.
 
 ---
 
-## Scope
+## Scope — three commits, in this order, and they do not merge
 
-| File | Lines | What |
-| --- | --- | --- |
-| `src/ui/UpgradeScreen.jsx` | 647 | the upgrade tree |
-| `src/ui/DeckDetail.jsx` | 238 | **you own it** — `GuideOverlay` (M5) renders it too and inherits your conversion |
-| `src/index.css` | — | the `.up-*` and deck-detail rules |
+**M3 absorbs the approved redesign.** Owner decision, 2026-08-24, and it is the M1 pattern: one worker
+does both jobs so the screen is touched once, split into commits so the comparison stays readable.
 
-Every surface, edge, elevation, radius and inset from §2c.
+**Binding input:** `docs/upgrade-baum-redesign.md` — *"freigegeben, Umsetzung ausstehend"*. Read it
+before you start. It is design only and says so: the technical implementation is yours, not its.
 
-**You are a shared-component owner.** M5 and anything else that mounts `DeckDetail` consume what you
-leave. Convert it as a component, not as a corner of your screen.
+### Commit 1 — structure. The redesign, at today's surface values.
 
----
+Build what `upgrade-baum-redesign.md` specifies — head and legend, the general page, the colour
+decision, the faction page, the legendary phase, the copy — using **the values that are in the tree
+today**. No tokens yet.
 
-## What the instrument now does, and does not
+Its four stated problems, and its claim that fixing them **costs no height**, are what your Part 3
+re-measures. The document computes `.up-root` at 1080 px from head 172 + branch 808 + legend 42, and
+notes the faction page has overflowed by 44 px once already. **Verify that arithmetic before you build
+against it** — the last design document put to a worker had a premise that did not survive contact
+with a `main` build.
 
-MH1 repaired it. Read this before you diff anything.
+### Commit 2 — vocabulary. The tokens.
 
-| | |
-| --- | --- |
-| **Noise floor is zero** | Same tree twice: 160 cells, 25 027 nodes, **0 deltas**. Every delta you see belongs to your change, not to scatter |
-| **The comparator no longer truncates** | It prints in full and names its distribution. The old cut at 200 of 410 did not blur a finding, it **manufactured** one — cells sort lang/size/surface, so a cut necessarily read as "only German, hole at 1920×1080" |
-| **The gate does not capture control states** | It prints *"Surfaces only. Control states are not captured and are verified by hand."* on every run, green ones included. **Believe the label.** Any control state you touch, you verify in a browser and say so in your record |
+Now take every surface, edge, elevation, radius and inset from §2c.
 
----
+### Commit 3 — the deck detail.
 
-## The comparison set is smaller from here
-
-**Owner decision, 2026-08-24.** Every remaining menu gets a design pass of its own afterwards, so a
-full before/after of the re-plumbing shows a state that is not the target anyway.
-
-| Half | Scope |
-| --- | --- |
-| **Machine** | **Unchanged, in full.** The zero-delta claim where you make one, and the proof that **only** your screens moved. This is what catches a token leaking onto a screen nobody touched |
-| **Owner-facing** | **The migrated screens, both languages, two sizes.** Not a full pair set |
-
-The machine half is not negotiable and the owner-facing half is not padding — send what there is to
-decide, not what the machine already checked.
+`DeckDetail.jsx`, converted as a **component**, not as a corner of your screen. `GuideOverlay` (M5)
+mounts it too and inherits what you leave.
 
 ---
+
+## The hazard that is specific to this screen
+
+**The tree is upstream of the vocabulary.** *Measured:* `src/index.css` says *"Werte 1:1 von
+`.up-*` übernommen"* at **ten sites** — the workshop, the guide, the glossary, the statistics screen
+and the options screen all copied their values from this one. The design document opens with the same
+observation.
+
+M1 derived the token values **by counting call sites**. Many of those call sites were copies of
+`.up-*`. So a token's value is often this screen's value, one step removed.
+
+**What follows, and it is the thing to get right:**
+
+> When the redesign changes a `.up-*` value that a token descends from, you are not making a local
+> edit. You are either **changing that token for everyone** — which goes through the planner — or
+> **deliberately diverging this screen from the token**, which needs a reason in the record.
+
+Neither is forbidden. Doing it without noticing which one you did is. Name it in your findings table
+either way.
 
 ## Non-goals, and the tripwires
 
@@ -174,7 +182,10 @@ pick-phase component, anything inside `@media (max-width: …)`, `test/typo-toke
 ## Definition of done
 
 - [ ] Branch confirmed, `git status --short` empty, before the first edit
-- [ ] Both files take every surface, edge, elevation, radius and inset from §2c
+- [ ] Commit 1 — the redesign built at today's values, its height arithmetic verified first
+- [ ] Commit 2 — both files take every surface, edge, elevation, radius and inset from §2c
+- [ ] Every `.up-*` value the redesign changes is classified: **token change for everyone** (through
+      the planner) or **deliberate divergence** (with a reason). Neither silently
 - [ ] Allowlist entry covers both files; ratchets do not grow
 - [ ] `DeckDetail` verified in **both** mount points, or the gap named
 - [ ] Guards: measured which break, each rewritten to the invariant and counter-checked

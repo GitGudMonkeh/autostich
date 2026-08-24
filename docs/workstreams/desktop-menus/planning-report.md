@@ -537,6 +537,41 @@ task 11, and everything before it gets adjusted twice — precisely §9's warnin
 This is stricter than the brief asks for, and it is the reason the acceptance criterion in §7 is
 reachable. A vocabulary frozen against the easiest screen is a vocabulary that reopens.
 
+### 4.1b The order is re-cut to follow the design documents — 2026-08-24
+
+**Owner decision.** A parallel design track is producing approved target designs, one per screen. The
+order below M2 is re-cut so that **a screen is migrated when its design exists**, and is therefore
+touched once rather than twice.
+
+| Design document | Screen | Task | |
+| --- | --- | --- | --- |
+| `optionen-redesign.md` | Options | **M1** | absorbed, done |
+| `werkstatt-redesign.md` | Workshop | **M2a/M2b** | **missed it — see below** |
+| `upgrade-baum-redesign.md` | Upgrade tree | **M3** | absorbed |
+| `statistik-redesign.md` | Statistics | M7 | ready |
+| `bestenliste-redesign.md` | Leaderboard | M8 | ready |
+| `feedback-redesign.md` · `erststart-redesign.md` | Feedback · welcome | M9 | ready |
+| `mainscreen-marke.md` | Mainscreen | own workstream | ready |
+| *(none yet)* | End screen · Guide · Glossary · Chronicle · Run dialogs | M4 · M5 · M6 · M10 · M11 | wait |
+
+**New order:** M3 → M7 → M8 → M9, then M4 · M5 · M6 · M10 · M11 as their designs arrive.
+
+**Why this is not a schedule preference.** The design documents state, each in its own head, that they
+are *"reiner Design-Auftrag"* and that the technical implementation belongs to the worker. So the CSS
+gets written either way; the only question is whether one worker writes it once or two workers write
+it twice. M1 proved the first shape works — structure commit, then vocabulary commit, one screen, one
+review.
+
+**What it already cost, recorded rather than glossed.** `werkstatt-redesign.md` was written at 14:37
+on 2026-08-24; M2a and M2b had finished before it existed. **The workshop will be touched a second
+time.** That is roughly one extra task, and it is sunk. It is also the whole argument for this
+re-cut: the same thing was avoidable for four more screens and now is.
+
+**The joint stays at the same seam either way.** `conventions.md` §2c decides what a value is *called*
+and where it lives; a design document decides what it *should be*. A design that changes a value
+changes a token — through the planner — or diverges deliberately, with a reason. That rule predates
+this re-cut and is unaffected by it.
+
 ### 4.2 Why this order below M2
 
 Shared-component owners run before their consumers, so later workers inherit a converted component
