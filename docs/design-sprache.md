@@ -15,6 +15,7 @@ Zugehörige Aufträge, die auf diesem Dokument aufsetzen:
 | Feedback-Melder | `docs/feedback-redesign.md` |
 | Mainscreen & Marke | `docs/mainscreen-marke.md` |
 | Upgrade-Baum | `docs/upgrade-baum-redesign.md` |
+| Erststart | `docs/erststart-redesign.md` |
 
 Mockups: https://claude.ai/code/artifact/2e09b642-9197-42b1-81c5-dd41618c5ad8 (Marke, Mainscreen,
 Melder, Baum) und https://claude.ai/code/artifact/c8328e42-db0b-411f-b26e-ec72a60a17ec (Optionen).
@@ -401,6 +402,12 @@ gesperrt und tatsächlich fokussierbar ist kein Zustand, sondern eine Falle.
 Der Titel sagt **warum** gesperrt ist, nicht nur *dass*: „Kein Lauf zum Anhängen gefunden",
 „öffnet sich mit Rarität · Legendär".
 
+**Leuchtet etwas, dann das, was gerade dran ist.** Nach `#ruhe` leuchtet die Hauptaktion — auf
+einem Screen, dessen Hauptaktion beim Öffnen gesperrt ist, leuchtet stattdessen das Element, das die
+Sperre löst. Einziger Fall bisher: der Erststart, wo das Eingabefeld leuchtet und der Speichern-Knopf
+nicht, weil er ohne Namen tot ist. Es bleibt bei **einem** Schein je Screen; die Ausnahme verschiebt
+ihn, sie vermehrt ihn nicht.
+
 **Der Zustand steht auf dem Bedienelement, nicht erst in einer Erklärung daneben.** Eine Kachel, die
 gesperrt ist und trotzdem ihren Preis in Gold zeigt, sagt „kaufbar" — und die Wahrheit steht dann
 irgendwo anders. Konkret: **Gold nur bei `buy`.** Gesperrt, zu teuer und kaufbar sind drei Zustände
@@ -476,6 +483,8 @@ entstehen bei jedem Screen, den wir uns vornehmen — sie gehören hierher, nich
 | --- | --- |
 | 24.08.2026 | Angelegt. Fundament, Kopf-Kanon, Farbrollen, Komponenten aus den Aufträgen Optionen, Melder, Mainscreen und Baum-Reiter 1–2 zusammengeführt. |
 | 24.08.2026 | Farbentscheidung Upgrade-Baum: **eine** Struktur-Farbe, und die ist die Deckfarbe. Feste Fremdtöne (Cyan/Violett) für Struktur entfallen. |
+| 24.08.2026 | **Erststart-Bildschirm entworfen**, Auftrag unter `docs/erststart-redesign.md`. Härtester Befund: die gewählte Sprache ist nur auf der linken Seite markiert — rechts überschreibt die Trennlinie des Segmented die Zustandskante, und der Standard ist Englisch, also ist der unmarkierte Zustand der, den jeder zuerst sieht. Dazu drei Cyans im Eingabefeld, ein Titel unter Maß mit violettem Schein, eine Karte ohne Rahmen und zwei Textglyphen. |
+| 24.08.2026 | Dazu eine **benannte Ausnahme in §5**: wo die Hauptaktion beim Öffnen gesperrt ist, leuchtet das Element, das die Sperre löst — beim Erststart also das Eingabefeld statt des Speichern-Knopfes. Ein Schein je Screen, nur an anderer Stelle. |
 | 24.08.2026 | **Der Zwei-Farben-Verlauf der Haarlinie bleibt** (§1) — der letzte offene Punkt. Die Frage war auf Decks gemünzt, deren Farben fast gegenüberliegen; gemessen über alle 42 Paare tut das Paar je nach Deck etwas anderes: Ton-Verlauf bei 10, beides bei 9, reiner Helligkeits-Verlauf bei 23. Auf 41 von 42 Decks tut die Linie etwas. Einzige Ausnahme ist Seraph, und die bleibt. |
 | 24.08.2026 | **Eyebrow-Wörter für alle acht Overlays festgelegt** (§2) — der letzte offene Punkt der Kopfzeile. Regel: der Eyebrow nennt den Bereich, der Titel den Screen; wo beide gleich heißen, nimmt der Eyebrow die kurze Hub-Form. Glossar und Leitfaden teilen sich einen. Vier verworfene Wörter sind mit notiert. Zwei Unterzeilen sind neue Copy und stehen als solche markiert. |
 | 24.08.2026 | Zur Ziel-Helligkeit zwei Gegenproben, beide gemessen und beide ohne Änderung: der **Rahmen** bleibt ungemischt (Spanne nur 1,9-fach), und **ein einziger Mischwert für alles** ist verworfen — er nimmt Farbe dort weg, wo der Kontrast schon erfüllt war. Beides in §3 notiert, damit es nicht wiederkommt. |
