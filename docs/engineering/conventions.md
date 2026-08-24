@@ -221,7 +221,7 @@ cases, `#menu-rework` planning report §2.1.
 | | `--el-rest` | `0 0 14px` deck 22 % | a panel at rest |
 | | `--el-float` | `0 14px 44px rgba(0,0,0,.42)` | a card off the board |
 | | `--el-modal` | `0 18px 48px rgba(0,0,0,.5)` | an overlay over it all |
-| | `--el-glow` | `0 0 16px -8px var(--c)` | **the primary CTA, and nothing else** |
+| | `--el-glow-blur` · `--el-glow-spread` | `16px` · `-8px` | **the primary CTA, and nothing else.** Two scalars, not one composite — see below |
 | **Radius** | `--rd-sm` | `6px` | tiles, buttons, rows, chips |
 | | `--rd-md` | `0.5rem` | a control that is not a tile |
 | | `--rd-lg` | `14px` | a panel |
@@ -326,9 +326,16 @@ it in.
 
 > **Only the primary CTA glows.**
 
-`--el-glow` exists so that rule stays expressible, and a token named for a rule is harder to spread
+`--el-glow-*` exists so that rule stays expressible, and a step named for a rule is harder to spread
 than a shadow value copied. A desktop panel at rest is `--el-flat`, which is exactly what
 `as-ring-quiet` already sets — so the rule is a step you *pick*, not an absence you have to remember.
+
+**It is two scalars rather than one composite**, and that is the substitution rule above, not
+untidiness: the glow's *colour* is `--c`, which the call site sets on the button itself, because the
+colour is the signal — it says which CTA this is. A composite declared at `:root` would resolve
+`var(--c)` there and freeze the grey fallback. It did exactly that on a victory-screen button, in the
+same task that wrote the rule down, until the zero-delta gate said so. The shape lives in the
+vocabulary; the colour belongs to the call site.
 
 `--el-halo-*` is the other half of the same decision: the loud phase card's coloured halo, kept so the
 phone branch stays value-preserving, and it is what `quiet` takes away. Nothing new takes it.

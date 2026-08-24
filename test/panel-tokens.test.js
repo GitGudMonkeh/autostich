@@ -188,11 +188,15 @@ describe("#menu-rework — das Vokabular selbst bleibt vollstaendig", () => {
     const STEPS = [
       "--sf-sunken", "--sf-base", "--sf-head", "--sf-raised",
       "--ed-quiet", "--ed-base", "--ed-strong", "--ed-deck",
-      "--el-flat", "--el-rest", "--el-float", "--el-modal", "--el-glow",
+      "--el-flat", "--el-rest", "--el-float", "--el-modal", "--el-glow-blur", "--el-glow-spread",
       "--rd-sm", "--rd-md", "--rd-lg",
       "--in-tight", "--in-snug", "--in-base",
     ];
-    expect(STEPS.length, "die Leiter hat nicht mehr neunzehn Sprossen").toBe(19);
+    /* ZWANZIG Eintraege fuer NEUNZEHN Schritte: der CTA-Schein ist EIN Schritt, geschrieben als zwei
+       Skalare, weil seine Farbe der Fundstelle gehoert (`--c` am Knopf) und ein Komposit sie an
+       :root einfrieren wuerde. Die Zahl steht hier ausgeschrieben, damit der naechste Leser die
+       Abweichung findet statt sie fuer einen Zaehlfehler zu halten. */
+    expect(STEPS.length, "die Leiter hat nicht mehr neunzehn Sprossen (20 Eintraege, --el-glow-* zaehlt einfach)").toBe(20);
     const missing = STEPS.filter((t) => !new RegExp(`\\n\\s*${t}\\s*:`).test(theme));
     expect(missing, `Schritt fehlt im Vokabular:\n  ${missing.join("\n  ")}`).toEqual([]);
   });
@@ -202,7 +206,8 @@ describe("#menu-rework — das Vokabular selbst bleibt vollstaendig", () => {
        die ihn vergisst, faellt beim Skalieren aus der Reihe — und zwar erst dann, also hier. */
     const LENGTHS = ["--rd-sm", "--rd-md", "--rd-lg", "--rd-shell",
       "--in-tight", "--in-snug", "--in-base", "--btn-pad-y", "--btn-pad-x",
-      "--sf-cone-w", "--sf-cone-w-phase", "--sf-cone-h", "--el-halo-blur"];
+      "--sf-cone-w", "--sf-cone-w-phase", "--sf-cone-h", "--el-halo-blur",
+      "--el-glow-blur", "--el-glow-spread"];
     const bad = LENGTHS.filter((t) => {
       const m = theme.match(new RegExp(`\\n\\s*${t}\\s*:([^;]*);`));
       return m && !/var\(--ui-scale/.test(m[1]);

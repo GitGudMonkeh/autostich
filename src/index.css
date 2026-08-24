@@ -396,10 +396,16 @@
                           /* desktop switches OFF                              */
   --el-float: 0 calc(14px * var(--ui-scale, 1)) calc(44px * var(--ui-scale, 1)) rgba(0, 0, 0, .42);
   --el-modal: 0 calc(18px * var(--ui-scale, 1)) calc(48px * var(--ui-scale, 1)) rgba(0, 0, 0, .5);
-  --el-glow:  0 0 calc(16px * var(--ui-scale, 1)) calc(-8px * var(--ui-scale, 1)) var(--c, #8a8a95);
-                          /* #ruhe: ONLY the                                   */
-                          /* primary CTA glows. A token named for the rule is  */
-                          /* harder to spread than a shadow value copied       */
+  /* #ruhe: ONLY the primary CTA glows, and this step is named for that rule because a token with a
+     name is harder to spread than a shadow value copied.
+
+     TWO SCALARS, NOT ONE COMPOSITE, and the reason is the substitution rule stated at the head of
+     this block: the glow's COLOUR is `--c`, which the call site sets on the button itself. A
+     composite declared here would resolve `var(--c)` at :root and freeze the grey fallback -- which
+     it did, on a victory-screen button, until the zero-delta gate said so. The colour belongs to the
+     call site because it is the signal: which CTA this is. The SHAPE belongs here. */
+  --el-glow-blur:   calc(16px * var(--ui-scale, 1));
+  --el-glow-spread: calc(-8px * var(--ui-scale, 1));
 
   /* OUTSIDE THE LADDER: the coloured halo of a LOUD phase card, as its two     */
   /* scalars. This is the value #ruhe removes on the desktop (quiet), kept so   */
@@ -1818,10 +1824,11 @@ b, strong { font-weight: 600; }
     color-mix(in srgb, var(--c, #8a8a95) 30%, var(--edge-btn-bg, #0e0e14)) 0%, var(--edge-btn-bg, #0e0e14) 30%);
   border-left-color: var(--c, #8a8a95);
   color: color-mix(in srgb, var(--c, #8a8a95) 40%, #ffffff);
-  /* #ruhe, als Token statt als Zahl: NUR der primaere Knopf leuchtet. --el-glow ist fuer genau diese
-     Regel benannt, und ein Token mit einem Namen laesst sich schwerer verteilen als ein kopierter
-     Schattenwert. Wertgleich — der Schritt wurde aus DIESER Zeile abgeleitet. */
-  box-shadow: var(--el-glow);
+  /* #ruhe, als Schritt statt als Zahl: NUR der primaere Knopf leuchtet. Die LAENGEN kommen aus dem
+     Vokabular, die FARBE aus `--c` — die setzt die Fundstelle am Knopf selbst, und sie ist das
+     Signal (welcher Knopf das Ziel ist). Ein Komposit-Token haette `--c` an :root aufgeloest und den
+     grauen Rueckfall eingefroren; genau das ist hier einmal passiert. Wertgleich zur Zeile davor. */
+  box-shadow: 0 0 var(--el-glow-blur) var(--el-glow-spread) var(--c, #8a8a95);
 }
 .as-edge-neutral {
   background: rgba(12, 12, 18, .5);
