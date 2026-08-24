@@ -593,3 +593,26 @@ Not measured, and therefore not claimed: the English lesson (German is the longe
 one budgeted), any viewport other than 390 × 844, and any behaviour of the Probierfeld beyond its
 size — it is a static prototype, and the live function call is a design commitment, not something
 this session ran.
+
+---
+
+## 9. Follow-ups — found while planning, out of scope here
+
+Neither blocks the workstream. Both are recorded so they are not re-discovered.
+
+**F1 — `docs/text-style-guide.md:45` lists a rarity name the code no longer has.** The table says
+*"Normal · Selten · Sehr selten · **Rar** (Namen aus `TIER_META`)"*. `TIER_META` says **Episch**;
+`src/game/rarity.js:14` records the rename and its reason — *rar* and *selten* are synonyms, so the
+old ladder climbed backwards.
+
+The instruction in that cell is right and the example beside it is stale, which is §4's own drift
+inside §4's own document — and the same shape as the *"Ungewöhnlich"* defect the August language
+review was created to fix. *Measured*, not inferred: the label is read out of `TIER_META` at
+runtime. One word, in a shared document, so it does not belong to a tutorial task.
+
+**F2 — the `--base` trap deserves to live somewhere a phone measurement will find it.**
+`scripts/phone-proof.mjs:162` documents it; `scripts/viewport-proof.mjs` and
+`scripts/mobile-tile-sheet.mjs` drive the same server. Anyone writing a new harness will rediscover
+it the expensive way, because the failure screenshots plausibly. T9 puts it in
+`design-sprache.md` §11; a line in `docs/engineering/testing.md` would reach the next harness author
+sooner. Not this workstream's call.
