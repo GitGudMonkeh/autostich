@@ -101,6 +101,52 @@ const MIGRATED_JSX = [
      Schritt entfernt — was ihn migriert, macht das Vokabular an seiner Quelle wahr statt an einer
      Kopie. */
   { path: "src/ui/UpgradeScreen.jsx" },
+  /* #menu-rework M7 — DIE STATISTIK UND DAS LAUF-FENSTER, die zwei Screens, die dieser Auftrag
+     GESTALTET. Die drei GETEILTEN Komponenten (`RunStats`, `RunGraphs`, `Sparkline`) kommen einen
+     Commit spaeter dazu und sind dort ausdruecklich wertetreu umgestellt, nicht umgestaltet: ihr
+     Aussehen gehoert der Laufbuehne und dem Siegesbildschirm. Die Trennung steht hier als zwei
+     Eintragsgruppen, weil sie genau der Naht folgt, an der der Auftrag entschieden wird.
+
+     `stateLiterals` traegt zwei Sorten, und beide sind gezaehlt statt gepraegt:
+
+       DIE HANDY-WAESCHE. Der Ueberzug beider Screens steht INLINE, und der Inline-Wert ist der Wert
+         der SCHMALEN Fassung: ab 1280 px ueberschreibt ihn `.st-root`/`.rd-root` mit
+         `--sf-scrim-desk`. Wirksam ist das Literal also ausschliesslich unter 1280 px — und was dort
+         steht, ist in 2c ausdruecklich dauerhaft ausgenommen. Es auf einen Schritt zu ziehen hiesse,
+         die Handy-Fassung zu bewegen, um einen Waechter gruen zu bekommen: beim Lauf-Fenster von
+         DECKEND auf 94 %, was man sieht.
+       M7-G4, DAS ZUSTANDSPAAR DER GEBAEUDELISTE. „angetippt" gegen „ruhend", plus der Schein, der am
+         Brett dazu leuchtet. Fuer ein Zustandspaar hat die Leiter keinen Schritt (MENU-46/47/48),
+         und `--el-glow-*` ist nach #ruhe dem primaeren CTA vorbehalten (MENU-50). Die RUHENDE Kante
+         ist umgestellt — sie war `#2a2a34`, und das IST `--ed-quiet`. */
+  { path: "src/ui/StatsScreen.jsx", stateLiterals: ["#0c0c10ee"] },
+  { path: "src/ui/RunDetail.jsx",
+    stateLiterals: ["#0c0c10", "#12313f", "#191922", "#5ec8f0", "#5ec8f055", "#5a8ade", "#141419", "#2a2a34"] },
+  { path: "src/ui/SeedChip.jsx" },
+  /* --- Der GETEILTE Teilbaum. Er steht hier als KOMPONENTEN, nicht als Ecken dieses Screens:
+     `RunStats` und `RunGraphs` rendert auch der Siegesbildschirm, `Sparkline` zusaetzlich die
+     LAUFBUEHNE (`StatusRail.jsx:133`). Wertetreu umgestellt, nicht umgestaltet — der Beweis ist
+     `run-stage` bei null Deltas in der Maschinen-Haelfte.
+
+     `stateLiterals` traegt hier drei Familien, alle gezaehlt statt gepraegt:
+       M7-G1 — die SPUR eines Balkens (`#0c0d14`, `#1e1e26`). Sie liegt UNTER jedem Panel-Schritt:
+         `--sf-sunken` ist `#141320` und damit 8/6/12 heller, wo diese dunkler sein muss als alles,
+         was auf ihr liegt. Erste Sichtung.
+       M7-G3 — der Grund einer eingeschobenen Erklaerzeile (`#0e0e13`, `#131318`) und ihre
+         gestrichelte Kante (`#2f2f3b`). Dieselbe Lage: unter dem tiefsten Schritt, und die
+         gestrichelte Kante sagt „hier fehlt etwas absichtlich", ist also Signal, keine Struktur.
+       PERMANENT — `#d4a63a` markiert einen legendaeren Skill. Gold ist eine Rollenfarbe
+         (design-sprache.md §3) und steht in 2c unter „meaning-coded borders". */
+  { path: "src/ui/RunStats.jsx",
+    stateLiterals: ["#1e1e26", "#0e0e13", "#131318", "#2f2f3b", "#d4a63a"] },
+  { path: "src/ui/RunGraphs.jsx", stateLiterals: ["#0c0d14"],
+    /* M7-G5 — `rounded-[2px]` und `rounded-[3px]` auf 9-px-Farbmarken. `--rd-sm` ist 6 px und machte
+       aus einer 9-px-Marke fast einen Kreis; Tailwinds benannte Nachbarn sind 2 px und 4 px. Ein
+       echter Mikro-Fall mit vier Fundstellen, gemeldet statt umgeschrieben — dieselbe Antwort wie
+       MENU-51. Eine Marke um 3 px zu runden, die auch unter 1280 px steht, ist eine Bewegung, die
+       niemand bestellt hat. */
+    utilExempt: ["rounded-[2px]", "rounded-[3px]"] },
+  { path: "src/ui/Sparkline.jsx" },
 ];
 /* Ein Haken trifft ein Tag, wenn dessen Klassen ihn als GANZES Wort fuehren: `cz-main` darf
    `cz-mainscroll` nicht mitnehmen, sonst haengt der eine Eintrag am anderen. */
@@ -120,7 +166,13 @@ const MIGRATED_SELECTORS = [/\.op-/, /\.as-opt-/, /\.as-panel-sunken/, /\.as-she
   /* M3: `.up-` MEINT DEN GANZEN SCREEN, wie `.cz-` seit M2b. Ein Screen ist entweder migriert oder
      nicht; eine Aufzaehlung einzelner Bausteine waere eine halbe Migration, und eine halbe Migration
      ist, wie die 43 Schatten entstanden sind. */
-  /\.up-(?!banner)/];
+  /\.up-(?!banner)/,
+  /* M7: `.st-` und `.rd-` MEINEN DIE ZWEI SCREENS, wie `.cz-` und `.up-` ihre. `.rs-` und `.rg-`
+     gehoeren dazu, aber nur SO WEIT SIE DIESER SCREEN FAERBT: die drei Komponenten teilen sich
+     Victory und Chronik, und jede Regel, die sie anfasst, ist deshalb ohnehin auf `.rd-`/`.go-`
+     eingegrenzt (Waechter: rd-ruhe). Ein blosser `/\.rs-/` wuerde die Victory-Regeln mit
+     einsammeln, die dieser Runde nicht gehoeren — deshalb der Praefix mit Screen davor. */
+  /\.st-/, /\.rd-/];
 /* `.up-banner` ist NICHT dieser Screen. Es ist die „Neue Version verfuegbar"-Leiste
    (`UpdateBanner.jsx`) und teilt mit dem Baum nur die zwei Buchstaben des Praefixes. Sie gehoert
    keinem migrierten Screen, also darf die Erlaubnisliste sie nicht einsammeln. Gefunden, weil der
@@ -186,6 +238,19 @@ const INSET_EXEMPT = [
   /* Steuerelement */ /^\.up-actions > \*$/, /^\.up-page-guide$/,
   /* Layout       */ /^\.up-root$/, /^\.up-readout$/, /^\.up-varrow$/, /^\.up-skills$/,
   /* Ueberschrift */ /^\.up-head$/, /^\.up-navhead$/, /^\.up-vlane-h$/, /^\.up-skills-h\.is-leg$/,
+  /* --- M7, Statistik und Lauf-Fenster. Dieselben drei Sorten, dieselben drei Gruende. ---
+     Steuerelement: die zwei Schliessen-Knoepfe (11/18) und die Zaehlfelder des Build-Panels (9/10
+       geschlossen, 7/9 als Reiter) polstern gegen ihre BESCHRIFTUNG — genau der Fall, fuer den 2c
+       `--btn-pad-*` ausserhalb der Leiter fuehrt. Beide Knoepfe tragen ihr 44-px-Klickziel darueber.
+     Layout: `.st-root`/`.rd-root` sind der Rand des Screens im Fenster (und seine Straffung auf
+       flachen Fenstern), und `.rd-blist2` setzt die Liste von ihrer Trennlinie ab — das ist eine
+       Fuge, keine Panelkante, dieselbe Unterscheidung wie bei `.up-readout`.
+     Ueberschrift: `.st-head` (sein Polster gehoert zum Kopf), und die zwei `summary`, die in diesem
+       Screen die Panel-Ueberschrift SIND — vertikaler Rhythmus einer Textzeile, und der gehoert dem
+       Typografie-System, das dieser Auftrag ausdruecklich nicht anfasst. */
+  /* Steuerelement */ /^\.st-close, \.lb-head > button$/, /^\.rd-close$/, /^\.rd-bf$/, /^\.rd-bf-tab$/,
+  /* Layout       */ /^\.st-root, \.lb-root, \.go-root$/, /^\.rd-root$/, /^\.rd-blist2$/,
+  /* Ueberschrift */ /^\.st-head, \.lb-head$/, /^\.rd-c3 > summary$/, /^\.rd-c4 \.rg-perTrick > summary$/,
 ];
 
 /* WAS DIE HOEHEN-ACHSE MEINT — und die eine Regel der Werkstatt, die daneben steht.
@@ -230,11 +295,38 @@ const M3_EDGE_EXEMPT = [
   /* permanent */ /^\.up-leg\.is-buy$/, /^\.up-leg\.is-owned$/,
 ];
 
+/* --- M7, die Statistik und das Lauf-Fenster. Drei Sorten, drei Gruende. ---
+
+   M7-G1 — DER GRUND EINES GRAPHEN. `#0c0d14` traegt die Spur eines Anteil-Balkens und den Grund des
+     gestapelten Herkunft-Balkens; `#26262e` ist seine Kante. Der naechste Schritt ist `--sf-sunken`
+     (`#141320`) und liegt 8/6/12 daneben — auf einer Flaeche, die zu grossen Teilen von farbigen
+     Segmenten verdeckt ist, waere das trotzdem eine Bewegung, und beide Regeln sind AUCH UNTER
+     1280 px sichtbar. Der Grund eines Graphen ist dunkler als jeder Panel-Schritt und hat keinen;
+     erste Sichtung, also gezaehlt (Schwellenregel in 2c).
+   M7-G2 — DER WEISSE HAUCH UEBER DEM GLAS. `rgba(255, 255, 255, .012)` (ruhend) und `.045`
+     (ueberfahren / gewaehlt) sind die flache Kachelform, die #st-ruhe, #go-ruhe und #rd-ruhe seit
+     19.08.2026 teilen. `--sf-sunken` ist DECKEND und naehme ihnen genau das, was sie sind. Dieselbe
+     Familie wie M3-G2, und dieselbe Antwort.
+   PERMANENT — die Haarlinien-Rundung. `border-radius: 2px` auf einer 3 px hohen Linie ist kein
+     Panel-Radius: `--rd-sm` (6 px) machte daraus eine Kapsel. Die Regel gehoert ausserdem zu dritt
+     mit `.lb-body::before` und `.go-card::before` zusammen, die dieser Runde nicht gehoeren. */
+const M7_SURFACE_EXEMPT = [
+  /* M7-G1 */ /^\.st-hbar$/, /^\.st-track$/,
+  /* M7-G2 */ /^\.st-box$/, /^\.rd-bf$/, /^\.rd-bf:hover$/, /^\.rd-bf-tab\.is-on$/,
+  /^\.rd-card \.rs-cell, \.rd-card \.rs-tree, \.rd-card \.rs-note, \.rd-card \.rd-blist$/,
+];
+const M7_EDGE_EXEMPT = [
+  /* M7-G1 */ /^\.st-hbar$/,
+];
+const M7_RADIUS_EXEMPT = [
+  /* permanent */ /^\.st-card::before, \.lb-body::before, \.go-card::before$/, /^\.rd-card::before$/,
+];
+
 const CSS_AXES = [
   { axis: "Flaeche", re: /(?:^|[;{\s])background(?:-color|-image)?\s*:[^;}]*(#[0-9a-fA-F]{3,8}|\brgba?\()/g,
-    exempt: M3_SURFACE_EXEMPT },
+    exempt: [...M3_SURFACE_EXEMPT, ...M7_SURFACE_EXEMPT] },
   { axis: "Kante",   re: /(?:^|[;{\s])border(?:-top|-right|-bottom|-left)?(?:-color)?\s*:[^;}]*(#[0-9a-fA-F]{3,8}|\brgba?\()/g,
-    exempt: M3_EDGE_EXEMPT },
+    exempt: [...M3_EDGE_EXEMPT, ...M7_EDGE_EXEMPT] },
   /* `inset` ist ausgenommen, und das ist eine Unterscheidung, keine Nachsicht: die Hoehenleiter misst
      ABHEBEN von der Flaeche. Ein Innenschatten hebt nichts — er zeichnet eine Kante (die 2-px-
      Unterstreichung der aktiven Auswahl) oder eine Mulde, und beides hat eigene Gruende. */
@@ -245,7 +337,8 @@ const CSS_AXES = [
      Ausnahme etwas weiter gefasst ist — H-b in Regex-Form, an der eigenen Ratsche gefunden.
      Der Lookahead wird jetzt genau einmal ausgewertet, direkt hinter dem Doppelpunkt. */
   { axis: "Hoehe",   re: /(?:^|[;{\s])box-shadow\s*:(?!\s*(?:var\(|none|inset\b))[^;}]*\d/g, exempt: ELEV_EXEMPT },
-  { axis: "Radius",  re: /(?:^|[;{\s])border-radius\s*:(?!\s*(?:var\(|0\s*[;}]))[^;}]*[1-9]/g },
+  { axis: "Radius",  re: /(?:^|[;{\s])border-radius\s*:(?!\s*(?:var\(|0\s*[;}]))[^;}]*[1-9]/g,
+    exempt: M7_RADIUS_EXEMPT },
   { axis: "Innenabstand", re: /(?:^|[;{\s])padding(?:-top|-right|-bottom|-left)?\s*:(?!\s*(?:var\(|0\s*[;}]))[^;}]*[1-9]/g, exempt: INSET_EXEMPT },
 ];
 
@@ -272,7 +365,8 @@ describe("#menu-rework — migrierte CSS-Regeln fuehren keine Werte ein", () => 
        genau das faellt hier auf. Beide Achsen mit Ausnahmen werden geprueft, nicht nur die neue.
        Der Anlass ist MENU-37: derselbe Waechter meldete einmal Erfolg fuer eine Liste, von der nur
        ein Teil noch etwas traf. */
-    for (const [name, liste] of [["Innenabstand", INSET_EXEMPT], ["Hoehe", ELEV_EXEMPT]]) {
+    for (const [name, liste] of [["Innenabstand", INSET_EXEMPT], ["Hoehe", ELEV_EXEMPT],
+      ["Flaeche", M7_SURFACE_EXEMPT], ["Kante", M7_EDGE_EXEMPT], ["Radius", M7_RADIUS_EXEMPT]]) {
       const tot = liste.filter((re) => !mine.some(([sel]) => re.test(sel)));
       expect(tot, `${name}: Ausnahme trifft keine migrierte Regel:\n  ${tot.map(String).join("\n  ")}`).toEqual([]);
     }
@@ -617,6 +711,21 @@ describe("#menu-rework — die Tinten-Ratsche: Textfarb-Literale wachsen nicht",
        Die Ratsche kostet dagegen nichts und uebergibt M5 eine GEMESSENE Zahl statt eines Eindrucks —
        dieselbe Antwort, die MENU-38 und die Tinte schon bekommen haben: zaehlen, nicht praegen. */
     ["src/ui/DeckDetail.jsx (ganze Datei, NICHT migriert)", () => inkOfJsx("src/ui/DeckDetail.jsx"), 12],
+    /* #menu-rework M7 — die zwei Screens, die dieser Auftrag gestaltet. Tinte ist eine benannte
+       Luecke des Vokabulars (2c), das Fenster ist zu, und diese zwei Screens sind zahlen- und
+       farbreich: jede Fraktion, jede Kategorie und jede Raritaet bringt ihre eigene mit. Gezaehlt
+       statt gepraegt — der Nachfolger erbt eine gemessene Zahl statt eines Eindrucks. */
+    ["src/ui/StatsScreen.jsx (ganze Datei)", () => inkOfJsx("src/ui/StatsScreen.jsx"), 4],
+    ["src/ui/RunDetail.jsx (ganze Datei)", () => inkOfJsx("src/ui/RunDetail.jsx"), 4],
+    ["src/ui/SeedChip.jsx (ganze Datei)", () => inkOfJsx("src/ui/SeedChip.jsx"), 1],
+    ["index.css — .st-* (M7)", () => inkOfCss([/\.st-/]), 3],
+    ["index.css — .rd-* (M7)", () => inkOfCss([/\.rd-/]), 10],
+    /* Der geteilte Teilbaum, gezaehlt als KOMPONENTEN. Ihre Tinte gehoert nicht diesem Screen
+       allein — sie steht genauso im Siegesbildschirm und, bei `Sparkline`, auf der Laufbuehne.
+       Genau deshalb wird sie gezaehlt und nicht angefasst. */
+    ["src/ui/RunStats.jsx (ganze Datei)", () => inkOfJsx("src/ui/RunStats.jsx"), 0],
+    ["src/ui/RunGraphs.jsx (ganze Datei)", () => inkOfJsx("src/ui/RunGraphs.jsx"), 0],
+    ["src/ui/Sparkline.jsx (ganze Datei)", () => inkOfJsx("src/ui/Sparkline.jsx"), 1],
   ];
 
   for (const [name, count, cap] of CAP) {
@@ -713,6 +822,22 @@ describe("#menu-rework — die Kanten-Ratsche (MENU-38): durchsichtige neutrale 
     ["index.css — .up-* (M3)", () => edgeOfCss([/\.up-(?!banner)/]), 0],
     /* Dieselbe Lage wie bei der Tinte: gezaehlt, nicht migriert — Begruendung dort. */
     ["src/ui/DeckDetail.jsx (ganze Datei, NICHT migriert)", () => edgeOfJsx("src/ui/DeckDetail.jsx"), 0],
+    /* #menu-rework M7. Die CSS-Seite beider Screens steht auf null, und diese Null ist ein
+       ERREICHTER Zustand: die durchsichtigen neutralen Kanten von `.st-box`, `.rd-bf`, `.rd-blist2`
+       und den geteilten Kacheln sind auf `--ed-quiet` gezogen — dieselbe Umstellung, die M2a
+       gemessen (rund 9/255) und der Owner abgenommen hat, und die M3 vierzehnmal gezogen hat. */
+    ["src/ui/StatsScreen.jsx (ganze Datei)", () => edgeOfJsx("src/ui/StatsScreen.jsx"), 0],
+    ["src/ui/RunDetail.jsx (ganze Datei)", () => edgeOfJsx("src/ui/RunDetail.jsx"), 0],
+    ["src/ui/SeedChip.jsx (ganze Datei)", () => edgeOfJsx("src/ui/SeedChip.jsx"), 0],
+    ["index.css — .st-* (M7)", () => edgeOfCss([/\.st-/]), 0],
+    ["index.css — .rd-* (M7)", () => edgeOfCss([/\.rd-/]), 0],
+    /* Der geteilte Teilbaum. `Sparkline` steht NICHT auf null, und das ist kein Versaeumnis: ihre
+       eine Fundstelle ist die STRICHFARBE des Gitters, kein Rahmen — der Ausdruck dieser Ratsche
+       sucht die Familie im ganzen Text, nicht nur an `border`. Sie als gemessene Eins stehen zu
+       lassen ist ehrlicher, als sie ueber eine Sonderregel wegzudefinieren. */
+    ["src/ui/RunStats.jsx (ganze Datei)", () => edgeOfJsx("src/ui/RunStats.jsx"), 0],
+    ["src/ui/RunGraphs.jsx (ganze Datei)", () => edgeOfJsx("src/ui/RunGraphs.jsx"), 0],
+    ["src/ui/Sparkline.jsx (ganze Datei)", () => edgeOfJsx("src/ui/Sparkline.jsx"), 1],
   ];
 
   for (const [name, count, cap] of CAP) {
@@ -742,17 +867,37 @@ describe("#menu-rework — die Kanten-Ratsche (MENU-38): durchsichtige neutrale 
        Handy-Fassung (durchsichtig -> deckend, rund 9/255), die niemand bestellt hat.
        Die Summe wird deshalb OHNE diese eine gebildet — und die eine wird einzeln nachgewiesen,
        damit sie nicht als „irgendwo eine" stehenbleibt und still auf zwei wachsen kann. */
-    const AUSNAHME = "src/ui/UpgradeScreen.jsx (ganze Datei)";
-    const rest = CAP.filter(([name]) => name !== AUSNAHME);
+    const AUSNAHMEN = ["src/ui/UpgradeScreen.jsx (ganze Datei)", "src/ui/Sparkline.jsx (ganze Datei)"];
+    const rest = CAP.filter(([name]) => !AUSNAHMEN.includes(name));
     expect(rest.reduce((n, [, c]) => n + c(), 0), "eine migrierte Einheit traegt wieder eine Kante").toBe(0);
 
-    /* Die Gegenprobe zur Ausnahme: sie ist genau eine, und sie steht genau dort, wo die Begruendung
-       sie behauptet. Waechst sie, oder wandert sie aus `panelStyle` heraus, faellt diese Zeile. */
+    /* Die Gegenprobe zu jeder Ausnahme: sie ist genau eine, und sie steht genau dort, wo die
+       Begruendung sie behauptet. Waechst sie, oder wandert sie an eine andere Stelle, faellt diese
+       Zeile — genau dafuer steht sie hier einzeln und nicht als „irgendwo eine". */
     const up = strip(read("src/ui/UpgradeScreen.jsx"));
     expect(edgeIn(up), "die benannte Ausnahme ist nicht mehr genau eine").toBe(1);
     const ps = up.match(/const panelStyle[\s\S]*?\n\}\);/);
     expect(ps, "panelStyle nicht mehr gefunden").toBeTruthy();
     expect(edgeIn(ps[0]), "die eine Kante steht nicht mehr in panelStyle").toBe(1);
+
+    /* #menu-rework M7 — DIE ZWEITE AUSNAHME IST KEINE KANTE, und deshalb steht sie hier statt in
+       einer Umschreibung des Suchausdrucks. `Sparkline.jsx` schreibt `rgba(150, 150, 170, .12)`
+       genau einmal, als STROKE des Gitters der ausfuehrlichen Fassung — dieselbe Haarlinie, die das
+       Haus ueberall benutzt, nur als Linie in einem SVG statt als Rahmen einer Box. Der Ausdruck
+       dieser Ratsche sucht die FAMILIE im ganzen Text (aus gutem Grund: `exemptFns` und die
+       Inline-Schreibweisen sind genau das, was er abdecken soll), also findet er sie mit.
+       Sie auf `--ed-quiet` zu ziehen waere keine Umstellung, sondern eine Umgestaltung: `#2a2a34`
+       ist deckend, das Gitter liegt durchsichtig ueber dem Panel, und die Komponente gehoert der
+       LAUFBUEHNE. Sie steht deshalb als gemessene Eins da, an genau einer Stelle nachgewiesen. */
+    const sl = strip(read("src/ui/Sparkline.jsx"));
+    expect(edgeIn(sl), "die zweite Ausnahme ist nicht mehr genau eine").toBe(1);
+    /* Zeilenweise, damit die Gegenprobe SAGEN kann, wo die eine Fundstelle steht. Ueber `String.raw`
+       gebaut statt als Regex-Literal: `no-control-regex` faellt sonst ueber die Steuerzeichen. */
+    const gitter = sl.split(new RegExp(String.raw`?
+`)).filter((z) => edgeIn(z) === 1);
+    expect(gitter.length, "die eine Kante steht nicht mehr auf genau einer Zeile").toBe(1);
+    expect(gitter[0].trim(), "die eine Kante ist keine Gitterlinie mehr — dann ist sie ein Rahmen")
+      .toMatch(/^stroke=\{voll \?/);
   });
 });
 

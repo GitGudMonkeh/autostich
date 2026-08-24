@@ -66,11 +66,19 @@ describe("#st-ruhe — EINE Kachelform für alles im Panel", () => {
     return m ? Number(m[1]) : null;
   };
 
-  it("die acht MENU_PANEL-Kästen tragen die gemeinsame Klasse", () => {
-    /* Kpi · Score-Verlauf · Skills · Perks · Archetyp-Nutzung · Auswertungszeile · zwei Hinweiskästen.
-       Jeder `MENU_PANEL`-Kasten muss `st-box` tragen, sonst steht einer gefüllt zwischen sieben flachen. */
+  it("der Screen enthält KEINEN MENU_PANEL-Kasten außer solchen mit `st-box`", () => {
+    /* Jeder `MENU_PANEL`-Kasten muss `st-box` tragen, sonst steht einer gefüllt zwischen den flachen.
+
+       #menu-rework M7 — ALS „ENTHÄLT KEIN X AUSSER Y" GESCHRIEBEN, NICHT ALS ZAHL. Die alte Fassung
+       nagelte die Zahl auf acht fest, und das ist die Bauart, aus der in dieser Runde sechs Befunde
+       entstanden sind: sie fragt, ob die VORGESEHENE Form da ist, statt ob eine fremde fehlt. Ein
+       neunter Kasten MIT `st-box` ist völlig richtig und ließ sie trotzdem fallen; ein achter OHNE
+       wäre der Fehler, den sie meint. Die Zahl trug nichts bei, was die Schleife nicht schon prüft —
+       außer der Gegenprobe, dass der Ausdruck überhaupt noch etwas findet, und die steht jetzt als
+       eigene Zeile da. */
     const kaesten = stats.match(/<div[^>]*style=\{MENU_PANEL\}/g) || [];
-    expect(kaesten.length, "Zahl der MENU_PANEL-Kästen hat sich geändert").toBe(8);
+    expect(kaesten.length, "kein MENU_PANEL-Kasten mehr gefunden — der Ausdruck greift ins Leere")
+      .toBeGreaterThan(0);
     for (const k of kaesten) expect(k, `Kasten ohne st-box: ${k}`).toMatch(/\bst-box\b/);
   });
 

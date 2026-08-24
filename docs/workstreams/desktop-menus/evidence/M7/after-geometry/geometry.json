@@ -1,0 +1,3636 @@
+{
+ "base": "/autostich/",
+ "seed": {
+  "runs": 12,
+  "best": 1284000,
+  "games": 12
+ },
+ "cells": {
+  "de/1920x1080/stats": {
+   "reached": true,
+   "viewport": {
+    "w": 1920,
+    "h": 1080
+   },
+   "card": {
+    "x": 100,
+    "y": 16,
+    "w": 1720,
+    "h": 1038.77,
+    "bottom": 1054.77
+   },
+   "cardScrollH": 1037,
+   "root": {
+    "x": 0,
+    "y": 0,
+    "w": 1920,
+    "h": 1080,
+    "bottom": 1080
+   },
+   "rootScrollH": 1080,
+   "rootClientH": 1080,
+   "belowFold": -25.23,
+   "scrollFactor": 1,
+   "columnEnds": {
+    "col1": 800.63,
+    "col2": 1053.77,
+    "col3": 1053.77
+   },
+   "sections": {
+    "overview": {
+     "x": 101,
+     "y": 144.34,
+     "w": 1717.98,
+     "h": 171.83,
+     "bottom": 316.17
+    },
+    "best": {
+     "x": 101,
+     "y": 316.17,
+     "w": 531.42,
+     "h": 221,
+     "bottom": 537.17
+    },
+    "runs": {
+     "x": 654.42,
+     "y": 316.17,
+     "w": 611.14,
+     "h": 737.59,
+     "bottom": 1053.77
+    },
+    "picked": {
+     "x": 1287.56,
+     "y": 316.17,
+     "w": 531.42,
+     "h": 737.59,
+     "bottom": 1053.77
+    },
+    "works": {
+     "x": 101,
+     "y": 559.17,
+     "w": 531.42,
+     "h": 241.45,
+     "bottom": 800.63
+    }
+   },
+   "secStyle": {
+    "background-color": "rgba(0, 0, 0, 0)",
+    "background-image": "linear-gradient(color(srgb 0.110031 0.166834 0.214347 / 0.935765) 0%, color(srgb 0.0895714 0.122541 0.16629 / 0.951569) 100%)",
+    "border-top-width": "1px",
+    "border-color": "color(srgb 0.286911 0.717375 0.82809 / 0.37898)",
+    "border-radius": "14px",
+    "padding": "18px"
+   },
+   "head": {
+    "x": 101,
+    "y": 17,
+    "w": 1718,
+    "h": 122.34,
+    "bottom": 139.34
+   },
+   "readout": null,
+   "close": {
+    "x": 1708.88,
+    "y": 27,
+    "w": 110.13,
+    "h": 44.14,
+    "bottom": 71.14
+   },
+   "title": {
+    "x": 193,
+    "y": 58.5,
+    "w": 1493.88,
+    "h": 42,
+    "bottom": 100.5
+   },
+   "titleSize": {
+    "font-size": "27px"
+   },
+   "eyebrow": {
+    "x": 193,
+    "y": 27,
+    "w": 1493.88,
+    "h": 19.5,
+    "bottom": 46.5
+   },
+   "subline": {
+    "x": 193,
+    "y": 112.5,
+    "w": 1493.88,
+    "h": 18.84,
+    "bottom": 131.34
+   },
+   "runRowCount": 12,
+   "runRowH": 44,
+   "runRowHAll": [
+    44,
+    44,
+    44,
+    44,
+    44,
+    44,
+    44,
+    44,
+    44,
+    44,
+    44,
+    44
+   ],
+   "scrollers": [
+    {
+     "cls": "st-root",
+     "scrollH": 1080,
+     "clientH": 1080,
+     "overflowY": "hidden"
+    },
+    {
+     "cls": "st-card",
+     "scrollH": 1037,
+     "clientH": 1037,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "st-body",
+     "scrollH": 909,
+     "clientH": 909,
+     "overflowY": "auto"
+    }
+   ],
+   "nodeCount": 537
+  },
+  "de/1920x1080/run-full": {
+   "reached": true,
+   "viewport": {
+    "w": 1920,
+    "h": 1080
+   },
+   "card": {
+    "x": 210,
+    "y": 16,
+    "w": 1500,
+    "h": 1046,
+    "bottom": 1062
+   },
+   "cardScrollH": 1044,
+   "root": {
+    "x": 0,
+    "y": 0,
+    "w": 1920,
+    "h": 1080,
+    "bottom": 1080
+   },
+   "rootScrollH": 1080,
+   "rootClientH": 1080,
+   "windowH": 1046,
+   "overshoot": -34,
+   "lanes": "373.047px 699.875px 373.062px",
+   "rows": "380px 1131.17px",
+   "panels": {
+    "c1": {
+     "x": 211,
+     "y": 123.83,
+     "w": 373.05,
+     "h": 380,
+     "bottom": 503.83
+    },
+    "c2": {
+     "x": 606.05,
+     "y": 123.83,
+     "w": 699.88,
+     "h": 380,
+     "bottom": 503.83
+    },
+    "c3": {
+     "x": 1327.92,
+     "y": 123.83,
+     "w": 373.06,
+     "h": 857.13,
+     "bottom": 980.95
+    },
+    "c4": {
+     "x": 211,
+     "y": 525.83,
+     "w": 1094.92,
+     "h": 1131.17,
+     "bottom": 1657
+    },
+    "left": null
+   },
+   "panelSum": 2748.3,
+   "hole": 676.05,
+   "chipCount": 0,
+   "chipWidths": [],
+   "chipHeights": [],
+   "buildFields": 15,
+   "board": {
+    "x": 1346.92,
+    "y": 211.83,
+    "w": 335.06,
+    "h": 478.13,
+    "bottom": 689.95
+   },
+   "score": {
+    "x": 211,
+    "y": 34.33,
+    "w": 484.66,
+    "h": 46,
+    "bottom": 80.33
+   },
+   "scoreSize": "46px",
+   "eyebrow": {
+    "x": 211,
+    "y": 17,
+    "w": 484.66,
+    "h": 17.33,
+    "bottom": 34.33
+   },
+   "kpi": {
+    "x": 717.66,
+    "y": 67.83,
+    "w": 484.67,
+    "h": 39,
+    "bottom": 106.83
+   },
+   "scrollers": [
+    {
+     "cls": "rd-root",
+     "scrollH": 1080,
+     "clientH": 1080,
+     "overflowY": "auto"
+    },
+    {
+     "cls": "rd-card",
+     "scrollH": 1044,
+     "clientH": 1044,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "rd-body",
+     "scrollH": 1533,
+     "clientH": 937,
+     "overflowY": "auto"
+    }
+   ],
+   "nodeCount": 1187
+  },
+  "de/1920x1080/run-thin": {
+   "reached": true,
+   "viewport": {
+    "w": 1920,
+    "h": 1080
+   },
+   "card": {
+    "x": 210,
+    "y": 16,
+    "w": 1500,
+    "h": 510.83,
+    "bottom": 526.83
+   },
+   "cardScrollH": 509,
+   "root": {
+    "x": 0,
+    "y": 0,
+    "w": 1920,
+    "h": 1080,
+    "bottom": 1080
+   },
+   "rootScrollH": 1080,
+   "rootClientH": 1080,
+   "windowH": 510.83,
+   "overshoot": -569.17,
+   "lanes": "513.203px 962.781px",
+   "rows": "380px 0px",
+   "panels": {
+    "c1": {
+     "x": 211,
+     "y": 123.83,
+     "w": 513.2,
+     "h": 380,
+     "bottom": 503.83
+    },
+    "c2": {
+     "x": 746.2,
+     "y": 123.83,
+     "w": 962.78,
+     "h": 380,
+     "bottom": 503.83
+    },
+    "c3": null,
+    "c4": null,
+    "left": null
+   },
+   "panelSum": 760,
+   "hole": null,
+   "chipCount": 0,
+   "chipWidths": [],
+   "chipHeights": [],
+   "buildFields": 15,
+   "board": null,
+   "score": {
+    "x": 211,
+    "y": 34.33,
+    "w": 484.66,
+    "h": 46,
+    "bottom": 80.33
+   },
+   "scoreSize": "46px",
+   "eyebrow": {
+    "x": 211,
+    "y": 17,
+    "w": 484.66,
+    "h": 17.33,
+    "bottom": 34.33
+   },
+   "kpi": {
+    "x": 717.66,
+    "y": 67.83,
+    "w": 484.67,
+    "h": 39,
+    "bottom": 106.83
+   },
+   "scrollers": [
+    {
+     "cls": "rd-root",
+     "scrollH": 1080,
+     "clientH": 1080,
+     "overflowY": "auto"
+    },
+    {
+     "cls": "rd-card",
+     "scrollH": 509,
+     "clientH": 509,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "rd-body",
+     "scrollH": 402,
+     "clientH": 402,
+     "overflowY": "auto"
+    }
+   ],
+   "nodeCount": 671
+  },
+  "de/1600x900/stats": {
+   "reached": true,
+   "viewport": {
+    "w": 1600,
+    "h": 900
+   },
+   "card": {
+    "x": 36,
+    "y": 10,
+    "w": 1528,
+    "h": 878,
+    "bottom": 888
+   },
+   "cardScrollH": 876,
+   "root": {
+    "x": 0,
+    "y": 0,
+    "w": 1600,
+    "h": 900,
+    "bottom": 900
+   },
+   "rootScrollH": 900,
+   "rootClientH": 900,
+   "belowFold": -12,
+   "scrollFactor": 1,
+   "columnEnds": {
+    "col1": 764.63,
+    "col2": 887,
+    "col3": 887
+   },
+   "sections": {
+    "overview": {
+     "x": 37,
+     "y": 138.34,
+     "w": 1525.98,
+     "h": 161.83,
+     "bottom": 300.17
+    },
+    "best": {
+     "x": 37,
+     "y": 300.17,
+     "w": 470.47,
+     "h": 211,
+     "bottom": 511.17
+    },
+    "runs": {
+     "x": 529.47,
+     "y": 300.17,
+     "w": 541.05,
+     "h": 586.83,
+     "bottom": 887
+    },
+    "picked": {
+     "x": 1092.52,
+     "y": 300.17,
+     "w": 470.47,
+     "h": 586.83,
+     "bottom": 887
+    },
+    "works": {
+     "x": 37,
+     "y": 533.17,
+     "w": 470.47,
+     "h": 231.45,
+     "bottom": 764.63
+    }
+   },
+   "secStyle": {
+    "background-color": "rgba(0, 0, 0, 0)",
+    "background-image": "linear-gradient(color(srgb 0.110031 0.166834 0.214347 / 0.935765) 0%, color(srgb 0.0895714 0.122541 0.16629 / 0.951569) 100%)",
+    "border-top-width": "1px",
+    "border-color": "color(srgb 0.286911 0.717375 0.82809 / 0.37898)",
+    "border-radius": "14px",
+    "padding": "13px"
+   },
+   "head": {
+    "x": 37,
+    "y": 11,
+    "w": 1526,
+    "h": 122.34,
+    "bottom": 133.34
+   },
+   "readout": null,
+   "close": {
+    "x": 1452.88,
+    "y": 21,
+    "w": 110.13,
+    "h": 44.14,
+    "bottom": 65.14
+   },
+   "title": {
+    "x": 129,
+    "y": 52.5,
+    "w": 1301.88,
+    "h": 42,
+    "bottom": 94.5
+   },
+   "titleSize": {
+    "font-size": "27px"
+   },
+   "eyebrow": {
+    "x": 129,
+    "y": 21,
+    "w": 1301.88,
+    "h": 19.5,
+    "bottom": 40.5
+   },
+   "subline": {
+    "x": 129,
+    "y": 106.5,
+    "w": 1301.88,
+    "h": 18.84,
+    "bottom": 125.34
+   },
+   "runRowCount": 11,
+   "runRowH": 44,
+   "runRowHAll": [
+    44,
+    44,
+    44,
+    44,
+    44,
+    44,
+    44,
+    44,
+    44,
+    44,
+    44
+   ],
+   "scrollers": [
+    {
+     "cls": "st-root",
+     "scrollH": 900,
+     "clientH": 900,
+     "overflowY": "hidden"
+    },
+    {
+     "cls": "st-card",
+     "scrollH": 876,
+     "clientH": 876,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "st-body",
+     "scrollH": 749,
+     "clientH": 749,
+     "overflowY": "auto"
+    }
+   ],
+   "nodeCount": 526
+  },
+  "de/1600x900/run-full": {
+   "reached": true,
+   "viewport": {
+    "w": 1600,
+    "h": 900
+   },
+   "card": {
+    "x": 50,
+    "y": 16,
+    "w": 1500,
+    "h": 866,
+    "bottom": 882
+   },
+   "cardScrollH": 864,
+   "root": {
+    "x": 0,
+    "y": 0,
+    "w": 1600,
+    "h": 900,
+    "bottom": 900
+   },
+   "rootScrollH": 900,
+   "rootClientH": 900,
+   "windowH": 866,
+   "overshoot": -34,
+   "lanes": "373.047px 699.875px 373.062px",
+   "rows": "380px 1131.17px",
+   "panels": {
+    "c1": {
+     "x": 51,
+     "y": 123.83,
+     "w": 373.05,
+     "h": 380,
+     "bottom": 503.83
+    },
+    "c2": {
+     "x": 446.05,
+     "y": 123.83,
+     "w": 699.88,
+     "h": 380,
+     "bottom": 503.83
+    },
+    "c3": {
+     "x": 1167.92,
+     "y": 123.83,
+     "w": 373.06,
+     "h": 857.13,
+     "bottom": 980.95
+    },
+    "c4": {
+     "x": 51,
+     "y": 525.83,
+     "w": 1094.92,
+     "h": 1131.17,
+     "bottom": 1657
+    },
+    "left": null
+   },
+   "panelSum": 2748.3,
+   "hole": 676.05,
+   "chipCount": 0,
+   "chipWidths": [],
+   "chipHeights": [],
+   "buildFields": 15,
+   "board": {
+    "x": 1186.92,
+    "y": 211.83,
+    "w": 335.06,
+    "h": 478.13,
+    "bottom": 689.95
+   },
+   "score": {
+    "x": 51,
+    "y": 34.33,
+    "w": 484.66,
+    "h": 46,
+    "bottom": 80.33
+   },
+   "scoreSize": "46px",
+   "eyebrow": {
+    "x": 51,
+    "y": 17,
+    "w": 484.66,
+    "h": 17.33,
+    "bottom": 34.33
+   },
+   "kpi": {
+    "x": 557.66,
+    "y": 67.83,
+    "w": 484.67,
+    "h": 39,
+    "bottom": 106.83
+   },
+   "scrollers": [
+    {
+     "cls": "rd-root",
+     "scrollH": 900,
+     "clientH": 900,
+     "overflowY": "auto"
+    },
+    {
+     "cls": "rd-card",
+     "scrollH": 864,
+     "clientH": 864,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "rd-body",
+     "scrollH": 1533,
+     "clientH": 757,
+     "overflowY": "auto"
+    }
+   ],
+   "nodeCount": 1176
+  },
+  "de/1600x900/run-thin": {
+   "reached": true,
+   "viewport": {
+    "w": 1600,
+    "h": 900
+   },
+   "card": {
+    "x": 50,
+    "y": 16,
+    "w": 1500,
+    "h": 510.83,
+    "bottom": 526.83
+   },
+   "cardScrollH": 509,
+   "root": {
+    "x": 0,
+    "y": 0,
+    "w": 1600,
+    "h": 900,
+    "bottom": 900
+   },
+   "rootScrollH": 900,
+   "rootClientH": 900,
+   "windowH": 510.83,
+   "overshoot": -389.17,
+   "lanes": "513.203px 962.781px",
+   "rows": "380px 0px",
+   "panels": {
+    "c1": {
+     "x": 51,
+     "y": 123.83,
+     "w": 513.2,
+     "h": 380,
+     "bottom": 503.83
+    },
+    "c2": {
+     "x": 586.2,
+     "y": 123.83,
+     "w": 962.78,
+     "h": 380,
+     "bottom": 503.83
+    },
+    "c3": null,
+    "c4": null,
+    "left": null
+   },
+   "panelSum": 760,
+   "hole": null,
+   "chipCount": 0,
+   "chipWidths": [],
+   "chipHeights": [],
+   "buildFields": 15,
+   "board": null,
+   "score": {
+    "x": 51,
+    "y": 34.33,
+    "w": 484.66,
+    "h": 46,
+    "bottom": 80.33
+   },
+   "scoreSize": "46px",
+   "eyebrow": {
+    "x": 51,
+    "y": 17,
+    "w": 484.66,
+    "h": 17.33,
+    "bottom": 34.33
+   },
+   "kpi": {
+    "x": 557.66,
+    "y": 67.83,
+    "w": 484.67,
+    "h": 39,
+    "bottom": 106.83
+   },
+   "scrollers": [
+    {
+     "cls": "rd-root",
+     "scrollH": 900,
+     "clientH": 900,
+     "overflowY": "auto"
+    },
+    {
+     "cls": "rd-card",
+     "scrollH": 509,
+     "clientH": 509,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "rd-body",
+     "scrollH": 402,
+     "clientH": 402,
+     "overflowY": "auto"
+    }
+   ],
+   "nodeCount": 660
+  },
+  "de/1536x791/stats": {
+   "reached": true,
+   "viewport": {
+    "w": 1536,
+    "h": 791
+   },
+   "card": {
+    "x": 36,
+    "y": 10,
+    "w": 1464,
+    "h": 769,
+    "bottom": 779
+   },
+   "cardScrollH": 767,
+   "root": {
+    "x": 0,
+    "y": 0,
+    "w": 1536,
+    "h": 791,
+    "bottom": 791
+   },
+   "rootScrollH": 791,
+   "rootClientH": 791,
+   "belowFold": -12,
+   "scrollFactor": 1,
+   "columnEnds": {
+    "col1": 785.13,
+    "col2": 778,
+    "col3": 778
+   },
+   "sections": {
+    "overview": {
+     "x": 37,
+     "y": 138.34,
+     "w": 1454,
+     "h": 161.83,
+     "bottom": 300.17
+    },
+    "best": {
+     "x": 37,
+     "y": 300.17,
+     "w": 447.61,
+     "h": 231.5,
+     "bottom": 531.67
+    },
+    "runs": {
+     "x": 506.61,
+     "y": 300.17,
+     "w": 514.77,
+     "h": 477.83,
+     "bottom": 778
+    },
+    "picked": {
+     "x": 1043.38,
+     "y": 300.17,
+     "w": 447.63,
+     "h": 477.83,
+     "bottom": 778
+    },
+    "works": {
+     "x": 37,
+     "y": 553.67,
+     "w": 447.61,
+     "h": 231.45,
+     "bottom": 785.13
+    }
+   },
+   "secStyle": {
+    "background-color": "rgba(0, 0, 0, 0)",
+    "background-image": "linear-gradient(color(srgb 0.110031 0.166834 0.214347 / 0.935765) 0%, color(srgb 0.0895714 0.122541 0.16629 / 0.951569) 100%)",
+    "border-top-width": "1px",
+    "border-color": "color(srgb 0.286911 0.717375 0.82809 / 0.37898)",
+    "border-radius": "14px",
+    "padding": "13px"
+   },
+   "head": {
+    "x": 37,
+    "y": 11,
+    "w": 1462,
+    "h": 122.34,
+    "bottom": 133.34
+   },
+   "readout": null,
+   "close": {
+    "x": 1388.88,
+    "y": 21,
+    "w": 110.13,
+    "h": 44.14,
+    "bottom": 65.14
+   },
+   "title": {
+    "x": 129,
+    "y": 52.5,
+    "w": 1237.88,
+    "h": 42,
+    "bottom": 94.5
+   },
+   "titleSize": {
+    "font-size": "27px"
+   },
+   "eyebrow": {
+    "x": 129,
+    "y": 21,
+    "w": 1237.88,
+    "h": 19.5,
+    "bottom": 40.5
+   },
+   "subline": {
+    "x": 129,
+    "y": 106.5,
+    "w": 1237.88,
+    "h": 18.84,
+    "bottom": 125.34
+   },
+   "runRowCount": 10,
+   "runRowH": 44,
+   "runRowHAll": [
+    44,
+    44,
+    44,
+    44,
+    44,
+    44,
+    44,
+    44,
+    44,
+    44
+   ],
+   "scrollers": [
+    {
+     "cls": "st-root",
+     "scrollH": 791,
+     "clientH": 791,
+     "overflowY": "hidden"
+    },
+    {
+     "cls": "st-card",
+     "scrollH": 767,
+     "clientH": 767,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "st-body",
+     "scrollH": 647,
+     "clientH": 640,
+     "overflowY": "auto"
+    }
+   ],
+   "nodeCount": 515
+  },
+  "de/1536x791/run-full": {
+   "reached": true,
+   "viewport": {
+    "w": 1536,
+    "h": 791
+   },
+   "card": {
+    "x": 48,
+    "y": 16,
+    "w": 1440,
+    "h": 757,
+    "bottom": 773
+   },
+   "cardScrollH": 755,
+   "root": {
+    "x": 0,
+    "y": 0,
+    "w": 1536,
+    "h": 791,
+    "bottom": 791
+   },
+   "rootScrollH": 791,
+   "rootClientH": 791,
+   "windowH": 757,
+   "overshoot": -34,
+   "lanes": "357.578px 670.812px 357.594px",
+   "rows": "380px 1113.22px",
+   "panels": {
+    "c1": {
+     "x": 49,
+     "y": 123.83,
+     "w": 357.58,
+     "h": 380,
+     "bottom": 503.83
+    },
+    "c2": {
+     "x": 428.58,
+     "y": 123.83,
+     "w": 670.81,
+     "h": 380,
+     "bottom": 503.83
+    },
+    "c3": {
+     "x": 1121.39,
+     "y": 123.83,
+     "w": 357.59,
+     "h": 832.38,
+     "bottom": 956.2
+    },
+    "c4": {
+     "x": 49,
+     "y": 525.83,
+     "w": 1050.39,
+     "h": 1113.22,
+     "bottom": 1639.05
+    },
+    "left": null
+   },
+   "panelSum": 2705.6000000000004,
+   "hole": 682.85,
+   "chipCount": 0,
+   "chipWidths": [],
+   "chipHeights": [],
+   "buildFields": 15,
+   "board": {
+    "x": 1140.39,
+    "y": 211.83,
+    "w": 319.59,
+    "h": 453.38,
+    "bottom": 665.2
+   },
+   "score": {
+    "x": 49,
+    "y": 34.33,
+    "w": 464.66,
+    "h": 46,
+    "bottom": 80.33
+   },
+   "scoreSize": "46px",
+   "eyebrow": {
+    "x": 49,
+    "y": 17,
+    "w": 464.66,
+    "h": 17.33,
+    "bottom": 34.33
+   },
+   "kpi": {
+    "x": 535.66,
+    "y": 67.83,
+    "w": 464.67,
+    "h": 39,
+    "bottom": 106.83
+   },
+   "scrollers": [
+    {
+     "cls": "rd-root",
+     "scrollH": 791,
+     "clientH": 791,
+     "overflowY": "auto"
+    },
+    {
+     "cls": "rd-card",
+     "scrollH": 755,
+     "clientH": 755,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "rd-body",
+     "scrollH": 1515,
+     "clientH": 648,
+     "overflowY": "auto"
+    }
+   ],
+   "nodeCount": 1165
+  },
+  "de/1536x791/run-thin": {
+   "reached": true,
+   "viewport": {
+    "w": 1536,
+    "h": 791
+   },
+   "card": {
+    "x": 48,
+    "y": 16,
+    "w": 1440,
+    "h": 510.83,
+    "bottom": 526.83
+   },
+   "cardScrollH": 509,
+   "root": {
+    "x": 0,
+    "y": 0,
+    "w": 1536,
+    "h": 791,
+    "bottom": 791
+   },
+   "rootScrollH": 791,
+   "rootClientH": 791,
+   "windowH": 510.83,
+   "overshoot": -280.17,
+   "lanes": "492.344px 923.641px",
+   "rows": "380px 0px",
+   "panels": {
+    "c1": {
+     "x": 49,
+     "y": 123.83,
+     "w": 492.34,
+     "h": 380,
+     "bottom": 503.83
+    },
+    "c2": {
+     "x": 563.34,
+     "y": 123.83,
+     "w": 923.64,
+     "h": 380,
+     "bottom": 503.83
+    },
+    "c3": null,
+    "c4": null,
+    "left": null
+   },
+   "panelSum": 760,
+   "hole": null,
+   "chipCount": 0,
+   "chipWidths": [],
+   "chipHeights": [],
+   "buildFields": 15,
+   "board": null,
+   "score": {
+    "x": 49,
+    "y": 34.33,
+    "w": 464.66,
+    "h": 46,
+    "bottom": 80.33
+   },
+   "scoreSize": "46px",
+   "eyebrow": {
+    "x": 49,
+    "y": 17,
+    "w": 464.66,
+    "h": 17.33,
+    "bottom": 34.33
+   },
+   "kpi": {
+    "x": 535.66,
+    "y": 67.83,
+    "w": 464.67,
+    "h": 39,
+    "bottom": 106.83
+   },
+   "scrollers": [
+    {
+     "cls": "rd-root",
+     "scrollH": 791,
+     "clientH": 791,
+     "overflowY": "auto"
+    },
+    {
+     "cls": "rd-card",
+     "scrollH": 509,
+     "clientH": 509,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "rd-body",
+     "scrollH": 402,
+     "clientH": 402,
+     "overflowY": "auto"
+    }
+   ],
+   "nodeCount": 649
+  },
+  "de/1400x700/stats": {
+   "reached": true,
+   "viewport": {
+    "w": 1400,
+    "h": 700
+   },
+   "card": {
+    "x": 36,
+    "y": 10,
+    "w": 1320,
+    "h": 678,
+    "bottom": 688
+   },
+   "cardScrollH": 676,
+   "root": {
+    "x": 0,
+    "y": 0,
+    "w": 1392,
+    "h": 700,
+    "bottom": 700
+   },
+   "rootScrollH": 700,
+   "rootClientH": 700,
+   "belowFold": -12,
+   "scrollFactor": 1,
+   "columnEnds": {
+    "col1": 785.13,
+    "col2": 687,
+    "col3": 687
+   },
+   "sections": {
+    "overview": {
+     "x": 37,
+     "y": 138.34,
+     "w": 1309.98,
+     "h": 161.83,
+     "bottom": 300.17
+    },
+    "best": {
+     "x": 37,
+     "y": 300.17,
+     "w": 401.89,
+     "h": 231.5,
+     "bottom": 531.67
+    },
+    "runs": {
+     "x": 460.89,
+     "y": 300.17,
+     "w": 462.2,
+     "h": 386.83,
+     "bottom": 687
+    },
+    "picked": {
+     "x": 945.09,
+     "y": 300.17,
+     "w": 401.89,
+     "h": 386.83,
+     "bottom": 687
+    },
+    "works": {
+     "x": 37,
+     "y": 553.67,
+     "w": 401.89,
+     "h": 231.45,
+     "bottom": 785.13
+    }
+   },
+   "secStyle": {
+    "background-color": "rgba(0, 0, 0, 0)",
+    "background-image": "linear-gradient(color(srgb 0.110031 0.166834 0.214347 / 0.935765) 0%, color(srgb 0.0895714 0.122541 0.16629 / 0.951569) 100%)",
+    "border-top-width": "1px",
+    "border-color": "color(srgb 0.286911 0.717375 0.82809 / 0.37898)",
+    "border-radius": "14px",
+    "padding": "13px"
+   },
+   "head": {
+    "x": 37,
+    "y": 11,
+    "w": 1318,
+    "h": 122.34,
+    "bottom": 133.34
+   },
+   "readout": null,
+   "close": {
+    "x": 1244.88,
+    "y": 21,
+    "w": 110.13,
+    "h": 44.14,
+    "bottom": 65.14
+   },
+   "title": {
+    "x": 129,
+    "y": 52.5,
+    "w": 1093.88,
+    "h": 42,
+    "bottom": 94.5
+   },
+   "titleSize": {
+    "font-size": "27px"
+   },
+   "eyebrow": {
+    "x": 129,
+    "y": 21,
+    "w": 1093.88,
+    "h": 19.5,
+    "bottom": 40.5
+   },
+   "subline": {
+    "x": 129,
+    "y": 106.5,
+    "w": 1093.88,
+    "h": 18.84,
+    "bottom": 125.34
+   },
+   "runRowCount": 10,
+   "runRowH": 44,
+   "runRowHAll": [
+    44,
+    44,
+    44,
+    44,
+    44,
+    44,
+    44,
+    44,
+    44,
+    44
+   ],
+   "scrollers": [
+    {
+     "cls": "st-root",
+     "scrollH": 700,
+     "clientH": 700,
+     "overflowY": "hidden"
+    },
+    {
+     "cls": "st-card",
+     "scrollH": 676,
+     "clientH": 676,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "st-body",
+     "scrollH": 647,
+     "clientH": 549,
+     "overflowY": "auto"
+    }
+   ],
+   "nodeCount": 515
+  },
+  "de/1400x700/run-full": {
+   "reached": true,
+   "viewport": {
+    "w": 1400,
+    "h": 700
+   },
+   "card": {
+    "x": 48,
+    "y": 16,
+    "w": 1296,
+    "h": 666,
+    "bottom": 682
+   },
+   "cardScrollH": 664,
+   "root": {
+    "x": 0,
+    "y": 0,
+    "w": 1392,
+    "h": 700,
+    "bottom": 700
+   },
+   "rootScrollH": 700,
+   "rootClientH": 700,
+   "windowH": 666,
+   "overshoot": -34,
+   "lanes": "320.422px 601.125px 320.438px",
+   "rows": "380px 1070.12px",
+   "panels": {
+    "c1": {
+     "x": 49,
+     "y": 123.83,
+     "w": 320.42,
+     "h": 380,
+     "bottom": 503.83
+    },
+    "c2": {
+     "x": 391.42,
+     "y": 123.83,
+     "w": 601.13,
+     "h": 380,
+     "bottom": 503.83
+    },
+    "c3": {
+     "x": 1014.55,
+     "y": 123.83,
+     "w": 320.44,
+     "h": 772.88,
+     "bottom": 896.7
+    },
+    "c4": {
+     "x": 49,
+     "y": 525.83,
+     "w": 943.55,
+     "h": 1070.13,
+     "bottom": 1595.95
+    },
+    "left": null
+   },
+   "panelSum": 2603.01,
+   "hole": 699.25,
+   "chipCount": 0,
+   "chipWidths": [],
+   "chipHeights": [],
+   "buildFields": 15,
+   "board": {
+    "x": 1033.55,
+    "y": 211.83,
+    "w": 282.44,
+    "h": 393.88,
+    "bottom": 605.7
+   },
+   "score": {
+    "x": 49,
+    "y": 34.33,
+    "w": 416.66,
+    "h": 46,
+    "bottom": 80.33
+   },
+   "scoreSize": "46px",
+   "eyebrow": {
+    "x": 49,
+    "y": 17,
+    "w": 416.66,
+    "h": 17.33,
+    "bottom": 34.33
+   },
+   "kpi": {
+    "x": 487.66,
+    "y": 67.83,
+    "w": 416.67,
+    "h": 39,
+    "bottom": 106.83
+   },
+   "scrollers": [
+    {
+     "cls": "rd-root",
+     "scrollH": 700,
+     "clientH": 700,
+     "overflowY": "auto"
+    },
+    {
+     "cls": "rd-card",
+     "scrollH": 664,
+     "clientH": 664,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "rd-body",
+     "scrollH": 1472,
+     "clientH": 557,
+     "overflowY": "auto"
+    }
+   ],
+   "nodeCount": 1165
+  },
+  "de/1400x700/run-thin": {
+   "reached": true,
+   "viewport": {
+    "w": 1400,
+    "h": 700
+   },
+   "card": {
+    "x": 48,
+    "y": 16,
+    "w": 1296,
+    "h": 510.83,
+    "bottom": 526.83
+   },
+   "cardScrollH": 509,
+   "root": {
+    "x": 0,
+    "y": 0,
+    "w": 1392,
+    "h": 700,
+    "bottom": 700
+   },
+   "rootScrollH": 700,
+   "rootClientH": 700,
+   "windowH": 510.83,
+   "overshoot": -189.17,
+   "lanes": "442.266px 829.719px",
+   "rows": "380px 0px",
+   "panels": {
+    "c1": {
+     "x": 49,
+     "y": 123.83,
+     "w": 442.27,
+     "h": 380,
+     "bottom": 503.83
+    },
+    "c2": {
+     "x": 513.27,
+     "y": 123.83,
+     "w": 829.72,
+     "h": 380,
+     "bottom": 503.83
+    },
+    "c3": null,
+    "c4": null,
+    "left": null
+   },
+   "panelSum": 760,
+   "hole": null,
+   "chipCount": 0,
+   "chipWidths": [],
+   "chipHeights": [],
+   "buildFields": 15,
+   "board": null,
+   "score": {
+    "x": 49,
+    "y": 34.33,
+    "w": 416.66,
+    "h": 46,
+    "bottom": 80.33
+   },
+   "scoreSize": "46px",
+   "eyebrow": {
+    "x": 49,
+    "y": 17,
+    "w": 416.66,
+    "h": 17.33,
+    "bottom": 34.33
+   },
+   "kpi": {
+    "x": 487.66,
+    "y": 67.83,
+    "w": 416.67,
+    "h": 39,
+    "bottom": 106.83
+   },
+   "scrollers": [
+    {
+     "cls": "rd-root",
+     "scrollH": 700,
+     "clientH": 700,
+     "overflowY": "auto"
+    },
+    {
+     "cls": "rd-card",
+     "scrollH": 509,
+     "clientH": 509,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "rd-body",
+     "scrollH": 402,
+     "clientH": 402,
+     "overflowY": "auto"
+    }
+   ],
+   "nodeCount": 649
+  },
+  "de/1280x720/stats": {
+   "reached": true,
+   "viewport": {
+    "w": 1280,
+    "h": 720
+   },
+   "card": {
+    "x": 36,
+    "y": 10,
+    "w": 1208,
+    "h": 698,
+    "bottom": 708
+   },
+   "cardScrollH": 696,
+   "root": {
+    "x": 0,
+    "y": 0,
+    "w": 1280,
+    "h": 720,
+    "bottom": 720
+   },
+   "rootScrollH": 720,
+   "rootClientH": 720,
+   "belowFold": -12,
+   "scrollFactor": 1,
+   "columnEnds": {
+    "col1": 785.13,
+    "col2": 707,
+    "col3": 707
+   },
+   "sections": {
+    "overview": {
+     "x": 37,
+     "y": 138.34,
+     "w": 1197.98,
+     "h": 161.83,
+     "bottom": 300.17
+    },
+    "best": {
+     "x": 37,
+     "y": 300.17,
+     "w": 366.34,
+     "h": 231.5,
+     "bottom": 531.67
+    },
+    "runs": {
+     "x": 425.34,
+     "y": 300.17,
+     "w": 421.3,
+     "h": 406.83,
+     "bottom": 707
+    },
+    "picked": {
+     "x": 868.64,
+     "y": 300.17,
+     "w": 366.34,
+     "h": 406.83,
+     "bottom": 707
+    },
+    "works": {
+     "x": 37,
+     "y": 553.67,
+     "w": 366.34,
+     "h": 231.45,
+     "bottom": 785.13
+    }
+   },
+   "secStyle": {
+    "background-color": "rgba(0, 0, 0, 0)",
+    "background-image": "linear-gradient(color(srgb 0.110031 0.166834 0.214347 / 0.935765) 0%, color(srgb 0.0895714 0.122541 0.16629 / 0.951569) 100%)",
+    "border-top-width": "1px",
+    "border-color": "color(srgb 0.286911 0.717375 0.82809 / 0.37898)",
+    "border-radius": "14px",
+    "padding": "13px"
+   },
+   "head": {
+    "x": 37,
+    "y": 11,
+    "w": 1206,
+    "h": 122.34,
+    "bottom": 133.34
+   },
+   "readout": null,
+   "close": {
+    "x": 1132.88,
+    "y": 21,
+    "w": 110.13,
+    "h": 44.14,
+    "bottom": 65.14
+   },
+   "title": {
+    "x": 129,
+    "y": 52.5,
+    "w": 981.88,
+    "h": 42,
+    "bottom": 94.5
+   },
+   "titleSize": {
+    "font-size": "27px"
+   },
+   "eyebrow": {
+    "x": 129,
+    "y": 21,
+    "w": 981.88,
+    "h": 19.5,
+    "bottom": 40.5
+   },
+   "subline": {
+    "x": 129,
+    "y": 106.5,
+    "w": 981.88,
+    "h": 18.84,
+    "bottom": 125.34
+   },
+   "runRowCount": 10,
+   "runRowH": 44,
+   "runRowHAll": [
+    44,
+    44,
+    44,
+    44,
+    44,
+    44,
+    44,
+    44,
+    44,
+    44
+   ],
+   "scrollers": [
+    {
+     "cls": "st-root",
+     "scrollH": 720,
+     "clientH": 720,
+     "overflowY": "hidden"
+    },
+    {
+     "cls": "st-card",
+     "scrollH": 696,
+     "clientH": 696,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "st-body",
+     "scrollH": 647,
+     "clientH": 569,
+     "overflowY": "auto"
+    }
+   ],
+   "nodeCount": 515
+  },
+  "de/1280x720/run-full": {
+   "reached": true,
+   "viewport": {
+    "w": 1280,
+    "h": 720
+   },
+   "card": {
+    "x": 48,
+    "y": 16,
+    "w": 1184,
+    "h": 686,
+    "bottom": 702
+   },
+   "cardScrollH": 684,
+   "root": {
+    "x": 0,
+    "y": 0,
+    "w": 1280,
+    "h": 720,
+    "bottom": 720
+   },
+   "rootScrollH": 720,
+   "rootClientH": 720,
+   "windowH": 686,
+   "overshoot": -34,
+   "lanes": "291.531px 546.922px 291.547px",
+   "rows": "380px 1036.62px",
+   "panels": {
+    "c1": {
+     "x": 49,
+     "y": 123.83,
+     "w": 291.53,
+     "h": 380,
+     "bottom": 503.83
+    },
+    "c2": {
+     "x": 362.53,
+     "y": 123.83,
+     "w": 546.92,
+     "h": 380,
+     "bottom": 503.83
+    },
+    "c3": {
+     "x": 931.45,
+     "y": 123.83,
+     "w": 291.55,
+     "h": 747.25,
+     "bottom": 871.08
+    },
+    "c4": {
+     "x": 49,
+     "y": 525.83,
+     "w": 860.45,
+     "h": 1036.63,
+     "bottom": 1562.45
+    },
+    "left": null
+   },
+   "panelSum": 2543.88,
+   "hole": 691.37,
+   "chipCount": 0,
+   "chipWidths": [],
+   "chipHeights": [],
+   "buildFields": 15,
+   "board": {
+    "x": 950.45,
+    "y": 232.33,
+    "w": 253.55,
+    "h": 347.75,
+    "bottom": 580.08
+   },
+   "score": {
+    "x": 49,
+    "y": 34.33,
+    "w": 379.33,
+    "h": 46,
+    "bottom": 80.33
+   },
+   "scoreSize": "46px",
+   "eyebrow": {
+    "x": 49,
+    "y": 17,
+    "w": 379.33,
+    "h": 17.33,
+    "bottom": 34.33
+   },
+   "kpi": {
+    "x": 450.33,
+    "y": 67.83,
+    "w": 379.33,
+    "h": 39,
+    "bottom": 106.83
+   },
+   "scrollers": [
+    {
+     "cls": "rd-root",
+     "scrollH": 720,
+     "clientH": 720,
+     "overflowY": "auto"
+    },
+    {
+     "cls": "rd-card",
+     "scrollH": 684,
+     "clientH": 684,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "rd-body",
+     "scrollH": 1439,
+     "clientH": 577,
+     "overflowY": "auto"
+    }
+   ],
+   "nodeCount": 1165
+  },
+  "de/1280x720/run-thin": {
+   "reached": true,
+   "viewport": {
+    "w": 1280,
+    "h": 720
+   },
+   "card": {
+    "x": 48,
+    "y": 16,
+    "w": 1184,
+    "h": 510.83,
+    "bottom": 526.83
+   },
+   "cardScrollH": 509,
+   "root": {
+    "x": 0,
+    "y": 0,
+    "w": 1280,
+    "h": 720,
+    "bottom": 720
+   },
+   "rootScrollH": 720,
+   "rootClientH": 720,
+   "windowH": 510.83,
+   "overshoot": -209.17,
+   "lanes": "403.328px 756.672px",
+   "rows": "380px 0px",
+   "panels": {
+    "c1": {
+     "x": 49,
+     "y": 123.83,
+     "w": 403.33,
+     "h": 380,
+     "bottom": 503.83
+    },
+    "c2": {
+     "x": 474.33,
+     "y": 123.83,
+     "w": 756.67,
+     "h": 380,
+     "bottom": 503.83
+    },
+    "c3": null,
+    "c4": null,
+    "left": null
+   },
+   "panelSum": 760,
+   "hole": null,
+   "chipCount": 0,
+   "chipWidths": [],
+   "chipHeights": [],
+   "buildFields": 15,
+   "board": null,
+   "score": {
+    "x": 49,
+    "y": 34.33,
+    "w": 379.33,
+    "h": 46,
+    "bottom": 80.33
+   },
+   "scoreSize": "46px",
+   "eyebrow": {
+    "x": 49,
+    "y": 17,
+    "w": 379.33,
+    "h": 17.33,
+    "bottom": 34.33
+   },
+   "kpi": {
+    "x": 450.33,
+    "y": 67.83,
+    "w": 379.33,
+    "h": 39,
+    "bottom": 106.83
+   },
+   "scrollers": [
+    {
+     "cls": "rd-root",
+     "scrollH": 720,
+     "clientH": 720,
+     "overflowY": "auto"
+    },
+    {
+     "cls": "rd-card",
+     "scrollH": 509,
+     "clientH": 509,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "rd-body",
+     "scrollH": 402,
+     "clientH": 402,
+     "overflowY": "auto"
+    }
+   ],
+   "nodeCount": 649
+  },
+  "en/1920x1080/stats": {
+   "reached": true,
+   "viewport": {
+    "w": 1920,
+    "h": 1080
+   },
+   "card": {
+    "x": 100,
+    "y": 16,
+    "w": 1720,
+    "h": 1038.77,
+    "bottom": 1054.77
+   },
+   "cardScrollH": 1037,
+   "root": {
+    "x": 0,
+    "y": 0,
+    "w": 1920,
+    "h": 1080,
+    "bottom": 1080
+   },
+   "rootScrollH": 1080,
+   "rootClientH": 1080,
+   "belowFold": -25.23,
+   "scrollFactor": 1,
+   "columnEnds": {
+    "col1": 800.63,
+    "col2": 1053.77,
+    "col3": 1053.77
+   },
+   "sections": {
+    "overview": {
+     "x": 101,
+     "y": 144.34,
+     "w": 1717.98,
+     "h": 171.83,
+     "bottom": 316.17
+    },
+    "best": {
+     "x": 101,
+     "y": 316.17,
+     "w": 531.42,
+     "h": 221,
+     "bottom": 537.17
+    },
+    "runs": {
+     "x": 654.42,
+     "y": 316.17,
+     "w": 611.14,
+     "h": 737.59,
+     "bottom": 1053.77
+    },
+    "picked": {
+     "x": 1287.56,
+     "y": 316.17,
+     "w": 531.42,
+     "h": 737.59,
+     "bottom": 1053.77
+    },
+    "works": {
+     "x": 101,
+     "y": 559.17,
+     "w": 531.42,
+     "h": 241.45,
+     "bottom": 800.63
+    }
+   },
+   "secStyle": {
+    "background-color": "rgba(0, 0, 0, 0)",
+    "background-image": "linear-gradient(color(srgb 0.110031 0.166834 0.214347 / 0.935765) 0%, color(srgb 0.0895714 0.122541 0.16629 / 0.951569) 100%)",
+    "border-top-width": "1px",
+    "border-color": "color(srgb 0.286911 0.717375 0.82809 / 0.37898)",
+    "border-radius": "14px",
+    "padding": "18px"
+   },
+   "head": {
+    "x": 101,
+    "y": 17,
+    "w": 1718,
+    "h": 122.34,
+    "bottom": 139.34
+   },
+   "readout": null,
+   "close": {
+    "x": 1740.7,
+    "y": 27,
+    "w": 78.3,
+    "h": 44.14,
+    "bottom": 71.14
+   },
+   "title": {
+    "x": 193,
+    "y": 58.5,
+    "w": 1525.7,
+    "h": 42,
+    "bottom": 100.5
+   },
+   "titleSize": {
+    "font-size": "27px"
+   },
+   "eyebrow": {
+    "x": 193,
+    "y": 27,
+    "w": 1525.7,
+    "h": 19.5,
+    "bottom": 46.5
+   },
+   "subline": {
+    "x": 193,
+    "y": 112.5,
+    "w": 1525.7,
+    "h": 18.84,
+    "bottom": 131.34
+   },
+   "runRowCount": 12,
+   "runRowH": 44,
+   "runRowHAll": [
+    44,
+    44,
+    44,
+    44,
+    44,
+    44,
+    44,
+    44,
+    44,
+    44,
+    44,
+    44
+   ],
+   "scrollers": [
+    {
+     "cls": "st-root",
+     "scrollH": 1080,
+     "clientH": 1080,
+     "overflowY": "hidden"
+    },
+    {
+     "cls": "st-card",
+     "scrollH": 1037,
+     "clientH": 1037,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "st-body",
+     "scrollH": 909,
+     "clientH": 909,
+     "overflowY": "auto"
+    }
+   ],
+   "nodeCount": 537
+  },
+  "en/1920x1080/run-full": {
+   "reached": true,
+   "viewport": {
+    "w": 1920,
+    "h": 1080
+   },
+   "card": {
+    "x": 210,
+    "y": 16,
+    "w": 1500,
+    "h": 1046,
+    "bottom": 1062
+   },
+   "cardScrollH": 1044,
+   "root": {
+    "x": 0,
+    "y": 0,
+    "w": 1920,
+    "h": 1080,
+    "bottom": 1080
+   },
+   "rootScrollH": 1080,
+   "rootClientH": 1080,
+   "windowH": 1046,
+   "overshoot": -34,
+   "lanes": "373.047px 699.875px 373.062px",
+   "rows": "380px 1131.17px",
+   "panels": {
+    "c1": {
+     "x": 211,
+     "y": 123.83,
+     "w": 373.05,
+     "h": 380,
+     "bottom": 503.83
+    },
+    "c2": {
+     "x": 606.05,
+     "y": 123.83,
+     "w": 699.88,
+     "h": 380,
+     "bottom": 503.83
+    },
+    "c3": {
+     "x": 1327.92,
+     "y": 123.83,
+     "w": 373.06,
+     "h": 857.13,
+     "bottom": 980.95
+    },
+    "c4": {
+     "x": 211,
+     "y": 525.83,
+     "w": 1094.92,
+     "h": 1131.17,
+     "bottom": 1657
+    },
+    "left": null
+   },
+   "panelSum": 2748.3,
+   "hole": 676.05,
+   "chipCount": 0,
+   "chipWidths": [],
+   "chipHeights": [],
+   "buildFields": 15,
+   "board": {
+    "x": 1346.92,
+    "y": 211.83,
+    "w": 335.06,
+    "h": 478.13,
+    "bottom": 689.95
+   },
+   "score": {
+    "x": 211,
+    "y": 34.33,
+    "w": 484.66,
+    "h": 46,
+    "bottom": 80.33
+   },
+   "scoreSize": "46px",
+   "eyebrow": {
+    "x": 211,
+    "y": 17,
+    "w": 484.66,
+    "h": 17.33,
+    "bottom": 34.33
+   },
+   "kpi": {
+    "x": 717.66,
+    "y": 67.83,
+    "w": 484.67,
+    "h": 39,
+    "bottom": 106.83
+   },
+   "scrollers": [
+    {
+     "cls": "rd-root",
+     "scrollH": 1080,
+     "clientH": 1080,
+     "overflowY": "auto"
+    },
+    {
+     "cls": "rd-card",
+     "scrollH": 1044,
+     "clientH": 1044,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "rd-body",
+     "scrollH": 1533,
+     "clientH": 937,
+     "overflowY": "auto"
+    }
+   ],
+   "nodeCount": 1187
+  },
+  "en/1920x1080/run-thin": {
+   "reached": true,
+   "viewport": {
+    "w": 1920,
+    "h": 1080
+   },
+   "card": {
+    "x": 210,
+    "y": 16,
+    "w": 1500,
+    "h": 510.83,
+    "bottom": 526.83
+   },
+   "cardScrollH": 509,
+   "root": {
+    "x": 0,
+    "y": 0,
+    "w": 1920,
+    "h": 1080,
+    "bottom": 1080
+   },
+   "rootScrollH": 1080,
+   "rootClientH": 1080,
+   "windowH": 510.83,
+   "overshoot": -569.17,
+   "lanes": "513.203px 962.781px",
+   "rows": "380px 0px",
+   "panels": {
+    "c1": {
+     "x": 211,
+     "y": 123.83,
+     "w": 513.2,
+     "h": 380,
+     "bottom": 503.83
+    },
+    "c2": {
+     "x": 746.2,
+     "y": 123.83,
+     "w": 962.78,
+     "h": 380,
+     "bottom": 503.83
+    },
+    "c3": null,
+    "c4": null,
+    "left": null
+   },
+   "panelSum": 760,
+   "hole": null,
+   "chipCount": 0,
+   "chipWidths": [],
+   "chipHeights": [],
+   "buildFields": 15,
+   "board": null,
+   "score": {
+    "x": 211,
+    "y": 34.33,
+    "w": 484.66,
+    "h": 46,
+    "bottom": 80.33
+   },
+   "scoreSize": "46px",
+   "eyebrow": {
+    "x": 211,
+    "y": 17,
+    "w": 484.66,
+    "h": 17.33,
+    "bottom": 34.33
+   },
+   "kpi": {
+    "x": 717.66,
+    "y": 67.83,
+    "w": 484.67,
+    "h": 39,
+    "bottom": 106.83
+   },
+   "scrollers": [
+    {
+     "cls": "rd-root",
+     "scrollH": 1080,
+     "clientH": 1080,
+     "overflowY": "auto"
+    },
+    {
+     "cls": "rd-card",
+     "scrollH": 509,
+     "clientH": 509,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "rd-body",
+     "scrollH": 402,
+     "clientH": 402,
+     "overflowY": "auto"
+    }
+   ],
+   "nodeCount": 671
+  },
+  "en/1600x900/stats": {
+   "reached": true,
+   "viewport": {
+    "w": 1600,
+    "h": 900
+   },
+   "card": {
+    "x": 36,
+    "y": 10,
+    "w": 1528,
+    "h": 878,
+    "bottom": 888
+   },
+   "cardScrollH": 876,
+   "root": {
+    "x": 0,
+    "y": 0,
+    "w": 1600,
+    "h": 900,
+    "bottom": 900
+   },
+   "rootScrollH": 900,
+   "rootClientH": 900,
+   "belowFold": -12,
+   "scrollFactor": 1,
+   "columnEnds": {
+    "col1": 764.63,
+    "col2": 887,
+    "col3": 887
+   },
+   "sections": {
+    "overview": {
+     "x": 37,
+     "y": 138.34,
+     "w": 1525.98,
+     "h": 161.83,
+     "bottom": 300.17
+    },
+    "best": {
+     "x": 37,
+     "y": 300.17,
+     "w": 470.47,
+     "h": 211,
+     "bottom": 511.17
+    },
+    "runs": {
+     "x": 529.47,
+     "y": 300.17,
+     "w": 541.05,
+     "h": 586.83,
+     "bottom": 887
+    },
+    "picked": {
+     "x": 1092.52,
+     "y": 300.17,
+     "w": 470.47,
+     "h": 586.83,
+     "bottom": 887
+    },
+    "works": {
+     "x": 37,
+     "y": 533.17,
+     "w": 470.47,
+     "h": 231.45,
+     "bottom": 764.63
+    }
+   },
+   "secStyle": {
+    "background-color": "rgba(0, 0, 0, 0)",
+    "background-image": "linear-gradient(color(srgb 0.110031 0.166834 0.214347 / 0.935765) 0%, color(srgb 0.0895714 0.122541 0.16629 / 0.951569) 100%)",
+    "border-top-width": "1px",
+    "border-color": "color(srgb 0.286911 0.717375 0.82809 / 0.37898)",
+    "border-radius": "14px",
+    "padding": "13px"
+   },
+   "head": {
+    "x": 37,
+    "y": 11,
+    "w": 1526,
+    "h": 122.34,
+    "bottom": 133.34
+   },
+   "readout": null,
+   "close": {
+    "x": 1484.7,
+    "y": 21,
+    "w": 78.3,
+    "h": 44.14,
+    "bottom": 65.14
+   },
+   "title": {
+    "x": 129,
+    "y": 52.5,
+    "w": 1333.7,
+    "h": 42,
+    "bottom": 94.5
+   },
+   "titleSize": {
+    "font-size": "27px"
+   },
+   "eyebrow": {
+    "x": 129,
+    "y": 21,
+    "w": 1333.7,
+    "h": 19.5,
+    "bottom": 40.5
+   },
+   "subline": {
+    "x": 129,
+    "y": 106.5,
+    "w": 1333.7,
+    "h": 18.84,
+    "bottom": 125.34
+   },
+   "runRowCount": 11,
+   "runRowH": 44,
+   "runRowHAll": [
+    44,
+    44,
+    44,
+    44,
+    44,
+    44,
+    44,
+    44,
+    44,
+    44,
+    44
+   ],
+   "scrollers": [
+    {
+     "cls": "st-root",
+     "scrollH": 900,
+     "clientH": 900,
+     "overflowY": "hidden"
+    },
+    {
+     "cls": "st-card",
+     "scrollH": 876,
+     "clientH": 876,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "st-body",
+     "scrollH": 749,
+     "clientH": 749,
+     "overflowY": "auto"
+    }
+   ],
+   "nodeCount": 526
+  },
+  "en/1600x900/run-full": {
+   "reached": true,
+   "viewport": {
+    "w": 1600,
+    "h": 900
+   },
+   "card": {
+    "x": 50,
+    "y": 16,
+    "w": 1500,
+    "h": 866,
+    "bottom": 882
+   },
+   "cardScrollH": 864,
+   "root": {
+    "x": 0,
+    "y": 0,
+    "w": 1600,
+    "h": 900,
+    "bottom": 900
+   },
+   "rootScrollH": 900,
+   "rootClientH": 900,
+   "windowH": 866,
+   "overshoot": -34,
+   "lanes": "373.047px 699.875px 373.062px",
+   "rows": "380px 1131.17px",
+   "panels": {
+    "c1": {
+     "x": 51,
+     "y": 123.83,
+     "w": 373.05,
+     "h": 380,
+     "bottom": 503.83
+    },
+    "c2": {
+     "x": 446.05,
+     "y": 123.83,
+     "w": 699.88,
+     "h": 380,
+     "bottom": 503.83
+    },
+    "c3": {
+     "x": 1167.92,
+     "y": 123.83,
+     "w": 373.06,
+     "h": 857.13,
+     "bottom": 980.95
+    },
+    "c4": {
+     "x": 51,
+     "y": 525.83,
+     "w": 1094.92,
+     "h": 1131.17,
+     "bottom": 1657
+    },
+    "left": null
+   },
+   "panelSum": 2748.3,
+   "hole": 676.05,
+   "chipCount": 0,
+   "chipWidths": [],
+   "chipHeights": [],
+   "buildFields": 15,
+   "board": {
+    "x": 1186.92,
+    "y": 211.83,
+    "w": 335.06,
+    "h": 478.13,
+    "bottom": 689.95
+   },
+   "score": {
+    "x": 51,
+    "y": 34.33,
+    "w": 484.66,
+    "h": 46,
+    "bottom": 80.33
+   },
+   "scoreSize": "46px",
+   "eyebrow": {
+    "x": 51,
+    "y": 17,
+    "w": 484.66,
+    "h": 17.33,
+    "bottom": 34.33
+   },
+   "kpi": {
+    "x": 557.66,
+    "y": 67.83,
+    "w": 484.67,
+    "h": 39,
+    "bottom": 106.83
+   },
+   "scrollers": [
+    {
+     "cls": "rd-root",
+     "scrollH": 900,
+     "clientH": 900,
+     "overflowY": "auto"
+    },
+    {
+     "cls": "rd-card",
+     "scrollH": 864,
+     "clientH": 864,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "rd-body",
+     "scrollH": 1533,
+     "clientH": 757,
+     "overflowY": "auto"
+    }
+   ],
+   "nodeCount": 1176
+  },
+  "en/1600x900/run-thin": {
+   "reached": true,
+   "viewport": {
+    "w": 1600,
+    "h": 900
+   },
+   "card": {
+    "x": 50,
+    "y": 16,
+    "w": 1500,
+    "h": 510.83,
+    "bottom": 526.83
+   },
+   "cardScrollH": 509,
+   "root": {
+    "x": 0,
+    "y": 0,
+    "w": 1600,
+    "h": 900,
+    "bottom": 900
+   },
+   "rootScrollH": 900,
+   "rootClientH": 900,
+   "windowH": 510.83,
+   "overshoot": -389.17,
+   "lanes": "513.203px 962.781px",
+   "rows": "380px 0px",
+   "panels": {
+    "c1": {
+     "x": 51,
+     "y": 123.83,
+     "w": 513.2,
+     "h": 380,
+     "bottom": 503.83
+    },
+    "c2": {
+     "x": 586.2,
+     "y": 123.83,
+     "w": 962.78,
+     "h": 380,
+     "bottom": 503.83
+    },
+    "c3": null,
+    "c4": null,
+    "left": null
+   },
+   "panelSum": 760,
+   "hole": null,
+   "chipCount": 0,
+   "chipWidths": [],
+   "chipHeights": [],
+   "buildFields": 15,
+   "board": null,
+   "score": {
+    "x": 51,
+    "y": 34.33,
+    "w": 484.66,
+    "h": 46,
+    "bottom": 80.33
+   },
+   "scoreSize": "46px",
+   "eyebrow": {
+    "x": 51,
+    "y": 17,
+    "w": 484.66,
+    "h": 17.33,
+    "bottom": 34.33
+   },
+   "kpi": {
+    "x": 557.66,
+    "y": 67.83,
+    "w": 484.67,
+    "h": 39,
+    "bottom": 106.83
+   },
+   "scrollers": [
+    {
+     "cls": "rd-root",
+     "scrollH": 900,
+     "clientH": 900,
+     "overflowY": "auto"
+    },
+    {
+     "cls": "rd-card",
+     "scrollH": 509,
+     "clientH": 509,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "rd-body",
+     "scrollH": 402,
+     "clientH": 402,
+     "overflowY": "auto"
+    }
+   ],
+   "nodeCount": 660
+  },
+  "en/1536x791/stats": {
+   "reached": true,
+   "viewport": {
+    "w": 1536,
+    "h": 791
+   },
+   "card": {
+    "x": 36,
+    "y": 10,
+    "w": 1464,
+    "h": 769,
+    "bottom": 779
+   },
+   "cardScrollH": 767,
+   "root": {
+    "x": 0,
+    "y": 0,
+    "w": 1536,
+    "h": 791,
+    "bottom": 791
+   },
+   "rootScrollH": 791,
+   "rootClientH": 791,
+   "belowFold": -12,
+   "scrollFactor": 1,
+   "columnEnds": {
+    "col1": 764.63,
+    "col2": 778,
+    "col3": 778
+   },
+   "sections": {
+    "overview": {
+     "x": 37,
+     "y": 138.34,
+     "w": 1461.98,
+     "h": 161.83,
+     "bottom": 300.17
+    },
+    "best": {
+     "x": 37,
+     "y": 300.17,
+     "w": 450.16,
+     "h": 211,
+     "bottom": 511.17
+    },
+    "runs": {
+     "x": 509.16,
+     "y": 300.17,
+     "w": 517.67,
+     "h": 477.83,
+     "bottom": 778
+    },
+    "picked": {
+     "x": 1048.83,
+     "y": 300.17,
+     "w": 450.16,
+     "h": 477.83,
+     "bottom": 778
+    },
+    "works": {
+     "x": 37,
+     "y": 533.17,
+     "w": 450.16,
+     "h": 231.45,
+     "bottom": 764.63
+    }
+   },
+   "secStyle": {
+    "background-color": "rgba(0, 0, 0, 0)",
+    "background-image": "linear-gradient(color(srgb 0.110031 0.166834 0.214347 / 0.935765) 0%, color(srgb 0.0895714 0.122541 0.16629 / 0.951569) 100%)",
+    "border-top-width": "1px",
+    "border-color": "color(srgb 0.286911 0.717375 0.82809 / 0.37898)",
+    "border-radius": "14px",
+    "padding": "13px"
+   },
+   "head": {
+    "x": 37,
+    "y": 11,
+    "w": 1462,
+    "h": 122.34,
+    "bottom": 133.34
+   },
+   "readout": null,
+   "close": {
+    "x": 1420.7,
+    "y": 21,
+    "w": 78.3,
+    "h": 44.14,
+    "bottom": 65.14
+   },
+   "title": {
+    "x": 129,
+    "y": 52.5,
+    "w": 1269.7,
+    "h": 42,
+    "bottom": 94.5
+   },
+   "titleSize": {
+    "font-size": "27px"
+   },
+   "eyebrow": {
+    "x": 129,
+    "y": 21,
+    "w": 1269.7,
+    "h": 19.5,
+    "bottom": 40.5
+   },
+   "subline": {
+    "x": 129,
+    "y": 106.5,
+    "w": 1269.7,
+    "h": 18.84,
+    "bottom": 125.34
+   },
+   "runRowCount": 10,
+   "runRowH": 44,
+   "runRowHAll": [
+    44,
+    44,
+    44,
+    44,
+    44,
+    44,
+    44,
+    44,
+    44,
+    44
+   ],
+   "scrollers": [
+    {
+     "cls": "st-root",
+     "scrollH": 791,
+     "clientH": 791,
+     "overflowY": "hidden"
+    },
+    {
+     "cls": "st-card",
+     "scrollH": 767,
+     "clientH": 767,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "st-body",
+     "scrollH": 640,
+     "clientH": 640,
+     "overflowY": "auto"
+    }
+   ],
+   "nodeCount": 515
+  },
+  "en/1536x791/run-full": {
+   "reached": true,
+   "viewport": {
+    "w": 1536,
+    "h": 791
+   },
+   "card": {
+    "x": 48,
+    "y": 16,
+    "w": 1440,
+    "h": 757,
+    "bottom": 773
+   },
+   "cardScrollH": 755,
+   "root": {
+    "x": 0,
+    "y": 0,
+    "w": 1536,
+    "h": 791,
+    "bottom": 791
+   },
+   "rootScrollH": 791,
+   "rootClientH": 791,
+   "windowH": 757,
+   "overshoot": -34,
+   "lanes": "357.578px 670.812px 357.594px",
+   "rows": "380px 1113.22px",
+   "panels": {
+    "c1": {
+     "x": 49,
+     "y": 123.83,
+     "w": 357.58,
+     "h": 380,
+     "bottom": 503.83
+    },
+    "c2": {
+     "x": 428.58,
+     "y": 123.83,
+     "w": 670.81,
+     "h": 380,
+     "bottom": 503.83
+    },
+    "c3": {
+     "x": 1121.39,
+     "y": 123.83,
+     "w": 357.59,
+     "h": 832.38,
+     "bottom": 956.2
+    },
+    "c4": {
+     "x": 49,
+     "y": 525.83,
+     "w": 1050.39,
+     "h": 1113.22,
+     "bottom": 1639.05
+    },
+    "left": null
+   },
+   "panelSum": 2705.6000000000004,
+   "hole": 682.85,
+   "chipCount": 0,
+   "chipWidths": [],
+   "chipHeights": [],
+   "buildFields": 15,
+   "board": {
+    "x": 1140.39,
+    "y": 211.83,
+    "w": 319.59,
+    "h": 453.38,
+    "bottom": 665.2
+   },
+   "score": {
+    "x": 49,
+    "y": 34.33,
+    "w": 464.66,
+    "h": 46,
+    "bottom": 80.33
+   },
+   "scoreSize": "46px",
+   "eyebrow": {
+    "x": 49,
+    "y": 17,
+    "w": 464.66,
+    "h": 17.33,
+    "bottom": 34.33
+   },
+   "kpi": {
+    "x": 535.66,
+    "y": 67.83,
+    "w": 464.67,
+    "h": 39,
+    "bottom": 106.83
+   },
+   "scrollers": [
+    {
+     "cls": "rd-root",
+     "scrollH": 791,
+     "clientH": 791,
+     "overflowY": "auto"
+    },
+    {
+     "cls": "rd-card",
+     "scrollH": 755,
+     "clientH": 755,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "rd-body",
+     "scrollH": 1515,
+     "clientH": 648,
+     "overflowY": "auto"
+    }
+   ],
+   "nodeCount": 1165
+  },
+  "en/1536x791/run-thin": {
+   "reached": true,
+   "viewport": {
+    "w": 1536,
+    "h": 791
+   },
+   "card": {
+    "x": 48,
+    "y": 16,
+    "w": 1440,
+    "h": 510.83,
+    "bottom": 526.83
+   },
+   "cardScrollH": 509,
+   "root": {
+    "x": 0,
+    "y": 0,
+    "w": 1536,
+    "h": 791,
+    "bottom": 791
+   },
+   "rootScrollH": 791,
+   "rootClientH": 791,
+   "windowH": 510.83,
+   "overshoot": -280.17,
+   "lanes": "492.344px 923.641px",
+   "rows": "380px 0px",
+   "panels": {
+    "c1": {
+     "x": 49,
+     "y": 123.83,
+     "w": 492.34,
+     "h": 380,
+     "bottom": 503.83
+    },
+    "c2": {
+     "x": 563.34,
+     "y": 123.83,
+     "w": 923.64,
+     "h": 380,
+     "bottom": 503.83
+    },
+    "c3": null,
+    "c4": null,
+    "left": null
+   },
+   "panelSum": 760,
+   "hole": null,
+   "chipCount": 0,
+   "chipWidths": [],
+   "chipHeights": [],
+   "buildFields": 15,
+   "board": null,
+   "score": {
+    "x": 49,
+    "y": 34.33,
+    "w": 464.66,
+    "h": 46,
+    "bottom": 80.33
+   },
+   "scoreSize": "46px",
+   "eyebrow": {
+    "x": 49,
+    "y": 17,
+    "w": 464.66,
+    "h": 17.33,
+    "bottom": 34.33
+   },
+   "kpi": {
+    "x": 535.66,
+    "y": 67.83,
+    "w": 464.67,
+    "h": 39,
+    "bottom": 106.83
+   },
+   "scrollers": [
+    {
+     "cls": "rd-root",
+     "scrollH": 791,
+     "clientH": 791,
+     "overflowY": "auto"
+    },
+    {
+     "cls": "rd-card",
+     "scrollH": 509,
+     "clientH": 509,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "rd-body",
+     "scrollH": 402,
+     "clientH": 402,
+     "overflowY": "auto"
+    }
+   ],
+   "nodeCount": 649
+  },
+  "en/1400x700/stats": {
+   "reached": true,
+   "viewport": {
+    "w": 1400,
+    "h": 700
+   },
+   "card": {
+    "x": 36,
+    "y": 10,
+    "w": 1320,
+    "h": 678,
+    "bottom": 688
+   },
+   "cardScrollH": 676,
+   "root": {
+    "x": 0,
+    "y": 0,
+    "w": 1392,
+    "h": 700,
+    "bottom": 700
+   },
+   "rootScrollH": 700,
+   "rootClientH": 700,
+   "belowFold": -12,
+   "scrollFactor": 1,
+   "columnEnds": {
+    "col1": 785.13,
+    "col2": 687,
+    "col3": 687
+   },
+   "sections": {
+    "overview": {
+     "x": 37,
+     "y": 138.34,
+     "w": 1309.98,
+     "h": 161.83,
+     "bottom": 300.17
+    },
+    "best": {
+     "x": 37,
+     "y": 300.17,
+     "w": 401.89,
+     "h": 231.5,
+     "bottom": 531.67
+    },
+    "runs": {
+     "x": 460.89,
+     "y": 300.17,
+     "w": 462.2,
+     "h": 386.83,
+     "bottom": 687
+    },
+    "picked": {
+     "x": 945.09,
+     "y": 300.17,
+     "w": 401.89,
+     "h": 386.83,
+     "bottom": 687
+    },
+    "works": {
+     "x": 37,
+     "y": 553.67,
+     "w": 401.89,
+     "h": 231.45,
+     "bottom": 785.13
+    }
+   },
+   "secStyle": {
+    "background-color": "rgba(0, 0, 0, 0)",
+    "background-image": "linear-gradient(color(srgb 0.110031 0.166834 0.214347 / 0.935765) 0%, color(srgb 0.0895714 0.122541 0.16629 / 0.951569) 100%)",
+    "border-top-width": "1px",
+    "border-color": "color(srgb 0.286911 0.717375 0.82809 / 0.37898)",
+    "border-radius": "14px",
+    "padding": "13px"
+   },
+   "head": {
+    "x": 37,
+    "y": 11,
+    "w": 1318,
+    "h": 122.34,
+    "bottom": 133.34
+   },
+   "readout": null,
+   "close": {
+    "x": 1276.7,
+    "y": 21,
+    "w": 78.3,
+    "h": 44.14,
+    "bottom": 65.14
+   },
+   "title": {
+    "x": 129,
+    "y": 52.5,
+    "w": 1125.7,
+    "h": 42,
+    "bottom": 94.5
+   },
+   "titleSize": {
+    "font-size": "27px"
+   },
+   "eyebrow": {
+    "x": 129,
+    "y": 21,
+    "w": 1125.7,
+    "h": 19.5,
+    "bottom": 40.5
+   },
+   "subline": {
+    "x": 129,
+    "y": 106.5,
+    "w": 1125.7,
+    "h": 18.84,
+    "bottom": 125.34
+   },
+   "runRowCount": 10,
+   "runRowH": 44,
+   "runRowHAll": [
+    44,
+    44,
+    44,
+    44,
+    44,
+    44,
+    44,
+    44,
+    44,
+    44
+   ],
+   "scrollers": [
+    {
+     "cls": "st-root",
+     "scrollH": 700,
+     "clientH": 700,
+     "overflowY": "hidden"
+    },
+    {
+     "cls": "st-card",
+     "scrollH": 676,
+     "clientH": 676,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "st-body",
+     "scrollH": 647,
+     "clientH": 549,
+     "overflowY": "auto"
+    }
+   ],
+   "nodeCount": 515
+  },
+  "en/1400x700/run-full": {
+   "reached": true,
+   "viewport": {
+    "w": 1400,
+    "h": 700
+   },
+   "card": {
+    "x": 48,
+    "y": 16,
+    "w": 1296,
+    "h": 666,
+    "bottom": 682
+   },
+   "cardScrollH": 664,
+   "root": {
+    "x": 0,
+    "y": 0,
+    "w": 1392,
+    "h": 700,
+    "bottom": 700
+   },
+   "rootScrollH": 700,
+   "rootClientH": 700,
+   "windowH": 666,
+   "overshoot": -34,
+   "lanes": "320.422px 601.125px 320.438px",
+   "rows": "380px 1070.12px",
+   "panels": {
+    "c1": {
+     "x": 49,
+     "y": 123.83,
+     "w": 320.42,
+     "h": 380,
+     "bottom": 503.83
+    },
+    "c2": {
+     "x": 391.42,
+     "y": 123.83,
+     "w": 601.13,
+     "h": 380,
+     "bottom": 503.83
+    },
+    "c3": {
+     "x": 1014.55,
+     "y": 123.83,
+     "w": 320.44,
+     "h": 793.38,
+     "bottom": 917.2
+    },
+    "c4": {
+     "x": 49,
+     "y": 525.83,
+     "w": 943.55,
+     "h": 1070.13,
+     "bottom": 1595.95
+    },
+    "left": null
+   },
+   "panelSum": 2623.51,
+   "hole": 678.75,
+   "chipCount": 0,
+   "chipWidths": [],
+   "chipHeights": [],
+   "buildFields": 15,
+   "board": {
+    "x": 1033.55,
+    "y": 232.33,
+    "w": 282.44,
+    "h": 393.88,
+    "bottom": 626.2
+   },
+   "score": {
+    "x": 49,
+    "y": 34.33,
+    "w": 416.66,
+    "h": 46,
+    "bottom": 80.33
+   },
+   "scoreSize": "46px",
+   "eyebrow": {
+    "x": 49,
+    "y": 17,
+    "w": 416.66,
+    "h": 17.33,
+    "bottom": 34.33
+   },
+   "kpi": {
+    "x": 487.66,
+    "y": 67.83,
+    "w": 416.67,
+    "h": 39,
+    "bottom": 106.83
+   },
+   "scrollers": [
+    {
+     "cls": "rd-root",
+     "scrollH": 700,
+     "clientH": 700,
+     "overflowY": "auto"
+    },
+    {
+     "cls": "rd-card",
+     "scrollH": 664,
+     "clientH": 664,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "rd-body",
+     "scrollH": 1472,
+     "clientH": 557,
+     "overflowY": "auto"
+    }
+   ],
+   "nodeCount": 1165
+  },
+  "en/1400x700/run-thin": {
+   "reached": true,
+   "viewport": {
+    "w": 1400,
+    "h": 700
+   },
+   "card": {
+    "x": 48,
+    "y": 16,
+    "w": 1296,
+    "h": 510.83,
+    "bottom": 526.83
+   },
+   "cardScrollH": 509,
+   "root": {
+    "x": 0,
+    "y": 0,
+    "w": 1392,
+    "h": 700,
+    "bottom": 700
+   },
+   "rootScrollH": 700,
+   "rootClientH": 700,
+   "windowH": 510.83,
+   "overshoot": -189.17,
+   "lanes": "442.266px 829.719px",
+   "rows": "380px 0px",
+   "panels": {
+    "c1": {
+     "x": 49,
+     "y": 123.83,
+     "w": 442.27,
+     "h": 380,
+     "bottom": 503.83
+    },
+    "c2": {
+     "x": 513.27,
+     "y": 123.83,
+     "w": 829.72,
+     "h": 380,
+     "bottom": 503.83
+    },
+    "c3": null,
+    "c4": null,
+    "left": null
+   },
+   "panelSum": 760,
+   "hole": null,
+   "chipCount": 0,
+   "chipWidths": [],
+   "chipHeights": [],
+   "buildFields": 15,
+   "board": null,
+   "score": {
+    "x": 49,
+    "y": 34.33,
+    "w": 416.66,
+    "h": 46,
+    "bottom": 80.33
+   },
+   "scoreSize": "46px",
+   "eyebrow": {
+    "x": 49,
+    "y": 17,
+    "w": 416.66,
+    "h": 17.33,
+    "bottom": 34.33
+   },
+   "kpi": {
+    "x": 487.66,
+    "y": 67.83,
+    "w": 416.67,
+    "h": 39,
+    "bottom": 106.83
+   },
+   "scrollers": [
+    {
+     "cls": "rd-root",
+     "scrollH": 700,
+     "clientH": 700,
+     "overflowY": "auto"
+    },
+    {
+     "cls": "rd-card",
+     "scrollH": 509,
+     "clientH": 509,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "rd-body",
+     "scrollH": 402,
+     "clientH": 402,
+     "overflowY": "auto"
+    }
+   ],
+   "nodeCount": 649
+  },
+  "en/1280x720/stats": {
+   "reached": true,
+   "viewport": {
+    "w": 1280,
+    "h": 720
+   },
+   "card": {
+    "x": 36,
+    "y": 10,
+    "w": 1208,
+    "h": 698,
+    "bottom": 708
+   },
+   "cardScrollH": 696,
+   "root": {
+    "x": 0,
+    "y": 0,
+    "w": 1280,
+    "h": 720,
+    "bottom": 720
+   },
+   "rootScrollH": 720,
+   "rootClientH": 720,
+   "belowFold": -12,
+   "scrollFactor": 1,
+   "columnEnds": {
+    "col1": 785.13,
+    "col2": 707,
+    "col3": 707
+   },
+   "sections": {
+    "overview": {
+     "x": 37,
+     "y": 138.34,
+     "w": 1197.98,
+     "h": 161.83,
+     "bottom": 300.17
+    },
+    "best": {
+     "x": 37,
+     "y": 300.17,
+     "w": 366.34,
+     "h": 231.5,
+     "bottom": 531.67
+    },
+    "runs": {
+     "x": 425.34,
+     "y": 300.17,
+     "w": 421.3,
+     "h": 406.83,
+     "bottom": 707
+    },
+    "picked": {
+     "x": 868.64,
+     "y": 300.17,
+     "w": 366.34,
+     "h": 406.83,
+     "bottom": 707
+    },
+    "works": {
+     "x": 37,
+     "y": 553.67,
+     "w": 366.34,
+     "h": 231.45,
+     "bottom": 785.13
+    }
+   },
+   "secStyle": {
+    "background-color": "rgba(0, 0, 0, 0)",
+    "background-image": "linear-gradient(color(srgb 0.110031 0.166834 0.214347 / 0.935765) 0%, color(srgb 0.0895714 0.122541 0.16629 / 0.951569) 100%)",
+    "border-top-width": "1px",
+    "border-color": "color(srgb 0.286911 0.717375 0.82809 / 0.37898)",
+    "border-radius": "14px",
+    "padding": "13px"
+   },
+   "head": {
+    "x": 37,
+    "y": 11,
+    "w": 1206,
+    "h": 122.34,
+    "bottom": 133.34
+   },
+   "readout": null,
+   "close": {
+    "x": 1164.7,
+    "y": 21,
+    "w": 78.3,
+    "h": 44.14,
+    "bottom": 65.14
+   },
+   "title": {
+    "x": 129,
+    "y": 52.5,
+    "w": 1013.7,
+    "h": 42,
+    "bottom": 94.5
+   },
+   "titleSize": {
+    "font-size": "27px"
+   },
+   "eyebrow": {
+    "x": 129,
+    "y": 21,
+    "w": 1013.7,
+    "h": 19.5,
+    "bottom": 40.5
+   },
+   "subline": {
+    "x": 129,
+    "y": 106.5,
+    "w": 1013.7,
+    "h": 18.84,
+    "bottom": 125.34
+   },
+   "runRowCount": 10,
+   "runRowH": 44,
+   "runRowHAll": [
+    44,
+    44,
+    44,
+    44,
+    44,
+    44,
+    44,
+    44,
+    44,
+    44
+   ],
+   "scrollers": [
+    {
+     "cls": "st-root",
+     "scrollH": 720,
+     "clientH": 720,
+     "overflowY": "hidden"
+    },
+    {
+     "cls": "st-card",
+     "scrollH": 696,
+     "clientH": 696,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "st-body",
+     "scrollH": 647,
+     "clientH": 569,
+     "overflowY": "auto"
+    }
+   ],
+   "nodeCount": 515
+  },
+  "en/1280x720/run-full": {
+   "reached": true,
+   "viewport": {
+    "w": 1280,
+    "h": 720
+   },
+   "card": {
+    "x": 48,
+    "y": 16,
+    "w": 1184,
+    "h": 686,
+    "bottom": 702
+   },
+   "cardScrollH": 684,
+   "root": {
+    "x": 0,
+    "y": 0,
+    "w": 1280,
+    "h": 720,
+    "bottom": 720
+   },
+   "rootScrollH": 720,
+   "rootClientH": 720,
+   "windowH": 686,
+   "overshoot": -34,
+   "lanes": "291.531px 546.922px 291.547px",
+   "rows": "380px 1036.62px",
+   "panels": {
+    "c1": {
+     "x": 49,
+     "y": 123.83,
+     "w": 291.53,
+     "h": 380,
+     "bottom": 503.83
+    },
+    "c2": {
+     "x": 362.53,
+     "y": 123.83,
+     "w": 546.92,
+     "h": 380,
+     "bottom": 503.83
+    },
+    "c3": {
+     "x": 931.45,
+     "y": 123.83,
+     "w": 291.55,
+     "h": 747.25,
+     "bottom": 871.08
+    },
+    "c4": {
+     "x": 49,
+     "y": 525.83,
+     "w": 860.45,
+     "h": 1036.63,
+     "bottom": 1562.45
+    },
+    "left": null
+   },
+   "panelSum": 2543.88,
+   "hole": 691.37,
+   "chipCount": 0,
+   "chipWidths": [],
+   "chipHeights": [],
+   "buildFields": 15,
+   "board": {
+    "x": 950.45,
+    "y": 232.33,
+    "w": 253.55,
+    "h": 347.75,
+    "bottom": 580.08
+   },
+   "score": {
+    "x": 49,
+    "y": 34.33,
+    "w": 379.33,
+    "h": 46,
+    "bottom": 80.33
+   },
+   "scoreSize": "46px",
+   "eyebrow": {
+    "x": 49,
+    "y": 17,
+    "w": 379.33,
+    "h": 17.33,
+    "bottom": 34.33
+   },
+   "kpi": {
+    "x": 450.33,
+    "y": 67.83,
+    "w": 379.33,
+    "h": 39,
+    "bottom": 106.83
+   },
+   "scrollers": [
+    {
+     "cls": "rd-root",
+     "scrollH": 720,
+     "clientH": 720,
+     "overflowY": "auto"
+    },
+    {
+     "cls": "rd-card",
+     "scrollH": 684,
+     "clientH": 684,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "rd-body",
+     "scrollH": 1439,
+     "clientH": 577,
+     "overflowY": "auto"
+    }
+   ],
+   "nodeCount": 1165
+  },
+  "en/1280x720/run-thin": {
+   "reached": true,
+   "viewport": {
+    "w": 1280,
+    "h": 720
+   },
+   "card": {
+    "x": 48,
+    "y": 16,
+    "w": 1184,
+    "h": 510.83,
+    "bottom": 526.83
+   },
+   "cardScrollH": 509,
+   "root": {
+    "x": 0,
+    "y": 0,
+    "w": 1280,
+    "h": 720,
+    "bottom": 720
+   },
+   "rootScrollH": 720,
+   "rootClientH": 720,
+   "windowH": 510.83,
+   "overshoot": -209.17,
+   "lanes": "403.328px 756.672px",
+   "rows": "380px 0px",
+   "panels": {
+    "c1": {
+     "x": 49,
+     "y": 123.83,
+     "w": 403.33,
+     "h": 380,
+     "bottom": 503.83
+    },
+    "c2": {
+     "x": 474.33,
+     "y": 123.83,
+     "w": 756.67,
+     "h": 380,
+     "bottom": 503.83
+    },
+    "c3": null,
+    "c4": null,
+    "left": null
+   },
+   "panelSum": 760,
+   "hole": null,
+   "chipCount": 0,
+   "chipWidths": [],
+   "chipHeights": [],
+   "buildFields": 15,
+   "board": null,
+   "score": {
+    "x": 49,
+    "y": 34.33,
+    "w": 379.33,
+    "h": 46,
+    "bottom": 80.33
+   },
+   "scoreSize": "46px",
+   "eyebrow": {
+    "x": 49,
+    "y": 17,
+    "w": 379.33,
+    "h": 17.33,
+    "bottom": 34.33
+   },
+   "kpi": {
+    "x": 450.33,
+    "y": 67.83,
+    "w": 379.33,
+    "h": 39,
+    "bottom": 106.83
+   },
+   "scrollers": [
+    {
+     "cls": "rd-root",
+     "scrollH": 720,
+     "clientH": 720,
+     "overflowY": "auto"
+    },
+    {
+     "cls": "rd-card",
+     "scrollH": 509,
+     "clientH": 509,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "rd-body",
+     "scrollH": 402,
+     "clientH": 402,
+     "overflowY": "auto"
+    }
+   ],
+   "nodeCount": 649
+  }
+ }
+}

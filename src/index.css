@@ -2238,7 +2238,12 @@ b, strong { font-weight: 600; }
    `fb-left`/`fb-right` (Feedback) existieren NUR, damit der Desktop-Pass zwei Spalten bilden kann.
    Unterhalb von 1280 px reichen sie ihre Kinder unverändert an das Handy-Raster durch — Reihenfolge,
    Abstände und Zeilenumbrüche der abgestimmten Handy-Fassung bleiben damit exakt, wie sie waren. */
-.op-col2, .op-floatgroup, .un-form, .fb-left, .fb-right, .rd-c1, .rd-c2, .rd-left, .go-col1 { display: contents; }
+.op-col2, .op-floatgroup, .un-form, .fb-left, .fb-right, .rd-c1, .rd-c2, .rd-body, .go-col1 { display: contents; }
+/* #menu-rework M7 — dieselben zwei Klammern fuer die Statistik. `st-body` ist ab 1280 px DER
+   Scroller des Screens (der Kopf steht fest darueber), `st-col1` der Stapel der linken Spalte.
+   Unter 1280 px gibt es weder das eine noch das andere: dort scrollt die Karte als Ganzes und die
+   Sektionen stehen im Fluss, also reichen beide ihre Kinder unveraendert durch. */
+.st-body, .st-col1 { display: contents; }
 /* Zwei Bausteine des Willkommen-Bildschirms gehören AUSSCHLIESSLICH der breiten Fassung: das Zeichen im
    Speichern-Knopf und die Beschriftung über dem Namensfeld (auf dem Handy steht der Titel schon darüber).
    Sie stehen im DOM, damit die breite Fassung ohne zweiten Renderpfad auskommt — hier sind sie aus. */
@@ -2350,6 +2355,41 @@ b, strong { font-weight: 600; }
    Umgekehrt gilt fuer `.up-readout-phone`: das ist der alte Zaehler-Satz, und er bleibt der
    Handy-Fassung. Sichtbar ist immer genau eine der beiden Haelften. */
 .up-eyebrow, .up-sub, .up-bal-k, .up-nodes, .up-rank, .up-legend-hint { display: none; }
+
+/* #menu-rework M7 — dieselbe Technik fuer den Kopf der Statistik. Eyebrow und Unterzeile stehen im
+   DOM, damit der Desktop-Pass ohne zweiten Renderpfad auskommt, sind aber bis 1279 px aus dem
+   Layout. Der Kopf der Handy-Fassung bleibt damit Titel plus Schliessen, Zeichen fuer Zeichen wie
+   vorher. */
+.st-eyebrow, .st-sub { display: none; }
+
+/* Der Eyebrow des Lauf-Fensters ist NICHT in dieser Familie: an seiner Stelle stand schon immer eine
+   Kennungszeile in der Deckfarbe, und die bleibt in jeder Breite stehen. Was sich aendert, ist ihr
+   WORTLAUT (aus dem Katalog statt als deutscher Literal im JSX) — kein Layout, keine zweite Zeile.
+   Die Farbe stand bis hierher INLINE; sie zieht hier ein, weil ein Inline-Literal jede Regel schlaegt
+   und die breite Fassung sie auf die Ziel-Helligkeit mischt. Wertgleich uebernommen. */
+.rd-eyebrow { color: var(--deck-a1, #8a7de0); }
+
+/* Die gezeichneten Zeichen des Seed-Chips. Ihre Groesse haengt am Text, in dem sie stehen, damit sie
+   in jedem Zustand mitwachsen statt eine zweite Zahl zu brauchen — dieselbe Bauform wie `.up-mark`. */
+.rd-mark { width: 1em; height: 1em; display: inline-block; vertical-align: -.125em; flex: none; }
+
+/* #menu-rework M7 — die RESERVIERTEN PLAETZE gehoeren der breiten Fassung.
+
+   design-sprache.md §1 („Wenn die Anzahl schwankt") reserviert Platz nach dem Hoechstfall, damit ein
+   Block ueber jeden Spielstand hinweg gleich hoch bleibt und seine Nachbarn nicht verschiebt. Das ist
+   eine Aussage ueber ein RASTER mit festen Zeilen — und das gibt es erst ab 1280 px. Auf dem Handy
+   steht alles im Fluss, dort verschiebt eine kuerzere Liste nichts, und drei gedaempfte Zeilen waeren
+   nur drei Zeilen mehr zu scrollen. Sie stehen deshalb im DOM (ein Renderpfad, wie ueberall in diesem
+   Pass) und sind bis 1279 px aus dem Layout. */
+.st-slot { display: none; }
+
+/* #menu-rework M7 — zwei Flaechen, die INLINE im JSX standen und jetzt hier stehen: der gestapelte
+   Herkunft-Balken der Rekord-Karte und die Spur eines Anteil-Balkens. WERTGLEICH uebernommen
+   (`#0c0d14`, `1px solid #26262e`) — es ist ein Umzug, keine Umgestaltung, und beide sind auch unter
+   1280 px sichtbar. Der Umzug ist die Vorbedingung fuer den Vokabular-Schritt: ein Literal in einem
+   Inline-Stil schlaegt jede Regel, und `!important` ist laut Architektur nicht die Antwort darauf. */
+.st-hbar { background: #0c0d14; border: 1px solid #26262e; }
+.st-track { background: #0c0d14; }
 
 /* Die gezeichneten Zeichen (Haken, Schloss) ersetzen die Emoji. Ihre Groesse haengt am Text, in dem
    sie stehen, damit sie in jedem Zustand mitwachsen statt eine zweite Zahl zu brauchen. */
@@ -4859,7 +4899,10 @@ b, strong { font-weight: 600; }
   /* ---- gemeinsame Schale der drei randverankerten Screens ---------------- */
   .st-root, .lb-root, .go-root {
     padding: 16px 48px 18px !important;
-    background: rgba(12, 12, 16, .94) !important;   /* s. #ueberzug an .up-root */
+    /* #menu-rework M7 — der Ueberzug ist `--sf-scrim-desk`, wertgleich (rgba(12, 12, 16, .94)).
+       `!important` bleibt: die drei Screens setzen ihren Grund INLINE, und der Inline-Wert ist dort
+       ein LITERAL, das unter 1280 px die Handy-Fassung traegt (s. den Eintrag in panel-tokens). */
+    background: var(--sf-scrim-desk) !important;   /* s. #ueberzug an .up-root */
     /* #perf-blur: kein backdrop-filter (gemessen der teuerste Posten des Desktop-Passes); `none !important`,
        weil die Overlays ihren Blur INLINE setzen. Präfix zuerst, Standard zuletzt (lightningcss behält den letzten). */
     -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
@@ -4906,71 +4949,238 @@ b, strong { font-weight: 600; }
     grid-column: 1 / -1; grid-row: 1;
     margin: 0 !important;
     padding: 10px 0 8px !important;
-    background: linear-gradient(180deg, rgba(18, 18, 26, .92) 62%, rgba(18, 18, 26, 0)) !important;
+    background: var(--sf-head-fade) !important;   /* wertgleich, s. @theme */
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
     column-gap: 22px;
-    align-items: center;
   }
-  .st-head > h2, .lb-head > h2 { font-size: var(--text-figure-1); font-weight: 600; }
-  .st-readout {
-    padding-left: 22px;
-    border-left: 1px solid rgba(150, 150, 170, .18);
+  .lb-head { grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; }
+  /* #menu-rework M7 — KOPF-KANON (design-sprache.md §2) fuer die Statistik. ZWEI Zonen statt drei:
+     der Titelblock (Eyebrow · Titel · Unterzeile) und die Aktionszone. Der Auskunftssatz, der bis
+     hierher in der Aktionszone stand, ist die Unterzeile geworden — §2 laesst dort nur Aktionen zu,
+     und die Zeile beantwortet als Unterzeile genau die Frage, die der Screen sonst offen laesst.
+
+     `align-items: start` statt `center` ist der Kern und nicht Geschmack: dadurch sitzt Schliessen
+     immer am selben Punkt unter der Oberkante, egal wie hoch der Titelblock daneben ist. Zentriert
+     gegen einen unterschiedlich hohen Block landet der Knopf in jedem Screen woanders — genau daher
+     kam der Versatz, den M3 am Baum gemessen hat. */
+  .st-head {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+  }
+  .st-eyebrow {
+    display: block; grid-column: 1; grid-row: 1;
+    font-size: var(--text-body-1); font-weight: 500;
+    text-transform: uppercase; letter-spacing: .1em;
+    /* #menu-rework M3-G1 — die ZIEL-HELLIGKEIT der Deckfarbe (design-sprache.md §3): 62 % auf Weiss
+       fuer alles, was als SCHRIFT gelesen wird. Ohne die Mischung faellt der Kontrast bei drei von
+       42 Decks unter 4,5 : 1 (dort gemessen). Das `#ffffff` ist der Mischpartner einer
+       Farbraum-Rechnung, keine Fuellung; die Leiter hat dafuer keinen Schritt, und nach der
+       Schwellenregel (conventions.md 2c) wird gezaehlt statt gepraegt — zweite Sichtung. */
+    color: color-mix(in srgb, var(--deck-a1, #8a7de0) 62%, #ffffff);
+  }
+  .st-head > h2 { grid-column: 1; grid-row: 2; }
+  .st-sub {
+    display: block; grid-column: 1; grid-row: 3;
     font-size: var(--text-body-3); line-height: 1.45; color: #8a8a95;
   }
-  .st-close, .lb-head > button { font-size: var(--text-body-lg-3) !important; padding: 11px 18px !important; border-radius: 8px; }
+  /* Schliessen ist das LETZTE Element, und nichts steht je rechts davon (§2). Es spannt alle drei
+     Zeilen des Titelblocks und richtet sich an dessen Oberkante aus — das ist, was `align-items:
+     start` oben ueberhaupt herstellt. */
+  .st-close { grid-column: 2; grid-row: 1 / span 3; justify-self: end; align-self: start; }
+  .st-head > h2, .lb-head > h2 { font-size: var(--text-figure-1); font-weight: 600; }
+  .st-close, .lb-head > button { font-size: var(--text-body-lg-3) !important; padding: 11px 18px !important; border-radius: var(--rd-md); }
   /* Der Ranglisten-Kopf hat nur zwei Kinder (Titel · Schließen) — ohne festen Platz landete der Knopf in der
      1fr-Spalte und zog sich über die halbe Breite. */
   .lb-head > button { grid-column: 3; justify-self: end; }
   /* Panel-Schale für alle Inhaltsblöcke der vier Screens. */
-  .st-sec, .lb-tabs, .lb-page, .go-heroblock, .go-earn, .go-best, .go-origin, .go-build, .go-stats, .go-layout {
+  /* #menu-rework M7 — `.st-sec` ist HIER RAUS und hat seine eigene Regel: die fünf Sektionen der
+     Statistik werden Panels (Tönung + Rahmen), die übrigen bleiben, wie sie sind. Bestenliste und
+     Siegesbildschirm gehören nicht zu diesem Auftrag. */
+  .lb-tabs, .lb-page, .go-heroblock, .go-earn, .go-best, .go-origin, .go-build, .go-stats, .go-layout {
     border-radius: 14px;
     background: linear-gradient(rgba(27, 26, 36, .93), rgba(22, 22, 32, .95));
   }
 
-  /* ---- Statistik: Band oben, darunter drei Spalten ----------------------- */
-  /* Die letzte Zeile ist `1fr` und nimmt die Restluft auf. Ohne sie verteilt das Raster die Mehrhöhe der
-     spannenden Spalten (Läufe, Wahlverhalten) auf die Zeilen 4 UND 5 — zwischen „Bestes Build" und
-     „Was am besten läuft" klaffte dann genau diese Differenz (derselbe Fall wie im Willkommen-Dialog). */
-  .st-card { grid-template-columns: 1fr 1.15fr 1fr; grid-template-rows: auto auto auto auto 1fr; }
-  .st-sec { margin-top: 22px !important; padding: 15px 17px 17px; }
-  /* Überblick über die volle Breite: Kennzahlen links, Score-Verlauf RECHTS DANEBEN statt darunter. Das ist
-     der eigentliche Gewinn der Breite — beides ist dieselbe Frage („wie läuft es gerade?") und wurde vorher
-     durch 90 px Abstand getrennt. */
-  .st-sec[data-sec="overview"] {
+  /* ---- Statistik: Kopf fest, Inhalt scrollt, darunter drei Spalten -------
+     #menu-rework M7 - DER INHALT SCROLLT, NICHT DAS FENSTER (docs/statistik-redesign.md).
+
+     GEMESSEN am Stand davor, mit dem benannten Profil aus evidence/M7/seed.mjs: die Karte ist an
+     1280 x 720, 1400 x 700 und 1536 x 791 dieselben 982,56 px hoch - die Sektionshoehen haengen
+     nicht am Fenster, nur die Breiten. Bei 1280 x 720 lagen damit 272,56 px unter der Falz und der
+     Ueberzug lief 1,40x mit (1,27x bei 1536 x 791). Der Screen war der einzige des Passes, der das
+     FENSTER scrollte statt eines Panels, und der sticky-Kopf war die Notloesung dafuer.
+
+     Jetzt: die Karte klemmt auf die Fensterhoehe, der Kopf ist Zeile 1 und steht fest, die Haarlinie
+     Zeile 2, und `.st-body` ist Zeile 3 mit dem EINEN Scroller des Screens. Damit verhaelt sich die
+     Statistik wie Baum und Bestenliste, und der sticky-Kopf ist keine Notloesung mehr, sondern der
+     Kopf des Kanons. */
+  .st-root { overflow: hidden !important; }
+  .st-card {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr);
+    max-height: 100%;
+    min-height: 0;
+  }
+  /* Der Inhaltsbereich. Das Spaltenraster sitzt HIER und nicht mehr an der Karte: die Karte traegt
+     nur noch Kopf, Linie und Rumpf, damit der Kopf ausserhalb des Scrollers liegen kann.
+
+     `minmax(0, 1fr)` in Zeile 2 ist die Bedingung dafuer, dass die Lauf-Liste ihre Spalte MESSEN
+     kann (design-sprache.md 1: "Panels sitzen in einem Raster mit festen Zeilen, nicht in einem
+     Fluss"). Die Hoehe der Spalte haengt damit am Raster und nicht am Inhalt der Liste - ohne das
+     waere "so viele Zeilen, wie passen" eine Rueckkopplung.
+     `overflow-y: auto` ist der Rueckfall fuer ein Fenster, das selbst dafuer zu flach ist. Dass
+     alles passt, wird nicht behauptet; erreichbar ist es in jedem Fall. */
+  .st-body {
+    display: grid;
     grid-column: 1 / -1; grid-row: 3;
+    /* `align-self: stretch` ist nicht Beiwerk, sondern die Bedingung: die Karte traegt
+       `align-items: start` (geteilt mit Bestenliste und Victory), und ein Rasterkind, das nicht
+       gestreckt wird, nimmt seine INHALTSHOEHE und laeuft aus seiner Zeile heraus. Gemessen: Zeile 3
+       stand auf 568,7 px, der Rumpf auf 885 px, und die Differenz war schlicht abgeschnitten -
+       `overflow: hidden` an der Wurzel macht daraus unerreichbaren Inhalt statt eines Scrollbalkens. */
+    align-self: stretch;
+    grid-template-columns: 1fr 1.15fr 1fr;
+    /* FESTE ZEILEN, und `minmax(0, 1fr)` ist die gemessene Wahl unter dreien.
+
+       Bei 1280 x 720 bleiben nach Kopf (122,3 px) und Ueberblick (159,8 px) 408,8 px fuer die
+       Spaltenzeile. `minmax(min-content, 1fr)` wurde probiert und verworfen: die Zeile waechst dann
+       auf 725,6 px - den `min-content` der Wahlverhalten-Spalte - und der Rumpf scrollt 1,55x statt
+       1,13x. Ein eigener Scroller macht den `min-content`-Beitrag eines Rasterkindes NICHT null;
+       `min-height: 0` regelt nur sein Minimum als Flex-Kind. Gemessen, nicht angenommen.
+
+       Die Zeile klemmt deshalb auf das, was das Fenster hergibt. Was laenger ist, scrollt in sich
+       (`.st-runs`, `.st-picked2`) oder mit dem Rumpf (Spalte 1) - beides ist design-sprache.md 1,
+       und keins davon schiebt einen Nachbarn. */
+    grid-template-rows: auto minmax(0, 1fr);
+    column-gap: 22px;
+    align-items: stretch;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  /* #menu-rework M7 — DIE SEKTION IST EIN PANEL (design-sprache.md §1).
+
+     GEMESSEN war sie keins: `border-top-width: 0px`, `background-color: transparent` und Radius 14 —
+     eine reine Abstandsklammer über dem Glasverlauf. Deshalb las sich der ungleiche Spaltenfuß als
+     Fehler statt als Kante. (Der Entwurf sagt „Hintergrund transparent"; präzise ist: die FARBE ist
+     transparent, das BILD trug den Glasverlauf. Was fehlte, war der Rahmen.)
+
+     Ziel und Umsetzung: die Deck-Tönung und der 26-%-Rahmen, beide aus dem Vokabular — `--sf-deck`
+     ist genau dieses Rezept, `--ed-deck-panel` genau dieser Rahmen. Sie sind kein neuer Wert: die
+     Optionen tragen `--sf-deck` seit M1, und `--ed-deck-panel` steht seit dem Freeze im Annex und
+     hatte bis hierher keine Fundstelle.
+
+     ABWEICHUNG, benannt: das Vokabular tönt 9 / 5 %, `design-sprache.md` §1 sagt 5 / 1 %. Der Wert
+     eines ausgelieferten Tokens zu ändern ist ausdrücklich nicht Sache dieses Auftrags, und die
+     Optionen stehen bereits auf 9 / 5. Als Befund gemeldet (M7-F07), nicht an der Fundstelle
+     umschifft — Letzteres wäre Tripwire 1 mit Hut.
+
+     Der Innenabstand geht auf `--in-base` (18 px, vorher 15/17/17) — dieselbe bewusste Abweichung,
+     die M3 an den Baum-Panels gemessen und benannt hat. */
+  .st-sec {
+    margin-top: 22px !important;
+    padding: var(--in-base);
+    border-radius: var(--rd-lg);
+    background: var(--sf-deck);
+    border: 1px solid var(--ed-deck-panel);
+  }
+  /* Ueberblick ueber die volle Breite: Kennzahlen links, Score-Verlauf RECHTS DANEBEN statt darunter.
+     Das ist der eigentliche Gewinn der Breite - beides ist dieselbe Frage ("wie laeuft es gerade?")
+     und wurde vorher durch 90 px Abstand getrennt. */
+  .st-sec[data-sec="overview"] {
+    grid-column: 1 / -1; grid-row: 1;
     display: grid; grid-template-columns: minmax(0, 1fr) 620px; column-gap: 22px; align-items: center;
+    margin-top: 0 !important;
   }
   .st-sec[data-sec="overview"] > .st-sech { grid-column: 1 / -1; }
   .st-kpis  { grid-column: 1; gap: 12px !important; }
   .st-trend { grid-column: 2; margin-top: 0 !important; }
-  /* #kpi-kacheln — die fünf Kennzahlen sind die Kernaussage des Screens. Der Wert steht größer, die
-     Beschriftung wird zur Versalzeile und rückt nach links; mittig gesetzte Kurzwörter über einer Zahl
-     lasen sich als Bildunterschrift.
-     KEINE Farbe dazu, und das ist Absicht: auf diesem Schirm heißt Gold „deine Bestmarke" (s. #kante am
-     Rekord-Lauf). Fünf farbige Kanten nähmen dem Gold genau diese Aussage.
-     Fläche, Rahmen und Radius stehen NICHT hier, sondern EINMAL an `.st-box` (#st-ruhe unten) — die
-     Kacheln teilen sie sich mit den übrigen sieben Kästen des Screens. */
+  /* #kpi-kacheln - die fuenf Kennzahlen sind die Kernaussage des Screens. Der Wert steht groesser,
+     die Beschriftung wird zur Versalzeile und rueckt nach links; mittig gesetzte Kurzwoerter ueber
+     einer Zahl lasen sich als Bildunterschrift.
+     KEINE Farbe dazu, und das ist Absicht: auf diesem Schirm heisst Gold "deine Bestmarke" (s. #kante
+     am Rekord-Lauf). Fuenf farbige Kanten naehmen dem Gold genau diese Aussage.
+     Flaeche, Rahmen und Radius stehen NICHT hier, sondern EINMAL an `.st-box` (#st-ruhe unten) - die
+     Kacheln teilen sie sich mit den uebrigen Kaesten des Screens. */
   .st-kpis > div {
-    padding: 12px 15px 13px !important;
+    /* Der Innenabstand eines inneren Kastens ist `--in-snug` (13 px, vorher 12/15/13). */
+    padding: var(--in-snug) !important;
     text-align: left !important;
   }
   .st-kpis > div > div:first-child {
     font-size: var(--text-meta-2); letter-spacing: .14em; text-transform: uppercase; opacity: .42;
   }
   .st-kpis > div > div:last-child { font-size: var(--text-figure-3); line-height: 1.15; margin-top: 3px; }
-  /* Links der Rekordlauf und die Auswertung, in der Mitte die Läufe, rechts das Wahlverhalten. Feste Plätze
-     statt auto-flow: sonst entscheidet die Reihenfolge im JSX, was wo landet. */
-  .st-sec[data-sec="best"]   { grid-column: 1; grid-row: 4; }
-  .st-sec[data-sec="works"]  { grid-column: 1; grid-row: 5; }
-  .st-sec[data-sec="runs"]   { grid-column: 2; grid-row: 4 / span 2; }
-  .st-sec[data-sec="picked"] { grid-column: 3; grid-row: 4 / span 2; }
-  /* In der Lauf-Liste ist Platz für alles: Serie und Crit-Quote sind am Handy `hidden sm:inline`, hier stehen
-     sie ohnehin. Nur die Zeilenhöhe wird etwas großzügiger, damit 10 Zeilen keine Tabelle werden. */
-  .st-sec[data-sec="runs"] button { padding-top: 7px; padding-bottom: 7px; }
-  /* In der ~500 px schmalen Spalte stehen Skills und Perks UNTEREINANDER — nebeneinander bleiben von den
-     Namen fünf Zeichen übrig. */
+  /* #menu-rework M7 - SPALTE 1 IST EIN STAPEL, KEINE RASTERZEILE.
+
+     Vorher standen "Bestes Build" und "Was am besten laeuft" als zwei Rasterzeilen (4 und 5) neben
+     den zwei spannenden Spalten. Eine Rasterzeile streckt sich am laengsten Nachbarn - die Mehrhoehe
+     der Nachbarspalten verteilte sich also auf BEIDE Zeilen, und zwischen den zwei Panels klaffte
+     genau diese Differenz. Restluft gehoert an den FUSS einer Spalte, nie zwischen zwei Panels: Luft
+     am Ende liest sich als "die Spalte ist zu Ende", Luft in der Mitte als "hier fehlt etwas"
+     (design-sprache.md 1).
+
+     Als Flex-Spalte mit `gap` sammelt sich die Restluft unten und die zwei Panels stehen aneinander.
+     Der Abstand kommt aus dem `gap` - die `margin-top` der Sektion faellt hier weg, sonst stuende
+     sie doppelt.
+
+     Links der Rekordlauf und die Auswertung, in der Mitte die Laeufe, rechts das Wahlverhalten.
+     Feste Plaetze statt auto-flow: sonst entscheidet die Reihenfolge im JSX, was wo landet. */
+  .st-col1 {
+    display: flex; flex-direction: column; gap: 22px;
+    grid-column: 1; grid-row: 2;
+    min-height: 0;
+  }
+  .st-col1 > .st-sec { margin-top: 0 !important; }
+  .st-sec[data-sec="runs"]   { grid-column: 2; grid-row: 2; }
+  .st-sec[data-sec="picked"] { grid-column: 3; grid-row: 2; }
+  /* Die zwei spannenden Sektionen sind selbst Spalten: Ueberschrift oben, Inhalt darunter, und der
+     Inhalt bekommt die Resthoehe. Ohne `min-height: 0` waechst ein Flex-Kind ueber seinen Container
+     hinaus statt zu scrollen - die Standardvorgabe ist `auto`, nicht `0`. */
+  .st-sec[data-sec="runs"], .st-sec[data-sec="picked"] {
+    display: flex; flex-direction: column; min-height: 0;
+    margin-top: 0 !important;
+  }
+  /* Ein Block, der doch laenger wird, scrollt IN SICH - er schiebt nie seinen Nachbarn
+     (design-sprache.md 1, dieselbe Naht wie im Baum seit #flach).
+
+     `flex: 1 1 auto` gehoert dazu und ist nicht Beiwerk: OHNE das nimmt der Inhaltsblock seine
+     INHALTSHOEHE statt der Spaltenhoehe, und `useRunCap` misst dann sich selbst — bei 1920 x 1080
+     stand die Liste auf 476 px in einer 738-px-Spalte und meldete „zehn passen", obwohl vierzehn
+     hineingepasst haetten. Eine Rueckkopplung, die zufaellig bei zehn stabil ist, ist keine Messung.
+     Mit dem Faktor fuellt der Block die Spalte, und die Mehrhoehe geht in die Kacheln statt in die
+     Fugen (design-sprache.md 1). */
+  .st-runs, .st-picked2 { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+  /* Und `align-content: start` an der LISTE, sonst streckt das Raster seine Zeilen auf die neue
+     Hoehe: gemessen wurden aus den 44 px Klickziel 63,8 px, und die Restluft sass zwischen den
+     Zeilen statt am Fuss der Spalte. Bei den Kaesten des Wahlverhaltens ist das Strecken richtig
+     (Mehrhoehe geht in die KACHELN), bei einer Liste aus Klickzielen nicht — dort ist die Hoehe
+     eine Zusage. */
+  .st-runs { align-content: start; }
+  /* #menu-rework M7 - DAS KLICKZIEL DER LAUF-ZEILEN.
+
+     GEMESSEN standen die zehn Zeilen auf 33,33 px - die kleinste Klickflaeche des ganzen
+     Desktop-Passes, und jede von ihnen oeffnet ein Fenster. design-sprache.md 4 sagt 44 px, ohne
+     Ausnahme. Als `min-height` und nicht ueber die Polsterung: das Klickziel ist die volle Hoehe,
+     sichtbar bleibt dasselbe, und die abgestimmte Polsterung bleibt unangetastet. */
+  .st-sec[data-sec="runs"] button {
+    /* Eine Zeile polstert mit `--in-tight` (11 px, vorher 7). Sichtbar aendert das nichts: das
+       Klickziel steht auf 44 px, und die Zeile war mit 33,3 px ohnehin darunter. */
+    padding-top: var(--in-tight); padding-bottom: var(--in-tight);
+    min-height: 44px;
+  }
+  /* In der ~500 px schmalen Spalte stehen Skills und Perks UNTEREINANDER - nebeneinander bleiben von
+     den Namen fuenf Zeichen uebrig. */
   .st-picked2 { grid-template-columns: minmax(0, 1fr) !important; }
+  /* #menu-rework M7 - DIE RESERVIERTEN PLAETZE (design-sprache.md 1, "Wenn die Anzahl schwankt").
+
+     Ein ZIEL reserviert Platz nach dem Hoechstfall, laesst freie Plaetze GEDAEMPFT stehen und sagt,
+     was fehlt. Der Block ist damit ueber jeden Spielstand hinweg gleich hoch - und sagt nebenbei
+     etwas Wahres: es ist noch Platz. Die 42 % sind der Daempfungswert dieser Sprache (5).
+
+     Der Platz traegt dieselbe Bauform wie die Zeile, die er vertritt (dasselbe Raster, dieselbe
+     Spur) - ein Platzhalter, der ANDERS gebaut ist als sein Original, haelt die Hoehe nur zufaellig. */
+  .st-slot { display: grid; opacity: .42; }
 
   /* ---- Bestenliste / Ranked: Navigationsspalte statt Reiterzeile --------- */
   /* Die Karte setzt ihre Höhe INLINE (`min(88vh, 760px)`, aus der Handy-Fassung) — `max-height` allein
@@ -5253,7 +5463,7 @@ b, strong { font-weight: 600; }
        mit der Begründung, die Detailansicht liege über der Statistik statt über dem Hub — am Gerät las sich
        genau das als „schwarzer Kasten", während jeder Nachbar-Screen leicht durchscheint. Der Blur fällt
        weiter weg (#perf-blur); `!important`, weil der Grund inline am Wurzelknoten steht. */
-    background: rgba(12, 12, 16, .94) !important;
+    background: var(--sf-scrim-desk) !important;
     -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
     /* Der Screen MUSS scrollen können. Die Karte scrollte auf dem Handy in sich; auf dem Desktop hat sie
        das abgegeben (`overflow: visible`, sonst klippte sie die Kopfzeile) — und der Wurzelknoten hatte
@@ -5268,7 +5478,12 @@ b, strong { font-weight: 600; }
   .rd-card {
     width: min(1500px, 100%);
     max-width: none;
-    max-height: none !important;
+    /* #menu-rework M7 - DER KOPF VERLAESST DEN SCROLLER, wie in der Statistik. Die Karte klemmt auf
+       die Fensterhoehe; Kopf (Zeile 1-2), Haarlinie (Zeile 3) und Rumpf (Zeile 4) sind ihre Zeilen,
+       und nur der Rumpf scrollt. GEMESSEN war das Fenster beim vollen Lauf 1591,8 px hoch gegen
+       720 px Bildschirm - dass es passt, wird nicht behauptet; erreichbar ist alles. */
+    max-height: 100% !important;
+    min-height: 0;
     margin-block: 0 !important;
     /* Die Handy-Karte scrollt in sich (`overflow-y: auto`) — als Raster ohne eigenes Polster (`padding: 0`)
        schnitt genau das die Kopfzeile an der linken Kante ab: die Kennung beginnt bei x = 49, geklemmt wurde
@@ -5279,7 +5494,8 @@ b, strong { font-weight: 600; }
     box-shadow: none !important;
     padding: 0 !important;
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: auto auto auto minmax(0, 1fr);
     column-gap: 22px;
     align-items: start;
     align-content: start;
@@ -5297,7 +5513,7 @@ b, strong { font-weight: 600; }
      ein 11-px-Label allein in einer 480-px-Spalte neben einer 46-px-Zahl. */
   .rd-title { grid-column: 1; grid-row: 1; align-self: end; }
   .rd-close { grid-column: 3; grid-row: 1 / span 2; justify-self: end; align-self: center;
-    font-size: var(--text-body-lg-3) !important; padding: 11px 18px !important; border-radius: 8px; }
+    font-size: var(--text-body-lg-3) !important; padding: 11px 18px !important; border-radius: var(--rd-md); }
   .rd-card::before {
     content: "";
     grid-column: 1 / -1; grid-row: 3;
@@ -5316,28 +5532,89 @@ b, strong { font-weight: 600; }
   }
   .rd-kpi-i > div:first-child { font-size: var(--text-title-3) !important; }
 
+  /* Dieselbe Panel-Fassung wie die Sektionen der Statistik, und aus demselben Grund: es ist eine
+     Bildsprache, kein Screen-Detail. `!important` an Flaeche und Rahmen, weil `.rd-c3` ein `details`
+     mit eigenem Inline-Stil ist. */
   .rd-c1, .rd-c2, .rd-c3, .rd-c4 {
     display: block;
-    grid-row: 4;
-    border-radius: 14px;
-    padding: 15px 17px 17px;
-    margin-top: 22px !important;
-    background: linear-gradient(rgba(27, 26, 36, .93), rgba(22, 22, 32, .95)) !important;
-    border: 0 !important;
+    border-radius: var(--rd-lg);
+    padding: var(--in-base);
+    margin-top: 0 !important;
+    background: var(--sf-deck) !important;
+    border: 1px solid var(--ed-deck-panel) !important;
   }
-  /* Linke Hälfte: eigenes Raster (Kennzahlen | Build, darunter der Verlauf über beide Spalten). Es ist EIN
-     Rasterfeld der Karte — die Aufstellung rechts steht damit einfach daneben, statt Zeilen zu überspannen. */
-  .rd-left {
-    display: grid; grid-column: 1 / span 2; grid-row: 4;
-    grid-template-columns: 1fr 1fr; grid-template-rows: min-content 1fr;
-    column-gap: 22px; align-self: stretch;
+  /* WER SCROLLT UND WER WAECHST, und `min-height` ist hier der Schalter - gemessen, nicht geraten.
+
+     Der Beitrag eines Rasterkindes zu einer `auto`-Zeile ist sein `min-content`, und `min-height: 0`
+     setzt den auf null. Steht es an ALLEN vier Panels, faellt Reihe 2 auf die Restluft zusammen: der
+     Verlauf stand mit 175,2 px in einem Panel, dessen Inhalt 1015 px misst, und der Rumpf scrollte
+     2,45x an einem abgeschnittenen Graphen vorbei.
+
+     Also getrennt: Kennzahlen und Aufstellung SCROLLEN IN SICH (`min-height: 0` plus eigener
+     Scroller) - sie sitzen in einer festen bzw. gespannten Zeile und duerfen ihren Nachbarn nicht
+     schieben. Der Verlauf WAECHST, und Reihe 2 folgt ihm; weil die Aufstellung beide Reihen spannt,
+     enden beide Haelften damit auf derselben Linie. Der Build behaelt seine Masse, seine Liste
+     scrollt darin (s. `.rd-blist2`). */
+  .rd-c1 { min-height: 0; overflow-y: auto; }
+  .rd-c2, .rd-c3 { min-height: 0; }
+  /* #menu-rework M7 - DIE SPUREN, UND WARUM SIE UNGLEICH SIND.
+
+     Drei gleich breite Spuren fuer drei ungleiche Inhalte sind keine Ordnung, sondern eine
+     Behauptung (design-sprache.md 1). GEMESSEN standen hier 376,66 - 376,66 - 376,66 px; das
+     Verhaeltnis 290 : 544 : 290 des Zielentwurfs steht deshalb als BRUCHTEIL und nicht als Pixelwert
+     - bei der gemessenen Kartenbreite von 1174 px ergibt `1fr 1.876fr 1fr` genau diese drei Zahlen,
+     und an jeder anderen Breite dasselbe Verhaeltnis statt eines Werts, der nur an einer stimmt.
+
+     DIE AUFSTELLUNG BEKOMMT EINE SPUR UEBER BEIDE REIHEN. Sie ist ein Hochformat (5 Spalten zu
+     8 Reihen aus 5:7-Karten, rund 1 : 2,2); in einer Reihe aus Querformaten zwingt sie entweder sich
+     selbst auf Briefmarkengroesse oder dem Nachbarn Luft auf. GEMESSEN lief die linke Haelfte
+     455-598 px tiefer als das Brett - das Loch, das der Zielentwurf nennt, nur groesser als dort
+     notiert (die Zahl haengt am Lauf, nicht am Layout).
+
+     DIE ERSTE REIHE MISST FEST 380 px, und das ist die Bedingung dafuer, dass das Umschalten im
+     Build-Panel nichts verschiebt: ein Panel, dessen Inhalt umschaltet, behaelt seine Masse.
+     Zugleich macht sie die Klammer `.rd-left` ueberfluessig - die stand nur da, weil ein
+     ueberspannendes Element seine Mehrhoehe auf ALLE Zeilen verteilt, die es kreuzt. Eine FESTE
+     Zeile hat dieses Problem nicht, also reicht der Rumpf seine vier Panels direkt ins Raster. */
+  .rd-body {
+    display: grid;
+    grid-column: 1 / -1; grid-row: 4;
+    grid-template-columns: 1fr 1.876fr 1fr;
+    /* Reihe 2 ist `auto` und nicht `1fr`, und das ist gemessen: mit `minmax(0, 1fr)` bekommt der
+       Verlauf bei 1280 x 720 genau 175,2 px - der beschriftete Graph bringt sein eigenes
+       Seitenverhaeltnis mit (620 x 250) und der Stich-Graph neun Zeilen, also stand der halbe Inhalt
+       ausserhalb seines Panels und der Rumpf scrollte 2,45x. `auto` laesst die Reihe dem Inhalt
+       folgen; weil die Aufstellung BEIDE Reihen spannt, endet sie damit automatisch auf derselben
+       Linie wie die linke Haelfte - ohne dass irgendwo Gleichhoehe erzwungen waere. Ist gar kein
+       Verlauf da (Alt-Lauf, fremder Board-Eintrag), ist die Reihe null hoch statt leer. */
+    grid-template-rows: 380px auto;
+    gap: 22px;
+    align-self: stretch;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
   }
+  /* OHNE AUFSTELLUNG faellt die dritte Spur WEG, statt leer zu bleiben - die Spaltenzahl folgt dem
+     Inhalt. Der Ausnahmefall ist der Notfallpfad des Speichers und der fremde Board-Lauf. */
+  .rd-body[data-lanes="2"] { grid-template-columns: 1fr 1.876fr; }
   .rd-c1 { grid-column: 1; grid-row: 1; }
   .rd-c2 { grid-column: 2; grid-row: 1; }
-  /* Der Verlauf füllt die untere linke Hälfte bis auf die Höhe der Aufstellung — beide Seiten enden damit auf
-     derselben Linie, statt dass rechts ein 200 px langer Panelrest allein steht. */
+  /* Der Verlauf fuellt die untere linke Haelfte bis auf die Hoehe der Aufstellung - beide Seiten enden
+     damit auf derselben Linie, statt dass rechts ein langer Panelrest allein steht. */
   .rd-c4 { grid-column: 1 / span 2; grid-row: 2; align-self: stretch; }
-  .rd-c3 { grid-column: 3; grid-row: 4; overflow: visible !important; }
+  /* DIE AUFSTELLUNG ENDET AN IHREM INHALT, und das ist eine Entscheidung gegen den naheliegenden
+     `stretch`. GEMESSEN misst das Brett auf dem Desktop 257,6 x 354,1 px in einer 291-px-Spur - ein
+     Verhaeltnis von 1 : 1,375, nicht die 1 : 2,2 des Zielentwurfs (der rechnet mit 5:7-Karten; ab
+     640 px traegt `CardTile` `sm:aspect-square`). Ueber beide Reihen gestreckt stuende das Panel
+     damit 1434 px hoch um 731 px Inhalt - aus dem kuerzesten einen HOHLEN zu machen ist genau das,
+     was design-sprache.md 1 verbietet („Gleichhoehe wird nie erzwungen"). Die Spur ueber beide
+     Reihen bleibt: sie gibt dem Hochformat den hochformatigen Platz. Gefuellt wird sie nicht. */
+  .rd-c3 { grid-column: 3; grid-row: 1 / span 2; align-self: start; }
+  .rd-body[data-lanes="2"] .rd-c4 { grid-row: 2; }
+  /* Ziel-Helligkeit der Deckfarbe fuer den Eyebrow (design-sprache.md §3): 62 % auf Weiss, weil er
+     als SCHRIFT gelesen wird. Unter 1280 px bleibt er ungemischt — die Handy-Fassung wird in diesem
+     Umbau nicht angefasst. */
+  .rd-eyebrow { color: color-mix(in srgb, var(--deck-a1, #8a7de0) 62%, #ffffff); }
   /* Panel-Überschriften wie in den anderen Screens; die Texte kommen aus dem Victory-Katalog (kein neuer Text). */
   .rd-ph {
     font-size: var(--text-meta-4); letter-spacing: .2em; text-transform: uppercase; font-weight: 600;
@@ -5346,6 +5623,14 @@ b, strong { font-weight: 600; }
   /* Das erste Element NACH der Panel-Überschrift (nicht `nth-child`: seit dem Ring steht ein `<i>` davor). */
   .rd-c1 > .rd-ph + * { margin-top: 0 !important; }
   .rd-c2 > .mt-4 { margin-top: 0 !important; }
+  /* #menu-rework M7 - ACHT WERTE, ZWEISPALTIG IN VIER REIHEN. Eine schmale Spur mit acht gleichen
+     Zeilen untereinander liest sich als Menue, nicht als Kennzahlenblock; und vierspaltig bleiben in
+     einer 290-px-Spur von den Beschriftungen fuenf Zeichen uebrig. Die Kacheln fuellen die
+     Reihenhoehe - Mehrhoehe geht in die Kacheln, nicht in die Fugen (design-sprache.md 1). */
+  .rd-c1 { display: flex; flex-direction: column; }
+  .rd-c1 > .grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important; }
+  .rd-c1 > .grid:last-child { flex: 1 1 auto; }
+  .rd-c1 .rs-cell { display: flex; flex-direction: column; justify-content: center; }
   /* Der Aufklapp-Griff ist hier die Panel-Überschrift — offen (`open={wide}`) und ohne eigenen Kasten. */
   .rd-c3 > summary {
     font-size: var(--text-meta-4); letter-spacing: .2em; font-weight: 600; color: #b9b3cf; opacity: 1 !important;
@@ -5371,6 +5656,87 @@ b, strong { font-weight: 600; }
   .rd-c4 .rg-perTrick { margin-top: 0 !important; background: none !important; border: 0 !important; }
   .rd-c4 .rg-perTrick > summary { padding: 0 0 8px !important; list-style: none; cursor: default; }
   .rd-c4 .rg-perTrick > div { padding: 0 !important; }
+
+  /* ---- #rd-zaehlen: das Build-Panel zaehlt, statt aufzuzaehlen ------------
+     Das Panel behaelt in beiden Zustaenden dieselben Masse (Spur 2, Reihe 1, feste 380 px) - sonst
+     schiebt es beim Oeffnen seine Nachbarn, und das ist dasselbe Verbot wie im Raum, nur in der Zeit
+     (design-sprache.md 1). Was umschaltet, ist der INHALT: fuenfzehn Kacheln, oder eine Reiterzeile
+     plus zwei zusammengeklappte Zeilen plus die Liste. */
+  .rd-c2 { display: flex; flex-direction: column; }
+  /* Der Feldblock scrollt, wenn er doch nicht passt. Gemessen war er 422 px hoch in einem 380-px-
+     Panel, und weil ein Block mit `overflow: visible` nicht klemmt, sondern HERAUSLAEUFT, stand die
+     Gebaeude-Zeile ueber dem Verlauf-Panel darunter. Auf den Uebergabe-Aufnahmen zu sehen, nicht in
+     einer Zahl — Fenster passen ist kein Zustand, den der Zustandsdurchlauf abfragt. */
+  .rd-bfs { display: flex; flex-direction: column; gap: 14px; min-height: 0; overflow-y: auto; }
+  /* Die Gruppenbeschriftung steht NEBEN ihren Feldern, nicht darueber — dieselbe Zeilenform, die der
+     geoeffnete Zustand fuer die zwei nicht gewaehlten Gruppen ohnehin benutzt. Sie spart die drei
+     Beschriftungszeilen (rund 69 px) und ist genau das, was die fuenfzehn Felder brauchen, um in die
+     vom Entwurf gesetzten 380 px zu passen. Eine Bauform weniger, nicht eine mehr. */
+  .rd-bg {
+    display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto;
+    align-items: center; column-gap: 10px;
+  }
+  .rd-bg-k {
+    font-size: var(--text-meta-1); letter-spacing: .14em; text-transform: uppercase;
+    color: #5c5c68; font-family: var(--font-mono, ui-monospace, monospace);
+  }
+  .rd-bg-f { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; }
+  .rd-bg[data-group="buildings"] .rd-bg-f { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  /* Ein Zaehlfeld. Die ZAHL traegt die Kategoriefarbe - sie ist Inhalt, kein Chrome (3); die
+     Beschriftung bleibt neutral, damit die Zeile nicht zur Farbwolke wird. */
+  .rd-bf {
+    display: grid; grid-template-rows: auto auto; row-gap: 2px;
+    padding: 9px 10px; border-radius: var(--rd-sm); text-align: left; min-height: 44px;
+    background: rgba(255, 255, 255, .012);
+    border: 1px solid var(--ed-quiet);
+    transition: background .12s ease;
+  }
+  .rd-bf:hover { background: rgba(255, 255, 255, .045); }
+  .rd-bf-n { font-size: var(--text-figure-3); line-height: 1.1; color: var(--c, #8a8a95); }
+  .rd-bf-k { font-size: var(--text-meta-1); letter-spacing: .06em; color: #8a8a95; }
+  /* Leere Kategorien bleiben STEHEN und sind gedaempft - sie sind nicht bei null, sie sind leer,
+     und das ist eine andere Aussage (5). */
+  .rd-bf.is-empty { opacity: .42; }
+  /* GEOEFFNET werden dieselben Felder zur Reiterzeile: dieselbe Reihenfolge, dieselben Farben, nur
+     flach. Das gewaehlte traegt die Unterkante in seiner Farbe - aktiv braucht beide Signale,
+     hellerer Grund UND Unterkante (4, „Segmented"). */
+  .rd-bf-tab {
+    grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto;
+    align-items: baseline; column-gap: 6px; row-gap: 0;
+    min-height: 0; padding: 7px 9px;
+    background: none; border: 0; border-radius: var(--rd-sm) var(--rd-sm) 0 0;
+    box-shadow: inset 0 -2px 0 transparent;
+  }
+  .rd-bf-tab .rd-bf-n { font-size: var(--text-body-lg-3); }
+  .rd-bf-tab.is-on { background: rgba(255, 255, 255, .045); box-shadow: inset 0 -2px 0 var(--c, #8a8a95); }
+  .rd-bf-tab.is-on .rd-bf-k { color: #e8e8ea; }
+  /* Die zwei NICHT gewaehlten Gruppen klappen auf je EINE Zeile zusammen, statt zu verschwinden:
+     sie bleiben sichtbar und anklickbar, und genau das ist der Unterschied zu einem Overlay. Ihre
+     Beschriftung wandert dabei neben die Felder, damit die Zeile wirklich eine ist. */
+  .rd-bg-tab { row-gap: 0; }
+  .rd-bfs .rd-bg-tab:not(.is-open) .rd-bf-tab { opacity: .7; }
+  .rd-bfs .rd-bg-tab:not(.is-open) .rd-bf-k { display: none; }
+  /* Die Liste scrollt IM Panel - die einzige Stelle dieses Screens, an der eine Liste beliebig lang
+     sein darf. Sie bekommt die Resthoehe, damit das Panel seine 380 px behaelt. */
+  .rd-blist2 {
+    flex: 1 1 auto; min-height: 0; overflow-y: auto;
+    margin-top: 12px; display: flex; flex-direction: column; gap: 10px;
+    border-top: 1px solid var(--ed-quiet); padding-top: 10px;
+  }
+  /* Der Abstand zwischen zwei Eintraegen ist eine FUGE und kein Innenabstand — er steht deshalb als
+     `gap` an der Liste und nicht als `padding` an der Zeile. Die Unterscheidung ist die, die 2c
+     zwischen „Innenabstand" und „Anordnung" zieht, und sie ist hier auch die einfachere Regel. */
+  .rd-bl-row {
+    display: grid; grid-template-columns: minmax(0, auto) auto; column-gap: 8px;
+  }
+  .rd-bl-n { font-size: var(--text-body-3); font-weight: 600; }
+  .rd-bl-t {
+    font-size: var(--text-meta-1); letter-spacing: .1em; text-transform: uppercase;
+    color: #5c5c68; justify-self: end; align-self: center;
+  }
+  .rd-bl-d { grid-column: 1 / -1; font-size: var(--text-meta-3); line-height: 1.4; color: #8a8a95; }
+  .rd-bl-empty { font-size: var(--text-body-3); color: #8a8a95; opacity: .42; }
+  .rd-bl-hidden { margin-top: 10px; font-size: var(--text-meta-3); line-height: 1.4; opacity: .6; }
 
   /* ==========================================================================
      #rd-ruhe — die Lauf-Details im Desktop-Ton (19.08.2026)
@@ -5398,14 +5764,16 @@ b, strong { font-weight: 600; }
   .rd-card .rs-cell, .rd-card .rs-tree, .rd-card .rs-note, .rd-card .rd-blist {
     background: rgba(255, 255, 255, .012) !important;
     box-shadow: none !important;
-    border-radius: 6px !important;
+    border-radius: var(--rd-sm) !important;
   }
   /* Rahmen NUR dort abräumen, wo er nichts sagt. Die Gebäudeliste behält ihren blauen (Architekt) und
      die Hinweiszeilen ihre farbige bzw. gestrichelte Kante — die trägt dort die Aussage. */
-  .rd-card .rs-cell, .rd-card .rs-tree { border: 1px solid rgba(150, 150, 170, .12) !important; }
-  /* Der Rest des Radien-Zoos: Perk-/Skill-Chips und die Einträge der Gebäudeliste. Kein `!important`
-     nötig — index.css steht ungelayert hinter `@import "tailwindcss"` und schlägt die Utilities. */
-  .rd-card .rs-chips > *, .rd-card .rd-blist button { border-radius: 6px; }
+  .rd-card .rs-cell, .rd-card .rs-tree { border: 1px solid var(--ed-quiet) !important; }
+  /* Der Rest des Radien-Zoos: die Einträge der Gebäudeliste. Kein `!important` nötig — index.css
+     steht ungelayert hinter `@import "tailwindcss"` und schlägt die Utilities.
+     #menu-rework M7 — `.rs-chips` ist hier raus: ab 1280 px rendert das Build-Panel keine Chips
+     mehr, es zählt. Die Chips bleiben der schmalen Fassung, und die hat diese Regel nie gesehen. */
+  .rd-card .rd-blist button { border-radius: var(--rd-sm); }
 
   /* Schließen ist ein Werkzeug am Rand, kein Angebot (dieselbe Entscheidung wie `.st-close`,
      `.up-actions > *`). Die Polsterung darüber bleibt — flach heißt leiser, nicht kleiner. */
@@ -6190,11 +6558,25 @@ b, strong { font-weight: 600; }
   /* Rekordlauf-Karte (`rounded-xl`) und die zehn Lauf-Zeilen (`rounded`) tragen ihren Radius als
      Tailwind-Utility; index.css steht ungelayert hinter `@import "tailwindcss"` und schlägt sie
      deshalb ohne `!important`. */
-  .st-sec[data-sec="best"] button, .st-sec[data-sec="runs"] button { border-radius: 6px; }
+  .st-sec[data-sec="best"] button, .st-sec[data-sec="runs"] button { border-radius: var(--rd-sm); }
 
+  /* #menu-rework M7 — DER RAHMEN GEHT UEBER EINE UMDEFINITION, NICHT UEBER `!important`.
+
+     `MENU_PANEL` emittiert `1px solid var(--ed-strong)` INLINE. Die Regel definiert den Schritt am
+     Element um; der Inline-Stil liest die Variable dort und nimmt den neuen Wert, mit intakter
+     Kaskade und ohne `!important`. Das ist die Bauart, die conventions.md 2c als die richtige Antwort
+     auf einen Inline-Stil nennt, und sie ersetzt hier eine, die es nicht war.
+
+     GEMESSENE FOLGE: aus `rgba(150, 150, 170, .12)` wird `--ed-quiet` (#2a2a34) — dieselbe
+     Umstellung, die M2a an der Werkstatt gemessen (rund 9/255) und der Owner abgenommen hat, und die
+     M3 vierzehnmal am Baum gezogen hat. Ein Literal weniger aus der MENU-38-Familie.
+
+     Die FLAECHE bleibt, wie sie ist: `rgba(255, 255, 255, .012)` ist ein weisser Hauch UEBER dem
+     Glas, und `--sf-sunken` ist deckend — es naehme ihr genau das. Gezaehlt statt gepraegt
+     (M7-G2, dieselbe Familie wie M3-G2). */
   .st-box {
     background: rgba(255, 255, 255, .012) !important;
-    border: 1px solid rgba(150, 150, 170, .12) !important;
+    --ed-strong: var(--ed-quiet);
     box-shadow: none;
   }
 
@@ -6522,7 +6904,9 @@ b, strong { font-weight: 600; }
    zwischen den Panels, kein Inhalt. Reicht es nicht, scrollt der jeweilige Rumpf weiter. */
 @media (min-width: 1280px) and (max-height: 950px) {
   .st-root, .lb-root, .go-root { padding: 10px 36px 12px !important; }
-  .st-sec, .go-earn, .go-best, .go-origin, .go-build, .go-stats, .go-layout { margin-top: 14px !important; padding: 12px 15px 14px; }
+  .go-earn, .go-best, .go-origin, .go-build, .go-stats, .go-layout { margin-top: 14px !important; padding: 12px 15px 14px; }
+  /* Die gestraffte Fassung der Sektion auf flachen Fenstern — `--in-snug` statt 12/15/14. */
+  .st-sec { margin-top: 14px !important; padding: var(--in-snug); }
   .st-card, .lb-card, .go-card { column-gap: 16px; }
   /* Flaches Fenster: das Brett wird KLEINER statt zu scrollen — 40 Karten sind acht Reihen, und die
      Übersicht ist der Zweck des Panels. Bei 260 px Rasterbreite ist eine Karte ~48 px breit; die Zahl bleibt

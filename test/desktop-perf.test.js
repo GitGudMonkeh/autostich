@@ -175,18 +175,34 @@ describe("#breite — alle gerahmten Screens stehen gleich breit im Bild", () =>
 });
 
 describe("#rd-scroll — die Lauf-Details müssen scrollen können", () => {
-  it("der Wurzelknoten hat den Scroller und verankert die Karte oben", () => {
+  it("EIN Element trägt den Scroller, und die Karte klemmt nur, wenn es ein anderes tut", () => {
     /* Der Fehler, wie er ausgeliefert war: die Karte gab auf dem Desktop ihren eigenen Scroller ab
        (`overflow: visible`, sonst klippte sie die Kopfzeile) — und der Wurzelknoten hatte nie einen.
-       Inhalt über der Fensterhöhe war damit unerreichbar. `align-items: flex-start` gehört dazu:
-       ein zentriertes Flex-Kind, das höher ist als sein Container, ragt nach OBEN heraus, und dorthin
-       kommt kein Scrollbalken. Statistik und Bestenliste tragen ihren Scroller im JSX. */
+       Inhalt über der Fensterhöhe war damit unerreichbar.
+
+       #menu-rework M7 — DIE ZUSICHERUNG IST DIE ERREICHBARKEIT, NICHT DER MECHANISMUS, und die alte
+       Fassung nagelte den Mechanismus fest: „die Karte darf sich NICHT auf die Fensterhöhe klemmen".
+       Seit der Kopf den Scroller verlassen hat, KLEMMT sie — und genau deshalb ist der Inhalt
+       erreichbar: `.rd-body` scrollt darunter. Beide Bauarten sind richtig, und die falsche ist die
+       dritte: geklemmte Karte OHNE inneren Scroller. Genau die schließt dieser Test jetzt aus.
+
+       `align-items: flex-start` gehört weiter dazu: ein zentriertes Flex-Kind, das höher ist als sein
+       Container, ragt nach OBEN heraus, und dorthin kommt kein Scrollbalken. */
     const rdRoot = css.match(/\.rd-root \{([^}]*)\}/);
     expect(rdRoot, ".rd-root-Regel fehlt").toBeTruthy();
     expect(rdRoot[1]).toMatch(/overflow-y:\s*auto/);
     expect(rdRoot[1]).toMatch(/align-items:\s*flex-start/);
-    // Und die Karte darf sich NICHT wieder auf die Fensterhöhe klemmen — sonst scrollt gar nichts mehr.
-    expect(css).toMatch(/\.rd-card \{[^}]*max-height:\s*none/);
+    const cardRule = css.match(/\.rd-card \{([^}]*)\}/);
+    expect(cardRule, ".rd-card-Regel fehlt").toBeTruthy();
+    const geklemmt = /max-height:\s*(?!none)[^;]*;/.test(cardRule[1]);
+    if (geklemmt) {
+      const body = css.match(/\.rd-body \{([^}]*)\}/);
+      expect(body, "die Karte klemmt, aber es gibt keinen .rd-body — der Inhalt wäre unerreichbar").toBeTruthy();
+      expect(body[1], ".rd-body scrollt nicht — geklemmte Karte ohne inneren Scroller schneidet ab")
+        .toMatch(/overflow-y:\s*auto/);
+      expect(body[1], ".rd-body kann ohne `min-height: 0` nicht unter seine Inhaltshöhe schrumpfen")
+        .toMatch(/min-height:\s*0/);
+    }
   });
 
   it("die vier Panels tragen den Ring wie die Statistik-Sektionen", () => {
@@ -271,7 +287,25 @@ describe("#lb-rahmen — die Bestenliste steht wie die anderen Screens im Bild",
 
 describe("#ueberzug — alle Overlays liegen gleich stark auf dem Hauptschirm", () => {
   it("auch die Lauf-Details, sie waren als einzige deckend", () => {
-    expect(css).toMatch(/\.rd-root \{[^}]*background:\s*rgba\(12,\s*12,\s*16,\s*\.94\)/);
+    /* #menu-rework M7 — GEPRUEFT WIRD „DERSELBE UEBERZUG WIE DIE NACHBARN", NICHT SEINE SCHREIBWEISE.
+       Der Wert steht seit diesem Auftrag als `var(--sf-scrim-desk)` da statt als `rgba(12, 12, 16,
+       .94)` — dasselbe Bild, ein Literal weniger. Die alte Fassung tippte die Zahl ab und waere an
+       genau dieser Umstellung gefallen, ohne dass sich ein Pixel bewegt haette. Verglichen wird
+       deshalb gegen die drei randverankerten Screens: liegt das Lauf-Fenster auf demselben Ueberzug
+       wie sie, ist die Zusicherung erfuellt, egal wie er geschrieben ist. */
+    const wert = (sel) => {
+      const m = css.match(new RegExp(`${sel} \\{([^}]*)\\}`));
+      if (!m) return null;
+      const b = m[1].match(/(?:^|;|\s)background:\s*([^;]+);/);
+      return b ? b[1].replace(/\s*!important/, "").trim() : null;
+    };
+    const nachbarn = wert("\\.st-root, \\.lb-root, \\.go-root");
+    expect(nachbarn, "die Regel der drei randverankerten Screens ist nicht mehr auffindbar").toBeTruthy();
+    expect(wert("\\.rd-root"), "das Lauf-Fenster liegt anders auf dem Hauptschirm als seine Nachbarn")
+      .toBe(nachbarn);
+    /* Und die Gegenprobe, dass es wirklich der Ueberzug-Schritt ist und nicht irgendein geteilter
+       Wert: er muss den Desktop-Wasch nennen, den das Vokabular fuehrt. */
+    expect(nachbarn).toMatch(/--sf-scrim-desk|rgba\(12,\s*12,\s*16,\s*\.94\)/);
   });
 });
 

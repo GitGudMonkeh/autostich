@@ -1,4 +1,17 @@
 import { fmtScore, fmtScoreShort } from "./format.js";
+/* #menu-rework M7 — DIESE DATEI IST GETEILT, UND DAS ENTSCHEIDET, WAS HIER PASSIEREN DARF.
+
+   Gemessen wird sie ausserdem gerendert von: der Siegesbildschirm
+   (`GameOver.jsx`, drei Fundstellen) und die live laufende StatusRail (`ScoreSourceBar`).
+
+   Sie wird deshalb WERTETREU umgestellt und NICHT umgestaltet: Literal zu `var(--token)`, null
+   berechnetes Delta, und jeder Schritt unten ist derselbe Wert, den er ersetzt — `#141419` IST
+   `--sf-ground`, `#2a2a34` IST `--ed-quiet`. Was KEINEN Schritt hat, bleibt stehen und wird gezaehlt
+   statt gepraegt; die Begruendungen stehen an den Fundstellen und in `measurements/M7.md`.
+
+   Der Beweis dafuer ist die Maschinen-Haelfte des Auftrags: `run-stage` muss null Deltas zeigen.
+   Bewegt eine dieser Zeilen die Laufbuehne um einen Pixel, war die Umstellung nicht wertetreu. */
+
 import { t as tr, fmtPct } from "../i18n/index.js"; // #sprache (tr = Alias: `t` ist hier lokal der Stich)
 
 /* #251: Zwei Lauf-Auswertungen aus dem Live-state (nur der aktuelle Lauf — kein Storage nötig):
@@ -65,7 +78,10 @@ export function ScoreHerkunft({ state }) {
           <span className="text-meta-3 uppercase tracking-wide opacity-50">{tr("rail.scoreSource")}</span>
           <span className="text-meta-3 font-mono opacity-40">Σ {fmtScoreShort(0)}</span>
         </div>
-        <div className="w-full h-[13px] rounded" style={{ background: "#0c0d14", border: "1px solid #2a2a34" }} />
+        {/* Die Kante ist `--ed-quiet` — wertgleich. Der GRUND eines Graphen hat keinen Schritt:
+            `--sf-sunken` liegt 8/6/12 daneben und ist heller, wo dieser dunkler sein muss als jedes
+            Panel. Gezaehlt statt gepraegt (M7-G1), erste Sichtung. */}
+        <div className="w-full h-[13px] rounded" style={{ background: "#0c0d14", border: "1px solid var(--ed-quiet)" }} />
       </div>
     );
   }
@@ -75,7 +91,7 @@ export function ScoreHerkunft({ state }) {
         <span className="text-meta-3 uppercase tracking-wide opacity-50">{tr("rail.scoreSource")}</span>
         <span className="text-meta-3 font-mono opacity-40" title={fmtScore(score)}>Σ {fmtScoreShort(score)}</span>
       </div>
-      <div className="flex w-full h-[13px] rounded overflow-hidden" style={{ background: "#0c0d14", border: "1px solid #2a2a34" }}>
+      <div className="flex w-full h-[13px] rounded overflow-hidden" style={{ background: "#0c0d14", border: "1px solid var(--ed-quiet)" }}>
         {rows.map((r) => (
           <div key={r.key} title={`${r.label}: ${fmtScore(r.value)} (${fmtPct(r.value / score)})`} style={{ width: `${(r.value / score) * 100}%`, background: r.color }} />
         ))}
@@ -119,7 +135,8 @@ export function ScoreSourceBar({ state, showTitle = true }) {
   return (
     <div>
       {showTitle && <div className="text-meta-3 uppercase tracking-wide opacity-50 mb-2">{tr("rail.scoreSource")}</div>}
-      <div className="flex w-full h-4 rounded overflow-hidden" style={{ background: "#141419", border: "1px solid #2a2a34" }}>
+      {/* `--sf-ground` und `--ed-quiet` sind WERTGLEICH: `#141419` und `#2a2a34` SIND die Schritte. */}
+      <div className="flex w-full h-4 rounded overflow-hidden" style={{ background: "var(--sf-ground)", border: "1px solid var(--ed-quiet)" }}>
         {SRC.map((s) => { const v = sh[s.key]; if (!v) return null;
           return <div key={s.key} title={`${tr(s.labelKey)}: ${fmtScore(v)} (${fmtPct(v / total)})`} style={{ width: `${(v / total) * 100}%`, background: s.color }} />; })}
       </div>
@@ -164,7 +181,7 @@ export function RunGraphs({ state, sourceBar = true, open = false }) {
 
       {/* (2) Durchlauf-Graph: Score je Stich, je Durchlauf getrennt (eigene Skala = „Reset je Durchlauf"). */}
       {hasGraph && (
-        <details className="rg-perTrick mt-4 rounded-xl overflow-hidden" open={open} style={{ background: "#141419", border: "1px solid #2a2a34" }}>
+        <details className="rg-perTrick mt-4 rounded-xl overflow-hidden" open={open} style={{ background: "var(--sf-ground)", border: "1px solid var(--ed-quiet)" }}>
           <summary className="cursor-pointer select-none px-3 py-2 text-meta-3 uppercase tracking-wide opacity-70">{tr("graphs.perTrick.open")}</summary>
           <div className="p-3 pt-1 flex flex-col gap-1.5">
             <div className="flex items-center gap-3 text-meta-1 font-mono opacity-55 mb-1 flex-wrap">

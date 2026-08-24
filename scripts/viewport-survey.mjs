@@ -99,7 +99,15 @@ const SURFACES = [
   { id: "shop-fx", steps: [{ tile: 1 }, { sel: '.cz-tabs [role="tab"]', nth: 2, settle: 1200 }],
     marker: ".cz-stage" },
   { id: "leaderboard", steps: [{ tile: 2 }], marker: ".lb-page, .lb-body" },
-  { id: "stats", steps: [{ tile: 3 }], marker: ".st-sec, .st-readout" },
+  /* #menu-rework M7 (2026-08-24) — MARKER auf `.st-head` umgestellt, und das ist eine Korrektur,
+     keine Anpassung an einen Umbau. Beide alten Marker sind ZUSTANDSABHAENGIG: `.st-sec` rendert nur
+     mit Lauf-Historie, und `.st-readout` war die Auskunftszeile, die der Kopf-Kanon aufloest. Der
+     Survey startet aber mit einem FRISCHEN Profil, also ohne Historie — gemessen an evidence/M3/after
+     traegt die Zelle 171 Knoten gegen 163 des Hubs, das heisst: sie hat immer nur den LEEREN Zustand
+     gesehen, und keine Sektion, kein Kasten, keine Lauf-Liste und kein Lauf-Fenster stand je in der
+     Matrix. Der Kopf steht in beiden Zustaenden, also sagt er die Wahrheit ueber „ist der Screen da".
+     Was die Zelle NICHT sagt, steht als Befund im Nachweis (M7-F01), nicht in einem stillen Marker. */
+  { id: "stats", steps: [{ tile: 3 }], marker: ".st-head" },
   /* The guide button lives inside a FACTION page, not in the default "general" branch — measured:
      .up-page-guide has 0 matches until a faction row in the navigation column is chosen. */
   { id: "guide", steps: [{ tile: 0 }, { sel: ".up-navrow", nth: 1 }, { sel: ".up-page-guide" }],

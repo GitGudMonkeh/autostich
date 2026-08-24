@@ -765,7 +765,9 @@ export default {
 
   /* ---- Statistics (StatsScreen) ---- */
   "stats.title": "Statistics",
-  "stats.desk.readout": "All numbers live locally on this device. Click a row to open the full run.",
+  "stats.eyebrow": "Retrospect",
+  "stats.sub": "What you have played so far. Click a row to open the full run.",
+  "stats.slot.empty": "not played yet",
   "stats.empty": "No runs yet — play one and your statistics appear here.",
   "stats.overview": "Overview",
   "stats.bestScore": "Best score",
@@ -785,7 +787,6 @@ export default {
   "stats.mostPicked": "Most picked",
   "stats.mostPicked.hint": "across your history",
   "stats.topSkills": "Most picked skills",
-  "stats.noSkills": "No skills played yet.",
   "stats.topPerks": "Most picked perks",
   "stats.archUse": "Archetype usage",
   "stats.archUse.right": "{n}× · avg {avg}",
@@ -872,7 +873,8 @@ export default {
   /* ---- Seed chip (SeedChip) ---- */
   "seed.copy": "Copy seed",
   "seed.copied": "copied",
-  "seed.replay": "↻ Replay",
+  "seed.replay": "Replay",
+  "rundetail.eyebrow": "Retrospect · Run",
   "seed.replay.title": "Replay this seed",
 
   /* ---- Leaderboard (LeaderboardScreen · GlobalLeaderboard) ---- */

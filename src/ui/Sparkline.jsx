@@ -1,4 +1,10 @@
 import { useId } from "react";
+/* #menu-rework M7 — GEMESSEN TRAEGT DIESE DATEI KEIN EINZIGES LITERAL AUF DEN FUENF ACHSEN, und
+   deshalb aendert dieser Auftrag an ihr nichts. Ihre Farben sind `stroke` und `fill` eines Graphen —
+   Inhalt, keine Flaeche —, ihre Laengen sind Koordinaten in einer viewBox. Sie steht trotzdem auf der
+   Erlaubnisliste des Vokabular-Waechters: eine Datei, die nichts einzufuehren hat, soll auch morgen
+   nichts einfuehren duerfen. Sie wird ausserdem von `StatusRail.jsx:133` gerendert — der LAUFBUEHNE,
+   also ausserhalb dieser Runde. Genau dafuer zeigt die Maschinen-Haelfte `run-stage` bei null. */
 import { GHOST_STEP } from "../game/constants.js"; // x-Achse: ein Stützpunkt je GHOST_STEP Stiche
 import { fmtScoreShort } from "./format.js";
 import { t, fmtNum } from "../i18n/index.js"; // #sprache

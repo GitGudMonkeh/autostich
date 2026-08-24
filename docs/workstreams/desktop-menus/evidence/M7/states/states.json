@@ -1,0 +1,150 @@
+{
+ "viewport": "1536x791",
+ "lang": "de",
+ "states": [
+  {
+   "name": "run row · hover",
+   "why": "44 px click target, and the gold edge must stay the record row's alone",
+   "ok": true,
+   "read": {
+    "rows": 10,
+    "heights": [
+     44
+    ],
+    "edgeRecord": "color(srgb 0.831373 0.65098 0.227451 / 0.8)",
+    "edgeOther": "color(srgb 0.227451 0.227451 0.282353 / 0.8)",
+    "golden": 1
+   }
+  },
+  {
+   "name": "run row · focus (keyboard)",
+   "why": "optically reachable and actually focusable must agree (design-sprache §5)",
+   "ok": true,
+   "read": {
+    "tag": "BUTTON",
+    "inList": true,
+    "outline": "none"
+   }
+  },
+  {
+   "name": "reserved slot · damped and named",
+   "why": "a free place is not at zero, it is empty — and it says so (§1 Ziel, §5 Leere Werte). THE SEEDED PROFILE FILLS ALL FOUR BLOCKS, so this state has to be reached with a THINNER one: twelve varied runs leave no free place, and a state nobody can reach is a state nobody verified. `sparse` re-seeds, reloads and re-opens before reading.",
+   "ok": true,
+   "read": {
+    "count": 9,
+    "opacity": [
+     "0.42"
+    ],
+    "says": [
+     "noch nicht gespielt"
+    ],
+    "displayed": [
+     "grid"
+    ]
+   }
+  },
+  {
+   "name": "build field · resting",
+   "why": "fifteen fields, empty ones standing and damped",
+   "ok": true,
+   "read": {
+    "fields": 15,
+    "empty": 8,
+    "emptyOpacity": [
+     "0.42"
+    ],
+    "fullOpacity": [
+     "1"
+    ],
+    "minHeights": [
+     "44px"
+    ],
+    "numberColours": 12
+   }
+  },
+  {
+   "name": "build field · hover",
+   "why": "the tile lifts on the wash, and nothing else moves",
+   "ok": true,
+   "read": {
+    "panel": 380
+   }
+  },
+  {
+   "name": "build panel · open",
+   "why": "the panel keeps its measurements; the fields become a tab row; the other two groups collapse",
+   "ok": true,
+   "read": {
+    "panelHeight": 380,
+    "head": "Build · Perks · Form",
+    "tabs": 15,
+    "selected": 1,
+    "selectedUnderline": "rgb(90, 138, 222) 0px -2px 0px 0px inset",
+    "groupsStillVisible": 3,
+    "listRows": 1,
+    "listScrolls": "auto",
+    "listBox": {
+     "client": 122,
+     "scroll": 122
+    }
+   }
+  },
+  {
+   "name": "build panel · the longest list scrolls inside the panel",
+   "why": "the one place on this screen where a list may be any length (§1) — and the panel keeps 380 px",
+   "ok": true,
+   "read": {
+    "panelHeight": 380,
+    "head": "Build · Perks · Legendär",
+    "listRows": 19,
+    "listBox": {
+     "client": 122,
+     "scroll": 1007
+    },
+    "scrolls": true,
+    "withTier": 19,
+    "withEffect": 19
+   }
+  },
+  {
+   "name": "build panel · switch category without going back",
+   "why": "the whole point of the tab row",
+   "ok": true,
+   "read": {
+    "panelHeight": 380,
+    "head": "Build · Skills · Blitz",
+    "stillOpen": true,
+    "selected": 1
+   }
+  },
+  {
+   "name": "build panel · close again",
+   "why": "clicking the selected field closes it, and the panel is where it was",
+   "ok": true,
+   "read": {
+    "panelHeight": 380,
+    "fields": 15,
+    "tabs": 0,
+    "listGone": true
+   }
+  },
+  {
+   "name": "seed chip · the two drawn marks",
+   "why": "§4 — drawn SVG, 16-grid, currentColor; no text glyph left",
+   "ok": true,
+   "read": {
+    "marks": 2,
+    "viewBoxes": [
+     "0 0 16 16"
+    ],
+    "stroke": [
+     "currentColor"
+    ],
+    "sized": [
+     11
+    ],
+    "textGlyphs": []
+   }
+  }
+ ]
+}
