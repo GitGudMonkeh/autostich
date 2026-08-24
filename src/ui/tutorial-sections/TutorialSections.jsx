@@ -66,8 +66,13 @@ function Head({ eyebrow, title, onClose, closeLabel }) {
   );
 }
 
-export function TutorialSections({ onClose, onOpenGlossary = null }) {
+/* `seen` (Menge gelesener „sektion/lektion") und `last` kommen von außen — die Sektion hält keinen
+   eigenen Speicher, damit sie ohne localStorage rendert (Server-Render, Tests). */
+export const lessonPath = (s, l) => `${s.id}/${l.id}`;
+
+export function TutorialSections({ onClose, onOpenGlossary = null, seen = [], last = null, onSeen = null }) {
   const t = useT();
+  const seenSet = new Set(seen);
   useEscape(onClose);
   // null = Themenliste · {section} = Lektionsliste · {section,lesson} = Lektion
   const [at, setAt] = useState(null);
@@ -76,9 +81,13 @@ export function TutorialSections({ onClose, onOpenGlossary = null }) {
   const lesson = section && at.lesson ? section.lessons.find((l) => l.id === at.lesson) : null;
   const lessonIdx = lesson ? section.lessons.indexOf(lesson) : -1;
 
+  const open = (sec, les) => {
+    setAt({ section: sec.id, lesson: les.id });
+    onSeen?.(lessonPath(sec, les));   // „gelesen" heißt geöffnet — es gibt keinen Abschluss zu erreichen
+  };
   const go = (delta) => {
     const next = section.lessons[lessonIdx + delta];
-    if (next) setAt({ section: section.id, lesson: next.id });
+    if (next) open(section, next);
     else setAt({ section: section.id });   // über das Ende hinaus → zurück in die Lektionsliste
   };
 
@@ -130,8 +139,13 @@ export function TutorialSections({ onClose, onOpenGlossary = null }) {
   /* ---- Ebene 2: die Lektionen einer Sektion ---- */
   if (section) {
     const body = section.lessons.map((l) => (
-      <Row key={l.id} onClick={() => setAt({ section: section.id, lesson: l.id })}>
-        <div className="text-body-4 font-semibold" style={{ color: "#e8e8ea" }}>{t(lessonTitleKey(section, l))}</div>
+      <Row key={l.id} onClick={() => open(section, l)}>
+        <div className="flex items-baseline gap-2.5">
+          <div className="text-body-4 font-semibold flex-1 min-w-0" style={{ color: "#e8e8ea" }}>{t(lessonTitleKey(section, l))}</div>
+          {seenSet.has(lessonPath(section, l)) && (
+            <span className="text-meta-1 flex-none" style={{ color: "var(--deck-a1, #8a7de0)" }}>{t("tut.seen")}</span>
+          )}
+        </div>
       </Row>
     ));
     const foot = <ActionButton kind="secondary" flex onClick={() => setAt(null)}>{t("tut.allTopics")}</ActionButton>;
@@ -139,15 +153,51 @@ export function TutorialSections({ onClose, onOpenGlossary = null }) {
   }
 
   /* ---- Ebene 1: die Themenliste ---- */
-  const body = SECTIONS.map((s) => (
-    <Row key={s.id} onClick={() => setAt({ section: s.id })}>
-      <div className="flex items-baseline gap-2.5">
-        <div className="text-body-4 font-semibold flex-1 min-w-0" style={{ color: "#e8e8ea" }}>{t(sectionTitleKey(s))}</div>
-        <div className="text-meta-1 ty-num-sm flex-none" style={{ color: "#71717c" }}>{s.lessons.length}</div>
+  const doneIn = (sec) => sec.lessons.filter((l) => seenSet.has(lessonPath(sec, l))).length;
+  const total = SECTIONS.reduce((n, sec) => n + sec.lessons.length, 0);
+
+  /* Die Weitermachen-Zeile ist Inhalt, nicht Polsterung: GEMESSEN ließ eine Liste aus nackten Zeilen
+     228,5 px Schwarz unter der Karte (27 % des Schirms), mit ihr sind es 104,2
+     (planning-report.md §1.4a). Sie ist zugleich der nützlichste Knopf für jeden, der wiederkommt. */
+  const resume = (() => {
+    if (!last) return null;
+    const [sid, lid] = last.split("/");
+    const sec = SECTIONS.find((x) => x.id === sid);
+    const les = sec && sec.lessons.find((x) => x.id === lid);
+    if (!sec || !les) return null;   // Lektion umbenannt/entfernt → keine tote Zeile zeigen
+    return (
+      <Row accent onClick={() => open(sec, les)}>
+        <div className={EYEBROW} style={{ color: "var(--deck-a1, #8a7de0)", marginBottom: 4 }}>{t("tut.resume")}</div>
+        <div className="text-body-4 font-semibold" style={{ color: "#e8e8ea" }}>
+          {t(sectionTitleKey(sec))} · {t(lessonTitleKey(sec, les))}
+        </div>
+      </Row>
+    );
+  })();
+
+  const body = (
+    <>
+      {resume}
+      <div className={EYEBROW} style={{ color: "var(--deck-a1, #8a7de0)", paddingBottom: 10 }}>
+        {t("tut.allProgress", { done: seenSet.size, total })}
       </div>
-      <div className="text-body-1" style={{ color: "#8a8a95", marginTop: 3, lineHeight: 1.38 }}>{t(sectionSubKey(s))}</div>
-    </Row>
-  ));
+      {SECTIONS.map((s) => {
+        const done = doneIn(s);
+        return (
+          <Row key={s.id} onClick={() => setAt({ section: s.id })}>
+            <div className="flex items-baseline gap-2.5">
+              <div className="text-body-4 font-semibold flex-1 min-w-0" style={{ color: "#e8e8ea" }}>{t(sectionTitleKey(s))}</div>
+              <div className="text-meta-1 ty-num-sm flex-none" style={{ color: "#71717c" }}>{done} / {s.lessons.length}</div>
+            </div>
+            <div className="text-body-1" style={{ color: "#8a8a95", marginTop: 3, lineHeight: 1.38 }}>{t(sectionSubKey(s))}</div>
+            <div style={{ height: 3, borderRadius: 2, background: "rgba(150,150,170,.14)", marginTop: 8, overflow: "hidden" }}>
+              <div style={{ height: "100%", width: `${Math.round(done / s.lessons.length * 100)}%`, background: "var(--deck-a1,#8a7de0)" }} />
+            </div>
+          </Row>
+        );
+      })}
+    </>
+  );
   /* Der Verweis aufs Glossar ist Absicht, nicht Dekoration: die drei Lehr-Ebenen zeigen aufeinander,
      statt einander abzuschreiben (planning-report.md §6, H4). */
   const foot = onOpenGlossary

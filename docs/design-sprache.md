@@ -1,4 +1,4 @@
-# Design-Sprache — Overlays und Menüs (Desktop, ab 1280 px)
+# Design-Sprache — Overlays und Menüs (Desktop ab 1280 px · Handy in §11)
 
 **Status: lebendes Dokument.** Es ist die Quelle der Wahrheit für die Bildsprache aller Menü-Overlays
 und wird bei jedem Screen fortgeschrieben, den wir uns vornehmen. Wer einen Screen anfasst, liest
@@ -25,6 +25,7 @@ Zugehörige Aufträge, die auf diesem Dokument aufsetzen:
 | Bestenliste | `docs/bestenliste-redesign.md` |
 | Deck-Werkstatt | `docs/werkstatt-redesign.md` |
 | Lauf-Bildschirm (kein Overlay, s. §8) | `docs/battlefield-redesign.md` |
+| Tutorial-Sektionen (Handy, s. §11) | `docs/workstreams/tutorial-sections/tutorial-plan/planning-report.md` |
 
 Mockups: https://claude.ai/code/artifact/2e09b642-9197-42b1-81c5-dd41618c5ad8 (Marke, Mainscreen,
 Melder, Baum) und https://claude.ai/code/artifact/c8328e42-db0b-411f-b26e-ec72a60a17ec (Optionen).
@@ -693,10 +694,94 @@ entstehen bei jedem Screen, den wir uns vornehmen — sie gehören hierher, nich
 
 ---
 
+## 11. Die Handy-Fassung
+
+**Sprachhinweis:** Dieser Eintrag ist deutsch, wie das ganze Dokument. Das ist die dokumentierte
+Ausnahme aus `AGENTS.md` — *Appending to an existing German document*: ein englischer Abschnitt
+mitten in einer deutschen Vorlage bricht die Vorlage, auf die der Rest der Datei baut.
+
+**Warum hier und nicht in einem eigenen Dokument.** §8 nimmt „die Fassung unter 1280 px" aus —
+**„solange sie nicht ausdrücklich beauftragt ist"**. Die Tutorial-Sektionen sind dieser Auftrag. Ein
+Geschwisterdokument hätte eine Bildsprache in zwei Dateien geteilt, die jemand von Hand im Gleichlauf
+halten müsste; das ist derselbe Fehler, den §1 an „zwei Tönungsebenen" und §7 an „ein String ist ein
+ganzer Satz" beschreibt, nur eine Etage höher.
+
+**Bezugsgröße ist 390 × 844** (`scripts/phone-proof.mjs`). Jede Zahl unten ist **gemessen** im
+Produktionsbuild, nicht gerechnet; das Skript liegt bei
+`docs/workstreams/tutorial-sections/tutorial-plan/evidence/measure.mjs`.
+
+### Die Karte
+
+Wie im Glossar und im Leitfaden: `max-height: 92dvh` in einem `p-3`-Rahmen. Bei 390 × 844 sind das
+**366 × 776,5 px** für eine Karte, die bis an den Deckel wächst, und 55,5 px Luft am Fuß.
+
+### Oben angeschlagen oder mittig — eine Regel, nicht zwei
+
+**`items-center`. Immer.** Eine Karte am 92dvh-Deckel steht damit ohnehin wieder oben (12 px Rahmen
+je Seite); eine kurze schwebt mittig.
+
+*Gemessen:* eine Tutorial-Lektion aus drei Takten ist **525,2 px** hoch, also 62 % des Schirms. Oben
+angeschlagen lägen **307,8 px** Schwarz darunter, und der Bildschirm liest sich wie eine Seite, der
+der Inhalt ausgegangen ist. Mittig teilt sich dieselbe Luft **159,9 / 159,9**.
+
+Das Glossar schlägt oben an und darf das: es füllt mit seinen 109 Begriffen **immer** bis zum Deckel,
+der Unterschied tritt dort nie auf.
+
+### Wieviel Luft zu viel ist
+
+*Gemessen:* eine Liste aus fünf nackten Zeilen ließ **228,5 px** unter der Karte frei — 27 % des
+Schirms. Mit einer Weitermachen-Zeile und einer Fortschritts-Zeile waren es **104,2 px**.
+
+**Über rund 180 px ist der Bildschirm dünn an Inhalt, nicht schlecht gesetzt.** Die Antwort ist
+Inhalt, nicht Polsterung — und der beste Inhalt ist der nützlichste Knopf: „weitermachen, wo du warst".
+
+### Tippziele
+
+**44 px für alles, was eine Entscheidung trägt** — Knöpfe, tippbare Zeilen, Zellen. Chips und Filter
+bleiben, wie sie sind.
+
+**Das Haus hält das heute nicht ein, und das ist ehrlich festzuhalten.** *Gemessen* im echten Glossar
+bei 390 × 844: der Schließen-Knopf misst **42 px**, die Kategorie-Chips **26,5 px**; `ActionButton`
+liefert app-weit 42 px (`py-2.5`). §4 nennt 44 px, ist aber ausdrücklich auf ≥ 1280 px bezogen — für
+das Telefon gab es bis hierher keine Regel.
+
+**Offen und bewusst offen gelassen:** ob die 44 px rückwirkend für die ganze App gelten. Die
+Tutorial-Sektionen setzen sie über **eine** Regel, die nur ihre eigene Fläche trifft
+(`.tut-card .as-actbtn`, `index.css`). Fällt die Entscheidung für app-weit, gehört diese Regel
+**gelöscht** statt stehengelassen — sonst lebt die Zahl an zwei Orten.
+
+### Die Zeile gilt auch hier
+
+`§1 — Zeile` (`rgba(15,15,21,.72)`, `1px solid rgba(150,150,170,.12)`, Radius 8) ist die Fläche für
+alles, was **in** einer Karte steht, auch auf dem Telefon. Und `§1 — Kein Panel im Panel` gilt
+unverändert: ein Abschluss (im Tutorial der Merksatz) hängt an einer **Linie nach oben**, nicht in
+einem eigenen Kasten.
+
+### Messen: die Falle, die zweimal Geld gekostet hat
+
+`vite preview` wendet die Base aus `vite.config.js` **nicht** an — dort steht
+`command === "build" ? "/autostich/" : "/"`, und für `preview` ist das Kommando `"serve"`. Ohne
+`--base /autostich/` fällt jede Asset-Anfrage in den SPA-Fallback und liefert `index.html`:
+**1391 Byte HTML, wo 156 575 Byte CSS hingehören.**
+
+Die Seite mountet dann nichts — **und screenshottet trotzdem als plausibler dunkler Schirm.** Wer so
+misst, bekommt einen vollständigen Satz selbstsicherer, wertloser Zahlen. Zwei Wächter gehören in
+jedes Messskript: die Größe der CSS-Antwort prüfen, und abbrechen, wenn `#root` weniger als ein paar
+Dutzend Knoten hat. `scripts/phone-proof.mjs:162` beschreibt dieselbe Falle.
+
+### Was §11 NICHT anfasst
+
+- Das Band 640–1279 px. Es ist weiterhin unbeauftragt.
+- Die Desktop-Fassung der Tutorial-Sektionen. Sie kommt nach dem Menü-Umbau und erbt dann, was aus
+  der geteilten Overlay-Schale geworden ist (Owner-Entscheidung).
+
+---
+
 ## 10. Änderungsprotokoll
 
 | Datum | Was |
 | --- | --- |
+| 25.08.2026 | **§11 — die Handy-Fassung**, anlässlich der Tutorial-Sektionen (`#tutorial-sections`). Erster Eintrag des Dokuments unterhalb von 1280 px; §8 sah ihn vor („solange sie nicht ausdrücklich beauftragt ist"). Härtester Befund: das Haus hält seine eigene 44-px-Regel auf dem Telefon nicht ein — der Schließen-Knopf des Glossars misst gemessen 42 px, seine Chips 26,5. Neu festgehalten: `items-center` als EINE Regel für kurze wie volle Karten (gemessen 307,8 px Schwarz bei oben angeschlagener 525-px-Karte gegen 159,9/159,9 mittig) und die Grenze, ab der ein Bildschirm dünn an Inhalt ist statt schlecht gesetzt (rund 180 px Restluft). |
 | 24.08.2026 | **Lauf-Bildschirm entworfen**, Auftrag unter `docs/battlefield-redesign.md`. Härtester Befund: die Instrumentenbank war um Faktor 2,2 überbucht (2460 px Bedarf auf 1140 px), und die Breite hing an der ANZAHL der Fraktionen statt am Inhalt — dieselbe Spur maß je nach Lauf 584 oder 60 px. Sichtbar waren 35 % des Inhalts. Neu: Perks und Multiplikatoren stehen als umschaltende Spalten neben der Bühne, unten ein Element im Fokus und die übrigen als Kopfzeilen. Ergebnis über vier Lauf-Formen und drei Größen: 0 Scrollbereiche, 0 abgeschnittene Stellen, Seite exakt Fensterhöhe. |
 | 24.08.2026 | **Die Abgrenzung „was gilt für einen Nicht-Overlay-Screen" ist entschieden** (§8): §1 ist Layout und gilt überall, §2 und §4 sind Overlay-Konventionen und gelten dort nicht. Anlass war der Lauf; die Frage stellt sich beim Hub genauso und war bis dahin offen. |
 | 24.08.2026 | Drei Ergänzungen in §1: **Restluft gehört auch INNERHALB einer Zeile an den Fuß** (ein streckbares Raster legt die Mehrhöhe in seine Zeilen — gemessen 70 px Luft in vier Panels, ohne dass etwas überläuft), **ein Hochformat steht in einem flachen Kasten NEBEN dem Inhalt** (dasselbe Brett kostet unten 259 px, daneben 190), und **ein Feld mit zwei Werten braucht die Breite für beide** (Umbrechen ist kein Ersatz: es kostete 35 px Breite gegen 35 px Höhe, und Höhe war teurer). |

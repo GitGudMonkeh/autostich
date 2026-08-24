@@ -302,7 +302,7 @@ export function saveProfile(profile) {
    aber altem Namen. Die übrigen Präferenzen (Lautstärke, Haptik, SPRACHE) überleben den Reset
    weiterhin: sie hängen nicht am Fortschritt, und die Sprache lässt sich im Namens-Dialog ohnehin
    direkt wieder wählen. */
-export const RESET_KEYS = ["as_profile", "as_highscores", "as_ghost", "as_runhistory", "as_activerun", "as_tutorial_done", "as_username", "as_feedback_draft", "as_feedback_sent"];
+export const RESET_KEYS = ["as_profile", "as_highscores", "as_ghost", "as_runhistory", "as_activerun", "as_tutorial_done", "as_tut_progress", "as_username", "as_feedback_draft", "as_feedback_sent"];
 export function wipeProfileStorage() {
   for (const key of RESET_KEYS) {
     try { localStorage.removeItem(k(key)); } catch (e) {}
@@ -692,20 +692,46 @@ export function saveOptions(opts) {
   return opts;
 }
 
-/* TUTORIAL-EINMAL-GESEHEN — hier zentral, damit der Preview-Namespace (P) auch diesen Key trennt
-   und der Test-Build den Erstbesuch-Zustand der echten Seite nicht setzt.
+/* TUTORIAL-FORTSCHRITT — hier zentral, damit der Preview-Namespace (P) auch diese Keys trennt und der
+   Test-Build den Erstbesuch-Zustand der echten Seite nicht setzt.
 
-   Ersetzt `as_seen_guide` (#12): dessen AnleitungModal existiert nicht mehr, gelesen hat den Schlüssel
-   zuletzt niemand. Gesetzt wird die Flagge NUR beim Durchlaufen bis zum Abschluss-Hinweis oder bei
-   „Tutorial beenden" — ein Abbruch mittendrin gilt als nicht gesehen (Plan §13.8). */
-export function loadTutorialDone() {
-  try { return !!localStorage.getItem(k("as_tutorial_done")); } catch (e) { return false; }
-}
-export function saveTutorialDone(done = true) {
+   Der geführte Lauf kannte nur einen Boolean („gesehen, ja/nein"). Die Sektionen brauchen mehr: WELCHE
+   Lektionen gelesen sind und WO man weitermachen kann. Das ist eine andere Form, also ein anderer
+   Schlüssel — `as_tutorial_done` wird NICHT umgedeutet.
+
+   Der alte Schlüssel wird aber weiter GELESEN (nie geschrieben): wer den geführten Lauf seinerzeit
+   durchlaufen hat, soll das laute Erstkontakt-Angebot im Hub nicht ein zweites Mal bekommen. Das ist
+   eine Zeile statt einer Migration, und ein verwaister Boolean im localStorage kostet nichts. */
+const TUT_PROGRESS = "as_tut_progress";
+const TUT_LEGACY   = "as_tutorial_done";   // geführter Lauf, zurückgebaut — nur noch gelesen
+
+// { seen: ["sektion/lektion", …], last: "sektion/lektion" | null }
+export function loadTutorialProgress() {
   try {
-    if (done) localStorage.setItem(k("as_tutorial_done"), "1");
-    else localStorage.removeItem(k("as_tutorial_done"));
+    const raw = localStorage.getItem(k(TUT_PROGRESS));
+    const p = raw ? JSON.parse(raw) : null;
+    if (!p || typeof p !== "object") return { seen: [], last: null };
+    return { seen: Array.isArray(p.seen) ? p.seen.filter((x) => typeof x === "string") : [],
+             last: typeof p.last === "string" ? p.last : null };
+  } catch (e) { return { seen: [], last: null }; }
+}
+export function saveTutorialProgress(p) {
+  try {
+    localStorage.setItem(k(TUT_PROGRESS), JSON.stringify({
+      seen: [...new Set((p && p.seen) || [])], last: (p && p.last) || null,
+    }));
   } catch (e) {}
+}
+
+/* Hat der Spieler das Tutorial je GEÖFFNET? Steuert allein, ob das laute Erstkontakt-Angebot über
+   „Lauf beginnen" noch erscheint — der ruhige Chip unten bleibt ohnehin immer.
+
+   Bewusst „geöffnet", nicht „abgeschlossen": es gibt keinen Abschluss mehr, den man erreichen könnte
+   (kein Lohn, kein Tor — Owner-Entscheidung). Wer eine Lektion gelesen hat, hat den Einstieg gefunden;
+   ihn weiter anzuwerben wäre lästig, ihm „fertig" zu sagen wäre gelogen. */
+export function tutorialOpened() {
+  try { if (localStorage.getItem(k(TUT_LEGACY))) return true; } catch (e) { /* kein localStorage */ }
+  return loadTutorialProgress().seen.length > 0;
 }
 
 /* AKTIVER LAUF (Resume) — Snapshot des laufenden Reducer-States, damit ein Run das Wegtabben/Schließen

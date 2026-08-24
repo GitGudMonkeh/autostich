@@ -8,7 +8,7 @@ import { allianceGroups } from "./game/families.js";
 import { computeFormations } from "./game/formations.js"; // #201.8 Stufe B: Deck-Snapshot in der Historie
 import { formatSeed } from "./game/rng.js"; // #205 Challenger Mode: Seed anzeigen (Base32)
 import { randomSeed } from "./ui/seedShare.js"; // #229 N7: Lauf-Seed würfeln (UI-Layer — Math.random raus aus game/)
-import { loadGhost, saveGhost, loadHighscores, recordHighscore, recordRun, recordChampionWeeks, loadOptions, saveOptions, loadUsername, saveUsername, loadProfile, saveProfile, wipeProfileStorage, saveActiveRun, loadActiveRun, clearActiveRun, loadRunHistory } from "./game/storage.js";
+import { loadGhost, saveGhost, loadHighscores, recordHighscore, recordRun, recordChampionWeeks, loadOptions, saveOptions, loadUsername, saveUsername, loadProfile, saveProfile, wipeProfileStorage, saveActiveRun, loadActiveRun, clearActiveRun, loadTutorialProgress, saveTutorialProgress, tutorialOpened, loadRunHistory } from "./game/storage.js";
 import { unlockAllProfile, skipOnboardingProfile, ONBOARDING_LINKS, nextOnboardingReward, ownedCount, unlockedArchetypes } from "./game/progression.js"; // Test-Codes: unlock (alles frei) / onboarding (skip +10 SP/+50 DP) / reset (Wipe) · §6 Meilenstein-Balken-Gate · #304 Onboarding-Fortschritt
 import { currentWeek } from "./game/weeklySeed.js"; // §7 Meister-Rangliste: Wochen-Seed (für alle gleich)
 import { leaderboardConfigured, publishRun } from "./game/leaderboard.js";
@@ -27,6 +27,8 @@ import { useFxLevel } from "./ui/useReducedFx.js"; // Perf: löst reducedFx drei
 import { PerfOverlay } from "./ui/PerfOverlay.jsx"; // Perf-Recorder-HUD (nur Preview-Build)
 import { perfMark, getReport, formatReport } from "./ui/perfRecorder.js"; // Perf-Recorder (No-op außerhalb Preview)
 import { GlossaryPanel } from "./ui/Glossary.jsx";
+// Tutorial-Sektionen (#tutorial-sections): reine UI-Schicht über dem Hub, kein Lauf, keine game/-Berührung.
+import { TutorialSections } from "./ui/tutorial-sections/TutorialSections.jsx";
 import { Controls } from "./ui/Controls.jsx";
 import { BuildPanel } from "./ui/BuildPanel.jsx";
 import { WeekModPanel } from "./ui/WeekMods.jsx"; // #381 Ranked-Modifikatoren-Panel (unter den Perks)
@@ -258,7 +260,26 @@ function AutostichGame() {
   const [showPrivacy, setShowPrivacy] = useState(false);
   const [showDevSetup, setShowDevSetup] = useState(false);        // Dev-Run-Setup-Overlay (nur Preview-Build)
   const [showChronik, setShowChronik] = useState(false);          // Chronik-Kartenübersicht (§22.11)
-  const [glossaryOpen, setGlossaryOpen] = useState(false);        // Glossar-Overlay offen → friert den Lauf ein (wie Optionen/Chronik)
+  const [glossaryOpen, setGlossaryOpen] = useState(false);
+  /* Tutorial-Sektionen: offen? und der Fortschritt. Beides reine UI — kein Lohn, kein Tor, keine
+     Kopplung an die Onboarding-Kette (Owner-Entscheidung; sie wiederzubeleben nähme neuen Spielern
+     die ersten sechs Läufe SP UND DP, siehe progression.js:355). */
+  const [tutOpen, setTutOpen] = useState(false);
+  const [tutProgress, setTutProgress] = useState(() => loadTutorialProgress());
+  /* GEFAHR D, entschieden: Was räumt das LAUTE Erstkontakt-Angebot über „Lauf beginnen" ab?
+     Antwort: EINE gelesene Lektion. Es gibt keinen Abschluss mehr, den man erreichen könnte (kein
+     Lohn, kein Tor), also wäre „fertig" gelogen und „für immer weiter anwerben" lästig. Wer eine
+     Lektion geöffnet hat, hat den Einstieg gefunden — das laute Angebot hat seine Arbeit getan.
+     Der ruhige Chip unten neben „Optionen" bleibt davon unberührt und immer erreichbar.
+     Der Altschlüssel des geführten Laufs wird EINMAL beim Mounten gelesen (tutorialOpened) und zählt
+     mit, damit Bestandsspieler nicht erneut angeworben werden. */
+  const [tutLegacy] = useState(() => tutorialOpened());
+  const tutOpened = tutLegacy || tutProgress.seen.length > 0;
+  const markLessonSeen = (path) => setTutProgress((p) => {
+    const next = { seen: p.seen.includes(path) ? p.seen : [...p.seen, path], last: path };
+    saveTutorialProgress(next);
+    return next;
+  });        // Glossar-Overlay offen → friert den Lauf ein (wie Optionen/Chronik)
   const [confirmAbort, setConfirmAbort] = useState(false);        // #254: Rückfrage „Lauf wirklich abbrechen?" (Beenden-Button ODER Zurück-Geste im Run)
   const [confirmRestart, setConfirmRestart] = useState(false);    // Komfort: Rückfrage „Wirklich neustarten?" (Neustart-Button) — kein Ein-Tap-Verlust bei Fettfingern
   const [speedMult, setSpeedMult] = useState(1); // Ablaufbeschleunigung intern 1×/2×/4×/5× (Buttons X2/X4/MAX; #27, kein Score-Effekt)
@@ -463,6 +484,7 @@ function AutostichGame() {
     if (showPrivacy) { setShowPrivacy(false); return true; }
     if (showUsername) { setShowUsername(false); return true; }
     if (showDevSetup) { setShowDevSetup(false); return true; }    // #350: Dev-Run-Setup → schließen (Preview-Build)
+    if (tutOpen) { setTutOpen(false); return true; }
     if (glossaryOpen) { setGlossaryOpen(false); return true; }
     if (showChronik) { setShowChronik(false); return true; }
     if (showOptions) { setShowOptions(false); return true; }
@@ -1131,6 +1153,7 @@ function AutostichGame() {
             resume={resumable ? { cycle: resumable.state.cycle, totalCycles: resumable.state.maxCycles || resumable.state.difficulty?.maxCycles || MAX_CYCLES, score: resumable.state.score } : null}
             onStats={() => setShowStats(true)} onCustomize={() => setShowCustomize(true)} onLeaderboard={() => setShowLeaderboard("board")}
             onUpgrades={() => setShowUpgrades(true)} profile={profile}
+            onTutorial={() => setTutOpen(true)} tutorialDone={tutOpened}
             onDevRun={import.meta.env.VITE_PREVIEW === "1" ? () => setShowDevSetup(true) : null}
             muted={!!options.muted} onToggleMute={() => changeOptions({ muted: !options.muted })}
             onFeedback={() => setShowFeedback(true)} onPrivacy={() => setShowPrivacy(true)}
@@ -1305,6 +1328,12 @@ function AutostichGame() {
           skills={state.skills} state={state} options={options} onOption={changeOptions}
           currentTraj={currentTraj.current} recordTraj={recordTraj.current} best={best} />
       )}
+      {/* Tutorial-Sektionen: Vollbild-Overlay über dem Hub. Ohne `tutOpen` rendert es nichts. */}
+      {tutOpen && (
+        <TutorialSections onClose={() => setTutOpen(false)} onOpenGlossary={() => { setTutOpen(false); setGlossaryOpen(true); }}
+          seen={tutProgress.seen} last={tutProgress.last} onSeen={markLessonSeen} />
+      )}
+
       {/* #update: „Neue Version verfügbar"-Hinweis — pollt version.json, meldet neue Deploys ohne Zwangs-Reload. */}
       <UpdateBanner />
 

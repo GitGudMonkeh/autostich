@@ -1,0 +1,116 @@
+{
+  "de-lautesAngebot": true,
+  "de-1-themen": {
+    "found": true,
+    "card": {
+      "w": 366,
+      "h": 378.1,
+      "bottom": 611.1
+    },
+    "content": 237,
+    "visible": 237,
+    "overflow": 0,
+    "hidden": [],
+    "airAbove": 232.9,
+    "airBelow": 232.9,
+    "xoverflow": false,
+    "under44": []
+  },
+  "de-2-lektion": {
+    "found": true,
+    "card": {
+      "w": 366,
+      "h": 525.2,
+      "bottom": 684.6
+    },
+    "content": 384,
+    "visible": 384,
+    "overflow": 0,
+    "hidden": [],
+    "airAbove": 159.4,
+    "airBelow": 159.4,
+    "xoverflow": false,
+    "under44": []
+  },
+  "de-gespeichert": {
+    "seen": [
+      "aufstellung/formationen"
+    ],
+    "last": "aufstellung/formationen"
+  },
+  "de-lautesAngebotDanach": false,
+  "de-3-nachReload": {
+    "found": true,
+    "card": {
+      "w": 366,
+      "h": 450.4,
+      "bottom": 647.2
+    },
+    "content": 309,
+    "visible": 309,
+    "overflow": 0,
+    "hidden": [],
+    "airAbove": 196.8,
+    "airBelow": 196.8,
+    "xoverflow": false,
+    "under44": []
+  },
+  "de-weitermachen": "WeitermachenAufstellung · Was sind Formationen",
+  "en-lautesAngebot": true,
+  "en-1-themen": {
+    "found": true,
+    "card": {
+      "w": 366,
+      "h": 378.1,
+      "bottom": 611.1
+    },
+    "content": 237,
+    "visible": 237,
+    "overflow": 0,
+    "hidden": [],
+    "airAbove": 232.9,
+    "airBelow": 232.9,
+    "xoverflow": false,
+    "under44": []
+  },
+  "en-2-lektion": {
+    "found": true,
+    "card": {
+      "w": 366,
+      "h": 504.2,
+      "bottom": 674.1
+    },
+    "content": 363,
+    "visible": 363,
+    "overflow": 0,
+    "hidden": [],
+    "airAbove": 169.9,
+    "airBelow": 169.9,
+    "xoverflow": false,
+    "under44": []
+  },
+  "en-gespeichert": {
+    "seen": [
+      "aufstellung/formationen"
+    ],
+    "last": "aufstellung/formationen"
+  },
+  "en-lautesAngebotDanach": false,
+  "en-3-nachReload": {
+    "found": true,
+    "card": {
+      "w": 366,
+      "h": 450.4,
+      "bottom": 647.2
+    },
+    "content": 309,
+    "visible": 309,
+    "overflow": 0,
+    "hidden": [],
+    "airAbove": 196.8,
+    "airBelow": 196.8,
+    "xoverflow": false,
+    "under44": []
+  },
+  "en-weitermachen": "ContinueOrder phase · What formations are"
+}
