@@ -25,7 +25,24 @@
 
    BOX GEOMETRY IS COMPARED WITH A TOLERANCE OF ZERO. Sub-pixel drift is not expected between two
    runs of the same deterministic harness at the same viewport, and accepting a tolerance here would
-   accept exactly the class of defect a padding token is most likely to introduce. */
+   accept exactly the class of defect a padding token is most likely to introduce.
+
+   SURFACES ONLY. CONTROL STATES ARE NOT CAPTURED AND ARE VERIFIED BY HAND (MENU-56). The matrix this
+   script reads holds each surface in its RESTING state: no cell renders a segment control selected,
+   hovered, focused or disabled, so no delta on those states can appear here and their absence from
+   this output is not evidence that they did not move. The line is printed with every run rather than
+   left in this header, because the reader who needs it is reading the OUTPUT.
+
+   NOTHING HERE IS TRUNCATED — MH1, and it is the whole reason this paragraph exists. Two lists used
+   to stop at a cap and print "… and N more": the deltas at 200, the unmatched nodes at 40. The cap
+   cut in the key's sort order, so the survivors were a CONTIGUOUS SLICE — one end of the alphabet,
+   one end of the size list — and a slice of a sorted list reads exactly like a pattern. Read as
+   complete, 200 of 410 deltas looked like "deltas only in German, a hole at 1920x1080": a finding
+   that did not exist and that only re-aggregating caught (MENU-55).
+
+   So every list below prints in full, and the census under each one states the distribution the
+   reader would otherwise have to infer by eye. A tool that summarises without saying so manufactures
+   findings, and a measured-looking finding is the expensive kind. */
 
 import { readFileSync, existsSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -109,11 +126,33 @@ for (const key of keys) {
 }
 
 const out = process.stdout;
-out.write(`\n  compared ${comparedCells} cells, ${comparedNodes} matched nodes\n`);
+
+/* The census that replaces the cap. A list printed in full is still read by eye, and an eye reading
+   410 lines infers a distribution; this states it instead. `by` groups a list on a key and prints
+   every group with its count — every group, because a census that elides is the defect again. */
+const census = (label, items, keyOf) => {
+  const m = new Map();
+  for (const it of items) { const k = keyOf(it); m.set(k, (m.get(k) || 0) + 1); }
+  if (!m.size) return;
+  out.write(`      by ${label}: ` + [...m].sort((x, y) => y[1] - x[1] || String(x[0]).localeCompare(String(y[0])))
+    .map(([k, n]) => `${k}=${n}`).join("  ") + `
+`);
+};
+
+out.write(`
+  compared ${comparedCells} cells, ${comparedNodes} matched nodes
+`);
+/* MENU-56, and it is printed on EVERY run including the green one. A gate that names its blind spot
+   only when it fails is a gate that reassures precisely when it is trusted most. */
+out.write(`  Surfaces only. Control states are not captured and are verified by hand.
+`);
 
 if (missingCells.length) {
-  out.write(`\n  ${missingCells.length} cell(s) not comparable:\n`);
-  for (const m of missingCells) out.write(`    ${m}\n`);
+  out.write(`
+  ${missingCells.length} cell(s) not comparable:
+`);
+  for (const m of missingCells) out.write(`    ${m}
+`);
 }
 
 if (tokenChanges.size) {
@@ -128,19 +167,45 @@ if (tokenChanges.size) {
 
 const preUnmatched = unmatched.filter((u) => u.pre);
 const realUnmatched = unmatched.filter((u) => !u.pre);
-out.write(`\n  unmatched nodes: ${preUnmatched.length} pre-registered (H-c: leaderboard, victory)`
-  + `, ${realUnmatched.length} elsewhere\n`);
-for (const u of realUnmatched.slice(0, 40)) out.write(`    ${u.key}  ${u.path}  (${u.side})\n`);
-if (realUnmatched.length > 40) out.write(`    … and ${realUnmatched.length - 40} more\n`);
+out.write(`
+  unmatched nodes: ${preUnmatched.length} pre-registered (H-c: leaderboard, victory)`
+  + `, ${realUnmatched.length} elsewhere
+`);
+/* IN FULL. This list used to stop at 40. */
+for (const u of realUnmatched) out.write(`    ${u.key}  ${u.path}  (${u.side})
+`);
+if (realUnmatched.length) {
+  census("cell", realUnmatched, (u) => u.key);
+  census("surface", realUnmatched, (u) => u.surface);
+  census("side", realUnmatched, (u) => u.side);
+}
 
 if (!deltas.length) {
-  out.write(`\n  ZERO computed deltas on the four surface axes.\n`);
+  out.write(`
+  ZERO computed deltas on the four surface axes.
+`);
 } else {
-  out.write(`\n  ${deltas.length} computed delta(s):\n`);
-  for (const d of deltas.slice(0, 200)) {
-    out.write(`    ${d.key}\n      ${d.path}  ${d.prop}\n        before: ${d.from}\n        after : ${d.to}\n`);
+  out.write(`
+  ${deltas.length} computed delta(s), all of them printed:
+`);
+  /* IN FULL. This list used to stop at 200, and the 210 it dropped were a contiguous tail of the
+     key sort — which is how a slice comes to look like "German only, nothing at 1920" (MENU-55). */
+  for (const d of deltas) {
+    out.write(`    ${d.key}
+      ${d.path}  ${d.prop}
+        before: ${d.from}
+        after : ${d.to}
+`);
   }
-  if (deltas.length > 200) out.write(`    … and ${deltas.length - 200} more\n`);
+  out.write(`
+  distribution of the ${deltas.length} delta(s) — stated, not left to the eye:
+`);
+  census("cell", deltas, (d) => d.key);
+  /* The key is `lang/size/surface`, in that order — viewport-survey.mjs:408. */
+  census("lang", deltas, (d) => d.key.split("/")[0]);
+  census("size", deltas, (d) => d.key.split("/")[1]);
+  census("surface", deltas, (d) => d.key.split("/")[2]);
+  census("property", deltas, (d) => d.prop);
 }
 
 /* Unmatched nodes outside the two pre-registered surfaces are a failure too: a node that stopped
