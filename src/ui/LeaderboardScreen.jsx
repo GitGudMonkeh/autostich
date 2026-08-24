@@ -294,7 +294,14 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPla
               mit `inset: 0` im Inhaltsfluss). Der Wächter zählt die Klassennamen im Quelltext — deshalb steht
               hier keiner ausgeschrieben. Unterhalb 1280 px ist der Scroll-Wrapper `display: contents`, dort
               scrollt weiter das Panel selbst — die Handy-Fassung bleibt unverändert. */}
-          <div className="lb-page as-ring as-ring-quiet rounded-xl p-4 flex-1 min-h-0 overflow-y-auto" style={{ background: "#141419", border: "1px solid #26262e" }}>
+          {/* #menu-rework M8 — der Inline-Wert trägt die SCHMALE Fassung (ab 1280 px überschreibt ihn
+              `.lb-page` mit Tönung und Rahmen). `#141419` IST `--sf-ground`, Zeichen für Zeichen: die
+              Fläche, auf der ein Panel sitzt, und genau das ist dieses Panel unter 1280 px — ein Loch
+              in der Karte. Wertgleich, die Handy-Fassung bewegt sich nicht.
+              `#26262e` bleibt Literal und wird gezählt (M8-G5): die Kanten-Leiter beginnt bei
+              `--ed-quiet` (#2a2a34) und liegt 4/4/6 daneben. Unter 1280 px ist das sichtbar, und
+              „nichts unter 1280 px" ist eine Regel, kein Richtwert (s. M3s benannte Ausnahme). */}
+          <div className="lb-page as-ring as-ring-quiet rounded-xl p-4 flex-1 min-h-0 overflow-y-auto" style={{ background: "var(--sf-ground)", border: "1px solid #26262e" }}>
             <i className="as-ring-run" aria-hidden="true" />
             <div className="lb-pagescroll">
             {/* #global Allzeit-Board: alle CASUAL-Läufe (die Abfrage filtert Ranglisten-Zeilen weg), Baum-Pille an.

@@ -147,6 +147,41 @@ const MIGRATED_JSX = [
        niemand bestellt hat. */
     utilExempt: ["rounded-[2px]", "rounded-[3px]"] },
   { path: "src/ui/Sparkline.jsx" },
+  /* #menu-rework M8 — DIE BESTENLISTE, beide Einstiege. Drei Dateien, und die dritte ist geteilt:
+     `WeekMods.jsx` exportiert die Chips, die dieser Screen unter 1280 px rendert, UND das Panel, das
+     nur im Ranglisten-LAUF unter dem Brett steht. Was dort umgestellt wurde, ist wertgleich
+     (`--sf-raised` ist der Verlauf Zeichen fuer Zeichen); alles andere steht unten als gezaehltes
+     Literal.
+
+     `stateLiterals` traegt hier drei Sorten, alle gezaehlt statt gepraegt:
+
+       DIE HANDY-WAESCHE, wie bei M7 und aus demselben Grund. `#0c0c10ee` ist der Ueberzug, den das
+         Overlay INLINE setzt; ab 1280 px ueberschreibt `.lb-root` ihn mit `--sf-scrim-desk`.
+         Wirksam ist das Literal also nur unter 1280 px, und das ist in 2c dauerhaft ausgenommen.
+         `#141419` daneben ist WEG — es war `--sf-ground` und liest den Schritt jetzt.
+       M8-G5, DIE ZWEITE KANTE. `#26262e` steht an `.lb-page` und an der gerahmten Fassung von
+         `GlobalLeaderboard` (die im HUB haengt, nicht auf diesem Screen). Die Kanten-Leiter beginnt
+         bei `--ed-quiet` (#2a2a34) und liegt 4/4/6 daneben — sichtbar, und beide Fundstellen sind
+         auch unter 1280 px sichtbar. Zweite Sichtung der Familie „Kante, die kein Schritt ist".
+       M8-G2, DER ZEILENGRUND ALS DECKENDES LITERAL. `#17161f`, `#1c1b24`, `#20202a`, `#15151d`,
+         `#131218` und `#2a2833` sind die Flaechen der schmalen Fassung — Mod-Kasten, Seed-Chip,
+         Champion-Zeile, Baum-Pille, Seed-Kasten, Trennlinie. Keiner davon hat einen Schritt:
+         `--sf-sunken` (#141320) ist der tiefste, und alle sechs liegen darueber. Ab 1280 px
+         ueberschreibt index.css die ersten beiden; die uebrigen sind die Handy-Fassung.
+       PERMANENT — `#3a3a48` ist die GESTRICHELTE Kante der Baum-Pille: sie sagt „hier fehlt ein
+         Wert absichtlich" und ist damit Signal, keine Struktur (dieselbe Antwort wie M7-G3).
+         `#d4a63a` ist Gold, eine Rollenfarbe aus design-sprache.md §3. */
+  { path: "src/ui/LeaderboardScreen.jsx",
+    stateLiterals: ["#0c0c10ee", "#26262e", "#17161f", "#131218", "#1c1b24", "#20202a"] },
+  { path: "src/ui/GlobalLeaderboard.jsx",
+    stateLiterals: ["#26262e", "#15151d", "#3a3a48"],
+    /* M8-G6 — `py-[1px]` polstert die ZWEI ZIFFERN der Baum-Pille gegen ihre eigene Kapsel. Das ist
+       MENU-51 noch einmal, eine Sprosse kleiner: `--btn-pad-y` (0.625rem) ist das Zehnfache, und
+       Tailwinds benannte Nachbarn sind 2 px (py-0.5) und 4 px (py-1) — es gibt kein 1. Die Pille
+       steht in JEDER Breite, also waere „auf 2 px hoch" eine Bewegung der Handy-Fassung fuer einen
+       gruenen Waechter. Gemeldet, nicht umgeschrieben — dritte Sichtung dieser Familie. */
+    utilExempt: ["py-[1px]"] },
+  { path: "src/ui/WeekMods.jsx", stateLiterals: ["#17161f", "#2a2833", "#1a1922"] },
 ];
 /* Ein Haken trifft ein Tag, wenn dessen Klassen ihn als GANZES Wort fuehren: `cz-main` darf
    `cz-mainscroll` nicht mitnehmen, sonst haengt der eine Eintrag am anderen. */
@@ -172,7 +207,12 @@ const MIGRATED_SELECTORS = [/\.op-/, /\.as-opt-/, /\.as-panel-sunken/, /\.as-she
      Victory und Chronik, und jede Regel, die sie anfasst, ist deshalb ohnehin auf `.rd-`/`.go-`
      eingegrenzt (Waechter: rd-ruhe). Ein blosser `/\.rs-/` wuerde die Victory-Regeln mit
      einsammeln, die dieser Runde nicht gehoeren — deshalb der Praefix mit Screen davor. */
-  /\.st-/, /\.rd-/];
+  /* M8: `.lb-` MEINT DEN GANZEN SCREEN, wie `.cz-`, `.up-`, `.st-` und `.rd-` ihre. Die Regeln des
+     Regeln-Reiters (`.rg-pos`, `.rg-neg`, `.rg-root`) sind darin enthalten, ohne dass `/\.rg-/`
+     hier stehen muesste: sie sind alle auf `.lb-page` eingegrenzt, weil dieselben Klassennamen im
+     Siegesbildschirm und in den Lauf-Details anderen Bauteilen gehoeren. Ein blosses `/\.rg-/`
+     wuerde die einsammeln — dieselbe Ueberlegung, mit der M7 `.rs-`/`.rg-` nicht aufgenommen hat. */
+  /\.st-/, /\.rd-/, /\.lb-/];
 /* `.up-banner` ist NICHT dieser Screen. Es ist die „Neue Version verfuegbar"-Leiste
    (`UpdateBanner.jsx`) und teilt mit dem Baum nur die zwei Buchstaben des Praefixes. Sie gehoert
    keinem migrierten Screen, also darf die Erlaubnisliste sie nicht einsammeln. Gefunden, weil der
@@ -251,6 +291,19 @@ const INSET_EXEMPT = [
   /* Steuerelement */ /^\.st-close, \.lb-head > button$/, /^\.rd-close$/, /^\.rd-bf$/, /^\.rd-bf-tab$/,
   /* Layout       */ /^\.st-root, \.lb-root, \.go-root$/, /^\.rd-root$/, /^\.rd-blist2$/,
   /* Ueberschrift */ /^\.st-head, \.lb-head$/, /^\.rd-c3 > summary$/, /^\.rd-c4 \.rg-perTrick > summary$/,
+  /* --- M8, die Bestenliste. Zwei der drei Sorten, dieselben Gruende. ---
+     Steuerelement: der Countdown-Chip (7/13), der Spannenwert am Modifikator (3/8) und der
+       Auswahlregel-Chip am Listenkopf (3/10) polstern gegen ihre BESCHRIFTUNG — zwei Ziffern, ein
+       Wort. Genau der Fall, fuer den 2c `--btn-pad-*` ausserhalb der Leiter fuehrt, und derselbe
+       Mikro-Fall wie MENU-51: `--btn-pad-y` ist das Fuenf- bis Dreifache, Tailwinds Nachbarn sind
+       2 px und 4 px.
+     Layout: die Listenzeile und ihre Spaltenkoepfe. Die Zeile hat KEINE Box — Flaeche keine, Rahmen
+       keiner, Radius 0, nur eine Haarlinie nach oben —, und ihre seitlichen 6 px sind die Spur, in
+       der `.lb-page .lb-cols` seine Koepfe haelt. Das ist eine Fluchtlinie zwischen zwei
+       Geschwistern, keine Panelkante; dieselbe Unterscheidung wie bei `.up-readout` und
+       `.rd-blist2`. Auf `--in-tight` gezogen stuenden Kopf und Zeile nicht mehr uebereinander. */
+  /* Steuerelement */ /^\.lb-weekcount$/, /^\.lb-modspan$/, /^\.lb-page \.lb-listsub$/,
+  /* Layout       */ /^\.lb-page \.lb-cols$/, /^\.lb-page \.lb-rows > button$/,
 ];
 
 /* WAS DIE HOEHEN-ACHSE MEINT — und die eine Regel der Werkstatt, die daneben steht.
@@ -322,11 +375,47 @@ const M7_RADIUS_EXEMPT = [
   /* permanent */ /^\.st-card::before, \.lb-body::before, \.go-card::before$/, /^\.rd-card::before$/,
 ];
 
+/* --- M8, die Bestenliste. Drei Sorten, drei Gruende, einzeln aufgezaehlt. ---
+
+   M8-G2 — DER ZEILENGRUND `rgba(15, 15, 21, .72)`. Er steht in design-sprache.md §1 als DIE Flaeche
+     einer Zeile („Alles, was IN einem Panel steht, bleibt neutral") und hat keinen Schritt: die
+     Leiter ist deckend, und was diese Flaeche ausmacht, ist gerade das Durchscheinen des getoenten
+     Panels darunter. `--sf-sunken` (#141320) naehme ihr genau das. Vier Fundstellen auf diesem
+     Screen, eine Familie — und dieselbe Antwort wie bei M3-G2 und M7-G2, eine Ebene daneben.
+   M8-G3 — DER WEISSE HAUCH UEBER DEM GLAS. `rgba(255, 255, 255, .018 / .028 / .03 / .045 / .07)`:
+     die Navigationszeile in drei Zustaenden, die Zeichenkachel und der Zeilen-Hover der Liste. Das
+     IST M3-G2 und M7-G2 — dieselbe Familie, hier zum dritten Mal gezaehlt. Die drei Zustandswerte
+     sind Zeichen fuer Zeichen die des Baums (`#up-form`), weil die Spalte ihm nachzieht.
+   M8-G1 — DIE HELLE KANTE des Countdown-Chips, `rgba(255, 255, 255, .62)`. Die Kanten-Leiter hat
+     drei Sprossen und alle drei sind dunkel (#2a2a34 · #2c2a3a · #302d40); eine helle Kante ist
+     keine Stufe davon, sondern die Gegenrichtung — und sie ist Absicht: der Countdown ist die
+     einzige Zahl des Kopfes, die sich bewegt.
+   M8-G4 — DIE PILLE. `border-radius: 999px` am Auswahlregel-Chip ist keine Stufe einer Leiter,
+     sondern eine FORM („so rund wie die Box hoch ist"). Auf `--rd-sm` gezogen waere aus der Pille
+     ein Kasten; einen Schritt „vollrund" zu praegen hiesse, den Annex zu oeffnen, und der ist beim
+     Freeze geschlossen worden.
+   PERMANENT — die deck- und bedeutungsgetoenten Kanten (`--c` am Rang-Podest und am
+     Modifikator-Zeichen, `--deck-a1` an der Kontext-Kachel) fallen gar nicht erst auf: sie stehen
+     als `color-mix()` ueber einer Variablen und tragen kein Literal. Sie stehen hier NICHT in der
+     Liste, weil eine Ausnahme, die nichts ausnimmt, den Waechter nur unschaerfer macht. */
+const M8_SURFACE_EXEMPT = [
+  /* M8-G3 */ /^\.lb-tabs \[role="tab"\]$/, /^\.lb-tabs \[role="tab"\]:hover$/,
+  /^\.lb-tabs \[role="tab"\]\[aria-selected="true"\]$/, /^\.lb-ctxicon$/, /^\.lb-modicon$/,
+  /^\.lb-page \.lb-rows > button:hover$/,
+  /* M8-G2 */ /^\.lb-weekcount$/, /^\.lb-ctxtile$/, /^\.lb-mod$/,
+];
+const M8_EDGE_EXEMPT = [
+  /* M8-G1 */ /^\.lb-weekcount$/,
+];
+const M8_RADIUS_EXEMPT = [
+  /* M8-G4 */ /^\.lb-page \.lb-listsub$/,
+];
+
 const CSS_AXES = [
   { axis: "Flaeche", re: /(?:^|[;{\s])background(?:-color|-image)?\s*:[^;}]*(#[0-9a-fA-F]{3,8}|\brgba?\()/g,
-    exempt: [...M3_SURFACE_EXEMPT, ...M7_SURFACE_EXEMPT] },
+    exempt: [...M3_SURFACE_EXEMPT, ...M7_SURFACE_EXEMPT, ...M8_SURFACE_EXEMPT] },
   { axis: "Kante",   re: /(?:^|[;{\s])border(?:-top|-right|-bottom|-left)?(?:-color)?\s*:[^;}]*(#[0-9a-fA-F]{3,8}|\brgba?\()/g,
-    exempt: [...M3_EDGE_EXEMPT, ...M7_EDGE_EXEMPT] },
+    exempt: [...M3_EDGE_EXEMPT, ...M7_EDGE_EXEMPT, ...M8_EDGE_EXEMPT] },
   /* `inset` ist ausgenommen, und das ist eine Unterscheidung, keine Nachsicht: die Hoehenleiter misst
      ABHEBEN von der Flaeche. Ein Innenschatten hebt nichts — er zeichnet eine Kante (die 2-px-
      Unterstreichung der aktiven Auswahl) oder eine Mulde, und beides hat eigene Gruende. */
@@ -338,7 +427,7 @@ const CSS_AXES = [
      Der Lookahead wird jetzt genau einmal ausgewertet, direkt hinter dem Doppelpunkt. */
   { axis: "Hoehe",   re: /(?:^|[;{\s])box-shadow\s*:(?!\s*(?:var\(|none|inset\b))[^;}]*\d/g, exempt: ELEV_EXEMPT },
   { axis: "Radius",  re: /(?:^|[;{\s])border-radius\s*:(?!\s*(?:var\(|0\s*[;}]))[^;}]*[1-9]/g,
-    exempt: M7_RADIUS_EXEMPT },
+    exempt: [...M7_RADIUS_EXEMPT, ...M8_RADIUS_EXEMPT] },
   { axis: "Innenabstand", re: /(?:^|[;{\s])padding(?:-top|-right|-bottom|-left)?\s*:(?!\s*(?:var\(|0\s*[;}]))[^;}]*[1-9]/g, exempt: INSET_EXEMPT },
 ];
 
@@ -366,7 +455,8 @@ describe("#menu-rework — migrierte CSS-Regeln fuehren keine Werte ein", () => 
        Der Anlass ist MENU-37: derselbe Waechter meldete einmal Erfolg fuer eine Liste, von der nur
        ein Teil noch etwas traf. */
     for (const [name, liste] of [["Innenabstand", INSET_EXEMPT], ["Hoehe", ELEV_EXEMPT],
-      ["Flaeche", M7_SURFACE_EXEMPT], ["Kante", M7_EDGE_EXEMPT], ["Radius", M7_RADIUS_EXEMPT]]) {
+      ["Flaeche", M7_SURFACE_EXEMPT], ["Kante", M7_EDGE_EXEMPT], ["Radius", M7_RADIUS_EXEMPT],
+      ["Flaeche M8", M8_SURFACE_EXEMPT], ["Kante M8", M8_EDGE_EXEMPT], ["Radius M8", M8_RADIUS_EXEMPT]]) {
       const tot = liste.filter((re) => !mine.some(([sel]) => re.test(sel)));
       expect(tot, `${name}: Ausnahme trifft keine migrierte Regel:\n  ${tot.map(String).join("\n  ")}`).toEqual([]);
     }
@@ -726,6 +816,16 @@ describe("#menu-rework — die Tinten-Ratsche: Textfarb-Literale wachsen nicht",
     ["src/ui/RunStats.jsx (ganze Datei)", () => inkOfJsx("src/ui/RunStats.jsx"), 0],
     ["src/ui/RunGraphs.jsx (ganze Datei)", () => inkOfJsx("src/ui/RunGraphs.jsx"), 0],
     ["src/ui/Sparkline.jsx (ganze Datei)", () => inkOfJsx("src/ui/Sparkline.jsx"), 1],
+    /* #menu-rework M8 — die Bestenliste. Tinte ist unveraendert eine benannte Luecke, das Fenster
+       ist zu, also gezaehlt statt gepraegt.
+       DIE CSS-SEITE SCHLIESST `.st-` AUS, und das ist keine Kosmetik: der Kopf-Kanon steht seit M8
+       als EINE Regel fuer beide Screens (`.st-eyebrow, .lb-eyebrow`, `.st-sub, .lb-sub`), und diese
+       zwei Literale sind M7s — sie stehen oben in dessen Zeile. Ohne den Ausschluss stuende jedes
+       von ihnen in zwei Ratschen, und eine Zahl, die zweimal gezaehlt wird, ist keine Messung. */
+    ["src/ui/LeaderboardScreen.jsx (ganze Datei)", () => inkOfJsx("src/ui/LeaderboardScreen.jsx"), 1],
+    ["src/ui/GlobalLeaderboard.jsx (ganze Datei)", () => inkOfJsx("src/ui/GlobalLeaderboard.jsx"), 3],
+    ["src/ui/WeekMods.jsx (ganze Datei)", () => inkOfJsx("src/ui/WeekMods.jsx"), 0],
+    ["index.css — .lb-* (M8, ohne die geteilten Kopf-Regeln)", () => inkOfCss([/\.lb-/], [/\.st-/]), 10],
   ];
 
   for (const [name, count, cap] of CAP) {
@@ -838,6 +938,17 @@ describe("#menu-rework — die Kanten-Ratsche (MENU-38): durchsichtige neutrale 
     ["src/ui/RunStats.jsx (ganze Datei)", () => edgeOfJsx("src/ui/RunStats.jsx"), 0],
     ["src/ui/RunGraphs.jsx (ganze Datei)", () => edgeOfJsx("src/ui/RunGraphs.jsx"), 0],
     ["src/ui/Sparkline.jsx (ganze Datei)", () => edgeOfJsx("src/ui/Sparkline.jsx"), 1],
+    /* #menu-rework M8. Die drei JSX-Dateien standen von Anfang an auf null — die Bestenliste hat
+       ihre Kanten nie inline gesetzt. Die CSS-Seite stand auf SECHS und steht jetzt auf null: die
+       Navigationszeile, die Kontext-Kachel, der Modifikator-Kasten, der Spannenwert, der
+       Auswahlregel-Chip und die Haarlinie zwischen zwei Listenzeilen sind auf `--ed-quiet` gezogen.
+       Diese Null ist ein ERREICHTER Zustand, keine Abwesenheit — dieselbe Umstellung, die M2a
+       gemessen, M3 vierzehnmal und M7 viermal gezogen hat. Die gemessenen Deltas stehen in
+       measurements/M8.md §3.4. */
+    ["src/ui/LeaderboardScreen.jsx (ganze Datei)", () => edgeOfJsx("src/ui/LeaderboardScreen.jsx"), 0],
+    ["src/ui/GlobalLeaderboard.jsx (ganze Datei)", () => edgeOfJsx("src/ui/GlobalLeaderboard.jsx"), 0],
+    ["src/ui/WeekMods.jsx (ganze Datei)", () => edgeOfJsx("src/ui/WeekMods.jsx"), 0],
+    ["index.css — .lb-* (M8)", () => edgeOfCss([/\.lb-/]), 0],
   ];
 
   for (const [name, count, cap] of CAP) {
