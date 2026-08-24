@@ -154,9 +154,39 @@ Ergebnis leere Plätze behauptet, die es nie gab.
   aufgehängt wäre es in einer 374-px-Spur 813 px hoch und liefe aus jedem Panel; über die Höhe
   bemessen braucht es 254 px Breite. Alles andere in einem Menü wird von der Breite bestimmt — solche
   Objekte sind die Ausnahme und müssen als solche behandelt werden.
+- **Ein Hochformat bekommt einen hochformatigen Platz.** Die knappe Achse zu bemessen reicht nicht,
+  wenn das Verhältnis extrem ist: das Kartenbrett (rund 1 : 2,2) in eine Reihe aus Querformaten zu
+  setzen zwingt entweder das Brett auf Briefmarkengröße oder dem Nachbarn 130 px Luft auf. Dann
+  bekommt es eine **Spur über mehrere Reihen** statt einer Zelle in einer.
+- **Mehrhöhe geht in die Kacheln, nicht in die Fugen.** Wo ein Panel höher ist als sein Inhalt,
+  wachsen seine Elemente. Die Luft auf die Abstände zwischen Gruppen zu verteilen macht aus einem
+  Panel drei lose Blöcke — und die Zahlen bleiben klein, obwohl Platz da wäre.
+- **Ein Panel, dessen Inhalt umschaltet, behält seine Maße.** Sonst schiebt es beim Öffnen seine
+  Nachbarn — dasselbe Verbot wie oben, nur in der Zeit statt im Raum. Die Fläche steht vorher fest,
+  der neue Inhalt scrollt darin.
 - **Restluft sammelt sich am Fuß einer Spalte, nie zwischen zwei Panels.** Luft am Ende liest sich
   als „die Spalte ist zu Ende", Luft in der Mitte als „hier fehlt etwas". Eine Spalte ist deshalb ein
   eigener Stapel und keine Rasterzeile, die sich am längsten Nachbarn streckt.
+
+### Zählen statt aufzählen
+
+Eine Liste, die zu lang für ihre Fläche ist, aber **bekannte Kategorien** hat, wird nicht gekürzt und
+nicht gescrollt — sie wird **gezählt**. Das Panel zeigt je Kategorie ein Feld mit der Anzahl; ein
+Klick darauf öffnet die Liste **an Ort und Stelle**, im selben Panel, mit denselben Maßen.
+
+Der Gewinn ist doppelt: die Fläche steht fest, egal was der Spielstand hergibt — und es wird *mehr*
+sichtbar, nicht weniger, weil die Liste Platz für Beschreibungen hat, den eine Chip-Wolke nie hatte.
+
+Im Lauf-Fenster: 20 Perks als Chips waren zwanzig Namen ohne Wirkung. Als acht Kategoriefelder plus
+Liste sind es acht Zahlen und, einen Klick entfernt, jeder Perk mit Stufe und Wirkung.
+
+**Wenn geöffnet wird, werden die Kategoriefelder zur Reiterzeile** — dieselben Felder, dieselbe
+Reihenfolge, dieselben Farben, nur flach. Man wechselt die Kategorie, ohne zurückzugehen. Was sonst
+noch im Panel stand, klappt auf je eine Zeile zusammen statt zu verschwinden.
+
+**Kein Overlay dafür.** Ein Überzug nimmt den halben Bildschirm, um ein paar Zeilen zu zeigen, und
+verdeckt genau das, wozu die Liste gehört. Ein Panel, das umschaltet, verdeckt nichts und braucht
+keine dritte Ebene.
 
 ### Haarlinie
 
@@ -532,6 +562,8 @@ entstehen bei jedem Screen, den wir uns vornehmen — sie gehören hierher, nich
 | --- | --- |
 | 24.08.2026 | Angelegt. Fundament, Kopf-Kanon, Farbrollen, Komponenten aus den Aufträgen Optionen, Melder, Mainscreen und Baum-Reiter 1–2 zusammengeführt. |
 | 24.08.2026 | Farbentscheidung Upgrade-Baum: **eine** Struktur-Farbe, und die ist die Deckfarbe. Feste Fremdtöne (Cyan/Violett) für Struktur entfallen. |
+| 24.08.2026 | **Zählen statt aufzählen** (§1) — das Muster hinter dem Build-Panel des Lauf-Fensters: bekannte Kategorien werden zu Zählfeldern, die Liste öffnet im selben Panel und die Felder werden zur Reiterzeile. Kein Overlay, keine dritte Ebene. Idee des Owners. |
+| 24.08.2026 | Drei weitere Regeln in §1: **ein Hochformat bekommt einen hochformatigen Platz**, **Mehrhöhe geht in die Kacheln, nicht in die Fugen**, und **ein Panel, dessen Inhalt umschaltet, behält seine Maße**. Alle drei aus Fehlgriffen an demselben Panel. |
 | 24.08.2026 | **Lauf-Fenster entworfen** (Teil zwei der Statistik). Gemessen an einem vollen Lauf — 7 Skills, 20 Perks, Aufstellung: 949 px gegen 720 px Bildschirm, und unter der Aufstellung ein 272-px-Loch, weil der Score-Verlauf nur zwei der drei Spuren spannt. |
 | 24.08.2026 | Drei Regeln daraus, alle in §1: **Gleichhöhe wird nie erzwungen**, **Spaltenbreiten folgen dem Inhalt**, und **ein Element mit festem Seitenverhältnis wird über seine knappe Achse bemessen**. Anlass war ein eigener Fehlgriff: die erste Fassung des Vorschlags zwang drei Panels auf eine Höhe und schnitt damit den längsten ab. |
 | 24.08.2026 | **Statistik entworfen**, Auftrag unter `docs/statistik-redesign.md`. Entscheidung: der **Inhalt** scrollt, nicht das Fenster — die Karte ist an jeder Größe 983 px hoch, bei 720 px Fenster liegen 263 px unter der Falz, und der `sticky`-Kopf war die Notlösung dafür. Dazu Sektionen ohne Tönung und ohne Rahmen, 33-px-Klickziele und eine Auskunftszeile in der Aktionszone. |

@@ -117,15 +117,104 @@ Klickziele sind, und aufgefangen davon, dass die Liste ihre Spalte ohnehin füll
 
 ---
 
-## Noch nicht Gegenstand: das Lauf-Fenster
+## Das Lauf-Fenster
 
-Ein Klick auf eine Lauf-Zeile öffnet die Detailansicht (`RunDetail`). Sie wird **in diesem Auftrag
-nicht angefasst** — sie bekommt einen eigenen Durchgang.
+Ein Klick auf eine Lauf-Zeile öffnet die Detailansicht (`RunDetail`). Sie ist Teil dieses Auftrags.
 
-Ein Befund liegt aber schon vor und gehört hierher, damit er nicht verlorengeht:
-*gemessen* ist das Fenster bei **1400 × 700 ganze 749 px hoch** — höher als der Bildschirm. Bei
-1280 × 720 sind es 717 px, also drei Pixel Luft. Im Markup steht `max-h-[90dvh]`; auf dem Desktop
-greift es nicht.
+Mockup: Artboard **„Statistik — das Lauf-Fenster"**, Fassungen *Ist*, *Vorschlag* und *Geöffnet*.
+
+**Messgrundlage:** ein **voller** Lauf — 7 Skills, 20 Perks, Aufstellung. Das ist der Normalfall; der
+Snapshot fällt nur weg, wenn der Speicher voll läuft (`storage.js:398` — Notfallpfad, nicht Regelpfad)
+und bei fremden Board-Läufen. Ein dünner Lauf misst 717 px, ein voller **949**.
+
+### Was schon richtig ist
+
+Auf dem Desktop ist das **keine Karte, sondern ein Raster**: `background: none`,
+`border-color: transparent`, `padding: 0` (`index.css:4488`). Das ist §1 wörtlich und bleibt. Ebenso
+bleiben der Überzug, die Score-Zahl auf 46 px, Gold als ihre Farbe und die Kennzahlreihe im Kopf.
+
+### Aufteilung
+
+| | Ist (*gemessen*) | Ziel |
+| --- | --- | --- |
+| Spuren | 374 · 374 · 374 | **290 · 544 · 290** |
+| Aufstellung | eine Zelle in Reihe 1, darunter 272 px Loch | **Spur über beide Reihen** |
+| Score-Verlauf | `1 / span 2`, 770 px | `1 / span 2` der linken Spuren, 856 px |
+| Reihe 1 | wächst mit dem Inhalt | **fest 380 px** |
+
+**Die Aufstellung ist ein Hochformat** — 5 Spalten zu 8 Reihen aus 5:7-Karten, rund **1 : 2,2**. In
+einer Reihe aus Querformaten zwingt sie entweder sich selbst auf Briefmarkengröße oder dem Nachbarn
+130 px Luft auf. Sie bekommt deshalb eine Spur über **beide** Reihen; damit verschwindet zugleich das
+gemessene 272-px-Loch, das heute unter ihr klafft.
+
+**Die erste Reihe misst fest 380 px.** Das ist die Bedingung dafür, dass das Umschalten im
+Build-Panel nichts verschiebt.
+
+### Stats & Verlauf
+
+Acht Werte, **zweispaltig in vier Reihen** statt achtmal untereinander — eine schmale Spur mit acht
+gleichen Zeilen liest sich als Menü, nicht als Kennzahlenblock. Die Kacheln füllen die Reihenhöhe.
+
+### Build — zählen statt aufzählen
+
+Das ist der Kern, und die Regel dazu steht in `design-sprache.md` §1 *Zählen statt aufzählen*.
+
+*Gemessen* fließen heute **34 Chips** inhaltsbreit (50 bis 109 px, Höhen 23 / 51 / 80) — jede
+Namenslänge ergibt ein anderes Bild, und **keine einzige Beschreibung ist erreichbar**.
+
+**Ziel: fünfzehn feste Kacheln**, immer gleich viele:
+
+| Block | Felder | Quelle |
+| --- | --- | --- |
+| Skills nach Fraktion | **4** | vier Fraktionen |
+| Perks nach Kategorie | **8** | 7 Kategorien (`perks.js:47`) + Legendär |
+| Gebäude nach Kategorie | **3** | `value` · `score` · `formation` (`architect.js`) |
+
+Jedes Feld zeigt die Anzahl in der **Kategoriefarbe** — sie ist Inhalt, kein Chrome (§3). Leere
+Kategorien bleiben stehen und sind gedämpft (§1, *Ziel*). Die Mehrhöhe des Panels geht in die
+**Kacheln**, nicht in die Fugen.
+
+**Die Architekten-Gebäude fehlten bisher ganz.** *Geprüft:* 41 Gebäude in drei Kategorien
+(Wert 12 · Score 19 · Formation 10), bis zu 24 gleichzeitig auf dem Brett (`MAX_COVER`).
+
+### Build — geöffnet
+
+Ein Klick auf ein Feld öffnet die Liste **im selben Panel**, mit denselben Maßen (544 × 380):
+
+- Die **acht Kategoriefelder werden zur Reiterzeile** — dieselben Felder, dieselbe Reihenfolge,
+  dieselben Farben, nur flach. Das gewählte trägt die Unterkante in seiner Farbe. Man wechselt die
+  Kategorie, ohne zurückzugehen.
+- **Skills und Gebäude klappen auf je eine Zeile zusammen** statt zu verschwinden; sie bleiben
+  sichtbar und anklickbar.
+- Die **Liste scrollt im Panel**: Name, Stufe, Wirkung. Sie ist die einzige Stelle des Screens, an
+  der eine Liste beliebig lang sein darf.
+- Der Kopf sagt, wo man ist: „Build · Perks · Score".
+
+**Kein Overlay, keine dritte Ebene.** Ein Überzug hätte den halben Bildschirm genommen, um sechs
+Zeilen zu zeigen, und genau das verdeckt, wozu die Liste gehört. Escape schließt weiterhin genau
+eine Ebene.
+
+### Höhe
+
+*Gemessen:* die vier Panels summieren sich beim vollen Lauf auf **1757 px**; das Fenster misst 949 px
+gegen 720 px Bildschirm (bei 1400 × 700 sind es 297 px darüber hinaus). `.rd-root` trägt dafür einen
+eigenen Scroller (`index.css:4485`) — erreichbar ist alles.
+
+**Ziel:** Kopf raus aus dem Scroller, der Inhalt scrollt. **Dass es passt, wird nicht behauptet:**
+ein voller Lauf hat mehr Inhalt, als ein 720-px-Fenster fasst.
+
+### Ohne Aufstellung
+
+Der Ausnahmefall (Speicher voll, fremder Board-Lauf): die dritte Spur **fällt weg**, statt leer zu
+bleiben — die Spaltenzahl folgt dem Inhalt.
+
+### Zeichen
+
+Zwei Textglyphen entfallen: `⧉` am Seed und `↻` an „Nachspielen" werden gezeichnete SVG (§4).
+
+### Kopf
+
+Eyebrow **Rückblick · Lauf** — die Statistik, aus der man kommt, trägt denselben Bereich.
 
 ---
 
@@ -138,7 +227,6 @@ greift es nicht.
   ist der Rekord das einzige Farbsignal, und das behält damit seine Aussage.
 - **Der Überzug** (`rgba(12, 12, 16, .94)` ohne `backdrop-filter`) und der **Titel auf 27 px** sind
   schon richtig.
-- **Das Lauf-Fenster** — eigener Durchgang, siehe oben.
 - **Keine Mechanik:** nichts hier ändert, was gezählt, gespeichert oder ausgewertet wird.
 
 ---
@@ -146,6 +234,8 @@ greift es nicht.
 ## Offene Punkte für den Owner
 
 1. **Der Wortlaut der neuen Unterzeile** in beiden Sprachen.
-2. **Wie viele Läufe die Liste höchstens zeigt.** Der Vorschlag sagt „so viele, wie die Spalte
+2. **Die Namen der Kategoriefelder** im Build-Panel und der Wortlaut der Kopfzeile im
+   geöffneten Zustand.
+3. **Wie viele Läufe die Liste höchstens zeigt.** Der Vorschlag sagt „so viele, wie die Spalte
    trägt", gedeckelt auf die gespeicherten 30. Wenn eine feste Obergrenze lieber ist (etwa 15), ist
    das eine Zahl.
