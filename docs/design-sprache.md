@@ -118,7 +118,25 @@ wieder etwas.
 ### Haarlinie
 
 Unter dem Kopf, über die volle Breite: `linear-gradient(90deg, a1, a2, a1)`, Deckkraft `.85`,
-**Höhe 2 px, überall.**
+**Höhe 2 px, überall.** Beide Stopps tragen die Flächen-Mischung (70 %, §3).
+
+**Das Farbpaar bleibt, unverändert** — auch bei Decks, deren zwei Farben fast gegenüberliegen.
+*Gemessen über alle 42 Paare* tut es je nach Deck etwas völlig anderes, und beides ist richtig:
+
+| Familie | Anzahl | Was die Linie tut |
+| --- | --- | --- |
+| Ton-Verlauf, Abstand ab 90° | 10 | zwei Farben, bis 173° auseinander (Eldritch, Malibu Wave, Genesis) |
+| beides zugleich, 30–90° | 9 | eine Wanderung in Ton und Helligkeit |
+| Helligkeits-Verlauf, unter 30° | 23 | ein Ton, hell nach dunkel — bei 16 davon liegt der Ton unter 10° |
+
+Die Linie tut damit auf **41 von 42 Decks** etwas: im Ton bis 173°, in der Helligkeit im Verhältnis
+bis 1,85 (Median 1,39). Es ist dasselbe Paar, das die Wortmarke trägt — die Haarlinie zeigt vom Deck
+genau das, was die Marke auch zeigt.
+
+**Ein Deck fällt heraus, und das bleibt so: Seraph** (`#ffe08a` / `#fff2c0`) — 4° Ton, Verhältnis
+1,11. Zwei fast gleiche Cremetöne, die die Mischung noch näher zusammenschiebt; die Linie liest sich
+dort als eine Farbe statt als Verlauf. Ihre Aufgabe ist, den Kopf abzusetzen, und das tut sie — hell
+auf dunklem Grund. Eine Sonderregel für ein Deck von 42 wäre teurer als der Fehler.
 
 Der Wert ist nicht beliebig: die Strichstärken dieser Sprache sind eine Leiter mit vier Sprossen, und
 jede Sprosse ist belegt.
@@ -444,7 +462,11 @@ gedämpft und sagt das — sie ist nicht bei null.
 
 ## 9. Offene Punkte
 
-1. Ob **Genesis-artige Decks** (a1 und a2 fast gegenüber) den Zwei-Farben-Verlauf so behalten sollen.
+Zurzeit keine.
+
+Was hier stand, ist abgearbeitet: die Haarlinien-Höhe (§1), die Ziel-Helligkeit der Deckfarbe (§3),
+die Eyebrow-Wörter (§2) und der Zwei-Farben-Verlauf bei Genesis-artigen Decks (§1). Neue Punkte
+entstehen bei jedem Screen, den wir uns vornehmen — sie gehören hierher, nicht in den Auftrag.
 
 ---
 
@@ -454,6 +476,7 @@ gedämpft und sagt das — sie ist nicht bei null.
 | --- | --- |
 | 24.08.2026 | Angelegt. Fundament, Kopf-Kanon, Farbrollen, Komponenten aus den Aufträgen Optionen, Melder, Mainscreen und Baum-Reiter 1–2 zusammengeführt. |
 | 24.08.2026 | Farbentscheidung Upgrade-Baum: **eine** Struktur-Farbe, und die ist die Deckfarbe. Feste Fremdtöne (Cyan/Violett) für Struktur entfallen. |
+| 24.08.2026 | **Der Zwei-Farben-Verlauf der Haarlinie bleibt** (§1) — der letzte offene Punkt. Die Frage war auf Decks gemünzt, deren Farben fast gegenüberliegen; gemessen über alle 42 Paare tut das Paar je nach Deck etwas anderes: Ton-Verlauf bei 10, beides bei 9, reiner Helligkeits-Verlauf bei 23. Auf 41 von 42 Decks tut die Linie etwas. Einzige Ausnahme ist Seraph, und die bleibt. |
 | 24.08.2026 | **Eyebrow-Wörter für alle acht Overlays festgelegt** (§2) — der letzte offene Punkt der Kopfzeile. Regel: der Eyebrow nennt den Bereich, der Titel den Screen; wo beide gleich heißen, nimmt der Eyebrow die kurze Hub-Form. Glossar und Leitfaden teilen sich einen. Vier verworfene Wörter sind mit notiert. Zwei Unterzeilen sind neue Copy und stehen als solche markiert. |
 | 24.08.2026 | Zur Ziel-Helligkeit zwei Gegenproben, beide gemessen und beide ohne Änderung: der **Rahmen** bleibt ungemischt (Spanne nur 1,9-fach), und **ein einziger Mischwert für alles** ist verworfen — er nimmt Farbe dort weg, wo der Kontrast schon erfüllt war. Beides in §3 notiert, damit es nicht wiederkommt. |
 | 24.08.2026 | **Ziel-Helligkeit der Deckfarbe entschieden** (§3), damit ist offener Punkt 3 erledigt. Gemessen über alle 42 Decks mit eigenem Akzent: der Kontrast von `a1` gegen den Zeilengrund schwankt um den Faktor 7,9, drei Decks liegen unter 4,5 : 1. Mischung auf Weiß, zwei Werte: **62 %** für Schrift (schlechtestes Deck dann 4,65 : 1), **70 %** für Flächen und Kanten (3,80 : 1). Die Tönung bleibt ungemischt. Kosten: rund vierzig Prozent der Sättigung. |
