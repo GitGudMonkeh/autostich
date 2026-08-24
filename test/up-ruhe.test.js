@@ -62,13 +62,26 @@ describe("#up-ruhe — der Schein nach außen fällt, die Aussage bleibt", () =>
 
   it("der gewählte Knoten und die gewählte Legendär-Phase leuchten nicht mehr nach außen", () => {
     expect(deskBlock).toMatch(/\.up-vnode\.is-sel\s*\{[^}]*box-shadow:\s*inset[^;]*;\s*\}/);
-    /* Die Regel steht ZWEIMAL im Block (alte Fassung, dann die leise) — die LETZTE gewinnt, also wird
-       auch die letzte geprüft. Auf die erste zu schauen hieße, den Rückfall zu übersehen. */
-    const alle = [...deskBlock.matchAll(/\.up-navpassive\.is-sel\s*\{([^}]*)\}/g)];
-    expect(alle.length, ".up-navpassive.is-sel nicht mehr gefunden").toBeGreaterThan(0);
-    const pas = alle[alle.length - 1][1];
-    expect(pas, "der 2-px-Ring ist zurück").toMatch(/box-shadow:\s*none/);
-    expect(pas, "ohne Fläche ist die Auswahl gar nicht mehr zu sehen").toMatch(/background:/);
+    /* #menu-rework M3 — hier stand die Prüfung auf `.up-navpassive.is-sel`, und das war der
+       MECHANISMUS: das Kärtchen der Legendär-Phase hatte einen Auswahl-Zustand, weil man es antippen
+       musste, um seine Erklärung woanders erscheinen zu lassen. Es trägt seinen Zustand jetzt selbst
+       und hat deshalb GAR KEINEN Auswahl-Zustand mehr; die alte Regel wäre eine Zusicherung über ein
+       Element, das es nicht gibt.
+       Die Zusicherung selbst ist unverändert und gilt für den Nachfolger: KEIN SCHEIN NACH AUSSEN.
+       Sie steht als „enthält keinen Schatten außer inset" statt als „enthält box-shadow: none" — die
+       zweite Form geht auf, sobald jemand eine zweite Regel danebenstellt, und genau daran sind in
+       diesem Durchgang fünf Befunde entstanden. */
+    const legRules = [...deskBlock.matchAll(/(^|[\s,])(\.up-leg[a-z-]*(?:\.[a-z-]+)?)\s*\{([^}]*)\}/g)];
+    expect(legRules.length, ".up-leg nicht gefunden — trägt das Kärtchen keine Regeln mehr?").toBeGreaterThan(0);
+    for (const [, , sel, body] of legRules) {
+      const schatten = [...body.matchAll(/box-shadow:\s*([^;]+)/g)].map((m) => m[1].trim());
+      for (const sch of schatten)
+        expect(sch, `${sel}: Schein nach außen ist zurück`).toMatch(/^(none|inset\b)/);
+    }
+    /* Und die Gegenprobe zum Verschwinden: der Auswahl-Zustand darf nicht durch die Hintertür
+       zurückkommen — im Kärtchen steht kein `is-sel` mehr. */
+    expect(read("src/ui/UpgradeScreen.jsx"), "das Kärtchen hat wieder einen Auswahl-Zustand")
+      .not.toMatch(/up-leg[^"`]*is-sel/);
   });
 
   it("die Kopf-Werkzeuge sind Text-Knöpfe", () => {
@@ -94,7 +107,7 @@ describe("#up-form — eine Kachelform, gleiche Reihen, eigene Legendär-Reihe",
     const r = deskBlock.match(/\.up-vnode,[^{]*\{([^}]*)\}/);
     expect(r, "die Sammelregel der Kachelform fehlt").toBeTruthy();
     expect(r[1]).toMatch(/border-radius:\s*6px/);
-    for (const k of ["up-navrow", "up-navpassive", "up-skill", "up-stat", "gd-navrow", "gl-navrow"])
+    for (const k of ["up-navrow", "up-leg", "up-skill", "up-stat", "gd-navrow", "gl-navrow"])
       expect(r[0], `${k} fehlt in der Sammelregel`).toMatch(new RegExp(`\\.${k}[,\\s]`));
     /* Die PANELS behalten ihre 14 px — sie sind der Rahmen, nicht der Inhalt. */
     expect(deskBlock).toMatch(/\.up-page\s*\{[^}]*border-radius:\s*14px/);
