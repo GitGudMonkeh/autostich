@@ -5142,8 +5142,21 @@ b, strong { font-weight: 600; }
     margin-top: 0 !important;
   }
   /* Ein Block, der doch laenger wird, scrollt IN SICH - er schiebt nie seinen Nachbarn
-     (design-sprache.md 1, dieselbe Naht wie im Baum seit #flach). */
-  .st-runs, .st-picked2 { min-height: 0; overflow-y: auto; }
+     (design-sprache.md 1, dieselbe Naht wie im Baum seit #flach).
+
+     `flex: 1 1 auto` gehoert dazu und ist nicht Beiwerk: OHNE das nimmt der Inhaltsblock seine
+     INHALTSHOEHE statt der Spaltenhoehe, und `useRunCap` misst dann sich selbst — bei 1920 x 1080
+     stand die Liste auf 476 px in einer 738-px-Spalte und meldete „zehn passen", obwohl vierzehn
+     hineingepasst haetten. Eine Rueckkopplung, die zufaellig bei zehn stabil ist, ist keine Messung.
+     Mit dem Faktor fuellt der Block die Spalte, und die Mehrhoehe geht in die Kacheln statt in die
+     Fugen (design-sprache.md 1). */
+  .st-runs, .st-picked2 { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+  /* Und `align-content: start` an der LISTE, sonst streckt das Raster seine Zeilen auf die neue
+     Hoehe: gemessen wurden aus den 44 px Klickziel 63,8 px, und die Restluft sass zwischen den
+     Zeilen statt am Fuss der Spalte. Bei den Kaesten des Wahlverhaltens ist das Strecken richtig
+     (Mehrhoehe geht in die KACHELN), bei einer Liste aus Klickzielen nicht — dort ist die Hoehe
+     eine Zusage. */
+  .st-runs { align-content: start; }
   /* #menu-rework M7 - DAS KLICKZIEL DER LAUF-ZEILEN.
 
      GEMESSEN standen die zehn Zeilen auf 33,33 px - die kleinste Klickflaeche des ganzen
@@ -5686,10 +5699,16 @@ b, strong { font-weight: 600; }
   .rd-bf-tab .rd-bf-n { font-size: var(--text-body-lg-3); }
   .rd-bf-tab.is-on { background: rgba(255, 255, 255, .045); box-shadow: inset 0 -2px 0 var(--c, #8a8a95); }
   .rd-bf-tab.is-on .rd-bf-k { color: #e8e8ea; }
-  /* Die zwei NICHT gewaehlten Gruppen klappen auf je eine Zeile zusammen, statt zu verschwinden:
-     sie bleiben sichtbar und anklickbar, und genau das ist der Unterschied zu einem Overlay. */
+  /* Die zwei NICHT gewaehlten Gruppen klappen auf je EINE Zeile zusammen, statt zu verschwinden:
+     sie bleiben sichtbar und anklickbar, und genau das ist der Unterschied zu einem Overlay. Ihre
+     Beschriftung wandert dabei neben die Felder, damit die Zeile wirklich eine ist. */
   .rd-bg-tab { row-gap: 0; }
-  .rd-bfs .rd-bg:not(.rd-bg-tab) .rd-bf-tab { opacity: .7; }
+  .rd-bg-tab:not(.is-open) {
+    grid-template-rows: auto; grid-template-columns: auto minmax(0, 1fr);
+    align-items: center; column-gap: 10px;
+  }
+  .rd-bfs .rd-bg-tab:not(.is-open) .rd-bf-tab { opacity: .7; }
+  .rd-bfs .rd-bg-tab:not(.is-open) .rd-bf-k { display: none; }
   /* Die Liste scrollt IM Panel - die einzige Stelle dieses Screens, an der eine Liste beliebig lang
      sein darf. Sie bekommt die Resthoehe, damit das Panel seine 380 px behaelt. */
   .rd-blist2 {

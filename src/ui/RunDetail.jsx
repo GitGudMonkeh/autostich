@@ -168,13 +168,13 @@ function BuildField({ field, tab, on, onOpen }) {
    Zuständen — geschlossen mit Kacheln, geöffnet als Reiterzeile (die gewählte Gruppe) bzw.
    zusammengeklappt auf EINE Zeile (die zwei anderen). Sie verschwinden nicht: sie bleiben sichtbar
    und anklickbar, und genau das ist der Unterschied zu einem Overlay. */
-function BuildGroup({ group, tab, openKey, onOpen }) {
+function BuildGroup({ group, tab, on = false, openKey, onOpen }) {
   return (
-    <div className={`rd-bg${tab ? " rd-bg-tab" : ""}`} data-group={group.key}>
+    <div className={`rd-bg${tab ? " rd-bg-tab" : ""}${on ? " is-open" : ""}`} data-group={group.key}>
       <span className="rd-bg-k">{group.label}</span>
       <span className="rd-bg-f">
         {group.fields.map((f) => (
-          <BuildField key={f.key} field={f} tab={tab} on={tab && f.key === openKey}
+          <BuildField key={f.key} field={f} tab={tab} on={on && f.key === openKey}
             onOpen={(k) => onOpen(group.key, k)} />
         ))}
       </span>
@@ -194,8 +194,15 @@ function BuildPanel({ groups, hidden }) {
         {t("gameover.build")}{openGroup ? ` · ${openGroup.label}` : ""}{openField ? ` · ${openField.label}` : ""}
       </div>
       <div className="rd-bfs">
+        {/* Ist IRGENDEINE Gruppe offen, werden ALLE drei flach — die gewählte als Reiterzeile, die
+            zwei anderen als je EINE Zeile. Sie verschwinden nicht: sie bleiben sichtbar und
+            anklickbar, und genau das ist der Unterschied zu einem Overlay.
+            Gemessen, warum das nicht nur Gestaltung ist: liess man die zwei anderen Gruppen in ihrer
+            Kachelform stehen, blieben dem Panel von 380 px noch ZEHN fuer die Liste — ein Eintrag
+            von 45 px scrollte in einem 10-px-Fenster. Der Zustandsdurchlauf hat es gefunden
+            (`evidence/M7/states.mjs`), nicht das Auge. */}
         {groups.map((g) => (
-          <BuildGroup key={g.key} group={g} tab={!!openGroup && g.key === openGroup.key}
+          <BuildGroup key={g.key} group={g} tab={!!openGroup} on={!!openGroup && g.key === openGroup.key}
             openKey={open?.field} onOpen={onOpen} />
         ))}
       </div>

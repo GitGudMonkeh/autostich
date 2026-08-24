@@ -59,7 +59,13 @@ const BASE = (() => {
 
 const ORIGIN = `http://localhost:${PORT}${BASE}`;
 
-const SIZES = [[1920, 1080], [1600, 900], [1536, 791], [1400, 700], [1280, 720]];
+const SIZES = (() => {
+  /* `--sizes 1280x720,1536x791` narrows the matrix. The owner-facing set is TWO sizes, not five —
+     five captures of the same screen are five chances to look at the wrong one. */
+  const i = process.argv.indexOf("--sizes");
+  if (i >= 0 && process.argv[i + 1]) return process.argv[i + 1].split(",").map((s) => s.split("x").map(Number));
+  return [[1920, 1080], [1600, 900], [1536, 791], [1400, 700], [1280, 720]];
+})();
 const LANGS = ["de", "en"];
 
 /* ------------------------------------------------------------------ server */
@@ -217,10 +223,12 @@ const RD_PROBE = `(() => {
     /* "die vier Panels summieren sich auf 1757 px" */
     panelSum: [".rd-c1", ".rd-c2", ".rd-c3", ".rd-c4"]
       .map((s) => { const b = one(s); return b ? b.h : 0; }).reduce((a, b) => a + b, 0),
-    /* "darunter 272 px Loch" — how far the LEFT half runs past the bottom of the formation lane.
-       Before this task the left half was the `.rd-left` bracket; it is gone, because a fixed first
-       row removes the reason it existed. The measure is therefore taken from whichever left-hand
-       panel ends lowest, which is the same quantity either way and survives the restructure. */
+    /* "darunter 272 px Loch" - how far the LEFT half runs past the bottom of the formation lane.
+       Before this task the left half was the rd-left bracket; it is gone, because a fixed first row
+       removes the reason it existed. The measure is therefore taken from whichever left-hand panel
+       ends lowest, which is the same quantity either way and survives the restructure.
+       NO BACKTICKS IN THIS STRING: the probe IS a template literal, and one backtick ends it. The
+       same trap is documented at the head of scripts/viewport-proof.mjs. */
     hole: (() => {
       const c3 = one(".rd-c3");
       if (!c3) return null;
