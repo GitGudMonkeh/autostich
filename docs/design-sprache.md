@@ -4,6 +4,11 @@
 und wird bei jedem Screen fortgeschrieben, den wir uns vornehmen. Wer einen Screen anfasst, liest
 zuerst hier — und trägt hier nach, was er entschieden hat.
 
+**Was hier entschieden ist, gilt auch für Screens, die eine Form vorher kopiert haben.** Ein Bauteil
+wandert von Screen zu Screen — die Navigationsspalte des Baums steht heute in drei Overlays. Ändert
+sich das Original, ziehen die Kopien nach; sie sind dieselbe Bedienung, nicht eine ähnliche. Anlass:
+die Bestenliste trug die Spalte des Baums noch zwei Entscheidungen nach dessen Umbau.
+
 Es beschreibt **nur Gestaltung**, keine Mechanik und keine Umsetzung. Technische Fragen
 (Komponenten-Schnitt, wo das CSS liegt, Tests) bespricht der Owner mit dem umsetzenden Worker.
 
@@ -16,6 +21,7 @@ Zugehörige Aufträge, die auf diesem Dokument aufsetzen:
 | Mainscreen & Marke | `docs/mainscreen-marke.md` |
 | Upgrade-Baum | `docs/upgrade-baum-redesign.md` |
 | Erststart | `docs/erststart-redesign.md` |
+| Bestenliste | `docs/bestenliste-redesign.md` |
 
 Mockups: https://claude.ai/code/artifact/2e09b642-9197-42b1-81c5-dd41618c5ad8 (Marke, Mainscreen,
 Melder, Baum) und https://claude.ai/code/artifact/c8328e42-db0b-411f-b26e-ec72a60a17ec (Optionen).
@@ -210,10 +216,17 @@ und „Upgrades", obwohl sie fast wie ihre Titel klingen.
 | Kosmetik | Deck-Werkstatt | Decks, Spielfelder, Effekte. |
 | Rückblick | Statistiken | *neu* — „Was du bisher gespielt hast." |
 | Vergleich | Bestenliste | *neu* — „Die besten Läufe aller Spieler." |
+| Rangliste | Bestenliste | *neu* — „Woche {n} — alle spielen denselben Seed." |
 | Nachschlagen | Glossar | Begriffe & Sonderregeln — keine einzelnen Perks/Skills |
 | Nachschlagen | Leitfaden | So spielst du jeden Archetyp. |
 | Optionen | Einstellungen | Alles sofort wirksam und gespeichert. |
 | Playtest | Feedback senden | Geht direkt an die Entwicklung. |
+
+**Ein Screen mit zwei Einstiegen bekommt zwei Kopf-Fassungen, nicht zwei Screens.** Die Bestenliste
+öffnet sich über die Hub-Kachel zum *Nachsehen* und über den Ranglisten-Knopf zum *Spielen* — dieselbe
+Liste, zwei Aufgaben. Der **Titel bleibt gleich**, weil die Sache dieselbe ist; **Eyebrow und
+Unterzeile sagen, welche der beiden Aufgaben gerade läuft**. Genau dafür hat der Kopf diese zwei
+Teile. Ein zweiter Titel wäre ein zweiter Screen, und den gibt es nicht.
 
 **Glossar und Leitfaden teilen sich einen Eyebrow.** Das ist kein Versehen: sie sind derselbe Bereich,
 und der geteilte Kicker sagt genau das. Zwei Beiträge einer Rubrik tragen dieselbe Rubrik.
@@ -483,6 +496,8 @@ entstehen bei jedem Screen, den wir uns vornehmen — sie gehören hierher, nich
 | --- | --- |
 | 24.08.2026 | Angelegt. Fundament, Kopf-Kanon, Farbrollen, Komponenten aus den Aufträgen Optionen, Melder, Mainscreen und Baum-Reiter 1–2 zusammengeführt. |
 | 24.08.2026 | Farbentscheidung Upgrade-Baum: **eine** Struktur-Farbe, und die ist die Deckfarbe. Feste Fremdtöne (Cyan/Violett) für Struktur entfallen. |
+| 24.08.2026 | **Bestenliste entworfen**, Auftrag unter `docs/bestenliste-redesign.md`. Der Screen hat die Maße des Baums, den richtigen Überzug und die richtige Titelgröße — er ist nur bei zwei Entscheidungen nicht mitgekommen: dem Farbanlauf der Navigationsspalte (`#up-form`) und dem Schein nach außen (`#up-ruhe`). Dazu ein Panel ohne Tönung und ohne Rahmen, ein Kopf ohne Eyebrow und Unterzeile und 22 Textglyphen. |
+| 24.08.2026 | Zwei Regeln daraus: **geteilte Bauteile ziehen nach** (Intro) und **ein Screen mit zwei Einstiegen bekommt zwei Kopf-Fassungen, nicht zwei Screens** (§2). |
 | 24.08.2026 | **Erststart-Bildschirm entworfen**, Auftrag unter `docs/erststart-redesign.md`. Härtester Befund: die gewählte Sprache ist nur auf der linken Seite markiert — rechts überschreibt die Trennlinie des Segmented die Zustandskante, und der Standard ist Englisch, also ist der unmarkierte Zustand der, den jeder zuerst sieht. Dazu drei Cyans im Eingabefeld, ein Titel unter Maß mit violettem Schein, eine Karte ohne Rahmen und zwei Textglyphen. |
 | 24.08.2026 | Dazu eine **benannte Ausnahme in §5**: wo die Hauptaktion beim Öffnen gesperrt ist, leuchtet das Element, das die Sperre löst — beim Erststart also das Eingabefeld statt des Speichern-Knopfes. Ein Schein je Screen, nur an anderer Stelle. |
 | 24.08.2026 | **Der Zwei-Farben-Verlauf der Haarlinie bleibt** (§1) — der letzte offene Punkt. Die Frage war auf Decks gemünzt, deren Farben fast gegenüberliegen; gemessen über alle 42 Paare tut das Paar je nach Deck etwas anderes: Ton-Verlauf bei 10, beides bei 9, reiner Helligkeits-Verlauf bei 23. Auf 41 von 42 Decks tut die Linie etwas. Einzige Ausnahme ist Seraph, und die bleibt. |
