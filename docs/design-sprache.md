@@ -142,6 +142,18 @@ Ergebnis leere Plätze behauptet, die es nie gab.
 - **Panels sitzen in einem Raster mit festen Zeilen, nicht in einem Fluss.** Ein Block, der doch
   länger wird, **scrollt in sich** — er schiebt nie seinen Nachbarn. Dieselbe Naht wie im Baum seit
   `#flach` (`grid-template-rows: minmax(0, 1fr)` plus innerer Scroller).
+- **Gleichhöhe wird nie erzwungen.** Ein Block endet an seinem Inhalt. Drei Panels mit 501, 491
+  und 544 px auf eine Höhe zu zwingen macht aus dem längsten einen **abgeschnittenen** und aus dem
+  kürzesten einen **hohlen** — beides schlechter als eine ungleiche Kante. (Anlass: das Lauf-Fenster,
+  wo genau das passiert war, nachdem die Regel darüber schon geschrieben stand.)
+- **Spaltenbreiten folgen dem Inhalt, nicht dem gleichen Anteil.** Drei gleich breite Spuren für drei
+  ungleiche Inhalte sind keine Ordnung, sondern eine Behauptung. Im Lauf-Fenster wurde aus
+  374 · 374 · 374 ein 300 · 570 · 254 — der Build trägt 27 Chips, die Aufstellung ein Hochformat.
+- **Ein Element mit festem Seitenverhältnis wird über seine knappe Achse bemessen.** Das Kartenbrett
+  ist 5 Spalten × 8 Reihen aus 5:7-Karten, also rund **1 : 2,2 im Hochformat**. An der Spaltenbreite
+  aufgehängt wäre es in einer 374-px-Spur 813 px hoch und liefe aus jedem Panel; über die Höhe
+  bemessen braucht es 254 px Breite. Alles andere in einem Menü wird von der Breite bestimmt — solche
+  Objekte sind die Ausnahme und müssen als solche behandelt werden.
 - **Restluft sammelt sich am Fuß einer Spalte, nie zwischen zwei Panels.** Luft am Ende liest sich
   als „die Spalte ist zu Ende", Luft in der Mitte als „hier fehlt etwas". Eine Spalte ist deshalb ein
   eigener Stapel und keine Rasterzeile, die sich am längsten Nachbarn streckt.
@@ -520,6 +532,8 @@ entstehen bei jedem Screen, den wir uns vornehmen — sie gehören hierher, nich
 | --- | --- |
 | 24.08.2026 | Angelegt. Fundament, Kopf-Kanon, Farbrollen, Komponenten aus den Aufträgen Optionen, Melder, Mainscreen und Baum-Reiter 1–2 zusammengeführt. |
 | 24.08.2026 | Farbentscheidung Upgrade-Baum: **eine** Struktur-Farbe, und die ist die Deckfarbe. Feste Fremdtöne (Cyan/Violett) für Struktur entfallen. |
+| 24.08.2026 | **Lauf-Fenster entworfen** (Teil zwei der Statistik). Gemessen an einem vollen Lauf — 7 Skills, 20 Perks, Aufstellung: 949 px gegen 720 px Bildschirm, und unter der Aufstellung ein 272-px-Loch, weil der Score-Verlauf nur zwei der drei Spuren spannt. |
+| 24.08.2026 | Drei Regeln daraus, alle in §1: **Gleichhöhe wird nie erzwungen**, **Spaltenbreiten folgen dem Inhalt**, und **ein Element mit festem Seitenverhältnis wird über seine knappe Achse bemessen**. Anlass war ein eigener Fehlgriff: die erste Fassung des Vorschlags zwang drei Panels auf eine Höhe und schnitt damit den längsten ab. |
 | 24.08.2026 | **Statistik entworfen**, Auftrag unter `docs/statistik-redesign.md`. Entscheidung: der **Inhalt** scrollt, nicht das Fenster — die Karte ist an jeder Größe 983 px hoch, bei 720 px Fenster liegen 263 px unter der Falz, und der `sticky`-Kopf war die Notlösung dafür. Dazu Sektionen ohne Tönung und ohne Rahmen, 33-px-Klickziele und eine Auskunftszeile in der Aktionszone. |
 | 24.08.2026 | Drei Regeln daraus, alle in §1: **wenn die Anzahl schwankt** (Ziel reservieren · Ergebnis umbrechen · Offenes mit vorhandenem Inhalt füllen), **Panels schieben nie ihren Nachbarn**, und **Restluft sammelt sich am Fuß einer Spalte, nie zwischen zwei Panels**. |
 | 24.08.2026 | **Bestenliste entworfen**, Auftrag unter `docs/bestenliste-redesign.md`. Der Screen hat die Maße des Baums, den richtigen Überzug und die richtige Titelgröße — er ist nur bei zwei Entscheidungen nicht mitgekommen: dem Farbanlauf der Navigationsspalte (`#up-form`) und dem Schein nach außen (`#up-ruhe`). Dazu ein Panel ohne Tönung und ohne Rahmen, ein Kopf ohne Eyebrow und Unterzeile und 22 Textglyphen. |
