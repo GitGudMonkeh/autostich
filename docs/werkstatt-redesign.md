@@ -67,15 +67,24 @@ und *ein Hochformat bekommt einen hochformatigen Platz*.
 
 *Gemessen, Vorschlag als Stil-Überzug im echten Build:*
 
-| Kartenrücken | heute | Ziel |
-| --- | --- | --- |
-| 1280 × 720 | 155,3 px | **250,1 px** |
-| 1400 × 700 | 146 px | **246 px** |
-| 1536 × 791 | 188,3 px | **250,1 px** (284 px wären dort möglich) |
+| Kartenrücken | heute | Ziel | Bildfläche |
+| --- | --- | --- | --- |
+| 1280 × 720 | 155,3 px | **266 px** | 2,9-fach |
+| 1400 × 700 | 146 px | **252 px** | 3,0-fach |
+| 1536 × 791 | 188,3 px | **283 px** | 2,3-fach |
 
-**250 px ist der Wert, der an allen drei Größen ohne Überhang steht** — Überhang 0, der
-Aktionsknopf bei y = 700 gegen die Kartenkante 702. Das ist die **2,6-fache Bildfläche**, und der
-Katalog gibt dafür **keinen Pixel** ab.
+**Die Breite wird gerechnet, nicht gesetzt** — §1: *ein Element mit festem Seitenverhältnis wird
+über seine knappe Achse bemessen*. Die knappe Achse ist hier die Höhe: der Rücken bekommt, was an
+Höhe übrig bleibt, wenn Titel, Beschriftungen und Aktionszone abgezogen sind, gedeckelt auf 58 % der
+Spur. **Gegen die Rasterzeile rechnen, nicht gegen die aktuelle Lage des Knopfes** — der wandert
+mit, sobald der Block schrumpft, und eine Runde gegen seine alte Position schießt zu kurz (gemessen:
+202 statt 266 px). Ergebnis an allen drei Größen: **Überhang 0**, und der Katalog gibt **keinen
+Pixel** ab.
+
+**Was übrig bleibt, steht mittig.** Der Block ist höhenbegrenzt und damit schmaler als seine Spur;
+linksbündig ließe er rechts eine tote Spalte stehen, die sich wie ein fehlendes Bild liest — dieselbe
+Entscheidung, die `.cz-shotwrap` in `index.css` für den geschrumpften Ist-Block schon getroffen hat
+(`#shop-skalieren`).
 
 **Der Schrumpffaktor wird dabei überflüssig.** `shopScale.js` existiert nur, weil der Block als
 Paar-plus-Band zu hoch wurde. Nebeneinander passt er ohne Schrumpfen.
@@ -160,8 +169,14 @@ Screens aus derselben Funktion `packUnlock()`.
 ### Die Entscheidung
 
 - **Die Kachel trägt Fortschritt statt Satz** — ein 3-px-Balken in der Deckfarbe und ein Zähler in
-  Geist Mono. *Gemessen: keiner der zwölf Zähler ist breiter als 62 px*, alle passen mit Balken
-  daneben. Die drei freien Decks sagen „frei" bzw. „Stufe III".
+  Geist Mono. Die drei freien Decks sagen „frei" bzw. „Stufe III".
+- **Der Zähler nennt ein Paar, solange beide Zahlen kurz sind, und Prozent, wo das Ziel in die
+  Millionen geht.** Das ist keine Kosmetik: der rohe Paar-Text eines Score-Ziels wäre
+  „412.000 / 25.000.000" und damit dreimal so breit wie die Kachel; *gemessen* passt selbst die
+  gekürzte Form „0,4 / 25 Mio." nicht neben den Balken. Beide Formen sind die natürliche Lesart
+  ihres Ziels — ein Paar für „tu es N mal", ein Prozentsatz für „erreiche eine Zahl". Konkret:
+  Peacock „21 / 300", die vier Fraktionen „3 / 5", Prisma „0 / 4", Sparfuchs „offen", Titan „2 %",
+  Kataklysmus „1 %". **In der Abschluss-Sektion daneben steht das volle Paar** — dort ist Platz.
 - **Die Bedingung wird die Abschluss-Sektion der Vorschau** — Trennlinie statt Rahmen,
   Kleinbeschriftung „Freischalten", der Satz in voller Größe, darunter Balken und Zähler. Genau die
   Reihenfolge aus §1: Inhalt, dann Abschluss der Seite.
@@ -179,7 +194,7 @@ Screens aus derselben Funktion `packUnlock()`.
 ### Das Loch
 
 *Gemessen bei 1280 × 720:* die Bühne schließt bei y = 548,6, das Listen-Panel bei y = 546,3, die
-Karte erst bei y = 702 — **153,4 px leer**. Bei 1536 × 791 sind es **226,7 px**. Durch 94 % Überzug
+Karte erst bei y = 702 — **153,4 px leer über die volle Breite**. Bei 1536 × 791 sind es **226,7 px**. Durch 94 % Überzug
 liest sich in der Lücke der Hub durch („Statistiken", „Optionen", „Tutorial", „Angemeldet als …").
 
 Das Listen-Panel ist an **jeder** Fenstergröße **388,9 px** hoch und wächst nie mit. `.cz-fxlist` hat
@@ -195,9 +210,16 @@ ein Element nur woanders, gehört die Erklärung an das Element.*
 
 - **Die Zeile wird die Kanon-Zeile** — 11 / 13 px Polster, Titel 13,5 / 600, Beschreibung 12 px auf
   1,38. Damit sagt die Liste, was die Effekte tun, ohne dass man jeden einzeln anklickt.
-- **Beide Panels füllen die Spalte.** Fünf Zeilen à 57 px plus Kategorien, Sektionskopf und Fußnote
-  füllen die 514 px; die Kategorie mit **sechs** Zeilen scrollt um rund 65 px — und damit hat der
-  Scroller, der seit dem Umbau leer läuft, zum ersten Mal Arbeit.
+- **Das Listen-Panel füllt die Spalte, und die Mehrhöhe geht in die Zeilen** (§1). Die Zeile wächst
+  von **57 px** auf höchstens **76 px**, je nachdem, was die Spalte hergibt — *gemessen* 64,1 px bei
+  1280 × 720, 60,1 bei 1400 × 700, 76 bei 1536 × 791. Am Fuß bleiben dabei überall **13 px**. Ohne
+  den Deckel würde aus einer Zeile mit zwei Textzeilen ein Kasten; ohne das Wachsen bliebe das Panel
+  bei 1536 × 791 unten **102 px hohl** — und ein hohles Panel ist genau das, was §1 an erzwungener
+  Gleichhöhe verbietet.
+- **Die Bühne endet weiter an ihrem Inhalt.** Ihre Vorschau trägt das Brett-Verhältnis und kann
+  Höhe nicht verwerten; *gemessen* bleiben dort 122 px (1280 × 720), 44 px (1400 × 700) und 60 px
+  (1536 × 791) Restluft am **Fuß der Spalte** — erlaubt nach §1, und nicht mehr die durchgehende
+  Lücke über die volle Breite, durch die sich der Hub las.
 - **Die Auskunft steht auf allen drei Reitern.** Heute fällt sie im Effekte-Kopf weg und hinterlässt
   **664 px Lücke** in Spalte 3.
 - **Der Skill-Effekt sagt „immer an" statt „aktiv".** Er ist per Mechanik immer eingeschaltet

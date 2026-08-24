@@ -199,7 +199,7 @@ Reihe Kachelbreite nimmt eine Reihe Kacheln aus dem ersten Bildschirm. Die Wirku
 *Gemessen an der Werkstatt bei 1280 × 720:* fünf statt sechs Katalogspalten hätten der Kachel 40 px
 gebracht und **sieben von zwölf** ohne Scrollen sichtbaren Decks gekostet. Dasselbe Panel mit dem
 Kartenrücken als Hochformat und Vorderseite plus Spielfeld als Beiwerk daneben bringt dem
-Hauptbild **155 → 250 px** — die 2,6-fache Fläche — und kostet den Katalog **keinen Pixel**.
+Hauptbild **155 → 266 px** — die 2,9-fache Fläche — und kostet den Katalog **keinen Pixel**.
 
 Daraus die allgemeine Form: **eine Ansicht, die ein Objekt verkaufen soll, führt genau ein Bild.**
 Drei gleich große Bilder nebeneinander sind ein Inventar, kein Angebot.
@@ -547,6 +547,14 @@ sind abgeschnitten.** Die zugehörigen Zähler sind **keiner breiter als 62 px**
 Also: **die Kachel trägt den Fortschritt** — ein schmaler Balken in der Deckfarbe und ein Zähler in
 Geist Mono —, und der **Satz steht in der dauerhaft sichtbaren Ansicht daneben**, als
 Abschluss-Sektion mit Trennlinie.
+
+**Und der Zähler hat zwei Formen, weil es zwei Arten von Zielen gibt:** ein **Paar**, solange beide
+Zahlen kurz sind („3 / 5", „21 / 300"), und **Prozent**, wo das Ziel in die Millionen geht („2 %").
+Der rohe Paar-Text eines Score-Ziels wäre „412.000 / 25.000.000" und damit dreimal so breit wie
+seine Kachel — *gemessen* passt selbst die gekürzte Form nicht neben den Balken. Das ist keine
+Ausnahme von der Regel, sondern ihre Anwendung: ein Paar liest sich als „tu es N mal", ein
+Prozentsatz als „erreiche eine Zahl". **Am Ort mit Platz — der Abschluss-Sektion — steht immer das
+volle Paar.**
 
 Das ist keine Ausnahme von *„erklärt sich ein Element nur woanders, gehört die Erklärung an das
 Element"*, sondern ihre Bedingung: die Erklärung darf danebenstehen, solange sie **ohne Klick und
