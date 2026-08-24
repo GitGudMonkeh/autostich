@@ -5270,13 +5270,14 @@ b, strong { font-weight: 600; }
        1. FLÄCHE STATT FARBANLAUF. „Fünf Zeilen mit je eigenem Farbverlauf sind fünf Flächen; die
           Farbe gehört an die Kante, nicht in die Zeile." Der 90-Grad-Anlauf (12 %, aktiv 26 %) ist
           weg, es bleibt der weiße Hauch in drei Stufen — dieselben drei Werte wie am Baum.
-       2. KEIN SCHEIN NACH AUSSEN. „Eine leuchtende Spalte neben einem ruhigen Panel zieht den Blick
-          heraus." Der `0 0 18px -10px` ist weg.
-          UND DER INNENSCHEIN MIT IHM, und das ist eine Auslegung, die benannt gehört: der Entwurf
-          nennt nur den äußeren. `inset 0 0 24px -14px` in der Deckfarbe IST aber ein Farbverlauf in
-          der Zeile, also genau das, was Griff 1 entfernt — ihn stehen zu lassen hieße, die aktive
-          Zeile behielte als einzige ihren Anlauf. Der Baum hat an `.up-navrow` gar keinen Schatten.
-          Als Befund gemeldet (M8-F04), nicht still entschieden.
+       2. KEIN SCHEIN NACH AUSSEN, und NUR der nach außen. „Eine leuchtende Spalte neben einem
+          ruhigen Panel zieht den Blick heraus." Der `0 0 18px -10px` ist weg; der Anlauf nach INNEN
+          (`inset 0 0 24px -14px`) bleibt.
+          Das war zwischendurch anders entschieden, und die Korrektur gehört hierher: der Innenschein
+          sah aus wie ein vierter Farbverlauf in der Zeile und war zuerst mit weg. Nachgemessen am
+          Original sagt `#up-ruhe` an `.up-navrow.is-on` aber wörtlich das Gegenteil — „behält ihren
+          Anlauf nach innen, verliert aber den Halo nach außen" —, und die Zeile steht dort mit
+          genau diesem Schatten. Die Spalte zieht dem Baum nach; sie zieht ihm nicht davon. (M8-F05)
        3. RADIUS 6. Der Baum steht seit `#up-form` darauf; 11 lief daneben.
      Die 4-px-Kante in der Deckfarbe BLEIBT und trägt weiterhin den aktiven Zustand — sie ist das
      eine Signal der Zeile (§1 Regel 8), und der Entwurf nimmt sie ausdrücklich aus. */
@@ -5303,6 +5304,10 @@ b, strong { font-weight: 600; }
     background: rgba(255, 255, 255, .07) !important;
     border-left-color: var(--deck-a1, #8a7de0) !important;
     color: #ffffff !important;
+    /* Derselbe Schatten und dieselben Zahlen wie `.up-navrow.is-on`. Er faellt nicht unter die
+       Hoehen-Achse und soll es nicht: ein Innenschatten hebt nichts, er zeichnet eine Mulde — 2c
+       nimmt `inset` deshalb ausdruecklich aus. */
+    box-shadow: inset 0 0 24px -14px var(--deck-a1, #8a7de0);
   }
   /* `span` statt `b`/`i`: die beiden Elemente existieren in JEDER Breite (der Reiter braucht seinen Text),
      und ein `b` hätte die Handy-Reiter still auf Gewicht 700 gezogen — nachgemessen, drei Zeilen wurden breiter.
