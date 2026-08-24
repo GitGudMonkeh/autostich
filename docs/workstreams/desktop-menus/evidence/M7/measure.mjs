@@ -217,12 +217,16 @@ const RD_PROBE = `(() => {
     /* "die vier Panels summieren sich auf 1757 px" */
     panelSum: [".rd-c1", ".rd-c2", ".rd-c3", ".rd-c4"]
       .map((s) => { const b = one(s); return b ? b.h : 0; }).reduce((a, b) => a + b, 0),
-    /* "darunter 272 px Loch" — the gap under the formation, measured as the distance from the
-       bottom of the tallest row-1 panel to the bottom of the formation lane. */
+    /* "darunter 272 px Loch" — how far the LEFT half runs past the bottom of the formation lane.
+       Before this task the left half was the `.rd-left` bracket; it is gone, because a fixed first
+       row removes the reason it existed. The measure is therefore taken from whichever left-hand
+       panel ends lowest, which is the same quantity either way and survives the restructure. */
     hole: (() => {
-      const c3 = one(".rd-c3"), left = one(".rd-left");
-      if (!c3 || !left) return null;
-      return px(left.bottom - c3.bottom);
+      const c3 = one(".rd-c3");
+      if (!c3) return null;
+      const links = [".rd-left", ".rd-c4", ".rd-c2", ".rd-c1"].map(one).filter(Boolean);
+      if (!links.length) return null;
+      return px(Math.max(...links.map((b) => b.bottom)) - c3.bottom);
     })(),
     /* THE BUILD PANEL — the chip cloud the design replaces with fifteen fixed fields. */
     chipCount: chips.length,
