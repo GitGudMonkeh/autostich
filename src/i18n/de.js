@@ -975,7 +975,7 @@ export default {
 
   /* ---- Glossar (Glossary) ---- */
   "glossary.title": "Glossar",
-  "glossary.subtitle": "Begriffe & Sonderregeln — keine einzelnen Perks/Skills",
+  "glossary.subtitle": "Begriffe & Sonderregeln, keine einzelnen Perks/Skills",
   "glossary.open": "Glossar öffnen",
   "glossary.search": "Suchen … z. B. Nachhall, Schichten, Hitze",
   "glossary.clear": "Suche löschen",
@@ -984,7 +984,7 @@ export default {
   "glossary.noHit.post": "Andere Schreibweise probieren?",
   /* Desktop-Fassung (#glossar-desktop): die Kategorien stehen als Spalte statt als Chip-Leiste. */
   "glossary.nav.categories": "Kategorien",
-  "glossary.nav.note": "Die Suche greift über alle Kategorien — die Zähler zeigen, wo die Treffer liegen.",
+  "glossary.nav.note": "Die Suche greift über alle Kategorien; die Zähler zeigen, wo die Treffer liegen.",
   "glossary.allTitle": "Alle Begriffe",
   "glossary.hits": "Treffer für „{q}“",
   "glossary.count_one": "{count} Begriff",

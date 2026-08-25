@@ -944,7 +944,7 @@ export default {
 
   /* ---- Glossary ---- */
   "glossary.title": "Glossary",
-  "glossary.subtitle": "Terms & special rules — no individual perks/skills",
+  "glossary.subtitle": "Terms & special rules, no individual perks/skills",
   "glossary.open": "Open the glossary",
   "glossary.search": "Search … e.g. echo, layers, heat",
   "glossary.clear": "Clear the search",
@@ -952,7 +952,7 @@ export default {
   "glossary.noHit.pre": "No entry for",
   "glossary.noHit.post": "Try a different spelling?",
   "glossary.nav.categories": "Categories",
-  "glossary.nav.note": "Search covers every category — the counters show where the hits are.",
+  "glossary.nav.note": "Search covers every category; the counters show where the hits are.",
   "glossary.allTitle": "All entries",
   "glossary.hits": "Hits for “{q}”",
   "glossary.count_one": "{count} entry",
