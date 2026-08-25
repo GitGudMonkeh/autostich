@@ -3887,8 +3887,13 @@ b, strong { font-weight: 600; }
      ========================================================================== */
   /* Der Dim wird zum Überzug des Leitfadens — derselbe Wert wie an `.up-root` (s. #ueberzug dort: 94 %,
      seit der Blur gefallen ist). `!important`, weil er inline am Element steht. */
+  /* #menu-rework M5 — `rgba(12, 12, 16, .94)` IST `--sf-scrim-desk`, Zeichen fuer Zeichen. Das
+     `!important` BLEIBT und ist hier tragend: der Inline-Wert ist `rgba(6, 6, 10, .66)` — ein
+     LITERAL und ein anderer Wert, die Handy-Fassung des Ueberzugs. Umdefinieren ginge nur, wenn der
+     Inline-Stil eine Variable laese; er tut es nicht. Dieselbe Bauform wie an `.up-root`,
+     `.st-root`, `.lb-root` und `.go-root`, und dieselbe, die MR1 zweimal zu Recht behalten hat. */
   .gd-dim {
-    background: rgba(12, 12, 16, .94) !important;
+    background: var(--sf-scrim-desk) !important;
     /* #perf-blur: KEIN backdrop-filter. Er stand hier bis 18.08.2026 und war der teuerste Posten des
        Desktop-Passes — gemessen im Produktionspfad (1723 x 1030): Werkstatt 12,3 -> 26,1 fps, Baum
        8,1 -> 22,8 fps, sobald er weg ist. Grund ist die Kombination mit den laufenden Animationen
@@ -3933,12 +3938,20 @@ b, strong { font-weight: 600; }
   /* --- Kopf: das Raster von `.up-head` -------------------------------------
      Spalte 1 Titel · Spalte 2 Auskunft (durch einen senkrechten Strich abgesetzt) · Spalte 3 Schließen,
      Zeile 2 die Haarlinie über die volle Breite. Aus zwei gestapelten Bändern wird eine Zeile. */
+  /* #menu-rework M5 — DIE FLAECHE GEHT UEBER EINE UMDEFINITION, NICHT UEBER `!important`, und das ist
+     die Form, die 2c woertlich als die richtige Antwort auf einen Inline-Stil nennt (dort am Beispiel
+     `.op-head`). `STICKY_HEAD_BG` ist `var(--sf-head)` — der Inline-Stil liest also eine VARIABLE,
+     und eine Variable kann die Regel am Element umdefinieren. Der Verlauf ist dabei zeichengleich
+     `--sf-head-fade`, also wertgleich; gemessen bei null Delta.
+     DAS `!important` AN `border-bottom` BLEIBT: dort steht inline ein LITERAL (`1px solid #2a2a33`),
+     und ein Literal erreicht keine Umdefinition. Es ist damit tragend, nicht vergessen. */
   .gd-head {
     display: grid;
     grid-template-columns: auto 1fr auto;
     align-items: center;
     column-gap: 22px;
-    background: linear-gradient(180deg, rgba(18, 18, 26, .92) 62%, rgba(18, 18, 26, 0)) !important;
+    --sf-head: var(--sf-head-fade);
+    background: var(--sf-head);
     border-bottom: none !important;
     padding: 10px 0 8px;
   }
@@ -3948,12 +3961,19 @@ b, strong { font-weight: 600; }
   .gd-hint {
     grid-column: 2; grid-row: 1;
     margin: 0; padding-left: 22px;
-    border-left: 1px solid rgba(150, 150, 170, .18);
+    /* #menu-rework M5 — MENU-38 auf `--ed-quiet`, die Umstellung, die M2a gemessen (rund 9/255) und
+       der Owner abgenommen hat; M3 hat sie vierzehnmal, M7 viermal, M8 sechsmal, M4 fuenfmal gezogen. */
+    border-left: 1px solid var(--ed-quiet);
     font-size: var(--text-body-4);
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
   /* Wie im Baum: Schließen liegt sonst unter dem 44-px-Mindestklickziel des Desktop-Passes. */
-  .gd-close { grid-column: 3; grid-row: 1; font-size: var(--text-body-lg-3) !important; padding: 11px 18px !important; border-radius: 8px; }
+  /* #menu-rework M5 — DER RADIUS 8 STAND HIER UND WAR WIRKUNGSLOS. Die Sammelregel des #eckig-Passes
+     weiter unten (`.up-close, .gd-close, .gl-close, …`) setzt `--rd-sm` bei gleicher Spezifitaet und
+     spaeter im Blatt, gewinnt also. Ihn zu tokenisieren haette dem Vokabular eine Fundstelle
+     zugeschrieben, die nichts malt — also entfernt, genau wie M3 es an `.up-navrow` getan hat.
+     Der Beweis, dass er tot war, ist das Null-Delta dieser Task. */
+  .gd-close { grid-column: 3; grid-row: 1; font-size: var(--text-body-lg-3) !important; padding: 11px 18px !important; }
   .gd-hair {
     grid-column: 1 / -1; grid-row: 2; margin-top: 10px;
     height: 2px; border-radius: 99px; opacity: .7;
@@ -3982,19 +4002,34 @@ b, strong { font-weight: 600; }
      schlechter als ein kurzes. */
   .gd-nav {
     align-self: start;
-    border-radius: 14px; padding: 14px 12px;
+    /* #menu-rework M5 — Radius auf `--rd-lg` (14, wertgleich), Flaeche auf `--sf-glass` (der Verlauf
+       ist Zeichen fuer Zeichen der Schritt — er ist einer der 13, aus denen er abgeleitet wurde).
+       Der Innenabstand 14/12 BLEIBT: `--in-snug` ist 13 und `--in-tight` 11, keiner trifft, und
+       diesen Screen um 1-2 px zu verschieben ist eine Gestaltungsentscheidung, die kein Entwurf
+       deckt — dieselbe Antwort, die der Owner M4s drei Panel-Polstern gegeben hat. M5-F03. */
+    border-radius: var(--rd-lg); padding: 14px 12px;
     display: flex; flex-direction: column; gap: 7px;
-    background: linear-gradient(180deg, rgba(27, 26, 36, .93), rgba(22, 22, 32, .95));
+    background: var(--sf-glass);
   }
   .gd-navhead {
     font-size: var(--text-meta-4); letter-spacing: .2em; text-transform: uppercase; font-weight: 600;
     color: #82828f; padding: 2px 3px 4px;
   }
+  /* #menu-rework M5 — DER RADIUS 11 WAR WIRKUNGSLOS, dieselbe Lage wie an `.gd-close` und dieselbe,
+     die M3 an `.up-navrow` gefunden hat: die Sammelregel des #eckig-Passes fuehrt `.gd-navrow`
+     ausdruecklich auf und setzt `--rd-sm`. Entfernt statt tokenisiert.
+     Die KANTE geht auf `--ed-quiet` (MENU-38). Der 90-Grad-Farbanlauf BLEIBT, und das ist der
+     Unterschied zu `.up-navrow`: M3 hat ihn dort entfernt, weil `#up-form` ihn ohnehin
+     ueberschrieb. Hier ueberschreibt ihn nichts — er malt. Ihn zu entfernen waere eine
+     Kompositionsaenderung an einem Screen ohne Entwurf. Sein Grundton `#12121a` ist damit ein
+     gezaehltes Literal (M5-F04), keine Achse: eine akzentgetoente Zustandsflaeche hat keinen Schritt
+     (MENU-46).
+     Der Innenabstand 12/13 bleibt aus dem Grund, der eine Zeile hoeher an `.gd-nav` steht. */
   .gd-navrow {
     display: flex; align-items: center; gap: 10px; text-align: left;
-    padding: 12px 13px; border-radius: 11px; cursor: pointer;
+    padding: 12px 13px; cursor: pointer;
     background: linear-gradient(90deg, color-mix(in srgb, var(--c) 12%, #12121a) 0%, #12121a 46%);
-    border: 1px solid rgba(150, 150, 170, .14);
+    border: 1px solid var(--ed-quiet);
     border-left: 4px solid color-mix(in srgb, var(--c) 70%, transparent);
     transition: background .14s ease, box-shadow .14s ease;
   }
@@ -4012,7 +4047,8 @@ b, strong { font-weight: 600; }
   }
   .gd-navnote {
     margin-top: 4px; padding: 10px 3px 2px;
-    border-top: 1px solid rgba(150, 150, 170, .14);
+    /* #menu-rework M5 — MENU-38 auf `--ed-quiet`, wie eine Zeile hoeher. */
+    border-top: 1px solid var(--ed-quiet);
     font-size: var(--text-body-2); line-height: 1.45; color: #71717c;
   }
 
@@ -4047,10 +4083,12 @@ b, strong { font-weight: 600; }
      womit sie nie eine Höhe hatte, an der sie hätte überlaufen können. */
   .gd-page {
     display: flex; flex-direction: column;
-    border-radius: 14px; padding: 16px 20px 14px;
+    /* #menu-rework M5 — Radius auf `--rd-lg`, Flaeche auf `--sf-glass`, beide wertgleich. Der
+       Innenabstand 16/20/14 bleibt (M5-F03, Begruendung an `.gd-nav`). */
+    border-radius: var(--rd-lg); padding: 16px 20px 14px;
     min-height: 0;
     overflow-y: auto; overscroll-behavior: contain; padding-right: 14px;
-    background: linear-gradient(180deg, rgba(27, 26, 36, .93), rgba(22, 22, 32, .95));
+    background: var(--sf-glass);
   }
   .gd-page-h { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; flex: none; }
   .gd-page-eyebrow {

@@ -15,7 +15,7 @@ nothing else, exactly as `PrivacyModal` and the end screen were handled.
 | **Task** | `M5` — the guide |
 | **Branch** | `task/menu-m5-guide` — create it yourself |
 | **Feature branch** | `feature/desktop-menus` |
-| **Base SHA** | tip of `feature/desktop-menus` at start. Record it here |
+| **Base SHA** | `d5f8aece` — tip of `feature/desktop-menus` at start, tree clean before the first edit |
 | **Tier** | C |
 | **Owner stops** | Two |
 | **Concurrency** | **Exclusive** |

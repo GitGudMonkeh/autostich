@@ -10,6 +10,25 @@ import { ActionButton, MODAL_CARD, TopHairline, STICKY_HEAD_BG } from "./modalSt
 import { archMeta } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
 import { t } from "../i18n/index.js";
 
+/* #menu-rework M5 — EIN EINZIGER INLINE-WERT DIESER DATEI IST EIN SCHRITT, und er steht dreimal:
+   `#141419` IST `--sf-ground`, der Grund, auf dem ein Panel SITZT. Er schliesst die drei
+   Kachel-Verlaeufe (`Bar`, `GuideBody`s Saeulen und Prinzipien) und ist damit wertgleich
+   umstellbar — an JEDER Breite, weil ein Token einen Wert hat und nicht zwei.
+
+   DAS IST HIER NICHT SELBSTVERSTAENDLICH. `DeckDetail.jsx` rendert `GuideBody`, und M3 hat
+   `DeckDetail` oberhalb 1280 px als unerreichbar GEMESSEN — null Einstiege bei 1280 und 1536, vier
+   bei 1100. Jeder Wert dieser Datei, den keine `.gd-*`-Desktop-Regel umzeigt, wird also auch unter
+   1280 px gelesen, und dort gilt Entscheidung 9: nichts bewegt sich. Eine wertgleiche Umstellung
+   bewegt nichts — eine wertUNgleiche waere ein Edit an der Handy-Fassung und ist deshalb ein Befund
+   geblieben, kein Diff.
+
+   WAS DESHALB LITERAL BLEIBT, gezaehlt in `test/panel-tokens.test.js` und begruendet in
+   measurements/M5.md: allen voran `#2a2a33`, das an ACHT Stellen steht und `--ed-quiet` (#2a2a34)
+   um genau EINE Einheit Blau verfehlt (M5-F02). Dazu die Balkenteile (`#0c0c11`, `#07070b`), die
+   Zeichenkacheln (`#0e0e13`, `#33333e`), der Knopf (`#20202a`, `#3a3a4a`), die zwei
+   Kasten-Verlaeufe (`#1a1826`/`#16161c`, `#17151f`), die Handy-Fassung des Ueberzugs
+   (`rgba(6,6,10,.66)`) und der Schlagschatten der Karte. */
+
 /* ============================================================
    LEITFADEN-UI — das „Wie spiele ich das"-Overlay je Archetyp (Datenquelle: guides.js).
    Aufbau wie das Glossar-Overlay (Drop-in-Panel + Overlay), aber mit vier Archetyp-Reitern
@@ -83,7 +102,7 @@ function LoopRing({ color, nodes, center }) {
 function Bar({ b }) {
   const single = !!b.scale;
   return (
-    <div className="gd-bar rounded-xl px-3.5 py-3" style={{ background: `linear-gradient(180deg, ${b.color}10, #141419)`, border: "1px solid #2a2a33", borderLeft: `3px solid ${b.color}66` }}>
+    <div className="gd-bar rounded-xl px-3.5 py-3" style={{ background: `linear-gradient(180deg, ${b.color}10, var(--sf-ground))`, border: "1px solid #2a2a33", borderLeft: `3px solid ${b.color}66` }}>
       <div className="flex items-center justify-between gap-3 mb-2">
         <span className="gd-barname text-body-3 tracking-wide" style={{ color: "#e2e0ee" }}>
           <span className="mr-1.5" style={{ color: b.color }}>{b.faction ? <FactionIcon type={b.faction} size={12} /> : b.glyph}</span>{b.name}
@@ -166,7 +185,7 @@ export function GuideBody({ archetype, showTitle = true, showSubtitle = true }) 
           <div className="grid gap-2.5">
             {g.pillars.map((p, i) => (
               <div key={i} className="gd-pillar grid gap-3 items-start rounded-xl px-3.5 py-3"
-                   style={{ gridTemplateColumns: "38px 1fr", background: `linear-gradient(180deg, ${p.color}0d, #141419)`, border: "1px solid #2a2a33", borderLeft: `3px solid ${p.color}66` }}>
+                   style={{ gridTemplateColumns: "38px 1fr", background: `linear-gradient(180deg, ${p.color}0d, var(--sf-ground))`, border: "1px solid #2a2a33", borderLeft: `3px solid ${p.color}66` }}>
                 <div className="gd-pglyph w-[38px] h-[38px] grid place-items-center rounded-lg text-title-5"
                      style={{ color: p.color, background: "#0e0e13", border: "1px solid #33333e", boxShadow: `0 0 14px -5px ${p.color}` }}>{p.faction ? <FactionIcon type={p.faction} size={18} /> : p.glyph}</div>
                 <div>
@@ -212,7 +231,7 @@ export function GuideBody({ archetype, showTitle = true, showSubtitle = true }) 
           <ul className="grid gap-2.5 list-none p-0 m-0">
             {g.principle.map((p, i) => (
               <li key={i} className="gd-princ grid gap-3 rounded-xl px-3.5 py-3 text-body-4"
-                  style={{ gridTemplateColumns: "auto 1fr", background: `linear-gradient(180deg, ${color}0d, #141419)`, border: "1px solid #2a2a33", borderLeft: `3px solid ${color}66`, color: "#d3d3dd" }}>
+                  style={{ gridTemplateColumns: "auto 1fr", background: `linear-gradient(180deg, ${color}0d, var(--sf-ground))`, border: "1px solid #2a2a33", borderLeft: `3px solid ${color}66`, color: "#d3d3dd" }}>
                 <span className="gd-tag h-fit ty-badge text-meta-2 uppercase px-2 py-1 rounded-md whitespace-nowrap"
                       style={{ color: color, background: "#17151f", border: "1px solid #33333e" }}>{p.tag}</span>
                 <span className="leading-relaxed"><RT t={p.text} /></span>
