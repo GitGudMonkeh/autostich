@@ -1,0 +1,187 @@
+  reusing the server on 5181 — verified against dist/
+  clock pinned to 2026-08-24T12:00:00.000Z · autostich_scores answered locally (this run writes NOTHING to the live board)
+
+  de · 1920x1080
+    hub            scroll 0x0px · 0 overflow · 0 outside · 0 truncated · 59 text · 0 runs · 50 surf
+    upgrades       scroll 0x0px · 0 overflow · 0 outside · 0 truncated · 182 text · 0 runs · 128 surf
+    shop-packs     scroll 0x0px · 20 overflow · 13 outside · 0 truncated · 170 text · 0 runs · 202 surf
+    shop-fx        scroll 0x0px · 0 overflow · 0 outside · 0 truncated · 87 text · 0 runs · 86 surf
+    leaderboard    scroll 0x0px · 0 overflow · 0 outside · 0 truncated · 174 text · 0 runs · 162 surf
+    stats          scroll 0x0px · 0 overflow · 0 outside · 0 truncated · 64 text · 0 runs · 55 surf
+    guide          scroll 0x0px · 0 overflow · 0 outside · 0 truncated · 246 text · 0 runs · 159 surf
+    glossary       scroll 0x0px · 153 overflow · 150 outside · 0 truncated · 419 text · 0 runs · 352 surf
+    options        scroll 0x0px · 0 overflow · 0 outside · 0 truncated · 110 text · 0 runs · 130 surf
+    feedback       scroll 0x0px · 1 overflow · 1 outside · 0 truncated · 76 text · 0 runs · 69 surf
+    privacy        scroll 0x0px · 5 overflow · 3 outside · 0 truncated · 79 text · 0 runs · 69 surf
+    skill-choice   scroll 0x2px · 0 overflow · 0 outside · 0 truncated · 231 text · 0 runs · 147 surf
+    run-stage      scroll 0x2px · 0 overflow · 0 outside · 0 truncated · 85 text · 0 runs · 109 surf
+    perk-choice    scroll 0x2px · 0 overflow · 0 outside · 0 truncated · 304 text · 0 runs · 204 surf
+    architect      scroll 0x2px · 1 overflow · 0 outside · 0 truncated · 198 text · 0 runs · 206 surf
+    victory        scroll 0x2px · 147 overflow · 147 outside · 0 truncated · 274 text · 1 runs · 357 surf
+
+  de · 1600x900
+    hub            scroll 0x0px · 0 overflow · 0 outside · 0 truncated · 59 text · 1 runs · 50 surf
+    upgrades       scroll 0x0px · 0 overflow · 0 outside · 0 truncated · 182 text · 1 runs · 128 surf
+    shop-packs     scroll 0x0px · 20 overflow · 13 outside · 0 truncated · 170 text · 1 runs · 202 surf
+    shop-fx        scroll 0x0px · 0 overflow · 0 outside · 0 truncated · 87 text · 1 runs · 86 surf
+    leaderboard    scroll 0x0px · 0 overflow · 0 outside · 0 truncated · 174 text · 1 runs · 162 surf
+    stats          scroll 0x0px · 0 overflow · 0 outside · 0 truncated · 132 text · 1 runs · 102 surf
+    guide          scroll 0x0px · 7 overflow · 6 outside · 0 truncated · 246 text · 1 runs · 159 surf
+    glossary       scroll 0x0px · 159 overflow · 154 outside · 0 truncated · 419 text · 1 runs · 352 surf
+    options        scroll 0x0px · 0 overflow · 0 outside · 0 truncated · 110 text · 1 runs · 130 surf
+    feedback       scroll 0x0px · 1 overflow · 1 outside · 0 truncated · 76 text · 1 runs · 69 surf
+    privacy        scroll 0x0px · 6 overflow · 4 outside · 0 truncated · 79 text · 1 runs · 69 surf
+    skill-choice   scroll 0x2px · 0 overflow · 0 outside · 0 truncated · 232 text · 1 runs · 147 surf
+    run-stage      scroll 0x2px · 0 overflow · 0 outside · 0 truncated · 86 text · 1 runs · 109 surf
+    perk-choice    scroll 0x2px · 0 overflow · 0 outside · 0 truncated · 305 text · 1 runs · 204 surf
+    architect      scroll 0x2px · 1 overflow · 0 outside · 0 truncated · 199 text · 1 runs · 206 surf
+    victory        scroll 0x2px · 147 overflow · 147 outside · 0 truncated · 273 text · 2 runs · 355 surf · 71 SHRUNK
+
+  de · 1536x791
+    hub            scroll 0x0px · 0 overflow · 0 outside · 0 truncated · 59 text · 2 runs · 50 surf
+    upgrades       scroll 0x0px · 13 overflow · 0 outside · 0 truncated · 182 text · 2 runs · 128 surf
+    shop-packs     scroll 0x0px · 20 overflow · 19 outside · 0 truncated · 170 text · 2 runs · 202 surf
+    shop-fx        scroll 0x0px · 0 overflow · 0 outside · 0 truncated · 87 text · 2 runs · 86 surf
+    leaderboard    scroll 0x0px · 49 overflow · 35 outside · 0 truncated · 174 text · 2 runs · 162 surf
+    stats          scroll 0x0px · 1 overflow · 0 outside · 0 truncated · 139 text · 2 runs · 103 surf
+    guide          scroll 0x0px · 10 overflow · 7 outside · 0 truncated · 246 text · 2 runs · 159 surf
+    glossary       scroll 0x0px · 168 overflow · 164 outside · 0 truncated · 419 text · 2 runs · 352 surf
+    options        scroll 0x0px · 2 overflow · 0 outside · 0 truncated · 110 text · 2 runs · 130 surf
+    feedback       scroll 0x0px · 1 overflow · 1 outside · 0 truncated · 76 text · 2 runs · 69 surf
+    privacy        scroll 0x0px · 6 overflow · 4 outside · 0 truncated · 79 text · 2 runs · 69 surf
+    skill-choice   scroll 0x2px · 0 overflow · 0 outside · 0 truncated · 232 text · 2 runs · 147 surf
+    run-stage      scroll 0x2px · 0 overflow · 0 outside · 0 truncated · 86 text · 2 runs · 109 surf
+    perk-choice    scroll 0x2px · 0 overflow · 0 outside · 0 truncated · 305 text · 2 runs · 204 surf
+    architect      scroll 0x2px · 1 overflow · 0 outside · 0 truncated · 199 text · 2 runs · 206 surf
+    victory        scroll 0x2px · 147 overflow · 147 outside · 0 truncated · 273 text · 3 runs · 355 surf · 71 SHRUNK
+
+  de · 1400x700
+    hub            scroll 0x0px · 0 overflow · 0 outside · 0 truncated · 59 text · 3 runs · 50 surf
+    upgrades       scroll 0x0px · 17 overflow · 2 outside · 0 truncated · 182 text · 3 runs · 128 surf
+    shop-packs     scroll 0x0px · 26 overflow · 19 outside · 2 truncated · 170 text · 3 runs · 202 surf
+    shop-fx        scroll 0x0px · 0 overflow · 0 outside · 0 truncated · 87 text · 3 runs · 86 surf
+    leaderboard    scroll 0x0px · 72 overflow · 68 outside · 0 truncated · 174 text · 3 runs · 162 surf
+    stats          scroll 0x0px · 1 overflow · 0 outside · 2 truncated · 145 text · 3 runs · 104 surf
+    guide          scroll 0x0px · 16 overflow · 14 outside · 0 truncated · 246 text · 3 runs · 159 surf
+    glossary       scroll 0x0px · 168 overflow · 164 outside · 0 truncated · 419 text · 3 runs · 352 surf
+    options        scroll 0x0px · 5 overflow · 0 outside · 0 truncated · 110 text · 3 runs · 130 surf
+    feedback       scroll 0x0px · 1 overflow · 1 outside · 0 truncated · 76 text · 3 runs · 69 surf
+    privacy        scroll 0x0px · 8 overflow · 5 outside · 0 truncated · 79 text · 3 runs · 69 surf
+    skill-choice   scroll 0x2px · 0 overflow · 0 outside · 0 truncated · 232 text · 3 runs · 147 surf
+    run-stage      scroll 0x2px · 0 overflow · 0 outside · 0 truncated · 86 text · 3 runs · 109 surf
+    perk-choice    scroll 0x2px · 0 overflow · 0 outside · 0 truncated · 305 text · 3 runs · 204 surf
+    architect      scroll 0x2px · 1 overflow · 0 outside · 0 truncated · 199 text · 3 runs · 206 surf
+    victory        scroll 0x2px · 147 overflow · 147 outside · 1 truncated · 273 text · 4 runs · 355 surf · 71 SHRUNK
+
+  de · 1280x720
+    hub            scroll 0x0px · 0 overflow · 0 outside · 0 truncated · 59 text · 4 runs · 50 surf
+    upgrades       scroll 0x0px · 17 overflow · 2 outside · 0 truncated · 182 text · 4 runs · 128 surf
+    shop-packs     scroll 0x0px · 20 overflow · 13 outside · 8 truncated · 170 text · 4 runs · 202 surf
+    shop-fx        scroll 0x0px · 0 overflow · 0 outside · 0 truncated · 87 text · 4 runs · 86 surf
+    leaderboard    scroll 0x0px · 70 overflow · 58 outside · 0 truncated · 174 text · 4 runs · 162 surf
+    stats          scroll 0x0px · 1 overflow · 0 outside · 4 truncated · 151 text · 4 runs · 105 surf
+    guide          scroll 0x0px · 16 overflow · 14 outside · 0 truncated · 246 text · 4 runs · 159 surf
+    glossary       scroll 0x0px · 171 overflow · 167 outside · 0 truncated · 419 text · 4 runs · 352 surf
+    options        scroll 0x0px · 8 overflow · 0 outside · 0 truncated · 110 text · 4 runs · 130 surf
+    feedback       scroll 0x0px · 1 overflow · 1 outside · 0 truncated · 76 text · 4 runs · 69 surf
+    privacy        scroll 0x0px · 8 overflow · 5 outside · 0 truncated · 79 text · 4 runs · 69 surf
+    skill-choice   scroll 0x2px · 0 overflow · 0 outside · 0 truncated · 232 text · 4 runs · 147 surf
+    run-stage      scroll 0x2px · 0 overflow · 0 outside · 0 truncated · 86 text · 4 runs · 109 surf
+    perk-choice    scroll 0x2px · 0 overflow · 0 outside · 0 truncated · 305 text · 4 runs · 204 surf
+    architect      scroll 0x2px · 1 overflow · 0 outside · 0 truncated · 199 text · 4 runs · 206 surf
+    victory        scroll 0x2px · 147 overflow · 147 outside · 3 truncated · 273 text · 5 runs · 355 surf · 71 SHRUNK
+
+  en · 1920x1080
+    hub            scroll 0x0px · 0 overflow · 0 outside · 0 truncated · 59 text · 5 runs · 50 surf
+    upgrades       scroll 0x0px · 0 overflow · 0 outside · 0 truncated · 182 text · 5 runs · 128 surf
+    shop-packs     scroll 0x0px · 20 overflow · 13 outside · 0 truncated · 170 text · 5 runs · 202 surf
+    shop-fx        scroll 0x0px · 0 overflow · 0 outside · 0 truncated · 87 text · 5 runs · 86 surf
+    leaderboard    scroll 0x0px · 0 overflow · 0 outside · 0 truncated · 174 text · 5 runs · 162 surf
+    stats          scroll 0x0px · 0 overflow · 0 outside · 0 truncated · 157 text · 5 runs · 106 surf
+    guide          scroll 0x0px · 0 overflow · 0 outside · 0 truncated · 246 text · 5 runs · 159 surf
+    glossary       scroll 0x0px · 148 overflow · 144 outside · 0 truncated · 419 text · 5 runs · 352 surf
+    options        scroll 0x0px · 0 overflow · 0 outside · 0 truncated · 110 text · 5 runs · 130 surf
+    feedback       scroll 0x0px · 1 overflow · 1 outside · 0 truncated · 76 text · 5 runs · 69 surf
+    privacy        scroll 0x0px · 0 overflow · 0 outside · 0 truncated · 79 text · 5 runs · 69 surf
+    skill-choice   scroll 0x2px · 0 overflow · 0 outside · 0 truncated · 238 text · 5 runs · 147 surf
+    run-stage      scroll 0x2px · 0 overflow · 0 outside · 0 truncated · 86 text · 5 runs · 109 surf
+    perk-choice    scroll 0x2px · 0 overflow · 0 outside · 0 truncated · 308 text · 5 runs · 204 surf
+    architect      scroll 0x2px · 1 overflow · 0 outside · 0 truncated · 199 text · 5 runs · 206 surf
+    victory        scroll 0x2px · 147 overflow · 147 outside · 0 truncated · 273 text · 6 runs · 355 surf
+
+  en · 1600x900
+    hub            scroll 0x0px · 0 overflow · 0 outside · 0 truncated · 59 text · 6 runs · 50 surf
+    upgrades       scroll 0x0px · 0 overflow · 0 outside · 0 truncated · 182 text · 6 runs · 128 surf
+    shop-packs     scroll 0x0px · 20 overflow · 13 outside · 0 truncated · 170 text · 6 runs · 202 surf
+    shop-fx        scroll 0x0px · 0 overflow · 0 outside · 0 truncated · 87 text · 6 runs · 86 surf
+    leaderboard    scroll 0x0px · 0 overflow · 0 outside · 0 truncated · 174 text · 6 runs · 162 surf
+    stats          scroll 0x0px · 0 overflow · 0 outside · 0 truncated · 163 text · 6 runs · 107 surf
+    guide          scroll 0x0px · 5 overflow · 5 outside · 0 truncated · 246 text · 6 runs · 159 surf
+    glossary       scroll 0x0px · 157 overflow · 154 outside · 0 truncated · 419 text · 6 runs · 352 surf
+    options        scroll 0x0px · 0 overflow · 0 outside · 0 truncated · 110 text · 6 runs · 130 surf
+    feedback       scroll 0x0px · 1 overflow · 1 outside · 0 truncated · 76 text · 6 runs · 69 surf
+    privacy        scroll 0x0px · 5 overflow · 3 outside · 0 truncated · 79 text · 6 runs · 69 surf
+    skill-choice   scroll 0x2px · 0 overflow · 0 outside · 0 truncated · 238 text · 6 runs · 147 surf
+    run-stage      scroll 0x2px · 0 overflow · 0 outside · 0 truncated · 86 text · 6 runs · 109 surf
+    perk-choice    scroll 0x2px · 0 overflow · 0 outside · 0 truncated · 308 text · 6 runs · 204 surf
+    architect      scroll 0x2px · 1 overflow · 0 outside · 0 truncated · 199 text · 6 runs · 206 surf
+    victory        scroll 0x2px · 147 overflow · 147 outside · 0 truncated · 273 text · 7 runs · 355 surf · 71 SHRUNK
+
+  en · 1536x791
+    hub            scroll 0x0px · 0 overflow · 0 outside · 0 truncated · 59 text · 7 runs · 50 surf
+    upgrades       scroll 0x0px · 13 overflow · 0 outside · 0 truncated · 182 text · 7 runs · 128 surf
+    shop-packs     scroll 0x0px · 20 overflow · 19 outside · 0 truncated · 170 text · 7 runs · 202 surf
+    shop-fx        scroll 0x0px · 0 overflow · 0 outside · 0 truncated · 87 text · 7 runs · 86 surf
+    leaderboard    scroll 0x0px · 49 overflow · 35 outside · 0 truncated · 174 text · 7 runs · 162 surf
+    stats          scroll 0x0px · 1 overflow · 0 outside · 0 truncated · 169 text · 7 runs · 108 surf
+    guide          scroll 0x0px · 10 overflow · 7 outside · 0 truncated · 246 text · 7 runs · 159 surf
+    glossary       scroll 0x0px · 159 overflow · 154 outside · 0 truncated · 419 text · 7 runs · 352 surf
+    options        scroll 0x0px · 2 overflow · 0 outside · 0 truncated · 110 text · 7 runs · 130 surf
+    feedback       scroll 0x0px · 1 overflow · 1 outside · 0 truncated · 76 text · 7 runs · 69 surf
+    privacy        scroll 0x0px · 6 overflow · 4 outside · 0 truncated · 79 text · 7 runs · 69 surf
+    skill-choice   scroll 0x2px · 0 overflow · 0 outside · 0 truncated · 238 text · 7 runs · 147 surf
+    run-stage      scroll 0x2px · 0 overflow · 0 outside · 0 truncated · 86 text · 7 runs · 109 surf
+    perk-choice    scroll 0x2px · 0 overflow · 0 outside · 0 truncated · 308 text · 7 runs · 204 surf
+    architect      scroll 0x2px · 1 overflow · 0 outside · 0 truncated · 199 text · 7 runs · 206 surf
+    victory        scroll 0x2px · 147 overflow · 147 outside · 0 truncated · 273 text · 8 runs · 355 surf · 71 SHRUNK
+
+  en · 1400x700
+    hub            scroll 0x0px · 0 overflow · 0 outside · 0 truncated · 59 text · 8 runs · 50 surf
+    upgrades       scroll 0x0px · 14 overflow · 2 outside · 0 truncated · 182 text · 8 runs · 128 surf
+    shop-packs     scroll 0x0px · 26 overflow · 19 outside · 2 truncated · 170 text · 8 runs · 202 surf
+    shop-fx        scroll 0x0px · 0 overflow · 0 outside · 0 truncated · 87 text · 8 runs · 86 surf
+    leaderboard    scroll 0x0px · 72 overflow · 68 outside · 0 truncated · 174 text · 8 runs · 162 surf
+    stats          scroll 0x0px · 2 overflow · 0 outside · 2 truncated · 181 text · 8 runs · 111 surf
+    guide          scroll 0x0px · 16 overflow · 14 outside · 0 truncated · 246 text · 8 runs · 159 surf
+    glossary       scroll 0x0px · 168 overflow · 164 outside · 0 truncated · 419 text · 8 runs · 352 surf
+    options        scroll 0x0px · 4 overflow · 0 outside · 0 truncated · 110 text · 8 runs · 130 surf
+    feedback       scroll 0x0px · 1 overflow · 1 outside · 0 truncated · 76 text · 8 runs · 69 surf
+    privacy        scroll 0x0px · 7 overflow · 5 outside · 0 truncated · 79 text · 8 runs · 69 surf
+    skill-choice   scroll 0x2px · 0 overflow · 0 outside · 0 truncated · 238 text · 8 runs · 147 surf
+    run-stage      scroll 0x2px · 0 overflow · 0 outside · 0 truncated · 86 text · 8 runs · 109 surf
+    perk-choice    scroll 0x2px · 0 overflow · 0 outside · 0 truncated · 308 text · 8 runs · 204 surf
+    architect      scroll 0x2px · 1 overflow · 0 outside · 0 truncated · 199 text · 8 runs · 206 surf
+    victory        scroll 0x2px · 147 overflow · 147 outside · 1 truncated · 273 text · 9 runs · 355 surf · 71 SHRUNK
+
+  en · 1280x720
+    hub            scroll 0x0px · 0 overflow · 0 outside · 0 truncated · 59 text · 9 runs · 50 surf
+    upgrades       scroll 0x0px · 14 overflow · 2 outside · 0 truncated · 182 text · 9 runs · 128 surf
+    shop-packs     scroll 0x0px · 20 overflow · 13 outside · 8 truncated · 170 text · 9 runs · 202 surf
+    shop-fx        scroll 0x0px · 0 overflow · 0 outside · 0 truncated · 87 text · 9 runs · 86 surf
+    leaderboard    scroll 0x0px · 70 overflow · 58 outside · 0 truncated · 174 text · 9 runs · 162 surf
+    stats          scroll 0x0px · 3 overflow · 1 outside · 5 truncated · 187 text · 9 runs · 112 surf
+    guide          scroll 0x0px · 16 overflow · 14 outside · 0 truncated · 246 text · 9 runs · 159 surf
+    glossary       scroll 0x0px · 170 overflow · 167 outside · 0 truncated · 419 text · 9 runs · 352 surf
+    options        scroll 0x0px · 5 overflow · 0 outside · 0 truncated · 110 text · 9 runs · 130 surf
+    feedback       scroll 0x0px · 1 overflow · 1 outside · 0 truncated · 76 text · 9 runs · 69 surf
+    privacy        scroll 0x0px · 6 overflow · 5 outside · 0 truncated · 79 text · 9 runs · 69 surf
+    skill-choice   scroll 0x2px · 0 overflow · 0 outside · 0 truncated · 238 text · 9 runs · 147 surf
+    run-stage      scroll 0x2px · 0 overflow · 0 outside · 0 truncated · 86 text · 9 runs · 109 surf
+    perk-choice    scroll 0x2px · 0 overflow · 0 outside · 0 truncated · 308 text · 9 runs · 204 surf
+    architect      scroll 0x2px · 1 overflow · 0 outside · 0 truncated · 199 text · 9 runs · 206 surf
+    victory        scroll 0x2px · 147 overflow · 147 outside · 2 truncated · 278 text · 10 runs · 359 surf · 71 SHRUNK
+
+  bundle re-verified after the last cell — same dist/ throughout
+
+  160 cells · 0 not reached
+  evidence -> C:\Code\Autostich-worktrees\menu-rework\docs\workstreams\mainscreen-branding\evidence\C4\after\matrix.json

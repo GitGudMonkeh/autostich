@@ -288,7 +288,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
      Verwaltungsliste, obwohl sie der leiseste Rang der Seite sind; die Klickzielgröße hält der
      Innenabstand, nicht die Schrift. Dazu ein Zeichen je Chip — `inline-flex`, damit es neben dem
      Wort sitzt statt darüber. */
-  const chipCls = "as-edge-neutral as-edge-thin dt:inline-flex dt:items-center dt:gap-2 px-3.5 py-1.5 dt:px-5 dt:py-[11px] rounded-xl text-body-lg-5 dt:text-body-lg-3 font-medium transition-all hover:-translate-y-0.5";
+  const chipCls = "as-hub-chip as-edge-neutral as-edge-thin dt:inline-flex dt:items-center dt:gap-2 px-3.5 py-1.5 rounded-xl text-body-lg-5 dt:text-body-lg-3 font-medium transition-all hover:-translate-y-0.5";
 
   // Farb-Hierarchie: nur EINE gefüllte Primär-Aktion, der Rest als Outline (weniger Farbwände, luftiger).
   // Läuft ein Run → „Fortsetzen" ist die helle Primär-Aktion, „Lauf beginnen" wird zum Cyan-Outline.
@@ -473,7 +473,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
       {/* Fortschritts-/Bonus-Leiste — ein Element, zwei Leben: Onboarding (bis 6/6), danach SP-Treue-Drip.
           Frosted-Glass: halbtransparenter Grund (das Kopf-Glühen blutet oben ins Panel → weicher Übergang statt
           harter Kante) + Hairline-Border + Backdrop-Blur (Text bleibt scharf). */}
-      <div className={`${LANE_LEAD} rounded-xl px-4 py-2.5 dt:px-5 dt:py-3.5 flex flex-col gap-1.5 dt:gap-2`}
+      <div className={`as-hub-bonus ${LANE_LEAD} rounded-xl px-4 py-2.5 flex flex-col gap-1.5 dt:gap-2`}
         style={{ background: "rgba(23,23,28,0.5)", border: "1px solid rgba(150,150,170,0.10)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}>
         <div className="flex items-center justify-between gap-3">
           {/* Der Flex-Kontext gilt ERST ab 1280 px. Darunter bleibt die Zeile ein normaler Textfluss —
@@ -522,7 +522,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
       {firstContact && (
         <div className={LANE_LEAD}>
           <button onClick={onTutorial}
-            className="as-tut-btn w-full px-5 py-3 dt:px-6 dt:py-4 rounded-xl ty-title transition-all hover:-translate-y-0.5 flex flex-col items-center dt:items-start leading-tight">
+            className="as-tut-btn w-full px-5 py-3 rounded-xl ty-title transition-all hover:-translate-y-0.5 flex flex-col items-center dt:items-start leading-tight">
             <span className="text-title-2 dt:text-head-1">{t("start.tutorial.offer")}</span>
             <span className="text-body-1 dt:text-body-lg-1 font-normal opacity-75">{t("start.tutorial.offer.sub")}</span>
           </button>
@@ -535,7 +535,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
         {/* Resume (#Auto-Save): gespeicherter laufender Run → einzige gefüllte Primär-Aktion (hell). */}
         {onResume && resume && (
           <button onClick={onResume}
-            className="as-cta-primary w-full px-5 py-3 dt:py-4 rounded-xl ty-title transition-all hover:-translate-y-0.5 flex flex-col items-center leading-tight">
+            className="as-cta-primary as-hub-resume w-full px-5 py-3 rounded-xl ty-title transition-all hover:-translate-y-0.5 flex flex-col items-center leading-tight">
             <span className="text-title-4 dt:text-head-2">{t("start.resume")}</span>
             {/* `as-cta-sub`: die Zweitzeile klebte am Titel (`leading-tight` ohne Abstand dazwischen).
                 Luft und Fußpolster stehen ab 1280 px in index.css — beides zusammen, sonst rutscht die
@@ -555,7 +555,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
             trägt jetzt die Breite der BLÖCKE, der Knopf selbst muss dafür nichts abgeben.
             Das Relief (#knopf-relief) nimmt ihm das Flächenhafte, ohne dass etwas daneben stehen muss. */}
         <button onClick={onStart}
-          className={`${normalCls} relative w-full px-5 py-3.5 dt:py-5 rounded-xl ty-title text-title-1 dt:text-head-2 transition-all hover:-translate-y-0.5 flex items-center justify-center`}>
+          className={`${normalCls} as-hub-start relative w-full px-5 py-3.5 rounded-xl ty-title text-title-1 dt:text-head-2 transition-all hover:-translate-y-0.5 flex items-center justify-center`}>
           {t("start.normal")}
           {/* #premium: Der Knopf sagt jetzt auch in der Form, dass es weitergeht. Absolut am rechten Rand
               und nicht als Flex-Kind, damit das Label mittig bleibt — mit dem Zeichen im Fluss säße es
@@ -582,12 +582,12 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
                    inline-style — am Handy ist das Feld seit dem Deck-Hintergrund getöntes Glas, und ein
                    inline gesetzter Grund ließe sich davon nicht überschreiben (inline schlägt jedes
                    Stylesheet). Der Fehlerzustand bleibt eine Klasse, damit dasselbe für ihn gilt. */
-                className={`as-hub-field ${seedError ? "is-err" : ""} flex-1 min-w-0 px-3 py-2 dt:px-4 dt:py-3 rounded-xl font-mono text-body-lg-5 dt:text-title-2`}
+                className={`as-hub-field ${seedError ? "is-err" : ""} flex-1 min-w-0 px-3 py-2 rounded-xl font-mono text-body-lg-5 dt:text-title-2`}
               />
               {/* Fläche und Rahmen kommen aus `.as-seed-play` statt aus einem inline-style — sonst ließe sich
                   der Rahmen ab 1280 px nicht durch den Hover-Schein ersetzen (inline schlägt jedes Stylesheet). */}
               <button type="submit" disabled={!seedInput.trim()}
-                className="as-seed-play shrink-0 px-3.5 py-2 dt:px-4 dt:py-3 rounded-xl text-body-lg-5 dt:text-title-2 font-medium transition-all disabled:opacity-40">
+                className="as-seed-play shrink-0 px-3.5 py-2 rounded-xl text-body-lg-5 dt:text-title-2 font-medium transition-all disabled:opacity-40">
                 {t("start.seed.play")}
               </button>
             </form>
@@ -605,7 +605,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
       {onRankedBoard && (
         <div className={`${LANE_MID} flex flex-col gap-2.5`}>
           <button onClick={onRankedBoard}
-            className="as-ranked-btn relative w-full px-5 py-2.5 dt:px-6 dt:py-4 rounded-xl ty-title text-body-lg-3 dt:text-title-3 transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2"
+            className="as-ranked-btn relative w-full px-5 py-2.5 rounded-xl ty-title text-body-lg-3 dt:text-title-3 transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2"
             title={t(rankedFree ? "start.ranked.open" : "start.ranked.locked")}>
             {/* #premium/#pokal: Hier zeichnet auf JEDER Breite ein Vektor in der Knopffarbe — Schloss
                 für „Spielen noch gesperrt", Pokal für „frei". Die Emoji-Fassung darunter ist entfallen.
@@ -639,7 +639,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
                   die letzte Stelle am Knopf, die das aktive Deck nicht mitgenommen hat. Orbitron ist im Spiel
                   sonst der Wortmarke und den Kartenzahlen vorbehalten; hier steht eine Zahl, insofern dieselbe
                   Rolle. Darunter läuft er seit #ruhe in der System-Mono wie der ganze Rest des Hubs. */}
-              <span className="as-week-chip ty-num-sm px-1 dt:px-1.5 dt:py-0.5 rounded text-meta-1 dt:text-body-1 leading-tight">
+              <span className="as-week-chip ty-num-sm px-1 rounded text-meta-1 dt:text-body-1 leading-tight">
                 {t("start.ranked.badge", { n: week.week })}
               </span>
               {/* #desktop: Auf breiten Bildschirmen entfällt die Bonus-Zeile am Knopf — die Status-Tafel
@@ -681,7 +681,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           C1 musste sie als „das ring-tragende Kind von `.hub-stand`, das nicht die Kachelbank ist"
           greifen, weil ZWEI Kinder `.as-ring` tragen (C1-F10). Ein Screen, den nur eine Negation
           erreicht, ist ein Screen, den der nächste Wächter falsch trifft. */}
-      <div className="as-deck hidden dt:flex as-glass as-ring flex-col gap-[18px] rounded-2xl px-6 py-[22px]">
+      <div className="as-deck hidden dt:flex as-glass as-ring flex-col gap-[18px] rounded-2xl">
         <i className="as-ring-run" aria-hidden="true" />
         <div className="ty-screen-title text-meta-3 opacity-45">
           {t("start.board.title")}
@@ -807,7 +807,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
             { k: t("start.board.last"), v: lastRun ? fmtNum(Math.round(lastRun.score || 0)) : t("start.board.last.none"),
               c: CY, s: lastRun ? t("start.board.last.sub", { cycle: lastRun.cycles ?? 0 }) : t("start.board.last.none.sub") },
           ].map((s, i) => (
-            <div key={i} className="as-kpi flex flex-col gap-0.5 px-4 py-3.5">
+            <div key={i} className="as-kpi flex flex-col gap-0.5">
               <span className="text-body-1 font-medium opacity-45">{s.k}</span>
               {/* #kpi-passt: die ZEICHENZAHL ist alles, was die Regel braucht — `ty-num` ist Geist Mono,
                   jedes Zeichen also gleich breit (gemessener Vorschub 0,59 × Schriftgrad, Ziffern wie
@@ -830,14 +830,14 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
             kommt aus der Klasse `as-hub-tile` statt aus einem inline-style, sonst ließe sie sich oberhalb
             von 1280 px nicht auf Glas umstellen. */}
         {(() => { const tileCls = "as-hub-tile relative overflow-hidden rounded-xl text-left p-3 pl-4 min-h-[76px] flex flex-col justify-between transition-all hover:-translate-y-0.5"
-            + " dt:flex-row dt:items-center dt:gap-3 dt:min-h-0 dt:rounded-none dt:py-4 dt:pl-6 dt:pr-5 dt:hover:translate-y-0";
+            + " dt:flex-row dt:items-center dt:gap-3 dt:min-h-0 dt:hover:translate-y-0";
           /* #kante: Aus dem 3-px-Streifen wird die Kante der Kanten-Familie — 4 px plus der kurze Farbanlauf
              nach rechts, den auch Auswahlkarten und Knöpfe tragen. Bleibt ein absolut liegendes Overlay über
              der ganzen Kachel (nicht deren border-left), weil die Kachel ab 1280 px zur randlosen Listenzeile
              wird und ihren eigenen Rahmen verliert; so überlebt das Farbsignal beide Fassungen unverändert.
              Klickdurchlässig, damit die Kachel darunter der Knopf bleibt. */
           const Stripe = ({ c, dim }) => (<span aria-hidden="true"
-            className="as-hub-stripe absolute inset-y-0 left-0 right-0 rounded-xl pointer-events-none dt:rounded-none"
+            className="as-hub-stripe absolute inset-y-0 left-0 right-0 rounded-xl pointer-events-none"
             style={{ borderLeft: `4px solid ${c}`,
                      background: `linear-gradient(90deg, color-mix(in srgb, ${c} 14%, transparent) 0%, transparent 42%)`,
                      opacity: dim ? 0.45 : 1 }} />);

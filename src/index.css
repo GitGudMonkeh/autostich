@@ -2597,13 +2597,26 @@ b, strong { font-weight: 600; }
        ein zweiter Blur je Zeile wäre Blur auf Blur und viermal dieselbe Fläche unschärfen. */
     -webkit-backdrop-filter: none; backdrop-filter: none;
   }
-  /* Ebenso das Seed-Feld: auf Desktop bleibt es die deckende Eingabe, die es immer war. */
-  .as-hub-field {
-    background: #141419;
-    border: 1px solid #2a2a33;
+  /* Ebenso das Seed-Feld: auf Desktop bleibt es die deckende Eingabe, die es immer war.
+     #mainscreen-branding C4: Fläche und Kante kommen jetzt aus dem Vokabular, und beide passen nach
+     ROLLE und nicht nur nach Zahl. `--sf-ground` ist in §2c „what a panel SITS ON … so an inner
+     structure box reads as a hole punched in the card" — genau das ist ein Eingabefeld, und der Wert
+     ist mit `#141419` auf das Byte derselbe. `--ed-quiet` ist `#2a2a34` gegen `#2a2a33`: EIN Schritt
+     auf dem Blaukanal, gemessen, und die Regel steht oberhalb der Schwelle, wo diese Runde umstellen
+     darf. */
+  /* EINGEGRENZT AUF `.hub-play`, und das ist keine Kosmetik — es ist der Unterschied zwischen einer
+     bewachten und einer unbewachten Regel. Die Ausnahmeliste der Ratsche greift nach dem SELEKTOR und
+     kennt die Media Query nicht: die Handy-Regel `.as-hub-field` braucht eine Ausnahme (ihre Werte
+     sind die der schmalen Fassung und dürfen sich nicht bewegen), und mit demselben Selektor wäre die
+     DESKTOP-Regel gleich mit ausgenommen. Gemessen: die Gegenprobe C4/CC1 und CC2 blieben grün, als
+     hier wieder `#141419` und `#2a2a33` standen. Zwei Klassen statt einer, und die Ausnahme trifft
+     nur noch die Zeile, für die sie gedacht ist. */
+  .hub-play .as-hub-field {
+    background: var(--sf-ground);
+    border: 1px solid var(--ed-quiet);
     -webkit-backdrop-filter: none; backdrop-filter: none;
   }
-  .as-hub-field.is-err { border-color: #e06a6a; }
+  .hub-play .as-hub-field.is-err { border-color: #e06a6a; }
   .as-hub-list .as-hub-tile:last-child { border-bottom: 0; }
 
   /* Die Knöpfe brauchen hier KEINE Sonderregel mehr: seit „Kante statt Fläche" ziehen sie ihre Farbe
@@ -2653,7 +2666,7 @@ b, strong { font-weight: 600; }
     opacity: 1;
     stroke-width: 1.9;
     color: var(--row-tone);
-    border-radius: 9px;
+    border-radius: var(--rd-md);  /* C4: 8 statt 9 — ein Pixel, gemessen */
     background: color-mix(in srgb, var(--row-tone) 14%, rgba(255, 255, 255, .02));
     border: 1px solid color-mix(in srgb, var(--row-tone) 26%, transparent);
   }
@@ -2729,7 +2742,7 @@ b, strong { font-weight: 600; }
     padding: 4px 10px;
     border: 1px solid rgba(150, 150, 170, .22);
     background: rgba(20, 20, 26, .45);
-    border-radius: 8px;
+    border-radius: var(--rd-md);
     font-size: var(--text-body); line-height: 1.4;
     opacity: .6;
   }
@@ -2737,6 +2750,51 @@ b, strong { font-weight: 600; }
      gegen seine Beschriftung, nicht gegen die Kante daneben (conventions.md §2c, `--btn-pad-*`). */
   .as-deck-attr-music { padding-right: 4px; }
   .as-deck-attr-next { padding: 2px 6px; opacity: .6; }
+
+  /* ==========================================================================
+     #mainscreen-branding C4 — DIE POLSTER STEHEN JETZT HIER, NICHT AN DER FUNDSTELLE
+     --------------------------------------------------------------------------
+     Vierzehn `dt:`-Utilities sind aus den Klassenlisten in `StartScreen.jsx` hierher gewandert. Der
+     Grund ist nicht Ordnung, sondern Erreichbarkeit: eine Utility mit Desktop-Präfix trifft den
+     Desktop, und dort gilt das Vokabular — `panel-tokens.test.js` prüft genau das (die vierte der vier
+     Schreibweisen, die Hälfte, um die TYPO-12 danebenlag). Solange sie im JSX stehen, kann keine Regel
+     sie erreichen und kein Token sie tragen.
+
+     JEDE REGEL STEHT IN DIESER MEDIA QUERY, und das ist die ganze Sicherung für die schmale Fassung:
+     die Utilities OHNE Präfix (`px-5 py-3` …) bleiben unangetastet und tragen dort weiter den Wert,
+     den sie immer trugen. Ein Selektor wie `.hub-play .as-tut-btn` hat zwei Klassen und schlüge eine
+     Utility mit einer — außerhalb der Query wäre das eine Bewegung am Handy.
+
+     WARUM HIER KEIN `--in-*` STEHT, und es ist kein Versäumnis. §2c lässt Polsterung, die kein
+     Kasten-Innenabstand ist, ausdrücklich außerhalb der Leiter: *„A control pads against its label
+     (which is why `--btn-pad-*` sits outside the ladder), screen margins are layout."* Diese vierzehn
+     sind Knopf- und Zeilenpolster, keine Panel-Innenabstände — gemessen: `--btn-pad-y` ist 10 px und
+     `--btn-pad-x` 16 px, und keiner der fünf Knöpfe dieses Screens polstert so. Die drei Leiterstufen
+     (11 / 13 / 18) treffen ebenfalls keinen von ihnen. Sie stehen deshalb als Zahl — an EINER Stelle,
+     erreichbar, und in der Abweichungstabelle des Nachweises benannt.
+     ========================================================================== */
+  .hub-play .as-hub-bonus { padding: 14px 20px; }
+  .hub-play .as-tut-btn { padding: 16px 24px; }
+  /* Fortsetzen und Beginnen polstern verschieden — der eine trägt eine Zweitzeile, der andere nicht.
+     Zwei Haken statt eines `:has()`: der Screen entscheidet über `normalCls`, welcher Knopf welche
+     Rolle hat, und ein Haken je Rolle sagt das an der Fundstelle statt in einem Selektor. */
+  .hub-play .as-hub-resume { padding-block: 16px; }
+  .hub-play .as-hub-start { padding-block: 20px; }
+  .hub-play .as-seed-play { padding: 12px 16px; }
+  .hub-play .as-ranked-btn { padding: 16px 24px; }
+  .hub-foot .as-hub-chip { padding: 11px 20px; }
+  .hub-play .as-week-chip { padding: 2px 6px; }
+  .hub-play .as-hub-field { padding: 12px 16px; }
+  /* Die Tafel und ihre Kennzahl-Zellen sind ohnehin nur oberhalb der Schwelle im Baum (`hidden dt:flex`),
+     ihre Polster trugen also Handy-Kleidung ohne Handy dahinter. `py-[22px]` war zusätzlich eine
+     WILLKÜRLICHE Utility — die verbietet die Ratsche unabhängig vom Präfix. */
+  .as-deck { padding: 22px 24px; }
+  .as-kpi { padding: 14px 16px; }
+  /* Die Listenzeile: der linke Innenabstand stand schon hier (18 px, s. o.), die drei anderen kommen
+     nach. `dt:pl-6` war dabei bereits TOT — die Regel darüber hat zwei Klassen und schlug die Utility
+     seit dem Listen-Umbau; die 24 px im JSX haben nie etwas gefärbt (C4-F01). */
+  .as-hub-list .as-hub-tile { padding-top: 16px; padding-bottom: 16px; padding-right: 20px; }
+  .as-hub-list .as-hub-stripe { border-radius: 0; }
 
   /* Kennzahl-Raster der Status-Tafel: Haarlinie zwischen den Zellen statt freigelegter Container-Fläche
      (Begründung an der Fundstelle in StartScreen.jsx).
