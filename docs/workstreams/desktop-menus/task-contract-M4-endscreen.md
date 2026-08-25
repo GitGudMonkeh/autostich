@@ -17,7 +17,7 @@ is not a screen a worker redecorates.
 | **Task** | `M4` — the end screen |
 | **Branch** | `task/menu-m4-endscreen` — create it yourself |
 | **Feature branch** | `feature/desktop-menus` |
-| **Base SHA** | tip of `feature/desktop-menus` at start. Record it here |
+| **Base SHA** | `654e7bef` — tip of `feature/desktop-menus` at start, tree clean before the first edit |
 | **Tier** | C — a menu screen with a full measurement deliverable |
 | **Owner stops** | Two |
 | **Concurrency** | **Exclusive** |
