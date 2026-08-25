@@ -107,6 +107,45 @@ const UN_STATE_LITERALS = ["rgba(150, 150, 170, .12)", "#221114", "#54e08a",
 const FB_STATE_LITERALS = ["rgba(150, 150, 170, .12)", "#123a25", "#2f7a4f",
   "#3a1518", "#d1462f66", "#3a2a15", "#d0902f", "#54e08a", "#6c6c7e", "#e0a05a"];
 
+/* #menu-rework M4 — DER SIEGESBILDSCHIRM. Neunzehn Literale, alle GEZAEHLT statt gepraegt, und keines
+   davon ist eine Bequemlichkeit: der Screen hat KEINEN freigegebenen Entwurf (task-contract-M4 —
+   "Migration only. There is no design commission for this screen"), also wird das Vokabular genommen
+   und sonst nichts angefasst. Drei Werte WAREN Schritte und stehen deshalb nicht mehr hier — der
+   Ueberzug (`--sf-scrim`), die Flaeche der Gebaeudeliste (`--sf-base`) und die ruhende Kante der
+   Gebaeude-Zeile (`--ed-quiet`).
+
+   Was bleibt, in fuenf Gruppen:
+
+     DAS GOLD DER FREISCHALTUNG — `#1c1708`/`#14110c` (das Fenster), `#0c0c10` (der Bildhalter
+       dahinter), `#d4a63a55` (seine Kante), `#1a1608` (Willkommensbonus, Onboarding, Meta-Fenster),
+       `#141019`/`#3a2f12` (die Kacheln darin). Das ist `as-legendary`, eine ROLLENFARBE aus
+       design-sprache.md §3, und damit dieselbe Antwort wie `#d4a63a` in RunStats.jsx: Bedeutung, kein
+       Chrome. EINE FALLE IST HIER BENANNT: `#141019` ist zeichengleich `--sf-deep` — und `--sf-deep`
+       ist in 2c ausdruecklich intern ("No call site names it"), der Schlussanschlag von
+       `--sf-raised`. Gleiche Zahl, andere Rolle; sie zu verwechseln waere ein Schritt, den die Leiter
+       gar nicht anbietet.
+     DER UEBERZUG DES FREISCHALT-FENSTERS — `rgba(8, 8, 12, .82)`. `--sf-scrim` ist
+       rgba(12, 12, 16, .8) und damit 4/4/4 plus .02 daneben; das Fenster steht ausserdem in JEDER
+       Breite. M3 hat fuer genau diese Sorte eine Ausnahme ERBETEN und bekommen, mit dem Satz, dass es
+       dafuer keine stehende Erlaubnis gibt — die naechste wird wieder gefragt. Also gefragt und nicht
+       genommen: M4-F03.
+     DER WEISSE HAUCH UND SEINE NACHBARN — `#ffffff0d` (Rekord-Abstands-Chip) und `#0e0e13`
+       (Meilensteinbalken samt Teilern). Dieselbe Familie wie M3-G2 / M7-G2 / M8-G3: sie liegen UNTER
+       dem tiefsten Schritt bzw. UEBER dem Glas, und `--sf-sunken` ist deckend.
+     DIE ZUSTANDSFARBEN — `#3a1214`/`#e05555` (der DP-Abzug, rot), `#12313f`/`#191922` (Gebaeude
+       angetippt gegen ruhend), `#241b34`/`#6b4fa0` (der Leitfaden-Chip). Fuer ein Zustandspaar hat
+       die Leiter keinen Schritt — MENU-46/47/48, seit dem Freeze als Ratsche gefuehrt.
+     DIE SIGNALE — `#5a8ade`/`#5ec8f0` (der Architekt) und `#33333e` (die Kante des Chips, dieselbe
+       wie M9s Kennungs-Box). #go-ruhe fuehrt den blauen Rahmen ausdruecklich unter "was NICHT
+       angefasst ist"; er gehoert dem Architekten, nicht diesem Screen. */
+const GO_STATE_LITERALS = [
+  /* Gold / as-legendary */ "#1c1708", "#14110c", "#0c0c10", "#d4a63a55", "#1a1608", "#141019", "#3a2f12",
+  /* Ueberzug (M4-F03)  */ "rgba(8, 8, 12, .82)",
+  /* Hauch / darunter   */ "#ffffff0d", "#0e0e13",
+  /* Zustandspaare      */ "#3a1214", "#e05555", "#12313f", "#191922", "#241b34", "#6b4fa0",
+  /* Signale            */ "#5a8ade", "#5ec8f0", "#33333e",
+];
+
 const MIGRATED_JSX = [
   { path: "src/ui/modalStyle.jsx" },
   { path: "src/ui/OptionsModal.jsx" },
@@ -216,6 +255,10 @@ const MIGRATED_JSX = [
   { path: "src/ui/PrivacyModal.jsx", stateLiterals: PV_STATE_LITERALS },
   { path: "src/ui/UsernameModal.jsx", stateLiterals: UN_STATE_LITERALS },
   { path: "src/ui/FeedbackModal.jsx", stateLiterals: FB_STATE_LITERALS },
+  /* #menu-rework M4 — der Siegesbildschirm. `UnlockModal` ist in dieser Datei definiert und gehoert
+     dazu; die vier Komponenten, die der Screen nur RENDERT (`GuideOverlay`, `CardGrid`,
+     `ArchToggle`, `FormIcon`), gehoeren ihm nicht und stehen deshalb weder hier noch im Diff. */
+  { path: "src/ui/GameOver.jsx", stateLiterals: GO_STATE_LITERALS },
 ];
 /* Ein Haken trifft ein Tag, wenn dessen Klassen ihn als GANZES Wort fuehren: `cz-main` darf
    `cz-mainscroll` nicht mitnehmen, sonst haengt der eine Eintrag am anderen. */
@@ -250,7 +293,13 @@ const MIGRATED_SELECTORS = [/\.op-/, /\.as-opt-/, /\.as-panel-sunken/, /\.as-she
      hier stehen muesste: sie sind alle auf `.lb-page` eingegrenzt, weil dieselben Klassennamen im
      Siegesbildschirm und in den Lauf-Details anderen Bauteilen gehoeren. Ein blosses `/\.rg-/`
      wuerde die einsammeln — dieselbe Ueberlegung, mit der M7 `.rs-`/`.rg-` nicht aufgenommen hat. */
-  /\.st-/, /\.rd-/, /\.lb-/];
+  /* M4: `.go-` MEINT DEN GANZEN SCREEN, wie `.cz-`, `.up-`, `.st-`, `.rd-` und `.lb-` ihre. Die
+     geteilten Regeln (`.st-root, .lb-root, .go-root`, `.st-card, .lb-card, .go-card`,
+     `.st-card::before, .lb-body::before, .go-card::before`) sind darin enthalten und werden von M7s
+     und M8s Eintraegen ohnehin schon geprueft — die Achsen-Pruefung zaehlt nicht doppelt, weil sie
+     Regeln und keine Treffer sammelt. Die RATSCHEN weiter unten schliessen sie dagegen aus, sonst
+     stuende dieselbe Zahl in zwei Messungen. */
+  /\.st-/, /\.rd-/, /\.lb-/, /\.go-/];
 /* `.up-banner` ist NICHT dieser Screen. Es ist die „Neue Version verfuegbar"-Leiste
    (`UpdateBanner.jsx`) und teilt mit dem Baum nur die zwei Buchstaben des Praefixes. Sie gehoert
    keinem migrierten Screen, also darf die Erlaubnisliste sie nicht einsammeln. Gefunden, weil der
@@ -278,6 +327,36 @@ const withoutFallbacks = (body) => body.replace(/var\(\s*--[a-zA-Z0-9-]+\s*,[^()
 
    Die Liste steht hier offen und nicht als aufgeweichter Ausdruck: eine Ausnahme, die man lesen kann,
    ist ueberpruefbar; ein Ausdruck, der leiser geworden ist, nicht. */
+/* --- M4, der Siegesbildschirm. Die drei bekannten Sorten — und eine VIERTE, die als Befund
+   herausfaellt statt als Ausnahme zu verschwinden.
+
+   Steuerelement: der Griff des Stich-Graphen (8/11) polstert gegen seine Beschriftung samt Marke, die
+     zwei Aktionen (11/22) gegen ihre — genau der Fall, fuer den 2c `--btn-pad-*` ausserhalb der
+     Leiter fuehrt —, und der NEU-Marker (2/6) ist MENU-51 noch einmal: eine Kapsel um drei Zeichen,
+     fuer die `--btn-pad-y` das Fuenffache waere.
+   Layout: `.go-blist ~ .go-ticks:has(…)` traegt 18 px als `padding-top`, weil `margin-top` in
+     derselben Zeile auf `auto` steht und den Graphen an den Fuss der Spalte drueckt. Es IST die
+     Fuge, die die Schwesterregel eine Zeile hoeher als `margin-top: 18px` schreibt — Anordnung, kein
+     Inset, und dieselbe Unterscheidung wie bei `.up-varrow`.
+
+   M4-F02, UND DAS IST KEINE DER DREI SORTEN. Die PANEL-Polster dieses Screens sind 15/17/17 (und auf
+     flachen Fenstern 12/15/14), die Bestleistungs-Zeile 9/13. Das sind echte Panel-Insets, und die
+     Leiter hat dafuer Sprossen: `--in-base` ist 18, `--in-tight` 11, `--in-snug` 13. Sie liegen um
+     1 bis 3 px daneben.
+
+     DAS IST KEINE LUECKE, SONDERN EIN UNTERSCHIED — und ihn aufzuloesen ist eine
+     Gestaltungsentscheidung, keine Migration. Der Screen hat keinen freigegebenen Entwurf; ihn um
+     3 px zu verschieben, weil ein Waechter dann gruen wird, ist genau das Umdekorieren, das der
+     Vertrag verbietet. Halb umzustellen (`padding: 9px var(--in-snug)`) waere schlimmer: zwei
+     Schreibweisen fuer eine Zahl, und die Leiter sieht danach so aus, als traege der Screen sie.
+     Gemessen, gezaehlt, und als Entscheidung an den Owner gegeben — measurements/M4.md Teil 3. */
+const M4_INSET_EXEMPT = [
+  /* Steuerelement */ /^\.go-ticks \.rg-perTrick > summary$/, /^\.go-actions > button$/, /^\.go-bestnew$/,
+  /* Layout        */ /^\.go-blist ~ \.go-ticks:has\(\.rg-perTrick\[open\]\)$/,
+  /* M4-F02        */ /^\.go-heroblock, \.go-earn, \.go-best, \.go-origin, \.go-build, \.go-stats, \.go-layout$/,
+  /^\.go-earn, \.go-best, \.go-origin, \.go-build, \.go-stats, \.go-layout$/, /^\.go-bestrow$/,
+];
+
 const INSET_EXEMPT = [
   /* Steuerelement */ /\.op-dd-btn/, /\.op-dd-item/, /\.op-dd-list/, /\[role="radio"\]/, /\.op-reset/,
   /* Layout       */ /\.op-root/, /\.op-foot/, /\.op-body/, /\.op-card/, /\.op-cols/, /\.op-col2/, /\.op-headrow/,
@@ -356,6 +435,8 @@ const INSET_EXEMPT = [
   /* Steuerelement */ /^\.un-first \.un-form input$/, /^\.un-first \.un-save$/,
                       /^\.fb-kind$/, /^\.fb-send$/,
   /* Layout       */ /^\.un-first \.un-body$/, /^\.fb-body$/,
+  /* M4 — begruendet an `M4_INSET_EXEMPT` weiter oben, wo die vier Sorten einzeln stehen. */
+  ...M4_INSET_EXEMPT,
 ];
 
 /* WAS DIE HOEHEN-ACHSE MEINT — und die eine Regel der Werkstatt, die daneben steht.
@@ -502,13 +583,32 @@ const M9_EDGE_EXEMPT = [
   /* Aus     */ /^\.fb-run\[data-off="1"\] \.fb-runicon$/,
 ];
 
+/* --- M4, der Siegesbildschirm. Zwei Sorten, beide gezaehlt, beide mit ID. ---
+
+   M7-G2 / M8-G3, DER WEISSE HAUCH UEBER DEM GLAS. `rgba(255, 255, 255, .012)` ruhend und `.045`
+     ueberfahren, an der Kachelform (`.go-box`), der Gebaeudeliste, den zwei Aktionen, dem Griff des
+     Stich-Graphen und der Bestleistungs-Zeile. Das IST die Familie, die M3, M7 und M8 schon gezaehlt
+     haben, und die Antwort ist dieselbe: `--sf-sunken` (#141320) ist DECKEND, und was diese Flaeche
+     ausmacht, ist gerade das Durchscheinen des Glases darunter. Der Screen ist ausserdem der Zwilling
+     von #st-ruhe — `.st-box` traegt denselben Wert aus demselben Grund.
+   PERMANENT — `#d4a63a` am Rekord-Ring. Gold heisst auf diesem Schirm "deine Bestmarke" (#kante), es
+     ist eine Rollenfarbe aus design-sprache.md §3 und faellt damit unter "meaning-coded borders" in
+     2c. Dieselbe Antwort wie `#d4a63a` in RunStats.jsx. */
+const M4_SURFACE_EXEMPT = [
+  /* M7-G2 */ /^\.go-card \.go-box$/, /^\.go-blist$/, /^\.go-actions > button$/,
+  /^\.go-actions > button:hover$/, /^\.go-ticks \.rg-perTrick > summary$/,
+  /^\.go-ticks \.rg-perTrick > summary:hover$/, /^\.go-bestrow$/,
+  /* permanent */ /^\.go-heroblock\.is-record > \.as-ring-run::before$/,
+];
+
 const M8_RADIUS_EXEMPT = [
   /* M8-G4 */ /^\.lb-page \.lb-listsub$/,
 ];
 
 const CSS_AXES = [
   { axis: "Flaeche", re: /(?:^|[;{\s])background(?:-color|-image)?\s*:[^;}]*(#[0-9a-fA-F]{3,8}|\brgba?\()/g,
-    exempt: [...M3_SURFACE_EXEMPT, ...M7_SURFACE_EXEMPT, ...M8_SURFACE_EXEMPT, ...M9_SURFACE_EXEMPT] },
+    exempt: [...M3_SURFACE_EXEMPT, ...M7_SURFACE_EXEMPT, ...M8_SURFACE_EXEMPT, ...M9_SURFACE_EXEMPT,
+             ...M4_SURFACE_EXEMPT] },
   { axis: "Kante",   re: /(?:^|[;{\s])border(?:-top|-right|-bottom|-left)?(?:-color)?\s*:[^;}]*(#[0-9a-fA-F]{3,8}|\brgba?\()/g,
     exempt: [...M3_EDGE_EXEMPT, ...M7_EDGE_EXEMPT, ...M8_EDGE_EXEMPT, ...M9_EDGE_EXEMPT] },
   /* `inset` ist ausgenommen, und das ist eine Unterscheidung, keine Nachsicht: die Hoehenleiter misst
@@ -875,6 +975,17 @@ describe("#menu-rework — die Tinten-Ratsche: Textfarb-Literale wachsen nicht",
     ["src/ui/OptionsModal.jsx", () => inkOfJsx("src/ui/OptionsModal.jsx"), 0],
     ["src/ui/optionsBits.jsx", () => inkOfJsx("src/ui/optionsBits.jsx"), 0],
     ["src/ui/CustomizeScreen.jsx (ganze Datei)", () => inkOfJsx("src/ui/CustomizeScreen.jsx"), 27],
+    /* #menu-rework M4 — der Siegesbildschirm. Tinte ist unveraendert eine benannte Luecke des
+       Vokabulars (2c, "What the vocabulary does not claim"), das Fenster ist zu, also gezaehlt statt
+       gepraegt. Die Zahl ist hoch, weil dieser Screen der farbigste der Runde ist: jede Waehrung,
+       jede Freischaltung und jeder Zustand bringt seine eigene Textfarbe mit — und weil der Screen
+       KEINEN Entwurf hat, wird keine davon zusammengefasst.
+       DIE CSS-SEITE SCHLIESST `.st-` UND `.lb-` AUS, aus demselben Grund, aus dem M8s Zeile `.st-`
+       ausschliesst: die Schale der drei randverankerten Screens ist EINE Regel
+       (`.st-root, .lb-root, .go-root`), ihre Literale sind M7s und stehen oben in dessen Zeile. Eine
+       Zahl, die zweimal gezaehlt wird, ist keine Messung. */
+    ["src/ui/GameOver.jsx (ganze Datei)", () => inkOfJsx("src/ui/GameOver.jsx"), 23],
+    ["index.css — .go-* (M4, ohne die geteilten Schalen-Regeln)", () => inkOfCss([/\.go-/], [/\.st-/, /\.lb-/]), 11],
     ["index.css — .op-* (M1)", () => inkOfCss([/\.op-/, /\.as-opt-/]), 16],
     ["index.css — .cz-* Schale (M2a)", () => inkOfCss(M2A_SHELL_SELECTORS), 2],
     ["index.css — .cz-* Inhalte (M2b)", () => inkOfCss([/\.cz-/], M2A_SHELL_SELECTORS), 1],
@@ -1055,6 +1166,15 @@ describe("#menu-rework — die Kanten-Ratsche (MENU-38): durchsichtige neutrale 
     ["src/ui/GlobalLeaderboard.jsx (ganze Datei)", () => edgeOfJsx("src/ui/GlobalLeaderboard.jsx"), 0],
     ["src/ui/WeekMods.jsx (ganze Datei)", () => edgeOfJsx("src/ui/WeekMods.jsx"), 0],
     ["index.css — .lb-* (M8)", () => edgeOfCss([/\.lb-/]), 0],
+    /* #menu-rework M4. Beide Seiten stehen auf null, und beide Nullen sind ERREICHTE Zustaende:
+       `GameOver.jsx` trug eine (die ruhende Kante der Gebaeude-Zeile, jetzt `--ed-quiet`), die
+       CSS-Seite trug VIER — die Kachelform, die zwei Aktionen, der Griff des Stich-Graphen und die
+       Bestleistungs-Zeile. Dieselbe Umstellung, die M2a gemessen (rund 9/255) und der Owner
+       abgenommen hat, die M3 vierzehnmal, M7 viermal und M8 sechsmal gezogen hat; die gemessenen
+       Deltas stehen in measurements/M4.md Teil 3.
+       Der Ausschluss von `.st-`/`.lb-` ist derselbe wie bei der Tinte und aus demselben Grund. */
+    ["src/ui/GameOver.jsx (ganze Datei)", () => edgeOfJsx("src/ui/GameOver.jsx"), 0],
+    ["index.css — .go-* (M4, ohne die geteilten Schalen-Regeln)", () => edgeOfCss([/\.go-/], [/\.st-/, /\.lb-/]), 0],
   ];
 
   for (const [name, count, cap] of CAP) {

@@ -59,6 +59,23 @@ const radius = (sel) => {
   return m ? Number(m[1]) : null;
 };
 
+/* #menu-rework M4 — DERSELBE GRIFF, EINE EBENE TIEFER: `radius()` oben loest den Wert einer Regel auf,
+   die es ueber ihren SELEKTOR findet. Zwei Zusicherungen weiter unten halten aber einen Regel-RUMPF in
+   der Hand — eine Sammelregel ueber drei Zeilen Selektor, und den Griff des Stich-Graphen. Beide lasen
+   `border-radius:\s*6px` woertlich und fielen, sobald dort `var(--rd-sm)` steht, waehrend die
+   Zusicherung, die sie schuetzen („EINE Kachelform fuer alles im Panel"), voellig intakt war.
+
+   Das ist Zeichen fuer Zeichen der Fall, fuer den M3 `test/cssTokens.js` geschrieben hat, und die
+   Antwort ist dieselbe: AUFLOESEN statt den Token-NAMEN pruefen. Der Waechter rechnet weiter mit
+   echten Zahlen — und er gewinnt dieselbe zweite Regression dazu wie `radius()`: fehlt der Schritt im
+   `@theme`-Block, bleibt die Ersetzung stehen und die Zusicherung faellt. */
+const radiusOfBody = (body) => {
+  const roh = String(body).match(/border-radius:\s*([^;}]+)/);
+  if (!roh) return null;
+  const m = resolve(roh[1].trim(), themeTokens(css)).match(/([\d.]+)px/);
+  return m ? Number(m[1]) : null;
+};
+
 describe("#go-ruhe — der Ring steht still", () => {
   it("jedes Panel des Screens trägt den Modifikator", () => {
     /* Verdienst · Bestleistungen · Herkunft · Build · Kennzahlen · Aufstellung. Ein `as-ring` ohne
@@ -127,10 +144,53 @@ describe("#go-ruhe — EINE Kachelform für alles im Panel", () => {
 
 describe("#go-ruhe — die zwei Aktionen tragen die Kachelform", () => {
   it("Fläche, Rahmen und Schein der Kanten-Knöpfe fallen", () => {
+    /* #menu-rework M4 — GEPRUEFT WIRD DIE ZUSICHERUNG, NICHT DER MECHANISMUS, und das ist dieselbe
+       Korrektur, die M1 an `test/inlineOverride.js` geschrieben hat: die Zusicherung war nie
+       "`!important` steht da". Sie ist: an diesem Knopf gewinnt die flache Kachelform, nicht die
+       gefuellte Optik von `as-edge`/`as-edge-strong`.
+
+       DIE ALTE FASSUNG PRUEFTE `!important` UND BEGRUENDETE ES FALSCH. Ihre Meldung sagte,
+       `as-edge-strong` gewaenne als Klasse. Gemessen stimmt das nicht: `.go-actions > button` wiegt
+       (0,1,1) gegen (0,1,0) und steht ausserdem SPAETER im selben ungelayerten Blatt. Die drei
+       Deklarationen entfernt und neu gemessen ergab null Deltas ueber 1428 Knoten (M4-F04) — der
+       Waechter schuetzte also eine Schreibweise, keine Eigenschaft.
+
+       DIE NEUE FASSUNG IST STRENGER, in genau der Richtung, in der die alte blind war. Sie verlangt
+       (a) dass die Regel alle drei Eigenschaften ueberhaupt setzt, und (b) dass sie
+       `as-edge-strong` SCHLAEGT — durch `!important` ODER dadurch, dass sie spaeter im Blatt steht
+       und mindestens so spezifisch ist. Die alte Fassung haette es nicht gemerkt, wenn jemand den
+       `.as-edge-*`-Block unter den Desktop-Block schoebe; diese merkt es. */
     const btn = desk.match(/\.go-actions > button\s*\{[^}]*\}/)[0];
     for (const prop of ["background", "border", "box-shadow"])
-      expect(btn, `${prop} ohne !important — as-edge-strong steht als Klasse und gewänne`)
-        .toMatch(new RegExp(`${prop}:[^;]*!important`));
+      expect(btn, `${prop} wird an .go-actions > button gar nicht mehr gesetzt — dann traegt der Knopf `
+        + `wieder die gefuellte Optik von as-edge-strong`)
+        .toMatch(new RegExp(`(^|[;{\\s])${prop}\\s*:`));
+
+    /* Beide Regeln stehen ungelayert in derselben Datei, also entscheidet erst die Spezifitaet und
+       bei Gleichstand die Reihenfolge. `.as-edge-strong` ist eine einzelne Klasse; die Regel hier
+       traegt Klasse PLUS Elementselektor und ist damit strikt spezifischer — die Reihenfolge wird
+       zusaetzlich geprueft, damit die Zusicherung auch dann haelt, wenn jemand den Selektor kuerzt. */
+    /* ZWEIMAL KORRIGIERT, UND BEIDE MALE VON DER GEGENPROBE, NICHT VOM NACHDENKEN:
+         1. `indexOf(".as-edge-strong {")` trifft auch `.up-banner .as-edge-strong {` — eine ANDERE
+            Regel, tausende Zeichen entfernt, und sie stuende auf der falschen Seite des Vergleichs.
+            Der Anker steht deshalb am Zeilenanfang.
+         2. `indexOf` liest die ERSTE Definition. Entscheidend ist bei Gleichstand aber die LETZTE:
+            eine zweite, spaeter angehaengte `.as-edge-strong`-Regel gewaenne, und der Vergleich
+            gegen die erste haette sie nicht gesehen. Also `lastIndexOf`.
+       Beide Fehler standen in der ERSTEN Fassung dieses Waechters, und beide hat die Gegenprobe
+       gemeldet, nicht die Ueberlegung — was genau der Grund ist, aus dem der Auftrag sie verlangt. */
+    const iEdge = cssBare.lastIndexOf("\n.as-edge-strong {");
+    const iBtn = cssBare.indexOf(".go-actions > button {");
+    expect(iEdge, "as-edge-strong nicht mehr gefunden — dann prueft dieser Test nichts").toBeGreaterThan(-1);
+    expect(iBtn, ".go-actions > button nicht mehr gefunden").toBeGreaterThan(-1);
+    /* DRITTER FEHLER, DRITTE GEGENPROBE. `/!important/.test(btn)` fragte, ob IRGENDWO in der Regel
+       ein `!important` steht — und da stehen weiter drei, an `font-size`, `padding` und `color`.
+       Die Bedingung war damit immer wahr, und der Reihenfolge-Zweig konnte nie feuern. Gefragt wird
+       jetzt je EIGENSCHAFT, also genau das, was die Kaskade auch fragt. */
+    const wichtig = (p) => new RegExp(`(^|[;{\\s])${p}\\s*:[^;]*!important`).test(btn);
+    const schlaegt = ["background", "border", "box-shadow"].every(wichtig) || iBtn > iEdge;
+    expect(schlaegt, "die Kachelform steht VOR as-edge-strong und traegt kein !important — "
+      + "die gefuellte Optik gewaenne").toBe(true);
   });
 
   it("unterschieden wird allein über die Schriftfarbe", () => {
@@ -196,8 +256,11 @@ describe("#go-ruhe — der Stich-Graph sitzt am Fuß der Spalte", () => {
 describe("#go-ruhe — was ausdrücklich NICHT angefasst ist", () => {
   it("die Kanten-Familie behält ihre Kante, nur der Radius zieht mit", () => {
     /* Regel 5: die Linkskante ist ein projektweites Signal (#kante). Der Desktop-Block darf die
-       SP-/DP-Kacheln eckiger machen, aber ihre `--c` nicht überschreiben. */
-    expect(desk).toMatch(/\.go-earn \.as-edge-card,[\s\S]{0,200}?border-radius:\s*6px/);
+       SP-/DP-Kacheln eckiger machen, aber ihre `--c` nicht überschreiben.
+       #menu-rework M4: der Radius wird AUFGELOEST (s. `radiusOfBody` oben) statt woertlich gelesen. */
+    const sammel = desk.match(/\.go-earn \.as-edge-card,[\s\S]{0,200}?\{[^}]*\}/);
+    expect(sammel, "die Sammelregel der Kanten-Kacheln gibt es nicht mehr").toBeTruthy();
+    expect(radiusOfBody(sammel[0]), "die Kanten-Kacheln stehen nicht mehr auf der Kachelform").toBe(6);
     expect(desk, "der Desktop-Block färbt die Kante um").not.toMatch(/\.go-earn[^{]*\{[^}]*--c:/);
   });
 
@@ -356,7 +419,14 @@ describe("#stiche-zu — der Durchlauf-Graph startet zugeklappt", () => {
        wäre er eine Überschrift, die nicht verrät, dass etwas dahinter liegt. */
     const s = desk.match(/\.go-ticks \.rg-perTrick > summary\s*\{[^}]*\}/)[0];
     expect(s).toMatch(/cursor:\s*pointer/);
-    expect(s, "der Griff ist keine Kachel mehr").toMatch(/border-radius:\s*6px/);
+    /* #menu-rework M4 — aufgeloest statt woertlich, UND an den Kasten gebunden statt an eine Zahl.
+       Die Zusicherung von #go-ruhe ist „EINE Kachelform fuer alles im Panel"; sie an `.go-box` zu
+       messen prueft genau das, statt zweimal unabhaengig dieselbe Ziffer zu behaupten. Die absolute
+       Zahl bleibt daneben stehen, damit ein gemeinsamer Fehlgriff beider Regeln nicht durchgeht. */
+    const box = desk.match(/\.go-card \.go-box\s*\{[^}]*\}/)[0];
+    expect(radiusOfBody(s), "der Griff ist keine Kachel mehr").toBe(6);
+    expect(radiusOfBody(s), "Griff und Kasten tragen nicht mehr dieselbe Kachelform")
+      .toBe(radiusOfBody(box));
     expect(desk, "die Marke fehlt").toMatch(/\.go-ticks \.rg-perTrick > summary::before\s*\{[^}]*content:/);
     expect(desk, "die Marke dreht sich beim Aufklappen nicht")
       .toMatch(/\.go-ticks \.rg-perTrick\[open\] > summary::before\s*\{[^}]*rotate\(90deg\)/);
