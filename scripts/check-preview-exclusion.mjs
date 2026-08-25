@@ -21,7 +21,7 @@
    exist only inside the gated modules and survive minification unchanged. */
 
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, rmSync, readdirSync, readFileSync, existsSync } from "node:fs";
+import { mkdtempSync, rmSync, readdirSync, readFileSync, existsSync, writeSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -73,7 +73,11 @@ function bundleText(outDir) {
 
 if (!existsSync(VITE_BIN)) {
   // The most common cause of an inexplicable failure in a fresh worktree — say so plainly.
-  console.error(`vite not found at ${VITE_BIN} — run \`npm ci\` in this worktree first.`);
+  /* MH3: `writeSync` and not `console.error`. This bail MUST stop the script — everything below
+     assumes a working vite — so the exit call stays, and the message is therefore written straight
+     to fd 2 rather than queued on a stream that `process.exit()` would discard. Nothing has been
+     printed before this point, so there is nothing else in flight to lose. */
+  writeSync(2, `vite not found at ${VITE_BIN} — run \`npm ci\` in this worktree first.\n`);
   process.exit(1);
 }
 
@@ -115,8 +119,13 @@ try {
   rmSync(tmp, { recursive: true, force: true });
 }
 
+/* MH3 — THE `else` IS LOAD-BEARING, and it is why this site could not be converted mechanically.
+   `process.exit()` here was doing two jobs: reporting the failure AND skipping the OK line below it.
+   Dropping the exit call for `process.exitCode` alone would let a FAILED run print that it passed —
+   the loop above has already written its per-marker lines to stdout, so the exit had to go. */
 if (fail.length) {
   console.error("\n#400 preview exclusion FAILED:\n  " + fail.join("\n  "));
-  process.exit(1);
+  process.exitCode = 1;
+} else {
+  console.log("\n#400 preview exclusion OK — the harness is not in the production build.");
 }
-console.log("\n#400 preview exclusion OK — the harness is not in the production build.");

@@ -534,7 +534,9 @@ async function compare(a, b) {
   for (const k of Object.keys(px)) if (px[k].sizeMismatch || px[k].structural > 0) bad++;
 
   process.stdout.write(bad ? `\nFAIL · ${bad} check(s) differ\n` : "\nPASS · the phone layout is unchanged\n");
-  process.exit(bad ? 1 : 0);
+  /* MH3: setting the code lets the verdict line above drain; `process.exit()` would race it. Nothing
+     runs after `compare()` returns, so this ends the program exactly as the exit call did. */
+  process.exitCode = bad ? 1 : 0;
 }
 
 /* ------------------------------------------------------------------ entry */
@@ -544,5 +546,5 @@ if (cmd === "capture" && x) await capture(x);
 else if (cmd === "compare" && x && y) await compare(x, y);
 else {
   process.stdout.write("usage:\n  phone-proof.mjs capture <label>\n  phone-proof.mjs compare <labelA> <labelB>\n");
-  process.exit(2);
+  process.exitCode = 2;   /* MH3 — see above; the usage text is queued stdout like any other. */
 }
