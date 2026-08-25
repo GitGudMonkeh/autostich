@@ -26,27 +26,65 @@ export const SECTIONS = [
   {
     id: "grundlagen",
     lessons: [
-      {
-        id: "wasist",
-        beats: [
-          { kind: "satz" },
-          { kind: "bild", probe: "deckstrip" },
-          { kind: "tip" },
-        ],
-      },
+      { id: "wasist",    beats: [{ kind: "satz" }, { kind: "bild", probe: "deckstrip" }, { kind: "tip" }] },
+      { id: "stich",     beats: [{ kind: "satz" }, { kind: "tip" }] },
+      { id: "werte",     beats: [{ kind: "satz" }, { kind: "tip" }] },
+      { id: "durchlauf", beats: [{ kind: "satz" }, { kind: "tip" }] },
+      { id: "serie",     beats: [{ kind: "satz" }, { kind: "probierfeld", probe: "streak" }, { kind: "tip" }] },
+      { id: "crit",      beats: [{ kind: "satz" }, { kind: "tip" }] },
+      { id: "score",     beats: [{ kind: "satz" }, { kind: "probierfeld", probe: "score" }, { kind: "tip" }] },
+      { id: "anzeigen",  beats: [{ kind: "satz" }, { kind: "tip" }] },
     ],
   },
   {
     id: "aufstellung",
     lessons: [
-      {
-        id: "formationen",
-        beats: [
-          { kind: "satz" },
-          { kind: "probierfeld", probe: "formation" },
-          { kind: "tip" },
-        ],
-      },
+      { id: "phase",       beats: [{ kind: "satz" }, { kind: "tip" }] },
+      { id: "tauschen",    beats: [{ kind: "satz" }, { kind: "probierfeld", probe: "formation" }, { kind: "tip" }] },
+      { id: "position",    beats: [{ kind: "satz" }, { kind: "tip" }] },
+      { id: "karte",       beats: [{ kind: "satz" }, { kind: "tip" }] },
+      { id: "formationen", beats: [{ kind: "satz" }, { kind: "probierfeld", probe: "formation" }, { kind: "tip" }] },
+      { id: "stapeln",     beats: [{ kind: "satz" }, { kind: "probierfeld", probe: "formation" }, { kind: "tip" }] },
+    ],
+  },
+  {
+    id: "wahl",
+    lessons: [
+      { id: "perks",     beats: [{ kind: "satz" }, { kind: "tip" }] },
+      { id: "raritaet",  beats: [{ kind: "satz" }, { kind: "tip" }] },
+      { id: "neuwurf",   beats: [{ kind: "satz" }, { kind: "tip" }] },
+      { id: "skills",    beats: [{ kind: "satz" }, { kind: "tip" }] },
+      { id: "motor",     beats: [{ kind: "satz" }, { kind: "tip" }] },
+      { id: "legendaer", beats: [{ kind: "satz" }, { kind: "tip" }] },
+    ],
+  },
+  {
+    id: "archetypen",
+    lessons: [
+      { id: "feuer",   beats: [{ kind: "satz" }, { kind: "bild", probe: "guideFire" },      { kind: "tip" }] },
+      { id: "blitz",   beats: [{ kind: "satz" }, { kind: "bild", probe: "guideLightning" }, { kind: "tip" }] },
+      { id: "eis",     beats: [{ kind: "satz" }, { kind: "bild", probe: "guideIce" },       { kind: "tip" }] },
+      { id: "pflanze", beats: [{ kind: "satz" }, { kind: "bild", probe: "guidePlant" },     { kind: "tip" }] },
+    ],
+  },
+  {
+    id: "architekt",
+    lessons: [
+      { id: "bauphase",  beats: [{ kind: "satz" }, { kind: "tip" }] },
+      { id: "brett",     beats: [{ kind: "satz" }, { kind: "tip" }] },
+      { id: "bauen",     beats: [{ kind: "satz" }, { kind: "probierfeld", probe: "board" }, { kind: "tip" }] },
+      { id: "sorten",    beats: [{ kind: "satz" }, { kind: "tip" }] },
+      { id: "boni",      beats: [{ kind: "satz" }, { kind: "probierfeld", probe: "board" }, { kind: "tip" }] },
+      { id: "aufwerten", beats: [{ kind: "satz" }, { kind: "tip" }] },
+    ],
+  },
+  {
+    id: "danach",
+    lessons: [
+      { id: "endscreen", beats: [{ kind: "satz" }, { kind: "tip" }] },
+      { id: "punkte",    beats: [{ kind: "satz" }, { kind: "tip" }] },
+      { id: "baum",      beats: [{ kind: "satz" }, { kind: "tip" }] },
+      { id: "rangliste", beats: [{ kind: "satz" }, { kind: "tip" }] },
     ],
   },
 ];
@@ -105,7 +143,14 @@ const SATZ_MARGIN = 14;
 const TIP_LINE = 20;      // line-height 1.45
 const TIP_CHROME = 46;    // Trennlinie + Label + Abstände (gemessen 90 bei 2 Zeilen)
 const BILD_PX = 123;       // obere Messung
-const PROBE_PX = 215;      // obere Messung
+
+/* JE BAUSTEIN, nicht je Takt-Art. Die erste Fassung setzte jedes Probierfeld auf 215 px und ließ
+   damit eine 486-px-Lektion durchs Budget — das Architekt-Brett ist deutlich höher als eine
+   Kartenreihe. Ein Wächter, der ein Budget durchwinkt, ist schlimmer als keiner.
+   Unbekannter Baustein → der höchste bekannte Wert: raten fällt dann zu Lasten des Budgets, nicht
+   zu Lasten des Lesers. */
+const PROBE_PX = { formation: 215, streak: 150, score: 195, board: 215 };
+const PROBE_MAX = Math.max(...Object.values(PROBE_PX));
 
 const lines = (text) => Math.max(1, Math.ceil(String(text || "").length / CHARS_PER_LINE));
 
@@ -116,7 +161,7 @@ export function beatHeight(beat, text) {
     case "satz":        return lines(text) * SATZ_LINE + SATZ_MARGIN;
     case "tip":    return lines(text) * TIP_LINE + TIP_CHROME;
     case "bild":        return BILD_PX;
-    case "probierfeld": return PROBE_PX;
+    case "probierfeld": return PROBE_PX[beat.probe] ?? PROBE_MAX;
     default:            return 0;
   }
 }

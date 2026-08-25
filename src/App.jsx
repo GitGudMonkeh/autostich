@@ -29,6 +29,7 @@ import { perfMark, getReport, formatReport } from "./ui/perfRecorder.js"; // Per
 import { GlossaryPanel } from "./ui/Glossary.jsx";
 // Tutorial-Sektionen (#tutorial-sections): reine UI-Schicht über dem Hub, kein Lauf, keine game/-Berührung.
 import { TutorialSections } from "./ui/tutorial-sections/TutorialSections.jsx";
+import { GuideOverlay } from "./ui/GuideOverlay.jsx"; // Archetyp-Leitfaden — aus den Tutorial-Sektionen VERLINKT, nicht abgeschrieben
 import { Controls } from "./ui/Controls.jsx";
 import { BuildPanel } from "./ui/BuildPanel.jsx";
 import { WeekModPanel } from "./ui/WeekMods.jsx"; // #381 Ranked-Modifikatoren-Panel (unter den Perks)
@@ -265,6 +266,7 @@ function AutostichGame() {
      Kopplung an die Onboarding-Kette (Owner-Entscheidung; sie wiederzubeleben nähme neuen Spielern
      die ersten sechs Läufe SP UND DP, siehe progression.js:355). */
   const [tutOpen, setTutOpen] = useState(false);
+  const [tutGuide, setTutGuide] = useState(null);   // Archetyp-Leitfaden aus einer Archetyp-Lektion
   const [tutProgress, setTutProgress] = useState(() => loadTutorialProgress());
   /* GEFAHR D, entschieden: Was räumt das LAUTE Erstkontakt-Angebot über „Lauf beginnen" ab?
      Antwort: EINE gelesene Lektion. Es gibt keinen Abschluss mehr, den man erreichen könnte (kein
@@ -484,6 +486,7 @@ function AutostichGame() {
     if (showPrivacy) { setShowPrivacy(false); return true; }
     if (showUsername) { setShowUsername(false); return true; }
     if (showDevSetup) { setShowDevSetup(false); return true; }    // #350: Dev-Run-Setup → schließen (Preview-Build)
+    if (tutGuide) { setTutGuide(null); return true; }
     if (tutOpen) { setTutOpen(false); return true; }
     if (glossaryOpen) { setGlossaryOpen(false); return true; }
     if (showChronik) { setShowChronik(false); return true; }
@@ -1331,8 +1334,10 @@ function AutostichGame() {
       {/* Tutorial-Sektionen: Vollbild-Overlay über dem Hub. Ohne `tutOpen` rendert es nichts. */}
       {tutOpen && (
         <TutorialSections onClose={() => setTutOpen(false)} onOpenGlossary={() => { setTutOpen(false); setGlossaryOpen(true); }}
+          onOpenGuide={setTutGuide}
           seen={tutProgress.seen} last={tutProgress.last} onSeen={markLessonSeen} />
       )}
+      {tutGuide && <GuideOverlay initial={tutGuide} onClose={() => setTutGuide(null)} />}
 
       {/* #update: „Neue Version verfügbar"-Hinweis — pollt version.json, meldet neue Deploys ohne Zwangs-Reload. */}
       <UpdateBanner />

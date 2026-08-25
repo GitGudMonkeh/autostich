@@ -129,6 +129,46 @@ describe("Tutorial-Sektionen · das Höhenbudget", () => {
   });
 });
 
+describe("Tutorial-Sektionen · Terminologie", () => {
+  /* text-style-guide.md §1e RESERVIERT das Wort Formation für Karten-Formationen. Die Geometrie des
+     Architekten heisst Struktur und Distrikt. Der Bruch ist schon einmal passiert: die Probierfelder
+     teilten sich anfangs die Beschriftung des Formations-Felds, und das Gebaeude-Brett trug damit
+     „ein Segment" und „keine Formation". Ein Auge findet das einmal; ein Waechter jedes Mal. */
+  /* EINE begruendete Ausnahme, und sie steht als Liste da statt als Sonderzweig im Code — damit sie
+     sichtbar bleibt und der Test unten verlangen kann, dass es sie noch GIBT. Sakralbauten wirken
+     wirklich auf KARTEN-Formationen (architect.js:13 — "formation: biegt computeFormations fuer
+     abgedeckte Positionen"). Dort ist das Wort richtig; verboten ist es als Name fuer die Geometrie
+     des Bretts, die Struktur und Distrikt heisst. */
+  const FORMATION_OK = ["tut.architekt.sorten.0"];
+
+  it("kein Architekt-Text benutzt das Wort Formation fuer Brett-Geometrie", () => {
+    const bad = [];
+    for (const [lang, cat] of [["de", de], ["en", en]]) {
+      for (const k of Object.keys(cat)) {
+        if (!k.startsWith("tut.architekt.") && !k.startsWith("tut.probe.board.")) continue;
+        if (FORMATION_OK.includes(k)) continue;
+        if (/formation/i.test(String(cat[k]))) bad.push(lang + " " + k + ": " + cat[k]);
+      }
+    }
+    expect(bad, "Formation ist fuer Karten-Formationen reserviert. Architekt: Struktur, Distrikt.").toEqual([]);
+  });
+
+  /* Eine verwaiste Ausnahme ist genauso ein Fehler wie eine fehlende — sie wuerde die Regel still
+     aufweichen. Dasselbe Prinzip wie in test/overlay-nesting.test.js. */
+  it("haelt die Ausnahmeliste ehrlich", () => {
+    for (const k of FORMATION_OK) {
+      expect(de[k], `verwaiste Ausnahme ${k} — bitte streichen`).toBeTruthy();
+      expect(/formation/i.test(String(de[k])), `${k} sagt gar nicht mehr Formation — Ausnahme streichen`).toBe(true);
+    }
+  });
+
+  /* Gegenprobe eingebaut: findet der Waechter die Schluessel ueberhaupt? Ohne diese Zeile waere er
+     still gruen, sobald sich das Praefix aendert — die teuerste Art, kaputtzugehen. */
+  it("findet die Architekt-Texte ueberhaupt", () => {
+    expect(Object.keys(de).filter((k) => k.startsWith("tut.architekt.")).length).toBeGreaterThan(10);
+  });
+});
+
 describe("Tutorial-Sektionen · Schale", () => {
   it("das Overlay hängt am Portal — Pflicht für jedes fixed-inset-0-Element", () => {
     const src = SRC("TutorialSections.jsx");

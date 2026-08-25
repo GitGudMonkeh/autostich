@@ -3,7 +3,10 @@ import { useLocale } from "../../i18n/useLocale.js"; // #sprache: Neuberechnung 
 import { formationName } from "../../i18n/labels.js";
 import { fmtNum } from "../../i18n/index.js"; // Dezimaltrennzeichen je Sprache — nie toFixed+replace
 import { buildDeck } from "../../game/deck.js";
-import { computeFormations, summarizeFormations } from "../../game/formations.js";
+import { computeFormations, summarizeFormations, SEGMENT_SIZE } from "../../game/formations.js";
+import * as C from "../../game/constants.js";
+import { ARCHETYPE_META } from "../../game/skills.js";
+import { COLS, posOf, boardFactorMap, completedStructures } from "../../game/architect.js";
 
 /* DIE VIER TAKT-ARTEN. Mehr gibt es nicht (planning-report.md §1.2); ein fünfter braucht erst einen
    Eintrag in docs/design-sprache.md §11.
@@ -111,8 +114,17 @@ export function Probierfeld({ title, hint, cards, order, onSwap, readoutLabel, r
    Neutraler Aufruf: keine Rollen, keine Perks, keine Skills, keine Anker, kein Architekt. Eine Lektion
    lehrt die Grundregel; was ein Perk daran biegt, steht auf der Perk-Karte. */
 const DECK = buildDeck();
-// Eine Ausgangsreihenfolge, in der eine Wiederholung greifbar nah liegt, aber nicht schon dasteht.
-const START_ORDER = [8, 18, 3, 28, 13];
+/* Die Ausgangslage lehrt mit, und das ist keine Kleinigkeit.
+
+   Erster Versuch war 9,9,4,9,4 — dort stand schon ×1,88, und der naheliegende Zug (drei Neunen
+   nebeneinander) SENKTE den Wert auf ×1,50: zwei sich überlappende Formationen schlagen eine längere.
+   Ein Probierfeld, das den Leser für den offensichtlichen Zug bestraft, lehrt das Gegenteil von dem,
+   was es soll.
+
+   Diese Lage steht bei ×1,00 — „keine Formation". Von den zehn möglichen Tauschen erzeugen SECHS
+   eine, und keiner kann es schlechter machen, weil es nichts zu verlieren gibt. Gemessen, nicht
+   geschätzt: die Kandidaten wurden über computeFormations durchgerechnet. */
+const START_ORDER = [26, 18, 24, 15, 20];   // Werte 7 · 9 · 5 · 6 · 1
 
 export function FormationProbe({ title, hint, readoutLabel, noneLabel }) {
   /* formationName() liest die aktive Sprache intern (wie glossaryEntries im Glossar) → der Locale
@@ -139,8 +151,141 @@ export function FormationProbe({ title, hint, readoutLabel, noneLabel }) {
   );
 }
 
+/* ---- Serien-Probierfeld ----
+   Kein Brett, ein Regler: die Serie hat keine Geometrie. Der Faktor kommt aus den Konstanten, nicht
+   aus einer Tabelle im Text — bewegt das Balancing STREAK_BASE_STEP, bewegt sich die Lektion mit. */
+export function StreakProbe({ title, hint, readoutLabel }) {
+  const [locale] = useLocale();
+  const [n, setN] = useState(6);
+  const mult = Math.min(C.STREAK_BASE_CAP, n * C.STREAK_BASE_STEP);
+  return (
+    <div className="tut-beat tut-probe" style={{ margin: "0 0 14px", padding: "12px 12px 11px", ...ZEILE }}>
+      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 10 }}>{title}</div>
+      <input type="range" min="0" max="80" value={n} onChange={(e) => setN(Number(e.target.value))}
+        className="tut-slider" style={{ width: "100%" }} aria-label={title} />
+      <div className="tut-probe-out" style={{ marginTop: 10, paddingTop: 9, borderTop: HAIR, display: "flex", alignItems: "baseline", gap: 8 }}>
+        <span className="text-meta-1" style={LABEL}>{readoutLabel}</span>
+        <span className="text-body-lg-5" style={{ color: "#e8e8ea", fontWeight: 700 }}>
+          {n} · ×{fmtNum((1 + mult).toFixed(2), locale)}
+        </span>
+      </div>
+      {hint && <div className="text-meta-1" style={{ color: "#71717c", marginTop: 7, lineHeight: 1.4 }}>{hint}</div>}
+    </div>
+  );
+}
+
+/* ---- Score-Ketten-Probierfeld ----
+   Die vier Faktoren als Schalter, das Produkt live. Die Lektion, in der sichtbar wird, WARUM ein
+   Formations-Multiplikator auf einem verlorenen Stich nichts wert ist. */
+const CHAIN = [
+  { id: "streak", f: 1.3 }, { id: "crit", f: C.CRIT_BASE_MULT },
+  { id: "form", f: 1.5 }, { id: "build", f: 1.35 },
+];
+export function ScoreProbe({ title, hint, readoutLabel, labels }) {
+  const [locale] = useLocale();
+  const [on, setOn] = useState({ streak: true, crit: false, form: false, build: false });
+  const total = CHAIN.reduce((p, c) => p * (on[c.id] ? c.f : 1), C.SCORE_PER_WIN);
+  return (
+    <div className="tut-beat tut-probe" style={{ margin: "0 0 14px", padding: "12px 12px 11px", ...ZEILE }}>
+      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 8 }}>{title}</div>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        {CHAIN.map((c) => (
+          <button key={c.id} type="button" onClick={() => setOn((o) => ({ ...o, [c.id]: !o[c.id] }))}
+            aria-pressed={on[c.id] ? "true" : "false"}
+            className="tut-chip text-body-5 font-bold"
+            style={{ flex: "1 1 0", minWidth: 0, minHeight: 44, borderRadius: 8, padding: "6px 8px",
+              color: on[c.id] ? "#e8e8ea" : "#8a8a95",
+              background: on[c.id] ? "rgba(150,150,170,.14)" : "rgba(15,15,21,.72)",
+              border: `1px solid ${on[c.id] ? "var(--deck-a1,#8a7de0)" : "rgba(150,150,170,.12)"}` }}>
+            {(labels || {})[c.id] || c.id}
+          </button>
+        ))}
+      </div>
+      <div className="tut-probe-out" style={{ marginTop: 10, paddingTop: 9, borderTop: HAIR, display: "flex", alignItems: "baseline", gap: 8 }}>
+        <span className="text-meta-1" style={LABEL}>{readoutLabel}</span>
+        <span className="text-body-lg-5" style={{ color: "#e8e8ea", fontWeight: 700 }}>{fmtNum(Math.round(total), locale)}</span>
+      </div>
+      {hint && <div className="text-meta-1" style={{ color: "#71717c", marginTop: 7, lineHeight: 1.4 }}>{hint}</div>}
+    </div>
+  );
+}
+
+/* ---- Architekt-Probierfeld ----
+   Ein AUSSCHNITT des Bretts. Das volle Brett wäre allein rund 500 px hoch und risse das 400-px-Budget
+   einer Lektion. ZWEI Zeilen reichen: eine volle Zeile ist eine Struktur, die zweite zeigt den
+   Nachbarn für den Distrikt. Der Satz sagt, wie groß das Brett wirklich ist.
+   Drei Zeilen waren der erste Versuch — GEMESSEN 486 px für die Lektion, also 86 px über Budget.
+
+   Die Faktoren kommen aus boardFactorMap/completedStructures in src/game/architect.js — dieselbe
+   Rechnung wie im Lauf. Nachgebaut wird nichts. */
+const PROBE_ROWS = 2;
+export function BoardProbe({ title, hint, readoutLabel, noneLabel }) {
+  const [locale] = useLocale();
+  const [cells, setCells] = useState([]);
+  const toggle = (p) => setCells((c) => (c.includes(p) ? c.filter((x) => x !== p) : [...c, p]));
+
+  const { factor, structures } = useMemo(() => {
+    // Jede belegte Zelle als eigenes einzelliges Gebäude derselben Sorte — die kleinste ehrliche
+    // Eingabe, die structure/district wirklich rechnen lässt.
+    const buildings = cells.map((p) => ({ footprint: [p], cat: "value" }));
+    const map = boardFactorMap(buildings);
+    const f = cells.length ? Math.max(...cells.map((p) => map[p] || 1)) : 1;
+    return { factor: f, structures: completedStructures(new Set(cells)).length };
+  }, [cells]);
+
+  return (
+    <div className="tut-beat tut-probe" style={{ margin: "0 0 14px", padding: "12px 12px 11px", ...ZEILE }}>
+      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 8 }}>{title}</div>
+      <div style={{ display: "grid", gridTemplateColumns: `repeat(${COLS},1fr)`, gap: 4 }}>
+        {Array.from({ length: PROBE_ROWS * COLS }, (_, i) => {
+          const p = posOf(Math.floor(i / COLS), i % COLS);
+          const on = cells.includes(p);
+          return (
+            <button key={p} type="button" onClick={() => toggle(p)} aria-pressed={on ? "true" : "false"}
+              style={{ aspectRatio: "1", minWidth: 0, borderRadius: 6,
+                background: on ? "rgba(59,125,190,.34)" : "linear-gradient(180deg,#242433,#1a1a26)",
+                border: `1px solid ${on ? "#3b7dbe" : "#33333e"}` }} />
+          );
+        })}
+      </div>
+      <div className="tut-probe-out" style={{ marginTop: 10, paddingTop: 9, borderTop: HAIR, display: "flex", alignItems: "baseline", gap: 8 }}>
+        <span className="text-meta-1" style={LABEL}>{readoutLabel}</span>
+        <span className="text-body-lg-5" style={{ color: "#e8e8ea", fontWeight: 700 }}>
+          {structures || factor > 1 ? `×${fmtNum(factor.toFixed(2), locale)}` : noneLabel}
+        </span>
+      </div>
+      {hint && <div className="text-meta-1" style={{ color: "#71717c", marginTop: 7, lineHeight: 1.4 }}>{hint}</div>}
+    </div>
+  );
+}
+
+/* ---- Leitfaden-Verweis ----
+   KEINE fünfte Takt-Art: er belegt den Bild-Platz. Die Archetyp-Lektionen VERLINKEN den Leitfaden,
+   statt ihn abzuschreiben — die Arbeitsteilung aus tutorial-guided-run-plan.md §1, und der Grund,
+   warum es hier nur einen Verweis und keinen zweiten Strategietext gibt. */
+export function GuideLink({ caption, arch, onOpenGuide }) {
+  const meta = ARCHETYPE_META[arch];
+  return (
+    <button type="button" className="tut-beat tut-bild tut-guidelink block w-full text-left"
+      onClick={() => onOpenGuide?.(arch)}
+      style={{ margin: "0 0 14px", padding: "12px 13px", minHeight: 44, ...ZEILE,
+        border: `1px solid ${meta ? meta.color + "55" : "rgba(150,150,170,.12)"}` }}>
+      <span className="text-body-4 font-semibold" style={{ color: meta ? meta.color : "#e8e8ea" }}>{caption}</span>
+    </button>
+  );
+}
+
 /* Katalog → Komponente. Der Katalog nennt nur einen NAMEN, damit er React-frei bleibt. */
 export const PROBES = {
   formation: FormationProbe,
+  streak: StreakProbe,
+  score: ScoreProbe,
+  board: BoardProbe,
   deckstrip: ({ caption }) => <Bild cards={START_ORDER.map((i) => DECK[i])} caption={caption} />,
+  // Bezeichner ohne Bindestrich: ein zitierter Schlüssel wäre im Wächter nicht als Name erkennbar.
+  guideFire: (p) => <GuideLink {...p} arch="fire" />,
+  guideLightning: (p) => <GuideLink {...p} arch="lightning" />,
+  guideIce: (p) => <GuideLink {...p} arch="ice" />,
+  guidePlant: (p) => <GuideLink {...p} arch="plant" />,
 };
+export { SEGMENT_SIZE };

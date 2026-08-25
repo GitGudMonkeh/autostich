@@ -79,6 +79,10 @@ describe("i18n · Katalog-Parität", () => {
     "start.tutorial",        // „Tutorial" ebenso — dasselbe Wort in beiden Sprachen
     "tut.eyebrow",           // dito — die Kopfzeile der Tutorial-Sektionen
     "tut.progress",          // „{n} / {total}" — nur Zahlen und ein Schrägstrich
+    "tut.f.crit",            // „Crit" bleibt Crit (Begriffstabelle §3.1)
+    "tut.f.form",            // „Formation" ist in beiden Sprachen dasselbe Wort
+    "tut.wahl.perks.title",  // „Perks" — im Deutschen der etablierte Begriff (§3.5)
+    "tut.wahl.skills.title", // dito für Skills
     "upgrades.tab.decks",    // „Decks" — dasselbe Wort in beiden Sprachen
     "upgrades.nav.decks",    // dito — Überschrift der Deck-Spalte in der Desktop-Fassung
     "upgrades.deckLead",     // „Deck" — dasselbe Wort in beiden Sprachen
