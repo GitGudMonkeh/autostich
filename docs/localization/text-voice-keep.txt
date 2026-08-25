@@ -1,0 +1,23 @@
+# text-voice-keep.txt — das Hauptbuch des Strich-Durchgangs (#text-voice)
+#
+# Geprüft von `node scripts/text-voice-check.mjs`. Jede Zeile hier ist eine AUSNAHME und
+# braucht einen Grund; was nicht drinsteht, lässt das Skript nicht durch.
+#
+# Zwei Arten von Eintrag:
+#
+#   dash    <schlüssel> <de|en>            — ein Gedankenstrich bleibt stehen
+#   hyphen  <schlüssel> <de|en> <a>-><b>   — die ANZAHL der Wort-Bindestriche ändert sich
+#
+# Warum es die zweite Art gibt: der Tripwire des Auftrags („ändert ein Diff einen Bindestrich
+# zwischen zwei Wortzeichen — anhalten") schützt die Komposita, von denen 537 deutsche Zeilen
+# leben. Er kollidiert aber mit dem zweiten Auftrag, §3 durchzusetzen, sobald ein verbotener
+# Anglizismus SELBST ein Bindestrich-Wort ist (`tilt-reaktiv`, `self-feeding`). Beides ist
+# nicht gleichzeitig zu haben. Statt den Tripwire aufzuweichen, wird jede solche Änderung hier
+# einzeln begründet — nichts geht still durch, und §3 bleibt durchsetzbar.
+#
+# Ein reiner Wortwechsel, der den Bindestrich BEHÄLT, gehört NICHT hierher:
+# `Battlefield-Bild` → `Spielfeld-Bild` ist kein Kompositum-Schaden, und das Skript misst
+# deshalb die Anzahl je Schlüssel, nicht die Wortliste.
+
+# ---------------------------------------------------------------- Stapel 1
+hyphen  fx.holo.desc  de  2->1   §3 verbietet Anglizismen mit deutschem Wort: `tilt-reaktiv` → `reagiert auf Neigung`. Der Bindestrich verschwindet mit dem Anglizismus, nicht aus einem Kompositum.
