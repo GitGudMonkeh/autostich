@@ -15,7 +15,7 @@ this is carrying it out.
 | **Task** | `MR1` — adopt `--sf-row` |
 | **Branch** | `task/menu-mr1-row-ground` — create it yourself |
 | **Feature branch** | `feature/desktop-menus` |
-| **Base SHA** | tip of `feature/desktop-menus` at start. Record it here |
+| **Base SHA** | `64f304a5` — tip of `feature/desktop-menus` at start, tree clean before the first edit |
 | **Tier** | A — one value, a known file surface, a decision already taken |
 | **Owner stops** | One, before integration. Nothing here is the owner's to decide |
 | **Worktree** | `C:/Code/Autostich-worktrees/menu-rework` — shared, **leave it in place** |
