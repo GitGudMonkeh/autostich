@@ -348,6 +348,7 @@ These were taken by the owner, were never revoked, and survive the discarded rep
 | Q1 | Grid geometry | ~~5 × 6~~ — **superseded on 2026-08-25 by 5 × 8.** The 5 × 6 was the shape reviewed at the time; the reason for 5 × 8 was not on the table then. See §8.2 |
 | Q2 | Grid placement | **Centred beneath the tagline, small** — wordmark, tagline and mark read as one lockup |
 | Q3 | EN tagline | **"Order. Trick. Escalate."** with the closing period. "Order" and "Trick" are already the approved English terms for the order phase and for *Stich* — established vocabulary, not new synonyms |
+| Q3a | The closing period, re-confirmed 2026-08-25 | **With.** `docs/mainscreen-marke.md:126` prints it **without** — that one line is the outlier and is the owner's to correct on the design side. **Where the two disagree, this row wins**: the German carries the period and the English rhythm was chosen to match it |
 | Q4 | Build DNA | **Out of scope** |
 | Q5 | Tagline below 1400 px | **Shown from `DESKTOP_MIN` upward, including 1280×720.** Not in the phone layout |
 | Q6 | Wordmark size | **Stays at 88 px** — presence comes from composition. ⚠ **Rests on a pre-typography measurement; see R9** |
