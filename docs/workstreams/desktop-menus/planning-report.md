@@ -856,6 +856,44 @@ which was right.
 where two applied, once naming a mount point that does not mount: *an import is not a render, and a
 filename is not an assertion.* A planner's inventory is a hypothesis until a worker measures it.
 
+### 8.16 The number could not see it; the picture could
+
+*M9, 2026-08-25 — and this is the clearest case the round has produced for why a person still looks.*
+
+The first-start title began to glow white. `ty-display` lays **three `text-shadow` in
+`currentColor`** beneath it — invisible for as long as the text was transparent. M9's colour change
+switched them on.
+
+**The measurement reported `filter: none` throughout.** The survey compares computed values on four
+surface axes; a shadow inherited through `currentColor` from a class the screen did not touch is not
+one of them. The gate was green and the screen was wrong.
+
+Two more from the same task, both found the same way:
+
+- A rule meant to hide the feedback card **failed twice** — the CRT rule is more specific — and the
+  first attempt *looked* successful because the background was already transparent. **A change that
+  cannot be distinguished from its own no-op is not a change that has been verified.**
+- The locked state of the run reference was **entirely unguarded**: M9 removed it as a test and the
+  whole suite stayed green.
+
+**This is why the owner-facing half of the comparison was not cut to zero when it was shrunk** (§5.2).
+The machine half proves that nothing moved where nothing should. It cannot prove that what moved is
+right, and it cannot see an axis it does not measure.
+
+### 8.17 A guard that goes red because the work succeeded
+
+M9's `#ueberzug` guard counted literals and fell below its threshold when an overlay moved to
+`--sf-scrim-desk`. **It went red because the vocabulary was applied correctly.**
+
+Left as it was, it would have punished every future migration — a guard that fires on progress
+teaches workers to route around it. Rewritten to the invariant it now also catches the **sanctioned
+re-point** it previously could not see: **stricter than before, not looser.**
+
+That is what *"rewrite to the invariant, never the mechanism"* was always meant to produce, and this
+is the first time a worker has demonstrated the outcome rather than merely complied with the
+instruction. **A correct rewrite makes a guard stronger. If yours got weaker, you rewrote the
+threshold instead of the invariant.**
+
 ### 8.14 What MH2 retired — three rules leave the contracts
 
 *2026-08-25. This is the first time this round has been able to delete a rule rather than add one,

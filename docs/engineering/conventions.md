@@ -549,6 +549,45 @@ collided and the answer would have been the owner's.
 **Carried to the successor with its number:** the target-brightness mix is the ink axis's **first
 named entry**, at one call site and three consumers. The ratchet keeps counting.
 
+### `--sf-row` — the threshold fires, and the vocabulary grows once — 2026-08-25
+
+*M9-F09. The first token added after the freeze, and the only one so far.*
+
+M9 counted and reported instead of minting, which is what the closure requires of a **worker**. The
+closure never barred the *planner* from acting on the threshold — those two rules govern different
+people, and this is the first time that distinction has had to do any work.
+
+**Measured before ruling, because the last count was taken from screens and was wrong for it:**
+
+```
+rgba(15, 15, 21, .72)   8 call sites, 4 screens
+  index.css:4348, 4789, 4976, 5548, 5566, 5610      six rules, four of them !important
+  FeedbackModal.jsx:38, UsernameModal.jsx:37        two JS constants, set inline
+```
+
+**Eight sites against a threshold of three.** Not a marginal case, and not ink — it is a **surface**,
+which is the vocabulary's own domain, so the ink exclusion does not reach it.
+
+**Three things make this a transcription rather than an invention:**
+
+1. **`design-sprache.md` §1 already names it as *the* row surface.** The canon decided it is a role;
+   §2c giving it a name records that decision rather than making one.
+2. **Four of the eight sites carry `!important`**, and they carry it for the reason this round
+   exists: `ROW_BG` is a JS constant set **inline**, so no stylesheet rule can reach it. That is H2
+   and H5 exactly, on four screens, in a round created to remove them. Leaving it means shipping the
+   disease the round was formed to cure.
+3. **The value does not change.** `--sf-row: rgba(15, 15, 21, .72)` is what those eight sites already
+   paint, so adopting it is value-preserving and provable at zero delta.
+
+**This is not a second window.** A window is a worker's licence to add what it needs. This is the
+planner acting on a rule that was written down before the case arose, on a count that was measured
+rather than asserted, for a value the canon had already named. **A worker that finds a ninth gap
+still stops and reports.**
+
+**The migration is its own task** — `task-contract-MR1-row-ground.md`. It spans four screens that are
+already approved, so it is value-preserving and gated at zero delta, and it removes four `!important`
+on the way.
+
 ### What is permanently exempt
 
 - **`PHASE_ACCENTS` in `modalStyle.jsx`** keeps its six colours as literal strings. `.c` is handed to
