@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { DESKTOP_BLOCK_AT } from "./desktopBreakpoint.js";
+import { resolve, themeTokens } from "./cssTokens.js";
 
 /* ============================================================
    #rahmen-huelle + #run-dialoge + #graph-achsen (18.08.2026) — als Quelltext-Ratsche.
@@ -98,8 +99,30 @@ describe("#run-dialoge — Beenden und Neustarten", () => {
   it("Zeilen und Knöpfe sind so eckig wie der Rest des Desktops (6 px)", () => {
     /* Hub-Knöpfe, Baum-Kacheln und Angebotskarten stehen auf 6 px; die zwei Rückfragen liefen mit 12/8 px
        daneben. Die KARTE behält ihren Radius — sie ist der Rahmen, nicht der Inhalt (dieselbe Trennung
-       wie an den Panels von Baum, Werkstatt und Leitfaden). */
-    expect(deskBlock).toMatch(/\.rc-row,\s*\.rc-btn\s*\{[^}]*border-radius:\s*6px/);
+       wie an den Panels von Baum, Werkstatt und Leitfaden).
+
+       #menu-rework M11 — DIESE ZEILE STAND AUF DER ZAHL UND WURDE ROT, WEIL DIE MIGRATION GELUNGEN IST.
+       Sie verlangte `border-radius: 6px` woertlich; die Regel liest die 6 jetzt als `--rd-sm` aus dem
+       Vokabular (conventions.md §2c), und die Aussage — „so eckig wie der Rest des Desktops" — ist damit
+       WAHRER als vorher, nicht falscher. Das ist H-f, zum vierten Mal in dieser Runde, und die Antwort
+       ist dieselbe wie bei M5: auf die INVARIANTE umschreiben, nicht auf eine andere Schreibweise.
+
+       Die Invariante hat drei Teile, und der dritte ist der, den eine blosse Umschreibung vergessen
+       wuerde: die Regel liest GENAU DIESE Sprosse (nicht irgendeine), die Sprosse ist immer noch sechs,
+       und sie ist NICHT die Nachbarsprosse. Ohne die Negativprobe bestuende die Zeile auch dann, wenn
+       jemand `--rd-md` einsetzte — ein zu weiter Ausdruck beruhigt eine Ratsche genauso zuverlaessig
+       wie ein zu enger. Kommentarfrei gelesen, weil die Begruendung hier beide Token beim Namen nennt. */
+    const bare = deskBlock.replace(/\/\*[\s\S]*?\*\//g, "");
+    const regel = bare.match(/\.rc-row,\s*\.rc-btn\s*\{([^}]*)\}/);
+    expect(regel, "die .rc-row/.rc-btn-Regel gibt es nicht mehr").toBeTruthy();
+    const rd = (regel[1].match(/border-radius:\s*([^;]+);/) || [])[1];
+    expect(rd, "Zeilen und Knoepfe haben ihren Radius verloren").toBeTruthy();
+    const theme = themeTokens(css);
+    expect(resolve(rd, theme).trim(), "der Radius ist nicht mehr die Sprosse --rd-sm")
+      .toBe(resolve("var(--rd-sm)", theme).trim());
+    expect(resolve(rd, theme), "die Sprosse --rd-sm ist nicht mehr sechs").toMatch(/\b6px\b/);
+    expect(resolve(rd, theme).trim(), "der Radius liest die NACHBARSPROSSE — 6 waere es dann nicht mehr")
+      .not.toBe(resolve("var(--rd-md)", theme).trim());
     expect(rc).toMatch(/className="rc-row as-edge-card/);
     expect((rc.match(/className="rc-btn"/g) || []).length, "beide Knöpfe der Neustart-Rückfrage").toBe(2);
   });
