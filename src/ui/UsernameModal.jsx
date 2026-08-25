@@ -27,14 +27,14 @@ const MAX = 20;
 const CY = "#26c6e6", VI = "#9b82f0";
 const ER = "#e2685f"; // #174 Fehlerfarbe — der Glührahmen wechselt mit, nicht nur der Text
 /* #menu-rework M9. Drei Werte, die der Erststart-Entwurf fordert, und keiner von ihnen ist erfunden:
-     ROW_BG   der Zeilengrund aus design-sprache.md §1. Er hat KEINEN Schritt in §2c — `--sf-sunken`
-              ist deckend, und was hier zaehlt, ist gerade das Durchscheinen. Das ist M8-G2, und mit
-              diesem Bildschirm steht die Familie beim vierten unabhaengigen Screen. Gemeldet, nicht
-              gepraegt: eine Stufe zu erfinden ist die Entscheidung des Planners, nicht dieses Screens.
+     ROW_BG   der Zeilengrund aus design-sprache.md §1. M9 hat ihn gemeldet statt gepraegt — der
+              vierte unabhaengige Screen, M9-F09. Der Planner hat daraufhin `--sf-row` gepraegt
+              (conventions.md §2c), und MR1 hat die acht Fundstellen darauf gezeigt: hier steht
+              deshalb das Token und kein Wert mehr. Wertgleich, gemessen bei null Delta.
      ROW_EDGE die neutrale DURCHSCHEINENDE Kante — MENU-38, die zwoelffache Alpha-Familie, die als
               Ratsche gefuehrt wird und nicht als Achse.
      ON_GREEN die Rolle „an / gekauft" (design-sprache.md §3). Der Melder traegt denselben Ton. */
-const ROW_BG = "rgba(15, 15, 21, .72)";
+const ROW_BG = "var(--sf-row)";
 const ROW_EDGE = "rgba(150, 150, 170, .12)";
 const ON_GREEN = "#54e08a";
 const INK = "#e8e8ea";

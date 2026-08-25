@@ -34,8 +34,10 @@ const MAX_LEN = 1000;
    als Zustandspaar) ist genau die Luecke, die §2c als MENU-48 offen fuehrt und die erst auf der dritten
    unabhaengigen Sichtung ein Token wird. Hier ist sie zusammengefasst, nicht gepraegt — vier Fundstellen
    sind eine geworden, was die Ratsche senkt statt sie zu heben. */
-/* Der Zeilengrund aus design-sprache.md §1 — M8-G2, gemeldet und gezaehlt, nicht gepraegt. */
-const ROW_BG = "rgba(15, 15, 21, .72)";
+/* Der Zeilengrund aus design-sprache.md §1 — M8-G2. M9 hat ihn gemeldet und gezaehlt; der Planner hat
+   daraufhin `--sf-row` gepraegt (conventions.md §2c) und MR1 zeigt die acht Fundstellen darauf.
+   Wertgleich, gemessen bei null Delta. */
+const ROW_BG = "var(--sf-row)";
 const ROW_EDGE = "rgba(150, 150, 170, .12)";
 
 const MSG_ROLE = {

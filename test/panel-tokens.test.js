@@ -96,9 +96,15 @@ const CZ_STATE_LITERALS = [
    FB — dieselben zwei Familien plus die drei Farbrollen der Meldungen (MENU-48 steht bei zwei
    unabhaengigen Sichtungen und wird auf der dritten ein Token, nicht vorher). */
 const PV_STATE_LITERALS = ["#0f0f14", "#33333e", "#6d6b7a"];
-const UN_STATE_LITERALS = ["rgba(15, 15, 21, .72)", "rgba(150, 150, 170, .12)", "#221114", "#54e08a",
+/* #menu-rework MR1 — DER ZEILENGRUND IST AUS BEIDEN LISTEN GESTRICHEN, und das ist die Ratsche, die
+   nach unten dreht: `rgba(15, 15, 21, .72)` war das erste Literal beider Listen, es steht seit MR1 als
+   `--sf-row` im `@theme`-Block, und was ein Token ist, ist keine gezaehlte Luecke mehr. Was die
+   Streichung ERSETZT, steht ganz unten als eigener Waechter: das Literal darf im ganzen Baum nur noch
+   EINMAL vorkommen, naemlich in seiner eigenen Deklaration. Das ist strenger als der Eintrag hier —
+   der deckte eine Datei, die Invariante deckt den Baum. */
+const UN_STATE_LITERALS = ["rgba(150, 150, 170, .12)", "#221114", "#54e08a",
   "#5f6b62", "#d8b25e", "#e2685f", "#f0bdb8"];
-const FB_STATE_LITERALS = ["rgba(15, 15, 21, .72)", "rgba(150, 150, 170, .12)", "#123a25", "#2f7a4f",
+const FB_STATE_LITERALS = ["rgba(150, 150, 170, .12)", "#123a25", "#2f7a4f",
   "#3a1518", "#d1462f66", "#3a2a15", "#d0902f", "#54e08a", "#6c6c7e", "#e0a05a"];
 
 const MIGRATED_JSX = [
@@ -457,7 +463,11 @@ const M8_SURFACE_EXEMPT = [
   /* M8-G3 */ /^\.lb-tabs \[role="tab"\]$/, /^\.lb-tabs \[role="tab"\]:hover$/,
   /^\.lb-tabs \[role="tab"\]\[aria-selected="true"\]$/, /^\.lb-ctxicon$/, /^\.lb-modicon$/,
   /^\.lb-page \.lb-rows > button:hover$/,
-  /* M8-G2 */ /^\.lb-weekcount$/, /^\.lb-ctxtile$/, /^\.lb-mod$/,
+  /* M8-G2 IST WEG. Die drei Regeln lasen den Zeilengrund als Literal; sie lesen ihn seit MR1 als
+     `--sf-row`, also nimmt die Ausnahme nichts mehr aus — und eine Ausnahme, die nichts ausnimmt,
+     laesst die NAECHSTE Flaeche an derselben Stelle still durch. Gestrichen statt stehengelassen:
+     `.lb-weekcount`, `.lb-ctxtile` und `.lb-mod` werden ab hier auf der Flaechen-Achse voll geprueft.
+     Die Kante von `.lb-weekcount` (M8-G1) bleibt ausgenommen — sie ist nicht migriert. */
 ];
 const M8_EDGE_EXEMPT = [
   /* M8-G1 */ /^\.lb-weekcount$/,
@@ -481,7 +491,9 @@ const M8_EDGE_EXEMPT = [
    AUSSAGE traegt — der Rang — und keine Chrome) und die stumme Kachel des gesperrten Lauf-Bezugs
    (`#3a3a48`): der Aus-Zustand des Kanons, dieselbe Sorte wie MENU-47. Beide gezaehlt. */
 const M9_SURFACE_EXEMPT = [
-  /* M8-G2 */ /^\.un-first \.un-prev$/, /^\.fb-run$/,
+  /* M8-G2 IST WEG, aus demselben Grund wie eine Zeile weiter oben bei M8: beide Regeln lesen den
+     Zeilengrund seit MR1 als `--sf-row`. `.un-first .un-prev` und `.fb-run` werden ab hier auf der
+     Flaechen-Achse voll geprueft; ihre KANTE (MENU-38) bleibt unten ausgenommen. */
   /* Rang   */ /^\.un-first \.un-prevchip$/,
 ];
 const M9_EDGE_EXEMPT = [
@@ -1157,5 +1169,62 @@ describe("#menu-rework — das Vokabular selbst bleibt vollstaendig", () => {
     expect(textTokens.length, "keine Typografie-Token mehr gefunden").toBeGreaterThan(20);
     const scaled = textTokens.filter((m) => /var\(--ui-scale/.test(m[2])).map((m) => m[1]);
     expect(scaled, `Typografie am Geometrie-Regler:\n  ${scaled.join("\n  ")}`).toEqual([]);
+  });
+});
+
+/* ============================================================================
+   #menu-rework MR1 — DER ZEILENGRUND STEHT GENAU EINMAL.
+
+   THIS IS WHAT REPLACED TWO RATCHET ENTRIES AND FIVE EXEMPTIONS, AND IT IS STRICTER THAN ALL SEVEN.
+   Before MR1, `rgba(15, 15, 21, .72)` was a counted gap: named per file in `stateLiterals`, exempted
+   per rule in the surface axis. Those entries covered the sites that HAPPENED to carry it on the day
+   they were written. A ninth site arriving in a file nobody had listed was invisible to every one of
+   them — which is exactly how eight sites came to exist in the first place.
+
+   The invariant is not "there are eight". It is: THE VALUE IS WRITTEN OUT ONCE, IN ITS OWN
+   DECLARATION, AND EVERY CONSUMER READS THE TOKEN. That holds however many consumers there are, so
+   consolidating two rules into one cannot break it and adding a tenth screen cannot either — only
+   writing the value out again can, which is the defect.
+
+   TWO SPELLINGS, AND THAT IS TYPO-12 PAID FORWARD: `.72` and `0.72` are the same colour, and a guard
+   that knows one of them is wrong the first time somebody types the other. Whitespace is normalised
+   for the same reason — `rgba(15,15,21,.72)` is the spelling the glossary's own design note uses.
+
+   COMMENTS ARE STRIPPED FIRST. index.css records what the #gl-ruhe pass took, verbatim, value and
+   all; a historical note must not be able to trip a guard, and — the other direction, which is the
+   expensive one — must not be able to satisfy one either.
+   ============================================================================ */
+describe("#menu-rework MR1 — der Zeilengrund steht genau einmal", () => {
+  /* Every spelling of the row ground, in a source with comments already removed. */
+  const ROW_RE = /rgba\(\s*15\s*,\s*15\s*,\s*21\s*,\s*0?\.72\s*\)/g;
+  const hits = (src) => [...strip(src).matchAll(ROW_RE)].length;
+
+  const CSS = read("src/index.css");
+  /* Every migrated JSX file, plus the two that carry the constant. Read through the allowlist rather
+     than named here: a file added there is covered by this guard on the same day. */
+  const JSX = MIGRATED_JSX.map((e) => [e.path, read(e.path)]);
+
+  it("das Literal steht im ganzen Baum genau einmal — in seiner eigenen Deklaration", () => {
+    const inCss = hits(CSS);
+    const inJsx = JSX.filter(([, src]) => hits(src) > 0).map(([p]) => p);
+    expect(inJsx, `Zeilengrund als Literal im JSX — \`var(--sf-row)\` schreiben:\n  ${inJsx.join("\n  ")}`)
+      .toEqual([]);
+    expect(inCss, "der Zeilengrund steht nicht mehr genau einmal in index.css").toBe(1);
+    /* ...and that one time is the declaration, not a rule that happens to be the only one left. */
+    expect(/\n\s*--sf-row\s*:\s*rgba\(\s*15\s*,\s*15\s*,\s*21\s*,\s*0?\.72\s*\)\s*;/.test(strip(CSS)),
+      "die eine Fundstelle ist nicht die Deklaration von --sf-row").toBe(true);
+  });
+
+  it("das Token hat lebende Verbraucher auf BEIDEN Seiten — sonst prunet Tailwind es weg", () => {
+    /* 2c, „a token you do not use does not ship": Tailwind 4 entfernt eine `@theme`-Variable, die
+       nichts referenziert, aus dem gebauten Stylesheet. Ein Token ohne Verbraucher ist deshalb nicht
+       nur unbenutzt, es ist ABWESEND — und ein Inline-Stil, der es liest, faellt dann auf nichts
+       zurueck. Beide Seiten werden geprueft, weil die JSX-Seite die ist, die Tailwinds Scanner
+       finden muss.
+       KEINE ZAHL, sondern „mindestens einer": eine Schwelle auf acht wuerde die naechste
+       Zusammenfuehrung zweier Regeln bestrafen, und genau das ist der Fehler, den M9 bezahlt hat. */
+    const use = (src) => [...strip(src).matchAll(/var\(\s*--sf-row\s*[,)]/g)].length;
+    expect(use(CSS), "keine Regel liest --sf-row mehr").toBeGreaterThan(0);
+    expect(JSX.reduce((n, [, src]) => n + use(src), 0), "kein JSX liest --sf-row mehr").toBeGreaterThan(0);
   });
 });
