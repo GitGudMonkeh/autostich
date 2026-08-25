@@ -856,6 +856,64 @@ which was right.
 where two applied, once naming a mount point that does not mount: *an import is not a render, and a
 filename is not an assertion.* A planner's inventory is a hypothesis until a worker measures it.
 
+### 8.18 The gate does not see everything it certifies — measured, not feared
+
+*MR1, 2026-08-25, and it is the most consequential harness finding of the round.*
+
+**Three of MR1's eight sites lay in no survey cell at all.** The survey opens the board entry on its
+default tab; the three leaderboard rules hang on the **week tab** and the **ranked entry**, which no
+cell has ever opened.
+
+> **A green survey run would have covered three of eight and claimed eight.**
+
+Sixth instance of the round's recurring shape, and the first to reach the **gate itself**. Until now
+the question was whether a *check* tested the right thing. Here it is whether the gate **sees** what
+it certifies. MENU-56 named this for control states and it was labelled; for **surfaces** nobody
+suspected it, because a surface has a cell by definition — except that a cell reaches one *state* of
+a surface, and a tab is a state.
+
+**Standing requirement from here on, in every contract:**
+
+> **A task shows that its changed sites are inside a measured cell.** A site nothing opened is a site
+> nothing verified, whatever the delta count says.
+
+**MR1's answer is the pattern to copy.** It built two task-local probes that **assert they can see the
+measured thing before counting a cell valid**, and deliberately left the shared survey alone. That is
+the right separation — a worker repairing shared tooling mid-task is how a measurement instrument
+drifts — and those probes deserve promoting the way M8's stub was.
+
+*`evidence/MR1/lb-week.mjs` is the working example.*
+
+### 8.19 A premise generalised instead of measured — the fifth, and it was mine again
+
+MR1's contract asserted that all four `!important` on the row ground existed because `ROW_BG` is set
+inline. **True for one of four.**
+
+`.gl-search input` and `.lb-mod` override a *different* inline value — `#0f0f14` and `#17161f`, the
+**narrow** version's opaque row — and the declaration is what re-points it above 1280 px. That is the
+`--sf-scrim` / `--sf-scrim-desk` shape, which this round created on purpose. Counter-checked:
+removing them produces **31 deltas**, each a surface falling back to its inline value. They stay, and
+they are now justified in the code at the site, with file, line and value.
+
+`.fb-run` had no inline background at all and was shouting for nothing.
+
+**The pattern in my own errors is now stable across five instances**, and it is always the same
+motion: I see one real case, name the class from it, and write the class into a contract as though it
+had been counted.
+
+| # | I wrote | Measured |
+| --- | --- | --- |
+| 1 | six `*-ruhe` guards assert `!important` | two |
+| 2 | `GuideOverlay` mounts `DeckDetail` | it does not |
+| 3 | the guide is a free-standing screen | a page inside the tree |
+| 4 | `StatsScreen` renders `RunStats` | a comment |
+| 5 | four `!important` exist for one reason | one of four |
+
+**A worker measures because a contract told it to. Nothing tells the planner to.** The habit that has
+caught all five is the same one: a worker reading the contract as a hypothesis rather than as fact,
+and saying so in its handoff. That is worth more than any of the individual corrections, and it is
+why the handoff asks what held rather than what was done.
+
 ### 8.16 The number could not see it; the picture could
 
 *M9, 2026-08-25 — and this is the clearest case the round has produced for why a person still looks.*
