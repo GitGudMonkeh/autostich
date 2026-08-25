@@ -11,7 +11,7 @@
    Terminology is frozen (docs/localization/uebersetzerpaket_pixi_2026-08-15.md §3):
    cycle · trick · trick value · card value · margin · streak · charge · ionization · stack ·
    heat · brand · ash · forge · white heat · ash glow · glacier · mass · burst · threshold ·
-   firn · growth · green/ripe · roots · bloom · colonize · runner · pruning.
+   snow · growth · green/ripe · roots · bloom · colonize · runner · pruning.
    ============================================================ */
 import * as C from "../game/constants.js";
 import { ANFRIEREN_WIN as G_ANFRIEREN_WIN, ANFRIEREN_FORM as G_ANFRIEREN_FORM, SCHNEETREIBEN_SEED as G_SCHNEETREIBEN_SEED,
