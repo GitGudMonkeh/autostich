@@ -566,22 +566,25 @@ const target = join(OUT, "matrix.json");
 /* #typo-system S0: a `--surface` run is a debug probe, not evidence. Merging its one cell into the
    stored matrix would leave a file that LOOKS complete and is not — the same failure the reachability
    reporting above exists to prevent, one level up. */
+/* MH3 — THE `else` IS LOAD-BEARING. `process.exit()` in the probe branch was also what STOPPED the
+   write below it, so swapping it for `process.exitCode` alone would have a probe run write the very
+   matrix.json the comment above forbids it to touch. The exit had to become a branch, not a code. */
 if (argv.includes("--surface")) {
   const reached = Object.values(matrix.cells).filter((c) => c.reached !== false).length;
   process.stdout.write(`\n  --surface probe: ${Object.keys(matrix.cells).length} cell(s), ${reached} reached.` +
     `\n  matrix.json NOT written (probe runs never touch the evidence file)\n`);
-  process.exit(unreached ? 1 : 0);
+  process.exitCode = unreached ? 1 : 0;
+} else {
+  let merged = matrix;
+  if (existsSync(target)) {
+    try {
+      const prev = JSON.parse(readFileSync(target, "utf8"));
+      merged = { ...matrix, cells: { ...prev.cells, ...matrix.cells } };
+      merged.sizes = [...new Set([...(prev.sizes || []), ...matrix.sizes])];
+      merged.langs = [...new Set([...(prev.langs || []), ...matrix.langs])];
+    } catch (e) { process.stdout.write("  (existing matrix.json unreadable, starting fresh)" + String.fromCharCode(10)); }
+  }
+  writeFileSync(target, JSON.stringify(merged, null, 1));
+  const total = Object.keys(merged.cells).length;
+  process.stdout.write(`\n  ${total} cells · ${unreached} not reached\n  evidence -> ${join(OUT, "matrix.json")}\n`);
 }
-
-let merged = matrix;
-if (existsSync(target)) {
-  try {
-    const prev = JSON.parse(readFileSync(target, "utf8"));
-    merged = { ...matrix, cells: { ...prev.cells, ...matrix.cells } };
-    merged.sizes = [...new Set([...(prev.sizes || []), ...matrix.sizes])];
-    merged.langs = [...new Set([...(prev.langs || []), ...matrix.langs])];
-  } catch (e) { process.stdout.write("  (existing matrix.json unreadable, starting fresh)" + String.fromCharCode(10)); }
-}
-writeFileSync(target, JSON.stringify(merged, null, 1));
-const total = Object.keys(merged.cells).length;
-process.stdout.write(`\n  ${total} cells · ${unreached} not reached\n  evidence -> ${join(OUT, "matrix.json")}\n`);

@@ -147,6 +147,38 @@ describe("#menu-rework MH3 — the output is flushed before the process ends", (
     expect(raw.slice(Math.max(0, at - 2000), at)).toMatch(/POSIX/);
     expect(raw.slice(Math.max(0, at - 2000), at)).toMatch(/Windows/);
   });
+
+  /* MH3b — THE SAME INVARIANT, OVER EVERY SCRIPT THAT PRINTS A REPORT.
+     `surface-delta.mjs` is the one that was caught, because it is the one that writes 34 KB. It is
+     not the one the rule is about. Five more scripts here end a report and then terminate, and each
+     of them is one added line away from the same loss — on the platform that does not run their
+     author's tests. Guarding only the file that failed guards the incident, not the defect.
+
+     THE INVARIANT IS UNCHANGED, and that is the point: "once the report has begun, the process ends
+     by letting Node drain". It transfers without weakening. `check-preview-exclusion.mjs` still calls
+     `process.exit()` for its no-vite bail and still passes, because that bail sits ABOVE any output
+     and writes its message with `writeSync` — exactly the case the invariant was written to permit.
+     A rule against the shape would have had to make an exception for it; a rule against the failure
+     does not. */
+  const REPORTERS = [
+    "scripts/viewport-proof.mjs",
+    "scripts/phone-proof.mjs",
+    "scripts/viewport-survey.mjs",
+    "scripts/mobile-tile-sheet.mjs",
+    "scripts/check-preview-exclusion.mjs",
+  ];
+
+  it.each(REPORTERS)("%s does not terminate after its report starts either", (path) => {
+    const src = read(path).replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+    /* `console.log` writes to stdout as surely as `process.stdout.write` does, so the report begins
+       at whichever comes first — anchoring on one spelling alone would let the other slip past. */
+    const marks = [src.indexOf("process.stdout"), src.indexOf("console.log")].filter((i) => i >= 0);
+    expect(marks.length, `${path} prints nothing — it does not belong in this list`).toBeGreaterThan(0);
+    const after = src.slice(Math.min(...marks));
+    expect(after.match(/process\.exit\s*\(/g) || [],
+      `${path}: process.exit() after output discards the queued tail — set process.exitCode`)
+      .toHaveLength(0);
+  });
 });
 
 describe("#menu-rework MH1 — surface-delta.mjs withholds nothing", () => {

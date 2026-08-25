@@ -448,3 +448,69 @@ green — *locally, on Windows*. `gh` was available throughout and was never con
 
 **From here: CI state is checked after every push to `feature/desktop-menus`, before the next task is
 opened.**
+
+---
+
+## MH3b — the same invariant over the five that were not widened, appended 2026-08-25
+
+MH3 closed the incident. This closes the defect: **"noted, not widened" above left five scripts one
+added output line away from the same loss, on the platform their author's test run does not use.**
+
+The reasoning for not widening was that they write far too little to truncate today, and that is
+correct — none of them was at risk. But the risk is not a property of the script, it is a property of
+the next line somebody adds to it, and nothing in the file would have told them.
+
+### What changed
+
+`viewport-proof.mjs`, `phone-proof.mjs` (two sites), `mobile-tile-sheet.mjs` and `viewport-survey.mjs`
+now set `process.exitCode`. **Six of the eight sites were straight substitutions. Two were not, and
+the mechanical version of this change would have introduced defects worse than the one MH3 fixed:**
+
+| site | what `process.exit()` was also doing |
+| --- | --- |
+| `check-preview-exclusion.mjs:120` | **skipping the OK line below it.** Converted naively, a FAILED preview check prints that it passed. The success line moved into an `else`. |
+| `viewport-survey.mjs:573` | **stopping the `matrix.json` write.** Converted naively, a `--surface` probe writes the evidence file the comment directly above it forbids it to touch — leaving a file that looks complete and holds one cell. The remainder moved into an `else`. |
+
+`check-preview-exclusion.mjs:77` **keeps its `process.exit()`**, and this is the case that shows the
+invariant was written correctly. It is a hard bail everything below depends on, it sits above any
+output, and its message now goes through `writeSync(2, …)` so there is no stream queue to lose. A
+rule against the *shape* would have needed an exception for it. The rule against the *failure* —
+"once the report has begun, the process ends by letting Node drain" — permits it unchanged.
+
+### The guard
+
+MH3's source assertion is **extended, not duplicated**. Same instrument, same invariant, now over all
+six scripts, anchored on `console.log` as well as `process.stdout.write` (a report that begins with
+`console.log` would otherwise start after the anchor).
+
+**A behavioural guard was written, measured and then dropped** in favour of extending this one. For
+the record, because MH3's stated reason is half right and the measured half is worth keeping: a
+throttled-reader test on Linux is **not** green-either-way. Over 20 runs per condition, with no
+artificial load, `process.exit()` truncated **20/20** and `process.exitCode` truncated **0/20**; in
+vitest the same guard was 3 red with the seam broken and 3 green restored. On Windows it would
+indeed pass regardless — so the objection holds for the *developer's* machine and not for CI. It was
+dropped because a second guard on an invariant already guarded buys CI-side proof at the price of a
+275 KB fixture and a platform-conditional result, not because it does not discriminate.
+
+### Counter-checks, 2026-08-25 (Linux)
+
+| seam broken | result |
+| --- | --- |
+| `process.exitCode` → `process.exit()` in `viewport-proof.mjs` | that script's assertion red, others green |
+| same in `phone-proof.mjs` | red |
+| same in `viewport-survey.mjs` | red |
+| same in `mobile-tile-sheet.mjs` | red |
+| an exit appended AFTER the report in `check-preview-exclusion.mjs` | red |
+| all restored | 5 passed |
+
+Behaviour verified by running the scripts, not by reading them: `check-preview-exclusion.mjs` OK path
+prints its four marker lines and the OK line at exit 0; its failure path, forced, prints `FAILED` at
+exit 1 **and does not print the OK line**; the no-vite bail writes to fd 2 at exit 1 with stdout
+empty.
+
+### Findings
+
+| id | finding | consequence |
+| --- | --- | --- |
+| **MH3b-F01** | Two of the eight `process.exit()` sites also carried control flow | recorded because the mechanical version of this fix is the obvious one and it is wrong. A sweep would have made a failing preview check report success |
+| **MH3b-F02** | The invariant transfers to all six scripts without an exception clause, including the one that legitimately keeps `process.exit()` | evidence that MH3 named the failure rather than the shape. Worth keeping the next time a rule is drafted against a call rather than against a loss |

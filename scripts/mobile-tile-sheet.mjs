@@ -241,4 +241,6 @@ const main = async () => {
   console.log(`wrote ${file}`);
 };
 
-main().catch((e) => { console.error(e); process.exit(1); });
+/* MH3: `process.exitCode`, not `process.exit()` — the latter discards queued stdout/stderr on POSIX,
+   and here that is the stack trace this handler exists to print. */
+main().catch((e) => { console.error(e); process.exitCode = 1; });
