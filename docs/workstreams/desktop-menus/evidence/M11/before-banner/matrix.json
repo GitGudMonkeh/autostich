@@ -1,0 +1,321 @@
+{
+ "generated": "2026-08-24T12:00:00.000Z",
+ "base": "/autostich/",
+ "dist": "C:\\Users\\Monkeh\\AppData\\Local\\Temp\\claude\\C--Code\\7dc741be-d605-4df3-906f-9c00a50cef0d\\scratchpad\\dist-before",
+ "stamp": null,
+ "frozen": "2026-08-24T12:00:00.000Z",
+ "sizes": [
+  "1280x720",
+  "1920x1080"
+ ],
+ "langs": [
+  "de",
+  "en"
+ ],
+ "cells": {
+  "de/1280x720/update-banner": {
+   "reached": true,
+   "verdict": {
+    "upBanner": 1,
+    "hubTile": 4,
+    "rcWide": 0,
+    "rcNarrow": 0
+   },
+   "surface": [
+    {
+     "p": ":DIV",
+     "bg": "rgb(27, 27, 36)",
+     "bi": "none",
+     "bo": "padding-box|border-box|auto",
+     "bc": "rgb(58, 58, 72) rgb(58, 58, 72) rgb(58, 58, 72) rgb(58, 58, 72)",
+     "bw": "1px 1px 1px 1px",
+     "bs": "solid solid solid solid",
+     "rd": "6px 6px 6px 6px",
+     "sh": "rgb(0, 0, 0) 0px 6px 24px -8px",
+     "pd": "10px 14px 10px 14px",
+     "ol": "3px none rgb(232, 232, 234)",
+     "op": "1",
+     "cl": "rgb(232, 232, 234)",
+     "box": [
+      349.16,
+      58.14
+     ]
+    },
+    {
+     "p": "1:BUTTON",
+     "bg": "rgba(0, 0, 0, 0)",
+     "bi": "linear-gradient(90deg, color(srgb 0.287843 0.233726 0.123137) 0%, rgb(14, 14, 20) 30%)",
+     "bo": "padding-box|border-box|auto",
+     "bc": "rgba(150, 150, 170, 0.16) rgba(150, 150, 170, 0.16) rgba(150, 150, 170, 0.16) rgb(212, 166, 58)",
+     "bw": "1px 1px 1px 3px",
+     "bs": "solid solid solid solid",
+     "rd": "6px 6px 6px 6px",
+     "sh": "none",
+     "pd": "6px 12px 6px 12px",
+     "ol": "3px none color(srgb 0.932549 0.860392 0.69098)",
+     "op": "1",
+     "cl": "color(srgb 0.932549 0.860392 0.69098)",
+     "box": [
+      102.59,
+      36.14
+     ]
+    },
+    {
+     "p": "2:BUTTON",
+     "bg": "rgba(0, 0, 0, 0)",
+     "bi": "none",
+     "bo": "padding-box|border-box|auto",
+     "bc": "rgb(232, 232, 234) rgb(232, 232, 234) rgb(232, 232, 234) rgb(232, 232, 234)",
+     "bw": "0px 0px 0px 0px",
+     "bs": "solid solid solid solid",
+     "rd": "0px 0px 0px 0px",
+     "sh": "none",
+     "pd": "0px 4px 0px 4px",
+     "ol": "3px none rgb(232, 232, 234)",
+     "op": "0.55",
+     "cl": "rgb(232, 232, 234)",
+     "box": [
+      17.3,
+      18.5
+     ]
+    }
+   ],
+   "tokens": {
+    "--rd-sm": "calc(6px * 1)",
+    "--rd-md": "calc(.5rem * 1)",
+    "--el-flat": "none",
+    "--ed-quiet": "#2a2a34",
+    "--sf-head": "#1b1a24"
+   },
+   "rootFound": true
+  },
+  "de/1920x1080/update-banner": {
+   "reached": true,
+   "verdict": {
+    "upBanner": 1,
+    "hubTile": 4,
+    "rcWide": 0,
+    "rcNarrow": 0
+   },
+   "surface": [
+    {
+     "p": ":DIV",
+     "bg": "rgb(27, 27, 36)",
+     "bi": "none",
+     "bo": "padding-box|border-box|auto",
+     "bc": "rgb(58, 58, 72) rgb(58, 58, 72) rgb(58, 58, 72) rgb(58, 58, 72)",
+     "bw": "1px 1px 1px 1px",
+     "bs": "solid solid solid solid",
+     "rd": "6px 6px 6px 6px",
+     "sh": "rgb(0, 0, 0) 0px 6px 24px -8px",
+     "pd": "10px 14px 10px 14px",
+     "ol": "3px none rgb(232, 232, 234)",
+     "op": "1",
+     "cl": "rgb(232, 232, 234)",
+     "box": [
+      349.16,
+      58.14
+     ]
+    },
+    {
+     "p": "1:BUTTON",
+     "bg": "rgba(0, 0, 0, 0)",
+     "bi": "linear-gradient(90deg, color(srgb 0.287843 0.233726 0.123137) 0%, rgb(14, 14, 20) 30%)",
+     "bo": "padding-box|border-box|auto",
+     "bc": "rgba(150, 150, 170, 0.16) rgba(150, 150, 170, 0.16) rgba(150, 150, 170, 0.16) rgb(212, 166, 58)",
+     "bw": "1px 1px 1px 3px",
+     "bs": "solid solid solid solid",
+     "rd": "6px 6px 6px 6px",
+     "sh": "none",
+     "pd": "6px 12px 6px 12px",
+     "ol": "3px none color(srgb 0.932549 0.860392 0.69098)",
+     "op": "1",
+     "cl": "color(srgb 0.932549 0.860392 0.69098)",
+     "box": [
+      102.59,
+      36.14
+     ]
+    },
+    {
+     "p": "2:BUTTON",
+     "bg": "rgba(0, 0, 0, 0)",
+     "bi": "none",
+     "bo": "padding-box|border-box|auto",
+     "bc": "rgb(232, 232, 234) rgb(232, 232, 234) rgb(232, 232, 234) rgb(232, 232, 234)",
+     "bw": "0px 0px 0px 0px",
+     "bs": "solid solid solid solid",
+     "rd": "0px 0px 0px 0px",
+     "sh": "none",
+     "pd": "0px 4px 0px 4px",
+     "ol": "3px none rgb(232, 232, 234)",
+     "op": "0.55",
+     "cl": "rgb(232, 232, 234)",
+     "box": [
+      17.3,
+      18.5
+     ]
+    }
+   ],
+   "tokens": {
+    "--rd-sm": "calc(6px * 1)",
+    "--rd-md": "calc(.5rem * 1)",
+    "--el-flat": "none",
+    "--ed-quiet": "#2a2a34",
+    "--sf-head": "#1b1a24"
+   },
+   "rootFound": true
+  },
+  "en/1280x720/update-banner": {
+   "reached": true,
+   "verdict": {
+    "upBanner": 1,
+    "hubTile": 4,
+    "rcWide": 0,
+    "rcNarrow": 0
+   },
+   "surface": [
+    {
+     "p": ":DIV",
+     "bg": "rgb(27, 27, 36)",
+     "bi": "none",
+     "bo": "padding-box|border-box|auto",
+     "bc": "rgb(58, 58, 72) rgb(58, 58, 72) rgb(58, 58, 72) rgb(58, 58, 72)",
+     "bw": "1px 1px 1px 1px",
+     "bs": "solid solid solid solid",
+     "rd": "6px 6px 6px 6px",
+     "sh": "rgb(0, 0, 0) 0px 6px 24px -8px",
+     "pd": "10px 14px 10px 14px",
+     "ol": "3px none rgb(232, 232, 234)",
+     "op": "1",
+     "cl": "rgb(232, 232, 234)",
+     "box": [
+      312.59,
+      58.14
+     ]
+    },
+    {
+     "p": "1:BUTTON",
+     "bg": "rgba(0, 0, 0, 0)",
+     "bi": "linear-gradient(90deg, color(srgb 0.287843 0.233726 0.123137) 0%, rgb(14, 14, 20) 30%)",
+     "bo": "padding-box|border-box|auto",
+     "bc": "rgba(150, 150, 170, 0.16) rgba(150, 150, 170, 0.16) rgba(150, 150, 170, 0.16) rgb(212, 166, 58)",
+     "bw": "1px 1px 1px 3px",
+     "bs": "solid solid solid solid",
+     "rd": "6px 6px 6px 6px",
+     "sh": "none",
+     "pd": "6px 12px 6px 12px",
+     "ol": "3px none color(srgb 0.932549 0.860392 0.69098)",
+     "op": "1",
+     "cl": "color(srgb 0.932549 0.860392 0.69098)",
+     "box": [
+      79.8,
+      36.14
+     ]
+    },
+    {
+     "p": "2:BUTTON",
+     "bg": "rgba(0, 0, 0, 0)",
+     "bi": "none",
+     "bo": "padding-box|border-box|auto",
+     "bc": "rgb(232, 232, 234) rgb(232, 232, 234) rgb(232, 232, 234) rgb(232, 232, 234)",
+     "bw": "0px 0px 0px 0px",
+     "bs": "solid solid solid solid",
+     "rd": "0px 0px 0px 0px",
+     "sh": "none",
+     "pd": "0px 4px 0px 4px",
+     "ol": "3px none rgb(232, 232, 234)",
+     "op": "0.55",
+     "cl": "rgb(232, 232, 234)",
+     "box": [
+      17.3,
+      18.5
+     ]
+    }
+   ],
+   "tokens": {
+    "--rd-sm": "calc(6px * 1)",
+    "--rd-md": "calc(.5rem * 1)",
+    "--el-flat": "none",
+    "--ed-quiet": "#2a2a34",
+    "--sf-head": "#1b1a24"
+   },
+   "rootFound": true
+  },
+  "en/1920x1080/update-banner": {
+   "reached": true,
+   "verdict": {
+    "upBanner": 1,
+    "hubTile": 4,
+    "rcWide": 0,
+    "rcNarrow": 0
+   },
+   "surface": [
+    {
+     "p": ":DIV",
+     "bg": "rgb(27, 27, 36)",
+     "bi": "none",
+     "bo": "padding-box|border-box|auto",
+     "bc": "rgb(58, 58, 72) rgb(58, 58, 72) rgb(58, 58, 72) rgb(58, 58, 72)",
+     "bw": "1px 1px 1px 1px",
+     "bs": "solid solid solid solid",
+     "rd": "6px 6px 6px 6px",
+     "sh": "rgb(0, 0, 0) 0px 6px 24px -8px",
+     "pd": "10px 14px 10px 14px",
+     "ol": "3px none rgb(232, 232, 234)",
+     "op": "1",
+     "cl": "rgb(232, 232, 234)",
+     "box": [
+      312.59,
+      58.14
+     ]
+    },
+    {
+     "p": "1:BUTTON",
+     "bg": "rgba(0, 0, 0, 0)",
+     "bi": "linear-gradient(90deg, color(srgb 0.287843 0.233726 0.123137) 0%, rgb(14, 14, 20) 30%)",
+     "bo": "padding-box|border-box|auto",
+     "bc": "rgba(150, 150, 170, 0.16) rgba(150, 150, 170, 0.16) rgba(150, 150, 170, 0.16) rgb(212, 166, 58)",
+     "bw": "1px 1px 1px 3px",
+     "bs": "solid solid solid solid",
+     "rd": "6px 6px 6px 6px",
+     "sh": "none",
+     "pd": "6px 12px 6px 12px",
+     "ol": "3px none color(srgb 0.932549 0.860392 0.69098)",
+     "op": "1",
+     "cl": "color(srgb 0.932549 0.860392 0.69098)",
+     "box": [
+      79.8,
+      36.14
+     ]
+    },
+    {
+     "p": "2:BUTTON",
+     "bg": "rgba(0, 0, 0, 0)",
+     "bi": "none",
+     "bo": "padding-box|border-box|auto",
+     "bc": "rgb(232, 232, 234) rgb(232, 232, 234) rgb(232, 232, 234) rgb(232, 232, 234)",
+     "bw": "0px 0px 0px 0px",
+     "bs": "solid solid solid solid",
+     "rd": "0px 0px 0px 0px",
+     "sh": "none",
+     "pd": "0px 4px 0px 4px",
+     "ol": "3px none rgb(232, 232, 234)",
+     "op": "0.55",
+     "cl": "rgb(232, 232, 234)",
+     "box": [
+      17.3,
+      18.5
+     ]
+    }
+   ],
+   "tokens": {
+    "--rd-sm": "calc(6px * 1)",
+    "--rd-md": "calc(.5rem * 1)",
+    "--el-flat": "none",
+    "--ed-quiet": "#2a2a34",
+    "--sf-head": "#1b1a24"
+   },
+   "rootFound": true
+  }
+ }
+}
