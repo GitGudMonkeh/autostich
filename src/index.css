@@ -4180,8 +4180,13 @@ b, strong { font-weight: 600; }
   /* Der Dim wird zum Überzug — EIN Wert für alle Overlays (#ueberzug: 94 %, ohne Blur). Die 82 % der
      ersten Fassung waren zusammen mit `blur(10px)` abgenommen; seit #perf-blur gibt es den Blur nicht
      mehr und der Hub las sich durch die Panels. `!important`, weil beide Werte inline am Element stehen. */
+  /* #menu-rework M6 — `rgba(12, 12, 16, .94)` IS `--sf-scrim-desk`, character for character:
+     the same conversion M5 made at `.gd-dim` and M9 at the privacy notice. THE `!important` STAYS,
+     and it is measured rather than assumed: `Glossary.jsx:143` sets `background: "rgba(6,6,10,.66)"`
+     INLINE — the phone's wash, a DIFFERENT value, not this one — so the declaration is what overrides
+     an inline literal rather than a leftover shout. Counter-checked at M6-C1. */
   .gl-dim {
-    background: rgba(12, 12, 16, .94) !important;
+    background: var(--sf-scrim-desk) !important;
     -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
   }
   .gl-frame { padding: 16px 48px 18px !important; align-items: stretch !important; }
@@ -4213,7 +4218,13 @@ b, strong { font-weight: 600; }
     grid-template-columns: auto minmax(0, 1fr) auto;
     align-items: center;
     column-gap: 22px;
-    background: linear-gradient(180deg, rgba(18, 18, 26, .92) 62%, rgba(18, 18, 26, 0)) !important;
+    /* #menu-rework M6 — the head that runs out IS `--sf-head-fade`, character for character, AND ITS
+       `!important` FELL WITH IT. `STICKY_HEAD_BG` has emitted `var(--sf-head)` since M1, so
+       re-pointing the step ON THIS ELEMENT steers the inline declaration with the cascade intact —
+       the sanctioned form in conventions.md §2c, and `.gd-head`'s verbatim. Eleventh `!important`
+       to fall in this round. */
+    --sf-head: var(--sf-head-fade);
+    background: var(--sf-head);
     border-bottom: none !important;
     padding: 10px 0 8px;
   }
@@ -4224,7 +4235,12 @@ b, strong { font-weight: 600; }
   .gl-search { grid-column: 2; grid-row: 1; margin-top: 0 !important; max-width: 520px; }
   .gl-search input { font-size: var(--text-body-lg-2) !important; padding-top: 11px; padding-bottom: 11px; }
   /* Wie im Baum: Schließen liegt sonst unter dem 44-px-Mindestklickziel des Desktop-Passes. */
-  .gl-close { grid-column: 3; grid-row: 1; font-size: var(--text-body-lg-3) !important; padding: 11px 18px !important; border-radius: 8px; }
+  /* #menu-rework M6 — M6-F01: the 8 px painted nothing. `.up-close, .gd-close, .gl-close, …` sets
+     `--rd-sm` at EQUAL specificity and later in the sheet, so this row computes 6 px — read back off
+     the live document (evidence/M6/before-mounts), not off the sheet. Deleted rather than tokenised:
+     writing `var(--rd-md)` where nothing paints would credit the vocabulary with a call site it does
+     not have. M5's answer at `.gd-close`, which is the same declaration one screen over. */
+  .gl-close { grid-column: 3; grid-row: 1; font-size: var(--text-body-lg-3) !important; padding: 11px 18px !important; }
   .gl-hair {
     grid-column: 1 / -1; grid-row: 2; margin-top: 10px;
     height: 2px; border-radius: 99px; opacity: .7;
@@ -4250,54 +4266,72 @@ b, strong { font-weight: 600; }
   }
   /* `align-self: start` wie `.up-nav`/`.gd-nav`: die Spalte endet an ihrem letzten Eintrag statt bis
      zum Fuß durchzulaufen. */
+  /* #menu-rework M6 — radius on `--rd-lg` (14, value-identical) and surface on `--sf-glass` (the
+     gradient character for character, one of the 13 the token was derived from). The 180deg is
+     normalised away by Chrome, so the computed string does not move — measured by M2a at
+     `.cz-fxside` and again here at zero delta. The padding is M6-F04 and stays a literal. */
   .gl-nav {
     align-self: start;
-    border-radius: 14px; padding: 14px 12px;
+    border-radius: var(--rd-lg); padding: 14px 12px;
     display: flex; flex-direction: column; gap: 6px;
-    background: linear-gradient(180deg, rgba(27, 26, 36, .93), rgba(22, 22, 32, .95));
+    background: var(--sf-glass);
   }
   .gl-navhead {
     font-size: var(--text-meta-4); letter-spacing: .2em; text-transform: uppercase; font-weight: 600;
     color: #82828f; padding: 2px 3px 4px;
   }
+  /* #menu-rework M6 — M6-F01, AND THIS IS WHERE MOST OF IT SITS. Every axis declaration this block
+     carried painted nothing: `#gl-ruhe` further down sets `background: none`, `border: 0` and its own
+     padding on the SAME selector at equal specificity and later in the sheet, and the `#eckig`
+     collector sets the radius later still. MEASURED, not read: the row computes
+     `background-image: none`, `border-width: 0`, radius 6 and padding 9/0 on the live document
+     (evidence/M6/before-mounts, both viewports, both languages).
+     Deleted rather than tokenised — M5's answer at `.gd-navrow` and M3's at `.up-navrow`: a
+     `var(--ed-quiet)` written where nothing paints would credit the vocabulary with a call site it
+     does not have, and would put a MENU-38 conversion in the ratchet that no eye can check.
+     `border-left-color` on `.is-on` STAYS: at (0,2,0) it outranks `border: 0` and it does reach the
+     computed style — inert at width 0, but present, so removing it is a change and not a deletion. */
   .gl-navrow {
     display: flex; align-items: center; gap: 10px; text-align: left;
-    padding: 10px 12px; border-radius: 11px; cursor: pointer;
-    background: linear-gradient(90deg, color-mix(in srgb, var(--c) 12%, #12121a) 0%, #12121a 46%);
-    border: 1px solid rgba(150, 150, 170, .14);
-    border-left: 4px solid color-mix(in srgb, var(--c) 70%, transparent);
+    cursor: pointer;
     transition: background .14s ease, box-shadow .14s ease;
   }
-  .gl-navrow:hover { background: linear-gradient(90deg, color-mix(in srgb, var(--c) 20%, #12121a) 0%, #12121a 50%); }
   .gl-navrow.is-on {
     border-left-color: var(--c);
-    background: linear-gradient(90deg, color-mix(in srgb, var(--c) 26%, #12121a) 0%, #12121a 52%);
-    box-shadow: inset 0 0 24px -14px var(--c), 0 0 18px -10px var(--c);
   }
   /* Eine Kategorie ohne Treffer bleibt STEHEN und wird nur blass. Sie auszublenden ließe die Spalte
      bei jedem Tastendruck springen — und die Zeilenposition ist das, woran man sie liest. */
   .gl-navrow.is-empty { opacity: .34; }
-  .gl-navdot { width: 9px; height: 9px; border-radius: 3px; background: var(--c); flex: none; }
+  /* #menu-rework M6 — M6-F01: the 3 px painted nothing, `#gl-ruhe`'s `0 3px 3px 0` wins. Deleted. */
+  .gl-navdot { width: 9px; height: 9px; background: var(--c); flex: none; }
   .gl-navlabel {
     flex: 1; min-width: 0; font-size: var(--text-body-lg-3); font-weight: 600; color: #e6e4ee;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
+  /* #menu-rework M6 — M6-F01: the counter's fill, its edge and its padding all painted nothing —
+     `#gl-ruhe` sets `background: none`, `border: 0` and `padding: 0` on the same selector later.
+     Deleted. THE RADIUS IS NOT DELETED: nothing re-declares it, so it does reach the computed style
+     (7 px, measured), and it is M6-F05 — off the ladder, on a box that no longer has a fill to round. */
   .gl-navcount {
     flex: none; font-size: var(--text-body-1); color: #8a8a95;
-    background: #0e0e13; border: 1px solid #2a2a33;
-    border-radius: 7px; padding: 2px 7px; min-width: 34px; text-align: center;
+    border-radius: 7px; min-width: 34px; text-align: center;
   }
   .gl-navrow.is-on .gl-navcount { color: var(--c); border-color: color-mix(in srgb, var(--c) 40%, #2a2a33); }
+  /* #menu-rework M6 — MENU-38 -> `--ed-quiet`, the conversion M2a measured at about 9/255 and the
+     owner accepted, and that M3 made fourteen times, M7 four, M8 six, M4 five and M5 three. The
+     padding is heading rhythm and stays outside the ladder (conventions.md §2c). */
   .gl-navnote {
     margin-top: 4px; padding: 10px 3px 2px;
-    border-top: 1px solid rgba(150, 150, 170, .14);
+    border-top: 1px solid var(--ed-quiet);
     font-size: var(--text-body-2); line-height: 1.45; color: #71717c;
   }
 
+  /* #menu-rework M6 — radius `--rd-lg`, surface `--sf-glass`, both value-identical; the same pair
+     M5 made at `.gd-page`. The padding is M6-F04. */
   .gl-page {
     display: flex; flex-direction: column;
-    border-radius: 14px; padding: 16px 20px 14px; min-height: 0;
-    background: linear-gradient(180deg, rgba(27, 26, 36, .93), rgba(22, 22, 32, .95));
+    border-radius: var(--rd-lg); padding: 16px 20px 14px; min-height: 0;
+    background: var(--sf-glass);
   }
   .gl-page-h { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; flex: none; min-height: 36px; }
   .gl-page-eyebrow {
@@ -4337,7 +4371,9 @@ b, strong { font-weight: 600; }
   /* Schriftgrößen einen Schritt nach oben aus den Handy-Maßen. Bewusst KEIN `--gs`-Maßstab wie beim
      Leitfaden: der muss auf EINE Seite passen, das Glossar ist eine Liste und scrollt ohnehin —
      Stufen hätten hier nichts zu regeln. */
-  .gl-cols .gloss-term-row { padding: 9px 11px; margin-bottom: 8px; }
+  /* #menu-rework M6 — M6-F01: `#gl-ruhe` re-declares this selector's padding below, so 9/11 paints
+     nothing (measured 11/13/12). Deleted; `margin-bottom` is not one of the five axes and stays. */
+  .gl-cols .gloss-term-row { margin-bottom: 8px; }
   .gl-cols .gl-tname { font-size: var(--text-body-lg-2); }
   .gl-cols .gl-ttext { font-size: var(--text-body-6); }
 
@@ -4358,10 +4394,12 @@ b, strong { font-weight: 600; }
 
   /* Navigationsspalte: Zeilen statt Knöpfe. Der farbige Punkt trägt die Kategorie, die aktive Zeile
      eine ruhige Fläche in derselben Farbe — kein Rahmen, kein Verlauf, kein Halo. */
+  /* #menu-rework M6 — M6-F01 once more, and in the block that CAUSED it: the 9 px painted nothing
+     either, because the `#eckig` collector sets `--rd-sm` later still (measured 6 px). Deleted.
+     `background: none`, `border: 0` and the padding stay — they are what the row actually draws. */
   .gl-navrow {
     background: none;
     border: 0;
-    border-radius: 9px;
     padding: 9px 10px;
   }
   .gl-navrow:hover { background: rgba(255, 255, 255, .035); }
@@ -4396,9 +4434,13 @@ b, strong { font-weight: 600; }
      assumed: Glossary.jsx:169 sets `background: "#0f0f14"` inline on this input — a DIFFERENT value,
      not the row ground — so the declaration is what overrides it rather than a leftover shout.
      Removing it repaints the field #0f0f14; counter-checked at MR1-F02. */
+  /* #menu-rework M6 — the edge is MENU-38 and reads `--ed-quiet`. BOTH `!important` STAY, for the
+     reason MR1 already measured on the line above: `Glossary.jsx:169` sets `background: "#0f0f14"`
+     AND `border: "1px solid #33333e"` INLINE, both different values, so these declarations are what
+     override an inline literal. Counter-checked at M6-C1. */
   .gl-search input {
     background: var(--sf-row) !important;
-    border-color: rgba(150, 150, 170, .14) !important;
+    border-color: var(--ed-quiet) !important;
   }
 
   /* Begriffe: eine Karte, die nur so viel Kontur trägt, wie zum Abgrenzen nötig ist. Die Kategoriefarbe
@@ -4406,7 +4448,11 @@ b, strong { font-weight: 600; }
   .gl-cols { column-gap: 22px; }
   .gl-cols .gloss-term-row {
     background: rgba(255, 255, 255, .014) !important;
-    border: 1px solid rgba(150, 150, 170, .10) !important;
+    /* MENU-38 -> `--ed-quiet` (#menu-rework M6). The `!important` STAYS and is not decoration:
+       `.as-edge, .as-edge-strong, .as-edge-card` sets this border in the same unlayered sheet and
+       `.as-edge-thin` its left width — counter-checked at M6-C1 by removing both and re-reading the
+       computed edge. */
+    border: 1px solid var(--ed-quiet) !important;
     border-left-width: 1px !important;
     border-radius: 11px;
     box-shadow: none !important;
@@ -4415,10 +4461,15 @@ b, strong { font-weight: 600; }
     gap: 11px;
   }
   .gl-cols .gloss-term-row::before, .gl-cols .gloss-term-row::after { display: none !important; }
+  /* #menu-rework M6 — the icon tile's 8 IS `--rd-md`, value-identical, and this is M8's answer at
+     `.lb-ctxicon` (28 × 28, radius 8) rather than a new reading: the rung is labelled "a control that
+     is not a tile" and this IS a tile, so the VALUE matches while the label does not. Second sighting
+     of that mismatch, recorded as an observation (M6-F06) rather than resolved from inside a screen.
+     The white haze and the deck-tinted edge stay literals — M3-G2 and the accent family. */
   .gl-ticon {
     width: 27px !important; height: 27px;
     display: grid !important; place-items: center;
-    border-radius: 8px;
+    border-radius: var(--rd-md);
     background: rgba(255, 255, 255, .03);
     border: 1px solid color-mix(in srgb, var(--c, #3a3a48) 38%, transparent);
   }
