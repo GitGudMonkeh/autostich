@@ -269,7 +269,7 @@ export const GLOSSARY = {
     match: ["Gletscher-Formationen", "Gletscher-Formation", "Eis-Formationen", "Eis-Formation"] },
   // id `freeze` bleibt als Backcompat-Token erhalten (glossary.test.js), umgewidmet auf „Firn-Boden".
   freeze: { category: "frak", group: "ice", label: "Firn-Boden", icon: "❄", color: CLR.ice,
-    text: `Firn liegt als Reserve auf dem Brettfeld (Firn-Boden), getrennt von der Gletschermasse. Frierst du einen Gletscher auf ein aufgeladenes Feld, wird der angesammelte Firn zu seiner Reserve; der Gletscher startet leer und zieht daraus jeden Durchlauf wieder auf volle ${G_THRESHOLDS[G_THRESHOLDS.length - 1]} Masse nach (nur die Differenz, nie darüber), bis die Reserve leer ist. Offenen Boden laden Dauerfrost, Schneetreiben und Eiszeit auf — nie unter einen Gletscher.`,
+    text: `Firn liegt als Reserve auf dem Brettfeld (Firn-Boden), getrennt von der Gletschermasse. Frierst du einen Gletscher auf ein aufgeladenes Feld, wird der angesammelte Firn zu seiner Reserve; der Gletscher startet leer und zieht daraus jeden Durchlauf wieder auf volle ${G_THRESHOLDS[G_THRESHOLDS.length - 1]} Masse nach (nur die Differenz, nie darüber), bis die Reserve leer ist. Offenen Boden laden Dauerfrost, Schneetreiben und Eiszeit auf, nie unter einen Gletscher.`,
     match: ["Firn-Boden", "Firn"] },
 
   /* ============ 4 · Pflanze ============ */
