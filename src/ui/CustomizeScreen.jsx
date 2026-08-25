@@ -295,12 +295,24 @@ const ANIM_LAYER = { edgeglow: "edgeGlow", holo: "holo", glitch: "glitch" };
 const STD_PACK = { ...(THEMES.find((t) => t.id === "genesis") || {}), kind: "std" };
 // #307/#Shop-Reorg: eigene Kategorien. „Packs" = Genesis (Default) + Kauf-Packs, nach DP-Preis aufsteigend (billig oben,
 // teuer unten; Genesis immer zuoberst). „Challenges" = die freischaltbaren cond-Packs (#303) OHNE Genesis.
-const PACKS_TAB = [STD_PACK, ...THEMES.filter((t) => t.kind === "buy").slice().sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0))];
-/* Der Challenges-Reiter zeigt die ERSPIELTEN Packs. Genesis und Insert Coin sind zwar auch `cond`, aber
-   geschenkt — das eine für abgeschlossenes Onboarding, das andere für den ersten beendeten Lauf. Beide
-   stehen deshalb auf der Packs-Seite (Default): im Challenges-Reiter sähen sie wie eine offene Aufgabe
-   aus, die niemand mehr angehen kann. */
-const CHALLENGES_TAB = THEMES.filter((t) => t.kind === "cond" && t.id !== "genesis" && t.id !== "insertcoin");
+/* GESCHENK-PACKS — cond, aber nicht erspielt: sie fallen einem zu. Genesis für abgeschlossenes Onboarding,
+   Insert Coin für den ersten beendeten Lauf. Sie gehören auf die Packs-Seite und NICHT in den
+   Challenges-Reiter: dort sähen sie wie eine offene Aufgabe aus, die niemand mehr angehen kann.
+
+   Warum EINE Liste für beide Reiter: die zwei Filter unten teilen THEMES vollständig unter sich auf. Stünde
+   die Ausnahme nur im Challenges-Filter, fiele das Pack durch BEIDE Raster (Packs nimmt nur `buy`) und
+   erschiene nirgends im Shop — genau das ist bei Insert Coin passiert. Genesis fiel nie auf, weil es über
+   STD_PACK an der Liste vorbei hereinkommt. test/themes.test.js wacht seither darüber, dass jedes Pack in
+   genau einem Reiter landet. */
+const GIFT_PACK_IDS = ["genesis", "insertcoin"];
+export const isGiftPack = (t) => t.kind === "cond" && GIFT_PACK_IDS.includes(t.id);
+// Packs-Seite: Genesis (als Default zuoberst) · die übrigen Geschenke · dann die Kauf-Packs nach DP aufsteigend.
+// Die Geschenke stehen vor den Kauf-Packs, weil sie nichts kosten — die Seite ist nach Preis aufsteigend sortiert.
+export const PACKS_TAB = [STD_PACK,
+  ...THEMES.filter((t) => isGiftPack(t) && t.id !== "genesis"),
+  ...THEMES.filter((t) => t.kind === "buy").slice().sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0))];
+// Challenges-Reiter: die ERSPIELTEN cond-Packs, also alle außer den Geschenken.
+export const CHALLENGES_TAB = THEMES.filter((t) => t.kind === "cond" && !isGiftPack(t));
 // #: Aktives (gerade ausgerüstetes) Pack immer nach vorn — direkt hinter „Standard" (falls in der Liste), sonst ganz
 // vorn (Challenges haben kein Standard). Reine Umsortierung; Preise/Reihenfolge der übrigen bleiben.
 function orderPacks(list, deckId) {

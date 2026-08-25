@@ -1410,6 +1410,7 @@ export default {
      `kind` + `vars`, den Text setzt src/i18n/unlockText.js daraus zusammen. */
   "unlock.none": "Immer verfügbar",
   "unlock.games": "Spiele {n} Läufe",
+  "unlock.games.one": "Spiele einen Lauf",
   "unlock.streak": "Erreiche eine Serie von {n}",
   "unlock.score": "Erreiche Score {n}",
   "unlock.noRerollRun": "Schließe einen Lauf ab, ohne einen Reroll zu benutzen",

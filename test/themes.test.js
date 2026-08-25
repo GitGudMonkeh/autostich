@@ -9,7 +9,7 @@ import {
   isTieredPack, unlockedTiers, highestUnlockedTier, coverTier, tierByDeckId, tierAsPack, packHasTierDeck, resolvePackByDeckId,
 } from "../src/game/themes.js";
 import { DECK_DEFS, BATTLEFIELD_DEFS, isUnlocked } from "../src/game/cosmetics.js";
-import { BUYABLE_FINISHER_OWNKEYS } from "../src/ui/CustomizeScreen.jsx";
+import { BUYABLE_FINISHER_OWNKEYS, PACKS_TAB, CHALLENGES_TAB } from "../src/ui/CustomizeScreen.jsx";
 import { BG_EXCL_OPTS, normalizeFxOptions } from "../src/game/storage.js";
 import { BOARD_POSITIONS } from "../src/game/constants.js";
 import { N_POS } from "../src/game/architect.js";
@@ -126,6 +126,37 @@ describe("packs — Zustände & Besitz", () => {
     for (const pack of THEMES) {
       if (challenge.includes(pack.id)) continue;
       expect(pack.kind).toBe("buy");
+    }
+  });
+});
+
+/* SHOP-VOLLSTÄNDIGKEIT — der Wächter, der bei Insert Coin gefehlt hat.
+
+   Die beiden Reiter der Deck-Werkstatt teilen THEMES vollständig unter sich auf: „Packs“ nimmt die
+   Kauf-Packs plus die Geschenke, „Challenges“ die erspielten cond-Packs. Ein neues cond-Pack, das nur aus
+   dem Challenges-Filter ausgenommen wird, landet in KEINEM der beiden und ist im Shop unsichtbar — der
+   Fehler fiel erst im Spiel auf, weil beide Filter für sich genommen richtig aussahen. Deshalb wird hier
+   nicht der einzelne Filter geprüft, sondern die Summe: jedes Pack genau einmal. */
+describe("Deck-Werkstatt — jedes Pack erscheint in genau einem Reiter", () => {
+  const inTabs = (id) => PACKS_TAB.filter((p) => p.id === id).length + CHALLENGES_TAB.filter((p) => p.id === id).length;
+
+  it("kein Pack faellt durch beide Raster, keines steht doppelt", () => {
+    const fehlen = THEMES.filter((t) => inTabs(t.id) === 0).map((t) => t.id);
+    const doppelt = THEMES.filter((t) => inTabs(t.id) > 1).map((t) => t.id);
+    expect(fehlen, `nicht im Shop sichtbar: ${fehlen.join(", ")}`).toEqual([]);
+    expect(doppelt, `in beiden Reitern: ${doppelt.join(", ")}`).toEqual([]);
+  });
+
+  it("die Geschenk-Packs stehen auf der Packs-Seite, nicht bei den Challenges", () => {
+    for (const id of ["genesis", "insertcoin"]) {
+      expect(PACKS_TAB.some((p) => p.id === id), `${id} fehlt auf der Packs-Seite`).toBe(true);
+      expect(CHALLENGES_TAB.some((p) => p.id === id), `${id} steht faelschlich bei den Challenges`).toBe(false);
+    }
+  });
+
+  it("die erspielten cond-Packs stehen bei den Challenges", () => {
+    for (const id of ["gottgleich", "titan", "hirsch", "sparfuchs"]) {
+      expect(CHALLENGES_TAB.some((p) => p.id === id), `${id} fehlt im Challenges-Reiter`).toBe(true);
     }
   });
 });

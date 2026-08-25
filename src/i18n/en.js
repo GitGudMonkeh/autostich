@@ -1370,6 +1370,7 @@ export default {
   /* ---- Unlock conditions (cosmetics) ---- */
   "unlock.none": "Always available",
   "unlock.games": "Play {n} runs",
+  "unlock.games.one": "Play one run",
   "unlock.streak": "Reach a streak of {n}",
   "unlock.score": "Reach a score of {n}",
   "unlock.noRerollRun": "Finish a run without using a single reroll",
