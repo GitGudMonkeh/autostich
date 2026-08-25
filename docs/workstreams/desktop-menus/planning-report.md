@@ -856,6 +856,33 @@ which was right.
 where two applied, once naming a mount point that does not mount: *an import is not a render, and a
 filename is not an assertion.* A planner's inventory is a hypothesis until a worker measures it.
 
+### 8.25 "M5 shrank" was the sixth premise, and it was mine
+
+I told the owner M5 had become "content only — its frame came with M3". **Half right, and the wrong
+half was the conclusion.**
+
+*Measured:* the guide's **cell** is `.up-page-guide` inside the upgrade tree and does wear that
+screen's chrome, which M3 migrated — that is why the `guide` cell showed 2410 deltas in M3's
+comparison without anyone touching the guide. But `GuideOverlay.jsx` carries **35 colour values of
+its own**, and **7 of its 59 `.gd-*` rules still hold literals**. Its frame is done. It is not.
+
+**Sixth instance, same motion as the other five:** one true observation, a class named from it, the
+class stated as fact.
+
+**And measuring it turned up two seams the estimate had hidden**, pointing in opposite directions:
+
+| Seam | Where |
+| --- | --- |
+| **The pick phase mounts this screen** | `SkillSelect.jsx:534` renders `<GuideOverlay>` — the battle session, out of this round |
+| **`GuideBody` reaches the phone** | `DeckDetail.jsx` renders it, and `DeckDetail` left the round as unreachable above 1280 px |
+
+So M5 must convert value-preservingly toward the pick phase (proof: `skill-choice` at zero deltas) and
+must not follow `GuideBody` below 1280 px at all. **A task described as "smaller now" turned out to be
+the one with the most edges.**
+
+*The estimate was cheap to correct because the owner asked what it meant. That question is worth more
+than the answer was.*
+
 ### 8.22 Two differences on the end screen — counted, and left alone
 
 *M4's two questions, 2026-08-25. Both measured, both untouched, and the ruling is the same for both.*
