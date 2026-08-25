@@ -622,6 +622,35 @@ question.
 **Every grant is recorded with its number**, so the fourth case is decided against three measurements
 rather than against a memory.
 
+### The alpha clause — derived, not picked — 2026-08-25
+
+**M11-F03 is the first pure-alpha case, and the rule above does not cover it.** `#0c0c10f2` against
+`--sf-scrim-desk` `rgba(12, 12, 16, .94)`: **the colour is identical** and only the opacity moves, by
+**Δα = 0.009**.
+
+The `≤ 2/255 per channel` bound was **picked from three colour cases**. It has no authority over
+alpha, and saying so is more useful than stretching it — *overlays differ in opacity more often than
+in tone*, so the next strand meets this again.
+
+**So alpha gets its own bound, and it is derived:**
+
+> **Alpha, with the colour unchanged: Δα ≤ 0.01** — one percentage point of opacity.
+
+**Why that number and not another.** A change of Δα moves the *composited* pixel by at most
+`Δα × 255` — the full range — and that worst case only occurs against a **white** backdrop. At
+Δα = 0.01 the bound is 2.55/255 in the worst case and **under 1/255 against the dark surfaces these
+overlays actually cover.** So one percentage point of opacity is comparable to, and in practice
+smaller than, the colour bound already in force.
+
+**M11-F03 at Δα = 0.009 is granted.** M4's refused request moved alpha by **0.02** — twice this
+clause — *and* moved colour by 4/255, so it stays refused under both halves.
+
+**The colour bound is untouched at ≤ 2/255.** A clause was added; nothing was loosened. Four cases
+have now been decided and none of the earlier three changes.
+
+**And the worker still asks.** Two clauses do not make an entitlement — they make the answer
+predictable, which is the point.
+
 ### What is permanently exempt
 
 - **`PHASE_ACCENTS` in `modalStyle.jsx`** keeps its six colours as literal strings. `.c` is handed to
