@@ -104,6 +104,51 @@ function matrices() {
   return { A, B, expected };
 }
 
+describe("#menu-rework MH3 — the output is flushed before the process ends", () => {
+  /* THE DEFECT, and why this is a source assertion in a file that prefers behaviour.
+
+     `process.exit()` terminates at once and discards whatever is still queued on stdout. On POSIX a
+     piped stdout is ASYNCHRONOUS, so a script printing more than a pipe drains in one tick loses its
+     tail. On Windows pipes are SYNCHRONOUS and nothing is ever lost.
+
+     That asymmetry is the reason a behavioural test is the wrong instrument here. A slow-reader test
+     fails on Linux and passes on Windows WHETHER OR NOT THE DEFECT IS PRESENT — so on the machine
+     where the mistake gets written it would be green either way, which is the exact flaky-green
+     property that let this reach CI twice. A source assertion fires where the mistake is made.
+
+     THE INVARIANT IS NOT "never call process.exit". Two early exits sit ABOVE any output, on a usage
+     error and a missing file, and they write about sixty bytes of stderr. They are not at risk and
+     forbidding them would be a rule against a shape rather than against a failure. What must hold is:
+
+         once the report has begun, the process ends by letting Node drain.
+
+     Comments are stripped before matching — the first draft of this guard matched its own
+     explanation, which is precisely what `AGENTS.md` warns about under the ratchet hazard. */
+
+  const raw = read("scripts/surface-delta.mjs");
+  const code = raw.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+
+  it("nothing terminates the process after the report starts", () => {
+    const firstWrite = code.indexOf("process.stdout");
+    expect(firstWrite, "expected the script to still write to stdout").toBeGreaterThan(-1);
+    const after = code.slice(firstWrite);
+    expect(after.match(/process\.exit\s*\(/g) || [],
+      "process.exit() after output discards the queued tail — set process.exitCode").toHaveLength(0);
+  });
+
+  it("the status is set as a code, so Node exits on its own", () => {
+    expect(code).toMatch(/process\.exitCode\s*=/);
+  });
+
+  it("the reason stands at the line, not only in a commit message", () => {
+    /* A one-character fix with no explanation is a fix somebody reverts while tidying, and this one
+       is invisible on the machine most likely to do the tidying. */
+    const at = raw.indexOf("process.exitCode =");
+    expect(raw.slice(Math.max(0, at - 2000), at)).toMatch(/POSIX/);
+    expect(raw.slice(Math.max(0, at - 2000), at)).toMatch(/Windows/);
+  });
+});
+
 describe("#menu-rework MH1 — surface-delta.mjs withholds nothing", () => {
   let out = "", code = 0, expected = [];
 
