@@ -180,6 +180,35 @@ const GD_STATE_LITERALS = [
   /* Handy       */ "rgba(6,6,10,.66)", "#131318", "#000",
 ];
 
+/* #menu-rework M6 — DAS GLOSSAR. Vier Literale, alle GEZAEHLT statt gepraegt, und alle vier stehen
+   UNTER 1280 px oder in jeder Breite — die Datei setzt oberhalb des Bruchpunkts gar nichts mehr
+   inline, was eine der fuenf Achsen traefe.
+
+     DIE HANDY-WAESCHE — `rgba(6,6,10,.66)` ist der Ueberzug UNTER 1280 px; ab da zeigt `.gl-dim` ihn
+       auf `--sf-scrim-desk` um. Zeichengleich derselbe Wert, den M5 fuer den Leitfaden zaehlt, und
+       dieselbe Lage wie `#0c0c10ee` bei M7 und `#0c0c10cc` bei M4.
+     DER SCHLAGSCHATTEN DER HANDY-KARTE — `#000` in `0 30px 80px -30px #000`. Ab 1280 px setzt
+       `.gl-card` `box-shadow: none !important`; wirksam ist er nur darunter, und das ist in 2c
+       dauerhaft ausgenommen. Auch das ist M5s Eintrag, ein Screen weiter.
+     DAS SUCHFELD — `#0f0f14` mit `#33333e`. Genau M9s Kennungs-Box (PV_STATE_LITERALS), hier zum
+       wiederholten Mal: die Leiter hat fuer diese Flaeche nichts (`--sf-sunken` ist `#141320` und
+       liegt 5/4/12 daneben), und `#33333e` ist die Kante dazu. Ab 1280 px ueberschreibt
+       `.gl-search input` beide — der Grund als `--sf-row` seit MR1, die Kante seit hier als
+       `--ed-quiet`. Das Literal ist also die HANDY-Fassung, und `#33333e` traegt zusaetzlich den
+       Verlauf der Sektions-Trennlinie, der in JEDER Breite steht.
+
+   WAS HIER NICHT MEHR STEHT: `#2c2a3a`. Es IST `--ed-base`, Zeichen fuer Zeichen, und die zwei
+   Fundstellen (die Unterkante des Kopfes und die der Chip-Leiste) lesen jetzt den Schritt. Beide
+   werden NUR unter 1280 px gelesen — der Desktop-Block setzt `border-bottom: none` bzw.
+   `display: none` —, deshalb ist die Wertgleichheit nicht behauptet, sondern gemessen: ein Token
+   mit einer Deklaration und ohne Media-Ueberschreibung hat einen Wert in jeder Breite, abgelesen am
+   LEBENDEN Dokument bei 1920 / 1280 / 1100 / 390 px (evidence/M6/*-mounts, `tokenAtWidths`). */
+const GL_STATE_LITERALS = [
+  /* Handy-Waesche */ "rgba(6,6,10,.66)",
+  /* Handy-Schatten */ "#000",
+  /* Suchfeld + Trennlinie */ "#0f0f14", "#33333e",
+];
+
 const MIGRATED_JSX = [
   { path: "src/ui/modalStyle.jsx" },
   { path: "src/ui/OptionsModal.jsx" },
@@ -298,6 +327,15 @@ const MIGRATED_JSX = [
      und `FactionIcon` gehoeren ihr NICHT — dass der Screen sie rendert oder von ihnen gerendert
      wird, macht sie nicht zu seinen. */
   { path: "src/ui/GuideOverlay.jsx", stateLiterals: GD_STATE_LITERALS },
+  /* #menu-rework M6 — das Glossar. `GlossaryOverlay`, `GlossaryButton`, `GlossaryPanel`,
+     `GlossaryText`, `NavRow`, `TermRow` und das `Chip` dieser Datei sind darin definiert und
+     gehoeren dazu. DIE NEUN EINSTIEGE GEHOEREN IHR NICHT: dass `SkillSelect`, `PerkSelect`,
+     `LegendarySelect`, `FormationPhase`, `ArchitectScreen`, `HeldSkills`, `StartScreen`,
+     `CornerTools` und `App` diese Komponenten MOUNTEN, macht sie nicht zu ihren — dieselbe Grenze,
+     die M5 fuer `DeckDetail`/`SkillSelect` und M4 fuer die vier gerenderten Komponenten gezogen hat.
+     Und `Chip` gibt es dreimal im Baum (hier, in `CardDetail.jsx`, in `StartScreen.jsx`): drei
+     eigenstaendige Komponenten mit demselben Namen, von denen dieser Eintrag genau eine deckt. */
+  { path: "src/ui/Glossary.jsx", stateLiterals: GL_STATE_LITERALS },
 ];
 /* Ein Haken trifft ein Tag, wenn dessen Klassen ihn als GANZES Wort fuehren: `cz-main` darf
    `cz-mainscroll` nicht mitnehmen, sonst haengt der eine Eintrag am anderen. */
@@ -312,6 +350,10 @@ const anyHook = (hooks) => (hooks ? new RegExp(`\\b(${hooks.join("|")})\\b`) : u
 const M2A_SHELL_SELECTORS = [/\.cz-root/, /\.cz-card/, /\.cz-scroll/, /\.cz-head/, /\.cz-topline/,
   /\.cz-headrow/, /\.cz-bal/, /\.cz-readout/, /\.cz-close/, /\.cz-hair/, /\.cz-tabs/, /\.cz-split/,
   /\.cz-main/, /\.cz-side/, /\.cz-stage/, /\.cz-fxside/];
+/* M6s zwei Praefixe stehen als eigene Konstante, damit die Gegenprobe weiter unten sie EINZELN
+   pruefen kann: `.gl-wrap` faellt nur auf, wenn man fragt, was DIESER Eintrag einsammelt — in der
+   Gesamtliste deckt M8s `\.lb-` dieselbe Regel voellig zu Recht ab. */
+const M6_SELECTORS = [/\.gl-(?!wrap)/, /\.gloss-/];
 const MIGRATED_SELECTORS = [/\.op-/, /\.as-opt-/, /\.as-panel-sunken/, /\.as-shell/, /\.as-head\b/,
   /* M9: `.un-` und `.fb-` MEINEN DIE ZWEI SCREENS, wie `.cz-`, `.up-`, `.st-` und `.rd-` ihre. Der
      Datenschutz-Hinweis hat keine eigenen Selektoren — er traegt `as-panel`, `as-edge` und Tailwind —,
@@ -343,7 +385,18 @@ const MIGRATED_SELECTORS = [/\.op-/, /\.as-opt-/, /\.as-panel-sunken/, /\.as-she
      enthalten; sie tragen ohnehin nur Token. Die RATSCHEN unten grenzen auf Regeln ein, deren
      Selektor keinem anderen migrierten Screen gehoert — eine Zahl, die zweimal gezaehlt wird, ist
      keine Messung. */
-  /\.st-/, /\.rd-/, /\.lb-/, /\.go-/, /\.gd-/];
+  /* M6: `.gl-` und `.gloss-` MEINEN DEN GANZEN SCREEN, wie die sieben davor. Die geteilten
+     Sammelregeln des #eckig-Passes (`.up-close, .gd-close, .gl-close, …` und
+     `.gd-bar, …, .gloss-term-row`) und die #ecke-Bahn (`… .gd-head, … .gl-head`) sind darin
+     enthalten; sie tragen ohnehin nur Token. Die RATSCHEN unten grenzen wieder auf Regeln ein, deren
+     Selektor keinem anderen migrierten Screen gehoert.
+
+     `.gl-wrap` IST NICHT DIESER SCREEN, und das ist genau der Fehler, den `.up-banner` eine Zeile
+     tiefer schon einmal gekostet hat: `.lb-pagescroll:has(.lb-cockpit) > .gl-wrap` gehoert
+     `GlobalLeaderboard.jsx` (dort `<div className="gl-wrap mt-5">`) und teilt mit dem Glossar nur
+     die zwei Buchstaben des Praefixes. Eine Grenze, die nach dem sichtbarsten Traeger gezogen wird,
+     trifft irgendwann etwas, das nur so heisst — MENU-38 in klein, zum dritten Mal. */
+  /\.st-/, /\.rd-/, /\.lb-/, /\.go-/, /\.gd-/, ...M6_SELECTORS];
 /* `.up-banner` ist NICHT dieser Screen. Es ist die „Neue Version verfuegbar"-Leiste
    (`UpdateBanner.jsx`) und teilt mit dem Baum nur die zwei Buchstaben des Praefixes. Sie gehoert
    keinem migrierten Screen, also darf die Erlaubnisliste sie nicht einsammeln. Gefunden, weil der
@@ -430,6 +483,38 @@ const M5_INSET_EXEMPT = [
   /^\.gd-page \.gd-pillar$/, /^\.gd-page \.gd-valve$/, /^\.gd-page \.gd-bar$/, /^\.gd-page \.gd-princ$/,
 ];
 
+/* --- M6, das Glossar. Die drei bekannten Sorten, und dieselbe vierte, die M4 herausgetrennt hat.
+
+   Steuerelement: `.gl-close` (11/18) polstert gegen seine Beschriftung und traegt darueber sein
+     44-px-Klickziel — derselbe Eintrag, den `.up-close`, `.st-close` und `.gd-close` schon haben.
+     `.gl-search input` (11/11) polstert gegen seinen INHALT, nicht gegen eine Panelkante; 2c fuehrt
+     genau diese Sorte ausserhalb der Leiter (`--btn-pad-*`).
+   Layout: `.gl-frame` ist der Rand des Screens im Fenster (in beiden Hoehenfassungen), `.gl-body`
+     haelt rechts 6 px frei, damit die Rollleiste nicht auf den Begriffen sitzt — eine Rinne ist
+     Anordnung, dieselbe Unterscheidung wie bei `.cz-fxlist` und `.up-skills` —, und
+     `.gl-body > .gl-sec + .gl-sec` ist die Fuge ZWISCHEN zwei Sektionen, keine Panelkante.
+   Ueberschrift: `.gl-head` (sein Polster gehoert zum Kopf), `.gl-navhead` und `.gl-navnote` —
+     vertikaler Rhythmus einer Textzeile, und der gehoert dem Typografie-System, das dieser Auftrag
+     ausdruecklich nicht anfasst.
+
+   M6-F04, UND DAS IST KEINE DER DREI SORTEN. Die Panel- und Zeilenpolster dieses Screens sind
+     14/12 (`.gl-nav`), 9/10 (`.gl-navrow`), 16/20/14 (`.gl-page`) und 11/13/12 an der
+     Begriffskarte; auf flachen Fenstern 12/10 und 12/16/10. Die Leiter hat 11 / 13 / 18.
+     DIE BEGRIFFSKARTE IST DER SCHAERFSTE FALL DER RUNDE und deshalb einzeln benannt: 11 IST
+     `--in-tight` und 13 IST `--in-snug`, nur die 12 unten ist keine Sprosse. Sie halb umzustellen
+     (`padding: var(--in-tight) var(--in-snug) 12px`) waere schlimmer als sie zu lassen — zwei
+     Schreibweisen fuer eine Zahl, und die Leiter saehe danach so aus, als truege der Screen sie.
+     Das ist M4s eigener Satz, und der Owner hat die Frage fuer M4 in `8a858c11` entschieden: beide
+     Unterschiede bleiben, weil das Vokabular hier nichts vermisst und ihre Aufloesung einen Screen
+     SICHTBAR bewegen wuerde. M5 hat sie unter derselben Entscheidung gefuehrt statt sie ein zweites
+     Mal zu stellen; das Glossar ist derselbe Fall und wird ein drittes Mal nicht gefragt. */
+const M6_INSET_EXEMPT = [
+  /* Steuerelement */ /^\.gl-close$/, /^\.gl-search input$/,
+  /* Layout        */ /^\.gl-frame$/, /^\.gl-body$/, /^\.gl-body > \.gl-sec \+ \.gl-sec$/,
+  /* Ueberschrift  */ /^\.gl-head$/, /^\.gl-navhead$/, /^\.gl-navnote$/,
+  /* M6-F04        */ /^\.gl-nav$/, /^\.gl-navrow$/, /^\.gl-page$/, /^\.gl-cols \.gloss-term-row$/,
+];
+
 const INSET_EXEMPT = [
   /* Steuerelement */ /\.op-dd-btn/, /\.op-dd-item/, /\.op-dd-list/, /\[role="radio"\]/, /\.op-reset/,
   /* Layout       */ /\.op-root/, /\.op-foot/, /\.op-body/, /\.op-card/, /\.op-cols/, /\.op-col2/, /\.op-headrow/,
@@ -512,6 +597,8 @@ const INSET_EXEMPT = [
   ...M4_INSET_EXEMPT,
   /* M5 — dito, an `M5_INSET_EXEMPT`. */
   ...M5_INSET_EXEMPT,
+  /* M6 — dito, an `M6_INSET_EXEMPT`. */
+  ...M6_INSET_EXEMPT,
 ];
 
 /* WAS DIE HOEHEN-ACHSE MEINT — und die eine Regel der Werkstatt, die daneben steht.
@@ -539,7 +626,18 @@ const INSET_EXEMPT = [
    ihn hier auszugeben hiesse die Regel zu brechen, die er ausdruecken soll. Dieselbe Ueberlegung, mit
    der MENU-50 richtig abgelehnt wurde. Es bleibt bei EINEM: der Knopf bekommt keinen. */
 const M9_ELEV_EXEMPT = [/^\.un-first \.as-guide-glow::after$/];
-const ELEV_EXEMPT = [/^\.cz-shown$/, ...M9_ELEV_EXEMPT];
+/* #menu-rework M6 — ZWEI RINGE AN EINEM STEUERELEMENT, und beide sind MENU-50 noch einmal.
+   `.gloss-i-btn:hover` traegt `0 0 0 3px #8a7de022` (ein RING — keine Weichzeichnung, keine
+   Streuung, also eine Kante, die als Schatten geschrieben ist, damit der Kreis nicht groesser wird)
+   plus `0 0 12px -2px #8a7de0` (ein Schein); `.gloss-search:focus` traegt denselben Ring allein.
+   Fuer den Schein hat das Vokabular `--el-glow-*` — und `#ruhe` sagt „nur der primaere CTA
+   leuchtet", 2c fuehrt den Schritt ausdruecklich als „the primary CTA, and nothing else". Ihn an
+   einen Nachschlage-Knopf und an ein Suchfeld zu haengen hiesse, genau die Regel zu brechen, fuer
+   die es ihn gibt — dieselbe Ueberlegung, mit der MENU-50 richtig abgelehnt wurde und mit der M9
+   seinen einen Schein benannt statt getokent hat. Beide sind ausserdem ZUSTAENDE eines
+   Bedienelements, und die sieht der Zustands-Gate ueberhaupt nicht (MENU-56). */
+const M6_ELEV_EXEMPT = [/^\.gloss-i-btn:hover$/, /^\.gloss-search:focus$/];
+const ELEV_EXEMPT = [/^\.cz-shown$/, ...M9_ELEV_EXEMPT, ...M6_ELEV_EXEMPT];
 
 /* --- M3, die Flaechen- und Kanten-Ausnahmen. Drei Sorten, drei Gruende, einzeln aufgezaehlt. ---
 
@@ -699,12 +797,62 @@ const M8_RADIUS_EXEMPT = [
   /* M8-G4 */ /^\.lb-page \.lb-listsub$/,
 ];
 
+/* --- M6, das Glossar. Drei Sorten auf der Flaeche, drei auf der Kante, und eine ganze Familie an
+   Radien, die keine Stufen sind. Alle gezaehlt, keine gepraegt.
+
+   M6-G1 — DAS VIOLETTE ⓘ. `#1b1830` (Grund), `#241f42` (ueberfahren), `#3b3563` (Kante) und der
+     Fokus-Rahmen `#8a7de0` sind der Knopf, der das Glossar oeffnet, und das Zeichen im Kopf des
+     Overlays. Die Flaechen-Leiter ist NEUTRAL — `--sf-head` (#1b1a24) liegt 0/2/12 daneben, und was
+     diese Flaeche ausmacht, ist gerade der violette Stich: er ist das Erkennungszeichen des
+     Nachschlagewerks, an neun Einstiegen dasselbe. Ein Steuerelement ist ausserdem kein Panel (2c
+     fuehrt `--ctl-*` genau dafuer ausserhalb der Leiter, als GESCHLOSSENE Menge von neun), und
+     dieser Knopf steht in JEDER Breite.
+   M6-G2 — DER GRUND DER UEBERFAHRENEN BEGRIFFSZEILE, `#1a1a22`. Er steht in der Grundregel, gilt
+     also auch unter 1280 px, und ist ein ZUSTAND: `--sf-base` (#17171c) liegt 3/3/6 daneben.
+   M7-G2 / M8-G3 / M4, DER WEISSE HAUCH UEBER DEM GLAS — `rgba(255, 255, 255, .035)` (Zeile
+     ueberfahren), `.014` (Begriffskarte) und `.03` (Zeichenkachel). Das IST die Familie, die M3,
+     M7, M8 und M4 schon gezaehlt haben, hier zum fuenften Mal, und die Antwort ist dieselbe:
+     `--sf-sunken` (#141320) ist DECKEND und naehme ihnen genau das, was sie sind.
+   M6-F03 — `#2a2a33` AN GENAU EINER STELLE, und es ist M5-F02s Wert: `--ed-quiet` (#2a2a34) minus
+     eine Einheit Blau. Der Planner hat diesen Wert fuer M5 GEWAEHRT (bb22e237), und trotzdem steht
+     er hier ungewandelt — aus einem Grund, der mit der Schwelle nichts zu tun hat: die Deklaration
+     ist `border-color` an einem Kaestchen, dessen Rahmenbreite `#gl-ruhe` auf 0 gesetzt hat. Sie
+     erreicht die berechnete Formatvorlage (gemessen), aber sie MALT NICHTS. Etwas umzustellen, das
+     nichts zeichnet, waere eine Bewegung ohne Wirkung in einer Ratsche, die niemand nachpruefen
+     kann. Gezaehlt und benannt; sie faellt mit dem Rest von M6-F01, wenn jemand die Reste des
+     `#gl-ruhe`-Passes einsammelt.
+
+   DIE RADIEN, und keiner von ihnen ist eine Stufe:
+     FORM statt Stufe — `.gloss-i-btn` und `.gloss-i-mark` tragen `50%` („so rund wie die Box hoch
+       ist"), `.gl-hair` `99px` auf einer 2 px hohen Linie, `.gl-navdot` `0 3px 3px 0` auf einem
+       3 px breiten Balken. Auf `--rd-sm` gezogen waeren aus Kreis, Haarlinie und Balken drei Kaesten.
+       Dieselbe Antwort wie M8-G4 an der Auswahlregel-Pille und M5 an `.gd-hair`.
+     NEBEN DER LEITER — `.gl-page-eyebrow .gl-sq` `3px` auf einem 11-px-Quadrat (`--rd-sm` ist 6 und
+       machte daraus fast einen Kreis; dieselbe Lage wie M7-G5), `.gl-cols .gloss-term-row` `11px`
+       (die Leiter hat 6 / 8 / 14) und `.gl-navcount` `7px` — der einzige Rest der Zaehler-Kapsel,
+       die `#gl-ruhe` ihrer Flaeche und ihres Rahmens beraubt hat, also ein Radius ohne etwas zum
+       Runden (M6-F05). */
+const M6_SURFACE_EXEMPT = [
+  /* M6-G1 */ /^\.gloss-i-btn$/, /^\.gloss-i-btn:hover$/, /^\.gloss-i-mark$/,
+  /* M6-G2 */ /^\.gloss-term-row:hover$/,
+  /* Hauch */ /^\.gl-navrow:hover$/, /^\.gl-cols \.gloss-term-row$/, /^\.gl-ticon$/,
+];
+const M6_EDGE_EXEMPT = [
+  /* M6-G1 */ /^\.gloss-i-btn$/, /^\.gloss-i-mark$/, /^\.gloss-search:focus$/,
+  /* M6-F03 */ /^\.gl-navrow\.is-on \.gl-navcount$/,
+];
+const M6_RADIUS_EXEMPT = [
+  /* Form   */ /^\.gloss-i-btn$/, /^\.gloss-i-mark$/, /^\.gl-hair$/, /^\.gl-navdot$/,
+  /* daneben*/ /^\.gl-page-eyebrow \.gl-sq$/, /^\.gl-cols \.gloss-term-row$/, /^\.gl-navcount$/,
+];
+
 const CSS_AXES = [
   { axis: "Flaeche", re: /(?:^|[;{\s])background(?:-color|-image)?\s*:[^;}]*(#[0-9a-fA-F]{3,8}|\brgba?\()/g,
     exempt: [...M3_SURFACE_EXEMPT, ...M7_SURFACE_EXEMPT, ...M8_SURFACE_EXEMPT, ...M9_SURFACE_EXEMPT,
-             ...M4_SURFACE_EXEMPT, ...M5_SURFACE_EXEMPT] },
+             ...M4_SURFACE_EXEMPT, ...M5_SURFACE_EXEMPT, ...M6_SURFACE_EXEMPT] },
   { axis: "Kante",   re: /(?:^|[;{\s])border(?:-top|-right|-bottom|-left)?(?:-color)?\s*:[^;}]*(#[0-9a-fA-F]{3,8}|\brgba?\()/g,
-    exempt: [...M3_EDGE_EXEMPT, ...M7_EDGE_EXEMPT, ...M8_EDGE_EXEMPT, ...M9_EDGE_EXEMPT] },
+    exempt: [...M3_EDGE_EXEMPT, ...M7_EDGE_EXEMPT, ...M8_EDGE_EXEMPT, ...M9_EDGE_EXEMPT,
+             ...M6_EDGE_EXEMPT] },
   /* `inset` ist ausgenommen, und das ist eine Unterscheidung, keine Nachsicht: die Hoehenleiter misst
      ABHEBEN von der Flaeche. Ein Innenschatten hebt nichts — er zeichnet eine Kante (die 2-px-
      Unterstreichung der aktiven Auswahl) oder eine Mulde, und beides hat eigene Gruende. */
@@ -716,7 +864,7 @@ const CSS_AXES = [
      Der Lookahead wird jetzt genau einmal ausgewertet, direkt hinter dem Doppelpunkt. */
   { axis: "Hoehe",   re: /(?:^|[;{\s])box-shadow\s*:(?!\s*(?:var\(|none|inset\b))[^;}]*\d/g, exempt: ELEV_EXEMPT },
   { axis: "Radius",  re: /(?:^|[;{\s])border-radius\s*:(?!\s*(?:var\(|0\s*[;}]))[^;}]*[1-9]/g,
-    exempt: [...M7_RADIUS_EXEMPT, ...M8_RADIUS_EXEMPT, ...M5_RADIUS_EXEMPT] },
+    exempt: [...M7_RADIUS_EXEMPT, ...M8_RADIUS_EXEMPT, ...M5_RADIUS_EXEMPT, ...M6_RADIUS_EXEMPT] },
   { axis: "Innenabstand", re: /(?:^|[;{\s])padding(?:-top|-right|-bottom|-left)?\s*:(?!\s*(?:var\(|0\s*[;}]))[^;}]*[1-9]/g, exempt: INSET_EXEMPT },
 ];
 
@@ -746,7 +894,9 @@ describe("#menu-rework — migrierte CSS-Regeln fuehren keine Werte ein", () => 
     for (const [name, liste] of [["Innenabstand", INSET_EXEMPT], ["Hoehe", ELEV_EXEMPT],
       ["Flaeche", M7_SURFACE_EXEMPT], ["Kante", M7_EDGE_EXEMPT], ["Radius", M7_RADIUS_EXEMPT],
       ["Flaeche M8", M8_SURFACE_EXEMPT], ["Kante M8", M8_EDGE_EXEMPT], ["Radius M8", M8_RADIUS_EXEMPT],
-      ["Flaeche M9", M9_SURFACE_EXEMPT], ["Kante M9", M9_EDGE_EXEMPT], ["Hoehe M9", M9_ELEV_EXEMPT]]) {
+      ["Flaeche M9", M9_SURFACE_EXEMPT], ["Kante M9", M9_EDGE_EXEMPT], ["Hoehe M9", M9_ELEV_EXEMPT],
+      ["Innenabstand M6", M6_INSET_EXEMPT], ["Hoehe M6", M6_ELEV_EXEMPT],
+      ["Flaeche M6", M6_SURFACE_EXEMPT], ["Kante M6", M6_EDGE_EXEMPT], ["Radius M6", M6_RADIUS_EXEMPT]]) {
       const tot = liste.filter((re) => !mine.some(([sel]) => re.test(sel)));
       expect(tot, `${name}: Ausnahme trifft keine migrierte Regel:\n  ${tot.map(String).join("\n  ")}`).toEqual([]);
     }
@@ -756,6 +906,27 @@ describe("#menu-rework — migrierte CSS-Regeln fuehren keine Werte ein", () => 
     /* Gegenprobe gegen die stillste Art, diesen Waechter wirkungslos zu machen: eine Erlaubnisliste,
        die auf nichts mehr passt, weil ein Selektor umbenannt wurde. */
     expect(mine.length, "kein migrierter Selektor gefunden — die Liste zeigt ins Leere").toBeGreaterThan(25);
+  });
+
+  it("die Erlaubnisliste nimmt KEINE fremde Regel mit — `.gl-wrap` gehoert der Bestenliste", () => {
+    /* #menu-rework M6 — die Gegenprobe zum Praefix `\.gl-`, und sie ist die Form, die MENU-38 und
+       `.up-banner` beide gekostet haben: eine Grenze, die nach dem sichtbarsten Traeger gezogen wird,
+       trifft irgendwann etwas, das nur so heisst. `.gl-wrap` ist `GlobalLeaderboard.jsx`
+       (`<div className="gl-wrap mt-5">`), nicht das Glossar.
+
+       GEFRAGT WIRD, WAS DIESER EINTRAG EINSAMMELT, nicht was in der Gesamtliste steht: M8s `\.lb-`
+       deckt dieselbe Regel voellig zu Recht ab, und in der Summe faellt der Fehler deshalb nie auf.
+
+       ALS „ENTHAELT KEIN X AUSSER Y" GESCHRIEBEN, nicht als „X ist da": zuerst muss der Fremdkoerper
+       im Baum ueberhaupt noch existieren — sonst prueft die zweite Haelfte nichts —, und dann darf
+       KEINE Regel, die ueber M6s Praefixe hereinkommt, ihn fuehren. Ein zu weit gefasster Ausdruck
+       (`/\.gl-/` ohne den Ausschluss) faellt hier, und NUR hier: die Regel selbst traegt kein
+       Literal, also wuerde ihn weder eine Achsen-Pruefung noch eine Ratsche je bemerken. */
+    expect(all.some(([sel]) => /\.gl-wrap/.test(sel)),
+      "`.gl-wrap` gibt es nicht mehr — dann prueft diese Gegenprobe nichts, streichen oder nachziehen").toBe(true);
+    const meins = all.filter(([sel]) => M6_SELECTORS.some((re) => re.test(sel)));
+    const fremd = meins.filter(([sel]) => /\.gl-wrap/.test(sel)).map(([sel]) => sel);
+    expect(fremd, `fremde Regel ueber M6s Praefix: ${fremd.join(" · ")}`).toEqual([]);
   });
 
   for (const { axis, re, exempt } of CSS_AXES) {
@@ -1147,6 +1318,20 @@ describe("#menu-rework — die Tinten-Ratsche: Textfarb-Literale wachsen nicht",
     ["src/ui/UsernameModal.jsx (ganze Datei)", () => inkOfJsx("src/ui/UsernameModal.jsx"), 3],
     ["src/ui/FeedbackModal.jsx (ganze Datei)", () => inkOfJsx("src/ui/FeedbackModal.jsx"), 8],
     ["index.css — .un-* / .fb-* (M9)", () => inkOfCss([/\.un-/, /\.fb-/]), 14],
+    /* #menu-rework M6 — das Glossar. Tinte ist weiterhin eine benannte Luecke des Vokabulars (2c,
+       "What the vocabulary does not claim"), das Fenster ist zu, also gezaehlt statt gepraegt. Der
+       Screen ist ein NACHSCHLAGEWERK — acht Kategorien, fuenf Archetypen, rund 110 Begriffe —, und
+       jede Kategorie bringt ihre Farbe mit; die Zahl ist deshalb kein Versaeumnis, sondern das, was
+       ein farbcodiertes Register kostet.
+       DIE CSS-SEITE SCHLIESST DIE ANDEREN MIGRIERTEN PRAEFIXE AUS, aus demselben Grund wie bei M4,
+       M5 und M8: die Sammelregeln des #eckig-Passes und die #ecke-Bahn nennen `.gl-`/`.gloss-`
+       neben `.up-`, `.gd-`, `.cz-`, `.st-` und `.lb-`, und ihre Werte gehoeren dem, der sie
+       geschrieben hat. Eine Zahl, die zweimal gezaehlt wird, ist keine Messung.
+       `.gl-wrap` ist ueber den Praefix-Ausdruck selbst schon ausgeschlossen — es gehoert
+       `GlobalLeaderboard.jsx`, nicht diesem Screen. */
+    ["src/ui/Glossary.jsx (ganze Datei)", () => inkOfJsx("src/ui/Glossary.jsx"), 8],
+    ["index.css — .gl-* / .gloss-* (M6, ohne die geteilten Sammelregeln)",
+      () => inkOfCss([/\.gl-(?!wrap)/, /\.gloss-/], [/\.up-/, /\.gd-/, /\.cz-/, /\.st-/, /\.lb-/]), 14],
   ];
 
   for (const [name, count, cap] of CAP) {
@@ -1287,6 +1472,22 @@ describe("#menu-rework — die Kanten-Ratsche (MENU-38): durchsichtige neutrale 
        M7 viermal, M8 sechsmal und M4 fuenfmal gezogen hat. */
     ["src/ui/GuideOverlay.jsx (ganze Datei)", () => edgeOfJsx("src/ui/GuideOverlay.jsx"), 0],
     ["index.css — .gd-* (M5, ohne die geteilten Sammelregeln)", () => edgeOfCss([/\.gd-/], [/\.up-/, /\.gl-/, /\.cz-/, /\.st-/, /\.lb-/]), 0],
+    /* #menu-rework M6. Beide Seiten stehen auf null. Die JSX-Seite stand von Anfang an dort — das
+       Glossar hat seine Kanten nie durchsichtig-neutral inline gesetzt. Die CSS-Seite trug VIER und
+       steht jetzt auf null, und diese Null ist zur Haelfte ein ERREICHTER und zur Haelfte ein
+       AUFGERAEUMTER Zustand — was hier steht, ist beides, weil ein spaeterer Leser sonst das eine
+       fuer das andere haelt:
+         DREI WURDEN UMGESTELLT — die Notiz unter der Spalte, die Kante des Suchfelds und die der
+           Begriffskarte, alle auf `--ed-quiet`. Dieselbe Umstellung, die M2a gemessen (rund 9/255)
+           und der Owner abgenommen hat, und die M3 vierzehnmal, M7 viermal, M8 sechsmal, M4 fuenfmal
+           und M5 dreimal gezogen hat. Gemessen: 444 `bc`-Deltas, 111 je Zelle, und NICHTS SONST.
+         EINE WAR TOT — die Kante der Navigationszeile. `#gl-ruhe` setzt `border: 0` auf denselben
+           Selektor spaeter im Blatt, also malte sie nichts (am lebenden Dokument abgelesen). Sie ist
+           geloescht, nicht umgestellt: ein `var(--ed-quiet)` dort haette der Ratsche eine Umstellung
+           gemeldet, die kein Auge nachpruefen kann. Steht als M6-F01 im Nachweis. */
+    ["src/ui/Glossary.jsx (ganze Datei)", () => edgeOfJsx("src/ui/Glossary.jsx"), 0],
+    ["index.css — .gl-* / .gloss-* (M6, ohne die geteilten Sammelregeln)",
+      () => edgeOfCss([/\.gl-(?!wrap)/, /\.gloss-/], [/\.up-/, /\.gd-/, /\.cz-/, /\.st-/, /\.lb-/]), 0],
   ];
 
   for (const [name, count, cap] of CAP) {
