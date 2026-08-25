@@ -354,3 +354,97 @@ source text instead of behaviour, which is the failure mode `testing.md` names. 
 | `evidence/MH2/after-2/matrix.json` | run B — the second half of the noise floor |
 | `evidence/MH2/noise-floor.txt` | A vs B — zero deltas, zero unmatched, exit 0 |
 | `evidence/MH2/baseline-shift.txt` | `M8/survey-after` vs A — the 710 leaderboard deltas, in full |
+
+---
+
+## MH3 — the flush, appended 2026-08-25
+
+*Recorded here rather than in a new document, as instructed: MH1 and MH2 already own the harness's
+record and a third file would split it.*
+
+### The defect
+
+`scripts/surface-delta.mjs` ended with
+
+```js
+process.exit(deltas.length || realUnmatched.length ? 1 : 0);
+```
+
+**On POSIX a piped stdout is asynchronous.** `process.exit()` terminates at once and discards
+whatever is still queued, and this script writes 34 098 bytes against the MH1 fixture. On Windows
+pipes are synchronous, so nothing is ever lost.
+
+**Windows-dev / Linux-CI — the same hazard class as `.gitattributes`** (`AGENTS.md` — *Platform*).
+
+CI kept **167 of 288 deltas**, first loss `en/1280x720/options body>div:nth-child(12)` at byte
+19 346. The census block prints *after* the delta list, so it went with the tail — hence two failed
+assertions rather than one.
+
+**What survived was a contiguous slice of the sort order**, which reads as *"deltas only in German, a
+hole at 1920×1080"* — literally the false finding MENU-55 nearly produced, arriving this time through
+a lost flush instead of a coded cap. **The guard was right; only the mechanism changed.**
+
+### The fix
+
+```js
+process.exitCode = deltas.length || realUnmatched.length ? 1 : 0;
+```
+
+Node then exits on its own, after the buffer drains. Exit codes preserved — 1 with a delta, 0
+without, which the MH1 assertions depend on.
+
+### The guard, and why it is a source assertion
+
+**Reproduction was not possible on this machine, and that is stated rather than glossed.** The
+defect requires asynchronous pipes; Windows has synchronous ones. The measurements in the brief
+(0/40 idle, 33/40 under twelve spinners, shortest survivor 19 346 bytes) come from a Linux box and
+are quoted, not reproduced here. **CI is the verification.**
+
+That same asymmetry decided the guard's shape. A behavioural test — slow reader, demand the whole
+output — fails on Linux and passes on Windows **whether or not the defect is present**. On the
+machine where the mistake gets written it would be green either way: the exact flaky-green property
+that let this reach CI twice.
+
+**The invariant is not "never call `process.exit`".** Two early exits sit above any output, on a
+usage error and a missing file, writing about sixty bytes of stderr. Forbidding them would be a rule
+against a shape rather than against a failure. What must hold is:
+
+> **Once the report has begun, the process ends by letting Node drain.**
+
+Three assertions: nothing terminates after the first `process.stdout`; the status is set as a code;
+and the reason stands at the line, naming both platforms.
+
+**The first draft of this guard matched its own explanatory comment** — `process.exit()` appears
+twice in the comment that explains why it must not be called. `AGENTS.md` warns about exactly that
+under the ratchet hazard, and it took one run to reproduce it. Comments are stripped before matching.
+
+### Counter-checks
+
+| Break | Result |
+| --- | --- |
+| `process.exitCode` → `process.exit()` | **red**, 4 assertions |
+| the explanation removed from above the line | **red** |
+| restored | green |
+
+### Gates
+
+`npm test` 143 files / **2292 tests** · `lint --max-warnings=0` · `build` · `gen:db` — all exit 0,
+run bare without pipes.
+
+### Noted, not widened
+
+`viewport-proof.mjs`, `phone-proof.mjs`, `viewport-survey.mjs`, `mobile-tile-sheet.mjs` and
+`check-preview-exclusion.mjs` carry the same exit-after-stdout shape and write far too little to be
+at risk. **Left alone deliberately** — a fix that widens past its evidence is a fix nobody measured.
+
+### The planner's own failure, recorded because it is the reusable part
+
+**CI was red on two pushes and the planner reported "four gates green" after each.** The gates were
+green — *locally, on Windows*. `gh` was available throughout and was never consulted.
+
+> **A gate is green when the machine that will run it says so.** A local run on the developer's
+> platform is evidence, not the verdict — and on a Windows-dev / Linux-CI project it is evidence
+> about the wrong platform.
+
+**From here: CI state is checked after every push to `feature/desktop-menus`, before the next task is
+opened.**

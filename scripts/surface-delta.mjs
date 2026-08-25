@@ -211,4 +211,22 @@ if (!deltas.length) {
 /* Unmatched nodes outside the two pre-registered surfaces are a failure too: a node that stopped
    painting is a moved pixel, and it would otherwise leave through the gap this script opens for
    H-c. */
-process.exit(deltas.length || realUnmatched.length ? 1 : 0);
+/* #menu-rework MH3 — `process.exitCode`, NOT `process.exit()`, and the difference is the whole
+   reason this line is commented.
+
+   On POSIX a piped stdout is ASYNCHRONOUS. `process.exit()` terminates immediately and discards
+   whatever is still queued in the write buffer, so a run that prints more than a pipe drains in one
+   tick loses its tail. This script writes 34 kB against the MH1 fixture. On Windows pipes are
+   SYNCHRONOUS, so nothing is ever lost — which is why the defect passed on the dev machine every
+   time and failed on the Linux CI runner under load. Windows-dev / Linux-CI, the same hazard class
+   as `.gitattributes` (`AGENTS.md` — *Platform*).
+
+   Measured on a 4-core Linux box: idle 0/40 runs truncated, under 12 spinners 33/40, shortest
+   survivor 19 346 bytes — the exact byte at which CI cut. What survived was a contiguous slice of
+   the sort order, so it read as "deltas only in German, a hole at 1920x1080": literally the false
+   finding MENU-55 nearly produced, arriving this time through a lost flush rather than a coded cap.
+
+   `process.exitCode` sets the status and lets Node exit naturally, after the buffer drains. The
+   census block is printed AFTER the delta list and was therefore the first thing lost, which is why
+   two assertions failed rather than one. */
+process.exitCode = deltas.length || realUnmatched.length ? 1 : 0;
