@@ -993,7 +993,7 @@ export default {
   /* ---- Leitfaden (GuideOverlay) ---- */
   "guide.title": "Leitfaden",
   "guide.open": "Leitfaden öffnen",
-  "guide.subtitle": "So spielst du jeden Archetyp — durchklicken",
+  "guide.subtitle": "So spielst du jeden Archetyp, durchklicken",
   "guide.archOf": "Archetyp {n} von {total}",
   "guide.core": "Kernidee",
   "guide.loop": "Der Kreislauf",

@@ -961,7 +961,7 @@ export default {
   /* ---- Guide (GuideOverlay) ---- */
   "guide.title": "Guide",
   "guide.open": "Open the guide",
-  "guide.subtitle": "How to play each archetype — click through",
+  "guide.subtitle": "How to play each archetype, click through",
   "guide.archOf": "Archetype {n} of {total}",
   "guide.core": "Core idea",
   "guide.loop": "The loop",
