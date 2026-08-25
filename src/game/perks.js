@@ -99,7 +99,7 @@ export const PERK_DEFS = {
   L_UMV: { id: "L_UMV", cat: "A", rarity: "legendary", label: "Umverteilung", redistribute: true,
         desc: "Sofort: alle Karten nehmen dauerhaft den durchschnittlichen Kartenwert des Decks an (keine Karte wird entfernt). Stark bei schiefem Deck." },
   L_ZINS: { id: "L_ZINS", cat: "C", rarity: "legendary", label: "Zinseszins", zinseszins: true,
-        desc: `Die Bank: Jeder gewonnene Stich legt ${pct(C.ZINS_DEPOSIT)} % seines Scores aufs Kapital. Endet ein Durchlauf mit mindestens ${pct(C.ZINS_HURDLE_RATE)} % Siegen, zahlt sie Kapital × Zinssatz aus und der Zinssatz steigt um ${pct(C.ZINS_RATE_STEP)} Prozentpunkte (Start ${pct(C.ZINS_RATE_START)} %, höchstens ${pct(C.ZINS_RATE_MAX)} %) — das Kapital bleibt liegen. Verfehlst du die Quote, crasht das Konto: ${pct(1 - C.ZINS_CRASH_KEEP)} % des Kapitals sind weg und der Zinssatz fällt um ${pct(C.ZINS_RATE_STEP * C.ZINS_CRASH_STEPS)} Prozentpunkte zurück.` },
+        desc: `Die Bank: Jeder gewonnene Stich legt ${pct(C.ZINS_DEPOSIT)} % seines Scores aufs Kapital. Endet ein Durchlauf mit mindestens ${pct(C.ZINS_HURDLE_RATE)} % Siegen, zahlt sie Kapital × Zinssatz aus und der Zinssatz steigt um ${pct(C.ZINS_RATE_STEP)} Prozentpunkte (Start ${pct(C.ZINS_RATE_START)} %, höchstens ${pct(C.ZINS_RATE_MAX)} %); das Kapital bleibt liegen. Verfehlst du die Quote, crasht das Konto: ${pct(1 - C.ZINS_CRASH_KEEP)} % des Kapitals sind weg und der Zinssatz fällt um ${pct(C.ZINS_RATE_STEP * C.ZINS_CRASH_STEPS)} Prozentpunkte zurück.` },
   L_VAB: { id: "L_VAB", cat: "C", rarity: "legendary", label: "Vabanque", vabanque: true,
         desc: `Eröffnungs-Wette: Jedes Mal, wenn du die ersten ${C.VABANQUE_TRICKS} Stiche eines Durchlaufs in Folge gewinnst, zahlen sie zusätzlich das ${de(C.VABANQUE_MULT)}-fache ihres Scores aus.` },
   L_HENK: { id: "L_HENK", cat: "D", rarity: "legendary", label: "Henker", henker: true,
@@ -123,7 +123,7 @@ export const PERK_DEFS = {
   L_RICHT: { id: "L_RICHT", cat: "E", rarity: "legendary", label: "Richtfest", richtfest: true, needsArchitect: true,
         desc: `Am Ende jedes Durchlaufs: je vollendeter Struktur (volle Zeile, Spalte oder Diagonale) zusätzlich ${pct(C.RICHTFEST_STEP)} % des in diesem Durchlauf erspielten Scores.` },
   L_BAUH: { id: "L_BAUH", cat: "E", rarity: "legendary", label: "Bauhütte", bauhuette: true, needsArchitect: true,
-        desc: `Sofort: das Baufeld des Architekten wächst dauerhaft um ${C.BAUHUETTE_COVER} Zellen — du kannst mehr Gebäude platzieren.` },
+        desc: `Sofort: das Baufeld des Architekten wächst dauerhaft um ${C.BAUHUETTE_COVER} Zellen. Du kannst mehr Gebäude platzieren.` },
   // --- v0.3-Erweiterung (2026-08-15): 7 neue gegen die Pool-Lücken. Zwei davon (Opfergang, Ballast) haben als ERSTE
   //     einen echten NACHTEIL — die #33-Definition „mächtig, aber mit Nachteil" hatte bis hier kein einziger Perk erfüllt. ---
   L_MEIS: { id: "L_MEIS", cat: "S", rarity: "legendary", label: "Meisterhand", skillSlotBonus: C.MEISTERHAND_SLOTS,

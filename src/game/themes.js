@@ -33,15 +33,15 @@ export const GLOBAL_FX = [
   // sie werden ersetzt. Es bleiben: Hintergrund-Effekt „Aurora", die Hintergrund-Finisher „Glutfunken" + „Sternenfeld"
   // (#311 überarbeitet wieder eingeführt) und der synthetische Klinge-Finisher. Die Gottgleich-Kategorie (group "gott")
   // bleibt (nur „Standard"), dort kommt später neuer Prunk rein.
-  { key: "aurora", name: "Aurora", desc: "Weiche Polarlicht-Schleier driften übers Feld; je Stich ein sanfter Bloom-Puls — in der Deckfarbe.",
+  { key: "aurora", name: "Aurora", desc: "Weiche Polarlicht-Schleier driften übers Feld; je Stich ein sanfter Bloom-Puls in der Deckfarbe.",
     ownKey: "fx:aurora", option: "fxAurora", preview: "aurora", price: 10, group: "bgfx" }, // #kategorien: Hintergrund-Effekt (reiner BG, Pixi) · #353 Rarität: grün/Selten = 10 DP
   // #317 Cube-Matrix: musik-/bass-reaktives 3D-Würfelfeld auf Synthwave-Boden + Scheinwerfer. Kontinuierlich (kein
   // Stich-Bezug) → reiner Hintergrund-Effekt (bgfx, einfach-exklusiv mit Aurora). Jeder Würfel = ein Frequenzband.
-  { key: "cubematrix", name: "Würfel-Matrix", desc: "Ein perspektivisches Feld aus Neon-Würfeln auf einem Synthwave-Boden — jeder Würfel schlägt zu einem eigenen Frequenzband der laufenden Musik nach oben aus. Dazu Scheinwerfer von oben, die zum Bass pulsieren. In der Deckfarbe.",
+  { key: "cubematrix", name: "Würfel-Matrix", desc: "Ein perspektivisches Feld aus Neon-Würfeln auf einem Synthwave-Boden. Jeder Würfel schlägt zu einem eigenen Frequenzband der laufenden Musik nach oben aus. Dazu Scheinwerfer von oben, die zum Bass pulsieren. In der Deckfarbe.",
     ownKey: "fx:cubematrix", option: "fxCubeMatrix", preview: "cubematrix", price: 40, group: "bgfx" }, // #353 Rarität: gold/Legendär = 40 DP
   // #345 Neon-Brandung: Plasma-See am unteren Rand (eigene WebGL-Canvas wie Aurora). Bei starken Ansagen drückt ein
   // Puls das Wasser mittig ein und lässt es an den Seitenrändern hochsteigen (Gefäß/Rahmen). Reiner BG (bgfx).
-  { key: "neonsurf", name: "Neon-Brandung", desc: "Eine Plasma-See am unteren Rand — Neon-Fluss mit heller Wasserlinie; bei starken Ansagen drückt ein Puls das Wasser mittig ein und lässt es an den Seitenrändern hochsteigen. In der Deckfarbe.",
+  { key: "neonsurf", name: "Neon-Brandung", desc: "Eine Plasma-See am unteren Rand: Neon-Fluss mit heller Wasserlinie; bei starken Ansagen drückt ein Puls das Wasser mittig ein und lässt es an den Seitenrändern hochsteigen. In der Deckfarbe.",
     ownKey: "fx:neonsurf", option: "fxNeonsurf", preview: "neonsurf", price: 30, group: "bgfx" }, // #farbsystem: lila = 30 DP
   /* #deckglow-raus (18.08.2026): „Leuchten" (deckglow) ist ERSATZLOS entfernt — Effekt, Shader, Vorschau, Toggle,
      Besitz-Eintrag. Grund war Hitze auf dem Handy, nicht der Look: die Ebene ritt auf den KONTUREN des Battlefield-
@@ -51,23 +51,23 @@ export const GLOBAL_FX = [
      einzige Ebene, die den `stack`-Pfad des Kompositors überhaupt brauchte (der ist mit ihr entfallen).
      Wer sie zurückholt, holt beides zurück: die volle Auflösung und den zweiten Stapelplatz. */
   // #glutfunken-raus: „Glutfunken" (embers) komplett entfernt (Effekt/Tile/Option/Sound/Vorschau). „Komet" bleibt.
-  { key: "starfield", name: "Meteor", desc: "Ein dichtes Sternenfeld driftet über drei Tiefen-Ebenen mit Nebel-Schleier; je Stich schießt ein Meteor durchs Feld — größer je Score-Stufe, ab der Stufe Stark mit Einschlag-Blitz und Funken, die mit Schweif davonstieben. Standard weiß-blau, wahlweise in der Deckfarbe.",
+  { key: "starfield", name: "Meteor", desc: "Ein dichtes Sternenfeld driftet über drei Tiefen-Ebenen mit Nebel-Schleier; je Stich schießt ein Meteor durchs Feld. Er wird größer mit jeder Score-Stufe, ab der Stufe Stark mit Einschlag-Blitz und Funken, die mit Schweif davonstieben. Standard weiß-blau, wahlweise in der Deckfarbe.",
     ownKey: "fx:starfield", option: "fxStarfield", preview: "starfield", price: 20, group: "bgfin" }, // #311: Hintergrund-Finisher (Stich-Interaktion, Pixi)
   // #318 Karten-Animationen (group "anim") — geteilte Pixi-Overlay-Bühne ÜBER den Karten (CardFxStage), pro Karte
   // gezeichnet, frei kombinierbar (stapelbare Dauer-Layer). Pixi-only (Preview/Dev-gated), kein DOM-Fallback.
-  { key: "edgeglow", name: "Neonrahmen", desc: "Ein weicher Neon-Rand umglüht die Karte in der Deckfarbe — dauerhaft, ruhig atmend, additiv gestapelt (kein Blur). Ohne Stich-Bezug.",
+  { key: "edgeglow", name: "Neonrahmen", desc: "Ein weicher Neon-Rand umglüht die Karte in der Deckfarbe: dauerhaft, ruhig atmend, additiv gestapelt (kein Blur). Ohne Stich-Bezug.",
     ownKey: "fx:edgeglow", option: "fxEdgeGlow", preview: "edgeglow", price: 10, group: "anim" }, // [TUNING] Preis
-  { key: "holo", name: "Holo-Sweep", desc: "Ein prismatisches Lichtband wandert diagonal über die Karte — Regenbogen-Hues in der Deckfarbe, tilt-reaktiv (Pointer/Gyro). Dauerhaft, additiv.",
+  { key: "holo", name: "Holo-Sweep", desc: "Ein prismatisches Lichtband wandert diagonal über die Karte: Regenbogen-Töne in der Deckfarbe, reagiert auf Neigung (Zeiger/Gyro). Dauerhaft, additiv.",
     ownKey: "fx:holo", option: "fxHolo", preview: "holo", price: 20, group: "anim" }, // [TUNING] Preis
-  { key: "glitch", name: "Glitch", desc: "Cyberpunk-Digital-Glitch über der ganzen Karte inkl. Zahl — Chroma-Split, Tear-Slices, Scanlines und Farb-Bars, mit ruhiger Grundlast und gelegentlichen Bursts.",
+  { key: "glitch", name: "Glitch", desc: "Cyberpunk-Digital-Glitch über der ganzen Karte inkl. Zahl: Chroma-Split, Tear-Slices, Scanlines und Farb-Bars, mit ruhiger Grundlast und gelegentlichen Bursts.",
     ownKey: "fx:glitch", option: "fxGlitch", preview: "glitch", price: 30, group: "anim" }, // #353 Rarität: lila/Rar = 30 DP
   // #322–#326 Gottgleich-Prunk (group "gott", PIXI): feuert bei gottgleichem Sieg OHNE Krit, EINFACH-EXKLUSIV (genau
   // einer aktiv, oder „gottStandard" = kein Prunk). Sonnen-Puls ist der FREIE Default (alwaysOwned, 0 DP); die anderen
   // kosten nach Rarity (Selten 10 · Sehr selten 20 · Rar 30 · Legendär 40 = grün/blau/lila/gold). `hidden` blendet die
   // noch nicht gebauten Effekte im Shop aus (bleiben registriert) → wird je Effekt entfernt, sobald die Pixi-Komponente steht.
-  { key: "sonnenPuls", name: "Sonne", desc: "Die Outrun-Sonne bloomt hinter der geschlagenen Karte auf — Sunset-Verlauf mit Scanline-Lücken, heißem Kern, Korona und drehenden Strahlen. Standard-Sunset oder Deckfarbe. Der freie Gottgleich-Prunk.",
+  { key: "sonnenPuls", name: "Sonne", desc: "Die Outrun-Sonne bloomt hinter der geschlagenen Karte auf: Sunset-Verlauf mit Scanline-Lücken, heißem Kern, Korona und drehenden Strahlen. Standard-Sunset oder Deckfarbe. Der freie Gottgleich-Prunk.",
     ownKey: "fx:sonnenPuls", option: "fxSonnenPuls", preview: "sonnenPuls", price: 0, group: "gott", alwaysOwned: true },
-  { key: "laserFaecher", name: "Laserfächer", desc: "Scharfe Neon-Laser fächern aus der Kartenmitte auf — lange Haupt- und kurze Nebenstrahlen mit Kernlinie und leuchtender Nabe, öffnen mit Pop und drehen langsam. Standard-Neon oder Deckfarbe.",
+  { key: "laserFaecher", name: "Laserfächer", desc: "Scharfe Neon-Laser fächern aus der Kartenmitte auf: lange Haupt- und kurze Nebenstrahlen mit Kernlinie und leuchtender Nabe, öffnen mit Pop und drehen langsam. Standard-Neon oder Deckfarbe.",
     ownKey: "fx:laserFaecher", option: "fxLaserFaecher", preview: "laserFaecher", price: 10, group: "gott" },
   { key: "prismaKaskade", name: "Prisma", desc: "Mehrere prismatische Schockwellen-Ringe zünden zeitversetzt und laufen chromatisch (Regenbogen-Split) übers Feld, jeder mit Geburts-Blitz. Standard = volles Spektrum, Deckfarbe = Duoton.",
     ownKey: "fx:prismaKaskade", option: "fxPrismaKaskade", preview: "prismaKaskade", price: 20, group: "gott" },

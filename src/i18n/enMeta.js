@@ -109,7 +109,7 @@ export default {
   "weekmod.skillFull.name": "Skill abundance",
   "weekmod.skillFull.desc": "+{v} skill slots",
   "weekmod.doubleLeg.name": "Double legendary",
-  "weekmod.doubleLeg.desc": "2 legendary slots — pick 2 in the legendary phase",
+  "weekmod.doubleLeg.desc": "2 legendary slots: pick 2 in the legendary phase",
   "weekmod.noBuildLimit.name": "No build limit",
   "weekmod.noBuildLimit.desc": "Build without a limit",
   "weekmod.perkBlessing.name": "Perk blessing",

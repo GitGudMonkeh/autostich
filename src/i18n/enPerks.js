@@ -39,7 +39,7 @@ export default {
   "perk.L_UMV.label": "Redistribution",
   "perk.L_UMV.desc": "Immediately: every card permanently takes on the deck's average card value (no card is removed). Strong on a lopsided deck.",
   "perk.L_ZINS.label": "Compound Interest",
-  "perk.L_ZINS.desc": `The bank: every trick you win puts ${pct(C.ZINS_DEPOSIT)}% of its score into the capital. If a cycle ends with at least ${pct(C.ZINS_HURDLE_RATE)}% wins, it pays out capital × interest rate and the rate rises by ${pct(C.ZINS_RATE_STEP)} percentage points (starting at ${pct(C.ZINS_RATE_START)}%, at most ${pct(C.ZINS_RATE_MAX)}%) — the capital stays. Miss the quota and the account crashes: ${pct(1 - C.ZINS_CRASH_KEEP)}% of the capital is gone and the rate drops back by ${pct(C.ZINS_RATE_STEP * C.ZINS_CRASH_STEPS)} percentage points.`,
+  "perk.L_ZINS.desc": `The bank: every trick you win puts ${pct(C.ZINS_DEPOSIT)}% of its score into the capital. If a cycle ends with at least ${pct(C.ZINS_HURDLE_RATE)}% wins, it pays out capital × interest rate and the rate rises by ${pct(C.ZINS_RATE_STEP)} percentage points (starting at ${pct(C.ZINS_RATE_START)}%, at most ${pct(C.ZINS_RATE_MAX)}%); the capital stays. Miss the quota and the account crashes: ${pct(1 - C.ZINS_CRASH_KEEP)}% of the capital is gone and the rate drops back by ${pct(C.ZINS_RATE_STEP * C.ZINS_CRASH_STEPS)} percentage points.`,
   "perk.L_VAB.label": "All In",
   "perk.L_VAB.desc": `Opening bet: every time you win the first ${C.VABANQUE_TRICKS} tricks of a cycle in a row, they pay out ${num(C.VABANQUE_MULT)}× their own score on top.`,
   "perk.L_HENK.label": "Executioner",
@@ -57,7 +57,7 @@ export default {
   "perk.L_RICHT.label": "Topping Out",
   "perk.L_RICHT.desc": `At the end of every cycle: for each completed structure (full row, column or diagonal) an extra ${pct(C.RICHTFEST_STEP)}% of the score you earned in that cycle.`,
   "perk.L_BAUH.label": "Masons' Lodge",
-  "perk.L_BAUH.desc": `Immediately: the Architect's build space permanently grows by ${C.BAUHUETTE_COVER} cells — you can place more buildings.`,
+  "perk.L_BAUH.desc": `Immediately: the Architect's build space permanently grows by ${C.BAUHUETTE_COVER} cells. You can place more buildings.`,
 
   /* ---- v0.3 expansion: 7 more. Sacrifice and Ballast are the first perks with a REAL downside,
           so their drawback stays in the first sentence, the payoff in the second (same order as the German). ---- */
