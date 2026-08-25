@@ -11,7 +11,7 @@
    Terminology is frozen (docs/localization/uebersetzerpaket_pixi_2026-08-15.md §3):
    cycle · trick · trick value · card value · margin · streak · charge · ionization · stack ·
    heat · brand · ash · forge · white heat · ash glow · glacier · mass · burst · threshold ·
-   firn · growth · green/ripe · roots · bloom · colonize · runner · pruning.
+   snow · growth · green/ripe · roots · bloom · colonize · runner · pruning.
    ============================================================ */
 import * as C from "../game/constants.js";
 import { ANFRIEREN_WIN as G_ANFRIEREN_WIN, ANFRIEREN_FORM as G_ANFRIEREN_FORM, SCHNEETREIBEN_SEED as G_SCHNEETREIBEN_SEED,
@@ -129,9 +129,9 @@ export default {
   "ability.SK_ICE_01.name": "Freeze-On",
   "ability.SK_ICE_01.desc": `A glacier win gives +${num(G_ANFRIEREN_WIN)} extra mass; if the glacier wins inside a formation, +${num(G_ANFRIEREN_FORM)} on top.`,
   "ability.SK_ICE_02.name": "Snowdrift",
-  "ability.SK_ICE_02.desc": `When a glacier wins, it seeds +${num(G_SCHNEETREIBEN_SEED)} firn into the ground reserve of an adjacent open cell: as an addition, without giving up mass of its own; only at 0 mass of its own does it give up its win mass instead. Open ground only (never under a glacier), only the 4 direct neighbours; ice bridge does not count here.`,
+  "ability.SK_ICE_02.desc": `When a glacier wins, it seeds +${num(G_SCHNEETREIBEN_SEED)} snow into the ground reserve of an adjacent open cell: as an addition, without giving up mass of its own; only at 0 mass of its own does it give up its win mass instead. Open ground only (never under a glacier), only the 4 direct neighbours; ice bridge does not count here.`,
   "ability.SK_ICE_03.name": "Permafrost",
-  "ability.SK_ICE_03.desc": `Every cycle, open ground frosts over: unfrozen cells collect firn in their ground reserve by distance to the nearest glacier: +${num(G_DAUERFROST_NEAR)} at 2 cells' distance, +${num(G_DAUERFROST_FAR)} from 3. The 8 cells directly around a glacier stay empty. The reserve refills a glacier later frozen here at the start of the cycle.`,
+  "ability.SK_ICE_03.desc": `Every cycle, open ground frosts over: unfrozen cells collect snow in their ground reserve by distance to the nearest glacier: +${num(G_DAUERFROST_NEAR)} at 2 cells' distance, +${num(G_DAUERFROST_FAR)} from 3. The 8 cells directly around a glacier stay empty. The reserve refills a glacier later frozen here at the start of the cycle.`,
   "ability.SK_ICE_04.name": "Compaction",
   "ability.SK_ICE_04.desc": `If a building raises the card strength of a glacier card, that value bonus is not played out (the card fights without it) but stored as mass instead: +${num(G_VERDICHTUNG_RATE)} mass per point. Score buildings are untouched.`,
   "ability.SK_ICE_05.name": "Fusion",
@@ -161,7 +161,7 @@ export default {
   "ability.SK_ICE_17.name": "Ice Armour",
   "ability.SK_ICE_17.desc": `A loss next to a glacier does not break your streak; it feeds +${num(G_EISPANZER_MASS)} mass per adjacent glacier instead.`,
   "ability.SK_ICE_L01.name": "Ice Age",
-  "ability.SK_ICE_L01.desc": `Every cycle: +${num(G_EISZEIT_FLOOD)} firn into the ground reserve of every unfrozen cell, then the one with the largest reserve freezes into a glacier (starts empty, refills from its reserve), up to ${G_EISZEIT_MAX} glaciers.`,
+  "ability.SK_ICE_L01.desc": `Every cycle: +${num(G_EISZEIT_FLOOD)} snow into the ground reserve of every unfrozen cell, then the one with the largest reserve freezes into a glacier (starts empty, refills from its reserve), up to ${G_EISZEIT_MAX} glaciers.`,
   "ability.SK_ICE_L02.name": "Eternal Shield",
   "ability.SK_ICE_L02.desc": `The whole field becomes ONE super-glacier. Every cycle, all your glaciers rise to the mass of the strongest and gain +${G_SCHILD_BONUS} mass on top (never dropping). On a burst, every glacier counts as a neighbour of every other: full cascade and collision, wherever they sit. Placement becomes irrelevant; only the largest mass matters.`,
   "ability.SK_ICE_L03.name": "Great Avalanche",

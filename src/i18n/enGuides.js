@@ -7,7 +7,7 @@
    - the diagram labels, which sit in tight boxes — the loop nodes and centre lines stay SHORT.
 
    Terminology is frozen (§3): cycle · trick · margin · streak · charge · ionization · stack ·
-   heat · brand · ash · forge · glacier · mass · burst · threshold · firn · growth · green/ripe ·
+   heat · brand · ash · forge · glacier · mass · burst · threshold · snow · growth · green/ripe ·
    roots · bloom · pruning · consumer · commitment · overflow.
    ============================================================ */
 export default {
@@ -92,7 +92,7 @@ export default {
   "guide.ice.pillars.0.text": "It gathers on the **board cell** (not on the card), a little every cycle, all by itself on a win or a loss, and more when a glacier wins. Mass never falls.",
   "guide.ice.pillars.1.name": "The burst",
   "guide.ice.pillars.1.sub": "· the payoff",
-  "guide.ice.pillars.1.text": "A glacier **holds and grows** until its mass reaches the **top threshold**. Then it bursts with full force and **drops back to zero**. If the cell has a **firn reserve**, it pulls straight back up from it; otherwise it builds again from the bottom.",
+  "guide.ice.pillars.1.text": "A glacier **holds and grows** until its mass reaches the **top threshold**. Then it bursts with full force and **drops back to zero**. If the cell has a **ground reserve**, it pulls straight back up from it; otherwise it builds again from the bottom.",
   "guide.ice.pillars.2.name": "The cluster",
   "guide.ice.pillars.2.sub": "· the multiplier",
   "guide.ice.pillars.2.text": "Glaciers **next to each other** amplify one another: the denser the field, the fiercer every burst. One burst can set off a **cascade** through the whole cluster.",
@@ -106,7 +106,7 @@ export default {
   "guide.ice.loop.steps.1": "When a glacier reaches the **top threshold**, it **bursts** with full force → a large burst score; then it **drops to zero** and charges again.",
   "guide.ice.loop.steps.2": "When glaciers stand **close together**, every burst amplifies its neighbours and can send a **cascade** rolling through the cluster.",
   "guide.ice.loop.steps.3": "If a glacier shoots **past the threshold**, the surplus is paid out as score immediately, nothing is lost.",
-  "guide.ice.loop.steps.4": "**Firn** gathers on open cells (Permafrost, Snowdrift, Ice Age) and becomes the **reserve** of the glacier that later freezes there; it refills that glacier after every burst.",
+  "guide.ice.loop.steps.4": "**Snow** gathers on open cells (Permafrost, Snowdrift, Ice Age) and becomes the **reserve** of the glacier that later freezes there; it refills that glacier after every burst.",
   "guide.ice.loop.valve": "A glacier is **rigid**: you give up the ability to move it. In exchange it is **unstoppable**: the mass only rises, and the burst hangs on the mass, not on the trick; it comes whether the card wins or loses.",
   "guide.ice.status.label": "How full is your glacier?",
   "guide.ice.status.bars.0.name": "Mass",

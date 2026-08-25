@@ -76,7 +76,7 @@ Kurzerklärungen, aus `constants.js`/`glacier.js`/`rarity.js` gespeist und im Sp
 | **Kaskade** | — | Ereignis zündet Ereignis — **bei Blitz und bei Eis** |
 | **Masse** | Tiefe, Schicht | Eis-Ansammelwert auf dem Brettfeld |
 | **Gletscher** | Frostkarte | auf ihr Brettfeld festgefrorene Karte |
-| **Firn** / **Firn-Reserve** | — | Boden-Vorrat, der einen Gletscher nachfüllt |
+| **Schnee** / **Boden-Reserve** | Firn, Firn-Boden, Firn-Reserve | Boden-Vorrat, der einen Gletscher nachfüllt |
 | **Bersten** (Subst.) / **bricht**, **brechen** (Verb) | birst, Burst | der Eis-Payoff-Event |
 | **Berst-Score** | Burst-Score, Score-Burst | der Score eines Bruchs |
 | **Schwelle** | Stufe | die Masse-Marken 4 / 8 / 12 (siehe §1e) |
