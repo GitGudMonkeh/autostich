@@ -58,9 +58,16 @@ const GOLD = "#d4a63a", RED = "#e0605a", GREY = "#8a8a95";
 
 export function AbortConfirm({ onKeepPlaying, onSave, onEnd }) {
   const wide = useIsWide();
+  /* #menu-rework M11 — `#0c0c10cc` IS `--sf-scrim`: rgba(12, 12, 16, .8), and .8 is 0xcc exactly.
+     The dialog is portalled to `document.body`, so it reads the step from `:root` and not from a
+     screen that re-points it (`.up-root` and `.cz-root` both do) — measured, not assumed.
+     THE COMMENT STANDS ABOVE THE `return`, NOT INSIDE IT, and that is M11-F06 rather than style:
+     `overlay-nesting.test.js` decides "is this overlay portalled?" from the 260 characters BEFORE the
+     class literal. Three lines of comment between `overlayPortal(` and the element push the call out
+     of that window and the guard reports an un-portalled overlay that is in fact portalled. */
   return overlayPortal(
     <div className="fixed inset-0 z-40 flex items-center justify-center p-4"
-      style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }} onClick={onKeepPlaying}>
+      style={{ background: "var(--sf-scrim)", backdropFilter: "blur(3px)" }} onClick={onKeepPlaying}>
       <div className={`w-full ${wide ? "rc-wide" : "max-w-xs"} rounded-2xl overflow-hidden as-panel as-panel-deck`}
         style={MODAL_CARD} onClick={(e) => e.stopPropagation()}>
         <ModalHairline />
@@ -97,9 +104,11 @@ export function AbortConfirm({ onKeepPlaying, onSave, onEnd }) {
 
 export function RestartConfirm({ onKeepPlaying, onRestart }) {
   const wide = useIsWide();
+  /* #menu-rework M11 — the same step as the abort dialog above, and the comment sits above the
+     `return` for the same reason (M11-F06). */
   return overlayPortal(
     <div className="fixed inset-0 z-40 flex items-center justify-center p-4"
-      style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }} onClick={onKeepPlaying}>
+      style={{ background: "var(--sf-scrim)", backdropFilter: "blur(3px)" }} onClick={onKeepPlaying}>
       <div className={`w-full ${wide ? "rc-narrow" : "max-w-xs"} rounded-2xl overflow-hidden as-panel as-panel-deck`}
         style={MODAL_CARD} onClick={(e) => e.stopPropagation()}>
         <ModalHairline />

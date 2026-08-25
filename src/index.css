@@ -5481,9 +5481,13 @@ b, strong { font-weight: 600; }
      Baum-Kacheln und die Angebotskarten stehen auf 6 px, die zwei Rückfragen liefen mit 12/8 px daneben.
      Die KARTE behält ihren Radius: sie ist der Rahmen, nicht der Inhalt (dieselbe Trennung wie an den
      Panels von Baum, Werkstatt und Leitfaden). */
+  /* #menu-rework M11 — the 6 IS `--rd-sm`. "#eckig: tiles, buttons, rows, chips" is this rule's own
+     sentence, written once in the vocabulary instead of a fourth time here; the comment above already
+     says the two dialogs joined the 6 px the hub buttons, the tree tiles and the offer cards stand on.
+     Value-identical, measured at zero delta on both dialogs, in both languages, at both viewports. */
   .rc-wide   { max-width: 560px; }
   .rc-narrow { max-width: 440px; }
-  .rc-row, .rc-btn { border-radius: 6px; }
+  .rc-row, .rc-btn { border-radius: var(--rd-sm); }
   /* Der Pfeil rückt beim Überfahren eine Spur nach rechts — die einzige Bewegung im Dialog, und sie sagt,
      wohin der Klick führt. Die Zeile selbst bleibt ruhig (kein Anheben wie bei den Angebotskarten: ein
      Dialog, der beim Zeigen wackelt, liest sich nervös). */
@@ -6857,8 +6861,16 @@ b, strong { font-weight: 600; }
      eckig (6 px statt 12) und ohne Schein am Knopf. Sie ist ein HINWEIS, kein Angebot — der Schein war
      dasselbe Mittel, das an Hub-Taste, Ring und Knoten in diesem Durchgang gefallen ist. Die goldene
      Kante bleibt: „Neu laden" ist die Handlung der Leiste und darf sie tragen. */
-  .up-banner { border-radius: 6px !important; }
-  .up-banner .as-edge-strong { border-radius: 6px; box-shadow: none; }
+  /* #menu-rework M11 — both 6s ARE `--rd-sm`, and the `none` IS `--el-flat`. The step is named for
+     the rule it expresses: §2c puts `--el-flat` under #ruhe as "a step you PICK, not an absence you
+     have to remember", and this rule is exactly where that absence was decided — the comment above
+     says the glow went because the banner is a notice, not an offer. Written as the step, the decision
+     is legible instead of implied. `.cz-main:has(.cz-stage)` already reads it that way.
+     THE `!important` STAYS on the first line and it is not a leftover: the element carries Tailwind's
+     `rounded-xl` in its own class list, and the utility and this rule are both unlayered — measured,
+     the radius falls back to 12 px without it. Counter-checked at M11-C1. */
+  .up-banner { border-radius: var(--rd-sm) !important; }
+  .up-banner .as-edge-strong { border-radius: var(--rd-sm); box-shadow: var(--el-flat); }
 
   /* #eckig — ALLE Bestätigen-/Schließen-Knöpfe auf denselben Radius (19.08.2026)
      Hub-Knöpfe, Baum-Kacheln, Angebotskarten und die Run-Dialoge stehen auf 6 px; die Schließen-Knöpfe der
