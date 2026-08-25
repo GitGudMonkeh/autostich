@@ -94,18 +94,20 @@ function baselineCsv() {
   }
 }
 
-/* keep file: `dash <key> <lang> …` and `hyphen <key> <lang> <a>-><b> …` */
+/* keep file: `dash <key> <lang> …`, `hyphen <key> <lang> <a>-><b> …`,
+   `num <key> <lang> -<a>,-<b> …` — only figures that LEFT the text. */
 function readKeep() {
-  const dash = new Set(), hyphen = new Set();
-  if (!existsSync(KEEP)) return { dash, hyphen };
+  const dash = new Set(), hyphen = new Set(), num = new Set();
+  if (!existsSync(KEEP)) return { dash, hyphen, num };
   for (const line of readFileSync(KEEP, "utf8").split("\n")) {
     const t = line.trim();
     if (!t || t.startsWith("#")) continue;
     const [kind, key, lang, ...rest] = t.split(/\s+/);
     if (kind === "dash") dash.add(`${key}|${lang}`);
     else if (kind === "hyphen") hyphen.add(`${key}|${lang}|${rest[0]}`);
+    else if (kind === "num") num.add(`${key}|${lang}|${rest[0]}`);
   }
-  return { dash, hyphen };
+  return { dash, hyphen, num };
 }
 
 const HY = /(?<=\w)-(?=\w)/g;
@@ -127,8 +129,20 @@ for (const [id, r] of now) {
     const a = count(before[lang], HY), b = count(r[lang], HY);
     if (a !== b && !keep.hyphen.has(`${id}|${lang}|${a}->${b}`))
       fail.hyphen.push(`${id} (${lang}): ${a} -> ${b}`);
-    if (nums(before[lang]).join("") !== nums(r[lang]).join(""))
-      fail.num.push(`${id} (${lang})`);
+    const na = nums(before[lang]), nb = nums(r[lang]);
+    if (na.join("") !== nb.join("")) {
+      /* The token names the DIRECTION of every change, so no booking can hide one.
+         `-x` a figure LEFT the text: a rewrite legitimately drops one whose own sentence already
+              said it in words ("(5 Stapel)" right after "voll ionisiert").
+         `+x` a figure APPEARED. Usually the very thing this check exists to catch, so it is called
+              out separately and its booking carries the burden of proof: the only honest reason is
+              that the SAME interpolation is now drawn twice, never that a constant was typed out. */
+      const pool = [...nb], removed = [];
+      for (const n of na) { const i = pool.indexOf(n); if (i >= 0) pool.splice(i, 1); else removed.push(n); }
+      const token = [...removed.map((n) => "-" + n), ...pool.map((n) => "+" + n)].join(",");
+      if (!keep.num.has(`${id}|${lang}|${token}`))
+        fail.num.push(`${id} (${lang})${pool.length ? " [ADDS a number]" : ""}: book \`num ${id} ${lang} ${token}\``);
+    }
   }
 }
 
@@ -150,7 +164,7 @@ bad += report("compounds intact", fail.hyphen,
 bad += report("no number drift", fail.num,
   "A rewritten line keeps its template literal; never bake a constant into the prose.");
 
-const kept = keep.dash.size + keep.hyphen.size;
+const kept = keep.dash.size + keep.hyphen.size + keep.num.size;
 console.log(`\n  ${kept} booked exception${kept === 1 ? "" : "s"} in text-voice-keep.txt`);
 console.log(bad ? "\nFAILED\n" : "\nPASSED\n");
 process.exit(bad ? 1 : 0);

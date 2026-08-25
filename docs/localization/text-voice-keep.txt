@@ -30,3 +30,62 @@ dash  start.board.last.none      de   Leerwert-Marke: die Zeile ist NUR der Stri
 dash  start.board.last.none      en   dito
 dash  arch.cell.formationOnly    de   Listenmarke am Zeilenanfang, gepaart mit dem Pfeil-Praefix des Geschwisters arch.cell.upgrade („→ Stufe {tier}"). Einzeln geaendert braeche die Reihe.
 dash  arch.cell.formationOnly    en   dito
+
+# ---------------------------------------------------------------- #skill-text
+# Der Skill-Text-Durchgang: 84 Beschreibungen + 4 Archetyp-Passives, Wortlaut je Text mit dem
+# Owner abgestimmt (docs/workstreams/skill-text-pass/ledger.md).
+#
+# Die dritte Eintragsart `num` kam mit diesem Durchgang dazu. Prüfung 3 hatte als einzige kein
+# Hauptbuch, und dieser Durchgang entfernt Zahlen, die nur wiederholten, was die Wörter daneben
+# schon sagten — „(5 Stapel)" direkt hinter „voll ionisiert". Das Token nennt die RICHTUNG:
+#   -x  die Zahl ist aus dem Text verschwunden
+#   +x  eine Zahl ist DAZUGEKOMMEN — der Fall, gegen den Prüfung 3 eigentlich geschrieben ist.
+#       Buchbar nur, wenn dieselbe Interpolation ein zweites Mal gezogen wird, nie weil eine
+#       Konstante ausgeschrieben wurde. Genau ein solcher Eintrag steht unten, mit Begründung.
+
+# ---- Komposita, die mit ihrem Einschub verschwinden (kein Kompositum-Schaden) ----
+hyphen  ability.SK_LIGHTNING_01.desc  de  1->0   `Grund-Ladung` ging mit der Klammer, die nur wiederholte, was „zusätzlich" schon sagt.
+hyphen  ability.SK_LIGHTNING_06.desc  en  1->0   `arc-over` ging mit dem Satz, der Überschlag beschrieb statt diesen Skill.
+hyphen  ability.SK_LIGHTNING_09.desc  en  1->0   `short-circuits` war der eigene Skill-Name als Verb; §3 verbietet den Selbstbezug.
+hyphen  ability.SK_LIGHTNING_12.desc  de  2->1   `Voll-Ionisierung` stand in einem Kommentarsatz ohne eigene Zusage.
+hyphen  ability.SK_LIGHTNING_14.desc  de  2->1   `Voll-Tiefe` war eine Begriffsglosse in Klammern; die Bedingung selbst steht weiter da.
+hyphen  ability.SK_LIGHTNING_L02.desc de  2->1   `Score-Anteil` entfällt; `Blitz-Bekenntnis` wird zu `Blitz-Skills` (Owner-Entscheid, §1c-Ausnahme).
+hyphen  ability.SK_LIGHTNING_L03.desc de  2->1   dito.
+hyphen  ability.SK_ICE_04.desc        de  3->2   `Wert-Bonus` wird zu „Bonus"; der Satz nennt den Kampfwert schon im Vordersatz.
+hyphen  ability.SK_ICE_07.desc        de  2->1   `8-Nachbarschaft` sagte dasselbe wie „auch die vier Diagonalen als angrenzend".
+hyphen  ability.SK_ICE_07.desc        en  1->0   dito, `8-neighbourhood`.
+hyphen  ability.SK_ICE_08.desc        de  1->0   `Linien-Formation` — die Anzeige nennt sie „Linie" (glacier.js:294), der Name kam nirgends vor.
+hyphen  ability.SK_ICE_L02.desc       en  1->0   `super-glacier` ging mit dem Metaphern-Satz; die Mechanik steht unverändert im Text.
+hyphen  ability.SK_FIRE_15.desc       de  1->0   `Asche-Kosten` ging mit dem Klammersatz über Schmelzofen, der ihn selbst sagt.
+hyphen  ability.SK_FIRE_L04.desc      de  1->0   `Gesamt-Schmiedewert` wird zu „geschmiedetem Wert im Deck" (Owner: das Kompositum verbarg, dass über ALLE Karten summiert wird).
+hyphen  ability.SK_PLANT_03.desc      de  2->1   `Feld-Bonus` ging mit dem Ausschlusssatz, den „die Wurzel-Basis ×2" bereits eingrenzt.
+hyphen  ability.SK_PLANT_L01.desc     de  2->1   `Überlauf-Wachstum` wird durch seine Bedeutung ersetzt: „Wachstum über dem Wert-Deckel".
+
+# ---- ein Kompositum kommt DAZU ----
+hyphen  skill.passive.ice             de  3->4   §1a führt seit dieser Woche `Skill-Slot` als kanonisch (die eine erlaubte Verwendung von „Slot"); aus „vollen Slots" wird „vollen Skill-Slots".
+
+# ---- Zahlen, die nur wiederholten, was danebensteht ----
+num     ability.SK_LIGHTNING_06.desc  de  -100   Der Satz über den Überschuss über 100 % beschrieb Überschlag, nicht diesen Skill.
+num     ability.SK_LIGHTNING_06.desc  en  -100   dito.
+num     ability.SK_LIGHTNING_09.desc  de  -5     „(5 Stapel)" wiederholte „voll ionisierten" im selben Satz.
+num     ability.SK_LIGHTNING_09.desc  en  -5     dito.
+num     ability.SK_LIGHTNING_11.desc  de  -5     „(5 Stapel)" wiederholte „volle Karte" im selben Satz.
+num     ability.SK_LIGHTNING_11.desc  en  -5     dito.
+num     ability.SK_LIGHTNING_12.desc  de  -0     „(0 Stapel)" wiederholte „noch nicht ionisierte Karte" im selben Satz.
+num     ability.SK_LIGHTNING_12.desc  en  -0     dito.
+num     ability.SK_LIGHTNING_14.desc  de  -100   „je 10 Prozentpunkte über 100 %" — der Satzanfang hat die 100 % bereits gesetzt.
+num     ability.SK_LIGHTNING_14.desc  en  -100   dito.
+num     ability.SK_LIGHTNING_L04.desc de  -5     „(5 Stapel)" wiederholte „voll ionisierte Karte" im selben Satz.
+num     ability.SK_LIGHTNING_L04.desc en  -5     dito.
+num     ability.SK_ICE_07.desc        de  -8     die 8 steckte in „(8-Nachbarschaft)", der Glosse zu „die vier Diagonalen".
+num     ability.SK_ICE_07.desc        en  -8     dito.
+num     ability.SK_FIRE_01.desc       de  -1,5   Quelle war `+${pct(C.EMBER_MULT - 1)} % … (Hitzegewinn ×${de(C.EMBER_MULT)})`: EINE Konstante, zweimal gedruckt.
+num     ability.SK_FIRE_01.desc       en  -1.5   dito, mit englischem Dezimalpunkt.
+num     ability.SK_FIRE_06.desc       de  -2,-3  „Für +2 und +3 braucht es …" wird zu „Die oberen beiden verlangen …" — die Stufen stehen im Satz davor.
+num     ability.SK_FIRE_06.desc       en  -2,-3  dito.
+num     ability.SK_FIRE_15.desc       de  -50    die 50 % gehörten zum Klammersatz über Schmelzofen, der sie in seinem eigenen Text nennt.
+num     ability.SK_FIRE_15.desc       en  -50    dito.
+
+# ---- die eine hinzugekommene Zahl ----
+num     ability.SK_FIRE_L04.desc      de  +3     `${C.FORGE_VALUE}` wird ein ZWEITES Mal gezogen: „Eine Schmiedung sind 3 Punkte." Der Owner wollte die Einheit ausgeschrieben, weil „je Punkt geschmiedetem Wert" sonst als „je Schmiedung" gelesen wird (tatsächlich 3 Punkte = 42 Score je Sieg). Keine ausgeschriebene Konstante — dieselbe Interpolation, zweimal.
+num     ability.SK_FIRE_L04.desc      en  +3     dito.
