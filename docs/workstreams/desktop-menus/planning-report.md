@@ -856,6 +856,35 @@ which was right.
 where two applied, once naming a mount point that does not mount: *an import is not a render, and a
 filename is not an assertion.* A planner's inventory is a hypothesis until a worker measures it.
 
+### 8.21 The round's tail, re-cut by the owner — 2026-08-25
+
+**Chronicle is out of this round.** Owner decision. `ChronikOverview` and `CardDetail` keep whatever
+they have; they will be a later round's work, with or without a design.
+
+**The end screen runs next, as migration only** — *measured: no `endscreen-redesign.md` exists, and
+`design-sprache.md` names the end screen only inside an open question.* The owner accepted the trade
+the workshop already paid: a screen migrated without a design gets touched twice if one arrives.
+
+**And the run dialogs have no design either.** Checked because the owner recalled one: the phrase
+*"Lauf-Fenster"* appears in `statistik-redesign.md` and `design-sprache.md`, but it means `RunDetail`
+— **the run window, which M7 already built to that commission.** `RunConfirm`, `RunLoader`,
+`UpdateBanner` and `PwaInstall` appear in no design document at all.
+
+*A recollection that turned out to be right about the thing and wrong about the name. Worth the
+three-minute check, and worth recording so nobody spends it again.*
+
+**What M4's measurement shows about the re-cut.** §3.1 planned M4 at 1405 lines and 99 colour values
+— `GameOver` plus `RunDetail`, `RunStats`, `RunGraphs`. **M7 took that subtree**, so M4 is now
+`GameOver.jsx` alone: **664 lines, 50 colour values, 70 `.go-*` rules.** Halved, because another task
+ran first.
+
+That is the ordering change earning its keep a second time. The first was avoiding four double
+touches; this one is a task shrinking by half without anyone planning it, because ownership was
+assigned by the render graph instead of by the file list.
+
+**Remaining after M4:** M5 guide *content* (its frame came with M3), M6 glossary, M11 run dialogs.
+All three await a design or an owner decision to migrate without one.
+
 ### 8.20 The follow-up MR1 proposed would repaint the phone — not opened
 
 *Measured 2026-08-25, before dispatching a worker on it.*
