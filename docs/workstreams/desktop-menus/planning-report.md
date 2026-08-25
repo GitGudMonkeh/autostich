@@ -856,6 +856,42 @@ which was right.
 where two applied, once naming a mount point that does not mount: *an import is not a render, and a
 filename is not an assertion.* A planner's inventory is a hypothesis until a worker measures it.
 
+### 8.29 Eighteen declarations that painted nothing — and a suspicion I will not dress as a finding
+
+*M6, 2026-08-25.* Thirteen declarations in the glossary painted nothing at all. **The `#gl-ruhe` pass
+had placed a second rule block beside the old one instead of editing it**, and the survivors had been
+sitting there ever since, looking live. M6 deleted them and the zero-delta gate is what proves they
+were dead.
+
+**M6 asked whether the next task should also collect five more** in the same rules — `gap: 10px`,
+`width/height: 9px`, `min-width: 34px`, `margin-bottom: 8px` — which are dead too but lie **off the
+five axes**.
+
+**Ruling: no, and M6's own reason is the right one.** *Tidying is not migration.* Those five are
+outside this round's subject, on a screen with no approved design, and a round that starts collecting
+adjacent dead code has no boundary. The same reasoning kept `PrivacyModal` and the end screen from
+being improved.
+
+### The generalisation, and why it stays a suspicion
+
+`#gl-ruhe` is one of **seven** `*-ruhe` passes — `#cz-ruhe` 10 mentions, `#up-ruhe` 9, `#lv-ruhe` 6,
+`#go-ruhe` 6, `#st-ruhe` 5, `#gl-ruhe` 5, `#rd-ruhe` 1. If one of them added a block instead of
+editing one, others may have.
+
+I counted multiply-defined selectors per prefix — `.up-*` 14, `.gl-*` 11, `.cz-*` 6, `.lv-*` 5 — and
+**that count proves nothing.** A selector redefined inside a media query is not a mistake; it is the
+desktop-block pattern this stylesheet is built on. Reading those numbers as evidence would be the
+seventh time this round that I named a class from one real case and stated it as a count.
+
+**So it is recorded as what it is:** a named suspicion with a method to settle it, not a finding.
+
+> **To settle it, compare duplicate selectors *within the same cascade context*** — same media query,
+> same layer — and check whether the later block's declarations are all overridden. That distinguishes
+> a legitimate breakpoint override from a block someone added beside another. **Cheap to run, and it
+> is worth exactly one measurement.**
+
+Backlog. Not this round's, and not worth a task until somebody has the number.
+
 ### 8.28 The glossary has nine mount points — the widest seam of the round
 
 *Measured 2026-08-25, and it took two wrong greps to find.*
