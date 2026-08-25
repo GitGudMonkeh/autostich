@@ -5158,11 +5158,15 @@ b, strong { font-weight: 600; }
      `--sf-glass` IST dieser Verlauf — er ist einer der 13, aus denen der Schritt abgeleitet wurde.
      EIN Unterschied, benannt: `--sf-glass` schreibt die Richtung aus (`180deg`), das Literal ließ sie
      weg. `to bottom` ist der Vorgabewert, also malt es dasselbe — die berechnete Zeichenkette lautet
-     aber anders, und in einem Null-Delta-Lauf ist das ein Eintrag. Auf `leaderboard` ist er erwartet;
-     außerhalb kann er nicht auftauchen, weil `.go-*` sein Literal behält. */
+     aber anders, und in einem Null-Delta-Lauf ist das ein Eintrag. */
+  /* #menu-rework M4 — DER SIEGESBILDSCHIRM NIMMT DEN SCHRITT JETZT AUCH, und damit ist der oben
+     angekuendigte Eintrag faellig: M8 liess `.go-*` sein Literal behalten, weil der Screen jener Runde
+     nicht gehoerte, und sagte voraus, dass die Umstellung genau EINEN Delta-Eintrag je Knoten kostet —
+     dieselben Pixel, andere berechnete Zeichenkette (`180deg` ausgeschrieben). Gemessen und in
+     measurements/M4.md als M4-F01 gefuehrt. Sieben Selektoren, ein Schritt, keine Bewegung. */
   .go-heroblock, .go-earn, .go-best, .go-origin, .go-build, .go-stats, .go-layout {
-    border-radius: 14px;
-    background: linear-gradient(rgba(27, 26, 36, .93), rgba(22, 22, 32, .95));
+    border-radius: var(--rd-lg);
+    background: var(--sf-glass);
   }
   .lb-tabs, .lb-page {
     border-radius: var(--rd-lg);
@@ -6228,9 +6232,12 @@ b, strong { font-weight: 600; }
     list-style: none;
     cursor: pointer;
     display: flex; align-items: center; gap: 9px;
-    border-radius: 6px;
+    border-radius: var(--rd-sm);
+    /* #menu-rework M4 — Kante auf `--ed-quiet` (MENU-38, die Umstellung, die M2a gemessen und der
+       Owner abgenommen hat). Die FLAECHE bleibt: `rgba(255, 255, 255, .012)` ist ein weisser Hauch
+       UEBER dem Glas, `--sf-sunken` ist deckend und naehme ihr genau das — M7-G2, gezaehlt. */
     background: rgba(255, 255, 255, .012);
-    border: 1px solid rgba(150, 150, 170, .12);
+    border: 1px solid var(--ed-quiet);
     color: #b9b3cf;
     opacity: 1 !important;
     transition: background .14s ease, color .14s ease;
@@ -6903,11 +6910,25 @@ b, strong { font-weight: 600; }
      ihr RADIUS zieht mit, nicht ihre Kante. Und der blaue Rahmen der Gebäudeliste bleibt: er ist das
      Signal des Architekten, kein Victory-Detail.
      ========================================================================== */
+  /* #menu-rework M4 — DIE KANTE GEHT UEBER EINE UMDEFINITION, NICHT UEBER `!important`, und das ist
+     Zeichen fuer Zeichen die Umstellung, die M7 an `.st-box` gemacht hat (der Kasten, dessen Zwilling
+     dieser hier laut #go-ruhe ausdruecklich ist).
+
+     `MENU_PANEL` emittiert `1px solid var(--ed-strong)` INLINE. Die Regel definiert den Schritt am
+     Element um; der Inline-Stil liest die Variable dort und nimmt den neuen Wert, mit intakter Kaskade
+     und ohne `!important`. GEMESSENE FOLGE: aus `rgba(150, 150, 170, .12)` wird `--ed-quiet`
+     (#2a2a34), rund 9/255 — dieselbe Umstellung, die M2a gemessen und der Owner abgenommen hat, die
+     M3 vierzehnmal, M7 viermal und M8 sechsmal gezogen hat. Ein Literal weniger aus MENU-38.
+
+     DIE FLAECHE BEHAELT IHR `!important`, und das ist keine Nachlaessigkeit: der Inline-Wert ist
+     `var(--sf-sunken)`, umdefinieren koennte man ihn also — aber nur auf einen ANDEREN BENANNTEN
+     SCHRITT (2c, „never to a fresh literal"). Der weisse Hauch ueber dem Glas hat keinen, und
+     `--sf-sunken` ist deckend. Also bleibt die Regel die, die gewinnt. Genau wie an `.st-box`. */
   .go-card .go-box {
     background: rgba(255, 255, 255, .012) !important;
-    border: 1px solid rgba(150, 150, 170, .12) !important;
-    box-shadow: none !important;
-    border-radius: 6px !important;
+    --ed-strong: var(--ed-quiet);
+    box-shadow: var(--el-flat) !important;
+    border-radius: var(--rd-sm) !important;
   }
   /* Kästen MIT Farbkante behalten sie (#kante). Der Ton steht in `--gob`, im JSX gesetzt; die Regel
      wiegt (0,3,0) gegen (0,2,0) oben und gewinnt damit nur für DIESE eine Kante. */
@@ -6917,7 +6938,7 @@ b, strong { font-weight: 600; }
      `@import "tailwindcss"` und schlägt die Utilities (dieselbe Begründung wie an `.st-box`). */
   .go-earn .as-edge-card,
   .go-blist, .go-blist button,
-  .go-build .rs-chips > * { border-radius: 6px; }
+  .go-build .rs-chips > * { border-radius: var(--rd-sm); }
   /* Die Gebäudeliste behält ihren blauen Rahmen (Architekt-Signal), gibt aber die gefüllte Fläche ab —
      ein gefüllter Kasten in einem Panel ist wieder ein zweites Bauteil. */
   .go-blist { background: rgba(255, 255, 255, .012) !important; }
@@ -6925,11 +6946,26 @@ b, strong { font-weight: 600; }
   /* ---- Die zwei Aktionen in der Kachelform ------------------------------- */
   /* `as-edge`/`as-edge-strong` setzen Fläche, Rahmen und Schein über Klassen; der Radius steht schon
      seit #eckig auf 6 (`.as-actbtn`). Hier fallen nur Fläche, Kante und Schein. */
+  /* #menu-rework M4 — Kante auf `--ed-quiet` (MENU-38), Schein auf `--el-flat`. Die FLAECHE bleibt
+     der weisse Hauch (M7-G2, gezaehlt); der Innenabstand polstert gegen die BESCHRIFTUNG und steht
+     damit ausserhalb der Leiter (2c, `--btn-pad-*`).
+
+     DREI `!important` SIND HIER GEFALLEN, UND ZWAR WEIL SIE NICHTS GETRAGEN HABEN — gemessen, nicht
+     geschlossen. Der Waechter behauptete, `as-edge-strong` gewaenne als Klasse. Das ist falsch:
+     `.go-actions > button` wiegt (0,1,1) gegen (0,1,0) UND steht spaeter im selben ungelayerten
+     Blatt, gewinnt also zweifach. Die Gegenprobe: die drei Deklarationen entfernt, neu gebaut, die
+     vier Zellen des Endscreen-Messkopfs gegen den ausgelieferten Stand — 1428 verglichene Knoten,
+     NULL Deltas (M4-F04, evidence/M4/counter-important/). Ein `!important`, das niemand begruenden
+     kann, ist schlimmer als eines, das erklaert ist.
+
+     `color` und `padding` BEHALTEN ihres, und das ist kein Vergessen: Tinte ist keine der fuenf
+     Achsen und der Innenabstand steht ausserhalb der Leiter — beide liegen ausserhalb dieses
+     Auftrags, und ein `!important` ohne Gegenprobe faellt hier nicht. */
   .go-actions > button {
     font-size: var(--text-body-lg-3) !important; padding: 11px 22px !important;
-    background: rgba(255, 255, 255, .012) !important;
-    border: 1px solid rgba(150, 150, 170, .12) !important;
-    box-shadow: none !important;
+    background: rgba(255, 255, 255, .012);
+    border: 1px solid var(--ed-quiet);
+    box-shadow: var(--el-flat);
     color: #c9c9d4 !important;
   }
   /* „Neuer Lauf" ist immer der LETZTE Knopf — „Menü" hängt an `onMenu` und fehlt gelegentlich. */
@@ -6965,11 +7001,16 @@ b, strong { font-weight: 600; }
   /* Zeilenbauform von `.lb-mod` (Bestenliste): Text · Wert · Marke. Das Panel steht in Spalte 2 der
      Panelzeile — es beantwortet die Frage, die der Rekord-Chip im Kopf nur anreißt („neuer Rekord"):
      WELCHE Bestmarken sind in diesem Lauf gefallen. */
+  /* #menu-rework M4 — Kante auf `--ed-quiet` (MENU-38), Radius auf `--rd-sm` (wertgleich). Die
+     FLAECHE bleibt der weisse Hauch (M7-G2). Der Innenabstand 9/13 ist NICHT wertgleich: 13 ist
+     `--in-snug`, 9 ist keine Sprosse (`--in-tight` ist 11). Halb umgestellt waere er zwei
+     Schreibweisen fuer eine Zahl, ganz umgestellt eine Bewegung, die kein Entwurf bestellt hat —
+     gezaehlt und als M4-F02 gemeldet. */
   .go-bestrow {
     display: flex; align-items: center; gap: 11px;
     background: rgba(255, 255, 255, .012);
-    border: 1px solid rgba(150, 150, 170, .12);
-    border-radius: 6px; padding: 9px 13px;
+    border: 1px solid var(--ed-quiet);
+    border-radius: var(--rd-sm); padding: 9px 13px;
   }
   .go-bestrow + .go-bestrow { margin-top: 8px; }
   .go-bestrow > b { flex: 1; min-width: 0; font-size: var(--text-body-4); font-weight: 500; color: #e4e4ee; }
@@ -6981,7 +7022,7 @@ b, strong { font-weight: 600; }
     color: var(--deck-a1, #26c6e6);
     border: 1px solid color-mix(in srgb, var(--deck-a1, #26c6e6) 45%, transparent);
     border-left: 3px solid var(--deck-a1, #26c6e6);
-    border-radius: 6px; padding: 2px 6px;
+    border-radius: var(--rd-sm); padding: 2px 6px;
   }
   /* Die Zeile ohne Marker (der bisherige Höchstwert) steht leiser — sie ist der Vergleichswert,
      nicht das Ergebnis. */
