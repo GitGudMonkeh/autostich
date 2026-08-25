@@ -856,6 +856,47 @@ which was right.
 where two applied, once naming a mount point that does not mount: *an import is not a render, and a
 filename is not an assertion.* A planner's inventory is a hypothesis until a worker measures it.
 
+### 8.20 The follow-up MR1 proposed would repaint the phone — not opened
+
+*Measured 2026-08-25, before dispatching a worker on it.*
+
+MR1's handoff suggested a small successor: point the two inline literals at `Glossary.jsx:169` and
+`LeaderboardScreen.jsx:113` at the token, which "would also settle the last two declarations". Taken
+literally it does something else.
+
+| | |
+| --- | --- |
+| `--sf-row` | `rgba(15, 15, 21, .72)` — **translucent** |
+| `Glossary.jsx:169` | `#0f0f14` — **opaque** |
+| `LeaderboardScreen.jsx:113` | `#17161f` — **opaque** |
+
+**Those are not the same value, and the sites are the narrow version's.** Pointing them at `--sf-row`
+would replace an opaque phone surface with a 72 % translucent one — a visible change below 1280 px,
+which is owner decision 9's non-goal stated backwards.
+
+**It is the sixth instance of the round's other recurring error** — generalising from one real case
+instead of counting — and the first committed by a worker rather than by the planner. It is also the
+first caught *before* a contract was written, which is the only reason it costs nothing.
+
+**The correct version, and why it is still not opened.** The shape that would work is the one MR1
+itself named in its code comment: the inline emits a var carrying the **narrow** value, and the
+desktop block re-points that var — `--sf-scrim` / `--sf-scrim-desk`, value-preserving on the phone.
+That needs a token per value, and the counts do not both support one:
+
+| Value | Inline call sites | Against the threshold |
+| --- | --- | --- |
+| `#17161f` | **3** — `LeaderboardScreen.jsx:113`, `:345`, `WeekMods.jsx:58` | met |
+| `#0f0f14` | **2** — `Glossary.jsx:169`, `PrivacyModal.jsx:140` | **below** |
+
+**And the two `!important` it would remove are correct.** MR1 measured them, counter-checked them at
+31 deltas, and justified them in the code at the site. They are the sanctioned `--sf-scrim-desk`
+shape, not debt.
+
+**Ruling: backlog, with the counts, not a task.** Minting a second token for tidying — days after
+minting the first on a measured eight-site case — would turn *"the threshold fires"* into *"the
+planner mints when it is convenient"*, and that sentence is the only thing keeping the vocabulary
+closed. When `#0f0f14` reaches three the case is ready and the measurement is already here.
+
 ### 8.18 The gate does not see everything it certifies — measured, not feared
 
 *MR1, 2026-08-25, and it is the most consequential harness finding of the round.*
