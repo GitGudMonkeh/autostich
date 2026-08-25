@@ -1314,6 +1314,11 @@ export default {
 
   /* ---- Start screen ---- */
   "start.logo.alt": "AUTOTRICK",
+  /* #mainscreen-branding — s. de.js. „Order" und „Trick" sind die bereits abgestimmten englischen
+     Begriffe fuer die Legephase und fuer den Stich (Terminologietabelle, eingefroren) — keine neuen
+     Synonyme. Der SCHLUSSPUNKT steht hier bewusst: Owner-Entscheidung Q3a vom 25.08.2026. Das
+     Entwurfsdokument druckt die Zeile ohne, und genau diese eine Zeile ist der Ausreisser. */
+  "start.tagline": "Order. Trick. Escalate.",
 
   // Emoji siehe de.js — es steht seit 18.08.2026 im JSX, nicht mehr im String.
   "start.progress.onboarding": "Onboarding",

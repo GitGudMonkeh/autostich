@@ -1,0 +1,520 @@
+{
+  "cells": [
+    {
+      "id": "360x800/de",
+      "reached": true,
+      "scrollH": 828,
+      "wordmark": {
+        "box": {
+          "x": 25.7,
+          "y": 72,
+          "w": 300.58,
+          "h": 47.61
+        },
+        "text": "AUTOSTICH",
+        "wmSize": "clamp(40px, 11.5vw, 52px)",
+        "fontSize": "41.4px",
+        "lineHeight": "47.61px",
+        "letterSpacing": "2.484px",
+        "marginTop": "48px",
+        "gridBoxes": 0,
+        "lockupBoxes": 0
+      },
+      "stack": [
+        {
+          "cls": "as-wm-glow pointer-events-none absolute inset-x-0 top-0 h-[1",
+          "box": {
+            "x": 16,
+            "y": 24,
+            "w": 320,
+            "h": 190
+          }
+        },
+        {
+          "cls": "as-hub-bg dt:hidden pointer-events-none fixed inset-0",
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 352,
+            "h": 800
+          }
+        },
+        {
+          "cls": "hidden dt:block pointer-events-none fixed inset-x-0 bottom-0",
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        },
+        {
+          "cls": "rounded-lg px-3 py-1.5 text-body-lg-5 font-semibold leading-",
+          "box": {
+            "x": 24,
+            "y": 32,
+            "w": 45.23,
+            "h": 28
+          }
+        },
+        {
+          "cls": "gloss-i-btn as-edge as-edge-thin as-gloss-corner absolute to",
+          "box": {
+            "x": 296.13,
+            "y": 32,
+            "w": 31.88,
+            "h": 28.41
+          }
+        },
+        {
+          "cls": "hub-pair",
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        },
+        {
+          "cls": "hub-foot",
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "390x844/de",
+      "reached": true,
+      "scrollH": 844,
+      "wordmark": {
+        "box": {
+          "x": 32.19,
+          "y": 72,
+          "w": 325.63,
+          "h": 51.56
+        },
+        "text": "AUTOSTICH",
+        "wmSize": "clamp(40px, 11.5vw, 52px)",
+        "fontSize": "44.85px",
+        "lineHeight": "51.5775px",
+        "letterSpacing": "2.691px",
+        "marginTop": "48px",
+        "gridBoxes": 0,
+        "lockupBoxes": 0
+      },
+      "stack": [
+        {
+          "cls": "as-wm-glow pointer-events-none absolute inset-x-0 top-0 h-[1",
+          "box": {
+            "x": 16,
+            "y": 24,
+            "w": 358,
+            "h": 190
+          }
+        },
+        {
+          "cls": "as-hub-bg dt:hidden pointer-events-none fixed inset-0",
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 390,
+            "h": 844
+          }
+        },
+        {
+          "cls": "hidden dt:block pointer-events-none fixed inset-x-0 bottom-0",
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        },
+        {
+          "cls": "rounded-lg px-3 py-1.5 text-body-lg-5 font-semibold leading-",
+          "box": {
+            "x": 24,
+            "y": 32,
+            "w": 45.23,
+            "h": 28
+          }
+        },
+        {
+          "cls": "gloss-i-btn as-edge as-edge-thin as-gloss-corner absolute to",
+          "box": {
+            "x": 334.13,
+            "y": 32,
+            "w": 31.88,
+            "h": 28.41
+          }
+        },
+        {
+          "cls": "hub-pair",
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        },
+        {
+          "cls": "hub-foot",
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "1279x800/de",
+      "reached": true,
+      "scrollH": 800,
+      "wordmark": {
+        "box": {
+          "x": 450.73,
+          "y": 72,
+          "w": 377.53,
+          "h": 59.8
+        },
+        "text": "AUTOSTICH",
+        "wmSize": "clamp(40px, 11.5vw, 52px)",
+        "fontSize": "52px",
+        "lineHeight": "59.8px",
+        "letterSpacing": "3.12px",
+        "marginTop": "48px",
+        "gridBoxes": 0,
+        "lockupBoxes": 0
+      },
+      "stack": [
+        {
+          "cls": "as-wm-glow pointer-events-none absolute inset-x-0 top-0 h-[1",
+          "box": {
+            "x": 127.5,
+            "y": 24,
+            "w": 1024,
+            "h": 190
+          }
+        },
+        {
+          "cls": "as-hub-bg dt:hidden pointer-events-none fixed inset-0",
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 1279,
+            "h": 800
+          }
+        },
+        {
+          "cls": "hidden dt:block pointer-events-none fixed inset-x-0 bottom-0",
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        },
+        {
+          "cls": "rounded-lg px-3 py-1.5 text-body-lg-5 font-semibold leading-",
+          "box": {
+            "x": 135.5,
+            "y": 32,
+            "w": 45.23,
+            "h": 28
+          }
+        },
+        {
+          "cls": "gloss-i-btn as-edge as-edge-thin as-gloss-corner absolute to",
+          "box": {
+            "x": 1111.63,
+            "y": 32,
+            "w": 31.88,
+            "h": 28.41
+          }
+        },
+        {
+          "cls": "hub-pair",
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        },
+        {
+          "cls": "hub-foot",
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "360x800/en",
+      "reached": true,
+      "scrollH": 801,
+      "wordmark": {
+        "box": {
+          "x": 26.78,
+          "y": 72,
+          "w": 298.42,
+          "h": 47.61
+        },
+        "text": "AUTOTRICK",
+        "wmSize": "clamp(40px, 11.5vw, 52px)",
+        "fontSize": "41.4px",
+        "lineHeight": "47.61px",
+        "letterSpacing": "2.484px",
+        "marginTop": "48px",
+        "gridBoxes": 0,
+        "lockupBoxes": 0
+      },
+      "stack": [
+        {
+          "cls": "as-wm-glow pointer-events-none absolute inset-x-0 top-0 h-[1",
+          "box": {
+            "x": 16,
+            "y": 24,
+            "w": 320,
+            "h": 190
+          }
+        },
+        {
+          "cls": "as-hub-bg dt:hidden pointer-events-none fixed inset-0",
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 352,
+            "h": 800
+          }
+        },
+        {
+          "cls": "hidden dt:block pointer-events-none fixed inset-x-0 bottom-0",
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        },
+        {
+          "cls": "rounded-lg px-3 py-1.5 text-body-lg-5 font-semibold leading-",
+          "box": {
+            "x": 24,
+            "y": 32,
+            "w": 45.23,
+            "h": 28
+          }
+        },
+        {
+          "cls": "gloss-i-btn as-edge as-edge-thin as-gloss-corner absolute to",
+          "box": {
+            "x": 296.13,
+            "y": 32,
+            "w": 31.88,
+            "h": 28.41
+          }
+        },
+        {
+          "cls": "hub-pair",
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        },
+        {
+          "cls": "hub-foot",
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "390x844/en",
+      "reached": true,
+      "scrollH": 844,
+      "wordmark": {
+        "box": {
+          "x": 33.36,
+          "y": 72,
+          "w": 323.28,
+          "h": 51.56
+        },
+        "text": "AUTOTRICK",
+        "wmSize": "clamp(40px, 11.5vw, 52px)",
+        "fontSize": "44.85px",
+        "lineHeight": "51.5775px",
+        "letterSpacing": "2.691px",
+        "marginTop": "48px",
+        "gridBoxes": 0,
+        "lockupBoxes": 0
+      },
+      "stack": [
+        {
+          "cls": "as-wm-glow pointer-events-none absolute inset-x-0 top-0 h-[1",
+          "box": {
+            "x": 16,
+            "y": 24,
+            "w": 358,
+            "h": 190
+          }
+        },
+        {
+          "cls": "as-hub-bg dt:hidden pointer-events-none fixed inset-0",
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 390,
+            "h": 844
+          }
+        },
+        {
+          "cls": "hidden dt:block pointer-events-none fixed inset-x-0 bottom-0",
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        },
+        {
+          "cls": "rounded-lg px-3 py-1.5 text-body-lg-5 font-semibold leading-",
+          "box": {
+            "x": 24,
+            "y": 32,
+            "w": 45.23,
+            "h": 28
+          }
+        },
+        {
+          "cls": "gloss-i-btn as-edge as-edge-thin as-gloss-corner absolute to",
+          "box": {
+            "x": 334.13,
+            "y": 32,
+            "w": 31.88,
+            "h": 28.41
+          }
+        },
+        {
+          "cls": "hub-pair",
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        },
+        {
+          "cls": "hub-foot",
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "1279x800/en",
+      "reached": true,
+      "scrollH": 800,
+      "wordmark": {
+        "box": {
+          "x": 452.08,
+          "y": 72,
+          "w": 374.83,
+          "h": 59.8
+        },
+        "text": "AUTOTRICK",
+        "wmSize": "clamp(40px, 11.5vw, 52px)",
+        "fontSize": "52px",
+        "lineHeight": "59.8px",
+        "letterSpacing": "3.12px",
+        "marginTop": "48px",
+        "gridBoxes": 0,
+        "lockupBoxes": 0
+      },
+      "stack": [
+        {
+          "cls": "as-wm-glow pointer-events-none absolute inset-x-0 top-0 h-[1",
+          "box": {
+            "x": 127.5,
+            "y": 24,
+            "w": 1024,
+            "h": 190
+          }
+        },
+        {
+          "cls": "as-hub-bg dt:hidden pointer-events-none fixed inset-0",
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 1279,
+            "h": 800
+          }
+        },
+        {
+          "cls": "hidden dt:block pointer-events-none fixed inset-x-0 bottom-0",
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        },
+        {
+          "cls": "rounded-lg px-3 py-1.5 text-body-lg-5 font-semibold leading-",
+          "box": {
+            "x": 135.5,
+            "y": 32,
+            "w": 45.23,
+            "h": 28
+          }
+        },
+        {
+          "cls": "gloss-i-btn as-edge as-edge-thin as-gloss-corner absolute to",
+          "box": {
+            "x": 1111.63,
+            "y": 32,
+            "w": 31.88,
+            "h": 28.41
+          }
+        },
+        {
+          "cls": "hub-pair",
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        },
+        {
+          "cls": "hub-foot",
+          "box": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        }
+      ]
+    }
+  ]
+}

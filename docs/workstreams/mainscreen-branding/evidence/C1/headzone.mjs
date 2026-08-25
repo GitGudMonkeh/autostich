@@ -538,8 +538,15 @@ async function main() {
     await server.stop();
   }
 
-  mkdirSync(HERE, { recursive: true });
-  const outFile = join(HERE, "headzone.json");
+  /* `--out <file>` added by C2, and it fixes a real accident rather than adding a convenience: the
+     output path was HERE, so re-running this instrument against a changed tree OVERWROTE C1's
+     committed evidence. Caught by `git status`, which is the same way the survey's `--out` was
+     earned (#typo-system S0). The default stays put, so C1's own invocation is unchanged. */
+  const outFile = (() => {
+    const i = process.argv.indexOf("--out");
+    return i >= 0 && process.argv[i + 1] ? resolve(process.argv[i + 1]) : join(HERE, "headzone.json");
+  })();
+  mkdirSync(dirname(outFile), { recursive: true });
   writeFileSync(outFile, JSON.stringify({
     takenAgainst: "production build in dist/", frozenClock: new Date(FROZEN_MS).toISOString(),
     sizes: SIZES.map(([a, b]) => `${a}x${b}`), langs: LANGS, cells,

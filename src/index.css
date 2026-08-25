@@ -1201,12 +1201,43 @@ b, strong { font-weight: 600; }
    Zeile darunter in den Fuß gewandert (StartScreen), die Marke bekommt den Platz. `.hub-play` grenzt bewusst gegen
    den Run-Kopf ab (der zieht seine 22 px aus `.as-wordmark-sm`). Ab 1280 px gewinnt die Desktop-Regel (88 px, in
    der Media-Query weiter unten). Deckel 52 px: darüber stößt „AUTOSTICH" (nowrap) an die Mute-/Info-Knöpfe.
-   Gemessen an der DEUTSCHEN Marke — die ist mit zehn Zeichen die längere; „AUTOTRICK" (englisch, neun Zeichen)
-   bleibt darunter. Wer die Marke in einer Sprache verlängert, misst den Deckel neu. */
+   Gemessen an der DEUTSCHEN Marke. #mainscreen-branding C1 (25.08.2026), gemessen am gerenderten
+   Screen: „AUTOSTICH" hat NEUN Zeichen, nicht zehn — „AUTOTRICK" ebenfalls neun, und beide tragen das
+   I an derselben, siebten Stelle. Der 52-px-Deckel war damit gegen eine falsche Annahme gemessen; er
+   bleibt trotzdem stehen, weil er in der Sache stimmt und unter 1280 px in dieser Runde nichts bewegt
+   werden darf. Wer die Marke in einer Sprache verlängert, misst den Deckel neu. */
 .hub-play .as-wordmark { --wm-size: clamp(40px, 11.5vw, 52px); margin-top: 3rem; }
 @media (prefers-reduced-motion: reduce) {
   .as-wordmark { animation: none; }
 }
+
+/* ============================================================================
+   DAS ZEICHEN (#mainscreen-branding) — die drei Zellenzustände
+   ----------------------------------------------------------------------------
+   Geometrie und Menge stehen in `src/ui/BrandGrid.jsx`; hier steht nur, welche Farbe eine Zelle
+   trägt. Die Trennung ist gemessen und nicht ordentlich: eine Farbe als SVG-Attribut ist für
+   `panel-tokens.test.js` unsichtbar (der Wächter liest style-Objekte — M6-F11, M11-F08), und die
+   betonten Zellen sind DECKGETÖNT, ihr Ton muss also über die Kaskade von der Aufrufstelle kommen,
+   was ein Attribut nicht kann.
+
+   ZWEI BETONTE ZUSTÄNDE IN `currentColor`, EIN RUHIGER NEUTRAL. Der ruhige ist mit Absicht nicht
+   deckfarben: bei 22 % Kante würde die Deckfarbe das ganze Zeichen einfärben, und dann liest es sich
+   nicht mehr als Brett mit drei leuchtenden Zellen, sondern als farbiger Fleck. Die Werte sind die
+   des Entwurfs und gelten für den DUNKLEN Screen-Grund; auf hellerem Grund dürfen sie zurückgenommen
+   werden — die erste Fassung nutzte 9/16/40 % und war auf dem Mainscreen schlicht unsichtbar.
+
+   UNTER 1280 PX IST DAS ZEICHEN NICHT DA. Die acht Zellen fallen unter etwa 40 px Schriftgröße
+   zusammen; die schmale Fassung behält den normalen Glyph (Entwurf, „Abgrenzung"). `display: none`
+   steht deshalb HIER und das Gegenstück in der 1280-px-Sektion — nicht umgekehrt: so kann die
+   schmale Fassung sich nicht bewegen, egal was später dazukommt.
+   ============================================================================ */
+.as-brandgrid { display: none; }
+.as-bg-cell  { fill: currentColor; stroke: currentColor; }
+/* Ruhig: neutral, nicht deckfarben — s. o. */
+.as-bg-quiet { fill: #ffffff; stroke: #ffffff; fill-opacity: .03; stroke-opacity: .22; }
+/* Zwischenton und leuchtend: beide in der Deckfarbe, die das Element als `color` mitbringt. */
+.as-bg-mid   { fill-opacity: .28; stroke-opacity: .66; }
+.as-bg-hot   { fill-opacity: 1; stroke-opacity: 1; }
 
 /* Ambient-Glow hinter der Marke — drei weiche Ellipsen im Logo-Dreiklang (Cyan links · Violett Mitte ·
    Amber rechts). Lag bis 17.08.2026 als inline-style im JSX; inline kann keine Media Query, und genau
@@ -2518,7 +2549,15 @@ b, strong { font-weight: 600; }
      255 px leer — ausgerechnet unten, wo das Bodenband des Decks am dichtesten ist. `margin-block: auto`
      am Paar verteilt die Restluft nach oben UND unten und schiebt das Fußband an den Rand. */
   .hub-pair { margin-block: auto; }
-  .hub-play { display: flex; flex-direction: column; align-items: flex-start; gap: 22px; }
+  /* #mainscreen-branding: ZENTRIERT statt linksbündig, und das ist die ganze Kopfzonen-Änderung am
+     Layout — kein Wrapper, keine zweite Regel. Begründung des Entwurfs: JEDER Block darunter läuft
+     über die volle Spaltenbreite, es gibt also keine linke Textachse, gegen die eine zentrierte
+     Marke verstoßen könnte. C1 hat das nachgemessen statt es zu glauben (C1-F13): von den fünf
+     Kindern dieser Spalte bewegt `center` GENAU EINES, die Wortmarke, und die vier darunter behalten
+     x und Breite auf allen fünf Viewports. Ein Wrapper um die drei Kopf-Elemente wäre die
+     Alternative gewesen und wäre teurer: `.hub-play` ist unter 1280 px `display: contents`, ein
+     Wrapper würde dort zu einer echten Box und die Handy-Reihenfolge verschieben. */
+  .hub-play { display: flex; flex-direction: column; align-items: center; gap: 22px; }
   .hub-stand { display: flex; flex-direction: column; gap: 20px; }
   /* Der Fuß löst sich von der Inhaltsspalte und wird ein Band über die volle Breite. */
   /* `width: min(1520px, 100%)` und nicht `100%`, und das ist keine Kosmetik: Der Zoom weiter unten
@@ -2703,7 +2742,88 @@ b, strong { font-weight: 600; }
      `.hub-play .as-wordmark` und nicht `.as-wordmark`: der Run-Kopf trägt dieselbe Klasse und holt
      sich seine 22 px aus `.as-wordmark-sm`. Diese Regel hier steht später in der Datei und hätte mit
      gleicher Spezifität gewonnen — die Marke im laufenden Spiel wäre auf 88 px gesprungen. */
-  .hub-play .as-wordmark { --wm-size: 88px; margin-top: -70px; }
+  /* #mainscreen-branding: DIE GRÖSSE STEHT JETZT AN DER SPALTE, nicht am Schriftzug — und das ist
+     kein Umzug aus Ordnungsliebe. Das Zeichen unter der Tagline ist derselbe Zellenraster wie die
+     Spalte im I und muss deshalb dieselbe Größe LESEN können; `--wm-size` am `h1` erreicht ein
+     Geschwister nicht. Die Alternative wäre ein zweiter Wert daneben, also zwei Zahlen, die jemand
+     in Schritt halten muss — genau davor warnen die Kommentare in dieser Datei sonst überall.
+
+     `--wm-size: inherit` am Schriftzug ist nötig und kein Zierrat: die Grundregel oben setzt den Wert
+     DIREKT am `h1` (die Handy-Fassung, clamp 40–52 px), und eine direkte Deklaration schlägt jede
+     Vererbung, Media Query hin oder her. Der Selektor bleibt auf `.hub-play` eingegrenzt — der
+     Run-Kopf trägt dieselbe Klasse und holt seine 22 px weiter aus `.as-wordmark-sm`.
+
+     C1-F12: „bei 88 px ist das Wort 620 px breit" stand hier bisher. Gemessen sind es 639 px (de) /
+     634 px (en) in einer 700-px-Spalte; die Marke läuft damit ab 96,4 px in die Lücke und nicht erst
+     ab 98. 88 px bleiben acht Pixel frei — die Entscheidung Q6 ist davon unberührt. */
+  .hub-play { --wm-size: 88px; }
+  .hub-play .as-wordmark { --wm-size: inherit; margin-top: -70px; }
+
+  /* --- Das I trägt die Spalte -------------------------------------------------
+     Der Glyph tritt zur Seite, die acht Zellen nehmen seinen Platz. Beide stehen im DOM, sichtbar ist
+     genau einer — die Weiche ist diese Media Query und keine Verzweigung im JSX, weil eine JS-Weiche
+     den Bruchpunkt ein zweites Mal kennen müsste.
+
+     DIE MASSE SIND DIE DES ENTWURFS, in `em` — und `em` ist hier das richtige Maß und kein Zufall:
+     `.as-wordmark` setzt `font-size: var(--wm-size)`, ein `em` im Schriftzug IST also `--wm-size`.
+     Zelle .09 · Fuge .022 · Spalte .874 (= 8 Zellen + 7 Fugen, fällt aus den Teilen und steht nicht
+     als eigene Zahl) · Abstand links .02, rechts .085.
+
+     DER SITZ IST HERGELEITET, NICHT GERÜCKT. Die Versalhöhe von Orbitron liegt bei rund .7em, das
+     Versalband läuft also von der Grundlinie bis −.7em und seine Mitte liegt bei −.35em. Eine .874em
+     hohe Spalte, auf diese Mitte zentriert, endet .087em UNTER der Grundlinie — und genau das ist der
+     Überstand oben und unten, den der Entwurf will: der Buchstabe bricht die Versallinie und wird
+     dadurch als Zeichen lesbar statt als verunglücktes I.
+
+     DEN SCHEIN ERBT DIE SPALTE. `.as-wordmark` trägt oben ein `drop-shadow` in der Deckfarbe, und ein
+     Filter wirkt auf den ganzen Teilbaum — die leuchtenden Zellen glühen also mit dem Wort, mit einer
+     Deklaration statt mit einer zweiten daneben. */
+  /* Kein Gegenstück für den Glyph nötig: unter 1280 px rendert der Screen ihn als Text, darüber gar
+     nicht (StartScreen.jsx, `useIsWide`). Diese Regel ist das zweite Schloss — sie macht das Zeichen
+     sichtbar, und die Grundregel oben hält es unter der Schwelle in jedem Fall aus dem Layout. */
+  .hub-play .as-brandgrid { display: inline-block; }
+  .hub-play .as-brandgrid-column {
+    width: .09em; height: .874em;
+    margin-left: .02em; margin-right: .085em;
+    vertical-align: -.087em;
+    color: var(--deck-a1, #26c6e6);
+  }
+
+  /* --- Tagline und Bildmarke: mit der Wortmarke EIN Lockup --------------------
+     Der Abstand steht hier und nicht als `gap-[10px]` an der Fundstelle: die Fuge innerhalb des
+     Lockups gehört zur Komposition und nicht zur Kachel-Sprache des JSX.
+
+     DIE TAGLINE PICKT EINE ROLLE (`text-body-lg`, 15,5 px) und führt keine Größe ein. Der Entwurf
+     nennt 15 px; die nächste Sprosse der Leiter liegt einen halben Pixel daneben, und eine neue Rolle
+     für einen halben Pixel wäre eine Rolle, die jeder Screen danach hat (C1-F11).
+
+     BEIDE TÖNE STEHEN SCHON IM BAUM. `#9a9aa6` trägt an vier Stellen im JSX gedämpften Fließtext,
+     `#5c5c68` sechsmal in dieser Datei genau diese Rolle — ein Trennzeichen, das leiser ist als der
+     Text daneben. Es kommt also kein Tintenwert dazu, es kommt je eine Fundstelle dazu. Tinte ist
+     keine der fünf Achsen (§2c) und wird in dieser Runde gezählt, nicht umgestellt. */
+  .as-lockup { gap: 10px; }
+  .as-tagline { letter-spacing: .05em; color: #9a9aa6; white-space: nowrap; }
+  .as-tagline-dot { color: #5c5c68; }
+
+  /* Die eigenständige Bildmarke — DASSELBE ZEICHEN, ANDERER ZUSCHNITT, und ausdrücklich dieselbe
+     Zellengröße wie die Spalte im I. Das ist kein gewählter Wert, sondern der Verzicht auf einen:
+     wären die Zellen hier kleiner, wären es zwei Zeichen, die einander ähneln, statt eines in zwei
+     Ausschnitten. „Klein" ist es trotzdem — 47 px breit in einer 700-px-Spalte, also 7 % davon.
+
+     `calc(var(--wm-size) * .874)` statt `em`, weil ein `em` hier die Grundschrift der Spalte wäre und
+     nicht die Marke; die Breite folgt der viewBox. `overflow: visible`, damit der Schein die
+     Zeichenfläche verlassen darf — ohne das schnitte die SVG-Wurzel ihn an der äußersten Zelle ab,
+     und leuchten sollen genau die beiden Ecken.
+
+     Der Schein ist derselbe wie am Wort: 9 px, Deckfarbe 55 %. Der Entwurf nennt 8; die 9 stehen seit
+     dem Deck-Pass an `.as-wordmark`, und eine Marke, die mit einem Pixel anderem Radius glüht als der
+     Schriftzug daneben, ist ein zweiter Wert für dieselbe Sache. */
+  .hub-play .as-brandmark {
+    height: calc(var(--wm-size) * .874); width: auto;
+    overflow: visible;
+    color: var(--deck-a1, #26c6e6);
+    filter: drop-shadow(0 0 9px color-mix(in srgb, var(--deck-a1, #26c6e6) 55%, transparent));
+  }
   /* Der Glow hinter der Marke folgt mit: drei Ellipsen, links → rechts von der ersten in die zweite
      Deckfarbe. Vorher standen hier feste Cyan-/Violett-/Amber-Werte — der Dreiklang des alten PNG.
      Mit einer deckfarbenen Marke war das der letzte Rest, der die alte Palette festhielt. */
