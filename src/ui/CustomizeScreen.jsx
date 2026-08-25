@@ -296,7 +296,11 @@ const STD_PACK = { ...(THEMES.find((t) => t.id === "genesis") || {}), kind: "std
 // #307/#Shop-Reorg: eigene Kategorien. „Packs" = Genesis (Default) + Kauf-Packs, nach DP-Preis aufsteigend (billig oben,
 // teuer unten; Genesis immer zuoberst). „Challenges" = die freischaltbaren cond-Packs (#303) OHNE Genesis.
 const PACKS_TAB = [STD_PACK, ...THEMES.filter((t) => t.kind === "buy").slice().sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0))];
-const CHALLENGES_TAB = THEMES.filter((t) => t.kind === "cond" && t.id !== "genesis"); // Genesis raus aus Challenges → Packs-Seite (Default)
+/* Der Challenges-Reiter zeigt die ERSPIELTEN Packs. Genesis und Insert Coin sind zwar auch `cond`, aber
+   geschenkt — das eine für abgeschlossenes Onboarding, das andere für den ersten beendeten Lauf. Beide
+   stehen deshalb auf der Packs-Seite (Default): im Challenges-Reiter sähen sie wie eine offene Aufgabe
+   aus, die niemand mehr angehen kann. */
+const CHALLENGES_TAB = THEMES.filter((t) => t.kind === "cond" && t.id !== "genesis" && t.id !== "insertcoin");
 // #: Aktives (gerade ausgerüstetes) Pack immer nach vorn — direkt hinter „Standard" (falls in der Liste), sonst ganz
 // vorn (Challenges haben kein Standard). Reine Umsortierung; Preise/Reihenfolge der übrigen bleiben.
 function orderPacks(list, deckId) {

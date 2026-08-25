@@ -383,6 +383,16 @@ export const THEME_DEFS = {
     deckId: "deck_solfatara",   bfId: "bf_solfatara",   els: ["deck", "bf"] },
   origami:     { id: "origami",     name: packName("deck_origami"),     emblem: "🕊️", kind: "buy", price: 40, a1: "#f4ecdd", a2: "#c9bda6",
     deckId: "deck_origami",     bfId: "bf_origami",     els: ["deck", "bf"] },
+  /* #deck-insertcoin „Insert Coin“ — Willkommensgeschenk nach dem ersten abgeschlossenen Lauf.
+     `kind: "cond"` wie Genesis, weil es an eine Bedingung hängt statt an einen Preis; im Hub steht es
+     trotzdem auf der Packs-Seite und nicht im Challenges-Reiter (siehe CustomizeScreen CHALLENGES_TAB).
+     a1 ist ein warmes Bernstein (Farbwinkel ~30°, damit das Deck in der Auswertung unter Orange fällt),
+     a2 das kühle Blau des Hintergrunds — genau der Zweiklang des Motivs: oranges Marquee über blauem
+     Bildschirm. Kollidiert nicht mit dem grün/cyanen Beryll (`arcade`, a1 #39e64d), obwohl beide Decks
+     Neon zeigen — die zwei Paletten stehen im Hub weit auseinander.
+     Emblem 🕹️ statt einer Münze: den Einwurf sagt schon der Name, das Bild trägt der Automat. */
+  insertcoin:  { id: "insertcoin",  name: packName("deck_insertcoin"),  emblem: "🕹️", kind: "cond", a1: "#ff9a3c", a2: "#4a7fd6",
+    deckId: "deck_insertcoin",  bfId: "bf_insertcoin",  els: ["deck", "bf"] },
 };
 
 export const THEMES = Object.values(THEME_DEFS);

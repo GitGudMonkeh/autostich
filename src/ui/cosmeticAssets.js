@@ -178,6 +178,8 @@ import solfataraFront   from "../assets/cards/decks_player/deck_solfatara/front.
 import solfataraBack    from "../assets/cards/decks_player/deck_solfatara/back.webp";
 import origamiFront     from "../assets/cards/decks_player/deck_origami/front.webp";
 import origamiBack      from "../assets/cards/decks_player/deck_origami/back.webp";
+import insertCoinFront  from "../assets/cards/decks_player/deck_insertcoin/front.webp"; // #deck-insertcoin „Insert Coin“ (NICHT deck_arcade — das ist Beryll)
+import insertCoinBack   from "../assets/cards/decks_player/deck_insertcoin/back.webp";
 import bfArcadeDesktop     from "../assets/battlefields/bf_arcade/desktop.jpg";
 import bfArcadeMobile      from "../assets/battlefields/bf_arcade/mobile.jpg";
 import bfPolarlichtDesktop from "../assets/battlefields/bf_polarlicht/desktop.jpg";
@@ -236,6 +238,8 @@ import bfSolfataraDesktop   from "../assets/battlefields/bf_solfatara/desktop.jp
 import bfSolfataraMobile    from "../assets/battlefields/bf_solfatara/mobile.jpg";
 import bfOrigamiDesktop     from "../assets/battlefields/bf_origami/desktop.jpg";
 import bfOrigamiMobile      from "../assets/battlefields/bf_origami/mobile.jpg";
+import bfInsertCoinDesktop  from "../assets/battlefields/bf_insertcoin/desktop.jpg"; // #deck-insertcoin
+import bfInsertCoinMobile   from "../assets/battlefields/bf_insertcoin/mobile.jpg";
 
 // id → { front, back }. Fällt für unbekannte ids auf DECK_ASSETS.default zurück (siehe deckAssets()).
 export const DECK_ASSETS = {
@@ -298,6 +302,7 @@ export const DECK_ASSETS = {
   deck_nimbus:      { front: nimbusFront,      back: nimbusBack },
   deck_solfatara:   { front: solfataraFront,   back: solfataraBack },
   deck_origami:     { front: origamiFront,     back: origamiBack },
+  deck_insertcoin:  { front: insertCoinFront,  back: insertCoinBack },
 };
 
 // id → Battlefield-Skin (responsive { desktop, mobile }). default = null (aktueller Look ohne
@@ -362,6 +367,7 @@ export const BATTLEFIELD_ASSETS = {
   bf_nimbus:      { desktop: bfNimbusDesktop,      mobile: bfNimbusMobile },
   bf_solfatara:   { desktop: bfSolfataraDesktop,   mobile: bfSolfataraMobile },
   bf_origami:     { desktop: bfOrigamiDesktop,     mobile: bfOrigamiMobile },
+  bf_insertcoin:  { desktop: bfInsertCoinDesktop,  mobile: bfInsertCoinMobile },
 };
 
 export const deckAssets = (id) => DECK_ASSETS[id] || DECK_ASSETS.default;
