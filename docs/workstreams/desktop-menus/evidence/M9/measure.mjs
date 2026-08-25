@@ -26,7 +26,7 @@
    THE BUNDLE IS VERIFIED, same as the survey: a stale `vite preview` on this shared worktree serves an
    abandoned build and answers just as cheerfully (M3-F09). */
 
-import { writeFileSync, mkdirSync, readFileSync, existsSync } from "node:fs";
+import { writeFileSync, mkdirSync, readFileSync } from "node:fs";
 import { join, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
