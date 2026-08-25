@@ -856,6 +856,40 @@ which was right.
 where two applied, once naming a mount point that does not mount: *an import is not a render, and a
 filename is not an assertion.* A planner's inventory is a hypothesis until a worker measures it.
 
+### 8.28 The glossary has nine mount points — the widest seam of the round
+
+*Measured 2026-08-25, and it took two wrong greps to find.*
+
+`Glossary.jsx` exports **`GlossaryPanel`** and **`GlossaryText`**, and they are mounted from **nine
+places**:
+
+| Mounted by | Which is |
+| --- | --- |
+| `SkillSelect` · `PerkSelect` · `LegendarySelect` | the pick phase — battle session |
+| `FormationPhase` · `ArchitectScreen` · `HeldSkills` | in-run — design belongs to the battle session |
+| **`StartScreen`** (×2) | **the mainscreen — a separate workstream that has not begun** |
+| `CornerTools` · `App` | hub chrome |
+
+**M6's gate is therefore five surfaces wide:** `skill-choice`, `perk-choice`, `run-stage`,
+`architect` and `hub`, all at zero.
+
+**The `hub` clause carries as much weight as the battle ones.** The mainscreen is its own workstream
+and has not started. A change leaking there means it inherits something nobody decided *and* its
+baseline is wrong before its first measurement.
+
+**Two wrong greps on the way, both mine, both corrected before the contract:**
+
+1. `<Glossary` matched `<GlossaryIcon` — eleven files, most of them false.
+2. Chasing `GlossaryOverlay` and `GlossaryButton` found them rendered only inside `Glossary.jsx`,
+   which read as "self-contained" and was the opposite of true. The exported components are
+   `GlossaryPanel` and `GlossaryText`, and those are everywhere.
+
+**The rule from §8.11 held and needed applying twice.** *Derive from the render graph, by grep for
+`<Component`* — but a prefix grep is not a render graph either. **Match the whole element name.**
+
+*This is also the sharpest illustration of why M5's method matters. The survey reaches one of nine
+mounts. Eight are invisible to a green run.*
+
 ### 8.26 A guard fixed by replacing a threshold with an invariant — the shape, demonstrated
 
 M5's contract predicted `guide-desktop` would break. **It did not.** What went red was the MENU-38
