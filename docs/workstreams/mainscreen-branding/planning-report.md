@@ -264,30 +264,47 @@ catalog keys per language.
 
 ## 5. Tier and worker split
 
-### 5.1 Tier B, with one Tier C clause
+### 5.1 Tier C — corrected 2026-08-25, before the contract was written
 
-Tier B: one screen, one feature. **The borrowed Tier C clause: the before/after comparison runs again
-after every design iteration**, each with its own capture and its own findings table. A head-zone
-composition is not settled in one round, and a single comparison at the end would show the last change
-rather than the work.
+**This report scoped a Tier B task and that was right when it was written.** It described a *design*
+commission: three commits, mark and tagline and panel.
 
-Note that this clause is now **this workstream's own**, not an inherited one: `4f72ba68` removed it
-from the lifecycle along with the rest of the visual protocol (`#menu-rework` §0.5). It is kept here
-for the reason it existed, which the deletion did not change.
+It is now **also the round's last migration.** *Measured:* `StartScreen.jsx` carries 22 colour values
+and **25 inline `style={{`**, and its 19 `.hub-*` plus 31 `.as-hub-*` rules sit on no token at all —
+it is the only screen in the tree using none of the shared menu constants, which is why it was
+separated in the first place.
 
-### 5.2 One worker, three sequenced commits
+**Design plus migration plus a new component is the shape M1 carried, and M1 was Tier C.** The
+correction is made here rather than discovered at an End stop.
+
+**The Tier C clause this section used to borrow is now simply part of the tier:** the before/after
+comparison runs again after every design iteration, each with its own capture and its own findings
+table. A head-zone composition is not settled in one round, and a single comparison at the end would
+show the last change rather than the work. It survives `4f72ba68`, which removed it from the lifecycle
+along with the rest of the visual protocol (`#menu-rework` §0.5) — kept here for the reason it
+existed, which the deletion did not change.
+
+**And the base is `feature/desktop-menus`, not `dev`.** The vocabulary lives there and `dev` does not
+have it yet. A sequencing fact rather than a preference: `conventions.md` §2c is a hard dependency of
+C4 (§1.4).
+
+### 5.2 One worker, four sequenced commits
 
 | Commit | Contents |
 | --- | --- |
-| **C1** | **Measurement only. No pixel moves.** Re-derive the head-zone budget at 1280×720 first, then the other four sizes, on the post-typography tree. Output is a table, and the input to Q9 |
-| **C2** | The head zone: `BrandGrid.jsx`, the tagline slot, the composed lockup. Designed **1280 → 1600 → 1920**, smallest first |
-| **C3** | The Signature Deck panel against §2c, plus the deviation table of §2.3 |
+| **C1** | **Measurement only. No pixel moves.** The head-zone budget re-derived at 1280×720 first, in a `main` build — **the figures in §1.3 are pre-typography and yours replace them** — and the mark measured at its real **5 × 8** height. Baseline captured |
+| **C2** | The head zone: `BrandGrid.jsx`, the tagline, the composed lockup. Designed **1280 → 1600 → 1920**, smallest first |
+| **C3** | The Signature Deck panel, at today's surface values |
+| **C4** | **The vocabulary** — every surface, edge, elevation, radius and inset from §2c, with every deviation in a named table |
 
 **C1 exists as a commit of its own, not as a bullet inside C2**, for the reason `task-lifecycle.md`
-§5 gives about measurement tasks: if proving the work correct is a sub-bullet, it is the thing that
-gets cut under time pressure. Here it is worse than that — C1's numbers are the *input* to a decision
-the owner has to make, and a worker that has already composed the head zone has an interest in the
-answer.
+§5 gives about measurement tasks: if proving the work correct is a sub-bullet, it is what gets cut
+under time pressure. Here it is worse — C1's numbers are the *input* to a decision the owner has to
+make, and a worker that has already composed the head zone has an interest in the answer.
+
+**5 × 8 is what makes C1 load-bearing rather than ceremonial.** It is two rows taller than the shape
+the head-zone budget was ever reasoned against, at the size where all three short-desktop blocks fire
+and the wordmark is already pulled up 70 px.
 
 ### 5.3 The baseline
 
