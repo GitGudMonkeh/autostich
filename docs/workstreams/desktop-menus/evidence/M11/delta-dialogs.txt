@@ -1,0 +1,7 @@
+
+  compared 16 cells, 80 matched nodes
+  Surfaces only. Control states are not captured and are verified by hand.
+
+  unmatched nodes: 0 pre-registered (H-c: leaderboard, victory), 0 elsewhere
+
+  ZERO computed deltas on the four surface axes.
