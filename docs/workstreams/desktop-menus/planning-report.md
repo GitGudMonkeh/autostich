@@ -856,6 +856,69 @@ which was right.
 where two applied, once naming a mount point that does not mount: *an import is not a render, and a
 filename is not an assertion.* A planner's inventory is a hypothesis until a worker measures it.
 
+### 8.22 Two differences on the end screen — counted, and left alone
+
+*M4's two questions, 2026-08-25. Both measured, both untouched, and the ruling is the same for both.*
+
+| | Today | Nearest step | Off by |
+| --- | --- | --- | --- |
+| the seven panels | 15 / 17 / 17 px | `--in-base` 18 | −3 / −1 / −1 |
+| the same, flat windows | 12 / 15 / 14 px | `--in-snug` 13 | −1 / +2 / +1 |
+| `.go-bestrow` | 9 / 13 px | `--in-tight` 11 · `--in-snug` 13 | −2 / 0 |
+| the unlock window's scrim | `rgba(8, 8, 12, .82)` | `--sf-scrim` `rgba(12, 12, 16, .8)` | **4/4/4 per channel, +.02 alpha** |
+
+**Ruling: both stay. Neither is a gap.**
+
+The vocabulary is not short of anything here — these are **differences**, and resolving them would
+move a screen **visibly**, on the one screen in this round that has no approved design. That is the
+same reason `PrivacyModal` was migrated and not improved.
+
+**The scrim needed the ruling more than the paddings did.** M3 asked for a comparable exception and
+got it at **≤ 1.8/255**, with the explicit note that it created no standing permission. **M4's is more
+than double that**, and visible at every width. The precedent does not reach, and M4 asked rather
+than took — which is the only reason the precedent still means anything.
+
+**They cannot spread:** both are counted by the ratchets. When the end screen gets a design, these
+are its inputs and the numbers are already here.
+
+**M4 rejected the half-measure itself, correctly.** Converting only `9px` to `var(--in-snug)` would
+leave two spellings for one padding and make the ladder *look* adopted where it is not. A partial
+migration that reads as a complete one is worse than an honest literal.
+
+### 8.23 A worker's prediction fails the same way a design's does
+
+M8 predicted that moving to `--sf-glass` would cost one delta entry per node. **Measured by M4: none**
+— the browser normalises the default angle out of the computed value.
+
+**Fourth instance in this round, and the first where the prediction was a worker's rather than a
+design document's.** The pattern is now general enough to state without reference to who wrote it:
+
+> **In this codebase, observations survive and predictions do not.** Whoever makes one — a design
+> document, a worker, the planner — the number is taken as a hypothesis and re-measured by whoever
+> acts on it.
+
+Three design documents, one worker handoff. Not one of the four was wrong in *direction*; all four
+were wrong about *cost*.
+
+### 8.24 The named class, committed inside a guard, in the round that named it
+
+M4's counter-check found three defects in its own new guard. The third is the one worth keeping:
+
+```js
+/!important/.test(rule)   // asks: does this rule carry one ANYWHERE?
+```
+
+`font-size`, `padding` and `color` still carried one, so the condition was **permanently true** and
+the ordering branch it protected **could never fire**.
+
+That is the round's own named class — *a check that asks whether something is present will eventually
+pass on the wrong thing* — committed **inside a guard**, by a worker who had that sentence in its
+contract. And it was found by **running the counter-check**, not by reading the code.
+
+**The lesson is not "be careful".** It is that eleven deliberate breakages found what no amount of
+re-reading did, and that the counter-check is the only part of the guard discipline that finds
+mistakes in the guard itself.
+
 ### 8.21 The round's tail, re-cut by the owner — 2026-08-25
 
 **Chronicle is out of this round.** Owner decision. `ChronikOverview` and `CardDetail` keep whatever
