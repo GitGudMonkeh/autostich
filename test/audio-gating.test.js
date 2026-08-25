@@ -88,7 +88,15 @@ describe("Musik Lazy-Gating (#264)", () => {
       // Song lief inzwischen lange → nächster Stufenwechsel blendet weich auf einen neuen Track (genau ein Reload).
       el.currentTime = 60;
       music.setProgress(10000000);    // 10 Mio → mid (TIER_MIN.mid = 3 Mio); Stufenwechsel bei lang laufendem Song
-      vi.advanceTimersByTime(1200);   // Fade-Übergang durchlaufen (Swap am Ende der ersten Halbwelle)
+      /* #musik-blende (26.08.2026): Der Tausch passiert später als früher, und das ist der Punkt der Änderung —
+         der nächste Titel wird erst ANGELADEN, dann wird geblendet. Vorher stand hier ein einzelnes
+         `advanceTimersByTime(1200)`, das die damalige Blendenlänge abschrieb; jede Politur an den zwei
+         [TUNING]-Werten hätte den Test rot gemacht, ohne dass sich am VERHALTEN etwas ändert.
+         Geprüft wird deshalb die Aussage, nicht die Uhr: währenddessen läuft der alte Song WEITER (kein
+         Schnitt, keine Stille), und am Ende steht GENAU EIN neuer Titel. */
+      vi.advanceTimersByTime(200);
+      expect(el.srcSets.length, "während des Anladens läuft der alte Song weiter").toBe(base);
+      vi.advanceTimersByTime(6000);   // großzügig: Anladen (gedeckelt) + Ausblende, unabhängig von den Tuning-Werten
       expect(el.srcSets.length, "nach dem Fade genau ein neuer Track").toBe(base + 1);
     } finally {
       vi.useRealTimers();
