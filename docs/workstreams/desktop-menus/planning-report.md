@@ -856,6 +856,48 @@ which was right.
 where two applied, once naming a mount point that does not mount: *an import is not a render, and a
 filename is not an assertion.* A planner's inventory is a hypothesis until a worker measures it.
 
+### 8.26 A guard fixed by replacing a threshold with an invariant — the shape, demonstrated
+
+M5's contract predicted `guide-desktop` would break. **It did not.** What went red was the MENU-38
+live probe, and it went red **because the migration succeeded**: it asserted `> 30` on a number that
+falls with every correct conversion — 58 when it was written, 30 as its floor, 29 after M5's three.
+
+**Third guard this round to go red on success**, after M9's `#ueberzug`. But M5's repair is the first
+that shows what the instruction actually means:
+
+| | |
+| --- | --- |
+| **The old guard** | a **floor**: "at least 30 of these literals remain" |
+| **The new guard** | an **invariant**: "the expression recognises the family" — a positive probe, a **negative** probe, and an anchor of `toBe(3)` on `.as-edge-*` |
+
+The negative probe is the part worth copying: **a too-wide expression calms the ratchet exactly as
+reliably as a too-narrow one.** A guard that only checks it *finds* things will pass when it finds
+everything, including what it should not.
+
+**Proved rather than argued:** simulate a further migration down to 16 and the new guard stays green
+where the old would be red; the seven defects it exists for still turn it red.
+
+**This is the sentence from §8.17 with a worked example behind it.** *A correct rewrite makes a guard
+stronger; if yours got weaker, you rewrote the threshold instead of the invariant.* M5 rewrote the
+threshold **out of existence** — the guard no longer has a number to fall below.
+
+### 8.27 The named class, arrived in a worker's own tool — twice now
+
+M5's measurement probe hit the wrong element **and reported ok**. *"The only visible button reading
+`i`"* is also the glossary button, which sits behind the run in the document and therefore comes
+first. The opening run opened the glossary and said nothing was wrong.
+
+Reformulated as *"the visible `i` that is not `.gloss-i-btn`"* — **the contract's own H-e form,
+arrived in the worker's own tool.**
+
+M4 did the same thing inside a guard; M5 did it inside a probe. **Both had the sentence in their
+contract.** That is not a failure of the instruction — it is evidence for what the instruction says:
+the shape is easy to write and hard to see, which is exactly why it needs a rule rather than
+attention.
+
+**Seven instances now**, and the two most recent were committed by workers who had been warned about
+it in writing, in the same document that told them to look for it elsewhere.
+
 ### 8.25 "M5 shrank" was the sixth premise, and it was mine
 
 I told the owner M5 had become "content only — its frame came with M3". **Half right, and the wrong

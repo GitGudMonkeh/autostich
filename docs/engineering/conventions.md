@@ -588,6 +588,40 @@ still stops and reports.**
 already approved, so it is value-preserving and gated at zero delta, and it removes four `!important`
 on the way.
 
+### The sub-1280 threshold, stated once instead of ruled three times — 2026-08-25
+
+Three workers have now asked to convert a literal that is *almost* a token, on a value read below
+1280 px. Deciding each on its own has worked, and it has also produced a precedent nobody could
+predict from. **M5-F02 is the third, and it is the one that turns the practice into a rule.**
+
+| Task | The delta | Ruling |
+| --- | --- | --- |
+| **M3** | scrim, **≤ 1.8/255**, no alpha change | granted |
+| **M4** | scrim, **4/4/4 per channel + .02 alpha**, visible at every width | **refused** |
+| **M5** | `#2a2a33` against `--ed-quiet` `#2a2a34` — **1/255, blue only**, eight sites | **granted** |
+
+**The rule these three describe:**
+
+> **A sub-1280 conversion is granted where the maximum per-channel delta is ≤ 2/255 and no alpha
+> changes.** Above that, or where alpha moves, it is the owner's.
+
+M5's is the smallest of the three — an order below perception — and it covers **the entire neutral
+edge vocabulary of that file**. Refusing would leave eight literals standing in a migrated file,
+precisely where this round's subject is.
+
+M4's refusal stands on measurably different facts: more than double the channel delta, an alpha
+change, and visible at every width on a screen with no approved design. **The distinction is a
+number, not a mood.**
+
+**What does *not* change: the worker still asks.** The threshold makes the answer predictable, not
+automatic. A worker that applies it itself has replaced *"nothing below 1280"* with its own
+arithmetic, which is what the original clause exists to prevent — and all three of these were found
+*because* someone asked instead of taking. The rule shortens the answer; it does not remove the
+question.
+
+**Every grant is recorded with its number**, so the fourth case is decided against three measurements
+rather than against a memory.
+
 ### What is permanently exempt
 
 - **`PHASE_ACCENTS` in `modalStyle.jsx`** keeps its six colours as literal strings. `.c` is handed to
