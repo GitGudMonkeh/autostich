@@ -259,7 +259,7 @@ export const GLOSSARY = {
     text: `Die Eis-Ressource: Masse liegt auf dem Brettfeld. Jeder Gletscher gewinnt jeden Durchlauf +${de(G_EWIGER_FROST)} Masse — bedingungslos, ob Sieg oder Niederlage; ein Sieg bringt +${de(G_WIN_MASS)} Masse zusätzlich.`,
     match: ["Masse"] },
   bersten: { category: "frak", group: "ice", label: "Bersten", icon: "✷", color: CLR.ice,
-    text: `Erreicht ein Gletscher ${G_THRESHOLDS[G_THRESHOLDS.length - 1]} Masse, bricht er: Berst-Score aus Masse × Wucht der erreichten Schwelle (Schwellen ${G_THRESHOLDS.join(" / ")}), verstärkt um +${pct(G_KASKADE)} % je angrenzendem Gletscher und Kollision, wenn der Bruch einen Gletscher-Nachbarn trifft. Danach fällt er auf 0 ab und füllt sich zum Durchlauf-Beginn aus seiner Firn-Reserve wieder auf.`,
+    text: `Erreicht ein Gletscher ${G_THRESHOLDS[G_THRESHOLDS.length - 1]} Masse, bricht er: Berst-Score aus Masse × Wucht der erreichten Schwelle (Schwellen ${G_THRESHOLDS.join(" / ")}), verstärkt um +${pct(G_KASKADE)} % je angrenzendem Gletscher und Kollision, wenn der Bruch einen Gletscher-Nachbarn trifft. Danach fällt er auf 0 ab und füllt sich zum Durchlauf-Beginn aus seiner Boden-Reserve wieder auf.`,
     match: ["Bersten", "bricht", "brechen", "Bruch", "Brüche", "Bruchs", "brechendem", "Berst-Score", "Berst-Schwelle"] },
   cluster: { category: "frak", group: "ice", label: "Cluster", icon: "⧉", color: CLR.ice,
     text: "Eine Gruppe direkt aneinandergrenzender Gletscher. Viele Eis-Skills messen die Cluster-Größe (z. B. Verschmelzen, Verzahnung); Eisbrücke zählt auch die Diagonalen dazu.",
@@ -267,10 +267,10 @@ export const GLOSSARY = {
   eisformation: { category: "frak", group: "ice", label: "Gletscher-Formationen", icon: "❄", color: CLR.ice,
     text: `Eis ist das einzige Deck mit Gletscher-Formationen: geometrische Formen aus festgefrorenen Gletschern verstärken deren Bersten — Block = 2×2 (4 Gletscher, ×${de(G_BLOCK)}), Kreuz = Zentrum + 4 Nachbarn (5, ×${de(G_KREUZ)}), Linie = volle Reihe (5) oder Spalte (8) (×${de(G_LINIE)}), Große Fläche = 3×3 (9, ×${de(G_FLAECHE)}). Überlappende Formen stapeln.`,
     match: ["Gletscher-Formationen", "Gletscher-Formation", "Eis-Formationen", "Eis-Formation"] },
-  // id `freeze` bleibt als Backcompat-Token erhalten (glossary.test.js), umgewidmet auf „Firn-Boden".
-  freeze: { category: "frak", group: "ice", label: "Firn-Boden", icon: "❄", color: CLR.ice,
-    text: `Firn liegt als Reserve auf dem Brettfeld (Firn-Boden), getrennt von der Gletschermasse. Frierst du einen Gletscher auf ein aufgeladenes Feld, wird der angesammelte Firn zu seiner Reserve; der Gletscher startet leer und zieht daraus jeden Durchlauf wieder auf volle ${G_THRESHOLDS[G_THRESHOLDS.length - 1]} Masse nach (nur die Differenz, nie darüber), bis die Reserve leer ist. Offenen Boden laden Dauerfrost, Schneetreiben und Eiszeit auf — nie unter einen Gletscher.`,
-    match: ["Firn-Boden", "Firn"] },
+  // id `freeze` bleibt als Backcompat-Token erhalten (glossary.test.js), umgewidmet auf „Schnee".
+  freeze: { category: "frak", group: "ice", label: "Schnee", icon: "❄", color: CLR.ice,
+    text: `Schnee liegt als Reserve auf dem Brettfeld, getrennt von der Gletschermasse. Frierst du einen Gletscher auf ein aufgeladenes Feld, wird der angesammelte Schnee zu seiner Boden-Reserve; der Gletscher startet leer und zieht daraus jeden Durchlauf wieder auf volle ${G_THRESHOLDS[G_THRESHOLDS.length - 1]} Masse nach (nur die Differenz, nie darüber), bis die Reserve leer ist. Offenen Boden laden Dauerfrost, Schneetreiben und Eiszeit auf — nie unter einen Gletscher.`,
+    match: ["Schnee"] },
 
   /* ============ 4 · Pflanze ============ */
   growth: { category: "frak", group: "plant", label: "Wachstum", icon: "⚘", color: CLR.plant,

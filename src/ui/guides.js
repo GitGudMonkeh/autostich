@@ -94,7 +94,7 @@ export const GUIDES = {
     pillarsLabel: `Die drei Säulen`,
     pillars: [
       { glyph: "❆", color: "#5ec8f0", name: "Masse", sub: "· die Ressource", text: `Sie sammelt sich auf dem **Brettfeld** an (nicht auf der Karte), jeden Durchlauf ein Stück — ganz von selbst, ob Sieg oder Niederlage — und mehr, wenn ein Gletscher gewinnt. Masse fällt nie.` },
-      { glyph: "✷", color: "#9fe6ff", name: "Der Bruch", sub: "· der Payoff", text: `Ein Gletscher **hält und wächst**, bis seine Masse die **oberste Schwelle** erreicht — dann bricht er mit voller Wucht und **fällt zurück auf null**. Hat das Feld eine **Firn-Reserve**, zieht er daraus sofort wieder hoch; sonst baut er von unten neu auf.` },
+      { glyph: "✷", color: "#9fe6ff", name: "Der Bruch", sub: "· der Payoff", text: `Ein Gletscher **hält und wächst**, bis seine Masse die **oberste Schwelle** erreicht — dann bricht er mit voller Wucht und **fällt zurück auf null**. Hat das Feld eine **Boden-Reserve**, zieht er daraus sofort wieder hoch; sonst baut er von unten neu auf.` },
       { glyph: "▦", color: "#5a9fd4", name: "Das Cluster", sub: "· der Multiplikator", text: `Gletscher **nebeneinander** verstärken einander: je dichter das Feld, desto heftiger jeder Bruch — und ein Bruch kann eine **Kaskade** durchs ganze Cluster auslösen.` },
     ],
     loop: {
@@ -105,7 +105,7 @@ export const GUIDES = {
         `Erreicht ein Gletscher die **oberste Schwelle**, **bricht** er mit voller Wucht → großer Berst-Score; danach **fällt er auf null** und lädt neu auf.`,
         `Stehen Gletscher **dicht beieinander**, verstärkt jeder Bruch die Nachbarn — und kann eine **Kaskade** durchs Cluster rollen lassen.`,
         `Schießt ein Gletscher **über die Schwelle hinaus**, wird der Überschuss sofort als Score ausgezahlt — nichts geht verloren.`,
-        `**Firn** sammelt sich auf offenen Feldern (Dauerfrost, Schneetreiben, Eiszeit) und wird zur **Reserve** des Gletschers, der später dort einfriert — sie füllt ihn nach jedem Bruch wieder auf.`,
+        `**Schnee** sammelt sich auf offenen Feldern (Dauerfrost, Schneetreiben, Eiszeit) und wird zur **Reserve** des Gletschers, der später dort einfriert — sie füllt ihn nach jedem Bruch wieder auf.`,
       ],
       valve: `Ein Gletscher ist **starr** — du gibst seine Umstellbarkeit auf. Dafür ist er **unaufhaltsam**: die Masse steigt nur, und der Bruch hängt an ihr, nicht am Stich — er kommt, ob die Karte den Stich gewinnt oder verliert.`,
     },
