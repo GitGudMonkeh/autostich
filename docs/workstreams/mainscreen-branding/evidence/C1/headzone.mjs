@@ -59,7 +59,13 @@ const ORIGIN = `${HOST}${BASE}`;
 /* 1280x720 FIRST, and that ordering is the contract's, not a convenience: it is the itch.io embed,
    it is where all the reserves are already spent, and it is the size the composition is decided
    against. A budget derived at 1920 and checked at 1280 is a budget derived at the wrong end. */
-const SIZES = [[1280, 720], [1400, 700], [1536, 791], [1600, 900], [1920, 1080]];
+/* The five the contract names, plus three the FORMULA needs and the contract does not: the deck art's
+   height divides by the `zoom`, and the zoom is `clamp(0.85, 100vw/1920, 1)` — so every one of the
+   five contract viewports sits at the clamp FLOOR, and none of them exercises the band where the zoom
+   is between the floor and 1. That band starts at 1632 px of width. A formula checked only where its
+   divisor is constant is a formula checked at one point. */
+const SIZES = [[1280, 720], [1400, 700], [1536, 791], [1600, 900], [1920, 1080],
+  [1700, 760], [1800, 820], [1920, 850]];
 const LANGS = ["de", "en"];
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));

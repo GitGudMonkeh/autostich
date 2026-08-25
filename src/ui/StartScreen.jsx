@@ -677,61 +677,93 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           gar nicht im Layout. Sie beantwortet, was man vor dem Start wissen will: welches Deck aktiv ist,
           wie die Guthaben stehen, was die Woche noch hergibt und wie der letzte Lauf lief. Alle Werte
           stammen aus bereits vorhandenen Quellen — nichts davon wird hier neu berechnet. */}
-      <div className="hidden dt:flex as-glass as-ring flex-col gap-[18px] rounded-2xl px-6 py-[22px]">
+      {/* #mainscreen-branding C3 — DIE TAFEL BEKOMMT EINEN EIGENEN KLASSENHAKEN. Sie hatte keinen:
+          C1 musste sie als „das ring-tragende Kind von `.hub-stand`, das nicht die Kachelbank ist"
+          greifen, weil ZWEI Kinder `.as-ring` tragen (C1-F10). Ein Screen, den nur eine Negation
+          erreicht, ist ein Screen, den der nächste Wächter falsch trifft. */}
+      <div className="as-deck hidden dt:flex as-glass as-ring flex-col gap-[18px] rounded-2xl px-6 py-[22px]">
         <i className="as-ring-run" aria-hidden="true" />
         <div className="ty-screen-title text-meta-3 opacity-45">
           {t("start.board.title")}
         </div>
-        <div className="flex items-center gap-4">
-          {/* 96 → 112 px (Mockup-Abnahme 18.08.2026): das Deck ist der GEGENSTAND dieser Tafel und war
-              kleiner gesetzt als die vier Kennzahlen darunter. */}
+        <div className="as-deck-row flex items-center gap-4">
+          {/* 96 → 112 px (Mockup-Abnahme 18.08.2026), und ab #mainscreen-branding C3 keine feste Zahl
+              mehr: das Bild ist so groß, wie die Seite es trägt, und erreicht die Entwurfsgröße
+              196 × 268 ab 1600 px (Owner-Entscheidung Q10, Option A). Die Formel steht in index.css
+              unter `.as-deck-art` — sie ist gemessen und nicht geraten, und der Nachweis rechnet sie
+              an fünf Viewports nach.
+              Rahmen und Schatten sind von hier in die Regel gewandert: der Rahmen war eines der vier
+              durchscheinenden Inline-Alphas, die dieser Screen mitbringt, und ein Inline-Literal ist
+              von keiner Regel außer `!important` erreichbar. Umgewandelt statt kopiert. */}
           {deckBack && (
-            <img src={deckBack} alt="" draggable="false"
-              className="w-[112px] h-auto rounded-lg select-none"
-              style={{ border: "1px solid rgba(150,150,170,.25)", boxShadow: "0 6px 18px rgba(0,0,0,.55)" }} />
+            <img src={deckBack} alt="" draggable="false" className="as-deck-art rounded-lg select-none" />
           )}
           <div className="flex flex-col gap-1 min-w-0 flex-1">
             <div className="ty-title text-head-2 truncate">{deckName}</div>
-            {/* Die Spielfeld-Zeile erscheint NUR, wenn das Spielfeld nicht zum Deck gehört. Der Registername
-                eines Spielfelds ist der Deckname plus Suffix („Biolumen · Battlefield") — im Normalfall stand
-                hier also „Battlefield · Biolumen · Battlefield", dreimal dasselbe Wort für null Information.
-                Sind Deck und Feld in der Werkstatt gemischt worden, sagt die Zeile dagegen etwas. */}
-            {bfName && !bfName.startsWith(deckName) && (
-              <div className="text-body-3 opacity-55 truncate">{t("start.board.field", { name: bfName })}</div>
+            {/* #mainscreen-branding C3 — DIE ATTRIBUT-CHIPZEILE. Spielfeld, Effekte und Musik standen
+            hier als drei stille Textzeilen untereinander. Als umbrechende Chipzeile sagen dieselben
+            drei dasselbe in einer Zeile: WAS gerade eingestellt ist.
+
+            SIE BLEIBT NEBEN DEM BILD, und das ist gemessen. Der Entwurf stapelt die drei UNTER das
+            gerahmte Feld. Als eigene Zeile unter beiden gebaut und nachgemessen kostet das 39 px an
+            allen drei kleinen Viewports — und die rechte Spalte hat bei 1280 × 720 sieben (C1-F03).
+            Neben dem Bild kostet sie nichts: die Tafel ist so hoch wie das Höhere von Bild und
+            Namensspalte, und die drei Chips passen in die Spalte, die vorher drei Zeilen trug. Der
+            Vertrag sagt ohnehin „die VORHANDENEN Spielfeld- und FX-Zeilen ALS Chipzeile" — umgestellt,
+            nicht umgezogen. Die Abweichung vom Entwurf steht mit ihrer Zahl im Nachweis.
+
+            DIE TEXTE SIND DIESELBEN. `start.board.field` und `start.board.fx` tragen ihre Beschriftung
+            schon im String („Spielfeld · {name}"), also braucht diese Zeile keinen einzigen neuen
+            Katalog-Schlüssel — sie ist eine Umstellung der Darstellung und keine neue Aussage. Genau
+            das meint der Vertrag mit „die VORHANDENEN Spielfeld- und FX-Zeilen als Chipzeile".
+
+            DER CHIP-LOOK IST AUCH NICHT NEU: Rahmen, Fläche, Radius und Polster sind die des
+            Musik-Kastens, der hier seit dem Musik-Pass steht. Sie sind dabei von einem Inline-Style in
+            eine Regel gewandert — der Rahmen ist eines der vier durchscheinenden Inline-Alphas dieses
+            Screens (.22), und ein Inline-Literal ist von keiner Regel außer `!important` erreichbar.
+            Umgewandelt statt dreimal kopiert.
+
+            WAS FEHLT, FEHLT WEITER. Ohne aktive Effekte entfällt der Effekt-Chip; gehört das Spielfeld
+            zum Deck, entfällt der Spielfeld-Chip. „Effekte · —" wäre ein Chip, der nichts sagt. */}
+        <div className="as-deck-attrs flex flex-wrap items-center gap-2">
+          {/* Die Spielfeld-Zeile erscheint NUR, wenn das Spielfeld nicht zum Deck gehört. Der Registername
+              eines Spielfelds ist der Deckname plus Suffix („Biolumen · Battlefield") — im Normalfall stand
+              hier also „Battlefield · Biolumen · Battlefield", dreimal dasselbe Wort für null Information.
+              Sind Deck und Feld in der Werkstatt gemischt worden, sagt die Zeile dagegen etwas. */}
+          {bfName && !bfName.startsWith(deckName) && (
+            <span className="as-deck-attr min-w-0" title={bfName}>
+              <span className="truncate">{t("start.board.field", { name: bfName })}</span>
+            </span>
+          )}
+          {/* Ausgerüstete Effekte. Ohne aktive Effekte entfällt der Chip. */}
+          {fxNames.length > 0 && (
+            <span className="as-deck-attr min-w-0" title={fxNames.join(" + ")}>
+              <span className="truncate">{t("start.board.fx", { list: fxNames.join(" + ") })}</span>
+            </span>
+          )}
+          {/* #musik — Was gerade läuft, plus Weiterschalten. Steht in derselben Zeile wie Spielfeld und
+              Effekte, weil die Musik zum „Stand" gehört wie beide: alles, was der Screen gerade IST.
+              Der Knopf bleibt IM Chip — als gestreckte Zeile stand er am Panelrand und las sich wie ein
+              eigenes Element neben dem Titel. */}
+          <span className="as-deck-attr as-deck-attr-music min-w-0" title={musicTitle || undefined}>
+            {/* Wiedergabe-Dreieck statt der Note: die Zeile sagt, was gerade LÄUFT — ein Zustand,
+                kein Genre. Als Vektor, damit es dieselbe Strichfamilie hat wie die Zeichen daneben. */}
+            <svg className="w-[11px] h-[11px] shrink-0 opacity-45" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="currentColor">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+            <span className="truncate max-w-[260px]">{musicTitle || "—"}</span>
+            {onMusicNext && (
+              <button onClick={onMusicNext} aria-label={t("music.next")}
+                title={musicTitle ? t("music.playing", { title: musicTitle }) : t("music.next")}
+                className="as-deck-attr-next shrink-0 rounded leading-none transition-all hover:opacity-100">
+                ⏭
+              </button>
             )}
-            {/* Ausgerüstete Effekte, gleiche Zeilen-Optik wie das Spielfeld darüber. Ohne aktive Effekte
-                entfällt die Zeile — „Effekte · —" wäre eine Zeile, die nichts sagt. */}
-            {fxNames.length > 0 && (
-              <div className="text-body-3 opacity-55 truncate" title={fxNames.join(" + ")}>
-                {t("start.board.fx", { list: fxNames.join(" + ") })}
-              </div>
-            )}
-            {/* #musik — Was gerade läuft, plus Weiterschalten. Sitzt hier und nicht als eigener Block, weil
-                die Musik zum „Stand" gehört wie Deck und Spielfeld: alles, was der Screen gerade IST. */}
-            {/* EIN gemeinsamer Rahmen um Titel und Knopf, und `self-start` statt voller Breite: Als
-                gestreckte Zeile stand der Knopf ganz am Panelrand und las sich wie ein eigenes Element
-                neben dem Titel. Zusammengefasst sind beide sichtbar EINE Sache — was läuft, und wie man
-                weiterschaltet. Der Titel darf wachsen (`max-w`), der Kasten folgt ihm nur so weit. */}
-            <div className="inline-flex self-start items-center gap-2 mt-1.5 min-w-0 max-w-full rounded-lg pl-2.5 pr-1 py-1"
-              style={{ border: "1px solid rgba(150,150,170,.22)", background: "rgba(20,20,26,.45)" }}>
-              {/* Wiedergabe-Dreieck statt der Note: die Zeile sagt, was gerade LÄUFT — ein Zustand,
-                  kein Genre. Als Vektor, damit es dieselbe Strichfamilie hat wie die Zeichen daneben. */}
-              <svg className="w-[11px] h-[11px] shrink-0 opacity-45" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="currentColor">
-                <path d="M8 5v14l11-7z" />
-              </svg>
-              <span className="text-body-3 opacity-60 truncate max-w-[260px]" title={musicTitle || undefined}>
-                {musicTitle || "—"}
-              </span>
-              {onMusicNext && (
-                <button onClick={onMusicNext} aria-label={t("music.next")}
-                  title={musicTitle ? t("music.playing", { title: musicTitle }) : t("music.next")}
-                  className="shrink-0 rounded px-1.5 py-0.5 text-body-3 leading-none opacity-60 transition-all hover:opacity-100">
-                  ⏭
-                </button>
-              )}
+          </span>
             </div>
           </div>
         </div>
+
         {/* Vier Kennzahlen. Die Farben bleiben hier bewusst die BEDEUTUNGS-Farben (Gold = Währung,
             Violett = Rangliste, Cyan = Lauf) — die Tafel ist der Ort, an dem gelesen und nicht navigiert
             wird, und die Deckfarbe trägt hier ohnehin schon Rahmen, Schimmer und Kartenbild. */}
@@ -739,7 +771,15 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
             Boxen — `gap-px` legte den Container-Grund in dem einen Pixel frei. Bei vier gleich hellen
             Zellen liest sich das als Raster statt als Trennung. Jetzt eine echte Haarlinie je Zelle
             (`as-kpi`), und der Container trägt nur noch seinen Rahmen. */}
-        <div className="as-kpis grid grid-cols-4 rounded-xl overflow-hidden" style={{ border: "1px solid rgba(60,58,78,.5)" }}>
+        {/* #mainscreen-branding C3 — DIE KENNZAHLEN TRETEN ZURÜCK. Sie standen als eigener gerahmter
+            Kasten mit vier gefüllten Zellen in der Tafel — vier Flächen in einer Fläche, und damit
+            optisch schwerer als das Deck darüber, das der GEGENSTAND der Tafel ist. Der Entwurf sagt
+            es in einem Halbsatz: „darunter, durch eine Linie getrennt: die vier Kennzahlen."
+            Also: keine Füllung je Zelle, kein Rahmen um die vier, stattdessen EINE Linie darüber. Die
+            Haarlinien zwischen den Zellen bleiben — sie trennen vier Werte, sie rahmen nichts ein.
+            WERTGLEICH umgestellt: die Linie trägt denselben Ton, den der Rahmen trug; sie steht nur
+            an einer Kante statt an vieren. Ein Schritt aus dem Vokabular wird sie in C4. */}
+        <div className="as-kpis grid grid-cols-4">
           {[
             { k: t("start.board.sp"), v: progSp, c: SP, s: t("start.board.sp.sub", { done: progOwned, total: TOTAL_NODES }) },
             { k: t("start.board.dp"), v: progDp, c: AM, s: t("start.board.dp.sub") },
@@ -767,7 +807,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
             { k: t("start.board.last"), v: lastRun ? fmtNum(Math.round(lastRun.score || 0)) : t("start.board.last.none"),
               c: CY, s: lastRun ? t("start.board.last.sub", { cycle: lastRun.cycles ?? 0 }) : t("start.board.last.none.sub") },
           ].map((s, i) => (
-            <div key={i} className="as-kpi flex flex-col gap-0.5 px-4 py-3.5" style={{ background: "rgba(22,22,32,.5)" }}>
+            <div key={i} className="as-kpi flex flex-col gap-0.5 px-4 py-3.5">
               <span className="text-body-1 font-medium opacity-45">{s.k}</span>
               {/* #kpi-passt: die ZEICHENZAHL ist alles, was die Regel braucht — `ty-num` ist Geist Mono,
                   jedes Zeichen also gleich breit (gemessener Vorschub 0,59 × Schriftgrad, Ziffern wie

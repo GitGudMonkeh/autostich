@@ -22,6 +22,23 @@ import { DESKTOP_BLOCK_AT } from "./desktopBreakpoint.js";
 const src = (p) => readFileSync(new URL(`../src/${p}`, import.meta.url), "utf8");
 const css = src("index.css");
 
+/* #mainscreen-branding C3 — KOMMENTARE RAUS, BEVOR KLASSEN GEZAEHLT WERDEN.
+
+   Die Ratsche unten zaehlt, wie oft `as-ring` und `as-ring-run` in einer Datei VORKOMMEN, und liest
+   dafuer den rohen Quelltext. Das ist ein Stellvertreter fuer die Aussage, die sie eigentlich macht —
+   *jedes Element mit `as-ring` hat genau ein `as-ring-run` als Kind* — und der Stellvertreter bricht
+   an einer Stelle, an der nichts kaputt ist: an einem KOMMENTAR, der eine der beiden Klassen nennt.
+
+   Gemessen: `StartScreen.jsx` bekam in C3 einen Kommentar, der `.as-ring` erwaehnt, und der Waechter
+   meldete „3x as-ring, aber 2x as-ring-run" an einer Datei, in der sich am Markup nichts geaendert
+   hatte. Zweiter Fall dieser Sorte in dieser Runde (M11-F06 war der erste, an einem anderen Waechter).
+
+   DAS IST KEINE AUFWEICHUNG, SONDERN DIE INVARIANTE. Der Fehler geht in BEIDE Richtungen: so wie ein
+   Kommentar bisher einen Fehlalarm ausloesen konnte, konnte ein Kommentar, der `as-ring-run` nennt,
+   ein FEHLENDES Kind zudecken. Nach dem Strippen zaehlt der Waechter, was er zu zaehlen behauptet.
+   Gegenproben dazu in `docs/workstreams/mainscreen-branding/evidence/C3/counter-checks.txt`. */
+const stripComments = (s) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
+
 // Alle JSX-Dateien, die Klassen vergeben.
 const jsxFiles = ["App.jsx", ...readdirSync(new URL("../src/ui", import.meta.url))
   .filter((f) => f.endsWith(".jsx")).map((f) => `ui/${f}`)];
@@ -30,7 +47,7 @@ describe("#perf-ring — der Ring ist ein Paar aus zwei Boxen", () => {
   it("jedes `as-ring` hat genau ein `as-ring-run` als Kind", () => {
     const fehlt = [];
     for (const f of jsxFiles) {
-      const s = src(f);
+      const s = stripComments(src(f));
       // `as-ring` OHNE Bindestrich dahinter — sonst zaehlt `as-ring-run` doppelt.
       const ringe = (s.match(/as-ring(?![-\w])/g) || []).length;
       const kinder = (s.match(/as-ring-run/g) || []).length;

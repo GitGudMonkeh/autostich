@@ -2543,7 +2543,12 @@ b, strong { font-weight: 600; }
 
      Untergrenze 0,85: darunter wird der Start-Knopf kleiner als 22 px. Auf einem 1280er Laptop ohne
      Systemskalierung ist das die Grenze des Lesbaren, und lieber wird es dort wieder etwas enger. */
-  .hub-pair, .hub-foot { zoom: clamp(0.85, tan(atan2(100vw, 1920px)), 1); }
+  /* #mainscreen-branding C3: der Faktor steht als EIGENSCHAFT und wird dann benutzt, statt zweimal
+     geschrieben zu werden. Die Deck-Tafel rechnet ihre Bildhöhe gegen genau diesen Zoom (s.
+     `.as-deck-art`), und eine zweite Kopie der Formel dort wäre die Drift, vor der die Kommentare in
+     dieser Datei sonst überall warnen. Der berechnete Zoom ändert sich dadurch um nichts — die
+     Maschinen-Hälfte weist es nach. */
+  .hub-pair, .hub-foot { --hub-zoom: clamp(0.85, tan(atan2(100vw, 1920px)), 1); zoom: var(--hub-zoom); }
 
   /* Der Hub stand im oberen Drittel: auf 1920 × 1080 endete das Fußband bei y = 825, darunter blieben
      255 px leer — ausgerechnet unten, wo das Bodenband des Decks am dichtesten ist. `margin-block: auto`
@@ -2656,8 +2661,89 @@ b, strong { font-weight: 600; }
      Text ohnehin ein, und 24 px vor der Icon-Kachel wären eine Delle. */
   .as-hub-list .as-hub-tile { padding-left: 18px; }
 
+  /* ==========================================================================
+     #mainscreen-branding C3 — DIE DECK-TAFEL
+     --------------------------------------------------------------------------
+     DAS BILD IST SO GROSS, WIE DIE SEITE ES TRÄGT — Owner-Entscheidung Q10, Option A vom 25.08.2026.
+     Der Entwurf will ein 196 × 268 gerahmtes Feld; gemessen (C1 §3.6) fügt das `.hub-stand`
+     mindestens 114 px zu und läuft bei drei von fünf Viewports über, weil das Spaltenpaar zentriert
+     und damit so hoch ist wie seine HÖHERE Spalte — und das ist immer die rechte. Sie verträgt bei
+     1280 × 720 genau 7 px.
+
+     DIE FORMEL IST GEMESSEN UND NICHT GERATEN, und sie hat zwei Zahlen:
+
+       (100vh - U) / --hub-zoom - L
+
+     ZWEI TERME, WEIL DIE SEITE ZWEI SORTEN HÖHE HAT. `U` ist das senkrechte Chrome, das AUSSERHALB des
+     Zooms liegt und deshalb in CSS-Pixeln zählt: `.app-root` polstert oben und unten je 1,5 rem, dazu
+     `.hub-root` mit 6 px Kopfpolster, 18 px Fuge und 4 px Fußpolster — zusammen 76 px, gemessen 79,4.
+     `L` ist alles, was INNERHALB des Zooms steht und nicht das Bild ist: die übrige Tafel, die
+     Kachelbank und das Fußband, zusammen 591,3 gezoomte Pixel. Geteilt wird durch den ZOOM, weil diese
+     Regel innerhalb von `.hub-pair` steht und in gezoomten Einheiten schreibt.
+
+     BEIDE SIND AUS ZWEI MESSPUNKTEN AUFGELÖST, nicht geraten: `Seitenhöhe(Bild=0) = U + Zoom · L` ist
+     linear im Zoom, also genügen zwei Zoom-Werte, um beide zu bestimmen — und die übrigen sechs
+     Viewports prüfen die Lösung nach. Sie trifft auf 0,3 px. Eingetragen sind 80 und 592 statt 79,4
+     und 591,3: beide Rundungen gehen nach OBEN, machen das Bild also um gut einen Pixel kleiner als das
+     Maximum. Eine Formel, die auf die Dezimale ans Limit geht, läuft beim ersten gerundeten Pixel über.
+
+     DIE ERSTE FASSUNG HATTE NUR EINEN TERM UND TEILTE DURCH DEN ZOOM-BODEN, und beides war falsch —
+     gemessen, nicht vermutet. Alle fünf Viewports des Vertrags liegen exakt auf dem Boden 0,85; der
+     Zoom steigt erst ab 1632 px Breite darüber. Die Rechnung sah an allen fünf richtig aus und lief
+     außerhalb über: 1700 × 760 um 28 px, 1800 × 820 um 66, 1920 × 850 um 89. Eine Formel, die nur
+     dort geprüft wird, wo ihr Teiler konstant ist, ist an einem Punkt geprüft.
+
+     Wer die Tafel umbaut, misst `L` neu — es ist die Höhe des Rests, nicht eine Konstante der Welt.
+     Das Werkzeug dafür steht daneben: `evidence/C1/headzone.mjs` misst an acht Viewports, wie groß das
+     Bild höchstens sein darf, und der Nachweis stellt Rechnung und Messung nebeneinander.
+
+     Der Deckel 268 px ist die Entwurfsgröße: darüber wächst das Bild nicht, auch auf einem sehr hohen
+     Fenster nicht. Der Boden ist die alte Größe minus Luft — darunter scrollt die Seite lieber, als
+     dass die Tafel zu einem Briefmarken-Bild wird. Was die Entscheidung ausdrücklich zugibt: bei den
+     zwei kleinsten Fenstern bleibt die Tafel nah an ihrer heutigen Größe, der Entwurfs-Zug greift dort
+     also nur halb (planning-report §8.2, Q10).
+
+     Rahmen und Schatten sind von einem Inline-Style hierher gewandert. Der Rahmen ist eines der vier
+     durchscheinenden Inline-Alphas, die dieser Screen mitbringt (.25) — und ein Inline-Literal ist von
+     keiner Regel außer `!important` erreichbar, also wird es umgewandelt und nicht kopiert. Die Werte
+     sind unverändert; ein Schritt aus dem Vokabular werden sie in C4.
+     ========================================================================== */
+  .as-deck-art {
+    width: auto;
+    height: clamp(112px, calc((100vh - 80px) / var(--hub-zoom, 0.85) - 592px), 268px);
+    border: 1px solid rgba(150, 150, 170, .25);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, .55);
+  }
+  /* Das Bild oben ausrichten statt mittig: sobald es höher ist als die Namensspalte daneben, zöge
+     `items-center` den Namen in die Bildmitte und ließe über ihm eine Lücke, die nach einem Fehler
+     aussieht. */
+  .as-deck-row { align-items: flex-start; }
+
+  /* --- Die Attribut-Chipzeile ---------------------------------------------
+     Rahmen, Fläche, Radius und Polster sind die des Musik-Kastens, der bis C3 als Inline-Style in der
+     Namensspalte stand. Sie stehen jetzt EINMAL als Regel statt dreimal inline — dasselbe Motiv wie
+     oben: ein Inline-Literal ist unerreichbar, eine Regel nicht. Werte unverändert (.22). */
+  .as-deck-attr {
+    display: inline-flex; align-items: center; gap: 8px;
+    max-width: 100%;
+    padding: 4px 10px;
+    border: 1px solid rgba(150, 150, 170, .22);
+    background: rgba(20, 20, 26, .45);
+    border-radius: 8px;
+    font-size: var(--text-body); line-height: 1.4;
+    opacity: .6;
+  }
+  /* Der Musik-Chip trägt rechts einen Knopf, also weniger Polster auf dieser Seite — ein Knopf polstert
+     gegen seine Beschriftung, nicht gegen die Kante daneben (conventions.md §2c, `--btn-pad-*`). */
+  .as-deck-attr-music { padding-right: 4px; }
+  .as-deck-attr-next { padding: 2px 6px; opacity: .6; }
+
   /* Kennzahl-Raster der Status-Tafel: Haarlinie zwischen den Zellen statt freigelegter Container-Fläche
-     (Begründung an der Fundstelle in StartScreen.jsx). */
+     (Begründung an der Fundstelle in StartScreen.jsx).
+     C3: dazu die EINE Linie über der Zeile, die den gerahmten Kasten ersetzt. Derselbe Ton, den der
+     Rahmen trug — er steht jetzt an einer Kante statt an vieren, und die vier Zellen haben ihre eigene
+     Füllung abgegeben. Vier Flächen in einer Fläche wogen schwerer als das Deck darüber. */
+  .as-kpis { border-top: 1px solid rgba(60, 58, 78, .5); }
   .as-kpi + .as-kpi { border-left: 1px solid rgba(60, 58, 78, .5); }
   /* #kpi-passt (19.08.2026) — die Zahl passt sich der Kachel an, statt aus ihr herauszulaufen.
      Gemeldet mit „Letzter Lauf 179.077.04…": elf Zeichen brauchen bei 27 px rund 175 px, die Kachel

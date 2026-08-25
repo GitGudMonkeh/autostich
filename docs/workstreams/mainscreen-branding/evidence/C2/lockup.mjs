@@ -43,7 +43,15 @@ const BASE = (() => {
 })();
 const HOST = `http://localhost:${PORT}`;
 const ORIGIN = `${HOST}${BASE}`;
-const OUT = join(HERE, "owner");
+/* `--out <dir>` added by C3, and it fixes an accident rather than adding a convenience: the output
+   path was HERE, so re-running this instrument against a changed tree OVERWROTE C2's committed owner
+   set and its measurements. Caught by `git status`, which is the second time in this workstream and
+   the same way the survey's `--out` was earned (#typo-system S0). The default stays put. */
+const OUT_DIR = (() => {
+  const i = process.argv.indexOf("--out");
+  return i >= 0 && process.argv[i + 1] ? resolve(process.argv[i + 1]) : HERE;
+})();
+const OUT = join(OUT_DIR, "owner");
 
 /* 1280x720 first — the binding case, and the size the composition was decided against. */
 const SIZES = [[1280, 720], [1920, 1080]];
@@ -292,9 +300,9 @@ async function main() {
     await server.stop();
   }
 
-  writeFileSync(join(HERE, "lockup.json"), JSON.stringify({ sizes: SIZES.map(([a, b]) => `${a}x${b}`),
+  writeFileSync(join(OUT_DIR, "lockup.json"), JSON.stringify({ sizes: SIZES.map(([a, b]) => `${a}x${b}`),
     langs: LANGS, decks: DECKS, cells }, null, 2) + "\n");
-  process.stdout.write(`\n  wrote ${join(HERE, "lockup.json")} and ${cells.length} PNGs in ${OUT}\n`);
+  process.stdout.write(`\n  wrote ${join(OUT_DIR, "lockup.json")} and ${cells.length} PNGs in ${OUT}\n`);
 
   const bad = cells.filter((c) => !c.reached);
   if (bad.length) { process.stdout.write(`  ${bad.length} cell(s) NOT REACHED\n`); process.exitCode = 1; }

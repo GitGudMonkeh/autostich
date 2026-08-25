@@ -30,9 +30,17 @@ import { spawnSync } from "node:child_process";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, "../../../../..");
-const PREFIX = "0/0/2/0/5/0";          /* = .hub-play, measured by whose-subtree.mjs */
-const BEFORE = join(ROOT, "docs/workstreams/mainscreen-branding/evidence/C1/baseline");
-const AFTER = join(HERE, "after");
+/* Three arguments, added by C3 and defaulting to C2's own run so the invocation in this file's header
+   is unchanged. C3 needs a WIDER prefix — it changes `.hub-stand`, which is `.hub-play`'s sibling —
+   and it compares a different pair of matrices. A second copy of this file would have been the
+   cheaper edit and the worse one: two instruments that drift is how a gate stops meaning anything. */
+const arg = (name, fallback) => {
+  const i = process.argv.indexOf(name);
+  return i >= 0 && process.argv[i + 1] ? process.argv[i + 1] : fallback;
+};
+const PREFIX = arg("--prefix", "0/0/2/0/5/0");   /* = .hub-play, measured by whose-subtree.mjs */
+const BEFORE = resolve(arg("--before", join(ROOT, "docs/workstreams/mainscreen-branding/evidence/C1/baseline")));
+const AFTER = resolve(arg("--after", join(HERE, "after")));
 const TMP = join(HERE, ".filtered");
 
 const inHub = (p) => p === `${PREFIX}:` || p.startsWith(`${PREFIX}/`) || p.split(":")[0] === PREFIX;
