@@ -168,7 +168,7 @@ introduce a size.
 Its own module, not a block at the top of `StartScreen.jsx`, so that the head region and the panel
 region are not both edited in the same 891-line file in the same task.
 
-**5 × 6** — owner decision Q1. **Centred beneath the tagline, small** — Q2: wordmark, tagline and mark
+**5 × 8** — owner decision, 2026-08-25, superseding Q1's 5 × 6. See §8.2. **Centred beneath the tagline, small** — Q2: wordmark, tagline and mark
 then read as one lockup, which is what produces the premium impression. Beside the wordmark it
 competes; inside the panel it becomes a UI icon and loses its brand function.
 
@@ -345,7 +345,7 @@ These were taken by the owner, were never revoked, and survive the discarded rep
 
 | # | Question | Decision |
 | --- | --- | --- |
-| Q1 | Grid geometry | **5 × 6** — the shape actually reviewed and approved; near-square, so it spends far less vertical space |
+| Q1 | Grid geometry | ~~5 × 6~~ — **superseded on 2026-08-25 by 5 × 8.** The 5 × 6 was the shape reviewed at the time; the reason for 5 × 8 was not on the table then. See §8.2 |
 | Q2 | Grid placement | **Centred beneath the tagline, small** — wordmark, tagline and mark read as one lockup |
 | Q3 | EN tagline | **"Order. Trick. Escalate."** with the closing period. "Order" and "Trick" are already the approved English terms for the order phase and for *Stich* — established vocabulary, not new synonyms |
 | Q4 | Build DNA | **Out of scope** |
@@ -362,8 +362,24 @@ These were taken by the owner, were never revoked, and survive the discarded rep
   the wordmark below 88 px at 1280 only. **Shrinking the tagline is not an option** (criterion 3a).
   **Asked at this workstream's Start stop, with C1's numbers in hand** — not in this planning session,
   where it would be a choice without evidence.
-- **Q1a** — if 5 × 8 was deliberate and carries a meaning the brief never stated, that overrides Q1.
-  Raise it before C2 starts; afterwards it is a re-composition, not a parameter change.
+- **Q1a — answered 2026-08-25: 5 × 8.** *Closed, and the way it closed is worth keeping.*
+
+  This report left Q1a open in these words: *"if 5 × 8 was deliberate and carries a meaning the brief
+  never stated, that overrides Q1."* **It was, and it does.**
+
+  `docs/mainscreen-marke.md` gives the meaning, and it is **measured rather than asserted** —
+  `src/game/architect.js` carries `COLS = 5`, `ROWS = 8`, `N_POS = 40`, with `COLS` explicitly
+  `= SEGMENT_SIZE` from `formations.js`. So the grid is not a decorative rectangle: **5 wide is the
+  segment width every formation run ends at, 8 tall is the eight segments of a pass, and 40 cells is
+  a full deck.** The mark says three true things about the game without a word.
+
+  **Q1's 5 × 6 was not wrong when it was taken** — it was the shape actually reviewed, and the brief
+  at the time offered no reason for the other. The reason arrived later, from the code.
+
+  **The cost this decision reopens, stated plainly:** 5 × 8 is two rows taller than the shape §1.3's
+  head-zone budget was reasoned against, and that budget is the top risk of this workstream at
+  1280×720. **C1 measures the mark at its real height before C2 composes anything** — and if the head
+  zone cannot hold it, that is Q9, unchanged.
 
 ### 8.3 Technical decisions taken here, not escalated
 
