@@ -1,7 +1,33 @@
 # skill-text-pass — evidence package
 
-Branch `task/skill-text-pass`, base `origin/dev` @ `9dde9bfdd255e8d836572d291fd5fd2d052eef58`.
-Worktree `C:/Code/Autostich-worktrees/skill-text-pass`, preview port 5195.
+Branch `task/skill-text-pass`, base `origin/dev` @ `9dde9bfdd255e8d836572d291fd5fd2d052eef58`,
+merged up to `b69cbbbe` before integration. Worktree
+`C:/Code/Autostich-worktrees/skill-text-pass`, preview port 5195.
+
+## The Firn → Schnee rename landed first, as sequenced
+
+`b69cbbbe` on `dev` carries the rename this pass depended on, and it matches the brief in
+`worker-firn-to-schnee.md`: substance **Schnee** / *snow*, store **Boden-Reserve** / *ground
+reserve*, glossary label `Schnee` with `match: ["Schnee"]`, and the i18n **key names**
+(`bar.ice.firnGround`, `bar.ice.firnReserve`, `arch.firn.title`) deliberately left alone so the
+change stayed out of `src/ui/**`. The three keys are the only rows in the exported CSV that still
+contain the string "firn", and all three carry Schnee/Snow **values**.
+
+**The merge conflicted on exactly the lines both sides touched** — the three ice descriptions in
+`skills.js` and their four `enSkills.js` mirrors. Both sides said *Schnee*; `dev` carried it in the
+old long wording, this branch in the rewritten one. Resolved hunk by hunk in favour of this branch.
+
+Not resolved with `git checkout --ours`, deliberately: `dev` also fixed the terminology header
+comment in `enSkills.js` (`firn ·` → `snow ·`), which sits **outside** the conflict and had already
+auto-merged. Taking the whole file from HEAD would have silently reverted it.
+
+**Two `Firn` strings remain in `skills.js`, both code comments** (lines 172 and 175). The rename task
+scoped comments out on purpose, and `src/**` is read as text by parts of the suite, so they are left
+as they are rather than swept up here.
+
+**Baseline for the acceptance check is now `origin/dev`.** Run against the old branch point it
+reports one failure — `glossary.freeze.match (de): 1 -> 0` — which is the rename's own change to
+`["Firn-Boden", "Firn"] -> ["Schnee"]`, not this pass's. Against current `dev` all three checks pass.
 
 The line-by-line specification is `ledger.md` beside this file: every one of the 88 texts, old and
 new, both languages, with the source form carrying its interpolated constants, and the owner's
@@ -18,7 +44,7 @@ decision recorded where one was made.
 | `npm run build` | **pass** |
 | `npm run gen:db` | **pass** — 219 entries |
 | `npm run loc:export` | **pass** — 2799 rows regenerated |
-| `node scripts/text-voice-check.mjs --baseline 9dde9bfd…` | **PASSED** — all three checks, 44 booked exceptions |
+| `node scripts/text-voice-check.mjs --baseline origin/dev` | **PASSED** — all three checks, 44 booked exceptions |
 
 Reproduce:
 
@@ -28,7 +54,7 @@ npm run lint -- --max-warnings=0
 npm run build
 npm run gen:db
 npm run loc:export
-node scripts/text-voice-check.mjs --baseline 9dde9bfdd255e8d836572d291fd5fd2d052eef58
+node scripts/text-voice-check.mjs --baseline origin/dev
 ```
 
 ## The acceptance gate
