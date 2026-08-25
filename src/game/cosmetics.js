@@ -112,6 +112,14 @@ export const DECK_DEFS = {
      „Salar" (Salzpfanne) und in beiden Sprachen identisch geschrieben. Das Motiv IST eine Solfatara. */
   deck_solfatara:   { id: "deck_solfatara",   name: "Solfatara",   unlock: { kind: "buy", ownKey: "pack:solfatara" } },
   deck_origami:     { id: "deck_origami",     name: "Origami",     unlock: { kind: "buy", ownKey: "pack:origami" } },
+  /* #deck-insertcoin „Insert Coin“ — ein GESCHENK, keine Herausforderung: es geht nach dem ERSTEN
+     abgeschlossenen Lauf auf. Formal dieselbe Machart wie Genesis (nicht kaufbar, an eine Bedingung
+     gekoppelt), nur hängt es an `games: 1` statt am Onboarding — wer einen Lauf zu Ende gespielt hat,
+     bekommt es, ohne etwas dafür anstreben zu müssen. Der Name ist in beiden Sprachen derselbe (wie
+     Genesis, Prisma, Solfatara) und meint beides: den Münzeinwurf des Motivs und den ersten Lauf.
+     Nicht zu verwechseln mit `deck_arcade` — das trägt seit der Umbenennung zu „Beryll“ ein
+     Smaragd-Motiv und ist nur dem Ordnernamen nach noch Arcade. */
+  deck_insertcoin: { id: "deck_insertcoin", name: "Insert Coin", unlock: { kind: "games", n: 1 } },
 };
 
 /* Sprachprüfung: Der Spielfeld-Name ist der DECK-Name plus Suffix. Vorher stand jeder der 27 Namen
@@ -190,6 +198,8 @@ export const BATTLEFIELD_DEFS = {
   // #deck-papier Battlefields (gleicher Besitz-Schlüssel wie das Deck):
   bf_solfatara:   { id: "bf_solfatara",   name: bfName("deck_solfatara"),   unlock: { kind: "buy", ownKey: "pack:solfatara" } },
   bf_origami:     { id: "bf_origami",     name: bfName("deck_origami"),     unlock: { kind: "buy", ownKey: "pack:origami" } },
+  // #deck-insertcoin Battlefield (dieselbe Bedingung wie sein Deck — Paar geht gemeinsam auf):
+  bf_insertcoin:  { id: "bf_insertcoin",  name: bfName("deck_insertcoin"),  unlock: { kind: "games", n: 1 } },
 };
 
 // Tausender-Punkte ohne ICU-Abhängigkeit (node-Tests deterministisch): 10000000 → "10.000.000".

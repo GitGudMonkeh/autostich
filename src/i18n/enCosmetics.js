@@ -89,6 +89,7 @@ export default {
      im Englischen genauso geschrieben — dieselbe Sorte Name wie „Salar". „Origami" (折り紙) ebenso. */
   "cosmetic.deck_solfatara.name": "Solfatara",
   "cosmetic.deck_origami.name": "Origami",
+  "cosmetic.deck_insertcoin.name": "Insert Coin", // in beiden Sprachen gleich (wie Genesis/Prisma) — der Eintrag muss trotzdem stehen, sonst reisst die i18n-Paritaet
 
   /* ---- Global effects (deck workshop) ----
      These are sales copy: they describe what the player will see. Effect over literalness —

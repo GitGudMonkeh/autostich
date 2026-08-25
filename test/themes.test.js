@@ -8,6 +8,7 @@ import {
   GOTT_FX_KEYS, gottFxOwned, activeGottFx,
   isTieredPack, unlockedTiers, highestUnlockedTier, coverTier, tierByDeckId, tierAsPack, packHasTierDeck, resolvePackByDeckId,
 } from "../src/game/themes.js";
+import { DECK_DEFS, BATTLEFIELD_DEFS, isUnlocked } from "../src/game/cosmetics.js";
 import { BUYABLE_FINISHER_OWNKEYS } from "../src/ui/CustomizeScreen.jsx";
 import { BG_EXCL_OPTS, normalizeFxOptions } from "../src/game/storage.js";
 import { BOARD_POSITIONS } from "../src/game/constants.js";
@@ -111,7 +112,10 @@ describe("packs — Zustände & Besitz", () => {
     const challenge = ["gottgleich", "peacock", "titan", "hirsch", "thron", "sparfuchs",
       "feuer", "eis", "blitz", "pflanze", "elementar", // #310 Element-Challenges + Prisma-Multi
       "genesis", // #: Genesis = Onboarding-Freischalt-Pack (cond, nicht kaufbar)
-      "kataklysmus"]; // #tiered: zweites Score-Stufen-Deck (150/250/400 Mio), oberhalb von Titan
+      "kataklysmus", // #tiered: zweites Score-Stufen-Deck (150/250/400 Mio), oberhalb von Titan
+      "insertcoin"]; // #deck-insertcoin: GESCHENK-Pack, kein erspieltes — cond nur, weil es an `games: 1`
+                     // hängt statt an einem Preis. Steht hier, damit die „alles Übrige ist buy“-Klammer
+                     // unten hält; im Hub läuft es über die Packs-Seite (siehe CHALLENGES_TAB).
     for (const id of challenge) {
       const t = THEME_DEFS[id];
       expect(t.kind).toBe("cond");
@@ -123,6 +127,34 @@ describe("packs — Zustände & Besitz", () => {
       if (challenge.includes(pack.id)) continue;
       expect(pack.kind).toBe("buy");
     }
+  });
+});
+
+/* #deck-insertcoin „Insert Coin“ — das Willkommensgeschenk. Gewacht wird die Schwelle selbst: bei
+   `games: 0` ist das Paar noch zu, ab dem ersten abgeschlossenen Lauf offen. Und dass Deck und Battlefield
+   DIESELBE Bedingung tragen — ginge nur eins von beiden auf, stuende im Hub ein halbes Pack. */
+describe("#deck-insertcoin — Willkommens-Deck „Insert Coin“ (games 1)", () => {
+  const DECK = DECK_DEFS.deck_insertcoin;
+  const BF = BATTLEFIELD_DEFS.bf_insertcoin;
+
+  it("ist bei games: 0 gesperrt und ab games: 1 frei", () => {
+    expect(isUnlocked(DECK, prof({ games: 0 }))).toBe(false);
+    expect(isUnlocked(DECK, prof({ games: 1 }))).toBe(true);
+    expect(isUnlocked(DECK, prof({ games: 7 }))).toBe(true);
+  });
+
+  it("das Battlefield traegt dieselbe Bedingung wie sein Deck", () => {
+    expect(BF.unlock).toEqual(DECK.unlock);
+    expect(isUnlocked(BF, prof({ games: 0 }))).toBe(false);
+    expect(isUnlocked(BF, prof({ games: 1 }))).toBe(true);
+  });
+
+  it("das Pack zeigt auf genau dieses Paar und kostet nichts", () => {
+    const t = THEME_DEFS.insertcoin;
+    expect(t.kind).toBe("cond");
+    expect(t.deckId).toBe("deck_insertcoin");
+    expect(t.bfId).toBe("bf_insertcoin");
+    expect(packPrice(t)).toBe(null);
   });
 });
 
