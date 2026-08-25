@@ -26,8 +26,8 @@ are `task/*`. The order was followed and the skill table is flagged as probably 
 
 | Role | Who |
 | --- | --- |
-| Owner | TODO — `AGENTS.md`, *Roles and source of truth* |
-| Integrator | TODO — `AGENTS.md`, *Roles and source of truth* |
+| Owner | Repository owner (GitGudMonkeh) — settled the decision block before implementation |
+| Integrator | This Claude Code session, on the owner's explicit instruction |
 
 No reviewer row: no independent review was requested. Review is optional and risk-based
 (`AGENTS.md` — *Independent review*).
@@ -201,9 +201,18 @@ Machine-checked by `scripts/text-voice-check.mjs`, three assertions with exit co
    position 1–40; "Skill-Position" would be the double-loading §1e exists to prevent.
 3. **One task**, with batch 7 in its own commit.
 
+## Status at integration
+
+Complete. The acceptance gate passes: no unlisted em-dash, compounds intact, no number drift,
+five booked exceptions. 221 -> 0 German and 222 -> 0 English em-dash rows across 2797 strings.
+
+Every Definition-of-Done item is met. Layout was measured in the real build at both constrained
+viewports rather than reasoned about, and the pass turns out to make the corpus 367 characters
+SHORTER, so the hazard it guarded against did not materialise.
+
 ## Open questions
 
-None outstanding. One item is recorded for the report rather than decided here: in
-`fx.glitch.desc` the anglicism "Bursts" sits inside a chain of effect jargon that §3 does not
-name and that renaming would put outside scope; the proposal is to leave the whole chain and say
-so, rather than half-germanising the line.
+None blocking. Four items are recorded in the planning report for elsewhere rather than decided
+here: the terminology guard's blindness to a violation both languages share; the §1a/`TIER_META`
+disagreement on rarity names; the 47 arrow-notation strings §3 arguably covers; and the hard-coded
+date in the inventory filename.
