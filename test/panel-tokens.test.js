@@ -146,6 +146,40 @@ const GO_STATE_LITERALS = [
   /* Signale            */ "#5a8ade", "#5ec8f0", "#33333e",
 ];
 
+/* #menu-rework M5 — DER LEITFADEN. Fuenfzehn Literale, alle GEZAEHLT statt gepraegt, und die Grenze
+   liegt hier schaerfer als bei jedem Screen davor: `DeckDetail.jsx` rendert `GuideBody` aus dieser
+   Datei, und M3 hat `DeckDetail` oberhalb 1280 px als UNERREICHBAR gemessen — null Einstiege bei
+   1280 und 1536, vier bei 1100. Jeder Wert, den keine `.gd-*`-Desktop-Regel umzeigt, wird also auch
+   unter 1280 px gelesen, und dort gilt Entscheidung 9. Wertgleich umgestellt wurde deshalb genau
+   EINES (`#141419` = `--sf-ground`, dreimal); alles andere ist Befund geblieben, kein Diff.
+
+     M5-F02, DIE KANTE, DIE UM EINS DANEBEN LIEGT. `#2a2a33` steht an ACHT Stellen und ist
+       `--ed-quiet` (#2a2a34) minus EINE Einheit Blau. Das ist unter M3s gewaehrter Schwelle von
+       1,8/255 — und M3s Bewilligung hat ausdruecklich KEINE stehende Erlaubnis geschaffen, M4 hat
+       fuer eine groessere gefragt und keine bekommen. Also gefragt, nicht genommen.
+     DIE BALKENTEILE — `#0c0c11` (die Spur), `#07070b` (die Teiler darin), `#f4f2ff` und
+       `#cfefff` (die Bruchmarke und ihr Schein). Ein Balkengrund liegt UNTER dem tiefsten Schritt
+       (`--sf-sunken` ist #141320), und die Marke ist ein Signal. Dieselbe Familie wie M7-G1.
+     DIE ZEICHENKACHELN — `#0e0e13` mit `#33333e`. M7 fuehrt `#0e0e13` als G3, M9 `#33333e` als
+       Kante seiner Kennungs-Box; beide sind schon gezaehlt, hier zum wiederholten Mal.
+     DER KNOPF — `#20202a`/`#3a3a4a` an `GuideButton`. Ein Steuerelement ist kein Panel (2c fuehrt
+       `--ctl-*` genau dafuer ausserhalb der Leiter), und dieser Knopf steht in JEDER Breite.
+     DIE ZWEI KASTEN-VERLAEUFE — `#1a1826`/`#16161c` (der Kern-Kasten) und `#17151f` (die
+       Marke am Prinzip). Kein Schritt trifft sie; `--sf-base` (#17171c) liegt 0/2/3 neben `#17151f`.
+     DIE HANDY-FASSUNG — `rgba(6,6,10,.66)` ist der Ueberzug UNTER 1280 px; ab da zeigt `.gd-dim`
+       ihn auf `--sf-scrim-desk` um. Dieselbe Lage wie `#0c0c10ee` bei M7 und `#0c0c10cc` bei M4.
+     `#131318` ist die gewaehlte Reiterflaeche der Handy-Fassung (`.gd-tabs` ist ab 1280 px
+       `display: none`), `#000` der Schlagschatten der Handy-Karte — beide unter 1280 px und damit
+       in 2c dauerhaft ausgenommen. */
+const GD_STATE_LITERALS = [
+  /* M5-F02      */ "#2a2a33",
+  /* Balken      */ "#0c0c11", "#07070b", "#f4f2ff", "#cfefff",
+  /* Zeichen     */ "#0e0e13", "#33333e",
+  /* Steuerelem. */ "#20202a", "#3a3a4a",
+  /* Kaesten     */ "#1a1826", "#16161c", "#17151f",
+  /* Handy       */ "rgba(6,6,10,.66)", "#131318", "#000",
+];
+
 const MIGRATED_JSX = [
   { path: "src/ui/modalStyle.jsx" },
   { path: "src/ui/OptionsModal.jsx" },
@@ -259,6 +293,11 @@ const MIGRATED_JSX = [
      dazu; die vier Komponenten, die der Screen nur RENDERT (`GuideOverlay`, `CardGrid`,
      `ArchToggle`, `FormIcon`), gehoeren ihm nicht und stehen deshalb weder hier noch im Diff. */
   { path: "src/ui/GameOver.jsx", stateLiterals: GO_STATE_LITERALS },
+  /* #menu-rework M5 — der Leitfaden. `GuideBody`, `GuideButton`, `LoopRing`, `SecLabel`, `Bar` und
+     `RT` sind in dieser Datei definiert und gehoeren dazu. `DeckDetail`, `SkillSelect`, `CardGrid`
+     und `FactionIcon` gehoeren ihr NICHT — dass der Screen sie rendert oder von ihnen gerendert
+     wird, macht sie nicht zu seinen. */
+  { path: "src/ui/GuideOverlay.jsx", stateLiterals: GD_STATE_LITERALS },
 ];
 /* Ein Haken trifft ein Tag, wenn dessen Klassen ihn als GANZES Wort fuehren: `cz-main` darf
    `cz-mainscroll` nicht mitnehmen, sonst haengt der eine Eintrag am anderen. */
@@ -299,7 +338,12 @@ const MIGRATED_SELECTORS = [/\.op-/, /\.as-opt-/, /\.as-panel-sunken/, /\.as-she
      und M8s Eintraegen ohnehin schon geprueft — die Achsen-Pruefung zaehlt nicht doppelt, weil sie
      Regeln und keine Treffer sammelt. Die RATSCHEN weiter unten schliessen sie dagegen aus, sonst
      stuende dieselbe Zahl in zwei Messungen. */
-  /\.st-/, /\.rd-/, /\.lb-/, /\.go-/];
+  /* M5: `.gd-` MEINT DEN GANZEN SCREEN, wie die sechs davor. Die geteilten Sammelregeln des
+     #eckig-Passes (`.up-close, .gd-close, …` und `.up-vnode, …, .gd-navrow, …`) sind darin
+     enthalten; sie tragen ohnehin nur Token. Die RATSCHEN unten grenzen auf Regeln ein, deren
+     Selektor keinem anderen migrierten Screen gehoert — eine Zahl, die zweimal gezaehlt wird, ist
+     keine Messung. */
+  /\.st-/, /\.rd-/, /\.lb-/, /\.go-/, /\.gd-/];
 /* `.up-banner` ist NICHT dieser Screen. Es ist die „Neue Version verfuegbar"-Leiste
    (`UpdateBanner.jsx`) und teilt mit dem Baum nur die zwei Buchstaben des Praefixes. Sie gehoert
    keinem migrierten Screen, also darf die Erlaubnisliste sie nicht einsammeln. Gefunden, weil der
@@ -355,6 +399,35 @@ const M4_INSET_EXEMPT = [
   /* Layout        */ /^\.go-blist ~ \.go-ticks:has\(\.rg-perTrick\[open\]\)$/,
   /* M4-F02        */ /^\.go-heroblock, \.go-earn, \.go-best, \.go-origin, \.go-build, \.go-stats, \.go-layout$/,
   /^\.go-earn, \.go-best, \.go-origin, \.go-build, \.go-stats, \.go-layout$/, /^\.go-bestrow$/,
+];
+
+/* --- M5, der Leitfaden. Die drei bekannten Sorten, und dieselbe vierte, die M4 herausgetrennt hat.
+
+   Steuerelement: `.gd-close` (11/18) polstert gegen seine Beschriftung und traegt darueber sein
+     44-px-Klickziel — der Fall, fuer den 2c `--btn-pad-*` ausserhalb der Leiter fuehrt, und derselbe
+     Eintrag, den `.up-close` und `.st-close` schon haben.
+   Layout: `.gd-frame` ist der Rand des Screens im Fenster (in beiden Hoehenfassungen), `.gd-hint`
+     setzt die Auskunft vom senkrechten Strich ab — eine Rasterfuge, kein Inset, dieselbe
+     Unterscheidung wie bei `.up-readout` und `.cz-readout`.
+   Ueberschrift: `.gd-head` (sein Polster gehoert zum Kopf), `.gd-navhead` und `.gd-navnote` —
+     vertikaler Rhythmus einer Textzeile, und der gehoert dem Typografie-System, das dieser Auftrag
+     ausdruecklich nicht anfasst.
+
+   M5-F03, UND DAS IST KEINE DER DREI SORTEN. Die Panel- und Zeilenpolster dieses Screens sind
+     14/12 (`.gd-nav`), 12/13 (`.gd-navrow`), 16/20/14 (`.gd-page`) und 12/14 bzw. 11/14 an den vier
+     Inhaltskacheln; auf flachen Fenstern 12/10 und 12/16/10. Die Leiter hat 11 / 13 / 18. Sie liegen
+     um 1 bis 3 px daneben — ein UNTERSCHIED, keine Luecke.
+     Der Owner hat genau diese Frage fuer M4 bereits entschieden (`8a858c11`): beide Unterschiede
+     bleiben, weil das Vokabular hier nichts vermisst und ihre Aufloesung einen Screen SICHTBAR
+     bewegen wuerde, auf dem einzigen Screen-Typ dieser Runde ohne freigegebenen Entwurf. Der
+     Leitfaden ist derselbe Fall, also wird er nicht ein zweites Mal gefragt — er wird gezaehlt und
+     unter derselben Entscheidung gefuehrt. */
+const M5_INSET_EXEMPT = [
+  /* Steuerelement */ /^\.gd-close$/,
+  /* Layout        */ /^\.gd-frame$/, /^\.gd-hint$/,
+  /* Ueberschrift  */ /^\.gd-head$/, /^\.gd-navhead$/, /^\.gd-navnote$/,
+  /* M5-F03        */ /^\.gd-nav$/, /^\.gd-navrow$/, /^\.gd-page$/,
+  /^\.gd-page \.gd-pillar$/, /^\.gd-page \.gd-valve$/, /^\.gd-page \.gd-bar$/, /^\.gd-page \.gd-princ$/,
 ];
 
 const INSET_EXEMPT = [
@@ -437,6 +510,8 @@ const INSET_EXEMPT = [
   /* Layout       */ /^\.un-first \.un-body$/, /^\.fb-body$/,
   /* M4 — begruendet an `M4_INSET_EXEMPT` weiter oben, wo die vier Sorten einzeln stehen. */
   ...M4_INSET_EXEMPT,
+  /* M5 — dito, an `M5_INSET_EXEMPT`. */
+  ...M5_INSET_EXEMPT,
 ];
 
 /* WAS DIE HOEHEN-ACHSE MEINT — und die eine Regel der Werkstatt, die daneben steht.
@@ -601,6 +676,25 @@ const M4_SURFACE_EXEMPT = [
   /* permanent */ /^\.go-heroblock\.is-record > \.as-ring-run::before$/,
 ];
 
+/* --- M5, der Leitfaden. Zwei Sorten, beide gezaehlt, beide mit ID. ---
+
+   MENU-46, DIE AKZENTGETOENTE ZUSTANDSFLAECHE. Die Navigationszeile traegt einen 90-Grad-Anlauf aus
+     `color-mix(… var(--c) 12/20/26% …, #12121a)` — ruhend, ueberfahren, gewaehlt. Der Grundton
+     `#12121a` ist kein Schritt, und ein Zustandspaar hat in der Leiter keinen (MENU-46/47/48, seit
+     dem Freeze als Ratsche gefuehrt). UND: anders als am Baum ueberschreibt hier nichts diese
+     Flaeche — M3 konnte den Anlauf an `.up-navrow` ersatzlos streichen, weil `#up-form` ihn ohnehin
+     ueberschrieb; hier malt er. Ihn zu entfernen waere eine Kompositionsaenderung ohne Entwurf.
+   PERMANENT — `.gd-hair` traegt `border-radius: 99px` auf einer 2 px hohen Linie. Das ist eine
+     FORM ("so rund wie die Box hoch ist"), keine Stufe einer Leiter: auf `--rd-sm` gezogen waere aus
+     der Haarlinie ein Kasten. Dieselbe Antwort wie M8-G4 an der Auswahlregel-Pille und wie M7s
+     Haarlinien-Rundung. */
+const M5_SURFACE_EXEMPT = [
+  /* MENU-46 */ /^\.gd-navrow$/, /^\.gd-navrow:hover$/, /^\.gd-navrow\.is-on$/,
+];
+const M5_RADIUS_EXEMPT = [
+  /* permanent */ /^\.gd-hair$/,
+];
+
 const M8_RADIUS_EXEMPT = [
   /* M8-G4 */ /^\.lb-page \.lb-listsub$/,
 ];
@@ -608,7 +702,7 @@ const M8_RADIUS_EXEMPT = [
 const CSS_AXES = [
   { axis: "Flaeche", re: /(?:^|[;{\s])background(?:-color|-image)?\s*:[^;}]*(#[0-9a-fA-F]{3,8}|\brgba?\()/g,
     exempt: [...M3_SURFACE_EXEMPT, ...M7_SURFACE_EXEMPT, ...M8_SURFACE_EXEMPT, ...M9_SURFACE_EXEMPT,
-             ...M4_SURFACE_EXEMPT] },
+             ...M4_SURFACE_EXEMPT, ...M5_SURFACE_EXEMPT] },
   { axis: "Kante",   re: /(?:^|[;{\s])border(?:-top|-right|-bottom|-left)?(?:-color)?\s*:[^;}]*(#[0-9a-fA-F]{3,8}|\brgba?\()/g,
     exempt: [...M3_EDGE_EXEMPT, ...M7_EDGE_EXEMPT, ...M8_EDGE_EXEMPT, ...M9_EDGE_EXEMPT] },
   /* `inset` ist ausgenommen, und das ist eine Unterscheidung, keine Nachsicht: die Hoehenleiter misst
@@ -622,7 +716,7 @@ const CSS_AXES = [
      Der Lookahead wird jetzt genau einmal ausgewertet, direkt hinter dem Doppelpunkt. */
   { axis: "Hoehe",   re: /(?:^|[;{\s])box-shadow\s*:(?!\s*(?:var\(|none|inset\b))[^;}]*\d/g, exempt: ELEV_EXEMPT },
   { axis: "Radius",  re: /(?:^|[;{\s])border-radius\s*:(?!\s*(?:var\(|0\s*[;}]))[^;}]*[1-9]/g,
-    exempt: [...M7_RADIUS_EXEMPT, ...M8_RADIUS_EXEMPT] },
+    exempt: [...M7_RADIUS_EXEMPT, ...M8_RADIUS_EXEMPT, ...M5_RADIUS_EXEMPT] },
   { axis: "Innenabstand", re: /(?:^|[;{\s])padding(?:-top|-right|-bottom|-left)?\s*:(?!\s*(?:var\(|0\s*[;}]))[^;}]*[1-9]/g, exempt: INSET_EXEMPT },
 ];
 
@@ -986,6 +1080,16 @@ describe("#menu-rework — die Tinten-Ratsche: Textfarb-Literale wachsen nicht",
        Zahl, die zweimal gezaehlt wird, ist keine Messung. */
     ["src/ui/GameOver.jsx (ganze Datei)", () => inkOfJsx("src/ui/GameOver.jsx"), 23],
     ["index.css — .go-* (M4, ohne die geteilten Schalen-Regeln)", () => inkOfCss([/\.go-/], [/\.st-/, /\.lb-/]), 11],
+    /* #menu-rework M5 — der Leitfaden. Tinte ist weiterhin eine benannte Luecke des Vokabulars (2c,
+       "What the vocabulary does not claim"), das Fenster ist zu, also gezaehlt statt gepraegt. Der
+       Screen ist textreich und farbcodiert nach Fraktion — jede der vier bringt ihre eigene mit, und
+       ohne Entwurf wird keine davon zusammengefasst.
+       DIE CSS-SEITE SCHLIESST DIE ANDEREN MIGRIERTEN PRAEFIXE AUS, aus demselben Grund, aus dem M8
+       `.st-` und M4 `.st-`/`.lb-` ausschliessen: die Sammelregeln des #eckig-Passes nennen `.gd-`
+       neben `.up-`, `.gl-`, `.cz-`, `.st-` und `.lb-`, und ihre Werte gehoeren dem, der sie
+       geschrieben hat. Eine Zahl, die zweimal gezaehlt wird, ist keine Messung. */
+    ["src/ui/GuideOverlay.jsx (ganze Datei)", () => inkOfJsx("src/ui/GuideOverlay.jsx"), 19],
+    ["index.css — .gd-* (M5, ohne die geteilten Sammelregeln)", () => inkOfCss([/\.gd-/], [/\.up-/, /\.gl-/, /\.cz-/, /\.st-/, /\.lb-/]), 4],
     ["index.css — .op-* (M1)", () => inkOfCss([/\.op-/, /\.as-opt-/]), 16],
     ["index.css — .cz-* Schale (M2a)", () => inkOfCss(M2A_SHELL_SELECTORS), 2],
     ["index.css — .cz-* Inhalte (M2b)", () => inkOfCss([/\.cz-/], M2A_SHELL_SELECTORS), 1],
@@ -1175,6 +1279,14 @@ describe("#menu-rework — die Kanten-Ratsche (MENU-38): durchsichtige neutrale 
        Der Ausschluss von `.st-`/`.lb-` ist derselbe wie bei der Tinte und aus demselben Grund. */
     ["src/ui/GameOver.jsx (ganze Datei)", () => edgeOfJsx("src/ui/GameOver.jsx"), 0],
     ["index.css — .go-* (M4, ohne die geteilten Schalen-Regeln)", () => edgeOfCss([/\.go-/], [/\.st-/, /\.lb-/]), 0],
+    /* #menu-rework M5. Beide Seiten stehen auf null. Die JSX-Seite stand von Anfang an dort — der
+       Leitfaden hat seine durchsichtigen Kanten nie inline gesetzt, seine acht `#2a2a33` sind DECKEND
+       und gehoeren einer anderen Familie (M5-F02). Die CSS-Seite trug DREI und steht jetzt auf null:
+       die Auskunft im Kopf, die Navigationszeile und die Notiz darunter, alle auf `--ed-quiet`.
+       Diese Null ist ein ERREICHTER Zustand — dieselbe Umstellung, die M2a gemessen, M3 vierzehnmal,
+       M7 viermal, M8 sechsmal und M4 fuenfmal gezogen hat. */
+    ["src/ui/GuideOverlay.jsx (ganze Datei)", () => edgeOfJsx("src/ui/GuideOverlay.jsx"), 0],
+    ["index.css — .gd-* (M5, ohne die geteilten Sammelregeln)", () => edgeOfCss([/\.gd-/], [/\.up-/, /\.gl-/, /\.cz-/, /\.st-/, /\.lb-/]), 0],
   ];
 
   for (const [name, count, cap] of CAP) {
@@ -1183,13 +1295,43 @@ describe("#menu-rework — die Kanten-Ratsche (MENU-38): durchsichtige neutrale 
     });
   }
 
-  it("der Sucher findet die Familie im Baum — sonst waere die Ratsche still gruen", () => {
-    /* Die Lebendprobe. Ohne sie wuerde ein zerbrochener Ausdruck — ein Leerzeichen mehr in der
-       Schreibweise, ein vergessenes `\s*` — jede Obergrenze oben mit „0 gefunden" erfuellen und die
-       Ratsche fuer immer gruen melden, ohne je etwas zu pruefen. Gemessen 58 in index.css; die
-       Untergrenze steht tief genug, dass ein nicht-migrierter Screen sie im Vorbeigehen nicht
-       reisst, und hoch genug, dass ein kaputter Ausdruck sie nicht mehr erreicht. */
-    expect(edgeIn(strip(css)), "der Ausdruck der Kanten-Familie findet nichts mehr").toBeGreaterThan(30);
+  it("der Sucher erkennt die Familie — als Positivprobe, nicht als Baumzahl", () => {
+    /* #menu-rework M5 — DIESE PROBE STAND ALS SCHWELLE AUF EINER ZAHL, DIE MIT JEDER GELUNGENEN
+       MIGRATION SINKT, und sie ist genau daran gefallen: gemessen 58, als sie geschrieben wurde,
+       dann Untergrenze 30 — und M5 hat drei weitere Kanten auf `--ed-quiet` gezogen, womit der Baum
+       auf 29 steht. Der Waechter wurde rot, WEIL DAS VOKABULAR RICHTIG ANGEWENDET WURDE.
+
+       Das ist MR1s H-c, wortwoertlich, und die Antwort ist dieselbe: auf die INVARIANTE umschreiben,
+       nicht auf eine niedrigere Zahl. Eine niedrigere Zahl haette dieselbe Falle fuer M6 gestellt,
+       und fuer jeden danach, bis irgendwann jemand die Ratsche selbst aufweicht, um sie loszuwerden.
+
+       DIE INVARIANTE IST NICHT "der Baum enthaelt noch N davon". Sie ist: DER AUSDRUCK ERKENNT DIE
+       FAMILIE. Das haengt an keinem Migrationsstand, also wird es auch nicht daran gemessen:
+
+         1. Eine POSITIVPROBE an einem festen Text. Sie kann nie veralten und nie durch eine
+            Migration fallen — nur dadurch, dass jemand den Ausdruck kaputt macht, wofuer sie da ist.
+            Zusaetzlich eine NEGATIVPROBE: ein Nachbarwert, den der Ausdruck NICHT nehmen darf, sonst
+            beruhigt ein zu weiter Ausdruck die Ratsche genauso zuverlaessig wie ein zu enger.
+         2. Ein ANKER IM BAUM, der dieser Runde nicht gehoert: die drei Deklarationen von
+            `.as-edge` / `.as-edge-strong` / `.as-edge-card` / `.as-edge-neutral`. `.as-edge-*` hat
+            143 Fundstellen, wird in dieser Runde nicht migriert, und die zwoelf Alphas der Familie
+            stehen in JEDEM Auftrag ausdruecklich unter den Nicht-Zielen. Deshalb `toBe` statt
+            `toBeGreaterThan`: die Zahl darf hier weder fallen noch wachsen, und beides zu melden ist
+            strenger als eine Untergrenze, die nur nach unten schaut. */
+    expect(edgeIn("border: 1px solid rgba(150, 150, 170, .14);"),
+      "der Ausdruck erkennt die Familie nicht mehr — die Ratsche waere ab jetzt still gruen").toBe(1);
+    expect(edgeIn("border: 1px solid rgba(150, 150, 171, .14);"),
+      "der Ausdruck ist zu weit: er nimmt einen NACHBARWERT mit, der nicht zur Familie gehoert").toBe(0);
+
+    /* Der Anker. `.as-edge-*` traegt die Familie an ihrer Quelle und ist in jedem Auftrag dieser
+       Runde ein Nicht-Ziel — faellt diese Zahl, hat jemand an ihr gearbeitet, und das ist zu melden. */
+    const src = strip(css);
+    const von = src.indexOf(".as-edge,"), bis = src.indexOf(".as-edge-thin");
+    expect(von, ".as-edge-* nicht mehr gefunden — dann prueft der Anker nichts").toBeGreaterThan(-1);
+    expect(bis, ".as-edge-thin nicht mehr gefunden — der Anker hat kein Ende mehr").toBeGreaterThan(von);
+    expect(edgeIn(src.slice(von, bis)),
+      "die drei Kanten der .as-edge-*-Rollenklassen sind nicht mehr genau drei — .as-edge-* ist in "
+      + "dieser Runde ein Nicht-Ziel, also ist jede Aenderung daran ein Befund").toBe(3);
   });
 
   it("die migrierten Einheiten sind zusammen auf null — bis auf die EINE benannte Ausnahme", () => {
