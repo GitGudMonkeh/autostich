@@ -139,7 +139,11 @@ export function FeedbackModal({ onClose }) {
 
   return overlayPortal((
     <div onClick={onClose} className="fb-root fixed inset-0 overlay-root z-40 flex items-center justify-center p-4"
-      style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}>
+      /* #menu-rework M9, Vokabular: `--sf-scrim` IST `rgba(12, 12, 16, .8)` — wertgleich zu
+         `#0c0c10cc`, und der Ueberzug-Wert, aus dem der Schritt abgeleitet wurde. Ab 1280 px zeigt
+         `.un-root, .fb-root` ihn auf `--sf-scrim-desk` um (94 %), was die sanktionierte Form ist:
+         eine Stufe auf der eigenen Wurzel auf eine ANDERE benannte Stufe zeigen. */
+      style={{ background: "var(--sf-scrim)", backdropFilter: "blur(3px)" }}>
       {/* #deckui: äußere Karte zieht den deck-getönten Rahmen-Verlauf (as-panel-deck). */}
       <div onClick={(e) => e.stopPropagation()} className="fb-card w-full max-w-lg rounded-2xl max-h-[90dvh] overflow-y-auto overlay-card as-panel as-panel-deck" style={MODAL_CARD}>
         <ModalHairline />

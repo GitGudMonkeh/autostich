@@ -55,7 +55,11 @@ export function UsernameModal({ initial = "", firstTime = false, onLang = null, 
 
   return overlayPortal((
     <div onClick={onClose} className="un-root fixed inset-0 overlay-root z-40 flex items-center justify-center p-4"
-      style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}>
+      /* #menu-rework M9, Vokabular: `--sf-scrim` IST `rgba(12, 12, 16, .8)` — wertgleich zu
+         `#0c0c10cc`, und der Ueberzug-Wert, aus dem der Schritt abgeleitet wurde. Ab 1280 px zeigt
+         `.un-root, .fb-root` ihn auf `--sf-scrim-desk` um (94 %), was die sanktionierte Form ist:
+         eine Stufe auf der eigenen Wurzel auf eine ANDERE benannte Stufe zeigen. */
+      style={{ background: "var(--sf-scrim)", backdropFilter: "blur(3px)" }}>
       {/* #desktop: `un-first` schaltet ab 1280 px die zweispaltige Fassung frei — und NUR beim Erststart.
           „Name ändern" bleibt der schmale Dialog: das ist ein Umbenennen, kein Auftritt. */}
       <div onClick={(e) => e.stopPropagation()} className={`un-card w-full max-w-xs rounded-2xl overflow-hidden as-panel as-panel-deck ${firstTime ? "un-first" : ""}`}

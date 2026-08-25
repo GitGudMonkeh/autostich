@@ -4649,7 +4649,10 @@ b, strong { font-weight: 600; }
     /* Dafür dunkler: Ein Dialog deckt nur einen Bruchteil des Schirms, der Rest bleibt Hub — mit 80 % und
        ohne Blur las sich dessen Wortmarke direkt neben der des Dialogs mit. Der Baum kommt mit 82 % aus,
        weil er randverankert ohnehin fast alles verdeckt. */
-    background: rgba(12, 12, 16, .94) !important;   /* s. #ueberzug an .up-root */
+    /* #menu-rework M9: `--sf-scrim-desk` IST dieser Wert — die Desktop-Translucency der Leiter.
+       Wertgleich, und damit steht der Ueberzug beider Dialoge auf einer benannten Stufe statt auf
+       zwei Zahlen, die jemand in Gleichklang halten muss. */
+    background: var(--sf-scrim-desk) !important;   /* s. #ueberzug an .up-root */
   }
 
   /* ---- Willkommen: Marke links, Formular rechts ----------------------------
@@ -4809,7 +4812,10 @@ b, strong { font-weight: 600; }
     border-color: transparent !important;
     box-shadow: none !important;
   }
-  .un-first .un-save { padding: 11px 20px !important; border-radius: 12px !important; font-size: var(--text-body-lg-3) !important; }
+  /* Radius auf `--rd-md` (12 -> 8), und das ist derselbe Griff, mit dem M8 seine 10 auf `--rd-sm`
+     gezogen hat: nebeneinander gestellt lesen sich verschiedene Radien als verschiedene BAUTEILE. Der
+     Knopf steht in derselben Spalte wie Feld, Sprachwahl und Vorschau, und die tragen jetzt alle 8. */
+  .un-first .un-save { padding: 11px 20px !important; border-radius: var(--rd-md) !important; font-size: var(--text-body-lg-3) !important; }
   .un-first .un-prevname { color: #e8e8ea !important; }
   /* Die Rolle „an / gekauft" (design-sprache.md §3), derselbe Ton wie im Melder. */
   .un-first .un-prevscore { opacity: 1 !important; color: #54e08a !important; font-size: var(--text-body-lg-1); }
@@ -5006,7 +5012,8 @@ b, strong { font-weight: 600; }
     position: relative;
     padding: 13px 16px !important;
     font-size: var(--text-body-lg-3) !important;
-    border-radius: 12px !important;
+    /* Wie `.un-save`: derselbe Schritt wie Feld, Segmented und Lauf-Zeile in derselben Spalte. */
+    border-radius: var(--rd-md) !important;
   }
   .fb-send:not(:disabled) {
     background: linear-gradient(90deg, var(--deck-a1, #26c6e6), var(--deck-a2, #9b82f0)) !important;
