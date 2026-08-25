@@ -7,6 +7,8 @@ import { loadUsername, loadFeedbackDraft, saveFeedbackDraft, clearFeedbackDraft,
 import { submitReport, reportsConfigured } from "../game/reports.js";
 import { lastRunContext, buildContext } from "./feedbackContext.js";
 import { t } from "../i18n/index.js";
+import { ModalIcon } from "./modalIcons.jsx";   // #menu-rework M9: gezeichnet statt getippt (M9-F06)
+import { Toggle } from "./optionsBits.jsx";     // #menu-rework M9: der Schalter des Optionen-Kanons
 
 /* FEEDBACK-MELDER (#396) — Bug/Idee aus dem Spiel heraus melden.
 
@@ -22,6 +24,37 @@ import { t } from "../i18n/index.js";
 const KINDS = ["bug", "idea", "balance", "other"];
 const MIN_LEN = 10;
 const MAX_LEN = 1000;
+
+/* #menu-rework M9 (feedback-redesign §Die vier Meldungen). Danke, Entwurf-nachgesendet, Sendefehler und
+   „nicht konfiguriert" trugen vier verschiedene Polsterungen, Schnitte und Schriftgroessen, obwohl sie
+   dasselbe sind: EINE Zeile Rueckmeldung. Jetzt gleiche Maße, gleicher Schnitt, gleiche Polsterung —
+   nur die Farbrolle unterscheidet sie, und die drei Rollen sind die des Kanons.
+
+   Die Werte bleiben Literale und werden von der Ink-Ratsche gezaehlt: eine Farb-ROLLE (gruen/rot/amber
+   als Zustandspaar) ist genau die Luecke, die §2c als MENU-48 offen fuehrt und die erst auf der dritten
+   unabhaengigen Sichtung ein Token wird. Hier ist sie zusammengefasst, nicht gepraegt — vier Fundstellen
+   sind eine geworden, was die Ratsche senkt statt sie zu heben. */
+/* Der Zeilengrund aus design-sprache.md §1 — M8-G2, gemeldet und gezaehlt, nicht gepraegt. */
+const ROW_BG = "rgba(15, 15, 21, .72)";
+const ROW_EDGE = "rgba(150, 150, 170, .12)";
+
+const MSG_ROLE = {
+  ok:    { bg: "#123a25", edge: "#2f7a4f", ink: "#9fe0b8" },
+  error: { bg: "#3a1518", edge: "#d1462f66", ink: "#f0a898" },
+  warn:  { bg: "#3a2a15", edge: "#d0902f", ink: "#f0d9a8" },
+};
+
+function FbMessage({ role, icon, children, status = false }) {
+  const r = MSG_ROLE[role];
+  return (
+    <div role={status ? "status" : undefined}
+      className="fb-note rounded-lg px-3 py-2 text-body-1 leading-snug flex items-center gap-2"
+      style={{ background: r.bg, border: `1px solid ${r.edge}`, color: r.ink }}>
+      {icon}
+      <span className="min-w-0">{children}</span>
+    </div>
+  );
+}
 
 export function FeedbackModal({ onClose }) {
   useEscape(onClose);
@@ -106,14 +139,18 @@ export function FeedbackModal({ onClose }) {
 
   return overlayPortal((
     <div onClick={onClose} className="fb-root fixed inset-0 overlay-root z-40 flex items-center justify-center p-4"
-      style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}>
+      /* #menu-rework M9, Vokabular: `--sf-scrim` IST `rgba(12, 12, 16, .8)` — wertgleich zu
+         `#0c0c10cc`, und der Ueberzug-Wert, aus dem der Schritt abgeleitet wurde. Ab 1280 px zeigt
+         `.un-root, .fb-root` ihn auf `--sf-scrim-desk` um (94 %), was die sanktionierte Form ist:
+         eine Stufe auf der eigenen Wurzel auf eine ANDERE benannte Stufe zeigen. */
+      style={{ background: "var(--sf-scrim)", backdropFilter: "blur(3px)" }}>
       {/* #deckui: äußere Karte zieht den deck-getönten Rahmen-Verlauf (as-panel-deck). */}
       <div onClick={(e) => e.stopPropagation()} className="fb-card w-full max-w-lg rounded-2xl max-h-[90dvh] overflow-y-auto overlay-card as-panel as-panel-deck" style={MODAL_CARD}>
         <ModalHairline />
         <div className="fb-body p-6">
           <ActionBar pad={6} className="fb-bar">
             <span className="flex-1" />
-            <ActionButton kind="secondary" onClick={onClose}><span className="as-deskonly fb-closeicon" aria-hidden="true">✕</span>{t("common.close")}</ActionButton>
+            <ActionButton kind="secondary" onClick={onClose}><span className="as-deskonly fb-closeicon" aria-hidden="true"><ModalIcon name="close" /></span>{t("common.close")}</ActionButton>
           </ActionBar>
 
           {/* #desktop: Auskunftszeile neben dem Titel (Spalte 2 des Kopf-Rasters, wie im Upgrade-Baum).
@@ -133,12 +170,10 @@ export function FeedbackModal({ onClose }) {
                Riesen-Haken; auf dem Handy füllte er fast das ganze Fenster, obwohl er nur vier
                Wörter trägt. Ein Erfolg braucht keinen mehr Platz als ein Fehler. role="status",
                damit Screenreader die Bestätigung ansagen — der Dialog schließt gleich von selbst. */
-            <div role="status"
-              className="rounded-lg px-3 py-2 text-body-1 leading-snug font-semibold flex items-center justify-center gap-2"
-              style={{ background: "#123a25", border: "1px solid #2f7a4f", color: "#9fe0b8" }}>
-              <span aria-hidden="true" style={{ color: "#54e08a" }}>✓</span>
+            <FbMessage role="ok" status
+              icon={<span aria-hidden="true" style={{ color: "#54e08a" }}>✓</span>}>
               {t("feedback.thanks")}
-            </div>
+            </FbMessage>
           ) : (
             <div className="fb-form grid gap-3">
               {/* #desktop — zwei Klammern für die beiden Spalten (links Art + Text, rechts Name, Lauf-Bezug
@@ -173,9 +208,12 @@ export function FeedbackModal({ onClose }) {
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder={t("feedback.message.placeholder")}
                   className="fb-msg w-full rounded-lg px-3 py-2 text-body-lg-5 leading-snug"
-                  style={{ background: "#0f0f14", border: "1px solid #33333e", color: "#e8e8ea", resize: "vertical" }} />
+                  /* #menu-rework M9: die Sonderwerte #0f0f14 / #33333e entfallen — alle Eingabefelder
+                     nehmen die ZEILENflaeche der Optionen (M8-G2) und die neutrale durchscheinende
+                     Kante (MENU-38). Zwei Fundstellen weniger fuer beide Ratschen. */
+                  style={{ background: ROW_BG, border: `1px solid ${ROW_EDGE}`, color: "#e8e8ea", resize: "vertical" }} />
                 {/* #feedback-ton: Der Melder lebt von Details — auf der breiten Fassung ist Platz, das einmal zu sagen. */}
-                <div className="as-deskonly fb-hint"><span aria-hidden="true">ⓘ</span> {t("feedback.detailHint")}</div>
+                <div className="as-deskonly fb-hint"><span aria-hidden="true"><ModalIcon name="info" /></span> {t("feedback.detailHint")}</div>
               </div>
               </div>
 
@@ -185,52 +223,62 @@ export function FeedbackModal({ onClose }) {
                 <div className="fb-slabel text-meta-3 uppercase tracking-wide opacity-55 mb-1.5">{t("feedback.name")}</div>
                 <input value={name} maxLength={40} onChange={(e) => setName(e.target.value)}
                   placeholder={t("feedback.name.placeholder")}
-                  className="w-full rounded-lg px-3 py-2 text-body-lg-5"
-                  style={{ background: "#0f0f14", border: "1px solid #33333e", color: "#e8e8ea" }} />
+                  className="fb-nameinput w-full rounded-lg px-3 py-2 text-body-lg-5"
+                  style={{ background: ROW_BG, border: `1px solid ${ROW_EDGE}`, color: "#e8e8ea" }} />
               </div>
 
               {/* Honeypot: für Menschen unsichtbar, für simple Bots verlockend. */}
               <input value={honey} onChange={(e) => setHoney(e.target.value)} tabIndex={-1} autoComplete="off"
                 aria-hidden="true" style={{ position: "absolute", left: "-9999px", width: 1, height: 1 }} />
 
-              {/* Lauf-Bezug — sichtbar ausgewiesen und abwählbar. */}
-              <label className="fb-run flex items-start gap-2.5 rounded-lg px-3 py-2.5 cursor-pointer" style={{ background: "#20202a" }}>
-                <input type="checkbox" checked={useRun && !!run} disabled={!run}
-                  onChange={(e) => setUseRun(e.target.checked)}
-                  /* #deckui: generischer Akzent der Checkbox → Deckfarbe. */
-                  style={{ marginTop: 2, accentColor: "var(--deck-a1, #8a7de0)" }} />
-                <span className="as-deskonly fb-runicon" aria-hidden="true">☁</span>
-                <span className="min-w-0">
+              {/* Lauf-Bezug — sichtbar ausgewiesen und abwählbar.
+
+                  #menu-rework M9 (feedback-redesign §Panel rechts / §Zustaende): eine OPTIONS-ZEILE
+                  statt einer nativen Checkbox — Zeichenkachel, Titel, Beschreibung, Schalter. Der
+                  Schalter ist `Toggle` aus `optionsBits.jsx`, also DERSELBE, den die Optionen tragen,
+                  nicht ein zweiter im selben Schnitt.
+
+                  „KEIN LAUF" IST EIN ZUSTAND, KEIN SONDERFALL. Vorher war die Checkbox `disabled` und
+                  die Zeile sah aus wie jede andere — man las erst am Text, dass hier nichts geht. Jetzt
+                  ist es exakt der Sperr-Zustand des Optionen-Kanons: Zeile auf 42 %, Kachel stumm,
+                  Schalter gesperrt. Und gesperrt heisst auch per TASTATUR gesperrt — `Toggle` setzt
+                  dafuer `disabled` am Knopf statt `pointer-events: none`, was der Grund ist, diesen
+                  Schalter zu nehmen statt einen eigenen zu bauen. */}
+              <div className="fb-run flex items-start gap-2.5 rounded-lg px-3 py-2.5" data-off={run ? undefined : "1"}>
+                <span className="as-deskonly fb-runicon" aria-hidden="true"><ModalIcon name="cloud" /></span>
+                <span className="min-w-0 flex-1">
                   <span className="fb-runtitle text-body-1 font-bold block">{runLabel}</span>
                   <span className="fb-runhint text-meta-3 opacity-60 leading-snug block">{t("feedback.run.hint")}</span>
                 </span>
-              </label>
+                <Toggle on={useRun && !!run} disabled={!run} label={t("feedback.run.hint")}
+                  onClick={() => setUseRun((v) => !v)} />
+              </div>
 
               {sentDraft && (
-                <div className="rounded-lg px-3 py-2 text-body-1 leading-snug" style={{ background: "#123a25", border: "1px solid #2f7a4f", color: "#9fe0b8" }}>
+                <FbMessage role="ok" icon={<span aria-hidden="true" style={{ color: "#54e08a" }}>✓</span>}>
                   {t("feedback.draftSent")}
-                </div>
+                </FbMessage>
               )}
               {state === "error" && (
-                <div className="rounded-lg px-3 py-2 text-body-1 leading-snug" style={{ background: "#3a1518", border: "1px solid #d1462f66", color: "#f0a898" }}>
-                  {err}
-                </div>
+                <FbMessage role="error" icon={<ModalIcon name="block" className="fb-noteicon" />}>{err}</FbMessage>
               )}
               {!reportsConfigured && (
-                <div className="rounded-lg px-3 py-2 text-body-1 leading-snug" style={{ background: "#3a2a15", border: "1px solid #d0902f", color: "#f0d9a8" }}>
+                <FbMessage role="warn" icon={<ModalIcon name="info" className="fb-noteicon" />}>
                   {t("feedback.err.offline")}
-                </div>
+                </FbMessage>
               )}
 
               <button type="button" onClick={send} disabled={!canSend}
                 className="fb-send w-full rounded-lg py-2.5 text-body-lg-5 font-bold transition-all"
                 /* #deckui: Primär-Senden-Button zieht im aktiven Zustand die Deckfarbe (deaktiviert bleibt neutral). */
-                style={{ background: canSend ? "var(--deck-a1, #8a7de0)" : "#2a2733", color: canSend ? "#141419" : "#6d6a80",
+                /* #menu-rework M9: inaktiv ist eine flache ZEILENflaeche, kein eigener Grauton — dieselbe
+                   Flaeche wie jede andere Zeile des Melders (M8-G2), mit der Aus-Schrift des Kanons. */
+                style={{ background: canSend ? "var(--deck-a1, #8a7de0)" : ROW_BG, color: canSend ? "#141419" : "#6c6c7e",
                          cursor: canSend ? "pointer" : "not-allowed" }}>
-                {t(state === "sending" ? "feedback.sending" : "feedback.send")}<span className="as-deskonly fb-sendicon" aria-hidden="true">➤</span>
+                {t(state === "sending" ? "feedback.sending" : "feedback.send")}<span className="as-deskonly fb-sendicon" aria-hidden="true"><ModalIcon name="send" /></span>
               </button>
               {tooShort && (
-                <div className="fb-short text-meta-3 text-center opacity-55"><span className="as-deskonly fb-shorticon" aria-hidden="true">⊘</span>{t("feedback.tooShort", { n: MIN_LEN })}</div>
+                <div className="fb-short text-meta-3 text-center opacity-55"><span className="as-deskonly fb-shorticon" aria-hidden="true"><ModalIcon name="block" /></span>{t("feedback.tooShort", { n: MIN_LEN })}</div>
               )}
               </div>
               {/* Kein GitHub-Zweitweg mehr (#397): Meldungen laufen ausschließlich über diesen Melder.

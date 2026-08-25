@@ -83,6 +83,24 @@ const CZ_STATE_LITERALS = [
   /* MENU-48 — das bejahende Gegenstueck zu --ctl-danger / --ctl-danger-wash. Es gibt keins. */
   "#123a25", "#2f7a4f",
 ];
+/* #menu-rework M9. Drei Listen, alle GEZAEHLT statt gepraegt — die Form, die §2c seit M2b vorgibt.
+
+   PV — der Datenschutz-Hinweis hat KEINEN freigegebenen Entwurf (H-b). Er wurde migriert, wo ein
+   Schritt wertgleich vorlag (`--sf-scrim` fuer den Ueberzug, `--ed-quiet` fuer die Kopf-Unterkante)
+   und sonst nicht angefasst. Was bleibt, ist M9-G1: `#0f0f14`/`#33333e` der Kennungs-Box, fuer die
+   die Leiter nichts hat, plus die Kanten- und Schriftfarben seiner Abschnitts-Aussage.
+
+   UN — der Zeilengrund und die durchscheinende Kante (M8-G2 / MENU-38, beide als Ratsche gefuehrt),
+   die Fehlerfarben des Namensfilters, die Rolle „an / gekauft" und der Rang-Chip.
+
+   FB — dieselben zwei Familien plus die drei Farbrollen der Meldungen (MENU-48 steht bei zwei
+   unabhaengigen Sichtungen und wird auf der dritten ein Token, nicht vorher). */
+const PV_STATE_LITERALS = ["#0f0f14", "#33333e", "#6d6b7a"];
+const UN_STATE_LITERALS = ["rgba(15, 15, 21, .72)", "rgba(150, 150, 170, .12)", "#221114", "#54e08a",
+  "#5f6b62", "#d8b25e", "#e2685f", "#f0bdb8"];
+const FB_STATE_LITERALS = ["rgba(15, 15, 21, .72)", "rgba(150, 150, 170, .12)", "#123a25", "#2f7a4f",
+  "#3a1518", "#d1462f66", "#3a2a15", "#d0902f", "#54e08a", "#6c6c7e", "#e0a05a"];
+
 const MIGRATED_JSX = [
   { path: "src/ui/modalStyle.jsx" },
   { path: "src/ui/OptionsModal.jsx" },
@@ -182,6 +200,16 @@ const MIGRATED_JSX = [
        gruenen Waechter. Gemeldet, nicht umgeschrieben — dritte Sichtung dieser Familie. */
     utilExempt: ["py-[1px]"] },
   { path: "src/ui/WeekMods.jsx", stateLiterals: ["#17161f", "#2a2833", "#1a1922"] },
+  /* #menu-rework M9 — die drei kleinen Modals. Sie sind die reinsten Verbraucher der Modal-Schale im
+     Baum und standen im Auftrag als BESTAETIGUNG, nicht als Entdeckung: haelt das Vokabular
+     irgendwo, dann hier. Es haelt — die Zielwerte beider Entwuerfe (`rgba(19,19,26,.9)`,
+     `rgba(32,32,44,.95)`, `#3a3a44`, Radius 8, Radius 14, 9/5-%-Toenung, 11/13) liegen ALLE als
+     Schritt vor und keiner musste gepraegt werden.
+     `modalIcons.jsx` traegt keine Werte — ein Pfad-Satz, `currentColor`, keine Flaeche. */
+  { path: "src/ui/modalIcons.jsx" },
+  { path: "src/ui/PrivacyModal.jsx", stateLiterals: PV_STATE_LITERALS },
+  { path: "src/ui/UsernameModal.jsx", stateLiterals: UN_STATE_LITERALS },
+  { path: "src/ui/FeedbackModal.jsx", stateLiterals: FB_STATE_LITERALS },
 ];
 /* Ein Haken trifft ein Tag, wenn dessen Klassen ihn als GANZES Wort fuehren: `cz-main` darf
    `cz-mainscroll` nicht mitnehmen, sonst haengt der eine Eintrag am anderen. */
@@ -197,6 +225,10 @@ const M2A_SHELL_SELECTORS = [/\.cz-root/, /\.cz-card/, /\.cz-scroll/, /\.cz-head
   /\.cz-headrow/, /\.cz-bal/, /\.cz-readout/, /\.cz-close/, /\.cz-hair/, /\.cz-tabs/, /\.cz-split/,
   /\.cz-main/, /\.cz-side/, /\.cz-stage/, /\.cz-fxside/];
 const MIGRATED_SELECTORS = [/\.op-/, /\.as-opt-/, /\.as-panel-sunken/, /\.as-shell/, /\.as-head\b/,
+  /* M9: `.un-` und `.fb-` MEINEN DIE ZWEI SCREENS, wie `.cz-`, `.up-`, `.st-` und `.rd-` ihre. Der
+     Datenschutz-Hinweis hat keine eigenen Selektoren — er traegt `as-panel`, `as-edge` und Tailwind —,
+     seine Migration steht deshalb allein auf der JSX-Seite. */
+  /\.un-/, /\.fb-/,
   /\.cz-/,
   /* M3: `.up-` MEINT DEN GANZEN SCREEN, wie `.cz-` seit M2b. Ein Screen ist entweder migriert oder
      nicht; eine Aufzaehlung einzelner Bausteine waere eine halbe Migration, und eine halbe Migration
@@ -304,6 +336,20 @@ const INSET_EXEMPT = [
        `.rd-blist2`. Auf `--in-tight` gezogen stuenden Kopf und Zeile nicht mehr uebereinander. */
   /* Steuerelement */ /^\.lb-weekcount$/, /^\.lb-modspan$/, /^\.lb-page \.lb-listsub$/,
   /* Layout       */ /^\.lb-page \.lb-cols$/, /^\.lb-page \.lb-rows > button$/,
+  /* --- M9, die drei kleinen Modals. Zwei der drei Sorten, dieselben Gruende wie ueberall. ---
+     Steuerelement: das Namensfeld (13/16), der Speichern-Knopf (11/20), ein Segment der Art-Auswahl
+       (0/12 plus `min-height`) und der Absenden-Knopf (13/16) polstern gegen ihren INHALT bzw. ihre
+       BESCHRIFTUNG — genau der Fall, fuer den 2c `--btn-pad-*` ausserhalb der Leiter fuehrt. Beim
+       Segment ist die Polsterung ausserdem bewusst NICHT hoehenbestimmend: die 44 px des Entwurfs
+       haengen an `min-height`, damit sie nicht an der Schriftmetrik haengen.
+     Layout: `.un-first .un-body` und `.fb-body` sind der Rand des Dialogs im Fenster — Anordnung, wie
+       `.up-root`, `.st-root` und `.rd-root`, und keine Panelkante.
+     Was hier NICHT steht und deshalb auch nicht ausgenommen ist: die Zeilen selbst. `.fb-run` und
+       `.un-first .un-prev` polstern gegen eine Panelkante und tragen `var(--in-tight) var(--in-snug)`,
+       und die zwei Panels des Melders tragen `var(--in-base)`. Das ist die Achse, und sie greift. */
+  /* Steuerelement */ /^\.un-first \.un-form input$/, /^\.un-first \.un-save$/,
+                      /^\.fb-kind$/, /^\.fb-send$/,
+  /* Layout       */ /^\.un-first \.un-body$/, /^\.fb-body$/,
 ];
 
 /* WAS DIE HOEHEN-ACHSE MEINT — und die eine Regel der Werkstatt, die daneben steht.
@@ -322,7 +368,16 @@ const INSET_EXEMPT = [
 
    Gemeldet als MENU-50, nicht gepraegt: ein Auswahl-RING ist eine echte Luecke der fuenf Achsen,
    und das Fenster ist zu. Einzeln aufgezaehlt, damit die Ausnahme keine zweite Regel mitnimmt. */
-const ELEV_EXEMPT = [/^\.cz-shown$/];
+/* #menu-rework M9 — DER EINE SCHEIN des Willkommens-Bildschirms, und er ist eine benannte Ausnahme
+   und keine Nachlaessigkeit. `#ruhe` sagt: nur die Hauptaktion leuchtet. Hier leuchtet stattdessen das
+   EINGABEFELD, und `erststart-redesign.md` fuehrt das unter „Der eine Schein — benannte Ausnahme"
+   ausdruecklich so: der Speichern-Knopf ist beim Oeffnen tot, bis ein Name dasteht; ein Schein am
+   toten Knopf waere ein Versprechen, das er nicht einloest. Das Feld IST die Aufgabe des Bildschirms.
+   `--el-glow-*` waere der falsche Schritt — er ist per `#ruhe` fuer die Hauptaktion reserviert, und
+   ihn hier auszugeben hiesse die Regel zu brechen, die er ausdruecken soll. Dieselbe Ueberlegung, mit
+   der MENU-50 richtig abgelehnt wurde. Es bleibt bei EINEM: der Knopf bekommt keinen. */
+const M9_ELEV_EXEMPT = [/^\.un-first \.as-guide-glow::after$/];
+const ELEV_EXEMPT = [/^\.cz-shown$/, ...M9_ELEV_EXEMPT];
 
 /* --- M3, die Flaechen- und Kanten-Ausnahmen. Drei Sorten, drei Gruende, einzeln aufgezaehlt. ---
 
@@ -407,15 +462,43 @@ const M8_SURFACE_EXEMPT = [
 const M8_EDGE_EXEMPT = [
   /* M8-G1 */ /^\.lb-weekcount$/,
 ];
+/* #menu-rework M9 — die drei kleinen Modals, und beide Familien sind ALT und beide sind schon
+   gemeldet. Es kommt keine neue Sorte dazu, was fuer eine Bestaetigungs-Task die erwartete Antwort ist.
+
+   M8-G2, DER ZEILENGRUND `rgba(15, 15, 21, .72)`, ERREICHT MIT DIESEM SCREEN DEN VIERTEN
+   UNABHAENGIGEN. M8 hat ihn gemeldet, als es nur den eigenen sehen konnte („vier Fundstellen auf
+   diesem Screen"); gezaehlt ueber index.css tragen ihn heute das GLOSSAR (`.gl-search input`), der
+   MELDER (`.fb-run`), die BESTENLISTE (`.lb-weekcount`, `.lb-ctxtile`) und ab hier der ERSTSTART.
+   Die Schwelle des Planners lautet „ein Token auf der DRITTEN unabhaengigen Sichtung, nicht der
+   ersten" — sie ist damit ueberschritten. Gemeldet als M9-F09 und NICHT gepraegt: eine Stufe zu
+   erfinden ist die Entscheidung des Planners, und §2c sagt ausdruecklich, dass Mengen auf Zaehlung
+   schliessen und auf Zaehlung wieder aufgehen.
+
+   MENU-38, die durchscheinende neutrale Kante, ist die zweite und wird seit dem Freeze als Ratsche
+   gefuehrt statt als Achse.
+
+   DIE ZWEI EIGENEN sind der Rang-Chip der Vorschau (`#241d10`/`#6a5426`, ein Gold-Paar, das eine
+   AUSSAGE traegt — der Rang — und keine Chrome) und die stumme Kachel des gesperrten Lauf-Bezugs
+   (`#3a3a48`): der Aus-Zustand des Kanons, dieselbe Sorte wie MENU-47. Beide gezaehlt. */
+const M9_SURFACE_EXEMPT = [
+  /* M8-G2 */ /^\.un-first \.un-prev$/, /^\.fb-run$/,
+  /* Rang   */ /^\.un-first \.un-prevchip$/,
+];
+const M9_EDGE_EXEMPT = [
+  /* MENU-38 */ /^\.un-first \.un-prev$/, /^\.fb-run$/,
+  /* Rang    */ /^\.un-first \.un-prevchip$/,
+  /* Aus     */ /^\.fb-run\[data-off="1"\] \.fb-runicon$/,
+];
+
 const M8_RADIUS_EXEMPT = [
   /* M8-G4 */ /^\.lb-page \.lb-listsub$/,
 ];
 
 const CSS_AXES = [
   { axis: "Flaeche", re: /(?:^|[;{\s])background(?:-color|-image)?\s*:[^;}]*(#[0-9a-fA-F]{3,8}|\brgba?\()/g,
-    exempt: [...M3_SURFACE_EXEMPT, ...M7_SURFACE_EXEMPT, ...M8_SURFACE_EXEMPT] },
+    exempt: [...M3_SURFACE_EXEMPT, ...M7_SURFACE_EXEMPT, ...M8_SURFACE_EXEMPT, ...M9_SURFACE_EXEMPT] },
   { axis: "Kante",   re: /(?:^|[;{\s])border(?:-top|-right|-bottom|-left)?(?:-color)?\s*:[^;}]*(#[0-9a-fA-F]{3,8}|\brgba?\()/g,
-    exempt: [...M3_EDGE_EXEMPT, ...M7_EDGE_EXEMPT, ...M8_EDGE_EXEMPT] },
+    exempt: [...M3_EDGE_EXEMPT, ...M7_EDGE_EXEMPT, ...M8_EDGE_EXEMPT, ...M9_EDGE_EXEMPT] },
   /* `inset` ist ausgenommen, und das ist eine Unterscheidung, keine Nachsicht: die Hoehenleiter misst
      ABHEBEN von der Flaeche. Ein Innenschatten hebt nichts — er zeichnet eine Kante (die 2-px-
      Unterstreichung der aktiven Auswahl) oder eine Mulde, und beides hat eigene Gruende. */
@@ -456,7 +539,8 @@ describe("#menu-rework — migrierte CSS-Regeln fuehren keine Werte ein", () => 
        ein Teil noch etwas traf. */
     for (const [name, liste] of [["Innenabstand", INSET_EXEMPT], ["Hoehe", ELEV_EXEMPT],
       ["Flaeche", M7_SURFACE_EXEMPT], ["Kante", M7_EDGE_EXEMPT], ["Radius", M7_RADIUS_EXEMPT],
-      ["Flaeche M8", M8_SURFACE_EXEMPT], ["Kante M8", M8_EDGE_EXEMPT], ["Radius M8", M8_RADIUS_EXEMPT]]) {
+      ["Flaeche M8", M8_SURFACE_EXEMPT], ["Kante M8", M8_EDGE_EXEMPT], ["Radius M8", M8_RADIUS_EXEMPT],
+      ["Flaeche M9", M9_SURFACE_EXEMPT], ["Kante M9", M9_EDGE_EXEMPT], ["Hoehe M9", M9_ELEV_EXEMPT]]) {
       const tot = liste.filter((re) => !mine.some(([sel]) => re.test(sel)));
       expect(tot, `${name}: Ausnahme trifft keine migrierte Regel:\n  ${tot.map(String).join("\n  ")}`).toEqual([]);
     }
@@ -826,6 +910,16 @@ describe("#menu-rework — die Tinten-Ratsche: Textfarb-Literale wachsen nicht",
     ["src/ui/GlobalLeaderboard.jsx (ganze Datei)", () => inkOfJsx("src/ui/GlobalLeaderboard.jsx"), 3],
     ["src/ui/WeekMods.jsx (ganze Datei)", () => inkOfJsx("src/ui/WeekMods.jsx"), 0],
     ["index.css — .lb-* (M8, ohne die geteilten Kopf-Regeln)", () => inkOfCss([/\.lb-/], [/\.st-/]), 10],
+    /* #menu-rework M9 — die drei kleinen Modals. Tinte ist weiterhin keine Achse; gezaehlt wird, was
+       da ist. Die Zahlen sind GEMESSEN, nicht gesetzt: der Melder faellt, weil vier verschiedene
+       Meldungs-Kaesten zu einer Form mit drei Rollen geworden sind, und der Erststart faellt, weil
+       das Feld seine drei Cyans abgegeben hat. Ein Screen, der Literale zusammenfasst, dreht die
+       Ratsche nach unten — genau die Richtung, fuer die sie da ist. */
+    ["src/ui/modalIcons.jsx", () => inkOfJsx("src/ui/modalIcons.jsx"), 0],
+    ["src/ui/PrivacyModal.jsx (ganze Datei)", () => inkOfJsx("src/ui/PrivacyModal.jsx"), 1],
+    ["src/ui/UsernameModal.jsx (ganze Datei)", () => inkOfJsx("src/ui/UsernameModal.jsx"), 3],
+    ["src/ui/FeedbackModal.jsx (ganze Datei)", () => inkOfJsx("src/ui/FeedbackModal.jsx"), 8],
+    ["index.css — .un-* / .fb-* (M9)", () => inkOfCss([/\.un-/, /\.fb-/]), 14],
   ];
 
   for (const [name, count, cap] of CAP) {
@@ -1004,7 +1098,8 @@ describe("#menu-rework — die Kanten-Ratsche (MENU-38): durchsichtige neutrale 
     expect(edgeIn(sl), "die zweite Ausnahme ist nicht mehr genau eine").toBe(1);
     /* Zeilenweise, damit die Gegenprobe SAGEN kann, wo die eine Fundstelle steht. Ueber `String.raw`
        gebaut statt als Regex-Literal: `no-control-regex` faellt sonst ueber die Steuerzeichen. */
-    const gitter = sl.split(new RegExp(String.raw`?
+    const gitter = sl.split(new RegExp(String.raw`
+?
 `)).filter((z) => edgeIn(z) === 1);
     expect(gitter.length, "die eine Kante steht nicht mehr auf genau einer Zeile").toBe(1);
     expect(gitter[0].trim(), "die eine Kante ist keine Gitterlinie mehr — dann ist sie ein Rahmen")

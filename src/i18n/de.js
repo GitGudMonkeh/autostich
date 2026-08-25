@@ -1463,7 +1463,11 @@ export default {
   "name.title.first": "Wähle deinen Namen",
   "name.title.change": "Dein Name",
   "name.placeholder": "Dein Name",
-  "name.hint": "1–{max} Zeichen · erscheint im globalen Highscore. Jederzeit im Menü änderbar.",
+  "name.hint": "1–{max} Zeichen.",
+  // #menu-rework M9 (erststart-redesign): Die Unterzeile des Kopfes beantwortet „warum will das Spiel
+  //   jetzt meinen Namen“ dort, wo die Frage entsteht. Sie übernimmt damit die Hälfte, die vorher an
+  //   `name.hint` hing — deshalb ist die dort weg und nicht zweimal da. Owner-Wortlaut, 2026-08-25.
+  "name.sub.first": "Er erscheint auf der globalen Bestenliste. Du kannst ihn später ändern.",
   "name.cancel": "Abbrechen",
   "name.save": "Speichern",
   "name.lang.label": "Sprache",

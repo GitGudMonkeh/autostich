@@ -2244,6 +2244,22 @@ b, strong { font-weight: 600; }
    Unter 1280 px gibt es weder das eine noch das andere: dort scrollt die Karte als Ganzes und die
    Sektionen stehen im Fluss, also reichen beide ihre Kinder unveraendert durch. */
 .st-body, .st-col1 { display: contents; }
+
+/* #menu-rework M9 — der Titel des Willkommens-Bildschirms, aus dem Inline-Stil geholt.
+   Er stand als Inline-Objekt im JSX: Verlauf, Beschnitt, transparente Schrift und ein Schein. Ab
+   1280 px will der Entwurf ihn ohne beides — die Wortmarke steht direkt darueber und ist das farbige
+   Element dieser Spalte; zwei Verlaeufe uebereinander waren einer zu viel.
+
+   ALS REGEL UND NICHT ALS `!important`. §2c: „`!important` ist nicht die Antwort auf einen Inline-Stil.
+   Die Eigenschaft neu zu definieren ist es." Der Inline-Stil ist deshalb weg statt ueberschrieben, und
+   das `filter: … !important` der Desktop-Fassung faellt mit ihm — eines von den sechs, die in dieser
+   Runde so gefallen sind. Die Handy-Werte hier sind WERTGLEICH zu dem, was vorher inline stand. */
+.un-title {
+  background-image: linear-gradient(90deg, var(--deck-a1, #26c6e6), var(--deck-a2, #9b82f0), var(--deck-a1, #26c6e6));
+  -webkit-background-clip: text; background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 10px rgba(155, 130, 240, .35));
+}
 /* Zwei Bausteine des Willkommen-Bildschirms gehören AUSSCHLIESSLICH der breiten Fassung: das Zeichen im
    Speichern-Knopf und die Beschriftung über dem Namensfeld (auf dem Handy steht der Titel schon darüber).
    Sie stehen im DOM, damit die breite Fassung ohne zweiten Renderpfad auskommt — hier sind sie aus. */
@@ -4633,7 +4649,10 @@ b, strong { font-weight: 600; }
     /* Dafür dunkler: Ein Dialog deckt nur einen Bruchteil des Schirms, der Rest bleibt Hub — mit 80 % und
        ohne Blur las sich dessen Wortmarke direkt neben der des Dialogs mit. Der Baum kommt mit 82 % aus,
        weil er randverankert ohnehin fast alles verdeckt. */
-    background: rgba(12, 12, 16, .94) !important;   /* s. #ueberzug an .up-root */
+    /* #menu-rework M9: `--sf-scrim-desk` IST dieser Wert — die Desktop-Translucency der Leiter.
+       Wertgleich, und damit steht der Ueberzug beider Dialoge auf einer benannten Stufe statt auf
+       zwei Zahlen, die jemand in Gleichklang halten muss. */
+    background: var(--sf-scrim-desk) !important;   /* s. #ueberzug an .up-root */
   }
 
   /* ---- Willkommen: Marke links, Formular rechts ----------------------------
@@ -4641,14 +4660,23 @@ b, strong { font-weight: 600; }
      einmal sieht, und mit 320 px war er auf 1920 px eine Briefmarke. Die linke Spalte trägt die
      Ansprache (Marke + „Wähle deinen Namen"), die rechte die Arbeit — Feld, Sprache, Vorschau.
      „Name ändern" behält bewusst den schmalen Dialog: gleiche Komponente, andere Aufgabe. */
-  .un-first { width: min(900px, 100%); max-width: none; }
+  /* #menu-rework M9 (erststart-redesign §Karte): Radius 16 -> `--rd-lg` (14). Eine Stufe, kein Wert.
+
+     DEN RAHMEN FORDERT DER ENTWURF EBENFALLS — und er ist schon da (M9-F08). Der Entwurf las
+     `border: 1px solid rgba(0,0,0,0)` und schloss auf „keiner"; gemessen stimmt die Farbe, aber sie ist
+     ein Artefakt der MALWEISE: `.as-panel` setzt `border-color: transparent !important` und malt den
+     Rahmen als zweite Hintergrundlage auf `border-box` — bei `.as-panel-deck` als laufenden Verlauf aus
+     der Deckfarbe. Die Karte traegt ihre Zugehoerigkeit also bereits, nur nicht dort, wo eine
+     Farbmessung sie sucht. Hier `--ed-deck-panel` nachzureichen waere tote Deklaration hinter einem
+     `!important` — nicht getan, gemeldet. */
+  .un-first { width: min(900px, 100%); max-width: none; border-radius: var(--rd-lg); }
   .un-first .un-body {
     display: grid;
     grid-template-columns: 340px minmax(0, 1fr);
     /* Die letzte Zeile ist leer und nimmt die Restluft auf. Ohne sie verteilt das Raster die Mehrhöhe des
        rechten (spannenden) Formulars auf die Zeilen der linken Spalte — Augenbraue, Marke und Titel
        trieben dann sichtbar auseinander. */
-    grid-template-rows: auto auto auto auto 1fr;
+    grid-template-rows: auto auto auto auto auto 1fr;
     column-gap: 34px;
     align-items: start;
     padding: 22px 30px 30px !important;
@@ -4671,7 +4699,7 @@ b, strong { font-weight: 600; }
     font-size: var(--text-head-4);
     margin-top: 16px;
   }
-  .un-first .un-form { display: block; grid-column: 2; grid-row: 2 / span 4; }
+  .un-first .un-form { display: block; grid-column: 2; grid-row: 2 / span 5; }
   /* Feld und Sprachknöpfe wachsen mit der Fassung — auf 900 px Breite wirkt die 14-px-Handy-Eingabe
      wie ein Suchfeld, nicht wie die eine Entscheidung dieses Bildschirms. */
   .un-first .un-form input { padding: 13px 16px; font-size: var(--text-body-lg-8); }
@@ -4683,7 +4711,8 @@ b, strong { font-weight: 600; }
      320 px sind das nützliche Signale — auf 900 px lesen sie sich laut. Hier gilt: feine Kontur statt
      Schein, eine Fläche statt zweier Knöpfe, und Abstand als Gliederung.
      Alles hängt an `.un-first` und damit an der breiten Fassung; die Handy-Optik bleibt unberührt. */
-  .un-first .un-btnicon { display: inline-block; margin-right: 7px; font-size: var(--text-body-lg-1); opacity: .8; }
+  .un-first .un-btnicon { display: inline-grid; place-items: center; margin-right: 7px; opacity: .8; }
+  .un-first .un-btnicon .mi-svg { width: 15px; height: 15px; }
   .un-first .un-flabel { display: block; }
   /* Die drei Beschriftungen (Name · Sprache · Vorschau) sprechen mit einer Stimme — dieselbe Größe,
      dieselbe Laufweite, derselbe Abstand zum Feld darunter. Vorher waren es drei Zufälle. */
@@ -4696,47 +4725,83 @@ b, strong { font-weight: 600; }
      (s. `.as-guide-glow` weiter oben) — eine Regel am Element selbst greift daran vorbei. */
   .un-first .as-guide-glow::after { animation: none; opacity: 1; box-shadow: 0 0 12px rgba(95, 224, 247, .16); }
   .un-first .un-form input { text-align: left; }
-  .un-first .un-title { filter: drop-shadow(0 0 8px rgba(155, 130, 240, .18)) !important; }
+  /* #menu-rework M9 (erststart-redesign): Textfarbe statt Verlauf, kein Schein. Das Violett im Schein
+     war ohnehin der feste Fremdton, der ueberall sonst gefallen ist. Redefinition statt `!important`,
+     seit der Inline-Stil weg ist (s. `.un-title` in der Basis). */
+  .un-first .un-title {
+    background-image: none; color: #e8e8ea; filter: none;
+    /* UND `text-shadow`, und das war eine echte Regression, die erst das Hinschauen gezeigt hat:
+       `ty-display` legt drei gestapelte Scheine in `currentColor` unter den Titel. Solange der Text
+       `transparent` war (Verlauf mit `background-clip`), waren sie unsichtbar. Mit der Textfarbe des
+       Entwurfs wurden sie zu einem weissen Halo — die Zahl sagte `filter: none`, das Bild sagte
+       „leuchtet". Der Entwurf sagt „kein Schein", also beide Quellen aus. */
+    text-shadow: none;
+  }
+  /* Die neue Unterzeile sitzt unter dem Titel in derselben Ansprache-Spalte. */
+  .un-first .un-sub {
+    grid-column: 1; grid-row: 5;   /* Zeile 6 bleibt die leere, die die Restluft aufnimmt */
+    align-self: start;
+    margin-top: 10px;
+    max-width: 340px;
+    /* `.un-head` traegt `text-center` fuers Handy und reicht seine Kinder per `display: contents`
+       durch — die Ausrichtung muss deshalb pro Kind gesetzt werden, wie bei `.un-eyebrow`. */
+    text-align: left;
+    color: #8a8a95;
+  }
 
   /* Sprache: ein Segmented Control statt zweier Knöpfe — gemeinsame Kontur, keine Lücke, die aktive
      Hälfte trägt eine Kante unten in der Deckfarbe statt eines eigenen Rahmens samt Schein. */
+  /* #menu-rework M9 (erststart-redesign §Sprachwahl) — das Segmented nimmt die Steuerelement-Stufen.
+     DIE BESTAETIGUNG, AUF DIE DIESE TASK ANGELEGT IST: der Entwurf nennt seine Zielwerte als Literale
+     — inaktiv `rgba(19,19,26,.9)`, aktiv `rgba(32,32,44,.95)`, Rahmen `#3a3a44`, Radius 8 — und alle
+     vier stehen bereits als `--ctl-face`, `--ctl-face-on`, `--ctl-edge`, `--rd-md` in §2c. Zwei
+     Leitern, unabhaengig aus demselben Baum abgeleitet, treffen sich auf den Wert. Nichts zu praegen.
+
+     M9-F02: die Unterkante in der Deckfarbe, die der Entwurf hier VORSCHLAEGT, steht schon (der
+     `#willkommen-ton`-Durchgang hat sie gebaut). Sie bleibt unveraendert; was sich aendert, sind die
+     vier Flaechen- und Kantenwerte darum herum. Beide Signale sitzen damit auf der gewaehlten Seite,
+     unabhaengig davon, welche der beiden es ist — die Forderung des Entwurfs, jetzt vollstaendig. */
   .un-first .un-lang {
     gap: 0;
-    border: 1px solid #2c2c36;
-    border-radius: 10px;
+    border: 1px solid var(--ctl-edge);
+    border-radius: var(--rd-md);
     overflow: hidden;
   }
   .un-first .un-lang > [role="radio"] {
     border: 0 !important;
     border-radius: 0 !important;
     box-shadow: none !important;
-    background: #131318 !important;
-    color: #9a9aa8;
+    background: var(--ctl-face) !important;
+    color: #8a8a95;
   }
-  .un-first .un-lang > [role="radio"] + [role="radio"] { border-left: 1px solid #2c2c36 !important; }
+  .un-first .un-lang > [role="radio"] + [role="radio"] { border-left: 1px solid var(--ctl-edge) !important; }
   .un-first .un-lang > [aria-checked="true"] {
-    background: #191922 !important;
-    color: #eaf4ff;
+    background: var(--ctl-face-on) !important;
+    color: #f0eefc;
     box-shadow: inset 0 -2px 0 var(--deck-a1, #26c6e6) !important;
   }
 
   /* Vorschau: eine dezente Karte statt einer grünen Fläche. Der Rang sitzt als Chip vorn, der Name trägt
      die Textfarbe des Bildschirms, und nur der Punktestand bleibt farbig — er ist die Zahl, um die es geht. */
+  /* #menu-rework M9: dieselbe Zeile wie das Feld darueber (Flaeche M8-G2, Kante MENU-38), Radius aus
+     der Leiter. Innenabstand 11/13 ist wertgleich `--in-tight`/`--in-snug`. */
   .un-first .un-prev {
-    background: #131318 !important;
-    border: 1px solid #26262f !important;
-    border-radius: 12px;
-    padding: 11px 13px !important;
+    background: rgba(15, 15, 21, .72) !important;
+    border: 1px solid rgba(150, 150, 170, .12) !important;
+    border-radius: var(--rd-md);
+    padding: var(--in-tight) var(--in-snug) !important;
     gap: 11px;
   }
+  /* Die Zeichenkachel des Kanons (design-sprache.md §4: „28 x 28, Radius 8, Zeichen 16 px"). Das
+     Zeichen ist seit M9 gezeichnet, also traegt die Kachel es auf 16 px statt auf einer Schriftgroesse. */
   .un-first .un-prevchip {
-    width: 27px !important; height: 27px;
+    width: 28px !important; height: 28px;
     display: grid; place-items: center;
-    border-radius: 999px;
+    border-radius: var(--rd-md);
     background: #241d10;
     border: 1px solid #6a5426;
-    font-size: var(--text-body-lg-1) !important;
   }
+  .un-first .un-prevchip .mi-svg { width: 16px; height: 16px; }
   /* Speichern zieht mit dem Melder gleich (#feedback-ton): Auf den drei Menü-Bildschirmen gibt es genau
      EINEN Knopf, der etwas abschickt — der trägt den Verlauf der Wortmarke (Deckfarbe a1 → a2) und
      damit dieselbe Bauform wie „Absenden". Alles andere im Kopf bleibt Werkzeug am Rand.
@@ -4747,9 +4812,13 @@ b, strong { font-weight: 600; }
     border-color: transparent !important;
     box-shadow: none !important;
   }
-  .un-first .un-save { padding: 11px 20px !important; border-radius: 12px !important; font-size: var(--text-body-lg-3) !important; }
-  .un-first .un-prevname { color: #e4e4ee !important; }
-  .un-first .un-prevscore { opacity: 1 !important; color: #a8dcc0 !important; font-size: var(--text-body-lg-1); }
+  /* Radius auf `--rd-md` (12 -> 8), und das ist derselbe Griff, mit dem M8 seine 10 auf `--rd-sm`
+     gezogen hat: nebeneinander gestellt lesen sich verschiedene Radien als verschiedene BAUTEILE. Der
+     Knopf steht in derselben Spalte wie Feld, Sprachwahl und Vorschau, und die tragen jetzt alle 8. */
+  .un-first .un-save { padding: 11px 20px !important; border-radius: var(--rd-md) !important; font-size: var(--text-body-lg-3) !important; }
+  .un-first .un-prevname { color: #e8e8ea !important; }
+  /* Die Rolle „an / gekauft" (design-sprache.md §3), derselbe Ton wie im Melder. */
+  .un-first .un-prevscore { opacity: 1 !important; color: #54e08a !important; font-size: var(--text-body-lg-1); }
 
   /* ---- Feedback: Text links, Kontext und Absenden rechts -------------------
      Das Textfeld ist der Zweck des Melders; es bekommt die gewonnene Breite UND Höhe. Rechts steht,
@@ -4765,7 +4834,8 @@ b, strong { font-weight: 600; }
      die volle Breite, das nur einen „Schließen"-Knopf trägt, ist auf 1080 px verschenkte Höhe.
      Fläche und Rand kommen inline aus `ActionBar` → `!important`. */
   .fb-bar {
-    grid-column: 3; grid-row: 1;
+    grid-column: 3; grid-row: 1 / span 2;
+    align-self: start;
     position: static;
     margin: 0 !important;
     padding: 0 !important;
@@ -4774,22 +4844,62 @@ b, strong { font-weight: 600; }
   }
   .fb-head { grid-column: 1; grid-row: 1; text-align: left; margin-bottom: 0; }
   .fb-head h2 { font-size: var(--text-head-2); }
+  /* #menu-rework M9 (feedback-redesign §Kopf): Die Auskunftszeile ist eine UNTERZEILE des Titels, nicht
+     eine zweite Kopfspalte. Der Kopf-Kanon der Optionen ist Eyebrow, Titel, Auskunft darunter,
+     Schliessen rechts daneben — und der Melder kommt aus demselben Fussband. Den senkrechten Strich
+     hatte der `#feedback-ton`-Durchgang schon entfernt (M9-F03); jetzt folgt die Position. */
   .fb-readout {
-    grid-column: 2; grid-row: 1;
-    padding-left: 22px;
-    border-left: 1px solid rgba(150, 150, 170, .18);
+    grid-column: 1; grid-row: 2;
+    max-width: 640px;
+    margin-top: 4px;
     font-size: var(--text-body-3); line-height: 1.45; color: #8a8a95;
   }
   /* Formular UND Danke-Zustand sitzen in derselben Rasterzelle — sonst spränge die Karte in dem
      Moment, in dem die Bestätigung das Formular ersetzt. */
-  .fb-form, .fb-body > [role="status"] { grid-column: 1 / -1; grid-row: 2; margin-top: 18px; }
+  .fb-form, .fb-body > [role="status"] { grid-column: 1 / -1; grid-row: 3; margin-top: 18px; }
   .fb-form {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 400px;
     gap: 26px;
     align-items: start;
   }
-  .fb-left, .fb-right { display: flex; flex-direction: column; gap: 12px; }
+  /* #menu-rework M9 (feedback-redesign §Die Karte verschwindet) — der wichtigste Zug des Entwurfs und
+     derselbe wie im Optionen-Screen ab 1280 px: KEINE Karte mehr. Der Ueberzug trennt vom Spiel, und
+     Flaeche und Rahmen tragen die SEKTIONS-PANELS. Damit liest sich der Melder als derselbe Screen-Typ
+     statt als eigenes Fenster.
+
+     `.as-panel` malt seine Fuellung und seinen laufenden Rahmen als zwei Hintergrundlagen mit
+     `!important` (die CRT-Regel, dauerhaft an) — die Karte wird hier also durch Neutralisieren dieser
+     Lagen unsichtbar, nicht durch Entfernen der Klasse: die Klasse steht im JSX und traegt unter
+     1280 px die Handy-Karte, die dieser Auftrag nicht anfasst. */
+  /* SPEZIFITAET, gemessen statt geschaetzt: `[data-skin="crt"] .as-panel.as-panel-deck` ist (0,3,0) und
+     traegt `!important`. `.fb-card` allein (0,1,0) und `.fb-card.as-panel` (0,2,0) verlieren beide —
+     die Karte blieb sichtbar, und der erste Versuch sah nur so aus, als haette er gewirkt. Drei
+     Klassen gleichen die Spezifitaet aus, die Quellreihenfolge entscheidet den Rest. */
+  .fb-card.as-panel.as-panel-deck {
+    background-image: none !important;
+    box-shadow: none !important;
+    animation: none !important;
+    border-color: transparent !important;
+  }
+  /* Und derselbe Halt fuer den reduced-fx-Zweig. GEMESSEN, nicht angenommen: nach der Regel oben stand
+     `background-image: none`, aber `animationName` LAS WEITER `as-panel-sweep` — die Ausnahme in
+     index.css:1581 (`:root[data-reduced-fx="1"][data-skin="crt"] .as-panel.as-panel-deck`) ist (0,5,0)
+     mit `!important` und laesst die In-Run-Identitaetspanels auch bei reduzierten Effekten wandern. Der
+     Survey seedet `reducedFx: "an"`, also griff sie hier. Eine Endlos-Animation auf einer Flaeche, die
+     es nicht mehr gibt, kostet den Compositor jedes Oeffnen etwas und zeigt nichts. */
+  :root[data-reduced-fx="1"][data-skin="crt"] .fb-card.as-panel.as-panel-deck { animation: none !important; }
+  /* Das Panel-Rezept der Optionen, als Stufen: 9/5 % Deck-Toenung ueber dem Glas, 26-%-Rahmen,
+     Radius 14, Innenabstand 18. Owner-Entscheidung 2026-08-25 (offener Punkt 1 des Entwurfs): der
+     Melder traegt die Toenung wie im Mockup. Zeilen INNERHALB bleiben neutral — die Klausel, mit der
+     `--sf-deck` ratifiziert wurde. */
+  .fb-left, .fb-right {
+    display: flex; flex-direction: column; gap: 12px;
+    background: var(--sf-deck);
+    border: 1px solid var(--ed-deck-panel);
+    border-radius: var(--rd-lg);
+    padding: var(--in-base);
+  }
   /* 5 Zeilen sind die Handy-Vorgabe; hier ist Höhe da, und ein Melder, der drei Sätze zeigt, bekommt
      drei Sätze. Feste Höhe statt `flex: 1`, weil die rechte Spalte kürzer ist und die linke sonst an
      ihr hinge. Das `resize: vertical` des Feldes bleibt. */
@@ -4802,28 +4912,40 @@ b, strong { font-weight: 600; }
      Der Absenden-Knopf ist die eine Ausnahme, die Fläche tragen darf — er ist der Zweck des Dialogs. */
   .fb-slabel { font-size: var(--text-meta-2) !important; letter-spacing: .2em; opacity: .5 !important; margin-bottom: 9px !important; }
   .fb-readout { padding-left: 0; border-left: 0; }
-  .fb-closeicon { display: inline-block; margin-right: 8px; opacity: .7; font-size: var(--text-body-3); }
+  .fb-closeicon { display: inline-grid; place-items: center; margin-right: 8px; opacity: .7; }
+  .fb-closeicon .mi-svg { width: 13px; height: 13px; }
+  /* Die gezeichneten Zeichen der drei Hinweise und des Absenden-Knopfes, alle auf demselben Raster. */
+  .fb-hint .mi-svg, .fb-shorticon .mi-svg, .fb-noteicon { width: 14px; height: 14px; flex: none; }
+  .fb-sendicon .mi-svg { width: 15px; height: 15px; }
 
   /* Kategorie: vier Segmente in EINER Kontur (Pillen mit Lücke zerfielen in vier Einzelknöpfe). */
   .fb-kinds {
     gap: 0 !important;
     flex-wrap: nowrap !important;
-    border: 1px solid rgba(150, 150, 170, .14);
-    border-radius: 10px;
+    border: 1px solid var(--ctl-edge);
+    border-radius: var(--rd-md);
     overflow: hidden;
   }
+  /* M9-F04: das Segmented stand schon, nur 37,33 px hoch statt der 44 des Entwurfs. Die Hoehe kommt
+     aus der Polsterung, damit sie mit der Schrift mitwaechst statt sie zu deckeln.
+     Flaeche und Kante sind jetzt Stufen: `--ctl-face` / `--ctl-face-on` / `--ctl-edge` — dieselben
+     vier Werte, die der Erststart-Entwurf fuer seine Sprachwahl nennt. */
   .fb-kind {
     flex: 1;
     border: 0 !important;
     border-radius: 0 !important;
     box-shadow: none !important;
-    background: rgba(19, 19, 26, .9) !important;
+    background: var(--ctl-face) !important;
     color: #8a8a95 !important;
-    padding: 9px 12px !important;
+    /* 42 + 2 Rahmen = die 44 des Entwurfs, GEMESSEN und nicht aus der Polsterung gehofft: aus
+       `padding: 12px` folgten 43,33, weil die Hoehe dann an der Schriftmetrik haengt. */
+    padding: 0 12px !important;
+    min-height: 42px;
+    display: flex; align-items: center; justify-content: center;
   }
-  .fb-kind + .fb-kind { border-left: 1px solid rgba(150, 150, 170, .14) !important; }
+  .fb-kind + .fb-kind { border-left: 1px solid var(--ctl-edge) !important; }
   .fb-kind.as-edge {
-    background: rgba(32, 32, 44, .95) !important;
+    background: var(--ctl-face-on) !important;
     color: #f0eefc !important;
     box-shadow: inset 0 -2px 0 var(--deck-a1, #8a7de0) !important;
   }
@@ -4842,28 +4964,43 @@ b, strong { font-weight: 600; }
     margin-top: 6px;
     font-size: var(--text-body-1); color: #8a8a95;
   }
-  .fb-hint > span { margin-right: 6px; opacity: .6; }
+  .fb-hint { display: flex !important; align-items: center; gap: 6px; }
+  .fb-hint > span { opacity: .6; display: inline-grid; place-items: center; }
 
   /* Lauf-Bezug als ruhige Karte mit Zeichen. Fehlt der Lauf, ist das Kästchen ohnehin tot — dann fällt
      es weg und die Karte sagt in Ruhe, was fehlt, statt ein graues Häkchen anzubieten. */
+  /* Radius und Innenabstand kommen aus der Leiter: `--rd-md` (12 -> 8, der Entwurf nennt 8) und
+     `--in-tight`/`--in-snug` (13/14 -> 11/13, der Entwurf nennt 11/13). Die Flaeche bleibt M8-G2,
+     die Kante MENU-38. Eine Zeile INNERHALB des getoenten Panels bleibt neutral. */
   .fb-run {
     background: rgba(15, 15, 21, .72) !important;
     border: 1px solid rgba(150, 150, 170, .12);
-    border-radius: 12px;
-    padding: 13px 14px !important;
+    border-radius: var(--rd-md);
+    padding: var(--in-tight) var(--in-snug) !important;
     gap: 12px !important;
     align-items: center !important;
   }
-  .fb-run input[type="checkbox"]:disabled { display: none; }
+  /* Die Zeichenkachel des Kanons (design-sprache.md §4: 28 x 28, Radius 8, Zeichen 16 px). Der
+     Entwurf nennt 28; sie stand auf 34 mit einer Schriftgroesse darin. Seit M9 ist das Zeichen
+     gezeichnet, also bemisst die Kachel es und nicht der Schriftschnitt. */
   .fb-runicon {
     display: grid; place-items: center;
     flex: none;
-    width: 34px; height: 34px;
-    border-radius: 9px;
-    font-size: var(--text-body-lg-4);
+    width: 28px; height: 28px;
+    border-radius: var(--rd-md);
     color: var(--deck-a1, #8a7de0);
-    background: rgba(255, 255, 255, .03);
+    background: var(--ctl-chip);
     border: 1px solid color-mix(in srgb, var(--deck-a1, #8a7de0) 34%, transparent);
+  }
+  .fb-runicon .mi-svg { width: 16px; height: 16px; }
+  /* „Kein Lauf" ist ein ZUSTAND, kein Sonderfall — exakt der Sperr-Zustand des Optionen-Kanons.
+     Die Zeile geht auf 42 %, die Kachel wird stumm. Der Schalter ist ueber `disabled` am Knopf
+     gesperrt (optionsBits.jsx), also auch fuer die Tastatur — nicht nur optisch. */
+  .fb-run[data-off="1"] { opacity: .42; }
+  .fb-run[data-off="1"] .fb-runicon {
+    color: #3a3a48;
+    border-color: #3a3a48;
+    background: none;
   }
   .fb-runtitle { font-size: var(--text-body-3) !important; }
   .fb-runhint { font-size: var(--text-meta-4) !important; opacity: 1 !important; color: #8a8a95; margin-top: 2px; }
@@ -4875,13 +5012,14 @@ b, strong { font-weight: 600; }
     position: relative;
     padding: 13px 16px !important;
     font-size: var(--text-body-lg-3) !important;
-    border-radius: 12px !important;
+    /* Wie `.un-save`: derselbe Schritt wie Feld, Segmented und Lauf-Zeile in derselben Spalte. */
+    border-radius: var(--rd-md) !important;
   }
   .fb-send:not(:disabled) {
     background: linear-gradient(90deg, var(--deck-a1, #26c6e6), var(--deck-a2, #9b82f0)) !important;
     color: #10101a !important;
   }
-  .fb-sendicon { display: block; position: absolute; right: 16px; font-size: var(--text-body-lg-3); opacity: .75; }
+  .fb-sendicon { display: grid; place-items: center; position: absolute; right: 16px; opacity: .75; }
   .fb-short { display: flex; align-items: center; justify-content: center; gap: 7px; }
   .fb-shorticon { display: inline-block; opacity: .7; }
 

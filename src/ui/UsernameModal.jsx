@@ -5,6 +5,7 @@ import { MODAL_CARD, ModalHairline, ActionBar, ActionButton, STICKY_HEAD_BG } fr
 import { LOCALES, fmtNum } from "../i18n/index.js";
 import { useT, useLocale } from "../i18n/useLocale.js"; // #sprache: Erstwahl der Sprache lebt hier
 import { isAllowedUsername } from "../game/profanity.js"; // #174 Profanity-Filter (rein, testbar)
+import { ModalIcon } from "./modalIcons.jsx"; // #menu-rework M9: gezeichnet statt getippt (M9-F06)
 
 /* Lokaler Nickname (#14): dient der Ersteinrichtung (beim ersten Start) und dem
    späteren Ändern. Validiert Trim + Länge 1–20 und seit #174 zusätzlich gegen die
@@ -25,6 +26,18 @@ const MAX = 20;
 //   Deckfarbe (Default = Genesis-Cyan/Violett, also unverändertes Erstbild). ER = Fehlerfarbe (bleibt).
 const CY = "#26c6e6", VI = "#9b82f0";
 const ER = "#e2685f"; // #174 Fehlerfarbe — der Glührahmen wechselt mit, nicht nur der Text
+/* #menu-rework M9. Drei Werte, die der Erststart-Entwurf fordert, und keiner von ihnen ist erfunden:
+     ROW_BG   der Zeilengrund aus design-sprache.md §1. Er hat KEINEN Schritt in §2c — `--sf-sunken`
+              ist deckend, und was hier zaehlt, ist gerade das Durchscheinen. Das ist M8-G2, und mit
+              diesem Bildschirm steht die Familie beim vierten unabhaengigen Screen. Gemeldet, nicht
+              gepraegt: eine Stufe zu erfinden ist die Entscheidung des Planners, nicht dieses Screens.
+     ROW_EDGE die neutrale DURCHSCHEINENDE Kante — MENU-38, die zwoelffache Alpha-Familie, die als
+              Ratsche gefuehrt wird und nicht als Achse.
+     ON_GREEN die Rolle „an / gekauft" (design-sprache.md §3). Der Melder traegt denselben Ton. */
+const ROW_BG = "rgba(15, 15, 21, .72)";
+const ROW_EDGE = "rgba(150, 150, 170, .12)";
+const ON_GREEN = "#54e08a";
+const INK = "#e8e8ea";
 
 export function UsernameModal({ initial = "", firstTime = false, onLang = null, onPrivacy = null, onSave, onClose }) {
   const [name, setName] = useState(initial);
@@ -42,7 +55,11 @@ export function UsernameModal({ initial = "", firstTime = false, onLang = null, 
 
   return overlayPortal((
     <div onClick={onClose} className="un-root fixed inset-0 overlay-root z-40 flex items-center justify-center p-4"
-      style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}>
+      /* #menu-rework M9, Vokabular: `--sf-scrim` IST `rgba(12, 12, 16, .8)` — wertgleich zu
+         `#0c0c10cc`, und der Ueberzug-Wert, aus dem der Schritt abgeleitet wurde. Ab 1280 px zeigt
+         `.un-root, .fb-root` ihn auf `--sf-scrim-desk` um (94 %), was die sanktionierte Form ist:
+         eine Stufe auf der eigenen Wurzel auf eine ANDERE benannte Stufe zeigen. */
+      style={{ background: "var(--sf-scrim)", backdropFilter: "blur(3px)" }}>
       {/* #desktop: `un-first` schaltet ab 1280 px die zweispaltige Fassung frei — und NUR beim Erststart.
           „Name ändern" bleibt der schmale Dialog: das ist ein Umbenennen, kein Auftritt. */}
       <div onClick={(e) => e.stopPropagation()} className={`un-card w-full max-w-xs rounded-2xl overflow-hidden as-panel as-panel-deck ${firstTime ? "un-first" : ""}`}
@@ -56,7 +73,7 @@ export function UsernameModal({ initial = "", firstTime = false, onLang = null, 
           {/* #willkommen: das Diskettenzeichen trägt nur die breite Fassung (unter 1280 px `display: none`) —
               im 320-px-Dialog nimmt es dem kurzen Wort mehr Platz weg, als es an Klarheit bringt. */}
           <ActionButton kind="primary" className="un-save" disabled={!canSave} onClick={submit}>
-            <span className="as-deskonly un-btnicon" aria-hidden="true">🖫</span>{t("name.save")}
+            <span className="as-deskonly un-btnicon" aria-hidden="true"><ModalIcon name="save" /></span>{t("name.save")}
           </ActionButton>
         </ActionBar>
         <div className="un-head text-center mb-4">
@@ -68,13 +85,19 @@ export function UsernameModal({ initial = "", firstTime = false, onLang = null, 
               Unter 1280 px gibt es sie hier nicht: dort ist der Dialog 320 px breit und die Marke stand
               zwei Sekunden vorher schon auf dem Startbildschirm. */}
           <div className="un-wm as-wordmark select-none hidden">{t("start.logo.alt")}</div>
-          {/* #deckui: Gradient-Wortmarke zieht die Deckfarbe (a1→a2→a1); Fallback = Genesis-Cyan/Violett. */}
-          <h2 className="un-title text-title-6 font-bold mt-1 ty-display"
-            style={{ backgroundImage: `linear-gradient(90deg, var(--deck-a1,${CY}), var(--deck-a2,${VI}), var(--deck-a1,${CY}))`,
-                     WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent",
-                     filter: "drop-shadow(0 0 10px rgba(155,130,240,0.35))" }}>
+          {/* #deckui: Gradient-Wortmarke zieht die Deckfarbe (a1→a2→a1); Fallback = Genesis-Cyan/Violett.
+              #menu-rework M9: Verlauf, Beschnitt und Schein stehen jetzt als REGEL in `.un-title`
+              (index.css) statt als Inline-Objekt. Wertgleich auf dem Handy — und ab 1280 px kann der
+              Entwurf sie ohne `!important` abschalten, was §2c genau so verlangt. */}
+          <h2 className="un-title text-title-6 font-bold mt-1 ty-display">
             {t(firstTime ? "name.title.first" : "name.title.change")}
           </h2>
+          {/* #menu-rework M9 (erststart-redesign): Die Unterzeile beantwortet die Frage, die der
+              Bildschirm sonst offen laesst — warum das Spiel jetzt den Namen will —, und zwar in der
+              Ansprache-Spalte, wo sie entsteht. Vorher stand die Haelfte davon unter dem Feld, in der
+              anderen Spalte. Nur beim ERSTSTART: der Name-aendern-Dialog ist ein Umbenennen und hat die
+              Frage nicht. */}
+          {firstTime && <div className="un-sub text-meta-3 leading-snug">{t("name.sub.first")}</div>}
         </div>
 
         {/* #desktop — Klammer um die rechte Spalte (Feld · Hinweis · Sprache · Vorschau). Unter 1280 px ist
@@ -85,7 +108,12 @@ export function UsernameModal({ initial = "", firstTime = false, onLang = null, 
             steht der Titel direkt darüber, dort wäre sie doppelt (`display: none`). Kein neuer Textschlüssel:
             `name.title.change` IST „Dein Name". */}
         <div className="as-deskonly un-flabel un-slabel text-meta-1 uppercase tracking-widest opacity-40 mb-1">{t("name.title.change")}</div>
-        {/* Eingabefeld im pulsierenden Cyan-Glührahmen (wie der „Lauf fortsetzen"-Rahmen). */}
+        {/* #menu-rework M9 (erststart-redesign): Das Feld trug drei Cyans — Grund, Rand und Schrift.
+            Cyan gehoert nach design-sprache.md §3 dem Hub und darf in Menues nicht fuer Beschriftungen
+            ausgegeben werden. Es ist jetzt eine ZEILE nach §1, und die Deckfarbe erscheint an genau zwei
+            Stellen: im Schein um das leere Feld (`as-guide-glow`, der eine benannte #ruhe-Ausnahme
+            dieses Bildschirms) und im RAND, sobald ein Name dasteht. Der Fehlerfall behaelt sein Rot.
+            Die Flaeche ist M8-G2 — der Zeilengrund ohne Schritt, siehe Nachweis. */}
         <div className="as-guide-glow rounded-lg">
           <input autoFocus value={name} maxLength={MAX}
             onChange={(e) => setName(e.target.value)}
@@ -93,8 +121,9 @@ export function UsernameModal({ initial = "", firstTime = false, onLang = null, 
             placeholder={t("name.placeholder")}
             aria-invalid={!!errKey}
             className="w-full px-3 py-2.5 rounded-lg text-body-lg-5 outline-none text-center font-semibold tracking-wide"
-            style={{ background: errKey ? "#221114" : "#0e1b22", border: `1px solid ${errKey ? ER : `var(--deck-a1, ${CY})`}`,
-                     color: errKey ? "#f0bdb8" : "#a8ecf7" }} />
+            style={{ background: errKey ? "#221114" : ROW_BG,
+                     border: `1px solid ${errKey ? ER : trimmed ? `var(--deck-a1, ${CY})` : ROW_EDGE}`,
+                     color: errKey ? "#f0bdb8" : INK }} />
         </div>
         <div className="text-meta-3 opacity-45 mt-2 leading-snug">
           {t("name.hint", { max: MAX })}
@@ -143,13 +172,16 @@ export function UsernameModal({ initial = "", firstTime = false, onLang = null, 
           <div className="un-slabel text-meta-1 uppercase tracking-widest opacity-40 mb-1">{t("name.preview.label")}</div>
           {/* #zeichensatz: ♔ statt 🥇 — dasselbe Zeichen, das im Glossar für Bestenliste und Ranglisten-Lauf
               steht, und einfarbig wie der Rest. In der breiten Fassung sitzt es in einem runden Chip. */}
+          {/* #menu-rework M9: dieselbe Zeile wie das Feld darueber statt einer gruen gefluteten Flaeche.
+              Gruen bleibt genau dort, wo es etwas BEDEUTET — auf dem Punktwert, in der Rolle „an /
+              gekauft". */}
           <div className="un-prev flex items-center gap-2 text-body-lg-5 px-2 py-1.5 rounded"
-            style={{ background: "#5ab87a22", border: "1px solid #5ab87a66" }}>
-            <span className="un-prevchip w-6 shrink-0 text-center" style={{ fontSize: "14px", color: "#d8b25e" }}>♔</span>
-            <span className="un-prevname flex-1 truncate font-semibold" style={{ color: trimmed ? "#5ab87a" : "#5f6b62" }}>
+            style={{ background: ROW_BG, border: `1px solid ${ROW_EDGE}` }}>
+            <span className="un-prevchip w-6 shrink-0 grid place-items-center" style={{ color: "#d8b25e" }}><ModalIcon name="crown" /></span>
+            <span className="un-prevname flex-1 truncate font-semibold" style={{ color: trimmed ? INK : "#5f6b62" }}>
               {trimmed || t("name.placeholder")}<span className="opacity-60 text-body-5"> · {t("name.preview.you")}</span>
             </span>
-            <span className="un-prevscore shrink-0 ty-num-sm opacity-70" style={{ color: "#cfeede" }}>{fmtNum(1337000)}</span>
+            <span className="un-prevscore shrink-0 ty-num-sm opacity-70" style={{ color: ON_GREEN }}>{fmtNum(1337000)}</span>
           </div>
         </div>
         </div>

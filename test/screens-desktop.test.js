@@ -262,13 +262,61 @@ describe("#desktop-screens — Victory", () => {
 });
 
 describe("#ueberzug — ein Wert für alle Overlays über dem Hauptschirm", () => {
-  it("kein Overlay-Wurzelknoten steht mehr auf den alten 82 %", () => {
+  /* #menu-rework M9 — AUF DIE INVARIANTE UMGESCHRIEBEN, und der Anlass ist genau die Fehlerform, um
+     die es in dieser Runde geht.
+
+     Der Wächter zählte LITERALE: er verlangte mehr als zwei Vorkommen von `rgba(12, 12, 16, .NN)` im
+     Desktop-Block und dass alle denselben Wert tragen. Das ist die Frage „ist der Wert DA?". M9 hat
+     `.un-root, .fb-root` auf `var(--sf-scrim-desk)` umgestellt — dieselbe Farbe, als benannte Stufe —,
+     und der Zähler fiel von drei auf zwei. Der Wächter wurde also rot, WEIL das Vokabular angewendet
+     wurde, und er wäre bei jeder weiteren Migration wieder rot geworden. Auf Dauer hätte das genau
+     eine Wirkung gehabt: dass niemand den Überzug migriert.
+
+     Die eigentliche Aussage ist nicht „das Literal steht dreimal da", sondern: JEDE Overlay-Wurzel im
+     Desktop-Block trägt denselben Überzug, und es ist nicht mehr der alte 82-%-Wert. Genau das steht
+     jetzt hier, und `--sf-scrim-desk` IST `rgba(12, 12, 16, .94)` — nachgeprüft am @theme-Block, nicht
+     angenommen, denn ein Token, das man nicht aufgelöst hat, ist die Lücke von `--el-glow` in Grün.
+
+     Der Wächter ist damit STRENGER als vorher: er zählt jetzt die Wurzeln, nicht die Schreibweisen,
+     und eine vierte Wurzel mit abweichendem Überzug fällt auf, egal wie sie geschrieben ist. */
+  it("jede Overlay-Wurzel trägt denselben Überzug — als Literal ODER als Stufe", () => {
     /* Die 82 % waren zusammen mit `blur(10px)` abgenommen; seit #perf-blur gibt es den Blur nicht mehr und
        der Hub las sich durch die Panels. Ein neuer Screen, der wieder 82 % setzt, fällt hier auf. */
     expect(deskBlock, "alter Überzugswert ist zurück").not.toMatch(/rgba\(12, 12, 16, \.82\)/);
-    const werte = [...deskBlock.matchAll(/rgba\(12, 12, 16, (\.\d+)\) !important/g)].map((m) => m[1]);
-    expect(werte.length, "keine Überzugs-Regel gefunden").toBeGreaterThan(2);
-    expect([...new Set(werte)], "die Overlays sollen EINEN Wert teilen").toEqual([".94"]);
+
+    /* Die Stufe wird AUFGELÖST, nicht geglaubt. Steht sie eines Tages auf einem anderen Wert, sagt es
+       dieser Wächter — statt ihn stillschweigend zu bestehen, weil ein `var()` da war. */
+    const theme = css.match(/--sf-scrim-desk:\s*([^;]+);/);
+    expect(theme, "--sf-scrim-desk fehlt im @theme-Block").not.toBeNull();
+    expect(theme[1].trim(), "die Desktop-Stufe ist nicht mehr der Überzugswert").toBe("rgba(12, 12, 16, .94)");
+
+    /* Jede Regel im Desktop-Block, die einen Overlay-Wurzel-Selektor trägt UND einen Hintergrund
+       setzt. `-root` ist die Namenskonvention dieser Wurzeln (`up-root`, `op-root`, `un-root`,
+       `fb-root`, `st-root`, …) — eine neue Wurzel heisst genauso und wird deshalb mitgezählt. */
+    const NL = String.fromCharCode(10);
+    const roots = [...deskBlock.matchAll(/([^{}]*)\{([^}]*)\}/g)]
+      .map(([, sel, body]) => [sel.split(NL).pop().trim(), body])
+      .filter(([sel]) => /-root/.test(sel))
+      /* DIE UM-ZEIGUNG WIRD AUFGELÖST, nicht verboten. `.op-root`, `.up-root` und `.cz-root` schreiben
+         `--sf-scrim: var(--sf-scrim-desk)` auf ihrer EIGENEN Wurzel und lesen danach `var(--sf-scrim)` —
+         das ist die von §2c ausdrücklich sanktionierte Form („Ein Screen darf eine Stufe auf seiner
+         eigenen Wurzel auf eine ANDERE benannte Stufe zeigen"), und sie ergibt dieselben 94 %. Ein
+         Wächter, der nur die Schreibweise am `background` liest, hielte genau diese drei für Abweichler
+         und würde damit die Form bestrafen, die das Vokabular vorschreibt. */
+      .map(([sel, body]) => {
+        const bg = (body.match(/(?:^|[;{\s])background\s*:\s*([^;}]+)/) || [])[1];
+        const repoint = /--sf-scrim:\s*var\(--sf-scrim-desk\)/.test(body);
+        return [sel, bg, repoint];
+      })
+      .filter(([, bg]) => bg && /rgba\(12, 12, 16|--sf-scrim/.test(bg));
+    expect(roots.length, "keine Überzugs-Regel gefunden").toBeGreaterThan(2);
+
+    const werte = roots.map(([, bg, repoint]) => (
+      /--sf-scrim-desk/.test(bg) || repoint ? ".94"
+        : /--sf-scrim/.test(bg) ? ".8"          /* die Handy-Stufe, ohne Um-Zeigung: eine echte Abweichung */
+          : (bg.match(/rgba\(12, 12, 16, (\.\d+)\)/) || [])[1]));
+    expect([...new Set(werte)], "die Overlays sollen EINEN Wert teilen: "
+      + roots.map(([sel, bg]) => `${sel} -> ${bg}`).join(" | ")).toEqual([".94"]);
   });
 });
 
