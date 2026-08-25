@@ -802,10 +802,10 @@ const E_FAMILIES = {
     // #195: monotone Leiter auf EINER Achse (Breite der Allianz) — I und II trugen zuvor beide suits:2 (mechanisch
     // identische Phantom-Stufe, wie E_RPM/E_SEGMENT/B_INITIATIVE). Jetzt 2 → 3 → 4 (alle als eine) → 4 (zwei Allianzen).
     tiers: {
-      1: { desc: "Wähle 2 Farben: sie zählen in allen Farb-Wertungen als dieselbe Farbe — außer bei Farbverstärkung/Farbduell.", pickTarget: { suits: 2 } },
-      2: { desc: "Wähle 3 Farben: sie zählen in allen Farb-Wertungen als dieselbe Farbe — außer bei Farbverstärkung/Farbduell.", pickTarget: { suits: 3 } },
-      3: { desc: "Alle vier zählen in allen Farb-Wertungen als dieselbe Farbe — außer bei Farbverstärkung/Farbduell.", pickTarget: { suits: 4 } },
-      4: { desc: "Alle vier zählen als dieselbe Farbe, Farbblöcke starten bei ×1,55 (statt ×1,35) — außer bei Farbverstärkung/Farbduell.", pickTarget: { suits: 4 }, farbblockBonus: 0.20 },
+      1: { desc: "Wähle 2 Farben: sie zählen in allen Farb-Wertungen als dieselbe Farbe, außer bei Farbverstärkung/Farbduell.", pickTarget: { suits: 2 } },
+      2: { desc: "Wähle 3 Farben: sie zählen in allen Farb-Wertungen als dieselbe Farbe, außer bei Farbverstärkung/Farbduell.", pickTarget: { suits: 3 } },
+      3: { desc: "Alle vier zählen in allen Farb-Wertungen als dieselbe Farbe, außer bei Farbverstärkung/Farbduell.", pickTarget: { suits: 4 } },
+      4: { desc: "Alle vier zählen als dieselbe Farbe, Farbblöcke starten bei ×1,55 (statt ×1,35), außer bei Farbverstärkung/Farbduell.", pickTarget: { suits: 4 }, farbblockBonus: 0.20 },
     },
   },
   E_CORE: {
