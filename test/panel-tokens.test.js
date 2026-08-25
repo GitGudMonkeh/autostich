@@ -209,6 +209,39 @@ const GL_STATE_LITERALS = [
   /* Suchfeld + Trennlinie */ "#0f0f14", "#33333e",
 ];
 
+/* #menu-rework M11 — DIE LAUF-DIALOGE, die letzte Einheit dieser Runde. Vier Dateien, und nur drei
+   von ihnen tragen ueberhaupt einen Wert auf einer der fuenf Achsen.
+
+     `RunConfirm.jsx` steht nach der Umstellung auf NULL. Sein Ueberzug war `#0c0c10cc` und das IST
+       `--sf-scrim` — rgba(12, 12, 16, .8), und .8 ist 0xcc genau. Die drei Farben, die bleiben, sind
+       GOLD / RED / GREY: die Kantenfarben der drei Wege (primaer / gefaehrlich / Ausstieg). Das ist
+       „meaning-coded borders" aus 2c, dieselbe Antwort wie bei `#d4a63a` in RunStats.jsx — und sie
+       stehen als MODUL-KONSTANTEN, die kein Waechter dieser Datei sieht (M11-F08).
+     `RunLoader.jsx` traegt drei, alle gezaehlt statt gepraegt:
+       `#0c0c10f2` — der Ueberzug. `--sf-scrim-desk` ist rgba(12, 12, 16, .94) und damit 0/0/0 in der
+         Farbe, aber 2,3/255 in der ALPHA. Die Schwelle des Planners gilt „bei <= 2/255 je Kanal OHNE
+         Alpha-Aenderung"; hier bewegt sich genau die Alpha. Gefragt, nicht genommen (M11-F03).
+       `#2a2836` — die Kante der Balkenspur. `--ed-quiet` (#2a2a34) liegt 0/2/2 daneben, also GENAU auf
+         der Schwelle, und der Balken steht in jeder Breite. Gefragt, nicht genommen (M11-F04).
+       `rgba(155,130,240,0.4)` — der Schein am Balken. `--el-glow-*` gehoert nach #ruhe dem primaeren
+         CTA, und ein Ladebalken ist keiner: MENU-50s Antwort, zum wiederholten Mal.
+     `UpdateBanner.jsx` traegt drei:
+       `#1b1b24` — die Flaeche der Leiste. `--sf-head` (#1b1a24) liegt 0/1/0 daneben — EINE Einheit
+         Gruen, dieselbe Groessenordnung wie M5-F02, die der Planner gewaehrt hat. Die Leiste steht in
+         jeder Breite. Gefragt, nicht genommen (M11-F02).
+       `#3a3a48` — ihre Kante. `--ctl-edge` (#3a3a44) liegt 0/0/4 daneben, also ueber der Schwelle.
+         M8 fuehrt denselben Wert als GESTRICHELTE Kante seiner Baum-Pille; hier ist er eine
+         durchgezogene Kante an einem Hinweis. Gezaehlt.
+       `#000` — der Schlagschatten. `--el-float` ist `0 14px 44px rgba(0, 0, 0, .42)`; das hier ist
+         `0 6px 24px -8px`, eine andere Geste an einer Leiste, die am Fensterrand klebt. Gezaehlt.
+     `PwaInstall.jsx` traegt KEINEN Achsen-Wert — die Datei setzt nur eine Textfarbe, und die steht als
+       Modul-Konstante (`AM`). Sie ist damit die einzige migrierte Datei dieser Runde, an der es nichts
+       umzustellen gab; sie steht trotzdem in der Liste, weil eine Datei, die niemand beobachtet, die
+       naechste ist, in der jemand einen Wert ablegt. */
+const RC_STATE_LITERALS = [];
+const RL_STATE_LITERALS = ["#0c0c10f2", "#2a2836", "rgba(155,130,240,0.4)"];
+const UB_STATE_LITERALS = ["#1b1b24", "#3a3a48", "#000"];
+
 const MIGRATED_JSX = [
   { path: "src/ui/modalStyle.jsx" },
   { path: "src/ui/OptionsModal.jsx" },
@@ -336,6 +369,16 @@ const MIGRATED_JSX = [
      Und `Chip` gibt es dreimal im Baum (hier, in `CardDetail.jsx`, in `StartScreen.jsx`): drei
      eigenstaendige Komponenten mit demselben Namen, von denen dieser Eintrag genau eine deckt. */
   { path: "src/ui/Glossary.jsx", stateLiterals: GL_STATE_LITERALS },
+  /* #menu-rework M11 — die vier Lauf-Dialoge. `RunConfirm.jsx` exportiert `AbortConfirm` und
+     `RestartConfirm`; ein `<RunConfirm>` gibt es NICHT, und der Eintrag deckt die Datei, nicht einen
+     Namen, den niemand rendert. `ActionBar`, `ActionButton`, `ModalHairline` und `OptionRow` gehoeren
+     ihnen nicht — das sind M1s Primitive, und dass diese vier sie rendern, macht sie nicht zu ihren.
+     `RC_STATE_LITERALS` ist bewusst LEER und steht trotzdem da: die Datei traegt nach der Umstellung
+     keinen Achsen-Wert mehr, und eine leere Liste sagt das, wo ein fehlender Eintrag nichts sagt. */
+  { path: "src/ui/RunConfirm.jsx", stateLiterals: RC_STATE_LITERALS },
+  { path: "src/ui/RunLoader.jsx", stateLiterals: RL_STATE_LITERALS },
+  { path: "src/ui/UpdateBanner.jsx", stateLiterals: UB_STATE_LITERALS },
+  { path: "src/ui/PwaInstall.jsx" },
 ];
 /* Ein Haken trifft ein Tag, wenn dessen Klassen ihn als GANZES Wort fuehren: `cz-main` darf
    `cz-mainscroll` nicht mitnehmen, sonst haengt der eine Eintrag am anderen. */
@@ -353,7 +396,10 @@ const M2A_SHELL_SELECTORS = [/\.cz-root/, /\.cz-card/, /\.cz-scroll/, /\.cz-head
 /* M6s zwei Praefixe stehen als eigene Konstante, damit die Gegenprobe weiter unten sie EINZELN
    pruefen kann: `.gl-wrap` faellt nur auf, wenn man fragt, was DIESER Eintrag einsammelt — in der
    Gesamtliste deckt M8s `\.lb-` dieselbe Regel voellig zu Recht ab. */
+const M3_TREE_SELECTOR = /\.up-(?!banner)/;
 const M6_SELECTORS = [/\.gl-(?!wrap)/, /\.gloss-/];
+/* M11s Praefixe stehen ebenfalls einzeln, damit die Gegenprobe unten die Naht zu M3 pruefen kann. */
+const M11_SELECTORS = [/\.rc-/, /\.up-banner/];
 const MIGRATED_SELECTORS = [/\.op-/, /\.as-opt-/, /\.as-panel-sunken/, /\.as-shell/, /\.as-head\b/,
   /* M9: `.un-` und `.fb-` MEINEN DIE ZWEI SCREENS, wie `.cz-`, `.up-`, `.st-` und `.rd-` ihre. Der
      Datenschutz-Hinweis hat keine eigenen Selektoren — er traegt `as-panel`, `as-edge` und Tailwind —,
@@ -362,8 +408,10 @@ const MIGRATED_SELECTORS = [/\.op-/, /\.as-opt-/, /\.as-panel-sunken/, /\.as-she
   /\.cz-/,
   /* M3: `.up-` MEINT DEN GANZEN SCREEN, wie `.cz-` seit M2b. Ein Screen ist entweder migriert oder
      nicht; eine Aufzaehlung einzelner Bausteine waere eine halbe Migration, und eine halbe Migration
-     ist, wie die 43 Schatten entstanden sind. */
-  /\.up-(?!banner)/,
+     ist, wie die 43 Schatten entstanden sind.
+     M11: der Ausdruck steht als KONSTANTE, damit die Naht-Gegenprobe ihn pruefen kann statt ihn
+     abzuschreiben — eine Gegenprobe, die eine Kopie prueft, ist gruen, waehrend das Original faellt. */
+  M3_TREE_SELECTOR,
   /* M7: `.st-` und `.rd-` MEINEN DIE ZWEI SCREENS, wie `.cz-` und `.up-` ihre. `.rs-` und `.rg-`
      gehoeren dazu, aber nur SO WEIT SIE DIESER SCREEN FAERBT: die drei Komponenten teilen sich
      Victory und Chronik, und jede Regel, die sie anfasst, ist deshalb ohnehin auf `.rd-`/`.go-`
@@ -396,7 +444,13 @@ const MIGRATED_SELECTORS = [/\.op-/, /\.as-opt-/, /\.as-panel-sunken/, /\.as-she
      `GlobalLeaderboard.jsx` (dort `<div className="gl-wrap mt-5">`) und teilt mit dem Glossar nur
      die zwei Buchstaben des Praefixes. Eine Grenze, die nach dem sichtbarsten Traeger gezogen wird,
      trifft irgendwann etwas, das nur so heisst — MENU-38 in klein, zum dritten Mal. */
-  /\.st-/, /\.rd-/, /\.lb-/, /\.go-/, /\.gd-/, ...M6_SELECTORS];
+  /* M11: `.rc-` MEINT DIE ZWEI RUECKFRAGEN, und `.up-banner` SCHLIESST DIE LUECKE, DIE M3 GELASSEN
+     HAT. Die Zeile darueber steht seit M3 als `/\.up-(?!banner)/`, mit der Begruendung: „`.up-banner`
+     ist NICHT dieser Screen. Sie gehoert keinem migrierten Screen, also darf die Erlaubnisliste sie
+     nicht einsammeln." Sie gehoert jetzt einem — diesem. Die letzte Task der Runde macht aus der
+     Ausnahme wieder eine Grenze, und die Gegenprobe weiter unten haelt fest, dass die zwei Ausdruecke
+     zusammen jede `.up-`-Regel des Blattes decken und keine doppelt. */
+  /\.st-/, /\.rd-/, /\.lb-/, /\.go-/, /\.gd-/, ...M6_SELECTORS, ...M11_SELECTORS];
 /* `.up-banner` ist NICHT dieser Screen. Es ist die „Neue Version verfuegbar"-Leiste
    (`UpdateBanner.jsx`) und teilt mit dem Baum nur die zwei Buchstaben des Praefixes. Sie gehoert
    keinem migrierten Screen, also darf die Erlaubnisliste sie nicht einsammeln. Gefunden, weil der
@@ -908,6 +962,30 @@ describe("#menu-rework — migrierte CSS-Regeln fuehren keine Werte ein", () => 
     expect(mine.length, "kein migrierter Selektor gefunden — die Liste zeigt ins Leere").toBeGreaterThan(25);
   });
 
+  it("die zwei `.up-`-Ausdruecke treffen sich genau — keine Regel doppelt, keine ungedeckt", () => {
+    /* #menu-rework M11 — die Naht zwischen M3 und M11, und sie ist die Sorte, die still schiefgeht.
+       M3 hat `.up-banner` mit einem negativen Lookahead ausgeschlossen, weil die Leiste damals keinem
+       migrierten Screen gehoerte. Seit dieser Task gehoert sie einer, und die zwei Ausdruecke muessen
+       sich jetzt exakt ergaenzen: JEDE `.up-`-Regel des Blattes wird von genau EINEM von beiden
+       gedeckt. Faellt der Lookahead weg, deckt M3 die Leiste MIT — dann steht ihre Zahl in zwei
+       Ratschen, und eine Zahl, die zweimal gezaehlt wird, ist keine Messung. Wird der Lookahead
+       breiter, faellt eine Baum-Regel aus beiden heraus und niemand sieht sie mehr an.
+       Als „enthaelt kein X ausser Y" geschrieben: keine Regel in beiden, keine in keinem. */
+    const upRules = all.filter(([sel]) => /\.up-/.test(sel));
+    expect(upRules.length, "keine `.up-`-Regel mehr gefunden — dann prueft diese Gegenprobe nichts")
+      .toBeGreaterThan(10);
+    /* DIE AUSDRUECKE SELBST, nicht ihre Schreibweise. Die erste Fassung dieser Gegenprobe schrieb die
+       zwei Regexe hier noch einmal hin — und war damit gruen, waehrend man die echten Eintraege oben
+       kaputtmachte. Gemessen an genau dieser Sabotage: `(?!banner)` entfernt -> gruen, `.up-banner`
+       aus M11 gestrichen -> gruen. Eine Gegenprobe, die eine Kopie prueft, prueft nichts. */
+    const tree = M3_TREE_SELECTOR;
+    const deckt = (sel) => M11_SELECTORS.some((re) => re.test(sel));
+    const beide = upRules.filter(([sel]) => tree.test(sel) && deckt(sel)).map(([sel]) => sel);
+    const keiner = upRules.filter(([sel]) => !tree.test(sel) && !deckt(sel)).map(([sel]) => sel);
+    expect(beide, `von beiden Ausdruecken gedeckt: ${beide.join(" · ")}`).toEqual([]);
+    expect(keiner, `von keinem Ausdruck gedeckt: ${keiner.join(" · ")}`).toEqual([]);
+  });
+
   it("die Erlaubnisliste nimmt KEINE fremde Regel mit — `.gl-wrap` gehoert der Bestenliste", () => {
     /* #menu-rework M6 — die Gegenprobe zum Praefix `\.gl-`, und sie ist die Form, die MENU-38 und
        `.up-banner` beide gekostet haben: eine Grenze, die nach dem sichtbarsten Traeger gezogen wird,
@@ -1332,6 +1410,15 @@ describe("#menu-rework — die Tinten-Ratsche: Textfarb-Literale wachsen nicht",
     ["src/ui/Glossary.jsx (ganze Datei)", () => inkOfJsx("src/ui/Glossary.jsx"), 8],
     ["index.css — .gl-* / .gloss-* (M6, ohne die geteilten Sammelregeln)",
       () => inkOfCss([/\.gl-(?!wrap)/, /\.gloss-/], [/\.up-/, /\.gd-/, /\.cz-/, /\.st-/, /\.lb-/]), 14],
+    /* #menu-rework M11 — die Lauf-Dialoge. Die kleinste Zahl der Runde, und sie ist gemessen und nicht
+       gesetzt: drei der vier Dateien tragen ueberhaupt keine Tinte, die vierte genau eine (die
+       Ueberschrift der Update-Leiste). Die CSS-Seite steht auf null — die fuenf `.rc-*`-Regeln und die
+       zwei `.up-banner`-Regeln setzen Groessen, Radien und einen Schatten, keine Schriftfarbe. */
+    ["src/ui/RunConfirm.jsx (ganze Datei)", () => inkOfJsx("src/ui/RunConfirm.jsx"), 0],
+    ["src/ui/RunLoader.jsx (ganze Datei)", () => inkOfJsx("src/ui/RunLoader.jsx"), 0],
+    ["src/ui/UpdateBanner.jsx (ganze Datei)", () => inkOfJsx("src/ui/UpdateBanner.jsx"), 1],
+    ["src/ui/PwaInstall.jsx (ganze Datei)", () => inkOfJsx("src/ui/PwaInstall.jsx"), 0],
+    ["index.css — .rc-* / .up-banner (M11)", () => inkOfCss([/\.rc-/, /\.up-banner/]), 0],
   ];
 
   for (const [name, count, cap] of CAP) {
@@ -1488,6 +1575,17 @@ describe("#menu-rework — die Kanten-Ratsche (MENU-38): durchsichtige neutrale 
     ["src/ui/Glossary.jsx (ganze Datei)", () => edgeOfJsx("src/ui/Glossary.jsx"), 0],
     ["index.css — .gl-* / .gloss-* (M6, ohne die geteilten Sammelregeln)",
       () => edgeOfCss([/\.gl-(?!wrap)/, /\.gloss-/], [/\.up-/, /\.gd-/, /\.cz-/, /\.st-/, /\.lb-/]), 0],
+    /* #menu-rework M11. Alle fuenf Einheiten stehen auf null, und DIESE Nullen sind ANWESENHEITEN und
+       keine erreichten Zustaende — die vier Dateien haben die durchscheinende neutrale Kante nie
+       getragen, und die sieben Regeln setzen ueberhaupt keine Kantenfarbe. Ausgeschrieben, weil MH1s
+       eigene Lehre die umgekehrte ist: dort las sich eine erreichte Null wie „hier war nie etwas".
+       Hier ist es wirklich „hier war nie etwas", und ein spaeterer Leser soll die zwei Sorten Null
+       auseinanderhalten koennen, ohne die Diffs zu lesen. */
+    ["src/ui/RunConfirm.jsx (ganze Datei)", () => edgeOfJsx("src/ui/RunConfirm.jsx"), 0],
+    ["src/ui/RunLoader.jsx (ganze Datei)", () => edgeOfJsx("src/ui/RunLoader.jsx"), 0],
+    ["src/ui/UpdateBanner.jsx (ganze Datei)", () => edgeOfJsx("src/ui/UpdateBanner.jsx"), 0],
+    ["src/ui/PwaInstall.jsx (ganze Datei)", () => edgeOfJsx("src/ui/PwaInstall.jsx"), 0],
+    ["index.css — .rc-* / .up-banner (M11)", () => edgeOfCss([/\.rc-/, /\.up-banner/]), 0],
   ];
 
   for (const [name, count, cap] of CAP) {

@@ -198,8 +198,39 @@ describe("#up-still + #up-griff — Auswertung ruhiger, Griffe fest", () => {
   });
 
   it("die Update-Leiste folgt derselben Sprache (eckig, kein Schein)", () => {
-    expect(deskBlock).toMatch(/\.up-banner\s*\{[^}]*border-radius:\s*6px/);
-    expect(deskBlock).toMatch(/\.up-banner \.as-edge-strong\s*\{[^}]*box-shadow:\s*none/);
+    /* #menu-rework M11 — BEIDE ZEILEN STANDEN AUF DER SCHREIBWEISE UND WURDEN ROT, WEIL DIE MIGRATION
+       GELUNGEN IST: die Leiste liest ihre 6 jetzt als `--rd-sm` und ihr `none` als `--el-flat`. Der
+       Schein ist damit nicht nur abwesend, sondern als Schritt GEWAEHLT — §2c fuehrt `--el-flat` unter
+       #ruhe ausdruecklich als „a step you PICK, not an absence you have to remember", und genau das ist
+       die Aussage dieser Zeile. H-f, und die Antwort ist die Invariante statt einer zweiten Schreibweise.
+
+       Je Achse drei Teile: die Regel liest GENAU DIESE Sprosse, die Sprosse traegt noch ihren Wert, und
+       sie ist NICHT die Nachbarsprosse. Ohne den dritten Teil bestuende die Radius-Zeile auch mit
+       `--rd-md` und die Schatten-Zeile auch mit `--el-rest` — dann waere die Leiste wieder eckiger
+       gedacht als gebaut und haette ihren Schein zurueck, und beides stuende gruen da. */
+    const bare = deskBlock.replace(/\/\*[\s\S]*?\*\//g, "");
+    const theme = themeTokens(css);
+
+    const leiste = bare.match(/\.up-banner\s*\{([^}]*)\}/);
+    expect(leiste, "die .up-banner-Regel gibt es nicht mehr").toBeTruthy();
+    const rd = (leiste[1].match(/border-radius:\s*([^;!]+)/) || [])[1];
+    expect(rd, "die Leiste hat ihren Radius verloren").toBeTruthy();
+    expect(resolve(rd, theme).trim(), "der Radius ist nicht mehr die Sprosse --rd-sm")
+      .toBe(resolve("var(--rd-sm)", theme).trim());
+    expect(resolve(rd, theme), "die Sprosse --rd-sm ist nicht mehr sechs").toMatch(/\b6px\b/);
+    expect(resolve(rd, theme).trim(), "der Radius liest die NACHBARSPROSSE")
+      .not.toBe(resolve("var(--rd-md)", theme).trim());
+
+    const knopf = bare.match(/\.up-banner \.as-edge-strong\s*\{([^}]*)\}/);
+    expect(knopf, "die Regel am Knopf der Leiste gibt es nicht mehr").toBeTruthy();
+    const sh = (knopf[1].match(/box-shadow:\s*([^;]+);/) || [])[1];
+    expect(sh, "der Knopf hat seine Hoehen-Angabe verloren").toBeTruthy();
+    expect(resolve(sh, theme).trim(), "der Knopf traegt wieder einen Schein").toBe("none");
+    expect(resolve(sh, theme).trim(), "die Hoehe ist nicht mehr die Sprosse --el-flat")
+      .toBe(resolve("var(--el-flat)", theme).trim());
+    expect(resolve(sh, theme).trim(), "die Hoehe liest die RUHE-Sprosse — das waere ein Schein")
+      .not.toBe(resolve("var(--el-rest)", theme).trim());
+
     expect(read("src/ui/UpdateBanner.jsx")).toMatch(/className="up-banner pointer-events-auto/);
   });
 });

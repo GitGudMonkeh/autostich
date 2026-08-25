@@ -1,0 +1,381 @@
+
+  compared 159 cells, 24822 matched nodes
+  Surfaces only. Control states are not captured and are verified by hand.
+
+  1 cell(s) not comparable:
+    de/1280x720/victory: reached true -> false
+
+  unmatched nodes: 4 pre-registered (H-c: leaderboard, victory), 9 elsewhere
+    en/1280x720/stats  1/0/1/2/2/8:BUTTON  (only in before)
+    en/1400x700/stats  1/0/1/1/1/2/0:DIV  (only in before)
+    en/1400x700/stats  1/0/1/1/1/2/1:DIV  (only in before)
+    en/1400x700/stats  1/0/1/1/1/2/2:DIV  (only in before)
+    en/1400x700/stats  1/0/1/2/2/7:BUTTON  (only in before)
+    en/1400x700/stats  1/0/1/1/1/2:DIV  (only in after)
+    en/1536x791/stats  1/0/1/2/2/6:BUTTON  (only in before)
+    en/1600x900/stats  1/0/1/2/2/5:BUTTON  (only in before)
+    en/1920x1080/stats  1/0/1/2/2/4:BUTTON  (only in before)
+      by cell: en/1400x700/stats=5  en/1280x720/stats=1  en/1536x791/stats=1  en/1600x900/stats=1  en/1920x1080/stats=1
+      by surface: stats=9
+      by side: only in before=8  only in after=1
+
+  88 computed delta(s), all of them printed:
+    en/1400x700/stats
+      1/0/1/0:DIV  box[w]
+        before: 1309.98
+        after : 1317.98
+    en/1400x700/stats
+      1/0/1/0/0:I  box[w]
+        before: 1307.98
+        after : 1315.98
+    en/1400x700/stats
+      1/0/1/0/2/0:DIV  box[w]
+        before: 118.39
+        after : 119.98
+    en/1400x700/stats
+      1/0/1/0/2/1:DIV  box[x]
+        before: 181.39
+        after : 182.98
+    en/1400x700/stats
+      1/0/1/0/2/1:DIV  box[w]
+        before: 118.39
+        after : 120
+    en/1400x700/stats
+      1/0/1/0/2/2:DIV  box[x]
+        before: 311.78
+        after : 314.98
+    en/1400x700/stats
+      1/0/1/0/2/2:DIV  box[w]
+        before: 118.41
+        after : 120
+    en/1400x700/stats
+      1/0/1/0/2/3:DIV  box[x]
+        before: 442.19
+        after : 446.98
+    en/1400x700/stats
+      1/0/1/0/2/3:DIV  box[w]
+        before: 118.39
+        after : 120
+    en/1400x700/stats
+      1/0/1/0/2/4:DIV  box[x]
+        before: 572.58
+        after : 578.98
+    en/1400x700/stats
+      1/0/1/0/2/4:DIV  box[w]
+        before: 118.39
+        after : 119.98
+    en/1400x700/stats
+      1/0/1/0/3:DIV  box[x]
+        before: 712.98
+        after : 720.98
+    en/1400x700/stats
+      1/0/1/0/3/1/2:svg  box[x]
+        before: 725.98
+        after : 733.98
+    en/1400x700/stats
+      1/0/1/1/0:DIV  box[w]
+        before: 401.89
+        after : 404.44
+    en/1400x700/stats
+      1/0/1/1/0/0:I  box[w]
+        before: 399.89
+        after : 402.44
+    en/1400x700/stats
+      1/0/1/1/0/2:BUTTON  box[w]
+        before: 373.89
+        after : 376.44
+    en/1400x700/stats
+      1/0/1/1/0/2/1:DIV  box[w]
+        before: 336.89
+        after : 339.44
+    en/1400x700/stats
+      1/0/1/1/0/2/1/0:DIV  box[w]
+        before: 245.58
+        after : 247.45
+    en/1400x700/stats
+      1/0/1/1/0/2/1/1:DIV  box[x]
+        before: 317.58
+        after : 319.45
+    en/1400x700/stats
+      1/0/1/1/0/2/1/1:DIV  box[w]
+        before: 40.47
+        after : 40.78
+    en/1400x700/stats
+      1/0/1/1/0/2/1/2:DIV  box[x]
+        before: 358.05
+        after : 360.23
+    en/1400x700/stats
+      1/0/1/1/0/2/1/2:DIV  box[w]
+        before: 36.88
+        after : 37.16
+    en/1400x700/stats
+      1/0/1/1/0/2/1/3:DIV  box[x]
+        before: 394.92
+        after : 397.39
+    en/1400x700/stats
+      1/0/1/1/0/2/1/3:DIV  box[w]
+        before: 11.94
+        after : 12.02
+    en/1400x700/stats
+      1/0/1/1/1:DIV  box[w]
+        before: 401.89
+        after : 404.44
+    en/1400x700/stats
+      1/0/1/1/1:DIV  box[h]
+        before: 231.45
+        after : 96.83
+    en/1400x700/stats
+      1/0/1/1/1/0:I  box[w]
+        before: 399.89
+        after : 402.44
+    en/1400x700/stats
+      1/0/1/1/1/0:I  box[h]
+        before: 229.45
+        after : 94.83
+    en/1400x700/stats
+      1/0/1/2:DIV  box[x]
+        before: 460.89
+        after : 463.44
+    en/1400x700/stats
+      1/0/1/2:DIV  box[w]
+        before: 462.2
+        after : 465.11
+    en/1400x700/stats
+      1/0/1/2/0:I  box[x]
+        before: 461.89
+        after : 464.44
+    en/1400x700/stats
+      1/0/1/2/0:I  box[w]
+        before: 460.2
+        after : 463.11
+    en/1400x700/stats
+      1/0/1/2/2/0:BUTTON  box[x]
+        before: 474.89
+        after : 477.44
+    en/1400x700/stats
+      1/0/1/2/2/0:BUTTON  box[w]
+        before: 426.2
+        after : 437.11
+    en/1400x700/stats
+      1/0/1/2/2/1:BUTTON  box[x]
+        before: 474.89
+        after : 477.44
+    en/1400x700/stats
+      1/0/1/2/2/1:BUTTON  box[w]
+        before: 426.2
+        after : 437.11
+    en/1400x700/stats
+      1/0/1/2/2/2:BUTTON  box[x]
+        before: 474.89
+        after : 477.44
+    en/1400x700/stats
+      1/0/1/2/2/2:BUTTON  box[w]
+        before: 426.2
+        after : 437.11
+    en/1400x700/stats
+      1/0/1/2/2/3:BUTTON  box[x]
+        before: 474.89
+        after : 477.44
+    en/1400x700/stats
+      1/0/1/2/2/3:BUTTON  box[w]
+        before: 426.2
+        after : 437.11
+    en/1400x700/stats
+      1/0/1/2/2/4:BUTTON  box[x]
+        before: 474.89
+        after : 477.44
+    en/1400x700/stats
+      1/0/1/2/2/4:BUTTON  box[w]
+        before: 426.2
+        after : 437.11
+    en/1400x700/stats
+      1/0/1/2/2/5:BUTTON  box[x]
+        before: 474.89
+        after : 477.44
+    en/1400x700/stats
+      1/0/1/2/2/5:BUTTON  box[w]
+        before: 426.2
+        after : 437.11
+    en/1400x700/stats
+      1/0/1/2/2/6:BUTTON  box[x]
+        before: 474.89
+        after : 477.44
+    en/1400x700/stats
+      1/0/1/2/2/6:BUTTON  box[w]
+        before: 426.2
+        after : 437.11
+    en/1400x700/stats
+      1/0/1/3:DIV  box[x]
+        before: 945.09
+        after : 950.55
+    en/1400x700/stats
+      1/0/1/3:DIV  box[w]
+        before: 401.89
+        after : 404.44
+    en/1400x700/stats
+      1/0/1/3/0:I  box[x]
+        before: 946.09
+        after : 951.55
+    en/1400x700/stats
+      1/0/1/3/0:I  box[w]
+        before: 399.89
+        after : 402.44
+    en/1400x700/stats
+      1/0/1/3/2/0:DIV  box[x]
+        before: 959.09
+        after : 964.55
+    en/1400x700/stats
+      1/0/1/3/2/0:DIV  box[w]
+        before: 365.89
+        after : 368.44
+    en/1400x700/stats
+      1/0/1/3/2/0/1/0/2:DIV  box[x]
+        before: 972.09
+        after : 977.55
+    en/1400x700/stats
+      1/0/1/3/2/0/1/0/2:DIV  box[w]
+        before: 339.89
+        after : 342.44
+    en/1400x700/stats
+      1/0/1/3/2/0/1/0/2/0:DIV  box[x]
+        before: 972.09
+        after : 977.55
+    en/1400x700/stats
+      1/0/1/3/2/0/1/0/2/0:DIV  box[w]
+        before: 339.89
+        after : 342.44
+    en/1400x700/stats
+      1/0/1/3/2/0/1/1/2:DIV  box[x]
+        before: 972.09
+        after : 977.55
+    en/1400x700/stats
+      1/0/1/3/2/0/1/1/2:DIV  box[w]
+        before: 339.89
+        after : 342.44
+    en/1400x700/stats
+      1/0/1/3/2/0/1/2/2:DIV  box[x]
+        before: 972.09
+        after : 977.55
+    en/1400x700/stats
+      1/0/1/3/2/0/1/2/2:DIV  box[w]
+        before: 339.89
+        after : 342.44
+    en/1400x700/stats
+      1/0/1/3/2/0/1/3/2:DIV  box[x]
+        before: 972.09
+        after : 977.55
+    en/1400x700/stats
+      1/0/1/3/2/0/1/3/2:DIV  box[w]
+        before: 339.89
+        after : 342.44
+    en/1400x700/stats
+      1/0/1/3/2/0/1/4/2:DIV  box[x]
+        before: 972.09
+        after : 977.55
+    en/1400x700/stats
+      1/0/1/3/2/0/1/4/2:DIV  box[w]
+        before: 339.89
+        after : 342.44
+    en/1400x700/stats
+      1/0/1/3/2/1:DIV  box[x]
+        before: 959.09
+        after : 964.55
+    en/1400x700/stats
+      1/0/1/3/2/1:DIV  box[w]
+        before: 365.89
+        after : 368.44
+    en/1400x700/stats
+      1/0/1/3/2/1/1/0/2:DIV  box[x]
+        before: 972.09
+        after : 977.55
+    en/1400x700/stats
+      1/0/1/3/2/1/1/0/2:DIV  box[w]
+        before: 339.89
+        after : 342.44
+    en/1400x700/stats
+      1/0/1/3/2/1/1/1/2:DIV  box[x]
+        before: 972.09
+        after : 977.55
+    en/1400x700/stats
+      1/0/1/3/2/1/1/1/2:DIV  box[w]
+        before: 339.89
+        after : 342.44
+    en/1400x700/stats
+      1/0/1/3/2/1/1/2/2:DIV  box[x]
+        before: 972.09
+        after : 977.55
+    en/1400x700/stats
+      1/0/1/3/2/1/1/2/2:DIV  box[w]
+        before: 339.89
+        after : 342.44
+    en/1400x700/stats
+      1/0/1/3/2/1/1/3/2:DIV  box[x]
+        before: 972.09
+        after : 977.55
+    en/1400x700/stats
+      1/0/1/3/2/1/1/3/2:DIV  box[w]
+        before: 339.89
+        after : 342.44
+    en/1400x700/stats
+      1/0/1/3/2/1/1/4/2:DIV  box[x]
+        before: 972.09
+        after : 977.55
+    en/1400x700/stats
+      1/0/1/3/2/1/1/4/2:DIV  box[w]
+        before: 339.89
+        after : 342.44
+    en/1400x700/stats
+      1/0/1/3/3:DIV  box[x]
+        before: 959.09
+        after : 964.55
+    en/1400x700/stats
+      1/0/1/3/3:DIV  box[w]
+        before: 373.89
+        after : 376.44
+    en/1400x700/stats
+      1/0/1/3/3/1/0/2:DIV  box[x]
+        before: 972.09
+        after : 977.55
+    en/1400x700/stats
+      1/0/1/3/3/1/0/2:DIV  box[w]
+        before: 347.89
+        after : 350.44
+    en/1400x700/stats
+      1/0/1/3/3/1/0/2/0:DIV  box[x]
+        before: 972.09
+        after : 977.55
+    en/1400x700/stats
+      1/0/1/3/3/1/0/2/0:DIV  box[w]
+        before: 347.89
+        after : 350.44
+    en/1400x700/stats
+      1/0/1/3/3/1/1/2:DIV  box[x]
+        before: 972.09
+        after : 977.55
+    en/1400x700/stats
+      1/0/1/3/3/1/1/2:DIV  box[w]
+        before: 347.89
+        after : 350.44
+    en/1400x700/stats
+      1/0/1/3/3/1/2/2:DIV  box[x]
+        before: 972.09
+        after : 977.55
+    en/1400x700/stats
+      1/0/1/3/3/1/2/2:DIV  box[w]
+        before: 347.89
+        after : 350.44
+    en/1400x700/stats
+      1/0/1/3/3/1/3/2:DIV  box[x]
+        before: 972.09
+        after : 977.55
+    en/1400x700/stats
+      1/0/1/3/3/1/3/2:DIV  box[w]
+        before: 347.89
+        after : 350.44
+
+  distribution of the 88 delta(s) — stated, not left to the eye:
+      by cell: en/1400x700/stats=88
+      by lang: en=88
+      by size: 1400x700=88
+      by surface: stats=88
+      by property: box[w]=47  box[x]=39  box[h]=2
