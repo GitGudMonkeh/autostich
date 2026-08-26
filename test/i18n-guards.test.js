@@ -119,6 +119,7 @@ describe("i18n · Katalog-Parität", () => {
        alles Sichtbare steckt in Platzhaltern, der Rohtext ist in jeder Sprache identisch. */
     "tut.sz.d.eqStep",
     "tut.sz.f.eqStep",
+    "tut.sz.h.pos",          // „Position {n}" — dasselbe Wort in Quell- und Zielsprache
     /* „{segWork} III" — der Rohtext IST in allen Sprachen gleich, weil der ganze Unterschied im
        Platzhalter steckt: das Register füllt ihn je Sprache (Segmentarbeit / Segment Work /
        Trabajo de Segmento / 区段作业). Vorher stand hier der deutsche Name im Text, und ein

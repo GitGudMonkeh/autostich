@@ -1,15 +1,11 @@
 import { useMemo, useState } from "react";
 import { useLocale } from "../../i18n/useLocale.js"; // #sprache: Neuberechnung bei Sprachwechsel
-import { formationName, formationAbbr, perkCat } from "../../i18n/labels.js";
-import { fmtNum, fmtPct, t } from "../../i18n/index.js"; // Dezimaltrennzeichen je Sprache — nie toFixed+replace
+import { formationName } from "../../i18n/labels.js";
+import { fmtNum, t } from "../../i18n/index.js"; // Dezimaltrennzeichen je Sprache — nie toFixed+replace
 import { buildDeck } from "../../game/deck.js";
 import { computeFormations, summarizeFormations, SEGMENT_SIZE } from "../../game/formations.js";
 import * as C from "../../game/constants.js";
-// ENERGY_FLOOR, nicht C.FORMATION_ENERGY: siehe die Begründung in vars.js.
-import { ENERGY_FLOOR } from "../../game/progression.js";
 import { ARCHETYPE_META } from "../../game/skills.js";
-import { FAMILY_DEFS } from "../../game/families.js";
-import { TIER_META } from "../../game/rarity.js";
 import * as GLACIER from "../../game/glacier.js";
 import * as PROG from "../../game/progression.js";
 import { COLS, ROWS, posOf, rowOf, colOf, boardFactorMap, familyDef, tierNum } from "../../game/architect.js";
@@ -19,6 +15,8 @@ import { ARCH_CAT } from "../indicators/vocab.js";
 // Die Proberunden des freigegebenen Entwurfs, 1:1 portiert (Mockup proberunden.html).
 import {
   StichSzene, KampfwertSzene, SerieSzene, ScoreSzene, LaufmockSzene, BilanzSzene,
+  BrettSzene, KarteSzene, FormationenSzene, UeberSzene, KatsSzene, RaritaetSzene,
+  BlitzkarteSzene, TippsSzene, LegendaerSzene,
 } from "./scenes.jsx";
 
 /* DIE TAKT-ARTEN. Vier trugen den ersten Bau, fünf kamen mit den vollen Lektionen dazu; die
@@ -204,39 +202,6 @@ export function Bild({ cards, caption }) {
   );
 }
 
-/* ---- Das Probierfeld ----
-   Der Kern der Sektion: der Leser ordnet um, und die Ablesung darunter kommt aus DERSELBEN reinen
-   Funktion, die im Lauf rechnet. Keine Nachbildung, kein zweiter Wahrheitsort — planning-report.md
-   §1.3. Ändert sich das Balancing, ändert sich die Lektion mit, ohne dass jemand daran denkt.
-
-   `compute(order)` reicht der Aufrufer herein; dieser Baustein weiß nichts über Formationen. */
-export function Probierfeld({ title, hint, cards, order, onSwap, readoutLabel, readout }) {
-  const [sel, setSel] = useState(null);
-  const tap = (i) => {
-    if (sel === null) { setSel(i); return; }
-    if (sel === i) { setSel(null); return; }
-    onSwap(sel, i);
-    setSel(null);
-  };
-  return (
-    <div className="tut-beat tut-probe" style={{ margin: "0 0 14px", padding: "12px 12px 11px", ...ZEILE }}>
-      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 8 }}>{title}</div>
-      {/* Tippen-Tippen statt Ziehen: eine 55-px-Zelle in einem scrollenden Overlay verliert jeden
-          Drag-Wettstreit gegen den Scroller (der Karten-Scroller setzt overscroll-behavior: contain). */}
-      <div className="tut-probe-row" style={{ display: "flex", gap: 6 }}>
-        {order.map((di, i) => (
-          <CardCell key={`${di}-${i}`} card={cards[di]} on={sel === i} onClick={() => tap(i)} />
-        ))}
-      </div>
-      <div className="tut-probe-out" style={{ marginTop: 10, paddingTop: 9, borderTop: HAIR, display: "flex", alignItems: "baseline", gap: 8 }}>
-        <span className="text-meta-1" style={LABEL}>{readoutLabel}</span>
-        <span className="text-body-lg-5" style={{ color: "#e8e8ea", fontWeight: 700 }}>{readout}</span>
-      </div>
-      {hint && <div className="text-meta-1" style={{ color: "#71717c", marginTop: 7, lineHeight: 1.4 }}>{hint}</div>}
-    </div>
-  );
-}
-
 /* ---- der Formations-Probierbaustein ----
    EIN Aufrufort für computeFormations, geteilt von jeder Lektion, die ihn braucht. Drei Aufrufstellen,
    die auseinanderlaufen, sind der Defekt, den docs/text-style-guide.md §4 unter „Einen Text an EINER
@@ -257,28 +222,15 @@ const DECK = buildDeck();
    geschätzt: die Kandidaten wurden über computeFormations durchgerechnet. */
 const START_ORDER = [26, 18, 24, 15, 20];   // Werte 7 · 9 · 5 · 6 · 1
 
-export function FormationProbe({ title, hint, readoutLabel, noneLabel, start = START_ORDER }) {
-  /* formationName() liest die aktive Sprache intern (wie glossaryEntries im Glossar) → der Locale
-     muss als Trigger in die Abhängigkeiten, sonst bliebe der Name beim Sprachwechsel stehen. */
-  const [locale] = useLocale();
-  const [order, setOrder] = useState(start);
-  const swap = (a, b) => setOrder((o) => { const n = o.slice(); [n[a], n[b]] = [n[b], n[a]]; return n; });
-
-  const readout = useMemo(() => {
-    const per = computeFormations(order, DECK);
-    const { count, maxMult } = summarizeFormations(per);
-    if (!count) return noneLabel;
-    // Der Name kommt aus dem Register (i18n/labels.js), nie als Literal — text-style-guide.md §4.
-    const first = per.find((p) => p.formations.length)?.formations[0];
-    const name = first ? formationName(first.type) : "";
-    /* fmtNum, NICHT toFixed(2).replace(".", ",") — das hätte das deutsche Dezimalkomma fest
-       verdrahtet und im englischen Build „×1,50" statt „×1.50" gezeigt (i18n.md §4). */
-    return `${name} · ×${fmtNum(maxMult.toFixed(2), locale)}`;
-  }, [order, noneLabel, locale]);
-
+function KnopfKlein({ text, onClick, aktiv }) {
   return (
-    <Probierfeld title={title} hint={hint} cards={DECK} order={order}
-      onSwap={swap} readoutLabel={readoutLabel} readout={readout} />
+    <button type="button" onClick={onClick} disabled={!aktiv}
+      className="tut-chip text-body-5 font-semibold"
+      style={{ flex: "1 1 0", minHeight: 44, borderRadius: 8, padding: "6px 8px",
+        color: aktiv ? "#c8c8d0" : "#5c5c68", background: "rgba(15,15,21,.72)",
+        border: "1px solid rgba(150,150,170,.12)", cursor: aktiv ? "pointer" : "default" }}>
+      {text}
+    </button>
   );
 }
 
@@ -318,141 +270,6 @@ export function GuideLink({ caption, arch, onOpenGuide }) {
         border: `1px solid ${meta ? meta.color + "55" : "rgba(150,150,170,.12)"}` }}>
       <span className="text-body-4 font-semibold" style={{ color: meta ? meta.color : "#e8e8ea" }}>{caption}</span>
     </button>
-  );
-}
-
-/* ---- Aufstellen: tauschen kostet Energie ----
-
-   Das Formations-Feld lässt beliebig oft tauschen. Die echte Aufstellungsphase nicht: jeder Tausch
-   kostet eine Energie, und `FORMATION_ENERGY` sagt, wie viele es je Phase sind. Diese Runde ist
-   dieselbe Fläche mit der echten Schranke davor, plus Rückgängig und Zurücksetzen.
-
-   Rückgängig gibt die Energie ZURÜCK. Das ist keine Bequemlichkeit, sondern das Verhalten des
-   Spiels: ein zurückgenommener Tausch hat nicht stattgefunden. Wer das im Tutorial anders baut,
-   lehrt eine Regel, die es nicht gibt. */
-const AUF_START = [26, 18, 24, 15, 20];
-
-export function AufstellenProbe({ title, hint, readoutLabel, noneLabel, labels }) {
-  const [locale] = useLocale();
-  const [verlauf, setVerlauf] = useState([AUF_START]);
-  const order = verlauf[verlauf.length - 1];
-  const genutzt = verlauf.length - 1;
-  const uebrig = ENERGY_FLOOR - genutzt;
-  const L = labels || {};
-
-  const swap = (a, b) => {
-    if (uebrig <= 0) return;                       // keine Energie, kein Tausch
-    setVerlauf((v) => {
-      const n = order.slice(); [n[a], n[b]] = [n[b], n[a]];
-      return [...v, n];
-    });
-  };
-  const zurueck = () => setVerlauf((v) => (v.length > 1 ? v.slice(0, -1) : v));
-  const anfang = () => setVerlauf([AUF_START]);
-
-  const readout = useMemo(() => {
-    const { count, maxMult } = summarizeFormations(computeFormations(order, DECK));
-    return count ? `×${fmtNum(maxMult.toFixed(2), locale)}` : noneLabel;
-  }, [order, noneLabel, locale]);
-
-  return (
-    <div className="tut-beat tut-probe" style={{ margin: "0 0 14px", padding: "12px 12px 11px", ...ZEILE }}>
-      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 8 }}>{title}</div>
-      <Reihe cards={DECK} order={order} onSwap={swap} gesperrt={uebrig <= 0} />
-      <div style={{ display: "flex", gap: 6, marginTop: 9 }}>
-        <KnopfKlein text={L.undo} onClick={zurueck} aktiv={genutzt > 0} />
-        <KnopfKlein text={L.reset} onClick={anfang} aktiv={genutzt > 0} />
-      </div>
-      <div className="tut-probe-out" style={{ marginTop: 10, paddingTop: 9, borderTop: HAIR, display: "flex", alignItems: "baseline", gap: 8 }}>
-        <span className="text-meta-1" style={LABEL}>{L.energy}</span>
-        <span className="text-body-lg-5" style={{ color: uebrig > 0 ? "#e8e8ea" : "#c0433f", fontWeight: 700 }}>{uebrig}</span>
-        <span className="text-meta-1" style={{ ...LABEL, marginLeft: "auto" }}>{readoutLabel}</span>
-        <span className="text-body-lg-5" style={{ color: "#e8e8ea", fontWeight: 700 }}>{readout}</span>
-      </div>
-      {hint && <div className="text-meta-1" style={{ color: "#71717c", marginTop: 7, lineHeight: 1.4 }}>{hint}</div>}
-    </div>
-  );
-}
-
-/* Die tippbare Kartenreihe, geteilt von den Aufstellungs-Runden. Tippen-Tippen statt Ziehen, aus
-   demselben Grund wie beim Probierfeld: eine 55-px-Zelle verliert jeden Ziehwettstreit gegen den
-   Scroller darunter. */
-function Reihe({ cards, order, onSwap, gesperrt = false, markiert = null, onTap = null, anatomie = null }) {
-  const [sel, setSel] = useState(null);
-  const tap = (i) => {
-    if (onTap) { onTap(i); return; }
-    if (gesperrt) return;
-    if (sel === null) { setSel(i); return; }
-    if (sel === i) { setSel(null); return; }
-    onSwap(sel, i); setSel(null);
-  };
-  return (
-    <div className="tut-probe-row" style={{ display: "flex", gap: 6 }}>
-      {order.map((di, i) => (
-        <CardCell key={`${di}-${i}`} card={cards[di]} on={onTap ? markiert === i : sel === i} onClick={() => tap(i)}
-          marks={anatomie ? anatomie[i].marks : null} mult={anatomie ? anatomie[i].mult : null} />
-      ))}
-    </div>
-  );
-}
-
-function KnopfKlein({ text, onClick, aktiv }) {
-  return (
-    <button type="button" onClick={onClick} disabled={!aktiv}
-      className="tut-chip text-body-5 font-semibold"
-      style={{ flex: "1 1 0", minHeight: 44, borderRadius: 8, padding: "6px 8px",
-        color: aktiv ? "#c8c8d0" : "#5c5c68", background: "rgba(15,15,21,.72)",
-        border: "1px solid rgba(150,150,170,.12)", cursor: aktiv ? "pointer" : "default" }}>
-      {text}
-    </button>
-  );
-}
-
-/* ---- Was auf einer Karte steht ----
-
-   Kein Umsortieren, nur Hinsehen: der Leser tippt eine Karte an und bekommt aufgeschlüsselt, was
-   die Zeichen darauf bedeuten. Die Kürzel kommen aus dem Register (`formationAbbr`), der
-   Multiplikator aus `computeFormations` — dieselbe Rechnung wie im Lauf.
-
-   Die Lage ist fest und trägt bewusst MEHRERE Formationen auf einer Karte, sonst hätte die Lektion
-   nichts aufzuschlüsseln. */
-const KARTE_LAGE = [7, 0, 33, 3, 9];   // R8 R1 Y4 R4 R10
-
-export function KartenteileProbe({ title, hint, readoutLabel, noneLabel, labels }) {
-  const [locale] = useLocale();
-  const [sel, setSel] = useState(null);
-  const L = labels || {};
-  const per = useMemo(() => computeFormations(KARTE_LAGE, DECK), []);
-  /* Was auf der Karte STEHT: unten die Kürzel ihrer Formationen, oben rechts der Multiplikator
-     dieser Position. „×1,00" bleibt weg — eine Karte, die nichts zahlt, soll auch nichts anzeigen,
-     und genau das ist der Punkt der Lektion. */
-  const anatomie = useMemo(() => per.map((p) => ({
-    marks: p.formations.map((x) => formationAbbr(x.type)).join("") || null,
-    mult: p.mult > 1 ? `×${fmtNum(p.mult.toFixed(2), locale)}` : null,
-  })), [per, locale]);
-
-  const zeile = () => {
-    if (sel === null) return hint;
-    const karte = DECK[KARTE_LAGE[sel]];
-    const f = per[sel]?.formations ?? [];
-    const teile = [`${L.cardValue}: ${karte.value}`, `${L.suit}: ${C.suitName(karte.suit)}`];
-    if (!f.length) return `${teile.join(" · ")} · ${noneLabel}`;
-    const namen = f.map((x) => `${formationAbbr(x.type)} ${formationName(x.type)}`).join(" + ");
-    /* `mult` steht JE POSITION, nicht je Formation. Genau darum geht es in dieser Lektion: die
-       ersten beiden Karten einer Formation tragen ihr Kürzel und stehen trotzdem bei ×1,00. */
-    return `${teile.join(" · ")} · ${namen} · ×${fmtNum(per[sel].mult.toFixed(2), locale)}`;
-  };
-
-  return (
-    <div className="tut-beat tut-probe" style={{ margin: "0 0 14px", padding: "12px 12px 11px", ...ZEILE }}>
-      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 8 }}>{title}</div>
-      <Reihe cards={DECK} order={KARTE_LAGE} markiert={sel} onTap={(i) => setSel(sel === i ? null : i)}
-        anatomie={anatomie} />
-      <div className="tut-probe-out" style={{ marginTop: 10, paddingTop: 9, borderTop: HAIR }}>
-        <div className="text-meta-1" style={LABEL}>{readoutLabel}</div>
-        <p className="text-body-5" style={{ color: "#c8c8d0", margin: "5px 0 0", lineHeight: 1.45 }}>{zeile()}</p>
-      </div>
-    </div>
   );
 }
 
@@ -686,142 +503,6 @@ export function ArchmockProbe({ title, hint, readoutLabel }) {
           {sel ? t(`tut.a.${sel}.text`, null, locale) : hint}
         </p>
       </div>
-    </div>
-  );
-}
-
-/* ---- Die Perk-Kategorien ----
-
-   Sechs Kacheln, jede in ihrer eigenen Farbe, mit der Zahl ihrer Familien. Namen, Beschreibungen
-   und Farben kommen aus `perkCat` — dem Register, das auch der Perk-Bildschirm liest. Die Zahlen
-   sind aus FAMILY_DEFS GEZÄHLT, nicht gesetzt: kommt eine Familie dazu, wandert die Kachel mit. */
-const KAT_ZAEHLUNG = (() => {
-  const n = {};
-  for (const f of Object.values(FAMILY_DEFS)) n[f.cat] = (n[f.cat] || 0) + 1;
-  return n;
-})();
-const KAT_IDS = Object.keys(KAT_ZAEHLUNG);
-
-export function KategorienProbe({ title, hint, readoutLabel }) {
-  const [locale] = useLocale();
-  const [sel, setSel] = useState(null);
-  // perkCat() liest die Sprache intern — der Locale ist hier der Auslöser fürs Neuzeichnen.
-  void locale;
-  const def = sel ? perkCat(sel) : null;
-  return (
-    <div className="tut-beat tut-probe" style={{ margin: "0 0 14px", padding: "12px 12px 11px", ...ZEILE }}>
-      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 8 }}>{title}</div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 6 }}>
-        {KAT_IDS.map((id) => {
-          const c = perkCat(id), on = sel === id;
-          return (
-            <button key={id} type="button" onClick={() => setSel(on ? null : id)} aria-pressed={on ? "true" : "false"}
-              className="tut-chip text-body-5 font-semibold"
-              style={{ minHeight: 44, borderRadius: 8, padding: "7px 6px", display: "flex",
-                justifyContent: "space-between", alignItems: "baseline", gap: 5,
-                color: on ? "#e8e8ea" : "#8a8a95",
-                background: on ? `${c?.color || "#5c5c68"}22` : "rgba(15,15,21,.72)",
-                border: `1px solid ${on ? c?.color || "#8a7de0" : "rgba(150,150,170,.12)"}` }}>
-              <span>{c ? c.name : id}</span>
-              <span className="ty-num-sm" style={{ color: c?.color || "#5c5c68" }}>{KAT_ZAEHLUNG[id]}</span>
-            </button>
-          );
-        })}
-      </div>
-      <div className="tut-probe-out" style={{ marginTop: 10, paddingTop: 9, borderTop: HAIR }}>
-        <div className="text-meta-1" style={LABEL}>{readoutLabel}</div>
-        <p className="text-body-5" style={{ color: "#c8c8d0", margin: "5px 0 0", lineHeight: 1.45 }}>
-          {def ? `${def.name}: ${def.desc}` : hint}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-/* ---- Die Raritäten ----
-   Die vier Stufen plus die legendäre Schicht, in den Farben aus TIER_META. Der Rahmen IST die
-   Information: im Spiel erkennt man die Rarität an ihm, und genau das soll diese Runde einüben. */
-const RAR_STUFEN = [1, 2, 3, 4, "legendary"];
-
-export function RaritaetProbe({ title, hint, readoutLabel }) {
-  const [locale] = useLocale();
-  const [sel, setSel] = useState(null);
-  const meta = (t2) => TIER_META[t2] || null;
-  return (
-    <div className="tut-beat tut-probe" style={{ margin: "0 0 14px", padding: "12px 12px 11px", ...ZEILE }}>
-      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 8 }}>{title}</div>
-      <div style={{ display: "flex", gap: 6 }}>
-        {RAR_STUFEN.map((tr) => {
-          const m = meta(tr), on = sel === tr;
-          return (
-            <button key={String(tr)} type="button" onClick={() => setSel(on ? null : tr)} aria-pressed={on ? "true" : "false"}
-              className="tut-chip text-body-5 font-bold"
-              style={{ flex: "1 1 0", minWidth: 0, minHeight: 52, borderRadius: 8, padding: "6px 4px",
-                color: m?.color || "#8a8a95",
-                background: on ? `${m?.color || "#5c5c68"}22` : "rgba(15,15,21,.72)",
-                border: `${on ? 2 : 1}px solid ${m?.color || "rgba(150,150,170,.12)"}` }}>
-              {tr === "legendary" ? "★" : ["", "I", "II", "III", "IV"][tr]}
-            </button>
-          );
-        })}
-      </div>
-      <div className="tut-probe-out" style={{ marginTop: 10, paddingTop: 9, borderTop: HAIR }}>
-        <div className="text-meta-1" style={LABEL}>{readoutLabel}</div>
-        <p className="text-body-5" style={{ color: "#c8c8d0", margin: "5px 0 0", lineHeight: 1.45 }}>
-          {sel ? `${meta(sel)?.label ?? ""} · ${t(`tut.r.${sel === "legendary" ? "leg" : sel}`, null, locale)}` : hint}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-/* ---- Die ionisierte Karte ----
-
-   Der Leser legt Stapel auf EINE Karte und sieht beide Wirkungen getrennt: was die Karte selbst
-   beim Sieg zahlt, und was alle Stapel im Deck zusammen an Crit-Chance geben. Die Trennung ist der
-   Punkt der Lektion — der rechte Wert zählt das ganze Deck, nicht diese Karte.
-
-   Beide Zahlen kommen aus den Konstanten: ION_SCORE_PER_STACK je Stapel auf der Karte,
-   ION_CRIT_PP_PER_STACK je Stapel im Deck, gedeckelt bei ION_CRIT_STACK_CAP. */
-export function BlitzkarteProbe({ title, hint, readoutLabel, labels }) {
-  const [locale] = useLocale();
-  const [stapel, setStapel] = useState(0);
-  const [imDeck, setImDeck] = useState(0);
-  const L = labels || {};
-  const voll = stapel >= C.ION_MAX_STACKS;
-  const critPP = Math.min(imDeck + stapel, C.ION_CRIT_STACK_CAP) * C.ION_CRIT_PP_PER_STACK;
-
-  return (
-    <div className="tut-beat tut-probe" style={{ margin: "0 0 14px", padding: "12px 12px 11px", ...ZEILE }}>
-      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 8 }}>{title}</div>
-      <div style={{ display: "flex", justifyContent: "center", marginBottom: 9 }}>
-        <div style={{ width: 78, height: 110, borderRadius: 8, position: "relative",
-          background: "linear-gradient(180deg,#242433,#1a1a26)",
-          border: `${stapel ? 2 : 1}px solid ${stapel ? (voll ? "#8ad4ff" : "#5a8ade") : "#33333e"}` }}>
-          <div style={{ position: "absolute", top: 5, left: 0, right: 0, display: "flex", justifyContent: "center", gap: 3 }}>
-            {Array.from({ length: C.ION_MAX_STACKS }, (_, i) => (
-              <span key={i} style={{ width: 7, height: 7, borderRadius: "50%",
-                background: i < stapel ? "#8ad4ff" : "rgba(150,150,170,.22)" }} />
-            ))}
-          </div>
-          <span className="text-title-2 font-bold" style={{ position: "absolute", inset: 0, display: "flex",
-            alignItems: "center", justifyContent: "center", color: "#e8e8ea" }}>{C.RANKS[6]}</span>
-        </div>
-      </div>
-      <div style={{ display: "flex", gap: 6 }}>
-        <KnopfKlein text={L.less} onClick={() => setStapel((n) => Math.max(0, n - 1))} aktiv={stapel > 0} />
-        <KnopfKlein text={L.more} onClick={() => setStapel((n) => Math.min(C.ION_MAX_STACKS, n + 1))} aktiv={!voll} />
-        <KnopfKlein text={L.deck} onClick={() => setImDeck((n) => (n + C.ION_MAX_STACKS > C.ION_CRIT_STACK_CAP ? 0 : n + C.ION_MAX_STACKS))} aktiv />
-      </div>
-      <div className="tut-probe-out" style={{ marginTop: 10, paddingTop: 9, borderTop: HAIR, display: "flex", alignItems: "baseline", gap: 8 }}>
-        <span className="text-meta-1" style={LABEL}>{readoutLabel}</span>
-        <span className="text-body-lg-5" style={{ color: "#e8e8ea", fontWeight: 700 }}>
-          +{fmtNum(stapel * C.ION_SCORE_PER_STACK, locale)}
-        </span>
-        <span className="text-meta-1" style={{ ...LABEL, marginLeft: "auto" }}>{L.deckWide}</span>
-        <span className="text-body-lg-5" style={{ color: "#e8e8ea", fontWeight: 700 }}>{fmtPct(critPP, locale)}</span>
-      </div>
-      {hint && <div className="text-meta-1" style={{ color: "#71717c", marginTop: 7, lineHeight: 1.4 }}>{hint}</div>}
     </div>
   );
 }
@@ -1332,15 +1013,16 @@ export function SegmenteProbe({ title, hint, readoutLabel, labels }) {
 
 /* Katalog → Komponente. Der Katalog nennt nur einen NAMEN, damit er React-frei bleibt. */
 export const PROBES = {
-  formation: FormationProbe,
+  formation: FormationenSzene,
   streak: StreakProbe,
   score: ScoreSzene,
   struktur: StrukturProbe,
   bauen: BauenProbe,
   archmock: ArchmockProbe,
-  kategorien: KategorienProbe,
-  raritaet: RaritaetProbe,
-  blitzkarte: BlitzkarteProbe,
+  kategorien: KatsSzene,
+  raritaet: RaritaetSzene,
+  legendaer: LegendaerSzene,
+  blitzkarte: BlitzkarteSzene,
   // Dieselbe Form, zwei Archetypen: eine Karte, eine wachsende Zahl, drei Schwellen.
   pflanzkarte: (p) => <StufenProbe {...p} art="pflanze" />,
   gletscher: (p) => <StufenProbe {...p} art="eis" />,
@@ -1360,18 +1042,19 @@ export const PROBES = {
   guideIce: (p) => <GuideLink {...p} arch="ice" />,
   guidePlant: (p) => <GuideLink {...p} arch="plant" />,
   // Dieselbe Runde, zwei Lektionen: einmal nur der Vergleich, einmal mit gesetztem Stichwert.
+  tipps: TippsSzene,
   duell: StichSzene,
   kampfwert: KampfwertSzene,
   serie: SerieSzene,
   laufmock: LaufmockSzene,
   herkunft: BilanzSzene,
-  aufstellen: AufstellenProbe,
-  kartenteile: KartenteileProbe,
+  aufstellen: BrettSzene,
+  kartenteile: KarteSzene,
   /* Dieselbe Flaeche wie `formation`, andere Ausgangslage. GESUCHT statt geraten: von 29.988
      brauchbaren Lagen ist diese eine, in der KEIN Tausch den Wert senkt und vier davon eine
      Ueberlappung schaffen. Start ×1,25 (eine Wiederholung), erreichbar ×4,96 mit einer Karte in
      drei Formationen. Ein Probierfeld, das den Leser fuer den offensichtlichen Zug bestraft,
      lehrt das Gegenteil. */
-  overlap: (p) => <FormationProbe {...p} start={[7, 0, 33, 3, 9]} />,
+  overlap: UeberSzene,
 };
 export { SEGMENT_SIZE };

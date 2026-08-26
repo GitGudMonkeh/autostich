@@ -146,15 +146,19 @@
 .tsz .mstats b{color:var(--ink)}
 
 /* ---- Brett und Segmente (Aufstellung) ---- */
-.tsz .brett{display:flex;flex-direction:column;gap:3px;background:rgba(15,15,21,.9);
-  border:1px solid var(--rowedge);border-radius:8px;padding:7px}
+.tsz .brett{display:flex;flex-direction:column;gap:3px}
 .tsz .brett .zr{display:grid;grid-template-columns:repeat(5,1fr);gap:3px}
-.tsz .brett .z{height:12px;border-radius:3px;background:#232330;border:1px solid #2c2a3a}
-.tsz .brett .z.an{background:var(--a1-bg2);border-color:var(--a1)}
-.tsz .brett .z.mark{background:color-mix(in srgb, var(--a1) 28%, transparent);border-color:var(--a1);
-  box-shadow:0 0 7px -2px var(--a1)}
-.tsz .segz{display:flex;justify-content:space-between;font-family:var(--mono);font-size:9px;
-  color:var(--tlabel);letter-spacing:.08em;text-transform:uppercase;margin-top:2px}
+.tsz .brett .seg{display:grid;grid-template-columns:repeat(5,1fr);gap:3px;align-items:center;position:relative;
+  padding-left:26px}
+.tsz .brett .segnr{position:absolute;left:0;font-family:var(--mono);font-size:9px;color:var(--tlabel);width:22px}
+.tsz .brett .z{height:14px;border-radius:3px;background:rgba(15,15,21,.9);border:1px solid var(--rowedge)}
+.tsz .brett .seg.on .z{border-color:var(--a1);background:var(--a1-bg2)}
+.tsz .brett .seg.on .segnr{color:var(--a1)}
+.tsz .delta{display:flex;align-items:baseline;gap:7px;margin-top:9px;padding-top:9px;border-top:1px solid var(--hair);
+  font-family:var(--mono);font-size:12px;font-variant-numeric:tabular-nums;flex-wrap:wrap}
+.tsz .delta b{font-weight:700} .tsz .delta .von{color:var(--ink3)}
+.tsz .delta .auf{color:var(--win)} .tsz .delta .ab{color:var(--lose)} .tsz .delta .gl{color:var(--ink3)}
+.tsz .delta .pf{font-size:11px}
 .tsz .pips{display:flex;gap:4px}
 .tsz .pips i{display:block;width:9px;height:9px;border-radius:50%;background:var(--a1)}
 .tsz .pips i.off{background:var(--hair)}
@@ -185,28 +189,34 @@
 .tsz .regeln span{font-size:12px;color:var(--ink2);line-height:1.4}
 .tsz .regeln span b{color:var(--ink)}
 
-/* ---- Kategorien und Perk-Kacheln (Wahl) ---- */
-.tsz .kats{display:flex;flex-direction:column;gap:5px}
-.tsz .kat{display:flex;align-items:center;gap:9px;width:100%;text-align:left;cursor:pointer;min-height:46px;
-  background:rgba(15,15,21,.9);border:1px solid var(--rowedge);border-radius:8px;padding:7px 10px;color:var(--ink)}
-.tsz .kat[aria-pressed="true"]{border-color:var(--a1);background:var(--a1-bg)}
-.tsz .kat .emblem{width:30px;height:30px;flex:none;border-radius:6px;overflow:hidden;
-  display:flex;align-items:center;justify-content:center;background:#0e0e13}
-.tsz .kat .emblem img{width:100%;height:100%;object-fit:cover;mix-blend-mode:screen}
-.tsz .kat .knm{font-size:13px;font-weight:700}
-.tsz .kat .kzw{font-family:var(--mono);font-size:10px;color:var(--ink3)}
-.tsz .pks{display:flex;flex-direction:column;gap:5px}
-.tsz .pk{display:flex;align-items:center;gap:9px;background:rgba(15,15,21,.9);
-  border:1px solid var(--rowedge);border-left-width:3px;border-radius:0 8px 8px 0;padding:8px 10px}
-.tsz .pk .pnm{font-size:12px;font-weight:700}
-.tsz .pk .ptx{font-size:11px;color:var(--ink2);line-height:1.4}
-.tsz .pk .pstufe{margin-left:auto;flex:none;font-family:var(--mono);font-size:9px;font-weight:700;
-  padding:1px 5px;border-radius:4px;border:1px solid}
-.tsz .pk.leg .emblem{width:34px;height:34px;flex:none;border-radius:6px;overflow:hidden;background:#0e0e13}
-.tsz .pk.leg .emblem img{width:100%;height:100%;object-fit:cover;mix-blend-mode:screen}
-.tsz .trenner{display:flex;align-items:center;gap:9px;font-family:var(--mono);font-size:9px;
-  letter-spacing:.16em;text-transform:uppercase;color:var(--tlabel)}
+/* ---- Kategorien und Perk-Kacheln (Wahl) — Optik der echten as-edge-card ---- */
+.tsz .kats{display:flex;flex-direction:column;gap:6px}
+.tsz .kat{display:flex;align-items:flex-start;gap:9px;background:rgba(15,15,21,.9);
+  border:1px solid var(--rowedge);border-left:4px solid var(--c);border-radius:8px;padding:9px 11px}
+.tsz .emblem{width:38px;height:38px;flex:none;border-radius:5px;background:#000;mix-blend-mode:screen}
+.tsz .katmid{display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-width:0;flex:1}
+.tsz .badge2{font-family:var(--mono);font-size:9px;letter-spacing:.08em;font-weight:700;
+  padding:2px 6px;border-radius:4px;white-space:nowrap}
+.tsz .katwas{font-size:12px;color:var(--ink);font-weight:600}
+.tsz .katbsp{font-size:11px;color:var(--ink3);line-height:1.4}
+.tsz .katbsp b{color:var(--ink2)}
+.tsz .katn{font-family:var(--mono);font-size:11px;text-align:right;color:var(--tlabel);flex:none;font-variant-numeric:tabular-nums}
+.tsz .pks{display:flex;flex-direction:column;gap:6px}
+.tsz .pk{display:flex;flex-direction:column;gap:5px;width:100%;text-align:left;
+  background:rgba(15,15,21,.9);border:1px solid rgba(150,150,170,.16);border-radius:10px;padding:11px 12px;color:var(--ink)}
+.tsz .pk.kachel{border-left-width:4px;border-left-style:solid}
+.tsz .pktop{display:flex;flex-wrap:wrap;align-items:center;gap:5px}
+.tsz .kachelnm{font-size:14px;font-weight:700}
+.tsz .pksatz{font-size:12px;color:var(--ink2);line-height:1.45;opacity:.9}
+.tsz .pk.leg{border-color:rgba(212,166,58,.34);box-shadow:0 0 18px -8px var(--gold)}
+.tsz .trenner{display:flex;align-items:center;gap:9px;margin-top:4px}
 .tsz .trenner:before,.tsz .trenner:after{content:"";flex:1;height:1px;background:var(--hair)}
+.tsz .trenner span{font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold)}
+.tsz .legrow{display:flex;gap:10px;align-items:flex-start}
+.tsz .emblem.gross{width:54px;height:54px}
+.tsz .legmid{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1}
+.tsz .text{margin:5px 0 0;font-size:13px;color:var(--ink2);line-height:1.5}
+.tsz .text + .text{margin-top:8px}
 
 /* ---- Kartenbühne (Blitz, Feuer, Pflanze, Eis) ---- */
 .tsz .buehne{display:flex;justify-content:center;padding:10px 0 6px}

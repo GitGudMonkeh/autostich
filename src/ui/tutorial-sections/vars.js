@@ -17,6 +17,7 @@ import { ENERGY_FLOOR, COVER_FLOOR, NODES, SP_PER_RUN, SP_LOYALTY_EVERY, SP_LOYA
 import { ARCHITECT_FAMILIES, tierNum, DISTRICT_BONUS, DISTRICT_CAP, ROWS, HAEUSERZEILE_FACTOR, SPALTE_FACTOR } from "../../game/architect.js";
 import { FAMILY_DEFS } from "../../game/families.js";
 import { THRESHOLDS, TIER_MULT, BURST_AT, WIN_MASS, EWIGER_FROST, DECLINE_MIN_SKILLS } from "../../game/glacier.js";
+import { TIER_META } from "../../game/rarity.js";
 
 /* Der Grundwert eines Gebäudes steckt in einem OBJEKT, nicht in einer Zahl: `{ kind: "flat",
    score: 35 }` bei Score-Gebäuden, `{ kind: "flat", value: 1 }` bei Wert-Gebäuden. */
@@ -88,6 +89,9 @@ export const VARS = {
   // Eis
   massBurst: BURST_AT, massT1: THRESHOLDS[0], massT2: THRESHOLDS[1], massT3: THRESHOLDS[2],
   iceWin: WIN_MASS, iceTick: EWIGER_FROST, iceDeclineMin: DECLINE_MIN_SKILLS,
+  // Wahl: der Legendär-Knoten des Baums (Kosten als Zahl; Name und Rarität sind Sprache
+  // und stehen in localeVars bzw. unten in MEASURE_VARS).
+  legSp: NODES.find((n) => n.id === "legLayer")?.cost ?? 0,
   // Nach dem Lauf
   spPerRun: SP_PER_RUN, loyaltyEvery: SP_LOYALTY_EVERY, loyaltySp: SP_LOYALTY_SP, welcomeDp: WELCOME_DP,
   // Fortgeschritten: die Vorsprungs-Schwellen der Gluehenden Klinge
@@ -102,6 +106,8 @@ export const VARS = {
    Für eine Höhenschätzung reicht deshalb eine Sprache, und Deutsch ist die längere Textsprache. */
 export const MEASURE_VARS = {
   ...VARS,
+  legNode: NODES.find((n) => n.id === "legLayer")?.label ?? "",
+  rar4: TIER_META[4].label,
   base: String(C.SCORE_PER_WIN),
   streakPct: String(Math.round(C.STREAK_BASE_STEP * 100)),
   critMult: C.CRIT_BASE_MULT.toFixed(2),

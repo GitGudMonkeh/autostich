@@ -122,19 +122,15 @@ export const SECTIONS = [
         { kind: "tip" }] },
       { id: "brett", art: "voll", beats: [
         { kind: "probierfeld", probe: "aufstellen" },
-        { kind: "block", label: true },
         { kind: "tip" }] },
       { id: "karte", art: "voll", beats: [
         { kind: "probierfeld", probe: "kartenteile" },
-        { kind: "block", label: true },
         { kind: "tip" }] },
       { id: "formationen", art: "voll", beats: [
         { kind: "probierfeld", probe: "formation" },
-        { kind: "regeln" },
         { kind: "tip" }] },
       { id: "stapeln", art: "voll", beats: [
         { kind: "probierfeld", probe: "overlap" },
-        { kind: "block", label: true },
         { kind: "tip" }] },
     ],
   },
@@ -148,13 +144,16 @@ export const SECTIONS = [
         { kind: "block", label: true },
         { kind: "block", label: true },
         { kind: "tip" }] },
-      { id: "kategorien", art: "kurz", beats: [
+      { id: "kategorien", art: "voll", beats: [
         { kind: "probierfeld", probe: "kategorien" },
         { kind: "tip" }] },
       { id: "raritaet", art: "voll", beats: [
         { kind: "probierfeld", probe: "raritaet" },
-        { kind: "merk" },
-        { kind: "block", label: true },
+        { kind: "tip" }] },
+      /* Der Raritäten-Schirm des Entwurfs maß 1285 px — über dem vollen Budget. Owner-Entscheid:
+         aufteilen statt kürzen; der Legendär-Teil ist eine eigene Lektion. */
+      { id: "legendaer", art: "voll", beats: [
+        { kind: "probierfeld", probe: "legendaer" },
         { kind: "tip" }] },
     ],
   },
@@ -169,10 +168,9 @@ export const SECTIONS = [
         { kind: "tip" }] },
       { id: "karte", art: "voll", beats: [
         { kind: "probierfeld", probe: "blitzkarte" },
-        { kind: "block", label: true },
         { kind: "tip" }] },
-      { id: "tipps", art: "kurz", beats: [
-        { kind: "liste" },
+      { id: "tipps", art: "voll", beats: [
+        { kind: "probierfeld", probe: "tipps" },
         { kind: "tip" }] },
     ],
   },
@@ -196,8 +194,8 @@ export const SECTIONS = [
         { kind: "probierfeld", probe: "hitze" },
         { kind: "block", label: true },
         { kind: "tip" }] },
-      { id: "tipps", art: "kurz", beats: [
-        { kind: "liste" },
+      { id: "tipps", art: "voll", beats: [
+        { kind: "probierfeld", probe: "tipps" },
         { kind: "tip" }] },
     ],
   },
@@ -219,8 +217,8 @@ export const SECTIONS = [
         { kind: "probierfeld", probe: "gruenfeld" },
         { kind: "block", label: true },
         { kind: "tip" }] },
-      { id: "tipps", art: "kurz", beats: [
-        { kind: "liste" },
+      { id: "tipps", art: "voll", beats: [
+        { kind: "probierfeld", probe: "tipps" },
         { kind: "tip" }] },
     ],
   },
@@ -242,8 +240,8 @@ export const SECTIONS = [
         { kind: "probierfeld", probe: "gletscherfeld" },
         { kind: "block", label: true },
         { kind: "tip" }] },
-      { id: "tipps", art: "kurz", beats: [
-        { kind: "liste" },
+      { id: "tipps", art: "voll", beats: [
+        { kind: "probierfeld", probe: "tipps" },
         { kind: "tip" }] },
     ],
   },
@@ -267,8 +265,8 @@ export const SECTIONS = [
         { kind: "probierfeld", probe: "struktur" },
         { kind: "block", label: true },
         { kind: "tip" }] },
-      { id: "tipps", art: "kurz", beats: [
-        { kind: "liste" },
+      { id: "tipps", art: "voll", beats: [
+        { kind: "probierfeld", probe: "tipps" },
         { kind: "tip" }] },
     ],
   },
@@ -439,22 +437,26 @@ const TAB_ROWS_DEFAULT = 4;
    NIEDRIG angesetzt (250/305/300) — das Modell hätte eine zu lange Lektion durchgewunken, und das
    ist die einzige Richtung, in die ein Budget nicht irren darf. Die Werte hier stehen deshalb
    knapp über der Messung, aufgerundet. */
-const PROBE_PX = { formation: 215, streak: 150, board: 215,
+const PROBE_PX = { formation: 700, streak: 150, board: 215,
   /* Die Grundlagen-Szenen des Entwurfs, nachgemessen im Build (mess-welle1.mjs, 390 x 844):
      duell 494 · kampfwert 773 · serie 414 ungespielt (+5 Logzeilen im gespielten Zustand)
      · score 785 · laufmock 538 (+Tippzeile) · herkunft 601. Eingetragen ist der gespielte
      Zustand, aufgerundet. */
   score: 790, duell: 500, kampfwert: 780, serie: 700, laufmock: 610, herkunft: 610,
+  /* Welle 2, nachgemessen (mess-welle2.mjs): aufstellen 553 ungespielt (+Log), kartenteile 657,
+     formation 697, overlap 337, kategorien 600, blitzkarte 763, tipps 470 (Eis hat sechs
+     Einträge, deshalb höher angesetzt), raritaet/legendaer nach dem Split gemessen. */
+  tipps: 560, legendaer: 620,
   /* Die Aufstellungs-Runden, ebenfalls nachgemessen: aufstellen 243 · kartenteile 186 ·
      overlap 190 (dieselbe Komponente wie formation). Sie fehlten hier zuerst ganz und fielen
      damit auf PROBE_MAX — 375 px für ein 186-px-Feld. Das Modell lag dadurch bis zu 40 % zu hoch,
      und ein Budget, das so weit danebenliegt, misst nichts mehr. */
-  aufstellen: 260, kartenteile: 215, overlap: 215,
+  aufstellen: 730, kartenteile: 660, overlap: 340,
   /* Die Architekt-Runden. Das Brett ist der teuerste Baustein des ganzen Tutorials: acht Zeilen
      mal fünf Spalten. GEMESSEN archmock 299 · bauen 286 · struktur 438. */
   archmock: 320, bauen: 310, struktur: 460,
   // Wahl und Blitz, gemessen: kategorien 199 · raritaet 157 · blitzkarte 272.
-  kategorien: 215, raritaet: 175, blitzkarte: 290,
+  kategorien: 600, raritaet: 650, blitzkarte: 765,
   /* Feuer, Pflanze, Eis — gemessen: feuerkarten 271 · hitze 152 · pflanzkarte 305 ·
      gruenfeld 315 · gletscher 252 · gletscherfeld 358. Zum VIERTEN Mal in diesem Task war ein
      neues Feld hier zuerst nicht eingetragen und fiel auf PROBE_MAX; wer ein Probierfeld baut,

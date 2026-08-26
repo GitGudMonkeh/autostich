@@ -12,7 +12,7 @@ import * as GL from "../../game/glacier.js";
 import * as AR from "../../game/architect.js";
 import * as FM from "../../game/formations.js";
 import { ARCHETYPE_META } from "../../game/skills.js";
-import { familyDef, archFamily } from "../../i18n/labels.js";
+import { familyDef, archFamily, nodeDef, rarityLabel } from "../../i18n/labels.js";
 
 /* Die Platzhalter liegen in vars.js, weil der Wächter dieselbe Liste braucht — siehe dort. */
 /* NAMEN VON PERKS UND GEBÄUDEN werden ABGELEITET, nicht in den Text getippt — dieselbe Regel wie
@@ -25,6 +25,8 @@ import { familyDef, archFamily } from "../../i18n/labels.js";
    einer Modulkonstante. */
 const localeVars = (locale) => ({
   segWork: familyDef("E_SEGMENT")?.name ?? "",
+  legNode: nodeDef("legLayer")?.label ?? "",
+  rar4: rarityLabel(4),
   pillar: archFamily("A_PFEILER")?.name ?? "",
   zollhaus: archFamily("A_ZOLLHAUS")?.name ?? "",
   kontor: archFamily("A_KONTOR")?.name ?? "",
