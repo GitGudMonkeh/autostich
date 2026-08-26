@@ -184,6 +184,7 @@ architecture* D spends four paragraphs on where it is allowed to live.
 | `de-comma-leak` | independent | About ten sites hard-code the German decimal comma outside the i18n layer. The English build already shows German commas there. A third language does **not** make it worse, because Spanish uses the comma too. |
 | `loc-import` | the translation returns | Turning the returned CSV into catalog files, including re-introducing the ~164 template interpolations the CSV delivers as resolved numbers. |
 | `loc-drift` helper | optional | A ten-line `npm run loc:drift -- <sha>`. Nice, not required: the plain `git diff` against the freeze SHA does the job. |
+| `lang-dropdown` | owner decision, 26.08.2026 | Both language pickers become a **dropdown** instead of a segmented control / button row. Owner's call, taken after the pixel measurement, and **not a fix**: three entries were measured to fit at 390×844 and 1280×720 with room to spare. It is a design preference that also stops the picker growing sideways with every further language. Independent of the translation, so it is its own task rather than a rider on one. |
 
 ---
 
