@@ -5,11 +5,13 @@
    Warum nicht die CSV nehmen? Die entsteht aus einer Heuristik mit Filterlisten und ist bewusst
    kuratiert; die Ratsche ist strenger und kennt keine Ausnahmen. Wer nach der CSV migriert,
    übersieht Stellen (bei GameOver waren es zwei Knöpfe) und macht die Suite hinterher rot.
-   Deshalb hier dieselben Regeln wie im Test, an einer Stelle.
+   Deshalb hier dieselben Regeln wie im Test, an einer Stelle — seit #health-check G3 wirklich:
+   test/i18n-guards.test.js IMPORTIERT locTodo, statt die Regeln zu kopieren.
 
    Aufruf: node scripts/loc-todo.mjs src/ui/HeatBar.jsx [weitere …]
 */
 import { readFileSync } from "node:fs";
+import { pathToFileURL } from "node:url";
 
 const stripComments = (src) =>
   src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/[^\n]*/g, "$1");
@@ -25,13 +27,16 @@ export function locTodo(file) {
   return [...found].filter((s) => HAS_WORD.test(s) && !CODEISH.test(s)).map((s) => s.trim());
 }
 
-const files = process.argv.slice(2);
-if (!files.length) { console.error("Aufruf: node scripts/loc-todo.mjs <datei> [...]"); process.exit(1); }
-let total = 0;
-for (const f of files) {
-  const list = locTodo(f);
-  total += list.length;
-  console.log(`\n== ${f} (${list.length})`);
-  for (const s of list) console.log(`   ${JSON.stringify(s)}`);
+// CLI nur, wenn direkt aufgerufen — ein Import (i18n-guards) darf den Prozess nicht beenden.
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  const files = process.argv.slice(2);
+  if (!files.length) { console.error("Aufruf: node scripts/loc-todo.mjs <datei> [...]"); process.exit(1); }
+  let total = 0;
+  for (const f of files) {
+    const list = locTodo(f);
+    total += list.length;
+    console.log(`\n== ${f} (${list.length})`);
+    for (const s of list) console.log(`   ${JSON.stringify(s)}`);
+  }
+  console.log(`\nSumme: ${total}`);
 }
-console.log(`\nSumme: ${total}`);
