@@ -164,7 +164,7 @@ export function UsernameModal({ initial = "", firstTime = false, onLang = null, 
                 der Dialog wählt nichts vor, er zeigt nur, was gilt. */}
             <div className="un-lang">
               <Dropdown value={locale} label={t("name.lang.label")}
-                options={READY_LOCALES.map((l) => ({ v: l.id, label: l.label }))}
+                options={READY_LOCALES.map((l) => ({ v: l.id, label: l.label, lang: l.id }))}
                 onChange={(v) => { setLocaleId(v); if (onLang) onLang(v); }} />
             </div>
           </div>

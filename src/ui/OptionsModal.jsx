@@ -197,7 +197,7 @@ export function OptionsModal({ options, onChange, onClose, onPrivacy = null }) {
               #es-locale: READY_LOCALES, nicht LOCALES — angemeldet ist nicht dasselbe wie übersetzt. */}
           <Row icon="language" title={t("options.language.title")} desc={t("options.language.desc")}>
             <Dropdown value={locale} label={t("options.language.title")}
-              options={READY_LOCALES.map((l) => ({ v: l.id, label: l.label }))}
+              options={READY_LOCALES.map((l) => ({ v: l.id, label: l.label, lang: l.id }))}
               onChange={(v) => { setLocaleId(v); onChange({ lang: v }); }} />
           </Row>
           {/* #207: Haptik — kurzes Vibrations-Feedback bei Bestätigungen. Wirkt nur auf Touch-Geräten (Handy); System-„reduzierte Bewegung“ schaltet sie ohnehin ab. */}

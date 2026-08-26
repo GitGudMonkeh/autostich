@@ -115,6 +115,15 @@ describe("i18n · Katalog-Parität", () => {
      würde die vergessene spanische Übersetzung genau dort durchlassen, wo sie am wahrscheinlichsten
      ist — bei den Wörtern, die aus dem Englischen schon vertraut aussehen. */
   const SAME_OK_EN = new Set([
+    /* „{segWork} III" — der Rohtext IST in allen Sprachen gleich, weil der ganze Unterschied im
+       Platzhalter steckt: das Register füllt ihn je Sprache (Segmentarbeit / Segment Work /
+       Trabajo de Segmento / 区段作业). Vorher stand hier der deutsche Name im Text, und ein
+       spanischer Spieler las ein Wort, das es in seinem Spiel nicht gibt. */
+    "tut.d.segIII",
+    "tut.d.segIV",
+    "common.cur.dp",             // DP = Deckpunkte / Deck Points — dasselbe Kuerzel in beiden Sprachen
+    "gameover.welcome.value",    // „+{n} DP" — Zahl plus dieses Kuerzel
+    "start.board.week.bonus.full", // „+{dp} DP" — dito
     "board.col.pilot",       // Spaltenkopf „Pilot" — in beiden Sprachen dasselbe Wort
     "start.onb.reroll",      // „Reroll" ist im Deutschen bereits das englische Wort
     "options.rfx.mobile",    // Zustandsname, in beiden Sprachen „Mobile"
@@ -124,10 +133,22 @@ describe("i18n · Katalog-Parität", () => {
     "start.progress.onboarding", // „Onboarding" ist im Deutschen der etablierte Begriff (§3.5)
     "start.progress.links",  // reine Zahlenzeile „{done} / {total}"
     "start.board.week.val",  // dito „{have}/{max}" — nur Ziffern und ein Schrägstrich
-    "start.board.week.bonus.full", // „+{dp} DP" — nur Zahl und Währungskürzel, DP heißt in beiden Sprachen DP
-    "common.cur.dp",         // DP = Deckpunkte / Deck Points
     "lv.wing.deck",          // „Deck" ist in beiden Sprachen dasselbe Wort (Begriffstabelle §3.1)
     "sparkline.axis.y",      // Achsenbeschriftung „Score" — Score bleibt Score (§3.1)
+    "tut.probe.duell.readout",     // Ablesung „Score" — Score bleibt Score (§3.1)
+    "tut.probe.kampfwert.readout", // dito
+    "tut.probe.herkunft.readout",  // dito
+    "tut.probe.aufstellen.readout", // Ablesung „Formation" — in beiden Sprachen dasselbe Wort (§3.1)
+    // Kasten-Überschriften, die BEGRIFFE sind: Perk, Skill und Passive stehen so in der
+    // Begriffstabelle §3.1 und lauten im Englischen gleich.
+    "tut.wahl.perks.1.label",
+    "tut.wahl.perks.2.label",
+    "tut.blitz.wasist.1.label",
+    "tut.feuer.wasist.1.label",
+    "tut.pflanze.wasist.1.label",
+    "tut.eis.wasist.1.label",
+    "tut.d.block",                  // Gletscherform „Block" — in beiden Sprachen dasselbe Wort
+    "tut.d.branchDeck",             // Baumzweig „Decks" — Deck bleibt Deck (§3.1)
     "build.perks.head",      // „Perks — {count}" — Perk bleibt Perk (Begriffstabelle §3.1)
     "build.skills.head",     // dito für Skill
     "start.tile.upgrades",   // „Upgrades" ist im Deutschen der etablierte Begriff (§3.5)
@@ -230,7 +251,6 @@ describe("i18n · Katalog-Parität", () => {
     "milestone.next",         // reine Struktur: „→ {at} +{sp}" — kein übersetzbarer Text
     "node.reroll1.label",     // „Reroll" ist im Deutschen bereits das englische Wort (wie start.onb.reroll)
     "node.reroll2.label",     // dito
-    "gameover.welcome.value", // „+{n} DP" — Kürzel, in beiden Sprachen gleich (wie common.cur.dp)
   ]);
 
   /* Eine Liste je Zielsprache, aus dem SPANISCHEN Katalog heraus gefüllt (#es-translate,
@@ -248,6 +268,12 @@ describe("i18n · Katalog-Parität", () => {
      3. ZWEI KÜRZEL, die zufällig zusammenfallen: Wechsel/Zigzag → Z und Anker/Ancla → A. Die
         anderen sechs Formations-Kürzel unterscheiden sich. */
   const SAME_OK_ES = new Set([
+    /* „{segWork} III" — der Rohtext IST in allen Sprachen gleich, weil der ganze Unterschied im
+       Platzhalter steckt: das Register füllt ihn je Sprache (Segmentarbeit / Segment Work /
+       Trabajo de Segmento / 区段作业). Vorher stand hier der deutsche Name im Text, und ein
+       spanischer Spieler las ein Wort, das es in seinem Spiel nicht gibt. */
+    "tut.d.segIII",
+    "tut.d.segIV",
     // 1 · reine Struktur: Platzhalter, Zahlen, Trennzeichen — kein übersetzbares Wort
     "building.kick.active",      // „{base} · {kick}"
     "bar.plant.share.value",     // „{green} / {total} · {pct} %"
@@ -293,16 +319,16 @@ describe("i18n · Katalog-Parität", () => {
      in keiner Sprache uebersetzt werden. Die erfundenen Deck- und Effektnamen faengt schon
      SAME_OK_CLASS ab und stehen deshalb nicht noch einmal hier. */
   const SAME_OK_ZH = new Set([
-    "common.cur.sp",               // SP — Kuerzel, in jeder Sprache SP
-    "common.cur.dp",               // DP — dito
-    "hud.speed.max.label",         // „MAX" — Kuerzel auf dem Tempo-Knopf
+    /* „{segWork} III" — der Rohtext IST in allen Sprachen gleich, weil der ganze Unterschied im
+       Platzhalter steckt: das Register füllt ihn je Sprache (Segmentarbeit / Segment Work /
+       Trabajo de Segmento / 区段作业). Vorher stand hier der deutsche Name im Text, und ein
+       spanischer Spieler las ein Wort, das es in seinem Spiel nicht gibt. */
+    "tut.d.segIII",
+    "tut.d.segIV",
+    "tut.progress",               // „{n} / {total}" — reine Platzhalterzeile, kein Wort
     "options.chip.display",        // „HUD" — das Kuerzel der Sprungleiste
     "dev.run.title",               // „DEV RUN" — Dev-Bildschirm, bewusst unuebersetzt
-    "upgrades.buy.short",          // „{cost} SP" — Zahl plus Waehrungskuerzel
-    "gameover.welcome.value",      // „+{n} DP" — dito
     "start.board.week.val",        // „{have}/{max}" — nur Ziffern und ein Schraegstrich
-    "start.board.week.bonus",      // „+{sp} SP · +{dp} DP" — nur Zahlen und Kuerzel
-    "start.board.week.bonus.full", // „+{dp} DP" — dito
     "milestone.next",              // „→ {at} +{sp}" — Pfeil, Zahlen, sonst nichts
     "start.board.last.none",       // Gedankenstrich als Platzhalter — Zeichen, kein Wort
     "building.kick.active",        // „{base} · {kick}" — reine Verkettung zweier Platzhalter
@@ -344,8 +370,15 @@ describe("i18n · Katalog-Parität", () => {
       expect(en[`cosmetic.${deckId}.name`], `${deckId} muss wie der Archetyp heißen`)
         .toBe(en[`archetype.${arch}.label`]);
     }
+    /* Sieben Namen dazu. Sie standen in DREI Katalogen auf Englisch — nicht weil sie Eigennamen
+       waeren, sondern weil sie beim Anlegen englisch geschrieben und nie uebersetzt wurden. Die
+       Klassen-Ausnahme oben hat das gedeckt, also fiel es erst im chinesischen Bild auf. Wer einen
+       von ihnen wieder angleicht, faellt ab jetzt hier auf. */
     for (const k of ["cosmetic.deck_kosmos.name", "cosmetic.deck_oni.name", "cosmetic.deck_drache.name",
-      "cosmetic.deck_serie1500.name", "cosmetic.deck_sparfuchs.name", "cosmetic.deck_sonne.name"]) {
+      "cosmetic.deck_serie1500.name", "cosmetic.deck_sparfuchs.name", "cosmetic.deck_sonne.name",
+      "cosmetic.deck_sunset.name", "cosmetic.deck_beach.name", "cosmetic.deck_wale.name",
+      "cosmetic.deck_onboarding.name", "cosmetic.deck_gottgleich.name", "cosmetic.deck_seedrache.name",
+      "cosmetic.deck_insertcoin.name"]) {
       expect(en[k], `${k} beschreibt etwas und muss übersetzt sein`).not.toBe(de[k]);
     }
   });
@@ -498,9 +531,14 @@ describe("i18n · Zahl- und Satzformate", () => {
     expect(fmtNum(2.25, "en")).toBe("2.25");
     expect(fmtNum(2.25, "es")).toBe("2,25");
     expect(fmtNum(-1234.5, "de")).toBe("-1.234,5");
-    expect(fmtPct(0.07, "de")).toBe("7 %");
+    /* GESCHÜTZTES Leerzeichen, ausdrücklich als Escape geprüft. Ein gewöhnliches erlaubte den
+       Umbruch zwischen Zahl und Zeichen — gemessen im Tutorial, wo „2" und „%." auf zwei Zeilen
+       standen (text-style-guide.md §2). Würde hier ein normales Leerzeichen stehen, sähe man den
+       Unterschied im Test nicht; deshalb der Escape und nicht das Zeichen selbst. */
+    expect(fmtPct(0.07, "de")).toBe("7\u00a0%");
+    expect(fmtPct(0.07, "de")).not.toBe("7 %");   // Gegenprobe: NICHT das gewöhnliche
     expect(fmtPct(0.07, "en")).toBe("7%");
-    expect(fmtPct(0.07, "es")).toBe("7 %");
+    expect(fmtPct(0.07, "es")).toBe("7\u00a0%");   // Spanisch erbt die deutsche Form
     expect(fmtDayMonth(ts, "de")).toBe("24.12.");
     expect(fmtDayMonth(ts, "en")).toBe("12/24");
     expect(fmtDayMonth(ts, "es")).toBe("24/12");

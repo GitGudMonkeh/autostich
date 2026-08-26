@@ -209,9 +209,9 @@ export function catalog(locale) { return CATALOGS[locale] || {}; }
    von beiden. Bei `es-419` wären die ersten beiden auf die englische Form gekippt; dass die
    Sprach-ID `es` heißt, entscheidet also auch das Zahlformat. */
 const FMT = {
-  de: { dec: ",", grp: ".", pct: "{n} %", day: "{dd}.{mm}." },
+  de: { dec: ",", grp: ".", pct: "{n}\u00a0%", day: "{dd}.{mm}." },
   en: { dec: ".", grp: ",", pct: "{n}%",  day: "{mm}/{dd}" },
-  es: { dec: ",", grp: ".", pct: "{n} %", day: "{dd}/{mm}" },
+  es: { dec: ",", grp: ".", pct: "{n}\u00a0%", day: "{dd}/{mm}" },
   /* #zh-hans: Ziffern bleiben westlich, Tausender wie im Englischen, Prozent OHNE
      Leerzeichen (die deutsche Form hat ein schmales, die chinesische keines). Der Tag
      traegt seine Einheiten mit: 12月24日, nicht 24/12. */
@@ -229,8 +229,18 @@ export function fmtNum(x, locale) {
   return sign + grouped + (frac ? s.dec + frac : "");
 }
 
-// Prozent als ganze Zahl inkl. Zeichen (0.07 → „7 %" / „7%").
-// Deutsch und Spanisch setzen ein Leerzeichen vor das Zeichen, Englisch nicht.
+/* Prozent als ganze Zahl inkl. Zeichen. Deutsch und Spanisch setzen ein Leerzeichen vor das
+   Zeichen, Englisch und Chinesisch nicht.
+
+   DAS LEERZEICHEN IST GESCHÜTZT (U+00A0, oben in der Tabelle), und das ist kein Detail: mit einem
+   gewöhnlichen darf die Zeile GENAU DORT umbrechen. GEMESSEN im Tutorial bei 390 × 844 stand
+   „… um 2" am Zeilenende und „%." allein in der nächsten. Spanisch erbt die Form von Deutsch und
+   damit auch den Schutz.
+
+   U+00A0 und nicht das feinere U+202F: beide rendert die Schrift sauber (gemessen 3,50 px gegen
+   1,75 px), aber das schmale würde jede Prozentangabe enger setzen. Der Fehler war der Umbruch,
+   nicht die Breite. Als ESCAPE geschrieben, weil ein geschütztes Leerzeichen im Editor von einem
+   gewöhnlichen nicht zu unterscheiden ist und sonst beim nächsten Bearbeiten wieder eines wird. */
 export function fmtPct(x, locale) {
   return numberFormat(locale).pct.replace("{n}", Math.round(x * 100));
 }

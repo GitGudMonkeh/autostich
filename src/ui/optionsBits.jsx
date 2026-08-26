@@ -127,7 +127,7 @@ export function Dropdown({ value, options, onChange, label }) {
     <div className="op-dd shrink-0" ref={rootRef}>
       <button type="button" className="op-dd-btn flex items-center gap-2 rounded-lg transition-all"
         aria-haspopup="listbox" aria-expanded={open} aria-label={label} onClick={() => setOpen((v) => !v)}>
-        <span className="op-dd-cur flex-1 text-left">{cur ? cur.label : ""}</span>
+        <span className="op-dd-cur flex-1 text-left" lang={cur ? cur.lang : undefined}>{cur ? cur.label : ""}</span>
         <svg viewBox="0 0 16 16" className="op-dd-chev shrink-0" data-open={open ? "1" : "0"} aria-hidden="true"
           fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
           <path d="M4 6.4L8 10.4l4-4" />
@@ -140,7 +140,7 @@ export function Dropdown({ value, options, onChange, label }) {
               <button type="button" className="op-dd-item flex items-center gap-2 w-full text-left transition-all"
                 data-sel={o.v === value ? "1" : "0"}
                 onClick={() => { onChange(o.v); setOpen(false); }}>
-                <span className="flex-1">{o.label}</span>
+                <span className="flex-1" lang={o.lang}>{o.label}</span>
                 {o.v === value && (
                   <svg viewBox="0 0 16 16" className="op-dd-tick shrink-0" aria-hidden="true" fill="none"
                     stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">

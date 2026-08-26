@@ -36,17 +36,17 @@ export const DECK_DEFS = {
   // (Prisma), Genesis und den kaufbaren DP-Packs. Die Freischalt-Kinds bleiben vorerst dormant in isUnlocked.
   // Deck-Werkstatt Kauf-Packs (#deckshop): als ganzes Pack mit SP kaufbar. „unlocked" = Pack im Besitz
   // (profile.ownedCosmetics["pack:<id>"]); die Pack-Registry (game/themes.js) treibt Kauf/Anzeige.
-  deck_sunset: { id: "deck_sunset", name: "Sunset Rider", unlock: { kind: "buy", ownKey: "pack:sunset" } },
+  deck_sunset: { id: "deck_sunset", name: "Sonnenreiter", unlock: { kind: "buy", ownKey: "pack:sunset" } },
   deck_lofi:   { id: "deck_lofi",   name: "Kitsune",      unlock: { kind: "buy", ownKey: "pack:lofi" } },
   // #IP: deck_kaiju / deck_aura / deck_mecha entfernt.
   // v0.4 Kauf-Packs:
-  deck_beach:      { id: "deck_beach",      name: "Malibu Wave",     unlock: { kind: "buy", ownKey: "pack:beach" } },
+  deck_beach:      { id: "deck_beach",      name: "Malibu-Welle",     unlock: { kind: "buy", ownKey: "pack:beach" } },
   deck_cat:        { id: "deck_cat",        name: "Biolumen", unlock: { kind: "buy", ownKey: "pack:cat" } },
   deck_spacedog:   { id: "deck_spacedog",   name: "Kosmospanther",   unlock: { kind: "buy", ownKey: "pack:spacedog" } },
-  deck_wale:       { id: "deck_wale",       name: "Moonwhale",       unlock: { kind: "buy", ownKey: "pack:wale" } },
-  deck_onboarding: { id: "deck_onboarding", name: "Genesis",         unlock: { kind: "onboardingDone" } }, // #: Onboarding-Freischalt-Deck (NICHT kaufbar) — frei nach abgeschlossenem Onboarding
+  deck_wale:       { id: "deck_wale",       name: "Mondwal",       unlock: { kind: "buy", ownKey: "pack:wale" } },
+  deck_onboarding: { id: "deck_onboarding", name: "Ursprung",         unlock: { kind: "onboardingDone" } }, // #: Onboarding-Freischalt-Deck (NICHT kaufbar) — frei nach abgeschlossenem Onboarding
   // #303 Challenge-Decks: NICHT kaufbar — je über eine Challenge freigeschaltet (das Deck definiert sein „cond"-Pack in themes.js).
-  deck_gottgleich: { id: "deck_gottgleich", name: "Ascension", unlock: { kind: "gottgleichRun" } },
+  deck_gottgleich: { id: "deck_gottgleich", name: "Aufstieg", unlock: { kind: "gottgleichRun" } },
   deck_serie300:   { id: "deck_serie300",   name: "Flamingo",   unlock: { kind: "streak", n: 300 } },
   deck_serie600:   { id: "deck_serie600",   name: "Peacock",    unlock: { kind: "streak", n: 600 } },
   deck_serie1500:  { id: "deck_serie1500",  name: "Königspfau", unlock: { kind: "streak", n: 1500 } },
@@ -69,7 +69,7 @@ export const DECK_DEFS = {
   // #312 DP-Kauf-Packs (je 10 DP, Preis in themes.js):
   deck_arcade:     { id: "deck_arcade",     name: "Beryll",     unlock: { kind: "buy", ownKey: "pack:arcade" } },
   deck_polarlicht: { id: "deck_polarlicht", name: "Scarab",     unlock: { kind: "buy", ownKey: "pack:polarlicht" } },
-  deck_seedrache:  { id: "deck_seedrache",  name: "Eldritch",   unlock: { kind: "buy", ownKey: "pack:seedrache" } },
+  deck_seedrache:  { id: "deck_seedrache",  name: "Tiefenschrecken",   unlock: { kind: "buy", ownKey: "pack:seedrache" } },
   deck_obsidian:   { id: "deck_obsidian",   name: "Obsidian",   unlock: { kind: "buy", ownKey: "pack:obsidian" } },
   // #tiered Titan — Stufen-Challenge über Score (25/50/100 Mio). Die drei Skins sind einzeln freischaltbar.
   deck_titan1:  { id: "deck_titan1",  name: "Titan · Erwachen",   unlock: { kind: "score", n: 25000000 } },
@@ -120,7 +120,7 @@ export const DECK_DEFS = {
      Genesis, Prisma, Solfatara) und meint beides: den Münzeinwurf des Motivs und den ersten Lauf.
      Nicht zu verwechseln mit `deck_arcade` — das trägt seit der Umbenennung zu „Beryll“ ein
      Smaragd-Motiv und ist nur dem Ordnernamen nach noch Arcade. */
-  deck_insertcoin: { id: "deck_insertcoin", name: "Insert Coin", unlock: { kind: "completedRun" } },
+  deck_insertcoin: { id: "deck_insertcoin", name: "Münze einwerfen", unlock: { kind: "completedRun" } },
 };
 
 /* Sprachprüfung: Der Spielfeld-Name ist der DECK-Name plus Suffix. Vorher stand jeder der 27 Namen

@@ -15,6 +15,10 @@
    `docs/prototypes/*.html` (eigenständige Entwurfsseiten) und `maintenance/index.html` (eigene
    Seite, eigenes Stylesheet). Wächter: test/bundle-split.test.js, Abschnitt #quellen. */
 @import "tailwindcss" source(none);
+/* #zh-hans: die 101 Noto-Sans-SC-Scheiben. Erzeugt von scripts/vendor-noto-sc.mjs, nicht von Hand
+   gepflegt — Datei und `unicode-range` duerfen nie auseinanderlaufen. Der Import steht hier oben,
+   weil @import allen anderen Regeln vorausgehen muss. */
+@import "./assets/fonts/noto-sans-sc/face.css";
 @source "../index.html";
 @source "../src";
 
@@ -8025,3 +8029,84 @@ b, strong { font-weight: 600; }
    Design-Dokument steht. Ob 44 px für die ganze App gelten, entscheidet §11 (T9) — dann fällt diese
    Regel hier wieder weg. */
 .tut-card .as-actbtn { padding-top: 11.5px; padding-bottom: 11.5px; }
+
+
+/* ============================================================================
+   #zh-hans — DER CJK-ZWEIG
+
+   Er steht NEBEN der lateinischen Typografie, nie an ihrer Stelle. Alles hier haengt an
+   `:lang(zh-Hans)`; keine Regel dieses Abschnitts feuert unter `lang="de"` oder `lang="en"`,
+   und kein unqualifizierter `--text-*`-Wert und keine `.ty-*`-Regel wird angefasst. Das ist
+   Tripwire 1 des Contracts, und es ist auf einen Blick pruefbar: jeder Selektor unten beginnt
+   mit `:lang(zh-Hans)`.
+
+   S6 ist hier NICHT beantwortet. Woher die Hierarchie der Eyebrows kommt, wenn ihre vier
+   Signale ausfallen, ist eine Gestaltungsentscheidung und gehoert dem Owner. Was unten steht,
+   sind die drei Dinge, die keine Entscheidung sind, sondern Defekte: eine Schrift, die die
+   Zeichen ueberhaupt hat, eine Groesse ueber der Lesbarkeitsgrenze, und eine Laufweite, die
+   Woerter nicht auseinanderreisst.
+   ============================================================================ */
+
+/* SCHRIFT. Geist bleibt VORN. Han-Zeichen liegen ausserhalb von Geists `unicode-range`, fallen
+   also von selbst auf Noto durch, waehrend Latein in einem chinesischen Satz Geist bleibt — die
+   Marke wechselt nicht mit der Sprache. Genau daran haengt auch die Ladefrage: ein deutscher
+   Spieler rendert kein Han, also holt sein Browser von den 4,5 MB keine einzige Datei. */
+:lang(zh-Hans) {
+  --font-sans: "Geist", "Noto Sans SC", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "Geist Mono", "Noto Sans SC", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* LEITER. A2 nennt zwei Werte, A2a wendet sie als GRENZE an: keine Stufe der micro-Familie
+     unter 12 px, keine der meta-Familie unter 13 px. Heute liegt jede Stufe darunter (micro
+     7–9.5, meta 10–11.5), also fallen beide Familien im Chinesischen auf je einen Wert zusammen.
+     Das ist die benannte Folge, keine Ueberraschung: die vier abgestuften micro-Stufen rendern
+     hier gleich, die meta-Stufen auch. Zeigt das Sichtgate, dass die verlorene Abstufung schlecht
+     liest, ist die Alternative eine verschobene Leiter (micro 12/12.5/13/13.5, meta 13/13.5/14/14.5),
+     und diese Wahl gehoert dem Owner.
+
+     Alle Werte in px, auch `--text-meta-5`, das lateinisch in rem steht: eine Grenze, die je nach
+     Wurzelgroesse mal ueber und mal unter der Lesbarkeitsschwelle liegt, ist keine Grenze. */
+  --text-micro-1: 12px;
+  --text-micro-2: 12px;
+  --text-micro-3: 12px;
+  --text-micro-4: 12px;
+  --text-micro-5: 12px;
+  --text-micro-6: 12px;
+  --text-meta-1: 13px;
+  --text-meta-2: 13px;
+  --text-meta-3: 13px;
+  --text-meta-4: 13px;
+  --text-meta-5: 13px;
+
+  /* ZEILENUMBRUCH (S2). Chinesisch bricht zwischen Zeichen, braucht dafuer also keine Hilfe —
+     wohl aber die Regel, dass eine Zeile nicht VOR einem schliessenden Satzzeichen umbricht.
+     Genau das ist `line-break: strict`. `overflow-wrap` faengt lange lateinische Einsprengsel
+     (Seeds, URLs) ab, die im Chinesischen keine Trennstelle mehr finden. */
+  line-break: strict;
+  overflow-wrap: break-word;
+}
+
+/* LAUFWEITE. `tracking-*` ist im Lateinischen ein Hierarchie-Signal und im Chinesischen ein
+   Defekt: positive Laufweite zwischen Han-Zeichen zerlegt das Wort optisch, weil es zwischen den
+   Zeichen ohnehin keine Wortgrenze gibt. 139 Fundstellen im JSX, deshalb ueber die Klasse und
+   nicht einzeln. Die lateinische Seite behaelt ihre Laufweite unveraendert. */
+:lang(zh-Hans) [class*="tracking-"] {
+  letter-spacing: 0;
+}
+
+/* S6, ERSTER VORSCHLAG — und er nimmt der Regel darueber genau eine Ausnahme ab.
+   Gemessen: die Eyebrow hat drei ihrer vier Signale verloren. Versalien sind auf Han wirkungslos,
+   Geist Mono hat keine CJK-Glyphe, und der Groessenschritt zu ihrer Ablesung ist von 1.45x auf
+   1.23x geschrumpft, weil die Grenze aus A2 sie nach OBEN gedrueckt hat. Uebrig blieb die
+   Deckkraft allein.
+
+   Der Vorschlag holt das vierte Signal zurueck, statt ein neues zu erfinden: Laufweite ist genau
+   das Mittel, mit dem die lateinische Seite rangiert. Nur war .14em die falsche MENGE, nicht das
+   falsche Mittel — im Fliesstext reisst sie Woerter auseinander, auf einem Label aus zwei bis vier
+   Zeichen ist massvolles Zeichenabstand-Setzen im Chinesischen ein gelaeufiges, bewusst wirkendes
+   Mittel. Deshalb .05em, und deshalb NUR dort, wo etwas als Eyebrow entworfen wurde: uppercase UND
+   eine tracking-Klasse zusammen. Fliesstext mit Laufweite bleibt bei null.
+
+   Das ist ein Vorschlag, keine Entscheidung: S6 gehoert dem Owner (AGENTS.md, Decision authority). */
+:lang(zh-Hans) .uppercase[class*="tracking-"] {
+  letter-spacing: .05em;
+}

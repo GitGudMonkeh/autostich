@@ -119,7 +119,12 @@ Kurzerklärungen, aus `constants.js`/`glacier.js`/`rarity.js` gespeist und im Sp
 - **Dezimal-Komma**: `×1,5`, `+0,20 Faktor`, `1,08` — nie `1.5`. Gilt **auch** für berechnete
   Faktoren (`toFixed(2).replace(".", ",")`, siehe `fmtFactor` in `architect.js`).
 - **Multiplikator**: `×1,25` (Malzeichen ×, kein `x`/`X`/`*`) — auch auf Buttons (`×2`, `×4`).
-- **Prozent**: `+40 %` (mit Leerzeichen). Additive Crit-Chance ebenfalls in **Prozent**
+- **Prozent**: `+40 %` — mit einem **geschützten** Leerzeichen (U+00A0), nicht mit einem
+  gewöhnlichen. Ein gewöhnliches erlaubt den Umbruch genau zwischen Zahl und Zeichen; *gemessen*
+  im Tutorial bei 390 × 844 stand „… um 2" am Zeilenende und „%." allein in der nächsten Zeile.
+  `fmtPct` in `src/i18n/index.js` setzt es selbst; wer eine Prozentangabe von Hand schreibt,
+  setzt es mit. Nicht U+202F (schmal): die Schrift kann es, aber es ändert die Breite jeder
+  Angabe im Spiel, und der Fehler war der Umbruch. Additive Crit-Chance ebenfalls in **Prozent**
   (`+6 % Crit-Chance`), **nicht** „pp".
   **Ausnahme:** Wo gegen die 100-%-Schwelle gerechnet wird, bleibt **„Prozentpunkte"**
   ausgeschrieben (`je 10 Prozentpunkte über 100 %`) — „je 10 % über 100 %" wäre unlesbar.

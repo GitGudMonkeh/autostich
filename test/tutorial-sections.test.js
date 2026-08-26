@@ -3,9 +3,10 @@ import { readFileSync } from "node:fs";
 import de from "../src/i18n/de.js";
 import en from "../src/i18n/en.js";
 import {
-  SECTIONS, BEAT_KINDS, allKeys, beatKey, lessonHeight, totalLessons,
-  LESSON_BUDGET_PX, SHELL_CEILING_PX,
+  SECTIONS, BEAT_KINDS, LESSON_KINDS, allKeys, beatKey, beatLabelKey, lessonHeight, lessonKind, lessonBudget,
+  totalLessons, LESSON_BUDGET_PX, VOLL_BUDGET_PX, SHELL_CEILING_PX,
 } from "../src/ui/tutorial-sections/catalog.js";
+import { MEASURE_VARS } from "../src/ui/tutorial-sections/vars.js";
 
 /* ============================================================
    TUTORIAL-SEKTIONEN — die Wächter der Schale (#tutorial-sections T1).
@@ -35,20 +36,184 @@ describe("Tutorial-Sektionen · Katalog", () => {
     }
   });
 
-  it("es gibt genau vier Takt-Arten — eine fünfte braucht erst einen Eintrag im Design-Dokument", () => {
+  it("jede Takt-Art steht in BEAT_KINDS — eine neue braucht erst einen Eintrag im Design-Dokument", () => {
     const used = new Set(SECTIONS.flatMap((s) => s.lessons.flatMap((l) => l.beats.map((b) => b.kind))));
     for (const k of used) expect(BEAT_KINDS, `unbekannte Takt-Art „${k}"`).toContain(k);
   });
 
-  it("eine Lektion ist DREI Takte: ein Satz, ein Bild oder Probierfeld, ein Tipp", () => {
+  it("jede Lektion trägt eine bekannte Art", () => {
+    for (const s of SECTIONS) for (const l of s.lessons)
+      expect(LESSON_KINDS, `${s.id}/${l.id}: unbekannte Art „${lessonKind(l)}"`).toContain(lessonKind(l));
+  });
+
+  /* Die Form je Art. Der erste Bau kannte nur eine: „Satz, Bild oder Probierfeld, Tipp". Die
+     vollen Lektionen brechen sie bewusst — sie haben mehrere Blöcke und teils zwei bewegliche Teile.
+     Was BEIDE Arten teilen, ist der Abschluss: der Tipp steht am Ende, genau einmal. Das ist die
+     Regel, die den ursprünglichen Fehler verhindert (der Tipp verschwindet, „Weiter" leuchtet),
+     und sie gilt unverändert weiter. */
+  it("jede Lektion endet mit genau einem Tipp", () => {
     for (const s of SECTIONS) for (const l of s.lessons) {
       const kinds = l.beats.map((b) => b.kind);
       const where = `${s.id}/${l.id}: ${kinds.join(" · ")}`;
       expect(kinds.filter((k) => k === "tip").length, `${where} — genau ein Tipp`).toBe(1);
       expect(kinds[kinds.length - 1], `${where} — der Tipp steht am Ende`).toBe("tip");
-      expect(kinds.filter((k) => k === "bild" || k === "probierfeld").length,
-        `${where} — höchstens ein Bild ODER ein Probierfeld`).toBeLessThanOrEqual(1);
     }
+  });
+
+  it("eine kurze Lektion bleibt bei höchstens einem Bild oder Probierfeld", () => {
+    for (const s of SECTIONS) for (const l of s.lessons) {
+      if (lessonKind(l) !== "kurz") continue;
+      const kinds = l.beats.map((b) => b.kind);
+      expect(kinds.filter((k) => k === "bild" || k === "probierfeld").length,
+        `${s.id}/${l.id}: ${kinds.join(" · ")} — eine kurze Lektion trägt höchstens einen beweglichen Teil`)
+        .toBeLessThanOrEqual(1);
+    }
+  });
+
+  /* Der Beschriftungs-Schlüssel eines Kastens hängt an `label: true`, nicht an der Takt-Art. Beide
+     Richtungen können schiefgehen, und beide bleiben ohne diesen Wächter still: fehlt der Schlüssel,
+     zeigt der Kasten seinen Rohschlüssel als Überschrift; steht er ohne `label: true` im Katalog,
+     ist er ein toter Eintrag, den der i18n-Wächter später als verwaist meldet. */
+  it("nur ein Kasten mit label verlangt einen Beschriftungs-Schlüssel", () => {
+    const keys = new Set(allKeys());
+    for (const s of SECTIONS) for (const l of s.lessons) {
+      l.beats.forEach((b, i) => {
+        const lk = beatLabelKey(s, l, i);
+        const soll = b.kind === "block" && !!b.label;
+        expect(keys.has(lk), soll
+          ? `${s.id}/${l.id} Takt ${i} trägt label, aber ${lk} fehlt in allKeys()`
+          : `${s.id}/${l.id} Takt ${i} trägt kein label, aber ${lk} steht in allKeys()`).toBe(soll);
+        if (soll) {
+          expect(de[lk], `${lk} fehlt in de.js`).toBeTruthy();
+          expect(en[lk], `${lk} fehlt in en.js`).toBeTruthy();
+        }
+      });
+    }
+  });
+
+  /* DIESER WÄCHTER HAT EINEN ECHTEN FEHLER GEFUNDEN, nicht einen gedachten.
+
+     `regeln` stand in BEAT_KINDS, hatte ein Höhenmodell, einen §11-Eintrag und wurde von einer
+     Lektion benutzt — aber die Schale kannte keinen Zweig dafür. Der Takt fiel durch bis zu
+     `PROBES[b.probe]`, das war `undefined`, und die Lektion rendert den Block einfach NICHT. Kein
+     Fehler, keine rote Zeile, nur ein fehlender Absatz, den erst ein Mensch am Telefon bemerkt.
+
+     Eine Art ohne Zeichner ist deshalb schlimmer als eine fehlende Art: sie sieht im Katalog aus
+     wie Inhalt und ist keiner. */
+  it("jede Takt-Art hat einen Zweig in der Schale", () => {
+    const shell = SRC("TutorialSections.jsx");
+    for (const k of BEAT_KINDS) {
+      if (k === "bild" || k === "probierfeld") continue;   // die beiden gehen über PROBES
+      expect(shell, `die Schale zeichnet „${k}" nicht — der Takt fiele still aus der Lektion`)
+        .toMatch(new RegExp(`b\\.kind === "${k}"`));
+    }
+  });
+
+  /* AUCH DIESER WÄCHTER HAT EINEN ECHTEN FEHLER GEFUNDEN.
+
+     Die Runden lesen ihre Wörter aus einem `labels`-Objekt, das die Schale zusammenstellt. Fünf
+     davon — `wins`, `undo`, `reset`, `energy`, `cardValue` — standen in beats.jsx und waren in der
+     Schale nicht verdrahtet. Das Ergebnis ist kein Fehler und keine rote Zeile, sondern das Wort
+     „undefined" auf einem Knopf.
+
+     Beide Enden werden geprüft: was beats.jsx liest, muss die Schale liefern, und was die Schale
+     liefert, muss in beiden Katalogen stehen. */
+  it("jedes Wort, das eine Runde liest, wird von der Schale geliefert", () => {
+    const probes = SRC("beats.jsx");
+    const shell = SRC("TutorialSections.jsx");
+    // `L` ist in beats.jsx durchgehend der Name des labels-Objekts.
+    const gelesen = new Set([...probes.matchAll(/\bL\.(\w+)/g)].map((m) => m[1]));
+    gelesen.delete("length");   // Array-Eigenschaft, kein Wort
+    // Das Muster laesst `vars` zu: eine Beschriftung MIT Platzhalter muss sie mitbekommen,
+    // und der Waechter darunter erzwingt genau das.
+    const geliefert = new Map([...shell.matchAll(/(\w+):\s*t\("(tut\.[df]\.\w+)"(?:,\s*vars)?\)/g)].map((m) => [m[1], m[2]]));
+    for (const name of gelesen) {
+      expect(geliefert.has(name), `beats.jsx liest L.${name}, die Schale liefert es nicht — auf dem Schirm steht „undefined"`).toBe(true);
+      const key = geliefert.get(name);
+      expect(de[key], `${key} fehlt in de.js`).toBeTruthy();
+      expect(en[key], `${key} fehlt in en.js`).toBeTruthy();
+    }
+  });
+
+  /* DER DRITTE WÄCHTER AUS EINEM ECHTEN FEHLER.
+
+     `beats.jsx` importierte `ARCH_CAT` aus `game/architect.js`. Dort steht es nicht — es liegt in
+     `ui/indicators/vocab.js`. Weder `npm run lint` noch `npm test` noch `npm run build` haben das
+     gemeldet: ESLint löst Modul-Exporte nicht auf, die Tests lasen beats.jsx nur als TEXT, und der
+     Build hat den toten Bezeichner wegoptimiert. Erst der Browser warf
+     „does not provide an export named ARCH_CAT" — und zwar beim Laden der GANZEN Seite, nicht nur
+     des Tutorials. Der Startbildschirm war leer.
+
+     Der Wächter lädt das Modul wirklich. Ein kaputter Import wirft dann hier statt beim Spieler. */
+  it("jeder benannte Import der Sektion existiert wirklich", async () => {
+    /* NUR EIN LADEN REICHT NICHT. Der erste Versuch dieses Wächters importierte beats.jsx und
+       prüfte die Bausteine — und war grün, obwohl der Import kaputt war: Vitest löst über esbuild
+       auf und erzwingt benannte Exporte nicht so streng wie der Browser. Ein Wächter, der den
+       Fehler nicht fängt, für den er geschrieben wurde, ist schlimmer als keiner.
+
+       Geprüft wird deshalb NAMENTLICH: jeder `import { a, b } from "..."` wird gegen die
+       tatsächlichen Exporte des Zielmoduls gehalten. */
+    const fehlt = [];
+    for (const datei of ["beats.jsx", "TutorialSections.jsx", "catalog.js", "vars.js"]) {
+      const src = SRC(datei);
+      for (const m of src.matchAll(/import\s*\{([^}]+)\}\s*from\s*"([^"]+)"/g)) {
+        if (!m[2].startsWith(".")) continue;   // Pakete wie "react" prüft npm, nicht dieser Wächter
+        const namen = m[1].split(",").map((x) => x.trim().split(/\s+as\s+/)[0].trim()).filter(Boolean);
+        const ziel = await import(new URL(`../src/ui/tutorial-sections/${m[2]}`, import.meta.url).href);
+        for (const n of namen) {
+          if (!(n in ziel)) fehlt.push(`${datei}: „${n}" gibt es in ${m[2]} nicht`);
+        }
+      }
+    }
+    expect(fehlt, `Kaputte Importe — im Browser bleibt die Seite leer:\n  ${fehlt.join("\n  ")}`).toEqual([]);
+  });
+
+  it("jeder Baustein in PROBES ist eine Komponente", async () => {
+    const mod = await import("../src/ui/tutorial-sections/beats.jsx");
+    expect(Object.keys(mod.PROBES).length, "PROBES ist leer").toBeGreaterThan(0);
+    for (const [name, komp] of Object.entries(mod.PROBES)) {
+      expect(typeof komp, `PROBES.${name} ist keine Komponente`).toBe("function");
+    }
+  });
+
+  /* Der Archetyp-Schlüssel einer Sektion muss AUFLÖSBAR sein. Ein Tippfehler gäbe kein `undefined`
+     auf dem Schirm, sondern gar keine Farbe — die Sektion sähe aus wie jede andere, und niemand
+     bemerkte, dass die Einfärbung fehlt. Genau die Sorte Fehler, die ein Auge nicht findet.
+
+     Umgekehrt gilt: die vier Archetyp-Sektionen MÜSSEN einen tragen. Ohne diese Richtung wäre der
+     Wächter grün, sobald jemand den Schlüssel einfach löscht. */
+  it("jede Archetyp-Sektion nennt einen Archetyp, den das Spiel kennt", async () => {
+    const { ARCHETYPE_META } = await import("../src/game/skills.js");
+    const mitArch = SECTIONS.filter((s) => s.arch);
+    for (const s of mitArch) {
+      expect(ARCHETYPE_META[s.arch], `Sektion ${s.id}: „${s.arch}" ist kein Archetyp des Spiels`).toBeTruthy();
+      expect(ARCHETYPE_META[s.arch].color, `Archetyp ${s.arch} hat keine Farbe`).toMatch(/^#[0-9a-f]{6}$/i);
+    }
+    expect(mitArch.map((s) => s.id).sort(), "die vier Archetyp-Sektionen tragen ihren Archetyp")
+      .toEqual(["blitz", "eis", "feuer", "pflanze"]);
+  });
+
+  /* DER VIERTE WÄCHTER AUS EINEM ECHTEN FEHLER.
+
+     Die Wörter der Runden werden mit `t(key)` geholt — ohne zweites Argument. Solange keins davon
+     einen Platzhalter trug, ging das gut. Dann bekamen `tut.d.segIII` und `segIV` einen
+     ({segWork}, damit der Perkname aus dem Register kommt statt auf Deutsch im Text zu stehen),
+     und auf den Knöpfen stand fortan wörtlich „{segWork} III".
+
+     Kein Fehler, keine rote Zeile. Gefunden nur, weil jemand hingesehen hat.
+
+     Der Wächter fordert deshalb: ein Wort mit Platzhalter muss `vars` mitbekommen. */
+  it("jede Beschriftung mit Platzhalter bekommt auch vars", () => {
+    const shell = SRC("TutorialSections.jsx");
+    const schlecht = [];
+    for (const m of shell.matchAll(/(\w+):\s*t\("(tut\.[df]\.\w+)"(,\s*vars)?\)/g)) {
+      const [, name, key, mitVars] = m;
+      const text = String(de[key] ?? "");
+      if (/\{\w+\}/.test(text) && !mitVars) {
+        schlecht.push(`${name} → ${key}: „${text}" trägt einen Platzhalter, wird aber ohne vars geholt`);
+      }
+    }
+    expect(schlecht, `Roher Platzhalter auf dem Schirm:\n  ${schlecht.join("\n  ")}`).toEqual([]);
   });
 
   it("jeder Probierfeld-/Bild-Takt nennt einen Baustein, den beats.jsx auch kennt", () => {
@@ -100,32 +265,129 @@ describe("Tutorial-Sektionen · Texte", () => {
 });
 
 describe("Tutorial-Sektionen · das Höhenbudget", () => {
-  /* Deutsch ist die Budget-Sprache: sie ist die längere von beiden. Passt Deutsch, passt Englisch. */
-  const heightDe = (s, l) => lessonHeight(s, l, (k) => de[k] ?? "");
+  /* GEMESSEN WERDEN BEIDE SPRACHEN, und die längere zählt.
 
-  it("keine Lektion überschreitet das Budget", () => {
+     Hier stand: „Deutsch ist die Budget-Sprache: sie ist die längere von beiden. Passt Deutsch,
+     passt Englisch." Das klingt vernünftig und ist GEMESSEN falsch. In vier Lektionen ist Englisch
+     länger — `blitz/karte` 595 gegen 575, und die drei Tipp-Listen 388 gegen 368. Keine reißt ihr
+     Budget, aber drei davon sind KURZE Lektionen mit zwölf Pixeln Luft, und der Wächter sah sie
+     überhaupt nicht an. Ein englischer Satz, der um zwei Zeilen wächst, wäre still durchgegangen.
+
+     Aufgefallen ist das erst, als das Tutorial zum ersten Mal auf Englisch durchlaufen wurde. Eine
+     Annahme über eine Sprache ist keine Messung, auch wenn sie meistens stimmt.
+
+     GEMESSEN WIRD DER AUFGELÖSTE TEXT, nicht der rohe. „{skillsOffered}" sind 15 Zeichen, auf dem
+     Schirm steht die Zahl mit zweien. Über eine Lektion mit vierzehn Platzhaltern waren das drei
+     Zeilen zu viel — das Modell hätte eine Lektion gerissen, die der Leser nie so sieht. Ein
+     Wächter, der etwas anderes misst als der Leser sieht, misst das Falsche. */
+  const fuellen = (text) => String(text).replace(/\{(\w+)\}/g,
+    (m, k) => (k in MEASURE_VARS ? String(MEASURE_VARS[k]) : m));
+  const heightIn = (cat) => (s, l) => lessonHeight(s, l, (k) => fuellen(cat[k] ?? ""));
+  // Der Name sagt, was gemessen wird: die HOEHERE der beiden Sprachen, nicht eine bestimmte.
+  const hoehe = (s, l) => Math.max(heightIn(de)(s, l), heightIn(en)(s, l));
+
+  /* Die Gegenprobe dazu: ein Platzhalter, den niemand füllt, bleibt als Text stehen. Ohne diesen
+     Wächter rechnete ein Tippfehler im Namen die Lektion still größer und wäre nur daran zu
+     erkennen, dass auf dem Schirm „{skillsOfferd}" steht. */
+  it("jeder Platzhalter in einem Lektionstext hat einen Wert", () => {
+    const offen = [];
+    for (const k of allKeys()) {
+      // `offered` wird je Lektion gesetzt, nicht global — siehe OFFERED in TutorialSections.jsx.
+      for (const m of fuellen(de[k] ?? "").matchAll(/\{(\w+)\}/g)) {
+        if (m[1] !== "offered") offen.push(`${k}: {${m[1]}}`);
+      }
+    }
+    expect(offen, `Platzhalter ohne Wert in vars.js:\n  ${offen.join("\n  ")}`).toEqual([]);
+  });
+
+  it("keine Lektion überschreitet das Budget ihrer Art", () => {
     const over = [];
     for (const s of SECTIONS) for (const l of s.lessons) {
-      const h = Math.round(heightDe(s, l));
-      if (h > LESSON_BUDGET_PX) over.push(`${s.id}/${l.id}: ${h} px > ${LESSON_BUDGET_PX} px — das sind zwei Lektionen`);
+      const h = Math.round(hoehe(s, l)), b = lessonBudget(l);
+      if (h > b) over.push(`${s.id}/${l.id} (${lessonKind(l)}): ${h} px > ${b} px`);
     }
     expect(over, `Über Budget:\n  ${over.join("\n  ")}`).toEqual([]);
   });
 
-  it("das Budget liegt unter der gemessenen Decke der Schale", () => {
-    // 638 px ist gemessen (92dvh minus Kopf und Fuß bei 390 × 844). Ein Budget darüber wäre sinnlos.
+  /* DIE UMKEHRREGEL — was „voll" davon abhält, ein Freibrief zu werden.
+
+     Die erste Fassung band das höhere Budget an einen beweglichen Teil: wer etwas TUT, darf länger
+     sein. GEMESSEN am Entwurf ist das falsch — Beweglichkeit und Höhe sind unkorreliert, die
+     längste Lektion überhaupt ist ein reiner Lesetext, und die Regel hätte rund zehn freigegebene
+     Schirme ins 400er Budget gezwungen, das sie um 140 bis 960 px verfehlen.
+
+     Statt der Beweglichkeit greift die Richtung, die die Daten hergeben: wer eine Lektion auf
+     „voll" setzt, die auch in 400 px passt, hat sie falsch eingeordnet. Das erlaubt „voll" für
+     jede Lektion, die es braucht, und für keine, die es nicht braucht — ohne von den Autoren zu
+     verlangen, still gewordene Erklärschirme künstlich beweglich zu machen. */
+  it("was ins kleine Budget passt, ist auch als kurz geführt", () => {
+    const falsch = [];
+    for (const s of SECTIONS) for (const l of s.lessons) {
+      if (lessonKind(l) !== "voll") continue;
+      const h = Math.round(hoehe(s, l));
+      if (h <= LESSON_BUDGET_PX) falsch.push(`${s.id}/${l.id}: ${h} px — das ist „kurz"`);
+    }
+    expect(falsch, `Als „voll" geführt, passt aber ins kleine Budget:\n  ${falsch.join("\n  ")}`).toEqual([]);
+  });
+
+  /* GEGENPROBE zur Umkehrregel. Solange keine Lektion „voll" trägt, läuft die Regel oben durch
+     eine leere Schleife und ist grün, ohne etwas geprüft zu haben — genau die Sorte Wächter, die
+     erst auffällt, wenn sie gebraucht wird und schweigt. Hier steht der Fall, den sie fangen muss. */
+  it("Gegenprobe: eine kurze Lektion, die als voll geführt wird, ist erkennbar", () => {
+    const fake = { id: "x", art: "voll", beats: [{ kind: "satz" }, { kind: "tip" }] };
+    const sec = { id: "y" };
+    const lang = { [beatKey(sec, fake, 0)]: "Kurz.", [beatKey(sec, fake, 1)]: "Auch kurz." };
+    const h = lessonHeight(sec, fake, (k) => lang[k] ?? "");
+    expect(lessonKind(fake)).toBe("voll");
+    expect(h, `die Fake-Lektion misst ${h} px und wäre gar nicht kurz`).toBeLessThanOrEqual(LESSON_BUDGET_PX);
+  });
+
+  it("das kurze Budget liegt unter der gemessenen Decke der Schale", () => {
+    // 638 px ist gemessen (92dvh minus Kopf und Fuß bei 390 × 844). Eine kurze Lektion scrollt nicht.
     expect(LESSON_BUDGET_PX).toBeLessThan(SHELL_CEILING_PX);
+  });
+
+  /* Das volle Budget liegt ÜBER der Decke — eine volle Lektion scrollt, und das ist der Unterschied
+     zur kurzen. Was es nicht darf, ist beliebig werden: eineinhalb Schalenhöhen heisst einmal
+     weiterschieben. Diese Grenze steht hier, damit ein späteres Anheben eine sichtbare Änderung
+     ist und keine stille. */
+  it("das volle Budget sind genau eineinhalb Schalenhöhen, aufgerundet", () => {
+    expect(VOLL_BUDGET_PX).toBeGreaterThan(SHELL_CEILING_PX);
+    expect(VOLL_BUDGET_PX).toBeLessThanOrEqual(Math.ceil(SHELL_CEILING_PX * 1.5 / 10) * 10);
   });
 
   /* GEGENPROBE, eingebaut statt einmalig von Hand gefahren (testing.md §5): ein Wächter, der nur grün
      ist, ist kein Beweis. Ein künstlich überlanger Satz MUSS das Budget reißen — sonst rechnet das
-     Modell nicht, sondern nickt. */
+     Modell nicht, sondern nickt. Es braucht sie ZWEIMAL: das höhere Budget ohne eigene Gegenprobe
+     wäre genau die Stelle, an der ein Modell unbemerkt aufhört zu rechnen. */
   it("Gegenprobe: eine überlange Lektion reißt das Budget", () => {
     const fake = { id: "x", beats: [{ kind: "satz" }, { kind: "probierfeld", probe: "formation" }, { kind: "tip" }] };
     const sec = { id: "y" };
     const lang = { [beatKey(sec, fake, 0)]: "W".repeat(1200), [beatKey(sec, fake, 1)]: "", [beatKey(sec, fake, 2)]: "kurz" };
     const h = lessonHeight(sec, fake, (k) => lang[k] ?? "");
     expect(h, "das Modell hält eine 1200-Zeichen-Lektion für budgetkonform").toBeGreaterThan(LESSON_BUDGET_PX);
+  });
+
+  it("Gegenprobe: auch das volle Budget ist zu reißen", () => {
+    const fake = { id: "x", art: "voll",
+      beats: [{ kind: "satz" }, { kind: "probierfeld", probe: "board" },
+              { kind: "merk" }, { kind: "tabelle", rows: 8 }, { kind: "tip" }] };
+    const sec = { id: "y" };
+    const lang = { [beatKey(sec, fake, 0)]: "W".repeat(1400), [beatKey(sec, fake, 2)]: "W".repeat(600),
+                   [beatKey(sec, fake, 4)]: "kurz" };
+    const h = lessonHeight(sec, fake, (k) => lang[k] ?? "");
+    expect(lessonBudget(fake), "die Fake-Lektion bekommt gar nicht das volle Budget").toBe(VOLL_BUDGET_PX);
+    expect(h, "das Modell hält eine 2000-Zeichen-Lektion für budgetkonform").toBeGreaterThan(VOLL_BUDGET_PX);
+  });
+
+  /* Und die Umkehrung: eine knappe volle Lektion muss DURCHkommen. Ohne diese Probe wäre ein Modell, das
+     alles reißen lässt, ebenso „grün" wie eines, das rechnet. */
+  it("Gegenprobe: eine knappe volle Lektion bleibt im Budget", () => {
+    const fake = { id: "x", art: "voll",
+      beats: [{ kind: "satz" }, { kind: "probierfeld", probe: "streak" }, { kind: "tip" }] };
+    const sec = { id: "y" };
+    const lang = { [beatKey(sec, fake, 0)]: "W".repeat(120), [beatKey(sec, fake, 2)]: "W".repeat(80) };
+    expect(lessonHeight(sec, fake, (k) => lang[k] ?? "")).toBeLessThan(VOLL_BUDGET_PX);
   });
 });
 
@@ -134,12 +396,13 @@ describe("Tutorial-Sektionen · Terminologie", () => {
      Architekten heisst Struktur und Distrikt. Der Bruch ist schon einmal passiert: die Probierfelder
      teilten sich anfangs die Beschriftung des Formations-Felds, und das Gebaeude-Brett trug damit
      „ein Segment" und „keine Formation". Ein Auge findet das einmal; ein Waechter jedes Mal. */
-  /* EINE begruendete Ausnahme, und sie steht als Liste da statt als Sonderzweig im Code — damit sie
-     sichtbar bleibt und der Test unten verlangen kann, dass es sie noch GIBT. Sakralbauten wirken
-     wirklich auf KARTEN-Formationen (architect.js:13 — "formation: biegt computeFormations fuer
-     abgedeckte Positionen"). Dort ist das Wort richtig; verboten ist es als Name fuer die Geometrie
-     des Bretts, die Struktur und Distrikt heisst. */
-  const FORMATION_OK = ["tut.architekt.sorten.0"];
+  /* Die Ausnahmeliste ist LEER, und das ist ein Ergebnis, kein Versehen. Sie trug
+     `tut.architekt.sorten.0`: die Lektion „Sorten" sprach von Sakralbauten, die wirklich auf
+     KARTEN-Formationen wirken (architect.js:13). Der freigegebene Entwurf hat diese Lektion nicht
+     mehr, also ist die Ausnahme verwaist — und der Wächter darunter hat genau das gemeldet.
+     Eine verwaiste Ausnahme weicht die Regel still auf; sie steht deshalb hier als Liste und nicht
+     als Sonderzweig im Code, damit ein Test ihre Berechtigung nachhalten kann. */
+  const FORMATION_OK = [];
 
   it("kein Architekt-Text benutzt das Wort Formation fuer Brett-Geometrie", () => {
     const bad = [];

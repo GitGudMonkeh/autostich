@@ -1,15 +1,26 @@
 import { useMemo, useState } from "react";
 import { useLocale } from "../../i18n/useLocale.js"; // #sprache: Neuberechnung bei Sprachwechsel
-import { formationName } from "../../i18n/labels.js";
-import { fmtNum } from "../../i18n/index.js"; // Dezimaltrennzeichen je Sprache — nie toFixed+replace
+import { formationName, formationAbbr, perkCat } from "../../i18n/labels.js";
+import { fmtNum, fmtPct, t } from "../../i18n/index.js"; // Dezimaltrennzeichen je Sprache — nie toFixed+replace
 import { buildDeck } from "../../game/deck.js";
 import { computeFormations, summarizeFormations, SEGMENT_SIZE } from "../../game/formations.js";
+import { effectivePlayerValue } from "../../game/engine.js";
 import * as C from "../../game/constants.js";
+// ENERGY_FLOOR, nicht C.FORMATION_ENERGY: siehe die Begründung in vars.js.
+import { ENERGY_FLOOR } from "../../game/progression.js";
 import { ARCHETYPE_META } from "../../game/skills.js";
-import { COLS, posOf, boardFactorMap, completedStructures } from "../../game/architect.js";
+import { FAMILY_DEFS } from "../../game/families.js";
+import { TIER_META } from "../../game/rarity.js";
+import * as GLACIER from "../../game/glacier.js";
+import * as PROG from "../../game/progression.js";
+import { COLS, ROWS, posOf, rowOf, colOf, boardFactorMap, familyDef, tierNum } from "../../game/architect.js";
+// Die Kategoriefarben liegen in der UI-Schicht, nicht im Spielmodul — dieselbe Quelle, die der
+// Architekt-Bildschirm nutzt (ArchPanels.jsx, ArchitectScreen.jsx).
+import { ARCH_CAT } from "../indicators/vocab.js";
 
-/* DIE VIER TAKT-ARTEN. Mehr gibt es nicht (planning-report.md §1.2); ein fünfter braucht erst einen
-   Eintrag in docs/design-sprache.md §11.
+/* DIE TAKT-ARTEN. Vier trugen den ersten Bau, fünf kamen mit den vollen Lektionen dazu; die
+   maßgebliche Liste ist BEAT_KINDS in catalog.js, und eine weitere braucht erst einen Eintrag in
+   docs/design-sprache.md §11.
 
    Die Maße unten sind gemessen, nicht geraten — im Produktionsbuild bei 390 × 844, nachvollziehbar
    mit docs/workstreams/tutorial-sections/tutorial-plan/evidence/measure.mjs. Wer hier eine Zahl
@@ -30,6 +41,103 @@ export function Satz({ text }) {
   return <p className="tut-beat tut-satz text-body-lg-5" style={{ color: "#c8c8d0", lineHeight: 1.5, margin: "0 0 14px" }}>{text}</p>;
 }
 
+/* Der beschriftete Kasten — der häufigste Block des freigegebenen Entwurfs.
+
+   Warum ein Kasten und nicht noch ein `Satz`: der Entwurf gliedert eine Lektion in benannte
+   Abschnitte („Dein Deck", „Ein Lauf"), und die Beschriftung ist die Gliederung. Als Fließtext
+   ohne Rahmen liefen sie ineinander.
+
+   KEIN PANEL IM PANEL (design-sprache.md §1): der Kasten sitzt IM Scroller der Lektion, nicht in
+   einem zweiten Rahmen. Er ist eine Zeile mit Kontur, kein Fenster.
+
+   Die Beschriftung ist optional. Ohne sie ist der Kasten der Einleitungsblock, den der Entwurf
+   `zeile kern` nennt: derselbe Rahmen, nur ohne Überschrift.
+
+   Die Polsterung steht hier ZAHLENGENAU, weil das Höhenmodell in catalog.js sie nachrechnet:
+   12 + 12 Polsterung, 2 Rahmen, 14 Abstand nach unten = 40 px Chrome, die Beschriftung 15 + 6.
+   Wer hier eine Zahl ändert, ändert BLOCK_CHROME und BLOCK_LABEL mit. */
+export function Block({ label, text }) {
+  return (
+    <div className="tut-beat tut-block" style={{ ...ZEILE, padding: "12px 14px", margin: "0 0 14px" }}>
+      {label ? <div className="text-meta-1" style={{ ...LABEL, marginBottom: 6 }}>{label}</div> : null}
+      <p className="text-body-lg-5" style={{ color: "#c8c8d0", margin: 0, lineHeight: 1.5 }}>{text}</p>
+    </div>
+  );
+}
+
+/* Der Merksatz: EIN Satz, hervorgehoben, mitten in der Lektion.
+
+   Nicht zu verwechseln mit dem Tipp. Der Tipp schließt ab und steht genau einmal am Ende; ein
+   Merksatz steht dort, wo er gebraucht wird, und darf mehrfach vorkommen (design-sprache.md §11). */
+export function Merk({ text }) {
+  return (
+    <p className="tut-beat tut-merk text-body-lg-5" style={{
+      color: "#e8e8ea", fontWeight: 600, lineHeight: 1.45, margin: "0 0 14px",
+      padding: "10px 12px", borderRadius: 8, borderLeft: "2px solid var(--deck-a1,#8a7de0)",
+      background: "rgba(15,15,21,.72)" }}>{text}</p>
+  );
+}
+
+/* Aufzählung: mehrere Einträge unter EINEM Schlüssel, getrennt durch `·`.
+
+   Warum ein Schlüssel und nicht einer je Eintrag: die Zahl der Einträge gehört zum Text, nicht zum
+   Katalog. Eine Sprache, die fünf Phasen in vier Sätzen erklärt, müsste sonst einen Schlüssel leer
+   lassen, und ein leerer Schlüssel ist genau das, was der i18n-Wächter als verwaist meldet.
+
+   `nummer` unterscheidet die beiden Arten, die denselben Zeichner teilen: `regeln` zählt mit,
+   `liste` setzt einen Punkt. Das Höhenmodell in catalog.js behandelt beide gleich. */
+export function Regeln({ text, nummer = false }) {
+  const teile = String(text || "").split("·").map((x) => x.trim()).filter(Boolean);
+  return (
+    <div className="tut-beat tut-regeln" style={{ display: "grid", gap: 6, margin: "0 0 14px" }}>
+      {teile.map((zeile, i) => (
+        <div key={i} style={{ ...ZEILE, padding: "9px 11px", display: "flex", gap: 9 }}>
+          <span className="text-meta-1" style={{ ...LABEL, flex: "none", paddingTop: 2 }}>
+            {nummer ? i + 1 : "·"}
+          </span>
+          <span className="text-body-5" style={{ color: "#c8c8d0", lineHeight: 1.45 }}>{zeile}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* Tabelle: Werte nebeneinander. Zeilen durch `·`, Zellen durch `|` — dieselbe Trennung wie oben,
+   damit eine Übersetzung nicht mit zwei verschiedenen Konventionen hantieren muss.
+
+   Die erste Zeile ist der Kopf. Sie SCROLLT waagerecht, wenn sie zu breit wird, statt die Seite
+   mitzuziehen: eine Tabelle mit vier Spalten passt bei 390 px nicht immer, und eine Seite, die
+   seitlich wackelt, ist schlimmer als eine Tabelle, die es tut.
+
+   Die Zeilenzahl steht ZUSÄTZLICH am Takt (`rows`), weil das Höhenmodell in catalog.js den Text
+   nicht kennt. Der Wächter hält beide gegeneinander. */
+export function Tabelle({ text }) {
+  const zeilen = String(text || "").split("·").map((z) => z.split("|").map((c) => c.trim()));
+  if (!zeilen.length) return null;
+  const [kopf, ...rest] = zeilen;
+  return (
+    <div className="tut-beat tut-tabelle" style={{ margin: "0 0 14px", overflowX: "auto", ...ZEILE }}>
+      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <thead>
+          <tr>{kopf.map((c, i) => (
+            <th key={i} className="text-meta-1" style={{ ...LABEL, textAlign: i ? "right" : "left", padding: "9px 11px" }}>{c}</th>
+          ))}</tr>
+        </thead>
+        <tbody>
+          {rest.map((z, r) => (
+            <tr key={r} style={{ borderTop: HAIR }}>
+              {z.map((c, i) => (
+                <td key={i} className="text-body-5 ty-num-sm"
+                  style={{ color: i ? "#e8e8ea" : "#c8c8d0", textAlign: i ? "right" : "left", padding: "8px 11px", whiteSpace: "nowrap" }}>{c}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 /* Der Tipp hängt an einer LINIE, nie in einem eigenen Kasten — design-sprache.md §1,
    „Kein Panel im Panel": eine Abschluss-Sektion trennt eine Linie nach oben ab. */
 export function Tip({ label, text }) {
@@ -45,11 +153,24 @@ export function Tip({ label, text }) {
    Gemessen: fünf Zellen über die 364-px-Inhaltsbreite ergeben 54,8 × 78,3 px — lesbar und tippbar.
    Zehn wären 27 px breit. Dass die lesbare Breite genau SEGMENT_SIZE ist, ist der Grund, warum die
    Formations-Lektionen Segment und Formation in EINEM Bild zeigen statt in zweien. */
-const SUIT_COLOR = { H: "#c0433f", D: "#c0433f", S: "#3f6cc0", C: "#3f6cc0" };
-const suitColor = (c) => SUIT_COLOR[c?.suit] || "#33333e";
+/* DIE FARBE KOMMT AUS DEM SPIEL, nicht aus einer zweiten Tabelle hier.
 
-function CardCell({ card, on, onClick, dim }) {
-  const border = dim ? "#33333e" : suitColor(card);
+   Vorher stand hier `{ H, D, S, C }` — Herz, Karo, Pik, Kreuz. Autostich hat aber R, B, G, Y
+   (constants.js SUIT_ORDER), also traf der Schlüssel nie, und JEDE Zelle fiel auf den grauen
+   Rückfallwert. Aufgefallen ist das erst beim Bauen der Aufstellungs-Sektion: die Lektion über den
+   FARBBLOCK lässt sich ohne Farbe nicht lesen.
+
+   Ein zweiter Wahrheitsort für die Farben ist genau der Fehler, den planning-report.md §1.3 für
+   die Rechnung beschreibt, eine Ebene tiefer. `suitColor` aus constants.js ist die eine Quelle. */
+const cardColor = (c) => (c?.suit ? C.suitColor(c.suit) : "#33333e");
+
+/* `marks` und `mult` zeichnen die ANATOMIE der Karte: unten die Kürzel der Formationen, oben rechts
+   der Multiplikator dieser Position. Beides bleibt leer, wo eine Lektion es nicht braucht.
+
+   Ohne sie versprach die Lektion „Was auf einer Karte steht" etwas, das die Karte nicht zeigte —
+   sie trug nur ihren Wert, und die Erklärung stand daneben statt darauf. */
+function CardCell({ card, on, onClick, dim, marks = null, mult = null }) {
+  const border = dim ? "#33333e" : cardColor(card);
   const cls = "tut-cell text-body-lg-6 flex items-center justify-center font-bold";
   const style = {
     flex: "1 1 0", minWidth: 0, aspectRatio: "0.7", borderRadius: 6, color: "#e8e8ea",
@@ -58,8 +179,15 @@ function CardCell({ card, on, onClick, dim }) {
     outline: on ? `2px solid var(--deck-a1,#8a7de0)` : undefined,
     outlineOffset: on ? -2 : undefined,
   };
-  if (!onClick) return <div className={cls} style={style}>{card.value}</div>;
-  return <button type="button" className={cls} style={style} onClick={onClick} aria-pressed={on ? "true" : "false"}>{card.value}</button>;
+  const inhalt = marks === null && mult === null ? card.value : (
+    <span style={{ position: "relative", display: "block", width: "100%", height: "100%" }}>
+      {mult ? <span className="text-meta-1 ty-num-sm" style={{ position: "absolute", top: 2, right: 3, color: "#8a8a95", fontWeight: 600 }}>{mult}</span> : null}
+      <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>{card.value}</span>
+      {marks ? <span className="text-meta-1" style={{ position: "absolute", bottom: 2, left: 0, right: 0, textAlign: "center", color: "#5c5c68", letterSpacing: ".1em", fontWeight: 600 }}>{marks}</span> : null}
+    </span>
+  );
+  if (!onClick) return <div className={cls} style={style}>{inhalt}</div>;
+  return <button type="button" className={cls} style={style} onClick={onClick} aria-pressed={on ? "true" : "false"}>{inhalt}</button>;
 }
 
 export function Bild({ cards, caption }) {
@@ -126,11 +254,11 @@ const DECK = buildDeck();
    geschätzt: die Kandidaten wurden über computeFormations durchgerechnet. */
 const START_ORDER = [26, 18, 24, 15, 20];   // Werte 7 · 9 · 5 · 6 · 1
 
-export function FormationProbe({ title, hint, readoutLabel, noneLabel }) {
+export function FormationProbe({ title, hint, readoutLabel, noneLabel, start = START_ORDER }) {
   /* formationName() liest die aktive Sprache intern (wie glossaryEntries im Glossar) → der Locale
      muss als Trigger in die Abhängigkeiten, sonst bliebe der Name beim Sprachwechsel stehen. */
   const [locale] = useLocale();
-  const [order, setOrder] = useState(START_ORDER);
+  const [order, setOrder] = useState(start);
   const swap = (a, b) => setOrder((o) => { const n = o.slice(); [n[a], n[b]] = [n[b], n[a]]; return n; });
 
   const readout = useMemo(() => {
@@ -210,55 +338,6 @@ export function ScoreProbe({ title, hint, readoutLabel, labels }) {
   );
 }
 
-/* ---- Architekt-Probierfeld ----
-   Ein AUSSCHNITT des Bretts. Das volle Brett wäre allein rund 500 px hoch und risse das 400-px-Budget
-   einer Lektion. ZWEI Zeilen reichen: eine volle Zeile ist eine Struktur, die zweite zeigt den
-   Nachbarn für den Distrikt. Der Satz sagt, wie groß das Brett wirklich ist.
-   Drei Zeilen waren der erste Versuch — GEMESSEN 486 px für die Lektion, also 86 px über Budget.
-
-   Die Faktoren kommen aus boardFactorMap/completedStructures in src/game/architect.js — dieselbe
-   Rechnung wie im Lauf. Nachgebaut wird nichts. */
-const PROBE_ROWS = 2;
-export function BoardProbe({ title, hint, readoutLabel, noneLabel }) {
-  const [locale] = useLocale();
-  const [cells, setCells] = useState([]);
-  const toggle = (p) => setCells((c) => (c.includes(p) ? c.filter((x) => x !== p) : [...c, p]));
-
-  const { factor, structures } = useMemo(() => {
-    // Jede belegte Zelle als eigenes einzelliges Gebäude derselben Sorte — die kleinste ehrliche
-    // Eingabe, die structure/district wirklich rechnen lässt.
-    const buildings = cells.map((p) => ({ footprint: [p], cat: "value" }));
-    const map = boardFactorMap(buildings);
-    const f = cells.length ? Math.max(...cells.map((p) => map[p] || 1)) : 1;
-    return { factor: f, structures: completedStructures(new Set(cells)).length };
-  }, [cells]);
-
-  return (
-    <div className="tut-beat tut-probe" style={{ margin: "0 0 14px", padding: "12px 12px 11px", ...ZEILE }}>
-      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 8 }}>{title}</div>
-      <div style={{ display: "grid", gridTemplateColumns: `repeat(${COLS},1fr)`, gap: 4 }}>
-        {Array.from({ length: PROBE_ROWS * COLS }, (_, i) => {
-          const p = posOf(Math.floor(i / COLS), i % COLS);
-          const on = cells.includes(p);
-          return (
-            <button key={p} type="button" onClick={() => toggle(p)} aria-pressed={on ? "true" : "false"}
-              style={{ aspectRatio: "1", minWidth: 0, borderRadius: 6,
-                background: on ? "rgba(59,125,190,.34)" : "linear-gradient(180deg,#242433,#1a1a26)",
-                border: `1px solid ${on ? "#3b7dbe" : "#33333e"}` }} />
-          );
-        })}
-      </div>
-      <div className="tut-probe-out" style={{ marginTop: 10, paddingTop: 9, borderTop: HAIR, display: "flex", alignItems: "baseline", gap: 8 }}>
-        <span className="text-meta-1" style={LABEL}>{readoutLabel}</span>
-        <span className="text-body-lg-5" style={{ color: "#e8e8ea", fontWeight: 700 }}>
-          {structures || factor > 1 ? `×${fmtNum(factor.toFixed(2), locale)}` : noneLabel}
-        </span>
-      </div>
-      {hint && <div className="text-meta-1" style={{ color: "#71717c", marginTop: 7, lineHeight: 1.4 }}>{hint}</div>}
-    </div>
-  );
-}
-
 /* ---- Leitfaden-Verweis ----
    KEINE fünfte Takt-Art: er belegt den Bild-Platz. Die Archetyp-Lektionen VERLINKEN den Leitfaden,
    statt ihn abzuschreiben — die Arbeitsteilung aus tutorial-guided-run-plan.md §1, und der Grund,
@@ -275,17 +354,1304 @@ export function GuideLink({ caption, arch, onOpenGuide }) {
   );
 }
 
+/* ---- Das Duell: zwei Karten treffen aufeinander ----
+
+   Die erste gespielte Runde des Tutorials. Der Leser tippt, ein Stich läuft ab, das Ergebnis steht
+   groß da. Nach vier Stichen ist die Runde zu Ende.
+
+   WAS HIER NICHT NACHGEBAUT IST: der Basiswert je Sieg kommt aus `SCORE_PER_WIN`, der Stichwert
+   geht durch `effectivePlayerValue` — dieselbe Funktion, die der Lauf ruft. Nachgebaut ist einzig
+   der Vergleich „höher gewinnt, gleich zählt nicht", und der IST die Regel, keine Kopie davon.
+
+   `mitStichwert` schaltet die zweite Lektion: dieselbe Runde, aber der Leser legt vorher einen
+   Stichwert auf seine Karte und sieht, dass nur der Kampfwert entscheidet. */
+const DUELL = [
+  { du: 5, geg: 7, boni: [2, 3] },
+  { du: 9, geg: 4, boni: [1, 2] },
+  { du: 6, geg: 6, boni: [3, 4] },
+  { du: 8, geg: 10, boni: [2, 3] },
+];
+const AUSGANG = (du, geg) => (du > geg ? "win" : du === geg ? "tie" : "loss");
+const AUSGANG_FARBE = { win: "#2f9d55", tie: "#8a8a95", loss: "#c0433f" };
+
+export function DuellProbe({ title, hint, readoutLabel, labels, mitStichwert = false }) {
+  const [locale] = useLocale();
+  const [i, setI] = useState(0);
+  const [bonus, setBonus] = useState(0);
+  const [gespielt, setGespielt] = useState(false);
+  const [score, setScore] = useState(0);
+  const r = DUELL[Math.min(i, DUELL.length - 1)];
+  const fertig = i >= DUELL.length;
+  const L = labels || {};
+
+  // effectivePlayerValue OHNE Perks: der Stichwert dieser Lektion ist gesetzt, nicht erspielt.
+  const kampf = effectivePlayerValue(r.du, [], {}) + bonus;
+  const aus = AUSGANG(kampf, r.geg);
+
+  const spielen = () => {
+    if (gespielt) {   // zweiter Tipp: weiter zur nächsten Runde
+      setI((n) => n + 1); setGespielt(false); setBonus(0); return;
+    }
+    setGespielt(true);
+    if (aus === "win") setScore((s) => s + C.SCORE_PER_WIN);
+  };
+
+  return (
+    <div className="tut-beat tut-probe" style={{ margin: "0 0 14px", padding: "12px 12px 11px", ...ZEILE }}>
+      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 8 }}>{title}</div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 14 }}>
+        <DuellKarte wert={r.geg} label={L.gegner} />
+        <span className="text-meta-1" style={{ ...LABEL, letterSpacing: ".2em" }}>{L.gegen}</span>
+        <DuellKarte wert={kampf} label={L.du} hervor={mitStichwert && bonus > 0} />
+      </div>
+
+      {mitStichwert && !gespielt && (
+        <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
+          {r.boni.map((b) => (
+            <button key={b} type="button" onClick={() => setBonus(bonus === b ? 0 : b)}
+              aria-pressed={bonus === b ? "true" : "false"}
+              className="tut-chip text-body-5 font-bold"
+              style={{ flex: "1 1 0", minHeight: 44, borderRadius: 8, padding: "6px 8px",
+                color: bonus === b ? "#e8e8ea" : "#8a8a95",
+                background: bonus === b ? "rgba(150,150,170,.14)" : "rgba(15,15,21,.72)",
+                border: `1px solid ${bonus === b ? "var(--deck-a1,#8a7de0)" : "rgba(150,150,170,.12)"}` }}>
+              {L.trickValue} +{fmtNum(b, locale)}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {!fertig && (
+        <button type="button" onClick={spielen} className="tut-chip text-body-5 font-bold"
+          style={{ width: "100%", minHeight: 44, borderRadius: 8, marginTop: 10, color: "#e8e8ea",
+            background: "rgba(150,150,170,.14)", border: "1px solid var(--deck-a1,#8a7de0)" }}>
+          {gespielt ? L.next : L.play}
+        </button>
+      )}
+
+      <div className="tut-probe-out" style={{ marginTop: 10, paddingTop: 9, borderTop: HAIR, display: "flex", alignItems: "baseline", gap: 8 }}>
+        <span className="text-meta-1" style={LABEL}>{readoutLabel}</span>
+        <span className="text-body-lg-5" style={{ color: "#e8e8ea", fontWeight: 700 }}>{fmtNum(score, locale)}</span>
+        {gespielt && !fertig && (
+          <span className="text-body-5 font-bold" style={{ marginLeft: "auto", color: AUSGANG_FARBE[aus] }}>
+            {L[aus]}
+          </span>
+        )}
+      </div>
+      {hint && <div className="text-meta-1" style={{ color: "#71717c", marginTop: 7, lineHeight: 1.4 }}>{hint}</div>}
+    </div>
+  );
+}
+
+function DuellKarte({ wert, label, hervor = false }) {
+  return (
+    <div style={{ textAlign: "center" }}>
+      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 5 }}>{label}</div>
+      <div className="text-title-2 flex items-center justify-center font-bold"
+        style={{ width: 62, height: 88, borderRadius: 8, color: "#e8e8ea",
+          background: "linear-gradient(180deg,#242433,#1a1a26)",
+          border: `1px solid ${hervor ? "var(--deck-a1,#8a7de0)" : "#33333e"}` }}>{wert}</div>
+    </div>
+  );
+}
+
+/* ---- Die Serie: vier Stiche, und die Reihenfolge entscheidet ----
+   Der Faktor kommt aus STREAK_BASE_STEP, nicht aus einer Tabelle im Text. Anders als das
+   Serien-Probierfeld mit dem Regler wird hier GESPIELT: der Leser tauscht zwei Karten und sieht,
+   dass dieselben vier Karten je nach Reihenfolge eine Serie halten oder abreißen. */
+const SERIE_GEGNER = [4, 8, 3, 9];
+const SERIE_START = [7, 5, 6, 2];
+
+export function SerieProbe({ title, hint, readoutLabel, labels }) {
+  const [locale] = useLocale();
+  const [hand, setHand] = useState(SERIE_START);
+  const [sel, setSel] = useState(null);
+  const L = labels || {};
+
+  const tap = (i) => {
+    if (sel === null) { setSel(i); return; }
+    if (sel === i) { setSel(null); return; }
+    setHand((h) => { const n = h.slice(); [n[sel], n[i]] = [n[i], n[sel]]; return n; });
+    setSel(null);
+  };
+
+  /* Die längste Siegesserie der Hand, Stich für Stich. Ein Gleichstand zählt nicht als Sieg und
+     bricht die Serie ebenso wie eine Niederlage — dieselbe Regel wie im Lauf. */
+  const { best } = useMemo(() => {
+    let lauf = 0, b = 0;
+    for (let k = 0; k < hand.length; k++) {
+      if (hand[k] > SERIE_GEGNER[k]) { lauf += 1; b = Math.max(b, lauf); } else lauf = 0;
+    }
+    return { best: b };
+  }, [hand]);
+  const mult = 1 + Math.min(C.STREAK_BASE_CAP, best * C.STREAK_BASE_STEP);
+
+  return (
+    <div className="tut-beat tut-probe" style={{ margin: "0 0 14px", padding: "12px 12px 11px", ...ZEILE }}>
+      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 8 }}>{title}</div>
+      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 5 }}>{L.gegner}</div>
+      <div style={{ display: "flex", gap: 6 }}>
+        {SERIE_GEGNER.map((v, k) => (
+          <div key={k} className="tut-cell text-body-lg-6 flex items-center justify-center font-bold"
+            style={{ flex: "1 1 0", aspectRatio: "0.7", borderRadius: 6, color: "#8a8a95",
+              background: "rgba(15,15,21,.72)", border: "1px solid #33333e" }}>{v}</div>
+        ))}
+      </div>
+      <div className="text-meta-1" style={{ ...LABEL, margin: "9px 0 5px" }}>{L.du}</div>
+      <div className="tut-probe-row" style={{ display: "flex", gap: 6 }}>
+        {hand.map((v, k) => (
+          <button key={k} type="button" onClick={() => tap(k)} aria-pressed={sel === k ? "true" : "false"}
+            className="tut-cell text-body-lg-6 flex items-center justify-center font-bold"
+            style={{ flex: "1 1 0", aspectRatio: "0.7", borderRadius: 6, color: "#e8e8ea",
+              background: "linear-gradient(180deg,#242433,#1a1a26)",
+              border: `1px solid ${v > SERIE_GEGNER[k] ? "#2f9d55" : "#c0433f"}`,
+              outline: sel === k ? "2px solid var(--deck-a1,#8a7de0)" : undefined, outlineOffset: sel === k ? -2 : undefined }}>
+            {v}
+          </button>
+        ))}
+      </div>
+      <div className="tut-probe-out" style={{ marginTop: 10, paddingTop: 9, borderTop: HAIR, display: "flex", alignItems: "baseline", gap: 8 }}>
+        <span className="text-meta-1" style={LABEL}>{readoutLabel}</span>
+        <span className="text-body-lg-5" style={{ color: "#e8e8ea", fontWeight: 700 }}>
+          {best} · ×{fmtNum(mult.toFixed(2), locale)}
+        </span>
+      </div>
+      {hint && <div className="text-meta-1" style={{ color: "#71717c", marginTop: 7, lineHeight: 1.4 }}>{hint}</div>}
+    </div>
+  );
+}
+
+/* ---- Der Lauf-Bildschirm: tippen und benennen ----
+
+   Die Lektion, die keinen Mechanismus lehrt, sondern eine LANDKARTE. Der Leser tippt auf einen
+   Bereich und liest, was dort steht. Kein Auswendiglernen, kein Text, der neben dem Bildschirm
+   herläuft und beim nächsten Layout-Pass falsch ist.
+
+   Die Namen und Erklärungen holt der Baustein sich SELBST aus dem Register — dieselbe Bauweise wie
+   `formationName` in i18n/labels.js. Sie gehören zum Bildschirm, nicht zur Lektion: derselbe Kopf
+   heißt in jeder Lektion gleich. */
+const MOCK_TEILE = ["kopf", "duell", "mult", "stat"];
+
+export function LaufmockProbe({ title, hint, readoutLabel }) {
+  const [locale] = useLocale();
+  const [sel, setSel] = useState(null);
+  const nm = (id) => t(`tut.m.${id}.name`, null, locale);
+
+  return (
+    <div className="tut-beat tut-probe" style={{ margin: "0 0 14px", padding: "12px 12px 11px", ...ZEILE }}>
+      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 8 }}>{title}</div>
+      <div style={{ display: "grid", gap: 6 }}>
+        {MOCK_TEILE.map((id) => (
+          <button key={id} type="button" onClick={() => setSel(sel === id ? null : id)}
+            aria-pressed={sel === id ? "true" : "false"}
+            className="tut-mockteil text-body-5 text-left font-semibold"
+            style={{ minHeight: 44, borderRadius: 8, padding: "10px 11px",
+              color: sel === id ? "#e8e8ea" : "#8a8a95",
+              background: sel === id ? "rgba(150,150,170,.14)" : "rgba(15,15,21,.72)",
+              border: `1px solid ${sel === id ? "var(--deck-a1,#8a7de0)" : "rgba(150,150,170,.12)"}` }}>
+            {nm(id)}
+          </button>
+        ))}
+      </div>
+      <div className="tut-probe-out" style={{ marginTop: 10, paddingTop: 9, borderTop: HAIR }}>
+        <div className="text-meta-1" style={LABEL}>{readoutLabel}</div>
+        <p className="text-body-5" style={{ color: "#c8c8d0", margin: "5px 0 0", lineHeight: 1.45 }}>
+          {sel ? t(`tut.m.${sel}.text`, null, locale) : hint}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* ---- Woher der Score kommt: die Kette rückwärts ----
+
+   Die letzte Lektion der Grundlagen fasst zusammen, was die vorigen einzeln gezeigt haben: dass
+   ein Score ein PRODUKT ist. Jede Zeile ist ein Faktor, und der Leser schaltet sie einzeln zu.
+
+   Die Basis kommt aus SCORE_PER_WIN, der Crit aus CRIT_BASE_MULT. Serie und Formation stehen als
+   Beispielwerte einer gespielten Hand — sie sind kein Balancing, sondern EIN Fall, und deshalb
+   hier und nicht in den Konstanten. */
+const HERKUNFT = [
+  { id: "streak", f: 1.10 }, { id: "form", f: 1.50 }, { id: "crit", f: C.CRIT_BASE_MULT },
+];
+const HERKUNFT_SIEGE = 4;
+
+export function HerkunftProbe({ title, hint, readoutLabel, labels }) {
+  const [locale] = useLocale();
+  const [on, setOn] = useState({ streak: false, form: false, crit: false });
+  const basis = HERKUNFT_SIEGE * C.SCORE_PER_WIN;
+  const total = HERKUNFT.reduce((p, c) => p * (on[c.id] ? c.f : 1), basis);
+  const L = labels || {};
+
+  return (
+    <div className="tut-beat tut-probe" style={{ margin: "0 0 14px", padding: "12px 12px 11px", ...ZEILE }}>
+      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 8 }}>{title}</div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "0 2px 8px" }}>
+        <span className="text-meta-1" style={LABEL}>{L.wins}</span>
+        <span className="text-body-5 font-bold" style={{ color: "#c8c8d0" }}>
+          {HERKUNFT_SIEGE} × {fmtNum(C.SCORE_PER_WIN, locale)}
+        </span>
+      </div>
+      <div style={{ display: "grid", gap: 6 }}>
+        {HERKUNFT.map((c) => (
+          <button key={c.id} type="button" onClick={() => setOn((o) => ({ ...o, [c.id]: !o[c.id] }))}
+            aria-pressed={on[c.id] ? "true" : "false"}
+            className="tut-chip text-body-5 font-bold"
+            style={{ minHeight: 44, borderRadius: 8, padding: "8px 11px", display: "flex", justifyContent: "space-between",
+              color: on[c.id] ? "#e8e8ea" : "#8a8a95",
+              background: on[c.id] ? "rgba(150,150,170,.14)" : "rgba(15,15,21,.72)",
+              border: `1px solid ${on[c.id] ? "var(--deck-a1,#8a7de0)" : "rgba(150,150,170,.12)"}` }}>
+            <span>{L[c.id] || c.id}</span>
+            <span>×{fmtNum(c.f.toFixed(2), locale)}</span>
+          </button>
+        ))}
+      </div>
+      <div className="tut-probe-out" style={{ marginTop: 10, paddingTop: 9, borderTop: HAIR, display: "flex", alignItems: "baseline", gap: 8 }}>
+        <span className="text-meta-1" style={LABEL}>{readoutLabel}</span>
+        <span className="text-body-lg-5" style={{ color: "#e8e8ea", fontWeight: 700 }}>{fmtNum(Math.round(total), locale)}</span>
+      </div>
+      {hint && <div className="text-meta-1" style={{ color: "#71717c", marginTop: 7, lineHeight: 1.4 }}>{hint}</div>}
+    </div>
+  );
+}
+
+/* ---- Aufstellen: tauschen kostet Energie ----
+
+   Das Formations-Feld lässt beliebig oft tauschen. Die echte Aufstellungsphase nicht: jeder Tausch
+   kostet eine Energie, und `FORMATION_ENERGY` sagt, wie viele es je Phase sind. Diese Runde ist
+   dieselbe Fläche mit der echten Schranke davor, plus Rückgängig und Zurücksetzen.
+
+   Rückgängig gibt die Energie ZURÜCK. Das ist keine Bequemlichkeit, sondern das Verhalten des
+   Spiels: ein zurückgenommener Tausch hat nicht stattgefunden. Wer das im Tutorial anders baut,
+   lehrt eine Regel, die es nicht gibt. */
+const AUF_START = [26, 18, 24, 15, 20];
+
+export function AufstellenProbe({ title, hint, readoutLabel, noneLabel, labels }) {
+  const [locale] = useLocale();
+  const [verlauf, setVerlauf] = useState([AUF_START]);
+  const order = verlauf[verlauf.length - 1];
+  const genutzt = verlauf.length - 1;
+  const uebrig = ENERGY_FLOOR - genutzt;
+  const L = labels || {};
+
+  const swap = (a, b) => {
+    if (uebrig <= 0) return;                       // keine Energie, kein Tausch
+    setVerlauf((v) => {
+      const n = order.slice(); [n[a], n[b]] = [n[b], n[a]];
+      return [...v, n];
+    });
+  };
+  const zurueck = () => setVerlauf((v) => (v.length > 1 ? v.slice(0, -1) : v));
+  const anfang = () => setVerlauf([AUF_START]);
+
+  const readout = useMemo(() => {
+    const { count, maxMult } = summarizeFormations(computeFormations(order, DECK));
+    return count ? `×${fmtNum(maxMult.toFixed(2), locale)}` : noneLabel;
+  }, [order, noneLabel, locale]);
+
+  return (
+    <div className="tut-beat tut-probe" style={{ margin: "0 0 14px", padding: "12px 12px 11px", ...ZEILE }}>
+      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 8 }}>{title}</div>
+      <Reihe cards={DECK} order={order} onSwap={swap} gesperrt={uebrig <= 0} />
+      <div style={{ display: "flex", gap: 6, marginTop: 9 }}>
+        <KnopfKlein text={L.undo} onClick={zurueck} aktiv={genutzt > 0} />
+        <KnopfKlein text={L.reset} onClick={anfang} aktiv={genutzt > 0} />
+      </div>
+      <div className="tut-probe-out" style={{ marginTop: 10, paddingTop: 9, borderTop: HAIR, display: "flex", alignItems: "baseline", gap: 8 }}>
+        <span className="text-meta-1" style={LABEL}>{L.energy}</span>
+        <span className="text-body-lg-5" style={{ color: uebrig > 0 ? "#e8e8ea" : "#c0433f", fontWeight: 700 }}>{uebrig}</span>
+        <span className="text-meta-1" style={{ ...LABEL, marginLeft: "auto" }}>{readoutLabel}</span>
+        <span className="text-body-lg-5" style={{ color: "#e8e8ea", fontWeight: 700 }}>{readout}</span>
+      </div>
+      {hint && <div className="text-meta-1" style={{ color: "#71717c", marginTop: 7, lineHeight: 1.4 }}>{hint}</div>}
+    </div>
+  );
+}
+
+/* Die tippbare Kartenreihe, geteilt von den Aufstellungs-Runden. Tippen-Tippen statt Ziehen, aus
+   demselben Grund wie beim Probierfeld: eine 55-px-Zelle verliert jeden Ziehwettstreit gegen den
+   Scroller darunter. */
+function Reihe({ cards, order, onSwap, gesperrt = false, markiert = null, onTap = null, anatomie = null }) {
+  const [sel, setSel] = useState(null);
+  const tap = (i) => {
+    if (onTap) { onTap(i); return; }
+    if (gesperrt) return;
+    if (sel === null) { setSel(i); return; }
+    if (sel === i) { setSel(null); return; }
+    onSwap(sel, i); setSel(null);
+  };
+  return (
+    <div className="tut-probe-row" style={{ display: "flex", gap: 6 }}>
+      {order.map((di, i) => (
+        <CardCell key={`${di}-${i}`} card={cards[di]} on={onTap ? markiert === i : sel === i} onClick={() => tap(i)}
+          marks={anatomie ? anatomie[i].marks : null} mult={anatomie ? anatomie[i].mult : null} />
+      ))}
+    </div>
+  );
+}
+
+function KnopfKlein({ text, onClick, aktiv }) {
+  return (
+    <button type="button" onClick={onClick} disabled={!aktiv}
+      className="tut-chip text-body-5 font-semibold"
+      style={{ flex: "1 1 0", minHeight: 44, borderRadius: 8, padding: "6px 8px",
+        color: aktiv ? "#c8c8d0" : "#5c5c68", background: "rgba(15,15,21,.72)",
+        border: "1px solid rgba(150,150,170,.12)", cursor: aktiv ? "pointer" : "default" }}>
+      {text}
+    </button>
+  );
+}
+
+/* ---- Was auf einer Karte steht ----
+
+   Kein Umsortieren, nur Hinsehen: der Leser tippt eine Karte an und bekommt aufgeschlüsselt, was
+   die Zeichen darauf bedeuten. Die Kürzel kommen aus dem Register (`formationAbbr`), der
+   Multiplikator aus `computeFormations` — dieselbe Rechnung wie im Lauf.
+
+   Die Lage ist fest und trägt bewusst MEHRERE Formationen auf einer Karte, sonst hätte die Lektion
+   nichts aufzuschlüsseln. */
+const KARTE_LAGE = [7, 0, 33, 3, 9];   // R8 R1 Y4 R4 R10
+
+export function KartenteileProbe({ title, hint, readoutLabel, noneLabel, labels }) {
+  const [locale] = useLocale();
+  const [sel, setSel] = useState(null);
+  const L = labels || {};
+  const per = useMemo(() => computeFormations(KARTE_LAGE, DECK), []);
+  /* Was auf der Karte STEHT: unten die Kürzel ihrer Formationen, oben rechts der Multiplikator
+     dieser Position. „×1,00" bleibt weg — eine Karte, die nichts zahlt, soll auch nichts anzeigen,
+     und genau das ist der Punkt der Lektion. */
+  const anatomie = useMemo(() => per.map((p) => ({
+    marks: p.formations.map((x) => formationAbbr(x.type)).join("") || null,
+    mult: p.mult > 1 ? `×${fmtNum(p.mult.toFixed(2), locale)}` : null,
+  })), [per, locale]);
+
+  const zeile = () => {
+    if (sel === null) return hint;
+    const karte = DECK[KARTE_LAGE[sel]];
+    const f = per[sel]?.formations ?? [];
+    const teile = [`${L.cardValue}: ${karte.value}`, `${L.suit}: ${C.suitName(karte.suit)}`];
+    if (!f.length) return `${teile.join(" · ")} · ${noneLabel}`;
+    const namen = f.map((x) => `${formationAbbr(x.type)} ${formationName(x.type)}`).join(" + ");
+    /* `mult` steht JE POSITION, nicht je Formation. Genau darum geht es in dieser Lektion: die
+       ersten beiden Karten einer Formation tragen ihr Kürzel und stehen trotzdem bei ×1,00. */
+    return `${teile.join(" · ")} · ${namen} · ×${fmtNum(per[sel].mult.toFixed(2), locale)}`;
+  };
+
+  return (
+    <div className="tut-beat tut-probe" style={{ margin: "0 0 14px", padding: "12px 12px 11px", ...ZEILE }}>
+      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 8 }}>{title}</div>
+      <Reihe cards={DECK} order={KARTE_LAGE} markiert={sel} onTap={(i) => setSel(sel === i ? null : i)}
+        anatomie={anatomie} />
+      <div className="tut-probe-out" style={{ marginTop: 10, paddingTop: 9, borderTop: HAIR }}>
+        <div className="text-meta-1" style={LABEL}>{readoutLabel}</div>
+        <p className="text-body-5" style={{ color: "#c8c8d0", margin: "5px 0 0", lineHeight: 1.45 }}>{zeile()}</p>
+      </div>
+    </div>
+  );
+}
+
+/* ---- Der Architekt: das Brett und die Strukturen ----
+
+   KEIN FREIES ANKLICKEN, und das ist eine Owner-Entscheidung mit einem harten Grund dahinter: das
+   alte Brett-Probierfeld setzte jede angetippte Zelle als EINZELLIGES Gebäude. Solche Gebäude gibt
+   es im Spiel nicht — keine der 41 Familien hat die Form `single`, die kleinste ist `domino`. Das
+   Feld zeigte damit eine Lage, die niemand bauen kann, und über zwei sichtbare Zeilen ließ sich
+   ohnehin nie eine Spalte oder Diagonale schließen.
+
+   Stattdessen vier feste Lagen aus ECHTEN Familien. Alle acht Gebäude sind nachgeschlagen, ihre
+   Kategorien und Formen stimmen mit ARCHITECT_FAMILIES überein, und die Faktoren kommen aus
+   `boardFactorMap` — nachgerechnet ×1,35 · ×1,75 · ×1,62 · ×1,08.
+
+   Die Distrikt-Lage ist der Beleg für die Lektion: dort steht die Struktur bei ×1,00 und der
+   Distrikt bei ×1,08. Zwei verschiedene Dinge, und genau das sagt der Tipp. */
+const AP = (r, c) => posOf(r, c);
+const GEB = (id, familyId, tier, footprint) => ({ id, familyId, tier, footprint });
+const ARCH_LAGEN = {
+  zeile:    [GEB("a", "A_ZOLLHAUS", 2, [AP(3, 0), AP(3, 1)]),
+             GEB("b", "A_RIEGEL", 1, [AP(3, 2), AP(3, 3), AP(3, 4)])],
+  spalte:   [GEB("a", "A_REIHENHAUS", 1, [AP(0, 2), AP(1, 2), AP(2, 2), AP(3, 2)]),
+             GEB("b", "A_FIRST", 1, [AP(4, 2), AP(5, 2), AP(6, 2), AP(7, 2)])],
+  diag:     [GEB("a", "A_LAUFGANG", 1, [AP(1, 0), AP(2, 1), AP(3, 2)]),
+             GEB("b", "A_FRIES", 1, [AP(4, 3), AP(4, 4), AP(5, 3), AP(5, 4)])],
+  distrikt: [GEB("a", "A_STUETZE", 1, [AP(3, 1), AP(3, 2)]),
+             GEB("b", "A_QUADER", 1, [AP(4, 2), AP(4, 3), AP(5, 2), AP(5, 3)])],
+};
+const ARCH_LAGEN_IDS = ["zeile", "spalte", "diag", "distrikt"];
+const ARCH_SEL = AP(3, 2);   // in allen vier Lagen belegt, damit nur die LAGE den Unterschied macht
+
+export function StrukturProbe({ title, hint, readoutLabel, labels }) {
+  const [locale] = useLocale();
+  const [lage, setLage] = useState("zeile");
+  const L = labels || {};
+  const geb = ARCH_LAGEN[lage];
+
+  const { faktor, farben } = useMemo(() => {
+    const map = boardFactorMap(geb);
+    const f = new Map();
+    for (const b of geb) {
+      const fam = familyDef(b.familyId);
+      for (const p of b.footprint) f.set(p, fam ? ARCH_CAT[fam.category]?.color : "#5c5c68");
+    }
+    return { faktor: map[ARCH_SEL] ?? 1, farben: f };
+  }, [geb]);
+
+  return (
+    <div className="tut-beat tut-probe" style={{ margin: "0 0 14px", padding: "12px 12px 11px", ...ZEILE }}>
+      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 8 }}>{title}</div>
+      <div style={{ display: "flex", gap: 5, marginBottom: 9 }}>
+        {ARCH_LAGEN_IDS.map((id) => (
+          <button key={id} type="button" onClick={() => setLage(id)} aria-pressed={lage === id ? "true" : "false"}
+            className="tut-chip text-body-5 font-semibold"
+            style={{ flex: "1 1 0", minWidth: 0, minHeight: 44, borderRadius: 8, padding: "5px 4px",
+              color: lage === id ? "#e8e8ea" : "#8a8a95",
+              background: lage === id ? "rgba(150,150,170,.14)" : "rgba(15,15,21,.72)",
+              border: `1px solid ${lage === id ? "var(--deck-a1,#8a7de0)" : "rgba(150,150,170,.12)"}` }}>
+            {L[id] || id}
+          </button>
+        ))}
+      </div>
+      <Brett farben={farben} markiert={ARCH_SEL} />
+      <div className="tut-probe-out" style={{ marginTop: 10, paddingTop: 9, borderTop: HAIR, display: "flex", alignItems: "baseline", gap: 8 }}>
+        <span className="text-meta-1" style={LABEL}>{readoutLabel}</span>
+        <span className="text-body-lg-5" style={{ color: "#e8e8ea", fontWeight: 700 }}>×{fmtNum(faktor.toFixed(2), locale)}</span>
+        <span className="text-body-5 font-bold" style={{ marginLeft: "auto", color: "#c8c8d0" }}>
+          {fmtNum(Math.round(C.SCORE_PER_WIN * faktor), locale)}
+        </span>
+      </div>
+      {hint && <div className="text-meta-1" style={{ color: "#71717c", marginTop: 7, lineHeight: 1.4 }}>{hint}</div>}
+    </div>
+  );
+}
+
+/* Das ganze Brett, alle ROWS × COLS. Acht Zeilen sind Pflicht: ohne sie lässt sich eine Spalte
+   nicht schließen und eine Diagonale nicht zeigen — der Grund, warum der Vorgänger mit zwei Zeilen
+   scheiterte.
+
+   DIE ZELLEN SIND BREITER ALS HOCH, und das ist eine Messung, keine Vorliebe. Quadratisch ergaben
+   acht Zeilen 544 px allein fürs Gitter, und beide Architekt-Lektionen rissen mit 1.151 und
+   1.159 px ihr Budget. Bei 1,9 sind es rund 300. Die Zellen tragen ohnehin keinen Text, nur Farbe,
+   also kostet die flachere Form nichts an Lesbarkeit.
+
+   `zeilen` schneidet das Brett ab, wo eine Lektion nicht das ganze braucht: die Bau-Runde lehrt
+   Setzen, Schieben und Drehen und kommt mit vier Zeilen aus. Strukturen brauchen alle acht. */
+function Brett({ farben, markiert, zeilen = ROWS }) {
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: `repeat(${COLS},1fr)`, gap: 3 }}>
+      {Array.from({ length: zeilen * COLS }, (_, p) => {
+        const farbe = farben.get(p);
+        return (
+          <div key={p} style={{ aspectRatio: "1.9", minWidth: 0, borderRadius: 4,
+            background: farbe ? `${farbe}44` : "linear-gradient(180deg,#242433,#1a1a26)",
+            border: `1px solid ${farbe || "#2a2a34"}`,
+            outline: p === markiert ? "2px solid var(--deck-a1,#8a7de0)" : undefined, outlineOffset: -2 }} />
+        );
+      })}
+    </div>
+  );
+}
+
+/* ---- Die Hauptaktion: bauen oder aufwerten ----
+
+   Der Tipp der Lektion sagt: gebaut wird sofort beim Antippen, der Platz kommt danach, und
+   Verschieben und Drehen kosten nichts. Genau das muss die Runde zeigen, sonst behauptet der Text
+   etwas, das der Schirm nicht tut.
+
+   Das Angebot sind ARCHITECT_OFFER echte Baupläne; der Wert je Stufe kommt aus `tierNum`. */
+const BAU_ANGEBOT = ["A_ZOLLHAUS", "A_RIEGEL", "A_QUADER"];
+const BAU_START = AP(1, 1);
+const BAU_ZEILEN = 4;
+
+export function BauenProbe({ title, hint, readoutLabel, noneLabel, labels }) {
+  const [locale] = useLocale();
+  const [wahl, setWahl] = useState(null);
+  const [anker, setAnker] = useState(BAU_START);
+  const [gedreht, setGedreht] = useState(false);
+  const L = labels || {};
+
+  const fam = wahl ? familyDef(wahl) : null;
+  const zellen = useMemo(() => (fam ? formZellen(fam.form, anker, gedreht) : []), [fam, anker, gedreht]);
+  const farben = useMemo(() => {
+    const m = new Map();
+    if (fam) for (const p of zellen) m.set(p, ARCH_CAT[fam.category]?.color || "#5c5c68");
+    return m;
+  }, [fam, zellen]);
+
+  const schieben = (dr, dc) => setAnker((a) => {
+    const r = rowOf(a) + dr, c = colOf(a) + dc;
+    if (r < 0 || r >= BAU_ZEILEN || c < 0 || c >= COLS) return a;
+    const neu = posOf(r, c);
+    const zellen2 = formZellen(fam.form, neu, gedreht);
+    return zellen2.length && zellen2.every((p) => p < BAU_ZEILEN * COLS) ? neu : a;
+  });
+
+  return (
+    <div className="tut-beat tut-probe" style={{ margin: "0 0 14px", padding: "12px 12px 11px", ...ZEILE }}>
+      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 8 }}>{title}</div>
+      <div style={{ display: "flex", gap: 5, marginBottom: 9 }}>
+        {BAU_ANGEBOT.map((id) => {
+          const f = familyDef(id), on = wahl === id;
+          return (
+            <button key={id} type="button" onClick={() => { setWahl(id); setAnker(BAU_START); setGedreht(false); }}
+              aria-pressed={on ? "true" : "false"} className="tut-chip text-body-5 font-semibold"
+              style={{ flex: "1 1 0", minWidth: 0, minHeight: 44, borderRadius: 8, padding: "5px 4px",
+                color: on ? "#e8e8ea" : "#8a8a95",
+                background: on ? "rgba(150,150,170,.14)" : "rgba(15,15,21,.72)",
+                border: `1px solid ${on ? ARCH_CAT[f.category]?.color || "#8a7de0" : "rgba(150,150,170,.12)"}` }}>
+              {f ? f.name : id}
+            </button>
+          );
+        })}
+      </div>
+      {/* Vier Zeilen reichen: diese Runde lehrt Setzen, Schieben und Drehen. Strukturen kommen
+          erst in der nächsten Lektion, und DIE braucht dann das ganze Brett. */}
+      <Brett farben={farben} markiert={-1} zeilen={BAU_ZEILEN} />
+      {wahl ? (
+        <div style={{ display: "flex", gap: 5, marginTop: 9 }}>
+          <KnopfKlein text="↑" onClick={() => schieben(-1, 0)} aktiv />
+          <KnopfKlein text="↓" onClick={() => schieben(1, 0)} aktiv />
+          <KnopfKlein text="←" onClick={() => schieben(0, -1)} aktiv />
+          <KnopfKlein text="→" onClick={() => schieben(0, 1)} aktiv />
+          <KnopfKlein text={L.rotate} onClick={() => setGedreht((g) => !g)} aktiv />
+        </div>
+      ) : null}
+      <div className="tut-probe-out" style={{ marginTop: 10, paddingTop: 9, borderTop: HAIR, display: "flex", alignItems: "baseline", gap: 8 }}>
+        <span className="text-meta-1" style={LABEL}>{readoutLabel}</span>
+        <span className="text-body-lg-5" style={{ color: "#e8e8ea", fontWeight: 700 }}>
+          {fam ? `+${fmtNum(tierNum(basisWert(fam), 1), locale)} ${einheit(fam, L)}` : noneLabel}
+        </span>
+      </div>
+      {hint && <div className="text-meta-1" style={{ color: "#71717c", marginTop: 7, lineHeight: 1.4 }}>{hint}</div>}
+    </div>
+  );
+}
+
+/* `base` ist ein OBJEKT, kein Zahlwert: `{ kind: "flat", score: 35 }` bei Score-Gebäuden,
+   `{ kind: "flat", value: 1 }` bei Wert-Gebäuden. Erst dachte ich, es sei eine Zahl, und die
+   Ablesung stand auf NaN. Die Einheit unterscheidet sich mit: Score-Gebäude zahlen Score,
+   Wert-Gebäude heben den Kartenwert. */
+const basisWert = (fam) => fam.base?.score ?? fam.base?.value ?? 0;
+const einheit = (fam, L) => (fam.category === "score" ? L.scoreUnit : L.cardValue);
+
+/* Die Zellen einer Form ab einem Anker. NUR die drei Formen des Angebots — eine vollständige
+   Formentabelle gehört nach architect.js, nicht ins Tutorial, und dort steht sie bereits für den
+   echten Bau. Hier reicht, was diese eine Runde zeigt. */
+function formZellen(form, anker, gedreht) {
+  const r = rowOf(anker), c = colOf(anker);
+  const rel = {
+    domino: gedreht ? [[0, 0], [1, 0]] : [[0, 0], [0, 1]],
+    tromino_i: gedreht ? [[0, 0], [1, 0], [2, 0]] : [[0, 0], [0, 1], [0, 2]],
+    block2x2: [[0, 0], [0, 1], [1, 0], [1, 1]],
+  }[form] || [[0, 0]];
+  const out = [];
+  for (const [dr, dc] of rel) {
+    const rr = r + dr, cc = c + dc;
+    if (rr < 0 || rr >= ROWS || cc < 0 || cc >= COLS) return [];
+    out.push(posOf(rr, cc));
+  }
+  return out;
+}
+
+/* ---- Der Bauphasen-Bildschirm: tippen und benennen ----
+   Dieselbe Bauweise wie der Lauf-Bildschirm; die Namen liegen unter `tut.a.*`. */
+const ARCH_TEILE = ["kopf", "brett", "plaene", "boost"];
+
+export function ArchmockProbe({ title, hint, readoutLabel }) {
+  const [locale] = useLocale();
+  const [sel, setSel] = useState(null);
+  return (
+    <div className="tut-beat tut-probe" style={{ margin: "0 0 14px", padding: "12px 12px 11px", ...ZEILE }}>
+      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 8 }}>{title}</div>
+      <div style={{ display: "grid", gap: 6 }}>
+        {ARCH_TEILE.map((id) => (
+          <button key={id} type="button" onClick={() => setSel(sel === id ? null : id)}
+            aria-pressed={sel === id ? "true" : "false"}
+            className="tut-mockteil text-body-5 text-left font-semibold"
+            style={{ minHeight: 44, borderRadius: 8, padding: "10px 11px",
+              color: sel === id ? "#e8e8ea" : "#8a8a95",
+              background: sel === id ? "rgba(150,150,170,.14)" : "rgba(15,15,21,.72)",
+              border: `1px solid ${sel === id ? "var(--deck-a1,#8a7de0)" : "rgba(150,150,170,.12)"}` }}>
+            {t(`tut.a.${id}.name`, null, locale)}
+          </button>
+        ))}
+      </div>
+      <div className="tut-probe-out" style={{ marginTop: 10, paddingTop: 9, borderTop: HAIR }}>
+        <div className="text-meta-1" style={LABEL}>{readoutLabel}</div>
+        <p className="text-body-5" style={{ color: "#c8c8d0", margin: "5px 0 0", lineHeight: 1.45 }}>
+          {sel ? t(`tut.a.${sel}.text`, null, locale) : hint}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* ---- Die Perk-Kategorien ----
+
+   Sechs Kacheln, jede in ihrer eigenen Farbe, mit der Zahl ihrer Familien. Namen, Beschreibungen
+   und Farben kommen aus `perkCat` — dem Register, das auch der Perk-Bildschirm liest. Die Zahlen
+   sind aus FAMILY_DEFS GEZÄHLT, nicht gesetzt: kommt eine Familie dazu, wandert die Kachel mit. */
+const KAT_ZAEHLUNG = (() => {
+  const n = {};
+  for (const f of Object.values(FAMILY_DEFS)) n[f.cat] = (n[f.cat] || 0) + 1;
+  return n;
+})();
+const KAT_IDS = Object.keys(KAT_ZAEHLUNG);
+
+export function KategorienProbe({ title, hint, readoutLabel }) {
+  const [locale] = useLocale();
+  const [sel, setSel] = useState(null);
+  // perkCat() liest die Sprache intern — der Locale ist hier der Auslöser fürs Neuzeichnen.
+  void locale;
+  const def = sel ? perkCat(sel) : null;
+  return (
+    <div className="tut-beat tut-probe" style={{ margin: "0 0 14px", padding: "12px 12px 11px", ...ZEILE }}>
+      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 8 }}>{title}</div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 6 }}>
+        {KAT_IDS.map((id) => {
+          const c = perkCat(id), on = sel === id;
+          return (
+            <button key={id} type="button" onClick={() => setSel(on ? null : id)} aria-pressed={on ? "true" : "false"}
+              className="tut-chip text-body-5 font-semibold"
+              style={{ minHeight: 44, borderRadius: 8, padding: "7px 6px", display: "flex",
+                justifyContent: "space-between", alignItems: "baseline", gap: 5,
+                color: on ? "#e8e8ea" : "#8a8a95",
+                background: on ? `${c?.color || "#5c5c68"}22` : "rgba(15,15,21,.72)",
+                border: `1px solid ${on ? c?.color || "#8a7de0" : "rgba(150,150,170,.12)"}` }}>
+              <span>{c ? c.name : id}</span>
+              <span className="ty-num-sm" style={{ color: c?.color || "#5c5c68" }}>{KAT_ZAEHLUNG[id]}</span>
+            </button>
+          );
+        })}
+      </div>
+      <div className="tut-probe-out" style={{ marginTop: 10, paddingTop: 9, borderTop: HAIR }}>
+        <div className="text-meta-1" style={LABEL}>{readoutLabel}</div>
+        <p className="text-body-5" style={{ color: "#c8c8d0", margin: "5px 0 0", lineHeight: 1.45 }}>
+          {def ? `${def.name}: ${def.desc}` : hint}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* ---- Die Raritäten ----
+   Die vier Stufen plus die legendäre Schicht, in den Farben aus TIER_META. Der Rahmen IST die
+   Information: im Spiel erkennt man die Rarität an ihm, und genau das soll diese Runde einüben. */
+const RAR_STUFEN = [1, 2, 3, 4, "legendary"];
+
+export function RaritaetProbe({ title, hint, readoutLabel }) {
+  const [locale] = useLocale();
+  const [sel, setSel] = useState(null);
+  const meta = (t2) => TIER_META[t2] || null;
+  return (
+    <div className="tut-beat tut-probe" style={{ margin: "0 0 14px", padding: "12px 12px 11px", ...ZEILE }}>
+      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 8 }}>{title}</div>
+      <div style={{ display: "flex", gap: 6 }}>
+        {RAR_STUFEN.map((tr) => {
+          const m = meta(tr), on = sel === tr;
+          return (
+            <button key={String(tr)} type="button" onClick={() => setSel(on ? null : tr)} aria-pressed={on ? "true" : "false"}
+              className="tut-chip text-body-5 font-bold"
+              style={{ flex: "1 1 0", minWidth: 0, minHeight: 52, borderRadius: 8, padding: "6px 4px",
+                color: m?.color || "#8a8a95",
+                background: on ? `${m?.color || "#5c5c68"}22` : "rgba(15,15,21,.72)",
+                border: `${on ? 2 : 1}px solid ${m?.color || "rgba(150,150,170,.12)"}` }}>
+              {tr === "legendary" ? "★" : ["", "I", "II", "III", "IV"][tr]}
+            </button>
+          );
+        })}
+      </div>
+      <div className="tut-probe-out" style={{ marginTop: 10, paddingTop: 9, borderTop: HAIR }}>
+        <div className="text-meta-1" style={LABEL}>{readoutLabel}</div>
+        <p className="text-body-5" style={{ color: "#c8c8d0", margin: "5px 0 0", lineHeight: 1.45 }}>
+          {sel ? `${meta(sel)?.label ?? ""} · ${t(`tut.r.${sel === "legendary" ? "leg" : sel}`, null, locale)}` : hint}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* ---- Die ionisierte Karte ----
+
+   Der Leser legt Stapel auf EINE Karte und sieht beide Wirkungen getrennt: was die Karte selbst
+   beim Sieg zahlt, und was alle Stapel im Deck zusammen an Crit-Chance geben. Die Trennung ist der
+   Punkt der Lektion — der rechte Wert zählt das ganze Deck, nicht diese Karte.
+
+   Beide Zahlen kommen aus den Konstanten: ION_SCORE_PER_STACK je Stapel auf der Karte,
+   ION_CRIT_PP_PER_STACK je Stapel im Deck, gedeckelt bei ION_CRIT_STACK_CAP. */
+export function BlitzkarteProbe({ title, hint, readoutLabel, labels }) {
+  const [locale] = useLocale();
+  const [stapel, setStapel] = useState(0);
+  const [imDeck, setImDeck] = useState(0);
+  const L = labels || {};
+  const voll = stapel >= C.ION_MAX_STACKS;
+  const critPP = Math.min(imDeck + stapel, C.ION_CRIT_STACK_CAP) * C.ION_CRIT_PP_PER_STACK;
+
+  return (
+    <div className="tut-beat tut-probe" style={{ margin: "0 0 14px", padding: "12px 12px 11px", ...ZEILE }}>
+      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 8 }}>{title}</div>
+      <div style={{ display: "flex", justifyContent: "center", marginBottom: 9 }}>
+        <div style={{ width: 78, height: 110, borderRadius: 8, position: "relative",
+          background: "linear-gradient(180deg,#242433,#1a1a26)",
+          border: `${stapel ? 2 : 1}px solid ${stapel ? (voll ? "#8ad4ff" : "#5a8ade") : "#33333e"}` }}>
+          <div style={{ position: "absolute", top: 5, left: 0, right: 0, display: "flex", justifyContent: "center", gap: 3 }}>
+            {Array.from({ length: C.ION_MAX_STACKS }, (_, i) => (
+              <span key={i} style={{ width: 7, height: 7, borderRadius: "50%",
+                background: i < stapel ? "#8ad4ff" : "rgba(150,150,170,.22)" }} />
+            ))}
+          </div>
+          <span className="text-title-2 font-bold" style={{ position: "absolute", inset: 0, display: "flex",
+            alignItems: "center", justifyContent: "center", color: "#e8e8ea" }}>{C.RANKS[6]}</span>
+        </div>
+      </div>
+      <div style={{ display: "flex", gap: 6 }}>
+        <KnopfKlein text={L.less} onClick={() => setStapel((n) => Math.max(0, n - 1))} aktiv={stapel > 0} />
+        <KnopfKlein text={L.more} onClick={() => setStapel((n) => Math.min(C.ION_MAX_STACKS, n + 1))} aktiv={!voll} />
+        <KnopfKlein text={L.deck} onClick={() => setImDeck((n) => (n + C.ION_MAX_STACKS > C.ION_CRIT_STACK_CAP ? 0 : n + C.ION_MAX_STACKS))} aktiv />
+      </div>
+      <div className="tut-probe-out" style={{ marginTop: 10, paddingTop: 9, borderTop: HAIR, display: "flex", alignItems: "baseline", gap: 8 }}>
+        <span className="text-meta-1" style={LABEL}>{readoutLabel}</span>
+        <span className="text-body-lg-5" style={{ color: "#e8e8ea", fontWeight: 700 }}>
+          +{fmtNum(stapel * C.ION_SCORE_PER_STACK, locale)}
+        </span>
+        <span className="text-meta-1" style={{ ...LABEL, marginLeft: "auto" }}>{L.deckWide}</span>
+        <span className="text-body-lg-5" style={{ color: "#e8e8ea", fontWeight: 700 }}>{fmtPct(critPP, locale)}</span>
+      </div>
+      {hint && <div className="text-meta-1" style={{ color: "#71717c", marginTop: 7, lineHeight: 1.4 }}>{hint}</div>}
+    </div>
+  );
+}
+
+/* ---- Eine Karte mit einer wachsenden Zahl und Schwellen ----
+
+   Pflanze und Eis lehren dieselbe Form: EINE Karte, eine Zahl, die steigt, und drei Schwellen, an
+   denen sich etwas ändert. Ein Baustein für beide, konfiguriert statt kopiert — zwei Komponenten,
+   die dasselbe tun, laufen beim nächsten Balancing auseinander.
+
+   Die Schwellen und die Wirkung je Stufe kommen aus den Modulen: `PLANT_GREEN_THRESHOLD` und
+   `PLANT_VALUE_CAP` bei der Pflanze, `THRESHOLDS` und `TIER_MULT` aus glacier.js beim Eis. */
+const STUFEN = {
+  pflanze: {
+    max: 12,
+    farbe: "#5ab87a",
+    schwellen: () => [C.PLANT_GREEN_THRESHOLD],
+    stufe: (n) => (n >= C.PLANT_GREEN_THRESHOLD ? 2 : n > 0 ? 1 : 0),
+    /* Der Wert wächst je WURZELSCHLAG_PER_GROWTH Wachstum um 1, gedeckelt bei PLANT_VALUE_CAP.
+       Nur im reinen Pflanzen-Bau — deshalb der Schalter darunter. */
+    wert: (n, rein, basis) => (rein ? Math.min(C.PLANT_VALUE_CAP, basis + Math.floor(n / C.WURZELSCHLAG_PER_GROWTH)) : basis),
+  },
+  eis: {
+    max: GLACIER.BURST_AT,
+    farbe: "#5a8ade",
+    schwellen: () => GLACIER.THRESHOLDS,
+    stufe: (n) => GLACIER.THRESHOLDS.filter((t2) => n >= t2).length,
+    wert: null,
+  },
+};
+
+export function StufenProbe({ title, hint, readoutLabel, labels, art }) {
+  const [locale] = useLocale();
+  const [n, setN] = useState(0);
+  const [rein, setRein] = useState(true);
+  const K = STUFEN[art];
+  const L = labels || {};
+  const basis = C.RANKS[3];
+  const stufe = K.stufe(n);
+  const reif = art === "pflanze" ? n >= C.PLANT_GREEN_THRESHOLD : n >= GLACIER.BURST_AT;
+  const wert = K.wert ? K.wert(n, rein, basis) : basis;
+
+  return (
+    <div className="tut-beat tut-probe" style={{ margin: "0 0 14px", padding: "12px 12px 11px", ...ZEILE }}>
+      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 8 }}>{title}</div>
+      <div style={{ display: "flex", justifyContent: "center", marginBottom: 9 }}>
+        <div style={{ width: 78, height: 110, borderRadius: 8, position: "relative",
+          background: "linear-gradient(180deg,#242433,#1a1a26)",
+          border: `${reif ? 2 : 1}px solid ${stufe ? K.farbe : "#33333e"}` }}>
+          <span className="text-title-2 font-bold" style={{ position: "absolute", inset: 0, display: "flex",
+            alignItems: "center", justifyContent: "center", color: stufe ? K.farbe : "#e8e8ea" }}>{wert}</span>
+          <span className="text-meta-1 ty-num-sm" style={{ position: "absolute", bottom: 4, right: 5, color: K.farbe }}>{n}</span>
+        </div>
+      </div>
+      <input type="range" min="0" max={K.max} value={n} onChange={(e) => setN(Number(e.target.value))}
+        className="tut-slider" style={{ width: "100%" }} aria-label={title} />
+      {K.wert ? (
+        <div style={{ display: "flex", gap: 6, marginTop: 9 }}>
+          <KnopfKlein text={L.pureOnly} onClick={() => setRein(true)} aktiv={!rein} />
+          <KnopfKlein text={L.mixed} onClick={() => setRein(false)} aktiv={rein} />
+        </div>
+      ) : null}
+      <div className="tut-probe-out" style={{ marginTop: 10, paddingTop: 9, borderTop: HAIR, display: "flex", alignItems: "baseline", gap: 8 }}>
+        <span className="text-meta-1" style={LABEL}>{readoutLabel}</span>
+        <span className="text-body-lg-5" style={{ color: "#e8e8ea", fontWeight: 700 }}>{n}</span>
+        <span className="text-meta-1" style={{ ...LABEL, marginLeft: "auto" }}>
+          {art === "eis" ? L.force : L.cardValue}
+        </span>
+        <span className="text-body-lg-5" style={{ color: "#e8e8ea", fontWeight: 700 }}>
+          {art === "eis" ? `×${fmtNum(GLACIER.TIER_MULT[stufe].toFixed(1), locale)}` : wert}
+        </span>
+      </div>
+      {hint && <div className="text-meta-1" style={{ color: "#71717c", marginTop: 7, lineHeight: 1.4 }}>{hint}</div>}
+    </div>
+  );
+}
+
+/* ---- Die Hitzeleiste ----
+   Ein Regler von 0 bis HEAT_MAX und drei Schwellen. Was bei welchem Stand wirkt, steht nicht als
+   Text daneben, sondern leuchtet auf: die Glühende Klinge an ihren drei Stufen, die Glutdividende
+   bis zu ihrem Deckel. */
+const HITZE_MARKEN = () => [
+  { at: C.GLOWING_T1_HEAT, id: "t1", v: C.GLOWING_T1_VALUE },
+  { at: C.GLOWING_T2_HEAT, id: "t2", v: C.GLOWING_T2_VALUE },
+  { at: C.GLOWING_T3_HEAT, id: "t3", v: C.GLOWING_T3_VALUE },
+];
+
+export function HitzeProbe({ title, hint, readoutLabel, labels }) {
+  const [locale] = useLocale();
+  const [h, setH] = useState(0);
+  const L = labels || {};
+  const marken = HITZE_MARKEN();
+  const klinge = marken.filter((m) => h >= m.at).at(-1);
+  // Die Dividende wächst bis FIRE_DIVIDEND_HEAT_CAP und steht danach still.
+  const dividende = Math.round(C.FIRE_HEAT_DIVIDEND * Math.min(h, C.FIRE_DIVIDEND_HEAT_CAP) / C.HEAT_MAX);
+
+  return (
+    <div className="tut-beat tut-probe" style={{ margin: "0 0 14px", padding: "12px 12px 11px", ...ZEILE }}>
+      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 8 }}>{title}</div>
+      <div style={{ height: 12, borderRadius: 6, background: "rgba(15,15,21,.72)", border: "1px solid rgba(150,150,170,.14)", position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", inset: 0, width: `${h}%`, background: "linear-gradient(90deg,#c0433f,#d4a63a)" }} />
+        {marken.map((m) => (
+          <span key={m.id} style={{ position: "absolute", top: 0, bottom: 0, left: `${m.at}%`, width: 1, background: "rgba(232,232,234,.34)" }} />
+        ))}
+      </div>
+      <input type="range" min="0" max={C.HEAT_MAX} value={h} onChange={(e) => setH(Number(e.target.value))}
+        className="tut-slider" style={{ width: "100%", marginTop: 8 }} aria-label={title} />
+      <div className="tut-probe-out" style={{ marginTop: 10, paddingTop: 9, borderTop: HAIR, display: "flex", alignItems: "baseline", gap: 8 }}>
+        <span className="text-meta-1" style={LABEL}>{readoutLabel}</span>
+        <span className="text-body-lg-5" style={{ color: "#e8e8ea", fontWeight: 700 }}>+{fmtNum(dividende, locale)}</span>
+        <span className="text-meta-1" style={{ ...LABEL, marginLeft: "auto" }}>{L.blade}</span>
+        <span className="text-body-lg-5" style={{ color: klinge ? "#d4a63a" : "#5c5c68", fontWeight: 700 }}>
+          {klinge ? `+${klinge.v}` : "—"}
+        </span>
+      </div>
+      {hint && <div className="text-meta-1" style={{ color: "#71717c", marginTop: 7, lineHeight: 1.4 }}>{hint}</div>}
+    </div>
+  );
+}
+
+/* ---- Geschmiedet und gebrandmarkt ----
+   Zwei Karten nebeneinander, und ein Regler, der beide Seiten zugleich bewegt: deine Karte steigt
+   um FORGE_VALUE je Schmiedung, die des Gegners fällt um BRAND_VALUE je Brandmal bis BRAND_VALUE_CAP.
+   Der Vorsprung darunter ist das, worauf Feuer wirklich rechnet. */
+export function FeuerkartenProbe({ title, hint, readoutLabel, labels }) {
+  const [locale] = useLocale();
+  const [schmied, setSchmied] = useState(0);
+  const [brand, setBrand] = useState(0);
+  const L = labels || {};
+  const meine = C.RANKS[6] + schmied * C.FORGE_VALUE;
+  const seine = C.RANKS[8] - Math.min(brand, C.BRAND_VALUE_CAP) * C.BRAND_VALUE;
+  const vorsprung = meine - seine;
+
+  return (
+    <div className="tut-beat tut-probe" style={{ margin: "0 0 14px", padding: "12px 12px 11px", ...ZEILE }}>
+      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 8 }}>{title}</div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 14 }}>
+        <DuellKarte wert={meine} label={L.du} hervor={schmied > 0} />
+        <span className="text-meta-1" style={{ ...LABEL, letterSpacing: ".2em" }}>{L.gegen}</span>
+        <DuellKarte wert={seine} label={L.gegner} hervor={brand > 0} />
+      </div>
+      <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
+        <KnopfKlein text={L.forge} onClick={() => setSchmied((n) => (n >= 3 ? 0 : n + 1))} aktiv />
+        <KnopfKlein text={L.brand} onClick={() => setBrand((n) => (n >= C.BRAND_VALUE_CAP ? 0 : n + 1))} aktiv />
+      </div>
+      <div className="tut-probe-out" style={{ marginTop: 10, paddingTop: 9, borderTop: HAIR, display: "flex", alignItems: "baseline", gap: 8 }}>
+        <span className="text-meta-1" style={LABEL}>{readoutLabel}</span>
+        <span className="text-body-lg-5" style={{ color: vorsprung >= C.HEAT_MIN_MARGIN ? "#d4a63a" : "#e8e8ea", fontWeight: 700 }}>
+          {vorsprung > 0 ? "+" : ""}{fmtNum(vorsprung, locale)}
+        </span>
+        <span className="text-meta-1" style={{ ...LABEL, marginLeft: "auto" }}>{L.heats}</span>
+        <span className="text-body-lg-5" style={{ color: vorsprung >= C.HEAT_MIN_MARGIN ? "#d4a63a" : "#5c5c68", fontWeight: 700 }}>
+          {vorsprung >= C.HEAT_MIN_MARGIN ? L.yes : L.no}
+        </span>
+      </div>
+      {hint && <div className="text-meta-1" style={{ color: "#71717c", marginTop: 7, lineHeight: 1.4 }}>{hint}</div>}
+    </div>
+  );
+}
+
+/* ---- Das grüne Feld ----
+   Fünfzehn Karten in drei Segmenten, drei Füllstände. Grüne Karten gelten als GLEICHE Farbe, auch
+   wenn sie es nicht sind — der Farbblock entsteht also aus der Reife, nicht aus der Farbe. Der
+   Faktor kommt aus derselben `computeFormations`, die im Lauf rechnet. */
+const GRUEN_STUFEN = [0, 10, 15];
+const GRUEN_HAND = [4, 9, 2, 7, 5, 8, 3, 10, 6, 1, 9, 4, 7, 2, 8];
+
+export function GruenfeldProbe({ title, hint, readoutLabel, labels }) {
+  const [locale] = useLocale();
+  const [stufe, setStufe] = useState(0);
+  const L = labels || {};
+  const gruen = GRUEN_STUFEN[stufe];
+  /* Grüne Karten zählen als eine Farbe. Statt das nachzubauen, wird die Hand mit der ECHTEN
+     Funktion gerechnet: die grünen Karten bekommen alle dieselbe Farbe, die übrigen behalten ihre. */
+  const faktor = useMemo(() => {
+    const karten = GRUEN_HAND.map((v, i) => ({ id: i, value: v, suit: i < gruen ? "G" : C.SUIT_ORDER[i % C.SUIT_ORDER.length] }));
+    const per = computeFormations(karten.map((_, i) => i), karten);
+    return summarizeFormations(per).maxMult;
+  }, [gruen]);
+
+  return (
+    <div className="tut-beat tut-probe" style={{ margin: "0 0 14px", padding: "12px 12px 11px", ...ZEILE }}>
+      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 8 }}>{title}</div>
+      <div style={{ display: "flex", gap: 5, marginBottom: 9 }}>
+        {[L.none, L.twoThirds, L.all].map((w, i) => (
+          <button key={i} type="button" onClick={() => setStufe(i)} aria-pressed={stufe === i ? "true" : "false"}
+            className="tut-chip text-body-5 font-semibold"
+            style={{ flex: "1 1 0", minWidth: 0, minHeight: 44, borderRadius: 8, padding: "5px 4px",
+              color: stufe === i ? "#e8e8ea" : "#8a8a95",
+              background: stufe === i ? "rgba(90,184,122,.18)" : "rgba(15,15,21,.72)",
+              border: `1px solid ${stufe === i ? "#5ab87a" : "rgba(150,150,170,.12)"}` }}>{w}</button>
+        ))}
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: `repeat(${SEGMENT_SIZE},1fr)`, gap: 4 }}>
+        {GRUEN_HAND.map((v, i) => (
+          <div key={i} className="tut-cell text-body-5 flex items-center justify-center font-bold"
+            style={{ aspectRatio: "1.2", minWidth: 0, borderRadius: 5,
+              color: i < gruen ? "#5ab87a" : "#c8c8d0",
+              background: "linear-gradient(180deg,#242433,#1a1a26)",
+              border: `1px solid ${i < gruen ? "#5ab87a" : "#33333e"}` }}>{v}</div>
+        ))}
+      </div>
+      <div className="tut-probe-out" style={{ marginTop: 10, paddingTop: 9, borderTop: HAIR, display: "flex", alignItems: "baseline", gap: 8 }}>
+        <span className="text-meta-1" style={LABEL}>{readoutLabel}</span>
+        <span className="text-body-lg-5" style={{ color: "#e8e8ea", fontWeight: 700 }}>{gruen} / {GRUEN_HAND.length}</span>
+        <span className="text-body-lg-5" style={{ marginLeft: "auto", color: "#e8e8ea", fontWeight: 700 }}>×{fmtNum(faktor.toFixed(2), locale)}</span>
+      </div>
+      {hint && <div className="text-meta-1" style={{ color: "#71717c", marginTop: 7, lineHeight: 1.4 }}>{hint}</div>}
+    </div>
+  );
+}
+
+/* ---- Das Gletscherfeld ----
+   Vier feste Formen auf dem Brett. Die Zahl darunter ist die Nachbardichte, aus der glacier.js den
+   Berst-Faktor bildet: 1 + KASKADE_PER_NEIGHBOR je Gletscher-Nachbar. */
+const GLET_FORMEN = {
+  block: [AP(2, 1), AP(2, 2), AP(3, 1), AP(3, 2)],
+  kreuz: [AP(2, 2), AP(3, 1), AP(3, 2), AP(3, 3), AP(4, 2)],
+  linie: [AP(3, 0), AP(3, 1), AP(3, 2), AP(3, 3), AP(3, 4)],
+  flaeche: [AP(2, 1), AP(2, 2), AP(2, 3), AP(3, 1), AP(3, 2), AP(3, 3), AP(4, 2)],
+};
+const GLET_IDS = ["block", "kreuz", "linie", "flaeche"];
+
+export function GletscherfeldProbe({ title, hint, readoutLabel, labels }) {
+  const [locale] = useLocale();
+  const [form, setForm] = useState("block");
+  const L = labels || {};
+  const zellen = GLET_FORMEN[form];
+  const menge = new Set(zellen);
+  // Nachbardichte: wie viele der vier Kantennachbarn ebenfalls Gletscher sind, im Schnitt.
+  const nachbarn = zellen.reduce((sum, p) => {
+    const r = rowOf(p), c = colOf(p), adj = [];
+    if (r > 0) adj.push(posOf(r - 1, c));
+    if (r < ROWS - 1) adj.push(posOf(r + 1, c));
+    if (c > 0) adj.push(posOf(r, c - 1));
+    if (c < COLS - 1) adj.push(posOf(r, c + 1));
+    return sum + adj.filter((q) => menge.has(q)).length;
+  }, 0) / zellen.length;
+  const faktor = 1 + GLACIER.KASKADE_PER_NEIGHBOR * nachbarn;
+  const farben = new Map(zellen.map((p) => [p, "#5a8ade"]));
+
+  return (
+    <div className="tut-beat tut-probe" style={{ margin: "0 0 14px", padding: "12px 12px 11px", ...ZEILE }}>
+      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 8 }}>{title}</div>
+      <div style={{ display: "flex", gap: 5, marginBottom: 9 }}>
+        {GLET_IDS.map((id) => (
+          <button key={id} type="button" onClick={() => setForm(id)} aria-pressed={form === id ? "true" : "false"}
+            className="tut-chip text-body-5 font-semibold"
+            style={{ flex: "1 1 0", minWidth: 0, minHeight: 44, borderRadius: 8, padding: "5px 4px",
+              color: form === id ? "#e8e8ea" : "#8a8a95",
+              background: form === id ? "rgba(90,138,222,.18)" : "rgba(15,15,21,.72)",
+              border: `1px solid ${form === id ? "#5a8ade" : "rgba(150,150,170,.12)"}` }}>
+            {L[id] || id}
+          </button>
+        ))}
+      </div>
+      <Brett farben={farben} markiert={-1} zeilen={6} />
+      <div className="tut-probe-out" style={{ marginTop: 10, paddingTop: 9, borderTop: HAIR, display: "flex", alignItems: "baseline", gap: 8 }}>
+        <span className="text-meta-1" style={LABEL}>{readoutLabel}</span>
+        <span className="text-body-lg-5" style={{ color: "#e8e8ea", fontWeight: 700 }}>{zellen.length}</span>
+        <span className="text-body-lg-5" style={{ marginLeft: "auto", color: "#e8e8ea", fontWeight: 700 }}>×{fmtNum(faktor.toFixed(2), locale)}</span>
+      </div>
+      {hint && <div className="text-meta-1" style={{ color: "#71717c", marginTop: 7, lineHeight: 1.4 }}>{hint}</div>}
+    </div>
+  );
+}
+
+/* ---- Der Endscreen ----
+   Dieselbe Landkarten-Bauweise wie der Lauf- und der Bauphasen-Bildschirm; die Namen liegen unter
+   `tut.g.*`. Drei Bildschirme, eine Form: antippen, lesen, verstanden. */
+const GO_TEILE = ["score", "punkte", "meilen", "best"];
+
+export function GomockProbe({ title, hint, readoutLabel }) {
+  const [locale] = useLocale();
+  const [sel, setSel] = useState(null);
+  return (
+    <div className="tut-beat tut-probe" style={{ margin: "0 0 14px", padding: "12px 12px 11px", ...ZEILE }}>
+      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 8 }}>{title}</div>
+      <div style={{ display: "grid", gap: 6 }}>
+        {GO_TEILE.map((id) => (
+          <button key={id} type="button" onClick={() => setSel(sel === id ? null : id)}
+            aria-pressed={sel === id ? "true" : "false"}
+            className="tut-mockteil text-body-5 text-left font-semibold"
+            style={{ minHeight: 44, borderRadius: 8, padding: "10px 11px",
+              color: sel === id ? "#e8e8ea" : "#8a8a95",
+              background: sel === id ? "rgba(150,150,170,.14)" : "rgba(15,15,21,.72)",
+              border: `1px solid ${sel === id ? "var(--deck-a1,#8a7de0)" : "rgba(150,150,170,.12)"}` }}>
+            {t(`tut.g.${id}.name`, null, locale)}
+          </button>
+        ))}
+      </div>
+      <div className="tut-probe-out" style={{ marginTop: 10, paddingTop: 9, borderTop: HAIR }}>
+        <div className="text-meta-1" style={LABEL}>{readoutLabel}</div>
+        <p className="text-body-5" style={{ color: "#c8c8d0", margin: "5px 0 0", lineHeight: 1.45 }}>
+          {sel ? t(`tut.g.${sel}.text`, null, locale) : hint}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* ---- Die Meilensteine ----
+   Ein Regler über den Score und darunter, was er einbringt. Die Marken kommen aus SP_MILESTONES,
+   die Punkte aus derselben Summe, die die Abrechnung nach dem Lauf zieht.
+
+   Die Marken sitzen NICHT linear auf der Leiste: sie stehen bei 10, 25, 50, 75 und 100 Millionen,
+   und jede belegt ein Fünftel. Genau so zeichnet der Endscreen sie auch. */
+export function MeilensteinProbe({ title, hint, readoutLabel, labels }) {
+  const [locale] = useLocale();
+  const [i, setI] = useState(0);
+  const L = labels || {};
+  const marken = PROG.SP_MILESTONES;
+  const score = i === 0 ? 0 : marken[i - 1].at;
+  const erreicht = marken.filter((m) => score >= m.at);
+  const sp = PROG.SP_PER_RUN + erreicht.reduce((n, m) => n + m.sp, 0);
+
+  return (
+    <div className="tut-beat tut-probe" style={{ margin: "0 0 14px", padding: "12px 12px 11px", ...ZEILE }}>
+      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 8 }}>{title}</div>
+      <div style={{ display: "flex", gap: 3 }}>
+        {marken.map((m, k) => (
+          <div key={m.at} style={{ flex: "1 1 0", height: 10, borderRadius: 3,
+            background: k < erreicht.length ? "var(--deck-a1,#8a7de0)" : "rgba(150,150,170,.14)" }} />
+        ))}
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: `repeat(${marken.length},1fr)`, gap: 3, marginTop: 4 }}>
+        {marken.map((m) => (
+          <span key={m.at} className="text-meta-1 ty-num-sm" style={{ color: "#5c5c68", textAlign: "right" }}>
+            {fmtNum(Math.round(m.at / 1e6), locale)}
+          </span>
+        ))}
+      </div>
+      <input type="range" min="0" max={marken.length} value={i} onChange={(e) => setI(Number(e.target.value))}
+        className="tut-slider" style={{ width: "100%", marginTop: 8 }} aria-label={title} />
+      <div className="tut-probe-out" style={{ marginTop: 10, paddingTop: 9, borderTop: HAIR, display: "flex", alignItems: "baseline", gap: 8 }}>
+        <span className="text-meta-1" style={LABEL}>{readoutLabel}</span>
+        <span className="text-body-lg-5" style={{ color: "#e8e8ea", fontWeight: 700 }}>
+          {erreicht.length} / {marken.length}
+        </span>
+        <span className="text-meta-1" style={{ ...LABEL, marginLeft: "auto" }}>{L.stitchPoints}</span>
+        <span className="text-body-lg-5" style={{ color: "#e8e8ea", fontWeight: 700 }}>+{fmtNum(sp, locale)}</span>
+      </div>
+      {hint && <div className="text-meta-1" style={{ color: "#71717c", marginTop: 7, lineHeight: 1.4 }}>{hint}</div>}
+    </div>
+  );
+}
+
+/* ---- Der Upgrade-Baum ----
+   Zwei Zweige, und je Zweig die echten Knoten mit ihren echten Kosten aus NODES. Kein Nachbau der
+   Baumgrafik: was diese Lektion lehrt, ist WAS man kauft und was es kostet, nicht wie er aussieht. */
+export function BaumProbe({ title, hint, readoutLabel, labels }) {
+  const [locale] = useLocale();
+  const [zweig, setZweig] = useState("gen");
+  const L = labels || {};
+  const knoten = PROG.NODES.filter((n) => n.branch === zweig && !n.placeholder).slice(0, 5);
+  const summe = knoten.reduce((n, x) => n + (x.cost || 0), 0);
+
+  return (
+    <div className="tut-beat tut-probe" style={{ margin: "0 0 14px", padding: "12px 12px 11px", ...ZEILE }}>
+      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 8 }}>{title}</div>
+      <div style={{ display: "flex", gap: 6, marginBottom: 9 }}>
+        {["gen", "deck"].map((z) => (
+          <button key={z} type="button" onClick={() => setZweig(z)} aria-pressed={zweig === z ? "true" : "false"}
+            className="tut-chip text-body-5 font-semibold"
+            style={{ flex: "1 1 0", minHeight: 44, borderRadius: 8, padding: "6px 8px",
+              color: zweig === z ? "#e8e8ea" : "#8a8a95",
+              background: zweig === z ? "rgba(150,150,170,.14)" : "rgba(15,15,21,.72)",
+              border: `1px solid ${zweig === z ? "var(--deck-a1,#8a7de0)" : "rgba(150,150,170,.12)"}` }}>
+            {z === "gen" ? L.branchGen : L.branchDeck}
+          </button>
+        ))}
+      </div>
+      <div style={{ display: "grid", gap: 5 }}>
+        {knoten.map((n) => (
+          <div key={n.id} style={{ ...ZEILE, padding: "8px 10px", display: "flex", justifyContent: "space-between", gap: 8 }}>
+            <span className="text-body-5" style={{ color: "#c8c8d0" }}>{n.label}</span>
+            <span className="text-body-5 ty-num-sm font-bold" style={{ color: "#e8e8ea" }}>{n.cost}</span>
+          </div>
+        ))}
+      </div>
+      <div className="tut-probe-out" style={{ marginTop: 10, paddingTop: 9, borderTop: HAIR, display: "flex", alignItems: "baseline", gap: 8 }}>
+        <span className="text-meta-1" style={LABEL}>{readoutLabel}</span>
+        <span className="text-body-lg-5" style={{ color: "#e8e8ea", fontWeight: 700 }}>{fmtNum(summe, locale)}</span>
+      </div>
+      {hint && <div className="text-meta-1" style={{ color: "#71717c", marginTop: 7, lineHeight: 1.4 }}>{hint}</div>}
+    </div>
+  );
+}
+
+/* ---- Wie die Länge zahlt ----
+
+   Vier Hände, jede erzeugt GENAU EINEN Formationstyp — nachgeprüft mit `computeFormations`, nicht
+   angenommen. Der Regler geht bis SEGMENT_SIZE und nicht weiter, und das ist die eigentliche
+   Lehre dieser Lektion: eine Formation endet an der Segmentgrenze. Ein Regler bis acht hätte ab
+   der sechsten Karte wieder ×1,00 gezeigt, weil dort ein neues Segment beginnt.
+
+   Genau daran hängt die nächste Lektion. */
+const LAENGE_HAENDE = {
+  wiederholung: (n) => Array.from({ length: n }, (_, i) => ({ id: i, value: 5, suit: C.SUIT_ORDER[i % 4] })),
+  farbblock: (n) => Array.from({ length: n }, (_, i) => ({ id: i, value: [3, 5, 4, 6, 5][i % 5], suit: "R" })),
+  treppe: (n) => Array.from({ length: n }, (_, i) => ({ id: i, value: 1 + i, suit: C.SUIT_ORDER[i % 4] })),
+  wechsel: (n) => Array.from({ length: n }, (_, i) => ({ id: i, value: i % 2 ? 1 : 9, suit: C.SUIT_ORDER[i % 4] })),
+};
+const LAENGE_IDS = ["wiederholung", "farbblock", "treppe", "wechsel"];
+
+export function LaengeProbe({ title, hint, readoutLabel }) {
+  const [locale] = useLocale();
+  const [n, setN] = useState(3);
+  const werte = useMemo(() => LAENGE_IDS.map((id) => {
+    const karten = LAENGE_HAENDE[id](n);
+    const per = computeFormations(karten.map((_, i) => i), karten);
+    return { id, mult: per[per.length - 1].mult };
+  }), [n]);
+
+  return (
+    <div className="tut-beat tut-probe" style={{ margin: "0 0 14px", padding: "12px 12px 11px", ...ZEILE }}>
+      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 8 }}>{title}</div>
+      <input type="range" min="2" max={SEGMENT_SIZE} value={n} onChange={(e) => setN(Number(e.target.value))}
+        className="tut-slider" style={{ width: "100%" }} aria-label={title} />
+      <div style={{ display: "grid", gap: 5, marginTop: 9 }}>
+        {werte.map((w) => (
+          <div key={w.id} style={{ ...ZEILE, padding: "7px 10px", display: "flex", justifyContent: "space-between" }}>
+            <span className="text-body-5" style={{ color: "#c8c8d0" }}>{formationName(w.id)}</span>
+            <span className="text-body-5 ty-num-sm font-bold" style={{ color: w.mult > 1 ? "#e8e8ea" : "#5c5c68" }}>
+              ×{fmtNum(w.mult.toFixed(2), locale)}
+            </span>
+          </div>
+        ))}
+      </div>
+      <div className="tut-probe-out" style={{ marginTop: 10, paddingTop: 9, borderTop: HAIR, display: "flex", alignItems: "baseline", gap: 8 }}>
+        <span className="text-meta-1" style={LABEL}>{readoutLabel}</span>
+        <span className="text-body-lg-5" style={{ color: "#e8e8ea", fontWeight: 700 }}>{n}</span>
+      </div>
+      {hint && <div className="text-meta-1" style={{ color: "#71717c", marginTop: 7, lineHeight: 1.4 }}>{hint}</div>}
+    </div>
+  );
+}
+
+/* ---- Segmentgrenzen öffnen ----
+
+   Fünfzehn Karten, neun rote hintereinander, quer über ZWEI Grenzen. Ein Schalter zwischen drei
+   Zuständen, und keine einzige Karte ändert sich dabei.
+
+   Die Hand ist Handarbeit: sie erzeugt NUR einen Farbblock, keine Treppe, keinen Wechsel, keine
+   Wiederholung. Sonst maße die Lektion etwas anderes, als sie behauptet. Gerechnet wird mit
+   `computeFormations` und `E_SEGMENT` im Familien-Argument — dieselbe Stelle, an der der Perk
+   Segmentarbeit im Lauf greift. */
+const SEG_HAND = [[9, "B"], [4, "G"], [7, "Y"], [5, "R"], [8, "R"], [6, "R"], [9, "R"], [7, "R"],
+                  [10, "R"], [4, "R"], [1, "R"], [3, "R"], [10, "B"], [8, "G"], [2, "Y"]]
+  .map(([value, suit], id) => ({ id, value, suit }));
+const SEG_STUFEN = [{}, { E_SEGMENT: 3 }, { E_SEGMENT: 4 }];
+
+export function SegmenteProbe({ title, hint, readoutLabel, labels }) {
+  const [locale] = useLocale();
+  const [stufe, setStufe] = useState(0);
+  const L = labels || {};
+  const per = useMemo(() => computeFormations(
+    SEG_HAND.map((_, i) => i), SEG_HAND, {}, [], [], [], SEG_STUFEN[stufe]), [stufe]);
+  const { maxMult } = summarizeFormations(per);
+  const summe = per.reduce((s, p) => s + p.mult, 0);
+
+  return (
+    <div className="tut-beat tut-probe" style={{ margin: "0 0 14px", padding: "12px 12px 11px", ...ZEILE }}>
+      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 8 }}>{title}</div>
+      <div style={{ display: "flex", gap: 5, marginBottom: 9 }}>
+        {[L.closed, L.segIII, L.segIV].map((w, i) => (
+          <button key={i} type="button" onClick={() => setStufe(i)} aria-pressed={stufe === i ? "true" : "false"}
+            className="tut-chip text-body-5 font-semibold"
+            style={{ flex: "1 1 0", minWidth: 0, minHeight: 44, borderRadius: 8, padding: "5px 4px",
+              color: stufe === i ? "#e8e8ea" : "#8a8a95",
+              background: stufe === i ? "rgba(150,150,170,.14)" : "rgba(15,15,21,.72)",
+              border: `1px solid ${stufe === i ? "var(--deck-a1,#8a7de0)" : "rgba(150,150,170,.12)"}` }}>{w}</button>
+        ))}
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: `repeat(${SEGMENT_SIZE},1fr)`, gap: 4 }}>
+        {SEG_HAND.map((c, i) => (
+          <div key={c.id} className="tut-cell text-body-5 flex items-center justify-center font-bold"
+            style={{ aspectRatio: "1.2", minWidth: 0, borderRadius: 5, color: "#e8e8ea",
+              background: "linear-gradient(180deg,#242433,#1a1a26)",
+              border: `1px solid ${per[i].mult > 1 ? C.suitColor(c.suit) : "#33333e"}`,
+              opacity: per[i].mult > 1 ? 1 : 0.45 }}>{c.value}</div>
+        ))}
+      </div>
+      <div className="tut-probe-out" style={{ marginTop: 10, paddingTop: 9, borderTop: HAIR, display: "flex", alignItems: "baseline", gap: 8 }}>
+        <span className="text-meta-1" style={LABEL}>{readoutLabel}</span>
+        <span className="text-body-lg-5" style={{ color: "#e8e8ea", fontWeight: 700 }}>×{fmtNum(maxMult.toFixed(2), locale)}</span>
+        <span className="text-meta-1" style={{ ...LABEL, marginLeft: "auto" }}>{L.sum}</span>
+        <span className="text-body-lg-5" style={{ color: "#e8e8ea", fontWeight: 700 }}>{fmtNum(summe.toFixed(2), locale)}</span>
+      </div>
+      {hint && <div className="text-meta-1" style={{ color: "#71717c", marginTop: 7, lineHeight: 1.4 }}>{hint}</div>}
+    </div>
+  );
+}
+
 /* Katalog → Komponente. Der Katalog nennt nur einen NAMEN, damit er React-frei bleibt. */
 export const PROBES = {
   formation: FormationProbe,
   streak: StreakProbe,
   score: ScoreProbe,
-  board: BoardProbe,
+  struktur: StrukturProbe,
+  bauen: BauenProbe,
+  archmock: ArchmockProbe,
+  kategorien: KategorienProbe,
+  raritaet: RaritaetProbe,
+  blitzkarte: BlitzkarteProbe,
+  // Dieselbe Form, zwei Archetypen: eine Karte, eine wachsende Zahl, drei Schwellen.
+  pflanzkarte: (p) => <StufenProbe {...p} art="pflanze" />,
+  gletscher: (p) => <StufenProbe {...p} art="eis" />,
+  hitze: HitzeProbe,
+  feuerkarten: FeuerkartenProbe,
+  gruenfeld: GruenfeldProbe,
+  gletscherfeld: GletscherfeldProbe,
+  gomock: GomockProbe,
+  meilenstein: MeilensteinProbe,
+  baum: BaumProbe,
+  laenge: LaengeProbe,
+  segmente: SegmenteProbe,
   deckstrip: ({ caption }) => <Bild cards={START_ORDER.map((i) => DECK[i])} caption={caption} />,
   // Bezeichner ohne Bindestrich: ein zitierter Schlüssel wäre im Wächter nicht als Name erkennbar.
   guideFire: (p) => <GuideLink {...p} arch="fire" />,
   guideLightning: (p) => <GuideLink {...p} arch="lightning" />,
   guideIce: (p) => <GuideLink {...p} arch="ice" />,
   guidePlant: (p) => <GuideLink {...p} arch="plant" />,
+  // Dieselbe Runde, zwei Lektionen: einmal nur der Vergleich, einmal mit gesetztem Stichwert.
+  duell: (p) => <DuellProbe {...p} />,
+  kampfwert: (p) => <DuellProbe {...p} mitStichwert />,
+  serie: SerieProbe,
+  laufmock: LaufmockProbe,
+  herkunft: HerkunftProbe,
+  aufstellen: AufstellenProbe,
+  kartenteile: KartenteileProbe,
+  /* Dieselbe Flaeche wie `formation`, andere Ausgangslage. GESUCHT statt geraten: von 29.988
+     brauchbaren Lagen ist diese eine, in der KEIN Tausch den Wert senkt und vier davon eine
+     Ueberlappung schaffen. Start ×1,25 (eine Wiederholung), erreichbar ×4,96 mit einer Karte in
+     drei Formationen. Ein Probierfeld, das den Leser fuer den offensichtlichen Zug bestraft,
+     lehrt das Gegenteil. */
+  overlap: (p) => <FormationProbe {...p} start={[7, 0, 33, 3, 9]} />,
 };
 export { SEGMENT_SIZE };

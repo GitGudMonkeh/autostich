@@ -611,6 +611,9 @@ gedämpft und sagt das — sie ist nicht bei null.
 **Kleinbeschriftung** (das Label über einer Ablesung, über einem Feld):
 `Geist Mono, 10px, letter-spacing .14em, uppercase, #5c5c68`.
 
+Im Chinesischen trägt diese eine Zeile nicht: von ihren vier Signalen wirkt dort keines. Was an ihre
+Stelle tritt, steht in §12.
+
 ---
 
 ## 7. Text
@@ -769,6 +772,79 @@ misst, bekommt einen vollständigen Satz selbstsicherer, wertloser Zahlen. Zwei 
 jedes Messskript: die Größe der CSS-Antwort prüfen, und abbrechen, wenn `#root` weniger als ein paar
 Dutzend Knoten hat. `scripts/phone-proof.mjs:162` beschreibt dieselbe Falle.
 
+### Die zwei Lektionsarten
+
+Der erste Bau kannte **eine** Art und **ein** Budget: 400 px, „kurz und knackig". Der freigegebene Entwurf
+passt da nicht hinein, und das ist keine Nachlässigkeit: eine Lektion, die eine Mechanik wirklich
+erklärt, braucht mehr als einen halben Schirm.
+
+*Gemessen* am freigegebenen Entwurf bei 390 × 844: Median **645 px**, **31 von 41** Lektionen über
+400, Maximum 1.360. Drei Auflösungen standen zur Wahl — das Budget fällt · der Entwurf wird zerlegt ·
+zwei Arten. Der Owner hat die zwei Arten gewählt.
+
+| Art | Budget | Was sie ist |
+| --- | --- | --- |
+| **kurz** | **400 px** | Eine Sache, ein Blick. Sie scrollt nicht. |
+| **voll** | **960 px** | Die ganze Lektion. Sie scrollt einmal. |
+
+**Woher die 960 kommen.** Eineinhalb Schalenhöhen: 638 × 1,5 = 957, aufgerundet. Einmal
+weiterschieben ist zumutbar, dreimal ist eine Seite ohne Ende. Die Zahl ist hergeleitet, nicht an den
+Bestand angepasst — *gemessen* reißt bei dieser Grenze **genau eine** der 41 Lektionen ihr Budget.
+Ein Budget, das nichts fängt, wäre keins.
+
+**Was beide Arten teilen:** der Tipp steht am Ende, genau einmal. Das ist die Regel, die den
+ursprünglichen Fehler verhindert — das Fazit hinter dem Fuß, während „Weiter" daneben leuchtet — und
+sie gilt für beide unverändert.
+
+**Warum die Arten nicht an der Beweglichkeit hängen.** Der erste Entwurf dieser Regel band das
+höhere Budget an einen beweglichen Teil und nannte die Arten `karte` und `runde`: wer etwas *tut*,
+darf länger sein. Das klingt richtig und ist *gemessen* falsch. Beweglichkeit und Höhe sind im
+freigegebenen Entwurf unkorreliert — Lektionen mit Auftrag spannen 193 bis 1.010 px, reine
+Lesetexte 193 bis 1.360. Die **längste Lektion überhaupt** hat gar keinen beweglichen Teil, und rund
+zehn stille Erklärschirme liegen zwischen 539 und 774 px, darunter jede Sektionseröffnung
+(„Was Blitz ist“, „Was Feuer ist“, …). Die Regel hätte diese zehn ins 400er Budget gezwungen, das
+sie um 140 bis 960 px verfehlen — oder verlangt, dass wir freigegebene Schirme künstlich beweglich
+machen. Ein Name, der etwas verspricht, was die Daten nicht hergeben, ist schlimmer als ein
+farbloser; `kurz` und `voll` sagen genau das, was gemessen wurde.
+
+**Was `voll` davon abhält, ein Freibrief zu werden**, ist deshalb nicht die Beweglichkeit, sondern
+zweierlei: die 960er Decke, die *gemessen* zwei der 41 Lektionen fängt, und die **Umkehrregel** —
+wer eine Lektion auf `voll` setzt, die auch in 400 px passt, wird vom Wächter zurückgewiesen.
+`kurz` ist damit kein Vorsatz, sondern ein geprüftes Versprechen, und ein Wechsel der Art steht als
+geändertes Feld im Diff statt still in einer Zeile Text.
+
+### Die Takt-Arten
+
+Vier trugen den ersten Bau, fünf kamen mit den vollen Lektionen dazu.
+
+| Takt | Was er ist |
+| --- | --- |
+| `satz` | Fließtext, der eine Sache sagt |
+| `block` | ein Kasten mit optionaler Überschrift; der häufigste Block des Entwurfs |
+| `bild` | eine stehende Abbildung mit Unterschrift |
+| `probierfeld` | der bewegliche Teil |
+| `tip` | der Abschluss, an einer Linie nach oben |
+| `merk` | ein hervorgehobener Satz, den man behalten soll |
+| `regeln` | nummerierte Punkte, jeder ein eigener Kasten |
+| `tabelle` | Werte nebeneinander; ihre Zeilenzahl steht am Takt |
+| `liste` | die Tipps am Ende einer Sektion |
+
+**`block` gliedert, `satz` erzählt.** Der Entwurf teilt eine volle Lektion in benannte Abschnitte
+(„Dein Deck“, „Ein Lauf“), und die Überschrift *ist* die Gliederung; als Fließtext ohne Rahmen
+liefen die Abschnitte ineinander. Die Überschrift ist optional — ohne sie ist der Kasten der
+Einleitungsblock. Sie hängt am Schlüssel des Takts mit dem Zusatz `.label`, damit Überschrift und
+Text nicht in zwei Spalten auseinanderlaufen können, und `label: true` im Katalog ist es, was den
+zweiten Schlüssel überhaupt entstehen lässt. Beides prüft ein Wächter in beide Richtungen: fehlt
+der Schlüssel, zeigt der Kasten seinen Rohschlüssel als Überschrift; steht er ohne `label: true`
+im Katalog, ist er ein toter Eintrag.
+
+Auch der Kasten bleibt bei `§1 — Kein Panel im Panel`: er sitzt IM Scroller der Lektion, nicht in
+einem zweiten Rahmen. Eine Zeile mit Kontur, kein Fenster.
+
+`merk` und `tip` sind **nicht** dasselbe: der Tipp schließt die Lektion ab und steht genau einmal am
+Ende, ein Merksatz steht mittendrin und darf mehrfach vorkommen. Beide bleiben bei `§1 — Kein Panel
+im Panel`.
+
 ### Was §11 NICHT anfasst
 
 - Das Band 640–1279 px. Es ist weiterhin unbeauftragt.
@@ -777,10 +853,82 @@ Dutzend Knoten hat. `scripts/phone-proof.mjs:162` beschreibt dieselbe Falle.
 
 ---
 
+## 12. Der CJK-Zweig (Chinesisch)
+
+Er steht **neben** der lateinischen Typografie, nie an ihrer Stelle. Jede Regel dieses Abschnitts
+hängt an der Sprache; unter Deutsch, Englisch und Spanisch ändert sich nichts. Das ist keine
+Absichtserklärung, sondern nachgemessen: auf demselben Bildschirm, nur mit umgeschaltetem
+Sprachattribut, steht die Laufweite bei 0 gegen 1,3 px und die Leiter bei 13/12 px gegen 11/9 px.
+
+### Die Schrift bleibt die Marke
+
+Geist steht **vorn**, Noto Sans SC dahinter. Han-Zeichen liegen außerhalb von Geists Zeichenvorrat
+und fallen von selbst durch; lateinische Wörter in einem chinesischen Satz behalten also die
+Hausschrift. Die Marke wechselt nicht mit der Sprache.
+
+Dasselbe entscheidet die Ladefrage: die Schrift liegt in 101 Scheiben mit je eigenem Zeichenbereich,
+4.516.508 Byte insgesamt. Ein deutscher Spieler zeichnet kein Han und holt deshalb keine einzige
+davon. Für den sichtbaren Text des Hubs lädt ein chinesischer Spieler 12.
+
+### Die Leiter hat eine Grenze, keine Verschiebung
+
+Keine Stufe der micro-Familie unter **12 px**, keine der meta-Familie unter **13 px**. Beide Familien
+liegen lateinisch vollständig darunter (micro 7 bis 9,5, meta 10 bis 11,5), also fallen sie im
+Chinesischen auf je einen Wert zusammen.
+
+Das ist die benannte Folge, keine Überraschung: die abgestuften micro-Stufen rendern hier gleich, die
+meta-Stufen auch. Wer die Abstufung zurückwill, verschiebt die Leiter (micro 12/12,5/13/13,5, meta
+13/13,5/14/14,5) statt die Grenze zu senken. Die Grenze ist der Punkt.
+
+Was das kostet, ist gemessen: auf dem Hub wachsen 12 von 59 Textknoten, **alle um genau 3 px**. Das
+ist die größere Zeilenhöhe, kein Umbruch in eine neue Zeile. Kein Element läuft über seine Breite.
+
+### Laufweite: null im Satz, wenig auf dem Label
+
+Positive Laufweite zwischen Han-Zeichen zerlegt das Wort optisch, weil dort ohnehin keine Wortgrenze
+sitzt. Im Fließtext steht sie deshalb auf **0**.
+
+Auf der Kleinbeschriftung steht sie auf **.05em**. Das ist der Rest von §6, der überhaupt tragen
+kann, und er ist der Grund, warum das Label sich noch von seiner Ablesung abhebt.
+
+### Die Kleinbeschriftung, chinesisch
+
+Von den vier Signalen aus §6 wirkt keines: Versalien tun Han-Zeichen nichts, Geist Mono hat kein
+einziges chinesisches Zeichen, 10 px liegt unter der Lesbarkeitsgrenze, und die Grenze oben drückt
+das Label auf 13 px **hoch** statt es klein zu lassen. Der Größenschritt zu seiner Ablesung fiel
+damit von 1,45× auf 1,23×.
+
+Es bleibt also: **13 px, Laufweite .05em, Deckkraft**. Drei Signale statt vier, und das schwächste
+davon trägt am meisten. Wer hier eine Fläche entwirft, sollte das wissen und die Hierarchie nicht
+allein der Beschriftung überlassen.
+
+Verworfen wurde **Fettung**: bei 13 px füllt sie die Binnenräume dichter Zeichen zu, chinesische
+Oberflächen setzen kleine Labels nicht fett. Verworfen wurde auch eine **eigene Farbe**, weil Farbe
+in diesem Haus Bedeutung trägt (§3) und ein Ton hier mit der Deckfarbe konkurrierte.
+
+### Zeilenumbruch
+
+Chinesisch bricht zwischen Zeichen und braucht dafür keine Hilfe. Was es braucht, ist die Regel, dass
+eine Zeile nicht **vor** einem schließenden Satzzeichen bricht. Lange lateinische Einsprengsel wie
+Seeds werden zusätzlich abgefangen, weil sie im chinesischen Satz keine Trennstelle mehr finden.
+
+### Was der Zweig NICHT anfasst
+
+Keine Farbrolle, keine Komponente, kein Maß, kein Abstand. Er ändert Schrift, Größe und Laufweite,
+und nur dort, wo die Sprache Chinesisch ist. Alles andere aus §1 bis §5 gilt unverändert.
+
+Ungeprüft ist die Fassung ab 1280 px: dieses Gate lief auf 411 × 840. Ebenfalls ungeprüft sind die
+späten Lauf-Flächen (Architekt, Gletscherwahl, Kartendetail, Endscreen) und der Kaltstart. Die
+vollständige Lückenliste steht in
+`docs/workstreams/zh-hans/zh-hans-sample/gate/BEFUND.md`.
+
+---
+
 ## 10. Änderungsprotokoll
 
 | Datum | Was |
 | --- | --- |
+| 26.08.2026 | **§12 — der CJK-Zweig**, anlässlich der dritten Sprache (`#zh-hans`). Erster Eintrag, der die Typografie nach SPRACHE trennt statt nach Bildschirmbreite. Härtester Befund: die Kleinbeschriftung aus §6 verliert im Chinesischen drei ihrer vier Signale, und die Lesbarkeitsgrenze macht es schlimmer statt besser, weil sie das Label von 10 auf 13 px HOCH drückt: der Größenschritt zu seiner Ablesung fällt von 1,45× auf 1,23×. Übrig blieb die Deckkraft allein. Entschieden vom Owner: Laufweite .05em auf der Beschriftung, verworfen Fettung (füllt bei 13 px die Binnenräume) und eigene Farbe (Farbe trägt hier Bedeutung). Gemessen: 12 von 59 Textknoten wachsen um je genau 3 px, kein Umbruch, kein Überlauf; von 101 Schriftscheiben (4.516.508 B) lädt ein deutscher Spieler keine und ein chinesischer für den Hub 12. Gegenprobe zur Sprachgrenze auf demselben DOM: Laufweite 0 gegen 1,3 px, Leiter 13/12 gegen 11/9 px. |
 | 25.08.2026 | **§11 — die Handy-Fassung**, anlässlich der Tutorial-Sektionen (`#tutorial-sections`). Erster Eintrag des Dokuments unterhalb von 1280 px; §8 sah ihn vor („solange sie nicht ausdrücklich beauftragt ist"). Härtester Befund: das Haus hält seine eigene 44-px-Regel auf dem Telefon nicht ein — der Schließen-Knopf des Glossars misst gemessen 42 px, seine Chips 26,5. Neu festgehalten: `items-center` als EINE Regel für kurze wie volle Karten (gemessen 307,8 px Schwarz bei oben angeschlagener 525-px-Karte gegen 159,9/159,9 mittig) und die Grenze, ab der ein Bildschirm dünn an Inhalt ist statt schlecht gesetzt (rund 180 px Restluft). |
 | 24.08.2026 | **Lauf-Bildschirm entworfen**, Auftrag unter `docs/battlefield-redesign.md`. Härtester Befund: die Instrumentenbank war um Faktor 2,2 überbucht (2460 px Bedarf auf 1140 px), und die Breite hing an der ANZAHL der Fraktionen statt am Inhalt — dieselbe Spur maß je nach Lauf 584 oder 60 px. Sichtbar waren 35 % des Inhalts. Neu: Perks und Multiplikatoren stehen als umschaltende Spalten neben der Bühne, unten ein Element im Fokus und die übrigen als Kopfzeilen. Ergebnis über vier Lauf-Formen und drei Größen: 0 Scrollbereiche, 0 abgeschnittene Stellen, Seite exakt Fensterhöhe. |
 | 24.08.2026 | **Die Abgrenzung „was gilt für einen Nicht-Overlay-Screen" ist entschieden** (§8): §1 ist Layout und gilt überall, §2 und §4 sind Overlay-Konventionen und gelten dort nicht. Anlass war der Lauf; die Frage stellt sich beim Hub genauso und war bis dahin offen. |
