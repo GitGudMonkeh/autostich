@@ -154,6 +154,18 @@ Spanish keep the boundary they had. **The design round has not run yet**: parts 
 are open, so Chinese currently ships in Latin typography, at a size ladder that A2 measured as below
 the legibility floor for Hanzi.
 
+**A8 — S6, the eyebrow hierarchy. Decided by the owner on 2026-08-26: letter-spacing .05em.**
+The eyebrow ranked by four signals at once and lost three of them to the script: uppercase does
+nothing to Han, Geist Mono carries no CJK glyph, and A2's floor pushed the label UP, so the size
+step down to its own readout fell from 1.45x to 1.23x. Opacity was left carrying the rank alone.
+
+The decision restores the fourth signal rather than inventing a fifth. Letter-spacing is what the
+Latin side ranks with; .14em was the wrong amount, not the wrong device. It applies only where
+something was designed as an eyebrow — `uppercase` and a tracking class together — so running text
+with tracking stays at zero. Rejected with reasons: weight 600 fills in the counters of dense Han at
+13 px, and colour is reserved in this repository for meaning. Both variants were photographed at
+411x840 and decided by looking.
+
 **A5 — Language of the artefacts.** English throughout, except the `docs/design-sprache.md` entry,
 which stays German because that document has a fixed German template
 (`AGENTS.md` — *Appending to an existing German document*).
@@ -352,21 +364,26 @@ Numbered `S*` as in the worker briefing. The `Z*` numbers are the same hazards a
 
 - [x] The returned sample is committed as a fixture, with the terminology list and fit warnings, and
       the source SHA quoted back matches the one the order named
-- [ ] The preview harness renders the sample in the real surfaces, behind `VITE_PREVIEW`
-- [ ] The CJK branch is drafted: `@font-face` slices, `:lang(zh-Hans)` rules, ladder floors per A2
+- [x] The real surfaces render the Chinese text behind `VITE_PREVIEW` — and, since the catalogue
+      completed, through the ordinary language picker as well
+- [x] The CJK branch is drafted: `@font-face` slices, `:lang(zh-Hans)` rules, ladder floors per A2
       and A2a
-- [ ] Visual gate passed on real Chinese text, with its evidence recorded — screens, host, browser,
-      and **what it did not cover** (`task-lifecycle.md` §7)
-- [ ] S6 answered by the owner at the gate, and the answer written down
+- [x] Visual gate run on real Chinese text, evidence in `gate/BEFUND.md` — device, browser, host,
+      the eight surfaces, the numbers, and **what it did not cover** (`task-lifecycle.md` §7)
+- [x] S6 answered by the owner at the gate, and written down (A8)
 - [ ] Every fit warning answered: layout takes it, or the string gets a stated limit for the full order
 - [ ] The branch is written into `docs/design-sprache.md`, in German, in that document's template
-- [ ] No rule fires outside `:lang(zh-Hans)` — verified, not assumed
-- [ ] The two "after" digests of the wording baseline unmoved, verified by
-      `node scripts/wording-digest.mjs`
-- [ ] Gates green and reported bare: `npm test`, `npm run lint -- --max-warnings=0`, `npm run build`,
+- [x] No rule fires outside `:lang(zh-Hans)` — verified by measurement, not assumed: on one DOM,
+      switching only the lang attribute, tracking 0 against 1.3px and the ladder 13/12 against 11/9
+- [~] The wording baseline: it MOVED once, deliberately and with the owner's approval, for the seven
+      deck names. Recorded under *Task-specific inputs* with both digests. Not a tick and not a
+      failure — an exception that is written down instead of waved through
+- [x] Gates green and reported bare: `npm test`, `npm run lint -- --max-warnings=0`, `npm run build`,
       the preview build, `npm run gen:db`, `npm run loc:export`,
       `node scripts/check-preview-exclusion.mjs`
-- [ ] Cold-load check done: `font-display: swap` with the sliced face causes no visible reflow (S3)
+- [ ] Cold-load check done: `font-display: swap` with the sliced face causes no visible reflow (S3).
+      Explicitly open: every gate image was taken AFTER `document.fonts.ready`, so none of them can
+      speak to this
 
 ## Open questions
 
