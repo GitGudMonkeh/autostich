@@ -29,8 +29,9 @@ jenem Branch liegt und für einen Cockpit-Grep unsichtbar ist** — siehe
 
 ## Scope
 
-Die zehn Sektionen mit 41 Lektionen aus dem freigegebenen Entwurf ersetzen die heutigen sechs
-Sektionen mit 34 Textlektionen. Betroffen sind:
+Die zehn Sektionen mit **42 Lektionen** aus dem freigegebenen Entwurf ersetzen die heutigen sechs
+Sektionen mit 34 Textlektionen. (41 bei Freigabe; „Zwei Builds“ wurde auf Owner-Entscheid geteilt,
+siehe *Definition of done*.) Betroffen sind:
 
 - `src/ui/tutorial-sections/catalog.js` — die Sektions- und Lektionsliste
 - `src/ui/tutorial-sections/beats.jsx` — die interaktiven Bausteine
@@ -157,11 +158,14 @@ eine Zahl zurückgibt. Heute folgenlos, aber tot.
 
 ## Definition of done
 
-- alle zehn Sektionen mit 41 Lektionen im Katalog, jede mit ihrer `art`
+- alle zehn Sektionen mit 42 Lektionen im Katalog, jede mit ihrer `art`
 - beide Sprachkataloge vollständig, `npm run loc:export` gelaufen
 - alle Wächter grün, einschließlich der beiden Budgets und der Umkehrregel
-- **die eine Lektion über Budget gekürzt:** „Zwei Builds, die sich selbst verstärken“
-  (Fortgeschritten 3), *gemessen* 1.360 px gegen 960
+- ~~die eine Lektion über Budget gekürzt~~ **ERLEDIGT im Entwurf.** „Zwei Builds, die sich selbst
+  verstärken“ (Fortgeschritten 3) maß 1.360 px gegen 960. Zur Wahl standen Kürzen auf einen der
+  beiden Builds oder Teilen; der Owner hat **geteilt**, weil beide Builds gewollt waren. Aus der
+  Lektion wurden „Glut auf Geometrie“ und „Glühende Klinge und Blitz“, *gemessen* **696 px** und
+  **784 px**. Fortgeschritten hat damit vier Lektionen, der Entwurf 42.
 - V1–V4 bei 390 × 844 gemessen, Belege im Workstream-Ordner
 
 ## Open questions
