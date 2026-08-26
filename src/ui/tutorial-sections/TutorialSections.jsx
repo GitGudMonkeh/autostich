@@ -12,7 +12,7 @@ import * as GL from "../../game/glacier.js";
 import * as AR from "../../game/architect.js";
 import * as FM from "../../game/formations.js";
 import { ARCHETYPE_META } from "../../game/skills.js";
-import { familyDef, archFamily, nodeDef, rarityLabel } from "../../i18n/labels.js";
+import { familyDef, archFamily, nodeDef, rarityLabel, skillDef } from "../../i18n/labels.js";
 
 /* Die Platzhalter liegen in vars.js, weil der Wächter dieselbe Liste braucht — siehe dort. */
 /* NAMEN VON PERKS UND GEBÄUDEN werden ABGELEITET, nicht in den Text getippt — dieselbe Regel wie
@@ -43,6 +43,14 @@ const localeVars = (locale) => ({
   colAmp: "×" + fmtNum((1 + (AR.SPALTE_FACTOR - 1) * C.FIRE_STRUCT_DIVIDEND_AMP).toFixed(2), locale),
   eskStep: fmtNum(FM.ESKALATION_STEP.toFixed(2), locale),
   wiedStep: fmtNum(FM.WIED_STEP.toFixed(2), locale),
+  // Welle 3: Skill-Namen und Dezimalfaktoren der Archetyp-Lektionen
+  gkSkill: skillDef("SK_FIRE_06")?.name ?? "",
+  fbSkill: skillDef("SK_FIRE_11")?.name ?? "",
+  spSkill: skillDef("SK_FIRE_12")?.name ?? "",
+  schmiedeSkill: skillDef("SK_FIRE_15")?.name ?? "",
+  greenCap: fmtNum(FM.FARBBLOCK_BASE.toFixed(2), locale),
+  greenCapUeber: fmtNum((FM.FARBBLOCK_BASE + C.UEBERWUCHERUNG_FACTOR).toFixed(2), locale),
+  kollFakt: fmtNum(String(GL.KOLLISION_MULT), locale),
 });
 // `offered` bedeutet je nach Lektion etwas anderes — Perk-Angebot oder Skill-Angebot.
 /* `none` hat nur, wer einen Leerzustand kennt. Die Aufstellungs-Runden kennen ihn: eine Reihe ohne

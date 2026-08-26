@@ -115,6 +115,10 @@ describe("i18n · Katalog-Parität", () => {
      würde die vergessene spanische Übersetzung genau dort durchlassen, wo sie am wahrscheinlichsten
      ist — bei den Wörtern, die aus dem Englischen schon vertraut aussehen. */
   const SAME_OK_EN = new Set([
+    "tut.sz.fb.k1b",       // „Brand" — im Englischen dasselbe Wort
+    "tut.sz.pc.eqBlock",    // reine Formelzeile aus Platzhaltern
+    "tut.sz.pc.eqBluete",   // dito
+    "tut.sz.ec.eqSiegStep", // dito
     /* Die zwei eq-Schritte der Szenen sind reine Formelzeilen — „× {f} {nm} = **{v}**":
        alles Sichtbare steckt in Platzhaltern, der Rohtext ist in jeder Sprache identisch. */
     "tut.sz.d.eqStep",
@@ -273,6 +277,9 @@ describe("i18n · Katalog-Parität", () => {
      3. ZWEI KÜRZEL, die zufällig zusammenfallen: Wechsel/Zigzag → Z und Anker/Ancla → A. Die
         anderen sechs Formations-Kürzel unterscheiden sich. */
   const SAME_OK_ES = new Set([
+    "tut.sz.pc.eqBlock",    // reine Formelzeile aus Platzhaltern
+    "tut.sz.pc.eqBluete",   // dito
+    "tut.sz.ec.eqSiegStep", // dito
     /* Die zwei eq-Schritte der Szenen sind reine Formelzeilen — „× {f} {nm} = **{v}**":
        alles Sichtbare steckt in Platzhaltern, der Rohtext ist in jeder Sprache identisch. */
     "tut.sz.d.eqStep",
@@ -328,6 +335,9 @@ describe("i18n · Katalog-Parität", () => {
      in keiner Sprache uebersetzt werden. Die erfundenen Deck- und Effektnamen faengt schon
      SAME_OK_CLASS ab und stehen deshalb nicht noch einmal hier. */
   const SAME_OK_ZH = new Set([
+    "tut.sz.pc.eqBlock",    // reine Formelzeile aus Platzhaltern
+    "tut.sz.pc.eqBluete",   // dito
+    "tut.sz.ec.eqSiegStep", // dito
     /* Die zwei eq-Schritte der Szenen sind reine Formelzeilen — „× {f} {nm} = **{v}**":
        alles Sichtbare steckt in Platzhaltern, der Rohtext ist in jeder Sprache identisch. */
     "tut.sz.d.eqStep",

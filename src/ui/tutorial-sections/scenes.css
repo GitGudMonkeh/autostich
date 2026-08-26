@@ -67,6 +67,10 @@
 .tsz .res .rechnung{font-family:var(--mono);font-size:11px;color:var(--ink3);margin-top:1px}
 .tsz .res .pkt{margin-left:auto;font-family:var(--mono);font-weight:700;font-size:16px;font-variant-numeric:tabular-nums}
 .tsz .res.w .pkt{color:var(--win)} .tsz .res.l .pkt,.tsz .res.t .pkt{color:var(--ink3)}
+/* kern2: der Akzent-Zustand des Entwurfs — Information, kein Sieg. */
+.tsz .res.kern2{border-left-color:var(--a1)}
+.tsz .res.kern2 .verdikt{color:var(--a1)}
+.tsz .res.kern2 .pkt{color:var(--a1)}
 .tsz .log{display:flex;flex-direction:column;gap:5px}
 .tsz .log .row{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;
   padding:7px 10px;border-radius:6px;background:var(--row);border-left:3px solid var(--rowedge)}

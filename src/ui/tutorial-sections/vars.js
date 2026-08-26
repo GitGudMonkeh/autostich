@@ -14,6 +14,9 @@
 import * as C from "../../game/constants.js";
 import { SEGMENT_SIZE, WECHSEL_MIN_DIFF, MAX_TREPPE_STEP, ESKALATION_STEP, WIED_STEP } from "../../game/formations.js";
 import { ENERGY_FLOOR, COVER_FLOOR, NODES, SP_PER_RUN, SP_LOYALTY_EVERY, SP_LOYALTY_SP, WELCOME_DP } from "../../game/progression.js";
+import { SKILL_DEFS } from "../../game/skills.js";
+import { FARBBLOCK_BASE } from "../../game/formations.js";
+import { KASKADE_PER_NEIGHBOR, KOLLISION_MULT } from "../../game/glacier.js";
 import { ARCHITECT_FAMILIES, tierNum, DISTRICT_BONUS, DISTRICT_CAP, ROWS, HAEUSERZEILE_FACTOR, SPALTE_FACTOR } from "../../game/architect.js";
 import { FAMILY_DEFS } from "../../game/families.js";
 import { THRESHOLDS, TIER_MULT, BURST_AT, WIN_MASS, EWIGER_FROST, DECLINE_MIN_SKILLS } from "../../game/glacier.js";
@@ -75,7 +78,17 @@ export const VARS = {
   charge: C.LIGHTNING_MAX_CHARGE,
   ionMax: C.ION_MAX_STACKS, ionCap: C.ION_CRIT_STACK_CAP,
   ionCapPct: Math.round(C.ION_CRIT_STACK_CAP * C.ION_CRIT_PP_PER_STACK * 100),
-  // Feuer
+  // Feuer. Der Feuer-Score je Vorsprung ist die Formel aus SkillSelect.jsx:43, nicht abgetippt.
+  conflagAt: C.CONFLAG_MIN_HEAT,
+  fireAtMin: Math.round((C.HEAT_MIN_MARGIN - C.FIRE_MARGIN_OFFSET) * C.FIRE_SCORE_BASE
+    + C.FIRE_SCORE_BASE * C.FIRE_SCORE_SQRT_K * Math.sqrt(C.HEAT_MIN_MARGIN - C.FIRE_MARGIN_OFFSET)),
+  fireAtM3: Math.round((C.GLOWING_T3_MARGIN - C.FIRE_MARGIN_OFFSET) * C.FIRE_SCORE_BASE
+    + C.FIRE_SCORE_BASE * C.FIRE_SCORE_SQRT_K * Math.sqrt(C.GLOWING_T3_MARGIN - C.FIRE_MARGIN_OFFSET)),
+  divAtCap: C.FIRE_DIVIDEND_HEAT_CAP * C.FIRE_HEAT_DIVIDEND,
+  // Pflanze und Eis: Prozent- und Zaehlwerte der Tipps-Listen
+  trimPct: Math.round(C.TRIM_STEP * 100), trimCap2: Math.round(C.TRIM_CAP * 100),
+  ueberPct: Math.round(C.UEBERWUCHERUNG_FIELD * 100),
+  kaskPct: Math.round(KASKADE_PER_NEIGHBOR * 100),
   heatMax: C.HEAT_MAX, heatMinMargin: C.HEAT_MIN_MARGIN, heatLossMax: C.HEAT_LOSS_MAX,
   firePerSkill: C.FIRE_SCORE_PER_SKILL, dividendCap: C.FIRE_DIVIDEND_HEAT_CAP,
   glowT1: C.GLOWING_T1_HEAT, glowT2: C.GLOWING_T2_HEAT, glowT3: C.GLOWING_T3_HEAT,
@@ -108,6 +121,14 @@ export const MEASURE_VARS = {
   ...VARS,
   legNode: NODES.find((n) => n.id === "legLayer")?.label ?? "",
   rar4: TIER_META[4].label,
+  // Skill-Namen der Archetyp-Lektionen — deutsch, wie das Register sie fuehrt
+  gkSkill: SKILL_DEFS.SK_FIRE_06?.name ?? "",
+  fbSkill: SKILL_DEFS.SK_FIRE_11?.name ?? "",
+  spSkill: SKILL_DEFS.SK_FIRE_12?.name ?? "",
+  schmiedeSkill: SKILL_DEFS.SK_FIRE_15?.name ?? "",
+  greenCap: FARBBLOCK_BASE.toFixed(2),
+  greenCapUeber: (FARBBLOCK_BASE + C.UEBERWUCHERUNG_FACTOR).toFixed(2),
+  kollFakt: String(KOLLISION_MULT),
   base: String(C.SCORE_PER_WIN),
   streakPct: String(Math.round(C.STREAK_BASE_STEP * 100)),
   critMult: C.CRIT_BASE_MULT.toFixed(2),

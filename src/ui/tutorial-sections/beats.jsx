@@ -6,7 +6,6 @@ import { buildDeck } from "../../game/deck.js";
 import { computeFormations, summarizeFormations, SEGMENT_SIZE } from "../../game/formations.js";
 import * as C from "../../game/constants.js";
 import { ARCHETYPE_META } from "../../game/skills.js";
-import * as GLACIER from "../../game/glacier.js";
 import * as PROG from "../../game/progression.js";
 import { COLS, ROWS, posOf, rowOf, colOf, boardFactorMap, familyDef, tierNum } from "../../game/architect.js";
 // Die Kategoriefarben liegen in der UI-Schicht, nicht im Spielmodul — dieselbe Quelle, die der
@@ -17,6 +16,8 @@ import {
   StichSzene, KampfwertSzene, SerieSzene, ScoreSzene, LaufmockSzene, BilanzSzene,
   BrettSzene, KarteSzene, FormationenSzene, UeberSzene, KatsSzene, RaritaetSzene,
   BlitzkarteSzene, TippsSzene, LegendaerSzene,
+  FeuerkartenSzene, SchmiedeSzene, HitzeSzene, PflanzkarteSzene, PflanzzeichenSzene,
+  GruenfeldSzene, GletscherSzene, GletscherfeldSzene,
 } from "./scenes.jsx";
 
 /* DIE TAKT-ARTEN. Vier trugen den ersten Bau, fünf kamen mit den vollen Lektionen dazu; die
@@ -513,276 +514,7 @@ export function ArchmockProbe({ title, hint, readoutLabel }) {
    denen sich etwas ändert. Ein Baustein für beide, konfiguriert statt kopiert — zwei Komponenten,
    die dasselbe tun, laufen beim nächsten Balancing auseinander.
 
-   Die Schwellen und die Wirkung je Stufe kommen aus den Modulen: `PLANT_GREEN_THRESHOLD` und
-   `PLANT_VALUE_CAP` bei der Pflanze, `THRESHOLDS` und `TIER_MULT` aus glacier.js beim Eis. */
-const STUFEN = {
-  pflanze: {
-    max: 12,
-    farbe: "#5ab87a",
-    schwellen: () => [C.PLANT_GREEN_THRESHOLD],
-    stufe: (n) => (n >= C.PLANT_GREEN_THRESHOLD ? 2 : n > 0 ? 1 : 0),
-    /* Der Wert wächst je WURZELSCHLAG_PER_GROWTH Wachstum um 1, gedeckelt bei PLANT_VALUE_CAP.
-       Nur im reinen Pflanzen-Bau — deshalb der Schalter darunter. */
-    wert: (n, rein, basis) => (rein ? Math.min(C.PLANT_VALUE_CAP, basis + Math.floor(n / C.WURZELSCHLAG_PER_GROWTH)) : basis),
-  },
-  eis: {
-    max: GLACIER.BURST_AT,
-    farbe: "#5a8ade",
-    schwellen: () => GLACIER.THRESHOLDS,
-    stufe: (n) => GLACIER.THRESHOLDS.filter((t2) => n >= t2).length,
-    wert: null,
-  },
-};
 
-export function StufenProbe({ title, hint, readoutLabel, labels, art }) {
-  const [locale] = useLocale();
-  const [n, setN] = useState(0);
-  const [rein, setRein] = useState(true);
-  const K = STUFEN[art];
-  const L = labels || {};
-  const basis = C.RANKS[3];
-  const stufe = K.stufe(n);
-  const reif = art === "pflanze" ? n >= C.PLANT_GREEN_THRESHOLD : n >= GLACIER.BURST_AT;
-  const wert = K.wert ? K.wert(n, rein, basis) : basis;
-
-  return (
-    <div className="tut-beat tut-probe" style={{ margin: "0 0 14px", padding: "12px 12px 11px", ...ZEILE }}>
-      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 8 }}>{title}</div>
-      <div style={{ display: "flex", justifyContent: "center", marginBottom: 9 }}>
-        <div style={{ width: 78, height: 110, borderRadius: 8, position: "relative",
-          background: "linear-gradient(180deg,#242433,#1a1a26)",
-          border: `${reif ? 2 : 1}px solid ${stufe ? K.farbe : "#33333e"}` }}>
-          <span className="text-title-2 font-bold" style={{ position: "absolute", inset: 0, display: "flex",
-            alignItems: "center", justifyContent: "center", color: stufe ? K.farbe : "#e8e8ea" }}>{wert}</span>
-          <span className="text-meta-1 ty-num-sm" style={{ position: "absolute", bottom: 4, right: 5, color: K.farbe }}>{n}</span>
-        </div>
-      </div>
-      <input type="range" min="0" max={K.max} value={n} onChange={(e) => setN(Number(e.target.value))}
-        className="tut-slider" style={{ width: "100%" }} aria-label={title} />
-      {K.wert ? (
-        <div style={{ display: "flex", gap: 6, marginTop: 9 }}>
-          <KnopfKlein text={L.pureOnly} onClick={() => setRein(true)} aktiv={!rein} />
-          <KnopfKlein text={L.mixed} onClick={() => setRein(false)} aktiv={rein} />
-        </div>
-      ) : null}
-      <div className="tut-probe-out" style={{ marginTop: 10, paddingTop: 9, borderTop: HAIR, display: "flex", alignItems: "baseline", gap: 8 }}>
-        <span className="text-meta-1" style={LABEL}>{readoutLabel}</span>
-        <span className="text-body-lg-5" style={{ color: "#e8e8ea", fontWeight: 700 }}>{n}</span>
-        <span className="text-meta-1" style={{ ...LABEL, marginLeft: "auto" }}>
-          {art === "eis" ? L.force : L.cardValue}
-        </span>
-        <span className="text-body-lg-5" style={{ color: "#e8e8ea", fontWeight: 700 }}>
-          {art === "eis" ? `×${fmtNum(GLACIER.TIER_MULT[stufe].toFixed(1), locale)}` : wert}
-        </span>
-      </div>
-      {hint && <div className="text-meta-1" style={{ color: "#71717c", marginTop: 7, lineHeight: 1.4 }}>{hint}</div>}
-    </div>
-  );
-}
-
-/* ---- Die Hitzeleiste ----
-   Ein Regler von 0 bis HEAT_MAX und drei Schwellen. Was bei welchem Stand wirkt, steht nicht als
-   Text daneben, sondern leuchtet auf: die Glühende Klinge an ihren drei Stufen, die Glutdividende
-   bis zu ihrem Deckel. */
-const HITZE_MARKEN = () => [
-  { at: C.GLOWING_T1_HEAT, id: "t1", v: C.GLOWING_T1_VALUE },
-  { at: C.GLOWING_T2_HEAT, id: "t2", v: C.GLOWING_T2_VALUE },
-  { at: C.GLOWING_T3_HEAT, id: "t3", v: C.GLOWING_T3_VALUE },
-];
-
-export function HitzeProbe({ title, hint, readoutLabel, labels }) {
-  const [locale] = useLocale();
-  const [h, setH] = useState(0);
-  const L = labels || {};
-  const marken = HITZE_MARKEN();
-  const klinge = marken.filter((m) => h >= m.at).at(-1);
-  // Die Dividende wächst bis FIRE_DIVIDEND_HEAT_CAP und steht danach still.
-  const dividende = Math.round(C.FIRE_HEAT_DIVIDEND * Math.min(h, C.FIRE_DIVIDEND_HEAT_CAP) / C.HEAT_MAX);
-
-  return (
-    <div className="tut-beat tut-probe" style={{ margin: "0 0 14px", padding: "12px 12px 11px", ...ZEILE }}>
-      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 8 }}>{title}</div>
-      <div style={{ height: 12, borderRadius: 6, background: "rgba(15,15,21,.72)", border: "1px solid rgba(150,150,170,.14)", position: "relative", overflow: "hidden" }}>
-        <div style={{ position: "absolute", inset: 0, width: `${h}%`, background: "linear-gradient(90deg,#c0433f,#d4a63a)" }} />
-        {marken.map((m) => (
-          <span key={m.id} style={{ position: "absolute", top: 0, bottom: 0, left: `${m.at}%`, width: 1, background: "rgba(232,232,234,.34)" }} />
-        ))}
-      </div>
-      <input type="range" min="0" max={C.HEAT_MAX} value={h} onChange={(e) => setH(Number(e.target.value))}
-        className="tut-slider" style={{ width: "100%", marginTop: 8 }} aria-label={title} />
-      <div className="tut-probe-out" style={{ marginTop: 10, paddingTop: 9, borderTop: HAIR, display: "flex", alignItems: "baseline", gap: 8 }}>
-        <span className="text-meta-1" style={LABEL}>{readoutLabel}</span>
-        <span className="text-body-lg-5" style={{ color: "#e8e8ea", fontWeight: 700 }}>+{fmtNum(dividende, locale)}</span>
-        <span className="text-meta-1" style={{ ...LABEL, marginLeft: "auto" }}>{L.blade}</span>
-        <span className="text-body-lg-5" style={{ color: klinge ? "#d4a63a" : "#5c5c68", fontWeight: 700 }}>
-          {klinge ? `+${klinge.v}` : "—"}
-        </span>
-      </div>
-      {hint && <div className="text-meta-1" style={{ color: "#71717c", marginTop: 7, lineHeight: 1.4 }}>{hint}</div>}
-    </div>
-  );
-}
-
-/* Die kleine Duellkarte des ersten Baus — die Feuer-Runde nutzt sie noch, bis auch sie
-   auf die Entwurfs-Szene umgestellt ist. */
-function DuellKarte({ wert, label, hervor = false }) {
-  return (
-    <div style={{ textAlign: "center" }}>
-      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 5 }}>{label}</div>
-      <div className="text-title-2 flex items-center justify-center font-bold"
-        style={{ width: 62, height: 88, borderRadius: 8, color: "#e8e8ea",
-          background: "linear-gradient(180deg,#242433,#1a1a26)",
-          border: `1px solid ${hervor ? "var(--deck-a1,#8a7de0)" : "#33333e"}` }}>{wert}</div>
-    </div>
-  );
-}
-
-/* ---- Geschmiedet und gebrandmarkt ----
-   Zwei Karten nebeneinander, und ein Regler, der beide Seiten zugleich bewegt: deine Karte steigt
-   um FORGE_VALUE je Schmiedung, die des Gegners fällt um BRAND_VALUE je Brandmal bis BRAND_VALUE_CAP.
-   Der Vorsprung darunter ist das, worauf Feuer wirklich rechnet. */
-export function FeuerkartenProbe({ title, hint, readoutLabel, labels }) {
-  const [locale] = useLocale();
-  const [schmied, setSchmied] = useState(0);
-  const [brand, setBrand] = useState(0);
-  const L = labels || {};
-  const meine = C.RANKS[6] + schmied * C.FORGE_VALUE;
-  const seine = C.RANKS[8] - Math.min(brand, C.BRAND_VALUE_CAP) * C.BRAND_VALUE;
-  const vorsprung = meine - seine;
-
-  return (
-    <div className="tut-beat tut-probe" style={{ margin: "0 0 14px", padding: "12px 12px 11px", ...ZEILE }}>
-      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 8 }}>{title}</div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 14 }}>
-        <DuellKarte wert={meine} label={L.du} hervor={schmied > 0} />
-        <span className="text-meta-1" style={{ ...LABEL, letterSpacing: ".2em" }}>{L.gegen}</span>
-        <DuellKarte wert={seine} label={L.gegner} hervor={brand > 0} />
-      </div>
-      <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
-        <KnopfKlein text={L.forge} onClick={() => setSchmied((n) => (n >= 3 ? 0 : n + 1))} aktiv />
-        <KnopfKlein text={L.brand} onClick={() => setBrand((n) => (n >= C.BRAND_VALUE_CAP ? 0 : n + 1))} aktiv />
-      </div>
-      <div className="tut-probe-out" style={{ marginTop: 10, paddingTop: 9, borderTop: HAIR, display: "flex", alignItems: "baseline", gap: 8 }}>
-        <span className="text-meta-1" style={LABEL}>{readoutLabel}</span>
-        <span className="text-body-lg-5" style={{ color: vorsprung >= C.HEAT_MIN_MARGIN ? "#d4a63a" : "#e8e8ea", fontWeight: 700 }}>
-          {vorsprung > 0 ? "+" : ""}{fmtNum(vorsprung, locale)}
-        </span>
-        <span className="text-meta-1" style={{ ...LABEL, marginLeft: "auto" }}>{L.heats}</span>
-        <span className="text-body-lg-5" style={{ color: vorsprung >= C.HEAT_MIN_MARGIN ? "#d4a63a" : "#5c5c68", fontWeight: 700 }}>
-          {vorsprung >= C.HEAT_MIN_MARGIN ? L.yes : L.no}
-        </span>
-      </div>
-      {hint && <div className="text-meta-1" style={{ color: "#71717c", marginTop: 7, lineHeight: 1.4 }}>{hint}</div>}
-    </div>
-  );
-}
-
-/* ---- Das grüne Feld ----
-   Fünfzehn Karten in drei Segmenten, drei Füllstände. Grüne Karten gelten als GLEICHE Farbe, auch
-   wenn sie es nicht sind — der Farbblock entsteht also aus der Reife, nicht aus der Farbe. Der
-   Faktor kommt aus derselben `computeFormations`, die im Lauf rechnet. */
-const GRUEN_STUFEN = [0, 10, 15];
-const GRUEN_HAND = [4, 9, 2, 7, 5, 8, 3, 10, 6, 1, 9, 4, 7, 2, 8];
-
-export function GruenfeldProbe({ title, hint, readoutLabel, labels }) {
-  const [locale] = useLocale();
-  const [stufe, setStufe] = useState(0);
-  const L = labels || {};
-  const gruen = GRUEN_STUFEN[stufe];
-  /* Grüne Karten zählen als eine Farbe. Statt das nachzubauen, wird die Hand mit der ECHTEN
-     Funktion gerechnet: die grünen Karten bekommen alle dieselbe Farbe, die übrigen behalten ihre. */
-  const faktor = useMemo(() => {
-    const karten = GRUEN_HAND.map((v, i) => ({ id: i, value: v, suit: i < gruen ? "G" : C.SUIT_ORDER[i % C.SUIT_ORDER.length] }));
-    const per = computeFormations(karten.map((_, i) => i), karten);
-    return summarizeFormations(per).maxMult;
-  }, [gruen]);
-
-  return (
-    <div className="tut-beat tut-probe" style={{ margin: "0 0 14px", padding: "12px 12px 11px", ...ZEILE }}>
-      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 8 }}>{title}</div>
-      <div style={{ display: "flex", gap: 5, marginBottom: 9 }}>
-        {[L.none, L.twoThirds, L.all].map((w, i) => (
-          <button key={i} type="button" onClick={() => setStufe(i)} aria-pressed={stufe === i ? "true" : "false"}
-            className="tut-chip text-body-5 font-semibold"
-            style={{ flex: "1 1 0", minWidth: 0, minHeight: 44, borderRadius: 8, padding: "5px 4px",
-              color: stufe === i ? "#e8e8ea" : "#8a8a95",
-              background: stufe === i ? "rgba(90,184,122,.18)" : "rgba(15,15,21,.72)",
-              border: `1px solid ${stufe === i ? "#5ab87a" : "rgba(150,150,170,.12)"}` }}>{w}</button>
-        ))}
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: `repeat(${SEGMENT_SIZE},1fr)`, gap: 4 }}>
-        {GRUEN_HAND.map((v, i) => (
-          <div key={i} className="tut-cell text-body-5 flex items-center justify-center font-bold"
-            style={{ aspectRatio: "1.2", minWidth: 0, borderRadius: 5,
-              color: i < gruen ? "#5ab87a" : "#c8c8d0",
-              background: "linear-gradient(180deg,#242433,#1a1a26)",
-              border: `1px solid ${i < gruen ? "#5ab87a" : "#33333e"}` }}>{v}</div>
-        ))}
-      </div>
-      <div className="tut-probe-out" style={{ marginTop: 10, paddingTop: 9, borderTop: HAIR, display: "flex", alignItems: "baseline", gap: 8 }}>
-        <span className="text-meta-1" style={LABEL}>{readoutLabel}</span>
-        <span className="text-body-lg-5" style={{ color: "#e8e8ea", fontWeight: 700 }}>{gruen} / {GRUEN_HAND.length}</span>
-        <span className="text-body-lg-5" style={{ marginLeft: "auto", color: "#e8e8ea", fontWeight: 700 }}>×{fmtNum(faktor.toFixed(2), locale)}</span>
-      </div>
-      {hint && <div className="text-meta-1" style={{ color: "#71717c", marginTop: 7, lineHeight: 1.4 }}>{hint}</div>}
-    </div>
-  );
-}
-
-/* ---- Das Gletscherfeld ----
-   Vier feste Formen auf dem Brett. Die Zahl darunter ist die Nachbardichte, aus der glacier.js den
-   Berst-Faktor bildet: 1 + KASKADE_PER_NEIGHBOR je Gletscher-Nachbar. */
-const GLET_FORMEN = {
-  block: [AP(2, 1), AP(2, 2), AP(3, 1), AP(3, 2)],
-  kreuz: [AP(2, 2), AP(3, 1), AP(3, 2), AP(3, 3), AP(4, 2)],
-  linie: [AP(3, 0), AP(3, 1), AP(3, 2), AP(3, 3), AP(3, 4)],
-  flaeche: [AP(2, 1), AP(2, 2), AP(2, 3), AP(3, 1), AP(3, 2), AP(3, 3), AP(4, 2)],
-};
-const GLET_IDS = ["block", "kreuz", "linie", "flaeche"];
-
-export function GletscherfeldProbe({ title, hint, readoutLabel, labels }) {
-  const [locale] = useLocale();
-  const [form, setForm] = useState("block");
-  const L = labels || {};
-  const zellen = GLET_FORMEN[form];
-  const menge = new Set(zellen);
-  // Nachbardichte: wie viele der vier Kantennachbarn ebenfalls Gletscher sind, im Schnitt.
-  const nachbarn = zellen.reduce((sum, p) => {
-    const r = rowOf(p), c = colOf(p), adj = [];
-    if (r > 0) adj.push(posOf(r - 1, c));
-    if (r < ROWS - 1) adj.push(posOf(r + 1, c));
-    if (c > 0) adj.push(posOf(r, c - 1));
-    if (c < COLS - 1) adj.push(posOf(r, c + 1));
-    return sum + adj.filter((q) => menge.has(q)).length;
-  }, 0) / zellen.length;
-  const faktor = 1 + GLACIER.KASKADE_PER_NEIGHBOR * nachbarn;
-  const farben = new Map(zellen.map((p) => [p, "#5a8ade"]));
-
-  return (
-    <div className="tut-beat tut-probe" style={{ margin: "0 0 14px", padding: "12px 12px 11px", ...ZEILE }}>
-      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 8 }}>{title}</div>
-      <div style={{ display: "flex", gap: 5, marginBottom: 9 }}>
-        {GLET_IDS.map((id) => (
-          <button key={id} type="button" onClick={() => setForm(id)} aria-pressed={form === id ? "true" : "false"}
-            className="tut-chip text-body-5 font-semibold"
-            style={{ flex: "1 1 0", minWidth: 0, minHeight: 44, borderRadius: 8, padding: "5px 4px",
-              color: form === id ? "#e8e8ea" : "#8a8a95",
-              background: form === id ? "rgba(90,138,222,.18)" : "rgba(15,15,21,.72)",
-              border: `1px solid ${form === id ? "#5a8ade" : "rgba(150,150,170,.12)"}` }}>
-            {L[id] || id}
-          </button>
-        ))}
-      </div>
-      <Brett farben={farben} markiert={-1} zeilen={6} />
-      <div className="tut-probe-out" style={{ marginTop: 10, paddingTop: 9, borderTop: HAIR, display: "flex", alignItems: "baseline", gap: 8 }}>
-        <span className="text-meta-1" style={LABEL}>{readoutLabel}</span>
-        <span className="text-body-lg-5" style={{ color: "#e8e8ea", fontWeight: 700 }}>{zellen.length}</span>
-        <span className="text-body-lg-5" style={{ marginLeft: "auto", color: "#e8e8ea", fontWeight: 700 }}>×{fmtNum(faktor.toFixed(2), locale)}</span>
-      </div>
-      {hint && <div className="text-meta-1" style={{ color: "#71717c", marginTop: 7, lineHeight: 1.4 }}>{hint}</div>}
-    </div>
-  );
-}
 
 /* ---- Der Endscreen ----
    Dieselbe Landkarten-Bauweise wie der Lauf- und der Bauphasen-Bildschirm; die Namen liegen unter
@@ -1024,12 +756,14 @@ export const PROBES = {
   legendaer: LegendaerSzene,
   blitzkarte: BlitzkarteSzene,
   // Dieselbe Form, zwei Archetypen: eine Karte, eine wachsende Zahl, drei Schwellen.
-  pflanzkarte: (p) => <StufenProbe {...p} art="pflanze" />,
-  gletscher: (p) => <StufenProbe {...p} art="eis" />,
-  hitze: HitzeProbe,
-  feuerkarten: FeuerkartenProbe,
-  gruenfeld: GruenfeldProbe,
-  gletscherfeld: GletscherfeldProbe,
+  pflanzkarte: PflanzkarteSzene,
+  pflanzzeichen: PflanzzeichenSzene,
+  gletscher: GletscherSzene,
+  hitze: HitzeSzene,
+  feuerkarten: FeuerkartenSzene,
+  schmiede: SchmiedeSzene,
+  gruenfeld: GruenfeldSzene,
+  gletscherfeld: GletscherfeldSzene,
   gomock: GomockProbe,
   meilenstein: MeilensteinProbe,
   baum: BaumProbe,

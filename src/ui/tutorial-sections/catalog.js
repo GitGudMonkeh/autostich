@@ -186,13 +186,16 @@ export const SECTIONS = [
         { kind: "block", label: true },
         { kind: "regeln" },
         { kind: "tip" }] },
+      /* Der Karten-Schirm des Entwurfs maß 1037 px — über dem Budget. Owner-Entscheid:
+         aufteilen statt kürzen; die Schmiede-Kette ist eine eigene Lektion. */
       { id: "karte", art: "voll", beats: [
         { kind: "probierfeld", probe: "feuerkarten" },
-        { kind: "block", label: true },
+        { kind: "tip" }] },
+      { id: "schmiede", art: "voll", beats: [
+        { kind: "probierfeld", probe: "schmiede" },
         { kind: "tip" }] },
       { id: "feld", art: "voll", beats: [
         { kind: "probierfeld", probe: "hitze" },
-        { kind: "block", label: true },
         { kind: "tip" }] },
       { id: "tipps", art: "voll", beats: [
         { kind: "probierfeld", probe: "tipps" },
@@ -209,13 +212,15 @@ export const SECTIONS = [
         { kind: "merk" },
         { kind: "regeln" },
         { kind: "tip" }] },
+      /* Der Pflanzen-Karten-Schirm maß 1083 px — Owner-Entscheid: aufteilen statt kürzen. */
       { id: "karte", art: "voll", beats: [
         { kind: "probierfeld", probe: "pflanzkarte" },
-        { kind: "block", label: true },
+        { kind: "tip" }] },
+      { id: "erkennen", art: "kurz", beats: [
+        { kind: "probierfeld", probe: "pflanzzeichen" },
         { kind: "tip" }] },
       { id: "feld", art: "voll", beats: [
         { kind: "probierfeld", probe: "gruenfeld" },
-        { kind: "block", label: true },
         { kind: "tip" }] },
       { id: "tipps", art: "voll", beats: [
         { kind: "probierfeld", probe: "tipps" },
@@ -234,11 +239,9 @@ export const SECTIONS = [
         { kind: "tip" }] },
       { id: "karte", art: "voll", beats: [
         { kind: "probierfeld", probe: "gletscher" },
-        { kind: "block", label: true },
         { kind: "tip" }] },
       { id: "feld", art: "voll", beats: [
         { kind: "probierfeld", probe: "gletscherfeld" },
-        { kind: "block", label: true },
         { kind: "tip" }] },
       { id: "tipps", art: "voll", beats: [
         { kind: "probierfeld", probe: "tipps" },
@@ -461,7 +464,7 @@ const PROBE_PX = { formation: 700, streak: 150, board: 215,
      gruenfeld 315 · gletscher 252 · gletscherfeld 358. Zum VIERTEN Mal in diesem Task war ein
      neues Feld hier zuerst nicht eingetragen und fiel auf PROBE_MAX; wer ein Probierfeld baut,
      trägt es HIER ein, sonst misst das Budget etwas anderes als der Leser sieht. */
-  feuerkarten: 290, hitze: 170, pflanzkarte: 325, gruenfeld: 335, gletscher: 270, gletscherfeld: 375,
+  feuerkarten: 425, schmiede: 465, hitze: 715, pflanzkarte: 710, pflanzzeichen: 262, gruenfeld: 670, gletscher: 645, gletscherfeld: 755,
   // Nach dem Lauf und Fortgeschritten, gemessen: gomock 299 · meilenstein 169 · baum 352 ·
   // laenge 299 · segmente 311.
   gomock: 320, meilenstein: 190, baum: 370, laenge: 320, segmente: 330 };
