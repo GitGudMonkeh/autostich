@@ -95,14 +95,41 @@ Größenwechsel nichts nachjustiert werden muss.
 | Abstand links / rechts | `.02em` / `.085em` |
 
 Ergibt eine Spalte von `.874em` Höhe. Die Versalhöhe von Orbitron liegt bei rund `.7em` — die Spalte
-überschreitet die Zeile also oben und unten leicht. **Das ist Absicht:** der Buchstabe bricht die
-Versallinie und wird dadurch als Zeichen lesbar statt als verunglücktes I.
+überschreitet die Zeile also oben und unten leicht. ~~**Das ist Absicht:** der Buchstabe bricht die
+Versallinie und wird dadurch als Zeichen lesbar statt als verunglücktes I.~~
+
+> **Überholt — Owner-Entscheidung vom 26.08.2026 am gebauten Screen (Q11).** Die Spalte schließt oben
+> und unten **bündig** mit den Buchstaben ab. Zwei Zahlen dieses Abschnitts sind damit ersetzt und eine
+> ist korrigiert:
+>
+> - Die Versalhöhe ist **`.71875em`**, nicht „rund .7em" — gemessen an der Schrift, ab 352 px
+>   Schriftgrad konvergiert und für **jede** Versalie identisch: Orbitron zieht auch seine runden
+>   Formen flach, es gibt also keinen Überschuss.
+> - Die Spalte ist damit **`.71875em`** hoch statt `.874em`.
+> - Die Maßtabelle darüber gilt **als Verhältnis weiter**: die ganze Spalte skaliert um einen Faktor
+>   (`.71875 / .874 = .8224`), Zelle und Fuge behalten also ihr Verhältnis zueinander. Nur so bleibt
+>   der Buchstabe ein *Ausschnitt* des Zeichens und wird nicht zu einer zweiten Zeichnung mit eigenem
+>   Rhythmus. Gemessen ergibt das Zelle `.074em` und Fuge `.0181em`.
+> - **Über die Fugen allein ging es nicht**, und das ist der Grund für die Skalierung: acht Zellen zu
+>   `.09em` sind `.72em` und damit bereits höher als die Versalie — die Fuge müsste negativ werden.
+>
+> Nachweis: `docs/workstreams/mainscreen-branding/measurements/C5.md`, Belege in `evidence/C5/`.
 
 ### Welche Zellen leuchten
 
 Dieselbe Fünferschritt-Regel, auf eine einzelne Spalte angewandt: **jedes dritte Segment leuchtet**,
 also 1, 4 und 7 von acht. Der Buchstabe ist damit kein neues Muster, sondern ein Ausschnitt des
 Zeichens.
+
+> **Ergänzt — Owner-Entscheidung vom 26.08.2026 (Q11).** Die **fünf übrigen** Zellen der Spalte tragen
+> den **Zwischenton** der Zustandstabelle (Deckfarbe 28 % Fläche, 66 % Kante) statt des ruhigen Weiß
+> bei 3 %. Das ist kein neuer Wert, sondern ein anderer aus derselben Tabelle — und es ist die Regel
+> dieses Abschnitts auf ihren eigenen Fall angewandt: die drei Zustände gelten für den **dunklen
+> Screen-Grund**, und der Grund der Spalte ist kein Screen, sondern eine Reihe massiver 88-px-Buchstaben.
+> Dort geht der Schritt nach oben statt zurück.
+>
+> **Nur in der Spalte.** Die eigenständige Bildmarke steht auf dem Screen-Grund, für den die Tabelle
+> kalibriert ist, und behält ihren ruhigen Zustand.
 
 ### Kleinfassung
 

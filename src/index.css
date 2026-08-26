@@ -2913,11 +2913,28 @@ b, strong { font-weight: 600; }
      Zelle .09 · Fuge .022 · Spalte .874 (= 8 Zellen + 7 Fugen, fällt aus den Teilen und steht nicht
      als eigene Zahl) · Abstand links .02, rechts .085.
 
-     DER SITZ IST HERGELEITET, NICHT GERÜCKT. Die Versalhöhe von Orbitron liegt bei rund .7em, das
-     Versalband läuft also von der Grundlinie bis −.7em und seine Mitte liegt bei −.35em. Eine .874em
-     hohe Spalte, auf diese Mitte zentriert, endet .087em UNTER der Grundlinie — und genau das ist der
-     Überstand oben und unten, den der Entwurf will: der Buchstabe bricht die Versallinie und wird
-     dadurch als Zeichen lesbar statt als verunglücktes I.
+     DER SITZ IST BÜNDIG, UND DIE HÖHE IST GEMESSEN. Owner-Entscheidung vom 26.08.2026: die Spalte
+     schließt oben und unten mit den Buchstaben ab, statt die Versallinie zu brechen. Das ersetzt den
+     Überstand, den `mainscreen-marke.md` unter „Maße" als Absicht führt — diese eine Zeile des
+     Entwurfs ist damit überholt, der Rest nicht.
+
+     Die Versalhöhe steht dafür nicht mehr als „rund .7em" da, sondern gemessen: .71875 em, an der
+     echten Schrift, konvergiert ab 352 px Schriftgrad, und identisch für JEDE Versalie — Orbitron
+     zieht auch seine runden Formen flach, es gibt also keinen Überschuss, gegen den „bündig"
+     mehrdeutig wäre. Die Reihe steht in `evidence/C5/capheight.txt`.
+
+     WARUM DIE ZELLE MITSKALIERT UND NICHT NUR DIE FUGE. Der Owner hat angeboten, die Abstände
+     anzupassen — gemessen geht das nicht: acht Zellen zu .09em sind .72em und damit schon höher als
+     die Versalie, die Fuge müsste NEGATIV werden. Also skaliert die ganze Spalte um EINEN Faktor
+     (.71875 / .874 = .8224), und das ist nicht nur die mögliche, sondern die richtige Antwort: das
+     Verhältnis von Zelle zu Fuge bleibt exakt das des ganzen Zeichens, und der Buchstabe bleibt ein
+     AUSSCHNITT derselben Zeichnung statt einer zweiten mit eigenem Rhythmus.
+
+     Der Faktor steht nirgends als Zahl. Die viewBox trägt die Maßtabelle bereits; wer die HÖHE setzt,
+     skaliert alles darin mit, und `width: auto` holt die Breite aus dem Seitenverhältnis.
+     `vertical-align: baseline` setzt die Unterkante eines ersetzten Inline-Blocks auf die Grundlinie —
+     oben endet die Spalte damit genau auf der Versallinie. Bündig durch Konstruktion, nicht durch
+     einen Korrekturwert.
 
      DEN SCHEIN ERBT DIE SPALTE. `.as-wordmark` trägt oben ein `drop-shadow` in der Deckfarbe, und ein
      Filter wirkt auf den ganzen Teilbaum — die leuchtenden Zellen glühen also mit dem Wort, mit einer
@@ -2927,10 +2944,26 @@ b, strong { font-weight: 600; }
      sichtbar, und die Grundregel oben hält es unter der Schwelle in jedem Fall aus dem Layout. */
   .hub-play .as-brandgrid { display: inline-block; }
   .hub-play .as-brandgrid-column {
-    width: .09em; height: .874em;
+    width: auto; height: .71875em;
     margin-left: .02em; margin-right: .085em;
-    vertical-align: -.087em;
+    vertical-align: baseline;
     color: var(--deck-a1, #26c6e6);
+  }
+  /* MEHR FARBE IN DEN QUADRATEN — Owner-Entscheidung vom 26.08.2026, und sie führt keinen Wert ein:
+     die unbeleuchteten Zellen der Spalte nehmen den ZWISCHENTON aus der Zustandstabelle des Entwurfs
+     (Deckfarbe 28 % Fläche, 66 % Kante) statt des ruhigen Weiß bei 3 %.
+
+     Das ist die Regel des Entwurfs auf ihren eigenen Fall angewandt und keine Abweichung von ihr: er
+     sagt, die drei Zustände gelten für den DUNKLEN Screen-Grund und dürfen auf hellerem Grund
+     zurückgenommen werden. Der Grund der Spalte ist kein Screen, sondern eine Reihe massiver
+     88-px-Buchstaben — dort geht der Schritt nach OBEN.
+
+     Eingegrenzt auf die Spalte. Die eigenständige Bildmarke steht auf dem Screen-Grund, für den die
+     Tabelle kalibriert ist, und behält ihren ruhigen Zustand. Beide liegen im Nachweis als Bild
+     nebeneinander, damit der Unterschied eine Entscheidung ist und kein Versehen. */
+  .hub-play .as-brandgrid-column .as-bg-quiet {
+    fill: currentColor; stroke: currentColor;
+    fill-opacity: .28; stroke-opacity: .66;
   }
 
   /* --- Tagline und Bildmarke: mit der Wortmarke EIN Lockup --------------------

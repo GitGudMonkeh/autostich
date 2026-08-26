@@ -217,6 +217,44 @@ describe("#mainscreen-branding — die schmale Fassung sieht das Zeichen nicht",
       .toMatch(/\.hub-play \.as-brandgrid \{[^}]*display:\s*inline-block/);
   });
 
+  it("die Spalte sitzt buendig — Hoehe aus der Versalhoehe, kein Korrekturwert", () => {
+    /* OWNER-ENTSCHEIDUNG 26.08.2026: die Spalte schliesst oben und unten mit den Buchstaben ab. Das
+       ersetzt den Ueberstand, den `mainscreen-marke.md` unter „Masse" als Absicht fuehrt.
+
+       DREI DINGE MACHEN ES BUENDIG, und jedes einzelne kann still brechen:
+         1. die HOEHE ist die gemessene Versalhoehe von Orbitron (.71875em, evidence/C5/capheight.txt),
+         2. die BREITE kommt aus der viewBox (`auto`) — eine gesetzte Breite loeste die Zelle vom
+            Zellen-Raster und der Buchstabe waere kein Ausschnitt des Zeichens mehr,
+         3. es gibt KEINEN senkrechten Korrekturwert: die Unterkante eines ersetzten Inline-Blocks
+            sitzt bei `baseline` per Konstruktion auf der Grundlinie. Ein `vertical-align` mit einer
+            Zahl waere genau die Nachjustierung, die diese Regel ersetzt.
+       Der Nachweis am gerenderten Screen ist `evidence/C5/flush.mjs`: unten exakt 0, oben 0,12 px. */
+    const rule = deskBlock.match(/\.hub-play \.as-brandgrid-column\s*\{([^}]*)\}/);
+    expect(rule, ".hub-play .as-brandgrid-column fehlt").toBeTruthy();
+    expect(rule[1], "die Hoehe ist nicht mehr die gemessene Versalhoehe").toMatch(/height:\s*\.71875em/);
+    expect(rule[1], "die Breite wird gesetzt statt aus der viewBox genommen").toMatch(/width:\s*auto/);
+    expect(rule[1], "die Spalte haengt wieder an einem Korrekturwert")
+      .toMatch(/vertical-align:\s*baseline/);
+    expect(rule[1], "ein senkrechter Korrekturwert ist zurueck").not.toMatch(/vertical-align:\s*-?[\d.]/);
+  });
+
+  it("die unbeleuchteten Zellen der Spalte tragen den Zwischenton, nicht das ruhige Weiss", () => {
+    /* OWNER-ENTSCHEIDUNG 26.08.2026: mehr Farbe in den Quadraten. Genommen wird der ZWISCHENTON aus
+       der Zustandstabelle des Entwurfs (28 % / 66 %) — es kommt also kein Wert dazu, es wird einer
+       aus derselben Tabelle gewaehlt. Geprueft wird beides: dass die Regel den Ton traegt UND dass sie
+       auf die SPALTE eingegrenzt ist. Ohne die zweite Haelfte faerbte sie die eigenstaendige Bildmarke
+       mit, die auf dem Screen-Grund steht, fuer den die Tabelle kalibriert ist. */
+    const rule = deskBlock.match(/\.hub-play \.as-brandgrid-column \.as-bg-quiet\s*\{([^}]*)\}/);
+    expect(rule, "die Zwischenton-Regel der Spalte fehlt").toBeTruthy();
+    expect(rule[1]).toMatch(/fill:\s*currentColor/);
+    expect(rule[1], "die Flaeche traegt nicht den Zwischenton der Tabelle").toMatch(/fill-opacity:\s*\.28/);
+    expect(rule[1], "die Kante traegt nicht den Zwischenton der Tabelle").toMatch(/stroke-opacity:\s*\.66/);
+    /* Die Gegenprobe: KEINE Regel faerbt `.as-bg-quiet` ausserhalb der Spalte um. */
+    const wide = deskBlock.match(/[^{}]*\.as-bg-quiet[^{}]*\{[^}]*\}/g) || [];
+    const stray = wide.filter((r) => !/\.as-brandgrid-column/.test(r)).map((r) => r.split("{")[0].trim());
+    expect(stray, `.as-bg-quiet wird ausserhalb der Spalte umgefaerbt: ${stray.join(" | ")}`).toEqual([]);
+  });
+
   it("das zweite Schloss steht auch dann noch, wenn der Hook irrt", () => {
     /* Die JS-Weiche hält das Zeichen aus der schmalen Fassung heraus; diese Regel hält es aus dem
        LAYOUT heraus, falls der Hook je zu früh `true` meldet. Zwei Schlösser an einer Tür, und die
