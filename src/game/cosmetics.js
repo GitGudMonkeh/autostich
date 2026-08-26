@@ -7,7 +7,7 @@
 
    Freischalt-Bedingung `unlock`:
      null                    → immer frei (Default = aktueller Look)
-     { kind: "games",  n }   → profile.games      >= n   (gespielte Läufe)
+     { kind: "completedGames", n } → profile.runsCompleted >= n (ABGESCHLOSSENE Läufe — `games` zählt Abbrüche mit)
      { kind: "streak", n }   → profile.bestStreak >= n
      { kind: "score",  n }   → profile.bestScore  >= n
      { kind: "completedRun" } → profile.hadCompletedRun === true (EIN abgeschlossener Lauf — NICHT `games`, das zählt Abbrüche mit)
@@ -76,9 +76,9 @@ export const DECK_DEFS = {
   deck_titan2:  { id: "deck_titan2",  name: "Titan · Aufstieg",   unlock: { kind: "score", n: 50000000 } },
   deck_titan3:  { id: "deck_titan3",  name: "Titan · Entfesselt", unlock: { kind: "score", n: 100000000 } },
   // #tiered Hirsch — Stufen-Challenge über abgeschlossene Läufe (10/20/30).
-  deck_hirsch1: { id: "deck_hirsch1", name: "Hirsch · Sternbild",  unlock: { kind: "games", n: 10 } },
-  deck_hirsch2: { id: "deck_hirsch2", name: "Hirsch · Erwacht",    unlock: { kind: "games", n: 20 } },
-  deck_hirsch3: { id: "deck_hirsch3", name: "Hirsch · Sternenlauf", unlock: { kind: "games", n: 30 } },
+  deck_hirsch1: { id: "deck_hirsch1", name: "Hirsch · Sternbild",  unlock: { kind: "completedGames", n: 10 } },
+  deck_hirsch2: { id: "deck_hirsch2", name: "Hirsch · Erwacht",    unlock: { kind: "completedGames", n: 20 } },
+  deck_hirsch3: { id: "deck_hirsch3", name: "Hirsch · Sternenlauf", unlock: { kind: "completedGames", n: 30 } },
   // #tiered Thron — Ranglisten-Serie über gewonnene Wochen (Platz 1 im Meister-Wochen-Board, 1./2./3. Sieg).
   deck_thron1: { id: "deck_thron1", name: "Thron · Anwärter",     unlock: { kind: "championWeek", n: 1 } },
   deck_thron2: { id: "deck_thron2", name: "Thron · Souverän",     unlock: { kind: "championWeek", n: 2 } },
@@ -170,9 +170,9 @@ export const BATTLEFIELD_DEFS = {
   bf_titan1:  { id: "bf_titan1",  name: bfName("deck_titan1"),  unlock: { kind: "score", n: 25000000 } },
   bf_titan2:  { id: "bf_titan2",  name: bfName("deck_titan2"),  unlock: { kind: "score", n: 50000000 } },
   bf_titan3:  { id: "bf_titan3",  name: bfName("deck_titan3"),  unlock: { kind: "score", n: 100000000 } },
-  bf_hirsch1: { id: "bf_hirsch1", name: bfName("deck_hirsch1"), unlock: { kind: "games", n: 10 } },
-  bf_hirsch2: { id: "bf_hirsch2", name: bfName("deck_hirsch2"), unlock: { kind: "games", n: 20 } },
-  bf_hirsch3: { id: "bf_hirsch3", name: bfName("deck_hirsch3"), unlock: { kind: "games", n: 30 } },
+  bf_hirsch1: { id: "bf_hirsch1", name: bfName("deck_hirsch1"), unlock: { kind: "completedGames", n: 10 } },
+  bf_hirsch2: { id: "bf_hirsch2", name: bfName("deck_hirsch2"), unlock: { kind: "completedGames", n: 20 } },
+  bf_hirsch3: { id: "bf_hirsch3", name: bfName("deck_hirsch3"), unlock: { kind: "completedGames", n: 30 } },
   // #tiered Thron Battlefields (gleiche Bedingung wie ihr Deck).
   bf_thron1: { id: "bf_thron1", name: bfName("deck_thron1"), unlock: { kind: "championWeek", n: 1 } },
   bf_thron2: { id: "bf_thron2", name: bfName("deck_thron2"), unlock: { kind: "championWeek", n: 2 } },
@@ -229,7 +229,7 @@ export function isUnlocked(def, profile) {
   if (!u) return true;
   const p = profile || {};
   switch (u.kind) {
-    case "games":       return (p.games      || 0) >= u.n;
+    case "completedGames": return (p.runsCompleted || 0) >= u.n; // #hirsch-abgeschlossen: NICHT `games` — das zählt Abbrüche mit
     case "streak":      return (p.bestStreak || 0) >= u.n;
     case "score":       return (p.bestScore  || 0) >= u.n;
     case "completedRun": return !!p.hadCompletedRun; // #deck-insertcoin: EIN abgeschlossener Lauf — Abbrüche zählen nicht
@@ -259,8 +259,8 @@ export function unlockProgress(def, profile) {
   if (!u) return { done: true, cur: 1, target: 1, kind: "none", vars: {} };
   const p = profile || {};
   switch (u.kind) {
-    case "games": {
-      const have = p.games || 0;
+    case "completedGames": {
+      const have = p.runsCompleted || 0;
       return { done: have >= u.n, cur: Math.min(have, u.n), target: u.n, kind: u.kind, vars: { n: u.n } };
     }
     case "streak": {

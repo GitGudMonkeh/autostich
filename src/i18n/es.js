@@ -1136,8 +1136,7 @@ export default {
      "Platz 1" stays the numeral `puesto 1`. The English catalog needed two entries in the number
      guard's exception list here because "place 1" reads wrong in English; Spanish does not. */
   "unlock.none": "Siempre disponible",
-  "unlock.games": "Juega {n} partidas",
-  "unlock.games.one": "Juega una partida",
+  "unlock.completedGames": "Termina {n} partidas",
   "unlock.streak": "Consigue una racha de {n}",
   "unlock.score": "Alcanza {n} de puntuación",
   "unlock.completedRun": "Termina una partida completa",

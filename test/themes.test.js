@@ -296,16 +296,21 @@ describe("#tiered — Titan (Score 25/50/100 Mio) & Hirsch (10/20/30 Läufe)", (
     expect(packUnlock(prof(), T)).toMatchObject({ target: 25000000 });
     expect(resolvePackByDeckId("deck_titan2").a1).toBe("#9b3fff");
   });
-  it("Hirsch: drei Läufe-Stufen, Cover = höchste freie Stufe", () => {
+  /* NACHGEZOGEN: die Leiter zählt ABGESCHLOSSENE Läufe (`runsCompleted`), nicht `games` — das zählte
+     jeden begonnenen mit, Abbrüche eingeschlossen, und der Kommentar dieser Gruppe sagte schon immer
+     „Läufe". Die letzte Zeile hält den Fehler in seiner allgemeinen Form fest. */
+  it("Hirsch: drei Stufen über ABGESCHLOSSENE Läufe, Cover = höchste freie Stufe", () => {
     const H = THEME_DEFS.hirsch;
     expect(isTieredPack(H)).toBe(true);
     expect(H.tiers.map((t) => t.deckId)).toEqual(["deck_hirsch1", "deck_hirsch2", "deck_hirsch3"]);
-    expect(unlockedTiers(prof({ games: 9 }), H)).toEqual([]);
-    expect(unlockedTiers(prof({ games: 20 }), H).map((t) => t.roman)).toEqual(["I", "II"]);
-    expect(coverTier(prof({ games: 30 }), H).roman).toBe("III");
-    expect(packOwned(prof({ games: 10 }), H)).toBe(true);
-    expect(packOwned(prof({ games: 9 }), H)).toBe(false);
+    expect(unlockedTiers(prof({ runsCompleted: 9 }), H)).toEqual([]);
+    expect(unlockedTiers(prof({ runsCompleted: 20 }), H).map((t) => t.roman)).toEqual(["I", "II"]);
+    expect(coverTier(prof({ runsCompleted: 30 }), H).roman).toBe("III");
+    expect(packOwned(prof({ runsCompleted: 10 }), H)).toBe(true);
+    expect(packOwned(prof({ runsCompleted: 9 }), H)).toBe(false);
     expect(resolvePackByDeckId("deck_hirsch3").pack.id).toBe("hirsch");
+    // 30 begonnene, keiner abgeschlossen → die Leiter bleibt zu.
+    expect(packOwned(prof({ games: 30, runsCompleted: 0 }), H)).toBe(false);
   });
 });
 
