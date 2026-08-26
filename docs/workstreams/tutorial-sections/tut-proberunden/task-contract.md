@@ -199,12 +199,15 @@ Eine Einschränkung, die im Code steht und hier festgehalten gehört: „abgesch
 **geöffnet**. Die Schale kennt keinen Abschluss, den man erreichen könnte, und der Kommentar in
 App.jsx begründet das: „es gibt keinen Abschluss mehr … also wäre ‚fertig‘ gelogen".
 
-**3. Die Archetyp-Panels** je Archetyp einfärben: NÄCHSTER TASK. Die vier Sektionen stehen jetzt;
-ihre Einfärbung ist ein Gestaltungsdurchgang über fertige Inhalte, kein Teil des Aufbaus.
+**3. Die Archetyp-Panels — ERLEDIGT.** Die vier Archetyp-Sektionen tragen ihren Akzent über
+`ARCHETYPE_META`; der Katalog nennt nur den Schlüssel, die Schale setzt EINE Variable
+(`--deck-a1`), die die ganze Lektion trägt. Beleg: `evidence/feuer-1-akzent.png`.
 
-**4. Der Sprachprüfer** bleibt vorerst im Scratchpad. Er prüft den Entwurf gegen den Styleguide;
-was davon dauerhaft gehört, entscheidet der Task `text-sprachpass`, der ohnehin die 18 Befunde im
-übrigen Katalog trägt.
+**4. Der Sprachprüfer** bleibt im Scratchpad; was davon dauerhaft gehört, entscheidet
+`text-sprachpass`. **Der Prozent-Umbruch ist dagegen hier erledigt** und nicht mehr Teil jenes
+Tasks: `fmtPct` setzt ein geschütztes Leerzeichen, 48 Stellen in `de.js` sind nachgezogen,
+`docs/text-style-guide.md` §2 sagt es jetzt, und der bestehende `fmtPct`-Wächter hat eine
+Gegenprobe bekommen.
 
 <!-- alte Fassung, zur Nachvollziehbarkeit:
 **2. Der Erstkontakt.****2. Der Erstkontakt.** `StartScreen.jsx:191` zeigt das laute Angebot, solange
