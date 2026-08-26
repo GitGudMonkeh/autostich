@@ -1,0 +1,2214 @@
+
+  compared 160 cells, 25299 matched nodes
+  Surfaces only. Control states are not captured and are verified by hand.
+
+  unmatched nodes: 0 pre-registered (H-c: leaderboard, victory), 0 elsewhere
+
+  550 computed delta(s), all of them printed:
+    de/1280x720/feedback
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    de/1280x720/feedback
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1280x720/feedback
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1280x720/feedback
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1280x720/feedback
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1280x720/glossary
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    de/1280x720/glossary
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1280x720/glossary
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1280x720/glossary
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1280x720/glossary
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1280x720/guide
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    de/1280x720/guide
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1280x720/guide
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1280x720/guide
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1280x720/guide
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1280x720/hub
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    de/1280x720/hub
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1280x720/hub
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1280x720/hub
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1280x720/hub
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1280x720/leaderboard
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    de/1280x720/leaderboard
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1280x720/leaderboard
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1280x720/leaderboard
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1280x720/leaderboard
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1280x720/options
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    de/1280x720/options
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1280x720/options
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1280x720/options
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1280x720/options
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1280x720/privacy
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    de/1280x720/privacy
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1280x720/privacy
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1280x720/privacy
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1280x720/privacy
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1280x720/shop-fx
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    de/1280x720/shop-fx
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1280x720/shop-fx
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1280x720/shop-fx
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1280x720/shop-fx
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1280x720/shop-packs
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    de/1280x720/shop-packs
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1280x720/shop-packs
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1280x720/shop-packs
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1280x720/shop-packs
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1280x720/stats
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    de/1280x720/stats
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1280x720/stats
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1280x720/stats
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1280x720/stats
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1280x720/upgrades
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    de/1280x720/upgrades
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1280x720/upgrades
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1280x720/upgrades
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1280x720/upgrades
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1400x700/feedback
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    de/1400x700/feedback
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1400x700/feedback
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1400x700/feedback
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1400x700/feedback
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1400x700/glossary
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    de/1400x700/glossary
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1400x700/glossary
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1400x700/glossary
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1400x700/glossary
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1400x700/guide
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    de/1400x700/guide
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1400x700/guide
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1400x700/guide
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1400x700/guide
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1400x700/hub
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    de/1400x700/hub
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1400x700/hub
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1400x700/hub
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1400x700/hub
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1400x700/leaderboard
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    de/1400x700/leaderboard
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1400x700/leaderboard
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1400x700/leaderboard
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1400x700/leaderboard
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1400x700/options
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    de/1400x700/options
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1400x700/options
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1400x700/options
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1400x700/options
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1400x700/privacy
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    de/1400x700/privacy
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1400x700/privacy
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1400x700/privacy
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1400x700/privacy
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1400x700/shop-fx
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    de/1400x700/shop-fx
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1400x700/shop-fx
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1400x700/shop-fx
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1400x700/shop-fx
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1400x700/shop-packs
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    de/1400x700/shop-packs
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1400x700/shop-packs
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1400x700/shop-packs
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1400x700/shop-packs
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1400x700/stats
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    de/1400x700/stats
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1400x700/stats
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1400x700/stats
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1400x700/stats
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1400x700/upgrades
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    de/1400x700/upgrades
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1400x700/upgrades
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1400x700/upgrades
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1400x700/upgrades
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1536x791/feedback
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    de/1536x791/feedback
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1536x791/feedback
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1536x791/feedback
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1536x791/feedback
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1536x791/glossary
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    de/1536x791/glossary
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1536x791/glossary
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1536x791/glossary
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1536x791/glossary
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1536x791/guide
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    de/1536x791/guide
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1536x791/guide
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1536x791/guide
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1536x791/guide
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1536x791/hub
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    de/1536x791/hub
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1536x791/hub
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1536x791/hub
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1536x791/hub
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1536x791/leaderboard
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    de/1536x791/leaderboard
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1536x791/leaderboard
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1536x791/leaderboard
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1536x791/leaderboard
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1536x791/options
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    de/1536x791/options
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1536x791/options
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1536x791/options
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1536x791/options
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1536x791/privacy
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    de/1536x791/privacy
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1536x791/privacy
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1536x791/privacy
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1536x791/privacy
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1536x791/shop-fx
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    de/1536x791/shop-fx
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1536x791/shop-fx
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1536x791/shop-fx
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1536x791/shop-fx
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1536x791/shop-packs
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    de/1536x791/shop-packs
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1536x791/shop-packs
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1536x791/shop-packs
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1536x791/shop-packs
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1536x791/stats
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    de/1536x791/stats
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1536x791/stats
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1536x791/stats
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1536x791/stats
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1536x791/upgrades
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    de/1536x791/upgrades
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1536x791/upgrades
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1536x791/upgrades
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1536x791/upgrades
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1600x900/feedback
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    de/1600x900/feedback
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1600x900/feedback
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1600x900/feedback
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1600x900/feedback
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1600x900/glossary
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    de/1600x900/glossary
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1600x900/glossary
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1600x900/glossary
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1600x900/glossary
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1600x900/guide
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    de/1600x900/guide
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1600x900/guide
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1600x900/guide
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1600x900/guide
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1600x900/hub
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    de/1600x900/hub
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1600x900/hub
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1600x900/hub
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1600x900/hub
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1600x900/leaderboard
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    de/1600x900/leaderboard
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1600x900/leaderboard
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1600x900/leaderboard
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1600x900/leaderboard
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1600x900/options
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    de/1600x900/options
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1600x900/options
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1600x900/options
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1600x900/options
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1600x900/privacy
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    de/1600x900/privacy
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1600x900/privacy
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1600x900/privacy
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1600x900/privacy
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1600x900/shop-fx
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    de/1600x900/shop-fx
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1600x900/shop-fx
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1600x900/shop-fx
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1600x900/shop-fx
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1600x900/shop-packs
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    de/1600x900/shop-packs
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1600x900/shop-packs
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1600x900/shop-packs
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1600x900/shop-packs
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1600x900/stats
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    de/1600x900/stats
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1600x900/stats
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1600x900/stats
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1600x900/stats
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1600x900/upgrades
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    de/1600x900/upgrades
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1600x900/upgrades
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1600x900/upgrades
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1600x900/upgrades
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1920x1080/feedback
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    de/1920x1080/feedback
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1920x1080/feedback
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1920x1080/feedback
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1920x1080/feedback
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1920x1080/glossary
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    de/1920x1080/glossary
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1920x1080/glossary
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1920x1080/glossary
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1920x1080/glossary
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1920x1080/guide
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    de/1920x1080/guide
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1920x1080/guide
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1920x1080/guide
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1920x1080/guide
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1920x1080/hub
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    de/1920x1080/hub
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1920x1080/hub
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1920x1080/hub
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1920x1080/hub
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1920x1080/leaderboard
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    de/1920x1080/leaderboard
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1920x1080/leaderboard
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1920x1080/leaderboard
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1920x1080/leaderboard
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1920x1080/options
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    de/1920x1080/options
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1920x1080/options
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1920x1080/options
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1920x1080/options
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1920x1080/privacy
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    de/1920x1080/privacy
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1920x1080/privacy
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1920x1080/privacy
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1920x1080/privacy
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1920x1080/shop-fx
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    de/1920x1080/shop-fx
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1920x1080/shop-fx
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1920x1080/shop-fx
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1920x1080/shop-fx
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1920x1080/shop-packs
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    de/1920x1080/shop-packs
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1920x1080/shop-packs
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1920x1080/shop-packs
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1920x1080/shop-packs
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1920x1080/stats
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    de/1920x1080/stats
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1920x1080/stats
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1920x1080/stats
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1920x1080/stats
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1920x1080/upgrades
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    de/1920x1080/upgrades
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1920x1080/upgrades
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1920x1080/upgrades
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    de/1920x1080/upgrades
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1280x720/feedback
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    en/1280x720/feedback
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1280x720/feedback
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1280x720/feedback
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1280x720/feedback
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1280x720/glossary
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    en/1280x720/glossary
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1280x720/glossary
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1280x720/glossary
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1280x720/glossary
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1280x720/guide
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    en/1280x720/guide
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1280x720/guide
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1280x720/guide
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1280x720/guide
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1280x720/hub
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    en/1280x720/hub
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1280x720/hub
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1280x720/hub
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1280x720/hub
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1280x720/leaderboard
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    en/1280x720/leaderboard
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1280x720/leaderboard
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1280x720/leaderboard
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1280x720/leaderboard
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1280x720/options
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    en/1280x720/options
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1280x720/options
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1280x720/options
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1280x720/options
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1280x720/privacy
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    en/1280x720/privacy
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1280x720/privacy
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1280x720/privacy
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1280x720/privacy
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1280x720/shop-fx
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    en/1280x720/shop-fx
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1280x720/shop-fx
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1280x720/shop-fx
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1280x720/shop-fx
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1280x720/shop-packs
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    en/1280x720/shop-packs
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1280x720/shop-packs
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1280x720/shop-packs
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1280x720/shop-packs
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1280x720/stats
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    en/1280x720/stats
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1280x720/stats
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1280x720/stats
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1280x720/stats
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1280x720/upgrades
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    en/1280x720/upgrades
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1280x720/upgrades
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1280x720/upgrades
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1280x720/upgrades
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1400x700/feedback
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    en/1400x700/feedback
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1400x700/feedback
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1400x700/feedback
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1400x700/feedback
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1400x700/glossary
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    en/1400x700/glossary
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1400x700/glossary
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1400x700/glossary
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1400x700/glossary
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1400x700/guide
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    en/1400x700/guide
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1400x700/guide
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1400x700/guide
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1400x700/guide
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1400x700/hub
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    en/1400x700/hub
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1400x700/hub
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1400x700/hub
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1400x700/hub
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1400x700/leaderboard
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    en/1400x700/leaderboard
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1400x700/leaderboard
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1400x700/leaderboard
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1400x700/leaderboard
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1400x700/options
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    en/1400x700/options
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1400x700/options
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1400x700/options
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1400x700/options
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1400x700/privacy
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    en/1400x700/privacy
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1400x700/privacy
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1400x700/privacy
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1400x700/privacy
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1400x700/shop-fx
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    en/1400x700/shop-fx
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1400x700/shop-fx
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1400x700/shop-fx
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1400x700/shop-fx
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1400x700/shop-packs
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    en/1400x700/shop-packs
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1400x700/shop-packs
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1400x700/shop-packs
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1400x700/shop-packs
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1400x700/stats
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    en/1400x700/stats
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1400x700/stats
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1400x700/stats
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1400x700/stats
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1400x700/upgrades
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    en/1400x700/upgrades
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1400x700/upgrades
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1400x700/upgrades
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1400x700/upgrades
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1536x791/feedback
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    en/1536x791/feedback
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1536x791/feedback
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1536x791/feedback
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1536x791/feedback
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1536x791/glossary
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    en/1536x791/glossary
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1536x791/glossary
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1536x791/glossary
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1536x791/glossary
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1536x791/guide
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    en/1536x791/guide
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1536x791/guide
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1536x791/guide
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1536x791/guide
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1536x791/hub
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    en/1536x791/hub
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1536x791/hub
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1536x791/hub
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1536x791/hub
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1536x791/leaderboard
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    en/1536x791/leaderboard
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1536x791/leaderboard
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1536x791/leaderboard
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1536x791/leaderboard
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1536x791/options
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    en/1536x791/options
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1536x791/options
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1536x791/options
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1536x791/options
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1536x791/privacy
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    en/1536x791/privacy
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1536x791/privacy
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1536x791/privacy
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1536x791/privacy
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1536x791/shop-fx
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    en/1536x791/shop-fx
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1536x791/shop-fx
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1536x791/shop-fx
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1536x791/shop-fx
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1536x791/shop-packs
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    en/1536x791/shop-packs
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1536x791/shop-packs
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1536x791/shop-packs
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1536x791/shop-packs
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1536x791/stats
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    en/1536x791/stats
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1536x791/stats
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1536x791/stats
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1536x791/stats
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1536x791/upgrades
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    en/1536x791/upgrades
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1536x791/upgrades
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1536x791/upgrades
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1536x791/upgrades
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1600x900/feedback
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    en/1600x900/feedback
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1600x900/feedback
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1600x900/feedback
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1600x900/feedback
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1600x900/glossary
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    en/1600x900/glossary
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1600x900/glossary
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1600x900/glossary
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1600x900/glossary
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1600x900/guide
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    en/1600x900/guide
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1600x900/guide
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1600x900/guide
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1600x900/guide
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1600x900/hub
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    en/1600x900/hub
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1600x900/hub
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1600x900/hub
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1600x900/hub
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1600x900/leaderboard
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    en/1600x900/leaderboard
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1600x900/leaderboard
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1600x900/leaderboard
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1600x900/leaderboard
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1600x900/options
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    en/1600x900/options
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1600x900/options
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1600x900/options
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1600x900/options
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1600x900/privacy
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    en/1600x900/privacy
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1600x900/privacy
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1600x900/privacy
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1600x900/privacy
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1600x900/shop-fx
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    en/1600x900/shop-fx
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1600x900/shop-fx
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1600x900/shop-fx
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1600x900/shop-fx
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1600x900/shop-packs
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    en/1600x900/shop-packs
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1600x900/shop-packs
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1600x900/shop-packs
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1600x900/shop-packs
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1600x900/stats
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    en/1600x900/stats
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1600x900/stats
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1600x900/stats
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1600x900/stats
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1600x900/upgrades
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    en/1600x900/upgrades
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1600x900/upgrades
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1600x900/upgrades
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1600x900/upgrades
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1920x1080/feedback
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    en/1920x1080/feedback
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1920x1080/feedback
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1920x1080/feedback
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1920x1080/feedback
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1920x1080/glossary
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    en/1920x1080/glossary
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1920x1080/glossary
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1920x1080/glossary
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1920x1080/glossary
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1920x1080/guide
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    en/1920x1080/guide
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1920x1080/guide
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1920x1080/guide
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1920x1080/guide
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1920x1080/hub
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    en/1920x1080/hub
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1920x1080/hub
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1920x1080/hub
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1920x1080/hub
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1920x1080/leaderboard
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    en/1920x1080/leaderboard
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1920x1080/leaderboard
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1920x1080/leaderboard
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1920x1080/leaderboard
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1920x1080/options
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    en/1920x1080/options
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1920x1080/options
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1920x1080/options
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1920x1080/options
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1920x1080/privacy
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    en/1920x1080/privacy
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1920x1080/privacy
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1920x1080/privacy
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1920x1080/privacy
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1920x1080/shop-fx
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    en/1920x1080/shop-fx
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1920x1080/shop-fx
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1920x1080/shop-fx
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1920x1080/shop-fx
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1920x1080/shop-packs
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    en/1920x1080/shop-packs
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1920x1080/shop-packs
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1920x1080/shop-packs
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1920x1080/shop-packs
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1920x1080/stats
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    en/1920x1080/stats
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1920x1080/stats
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1920x1080/stats
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1920x1080/stats
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1920x1080/upgrades
+      0/0/2/0/5/0/4/1/0/0:INPUT  bc
+        before: rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51) rgb(42, 42, 51)
+        after : rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52) rgb(42, 42, 52)
+    en/1920x1080/upgrades
+      0/0/2/0/5/1/1/1/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1920x1080/upgrades
+      0/0/2/0/5/1/1/2/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1920x1080/upgrades
+      0/0/2/0/5/1/1/3/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+    en/1920x1080/upgrades
+      0/0/2/0/5/1/1/4/1:svg  rd
+        before: 9px 9px 9px 9px
+        after : 8px 8px 8px 8px
+
+  distribution of the 550 delta(s) — stated, not left to the eye:
+      by cell: de/1280x720/feedback=5  de/1280x720/glossary=5  de/1280x720/guide=5  de/1280x720/hub=5  de/1280x720/leaderboard=5  de/1280x720/options=5  de/1280x720/privacy=5  de/1280x720/shop-fx=5  de/1280x720/shop-packs=5  de/1280x720/stats=5  de/1280x720/upgrades=5  de/1400x700/feedback=5  de/1400x700/glossary=5  de/1400x700/guide=5  de/1400x700/hub=5  de/1400x700/leaderboard=5  de/1400x700/options=5  de/1400x700/privacy=5  de/1400x700/shop-fx=5  de/1400x700/shop-packs=5  de/1400x700/stats=5  de/1400x700/upgrades=5  de/1536x791/feedback=5  de/1536x791/glossary=5  de/1536x791/guide=5  de/1536x791/hub=5  de/1536x791/leaderboard=5  de/1536x791/options=5  de/1536x791/privacy=5  de/1536x791/shop-fx=5  de/1536x791/shop-packs=5  de/1536x791/stats=5  de/1536x791/upgrades=5  de/1600x900/feedback=5  de/1600x900/glossary=5  de/1600x900/guide=5  de/1600x900/hub=5  de/1600x900/leaderboard=5  de/1600x900/options=5  de/1600x900/privacy=5  de/1600x900/shop-fx=5  de/1600x900/shop-packs=5  de/1600x900/stats=5  de/1600x900/upgrades=5  de/1920x1080/feedback=5  de/1920x1080/glossary=5  de/1920x1080/guide=5  de/1920x1080/hub=5  de/1920x1080/leaderboard=5  de/1920x1080/options=5  de/1920x1080/privacy=5  de/1920x1080/shop-fx=5  de/1920x1080/shop-packs=5  de/1920x1080/stats=5  de/1920x1080/upgrades=5  en/1280x720/feedback=5  en/1280x720/glossary=5  en/1280x720/guide=5  en/1280x720/hub=5  en/1280x720/leaderboard=5  en/1280x720/options=5  en/1280x720/privacy=5  en/1280x720/shop-fx=5  en/1280x720/shop-packs=5  en/1280x720/stats=5  en/1280x720/upgrades=5  en/1400x700/feedback=5  en/1400x700/glossary=5  en/1400x700/guide=5  en/1400x700/hub=5  en/1400x700/leaderboard=5  en/1400x700/options=5  en/1400x700/privacy=5  en/1400x700/shop-fx=5  en/1400x700/shop-packs=5  en/1400x700/stats=5  en/1400x700/upgrades=5  en/1536x791/feedback=5  en/1536x791/glossary=5  en/1536x791/guide=5  en/1536x791/hub=5  en/1536x791/leaderboard=5  en/1536x791/options=5  en/1536x791/privacy=5  en/1536x791/shop-fx=5  en/1536x791/shop-packs=5  en/1536x791/stats=5  en/1536x791/upgrades=5  en/1600x900/feedback=5  en/1600x900/glossary=5  en/1600x900/guide=5  en/1600x900/hub=5  en/1600x900/leaderboard=5  en/1600x900/options=5  en/1600x900/privacy=5  en/1600x900/shop-fx=5  en/1600x900/shop-packs=5  en/1600x900/stats=5  en/1600x900/upgrades=5  en/1920x1080/feedback=5  en/1920x1080/glossary=5  en/1920x1080/guide=5  en/1920x1080/hub=5  en/1920x1080/leaderboard=5  en/1920x1080/options=5  en/1920x1080/privacy=5  en/1920x1080/shop-fx=5  en/1920x1080/shop-packs=5  en/1920x1080/stats=5  en/1920x1080/upgrades=5
+      by lang: de=275  en=275
+      by size: 1280x720=110  1400x700=110  1536x791=110  1600x900=110  1920x1080=110
+      by surface: feedback=50  glossary=50  guide=50  hub=50  leaderboard=50  options=50  privacy=50  shop-fx=50  shop-packs=50  stats=50  upgrades=50
+      by property: rd=440  bc=110

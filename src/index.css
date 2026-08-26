@@ -1201,12 +1201,43 @@ b, strong { font-weight: 600; }
    Zeile darunter in den Fuß gewandert (StartScreen), die Marke bekommt den Platz. `.hub-play` grenzt bewusst gegen
    den Run-Kopf ab (der zieht seine 22 px aus `.as-wordmark-sm`). Ab 1280 px gewinnt die Desktop-Regel (88 px, in
    der Media-Query weiter unten). Deckel 52 px: darüber stößt „AUTOSTICH" (nowrap) an die Mute-/Info-Knöpfe.
-   Gemessen an der DEUTSCHEN Marke — die ist mit zehn Zeichen die längere; „AUTOTRICK" (englisch, neun Zeichen)
-   bleibt darunter. Wer die Marke in einer Sprache verlängert, misst den Deckel neu. */
+   Gemessen an der DEUTSCHEN Marke. #mainscreen-branding C1 (25.08.2026), gemessen am gerenderten
+   Screen: „AUTOSTICH" hat NEUN Zeichen, nicht zehn — „AUTOTRICK" ebenfalls neun, und beide tragen das
+   I an derselben, siebten Stelle. Der 52-px-Deckel war damit gegen eine falsche Annahme gemessen; er
+   bleibt trotzdem stehen, weil er in der Sache stimmt und unter 1280 px in dieser Runde nichts bewegt
+   werden darf. Wer die Marke in einer Sprache verlängert, misst den Deckel neu. */
 .hub-play .as-wordmark { --wm-size: clamp(40px, 11.5vw, 52px); margin-top: 3rem; }
 @media (prefers-reduced-motion: reduce) {
   .as-wordmark { animation: none; }
 }
+
+/* ============================================================================
+   DAS ZEICHEN (#mainscreen-branding) — die drei Zellenzustände
+   ----------------------------------------------------------------------------
+   Geometrie und Menge stehen in `src/ui/BrandGrid.jsx`; hier steht nur, welche Farbe eine Zelle
+   trägt. Die Trennung ist gemessen und nicht ordentlich: eine Farbe als SVG-Attribut ist für
+   `panel-tokens.test.js` unsichtbar (der Wächter liest style-Objekte — M6-F11, M11-F08), und die
+   betonten Zellen sind DECKGETÖNT, ihr Ton muss also über die Kaskade von der Aufrufstelle kommen,
+   was ein Attribut nicht kann.
+
+   ZWEI BETONTE ZUSTÄNDE IN `currentColor`, EIN RUHIGER NEUTRAL. Der ruhige ist mit Absicht nicht
+   deckfarben: bei 22 % Kante würde die Deckfarbe das ganze Zeichen einfärben, und dann liest es sich
+   nicht mehr als Brett mit drei leuchtenden Zellen, sondern als farbiger Fleck. Die Werte sind die
+   des Entwurfs und gelten für den DUNKLEN Screen-Grund; auf hellerem Grund dürfen sie zurückgenommen
+   werden — die erste Fassung nutzte 9/16/40 % und war auf dem Mainscreen schlicht unsichtbar.
+
+   UNTER 1280 PX IST DAS ZEICHEN NICHT DA. Die acht Zellen fallen unter etwa 40 px Schriftgröße
+   zusammen; die schmale Fassung behält den normalen Glyph (Entwurf, „Abgrenzung"). `display: none`
+   steht deshalb HIER und das Gegenstück in der 1280-px-Sektion — nicht umgekehrt: so kann die
+   schmale Fassung sich nicht bewegen, egal was später dazukommt.
+   ============================================================================ */
+.as-brandgrid { display: none; }
+.as-bg-cell  { fill: currentColor; stroke: currentColor; }
+/* Ruhig: neutral, nicht deckfarben — s. o. */
+.as-bg-quiet { fill: #ffffff; stroke: #ffffff; fill-opacity: .03; stroke-opacity: .22; }
+/* Zwischenton und leuchtend: beide in der Deckfarbe, die das Element als `color` mitbringt. */
+.as-bg-mid   { fill-opacity: .28; stroke-opacity: .66; }
+.as-bg-hot   { fill-opacity: 1; stroke-opacity: 1; }
 
 /* Ambient-Glow hinter der Marke — drei weiche Ellipsen im Logo-Dreiklang (Cyan links · Violett Mitte ·
    Amber rechts). Lag bis 17.08.2026 als inline-style im JSX; inline kann keine Media Query, und genau
@@ -2512,13 +2543,26 @@ b, strong { font-weight: 600; }
 
      Untergrenze 0,85: darunter wird der Start-Knopf kleiner als 22 px. Auf einem 1280er Laptop ohne
      Systemskalierung ist das die Grenze des Lesbaren, und lieber wird es dort wieder etwas enger. */
-  .hub-pair, .hub-foot { zoom: clamp(0.85, tan(atan2(100vw, 1920px)), 1); }
+  /* #mainscreen-branding C3: der Faktor steht als EIGENSCHAFT und wird dann benutzt, statt zweimal
+     geschrieben zu werden. Die Deck-Tafel rechnet ihre Bildhöhe gegen genau diesen Zoom (s.
+     `.as-deck-art`), und eine zweite Kopie der Formel dort wäre die Drift, vor der die Kommentare in
+     dieser Datei sonst überall warnen. Der berechnete Zoom ändert sich dadurch um nichts — die
+     Maschinen-Hälfte weist es nach. */
+  .hub-pair, .hub-foot { --hub-zoom: clamp(0.85, tan(atan2(100vw, 1920px)), 1); zoom: var(--hub-zoom); }
 
   /* Der Hub stand im oberen Drittel: auf 1920 × 1080 endete das Fußband bei y = 825, darunter blieben
      255 px leer — ausgerechnet unten, wo das Bodenband des Decks am dichtesten ist. `margin-block: auto`
      am Paar verteilt die Restluft nach oben UND unten und schiebt das Fußband an den Rand. */
   .hub-pair { margin-block: auto; }
-  .hub-play { display: flex; flex-direction: column; align-items: flex-start; gap: 22px; }
+  /* #mainscreen-branding: ZENTRIERT statt linksbündig, und das ist die ganze Kopfzonen-Änderung am
+     Layout — kein Wrapper, keine zweite Regel. Begründung des Entwurfs: JEDER Block darunter läuft
+     über die volle Spaltenbreite, es gibt also keine linke Textachse, gegen die eine zentrierte
+     Marke verstoßen könnte. C1 hat das nachgemessen statt es zu glauben (C1-F13): von den fünf
+     Kindern dieser Spalte bewegt `center` GENAU EINES, die Wortmarke, und die vier darunter behalten
+     x und Breite auf allen fünf Viewports. Ein Wrapper um die drei Kopf-Elemente wäre die
+     Alternative gewesen und wäre teurer: `.hub-play` ist unter 1280 px `display: contents`, ein
+     Wrapper würde dort zu einer echten Box und die Handy-Reihenfolge verschieben. */
+  .hub-play { display: flex; flex-direction: column; align-items: center; gap: 22px; }
   .hub-stand { display: flex; flex-direction: column; gap: 20px; }
   /* Der Fuß löst sich von der Inhaltsspalte und wird ein Band über die volle Breite. */
   /* `width: min(1520px, 100%)` und nicht `100%`, und das ist keine Kosmetik: Der Zoom weiter unten
@@ -2553,13 +2597,26 @@ b, strong { font-weight: 600; }
        ein zweiter Blur je Zeile wäre Blur auf Blur und viermal dieselbe Fläche unschärfen. */
     -webkit-backdrop-filter: none; backdrop-filter: none;
   }
-  /* Ebenso das Seed-Feld: auf Desktop bleibt es die deckende Eingabe, die es immer war. */
-  .as-hub-field {
-    background: #141419;
-    border: 1px solid #2a2a33;
+  /* Ebenso das Seed-Feld: auf Desktop bleibt es die deckende Eingabe, die es immer war.
+     #mainscreen-branding C4: Fläche und Kante kommen jetzt aus dem Vokabular, und beide passen nach
+     ROLLE und nicht nur nach Zahl. `--sf-ground` ist in §2c „what a panel SITS ON … so an inner
+     structure box reads as a hole punched in the card" — genau das ist ein Eingabefeld, und der Wert
+     ist mit `#141419` auf das Byte derselbe. `--ed-quiet` ist `#2a2a34` gegen `#2a2a33`: EIN Schritt
+     auf dem Blaukanal, gemessen, und die Regel steht oberhalb der Schwelle, wo diese Runde umstellen
+     darf. */
+  /* EINGEGRENZT AUF `.hub-play`, und das ist keine Kosmetik — es ist der Unterschied zwischen einer
+     bewachten und einer unbewachten Regel. Die Ausnahmeliste der Ratsche greift nach dem SELEKTOR und
+     kennt die Media Query nicht: die Handy-Regel `.as-hub-field` braucht eine Ausnahme (ihre Werte
+     sind die der schmalen Fassung und dürfen sich nicht bewegen), und mit demselben Selektor wäre die
+     DESKTOP-Regel gleich mit ausgenommen. Gemessen: die Gegenprobe C4/CC1 und CC2 blieben grün, als
+     hier wieder `#141419` und `#2a2a33` standen. Zwei Klassen statt einer, und die Ausnahme trifft
+     nur noch die Zeile, für die sie gedacht ist. */
+  .hub-play .as-hub-field {
+    background: var(--sf-ground);
+    border: 1px solid var(--ed-quiet);
     -webkit-backdrop-filter: none; backdrop-filter: none;
   }
-  .as-hub-field.is-err { border-color: #e06a6a; }
+  .hub-play .as-hub-field.is-err { border-color: #e06a6a; }
   .as-hub-list .as-hub-tile:last-child { border-bottom: 0; }
 
   /* Die Knöpfe brauchen hier KEINE Sonderregel mehr: seit „Kante statt Fläche" ziehen sie ihre Farbe
@@ -2609,7 +2666,7 @@ b, strong { font-weight: 600; }
     opacity: 1;
     stroke-width: 1.9;
     color: var(--row-tone);
-    border-radius: 9px;
+    border-radius: var(--rd-md);  /* C4: 8 statt 9 — ein Pixel, gemessen */
     background: color-mix(in srgb, var(--row-tone) 14%, rgba(255, 255, 255, .02));
     border: 1px solid color-mix(in srgb, var(--row-tone) 26%, transparent);
   }
@@ -2617,8 +2674,134 @@ b, strong { font-weight: 600; }
      Text ohnehin ein, und 24 px vor der Icon-Kachel wären eine Delle. */
   .as-hub-list .as-hub-tile { padding-left: 18px; }
 
+  /* ==========================================================================
+     #mainscreen-branding C3 — DIE DECK-TAFEL
+     --------------------------------------------------------------------------
+     DAS BILD IST SO GROSS, WIE DIE SEITE ES TRÄGT — Owner-Entscheidung Q10, Option A vom 25.08.2026.
+     Der Entwurf will ein 196 × 268 gerahmtes Feld; gemessen (C1 §3.6) fügt das `.hub-stand`
+     mindestens 114 px zu und läuft bei drei von fünf Viewports über, weil das Spaltenpaar zentriert
+     und damit so hoch ist wie seine HÖHERE Spalte — und das ist immer die rechte. Sie verträgt bei
+     1280 × 720 genau 7 px.
+
+     DIE FORMEL IST GEMESSEN UND NICHT GERATEN, und sie hat zwei Zahlen:
+
+       (100vh - U) / --hub-zoom - L
+
+     ZWEI TERME, WEIL DIE SEITE ZWEI SORTEN HÖHE HAT. `U` ist das senkrechte Chrome, das AUSSERHALB des
+     Zooms liegt und deshalb in CSS-Pixeln zählt: `.app-root` polstert oben und unten je 1,5 rem, dazu
+     `.hub-root` mit 6 px Kopfpolster, 18 px Fuge und 4 px Fußpolster — zusammen 76 px, gemessen 79,4.
+     `L` ist alles, was INNERHALB des Zooms steht und nicht das Bild ist: die übrige Tafel, die
+     Kachelbank und das Fußband, zusammen 591,3 gezoomte Pixel. Geteilt wird durch den ZOOM, weil diese
+     Regel innerhalb von `.hub-pair` steht und in gezoomten Einheiten schreibt.
+
+     BEIDE SIND AUS ZWEI MESSPUNKTEN AUFGELÖST, nicht geraten: `Seitenhöhe(Bild=0) = U + Zoom · L` ist
+     linear im Zoom, also genügen zwei Zoom-Werte, um beide zu bestimmen — und die übrigen sechs
+     Viewports prüfen die Lösung nach. Sie trifft auf 0,3 px. Eingetragen sind 80 und 592 statt 79,4
+     und 591,3: beide Rundungen gehen nach OBEN, machen das Bild also um gut einen Pixel kleiner als das
+     Maximum. Eine Formel, die auf die Dezimale ans Limit geht, läuft beim ersten gerundeten Pixel über.
+
+     DIE ERSTE FASSUNG HATTE NUR EINEN TERM UND TEILTE DURCH DEN ZOOM-BODEN, und beides war falsch —
+     gemessen, nicht vermutet. Alle fünf Viewports des Vertrags liegen exakt auf dem Boden 0,85; der
+     Zoom steigt erst ab 1632 px Breite darüber. Die Rechnung sah an allen fünf richtig aus und lief
+     außerhalb über: 1700 × 760 um 28 px, 1800 × 820 um 66, 1920 × 850 um 89. Eine Formel, die nur
+     dort geprüft wird, wo ihr Teiler konstant ist, ist an einem Punkt geprüft.
+
+     Wer die Tafel umbaut, misst `L` neu — es ist die Höhe des Rests, nicht eine Konstante der Welt.
+     Das Werkzeug dafür steht daneben: `evidence/C1/headzone.mjs` misst an acht Viewports, wie groß das
+     Bild höchstens sein darf, und der Nachweis stellt Rechnung und Messung nebeneinander.
+
+     Der Deckel 268 px ist die Entwurfsgröße: darüber wächst das Bild nicht, auch auf einem sehr hohen
+     Fenster nicht. Der Boden ist die alte Größe minus Luft — darunter scrollt die Seite lieber, als
+     dass die Tafel zu einem Briefmarken-Bild wird. Was die Entscheidung ausdrücklich zugibt: bei den
+     zwei kleinsten Fenstern bleibt die Tafel nah an ihrer heutigen Größe, der Entwurfs-Zug greift dort
+     also nur halb (planning-report §8.2, Q10).
+
+     Rahmen und Schatten sind von einem Inline-Style hierher gewandert. Der Rahmen ist eines der vier
+     durchscheinenden Inline-Alphas, die dieser Screen mitbringt (.25) — und ein Inline-Literal ist von
+     keiner Regel außer `!important` erreichbar, also wird es umgewandelt und nicht kopiert. Die Werte
+     sind unverändert; ein Schritt aus dem Vokabular werden sie in C4.
+     ========================================================================== */
+  .as-deck-art {
+    width: auto;
+    height: clamp(112px, calc((100vh - 80px) / var(--hub-zoom, 0.85) - 592px), 268px);
+    border: 1px solid rgba(150, 150, 170, .25);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, .55);
+  }
+  /* Das Bild oben ausrichten statt mittig: sobald es höher ist als die Namensspalte daneben, zöge
+     `items-center` den Namen in die Bildmitte und ließe über ihm eine Lücke, die nach einem Fehler
+     aussieht. */
+  .as-deck-row { align-items: flex-start; }
+
+  /* --- Die Attribut-Chipzeile ---------------------------------------------
+     Rahmen, Fläche, Radius und Polster sind die des Musik-Kastens, der bis C3 als Inline-Style in der
+     Namensspalte stand. Sie stehen jetzt EINMAL als Regel statt dreimal inline — dasselbe Motiv wie
+     oben: ein Inline-Literal ist unerreichbar, eine Regel nicht. Werte unverändert (.22). */
+  .as-deck-attr {
+    display: inline-flex; align-items: center; gap: 8px;
+    max-width: 100%;
+    padding: 4px 10px;
+    border: 1px solid rgba(150, 150, 170, .22);
+    background: rgba(20, 20, 26, .45);
+    border-radius: var(--rd-md);
+    font-size: var(--text-body); line-height: 1.4;
+    opacity: .6;
+  }
+  /* Der Musik-Chip trägt rechts einen Knopf, also weniger Polster auf dieser Seite — ein Knopf polstert
+     gegen seine Beschriftung, nicht gegen die Kante daneben (conventions.md §2c, `--btn-pad-*`). */
+  .as-deck-attr-music { padding-right: 4px; }
+  .as-deck-attr-next { padding: 2px 6px; opacity: .6; }
+
+  /* ==========================================================================
+     #mainscreen-branding C4 — DIE POLSTER STEHEN JETZT HIER, NICHT AN DER FUNDSTELLE
+     --------------------------------------------------------------------------
+     Vierzehn `dt:`-Utilities sind aus den Klassenlisten in `StartScreen.jsx` hierher gewandert. Der
+     Grund ist nicht Ordnung, sondern Erreichbarkeit: eine Utility mit Desktop-Präfix trifft den
+     Desktop, und dort gilt das Vokabular — `panel-tokens.test.js` prüft genau das (die vierte der vier
+     Schreibweisen, die Hälfte, um die TYPO-12 danebenlag). Solange sie im JSX stehen, kann keine Regel
+     sie erreichen und kein Token sie tragen.
+
+     JEDE REGEL STEHT IN DIESER MEDIA QUERY, und das ist die ganze Sicherung für die schmale Fassung:
+     die Utilities OHNE Präfix (`px-5 py-3` …) bleiben unangetastet und tragen dort weiter den Wert,
+     den sie immer trugen. Ein Selektor wie `.hub-play .as-tut-btn` hat zwei Klassen und schlüge eine
+     Utility mit einer — außerhalb der Query wäre das eine Bewegung am Handy.
+
+     WARUM HIER KEIN `--in-*` STEHT, und es ist kein Versäumnis. §2c lässt Polsterung, die kein
+     Kasten-Innenabstand ist, ausdrücklich außerhalb der Leiter: *„A control pads against its label
+     (which is why `--btn-pad-*` sits outside the ladder), screen margins are layout."* Diese vierzehn
+     sind Knopf- und Zeilenpolster, keine Panel-Innenabstände — gemessen: `--btn-pad-y` ist 10 px und
+     `--btn-pad-x` 16 px, und keiner der fünf Knöpfe dieses Screens polstert so. Die drei Leiterstufen
+     (11 / 13 / 18) treffen ebenfalls keinen von ihnen. Sie stehen deshalb als Zahl — an EINER Stelle,
+     erreichbar, und in der Abweichungstabelle des Nachweises benannt.
+     ========================================================================== */
+  .hub-play .as-hub-bonus { padding: 14px 20px; }
+  .hub-play .as-tut-btn { padding: 16px 24px; }
+  /* Fortsetzen und Beginnen polstern verschieden — der eine trägt eine Zweitzeile, der andere nicht.
+     Zwei Haken statt eines `:has()`: der Screen entscheidet über `normalCls`, welcher Knopf welche
+     Rolle hat, und ein Haken je Rolle sagt das an der Fundstelle statt in einem Selektor. */
+  .hub-play .as-hub-resume { padding-block: 16px; }
+  .hub-play .as-hub-start { padding-block: 20px; }
+  .hub-play .as-seed-play { padding: 12px 16px; }
+  .hub-play .as-ranked-btn { padding: 16px 24px; }
+  .hub-foot .as-hub-chip { padding: 11px 20px; }
+  .hub-play .as-week-chip { padding: 2px 6px; }
+  .hub-play .as-hub-field { padding: 12px 16px; }
+  /* Die Tafel und ihre Kennzahl-Zellen sind ohnehin nur oberhalb der Schwelle im Baum (`hidden dt:flex`),
+     ihre Polster trugen also Handy-Kleidung ohne Handy dahinter. `py-[22px]` war zusätzlich eine
+     WILLKÜRLICHE Utility — die verbietet die Ratsche unabhängig vom Präfix. */
+  .as-deck { padding: 22px 24px; }
+  .as-kpi { padding: 14px 16px; }
+  /* Die Listenzeile: der linke Innenabstand stand schon hier (18 px, s. o.), die drei anderen kommen
+     nach. `dt:pl-6` war dabei bereits TOT — die Regel darüber hat zwei Klassen und schlug die Utility
+     seit dem Listen-Umbau; die 24 px im JSX haben nie etwas gefärbt (C4-F01). */
+  .as-hub-list .as-hub-tile { padding-top: 16px; padding-bottom: 16px; padding-right: 20px; }
+  .as-hub-list .as-hub-stripe { border-radius: 0; }
+
   /* Kennzahl-Raster der Status-Tafel: Haarlinie zwischen den Zellen statt freigelegter Container-Fläche
-     (Begründung an der Fundstelle in StartScreen.jsx). */
+     (Begründung an der Fundstelle in StartScreen.jsx).
+     C3: dazu die EINE Linie über der Zeile, die den gerahmten Kasten ersetzt. Derselbe Ton, den der
+     Rahmen trug — er steht jetzt an einer Kante statt an vieren, und die vier Zellen haben ihre eigene
+     Füllung abgegeben. Vier Flächen in einer Fläche wogen schwerer als das Deck darüber. */
+  .as-kpis { border-top: 1px solid rgba(60, 58, 78, .5); }
   .as-kpi + .as-kpi { border-left: 1px solid rgba(60, 58, 78, .5); }
   /* #kpi-passt (19.08.2026) — die Zahl passt sich der Kachel an, statt aus ihr herauszulaufen.
      Gemeldet mit „Letzter Lauf 179.077.04…": elf Zeichen brauchen bei 27 px rund 175 px, die Kachel
@@ -2703,7 +2886,72 @@ b, strong { font-weight: 600; }
      `.hub-play .as-wordmark` und nicht `.as-wordmark`: der Run-Kopf trägt dieselbe Klasse und holt
      sich seine 22 px aus `.as-wordmark-sm`. Diese Regel hier steht später in der Datei und hätte mit
      gleicher Spezifität gewonnen — die Marke im laufenden Spiel wäre auf 88 px gesprungen. */
-  .hub-play .as-wordmark { --wm-size: 88px; margin-top: -70px; }
+  /* #mainscreen-branding: DIE GRÖSSE STEHT AN DER SPALTE, nicht am Schriftzug — und das ist kein
+     Umzug aus Ordnungsliebe. Das Zeichen unter der Tagline rechnet seine Höhe gegen `--wm-size`
+     (s. `.as-brandmark` weiter unten) und muss den Wert deshalb LESEN können; am `h1` gesetzt
+     erreicht er ein Geschwister nicht. Die Alternative wäre ein zweiter Wert daneben, also zwei Zahlen, die jemand
+     in Schritt halten muss — genau davor warnen die Kommentare in dieser Datei sonst überall.
+
+     `--wm-size: inherit` am Schriftzug ist nötig und kein Zierrat: die Grundregel oben setzt den Wert
+     DIREKT am `h1` (die Handy-Fassung, clamp 40–52 px), und eine direkte Deklaration schlägt jede
+     Vererbung, Media Query hin oder her. Der Selektor bleibt auf `.hub-play` eingegrenzt — der
+     Run-Kopf trägt dieselbe Klasse und holt seine 22 px weiter aus `.as-wordmark-sm`.
+
+     C1-F12: „bei 88 px ist das Wort 620 px breit" stand hier bisher. Gemessen sind es 639 px (de) /
+     634 px (en) in einer 700-px-Spalte; die Marke läuft damit ab 96,4 px in die Lücke und nicht erst
+     ab 98. 88 px bleiben acht Pixel frei — die Entscheidung Q6 ist davon unberührt. */
+  .hub-play { --wm-size: 88px; }
+  .hub-play .as-wordmark { --wm-size: inherit; margin-top: -70px; }
+
+  /* --- Das Zeichen unter der Tagline -----------------------------------------
+     BIS C6 STAND HIER AUCH DIE SPALTE IM I. Sie ist mit Owner-Entscheidung vom 26.08.2026 entfallen,
+     und der Grund war sprachlich: die Fassung hing daran, dass „AUTOSTICH" und „AUTOTRICK" das I an
+     derselben Stelle tragen, was eine dritte Sprache nicht tun muss — die Marke trüge ihr Zeichen
+     dann in einer Sprache und in der anderen nicht. Der Schriftzug ist wieder reiner Text.
+
+     Was bleibt, ist die eigenständige Bildmarke. Sie ersetzt keinen Buchstaben, hängt also an keiner
+     Sprache, und der Entwurf führt sie ohnehin getrennt (App-Icon, Favicon, Avatar, Ladebild).
+
+     `display: none` steht weiterhin in der Grundregel und die Sichtbarkeit erst hier: unter 1280 px
+     gibt es die Kopfzone des Entwurfs nicht, und was dort keinen Kasten hat, kann dort auch nichts
+     verschieben. */
+  .hub-play .as-brandgrid { display: inline-block; }
+
+  /* --- Tagline und Bildmarke: mit der Wortmarke EIN Lockup --------------------
+     Der Abstand steht hier und nicht als `gap-[10px]` an der Fundstelle: die Fuge innerhalb des
+     Lockups gehört zur Komposition und nicht zur Kachel-Sprache des JSX.
+
+     DIE TAGLINE PICKT EINE ROLLE (`text-body-lg`, 15,5 px) und führt keine Größe ein. Der Entwurf
+     nennt 15 px; die nächste Sprosse der Leiter liegt einen halben Pixel daneben, und eine neue Rolle
+     für einen halben Pixel wäre eine Rolle, die jeder Screen danach hat (C1-F11).
+
+     BEIDE TÖNE STEHEN SCHON IM BAUM. `#9a9aa6` trägt an vier Stellen im JSX gedämpften Fließtext,
+     `#5c5c68` sechsmal in dieser Datei genau diese Rolle — ein Trennzeichen, das leiser ist als der
+     Text daneben. Es kommt also kein Tintenwert dazu, es kommt je eine Fundstelle dazu. Tinte ist
+     keine der fünf Achsen (§2c) und wird in dieser Runde gezählt, nicht umgestellt. */
+  .as-lockup { gap: 10px; }
+  .as-tagline { letter-spacing: .05em; color: #9a9aa6; white-space: nowrap; }
+  .as-tagline-dot { color: #5c5c68; }
+
+  /* Die eigenständige Bildmarke — DASSELBE ZEICHEN, ANDERER ZUSCHNITT, und ausdrücklich dieselbe
+     Zellengröße wie die Spalte im I. Das ist kein gewählter Wert, sondern der Verzicht auf einen:
+     wären die Zellen hier kleiner, wären es zwei Zeichen, die einander ähneln, statt eines in zwei
+     Ausschnitten. „Klein" ist es trotzdem — 47 px breit in einer 700-px-Spalte, also 7 % davon.
+
+     `calc(var(--wm-size) * .874)` statt `em`, weil ein `em` hier die Grundschrift der Spalte wäre und
+     nicht die Marke; die Breite folgt der viewBox. `overflow: visible`, damit der Schein die
+     Zeichenfläche verlassen darf — ohne das schnitte die SVG-Wurzel ihn an der äußersten Zelle ab,
+     und leuchten sollen genau die beiden Ecken.
+
+     Der Schein ist derselbe wie am Wort: 9 px, Deckfarbe 55 %. Der Entwurf nennt 8; die 9 stehen seit
+     dem Deck-Pass an `.as-wordmark`, und eine Marke, die mit einem Pixel anderem Radius glüht als der
+     Schriftzug daneben, ist ein zweiter Wert für dieselbe Sache. */
+  .hub-play .as-brandmark {
+    height: calc(var(--wm-size) * .874); width: auto;
+    overflow: visible;
+    color: var(--deck-a1, #26c6e6);
+    filter: drop-shadow(0 0 9px color-mix(in srgb, var(--deck-a1, #26c6e6) 55%, transparent));
+  }
   /* Der Glow hinter der Marke folgt mit: drei Ellipsen, links → rechts von der ersten in die zweite
      Deckfarbe. Vorher standen hier feste Cyan-/Violett-/Amber-Werte — der Dreiklang des alten PNG.
      Mit einer deckfarbenen Marke war das der letzte Rest, der die alte Palette festhielt. */

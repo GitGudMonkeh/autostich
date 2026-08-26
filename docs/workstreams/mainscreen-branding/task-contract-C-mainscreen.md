@@ -14,7 +14,7 @@ the way M1 handled Options — and for the same reason: the screen is touched on
 | --- | --- |
 | **Task** | the mainscreen — brand mark, tagline, head zone, deck panel, and the vocabulary |
 | **Branch** | `task/mainscreen-brand` — create it yourself |
-| **Base** | **`feature/desktop-menus`**, not `dev`. The vocabulary lives there and `dev` does not have it yet. Record the tip SHA here |
+| **Base** | **`feature/desktop-menus`**, not `dev`. The vocabulary lives there and `dev` does not have it yet. **Tip SHA: `2600c74f`**, recorded by C1 with the working tree clean |
 | **Tier** | **C**, not the B the planning report says — see below |
 | **Owner stops** | Two |
 | **Concurrency** | **Exclusive** |

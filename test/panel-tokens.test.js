@@ -282,6 +282,28 @@ const MIGRATED_JSX = [
   { path: "src/ui/RunDetail.jsx",
     stateLiterals: ["#0c0c10", "#12313f", "#191922", "#5ec8f0", "#5ec8f055", "#5a8ade", "#141419", "#2a2a34"] },
   { path: "src/ui/SeedChip.jsx" },
+  /* #mainscreen-branding C — DER MAINSCREEN, und er ist der letzte. Er kommt als EIN Eintrag ueber die
+     ganze Datei, wie `.cz-` seit M2b und `.up-` seit M3: ein Screen ist entweder migriert oder nicht,
+     und eine Aufzaehlung einzelner Bausteine waere eine halbe Migration. */
+  { path: "src/ui/StartScreen.jsx", stateLiterals: [
+    /* SPIELGRAFIK — die Abdunkelung ueber dem Spielfeld-Bodenband. Sie kleidet kein Panel, sondern
+       liegt UEBER einem Bild, damit 40 unterschiedlich helle Spielfelder gemeinsam unter die
+       Kontrastforderung kommen. Dieselbe Sorte Ausnahme wie `CZ_SCENES` in M2b, nur ohne eigene
+       Funktion, an der man sie aufhaengen koennte. */
+    "rgba(20,20,25,0)", "rgba(17,17,22,.55)", "rgba(17,17,22,.82)",
+    /* HANDY-WAESCHE — die Bonus-Leiste rendert AUCH unter 1280 px, und ein Inline-Style kennt keine
+       Media Query. Der Wert ist damit gleichzeitig der Wertetraeger der schmalen Fassung, und §2c
+       nimmt alles unter 1280 px dauerhaft aus. Ihn umzustellen hiesse, das Handy zu bewegen, um einen
+       Waechter gruen zu bekommen — dieselbe Lage wie M7s Ueberzug. Gemessen daneben: `--sf-glass` ist
+       ein Verlauf ueber zwei Stopps (.93/.95), dies ist eine flache Flaeche bei .5. */
+    "rgba(23,23,28,0.5)",
+    /* MENU-38, zwei von zwoelf. `.10` an derselben Bonus-Leiste, `.18` an der ruhenden Kante des
+       Kachel-Streifens. Beide rendern unter 1280 px mit, beide gehoeren der durchscheinenden
+       Kanten-Familie, die diese Runde RATSCHT statt einsammelt — und die Kanten-Ratsche weiter unten
+       zaehlt sie. Die anderen zwei dieses Screens (`.22`, `.25`) haben ihn in C3 verlassen. */
+    "rgba(150,150,170,0.10)", "rgba(150,150,170,.18)",
+  ] },
+  { path: "src/ui/BrandGrid.jsx" },
   /* --- Der GETEILTE Teilbaum. Er steht hier als KOMPONENTEN, nicht als Ecken dieses Screens:
      `RunStats` und `RunGraphs` rendert auch der Siegesbildschirm, `Sparkline` zusaetzlich die
      LAUFBUEHNE (`StatusRail.jsx:133`). Wertetreu umgestellt, nicht umgestaltet — der Beweis ist
@@ -412,6 +434,12 @@ const MIGRATED_SELECTORS = [/\.op-/, /\.as-opt-/, /\.as-panel-sunken/, /\.as-she
      M11: der Ausdruck steht als KONSTANTE, damit die Naht-Gegenprobe ihn pruefen kann statt ihn
      abzuschreiben — eine Gegenprobe, die eine Kopie prueft, ist gruen, waehrend das Original faellt. */
   M3_TREE_SELECTOR,
+  /* #mainscreen-branding C: `.hub-` und `.as-hub-` MEINEN DEN GANZEN SCREEN, wie `.cz-`, `.up-`,
+     `.st-`, `.rd-`, `.lb-`, `.go-`, `.gd-` und `.gl-` ihre. Dazu die vier Klassenfamilien, die dieser
+     Auftrag NEU angelegt hat — die Marke, das Lockup, die Tagline und die Deck-Tafel: sie gehoeren
+     demselben Screen und waeren sonst der einzige Teil von ihm, den die Ratsche nicht sieht. */
+  /\.hub-/, /\.as-hub-/, /\.as-deck/, /\.as-lockup/, /\.as-tagline/, /\.as-brandgrid/, /\.as-bg-/,
+  /\.as-week-chip/,
   /* M7: `.st-` und `.rd-` MEINEN DIE ZWEI SCREENS, wie `.cz-` und `.up-` ihre. `.rs-` und `.rg-`
      gehoeren dazu, aber nur SO WEIT SIE DIESER SCREEN FAERBT: die drei Komponenten teilen sich
      Victory und Chronik, und jede Regel, die sie anfasst, ist deshalb ohnehin auf `.rd-`/`.go-`
@@ -900,13 +928,100 @@ const M6_RADIUS_EXEMPT = [
   /* daneben*/ /^\.gl-page-eyebrow \.gl-sq$/, /^\.gl-cols \.gloss-term-row$/, /^\.gl-navcount$/,
 ];
 
+
+/* ============================================================================
+   #mainscreen-branding C4 — DIE AUSNAHMEN DES MAINSCREENS, jede mit ihrem Grund.
+
+   Vier Sorten, und keine davon ist Nachsicht:
+
+     PHONE      — die Regel steht AUSSERHALB der 1280er Sektion und ist damit der Wertetraeger der
+                  schmalen Fassung. §2c nimmt alles unter 1280 px dauerhaft aus, und diese Runde darf
+                  dort nichts bewegen. Eine Umstellung waere kein Token, sondern eine Bewegung.
+     SPIELGRAFIK— der Wert kleidet kein Panel, sondern ein BILD: den Schleier ueber dem Spielfeld und
+                  den Schatten unter der Deckkarte. Dieselbe Sorte Ausnahme wie `CZ_SCENES` in M2b.
+     STEUERELEMENT / LAYOUT — Polsterung, die kein Kasten-Innenabstand ist. §2c laesst sie
+                  ausdruecklich ausserhalb der Leiter: ein Knopf polstert gegen seine BESCHRIFTUNG,
+                  Screen-Raender sind Layout.
+     GEZAEHLT   — echte Luecken, die diese Runde nicht praegt. Sie stehen in den Ratschen weiter unten
+                  und koennen nicht wachsen, ohne dass jemand eine Liste anfasst.
+   ============================================================================ */
+const C_SURFACE_EXEMPT = [
+  /* PHONE — und die Selektoren sind ABSICHTLICH ohne `.hub-play` davor: sie treffen genau die
+     Grundregeln, also die der schmalen Fassung. Die Desktop-Regeln derselben Klassen sind seit C4
+     auf `.hub-play` eingegrenzt und werden deshalb WEITER geprüft — ohne diese Trennung nähme die
+     Handy-Ausnahme die Desktop-Regel still mit, gemessen an C4/CC1 und CC2. */
+  /^\.as-hub-tile$/, /^\.as-hub-field$/, /^\.as-week-chip$/,
+  /* SPIELGRAFIK: der Schleier ueber dem Spielfeld-Bild, nicht die Flaeche eines Panels. */
+  /^\.as-hub-bg-veil$/,
+  /* DECK-GETOENT: das Zeichen der Listenzeile mischt die Deckfarbe in seinen Grund. §2c fuehrt
+     `--sf-deck` als deck-getoentes Panel, aber mit dem Rezept der Hub-KACHEL bei 9/5 % — dies hier
+     ist ein 34-px-Kaestchen bei 14 % gegen den Zeilenton, nicht dasselbe. Gezaehlt. */
+  /^\.as-hub-list \.as-hub-glyph$/,
+  /* ZUSTAND: die Zeile beim Ueberfahren. Zustandsfarben haben in dieser Runde keinen Schritt
+     (MENU-46/47/48) und werden gezaehlt statt gepraegt. */
+  /^\.as-hub-list \.as-hub-tile:hover$/,
+  /* SKIN-VARIANTE: der CRT-Zweitsatz des Wochen-Chips. Ein Skin ist keine Tiefe. */
+  /^\[data-skin="crt"\] \.as-week-chip$/,
+  /* GEZAEHLT: der Chip der Attributzeile. `--sf-sunken` ist deckend (#141320), dieser Grund ist
+     durchscheinend ueber Glas — eine andere Sorte Flaeche, und die Leiter hat dafuer keinen Schritt.
+     Der Wert stand bis C3 inline und ist dort unerreichbar gewesen; jetzt steht er einmal als Regel. */
+  /^\.as-deck-attr$/,
+];
+const C_EDGE_EXEMPT = [
+  /* PHONE — s. die Flächenliste: ohne `.hub-play` davor, damit die Desktop-Regeln geprüft bleiben. */
+  /^\.as-hub-tile$/, /^\.as-hub-field$/,
+  /* MEANING-CODED: der Fehlerrahmen des Seed-Feldes. §2c nimmt bedeutungstragende Kanten dauerhaft
+     aus — sie kodieren Information, keine Tiefe. */
+  /^\.hub-play \.as-hub-field\.is-err$/, /^\.as-hub-field\.is-err$/,
+  /* GEZAEHLT: der Trenner zwischen zwei Listenzeilen. `--ed-quiet` ist deckend (#2a2a34); dieser
+     Trenner ist durchscheinend ueber Glas und liegt damit in derselben Lage wie MENU-38 — eine
+     Kanten-Sorte, die die Leiter nicht kennt. */
+  /^\.as-hub-list \.as-hub-tile$/,
+  /* MENU-38, die durchscheinende Kanten-Familie: zwoelf Alphas ueber 64 Literale, in dieser Runde
+     GERATSCHT und nicht eingesammelt. Beide standen bis C3 INLINE und waren damit von keiner Regel
+     erreichbar; sie sind umgewandelt, nicht kopiert, und die Kanten-Ratsche zaehlt sie jetzt. */
+  /^\.as-deck-art$/, /^\.as-deck-attr$/,
+];
+const C_ELEV_EXEMPT = [
+  /* SPIELGRAFIK: der Schatten UNTER der Deckkarte. `--el-float` ist `0 14px 44px rgba(0,0,0,.42)` —
+     gemessen 8/26/0,13 daneben, und es ist auch nicht dieselbe Aussage: die Leiter misst, wie weit ein
+     Panel von seiner Flaeche abhebt; hier steht ein Spielobjekt auf einem Panel. */
+  /^\.as-deck-art$/,
+];
+const C_RADIUS_EXEMPT = [
+  /* GEZAEHLT: die Kachelbank rundet mit 12, `--rd-lg` ist 14. Zwei Pixel an der Aussenkante des
+     groessten Panels der rechten Spalte — sichtbar, und deshalb eine benannte Abweichung statt einer
+     stillen Anpassung. Steht mit ihrer Zahl in der Abweichungstabelle des Nachweises. */
+  /^\.as-hub-list$/,
+];
+const C_INSET_EXEMPT = [
+  /* STEUERELEMENT: acht Knoepfe, Chips und ein Eingabefeld. Sie polstern gegen ihre Beschriftung.
+     Gemessen: `--btn-pad-y` ist 10 px und `--btn-pad-x` 16 px, und KEINER der acht polstert so; die
+     drei Leiterstufen (11/13/18) treffen ebenfalls keinen. */
+  /^\.hub-play \.as-tut-btn$/, /^\.hub-play \.as-hub-resume$/, /^\.hub-play \.as-hub-start$/,
+  /^\.hub-play \.as-seed-play$/, /^\.hub-play \.as-ranked-btn$/, /^\.hub-foot \.as-hub-chip$/,
+  /^\.hub-play \.as-week-chip$/, /^\.hub-play \.as-hub-field$/, /^\.as-deck-attr$/, /^\.as-deck-attr-music$/,
+  /^\.as-deck-attr-next$/, /^\.as-hub-list \.as-hub-glyph$/,
+  /* LAYOUT: der senkrechte Rhythmus des Screens. §2c — „screen margins are layout". */
+  /^\.hub-root$/,
+  /* GEZAEHLT: die zwei echten Panel-Innenabstaende dieses Screens. Die Bonus-Leiste polstert 14/20,
+     die Deck-Tafel 22/24, die Kennzahl-Zelle 14/16 — `--in-base` ist 18. Vier bis sechs Pixel an
+     Flaechen, die ein freigegebener Entwurf so abgenommen hat; eine Umstellung waere eine Bewegung,
+     kein Token. Benannt in der Abweichungstabelle. */
+  /^\.hub-play \.as-hub-bonus$/, /^\.as-deck$/, /^\.as-kpi$/,
+  /* Die Listenzeile: der linke Innenabstand IST `--in-base` und steht als Token; die drei anderen
+     Kanten polstern die Zeile gegen ihr Zeichen und ihren Chevron. */
+  /^\.as-hub-list \.as-hub-tile$/,
+];
+
 const CSS_AXES = [
   { axis: "Flaeche", re: /(?:^|[;{\s])background(?:-color|-image)?\s*:[^;}]*(#[0-9a-fA-F]{3,8}|\brgba?\()/g,
     exempt: [...M3_SURFACE_EXEMPT, ...M7_SURFACE_EXEMPT, ...M8_SURFACE_EXEMPT, ...M9_SURFACE_EXEMPT,
-             ...M4_SURFACE_EXEMPT, ...M5_SURFACE_EXEMPT, ...M6_SURFACE_EXEMPT] },
+             ...M4_SURFACE_EXEMPT, ...M5_SURFACE_EXEMPT, ...M6_SURFACE_EXEMPT,
+             ...C_SURFACE_EXEMPT] },
   { axis: "Kante",   re: /(?:^|[;{\s])border(?:-top|-right|-bottom|-left)?(?:-color)?\s*:[^;}]*(#[0-9a-fA-F]{3,8}|\brgba?\()/g,
     exempt: [...M3_EDGE_EXEMPT, ...M7_EDGE_EXEMPT, ...M8_EDGE_EXEMPT, ...M9_EDGE_EXEMPT,
-             ...M6_EDGE_EXEMPT] },
+             ...M6_EDGE_EXEMPT, ...C_EDGE_EXEMPT] },
   /* `inset` ist ausgenommen, und das ist eine Unterscheidung, keine Nachsicht: die Hoehenleiter misst
      ABHEBEN von der Flaeche. Ein Innenschatten hebt nichts — er zeichnet eine Kante (die 2-px-
      Unterstreichung der aktiven Auswahl) oder eine Mulde, und beides hat eigene Gruende. */
@@ -916,10 +1031,11 @@ const CSS_AXES = [
      ausgenommen sein sollte. Dieselbe Luecke laesst umgekehrt ein echtes Literal durch, sobald die
      Ausnahme etwas weiter gefasst ist — H-b in Regex-Form, an der eigenen Ratsche gefunden.
      Der Lookahead wird jetzt genau einmal ausgewertet, direkt hinter dem Doppelpunkt. */
-  { axis: "Hoehe",   re: /(?:^|[;{\s])box-shadow\s*:(?!\s*(?:var\(|none|inset\b))[^;}]*\d/g, exempt: ELEV_EXEMPT },
+  { axis: "Hoehe",   re: /(?:^|[;{\s])box-shadow\s*:(?!\s*(?:var\(|none|inset\b))[^;}]*\d/g, exempt: [...ELEV_EXEMPT, ...C_ELEV_EXEMPT] },
   { axis: "Radius",  re: /(?:^|[;{\s])border-radius\s*:(?!\s*(?:var\(|0\s*[;}]))[^;}]*[1-9]/g,
-    exempt: [...M7_RADIUS_EXEMPT, ...M8_RADIUS_EXEMPT, ...M5_RADIUS_EXEMPT, ...M6_RADIUS_EXEMPT] },
-  { axis: "Innenabstand", re: /(?:^|[;{\s])padding(?:-top|-right|-bottom|-left)?\s*:(?!\s*(?:var\(|0\s*[;}]))[^;}]*[1-9]/g, exempt: INSET_EXEMPT },
+    exempt: [...M7_RADIUS_EXEMPT, ...M8_RADIUS_EXEMPT, ...M5_RADIUS_EXEMPT, ...M6_RADIUS_EXEMPT,
+             ...C_RADIUS_EXEMPT] },
+  { axis: "Innenabstand", re: /(?:^|[;{\s])padding(?:-top|-right|-bottom|-left)?\s*:(?!\s*(?:var\(|0\s*[;}]))[^;}]*[1-9]/g, exempt: [...INSET_EXEMPT, ...C_INSET_EXEMPT] },
 ];
 
 /* Jede CSS-Regel als [Selektor, Rumpf]. Kommentare sind vorher raus: eine Begruendung, die eine
@@ -1386,6 +1502,14 @@ describe("#menu-rework — die Tinten-Ratsche: Textfarb-Literale wachsen nicht",
     ["src/ui/GlobalLeaderboard.jsx (ganze Datei)", () => inkOfJsx("src/ui/GlobalLeaderboard.jsx"), 3],
     ["src/ui/WeekMods.jsx (ganze Datei)", () => inkOfJsx("src/ui/WeekMods.jsx"), 0],
     ["index.css — .lb-* (M8, ohne die geteilten Kopf-Regeln)", () => inkOfCss([/\.lb-/], [/\.st-/]), 10],
+    /* #mainscreen-branding C — DER MAINSCREEN. Tinte ist weiter eine benannte Luecke des Vokabulars
+       (2c, "What the vocabulary does not claim"), das Fenster ist zu, also gezaehlt statt gepraegt.
+       Die CSS-Zeile schliesst nichts aus: `.hub-`/`.as-hub-` und die vier neuen Familien gehoeren
+       diesem Screen allein — kein anderer migrierter Screen traegt eine Regel darauf. */
+    ["src/ui/StartScreen.jsx (ganze Datei)", () => inkOfJsx("src/ui/StartScreen.jsx"), 4],
+    ["src/ui/BrandGrid.jsx (ganze Datei)", () => inkOfJsx("src/ui/BrandGrid.jsx"), 0],
+    ["index.css — .hub-*/.as-hub-* und die Marke (C)",
+      () => inkOfCss([/\.hub-/, /\.as-hub-/, /\.as-deck/, /\.as-lockup/, /\.as-tagline/, /\.as-brandgrid/, /\.as-bg-/, /\.as-week-chip/]), 9],
     /* #menu-rework M9 — die drei kleinen Modals. Tinte ist weiterhin keine Achse; gezaehlt wird, was
        da ist. Die Zahlen sind GEMESSEN, nicht gesetzt: der Melder faellt, weil vier verschiedene
        Meldungs-Kaesten zu einer Form mit drei Rollen geworden sind, und der Erststart faellt, weil
@@ -1575,6 +1699,16 @@ describe("#menu-rework — die Kanten-Ratsche (MENU-38): durchsichtige neutrale 
     ["src/ui/Glossary.jsx (ganze Datei)", () => edgeOfJsx("src/ui/Glossary.jsx"), 0],
     ["index.css — .gl-* / .gloss-* (M6, ohne die geteilten Sammelregeln)",
       () => edgeOfCss([/\.gl-(?!wrap)/, /\.gloss-/], [/\.up-/, /\.gd-/, /\.cz-/, /\.st-/, /\.lb-/]), 0],
+    /* #mainscreen-branding C — DER MAINSCREEN, und er ist der einzige Eintrag dieser Ratsche, der
+       NICHT bei null steht. MH1 hat es vorhergesagt: die Familie ist zwoelf Alphas ueber 64 Literale,
+       und `.22` und `.25` wohnen hier — „named there as an input rather than migrated from here".
+       C3 hat beide vom Inline-Style in je eine Regel geholt (umgewandelt, nicht kopiert); `.10` und
+       `.18` stehen weiter inline, weil sie unter 1280 px mitrendern und ein Inline-Style keine Media
+       Query kennt. Vier also, gezaehlt und nicht gepraegt — die Familie wird von dem migriert, der
+       `.as-edge-*` anfasst, und der bekommt hier eine Zahl statt eines Eindrucks. */
+    ["src/ui/StartScreen.jsx (ganze Datei)", () => edgeOfJsx("src/ui/StartScreen.jsx"), 2],
+    ["index.css — .hub-*/.as-hub-* und die Marke (C)",
+      () => edgeOfCss([/\.hub-/, /\.as-hub-/, /\.as-deck/, /\.as-lockup/, /\.as-tagline/, /\.as-brandgrid/, /\.as-bg-/, /\.as-week-chip/]), 4],
     /* #menu-rework M11. Alle fuenf Einheiten stehen auf null, und DIESE Nullen sind ANWESENHEITEN und
        keine erreichten Zustaende — die vier Dateien haben die durchscheinende neutrale Kante nie
        getragen, und die sieben Regeln setzen ueberhaupt keine Kantenfarbe. Ausgeschrieben, weil MH1s
@@ -1645,7 +1779,24 @@ describe("#menu-rework — die Kanten-Ratsche (MENU-38): durchsichtige neutrale 
        Handy-Fassung (durchsichtig -> deckend, rund 9/255), die niemand bestellt hat.
        Die Summe wird deshalb OHNE diese eine gebildet — und die eine wird einzeln nachgewiesen,
        damit sie nicht als „irgendwo eine" stehenbleibt und still auf zwei wachsen kann. */
-    const AUSNAHMEN = ["src/ui/UpgradeScreen.jsx (ganze Datei)", "src/ui/Sparkline.jsx (ganze Datei)"];
+    /* #mainscreen-branding C — DIE DRITTE UND VIERTE AUSNAHME, und sie sind die groesste. MH1 hat
+       vorhergesagt, dass die Familie hier wohnt: „`.22` und `.25` live in `StartScreen.jsx`, which
+       belongs to the mainscreen workstream — named there as an input rather than migrated from here."
+       Gemessen sind es SECHS und nicht zwei, weil MH1 die Inline-Literale der JSX-Datei gezaehlt hat
+       und der Screen die Familie auch im Stylesheet traegt (C4-F02):
+
+         .16  zweimal in index.css   — die deck-getoenten Kanten der SCHMALEN Fassung
+         .22  einmal in index.css    — C3, aus dem Inline-Style geholt
+         .25  einmal in index.css    — C3, ebenso
+         .10  einmal inline          — die Bonus-Leiste, rendert unter 1280 px mit
+         .18  einmal inline          — die ruhende Kante des Kachel-Streifens, ebenso
+
+       KEINE davon wird umgestellt, und der Grund ist bei allen sechs derselbe wie bei M3s einer: vier
+       rendern unter 1280 px mit, wo diese Runde nichts bewegt, und alle sechs gehoeren einer Familie,
+       die MENU-38 ausdruecklich RATSCHT statt einsammelt — sie gehoert dem, der `.as-edge-*` migriert,
+       und der bekommt hier eine Zahl statt eines Eindrucks. */
+    const AUSNAHMEN = ["src/ui/UpgradeScreen.jsx (ganze Datei)", "src/ui/Sparkline.jsx (ganze Datei)",
+      "src/ui/StartScreen.jsx (ganze Datei)", "index.css — .hub-*/.as-hub-* und die Marke (C)"];
     const rest = CAP.filter(([name]) => !AUSNAHMEN.includes(name));
     expect(rest.reduce((n, [, c]) => n + c(), 0), "eine migrierte Einheit traegt wieder eine Kante").toBe(0);
 
@@ -1667,6 +1818,21 @@ describe("#menu-rework — die Kanten-Ratsche (MENU-38): durchsichtige neutrale 
        Sie auf `--ed-quiet` zu ziehen waere keine Umstellung, sondern eine Umgestaltung: `#2a2a34`
        ist deckend, das Gitter liegt durchsichtig ueber dem Panel, und die Komponente gehoert der
        LAUFBUEHNE. Sie steht deshalb als gemessene Eins da, an genau einer Stelle nachgewiesen. */
+    /* Die Gegenprobe zu den beiden Mainscreen-Ausnahmen, in derselben Form wie die beiden darueber:
+       jede steht genau dort, wo die Begruendung sie behauptet, und die Alphas sind einzeln genannt.
+       Waechst eine, oder taucht ein siebtes Alpha auf, faellt diese Zeile. */
+    const ss = strip(read("src/ui/StartScreen.jsx"));
+    expect(edgeIn(ss), "der Mainscreen traegt nicht mehr genau zwei Inline-Kanten").toBe(2);
+    const ssAlphas = [...ss.matchAll(EDGE_NEUTRAL)].map((m) => m[0].match(/,\s*([0-9.]+)\s*\)/)[1]).sort();
+    expect(ssAlphas, "die zwei inline gebliebenen Alphas sind nicht mehr .10 und .18").toEqual([".18", "0.10"].sort());
+    const cssAlphas = all
+      .filter(([sel]) => [/\.hub-/, /\.as-hub-/, /\.as-deck/, /\.as-lockup/, /\.as-tagline/,
+        /\.as-brandgrid/, /\.as-bg-/, /\.as-week-chip/].some((r) => r.test(sel)))
+      .flatMap(([, body]) => [...withoutFallbacks(body).matchAll(new RegExp(EDGE_NEUTRAL.source, "g"))])
+      .map((m) => m[0].match(/,\s*([0-9.]+)\s*\)/)[1]).sort();
+    expect(cssAlphas, "die vier Alphas im Stylesheet des Mainscreens stimmen nicht mehr")
+      .toEqual([".16", ".16", ".22", ".25"]);
+
     const sl = strip(read("src/ui/Sparkline.jsx"));
     expect(edgeIn(sl), "die zweite Ausnahme ist nicht mehr genau eine").toBe(1);
     /* Zeilenweise, damit die Gegenprobe SAGEN kann, wo die eine Fundstelle steht. Ueber `String.raw`

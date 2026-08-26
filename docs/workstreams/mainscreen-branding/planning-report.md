@@ -375,11 +375,72 @@ These were taken by the owner, were never revoked, and survive the discarded rep
 
 ### 8.2 Open, and deliberately deferred
 
-- **Q9 — what gives way if 1280×720 cannot hold all three.** Options: drop the grid mark at 1280 and
+- **Q9 — CLOSED UNASKED, 2026-08-25.** C1 measured that 1280×720 holds all three at the mark's full
+  size; none of the three options below was needed. Kept with its reasoning so the next reader can
+  see what was feared and what the measurement said. Original text:
+
+  **Q9 — what gives way if 1280×720 cannot hold all three.** Options: drop the grid mark at 1280 and
   show it from 1600 up; place the mark beside the wordmark rather than beneath it at 1280; or reduce
   the wordmark below 88 px at 1280 only. **Shrinking the tagline is not an option** (criterion 3a).
   **Asked at this workstream's Start stop, with C1's numbers in hand** — not in this planning session,
   where it would be a choice without evidence.
+- **Q11 and Q12 — the letter, decided and then withdrawn, both on 2026-08-26 at the built screen.**
+  *Kept as a pair, because the second is only legible next to the first.*
+
+  **Q11: flush and filled.** The owner asked for the cell column to sit flush with the letters rather
+  than breaking the cap line, and for more colour in the squares. Both were built. Two things fell out
+  of doing it and both are worth keeping: Orbitron's capital is **`.71875em`** and **identical for
+  every letter**, round shapes included — so "flush" is unambiguous here, which it would not be in most
+  typefaces; and **the route the owner offered did not exist**, because eight cells at `.09em` measure
+  `.72em` and are already taller than the cap, so the gap would have had to be negative. The column was
+  scaled as a whole instead, keeping its proportion to the sign.
+
+  **Q12: the column goes, in every language.** The next day the owner withdrew the cut entirely. **The
+  reason is not the look and it is not Q11** — it is that the whole idea rested on an observation about
+  two words: *"`AUTOSTICH` and `AUTOTRICK` both have nine characters and carry the I at seventh
+  place."* True, and not a law. A third language need not honour it — Spanish might carry no I at that
+  place at all — and the mark would then wear its sign in one language and not in another.
+
+  **What this costs and what it buys.** It costs the design's stated core (*"Zeichen und Name sind
+  dieselbe Sache"*) and, with it, C2's central move, C5 in full, five sections of
+  `mainscreen-marke.md` and eight guard assertions. It buys a wordmark that is the same object in
+  every language the game will ever ship — and it removes a dependency that would have surfaced as a
+  **red guard at translation time**, which is the expensive moment to find it.
+
+  **The standalone 5 × 8 sign stays.** It replaces no letter, so it depends on no language, and the
+  design already carries it separately as the mark for app icon, favicon, avatar and loading screen.
+
+  *Recorded rather than quietly reverted: the sections in the design document are struck through with
+  their reasoning intact, so nobody proposes the same route again in half a year.*
+
+- **Q10 — answered 2026-08-25: the deck art follows the viewport.** *A question this report did not
+  have, raised by C1 and closed at this workstream's first owner stop.*
+
+  **Q9 was deferred here to ask what gives way at 1280×720 if the head zone cannot hold all three.
+  C1 measured that it can** — at the mark's full 5 × 8 size, with page overflow unchanged at zero, in
+  both languages. So Q9 is closed unasked, and the question the owner was actually stopped for is the
+  one C1's numbers produced instead: **the deck panel, not the head zone.**
+
+  `.hub-pair` centres, so the pair is as tall as its **taller** column, and that is `.hub-stand` at
+  every viewport. The left column therefore has a 267 px cushion and the right one has none: it
+  tolerates **+7 px at 1280×720 and +0 at 1400×700**. The design's 196 × 268 deck-art field adds **at
+  least 114 px** and overflows at three of five viewports.
+
+  **Decision: option A.** The deck art is as large as the page carries and reaches the design's
+  196 × 268 from 1600 px upward — *measured*: 161 px at 1280×720 (154 today), 245 at 1536×791, 268 at
+  1600×900 and 1920×1080. The two rejected options are priced with it in
+  `measurements/C1.md` §3.6: **B** made a panel the design does not touch give up a third of its
+  height at the size that matters most, and **C** lowered a clamp floor whose stated reason no longer
+  lands on anything measurable (C1-F14).
+
+  **What the decision admits:** at the two smallest viewports the deck panel ends up close to today's
+  size, so the design's central move — *the deck panel becomes the subject of the screen* — arrives
+  in full only from 1536 px upward. That is the price of not touching a neighbouring panel and not
+  shrinking the whole hub, and it was named before it was chosen.
+
+  **One thing it buys back:** 1400×700 overflows by 14 px in the build as it stands, and the deck art
+  is what pays for it — 138 px there is the size at which that page stops scrolling (C1-F05).
+
 - **Q1a — answered 2026-08-25: 5 × 8.** *Closed, and the way it closed is worth keeping.*
 
   This report left Q1a open in these words: *"if 5 × 8 was deliberate and carries a meaning the brief

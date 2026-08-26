@@ -1368,6 +1368,10 @@ export default {
 
   /* ---- Startbildschirm ---- */
   "start.logo.alt": "AUTOSTICH",
+  /* #mainscreen-branding — die Tagline unter der Wortmarke, ab 1280 px. Drei Verben in der
+     Reihenfolge, in der eine Runde laeuft: legen, stechen, eskalieren. Die Punkte gehoeren zum Text
+     und nicht in die Darstellung — der Screen daempft sie nur, er setzt sie nicht. */
+  "start.tagline": "Legen. Stechen. Eskalieren.",
 
   // Ohne führendes Emoji: das Zeichen steht seit 18.08.2026 als eigenes Element im JSX (unter 1280 px
   // dasselbe Emoji, ab 1280 px ein Vektor im Textton). Im String ließe es sich nicht austauschen.

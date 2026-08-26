@@ -1,0 +1,209 @@
+{
+  "file": "src/ui/StartScreen.jsx",
+  "contractSaid": {
+    "lines": 891,
+    "colourValues": 22,
+    "inlineStyle": 25,
+    "hubRules": 19,
+    "asHubRules": 31
+  },
+  "measured": {
+    "lines": 891,
+    "inlineStyleObjects": 25,
+    "colourOccurrencesInStyleObjects": 19,
+    "colourOccurrencesAnywhereInCode": 28,
+    "colourOccurrencesOutsideStyleObjects": 9,
+    "distinctColoursInCode": 26,
+    "colourByAxis": {
+      "other": 3,
+      "surface": 6,
+      "ink": 4,
+      "edge": 5,
+      "elevation": 1
+    },
+    "distinctByAxis": {
+      "other": [
+        "#000",
+        "#8a7de0"
+      ],
+      "surface": [
+        "rgba(20,20,25,0)",
+        "rgba(17,17,22,.55)",
+        "rgba(17,17,22,.82)",
+        "rgba(23,23,28,0.5)",
+        "rgba(20,20,26,.45)",
+        "rgba(22,22,32,.5)"
+      ],
+      "ink": [
+        "#b3a8ff",
+        "#e06a6a",
+        "#6ad39f",
+        "#c9c9d2"
+      ],
+      "edge": [
+        "rgba(150,150,170,0.10)",
+        "rgba(150,150,170,.25)",
+        "rgba(150,150,170,.22)",
+        "rgba(60,58,78,.5)",
+        "rgba(150,150,170,.18)"
+      ],
+      "elevation": [
+        "rgba(0,0,0,.55)"
+      ]
+    },
+    "axisValueDeclarations": 17,
+    "axisValueDetail": [
+      "surface: backgroundImage: `url(${battlefield.mobile})`",
+      "surface: background: \"linear-gradient(180deg,rgba(20,20,25,0) 0%,rgba(17,17,22,.55) 45%,rgba(17,17,22,.82) 100%)\"",
+      "radius: borderRadius: \"0.75rem\"",
+      "inset: padding: \"0.375rem 0.75rem\"",
+      "surface: background: \"rgba(23,23,28,0.5)\"",
+      "edge: border: \"1px solid rgba(150,150,170,0.10)\"",
+      "edge: border: \"1px solid rgba(150,150,170,.25)\"",
+      "elevation: boxShadow: \"0 6px 18px rgba(0,0,0,.55)\"",
+      "edge: border: \"1px solid rgba(150,150,170,.22)\"",
+      "surface: background: \"rgba(20,20,26,.45)\"",
+      "edge: border: \"1px solid rgba(60,58,78,.5)\"",
+      "surface: background: \"rgba(22,22,32,.5)\"",
+      "edge: borderLeft: `4px solid ${c}`",
+      "surface: background: `linear-gradient(90deg, color-mix(in srgb, ${c} 14%, transparent) 0%, transparent 42%)`",
+      "surface: background: bg",
+      "edge: border: `1px solid ${AM}66`",
+      "edge: borderLeftColor: \"rgba(150,150,170,.18)\""
+    ],
+    "desktopUtilities": {
+      "count": 21,
+      "distinct": [
+        "dt:pl-6",
+        "dt:pr-5",
+        "dt:px-1.5",
+        "dt:px-4",
+        "dt:px-5",
+        "dt:px-6",
+        "dt:py-0.5",
+        "dt:py-3",
+        "dt:py-3.5",
+        "dt:py-4",
+        "dt:py-5",
+        "dt:py-[11px]",
+        "dt:rounded-none"
+      ]
+    }
+  },
+  "css": {
+    "hub": {
+      "rules": 14,
+      "axisDecls": 2,
+      "tokenised": 0,
+      "literal": 2,
+      "byAxis": {
+        "inset": 2
+      },
+      "literals": [
+        ".hub-root { padding-top: 24px }",
+        ".hub-root { padding-top: 6px }"
+      ],
+      "selectors": [
+        ".hub-play .as-wordmark",
+        ".hub-pair, .hub-play, .hub-stand, .hub-foot",
+        ".hub-pair",
+        ".hub-root",
+        ".hub-pair, .hub-foot",
+        ".hub-pair",
+        ".hub-play",
+        ".hub-stand",
+        ".hub-foot",
+        ".hub-play .as-wordmark",
+        ".hub-root",
+        ".hub-pair",
+        ".hub-play",
+        ".hub-stand"
+      ]
+    },
+    "asHub": {
+      "rules": 26,
+      "axisDecls": 30,
+      "tokenised": 14,
+      "literal": 16,
+      "byAxis": {
+        "surface": 8,
+        "edge": 10,
+        "ink": 8,
+        "radius": 2,
+        "inset": 2
+      },
+      "literals": [
+        ".as-hub-field { color: #cfcfd6 }",
+        ".as-hub-field::placeholder { color: #8a8a96 }",
+        ".as-hub-field.is-err { border-color: #e06a6a }",
+        ".as-hub-num { color: #dcdce4 }",
+        ".as-hub-cur { color: #d6ab6b }",
+        ".as-hub-list { border-radius: 12px }",
+        ".as-hub-list .as-hub-tile { border-bottom: 1px solid rgba(60, 58, 78, 0.55) }",
+        ".as-hub-field { background: #141419 }",
+        ".as-hub-field { border: 1px solid #2a2a33 }",
+        ".as-hub-field.is-err { border-color: #e06a6a }",
+        ".as-hub-list .as-hub-stripe { border-left-width: 2px !important }",
+        ".as-hub-list .as-hub-glyph { padding: 8px }",
+        ".as-hub-list .as-hub-glyph { border-radius: 9px }",
+        ".as-hub-list .as-hub-tile { padding-left: 18px }",
+        ".as-hub-list .as-hub-tile:hover { background: rgba(255, 255, 255, .06) }",
+        ".as-hub-list .as-hub-tile:hover .as-hub-stripe { border-left-width: 6px !important }"
+      ],
+      "selectors": [
+        ".as-hub-tile",
+        ".as-hub-field",
+        ".as-hub-field::placeholder",
+        ".as-hub-field.is-err",
+        ".as-hub-bg",
+        ".as-hub-bg-img",
+        ".as-hub-bg-veil",
+        ".as-hub-num",
+        ".as-hub-cur",
+        ".as-hub-glyph",
+        ".as-hub-list",
+        ".as-hub-list .as-hub-tile",
+        ".as-hub-field",
+        ".as-hub-field.is-err",
+        ".as-hub-list .as-hub-tile:last-child",
+        ".as-hub-list .as-hub-tile:nth-child(1)",
+        ".as-hub-list .as-hub-tile:nth-child(2)",
+        ".as-hub-list .as-hub-tile:nth-child(3)",
+        ".as-hub-list .as-hub-tile:nth-child(4)",
+        ".as-hub-list .as-hub-stripe",
+        ".as-hub-list .as-hub-num",
+        ".as-hub-list .as-hub-cur",
+        ".as-hub-list .as-hub-glyph",
+        ".as-hub-list .as-hub-tile",
+        ".as-hub-list .as-hub-tile:hover",
+        ".as-hub-list .as-hub-tile:hover .as-hub-stripe"
+      ]
+    },
+    "wordmark": {
+      "rules": 10,
+      "axisDecls": 4,
+      "tokenised": 4,
+      "literal": 0,
+      "byAxis": {
+        "surface": 4
+      },
+      "literals": [],
+      "selectors": [
+        ".as-wordmark",
+        ".as-wordmark-sm",
+        ".hub-play .as-wordmark",
+        ".as-wordmark",
+        ".as-wm-glow",
+        "[data-skin=\"crt\"] .as-wordmark-header",
+        "[data-skin=\"crt\"] .as-wordmark-hero",
+        ".as-wordmark",
+        ".hub-play .as-wordmark",
+        ".as-wm-glow"
+      ]
+    },
+    "selectorCounts": {
+      "hub": 18,
+      "asHub": 26
+    }
+  }
+}

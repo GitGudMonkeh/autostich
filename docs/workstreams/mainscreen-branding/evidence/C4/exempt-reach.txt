@@ -1,0 +1,18 @@
+exemption entries that match at least one rule: 187
+entries that reach BOTH the phone and the desktop half: 16
+    M5_INSET_EXEMPT  ^\.gd-frame$  -> 1 phone rule(s) + 1 desktop rule(s)
+    M5_INSET_EXEMPT  ^\.gd-nav$  -> 1 phone rule(s) + 1 desktop rule(s)
+    M5_INSET_EXEMPT  ^\.gd-page$  -> 1 phone rule(s) + 2 desktop rule(s)
+    M6_INSET_EXEMPT  ^\.gl-frame$  -> 1 phone rule(s) + 1 desktop rule(s)
+    M6_INSET_EXEMPT  ^\.gl-nav$  -> 1 phone rule(s) + 1 desktop rule(s)
+    M6_INSET_EXEMPT  ^\.gl-page$  -> 1 phone rule(s) + 1 desktop rule(s)
+    INSET_EXEMPT  \.op-dd-btn  -> 1 phone rule(s) + 1 desktop rule(s)
+    INSET_EXEMPT  \.op-root  -> 1 phone rule(s) + 1 desktop rule(s)
+    INSET_EXEMPT  \.op-foot  -> 1 phone rule(s) + 2 desktop rule(s)
+    INSET_EXEMPT  \.op-cols  -> 1 phone rule(s) + 1 desktop rule(s)
+    INSET_EXEMPT  \.op-col2  -> 1 phone rule(s) + 3 desktop rule(s)
+    INSET_EXEMPT  \.op-head  -> 1 phone rule(s) + 4 desktop rule(s)
+    INSET_EXEMPT  \.cz-root  -> 1 phone rule(s) + 1 desktop rule(s)
+    INSET_EXEMPT  ^\.up-root$  -> 2 phone rule(s) + 1 desktop rule(s)
+    INSET_EXEMPT  ^\.st-root, \.lb-root, \.go-root$  -> 1 phone rule(s) + 1 desktop rule(s)
+    C_INSET_EXEMPT  ^\.hub-root$  -> 1 phone rule(s) + 1 desktop rule(s)
