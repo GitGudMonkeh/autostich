@@ -34,7 +34,7 @@ import es from "./es.js";
 export const LOCALES = [
   { id: "de", label: "Deutsch",  short: "DE", ready: true },
   { id: "en", label: "English",  short: "EN", ready: true },
-  { id: "es", label: "Español",  short: "ES", ready: false, via: ["en"] },  // #es-locale
+  { id: "es", label: "Español",  short: "ES", ready: true,  via: ["en"] },  // #es-locale
 ];
 export const LOCALE_IDS = LOCALES.map((l) => l.id);
 // Was die UI anbietet und was `setLocale` annimmt. Nie LOCALE_IDS dafür benutzen.

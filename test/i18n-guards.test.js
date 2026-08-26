@@ -233,11 +233,62 @@ describe("i18n · Katalog-Parität", () => {
     "gameover.welcome.value", // „+{n} DP" — Kürzel, in beiden Sprachen gleich (wie common.cur.dp)
   ]);
 
-  /* Eine Liste je Zielsprache. `es` steht leer da, bis es spanischen Text gibt — und muss dann
-     eigenständig gefüllt werden, aus dem spanischen Katalog heraus. Sie von `en` zu erben wäre
-     der bequeme Fehler: die Hälfte der englischen Einträge („Deck", „Score", „Perks") sind
-     Wörter, die auf Spanisch sehr wohl übersetzt gehören. */
-  const SAME_OK = { en: SAME_OK_EN, es: new Set() };
+  /* Eine Liste je Zielsprache, aus dem SPANISCHEN Katalog heraus gefüllt (#es-translate,
+     26.08.2026). Von `en` erben wäre der bequeme Fehler gewesen: die Hälfte der englischen
+     Einträge („Deck", „Score", „Perks") sind Wörter, die auf Spanisch sehr wohl übersetzt
+     gehören — und sie sind hier auch übersetzt (mazo, puntuación, ventajas).
+
+     Die Liste zerfällt in drei Gruppen, und jede ist ein anderer Grund:
+
+     1. REINE STRUKTUR — Zeichenketten ohne übersetzbares Wort, nur Platzhalter, Zahlen und
+        Trenner. Sie MÜSSEN gleich bleiben; eine Abweichung wäre ein Fehler, keine Übersetzung.
+     2. LEHNWÖRTER, die das Spanische genauso benutzt wie das Deutsche (Build, Bug, Balance,
+        Tutorial, Playtest, Packs, Mono, Motor). Der Anglizismus ist hier die spanische Norm,
+        nicht eine vergessene Zeile.
+     3. ZWEI KÜRZEL, die zufällig zusammenfallen: Wechsel/Zigzag → Z und Anker/Ancla → A. Die
+        anderen sechs Formations-Kürzel unterscheiden sich. */
+  const SAME_OK_ES = new Set([
+    // 1 · reine Struktur: Platzhalter, Zahlen, Trennzeichen — kein übersetzbares Wort
+    "building.kick.active",      // „{base} · {kick}"
+    "bar.plant.share.value",     // „{green} / {total} · {pct} %"
+    "rail.formation.value",      // „{n} · +{pct} %"
+    "rail.pct", "rail.pct.plain",
+    "form.bonus.value", "form.delta", "form.seg.strength",
+    "roundscore.diff",
+    "arch.scoreDiff", "arch.pct",
+    "arch.cell.building",        // „{name} ({tier})"
+    "arch.cell.pos",             // „Pos {pos}" — Kürzel, in beiden Sprachen gleich
+    "chronik.anchor.row",        // „⚓ Pos {pos} · {type}"
+    "stats.archUse.right",       // „{n}× · Ø {avg}"
+    "stats.lift.value",          // „+{v} Ø"
+    "weekmods.range",            // reine Zahlenspanne
+    "milestone.next",            // „→ {at} +{sp}"
+    "tut.progress",              // „{n} / {total}"
+    "start.progress.links",      // dito
+    "start.board.week.val",      // „{have}/{max}"
+    "upgrades.readout.nodes.val", // „{owned} / {total}"
+    "start.board.last.none",     // „—"
+    // 2 · Lehnwörter, die das Spanische ebenso benutzt
+    "gameover.build",            // „Build" ist auch im Spanischen der Roguelite-Begriff
+    "hud.mult",                  // „Mult" — Kurzform von multiplicador, gleiche Schreibung
+    "shop.tab.packs",            // „Packs" — dito, und das Deutsche borgt es aus demselben Grund
+    "tut.eyebrow", "start.tutorial",  // „Tutorial"
+    "feedback.eyebrow", "privacy.eyebrow",  // „Playtest"
+    "feedback.kind.bug",         // „Bug"
+    "feedback.kind.balance",     // „Balance"
+    "board.tab.global",          // „Global" — dasselbe Wort
+    "options.chip.display",      // „HUD" — Akronym, in beiden Sprachen gleich
+    "board.tab.challenger",      // Name des Modus
+    "dev.run.title",             // „DEV RUN" — Dev-Oberfläche, Eigenname
+    "guide.lightning.principle.0.tag", "guide.plant.principle.1.tag",  // „Mono"
+    "guide.lightning.principle.1.tag",                                  // „Motor"
+    "building.A_PRISMA.name",    // „Prisma" — im Spanischen dasselbe Wort
+    // 3 · Kürzel, die zufällig zusammenfallen
+    "formation.wechsel.abbr",    // Wechsel/Zigzag → beide Z
+    "formation.anker.abbr",      // Anker/Ancla    → beide A
+  ]);
+
+  const SAME_OK = { en: SAME_OK_EN, es: SAME_OK_ES };
 
   /* Eigennamen-KLASSEN statt 18 Einzeleinträge: Kosmetik-Set-Namen und Effekt-Namen sind
      überwiegend Eigennamen (Kitsune, Ronin, Seraph, Aurora, Supernova) und lauten in beiden
@@ -491,18 +542,94 @@ describe("i18n · Terminologie", () => {
     { de: /\bAutostich\b/i,   ok: /\bAutotrick\b/i,  never: /\bAutostich\b/i,  name: "Autostich → Autotrick (Spieltitel)" },
   ];
 
-  /* EINE Begriffstabelle je Zielsprache. `es` ist leer, solange es keinen spanischen Text gibt —
-     sie wird gefüllt, wenn die Übersetzung zurückkommt, und zwar aus dem spanischen
-     Übersetzerpaket §3 heraus, genau wie die englische aus dem englischen. Vererben geht nicht:
-     die Tabelle bildet DEUTSCH auf die Zielsprache ab, nicht Englisch auf Spanisch. */
-  const TERMS = { en: TERMS_EN, es: [] };
+  /* Begriffstabelle SPANISCH — eingefroren am 26.08.2026 (#es-translate) aus
+     docs/localization/uebersetzerpaket_es_2026-08-26.md §3. Ab hier ist sie Prüfregel, nicht
+     Diskussionsgrundlage, genau wie die englische seit dem 15.08.2026.
+
+     JEDE Regel wurde vor dem Einfrieren gegen den fertigen Katalog gefahren; eine, die nur
+     „vernünftig aussieht", steht hier nicht drin. Die Übung hat sich sofort bezahlt gemacht:
+     `glossary.skillrunde` hieß „Ronda de habilidad", obwohl das deutsche Wort „Skill-DURCHLAUF"
+     ist und §3.1 `ciclo` als das einzige Wort dafür festlegt. Ohne die Probe wäre der Bruch
+     eingefroren worden statt aufzufallen.
+
+     ZWEI SPANISCHE EIGENHEITEN, an denen die englische Tabelle vorbeikommt:
+
+     - `\b` ist in JS ASCII-basiert und greift NICHT vor „Épica" oder „área". Ein `\bépica\b`
+       trifft nie. Die Regeln hier setzen die Grenze deshalb nur dort, wo links und rechts ASCII
+       steht.
+     - „Kampfwert-Vorsprung" bildet auf `margen` ab, nicht auf `valor de combate`, genau wie es
+       englisch auf „margin" abbildet. Die Kampfwert-Regel klammert die Zusammensetzung deshalb
+       aus, und der Vorsprung bekommt eine eigene Zeile — mit `ventaja` als VERBOTENEM Synonym,
+       weil `ventaja` das eingefrorene Wort für Perk ist (§3.5) und ein Wort nicht zwei Begriffe
+       tragen darf. */
+  const TERMS_ES = [
+    { de: /\bDurchlauf\b/i,   ok: /\bciclo/i,          never: /\bronda\b/i,     name: "Durchlauf → ciclo (nie „ronda“)" },
+    { de: /\bStich(e|en)?\b/, ok: /\bbaza/i,           never: /\bronda\b/i,     name: "Stich → baza (nie „ronda“)" },
+    { de: /\bLäufe?\b/,       ok: /\bpartidas?\b/i,    never: null,             name: "Lauf → partida" },
+    { de: /\bSeed\b/i,        ok: /\bsemillas?\b/i,    never: null,             name: "Seed → semilla" },
+    { de: /\bRarität\b/i,     ok: /\brareza/i,         never: null,             name: "Rarität → rareza" },
+    { de: /\bRangliste\b/i,   ok: /clasificaci|clasificatori/i, never: null,    name: "Rangliste → clasificación/clasificatoria" },
+    { de: /\bBestenliste\b/i, ok: /clasificación/i,    never: null,             name: "Bestenliste → clasificación" },
+    { de: /\bWerkstatt\b/i,   ok: /\btaller\b/i,       never: null,             name: "Werkstatt → taller" },
+    { de: /\bFormation(?!sphase|s-Energie|senergie)/i, ok: /formaci/i, never: null, name: "Formation → formación" },
+    { de: /\bMultiplikator\b/i, ok: /\bmultiplicador\b/i, never: null,          name: "Multiplikator → multiplicador" },
+    { de: /Aufstellungsphase/i, ok: /\bfase de orden\b/i, never: null,          name: "Aufstellungsphase → fase de orden" },
+    { de: /Formations-Energie/i, ok: /energía de orden/i, never: null,          name: "Formations-Energie → energía de orden" },
+    { de: /\bZiehreihenfolge\b/i, ok: /\borden de robo\b/i, never: null,        name: "Ziehreihenfolge → orden de robo" },
+    { de: /\bEpisch\b/,       ok: /pica\b/i,           never: /legendaria/i,    name: "Episch → Épica (nie „legendaria“ — eigene Achse)" },
+    { de: /Deck-Werkstatt/i,  ok: /taller de mazos/i,  never: null,             name: "Deck-Werkstatt → taller de mazos" },
+    { de: /Herausforderung/i, ok: /desafío/i,          never: null,             name: "Herausforderung → desafío" },
+    { de: /Stichpunkte?\b/i,  ok: /\bPuntos? de baza\b|\bPB\b/, never: /\bSP\b/, name: "Stichpunkte → Puntos de baza (PB, nie SP)" },
+    { de: /\bAutostich\b/i,   ok: /\bAutobaza\b/i,     never: /\bAutostich\b/i, name: "Autostich → Autobaza (Spieltitel)" },
+    { de: /\bKartenwert\b/i,  ok: /\bvalor de carta\b/i, never: null,           name: "Kartenwert → valor de carta" },
+    { de: /\bStichwert\b/i,   ok: /\bvalor de baza\b/i, never: null,            name: "Stichwert → valor de baza" },
+    { de: /\bKampfwert\b(?!-Vorsprung)/i, ok: /\bvalor de combate\b/i, never: null, name: "Kampfwert → valor de combate" },
+    { de: /Kampfwert-Vorsprung/i, ok: /\bmargen\b/i,   never: /\bventaja\b/i,   name: "Kampfwert-Vorsprung → margen (nie „ventaja“ — das ist Perk)" },
+    { de: /\bSerienpunkt(e|en)?\b/i, ok: /\bpuntos? de racha\b/i, never: null,  name: "Serienpunkt → punto de racha" },
+    { de: /\bGletscher\b/i,   ok: /glaciar/i,          never: null,             name: "Gletscher → glaciar" },
+    { de: /\bLadung(en)?\b/i, ok: /\bcargas?\b/i,      never: null,             name: "Ladung → carga" },
+    { de: /\bHitze\b/i,       ok: /\bcalor\b/i,        never: null,             name: "Hitze → calor" },
+    { de: /\bAsche\b/i,       ok: /ceniza/i,           never: null,             name: "Asche → ceniza" },
+    { de: /\bWachstum\b/i,    ok: /\bcrecimiento\b/i,  never: null,             name: "Wachstum → crecimiento" },
+    { de: /\bPerks?\b/i,      ok: /\bventajas?\b/i,    never: null,             name: "Perk → ventaja" },
+    { de: /\bSkills?\b/i,     ok: /habilidad(es)?\b/i, never: null,             name: "Skill → habilidad" },
+    { de: /\bGebäude\b/i,     ok: /\bedificios?\b/i,   never: null,             name: "Gebäude → edificio" },
+    { de: /\bSegment(e|s|en)?\b/i, ok: /\bsegmentos?\b/i, never: null,          name: "Segment → segmento" },
+    { de: /\bFarbblock\b/i,   ok: /\bbloque de palo\b/i, never: null,           name: "Farbblock → bloque de palo" },
+    { de: /\bJoker\b/i,       ok: /comodín/i,          never: null,             name: "Joker → comodín" },
+    { de: /\bDecks?\b/i,      ok: /\bmazos?\b/i,       never: null,             name: "Deck → mazo" },
+    { de: /\bGegner(karte|karten)?\b/i, ok: /\brival(es)?\b/i, never: null,     name: "Gegner → rival" },
+    { de: /\bNeuwurf\b|\bReroll(s)?\b/i, ok: /relanza/i, never: null,           name: "Neuwurf/Reroll → relanzamiento" },
+  ];
+
+  /* EINE Begriffstabelle je Zielsprache. Vererben geht nicht: die Tabelle bildet DEUTSCH auf die
+     Zielsprache ab, nicht Englisch auf Spanisch. */
+  const TERMS = { en: TERMS_EN, es: TERMS_ES };
+
+  /* ZWEI Schlüsselklassen, die diese Prüfung NICHT bewerten darf (#es-translate). Beide fielen
+     erst beim Aufbau der spanischen Tabelle auf, weil sie im Englischen zufällig nicht auffielen:
+
+     1. PLATZHALTERNAMEN. `target.eyebrow` heißt deutsch „Rolle · {perk}". Das Wort „perk" steht
+        dort als VARIABLENNAME, nicht als Text — die Regel „Perk → ventaja" schlug daran an und
+        verlangte eine Übersetzung des Platzhalters. Im Englischen fiel das nie auf, weil dort
+        zufällig dasselbe Wort auch die Übersetzung ist.
+
+     2. `glossary.*.match`. Diese Listen sind kein Anzeigetext, sondern die Wortformen der
+        Auto-Fettung, und sie werden je Sprache NEU GESCHRIEBEN statt übersetzt (Paket §7). Eine
+        spanische Liste muss die spanischen Flexionen enthalten und darf die deutschen gerade
+        nicht spiegeln. Englisch kam durch, weil „Deck-Durchlauf" dort als „deck cycle" auftaucht.
+
+     Beides ist eine Verengung auf das, was die Regel je gemeint hat, keine Abschwächung: an
+     ANZEIGETEXT ändert sich nichts, und die Gegenprobe unten bricht die Naht weiterhin auf. */
+  const stripVars = (s) => String(s).replace(/\{\w+\}/g, " ");
+  const isMatchList = (k) => /^glossary\..+\.match$/.test(k);
 
   it("kanonische Begriffe werden durchgängig verwendet", () => {
     const bad = [];
     for (const loc of READY_TARGETS) {
       for (const term of TERMS[loc] || []) {
         for (const k of KEYS_SRC) {
-          if (!(k in CATS[loc]) || !term.de.test(SRC[k])) continue;
+          if (!(k in CATS[loc]) || isMatchList(k) || !term.de.test(stripVars(SRC[k]))) continue;
           const ziel = CATS[loc][k];
           if (!term.ok.test(ziel)) bad.push(`${k} (${loc}) — ${term.name}\n     ${SOURCE_LOCALE}: ${SRC[k]}\n     ${loc}: ${ziel}`);
           else if (term.never && term.never.test(ziel)) bad.push(`${k} (${loc}) — verbotenes Synonym (${term.name})\n     ${loc}: ${ziel}`);
@@ -701,21 +828,53 @@ describe("i18n · Auflösung", () => {
     /* Eine angemeldete, aber unfertige Sprache wird genauso abgewiesen wie eine unbekannte.
        Das ist der Punkt, an dem „angemeldet" und „ausgeliefert" auseinandergehen: ein altes
        `options.lang: "es"` aus dem localStorage darf keine halb übersetzte UI aufmachen. */
-    for (const loc of LOCALE_IDS.filter((id) => !READY_LOCALE_IDS.includes(id))) {
+    const unfertig = LOCALE_IDS.filter((id) => !READY_LOCALE_IDS.includes(id));
+    for (const loc of unfertig) {
       expect(setLocale(loc), `${loc} ist nicht ready und darf nicht wählbar sein`).toBe(DEFAULT_LOCALE);
     }
     setLocale(before);
     expect(LOCALE_IDS).toEqual(["de", "en", "es"]);
-    expect(READY_LOCALE_IDS).toEqual(["de", "en"]);
+    /* Seit dem 26.08.2026 ist Spanisch fertig (#es-translate), also ist JEDE angemeldete Sprache
+       auch ausgeliefert — und die Schleife darüber läuft heute über eine leere Menge.
+
+       Das wird hier ausgesprochen statt verschwiegen: die Schleife prüft ab jetzt nichts mehr,
+       bis eine vierte Sprache angemeldet wird, und schärft sich in genau dem Moment von selbst
+       wieder. Die Zeile darunter ist das, was heute tatsächlich gemessen wird. Ein stillschweigend
+       leerer Durchlauf wäre die gefährlichere Variante — dieselbe Falle, in die die Sonde der
+       Rückfallkette weiter unten schon einmal getappt ist. */
+    expect(unfertig, "angemeldet, aber nicht ausgeliefert").toEqual([]);
+    expect(READY_LOCALE_IDS).toEqual(["de", "en", "es"]);
   });
 
   /* Die Rückfallkette, und zwar an der Stelle, die einen Spieler betrifft. Ohne sie fiele ein
      fehlender spanischer Schlüssel auf SOURCE_LOCALE zurück — ein spanischer Spieler bekäme
-     DEUTSCH zu sehen, nicht Englisch. Der spanische Katalog ist noch leer, also prüft dieser Test
-     die Kette heute über ihre volle Länge. */
+     DEUTSCH zu sehen, nicht Englisch.
+
+     DIE SONDE IST BEWUSST KÜNSTLICH (#es-translate). Bis hierher prüfte dieser Test die Kette an
+     `common.close` und verließ sich darauf, dass der spanische Katalog LEER ist. Das war eine
+     Sonde mit Verfallsdatum: sobald Spanisch den Schlüssel selbst führt, löst `t()` ihn direkt
+     auf, die Kette wird gar nicht mehr betreten — und der Test wäre grün geblieben, ohne noch
+     irgendetwas zu prüfen. Genau dieser stille Ausgang ist schlimmer als ein roter Test.
+
+     Ein Schlüssel, der zur Laufzeit aus dem ZIELKATALOG genommen und danach zurückgelegt wird,
+     erzwingt den Rückfall bei JEDEM Füllstand — auch bei voller Parität. `catalog()` liefert das
+     lebende Objekt, das `t()` selbst benutzt; deshalb wirkt das Entfernen, und deshalb muss das
+     Zurücklegen in `finally` stehen. */
   it("eine Sprache mit `via` fällt erst dorthin zurück, nicht sofort auf die Quellsprache", () => {
-    expect(t("common.close", null, "es")).toBe(en["common.close"]);
-    expect(t("common.close", null, "es")).not.toBe(de["common.close"]);
+    const esCat = catalog("es");
+    const probe = "common.close";
+    const had = Object.prototype.hasOwnProperty.call(esCat, probe);
+    const saved = esCat[probe];
+    // Vorbedingung der Sonde: die beiden Rückfallstufen müssen sich unterscheiden, sonst wiese
+    // die Prüfung darunter nichts nach.
+    expect(en[probe]).not.toBe(de[probe]);
+    try {
+      delete esCat[probe];
+      expect(t(probe, null, "es")).toBe(en[probe]);
+      expect(t(probe, null, "es")).not.toBe(de[probe]);
+    } finally {
+      if (had) esCat[probe] = saved;
+    }
     expect(t("gibt.es.nicht", null, "es")).toBe("gibt.es.nicht");   // Kette erschöpft → Schlüssel
   });
 
