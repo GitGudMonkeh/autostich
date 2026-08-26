@@ -70,7 +70,17 @@ function pruefe(k, text) {
 const arg = process.argv[2];
 const neu = arg && arg !== "--check" ? JSON.parse(readFileSync(resolve(ROOT, arg), "utf8")) : {};
 
+/* Ein Schluessel, den der deutsche Katalog nicht mehr kennt, ist tot: die Quelle hat ihn
+   entfernt, und eine Uebersetzung ohne Original ist eine verwaiste Zeile, die der Paritaets-
+   Waechter zu Recht anschlaegt. Er faellt hier heraus und wird benannt, statt den Lauf zu
+   blockieren — das Entfernen ist ja schon stromaufwaerts entschieden worden. */
 const alle = { ...zh, ...neu };
+const verwaist = Object.keys(alle).filter((k) => !(k in de));
+for (const k of verwaist) {
+  console.log(`ENTFALLEN im deutschen Katalog, wird gestrichen: ${k} — „${alle[k]}"`);
+  delete alle[k];
+}
+
 const fehler = Object.entries(alle).flatMap(([k, v]) => pruefe(k, v));
 const schonDa = Object.keys(neu).filter((k) => k in zh);
 

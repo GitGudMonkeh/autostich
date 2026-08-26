@@ -24,14 +24,14 @@ export default {
 
   /* ---- Skin sets ---- */
   "cosmetic.default.name": "Predeterminado",
-  "cosmetic.deck_sunset.name": "Sunset Rider",
+  "cosmetic.deck_sunset.name": "Jinete del Ocaso",
   "cosmetic.deck_lofi.name": "Kitsune",
-  "cosmetic.deck_beach.name": "Malibu Wave",
+  "cosmetic.deck_beach.name": "Ola de Malibú",
   "cosmetic.deck_cat.name": "Biolumen",
   "cosmetic.deck_spacedog.name": "Pantera Cósmica",
-  "cosmetic.deck_wale.name": "Moonwhale",
-  "cosmetic.deck_onboarding.name": "Genesis",
-  "cosmetic.deck_gottgleich.name": "Ascension",
+  "cosmetic.deck_wale.name": "Ballena Lunar",
+  "cosmetic.deck_onboarding.name": "Génesis",
+  "cosmetic.deck_gottgleich.name": "Ascensión",
   "cosmetic.deck_serie300.name": "Flamingo",
   "cosmetic.deck_serie600.name": "Peacock",
   "cosmetic.deck_serie1500.name": "Pavo Real",
@@ -52,7 +52,7 @@ export default {
   "cosmetic.deck_drache.name": "Fiesta de los Faroles",
   "cosmetic.deck_arcade.name": "Berilo",
   "cosmetic.deck_polarlicht.name": "Scarab",
-  "cosmetic.deck_seedrache.name": "Eldritch",
+  "cosmetic.deck_seedrache.name": "Espanto Abisal",
   "cosmetic.deck_obsidian.name": "Obsidiana",
 
   /* Numbered series — the tier word is translated, the set word carries across. */
@@ -84,7 +84,7 @@ export default {
   "cosmetic.deck_nimbus.name": "Nimbus",
   "cosmetic.deck_solfatara.name": "Solfatara",
   "cosmetic.deck_origami.name": "Origami",
-  "cosmetic.deck_insertcoin.name": "Insert Coin",
+  "cosmetic.deck_insertcoin.name": "Inserta Moneda",
 
   /* ---- Global effects ----
      `fx.starfield.desc` names a step of the score-announcement ladder, which makes it one of the

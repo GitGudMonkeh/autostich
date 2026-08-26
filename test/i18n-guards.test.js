@@ -338,8 +338,15 @@ describe("i18n · Katalog-Parität", () => {
       expect(en[`cosmetic.${deckId}.name`], `${deckId} muss wie der Archetyp heißen`)
         .toBe(en[`archetype.${arch}.label`]);
     }
+    /* Sieben Namen dazu. Sie standen in DREI Katalogen auf Englisch — nicht weil sie Eigennamen
+       waeren, sondern weil sie beim Anlegen englisch geschrieben und nie uebersetzt wurden. Die
+       Klassen-Ausnahme oben hat das gedeckt, also fiel es erst im chinesischen Bild auf. Wer einen
+       von ihnen wieder angleicht, faellt ab jetzt hier auf. */
     for (const k of ["cosmetic.deck_kosmos.name", "cosmetic.deck_oni.name", "cosmetic.deck_drache.name",
-      "cosmetic.deck_serie1500.name", "cosmetic.deck_sparfuchs.name", "cosmetic.deck_sonne.name"]) {
+      "cosmetic.deck_serie1500.name", "cosmetic.deck_sparfuchs.name", "cosmetic.deck_sonne.name",
+      "cosmetic.deck_sunset.name", "cosmetic.deck_beach.name", "cosmetic.deck_wale.name",
+      "cosmetic.deck_onboarding.name", "cosmetic.deck_gottgleich.name", "cosmetic.deck_seedrache.name",
+      "cosmetic.deck_insertcoin.name"]) {
       expect(en[k], `${k} beschreibt etwas und muss übersetzt sein`).not.toBe(de[k]);
     }
   });
