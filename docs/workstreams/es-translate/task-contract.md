@@ -97,7 +97,9 @@ The parts, in the order they must happen.
 node -e "import('./src/i18n/de.js').then(async d=>{const e=(await import('./src/i18n/en.js')).default;const c=o=>Object.values(o).reduce((a,s)=>a+String(s).length,0);console.log(Object.keys(d.default).length,c(d.default),c(e))})"
 ```
 
-Measured: `2639 111236 104771`. If the diff changes a German or English **text value**, stop.
+Measured at `b5dd4a15`: `2639 111236 104771`. **Re-measured after the `dev` merge** (H1/H7 both
+fired mid-task, see the evidence package §11): `2664 111640 105109` at `dev` and unchanged at
+HEAD. If the diff changes a German or English **text value**, stop.
 
 **Tripwire 2 — `ready: true` must not precede key parity.** The ratchet is built the other way round:
 it demands the flag once the catalog is complete. It is not permission to set it early.
@@ -207,7 +209,7 @@ Ticked only when true.
 - [x] `glossary.*.match` rewritten for Spanish; both measuring tests pass
 - [x] `TERMS.es` and `SAME_OK.es` filled
 - [x] `ready: true` set, after parity
-- [x] Tripwire 1 re-measured: `2639 111236 104771`
+- [x] Tripwire 1 re-measured: `2664 111640 105109` against the merged base
 - [x] `npm test`, `npm run lint -- --max-warnings=0`, `npm run build`, `npm run gen:db`, `npm run loc:export` — all green
 - [x] Counter-check recorded for every new guard (`testing.md` §5)
 - [x] `docs/localization/unsicherheiten_es.md` written

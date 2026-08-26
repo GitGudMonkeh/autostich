@@ -1,7 +1,8 @@
 # Evidence package — es-translate
 
-**Diff range.** `b5dd4a15786884bb35b1e29bbdcd79882fd24f38` … `HEAD` on `task/es-translate`.
-SHAs rather than branch names, so this survives branch deletion.
+**Diff range.** `b5dd4a15786884bb35b1e29bbdcd79882fd24f38` … `HEAD` on `task/es-translate`, with
+`dev` @ `78282fc91d781c4c818253e8edecfef53d7ac053` merged in on the way (see §11). SHAs rather
+than branch names, so this survives branch deletion.
 
 **Claim.** Spanish is complete, visible and machine-guarded. `LOCALES` carries `ready: true` for
 `es`, the suite is green, and no guard was weakened to get there.
@@ -16,11 +17,11 @@ SHAs rather than branch names, so this survives branch deletion.
 | | Result |
 | --- | --- |
 | `src/i18n/index.js` | `{ id: "es", …, ready: true, via: ["en"] }` |
-| `npm test` | **142 files, 2194 tests, all passed** |
+| `npm test` | **150 files, 2396 tests, all passed** |
 | `npm run lint -- --max-warnings=0` | **exit 0**, no warnings |
 | `npm run build` | **exit 0** |
 | `npm run gen:db` | **exit 0**, 219 entries |
-| `npm run loc:export` | `DATA [es]: 2800 Zeilen (0 offen, 30 mit Längenschranke)` |
+| `npm run loc:export` | `DATA [es]: 2825 Zeilen (0 offen, 30 mit Längenschranke)` |
 
 "Touched" needs answering honestly rather than asserted: **three guard edits were made.** All
 three are argued in §5, and each is either a strengthening, a snapshot the ratchet is designed to
@@ -42,9 +43,9 @@ green while leaving a real defect in place. §6 counter-checks all eight guarded
 | `esCosmetics.js` | 79 | 0 |
 | `esPerks.js` | 56 | 37 |
 | `esTerms.js` | (shared vocabulary) | — |
-| **Total** | **2639** | **352** |
+| **Total** | **2664** | **352** |
 
-Key parity with `de` and `en`: 2639 / 2639 / 2639. No orphans, no missing keys — enforced by the
+Key parity with `de` and `en`: 2664 / 2664 / 2664. No orphans, no missing keys — enforced by the
 parity guard, which now demands Spanish because Spanish is ready.
 
 Reproduce:
@@ -84,16 +85,20 @@ Tripwire 1 of the contract: German and English text values must not move.
 node -e "import('./src/i18n/de.js').then(async d=>{const e=(await import('./src/i18n/en.js')).default;const c=o=>Object.values(o).reduce((a,s)=>a+String(s).length,0);console.log(Object.keys(d.default).length,c(d.default),c(e))})"
 ```
 
-Baseline at `b5dd4a15` and at HEAD: **`2639 111236 104771`** — identical.
+Baseline at `b5dd4a15`: `2639 111236 104771`. After the `dev` merge the German and English
+catalogs legitimately grew (§11), so the baseline was re-measured against the new base and holds
+there: **`2664 111640 105109`** at `dev` and at HEAD — identical.
 
 Stronger than the character count, because it proves the files rather than their totals: all ten
 German and English catalog files are **byte-identical by blob hash** across the whole diff.
 
 ```bash
 for f in src/i18n/de.js src/i18n/en.js src/i18n/en{Skills,Perks,Families,Meta,Glossary,Cosmetics,Guides,Terms}.js; do
-  [ "$(git rev-parse b5dd4a15:$f)" = "$(git rev-parse HEAD:$f)" ] && echo "unchanged $f" || echo "CHANGED $f"
+  [ "$(git rev-parse dev:$f)" = "$(git rev-parse HEAD:$f)" ] && echo "unchanged $f" || echo "CHANGED $f"
 done
 ```
+
+All ten print `unchanged`. This branch adds Spanish and touches no German or English catalog file.
 
 **One file outside `es*` did change and it is not a text change.**
 `docs/localization/strings_de_pixi_2026-08-15.csv` — the ENGLISH delivery CSV — moved in 7 `limit`
@@ -231,3 +236,40 @@ guard caught all three cases. The catalog keeps the numeral: "Carta 2", "Desde l
 **What was NOT proven.** No screen was rendered and no pixel was measured; there is no visual
 evidence in this package and none is claimed. The suite proves structure, parity, numbers,
 terminology and characters — not that a Spanish sentence fits its tile.
+
+---
+
+## 11. H1 and H7 both fired, and both were handled
+
+The contract listed drift since the freeze (H1) as resolved-for-`b5dd4a15` and named a live
+cross-task collision (H7): `feature/desktop-menus` sitting mid-merge with unresolved conflicts in
+`src/i18n/de.js` and `src/i18n/en.js`. **Both happened while this task was running.**
+
+`dev` moved from `b5dd4a15` to `78282fc9` — the menu rework was integrated, and it changed the
+German and English catalogs. Measured rather than estimated:
+
+| | Keys |
+| --- | ---: |
+| New German keys with no Spanish | 29 |
+| German values changed under an existing Spanish translation | 15 |
+| Keys removed, leaving a Spanish orphan | 4 |
+
+The base was merged FORWARD into the task branch — the base, not a sibling, which is ordinary
+pre-integration hygiene and what the predecessor branch did too. The single merge conflict was in
+`docs/localization/strings_es.csv`, a generated artefact; it was resolved by regenerating the file
+rather than hand-merging machine output.
+
+**Why this was not optional.** With `ready: true` set, the parity guard demands a Spanish value
+for every German key. Leaving the 29 untranslated would have turned the suite red the moment this
+branch met `dev` — the acceptance gate would have been true only in isolation, which is the same
+as not being true.
+
+One recorded finding went obsolete in a good way: `upgrades.ranked.free` used to be German "frei"
+for two different meanings, and Spanish followed the English disambiguation. The rework made the
+German say "Freigeschaltet", so `desbloqueada` is now a straight translation. The note in the
+catalog was corrected rather than left standing.
+
+**Still open, and the owner's call:** whether `dev` needs pushing, and whether anything else lands
+in `src/i18n/**` before this branch integrates. If it does, the same three measurements repeat —
+`npm run loc:export`, the self-check, and the blob-hash scope proof — and the delta will again be
+tens of keys rather than thousands.
