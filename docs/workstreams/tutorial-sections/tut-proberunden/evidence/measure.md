@@ -346,3 +346,34 @@ Three details fell out of doing it:
   space fails the suite instead of passing it.
 
 The full walk was repeated after both changes: 10 topics, 42 lessons, no problems.
+
+
+---
+
+# The English walk, and what it refuted
+
+The tutorial had never been opened in English. The whole acceptance walk had run in German only,
+and the budget guard rested on a sentence I had written into it myself: *„Deutsch ist die
+Budget-Sprache: sie ist die längere von beiden. Passt Deutsch, passt Englisch."*
+
+**Walked in English: 10 topics, 42 lessons, no problems.** No `undefined`, no raw key, no unresolved
+placeholder, no tap target under 44 px, no overflow, no page error.
+
+**But the premise is false.** Measured, English is *longer* than German in four lessons:
+
+| Lesson | English | German |
+| --- | ---: | ---: |
+| blitz/karte | 595 | 575 |
+| blitz/tipps | 388 | 368 |
+| feuer/tipps | 388 | 368 |
+| eis/tipps | 388 | 368 |
+
+None exceeds its budget — but three of the four are **kurz** lessons with twelve pixels of headroom,
+and the guard was not looking at them at all. An English sentence growing by two lines would have
+gone through green.
+
+The guard now measures **both** catalogs and takes the higher. Counter-proved by lengthening one
+English tip: it reports `blitz/tipps (kurz): 528 px > 400 px`, where before the change it read 368
+and passed.
+
+A guess about a language is not a measurement, even when it is usually right.

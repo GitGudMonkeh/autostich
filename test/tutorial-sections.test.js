@@ -240,7 +240,16 @@ describe("Tutorial-Sektionen · Texte", () => {
 });
 
 describe("Tutorial-Sektionen · das Höhenbudget", () => {
-  /* Deutsch ist die Budget-Sprache: sie ist die längere von beiden. Passt Deutsch, passt Englisch.
+  /* GEMESSEN WERDEN BEIDE SPRACHEN, und die längere zählt.
+
+     Hier stand: „Deutsch ist die Budget-Sprache: sie ist die längere von beiden. Passt Deutsch,
+     passt Englisch." Das klingt vernünftig und ist GEMESSEN falsch. In vier Lektionen ist Englisch
+     länger — `blitz/karte` 595 gegen 575, und die drei Tipp-Listen 388 gegen 368. Keine reißt ihr
+     Budget, aber drei davon sind KURZE Lektionen mit zwölf Pixeln Luft, und der Wächter sah sie
+     überhaupt nicht an. Ein englischer Satz, der um zwei Zeilen wächst, wäre still durchgegangen.
+
+     Aufgefallen ist das erst, als das Tutorial zum ersten Mal auf Englisch durchlaufen wurde. Eine
+     Annahme über eine Sprache ist keine Messung, auch wenn sie meistens stimmt.
 
      GEMESSEN WIRD DER AUFGELÖSTE TEXT, nicht der rohe. „{skillsOffered}" sind 15 Zeichen, auf dem
      Schirm steht die Zahl mit zweien. Über eine Lektion mit vierzehn Platzhaltern waren das drei
@@ -248,7 +257,9 @@ describe("Tutorial-Sektionen · das Höhenbudget", () => {
      Wächter, der etwas anderes misst als der Leser sieht, misst das Falsche. */
   const fuellen = (text) => String(text).replace(/\{(\w+)\}/g,
     (m, k) => (k in MEASURE_VARS ? String(MEASURE_VARS[k]) : m));
-  const heightDe = (s, l) => lessonHeight(s, l, (k) => fuellen(de[k] ?? ""));
+  const heightIn = (cat) => (s, l) => lessonHeight(s, l, (k) => fuellen(cat[k] ?? ""));
+  // Der Name sagt, was gemessen wird: die HOEHERE der beiden Sprachen, nicht eine bestimmte.
+  const hoehe = (s, l) => Math.max(heightIn(de)(s, l), heightIn(en)(s, l));
 
   /* Die Gegenprobe dazu: ein Platzhalter, den niemand füllt, bleibt als Text stehen. Ohne diesen
      Wächter rechnete ein Tippfehler im Namen die Lektion still größer und wäre nur daran zu
@@ -267,7 +278,7 @@ describe("Tutorial-Sektionen · das Höhenbudget", () => {
   it("keine Lektion überschreitet das Budget ihrer Art", () => {
     const over = [];
     for (const s of SECTIONS) for (const l of s.lessons) {
-      const h = Math.round(heightDe(s, l)), b = lessonBudget(l);
+      const h = Math.round(hoehe(s, l)), b = lessonBudget(l);
       if (h > b) over.push(`${s.id}/${l.id} (${lessonKind(l)}): ${h} px > ${b} px`);
     }
     expect(over, `Über Budget:\n  ${over.join("\n  ")}`).toEqual([]);
@@ -288,7 +299,7 @@ describe("Tutorial-Sektionen · das Höhenbudget", () => {
     const falsch = [];
     for (const s of SECTIONS) for (const l of s.lessons) {
       if (lessonKind(l) !== "voll") continue;
-      const h = Math.round(heightDe(s, l));
+      const h = Math.round(hoehe(s, l));
       if (h <= LESSON_BUDGET_PX) falsch.push(`${s.id}/${l.id}: ${h} px — das ist „kurz"`);
     }
     expect(falsch, `Als „voll" geführt, passt aber ins kleine Budget:\n  ${falsch.join("\n  ")}`).toEqual([]);
