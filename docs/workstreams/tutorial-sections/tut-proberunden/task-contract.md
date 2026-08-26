@@ -19,11 +19,13 @@ Tier C. Die Proberunden aus dem freigegebenen Entwurf in `#tutorial-sections` ba
 
 | Field | Value |
 | --- | --- |
-| **Preview port** | `5198` |
-| **Preview URL** | `http://localhost:5198/` |
-| **Server invocation** | `npm run dev -- --port 5198 --strictPort` |
+| **Preview port** | `5201` |
+| **Preview URL** | `http://localhost:5201/` |
+| **Server invocation** | `npm run dev -- --port 5201 --strictPort` |
 
-Ports 5180–5197 sind belegt. **5186 ist von `icon-position-review` gepinnt, dessen Contract auf
+**5198 war zugeteilt und ist besetzt.** Ein fremder Dev-Server hält den Port und liefert einen
+anderen Worktree aus; die gesamte Messung dieses Tasks lief deshalb auf **5201**. Auf Owner-Entscheid
+ist 5201 jetzt der Port des Tasks. Ports 5180–5197 sind belegt. **5186 ist von `icon-position-review` gepinnt, dessen Contract auf
 jenem Branch liegt und für einen Cockpit-Grep unsichtbar ist** — siehe
 `docs/workstreams/mobile-icons/mobile-tile-design/findings.md`.
 
