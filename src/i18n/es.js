@@ -31,12 +31,14 @@ import esSkills from "./esSkills.js";       // 84 skills + archetype names — o
 import esPerks from "./esPerks.js";         // legendary perks + perk categories
 import esMeta from "./esMeta.js";           // upgrade tree + weekly modifiers
 import esCosmetics from "./esCosmetics.js"; // skin sets + global effects
+import esGuides from "./esGuides.js";       // the four archetype guides
 
 export default {
   ...esSkills,
   ...esPerks,
   ...esMeta,
   ...esCosmetics,
+  ...esGuides,
 
   /* ---- Rarity ladder (package §3.5) ----
      Ends on "Épica", not "Legendaria": legendary is a separate axis in this game (legendary perks,
