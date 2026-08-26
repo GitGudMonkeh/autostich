@@ -208,6 +208,12 @@ rows to judge the finding. Captured output is heavy and permanent: `viewport-128
 evidence, one file of which is 268,070 lines, and Git keeps it for good. Decide per workstream rather
 than by habit.
 
+**The size tripwire.** No single committed evidence file over **1 MB**, and no workstream
+`evidence/` directory over **25 MB**, without a one-line ruling in the workstream's contract or
+evidence document naming what a reader must see in the raw file. The judgement clause above,
+alone, let ~950 MB of geometry dumps into shared history within five days of being written
+(measured — health-check report, 2026-08-26); a number decides from here, not a mood.
+
 ---
 
 ## 8. Handoff to independent review
@@ -231,8 +237,8 @@ A handoff with no open questions is usually one that has not looked hard enough.
 
 ### Review type
 
-The canonical rule is `AGENTS.md` — *Independent review*. This section is how a requested review is
-run.
+Whether a review happens at all is `AGENTS.md` — *Independent review* (optional, risk-based).
+This section is **canonical** for how a requested review is run.
 
 Every handoff states its type in one line. A reviewer who cannot find one treats the review as
 **full**, which is the conservative default.
@@ -267,8 +273,6 @@ record already goes — the handoff or the contract — and become their own tas
 if they should outlive the workstream. No new document and no backlog system is created for them.
 
 ### Review budget
-
-The numbers are canonical in `AGENTS.md` — *Independent review*; what follows is how they are applied.
 
 One full review plus one closure review is the normal case. A further closure round is permitted only
 where a known blocking finding is still unfixed, or its fix caused a new regression. **There is no
