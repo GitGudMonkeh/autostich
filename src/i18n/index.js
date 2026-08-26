@@ -88,9 +88,18 @@ function applyLocale(next) {
   return current;
 }
 
+/* Gesetzt NUR von setPreviewLocale, und die geht ausschließlich im Vorschau-Build. In jedem
+   ausgelieferten Build ist dieser Wert konstant `null`, und setLocale verhält sich Zeile für
+   Zeile wie vorher. */
+let previewPin = null;
+
 // READY_LOCALE_IDS, nicht LOCALE_IDS: eine angemeldete, aber unfertige Sprache ist für den
 // Spieler nicht wählbar — auch nicht über ein altes `options.lang` aus dem localStorage.
 export function setLocale(id) {
+  /* Solange die Vorschau eine Sprache gepinnt hat, gewinnt sie. Ohne das überschriebe der
+     Sprach-Effekt der App (App.jsx, `setLocale(options.lang)`) das Pin beim Mount sofort
+     wieder mit `en` — die Vorschau wäre genau einen Frame lang chinesisch. */
+  if (previewPin) return current;
   return applyLocale(READY_LOCALE_IDS.includes(id) ? id : DEFAULT_LOCALE);
 }
 
@@ -108,7 +117,10 @@ export function setLocale(id) {
 export function setPreviewLocale(id) {
   const env = typeof import.meta !== "undefined" ? import.meta.env : null;
   if (!env || env.VITE_PREVIEW !== "1") return current;
-  return applyLocale(LOCALE_IDS.includes(id) ? id : current);
+  if (!id) { previewPin = null; return current; }        // ohne Argument: Pin lösen
+  if (!LOCALE_IDS.includes(id)) return current;
+  previewPin = id;
+  return applyLocale(id);
 }
 
 export function subscribeLocale(fn) {

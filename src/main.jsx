@@ -3,6 +3,7 @@ import { Autostich } from "./App.jsx";
 import { install as installErrorBuffer } from "./ui/errorBuffer.js"; // #396 Fehler-Ring-Puffer für den Melder
 import { maybeResetForEpoch, loadOptions } from "./game/storage.js"; // #reset: einmaliger Neustart-Reset (nur Preview/Test-Namensraum)
 import { activeTestViewport } from "./ui/testViewport.js"; // #400 Test-Viewport (nur Preview-Build)
+import { setPreviewLocale } from "./i18n/index.js"; // #zh-hans Vorschau-Sprache (nur Preview-Build)
 import "./index.css";
 
 // PWA: Das Install-Prompt-Event (`beforeinstallprompt`) kann VOR dem React-Mount feuern → früh einfangen und global
@@ -37,6 +38,23 @@ if (typeof window !== "undefined") {
       navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).catch(() => { /* SW nie kritisch */ });
     });
   }
+}
+
+/* #zh-hans Vorschau-Sprache — die zweite Boot-Entscheidung, und sie steht aus demselben Grund
+   hier ausgeschrieben wie das Viewport-Tor darunter: Vite ersetzt `VITE_PREVIEW` beim Bauen,
+   also faltet sich der ganze Block in einem `main`-Build weg.
+
+   `?lang=zh-Hans` pinnt die angemeldete, aber unfertige Fixture-Sprache. Das ist der einzige
+   Weg, den CJK-Zweig an den ECHTEN Bildschirmen zu beurteilen statt an einem Musterblatt —
+   und der Grund, warum das Pin überhaupt existiert: `setLocale` weist eine unfertige Sprache
+   ab, wie es soll, und würde sie beim Mount sofort wieder auf Englisch ziehen.
+
+   VOR dem Mount, damit schon der erste Frame chinesisch ist. Den Rest erledigt die App von
+   selbst: ihr Sprach-Effekt schreibt den zurückgegebenen Wert nach `documentElement.lang`,
+   womit auch der `:lang(zh-Hans)`-Zweig greift. */
+if (import.meta.env.VITE_PREVIEW === "1" && typeof window !== "undefined") {
+  const lang = new URLSearchParams(window.location.search).get("lang");
+  if (lang) setPreviewLocale(lang);
 }
 
 const rootEl = document.getElementById("root");
