@@ -115,6 +115,9 @@ describe("i18n · Katalog-Parität", () => {
      würde die vergessene spanische Übersetzung genau dort durchlassen, wo sie am wahrscheinlichsten
      ist — bei den Wörtern, die aus dem Englischen schon vertraut aussehen. */
   const SAME_OK_EN = new Set([
+    "common.cur.dp",             // DP = Deckpunkte / Deck Points — dasselbe Kuerzel in beiden Sprachen
+    "gameover.welcome.value",    // „+{n} DP" — Zahl plus dieses Kuerzel
+    "start.board.week.bonus.full", // „+{dp} DP" — dito
     "board.col.pilot",       // Spaltenkopf „Pilot" — in beiden Sprachen dasselbe Wort
     "start.onb.reroll",      // „Reroll" ist im Deutschen bereits das englische Wort
     "options.rfx.mobile",    // Zustandsname, in beiden Sprachen „Mobile"
@@ -124,8 +127,6 @@ describe("i18n · Katalog-Parität", () => {
     "start.progress.onboarding", // „Onboarding" ist im Deutschen der etablierte Begriff (§3.5)
     "start.progress.links",  // reine Zahlenzeile „{done} / {total}"
     "start.board.week.val",  // dito „{have}/{max}" — nur Ziffern und ein Schrägstrich
-    "start.board.week.bonus.full", // „+{dp} DP" — nur Zahl und Währungskürzel, DP heißt in beiden Sprachen DP
-    "common.cur.dp",         // DP = Deckpunkte / Deck Points
     "lv.wing.deck",          // „Deck" ist in beiden Sprachen dasselbe Wort (Begriffstabelle §3.1)
     "sparkline.axis.y",      // Achsenbeschriftung „Score" — Score bleibt Score (§3.1)
     "build.perks.head",      // „Perks — {count}" — Perk bleibt Perk (Begriffstabelle §3.1)
@@ -230,7 +231,6 @@ describe("i18n · Katalog-Parität", () => {
     "milestone.next",         // reine Struktur: „→ {at} +{sp}" — kein übersetzbarer Text
     "node.reroll1.label",     // „Reroll" ist im Deutschen bereits das englische Wort (wie start.onb.reroll)
     "node.reroll2.label",     // dito
-    "gameover.welcome.value", // „+{n} DP" — Kürzel, in beiden Sprachen gleich (wie common.cur.dp)
   ]);
 
   /* Eine Liste je Zielsprache, aus dem SPANISCHEN Katalog heraus gefüllt (#es-translate,
@@ -293,16 +293,10 @@ describe("i18n · Katalog-Parität", () => {
      in keiner Sprache uebersetzt werden. Die erfundenen Deck- und Effektnamen faengt schon
      SAME_OK_CLASS ab und stehen deshalb nicht noch einmal hier. */
   const SAME_OK_ZH = new Set([
-    "common.cur.sp",               // SP — Kuerzel, in jeder Sprache SP
-    "common.cur.dp",               // DP — dito
     "hud.speed.max.label",         // „MAX" — Kuerzel auf dem Tempo-Knopf
     "options.chip.display",        // „HUD" — das Kuerzel der Sprungleiste
     "dev.run.title",               // „DEV RUN" — Dev-Bildschirm, bewusst unuebersetzt
-    "upgrades.buy.short",          // „{cost} SP" — Zahl plus Waehrungskuerzel
-    "gameover.welcome.value",      // „+{n} DP" — dito
     "start.board.week.val",        // „{have}/{max}" — nur Ziffern und ein Schraegstrich
-    "start.board.week.bonus",      // „+{sp} SP · +{dp} DP" — nur Zahlen und Kuerzel
-    "start.board.week.bonus.full", // „+{dp} DP" — dito
     "milestone.next",              // „→ {at} +{sp}" — Pfeil, Zahlen, sonst nichts
     "start.board.last.none",       // Gedankenstrich als Platzhalter — Zeichen, kein Wort
     "building.kick.active",        // „{base} · {kick}" — reine Verkettung zweier Platzhalter
