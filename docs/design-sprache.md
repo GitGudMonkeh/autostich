@@ -771,9 +771,9 @@ Dutzend Knoten hat. `scripts/phone-proof.mjs:162` beschreibt dieselbe Falle.
 
 ### Die zwei Lektionsarten
 
-Der erste Bau kannte **eine** Art und **ein** Budget: 400 px, „kurz und knackig". Die Proberunden
-passen da nicht hinein, und das ist ihr Zweck, nicht ihr Fehler — ein Schirm, auf dem man etwas
-**tut**, darf länger sein als einer, den man liest.
+Der erste Bau kannte **eine** Art und **ein** Budget: 400 px, „kurz und knackig". Der freigegebene Entwurf
+passt da nicht hinein, und das ist keine Nachlässigkeit: eine Lektion, die eine Mechanik wirklich
+erklärt, braucht mehr als einen halben Schirm.
 
 *Gemessen* am freigegebenen Entwurf bei 390 × 844: Median **645 px**, **31 von 41** Lektionen über
 400, Maximum 1.360. Drei Auflösungen standen zur Wahl — das Budget fällt · der Entwurf wird zerlegt ·
@@ -781,8 +781,8 @@ zwei Arten. Der Owner hat die zwei Arten gewählt.
 
 | Art | Budget | Was sie ist |
 | --- | --- | --- |
-| **karte** | **400 px** | Eine Sache, ein Blick. Sie scrollt nicht. |
-| **runde** | **960 px** | Man arbeitet damit. Sie scrollt einmal. |
+| **kurz** | **400 px** | Eine Sache, ein Blick. Sie scrollt nicht. |
+| **voll** | **960 px** | Die ganze Lektion. Sie scrollt einmal. |
 
 **Woher die 960 kommen.** Eineinhalb Schalenhöhen: 638 × 1,5 = 957, aufgerundet. Einmal
 weiterschieben ist zumutbar, dreimal ist eine Seite ohne Ende. Die Zahl ist hergeleitet, nicht an den
@@ -793,14 +793,26 @@ Ein Budget, das nichts fängt, wäre keins.
 ursprünglichen Fehler verhindert — das Fazit hinter dem Fuß, während „Weiter" daneben leuchtet — und
 sie gilt für beide unverändert.
 
-**Was eine Runde von einer Karte unterscheidet, ist nicht ihre Länge, sondern ihr beweglicher Teil.**
-Eine Runde ohne Probierfeld ist eine Karte, die ihr Budget missbraucht; genau so wird ein gehobenes
-Budget still zum neuen Normalmaß. Der Wächter verlangt deshalb mindestens ein Probierfeld je Runde
-und lässt der Karte weiterhin höchstens eines.
+**Warum die Arten nicht an der Beweglichkeit hängen.** Der erste Entwurf dieser Regel band das
+höhere Budget an einen beweglichen Teil und nannte die Arten `karte` und `runde`: wer etwas *tut*,
+darf länger sein. Das klingt richtig und ist *gemessen* falsch. Beweglichkeit und Höhe sind im
+freigegebenen Entwurf unkorreliert — Lektionen mit Auftrag spannen 193 bis 1.010 px, reine
+Lesetexte 193 bis 1.360. Die **längste Lektion überhaupt** hat gar keinen beweglichen Teil, und rund
+zehn stille Erklärschirme liegen zwischen 539 und 774 px, darunter jede Sektionseröffnung
+(„Was Blitz ist“, „Was Feuer ist“, …). Die Regel hätte diese zehn ins 400er Budget gezwungen, das
+sie um 140 bis 960 px verfehlen — oder verlangt, dass wir freigegebene Schirme künstlich beweglich
+machen. Ein Name, der etwas verspricht, was die Daten nicht hergeben, ist schlimmer als ein
+farbloser; `kurz` und `voll` sagen genau das, was gemessen wurde.
+
+**Was `voll` davon abhält, ein Freibrief zu werden**, ist deshalb nicht die Beweglichkeit, sondern
+zweierlei: die 960er Decke, die *gemessen* zwei der 41 Lektionen fängt, und die **Umkehrregel** —
+wer eine Lektion auf `voll` setzt, die auch in 400 px passt, wird vom Wächter zurückgewiesen.
+`kurz` ist damit kein Vorsatz, sondern ein geprüftes Versprechen, und ein Wechsel der Art steht als
+geändertes Feld im Diff statt still in einer Zeile Text.
 
 ### Die Takt-Arten
 
-Vier trugen den ersten Bau, vier kamen mit den Proberunden dazu.
+Vier trugen den ersten Bau, vier kamen mit den vollen Lektionen dazu.
 
 | Takt | Was er ist |
 | --- | --- |

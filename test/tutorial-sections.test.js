@@ -4,7 +4,7 @@ import de from "../src/i18n/de.js";
 import en from "../src/i18n/en.js";
 import {
   SECTIONS, BEAT_KINDS, LESSON_KINDS, allKeys, beatKey, lessonHeight, lessonKind, lessonBudget,
-  totalLessons, LESSON_BUDGET_PX, RUNDE_BUDGET_PX, SHELL_CEILING_PX,
+  totalLessons, LESSON_BUDGET_PX, VOLL_BUDGET_PX, SHELL_CEILING_PX,
 } from "../src/ui/tutorial-sections/catalog.js";
 
 /* ============================================================
@@ -46,7 +46,7 @@ describe("Tutorial-Sektionen · Katalog", () => {
   });
 
   /* Die Form je Art. Der erste Bau kannte nur eine: „Satz, Bild oder Probierfeld, Tipp". Die
-     Proberunden brechen sie bewusst — sie haben mehrere Blöcke und teils zwei bewegliche Teile.
+     vollen Lektionen brechen sie bewusst — sie haben mehrere Blöcke und teils zwei bewegliche Teile.
      Was BEIDE Arten teilen, ist der Abschluss: der Tipp steht am Ende, genau einmal. Das ist die
      Regel, die den ursprünglichen Fehler verhindert (der Tipp verschwindet, „Weiter" leuchtet),
      und sie gilt unverändert weiter. */
@@ -59,25 +59,13 @@ describe("Tutorial-Sektionen · Katalog", () => {
     }
   });
 
-  it("eine Karten-Lektion bleibt bei höchstens einem Bild oder Probierfeld", () => {
+  it("eine kurze Lektion bleibt bei höchstens einem Bild oder Probierfeld", () => {
     for (const s of SECTIONS) for (const l of s.lessons) {
-      if (lessonKind(l) !== "karte") continue;
+      if (lessonKind(l) !== "kurz") continue;
       const kinds = l.beats.map((b) => b.kind);
       expect(kinds.filter((k) => k === "bild" || k === "probierfeld").length,
-        `${s.id}/${l.id}: ${kinds.join(" · ")} — eine Karte trägt höchstens einen beweglichen Teil`)
+        `${s.id}/${l.id}: ${kinds.join(" · ")} — eine kurze Lektion trägt höchstens einen beweglichen Teil`)
         .toBeLessThanOrEqual(1);
-    }
-  });
-
-  /* Eine Proberunde heisst so, weil man etwas TUT. Eine ohne beweglichen Teil ist eine Karte, die
-     ihr Budget missbraucht — das ist genau der Weg, auf dem ein gehobenes Budget still zum neuen
-     Normalmass wird. */
-  it("eine Proberunde hat mindestens einen beweglichen Teil", () => {
-    for (const s of SECTIONS) for (const l of s.lessons) {
-      if (lessonKind(l) !== "runde") continue;
-      const beweglich = l.beats.filter((b) => b.kind === "probierfeld").length;
-      expect(beweglich, `${s.id}/${l.id} ist als Runde geführt, hat aber kein Probierfeld`)
-        .toBeGreaterThanOrEqual(1);
     }
   });
 
@@ -142,18 +130,51 @@ describe("Tutorial-Sektionen · das Höhenbudget", () => {
     expect(over, `Über Budget:\n  ${over.join("\n  ")}`).toEqual([]);
   });
 
-  it("das Karten-Budget liegt unter der gemessenen Decke der Schale", () => {
-    // 638 px ist gemessen (92dvh minus Kopf und Fuß bei 390 × 844). Eine Karte scrollt nicht.
+  /* DIE UMKEHRREGEL — was „voll" davon abhält, ein Freibrief zu werden.
+
+     Die erste Fassung band das höhere Budget an einen beweglichen Teil: wer etwas TUT, darf länger
+     sein. GEMESSEN am Entwurf ist das falsch — Beweglichkeit und Höhe sind unkorreliert, die
+     längste Lektion überhaupt ist ein reiner Lesetext, und die Regel hätte rund zehn freigegebene
+     Schirme ins 400er Budget gezwungen, das sie um 140 bis 960 px verfehlen.
+
+     Statt der Beweglichkeit greift die Richtung, die die Daten hergeben: wer eine Lektion auf
+     „voll" setzt, die auch in 400 px passt, hat sie falsch eingeordnet. Das erlaubt „voll" für
+     jede Lektion, die es braucht, und für keine, die es nicht braucht — ohne von den Autoren zu
+     verlangen, still gewordene Erklärschirme künstlich beweglich zu machen. */
+  it("was ins kleine Budget passt, ist auch als kurz geführt", () => {
+    const falsch = [];
+    for (const s of SECTIONS) for (const l of s.lessons) {
+      if (lessonKind(l) !== "voll") continue;
+      const h = Math.round(heightDe(s, l));
+      if (h <= LESSON_BUDGET_PX) falsch.push(`${s.id}/${l.id}: ${h} px — das ist „kurz"`);
+    }
+    expect(falsch, `Als „voll" geführt, passt aber ins kleine Budget:\n  ${falsch.join("\n  ")}`).toEqual([]);
+  });
+
+  /* GEGENPROBE zur Umkehrregel. Solange keine Lektion „voll" trägt, läuft die Regel oben durch
+     eine leere Schleife und ist grün, ohne etwas geprüft zu haben — genau die Sorte Wächter, die
+     erst auffällt, wenn sie gebraucht wird und schweigt. Hier steht der Fall, den sie fangen muss. */
+  it("Gegenprobe: eine kurze Lektion, die als voll geführt wird, ist erkennbar", () => {
+    const fake = { id: "x", art: "voll", beats: [{ kind: "satz" }, { kind: "tip" }] };
+    const sec = { id: "y" };
+    const lang = { [beatKey(sec, fake, 0)]: "Kurz.", [beatKey(sec, fake, 1)]: "Auch kurz." };
+    const h = lessonHeight(sec, fake, (k) => lang[k] ?? "");
+    expect(lessonKind(fake)).toBe("voll");
+    expect(h, `die Fake-Lektion misst ${h} px und wäre gar nicht kurz`).toBeLessThanOrEqual(LESSON_BUDGET_PX);
+  });
+
+  it("das kurze Budget liegt unter der gemessenen Decke der Schale", () => {
+    // 638 px ist gemessen (92dvh minus Kopf und Fuß bei 390 × 844). Eine kurze Lektion scrollt nicht.
     expect(LESSON_BUDGET_PX).toBeLessThan(SHELL_CEILING_PX);
   });
 
-  /* Das Runden-Budget liegt ÜBER der Decke — eine Proberunde scrollt, und das ist der Unterschied
-     zur Karte. Was es nicht darf, ist beliebig werden: eineinhalb Schalenhöhen heisst einmal
+  /* Das volle Budget liegt ÜBER der Decke — eine volle Lektion scrollt, und das ist der Unterschied
+     zur kurzen. Was es nicht darf, ist beliebig werden: eineinhalb Schalenhöhen heisst einmal
      weiterschieben. Diese Grenze steht hier, damit ein späteres Anheben eine sichtbare Änderung
      ist und keine stille. */
-  it("das Runden-Budget sind genau eineinhalb Schalenhöhen, aufgerundet", () => {
-    expect(RUNDE_BUDGET_PX).toBeGreaterThan(SHELL_CEILING_PX);
-    expect(RUNDE_BUDGET_PX).toBeLessThanOrEqual(Math.ceil(SHELL_CEILING_PX * 1.5 / 10) * 10);
+  it("das volle Budget sind genau eineinhalb Schalenhöhen, aufgerundet", () => {
+    expect(VOLL_BUDGET_PX).toBeGreaterThan(SHELL_CEILING_PX);
+    expect(VOLL_BUDGET_PX).toBeLessThanOrEqual(Math.ceil(SHELL_CEILING_PX * 1.5 / 10) * 10);
   });
 
   /* GEGENPROBE, eingebaut statt einmalig von Hand gefahren (testing.md §5): ein Wächter, der nur grün
@@ -168,26 +189,26 @@ describe("Tutorial-Sektionen · das Höhenbudget", () => {
     expect(h, "das Modell hält eine 1200-Zeichen-Lektion für budgetkonform").toBeGreaterThan(LESSON_BUDGET_PX);
   });
 
-  it("Gegenprobe: auch das Runden-Budget ist zu reißen", () => {
-    const fake = { id: "x", art: "runde",
+  it("Gegenprobe: auch das volle Budget ist zu reißen", () => {
+    const fake = { id: "x", art: "voll",
       beats: [{ kind: "satz" }, { kind: "probierfeld", probe: "board" },
               { kind: "merk" }, { kind: "tabelle", rows: 8 }, { kind: "tip" }] };
     const sec = { id: "y" };
     const lang = { [beatKey(sec, fake, 0)]: "W".repeat(1400), [beatKey(sec, fake, 2)]: "W".repeat(600),
                    [beatKey(sec, fake, 4)]: "kurz" };
     const h = lessonHeight(sec, fake, (k) => lang[k] ?? "");
-    expect(lessonBudget(fake), "die Fake-Runde bekommt gar nicht das Runden-Budget").toBe(RUNDE_BUDGET_PX);
-    expect(h, "das Modell hält eine 2000-Zeichen-Runde für budgetkonform").toBeGreaterThan(RUNDE_BUDGET_PX);
+    expect(lessonBudget(fake), "die Fake-Lektion bekommt gar nicht das volle Budget").toBe(VOLL_BUDGET_PX);
+    expect(h, "das Modell hält eine 2000-Zeichen-Lektion für budgetkonform").toBeGreaterThan(VOLL_BUDGET_PX);
   });
 
-  /* Und die Umkehrung: eine kurze Runde muss DURCHkommen. Ohne diese Probe wäre ein Modell, das
+  /* Und die Umkehrung: eine knappe volle Lektion muss DURCHkommen. Ohne diese Probe wäre ein Modell, das
      alles reißen lässt, ebenso „grün" wie eines, das rechnet. */
-  it("Gegenprobe: eine knappe Runde bleibt im Budget", () => {
-    const fake = { id: "x", art: "runde",
+  it("Gegenprobe: eine knappe volle Lektion bleibt im Budget", () => {
+    const fake = { id: "x", art: "voll",
       beats: [{ kind: "satz" }, { kind: "probierfeld", probe: "streak" }, { kind: "tip" }] };
     const sec = { id: "y" };
     const lang = { [beatKey(sec, fake, 0)]: "W".repeat(120), [beatKey(sec, fake, 2)]: "W".repeat(80) };
-    expect(lessonHeight(sec, fake, (k) => lang[k] ?? "")).toBeLessThan(RUNDE_BUDGET_PX);
+    expect(lessonHeight(sec, fake, (k) => lang[k] ?? "")).toBeLessThan(VOLL_BUDGET_PX);
   });
 });
 

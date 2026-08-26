@@ -19,10 +19,10 @@
             Der Katalog kennt keine Komponenten — sonst wäre er nicht mehr React-frei.
 
    LEKTIONS-SCHEMA
-     art    "karte" (Vorgabe) oder "runde". Zwei Arten, zwei Budgets, siehe unten.
+     art    "kurz" (Vorgabe) oder "voll". Zwei Arten, zwei Budgets, siehe unten.
      beats  die Takte in Reihenfolge. Der letzte ist immer der Tipp. */
 
-/* Die Takt-Arten. Die ersten vier tragen die Karten-Lektionen; die vier weiteren kamen mit den
+/* Die Takt-Arten. Die ersten vier trugen den ersten Bau; die vier weiteren kamen mit den
    Proberunden dazu (docs/design-sprache.md §11 — Die zwei Lektionsarten). Der Wächter liest diese
    Liste, damit eine neunte nicht still durchrutscht. */
 export const BEAT_KINDS = [
@@ -33,22 +33,32 @@ export const BEAT_KINDS = [
 /* ============================================================
    DIE ZWEI LEKTIONSARTEN — Owner-Entscheidung, diese Runde.
 
-   Der erste Bau kannte nur eine Art und ein Budget von 400 px („kurz und knackig"). Die Proberunden
-   passen da nicht hinein, und das ist keine Nachlässigkeit, sondern ihr Zweck: ein Schirm, auf dem
-   man etwas TUT, darf länger sein als einer, den man liest. GEMESSEN am freigegebenen Entwurf bei
-   390 × 844: Median 645 px, 31 von 41 Lektionen über 400.
+   Der erste Bau kannte nur eine Art und ein Budget von 400 px („kurz und knackig"). Der
+   freigegebene Entwurf passt da nicht hinein. GEMESSEN bei 390 × 844: Median 645 px, 31 von 41
+   Lektionen über 400, Maximum 1.360. Drei Auflösungen standen zur Wahl (Budget fällt · Entwurf
+   zerlegen · zwei Arten); der Owner hat die zwei Arten gewählt.
 
-   Drei Auflösungen standen zur Wahl (Budget fällt · Entwurf zerlegen · zwei Arten); der Owner hat
-   die zwei Arten gewählt.
+     kurz  400 px — eine Sache, ein Blick, kein Scrollen.
+     voll  960 px — die ganze Lektion. Das sind EINEINHALB Schalenhöhen (638 × 1,5 = 957,
+           aufgerundet): einmal weiterschieben ist zumutbar, dreimal ist eine Seite ohne Ende.
 
-     karte  400 px — eine Sache, ein Blick, kein Scrollen.
-     runde  960 px — man arbeitet damit. Das sind EINEINHALB Schalenhöhen (638 × 1,5 = 957,
-            aufgerundet): einmal weiterschieben ist zumutbar, dreimal ist eine Seite ohne Ende.
+   WARUM NICHT „karte"/„runde", UND WARUM DIE ARTEN NICHT AN DER BEWEGLICHKEIT HÄNGEN.
+   Die erste Fassung dieser Datei nannte sie so und band das höhere Budget an einen beweglichen
+   Teil: wer etwas TUT, darf länger sein. Das klingt richtig und ist GEMESSEN falsch. Beweglichkeit
+   und Höhe sind im Entwurf unkorreliert — die mit Auftrag spannen 193 bis 1.010 px, die reinen
+   Lesetexte 193 bis 1.360. Die LÄNGSTE Lektion im ganzen Entwurf hat gar keinen beweglichen Teil,
+   und rund zehn stille Schirme liegen zwischen 539 und 774 px. Die Regel hätte diese zehn ins
+   400er Budget gezwungen, das sie um 140 bis 960 px verfehlen. Ein Name, der etwas verspricht,
+   was die Daten nicht hergeben, ist schlimmer als ein farbloser: „kurz" und „voll" sagen genau
+   das, was gemessen wurde.
 
-   Die 960 sind hergeleitet, nicht an den Bestand angepasst. GEMESSEN reißt bei dieser Grenze
-   genau EINE der 41 Lektionen das Budget — ein Budget, das nichts fängt, wäre keins. */
-export const LESSON_KINDS = ["karte", "runde"];
-export const lessonKind = (lesson) => lesson.art || "karte";
+   WAS „voll" DAVON ABHÄLT, EIN FREIBRIEF ZU WERDEN — nicht die Beweglichkeit, sondern zweierlei:
+   die 960er Decke, die GEMESSEN zwei der 41 Lektionen fängt, und die Umkehrregel unten. Wer eine
+   Lektion auf „voll" setzt, die auch in 400 px passt, wird vom Wächter zurückgewiesen. „kurz" ist
+   damit keine Bitte, sondern ein Versprechen, das geprüft wird, und ein Wechsel der Art steht als
+   geändertes Feld im Diff statt still in einer Zeile Text. */
+export const LESSON_KINDS = ["kurz", "voll"];
+export const lessonKind = (lesson) => lesson.art || "kurz";
 
 export const SECTIONS = [
   {
@@ -162,13 +172,13 @@ export const totalLessons = () => SECTIONS.reduce((n, s) => n + s.lessons.length
      Tipp  69 Zeichen      → 90 px
    44 Zeichen je Zeile ist der einzige Wert, der alle fünf Satz-Messungen trifft (58/44→2 Zeilen,
    99→3, 110→3, 130→3, 140→4). Bei 42 fiele der 130er auf 4 Zeilen und das Modell schätzte zu hoch. */
-export const LESSON_BUDGET_PX = 400;   // Art „karte"
-export const RUNDE_BUDGET_PX = 960;    // Art „runde" — 1,5 Schalenhöhen, siehe oben
+export const LESSON_BUDGET_PX = 400;   // Art „kurz"
+export const VOLL_BUDGET_PX = 960;     // Art „voll" — 1,5 Schalenhöhen, siehe oben
 export const SHELL_CEILING_PX = 638;   // gemessen; was die Schale ohne Scrollen zeigen kann
 
 /* Das Budget EINER Lektion. Der Wächter fragt hier, damit die Zuordnung an einer Stelle steht. */
 export const lessonBudget = (lesson) =>
-  lessonKind(lesson) === "runde" ? RUNDE_BUDGET_PX : LESSON_BUDGET_PX;
+  lessonKind(lesson) === "voll" ? VOLL_BUDGET_PX : LESSON_BUDGET_PX;
 
 const CHARS_PER_LINE = 44;
 const SATZ_LINE = 21;      // 0.875rem × line-height 1.5
@@ -177,7 +187,7 @@ const TIP_LINE = 20;      // line-height 1.45
 const TIP_CHROME = 46;    // Trennlinie + Label + Abstände (gemessen 90 bei 2 Zeilen)
 const BILD_PX = 123;       // obere Messung
 
-/* Die vier Arten der Proberunden. KALIBRIERT am Entwurf bei 390 × 844 (lineare Anpassung über 20
+/* Die vier hinzugekommenen Arten. KALIBRIERT am Entwurf bei 390 × 844 (lineare Anpassung über 20
    Merk-, 11 Regel- und 20 Tipp-Kästen), dann aufgerundet — das Modell soll eher zu viel schätzen
    als zu wenig. Der Entwurf ist NICHT der Produktionsbuild; diese Werte sind eine Näherung, und
    der Nachweis bleibt die V1–V4-Messung je Task.
