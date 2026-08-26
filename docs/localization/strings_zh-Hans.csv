@@ -2466,7 +2466,7 @@ Pruning: replacing the skill permanently grants +20% root/bloom score (up to +15
 "start.onb.rarity","i18n","Rarität: {tier}","稀有度：{tier}","Rarity: {tier}","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "start.onb.reroll","i18n","Reroll +1","重抽+1","Reroll +1","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "start.options","i18n","Optionen","选项","Options","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
-"start.progress.bonus","i18n","Bonus-{cur} · nächste +5","{cur}奖励 · 下一档+5","Bonus {cur} · next +5","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
+"start.progress.bonus","i18n","Bonus-{cur} · nächste +{n}","{cur}奖励 · 下一档+{n}","Bonus {cur} · next +{n}","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "start.progress.links","i18n","{done} / {total}","{done}/{total}","{done} / {total}","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "start.progress.next","i18n","Nächste Freischaltung:","下一个解锁：","Next unlock:","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "start.progress.onboarding","i18n","Onboarding","新手引导","Onboarding","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""

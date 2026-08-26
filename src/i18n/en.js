@@ -1714,7 +1714,7 @@ export default {
 
   // Emoji siehe de.js — es steht seit 18.08.2026 im JSX, nicht mehr im String.
   "start.progress.onboarding": "Onboarding",
-  "start.progress.bonus": "Bonus {cur} · next +5",
+  "start.progress.bonus": "Bonus {cur} · next +{n}",
   "start.progress.runs": "{done} / {total} runs",
   "start.progress.links": "{done} / {total}",
   "start.progress.next": "Next unlock:",

@@ -218,15 +218,23 @@ export function flush({ keepalive = false } = {}) {
 async function doFlush(keepalive) {
   const q = readQueue();
   if (!q.length) return;
+  /* #health-check M3: nur die GEPOSTETEN Zeilen räumen, nicht die ganze Queue. Zwischen Snapshot
+     und Erfolg kann recordRun eine neue Zeile anhängen (Läufe hintereinander weg) — ein pauschales
+     writeQueue([]) verwarf sie stumm, und die again-Runde fand dann eine schon leere Queue vor.
+     Ist die Queue inzwischen KÜRZER als der Snapshot (Opt-out-Purge), bleibt sie leer. */
+  const clearPosted = () => {
+    const now = readQueue();
+    writeQueue(now.length > q.length ? now.slice(q.length) : []);
+  };
   try {
     await post(q, keepalive);
-    writeQueue([]);
+    clearPosted();
   } catch (err) {
     const status = Number(String(err && err.message).replace(/\D+/g, "")) || 0;
     if (status >= 400 && status < 500) {
       // Dauerhaft unzustellbar (falsche Spalte, RLS, zu groß) → verwerfen und einmal sichtbar machen.
       try { console.warn(`[telemetry] Batch verworfen (HTTP ${status}) — Schema/RLS prüfen (docs/telemetry.md).`); } catch (e) {}
-      writeQueue([]);
+      clearPosted();
     }
     // 5xx / Netzfehler → liegen lassen, nächster Versuch beim nächsten Start.
   }
@@ -238,6 +246,13 @@ export function recordRun(args) {
   if (!telemetryConfigured || args?.enabled === false) return false;
   try {
     const payload = buildRunPayload(args);
+    /* #health-check S5: die DB deckelt decisions bei 200k Zeichen (telemetry-schema.sql) — EINE
+       übergroße Zeile machte den ganzen Batch zum 4xx und verwarf auch die unschuldigen Zeilen.
+       Lieber die Detailliste halbieren als den Lauf verlieren; die Kennzahlen bleiben vollständig. */
+    while (Array.isArray(payload.decisions) && payload.decisions.length &&
+           JSON.stringify(payload.decisions).length >= 190000) {
+      payload.decisions = payload.decisions.slice(0, Math.floor(payload.decisions.length / 2));
+    }
     payload.install_id = installId();
     payload.session_id = SESSION_ID;
     if (!payload.client) payload.client = clientInfo(args.options);

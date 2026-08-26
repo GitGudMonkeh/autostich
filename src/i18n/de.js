@@ -1768,7 +1768,7 @@ export default {
   // Ohne führendes Emoji: das Zeichen steht seit 18.08.2026 als eigenes Element im JSX (unter 1280 px
   // dasselbe Emoji, ab 1280 px ein Vektor im Textton). Im String ließe es sich nicht austauschen.
   "start.progress.onboarding": "Onboarding",
-  "start.progress.bonus": "Bonus-{cur} · nächste +5",
+  "start.progress.bonus": "Bonus-{cur} · nächste +{n}",
   "start.progress.runs": "{done} / {total} Läufe",
   "start.progress.links": "{done} / {total}",
   "start.progress.next": "Nächste Freischaltung:",

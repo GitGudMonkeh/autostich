@@ -303,9 +303,14 @@ function AutostichGame() {
     // den Leerlauf danach mit (ein Posten je Idle-Slot wie gehabt, kein Burst).
     const queue = [...LAZY_PREFETCH, ...emblemPrefetchTasks(profile)];
     let i = 0;
-    const step = () => { if (i >= queue.length) return; try { queue[i++](); } catch (e) { /* Prefetch nie kritisch */ } idle(step); };
-    const id = idle(step);
-    return () => (window.cancelIdleCallback || clearTimeout)(id);
+    /* #health-check M2: vorher wurde nur die ERSTE Idle-Id gemerkt — die Folge-Slots der Kette waren
+       nicht mehr stornierbar, und das „NIE während eines laufenden Stichspiels" oben galt nur bis zum
+       ersten Slot. Jetzt trägt jeder Schritt seine Id nach, und ein Flag stoppt die Kette im Cleanup. */
+    let cancelled = false;
+    let id = null;
+    const step = () => { if (cancelled || i >= queue.length) return; try { queue[i++](); } catch (e) { /* Prefetch nie kritisch */ } id = idle(step); };
+    id = idle(step);
+    return () => { cancelled = true; if (id != null) (window.cancelIdleCallback || clearTimeout)(id); };
   }, [state.phase, profile]);
   const [highscores, setHighscores] = useState(() => loadHighscores());
   const [isRecord, setIsRecord] = useState(false);

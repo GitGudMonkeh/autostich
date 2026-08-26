@@ -2787,7 +2787,7 @@ export default {
   "start.logo.alt": "自动墩",
   "start.tagline": "出牌。吃墩。层层升级。",
   "start.progress.onboarding": "新手引导",
-  "start.progress.bonus": "{cur}奖励 · 下一档+5",
+  "start.progress.bonus": "{cur}奖励 · 下一档+{n}",
   "start.progress.runs": "{done}/{total}局",
   "start.progress.links": "{done}/{total}",
   "start.progress.next": "下一个解锁：",

@@ -4,7 +4,7 @@ import { MuteButton } from "./MuteButton.jsx";
 import { parseSeed } from "../game/rng.js"; // #205 Challenger Mode: eingefügten Seed dekodieren
 import { currentWeek } from "../game/weeklySeed.js"; // #370: Wochennummer + Wochen-Seed für die Bonus-Anzeige
 import { RANKED_WEEK_SP, RANKED_WEEK_DP, RANKED_WEEK_DP_FULL } from "../game/storage.js"; // #bonus-benennen: die Tafel NENNT den Wochenbonus — Zahlen aus der Quelle
-import { matchSecretSeed, ownedCount, nodeState, treeComplete, rankedUnlocked, NODES, TOTAL_NODES, ONBOARDING_LINKS, SP_LOYALTY_EVERY } from "../game/progression.js"; // Test-Codes + Hub-Progressionsanzeige
+import { matchSecretSeed, ownedCount, nodeState, treeComplete, rankedUnlocked, NODES, TOTAL_NODES, ONBOARDING_LINKS, SP_LOYALTY_EVERY, SP_LOYALTY_SP } from "../game/progression.js"; // Test-Codes + Hub-Progressionsanzeige
 import { GlossaryPanel } from "./Glossary.jsx";
 import { battlefieldVeil, battlefieldDim } from "./cosmeticAssets.js"; // #deck-mobil: Schleier-Deckel fuer zu helle Spielfelder; #bf-desktop: Bild-Daempfung ab 1280 px
 import { rarityLabel, deckDef, battlefieldDef, globalFxDef } from "../i18n/labels.js"; // Raritäts-/Kosmetik-/Effekt-Namen: EINE Quelle, übersetzt (Sprachprüfung C1)
@@ -445,7 +445,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
               und das wäre eine sichtbare Änderung am Handy (anderer Durchgang, anderer Chat). */}
           {onbDone ? (
             <span className="dt:flex dt:items-center dt:gap-1.5 text-body-3 dt:text-title-1 font-medium opacity-90" style={{ color: SP }}>
-              <Lead emoji={EMO_BONUS} />{" "}<span>{t("start.progress.bonus", { cur: t(progLigaFree ? "common.cur.dp" : "common.cur.sp") })}</span>
+              <Lead emoji={EMO_BONUS} />{" "}<span>{t("start.progress.bonus", { cur: t(progLigaFree ? "common.cur.dp" : "common.cur.sp"), n: SP_LOYALTY_SP })}</span>
             </span>
           ) : (
             <span className="dt:flex dt:items-center dt:gap-1.5 text-body-3 dt:text-title-1 font-medium opacity-90" style={{ color: VI }}>

@@ -1747,7 +1747,7 @@ export default {
      zur nächsten Auszahlung ist; das Wort trug also nichts, was die Zeile nicht schon zeigt. Der
      etablierte Begriff „Bonificación" bleibt — ein zweites Wort für denselben Begriff wäre der
      schlechtere Tausch als ein gestrichenes Adjektiv. Länge jetzt wie im Deutschen und Englischen. */
-  "start.progress.bonus": "Bonificación {cur} · +5",
+  "start.progress.bonus": "Bonificación {cur} · +{n}",
   "start.progress.runs": "{done} / {total} partidas",
   "start.progress.links": "{done} / {total}",
   "start.progress.next": "Próximo desbloqueo:",
