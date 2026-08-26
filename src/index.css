@@ -8075,3 +8075,21 @@ b, strong { font-weight: 600; }
 :lang(zh-Hans) [class*="tracking-"] {
   letter-spacing: 0;
 }
+
+/* S6, ERSTER VORSCHLAG — und er nimmt der Regel darueber genau eine Ausnahme ab.
+   Gemessen: die Eyebrow hat drei ihrer vier Signale verloren. Versalien sind auf Han wirkungslos,
+   Geist Mono hat keine CJK-Glyphe, und der Groessenschritt zu ihrer Ablesung ist von 1.45x auf
+   1.23x geschrumpft, weil die Grenze aus A2 sie nach OBEN gedrueckt hat. Uebrig blieb die
+   Deckkraft allein.
+
+   Der Vorschlag holt das vierte Signal zurueck, statt ein neues zu erfinden: Laufweite ist genau
+   das Mittel, mit dem die lateinische Seite rangiert. Nur war .14em die falsche MENGE, nicht das
+   falsche Mittel — im Fliesstext reisst sie Woerter auseinander, auf einem Label aus zwei bis vier
+   Zeichen ist massvolles Zeichenabstand-Setzen im Chinesischen ein gelaeufiges, bewusst wirkendes
+   Mittel. Deshalb .05em, und deshalb NUR dort, wo etwas als Eyebrow entworfen wurde: uppercase UND
+   eine tracking-Klasse zusammen. Fliesstext mit Laufweite bleibt bei null.
+
+   Das ist ein Vorschlag, keine Entscheidung: S6 gehoert dem Owner (AGENTS.md, Decision authority). */
+:lang(zh-Hans) .uppercase[class*="tracking-"] {
+  letter-spacing: .05em;
+}
