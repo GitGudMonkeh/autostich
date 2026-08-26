@@ -45,9 +45,11 @@ Four parts, in this order.
    `docs/workstreams/zh-hans/zh-hans-sample/sample-order.csv`, with the terminology list and the fit
    warnings.
 
-   **It is a fixture, not a locale.** 115 of 2,639 keys is not a catalogue, and registering a partial
-   one would either break catalogue parity or force the seam that `task/spanish-locale` owns. No
-   locale is registered in `src/i18n/**` by this task.
+   **Superseded on 2026-08-26.** This read "it is a fixture, not a locale", on the reasoning that a
+   partial catalogue would break parity or force a seam this task does not own. Both premises fell:
+   `task/spanish-locale` is integrated, and its seam is built to carry an announced-but-not-ready
+   catalogue. The fixture was registered as `ready: false`, then translated the rest of the way at
+   the owner's instruction, and the ratchet took it to `ready: true`. See *Approved architecture* A7.
 
 2. **A harness that renders the sample in the real surfaces.** The design round has to be judged
    where the text actually sits — the eyebrow above its readout, the description in its panel, the
@@ -71,7 +73,7 @@ Four parts, in this order.
 | --- | --- |
 | Translating anything | Translation is external, and this task's whole point is that the text arrives before the design. |
 | The full 2,639-key order | It goes out after this round closes, from `zh-hans-plan` part 5. |
-| Registering `zh-Hans` as a selectable language | Depends on the N-language seam, which `task/spanish-locale` owns. |
+| ~~Registering `zh-Hans` as a selectable language~~ | **Reversed by the owner on 2026-08-26.** The dependency was gone once `task/spanish-locale` integrated, and the catalogue is complete. See A7. |
 | Changing German or English wording | Both text passes closed recently. The wording rule below is how that is verified. |
 | Changing Latin typography | The CJK branch stands beside it, never in its place. |
 | A profanity filter for Hanzi | Deliberately unsolved in round 1 (A3), with its consequence already named. |
@@ -138,6 +140,19 @@ route is: fetch the Google Fonts stylesheet for Noto Sans SC with a `woff2`-capa
 the `src` URLs and their `unicode-range` values from it, download the 101 files into
 `src/assets/fonts/noto-sans-sc/`, and write the `@font-face` block by hand from the same data. The
 stylesheet is the source of the ranges; they are not to be typed from memory.
+
+**A7 — Chinese ships. Decided by the owner on 2026-08-26.** The 2,660-key catalogue is translated
+in house from the German, `ready: true`, and offered in the language picker. English remains
+`DEFAULT_LOCALE`; nothing preselects Chinese.
+
+Three consequences are recorded rather than left to be discovered. **The terminology is now frozen
+in a guard table** (`TERMS["zh-Hans"]`) although it has not been through the external reading, so an
+external correction lands as a change to that table and to every string it governs, not as a note in
+a document. **The word-form boundary in `src/i18n/glossaryText.js` was generalised**, because it
+assumed a script with spaces and therefore blocked almost every Chinese match; German, English and
+Spanish keep the boundary they had. **The design round has not run yet**: parts 3 and 4 of *Scope*
+are open, so Chinese currently ships in Latin typography, at a size ladder that A2 measured as below
+the legibility floor for Hanzi.
 
 **A5 — Language of the artefacts.** English throughout, except the `docs/design-sprache.md` entry,
 which stays German because that document has a fixed German template
