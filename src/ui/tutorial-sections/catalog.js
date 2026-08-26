@@ -81,29 +81,31 @@ export const SECTIONS = [
         { kind: "block", label: true },
         { kind: "regeln" },
         { kind: "tip" }] },
-      { id: "stich", art: "kurz", beats: [
+      { id: "stich", art: "voll", beats: [
         { kind: "probierfeld", probe: "duell" },
         { kind: "tip" }] },
       { id: "werte", art: "voll", beats: [
         { kind: "probierfeld", probe: "kampfwert" },
-        { kind: "block", label: true },
         { kind: "tip" }] },
       { id: "serie", art: "voll", beats: [
         { kind: "probierfeld", probe: "serie" },
-        { kind: "block", label: true },
         { kind: "tip" }] },
+      /* Der Score-Schirm des Entwurfs traegt Formel, Runde und zwei Erklaerkaesten auf einem
+         Schirm (1344 px gemessen). Das reisst das volle Budget; der Owner-Entscheid dazu ist
+         AUFTEILEN statt kuerzen — die Runde bleibt komplett, die Kaesten ruecken in die
+         Folgelektion. */
       { id: "score", art: "voll", beats: [
-        { kind: "block", label: true },
         { kind: "probierfeld", probe: "score" },
+        { kind: "tip" }] },
+      { id: "formel", art: "voll", beats: [
+        { kind: "block" },
         { kind: "block", label: true },
         { kind: "block", label: true },
         { kind: "tip" }] },
       { id: "anzeigen", art: "voll", beats: [
         { kind: "probierfeld", probe: "laufmock" },
-        { kind: "block", label: true },
         { kind: "tip" }] },
       { id: "herkunft", art: "voll", beats: [
-        { kind: "block", label: true },
         { kind: "probierfeld", probe: "herkunft" },
         { kind: "tip" }] },
     ],
@@ -437,8 +439,12 @@ const TAB_ROWS_DEFAULT = 4;
    NIEDRIG angesetzt (250/305/300) — das Modell hätte eine zu lange Lektion durchgewunken, und das
    ist die einzige Richtung, in die ein Budget nicht irren darf. Die Werte hier stehen deshalb
    knapp über der Messung, aufgerundet. */
-const PROBE_PX = { formation: 215, streak: 150, score: 195, board: 215,
-  duell: 280, kampfwert: 335, serie: 375, laufmock: 340, herkunft: 300,
+const PROBE_PX = { formation: 215, streak: 150, board: 215,
+  /* Die Grundlagen-Szenen des Entwurfs, nachgemessen im Build (mess-welle1.mjs, 390 x 844):
+     duell 494 · kampfwert 773 · serie 414 ungespielt (+5 Logzeilen im gespielten Zustand)
+     · score 785 · laufmock 538 (+Tippzeile) · herkunft 601. Eingetragen ist der gespielte
+     Zustand, aufgerundet. */
+  score: 790, duell: 500, kampfwert: 780, serie: 700, laufmock: 610, herkunft: 610,
   /* Die Aufstellungs-Runden, ebenfalls nachgemessen: aufstellen 243 · kartenteile 186 ·
      overlap 190 (dieselbe Komponente wie formation). Sie fehlten hier zuerst ganz und fielen
      damit auf PROBE_MAX — 375 px für ein 186-px-Feld. Das Modell lag dadurch bis zu 40 % zu hoch,

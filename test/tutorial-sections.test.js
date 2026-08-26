@@ -119,7 +119,7 @@ describe("Tutorial-Sektionen · Katalog", () => {
      Beide Enden werden geprüft: was beats.jsx liest, muss die Schale liefern, und was die Schale
      liefert, muss in beiden Katalogen stehen. */
   it("jedes Wort, das eine Runde liest, wird von der Schale geliefert", () => {
-    const probes = SRC("beats.jsx");
+    const probes = SRC("beats.jsx") + SRC("scenes.jsx");
     const shell = SRC("TutorialSections.jsx");
     // `L` ist in beats.jsx durchgehend der Name des labels-Objekts.
     const gelesen = new Set([...probes.matchAll(/\bL\.(\w+)/g)].map((m) => m[1]));
@@ -154,7 +154,7 @@ describe("Tutorial-Sektionen · Katalog", () => {
        Geprüft wird deshalb NAMENTLICH: jeder `import { a, b } from "..."` wird gegen die
        tatsächlichen Exporte des Zielmoduls gehalten. */
     const fehlt = [];
-    for (const datei of ["beats.jsx", "TutorialSections.jsx", "catalog.js", "vars.js"]) {
+    for (const datei of ["beats.jsx", "scenes.jsx", "TutorialSections.jsx", "catalog.js", "vars.js"]) {
       const src = SRC(datei);
       for (const m of src.matchAll(/import\s*\{([^}]+)\}\s*from\s*"([^"]+)"/g)) {
         if (!m[2].startsWith(".")) continue;   // Pakete wie "react" prüft npm, nicht dieser Wächter
@@ -452,7 +452,7 @@ describe("Tutorial-Sektionen · Schale", () => {
   });
 
   it("das Probierfeld ruft die echte Funktion, statt sie nachzubauen", () => {
-    const src = SRC("beats.jsx");
+    const src = SRC("beats.jsx") + SRC("scenes.jsx");
     expect(src, "computeFormations wird nicht aufgerufen").toMatch(/computeFormations\(/);
     expect(src, "der Formationsname muss aus dem Register kommen").toMatch(/formationName\(/);
     /* GEGEN DEN KOMMENTAR GEPRÜFT, nicht mit ihm. Die erste Fassung dieser Zusicherung wurde von der

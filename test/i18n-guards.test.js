@@ -115,6 +115,10 @@ describe("i18n · Katalog-Parität", () => {
      würde die vergessene spanische Übersetzung genau dort durchlassen, wo sie am wahrscheinlichsten
      ist — bei den Wörtern, die aus dem Englischen schon vertraut aussehen. */
   const SAME_OK_EN = new Set([
+    /* Die zwei eq-Schritte der Szenen sind reine Formelzeilen — „× {f} {nm} = **{v}**":
+       alles Sichtbare steckt in Platzhaltern, der Rohtext ist in jeder Sprache identisch. */
+    "tut.sz.d.eqStep",
+    "tut.sz.f.eqStep",
     /* „{segWork} III" — der Rohtext IST in allen Sprachen gleich, weil der ganze Unterschied im
        Platzhalter steckt: das Register füllt ihn je Sprache (Segmentarbeit / Segment Work /
        Trabajo de Segmento / 区段作业). Vorher stand hier der deutsche Name im Text, und ein
@@ -268,6 +272,10 @@ describe("i18n · Katalog-Parität", () => {
      3. ZWEI KÜRZEL, die zufällig zusammenfallen: Wechsel/Zigzag → Z und Anker/Ancla → A. Die
         anderen sechs Formations-Kürzel unterscheiden sich. */
   const SAME_OK_ES = new Set([
+    /* Die zwei eq-Schritte der Szenen sind reine Formelzeilen — „× {f} {nm} = **{v}**":
+       alles Sichtbare steckt in Platzhaltern, der Rohtext ist in jeder Sprache identisch. */
+    "tut.sz.d.eqStep",
+    "tut.sz.f.eqStep",
     /* „{segWork} III" — der Rohtext IST in allen Sprachen gleich, weil der ganze Unterschied im
        Platzhalter steckt: das Register füllt ihn je Sprache (Segmentarbeit / Segment Work /
        Trabajo de Segmento / 区段作业). Vorher stand hier der deutsche Name im Text, und ein
@@ -319,6 +327,10 @@ describe("i18n · Katalog-Parität", () => {
      in keiner Sprache uebersetzt werden. Die erfundenen Deck- und Effektnamen faengt schon
      SAME_OK_CLASS ab und stehen deshalb nicht noch einmal hier. */
   const SAME_OK_ZH = new Set([
+    /* Die zwei eq-Schritte der Szenen sind reine Formelzeilen — „× {f} {nm} = **{v}**":
+       alles Sichtbare steckt in Platzhaltern, der Rohtext ist in jeder Sprache identisch. */
+    "tut.sz.d.eqStep",
+    "tut.sz.f.eqStep",
     /* „{segWork} III" — der Rohtext IST in allen Sprachen gleich, weil der ganze Unterschied im
        Platzhalter steckt: das Register füllt ihn je Sprache (Segmentarbeit / Segment Work /
        Trabajo de Segmento / 区段作业). Vorher stand hier der deutsche Name im Text, und ein

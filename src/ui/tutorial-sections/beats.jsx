@@ -4,7 +4,6 @@ import { formationName, formationAbbr, perkCat } from "../../i18n/labels.js";
 import { fmtNum, fmtPct, t } from "../../i18n/index.js"; // Dezimaltrennzeichen je Sprache — nie toFixed+replace
 import { buildDeck } from "../../game/deck.js";
 import { computeFormations, summarizeFormations, SEGMENT_SIZE } from "../../game/formations.js";
-import { effectivePlayerValue } from "../../game/engine.js";
 import * as C from "../../game/constants.js";
 // ENERGY_FLOOR, nicht C.FORMATION_ENERGY: siehe die Begründung in vars.js.
 import { ENERGY_FLOOR } from "../../game/progression.js";
@@ -17,6 +16,10 @@ import { COLS, ROWS, posOf, rowOf, colOf, boardFactorMap, familyDef, tierNum } f
 // Die Kategoriefarben liegen in der UI-Schicht, nicht im Spielmodul — dieselbe Quelle, die der
 // Architekt-Bildschirm nutzt (ArchPanels.jsx, ArchitectScreen.jsx).
 import { ARCH_CAT } from "../indicators/vocab.js";
+// Die Proberunden des freigegebenen Entwurfs, 1:1 portiert (Mockup proberunden.html).
+import {
+  StichSzene, KampfwertSzene, SerieSzene, ScoreSzene, LaufmockSzene, BilanzSzene,
+} from "./scenes.jsx";
 
 /* DIE TAKT-ARTEN. Vier trugen den ersten Bau, fünf kamen mit den vollen Lektionen dazu; die
    maßgebliche Liste ist BEAT_KINDS in catalog.js, und eine weitere braucht erst einen Eintrag in
@@ -302,42 +305,6 @@ export function StreakProbe({ title, hint, readoutLabel }) {
   );
 }
 
-/* ---- Score-Ketten-Probierfeld ----
-   Die vier Faktoren als Schalter, das Produkt live. Die Lektion, in der sichtbar wird, WARUM ein
-   Formations-Multiplikator auf einem verlorenen Stich nichts wert ist. */
-const CHAIN = [
-  { id: "streak", f: 1.3 }, { id: "crit", f: C.CRIT_BASE_MULT },
-  { id: "form", f: 1.5 }, { id: "build", f: 1.35 },
-];
-export function ScoreProbe({ title, hint, readoutLabel, labels }) {
-  const [locale] = useLocale();
-  const [on, setOn] = useState({ streak: true, crit: false, form: false, build: false });
-  const total = CHAIN.reduce((p, c) => p * (on[c.id] ? c.f : 1), C.SCORE_PER_WIN);
-  return (
-    <div className="tut-beat tut-probe" style={{ margin: "0 0 14px", padding: "12px 12px 11px", ...ZEILE }}>
-      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 8 }}>{title}</div>
-      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-        {CHAIN.map((c) => (
-          <button key={c.id} type="button" onClick={() => setOn((o) => ({ ...o, [c.id]: !o[c.id] }))}
-            aria-pressed={on[c.id] ? "true" : "false"}
-            className="tut-chip text-body-5 font-bold"
-            style={{ flex: "1 1 0", minWidth: 0, minHeight: 44, borderRadius: 8, padding: "6px 8px",
-              color: on[c.id] ? "#e8e8ea" : "#8a8a95",
-              background: on[c.id] ? "rgba(150,150,170,.14)" : "rgba(15,15,21,.72)",
-              border: `1px solid ${on[c.id] ? "var(--deck-a1,#8a7de0)" : "rgba(150,150,170,.12)"}` }}>
-            {(labels || {})[c.id] || c.id}
-          </button>
-        ))}
-      </div>
-      <div className="tut-probe-out" style={{ marginTop: 10, paddingTop: 9, borderTop: HAIR, display: "flex", alignItems: "baseline", gap: 8 }}>
-        <span className="text-meta-1" style={LABEL}>{readoutLabel}</span>
-        <span className="text-body-lg-5" style={{ color: "#e8e8ea", fontWeight: 700 }}>{fmtNum(Math.round(total), locale)}</span>
-      </div>
-      {hint && <div className="text-meta-1" style={{ color: "#71717c", marginTop: 7, lineHeight: 1.4 }}>{hint}</div>}
-    </div>
-  );
-}
-
 /* ---- Leitfaden-Verweis ----
    KEINE fünfte Takt-Art: er belegt den Bild-Platz. Die Archetyp-Lektionen VERLINKEN den Leitfaden,
    statt ihn abzuschreiben — die Arbeitsteilung aus tutorial-guided-run-plan.md §1, und der Grund,
@@ -351,267 +318,6 @@ export function GuideLink({ caption, arch, onOpenGuide }) {
         border: `1px solid ${meta ? meta.color + "55" : "rgba(150,150,170,.12)"}` }}>
       <span className="text-body-4 font-semibold" style={{ color: meta ? meta.color : "#e8e8ea" }}>{caption}</span>
     </button>
-  );
-}
-
-/* ---- Das Duell: zwei Karten treffen aufeinander ----
-
-   Die erste gespielte Runde des Tutorials. Der Leser tippt, ein Stich läuft ab, das Ergebnis steht
-   groß da. Nach vier Stichen ist die Runde zu Ende.
-
-   WAS HIER NICHT NACHGEBAUT IST: der Basiswert je Sieg kommt aus `SCORE_PER_WIN`, der Stichwert
-   geht durch `effectivePlayerValue` — dieselbe Funktion, die der Lauf ruft. Nachgebaut ist einzig
-   der Vergleich „höher gewinnt, gleich zählt nicht", und der IST die Regel, keine Kopie davon.
-
-   `mitStichwert` schaltet die zweite Lektion: dieselbe Runde, aber der Leser legt vorher einen
-   Stichwert auf seine Karte und sieht, dass nur der Kampfwert entscheidet. */
-const DUELL = [
-  { du: 5, geg: 7, boni: [2, 3] },
-  { du: 9, geg: 4, boni: [1, 2] },
-  { du: 6, geg: 6, boni: [3, 4] },
-  { du: 8, geg: 10, boni: [2, 3] },
-];
-const AUSGANG = (du, geg) => (du > geg ? "win" : du === geg ? "tie" : "loss");
-const AUSGANG_FARBE = { win: "#2f9d55", tie: "#8a8a95", loss: "#c0433f" };
-
-export function DuellProbe({ title, hint, readoutLabel, labels, mitStichwert = false }) {
-  const [locale] = useLocale();
-  const [i, setI] = useState(0);
-  const [bonus, setBonus] = useState(0);
-  const [gespielt, setGespielt] = useState(false);
-  const [score, setScore] = useState(0);
-  const r = DUELL[Math.min(i, DUELL.length - 1)];
-  const fertig = i >= DUELL.length;
-  const L = labels || {};
-
-  // effectivePlayerValue OHNE Perks: der Stichwert dieser Lektion ist gesetzt, nicht erspielt.
-  const kampf = effectivePlayerValue(r.du, [], {}) + bonus;
-  const aus = AUSGANG(kampf, r.geg);
-
-  const spielen = () => {
-    if (gespielt) {   // zweiter Tipp: weiter zur nächsten Runde
-      setI((n) => n + 1); setGespielt(false); setBonus(0); return;
-    }
-    setGespielt(true);
-    if (aus === "win") setScore((s) => s + C.SCORE_PER_WIN);
-  };
-
-  return (
-    <div className="tut-beat tut-probe" style={{ margin: "0 0 14px", padding: "12px 12px 11px", ...ZEILE }}>
-      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 8 }}>{title}</div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 14 }}>
-        <DuellKarte wert={r.geg} label={L.gegner} />
-        <span className="text-meta-1" style={{ ...LABEL, letterSpacing: ".2em" }}>{L.gegen}</span>
-        <DuellKarte wert={kampf} label={L.du} hervor={mitStichwert && bonus > 0} />
-      </div>
-
-      {mitStichwert && !gespielt && (
-        <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
-          {r.boni.map((b) => (
-            <button key={b} type="button" onClick={() => setBonus(bonus === b ? 0 : b)}
-              aria-pressed={bonus === b ? "true" : "false"}
-              className="tut-chip text-body-5 font-bold"
-              style={{ flex: "1 1 0", minHeight: 44, borderRadius: 8, padding: "6px 8px",
-                color: bonus === b ? "#e8e8ea" : "#8a8a95",
-                background: bonus === b ? "rgba(150,150,170,.14)" : "rgba(15,15,21,.72)",
-                border: `1px solid ${bonus === b ? "var(--deck-a1,#8a7de0)" : "rgba(150,150,170,.12)"}` }}>
-              {L.trickValue} +{fmtNum(b, locale)}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {!fertig && (
-        <button type="button" onClick={spielen} className="tut-chip text-body-5 font-bold"
-          style={{ width: "100%", minHeight: 44, borderRadius: 8, marginTop: 10, color: "#e8e8ea",
-            background: "rgba(150,150,170,.14)", border: "1px solid var(--deck-a1,#8a7de0)" }}>
-          {gespielt ? L.next : L.play}
-        </button>
-      )}
-
-      <div className="tut-probe-out" style={{ marginTop: 10, paddingTop: 9, borderTop: HAIR, display: "flex", alignItems: "baseline", gap: 8 }}>
-        <span className="text-meta-1" style={LABEL}>{readoutLabel}</span>
-        <span className="text-body-lg-5" style={{ color: "#e8e8ea", fontWeight: 700 }}>{fmtNum(score, locale)}</span>
-        {gespielt && !fertig && (
-          <span className="text-body-5 font-bold" style={{ marginLeft: "auto", color: AUSGANG_FARBE[aus] }}>
-            {L[aus]}
-          </span>
-        )}
-      </div>
-      {hint && <div className="text-meta-1" style={{ color: "#71717c", marginTop: 7, lineHeight: 1.4 }}>{hint}</div>}
-    </div>
-  );
-}
-
-function DuellKarte({ wert, label, hervor = false }) {
-  return (
-    <div style={{ textAlign: "center" }}>
-      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 5 }}>{label}</div>
-      <div className="text-title-2 flex items-center justify-center font-bold"
-        style={{ width: 62, height: 88, borderRadius: 8, color: "#e8e8ea",
-          background: "linear-gradient(180deg,#242433,#1a1a26)",
-          border: `1px solid ${hervor ? "var(--deck-a1,#8a7de0)" : "#33333e"}` }}>{wert}</div>
-    </div>
-  );
-}
-
-/* ---- Die Serie: vier Stiche, und die Reihenfolge entscheidet ----
-   Der Faktor kommt aus STREAK_BASE_STEP, nicht aus einer Tabelle im Text. Anders als das
-   Serien-Probierfeld mit dem Regler wird hier GESPIELT: der Leser tauscht zwei Karten und sieht,
-   dass dieselben vier Karten je nach Reihenfolge eine Serie halten oder abreißen. */
-const SERIE_GEGNER = [4, 8, 3, 9];
-const SERIE_START = [7, 5, 6, 2];
-
-export function SerieProbe({ title, hint, readoutLabel, labels }) {
-  const [locale] = useLocale();
-  const [hand, setHand] = useState(SERIE_START);
-  const [sel, setSel] = useState(null);
-  const L = labels || {};
-
-  const tap = (i) => {
-    if (sel === null) { setSel(i); return; }
-    if (sel === i) { setSel(null); return; }
-    setHand((h) => { const n = h.slice(); [n[sel], n[i]] = [n[i], n[sel]]; return n; });
-    setSel(null);
-  };
-
-  /* Die längste Siegesserie der Hand, Stich für Stich. Ein Gleichstand zählt nicht als Sieg und
-     bricht die Serie ebenso wie eine Niederlage — dieselbe Regel wie im Lauf. */
-  const { best } = useMemo(() => {
-    let lauf = 0, b = 0;
-    for (let k = 0; k < hand.length; k++) {
-      if (hand[k] > SERIE_GEGNER[k]) { lauf += 1; b = Math.max(b, lauf); } else lauf = 0;
-    }
-    return { best: b };
-  }, [hand]);
-  const mult = 1 + Math.min(C.STREAK_BASE_CAP, best * C.STREAK_BASE_STEP);
-
-  return (
-    <div className="tut-beat tut-probe" style={{ margin: "0 0 14px", padding: "12px 12px 11px", ...ZEILE }}>
-      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 8 }}>{title}</div>
-      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 5 }}>{L.gegner}</div>
-      <div style={{ display: "flex", gap: 6 }}>
-        {SERIE_GEGNER.map((v, k) => (
-          <div key={k} className="tut-cell text-body-lg-6 flex items-center justify-center font-bold"
-            style={{ flex: "1 1 0", aspectRatio: "0.7", borderRadius: 6, color: "#8a8a95",
-              background: "rgba(15,15,21,.72)", border: "1px solid #33333e" }}>{v}</div>
-        ))}
-      </div>
-      <div className="text-meta-1" style={{ ...LABEL, margin: "9px 0 5px" }}>{L.du}</div>
-      <div className="tut-probe-row" style={{ display: "flex", gap: 6 }}>
-        {hand.map((v, k) => (
-          <button key={k} type="button" onClick={() => tap(k)} aria-pressed={sel === k ? "true" : "false"}
-            className="tut-cell text-body-lg-6 flex items-center justify-center font-bold"
-            style={{ flex: "1 1 0", aspectRatio: "0.7", borderRadius: 6, color: "#e8e8ea",
-              background: "linear-gradient(180deg,#242433,#1a1a26)",
-              border: `1px solid ${v > SERIE_GEGNER[k] ? "#2f9d55" : "#c0433f"}`,
-              outline: sel === k ? "2px solid var(--deck-a1,#8a7de0)" : undefined, outlineOffset: sel === k ? -2 : undefined }}>
-            {v}
-          </button>
-        ))}
-      </div>
-      <div className="tut-probe-out" style={{ marginTop: 10, paddingTop: 9, borderTop: HAIR, display: "flex", alignItems: "baseline", gap: 8 }}>
-        <span className="text-meta-1" style={LABEL}>{readoutLabel}</span>
-        <span className="text-body-lg-5" style={{ color: "#e8e8ea", fontWeight: 700 }}>
-          {best} · ×{fmtNum(mult.toFixed(2), locale)}
-        </span>
-      </div>
-      {hint && <div className="text-meta-1" style={{ color: "#71717c", marginTop: 7, lineHeight: 1.4 }}>{hint}</div>}
-    </div>
-  );
-}
-
-/* ---- Der Lauf-Bildschirm: tippen und benennen ----
-
-   Die Lektion, die keinen Mechanismus lehrt, sondern eine LANDKARTE. Der Leser tippt auf einen
-   Bereich und liest, was dort steht. Kein Auswendiglernen, kein Text, der neben dem Bildschirm
-   herläuft und beim nächsten Layout-Pass falsch ist.
-
-   Die Namen und Erklärungen holt der Baustein sich SELBST aus dem Register — dieselbe Bauweise wie
-   `formationName` in i18n/labels.js. Sie gehören zum Bildschirm, nicht zur Lektion: derselbe Kopf
-   heißt in jeder Lektion gleich. */
-const MOCK_TEILE = ["kopf", "duell", "mult", "stat"];
-
-export function LaufmockProbe({ title, hint, readoutLabel }) {
-  const [locale] = useLocale();
-  const [sel, setSel] = useState(null);
-  const nm = (id) => t(`tut.m.${id}.name`, null, locale);
-
-  return (
-    <div className="tut-beat tut-probe" style={{ margin: "0 0 14px", padding: "12px 12px 11px", ...ZEILE }}>
-      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 8 }}>{title}</div>
-      <div style={{ display: "grid", gap: 6 }}>
-        {MOCK_TEILE.map((id) => (
-          <button key={id} type="button" onClick={() => setSel(sel === id ? null : id)}
-            aria-pressed={sel === id ? "true" : "false"}
-            className="tut-mockteil text-body-5 text-left font-semibold"
-            style={{ minHeight: 44, borderRadius: 8, padding: "10px 11px",
-              color: sel === id ? "#e8e8ea" : "#8a8a95",
-              background: sel === id ? "rgba(150,150,170,.14)" : "rgba(15,15,21,.72)",
-              border: `1px solid ${sel === id ? "var(--deck-a1,#8a7de0)" : "rgba(150,150,170,.12)"}` }}>
-            {nm(id)}
-          </button>
-        ))}
-      </div>
-      <div className="tut-probe-out" style={{ marginTop: 10, paddingTop: 9, borderTop: HAIR }}>
-        <div className="text-meta-1" style={LABEL}>{readoutLabel}</div>
-        <p className="text-body-5" style={{ color: "#c8c8d0", margin: "5px 0 0", lineHeight: 1.45 }}>
-          {sel ? t(`tut.m.${sel}.text`, null, locale) : hint}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-/* ---- Woher der Score kommt: die Kette rückwärts ----
-
-   Die letzte Lektion der Grundlagen fasst zusammen, was die vorigen einzeln gezeigt haben: dass
-   ein Score ein PRODUKT ist. Jede Zeile ist ein Faktor, und der Leser schaltet sie einzeln zu.
-
-   Die Basis kommt aus SCORE_PER_WIN, der Crit aus CRIT_BASE_MULT. Serie und Formation stehen als
-   Beispielwerte einer gespielten Hand — sie sind kein Balancing, sondern EIN Fall, und deshalb
-   hier und nicht in den Konstanten. */
-const HERKUNFT = [
-  { id: "streak", f: 1.10 }, { id: "form", f: 1.50 }, { id: "crit", f: C.CRIT_BASE_MULT },
-];
-const HERKUNFT_SIEGE = 4;
-
-export function HerkunftProbe({ title, hint, readoutLabel, labels }) {
-  const [locale] = useLocale();
-  const [on, setOn] = useState({ streak: false, form: false, crit: false });
-  const basis = HERKUNFT_SIEGE * C.SCORE_PER_WIN;
-  const total = HERKUNFT.reduce((p, c) => p * (on[c.id] ? c.f : 1), basis);
-  const L = labels || {};
-
-  return (
-    <div className="tut-beat tut-probe" style={{ margin: "0 0 14px", padding: "12px 12px 11px", ...ZEILE }}>
-      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 8 }}>{title}</div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "0 2px 8px" }}>
-        <span className="text-meta-1" style={LABEL}>{L.wins}</span>
-        <span className="text-body-5 font-bold" style={{ color: "#c8c8d0" }}>
-          {HERKUNFT_SIEGE} × {fmtNum(C.SCORE_PER_WIN, locale)}
-        </span>
-      </div>
-      <div style={{ display: "grid", gap: 6 }}>
-        {HERKUNFT.map((c) => (
-          <button key={c.id} type="button" onClick={() => setOn((o) => ({ ...o, [c.id]: !o[c.id] }))}
-            aria-pressed={on[c.id] ? "true" : "false"}
-            className="tut-chip text-body-5 font-bold"
-            style={{ minHeight: 44, borderRadius: 8, padding: "8px 11px", display: "flex", justifyContent: "space-between",
-              color: on[c.id] ? "#e8e8ea" : "#8a8a95",
-              background: on[c.id] ? "rgba(150,150,170,.14)" : "rgba(15,15,21,.72)",
-              border: `1px solid ${on[c.id] ? "var(--deck-a1,#8a7de0)" : "rgba(150,150,170,.12)"}` }}>
-            <span>{L[c.id] || c.id}</span>
-            <span>×{fmtNum(c.f.toFixed(2), locale)}</span>
-          </button>
-        ))}
-      </div>
-      <div className="tut-probe-out" style={{ marginTop: 10, paddingTop: 9, borderTop: HAIR, display: "flex", alignItems: "baseline", gap: 8 }}>
-        <span className="text-meta-1" style={LABEL}>{readoutLabel}</span>
-        <span className="text-body-lg-5" style={{ color: "#e8e8ea", fontWeight: 700 }}>{fmtNum(Math.round(total), locale)}</span>
-      </div>
-      {hint && <div className="text-meta-1" style={{ color: "#71717c", marginTop: 7, lineHeight: 1.4 }}>{hint}</div>}
-    </div>
   );
 }
 
@@ -1236,6 +942,20 @@ export function HitzeProbe({ title, hint, readoutLabel, labels }) {
   );
 }
 
+/* Die kleine Duellkarte des ersten Baus — die Feuer-Runde nutzt sie noch, bis auch sie
+   auf die Entwurfs-Szene umgestellt ist. */
+function DuellKarte({ wert, label, hervor = false }) {
+  return (
+    <div style={{ textAlign: "center" }}>
+      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 5 }}>{label}</div>
+      <div className="text-title-2 flex items-center justify-center font-bold"
+        style={{ width: 62, height: 88, borderRadius: 8, color: "#e8e8ea",
+          background: "linear-gradient(180deg,#242433,#1a1a26)",
+          border: `1px solid ${hervor ? "var(--deck-a1,#8a7de0)" : "#33333e"}` }}>{wert}</div>
+    </div>
+  );
+}
+
 /* ---- Geschmiedet und gebrandmarkt ----
    Zwei Karten nebeneinander, und ein Regler, der beide Seiten zugleich bewegt: deine Karte steigt
    um FORGE_VALUE je Schmiedung, die des Gegners fällt um BRAND_VALUE je Brandmal bis BRAND_VALUE_CAP.
@@ -1614,7 +1334,7 @@ export function SegmenteProbe({ title, hint, readoutLabel, labels }) {
 export const PROBES = {
   formation: FormationProbe,
   streak: StreakProbe,
-  score: ScoreProbe,
+  score: ScoreSzene,
   struktur: StrukturProbe,
   bauen: BauenProbe,
   archmock: ArchmockProbe,
@@ -1640,11 +1360,11 @@ export const PROBES = {
   guideIce: (p) => <GuideLink {...p} arch="ice" />,
   guidePlant: (p) => <GuideLink {...p} arch="plant" />,
   // Dieselbe Runde, zwei Lektionen: einmal nur der Vergleich, einmal mit gesetztem Stichwert.
-  duell: (p) => <DuellProbe {...p} />,
-  kampfwert: (p) => <DuellProbe {...p} mitStichwert />,
-  serie: SerieProbe,
-  laufmock: LaufmockProbe,
-  herkunft: HerkunftProbe,
+  duell: StichSzene,
+  kampfwert: KampfwertSzene,
+  serie: SerieSzene,
+  laufmock: LaufmockSzene,
+  herkunft: BilanzSzene,
   aufstellen: AufstellenProbe,
   kartenteile: KartenteileProbe,
   /* Dieselbe Flaeche wie `formation`, andere Ausgangslage. GESUCHT statt geraten: von 29.988
