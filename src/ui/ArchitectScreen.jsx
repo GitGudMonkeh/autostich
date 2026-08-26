@@ -819,6 +819,21 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                     {showCombos && !dragPrev && b && placeFlash && placeFlash.structCells.has(pos) && (
                       <span key={placeFlash.key} aria-hidden className="arch-struct-flash rounded-md" />
                     )}
+                    {/* #eis-arch: Gletscher und Schnee unterscheiden sich hier bisher NUR am Marker — gleiches Icon,
+                        eine Nummer kleiner, etwas blasser. Auf einer Bau-Zelle ist das kein Unterschied, den man sieht.
+                        Die Aufstellungsphase trennt beides über die FLÄCHE (CardGrid: Schnee = zarter Blau-Wash,
+                        Gletscher zusätzlich Rahmen + Schein), und genau diese Sprache kommt hier her.
+
+                        Der Rahmen ist BEWUSST dünner und halbdurchlässig statt der 2px-Vollfarbe aus dem Aufstellboard:
+                        Cyan ist auf diesem Bildschirm schon vergeben — `isInspected` malt das inspizierte Gebäude mit
+                        `inset 0 0 0 2px #5ec8f0` plus kräftigem Außenschein. Ein zweiter kräftiger Cyan-Rahmen hieße
+                        „inspiziert" und „Gletscher" sähen gleich aus, und der Fehler wäre schlimmer als der behobene.
+                        Als eigene Ebene, nicht im `boxShadow`-Stapel der Zelle: der führt schon acht Zustände. */}
+                    {(isGlacier || isFirn) && (
+                      <span aria-hidden className="absolute inset-0 rounded-md pointer-events-none"
+                        style={{ background: isGlacier ? "#5ec8f01f" : "#5ec8f014",
+                                 boxShadow: isGlacier ? "inset 0 0 0 1.5px #5ec8f066" : undefined }} />
+                    )}
                     {/* #301 C2: dauerhaft gesperrte Bau-Zelle — rote Diagonal-Schraffur (Querbalken) + Rim, KEIN Schloss. */}
                     {chLocked && (
                       <span aria-hidden className="absolute inset-0 rounded-md pointer-events-none" style={{ background: "repeating-linear-gradient(45deg, transparent, transparent 3.5px, rgba(224,85,85,0.28) 3.5px, rgba(224,85,85,0.28) 7px)", boxShadow: "inset 0 0 0 1.5px rgba(224,85,85,0.5)" }} />
