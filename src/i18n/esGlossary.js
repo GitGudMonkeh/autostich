@@ -32,7 +32,8 @@ import { WIN_MASS as G_WIN_MASS, EWIGER_FROST as G_EWIGER_FROST, THRESHOLDS as G
   GEO_FLAECHE as G_FLAECHE } from "../game/glacier.js";
 import { SKILL_LIST } from "../game/skills.js";
 import esSkills from "./esSkills.js";
-import { RARITY_ES, RARE, EPIC } from "./esTerms.js";
+// Only the joined ladder is needed here; esMeta.js imports RARE/EPIC straight from esTerms.
+import { RARITY_ES } from "./esTerms.js";
 
 const num = (x) => String(x).replace(".", ",");
 const pct = (x) => Math.round(x * 100);
@@ -90,7 +91,7 @@ const E = [
   /* ---- Archetypes ---- */
   ["archetyp", "Arquetipo", `Una familia de habilidades con identidad propia (Fuego · Rayo · Hielo · Planta). La primera habilidad la desbloquea; se pueden mezclar hasta ${C.MAX_ARCHETYPES}.`, ["arquetipo", "arquetipos"]],
   ["skillslot", "Ranura de habilidad", `Tienes como máximo ${C.SKILL_SLOTS} habilidades a la vez. Cuando la reserva está llena, una habilidad nueva sustituye a una vieja. La habilidad legendaria de la fase legendaria ocupa una ranura adicional y fija.`, ["ranura de habilidad", "ranuras de habilidad", "ranuras"]],
-  ["skillrunde", "Ronda de habilidad", `En momentos fijos de la partida (la primera vez en el ciclo ${C.FIRST_SKILL_CYCLE}) eliges habilidades en lugar de una ventaja: ${C.SKILLS_OFFERED} habilidades en oferta, con los 4 arquetipos entre ellas.`, ["ronda de habilidad", "rondas de habilidad"]],
+  ["skillrunde", "Ciclo de habilidad", `En momentos fijos de la partida (la primera vez en el ciclo ${C.FIRST_SKILL_CYCLE}) eliges habilidades en lugar de una ventaja: ${C.SKILLS_OFFERED} habilidades en oferta, con los 4 arquetipos entre ellas.`, ["ciclo de habilidad", "ciclos de habilidad"]],
   ["consume", "Consumidor", "Una habilidad que gasta un recurso acumulado para lograr un efecto fuerte: Fuego quema calor, Rayo gasta carga. Varios consumidores de fuego actúan a la vez; de los consumidores de rayo, siempre solo uno, y uno nuevo sustituye al anterior.", ["consumidor", "consumidores"]],
   ["legskill", "Habilidad legendaria", `Un nivel de habilidad raro y especialmente poderoso (marcado con ★). Las habilidades legendarias vienen exclusivamente de la fase legendaria (ciclo ${C.LEG_PHASE_CYCLE}). Qué arquetipos aparecen allí lo decide el árbol de mejoras.`, ["habilidad legendaria", "habilidades legendarias"]],
   ["ueberlauf", "Desbordamiento", `Lo que una carta acumula por encima de lo que su uso normal puede aprovechar (crecimiento por encima del tope de valor de ${C.PLANT_VALUE_CAP}, calor por encima del 100 %), y que si no se desperdiciaría. Fuego (calor blanco) lo acumula como sobrecalentamiento; las legendarias (Árbol del Mundo / Árbol Madre) convierten el gran resto.`, ["desbordamiento", "crecimiento de desbordamiento"]],
