@@ -152,13 +152,27 @@ export const SECTIONS = [
   },
   {
     id: "architekt",
+    /* VIER Lektionen statt sechs. „brett" und „sorten" waren Textkarten; was sie sagten, steht
+       jetzt in der ersten Runde und in den Regeln darunter. */
     lessons: [
-      { id: "bauphase",  beats: [{ kind: "satz" }, { kind: "tip" }] },
-      { id: "brett",     beats: [{ kind: "satz" }, { kind: "tip" }] },
-      { id: "bauen",     beats: [{ kind: "satz" }, { kind: "probierfeld", probe: "board" }, { kind: "tip" }] },
-      { id: "sorten",    beats: [{ kind: "satz" }, { kind: "tip" }] },
-      { id: "boni",      beats: [{ kind: "satz" }, { kind: "probierfeld", probe: "board" }, { kind: "tip" }] },
-      { id: "aufwerten", beats: [{ kind: "satz" }, { kind: "tip" }] },
+      { id: "wasist", art: "voll", beats: [
+        { kind: "block" },
+        { kind: "probierfeld", probe: "archmock" },
+        { kind: "liste" },
+        { kind: "tip" }] },
+      { id: "hauptaktion", art: "voll", beats: [
+        { kind: "probierfeld", probe: "bauen" },
+        { kind: "tabelle", rows: 5 },
+        { kind: "merk" },
+        { kind: "tip" }] },
+      { id: "wohin", art: "voll", beats: [
+        { kind: "block" },
+        { kind: "probierfeld", probe: "struktur" },
+        { kind: "block", label: true },
+        { kind: "tip" }] },
+      { id: "tipps", art: "kurz", beats: [
+        { kind: "liste" },
+        { kind: "tip" }] },
     ],
   },
   {
@@ -264,13 +278,13 @@ const BLOCK_CHROME = 42, BLOCK_LABEL = 22;
    war der Grund, warum vier von sieben Grundlagen-Lektionen unter ihrer echten Höhe gerechnet
    wurden. GEMESSEN 30 px, und der Wert trifft alle sieben. */
 const BODY_CHROME = 30;
-const MERK_LINE = 22, MERK_CHROME = 26;
+const MERK_LINE = 23, MERK_CHROME = 30;   // gemessen 142 px bei 5 Zeilen
 /* `regeln` und `liste` setzen in der KLEINEREN Schrift (text-body-5, nicht text-body-lg-5): mehr
    Zeichen je Zeile, niedrigere Zeile. GEMESSEN an drei Aufzählungen (2, 3 und 4 Einträge, real 150,
    142 und 237 px) trifft 52 Zeichen je Zeile bei 21 px Zeile und 26 px Chrome je Eintrag; mit den
    44 Zeichen des Fließtexts lag das Modell 35 bis 72 px zu hoch. */
 const REGEL_CHARS = 52, REGEL_LINE = 21, REGEL_CHROME = 26;
-const TAB_ROW = 26, TAB_CHROME = 30;
+const TAB_ROW = 28, TAB_CHROME = 30;      // gemessen 167 px bei 5 Zeilen
 const TAB_ROWS_DEFAULT = 4;
 
 /* JE BAUSTEIN, nicht je Takt-Art. Die erste Fassung setzte jedes Probierfeld auf 215 px und ließ
@@ -292,7 +306,10 @@ const PROBE_PX = { formation: 215, streak: 150, score: 195, board: 215,
      overlap 190 (dieselbe Komponente wie formation). Sie fehlten hier zuerst ganz und fielen
      damit auf PROBE_MAX — 375 px für ein 186-px-Feld. Das Modell lag dadurch bis zu 40 % zu hoch,
      und ein Budget, das so weit danebenliegt, misst nichts mehr. */
-  aufstellen: 260, kartenteile: 215, overlap: 215 };
+  aufstellen: 260, kartenteile: 215, overlap: 215,
+  /* Die Architekt-Runden. Das Brett ist der teuerste Baustein des ganzen Tutorials: acht Zeilen
+     mal fünf Spalten. GEMESSEN archmock 299 · bauen 286 · struktur 438. */
+  archmock: 320, bauen: 310, struktur: 460 };
 const PROBE_MAX = Math.max(...Object.values(PROBE_PX));
 
 const lines = (text) => Math.max(1, Math.ceil(String(text || "").length / CHARS_PER_LINE));

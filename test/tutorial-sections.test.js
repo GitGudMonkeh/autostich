@@ -133,6 +133,47 @@ describe("Tutorial-Sektionen · Katalog", () => {
     }
   });
 
+  /* DER DRITTE WÄCHTER AUS EINEM ECHTEN FEHLER.
+
+     `beats.jsx` importierte `ARCH_CAT` aus `game/architect.js`. Dort steht es nicht — es liegt in
+     `ui/indicators/vocab.js`. Weder `npm run lint` noch `npm test` noch `npm run build` haben das
+     gemeldet: ESLint löst Modul-Exporte nicht auf, die Tests lasen beats.jsx nur als TEXT, und der
+     Build hat den toten Bezeichner wegoptimiert. Erst der Browser warf
+     „does not provide an export named ARCH_CAT" — und zwar beim Laden der GANZEN Seite, nicht nur
+     des Tutorials. Der Startbildschirm war leer.
+
+     Der Wächter lädt das Modul wirklich. Ein kaputter Import wirft dann hier statt beim Spieler. */
+  it("jeder benannte Import der Sektion existiert wirklich", async () => {
+    /* NUR EIN LADEN REICHT NICHT. Der erste Versuch dieses Wächters importierte beats.jsx und
+       prüfte die Bausteine — und war grün, obwohl der Import kaputt war: Vitest löst über esbuild
+       auf und erzwingt benannte Exporte nicht so streng wie der Browser. Ein Wächter, der den
+       Fehler nicht fängt, für den er geschrieben wurde, ist schlimmer als keiner.
+
+       Geprüft wird deshalb NAMENTLICH: jeder `import { a, b } from "..."` wird gegen die
+       tatsächlichen Exporte des Zielmoduls gehalten. */
+    const fehlt = [];
+    for (const datei of ["beats.jsx", "TutorialSections.jsx", "catalog.js", "vars.js"]) {
+      const src = SRC(datei);
+      for (const m of src.matchAll(/import\s*\{([^}]+)\}\s*from\s*"([^"]+)"/g)) {
+        if (!m[2].startsWith(".")) continue;   // Pakete wie "react" prüft npm, nicht dieser Wächter
+        const namen = m[1].split(",").map((x) => x.trim().split(/\s+as\s+/)[0].trim()).filter(Boolean);
+        const ziel = await import(new URL(`../src/ui/tutorial-sections/${m[2]}`, import.meta.url).href);
+        for (const n of namen) {
+          if (!(n in ziel)) fehlt.push(`${datei}: „${n}" gibt es in ${m[2]} nicht`);
+        }
+      }
+    }
+    expect(fehlt, `Kaputte Importe — im Browser bleibt die Seite leer:\n  ${fehlt.join("\n  ")}`).toEqual([]);
+  });
+
+  it("jeder Baustein in PROBES ist eine Komponente", async () => {
+    const mod = await import("../src/ui/tutorial-sections/beats.jsx");
+    expect(Object.keys(mod.PROBES).length, "PROBES ist leer").toBeGreaterThan(0);
+    for (const [name, komp] of Object.entries(mod.PROBES)) {
+      expect(typeof komp, `PROBES.${name} ist keine Komponente`).toBe("function");
+    }
+  });
+
   it("jeder Probierfeld-/Bild-Takt nennt einen Baustein, den beats.jsx auch kennt", () => {
     const probes = SRC("beats.jsx");
     for (const s of SECTIONS) for (const l of s.lessons) for (const b of l.beats) {
@@ -302,12 +343,13 @@ describe("Tutorial-Sektionen · Terminologie", () => {
      Architekten heisst Struktur und Distrikt. Der Bruch ist schon einmal passiert: die Probierfelder
      teilten sich anfangs die Beschriftung des Formations-Felds, und das Gebaeude-Brett trug damit
      „ein Segment" und „keine Formation". Ein Auge findet das einmal; ein Waechter jedes Mal. */
-  /* EINE begruendete Ausnahme, und sie steht als Liste da statt als Sonderzweig im Code — damit sie
-     sichtbar bleibt und der Test unten verlangen kann, dass es sie noch GIBT. Sakralbauten wirken
-     wirklich auf KARTEN-Formationen (architect.js:13 — "formation: biegt computeFormations fuer
-     abgedeckte Positionen"). Dort ist das Wort richtig; verboten ist es als Name fuer die Geometrie
-     des Bretts, die Struktur und Distrikt heisst. */
-  const FORMATION_OK = ["tut.architekt.sorten.0"];
+  /* Die Ausnahmeliste ist LEER, und das ist ein Ergebnis, kein Versehen. Sie trug
+     `tut.architekt.sorten.0`: die Lektion „Sorten" sprach von Sakralbauten, die wirklich auf
+     KARTEN-Formationen wirken (architect.js:13). Der freigegebene Entwurf hat diese Lektion nicht
+     mehr, also ist die Ausnahme verwaist — und der Wächter darunter hat genau das gemeldet.
+     Eine verwaiste Ausnahme weicht die Regel still auf; sie steht deshalb hier als Liste und nicht
+     als Sonderzweig im Code, damit ein Test ihre Berechtigung nachhalten kann. */
+  const FORMATION_OK = [];
 
   it("kein Architekt-Text benutzt das Wort Formation fuer Brett-Geometrie", () => {
     const bad = [];

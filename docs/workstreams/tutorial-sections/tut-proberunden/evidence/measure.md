@@ -1,4 +1,4 @@
-# Grundlagen and Aufstellung — V1–V4 measurement
+# Tutorial sections — V1–V4 measurement
 
 Production build, viewport 390 × 844, German, Chrome via `scripts/cdp.mjs`.
 Walked lesson 1 → 7 with the footer's **Weiter** button.
@@ -139,3 +139,76 @@ names both rules. It was wrong in the approved draft as well, and the draft and 
 The card also renders its anatomy now — formation marks below, the position multiplier top right.
 Without it the lesson titled *Was auf einer Karte steht* showed a card carrying nothing but its
 value.
+
+
+---
+
+# Der Architekt
+
+## V1 — every lesson renders
+
+| # | Lesson | Content px | Beats | Tap targets < 44 px | Horizontal overflow |
+| --- | --- | ---: | ---: | ---: | --- |
+| 1 | Was der Architekt ist | 813 | 4 | 0 | none |
+| 2 | Deine Hauptaktion | 761 | 4 | 0 | none |
+| 3 | Wohin du baust | 901 | 4 | 0 | none |
+| 4 | Tipps für den Anfang | 337 | 2 | 0 | none |
+
+They started at 813 / **1151** / **1159** / 337 — two lessons well over the 960 budget, and the
+model had waved both through. The board is the most expensive component in the whole tutorial:
+eight rows by five columns. Square cells alone were 544 px of grid. Cells are now 1.9 wide to high
+(they carry colour, not text, so nothing is lost), the build round is cut to four rows because it
+teaches placing and rotating rather than structures, and four texts were trimmed.
+
+## V2 — model against reality, all sixteen lessons
+
+| Lesson | Model | Measured | Deviation |
+| --- | ---: | ---: | ---: |
+| architekt/wasist | 855 | 813 | +42 |
+| architekt/hauptaktion | 761 | 761 | +0 |
+| architekt/wohin | 911 | 901 | +10 |
+| architekt/tipps | 388 | 337 | +51 |
+
+Across all sixteen lessons of the three finished sections the model now sits above the measurement
+everywhere, by 0 to 66 px. Measured probe heights this round: archmock 299 · bauen 286 ·
+struktur 438.
+
+## V3 — the four layouts are real buildings
+
+`architekt-3-wohin.png` shows the *Zeile* layout: two green cells (Zollhaus, category score) and
+three blue (Riegel, category value), the marked cell outlined, reading ×1,35 and 540 — which is
+`SCORE_PER_WIN × 1.35`. All eight buildings across the four layouts were looked up in
+`ARCHITECT_FAMILIES`; their categories and shapes match, and the factors come from `boardFactorMap`:
+×1,35 · ×1,75 · ×1,62 · ×1,08.
+
+The district layout is the proof of the lesson's point: its structure factor is ×1,00 and its
+district factor ×1,08. Two different things, which is exactly what the tip says.
+
+The tier table is computed, not typed: Zollhaus 35 / 53 / 77 / 109 and Kontor 65 / 98 / 143 / 202
+come from `tierNum` over `TIER_FACTOR`.
+
+## V4 — what replaced the old board probe, and why
+
+The old `BoardProbe` had both defects the task contract listed as hazards, and a third:
+
+1. It built every tapped cell as a **single-cell building**. No family has form `single` — the
+   smallest is `domino` — so it showed a layout nobody can build.
+2. `completedStructures(...).length` was always `undefined`, because the function returns a number.
+3. It drew **two** rows of the eight-row board, so a column or diagonal could never be completed.
+   The probe could not demonstrate the thing its lesson was about.
+
+It is gone, replaced by four fixed layouts from real families.
+
+## The defect that no gate caught
+
+`beats.jsx` imported `ARCH_CAT` from `game/architect.js`. It lives in `ui/indicators/vocab.js`.
+Lint does not resolve module exports, the tests read the file as text, and the production build
+optimised the dead identifier away. Only the browser threw — and it threw while loading the whole
+page, so the start screen was blank, not just the tutorial.
+
+A new guard reads every relative named import in the four section files and checks it against the
+target module's actual exports. Its first version merely imported `beats.jsx` and checked the
+components; that version stayed **green with the import broken**, because Vitest resolves through
+esbuild and does not enforce named exports as strictly as the browser. The counter-proof caught
+that, and the guard was rewritten to check names rather than loading. Breaking the import now
+reports: *beats.jsx: „ARCH_CAT" gibt es in ../../game/architect.js nicht*.

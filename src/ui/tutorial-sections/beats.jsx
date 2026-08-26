@@ -9,7 +9,10 @@ import * as C from "../../game/constants.js";
 // ENERGY_FLOOR, nicht C.FORMATION_ENERGY: siehe die Begründung in vars.js.
 import { ENERGY_FLOOR } from "../../game/progression.js";
 import { ARCHETYPE_META } from "../../game/skills.js";
-import { COLS, posOf, boardFactorMap, completedStructures } from "../../game/architect.js";
+import { COLS, ROWS, posOf, rowOf, colOf, boardFactorMap, familyDef, tierNum } from "../../game/architect.js";
+// Die Kategoriefarben liegen in der UI-Schicht, nicht im Spielmodul — dieselbe Quelle, die der
+// Architekt-Bildschirm nutzt (ArchPanels.jsx, ArchitectScreen.jsx).
+import { ARCH_CAT } from "../indicators/vocab.js";
 
 /* DIE TAKT-ARTEN. Vier trugen den ersten Bau, fünf kamen mit den vollen Lektionen dazu; die
    maßgebliche Liste ist BEAT_KINDS in catalog.js, und eine weitere braucht erst einen Eintrag in
@@ -325,55 +328,6 @@ export function ScoreProbe({ title, hint, readoutLabel, labels }) {
       <div className="tut-probe-out" style={{ marginTop: 10, paddingTop: 9, borderTop: HAIR, display: "flex", alignItems: "baseline", gap: 8 }}>
         <span className="text-meta-1" style={LABEL}>{readoutLabel}</span>
         <span className="text-body-lg-5" style={{ color: "#e8e8ea", fontWeight: 700 }}>{fmtNum(Math.round(total), locale)}</span>
-      </div>
-      {hint && <div className="text-meta-1" style={{ color: "#71717c", marginTop: 7, lineHeight: 1.4 }}>{hint}</div>}
-    </div>
-  );
-}
-
-/* ---- Architekt-Probierfeld ----
-   Ein AUSSCHNITT des Bretts. Das volle Brett wäre allein rund 500 px hoch und risse das 400-px-Budget
-   einer Lektion. ZWEI Zeilen reichen: eine volle Zeile ist eine Struktur, die zweite zeigt den
-   Nachbarn für den Distrikt. Der Satz sagt, wie groß das Brett wirklich ist.
-   Drei Zeilen waren der erste Versuch — GEMESSEN 486 px für die Lektion, also 86 px über Budget.
-
-   Die Faktoren kommen aus boardFactorMap/completedStructures in src/game/architect.js — dieselbe
-   Rechnung wie im Lauf. Nachgebaut wird nichts. */
-const PROBE_ROWS = 2;
-export function BoardProbe({ title, hint, readoutLabel, noneLabel }) {
-  const [locale] = useLocale();
-  const [cells, setCells] = useState([]);
-  const toggle = (p) => setCells((c) => (c.includes(p) ? c.filter((x) => x !== p) : [...c, p]));
-
-  const { factor, structures } = useMemo(() => {
-    // Jede belegte Zelle als eigenes einzelliges Gebäude derselben Sorte — die kleinste ehrliche
-    // Eingabe, die structure/district wirklich rechnen lässt.
-    const buildings = cells.map((p) => ({ footprint: [p], cat: "value" }));
-    const map = boardFactorMap(buildings);
-    const f = cells.length ? Math.max(...cells.map((p) => map[p] || 1)) : 1;
-    return { factor: f, structures: completedStructures(new Set(cells)).length };
-  }, [cells]);
-
-  return (
-    <div className="tut-beat tut-probe" style={{ margin: "0 0 14px", padding: "12px 12px 11px", ...ZEILE }}>
-      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 8 }}>{title}</div>
-      <div style={{ display: "grid", gridTemplateColumns: `repeat(${COLS},1fr)`, gap: 4 }}>
-        {Array.from({ length: PROBE_ROWS * COLS }, (_, i) => {
-          const p = posOf(Math.floor(i / COLS), i % COLS);
-          const on = cells.includes(p);
-          return (
-            <button key={p} type="button" onClick={() => toggle(p)} aria-pressed={on ? "true" : "false"}
-              style={{ aspectRatio: "1", minWidth: 0, borderRadius: 6,
-                background: on ? "rgba(59,125,190,.34)" : "linear-gradient(180deg,#242433,#1a1a26)",
-                border: `1px solid ${on ? "#3b7dbe" : "#33333e"}` }} />
-          );
-        })}
-      </div>
-      <div className="tut-probe-out" style={{ marginTop: 10, paddingTop: 9, borderTop: HAIR, display: "flex", alignItems: "baseline", gap: 8 }}>
-        <span className="text-meta-1" style={LABEL}>{readoutLabel}</span>
-        <span className="text-body-lg-5" style={{ color: "#e8e8ea", fontWeight: 700 }}>
-          {structures || factor > 1 ? `×${fmtNum(factor.toFixed(2), locale)}` : noneLabel}
-        </span>
       </div>
       {hint && <div className="text-meta-1" style={{ color: "#71717c", marginTop: 7, lineHeight: 1.4 }}>{hint}</div>}
     </div>
@@ -792,12 +746,248 @@ export function KartenteileProbe({ title, hint, readoutLabel, noneLabel, labels 
   );
 }
 
+/* ---- Der Architekt: das Brett und die Strukturen ----
+
+   KEIN FREIES ANKLICKEN, und das ist eine Owner-Entscheidung mit einem harten Grund dahinter: das
+   alte Brett-Probierfeld setzte jede angetippte Zelle als EINZELLIGES Gebäude. Solche Gebäude gibt
+   es im Spiel nicht — keine der 41 Familien hat die Form `single`, die kleinste ist `domino`. Das
+   Feld zeigte damit eine Lage, die niemand bauen kann, und über zwei sichtbare Zeilen ließ sich
+   ohnehin nie eine Spalte oder Diagonale schließen.
+
+   Stattdessen vier feste Lagen aus ECHTEN Familien. Alle acht Gebäude sind nachgeschlagen, ihre
+   Kategorien und Formen stimmen mit ARCHITECT_FAMILIES überein, und die Faktoren kommen aus
+   `boardFactorMap` — nachgerechnet ×1,35 · ×1,75 · ×1,62 · ×1,08.
+
+   Die Distrikt-Lage ist der Beleg für die Lektion: dort steht die Struktur bei ×1,00 und der
+   Distrikt bei ×1,08. Zwei verschiedene Dinge, und genau das sagt der Tipp. */
+const AP = (r, c) => posOf(r, c);
+const GEB = (id, familyId, tier, footprint) => ({ id, familyId, tier, footprint });
+const ARCH_LAGEN = {
+  zeile:    [GEB("a", "A_ZOLLHAUS", 2, [AP(3, 0), AP(3, 1)]),
+             GEB("b", "A_RIEGEL", 1, [AP(3, 2), AP(3, 3), AP(3, 4)])],
+  spalte:   [GEB("a", "A_REIHENHAUS", 1, [AP(0, 2), AP(1, 2), AP(2, 2), AP(3, 2)]),
+             GEB("b", "A_FIRST", 1, [AP(4, 2), AP(5, 2), AP(6, 2), AP(7, 2)])],
+  diag:     [GEB("a", "A_LAUFGANG", 1, [AP(1, 0), AP(2, 1), AP(3, 2)]),
+             GEB("b", "A_FRIES", 1, [AP(4, 3), AP(4, 4), AP(5, 3), AP(5, 4)])],
+  distrikt: [GEB("a", "A_STUETZE", 1, [AP(3, 1), AP(3, 2)]),
+             GEB("b", "A_QUADER", 1, [AP(4, 2), AP(4, 3), AP(5, 2), AP(5, 3)])],
+};
+const ARCH_LAGEN_IDS = ["zeile", "spalte", "diag", "distrikt"];
+const ARCH_SEL = AP(3, 2);   // in allen vier Lagen belegt, damit nur die LAGE den Unterschied macht
+
+export function StrukturProbe({ title, hint, readoutLabel, labels }) {
+  const [locale] = useLocale();
+  const [lage, setLage] = useState("zeile");
+  const L = labels || {};
+  const geb = ARCH_LAGEN[lage];
+
+  const { faktor, farben } = useMemo(() => {
+    const map = boardFactorMap(geb);
+    const f = new Map();
+    for (const b of geb) {
+      const fam = familyDef(b.familyId);
+      for (const p of b.footprint) f.set(p, fam ? ARCH_CAT[fam.category]?.color : "#5c5c68");
+    }
+    return { faktor: map[ARCH_SEL] ?? 1, farben: f };
+  }, [geb]);
+
+  return (
+    <div className="tut-beat tut-probe" style={{ margin: "0 0 14px", padding: "12px 12px 11px", ...ZEILE }}>
+      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 8 }}>{title}</div>
+      <div style={{ display: "flex", gap: 5, marginBottom: 9 }}>
+        {ARCH_LAGEN_IDS.map((id) => (
+          <button key={id} type="button" onClick={() => setLage(id)} aria-pressed={lage === id ? "true" : "false"}
+            className="tut-chip text-body-5 font-semibold"
+            style={{ flex: "1 1 0", minWidth: 0, minHeight: 44, borderRadius: 8, padding: "5px 4px",
+              color: lage === id ? "#e8e8ea" : "#8a8a95",
+              background: lage === id ? "rgba(150,150,170,.14)" : "rgba(15,15,21,.72)",
+              border: `1px solid ${lage === id ? "var(--deck-a1,#8a7de0)" : "rgba(150,150,170,.12)"}` }}>
+            {L[id] || id}
+          </button>
+        ))}
+      </div>
+      <Brett farben={farben} markiert={ARCH_SEL} />
+      <div className="tut-probe-out" style={{ marginTop: 10, paddingTop: 9, borderTop: HAIR, display: "flex", alignItems: "baseline", gap: 8 }}>
+        <span className="text-meta-1" style={LABEL}>{readoutLabel}</span>
+        <span className="text-body-lg-5" style={{ color: "#e8e8ea", fontWeight: 700 }}>×{fmtNum(faktor.toFixed(2), locale)}</span>
+        <span className="text-body-5 font-bold" style={{ marginLeft: "auto", color: "#c8c8d0" }}>
+          {fmtNum(Math.round(C.SCORE_PER_WIN * faktor), locale)}
+        </span>
+      </div>
+      {hint && <div className="text-meta-1" style={{ color: "#71717c", marginTop: 7, lineHeight: 1.4 }}>{hint}</div>}
+    </div>
+  );
+}
+
+/* Das ganze Brett, alle ROWS × COLS. Acht Zeilen sind Pflicht: ohne sie lässt sich eine Spalte
+   nicht schließen und eine Diagonale nicht zeigen — der Grund, warum der Vorgänger mit zwei Zeilen
+   scheiterte.
+
+   DIE ZELLEN SIND BREITER ALS HOCH, und das ist eine Messung, keine Vorliebe. Quadratisch ergaben
+   acht Zeilen 544 px allein fürs Gitter, und beide Architekt-Lektionen rissen mit 1.151 und
+   1.159 px ihr Budget. Bei 1,9 sind es rund 300. Die Zellen tragen ohnehin keinen Text, nur Farbe,
+   also kostet die flachere Form nichts an Lesbarkeit.
+
+   `zeilen` schneidet das Brett ab, wo eine Lektion nicht das ganze braucht: die Bau-Runde lehrt
+   Setzen, Schieben und Drehen und kommt mit vier Zeilen aus. Strukturen brauchen alle acht. */
+function Brett({ farben, markiert, zeilen = ROWS }) {
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: `repeat(${COLS},1fr)`, gap: 3 }}>
+      {Array.from({ length: zeilen * COLS }, (_, p) => {
+        const farbe = farben.get(p);
+        return (
+          <div key={p} style={{ aspectRatio: "1.9", minWidth: 0, borderRadius: 4,
+            background: farbe ? `${farbe}44` : "linear-gradient(180deg,#242433,#1a1a26)",
+            border: `1px solid ${farbe || "#2a2a34"}`,
+            outline: p === markiert ? "2px solid var(--deck-a1,#8a7de0)" : undefined, outlineOffset: -2 }} />
+        );
+      })}
+    </div>
+  );
+}
+
+/* ---- Die Hauptaktion: bauen oder aufwerten ----
+
+   Der Tipp der Lektion sagt: gebaut wird sofort beim Antippen, der Platz kommt danach, und
+   Verschieben und Drehen kosten nichts. Genau das muss die Runde zeigen, sonst behauptet der Text
+   etwas, das der Schirm nicht tut.
+
+   Das Angebot sind ARCHITECT_OFFER echte Baupläne; der Wert je Stufe kommt aus `tierNum`. */
+const BAU_ANGEBOT = ["A_ZOLLHAUS", "A_RIEGEL", "A_QUADER"];
+const BAU_START = AP(1, 1);
+const BAU_ZEILEN = 4;
+
+export function BauenProbe({ title, hint, readoutLabel, noneLabel, labels }) {
+  const [locale] = useLocale();
+  const [wahl, setWahl] = useState(null);
+  const [anker, setAnker] = useState(BAU_START);
+  const [gedreht, setGedreht] = useState(false);
+  const L = labels || {};
+
+  const fam = wahl ? familyDef(wahl) : null;
+  const zellen = useMemo(() => (fam ? formZellen(fam.form, anker, gedreht) : []), [fam, anker, gedreht]);
+  const farben = useMemo(() => {
+    const m = new Map();
+    if (fam) for (const p of zellen) m.set(p, ARCH_CAT[fam.category]?.color || "#5c5c68");
+    return m;
+  }, [fam, zellen]);
+
+  const schieben = (dr, dc) => setAnker((a) => {
+    const r = rowOf(a) + dr, c = colOf(a) + dc;
+    if (r < 0 || r >= BAU_ZEILEN || c < 0 || c >= COLS) return a;
+    const neu = posOf(r, c);
+    const zellen2 = formZellen(fam.form, neu, gedreht);
+    return zellen2.length && zellen2.every((p) => p < BAU_ZEILEN * COLS) ? neu : a;
+  });
+
+  return (
+    <div className="tut-beat tut-probe" style={{ margin: "0 0 14px", padding: "12px 12px 11px", ...ZEILE }}>
+      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 8 }}>{title}</div>
+      <div style={{ display: "flex", gap: 5, marginBottom: 9 }}>
+        {BAU_ANGEBOT.map((id) => {
+          const f = familyDef(id), on = wahl === id;
+          return (
+            <button key={id} type="button" onClick={() => { setWahl(id); setAnker(BAU_START); setGedreht(false); }}
+              aria-pressed={on ? "true" : "false"} className="tut-chip text-body-5 font-semibold"
+              style={{ flex: "1 1 0", minWidth: 0, minHeight: 44, borderRadius: 8, padding: "5px 4px",
+                color: on ? "#e8e8ea" : "#8a8a95",
+                background: on ? "rgba(150,150,170,.14)" : "rgba(15,15,21,.72)",
+                border: `1px solid ${on ? ARCH_CAT[f.category]?.color || "#8a7de0" : "rgba(150,150,170,.12)"}` }}>
+              {f ? f.name : id}
+            </button>
+          );
+        })}
+      </div>
+      {/* Vier Zeilen reichen: diese Runde lehrt Setzen, Schieben und Drehen. Strukturen kommen
+          erst in der nächsten Lektion, und DIE braucht dann das ganze Brett. */}
+      <Brett farben={farben} markiert={-1} zeilen={BAU_ZEILEN} />
+      {wahl ? (
+        <div style={{ display: "flex", gap: 5, marginTop: 9 }}>
+          <KnopfKlein text="↑" onClick={() => schieben(-1, 0)} aktiv />
+          <KnopfKlein text="↓" onClick={() => schieben(1, 0)} aktiv />
+          <KnopfKlein text="←" onClick={() => schieben(0, -1)} aktiv />
+          <KnopfKlein text="→" onClick={() => schieben(0, 1)} aktiv />
+          <KnopfKlein text={L.rotate} onClick={() => setGedreht((g) => !g)} aktiv />
+        </div>
+      ) : null}
+      <div className="tut-probe-out" style={{ marginTop: 10, paddingTop: 9, borderTop: HAIR, display: "flex", alignItems: "baseline", gap: 8 }}>
+        <span className="text-meta-1" style={LABEL}>{readoutLabel}</span>
+        <span className="text-body-lg-5" style={{ color: "#e8e8ea", fontWeight: 700 }}>
+          {fam ? `+${fmtNum(tierNum(basisWert(fam), 1), locale)} ${einheit(fam, L)}` : noneLabel}
+        </span>
+      </div>
+      {hint && <div className="text-meta-1" style={{ color: "#71717c", marginTop: 7, lineHeight: 1.4 }}>{hint}</div>}
+    </div>
+  );
+}
+
+/* `base` ist ein OBJEKT, kein Zahlwert: `{ kind: "flat", score: 35 }` bei Score-Gebäuden,
+   `{ kind: "flat", value: 1 }` bei Wert-Gebäuden. Erst dachte ich, es sei eine Zahl, und die
+   Ablesung stand auf NaN. Die Einheit unterscheidet sich mit: Score-Gebäude zahlen Score,
+   Wert-Gebäude heben den Kartenwert. */
+const basisWert = (fam) => fam.base?.score ?? fam.base?.value ?? 0;
+const einheit = (fam, L) => (fam.category === "score" ? L.scoreUnit : L.cardValue);
+
+/* Die Zellen einer Form ab einem Anker. NUR die drei Formen des Angebots — eine vollständige
+   Formentabelle gehört nach architect.js, nicht ins Tutorial, und dort steht sie bereits für den
+   echten Bau. Hier reicht, was diese eine Runde zeigt. */
+function formZellen(form, anker, gedreht) {
+  const r = rowOf(anker), c = colOf(anker);
+  const rel = {
+    domino: gedreht ? [[0, 0], [1, 0]] : [[0, 0], [0, 1]],
+    tromino_i: gedreht ? [[0, 0], [1, 0], [2, 0]] : [[0, 0], [0, 1], [0, 2]],
+    block2x2: [[0, 0], [0, 1], [1, 0], [1, 1]],
+  }[form] || [[0, 0]];
+  const out = [];
+  for (const [dr, dc] of rel) {
+    const rr = r + dr, cc = c + dc;
+    if (rr < 0 || rr >= ROWS || cc < 0 || cc >= COLS) return [];
+    out.push(posOf(rr, cc));
+  }
+  return out;
+}
+
+/* ---- Der Bauphasen-Bildschirm: tippen und benennen ----
+   Dieselbe Bauweise wie der Lauf-Bildschirm; die Namen liegen unter `tut.a.*`. */
+const ARCH_TEILE = ["kopf", "brett", "plaene", "boost"];
+
+export function ArchmockProbe({ title, hint, readoutLabel }) {
+  const [locale] = useLocale();
+  const [sel, setSel] = useState(null);
+  return (
+    <div className="tut-beat tut-probe" style={{ margin: "0 0 14px", padding: "12px 12px 11px", ...ZEILE }}>
+      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 8 }}>{title}</div>
+      <div style={{ display: "grid", gap: 6 }}>
+        {ARCH_TEILE.map((id) => (
+          <button key={id} type="button" onClick={() => setSel(sel === id ? null : id)}
+            aria-pressed={sel === id ? "true" : "false"}
+            className="tut-mockteil text-body-5 text-left font-semibold"
+            style={{ minHeight: 44, borderRadius: 8, padding: "10px 11px",
+              color: sel === id ? "#e8e8ea" : "#8a8a95",
+              background: sel === id ? "rgba(150,150,170,.14)" : "rgba(15,15,21,.72)",
+              border: `1px solid ${sel === id ? "var(--deck-a1,#8a7de0)" : "rgba(150,150,170,.12)"}` }}>
+            {t(`tut.a.${id}.name`, null, locale)}
+          </button>
+        ))}
+      </div>
+      <div className="tut-probe-out" style={{ marginTop: 10, paddingTop: 9, borderTop: HAIR }}>
+        <div className="text-meta-1" style={LABEL}>{readoutLabel}</div>
+        <p className="text-body-5" style={{ color: "#c8c8d0", margin: "5px 0 0", lineHeight: 1.45 }}>
+          {sel ? t(`tut.a.${sel}.text`, null, locale) : hint}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 /* Katalog → Komponente. Der Katalog nennt nur einen NAMEN, damit er React-frei bleibt. */
 export const PROBES = {
   formation: FormationProbe,
   streak: StreakProbe,
   score: ScoreProbe,
-  board: BoardProbe,
+  struktur: StrukturProbe,
+  bauen: BauenProbe,
+  archmock: ArchmockProbe,
   deckstrip: ({ caption }) => <Bild cards={START_ORDER.map((i) => DECK[i])} caption={caption} />,
   // Bezeichner ohne Bindestrich: ein zitierter Schlüssel wäre im Wächter nicht als Name erkennbar.
   guideFire: (p) => <GuideLink {...p} arch="fire" />,

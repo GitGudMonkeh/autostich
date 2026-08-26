@@ -13,7 +13,20 @@
    als `localeVars(locale)`. */
 import * as C from "../../game/constants.js";
 import { SEGMENT_SIZE, WECHSEL_MIN_DIFF, MAX_TREPPE_STEP } from "../../game/formations.js";
-import { ENERGY_FLOOR, NODES } from "../../game/progression.js";
+import { ENERGY_FLOOR, COVER_FLOOR, NODES } from "../../game/progression.js";
+import { ARCHITECT_FAMILIES, tierNum, DISTRICT_BONUS, DISTRICT_CAP, ROWS } from "../../game/architect.js";
+
+/* Der Grundwert eines Gebäudes steckt in einem OBJEKT, nicht in einer Zahl: `{ kind: "flat",
+   score: 35 }` bei Score-Gebäuden, `{ kind: "flat", value: 1 }` bei Wert-Gebäuden. */
+const basis = (id) => {
+  const f = ARCHITECT_FAMILIES[id];
+  return f ? (f.base?.score ?? f.base?.value ?? 0) : 0;
+};
+/* Die Stufenwerte der beiden Gebäude, die die Tabelle in „Deine Hauptaktion" zeigt — GERECHNET
+   mit `tierNum`, nicht abgetippt. Verschiebt ein Balancing TIER_FACTOR oder den Grundwert, wandert
+   die Tabelle mit. */
+const stufen = (id, praefix) => Object.fromEntries(
+  [1, 2, 3, 4].map((t) => [praefix + t, tierNum(basis(id), t)]));
 
 /* Wie oft welche Entscheidung im Lauf vorkommt — GEZÄHLT aus DECISION_SCHEDULE, nicht gesetzt.
    `shop` ist die Architekten-Phase; das steht so im Plan-Kommentar in constants.js. */
@@ -36,6 +49,13 @@ export const VARS = {
   // Die Formationsregeln, die eine Lektion nennt. Aus formations.js, nie abgetippt.
   wechselDiff: WECHSEL_MIN_DIFF, treppeStep: MAX_TREPPE_STEP,
   segments: C.TRICKS_PER_CYCLE / SEGMENT_SIZE,
+  rows: ROWS,
+  // Baufeld wie Energie: der Boden steht in progression.js, nicht in der Engine-Konstante.
+  cover: COVER_FLOOR,
+  coverMax: COVER_FLOOR + NODES.reduce((n, x) => n + (x.cover || 0), 0),
+  firstShop: C.DECISION_SCHEDULE.indexOf("shop") + 1,
+  districtPct: Math.round(DISTRICT_BONUS * 100), districtCap: DISTRICT_CAP,
+  ...stufen("A_ZOLLHAUS", "zoll"), ...stufen("A_KONTOR", "kontor"),
   suits: C.SUIT_ORDER.length, rankMin: C.RANKS[0], rankMax: C.RANKS[C.RANKS.length - 1],
   perksOffered: C.PERKS_OFFERED, skillsOffered: C.SKILLS_OFFERED,
   ...countSchedule(),

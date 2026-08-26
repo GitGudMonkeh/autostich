@@ -162,6 +162,8 @@ export function TutorialSections({ onClose, onOpenGlossary = null, onOpenGuide =
           play: t("tut.d.play"), next: t("tut.d.next"), trickValue: t("tut.d.trickValue"),
           cardValue: t("tut.d.cardValue"), suit: t("tut.d.suit"), wins: t("tut.f.wins"),
           undo: t("tut.d.undo"), reset: t("tut.d.reset"), energy: t("tut.d.energy"),
+          rotate: t("tut.d.rotate"), scoreUnit: t("tut.d.scoreUnit"),
+          zeile: t("tut.d.zeile"), spalte: t("tut.d.spalte"), diag: t("tut.d.diag"), distrikt: t("tut.d.distrikt"),
           win: t("tut.d.win"), tie: t("tut.d.tie"), loss: t("tut.d.loss") }} />;
     });
     const foot = (
