@@ -8,8 +8,16 @@
      node scripts/wording-digest.mjs <git-ref>        Vergleich gegen einen Commit
      node scripts/wording-digest.mjs <verzeichnis>    Vergleich gegen einen zweiten Worktree
 
-   Die Verzeichnisform bedient die Prozedur aus dem Briefing (detached worktree). Die Ref-Form tut
-   dasselbe ohne zweiten Worktree und ist auf Windows der kuerzere Weg.
+   Beide Formen legen die Basis als VOLLSTAENDIGEN Baum aus; die Ref-Form macht sich dafuer
+   kurzzeitig einen detached worktree und raeumt ihn wieder weg.
+
+   Sie tat das nicht immer. Zuerst hat sie nur `de.js` und `en.js` des Refs neben die echten Module
+   geschrieben und importiert — und damit still gelogen, sobald sich ein IMPORT des Katalogs
+   geaendert hatte: die deutschen Decknamen kommen aus `src/game/cosmetics.js`, nicht aus dem
+   Katalog, also las die Basis sie aus dem Arbeitsstand und meldete null Aenderung, wo sieben
+   Namen umgeschrieben worden waren. Ein Pruefwerkzeug, das an genau der Stelle blind ist, an der
+   es gebraucht wird, ist schlimmer als keines. Die Prozedur aus dem Briefing war richtig, die
+   Abkuerzung war es nicht.
 
    Gemeldet werden drei Zahlen. Zwei entscheiden:
      WORTLAUT geaendert                        > 0  -> anhalten, Wortlaut-Aenderung
@@ -21,11 +29,12 @@
    Fragmenten ein Satz wird. */
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
-import { writeFileSync, rmSync, existsSync, statSync } from "node:fs";
+import { existsSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve, join } from "node:path";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
+const ROOT = resolve(HERE, "..");
 const I18N = resolve(HERE, "../src/i18n");
 const SPRACHEN = ["de", "en"];
 
@@ -47,20 +56,18 @@ for (const s of SPRACHEN) console.log(zeile(s, jetzt[s]));
 if (!arg) process.exit(0);
 
 const istVerzeichnis = existsSync(arg) && statSync(arg).isDirectory();
-const temp = [];
+/* Ein Pfad, den es noch nicht gibt: `git worktree add` verweigert einen belegten. */
+const tempBaum = istVerzeichnis ? null : resolve(ROOT, `../.wording-basis-${process.pid}`);
+const refBaum = istVerzeichnis ? resolve(arg) : tempBaum;
 let code = 0;
+if (tempBaum) execFileSync("git", ["worktree", "add", "--detach", tempBaum, arg], { cwd: ROOT, stdio: "pipe" });
 try {
   const alt = {};
   for (const s of SPRACHEN) {
     if (istVerzeichnis) {
       alt[s] = await laden(resolve(arg, "src/i18n", `${s}.js`));
     } else {
-      /* Die Fassung des Refs muss neben den echten Modulen liegen, sonst loesen ihre relativen
-         Importe (../game/constants.js) nicht auf. */
-      const p = join(I18N, `__basis_${s}.js`);
-      temp.push(p);
-      writeFileSync(p, execFileSync("git", ["show", `${arg}:src/i18n/${s}.js`], { encoding: "utf8", maxBuffer: 1 << 26 }), "utf8");
-      alt[s] = await laden(p);
+      alt[s] = await laden(resolve(refBaum, "src/i18n", `${s}.js`));
     }
   }
 
@@ -93,6 +100,8 @@ try {
     ? "\nURTEIL: anhalten und melden — Wortlaut bewegt oder Text verloren."
     : "\nURTEIL: rein strukturell. Neue Basis im Contract unter Task-specific inputs eintragen, mit beiden Digests.");
 } finally {
-  for (const p of temp) rmSync(p, { force: true });
+  if (tempBaum) {
+    execFileSync("git", ["worktree", "remove", tempBaum], { cwd: ROOT, stdio: "pipe" });
+  }
 }
 process.exit(code);

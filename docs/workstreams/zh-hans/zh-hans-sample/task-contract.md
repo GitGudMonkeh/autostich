@@ -225,6 +225,43 @@ because a translation without a source is an orphan the parity guard rightly rej
 `scripts/zh-add.mjs` now does that on its own and names each dropped key, instead of refusing to
 write.
 
+### Wording baseline — moved on purpose, 2026-08-26, with the owner's approval
+
+**This is the first entry that records a real wording change, not a structural one.** The rule says
+stop and report when the wording moves. It moved, it was reported, and the owner approved it, so it
+is written down here rather than waved through.
+
+| | `de` | `en` | Keys |
+| --- | --- | --- | --- |
+| Base — `origin/dev` | `a9320c064807749f` | `483e0a3c6bb77ea3` | 2,660 |
+| This branch | `f91613773c8e3a10` | `483e0a3c6bb77ea3` | 2,660 |
+
+English is untouched: those names were already English. What changed is that German and Spanish had
+been carrying the English ones.
+
+**The seven, in German:** Sunset Rider → Sonnenreiter, Malibu Wave → Malibu-Welle, Moonwhale →
+Mondwal, Genesis → Ursprung, Ascension → Aufstieg, Eldritch → Tiefenschrecken, Insert Coin → Münze
+einwerfen. Spanish got its own seven in the same pass. The German name lives in
+`src/game/cosmetics.js`, not in the catalogue; `de.js` pulls it from that registry.
+
+**Five names stayed** because there is nothing to translate in a coinage: Glazius, Voltaris, Pyrros,
+Salar, Solfatara. **Biolumen is the one asymmetric case** and it is deliberate: it stays a coinage in
+German, English and Spanish, whose readers can read Latin script, and is rendered as 生物荧光 in
+Chinese, whose readers cannot.
+
+**The rule is now enforced, not just stated.** The positive guard in `test/i18n-guards.test.js` knew
+six descriptive cosmetic names and now knows thirteen. The class exemption above it is why this went
+unnoticed for so long: it excuses every `cosmetic.*.name` from the must-differ rule, so nobody saw
+that seven of them were English everywhere. It took the Chinese screenshot to surface it.
+
+**And the check itself had a hole, which this change exposed.** `scripts/wording-digest.mjs` used to
+splice the reference `de.js` next to the working modules and import it. That is sound only while the
+catalogue's imports are unchanged — and the deck names come from `src/game/cosmetics.js`, so the
+baseline read them out of the working tree and reported zero changes where seven had happened. The
+tool now lays the reference out as a full detached worktree, exactly as the briefing's procedure
+said, and removes it afterwards. **The earlier entries stand:** at those points nothing outside the
+catalogue modules had moved, so the shortcut still measured the right thing.
+
 ### Measured inputs
 
 | Input | Value | Kind |
