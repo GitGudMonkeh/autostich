@@ -4,7 +4,7 @@ import { useEscape } from "./useEscape.js";
 import { MODAL_CARD, ModalHairline, ActionButton, STICKY_HEAD_BG } from "./modalStyle.jsx";
 import { OptIcon, Toggle, Segmented, Dropdown, Slider, ResetAction } from "./optionsBits.jsx";
 import { defaultScreenOptions } from "../game/storage.js";
-import { LOCALES, fmtPct } from "../i18n/index.js";
+import { READY_LOCALES, fmtPct } from "../i18n/index.js";
 import { useT, useLocale } from "../i18n/useLocale.js"; // #sprache: alle Texte über t()
 // #400 Test-Viewport — nur im Preview-Build gelesen (Gate an der Zeile unten in der Dev-Sektion).
 import { TEST_VIEWPORTS, TEST_VIEWPORT_OFF, optionValue, reloadAfterViewportChange } from "./testViewport.js";
@@ -193,10 +193,11 @@ export function OptionsModal({ options, onChange, onClose, onPrivacy = null }) {
           {/* #sprache: Sprachwahl ganz oben. Die Labels der Sprachen stehen bewusst in ihrer EIGENEN Sprache
               („Deutsch"/„English") — wer die aktuelle Sprache nicht lesen kann, findet die eigene trotzdem.
               #optionen-redesign: Dropdown statt Segmented — die Liste WÄCHST, und drei Reiter nebeneinander
-              wären bei der vierten Sprache eine Reiterzeile, die niemand mehr überblickt. */}
+              wären bei der vierten Sprache eine Reiterzeile, die niemand mehr überblickt.
+              #es-locale: READY_LOCALES, nicht LOCALES — angemeldet ist nicht dasselbe wie übersetzt. */}
           <Row icon="language" title={t("options.language.title")} desc={t("options.language.desc")}>
             <Dropdown value={locale} label={t("options.language.title")}
-              options={LOCALES.map((l) => ({ v: l.id, label: l.label }))}
+              options={READY_LOCALES.map((l) => ({ v: l.id, label: l.label }))}
               onChange={(v) => { setLocaleId(v); onChange({ lang: v }); }} />
           </Row>
           {/* #207: Haptik — kurzes Vibrations-Feedback bei Bestätigungen. Wirkt nur auf Touch-Geräten (Handy); System-„reduzierte Bewegung“ schaltet sie ohnehin ab. */}
