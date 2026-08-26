@@ -60,9 +60,13 @@ export function RunLoader({ images = [], onReady, showDelay = 150, maxWait = 300
           </div>
           {/* Ladebalken im Logo-Verlauf: die volle Farbleiste (Cyan→Violett→Amber) liegt fest im Track, die noch nicht
               geladene Strecke wird rechts abgedeckt → sichtbare Farbe = Fortschritt (wie die Tri-Color-Haarlinie, die sich füllt). */}
-          <div className="relative h-2.5 w-full rounded-full overflow-hidden" style={{ background: "#141320", border: "1px solid #2a2836", boxShadow: "0 0 16px -3px rgba(155,130,240,0.4)" }}>
+          {/* #menu-rework M11 — the track and the mask below both read `--sf-sunken`: `#141320` IS that
+              step, character for character, and a bar's trough is the inset-tile role it names. The EDGE
+              stays a literal (M11-F04) and so does the glow (MENU-50 — `--el-glow-*` belongs to the
+              primary CTA and a loading bar is not one). */}
+          <div className="relative h-2.5 w-full rounded-full overflow-hidden" style={{ background: "var(--sf-sunken)", border: "1px solid #2a2836", boxShadow: "0 0 16px -3px rgba(155,130,240,0.4)" }}>
             <div className="absolute inset-0" style={{ backgroundImage: HAIRLINE.background }} />
-            <div className="absolute inset-y-0 transition-[left] duration-200" style={{ left: `${pct}%`, right: 0, background: "#141320" }} />
+            <div className="absolute inset-y-0 transition-[left] duration-200" style={{ left: `${pct}%`, right: 0, background: "var(--sf-sunken)" }} />
           </div>
           <div className="text-meta-3 mt-2 opacity-50 ty-num-sm">{pct}%</div>
         </div>

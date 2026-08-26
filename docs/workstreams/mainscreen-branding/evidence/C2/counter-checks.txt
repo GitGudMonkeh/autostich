@@ -1,0 +1,14 @@
+  BASELINE before  exit 0  GREEN as required
+  CC1  exit 1  RED as required  — the wordmark's size rule loses its scope — the run header would move
+  CC2  exit 1  RED as required  — a second, unscoped --wm-size rule is added beside the scoped one
+  CC3  exit 1  RED as required  — the accented set becomes a typed list of fourteen numbers
+  CC4  exit 1  RED as required  — a colour moves into the component, where no ratchet and no cascade can reach it
+  CC5  exit 1  RED as required  — the English mark is renamed and no longer carries the I at seventh place
+  CC6  exit 1  RED as required  — the mark gains a second I — the cut becomes ambiguous
+  CC7  exit 1  RED as required  — the English tagline loses its closing period — Q3a, printed wrongly once already
+  CC8  exit 1  RED as required  — the cell column is made visible outside the desktop section
+  CC9  exit 1  RED as required  — the narrow version gets both variants in the DOM again — the 0.02 px this commit removed
+  CC10  exit 1  RED as required  — the standalone mark is dropped and only the letter remains
+  BASELINE after   exit 0  GREEN — the tree is restored
+
+  10 sabotages, 2 baselines, 0 unexpected

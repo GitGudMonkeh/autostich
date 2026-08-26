@@ -66,10 +66,29 @@ Schnitt, Gewicht, Sperrung und Verlauf bleiben **unangetastet** — es gilt weit
 `.as-wordmark`-Regel (Orbitron 450, `letter-spacing: .06em`, Verlauf Weiß → `--deck-a2` → `--deck-a1`
 → `--deck-a2` → Weiß, Deckfarben-Schein). Geändert wird genau eine Sache:
 
-**Das I trägt keinen Glyph mehr, sondern eine Spalte aus acht Zellen.**
+~~**Das I trägt keinen Glyph mehr, sondern eine Spalte aus acht Zellen.**~~
 
-Damit gibt es keine zweite Form, die sich neben dem Schriftzug behaupten muss — Zeichen und Name sind
-dieselbe Sache. Das ist der Kern des Entwurfs.
+~~Damit gibt es keine zweite Form, die sich neben dem Schriftzug behaupten muss — Zeichen und Name sind
+dieselbe Sache. Das ist der Kern des Entwurfs.~~
+
+> **Zurückgenommen — Owner-Entscheidung vom 26.08.2026 (Q12), am gebauten Screen.** Das I trägt wieder
+> seinen normalen Glyph, in **jeder** Sprache. Damit entfallen dieser Abschnitt, *Warum das I*, *Maße*,
+> *Welche Zellen leuchten* und *Kleinfassung* — sie beschreiben alle denselben, jetzt nicht mehr
+> gebauten Zuschnitt. Sie bleiben mit ihrer Begründung stehen, damit niemand in einem halben Jahr
+> denselben Weg noch einmal vorschlägt.
+>
+> **Der Grund ist sprachlich und nicht optisch, und er wiegt schwerer als das Aussehen.** Die ganze
+> Fassung hing an einer Beobachtung über zwei Wörter: *„`AUTOSTICH` und `AUTOTRICK` haben beide neun
+> Zeichen und tragen das I an siebter Stelle."* Das ist wahr und es ist **kein Gesetz** — eine dritte
+> Sprache muss es nicht erfüllen, und im Spanischen stünde an dieser Stelle womöglich gar kein I. Die
+> Marke trüge ihr Zeichen dann in einer Sprache und in der anderen nicht. Der Owner will sie in allen
+> gleich, und Konsistenz über Sprachen schlägt hier den Einfall.
+>
+> **Was bleibt:** die **eigenständige Bildmarke** weiter unten. Sie ersetzt keinen Buchstaben und hängt
+> deshalb an keiner Sprache. Sie steht weiter unter der Tagline und bleibt das Zeichen für App-Icon,
+> Favicon, Avatar und Ladebild.
+>
+> Nachweis: `docs/workstreams/mainscreen-branding/measurements/C6.md`.
 
 ### Warum das I
 
@@ -95,8 +114,26 @@ Größenwechsel nichts nachjustiert werden muss.
 | Abstand links / rechts | `.02em` / `.085em` |
 
 Ergibt eine Spalte von `.874em` Höhe. Die Versalhöhe von Orbitron liegt bei rund `.7em` — die Spalte
-überschreitet die Zeile also oben und unten leicht. **Das ist Absicht:** der Buchstabe bricht die
-Versallinie und wird dadurch als Zeichen lesbar statt als verunglücktes I.
+überschreitet die Zeile also oben und unten leicht. ~~**Das ist Absicht:** der Buchstabe bricht die
+Versallinie und wird dadurch als Zeichen lesbar statt als verunglücktes I.~~
+
+> **Überholt von Q11 und dann mit Q12 ganz entfallen** (s. oben). Für die Dauer eines Tages galt:
+> **Owner-Entscheidung vom 26.08.2026 am gebauten Screen (Q11).** Die Spalte schließt oben
+> und unten **bündig** mit den Buchstaben ab. Zwei Zahlen dieses Abschnitts sind damit ersetzt und eine
+> ist korrigiert:
+>
+> - Die Versalhöhe ist **`.71875em`**, nicht „rund .7em" — gemessen an der Schrift, ab 352 px
+>   Schriftgrad konvergiert und für **jede** Versalie identisch: Orbitron zieht auch seine runden
+>   Formen flach, es gibt also keinen Überschuss.
+> - Die Spalte ist damit **`.71875em`** hoch statt `.874em`.
+> - Die Maßtabelle darüber gilt **als Verhältnis weiter**: die ganze Spalte skaliert um einen Faktor
+>   (`.71875 / .874 = .8224`), Zelle und Fuge behalten also ihr Verhältnis zueinander. Nur so bleibt
+>   der Buchstabe ein *Ausschnitt* des Zeichens und wird nicht zu einer zweiten Zeichnung mit eigenem
+>   Rhythmus. Gemessen ergibt das Zelle `.074em` und Fuge `.0181em`.
+> - **Über die Fugen allein ging es nicht**, und das ist der Grund für die Skalierung: acht Zellen zu
+>   `.09em` sind `.72em` und damit bereits höher als die Versalie — die Fuge müsste negativ werden.
+>
+> Nachweis: `docs/workstreams/mainscreen-branding/measurements/C5.md`, Belege in `evidence/C5/`.
 
 ### Welche Zellen leuchten
 
@@ -104,7 +141,21 @@ Dieselbe Fünferschritt-Regel, auf eine einzelne Spalte angewandt: **jedes dritt
 also 1, 4 und 7 von acht. Der Buchstabe ist damit kein neues Muster, sondern ein Ausschnitt des
 Zeichens.
 
+> **Ergänzt von Q11 und dann mit Q12 entfallen** (s. oben). Für die Dauer eines Tages galt:
+> **Owner-Entscheidung vom 26.08.2026 (Q11).** Die **fünf übrigen** Zellen der Spalte tragen
+> den **Zwischenton** der Zustandstabelle (Deckfarbe 28 % Fläche, 66 % Kante) statt des ruhigen Weiß
+> bei 3 %. Das ist kein neuer Wert, sondern ein anderer aus derselben Tabelle — und es ist die Regel
+> dieses Abschnitts auf ihren eigenen Fall angewandt: die drei Zustände gelten für den **dunklen
+> Screen-Grund**, und der Grund der Spalte ist kein Screen, sondern eine Reihe massiver 88-px-Buchstaben.
+> Dort geht der Schritt nach oben statt zurück.
+>
+> **Nur in der Spalte.** Die eigenständige Bildmarke steht auf dem Screen-Grund, für den die Tabelle
+> kalibriert ist, und behält ihren ruhigen Zustand.
+
 ### Kleinfassung
+
+*Mit Q12 gegenstandslos: der Schriftzug trägt in jeder Größe und jeder Sprache seinen normalen Glyph,
+es gibt also keine Fassung mehr, von der zurückgefallen werden müsste.*
 
 Unter etwa **40 px** fallen die acht Zellen zusammen. Die Antwort ist **kein Sondersatz**, sondern ein
 **Rückfall auf den normalen Glyph** — dieselbe Marke, nur ohne Zellen. Betrifft den Run-Kopf

@@ -10,9 +10,11 @@ import { battlefieldVeil, battlefieldDim } from "./cosmeticAssets.js"; // #deck-
 import { rarityLabel, deckDef, battlefieldDef, globalFxDef } from "../i18n/labels.js"; // Raritäts-/Kosmetik-/Effekt-Namen: EINE Quelle, übersetzt (Sprachprüfung C1)
 import { VERSION_FULL } from "./version.js"; // #250: Versions-/Build-Stempel, seit 16.08.2026 direkt unter der Marke
 import { PwaInstall } from "./PwaInstall.jsx"; // PWA · „Zum Startbildschirm" (Installieren-Link)
+import BrandGrid from "./BrandGrid.jsx"; // #mainscreen-branding: das Zeichen — die Spalte im I und die Bildmarke
 import { DISCORD_URL, DISCORD_BLURPLE } from "./links.js"; // #datenschutz: Invite jetzt geteilt (s. u.)
 import { fmtNum } from "../i18n/index.js";
 import { useT } from "../i18n/useLocale.js"; // #sprache: alle Texte über t()
+
 
 /* Startbildschirm — Hub-Redesign (Progression-System, Design-Doc docs/progression-decisions.md).
    Das Farbsystem war aus dem Neon-Logo abgeleitet: der Verlauf Cyan → Blau → Violett → Amber lieferte
@@ -166,6 +168,15 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
   const t = useT();
   const ONB_REWARDS = onbRewards(t);
 
+  /* Die gedämpften Punkte der Tagline. Der Katalogtext wird AN ihnen zerlegt, nicht um sie herum
+     zusammengesetzt: enthält eine Übersetzung keinen Punkt, ergibt das genau einen Teil und rendert
+     unverändert. Das ist eine Darstellungsregel und keine Annahme über den Text — die Alternative
+     wären drei Katalog-Schlüssel je Sprache, und damit stünde die Interpunktion einer Marke in einer
+     Datei, die Übersetzer bearbeiten. */
+  const taglineParts = t("start.tagline").split(/(\.)/).filter(Boolean).map((part, i) => (
+    part === "." ? <span key={i} className="as-tagline-dot">.</span> : <span key={i}>{part}</span>
+  ));
+
   // Echte Progressionsanzeige aus dem Profil (progression.js). Leeres Profil = frischer Spieler.
   const prof = profile || {};
   const progSp = Math.max(0, Math.floor(Number(prof.stichPoints) || 0));
@@ -259,7 +270,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
      Verwaltungsliste, obwohl sie der leiseste Rang der Seite sind; die Klickzielgröße hält der
      Innenabstand, nicht die Schrift. Dazu ein Zeichen je Chip — `inline-flex`, damit es neben dem
      Wort sitzt statt darüber. */
-  const chipCls = "as-edge-neutral as-edge-thin dt:inline-flex dt:items-center dt:gap-2 px-3.5 py-1.5 dt:px-5 dt:py-[11px] rounded-xl text-body-lg-5 dt:text-body-lg-3 font-medium transition-all hover:-translate-y-0.5";
+  const chipCls = "as-hub-chip as-edge-neutral as-edge-thin dt:inline-flex dt:items-center dt:gap-2 px-3.5 py-1.5 rounded-xl text-body-lg-5 dt:text-body-lg-3 font-medium transition-all hover:-translate-y-0.5";
 
   // Farb-Hierarchie: nur EINE gefüllte Primär-Aktion, der Rest als Outline (weniger Farbwände, luftiger).
   // Läuft ein Run → „Fortsetzen" ist die helle Primär-Aktion, „Lauf beginnen" wird zum Cyan-Outline.
@@ -386,7 +397,38 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           „Stich" sichtbar, englisch läse sich dasselbe Wort als Nähbegriff „stitch"). Deshalb steht der
           Schlüssel NICHT mehr in der SAME_OK-Liste der i18n-Guards — dort stehen nur Texte, die in
           beiden Sprachen gleich lauten dürfen. */}
+      {/* #mainscreen-branding C6 — DAS I IST WIEDER EIN BUCHSTABE. Owner-Entscheidung vom 26.08.2026:
+          die Zellen-Spalte im I entfällt, in jeder Sprache.
+
+          DER GRUND IST SPRACHLICH UND NICHT OPTISCH, und er wiegt schwerer als das Aussehen: die
+          Fassung hing daran, dass „AUTOSTICH" und „AUTOTRICK" das I an derselben Stelle tragen. Eine
+          dritte Sprache muss das nicht — spanisch hätte an dieser Stelle womöglich gar kein I —, und
+          dann trüge die Marke ihr Zeichen in einer Sprache und in der anderen nicht. Der Owner will
+          sie in allen gleich.
+
+          WAS BLEIBT: das 5 × 8 Zeichen unter der Tagline. Es ersetzt keinen Buchstaben und hängt
+          deshalb an keiner Sprache — der Entwurf führt es ohnehin getrennt als eigenständige
+          Bildmarke (App-Icon, Favicon, Avatar, Ladebild).
+
+          Der Schriftzug ist damit wieder EIN Textknoten, derselbe wie vor C2, und die Marke im
+          Run-Kopf und im Namens-Dialog war es ohnehin immer. */}
       <h1 className="as-wordmark select-none">{t("start.logo.alt")}</h1>
+      {/* #mainscreen-branding — Tagline und Bildmarke, zusammen mit der Wortmarke EIN Lockup.
+          Erst ab 1280 px (`hidden dt:flex`), also gar nicht im Handy-Layout — Q5. Deshalb auch KEIN
+          Umschließen der Wortmarke: `.hub-play` ist unter 1280 px `display: contents`, ein Wrapper
+          um alle drei würde dort zu einer echten Box und die Handy-Reihenfolge verschieben.
+          Gemessen (C1-F13): die Kopfzone wird zentriert, indem die SPALTE zentriert wird — von ihren
+          fünf Kindern bewegt das genau eines, die Wortmarke, und die vier darunter laufen ohnehin
+          auf volle Spaltenbreite. */}
+      <div className="as-lockup hidden dt:flex flex-col items-center self-stretch">
+        {/* Die Tagline PICKT EINE ROLLE und führt keine Größe ein (conventions.md §2b). Der Entwurf
+            nennt 15 px; `text-body-lg` ist 15,5 — die nächste Sprosse liegt einen halben Pixel
+            daneben, eine neue Rolle wäre dafür nicht zu rechtfertigen (C1-F11).
+            Die Punkte zwischen den Wörtern sind gedämpft: das trennt die drei Verben sichtbar,
+            ohne sie mit Trennzeichen auseinanderzuziehen, die niemand vorliest. */}
+        <p className="as-tagline text-body-lg">{taglineParts}</p>
+        <BrandGrid cut="full" className="as-brandmark" />
+      </div>
       {/* #kopf: Der Versions-/Build-Stempel ist von HIER (unter der Marke) in den Fuß gewandert — unter die
           „angemeldet als"-Zeile. Das gibt der Wortmarke die Zeile darunter frei → größere Marke am Handy
           (index.css `.hub-play .as-wordmark`), und der Stempel steht dort, wo die übrigen Fuß-/Meta-Infos sitzen. */}
@@ -394,7 +436,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
       {/* Fortschritts-/Bonus-Leiste — ein Element, zwei Leben: Onboarding (bis 6/6), danach SP-Treue-Drip.
           Frosted-Glass: halbtransparenter Grund (das Kopf-Glühen blutet oben ins Panel → weicher Übergang statt
           harter Kante) + Hairline-Border + Backdrop-Blur (Text bleibt scharf). */}
-      <div className={`${LANE_LEAD} rounded-xl px-4 py-2.5 dt:px-5 dt:py-3.5 flex flex-col gap-1.5 dt:gap-2`}
+      <div className={`as-hub-bonus ${LANE_LEAD} rounded-xl px-4 py-2.5 flex flex-col gap-1.5 dt:gap-2`}
         style={{ background: "rgba(23,23,28,0.5)", border: "1px solid rgba(150,150,170,0.10)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}>
         <div className="flex items-center justify-between gap-3">
           {/* Der Flex-Kontext gilt ERST ab 1280 px. Darunter bleibt die Zeile ein normaler Textfluss —
@@ -443,7 +485,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
       {firstContact && (
         <div className={LANE_LEAD}>
           <button onClick={onTutorial}
-            className="as-tut-btn w-full px-5 py-3 dt:px-6 dt:py-4 rounded-xl ty-title transition-all hover:-translate-y-0.5 flex flex-col items-center dt:items-start leading-tight">
+            className="as-tut-btn w-full px-5 py-3 rounded-xl ty-title transition-all hover:-translate-y-0.5 flex flex-col items-center dt:items-start leading-tight">
             <span className="text-title-2 dt:text-head-1">{t("start.tutorial.offer")}</span>
             <span className="text-body-1 dt:text-body-lg-1 font-normal opacity-75">{t("start.tutorial.offer.sub")}</span>
           </button>
@@ -456,7 +498,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
         {/* Resume (#Auto-Save): gespeicherter laufender Run → einzige gefüllte Primär-Aktion (hell). */}
         {onResume && resume && (
           <button onClick={onResume}
-            className="as-cta-primary w-full px-5 py-3 dt:py-4 rounded-xl ty-title transition-all hover:-translate-y-0.5 flex flex-col items-center leading-tight">
+            className="as-cta-primary as-hub-resume w-full px-5 py-3 rounded-xl ty-title transition-all hover:-translate-y-0.5 flex flex-col items-center leading-tight">
             <span className="text-title-4 dt:text-head-2">{t("start.resume")}</span>
             {/* `as-cta-sub`: die Zweitzeile klebte am Titel (`leading-tight` ohne Abstand dazwischen).
                 Luft und Fußpolster stehen ab 1280 px in index.css — beides zusammen, sonst rutscht die
@@ -476,7 +518,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
             trägt jetzt die Breite der BLÖCKE, der Knopf selbst muss dafür nichts abgeben.
             Das Relief (#knopf-relief) nimmt ihm das Flächenhafte, ohne dass etwas daneben stehen muss. */}
         <button onClick={onStart}
-          className={`${normalCls} relative w-full px-5 py-3.5 dt:py-5 rounded-xl ty-title text-title-1 dt:text-head-2 transition-all hover:-translate-y-0.5 flex items-center justify-center`}>
+          className={`${normalCls} as-hub-start relative w-full px-5 py-3.5 rounded-xl ty-title text-title-1 dt:text-head-2 transition-all hover:-translate-y-0.5 flex items-center justify-center`}>
           {t("start.normal")}
           {/* #premium: Der Knopf sagt jetzt auch in der Form, dass es weitergeht. Absolut am rechten Rand
               und nicht als Flex-Kind, damit das Label mittig bleibt — mit dem Zeichen im Fluss säße es
@@ -503,12 +545,12 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
                    inline-style — am Handy ist das Feld seit dem Deck-Hintergrund getöntes Glas, und ein
                    inline gesetzter Grund ließe sich davon nicht überschreiben (inline schlägt jedes
                    Stylesheet). Der Fehlerzustand bleibt eine Klasse, damit dasselbe für ihn gilt. */
-                className={`as-hub-field ${seedError ? "is-err" : ""} flex-1 min-w-0 px-3 py-2 dt:px-4 dt:py-3 rounded-xl font-mono text-body-lg-5 dt:text-title-2`}
+                className={`as-hub-field ${seedError ? "is-err" : ""} flex-1 min-w-0 px-3 py-2 rounded-xl font-mono text-body-lg-5 dt:text-title-2`}
               />
               {/* Fläche und Rahmen kommen aus `.as-seed-play` statt aus einem inline-style — sonst ließe sich
                   der Rahmen ab 1280 px nicht durch den Hover-Schein ersetzen (inline schlägt jedes Stylesheet). */}
               <button type="submit" disabled={!seedInput.trim()}
-                className="as-seed-play shrink-0 px-3.5 py-2 dt:px-4 dt:py-3 rounded-xl text-body-lg-5 dt:text-title-2 font-medium transition-all disabled:opacity-40">
+                className="as-seed-play shrink-0 px-3.5 py-2 rounded-xl text-body-lg-5 dt:text-title-2 font-medium transition-all disabled:opacity-40">
                 {t("start.seed.play")}
               </button>
             </form>
@@ -526,7 +568,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
       {onRankedBoard && (
         <div className={`${LANE_MID} flex flex-col gap-2.5`}>
           <button onClick={onRankedBoard}
-            className="as-ranked-btn relative w-full px-5 py-2.5 dt:px-6 dt:py-4 rounded-xl ty-title text-body-lg-3 dt:text-title-3 transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2"
+            className="as-ranked-btn relative w-full px-5 py-2.5 rounded-xl ty-title text-body-lg-3 dt:text-title-3 transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2"
             title={t(rankedFree ? "start.ranked.open" : "start.ranked.locked")}>
             {/* #premium/#pokal: Hier zeichnet auf JEDER Breite ein Vektor in der Knopffarbe — Schloss
                 für „Spielen noch gesperrt", Pokal für „frei". Die Emoji-Fassung darunter ist entfallen.
@@ -560,7 +602,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
                   die letzte Stelle am Knopf, die das aktive Deck nicht mitgenommen hat. Orbitron ist im Spiel
                   sonst der Wortmarke und den Kartenzahlen vorbehalten; hier steht eine Zahl, insofern dieselbe
                   Rolle. Darunter läuft er seit #ruhe in der System-Mono wie der ganze Rest des Hubs. */}
-              <span className="as-week-chip ty-num-sm px-1 dt:px-1.5 dt:py-0.5 rounded text-meta-1 dt:text-body-1 leading-tight">
+              <span className="as-week-chip ty-num-sm px-1 rounded text-meta-1 dt:text-body-1 leading-tight">
                 {t("start.ranked.badge", { n: week.week })}
               </span>
               {/* #desktop: Auf breiten Bildschirmen entfällt die Bonus-Zeile am Knopf — die Status-Tafel
@@ -598,61 +640,93 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           gar nicht im Layout. Sie beantwortet, was man vor dem Start wissen will: welches Deck aktiv ist,
           wie die Guthaben stehen, was die Woche noch hergibt und wie der letzte Lauf lief. Alle Werte
           stammen aus bereits vorhandenen Quellen — nichts davon wird hier neu berechnet. */}
-      <div className="hidden dt:flex as-glass as-ring flex-col gap-[18px] rounded-2xl px-6 py-[22px]">
+      {/* #mainscreen-branding C3 — DIE TAFEL BEKOMMT EINEN EIGENEN KLASSENHAKEN. Sie hatte keinen:
+          C1 musste sie als „das ring-tragende Kind von `.hub-stand`, das nicht die Kachelbank ist"
+          greifen, weil ZWEI Kinder `.as-ring` tragen (C1-F10). Ein Screen, den nur eine Negation
+          erreicht, ist ein Screen, den der nächste Wächter falsch trifft. */}
+      <div className="as-deck hidden dt:flex as-glass as-ring flex-col gap-[18px] rounded-2xl">
         <i className="as-ring-run" aria-hidden="true" />
         <div className="ty-screen-title text-meta-3 opacity-45">
           {t("start.board.title")}
         </div>
-        <div className="flex items-center gap-4">
-          {/* 96 → 112 px (Mockup-Abnahme 18.08.2026): das Deck ist der GEGENSTAND dieser Tafel und war
-              kleiner gesetzt als die vier Kennzahlen darunter. */}
+        <div className="as-deck-row flex items-center gap-4">
+          {/* 96 → 112 px (Mockup-Abnahme 18.08.2026), und ab #mainscreen-branding C3 keine feste Zahl
+              mehr: das Bild ist so groß, wie die Seite es trägt, und erreicht die Entwurfsgröße
+              196 × 268 ab 1600 px (Owner-Entscheidung Q10, Option A). Die Formel steht in index.css
+              unter `.as-deck-art` — sie ist gemessen und nicht geraten, und der Nachweis rechnet sie
+              an fünf Viewports nach.
+              Rahmen und Schatten sind von hier in die Regel gewandert: der Rahmen war eines der vier
+              durchscheinenden Inline-Alphas, die dieser Screen mitbringt, und ein Inline-Literal ist
+              von keiner Regel außer `!important` erreichbar. Umgewandelt statt kopiert. */}
           {deckBack && (
-            <img src={deckBack} alt="" draggable="false"
-              className="w-[112px] h-auto rounded-lg select-none"
-              style={{ border: "1px solid rgba(150,150,170,.25)", boxShadow: "0 6px 18px rgba(0,0,0,.55)" }} />
+            <img src={deckBack} alt="" draggable="false" className="as-deck-art rounded-lg select-none" />
           )}
           <div className="flex flex-col gap-1 min-w-0 flex-1">
             <div className="ty-title text-head-2 truncate">{deckName}</div>
-            {/* Die Spielfeld-Zeile erscheint NUR, wenn das Spielfeld nicht zum Deck gehört. Der Registername
-                eines Spielfelds ist der Deckname plus Suffix („Biolumen · Battlefield") — im Normalfall stand
-                hier also „Battlefield · Biolumen · Battlefield", dreimal dasselbe Wort für null Information.
-                Sind Deck und Feld in der Werkstatt gemischt worden, sagt die Zeile dagegen etwas. */}
-            {bfName && !bfName.startsWith(deckName) && (
-              <div className="text-body-3 opacity-55 truncate">{t("start.board.field", { name: bfName })}</div>
+            {/* #mainscreen-branding C3 — DIE ATTRIBUT-CHIPZEILE. Spielfeld, Effekte und Musik standen
+            hier als drei stille Textzeilen untereinander. Als umbrechende Chipzeile sagen dieselben
+            drei dasselbe in einer Zeile: WAS gerade eingestellt ist.
+
+            SIE BLEIBT NEBEN DEM BILD, und das ist gemessen. Der Entwurf stapelt die drei UNTER das
+            gerahmte Feld. Als eigene Zeile unter beiden gebaut und nachgemessen kostet das 39 px an
+            allen drei kleinen Viewports — und die rechte Spalte hat bei 1280 × 720 sieben (C1-F03).
+            Neben dem Bild kostet sie nichts: die Tafel ist so hoch wie das Höhere von Bild und
+            Namensspalte, und die drei Chips passen in die Spalte, die vorher drei Zeilen trug. Der
+            Vertrag sagt ohnehin „die VORHANDENEN Spielfeld- und FX-Zeilen ALS Chipzeile" — umgestellt,
+            nicht umgezogen. Die Abweichung vom Entwurf steht mit ihrer Zahl im Nachweis.
+
+            DIE TEXTE SIND DIESELBEN. `start.board.field` und `start.board.fx` tragen ihre Beschriftung
+            schon im String („Spielfeld · {name}"), also braucht diese Zeile keinen einzigen neuen
+            Katalog-Schlüssel — sie ist eine Umstellung der Darstellung und keine neue Aussage. Genau
+            das meint der Vertrag mit „die VORHANDENEN Spielfeld- und FX-Zeilen als Chipzeile".
+
+            DER CHIP-LOOK IST AUCH NICHT NEU: Rahmen, Fläche, Radius und Polster sind die des
+            Musik-Kastens, der hier seit dem Musik-Pass steht. Sie sind dabei von einem Inline-Style in
+            eine Regel gewandert — der Rahmen ist eines der vier durchscheinenden Inline-Alphas dieses
+            Screens (.22), und ein Inline-Literal ist von keiner Regel außer `!important` erreichbar.
+            Umgewandelt statt dreimal kopiert.
+
+            WAS FEHLT, FEHLT WEITER. Ohne aktive Effekte entfällt der Effekt-Chip; gehört das Spielfeld
+            zum Deck, entfällt der Spielfeld-Chip. „Effekte · —" wäre ein Chip, der nichts sagt. */}
+        <div className="as-deck-attrs flex flex-wrap items-center gap-2">
+          {/* Die Spielfeld-Zeile erscheint NUR, wenn das Spielfeld nicht zum Deck gehört. Der Registername
+              eines Spielfelds ist der Deckname plus Suffix („Biolumen · Battlefield") — im Normalfall stand
+              hier also „Battlefield · Biolumen · Battlefield", dreimal dasselbe Wort für null Information.
+              Sind Deck und Feld in der Werkstatt gemischt worden, sagt die Zeile dagegen etwas. */}
+          {bfName && !bfName.startsWith(deckName) && (
+            <span className="as-deck-attr min-w-0" title={bfName}>
+              <span className="truncate">{t("start.board.field", { name: bfName })}</span>
+            </span>
+          )}
+          {/* Ausgerüstete Effekte. Ohne aktive Effekte entfällt der Chip. */}
+          {fxNames.length > 0 && (
+            <span className="as-deck-attr min-w-0" title={fxNames.join(" + ")}>
+              <span className="truncate">{t("start.board.fx", { list: fxNames.join(" + ") })}</span>
+            </span>
+          )}
+          {/* #musik — Was gerade läuft, plus Weiterschalten. Steht in derselben Zeile wie Spielfeld und
+              Effekte, weil die Musik zum „Stand" gehört wie beide: alles, was der Screen gerade IST.
+              Der Knopf bleibt IM Chip — als gestreckte Zeile stand er am Panelrand und las sich wie ein
+              eigenes Element neben dem Titel. */}
+          <span className="as-deck-attr as-deck-attr-music min-w-0" title={musicTitle || undefined}>
+            {/* Wiedergabe-Dreieck statt der Note: die Zeile sagt, was gerade LÄUFT — ein Zustand,
+                kein Genre. Als Vektor, damit es dieselbe Strichfamilie hat wie die Zeichen daneben. */}
+            <svg className="w-[11px] h-[11px] shrink-0 opacity-45" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="currentColor">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+            <span className="truncate max-w-[260px]">{musicTitle || "—"}</span>
+            {onMusicNext && (
+              <button onClick={onMusicNext} aria-label={t("music.next")}
+                title={musicTitle ? t("music.playing", { title: musicTitle }) : t("music.next")}
+                className="as-deck-attr-next shrink-0 rounded leading-none transition-all hover:opacity-100">
+                ⏭
+              </button>
             )}
-            {/* Ausgerüstete Effekte, gleiche Zeilen-Optik wie das Spielfeld darüber. Ohne aktive Effekte
-                entfällt die Zeile — „Effekte · —" wäre eine Zeile, die nichts sagt. */}
-            {fxNames.length > 0 && (
-              <div className="text-body-3 opacity-55 truncate" title={fxNames.join(" + ")}>
-                {t("start.board.fx", { list: fxNames.join(" + ") })}
-              </div>
-            )}
-            {/* #musik — Was gerade läuft, plus Weiterschalten. Sitzt hier und nicht als eigener Block, weil
-                die Musik zum „Stand" gehört wie Deck und Spielfeld: alles, was der Screen gerade IST. */}
-            {/* EIN gemeinsamer Rahmen um Titel und Knopf, und `self-start` statt voller Breite: Als
-                gestreckte Zeile stand der Knopf ganz am Panelrand und las sich wie ein eigenes Element
-                neben dem Titel. Zusammengefasst sind beide sichtbar EINE Sache — was läuft, und wie man
-                weiterschaltet. Der Titel darf wachsen (`max-w`), der Kasten folgt ihm nur so weit. */}
-            <div className="inline-flex self-start items-center gap-2 mt-1.5 min-w-0 max-w-full rounded-lg pl-2.5 pr-1 py-1"
-              style={{ border: "1px solid rgba(150,150,170,.22)", background: "rgba(20,20,26,.45)" }}>
-              {/* Wiedergabe-Dreieck statt der Note: die Zeile sagt, was gerade LÄUFT — ein Zustand,
-                  kein Genre. Als Vektor, damit es dieselbe Strichfamilie hat wie die Zeichen daneben. */}
-              <svg className="w-[11px] h-[11px] shrink-0 opacity-45" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="currentColor">
-                <path d="M8 5v14l11-7z" />
-              </svg>
-              <span className="text-body-3 opacity-60 truncate max-w-[260px]" title={musicTitle || undefined}>
-                {musicTitle || "—"}
-              </span>
-              {onMusicNext && (
-                <button onClick={onMusicNext} aria-label={t("music.next")}
-                  title={musicTitle ? t("music.playing", { title: musicTitle }) : t("music.next")}
-                  className="shrink-0 rounded px-1.5 py-0.5 text-body-3 leading-none opacity-60 transition-all hover:opacity-100">
-                  ⏭
-                </button>
-              )}
+          </span>
             </div>
           </div>
         </div>
+
         {/* Vier Kennzahlen. Die Farben bleiben hier bewusst die BEDEUTUNGS-Farben (Gold = Währung,
             Violett = Rangliste, Cyan = Lauf) — die Tafel ist der Ort, an dem gelesen und nicht navigiert
             wird, und die Deckfarbe trägt hier ohnehin schon Rahmen, Schimmer und Kartenbild. */}
@@ -660,7 +734,15 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
             Boxen — `gap-px` legte den Container-Grund in dem einen Pixel frei. Bei vier gleich hellen
             Zellen liest sich das als Raster statt als Trennung. Jetzt eine echte Haarlinie je Zelle
             (`as-kpi`), und der Container trägt nur noch seinen Rahmen. */}
-        <div className="as-kpis grid grid-cols-4 rounded-xl overflow-hidden" style={{ border: "1px solid rgba(60,58,78,.5)" }}>
+        {/* #mainscreen-branding C3 — DIE KENNZAHLEN TRETEN ZURÜCK. Sie standen als eigener gerahmter
+            Kasten mit vier gefüllten Zellen in der Tafel — vier Flächen in einer Fläche, und damit
+            optisch schwerer als das Deck darüber, das der GEGENSTAND der Tafel ist. Der Entwurf sagt
+            es in einem Halbsatz: „darunter, durch eine Linie getrennt: die vier Kennzahlen."
+            Also: keine Füllung je Zelle, kein Rahmen um die vier, stattdessen EINE Linie darüber. Die
+            Haarlinien zwischen den Zellen bleiben — sie trennen vier Werte, sie rahmen nichts ein.
+            WERTGLEICH umgestellt: die Linie trägt denselben Ton, den der Rahmen trug; sie steht nur
+            an einer Kante statt an vieren. Ein Schritt aus dem Vokabular wird sie in C4. */}
+        <div className="as-kpis grid grid-cols-4">
           {[
             { k: t("start.board.sp"), v: progSp, c: SP, s: t("start.board.sp.sub", { done: progOwned, total: TOTAL_NODES }) },
             { k: t("start.board.dp"), v: progDp, c: AM, s: t("start.board.dp.sub") },
@@ -688,7 +770,7 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
             { k: t("start.board.last"), v: lastRun ? fmtNum(Math.round(lastRun.score || 0)) : t("start.board.last.none"),
               c: CY, s: lastRun ? t("start.board.last.sub", { cycle: lastRun.cycles ?? 0 }) : t("start.board.last.none.sub") },
           ].map((s, i) => (
-            <div key={i} className="as-kpi flex flex-col gap-0.5 px-4 py-3.5" style={{ background: "rgba(22,22,32,.5)" }}>
+            <div key={i} className="as-kpi flex flex-col gap-0.5">
               <span className="text-body-1 font-medium opacity-45">{s.k}</span>
               {/* #kpi-passt: die ZEICHENZAHL ist alles, was die Regel braucht — `ty-num` ist Geist Mono,
                   jedes Zeichen also gleich breit (gemessener Vorschub 0,59 × Schriftgrad, Ziffern wie
@@ -711,14 +793,14 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
             kommt aus der Klasse `as-hub-tile` statt aus einem inline-style, sonst ließe sie sich oberhalb
             von 1280 px nicht auf Glas umstellen. */}
         {(() => { const tileCls = "as-hub-tile relative overflow-hidden rounded-xl text-left p-3 pl-4 min-h-[76px] flex flex-col justify-between transition-all hover:-translate-y-0.5"
-            + " dt:flex-row dt:items-center dt:gap-3 dt:min-h-0 dt:rounded-none dt:py-4 dt:pl-6 dt:pr-5 dt:hover:translate-y-0";
+            + " dt:flex-row dt:items-center dt:gap-3 dt:min-h-0 dt:hover:translate-y-0";
           /* #kante: Aus dem 3-px-Streifen wird die Kante der Kanten-Familie — 4 px plus der kurze Farbanlauf
              nach rechts, den auch Auswahlkarten und Knöpfe tragen. Bleibt ein absolut liegendes Overlay über
              der ganzen Kachel (nicht deren border-left), weil die Kachel ab 1280 px zur randlosen Listenzeile
              wird und ihren eigenen Rahmen verliert; so überlebt das Farbsignal beide Fassungen unverändert.
              Klickdurchlässig, damit die Kachel darunter der Knopf bleibt. */
           const Stripe = ({ c, dim }) => (<span aria-hidden="true"
-            className="as-hub-stripe absolute inset-y-0 left-0 right-0 rounded-xl pointer-events-none dt:rounded-none"
+            className="as-hub-stripe absolute inset-y-0 left-0 right-0 rounded-xl pointer-events-none"
             style={{ borderLeft: `4px solid ${c}`,
                      background: `linear-gradient(90deg, color-mix(in srgb, ${c} 14%, transparent) 0%, transparent 42%)`,
                      opacity: dim ? 0.45 : 1 }} />);

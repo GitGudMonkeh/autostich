@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { DESKTOP_BLOCK_AT } from "./desktopBreakpoint.js";
+import { inlineValueOf, overridesInline } from "./inlineOverride.js";
+import { resolve, themeTokens } from "./cssTokens.js";
 
 /* ============================================================
    #st-ruhe (19.08.2026) — die Statistik im Desktop-Ton.
@@ -11,13 +13,15 @@ import { DESKTOP_BLOCK_AT } from "./desktopBreakpoint.js";
    · `as-ring-quiet` an fünf Panels — verliert eines den Modifikator, holt es sich still den laufenden
      Ring zurück und sieht für sich genommen weiter richtig aus (dieselbe Begründung wie in #up-ruhe).
    · die acht `MENU_PANEL`-Kästen und ihre gemeinsame Klasse `.st-box` — die Konstante wird INLINE
-     gesetzt, ohne `!important` an Fläche und Rahmen bliebe die Regel wirkungslos, ohne dass im
-     Quelltext etwas fehlt.
+     gesetzt; wird sie an der Regel nicht neutralisiert, bliebe die flache Fassung wirkungslos, ohne
+     dass im Quelltext etwas fehlt. (#menu-rework M1: WIE sie neutralisiert wird, steht nicht mehr
+     hier fest — s. inlineOverride.js.)
    ============================================================ */
 
 const read = (p) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
 const css = read("src/index.css");
 const stats = read("src/ui/StatsScreen.jsx");
+const modal = read("src/ui/modalStyle.jsx");
 // Kommentarfreie Fassung: die Begründungen unten nennen die alten Werte absichtlich beim Namen.
 const cssBare = css.replace(/\/\*[\s\S]*?\*\//g, "");
 const deskBlock = (src) => {
@@ -46,17 +50,35 @@ describe("#st-ruhe — der Ring steht still", () => {
 describe("#st-ruhe — EINE Kachelform für alles im Panel", () => {
   /* Die LETZTE Regel gewinnt: `.up-vnode` steht im Desktop-Block zweimal (eigene Regel, dann die
      Sammelregel von #up-form). Ein Test, der die erste liest, misst den Wert von vor dem Umbau. */
+  /* #menu-rework M3 — der Radius wird AUFGELOEST, nicht abgelesen. Seit der Baum auf das
+     Panel-Vokabular umgestellt ist, steht an `.up-vnode` `var(--rd-sm)`, und die alte Ablesung
+     (`[\d.]+px`) lieferte `null` — der Waechter fiel, waehrend die Zusicherung, die er schuetzt
+     („dieselbe Kachelform wie im Baum"), voellig intakt war. Genau der Fall, fuer den
+     test/cssTokens.js geschrieben wurde: der Referenz folgen statt den Token-NAMEN zu pruefen.
+     Der Waechter rechnet damit weiter mit echten Zahlen und faengt zusaetzlich den Fall ab, dass
+     der Schritt aus dem `@theme`-Block verschwindet. */
   const radius = (sel) => {
-    const alle = desk.match(new RegExp(`(^|,)\\s*${sel}\\s*(,[^{}]*)?\\{[^}]*border-radius:\\s*[\\d.]+px`, "gm")) || [];
-    const m = alle.length ? alle[alle.length - 1].match(/border-radius:\s*([\d.]+)px/) : null;
+    const alle = desk.match(new RegExp(`(^|,)\\s*${sel}\\s*(,[^{}]*)?\\{[^}]*border-radius:\\s*[^;}]+`, "gm")) || [];
+    if (!alle.length) return null;
+    const roh = alle[alle.length - 1].match(/border-radius:\s*([^;}]+)/);
+    if (!roh) return null;
+    const m = resolve(roh[1].trim(), themeTokens(css)).match(/([\d.]+)px/);
     return m ? Number(m[1]) : null;
   };
 
-  it("die acht MENU_PANEL-Kästen tragen die gemeinsame Klasse", () => {
-    /* Kpi · Score-Verlauf · Skills · Perks · Archetyp-Nutzung · Auswertungszeile · zwei Hinweiskästen.
-       Jeder `MENU_PANEL`-Kasten muss `st-box` tragen, sonst steht einer gefüllt zwischen sieben flachen. */
+  it("der Screen enthält KEINEN MENU_PANEL-Kasten außer solchen mit `st-box`", () => {
+    /* Jeder `MENU_PANEL`-Kasten muss `st-box` tragen, sonst steht einer gefüllt zwischen den flachen.
+
+       #menu-rework M7 — ALS „ENTHÄLT KEIN X AUSSER Y" GESCHRIEBEN, NICHT ALS ZAHL. Die alte Fassung
+       nagelte die Zahl auf acht fest, und das ist die Bauart, aus der in dieser Runde sechs Befunde
+       entstanden sind: sie fragt, ob die VORGESEHENE Form da ist, statt ob eine fremde fehlt. Ein
+       neunter Kasten MIT `st-box` ist völlig richtig und ließ sie trotzdem fallen; ein achter OHNE
+       wäre der Fehler, den sie meint. Die Zahl trug nichts bei, was die Schleife nicht schon prüft —
+       außer der Gegenprobe, dass der Ausdruck überhaupt noch etwas findet, und die steht jetzt als
+       eigene Zeile da. */
     const kaesten = stats.match(/<div[^>]*style=\{MENU_PANEL\}/g) || [];
-    expect(kaesten.length, "Zahl der MENU_PANEL-Kästen hat sich geändert").toBe(8);
+    expect(kaesten.length, "kein MENU_PANEL-Kasten mehr gefunden — der Ausdruck greift ins Leere")
+      .toBeGreaterThan(0);
     for (const k of kaesten) expect(k, `Kasten ohne st-box: ${k}`).toMatch(/\bst-box\b/);
   });
 
@@ -79,10 +101,17 @@ describe("#st-ruhe — EINE Kachelform für alles im Panel", () => {
   });
 
   it("die flache Fassung schlägt das INLINE gesetzte MENU_PANEL", () => {
+    /* #menu-rework M1 — geprüft wird die INVARIANTE, nicht der Mechanismus. Dieselbe Bauart wie in
+       go-ruhe; die Begründung steht einmal, in test/inlineOverride.js. */
     const box = desk.match(/\.st-box\s*\{[^}]*\}/)[0];
-    for (const prop of ["background", "border"])
-      expect(box, `${prop} ohne !important — MENU_PANEL steht inline und gewänne`)
-        .toMatch(new RegExp(`${prop}:[^;]*!important`));
+    for (const prop of ["background", "border"]) {
+      const inline = inlineValueOf(modal, "MENU_PANEL", prop);
+      expect(inline, `MENU_PANEL setzt ${prop} nicht mehr inline — dann prüft dieser Test nichts`).toBeTruthy();
+      expect(overridesInline(box, prop, inline),
+        `${prop} wird an .st-box nicht neutralisiert — MENU_PANEL steht inline (${inline}) und `
+        + `gewänne. Nötig ist entweder !important, oder die Regel definiert die Variable um, die der `
+        + `Inline-Wert liest.`).toBeTruthy();
+    }
   });
 });
 

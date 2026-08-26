@@ -1,0 +1,18 @@
+ok  BASELINE       green  green  the clean tree — test/glossary-desktop.test.js
+ok  BASELINE       green  green  the clean tree — test/panel-tokens.test.js
+ok  RED-ON-DEFECT  RED    RED    STICKY_HEAD_BG goes back to a literal
+ok  RED-ON-DEFECT  RED    RED    STICKY_HEAD_BG keeps the token but carries a value beside it
+ok  RED-ON-DEFECT  RED    RED    the re-point is deleted — the head paints --sf-head
+ok  RED-ON-DEFECT  RED    RED    the !important comes back on the head's fill
+ok  RED-ON-DEFECT  RED    RED    the head's fill is removed entirely
+ok  RED-ON-DEFECT  RED    RED    a new surface literal arrives in a .gl-* rule
+ok  RED-ON-DEFECT  RED    RED    a step is silently swapped back for its literal (--sf-glass at .gl-page)
+ok  RED-ON-DEFECT  RED    RED    a MENU-38 translucent edge returns to a .gl-* rule
+ok  RED-ON-DEFECT  RED    RED    a counted state literal is swapped for a fresh one in Glossary.jsx
+ok  RED-ON-DEFECT  RED    RED    an ink literal is added to Glossary.jsx
+ok  RED-ON-DEFECT  RED    RED    the .gl-wrap exclusion is widened to /\.gl-/
+ok  RED-ON-DEFECT  RED    RED    an M6 exemption is left pointing at a selector that no longer exists
+ok  GREEN-ON-WORK  green  green  A FURTHER CORRECT MIGRATION — the two MENU-38 edges of .as-chip fall too
+ok  GREEN-ON-WORK  green  green  A FUTURE TIDY-UP — the successor collects the rest of #gl-ruhe's leftovers
+ok  LIVENESS       RED    RED    LIVENESS — .gl-wrap is gone, so the counter-check would measure nothing
+ok  LIVENESS       RED    RED    LIVENESS — a counted state literal disappears from Glossary.jsx without the list following

@@ -1,0 +1,156 @@
+{
+ "size": "1536x791",
+ "states": {
+  "nav-rest": {
+   "background-color": "rgba(255, 255, 255, 0.02)",
+   "background-image": "none",
+   "border-radius": "6px",
+   "box-shadow": "none",
+   "border-left-color": "color(srgb 0.14902 0.776471 0.901961 / 0.7)",
+   "color": "rgb(195, 193, 208)",
+   "box": {
+    "x": 50,
+    "y": 250,
+    "w": 274,
+    "h": 69
+   }
+  },
+  "nav-hover": {
+   "background-color": "rgba(255, 255, 255, 0.043)",
+   "background-image": "none",
+   "border-radius": "6px",
+   "box-shadow": "none",
+   "border-left-color": "color(srgb 0.14902 0.776471 0.901961 / 0.7)",
+   "color": "rgb(195, 193, 208)",
+   "box": {
+    "x": 50,
+    "y": 250,
+    "w": 274,
+    "h": 69
+   }
+  },
+  "nav-active": {
+   "background-color": "rgba(255, 255, 255, 0.07)",
+   "background-image": "none",
+   "border-radius": "6px",
+   "box-shadow": "rgb(38, 198, 230) 0px 0px 24px -14px inset",
+   "border-left-color": "rgb(38, 198, 230)",
+   "color": "rgb(255, 255, 255)",
+   "box": {
+    "x": 50,
+    "y": 173,
+    "w": 274,
+    "h": 69
+   }
+  },
+  "nav-focus": {
+   "background-color": "rgba(255, 255, 255, 0.043)",
+   "background-image": "none",
+   "border-radius": "6px",
+   "box-shadow": "none",
+   "border-left-color": "color(srgb 0.14902 0.776471 0.901961 / 0.7)",
+   "color": "rgb(195, 193, 208)",
+   "outline-color": "rgb(16, 16, 16)",
+   "outline-width": "1px",
+   "outline-style": "auto",
+   "box": {
+    "x": 50,
+    "y": 250,
+    "w": 274,
+    "h": 69
+   }
+  },
+  "cta-hover": {
+   "background-color": "rgba(0, 0, 0, 0)",
+   "background-image": "linear-gradient(90deg, color(srgb 0.14902 0.776471 0.901961 / 0.3) 0%, rgba(0, 0, 0, 0) 30%), linear-gradient(color(srgb 0.072549 0.219765 0.265726), color(srgb 0.0501961 0.12 0.150196))",
+   "box-shadow": "color(srgb 0.14902 0.776471 0.901961 / 0.4) 0px 0px 0px 1px, rgb(38, 198, 230) 0px 0px 20px -3px, rgb(38, 198, 230) 0px 0px 26px -14px inset",
+   "transform": "none",
+   "border-left-color": "rgb(38, 198, 230)",
+   "box": {
+    "x": 392,
+    "y": 366,
+    "w": 392,
+    "h": 42
+   }
+  },
+  "close-hover": {
+   "background-color": "rgba(12, 12, 18, 0.5)",
+   "border-color": "rgba(150, 150, 170, 0.18) rgba(150, 150, 170, 0.18) rgba(150, 150, 170, 0.18) rgba(150, 150, 170, 0.35)",
+   "border-left-color": "rgba(150, 150, 170, 0.35)",
+   "border-radius": "6px",
+   "color": "rgb(213, 213, 223)",
+   "box": {
+    "x": 1384,
+    "y": 21,
+    "w": 115,
+    "h": 46
+   }
+  },
+  "row-rest": {
+   "background-color": "rgba(0, 0, 0, 0)",
+   "border-top-color": "rgb(42, 42, 52)",
+   "border-radius": "0px",
+   "filter": "none",
+   "box": {
+    "x": 820,
+    "y": 390,
+    "w": 652,
+    "h": 62
+   }
+  },
+  "row-hover": {
+   "background-color": "rgba(255, 255, 255, 0.027)",
+   "border-top-color": "rgb(42, 42, 52)",
+   "border-radius": "0px",
+   "filter": "none",
+   "box": {
+    "x": 820,
+    "y": 390,
+    "w": 652,
+    "h": 62
+   }
+  },
+  "run-window": {
+   "present": 1,
+   "card": {
+    "background-color": "rgba(0, 0, 0, 0)",
+    "background-image": "none",
+    "border-radius": "16px",
+    "box-shadow": "none",
+    "box": {
+     "x": 48,
+     "y": 16,
+     "w": 1440,
+     "h": 542
+    }
+   },
+   "lanes": "492.344px 923.641px",
+   "eyebrow": "Rückblick · Lauf · #2"
+  },
+  "data-loading": {
+   "rows": 0,
+   "message": "Allzeit · Top 20alle LäufeLädt Bestenliste …"
+  },
+  "data-empty": {
+   "rows": 0,
+   "message": "Allzeit · Top 20alle LäufeNoch kein Lauf im Global-Board — mach den Anfang."
+  },
+  "data-error": {
+   "rows": 0,
+   "message": "Allzeit · Top 20alle LäufeBestenliste ist nicht verfügbar."
+  },
+  "data-empty-archive": {
+   "champions": 0,
+   "card": {
+    "border-radius": "16px",
+    "box": {
+     "x": 36,
+     "y": 10,
+     "w": 1464,
+     "h": 400
+    }
+   },
+   "message": "Noch keine Wochensieger — die erste Wochen-Rangliste muss erst abgeschlossen sein."
+  }
+ }
+}

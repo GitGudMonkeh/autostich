@@ -20,6 +20,29 @@ import { GuideOverlay } from "./GuideOverlay.jsx"; // #: Leitfaden direkt auf de
 import { archFamily, archCatDef } from "../i18n/labels.js"; // #sprache: Gebäudename zur Anzeigezeit
 import { t, fmtNum } from "../i18n/index.js"; // #sprache
 
+/* #menu-rework M4 — THREE INLINE LITERALS ON THIS SCREEN ARE STEPS OF THE VOCABULARY, and they are
+   the only three. Migrating them is value-preserving by construction, so all three are provable at
+   zero delta; everything else this file writes stays a counted literal, enumerated in
+   `test/panel-tokens.test.js` and reasoned in measurements/M4.md.
+
+     .go-root       `#0c0c10cc` IS `--sf-scrim` — rgba(12, 12, 16, .8), character for character. It is
+                    the NARROW version's wash: above 1280 px index.css re-points the element to
+                    `--sf-scrim-desk`, so the inline value still carries the phone, only no longer as a
+                    literal. Same shape as .st-root and .lb-root, which M7 and M8 left as literals
+                    because THEIR value (#0c0c10ee) is not a step — this one is.
+     .go-blist      `#17171c` IS `--sf-base`. The blue frame beside it stays a literal: it is the
+                    architect's signal (#go-ruhe, "was ausdruecklich NICHT angefasst ist"), meaning
+                    rather than chrome.
+     building row   the RESTING edge was `#2a2a34`, and that IS `--ed-quiet` — the same conversion M7
+                    made on the same row form in RunDetail.jsx. The tapped edge (#5ec8f0) and both
+                    fills stay: cyan is the architect's signal, and the ladder has no step for a state
+                    pair (MENU-46/47/48). Counted, not coined.
+
+   WHAT IS DELIBERATELY NOT TOUCHED, because it is meaning and not chrome: the gold of `as-legendary`
+   and of the unlock window, the red of the DP deduction, the violet of the guide chip, the architect
+   blue — and the DP price colour, which sits inside an OPEN canon question (design-sprache.md §9,
+   open point 1). A worker resolving that inside a migration is the mistake the contract names. */
+
 /* #graph-fuellt (19.08.2026) — die freie Höhe eines Kastens als viewBox-Höhe.
 
    Der Score-Verlauf skaliert mit `width: 100%` und festem Seitenverhältnis (620 : 250). In einem Panel,
@@ -214,7 +237,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
   const [inspectBid, setInspectBid] = useState(null);    // Liste ↔ Brett: angetipptes Gebäude glüht am Grid
 
   return overlayPortal((
-    <div className="go-root fixed inset-0 overlay-root z-20 flex items-center justify-center p-4" style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}>
+    <div className="go-root fixed inset-0 overlay-root z-20 flex items-center justify-center p-4" style={{ background: "var(--sf-scrim)", backdropFilter: "blur(3px)" }}>
       {/* #deckui: äußere Karte zieht den deck-getönten Rahmen-Verlauf (as-panel-deck). */}
       <div className="go-card w-full max-w-lg rounded-2xl px-6 pb-6 max-h-[90dvh] overflow-y-auto overlay-card as-panel as-panel-deck" style={MODAL_CARD}>
         {/* #UI: Aktions-Leiste (Menü · Neuer Lauf) nach oben und STICKY → schwebt beim Scrollen mit. Abstand opak im
@@ -611,7 +634,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
                    Gebäude. `auto-fit` allein reicht nicht: zusammen mit `width: fit-content` klappt es auch
                    bei sieben Gebäuden auf eine Spalte zusammen (gemessen). */
                 <div className="go-blist mt-3 rounded-lg p-2.5"
-                  style={{ background: "#17171c", border: "1px solid #5a8ade", "--gob-cols": Math.min(3, archBuildings.length) }}>
+                  style={{ background: "var(--sf-base)", border: "1px solid #5a8ade", "--gob-cols": Math.min(3, archBuildings.length) }}>
                   <div className="text-meta-3 uppercase tracking-wide font-bold mb-0.5" style={{ color: "#6f9bec" }}>🏗 {t("arch.yourBuildings", { n: archBuildings.length })}</div>
                   <div className="text-meta-1 opacity-45 mb-1.5">{t("gameover.layout.hint")}</div>
                   <div className="grid gap-1">
@@ -624,7 +647,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
                       return (
                         <button key={b.id} onClick={() => { if (!on) setShowArch(true); setInspectBid(on ? null : b.id); }}
                           className="w-full text-left rounded-lg px-2.5 py-1.5 text-meta-3 leading-snug flex flex-col gap-0.5 transition-all"
-                          style={{ background: on ? "#12313f" : "#191922", border: `1px solid ${on ? "#5ec8f0" : "#2a2a34"}` }}>
+                          style={{ background: on ? "#12313f" : "#191922", border: `1px solid ${on ? "#5ec8f0" : "var(--ed-quiet)"}` }}>
                           <span className="inline-flex items-center gap-1.5 flex-wrap">
                             <FormIcon form={fam.form} color={fam.legendary ? "#d4a63a" : (meta.color || "#8a8a92")} title={`${fam.name} · ${fam.form}`} />
                             <b>{fam.name}</b>
