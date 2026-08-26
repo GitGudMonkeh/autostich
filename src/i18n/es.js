@@ -27,10 +27,14 @@
    ============================================================ */
 import { LEG_PHASE_CYCLE } from "../game/constants.js";
 import { RARITY_ES } from "./esTerms.js";
+import esSkills from "./esSkills.js";       // 84 skills + archetype names — own file, it is long
+import esPerks from "./esPerks.js";         // legendary perks + perk categories
 import esMeta from "./esMeta.js";           // upgrade tree + weekly modifiers
 import esCosmetics from "./esCosmetics.js"; // skin sets + global effects
 
 export default {
+  ...esSkills,
+  ...esPerks,
   ...esMeta,
   ...esCosmetics,
 
