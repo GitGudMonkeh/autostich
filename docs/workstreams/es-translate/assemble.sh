@@ -5,5 +5,8 @@
 set -euo pipefail
 PARTS="${1:?usage: assemble.sh <parts-dir>}"
 OUT="$(cd "$(dirname "$0")/../../.." && pwd)/src/i18n/es.js"
-{ cat "$PARTS"/*.part; printf '};\n'; } > "$OUT"
+# LF throughout. .gitattributes is load-bearing and the rest of src/i18n is LF, so the parts
+# are normalised on the way out instead of leaving git to warn on every commit.
+{ cat "$PARTS"/*.part; printf '};
+'; } | tr -d '' > "$OUT"
 printf 'assembled %s from %d parts\n' "$OUT" "$(ls "$PARTS"/*.part | wc -l)"
