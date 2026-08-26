@@ -42,6 +42,9 @@ export function toRow(entry) {
     } else {
       v = String(v).trim();
       if (!v) continue;
+      // #health-check S2: Gürtel zur Hose — das Textfeld deckelt bei 1000 Zeichen, ein direkter
+      // Aufrufer nicht. 4000 ist grosszügig und hält Multi-MB-Zeilen aus der Tabelle.
+      if (c === "message") v = [...v].slice(0, 4000).join("");
     }
     row[c] = v;
   }

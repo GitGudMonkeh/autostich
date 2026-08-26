@@ -163,7 +163,7 @@ export function DeckDetail({ archetype: initialArch, profile, onBack, onClose, i
                     <span className="text-body-4 font-bold" style={{ color: pk.a1 || color }}>{pk.name}</span>
                     <span className="ml-auto text-meta-1 font-bold px-2 py-0.5 rounded-full"
                       style={unlocked ? { background: `${color}22`, border: `1px solid ${color}`, color } : { background: "#17151f", border: "1px solid #2e2d38", color: "#8a8a95" }}>
-                      {unlocked ? "✓ frei" : "🔒 gesperrt"}
+                      {unlocked ? t("deckdetail.skin.free") : t("deckdetail.skin.locked")}
                     </span>
                   </div>
                   {/* Echte Deck-Skin-Grafik (Vorschau) — GANZE Karte sichtbar (contain, nicht beschnitten); gesperrt: abgedunkelt. */}

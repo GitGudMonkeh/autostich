@@ -408,7 +408,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
                       <button type="button" onClick={() => setGuideArch(u.guide)}
                         className="rounded-full px-3 py-1 text-body-1 font-bold transition-all hover:-translate-y-0.5"
                         style={{ background: "#241b34", color: "#e8d9ff", border: "1px solid #6b4fa0" }}>
-                        📖 Leitfaden: {u.guideName}
+                        📖 {t("skill.guide.title", { arch: u.guideName })}
                       </button>
                     )}
                   </div>
@@ -417,7 +417,7 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
             ) : (
               <div className="text-body-1 text-center font-bold" style={{ color: "#f0d27a" }}>
                 {t(onboarding.advanced ? "gameover.progress.saved" : "gameover.progress.done")}
-                {onboarding.nextLabel ? ` · Nächste Freischaltung bei ${onboarding.nextAt}/${onboarding.links}: ${onboarding.nextLabel}` : ""}
+                {onboarding.nextLabel ? ` · ${t("gameover.progress.next", { at: onboarding.nextAt, total: onboarding.links, label: onboarding.nextLabel })}` : ""}
               </div>
             )}
           </div>

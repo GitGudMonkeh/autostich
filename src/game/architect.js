@@ -197,8 +197,9 @@ export function isValidFootprint(form, footprint, buildings = [], blocked = []) 
   return enumeratePlacements(form, buildings, blocked).some((fp) => sameSet(fp, footprint));
 }
 
-// Footprint einer Form bei (rotIdx, anchor) — im Gitter, sonst null.
-function footprintAtRot(form, rotIdx, anchor) {
+// Footprint einer Form bei (rotIdx, anchor) — im Gitter, sonst null. Exportiert seit #health-check M4:
+// ArchitectScreen trug eine zeilengleiche Kopie (footprintAt) — eine Quelle statt zwei, die driften.
+export function footprintAtRot(form, rotIdx, anchor) {
   const rots = shapeRotations(form);
   if (!rots.length) return null;
   const cells = rots[((rotIdx % rots.length) + rots.length) % rots.length];

@@ -1,5 +1,6 @@
 import { createRoot } from "react-dom/client";
 import { Autostich } from "./App.jsx";
+import { AppErrorBoundary } from "./ui/AppErrorBoundary.jsx"; // #health-check S3
 import { install as installErrorBuffer } from "./ui/errorBuffer.js"; // #396 Fehler-Ring-Puffer für den Melder
 import { maybeResetForEpoch, loadOptions } from "./game/storage.js"; // #reset: einmaliger Neustart-Reset (nur Preview/Test-Namensraum)
 import { activeTestViewport } from "./ui/testViewport.js"; // #400 Test-Viewport (nur Preview-Build)
@@ -99,5 +100,5 @@ if (testVp) {
   // once the condition above is statically false.
   import("./ui/TestViewportHarness.jsx").then((m) => m.mountTestViewportHarness(rootEl, testVp));
 } else {
-  createRoot(rootEl).render(<Autostich />);
+  createRoot(rootEl).render(<AppErrorBoundary><Autostich /></AppErrorBoundary>);
 }

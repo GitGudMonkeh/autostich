@@ -202,6 +202,10 @@ describe("#perf-meteor2 — Spawn-Takt (Turbo) und Größen-Deckel (spätes Spie
     // Sonst zöge ein übersprungener Meteor trotzdem seine Zufallszahlen — die Streuung der verbleibenden
     // Kometen würde sich mit dem Tempo verschieben, das Feld sähe bei Turbo anders aus.
     const body = src.slice(src.indexOf("function erupt("));
-    expect(body.indexOf("cometStride(")).toBeLessThan(body.indexOf("const d = Math.random()"));
+    /* #health-check G4: indexOf liefert -1, wenn der Aufruf FEHLT — und -1 < jeder Fundstelle liess
+       den Waechter gruen, obwohl die gesicherte Naht geloescht war. Erst Existenz, dann Reihenfolge. */
+    const stride = body.indexOf("cometStride(");
+    expect(stride, "cometStride() fehlt in erupt() — die Naht, die dieser Waechter sichert").toBeGreaterThan(-1);
+    expect(stride).toBeLessThan(body.indexOf("const d = Math.random()"));
   });
 });

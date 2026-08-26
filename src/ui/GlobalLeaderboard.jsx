@@ -173,7 +173,7 @@ export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, fr
                 <span className="flex-1 min-w-0">
                   <span className="flex items-baseline gap-2 min-w-0">
                     <span className="flex-1 truncate text-body-lg-5" style={{ color: mineRow ? "#5ab87a" : "#e8e8ea" }}>
-                      {r.name || "—"}{mineRow && <span className="opacity-60 text-body-5"> · du</span>}
+                      {r.name || "—"}{mineRow && <span className="opacity-60 text-body-5"> · {t("name.preview.you")}</span>}
                     </span>
                     <span className="ty-num font-bold shrink-0 text-body-3" style={{ color: "#d4a63a" }}>{fmtScore(r.score)}</span>
                   </span>

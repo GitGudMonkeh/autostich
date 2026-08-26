@@ -3,7 +3,7 @@ import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Re
 import {
   shapeRotations, enumeratePlacements, isValidFootprint, nextRotationFootprint,
   occupiedCells, precomputeArchitect, architectValueBonus, boardFactorMap, structureFactorMap, districtFactorMap,
-  rowOf, colOf, posOf, ROWS, COLS, N_POS, upgradeInfo,
+  rowOf, colOf, posOf, ROWS, COLS, N_POS, upgradeInfo, footprintAtRot, currentRotationIndex,
   HAEUSERZEILE_FACTOR, SPALTE_FACTOR, DIAGONALE_FACTOR, DISTRICT_BONUS, DISTRICT_CAP,
 } from "../game/architect.js";
 import { archFamily as familyDef } from "../i18n/labels.js"; // #sprache: Gebäudenamen zur Anzeigezeit (i18n) — archFamily ist der ARCHITEKT-Resolver (labels.familyDef löst Perk-Familien → null für Gebäude → leeres Angebot, #regression 1fa6778)
@@ -71,21 +71,6 @@ function ArchCollapse({ head, children, defaultOpen = false, className = "", sty
       {open && <div className="mt-1.5">{children}</div>}
     </div>
   );
-}
-
-// Footprint einer Form bei (anchor, rotIdx) — im Gitter, sonst null.
-function footprintAt(form, rotIdx, anchor) {
-  const rots = shapeRotations(form);
-  if (!rots.length) return null;
-  const cells = rots[((rotIdx % rots.length) + rots.length) % rots.length];
-  const ar = rowOf(anchor), ac = colOf(anchor);
-  const fp = [];
-  for (const [dr, dc] of cells) {
-    const r = ar + dr, c = ac + dc;
-    if (r < 0 || r >= ROWS || c < 0 || c >= COLS) return null;
-    fp.push(posOf(r, c));
-  }
-  return fp.sort((a, b) => a - b);
 }
 
 // Mini-Vorschau einer Form (kleines Raster, Kategorie-Farbe) — für Bauplan-Karten.
@@ -319,11 +304,8 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
 
   // ---- Geometrie-Helfer ----
   const anchorOf = (fp) => posOf(Math.min(...fp.map(rowOf)), Math.min(...fp.map(colOf)));
-  const currentRotOf = (b) => {
-    const form = familyDef(b.familyId).form, rots = shapeRotations(form), anchor = anchorOf(b.footprint), set = new Set(b.footprint);
-    for (let r = 0; r < rots.length; r++) { const fp = footprintAt(form, r, anchor); if (fp && fp.length === b.footprint.length && fp.every((p) => set.has(p))) return r; }
-    return 0;
-  };
+  // #health-check M4: eine Quelle statt einer Kopie — currentRotationIndex ist die Engine-Fassung derselben Suche.
+  const currentRotOf = (b) => currentRotationIndex(familyDef(b.familyId).form, b.footprint);
   const cellPos = (x, y) => { const el = document.elementFromPoint(x, y), c = el && el.closest ? el.closest("[data-arch-pos]") : null; return c ? Number(c.getAttribute("data-arch-pos")) : null; };
 
   // ---- Bauplan wählen → Vorschau platzieren (oder „kein Platz" → Gebäude entfernen anbieten) ----
@@ -486,7 +468,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
       let ar = rowOf(target) - grabRow, ac = colOf(target) - grabCol;
       ar = Math.max(-sMinR, Math.min(ar, ROWS - 1 - sMaxR));
       ac = Math.max(-sMinC, Math.min(ac, COLS - 1 - sMaxC));
-      return footprintAt(form, rot, posOf(ar, ac));
+      return footprintAtRot(form, rot, posOf(ar, ac));
     };
     const commit = (fp) => { if (b.id === PENDING_ID) setPending((p) => (p ? { ...p, footprint: fp } : p)); else onMove?.({ buildingId: b.id, footprint: fp }); };
     let lastKey = "∅"; // [#224.11] letzter gesnappter Fußabdruck → Re-Render/Delta nur bei Zielzellen-Wechsel
@@ -576,7 +558,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
     // #UI: Boost-Vorschau — dieselbe Formel wie archBoostPct (Struktur-Kombis Σ(f−1) + neu gegründete Formationen), aber
     // mit den Vorschau-Gebäuden. dBoost = Vorschau − aktuell → Live-Differenz des Gebäude-Boosts im Brett-Kopf.
     const sumStr = (fs) => (fs || []).reduce((s, pf) => s + ((pf.mult || 1) - 1), 0);
-    const pStructBonus = boardFactorMap(previewBuildings).reduce((t, f) => t + (f - 1), 0);
+    const pStructBonus = boardFactorMap(previewBuildings, fundBonus).reduce((t, f) => t + (f - 1), 0); // #health-check G2: gleiche Quelle wie die Baseline (Zeile ~171), sonst zeigt dBoost ein Phantom-Delta
     const pFormGain = Math.max(0, sumStr(previewForms) - sumStr(formationsNoArch));
     const previewBoost = Math.round((pStructBonus + pFormGain) * 100);
     return { dVal: val2 - sumValue, dForm: form2 - formCount, dBoost: previewBoost - archBoostPct, valid: dragPrev.valid };
@@ -845,7 +827,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                     {boost > 0 && <span className="absolute top-[1px] left-[3px] text-micro-2 font-extrabold" style={{ color: b ? "#fff" : "#3fb56a" }}>+{boost}</span>}
                     {/* Eis: Gletscher-Marker (Icon + Masse) bzw. Firn-Boden (dezenter ❄ + Masse) oben rechts. */}
                     {isGlacier && (
-                      <span className="absolute top-[1px] right-[2px] inline-flex items-center gap-[1px] text-micro-2 ty-num leading-none z-10" style={{ color: "#8be6ff", textShadow: "0 0 3px #5ec8f0" }} title={`Gletscher · Masse ${gMass}${fMass >= 1 ? ` · Reserve ${fMass}` : ""}`}>
+                      <span className="absolute top-[1px] right-[2px] inline-flex items-center gap-[1px] text-micro-2 ty-num leading-none z-10" style={{ color: "#8be6ff", textShadow: "0 0 3px #5ec8f0" }} title={fMass >= 1 ? t("arch.glacier.reserve", { mass: gMass, firn: fMass }) : t("cardgrid.glacierMass.title", { mass: gMass })}>
                         <FactionIcon type="ice" size={9} />
                         {gMass}
                       </span>

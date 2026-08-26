@@ -70,7 +70,7 @@ export function PrivacyModal({ onClose }) {
   // z-50: liegt bewusst ÜBER Optionen (z-30) und Namens-Dialog (z-40) — der Hinweis wird aus beiden
   // heraus geöffnet und muss darüber landen, nicht dahinter verschwinden.
   return overlayPortal((
-    <div onClick={onClose} className="fixed inset-0 overlay-root z-50 flex items-center justify-center p-4"
+    <div onClick={onClose} role="dialog" aria-modal="true" aria-label={t("privacy.title")} className="fixed inset-0 overlay-root z-50 flex items-center justify-center p-4"
       /* #menu-rework M9, Vokabular: `--sf-scrim` IST `rgba(12, 12, 16, .8)` und damit wertgleich zu
          `#0c0c10cc` — der Ueberzug-Wert, aus dem der Schritt abgeleitet wurde. Reine Umstellung; der
          Hinweis hat keinen freigegebenen Entwurf und aendert sein Aussehen hier nicht (H-b). */

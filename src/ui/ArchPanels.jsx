@@ -57,21 +57,27 @@ export function ArchToggle({ on, onToggle }) {
 /* Gebäude-Liste „🏗 Deine Gebäude": antippen lässt den Gebäude-Rahmen am Brett cyan leuchten (inspectBid) — und
    umgekehrt markiert das Antippen einer Karte im Gebäude den Eintrag. Geteilt von FormationPhase & ChronikOverview.
    `onInspect(nextBid)` bekommt die neue Auswahl (oder null); der Aufrufer blendet dabei die Gebäude ein (showArch). */
+/* Beide Schalen auf Modulebene, nicht im Render-Koerper: eine dort definierte Komponente ist fuer
+   React bei jedem Render ein NEUER Typ — der ganze Listen-Teilbaum wurde unmounted/remounted, Fokus
+   und Transitions gingen bei jedem Parent-Render verloren (#health-check G2). */
+function SchaleBare({ children }) { return <div>{children}</div>; }
+function SchaleFramed({ count, children }) {
+  return (
+    <div className="rounded-lg p-2.5" style={{ background: "#17171c", border: "1px solid #5a8ade" }}>
+      <div className="text-meta-3 uppercase tracking-wide font-bold mb-0.5" style={{ color: "#6f9bec" }}>🏗 {t("arch.yourBuildings", { n: count })}</div>
+      {children}
+    </div>
+  );
+}
+
 export function ArchBuildingList({ buildings = [], cover = null, inspectBid = null, onInspect, bare = false }) {
   if (!buildings.length) return null;
   /* `bare` lässt Kasten und Überschrift weg: im linken Flügel der Level-up-Karte (#lv-gebaeude) trägt der
      Ausklapp-Reiter beides bereits, ein eigener Rahmen darin wäre ein Panel im Panel. Die EINTRÄGE bleiben
      identisch — die Liste ist damit weiter eine Fassung, keine zweite. */
-  const Schale = bare
-    ? ({ children }) => <div>{children}</div>
-    : ({ children }) => (
-      <div className="rounded-lg p-2.5" style={{ background: "#17171c", border: "1px solid #5a8ade" }}>
-        <div className="text-meta-3 uppercase tracking-wide font-bold mb-0.5" style={{ color: "#6f9bec" }}>🏗 {t("arch.yourBuildings", { n: buildings.length })}</div>
-        {children}
-      </div>
-    );
+  const Schale = bare ? SchaleBare : SchaleFramed;
   return (
-    <Schale>
+    <Schale count={buildings.length}>
       <div className="text-meta-1 opacity-45 mb-1.5">{t("archpanels.tapHint")}</div>
       <div className="grid gap-1">
         {buildings.map((b) => {

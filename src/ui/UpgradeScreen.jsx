@@ -147,6 +147,7 @@ function NodePill({ node, st, accent, selected, onSelect }) {
   const markColor = edgeColor;
   return (
     <span title={`${node.detail}`} onClick={() => onSelect(node.id)} role="button" aria-pressed={selected}
+      tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSelect(node.id); } }}
       className={`as-edge-card as-edge-thin${stateCls} flex-1 min-w-0 flex flex-col items-center justify-center text-center rounded-lg px-1.5 py-2 cursor-pointer transition-transform hover:-translate-y-px`}
       style={{ "--c": edgeColor }}>
       <PillBody label={node.label} mark={mark} titleColor={isOwned ? "#e8e8ea" : isBuy ? "#f0e8d0" : "#c8c8d0"} markColor={markColor} />

@@ -87,7 +87,6 @@ export const DECISION_SCHEDULE = buildSchedule(MAX_CYCLES);
 // Für die 2.-Perk-Phase-Boni (Progression M4/M5): perkPhaseAt(schedule, c) === LEG_PERK2_PHASE.
 export const perkPhaseAt = (schedule, c) => (schedule[c] === "perk" ? schedule.slice(0, c + 1).filter((d) => d === "perk").length : 0);
 export const LEG_PERK2_PHASE = envNum("PROG_LEG_PERK2_PHASE", 2); // die „2. Perk-Phase" (Runde 6 im 50er-Plan) [TUNING]
-export const LEG_OFFER_PER_ARCH_BONUS = envNum("PROG_LEG_OFFER_PER_ARCH_BONUS", 1); // M2: +N R29-Kandidaten je Archetyp [TUNING]
 // Erste Skill-Runde (1-indexierter Durchlauf), driftfest aus dem festen Plan abgeleitet — für UI-Texte, die dem
 // Spieler sagen, ab wann Skills wählbar sind. Ändert sich der Plan, wandert die Zahl automatisch mit.
 export const FIRST_SKILL_CYCLE = DECISION_SCHEDULE.indexOf("skill") + 1;
@@ -97,7 +96,6 @@ export const LEG_PHASE_CYCLE = DECISION_SCHEDULE.indexOf("legendary") + 1;
 
 // (#229: Shop-Münzökonomie + Shop-Angebots-Konstanten entfernt — der Shop ist weg, es gibt keine Münzen/Angebote mehr.)
 // Anzeige-Labels der (ex-Shop-)Kategorien — von der Chronik-Ziel-Beschriftung noch referenziert.
-export const SHOP_CATEGORY_LABELS = { cards: "Karten", anchors: "Anker", planning: "Planung" }; // #195: „formations" entfernt (#179 zu Perks migriert)
 
 // Shop-Positionsanker (Shop-Spec §8) — hängen an der Deckposition (0–39), nicht an card.id. [TUNING]
 // (#189: ANCHOR_POWER_VALUE/ANCHOR_SCORE/ANCHOR_CRIT_CHANCE entfernt — die Anker-FAMILIEN in shopFamilies.js
