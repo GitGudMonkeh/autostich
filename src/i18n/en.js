@@ -1395,6 +1395,7 @@ export default {
   "unlock.games.one": "Play one run",
   "unlock.streak": "Reach a streak of {n}",
   "unlock.score": "Reach a score of {n}",
+  "unlock.completedRun": "Finish a run all the way through",
   "unlock.noRerollRun": "Finish a run without using a single reroll",
   "unlock.monoArchetypeRun": "Finish {n} runs with {archetype} skills only",
   "unlock.allMonoArchetypes": "Unlock all four element decks ({n} mono runs each)",

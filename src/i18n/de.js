@@ -1448,6 +1448,7 @@ export default {
   "unlock.games.one": "Spiele einen Lauf",
   "unlock.streak": "Erreiche eine Serie von {n}",
   "unlock.score": "Erreiche Score {n}",
+  "unlock.completedRun": "Schließe einen Lauf vollständig ab",
   "unlock.noRerollRun": "Schließe einen Lauf ab, ohne einen Reroll zu benutzen",
   "unlock.monoArchetypeRun": "Schließe {n} Läufe nur mit {archetype}-Skills ab",
   "unlock.allMonoArchetypes": "Schalte alle vier Element-Decks frei (je {n} Mono-Läufe)",

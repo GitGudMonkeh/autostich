@@ -44,20 +44,24 @@ describe("cosmetics — Katalog", () => {
       expect(unlockProgress(def, prof({ onboarding: 6 })).done).toBe(true);
     }
   });
-  /* #deck-insertcoin: an der „games“-Bedingung hängen jetzt ZWEI Dinge — die Hirsch-Leiter (10/20/30) und
-     das Willkommensgeschenk bei 1. Die Erwartung bleibt eine harte Liste statt eines `contains`, denn genau
-     das ist ihr Zweck: eine neue games-Schwelle soll auffallen, weil sie sich mit der Leiter überschneiden
-     könnte. Insert Coin bei 1 liegt unterhalb der ersten Hirsch-Stufe, also gehen nie zwei auf einmal auf. */
-  it("games-Bedingung: Hirsch-Stufen (10/20/30) plus das Willkommens-Deck (1)", () => {
+  /* An der „games“-Bedingung hängt die Hirsch-Leiter (10/20/30). Die Erwartung bleibt eine HARTE Liste
+     statt eines `contains`, denn genau das ist ihr Zweck: eine neue games-Schwelle soll auffallen, weil
+     sie sich mit der Leiter überschneiden könnte.
+
+     NACHGEZOGEN — „Insert Coin" stand hier bis dahin mit `games: 1` und ist ausgezogen: `profile.games`
+     zählt jeden BEGONNENEN Lauf, Abbrüche eingeschlossen, das Deck ging also nach einem Abbruch auf
+     (gemeldet). Es hängt jetzt an `completedRun`; die Prüfungen dazu stehen weiter unten in einer
+     eigenen Gruppe. Die Aussage dieser Gruppe ist unverändert — sie ist nur wieder allein über die
+     Leiter, für die sie geschrieben wurde. */
+  it("games-Bedingung: nur die Hirsch-Stufen (10/20/30)", () => {
     const deckGames = Object.values(DECK_DEFS).filter((d) => d.unlock?.kind === "games").map((d) => d.id);
     const bfGames   = Object.values(BATTLEFIELD_DEFS).filter((d) => d.unlock?.kind === "games").map((d) => d.id);
-    expect(deckGames).toEqual(["deck_hirsch1", "deck_hirsch2", "deck_hirsch3", "deck_insertcoin"]);
-    expect(bfGames).toEqual(["bf_hirsch1", "bf_hirsch2", "bf_hirsch3", "bf_insertcoin"]);
+    expect(deckGames).toEqual(["deck_hirsch1", "deck_hirsch2", "deck_hirsch3"]);
+    expect(bfGames).toEqual(["bf_hirsch1", "bf_hirsch2", "bf_hirsch3"]);
     // korrekte Schwellen
     expect(DECK_DEFS.deck_hirsch1.unlock.n).toBe(10);
     expect(DECK_DEFS.deck_hirsch2.unlock.n).toBe(20);
     expect(DECK_DEFS.deck_hirsch3.unlock.n).toBe(30);
-    expect(DECK_DEFS.deck_insertcoin.unlock.n).toBe(1);
     // keine Schwelle doppelt: sonst gingen zwei Decks gleichzeitig auf, die Meldung zeigt aber nur eins
     const ns = deckGames.map((id) => DECK_DEFS[id].unlock.n);
     expect(new Set(ns).size).toBe(ns.length);
@@ -146,6 +150,39 @@ describe("cosmetics — isUnlocked", () => {
     // Sprachprüfung A10: der Modus heißt „Ranglisten-Lauf" (früher „Meisterrang") — storage.js führt den alten
     // record-Key `ranked === "meister"` nur noch aus Kompatibilität.
     expect(unlockLabel(unlockProgress(DECK_DEFS.deck_sparfuchs, prof()))).toMatch(/Ranglisten.*Reroll/i);
+  });
+});
+
+describe("#deck-insertcoin — das Willkommens-Deck hängt am ABGESCHLOSSENEN Lauf", () => {
+  /* Gemeldet: „Insert Coin" ging auch nach einem ABGEBROCHENEN Lauf auf. Ursache war die Bedingung
+     `{ kind: "games", n: 1 }` — und `profile.games` zählt jeden begonnenen Lauf, Abbrüche
+     eingeschlossen. Der Merker dafür existierte längst und sagt es in storage.js selbst:
+     „Bewusst NICHT `games > 0`: das zählt auch Abbrüche, und wer nach zwei Stichen rausgeht, hat
+     nichts gesehen." Genau dieser Merker (`hadCompletedRun`) trägt die Bedingung jetzt.
+
+     Geprüft wird der Fall, der den Fehler ausmacht: EIN gespielter Lauf, aber keiner abgeschlossen. */
+  const abgebrochen = prof({ games: 1, hadCompletedRun: false });
+  const abgeschlossen = prof({ games: 1, hadCompletedRun: true });
+
+  it("ein abgebrochener Lauf schaltet weder Deck noch Spielfeld frei", () => {
+    expect(isUnlocked(DECK_DEFS.deck_insertcoin, abgebrochen)).toBe(false);
+    expect(isUnlocked(BATTLEFIELD_DEFS.bf_insertcoin, abgebrochen)).toBe(false);
+  });
+
+  it("ein abgeschlossener Lauf schaltet beide frei — Deck und Spielfeld gehen gemeinsam auf", () => {
+    expect(isUnlocked(DECK_DEFS.deck_insertcoin, abgeschlossen)).toBe(true);
+    expect(isUnlocked(BATTLEFIELD_DEFS.bf_insertcoin, abgeschlossen)).toBe(true);
+  });
+
+  it("der Fortschritt zeigt 0/1 bzw. 1/1 — kein Zähler über Läufe", () => {
+    expect(unlockProgress(DECK_DEFS.deck_insertcoin, abgebrochen)).toMatchObject({ done: false, cur: 0, target: 1 });
+    expect(unlockProgress(DECK_DEFS.deck_insertcoin, abgeschlossen)).toMatchObject({ done: true, cur: 1, target: 1 });
+  });
+
+  it("die Bedingung hat in jeder fertigen Sprache einen Klartext", () => {
+    // Ohne Katalogtext stünde in der Kollektion eine leere Zeile statt der Bedingung.
+    setLocale(SOURCE_LOCALE);
+    expect(unlockLabel(unlockProgress(DECK_DEFS.deck_insertcoin, abgebrochen))).not.toBe("");
   });
 });
 
