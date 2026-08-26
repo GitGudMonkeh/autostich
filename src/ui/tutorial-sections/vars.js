@@ -12,9 +12,9 @@
    SPRACHE und kann deshalb nicht in einer Modulkonstante stehen — das steht in TutorialSections.jsx
    als `localeVars(locale)`. */
 import * as C from "../../game/constants.js";
-import { SEGMENT_SIZE, WECHSEL_MIN_DIFF, MAX_TREPPE_STEP } from "../../game/formations.js";
-import { ENERGY_FLOOR, COVER_FLOOR, NODES } from "../../game/progression.js";
-import { ARCHITECT_FAMILIES, tierNum, DISTRICT_BONUS, DISTRICT_CAP, ROWS } from "../../game/architect.js";
+import { SEGMENT_SIZE, WECHSEL_MIN_DIFF, MAX_TREPPE_STEP, ESKALATION_STEP, WIED_STEP } from "../../game/formations.js";
+import { ENERGY_FLOOR, COVER_FLOOR, NODES, SP_PER_RUN, SP_LOYALTY_EVERY, SP_LOYALTY_SP, WELCOME_DP } from "../../game/progression.js";
+import { ARCHITECT_FAMILIES, tierNum, DISTRICT_BONUS, DISTRICT_CAP, ROWS, HAEUSERZEILE_FACTOR, SPALTE_FACTOR } from "../../game/architect.js";
 import { FAMILY_DEFS } from "../../game/families.js";
 import { THRESHOLDS, TIER_MULT, BURST_AT, WIN_MASS, EWIGER_FROST, DECLINE_MIN_SKILLS } from "../../game/glacier.js";
 
@@ -81,6 +81,10 @@ export const VARS = {
   // Eis
   massBurst: BURST_AT, massT1: THRESHOLDS[0], massT2: THRESHOLDS[1], massT3: THRESHOLDS[2],
   iceWin: WIN_MASS, iceTick: EWIGER_FROST, iceDeclineMin: DECLINE_MIN_SKILLS,
+  // Nach dem Lauf
+  spPerRun: SP_PER_RUN, loyaltyEvery: SP_LOYALTY_EVERY, loyaltySp: SP_LOYALTY_SP, welcomeDp: WELCOME_DP,
+  // Fortgeschritten: die Vorsprungs-Schwellen der Gluehenden Klinge
+  glowM2: C.GLOWING_T2_MARGIN, glowM3: C.GLOWING_T3_MARGIN,
   suits: C.SUIT_ORDER.length, rankMin: C.RANKS[0], rankMax: C.RANKS[C.RANKS.length - 1],
   perksOffered: C.PERKS_OFFERED, skillsOffered: C.SKILLS_OFFERED,
   ...countSchedule(),
@@ -96,4 +100,11 @@ export const MEASURE_VARS = {
   critMult: C.CRIT_BASE_MULT.toFixed(2),
   critMultPerSkill: C.LIGHTNING_CRIT_MULT_PER_SKILL.toFixed(1),
   wucht1: TIER_MULT[1].toFixed(1), wucht2: TIER_MULT[2].toFixed(1), wucht3: TIER_MULT[3].toFixed(1),
+  /* Die vier Faktoren der Glut-Lektion. Der verstärkte ist GERECHNET:
+     1 + (Struktur − 1) × FIRE_STRUCT_DIVIDEND_AMP. Wandert das Balancing, wandert der Text mit. */
+  rowFactor: "×" + HAEUSERZEILE_FACTOR.toFixed(2),
+  colFactor: "×" + SPALTE_FACTOR.toFixed(2),
+  rowAmp: "×" + (1 + (HAEUSERZEILE_FACTOR - 1) * C.FIRE_STRUCT_DIVIDEND_AMP).toFixed(2),
+  colAmp: "×" + (1 + (SPALTE_FACTOR - 1) * C.FIRE_STRUCT_DIVIDEND_AMP).toFixed(2),
+  eskStep: ESKALATION_STEP.toFixed(2), wiedStep: WIED_STEP.toFixed(2),
 };

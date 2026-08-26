@@ -247,3 +247,54 @@ constants but one plus one: `LIGHTNING_CRIT_BASE` is the activation socket at 0,
 `LIGHTNING_CRIT_PER_SKILL` is 0,08. The draft's 13 was right and is now computed rather than typed.
 The ionisation cap likewise: `ION_CRIT_STACK_CAP` 12 × `ION_CRIT_PP_PER_STACK` 0,015 = 18 %.
 The 73 perk families are counted from `FAMILY_DEFS`.
+
+
+---
+
+# Nach dem Lauf, Fortgeschritten — and the full walk
+
+| Section | Lesson | Content px |
+| --- | --- | ---: |
+| danach | Der Endscreen | 615 |
+| danach | Was ein Lauf einbringt | 525 |
+| danach | Der Upgrade-Baum | 613 |
+| danach | Der Ranglisten-Lauf | 372 |
+| fortgeschritten | Lange Formationen zahlen mehr | 696 |
+| fortgeschritten | Segmentgrenzen öffnen | 749 |
+| fortgeschritten | Glut auf Geometrie | 559 |
+| fortgeschritten | Glühende Klinge und Blitz | 592 |
+
+`danach/rangliste` was written as `voll` and computes 389 px — the reverse rule rejected it for the
+second time in this task. Marked `kurz`.
+
+## The complete walk
+
+All ten topics, all 42 lessons, opened in order in the production build at 390 × 844 and checked for
+six things at once: the literal string `undefined` in any beat, a raw `tut.` key showing as text, an
+unresolved `{placeholder}`, a tap target under 44 px, horizontal overflow, and any entry on the page
+error or unhandled-rejection listeners.
+
+**42 lessons walked, no problems.**
+
+## Model against measurement, all 42
+
+None of the 42 is under-estimated by the model, none exceeds its budget, and the largest
+over-estimate is **+66 px**. The catalog holds 10 sections, 42 lessons and 235 keys, each present in
+both catalogs.
+
+## One thing the length lesson had to correct
+
+The approved draft showed formation factors for hands of up to eight cards. Measured against the
+real `computeFormations`, a formation **cannot exceed a segment**: at six cards the last card starts
+a new segment and its factor falls back to ×1,00. The eight-card figures were only reachable with an
+open boundary, which is the *next* lesson's subject. The slider therefore stops at `SEGMENT_SIZE`,
+and the lesson says why — which hands straight into the boundary lesson rather than contradicting it.
+
+The four hands behind that slider each produce exactly one formation type, verified with the real
+detector rather than assumed. The segment lesson's fifteen-card hand reproduces the draft's numbers
+exactly: ×1,75 closed, ×2,55 at Segmentarbeit III, ×3,19 at IV, and only a Farbblock throughout.
+
+## Terminology the existing guards corrected, this round
+
+- *Rangliste* is **ranked / ranking** in English, never "leaderboard".
+- *Stichpunkte* are **Trick Points**, never "stitch points".

@@ -9,6 +9,8 @@ import { Satz, Block, Merk, Regeln, Tabelle, Tip, PROBES } from "./beats.jsx";
 import * as C from "../../game/constants.js";
 import { VARS } from "./vars.js";
 import * as GL from "../../game/glacier.js";
+import * as AR from "../../game/architect.js";
+import * as FM from "../../game/formations.js";
 
 /* Die Platzhalter liegen in vars.js, weil der Wächter dieselbe Liste braucht — siehe dort. */
 const localeVars = (locale) => ({
@@ -19,6 +21,12 @@ const localeVars = (locale) => ({
   wucht1: fmtNum(GL.TIER_MULT[1].toFixed(1), locale),
   wucht2: fmtNum(GL.TIER_MULT[2].toFixed(1), locale),
   wucht3: fmtNum(GL.TIER_MULT[3].toFixed(1), locale),
+  rowFactor: "×" + fmtNum(AR.HAEUSERZEILE_FACTOR.toFixed(2), locale),
+  colFactor: "×" + fmtNum(AR.SPALTE_FACTOR.toFixed(2), locale),
+  rowAmp: "×" + fmtNum((1 + (AR.HAEUSERZEILE_FACTOR - 1) * C.FIRE_STRUCT_DIVIDEND_AMP).toFixed(2), locale),
+  colAmp: "×" + fmtNum((1 + (AR.SPALTE_FACTOR - 1) * C.FIRE_STRUCT_DIVIDEND_AMP).toFixed(2), locale),
+  eskStep: fmtNum(FM.ESKALATION_STEP.toFixed(2), locale),
+  wiedStep: fmtNum(FM.WIED_STEP.toFixed(2), locale),
 });
 // `offered` bedeutet je nach Lektion etwas anderes — Perk-Angebot oder Skill-Angebot.
 /* `none` hat nur, wer einen Leerzustand kennt. Die Aufstellungs-Runden kennen ihn: eine Reihe ohne
@@ -174,6 +182,8 @@ export function TutorialSections({ onClose, onOpenGlossary = null, onOpenGuide =
           pureOnly: t("tut.d.pureOnly"), mixed: t("tut.d.mixed"),
           none: t("tut.d.none"), twoThirds: t("tut.d.twoThirds"), all: t("tut.d.all"),
           block: t("tut.d.block"), kreuz: t("tut.d.kreuz"), linie: t("tut.d.linie"), flaeche: t("tut.d.flaeche"),
+          stitchPoints: t("tut.d.stitchPoints"), branchGen: t("tut.d.branchGen"), branchDeck: t("tut.d.branchDeck"),
+          closed: t("tut.d.closed"), segIII: t("tut.d.segIII"), segIV: t("tut.d.segIV"), sum: t("tut.d.sum"),
           zeile: t("tut.d.zeile"), spalte: t("tut.d.spalte"), diag: t("tut.d.diag"), distrikt: t("tut.d.distrikt"),
           win: t("tut.d.win"), tie: t("tut.d.tie"), loss: t("tut.d.loss") }} />;
     });

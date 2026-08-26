@@ -168,6 +168,13 @@ eine Zahl zurückgibt. Heute folgenlos, aber tot.
   **784 px**. Fortgeschritten hat damit vier Lektionen, der Entwurf 42.
 - V1–V4 bei 390 × 844 gemessen, Belege im Workstream-Ordner
 
+**Stand: erfüllt.** Zehn Sektionen, 42 Lektionen, 235 Schlüssel in beiden Katalogen. Alle 42 im
+Produktionsbuild durchlaufen und geprüft; das Höhenmodell liegt bei keiner unter der Messung.
+Belege: `evidence/measure.md`.
+
+**Owner-Mandat, diese Runde:** „wenn du es wie in dem artifact umsetzt brauchst du nicht fragen".
+Der freigegebene Entwurf ist damit die Abnahme; Rückfragen nur, wo er von der Spiellogik abweicht.
+
 ## Open questions
 
 **1. Das Höhenbudget — ENTSCHIEDEN (C).** Steht unter *Approved architecture*. Die drei

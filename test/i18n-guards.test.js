@@ -85,6 +85,9 @@ describe("i18n · Katalog-Parität", () => {
     "tut.pflanze.wasist.1.label",
     "tut.eis.wasist.1.label",
     "tut.d.block",                  // Gletscherform „Block" — in beiden Sprachen dasselbe Wort
+    "tut.d.branchDeck",             // Baumzweig „Decks" — Deck bleibt Deck (§3.1)
+    "tut.d.segIII",                 // Perk-Name Segmentarbeit, Eigenname
+    "tut.d.segIV",
     "build.perks.head",      // „Perks — {count}" — Perk bleibt Perk (Begriffstabelle §3.1)
     "build.skills.head",     // dito für Skill
     "start.tile.upgrades",   // „Upgrades" ist im Deutschen der etablierte Begriff (§3.5)

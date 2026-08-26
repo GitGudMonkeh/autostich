@@ -263,10 +263,52 @@ export const SECTIONS = [
   {
     id: "danach",
     lessons: [
-      { id: "endscreen", beats: [{ kind: "satz" }, { kind: "tip" }] },
-      { id: "punkte",    beats: [{ kind: "satz" }, { kind: "tip" }] },
-      { id: "baum",      beats: [{ kind: "satz" }, { kind: "tip" }] },
-      { id: "rangliste", beats: [{ kind: "satz" }, { kind: "tip" }] },
+      { id: "endscreen", art: "voll", beats: [
+        { kind: "block" },
+        { kind: "probierfeld", probe: "gomock" },
+        { kind: "merk" },
+        { kind: "tip" }] },
+      { id: "punkte", art: "voll", beats: [
+        { kind: "block" },
+        { kind: "probierfeld", probe: "meilenstein" },
+        { kind: "merk" },
+        { kind: "tip" }] },
+      { id: "baum", art: "voll", beats: [
+        { kind: "block" },
+        { kind: "probierfeld", probe: "baum" },
+        { kind: "tip" }] },
+      { id: "rangliste", art: "kurz", beats: [
+        { kind: "block" },
+        { kind: "block", label: true },
+        { kind: "tip" }] },
+    ],
+  },
+  {
+    /* Die zehnte Sektion, vom Owner nachgefordert: was man tun kann, wenn die Grundlagen sitzen.
+       VIER Lektionen, seit „Zwei Builds" geteilt wurde — die Lektion maß 1.360 px gegen ein
+       Budget von 960, und beide Builds waren ausdrücklich gewollt. */
+    id: "fortgeschritten",
+    lessons: [
+      { id: "laenge", art: "voll", beats: [
+        { kind: "block" },
+        { kind: "probierfeld", probe: "laenge" },
+        { kind: "merk" },
+        { kind: "tip" }] },
+      { id: "segmente", art: "voll", beats: [
+        { kind: "block" },
+        { kind: "probierfeld", probe: "segmente" },
+        { kind: "merk" },
+        { kind: "tip" }] },
+      { id: "glut", art: "voll", beats: [
+        { kind: "block" },
+        { kind: "block", label: true },
+        { kind: "block", label: true },
+        { kind: "tip" }] },
+      { id: "klinge", art: "voll", beats: [
+        { kind: "block", label: true },
+        { kind: "block", label: true },
+        { kind: "merk" },
+        { kind: "tip" }] },
     ],
   },
 ];
@@ -401,7 +443,10 @@ const PROBE_PX = { formation: 215, streak: 150, score: 195, board: 215,
      gruenfeld 315 · gletscher 252 · gletscherfeld 358. Zum VIERTEN Mal in diesem Task war ein
      neues Feld hier zuerst nicht eingetragen und fiel auf PROBE_MAX; wer ein Probierfeld baut,
      trägt es HIER ein, sonst misst das Budget etwas anderes als der Leser sieht. */
-  feuerkarten: 290, hitze: 170, pflanzkarte: 325, gruenfeld: 335, gletscher: 270, gletscherfeld: 375 };
+  feuerkarten: 290, hitze: 170, pflanzkarte: 325, gruenfeld: 335, gletscher: 270, gletscherfeld: 375,
+  // Nach dem Lauf und Fortgeschritten, gemessen: gomock 299 · meilenstein 169 · baum 352 ·
+  // laenge 299 · segmente 311.
+  gomock: 320, meilenstein: 190, baum: 370, laenge: 320, segmente: 330 };
 const PROBE_MAX = Math.max(...Object.values(PROBE_PX));
 
 const lines = (text) => Math.max(1, Math.ceil(String(text || "").length / CHARS_PER_LINE));
