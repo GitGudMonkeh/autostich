@@ -372,7 +372,8 @@ Numbered `S*` as in the worker briefing. The `Z*` numbers are the same hazards a
       the eight surfaces, the numbers, and **what it did not cover** (`task-lifecycle.md` §7)
 - [x] S6 answered by the owner at the gate, and written down (A8)
 - [ ] Every fit warning answered: layout takes it, or the string gets a stated limit for the full order
-- [ ] The branch is written into `docs/design-sprache.md`, in German, in that document's template
+- [x] The branch is written into `docs/design-sprache.md` as §12, in German, in that document's
+      template, with a changelog row in §10
 - [x] No rule fires outside `:lang(zh-Hans)` — verified by measurement, not assumed: on one DOM,
       switching only the lang attribute, tracking 0 against 1.3px and the ladder 13/12 against 11/9
 - [~] The wording baseline: it MOVED once, deliberately and with the owner's approval, for the seven
