@@ -3,7 +3,7 @@ import { Autostich } from "./App.jsx";
 import { install as installErrorBuffer } from "./ui/errorBuffer.js"; // #396 Fehler-Ring-Puffer für den Melder
 import { maybeResetForEpoch, loadOptions } from "./game/storage.js"; // #reset: einmaliger Neustart-Reset (nur Preview/Test-Namensraum)
 import { activeTestViewport } from "./ui/testViewport.js"; // #400 Test-Viewport (nur Preview-Build)
-import { setPreviewLocale } from "./i18n/index.js"; // #zh-hans Vorschau-Sprache (nur Preview-Build)
+import { setLocale, getLocale, setPreviewLocale } from "./i18n/index.js"; // #zh-hans Sprache vor dem Mount
 import "./index.css";
 
 // PWA: Das Install-Prompt-Event (`beforeinstallprompt`) kann VOR dem React-Mount feuern → früh einfangen und global
@@ -40,6 +40,20 @@ if (typeof window !== "undefined") {
   }
 }
 
+/* #zh-hans S1 — die Sprache steht VOR dem Mount.
+
+   `index.html` kann nur eine feste Sprache behaupten; welche gilt, weiss erst das Profil. Bisher
+   stand dort `de`, waehrend DEFAULT_LOCALE `en` ist, und `App.jsx` hat das Attribut erst in einem
+   Effekt NACH dem Mount richtiggestellt. Der eine Frame dazwischen behauptete also die falsche
+   Sprache — fuer Chinesisch heisst das, dass ein System-Fallback dort japanische Glyphenformen
+   zeichnen kann, weil `lang` die Schriftwahl mitentscheidet.
+
+   Hier wird derselbe Weg gegangen wie in der App, nicht ein zweiter: `loadOptions()` und
+   `setLocale()`, dieselben Funktionen, keine zweite Lesart des Speichers. */
+if (typeof document !== "undefined") {
+  setLocale(loadOptions().lang || undefined);
+}
+
 /* #zh-hans Vorschau-Sprache — die zweite Boot-Entscheidung, und sie steht aus demselben Grund
    hier ausgeschrieben wie das Viewport-Tor darunter: Vite ersetzt `VITE_PREVIEW` beim Bauen,
    also faltet sich der ganze Block in einem `main`-Build weg.
@@ -55,6 +69,11 @@ if (typeof window !== "undefined") {
 if (import.meta.env.VITE_PREVIEW === "1" && typeof window !== "undefined") {
   const lang = new URLSearchParams(window.location.search).get("lang");
   if (lang) setPreviewLocale(lang);
+}
+
+/* Erst jetzt stempeln, damit das Pin der Vorschau gewinnt und nicht ueberschrieben wird. */
+if (typeof document !== "undefined") {
+  try { document.documentElement.lang = getLocale(); } catch (e) { /* nie kritisch */ }
 }
 
 const rootEl = document.getElementById("root");
