@@ -1,0 +1,124 @@
+{
+  "cells": [
+    {
+      "id": "1280x720/de",
+      "reached": true,
+      "size": 88,
+      "zoom": 0.8516,
+      "capEm": 0.71875,
+      "baseline": 106.53,
+      "capTop": 52.67,
+      "column": {
+        "top": 52.78,
+        "bottom": 106.53,
+        "w": 5.53,
+        "h": 53.75
+      },
+      "flushTop": 0.12,
+      "flushBottom": 0,
+      "cells": 8,
+      "hot": 3,
+      "quietFill": {
+        "fill": "rgb(143, 15, 42)",
+        "fillOpacity": "0.28",
+        "strokeOpacity": "0.66"
+      },
+      "wordmark": {
+        "layoutW": 630,
+        "cssW": 535.92,
+        "text": "AUTOSTCH"
+      },
+      "restored": 0
+    },
+    {
+      "id": "1920x1080/de",
+      "reached": true,
+      "size": 88,
+      "zoom": 1.0019,
+      "capEm": 0.71875,
+      "baseline": 221.45,
+      "capTop": 158.09,
+      "column": {
+        "top": 158.2,
+        "bottom": 221.45,
+        "w": 6.5,
+        "h": 63.25
+      },
+      "flushTop": 0.12,
+      "flushBottom": 0,
+      "cells": 8,
+      "hot": 3,
+      "quietFill": {
+        "fill": "rgb(143, 15, 42)",
+        "fillOpacity": "0.28",
+        "strokeOpacity": "0.66"
+      },
+      "wordmark": {
+        "layoutW": 631,
+        "cssW": 630.5,
+        "text": "AUTOSTCH"
+      },
+      "restored": 0
+    },
+    {
+      "id": "1280x720/en",
+      "reached": true,
+      "size": 88,
+      "zoom": 0.8516,
+      "capEm": 0.71875,
+      "baseline": 106.53,
+      "capTop": 52.67,
+      "column": {
+        "top": 52.78,
+        "bottom": 106.53,
+        "w": 5.53,
+        "h": 53.75
+      },
+      "flushTop": 0.12,
+      "flushBottom": 0,
+      "cells": 8,
+      "hot": 3,
+      "quietFill": {
+        "fill": "rgb(143, 15, 42)",
+        "fillOpacity": "0.28",
+        "strokeOpacity": "0.66"
+      },
+      "wordmark": {
+        "layoutW": 626,
+        "cssW": 532.03,
+        "text": "AUTOTRCK"
+      },
+      "restored": 0
+    },
+    {
+      "id": "1920x1080/en",
+      "reached": true,
+      "size": 88,
+      "zoom": 1.0019,
+      "capEm": 0.71875,
+      "baseline": 221.45,
+      "capTop": 158.09,
+      "column": {
+        "top": 158.2,
+        "bottom": 221.45,
+        "w": 6.5,
+        "h": 63.25
+      },
+      "flushTop": 0.12,
+      "flushBottom": 0,
+      "cells": 8,
+      "hot": 3,
+      "quietFill": {
+        "fill": "rgb(143, 15, 42)",
+        "fillOpacity": "0.28",
+        "strokeOpacity": "0.66"
+      },
+      "wordmark": {
+        "layoutW": 626,
+        "cssW": 625.94,
+        "text": "AUTOTRCK"
+      },
+      "restored": 0
+    }
+  ]
+}

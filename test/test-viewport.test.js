@@ -372,9 +372,25 @@ describe("#400 · das Gate schaltet die Zeile wirklich", () => {
     expect(s).not.toContain("FPS-Zähler");
   });
 
-  it("die vier Sektionen des Overlays bleiben unberührt (#395)", () => {
-    // Die neue Zeile sitzt IN der Grafik-Sektion. Käme sie daneben zu liegen, zählte hier eine fünfte.
+  /* #optionen-redesign kehrt die Zuordnung dieses Tests ABSICHTLICH um, und das ist der Grund, warum
+     er nicht einfach von 4 auf 5 gezählt wird.
+
+     Vorher saßen die zwei Messzeilen IN „Grafik & Leistung", gleichrangig zwischen Spieler-Optionen,
+     und der Test hielt genau das fest. Der freigegebene Entwurf nimmt sie aus dem Spieler-Screen:
+     eigene Sektion, ganz am Ende. Was der Test jetzt hält, ist die Aussage, die den Umbau überlebt —
+     ein Gate für BEIDE Zeilen, und die Sektion ist die LETZTE, nicht eine zwischen den anderen.
+
+     Der Spieler-Screen zählt weiterhin vier: ohne das Gate steht die fünfte gar nicht im DOM. */
+  it("die Messzeilen stehen in EINER eigenen Sektion, und zwar der letzten", () => {
+    const ohne = html();
+    expect((ohne.match(/sticky top-0/g) || []).length, "der Spieler-Screen hat nicht mehr vier Sektionen").toBe(4);
+    expect(ohne, "eine Messzeile steht ohne Gate im DOM").not.toContain("op-sec-dev");
+
     vi.stubEnv("VITE_PREVIEW", "1");
-    expect((html().match(/sticky top-0/g) || []).length).toBe(4);
+    const mit = html();
+    expect((mit.match(/sticky top-0/g) || []).length, "die Messzeilen sitzen nicht in EINER Sektion").toBe(5);
+    expect((mit.match(/op-sec-dev/g) || []).length, "mehr als eine Dev-Sektion — ein Gate je Zeile ist eines zu viel").toBe(1);
+    // Die Dev-Sektion steht HINTER der letzten Spieler-Sektion, nicht zwischen zweien.
+    expect(mit.indexOf("op-sec-dev")).toBeGreaterThan(mit.indexOf("Zahlengröße"));
   });
 });

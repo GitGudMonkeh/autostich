@@ -151,7 +151,7 @@ export function GlossaryOverlay({ onClose }) {
               Rasterzeile (Titel · Suche · Schließen) — dasselbe Raster wie `.up-head`/`.gd-head`.
               Die Suche steht dort in der Spalte, in der der Leitfaden seine Auskunft zeigt: sie ist
               das wichtigste Werkzeug des Glossars und hing bisher im mitscrollenden Kopf. */}
-          <div className="gl-head px-4 pt-3.5 pb-2.5 flex-none" style={{ borderBottom: "1px solid #2c2a3a", background: STICKY_HEAD_BG }}>
+          <div className="gl-head px-4 pt-3.5 pb-2.5 flex-none" style={{ borderBottom: "1px solid var(--ed-base)", background: STICKY_HEAD_BG }}>
             <div className="gl-headrow flex items-center gap-2.5">
               <span className="gl-title flex items-center gap-2.5">
                 <span className="gloss-i-mark">i</span>
@@ -177,7 +177,7 @@ export function GlossaryOverlay({ onClose }) {
           </div>
 
           {/* Kategorie-Chips (Sprungnavigation) — ab 1280 px übernimmt die Spalte links (`.gl-tabs`). */}
-          <div className="gl-tabs flex flex-nowrap sm:flex-wrap gap-1.5 px-4 py-2.5 flex-none overflow-x-auto sm:overflow-x-visible as-chiprow" style={{ borderBottom: "1px solid #2c2a3a" }}>
+          <div className="gl-tabs flex flex-nowrap sm:flex-wrap gap-1.5 px-4 py-2.5 flex-none overflow-x-auto sm:overflow-x-visible as-chiprow" style={{ borderBottom: "1px solid var(--ed-base)" }}>
             <Chip label={t("glossary.all")} active={activeCat === "all"} onClick={() => jump("all")} />
             {glossaryCategories().map((c) => (
               <Chip key={c.id} label={c.label} dot={c.color} active={activeCat === c.id} onClick={() => jump(c.id)} />

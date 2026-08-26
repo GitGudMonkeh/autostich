@@ -1,0 +1,6 @@
+  1280x720/de      top   0.12 px · bottom      0 px · column 5.53x53.75 · 3/8 lit · quiet fill 0.28
+  1920x1080/de     top   0.12 px · bottom      0 px · column 6.5x63.25 · 3/8 lit · quiet fill 0.28
+  1280x720/en      top   0.12 px · bottom      0 px · column 5.53x53.75 · 3/8 lit · quiet fill 0.28
+  1920x1080/en     top   0.12 px · bottom      0 px · column 6.5x63.25 · 3/8 lit · quiet fill 0.28
+
+  worst edge mismatch across 4 cells: 0.12 device px

@@ -71,7 +71,10 @@ export function PrivacyModal({ onClose }) {
   // heraus geöffnet und muss darüber landen, nicht dahinter verschwinden.
   return overlayPortal((
     <div onClick={onClose} className="fixed inset-0 overlay-root z-50 flex items-center justify-center p-4"
-      style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}>
+      /* #menu-rework M9, Vokabular: `--sf-scrim` IST `rgba(12, 12, 16, .8)` und damit wertgleich zu
+         `#0c0c10cc` — der Ueberzug-Wert, aus dem der Schritt abgeleitet wurde. Reine Umstellung; der
+         Hinweis hat keinen freigegebenen Entwurf und aendert sein Aussehen hier nicht (H-b). */
+      style={{ background: "var(--sf-scrim)", backdropFilter: "blur(3px)" }}>
       {/* #datenschutz-desktop: ab 1280 px 860 px breit statt 512 — der Hinweis bleibt ein FENSTER (er wird
           geprüft und geschlossen, er ist keine Station wie Leitfaden/Glossar), aber die fünf Abschnitte stehen
           dort in zwei Spalten statt als Schlange, die auf 1080 px Höhe scrollt, während links und rechts alles
@@ -85,7 +88,9 @@ export function PrivacyModal({ onClose }) {
         {/* Fixer Kopf wie in den Optionen: bei einem langen Fließtext muss „Schließen" erreichbar
             bleiben, ohne erst ans Ende zu scrollen. `items-start` + `shrink-0` (NICHT ActionBar mit
             items-stretch), sonst dehnt sich der Knopf auf die Höhe des zweizeiligen Titelblocks. */}
-        <div className="flex-none px-6 pt-5 pb-3" style={{ background: STICKY_HEAD_BG, borderBottom: "1px solid #2a2a34" }}>
+        {/* `--ed-quiet` IST `#2a2a34`: der Trenner INNERHALB eines Panels, und genau das ist diese
+            Kopf-Unterkante. Wertgleich. */}
+        <div className="flex-none px-6 pt-5 pb-3" style={{ background: STICKY_HEAD_BG, borderBottom: "1px solid var(--ed-quiet)" }}>
           <div className="flex items-start gap-3">
             <div className="min-w-0">
               <div className="text-body-5 uppercase tracking-widest" style={{ color: ACC }}>{t("privacy.eyebrow")}</div>
@@ -126,6 +131,11 @@ export function PrivacyModal({ onClose }) {
             {/* Install-Kennung — nur zeigen, wenn überhaupt gesendet werden kann. Ohne Supabase-Config
                 (lokaler Build ohne .env) gibt es keine Zeilen, die man löschen lassen könnte.
                 Sie steht IN der Abschnitts-Spalte, aber über beide Spalten: sie ist Werkzeug, kein Abschnitt. */}
+            {/* #menu-rework M9: Flaeche und Kante der Kennungs-Box BLEIBEN Literale und werden gezaehlt.
+                `#0f0f14` ist kein Schritt — `--sf-sunken` ist `#141320`, also 8/5/12 daneben — und
+                `#33333e` ist keine Stufe der dreistufigen Kantenleiter. Gemeldet als M9-G1 statt
+                umgeschrieben: den Hinweis anders aussehen zu lassen waere eine Entscheidung, die
+                niemand getroffen hat (H-b). */}
             {telemetryConfigured && id && (
               <div className="rounded-lg p-3 dt:col-span-2" style={{ background: "#0f0f14", border: "1px solid #33333e" }}>
                 <div className="text-meta-1 uppercase tracking-widest opacity-45 mb-1.5">{t("privacy.installId.label")}</div>

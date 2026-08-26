@@ -1,0 +1,820 @@
+{
+  "sizes": [
+    "1280x720",
+    "1920x1080"
+  ],
+  "langs": [
+    "de",
+    "en"
+  ],
+  "decks": [
+    {
+      "key": "dark",
+      "deckId": "deck_thron1",
+      "bfId": "bf_thron1",
+      "a1": "#8f0f2a",
+      "profile": {
+        "championWeeks": 1
+      },
+      "why": "Thron I — the darkest look the design names"
+    },
+    {
+      "key": "bright",
+      "deckId": "deck_obsidian",
+      "bfId": "bf_obsidian",
+      "a1": "#e8edf5",
+      "profile": {
+        "ownedCosmetics": {
+          "pack:obsidian": true
+        }
+      },
+      "why": "Obsidian — the brightest"
+    }
+  ],
+  "cells": [
+    {
+      "id": "1280x720/de/dark",
+      "size": "1280x720",
+      "lang": "de",
+      "deck": {
+        "a1": "#8f0f2a",
+        "a2": "#ff3b5c",
+        "markColour": "rgb(143, 15, 42)",
+        "columnColour": "rgb(143, 15, 42)"
+      },
+      "deckId": "deck_thron1",
+      "image": "owner/hub-1280x720-de-dark.png",
+      "reached": true,
+      "why": [],
+      "page": {
+        "scrollH": 720,
+        "innerH": 720,
+        "overflowPx": 0,
+        "playLayoutH": 561,
+        "standLayoutH": 710
+      },
+      "wordmark": {
+        "box": {
+          "x": 43.91,
+          "y": 34.53,
+          "w": 535.92,
+          "h": 86.02
+        },
+        "layoutW": 630,
+        "layoutH": 101,
+        "wmSize": "88px",
+        "fontSize": "88px",
+        "text": "AUTOSTCH",
+        "align": "center"
+      },
+      "column": {
+        "box": {
+          "x": 433.83,
+          "y": 52.78,
+          "w": 5.53,
+          "h": 53.75
+        },
+        "cssW": 5.53,
+        "cssH": 53.75,
+        "overshootTop": -18.25,
+        "overshootBottom": -14.02,
+        "cells": 8,
+        "hot": 3,
+        "mid": 0,
+        "quiet": 5
+      },
+      "tagline": {
+        "box": {
+          "x": 221.39,
+          "y": 132.44,
+          "w": 180.95,
+          "h": 18.44
+        },
+        "text": "Legen. Stechen. Eskalieren.",
+        "fontSize": "15.5px",
+        "lineHeight": "21.7px",
+        "letterSpacing": "0.775px",
+        "colour": "rgb(154, 154, 166)",
+        "dots": 3,
+        "dotColour": "rgb(92, 92, 104)"
+      },
+      "mark": {
+        "box": {
+          "x": 291.75,
+          "y": 159.38,
+          "w": 40.23,
+          "h": 65.38
+        },
+        "cssW": 40.23,
+        "cssH": 65.38,
+        "cells": 40,
+        "hot": 2,
+        "mid": 12,
+        "quiet": 26,
+        "colour": "rgb(143, 15, 42)",
+        "filter": "drop-shadow(color(srgb 0.560784 0.0588235 0.164706 / 0.55) 0px 0px 9px)"
+      },
+      "lockup": {
+        "wordmarkOffCentre": -0.01,
+        "taglineOffCentre": -0.01,
+        "markOffCentre": -0.01,
+        "wordmarkToTagline": 11.89,
+        "taglineToMark": 8.5
+      },
+      "runHeaderProbe": {
+        "wmSize": "22px",
+        "fontSize": "22px",
+        "hasCells": 0
+      },
+      "restored": {
+        "probesLeft": 0
+      }
+    },
+    {
+      "id": "1920x1080/de/dark",
+      "size": "1920x1080",
+      "lang": "de",
+      "deck": {
+        "a1": "#8f0f2a",
+        "a2": "#ff3b5c",
+        "markColour": "rgb(143, 15, 42)",
+        "columnColour": "rgb(143, 15, 42)"
+      },
+      "deckId": "deck_thron1",
+      "image": "owner/hub-1920x1080-de-dark.png",
+      "reached": true,
+      "why": [],
+      "page": {
+        "scrollH": 1080,
+        "innerH": 1080,
+        "overflowPx": 0,
+        "playLayoutH": 599,
+        "standLayoutH": 825
+      },
+      "wordmark": {
+        "box": {
+          "x": 234.75,
+          "y": 137.45,
+          "w": 630.5,
+          "h": 101.19
+        },
+        "layoutW": 631,
+        "layoutH": 101,
+        "wmSize": "88px",
+        "fontSize": "88px",
+        "text": "AUTOSTCH",
+        "align": "center"
+      },
+      "column": {
+        "box": {
+          "x": 693.48,
+          "y": 158.2,
+          "w": 6.5,
+          "h": 63.25
+        },
+        "cssW": 6.5,
+        "cssH": 63.25,
+        "overshootTop": -20.75,
+        "overshootBottom": -17.19,
+        "cells": 8,
+        "hot": 3,
+        "mid": 0,
+        "quiet": 5
+      },
+      "tagline": {
+        "box": {
+          "x": 443.53,
+          "y": 260.64,
+          "w": 212.94,
+          "h": 21.69
+        },
+        "text": "Legen. Stechen. Eskalieren.",
+        "fontSize": "15.5px",
+        "lineHeight": "21.7px",
+        "letterSpacing": "0.775px",
+        "colour": "rgb(154, 154, 166)",
+        "dots": 3,
+        "dotColour": "rgb(92, 92, 104)"
+      },
+      "mark": {
+        "box": {
+          "x": 526.33,
+          "y": 292.33,
+          "w": 47.33,
+          "h": 76.91
+        },
+        "cssW": 47.33,
+        "cssH": 76.91,
+        "cells": 40,
+        "hot": 2,
+        "mid": 12,
+        "quiet": 26,
+        "colour": "rgb(143, 15, 42)",
+        "filter": "drop-shadow(color(srgb 0.560784 0.0588235 0.164706 / 0.55) 0px 0px 9px)"
+      },
+      "lockup": {
+        "wordmarkOffCentre": 0,
+        "taglineOffCentre": 0,
+        "markOffCentre": -0.01,
+        "wordmarkToTagline": 22,
+        "taglineToMark": 10
+      },
+      "runHeaderProbe": {
+        "wmSize": "22px",
+        "fontSize": "22px",
+        "hasCells": 0
+      },
+      "restored": {
+        "probesLeft": 0
+      }
+    },
+    {
+      "id": "1280x720/en/dark",
+      "size": "1280x720",
+      "lang": "en",
+      "deck": {
+        "a1": "#8f0f2a",
+        "a2": "#ff3b5c",
+        "markColour": "rgb(143, 15, 42)",
+        "columnColour": "rgb(143, 15, 42)"
+      },
+      "deckId": "deck_thron1",
+      "image": "owner/hub-1280x720-en-dark.png",
+      "reached": true,
+      "why": [],
+      "page": {
+        "scrollH": 720,
+        "innerH": 720,
+        "overflowPx": 0,
+        "playLayoutH": 561,
+        "standLayoutH": 710
+      },
+      "wordmark": {
+        "box": {
+          "x": 45.86,
+          "y": 34.53,
+          "w": 532.03,
+          "h": 86.02
+        },
+        "layoutW": 626,
+        "layoutH": 101,
+        "wmSize": "88px",
+        "fontSize": "88px",
+        "text": "AUTOTRCK",
+        "align": "center"
+      },
+      "column": {
+        "box": {
+          "x": 435.94,
+          "y": 52.78,
+          "w": 5.53,
+          "h": 53.75
+        },
+        "cssW": 5.53,
+        "cssH": 53.75,
+        "overshootTop": -18.25,
+        "overshootBottom": -14.02,
+        "cells": 8,
+        "hot": 3,
+        "mid": 0,
+        "quiet": 5
+      },
+      "tagline": {
+        "box": {
+          "x": 240.3,
+          "y": 132.44,
+          "w": 143.16,
+          "h": 18.44
+        },
+        "text": "Order. Trick. Escalate.",
+        "fontSize": "15.5px",
+        "lineHeight": "21.7px",
+        "letterSpacing": "0.775px",
+        "colour": "rgb(154, 154, 166)",
+        "dots": 3,
+        "dotColour": "rgb(92, 92, 104)"
+      },
+      "mark": {
+        "box": {
+          "x": 291.75,
+          "y": 159.38,
+          "w": 40.23,
+          "h": 65.38
+        },
+        "cssW": 40.23,
+        "cssH": 65.38,
+        "cells": 40,
+        "hot": 2,
+        "mid": 12,
+        "quiet": 26,
+        "colour": "rgb(143, 15, 42)",
+        "filter": "drop-shadow(color(srgb 0.560784 0.0588235 0.164706 / 0.55) 0px 0px 9px)"
+      },
+      "lockup": {
+        "wordmarkOffCentre": 0,
+        "taglineOffCentre": 0,
+        "markOffCentre": -0.01,
+        "wordmarkToTagline": 11.89,
+        "taglineToMark": 8.5
+      },
+      "runHeaderProbe": {
+        "wmSize": "22px",
+        "fontSize": "22px",
+        "hasCells": 0
+      },
+      "restored": {
+        "probesLeft": 0
+      }
+    },
+    {
+      "id": "1920x1080/en/dark",
+      "size": "1920x1080",
+      "lang": "en",
+      "deck": {
+        "a1": "#8f0f2a",
+        "a2": "#ff3b5c",
+        "markColour": "rgb(143, 15, 42)",
+        "columnColour": "rgb(143, 15, 42)"
+      },
+      "deckId": "deck_thron1",
+      "image": "owner/hub-1920x1080-en-dark.png",
+      "reached": true,
+      "why": [],
+      "page": {
+        "scrollH": 1080,
+        "innerH": 1080,
+        "overflowPx": 0,
+        "playLayoutH": 599,
+        "standLayoutH": 825
+      },
+      "wordmark": {
+        "box": {
+          "x": 237.03,
+          "y": 137.45,
+          "w": 625.94,
+          "h": 101.19
+        },
+        "layoutW": 626,
+        "layoutH": 101,
+        "wmSize": "88px",
+        "fontSize": "88px",
+        "text": "AUTOTRCK",
+        "align": "center"
+      },
+      "column": {
+        "box": {
+          "x": 695.95,
+          "y": 158.2,
+          "w": 6.5,
+          "h": 63.25
+        },
+        "cssW": 6.5,
+        "cssH": 63.25,
+        "overshootTop": -20.75,
+        "overshootBottom": -17.19,
+        "cells": 8,
+        "hot": 3,
+        "mid": 0,
+        "quiet": 5
+      },
+      "tagline": {
+        "box": {
+          "x": 465.77,
+          "y": 260.64,
+          "w": 168.45,
+          "h": 21.69
+        },
+        "text": "Order. Trick. Escalate.",
+        "fontSize": "15.5px",
+        "lineHeight": "21.7px",
+        "letterSpacing": "0.775px",
+        "colour": "rgb(154, 154, 166)",
+        "dots": 3,
+        "dotColour": "rgb(92, 92, 104)"
+      },
+      "mark": {
+        "box": {
+          "x": 526.33,
+          "y": 292.33,
+          "w": 47.33,
+          "h": 76.91
+        },
+        "cssW": 47.33,
+        "cssH": 76.91,
+        "cells": 40,
+        "hot": 2,
+        "mid": 12,
+        "quiet": 26,
+        "colour": "rgb(143, 15, 42)",
+        "filter": "drop-shadow(color(srgb 0.560784 0.0588235 0.164706 / 0.55) 0px 0px 9px)"
+      },
+      "lockup": {
+        "wordmarkOffCentre": 0,
+        "taglineOffCentre": -0.01,
+        "markOffCentre": -0.01,
+        "wordmarkToTagline": 22,
+        "taglineToMark": 10
+      },
+      "runHeaderProbe": {
+        "wmSize": "22px",
+        "fontSize": "22px",
+        "hasCells": 0
+      },
+      "restored": {
+        "probesLeft": 0
+      }
+    },
+    {
+      "id": "1280x720/de/bright",
+      "size": "1280x720",
+      "lang": "de",
+      "deck": {
+        "a1": "#e8edf5",
+        "a2": "#9aa6bd",
+        "markColour": "rgb(232, 237, 245)",
+        "columnColour": "rgb(232, 237, 245)"
+      },
+      "deckId": "deck_obsidian",
+      "image": "owner/hub-1280x720-de-bright.png",
+      "reached": true,
+      "why": [],
+      "page": {
+        "scrollH": 720,
+        "innerH": 720,
+        "overflowPx": 0,
+        "playLayoutH": 561,
+        "standLayoutH": 710
+      },
+      "wordmark": {
+        "box": {
+          "x": 43.91,
+          "y": 34.53,
+          "w": 535.92,
+          "h": 86.02
+        },
+        "layoutW": 630,
+        "layoutH": 101,
+        "wmSize": "88px",
+        "fontSize": "88px",
+        "text": "AUTOSTCH",
+        "align": "center"
+      },
+      "column": {
+        "box": {
+          "x": 433.83,
+          "y": 52.78,
+          "w": 5.53,
+          "h": 53.75
+        },
+        "cssW": 5.53,
+        "cssH": 53.75,
+        "overshootTop": -18.25,
+        "overshootBottom": -14.02,
+        "cells": 8,
+        "hot": 3,
+        "mid": 0,
+        "quiet": 5
+      },
+      "tagline": {
+        "box": {
+          "x": 221.39,
+          "y": 132.44,
+          "w": 180.95,
+          "h": 18.44
+        },
+        "text": "Legen. Stechen. Eskalieren.",
+        "fontSize": "15.5px",
+        "lineHeight": "21.7px",
+        "letterSpacing": "0.775px",
+        "colour": "rgb(154, 154, 166)",
+        "dots": 3,
+        "dotColour": "rgb(92, 92, 104)"
+      },
+      "mark": {
+        "box": {
+          "x": 291.75,
+          "y": 159.38,
+          "w": 40.23,
+          "h": 65.38
+        },
+        "cssW": 40.23,
+        "cssH": 65.38,
+        "cells": 40,
+        "hot": 2,
+        "mid": 12,
+        "quiet": 26,
+        "colour": "rgb(232, 237, 245)",
+        "filter": "drop-shadow(color(srgb 0.909804 0.929412 0.960784 / 0.55) 0px 0px 9px)"
+      },
+      "lockup": {
+        "wordmarkOffCentre": -0.01,
+        "taglineOffCentre": -0.01,
+        "markOffCentre": -0.01,
+        "wordmarkToTagline": 11.89,
+        "taglineToMark": 8.5
+      },
+      "runHeaderProbe": {
+        "wmSize": "22px",
+        "fontSize": "22px",
+        "hasCells": 0
+      },
+      "restored": {
+        "probesLeft": 0
+      }
+    },
+    {
+      "id": "1920x1080/de/bright",
+      "size": "1920x1080",
+      "lang": "de",
+      "deck": {
+        "a1": "#e8edf5",
+        "a2": "#9aa6bd",
+        "markColour": "rgb(232, 237, 245)",
+        "columnColour": "rgb(232, 237, 245)"
+      },
+      "deckId": "deck_obsidian",
+      "image": "owner/hub-1920x1080-de-bright.png",
+      "reached": true,
+      "why": [],
+      "page": {
+        "scrollH": 1080,
+        "innerH": 1080,
+        "overflowPx": 0,
+        "playLayoutH": 599,
+        "standLayoutH": 825
+      },
+      "wordmark": {
+        "box": {
+          "x": 234.75,
+          "y": 137.45,
+          "w": 630.5,
+          "h": 101.19
+        },
+        "layoutW": 631,
+        "layoutH": 101,
+        "wmSize": "88px",
+        "fontSize": "88px",
+        "text": "AUTOSTCH",
+        "align": "center"
+      },
+      "column": {
+        "box": {
+          "x": 693.48,
+          "y": 158.2,
+          "w": 6.5,
+          "h": 63.25
+        },
+        "cssW": 6.5,
+        "cssH": 63.25,
+        "overshootTop": -20.75,
+        "overshootBottom": -17.19,
+        "cells": 8,
+        "hot": 3,
+        "mid": 0,
+        "quiet": 5
+      },
+      "tagline": {
+        "box": {
+          "x": 443.53,
+          "y": 260.64,
+          "w": 212.94,
+          "h": 21.69
+        },
+        "text": "Legen. Stechen. Eskalieren.",
+        "fontSize": "15.5px",
+        "lineHeight": "21.7px",
+        "letterSpacing": "0.775px",
+        "colour": "rgb(154, 154, 166)",
+        "dots": 3,
+        "dotColour": "rgb(92, 92, 104)"
+      },
+      "mark": {
+        "box": {
+          "x": 526.33,
+          "y": 292.33,
+          "w": 47.33,
+          "h": 76.91
+        },
+        "cssW": 47.33,
+        "cssH": 76.91,
+        "cells": 40,
+        "hot": 2,
+        "mid": 12,
+        "quiet": 26,
+        "colour": "rgb(232, 237, 245)",
+        "filter": "drop-shadow(color(srgb 0.909804 0.929412 0.960784 / 0.55) 0px 0px 9px)"
+      },
+      "lockup": {
+        "wordmarkOffCentre": 0,
+        "taglineOffCentre": 0,
+        "markOffCentre": -0.01,
+        "wordmarkToTagline": 22,
+        "taglineToMark": 10
+      },
+      "runHeaderProbe": {
+        "wmSize": "22px",
+        "fontSize": "22px",
+        "hasCells": 0
+      },
+      "restored": {
+        "probesLeft": 0
+      }
+    },
+    {
+      "id": "1280x720/en/bright",
+      "size": "1280x720",
+      "lang": "en",
+      "deck": {
+        "a1": "#e8edf5",
+        "a2": "#9aa6bd",
+        "markColour": "rgb(232, 237, 245)",
+        "columnColour": "rgb(232, 237, 245)"
+      },
+      "deckId": "deck_obsidian",
+      "image": "owner/hub-1280x720-en-bright.png",
+      "reached": true,
+      "why": [],
+      "page": {
+        "scrollH": 720,
+        "innerH": 720,
+        "overflowPx": 0,
+        "playLayoutH": 561,
+        "standLayoutH": 710
+      },
+      "wordmark": {
+        "box": {
+          "x": 45.86,
+          "y": 34.53,
+          "w": 532.03,
+          "h": 86.02
+        },
+        "layoutW": 626,
+        "layoutH": 101,
+        "wmSize": "88px",
+        "fontSize": "88px",
+        "text": "AUTOTRCK",
+        "align": "center"
+      },
+      "column": {
+        "box": {
+          "x": 435.94,
+          "y": 52.78,
+          "w": 5.53,
+          "h": 53.75
+        },
+        "cssW": 5.53,
+        "cssH": 53.75,
+        "overshootTop": -18.25,
+        "overshootBottom": -14.02,
+        "cells": 8,
+        "hot": 3,
+        "mid": 0,
+        "quiet": 5
+      },
+      "tagline": {
+        "box": {
+          "x": 240.3,
+          "y": 132.44,
+          "w": 143.16,
+          "h": 18.44
+        },
+        "text": "Order. Trick. Escalate.",
+        "fontSize": "15.5px",
+        "lineHeight": "21.7px",
+        "letterSpacing": "0.775px",
+        "colour": "rgb(154, 154, 166)",
+        "dots": 3,
+        "dotColour": "rgb(92, 92, 104)"
+      },
+      "mark": {
+        "box": {
+          "x": 291.75,
+          "y": 159.38,
+          "w": 40.23,
+          "h": 65.38
+        },
+        "cssW": 40.23,
+        "cssH": 65.38,
+        "cells": 40,
+        "hot": 2,
+        "mid": 12,
+        "quiet": 26,
+        "colour": "rgb(232, 237, 245)",
+        "filter": "drop-shadow(color(srgb 0.909804 0.929412 0.960784 / 0.55) 0px 0px 9px)"
+      },
+      "lockup": {
+        "wordmarkOffCentre": 0,
+        "taglineOffCentre": 0,
+        "markOffCentre": -0.01,
+        "wordmarkToTagline": 11.89,
+        "taglineToMark": 8.5
+      },
+      "runHeaderProbe": {
+        "wmSize": "22px",
+        "fontSize": "22px",
+        "hasCells": 0
+      },
+      "restored": {
+        "probesLeft": 0
+      }
+    },
+    {
+      "id": "1920x1080/en/bright",
+      "size": "1920x1080",
+      "lang": "en",
+      "deck": {
+        "a1": "#e8edf5",
+        "a2": "#9aa6bd",
+        "markColour": "rgb(232, 237, 245)",
+        "columnColour": "rgb(232, 237, 245)"
+      },
+      "deckId": "deck_obsidian",
+      "image": "owner/hub-1920x1080-en-bright.png",
+      "reached": true,
+      "why": [],
+      "page": {
+        "scrollH": 1080,
+        "innerH": 1080,
+        "overflowPx": 0,
+        "playLayoutH": 599,
+        "standLayoutH": 825
+      },
+      "wordmark": {
+        "box": {
+          "x": 237.03,
+          "y": 137.45,
+          "w": 625.94,
+          "h": 101.19
+        },
+        "layoutW": 626,
+        "layoutH": 101,
+        "wmSize": "88px",
+        "fontSize": "88px",
+        "text": "AUTOTRCK",
+        "align": "center"
+      },
+      "column": {
+        "box": {
+          "x": 695.95,
+          "y": 158.2,
+          "w": 6.5,
+          "h": 63.25
+        },
+        "cssW": 6.5,
+        "cssH": 63.25,
+        "overshootTop": -20.75,
+        "overshootBottom": -17.19,
+        "cells": 8,
+        "hot": 3,
+        "mid": 0,
+        "quiet": 5
+      },
+      "tagline": {
+        "box": {
+          "x": 465.77,
+          "y": 260.64,
+          "w": 168.45,
+          "h": 21.69
+        },
+        "text": "Order. Trick. Escalate.",
+        "fontSize": "15.5px",
+        "lineHeight": "21.7px",
+        "letterSpacing": "0.775px",
+        "colour": "rgb(154, 154, 166)",
+        "dots": 3,
+        "dotColour": "rgb(92, 92, 104)"
+      },
+      "mark": {
+        "box": {
+          "x": 526.33,
+          "y": 292.33,
+          "w": 47.33,
+          "h": 76.91
+        },
+        "cssW": 47.33,
+        "cssH": 76.91,
+        "cells": 40,
+        "hot": 2,
+        "mid": 12,
+        "quiet": 26,
+        "colour": "rgb(232, 237, 245)",
+        "filter": "drop-shadow(color(srgb 0.909804 0.929412 0.960784 / 0.55) 0px 0px 9px)"
+      },
+      "lockup": {
+        "wordmarkOffCentre": 0,
+        "taglineOffCentre": -0.01,
+        "markOffCentre": -0.01,
+        "wordmarkToTagline": 22,
+        "taglineToMark": 10
+      },
+      "runHeaderProbe": {
+        "wmSize": "22px",
+        "fontSize": "22px",
+        "hasCells": 0
+      },
+      "restored": {
+        "probesLeft": 0
+      }
+    }
+  ]
+}

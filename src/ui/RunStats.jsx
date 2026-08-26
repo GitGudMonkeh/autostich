@@ -1,5 +1,18 @@
 import { useState } from "react";
 import { rarityOf, RARITY_META, CATEGORIES } from "../game/perks.js";
+/* #menu-rework M7 — DIESE DATEI IST GETEILT, UND DAS ENTSCHEIDET, WAS HIER PASSIEREN DARF.
+
+   Gemessen wird sie ausserdem gerendert von: der Siegesbildschirm
+   (`GameOver.jsx`) und die Chronik — `RunDetail` ist nur einer von dreien.
+
+   Sie wird deshalb WERTETREU umgestellt und NICHT umgestaltet: Literal zu `var(--token)`, null
+   berechnetes Delta, und jeder Schritt unten ist derselbe Wert, den er ersetzt — `#141419` IST
+   `--sf-ground`, `#2a2a34` IST `--ed-quiet`. Was KEINEN Schritt hat, bleibt stehen und wird gezaehlt
+   statt gepraegt; die Begruendungen stehen an den Fundstellen und in `measurements/M7.md`.
+
+   Der Beweis dafuer ist die Maschinen-Haelfte des Auftrags: `run-stage` muss null Deltas zeigen.
+   Bewegt eine dieser Zeilen die Laufbuehne um einen Pixel, war die Umstellung nicht wertetreu. */
+
 
 import { ArchIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { fmtScore, fmtScoreShort } from "./format.js";
@@ -35,7 +48,7 @@ const num = (v) => {
    stellt, tut das deshalb SCOPED (`.rd-card .rs-cell`, s. #rd-ruhe in index.css). */
 function StatCard({ label, value, title, color }) {
   return (
-    <div title={title} className="rs-cell rounded-lg px-3 py-2 min-w-0" style={{ background: "#141419", border: "1px solid #2a2a34" }}>
+    <div title={title} className="rs-cell rounded-lg px-3 py-2 min-w-0" style={{ background: "var(--sf-ground)", border: "1px solid var(--ed-quiet)" }}>
       <div className="opacity-50 text-meta-3 uppercase tracking-wide truncate">{label}</div>
       <div className="ty-num leading-tight whitespace-nowrap overflow-hidden text-ellipsis text-body-lg-3 mt-0.5" style={color ? { color } : undefined}>{value == null ? "–" : value}</div>
     </div>
@@ -268,6 +281,10 @@ export function RunBuildChips({ entry = {}, anonymized = false }) {
             </div>
           )}
           {selDetail && (
+            /* M7-G3: der Grund einer eingeschobenen Erklaerzeile liegt UNTER jedem Panel-Schritt
+               (`--sf-sunken` ist `#141320`, das hier `#0e0e13`), und ihre Kante traegt die Farbe des
+               angetippten Elements — eine bedeutungskodierte Kante, die 2c dauerhaft ausnimmt.
+               Gezaehlt statt gepraegt. */
             <div className="rs-note mt-2 rounded-lg px-3 py-2 text-body-5 leading-snug" style={{ background: "#0e0e13", border: `1px solid ${selDetail.color}55` }}>
               <span className="font-bold" style={{ color: selDetail.color }}>{selDetail.title}</span>
               <span className="opacity-80"> — {selDetail.desc}</span>
@@ -299,13 +316,14 @@ export function RunTreeBlock({ treeNodes }) {
   return (
     // Der Abstand nach unten gehört zum Block selbst: der Aufrufer kann ihn nicht setzen, ohne bei fehlendem
     // Wert eine leere Lücke zu hinterlassen (die Komponente rendert dann null).
-    <div className="rs-tree rounded-xl px-3 py-2.5 mb-4" style={{ background: "#141419", border: "1px solid #2a2a34" }}>
+    <div className="rs-tree rounded-xl px-3 py-2.5 mb-4" style={{ background: "var(--sf-ground)", border: "1px solid var(--ed-quiet)" }}>
       <div className="text-meta-1 uppercase tracking-wider opacity-45 mb-1.5">{t("runstats.tree")}</div>
       <div className="flex items-baseline justify-between gap-3">
         <span className="ty-num text-body-lg-3">{t("runstats.tree.nodes", { done: n, total: TOTAL_NODES })}</span>
         <span className="ty-num-sm text-meta-3" style={{ color: "var(--deck-a1, #8a7de0)" }}>{fmtPct(frac)}</span>
       </div>
       {/* Der Balken ist die eigentliche Aussage — die Zahl daneben liest man erst, wenn der Balken auffällt. */}
+      {/* M7-G1: die SPUR eines Balkens, dieselbe Familie wie der Grund eines Graphen — kein Schritt. */}
       <div className="h-1.5 rounded-full mt-2 overflow-hidden" style={{ background: "#1e1e26" }}>
         <div className="h-full rounded-full" style={{ width: `${frac * 100}%`, background: "var(--deck-a1, #8a7de0)" }} />
       </div>

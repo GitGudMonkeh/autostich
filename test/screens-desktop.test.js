@@ -46,25 +46,77 @@ describe("#desktop-screens — die Klammer ist unterhalb von 1280 px keine Box",
   });
 
   it("die desktop-only Zeilen sind am Handy ausgeblendet", () => {
-    // Auskunftszeile der Statistik und die Zweitzeilen der Navigationsspalte gibt es nur ab 1280 px.
-    expect(read("ui/StatsScreen.jsx")).toMatch(new RegExp(`className="st-readout hidden ${DT_RX}block"`));
+    /* Die Zweitzeilen der Navigationsspalte gibt es nur ab 1280 px.
+
+       #menu-rework M7 — DIE STATISTIK HAT KEINE AUSKUNFTSZEILE MEHR. Sie stand in der Aktionszone,
+       wo der Kopf-Kanon nur Aktionen zulaesst, und ist die Unterzeile geworden. An ihre Stelle
+       treten Eyebrow und Unterzeile — dieselbe Zusicherung („was es nur ab 1280 px gibt, ist darunter
+       AUS DEM LAYOUT"), anderer Mechanismus: `display: none` in der Basis statt `hidden dt:block` im
+       Klassen-Literal. Das ist die Bauart, die M3 fuer denselben Fall am Baum gewaehlt hat, und
+       geprueft wird sie hier genauso: beide Teile stehen im JSX UND sind in der BASIS aus. */
+    const stats = read("ui/StatsScreen.jsx");
+    for (const hook of ["st-eyebrow", "st-sub"]) {
+      expect(stats, `${hook} steht nicht im JSX — der Kopf-Kanon fehlt`).toMatch(new RegExp(`className="${hook}"`));
+    }
+    const versteckt = base.match(/^\.st-eyebrow[^{]*\{([^}]*)\}/m);
+    expect(versteckt, "Basis-Regel fuer den Statistik-Kopf nicht gefunden").toBeTruthy();
+    expect(versteckt[0], "st-sub faehrt nicht mit — eine Haelfte des Kopfs stuende am Handy").toContain("st-sub");
+    expect(versteckt[1]).toMatch(/display:\s*none/);
     expect(read("ui/LeaderboardScreen.jsx")).toMatch(new RegExp(`className="lb-tab-s hidden ${DT_RX}block"`));
   });
 });
 
 describe("#desktop-screens — Statistik", () => {
-  it("die vier Blöcke haben feste Spaltenplätze (nicht auto-flow)", () => {
-    for (const [sec, col] of [["overview", "1 / -1"], ["best", "1"], ["works", "1"], ["runs", "2"], ["picked", "3"]]) {
+  it("jeder Block hat einen festen Platz (nicht auto-flow)", () => {
+    /* #menu-rework M7 — DREI Bloecke stehen selbst im Raster, ZWEI stehen in einem Stapel, der
+       selbst im Raster steht. Die Zusicherung ist unveraendert: kein Block findet seinen Platz ueber
+       die Reihenfolge im JSX, sonst entscheidet die naechste eingefuegte Sektion neu, was wo landet.
+       Was sich geaendert hat, ist wo der Platz von „Bestes Build" und „Was am besten laeuft" steht —
+       an ihrer Spalte, weil eine Spalte jetzt ein Stapel ist und keine zwei Rasterzeilen
+       (Restluft gehoert an den Fuss einer Spalte, nie zwischen zwei Panels). */
+    for (const [sec, col] of [["overview", "1 / -1"], ["runs", "2"], ["picked", "3"]]) {
       const rule = deskBlock.match(new RegExp(`\\.st-sec\\[data-sec="${sec}"\\][^{]*\\{([^}]*)\\}`));
       expect(rule, `Platz für data-sec="${sec}" fehlt`).toBeTruthy();
       expect(rule[1], `data-sec="${sec}" soll in Spalte ${col}`).toMatch(new RegExp(`grid-column:\\s*${col.replace(/[/]/g, "\\/")}`));
     }
+    const stapel = deskBlock.match(/\.st-col1\s*\{([^}]*)\}/);
+    expect(stapel, "der Stapel der ersten Spalte fehlt").toBeTruthy();
+    expect(stapel[1], ".st-col1 hat keinen festen Platz — dann entscheidet die JSX-Reihenfolge").toMatch(/grid-column:\s*1/);
+    /* Und die zwei Bloecke stehen wirklich DARIN: ein `.st-col1` mit festem Platz, das die zwei
+       Sektionen nicht enthaelt, ist eine leere Klammer und nagelt nichts fest. */
+    const jsx = read("ui/StatsScreen.jsx");
+    const stapelAt = jsx.indexOf('className="st-col1"');
+    expect(stapelAt, "st-col1 steht nicht im JSX").toBeGreaterThan(-1);
+    for (const sec of ["best", "works"]) {
+      expect(jsx.indexOf(`id="${sec}"`), `data-sec="${sec}" steht nicht mehr im Stapel der ersten Spalte`)
+        .toBeGreaterThan(stapelAt);
+    }
   });
 
-  it("die letzte Rasterzeile ist 1fr (sonst reißt es die linke Spalte auseinander)", () => {
-    const rule = deskBlock.match(/\.st-card\s*\{([^}]*)\}/);
-    expect(rule, ".st-card-Regel nicht gefunden").toBeTruthy();
-    expect(rule[1]).toMatch(/grid-template-rows:[^;]*1fr\s*;/);
+  it("die Restluft sammelt sich am FUSS der ersten Spalte, nicht zwischen ihren Panels", () => {
+    /* Der alte Wortlaut war „die letzte Rasterzeile ist 1fr", und die Begruendung dahinter war:
+       ohne sie verteilt das Raster die Mehrhoehe der spannenden Spalten auf BEIDE Zeilen der kurzen
+       Spalte und reisst dort eine Luecke auf.
+
+       #menu-rework M7 — DIESE FEHLERART GIBT ES NICHT MEHR, weil die kurze Spalte keine zwei
+       Rasterzeilen mehr hat: sie ist ein Flex-Stapel, und ein Stapel kann seine Kinder gar nicht
+       auseinanderziehen — die Restluft landet an seinem Fuss. Das ist die staerkere Zusicherung, und
+       sie wird hier gepruef statt der Rasterzeile, die sie ersetzt hat. Die `1fr`-Zeile bleibt
+       zusaetzlich verlangt: sie ist das, was dem Rumpf ueberhaupt eine bestimmte Hoehe gibt, ohne
+       die die Lauf-Liste ihre Spalte nicht messen kann. */
+    const stapel = deskBlock.match(/\.st-col1\s*\{([^}]*)\}/);
+    expect(stapel, ".st-col1-Regel nicht gefunden").toBeTruthy();
+    expect(stapel[1], "die erste Spalte ist wieder ein Raster — dann zieht es ihre Panels auseinander")
+      .toMatch(/display:\s*flex/);
+    expect(stapel[1]).toMatch(/flex-direction:\s*column/);
+    for (const [sel, name] of [[/\.st-card\s*\{([^}]*)\}/, ".st-card"], [/\.st-body\s*\{([^}]*)\}/, ".st-body"]]) {
+      const rule = deskBlock.match(sel);
+      expect(rule, `${name}-Regel nicht gefunden`).toBeTruthy();
+      const rows = rule[1].match(/grid-template-rows:([^;]*);/);
+      expect(rows, `${name} ohne feste Zeilen`).toBeTruthy();
+      expect(rows[1].trim().split(/\s+(?![^(]*\))/).pop(), `${name}: die letzte Zeile nimmt die Restluft nicht auf`)
+        .toMatch(/1fr/);
+    }
   });
 
   it("Skills und Perks stehen in der schmalen Spalte untereinander", () => {
@@ -92,10 +144,61 @@ describe("#desktop-screens — Bestenliste und Ranked", () => {
     expect(deskBlock).toMatch(/\.lb-pagescroll:has\(\.lb-cockpit\) \.lb-rows\s*\{[^}]*grid-auto-flow:\s*row/);
   });
 
-  it("die Reiter werden zur Navigationsspalte und der Schließen-Knopf behält seinen Platz", () => {
+  it("die Reiter werden zur Navigationsspalte", () => {
     expect(deskBlock).toMatch(/\.lb-tabs\s*\{[^}]*flex-direction:\s*column/);
-    // Der Kopf hat nur zwei Kinder; ohne festen Platz landet der Knopf in der 1fr-Spalte und zieht sich breit.
-    expect(deskBlock).toMatch(/\.lb-head > button\s*\{[^}]*grid-column:\s*3/);
+  });
+
+  /* #menu-rework M8 — UMGESCHRIEBEN AUF DIE INVARIANTE, und der alte Wortlaut sagt, warum das nötig
+     war: „Der Kopf hat nur zwei Kinder; ohne festen Platz landet der Knopf in der 1fr-Spalte" —
+     geprüft wurde `grid-column: 3`. Das ist eine SCHREIBWEISE, kein Verhalten. Der Kopf hat jetzt
+     vier Kinder und zwei Spuren, der Knopf steht in Spur 2, und die Zusicherung des Kanons ist
+     dieselbe geblieben: SCHLIESSEN IST DAS LETZTE ELEMENT, UND NICHTS STEHT JE RECHTS DAVON
+     (design-sprache.md §2). Die 3 hätte den Kanon gebrochen und wäre grün geblieben.
+
+     Deshalb RECHNET dieser Wächter jetzt: er zählt die Spuren des Kopf-Rasters und verlangt, dass
+     Schließen in der LETZTEN steht — und dass keine andere Kopf-Regel eine Spur nennt, die weiter
+     rechts liegt. Ohne die zweite Hälfte hieße „letzte Spur" nur „irgendeine Spur mit der höchsten
+     Nummer, die jemand hingeschrieben hat".
+
+     Und er verlangt, dass es EINE Regel für beide Screens ist. Der Kanon gilt laut §2 für alle
+     Overlays; zwei Regelsätze für dieselbe Zusicherung sind die Doppelpflege, vor der conventions.md
+     §1 Regel 2 warnt — und genau daraus war die alte 3 entstanden. */
+  it("Schließen ist das letzte Element des Kopfes — in EINER Regel für beide Screens", () => {
+    /* Spuren zählen, nicht Leerzeichen zählen: `minmax(0, 1fr)` trägt selbst ein Komma und ein
+       Leerzeichen. Zeichenweise mit Klammertiefe, wie der Wertleser in panel-tokens. */
+    const trackCount = (value) => {
+      let depth = 0, n = 0, inTrack = false;
+      for (const ch of value.trim()) {
+        if (ch === "(") depth++;
+        else if (ch === ")") depth--;
+        if (depth === 0 && /\s/.test(ch)) { inTrack = false; continue; }
+        if (!inTrack) { n++; inTrack = true; }
+      }
+      return n;
+    };
+    const head = deskBlock.match(/^\s*\.st-head, \.lb-head \{([^}]*)\}/m);
+    expect(head, "das Kopf-Raster steht nicht mehr als EINE Regel für beide Screens").toBeTruthy();
+    expect(head[1], "der Kern des Kanons fehlt: die Aktionszone hängt an der Oberkante").toMatch(/align-items:\s*start/);
+    const cols = /grid-template-columns:\s*([^;]+);/.exec(head[1]);
+    expect(cols, "das Kopf-Raster nennt keine Spuren mehr").toBeTruthy();
+    const spuren = trackCount(cols[1]);
+    expect(spuren).toBeGreaterThan(1);
+
+    const close = deskBlock.match(/^\s*\.st-close, \.lb-head > button \{([^}]*grid-column[^}]*)\}/m);
+    expect(close, "Schließen steht nicht mehr als EINE Regel für beide Screens").toBeTruthy();
+    const at = /grid-column:\s*(\d+)/.exec(close[1]);
+    expect(at, "Schließen hat keinen festen Platz mehr — es landet in der 1fr-Spalte").toBeTruthy();
+    expect(Number(at[1]), `Schließen steht in Spur ${at && at[1]} von ${spuren} — es ist nicht das letzte Element`).toBe(spuren);
+    expect(close[1], "Schließen spannt den Titelblock nicht mehr").toMatch(/grid-row:\s*1 \/ span/);
+
+    /* Nichts rechts von Schließen: jede andere Regel des Kopfes muss weiter links liegen. */
+    const rechtsDavon = [];
+    for (const m of deskBlock.matchAll(/^\s*([^{}\n]*(?:st-head|lb-head|st-eyebrow|lb-eyebrow|st-sub|lb-sub)[^{}\n]*)\{([^}]*)\}/gm)) {
+      if (/st-close/.test(m[1])) continue;
+      const c = /grid-column:\s*(\d+)/.exec(m[2]);
+      if (c && Number(c[1]) >= spuren) rechtsDavon.push(`${m[1].trim()} -> grid-column: ${c[1]}`);
+    }
+    expect(rechtsDavon, `steht in Schließens Spur oder rechts davon:\n  ${rechtsDavon.join("\n  ")}`).toEqual([]);
   });
 });
 
@@ -159,13 +262,61 @@ describe("#desktop-screens — Victory", () => {
 });
 
 describe("#ueberzug — ein Wert für alle Overlays über dem Hauptschirm", () => {
-  it("kein Overlay-Wurzelknoten steht mehr auf den alten 82 %", () => {
+  /* #menu-rework M9 — AUF DIE INVARIANTE UMGESCHRIEBEN, und der Anlass ist genau die Fehlerform, um
+     die es in dieser Runde geht.
+
+     Der Wächter zählte LITERALE: er verlangte mehr als zwei Vorkommen von `rgba(12, 12, 16, .NN)` im
+     Desktop-Block und dass alle denselben Wert tragen. Das ist die Frage „ist der Wert DA?". M9 hat
+     `.un-root, .fb-root` auf `var(--sf-scrim-desk)` umgestellt — dieselbe Farbe, als benannte Stufe —,
+     und der Zähler fiel von drei auf zwei. Der Wächter wurde also rot, WEIL das Vokabular angewendet
+     wurde, und er wäre bei jeder weiteren Migration wieder rot geworden. Auf Dauer hätte das genau
+     eine Wirkung gehabt: dass niemand den Überzug migriert.
+
+     Die eigentliche Aussage ist nicht „das Literal steht dreimal da", sondern: JEDE Overlay-Wurzel im
+     Desktop-Block trägt denselben Überzug, und es ist nicht mehr der alte 82-%-Wert. Genau das steht
+     jetzt hier, und `--sf-scrim-desk` IST `rgba(12, 12, 16, .94)` — nachgeprüft am @theme-Block, nicht
+     angenommen, denn ein Token, das man nicht aufgelöst hat, ist die Lücke von `--el-glow` in Grün.
+
+     Der Wächter ist damit STRENGER als vorher: er zählt jetzt die Wurzeln, nicht die Schreibweisen,
+     und eine vierte Wurzel mit abweichendem Überzug fällt auf, egal wie sie geschrieben ist. */
+  it("jede Overlay-Wurzel trägt denselben Überzug — als Literal ODER als Stufe", () => {
     /* Die 82 % waren zusammen mit `blur(10px)` abgenommen; seit #perf-blur gibt es den Blur nicht mehr und
        der Hub las sich durch die Panels. Ein neuer Screen, der wieder 82 % setzt, fällt hier auf. */
     expect(deskBlock, "alter Überzugswert ist zurück").not.toMatch(/rgba\(12, 12, 16, \.82\)/);
-    const werte = [...deskBlock.matchAll(/rgba\(12, 12, 16, (\.\d+)\) !important/g)].map((m) => m[1]);
-    expect(werte.length, "keine Überzugs-Regel gefunden").toBeGreaterThan(2);
-    expect([...new Set(werte)], "die Overlays sollen EINEN Wert teilen").toEqual([".94"]);
+
+    /* Die Stufe wird AUFGELÖST, nicht geglaubt. Steht sie eines Tages auf einem anderen Wert, sagt es
+       dieser Wächter — statt ihn stillschweigend zu bestehen, weil ein `var()` da war. */
+    const theme = css.match(/--sf-scrim-desk:\s*([^;]+);/);
+    expect(theme, "--sf-scrim-desk fehlt im @theme-Block").not.toBeNull();
+    expect(theme[1].trim(), "die Desktop-Stufe ist nicht mehr der Überzugswert").toBe("rgba(12, 12, 16, .94)");
+
+    /* Jede Regel im Desktop-Block, die einen Overlay-Wurzel-Selektor trägt UND einen Hintergrund
+       setzt. `-root` ist die Namenskonvention dieser Wurzeln (`up-root`, `op-root`, `un-root`,
+       `fb-root`, `st-root`, …) — eine neue Wurzel heisst genauso und wird deshalb mitgezählt. */
+    const NL = String.fromCharCode(10);
+    const roots = [...deskBlock.matchAll(/([^{}]*)\{([^}]*)\}/g)]
+      .map(([, sel, body]) => [sel.split(NL).pop().trim(), body])
+      .filter(([sel]) => /-root/.test(sel))
+      /* DIE UM-ZEIGUNG WIRD AUFGELÖST, nicht verboten. `.op-root`, `.up-root` und `.cz-root` schreiben
+         `--sf-scrim: var(--sf-scrim-desk)` auf ihrer EIGENEN Wurzel und lesen danach `var(--sf-scrim)` —
+         das ist die von §2c ausdrücklich sanktionierte Form („Ein Screen darf eine Stufe auf seiner
+         eigenen Wurzel auf eine ANDERE benannte Stufe zeigen"), und sie ergibt dieselben 94 %. Ein
+         Wächter, der nur die Schreibweise am `background` liest, hielte genau diese drei für Abweichler
+         und würde damit die Form bestrafen, die das Vokabular vorschreibt. */
+      .map(([sel, body]) => {
+        const bg = (body.match(/(?:^|[;{\s])background\s*:\s*([^;}]+)/) || [])[1];
+        const repoint = /--sf-scrim:\s*var\(--sf-scrim-desk\)/.test(body);
+        return [sel, bg, repoint];
+      })
+      .filter(([, bg]) => bg && /rgba\(12, 12, 16|--sf-scrim/.test(bg));
+    expect(roots.length, "keine Überzugs-Regel gefunden").toBeGreaterThan(2);
+
+    const werte = roots.map(([, bg, repoint]) => (
+      /--sf-scrim-desk/.test(bg) || repoint ? ".94"
+        : /--sf-scrim/.test(bg) ? ".8"          /* die Handy-Stufe, ohne Um-Zeigung: eine echte Abweichung */
+          : (bg.match(/rgba\(12, 12, 16, (\.\d+)\)/) || [])[1]));
+    expect([...new Set(werte)], "die Overlays sollen EINEN Wert teilen: "
+      + roots.map(([sel, bg]) => `${sel} -> ${bg}`).join(" | ")).toEqual([".94"]);
   });
 });
 

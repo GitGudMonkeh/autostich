@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { DESKTOP_BLOCK_AT } from "./desktopBreakpoint.js";
+import { resolve, themeTokens } from "./cssTokens.js";
 
 /* ============================================================
    #up-ruhe (19.08.2026) — Baum, Leitfaden und Glossar im Desktop-Ton.
@@ -61,13 +62,26 @@ describe("#up-ruhe — der Schein nach außen fällt, die Aussage bleibt", () =>
 
   it("der gewählte Knoten und die gewählte Legendär-Phase leuchten nicht mehr nach außen", () => {
     expect(deskBlock).toMatch(/\.up-vnode\.is-sel\s*\{[^}]*box-shadow:\s*inset[^;]*;\s*\}/);
-    /* Die Regel steht ZWEIMAL im Block (alte Fassung, dann die leise) — die LETZTE gewinnt, also wird
-       auch die letzte geprüft. Auf die erste zu schauen hieße, den Rückfall zu übersehen. */
-    const alle = [...deskBlock.matchAll(/\.up-navpassive\.is-sel\s*\{([^}]*)\}/g)];
-    expect(alle.length, ".up-navpassive.is-sel nicht mehr gefunden").toBeGreaterThan(0);
-    const pas = alle[alle.length - 1][1];
-    expect(pas, "der 2-px-Ring ist zurück").toMatch(/box-shadow:\s*none/);
-    expect(pas, "ohne Fläche ist die Auswahl gar nicht mehr zu sehen").toMatch(/background:/);
+    /* #menu-rework M3 — hier stand die Prüfung auf `.up-navpassive.is-sel`, und das war der
+       MECHANISMUS: das Kärtchen der Legendär-Phase hatte einen Auswahl-Zustand, weil man es antippen
+       musste, um seine Erklärung woanders erscheinen zu lassen. Es trägt seinen Zustand jetzt selbst
+       und hat deshalb GAR KEINEN Auswahl-Zustand mehr; die alte Regel wäre eine Zusicherung über ein
+       Element, das es nicht gibt.
+       Die Zusicherung selbst ist unverändert und gilt für den Nachfolger: KEIN SCHEIN NACH AUSSEN.
+       Sie steht als „enthält keinen Schatten außer inset" statt als „enthält box-shadow: none" — die
+       zweite Form geht auf, sobald jemand eine zweite Regel danebenstellt, und genau daran sind in
+       diesem Durchgang fünf Befunde entstanden. */
+    const legRules = [...deskBlock.matchAll(/(^|[\s,])(\.up-leg[a-z-]*(?:\.[a-z-]+)?)\s*\{([^}]*)\}/g)];
+    expect(legRules.length, ".up-leg nicht gefunden — trägt das Kärtchen keine Regeln mehr?").toBeGreaterThan(0);
+    for (const [, , sel, body] of legRules) {
+      const schatten = [...body.matchAll(/box-shadow:\s*([^;]+)/g)].map((m) => m[1].trim());
+      for (const sch of schatten)
+        expect(sch, `${sel}: Schein nach außen ist zurück`).toMatch(/^(none|inset\b)/);
+    }
+    /* Und die Gegenprobe zum Verschwinden: der Auswahl-Zustand darf nicht durch die Hintertür
+       zurückkommen — im Kärtchen steht kein `is-sel` mehr. */
+    expect(read("src/ui/UpgradeScreen.jsx"), "das Kärtchen hat wieder einen Auswahl-Zustand")
+      .not.toMatch(/up-leg[^"`]*is-sel/);
   });
 
   it("die Kopf-Werkzeuge sind Text-Knöpfe", () => {
@@ -92,11 +106,22 @@ describe("#up-form — eine Kachelform, gleiche Reihen, eigene Legendär-Reihe",
   it("alle Kacheln tragen denselben Radius wie die Perk-/Skill-Angebote (6 px)", () => {
     const r = deskBlock.match(/\.up-vnode,[^{]*\{([^}]*)\}/);
     expect(r, "die Sammelregel der Kachelform fehlt").toBeTruthy();
-    expect(r[1]).toMatch(/border-radius:\s*6px/);
-    for (const k of ["up-navrow", "up-navpassive", "up-skill", "up-stat", "gd-navrow", "gl-navrow"])
+    /* #menu-rework M3 — dieselbe Behandlung, die der `#eckig`-Zwilling weiter unten seit M2a hat:
+       die 6 wird weiter geprüft, ihre Schreibweise nicht mehr vorgeschrieben. Die Aussage dieses
+       Wächters ist „EIN Radius für alle Kacheln, über EINE Regel", nicht „dort stehen die Zeichen
+       6px" — seit der Baum das Vokabular liest, nennt die Regel den Schritt beim Namen. Aufgelöst
+       durch den @theme-Block muss trotzdem 6 px herauskommen; fehlt der Schritt oder steht er auf
+       einem anderen Wert, endet die Ersetzung woanders und der Wächter fällt. */
+    const radius = resolve((r[1].match(/border-radius:\s*([^;]+);/) || [])[1] || "", themeTokens(css));
+    expect(radius, `der Sammelradius ist nicht mehr 6 px: ${radius}`).toMatch(/\b6px\b/);
+    for (const k of ["up-navrow", "up-leg", "up-skill", "up-stat", "gd-navrow", "gl-navrow"])
       expect(r[0], `${k} fehlt in der Sammelregel`).toMatch(new RegExp(`\\.${k}[,\\s]`));
-    /* Die PANELS behalten ihre 14 px — sie sind der Rahmen, nicht der Inhalt. */
-    expect(deskBlock).toMatch(/\.up-page\s*\{[^}]*border-radius:\s*14px/);
+    /* Die PANELS behalten ihre 14 px — sie sind der Rahmen, nicht der Inhalt. Auch hier aufgelöst
+       statt abgelesen: das Panel liest seit M3 `--rd-lg`, und 14 px ist genau, was dieser Schritt
+       ist. Die Zusicherung „Panel und Inhalt tragen VERSCHIEDENE Radien" bleibt damit prüfbar. */
+    const rdPage = resolve(
+      (deskBlock.match(/\.up-page\s*\{[^}]*?border-radius:\s*([^;]+);/) || [])[1] || "", themeTokens(css));
+    expect(rdPage, `der Panel-Radius ist nicht mehr 14 px: ${rdPage}`).toMatch(/\b14px\b/);
   });
 
   it("die Knoten einer Reihe sind gleich hoch (subgrid über alle sechs Spalten)", () => {
@@ -173,8 +198,39 @@ describe("#up-still + #up-griff — Auswertung ruhiger, Griffe fest", () => {
   });
 
   it("die Update-Leiste folgt derselben Sprache (eckig, kein Schein)", () => {
-    expect(deskBlock).toMatch(/\.up-banner\s*\{[^}]*border-radius:\s*6px/);
-    expect(deskBlock).toMatch(/\.up-banner \.as-edge-strong\s*\{[^}]*box-shadow:\s*none/);
+    /* #menu-rework M11 — BEIDE ZEILEN STANDEN AUF DER SCHREIBWEISE UND WURDEN ROT, WEIL DIE MIGRATION
+       GELUNGEN IST: die Leiste liest ihre 6 jetzt als `--rd-sm` und ihr `none` als `--el-flat`. Der
+       Schein ist damit nicht nur abwesend, sondern als Schritt GEWAEHLT — §2c fuehrt `--el-flat` unter
+       #ruhe ausdruecklich als „a step you PICK, not an absence you have to remember", und genau das ist
+       die Aussage dieser Zeile. H-f, und die Antwort ist die Invariante statt einer zweiten Schreibweise.
+
+       Je Achse drei Teile: die Regel liest GENAU DIESE Sprosse, die Sprosse traegt noch ihren Wert, und
+       sie ist NICHT die Nachbarsprosse. Ohne den dritten Teil bestuende die Radius-Zeile auch mit
+       `--rd-md` und die Schatten-Zeile auch mit `--el-rest` — dann waere die Leiste wieder eckiger
+       gedacht als gebaut und haette ihren Schein zurueck, und beides stuende gruen da. */
+    const bare = deskBlock.replace(/\/\*[\s\S]*?\*\//g, "");
+    const theme = themeTokens(css);
+
+    const leiste = bare.match(/\.up-banner\s*\{([^}]*)\}/);
+    expect(leiste, "die .up-banner-Regel gibt es nicht mehr").toBeTruthy();
+    const rd = (leiste[1].match(/border-radius:\s*([^;!]+)/) || [])[1];
+    expect(rd, "die Leiste hat ihren Radius verloren").toBeTruthy();
+    expect(resolve(rd, theme).trim(), "der Radius ist nicht mehr die Sprosse --rd-sm")
+      .toBe(resolve("var(--rd-sm)", theme).trim());
+    expect(resolve(rd, theme), "die Sprosse --rd-sm ist nicht mehr sechs").toMatch(/\b6px\b/);
+    expect(resolve(rd, theme).trim(), "der Radius liest die NACHBARSPROSSE")
+      .not.toBe(resolve("var(--rd-md)", theme).trim());
+
+    const knopf = bare.match(/\.up-banner \.as-edge-strong\s*\{([^}]*)\}/);
+    expect(knopf, "die Regel am Knopf der Leiste gibt es nicht mehr").toBeTruthy();
+    const sh = (knopf[1].match(/box-shadow:\s*([^;]+);/) || [])[1];
+    expect(sh, "der Knopf hat seine Hoehen-Angabe verloren").toBeTruthy();
+    expect(resolve(sh, theme).trim(), "der Knopf traegt wieder einen Schein").toBe("none");
+    expect(resolve(sh, theme).trim(), "die Hoehe ist nicht mehr die Sprosse --el-flat")
+      .toBe(resolve("var(--el-flat)", theme).trim());
+    expect(resolve(sh, theme).trim(), "die Hoehe liest die RUHE-Sprosse — das waere ein Schein")
+      .not.toBe(resolve("var(--el-rest)", theme).trim());
+
     expect(read("src/ui/UpdateBanner.jsx")).toMatch(/className="up-banner pointer-events-auto/);
   });
 });
@@ -187,7 +243,13 @@ describe("#eckig + #up-untertitel — ein Radius für alle Knöpfe, kein abgesch
     expect(read("src/ui/modalStyle.jsx"), "der Haken fehlt an der Sorte").toMatch(/ACTIONBTN_BASE = "as-actbtn /);
     const r = deskBlock.match(/\.as-actbtn,[\s\S]{0,180}?\{([^}]*)\}/);
     expect(r, "die Sammelregel des Radius fehlt").toBeTruthy();
-    expect(r[1]).toMatch(/border-radius:\s*6px/);
+    /* #menu-rework M2a — die 6 wird weiter geprüft, ihre Schreibweise nicht mehr vorgeschrieben.
+       Die Aussage dieses Wächters ist „ein Radius für alle, über EINE Regel", nicht „dort stehen die
+       Zeichen 6px": seit der Vokabular-Umstellung nennt die Regel den Schritt `--rd-sm` beim Namen.
+       Aufgelöst durch den @theme-Block muss trotzdem 6 px herauskommen — fehlt das Token oder steht
+       es auf einem anderen Wert, endet die Ersetzung woanders und der Wächter fällt. */
+    const radius = resolve((r[1].match(/border-radius:\s*([^;]+);/) || [])[1] || "", themeTokens(css));
+    expect(radius, `der Sammelradius ist nicht mehr 6 px: ${radius}`).toMatch(/\b6px\b/);
     for (const k of ["up-close", "gd-close", "gl-close", "cz-close", "st-close"])
       expect(r[0], `${k} fehlt in der Sammelregel`).toMatch(new RegExp(`\\.${k}[,\\s]`));
     /* Der Endscreen baut seine drei Knöpfe von Hand (Menü, Neuer Lauf, „Bestätigen" der Freischalt-Karte)
