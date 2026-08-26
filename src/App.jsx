@@ -727,7 +727,7 @@ function AutostichGame() {
     });
     // Globalen Lauf posten (#14) — additiv, fehlertolerant. myEntry hebt ihn im Board hervor;
     // pubToken lädt das Board nach dem Submit neu (damit der eigene Lauf drin ist).
-    const name = (username || "").trim().slice(0, 20);
+    const name = [...(username || "").trim()].slice(0, 20).join(""); // #health-check S7: Codepoints statt UTF-16-Einheiten — .slice(0,20) konnte ein Surrogatpaar zerschneiden
     // Archetyp je gehaltenem Skill am Laufende (#139): ein Eintrag pro Skill (z. B. "fire,fire,ice"),
     // damit das Board ein Icon PRO Skill zeigt (4 Feuer → 4× 🔥). Leer, wenn keine Skills gehalten wurden.
     // Reihenfolge egal — decodeArchetypes gruppiert/zählt beim Rendern.

@@ -576,7 +576,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
     // #UI: Boost-Vorschau — dieselbe Formel wie archBoostPct (Struktur-Kombis Σ(f−1) + neu gegründete Formationen), aber
     // mit den Vorschau-Gebäuden. dBoost = Vorschau − aktuell → Live-Differenz des Gebäude-Boosts im Brett-Kopf.
     const sumStr = (fs) => (fs || []).reduce((s, pf) => s + ((pf.mult || 1) - 1), 0);
-    const pStructBonus = boardFactorMap(previewBuildings).reduce((t, f) => t + (f - 1), 0);
+    const pStructBonus = boardFactorMap(previewBuildings, fundBonus).reduce((t, f) => t + (f - 1), 0); // #health-check G2: gleiche Quelle wie die Baseline (Zeile ~171), sonst zeigt dBoost ein Phantom-Delta
     const pFormGain = Math.max(0, sumStr(previewForms) - sumStr(formationsNoArch));
     const previewBoost = Math.round((pStructBonus + pFormGain) * 100);
     return { dVal: val2 - sumValue, dForm: form2 - formCount, dBoost: previewBoost - archBoostPct, valid: dragPrev.valid };

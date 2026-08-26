@@ -7683,7 +7683,7 @@ b, strong { font-weight: 600; }
   .as-ring > .as-ring-run::before { animation: none; }
 }
 /* Effekt-Stufe „minimal": der Sweep friert ein, der Rahmen bleibt (Farbe trägt weiter die Deck-Identität). */
-:root[data-reduced-fx="1"] .as-ring::before { animation: none !important; }
+:root[data-reduced-fx="1"] .as-ring > .as-ring-run::before { animation: none !important; }
 
 
 /* ==========================================================================

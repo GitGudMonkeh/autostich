@@ -80,7 +80,7 @@ export function DevRunSetup({ onStart, onClose }) {
   });
 
   return overlayPortal((
-    <div className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto p-4"
+    <div className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto p-4" role="dialog" aria-modal="true"
       style={{ background: "#0c0c10ee", backdropFilter: "blur(3px)" }} onClick={onClose}>
       <div className="w-full max-w-lg my-6 rounded-2xl px-5 pb-5 flex flex-col gap-4 as-panel" style={panel} onClick={(e) => e.stopPropagation()}>
         {/* #UI: Kopf mit ✕ STICKY → beim Scrollen der Konfiguration oben rechts erreichbar (Abstand opak im Header, kein negativer Margin). */}
