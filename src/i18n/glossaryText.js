@@ -44,8 +44,23 @@ function formsRegex(locale) {
   }
   const uniq = [...new Set(forms)].sort((a, b) => b.length - a.length);
   const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+  /* #zh-hans: Die Wortgrenze gilt je Wortform, nicht mehr um die ganze Alternation.
+     Grund, gemessen: Han-Zeichen sind `\p{L}`. Eine chinesische Wortform steht im Fließtext
+     IMMER zwischen anderen Han-Zeichen, also verbot die Grenze praktisch jeden Treffer — die
+     Fettung griff 42 mal, wo der Wächter über 198 erwartet. Chinesisch kennt keine Wortgrenze;
+     das Wort selbst IST die Grenze.
+
+     Für Deutsch, Englisch und Spanisch ändert sich nichts: dort ist jede Wortform lateinisch und
+     bekommt genau dieselben Lookarounds wie vorher, nur eine Ebene tiefer geschrieben. Das ist
+     eine Verallgemeinerung über N Sprachen, keine Aufweichung — eine lateinische Form wird
+     weiterhin nicht mitten in einem längeren Wort gefunden. */
+  const CJK = /[㐀-䶿一-鿿豈-﫿]/;
+  const zweig = (f) => (CJK.test(f)
+    ? esc(f)
+    : "(?<![\\p{L}\\p{N}\\-])" + esc(f) + "(?![\\p{L}\\p{N}\\-])");
   const re = uniq.length
-    ? new RegExp("(?<![\\p{L}\\p{N}\\-])(?:" + uniq.map(esc).join("|") + ")(?![\\p{L}\\p{N}\\-])", "gu")
+    ? new RegExp("(?:" + uniq.map(zweig).join("|") + ")", "gu")
     : null;
   _cache.set(locale, re);
   return re;

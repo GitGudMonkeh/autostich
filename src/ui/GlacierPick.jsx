@@ -34,7 +34,10 @@ export function GlacierPick({ state, onConfirm }) {
           <div className="text-body-5 uppercase tracking-widest inline-flex items-center gap-1" style={{ color: ICE }}><FactionIcon type="ice" size={12} /> {t("glacierpick.eyebrow")}</div>
           <h2 className="text-title-6 font-bold mt-1">{t("glacierpick.title")}</h2>
           <p className="text-body-5 opacity-60 mt-1 max-w-xl mx-auto leading-snug">
-            {t("glacierpick.intro.a")} <b>{t("glacierpick.intro.rigid")}</b> {t("glacierpick.intro.b")}
+            {/* Ein String mit **fett** statt drei Fragmente, s. FormationPhase. */}
+            {t("glacierpick.intro").split(/\*\*/).map((part, i) => (i % 2
+              ? <b key={i}>{part}</b>
+              : <span key={i}>{part}</span>))}
           </p>
         </div>
 

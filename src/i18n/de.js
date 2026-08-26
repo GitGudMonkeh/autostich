@@ -422,9 +422,7 @@ export default {
   "form.delta": "{sign}{pct} %",
   "form.energyLeft": " · noch {n} Energie",
   // Der Hinweis ist dreigeteilt, weil „innerhalb" fett steht.
-  "form.hint.pre": "Tippe zwei Karten zum Tauschen (1 Energie) · Formationen entstehen nur",
-  "form.hint.within": "innerhalb",
-  "form.hint.post": "der {size}er-Segmente",
+  "form.hint": "Tippe zwei Karten zum Tauschen (1 Energie) · Formationen entstehen nur **innerhalb** der {size}er-Segmente",
   "form.seg.strength": "+{pct} %",
   "form.seg.strength.title": "Formations-Bonus dieses Segments in Prozent. Grün: seit Durchlaufbeginn stärker, rot: schwächer",
   "form.segwork": "Segmentarbeit:",
@@ -565,9 +563,7 @@ export default {
   /* ---- Gletscher-Wahl (GlacierPick) ---- */
   "glacierpick.eyebrow": "Gletscher",
   "glacierpick.title": "Wähle eine Karte als Gletscher",
-  "glacierpick.intro.a": "Sie friert auf ihrer Zelle fest. Ab dann",
-  "glacierpick.intro.rigid": "starr",
-  "glacierpick.intro.b": "(nicht mehr verschiebbar) und sammelt Masse, bis sie bricht. Entscheide zwischen Position und Wert.",
+  "glacierpick.intro": "Sie friert auf ihrer Zelle fest. Ab dann **starr** (nicht mehr verschiebbar) und sammelt Masse, bis sie bricht. Entscheide zwischen Position und Wert.",
   "glacierpick.chosen": "{n} / 1 gewählt",
 
   /* ---- Ziel-Auswahlen (TargetSelect · FamilyTargetSelect) ---- */

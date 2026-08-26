@@ -238,7 +238,12 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
           </button>
         </div>
         <p className="text-body-5 opacity-55 mb-2">
-          {t("form.hint.pre")} <b>{t("form.hint.within")}</b> {t("form.hint.post", { size: SEGMENT_SIZE })}
+          {/* Ein String, **fett** darin ausgezeichnet (dieselbe Markup-Konvention wie BuildSummary und die
+              Leitfaden-Texte). Frueher drei Fragmente mit Literal-Leerzeichen im JSX: das erzwang die
+              deutsche Wortstellung und riss im Chinesischen zwei Luecken um das fette Wort. */}
+          {t("form.hint", { size: SEGMENT_SIZE }).split(/\*\*/).map((part, i) => (i % 2
+            ? <b key={i}>{part}</b>
+            : <span key={i}>{part}</span>))}
           {segInfo.active && (segInfo.all
             ? <> — <span style={{ color: "#8be0a8" }}><b>{t("form.segwork")}</b> {t("form.segwork.all")}</span></>
             : <> — <span style={{ color: "#8be0a8" }}><b>{t("form.segwork")}</b> {t("form.segwork.marked")}</span></>)}.

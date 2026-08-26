@@ -415,9 +415,7 @@ export default {
   "form.confirm.title": "Formation difference since the start of the cycle · remaining order energy",
   "form.delta": "{sign}{pct}%",
   "form.energyLeft": " · {n} energy left",
-  "form.hint.pre": "Tap two cards to swap them (1 energy) · formations only form",
-  "form.hint.within": "inside",
-  "form.hint.post": "the segments of {size}",
+  "form.hint": "Tap two cards to swap them (1 energy) · formations only form **inside** the segments of {size}",
   "form.seg.strength": "+{pct}%",
   "form.seg.strength.title": "Formation bonus of this segment in percent. Green: stronger than at the start of the cycle, red: weaker",
   "form.segwork": "Segment work:",
@@ -549,9 +547,7 @@ export default {
   /* ---- Glacier choice (GlacierPick) ---- */
   "glacierpick.eyebrow": "Glacier",
   "glacierpick.title": "Choose a card to become a glacier",
-  "glacierpick.intro.a": "It freezes onto its cell. From then on",
-  "glacierpick.intro.rigid": "rigid",
-  "glacierpick.intro.b": "(no longer movable) and gathering mass until it bursts. Weigh position against value.",
+  "glacierpick.intro": "It freezes onto its cell. From then on **rigid** (no longer movable) and gathering mass until it bursts. Weigh position against value.",
   "glacierpick.chosen": "{n} / 1 chosen",
 
   /* ---- Target selections (TargetSelect · FamilyTargetSelect) ---- */

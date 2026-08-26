@@ -288,7 +288,27 @@ describe("i18n · Katalog-Parität", () => {
     "formation.anker.abbr",      // Anker/Ancla    → beide A
   ]);
 
-  const SAME_OK = { en: SAME_OK_EN, es: SAME_OK_ES };
+  /* #zh-hans: Schluessel, deren chinesischer Text zu Recht Zeichen fuer Zeichen dem deutschen
+     gleicht. Es sind zwei Sorten: reine Zahlen- und Platzhalterzeilen, und lateinische Codes, die
+     in keiner Sprache uebersetzt werden. Die erfundenen Deck- und Effektnamen faengt schon
+     SAME_OK_CLASS ab und stehen deshalb nicht noch einmal hier. */
+  const SAME_OK_ZH = new Set([
+    "common.cur.sp",               // SP — Kuerzel, in jeder Sprache SP
+    "common.cur.dp",               // DP — dito
+    "hud.speed.max.label",         // „MAX" — Kuerzel auf dem Tempo-Knopf
+    "options.chip.display",        // „HUD" — das Kuerzel der Sprungleiste
+    "dev.run.title",               // „DEV RUN" — Dev-Bildschirm, bewusst unuebersetzt
+    "upgrades.buy.short",          // „{cost} SP" — Zahl plus Waehrungskuerzel
+    "gameover.welcome.value",      // „+{n} DP" — dito
+    "start.board.week.val",        // „{have}/{max}" — nur Ziffern und ein Schraegstrich
+    "start.board.week.bonus",      // „+{sp} SP · +{dp} DP" — nur Zahlen und Kuerzel
+    "start.board.week.bonus.full", // „+{dp} DP" — dito
+    "milestone.next",              // „→ {at} +{sp}" — Pfeil, Zahlen, sonst nichts
+    "start.board.last.none",       // Gedankenstrich als Platzhalter — Zeichen, kein Wort
+    "building.kick.active",        // „{base} · {kick}" — reine Verkettung zweier Platzhalter
+  ]);
+
+  const SAME_OK = { en: SAME_OK_EN, es: SAME_OK_ES, "zh-Hans": SAME_OK_ZH };
 
   /* Eigennamen-KLASSEN statt 18 Einzeleinträge: Kosmetik-Set-Namen und Effekt-Namen sind
      überwiegend Eigennamen (Kitsune, Ronin, Seraph, Aurora, Supernova) und lauten in beiden
@@ -431,6 +451,9 @@ describe("i18n · Zahl- und Satzformate", () => {
     de: { open: "„", close: "“" },
     en: { open: "“", close: "”" },
     es: { open: "“", close: "”" },
+    // #zh-hans: Chinesisch setzt Vollbreiten-Ecken. Sie kommen damit auch in ALL_QUOTES und
+    // sind ab jetzt fuer de/en/es fremde Zeichen — die Paar-Regel wird schaerfer, nicht milder.
+    "zh-Hans": { open: "「", close: "」" },
   };
   const ALL_QUOTES = [...new Set(Object.values(QUOTES).flatMap((q) => [q.open, q.close]))];
 
@@ -604,7 +627,34 @@ describe("i18n · Terminologie", () => {
 
   /* EINE Begriffstabelle je Zielsprache. Vererben geht nicht: die Tabelle bildet DEUTSCH auf die
      Zielsprache ab, nicht Englisch auf Spanisch. */
-  const TERMS = { en: TERMS_EN, es: TERMS_ES };
+  /* #zh-hans: Dieselbe Abbildung wie fuer Englisch und Spanisch, ein drittes Mal angewandt:
+     EIN deutscher Begriff auf GENAU EIN chinesisches Wort, ueberall. Die Liste ist der
+     eingefrorene Teil von lieferung.md §2. Wo eine Wortwahl noch aussteht, steht sie hier
+     bewusst nicht drin — die Tabelle prueft, was entschieden ist, nicht was diskutiert wird. */
+  const TERMS_ZH = [
+    { de: /\bDurchlauf\b/i,      ok: /轮/,        never: /回合/,   name: "Durchlauf → 轮 (nie 回合)" },
+    { de: /\bStich(e|en)?\b/,    ok: /墩/,        never: /回合/,   name: "Stich → 墩 (nie 回合)" },
+    { de: /\bSeed\b/i,           ok: /种子/,      never: null,     name: "Seed → 种子" },
+    { de: /\bRarität\b/i,        ok: /稀有度/,    never: null,     name: "Rarität → 稀有度" },
+    { de: /\bBestenliste\b/i,    ok: /排行榜/,    never: null,     name: "Bestenliste → 排行榜" },
+    { de: /Deck-Werkstatt/i,      ok: /卡组工坊/,  never: null,     name: "Deck-Werkstatt → 卡组工坊" },
+    { de: /\bMultiplikator\b/i,  ok: /倍率/,      never: null,     name: "Multiplikator → 倍率" },
+    { de: /Aufstellungsphase/i,   ok: /布阵阶段/,  never: null,     name: "Aufstellungsphase → 布阵阶段" },
+    { de: /Formations-Energie/i,  ok: /布阵能量/,  never: null,     name: "Formations-Energie → 布阵能量" },
+    { de: /\bZiehreihenfolge\b/i, ok: /牌序/,     never: null,     name: "Ziehreihenfolge → 牌序" },
+    { de: /\bKartenwert\b/i,     ok: /卡牌数值/,  never: null,     name: "Kartenwert → 卡牌数值" },
+    { de: /\bStichwert\b/i,      ok: /墩值/,      never: null,     name: "Stichwert → 墩值" },
+    { de: /\bKampfwert\b/i,      ok: /战斗数值/,  never: null,     name: "Kampfwert → 战斗数值" },
+    { de: /\bGletscher\b/i,      ok: /冰川/,      never: null,     name: "Gletscher → 冰川" },
+    { de: /\bHitze\b/i,          ok: /热量/,      never: null,     name: "Hitze → 热量" },
+    { de: /\bWachstum\b/i,       ok: /生长/,      never: null,     name: "Wachstum → 生长" },
+    { de: /\bAsche\b/i,          ok: /灰烬/,      never: null,     name: "Asche → 灰烬" },
+    { de: /\bMasse\b/i,          ok: /质量/,      never: null,     name: "Masse → 质量" },
+    { de: /\bSchwelle(n)?\b/i,   ok: /阈值/,      never: null,     name: "Schwelle → 阈值" },
+    { de: /\bUpgrade-Baum\b/i,   ok: /升级树/,    never: null,     name: "Upgrade-Baum → 升级树" },
+  ];
+
+  const TERMS = { en: TERMS_EN, es: TERMS_ES, "zh-Hans": TERMS_ZH };
 
   /* ZWEI Schlüsselklassen, die diese Prüfung NICHT bewerten darf (#es-translate). Beide fielen
      erst beim Aufbau der spanischen Tabelle auf, weil sie im Englischen zufällig nicht auffielen:
@@ -658,7 +708,12 @@ describe("i18n · Terminologie", () => {
      „Autostich" als Nähbegriff). Am 26.08.2026 auf Spanisch angewandt statt neu verhandelt: der
      spanische Stich ist die „baza", also Autobaza. Die Marke folgt damit in jeder Sprache derselben
      Abbildung wie das Wort in ihr (Stich → trick → baza). */
-  const BRAND = { de: "Autostich", en: "Autotrick", es: "Autobaza" };
+  /* #zh-hans, 26.08.2026: dieselbe Abbildung ein drittes Mal angewandt statt neu verhandelt.
+     Der chinesische Stich ist die 墩, also 自动墩 — „automatischer Stich", die Konstruktion von
+     Autostich und Autobaza. Die Order zum Muster sagte noch „Autostich nicht übersetzen"; das
+     war vor dieser Regel geschrieben und ist damit überholt, denn zwei Sprachen mit derselben
+     Marke entwerten die Kreuzprüfung unten. */
+  const BRAND = { de: "Autostich", en: "Autotrick", es: "Autobaza", "zh-Hans": "自动墩" };
 
   it("die Marke trägt je Sprache ihren eigenen Namen — nie über Kreuz", () => {
     for (const loc of LOCALE_IDS) {
@@ -849,17 +904,15 @@ describe("i18n · Auflösung", () => {
       expect(setLocale(loc), `${loc} ist nicht ready und darf nicht wählbar sein`).toBe(DEFAULT_LOCALE);
     }
     setLocale(before);
-    expect(LOCALE_IDS).toEqual(["de", "en", "es"]);
-    /* Seit dem 26.08.2026 ist Spanisch fertig (#es-translate), also ist JEDE angemeldete Sprache
-       auch ausgeliefert — und die Schleife darüber läuft heute über eine leere Menge.
-
-       Das wird hier ausgesprochen statt verschwiegen: die Schleife prüft ab jetzt nichts mehr,
-       bis eine vierte Sprache angemeldet wird, und schärft sich in genau dem Moment von selbst
-       wieder. Die Zeile darunter ist das, was heute tatsächlich gemessen wird. Ein stillschweigend
-       leerer Durchlauf wäre die gefährlichere Variante — dieselbe Falle, in die die Sonde der
-       Rückfallkette weiter unten schon einmal getappt ist. */
+    expect(LOCALE_IDS).toEqual(["de", "en", "es", "zh-Hans"]);
+    /* Die Schleife über die unfertigen Sprachen läuft wieder über eine leere Menge, und das
+       wird hier ausgesprochen statt verschwiegen: zh-Hans war eine Weile angemeldet und nicht
+       ausgeliefert, hat seinen Katalog vervollständigt und ist über die Ratsche ganz unten auf
+       `ready: true` gegangen. Die Schleife prüft ab jetzt wieder nichts, bis eine FÜNFTE Sprache
+       angemeldet wird, und schärft sich in genau dem Moment von selbst. Die beiden Zeilen darunter
+       sind das, was heute tatsächlich gemessen wird. */
     expect(unfertig, "angemeldet, aber nicht ausgeliefert").toEqual([]);
-    expect(READY_LOCALE_IDS).toEqual(["de", "en", "es"]);
+    expect(READY_LOCALE_IDS).toEqual(["de", "en", "es", "zh-Hans"]);
   });
 
   /* Die Rückfallkette, und zwar an der Stelle, die einen Spieler betrifft. Ohne sie fiele ein
