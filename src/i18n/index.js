@@ -20,12 +20,26 @@
    ============================================================ */
 import de from "./de.js";
 import en from "./en.js";
+import es from "./es.js";
 
+/* `ready` trennt ANGEMELDET von AUSLIEFERBAR — und das ist keine Aufweichung der Parität,
+   sondern ihr Schalter. Eine Sprache steht hier, sobald der Code sie kennt (Export, Wächter,
+   Formatierer); sie wird dem Spieler erst angeboten, wenn ihr Katalog VOLLSTÄNDIG ist. Der
+   Guard-Test dreht die Richtung um: verlangende Prüfungen laufen über die fertigen Sprachen,
+   verbietende über ALLE — und eine Ratsche macht die Suite rot, sobald ein `ready: false`-Katalog
+   vollständig ist („setz ready: true"). Damit kann die Ausnahme nicht stillschweigend bleiben.
+
+   `via` ist die Rückfallkette VOR der Quellsprache. Ohne sie sähe ein spanischer Spieler bei
+   einem fehlenden Schlüssel Deutsch (SOURCE_LOCALE), nicht Englisch. */
 export const LOCALES = [
-  { id: "de", label: "Deutsch",  short: "DE" },
-  { id: "en", label: "English",  short: "EN" },
+  { id: "de", label: "Deutsch",  short: "DE", ready: true },
+  { id: "en", label: "English",  short: "EN", ready: true },
+  { id: "es", label: "Español",  short: "ES", ready: true,  via: ["en"] },  // #es-locale
 ];
 export const LOCALE_IDS = LOCALES.map((l) => l.id);
+// Was die UI anbietet und was `setLocale` annimmt. Nie LOCALE_IDS dafür benutzen.
+export const READY_LOCALES = LOCALES.filter((l) => l.ready);
+export const READY_LOCALE_IDS = READY_LOCALES.map((l) => l.id);
 
 /* ZWEI verschiedene „Standards" — bewusst getrennt, sie werden gern verwechselt:
    - SOURCE_LOCALE = die Sprache, in der die Texte GESCHRIEBEN werden. Ihr Katalog ist immer
@@ -36,7 +50,14 @@ export const LOCALE_IDS = LOCALES.map((l) => l.id);
 export const SOURCE_LOCALE = "de";
 export const DEFAULT_LOCALE = "en";
 
-const CATALOGS = { de, en };
+const CATALOGS = { de, en, es };
+
+/* Rückfallkette je Sprache: erst `via`, dann die Quellsprache. Die eigene Sprache fliegt raus
+   (sie ist schon gescheitert), Doppelte ebenso — `de` behält damit eine LEERE Kette. */
+const FALLBACK = Object.fromEntries(LOCALES.map((l) => [
+  l.id,
+  [...(l.via || []), SOURCE_LOCALE].filter((id, i, all) => id !== l.id && all.indexOf(id) === i),
+]));
 
 /* ---- Zustand ------------------------------------------------
    Bewusst Modul-Zustand (kein React-Context): `t()` wird auch aus reinen Modulen
@@ -47,8 +68,10 @@ const listeners = new Set();
 
 export function getLocale() { return current; }
 
+// READY_LOCALE_IDS, nicht LOCALE_IDS: eine angemeldete, aber unfertige Sprache ist für den
+// Spieler nicht wählbar — auch nicht über ein altes `options.lang` aus dem localStorage.
 export function setLocale(id) {
-  const next = LOCALE_IDS.includes(id) ? id : DEFAULT_LOCALE;
+  const next = READY_LOCALE_IDS.includes(id) ? id : DEFAULT_LOCALE;
   if (next === current) return current;
   current = next;
   for (const fn of [...listeners]) { try { fn(next); } catch (e) {} }
@@ -72,7 +95,7 @@ export function interpolate(tpl, vars) {
 }
 
 // Fehlende Schlüssel: in Dev laut (damit sie beim Bauen auffallen), in Produktion still
-// mit Deutsch-Rückfall — ein fehlendes englisches Wort darf nie den Bildschirm sprengen.
+// über die Rückfallkette — ein fehlendes Wort darf nie den Bildschirm sprengen.
 function missing(key, locale) {
   if (typeof import.meta !== "undefined" && import.meta.env && import.meta.env.DEV) {
     console.warn(`[i18n] fehlender Schlüssel „${key}" (${locale})`);
@@ -80,8 +103,14 @@ function missing(key, locale) {
 }
 
 /* Plural nach i18next-Konvention: `key_one` / `key_other`, gewählt über die Variable `count`.
-   Bewusst minimal — Deutsch und Englisch haben beide genau zwei Formen. Sprachen mit mehr
-   Formen (pl, ru) bräuchten hier Intl.PluralRules; der Aufrufer bleibt derselbe. */
+   Bewusst minimal — Deutsch, Englisch UND Spanisch haben alle drei genau zwei Formen, und zwar
+   mit derselben Grenze (CLDR: `one` nur bei genau 1). Gemessen mit Intl.PluralRules, nicht
+   angenommen. Sprachen mit mehr Formen (pl, ru) bräuchten hier Intl.PluralRules selbst; der
+   Aufrufer bliebe derselbe.
+
+   Was diese Stelle NICHT kann und auch mit einer Bibliothek nicht könnte: Genus-Kongruenz mit
+   einem eingesetzten Wort („{n} bloqueado" vs. „bloqueada"). Das ist im Spanischen die eigentliche
+   Falle, und sie wird im Übersetzerpaket als Formulierungsregel gelöst, nicht hier. */
 function resolveKey(cat, key, vars) {
   if (vars && typeof vars.count === "number") {
     const suffix = vars.count === 1 ? "_one" : "_other";
@@ -98,7 +127,12 @@ export function t(key, vars, locale) {
   let raw = resolveKey(cat, key, vars);
   if (raw == null) {
     missing(key, loc);
-    raw = resolveKey(CATALOGS[SOURCE_LOCALE], key, vars);   // Quellsprache ist immer vollständig
+    // Kette statt Sprung: `es` fällt auf Englisch, erst danach auf die Quellsprache. Ein
+    // direkter Sprung auf SOURCE_LOCALE zeigte einem spanischen Spieler DEUTSCH.
+    for (const alt of FALLBACK[loc] || [SOURCE_LOCALE]) {
+      raw = resolveKey(CATALOGS[alt] || {}, key, vars);
+      if (raw != null) break;
+    }
   }
   if (raw == null) return key;              // letzter Rückfall: der Schlüssel selbst, nie „undefined"
   return interpolate(raw, vars);
@@ -114,16 +148,32 @@ export function hasKey(key, locale) {
 export function catalog(locale) { return CATALOGS[locale] || {}; }
 
 /* ---- Zahlformate --------------------------------------------
-   Deutsch: Dezimal-Komma, Tausenderpunkt (1.234,5). Englisch: Punkt/Komma (1,234.5).
-   Bislang lagen dafür Helfer (`de`, `grp`) in jedem Register einzeln — die bleiben dort
-   als deutsche Formatierer, aber alles, was durch die i18n-Schicht läuft, nimmt diese hier. */
-const SEP = {
-  de: { dec: ",", grp: "." },
-  en: { dec: ".", grp: "," },
+   EINE Tabelle, eine Zeile je Sprache. Bis 26.08.2026 waren das drei Fallunterscheidungen an
+   drei Stellen (`SEP`, `fmtPct`, `fmtDayMonth`) plus eine VIERTE, versteckte in buildingText.js,
+   die `getLocale() === SOURCE_LOCALE` fragte — die hätte Spanisch still in den englischen Zweig
+   fallen lassen (×1.10 statt ×1,10). Genau deshalb steht das jetzt als Tabelle: eine neue Sprache
+   ist eine ZEILE, kein weiterer Zweig, und der Wächter liest dieselbe Tabelle wie der Formatierer,
+   kann ihr also nicht widersprechen.
+
+   Bewusst NICHT über `Intl`/`toLocaleDateString`: deren Ausgabe hängt an der Browser-Sprache,
+   nicht an der im Spiel gewählten, und sie verschiebt sich zwischen ICU-Versionen — die
+   Quelltext-Ratschen würden dann aus Gründen rot, die nichts mit dem Code zu tun haben.
+
+   Die `es`-Zeile ist gemessen, nicht geraten (Intl als REFERENZ befragt, nicht als Implementierung):
+   neutrales `es` liefert 1.234.567,25 · „7 %" · 24/12 — Trennzeichen wie Deutsch, Datum wie keins
+   von beiden. Bei `es-419` wären die ersten beiden auf die englische Form gekippt; dass die
+   Sprach-ID `es` heißt, entscheidet also auch das Zahlformat. */
+const FMT = {
+  de: { dec: ",", grp: ".", pct: "{n} %", day: "{dd}.{mm}." },
+  en: { dec: ".", grp: ",", pct: "{n}%",  day: "{mm}/{dd}" },
+  es: { dec: ",", grp: ".", pct: "{n} %", day: "{dd}/{mm}" },
 };
 
+// Für Wächter und Export: dieselbe Tabelle, die die Formatierer benutzen. NICHT für die UI.
+export function numberFormat(locale) { return FMT[locale || current] || FMT[SOURCE_LOCALE]; }
+
 export function fmtNum(x, locale) {
-  const s = SEP[locale || current] || SEP[SOURCE_LOCALE];
+  const s = numberFormat(locale);
   const [int, frac] = String(x).split(".");
   const grouped = int.replace("-", "").replace(/\B(?=(\d{3})+(?!\d))/g, s.grp);
   const sign = int.startsWith("-") ? "-" : "";
@@ -131,20 +181,16 @@ export function fmtNum(x, locale) {
 }
 
 // Prozent als ganze Zahl inkl. Zeichen (0.07 → „7 %" / „7%").
-// Im Deutschen steht ein schmales Leerzeichen vor dem Zeichen, im Englischen keines.
+// Deutsch und Spanisch setzen ein Leerzeichen vor das Zeichen, Englisch nicht.
 export function fmtPct(x, locale) {
-  const loc = locale || current;
-  const n = Math.round(x * 100);
-  return loc === "de" ? `${n} %` : `${n}%`;
+  return numberFormat(locale).pct.replace("{n}", Math.round(x * 100));
 }
 
-/* Kurzes Tagesdatum (Tag.Monat) — die Reihenfolge unterscheidet sich: de „24.12." · en „12/24".
-   Bewusst NICHT über `toLocaleDateString`: dessen Ausgabe hängt an der Browser-Sprache, nicht an
-   der im Spiel gewählten. Nur diese beiden Sprachen, deshalb reicht die kleine Fallunterscheidung. */
+// Kurzes Tagesdatum. Drei verschiedene Formen: de „24.12." · en „12/24" · es „24/12".
 export function fmtDayMonth(ts, locale) {
   const d = new Date(ts);
   if (Number.isNaN(d.getTime())) return "—";
   const dd = String(d.getDate()).padStart(2, "0");
   const mm = String(d.getMonth() + 1).padStart(2, "0");
-  return (locale || current) === "de" ? `${dd}.${mm}.` : `${mm}/${dd}`;
+  return numberFormat(locale).day.replace("{dd}", dd).replace("{mm}", mm);
 }

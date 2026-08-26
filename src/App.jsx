@@ -888,8 +888,25 @@ function AutostichGame() {
   // nicht selbst mitten in Animationsframes fallen. Je Session einmal pro aktivem Archetyp; gestaffelt (ein Effekt je
   // Idle-Slot). Deckfarben werden nur beim Auslösen gelesen (je Lauf stabil).
   const fxPrewarmedRef = useRef(new Set());
+  /* #372b — die ANGEBOTENEN Archetypen zählen mit, nicht nur die aktiven.
+
+     Der gemeldete Ruckler („die erste ausgewachsene Pflanzen-Karte hängt beim Umdrehen") kam von einer
+     Lücke in genau diesem Effekt: `PICK_SKILL` setzt `activeArchetypes` UND `phase: "play"` in EINEM
+     Dispatch (reducer.js). Der Effekt läuft danach zwar, fällt aber sofort über seine erste Zeile —
+     Phase ist „play" — und der eben gewählte Archetyp wird übersprungen. Vorgewärmt wurde er erst in
+     der nächsten Nicht-Spiel-Phase, also mehrere Stiche später; die erste reife Karte kam vorher und
+     baute ihr teures Bitmap synchron auf dem Umdreh-Frame.
+
+     EIS war deshalb nie betroffen und der Fehler sah nach einem reinen Pflanzen-Problem aus: der
+     Eis-Pick geht auf „glacier-target", also in eine Nicht-Spiel-Phase, und wärmt dort ganz normal.
+
+     Vorgewärmt wird jetzt, WÄHREND das Angebot offen steht — eine Nicht-Spiel-Phase, in der der
+     Spieler ohnehin liest. Damit bleibt die Regel „nie mitten im Stichspiel" (#372) unangetastet:
+     die Wärmung passiert VOR dem Pick, nicht danach. Preis: ein Archetyp, der am Ende nicht gewählt
+     wird, ist umsonst gewärmt — ein Bitmap, einmal je Sitzung, gegen einen sichtbaren Hänger. */
+  const offeredArchs = (state.skillOffer || []).map(archetypeOf).filter(Boolean).join(",");
   useEffect(() => {
-    const arch = state.activeArchetypes || [];
+    const arch = [...new Set([...(state.activeArchetypes || []), ...(offeredArchs ? offeredArchs.split(",") : [])])];
     if (!arch.length || state.phase === "play") return undefined;   // nie mitten im Stichspiel prewarmen
     const todo = arch.filter((a) => FX_PREWARM[a] && !fxPrewarmedRef.current.has(a));
     if (!todo.length) return undefined;
@@ -906,7 +923,7 @@ function AutostichGame() {
     const id = idle(step);
     return () => (window.cancelIdleCallback || clearTimeout)(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- deckFx bewusst nur beim Trigger gelesen (Deckfarben je Lauf stabil)
-  }, [state.activeArchetypes, state.phase]);
+  }, [state.activeArchetypes, state.phase, offeredArchs]);
 
   function beginRun() {
     clearActiveRun(); setResumable(null); // frischer Lauf ersetzt einen evtl. gespeicherten Resume-Snapshot

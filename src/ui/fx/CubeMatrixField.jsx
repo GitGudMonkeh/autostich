@@ -325,19 +325,40 @@ export default function CubeMatrixField({ color = "#5a8ade", color2 = "#b06bff",
       if (propsRef.current.wire) {
         // #glow: LEUCHTENDER Neon-Look statt blasser Striche — heller Kern-Strich + ein breiterer, dimmerer additiver
         //   Glow-Halo (Bloom um die Kanten). Beide in glowC (Deckfarbe, #343) → satter Neon-Rahmen ohne Weiß-Wäsche.
+        /* #cube-mobil (26.08.2026) — das Drahtgitter kostet auf dem Handy an drei Stellen, und alle drei sind
+           hier. Gemeldet als „gefühlt spürbar weniger fps mit Wire an"; nachgezählt je Render, 48 Würfel auf lite:
+
+             vorher   288 stroke(), ALLE additiv, 1152 runde Ecken zu tessellieren
+             jetzt    144 stroke(), ebenso additiv,  576 Ecken — und die als bevel
+
+           WARUM DER HALO UND NICHT DIE FLÄCHE. Eine erste Rechnung verglich nur die bemalten Pixel und kam auf
+           „Striche und Füllungen nehmen sich nichts". Das war irreführend: ein Strich kostet mehr als eine
+           Füllung GLEICHER Fläche, weil Skia aus jedem Strichpfad erst eine Füllgeometrie erzeugen muss, je
+           Render neu. Zwei Durchgänge heißen also nicht doppelte Fläche, sondern doppelte Pfad-Expansion.
+
+           NUR AUF lite. Am Desktop bleibt der Look unangetastet — dort ist die Fläche billig und der Bloom ist
+           der Grund, warum das Gitter überhaupt nach Neon aussieht.
+
+           Der Kern-Strich behält seine volle Helligkeit: die Würfel werden auf dem Handy DÜNNER, nicht blasser.
+           Das ist der Tausch, und er ist bewusst so herum. */
         const laCore = clamp(0.78 + glowA * 1.2, 0.55, 1) * (0.55 + 0.45 * alpha);   // heller als vorher (war 0.5-Basis)
         const litFull = !liteOn();
-        ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = 1; ctx.lineJoin = "round";
+        ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = 1;
+        /* Jede runde Ecke ist eine Bogen-Tessellation. Bei 1–2 px Strichbreite sieht man den Unterschied zu
+           `bevel` nicht — auf lite sind das 576 Tessellationen je Render, die niemand bemerkt. */
+        ctx.lineJoin = litFull ? "round" : "bevel";
         const face = (a, b, c, d) => { ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.lineTo(c.x, c.y); ctx.lineTo(d.x, d.y); ctx.closePath(); ctx.stroke(); };
         const drawFaces = () => {
           face(FBL, FBR, FTR, FTL);                                          // Front
           face(FTL, FTR, BTR, BTL);                                          // Deckel
           if (cx < 0) face(FBL, FTL, BTL, BBL); else face(FBR, FTR, BTR, BBR); // sichtbare Seite
         };
-        // 1) Glow-Halo: breit + dim → weicher Neon-Schein (auf lite etwas schmaler = billiger).
-        ctx.strokeStyle = rgba(glowC, laCore * 0.34); ctx.lineWidth = Math.max(2, H * (litFull ? 0.0064 : 0.0050)); drawFaces();
-        // 2) Heller, etwas dickerer Kern-Strich obendrauf.
-        ctx.strokeStyle = rgba(glowC, laCore); ctx.lineWidth = Math.max(1.2, H * 0.0026); drawFaces();
+        // 1) Glow-Halo: breit + dim → weicher Neon-Schein. NUR am Desktop, s. Block oben.
+        if (litFull) { ctx.strokeStyle = rgba(glowC, laCore * 0.34); ctx.lineWidth = Math.max(2, H * 0.0064); drawFaces(); }
+        /* 2) Heller Kern-Strich. Boden auf lite 1,2 → 1,0 px: bei DPR 1.0 ist 1 px sogar SCHÄRFER (kein
+           Antialias-Saum über zwei Pixelreihen) und schmaler zugleich. Die frühere lite-Verdünnung des Halos
+           (0.0064 → 0.0050) war wirkungslos — sie klemmte am 2-px-Boden — und ist mit dem Halo entfallen. */
+        ctx.strokeStyle = rgba(glowC, laCore); ctx.lineWidth = Math.max(litFull ? 1.2 : 1.0, H * 0.0026); drawFaces();
         ctx.globalCompositeOperation = "source-over";
         return;
       }

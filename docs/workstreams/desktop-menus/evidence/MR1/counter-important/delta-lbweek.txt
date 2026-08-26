@@ -1,0 +1,134 @@
+
+  compared 20 cells, 2210 matched nodes
+  Surfaces only. Control states are not captured and are verified by hand.
+
+  unmatched nodes: 0 pre-registered (H-c: leaderboard, victory), 0 elsewhere
+
+  30 computed delta(s), all of them printed:
+    de/1280x720/ranked-week
+      1/0/1/2/1/2/3/0:DIV  bg
+        before: rgba(15, 15, 21, 0.72)
+        after : rgb(23, 22, 31)
+    de/1280x720/ranked-week
+      1/0/1/2/1/2/3/1:DIV  bg
+        before: rgba(15, 15, 21, 0.72)
+        after : rgb(23, 22, 31)
+    de/1280x720/ranked-week
+      1/0/1/2/1/2/3/2:DIV  bg
+        before: rgba(15, 15, 21, 0.72)
+        after : rgb(23, 22, 31)
+    de/1400x700/ranked-week
+      1/0/1/2/1/2/3/0:DIV  bg
+        before: rgba(15, 15, 21, 0.72)
+        after : rgb(23, 22, 31)
+    de/1400x700/ranked-week
+      1/0/1/2/1/2/3/1:DIV  bg
+        before: rgba(15, 15, 21, 0.72)
+        after : rgb(23, 22, 31)
+    de/1400x700/ranked-week
+      1/0/1/2/1/2/3/2:DIV  bg
+        before: rgba(15, 15, 21, 0.72)
+        after : rgb(23, 22, 31)
+    de/1536x791/ranked-week
+      1/0/1/2/1/2/3/0:DIV  bg
+        before: rgba(15, 15, 21, 0.72)
+        after : rgb(23, 22, 31)
+    de/1536x791/ranked-week
+      1/0/1/2/1/2/3/1:DIV  bg
+        before: rgba(15, 15, 21, 0.72)
+        after : rgb(23, 22, 31)
+    de/1536x791/ranked-week
+      1/0/1/2/1/2/3/2:DIV  bg
+        before: rgba(15, 15, 21, 0.72)
+        after : rgb(23, 22, 31)
+    de/1600x900/ranked-week
+      1/0/1/2/1/2/3/0:DIV  bg
+        before: rgba(15, 15, 21, 0.72)
+        after : rgb(23, 22, 31)
+    de/1600x900/ranked-week
+      1/0/1/2/1/2/3/1:DIV  bg
+        before: rgba(15, 15, 21, 0.72)
+        after : rgb(23, 22, 31)
+    de/1600x900/ranked-week
+      1/0/1/2/1/2/3/2:DIV  bg
+        before: rgba(15, 15, 21, 0.72)
+        after : rgb(23, 22, 31)
+    de/1920x1080/ranked-week
+      1/0/1/2/1/2/3/0:DIV  bg
+        before: rgba(15, 15, 21, 0.72)
+        after : rgb(23, 22, 31)
+    de/1920x1080/ranked-week
+      1/0/1/2/1/2/3/1:DIV  bg
+        before: rgba(15, 15, 21, 0.72)
+        after : rgb(23, 22, 31)
+    de/1920x1080/ranked-week
+      1/0/1/2/1/2/3/2:DIV  bg
+        before: rgba(15, 15, 21, 0.72)
+        after : rgb(23, 22, 31)
+    en/1280x720/ranked-week
+      1/0/1/2/1/2/3/0:DIV  bg
+        before: rgba(15, 15, 21, 0.72)
+        after : rgb(23, 22, 31)
+    en/1280x720/ranked-week
+      1/0/1/2/1/2/3/1:DIV  bg
+        before: rgba(15, 15, 21, 0.72)
+        after : rgb(23, 22, 31)
+    en/1280x720/ranked-week
+      1/0/1/2/1/2/3/2:DIV  bg
+        before: rgba(15, 15, 21, 0.72)
+        after : rgb(23, 22, 31)
+    en/1400x700/ranked-week
+      1/0/1/2/1/2/3/0:DIV  bg
+        before: rgba(15, 15, 21, 0.72)
+        after : rgb(23, 22, 31)
+    en/1400x700/ranked-week
+      1/0/1/2/1/2/3/1:DIV  bg
+        before: rgba(15, 15, 21, 0.72)
+        after : rgb(23, 22, 31)
+    en/1400x700/ranked-week
+      1/0/1/2/1/2/3/2:DIV  bg
+        before: rgba(15, 15, 21, 0.72)
+        after : rgb(23, 22, 31)
+    en/1536x791/ranked-week
+      1/0/1/2/1/2/3/0:DIV  bg
+        before: rgba(15, 15, 21, 0.72)
+        after : rgb(23, 22, 31)
+    en/1536x791/ranked-week
+      1/0/1/2/1/2/3/1:DIV  bg
+        before: rgba(15, 15, 21, 0.72)
+        after : rgb(23, 22, 31)
+    en/1536x791/ranked-week
+      1/0/1/2/1/2/3/2:DIV  bg
+        before: rgba(15, 15, 21, 0.72)
+        after : rgb(23, 22, 31)
+    en/1600x900/ranked-week
+      1/0/1/2/1/2/3/0:DIV  bg
+        before: rgba(15, 15, 21, 0.72)
+        after : rgb(23, 22, 31)
+    en/1600x900/ranked-week
+      1/0/1/2/1/2/3/1:DIV  bg
+        before: rgba(15, 15, 21, 0.72)
+        after : rgb(23, 22, 31)
+    en/1600x900/ranked-week
+      1/0/1/2/1/2/3/2:DIV  bg
+        before: rgba(15, 15, 21, 0.72)
+        after : rgb(23, 22, 31)
+    en/1920x1080/ranked-week
+      1/0/1/2/1/2/3/0:DIV  bg
+        before: rgba(15, 15, 21, 0.72)
+        after : rgb(23, 22, 31)
+    en/1920x1080/ranked-week
+      1/0/1/2/1/2/3/1:DIV  bg
+        before: rgba(15, 15, 21, 0.72)
+        after : rgb(23, 22, 31)
+    en/1920x1080/ranked-week
+      1/0/1/2/1/2/3/2:DIV  bg
+        before: rgba(15, 15, 21, 0.72)
+        after : rgb(23, 22, 31)
+
+  distribution of the 30 delta(s) — stated, not left to the eye:
+      by cell: de/1280x720/ranked-week=3  de/1400x700/ranked-week=3  de/1536x791/ranked-week=3  de/1600x900/ranked-week=3  de/1920x1080/ranked-week=3  en/1280x720/ranked-week=3  en/1400x700/ranked-week=3  en/1536x791/ranked-week=3  en/1600x900/ranked-week=3  en/1920x1080/ranked-week=3
+      by lang: de=15  en=15
+      by size: 1280x720=6  1400x700=6  1536x791=6  1600x900=6  1920x1080=6
+      by surface: ranked-week=30
+      by property: bg=30

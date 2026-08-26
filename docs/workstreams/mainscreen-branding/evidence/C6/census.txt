@@ -1,0 +1,36 @@
+
+  translucent panel surface  rgba(20, 20, 26, a)
+    1 call site(s) in 1 file(s), 1 distinct alpha(s)
+        1  src/index.css
+      values: rgba(20,20,26,.45) x1
+
+  translucent divider        rgba(60, 58, 78, a)
+    3 call site(s) in 1 file(s), 2 distinct alpha(s)
+        3  src/index.css
+      values: rgba(60,58,78,0.55) x1  rgba(60,58,78,.5) x2
+
+  MENU-38 neutral edge       rgba(150,150,170, a)
+    33 call site(s) in 6 file(s), 10 distinct alpha(s)
+       27  src/index.css
+        2  src/ui/StartScreen.jsx
+        1  src/ui/FeedbackModal.jsx
+        1  src/ui/Sparkline.jsx
+        1  src/ui/UpgradeScreen.jsx
+        1  src/ui/UsernameModal.jsx
+      values: rgba(150,150,170,.16) x6  rgba(150,150,170,.18) x7  rgba(150,150,170,.35) x4  rgba(150,150,170,.25) x1  rgba(150,150,170,.22) x1  rgba(150,150,170,.13) x1  rgba(150,150,170,.12) x8  rgba(150,150,170,.07) x3  rgba(150,150,170,.08) x1  rgba(150,150,170,0.10) x1
+
+  PANEL/BOX INSETS written as a literal shorthand, across the whole stylesheet
+      7 x  padding: 16px 48px 18px !important .up-root · .cz-root · .gd-frame · …
+      6 x  padding: 11px 18px !important .up-actions > * · .cz-close · .gd-close · …
+      5 x  padding: 10px 36px 12px !important .up-root · .st-root, .lb-root, .go-root · .op-root · …
+      3 x  padding: 2px 6px            .as-deck-attr-next · .hub-play .as-week-chip · .go-bestnew
+      2 x  padding: 16px 24px          .hub-play .as-tut-btn · .hub-play .as-ranked-btn
+      2 x  padding: 12px 16px          .hub-play .as-seed-play · .hub-play .as-hub-field
+      2 x  padding: 14px 16px          .as-kpi · .lv-wing
+      2 x  padding: 6px 0              .up-varrow · .op-reset
+      2 x  padding: 10px 0 8px         .gd-head · .gl-head
+      2 x  padding: 14px 12px          .gd-nav · .gl-nav
+      2 x  padding: 2px 3px 4px        .gd-navhead · .gl-navhead
+      2 x  padding: 10px 3px 2px       .gd-navnote · .gl-navnote
+
+    values at three or more call sites: 4 -> 16px 48px 18px !important (7), 11px 18px !important (6), 10px 36px 12px !important (5), 2px 6px (3)

@@ -1,0 +1,18 @@
+  options open: true · hub still in the DOM behind it: true
+
+  walking 0/0/2/0/5/0
+    body  BODY  
+       0  DIV  min-h-screen
+       0  DIV  app-root relative w-full flex justify-center
+       2  DIV  w-full max-w-5xl grid gap-4 dt:max-w-[1520px]
+       0  DIV  hub-root relative isolate flex flex-col items-center gap-2.5 pt-0 pb-1
+       5  DIV  hub-pair
+       0  DIV  hub-play
+
+  its 6 children — the list whose indices shifted:
+       0  H1  as-wordmark select-none
+       1  DIV  as-lockup hidden dt:flex flex-col items-center self-stretch
+       2  DIV  w-[88%] max-w-sm dt:w-full dt:max-w-none rounded-xl px-4 py-
+       3  DIV  w-[88%] max-w-sm dt:w-full dt:max-w-none
+       4  DIV  w-[88%] max-w-sm dt:w-full dt:max-w-none flex flex-col gap-2
+       5  DIV  w-[88%] max-w-sm dt:w-full dt:max-w-none flex flex-col gap-2

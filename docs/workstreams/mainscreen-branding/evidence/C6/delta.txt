@@ -1,0 +1,894 @@
+
+  compared 160 cells, 25299 matched nodes
+  Surfaces only. Control states are not captured and are verified by hand.
+
+  unmatched nodes: 0 pre-registered (H-c: leaderboard, victory), 0 elsewhere
+
+  220 computed delta(s), all of them printed:
+    de/1280x720/feedback
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 43.91
+        after : 40.34
+    de/1280x720/feedback
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 535.92
+        after : 543.06
+    de/1280x720/glossary
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 43.91
+        after : 40.34
+    de/1280x720/glossary
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 535.92
+        after : 543.06
+    de/1280x720/guide
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 43.91
+        after : 40.34
+    de/1280x720/guide
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 535.92
+        after : 543.06
+    de/1280x720/hub
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 43.91
+        after : 40.34
+    de/1280x720/hub
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 535.92
+        after : 543.06
+    de/1280x720/leaderboard
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 43.91
+        after : 40.34
+    de/1280x720/leaderboard
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 535.92
+        after : 543.06
+    de/1280x720/options
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 43.91
+        after : 40.34
+    de/1280x720/options
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 535.92
+        after : 543.06
+    de/1280x720/privacy
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 43.91
+        after : 40.34
+    de/1280x720/privacy
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 535.92
+        after : 543.06
+    de/1280x720/shop-fx
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 43.91
+        after : 40.34
+    de/1280x720/shop-fx
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 535.92
+        after : 543.06
+    de/1280x720/shop-packs
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 43.91
+        after : 40.34
+    de/1280x720/shop-packs
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 535.92
+        after : 543.06
+    de/1280x720/stats
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 43.91
+        after : 40.34
+    de/1280x720/stats
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 535.92
+        after : 543.06
+    de/1280x720/upgrades
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 43.91
+        after : 40.34
+    de/1280x720/upgrades
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 535.92
+        after : 543.06
+    de/1400x700/feedback
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 88.48
+        after : 84.92
+    de/1400x700/feedback
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 535.92
+        after : 543.06
+    de/1400x700/glossary
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 88.48
+        after : 84.92
+    de/1400x700/glossary
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 535.92
+        after : 543.06
+    de/1400x700/guide
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 88.48
+        after : 84.92
+    de/1400x700/guide
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 535.92
+        after : 543.06
+    de/1400x700/hub
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 88.48
+        after : 84.92
+    de/1400x700/hub
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 535.92
+        after : 543.06
+    de/1400x700/leaderboard
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 88.48
+        after : 84.92
+    de/1400x700/leaderboard
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 535.92
+        after : 543.06
+    de/1400x700/options
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 88.48
+        after : 84.92
+    de/1400x700/options
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 535.92
+        after : 543.06
+    de/1400x700/privacy
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 88.48
+        after : 84.92
+    de/1400x700/privacy
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 535.92
+        after : 543.06
+    de/1400x700/shop-fx
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 88.48
+        after : 84.92
+    de/1400x700/shop-fx
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 535.92
+        after : 543.06
+    de/1400x700/shop-packs
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 88.48
+        after : 84.92
+    de/1400x700/shop-packs
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 535.92
+        after : 543.06
+    de/1400x700/stats
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 88.48
+        after : 84.92
+    de/1400x700/stats
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 535.92
+        after : 543.06
+    de/1400x700/upgrades
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 88.48
+        after : 84.92
+    de/1400x700/upgrades
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 535.92
+        after : 543.06
+    de/1536x791/feedback
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 156.48
+        after : 152.92
+    de/1536x791/feedback
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 535.92
+        after : 543.06
+    de/1536x791/glossary
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 156.48
+        after : 152.92
+    de/1536x791/glossary
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 535.92
+        after : 543.06
+    de/1536x791/guide
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 156.48
+        after : 152.92
+    de/1536x791/guide
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 535.92
+        after : 543.06
+    de/1536x791/hub
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 156.48
+        after : 152.92
+    de/1536x791/hub
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 535.92
+        after : 543.06
+    de/1536x791/leaderboard
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 156.48
+        after : 152.92
+    de/1536x791/leaderboard
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 535.92
+        after : 543.06
+    de/1536x791/options
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 156.48
+        after : 152.92
+    de/1536x791/options
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 535.92
+        after : 543.06
+    de/1536x791/privacy
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 156.48
+        after : 152.92
+    de/1536x791/privacy
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 535.92
+        after : 543.06
+    de/1536x791/shop-fx
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 156.48
+        after : 152.92
+    de/1536x791/shop-fx
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 535.92
+        after : 543.06
+    de/1536x791/shop-packs
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 156.48
+        after : 152.92
+    de/1536x791/shop-packs
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 535.92
+        after : 543.06
+    de/1536x791/stats
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 156.48
+        after : 152.92
+    de/1536x791/stats
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 535.92
+        after : 543.06
+    de/1536x791/upgrades
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 156.48
+        after : 152.92
+    de/1536x791/upgrades
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 535.92
+        after : 543.06
+    de/1600x900/feedback
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 188.48
+        after : 184.92
+    de/1600x900/feedback
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 535.92
+        after : 543.06
+    de/1600x900/glossary
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 188.48
+        after : 184.92
+    de/1600x900/glossary
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 535.92
+        after : 543.06
+    de/1600x900/guide
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 188.48
+        after : 184.92
+    de/1600x900/guide
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 535.92
+        after : 543.06
+    de/1600x900/hub
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 188.48
+        after : 184.92
+    de/1600x900/hub
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 535.92
+        after : 543.06
+    de/1600x900/leaderboard
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 188.48
+        after : 184.92
+    de/1600x900/leaderboard
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 535.92
+        after : 543.06
+    de/1600x900/options
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 188.48
+        after : 184.92
+    de/1600x900/options
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 535.92
+        after : 543.06
+    de/1600x900/privacy
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 188.48
+        after : 184.92
+    de/1600x900/privacy
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 535.92
+        after : 543.06
+    de/1600x900/shop-fx
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 188.48
+        after : 184.92
+    de/1600x900/shop-fx
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 535.92
+        after : 543.06
+    de/1600x900/shop-packs
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 188.48
+        after : 184.92
+    de/1600x900/shop-packs
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 535.92
+        after : 543.06
+    de/1600x900/stats
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 188.48
+        after : 184.92
+    de/1600x900/stats
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 535.92
+        after : 543.06
+    de/1600x900/upgrades
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 188.48
+        after : 184.92
+    de/1600x900/upgrades
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 535.92
+        after : 543.06
+    de/1920x1080/feedback
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 234.75
+        after : 230.55
+    de/1920x1080/feedback
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 630.5
+        after : 638.89
+    de/1920x1080/glossary
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 234.75
+        after : 230.55
+    de/1920x1080/glossary
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 630.5
+        after : 638.89
+    de/1920x1080/guide
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 234.75
+        after : 230.55
+    de/1920x1080/guide
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 630.5
+        after : 638.89
+    de/1920x1080/hub
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 234.75
+        after : 230.55
+    de/1920x1080/hub
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 630.5
+        after : 638.89
+    de/1920x1080/leaderboard
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 234.75
+        after : 230.55
+    de/1920x1080/leaderboard
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 630.5
+        after : 638.89
+    de/1920x1080/options
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 234.75
+        after : 230.55
+    de/1920x1080/options
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 630.5
+        after : 638.89
+    de/1920x1080/privacy
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 234.75
+        after : 230.55
+    de/1920x1080/privacy
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 630.5
+        after : 638.89
+    de/1920x1080/shop-fx
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 234.75
+        after : 230.55
+    de/1920x1080/shop-fx
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 630.5
+        after : 638.89
+    de/1920x1080/shop-packs
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 234.75
+        after : 230.55
+    de/1920x1080/shop-packs
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 630.5
+        after : 638.89
+    de/1920x1080/stats
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 234.75
+        after : 230.55
+    de/1920x1080/stats
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 630.5
+        after : 638.89
+    de/1920x1080/upgrades
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 234.75
+        after : 230.55
+    de/1920x1080/upgrades
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 630.5
+        after : 638.89
+    en/1280x720/feedback
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 45.86
+        after : 42.28
+    en/1280x720/feedback
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 532.03
+        after : 539.17
+    en/1280x720/glossary
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 45.86
+        after : 42.28
+    en/1280x720/glossary
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 532.03
+        after : 539.17
+    en/1280x720/guide
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 45.86
+        after : 42.28
+    en/1280x720/guide
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 532.03
+        after : 539.17
+    en/1280x720/hub
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 45.86
+        after : 42.28
+    en/1280x720/hub
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 532.03
+        after : 539.17
+    en/1280x720/leaderboard
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 45.86
+        after : 42.28
+    en/1280x720/leaderboard
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 532.03
+        after : 539.17
+    en/1280x720/options
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 45.86
+        after : 42.28
+    en/1280x720/options
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 532.03
+        after : 539.17
+    en/1280x720/privacy
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 45.86
+        after : 42.28
+    en/1280x720/privacy
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 532.03
+        after : 539.17
+    en/1280x720/shop-fx
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 45.86
+        after : 42.28
+    en/1280x720/shop-fx
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 532.03
+        after : 539.17
+    en/1280x720/shop-packs
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 45.86
+        after : 42.28
+    en/1280x720/shop-packs
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 532.03
+        after : 539.17
+    en/1280x720/stats
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 45.86
+        after : 42.28
+    en/1280x720/stats
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 532.03
+        after : 539.17
+    en/1280x720/upgrades
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 45.86
+        after : 42.28
+    en/1280x720/upgrades
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 532.03
+        after : 539.17
+    en/1400x700/feedback
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 90.44
+        after : 86.86
+    en/1400x700/feedback
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 532.03
+        after : 539.17
+    en/1400x700/glossary
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 90.44
+        after : 86.86
+    en/1400x700/glossary
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 532.03
+        after : 539.17
+    en/1400x700/guide
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 90.44
+        after : 86.86
+    en/1400x700/guide
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 532.03
+        after : 539.17
+    en/1400x700/hub
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 90.44
+        after : 86.86
+    en/1400x700/hub
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 532.03
+        after : 539.17
+    en/1400x700/leaderboard
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 90.44
+        after : 86.86
+    en/1400x700/leaderboard
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 532.03
+        after : 539.17
+    en/1400x700/options
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 90.44
+        after : 86.86
+    en/1400x700/options
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 532.03
+        after : 539.17
+    en/1400x700/privacy
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 90.44
+        after : 86.86
+    en/1400x700/privacy
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 532.03
+        after : 539.17
+    en/1400x700/shop-fx
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 90.44
+        after : 86.86
+    en/1400x700/shop-fx
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 532.03
+        after : 539.17
+    en/1400x700/shop-packs
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 90.44
+        after : 86.86
+    en/1400x700/shop-packs
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 532.03
+        after : 539.17
+    en/1400x700/stats
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 90.44
+        after : 86.86
+    en/1400x700/stats
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 532.03
+        after : 539.17
+    en/1400x700/upgrades
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 90.44
+        after : 86.86
+    en/1400x700/upgrades
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 532.03
+        after : 539.17
+    en/1536x791/feedback
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 158.44
+        after : 154.86
+    en/1536x791/feedback
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 532.03
+        after : 539.17
+    en/1536x791/glossary
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 158.44
+        after : 154.86
+    en/1536x791/glossary
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 532.03
+        after : 539.17
+    en/1536x791/guide
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 158.44
+        after : 154.86
+    en/1536x791/guide
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 532.03
+        after : 539.17
+    en/1536x791/hub
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 158.44
+        after : 154.86
+    en/1536x791/hub
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 532.03
+        after : 539.17
+    en/1536x791/leaderboard
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 158.44
+        after : 154.86
+    en/1536x791/leaderboard
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 532.03
+        after : 539.17
+    en/1536x791/options
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 158.44
+        after : 154.86
+    en/1536x791/options
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 532.03
+        after : 539.17
+    en/1536x791/privacy
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 158.44
+        after : 154.86
+    en/1536x791/privacy
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 532.03
+        after : 539.17
+    en/1536x791/shop-fx
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 158.44
+        after : 154.86
+    en/1536x791/shop-fx
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 532.03
+        after : 539.17
+    en/1536x791/shop-packs
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 158.44
+        after : 154.86
+    en/1536x791/shop-packs
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 532.03
+        after : 539.17
+    en/1536x791/stats
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 158.44
+        after : 154.86
+    en/1536x791/stats
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 532.03
+        after : 539.17
+    en/1536x791/upgrades
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 158.44
+        after : 154.86
+    en/1536x791/upgrades
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 532.03
+        after : 539.17
+    en/1600x900/feedback
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 190.44
+        after : 186.86
+    en/1600x900/feedback
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 532.03
+        after : 539.17
+    en/1600x900/glossary
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 190.44
+        after : 186.86
+    en/1600x900/glossary
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 532.03
+        after : 539.17
+    en/1600x900/guide
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 190.44
+        after : 186.86
+    en/1600x900/guide
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 532.03
+        after : 539.17
+    en/1600x900/hub
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 190.44
+        after : 186.86
+    en/1600x900/hub
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 532.03
+        after : 539.17
+    en/1600x900/leaderboard
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 190.44
+        after : 186.86
+    en/1600x900/leaderboard
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 532.03
+        after : 539.17
+    en/1600x900/options
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 190.44
+        after : 186.86
+    en/1600x900/options
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 532.03
+        after : 539.17
+    en/1600x900/privacy
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 190.44
+        after : 186.86
+    en/1600x900/privacy
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 532.03
+        after : 539.17
+    en/1600x900/shop-fx
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 190.44
+        after : 186.86
+    en/1600x900/shop-fx
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 532.03
+        after : 539.17
+    en/1600x900/shop-packs
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 190.44
+        after : 186.86
+    en/1600x900/shop-packs
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 532.03
+        after : 539.17
+    en/1600x900/stats
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 190.44
+        after : 186.86
+    en/1600x900/stats
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 532.03
+        after : 539.17
+    en/1600x900/upgrades
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 190.44
+        after : 186.86
+    en/1600x900/upgrades
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 532.03
+        after : 539.17
+    en/1920x1080/feedback
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 237.03
+        after : 232.84
+    en/1920x1080/feedback
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 625.94
+        after : 634.31
+    en/1920x1080/glossary
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 237.03
+        after : 232.84
+    en/1920x1080/glossary
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 625.94
+        after : 634.31
+    en/1920x1080/guide
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 237.03
+        after : 232.84
+    en/1920x1080/guide
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 625.94
+        after : 634.31
+    en/1920x1080/hub
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 237.03
+        after : 232.84
+    en/1920x1080/hub
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 625.94
+        after : 634.31
+    en/1920x1080/leaderboard
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 237.03
+        after : 232.84
+    en/1920x1080/leaderboard
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 625.94
+        after : 634.31
+    en/1920x1080/options
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 237.03
+        after : 232.84
+    en/1920x1080/options
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 625.94
+        after : 634.31
+    en/1920x1080/privacy
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 237.03
+        after : 232.84
+    en/1920x1080/privacy
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 625.94
+        after : 634.31
+    en/1920x1080/shop-fx
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 237.03
+        after : 232.84
+    en/1920x1080/shop-fx
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 625.94
+        after : 634.31
+    en/1920x1080/shop-packs
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 237.03
+        after : 232.84
+    en/1920x1080/shop-packs
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 625.94
+        after : 634.31
+    en/1920x1080/stats
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 237.03
+        after : 232.84
+    en/1920x1080/stats
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 625.94
+        after : 634.31
+    en/1920x1080/upgrades
+      0/0/2/0/5/0/0:H1  box[x]
+        before: 237.03
+        after : 232.84
+    en/1920x1080/upgrades
+      0/0/2/0/5/0/0:H1  box[w]
+        before: 625.94
+        after : 634.31
+
+  distribution of the 220 delta(s) — stated, not left to the eye:
+      by cell: de/1280x720/feedback=2  de/1280x720/glossary=2  de/1280x720/guide=2  de/1280x720/hub=2  de/1280x720/leaderboard=2  de/1280x720/options=2  de/1280x720/privacy=2  de/1280x720/shop-fx=2  de/1280x720/shop-packs=2  de/1280x720/stats=2  de/1280x720/upgrades=2  de/1400x700/feedback=2  de/1400x700/glossary=2  de/1400x700/guide=2  de/1400x700/hub=2  de/1400x700/leaderboard=2  de/1400x700/options=2  de/1400x700/privacy=2  de/1400x700/shop-fx=2  de/1400x700/shop-packs=2  de/1400x700/stats=2  de/1400x700/upgrades=2  de/1536x791/feedback=2  de/1536x791/glossary=2  de/1536x791/guide=2  de/1536x791/hub=2  de/1536x791/leaderboard=2  de/1536x791/options=2  de/1536x791/privacy=2  de/1536x791/shop-fx=2  de/1536x791/shop-packs=2  de/1536x791/stats=2  de/1536x791/upgrades=2  de/1600x900/feedback=2  de/1600x900/glossary=2  de/1600x900/guide=2  de/1600x900/hub=2  de/1600x900/leaderboard=2  de/1600x900/options=2  de/1600x900/privacy=2  de/1600x900/shop-fx=2  de/1600x900/shop-packs=2  de/1600x900/stats=2  de/1600x900/upgrades=2  de/1920x1080/feedback=2  de/1920x1080/glossary=2  de/1920x1080/guide=2  de/1920x1080/hub=2  de/1920x1080/leaderboard=2  de/1920x1080/options=2  de/1920x1080/privacy=2  de/1920x1080/shop-fx=2  de/1920x1080/shop-packs=2  de/1920x1080/stats=2  de/1920x1080/upgrades=2  en/1280x720/feedback=2  en/1280x720/glossary=2  en/1280x720/guide=2  en/1280x720/hub=2  en/1280x720/leaderboard=2  en/1280x720/options=2  en/1280x720/privacy=2  en/1280x720/shop-fx=2  en/1280x720/shop-packs=2  en/1280x720/stats=2  en/1280x720/upgrades=2  en/1400x700/feedback=2  en/1400x700/glossary=2  en/1400x700/guide=2  en/1400x700/hub=2  en/1400x700/leaderboard=2  en/1400x700/options=2  en/1400x700/privacy=2  en/1400x700/shop-fx=2  en/1400x700/shop-packs=2  en/1400x700/stats=2  en/1400x700/upgrades=2  en/1536x791/feedback=2  en/1536x791/glossary=2  en/1536x791/guide=2  en/1536x791/hub=2  en/1536x791/leaderboard=2  en/1536x791/options=2  en/1536x791/privacy=2  en/1536x791/shop-fx=2  en/1536x791/shop-packs=2  en/1536x791/stats=2  en/1536x791/upgrades=2  en/1600x900/feedback=2  en/1600x900/glossary=2  en/1600x900/guide=2  en/1600x900/hub=2  en/1600x900/leaderboard=2  en/1600x900/options=2  en/1600x900/privacy=2  en/1600x900/shop-fx=2  en/1600x900/shop-packs=2  en/1600x900/stats=2  en/1600x900/upgrades=2  en/1920x1080/feedback=2  en/1920x1080/glossary=2  en/1920x1080/guide=2  en/1920x1080/hub=2  en/1920x1080/leaderboard=2  en/1920x1080/options=2  en/1920x1080/privacy=2  en/1920x1080/shop-fx=2  en/1920x1080/shop-packs=2  en/1920x1080/stats=2  en/1920x1080/upgrades=2
+      by lang: de=110  en=110
+      by size: 1280x720=44  1400x700=44  1536x791=44  1600x900=44  1920x1080=44
+      by surface: feedback=20  glossary=20  guide=20  hub=20  leaderboard=20  options=20  privacy=20  shop-fx=20  shop-packs=20  stats=20  upgrades=20
+      by property: box[w]=110  box[x]=110

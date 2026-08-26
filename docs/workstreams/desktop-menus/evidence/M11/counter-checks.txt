@@ -1,0 +1,20 @@
+ok  BASELINE       green  green  the clean tree — test/rahmen-huelle.test.js
+ok  BASELINE       green  green  the clean tree — test/up-ruhe.test.js
+ok  BASELINE       green  green  the clean tree — test/panel-tokens.test.js
+ok  BASELINE       green  green  the clean tree — test/overlay-nesting.test.js
+ok  RED-ON-DEFECT  RED    RED    the dialog radius goes back to a literal 6px
+ok  RED-ON-DEFECT  RED    RED    the dialog radius reads the NEIGHBOURING rung (--rd-md)
+ok  RED-ON-DEFECT  RED    RED    the dialog loses its radius entirely
+ok  RED-ON-DEFECT  RED    RED    the banner radius reads the neighbouring rung
+ok  RED-ON-DEFECT  RED    RED    the banner's button gets its glow back (--el-rest instead of --el-flat)
+ok  RED-ON-DEFECT  RED    RED    a step is swapped back for its literal (--sf-scrim at the abort dialog)
+ok  RED-ON-DEFECT  RED    RED    a new surface literal arrives in a .rc-* rule
+ok  RED-ON-DEFECT  RED    RED    a counted state literal is swapped for a fresh one in RunLoader
+ok  RED-ON-DEFECT  RED    RED    an ink literal is added to PwaInstall — the file with nothing to migrate
+ok  RED-ON-DEFECT  RED    RED    M3's `(?!banner)` is dropped — the banner lands in two ratchets
+ok  RED-ON-DEFECT  RED    RED    M11 drops `.up-banner` — the banner lands in none
+ok  RED-ON-DEFECT  RED    RED    a comment is placed between overlayPortal( and the element
+ok  GREEN-ON-WORK  green  green  GRANT M11-F04 — the loader's edge is pulled onto --ed-quiet
+ok  GREEN-ON-WORK  green  green  GRANT M11-F02 — the banner's fill is pulled onto --sf-head
+ok  LIVENESS       RED    RED    LIVENESS — a counted state literal disappears without the list following
+ok  LIVENESS       RED    RED    LIVENESS — every `.up-` rule is gone, so the seam check would measure nothing

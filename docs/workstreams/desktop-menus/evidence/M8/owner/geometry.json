@@ -1,0 +1,5047 @@
+{
+ "base": "/autostich/",
+ "frozen": "2026-08-24T12:00:00.000Z",
+ "boardRows": 20,
+ "cells": {
+  "de/1280x720/board/global": {
+   "reached": true,
+   "viewport": {
+    "w": 1280,
+    "h": 720
+   },
+   "card": {
+    "x": 36,
+    "y": 10,
+    "w": 1208,
+    "h": 698,
+    "bottom": 708
+   },
+   "body": {
+    "x": 37,
+    "y": 11,
+    "w": 1206,
+    "h": 696,
+    "bottom": 707
+   },
+   "page": {
+    "x": 359,
+    "y": 160.34,
+    "w": 884,
+    "h": 546.66,
+    "bottom": 707
+   },
+   "tabsCol": {
+    "x": 37,
+    "y": 160.34,
+    "w": 300,
+    "h": 248.25,
+    "bottom": 408.59
+   },
+   "bodyGrid": {
+    "grid-template-columns": "300px 884px",
+    "column-gap": "22px"
+   },
+   "head": {
+    "x": 37,
+    "y": 11,
+    "w": 1206,
+    "h": 122.34,
+    "bottom": 133.34
+   },
+   "headTop": 11,
+   "cardBottom": 708,
+   "belowFold": -12,
+   "rootStyle": {
+    "background-color": "rgba(12, 12, 16, 0.94)",
+    "backdrop-filter": "none",
+    "-webkit-backdrop-filter": "",
+    "align-items": "start"
+   },
+   "navActive": {
+    "background-color": "rgba(255, 255, 255, 0.07)",
+    "background-image": "none",
+    "border-radius": "6px",
+    "box-shadow": "rgb(38, 198, 230) 0px 0px 24px -14px inset",
+    "border-left-color": "rgb(38, 198, 230)",
+    "border-left-width": "4px",
+    "padding": "11px"
+   },
+   "navIdle": {
+    "background-color": "rgba(255, 255, 255, 0.02)",
+    "background-image": "none",
+    "border-radius": "6px",
+    "box-shadow": "none",
+    "border-left-color": "color(srgb 0.14902 0.776471 0.901961 / 0.7)",
+    "border-left-width": "4px",
+    "padding": "11px"
+   },
+   "navBox": {
+    "x": 50,
+    "y": 173.34,
+    "w": 274,
+    "h": 68.75,
+    "bottom": 242.09
+   },
+   "navCount": 3,
+   "navLabels": [
+    "GlobalAllzeit · alle Läufe",
+    "WocheWoche 35 · 2026",
+    "ChallengerPlatz 1 jeder abgelaufenen Woc"
+   ],
+   "pageStyle": {
+    "background-color": "rgba(0, 0, 0, 0)",
+    "background-image": "linear-gradient(color(srgb 0.110031 0.166834 0.214347 / 0.935765) 0%, color(srgb 0.0895714 0.122541 0.16629 / 0.951569) 100%)",
+    "border-top-width": "1px",
+    "border-top-color": "color(srgb 0.286911 0.717375 0.82809 / 0.37898)",
+    "border-radius": "14px",
+    "padding": "18px"
+   },
+   "title": {
+    "x": 129,
+    "y": 52.5,
+    "w": 976.88,
+    "h": 42,
+    "bottom": 94.5
+   },
+   "titleStyle": {
+    "font-size": "27px",
+    "font-weight": "600"
+   },
+   "eyebrow": {
+    "x": 129,
+    "y": 21,
+    "w": 976.88,
+    "h": 19.5,
+    "bottom": 40.5
+   },
+   "eyebrowStyle": {
+    "font-size": "13px",
+    "color": "color(srgb 0.472392 0.861412 0.939216)",
+    "letter-spacing": "1.3px",
+    "text-transform": "uppercase"
+   },
+   "eyebrowText": "Vergleich",
+   "sub": {
+    "x": 129,
+    "y": 106.5,
+    "w": 976.88,
+    "h": 18.84,
+    "bottom": 125.34
+   },
+   "subStyle": {
+    "font-size": "13px",
+    "color": "rgb(138, 138, 149)",
+    "line-height": "18.85px"
+   },
+   "subText": "Die besten Läufe aller Spieler.",
+   "close": {
+    "x": 1127.88,
+    "y": 21,
+    "w": 115.13,
+    "h": 46.14,
+    "bottom": 67.14
+   },
+   "glyphs": {
+    "⌗": 0,
+    "⚖": 0,
+    "♔": 0,
+    "✚": 0,
+    "⊘": 0
+   },
+   "glyphTotal": 0,
+   "svgIcons": 2,
+   "rowCount": 20,
+   "rowH": 61.64,
+   "modCount": 0,
+   "playCta": 0,
+   "champCount": 0,
+   "edgeSpots": [
+    {
+     "name": "nav row (idle)",
+     "sel": ".lb-tabs [role=\"tab\"]:not([aria-selected=\"true\"])",
+     "x": 187,
+     "y": 250
+    },
+    {
+     "name": "nav row (active)",
+     "sel": ".lb-tabs [role=\"tab\"][aria-selected=\"true\"]",
+     "x": 187,
+     "y": 173
+    },
+    {
+     "name": "list subhead chip",
+     "sel": ".lb-page .lb-listsub",
+     "x": 1180,
+     "y": 199
+    },
+    {
+     "name": "list row hairline",
+     "sel": ".lb-page .lb-rows > button:nth-child(2)",
+     "x": 588,
+     "y": 323
+    }
+   ],
+   "scrollers": [
+    {
+     "cls": "lb-root",
+     "scrollH": 720,
+     "clientH": 720,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-card",
+     "scrollH": 696,
+     "clientH": 696,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-body",
+     "scrollH": 696,
+     "clientH": 696,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-page",
+     "scrollH": 545,
+     "clientH": 545,
+     "overflowY": "hidden"
+    },
+    {
+     "cls": "lb-pagescroll",
+     "scrollH": 698,
+     "clientH": 509,
+     "overflowY": "auto"
+    }
+   ],
+   "nodeCount": 507
+  },
+  "de/1280x720/board/week": {
+   "reached": true,
+   "viewport": {
+    "w": 1280,
+    "h": 720
+   },
+   "card": {
+    "x": 36,
+    "y": 10,
+    "w": 1208,
+    "h": 698,
+    "bottom": 708
+   },
+   "body": {
+    "x": 37,
+    "y": 11,
+    "w": 1206,
+    "h": 696,
+    "bottom": 707
+   },
+   "page": {
+    "x": 359,
+    "y": 160.34,
+    "w": 884,
+    "h": 546.66,
+    "bottom": 707
+   },
+   "tabsCol": {
+    "x": 37,
+    "y": 160.34,
+    "w": 300,
+    "h": 248.25,
+    "bottom": 408.59
+   },
+   "bodyGrid": {
+    "grid-template-columns": "300px 884px",
+    "column-gap": "22px"
+   },
+   "head": {
+    "x": 37,
+    "y": 11,
+    "w": 1206,
+    "h": 122.34,
+    "bottom": 133.34
+   },
+   "headTop": 11,
+   "cardBottom": 708,
+   "belowFold": -12,
+   "rootStyle": {
+    "background-color": "rgba(12, 12, 16, 0.94)",
+    "backdrop-filter": "none",
+    "-webkit-backdrop-filter": "",
+    "align-items": "start"
+   },
+   "navActive": {
+    "background-color": "rgba(255, 255, 255, 0.07)",
+    "background-image": "none",
+    "border-radius": "6px",
+    "box-shadow": "rgb(38, 198, 230) 0px 0px 24px -14px inset",
+    "border-left-color": "rgb(38, 198, 230)",
+    "border-left-width": "4px",
+    "padding": "11px"
+   },
+   "navIdle": {
+    "background-color": "rgba(255, 255, 255, 0.02)",
+    "background-image": "none",
+    "border-radius": "6px",
+    "box-shadow": "none",
+    "border-left-color": "color(srgb 0.14902 0.776471 0.901961 / 0.7)",
+    "border-left-width": "4px",
+    "padding": "11px"
+   },
+   "navBox": {
+    "x": 50,
+    "y": 250.09,
+    "w": 274,
+    "h": 68.75,
+    "bottom": 318.84
+   },
+   "navCount": 3,
+   "navLabels": [
+    "GlobalAllzeit · alle Läufe",
+    "WocheWoche 35 · 2026",
+    "ChallengerPlatz 1 jeder abgelaufenen Woc"
+   ],
+   "pageStyle": {
+    "background-color": "rgba(0, 0, 0, 0)",
+    "background-image": "linear-gradient(color(srgb 0.110031 0.166834 0.214347 / 0.935765) 0%, color(srgb 0.0895714 0.122541 0.16629 / 0.951569) 100%)",
+    "border-top-width": "1px",
+    "border-top-color": "color(srgb 0.286911 0.717375 0.82809 / 0.37898)",
+    "border-radius": "14px",
+    "padding": "18px"
+   },
+   "title": {
+    "x": 129,
+    "y": 52.5,
+    "w": 976.88,
+    "h": 42,
+    "bottom": 94.5
+   },
+   "titleStyle": {
+    "font-size": "27px",
+    "font-weight": "600"
+   },
+   "eyebrow": {
+    "x": 129,
+    "y": 21,
+    "w": 976.88,
+    "h": 19.5,
+    "bottom": 40.5
+   },
+   "eyebrowStyle": {
+    "font-size": "13px",
+    "color": "color(srgb 0.472392 0.861412 0.939216)",
+    "letter-spacing": "1.3px",
+    "text-transform": "uppercase"
+   },
+   "eyebrowText": "Vergleich",
+   "sub": {
+    "x": 129,
+    "y": 106.5,
+    "w": 976.88,
+    "h": 18.84,
+    "bottom": 125.34
+   },
+   "subStyle": {
+    "font-size": "13px",
+    "color": "rgb(138, 138, 149)",
+    "line-height": "18.85px"
+   },
+   "subText": "Die besten Läufe aller Spieler.",
+   "close": {
+    "x": 1127.88,
+    "y": 21,
+    "w": 115.13,
+    "h": 46.14,
+    "bottom": 67.14
+   },
+   "glyphs": {
+    "⌗": 0,
+    "⚖": 0,
+    "♔": 0,
+    "✚": 0,
+    "⊘": 0
+   },
+   "glyphTotal": 0,
+   "svgIcons": 2,
+   "rowCount": 20,
+   "rowH": 61.64,
+   "modCount": 0,
+   "playCta": 0,
+   "champCount": 0,
+   "edgeSpots": [
+    {
+     "name": "nav row (idle)",
+     "sel": ".lb-tabs [role=\"tab\"]:not([aria-selected=\"true\"])",
+     "x": 187,
+     "y": 173
+    },
+    {
+     "name": "nav row (active)",
+     "sel": ".lb-tabs [role=\"tab\"][aria-selected=\"true\"]",
+     "x": 187,
+     "y": 250
+    },
+    {
+     "name": "list row hairline",
+     "sel": ".lb-page .lb-rows > button:nth-child(2)",
+     "x": 588,
+     "y": 351
+    },
+    {
+     "name": "countdown chip",
+     "sel": ".lb-weekcount",
+     "x": 1129,
+     "y": 179
+    }
+   ],
+   "scrollers": [
+    {
+     "cls": "lb-root",
+     "scrollH": 720,
+     "clientH": 720,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-card",
+     "scrollH": 696,
+     "clientH": 696,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-body",
+     "scrollH": 696,
+     "clientH": 696,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-page",
+     "scrollH": 545,
+     "clientH": 545,
+     "overflowY": "hidden"
+    },
+    {
+     "cls": "lb-pagescroll",
+     "scrollH": 727,
+     "clientH": 509,
+     "overflowY": "auto"
+    }
+   ],
+   "nodeCount": 449
+  },
+  "de/1280x720/board/champions": {
+   "reached": true,
+   "viewport": {
+    "w": 1280,
+    "h": 720
+   },
+   "card": {
+    "x": 36,
+    "y": 10,
+    "w": 1208,
+    "h": 616.63,
+    "bottom": 626.63
+   },
+   "body": {
+    "x": 37,
+    "y": 11,
+    "w": 1206,
+    "h": 614.63,
+    "bottom": 625.63
+   },
+   "page": {
+    "x": 359,
+    "y": 160.34,
+    "w": 884,
+    "h": 465.28,
+    "bottom": 625.63
+   },
+   "tabsCol": {
+    "x": 37,
+    "y": 160.34,
+    "w": 300,
+    "h": 248.25,
+    "bottom": 408.59
+   },
+   "bodyGrid": {
+    "grid-template-columns": "300px 884px",
+    "column-gap": "22px"
+   },
+   "head": {
+    "x": 37,
+    "y": 11,
+    "w": 1206,
+    "h": 122.34,
+    "bottom": 133.34
+   },
+   "headTop": 11,
+   "cardBottom": 626.63,
+   "belowFold": -93.37,
+   "rootStyle": {
+    "background-color": "rgba(12, 12, 16, 0.94)",
+    "backdrop-filter": "none",
+    "-webkit-backdrop-filter": "",
+    "align-items": "start"
+   },
+   "navActive": {
+    "background-color": "rgba(255, 255, 255, 0.07)",
+    "background-image": "none",
+    "border-radius": "6px",
+    "box-shadow": "rgb(38, 198, 230) 0px 0px 24px -14px inset",
+    "border-left-color": "rgb(38, 198, 230)",
+    "border-left-width": "4px",
+    "padding": "11px"
+   },
+   "navIdle": {
+    "background-color": "rgba(255, 255, 255, 0.02)",
+    "background-image": "none",
+    "border-radius": "6px",
+    "box-shadow": "none",
+    "border-left-color": "color(srgb 0.14902 0.776471 0.901961 / 0.7)",
+    "border-left-width": "4px",
+    "padding": "11px"
+   },
+   "navBox": {
+    "x": 50,
+    "y": 326.84,
+    "w": 274,
+    "h": 68.75,
+    "bottom": 395.59
+   },
+   "navCount": 3,
+   "navLabels": [
+    "GlobalAllzeit · alle Läufe",
+    "WocheWoche 35 · 2026",
+    "ChallengerPlatz 1 jeder abgelaufenen Woc"
+   ],
+   "pageStyle": {
+    "background-color": "rgba(0, 0, 0, 0)",
+    "background-image": "linear-gradient(color(srgb 0.110031 0.166834 0.214347 / 0.935765) 0%, color(srgb 0.0895714 0.122541 0.16629 / 0.951569) 100%)",
+    "border-top-width": "1px",
+    "border-top-color": "color(srgb 0.286911 0.717375 0.82809 / 0.37898)",
+    "border-radius": "14px",
+    "padding": "18px"
+   },
+   "title": {
+    "x": 129,
+    "y": 52.5,
+    "w": 976.88,
+    "h": 42,
+    "bottom": 94.5
+   },
+   "titleStyle": {
+    "font-size": "27px",
+    "font-weight": "600"
+   },
+   "eyebrow": {
+    "x": 129,
+    "y": 21,
+    "w": 976.88,
+    "h": 19.5,
+    "bottom": 40.5
+   },
+   "eyebrowStyle": {
+    "font-size": "13px",
+    "color": "color(srgb 0.472392 0.861412 0.939216)",
+    "letter-spacing": "1.3px",
+    "text-transform": "uppercase"
+   },
+   "eyebrowText": "Vergleich",
+   "sub": {
+    "x": 129,
+    "y": 106.5,
+    "w": 976.88,
+    "h": 18.84,
+    "bottom": 125.34
+   },
+   "subStyle": {
+    "font-size": "13px",
+    "color": "rgb(138, 138, 149)",
+    "line-height": "18.85px"
+   },
+   "subText": "Die besten Läufe aller Spieler.",
+   "close": {
+    "x": 1127.88,
+    "y": 21,
+    "w": 115.13,
+    "h": 46.14,
+    "bottom": 67.14
+   },
+   "glyphs": {
+    "⌗": 0,
+    "⚖": 0,
+    "♔": 0,
+    "✚": 0,
+    "⊘": 0
+   },
+   "glyphTotal": 0,
+   "svgIcons": 12,
+   "rowCount": 0,
+   "rowH": null,
+   "modCount": 0,
+   "playCta": 0,
+   "champCount": 10,
+   "edgeSpots": [
+    {
+     "name": "nav row (idle)",
+     "sel": ".lb-tabs [role=\"tab\"]:not([aria-selected=\"true\"])",
+     "x": 187,
+     "y": 173
+    },
+    {
+     "name": "nav row (active)",
+     "sel": ".lb-tabs [role=\"tab\"][aria-selected=\"true\"]",
+     "x": 187,
+     "y": 327
+    }
+   ],
+   "scrollers": [
+    {
+     "cls": "lb-root",
+     "scrollH": 720,
+     "clientH": 720,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-card",
+     "scrollH": 615,
+     "clientH": 615,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-body",
+     "scrollH": 615,
+     "clientH": 615,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-page",
+     "scrollH": 463,
+     "clientH": 463,
+     "overflowY": "hidden"
+    },
+    {
+     "cls": "lb-pagescroll",
+     "scrollH": 427,
+     "clientH": 427,
+     "overflowY": "auto"
+    }
+   ],
+   "nodeCount": 353
+  },
+  "de/1280x720/ranked/week": {
+   "reached": true,
+   "viewport": {
+    "w": 1280,
+    "h": 720
+   },
+   "card": {
+    "x": 36,
+    "y": 10,
+    "w": 1208,
+    "h": 698,
+    "bottom": 708
+   },
+   "body": {
+    "x": 37,
+    "y": 11,
+    "w": 1206,
+    "h": 696,
+    "bottom": 707
+   },
+   "page": {
+    "x": 359,
+    "y": 160.34,
+    "w": 884,
+    "h": 546.66,
+    "bottom": 707
+   },
+   "tabsCol": {
+    "x": 37,
+    "y": 160.34,
+    "w": 300,
+    "h": 248.25,
+    "bottom": 408.59
+   },
+   "bodyGrid": {
+    "grid-template-columns": "300px 884px",
+    "column-gap": "22px"
+   },
+   "head": {
+    "x": 37,
+    "y": 11,
+    "w": 1206,
+    "h": 122.34,
+    "bottom": 133.34
+   },
+   "headTop": 11,
+   "cardBottom": 708,
+   "belowFold": -12,
+   "rootStyle": {
+    "background-color": "rgba(12, 12, 16, 0.94)",
+    "backdrop-filter": "none",
+    "-webkit-backdrop-filter": "",
+    "align-items": "start"
+   },
+   "navActive": {
+    "background-color": "rgba(255, 255, 255, 0.07)",
+    "background-image": "none",
+    "border-radius": "6px",
+    "box-shadow": "rgb(38, 198, 230) 0px 0px 24px -14px inset",
+    "border-left-color": "rgb(38, 198, 230)",
+    "border-left-width": "4px",
+    "padding": "11px"
+   },
+   "navIdle": {
+    "background-color": "rgba(255, 255, 255, 0.02)",
+    "background-image": "none",
+    "border-radius": "6px",
+    "box-shadow": "none",
+    "border-left-color": "color(srgb 0.14902 0.776471 0.901961 / 0.7)",
+    "border-left-width": "4px",
+    "padding": "11px"
+   },
+   "navBox": {
+    "x": 50,
+    "y": 173.34,
+    "w": 274,
+    "h": 68.75,
+    "bottom": 242.09
+   },
+   "navCount": 3,
+   "navLabels": [
+    "Diese WocheWoche 35 · 2026",
+    "ChallengerPlatz 1 jeder abgelaufenen Woc",
+    "RegelnBaseline und alle Modifikatoren"
+   ],
+   "pageStyle": {
+    "background-color": "rgba(0, 0, 0, 0)",
+    "background-image": "linear-gradient(color(srgb 0.110031 0.166834 0.214347 / 0.935765) 0%, color(srgb 0.0895714 0.122541 0.16629 / 0.951569) 100%)",
+    "border-top-width": "1px",
+    "border-top-color": "color(srgb 0.286911 0.717375 0.82809 / 0.37898)",
+    "border-radius": "14px",
+    "padding": "18px"
+   },
+   "title": {
+    "x": 129,
+    "y": 52.5,
+    "w": 976.88,
+    "h": 42,
+    "bottom": 94.5
+   },
+   "titleStyle": {
+    "font-size": "27px",
+    "font-weight": "600"
+   },
+   "eyebrow": {
+    "x": 129,
+    "y": 21,
+    "w": 976.88,
+    "h": 19.5,
+    "bottom": 40.5
+   },
+   "eyebrowStyle": {
+    "font-size": "13px",
+    "color": "color(srgb 0.472392 0.861412 0.939216)",
+    "letter-spacing": "1.3px",
+    "text-transform": "uppercase"
+   },
+   "eyebrowText": "Rangliste",
+   "sub": {
+    "x": 129,
+    "y": 106.5,
+    "w": 976.88,
+    "h": 18.84,
+    "bottom": 125.34
+   },
+   "subStyle": {
+    "font-size": "13px",
+    "color": "rgb(138, 138, 149)",
+    "line-height": "18.85px"
+   },
+   "subText": "Woche 35 — alle spielen denselben Seed.",
+   "close": {
+    "x": 1127.88,
+    "y": 21,
+    "w": 115.13,
+    "h": 46.14,
+    "bottom": 67.14
+   },
+   "glyphs": {
+    "⌗": 0,
+    "⚖": 0,
+    "♔": 0,
+    "✚": 0,
+    "⊘": 0
+   },
+   "glyphTotal": 0,
+   "svgIcons": 8,
+   "rowCount": 20,
+   "rowH": 60.64,
+   "modCount": 3,
+   "playCta": 1,
+   "champCount": 0,
+   "edgeSpots": [
+    {
+     "name": "nav row (idle)",
+     "sel": ".lb-tabs [role=\"tab\"]:not([aria-selected=\"true\"])",
+     "x": 187,
+     "y": 250
+    },
+    {
+     "name": "nav row (active)",
+     "sel": ".lb-tabs [role=\"tab\"][aria-selected=\"true\"]",
+     "x": 187,
+     "y": 173
+    },
+    {
+     "name": "modifier box",
+     "sel": ".lb-mod",
+     "x": 588,
+     "y": 458
+    },
+    {
+     "name": "context tile",
+     "sel": ".lb-ctxtile",
+     "x": 514,
+     "y": 229
+    },
+    {
+     "name": "list row hairline",
+     "sel": ".lb-page .lb-rows > button:nth-child(2)",
+     "x": 1018,
+     "y": 390
+    },
+    {
+     "name": "countdown chip",
+     "sel": ".lb-weekcount",
+     "x": 1129,
+     "y": 179
+    }
+   ],
+   "scrollers": [
+    {
+     "cls": "lb-root",
+     "scrollH": 720,
+     "clientH": 720,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-card",
+     "scrollH": 696,
+     "clientH": 696,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-body",
+     "scrollH": 696,
+     "clientH": 696,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-page",
+     "scrollH": 545,
+     "clientH": 545,
+     "overflowY": "hidden"
+    },
+    {
+     "cls": "lb-pagescroll",
+     "scrollH": 1382,
+     "clientH": 509,
+     "overflowY": "auto"
+    }
+   ],
+   "nodeCount": 507
+  },
+  "de/1280x720/ranked/champions": {
+   "reached": true,
+   "viewport": {
+    "w": 1280,
+    "h": 720
+   },
+   "card": {
+    "x": 36,
+    "y": 10,
+    "w": 1208,
+    "h": 616.63,
+    "bottom": 626.63
+   },
+   "body": {
+    "x": 37,
+    "y": 11,
+    "w": 1206,
+    "h": 614.63,
+    "bottom": 625.63
+   },
+   "page": {
+    "x": 359,
+    "y": 160.34,
+    "w": 884,
+    "h": 465.28,
+    "bottom": 625.63
+   },
+   "tabsCol": {
+    "x": 37,
+    "y": 160.34,
+    "w": 300,
+    "h": 248.25,
+    "bottom": 408.59
+   },
+   "bodyGrid": {
+    "grid-template-columns": "300px 884px",
+    "column-gap": "22px"
+   },
+   "head": {
+    "x": 37,
+    "y": 11,
+    "w": 1206,
+    "h": 122.34,
+    "bottom": 133.34
+   },
+   "headTop": 11,
+   "cardBottom": 626.63,
+   "belowFold": -93.37,
+   "rootStyle": {
+    "background-color": "rgba(12, 12, 16, 0.94)",
+    "backdrop-filter": "none",
+    "-webkit-backdrop-filter": "",
+    "align-items": "start"
+   },
+   "navActive": {
+    "background-color": "rgba(255, 255, 255, 0.07)",
+    "background-image": "none",
+    "border-radius": "6px",
+    "box-shadow": "rgb(38, 198, 230) 0px 0px 24px -14px inset",
+    "border-left-color": "rgb(38, 198, 230)",
+    "border-left-width": "4px",
+    "padding": "11px"
+   },
+   "navIdle": {
+    "background-color": "rgba(255, 255, 255, 0.02)",
+    "background-image": "none",
+    "border-radius": "6px",
+    "box-shadow": "none",
+    "border-left-color": "color(srgb 0.14902 0.776471 0.901961 / 0.7)",
+    "border-left-width": "4px",
+    "padding": "11px"
+   },
+   "navBox": {
+    "x": 50,
+    "y": 250.09,
+    "w": 274,
+    "h": 68.75,
+    "bottom": 318.84
+   },
+   "navCount": 3,
+   "navLabels": [
+    "Diese WocheWoche 35 · 2026",
+    "ChallengerPlatz 1 jeder abgelaufenen Woc",
+    "RegelnBaseline und alle Modifikatoren"
+   ],
+   "pageStyle": {
+    "background-color": "rgba(0, 0, 0, 0)",
+    "background-image": "linear-gradient(color(srgb 0.110031 0.166834 0.214347 / 0.935765) 0%, color(srgb 0.0895714 0.122541 0.16629 / 0.951569) 100%)",
+    "border-top-width": "1px",
+    "border-top-color": "color(srgb 0.286911 0.717375 0.82809 / 0.37898)",
+    "border-radius": "14px",
+    "padding": "18px"
+   },
+   "title": {
+    "x": 129,
+    "y": 52.5,
+    "w": 976.88,
+    "h": 42,
+    "bottom": 94.5
+   },
+   "titleStyle": {
+    "font-size": "27px",
+    "font-weight": "600"
+   },
+   "eyebrow": {
+    "x": 129,
+    "y": 21,
+    "w": 976.88,
+    "h": 19.5,
+    "bottom": 40.5
+   },
+   "eyebrowStyle": {
+    "font-size": "13px",
+    "color": "color(srgb 0.472392 0.861412 0.939216)",
+    "letter-spacing": "1.3px",
+    "text-transform": "uppercase"
+   },
+   "eyebrowText": "Rangliste",
+   "sub": {
+    "x": 129,
+    "y": 106.5,
+    "w": 976.88,
+    "h": 18.84,
+    "bottom": 125.34
+   },
+   "subStyle": {
+    "font-size": "13px",
+    "color": "rgb(138, 138, 149)",
+    "line-height": "18.85px"
+   },
+   "subText": "Woche 35 — alle spielen denselben Seed.",
+   "close": {
+    "x": 1127.88,
+    "y": 21,
+    "w": 115.13,
+    "h": 46.14,
+    "bottom": 67.14
+   },
+   "glyphs": {
+    "⌗": 0,
+    "⚖": 0,
+    "♔": 0,
+    "✚": 0,
+    "⊘": 0
+   },
+   "glyphTotal": 0,
+   "svgIcons": 12,
+   "rowCount": 0,
+   "rowH": null,
+   "modCount": 0,
+   "playCta": 0,
+   "champCount": 10,
+   "edgeSpots": [
+    {
+     "name": "nav row (idle)",
+     "sel": ".lb-tabs [role=\"tab\"]:not([aria-selected=\"true\"])",
+     "x": 187,
+     "y": 173
+    },
+    {
+     "name": "nav row (active)",
+     "sel": ".lb-tabs [role=\"tab\"][aria-selected=\"true\"]",
+     "x": 187,
+     "y": 250
+    }
+   ],
+   "scrollers": [
+    {
+     "cls": "lb-root",
+     "scrollH": 720,
+     "clientH": 720,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-card",
+     "scrollH": 615,
+     "clientH": 615,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-body",
+     "scrollH": 615,
+     "clientH": 615,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-page",
+     "scrollH": 463,
+     "clientH": 463,
+     "overflowY": "hidden"
+    },
+    {
+     "cls": "lb-pagescroll",
+     "scrollH": 427,
+     "clientH": 427,
+     "overflowY": "auto"
+    }
+   ],
+   "nodeCount": 353
+  },
+  "de/1280x720/ranked/rules": {
+   "reached": true,
+   "viewport": {
+    "w": 1280,
+    "h": 720
+   },
+   "card": {
+    "x": 36,
+    "y": 10,
+    "w": 1208,
+    "h": 698,
+    "bottom": 708
+   },
+   "body": {
+    "x": 37,
+    "y": 11,
+    "w": 1206,
+    "h": 696,
+    "bottom": 707
+   },
+   "page": {
+    "x": 359,
+    "y": 160.34,
+    "w": 884,
+    "h": 546.66,
+    "bottom": 707
+   },
+   "tabsCol": {
+    "x": 37,
+    "y": 160.34,
+    "w": 300,
+    "h": 248.25,
+    "bottom": 408.59
+   },
+   "bodyGrid": {
+    "grid-template-columns": "300px 884px",
+    "column-gap": "22px"
+   },
+   "head": {
+    "x": 37,
+    "y": 11,
+    "w": 1206,
+    "h": 122.34,
+    "bottom": 133.34
+   },
+   "headTop": 11,
+   "cardBottom": 708,
+   "belowFold": -12,
+   "rootStyle": {
+    "background-color": "rgba(12, 12, 16, 0.94)",
+    "backdrop-filter": "none",
+    "-webkit-backdrop-filter": "",
+    "align-items": "start"
+   },
+   "navActive": {
+    "background-color": "rgba(255, 255, 255, 0.07)",
+    "background-image": "none",
+    "border-radius": "6px",
+    "box-shadow": "rgb(38, 198, 230) 0px 0px 24px -14px inset",
+    "border-left-color": "rgb(38, 198, 230)",
+    "border-left-width": "4px",
+    "padding": "11px"
+   },
+   "navIdle": {
+    "background-color": "rgba(255, 255, 255, 0.02)",
+    "background-image": "none",
+    "border-radius": "6px",
+    "box-shadow": "none",
+    "border-left-color": "color(srgb 0.14902 0.776471 0.901961 / 0.7)",
+    "border-left-width": "4px",
+    "padding": "11px"
+   },
+   "navBox": {
+    "x": 50,
+    "y": 326.84,
+    "w": 274,
+    "h": 68.75,
+    "bottom": 395.59
+   },
+   "navCount": 3,
+   "navLabels": [
+    "Diese WocheWoche 35 · 2026",
+    "ChallengerPlatz 1 jeder abgelaufenen Woc",
+    "RegelnBaseline und alle Modifikatoren"
+   ],
+   "pageStyle": {
+    "background-color": "rgba(0, 0, 0, 0)",
+    "background-image": "linear-gradient(color(srgb 0.110031 0.166834 0.214347 / 0.935765) 0%, color(srgb 0.0895714 0.122541 0.16629 / 0.951569) 100%)",
+    "border-top-width": "1px",
+    "border-top-color": "color(srgb 0.286911 0.717375 0.82809 / 0.37898)",
+    "border-radius": "14px",
+    "padding": "18px"
+   },
+   "title": {
+    "x": 129,
+    "y": 52.5,
+    "w": 976.88,
+    "h": 42,
+    "bottom": 94.5
+   },
+   "titleStyle": {
+    "font-size": "27px",
+    "font-weight": "600"
+   },
+   "eyebrow": {
+    "x": 129,
+    "y": 21,
+    "w": 976.88,
+    "h": 19.5,
+    "bottom": 40.5
+   },
+   "eyebrowStyle": {
+    "font-size": "13px",
+    "color": "color(srgb 0.472392 0.861412 0.939216)",
+    "letter-spacing": "1.3px",
+    "text-transform": "uppercase"
+   },
+   "eyebrowText": "Rangliste",
+   "sub": {
+    "x": 129,
+    "y": 106.5,
+    "w": 976.88,
+    "h": 18.84,
+    "bottom": 125.34
+   },
+   "subStyle": {
+    "font-size": "13px",
+    "color": "rgb(138, 138, 149)",
+    "line-height": "18.85px"
+   },
+   "subText": "Woche 35 — alle spielen denselben Seed.",
+   "close": {
+    "x": 1127.88,
+    "y": 21,
+    "w": 115.13,
+    "h": 46.14,
+    "bottom": 67.14
+   },
+   "glyphs": {
+    "⌗": 0,
+    "⚖": 0,
+    "♔": 0,
+    "✚": 0,
+    "⊘": 0
+   },
+   "glyphTotal": 0,
+   "svgIcons": 21,
+   "rowCount": 0,
+   "rowH": null,
+   "modCount": 19,
+   "playCta": 0,
+   "champCount": 0,
+   "edgeSpots": [
+    {
+     "name": "nav row (idle)",
+     "sel": ".lb-tabs [role=\"tab\"]:not([aria-selected=\"true\"])",
+     "x": 187,
+     "y": 173
+    },
+    {
+     "name": "nav row (active)",
+     "sel": ".lb-tabs [role=\"tab\"][aria-selected=\"true\"]",
+     "x": 187,
+     "y": 327
+    },
+    {
+     "name": "modifier box",
+     "sel": ".lb-mod",
+     "x": 582,
+     "y": 328
+    },
+    {
+     "name": "span chip",
+     "sel": ".lb-modspan",
+     "x": 750,
+     "y": 344
+    }
+   ],
+   "scrollers": [
+    {
+     "cls": "lb-root",
+     "scrollH": 720,
+     "clientH": 720,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-card",
+     "scrollH": 696,
+     "clientH": 696,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-body",
+     "scrollH": 696,
+     "clientH": 696,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-page",
+     "scrollH": 545,
+     "clientH": 545,
+     "overflowY": "hidden"
+    },
+    {
+     "cls": "lb-pagescroll",
+     "scrollH": 996,
+     "clientH": 509,
+     "overflowY": "auto"
+    }
+   ],
+   "nodeCount": 390
+  },
+  "de/1920x1080/board/global": {
+   "reached": true,
+   "viewport": {
+    "w": 1920,
+    "h": 1080
+   },
+   "card": {
+    "x": 100,
+    "y": 16,
+    "w": 1720,
+    "h": 887.75,
+    "bottom": 903.75
+   },
+   "body": {
+    "x": 101,
+    "y": 17,
+    "w": 1718,
+    "h": 885.75,
+    "bottom": 902.75
+   },
+   "page": {
+    "x": 423,
+    "y": 166.34,
+    "w": 1396,
+    "h": 736.41,
+    "bottom": 902.75
+   },
+   "tabsCol": {
+    "x": 101,
+    "y": 166.34,
+    "w": 300,
+    "h": 248.25,
+    "bottom": 414.59
+   },
+   "bodyGrid": {
+    "grid-template-columns": "300px 1396px",
+    "column-gap": "22px"
+   },
+   "head": {
+    "x": 101,
+    "y": 17,
+    "w": 1718,
+    "h": 122.34,
+    "bottom": 139.34
+   },
+   "headTop": 17,
+   "cardBottom": 903.75,
+   "belowFold": -176.25,
+   "rootStyle": {
+    "background-color": "rgba(12, 12, 16, 0.94)",
+    "backdrop-filter": "none",
+    "-webkit-backdrop-filter": "",
+    "align-items": "start"
+   },
+   "navActive": {
+    "background-color": "rgba(255, 255, 255, 0.07)",
+    "background-image": "none",
+    "border-radius": "6px",
+    "box-shadow": "rgb(38, 198, 230) 0px 0px 24px -14px inset",
+    "border-left-color": "rgb(38, 198, 230)",
+    "border-left-width": "4px",
+    "padding": "11px"
+   },
+   "navIdle": {
+    "background-color": "rgba(255, 255, 255, 0.02)",
+    "background-image": "none",
+    "border-radius": "6px",
+    "box-shadow": "none",
+    "border-left-color": "color(srgb 0.14902 0.776471 0.901961 / 0.7)",
+    "border-left-width": "4px",
+    "padding": "11px"
+   },
+   "navBox": {
+    "x": 114,
+    "y": 179.34,
+    "w": 274,
+    "h": 68.75,
+    "bottom": 248.09
+   },
+   "navCount": 3,
+   "navLabels": [
+    "GlobalAllzeit · alle Läufe",
+    "WocheWoche 35 · 2026",
+    "ChallengerPlatz 1 jeder abgelaufenen Woc"
+   ],
+   "pageStyle": {
+    "background-color": "rgba(0, 0, 0, 0)",
+    "background-image": "linear-gradient(color(srgb 0.110031 0.166834 0.214347 / 0.935765) 0%, color(srgb 0.0895714 0.122541 0.16629 / 0.951569) 100%)",
+    "border-top-width": "1px",
+    "border-top-color": "color(srgb 0.286911 0.717375 0.82809 / 0.37898)",
+    "border-radius": "14px",
+    "padding": "18px"
+   },
+   "title": {
+    "x": 193,
+    "y": 58.5,
+    "w": 1488.88,
+    "h": 42,
+    "bottom": 100.5
+   },
+   "titleStyle": {
+    "font-size": "27px",
+    "font-weight": "600"
+   },
+   "eyebrow": {
+    "x": 193,
+    "y": 27,
+    "w": 1488.88,
+    "h": 19.5,
+    "bottom": 46.5
+   },
+   "eyebrowStyle": {
+    "font-size": "13px",
+    "color": "color(srgb 0.472392 0.861412 0.939216)",
+    "letter-spacing": "1.3px",
+    "text-transform": "uppercase"
+   },
+   "eyebrowText": "Vergleich",
+   "sub": {
+    "x": 193,
+    "y": 112.5,
+    "w": 1488.88,
+    "h": 18.84,
+    "bottom": 131.34
+   },
+   "subStyle": {
+    "font-size": "13px",
+    "color": "rgb(138, 138, 149)",
+    "line-height": "18.85px"
+   },
+   "subText": "Die besten Läufe aller Spieler.",
+   "close": {
+    "x": 1703.88,
+    "y": 27,
+    "w": 115.13,
+    "h": 46.14,
+    "bottom": 73.14
+   },
+   "glyphs": {
+    "⌗": 0,
+    "⚖": 0,
+    "♔": 0,
+    "✚": 0,
+    "⊘": 0
+   },
+   "glyphTotal": 0,
+   "svgIcons": 2,
+   "rowCount": 20,
+   "rowH": 61.64,
+   "modCount": 0,
+   "playCta": 0,
+   "champCount": 0,
+   "edgeSpots": [
+    {
+     "name": "nav row (idle)",
+     "sel": ".lb-tabs [role=\"tab\"]:not([aria-selected=\"true\"])",
+     "x": 251,
+     "y": 256
+    },
+    {
+     "name": "nav row (active)",
+     "sel": ".lb-tabs [role=\"tab\"][aria-selected=\"true\"]",
+     "x": 251,
+     "y": 179
+    },
+    {
+     "name": "list subhead chip",
+     "sel": ".lb-page .lb-listsub",
+     "x": 1764,
+     "y": 205
+    },
+    {
+     "name": "list row hairline",
+     "sel": ".lb-page .lb-rows > button:nth-child(2)",
+     "x": 782,
+     "y": 329
+    }
+   ],
+   "scrollers": [
+    {
+     "cls": "lb-root",
+     "scrollH": 1080,
+     "clientH": 1080,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-card",
+     "scrollH": 886,
+     "clientH": 886,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-body",
+     "scrollH": 886,
+     "clientH": 886,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-page",
+     "scrollH": 734,
+     "clientH": 734,
+     "overflowY": "hidden"
+    },
+    {
+     "cls": "lb-pagescroll",
+     "scrollH": 698,
+     "clientH": 698,
+     "overflowY": "auto"
+    }
+   ],
+   "nodeCount": 507
+  },
+  "de/1920x1080/board/week": {
+   "reached": true,
+   "viewport": {
+    "w": 1920,
+    "h": 1080
+   },
+   "card": {
+    "x": 100,
+    "y": 16,
+    "w": 1720,
+    "h": 915.88,
+    "bottom": 931.88
+   },
+   "body": {
+    "x": 101,
+    "y": 17,
+    "w": 1718,
+    "h": 913.88,
+    "bottom": 930.88
+   },
+   "page": {
+    "x": 423,
+    "y": 166.34,
+    "w": 1396,
+    "h": 764.53,
+    "bottom": 930.88
+   },
+   "tabsCol": {
+    "x": 101,
+    "y": 166.34,
+    "w": 300,
+    "h": 248.25,
+    "bottom": 414.59
+   },
+   "bodyGrid": {
+    "grid-template-columns": "300px 1396px",
+    "column-gap": "22px"
+   },
+   "head": {
+    "x": 101,
+    "y": 17,
+    "w": 1718,
+    "h": 122.34,
+    "bottom": 139.34
+   },
+   "headTop": 17,
+   "cardBottom": 931.88,
+   "belowFold": -148.12,
+   "rootStyle": {
+    "background-color": "rgba(12, 12, 16, 0.94)",
+    "backdrop-filter": "none",
+    "-webkit-backdrop-filter": "",
+    "align-items": "start"
+   },
+   "navActive": {
+    "background-color": "rgba(255, 255, 255, 0.07)",
+    "background-image": "none",
+    "border-radius": "6px",
+    "box-shadow": "rgb(38, 198, 230) 0px 0px 24px -14px inset",
+    "border-left-color": "rgb(38, 198, 230)",
+    "border-left-width": "4px",
+    "padding": "11px"
+   },
+   "navIdle": {
+    "background-color": "rgba(255, 255, 255, 0.02)",
+    "background-image": "none",
+    "border-radius": "6px",
+    "box-shadow": "none",
+    "border-left-color": "color(srgb 0.14902 0.776471 0.901961 / 0.7)",
+    "border-left-width": "4px",
+    "padding": "11px"
+   },
+   "navBox": {
+    "x": 114,
+    "y": 256.09,
+    "w": 274,
+    "h": 68.75,
+    "bottom": 324.84
+   },
+   "navCount": 3,
+   "navLabels": [
+    "GlobalAllzeit · alle Läufe",
+    "WocheWoche 35 · 2026",
+    "ChallengerPlatz 1 jeder abgelaufenen Woc"
+   ],
+   "pageStyle": {
+    "background-color": "rgba(0, 0, 0, 0)",
+    "background-image": "linear-gradient(color(srgb 0.110031 0.166834 0.214347 / 0.935765) 0%, color(srgb 0.0895714 0.122541 0.16629 / 0.951569) 100%)",
+    "border-top-width": "1px",
+    "border-top-color": "color(srgb 0.286911 0.717375 0.82809 / 0.37898)",
+    "border-radius": "14px",
+    "padding": "18px"
+   },
+   "title": {
+    "x": 193,
+    "y": 58.5,
+    "w": 1488.88,
+    "h": 42,
+    "bottom": 100.5
+   },
+   "titleStyle": {
+    "font-size": "27px",
+    "font-weight": "600"
+   },
+   "eyebrow": {
+    "x": 193,
+    "y": 27,
+    "w": 1488.88,
+    "h": 19.5,
+    "bottom": 46.5
+   },
+   "eyebrowStyle": {
+    "font-size": "13px",
+    "color": "color(srgb 0.472392 0.861412 0.939216)",
+    "letter-spacing": "1.3px",
+    "text-transform": "uppercase"
+   },
+   "eyebrowText": "Vergleich",
+   "sub": {
+    "x": 193,
+    "y": 112.5,
+    "w": 1488.88,
+    "h": 18.84,
+    "bottom": 131.34
+   },
+   "subStyle": {
+    "font-size": "13px",
+    "color": "rgb(138, 138, 149)",
+    "line-height": "18.85px"
+   },
+   "subText": "Die besten Läufe aller Spieler.",
+   "close": {
+    "x": 1703.88,
+    "y": 27,
+    "w": 115.13,
+    "h": 46.14,
+    "bottom": 73.14
+   },
+   "glyphs": {
+    "⌗": 0,
+    "⚖": 0,
+    "♔": 0,
+    "✚": 0,
+    "⊘": 0
+   },
+   "glyphTotal": 0,
+   "svgIcons": 2,
+   "rowCount": 20,
+   "rowH": 61.64,
+   "modCount": 0,
+   "playCta": 0,
+   "champCount": 0,
+   "edgeSpots": [
+    {
+     "name": "nav row (idle)",
+     "sel": ".lb-tabs [role=\"tab\"]:not([aria-selected=\"true\"])",
+     "x": 251,
+     "y": 179
+    },
+    {
+     "name": "nav row (active)",
+     "sel": ".lb-tabs [role=\"tab\"][aria-selected=\"true\"]",
+     "x": 251,
+     "y": 256
+    },
+    {
+     "name": "list row hairline",
+     "sel": ".lb-page .lb-rows > button:nth-child(2)",
+     "x": 782,
+     "y": 357
+    },
+    {
+     "name": "countdown chip",
+     "sel": ".lb-weekcount",
+     "x": 1713,
+     "y": 185
+    }
+   ],
+   "scrollers": [
+    {
+     "cls": "lb-root",
+     "scrollH": 1080,
+     "clientH": 1080,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-card",
+     "scrollH": 914,
+     "clientH": 914,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-body",
+     "scrollH": 914,
+     "clientH": 914,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-page",
+     "scrollH": 763,
+     "clientH": 763,
+     "overflowY": "hidden"
+    },
+    {
+     "cls": "lb-pagescroll",
+     "scrollH": 727,
+     "clientH": 727,
+     "overflowY": "auto"
+    }
+   ],
+   "nodeCount": 449
+  },
+  "de/1920x1080/board/champions": {
+   "reached": true,
+   "viewport": {
+    "w": 1920,
+    "h": 1080
+   },
+   "card": {
+    "x": 100,
+    "y": 16,
+    "w": 1720,
+    "h": 616.63,
+    "bottom": 632.63
+   },
+   "body": {
+    "x": 101,
+    "y": 17,
+    "w": 1718,
+    "h": 614.63,
+    "bottom": 631.63
+   },
+   "page": {
+    "x": 423,
+    "y": 166.34,
+    "w": 1396,
+    "h": 465.28,
+    "bottom": 631.63
+   },
+   "tabsCol": {
+    "x": 101,
+    "y": 166.34,
+    "w": 300,
+    "h": 248.25,
+    "bottom": 414.59
+   },
+   "bodyGrid": {
+    "grid-template-columns": "300px 1396px",
+    "column-gap": "22px"
+   },
+   "head": {
+    "x": 101,
+    "y": 17,
+    "w": 1718,
+    "h": 122.34,
+    "bottom": 139.34
+   },
+   "headTop": 17,
+   "cardBottom": 632.63,
+   "belowFold": -447.37,
+   "rootStyle": {
+    "background-color": "rgba(12, 12, 16, 0.94)",
+    "backdrop-filter": "none",
+    "-webkit-backdrop-filter": "",
+    "align-items": "start"
+   },
+   "navActive": {
+    "background-color": "rgba(255, 255, 255, 0.07)",
+    "background-image": "none",
+    "border-radius": "6px",
+    "box-shadow": "rgb(38, 198, 230) 0px 0px 24px -14px inset",
+    "border-left-color": "rgb(38, 198, 230)",
+    "border-left-width": "4px",
+    "padding": "11px"
+   },
+   "navIdle": {
+    "background-color": "rgba(255, 255, 255, 0.02)",
+    "background-image": "none",
+    "border-radius": "6px",
+    "box-shadow": "none",
+    "border-left-color": "color(srgb 0.14902 0.776471 0.901961 / 0.7)",
+    "border-left-width": "4px",
+    "padding": "11px"
+   },
+   "navBox": {
+    "x": 114,
+    "y": 332.84,
+    "w": 274,
+    "h": 68.75,
+    "bottom": 401.59
+   },
+   "navCount": 3,
+   "navLabels": [
+    "GlobalAllzeit · alle Läufe",
+    "WocheWoche 35 · 2026",
+    "ChallengerPlatz 1 jeder abgelaufenen Woc"
+   ],
+   "pageStyle": {
+    "background-color": "rgba(0, 0, 0, 0)",
+    "background-image": "linear-gradient(color(srgb 0.110031 0.166834 0.214347 / 0.935765) 0%, color(srgb 0.0895714 0.122541 0.16629 / 0.951569) 100%)",
+    "border-top-width": "1px",
+    "border-top-color": "color(srgb 0.286911 0.717375 0.82809 / 0.37898)",
+    "border-radius": "14px",
+    "padding": "18px"
+   },
+   "title": {
+    "x": 193,
+    "y": 58.5,
+    "w": 1488.88,
+    "h": 42,
+    "bottom": 100.5
+   },
+   "titleStyle": {
+    "font-size": "27px",
+    "font-weight": "600"
+   },
+   "eyebrow": {
+    "x": 193,
+    "y": 27,
+    "w": 1488.88,
+    "h": 19.5,
+    "bottom": 46.5
+   },
+   "eyebrowStyle": {
+    "font-size": "13px",
+    "color": "color(srgb 0.472392 0.861412 0.939216)",
+    "letter-spacing": "1.3px",
+    "text-transform": "uppercase"
+   },
+   "eyebrowText": "Vergleich",
+   "sub": {
+    "x": 193,
+    "y": 112.5,
+    "w": 1488.88,
+    "h": 18.84,
+    "bottom": 131.34
+   },
+   "subStyle": {
+    "font-size": "13px",
+    "color": "rgb(138, 138, 149)",
+    "line-height": "18.85px"
+   },
+   "subText": "Die besten Läufe aller Spieler.",
+   "close": {
+    "x": 1703.88,
+    "y": 27,
+    "w": 115.13,
+    "h": 46.14,
+    "bottom": 73.14
+   },
+   "glyphs": {
+    "⌗": 0,
+    "⚖": 0,
+    "♔": 0,
+    "✚": 0,
+    "⊘": 0
+   },
+   "glyphTotal": 0,
+   "svgIcons": 12,
+   "rowCount": 0,
+   "rowH": null,
+   "modCount": 0,
+   "playCta": 0,
+   "champCount": 10,
+   "edgeSpots": [
+    {
+     "name": "nav row (idle)",
+     "sel": ".lb-tabs [role=\"tab\"]:not([aria-selected=\"true\"])",
+     "x": 251,
+     "y": 179
+    },
+    {
+     "name": "nav row (active)",
+     "sel": ".lb-tabs [role=\"tab\"][aria-selected=\"true\"]",
+     "x": 251,
+     "y": 333
+    }
+   ],
+   "scrollers": [
+    {
+     "cls": "lb-root",
+     "scrollH": 1080,
+     "clientH": 1080,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-card",
+     "scrollH": 615,
+     "clientH": 615,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-body",
+     "scrollH": 615,
+     "clientH": 615,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-page",
+     "scrollH": 463,
+     "clientH": 463,
+     "overflowY": "hidden"
+    },
+    {
+     "cls": "lb-pagescroll",
+     "scrollH": 427,
+     "clientH": 427,
+     "overflowY": "auto"
+    }
+   ],
+   "nodeCount": 353
+  },
+  "de/1920x1080/ranked/week": {
+   "reached": true,
+   "viewport": {
+    "w": 1920,
+    "h": 1080
+   },
+   "card": {
+    "x": 100,
+    "y": 16,
+    "w": 1720,
+    "h": 1046,
+    "bottom": 1062
+   },
+   "body": {
+    "x": 101,
+    "y": 17,
+    "w": 1718,
+    "h": 1044,
+    "bottom": 1061
+   },
+   "page": {
+    "x": 423,
+    "y": 166.34,
+    "w": 1396,
+    "h": 894.66,
+    "bottom": 1061
+   },
+   "tabsCol": {
+    "x": 101,
+    "y": 166.34,
+    "w": 300,
+    "h": 248.25,
+    "bottom": 414.59
+   },
+   "bodyGrid": {
+    "grid-template-columns": "300px 1396px",
+    "column-gap": "22px"
+   },
+   "head": {
+    "x": 101,
+    "y": 17,
+    "w": 1718,
+    "h": 122.34,
+    "bottom": 139.34
+   },
+   "headTop": 17,
+   "cardBottom": 1062,
+   "belowFold": -18,
+   "rootStyle": {
+    "background-color": "rgba(12, 12, 16, 0.94)",
+    "backdrop-filter": "none",
+    "-webkit-backdrop-filter": "",
+    "align-items": "start"
+   },
+   "navActive": {
+    "background-color": "rgba(255, 255, 255, 0.07)",
+    "background-image": "none",
+    "border-radius": "6px",
+    "box-shadow": "rgb(38, 198, 230) 0px 0px 24px -14px inset",
+    "border-left-color": "rgb(38, 198, 230)",
+    "border-left-width": "4px",
+    "padding": "11px"
+   },
+   "navIdle": {
+    "background-color": "rgba(255, 255, 255, 0.02)",
+    "background-image": "none",
+    "border-radius": "6px",
+    "box-shadow": "none",
+    "border-left-color": "color(srgb 0.14902 0.776471 0.901961 / 0.7)",
+    "border-left-width": "4px",
+    "padding": "11px"
+   },
+   "navBox": {
+    "x": 114,
+    "y": 179.34,
+    "w": 274,
+    "h": 68.75,
+    "bottom": 248.09
+   },
+   "navCount": 3,
+   "navLabels": [
+    "Diese WocheWoche 35 · 2026",
+    "ChallengerPlatz 1 jeder abgelaufenen Woc",
+    "RegelnBaseline und alle Modifikatoren"
+   ],
+   "pageStyle": {
+    "background-color": "rgba(0, 0, 0, 0)",
+    "background-image": "linear-gradient(color(srgb 0.110031 0.166834 0.214347 / 0.935765) 0%, color(srgb 0.0895714 0.122541 0.16629 / 0.951569) 100%)",
+    "border-top-width": "1px",
+    "border-top-color": "color(srgb 0.286911 0.717375 0.82809 / 0.37898)",
+    "border-radius": "14px",
+    "padding": "18px"
+   },
+   "title": {
+    "x": 193,
+    "y": 58.5,
+    "w": 1488.88,
+    "h": 42,
+    "bottom": 100.5
+   },
+   "titleStyle": {
+    "font-size": "27px",
+    "font-weight": "600"
+   },
+   "eyebrow": {
+    "x": 193,
+    "y": 27,
+    "w": 1488.88,
+    "h": 19.5,
+    "bottom": 46.5
+   },
+   "eyebrowStyle": {
+    "font-size": "13px",
+    "color": "color(srgb 0.472392 0.861412 0.939216)",
+    "letter-spacing": "1.3px",
+    "text-transform": "uppercase"
+   },
+   "eyebrowText": "Rangliste",
+   "sub": {
+    "x": 193,
+    "y": 112.5,
+    "w": 1488.88,
+    "h": 18.84,
+    "bottom": 131.34
+   },
+   "subStyle": {
+    "font-size": "13px",
+    "color": "rgb(138, 138, 149)",
+    "line-height": "18.85px"
+   },
+   "subText": "Woche 35 — alle spielen denselben Seed.",
+   "close": {
+    "x": 1703.88,
+    "y": 27,
+    "w": 115.13,
+    "h": 46.14,
+    "bottom": 73.14
+   },
+   "glyphs": {
+    "⌗": 0,
+    "⚖": 0,
+    "♔": 0,
+    "✚": 0,
+    "⊘": 0
+   },
+   "glyphTotal": 0,
+   "svgIcons": 8,
+   "rowCount": 20,
+   "rowH": 60.64,
+   "modCount": 3,
+   "playCta": 1,
+   "champCount": 0,
+   "edgeSpots": [
+    {
+     "name": "nav row (idle)",
+     "sel": ".lb-tabs [role=\"tab\"]:not([aria-selected=\"true\"])",
+     "x": 251,
+     "y": 256
+    },
+    {
+     "name": "nav row (active)",
+     "sel": ".lb-tabs [role=\"tab\"][aria-selected=\"true\"]",
+     "x": 251,
+     "y": 179
+    },
+    {
+     "name": "modifier box",
+     "sel": ".lb-mod",
+     "x": 652,
+     "y": 464
+    },
+    {
+     "name": "context tile",
+     "sel": ".lb-ctxtile",
+     "x": 664,
+     "y": 235
+    },
+    {
+     "name": "list row hairline",
+     "sel": ".lb-page .lb-rows > button:nth-child(2)",
+     "x": 1338,
+     "y": 396
+    },
+    {
+     "name": "countdown chip",
+     "sel": ".lb-weekcount",
+     "x": 1705,
+     "y": 185
+    }
+   ],
+   "scrollers": [
+    {
+     "cls": "lb-root",
+     "scrollH": 1080,
+     "clientH": 1080,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-card",
+     "scrollH": 1044,
+     "clientH": 1044,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-body",
+     "scrollH": 1044,
+     "clientH": 1044,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-page",
+     "scrollH": 893,
+     "clientH": 893,
+     "overflowY": "hidden"
+    },
+    {
+     "cls": "lb-pagescroll",
+     "scrollH": 1382,
+     "clientH": 857,
+     "overflowY": "auto"
+    }
+   ],
+   "nodeCount": 507
+  },
+  "de/1920x1080/ranked/champions": {
+   "reached": true,
+   "viewport": {
+    "w": 1920,
+    "h": 1080
+   },
+   "card": {
+    "x": 100,
+    "y": 16,
+    "w": 1720,
+    "h": 616.63,
+    "bottom": 632.63
+   },
+   "body": {
+    "x": 101,
+    "y": 17,
+    "w": 1718,
+    "h": 614.63,
+    "bottom": 631.63
+   },
+   "page": {
+    "x": 423,
+    "y": 166.34,
+    "w": 1396,
+    "h": 465.28,
+    "bottom": 631.63
+   },
+   "tabsCol": {
+    "x": 101,
+    "y": 166.34,
+    "w": 300,
+    "h": 248.25,
+    "bottom": 414.59
+   },
+   "bodyGrid": {
+    "grid-template-columns": "300px 1396px",
+    "column-gap": "22px"
+   },
+   "head": {
+    "x": 101,
+    "y": 17,
+    "w": 1718,
+    "h": 122.34,
+    "bottom": 139.34
+   },
+   "headTop": 17,
+   "cardBottom": 632.63,
+   "belowFold": -447.37,
+   "rootStyle": {
+    "background-color": "rgba(12, 12, 16, 0.94)",
+    "backdrop-filter": "none",
+    "-webkit-backdrop-filter": "",
+    "align-items": "start"
+   },
+   "navActive": {
+    "background-color": "rgba(255, 255, 255, 0.07)",
+    "background-image": "none",
+    "border-radius": "6px",
+    "box-shadow": "rgb(38, 198, 230) 0px 0px 24px -14px inset",
+    "border-left-color": "rgb(38, 198, 230)",
+    "border-left-width": "4px",
+    "padding": "11px"
+   },
+   "navIdle": {
+    "background-color": "rgba(255, 255, 255, 0.02)",
+    "background-image": "none",
+    "border-radius": "6px",
+    "box-shadow": "none",
+    "border-left-color": "color(srgb 0.14902 0.776471 0.901961 / 0.7)",
+    "border-left-width": "4px",
+    "padding": "11px"
+   },
+   "navBox": {
+    "x": 114,
+    "y": 256.09,
+    "w": 274,
+    "h": 68.75,
+    "bottom": 324.84
+   },
+   "navCount": 3,
+   "navLabels": [
+    "Diese WocheWoche 35 · 2026",
+    "ChallengerPlatz 1 jeder abgelaufenen Woc",
+    "RegelnBaseline und alle Modifikatoren"
+   ],
+   "pageStyle": {
+    "background-color": "rgba(0, 0, 0, 0)",
+    "background-image": "linear-gradient(color(srgb 0.110031 0.166834 0.214347 / 0.935765) 0%, color(srgb 0.0895714 0.122541 0.16629 / 0.951569) 100%)",
+    "border-top-width": "1px",
+    "border-top-color": "color(srgb 0.286911 0.717375 0.82809 / 0.37898)",
+    "border-radius": "14px",
+    "padding": "18px"
+   },
+   "title": {
+    "x": 193,
+    "y": 58.5,
+    "w": 1488.88,
+    "h": 42,
+    "bottom": 100.5
+   },
+   "titleStyle": {
+    "font-size": "27px",
+    "font-weight": "600"
+   },
+   "eyebrow": {
+    "x": 193,
+    "y": 27,
+    "w": 1488.88,
+    "h": 19.5,
+    "bottom": 46.5
+   },
+   "eyebrowStyle": {
+    "font-size": "13px",
+    "color": "color(srgb 0.472392 0.861412 0.939216)",
+    "letter-spacing": "1.3px",
+    "text-transform": "uppercase"
+   },
+   "eyebrowText": "Rangliste",
+   "sub": {
+    "x": 193,
+    "y": 112.5,
+    "w": 1488.88,
+    "h": 18.84,
+    "bottom": 131.34
+   },
+   "subStyle": {
+    "font-size": "13px",
+    "color": "rgb(138, 138, 149)",
+    "line-height": "18.85px"
+   },
+   "subText": "Woche 35 — alle spielen denselben Seed.",
+   "close": {
+    "x": 1703.88,
+    "y": 27,
+    "w": 115.13,
+    "h": 46.14,
+    "bottom": 73.14
+   },
+   "glyphs": {
+    "⌗": 0,
+    "⚖": 0,
+    "♔": 0,
+    "✚": 0,
+    "⊘": 0
+   },
+   "glyphTotal": 0,
+   "svgIcons": 12,
+   "rowCount": 0,
+   "rowH": null,
+   "modCount": 0,
+   "playCta": 0,
+   "champCount": 10,
+   "edgeSpots": [
+    {
+     "name": "nav row (idle)",
+     "sel": ".lb-tabs [role=\"tab\"]:not([aria-selected=\"true\"])",
+     "x": 251,
+     "y": 179
+    },
+    {
+     "name": "nav row (active)",
+     "sel": ".lb-tabs [role=\"tab\"][aria-selected=\"true\"]",
+     "x": 251,
+     "y": 256
+    }
+   ],
+   "scrollers": [
+    {
+     "cls": "lb-root",
+     "scrollH": 1080,
+     "clientH": 1080,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-card",
+     "scrollH": 615,
+     "clientH": 615,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-body",
+     "scrollH": 615,
+     "clientH": 615,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-page",
+     "scrollH": 463,
+     "clientH": 463,
+     "overflowY": "hidden"
+    },
+    {
+     "cls": "lb-pagescroll",
+     "scrollH": 427,
+     "clientH": 427,
+     "overflowY": "auto"
+    }
+   ],
+   "nodeCount": 353
+  },
+  "de/1920x1080/ranked/rules": {
+   "reached": true,
+   "viewport": {
+    "w": 1920,
+    "h": 1080
+   },
+   "card": {
+    "x": 100,
+    "y": 16,
+    "w": 1720,
+    "h": 1046,
+    "bottom": 1062
+   },
+   "body": {
+    "x": 101,
+    "y": 17,
+    "w": 1718,
+    "h": 1044,
+    "bottom": 1061
+   },
+   "page": {
+    "x": 423,
+    "y": 166.34,
+    "w": 1396,
+    "h": 894.66,
+    "bottom": 1061
+   },
+   "tabsCol": {
+    "x": 101,
+    "y": 166.34,
+    "w": 300,
+    "h": 248.25,
+    "bottom": 414.59
+   },
+   "bodyGrid": {
+    "grid-template-columns": "300px 1396px",
+    "column-gap": "22px"
+   },
+   "head": {
+    "x": 101,
+    "y": 17,
+    "w": 1718,
+    "h": 122.34,
+    "bottom": 139.34
+   },
+   "headTop": 17,
+   "cardBottom": 1062,
+   "belowFold": -18,
+   "rootStyle": {
+    "background-color": "rgba(12, 12, 16, 0.94)",
+    "backdrop-filter": "none",
+    "-webkit-backdrop-filter": "",
+    "align-items": "start"
+   },
+   "navActive": {
+    "background-color": "rgba(255, 255, 255, 0.07)",
+    "background-image": "none",
+    "border-radius": "6px",
+    "box-shadow": "rgb(38, 198, 230) 0px 0px 24px -14px inset",
+    "border-left-color": "rgb(38, 198, 230)",
+    "border-left-width": "4px",
+    "padding": "11px"
+   },
+   "navIdle": {
+    "background-color": "rgba(255, 255, 255, 0.02)",
+    "background-image": "none",
+    "border-radius": "6px",
+    "box-shadow": "none",
+    "border-left-color": "color(srgb 0.14902 0.776471 0.901961 / 0.7)",
+    "border-left-width": "4px",
+    "padding": "11px"
+   },
+   "navBox": {
+    "x": 114,
+    "y": 332.84,
+    "w": 274,
+    "h": 68.75,
+    "bottom": 401.59
+   },
+   "navCount": 3,
+   "navLabels": [
+    "Diese WocheWoche 35 · 2026",
+    "ChallengerPlatz 1 jeder abgelaufenen Woc",
+    "RegelnBaseline und alle Modifikatoren"
+   ],
+   "pageStyle": {
+    "background-color": "rgba(0, 0, 0, 0)",
+    "background-image": "linear-gradient(color(srgb 0.110031 0.166834 0.214347 / 0.935765) 0%, color(srgb 0.0895714 0.122541 0.16629 / 0.951569) 100%)",
+    "border-top-width": "1px",
+    "border-top-color": "color(srgb 0.286911 0.717375 0.82809 / 0.37898)",
+    "border-radius": "14px",
+    "padding": "18px"
+   },
+   "title": {
+    "x": 193,
+    "y": 58.5,
+    "w": 1488.88,
+    "h": 42,
+    "bottom": 100.5
+   },
+   "titleStyle": {
+    "font-size": "27px",
+    "font-weight": "600"
+   },
+   "eyebrow": {
+    "x": 193,
+    "y": 27,
+    "w": 1488.88,
+    "h": 19.5,
+    "bottom": 46.5
+   },
+   "eyebrowStyle": {
+    "font-size": "13px",
+    "color": "color(srgb 0.472392 0.861412 0.939216)",
+    "letter-spacing": "1.3px",
+    "text-transform": "uppercase"
+   },
+   "eyebrowText": "Rangliste",
+   "sub": {
+    "x": 193,
+    "y": 112.5,
+    "w": 1488.88,
+    "h": 18.84,
+    "bottom": 131.34
+   },
+   "subStyle": {
+    "font-size": "13px",
+    "color": "rgb(138, 138, 149)",
+    "line-height": "18.85px"
+   },
+   "subText": "Woche 35 — alle spielen denselben Seed.",
+   "close": {
+    "x": 1703.88,
+    "y": 27,
+    "w": 115.13,
+    "h": 46.14,
+    "bottom": 73.14
+   },
+   "glyphs": {
+    "⌗": 0,
+    "⚖": 0,
+    "♔": 0,
+    "✚": 0,
+    "⊘": 0
+   },
+   "glyphTotal": 0,
+   "svgIcons": 21,
+   "rowCount": 0,
+   "rowH": null,
+   "modCount": 19,
+   "playCta": 0,
+   "champCount": 0,
+   "edgeSpots": [
+    {
+     "name": "nav row (idle)",
+     "sel": ".lb-tabs [role=\"tab\"]:not([aria-selected=\"true\"])",
+     "x": 251,
+     "y": 179
+    },
+    {
+     "name": "nav row (active)",
+     "sel": ".lb-tabs [role=\"tab\"][aria-selected=\"true\"]",
+     "x": 251,
+     "y": 333
+    },
+    {
+     "name": "modifier box",
+     "sel": ".lb-mod",
+     "x": 774,
+     "y": 309
+    },
+    {
+     "name": "span chip",
+     "sel": ".lb-modspan",
+     "x": 1070,
+     "y": 325
+    }
+   ],
+   "scrollers": [
+    {
+     "cls": "lb-root",
+     "scrollH": 1080,
+     "clientH": 1080,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-card",
+     "scrollH": 1044,
+     "clientH": 1044,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-body",
+     "scrollH": 1044,
+     "clientH": 1044,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-page",
+     "scrollH": 893,
+     "clientH": 893,
+     "overflowY": "hidden"
+    },
+    {
+     "cls": "lb-pagescroll",
+     "scrollH": 972,
+     "clientH": 857,
+     "overflowY": "auto"
+    }
+   ],
+   "nodeCount": 390
+  },
+  "en/1280x720/board/global": {
+   "reached": true,
+   "viewport": {
+    "w": 1280,
+    "h": 720
+   },
+   "card": {
+    "x": 36,
+    "y": 10,
+    "w": 1208,
+    "h": 698,
+    "bottom": 708
+   },
+   "body": {
+    "x": 37,
+    "y": 11,
+    "w": 1206,
+    "h": 696,
+    "bottom": 707
+   },
+   "page": {
+    "x": 359,
+    "y": 160.34,
+    "w": 884,
+    "h": 546.66,
+    "bottom": 707
+   },
+   "tabsCol": {
+    "x": 37,
+    "y": 160.34,
+    "w": 300,
+    "h": 248.25,
+    "bottom": 408.59
+   },
+   "bodyGrid": {
+    "grid-template-columns": "300px 884px",
+    "column-gap": "22px"
+   },
+   "head": {
+    "x": 37,
+    "y": 11,
+    "w": 1206,
+    "h": 122.34,
+    "bottom": 133.34
+   },
+   "headTop": 11,
+   "cardBottom": 708,
+   "belowFold": -12,
+   "rootStyle": {
+    "background-color": "rgba(12, 12, 16, 0.94)",
+    "backdrop-filter": "none",
+    "-webkit-backdrop-filter": "",
+    "align-items": "start"
+   },
+   "navActive": {
+    "background-color": "rgba(255, 255, 255, 0.07)",
+    "background-image": "none",
+    "border-radius": "6px",
+    "box-shadow": "rgb(38, 198, 230) 0px 0px 24px -14px inset",
+    "border-left-color": "rgb(38, 198, 230)",
+    "border-left-width": "4px",
+    "padding": "11px"
+   },
+   "navIdle": {
+    "background-color": "rgba(255, 255, 255, 0.02)",
+    "background-image": "none",
+    "border-radius": "6px",
+    "box-shadow": "none",
+    "border-left-color": "color(srgb 0.14902 0.776471 0.901961 / 0.7)",
+    "border-left-width": "4px",
+    "padding": "11px"
+   },
+   "navBox": {
+    "x": 50,
+    "y": 173.34,
+    "w": 274,
+    "h": 68.75,
+    "bottom": 242.09
+   },
+   "navCount": 3,
+   "navLabels": [
+    "GlobalAll-time · every run",
+    "WeekWeek 35 · 2026",
+    "ChallengerRank 1 of every past week"
+   ],
+   "pageStyle": {
+    "background-color": "rgba(0, 0, 0, 0)",
+    "background-image": "linear-gradient(color(srgb 0.110031 0.166834 0.214347 / 0.935765) 0%, color(srgb 0.0895714 0.122541 0.16629 / 0.951569) 100%)",
+    "border-top-width": "1px",
+    "border-top-color": "color(srgb 0.286911 0.717375 0.82809 / 0.37898)",
+    "border-radius": "14px",
+    "padding": "18px"
+   },
+   "title": {
+    "x": 129,
+    "y": 52.5,
+    "w": 1008.7,
+    "h": 42,
+    "bottom": 94.5
+   },
+   "titleStyle": {
+    "font-size": "27px",
+    "font-weight": "600"
+   },
+   "eyebrow": {
+    "x": 129,
+    "y": 21,
+    "w": 1008.7,
+    "h": 19.5,
+    "bottom": 40.5
+   },
+   "eyebrowStyle": {
+    "font-size": "13px",
+    "color": "color(srgb 0.472392 0.861412 0.939216)",
+    "letter-spacing": "1.3px",
+    "text-transform": "uppercase"
+   },
+   "eyebrowText": "Comparison",
+   "sub": {
+    "x": 129,
+    "y": 106.5,
+    "w": 1008.7,
+    "h": 18.84,
+    "bottom": 125.34
+   },
+   "subStyle": {
+    "font-size": "13px",
+    "color": "rgb(138, 138, 149)",
+    "line-height": "18.85px"
+   },
+   "subText": "The best runs from every player.",
+   "close": {
+    "x": 1159.7,
+    "y": 21,
+    "w": 83.3,
+    "h": 46.14,
+    "bottom": 67.14
+   },
+   "glyphs": {
+    "⌗": 0,
+    "⚖": 0,
+    "♔": 0,
+    "✚": 0,
+    "⊘": 0
+   },
+   "glyphTotal": 0,
+   "svgIcons": 2,
+   "rowCount": 20,
+   "rowH": 61.64,
+   "modCount": 0,
+   "playCta": 0,
+   "champCount": 0,
+   "edgeSpots": [
+    {
+     "name": "nav row (idle)",
+     "sel": ".lb-tabs [role=\"tab\"]:not([aria-selected=\"true\"])",
+     "x": 187,
+     "y": 250
+    },
+    {
+     "name": "nav row (active)",
+     "sel": ".lb-tabs [role=\"tab\"][aria-selected=\"true\"]",
+     "x": 187,
+     "y": 173
+    },
+    {
+     "name": "list subhead chip",
+     "sel": ".lb-page .lb-listsub",
+     "x": 1187,
+     "y": 199
+    },
+    {
+     "name": "list row hairline",
+     "sel": ".lb-page .lb-rows > button:nth-child(2)",
+     "x": 588,
+     "y": 323
+    }
+   ],
+   "scrollers": [
+    {
+     "cls": "lb-root",
+     "scrollH": 720,
+     "clientH": 720,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-card",
+     "scrollH": 696,
+     "clientH": 696,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-body",
+     "scrollH": 696,
+     "clientH": 696,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-page",
+     "scrollH": 545,
+     "clientH": 545,
+     "overflowY": "hidden"
+    },
+    {
+     "cls": "lb-pagescroll",
+     "scrollH": 698,
+     "clientH": 509,
+     "overflowY": "auto"
+    }
+   ],
+   "nodeCount": 507
+  },
+  "en/1280x720/board/week": {
+   "reached": true,
+   "viewport": {
+    "w": 1280,
+    "h": 720
+   },
+   "card": {
+    "x": 36,
+    "y": 10,
+    "w": 1208,
+    "h": 698,
+    "bottom": 708
+   },
+   "body": {
+    "x": 37,
+    "y": 11,
+    "w": 1206,
+    "h": 696,
+    "bottom": 707
+   },
+   "page": {
+    "x": 359,
+    "y": 160.34,
+    "w": 884,
+    "h": 546.66,
+    "bottom": 707
+   },
+   "tabsCol": {
+    "x": 37,
+    "y": 160.34,
+    "w": 300,
+    "h": 248.25,
+    "bottom": 408.59
+   },
+   "bodyGrid": {
+    "grid-template-columns": "300px 884px",
+    "column-gap": "22px"
+   },
+   "head": {
+    "x": 37,
+    "y": 11,
+    "w": 1206,
+    "h": 122.34,
+    "bottom": 133.34
+   },
+   "headTop": 11,
+   "cardBottom": 708,
+   "belowFold": -12,
+   "rootStyle": {
+    "background-color": "rgba(12, 12, 16, 0.94)",
+    "backdrop-filter": "none",
+    "-webkit-backdrop-filter": "",
+    "align-items": "start"
+   },
+   "navActive": {
+    "background-color": "rgba(255, 255, 255, 0.07)",
+    "background-image": "none",
+    "border-radius": "6px",
+    "box-shadow": "rgb(38, 198, 230) 0px 0px 24px -14px inset",
+    "border-left-color": "rgb(38, 198, 230)",
+    "border-left-width": "4px",
+    "padding": "11px"
+   },
+   "navIdle": {
+    "background-color": "rgba(255, 255, 255, 0.02)",
+    "background-image": "none",
+    "border-radius": "6px",
+    "box-shadow": "none",
+    "border-left-color": "color(srgb 0.14902 0.776471 0.901961 / 0.7)",
+    "border-left-width": "4px",
+    "padding": "11px"
+   },
+   "navBox": {
+    "x": 50,
+    "y": 250.09,
+    "w": 274,
+    "h": 68.75,
+    "bottom": 318.84
+   },
+   "navCount": 3,
+   "navLabels": [
+    "GlobalAll-time · every run",
+    "WeekWeek 35 · 2026",
+    "ChallengerRank 1 of every past week"
+   ],
+   "pageStyle": {
+    "background-color": "rgba(0, 0, 0, 0)",
+    "background-image": "linear-gradient(color(srgb 0.110031 0.166834 0.214347 / 0.935765) 0%, color(srgb 0.0895714 0.122541 0.16629 / 0.951569) 100%)",
+    "border-top-width": "1px",
+    "border-top-color": "color(srgb 0.286911 0.717375 0.82809 / 0.37898)",
+    "border-radius": "14px",
+    "padding": "18px"
+   },
+   "title": {
+    "x": 129,
+    "y": 52.5,
+    "w": 1008.7,
+    "h": 42,
+    "bottom": 94.5
+   },
+   "titleStyle": {
+    "font-size": "27px",
+    "font-weight": "600"
+   },
+   "eyebrow": {
+    "x": 129,
+    "y": 21,
+    "w": 1008.7,
+    "h": 19.5,
+    "bottom": 40.5
+   },
+   "eyebrowStyle": {
+    "font-size": "13px",
+    "color": "color(srgb 0.472392 0.861412 0.939216)",
+    "letter-spacing": "1.3px",
+    "text-transform": "uppercase"
+   },
+   "eyebrowText": "Comparison",
+   "sub": {
+    "x": 129,
+    "y": 106.5,
+    "w": 1008.7,
+    "h": 18.84,
+    "bottom": 125.34
+   },
+   "subStyle": {
+    "font-size": "13px",
+    "color": "rgb(138, 138, 149)",
+    "line-height": "18.85px"
+   },
+   "subText": "The best runs from every player.",
+   "close": {
+    "x": 1159.7,
+    "y": 21,
+    "w": 83.3,
+    "h": 46.14,
+    "bottom": 67.14
+   },
+   "glyphs": {
+    "⌗": 0,
+    "⚖": 0,
+    "♔": 0,
+    "✚": 0,
+    "⊘": 0
+   },
+   "glyphTotal": 0,
+   "svgIcons": 2,
+   "rowCount": 20,
+   "rowH": 61.64,
+   "modCount": 0,
+   "playCta": 0,
+   "champCount": 0,
+   "edgeSpots": [
+    {
+     "name": "nav row (idle)",
+     "sel": ".lb-tabs [role=\"tab\"]:not([aria-selected=\"true\"])",
+     "x": 187,
+     "y": 173
+    },
+    {
+     "name": "nav row (active)",
+     "sel": ".lb-tabs [role=\"tab\"][aria-selected=\"true\"]",
+     "x": 187,
+     "y": 250
+    },
+    {
+     "name": "list row hairline",
+     "sel": ".lb-page .lb-rows > button:nth-child(2)",
+     "x": 588,
+     "y": 351
+    },
+    {
+     "name": "countdown chip",
+     "sel": ".lb-weekcount",
+     "x": 1127,
+     "y": 179
+    }
+   ],
+   "scrollers": [
+    {
+     "cls": "lb-root",
+     "scrollH": 720,
+     "clientH": 720,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-card",
+     "scrollH": 696,
+     "clientH": 696,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-body",
+     "scrollH": 696,
+     "clientH": 696,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-page",
+     "scrollH": 545,
+     "clientH": 545,
+     "overflowY": "hidden"
+    },
+    {
+     "cls": "lb-pagescroll",
+     "scrollH": 727,
+     "clientH": 509,
+     "overflowY": "auto"
+    }
+   ],
+   "nodeCount": 449
+  },
+  "en/1280x720/board/champions": {
+   "reached": true,
+   "viewport": {
+    "w": 1280,
+    "h": 720
+   },
+   "card": {
+    "x": 36,
+    "y": 10,
+    "w": 1208,
+    "h": 616.63,
+    "bottom": 626.63
+   },
+   "body": {
+    "x": 37,
+    "y": 11,
+    "w": 1206,
+    "h": 614.63,
+    "bottom": 625.63
+   },
+   "page": {
+    "x": 359,
+    "y": 160.34,
+    "w": 884,
+    "h": 465.28,
+    "bottom": 625.63
+   },
+   "tabsCol": {
+    "x": 37,
+    "y": 160.34,
+    "w": 300,
+    "h": 248.25,
+    "bottom": 408.59
+   },
+   "bodyGrid": {
+    "grid-template-columns": "300px 884px",
+    "column-gap": "22px"
+   },
+   "head": {
+    "x": 37,
+    "y": 11,
+    "w": 1206,
+    "h": 122.34,
+    "bottom": 133.34
+   },
+   "headTop": 11,
+   "cardBottom": 626.63,
+   "belowFold": -93.37,
+   "rootStyle": {
+    "background-color": "rgba(12, 12, 16, 0.94)",
+    "backdrop-filter": "none",
+    "-webkit-backdrop-filter": "",
+    "align-items": "start"
+   },
+   "navActive": {
+    "background-color": "rgba(255, 255, 255, 0.07)",
+    "background-image": "none",
+    "border-radius": "6px",
+    "box-shadow": "rgb(38, 198, 230) 0px 0px 24px -14px inset",
+    "border-left-color": "rgb(38, 198, 230)",
+    "border-left-width": "4px",
+    "padding": "11px"
+   },
+   "navIdle": {
+    "background-color": "rgba(255, 255, 255, 0.02)",
+    "background-image": "none",
+    "border-radius": "6px",
+    "box-shadow": "none",
+    "border-left-color": "color(srgb 0.14902 0.776471 0.901961 / 0.7)",
+    "border-left-width": "4px",
+    "padding": "11px"
+   },
+   "navBox": {
+    "x": 50,
+    "y": 326.84,
+    "w": 274,
+    "h": 68.75,
+    "bottom": 395.59
+   },
+   "navCount": 3,
+   "navLabels": [
+    "GlobalAll-time · every run",
+    "WeekWeek 35 · 2026",
+    "ChallengerRank 1 of every past week"
+   ],
+   "pageStyle": {
+    "background-color": "rgba(0, 0, 0, 0)",
+    "background-image": "linear-gradient(color(srgb 0.110031 0.166834 0.214347 / 0.935765) 0%, color(srgb 0.0895714 0.122541 0.16629 / 0.951569) 100%)",
+    "border-top-width": "1px",
+    "border-top-color": "color(srgb 0.286911 0.717375 0.82809 / 0.37898)",
+    "border-radius": "14px",
+    "padding": "18px"
+   },
+   "title": {
+    "x": 129,
+    "y": 52.5,
+    "w": 1008.7,
+    "h": 42,
+    "bottom": 94.5
+   },
+   "titleStyle": {
+    "font-size": "27px",
+    "font-weight": "600"
+   },
+   "eyebrow": {
+    "x": 129,
+    "y": 21,
+    "w": 1008.7,
+    "h": 19.5,
+    "bottom": 40.5
+   },
+   "eyebrowStyle": {
+    "font-size": "13px",
+    "color": "color(srgb 0.472392 0.861412 0.939216)",
+    "letter-spacing": "1.3px",
+    "text-transform": "uppercase"
+   },
+   "eyebrowText": "Comparison",
+   "sub": {
+    "x": 129,
+    "y": 106.5,
+    "w": 1008.7,
+    "h": 18.84,
+    "bottom": 125.34
+   },
+   "subStyle": {
+    "font-size": "13px",
+    "color": "rgb(138, 138, 149)",
+    "line-height": "18.85px"
+   },
+   "subText": "The best runs from every player.",
+   "close": {
+    "x": 1159.7,
+    "y": 21,
+    "w": 83.3,
+    "h": 46.14,
+    "bottom": 67.14
+   },
+   "glyphs": {
+    "⌗": 0,
+    "⚖": 0,
+    "♔": 0,
+    "✚": 0,
+    "⊘": 0
+   },
+   "glyphTotal": 0,
+   "svgIcons": 12,
+   "rowCount": 0,
+   "rowH": null,
+   "modCount": 0,
+   "playCta": 0,
+   "champCount": 10,
+   "edgeSpots": [
+    {
+     "name": "nav row (idle)",
+     "sel": ".lb-tabs [role=\"tab\"]:not([aria-selected=\"true\"])",
+     "x": 187,
+     "y": 173
+    },
+    {
+     "name": "nav row (active)",
+     "sel": ".lb-tabs [role=\"tab\"][aria-selected=\"true\"]",
+     "x": 187,
+     "y": 327
+    }
+   ],
+   "scrollers": [
+    {
+     "cls": "lb-root",
+     "scrollH": 720,
+     "clientH": 720,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-card",
+     "scrollH": 615,
+     "clientH": 615,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-body",
+     "scrollH": 615,
+     "clientH": 615,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-page",
+     "scrollH": 463,
+     "clientH": 463,
+     "overflowY": "hidden"
+    },
+    {
+     "cls": "lb-pagescroll",
+     "scrollH": 427,
+     "clientH": 427,
+     "overflowY": "auto"
+    }
+   ],
+   "nodeCount": 353
+  },
+  "en/1280x720/ranked/week": {
+   "reached": true,
+   "viewport": {
+    "w": 1280,
+    "h": 720
+   },
+   "card": {
+    "x": 36,
+    "y": 10,
+    "w": 1208,
+    "h": 698,
+    "bottom": 708
+   },
+   "body": {
+    "x": 37,
+    "y": 11,
+    "w": 1206,
+    "h": 696,
+    "bottom": 707
+   },
+   "page": {
+    "x": 359,
+    "y": 160.34,
+    "w": 884,
+    "h": 546.66,
+    "bottom": 707
+   },
+   "tabsCol": {
+    "x": 37,
+    "y": 160.34,
+    "w": 300,
+    "h": 248.25,
+    "bottom": 408.59
+   },
+   "bodyGrid": {
+    "grid-template-columns": "300px 884px",
+    "column-gap": "22px"
+   },
+   "head": {
+    "x": 37,
+    "y": 11,
+    "w": 1206,
+    "h": 122.34,
+    "bottom": 133.34
+   },
+   "headTop": 11,
+   "cardBottom": 708,
+   "belowFold": -12,
+   "rootStyle": {
+    "background-color": "rgba(12, 12, 16, 0.94)",
+    "backdrop-filter": "none",
+    "-webkit-backdrop-filter": "",
+    "align-items": "start"
+   },
+   "navActive": {
+    "background-color": "rgba(255, 255, 255, 0.07)",
+    "background-image": "none",
+    "border-radius": "6px",
+    "box-shadow": "rgb(38, 198, 230) 0px 0px 24px -14px inset",
+    "border-left-color": "rgb(38, 198, 230)",
+    "border-left-width": "4px",
+    "padding": "11px"
+   },
+   "navIdle": {
+    "background-color": "rgba(255, 255, 255, 0.02)",
+    "background-image": "none",
+    "border-radius": "6px",
+    "box-shadow": "none",
+    "border-left-color": "color(srgb 0.14902 0.776471 0.901961 / 0.7)",
+    "border-left-width": "4px",
+    "padding": "11px"
+   },
+   "navBox": {
+    "x": 50,
+    "y": 173.34,
+    "w": 274,
+    "h": 68.75,
+    "bottom": 242.09
+   },
+   "navCount": 3,
+   "navLabels": [
+    "This weekWeek 35 · 2026",
+    "ChallengerRank 1 of every past week",
+    "RulesBaseline and all modifiers"
+   ],
+   "pageStyle": {
+    "background-color": "rgba(0, 0, 0, 0)",
+    "background-image": "linear-gradient(color(srgb 0.110031 0.166834 0.214347 / 0.935765) 0%, color(srgb 0.0895714 0.122541 0.16629 / 0.951569) 100%)",
+    "border-top-width": "1px",
+    "border-top-color": "color(srgb 0.286911 0.717375 0.82809 / 0.37898)",
+    "border-radius": "14px",
+    "padding": "18px"
+   },
+   "title": {
+    "x": 129,
+    "y": 52.5,
+    "w": 1008.7,
+    "h": 42,
+    "bottom": 94.5
+   },
+   "titleStyle": {
+    "font-size": "27px",
+    "font-weight": "600"
+   },
+   "eyebrow": {
+    "x": 129,
+    "y": 21,
+    "w": 1008.7,
+    "h": 19.5,
+    "bottom": 40.5
+   },
+   "eyebrowStyle": {
+    "font-size": "13px",
+    "color": "color(srgb 0.472392 0.861412 0.939216)",
+    "letter-spacing": "1.3px",
+    "text-transform": "uppercase"
+   },
+   "eyebrowText": "Ranked",
+   "sub": {
+    "x": 129,
+    "y": 106.5,
+    "w": 1008.7,
+    "h": 18.84,
+    "bottom": 125.34
+   },
+   "subStyle": {
+    "font-size": "13px",
+    "color": "rgb(138, 138, 149)",
+    "line-height": "18.85px"
+   },
+   "subText": "Week 35 — everyone plays the same seed.",
+   "close": {
+    "x": 1159.7,
+    "y": 21,
+    "w": 83.3,
+    "h": 46.14,
+    "bottom": 67.14
+   },
+   "glyphs": {
+    "⌗": 0,
+    "⚖": 0,
+    "♔": 0,
+    "✚": 0,
+    "⊘": 0
+   },
+   "glyphTotal": 0,
+   "svgIcons": 8,
+   "rowCount": 20,
+   "rowH": 60.64,
+   "modCount": 3,
+   "playCta": 1,
+   "champCount": 0,
+   "edgeSpots": [
+    {
+     "name": "nav row (idle)",
+     "sel": ".lb-tabs [role=\"tab\"]:not([aria-selected=\"true\"])",
+     "x": 187,
+     "y": 250
+    },
+    {
+     "name": "nav row (active)",
+     "sel": ".lb-tabs [role=\"tab\"][aria-selected=\"true\"]",
+     "x": 187,
+     "y": 173
+    },
+    {
+     "name": "modifier box",
+     "sel": ".lb-mod",
+     "x": 588,
+     "y": 474
+    },
+    {
+     "name": "context tile",
+     "sel": ".lb-ctxtile",
+     "x": 514,
+     "y": 229
+    },
+    {
+     "name": "list row hairline",
+     "sel": ".lb-page .lb-rows > button:nth-child(2)",
+     "x": 1018,
+     "y": 407
+    },
+    {
+     "name": "countdown chip",
+     "sel": ".lb-weekcount",
+     "x": 1127,
+     "y": 179
+    }
+   ],
+   "scrollers": [
+    {
+     "cls": "lb-root",
+     "scrollH": 720,
+     "clientH": 720,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-card",
+     "scrollH": 696,
+     "clientH": 696,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-body",
+     "scrollH": 696,
+     "clientH": 696,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-page",
+     "scrollH": 545,
+     "clientH": 545,
+     "overflowY": "hidden"
+    },
+    {
+     "cls": "lb-pagescroll",
+     "scrollH": 1399,
+     "clientH": 509,
+     "overflowY": "auto"
+    }
+   ],
+   "nodeCount": 507
+  },
+  "en/1280x720/ranked/champions": {
+   "reached": true,
+   "viewport": {
+    "w": 1280,
+    "h": 720
+   },
+   "card": {
+    "x": 36,
+    "y": 10,
+    "w": 1208,
+    "h": 616.63,
+    "bottom": 626.63
+   },
+   "body": {
+    "x": 37,
+    "y": 11,
+    "w": 1206,
+    "h": 614.63,
+    "bottom": 625.63
+   },
+   "page": {
+    "x": 359,
+    "y": 160.34,
+    "w": 884,
+    "h": 465.28,
+    "bottom": 625.63
+   },
+   "tabsCol": {
+    "x": 37,
+    "y": 160.34,
+    "w": 300,
+    "h": 248.25,
+    "bottom": 408.59
+   },
+   "bodyGrid": {
+    "grid-template-columns": "300px 884px",
+    "column-gap": "22px"
+   },
+   "head": {
+    "x": 37,
+    "y": 11,
+    "w": 1206,
+    "h": 122.34,
+    "bottom": 133.34
+   },
+   "headTop": 11,
+   "cardBottom": 626.63,
+   "belowFold": -93.37,
+   "rootStyle": {
+    "background-color": "rgba(12, 12, 16, 0.94)",
+    "backdrop-filter": "none",
+    "-webkit-backdrop-filter": "",
+    "align-items": "start"
+   },
+   "navActive": {
+    "background-color": "rgba(255, 255, 255, 0.07)",
+    "background-image": "none",
+    "border-radius": "6px",
+    "box-shadow": "rgb(38, 198, 230) 0px 0px 24px -14px inset",
+    "border-left-color": "rgb(38, 198, 230)",
+    "border-left-width": "4px",
+    "padding": "11px"
+   },
+   "navIdle": {
+    "background-color": "rgba(255, 255, 255, 0.02)",
+    "background-image": "none",
+    "border-radius": "6px",
+    "box-shadow": "none",
+    "border-left-color": "color(srgb 0.14902 0.776471 0.901961 / 0.7)",
+    "border-left-width": "4px",
+    "padding": "11px"
+   },
+   "navBox": {
+    "x": 50,
+    "y": 250.09,
+    "w": 274,
+    "h": 68.75,
+    "bottom": 318.84
+   },
+   "navCount": 3,
+   "navLabels": [
+    "This weekWeek 35 · 2026",
+    "ChallengerRank 1 of every past week",
+    "RulesBaseline and all modifiers"
+   ],
+   "pageStyle": {
+    "background-color": "rgba(0, 0, 0, 0)",
+    "background-image": "linear-gradient(color(srgb 0.110031 0.166834 0.214347 / 0.935765) 0%, color(srgb 0.0895714 0.122541 0.16629 / 0.951569) 100%)",
+    "border-top-width": "1px",
+    "border-top-color": "color(srgb 0.286911 0.717375 0.82809 / 0.37898)",
+    "border-radius": "14px",
+    "padding": "18px"
+   },
+   "title": {
+    "x": 129,
+    "y": 52.5,
+    "w": 1008.7,
+    "h": 42,
+    "bottom": 94.5
+   },
+   "titleStyle": {
+    "font-size": "27px",
+    "font-weight": "600"
+   },
+   "eyebrow": {
+    "x": 129,
+    "y": 21,
+    "w": 1008.7,
+    "h": 19.5,
+    "bottom": 40.5
+   },
+   "eyebrowStyle": {
+    "font-size": "13px",
+    "color": "color(srgb 0.472392 0.861412 0.939216)",
+    "letter-spacing": "1.3px",
+    "text-transform": "uppercase"
+   },
+   "eyebrowText": "Ranked",
+   "sub": {
+    "x": 129,
+    "y": 106.5,
+    "w": 1008.7,
+    "h": 18.84,
+    "bottom": 125.34
+   },
+   "subStyle": {
+    "font-size": "13px",
+    "color": "rgb(138, 138, 149)",
+    "line-height": "18.85px"
+   },
+   "subText": "Week 35 — everyone plays the same seed.",
+   "close": {
+    "x": 1159.7,
+    "y": 21,
+    "w": 83.3,
+    "h": 46.14,
+    "bottom": 67.14
+   },
+   "glyphs": {
+    "⌗": 0,
+    "⚖": 0,
+    "♔": 0,
+    "✚": 0,
+    "⊘": 0
+   },
+   "glyphTotal": 0,
+   "svgIcons": 12,
+   "rowCount": 0,
+   "rowH": null,
+   "modCount": 0,
+   "playCta": 0,
+   "champCount": 10,
+   "edgeSpots": [
+    {
+     "name": "nav row (idle)",
+     "sel": ".lb-tabs [role=\"tab\"]:not([aria-selected=\"true\"])",
+     "x": 187,
+     "y": 173
+    },
+    {
+     "name": "nav row (active)",
+     "sel": ".lb-tabs [role=\"tab\"][aria-selected=\"true\"]",
+     "x": 187,
+     "y": 250
+    }
+   ],
+   "scrollers": [
+    {
+     "cls": "lb-root",
+     "scrollH": 720,
+     "clientH": 720,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-card",
+     "scrollH": 615,
+     "clientH": 615,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-body",
+     "scrollH": 615,
+     "clientH": 615,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-page",
+     "scrollH": 463,
+     "clientH": 463,
+     "overflowY": "hidden"
+    },
+    {
+     "cls": "lb-pagescroll",
+     "scrollH": 427,
+     "clientH": 427,
+     "overflowY": "auto"
+    }
+   ],
+   "nodeCount": 353
+  },
+  "en/1280x720/ranked/rules": {
+   "reached": true,
+   "viewport": {
+    "w": 1280,
+    "h": 720
+   },
+   "card": {
+    "x": 36,
+    "y": 10,
+    "w": 1208,
+    "h": 698,
+    "bottom": 708
+   },
+   "body": {
+    "x": 37,
+    "y": 11,
+    "w": 1206,
+    "h": 696,
+    "bottom": 707
+   },
+   "page": {
+    "x": 359,
+    "y": 160.34,
+    "w": 884,
+    "h": 546.66,
+    "bottom": 707
+   },
+   "tabsCol": {
+    "x": 37,
+    "y": 160.34,
+    "w": 300,
+    "h": 248.25,
+    "bottom": 408.59
+   },
+   "bodyGrid": {
+    "grid-template-columns": "300px 884px",
+    "column-gap": "22px"
+   },
+   "head": {
+    "x": 37,
+    "y": 11,
+    "w": 1206,
+    "h": 122.34,
+    "bottom": 133.34
+   },
+   "headTop": 11,
+   "cardBottom": 708,
+   "belowFold": -12,
+   "rootStyle": {
+    "background-color": "rgba(12, 12, 16, 0.94)",
+    "backdrop-filter": "none",
+    "-webkit-backdrop-filter": "",
+    "align-items": "start"
+   },
+   "navActive": {
+    "background-color": "rgba(255, 255, 255, 0.07)",
+    "background-image": "none",
+    "border-radius": "6px",
+    "box-shadow": "rgb(38, 198, 230) 0px 0px 24px -14px inset",
+    "border-left-color": "rgb(38, 198, 230)",
+    "border-left-width": "4px",
+    "padding": "11px"
+   },
+   "navIdle": {
+    "background-color": "rgba(255, 255, 255, 0.02)",
+    "background-image": "none",
+    "border-radius": "6px",
+    "box-shadow": "none",
+    "border-left-color": "color(srgb 0.14902 0.776471 0.901961 / 0.7)",
+    "border-left-width": "4px",
+    "padding": "11px"
+   },
+   "navBox": {
+    "x": 50,
+    "y": 326.84,
+    "w": 274,
+    "h": 68.75,
+    "bottom": 395.59
+   },
+   "navCount": 3,
+   "navLabels": [
+    "This weekWeek 35 · 2026",
+    "ChallengerRank 1 of every past week",
+    "RulesBaseline and all modifiers"
+   ],
+   "pageStyle": {
+    "background-color": "rgba(0, 0, 0, 0)",
+    "background-image": "linear-gradient(color(srgb 0.110031 0.166834 0.214347 / 0.935765) 0%, color(srgb 0.0895714 0.122541 0.16629 / 0.951569) 100%)",
+    "border-top-width": "1px",
+    "border-top-color": "color(srgb 0.286911 0.717375 0.82809 / 0.37898)",
+    "border-radius": "14px",
+    "padding": "18px"
+   },
+   "title": {
+    "x": 129,
+    "y": 52.5,
+    "w": 1008.7,
+    "h": 42,
+    "bottom": 94.5
+   },
+   "titleStyle": {
+    "font-size": "27px",
+    "font-weight": "600"
+   },
+   "eyebrow": {
+    "x": 129,
+    "y": 21,
+    "w": 1008.7,
+    "h": 19.5,
+    "bottom": 40.5
+   },
+   "eyebrowStyle": {
+    "font-size": "13px",
+    "color": "color(srgb 0.472392 0.861412 0.939216)",
+    "letter-spacing": "1.3px",
+    "text-transform": "uppercase"
+   },
+   "eyebrowText": "Ranked",
+   "sub": {
+    "x": 129,
+    "y": 106.5,
+    "w": 1008.7,
+    "h": 18.84,
+    "bottom": 125.34
+   },
+   "subStyle": {
+    "font-size": "13px",
+    "color": "rgb(138, 138, 149)",
+    "line-height": "18.85px"
+   },
+   "subText": "Week 35 — everyone plays the same seed.",
+   "close": {
+    "x": 1159.7,
+    "y": 21,
+    "w": 83.3,
+    "h": 46.14,
+    "bottom": 67.14
+   },
+   "glyphs": {
+    "⌗": 0,
+    "⚖": 0,
+    "♔": 0,
+    "✚": 0,
+    "⊘": 0
+   },
+   "glyphTotal": 0,
+   "svgIcons": 21,
+   "rowCount": 0,
+   "rowH": null,
+   "modCount": 19,
+   "playCta": 0,
+   "champCount": 0,
+   "edgeSpots": [
+    {
+     "name": "nav row (idle)",
+     "sel": ".lb-tabs [role=\"tab\"]:not([aria-selected=\"true\"])",
+     "x": 187,
+     "y": 173
+    },
+    {
+     "name": "nav row (active)",
+     "sel": ".lb-tabs [role=\"tab\"][aria-selected=\"true\"]",
+     "x": 187,
+     "y": 327
+    },
+    {
+     "name": "modifier box",
+     "sel": ".lb-mod",
+     "x": 582,
+     "y": 328
+    },
+    {
+     "name": "span chip",
+     "sel": ".lb-modspan",
+     "x": 750,
+     "y": 344
+    }
+   ],
+   "scrollers": [
+    {
+     "cls": "lb-root",
+     "scrollH": 720,
+     "clientH": 720,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-card",
+     "scrollH": 696,
+     "clientH": 696,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-body",
+     "scrollH": 696,
+     "clientH": 696,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-page",
+     "scrollH": 545,
+     "clientH": 545,
+     "overflowY": "hidden"
+    },
+    {
+     "cls": "lb-pagescroll",
+     "scrollH": 996,
+     "clientH": 509,
+     "overflowY": "auto"
+    }
+   ],
+   "nodeCount": 390
+  },
+  "en/1920x1080/board/global": {
+   "reached": true,
+   "viewport": {
+    "w": 1920,
+    "h": 1080
+   },
+   "card": {
+    "x": 100,
+    "y": 16,
+    "w": 1720,
+    "h": 887.75,
+    "bottom": 903.75
+   },
+   "body": {
+    "x": 101,
+    "y": 17,
+    "w": 1718,
+    "h": 885.75,
+    "bottom": 902.75
+   },
+   "page": {
+    "x": 423,
+    "y": 166.34,
+    "w": 1396,
+    "h": 736.41,
+    "bottom": 902.75
+   },
+   "tabsCol": {
+    "x": 101,
+    "y": 166.34,
+    "w": 300,
+    "h": 248.25,
+    "bottom": 414.59
+   },
+   "bodyGrid": {
+    "grid-template-columns": "300px 1396px",
+    "column-gap": "22px"
+   },
+   "head": {
+    "x": 101,
+    "y": 17,
+    "w": 1718,
+    "h": 122.34,
+    "bottom": 139.34
+   },
+   "headTop": 17,
+   "cardBottom": 903.75,
+   "belowFold": -176.25,
+   "rootStyle": {
+    "background-color": "rgba(12, 12, 16, 0.94)",
+    "backdrop-filter": "none",
+    "-webkit-backdrop-filter": "",
+    "align-items": "start"
+   },
+   "navActive": {
+    "background-color": "rgba(255, 255, 255, 0.07)",
+    "background-image": "none",
+    "border-radius": "6px",
+    "box-shadow": "rgb(38, 198, 230) 0px 0px 24px -14px inset",
+    "border-left-color": "rgb(38, 198, 230)",
+    "border-left-width": "4px",
+    "padding": "11px"
+   },
+   "navIdle": {
+    "background-color": "rgba(255, 255, 255, 0.02)",
+    "background-image": "none",
+    "border-radius": "6px",
+    "box-shadow": "none",
+    "border-left-color": "color(srgb 0.14902 0.776471 0.901961 / 0.7)",
+    "border-left-width": "4px",
+    "padding": "11px"
+   },
+   "navBox": {
+    "x": 114,
+    "y": 179.34,
+    "w": 274,
+    "h": 68.75,
+    "bottom": 248.09
+   },
+   "navCount": 3,
+   "navLabels": [
+    "GlobalAll-time · every run",
+    "WeekWeek 35 · 2026",
+    "ChallengerRank 1 of every past week"
+   ],
+   "pageStyle": {
+    "background-color": "rgba(0, 0, 0, 0)",
+    "background-image": "linear-gradient(color(srgb 0.110031 0.166834 0.214347 / 0.935765) 0%, color(srgb 0.0895714 0.122541 0.16629 / 0.951569) 100%)",
+    "border-top-width": "1px",
+    "border-top-color": "color(srgb 0.286911 0.717375 0.82809 / 0.37898)",
+    "border-radius": "14px",
+    "padding": "18px"
+   },
+   "title": {
+    "x": 193,
+    "y": 58.5,
+    "w": 1520.7,
+    "h": 42,
+    "bottom": 100.5
+   },
+   "titleStyle": {
+    "font-size": "27px",
+    "font-weight": "600"
+   },
+   "eyebrow": {
+    "x": 193,
+    "y": 27,
+    "w": 1520.7,
+    "h": 19.5,
+    "bottom": 46.5
+   },
+   "eyebrowStyle": {
+    "font-size": "13px",
+    "color": "color(srgb 0.472392 0.861412 0.939216)",
+    "letter-spacing": "1.3px",
+    "text-transform": "uppercase"
+   },
+   "eyebrowText": "Comparison",
+   "sub": {
+    "x": 193,
+    "y": 112.5,
+    "w": 1520.7,
+    "h": 18.84,
+    "bottom": 131.34
+   },
+   "subStyle": {
+    "font-size": "13px",
+    "color": "rgb(138, 138, 149)",
+    "line-height": "18.85px"
+   },
+   "subText": "The best runs from every player.",
+   "close": {
+    "x": 1735.7,
+    "y": 27,
+    "w": 83.3,
+    "h": 46.14,
+    "bottom": 73.14
+   },
+   "glyphs": {
+    "⌗": 0,
+    "⚖": 0,
+    "♔": 0,
+    "✚": 0,
+    "⊘": 0
+   },
+   "glyphTotal": 0,
+   "svgIcons": 2,
+   "rowCount": 20,
+   "rowH": 61.64,
+   "modCount": 0,
+   "playCta": 0,
+   "champCount": 0,
+   "edgeSpots": [
+    {
+     "name": "nav row (idle)",
+     "sel": ".lb-tabs [role=\"tab\"]:not([aria-selected=\"true\"])",
+     "x": 251,
+     "y": 256
+    },
+    {
+     "name": "nav row (active)",
+     "sel": ".lb-tabs [role=\"tab\"][aria-selected=\"true\"]",
+     "x": 251,
+     "y": 179
+    },
+    {
+     "name": "list subhead chip",
+     "sel": ".lb-page .lb-listsub",
+     "x": 1771,
+     "y": 205
+    },
+    {
+     "name": "list row hairline",
+     "sel": ".lb-page .lb-rows > button:nth-child(2)",
+     "x": 782,
+     "y": 329
+    }
+   ],
+   "scrollers": [
+    {
+     "cls": "lb-root",
+     "scrollH": 1080,
+     "clientH": 1080,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-card",
+     "scrollH": 886,
+     "clientH": 886,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-body",
+     "scrollH": 886,
+     "clientH": 886,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-page",
+     "scrollH": 734,
+     "clientH": 734,
+     "overflowY": "hidden"
+    },
+    {
+     "cls": "lb-pagescroll",
+     "scrollH": 698,
+     "clientH": 698,
+     "overflowY": "auto"
+    }
+   ],
+   "nodeCount": 507
+  },
+  "en/1920x1080/board/week": {
+   "reached": true,
+   "viewport": {
+    "w": 1920,
+    "h": 1080
+   },
+   "card": {
+    "x": 100,
+    "y": 16,
+    "w": 1720,
+    "h": 915.88,
+    "bottom": 931.88
+   },
+   "body": {
+    "x": 101,
+    "y": 17,
+    "w": 1718,
+    "h": 913.88,
+    "bottom": 930.88
+   },
+   "page": {
+    "x": 423,
+    "y": 166.34,
+    "w": 1396,
+    "h": 764.53,
+    "bottom": 930.88
+   },
+   "tabsCol": {
+    "x": 101,
+    "y": 166.34,
+    "w": 300,
+    "h": 248.25,
+    "bottom": 414.59
+   },
+   "bodyGrid": {
+    "grid-template-columns": "300px 1396px",
+    "column-gap": "22px"
+   },
+   "head": {
+    "x": 101,
+    "y": 17,
+    "w": 1718,
+    "h": 122.34,
+    "bottom": 139.34
+   },
+   "headTop": 17,
+   "cardBottom": 931.88,
+   "belowFold": -148.12,
+   "rootStyle": {
+    "background-color": "rgba(12, 12, 16, 0.94)",
+    "backdrop-filter": "none",
+    "-webkit-backdrop-filter": "",
+    "align-items": "start"
+   },
+   "navActive": {
+    "background-color": "rgba(255, 255, 255, 0.07)",
+    "background-image": "none",
+    "border-radius": "6px",
+    "box-shadow": "rgb(38, 198, 230) 0px 0px 24px -14px inset",
+    "border-left-color": "rgb(38, 198, 230)",
+    "border-left-width": "4px",
+    "padding": "11px"
+   },
+   "navIdle": {
+    "background-color": "rgba(255, 255, 255, 0.02)",
+    "background-image": "none",
+    "border-radius": "6px",
+    "box-shadow": "none",
+    "border-left-color": "color(srgb 0.14902 0.776471 0.901961 / 0.7)",
+    "border-left-width": "4px",
+    "padding": "11px"
+   },
+   "navBox": {
+    "x": 114,
+    "y": 256.09,
+    "w": 274,
+    "h": 68.75,
+    "bottom": 324.84
+   },
+   "navCount": 3,
+   "navLabels": [
+    "GlobalAll-time · every run",
+    "WeekWeek 35 · 2026",
+    "ChallengerRank 1 of every past week"
+   ],
+   "pageStyle": {
+    "background-color": "rgba(0, 0, 0, 0)",
+    "background-image": "linear-gradient(color(srgb 0.110031 0.166834 0.214347 / 0.935765) 0%, color(srgb 0.0895714 0.122541 0.16629 / 0.951569) 100%)",
+    "border-top-width": "1px",
+    "border-top-color": "color(srgb 0.286911 0.717375 0.82809 / 0.37898)",
+    "border-radius": "14px",
+    "padding": "18px"
+   },
+   "title": {
+    "x": 193,
+    "y": 58.5,
+    "w": 1520.7,
+    "h": 42,
+    "bottom": 100.5
+   },
+   "titleStyle": {
+    "font-size": "27px",
+    "font-weight": "600"
+   },
+   "eyebrow": {
+    "x": 193,
+    "y": 27,
+    "w": 1520.7,
+    "h": 19.5,
+    "bottom": 46.5
+   },
+   "eyebrowStyle": {
+    "font-size": "13px",
+    "color": "color(srgb 0.472392 0.861412 0.939216)",
+    "letter-spacing": "1.3px",
+    "text-transform": "uppercase"
+   },
+   "eyebrowText": "Comparison",
+   "sub": {
+    "x": 193,
+    "y": 112.5,
+    "w": 1520.7,
+    "h": 18.84,
+    "bottom": 131.34
+   },
+   "subStyle": {
+    "font-size": "13px",
+    "color": "rgb(138, 138, 149)",
+    "line-height": "18.85px"
+   },
+   "subText": "The best runs from every player.",
+   "close": {
+    "x": 1735.7,
+    "y": 27,
+    "w": 83.3,
+    "h": 46.14,
+    "bottom": 73.14
+   },
+   "glyphs": {
+    "⌗": 0,
+    "⚖": 0,
+    "♔": 0,
+    "✚": 0,
+    "⊘": 0
+   },
+   "glyphTotal": 0,
+   "svgIcons": 2,
+   "rowCount": 20,
+   "rowH": 61.64,
+   "modCount": 0,
+   "playCta": 0,
+   "champCount": 0,
+   "edgeSpots": [
+    {
+     "name": "nav row (idle)",
+     "sel": ".lb-tabs [role=\"tab\"]:not([aria-selected=\"true\"])",
+     "x": 251,
+     "y": 179
+    },
+    {
+     "name": "nav row (active)",
+     "sel": ".lb-tabs [role=\"tab\"][aria-selected=\"true\"]",
+     "x": 251,
+     "y": 256
+    },
+    {
+     "name": "list row hairline",
+     "sel": ".lb-page .lb-rows > button:nth-child(2)",
+     "x": 782,
+     "y": 357
+    },
+    {
+     "name": "countdown chip",
+     "sel": ".lb-weekcount",
+     "x": 1711,
+     "y": 185
+    }
+   ],
+   "scrollers": [
+    {
+     "cls": "lb-root",
+     "scrollH": 1080,
+     "clientH": 1080,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-card",
+     "scrollH": 914,
+     "clientH": 914,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-body",
+     "scrollH": 914,
+     "clientH": 914,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-page",
+     "scrollH": 763,
+     "clientH": 763,
+     "overflowY": "hidden"
+    },
+    {
+     "cls": "lb-pagescroll",
+     "scrollH": 727,
+     "clientH": 727,
+     "overflowY": "auto"
+    }
+   ],
+   "nodeCount": 449
+  },
+  "en/1920x1080/board/champions": {
+   "reached": true,
+   "viewport": {
+    "w": 1920,
+    "h": 1080
+   },
+   "card": {
+    "x": 100,
+    "y": 16,
+    "w": 1720,
+    "h": 616.63,
+    "bottom": 632.63
+   },
+   "body": {
+    "x": 101,
+    "y": 17,
+    "w": 1718,
+    "h": 614.63,
+    "bottom": 631.63
+   },
+   "page": {
+    "x": 423,
+    "y": 166.34,
+    "w": 1396,
+    "h": 465.28,
+    "bottom": 631.63
+   },
+   "tabsCol": {
+    "x": 101,
+    "y": 166.34,
+    "w": 300,
+    "h": 248.25,
+    "bottom": 414.59
+   },
+   "bodyGrid": {
+    "grid-template-columns": "300px 1396px",
+    "column-gap": "22px"
+   },
+   "head": {
+    "x": 101,
+    "y": 17,
+    "w": 1718,
+    "h": 122.34,
+    "bottom": 139.34
+   },
+   "headTop": 17,
+   "cardBottom": 632.63,
+   "belowFold": -447.37,
+   "rootStyle": {
+    "background-color": "rgba(12, 12, 16, 0.94)",
+    "backdrop-filter": "none",
+    "-webkit-backdrop-filter": "",
+    "align-items": "start"
+   },
+   "navActive": {
+    "background-color": "rgba(255, 255, 255, 0.07)",
+    "background-image": "none",
+    "border-radius": "6px",
+    "box-shadow": "rgb(38, 198, 230) 0px 0px 24px -14px inset",
+    "border-left-color": "rgb(38, 198, 230)",
+    "border-left-width": "4px",
+    "padding": "11px"
+   },
+   "navIdle": {
+    "background-color": "rgba(255, 255, 255, 0.02)",
+    "background-image": "none",
+    "border-radius": "6px",
+    "box-shadow": "none",
+    "border-left-color": "color(srgb 0.14902 0.776471 0.901961 / 0.7)",
+    "border-left-width": "4px",
+    "padding": "11px"
+   },
+   "navBox": {
+    "x": 114,
+    "y": 332.84,
+    "w": 274,
+    "h": 68.75,
+    "bottom": 401.59
+   },
+   "navCount": 3,
+   "navLabels": [
+    "GlobalAll-time · every run",
+    "WeekWeek 35 · 2026",
+    "ChallengerRank 1 of every past week"
+   ],
+   "pageStyle": {
+    "background-color": "rgba(0, 0, 0, 0)",
+    "background-image": "linear-gradient(color(srgb 0.110031 0.166834 0.214347 / 0.935765) 0%, color(srgb 0.0895714 0.122541 0.16629 / 0.951569) 100%)",
+    "border-top-width": "1px",
+    "border-top-color": "color(srgb 0.286911 0.717375 0.82809 / 0.37898)",
+    "border-radius": "14px",
+    "padding": "18px"
+   },
+   "title": {
+    "x": 193,
+    "y": 58.5,
+    "w": 1520.7,
+    "h": 42,
+    "bottom": 100.5
+   },
+   "titleStyle": {
+    "font-size": "27px",
+    "font-weight": "600"
+   },
+   "eyebrow": {
+    "x": 193,
+    "y": 27,
+    "w": 1520.7,
+    "h": 19.5,
+    "bottom": 46.5
+   },
+   "eyebrowStyle": {
+    "font-size": "13px",
+    "color": "color(srgb 0.472392 0.861412 0.939216)",
+    "letter-spacing": "1.3px",
+    "text-transform": "uppercase"
+   },
+   "eyebrowText": "Comparison",
+   "sub": {
+    "x": 193,
+    "y": 112.5,
+    "w": 1520.7,
+    "h": 18.84,
+    "bottom": 131.34
+   },
+   "subStyle": {
+    "font-size": "13px",
+    "color": "rgb(138, 138, 149)",
+    "line-height": "18.85px"
+   },
+   "subText": "The best runs from every player.",
+   "close": {
+    "x": 1735.7,
+    "y": 27,
+    "w": 83.3,
+    "h": 46.14,
+    "bottom": 73.14
+   },
+   "glyphs": {
+    "⌗": 0,
+    "⚖": 0,
+    "♔": 0,
+    "✚": 0,
+    "⊘": 0
+   },
+   "glyphTotal": 0,
+   "svgIcons": 12,
+   "rowCount": 0,
+   "rowH": null,
+   "modCount": 0,
+   "playCta": 0,
+   "champCount": 10,
+   "edgeSpots": [
+    {
+     "name": "nav row (idle)",
+     "sel": ".lb-tabs [role=\"tab\"]:not([aria-selected=\"true\"])",
+     "x": 251,
+     "y": 179
+    },
+    {
+     "name": "nav row (active)",
+     "sel": ".lb-tabs [role=\"tab\"][aria-selected=\"true\"]",
+     "x": 251,
+     "y": 333
+    }
+   ],
+   "scrollers": [
+    {
+     "cls": "lb-root",
+     "scrollH": 1080,
+     "clientH": 1080,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-card",
+     "scrollH": 615,
+     "clientH": 615,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-body",
+     "scrollH": 615,
+     "clientH": 615,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-page",
+     "scrollH": 463,
+     "clientH": 463,
+     "overflowY": "hidden"
+    },
+    {
+     "cls": "lb-pagescroll",
+     "scrollH": 427,
+     "clientH": 427,
+     "overflowY": "auto"
+    }
+   ],
+   "nodeCount": 353
+  },
+  "en/1920x1080/ranked/week": {
+   "reached": true,
+   "viewport": {
+    "w": 1920,
+    "h": 1080
+   },
+   "card": {
+    "x": 100,
+    "y": 16,
+    "w": 1720,
+    "h": 1046,
+    "bottom": 1062
+   },
+   "body": {
+    "x": 101,
+    "y": 17,
+    "w": 1718,
+    "h": 1044,
+    "bottom": 1061
+   },
+   "page": {
+    "x": 423,
+    "y": 166.34,
+    "w": 1396,
+    "h": 894.66,
+    "bottom": 1061
+   },
+   "tabsCol": {
+    "x": 101,
+    "y": 166.34,
+    "w": 300,
+    "h": 248.25,
+    "bottom": 414.59
+   },
+   "bodyGrid": {
+    "grid-template-columns": "300px 1396px",
+    "column-gap": "22px"
+   },
+   "head": {
+    "x": 101,
+    "y": 17,
+    "w": 1718,
+    "h": 122.34,
+    "bottom": 139.34
+   },
+   "headTop": 17,
+   "cardBottom": 1062,
+   "belowFold": -18,
+   "rootStyle": {
+    "background-color": "rgba(12, 12, 16, 0.94)",
+    "backdrop-filter": "none",
+    "-webkit-backdrop-filter": "",
+    "align-items": "start"
+   },
+   "navActive": {
+    "background-color": "rgba(255, 255, 255, 0.07)",
+    "background-image": "none",
+    "border-radius": "6px",
+    "box-shadow": "rgb(38, 198, 230) 0px 0px 24px -14px inset",
+    "border-left-color": "rgb(38, 198, 230)",
+    "border-left-width": "4px",
+    "padding": "11px"
+   },
+   "navIdle": {
+    "background-color": "rgba(255, 255, 255, 0.02)",
+    "background-image": "none",
+    "border-radius": "6px",
+    "box-shadow": "none",
+    "border-left-color": "color(srgb 0.14902 0.776471 0.901961 / 0.7)",
+    "border-left-width": "4px",
+    "padding": "11px"
+   },
+   "navBox": {
+    "x": 114,
+    "y": 179.34,
+    "w": 274,
+    "h": 68.75,
+    "bottom": 248.09
+   },
+   "navCount": 3,
+   "navLabels": [
+    "This weekWeek 35 · 2026",
+    "ChallengerRank 1 of every past week",
+    "RulesBaseline and all modifiers"
+   ],
+   "pageStyle": {
+    "background-color": "rgba(0, 0, 0, 0)",
+    "background-image": "linear-gradient(color(srgb 0.110031 0.166834 0.214347 / 0.935765) 0%, color(srgb 0.0895714 0.122541 0.16629 / 0.951569) 100%)",
+    "border-top-width": "1px",
+    "border-top-color": "color(srgb 0.286911 0.717375 0.82809 / 0.37898)",
+    "border-radius": "14px",
+    "padding": "18px"
+   },
+   "title": {
+    "x": 193,
+    "y": 58.5,
+    "w": 1520.7,
+    "h": 42,
+    "bottom": 100.5
+   },
+   "titleStyle": {
+    "font-size": "27px",
+    "font-weight": "600"
+   },
+   "eyebrow": {
+    "x": 193,
+    "y": 27,
+    "w": 1520.7,
+    "h": 19.5,
+    "bottom": 46.5
+   },
+   "eyebrowStyle": {
+    "font-size": "13px",
+    "color": "color(srgb 0.472392 0.861412 0.939216)",
+    "letter-spacing": "1.3px",
+    "text-transform": "uppercase"
+   },
+   "eyebrowText": "Ranked",
+   "sub": {
+    "x": 193,
+    "y": 112.5,
+    "w": 1520.7,
+    "h": 18.84,
+    "bottom": 131.34
+   },
+   "subStyle": {
+    "font-size": "13px",
+    "color": "rgb(138, 138, 149)",
+    "line-height": "18.85px"
+   },
+   "subText": "Week 35 — everyone plays the same seed.",
+   "close": {
+    "x": 1735.7,
+    "y": 27,
+    "w": 83.3,
+    "h": 46.14,
+    "bottom": 73.14
+   },
+   "glyphs": {
+    "⌗": 0,
+    "⚖": 0,
+    "♔": 0,
+    "✚": 0,
+    "⊘": 0
+   },
+   "glyphTotal": 0,
+   "svgIcons": 8,
+   "rowCount": 20,
+   "rowH": 60.64,
+   "modCount": 3,
+   "playCta": 1,
+   "champCount": 0,
+   "edgeSpots": [
+    {
+     "name": "nav row (idle)",
+     "sel": ".lb-tabs [role=\"tab\"]:not([aria-selected=\"true\"])",
+     "x": 251,
+     "y": 256
+    },
+    {
+     "name": "nav row (active)",
+     "sel": ".lb-tabs [role=\"tab\"][aria-selected=\"true\"]",
+     "x": 251,
+     "y": 179
+    },
+    {
+     "name": "modifier box",
+     "sel": ".lb-mod",
+     "x": 652,
+     "y": 464
+    },
+    {
+     "name": "context tile",
+     "sel": ".lb-ctxtile",
+     "x": 664,
+     "y": 235
+    },
+    {
+     "name": "list row hairline",
+     "sel": ".lb-page .lb-rows > button:nth-child(2)",
+     "x": 1338,
+     "y": 396
+    },
+    {
+     "name": "countdown chip",
+     "sel": ".lb-weekcount",
+     "x": 1703,
+     "y": 185
+    }
+   ],
+   "scrollers": [
+    {
+     "cls": "lb-root",
+     "scrollH": 1080,
+     "clientH": 1080,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-card",
+     "scrollH": 1044,
+     "clientH": 1044,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-body",
+     "scrollH": 1044,
+     "clientH": 1044,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-page",
+     "scrollH": 893,
+     "clientH": 893,
+     "overflowY": "hidden"
+    },
+    {
+     "cls": "lb-pagescroll",
+     "scrollH": 1382,
+     "clientH": 857,
+     "overflowY": "auto"
+    }
+   ],
+   "nodeCount": 507
+  },
+  "en/1920x1080/ranked/champions": {
+   "reached": true,
+   "viewport": {
+    "w": 1920,
+    "h": 1080
+   },
+   "card": {
+    "x": 100,
+    "y": 16,
+    "w": 1720,
+    "h": 616.63,
+    "bottom": 632.63
+   },
+   "body": {
+    "x": 101,
+    "y": 17,
+    "w": 1718,
+    "h": 614.63,
+    "bottom": 631.63
+   },
+   "page": {
+    "x": 423,
+    "y": 166.34,
+    "w": 1396,
+    "h": 465.28,
+    "bottom": 631.63
+   },
+   "tabsCol": {
+    "x": 101,
+    "y": 166.34,
+    "w": 300,
+    "h": 248.25,
+    "bottom": 414.59
+   },
+   "bodyGrid": {
+    "grid-template-columns": "300px 1396px",
+    "column-gap": "22px"
+   },
+   "head": {
+    "x": 101,
+    "y": 17,
+    "w": 1718,
+    "h": 122.34,
+    "bottom": 139.34
+   },
+   "headTop": 17,
+   "cardBottom": 632.63,
+   "belowFold": -447.37,
+   "rootStyle": {
+    "background-color": "rgba(12, 12, 16, 0.94)",
+    "backdrop-filter": "none",
+    "-webkit-backdrop-filter": "",
+    "align-items": "start"
+   },
+   "navActive": {
+    "background-color": "rgba(255, 255, 255, 0.07)",
+    "background-image": "none",
+    "border-radius": "6px",
+    "box-shadow": "rgb(38, 198, 230) 0px 0px 24px -14px inset",
+    "border-left-color": "rgb(38, 198, 230)",
+    "border-left-width": "4px",
+    "padding": "11px"
+   },
+   "navIdle": {
+    "background-color": "rgba(255, 255, 255, 0.02)",
+    "background-image": "none",
+    "border-radius": "6px",
+    "box-shadow": "none",
+    "border-left-color": "color(srgb 0.14902 0.776471 0.901961 / 0.7)",
+    "border-left-width": "4px",
+    "padding": "11px"
+   },
+   "navBox": {
+    "x": 114,
+    "y": 256.09,
+    "w": 274,
+    "h": 68.75,
+    "bottom": 324.84
+   },
+   "navCount": 3,
+   "navLabels": [
+    "This weekWeek 35 · 2026",
+    "ChallengerRank 1 of every past week",
+    "RulesBaseline and all modifiers"
+   ],
+   "pageStyle": {
+    "background-color": "rgba(0, 0, 0, 0)",
+    "background-image": "linear-gradient(color(srgb 0.110031 0.166834 0.214347 / 0.935765) 0%, color(srgb 0.0895714 0.122541 0.16629 / 0.951569) 100%)",
+    "border-top-width": "1px",
+    "border-top-color": "color(srgb 0.286911 0.717375 0.82809 / 0.37898)",
+    "border-radius": "14px",
+    "padding": "18px"
+   },
+   "title": {
+    "x": 193,
+    "y": 58.5,
+    "w": 1520.7,
+    "h": 42,
+    "bottom": 100.5
+   },
+   "titleStyle": {
+    "font-size": "27px",
+    "font-weight": "600"
+   },
+   "eyebrow": {
+    "x": 193,
+    "y": 27,
+    "w": 1520.7,
+    "h": 19.5,
+    "bottom": 46.5
+   },
+   "eyebrowStyle": {
+    "font-size": "13px",
+    "color": "color(srgb 0.472392 0.861412 0.939216)",
+    "letter-spacing": "1.3px",
+    "text-transform": "uppercase"
+   },
+   "eyebrowText": "Ranked",
+   "sub": {
+    "x": 193,
+    "y": 112.5,
+    "w": 1520.7,
+    "h": 18.84,
+    "bottom": 131.34
+   },
+   "subStyle": {
+    "font-size": "13px",
+    "color": "rgb(138, 138, 149)",
+    "line-height": "18.85px"
+   },
+   "subText": "Week 35 — everyone plays the same seed.",
+   "close": {
+    "x": 1735.7,
+    "y": 27,
+    "w": 83.3,
+    "h": 46.14,
+    "bottom": 73.14
+   },
+   "glyphs": {
+    "⌗": 0,
+    "⚖": 0,
+    "♔": 0,
+    "✚": 0,
+    "⊘": 0
+   },
+   "glyphTotal": 0,
+   "svgIcons": 12,
+   "rowCount": 0,
+   "rowH": null,
+   "modCount": 0,
+   "playCta": 0,
+   "champCount": 10,
+   "edgeSpots": [
+    {
+     "name": "nav row (idle)",
+     "sel": ".lb-tabs [role=\"tab\"]:not([aria-selected=\"true\"])",
+     "x": 251,
+     "y": 179
+    },
+    {
+     "name": "nav row (active)",
+     "sel": ".lb-tabs [role=\"tab\"][aria-selected=\"true\"]",
+     "x": 251,
+     "y": 256
+    }
+   ],
+   "scrollers": [
+    {
+     "cls": "lb-root",
+     "scrollH": 1080,
+     "clientH": 1080,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-card",
+     "scrollH": 615,
+     "clientH": 615,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-body",
+     "scrollH": 615,
+     "clientH": 615,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-page",
+     "scrollH": 463,
+     "clientH": 463,
+     "overflowY": "hidden"
+    },
+    {
+     "cls": "lb-pagescroll",
+     "scrollH": 427,
+     "clientH": 427,
+     "overflowY": "auto"
+    }
+   ],
+   "nodeCount": 353
+  },
+  "en/1920x1080/ranked/rules": {
+   "reached": true,
+   "viewport": {
+    "w": 1920,
+    "h": 1080
+   },
+   "card": {
+    "x": 100,
+    "y": 16,
+    "w": 1720,
+    "h": 1046,
+    "bottom": 1062
+   },
+   "body": {
+    "x": 101,
+    "y": 17,
+    "w": 1718,
+    "h": 1044,
+    "bottom": 1061
+   },
+   "page": {
+    "x": 423,
+    "y": 166.34,
+    "w": 1396,
+    "h": 894.66,
+    "bottom": 1061
+   },
+   "tabsCol": {
+    "x": 101,
+    "y": 166.34,
+    "w": 300,
+    "h": 248.25,
+    "bottom": 414.59
+   },
+   "bodyGrid": {
+    "grid-template-columns": "300px 1396px",
+    "column-gap": "22px"
+   },
+   "head": {
+    "x": 101,
+    "y": 17,
+    "w": 1718,
+    "h": 122.34,
+    "bottom": 139.34
+   },
+   "headTop": 17,
+   "cardBottom": 1062,
+   "belowFold": -18,
+   "rootStyle": {
+    "background-color": "rgba(12, 12, 16, 0.94)",
+    "backdrop-filter": "none",
+    "-webkit-backdrop-filter": "",
+    "align-items": "start"
+   },
+   "navActive": {
+    "background-color": "rgba(255, 255, 255, 0.07)",
+    "background-image": "none",
+    "border-radius": "6px",
+    "box-shadow": "rgb(38, 198, 230) 0px 0px 24px -14px inset",
+    "border-left-color": "rgb(38, 198, 230)",
+    "border-left-width": "4px",
+    "padding": "11px"
+   },
+   "navIdle": {
+    "background-color": "rgba(255, 255, 255, 0.02)",
+    "background-image": "none",
+    "border-radius": "6px",
+    "box-shadow": "none",
+    "border-left-color": "color(srgb 0.14902 0.776471 0.901961 / 0.7)",
+    "border-left-width": "4px",
+    "padding": "11px"
+   },
+   "navBox": {
+    "x": 114,
+    "y": 332.84,
+    "w": 274,
+    "h": 68.75,
+    "bottom": 401.59
+   },
+   "navCount": 3,
+   "navLabels": [
+    "This weekWeek 35 · 2026",
+    "ChallengerRank 1 of every past week",
+    "RulesBaseline and all modifiers"
+   ],
+   "pageStyle": {
+    "background-color": "rgba(0, 0, 0, 0)",
+    "background-image": "linear-gradient(color(srgb 0.110031 0.166834 0.214347 / 0.935765) 0%, color(srgb 0.0895714 0.122541 0.16629 / 0.951569) 100%)",
+    "border-top-width": "1px",
+    "border-top-color": "color(srgb 0.286911 0.717375 0.82809 / 0.37898)",
+    "border-radius": "14px",
+    "padding": "18px"
+   },
+   "title": {
+    "x": 193,
+    "y": 58.5,
+    "w": 1520.7,
+    "h": 42,
+    "bottom": 100.5
+   },
+   "titleStyle": {
+    "font-size": "27px",
+    "font-weight": "600"
+   },
+   "eyebrow": {
+    "x": 193,
+    "y": 27,
+    "w": 1520.7,
+    "h": 19.5,
+    "bottom": 46.5
+   },
+   "eyebrowStyle": {
+    "font-size": "13px",
+    "color": "color(srgb 0.472392 0.861412 0.939216)",
+    "letter-spacing": "1.3px",
+    "text-transform": "uppercase"
+   },
+   "eyebrowText": "Ranked",
+   "sub": {
+    "x": 193,
+    "y": 112.5,
+    "w": 1520.7,
+    "h": 18.84,
+    "bottom": 131.34
+   },
+   "subStyle": {
+    "font-size": "13px",
+    "color": "rgb(138, 138, 149)",
+    "line-height": "18.85px"
+   },
+   "subText": "Week 35 — everyone plays the same seed.",
+   "close": {
+    "x": 1735.7,
+    "y": 27,
+    "w": 83.3,
+    "h": 46.14,
+    "bottom": 73.14
+   },
+   "glyphs": {
+    "⌗": 0,
+    "⚖": 0,
+    "♔": 0,
+    "✚": 0,
+    "⊘": 0
+   },
+   "glyphTotal": 0,
+   "svgIcons": 21,
+   "rowCount": 0,
+   "rowH": null,
+   "modCount": 19,
+   "playCta": 0,
+   "champCount": 0,
+   "edgeSpots": [
+    {
+     "name": "nav row (idle)",
+     "sel": ".lb-tabs [role=\"tab\"]:not([aria-selected=\"true\"])",
+     "x": 251,
+     "y": 179
+    },
+    {
+     "name": "nav row (active)",
+     "sel": ".lb-tabs [role=\"tab\"][aria-selected=\"true\"]",
+     "x": 251,
+     "y": 333
+    },
+    {
+     "name": "modifier box",
+     "sel": ".lb-mod",
+     "x": 774,
+     "y": 284
+    },
+    {
+     "name": "span chip",
+     "sel": ".lb-modspan",
+     "x": 1070,
+     "y": 301
+    }
+   ],
+   "scrollers": [
+    {
+     "cls": "lb-root",
+     "scrollH": 1080,
+     "clientH": 1080,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-card",
+     "scrollH": 1044,
+     "clientH": 1044,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-body",
+     "scrollH": 1044,
+     "clientH": 1044,
+     "overflowY": "visible"
+    },
+    {
+     "cls": "lb-page",
+     "scrollH": 893,
+     "clientH": 893,
+     "overflowY": "hidden"
+    },
+    {
+     "cls": "lb-pagescroll",
+     "scrollH": 947,
+     "clientH": 857,
+     "overflowY": "auto"
+    }
+   ],
+   "nodeCount": 390
+  }
+ }
+}

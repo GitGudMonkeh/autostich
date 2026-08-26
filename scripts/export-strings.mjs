@@ -18,10 +18,81 @@ import { dirname, resolve, relative, join } from "node:path";
 
 import { ARCHITECT_FAMILIES, TIER_INERT_KINDS } from "../src/game/architect.js";
 import { buildingEffect } from "../src/i18n/buildingText.js";
-import { setLocale, SOURCE_LOCALE } from "../src/i18n/index.js";
-import CAT_DE from "../src/i18n/de.js";
-import CAT_EN from "../src/i18n/en.js";
+import { setLocale, SOURCE_LOCALE, LOCALE_IDS, READY_LOCALE_IDS, catalog } from "../src/i18n/index.js";
 import { SUIT_ORDER, suitName } from "../src/game/constants.js";
+
+/* #es-locale: EINE Datei je ZIELSPRACHE statt einer Spalte mehr in einer breiten CSV.
+
+   Der Grund ist nicht Geschmack: `status` und `note` gehören per Definition zu EINER Zielsprache.
+   Eine gemeinsame Datei bräuchte `status_en` und `status_es`, bräche das Schema, das
+   test/loc-csv.test.js festhält, und gäbe jedem Übersetzer die Spalten aller anderen mit.
+
+   Die englische Datei behält ihren Namen — die Ratsche, docs/localization/i18n.md und das
+   Übersetzerpaket zeigen alle darauf, und eine 520-KB-Umbenennung kauft nichts. */
+const CAT = Object.fromEntries(LOCALE_IDS.map((id) => [id, catalog(id)]));
+const CAT_DE = CAT[SOURCE_LOCALE];
+const TARGETS = LOCALE_IDS.filter((id) => id !== SOURCE_LOCALE);
+const OUT_NAME = { en: "strings_de_pixi_2026-08-15.csv" };          // historisch gewachsen
+const csvName = (loc) => OUT_NAME[loc] || `strings_${loc}.csv`;
+// Eine unfertige Sprache lässt sich nicht rendern: `setLocale` weist sie ab (und das soll sie).
+const canRender = (loc) => READY_LOCALE_IDS.includes(loc);
+
+/* ============ Längenschranken ============
+   H3 der Planung: die Spalte `limit` existierte im Schema und war in ALLEN 2800 Zeilen leer,
+   während das englische Übersetzerpaket dem Übersetzer 290 gefüllte Zeilen versprach. Ein
+   Übersetzer, der die Grenze nicht kennt, liefert korrekten Text, der abgeschnitten wird — und
+   das fällt erst im Layout-Durchgang auf, also am teuersten Punkt.
+
+   Hier stehen nur Grenzen, die BELEGT sind. Zwei Herkünfte, beide im `note`-Feld vermerkt:
+
+     hart      — der Code erzwingt sie und ein Test hält sie fest (die Formations-Kürzel sitzen
+                 als EIN Zeichen auf der Karte; i18n-guards.test.js prüft genau das).
+     gemessen  — die Zeichenkette sitzt in einer festen Fläche. Die Schranke ist die Länge des
+                 LÄNGSTEN GESCHWISTERS derselben Familie über alle fertigen Sprachen.
+
+                 Warum das Geschwister und nicht der eigene Eintrag: die Geschwister teilen sich
+                 EINE Fläche (alle vier Archetyp-Namen erscheinen in derselben Chip-Zelle), also
+                 fasst die Fläche nachweislich schon den längsten von ihnen. Der erste Anlauf nahm
+                 hier den eigenen Eintrag und schrieb `archetype.ice.label` ein `limit=3` vor —
+                 „Eis"/„Ice" sind kurz, „Hielo" hat fünf Zeichen, und keine spanische Übersetzung
+                 hätte diese Schranke je einhalten können. Eine geratene Schranke ist schlimmer als
+                 keine, und eine zu enge ist eine geratene.
+
+                 Die Zahl ist eine UNTERE Schranke der echten Kapazität: was den längsten heutigen
+                 Eintrag darstellt, stellt auch alles Kürzere dar. Sie ist damit sicher, nicht exakt.
+                 Gegenprobe zur Methode: für `suit.*.name` liefert sie 6 — genau den Wert, den der
+                 alte Export dort hart gesetzt hatte, ohne dass er hier abgeschrieben wurde.
+
+   Was NICHT hier steht, bekommt bewusst keine Zahl. Eine geratene Schranke ist schlimmer als
+   keine: sie lässt einen Übersetzer kürzen, wo er nicht müsste. Die übrigen engen Stellen misst
+   der Layout-Durchgang, wenn es spanischen Text gibt. */
+const LIMIT_HARD = [
+  { re: /^formation\..+\.abbr$/, value: 1, why: "Badge auf der Karte — genau ein Zeichen, paarweise verschieden" },
+];
+const LIMIT_MEASURED = [
+  { re: /^suit\..+\.name$/,       why: "Farbname im Chip" },
+  { re: /^archetype\..+\.label$/, why: "Archetyp-Name im Chip" },
+  { re: /^archcat\..+\.label$/,   why: "Bau-Kategorie im Chip" },
+  { re: /^rarity\.tier\d\.label$/, why: "Raritäts-Chip" },
+  { re: /^perkcat\..+\.name$/,    why: "Perk-Kategorie im Chip" },
+];
+
+// Längster Eintrag der Familie über alle fertigen Sprachen — einmal je Familie, nicht je Schlüssel.
+const FAMILY_MAX = new Map(LIMIT_MEASURED.map((r) => {
+  const ids = Object.keys(CAT_DE).filter((k) => r.re.test(k));
+  const lens = ids.flatMap((k) => READY_LOCALE_IDS.map((l) => String(CAT[l][k] ?? "").length));
+  return [r, Math.max(0, ...lens)];
+}));
+
+function limitFor(id) {
+  for (const r of LIMIT_HARD) if (r.re.test(id)) return { limit: String(r.value), note: `hart — ${r.why}` };
+  for (const r of LIMIT_MEASURED) {
+    if (!r.re.test(id)) continue;
+    const max = FAMILY_MAX.get(r);
+    if (max) return { limit: String(max), note: `gemessen (längstes Geschwister, ${READY_LOCALE_IDS.join("/")}) — ${r.why}` };
+  }
+  return null;
+}
 
 
 const __dir = dirname(fileURLToPath(import.meta.url));
@@ -29,12 +100,14 @@ const ROOT = resolve(__dir, "..");
 const OUT = resolve(ROOT, "docs/localization");
 const ROMAN = { 1: "I", 2: "II", 3: "III", 4: "IV" };
 
+/* Eine Zeile trägt jetzt EINE Quellsprache und eine Abbildung Zielsprache → Text (`t`), statt
+   einer festen `en`-Spalte. Geschrieben wird daraus je Zielsprache eine eigene Datei. */
 const rows = [];
 const push = (id, category, de, context, limit = "", note = "") => {
   if (de == null) return;
   const s = String(de).trim();
   if (!s) return;
-  rows.push({ id, category, de: s, en: "", context, limit, status: "new", note });
+  rows.push({ id, category, de: s, t: {}, context, limit, note });
 };
 
 /* ============ 1 · Skills + Archetypen ============
@@ -53,24 +126,29 @@ const push = (id, category, de, context, limit = "", note = "") => {
    Zeilen ausgegeben: der Übersetzer sieht den echten In-Game-Wortlaut, ohne dass daraus ein
    zweiter Pflegeort wird. */
 const effIn = (loc, fam, tier) => { setLocale(loc); return buildingEffect(fam, tier); };
-const pushEff = (id, deText, enText, context) => {
+// Je Zielsprache rendern — aber nur, wo sie fertig ist. Eine unfertige Sprache würde sonst den
+// englischen Rückfall in ihre eigene Spalte schreiben, und das sähe aus wie eine Übersetzung.
+const pushEff = (id, deText, fam, tier, context) => {
   if (!deText) return;
-  rows.push({ id, category: "building", de: deText, en: enText, context, limit: "", status: "done", note: "erzeugt aus src/i18n/buildingText.js" });
+  const t = {};
+  for (const loc of TARGETS) t[loc] = canRender(loc) ? effIn(loc, fam, tier) : "";
+  rows.push({ id, category: "building", de: deText, t, context, limit: "",
+    note: "erzeugt aus src/i18n/buildingText.js" });
 };
 
 for (const fam of Object.values(ARCHITECT_FAMILIES)) {
   if (fam.legendary) {
-    pushEff(`building.${fam.id}.legendary.eff`, effIn("de", fam, "legendary"), effIn("en", fam, "legendary"),
+    pushEff(`building.${fam.id}.legendary.eff`, effIn(SOURCE_LOCALE, fam, "legendary"), fam, "legendary",
       `Architekt-Gebäude „${fam.name}" — Effekt (legendär)`);
   } else {
     const inert = TIER_INERT_KINDS.has(fam.base && fam.base.kind);
     const maxTier = inert ? (fam.tierKick ? fam.tierKick.at : 1) : 4;
     const seen = new Set();
     for (let t = 1; t <= maxTier; t++) {
-      const deText = effIn("de", fam, t);
+      const deText = effIn(SOURCE_LOCALE, fam, t);
       if (!deText || seen.has(deText)) continue;
       seen.add(deText);
-      pushEff(`building.${fam.id}.tier${t}.eff`, deText, effIn("en", fam, t),
+      pushEff(`building.${fam.id}.tier${t}.eff`, deText, fam, t,
         `Architekt-Gebäude „${fam.name}" — Effekt Stufe ${ROMAN[t]}`);
     }
   }
@@ -117,7 +195,8 @@ for (const s of SUIT_ORDER) push(`ui.suit.${s}.name`, "ui", suitName(s), "Karten
 for (const r of uiRows()) {
   const isTrack = /ui\/music\.js/.test(r.context || "");
   if (isTrack) {
-    rows.push({ id: r.id, category: "system", de: r.de, en: r.de,
+    // Eigenname: in JEDER Zielsprache derselbe Text, und `status` bleibt „n/a" statt „done".
+    rows.push({ id: r.id, category: "system", de: r.de, t: Object.fromEntries(TARGETS.map((l) => [l, r.de])),
       context: "Musiktitel — Eigenname, wird NICHT übersetzt", limit: "", status: "n/a", note: "do-not-translate" });
   } else {
     push(r.id, r.category, r.de, r.context, r.limit, r.note);
@@ -132,10 +211,12 @@ for (const r of uiRows()) {
 for (const key of Object.keys(CAT_DE)) {
   const deText = String(CAT_DE[key] ?? "").trim();
   if (!deText) continue;
+  const lim = limitFor(key);
   rows.push({
-    id: key, category: "i18n", de: deText, en: String(CAT_EN[key] ?? "").trim(),
+    id: key, category: "i18n", de: deText,
+    t: Object.fromEntries(TARGETS.map((l) => [l, String(CAT[l][key] ?? "").trim()])),
     context: "i18n-Katalog (src/i18n) — über t() aufgelöst",
-    limit: "", status: CAT_EN[key] ? "done" : "new", note: "",
+    limit: lim ? lim.limit : "", note: lim ? lim.note : "",
   });
 }
 
@@ -147,11 +228,37 @@ const deduped = rows.filter((r) => r.category === "i18n" || !CATALOG_TEXTS.has(r
 rows.length = 0; rows.push(...deduped);
 
 const q = (s) => `"${String(s ?? "").replace(/"/g, '""')}"`;
-rows.sort((a, b) => (a.category + a.id).localeCompare(b.category + b.id, "de"));
-const head = ["id", "category", "de", "en", "context", "limit", "status", "note"];
-const csv = [head.map(q).join(",")].concat(rows.map((r) => head.map((h) => q(r[h])).join(","))).join("\r\n") + "\r\n";
-writeFileSync(join(OUT, "strings_de_pixi_2026-08-15.csv"), csv, "utf8");
-console.error(`DATA: ${rows.length} Zeilen → docs/localization/strings_de_pixi_2026-08-15.csv`);
+rows.sort((a, b) => (a.category + a.id).localeCompare(b.category + b.id, SOURCE_LOCALE));
+
+/* Spaltenschema je Zielsprache. Die Zielspalte heißt IMMER wie die Sprach-ID — für `en` ergibt
+   das exakt das bisherige Schema, das test/loc-csv.test.js festhält, unverändert.
+
+   `en_ref` kommt nur bei den ÜBRIGEN Sprachen dazu, und nur als REFERENZ: übersetzt wird aus dem
+   Deutschen (Entscheidung des Owners), Englisch steht daneben, weil dort eine Mehrdeutigkeit des
+   Deutschen schon einmal aufgelöst wurde. Wo beide sich widersprechen, gilt Deutsch, und der
+   Übersetzer vermerkt es in `note`. */
+const headFor = (loc) => loc === "en"
+  ? ["id", "category", "de", "en", "context", "limit", "status", "note"]
+  : ["id", "category", "de", loc, "en_ref", "context", "limit", "status", "note"];
+
+for (const loc of TARGETS) {
+  const head = headFor(loc);
+  const line = (r) => {
+    const text = r.t[loc] ?? "";
+    const cell = {
+      id: r.id, category: r.category, de: r.de, [loc]: text, en_ref: r.t.en ?? "",
+      context: r.context, limit: r.limit, note: r.note,
+      // „n/a" heißt „bewusst einsprachig" und darf nicht zu „done" werden, nur weil Text dasteht.
+      status: r.status === "n/a" ? "n/a" : (text ? "done" : "new"),
+    };
+    return head.map((h) => q(cell[h])).join(",");
+  };
+  const csv = [head.map(q).join(",")].concat(rows.map(line)).join("\r\n") + "\r\n";
+  writeFileSync(join(OUT, csvName(loc)), csv, "utf8");
+  const offen = rows.filter((r) => r.status !== "n/a" && !(r.t[loc] ?? "")).length;
+  const mitLimit = rows.filter((r) => r.limit).length;
+  console.error(`DATA [${loc}]: ${rows.length} Zeilen (${offen} offen, ${mitLimit} mit Längenschranke) → docs/localization/${csvName(loc)}`);
+}
 
 /* ============ UI-Texte (kuratiert) ============
    Heuristik + Filterlisten. Ergibt die `ui.*`/`store.*`/`system.*`-Zeilen der CSV. Bewusst KEIN

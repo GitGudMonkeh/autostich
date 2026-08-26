@@ -1,0 +1,2417 @@
+
+  compared 160 cells, 25129 matched nodes
+  Surfaces only. Control states are not captured and are verified by hand.
+
+  unmatched nodes: 0 pre-registered (H-c: leaderboard, victory), 80 elsewhere
+    de/1280x720/feedback  1/0/1/3/1/2:LABEL  (only in before)
+    de/1280x720/feedback  1/0/1/3/1/2/1:SPAN  (only in before)
+    de/1280x720/feedback  1/0/1/3/0:DIV  (only in after)
+    de/1280x720/feedback  1/0/1/3/1:DIV  (only in after)
+    de/1280x720/feedback  1/0/1/3/1/2:DIV  (only in after)
+    de/1280x720/feedback  1/0/1/3/1/2/0:SPAN  (only in after)
+    de/1280x720/feedback  1/0/1/3/1/2/2:BUTTON  (only in after)
+    de/1280x720/feedback  1/0/1/3/1/2/2/0:SPAN  (only in after)
+    de/1400x700/feedback  1/0/1/3/1/2:LABEL  (only in before)
+    de/1400x700/feedback  1/0/1/3/1/2/1:SPAN  (only in before)
+    de/1400x700/feedback  1/0/1/3/0:DIV  (only in after)
+    de/1400x700/feedback  1/0/1/3/1:DIV  (only in after)
+    de/1400x700/feedback  1/0/1/3/1/2:DIV  (only in after)
+    de/1400x700/feedback  1/0/1/3/1/2/0:SPAN  (only in after)
+    de/1400x700/feedback  1/0/1/3/1/2/2:BUTTON  (only in after)
+    de/1400x700/feedback  1/0/1/3/1/2/2/0:SPAN  (only in after)
+    de/1536x791/feedback  1/0/1/3/1/2:LABEL  (only in before)
+    de/1536x791/feedback  1/0/1/3/1/2/1:SPAN  (only in before)
+    de/1536x791/feedback  1/0/1/3/0:DIV  (only in after)
+    de/1536x791/feedback  1/0/1/3/1:DIV  (only in after)
+    de/1536x791/feedback  1/0/1/3/1/2:DIV  (only in after)
+    de/1536x791/feedback  1/0/1/3/1/2/0:SPAN  (only in after)
+    de/1536x791/feedback  1/0/1/3/1/2/2:BUTTON  (only in after)
+    de/1536x791/feedback  1/0/1/3/1/2/2/0:SPAN  (only in after)
+    de/1600x900/feedback  1/0/1/3/1/2:LABEL  (only in before)
+    de/1600x900/feedback  1/0/1/3/1/2/1:SPAN  (only in before)
+    de/1600x900/feedback  1/0/1/3/0:DIV  (only in after)
+    de/1600x900/feedback  1/0/1/3/1:DIV  (only in after)
+    de/1600x900/feedback  1/0/1/3/1/2:DIV  (only in after)
+    de/1600x900/feedback  1/0/1/3/1/2/0:SPAN  (only in after)
+    de/1600x900/feedback  1/0/1/3/1/2/2:BUTTON  (only in after)
+    de/1600x900/feedback  1/0/1/3/1/2/2/0:SPAN  (only in after)
+    de/1920x1080/feedback  1/0/1/3/1/2:LABEL  (only in before)
+    de/1920x1080/feedback  1/0/1/3/1/2/1:SPAN  (only in before)
+    de/1920x1080/feedback  1/0/1/3/0:DIV  (only in after)
+    de/1920x1080/feedback  1/0/1/3/1:DIV  (only in after)
+    de/1920x1080/feedback  1/0/1/3/1/2:DIV  (only in after)
+    de/1920x1080/feedback  1/0/1/3/1/2/0:SPAN  (only in after)
+    de/1920x1080/feedback  1/0/1/3/1/2/2:BUTTON  (only in after)
+    de/1920x1080/feedback  1/0/1/3/1/2/2/0:SPAN  (only in after)
+    en/1280x720/feedback  1/0/1/3/1/2:LABEL  (only in before)
+    en/1280x720/feedback  1/0/1/3/1/2/1:SPAN  (only in before)
+    en/1280x720/feedback  1/0/1/3/0:DIV  (only in after)
+    en/1280x720/feedback  1/0/1/3/1:DIV  (only in after)
+    en/1280x720/feedback  1/0/1/3/1/2:DIV  (only in after)
+    en/1280x720/feedback  1/0/1/3/1/2/0:SPAN  (only in after)
+    en/1280x720/feedback  1/0/1/3/1/2/2:BUTTON  (only in after)
+    en/1280x720/feedback  1/0/1/3/1/2/2/0:SPAN  (only in after)
+    en/1400x700/feedback  1/0/1/3/1/2:LABEL  (only in before)
+    en/1400x700/feedback  1/0/1/3/1/2/1:SPAN  (only in before)
+    en/1400x700/feedback  1/0/1/3/0:DIV  (only in after)
+    en/1400x700/feedback  1/0/1/3/1:DIV  (only in after)
+    en/1400x700/feedback  1/0/1/3/1/2:DIV  (only in after)
+    en/1400x700/feedback  1/0/1/3/1/2/0:SPAN  (only in after)
+    en/1400x700/feedback  1/0/1/3/1/2/2:BUTTON  (only in after)
+    en/1400x700/feedback  1/0/1/3/1/2/2/0:SPAN  (only in after)
+    en/1536x791/feedback  1/0/1/3/1/2:LABEL  (only in before)
+    en/1536x791/feedback  1/0/1/3/1/2/1:SPAN  (only in before)
+    en/1536x791/feedback  1/0/1/3/0:DIV  (only in after)
+    en/1536x791/feedback  1/0/1/3/1:DIV  (only in after)
+    en/1536x791/feedback  1/0/1/3/1/2:DIV  (only in after)
+    en/1536x791/feedback  1/0/1/3/1/2/0:SPAN  (only in after)
+    en/1536x791/feedback  1/0/1/3/1/2/2:BUTTON  (only in after)
+    en/1536x791/feedback  1/0/1/3/1/2/2/0:SPAN  (only in after)
+    en/1600x900/feedback  1/0/1/3/1/2:LABEL  (only in before)
+    en/1600x900/feedback  1/0/1/3/1/2/1:SPAN  (only in before)
+    en/1600x900/feedback  1/0/1/3/0:DIV  (only in after)
+    en/1600x900/feedback  1/0/1/3/1:DIV  (only in after)
+    en/1600x900/feedback  1/0/1/3/1/2:DIV  (only in after)
+    en/1600x900/feedback  1/0/1/3/1/2/0:SPAN  (only in after)
+    en/1600x900/feedback  1/0/1/3/1/2/2:BUTTON  (only in after)
+    en/1600x900/feedback  1/0/1/3/1/2/2/0:SPAN  (only in after)
+    en/1920x1080/feedback  1/0/1/3/1/2:LABEL  (only in before)
+    en/1920x1080/feedback  1/0/1/3/1/2/1:SPAN  (only in before)
+    en/1920x1080/feedback  1/0/1/3/0:DIV  (only in after)
+    en/1920x1080/feedback  1/0/1/3/1:DIV  (only in after)
+    en/1920x1080/feedback  1/0/1/3/1/2:DIV  (only in after)
+    en/1920x1080/feedback  1/0/1/3/1/2/0:SPAN  (only in after)
+    en/1920x1080/feedback  1/0/1/3/1/2/2:BUTTON  (only in after)
+    en/1920x1080/feedback  1/0/1/3/1/2/2/0:SPAN  (only in after)
+      by cell: de/1280x720/feedback=8  de/1400x700/feedback=8  de/1536x791/feedback=8  de/1600x900/feedback=8  de/1920x1080/feedback=8  en/1280x720/feedback=8  en/1400x700/feedback=8  en/1536x791/feedback=8  en/1600x900/feedback=8  en/1920x1080/feedback=8
+      by surface: feedback=80
+      by side: only in after=60  only in before=20
+
+  580 computed delta(s), all of them printed:
+    de/1280x720/feedback
+      1/0:DIV  bi
+        before: linear-gradient(rgb(23, 23, 28), rgb(23, 23, 28)), linear-gradient(90deg, rgb(58, 58, 72) 0%, rgb(38, 198, 230) 25%, rgb(255, 46, 200) 50%, rgb(38, 198, 230) 75%, rgb(58, 58, 72) 100%)
+        after : none
+    de/1280x720/feedback
+      1/0:DIV  bo
+        before: padding-box, border-box|padding-box, border-box|auto, 200%
+        after : padding-box|padding-box|auto
+    de/1280x720/feedback
+      1/0:DIV  sh
+        before: color(srgb 0.14902 0.776471 0.901961 / 0.22) 0px 0px 14px 0px
+        after : none
+    de/1280x720/feedback
+      1/0:DIV  box[y]
+        before: 102.17
+        after : 67.53
+    de/1280x720/feedback
+      1/0:DIV  box[h]
+        before: 515.66
+        after : 584.92
+    de/1280x720/feedback
+      1/0/0:DIV  box[y]
+        before: 103.17
+        after : 68.53
+    de/1280x720/feedback
+      1/0/1:DIV  box[y]
+        before: 106.17
+        after : 71.53
+    de/1280x720/feedback
+      1/0/1:DIV  box[h]
+        before: 510.66
+        after : 579.92
+    de/1280x720/feedback
+      1/0/1/0/1:BUTTON  box[x]
+        before: 1019.25
+        after : 1016.88
+    de/1280x720/feedback
+      1/0/1/0/1:BUTTON  box[y]
+        before: 124.17
+        after : 89.53
+    de/1280x720/feedback
+      1/0/1/0/1:BUTTON  box[w]
+        before: 129.75
+        after : 132.13
+    de/1280x720/feedback
+      1/0/1/0/1:BUTTON  box[h]
+        before: 52.83
+        after : 44.14
+    de/1280x720/feedback
+      1/0/1/3/0/0/1:DIV  bc
+        before: rgba(150, 150, 170, 0.14) rgba(150, 150, 170, 0.14) rgba(150, 150, 170, 0.14) rgba(150, 150, 170, 0.14)
+        after : rgb(58, 58, 68) rgb(58, 58, 68) rgb(58, 58, 68) rgb(58, 58, 68)
+    de/1280x720/feedback
+      1/0/1/3/0/0/1:DIV  rd
+        before: 10px 10px 10px 10px
+        after : 8px 8px 8px 8px
+    de/1280x720/feedback
+      1/0/1/3/0/0/1:DIV  box[x]
+        before: 131
+        after : 150
+    de/1280x720/feedback
+      1/0/1/3/0/0/1:DIV  box[y]
+        before: 220.5
+        after : 227.7
+    de/1280x720/feedback
+      1/0/1/3/0/0/1:DIV  box[w]
+        before: 592
+        after : 554
+    de/1280x720/feedback
+      1/0/1/3/0/0/1:DIV  box[h]
+        before: 37.33
+        after : 44
+    de/1280x720/feedback
+      1/0/1/3/0/0/1/0:BUTTON  pd
+        before: 9px 12px 9px 12px
+        after : 0px 12px 0px 12px
+    de/1280x720/feedback
+      1/0/1/3/0/0/1/0:BUTTON  box[x]
+        before: 132
+        after : 151
+    de/1280x720/feedback
+      1/0/1/3/0/0/1/0:BUTTON  box[y]
+        before: 221.5
+        after : 228.7
+    de/1280x720/feedback
+      1/0/1/3/0/0/1/0:BUTTON  box[w]
+        before: 146.75
+        after : 137.25
+    de/1280x720/feedback
+      1/0/1/3/0/0/1/0:BUTTON  box[h]
+        before: 35.33
+        after : 42
+    de/1280x720/feedback
+      1/0/1/3/0/0/1/1:BUTTON  bc
+        before: rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgba(150, 150, 170, 0.14)
+        after : rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgb(58, 58, 68)
+    de/1280x720/feedback
+      1/0/1/3/0/0/1/1:BUTTON  pd
+        before: 9px 12px 9px 12px
+        after : 0px 12px 0px 12px
+    de/1280x720/feedback
+      1/0/1/3/0/0/1/1:BUTTON  box[x]
+        before: 278.75
+        after : 288.25
+    de/1280x720/feedback
+      1/0/1/3/0/0/1/1:BUTTON  box[y]
+        before: 221.5
+        after : 228.7
+    de/1280x720/feedback
+      1/0/1/3/0/0/1/1:BUTTON  box[w]
+        before: 147.75
+        after : 138.25
+    de/1280x720/feedback
+      1/0/1/3/0/0/1/1:BUTTON  box[h]
+        before: 35.33
+        after : 42
+    de/1280x720/feedback
+      1/0/1/3/0/0/1/2:BUTTON  bc
+        before: rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgba(150, 150, 170, 0.14)
+        after : rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgb(58, 58, 68)
+    de/1280x720/feedback
+      1/0/1/3/0/0/1/2:BUTTON  pd
+        before: 9px 12px 9px 12px
+        after : 0px 12px 0px 12px
+    de/1280x720/feedback
+      1/0/1/3/0/0/1/2:BUTTON  box[y]
+        before: 221.5
+        after : 228.7
+    de/1280x720/feedback
+      1/0/1/3/0/0/1/2:BUTTON  box[w]
+        before: 147.75
+        after : 138.25
+    de/1280x720/feedback
+      1/0/1/3/0/0/1/2:BUTTON  box[h]
+        before: 35.33
+        after : 42
+    de/1280x720/feedback
+      1/0/1/3/0/0/1/3:BUTTON  bc
+        before: rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgba(150, 150, 170, 0.14)
+        after : rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgb(58, 58, 68)
+    de/1280x720/feedback
+      1/0/1/3/0/0/1/3:BUTTON  pd
+        before: 9px 12px 9px 12px
+        after : 0px 12px 0px 12px
+    de/1280x720/feedback
+      1/0/1/3/0/0/1/3:BUTTON  box[x]
+        before: 574.25
+        after : 564.75
+    de/1280x720/feedback
+      1/0/1/3/0/0/1/3:BUTTON  box[y]
+        before: 221.5
+        after : 228.7
+    de/1280x720/feedback
+      1/0/1/3/0/0/1/3:BUTTON  box[w]
+        before: 147.75
+        after : 138.25
+    de/1280x720/feedback
+      1/0/1/3/0/0/1/3:BUTTON  box[h]
+        before: 35.33
+        after : 42
+    de/1280x720/feedback
+      1/0/1/3/0/1/1:TEXTAREA  bg
+        before: rgb(15, 15, 20)
+        after : rgba(15, 15, 21, 0.72)
+    de/1280x720/feedback
+      1/0/1/3/0/1/1:TEXTAREA  bc
+        before: rgb(51, 51, 62) rgb(51, 51, 62) rgb(51, 51, 62) rgb(51, 51, 62)
+        after : rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12)
+    de/1280x720/feedback
+      1/0/1/3/0/1/1:TEXTAREA  box[x]
+        before: 131
+        after : 150
+    de/1280x720/feedback
+      1/0/1/3/0/1/1:TEXTAREA  box[y]
+        before: 295.33
+        after : 309.2
+    de/1280x720/feedback
+      1/0/1/3/0/1/1:TEXTAREA  box[w]
+        before: 592
+        after : 554
+    de/1280x720/feedback
+      1/0/1/3/1/0/1:INPUT  bg
+        before: rgb(15, 15, 20)
+        after : rgba(15, 15, 21, 0.72)
+    de/1280x720/feedback
+      1/0/1/3/1/0/1:INPUT  bc
+        before: rgb(51, 51, 62) rgb(51, 51, 62) rgb(51, 51, 62) rgb(51, 51, 62)
+        after : rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12)
+    de/1280x720/feedback
+      1/0/1/3/1/0/1:INPUT  box[x]
+        before: 749
+        after : 768
+    de/1280x720/feedback
+      1/0/1/3/1/0/1:INPUT  box[y]
+        before: 220.5
+        after : 227.7
+    de/1280x720/feedback
+      1/0/1/3/1/0/1:INPUT  box[w]
+        before: 400
+        after : 362
+    de/1280x720/feedback
+      1/0/1/3/1/3:BUTTON  bg
+        before: rgb(42, 39, 51)
+        after : rgba(15, 15, 21, 0.72)
+    de/1280x720/feedback
+      1/0/1/3/1/3:BUTTON  bc
+        before: rgb(109, 106, 128) rgb(109, 106, 128) rgb(109, 106, 128) rgb(109, 106, 128)
+        after : rgb(108, 108, 126) rgb(108, 108, 126) rgb(108, 108, 126) rgb(108, 108, 126)
+    de/1280x720/feedback
+      1/0/1/3/1/3:BUTTON  rd
+        before: 12px 12px 12px 12px
+        after : 8px 8px 8px 8px
+    de/1280x720/feedback
+      1/0/1/3/1/3:BUTTON  ol
+        before: 3px none rgb(109, 106, 128)
+        after : 3px none rgb(108, 108, 126)
+    de/1280x720/feedback
+      1/0/1/3/1/3:BUTTON  cl
+        before: rgb(109, 106, 128)
+        after : rgb(108, 108, 126)
+    de/1280x720/feedback
+      1/0/1/3/1/3:BUTTON  box[x]
+        before: 749
+        after : 768
+    de/1280x720/feedback
+      1/0/1/3/1/3:BUTTON  box[y]
+        before: 383.89
+        after : 387.09
+    de/1280x720/feedback
+      1/0/1/3/1/3:BUTTON  box[w]
+        before: 400
+        after : 362
+    de/1400x700/feedback
+      1/0:DIV  bi
+        before: linear-gradient(rgb(23, 23, 28), rgb(23, 23, 28)), linear-gradient(90deg, rgb(58, 58, 72) 0%, rgb(38, 198, 230) 25%, rgb(255, 46, 200) 50%, rgb(38, 198, 230) 75%, rgb(58, 58, 72) 100%)
+        after : none
+    de/1400x700/feedback
+      1/0:DIV  bo
+        before: padding-box, border-box|padding-box, border-box|auto, 200%
+        after : padding-box|padding-box|auto
+    de/1400x700/feedback
+      1/0:DIV  sh
+        before: color(srgb 0.14902 0.776471 0.901961 / 0.22) 0px 0px 14px 0px
+        after : none
+    de/1400x700/feedback
+      1/0:DIV  box[y]
+        before: 92.17
+        after : 57.53
+    de/1400x700/feedback
+      1/0:DIV  box[h]
+        before: 515.66
+        after : 584.92
+    de/1400x700/feedback
+      1/0/0:DIV  box[y]
+        before: 93.17
+        after : 58.53
+    de/1400x700/feedback
+      1/0/1:DIV  box[y]
+        before: 96.17
+        after : 61.53
+    de/1400x700/feedback
+      1/0/1:DIV  box[h]
+        before: 510.66
+        after : 579.92
+    de/1400x700/feedback
+      1/0/1/0/1:BUTTON  box[x]
+        before: 1075.25
+        after : 1072.88
+    de/1400x700/feedback
+      1/0/1/0/1:BUTTON  box[y]
+        before: 114.17
+        after : 79.53
+    de/1400x700/feedback
+      1/0/1/0/1:BUTTON  box[w]
+        before: 129.75
+        after : 132.13
+    de/1400x700/feedback
+      1/0/1/0/1:BUTTON  box[h]
+        before: 52.83
+        after : 44.14
+    de/1400x700/feedback
+      1/0/1/3/0/0/1:DIV  bc
+        before: rgba(150, 150, 170, 0.14) rgba(150, 150, 170, 0.14) rgba(150, 150, 170, 0.14) rgba(150, 150, 170, 0.14)
+        after : rgb(58, 58, 68) rgb(58, 58, 68) rgb(58, 58, 68) rgb(58, 58, 68)
+    de/1400x700/feedback
+      1/0/1/3/0/0/1:DIV  rd
+        before: 10px 10px 10px 10px
+        after : 8px 8px 8px 8px
+    de/1400x700/feedback
+      1/0/1/3/0/0/1:DIV  box[x]
+        before: 187
+        after : 206
+    de/1400x700/feedback
+      1/0/1/3/0/0/1:DIV  box[y]
+        before: 210.5
+        after : 217.7
+    de/1400x700/feedback
+      1/0/1/3/0/0/1:DIV  box[w]
+        before: 592
+        after : 554
+    de/1400x700/feedback
+      1/0/1/3/0/0/1:DIV  box[h]
+        before: 37.33
+        after : 44
+    de/1400x700/feedback
+      1/0/1/3/0/0/1/0:BUTTON  pd
+        before: 9px 12px 9px 12px
+        after : 0px 12px 0px 12px
+    de/1400x700/feedback
+      1/0/1/3/0/0/1/0:BUTTON  box[x]
+        before: 188
+        after : 207
+    de/1400x700/feedback
+      1/0/1/3/0/0/1/0:BUTTON  box[y]
+        before: 211.5
+        after : 218.7
+    de/1400x700/feedback
+      1/0/1/3/0/0/1/0:BUTTON  box[w]
+        before: 146.75
+        after : 137.25
+    de/1400x700/feedback
+      1/0/1/3/0/0/1/0:BUTTON  box[h]
+        before: 35.33
+        after : 42
+    de/1400x700/feedback
+      1/0/1/3/0/0/1/1:BUTTON  bc
+        before: rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgba(150, 150, 170, 0.14)
+        after : rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgb(58, 58, 68)
+    de/1400x700/feedback
+      1/0/1/3/0/0/1/1:BUTTON  pd
+        before: 9px 12px 9px 12px
+        after : 0px 12px 0px 12px
+    de/1400x700/feedback
+      1/0/1/3/0/0/1/1:BUTTON  box[x]
+        before: 334.75
+        after : 344.25
+    de/1400x700/feedback
+      1/0/1/3/0/0/1/1:BUTTON  box[y]
+        before: 211.5
+        after : 218.7
+    de/1400x700/feedback
+      1/0/1/3/0/0/1/1:BUTTON  box[w]
+        before: 147.75
+        after : 138.25
+    de/1400x700/feedback
+      1/0/1/3/0/0/1/1:BUTTON  box[h]
+        before: 35.33
+        after : 42
+    de/1400x700/feedback
+      1/0/1/3/0/0/1/2:BUTTON  bc
+        before: rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgba(150, 150, 170, 0.14)
+        after : rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgb(58, 58, 68)
+    de/1400x700/feedback
+      1/0/1/3/0/0/1/2:BUTTON  pd
+        before: 9px 12px 9px 12px
+        after : 0px 12px 0px 12px
+    de/1400x700/feedback
+      1/0/1/3/0/0/1/2:BUTTON  box[y]
+        before: 211.5
+        after : 218.7
+    de/1400x700/feedback
+      1/0/1/3/0/0/1/2:BUTTON  box[w]
+        before: 147.75
+        after : 138.25
+    de/1400x700/feedback
+      1/0/1/3/0/0/1/2:BUTTON  box[h]
+        before: 35.33
+        after : 42
+    de/1400x700/feedback
+      1/0/1/3/0/0/1/3:BUTTON  bc
+        before: rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgba(150, 150, 170, 0.14)
+        after : rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgb(58, 58, 68)
+    de/1400x700/feedback
+      1/0/1/3/0/0/1/3:BUTTON  pd
+        before: 9px 12px 9px 12px
+        after : 0px 12px 0px 12px
+    de/1400x700/feedback
+      1/0/1/3/0/0/1/3:BUTTON  box[x]
+        before: 630.25
+        after : 620.75
+    de/1400x700/feedback
+      1/0/1/3/0/0/1/3:BUTTON  box[y]
+        before: 211.5
+        after : 218.7
+    de/1400x700/feedback
+      1/0/1/3/0/0/1/3:BUTTON  box[w]
+        before: 147.75
+        after : 138.25
+    de/1400x700/feedback
+      1/0/1/3/0/0/1/3:BUTTON  box[h]
+        before: 35.33
+        after : 42
+    de/1400x700/feedback
+      1/0/1/3/0/1/1:TEXTAREA  bg
+        before: rgb(15, 15, 20)
+        after : rgba(15, 15, 21, 0.72)
+    de/1400x700/feedback
+      1/0/1/3/0/1/1:TEXTAREA  bc
+        before: rgb(51, 51, 62) rgb(51, 51, 62) rgb(51, 51, 62) rgb(51, 51, 62)
+        after : rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12)
+    de/1400x700/feedback
+      1/0/1/3/0/1/1:TEXTAREA  box[x]
+        before: 187
+        after : 206
+    de/1400x700/feedback
+      1/0/1/3/0/1/1:TEXTAREA  box[y]
+        before: 285.33
+        after : 299.2
+    de/1400x700/feedback
+      1/0/1/3/0/1/1:TEXTAREA  box[w]
+        before: 592
+        after : 554
+    de/1400x700/feedback
+      1/0/1/3/1/0/1:INPUT  bg
+        before: rgb(15, 15, 20)
+        after : rgba(15, 15, 21, 0.72)
+    de/1400x700/feedback
+      1/0/1/3/1/0/1:INPUT  bc
+        before: rgb(51, 51, 62) rgb(51, 51, 62) rgb(51, 51, 62) rgb(51, 51, 62)
+        after : rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12)
+    de/1400x700/feedback
+      1/0/1/3/1/0/1:INPUT  box[x]
+        before: 805
+        after : 824
+    de/1400x700/feedback
+      1/0/1/3/1/0/1:INPUT  box[y]
+        before: 210.5
+        after : 217.7
+    de/1400x700/feedback
+      1/0/1/3/1/0/1:INPUT  box[w]
+        before: 400
+        after : 362
+    de/1400x700/feedback
+      1/0/1/3/1/3:BUTTON  bg
+        before: rgb(42, 39, 51)
+        after : rgba(15, 15, 21, 0.72)
+    de/1400x700/feedback
+      1/0/1/3/1/3:BUTTON  bc
+        before: rgb(109, 106, 128) rgb(109, 106, 128) rgb(109, 106, 128) rgb(109, 106, 128)
+        after : rgb(108, 108, 126) rgb(108, 108, 126) rgb(108, 108, 126) rgb(108, 108, 126)
+    de/1400x700/feedback
+      1/0/1/3/1/3:BUTTON  rd
+        before: 12px 12px 12px 12px
+        after : 8px 8px 8px 8px
+    de/1400x700/feedback
+      1/0/1/3/1/3:BUTTON  ol
+        before: 3px none rgb(109, 106, 128)
+        after : 3px none rgb(108, 108, 126)
+    de/1400x700/feedback
+      1/0/1/3/1/3:BUTTON  cl
+        before: rgb(109, 106, 128)
+        after : rgb(108, 108, 126)
+    de/1400x700/feedback
+      1/0/1/3/1/3:BUTTON  box[x]
+        before: 805
+        after : 824
+    de/1400x700/feedback
+      1/0/1/3/1/3:BUTTON  box[y]
+        before: 373.89
+        after : 377.09
+    de/1400x700/feedback
+      1/0/1/3/1/3:BUTTON  box[w]
+        before: 400
+        after : 362
+    de/1536x791/feedback
+      1/0:DIV  bi
+        before: linear-gradient(rgb(23, 23, 28), rgb(23, 23, 28)), linear-gradient(90deg, rgb(58, 58, 72) 0%, rgb(38, 198, 230) 25%, rgb(255, 46, 200) 50%, rgb(38, 198, 230) 75%, rgb(58, 58, 72) 100%)
+        after : none
+    de/1536x791/feedback
+      1/0:DIV  bo
+        before: padding-box, border-box|padding-box, border-box|auto, 200%
+        after : padding-box|padding-box|auto
+    de/1536x791/feedback
+      1/0:DIV  sh
+        before: color(srgb 0.14902 0.776471 0.901961 / 0.22) 0px 0px 14px 0px
+        after : none
+    de/1536x791/feedback
+      1/0:DIV  box[y]
+        before: 137.67
+        after : 103.03
+    de/1536x791/feedback
+      1/0:DIV  box[h]
+        before: 515.66
+        after : 584.92
+    de/1536x791/feedback
+      1/0/0:DIV  box[y]
+        before: 138.67
+        after : 104.03
+    de/1536x791/feedback
+      1/0/1:DIV  box[y]
+        before: 141.67
+        after : 107.03
+    de/1536x791/feedback
+      1/0/1:DIV  box[h]
+        before: 510.66
+        after : 579.92
+    de/1536x791/feedback
+      1/0/1/0/1:BUTTON  box[x]
+        before: 1147.25
+        after : 1144.88
+    de/1536x791/feedback
+      1/0/1/0/1:BUTTON  box[y]
+        before: 159.67
+        after : 125.03
+    de/1536x791/feedback
+      1/0/1/0/1:BUTTON  box[w]
+        before: 129.75
+        after : 132.13
+    de/1536x791/feedback
+      1/0/1/0/1:BUTTON  box[h]
+        before: 52.83
+        after : 44.14
+    de/1536x791/feedback
+      1/0/1/3/0/0/1:DIV  bc
+        before: rgba(150, 150, 170, 0.14) rgba(150, 150, 170, 0.14) rgba(150, 150, 170, 0.14) rgba(150, 150, 170, 0.14)
+        after : rgb(58, 58, 68) rgb(58, 58, 68) rgb(58, 58, 68) rgb(58, 58, 68)
+    de/1536x791/feedback
+      1/0/1/3/0/0/1:DIV  rd
+        before: 10px 10px 10px 10px
+        after : 8px 8px 8px 8px
+    de/1536x791/feedback
+      1/0/1/3/0/0/1:DIV  box[x]
+        before: 259
+        after : 278
+    de/1536x791/feedback
+      1/0/1/3/0/0/1:DIV  box[y]
+        before: 256
+        after : 263.2
+    de/1536x791/feedback
+      1/0/1/3/0/0/1:DIV  box[w]
+        before: 592
+        after : 554
+    de/1536x791/feedback
+      1/0/1/3/0/0/1:DIV  box[h]
+        before: 37.33
+        after : 44
+    de/1536x791/feedback
+      1/0/1/3/0/0/1/0:BUTTON  pd
+        before: 9px 12px 9px 12px
+        after : 0px 12px 0px 12px
+    de/1536x791/feedback
+      1/0/1/3/0/0/1/0:BUTTON  box[x]
+        before: 260
+        after : 279
+    de/1536x791/feedback
+      1/0/1/3/0/0/1/0:BUTTON  box[y]
+        before: 257
+        after : 264.2
+    de/1536x791/feedback
+      1/0/1/3/0/0/1/0:BUTTON  box[w]
+        before: 146.75
+        after : 137.25
+    de/1536x791/feedback
+      1/0/1/3/0/0/1/0:BUTTON  box[h]
+        before: 35.33
+        after : 42
+    de/1536x791/feedback
+      1/0/1/3/0/0/1/1:BUTTON  bc
+        before: rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgba(150, 150, 170, 0.14)
+        after : rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgb(58, 58, 68)
+    de/1536x791/feedback
+      1/0/1/3/0/0/1/1:BUTTON  pd
+        before: 9px 12px 9px 12px
+        after : 0px 12px 0px 12px
+    de/1536x791/feedback
+      1/0/1/3/0/0/1/1:BUTTON  box[x]
+        before: 406.75
+        after : 416.25
+    de/1536x791/feedback
+      1/0/1/3/0/0/1/1:BUTTON  box[y]
+        before: 257
+        after : 264.2
+    de/1536x791/feedback
+      1/0/1/3/0/0/1/1:BUTTON  box[w]
+        before: 147.75
+        after : 138.25
+    de/1536x791/feedback
+      1/0/1/3/0/0/1/1:BUTTON  box[h]
+        before: 35.33
+        after : 42
+    de/1536x791/feedback
+      1/0/1/3/0/0/1/2:BUTTON  bc
+        before: rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgba(150, 150, 170, 0.14)
+        after : rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgb(58, 58, 68)
+    de/1536x791/feedback
+      1/0/1/3/0/0/1/2:BUTTON  pd
+        before: 9px 12px 9px 12px
+        after : 0px 12px 0px 12px
+    de/1536x791/feedback
+      1/0/1/3/0/0/1/2:BUTTON  box[y]
+        before: 257
+        after : 264.2
+    de/1536x791/feedback
+      1/0/1/3/0/0/1/2:BUTTON  box[w]
+        before: 147.75
+        after : 138.25
+    de/1536x791/feedback
+      1/0/1/3/0/0/1/2:BUTTON  box[h]
+        before: 35.33
+        after : 42
+    de/1536x791/feedback
+      1/0/1/3/0/0/1/3:BUTTON  bc
+        before: rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgba(150, 150, 170, 0.14)
+        after : rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgb(58, 58, 68)
+    de/1536x791/feedback
+      1/0/1/3/0/0/1/3:BUTTON  pd
+        before: 9px 12px 9px 12px
+        after : 0px 12px 0px 12px
+    de/1536x791/feedback
+      1/0/1/3/0/0/1/3:BUTTON  box[x]
+        before: 702.25
+        after : 692.75
+    de/1536x791/feedback
+      1/0/1/3/0/0/1/3:BUTTON  box[y]
+        before: 257
+        after : 264.2
+    de/1536x791/feedback
+      1/0/1/3/0/0/1/3:BUTTON  box[w]
+        before: 147.75
+        after : 138.25
+    de/1536x791/feedback
+      1/0/1/3/0/0/1/3:BUTTON  box[h]
+        before: 35.33
+        after : 42
+    de/1536x791/feedback
+      1/0/1/3/0/1/1:TEXTAREA  bg
+        before: rgb(15, 15, 20)
+        after : rgba(15, 15, 21, 0.72)
+    de/1536x791/feedback
+      1/0/1/3/0/1/1:TEXTAREA  bc
+        before: rgb(51, 51, 62) rgb(51, 51, 62) rgb(51, 51, 62) rgb(51, 51, 62)
+        after : rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12)
+    de/1536x791/feedback
+      1/0/1/3/0/1/1:TEXTAREA  box[x]
+        before: 259
+        after : 278
+    de/1536x791/feedback
+      1/0/1/3/0/1/1:TEXTAREA  box[y]
+        before: 330.83
+        after : 344.7
+    de/1536x791/feedback
+      1/0/1/3/0/1/1:TEXTAREA  box[w]
+        before: 592
+        after : 554
+    de/1536x791/feedback
+      1/0/1/3/1/0/1:INPUT  bg
+        before: rgb(15, 15, 20)
+        after : rgba(15, 15, 21, 0.72)
+    de/1536x791/feedback
+      1/0/1/3/1/0/1:INPUT  bc
+        before: rgb(51, 51, 62) rgb(51, 51, 62) rgb(51, 51, 62) rgb(51, 51, 62)
+        after : rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12)
+    de/1536x791/feedback
+      1/0/1/3/1/0/1:INPUT  box[x]
+        before: 877
+        after : 896
+    de/1536x791/feedback
+      1/0/1/3/1/0/1:INPUT  box[y]
+        before: 256
+        after : 263.2
+    de/1536x791/feedback
+      1/0/1/3/1/0/1:INPUT  box[w]
+        before: 400
+        after : 362
+    de/1536x791/feedback
+      1/0/1/3/1/3:BUTTON  bg
+        before: rgb(42, 39, 51)
+        after : rgba(15, 15, 21, 0.72)
+    de/1536x791/feedback
+      1/0/1/3/1/3:BUTTON  bc
+        before: rgb(109, 106, 128) rgb(109, 106, 128) rgb(109, 106, 128) rgb(109, 106, 128)
+        after : rgb(108, 108, 126) rgb(108, 108, 126) rgb(108, 108, 126) rgb(108, 108, 126)
+    de/1536x791/feedback
+      1/0/1/3/1/3:BUTTON  rd
+        before: 12px 12px 12px 12px
+        after : 8px 8px 8px 8px
+    de/1536x791/feedback
+      1/0/1/3/1/3:BUTTON  ol
+        before: 3px none rgb(109, 106, 128)
+        after : 3px none rgb(108, 108, 126)
+    de/1536x791/feedback
+      1/0/1/3/1/3:BUTTON  cl
+        before: rgb(109, 106, 128)
+        after : rgb(108, 108, 126)
+    de/1536x791/feedback
+      1/0/1/3/1/3:BUTTON  box[x]
+        before: 877
+        after : 896
+    de/1536x791/feedback
+      1/0/1/3/1/3:BUTTON  box[y]
+        before: 419.39
+        after : 422.59
+    de/1536x791/feedback
+      1/0/1/3/1/3:BUTTON  box[w]
+        before: 400
+        after : 362
+    de/1600x900/feedback
+      1/0:DIV  bi
+        before: linear-gradient(rgb(23, 23, 28), rgb(23, 23, 28)), linear-gradient(90deg, rgb(58, 58, 72) 0%, rgb(38, 198, 230) 25%, rgb(255, 46, 200) 50%, rgb(38, 198, 230) 75%, rgb(58, 58, 72) 100%)
+        after : none
+    de/1600x900/feedback
+      1/0:DIV  bo
+        before: padding-box, border-box|padding-box, border-box|auto, 200%
+        after : padding-box|padding-box|auto
+    de/1600x900/feedback
+      1/0:DIV  sh
+        before: color(srgb 0.14902 0.776471 0.901961 / 0.22) 0px 0px 14px 0px
+        after : none
+    de/1600x900/feedback
+      1/0:DIV  box[y]
+        before: 192.17
+        after : 157.53
+    de/1600x900/feedback
+      1/0:DIV  box[h]
+        before: 515.66
+        after : 584.92
+    de/1600x900/feedback
+      1/0/0:DIV  box[y]
+        before: 193.17
+        after : 158.53
+    de/1600x900/feedback
+      1/0/1:DIV  box[y]
+        before: 196.17
+        after : 161.53
+    de/1600x900/feedback
+      1/0/1:DIV  box[h]
+        before: 510.66
+        after : 579.92
+    de/1600x900/feedback
+      1/0/1/0/1:BUTTON  box[x]
+        before: 1179.25
+        after : 1176.88
+    de/1600x900/feedback
+      1/0/1/0/1:BUTTON  box[y]
+        before: 214.17
+        after : 179.53
+    de/1600x900/feedback
+      1/0/1/0/1:BUTTON  box[w]
+        before: 129.75
+        after : 132.13
+    de/1600x900/feedback
+      1/0/1/0/1:BUTTON  box[h]
+        before: 52.83
+        after : 44.14
+    de/1600x900/feedback
+      1/0/1/3/0/0/1:DIV  bc
+        before: rgba(150, 150, 170, 0.14) rgba(150, 150, 170, 0.14) rgba(150, 150, 170, 0.14) rgba(150, 150, 170, 0.14)
+        after : rgb(58, 58, 68) rgb(58, 58, 68) rgb(58, 58, 68) rgb(58, 58, 68)
+    de/1600x900/feedback
+      1/0/1/3/0/0/1:DIV  rd
+        before: 10px 10px 10px 10px
+        after : 8px 8px 8px 8px
+    de/1600x900/feedback
+      1/0/1/3/0/0/1:DIV  box[x]
+        before: 291
+        after : 310
+    de/1600x900/feedback
+      1/0/1/3/0/0/1:DIV  box[y]
+        before: 310.5
+        after : 317.7
+    de/1600x900/feedback
+      1/0/1/3/0/0/1:DIV  box[w]
+        before: 592
+        after : 554
+    de/1600x900/feedback
+      1/0/1/3/0/0/1:DIV  box[h]
+        before: 37.33
+        after : 44
+    de/1600x900/feedback
+      1/0/1/3/0/0/1/0:BUTTON  pd
+        before: 9px 12px 9px 12px
+        after : 0px 12px 0px 12px
+    de/1600x900/feedback
+      1/0/1/3/0/0/1/0:BUTTON  box[x]
+        before: 292
+        after : 311
+    de/1600x900/feedback
+      1/0/1/3/0/0/1/0:BUTTON  box[y]
+        before: 311.5
+        after : 318.7
+    de/1600x900/feedback
+      1/0/1/3/0/0/1/0:BUTTON  box[w]
+        before: 146.75
+        after : 137.25
+    de/1600x900/feedback
+      1/0/1/3/0/0/1/0:BUTTON  box[h]
+        before: 35.33
+        after : 42
+    de/1600x900/feedback
+      1/0/1/3/0/0/1/1:BUTTON  bc
+        before: rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgba(150, 150, 170, 0.14)
+        after : rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgb(58, 58, 68)
+    de/1600x900/feedback
+      1/0/1/3/0/0/1/1:BUTTON  pd
+        before: 9px 12px 9px 12px
+        after : 0px 12px 0px 12px
+    de/1600x900/feedback
+      1/0/1/3/0/0/1/1:BUTTON  box[x]
+        before: 438.75
+        after : 448.25
+    de/1600x900/feedback
+      1/0/1/3/0/0/1/1:BUTTON  box[y]
+        before: 311.5
+        after : 318.7
+    de/1600x900/feedback
+      1/0/1/3/0/0/1/1:BUTTON  box[w]
+        before: 147.75
+        after : 138.25
+    de/1600x900/feedback
+      1/0/1/3/0/0/1/1:BUTTON  box[h]
+        before: 35.33
+        after : 42
+    de/1600x900/feedback
+      1/0/1/3/0/0/1/2:BUTTON  bc
+        before: rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgba(150, 150, 170, 0.14)
+        after : rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgb(58, 58, 68)
+    de/1600x900/feedback
+      1/0/1/3/0/0/1/2:BUTTON  pd
+        before: 9px 12px 9px 12px
+        after : 0px 12px 0px 12px
+    de/1600x900/feedback
+      1/0/1/3/0/0/1/2:BUTTON  box[y]
+        before: 311.5
+        after : 318.7
+    de/1600x900/feedback
+      1/0/1/3/0/0/1/2:BUTTON  box[w]
+        before: 147.75
+        after : 138.25
+    de/1600x900/feedback
+      1/0/1/3/0/0/1/2:BUTTON  box[h]
+        before: 35.33
+        after : 42
+    de/1600x900/feedback
+      1/0/1/3/0/0/1/3:BUTTON  bc
+        before: rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgba(150, 150, 170, 0.14)
+        after : rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgb(58, 58, 68)
+    de/1600x900/feedback
+      1/0/1/3/0/0/1/3:BUTTON  pd
+        before: 9px 12px 9px 12px
+        after : 0px 12px 0px 12px
+    de/1600x900/feedback
+      1/0/1/3/0/0/1/3:BUTTON  box[x]
+        before: 734.25
+        after : 724.75
+    de/1600x900/feedback
+      1/0/1/3/0/0/1/3:BUTTON  box[y]
+        before: 311.5
+        after : 318.7
+    de/1600x900/feedback
+      1/0/1/3/0/0/1/3:BUTTON  box[w]
+        before: 147.75
+        after : 138.25
+    de/1600x900/feedback
+      1/0/1/3/0/0/1/3:BUTTON  box[h]
+        before: 35.33
+        after : 42
+    de/1600x900/feedback
+      1/0/1/3/0/1/1:TEXTAREA  bg
+        before: rgb(15, 15, 20)
+        after : rgba(15, 15, 21, 0.72)
+    de/1600x900/feedback
+      1/0/1/3/0/1/1:TEXTAREA  bc
+        before: rgb(51, 51, 62) rgb(51, 51, 62) rgb(51, 51, 62) rgb(51, 51, 62)
+        after : rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12)
+    de/1600x900/feedback
+      1/0/1/3/0/1/1:TEXTAREA  box[x]
+        before: 291
+        after : 310
+    de/1600x900/feedback
+      1/0/1/3/0/1/1:TEXTAREA  box[y]
+        before: 385.33
+        after : 399.2
+    de/1600x900/feedback
+      1/0/1/3/0/1/1:TEXTAREA  box[w]
+        before: 592
+        after : 554
+    de/1600x900/feedback
+      1/0/1/3/1/0/1:INPUT  bg
+        before: rgb(15, 15, 20)
+        after : rgba(15, 15, 21, 0.72)
+    de/1600x900/feedback
+      1/0/1/3/1/0/1:INPUT  bc
+        before: rgb(51, 51, 62) rgb(51, 51, 62) rgb(51, 51, 62) rgb(51, 51, 62)
+        after : rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12)
+    de/1600x900/feedback
+      1/0/1/3/1/0/1:INPUT  box[x]
+        before: 909
+        after : 928
+    de/1600x900/feedback
+      1/0/1/3/1/0/1:INPUT  box[y]
+        before: 310.5
+        after : 317.7
+    de/1600x900/feedback
+      1/0/1/3/1/0/1:INPUT  box[w]
+        before: 400
+        after : 362
+    de/1600x900/feedback
+      1/0/1/3/1/3:BUTTON  bg
+        before: rgb(42, 39, 51)
+        after : rgba(15, 15, 21, 0.72)
+    de/1600x900/feedback
+      1/0/1/3/1/3:BUTTON  bc
+        before: rgb(109, 106, 128) rgb(109, 106, 128) rgb(109, 106, 128) rgb(109, 106, 128)
+        after : rgb(108, 108, 126) rgb(108, 108, 126) rgb(108, 108, 126) rgb(108, 108, 126)
+    de/1600x900/feedback
+      1/0/1/3/1/3:BUTTON  rd
+        before: 12px 12px 12px 12px
+        after : 8px 8px 8px 8px
+    de/1600x900/feedback
+      1/0/1/3/1/3:BUTTON  ol
+        before: 3px none rgb(109, 106, 128)
+        after : 3px none rgb(108, 108, 126)
+    de/1600x900/feedback
+      1/0/1/3/1/3:BUTTON  cl
+        before: rgb(109, 106, 128)
+        after : rgb(108, 108, 126)
+    de/1600x900/feedback
+      1/0/1/3/1/3:BUTTON  box[x]
+        before: 909
+        after : 928
+    de/1600x900/feedback
+      1/0/1/3/1/3:BUTTON  box[y]
+        before: 473.89
+        after : 477.09
+    de/1600x900/feedback
+      1/0/1/3/1/3:BUTTON  box[w]
+        before: 400
+        after : 362
+    de/1920x1080/feedback
+      1/0:DIV  bi
+        before: linear-gradient(rgb(23, 23, 28), rgb(23, 23, 28)), linear-gradient(90deg, rgb(58, 58, 72) 0%, rgb(38, 198, 230) 25%, rgb(255, 46, 200) 50%, rgb(38, 198, 230) 75%, rgb(58, 58, 72) 100%)
+        after : none
+    de/1920x1080/feedback
+      1/0:DIV  bo
+        before: padding-box, border-box|padding-box, border-box|auto, 200%
+        after : padding-box|padding-box|auto
+    de/1920x1080/feedback
+      1/0:DIV  sh
+        before: color(srgb 0.14902 0.776471 0.901961 / 0.22) 0px 0px 14px 0px
+        after : none
+    de/1920x1080/feedback
+      1/0:DIV  box[y]
+        before: 282.17
+        after : 247.53
+    de/1920x1080/feedback
+      1/0:DIV  box[h]
+        before: 515.66
+        after : 584.92
+    de/1920x1080/feedback
+      1/0/0:DIV  box[y]
+        before: 283.17
+        after : 248.53
+    de/1920x1080/feedback
+      1/0/1:DIV  box[y]
+        before: 286.17
+        after : 251.53
+    de/1920x1080/feedback
+      1/0/1:DIV  box[h]
+        before: 510.66
+        after : 579.92
+    de/1920x1080/feedback
+      1/0/1/0/1:BUTTON  box[x]
+        before: 1339.25
+        after : 1336.88
+    de/1920x1080/feedback
+      1/0/1/0/1:BUTTON  box[y]
+        before: 304.17
+        after : 269.53
+    de/1920x1080/feedback
+      1/0/1/0/1:BUTTON  box[w]
+        before: 129.75
+        after : 132.13
+    de/1920x1080/feedback
+      1/0/1/0/1:BUTTON  box[h]
+        before: 52.83
+        after : 44.14
+    de/1920x1080/feedback
+      1/0/1/3/0/0/1:DIV  bc
+        before: rgba(150, 150, 170, 0.14) rgba(150, 150, 170, 0.14) rgba(150, 150, 170, 0.14) rgba(150, 150, 170, 0.14)
+        after : rgb(58, 58, 68) rgb(58, 58, 68) rgb(58, 58, 68) rgb(58, 58, 68)
+    de/1920x1080/feedback
+      1/0/1/3/0/0/1:DIV  rd
+        before: 10px 10px 10px 10px
+        after : 8px 8px 8px 8px
+    de/1920x1080/feedback
+      1/0/1/3/0/0/1:DIV  box[x]
+        before: 451
+        after : 470
+    de/1920x1080/feedback
+      1/0/1/3/0/0/1:DIV  box[y]
+        before: 400.5
+        after : 407.7
+    de/1920x1080/feedback
+      1/0/1/3/0/0/1:DIV  box[w]
+        before: 592
+        after : 554
+    de/1920x1080/feedback
+      1/0/1/3/0/0/1:DIV  box[h]
+        before: 37.33
+        after : 44
+    de/1920x1080/feedback
+      1/0/1/3/0/0/1/0:BUTTON  pd
+        before: 9px 12px 9px 12px
+        after : 0px 12px 0px 12px
+    de/1920x1080/feedback
+      1/0/1/3/0/0/1/0:BUTTON  box[x]
+        before: 452
+        after : 471
+    de/1920x1080/feedback
+      1/0/1/3/0/0/1/0:BUTTON  box[y]
+        before: 401.5
+        after : 408.7
+    de/1920x1080/feedback
+      1/0/1/3/0/0/1/0:BUTTON  box[w]
+        before: 146.75
+        after : 137.25
+    de/1920x1080/feedback
+      1/0/1/3/0/0/1/0:BUTTON  box[h]
+        before: 35.33
+        after : 42
+    de/1920x1080/feedback
+      1/0/1/3/0/0/1/1:BUTTON  bc
+        before: rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgba(150, 150, 170, 0.14)
+        after : rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgb(58, 58, 68)
+    de/1920x1080/feedback
+      1/0/1/3/0/0/1/1:BUTTON  pd
+        before: 9px 12px 9px 12px
+        after : 0px 12px 0px 12px
+    de/1920x1080/feedback
+      1/0/1/3/0/0/1/1:BUTTON  box[x]
+        before: 598.75
+        after : 608.25
+    de/1920x1080/feedback
+      1/0/1/3/0/0/1/1:BUTTON  box[y]
+        before: 401.5
+        after : 408.7
+    de/1920x1080/feedback
+      1/0/1/3/0/0/1/1:BUTTON  box[w]
+        before: 147.75
+        after : 138.25
+    de/1920x1080/feedback
+      1/0/1/3/0/0/1/1:BUTTON  box[h]
+        before: 35.33
+        after : 42
+    de/1920x1080/feedback
+      1/0/1/3/0/0/1/2:BUTTON  bc
+        before: rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgba(150, 150, 170, 0.14)
+        after : rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgb(58, 58, 68)
+    de/1920x1080/feedback
+      1/0/1/3/0/0/1/2:BUTTON  pd
+        before: 9px 12px 9px 12px
+        after : 0px 12px 0px 12px
+    de/1920x1080/feedback
+      1/0/1/3/0/0/1/2:BUTTON  box[y]
+        before: 401.5
+        after : 408.7
+    de/1920x1080/feedback
+      1/0/1/3/0/0/1/2:BUTTON  box[w]
+        before: 147.75
+        after : 138.25
+    de/1920x1080/feedback
+      1/0/1/3/0/0/1/2:BUTTON  box[h]
+        before: 35.33
+        after : 42
+    de/1920x1080/feedback
+      1/0/1/3/0/0/1/3:BUTTON  bc
+        before: rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgba(150, 150, 170, 0.14)
+        after : rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgb(58, 58, 68)
+    de/1920x1080/feedback
+      1/0/1/3/0/0/1/3:BUTTON  pd
+        before: 9px 12px 9px 12px
+        after : 0px 12px 0px 12px
+    de/1920x1080/feedback
+      1/0/1/3/0/0/1/3:BUTTON  box[x]
+        before: 894.25
+        after : 884.75
+    de/1920x1080/feedback
+      1/0/1/3/0/0/1/3:BUTTON  box[y]
+        before: 401.5
+        after : 408.7
+    de/1920x1080/feedback
+      1/0/1/3/0/0/1/3:BUTTON  box[w]
+        before: 147.75
+        after : 138.25
+    de/1920x1080/feedback
+      1/0/1/3/0/0/1/3:BUTTON  box[h]
+        before: 35.33
+        after : 42
+    de/1920x1080/feedback
+      1/0/1/3/0/1/1:TEXTAREA  bg
+        before: rgb(15, 15, 20)
+        after : rgba(15, 15, 21, 0.72)
+    de/1920x1080/feedback
+      1/0/1/3/0/1/1:TEXTAREA  bc
+        before: rgb(51, 51, 62) rgb(51, 51, 62) rgb(51, 51, 62) rgb(51, 51, 62)
+        after : rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12)
+    de/1920x1080/feedback
+      1/0/1/3/0/1/1:TEXTAREA  box[x]
+        before: 451
+        after : 470
+    de/1920x1080/feedback
+      1/0/1/3/0/1/1:TEXTAREA  box[y]
+        before: 475.33
+        after : 489.2
+    de/1920x1080/feedback
+      1/0/1/3/0/1/1:TEXTAREA  box[w]
+        before: 592
+        after : 554
+    de/1920x1080/feedback
+      1/0/1/3/1/0/1:INPUT  bg
+        before: rgb(15, 15, 20)
+        after : rgba(15, 15, 21, 0.72)
+    de/1920x1080/feedback
+      1/0/1/3/1/0/1:INPUT  bc
+        before: rgb(51, 51, 62) rgb(51, 51, 62) rgb(51, 51, 62) rgb(51, 51, 62)
+        after : rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12)
+    de/1920x1080/feedback
+      1/0/1/3/1/0/1:INPUT  box[x]
+        before: 1069
+        after : 1088
+    de/1920x1080/feedback
+      1/0/1/3/1/0/1:INPUT  box[y]
+        before: 400.5
+        after : 407.7
+    de/1920x1080/feedback
+      1/0/1/3/1/0/1:INPUT  box[w]
+        before: 400
+        after : 362
+    de/1920x1080/feedback
+      1/0/1/3/1/3:BUTTON  bg
+        before: rgb(42, 39, 51)
+        after : rgba(15, 15, 21, 0.72)
+    de/1920x1080/feedback
+      1/0/1/3/1/3:BUTTON  bc
+        before: rgb(109, 106, 128) rgb(109, 106, 128) rgb(109, 106, 128) rgb(109, 106, 128)
+        after : rgb(108, 108, 126) rgb(108, 108, 126) rgb(108, 108, 126) rgb(108, 108, 126)
+    de/1920x1080/feedback
+      1/0/1/3/1/3:BUTTON  rd
+        before: 12px 12px 12px 12px
+        after : 8px 8px 8px 8px
+    de/1920x1080/feedback
+      1/0/1/3/1/3:BUTTON  ol
+        before: 3px none rgb(109, 106, 128)
+        after : 3px none rgb(108, 108, 126)
+    de/1920x1080/feedback
+      1/0/1/3/1/3:BUTTON  cl
+        before: rgb(109, 106, 128)
+        after : rgb(108, 108, 126)
+    de/1920x1080/feedback
+      1/0/1/3/1/3:BUTTON  box[x]
+        before: 1069
+        after : 1088
+    de/1920x1080/feedback
+      1/0/1/3/1/3:BUTTON  box[y]
+        before: 544.39
+        after : 547.59
+    de/1920x1080/feedback
+      1/0/1/3/1/3:BUTTON  box[w]
+        before: 400
+        after : 362
+    en/1280x720/feedback
+      1/0:DIV  bi
+        before: linear-gradient(rgb(23, 23, 28), rgb(23, 23, 28)), linear-gradient(90deg, rgb(58, 58, 72) 0%, rgb(38, 198, 230) 25%, rgb(255, 46, 200) 50%, rgb(38, 198, 230) 75%, rgb(58, 58, 72) 100%)
+        after : none
+    en/1280x720/feedback
+      1/0:DIV  bo
+        before: padding-box, border-box|padding-box, border-box|auto, 200%
+        after : padding-box|padding-box|auto
+    en/1280x720/feedback
+      1/0:DIV  sh
+        before: color(srgb 0.14902 0.776471 0.901961 / 0.22) 0px 0px 14px 0px
+        after : none
+    en/1280x720/feedback
+      1/0:DIV  box[y]
+        before: 102.17
+        after : 67.53
+    en/1280x720/feedback
+      1/0:DIV  box[h]
+        before: 515.66
+        after : 584.92
+    en/1280x720/feedback
+      1/0/0:DIV  box[y]
+        before: 103.17
+        after : 68.53
+    en/1280x720/feedback
+      1/0/1:DIV  box[y]
+        before: 106.17
+        after : 71.53
+    en/1280x720/feedback
+      1/0/1:DIV  box[h]
+        before: 510.66
+        after : 579.92
+    en/1280x720/feedback
+      1/0/1/0/1:BUTTON  box[x]
+        before: 1051.08
+        after : 1048.7
+    en/1280x720/feedback
+      1/0/1/0/1:BUTTON  box[y]
+        before: 124.17
+        after : 89.53
+    en/1280x720/feedback
+      1/0/1/0/1:BUTTON  box[w]
+        before: 97.92
+        after : 100.3
+    en/1280x720/feedback
+      1/0/1/0/1:BUTTON  box[h]
+        before: 52.83
+        after : 44.14
+    en/1280x720/feedback
+      1/0/1/3/0/0/1:DIV  bc
+        before: rgba(150, 150, 170, 0.14) rgba(150, 150, 170, 0.14) rgba(150, 150, 170, 0.14) rgba(150, 150, 170, 0.14)
+        after : rgb(58, 58, 68) rgb(58, 58, 68) rgb(58, 58, 68) rgb(58, 58, 68)
+    en/1280x720/feedback
+      1/0/1/3/0/0/1:DIV  rd
+        before: 10px 10px 10px 10px
+        after : 8px 8px 8px 8px
+    en/1280x720/feedback
+      1/0/1/3/0/0/1:DIV  box[x]
+        before: 131
+        after : 150
+    en/1280x720/feedback
+      1/0/1/3/0/0/1:DIV  box[y]
+        before: 220.5
+        after : 227.7
+    en/1280x720/feedback
+      1/0/1/3/0/0/1:DIV  box[w]
+        before: 592
+        after : 554
+    en/1280x720/feedback
+      1/0/1/3/0/0/1:DIV  box[h]
+        before: 37.33
+        after : 44
+    en/1280x720/feedback
+      1/0/1/3/0/0/1/0:BUTTON  pd
+        before: 9px 12px 9px 12px
+        after : 0px 12px 0px 12px
+    en/1280x720/feedback
+      1/0/1/3/0/0/1/0:BUTTON  box[x]
+        before: 132
+        after : 151
+    en/1280x720/feedback
+      1/0/1/3/0/0/1/0:BUTTON  box[y]
+        before: 221.5
+        after : 228.7
+    en/1280x720/feedback
+      1/0/1/3/0/0/1/0:BUTTON  box[w]
+        before: 146.75
+        after : 137.25
+    en/1280x720/feedback
+      1/0/1/3/0/0/1/0:BUTTON  box[h]
+        before: 35.33
+        after : 42
+    en/1280x720/feedback
+      1/0/1/3/0/0/1/1:BUTTON  bc
+        before: rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgba(150, 150, 170, 0.14)
+        after : rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgb(58, 58, 68)
+    en/1280x720/feedback
+      1/0/1/3/0/0/1/1:BUTTON  pd
+        before: 9px 12px 9px 12px
+        after : 0px 12px 0px 12px
+    en/1280x720/feedback
+      1/0/1/3/0/0/1/1:BUTTON  box[x]
+        before: 278.75
+        after : 288.25
+    en/1280x720/feedback
+      1/0/1/3/0/0/1/1:BUTTON  box[y]
+        before: 221.5
+        after : 228.7
+    en/1280x720/feedback
+      1/0/1/3/0/0/1/1:BUTTON  box[w]
+        before: 147.75
+        after : 138.25
+    en/1280x720/feedback
+      1/0/1/3/0/0/1/1:BUTTON  box[h]
+        before: 35.33
+        after : 42
+    en/1280x720/feedback
+      1/0/1/3/0/0/1/2:BUTTON  bc
+        before: rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgba(150, 150, 170, 0.14)
+        after : rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgb(58, 58, 68)
+    en/1280x720/feedback
+      1/0/1/3/0/0/1/2:BUTTON  pd
+        before: 9px 12px 9px 12px
+        after : 0px 12px 0px 12px
+    en/1280x720/feedback
+      1/0/1/3/0/0/1/2:BUTTON  box[y]
+        before: 221.5
+        after : 228.7
+    en/1280x720/feedback
+      1/0/1/3/0/0/1/2:BUTTON  box[w]
+        before: 147.75
+        after : 138.25
+    en/1280x720/feedback
+      1/0/1/3/0/0/1/2:BUTTON  box[h]
+        before: 35.33
+        after : 42
+    en/1280x720/feedback
+      1/0/1/3/0/0/1/3:BUTTON  bc
+        before: rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgba(150, 150, 170, 0.14)
+        after : rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgb(58, 58, 68)
+    en/1280x720/feedback
+      1/0/1/3/0/0/1/3:BUTTON  pd
+        before: 9px 12px 9px 12px
+        after : 0px 12px 0px 12px
+    en/1280x720/feedback
+      1/0/1/3/0/0/1/3:BUTTON  box[x]
+        before: 574.25
+        after : 564.75
+    en/1280x720/feedback
+      1/0/1/3/0/0/1/3:BUTTON  box[y]
+        before: 221.5
+        after : 228.7
+    en/1280x720/feedback
+      1/0/1/3/0/0/1/3:BUTTON  box[w]
+        before: 147.75
+        after : 138.25
+    en/1280x720/feedback
+      1/0/1/3/0/0/1/3:BUTTON  box[h]
+        before: 35.33
+        after : 42
+    en/1280x720/feedback
+      1/0/1/3/0/1/1:TEXTAREA  bg
+        before: rgb(15, 15, 20)
+        after : rgba(15, 15, 21, 0.72)
+    en/1280x720/feedback
+      1/0/1/3/0/1/1:TEXTAREA  bc
+        before: rgb(51, 51, 62) rgb(51, 51, 62) rgb(51, 51, 62) rgb(51, 51, 62)
+        after : rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12)
+    en/1280x720/feedback
+      1/0/1/3/0/1/1:TEXTAREA  box[x]
+        before: 131
+        after : 150
+    en/1280x720/feedback
+      1/0/1/3/0/1/1:TEXTAREA  box[y]
+        before: 295.33
+        after : 309.2
+    en/1280x720/feedback
+      1/0/1/3/0/1/1:TEXTAREA  box[w]
+        before: 592
+        after : 554
+    en/1280x720/feedback
+      1/0/1/3/1/0/1:INPUT  bg
+        before: rgb(15, 15, 20)
+        after : rgba(15, 15, 21, 0.72)
+    en/1280x720/feedback
+      1/0/1/3/1/0/1:INPUT  bc
+        before: rgb(51, 51, 62) rgb(51, 51, 62) rgb(51, 51, 62) rgb(51, 51, 62)
+        after : rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12)
+    en/1280x720/feedback
+      1/0/1/3/1/0/1:INPUT  box[x]
+        before: 749
+        after : 768
+    en/1280x720/feedback
+      1/0/1/3/1/0/1:INPUT  box[y]
+        before: 220.5
+        after : 227.7
+    en/1280x720/feedback
+      1/0/1/3/1/0/1:INPUT  box[w]
+        before: 400
+        after : 362
+    en/1280x720/feedback
+      1/0/1/3/1/3:BUTTON  bg
+        before: rgb(42, 39, 51)
+        after : rgba(15, 15, 21, 0.72)
+    en/1280x720/feedback
+      1/0/1/3/1/3:BUTTON  bc
+        before: rgb(109, 106, 128) rgb(109, 106, 128) rgb(109, 106, 128) rgb(109, 106, 128)
+        after : rgb(108, 108, 126) rgb(108, 108, 126) rgb(108, 108, 126) rgb(108, 108, 126)
+    en/1280x720/feedback
+      1/0/1/3/1/3:BUTTON  rd
+        before: 12px 12px 12px 12px
+        after : 8px 8px 8px 8px
+    en/1280x720/feedback
+      1/0/1/3/1/3:BUTTON  ol
+        before: 3px none rgb(109, 106, 128)
+        after : 3px none rgb(108, 108, 126)
+    en/1280x720/feedback
+      1/0/1/3/1/3:BUTTON  cl
+        before: rgb(109, 106, 128)
+        after : rgb(108, 108, 126)
+    en/1280x720/feedback
+      1/0/1/3/1/3:BUTTON  box[x]
+        before: 749
+        after : 768
+    en/1280x720/feedback
+      1/0/1/3/1/3:BUTTON  box[y]
+        before: 364.39
+        after : 387.09
+    en/1280x720/feedback
+      1/0/1/3/1/3:BUTTON  box[w]
+        before: 400
+        after : 362
+    en/1400x700/feedback
+      1/0:DIV  bi
+        before: linear-gradient(rgb(23, 23, 28), rgb(23, 23, 28)), linear-gradient(90deg, rgb(58, 58, 72) 0%, rgb(38, 198, 230) 25%, rgb(255, 46, 200) 50%, rgb(38, 198, 230) 75%, rgb(58, 58, 72) 100%)
+        after : none
+    en/1400x700/feedback
+      1/0:DIV  bo
+        before: padding-box, border-box|padding-box, border-box|auto, 200%
+        after : padding-box|padding-box|auto
+    en/1400x700/feedback
+      1/0:DIV  sh
+        before: color(srgb 0.14902 0.776471 0.901961 / 0.22) 0px 0px 14px 0px
+        after : none
+    en/1400x700/feedback
+      1/0:DIV  box[y]
+        before: 92.17
+        after : 57.53
+    en/1400x700/feedback
+      1/0:DIV  box[h]
+        before: 515.66
+        after : 584.92
+    en/1400x700/feedback
+      1/0/0:DIV  box[y]
+        before: 93.17
+        after : 58.53
+    en/1400x700/feedback
+      1/0/1:DIV  box[y]
+        before: 96.17
+        after : 61.53
+    en/1400x700/feedback
+      1/0/1:DIV  box[h]
+        before: 510.66
+        after : 579.92
+    en/1400x700/feedback
+      1/0/1/0/1:BUTTON  box[x]
+        before: 1107.08
+        after : 1104.7
+    en/1400x700/feedback
+      1/0/1/0/1:BUTTON  box[y]
+        before: 114.17
+        after : 79.53
+    en/1400x700/feedback
+      1/0/1/0/1:BUTTON  box[w]
+        before: 97.92
+        after : 100.3
+    en/1400x700/feedback
+      1/0/1/0/1:BUTTON  box[h]
+        before: 52.83
+        after : 44.14
+    en/1400x700/feedback
+      1/0/1/3/0/0/1:DIV  bc
+        before: rgba(150, 150, 170, 0.14) rgba(150, 150, 170, 0.14) rgba(150, 150, 170, 0.14) rgba(150, 150, 170, 0.14)
+        after : rgb(58, 58, 68) rgb(58, 58, 68) rgb(58, 58, 68) rgb(58, 58, 68)
+    en/1400x700/feedback
+      1/0/1/3/0/0/1:DIV  rd
+        before: 10px 10px 10px 10px
+        after : 8px 8px 8px 8px
+    en/1400x700/feedback
+      1/0/1/3/0/0/1:DIV  box[x]
+        before: 187
+        after : 206
+    en/1400x700/feedback
+      1/0/1/3/0/0/1:DIV  box[y]
+        before: 210.5
+        after : 217.7
+    en/1400x700/feedback
+      1/0/1/3/0/0/1:DIV  box[w]
+        before: 592
+        after : 554
+    en/1400x700/feedback
+      1/0/1/3/0/0/1:DIV  box[h]
+        before: 37.33
+        after : 44
+    en/1400x700/feedback
+      1/0/1/3/0/0/1/0:BUTTON  pd
+        before: 9px 12px 9px 12px
+        after : 0px 12px 0px 12px
+    en/1400x700/feedback
+      1/0/1/3/0/0/1/0:BUTTON  box[x]
+        before: 188
+        after : 207
+    en/1400x700/feedback
+      1/0/1/3/0/0/1/0:BUTTON  box[y]
+        before: 211.5
+        after : 218.7
+    en/1400x700/feedback
+      1/0/1/3/0/0/1/0:BUTTON  box[w]
+        before: 146.75
+        after : 137.25
+    en/1400x700/feedback
+      1/0/1/3/0/0/1/0:BUTTON  box[h]
+        before: 35.33
+        after : 42
+    en/1400x700/feedback
+      1/0/1/3/0/0/1/1:BUTTON  bc
+        before: rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgba(150, 150, 170, 0.14)
+        after : rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgb(58, 58, 68)
+    en/1400x700/feedback
+      1/0/1/3/0/0/1/1:BUTTON  pd
+        before: 9px 12px 9px 12px
+        after : 0px 12px 0px 12px
+    en/1400x700/feedback
+      1/0/1/3/0/0/1/1:BUTTON  box[x]
+        before: 334.75
+        after : 344.25
+    en/1400x700/feedback
+      1/0/1/3/0/0/1/1:BUTTON  box[y]
+        before: 211.5
+        after : 218.7
+    en/1400x700/feedback
+      1/0/1/3/0/0/1/1:BUTTON  box[w]
+        before: 147.75
+        after : 138.25
+    en/1400x700/feedback
+      1/0/1/3/0/0/1/1:BUTTON  box[h]
+        before: 35.33
+        after : 42
+    en/1400x700/feedback
+      1/0/1/3/0/0/1/2:BUTTON  bc
+        before: rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgba(150, 150, 170, 0.14)
+        after : rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgb(58, 58, 68)
+    en/1400x700/feedback
+      1/0/1/3/0/0/1/2:BUTTON  pd
+        before: 9px 12px 9px 12px
+        after : 0px 12px 0px 12px
+    en/1400x700/feedback
+      1/0/1/3/0/0/1/2:BUTTON  box[y]
+        before: 211.5
+        after : 218.7
+    en/1400x700/feedback
+      1/0/1/3/0/0/1/2:BUTTON  box[w]
+        before: 147.75
+        after : 138.25
+    en/1400x700/feedback
+      1/0/1/3/0/0/1/2:BUTTON  box[h]
+        before: 35.33
+        after : 42
+    en/1400x700/feedback
+      1/0/1/3/0/0/1/3:BUTTON  bc
+        before: rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgba(150, 150, 170, 0.14)
+        after : rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgb(58, 58, 68)
+    en/1400x700/feedback
+      1/0/1/3/0/0/1/3:BUTTON  pd
+        before: 9px 12px 9px 12px
+        after : 0px 12px 0px 12px
+    en/1400x700/feedback
+      1/0/1/3/0/0/1/3:BUTTON  box[x]
+        before: 630.25
+        after : 620.75
+    en/1400x700/feedback
+      1/0/1/3/0/0/1/3:BUTTON  box[y]
+        before: 211.5
+        after : 218.7
+    en/1400x700/feedback
+      1/0/1/3/0/0/1/3:BUTTON  box[w]
+        before: 147.75
+        after : 138.25
+    en/1400x700/feedback
+      1/0/1/3/0/0/1/3:BUTTON  box[h]
+        before: 35.33
+        after : 42
+    en/1400x700/feedback
+      1/0/1/3/0/1/1:TEXTAREA  bg
+        before: rgb(15, 15, 20)
+        after : rgba(15, 15, 21, 0.72)
+    en/1400x700/feedback
+      1/0/1/3/0/1/1:TEXTAREA  bc
+        before: rgb(51, 51, 62) rgb(51, 51, 62) rgb(51, 51, 62) rgb(51, 51, 62)
+        after : rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12)
+    en/1400x700/feedback
+      1/0/1/3/0/1/1:TEXTAREA  box[x]
+        before: 187
+        after : 206
+    en/1400x700/feedback
+      1/0/1/3/0/1/1:TEXTAREA  box[y]
+        before: 285.33
+        after : 299.2
+    en/1400x700/feedback
+      1/0/1/3/0/1/1:TEXTAREA  box[w]
+        before: 592
+        after : 554
+    en/1400x700/feedback
+      1/0/1/3/1/0/1:INPUT  bg
+        before: rgb(15, 15, 20)
+        after : rgba(15, 15, 21, 0.72)
+    en/1400x700/feedback
+      1/0/1/3/1/0/1:INPUT  bc
+        before: rgb(51, 51, 62) rgb(51, 51, 62) rgb(51, 51, 62) rgb(51, 51, 62)
+        after : rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12)
+    en/1400x700/feedback
+      1/0/1/3/1/0/1:INPUT  box[x]
+        before: 805
+        after : 824
+    en/1400x700/feedback
+      1/0/1/3/1/0/1:INPUT  box[y]
+        before: 210.5
+        after : 217.7
+    en/1400x700/feedback
+      1/0/1/3/1/0/1:INPUT  box[w]
+        before: 400
+        after : 362
+    en/1400x700/feedback
+      1/0/1/3/1/3:BUTTON  bg
+        before: rgb(42, 39, 51)
+        after : rgba(15, 15, 21, 0.72)
+    en/1400x700/feedback
+      1/0/1/3/1/3:BUTTON  bc
+        before: rgb(109, 106, 128) rgb(109, 106, 128) rgb(109, 106, 128) rgb(109, 106, 128)
+        after : rgb(108, 108, 126) rgb(108, 108, 126) rgb(108, 108, 126) rgb(108, 108, 126)
+    en/1400x700/feedback
+      1/0/1/3/1/3:BUTTON  rd
+        before: 12px 12px 12px 12px
+        after : 8px 8px 8px 8px
+    en/1400x700/feedback
+      1/0/1/3/1/3:BUTTON  ol
+        before: 3px none rgb(109, 106, 128)
+        after : 3px none rgb(108, 108, 126)
+    en/1400x700/feedback
+      1/0/1/3/1/3:BUTTON  cl
+        before: rgb(109, 106, 128)
+        after : rgb(108, 108, 126)
+    en/1400x700/feedback
+      1/0/1/3/1/3:BUTTON  box[x]
+        before: 805
+        after : 824
+    en/1400x700/feedback
+      1/0/1/3/1/3:BUTTON  box[y]
+        before: 354.39
+        after : 377.09
+    en/1400x700/feedback
+      1/0/1/3/1/3:BUTTON  box[w]
+        before: 400
+        after : 362
+    en/1536x791/feedback
+      1/0:DIV  bi
+        before: linear-gradient(rgb(23, 23, 28), rgb(23, 23, 28)), linear-gradient(90deg, rgb(58, 58, 72) 0%, rgb(38, 198, 230) 25%, rgb(255, 46, 200) 50%, rgb(38, 198, 230) 75%, rgb(58, 58, 72) 100%)
+        after : none
+    en/1536x791/feedback
+      1/0:DIV  bo
+        before: padding-box, border-box|padding-box, border-box|auto, 200%
+        after : padding-box|padding-box|auto
+    en/1536x791/feedback
+      1/0:DIV  sh
+        before: color(srgb 0.14902 0.776471 0.901961 / 0.22) 0px 0px 14px 0px
+        after : none
+    en/1536x791/feedback
+      1/0:DIV  box[y]
+        before: 137.67
+        after : 103.03
+    en/1536x791/feedback
+      1/0:DIV  box[h]
+        before: 515.66
+        after : 584.92
+    en/1536x791/feedback
+      1/0/0:DIV  box[y]
+        before: 138.67
+        after : 104.03
+    en/1536x791/feedback
+      1/0/1:DIV  box[y]
+        before: 141.67
+        after : 107.03
+    en/1536x791/feedback
+      1/0/1:DIV  box[h]
+        before: 510.66
+        after : 579.92
+    en/1536x791/feedback
+      1/0/1/0/1:BUTTON  box[x]
+        before: 1179.08
+        after : 1176.7
+    en/1536x791/feedback
+      1/0/1/0/1:BUTTON  box[y]
+        before: 159.67
+        after : 125.03
+    en/1536x791/feedback
+      1/0/1/0/1:BUTTON  box[w]
+        before: 97.92
+        after : 100.3
+    en/1536x791/feedback
+      1/0/1/0/1:BUTTON  box[h]
+        before: 52.83
+        after : 44.14
+    en/1536x791/feedback
+      1/0/1/3/0/0/1:DIV  bc
+        before: rgba(150, 150, 170, 0.14) rgba(150, 150, 170, 0.14) rgba(150, 150, 170, 0.14) rgba(150, 150, 170, 0.14)
+        after : rgb(58, 58, 68) rgb(58, 58, 68) rgb(58, 58, 68) rgb(58, 58, 68)
+    en/1536x791/feedback
+      1/0/1/3/0/0/1:DIV  rd
+        before: 10px 10px 10px 10px
+        after : 8px 8px 8px 8px
+    en/1536x791/feedback
+      1/0/1/3/0/0/1:DIV  box[x]
+        before: 259
+        after : 278
+    en/1536x791/feedback
+      1/0/1/3/0/0/1:DIV  box[y]
+        before: 256
+        after : 263.2
+    en/1536x791/feedback
+      1/0/1/3/0/0/1:DIV  box[w]
+        before: 592
+        after : 554
+    en/1536x791/feedback
+      1/0/1/3/0/0/1:DIV  box[h]
+        before: 37.33
+        after : 44
+    en/1536x791/feedback
+      1/0/1/3/0/0/1/0:BUTTON  pd
+        before: 9px 12px 9px 12px
+        after : 0px 12px 0px 12px
+    en/1536x791/feedback
+      1/0/1/3/0/0/1/0:BUTTON  box[x]
+        before: 260
+        after : 279
+    en/1536x791/feedback
+      1/0/1/3/0/0/1/0:BUTTON  box[y]
+        before: 257
+        after : 264.2
+    en/1536x791/feedback
+      1/0/1/3/0/0/1/0:BUTTON  box[w]
+        before: 146.75
+        after : 137.25
+    en/1536x791/feedback
+      1/0/1/3/0/0/1/0:BUTTON  box[h]
+        before: 35.33
+        after : 42
+    en/1536x791/feedback
+      1/0/1/3/0/0/1/1:BUTTON  bc
+        before: rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgba(150, 150, 170, 0.14)
+        after : rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgb(58, 58, 68)
+    en/1536x791/feedback
+      1/0/1/3/0/0/1/1:BUTTON  pd
+        before: 9px 12px 9px 12px
+        after : 0px 12px 0px 12px
+    en/1536x791/feedback
+      1/0/1/3/0/0/1/1:BUTTON  box[x]
+        before: 406.75
+        after : 416.25
+    en/1536x791/feedback
+      1/0/1/3/0/0/1/1:BUTTON  box[y]
+        before: 257
+        after : 264.2
+    en/1536x791/feedback
+      1/0/1/3/0/0/1/1:BUTTON  box[w]
+        before: 147.75
+        after : 138.25
+    en/1536x791/feedback
+      1/0/1/3/0/0/1/1:BUTTON  box[h]
+        before: 35.33
+        after : 42
+    en/1536x791/feedback
+      1/0/1/3/0/0/1/2:BUTTON  bc
+        before: rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgba(150, 150, 170, 0.14)
+        after : rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgb(58, 58, 68)
+    en/1536x791/feedback
+      1/0/1/3/0/0/1/2:BUTTON  pd
+        before: 9px 12px 9px 12px
+        after : 0px 12px 0px 12px
+    en/1536x791/feedback
+      1/0/1/3/0/0/1/2:BUTTON  box[y]
+        before: 257
+        after : 264.2
+    en/1536x791/feedback
+      1/0/1/3/0/0/1/2:BUTTON  box[w]
+        before: 147.75
+        after : 138.25
+    en/1536x791/feedback
+      1/0/1/3/0/0/1/2:BUTTON  box[h]
+        before: 35.33
+        after : 42
+    en/1536x791/feedback
+      1/0/1/3/0/0/1/3:BUTTON  bc
+        before: rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgba(150, 150, 170, 0.14)
+        after : rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgb(58, 58, 68)
+    en/1536x791/feedback
+      1/0/1/3/0/0/1/3:BUTTON  pd
+        before: 9px 12px 9px 12px
+        after : 0px 12px 0px 12px
+    en/1536x791/feedback
+      1/0/1/3/0/0/1/3:BUTTON  box[x]
+        before: 702.25
+        after : 692.75
+    en/1536x791/feedback
+      1/0/1/3/0/0/1/3:BUTTON  box[y]
+        before: 257
+        after : 264.2
+    en/1536x791/feedback
+      1/0/1/3/0/0/1/3:BUTTON  box[w]
+        before: 147.75
+        after : 138.25
+    en/1536x791/feedback
+      1/0/1/3/0/0/1/3:BUTTON  box[h]
+        before: 35.33
+        after : 42
+    en/1536x791/feedback
+      1/0/1/3/0/1/1:TEXTAREA  bg
+        before: rgb(15, 15, 20)
+        after : rgba(15, 15, 21, 0.72)
+    en/1536x791/feedback
+      1/0/1/3/0/1/1:TEXTAREA  bc
+        before: rgb(51, 51, 62) rgb(51, 51, 62) rgb(51, 51, 62) rgb(51, 51, 62)
+        after : rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12)
+    en/1536x791/feedback
+      1/0/1/3/0/1/1:TEXTAREA  box[x]
+        before: 259
+        after : 278
+    en/1536x791/feedback
+      1/0/1/3/0/1/1:TEXTAREA  box[y]
+        before: 330.83
+        after : 344.7
+    en/1536x791/feedback
+      1/0/1/3/0/1/1:TEXTAREA  box[w]
+        before: 592
+        after : 554
+    en/1536x791/feedback
+      1/0/1/3/1/0/1:INPUT  bg
+        before: rgb(15, 15, 20)
+        after : rgba(15, 15, 21, 0.72)
+    en/1536x791/feedback
+      1/0/1/3/1/0/1:INPUT  bc
+        before: rgb(51, 51, 62) rgb(51, 51, 62) rgb(51, 51, 62) rgb(51, 51, 62)
+        after : rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12)
+    en/1536x791/feedback
+      1/0/1/3/1/0/1:INPUT  box[x]
+        before: 877
+        after : 896
+    en/1536x791/feedback
+      1/0/1/3/1/0/1:INPUT  box[y]
+        before: 256
+        after : 263.2
+    en/1536x791/feedback
+      1/0/1/3/1/0/1:INPUT  box[w]
+        before: 400
+        after : 362
+    en/1536x791/feedback
+      1/0/1/3/1/3:BUTTON  bg
+        before: rgb(42, 39, 51)
+        after : rgba(15, 15, 21, 0.72)
+    en/1536x791/feedback
+      1/0/1/3/1/3:BUTTON  bc
+        before: rgb(109, 106, 128) rgb(109, 106, 128) rgb(109, 106, 128) rgb(109, 106, 128)
+        after : rgb(108, 108, 126) rgb(108, 108, 126) rgb(108, 108, 126) rgb(108, 108, 126)
+    en/1536x791/feedback
+      1/0/1/3/1/3:BUTTON  rd
+        before: 12px 12px 12px 12px
+        after : 8px 8px 8px 8px
+    en/1536x791/feedback
+      1/0/1/3/1/3:BUTTON  ol
+        before: 3px none rgb(109, 106, 128)
+        after : 3px none rgb(108, 108, 126)
+    en/1536x791/feedback
+      1/0/1/3/1/3:BUTTON  cl
+        before: rgb(109, 106, 128)
+        after : rgb(108, 108, 126)
+    en/1536x791/feedback
+      1/0/1/3/1/3:BUTTON  box[x]
+        before: 877
+        after : 896
+    en/1536x791/feedback
+      1/0/1/3/1/3:BUTTON  box[y]
+        before: 399.89
+        after : 422.59
+    en/1536x791/feedback
+      1/0/1/3/1/3:BUTTON  box[w]
+        before: 400
+        after : 362
+    en/1600x900/feedback
+      1/0:DIV  bi
+        before: linear-gradient(rgb(23, 23, 28), rgb(23, 23, 28)), linear-gradient(90deg, rgb(58, 58, 72) 0%, rgb(38, 198, 230) 25%, rgb(255, 46, 200) 50%, rgb(38, 198, 230) 75%, rgb(58, 58, 72) 100%)
+        after : none
+    en/1600x900/feedback
+      1/0:DIV  bo
+        before: padding-box, border-box|padding-box, border-box|auto, 200%
+        after : padding-box|padding-box|auto
+    en/1600x900/feedback
+      1/0:DIV  sh
+        before: color(srgb 0.14902 0.776471 0.901961 / 0.22) 0px 0px 14px 0px
+        after : none
+    en/1600x900/feedback
+      1/0:DIV  box[y]
+        before: 192.17
+        after : 157.53
+    en/1600x900/feedback
+      1/0:DIV  box[h]
+        before: 515.66
+        after : 584.92
+    en/1600x900/feedback
+      1/0/0:DIV  box[y]
+        before: 193.17
+        after : 158.53
+    en/1600x900/feedback
+      1/0/1:DIV  box[y]
+        before: 196.17
+        after : 161.53
+    en/1600x900/feedback
+      1/0/1:DIV  box[h]
+        before: 510.66
+        after : 579.92
+    en/1600x900/feedback
+      1/0/1/0/1:BUTTON  box[x]
+        before: 1211.08
+        after : 1208.7
+    en/1600x900/feedback
+      1/0/1/0/1:BUTTON  box[y]
+        before: 214.17
+        after : 179.53
+    en/1600x900/feedback
+      1/0/1/0/1:BUTTON  box[w]
+        before: 97.92
+        after : 100.3
+    en/1600x900/feedback
+      1/0/1/0/1:BUTTON  box[h]
+        before: 52.83
+        after : 44.14
+    en/1600x900/feedback
+      1/0/1/3/0/0/1:DIV  bc
+        before: rgba(150, 150, 170, 0.14) rgba(150, 150, 170, 0.14) rgba(150, 150, 170, 0.14) rgba(150, 150, 170, 0.14)
+        after : rgb(58, 58, 68) rgb(58, 58, 68) rgb(58, 58, 68) rgb(58, 58, 68)
+    en/1600x900/feedback
+      1/0/1/3/0/0/1:DIV  rd
+        before: 10px 10px 10px 10px
+        after : 8px 8px 8px 8px
+    en/1600x900/feedback
+      1/0/1/3/0/0/1:DIV  box[x]
+        before: 291
+        after : 310
+    en/1600x900/feedback
+      1/0/1/3/0/0/1:DIV  box[y]
+        before: 310.5
+        after : 317.7
+    en/1600x900/feedback
+      1/0/1/3/0/0/1:DIV  box[w]
+        before: 592
+        after : 554
+    en/1600x900/feedback
+      1/0/1/3/0/0/1:DIV  box[h]
+        before: 37.33
+        after : 44
+    en/1600x900/feedback
+      1/0/1/3/0/0/1/0:BUTTON  pd
+        before: 9px 12px 9px 12px
+        after : 0px 12px 0px 12px
+    en/1600x900/feedback
+      1/0/1/3/0/0/1/0:BUTTON  box[x]
+        before: 292
+        after : 311
+    en/1600x900/feedback
+      1/0/1/3/0/0/1/0:BUTTON  box[y]
+        before: 311.5
+        after : 318.7
+    en/1600x900/feedback
+      1/0/1/3/0/0/1/0:BUTTON  box[w]
+        before: 146.75
+        after : 137.25
+    en/1600x900/feedback
+      1/0/1/3/0/0/1/0:BUTTON  box[h]
+        before: 35.33
+        after : 42
+    en/1600x900/feedback
+      1/0/1/3/0/0/1/1:BUTTON  bc
+        before: rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgba(150, 150, 170, 0.14)
+        after : rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgb(58, 58, 68)
+    en/1600x900/feedback
+      1/0/1/3/0/0/1/1:BUTTON  pd
+        before: 9px 12px 9px 12px
+        after : 0px 12px 0px 12px
+    en/1600x900/feedback
+      1/0/1/3/0/0/1/1:BUTTON  box[x]
+        before: 438.75
+        after : 448.25
+    en/1600x900/feedback
+      1/0/1/3/0/0/1/1:BUTTON  box[y]
+        before: 311.5
+        after : 318.7
+    en/1600x900/feedback
+      1/0/1/3/0/0/1/1:BUTTON  box[w]
+        before: 147.75
+        after : 138.25
+    en/1600x900/feedback
+      1/0/1/3/0/0/1/1:BUTTON  box[h]
+        before: 35.33
+        after : 42
+    en/1600x900/feedback
+      1/0/1/3/0/0/1/2:BUTTON  bc
+        before: rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgba(150, 150, 170, 0.14)
+        after : rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgb(58, 58, 68)
+    en/1600x900/feedback
+      1/0/1/3/0/0/1/2:BUTTON  pd
+        before: 9px 12px 9px 12px
+        after : 0px 12px 0px 12px
+    en/1600x900/feedback
+      1/0/1/3/0/0/1/2:BUTTON  box[y]
+        before: 311.5
+        after : 318.7
+    en/1600x900/feedback
+      1/0/1/3/0/0/1/2:BUTTON  box[w]
+        before: 147.75
+        after : 138.25
+    en/1600x900/feedback
+      1/0/1/3/0/0/1/2:BUTTON  box[h]
+        before: 35.33
+        after : 42
+    en/1600x900/feedback
+      1/0/1/3/0/0/1/3:BUTTON  bc
+        before: rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgba(150, 150, 170, 0.14)
+        after : rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgb(58, 58, 68)
+    en/1600x900/feedback
+      1/0/1/3/0/0/1/3:BUTTON  pd
+        before: 9px 12px 9px 12px
+        after : 0px 12px 0px 12px
+    en/1600x900/feedback
+      1/0/1/3/0/0/1/3:BUTTON  box[x]
+        before: 734.25
+        after : 724.75
+    en/1600x900/feedback
+      1/0/1/3/0/0/1/3:BUTTON  box[y]
+        before: 311.5
+        after : 318.7
+    en/1600x900/feedback
+      1/0/1/3/0/0/1/3:BUTTON  box[w]
+        before: 147.75
+        after : 138.25
+    en/1600x900/feedback
+      1/0/1/3/0/0/1/3:BUTTON  box[h]
+        before: 35.33
+        after : 42
+    en/1600x900/feedback
+      1/0/1/3/0/1/1:TEXTAREA  bg
+        before: rgb(15, 15, 20)
+        after : rgba(15, 15, 21, 0.72)
+    en/1600x900/feedback
+      1/0/1/3/0/1/1:TEXTAREA  bc
+        before: rgb(51, 51, 62) rgb(51, 51, 62) rgb(51, 51, 62) rgb(51, 51, 62)
+        after : rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12)
+    en/1600x900/feedback
+      1/0/1/3/0/1/1:TEXTAREA  box[x]
+        before: 291
+        after : 310
+    en/1600x900/feedback
+      1/0/1/3/0/1/1:TEXTAREA  box[y]
+        before: 385.33
+        after : 399.2
+    en/1600x900/feedback
+      1/0/1/3/0/1/1:TEXTAREA  box[w]
+        before: 592
+        after : 554
+    en/1600x900/feedback
+      1/0/1/3/1/0/1:INPUT  bg
+        before: rgb(15, 15, 20)
+        after : rgba(15, 15, 21, 0.72)
+    en/1600x900/feedback
+      1/0/1/3/1/0/1:INPUT  bc
+        before: rgb(51, 51, 62) rgb(51, 51, 62) rgb(51, 51, 62) rgb(51, 51, 62)
+        after : rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12)
+    en/1600x900/feedback
+      1/0/1/3/1/0/1:INPUT  box[x]
+        before: 909
+        after : 928
+    en/1600x900/feedback
+      1/0/1/3/1/0/1:INPUT  box[y]
+        before: 310.5
+        after : 317.7
+    en/1600x900/feedback
+      1/0/1/3/1/0/1:INPUT  box[w]
+        before: 400
+        after : 362
+    en/1600x900/feedback
+      1/0/1/3/1/3:BUTTON  bg
+        before: rgb(42, 39, 51)
+        after : rgba(15, 15, 21, 0.72)
+    en/1600x900/feedback
+      1/0/1/3/1/3:BUTTON  bc
+        before: rgb(109, 106, 128) rgb(109, 106, 128) rgb(109, 106, 128) rgb(109, 106, 128)
+        after : rgb(108, 108, 126) rgb(108, 108, 126) rgb(108, 108, 126) rgb(108, 108, 126)
+    en/1600x900/feedback
+      1/0/1/3/1/3:BUTTON  rd
+        before: 12px 12px 12px 12px
+        after : 8px 8px 8px 8px
+    en/1600x900/feedback
+      1/0/1/3/1/3:BUTTON  ol
+        before: 3px none rgb(109, 106, 128)
+        after : 3px none rgb(108, 108, 126)
+    en/1600x900/feedback
+      1/0/1/3/1/3:BUTTON  cl
+        before: rgb(109, 106, 128)
+        after : rgb(108, 108, 126)
+    en/1600x900/feedback
+      1/0/1/3/1/3:BUTTON  box[x]
+        before: 909
+        after : 928
+    en/1600x900/feedback
+      1/0/1/3/1/3:BUTTON  box[y]
+        before: 454.39
+        after : 477.09
+    en/1600x900/feedback
+      1/0/1/3/1/3:BUTTON  box[w]
+        before: 400
+        after : 362
+    en/1920x1080/feedback
+      1/0:DIV  bi
+        before: linear-gradient(rgb(23, 23, 28), rgb(23, 23, 28)), linear-gradient(90deg, rgb(58, 58, 72) 0%, rgb(38, 198, 230) 25%, rgb(255, 46, 200) 50%, rgb(38, 198, 230) 75%, rgb(58, 58, 72) 100%)
+        after : none
+    en/1920x1080/feedback
+      1/0:DIV  bo
+        before: padding-box, border-box|padding-box, border-box|auto, 200%
+        after : padding-box|padding-box|auto
+    en/1920x1080/feedback
+      1/0:DIV  sh
+        before: color(srgb 0.14902 0.776471 0.901961 / 0.22) 0px 0px 14px 0px
+        after : none
+    en/1920x1080/feedback
+      1/0:DIV  box[y]
+        before: 282.17
+        after : 247.53
+    en/1920x1080/feedback
+      1/0:DIV  box[h]
+        before: 515.66
+        after : 584.92
+    en/1920x1080/feedback
+      1/0/0:DIV  box[y]
+        before: 283.17
+        after : 248.53
+    en/1920x1080/feedback
+      1/0/1:DIV  box[y]
+        before: 286.17
+        after : 251.53
+    en/1920x1080/feedback
+      1/0/1:DIV  box[h]
+        before: 510.66
+        after : 579.92
+    en/1920x1080/feedback
+      1/0/1/0/1:BUTTON  box[x]
+        before: 1371.08
+        after : 1368.7
+    en/1920x1080/feedback
+      1/0/1/0/1:BUTTON  box[y]
+        before: 304.17
+        after : 269.53
+    en/1920x1080/feedback
+      1/0/1/0/1:BUTTON  box[w]
+        before: 97.92
+        after : 100.3
+    en/1920x1080/feedback
+      1/0/1/0/1:BUTTON  box[h]
+        before: 52.83
+        after : 44.14
+    en/1920x1080/feedback
+      1/0/1/3/0/0/1:DIV  bc
+        before: rgba(150, 150, 170, 0.14) rgba(150, 150, 170, 0.14) rgba(150, 150, 170, 0.14) rgba(150, 150, 170, 0.14)
+        after : rgb(58, 58, 68) rgb(58, 58, 68) rgb(58, 58, 68) rgb(58, 58, 68)
+    en/1920x1080/feedback
+      1/0/1/3/0/0/1:DIV  rd
+        before: 10px 10px 10px 10px
+        after : 8px 8px 8px 8px
+    en/1920x1080/feedback
+      1/0/1/3/0/0/1:DIV  box[x]
+        before: 451
+        after : 470
+    en/1920x1080/feedback
+      1/0/1/3/0/0/1:DIV  box[y]
+        before: 400.5
+        after : 407.7
+    en/1920x1080/feedback
+      1/0/1/3/0/0/1:DIV  box[w]
+        before: 592
+        after : 554
+    en/1920x1080/feedback
+      1/0/1/3/0/0/1:DIV  box[h]
+        before: 37.33
+        after : 44
+    en/1920x1080/feedback
+      1/0/1/3/0/0/1/0:BUTTON  pd
+        before: 9px 12px 9px 12px
+        after : 0px 12px 0px 12px
+    en/1920x1080/feedback
+      1/0/1/3/0/0/1/0:BUTTON  box[x]
+        before: 452
+        after : 471
+    en/1920x1080/feedback
+      1/0/1/3/0/0/1/0:BUTTON  box[y]
+        before: 401.5
+        after : 408.7
+    en/1920x1080/feedback
+      1/0/1/3/0/0/1/0:BUTTON  box[w]
+        before: 146.75
+        after : 137.25
+    en/1920x1080/feedback
+      1/0/1/3/0/0/1/0:BUTTON  box[h]
+        before: 35.33
+        after : 42
+    en/1920x1080/feedback
+      1/0/1/3/0/0/1/1:BUTTON  bc
+        before: rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgba(150, 150, 170, 0.14)
+        after : rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgb(58, 58, 68)
+    en/1920x1080/feedback
+      1/0/1/3/0/0/1/1:BUTTON  pd
+        before: 9px 12px 9px 12px
+        after : 0px 12px 0px 12px
+    en/1920x1080/feedback
+      1/0/1/3/0/0/1/1:BUTTON  box[x]
+        before: 598.75
+        after : 608.25
+    en/1920x1080/feedback
+      1/0/1/3/0/0/1/1:BUTTON  box[y]
+        before: 401.5
+        after : 408.7
+    en/1920x1080/feedback
+      1/0/1/3/0/0/1/1:BUTTON  box[w]
+        before: 147.75
+        after : 138.25
+    en/1920x1080/feedback
+      1/0/1/3/0/0/1/1:BUTTON  box[h]
+        before: 35.33
+        after : 42
+    en/1920x1080/feedback
+      1/0/1/3/0/0/1/2:BUTTON  bc
+        before: rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgba(150, 150, 170, 0.14)
+        after : rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgb(58, 58, 68)
+    en/1920x1080/feedback
+      1/0/1/3/0/0/1/2:BUTTON  pd
+        before: 9px 12px 9px 12px
+        after : 0px 12px 0px 12px
+    en/1920x1080/feedback
+      1/0/1/3/0/0/1/2:BUTTON  box[y]
+        before: 401.5
+        after : 408.7
+    en/1920x1080/feedback
+      1/0/1/3/0/0/1/2:BUTTON  box[w]
+        before: 147.75
+        after : 138.25
+    en/1920x1080/feedback
+      1/0/1/3/0/0/1/2:BUTTON  box[h]
+        before: 35.33
+        after : 42
+    en/1920x1080/feedback
+      1/0/1/3/0/0/1/3:BUTTON  bc
+        before: rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgba(150, 150, 170, 0.14)
+        after : rgb(138, 138, 149) rgb(138, 138, 149) rgb(138, 138, 149) rgb(58, 58, 68)
+    en/1920x1080/feedback
+      1/0/1/3/0/0/1/3:BUTTON  pd
+        before: 9px 12px 9px 12px
+        after : 0px 12px 0px 12px
+    en/1920x1080/feedback
+      1/0/1/3/0/0/1/3:BUTTON  box[x]
+        before: 894.25
+        after : 884.75
+    en/1920x1080/feedback
+      1/0/1/3/0/0/1/3:BUTTON  box[y]
+        before: 401.5
+        after : 408.7
+    en/1920x1080/feedback
+      1/0/1/3/0/0/1/3:BUTTON  box[w]
+        before: 147.75
+        after : 138.25
+    en/1920x1080/feedback
+      1/0/1/3/0/0/1/3:BUTTON  box[h]
+        before: 35.33
+        after : 42
+    en/1920x1080/feedback
+      1/0/1/3/0/1/1:TEXTAREA  bg
+        before: rgb(15, 15, 20)
+        after : rgba(15, 15, 21, 0.72)
+    en/1920x1080/feedback
+      1/0/1/3/0/1/1:TEXTAREA  bc
+        before: rgb(51, 51, 62) rgb(51, 51, 62) rgb(51, 51, 62) rgb(51, 51, 62)
+        after : rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12)
+    en/1920x1080/feedback
+      1/0/1/3/0/1/1:TEXTAREA  box[x]
+        before: 451
+        after : 470
+    en/1920x1080/feedback
+      1/0/1/3/0/1/1:TEXTAREA  box[y]
+        before: 475.33
+        after : 489.2
+    en/1920x1080/feedback
+      1/0/1/3/0/1/1:TEXTAREA  box[w]
+        before: 592
+        after : 554
+    en/1920x1080/feedback
+      1/0/1/3/1/0/1:INPUT  bg
+        before: rgb(15, 15, 20)
+        after : rgba(15, 15, 21, 0.72)
+    en/1920x1080/feedback
+      1/0/1/3/1/0/1:INPUT  bc
+        before: rgb(51, 51, 62) rgb(51, 51, 62) rgb(51, 51, 62) rgb(51, 51, 62)
+        after : rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12) rgba(150, 150, 170, 0.12)
+    en/1920x1080/feedback
+      1/0/1/3/1/0/1:INPUT  box[x]
+        before: 1069
+        after : 1088
+    en/1920x1080/feedback
+      1/0/1/3/1/0/1:INPUT  box[y]
+        before: 400.5
+        after : 407.7
+    en/1920x1080/feedback
+      1/0/1/3/1/0/1:INPUT  box[w]
+        before: 400
+        after : 362
+    en/1920x1080/feedback
+      1/0/1/3/1/3:BUTTON  bg
+        before: rgb(42, 39, 51)
+        after : rgba(15, 15, 21, 0.72)
+    en/1920x1080/feedback
+      1/0/1/3/1/3:BUTTON  bc
+        before: rgb(109, 106, 128) rgb(109, 106, 128) rgb(109, 106, 128) rgb(109, 106, 128)
+        after : rgb(108, 108, 126) rgb(108, 108, 126) rgb(108, 108, 126) rgb(108, 108, 126)
+    en/1920x1080/feedback
+      1/0/1/3/1/3:BUTTON  rd
+        before: 12px 12px 12px 12px
+        after : 8px 8px 8px 8px
+    en/1920x1080/feedback
+      1/0/1/3/1/3:BUTTON  ol
+        before: 3px none rgb(109, 106, 128)
+        after : 3px none rgb(108, 108, 126)
+    en/1920x1080/feedback
+      1/0/1/3/1/3:BUTTON  cl
+        before: rgb(109, 106, 128)
+        after : rgb(108, 108, 126)
+    en/1920x1080/feedback
+      1/0/1/3/1/3:BUTTON  box[x]
+        before: 1069
+        after : 1088
+    en/1920x1080/feedback
+      1/0/1/3/1/3:BUTTON  box[y]
+        before: 544.39
+        after : 567.09
+    en/1920x1080/feedback
+      1/0/1/3/1/3:BUTTON  box[w]
+        before: 400
+        after : 362
+
+  distribution of the 580 delta(s) — stated, not left to the eye:
+      by cell: de/1280x720/feedback=58  de/1400x700/feedback=58  de/1536x791/feedback=58  de/1600x900/feedback=58  de/1920x1080/feedback=58  en/1280x720/feedback=58  en/1400x700/feedback=58  en/1536x791/feedback=58  en/1600x900/feedback=58  en/1920x1080/feedback=58
+      by lang: de=290  en=290
+      by size: 1280x720=116  1400x700=116  1536x791=116  1600x900=116  1920x1080=116
+      by surface: feedback=580
+      by property: box[y]=120  box[w]=90  box[h]=80  box[x]=80  bc=70  pd=40  bg=30  rd=20  bi=10  bo=10  cl=10  ol=10  sh=10

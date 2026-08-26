@@ -780,8 +780,19 @@ export default {
 
   /* ---- Statistiken (StatsScreen) ---- */
   "stats.title": "Statistiken",
+  /* #menu-rework M7 — Kopf-Kanon (design-sprache.md §2). Der Eyebrow nennt den BEREICH, der Titel
+     den Screen, die Unterzeile beantwortet die Frage, die der Screen sonst offen lässt. Beide Wörter
+     sind dort schon entschieden und nicht hier erfunden; „Verlauf" ist geprüft und verworfen (zu nah
+     am Titel und für die Lauf-Historie belegt).
+     Die Unterzeile ERSETZT `stats.desk.readout`: der Auskunftssatz stand in der Aktionszone, wo §2
+     nur Aktionen zulässt, und er war Material für genau diese Zeile. */
+  "stats.eyebrow": "Rückblick",
+  "stats.sub": "Was du bisher gespielt hast. Eine Zeile anklicken öffnet den vollständigen Lauf.",
+  /* Ein reservierter, noch nicht belegter Platz (design-sprache.md §1, „Wenn die Anzahl schwankt":
+     ein ZIEL reserviert nach dem Höchstfall und sagt, was fehlt). Er ist nicht bei null — er ist
+     leer, und das ist eine andere Aussage. */
+  "stats.slot.empty": "noch nicht gespielt",
   /* #desktop: Auskunftszeile im Kopf der Statistik (erst ab 1280 px, neben dem Titel). */
-  "stats.desk.readout": "Alle Zahlen liegen lokal auf diesem Gerät. Eine Zeile anklicken öffnet den vollständigen Lauf.",
   "stats.empty": "Noch keine Läufe. Spiel einen, dann erscheinen hier deine Statistiken.",
   "stats.overview": "Übersicht",
   "stats.bestScore": "Bestscore",
@@ -801,7 +812,6 @@ export default {
   "stats.mostPicked": "Am häufigsten",
   "stats.mostPicked.hint": "über deine Historie",
   "stats.topSkills": "Meistgewählte Skills",
-  "stats.noSkills": "Noch keine Skills gespielt.",
   "stats.topPerks": "Meistgewählte Perks",
   "stats.archUse": "Archetyp-Nutzung",
   "stats.archUse.right": "{n}× · Ø {avg}",
@@ -890,11 +900,20 @@ export default {
   /* ---- Seed-Chip (SeedChip) ---- */
   "seed.copy": "Seed kopieren",
   "seed.copied": "kopiert",
-  "seed.replay": "↻ Nachspielen",
+  "seed.replay": "Nachspielen",
+  "rundetail.eyebrow": "Rückblick · Lauf",
   "seed.replay.title": "Diesen Seed nachspielen",
 
   /* ---- Bestenliste (LeaderboardScreen · GlobalLeaderboard) ---- */
   "board.title": "Bestenliste",
+  /* #menu-rework M8 — Kopf-Kanon (design-sprache.md §2): EIN Screen, ZWEI Einstiege. Der Titel bleibt
+     in beiden Fassungen „Bestenliste" (es ist dieselbe Liste); Eyebrow und Unterzeile sagen, welche
+     der beiden Aufgaben gerade laeuft. „Rangliste" ist kein neues Wort — so heisst der Hub-Knopf,
+     ueber den man in diese Fassung hereinkommt (`start.ranked`). */
+  "board.eyebrow.board": "Vergleich",
+  "board.eyebrow.ranked": "Rangliste",
+  "board.sub.board": "Die besten Läufe aller Spieler.",
+  "board.sub.ranked": "Woche {week} — alle spielen denselben Seed.",
   "board.tab.global": "Global",
   "board.tab.week": "Diese Woche",
   "board.tab.weekShort": "Woche",
@@ -999,12 +1018,21 @@ export default {
   "guide.nav.note": "Der Leitfaden erklärt das Spielprinzip. Begriffe und Sonderregeln stehen im Glossar.",
 
   /* ---- Upgrade-Baum (UpgradeScreen) ---- */
-  "upgrades.title": "Upgrades",
+  "upgrades.eyebrow": "Upgrades",
+  "upgrades.title": "Upgrade-Baum",
+  "upgrades.subtitle": "Dauerhafte Verbesserungen für jeden Lauf.",
   "upgrades.respec": "↺ Zurücksetzen",
-  "upgrades.nodes": " / {total} Knoten · Ranglisten-Lauf",
-  "upgrades.ranked.free": "frei",
-  "upgrades.ranked.at": "bei {total}/{total} Knoten",
+  /* #menu-rework M3 — zwei benannte Ablesungen statt einer nackten Zahl am Titel. Der alte
+     `upgrades.nodes` begann mit einem Leerzeichen, wurde an eine Zahl geklebt und ergab zusammen mit
+     `upgrades.ranked.at` dreimal „Knoten" und zweimal dieselbe Zahl (design-sprache.md §7). */
+  "upgrades.readout.sp": "Guthaben",
+  "upgrades.readout.nodes": "Knoten",
+  "upgrades.readout.nodes.val": "{owned} / {total}",
+  "upgrades.ranked.label": "Ranglisten-Lauf",
+  "upgrades.ranked.open": "Noch nicht freigeschaltet",
+  "upgrades.ranked.free": "Freigeschaltet",
   "upgrades.tapHint": "Knoten antippen zeigt, was er bewirkt.",
+  "upgrades.legend.hint": "Klick auf einen Knoten erklärt ihn.",
   "upgrades.details": "Details ›",
   "upgrades.legPhase": "Legendär-Phase",
   "upgrades.tab.decks": "Decks",
@@ -1015,10 +1043,10 @@ export default {
   "upgrades.lane.rarity": "Rarität",
   "upgrades.lane.drops": "Drop-Raten",
   "upgrades.lane.perk2": "2. Perk-Phase",
-  "upgrades.lane.note.afterLeg": "öffnet sich nach dem Legendär-Unlock",
+  "upgrades.lane.note.afterLeg": "öffnet sich mit Rarität · Legendär",
   "upgrades.free": "frei",
   "upgrades.state.soon": "Bald",
-  "upgrades.state.owned": "✓ Gekauft",
+  "upgrades.state.owned": "Gekauft",
   "upgrades.state.soonFull": "Bald verfügbar",
   "upgrades.state.buyable": "Kaufbar",
   "upgrades.state.lockSp": "Zu wenig SP: kostet {cost} SP",
@@ -1046,8 +1074,15 @@ export default {
   "upgrades.skills.legendary": "Legendäre Skills",
   "upgrades.owned": "gekauft",
   "upgrades.buyable": "kaufbar",
-  "upgrades.locked": "🔒 gesperrt ·",
+  "upgrades.locked": "gesperrt",
   "upgrades.soon": "Bald = Platzhalter",
+  /* #menu-rework M3 — die Fraktionsseite: Challenge als Zeile am Fuß statt als Karte im Panel.
+     Der Bedingungssatz und der Zähler kommen unverändert aus `packUnlock()`; neu ist nur der Rahmen. */
+  "upgrades.chall.label": "Herausforderung",
+  "upgrades.chall.link": "Werkstatt ›",
+  "upgrades.chall.done": "Freigeschaltet",
+  /* Die zwei Kärtchen der Legendär-Phase tragen ihren Zustand selbst (design-sprache.md §5). */
+  "upgrades.leg.missing": "{n} SP fehlen",
 
   /* ---- Deck-Detail (DeckDetail) ---- */
   "deckdetail.back": "‹ Zurück",
@@ -1452,6 +1487,10 @@ export default {
 
   /* ---- Startbildschirm ---- */
   "start.logo.alt": "AUTOSTICH",
+  /* #mainscreen-branding — die Tagline unter der Wortmarke, ab 1280 px. Drei Verben in der
+     Reihenfolge, in der eine Runde laeuft: legen, stechen, eskalieren. Die Punkte gehoeren zum Text
+     und nicht in die Darstellung — der Screen daempft sie nur, er setzt sie nicht. */
+  "start.tagline": "Legen. Stechen. Eskalieren.",
 
   // Ohne führendes Emoji: das Zeichen steht seit 18.08.2026 als eigenes Element im JSX (unter 1280 px
   // dasselbe Emoji, ab 1280 px ein Vektor im Textton). Im String ließe es sich nicht austauschen.
@@ -1547,7 +1586,11 @@ export default {
   "name.title.first": "Wähle deinen Namen",
   "name.title.change": "Dein Name",
   "name.placeholder": "Dein Name",
-  "name.hint": "1–{max} Zeichen · erscheint im globalen Highscore. Jederzeit im Menü änderbar.",
+  "name.hint": "1–{max} Zeichen.",
+  // #menu-rework M9 (erststart-redesign): Die Unterzeile des Kopfes beantwortet „warum will das Spiel
+  //   jetzt meinen Namen“ dort, wo die Frage entsteht. Sie übernimmt damit die Hälfte, die vorher an
+  //   `name.hint` hing — deshalb ist die dort weg und nicht zweimal da. Owner-Wortlaut, 2026-08-25.
+  "name.sub.first": "Er erscheint auf der globalen Bestenliste. Du kannst ihn später ändern.",
   "name.cancel": "Abbrechen",
   "name.save": "Speichern",
   "name.lang.label": "Sprache",
@@ -1563,11 +1606,11 @@ export default {
   "options.sec.general": "Allgemein",
   "options.sec.graphics": "Grafik & Leistung",
   "options.sec.sound": "Ton",
-  "options.sec.display": "Anzeige",
+  "options.sec.display": "HUD & Text",
   "options.chip.general": "Allgemein",
   "options.chip.graphics": "Grafik",
   "options.chip.sound": "Ton",
-  "options.chip.display": "Anzeige",
+  "options.chip.display": "HUD",
   "options.eyebrow": "Optionen",
   "options.title": "Einstellungen",
   /* #desktop: Auskunftszeile im Kopf — steht erst ab 1280 px neben dem Titel (dort, wo im Upgrade-Baum
@@ -1578,8 +1621,8 @@ export default {
   "options.language.title": "Sprache",
   "options.language.desc": "Sprache der Spieltexte.",
 
-  "options.mute.title": "Ton stumm",
-  "options.mute.desc": "Schaltet alle Klick- und Spiel-Sounds ab.",
+  "options.mute.title": "Ton",
+  "options.mute.desc": "Alle Klick- und Spiel-Sounds. Aus = komplett stumm.",
   "options.sfx.title": "Effekt-Lautstärke",
   "options.sfx.desc": "Lautstärke der Klick-/Spiel-Sounds (SFX).",
   "options.sfx.aria": "SFX-Lautstärke",
@@ -1590,7 +1633,7 @@ export default {
   // #394 Zahlengröße: {pct} kommt als fertig formatierter Prozentwert (fmtPct) — das Prozentzeichen sitzt
   // im Deutschen mit schmalem Abstand, im Englischen ohne, deshalb steht es NICHT in der Vorlage.
   "options.numScale.title": "Zahlengröße",
-  "options.numScale.desc": "Größe der aufsteigenden Score-Zahlen. {pct}",
+  "options.numScale.desc": "Größe der aufsteigenden Score-Zahlen.",
   "options.numScale.aria": "Zahlengröße",
 
   "options.rfx.title": "Effekte reduziert",
@@ -1612,6 +1655,15 @@ export default {
      im verlinkten Hinweis (PrivacyModal), hier nur die ehrliche Kurzfassung. */
   "options.telemetry.desc": "Sendet nach jedem Lauf Score, gewählte Perks und Skills, deinen Fortschritt sowie groben Gerätekontext (Browserkennung, Kerne, Fenstergröße), ohne Namen und ohne Konto. Hilft uns beim Ausbalancieren des Spiels. Aus = es wird nichts gesendet.",
   "options.telemetry.more": "Was genau gesendet wird",
+  /* #optionen-redesign: der Fuß des Screens. Der Regler-Wert steht am Regler statt in der
+     Beschreibung; ist der Ton aus, sagt er WARUM statt eine Zahl zu zeigen, die nichts bewirkt. */
+  "options.sec.dev": "Testbranch",
+  "options.slider.muted": "stumm",
+  "options.reset": "Alles auf Standard zurücksetzen",
+  "options.reset.confirm": "Wirklich alle Einstellungen zurücksetzen?",
+  "options.reset.yes": "Zurücksetzen",
+  "options.reset.no": "Abbrechen",
+  "options.foot.hint": "Änderungen wirken sofort",
 
   "options.perfHud.title": "FPS-Zähler & Report",
   "options.perfHud.desc": "Blendet oben rechts FPS · p95 · Jank ein und zeichnet Perf-Daten auf (⧉ Report → Konsole + Zwischenablage). Nur im Testbranch. Aus = keine Anzeige und keine Messung.",
@@ -1623,11 +1675,11 @@ export default {
 
   "options.float.title": "Floating-Text anzeigen",
   "options.float.desc": "Aufsteigende Zahlen/Texte über dem Feld. Master-Schalter für alle drei unten. Die großen Ansagen (Stark/Brutal/Irre/Gottgleich) bleiben immer sichtbar.",
-  "options.float.score.title": "↳ Score",
+  "options.float.score.title": "Score",
   "options.float.score.desc": "Aufsteigende Punktzahlen bei gewonnenen Stichen.",
-  "options.float.mult.title": "↳ Multiplikator",
+  "options.float.mult.title": "Multiplikator",
   "options.float.mult.desc": "„Kritisch!“- und Formations-Text (Multiplikator-Boni).",
-  "options.float.winlose.title": "↳ Sieg / Niederlage",
+  "options.float.winlose.title": "Sieg / Niederlage",
   "options.float.winlose.desc": "Gewonnen/Verloren-Text am Stich-Ausgang.",
   "options.breakdown.title": "Stich-Aufschlüsselung anzeigen",
   "options.breakdown.desc": "Faktorenkette unter dem Feld: Basis × Serie × Perks × Formation × Crit = Summe des laufenden Stichs. Der Platz bleibt reserviert; die Karten stehen so oder so gleich.",

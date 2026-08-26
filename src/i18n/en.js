@@ -761,7 +761,9 @@ export default {
 
   /* ---- Statistics (StatsScreen) ---- */
   "stats.title": "Statistics",
-  "stats.desk.readout": "All numbers live locally on this device. Click a row to open the full run.",
+  "stats.eyebrow": "Retrospect",
+  "stats.sub": "What you have played so far. Click a row to open the full run.",
+  "stats.slot.empty": "not played yet",
   "stats.empty": "No runs yet. Play one and your statistics appear here.",
   "stats.overview": "Overview",
   "stats.bestScore": "Best score",
@@ -781,7 +783,6 @@ export default {
   "stats.mostPicked": "Most picked",
   "stats.mostPicked.hint": "across your history",
   "stats.topSkills": "Most picked skills",
-  "stats.noSkills": "No skills played yet.",
   "stats.topPerks": "Most picked perks",
   "stats.archUse": "Archetype usage",
   "stats.archUse.right": "{n}× · avg {avg}",
@@ -868,11 +869,20 @@ export default {
   /* ---- Seed chip (SeedChip) ---- */
   "seed.copy": "Copy seed",
   "seed.copied": "copied",
-  "seed.replay": "↻ Replay",
+  "seed.replay": "Replay",
+  "rundetail.eyebrow": "Retrospect · Run",
   "seed.replay.title": "Replay this seed",
 
   /* ---- Leaderboard (LeaderboardScreen · GlobalLeaderboard) ---- */
   "board.title": "Leaderboard",
+  /* #menu-rework M8 — head canon (design-sprache.md §2): ONE screen, TWO entries. The title stays
+     "Leaderboard" in both (it is the same list); the eyebrow and the subline say which of the two
+     jobs is running. "Ranked" is not a new word — it is what the hub button that opens this variant
+     is called (`start.ranked`). */
+  "board.eyebrow.board": "Comparison",
+  "board.eyebrow.ranked": "Ranked",
+  "board.sub.board": "The best runs from every player.",
+  "board.sub.ranked": "Week {week} — everyone plays the same seed.",
   "board.tab.global": "Global",
   "board.tab.week": "This week",
   "board.tab.weekShort": "Week",
@@ -967,12 +977,19 @@ export default {
   "guide.nav.note": "The guide explains how an archetype plays. Terms and special rules live in the glossary.",
 
   /* ---- Upgrade tree (UpgradeScreen) ---- */
-  "upgrades.title": "Upgrades",
+  "upgrades.eyebrow": "Upgrades",
+  "upgrades.title": "Upgrade Tree",
+  "upgrades.subtitle": "Permanent improvements for every run.",
   "upgrades.respec": "↺ Respec",
-  "upgrades.nodes": " / {total} nodes · ranked run",
-  "upgrades.ranked.free": "unlocked",
-  "upgrades.ranked.at": "at {total}/{total} nodes",
+  /* #menu-rework M3 — two named readouts instead of a bare number beside the title. */
+  "upgrades.readout.sp": "Balance",
+  "upgrades.readout.nodes": "Nodes",
+  "upgrades.readout.nodes.val": "{owned} / {total}",
+  "upgrades.ranked.label": "Ranked run",
+  "upgrades.ranked.open": "Not unlocked yet",
+  "upgrades.ranked.free": "Unlocked",
   "upgrades.tapHint": "Tap a node to see what it does.",
+  "upgrades.legend.hint": "Click a node to have it explained.",
   "upgrades.details": "Details ›",
   "upgrades.legPhase": "Legendary phase",
   "upgrades.tab.decks": "Decks",
@@ -983,10 +1000,10 @@ export default {
   "upgrades.lane.rarity": "Rarity",
   "upgrades.lane.drops": "Drop rates",
   "upgrades.lane.perk2": "2nd perk phase",
-  "upgrades.lane.note.afterLeg": "opens after the legendary unlock",
+  "upgrades.lane.note.afterLeg": "opens with Rarity · Legendary",
   "upgrades.free": "free",
   "upgrades.state.soon": "Soon",
-  "upgrades.state.owned": "✓ Bought",
+  "upgrades.state.owned": "Bought",
   "upgrades.state.soonFull": "Coming soon",
   "upgrades.state.buyable": "Buyable",
   "upgrades.state.lockSp": "Not enough TP: costs {cost} TP",
@@ -1014,8 +1031,13 @@ export default {
   "upgrades.skills.legendary": "Legendary skills",
   "upgrades.owned": "owned",
   "upgrades.buyable": "buyable",
-  "upgrades.locked": "🔒 locked ·",
+  "upgrades.locked": "locked",
   "upgrades.soon": "Soon = placeholder",
+  /* #menu-rework M3 — faction page: the challenge as a row at the foot instead of a card. */
+  "upgrades.chall.label": "Challenge",
+  "upgrades.chall.link": "Workshop ›",
+  "upgrades.chall.done": "Unlocked",
+  "upgrades.leg.missing": "{n} TP short",
 
   /* ---- Deck detail (DeckDetail) ---- */
   "deckdetail.back": "‹ Back",
@@ -1411,6 +1433,11 @@ export default {
 
   /* ---- Start screen ---- */
   "start.logo.alt": "AUTOTRICK",
+  /* #mainscreen-branding — s. de.js. „Order" und „Trick" sind die bereits abgestimmten englischen
+     Begriffe fuer die Legephase und fuer den Stich (Terminologietabelle, eingefroren) — keine neuen
+     Synonyme. Der SCHLUSSPUNKT steht hier bewusst: Owner-Entscheidung Q3a vom 25.08.2026. Das
+     Entwurfsdokument druckt die Zeile ohne, und genau diese eine Zeile ist der Ausreisser. */
+  "start.tagline": "Order. Trick. Escalate.",
 
   // Emoji siehe de.js — es steht seit 18.08.2026 im JSX, nicht mehr im String.
   "start.progress.onboarding": "Onboarding",
@@ -1492,7 +1519,8 @@ export default {
   "name.title.first": "Choose your name",
   "name.title.change": "Your name",
   "name.placeholder": "Your name",
-  "name.hint": "1–{max} characters · shown on the global leaderboard. Changeable from the menu at any time.",
+  "name.hint": "1–{max} characters.",
+  "name.sub.first": "It appears on the global leaderboard. You can change it later.",
   "name.cancel": "Cancel",
   "name.save": "Save",
   "name.lang.label": "Language",
@@ -1506,11 +1534,11 @@ export default {
   "options.sec.general": "General",
   "options.sec.graphics": "Graphics & performance",
   "options.sec.sound": "Sound",
-  "options.sec.display": "Display",
+  "options.sec.display": "HUD & Text",
   "options.chip.general": "General",
   "options.chip.graphics": "Graphics",
   "options.chip.sound": "Sound",
-  "options.chip.display": "Display",
+  "options.chip.display": "HUD",
   "options.eyebrow": "Options",
   "options.title": "Settings",
   "options.desk.readout": "Everything takes effect and is saved immediately.",
@@ -1518,8 +1546,8 @@ export default {
   "options.language.title": "Language",
   "options.language.desc": "Language of the in-game texts.",
 
-  "options.mute.title": "Mute",
-  "options.mute.desc": "Turns off all click and game sounds.",
+  "options.mute.title": "Sound",
+  "options.mute.desc": "All click and game sounds. Off = completely silent.",
   "options.sfx.title": "Effect volume",
   "options.sfx.desc": "Volume of the click and game sounds (SFX).",
   "options.sfx.aria": "SFX volume",
@@ -1530,7 +1558,7 @@ export default {
   // #394 Number size: {pct} arrives pre-formatted (fmtPct) — English sets the percent sign tight,
   // German with a thin space, so the sign never lives in the template.
   "options.numScale.title": "Number size",
-  "options.numScale.desc": "Size of the rising score numbers. {pct}",
+  "options.numScale.desc": "Size of the rising score numbers.",
   "options.numScale.aria": "Number size",
 
   "options.rfx.title": "Reduced effects",
@@ -1548,6 +1576,15 @@ export default {
   "options.telemetry.title": "Send anonymous gameplay data",
   "options.telemetry.desc": "After each run, sends your score, the perks and skills you picked, your progress and rough device context (browser identification, cores, window size), without a name and without an account. It helps us balance the game. Off = nothing is sent.",
   "options.telemetry.more": "What exactly gets sent",
+  /* #optionen-redesign: the screen's footer. The slider's value sits at the slider rather than in the
+     description; with sound off it says WHY instead of showing a number that does nothing. */
+  "options.sec.dev": "Test branch",
+  "options.slider.muted": "muted",
+  "options.reset": "Reset everything to defaults",
+  "options.reset.confirm": "Really reset all settings?",
+  "options.reset.yes": "Reset",
+  "options.reset.no": "Cancel",
+  "options.foot.hint": "Changes apply immediately",
 
   "options.perfHud.title": "FPS counter & report",
   "options.perfHud.desc": "Shows FPS · p95 · jank in the top right and records performance data (⧉ report → console + clipboard). Test branch only. Off = no display and no measurement.",
@@ -1558,12 +1595,12 @@ export default {
   "options.testvp.hint": "To leave, set this back to Off in the options in here.",
 
   "options.float.title": "Show floating text",
-  "options.float.desc": "Numbers and text rising over the field. Master switch for all three below. The big announcements (NICE/BRUTAL/INSANE/GODLIKE) always stay visible.",
-  "options.float.score.title": "↳ Score",
+  "options.float.desc": "Numbers and text rising over the field. Switches the three kinds below together. The big announcements (NICE/BRUTAL/INSANE/GODLIKE) always stay visible.",
+  "options.float.score.title": "Score",
   "options.float.score.desc": "Rising score numbers on tricks you win.",
-  "options.float.mult.title": "↳ Multiplier",
+  "options.float.mult.title": "Multiplier",
   "options.float.mult.desc": "“CRITICAL!” and formation text (multiplier bonuses).",
-  "options.float.winlose.title": "↳ Win / loss",
+  "options.float.winlose.title": "Win / loss",
   "options.float.winlose.desc": "Won/lost text at the end of a trick.",
   "options.breakdown.title": "Show trick breakdown",
   "options.breakdown.desc": "Factor chain under the field: base × streak × perks × formation × crit = total of the current trick. The space stays reserved; the cards sit in the same place either way.",

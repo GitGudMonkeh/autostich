@@ -2,8 +2,8 @@ import { describe, it, expect } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
 import de from "../src/i18n/de.js";
 import en from "../src/i18n/en.js";
-import { t, fmtNum, fmtPct, LOCALE_IDS, setLocale, getLocale, interpolate,
-  SOURCE_LOCALE, DEFAULT_LOCALE } from "../src/i18n/index.js";
+import { t, fmtNum, fmtPct, fmtDayMonth, LOCALE_IDS, READY_LOCALE_IDS, setLocale, getLocale,
+  interpolate, SOURCE_LOCALE, DEFAULT_LOCALE, catalog, numberFormat } from "../src/i18n/index.js";
 import { tokenizeGlossary } from "../src/i18n/glossaryText.js";
 
 /* ============================================================
@@ -22,49 +22,105 @@ import { tokenizeGlossary } from "../src/i18n/glossaryText.js";
                               in der JSX auftauchen. Die Liste der migrierten Dateien wächst;
                               sie schrumpft nie.
 
-   Wichtig für zukünftige Zugänge: neue Anzeigetexte gehören IMMER in beide Kataloge.
+   Wichtig für zukünftige Zugänge: neue Anzeigetexte gehören IMMER in ALLE fertigen Kataloge.
    Ein einsprachiger Zugang macht die Suite (und damit den Deploy) rot.
+
+   ------------------------------------------------------------
+   N SPRACHEN STATT ZWEI (#es-locale, 26.08.2026).
+
+   Bis hierher stand in dieser Datei überall `de` gegen `en`. Mit einer dritten Sprache zerfallen
+   diese Prüfungen in ZWEI ARTEN, die sich verschieden verallgemeinern — und diese Unterscheidung
+   ist der ganze Trick:
+
+     VERBIETENDE Prüfungen laufen über ALLE angemeldeten Sprachen, auch über eine unfertige.
+       „Kein verwaister Schlüssel", „keine kaputten Platzhalter", „kein leerer Text", „kein fremdes
+       Dezimalzeichen", „keine halbe Plural-Paarung". Ein leerer Katalog verletzt keine davon.
+
+     VERLANGENDE Prüfungen laufen über die FERTIGEN Sprachen (READY_LOCALE_IDS).
+       „Jeder Schlüssel existiert", „die Kürzel sind je ein Zeichen", „die Raritätsleiter stimmt".
+       Von einem Katalog, der noch übersetzt wird, kann man Vollständigkeit nicht verlangen.
+
+   Das ist KEINE Aufweichung, solange die Ausnahme nicht liegen bleiben kann — dafür sorgt die
+   Ratsche „unfertige Sprache ist vollständig → ready: true setzen" ganz unten. Und
+   sprachpaarige Tabellen (SAME_OK, TERMS, Anführungszeichen, Marke) werden NICHT geteilt,
+   sondern je Sprache geführt: „Deck" ist auf Englisch dasselbe Wort und auf Spanisch „mazo" —
+   eine gemeinsame Liste würde genau die vergessene Übersetzung verstecken, die sie fangen soll.
    ============================================================ */
 
-const KEYS_DE = Object.keys(de);
-const KEYS_EN = Object.keys(en);
+const CATS = Object.fromEntries(LOCALE_IDS.map((id) => [id, catalog(id)]));
+const KEYS = Object.fromEntries(LOCALE_IDS.map((id) => [id, Object.keys(CATS[id])]));
+const SRC = CATS[SOURCE_LOCALE];
+const KEYS_SRC = KEYS[SOURCE_LOCALE];
+// Alle Zielsprachen (verbietende Prüfungen) bzw. nur die fertigen (verlangende).
+const TARGETS = LOCALE_IDS.filter((id) => id !== SOURCE_LOCALE);
+const READY_TARGETS = READY_LOCALE_IDS.filter((id) => id !== SOURCE_LOCALE);
+
+// Alt-Name, weiterbenutzt wo die Prüfung wirklich von der QUELLSPRACHE ausgeht (Score-Ansagen, tote Schlüssel).
+const KEYS_DE = KEYS_SRC;
 const PLACEHOLDER = /\{(\w+)\}/g;
 const placeholders = (s) => new Set([...String(s).matchAll(PLACEHOLDER)].map((m) => m[1]));
 
 describe("i18n · Katalog-Parität", () => {
-  it("beide Kataloge kennen exakt dieselben Schlüssel", () => {
-    const onlyDe = KEYS_DE.filter((k) => !(k in en));
-    const onlyEn = KEYS_EN.filter((k) => !(k in de));
-    expect(onlyDe, `Nur in de.js — englische Spieler sehen Deutsch:\n  ${onlyDe.join("\n  ")}`).toEqual([]);
-    expect(onlyEn, `Nur in en.js — verwaiste Übersetzung:\n  ${onlyEn.join("\n  ")}`).toEqual([]);
+  // VERLANGEND: nur von den fertigen Sprachen. Ein Katalog in Arbeit darf lückenhaft sein.
+  it("jede fertige Sprache kennt exakt dieselben Schlüssel wie die Quellsprache", () => {
+    for (const loc of READY_TARGETS) {
+      const fehlt = KEYS_SRC.filter((k) => !(k in CATS[loc]));
+      expect(fehlt, `Nur in ${SOURCE_LOCALE}.js — ${loc}-Spieler sehen die Quellsprache:\n  ${fehlt.join("\n  ")}`).toEqual([]);
+    }
   });
 
-  it("jeder Schlüssel hat auf beiden Seiten dieselben Platzhalter", () => {
+  /* VERBIETEND: über ALLE Sprachen, auch die unfertige. Ein Schlüssel, den die Quellsprache nicht
+     kennt, ist in JEDEM Katalog eine verwaiste Zeile — ob der Katalog sonst vollständig ist oder
+     nicht, ändert daran nichts. Genau diese Prüfung fängt einen Tippfehler im spanischen Katalog,
+     bevor Spanisch überhaupt sichtbar ist. */
+  it("keine Sprache führt Schlüssel, die die Quellsprache nicht kennt", () => {
+    for (const loc of TARGETS) {
+      const verwaist = KEYS[loc].filter((k) => !(k in SRC));
+      expect(verwaist, `Verwaiste Übersetzung in ${loc}.js:\n  ${verwaist.join("\n  ")}`).toEqual([]);
+    }
+  });
+
+  // VERBIETEND: wo ein Text existiert, muss er dieselben Platzhalter tragen wie die Quelle.
+  it("jeder vorhandene Schlüssel trägt dieselben Platzhalter wie die Quellsprache", () => {
     const bad = [];
-    for (const k of KEYS_DE) {
-      if (!(k in en)) continue;
-      const a = placeholders(de[k]), b = placeholders(en[k]);
-      const missing = [...a].filter((p) => !b.has(p));
-      const extra = [...b].filter((p) => !a.has(p));
-      if (missing.length || extra.length) {
-        bad.push(`${k}: en fehlt {${missing.join("},{")}}${extra.length ? ` · en hat zusätzlich {${extra.join("},{")}}` : ""}`);
+    for (const loc of TARGETS) {
+      for (const k of KEYS_SRC) {
+        if (!(k in CATS[loc])) continue;
+        const a = placeholders(SRC[k]), b = placeholders(CATS[loc][k]);
+        const missing = [...a].filter((p) => !b.has(p));
+        const extra = [...b].filter((p) => !a.has(p));
+        if (missing.length || extra.length) {
+          bad.push(`${k} (${loc}): fehlt {${missing.join("},{")}}${extra.length ? ` · zusätzlich {${extra.join("},{")}}` : ""}`);
+        }
       }
     }
     expect(bad, `Platzhalter-Bruch — die Variable würde im Text fehlen:\n  ${bad.join("\n  ")}`).toEqual([]);
   });
 
+  // VERBIETEND: über alle Sprachen.
   it("kein Katalogtext ist leer", () => {
-    const empty = [...KEYS_DE, ...KEYS_EN].filter((k) => !String((k in de ? de[k] : en[k]) ?? "").trim());
+    const empty = [];
+    for (const loc of LOCALE_IDS) {
+      for (const k of KEYS[loc]) if (!String(CATS[loc][k] ?? "").trim()) empty.push(`${k} (${loc})`);
+    }
     expect(empty).toEqual([]);
   });
 
-  /* Wörter, die in beiden Sprachen identisch sind (Eigennamen, Kürzel, Marken, reine Symbolzeilen).
-     Nur DIESE dürfen unübersetzt bleiben — alles andere ist eine vergessene Übersetzung. */
-  const SAME_OK = new Set([
+  /* Wörter, die in dieser Zielsprache identisch mit der Quellsprache sind (Eigennamen, Kürzel,
+     Marken, reine Symbolzeilen). Nur DIESE dürfen unübersetzt bleiben — alles andere ist eine
+     vergessene Übersetzung.
+
+     JE SPRACHE, nicht geteilt. „Deck", „Perks", „Score" sind im Englischen dieselben Wörter wie im
+     Deutschen; im Spanischen heißen sie „mazo", „ventajas", „puntuación". Eine gemeinsame Liste
+     würde die vergessene spanische Übersetzung genau dort durchlassen, wo sie am wahrscheinlichsten
+     ist — bei den Wörtern, die aus dem Englischen schon vertraut aussehen. */
+  const SAME_OK_EN = new Set([
     "board.col.pilot",       // Spaltenkopf „Pilot" — in beiden Sprachen dasselbe Wort
     "start.onb.reroll",      // „Reroll" ist im Deutschen bereits das englische Wort
     "options.rfx.mobile",    // Zustandsname, in beiden Sprachen „Mobile"
-    "options.float.score.title", // „↳ Score" — Score bleibt Score (Begriffstabelle §3.1)
+    "options.float.score.title", // „Score" — Score bleibt Score (Begriffstabelle §3.1)
+    "options.sec.display",   // „HUD & Text" — HUD ist auch im Deutschen das englische Kürzel
+    "options.chip.display",  // dito, die Kurzform der Sprungleiste
     "start.progress.onboarding", // „Onboarding" ist im Deutschen der etablierte Begriff (§3.5)
     "start.progress.links",  // reine Zahlenzeile „{done} / {total}"
     "start.board.week.val",  // dito „{have}/{max}" — nur Ziffern und ein Schrägstrich
@@ -133,6 +189,8 @@ describe("i18n · Katalog-Parität", () => {
     "formpanel.count",        // reine Zahlenzeile „{n} · max ×{max}"
     // Menü-/Werkstatt-Bildschirme: Fremdwörter und Eigennamen, die im Englischen genauso lauten.
     "upgrades.title",         // „Upgrades" ist im Deutschen der etablierte Begriff (§3.5)
+    "upgrades.eyebrow",       // dito — der Eyebrow trägt genau dieses Wort (design-sprache.md §2)
+    "upgrades.readout.nodes.val", // reine Zahlenzeile „{owned} / {total}" (wie start.progress.links)
     "upgrades.details",       // „Details ›"
     "deckdetail.deck",        // „Deck" ist in beiden Sprachen dasselbe Wort
     "deckdetail.tab.skills",  // „Skills" (§3.1)
@@ -175,6 +233,63 @@ describe("i18n · Katalog-Parität", () => {
     "gameover.welcome.value", // „+{n} DP" — Kürzel, in beiden Sprachen gleich (wie common.cur.dp)
   ]);
 
+  /* Eine Liste je Zielsprache, aus dem SPANISCHEN Katalog heraus gefüllt (#es-translate,
+     26.08.2026). Von `en` erben wäre der bequeme Fehler gewesen: die Hälfte der englischen
+     Einträge („Deck", „Score", „Perks") sind Wörter, die auf Spanisch sehr wohl übersetzt
+     gehören — und sie sind hier auch übersetzt (mazo, puntuación, ventajas).
+
+     Die Liste zerfällt in drei Gruppen, und jede ist ein anderer Grund:
+
+     1. REINE STRUKTUR — Zeichenketten ohne übersetzbares Wort, nur Platzhalter, Zahlen und
+        Trenner. Sie MÜSSEN gleich bleiben; eine Abweichung wäre ein Fehler, keine Übersetzung.
+     2. LEHNWÖRTER, die das Spanische genauso benutzt wie das Deutsche (Build, Bug, Balance,
+        Tutorial, Playtest, Packs, Mono, Motor). Der Anglizismus ist hier die spanische Norm,
+        nicht eine vergessene Zeile.
+     3. ZWEI KÜRZEL, die zufällig zusammenfallen: Wechsel/Zigzag → Z und Anker/Ancla → A. Die
+        anderen sechs Formations-Kürzel unterscheiden sich. */
+  const SAME_OK_ES = new Set([
+    // 1 · reine Struktur: Platzhalter, Zahlen, Trennzeichen — kein übersetzbares Wort
+    "building.kick.active",      // „{base} · {kick}"
+    "bar.plant.share.value",     // „{green} / {total} · {pct} %"
+    "rail.formation.value",      // „{n} · +{pct} %"
+    "rail.pct", "rail.pct.plain",
+    "form.bonus.value", "form.delta", "form.seg.strength",
+    "roundscore.diff",
+    "arch.scoreDiff", "arch.pct",
+    "arch.cell.building",        // „{name} ({tier})"
+    "arch.cell.pos",             // „Pos {pos}" — Kürzel, in beiden Sprachen gleich
+    "chronik.anchor.row",        // „⚓ Pos {pos} · {type}"
+    "stats.archUse.right",       // „{n}× · Ø {avg}"
+    "stats.lift.value",          // „+{v} Ø"
+    "weekmods.range",            // reine Zahlenspanne
+    "milestone.next",            // „→ {at} +{sp}"
+    "tut.progress",              // „{n} / {total}"
+    "start.progress.links",      // dito
+    "start.board.week.val",      // „{have}/{max}"
+    "upgrades.readout.nodes.val", // „{owned} / {total}"
+    "start.board.last.none",     // „—"
+    // 2 · Lehnwörter, die das Spanische ebenso benutzt
+    "gameover.build",            // „Build" ist auch im Spanischen der Roguelite-Begriff
+    "hud.mult",                  // „Mult" — Kurzform von multiplicador, gleiche Schreibung
+    "shop.tab.packs",            // „Packs" — dito, und das Deutsche borgt es aus demselben Grund
+    "tut.eyebrow", "start.tutorial",  // „Tutorial"
+    "feedback.eyebrow", "privacy.eyebrow",  // „Playtest"
+    "feedback.kind.bug",         // „Bug"
+    "feedback.kind.balance",     // „Balance"
+    "board.tab.global",          // „Global" — dasselbe Wort
+    "options.chip.display",      // „HUD" — Akronym, in beiden Sprachen gleich
+    "board.tab.challenger",      // Name des Modus
+    "dev.run.title",             // „DEV RUN" — Dev-Oberfläche, Eigenname
+    "guide.lightning.principle.0.tag", "guide.plant.principle.1.tag",  // „Mono"
+    "guide.lightning.principle.1.tag",                                  // „Motor"
+    "building.A_PRISMA.name",    // „Prisma" — im Spanischen dasselbe Wort
+    // 3 · Kürzel, die zufällig zusammenfallen
+    "formation.wechsel.abbr",    // Wechsel/Zigzag → beide Z
+    "formation.anker.abbr",      // Anker/Ancla    → beide A
+  ]);
+
+  const SAME_OK = { en: SAME_OK_EN, es: SAME_OK_ES };
+
   /* Eigennamen-KLASSEN statt 18 Einzeleinträge: Kosmetik-Set-Namen und Effekt-Namen sind
      überwiegend Eigennamen (Kitsune, Ronin, Seraph, Aurora, Supernova) und lauten in beiden
      Sprachen gleich. Der Preis dieser Ausnahme: eine vergessene Kosmetik-Übersetzung fällt hier
@@ -182,9 +297,22 @@ describe("i18n · Katalog-Parität", () => {
      (allen voran die vier Archetyp-Decks) tatsächlich übersetzt sind. */
   const SAME_OK_CLASS = /^(cosmetic\..+\.name|cosmetic\.bf\.suffix|fx\..+\.name)$/;
 
-  it("englische Texte unterscheiden sich vom deutschen Original", () => {
-    const same = KEYS_DE.filter((k) => k in en && de[k] === en[k] && !SAME_OK.has(k) && !SAME_OK_CLASS.test(k));
-    expect(same, `Unübersetzt (oder in SAME_OK eintragen, wenn das Wort wirklich identisch ist):\n  ${same.join("\n  ")}`).toEqual([]);
+  it("übersetzte Texte unterscheiden sich vom Original der Quellsprache", () => {
+    for (const loc of READY_TARGETS) {
+      const ok = SAME_OK[loc] || new Set();
+      const same = KEYS_SRC.filter((k) => k in CATS[loc] && SRC[k] === CATS[loc][k]
+        && !ok.has(k) && !SAME_OK_CLASS.test(k));
+      expect(same, `Unübersetzt in ${loc} (oder in SAME_OK.${loc} eintragen, wenn das Wort wirklich identisch ist):\n  ${same.join("\n  ")}`).toEqual([]);
+    }
+  });
+
+  /* Gegenprobe zur Tabelle selbst: eine fertige Sprache OHNE eigene SAME_OK-Liste würde diese
+     Prüfung stillschweigend mit einer leeren Ausnahmeliste bestehen oder an Eigennamen scheitern.
+     Beides ist falsch — die Liste ist eine bewusste Aussage und muss existieren. */
+  it("jede fertige Zielsprache hat eine eigene SAME_OK-Liste", () => {
+    for (const loc of READY_TARGETS) {
+      expect(SAME_OK[loc], `${loc}: keine SAME_OK-Liste — neue Sprache ohne eigene Ausnahmetabelle`).toBeInstanceOf(Set);
+    }
   });
 
   /* Gegenprobe zur Eigennamen-Klasse: Kosmetik-Namen, die etwas BESCHREIBEN statt zu benennen,
@@ -202,9 +330,12 @@ describe("i18n · Katalog-Parität", () => {
     }
   });
 
+  /* VERBIETEND, über alle Sprachen: eine halbe Paarung ist auch in einem unfertigen Katalog
+     falsch. Deutsch, Englisch und Spanisch haben alle drei genau `one`/`other` mit derselben
+     Grenze (CLDR), deshalb reicht dieselbe Prüfung für alle. */
   it("Plural-Schlüssel treten immer als _one/_other-Paar auf", () => {
-    for (const [name, cat] of [["de", de], ["en", en]]) {
-      const keys = Object.keys(cat);
+    for (const name of LOCALE_IDS) {
+      const keys = KEYS[name];
       const lonely = keys.filter((k) => {
         if (k.endsWith("_one")) return !keys.includes(k.slice(0, -4) + "_other");
         if (k.endsWith("_other")) return !keys.includes(k.slice(0, -6) + "_one");
@@ -220,18 +351,25 @@ describe("i18n · Zahl- und Satzformate", () => {
      vertauschten Rollen; ein nacktes /\d,\d/ träfe deshalb auch den englischen Tausendertrenner
      („12,000"). Unterscheidungsmerkmal: ein Tausenderblock hat GENAU drei Ziffern. Alles andere
      hinter dem Trennzeichen ist ein Dezimalteil — und damit in der falschen Sprache. */
-  const DE_DECIMAL_IN_EN = /\d,(\d{1,2}(?!\d)|\d{4,})/;
-  const EN_DECIMAL_IN_DE = /\d\.(\d{1,2}(?!\d)|\d{4,})/;
+  /* Das Trennzeichen kommt aus derselben Tabelle, die auch die Formatierer benutzen
+     (`numberFormat`) — bis 26.08.2026 stand die Regel hier ein zweites Mal, hart als `de` gegen
+     `en` getippt. Ein Wächter, der seine eigene Fassung der Regel führt, kann dem Formatierer
+     widersprechen; dieser hier kann es nicht mehr.
 
-  it("englische Texte enthalten keine deutschen Dezimalkommas", () => {
-    const bad = KEYS_EN.filter((k) => DE_DECIMAL_IN_EN.test(en[k]));
-    expect(bad, `Deutsches Dezimalkomma in en.js:\n  ${bad.join("\n  ")}`).toEqual([]);
-  });
+     VERBIETEND, über alle Sprachen: das FREMDE Dezimalzeichen darf nirgends als Dezimaltrenner
+     stehen. Deutsch und Spanisch teilen sich das Format, für sie ist die Prüfung dieselbe. */
+  const wrongDecimal = (loc) => {
+    const f = numberFormat(loc);
+    const foreign = f.dec === "," ? "\\." : ",";
+    return new RegExp(`\\d${foreign}(\\d{1,2}(?!\\d)|\\d{4,})`);
+  };
 
-  it("deutsche Texte enthalten keine englischen Dezimalpunkte", () => {
-    // Ausgenommen: Auslassungspunkte, Aufzählungspunkte („2. / 3. Schwelle") und Kürzel wie „p95".
-    const bad = KEYS_DE.filter((k) => EN_DECIMAL_IN_DE.test(de[k]));
-    expect(bad, `Englischer Dezimalpunkt in de.js:\n  ${bad.join("\n  ")}`).toEqual([]);
+  it("kein Text benutzt das Dezimalzeichen einer anderen Sprache", () => {
+    for (const loc of LOCALE_IDS) {
+      const re = wrongDecimal(loc);
+      const bad = KEYS[loc].filter((k) => re.test(CATS[loc][k]));
+      expect(bad, `Fremdes Dezimalzeichen in ${loc}.js (erwartet „${numberFormat(loc).dec}"):\n  ${bad.join("\n  ")}`).toEqual([]);
+    }
   });
 
   /* DER wichtigste Wächter für die Registertexte: beide Sprachen müssen DIESELBEN Zahlen nennen.
@@ -240,10 +378,12 @@ describe("i18n · Zahl- und Satzformate", () => {
      still weg. Hier fliegt genau das auf: Zahlmengen extrahieren, Trennzeichen normalisieren,
      vergleichen. Schlägt fehl, sobald eine Zahl in einer Sprache fehlt, zu viel ist oder abweicht. */
   const numbersOf = (text, loc) => {
-    const grouped = loc === "de" ? /(\d)\.(\d{3})(?!\d)/g : /(\d),(\d{3})(?!\d)/g;
+    const f = numberFormat(loc);                                   // dieselbe Tabelle wie die Formatierer
+    const esc = (c) => c.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const grouped = new RegExp(`(\\d)${esc(f.grp)}(\\d{3})(?!\\d)`, "g");
     let s = String(text);
-    for (let i = 0; i < 3; i++) s = s.replace(grouped, "$1$2");   // 1.234.567 → mehrfach zusammenziehen
-    if (loc === "de") s = s.replace(/(\d),(\d)/g, "$1.$2");       // Dezimal-Komma → Punkt
+    for (let i = 0; i < 3; i++) s = s.replace(grouped, "$1$2");    // 1.234.567 → mehrfach zusammenziehen
+    if (f.dec !== ".") s = s.replace(new RegExp(`(\\d)${esc(f.dec)}(\\d)`, "g"), "$1.$2");
     return (s.match(/\d+(?:\.\d+)?/g) || []).map(Number).sort((a, b) => a - b);
   };
 
@@ -260,33 +400,110 @@ describe("i18n · Zahl- und Satzformate", () => {
     ["unlock.championWeekN", "de „Platz 1“ → en „first place“ (wie glossary.rankedrun.text)"],
   ]);
 
-  it("beide Sprachen nennen dieselben Zahlen", () => {
+  // VERBIETEND, über alle Zielsprachen: wo ein Text existiert, muss er dieselben Zahlen nennen.
+  it("alle Sprachen nennen dieselben Zahlen", () => {
     const bad = [];
-    for (const k of KEYS_DE) {
-      if (!(k in en) || NUM_OK.has(k)) continue;
-      const a = numbersOf(de[k], "de"), b = numbersOf(en[k], "en");
-      if (a.length !== b.length || a.some((n, i) => n !== b[i])) {
-        bad.push(`${k}\n     de: [${a.join(", ")}]\n     en: [${b.join(", ")}]`);
+    for (const loc of TARGETS) {
+      for (const k of KEYS_SRC) {
+        if (!(k in CATS[loc]) || NUM_OK.has(k)) continue;
+        const a = numbersOf(SRC[k], SOURCE_LOCALE), b = numbersOf(CATS[loc][k], loc);
+        if (a.length !== b.length || a.some((n, i) => n !== b[i])) {
+          bad.push(`${k}\n     ${SOURCE_LOCALE}: [${a.join(", ")}]\n     ${loc}: [${b.join(", ")}]`);
+        }
       }
     }
     expect(bad, `Zahlen laufen zwischen den Sprachen auseinander:\n  ${bad.join("\n  ")}`).toEqual([]);
   });
 
-  it("deutsche Anführungszeichen sind typografisch („…“), englische kurvig (“…”)", () => {
-    const badDe = KEYS_DE.filter((k) => /[“”](?![^„]*„)/.test(de[k]) && !/„/.test(de[k]));
-    expect(badDe, `de.js benutzt englische Anführungszeichen:\n  ${badDe.join("\n  ")}`).toEqual([]);
-    const badEn = KEYS_EN.filter((k) => /„/.test(en[k]));
-    expect(badEn, `en.js benutzt deutsche Anführungszeichen:\n  ${badEn.join("\n  ")}`).toEqual([]);
+  /* Anführungszeichen als PAAR je Sprache, nicht als einzelnes Zeichen. Der erste Anlauf prüfte
+     nur das öffnende Zeichen und ließ ein deutsches „…“ im spanischen Katalog durch — aufgeflogen
+     in der Gegenprobe, nicht im Kopf. Der Grund ist eine Zweideutigkeit, die man leicht übersieht:
+
+       U+201C ist im DEUTSCHEN das SCHLIESSENDE und im Englischen/Spanischen das ÖFFNENDE Zeichen.
+       Es ist damit kein Erkennungsmerkmal, und jede Prüfung, die es als solches benutzt, muss
+       entweder deutsche Zitate fälschlich anmahnen oder fremde durchlassen.
+
+     Deshalb die Paar-Regel: ein Text darf nur Zeichen aus dem Paar SEINER Sprache tragen. Gemessen
+     am 26.08.2026: de benutzt U+201E (10 Zeilen) und U+201C (9), nie U+201D; en benutzt U+201C (10)
+     und U+201D (10), nie U+201E. Spanisch bekommt das englische Paar — neutrales Spanisch, also
+     NICHT die spanientypischen Guillemets, die ohnehin im Orbitron-Subset fehlen. */
+  const QUOTES = {
+    de: { open: "„", close: "“" },
+    en: { open: "“", close: "”" },
+    es: { open: "“", close: "”" },
+  };
+  const ALL_QUOTES = [...new Set(Object.values(QUOTES).flatMap((q) => [q.open, q.close]))];
+
+  it("jede Sprache benutzt ihr eigenes Anführungszeichen-Paar", () => {
+    for (const loc of LOCALE_IDS) {
+      const own = [QUOTES[loc].open, QUOTES[loc].close];
+      const foreign = ALL_QUOTES.filter((q) => !own.includes(q));
+      if (!foreign.length) continue;
+      const re = new RegExp(`[${foreign.join("")}]`);
+      const bad = KEYS[loc].filter((k) => re.test(CATS[loc][k]));
+      expect(bad, `${loc}.js benutzt ein Zeichen außerhalb seines Paars ${own.join("…")}:\n  ${bad.join("\n  ")}`).toEqual([]);
+    }
   });
 
-  it("fmtNum/fmtPct formatieren je Sprache korrekt", () => {
+  /* Zusätzlich die ursprüngliche Regel für die Quellsprache, dem Sinn nach übernommen. Die
+     Paar-Regel oben kann sie nicht ersetzen: ein deutscher Text mit NUR dem schließenden Zeichen
+     trägt ausschließlich Zeichen aus dem deutschen Paar und käme dort durch, obwohl das öffnende
+     fehlt. Weniger zu prüfen als vorher wäre eine Abschwächung, auch wenn die neue Regel
+     allgemeiner ist. */
+  it("die Quellsprache setzt kein schließendes Zeichen ohne ihr öffnendes", () => {
+    const q = QUOTES[SOURCE_LOCALE];
+    const bad = KEYS_SRC.filter((k) => SRC[k].includes(q.close) && !SRC[k].includes(q.open));
+    expect(bad, `${SOURCE_LOCALE}.js: schließendes Zeichen ohne öffnendes:\n  ${bad.join("\n  ")}`).toEqual([]);
+  });
+
+  it("jede angemeldete Sprache hat ein eingetragenes Anführungszeichen-Paar", () => {
+    for (const loc of LOCALE_IDS) {
+      expect(QUOTES[loc]?.open, `${loc}: kein öffnendes Zeichen in QUOTES`).toBeTruthy();
+      expect(QUOTES[loc]?.close, `${loc}: kein schließendes Zeichen in QUOTES`).toBeTruthy();
+    }
+  });
+
+  /* Die Formatierer gegen die Tabelle, alle drei Sprachen, alle drei Formate. Spanisch ist der
+     Fall, für den es die Tabelle überhaupt braucht: Trennzeichen wie Deutsch, Prozent wie Deutsch,
+     Datum wie KEINE der beiden anderen. */
+  it("fmtNum/fmtPct/fmtDayMonth formatieren je Sprache korrekt", () => {
+    const ts = new Date(2026, 11, 24).getTime();
     expect(fmtNum(1234567, "de")).toBe("1.234.567");
     expect(fmtNum(1234567, "en")).toBe("1,234,567");
+    expect(fmtNum(1234567, "es")).toBe("1.234.567");
     expect(fmtNum(2.25, "de")).toBe("2,25");
     expect(fmtNum(2.25, "en")).toBe("2.25");
+    expect(fmtNum(2.25, "es")).toBe("2,25");
     expect(fmtNum(-1234.5, "de")).toBe("-1.234,5");
     expect(fmtPct(0.07, "de")).toBe("7 %");
     expect(fmtPct(0.07, "en")).toBe("7%");
+    expect(fmtPct(0.07, "es")).toBe("7 %");
+    expect(fmtDayMonth(ts, "de")).toBe("24.12.");
+    expect(fmtDayMonth(ts, "en")).toBe("12/24");
+    expect(fmtDayMonth(ts, "es")).toBe("24/12");
+  });
+
+  it("jede angemeldete Sprache hat eine vollständige Zeile in der Formattabelle", () => {
+    for (const loc of LOCALE_IDS) {
+      const f = numberFormat(loc);
+      for (const feld of ["dec", "grp", "pct", "day"]) {
+        expect(f[feld], `${loc}: Feld „${feld}" fehlt in der Formattabelle`).toBeTruthy();
+      }
+      expect(f.pct, `${loc}: pct muss {n} enthalten`).toContain("{n}");
+      expect(f.day, `${loc}: day muss {dd} und {mm} enthalten`).toMatch(/\{dd\}[\s\S]*\{mm\}|\{mm\}[\s\S]*\{dd\}/);
+    }
+  });
+
+  /* Quelltext-Ratsche auf die vierte Sprachweiche. `buildingText.js` fragte bis 26.08.2026
+     `getLocale() === SOURCE_LOCALE` und hätte Spanisch damit in den englischen Zweig fallen lassen
+     (×1.10 statt ×1,10). Kein Paritätswächter konnte das sehen: die Gebäude-Effekttexte werden
+     ERZEUGT, sie stehen nicht im Katalog. Deshalb hier, an der Quelle. */
+  it("buildingText.js entscheidet Zahlformate nicht mehr über einen Sprachvergleich", () => {
+    const src = readFileSync(new URL("../src/i18n/buildingText.js", import.meta.url), "utf8")
+      .replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/[^\n]*/g, "$1");
+    expect(src, "Sprachvergleich in buildingText.js — gehört in die Formattabelle").not.toMatch(/getLocale\(\)\s*===/);
+    expect(src, "hart gesetztes Dezimalkomma in buildingText.js").not.toMatch(/replace\(\s*"\."\s*,\s*","\s*\)/);
+    expect(src, "der Faktor muss über fmtNum laufen").toMatch(/fmtNum\(/);
   });
 });
 
@@ -295,7 +512,7 @@ describe("i18n · Terminologie", () => {
      Geprüft wird die Richtung, die im Spiel weh tut: taucht das deutsche Wort in einem
      Schlüssel auf, muss der englische Text die kanonische Entsprechung benutzen — und nie
      ein verbotenes Synonym. */
-  const TERMS = [
+  const TERMS_EN = [
     { de: /\bDurchlauf\b/i,   ok: /\bcycle/i,        never: /\bround\b/i,            name: "Durchlauf → cycle (nie „round“)" },
     { de: /\bStich(e|en)?\b/, ok: /\btrick/i,        never: /\bround\b/i,            name: "Stich → trick (nie „round“)" },
     { de: /\bLäufe?\b/,       ok: /\bruns?\b/i,      never: null,                     name: "Lauf → run" },
@@ -325,30 +542,144 @@ describe("i18n · Terminologie", () => {
     { de: /\bAutostich\b/i,   ok: /\bAutotrick\b/i,  never: /\bAutostich\b/i,  name: "Autostich → Autotrick (Spieltitel)" },
   ];
 
+  /* Begriffstabelle SPANISCH — eingefroren am 26.08.2026 (#es-translate) aus
+     docs/localization/uebersetzerpaket_es_2026-08-26.md §3. Ab hier ist sie Prüfregel, nicht
+     Diskussionsgrundlage, genau wie die englische seit dem 15.08.2026.
+
+     JEDE Regel wurde vor dem Einfrieren gegen den fertigen Katalog gefahren; eine, die nur
+     „vernünftig aussieht", steht hier nicht drin. Die Übung hat sich sofort bezahlt gemacht:
+     `glossary.skillrunde` hieß „Ronda de habilidad", obwohl das deutsche Wort „Skill-DURCHLAUF"
+     ist und §3.1 `ciclo` als das einzige Wort dafür festlegt. Ohne die Probe wäre der Bruch
+     eingefroren worden statt aufzufallen.
+
+     ZWEI SPANISCHE EIGENHEITEN, an denen die englische Tabelle vorbeikommt:
+
+     - `\b` ist in JS ASCII-basiert und greift NICHT vor „Épica" oder „área". Ein `\bépica\b`
+       trifft nie. Die Regeln hier setzen die Grenze deshalb nur dort, wo links und rechts ASCII
+       steht.
+     - „Kampfwert-Vorsprung" bildet auf `margen` ab, nicht auf `valor de combate`, genau wie es
+       englisch auf „margin" abbildet. Die Kampfwert-Regel klammert die Zusammensetzung deshalb
+       aus, und der Vorsprung bekommt eine eigene Zeile — mit `ventaja` als VERBOTENEM Synonym,
+       weil `ventaja` das eingefrorene Wort für Perk ist (§3.5) und ein Wort nicht zwei Begriffe
+       tragen darf. */
+  const TERMS_ES = [
+    { de: /\bDurchlauf\b/i,   ok: /\bciclo/i,          never: /\bronda\b/i,     name: "Durchlauf → ciclo (nie „ronda“)" },
+    { de: /\bStich(e|en)?\b/, ok: /\bbaza/i,           never: /\bronda\b/i,     name: "Stich → baza (nie „ronda“)" },
+    { de: /\bLäufe?\b/,       ok: /\bpartidas?\b/i,    never: null,             name: "Lauf → partida" },
+    { de: /\bSeed\b/i,        ok: /\bsemillas?\b/i,    never: null,             name: "Seed → semilla" },
+    { de: /\bRarität\b/i,     ok: /\brareza/i,         never: null,             name: "Rarität → rareza" },
+    { de: /\bRangliste\b/i,   ok: /clasificaci|clasificatori/i, never: null,    name: "Rangliste → clasificación/clasificatoria" },
+    { de: /\bBestenliste\b/i, ok: /clasificación/i,    never: null,             name: "Bestenliste → clasificación" },
+    { de: /\bWerkstatt\b/i,   ok: /\btaller\b/i,       never: null,             name: "Werkstatt → taller" },
+    { de: /\bFormation(?!sphase|s-Energie|senergie)/i, ok: /formaci/i, never: null, name: "Formation → formación" },
+    { de: /\bMultiplikator\b/i, ok: /\bmultiplicador\b/i, never: null,          name: "Multiplikator → multiplicador" },
+    { de: /Aufstellungsphase/i, ok: /\bfase de orden\b/i, never: null,          name: "Aufstellungsphase → fase de orden" },
+    { de: /Formations-Energie/i, ok: /energía de orden/i, never: null,          name: "Formations-Energie → energía de orden" },
+    { de: /\bZiehreihenfolge\b/i, ok: /\borden de robo\b/i, never: null,        name: "Ziehreihenfolge → orden de robo" },
+    { de: /\bEpisch\b/,       ok: /pica\b/i,           never: /legendaria/i,    name: "Episch → Épica (nie „legendaria“ — eigene Achse)" },
+    { de: /Deck-Werkstatt/i,  ok: /taller de mazos/i,  never: null,             name: "Deck-Werkstatt → taller de mazos" },
+    { de: /Herausforderung/i, ok: /desafío/i,          never: null,             name: "Herausforderung → desafío" },
+    { de: /Stichpunkte?\b/i,  ok: /\bPuntos? de baza\b|\bPB\b/, never: /\bSP\b/, name: "Stichpunkte → Puntos de baza (PB, nie SP)" },
+    { de: /\bAutostich\b/i,   ok: /\bAutobaza\b/i,     never: /\bAutostich\b/i, name: "Autostich → Autobaza (Spieltitel)" },
+    { de: /\bKartenwert\b/i,  ok: /\bvalor de carta\b/i, never: null,           name: "Kartenwert → valor de carta" },
+    { de: /\bStichwert\b/i,   ok: /\bvalor de baza\b/i, never: null,            name: "Stichwert → valor de baza" },
+    { de: /\bKampfwert\b(?!-Vorsprung)/i, ok: /\bvalor de combate\b/i, never: null, name: "Kampfwert → valor de combate" },
+    { de: /Kampfwert-Vorsprung/i, ok: /\bmargen\b/i,   never: /\bventaja\b/i,   name: "Kampfwert-Vorsprung → margen (nie „ventaja“ — das ist Perk)" },
+    { de: /\bSerienpunkt(e|en)?\b/i, ok: /\bpuntos? de racha\b/i, never: null,  name: "Serienpunkt → punto de racha" },
+    { de: /\bGletscher\b/i,   ok: /glaciar/i,          never: null,             name: "Gletscher → glaciar" },
+    { de: /\bLadung(en)?\b/i, ok: /\bcargas?\b/i,      never: null,             name: "Ladung → carga" },
+    { de: /\bHitze\b/i,       ok: /\bcalor\b/i,        never: null,             name: "Hitze → calor" },
+    { de: /\bAsche\b/i,       ok: /ceniza/i,           never: null,             name: "Asche → ceniza" },
+    { de: /\bWachstum\b/i,    ok: /\bcrecimiento\b/i,  never: null,             name: "Wachstum → crecimiento" },
+    { de: /\bPerks?\b/i,      ok: /\bventajas?\b/i,    never: null,             name: "Perk → ventaja" },
+    { de: /\bSkills?\b/i,     ok: /habilidad(es)?\b/i, never: null,             name: "Skill → habilidad" },
+    { de: /\bGebäude\b/i,     ok: /\bedificios?\b/i,   never: null,             name: "Gebäude → edificio" },
+    { de: /\bSegment(e|s|en)?\b/i, ok: /\bsegmentos?\b/i, never: null,          name: "Segment → segmento" },
+    { de: /\bFarbblock\b/i,   ok: /\bbloque de palo\b/i, never: null,           name: "Farbblock → bloque de palo" },
+    { de: /\bJoker\b/i,       ok: /comodín/i,          never: null,             name: "Joker → comodín" },
+    { de: /\bDecks?\b/i,      ok: /\bmazos?\b/i,       never: null,             name: "Deck → mazo" },
+    { de: /\bGegner(karte|karten)?\b/i, ok: /\brival(es)?\b/i, never: null,     name: "Gegner → rival" },
+    { de: /\bNeuwurf\b|\bReroll(s)?\b/i, ok: /relanza/i, never: null,           name: "Neuwurf/Reroll → relanzamiento" },
+  ];
+
+  /* EINE Begriffstabelle je Zielsprache. Vererben geht nicht: die Tabelle bildet DEUTSCH auf die
+     Zielsprache ab, nicht Englisch auf Spanisch. */
+  const TERMS = { en: TERMS_EN, es: TERMS_ES };
+
+  /* ZWEI Schlüsselklassen, die diese Prüfung NICHT bewerten darf (#es-translate). Beide fielen
+     erst beim Aufbau der spanischen Tabelle auf, weil sie im Englischen zufällig nicht auffielen:
+
+     1. PLATZHALTERNAMEN. `target.eyebrow` heißt deutsch „Rolle · {perk}". Das Wort „perk" steht
+        dort als VARIABLENNAME, nicht als Text — die Regel „Perk → ventaja" schlug daran an und
+        verlangte eine Übersetzung des Platzhalters. Im Englischen fiel das nie auf, weil dort
+        zufällig dasselbe Wort auch die Übersetzung ist.
+
+     2. `glossary.*.match`. Diese Listen sind kein Anzeigetext, sondern die Wortformen der
+        Auto-Fettung, und sie werden je Sprache NEU GESCHRIEBEN statt übersetzt (Paket §7). Eine
+        spanische Liste muss die spanischen Flexionen enthalten und darf die deutschen gerade
+        nicht spiegeln. Englisch kam durch, weil „Deck-Durchlauf" dort als „deck cycle" auftaucht.
+
+     Beides ist eine Verengung auf das, was die Regel je gemeint hat, keine Abschwächung: an
+     ANZEIGETEXT ändert sich nichts, und die Gegenprobe unten bricht die Naht weiterhin auf. */
+  const stripVars = (s) => String(s).replace(/\{\w+\}/g, " ");
+  const isMatchList = (k) => /^glossary\..+\.match$/.test(k);
+
   it("kanonische Begriffe werden durchgängig verwendet", () => {
     const bad = [];
-    for (const term of TERMS) {
-      for (const k of KEYS_DE) {
-        if (!(k in en) || !term.de.test(de[k])) continue;
-        if (!term.ok.test(en[k])) bad.push(`${k} — ${term.name}\n     de: ${de[k]}\n     en: ${en[k]}`);
-        else if (term.never && term.never.test(en[k])) bad.push(`${k} — verbotenes Synonym (${term.name})\n     en: ${en[k]}`);
+    for (const loc of READY_TARGETS) {
+      for (const term of TERMS[loc] || []) {
+        for (const k of KEYS_SRC) {
+          if (!(k in CATS[loc]) || isMatchList(k) || !term.de.test(stripVars(SRC[k]))) continue;
+          const ziel = CATS[loc][k];
+          if (!term.ok.test(ziel)) bad.push(`${k} (${loc}) — ${term.name}\n     ${SOURCE_LOCALE}: ${SRC[k]}\n     ${loc}: ${ziel}`);
+          else if (term.never && term.never.test(ziel)) bad.push(`${k} (${loc}) — verbotenes Synonym (${term.name})\n     ${loc}: ${ziel}`);
+        }
       }
     }
     expect(bad, `Begriffsbruch gegen das Übersetzerpaket §3:\n  ${bad.join("\n  ")}`).toEqual([]);
   });
 
+  /* Ohne diese Gegenprobe könnte eine vierte Sprache ohne eigene Begriffstabelle ankommen und der
+     Wächter darüber liefe grün, weil er über eine leere Liste iteriert. Eine fertige Sprache OHNE
+     Tabelle ist keine geprüfte Sprache. Eine noch unfertige darf eine leere haben — sie hat ja
+     auch noch keinen Text. */
+  it("jede fertige Zielsprache hat eine eigene Begriffstabelle, und sie ist nicht leer", () => {
+    for (const loc of READY_TARGETS) {
+      expect(Array.isArray(TERMS[loc]), `${loc}: keine Begriffstabelle`).toBe(true);
+      expect(TERMS[loc].length, `${loc}: leere Begriffstabelle bei fertiger Sprache`).toBeGreaterThan(0);
+    }
+  });
+
   /* Gegenprobe zur Marken-Zeile oben: die Tabelle prüft nur Schlüssel, in denen SCHON das deutsche
      Wort steht. Ein neuer englischer Text darf den deutschen Titel aber auch dann nicht tragen, wenn
      die deutsche Seite ihn gar nicht nennt (und umgekehrt) — deshalb hier über den ganzen Katalog. */
-  it("die Marke heißt auf Deutsch Autostich und auf Englisch Autotrick — nie über Kreuz", () => {
-    const enBad = KEYS_EN.filter((k) => /autostich/i.test(en[k]));
-    expect(enBad, `Deutscher Spieltitel im englischen Katalog:\n  ${enBad.join("\n  ")}`).toEqual([]);
-    const deBad = KEYS_DE.filter((k) => /autotrick/i.test(de[k]));
-    expect(deBad, `Englischer Spieltitel im deutschen Katalog:\n  ${deBad.join("\n  ")}`).toEqual([]);
+  /* Die Marke wechselt MIT der Sprache. Entschieden am 18.08.2026 für Englisch (der deutsche Titel
+     trägt „Stich" sichtbar, das Spiel sagt seinen eigenen Mechanismus im Namen; englisch liest sich
+     „Autostich" als Nähbegriff). Am 26.08.2026 auf Spanisch angewandt statt neu verhandelt: der
+     spanische Stich ist die „baza", also Autobaza. Die Marke folgt damit in jeder Sprache derselben
+     Abbildung wie das Wort in ihr (Stich → trick → baza). */
+  const BRAND = { de: "Autostich", en: "Autotrick", es: "Autobaza" };
+
+  it("die Marke trägt je Sprache ihren eigenen Namen — nie über Kreuz", () => {
+    for (const loc of LOCALE_IDS) {
+      const foreign = LOCALE_IDS.filter((o) => o !== loc).map((o) => BRAND[o]);
+      const re = new RegExp(foreign.join("|"), "i");
+      const bad = KEYS[loc].filter((k) => re.test(CATS[loc][k]));
+      expect(bad, `Fremder Spieltitel im Katalog ${loc} (eigener: ${BRAND[loc]}):\n  ${bad.join("\n  ")}`).toEqual([]);
+    }
     // Die Wortmarke auf dem Startbildschirm ist der sichtbarste Träger — sie steht hier namentlich,
     // damit ein Umbau des Hubs sie nicht still auf einen Schlüssel ohne Marke umhängt.
-    expect(de["start.logo.alt"]).toBe("AUTOSTICH");
-    expect(en["start.logo.alt"]).toBe("AUTOTRICK");
+    for (const loc of READY_LOCALE_IDS) {
+      expect(CATS[loc]["start.logo.alt"], `${loc}: Wortmarke`).toBe(BRAND[loc].toUpperCase());
+    }
+  });
+
+  it("jede angemeldete Sprache hat einen eingetragenen Markennamen", () => {
+    for (const loc of LOCALE_IDS) {
+      expect(BRAND[loc], `${loc}: kein Markenname in BRAND`).toBeTruthy();
+    }
+    // Zwei Sprachen mit derselben Marke würden die Kreuzprüfung oben stillschweigend entwerten.
+    expect(new Set(Object.values(BRAND)).size, "zwei Sprachen tragen denselben Markennamen").toBe(LOCALE_IDS.length);
   });
 
   it("Stichpunkte heißen im Englischen TP (Trick Points), nicht SP", () => {
@@ -404,8 +735,10 @@ describe("i18n · Terminologie", () => {
 describe("i18n · Längenschranken", () => {
   /* Die Formations-Badges sitzen als EIN Zeichen auf der Karte. Zwei Zeichen sprengen das Layout,
      zwei gleiche Zeichen machen zwei Formationen ununterscheidbar. Gilt in JEDER Sprache. */
+  // VERLANGEND: über die fertigen Sprachen. Ein Katalog in Arbeit hat noch gar keine Kürzel.
   it("Formations-Kürzel sind je genau ein Zeichen und paarweise verschieden", () => {
-    for (const [name, cat] of [["de", de], ["en", en]]) {
+    for (const name of READY_LOCALE_IDS) {
+      const cat = CATS[name];
       const abbrs = Object.entries(cat).filter(([k]) => /^formation\..+\.abbr$/.test(k));
       expect(abbrs.length, `${name}: keine Kürzel im Katalog`).toBeGreaterThan(0);
       const bad = abbrs.filter(([, v]) => [...v].length !== 1);
@@ -442,8 +775,8 @@ describe("i18n · Glossar-Wortformen", () => {
     .map(([k, v]) => [k, String(v).split("|").filter(Boolean)]);
 
   it("jeder Eintrag hat mindestens eine Wortform, keine leer, keine doppelt", () => {
-    for (const [name, cat] of [["de", de], ["en", en]]) {
-      const all = forms(cat);
+    for (const name of READY_LOCALE_IDS) {
+      const all = forms(CATS[name]);
       expect(all.length, `${name}: keine Wortformen im Katalog`).toBeGreaterThan(0);
       const bad = all.filter(([, list]) => !list.length || list.some((f) => f !== f.trim() || !f));
       expect(bad.map(([k]) => k), `${name}: leere/ungetrimmte Wortform`).toEqual([]);
@@ -452,11 +785,11 @@ describe("i18n · Glossar-Wortformen", () => {
     }
   });
 
-  it("die Auto-Fettung ist in beiden Sprachen verlustfrei", () => {
+  it("die Auto-Fettung ist in jeder fertigen Sprache verlustfrei", () => {
     const before = getLocale();
-    for (const [name, cat] of [["de", de], ["en", en]]) {
+    for (const name of READY_LOCALE_IDS) {
       setLocale(name);
-      const texts = Object.entries(cat)
+      const texts = Object.entries(CATS[name])
         .filter(([k]) => /^(ability|family|perk)\..*\.(desc|text)$/.test(k))
         .map(([, v]) => v);
       let hits = 0;
@@ -488,12 +821,80 @@ describe("i18n · Auflösung", () => {
     expect(t("start.tile.lock", { count: 3 }, "en")).toBe("🔒 3 more runs");
   });
 
-  it("setLocale akzeptiert nur bekannte Sprachen", () => {
+  it("setLocale akzeptiert nur FERTIGE Sprachen", () => {
     const before = getLocale();
     expect(setLocale("de")).toBe("de");
     expect(setLocale("klingonisch")).toBe(DEFAULT_LOCALE);   // Rückfall statt kaputter UI
+    /* Eine angemeldete, aber unfertige Sprache wird genauso abgewiesen wie eine unbekannte.
+       Das ist der Punkt, an dem „angemeldet" und „ausgeliefert" auseinandergehen: ein altes
+       `options.lang: "es"` aus dem localStorage darf keine halb übersetzte UI aufmachen. */
+    const unfertig = LOCALE_IDS.filter((id) => !READY_LOCALE_IDS.includes(id));
+    for (const loc of unfertig) {
+      expect(setLocale(loc), `${loc} ist nicht ready und darf nicht wählbar sein`).toBe(DEFAULT_LOCALE);
+    }
     setLocale(before);
-    expect(LOCALE_IDS).toEqual(["de", "en"]);
+    expect(LOCALE_IDS).toEqual(["de", "en", "es"]);
+    /* Seit dem 26.08.2026 ist Spanisch fertig (#es-translate), also ist JEDE angemeldete Sprache
+       auch ausgeliefert — und die Schleife darüber läuft heute über eine leere Menge.
+
+       Das wird hier ausgesprochen statt verschwiegen: die Schleife prüft ab jetzt nichts mehr,
+       bis eine vierte Sprache angemeldet wird, und schärft sich in genau dem Moment von selbst
+       wieder. Die Zeile darunter ist das, was heute tatsächlich gemessen wird. Ein stillschweigend
+       leerer Durchlauf wäre die gefährlichere Variante — dieselbe Falle, in die die Sonde der
+       Rückfallkette weiter unten schon einmal getappt ist. */
+    expect(unfertig, "angemeldet, aber nicht ausgeliefert").toEqual([]);
+    expect(READY_LOCALE_IDS).toEqual(["de", "en", "es"]);
+  });
+
+  /* Die Rückfallkette, und zwar an der Stelle, die einen Spieler betrifft. Ohne sie fiele ein
+     fehlender spanischer Schlüssel auf SOURCE_LOCALE zurück — ein spanischer Spieler bekäme
+     DEUTSCH zu sehen, nicht Englisch.
+
+     DIE SONDE IST BEWUSST KÜNSTLICH (#es-translate). Bis hierher prüfte dieser Test die Kette an
+     `common.close` und verließ sich darauf, dass der spanische Katalog LEER ist. Das war eine
+     Sonde mit Verfallsdatum: sobald Spanisch den Schlüssel selbst führt, löst `t()` ihn direkt
+     auf, die Kette wird gar nicht mehr betreten — und der Test wäre grün geblieben, ohne noch
+     irgendetwas zu prüfen. Genau dieser stille Ausgang ist schlimmer als ein roter Test.
+
+     Ein Schlüssel, der zur Laufzeit aus dem ZIELKATALOG genommen und danach zurückgelegt wird,
+     erzwingt den Rückfall bei JEDEM Füllstand — auch bei voller Parität. `catalog()` liefert das
+     lebende Objekt, das `t()` selbst benutzt; deshalb wirkt das Entfernen, und deshalb muss das
+     Zurücklegen in `finally` stehen. */
+  it("eine Sprache mit `via` fällt erst dorthin zurück, nicht sofort auf die Quellsprache", () => {
+    const esCat = catalog("es");
+    const probe = "common.close";
+    const had = Object.prototype.hasOwnProperty.call(esCat, probe);
+    const saved = esCat[probe];
+    // Vorbedingung der Sonde: die beiden Rückfallstufen müssen sich unterscheiden, sonst wiese
+    // die Prüfung darunter nichts nach.
+    expect(en[probe]).not.toBe(de[probe]);
+    try {
+      delete esCat[probe];
+      expect(t(probe, null, "es")).toBe(en[probe]);
+      expect(t(probe, null, "es")).not.toBe(de[probe]);
+    } finally {
+      if (had) esCat[probe] = saved;
+    }
+    expect(t("gibt.es.nicht", null, "es")).toBe("gibt.es.nicht");   // Kette erschöpft → Schlüssel
+  });
+
+  /* DIE RATSCHE, die aus dem `ready`-Schalter etwas anderes macht als eine Ausnahme.
+
+     `ready: false` nimmt eine Sprache aus den VERLANGENDEN Prüfungen heraus. Das ist nur so lange
+     ehrlich, wie es vorübergehend ist. Ohne diesen Test wäre der stille Ausgang offen: jemand füllt
+     den spanischen Katalog fertig, niemand denkt an das Flag, und die Sprache ist vollständig
+     übersetzt, aber unerreichbar — während die Paritätsprüfung sie weiterhin überspringt und damit
+     ab da wirklich abgeschwächt WÄRE.
+
+     Hier fliegt genau das auf: sobald ein unfertiger Katalog Schlüssel-Parität erreicht, wird die
+     Suite rot und verlangt das Flag. Das Flag kann nicht verrotten. */
+  it("eine unfertige Sprache, die vollständig ist, verlangt `ready: true`", () => {
+    for (const loc of LOCALE_IDS.filter((id) => !READY_LOCALE_IDS.includes(id))) {
+      const fehlt = KEYS_SRC.filter((k) => !(k in CATS[loc]));
+      expect(fehlt.length,
+        `${loc} ist vollständig übersetzt (${KEYS_SRC.length} Schlüssel) — setz \`ready: true\` in LOCALES, `
+        + "sonst überspringen die verlangenden Wächter einen fertigen Katalog").toBeGreaterThan(0);
+    }
   });
 
   /* Zwei Standards, die gern verwechselt werden — der Test hält sie auseinander:
@@ -616,7 +1017,10 @@ describe("i18n · Abdeckung wächst mit", () => {
 
        Excluding the catalogues is what gives the guard teeth; walking recursively is what stops it
        from biting the innocent. Both are needed, and either one alone would be worse than neither. */
-    const isCatalogue = (u) => /\/i18n\/(de|en)\.js$/.test(u.pathname);
+    /* Aus LOCALE_IDS gebaut, nicht als `(de|en)` getippt: ein neuer Katalog, der hier
+       durchrutscht, würde seine eigenen Schlüssel als „benutzt" ausweisen und den Wächter genau
+       so entwaffnen, wie es am 22.08.2026 schon einmal passiert ist (Defekt 2 im Block darüber). */
+    const isCatalogue = (u) => new RegExp(`/i18n/(${LOCALE_IDS.join("|")})\\.js$`).test(u.pathname);
     const walk = (url, out = []) => {
       for (const f of readdirSync(url, { withFileTypes: true })) {
         if (f.isDirectory()) walk(new URL(`${f.name}/`, url), out);

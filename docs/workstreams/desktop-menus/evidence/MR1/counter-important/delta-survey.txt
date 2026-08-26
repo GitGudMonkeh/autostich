@@ -1,0 +1,18 @@
+
+  compared 16 cells, 2474 matched nodes
+  Surfaces only. Control states are not captured and are verified by hand.
+
+  unmatched nodes: 0 pre-registered (H-c: leaderboard, victory), 0 elsewhere
+
+  1 computed delta(s), all of them printed:
+    de/1280x720/glossary
+      1/1/0/1/2/1:INPUT  bg
+        before: rgba(15, 15, 21, 0.72)
+        after : rgb(15, 15, 20)
+
+  distribution of the 1 delta(s) — stated, not left to the eye:
+      by cell: de/1280x720/glossary=1
+      by lang: de=1
+      by size: 1280x720=1
+      by surface: glossary=1
+      by property: bg=1

@@ -1,0 +1,90 @@
+# M11 — the run counts of the FLAKED survey run, kept after its matrix was discarded.
+#
+# One `victory` cell timed out (de/1280x720, [data-tut="form-energy"] never appeared within 90s).
+# The run it never finished left every later cell one run short, and MH2s runCountSource() is what
+# says so. The full delta output is beside this file as delta-survey-flaked.txt; the 22 MB matrix
+# itself was not kept — it measures a run that did not complete, and these two columns plus that
+# delta file are everything the finding rests on.
+#
+cell                      baseline(entry/capture)   flaked(entry/capture)
+de/1280x720/victory       4/5                       4/-
+en/1920x1080/hub          5/5                       4/4
+en/1920x1080/upgrades     5/5                       4/4
+en/1920x1080/shop-packs   5/5                       4/4
+en/1920x1080/shop-fx      5/5                       4/4
+en/1920x1080/leaderboard  5/5                       4/4
+en/1920x1080/stats        5/5                       4/4
+en/1920x1080/guide        5/5                       4/4
+en/1920x1080/glossary     5/5                       4/4
+en/1920x1080/options      5/5                       4/4
+en/1920x1080/feedback     5/5                       4/4
+en/1920x1080/privacy      5/5                       4/4
+en/1920x1080/skill-choice 5/5                       4/4
+en/1920x1080/run-stage    5/5                       4/4
+en/1920x1080/perk-choice  5/5                       4/4
+en/1920x1080/architect    5/5                       4/4
+en/1920x1080/victory      5/6                       4/5
+en/1600x900/hub           6/6                       5/5
+en/1600x900/upgrades      6/6                       5/5
+en/1600x900/shop-packs    6/6                       5/5
+en/1600x900/shop-fx       6/6                       5/5
+en/1600x900/leaderboard   6/6                       5/5
+en/1600x900/stats         6/6                       5/5
+en/1600x900/guide         6/6                       5/5
+en/1600x900/glossary      6/6                       5/5
+en/1600x900/options       6/6                       5/5
+en/1600x900/feedback      6/6                       5/5
+en/1600x900/privacy       6/6                       5/5
+en/1600x900/skill-choice  6/6                       5/5
+en/1600x900/run-stage     6/6                       5/5
+en/1600x900/perk-choice   6/6                       5/5
+en/1600x900/architect     6/6                       5/5
+en/1600x900/victory       6/7                       5/6
+en/1536x791/hub           7/7                       6/6
+en/1536x791/upgrades      7/7                       6/6
+en/1536x791/shop-packs    7/7                       6/6
+en/1536x791/shop-fx       7/7                       6/6
+en/1536x791/leaderboard   7/7                       6/6
+en/1536x791/stats         7/7                       6/6
+en/1536x791/guide         7/7                       6/6
+en/1536x791/glossary      7/7                       6/6
+en/1536x791/options       7/7                       6/6
+en/1536x791/feedback      7/7                       6/6
+en/1536x791/privacy       7/7                       6/6
+en/1536x791/skill-choice  7/7                       6/6
+en/1536x791/run-stage     7/7                       6/6
+en/1536x791/perk-choice   7/7                       6/6
+en/1536x791/architect     7/7                       6/6
+en/1536x791/victory       7/8                       6/7
+en/1400x700/hub           8/8                       7/7
+en/1400x700/upgrades      8/8                       7/7
+en/1400x700/shop-packs    8/8                       7/7
+en/1400x700/shop-fx       8/8                       7/7
+en/1400x700/leaderboard   8/8                       7/7
+en/1400x700/stats         8/8                       7/7
+en/1400x700/guide         8/8                       7/7
+en/1400x700/glossary      8/8                       7/7
+en/1400x700/options       8/8                       7/7
+en/1400x700/feedback      8/8                       7/7
+en/1400x700/privacy       8/8                       7/7
+en/1400x700/skill-choice  8/8                       7/7
+en/1400x700/run-stage     8/8                       7/7
+en/1400x700/perk-choice   8/8                       7/7
+en/1400x700/architect     8/8                       7/7
+en/1400x700/victory       8/9                       7/8
+en/1280x720/hub           9/9                       8/8
+en/1280x720/upgrades      9/9                       8/8
+en/1280x720/shop-packs    9/9                       8/8
+en/1280x720/shop-fx       9/9                       8/8
+en/1280x720/leaderboard   9/9                       8/8
+en/1280x720/stats         9/9                       8/8
+en/1280x720/guide         9/9                       8/8
+en/1280x720/glossary      9/9                       8/8
+en/1280x720/options       9/9                       8/8
+en/1280x720/feedback      9/9                       8/8
+en/1280x720/privacy       9/9                       8/8
+en/1280x720/skill-choice  9/9                       8/8
+en/1280x720/run-stage     9/9                       8/8
+en/1280x720/perk-choice   9/9                       8/8
+en/1280x720/architect     9/9                       8/8
+en/1280x720/victory       9/10                      8/9
