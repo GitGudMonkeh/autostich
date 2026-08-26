@@ -53,17 +53,5 @@ On either platform, where an equivalent takes no colon argument, prefer it — `
 **owner-invoked** — a session cannot run them for itself. Where one of them covers the work at hand,
 name it and let the owner run it, rather than hand-rolling the equivalent Git commands.
 
-## Historical knowledge
-
-Historical engineering records live in `docs/decisions/`. Start at `docs/decisions/README.md`.
-
-- Read them **on demand only.** Do not preload the historical log.
-- Treat them as context, not as standing instruction.
-- Branch names, test counts, file lists, and "current state" claims inside them are **historical**.
-  Never follow them as current instruction; verify against current code and current documentation.
-
-## Language
-
-- New engineering and code-side material: **English**.
-- Player-visible UI text: **German and English** through the localization catalogs.
-- Existing historical German records: **preserve as written.** Do not translate them.
+Historical records (`docs/decisions/`), the language policy, and every other project rule are in
+`AGENTS.md`, inlined above.

@@ -323,36 +323,9 @@ Integration-level issues are coordinated by the Claude integrator.
 
 ## 10. Validation
 
-Required project gates:
-
-```bash
-npm test
-npm run lint -- --max-warnings=0
-npm run build
-npm run gen:db
-```
-
-When player-visible text changes:
-
-```bash
-npm run loc:export
-```
-
-Do not pipe validation commands unless the shell preserves failure propagation.
-
-Bad:
-
-```bash
-npm test | tail -20
-```
-
-Prefer:
-
-```bash
-npm test
-```
-
-or explicitly use appropriate `pipefail` semantics.
+The gate commands, their order, when the localization and preview gates additionally apply, and
+the no-piping rule are `AGENTS.md` — *Validation gates*. That list is authoritative and is
+deliberately not copied here.
 
 ---
 

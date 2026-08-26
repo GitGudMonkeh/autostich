@@ -105,38 +105,16 @@ through, and **a missing review does not block integration** where none was requ
 - the branch is clean and committed,
 - known blockers are resolved, or documented as open with their consequence stated.
 
-**When to ask for one anyway.** Risky architectural change; save, persistence or migration logic; a
-defect that will not reproduce reliably; anything security-relevant; a large or risky integration; a
-release-critical change; or simply because the planner, worker, integrator or owner wants a second
-technical opinion. Asking is cheap and is never wrong — the point is that *not* asking is also
-correct, and needs no justification.
+**When to ask for one anyway.** Risky architectural change; save, persistence or migration logic;
+a defect that will not reproduce reliably; anything security-relevant; a large or risky
+integration; a release-critical change; or simply because someone wants a second technical
+opinion. Asking is cheap and is never wrong — and *not* asking is also correct, and needs no
+justification.
 
-### When a review is requested, it converges
-
-Review reduces relevant risk. It does not enforce perfection. **Good, correct and integration-ready
-is enough.**
-
-**The first independent review is a full review.** It may examine the whole agreed scope, and it may
-return blocking findings, non-blocking findings, an approval, or changes requested.
-
-**Every review after it is a closure review.** It examines two things and no others: whether the open
-findings were closed, and whether those specific fixes caused a regression. Scope that has already
-been reviewed and closed is not reopened, and a closed finding stays closed.
-
-**A closure review does not move the finish line.** It may block the workstream again only where the
-finding was created by the current fix, or is a genuine blocker — a correctness defect, data loss, a
-security problem, a broken build or test suite, or a violated project invariant. Everything else —
-improvement ideas, documentation refinements, robustness wishes, style, optional cleanup — is recorded
-as a **follow-up** and does not block the current integration.
-
-**The normal budget is one full review plus one closure review.** A further closure round is
-permitted only where a known blocking finding is still unfixed, or its fix caused a new regression.
-There is no second full review.
-
-How a requested review is run, and what a handoff must state: `docs/engineering/task-lifecycle.md`
-§8.
-
----
+**How a requested review runs** — full versus closure review, what may block, and the review
+budget — is `docs/engineering/task-lifecycle.md` §8, which is canonical for those mechanics.
+Review reduces relevant risk; it does not enforce perfection. Good, correct and integration-ready
+is enough.
 
 ## Branch model
 
@@ -165,19 +143,9 @@ Both commands must exit successfully.
 feature/task -> dev --ff-only-> test --ff-only-> main
 ```
 
-Canonical promotion commands:
-
-```bash
-git checkout test
-git merge --ff-only dev
-```
-
-then:
-
-```bash
-git checkout main
-git merge --ff-only test
-```
+The step-by-step promotion commands, including the catch-up merge against the remote, are
+`docs/engineering/git-workflow.md` §12. Promotion is an integrator act; do not promote from
+memory.
 
 ### Branch rules
 
