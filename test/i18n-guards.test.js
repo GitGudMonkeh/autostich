@@ -266,6 +266,7 @@ describe("i18n · Katalog-Parität", () => {
     "tut.progress",              // „{n} / {total}"
     "start.progress.links",      // dito
     "start.board.week.val",      // „{have}/{max}"
+    "upgrades.readout.nodes.val", // „{owned} / {total}"
     "start.board.last.none",     // „—"
     // 2 · Lehnwörter, die das Spanische ebenso benutzt
     "gameover.build",            // „Build" ist auch im Spanischen der Roguelite-Begriff
@@ -276,6 +277,7 @@ describe("i18n · Katalog-Parität", () => {
     "feedback.kind.bug",         // „Bug"
     "feedback.kind.balance",     // „Balance"
     "board.tab.global",          // „Global" — dasselbe Wort
+    "options.chip.display",      // „HUD" — Akronym, in beiden Sprachen gleich
     "board.tab.challenger",      // Name des Modus
     "dev.run.title",             // „DEV RUN" — Dev-Oberfläche, Eigenname
     "guide.lightning.principle.0.tag", "guide.plant.principle.1.tag",  // „Mono"

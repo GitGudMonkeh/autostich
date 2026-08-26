@@ -648,7 +648,7 @@ export default {
   /* ---- Seed ---- */
   "seed.copy": "Copiar semilla",
   "seed.copied": "copiada",
-  "seed.replay": "↻ Repetir",
+  "seed.replay": "Repetir",
   "seed.replay.title": "Repetir esta semilla",
 
   /* ---- Anchor sources ---- */
@@ -937,7 +937,9 @@ export default {
 
   /* ---- Statistics screen ---- */
   "stats.title": "Estadísticas",
-  "stats.desk.readout": "Todos los números están guardados localmente en este dispositivo. Al hacer clic en una fila se abre la partida completa.",
+  "stats.eyebrow": "Retrospectiva",
+  "stats.sub": "Lo que has jugado hasta ahora. Al hacer clic en una fila se abre la partida completa.",
+  "stats.slot.empty": "aún sin jugar",
   "stats.empty": "Aún no hay partidas. Juega una y aquí aparecerán tus estadísticas.",
   "stats.overview": "Resumen",
   "stats.bestScore": "Mejor puntuación",
@@ -957,7 +959,6 @@ export default {
   "stats.mostPicked": "Lo más elegido",
   "stats.mostPicked.hint": "en todo tu historial",
   "stats.topSkills": "Habilidades más elegidas",
-  "stats.noSkills": "Aún no has jugado ninguna habilidad.",
   "stats.topPerks": "Ventajas más elegidas",
   "stats.archUse": "Uso de arquetipos",
   "stats.archUse.right": "{n}× · Ø {avg}",
@@ -971,6 +972,9 @@ export default {
   "stats.lift.value": "+{v} Ø",
   "stats.played": " · jugada {n}×",
   "stats.noPatterns": "Aún no hay patrones claros: tus elecciones varían todavía demasiado para medir impulsos con fiabilidad.",
+
+  /* ---- Run detail ---- */
+  "rundetail.eyebrow": "Retrospectiva · partida",
 
   /* ---- Per-run statistics ----
      The three narrow KPI labels are abbreviated the way the German ones are (`Form.-Score`,
@@ -1030,6 +1034,10 @@ export default {
      "Platz 1" stays a numeral — `puesto 1` — where the English catalog had to write "first place"
      and buy itself an entry in the number guard's exception list. Spanish needs no exception. */
   "board.title": "Clasificación",
+  "board.eyebrow.board": "Comparación",
+  "board.eyebrow.ranked": "Clasificatoria",
+  "board.sub.board": "Las mejores partidas de todos los jugadores.",
+  "board.sub.ranked": "Semana {week} — todo el mundo juega la misma semilla.",
   "board.tab.global": "Global",
   "board.tab.week": "Esta semana",
   "board.tab.weekShort": "Semana",
@@ -1144,20 +1152,30 @@ export default {
   "unlock.onboardingDone": "Termina la introducción",
 
   /* ---- Upgrade tree ----
-     The German writes "frei" for two different things — `upgrades.ranked.free` means unlocked,
-     `upgrades.free` means costs nothing. German is ambiguous here and English already resolved it
-     ("unlocked" vs "free"); Spanish follows that reading, which is exactly what the reference
-     column is for (package §2). Reported in unsicherheiten_es.md so the German side can decide
-     whether it wants to disambiguate too.
+     The German used to write "frei" for two different things — unlocked and costs-nothing — and
+     Spanish followed the English disambiguation. The menu rework has since resolved it upstream:
+     `upgrades.ranked.free` now reads "Freigeschaltet" in German, so `desbloqueada` and `gratis`
+     are no longer an interpretation but a straight translation. The note stays because it records
+     why the two words differ.
 
      `upgrades.lane.perk2` says "Fase de ventajas 2" rather than "2.ª fase": the ordinal indicator
      is missing from the card font and package §5.3 forbids it. The numeral is kept so the number
      guard still sees the same digit on both sides. */
-  "upgrades.title": "Mejoras",
+  "upgrades.eyebrow": "Mejoras",
+  "upgrades.title": "Árbol de mejoras",
+  "upgrades.subtitle": "Mejoras permanentes para todas las partidas.",
   "upgrades.respec": "↺ Restablecer",
-  "upgrades.nodes": " / {total} nodos · partida clasificatoria",
-  "upgrades.ranked.free": "desbloqueada",
-  "upgrades.ranked.at": "con {total}/{total} nodos",
+  "upgrades.readout.sp": "Saldo",
+  "upgrades.readout.nodes": "Nodos",
+  "upgrades.readout.nodes.val": "{owned} / {total}",
+  "upgrades.ranked.label": "Partida clasificatoria",
+  "upgrades.ranked.open": "Aún no desbloqueada",
+  "upgrades.ranked.free": "Desbloqueada",
+  "upgrades.legend.hint": "Haz clic en un nodo para que te lo expliquen.",
+  "upgrades.chall.label": "Desafío",
+  "upgrades.chall.link": "Taller ›",
+  "upgrades.chall.done": "Desbloqueado",
+  "upgrades.leg.missing": "Faltan {n} PB",
   "upgrades.tapHint": "Toca un nodo para ver lo que hace.",
   "upgrades.details": "Detalles ›",
   "upgrades.legPhase": "Fase legendaria",
@@ -1169,10 +1187,10 @@ export default {
   "upgrades.lane.rarity": "Rareza",
   "upgrades.lane.drops": "Tasas de aparición",
   "upgrades.lane.perk2": "Fase de ventajas 2",
-  "upgrades.lane.note.afterLeg": "se abre tras el desbloqueo legendario",
+  "upgrades.lane.note.afterLeg": "se abre con Rareza · Legendaria",
   "upgrades.free": "gratis",
   "upgrades.state.soon": "Pronto",
-  "upgrades.state.owned": "✓ Comprado",
+  "upgrades.state.owned": "Comprado",
   "upgrades.state.soonFull": "Disponible pronto",
   "upgrades.state.buyable": "Se puede comprar",
   "upgrades.state.lockSp": "PB insuficientes: cuesta {cost} PB",
@@ -1198,7 +1216,7 @@ export default {
   "upgrades.skills.legendary": "Habilidades legendarias",
   "upgrades.owned": "compradas",
   "upgrades.buyable": "se pueden comprar",
-  "upgrades.locked": "🔒 bloqueadas ·",
+  "upgrades.locked": "bloqueadas",
   "upgrades.soon": "Pronto = marcador de posición",
 
   /* ---- Deck workshop (CustomizeScreen.jsx) ----
@@ -1465,6 +1483,7 @@ export default {
   "start.feedback": "Comentarios",
   "start.discord": "Abrir Discord",
   "start.logo.alt": "AUTOBAZA",
+  "start.tagline": "Ordena. Vence. Escala.",
   "start.progress.onboarding": "Introducción",
   "start.progress.bonus": "Bonificación {cur} · siguiente +5",
   "start.progress.runs": "{done} / {total} partidas",
@@ -1607,7 +1626,8 @@ export default {
   "name.title.first": "Elige tu nombre",
   "name.title.change": "Tu nombre",
   "name.placeholder": "Tu nombre",
-  "name.hint": "De 1 a {max} caracteres · aparece en la clasificación global. Se puede cambiar en el menú en cualquier momento.",
+  "name.hint": "De 1 a {max} caracteres.",
+  "name.sub.first": "Aparece en la clasificación global. Puedes cambiarlo más tarde.",
   "name.cancel": "Cancelar",
   "name.save": "Guardar",
   "name.lang.label": "Idioma",
@@ -1657,11 +1677,11 @@ export default {
   "options.sec.general": "General",
   "options.sec.graphics": "Gráficos y rendimiento",
   "options.sec.sound": "Sonido",
-  "options.sec.display": "Pantalla",
+  "options.sec.display": "HUD y texto",
   "options.chip.general": "General",
   "options.chip.graphics": "Gráficos",
   "options.chip.sound": "Sonido",
-  "options.chip.display": "Pantalla",
+  "options.chip.display": "HUD",
   "options.eyebrow": "Opciones",
   "options.title": "Ajustes",
   "options.desk.readout": "Todo tiene efecto y se guarda al instante.",
@@ -1669,8 +1689,8 @@ export default {
   "options.language.title": "Idioma",
   "options.language.desc": "Idioma de los textos del juego.",
 
-  "options.mute.title": "Silenciar",
-  "options.mute.desc": "Desactiva todos los sonidos de clic y de juego.",
+  "options.mute.title": "Sonido",
+  "options.mute.desc": "Todos los sonidos de clic y de juego. Apagado = silencio total.",
   "options.sfx.title": "Volumen de efectos",
   "options.sfx.desc": "Volumen de los sonidos de clic y de juego (SFX).",
   "options.sfx.aria": "Volumen de SFX",
@@ -1681,7 +1701,7 @@ export default {
   // #394 Number size: {pct} arrives pre-formatted (fmtPct) — Spanish sets the percent sign with a
   // space like German, so the sign never lives in the template.
   "options.numScale.title": "Tamaño de los números",
-  "options.numScale.desc": "Tamaño de los números de puntuación que suben. {pct}",
+  "options.numScale.desc": "Tamaño de los números de puntuación que suben.",
   "options.numScale.aria": "Tamaño de los números",
 
   "options.rfx.title": "Efectos reducidos",
@@ -1708,13 +1728,21 @@ export default {
   "options.testvp.off": "Apagado",
   "options.testvp.hint": "Para salir, vuelve a poner esto en Apagado aquí mismo, en las opciones.",
 
+  "options.sec.dev": "Rama de pruebas",
+  "options.slider.muted": "silencio",
+  "options.reset": "Restablecer todo a los valores predeterminados",
+  "options.reset.confirm": "¿Seguro que quieres restablecer todos los ajustes?",
+  "options.reset.yes": "Restablecer",
+  "options.reset.no": "Cancelar",
+  "options.foot.hint": "Los cambios se aplican al instante",
+
   "options.float.title": "Mostrar el texto flotante",
   "options.float.desc": "Números y textos que suben sobre el campo. Interruptor principal de los tres de abajo. Los anuncios grandes (BIEN/BRUTAL/DEMENCIAL/DIVINO) siempre se ven.",
-  "options.float.score.title": "↳ Puntuación",
+  "options.float.score.title": "Puntuación",
   "options.float.score.desc": "Números de puntuación que suben en las bazas que ganas.",
-  "options.float.mult.title": "↳ Multiplicador",
+  "options.float.mult.title": "Multiplicador",
   "options.float.mult.desc": "Texto de “¡Crítico!” y de formaciones (bonificaciones de multiplicador).",
-  "options.float.winlose.title": "↳ Victoria / derrota",
+  "options.float.winlose.title": "Victoria / derrota",
   "options.float.winlose.desc": "Texto de victoria o derrota al resolverse la baza.",
   "options.breakdown.title": "Mostrar el desglose de la baza",
   "options.breakdown.desc": "Cadena de factores bajo el campo: base × racha × ventajas × formación × crítico = total de la baza en curso. El espacio queda reservado; las cartas están en el mismo sitio de todos modos.",
