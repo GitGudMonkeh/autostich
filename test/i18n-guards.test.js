@@ -76,6 +76,11 @@ describe("i18n · Katalog-Parität", () => {
     "tut.probe.kampfwert.readout", // dito
     "tut.probe.herkunft.readout",  // dito
     "tut.probe.aufstellen.readout", // Ablesung „Formation" — in beiden Sprachen dasselbe Wort (§3.1)
+    // Kasten-Überschriften, die BEGRIFFE sind: Perk, Skill und Passive stehen so in der
+    // Begriffstabelle §3.1 und lauten im Englischen gleich.
+    "tut.wahl.perks.1.label",
+    "tut.wahl.perks.2.label",
+    "tut.blitz.wasist.1.label",
     "build.perks.head",      // „Perks — {count}" — Perk bleibt Perk (Begriffstabelle §3.1)
     "build.skills.head",     // dito für Skill
     "start.tile.upgrades",   // „Upgrades" ist im Deutschen der etablierte Begriff (§3.5)

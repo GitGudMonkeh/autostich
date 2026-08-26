@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useLocale } from "../../i18n/useLocale.js"; // #sprache: Neuberechnung bei Sprachwechsel
-import { formationName, formationAbbr } from "../../i18n/labels.js";
-import { fmtNum, t } from "../../i18n/index.js"; // Dezimaltrennzeichen je Sprache — nie toFixed+replace
+import { formationName, formationAbbr, perkCat } from "../../i18n/labels.js";
+import { fmtNum, fmtPct, t } from "../../i18n/index.js"; // Dezimaltrennzeichen je Sprache — nie toFixed+replace
 import { buildDeck } from "../../game/deck.js";
 import { computeFormations, summarizeFormations, SEGMENT_SIZE } from "../../game/formations.js";
 import { effectivePlayerValue } from "../../game/engine.js";
@@ -9,6 +9,8 @@ import * as C from "../../game/constants.js";
 // ENERGY_FLOOR, nicht C.FORMATION_ENERGY: siehe die Begründung in vars.js.
 import { ENERGY_FLOOR } from "../../game/progression.js";
 import { ARCHETYPE_META } from "../../game/skills.js";
+import { FAMILY_DEFS } from "../../game/families.js";
+import { TIER_META } from "../../game/rarity.js";
 import { COLS, ROWS, posOf, rowOf, colOf, boardFactorMap, familyDef, tierNum } from "../../game/architect.js";
 // Die Kategoriefarben liegen in der UI-Schicht, nicht im Spielmodul — dieselbe Quelle, die der
 // Architekt-Bildschirm nutzt (ArchPanels.jsx, ArchitectScreen.jsx).
@@ -980,6 +982,142 @@ export function ArchmockProbe({ title, hint, readoutLabel }) {
   );
 }
 
+/* ---- Die Perk-Kategorien ----
+
+   Sechs Kacheln, jede in ihrer eigenen Farbe, mit der Zahl ihrer Familien. Namen, Beschreibungen
+   und Farben kommen aus `perkCat` — dem Register, das auch der Perk-Bildschirm liest. Die Zahlen
+   sind aus FAMILY_DEFS GEZÄHLT, nicht gesetzt: kommt eine Familie dazu, wandert die Kachel mit. */
+const KAT_ZAEHLUNG = (() => {
+  const n = {};
+  for (const f of Object.values(FAMILY_DEFS)) n[f.cat] = (n[f.cat] || 0) + 1;
+  return n;
+})();
+const KAT_IDS = Object.keys(KAT_ZAEHLUNG);
+
+export function KategorienProbe({ title, hint, readoutLabel }) {
+  const [locale] = useLocale();
+  const [sel, setSel] = useState(null);
+  // perkCat() liest die Sprache intern — der Locale ist hier der Auslöser fürs Neuzeichnen.
+  void locale;
+  const def = sel ? perkCat(sel) : null;
+  return (
+    <div className="tut-beat tut-probe" style={{ margin: "0 0 14px", padding: "12px 12px 11px", ...ZEILE }}>
+      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 8 }}>{title}</div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 6 }}>
+        {KAT_IDS.map((id) => {
+          const c = perkCat(id), on = sel === id;
+          return (
+            <button key={id} type="button" onClick={() => setSel(on ? null : id)} aria-pressed={on ? "true" : "false"}
+              className="tut-chip text-body-5 font-semibold"
+              style={{ minHeight: 44, borderRadius: 8, padding: "7px 6px", display: "flex",
+                justifyContent: "space-between", alignItems: "baseline", gap: 5,
+                color: on ? "#e8e8ea" : "#8a8a95",
+                background: on ? `${c?.color || "#5c5c68"}22` : "rgba(15,15,21,.72)",
+                border: `1px solid ${on ? c?.color || "#8a7de0" : "rgba(150,150,170,.12)"}` }}>
+              <span>{c ? c.name : id}</span>
+              <span className="ty-num-sm" style={{ color: c?.color || "#5c5c68" }}>{KAT_ZAEHLUNG[id]}</span>
+            </button>
+          );
+        })}
+      </div>
+      <div className="tut-probe-out" style={{ marginTop: 10, paddingTop: 9, borderTop: HAIR }}>
+        <div className="text-meta-1" style={LABEL}>{readoutLabel}</div>
+        <p className="text-body-5" style={{ color: "#c8c8d0", margin: "5px 0 0", lineHeight: 1.45 }}>
+          {def ? `${def.name}: ${def.desc}` : hint}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* ---- Die Raritäten ----
+   Die vier Stufen plus die legendäre Schicht, in den Farben aus TIER_META. Der Rahmen IST die
+   Information: im Spiel erkennt man die Rarität an ihm, und genau das soll diese Runde einüben. */
+const RAR_STUFEN = [1, 2, 3, 4, "legendary"];
+
+export function RaritaetProbe({ title, hint, readoutLabel }) {
+  const [locale] = useLocale();
+  const [sel, setSel] = useState(null);
+  const meta = (t2) => TIER_META[t2] || null;
+  return (
+    <div className="tut-beat tut-probe" style={{ margin: "0 0 14px", padding: "12px 12px 11px", ...ZEILE }}>
+      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 8 }}>{title}</div>
+      <div style={{ display: "flex", gap: 6 }}>
+        {RAR_STUFEN.map((tr) => {
+          const m = meta(tr), on = sel === tr;
+          return (
+            <button key={String(tr)} type="button" onClick={() => setSel(on ? null : tr)} aria-pressed={on ? "true" : "false"}
+              className="tut-chip text-body-5 font-bold"
+              style={{ flex: "1 1 0", minWidth: 0, minHeight: 52, borderRadius: 8, padding: "6px 4px",
+                color: m?.color || "#8a8a95",
+                background: on ? `${m?.color || "#5c5c68"}22` : "rgba(15,15,21,.72)",
+                border: `${on ? 2 : 1}px solid ${m?.color || "rgba(150,150,170,.12)"}` }}>
+              {tr === "legendary" ? "★" : ["", "I", "II", "III", "IV"][tr]}
+            </button>
+          );
+        })}
+      </div>
+      <div className="tut-probe-out" style={{ marginTop: 10, paddingTop: 9, borderTop: HAIR }}>
+        <div className="text-meta-1" style={LABEL}>{readoutLabel}</div>
+        <p className="text-body-5" style={{ color: "#c8c8d0", margin: "5px 0 0", lineHeight: 1.45 }}>
+          {sel ? `${meta(sel)?.label ?? ""} · ${t(`tut.r.${sel === "legendary" ? "leg" : sel}`, null, locale)}` : hint}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* ---- Die ionisierte Karte ----
+
+   Der Leser legt Stapel auf EINE Karte und sieht beide Wirkungen getrennt: was die Karte selbst
+   beim Sieg zahlt, und was alle Stapel im Deck zusammen an Crit-Chance geben. Die Trennung ist der
+   Punkt der Lektion — der rechte Wert zählt das ganze Deck, nicht diese Karte.
+
+   Beide Zahlen kommen aus den Konstanten: ION_SCORE_PER_STACK je Stapel auf der Karte,
+   ION_CRIT_PP_PER_STACK je Stapel im Deck, gedeckelt bei ION_CRIT_STACK_CAP. */
+export function BlitzkarteProbe({ title, hint, readoutLabel, labels }) {
+  const [locale] = useLocale();
+  const [stapel, setStapel] = useState(0);
+  const [imDeck, setImDeck] = useState(0);
+  const L = labels || {};
+  const voll = stapel >= C.ION_MAX_STACKS;
+  const critPP = Math.min(imDeck + stapel, C.ION_CRIT_STACK_CAP) * C.ION_CRIT_PP_PER_STACK;
+
+  return (
+    <div className="tut-beat tut-probe" style={{ margin: "0 0 14px", padding: "12px 12px 11px", ...ZEILE }}>
+      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 8 }}>{title}</div>
+      <div style={{ display: "flex", justifyContent: "center", marginBottom: 9 }}>
+        <div style={{ width: 78, height: 110, borderRadius: 8, position: "relative",
+          background: "linear-gradient(180deg,#242433,#1a1a26)",
+          border: `${stapel ? 2 : 1}px solid ${stapel ? (voll ? "#8ad4ff" : "#5a8ade") : "#33333e"}` }}>
+          <div style={{ position: "absolute", top: 5, left: 0, right: 0, display: "flex", justifyContent: "center", gap: 3 }}>
+            {Array.from({ length: C.ION_MAX_STACKS }, (_, i) => (
+              <span key={i} style={{ width: 7, height: 7, borderRadius: "50%",
+                background: i < stapel ? "#8ad4ff" : "rgba(150,150,170,.22)" }} />
+            ))}
+          </div>
+          <span className="text-title-2 font-bold" style={{ position: "absolute", inset: 0, display: "flex",
+            alignItems: "center", justifyContent: "center", color: "#e8e8ea" }}>{C.RANKS[6]}</span>
+        </div>
+      </div>
+      <div style={{ display: "flex", gap: 6 }}>
+        <KnopfKlein text={L.less} onClick={() => setStapel((n) => Math.max(0, n - 1))} aktiv={stapel > 0} />
+        <KnopfKlein text={L.more} onClick={() => setStapel((n) => Math.min(C.ION_MAX_STACKS, n + 1))} aktiv={!voll} />
+        <KnopfKlein text={L.deck} onClick={() => setImDeck((n) => (n + C.ION_MAX_STACKS > C.ION_CRIT_STACK_CAP ? 0 : n + C.ION_MAX_STACKS))} aktiv />
+      </div>
+      <div className="tut-probe-out" style={{ marginTop: 10, paddingTop: 9, borderTop: HAIR, display: "flex", alignItems: "baseline", gap: 8 }}>
+        <span className="text-meta-1" style={LABEL}>{readoutLabel}</span>
+        <span className="text-body-lg-5" style={{ color: "#e8e8ea", fontWeight: 700 }}>
+          +{fmtNum(stapel * C.ION_SCORE_PER_STACK, locale)}
+        </span>
+        <span className="text-meta-1" style={{ ...LABEL, marginLeft: "auto" }}>{L.deckWide}</span>
+        <span className="text-body-lg-5" style={{ color: "#e8e8ea", fontWeight: 700 }}>{fmtPct(critPP, locale)}</span>
+      </div>
+      {hint && <div className="text-meta-1" style={{ color: "#71717c", marginTop: 7, lineHeight: 1.4 }}>{hint}</div>}
+    </div>
+  );
+}
+
 /* Katalog → Komponente. Der Katalog nennt nur einen NAMEN, damit er React-frei bleibt. */
 export const PROBES = {
   formation: FormationProbe,
@@ -988,6 +1126,9 @@ export const PROBES = {
   struktur: StrukturProbe,
   bauen: BauenProbe,
   archmock: ArchmockProbe,
+  kategorien: KategorienProbe,
+  raritaet: RaritaetProbe,
+  blitzkarte: BlitzkarteProbe,
   deckstrip: ({ caption }) => <Bild cards={START_ORDER.map((i) => DECK[i])} caption={caption} />,
   // Bezeichner ohne Bindestrich: ein zitierter Schlüssel wäre im Wächter nicht als Name erkennbar.
   guideFire: (p) => <GuideLink {...p} arch="fire" />,

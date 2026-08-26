@@ -212,3 +212,38 @@ components; that version stayed **green with the import broken**, because Vitest
 esbuild and does not enforce named exports as strictly as the browser. The counter-proof caught
 that, and the guard was rewritten to check names rather than loading. Breaking the import now
 reports: *beats.jsx: „ARCH_CAT" gibt es in ../../game/architect.js nicht*.
+
+
+---
+
+# Perks und Skills, Blitz
+
+| Section | Lesson | Content px | Beats | Tap targets < 44 px | Overflow |
+| --- | --- | ---: | ---: | ---: | --- |
+| wahl | Perks und Skills | 559 | 4 | 0 | none |
+| wahl | Die Kategorien | 337 | 2 | 0 | none |
+| wahl | Raritäten | 515 | 4 | 0 | none |
+| blitz | Was Blitz ist | 583 | 4 | 0 | none |
+| blitz | Die Karte | 556 | 3 | 0 | none |
+| blitz | Tipps für den Anfang | 334 | 2 | 0 | none |
+
+Six lessons, no page errors, nothing scrolls.
+
+**The reverse rule earned its keep.** `wahl/kategorien` was written as `voll` and computes 351 px,
+so the guard rejected it: a lesson that fits the short budget is a short lesson. Marked `kurz`.
+
+**Three probes were missing from `PROBE_PX` again** and fell back to `PROBE_MAX`, putting the model
+189 to 305 px over. Measured: kategorien 199 · raritaet 157 · blitzkarte 272. That is the third
+time this specific omission has happened, and each time the symptom is the same: the model reads
+plausible and green while measuring the wrong thing.
+
+Across all 22 lessons of the five finished sections the model now sits **above** the measurement
+everywhere, by at most 66 px, and nothing exceeds its budget.
+
+## Numbers, all derived
+
+The lightning passive reads 13 % for the first skill and 8 % for each further one. That is not two
+constants but one plus one: `LIGHTNING_CRIT_BASE` is the activation socket at 0,05 and
+`LIGHTNING_CRIT_PER_SKILL` is 0,08. The draft's 13 was right and is now computed rather than typed.
+The ionisation cap likewise: `ION_CRIT_STACK_CAP` 12 × `ION_CRIT_PP_PER_STACK` 0,015 = 18 %.
+The 73 perk families are counted from `FAMILY_DEFS`.

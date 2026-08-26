@@ -15,6 +15,7 @@ import * as C from "../../game/constants.js";
 import { SEGMENT_SIZE, WECHSEL_MIN_DIFF, MAX_TREPPE_STEP } from "../../game/formations.js";
 import { ENERGY_FLOOR, COVER_FLOOR, NODES } from "../../game/progression.js";
 import { ARCHITECT_FAMILIES, tierNum, DISTRICT_BONUS, DISTRICT_CAP, ROWS } from "../../game/architect.js";
+import { FAMILY_DEFS } from "../../game/families.js";
 
 /* Der Grundwert eines Gebäudes steckt in einem OBJEKT, nicht in einer Zahl: `{ kind: "flat",
    score: 35 }` bei Score-Gebäuden, `{ kind: "flat", value: 1 }` bei Wert-Gebäuden. */
@@ -56,6 +57,15 @@ export const VARS = {
   firstShop: C.DECISION_SCHEDULE.indexOf("shop") + 1,
   districtPct: Math.round(DISTRICT_BONUS * 100), districtCap: DISTRICT_CAP,
   ...stufen("A_ZOLLHAUS", "zoll"), ...stufen("A_KONTOR", "kontor"),
+  // Perk-Familien: GEZAEHLT, damit die Zahl mitwandert, wenn eine Familie dazukommt.
+  perkFamilies: Object.keys(FAMILY_DEFS).length,
+  /* Blitz. Der erste Skill gibt Sockel PLUS Beitrag, jeder weitere nur den Beitrag — deshalb 13
+     und 8, und deshalb steht hier eine Rechnung und keine abgetippte Zahl. */
+  critFirst: Math.round((C.LIGHTNING_CRIT_BASE + C.LIGHTNING_CRIT_PER_SKILL) * 100),
+  critPerSkill: Math.round(C.LIGHTNING_CRIT_PER_SKILL * 100),
+  charge: C.LIGHTNING_MAX_CHARGE,
+  ionMax: C.ION_MAX_STACKS, ionCap: C.ION_CRIT_STACK_CAP,
+  ionCapPct: Math.round(C.ION_CRIT_STACK_CAP * C.ION_CRIT_PP_PER_STACK * 100),
   suits: C.SUIT_ORDER.length, rankMin: C.RANKS[0], rankMax: C.RANKS[C.RANKS.length - 1],
   perksOffered: C.PERKS_OFFERED, skillsOffered: C.SKILLS_OFFERED,
   ...countSchedule(),
@@ -69,4 +79,5 @@ export const MEASURE_VARS = {
   base: String(C.SCORE_PER_WIN),
   streakPct: String(Math.round(C.STREAK_BASE_STEP * 100)),
   critMult: C.CRIT_BASE_MULT.toFixed(2),
+  critMultPerSkill: C.LIGHTNING_CRIT_MULT_PER_SKILL.toFixed(1),
 };

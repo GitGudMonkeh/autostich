@@ -132,13 +132,39 @@ export const SECTIONS = [
   },
   {
     id: "wahl",
+    /* DREI Lektionen statt sechs. Der freigegebene Entwurf zieht Angebot, Neuwurf, Motor und
+       Legendäres in die erste Runde und die Raritäten-Lektion zusammen. */
     lessons: [
-      { id: "perks",     beats: [{ kind: "satz" }, { kind: "tip" }] },
-      { id: "raritaet",  beats: [{ kind: "satz" }, { kind: "tip" }] },
-      { id: "neuwurf",   beats: [{ kind: "satz" }, { kind: "tip" }] },
-      { id: "skills",    beats: [{ kind: "satz" }, { kind: "tip" }] },
-      { id: "motor",     beats: [{ kind: "satz" }, { kind: "tip" }] },
-      { id: "legendaer", beats: [{ kind: "satz" }, { kind: "tip" }] },
+      { id: "perks", art: "voll", beats: [
+        { kind: "block" },
+        { kind: "block", label: true },
+        { kind: "block", label: true },
+        { kind: "tip" }] },
+      { id: "kategorien", art: "kurz", beats: [
+        { kind: "probierfeld", probe: "kategorien" },
+        { kind: "tip" }] },
+      { id: "raritaet", art: "voll", beats: [
+        { kind: "probierfeld", probe: "raritaet" },
+        { kind: "merk" },
+        { kind: "block", label: true },
+        { kind: "tip" }] },
+    ],
+  },
+  {
+    id: "blitz",
+    lessons: [
+      { id: "wasist", art: "voll", beats: [
+        { kind: "block" },
+        { kind: "block", label: true },
+        { kind: "regeln" },
+        { kind: "tip" }] },
+      { id: "karte", art: "voll", beats: [
+        { kind: "probierfeld", probe: "blitzkarte" },
+        { kind: "block", label: true },
+        { kind: "tip" }] },
+      { id: "tipps", art: "kurz", beats: [
+        { kind: "liste" },
+        { kind: "tip" }] },
     ],
   },
   {
@@ -309,7 +335,9 @@ const PROBE_PX = { formation: 215, streak: 150, score: 195, board: 215,
   aufstellen: 260, kartenteile: 215, overlap: 215,
   /* Die Architekt-Runden. Das Brett ist der teuerste Baustein des ganzen Tutorials: acht Zeilen
      mal fünf Spalten. GEMESSEN archmock 299 · bauen 286 · struktur 438. */
-  archmock: 320, bauen: 310, struktur: 460 };
+  archmock: 320, bauen: 310, struktur: 460,
+  // Wahl und Blitz, gemessen: kategorien 199 · raritaet 157 · blitzkarte 272.
+  kategorien: 215, raritaet: 175, blitzkarte: 290 };
 const PROBE_MAX = Math.max(...Object.values(PROBE_PX));
 
 const lines = (text) => Math.max(1, Math.ceil(String(text || "").length / CHARS_PER_LINE));

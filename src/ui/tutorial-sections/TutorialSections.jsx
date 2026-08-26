@@ -14,11 +14,12 @@ const localeVars = (locale) => ({
   base: fmtNum(C.SCORE_PER_WIN, locale),
   streakPct: fmtNum(Math.round(C.STREAK_BASE_STEP * 100), locale),
   critMult: fmtNum(C.CRIT_BASE_MULT.toFixed(2), locale),
+  critMultPerSkill: fmtNum(C.LIGHTNING_CRIT_MULT_PER_SKILL.toFixed(1), locale),
 });
 // `offered` bedeutet je nach Lektion etwas anderes — Perk-Angebot oder Skill-Angebot.
 /* `none` hat nur, wer einen Leerzustand kennt. Die Aufstellungs-Runden kennen ihn: eine Reihe ohne
    Formation ist ein gültiger Zustand und braucht ein Wort dafür. */
-const NONE_LABEL = new Set(["formation", "board", "aufstellen", "kartenteile", "overlap"]);
+const NONE_LABEL = new Set(["formation", "aufstellen", "kartenteile", "overlap", "bauen"]);
 const OFFERED = { "tut.wahl.perks.0": C.PERKS_OFFERED, "tut.wahl.skills.0": C.SKILLS_OFFERED };
 
 /* TUTORIAL-SEKTIONEN — die dritte Lehr-Ebene (Glossar = nachschlagen · Leitfaden = Strategie ·
@@ -163,6 +164,7 @@ export function TutorialSections({ onClose, onOpenGlossary = null, onOpenGuide =
           cardValue: t("tut.d.cardValue"), suit: t("tut.d.suit"), wins: t("tut.f.wins"),
           undo: t("tut.d.undo"), reset: t("tut.d.reset"), energy: t("tut.d.energy"),
           rotate: t("tut.d.rotate"), scoreUnit: t("tut.d.scoreUnit"),
+          more: t("tut.d.more"), less: t("tut.d.less"), deck: t("tut.d.deck"), deckWide: t("tut.d.deckWide"),
           zeile: t("tut.d.zeile"), spalte: t("tut.d.spalte"), diag: t("tut.d.diag"), distrikt: t("tut.d.distrikt"),
           win: t("tut.d.win"), tie: t("tut.d.tie"), loss: t("tut.d.loss") }} />;
     });
