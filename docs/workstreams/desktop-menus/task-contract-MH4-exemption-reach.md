@@ -14,14 +14,16 @@ silently, and with the counter-check still green.
 | --- | --- |
 | **Task** | `MH4` — make an exemption say which half it means |
 | **Branch** | `task/menu-mh4-exemption-reach` — create it yourself |
-| **Feature branch** | `feature/desktop-menus` |
+| **Base** | **`dev`.** The round was integrated on 2026-08-26 (`cbb07216`); the feature branch is merged and no longer the base |
 | **Base SHA** | tip at start. Record it here |
 | **Tier** | A — a known file surface, carrying out a decision already taken |
 | **Owner stops** | One, before integration |
 | **Worktree** | `C:/Code/Autostich-worktrees/menu-rework` — shared, **leave it in place** |
 | **Ports** | preview **5189** · survey **5181** |
 
-**Green at handover:** 145 files / 2355 tests · lint · build · gen:db, all exit 0, **CI green**.
+**Baseline, measured bare on `a0dc6885` (`npm test`, no pipe):** 147 files / 2380 tests. `dev` at
+`cbb07216` carries the same source. Re-measure at your base and record what you got — a number in a
+contract says how it was taken.
 
 ---
 
@@ -53,6 +55,18 @@ two halves have **different** reasons: untouchable below the threshold, tokenisa
 
 ## 2. What to build
 
+**The defect has one line.** `test/panel-tokens.test.js:1046`:
+
+```js
+const sel = m[1].trim().split("
+").pop().trim();
+```
+
+The regex matches innermost braces, so an `@media` opener lands in `m[1]` as an earlier line and
+`.pop()` throws it away. That is deliberate — it is how a clean selector is obtained — and it discards
+the only thing that tells the stylesheet's two halves apart. `src/index.css` has **31 `@media` blocks**
+and the threshold is `--breakpoint-dt: 1280px` at `src/index.css:60`.
+
 **Teach `rules()` the media context, and let an exemption say which half it means.** One function, one
 optional field.
 
@@ -76,7 +90,9 @@ written as task-local evidence, the way M8's stub and MR1's probes were before t
 The surface probe records background, border, shadow and outline. **An SVG's `fill` and `stroke` are
 on none of the four axes**, so a brand mark is invisible to the zero-delta gate by construction.
 
-The survey already prints its blind spot on every run. **That line gains SVG paint.** No fifth axis —
+The blind spot is already printed on every run — **`scripts/surface-delta.mjs:147`, not the survey**,
+and the exact string is pinned in `test/harness-honesty.test.js:48` with a lowercase substring check
+at `:310`. **That line gains SVG paint**, and both seams move together. No fifth axis —
 a gate that names what it cannot see is honest, and `lockup.mjs` covers the mark directly.
 
 ---
