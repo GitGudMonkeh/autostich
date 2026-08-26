@@ -253,20 +253,26 @@ export const SECTIONS = [
     /* VIER Lektionen statt sechs. „brett" und „sorten" waren Textkarten; was sie sagten, steht
        jetzt in der ersten Runde und in den Regeln darunter. */
     lessons: [
+      /* Die Architekt-Schirme des Entwurfs maßen 1050 bis 1350 px — über dem Budget.
+         Owner-Entscheid: aufteilen statt kürzen. Die Regeln-Liste und die Aufwerten-Tabelle
+         sind eigene Lektionen. */
       { id: "wasist", art: "voll", beats: [
         { kind: "block" },
         { kind: "probierfeld", probe: "archmock" },
+        { kind: "tip" }] },
+      { id: "regeln", art: "kurz", beats: [
         { kind: "liste" },
         { kind: "tip" }] },
       { id: "hauptaktion", art: "voll", beats: [
         { kind: "probierfeld", probe: "bauen" },
+        { kind: "tip" }] },
+      { id: "aufwerten", art: "voll", beats: [
         { kind: "tabelle", rows: 5 },
         { kind: "merk" },
         { kind: "tip" }] },
       { id: "wohin", art: "voll", beats: [
         { kind: "block" },
         { kind: "probierfeld", probe: "struktur" },
-        { kind: "block", label: true },
         { kind: "tip" }] },
       { id: "tipps", art: "voll", beats: [
         { kind: "probierfeld", probe: "tipps" },
@@ -284,6 +290,7 @@ export const SECTIONS = [
       { id: "punkte", art: "voll", beats: [
         { kind: "block" },
         { kind: "probierfeld", probe: "meilenstein" },
+        { kind: "merk" },
         { kind: "merk" },
         { kind: "tip" }] },
       { id: "baum", art: "voll", beats: [
@@ -307,19 +314,17 @@ export const SECTIONS = [
         { kind: "probierfeld", probe: "laenge" },
         { kind: "merk" },
         { kind: "tip" }] },
+      /* Der Segmente-Schirm maß 1375 px — die Kernaussagen des Blocks und des Merksatzes
+         stecken jetzt in Szene und Tipp, die Rechen-Zeile entfiel (die Faktoren stehen
+         ohnehin unter jeder Karte). */
       { id: "segmente", art: "voll", beats: [
-        { kind: "block" },
         { kind: "probierfeld", probe: "segmente" },
-        { kind: "merk" },
         { kind: "tip" }] },
       { id: "glut", art: "voll", beats: [
-        { kind: "block" },
-        { kind: "block", label: true },
-        { kind: "block", label: true },
+        { kind: "probierfeld", probe: "glutbuild" },
         { kind: "tip" }] },
       { id: "klinge", art: "voll", beats: [
-        { kind: "block", label: true },
-        { kind: "block", label: true },
+        { kind: "probierfeld", probe: "klingebuild" },
         { kind: "merk" },
         { kind: "tip" }] },
     ],
@@ -457,7 +462,7 @@ const PROBE_PX = { formation: 700, streak: 150, board: 215,
   aufstellen: 730, kartenteile: 660, overlap: 340,
   /* Die Architekt-Runden. Das Brett ist der teuerste Baustein des ganzen Tutorials: acht Zeilen
      mal fünf Spalten. GEMESSEN archmock 299 · bauen 286 · struktur 438. */
-  archmock: 320, bauen: 310, struktur: 460,
+  archmock: 560, bauen: 700, struktur: 655, glutbuild: 470, klingebuild: 490,
   // Wahl und Blitz, gemessen: kategorien 199 · raritaet 157 · blitzkarte 272.
   kategorien: 600, raritaet: 650, blitzkarte: 765,
   /* Feuer, Pflanze, Eis — gemessen: feuerkarten 271 · hitze 152 · pflanzkarte 305 ·
@@ -467,7 +472,7 @@ const PROBE_PX = { formation: 700, streak: 150, board: 215,
   feuerkarten: 425, schmiede: 465, hitze: 715, pflanzkarte: 710, pflanzzeichen: 262, gruenfeld: 670, gletscher: 645, gletscherfeld: 755,
   // Nach dem Lauf und Fortgeschritten, gemessen: gomock 299 · meilenstein 169 · baum 352 ·
   // laenge 299 · segmente 311.
-  gomock: 320, meilenstein: 190, baum: 370, laenge: 320, segmente: 330 };
+  gomock: 470, meilenstein: 400, baum: 455, laenge: 370, segmente: 772 };
 const PROBE_MAX = Math.max(...Object.values(PROBE_PX));
 
 const lines = (text) => Math.max(1, Math.ceil(String(text || "").length / CHARS_PER_LINE));

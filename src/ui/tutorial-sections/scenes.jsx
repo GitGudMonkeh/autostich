@@ -23,8 +23,12 @@ import { PERK_DEFS } from "../../game/perks.js";
 import { computeFormations, summarizeFormations, FARBBLOCK_BASE } from "../../game/formations.js";
 import { marginHeatPoints } from "../../game/skills.js";
 import * as GLACIER from "../../game/glacier.js";
+import * as AR from "../../game/architect.js";
+import * as PROG from "../../game/progression.js";
+import { RUN_COMPLETE_DP } from "../../game/storage.js";
+import { buildingEffect } from "../../i18n/buildingText.js";
 import { FACTION_ICON_SRC, GLOSSARY_IMG_SRC } from "../FactionIcon.jsx";
-import { familyDef, perkDef, perkCat, formationName, formationAbbr, rarityLabel, nodeDef, skillDef, glacierFormName } from "../../i18n/labels.js";
+import { familyDef, perkDef, perkCat, formationName, formationAbbr, rarityLabel, nodeDef, skillDef, glacierFormName, archFamily, archCatDef, branchList } from "../../i18n/labels.js";
 import { TIER_META, ROMAN } from "../../game/rarity.js";
 import { ENERGY_FLOOR } from "../../game/progression.js";
 import { perkCatArt, legendaryPerkArt } from "../perkArt.js";
@@ -1631,6 +1635,707 @@ export function GletscherfeldSzene({ hint }) {
         : t("tut.sz.ec.merkForm", { formen: body.formen,
           liste: ["block", "kreuz", "linie", "flaeche"].map((k) =>
             `${glacierFormName(k)} ×${fmtNum(String({ block: GLACIER.GEO_BLOCK, kreuz: GLACIER.GEO_KREUZ, linie: GLACIER.GEO_LINIE, flaeche: GLACIER.GEO_FLAECHE }[k]))}`).join(" · ") }))}</div>
+    </div>
+  );
+}
+
+/* ════════════════════ Welle 4 · Architekt, Danach, Fortgeschritten ════════════════════ */
+
+/* Die Architekt-Szenen bauen auf den ECHTEN Modulen: Bretter aus echten Gebäuden
+   (ARCHITECT_FAMILIES), Faktoren aus structureFactorMap/districtFactorMap, Rotationen aus
+   shapeRotations. Das Brett zeichnet verschmelzende Zellen wie ArchitectScreen.jsx:620. */
+const A_KATFARBE = { value: "#3b7dbe", score: "#2f9d55", formation: "#d1652f" };
+const A_KATKUERZEL = { value: "kv", score: "ks", formation: "kf" };
+
+function bauGeb(familyId, tier, fp, neu = false) {
+  const fam = archFamily(familyId);
+  return { id: `${familyId}@${fp[0]}`, familyId, tier, footprint: fp,
+    nm: fam?.name ?? familyId, kat: fam?.category ?? "value", neu };
+}
+
+/* Brett mit verschmelzenden Gebäudezellen: gemeinsame Kanten fallen weg, der Block wächst
+   um die 3-px-Fuge, damit eine Form als EIN Gebäude zu sehen ist. */
+function ArchBrett({ zeilen, geb, sel }) {
+  const wem = new Map();
+  geb.forEach((g, i) => g.footprint.forEach((p) => wem.set(p, i)));
+  return (
+    <div className="brett arch">
+      {Array.from({ length: zeilen }, (_, r) => (
+        <div key={r} className="zr">
+          {Array.from({ length: AR.COLS }, (_, c2) => {
+            const p = AR.posOf(r, c2), i = wem.get(p);
+            if (i == null) return <div key={c2} className="z" />;
+            const g = geb[i];
+            const gl = (dr, dc) => {
+              const rr = r + dr, cc = c2 + dc;
+              return rr >= 0 && rr < zeilen && cc >= 0 && cc < AR.COLS && wem.get(AR.posOf(rr, cc)) === i;
+            };
+            const st = {};
+            if (gl(-1, 0)) Object.assign(st, { top: -3, borderTop: 0, borderTopLeftRadius: 0, borderTopRightRadius: 0 });
+            if (gl(1, 0)) Object.assign(st, { bottom: -3, borderBottom: 0, borderBottomLeftRadius: 0, borderBottomRightRadius: 0 });
+            if (gl(0, -1)) Object.assign(st, { left: -3, borderLeft: 0, borderTopLeftRadius: 0, borderBottomLeftRadius: 0 });
+            if (gl(0, 1)) Object.assign(st, { right: -3, borderRight: 0, borderTopRightRadius: 0, borderBottomRightRadius: 0 });
+            return (
+              <div key={c2} className={`z hat ${p === sel ? "sel" : ""}`}>
+                <i className={`${A_KATKUERZEL[g.kat]} ${g.neu ? "neu" : ""}`} style={st} />
+              </div>
+            );
+          })}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function GebListe({ geb }) {
+  return (
+    <div className="gebliste">
+      {geb.map((g) => (
+        <span key={g.id} className="geb">
+          <span className="pkt2" style={{ background: A_KATFARBE[g.kat] }} />
+          <b>{g.nm}</b>
+          {g.tier ? <i>{ROMAN[g.tier]}</i> : null}
+          <i>{archCatDef(g.kat)?.label ?? g.kat}</i>
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/* ── Szene Ar · Was der Architekt ist (Entwurf Schirm 30) ───────
+   Drei Bretter aus dem Lauf zum Durchschalten; der Gebäude-Boost ist aus den echten
+   Faktor-Karten GERECHNET: Summe(Struktur × Distrikt − 1) über alle Positionen. */
+const AA_SZENEN = [
+  { runde: 4, geb: () => [
+    bauGeb("A_STUETZE", 1, [AR.posOf(0, 0), AR.posOf(0, 1)]),
+    bauGeb("A_ZOLLHAUS", 1, [AR.posOf(2, 3), AR.posOf(2, 4)])] },
+  { runde: 16, geb: () => [
+    bauGeb("A_KONTOR", 2, [AR.posOf(0, 0), AR.posOf(1, 0), AR.posOf(2, 0), AR.posOf(2, 1)]),
+    bauGeb("A_STUETZE", 3, [AR.posOf(3, 1), AR.posOf(3, 2)]),
+    bauGeb("A_QUADER", 1, [AR.posOf(4, 2), AR.posOf(4, 3), AR.posOf(5, 2), AR.posOf(5, 3)]),
+    bauGeb("A_KLAMMER", 1, [AR.posOf(6, 0), AR.posOf(6, 1)])] },
+  { runde: 32, geb: () => [
+    bauGeb("A_FRIES", 1, [AR.posOf(0, 3), AR.posOf(0, 4), AR.posOf(1, 3), AR.posOf(1, 4)]),
+    bauGeb("A_ZOLLHAUS", 4, [AR.posOf(3, 0), AR.posOf(3, 1)]),
+    bauGeb("A_RIEGEL", 2, [AR.posOf(3, 2), AR.posOf(3, 3), AR.posOf(3, 4)]),
+    bauGeb("A_QUADER", 3, [AR.posOf(5, 1), AR.posOf(5, 2), AR.posOf(6, 1), AR.posOf(6, 2)])] },
+];
+
+export function ArchmockSzene({ hint }) {
+  useLocale();
+  const [i, setI] = useState(0);
+  const [sel, setSel] = useState(null);
+  const z = AA_SZENEN[i];
+  const geb = z.geb();
+  const belegt = new Set(geb.flatMap((g) => g.footprint)).size;
+  const karte = AR.boardFactorMap(geb);
+  let summe = 0;
+  for (let p = 0; p < AR.ROWS * AR.COLS; p++) summe += karte[p] - 1;
+  const stelle = (el, inner, extraCls = "") => (
+    <div key={el} role="button" tabIndex={0} className={`stelle ${extraCls}`} aria-pressed={sel === el}
+      onClick={() => setSel(sel === el ? null : el)}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSel(sel === el ? null : el); } }}>
+      {inner}
+    </div>
+  );
+  return (
+    <div className="tsz">
+      <p className="auftrag">{hint}</p>
+      <div className="ziel"><span className="label">{t("tut.sz.aa.ausLauf")}</span>
+        <span className="num" style={{ marginLeft: "auto" }}>{i + 1} / {AA_SZENEN.length}</span>
+        <button type="button" className="tbtn leer" onClick={() => { setI((i + 1) % AA_SZENEN.length); }}>
+          {t("tut.sz.aa.neu")}
+        </button></div>
+      <div className="archmock">
+        {stelle("kopf", (
+          <>
+            <div className="amauge">{t("tut.sz.aa.auge", { n: z.runde })}</div>
+            <div className="amtitel">{t("tut.sz.aa.titel")}</div>
+          </>
+        ))}
+        <div className="amhero">
+          {stelle("boost", (
+            <>
+              <div className="amlab">{t("tut.sz.aa.boostLab")}</div>
+              <div className="amgross gruen">+{fmtNum(Math.round(summe * 100))} %</div>
+            </>
+          ))}
+          {stelle("feld", (
+            <>
+              <div className="amlab">{t("tut.sz.aa.feldLab")}</div>
+              <div className="amgross gold">{PROG.COVER_FLOOR - belegt}<span> / {PROG.COVER_FLOOR}</span></div>
+              <div className="amklein">{t("tut.sz.aa.belegt", { n: belegt, pct: Math.round(belegt / PROG.COVER_FLOOR * 100) })}</div>
+            </>
+          ), "rechts")}
+        </div>
+        {stelle("brett", (
+          <>
+            <div className="amschalter">
+              <span className="ampill">{t("tut.sz.aa.pillBoost")}</span>
+              <span className="ampill gold">◉ {t("tut.sz.aa.pillKombis")}</span>
+              <span className="ampill blau">◉ {t("tut.sz.aa.pillForm")}</span>
+            </div>
+            <ArchBrett zeilen={AR.ROWS} geb={geb} sel={null} />
+          </>
+        ))}
+      </div>
+      <GebListe geb={geb} />
+      <div className="res arch">
+        <div>
+          <div className="verdikt" style={{ fontSize: 13 }}>{sel ? t(`tut.sz.aa.${sel}.nm`) : ""}</div>
+          <div className="rechnung">{sel ? t(`tut.sz.aa.${sel}.txt`, {
+            first: VARS.firstShop, shops: VARS.nShop, cover: PROG.COVER_FLOOR, coverMax: VARS.coverMax,
+            cards: C.TRICKS_PER_CYCLE,
+          }) : t("tut.sz.aa.tap")}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Szene Ab · Deine Hauptaktion (Entwurf Schirm 31) ───────────
+   Drei echte Baupläne plus Aufwerten auf einem Vier-Zeilen-Ausschnitt mit festem Zollhaus.
+   Verschieben und Drehen sind frei; die Rotationen kommen aus shapeRotations. */
+const AB_ZEILEN = 4;
+const AB_PLAENE = [
+  { id: "stuetz", familyId: "A_STUETZE", tier: 2, start: [AR.posOf(1, 0), AR.posOf(1, 1)] },
+  { id: "kontor", familyId: "A_KONTOR", tier: 1, start: [AR.posOf(1, 3), AR.posOf(2, 3), AR.posOf(3, 3), AR.posOf(3, 4)] },
+  { id: "fries", familyId: "A_FRIES", tier: 1, start: [AR.posOf(2, 1), AR.posOf(2, 2), AR.posOf(3, 1), AR.posOf(3, 2)] },
+];
+const AB_ZOLL_FP = [AR.posOf(0, 0), AR.posOf(0, 1)];
+
+function PlanKarte({ plan, gedrueckt, gesperrt, onClick }) {
+  const fam = archFamily(plan.familyId);
+  const col = TIER_META[plan.tier].color;
+  const katF = A_KATFARBE[fam.category];
+  const cells = AR.shapeRotations(fam.form)[0] ?? [];
+  const hr = Math.max(...cells.map((x) => x[0])) + 1, hc = Math.max(...cells.map((x) => x[1])) + 1;
+  const an = new Set(cells.map(([r, c2]) => r * hc + c2));
+  const drehbar = AR.shapeRotations(fam.form).length > 1;
+  return (
+    <button type="button" className="plan" style={{ borderColor: col }} aria-pressed={gedrueckt}
+      disabled={gesperrt} onClick={onClick}>
+      <span className="plantop">
+        <span className="mini" style={{ gridTemplateColumns: `repeat(${hc},6px)` }}>
+          {Array.from({ length: hr * hc }, (_, k) => (
+            <i key={k} style={an.has(k) ? { background: katF } : undefined} />
+          ))}
+        </span>
+        <span className="stufe2" style={{ color: col, borderColor: `${col}55`, background: `${col}18` }}>{ROMAN[plan.tier]}</span>
+      </span>
+      <span className="plannm"><span className="pkt2" style={{ background: katF }} />{fam.name}</span>
+      <span className="planeff">{buildingEffect(fam, plan.tier)}</span>
+      {!drehbar && <span className="norot">⟳ {t("tut.sz.ab.nichtDrehbar")}</span>}
+    </button>
+  );
+}
+
+export function HauptaktionSzene({ hint }) {
+  useLocale();
+  const [akt, setAkt] = useState(null);
+  const [fp, setFp] = useState(null);
+  const [zuege, setZuege] = useState(0);
+  const [mvHinweis, setMvHinweis] = useState(null);
+  const plan = AB_PLAENE.find((x) => x.id === akt) || null;
+  const zollFam = archFamily("A_ZOLLHAUS");
+  const geb = (() => {
+    const zoll = { ...bauGeb("A_ZOLLHAUS", akt === "auf" ? 3 : 2, akt === "auf" ? fp : AB_ZOLL_FP), neu: akt === "auf" };
+    return plan ? [zoll, { ...bauGeb(plan.familyId, plan.tier, fp), neu: true }] : [zoll];
+  })();
+  const form = akt === "auf" ? zollFam.form : plan ? archFamily(plan.familyId).form : null;
+  const frei = (kand) => {
+    const fest = akt === "auf" ? [] : AB_ZOLL_FP;
+    return kand.every((p) => p >= 0 && p < AB_ZEILEN * AR.COLS && !fest.includes(p));
+  };
+  const waehle = (id) => {
+    if (akt) return;
+    setZuege(0); setMvHinweis(null);
+    if (id === "auf") { setAkt("auf"); setFp(AB_ZOLL_FP.slice()); }
+    else { const g = AB_PLAENE.find((x) => x.id === id); setAkt(id); setFp(g.start.slice()); }
+  };
+  const schiebe = (dr, dc) => {
+    if (!fp) return;
+    const randOk = fp.every((p) => AR.colOf(p) + dc >= 0 && AR.colOf(p) + dc < AR.COLS
+      && AR.rowOf(p) + dr >= 0 && AR.rowOf(p) + dr < AB_ZEILEN);
+    const neu = fp.map((p) => AR.posOf(AR.rowOf(p) + dr, AR.colOf(p) + dc));
+    if (!randOk || !frei(neu)) return;
+    setZuege(zuege + 1); setFp(neu); setMvHinweis(null);
+  };
+  const drehe = () => {
+    if (!fp || !form) return;
+    const lagen = AR.shapeRotations(form);
+    if (lagen.length < 2) return;
+    const r0 = Math.min(...fp.map(AR.rowOf)), c0 = Math.min(...fp.map(AR.colOf));
+    const jetzt = new Set(fp);
+    let idx = 0;
+    for (let k = 0; k < lagen.length; k++) {
+      const kand = lagen[k].map(([dr, dc]) => AR.posOf(r0 + dr, c0 + dc));
+      if (kand.length === fp.length && kand.every((p) => jetzt.has(p))) { idx = k; break; }
+    }
+    for (let k = 1; k < lagen.length; k++) {
+      const l = lagen[(idx + k) % lagen.length];
+      const kand = l.map(([dr, dc]) => AR.posOf(r0 + dr, c0 + dc));
+      const passt = l.every(([dr, dc]) => r0 + dr < AB_ZEILEN && c0 + dc < AR.COLS);
+      if (passt && frei(kand)) { setZuege(zuege + 1); setFp(kand); setMvHinweis(null); return; }
+    }
+    setMvHinweis("tut.sz.ab.keinPlatz");
+  };
+  const drehbar = form && AR.shapeRotations(form).length > 1;
+  const resKlasse = !akt ? "" : akt === "auf" ? " ks" : ` ${A_KATKUERZEL[archFamily(plan.familyId).category]}`;
+  return (
+    <div className="tsz">
+      <p className="auftrag">{hint}</p>
+      <div>
+        <div className="ziel"><span className="label">{t("tut.sz.ab.ausschnitt")}</span>
+          <button type="button" className="tbtn leer" style={{ marginLeft: "auto" }}
+            onClick={() => { setAkt(null); setFp(null); setZuege(0); setMvHinweis(null); }}>
+            {t("tut.sz.ab.nochmal")}
+          </button></div>
+        <div style={{ marginTop: 6 }}><ArchBrett zeilen={AB_ZEILEN} geb={geb} sel={null} /></div>
+        <GebListe geb={geb} />
+      </div>
+      <div><span className="label">{t("tut.sz.ab.wasBaust")}</span>
+        <div className="angebot" style={{ marginTop: 6 }}>
+          {AB_PLAENE.map((p) => (
+            <PlanKarte key={p.id} plan={p} gedrueckt={akt === p.id} gesperrt={!!akt && akt !== p.id}
+              onClick={() => waehle(p.id)} />
+          ))}
+          <button type="button" className="plan auf" style={{ borderColor: A_KATFARBE.value }}
+            aria-pressed={akt === "auf"} disabled={!!akt && akt !== "auf"} onClick={() => waehle("auf")}>
+            <span className="planpfeil">⬆</span>
+            <span className="plannm">{t("tut.sz.ab.aufwerten")}</span>
+            <span className="planeff">{t("tut.sz.ab.aufwertenEff")}</span>
+          </button>
+        </div></div>
+      {akt && (
+        <div>
+          <span className="label">{t("tut.sz.ab.moveLabel")}</span>
+          <div className="werkzeuge formen" style={{ marginTop: 6 }}>
+            <button type="button" className="tbtn" onClick={() => schiebe(-1, 0)}>{t("tut.sz.ab.hoch")}</button>
+            <button type="button" className="tbtn" onClick={() => schiebe(1, 0)}>{t("tut.sz.ab.runter")}</button>
+            <button type="button" className="tbtn" onClick={() => schiebe(0, -1)}>{t("tut.sz.ab.links")}</button>
+            <button type="button" className="tbtn" onClick={() => schiebe(0, 1)}>{t("tut.sz.ab.rechts")}</button>
+          </div>
+          <button type="button" className="tbtn" style={{ marginTop: 6, width: "100%" }} disabled={!drehbar} onClick={drehe}>
+            ⟳ {drehbar ? t("tut.sz.ab.drehen") : t("tut.sz.ab.nichtDrehbar")}
+          </button>
+          <p className="hint">{mvHinweis ? t(mvHinweis)
+            : zuege === 1 ? t("tut.sz.ab.zug1") : zuege ? t("tut.sz.ab.zuege", { n: zuege }) : t("tut.sz.ab.leuchtet")}</p>
+        </div>
+      )}
+      <div className={`res arch${resKlasse}`}>
+        <div>
+          <div className="verdikt" style={{ fontSize: 13 }}>
+            {!akt ? t("tut.sz.ab.nichtsNm")
+              : akt === "auf" ? t("tut.sz.ab.aufNm", { nm: zollFam.name, stufe: ROMAN[3] })
+              : t("tut.sz.ab.bauNm", { nm: archFamily(plan.familyId).name, stufe: ROMAN[plan.tier] })}
+          </div>
+          <div className="rechnung">
+            {!akt ? t("tut.sz.ab.nichtsTxt")
+              : akt === "auf" ? t("tut.sz.ab.aufTxt", {
+                  neu: AR.tierNum(zollFam.base.score, 3), alt: AR.tierNum(zollFam.base.score, 2), felder: AB_ZOLL_FP.length })
+              : t("tut.sz.ab.bauTxt", { eff: buildingEffect(archFamily(plan.familyId), plan.tier), felder: plan.start.length })}
+          </div>
+        </div>
+        <div className="pkt" style={{ whiteSpace: "nowrap" }}>
+          {!akt ? "0" : akt === "auf" ? `+${fmtNum(AR.tierNum(zollFam.base.score, 3))}` : ROMAN[plan.tier]}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Szene Ax · Wohin du baust (Entwurf Schirm 32) ──────────────
+   Vier feste Lagen aus echten Gebäuden; jede isoliert genau eine Sache. Die Faktoren der
+   markierten Zelle kommen aus structureFactorMap und districtFactorMap. */
+const AX_SEL = AR.posOf(3, 2);
+const AX_LAGEN = {
+  zeile: () => [bauGeb("A_ZOLLHAUS", 2, [AR.posOf(3, 0), AR.posOf(3, 1)]),
+    bauGeb("A_RIEGEL", 1, [AR.posOf(3, 2), AR.posOf(3, 3), AR.posOf(3, 4)])],
+  spalte: () => [bauGeb("A_REIHENHAUS", 1, [AR.posOf(0, 2), AR.posOf(1, 2), AR.posOf(2, 2), AR.posOf(3, 2)]),
+    bauGeb("A_FIRST", 1, [AR.posOf(4, 2), AR.posOf(5, 2), AR.posOf(6, 2), AR.posOf(7, 2)])],
+  diag: () => [bauGeb("A_LAUFGANG", 1, [AR.posOf(1, 0), AR.posOf(2, 1), AR.posOf(3, 2)]),
+    bauGeb("A_FRIES", 1, [AR.posOf(4, 3), AR.posOf(4, 4), AR.posOf(5, 3), AR.posOf(5, 4)])],
+  distrikt: () => [bauGeb("A_STUETZE", 1, [AR.posOf(3, 1), AR.posOf(3, 2)]),
+    bauGeb("A_QUADER", 1, [AR.posOf(4, 2), AR.posOf(4, 3), AR.posOf(5, 2), AR.posOf(5, 3)])],
+};
+
+export function WohinSzene({ hint, labels: L }) {
+  useLocale();
+  const [lage, setLage] = useState("zeile");
+  const geb = AX_LAGEN[lage]();
+  const felder = new Set(geb.flatMap((g) => g.footprint));
+  const sf = AR.structureFactorMap(felder);
+  const df = AR.districtFactorMap(geb);
+  /* Die Namen der Strukturen an der markierten Zelle, aus der Geometrie abgelesen. */
+  const namen = [];
+  const r = AR.rowOf(AX_SEL);
+  if (Array.from({ length: AR.COLS }, (_, c2) => AR.posOf(r, c2)).every((p) => felder.has(p))) namen.push(L.zeile);
+  const c0 = AR.colOf(AX_SEL);
+  if (Array.from({ length: AR.ROWS }, (_, rr) => AR.posOf(rr, c0)).every((p) => felder.has(p))) namen.push(L.spalte);
+  for (let r0 = 0; r0 <= AR.ROWS - AR.COLS; r0++) {
+    const haupt = [], gegen = [];
+    for (let k = 0; k < AR.COLS; k++) { haupt.push(AR.posOf(r0 + k, k)); gegen.push(AR.posOf(r0 + k, AR.COLS - 1 - k)); }
+    for (const d of [haupt, gegen]) if (d.includes(AX_SEL) && d.every((p) => felder.has(p))) namen.push(L.diag);
+  }
+  const sF = sf[AX_SEL], dF = df[AX_SEL], ges = sF * dF;
+  const dN = dF > 1 ? Math.round((dF - 1) / AR.DISTRICT_BONUS) : 0;
+  let v = WIN;
+  const steps = [];
+  steps.push(rich(t("tut.sz.ax.eqBasis", { v: fmtNum(WIN) })));
+  for (const nm of namen) {
+    const einzel = nm === L.zeile ? AR.HAEUSERZEILE_FACTOR : nm === L.spalte ? AR.SPALTE_FACTOR : AR.DIAGONALE_FACTOR;
+    v = v * einzel;
+    steps.push(rich(t("tut.sz.ax.eqStep", { nm, f: f2(einzel), v: fmtNum(Math.round(v)) })));
+  }
+  if (dN) {
+    v = v * dF;
+    steps.push(rich(t("tut.sz.ax.eqDistrikt", { f: f2(dF), n: dN, v: fmtNum(Math.round(v)) })));
+  }
+  return (
+    <div className="tsz">
+      <p className="auftrag">{hint}</p>
+      <div className="werkzeuge formen">
+        {["zeile", "spalte", "diag", "distrikt"].map((k) => (
+          <button key={k} type="button" className="tbtn" aria-pressed={lage === k} onClick={() => setLage(k)}>
+            {t(`tut.sz.ax.${k}Btn`)}
+          </button>
+        ))}
+      </div>
+      <ArchBrett zeilen={AR.ROWS} geb={geb} sel={AX_SEL} />
+      <GebListe geb={geb} />
+      <div className={`res arch${ges > 1 ? " kv" : ""}`}>
+        <div>
+          <div className="verdikt" style={{ fontSize: 13 }}>
+            {namen.length ? namen.join(" + ") : dN ? L.distrikt : t("tut.sz.ax.keinBonus")}
+          </div>
+          <div className="rechnung">
+            {(namen.length ? t("tut.sz.ax.mitStruktur", { f: f2(sF) }) : t("tut.sz.ax.keineStruktur"))
+              + " · " + (dN ? t("tut.sz.ax.mitDistrikt", { f: f2(dF) }) : t("tut.sz.ax.keinDistrikt"))}
+          </div>
+        </div>
+        <div className="pkt" style={{ whiteSpace: "nowrap" }}>×{f2(ges)}</div>
+      </div>
+      <div className="zeile"><span className="label">{t("tut.sz.ax.eqLabel")}</span>
+        <div className="eq" style={{ marginTop: 7 }}>
+          {steps.map((x, k) => <span key={k} className="step">{x}</span>)}
+          <span className="step trenn">{rich(t("tut.sz.ax.eqZahlt", { v: fmtNum(Math.round(v)), basis: fmtNum(WIN) }))}</span>
+        </div></div>
+      <div className="merk3">{rich(t(`tut.sz.ax.${lage}Merk`, {
+        cover: PROG.COVER_FLOOR, pct: VARS.districtPct }))}</div>
+    </div>
+  );
+}
+
+/* ── Szene Na · Der Endscreen (Entwurf Schirm 34) ───────────────
+   Nachbildung aus GameOver.jsx:300 mit vier anfassbaren Bereichen; die Beispielwerte
+   sind die des Entwurfs, die Meilenstein-Zahlen kommen aus SP_MILESTONES. */
+
+export function EndscreenSzene({ hint }) {
+  useLocale();
+  const [sel, setSel] = useState(null);
+  const marken = PROG.SP_MILESTONES;
+  const stelle = (el, inner, extra = null) => (
+    <div key={el} role="button" tabIndex={0} className="stelle" aria-pressed={sel === el} style={extra}
+      onClick={() => setSel(sel === el ? null : el)}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSel(sel === el ? null : el); } }}>
+      {inner}
+    </div>
+  );
+  return (
+    <div className="tsz">
+      <p className="auftrag">{hint}</p>
+      <div className="archmock go">
+        {stelle("score", (
+          <>
+            <div className="goauge">{t("tut.sz.na.auge")}</div>
+            <div className="goscore">41,3 Mio.</div>
+            <div className="gochip">−12 % {t("tut.sz.na.zumRekord")}</div>
+            <div className="goklein">14:32 · Ø 20.642/{t("tut.sz.na.jeStich")} · 50 {t("tut.sz.na.durchlaeufe")}</div>
+          </>
+        ))}
+        {stelle("marken", (
+          <>
+            <div className="gozeile"><span>💠 {t("tut.sz.e.msWort")} 2/{marken.length}</span>
+              <span>{t("tut.sz.na.naechster", { n: Math.round(marken[2].at / 1e6) })}</span></div>
+            <div className="msbar"><span className="msfill" style={{ width: "53%" }} />
+              {[1, 2, 3, 4].map((k) => <i key={k} style={{ left: `${k * 20}%` }} />)}</div>
+          </>
+        ))}
+        {stelle("waehrung", (
+          <div className="gowaehrung">
+            <div className="gow sp"><span>{t("gameover.sp")}</span><b>+7</b></div>
+            <div className="gow dp"><span>{t("tut.sz.na.dp")}</span><b>+7</b></div>
+          </div>
+        ))}
+        {stelle("best", (
+          <>
+            <div className="golab">{t("tut.sz.na.bestLab")}</div>
+            <div className="gobest">
+              <div><span>{t("tut.sz.na.besteSerie")}</span><b>31</b></div>
+              <div><span>{t("tut.sz.na.besterStich")}</span><b>2,1 Mio.</b></div>
+              <div><span>{t("tut.sz.na.meisteCrits")}</span><b>84</b></div>
+            </div>
+          </>
+        ))}
+      </div>
+      <div className="res arch">
+        <div>
+          <div className="verdikt" style={{ fontSize: 13 }}>{sel ? t(`tut.sz.na.${sel}.nm`) : ""}</div>
+          <div className="rechnung">{sel ? t(`tut.sz.na.${sel}.txt`, {
+            m1: Math.round(marken[0].at / 1e6), m2: Math.round(marken[1].at / 1e6), m3: Math.round(marken[2].at / 1e6),
+            m4: Math.round(marken[3].at / 1e6), m5: Math.round(marken[4].at / 1e6),
+          }) : t("tut.sz.aa.tap")}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Szene Nb · Was ein Lauf einbringt (Entwurf Schirm 35) ──────
+   Regler in 5-Mio-Schritten, damit alle Marken exakt getroffen werden; Balkenlogik wie
+   milestoneBarState: jede Marke ein Fünftel, innerhalb proportional. */
+const NB_SCHRITT = 5e6;
+
+export function PunkteSzene({ hint }) {
+  const [locale] = useLocale();
+  const [reg, setReg] = useState(8);
+  const marken = PROG.SP_MILESTONES;
+  const s2 = reg * NB_SCHRITT;
+  const erreicht = marken.reduce((k, m) => (s2 >= m.at ? k + 1 : k), 0);
+  const mark = marken.reduce((a, m) => (s2 >= m.at ? a + m.sp : a), 0);
+  let fill = 1, naechste = null;
+  if (erreicht < marken.length) {
+    const vor = erreicht === 0 ? 0 : marken[erreicht - 1].at, nach = marken[erreicht].at;
+    fill = (erreicht + (s2 - vor) / (nach - vor)) / marken.length;
+    naechste = nach;
+  }
+  const sp = PROG.SP_PER_RUN + mark, dp = RUN_COMPLETE_DP + mark;
+  const mio = (x) => `${fmtNum(String(Math.round(x / 1e5) / 10), locale)} Mio.`;
+  return (
+    <div className="tsz">
+      <p className="auftrag">{hint}</p>
+      <div className="zeile">
+        <div className="ziel"><span className="label">{t("tut.sz.nb.scoreLab")}</span>
+          <span className="num" style={{ marginLeft: "auto" }}>{s2 === 0 ? "0" : mio(s2)}</span></div>
+        <input type="range" min="0" max="24" step="1" value={reg}
+          onChange={(e) => setReg(Number(e.target.value))} aria-label={t("tut.sz.nb.scoreLab")} />
+        <div className="gozeile" style={{ marginTop: 4 }}>
+          <span>{t("tut.sz.nb.marken", { n: erreicht, total: marken.length })}</span>
+          <span>{naechste ? t("tut.sz.na.naechster", { n: Math.round(naechste / 1e6) }) : t("tut.sz.nb.maximum")}</span></div>
+        <div className="msbar"><span className="msfill" style={{ width: `${(fill * 100).toFixed(1)}%` }} />
+          {[1, 2, 3, 4].map((k) => <i key={k} style={{ left: `${k * 20}%` }} />)}</div>
+        <div className="gomarken">
+          {marken.map((m, k) => <span key={k}>{Math.round(m.at / 1e6)}{k === marken.length - 1 ? " Mio" : ""}</span>)}
+        </div>
+      </div>
+      <div className="gowaehrung">
+        <div className="gow sp"><span>{t("gameover.sp")}</span><b>+{sp}</b></div>
+        <div className="gow dp"><span>{t("tut.sz.na.dp")}</span><b>+{dp}</b></div>
+      </div>
+      <div className="zeile"><span className="label">{t("tut.sz.nb.eqLabel")}</span>
+        <div className="eq" style={{ marginTop: 7 }}>
+          <span className="step">{rich(t("tut.sz.nb.eqGrund", { n: PROG.SP_PER_RUN }))}</span>
+          <span className={`step ${mark ? "" : "off"}`}>{rich(mark
+            ? t("tut.sz.nb.eqMarken", { n: mark })
+            : t("tut.sz.nb.eqKeine", { m1: Math.round(marken[0].at / 1e6) }))}</span>
+          <span className="step trenn">{rich(t("tut.sz.nb.eqSumme", { sp, dp }))}</span>
+        </div></div>
+    </div>
+  );
+}
+
+/* ── Szene Nc · Der Upgrade-Baum (Entwurf Schirm 36) ────────────
+   Die Bahnen aus UpgradeScreen.jsx:89 (GEN_LANES, dort nicht exportiert — die id-Listen
+   sind zitiert) plus der Deck-Zweig; die Kosten sind live aus NODES summiert. */
+const NC_BAHNEN = [
+  { nmKey: "upgrades.lane.cover", zweig: "gen", ids: ["cover1", "cover2", "cover3"], txt: "cover" },
+  { nmKey: "upgrades.lane.energy", zweig: "gen", ids: ["energy1", "energy2"], txt: "energy" },
+  { nmKey: "upgrades.lane.rerolls", zweig: "gen", ids: ["reroll1", "reroll2"], txt: "rerolls" },
+  { nmKey: "upgrades.lane.rarity", zweig: "gen", ids: ["tier3", "tier4", "legLayer"], txt: "rarity" },
+  { nmKey: "upgrades.lane.drops", zweig: "gen", ids: ["drop1", "drop2", "drop3", "drop4"], txt: "drops" },
+  { nmKey: "upgrades.lane.perk2", zweig: "gen", ids: ["perk2Leg", "perk2Reroll"], txt: "perk2" },
+];
+
+export function BaumSzene({ hint }) {
+  useLocale();
+  const [sel, setSel] = useState(null);
+  const kosten = (ids) => ids.reduce((a, id) => a + (PROG.NODES.find((n) => n.id === id)?.cost ?? 0), 0);
+  const deckIds = PROG.NODES.filter((n) => n.branch === "deck" && !n.placeholder).map((n) => n.id);
+  const bahnen = [
+    ...NC_BAHNEN.map((b) => ({ ...b, nm: t(b.nmKey), zweigNm: branchList().find((x) => x.key === b.zweig)?.name ?? "", sp: kosten(b.ids) })),
+    { txt: "decks", nm: t("tut.sz.nc.decks"), zweigNm: branchList().find((x) => x.key === "deck")?.name ?? "", sp: kosten(deckIds), ids: deckIds },
+  ];
+  return (
+    <div className="tsz">
+      <p className="auftrag">{hint}</p>
+      <div className="bahnen">
+        {bahnen.map((b) => (
+          <button key={b.txt} type="button" className="bahn" aria-pressed={sel === b.txt}
+            onClick={() => setSel(sel === b.txt ? null : b.txt)}>
+            <span className="bahnnm">{b.nm}</span>
+            <span className="bahnzw">{b.zweigNm}</span>
+            <span className="bahnsp">{b.sp} SP</span>
+          </button>
+        ))}
+      </div>
+      <div className="res">
+        <div>
+          <div className="verdikt" style={{ fontSize: 13 }}>{sel ? bahnen.find((b) => b.txt === sel)?.nm : ""}</div>
+          <div className="rechnung">{sel ? t(`tut.sz.nc.${sel}`, {
+            cover: PROG.COVER_FLOOR, coverMax: VARS.coverMax, energy: PROG.ENERGY_FLOOR, energyMax: VARS.energyMax,
+            n: bahnen.find((b) => b.txt === sel)?.ids.length ?? 0,
+          }) : t("tut.sz.nc.tap")}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Szene Fa · Lange Formationen zahlen mehr (Entwurf Schirm 38) ──
+   Je Typ eine saubere Hand, die NUR diesen Typ erzeugt; die Faktoren misst die echte
+   computeFormations je Länge — mit offener Segmentgrenze (E_SEGMENT III), damit der
+   Regler wie im Entwurf bis acht laufen kann. */
+const FA_HAENDE = {
+  wiederholung: [[7, "R"], [7, "B"], [7, "G"], [7, "Y"], [7, "R"], [7, "B"], [7, "G"], [7, "Y"]],
+  wechsel: [[2, "R"], [7, "B"], [3, "G"], [8, "Y"], [4, "R"], [9, "B"], [5, "G"], [10, "Y"]],
+  farbblock: [[5, "B"], [2, "B"], [8, "B"], [4, "B"], [9, "B"], [6, "B"], [3, "B"], [10, "B"]],
+  treppe: [[1, "R"], [2, "B"], [3, "G"], [5, "Y"], [6, "R"], [7, "B"], [9, "G"], [10, "Y"]],
+};
+const FA_TYPEN = ["wiederholung", "wechsel", "farbblock", "treppe"];
+
+function faFaktor(typ, n) {
+  const hand = FA_HAENDE[typ].slice(0, n);
+  const cards = hand.map(([v, su], k) => ({ id: `fa-${typ}-${k}`, value: v, suit: su }));
+  const per = computeFormations(cards.map((_, k) => k), cards, {}, [], [], [], { E_SEGMENT: 3 });
+  return per[n - 1]?.mult ?? 1;
+}
+
+export function LaengeSzene({ hint }) {
+  useLocale();
+  const [n, setN] = useState(2);
+  return (
+    <div className="tsz">
+      <p className="auftrag">{hint}</p>
+      <div className="zeile">
+        <div className="ziel"><span className="label">{t("tut.sz.fa.lenLab")}</span>
+          <span className="num" style={{ marginLeft: "auto" }}>{t("tut.sz.fa.lenN", { n })}</span></div>
+        <input type="range" min="1" max="8" step="1" value={n}
+          onChange={(e) => setN(Number(e.target.value))} aria-label={t("tut.sz.fa.lenLab")} />
+      </div>
+      <div className="flist">
+        {FA_TYPEN.map((typ) => {
+          const f = faFaktor(typ, n), an = f > 1;
+          return (
+            <div key={typ} className={`fz ${an ? "an" : ""}`}>
+              <span>{formationName(typ)}</span>
+              <i>{t(`tut.sz.fa.${typ}`)}</i>
+              <b>×{f2(f)}</b>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ── Szene Sg · Segmentgrenzen öffnen (Entwurf Schirm 39) ───────
+   Fünfzehn Karten, drei Segmente, neun rote über beide Grenzen. Die drei Zustände sind
+   die echten Stufen der Segmentarbeit: zu, offen (III), offen mit Grenzbonus (IV). */
+const SG_KARTEN = [[9, "B"], [4, "G"], [7, "Y"],
+  [5, "R"], [8, "R"], [6, "R"], [9, "R"], [7, "R"], [10, "R"], [4, "R"], [1, "R"], [3, "R"],
+  [10, "B"], [8, "G"], [2, "Y"]];
+const SG_CARDS = SG_KARTEN.map(([v, su], k) => ({ id: `sg-${k}`, value: v, suit: su }));
+
+function sgMults(stufe) {
+  const tiers = stufe === 0 ? {} : { E_SEGMENT: stufe };
+  const per = computeFormations(SG_CARDS.map((_, k) => k), SG_CARDS, {}, [], [], [], tiers);
+  return per.map((p) => p.mult);
+}
+
+export function SegmenteSzene({ hint, labels: L }) {
+  useLocale();
+  const [lage, setLage] = useState("zu");
+  const stufe = lage === "zu" ? 0 : lage === "drei" ? 3 : 4;
+  const m = sgMults(stufe);
+  const summe = m.reduce((a, x) => a + (x - 1), 0);
+  const offen = lage !== "zu";
+  return (
+    <div className="tsz seg1">
+      <p className="auftrag">{hint}</p>
+      <div className="werkzeuge formen" style={{ gridTemplateColumns: "repeat(3,minmax(0,1fr))" }}>
+        <button type="button" className="tbtn" aria-pressed={lage === "zu"} onClick={() => setLage("zu")}>{t("tut.sz.sg.zu")}</button>
+        <button type="button" className="tbtn" aria-pressed={lage === "drei"} onClick={() => setLage("drei")}>{L.segIII}</button>
+        <button type="button" className="tbtn" aria-pressed={lage === "vier"} onClick={() => setLage("vier")}>{L.segIV}</button>
+      </div>
+      {[0, 1, 2].map((seg) => (
+        <div key={seg}>
+          <div className="reihe">
+            {SG_KARTEN.slice(seg * 5, seg * 5 + 5).map(([v, su], k) => (
+              <Karte key={k} v={v} s={su} cls={m[seg * 5 + k] > 1 ? "" : "dim"} />
+            ))}
+          </div>
+          <div className="fakt">
+            {SG_KARTEN.slice(seg * 5, seg * 5 + 5).map((_, k) => {
+              const f = m[seg * 5 + k];
+              return <span key={k} className={f > 1 ? "an" : ""}>{f > 1 ? `×${f2(f)}` : "–"}</span>;
+            })}
+          </div>
+          {seg < 2 && (
+            <div className={`grenze ${offen ? "offen" : ""}`}>
+              <span>{t("tut.sz.sg.grenze", { n: seg + 1 })}</span>
+              <b>{offen ? (stufe === 4 ? t("tut.sz.sg.offenBonus") : t("tut.sz.sg.offen")) : t("tut.sz.sg.geschlossen")}</b>
+            </div>
+          )}
+        </div>
+      ))}
+      <div className={`res arch${offen ? " kv" : ""}`}>
+        <div>
+          <div className="verdikt" style={{ fontSize: 13 }}>
+            {lage === "zu" ? t("tut.sz.sg.zuNm") : lage === "drei" ? L.segIII : L.segIV}
+          </div>
+          <div className="rechnung">{t("tut.sz.sg.summeTxt")}</div>
+        </div>
+        <div className="pkt" style={{ whiteSpace: "nowrap" }}>{f2(summe)}</div>
+      </div>
+      <div className="merk3">{rich(t(`tut.sz.sg.${lage}Merk`, { segIII: L.segIII, segIV: L.segIV }))}</div>
+    </div>
+  );
+}
+
+/* ── Szenen Fc/Fd · Zwei Builds (Entwurf Schirme 40/41) ─────────
+   Die Build-Kästen des Entwurfs: Kopf, Satz, Teile, Schlusszeile. Statisch, aber in der
+   Optik des Entwurfs; Zahlen als Platzhalter aus den Konstanten. */
+export function BuildSzene({ hint, warm = false, kopfKey }) {
+  useLocale();
+  const V = {
+    rowFactor: f2(AR.HAEUSERZEILE_FACTOR), colFactor: f2(AR.SPALTE_FACTOR),
+    rowAmp: f2(1 + (AR.HAEUSERZEILE_FACTOR - 1) * C.FIRE_STRUCT_DIVIDEND_AMP),
+    colAmp: f2(1 + (AR.SPALTE_FACTOR - 1) * C.FIRE_STRUCT_DIVIDEND_AMP),
+    forgeValue: C.FORGE_VALUE, glowV1: C.GLOWING_T1_VALUE, glowV2: C.GLOWING_T2_VALUE, glowV3: C.GLOWING_T3_VALUE,
+    glowT1: C.GLOWING_T1_HEAT, glowT2: C.GLOWING_T2_HEAT, glowT3: C.GLOWING_T3_HEAT,
+    streakPct: Math.round(STEP * 100), critPerSkill: Math.round(C.LIGHTNING_CRIT_PER_SKILL * 100),
+    critMult: f2(CRIT), glowM2: C.GLOWING_T2_MARGIN, glowM3: C.GLOWING_T3_MARGIN,
+    schmiede: skillDef("SK_FIRE_15")?.name ?? "", gk: skillDef("SK_FIRE_06")?.name ?? "",
+    walze: skillDef("SK_FIRE_07")?.name ?? "",
+  };
+  const teile = [1, 2, 3].filter((k) => t(`${kopfKey}.t${k}`) !== `${kopfKey}.t${k}`);
+  return (
+    <div className="tsz">
+      <p className="auftrag">{hint}</p>
+      <div className={`build ${warm ? "warm" : ""}`}>
+        <div className="buildkopf"><b>{t(`${kopfKey}.kopf`)}</b><i>{t(`${kopfKey}.unter`)}</i></div>
+        <p className="buildsatz">{rich(t(`${kopfKey}.satz`, V))}</p>
+        <div className="teile">
+          {teile.map((k) => (
+            <div key={k}>
+              <span>{t(`${kopfKey}.t${k}`)}</span>
+              <em>{rich(t(`${kopfKey}.e${k}`, V))}</em>
+            </div>
+          ))}
+        </div>
+        <p className="buildende">{rich(t(`${kopfKey}.ende`, V))}</p>
+      </div>
     </div>
   );
 }

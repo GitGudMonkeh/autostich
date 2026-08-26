@@ -115,6 +115,10 @@ describe("i18n · Katalog-Parität", () => {
      würde die vergessene spanische Übersetzung genau dort durchlassen, wo sie am wahrscheinlichsten
      ist — bei den Wörtern, die aus dem Englischen schon vertraut aussehen. */
   const SAME_OK_EN = new Set([
+    "tut.sz.aa.pillBoost",  // „Boost →0 %" — reines Kuerzel, beide Sprachen gleich
+    "tut.sz.ax.eqStep",     // reine Formelzeile aus Platzhaltern
+    "tut.sz.nb.maximum",    // dasselbe Wort
+    "tut.sz.nc.decks",      // Deck bleibt Deck (§3.1)
     "tut.sz.fb.k1b",       // „Brand" — im Englischen dasselbe Wort
     "tut.sz.pc.eqBlock",    // reine Formelzeile aus Platzhaltern
     "tut.sz.pc.eqBluete",   // dito
@@ -277,6 +281,7 @@ describe("i18n · Katalog-Parität", () => {
      3. ZWEI KÜRZEL, die zufällig zusammenfallen: Wechsel/Zigzag → Z und Anker/Ancla → A. Die
         anderen sechs Formations-Kürzel unterscheiden sich. */
   const SAME_OK_ES = new Set([
+    "tut.sz.ax.eqStep",     // reine Formelzeile aus Platzhaltern
     "tut.sz.pc.eqBlock",    // reine Formelzeile aus Platzhaltern
     "tut.sz.pc.eqBluete",   // dito
     "tut.sz.ec.eqSiegStep", // dito
@@ -335,6 +340,7 @@ describe("i18n · Katalog-Parität", () => {
      in keiner Sprache uebersetzt werden. Die erfundenen Deck- und Effektnamen faengt schon
      SAME_OK_CLASS ab und stehen deshalb nicht noch einmal hier. */
   const SAME_OK_ZH = new Set([
+    "tut.sz.ax.eqStep",     // reine Formelzeile aus Platzhaltern
     "tut.sz.pc.eqBlock",    // reine Formelzeile aus Platzhaltern
     "tut.sz.pc.eqBluete",   // dito
     "tut.sz.ec.eqSiegStep", // dito
