@@ -92,3 +92,13 @@ create index if not exists autostich_scores_seed_idx
 create index if not exists autostich_scores_global_idx
   on public.autostich_scores (score desc, tricks desc, created_at desc)
   where board is null;
+
+-- ============================================================================
+-- #health-check S1 (2026-08-27): Missbrauchs-Stopp für die Score-Spalte.
+-- KEIN varchar(N)-Muster (#197) — dies ist ein Wertebereichs-Check, 4–5 Größenordnungen über echten
+-- Läufen (zweistellige Millionen, s. Spaltenkommentar oben). Ein legitimer Client erreicht ihn nie;
+-- ein direkter POST mit 2^63−1 prallt ab, statt jedes Board dauerhaft zu toppen. Vorbild ist der
+-- Größen-Check der Telemetrie-Tabelle. Idempotent; im Supabase-SQL-Editor ausführen.
+alter table public.autostich_scores drop constraint if exists autostich_scores_score_range;
+alter table public.autostich_scores add constraint autostich_scores_score_range
+  check (score >= 0 and score <= 1000000000000);

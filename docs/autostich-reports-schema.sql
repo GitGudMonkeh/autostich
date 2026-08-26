@@ -51,3 +51,13 @@ create policy "anon can insert reports" on public.autostich_reports
 -- Sie braucht KEINEN neuen Client-Build (der Client weiß von Discord nichts) und fällt der Ping aus,
 -- steht der Report trotzdem in der Tabelle.
 -- ------------------------------------------------------------
+
+-- ============================================================================
+-- #health-check S2 (2026-08-27): Missbrauchs-Stopp für die Meldungs-Länge, nach dem Muster des
+-- decisions-Checks der Telemetrie-Tabelle (≤ 200k). KEIN varchar(N) (#197): die Grenze liegt 20×
+-- über dem 1000-Zeichen-Feld des Melders — ein legitimer Client erreicht sie nie, Multi-MB-Zeilen
+-- eines Flooders prallen ab. Der Client kappt seit demselben Befund zusätzlich in toRow (4000).
+-- Idempotent; im Supabase-SQL-Editor ausführen.
+alter table public.autostich_reports drop constraint if exists autostich_reports_message_len;
+alter table public.autostich_reports add constraint autostich_reports_message_len
+  check (char_length(message) <= 20000);

@@ -179,12 +179,6 @@ export function t(key, vars, locale) {
   return interpolate(raw, vars);
 }
 
-// Prüfen, ob ein Schlüssel existiert (für optionale Texte, z. B. Tutorial-Schritte ohne Hinweis).
-export function hasKey(key, locale) {
-  const cat = CATALOGS[locale || current] || {};
-  return cat[key] != null || cat[key + "_one"] != null;
-}
-
 // Roher Katalog — nur für Guards/Export, NICHT für die UI.
 export function catalog(locale) { return CATALOGS[locale] || {}; }
 

@@ -263,5 +263,3 @@ export function recordAbandoned(args) {
   return recordRun({ ...args, outcome: "abandoned", keepalive: true });
 }
 
-// Nur für Tests: Modul-Zustand zurücksetzen.
-export function __resetTelemetryState() { abandoned.clear(); inflight = null; }

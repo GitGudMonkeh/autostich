@@ -58,4 +58,3 @@ export function ModalIcon({ name, className = "" }) {
   );
 }
 
-export const MODAL_ICON_NAMES = Object.keys(PATHS);
