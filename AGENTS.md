@@ -458,6 +458,11 @@ The core rule is:
 
 > One active writer = one task = one branch = one worktree.
 
+**The cockpit checkout is a worktree too, and it belongs to integration.** A worker gets its own
+worktree; where it does not have one, it asks for one rather than writing into the cockpit beside the
+integrator. Two sessions writing there is the same collision as anywhere else — it just looks
+harmless because the directory is the one everybody knows.
+
 A task may use several **sequential** agent sessions in the same worktree.
 
 Allowed:
@@ -536,6 +541,21 @@ Task lifecycle — tiers, contract, evidence, handoff:
   - proposed.
 - Never claim a gate ran if it did not.
 - Never describe planned work as completed.
+
+### Output discipline
+
+Reasoning is worth recording. Length is not, and the two get confused constantly.
+
+- **Code comment: at most ~5 lines.** Longer only where the reasoning is genuinely non-obvious and a
+  later reader would otherwise undo the change. A two-line fix does not get a thirty-line comment.
+- **Commit message: subject plus at most ~10 lines.** What changed, why, what was measured, what was
+  not. Not an essay; the diff is right there.
+- **Report to the owner: what fits on a phone screen.** The finding, the fix, what is still open.
+  Detail on request.
+
+This is not a licence to skip the reasoning — it is a limit on restating it. Where a decision needs
+more room, put it in the one place that already exists for it (the log in `docs/decisions/`), not in
+three places at once.
 
 ---
 
