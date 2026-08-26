@@ -25,7 +25,10 @@ function mockLS() {
 const DEFAULT_OPTIONS = {
   lang: null, // #sprache: noch nicht gewählt → die UI nimmt beim ersten Start die Browsersprache
   skin: "crt", muted: false, sfxVol: 0.4, musicVol: 0.2, deckId: "deck_onboarding", battlefieldId: "bf_onboarding",
-  reducedFx: "aus", haptics: true, archShowCombos: true, archShowForms: true,
+  /* #arch-default: Combos AN, Formationen AUS. Die Formationsrahmen gehören der Aufstellung; auf dem
+     Bau-Brett liegen sie als zweite Rahmenlage über demselben Feld. `archFormsDefaultLift` unten ist
+     der Marker der EINMALIGEN Absenkung bestehender Stände (s. storage.js `liftArchFormsDefault`). */
+  reducedFx: "aus", haptics: true, archShowCombos: true, archShowForms: false,
   calmMusic: false,
   telemetry: true, // #telemetrie: anonyme Lauf-Daten, Default an (Opt-out in den Optionen)
   collapseScoreSource: true, collapseScoreTrend: true, finisher: "standard", archColor: "standard",
@@ -50,6 +53,7 @@ const DEFAULT_OPTIONS = {
   fxSonnenPulsDeck: true, fxLaserFaecherDeck: true, fxPrismaKaskadeDeck: true, fxHoloCubeDeck: true, fxSupernovaDeck: true,
   fxGottStandardDeck: true, // #vorschau-deck: Farbmodus für „Gottgleich · Standard“
   fxDeckDefaultLift: false,
+  archFormsDefaultLift: false,
 };
 
 describe("rankHighscores", () => {
