@@ -2272,7 +2272,24 @@ b, strong { font-weight: 600; }
 /* #zh-hans: Im Willkommens-Dialog steht die Sprachwahl ALLEIN in ihrer Zeile und fuellt sie
    deshalb, waehrend sie in den Optionen rechts neben einer Beschriftung sitzt und schmal bleibt. */
 .un-lang .op-dd, .un-lang .op-dd-btn { width: 100%; }
-.un-lang .op-dd-list { left: 0; right: 0; }
+.un-lang .op-dd-list {
+  left: 0; right: 0;
+  /* #un-lang-liste: Die Liste klappt hier NACH OBEN auf. Grund ist die Karte: `.un-card` traegt
+     `overflow-hidden`, und das ist nicht dekorativ — gemessen haengt genau EIN Kind daran, die 3px
+     hohe Haarlinie am oberen Rand, die keinen eigenen Radius hat und ohne den Schnitt an beiden
+     oberen Ecken ueberstuende. Der Schnitt bleibt also, und die Liste weicht ihm aus.
+
+     Gemessen am 26.08.2026, vier Sprachen (Liste 154 px hoch):
+       375x812  Karte 188-624, Knopf bei 486 → 297 px Luft nach oben; nach unten wurden 66 px abgeschnitten
+       1440x900 Karte 238-662, Knopf bei 485 → 247 px Luft nach oben; nach unten wurden 28 px abgeschnitten
+     Nach oben passt sie in beiden Fassungen mit deutlichem Rest.
+
+     `max-height` ist die Klammer gegen den naechsten Zuwachs: eine fuenfte oder sechste Sprache macht
+     die Liste nicht wieder laenger als den Platz, sie scrollt dann in sich. Ohne die Klammer waere
+     diese Regel nur eine Wette auf die heutige Position. */
+  top: auto; bottom: calc(100% + 6px);
+  max-height: min(40vh, 240px); overflow-y: auto;
+}
 
 /* Die Float-Gruppe ist auf dem Handy eine reine Klammer — dieselbe `display: contents`-Technik wie
    `.op-col2`, damit Reihenfolge und Abstände der abgenommenen schmalen Fassung exakt bleiben. Erst
