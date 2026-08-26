@@ -155,3 +155,19 @@ any existing exemption entry.
 - [ ] Short measurement record — this task moves no pixels
 - [ ] Handoff, fifteen lines or fewer. Tree clean; worktree left in place
 - [ ] **Not done here:** no merge, no push of a permanent branch, no PR
+
+
+---
+
+## Closed 2026-08-26 — and one number in this contract was wrong
+
+**The sixteen were five.** The block above quotes `evidence/C4/exempt-reach.mjs`, which knew only the
+first `1280` block and read every rule outside it as a phone rule. Eleven of the sixteen cover a width
+block and its `... and (max-height: 950px)` height variant, **both above the threshold**. The 187
+matched exactly; only the classified figure moved.
+
+**Two more:** the worktree named here (`menu-rework`) held another task by the time a worker read
+this, and the port `5189` was taken — `/create-task` allocated **5197**. Delivered from
+`C:/Code/Autostich-worktrees/menu-mh4` on `task/menu-mh4-exemption-reach`.
+
+Full record: `planning-report.md` 8.10 and 8.11.

@@ -1567,3 +1567,46 @@ console. A is today's state, B is the proposal, C is the proposal where H5 lives
 
 *A width media query is equivalent to C's gate and is what the real rule uses; the attribute is used
 here only so the probe does not depend on the window being a particular size.*
+
+
+---
+
+### 8.10 The sixteen were five, and the instrument corrected the reading
+
+MH4 re-measured the number this planner had put in its own contract. `exempt-reach.mjs`, written as
+C4's task-local evidence, reported **16** exemption entries reaching both halves of the stylesheet.
+The real figure is **5**.
+
+The other eleven cover two rules that **both sit above the threshold**: a width block and its height
+variant, `... and (max-height: 950px)`. The C4 probe knew only the first `1280` block and classified
+every rule outside it as a phone rule. Measured at `.hub-root`: both sites, `src/index.css:2538` and
+`:7628`, are above the threshold, and no phone rule exists there at all.
+
+**The 187 matched exactly.** Only the second number moved, which is what makes this a finding rather
+than a disagreement: the two probes agree everywhere the classification is not involved.
+
+**The provenance rule is what caught it.** `PLANNER-RULINGS.md` 4.4 requires a contract to say how a
+number was taken. This one named `evidence/C4/exempt-reach.mjs` and printed its output verbatim, so
+the worker could check the instrument instead of trusting the figure. It did.
+
+**Tenth instance of the round's defect class, and the first where the thing that passed on the wrong
+subject was a measurement rather than a guard.** Same shape either way: the probe asked *"is this rule
+outside the 1280 block?"* when the question was *"is this rule below the threshold?"*
+
+**What is still open is unchanged in kind, only smaller.** Five entries genuinely cross the threshold
+and are named in the guard. Whether any of them is a real defect needs someone who knows the screen.
+Making them visible was the deliverable; deciding them was not.
+
+### 8.11 Two planner errors in the MH4 contract, both caught by the worker
+
+**The worktree.** The contract named `menu-rework` as a shared worktree to leave in place. By the time
+a worker read it, that worktree held `task/cubematrix-perf`. The worker used the `menu-mh4` worktree
+instead and said why: entering an occupied one would have put two writers in it. Correct, and the
+contract was the thing at fault.
+
+**The port.** The contract's `5189` was already allocated. `/create-task` derived **5197** as the
+lowest free port at or above 5181; 5180 to 5196 are taken across the workstream contracts.
+
+A contract written before a round closes describes a repository that has since moved. Both of these
+are that, not carelessness at the time of writing, and both were cheap only because the worker
+checked rather than obeyed.

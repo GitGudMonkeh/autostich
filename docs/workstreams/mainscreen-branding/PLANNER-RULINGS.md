@@ -27,6 +27,12 @@ correct and it is not close:
 each screen then judges its own, cheaply, against a list that says which half an exemption meant.
 **Not judging them now is the point of fixing the mechanism first.**
 
+**Outcome, 2026-08-26.** MH4 is built, and it corrected the number this ruling was written around:
+**five entries cross the threshold, not sixteen.** The other eleven cover a width block and its
+height variant, both above it; the C4 probe classified them as phone rules because it knew only the
+first `1280` block. The ruling stands unchanged — fix the mechanism, do not judge the entries — and
+the judgement now waiting on a screen owner is five entries wide, not sixteen.
+
 **Declining to review five other workers' migrations was right.** Each needs a judgement about whether
 the two halves share a reason, and that judgement belongs to whoever knows the screen.
 
