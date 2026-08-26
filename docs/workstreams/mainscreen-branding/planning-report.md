@@ -384,6 +384,35 @@ These were taken by the owner, were never revoked, and survive the discarded rep
   the wordmark below 88 px at 1280 only. **Shrinking the tagline is not an option** (criterion 3a).
   **Asked at this workstream's Start stop, with C1's numbers in hand** — not in this planning session,
   where it would be a choice without evidence.
+- **Q11 and Q12 — the letter, decided and then withdrawn, both on 2026-08-26 at the built screen.**
+  *Kept as a pair, because the second is only legible next to the first.*
+
+  **Q11: flush and filled.** The owner asked for the cell column to sit flush with the letters rather
+  than breaking the cap line, and for more colour in the squares. Both were built. Two things fell out
+  of doing it and both are worth keeping: Orbitron's capital is **`.71875em`** and **identical for
+  every letter**, round shapes included — so "flush" is unambiguous here, which it would not be in most
+  typefaces; and **the route the owner offered did not exist**, because eight cells at `.09em` measure
+  `.72em` and are already taller than the cap, so the gap would have had to be negative. The column was
+  scaled as a whole instead, keeping its proportion to the sign.
+
+  **Q12: the column goes, in every language.** The next day the owner withdrew the cut entirely. **The
+  reason is not the look and it is not Q11** — it is that the whole idea rested on an observation about
+  two words: *"`AUTOSTICH` and `AUTOTRICK` both have nine characters and carry the I at seventh
+  place."* True, and not a law. A third language need not honour it — Spanish might carry no I at that
+  place at all — and the mark would then wear its sign in one language and not in another.
+
+  **What this costs and what it buys.** It costs the design's stated core (*"Zeichen und Name sind
+  dieselbe Sache"*) and, with it, C2's central move, C5 in full, five sections of
+  `mainscreen-marke.md` and eight guard assertions. It buys a wordmark that is the same object in
+  every language the game will ever ship — and it removes a dependency that would have surfaced as a
+  **red guard at translation time**, which is the expensive moment to find it.
+
+  **The standalone 5 × 8 sign stays.** It replaces no letter, so it depends on no language, and the
+  design already carries it separately as the mark for app icon, favicon, avatar and loading screen.
+
+  *Recorded rather than quietly reverted: the sections in the design document are struck through with
+  their reasoning intact, so nobody proposes the same route again in half a year.*
+
 - **Q10 — answered 2026-08-25: the deck art follows the viewport.** *A question this report did not
   have, raised by C1 and closed at this workstream's first owner stop.*
 

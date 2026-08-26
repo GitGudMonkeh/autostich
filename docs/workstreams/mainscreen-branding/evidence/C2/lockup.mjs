@@ -155,12 +155,15 @@ const PROBE = `(() => {
   const marks = all(".hub-play .as-wordmark");
   if (marks.length !== 1) { out.reached = false; out.why.push(marks.length + " wordmarks in .hub-play, expected 1"); }
 
-  /* The cell column must be INSIDE the wordmark, and there must be no second brandgrid in there. */
+  /* C6 TURNED THIS ASSERTION AROUND, and the file kept the old one for exactly one run: the wordmark
+     must now carry NO sign at all. The owner dropped the cell column because it rested on the I
+     sitting at the same place in every language, which a third language need not do. So the reach is
+     the absence, and it is written as an absence rather than removed — a check that stops asking is
+     a check that cannot notice the column growing back. */
   const inWord = marks[0] ? Array.prototype.slice.call(marks[0].querySelectorAll(".as-brandgrid")) : [];
-  const cols = inWord.filter((e) => e.classList.contains("as-brandgrid-column"));
-  if (inWord.length !== 1 || cols.length !== 1) {
+  if (inWord.length !== 0) {
     out.reached = false;
-    out.why.push(inWord.length + " brandgrids inside the wordmark, " + cols.length + " of them the column cut — expected 1/1");
+    out.why.push(inWord.length + " brandgrid(s) inside the wordmark — expected 0 since C6");
   }
 
   const tags = all(".hub-play .as-tagline");
@@ -177,7 +180,7 @@ const PROBE = `(() => {
   }
   if (!out.reached) return out;
 
-  const wm = marks[0], col = cols[0], tag = tags[0], mark = fulls[0];
+  const wm = marks[0], tag = tags[0], mark = fulls[0];
   const cs = (e) => getComputedStyle(e);
 
   out.page = { scrollH: doc.scrollHeight, innerH: window.innerHeight,
@@ -187,19 +190,8 @@ const PROBE = `(() => {
   out.wordmark = { box: box(wm), layoutW: wm.offsetWidth, layoutH: wm.offsetHeight,
     wmSize: cs(wm).getPropertyValue("--wm-size").trim(), fontSize: cs(wm).fontSize,
     text: (wm.textContent || "").trim(), align: cs(play).alignItems };
-  /* The column's overshoot, measured rather than trusted: how far it stands above and below the
-     wordmark's own text box. The design asks for it on BOTH sides and calls it deliberate. */
-  /* AN SVG ELEMENT HAS NO offsetWidth. It is not an HTMLElement, so the layout-box properties are
-     simply absent and read as undefined — which prints as "undefinedxundefined" and not as an error.
-     Measured on the first run of this file. The rect is the only box an SVG has here. */
-  out.column = { box: box(col), cssW: +col.getBoundingClientRect().width.toFixed(2),
-    cssH: +col.getBoundingClientRect().height.toFixed(2),
-    overshootTop: +(wm.getBoundingClientRect().top - col.getBoundingClientRect().top).toFixed(2),
-    overshootBottom: +(col.getBoundingClientRect().bottom - wm.getBoundingClientRect().bottom).toFixed(2),
-    cells: col.querySelectorAll(".as-bg-cell").length,
-    hot: col.querySelectorAll(".as-bg-hot").length,
-    mid: col.querySelectorAll(".as-bg-mid").length,
-    quiet: col.querySelectorAll(".as-bg-quiet").length };
+  /* The column's own block stood here until C6 and is gone with its subject. The wordmark is a plain
+     text node again, so what is left to say about it is its width — which is in "out.wordmark". */
   out.tagline = { box: box(tag), text: (tag.textContent || "").trim(),
     fontSize: cs(tag).fontSize, lineHeight: cs(tag).lineHeight,
     letterSpacing: cs(tag).letterSpacing, colour: cs(tag).color,
@@ -237,7 +229,7 @@ const PROBE = `(() => {
   const a1 = wmCS.getPropertyValue("--deck-a1").trim();
   if (!a1) { out.reached = false; out.why.push("--deck-a1 is empty — the profile does not own this deck, so the screen fell back"); }
   out.deck = { a1, a2: wmCS.getPropertyValue("--deck-a2").trim(),
-    markColour: cs(mark).color, columnColour: cs(col).color };
+    markColour: cs(mark).color };
 
   /* --- THE WORDMARK TRAP: the run header must not have been reached ---------
      The rule is scoped to .hub-play; this asserts the scoping from the other side, on the same page,

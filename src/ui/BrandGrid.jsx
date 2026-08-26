@@ -1,10 +1,13 @@
 /* #mainscreen-branding C2 — die Marke, als Geometrie, die dem Projekt gehört.
    ============================================================================
 
-   EIN ZEICHEN, ZWEI ZUSCHNITTE. `column` sind die acht Zellen, die im Schriftzug das I ersetzen;
-   `full` ist das ganze 5 × 8 Brett, also die eigenständige Bildmarke. Es ist dieselbe Tabelle,
-   zweimal gelesen — denn genau das ist die Aussage des Entwurfs: der Buchstabe ist ein AUSSCHNITT
-   des Zeichens und keine zweite Zeichnung.
+   EIN ZEICHEN. Das volle 5 × 8 Brett, die eigenständige Bildmarke.
+
+   BIS C6 GAB ES EINEN ZWEITEN ZUSCHNITT: eine Spalte aus acht Zellen, die im Schriftzug das I
+   ersetzte. Er ist mit Owner-Entscheidung vom 26.08.2026 entfallen, und der Grund war sprachlich
+   und nicht optisch — er hing daran, dass „AUTOSTICH" und „AUTOTRICK" das I an derselben Stelle
+   tragen, was eine dritte Sprache nicht tun muss. Ersatzlos gestrichen statt liegengelassen: ein
+   Zuschnitt, den nichts rendert, ist Code, den der nächste Leser für lebendig hält.
 
    DAS RASTER IST DAS BRETT, und das ist gemessen und nicht dekoriert: `src/game/architect.js` führt
    `COLS = 5`, `ROWS = 8`, `N_POS = 40`, wobei `COLS` dort ausdrücklich `= SEGMENT_SIZE` aus
@@ -52,37 +55,33 @@ const BORD = EM.border * U;    /*  12 */
 
 const span = (n) => n * CELL + (n - 1) * GUT;
 
-/* DIE FÜNFERSCHRITT-REGEL, in beiden Lesarten — und es ist EINE Regel, nicht zwei.
-
-   Auf dem ganzen Brett trägt jede dritte Position in Lesereihenfolge den Zwischenton, und die beiden
-   gegenüberliegenden Ecken leuchten. Auf der einzelnen Spalte im I gibt es keine gegenüberliegende
-   Ecke und keinen Platz für einen dritten Ton — dort leuchtet, was auf dem Brett den Zwischenton
-   trägt: 1, 4 und 7 von acht. Der Buchstabe ist damit derselbe Rhythmus, eine Stufe lauter, weil er
-   allein steht. */
-export const cellState = (p, total, cut) => {
-  if (cut === "column") return p % 3 === 0 ? "hot" : "quiet";
+/* DIE FÜNFERSCHRITT-REGEL. Jede dritte Position in Lesereihenfolge trägt den Zwischenton, die beiden
+   gegenüberliegenden Ecken leuchten. Bei fünf Spalten entstehen daraus von selbst Diagonalen —
+   geordnet genug, dass das Auge die Regel findet, und über das ganze Brett verteilt statt in einer
+   Zone geballt. */
+export const cellState = (p, total) => {
   if (p === 0 || p === total - 1) return "hot";
   return p % 3 === 0 ? "mid" : "quiet";
 };
 
 /**
- * @param {"full"|"column"} cut  das ganze 5 × 8 Zeichen, oder die acht Zellen im I
+ * @param {"full"} cut  der Zuschnitt. Es gibt seit C6 nur einen; das Attribut bleibt als NAME an der
+ *                      Fundstelle stehen, damit dort lesbar ist, WAS gerendert wird.
  */
 export default function BrandGrid({ cut = "full", className = "", ...rest }) {
-  const cols = cut === "column" ? 1 : COLS;
-  const total = cols * ROWS;
-  const w = span(cols);
+  const total = COLS * ROWS;
+  const w = span(COLS);
   const h = span(ROWS);
 
   const cells = [];
   for (let p = 0; p < total; p++) {
-    const col = p % cols;
-    const row = (p - col) / cols;
+    const col = p % COLS;
+    const row = (p - col) / COLS;
     /* Die Kante liegt MITTIG auf dem Pfad, also wird das Rechteck um die halbe Strichstärke
        eingerückt und um die volle verkleinert — sonst stünde die Kante zur Hälfte außerhalb der
        Zelle und die Fugen wären um 12 Einheiten zu eng. */
     cells.push(
-      <rect key={p} className={`as-bg-cell as-bg-${cellState(p, total, cut)}`}
+      <rect key={p} className={`as-bg-cell as-bg-${cellState(p, total)}`}
         x={col * (CELL + GUT) + BORD / 2} y={row * (CELL + GUT) + BORD / 2}
         width={CELL - BORD} height={CELL - BORD}
         rx={RAD} ry={RAD} strokeWidth={BORD} />,

@@ -14,11 +14,7 @@ import BrandGrid from "./BrandGrid.jsx"; // #mainscreen-branding: das Zeichen �
 import { DISCORD_URL, DISCORD_BLURPLE } from "./links.js"; // #datenschutz: Invite jetzt geteilt (s. u.)
 import { fmtNum } from "../i18n/index.js";
 import { useT } from "../i18n/useLocale.js"; // #sprache: alle Texte über t()
-import { useIsWide } from "./useIsWide.js"; // #mainscreen-branding: die Zellen im I sind eine DOM-Frage, keine Anordnung
 
-/* Der Buchstabe, an dem der Schriftzug geschnitten wird. Als benannte Konstante und nicht als "I" an
-   der Fundstelle, damit `test/marke.test.js` dieselbe Stelle prüft, die der Screen benutzt. */
-export const WORDMARK_I = "I";
 
 /* Startbildschirm — Hub-Redesign (Progression-System, Design-Doc docs/progression-decisions.md).
    Das Farbsystem war aus dem Neon-Logo abgeleitet: der Verlauf Cyan → Blau → Violett → Amber lieferte
@@ -171,20 +167,6 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
   const [secretMsg, setSecretMsg] = useState("");
   const t = useT();
   const ONB_REWARDS = onbRewards(t);
-
-  /* #mainscreen-branding — der Schnitt im Schriftzug, und er wird GESUCHT statt gezählt.
-     `slice(0, 6)` wäre bei einer Umbenennung still falsch; ein `indexOf` ist es laut, und wenn kein I
-     da ist, fällt die Marke auf den reinen Text zurück statt einen Buchstaben zu erfinden, den das
-     Wort nicht hat. Dass beide Kataloge das I an siebter von neun Stellen tragen — und genau EINMAL —
-     prüft `test/marke.test.js`, bevor der Fall je einen Screen erreicht.
-
-     `wide`: ab 1280 px trägt das I die Zellenspalte, darunter den normalen Glyph. Warum das eine
-     JS-Weiche ist und keine Media Query, steht am Schriftzug unten — es ist gemessen. */
-  const wide = useIsWide();
-  const logo = t("start.logo.alt");
-  const logoI = logo.indexOf(WORDMARK_I);
-  const logoHead = logoI >= 0 ? logo.slice(0, logoI) : logo;
-  const logoTail = logoI >= 0 ? logo.slice(logoI + 1) : "";
 
   /* Die gedämpften Punkte der Tagline. Der Katalogtext wird AN ihnen zerlegt, nicht um sie herum
      zusammengesetzt: enthält eine Übersetzung keinen Punkt, ergibt das genau einen Teil und rendert
@@ -411,45 +393,22 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           „Stich" sichtbar, englisch läse sich dasselbe Wort als Nähbegriff „stitch"). Deshalb steht der
           Schlüssel NICHT mehr in der SAME_OK-Liste der i18n-Guards — dort stehen nur Texte, die in
           beiden Sprachen gleich lauten dürfen. */}
-      {/* #mainscreen-branding — DAS I TRÄGT KEINEN GLYPH MEHR, SONDERN EINE SPALTE AUS ACHT ZELLEN.
-          Damit gibt es keine zweite Form, die sich neben dem Schriftzug behaupten muss: Zeichen und
-          Name sind dieselbe Sache. Das ist der Kern des Entwurfs (docs/mainscreen-marke.md).
+      {/* #mainscreen-branding C6 — DAS I IST WIEDER EIN BUCHSTABE. Owner-Entscheidung vom 26.08.2026:
+          die Zellen-Spalte im I entfällt, in jeder Sprache.
 
-          WARUM DAS I UND KEIN ANDERER BUCHSTABE, und es ist keine Geschmacksfrage: „AUTOSTICH" und
-          „AUTOTRICK" haben beide neun Zeichen und tragen das I an siebter Stelle. EINE Fassung deckt
-          damit beide Sprachen an derselben Position ab — es braucht keine zweite Zeichnung und keine
-          Sonderregel je Locale. Die Annahme steht nicht hier als Hoffnung: `test/marke.test.js`
-          prüft für beide Kataloge, dass die Marke neun Zeichen hat, dass das I an siebter Stelle
-          steht, und dass es KEIN zweites gibt, an dem der Schnitt genauso gut hinge.
+          DER GRUND IST SPRACHLICH UND NICHT OPTISCH, und er wiegt schwerer als das Aussehen: die
+          Fassung hing daran, dass „AUTOSTICH" und „AUTOTRICK" das I an derselben Stelle tragen. Eine
+          dritte Sprache muss das nicht — spanisch hätte an dieser Stelle womöglich gar kein I —, und
+          dann trüge die Marke ihr Zeichen in einer Sprache und in der anderen nicht. Der Owner will
+          sie in allen gleich.
 
-          DER SCHNITT IST GEMESSEN, NICHT GEZÄHLT. `indexOf` statt `slice(0, 6)`: eine feste Zahl
-          wäre bei einer Umbenennung still falsch, ein `indexOf` ist es laut — und der Wächter fängt
-          den Fall ohnehin ab, bevor er einen Screen erreicht.
+          WAS BLEIBT: das 5 × 8 Zeichen unter der Tagline. Es ersetzt keinen Buchstaben und hängt
+          deshalb an keiner Sprache — der Entwurf führt es ohnehin getrennt als eigenständige
+          Bildmarke (App-Icon, Favicon, Avatar, Ladebild).
 
-          UNTER 1280 PX IST DIE MARKE EIN EINZIGER TEXTKNOTEN, UND ZWAR DERSELBE WIE VORHER. Die
-          Zellen fallen unter etwa 40 px Schriftgröße zusammen (Entwurf, „Abgrenzung"), die schmale
-          Fassung behält also den normalen Glyph — und diese Runde darf sie nicht bewegen.
-
-          DASS DAS EINE JS-WEICHE IST UND KEINE MEDIA QUERY, IST GEMESSEN UND NICHT GEWÄHLT. Die
-          erste Fassung hielt beide Varianten im DOM und blendete eine per Media Query aus. Das ist
-          nicht kostenlos: der Glyph braucht dafür ein eigenes Inline-Element, und ein zusätzlicher
-          Inline-Kasten verschiebt die Breite des Schriftzugs um 0,02 px — gemessen an zwei von sechs
-          Handy-Zellen (`evidence/C2/phone-*.json`). Unsichtbar, und trotzdem eine Bewegung unter
-          1280 px, die diese Runde ausschließt.
-
-          `useIsWide` ist dafür das vorgesehene Werkzeug und keine Umgehung: sein eigener Kommentar
-          nennt genau diesen Fall — „für die Fälle, in denen der Unterschied NICHT im Layout liegt,
-          sondern in der DOM-Struktur selbst — und die kann keine Media Query beantworten". Der
-          Bruchpunkt wird dabei nicht ein zweites Mal genannt, sondern aus `DESKTOP_MIN` gelesen.
-
-          Die CSS-Seite bleibt trotzdem stehen (`.as-brandgrid { display: none }` in der Grundregel,
-          sichtbar erst in der 1280er Sektion). Zwei Schlösser an einer Tür, mit Absicht: sollte der
-          Hook je zu früh `true` melden, trägt die schmale Fassung immer noch keinen Kasten. */}
-      <h1 className="as-wordmark select-none">
-        {wide && logoI >= 0
-          ? <>{logoHead}<BrandGrid cut="column" />{logoTail}</>
-          : logo}
-      </h1>
+          Der Schriftzug ist damit wieder EIN Textknoten, derselbe wie vor C2, und die Marke im
+          Run-Kopf und im Namens-Dialog war es ohnehin immer. */}
+      <h1 className="as-wordmark select-none">{t("start.logo.alt")}</h1>
       {/* #mainscreen-branding — Tagline und Bildmarke, zusammen mit der Wortmarke EIN Lockup.
           Erst ab 1280 px (`hidden dt:flex`), also gar nicht im Handy-Layout — Q5. Deshalb auch KEIN
           Umschließen der Wortmarke: `.hub-play` ist unter 1280 px `display: contents`, ein Wrapper

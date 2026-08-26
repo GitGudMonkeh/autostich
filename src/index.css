@@ -2886,10 +2886,10 @@ b, strong { font-weight: 600; }
      `.hub-play .as-wordmark` und nicht `.as-wordmark`: der Run-Kopf trägt dieselbe Klasse und holt
      sich seine 22 px aus `.as-wordmark-sm`. Diese Regel hier steht später in der Datei und hätte mit
      gleicher Spezifität gewonnen — die Marke im laufenden Spiel wäre auf 88 px gesprungen. */
-  /* #mainscreen-branding: DIE GRÖSSE STEHT JETZT AN DER SPALTE, nicht am Schriftzug — und das ist
-     kein Umzug aus Ordnungsliebe. Das Zeichen unter der Tagline ist derselbe Zellenraster wie die
-     Spalte im I und muss deshalb dieselbe Größe LESEN können; `--wm-size` am `h1` erreicht ein
-     Geschwister nicht. Die Alternative wäre ein zweiter Wert daneben, also zwei Zahlen, die jemand
+  /* #mainscreen-branding: DIE GRÖSSE STEHT AN DER SPALTE, nicht am Schriftzug — und das ist kein
+     Umzug aus Ordnungsliebe. Das Zeichen unter der Tagline rechnet seine Höhe gegen `--wm-size`
+     (s. `.as-brandmark` weiter unten) und muss den Wert deshalb LESEN können; am `h1` gesetzt
+     erreicht er ein Geschwister nicht. Die Alternative wäre ein zweiter Wert daneben, also zwei Zahlen, die jemand
      in Schritt halten muss — genau davor warnen die Kommentare in dieser Datei sonst überall.
 
      `--wm-size: inherit` am Schriftzug ist nötig und kein Zierrat: die Grundregel oben setzt den Wert
@@ -2903,68 +2903,19 @@ b, strong { font-weight: 600; }
   .hub-play { --wm-size: 88px; }
   .hub-play .as-wordmark { --wm-size: inherit; margin-top: -70px; }
 
-  /* --- Das I trägt die Spalte -------------------------------------------------
-     Der Glyph tritt zur Seite, die acht Zellen nehmen seinen Platz. Beide stehen im DOM, sichtbar ist
-     genau einer — die Weiche ist diese Media Query und keine Verzweigung im JSX, weil eine JS-Weiche
-     den Bruchpunkt ein zweites Mal kennen müsste.
+  /* --- Das Zeichen unter der Tagline -----------------------------------------
+     BIS C6 STAND HIER AUCH DIE SPALTE IM I. Sie ist mit Owner-Entscheidung vom 26.08.2026 entfallen,
+     und der Grund war sprachlich: die Fassung hing daran, dass „AUTOSTICH" und „AUTOTRICK" das I an
+     derselben Stelle tragen, was eine dritte Sprache nicht tun muss — die Marke trüge ihr Zeichen
+     dann in einer Sprache und in der anderen nicht. Der Schriftzug ist wieder reiner Text.
 
-     DIE MASSE SIND DIE DES ENTWURFS, in `em` — und `em` ist hier das richtige Maß und kein Zufall:
-     `.as-wordmark` setzt `font-size: var(--wm-size)`, ein `em` im Schriftzug IST also `--wm-size`.
-     Zelle .09 · Fuge .022 · Spalte .874 (= 8 Zellen + 7 Fugen, fällt aus den Teilen und steht nicht
-     als eigene Zahl) · Abstand links .02, rechts .085.
+     Was bleibt, ist die eigenständige Bildmarke. Sie ersetzt keinen Buchstaben, hängt also an keiner
+     Sprache, und der Entwurf führt sie ohnehin getrennt (App-Icon, Favicon, Avatar, Ladebild).
 
-     DER SITZ IST BÜNDIG, UND DIE HÖHE IST GEMESSEN. Owner-Entscheidung vom 26.08.2026: die Spalte
-     schließt oben und unten mit den Buchstaben ab, statt die Versallinie zu brechen. Das ersetzt den
-     Überstand, den `mainscreen-marke.md` unter „Maße" als Absicht führt — diese eine Zeile des
-     Entwurfs ist damit überholt, der Rest nicht.
-
-     Die Versalhöhe steht dafür nicht mehr als „rund .7em" da, sondern gemessen: .71875 em, an der
-     echten Schrift, konvergiert ab 352 px Schriftgrad, und identisch für JEDE Versalie — Orbitron
-     zieht auch seine runden Formen flach, es gibt also keinen Überschuss, gegen den „bündig"
-     mehrdeutig wäre. Die Reihe steht in `evidence/C5/capheight.txt`.
-
-     WARUM DIE ZELLE MITSKALIERT UND NICHT NUR DIE FUGE. Der Owner hat angeboten, die Abstände
-     anzupassen — gemessen geht das nicht: acht Zellen zu .09em sind .72em und damit schon höher als
-     die Versalie, die Fuge müsste NEGATIV werden. Also skaliert die ganze Spalte um EINEN Faktor
-     (.71875 / .874 = .8224), und das ist nicht nur die mögliche, sondern die richtige Antwort: das
-     Verhältnis von Zelle zu Fuge bleibt exakt das des ganzen Zeichens, und der Buchstabe bleibt ein
-     AUSSCHNITT derselben Zeichnung statt einer zweiten mit eigenem Rhythmus.
-
-     Der Faktor steht nirgends als Zahl. Die viewBox trägt die Maßtabelle bereits; wer die HÖHE setzt,
-     skaliert alles darin mit, und `width: auto` holt die Breite aus dem Seitenverhältnis.
-     `vertical-align: baseline` setzt die Unterkante eines ersetzten Inline-Blocks auf die Grundlinie —
-     oben endet die Spalte damit genau auf der Versallinie. Bündig durch Konstruktion, nicht durch
-     einen Korrekturwert.
-
-     DEN SCHEIN ERBT DIE SPALTE. `.as-wordmark` trägt oben ein `drop-shadow` in der Deckfarbe, und ein
-     Filter wirkt auf den ganzen Teilbaum — die leuchtenden Zellen glühen also mit dem Wort, mit einer
-     Deklaration statt mit einer zweiten daneben. */
-  /* Kein Gegenstück für den Glyph nötig: unter 1280 px rendert der Screen ihn als Text, darüber gar
-     nicht (StartScreen.jsx, `useIsWide`). Diese Regel ist das zweite Schloss — sie macht das Zeichen
-     sichtbar, und die Grundregel oben hält es unter der Schwelle in jedem Fall aus dem Layout. */
+     `display: none` steht weiterhin in der Grundregel und die Sichtbarkeit erst hier: unter 1280 px
+     gibt es die Kopfzone des Entwurfs nicht, und was dort keinen Kasten hat, kann dort auch nichts
+     verschieben. */
   .hub-play .as-brandgrid { display: inline-block; }
-  .hub-play .as-brandgrid-column {
-    width: auto; height: .71875em;
-    margin-left: .02em; margin-right: .085em;
-    vertical-align: baseline;
-    color: var(--deck-a1, #26c6e6);
-  }
-  /* MEHR FARBE IN DEN QUADRATEN — Owner-Entscheidung vom 26.08.2026, und sie führt keinen Wert ein:
-     die unbeleuchteten Zellen der Spalte nehmen den ZWISCHENTON aus der Zustandstabelle des Entwurfs
-     (Deckfarbe 28 % Fläche, 66 % Kante) statt des ruhigen Weiß bei 3 %.
-
-     Das ist die Regel des Entwurfs auf ihren eigenen Fall angewandt und keine Abweichung von ihr: er
-     sagt, die drei Zustände gelten für den DUNKLEN Screen-Grund und dürfen auf hellerem Grund
-     zurückgenommen werden. Der Grund der Spalte ist kein Screen, sondern eine Reihe massiver
-     88-px-Buchstaben — dort geht der Schritt nach OBEN.
-
-     Eingegrenzt auf die Spalte. Die eigenständige Bildmarke steht auf dem Screen-Grund, für den die
-     Tabelle kalibriert ist, und behält ihren ruhigen Zustand. Beide liegen im Nachweis als Bild
-     nebeneinander, damit der Unterschied eine Entscheidung ist und kein Versehen. */
-  .hub-play .as-brandgrid-column .as-bg-quiet {
-    fill: currentColor; stroke: currentColor;
-    fill-opacity: .28; stroke-opacity: .66;
-  }
 
   /* --- Tagline und Bildmarke: mit der Wortmarke EIN Lockup --------------------
      Der Abstand steht hier und nicht als `gap-[10px]` an der Fundstelle: die Fuge innerhalb des

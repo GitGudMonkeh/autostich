@@ -58,8 +58,6 @@ const rules = (src) => {
 };
 const ALL_RULES = rules(css);
 
-const logoKey = (src) => (src.match(/"start\.logo\.alt":\s*"([^"]*)"/) || [])[1];
-
 describe("#mainscreen-branding — das Zeichen ist das Brett", () => {
   it("liest die Rastermaße aus dem Spiel und nicht aus einer Zahl daneben", () => {
     expect(arch, "COLS ist nicht mehr 5 — dann sagt das Raster der Marke etwas Falsches über das Spiel")
@@ -87,24 +85,35 @@ describe("#mainscreen-branding — das Zeichen ist das Brett", () => {
     }
   });
 
-  it("liest beide Zuschnitte aus EINER Regel — die Spalte ist ein Ausschnitt, keine zweite Zeichnung", () => {
-    expect(grid, "cellState kennt den Zuschnitt nicht mehr").toMatch(/cellState = \(p, total, cut\)/);
-    expect(grid, "der Zuschnitt wird nicht mehr an cellState gereicht").toMatch(/cellState\(p, total, cut\)/);
+  it("hat GENAU EINEN Zuschnitt — der zweite ist mit C6 entfallen, nicht liegengeblieben", () => {
+    /* Owner-Entscheidung 26.08.2026: die Spalte im I entfällt. Geprüft wird die ABWESENHEIT und nicht
+       die Anwesenheit des einen: ein Zuschnitt, den nichts mehr rendert, wäre Code, den der nächste
+       Leser für lebendig hält, und genau so wächst er irgendwann wieder an. */
+    expect(grid, "cellState nimmt wieder einen Zuschnitt entgegen").toMatch(/cellState = \(p, total\)/);
+    for (const src of [grid, start, css]) {
+      expect(src, "der Spalten-Zuschnitt ist zurück").not.toContain("brandgrid-column");
+    }
+    expect(start, "der Spalten-Zuschnitt wird wieder gerendert").not.toMatch(/cut="column"/);
+    expect(start, "die eigenständige Bildmarke fehlt").toMatch(/<BrandGrid cut="full"/);
   });
 });
 
-describe("#mainscreen-branding — das I trägt die Spalte, in beiden Sprachen", () => {
-  for (const [lang, file] of [["de", "../src/i18n/de.js"], ["en", "../src/i18n/en.js"]]) {
-    it(`${lang}: die Marke hat neun Zeichen und genau EIN I, an siebter Stelle`, () => {
-      const word = logoKey(read(file));
-      expect(word, `start.logo.alt fehlt in ${lang}.js`).toBeTruthy();
-      expect(word.length, `"${word}" hat ${word.length} Zeichen — der Entwurf rechnet mit neun`).toBe(9);
-      /* Erste und letzte Fundstelle zusammen sagen „genau eins, und zwar hier". Ohne die zweite
-         Hälfte ginge ein Wort mit zwei I still durch, und der Schnitt säße am falschen. */
-      expect(word.indexOf("I"), `"${word}": das erste I steht nicht an siebter Stelle`).toBe(6);
-      expect(word.lastIndexOf("I"), `"${word}" trägt mehr als ein I — der Schnitt wäre mehrdeutig`).toBe(6);
-    });
+describe("#mainscreen-branding — die Marke ist in jeder Sprache derselbe Text", () => {
+  /* BIS C6 HING HIER DIE ANNAHME, DIE DEN GANZEN SCHNITT TRUG: „AUTOSTICH" und „AUTOTRICK" haben
+     neun Zeichen und tragen das I an siebter Stelle. Sie ist mit dem Schnitt entfallen — und zwar
+     GENAU DESHALB: eine dritte Sprache muss sie nicht erfüllen. Was bleibt, ist die schwächere und
+     dauerhaft wahre Aussage: der Schriftzug ist reiner Text, in jeder Sprache gleich behandelt. */
+  it("der Schriftzug rendert den Katalogtext und sonst nichts", () => {
+    expect(start, "der Schriftzug ist wieder zusammengesetzt statt ein Textknoten")
+      .toMatch(/<h1 className="as-wordmark select-none">\{t\("start\.logo\.alt"\)\}<\/h1>/);
+    /* Die Gegenprobe zum Rückbau: keine der Hilfsgrößen des Schnitts steht noch da. Ohne sie wäre
+       „der Schnitt ist weg" eine Aussage über eine Zeile statt über die Datei. */
+    for (const gone of ["WORDMARK_I", "logoHead", "logoTail", "useIsWide"]) {
+      expect(start, `\`${gone}\` ist zurück — der Schnitt wächst wieder an`).not.toContain(gone);
+    }
+  });
 
+  for (const [lang, file] of [["de", "../src/i18n/de.js"], ["en", "../src/i18n/en.js"]]) {
     it(`${lang}: die Tagline steht im Katalog und trägt ihren Schlusspunkt`, () => {
       const src = read(file);
       const tag = (src.match(/"start\.tagline":\s*"([^"]*)"/) || [])[1];
@@ -117,36 +126,6 @@ describe("#mainscreen-branding — das I trägt die Spalte, in beiden Sprachen",
       expect((tag.match(/\./g) || []).length, `"${tag}" hat nicht drei Punkte`).toBe(3);
     });
   }
-
-  it("StartScreen schneidet an der GESUCHTEN Stelle und nicht an einer gezählten", () => {
-    expect(start, "der Schnittbuchstabe steht nicht als Konstante").toMatch(/export const WORDMARK_I = "I";/);
-    expect(start, "der Schnitt haengt an einer festen Zahl statt an indexOf")
-      .toMatch(/logo\.indexOf\(WORDMARK_I\)/);
-    expect(start, "die Spalte wird nicht als eigener Zuschnitt gerendert")
-      .toMatch(/<BrandGrid cut="column"/);
-    expect(start, "die eigenstaendige Bildmarke fehlt").toMatch(/<BrandGrid cut="full"/);
-    /* Die Gegenprobe zum Rückfall: ohne I bleibt die Marke der reine Text, es wird kein Buchstabe
-       erfunden. Und die schmale Fassung nimmt IMMER diesen Zweig. */
-    /* Whitespace-unempfindlich verglichen: die Aussage ist die VERZWEIGUNG, nicht ihre Einrückung.
-       Ein Ausdruck über den Zeilenumbruch hinweg wäre ein Wächter, den der nächste Formatierer rot
-       macht, ohne dass sich etwas geändert hat. */
-    const flat = start.replace(/\s+/g, " ");
-    expect(flat, "der Rückfall auf den reinen Text fehlt")
-      .toContain('{wide && logoI >= 0 ? <>{logoHead}<BrandGrid cut="column" />{logoTail}</> : logo}');
-  });
-
-  it("die schmale Fassung bekommt das Zeichen gar nicht erst in den Baum", () => {
-    /* GEMESSEN, NICHT GEWÄHLT: eine Fassung, die beide Varianten im DOM hält und eine per Media Query
-       ausblendet, braucht für den Glyph ein eigenes Inline-Element — und das verschiebt die Breite des
-       Schriftzugs unter 1280 px um 0,02 px (evidence/C2/phone-*.json, zwei von sechs Zellen). Diese
-       Runde bewegt unter 1280 px nichts, auch nichts Unsichtbares. Deshalb entscheidet der Hook. */
-    expect(start, "der Desktop-Zweig hängt nicht mehr am geteilten Hook").toMatch(/const wide = useIsWide\(\);/);
-    expect(start, "useIsWide wird nicht importiert").toMatch(/import \{ useIsWide \} from "\.\/useIsWide\.js"/);
-    /* Und die Gegenprobe: es gibt kein per CSS ausgeblendetes Glyph-Element mehr, an dem die alte
-       Fassung wieder anwachsen könnte. */
-    expect(start, "das ausgeblendete Glyph-Element ist zurück").not.toMatch(/as-wm-i/);
-    expect(css, "eine Regel blendet ein Glyph-Element aus, das es nicht mehr gibt").not.toMatch(/as-wm-i/);
-  });
 });
 
 describe("#mainscreen-branding — die Wortmarken-Falle", () => {
@@ -217,43 +196,12 @@ describe("#mainscreen-branding — die schmale Fassung sieht das Zeichen nicht",
       .toMatch(/\.hub-play \.as-brandgrid \{[^}]*display:\s*inline-block/);
   });
 
-  it("die Spalte sitzt buendig — Hoehe aus der Versalhoehe, kein Korrekturwert", () => {
-    /* OWNER-ENTSCHEIDUNG 26.08.2026: die Spalte schliesst oben und unten mit den Buchstaben ab. Das
-       ersetzt den Ueberstand, den `mainscreen-marke.md` unter „Masse" als Absicht fuehrt.
-
-       DREI DINGE MACHEN ES BUENDIG, und jedes einzelne kann still brechen:
-         1. die HOEHE ist die gemessene Versalhoehe von Orbitron (.71875em, evidence/C5/capheight.txt),
-         2. die BREITE kommt aus der viewBox (`auto`) — eine gesetzte Breite loeste die Zelle vom
-            Zellen-Raster und der Buchstabe waere kein Ausschnitt des Zeichens mehr,
-         3. es gibt KEINEN senkrechten Korrekturwert: die Unterkante eines ersetzten Inline-Blocks
-            sitzt bei `baseline` per Konstruktion auf der Grundlinie. Ein `vertical-align` mit einer
-            Zahl waere genau die Nachjustierung, die diese Regel ersetzt.
-       Der Nachweis am gerenderten Screen ist `evidence/C5/flush.mjs`: unten exakt 0, oben 0,12 px. */
-    const rule = deskBlock.match(/\.hub-play \.as-brandgrid-column\s*\{([^}]*)\}/);
-    expect(rule, ".hub-play .as-brandgrid-column fehlt").toBeTruthy();
-    expect(rule[1], "die Hoehe ist nicht mehr die gemessene Versalhoehe").toMatch(/height:\s*\.71875em/);
-    expect(rule[1], "die Breite wird gesetzt statt aus der viewBox genommen").toMatch(/width:\s*auto/);
-    expect(rule[1], "die Spalte haengt wieder an einem Korrekturwert")
-      .toMatch(/vertical-align:\s*baseline/);
-    expect(rule[1], "ein senkrechter Korrekturwert ist zurueck").not.toMatch(/vertical-align:\s*-?[\d.]/);
-  });
-
-  it("die unbeleuchteten Zellen der Spalte tragen den Zwischenton, nicht das ruhige Weiss", () => {
-    /* OWNER-ENTSCHEIDUNG 26.08.2026: mehr Farbe in den Quadraten. Genommen wird der ZWISCHENTON aus
-       der Zustandstabelle des Entwurfs (28 % / 66 %) — es kommt also kein Wert dazu, es wird einer
-       aus derselben Tabelle gewaehlt. Geprueft wird beides: dass die Regel den Ton traegt UND dass sie
-       auf die SPALTE eingegrenzt ist. Ohne die zweite Haelfte faerbte sie die eigenstaendige Bildmarke
-       mit, die auf dem Screen-Grund steht, fuer den die Tabelle kalibriert ist. */
-    const rule = deskBlock.match(/\.hub-play \.as-brandgrid-column \.as-bg-quiet\s*\{([^}]*)\}/);
-    expect(rule, "die Zwischenton-Regel der Spalte fehlt").toBeTruthy();
-    expect(rule[1]).toMatch(/fill:\s*currentColor/);
-    expect(rule[1], "die Flaeche traegt nicht den Zwischenton der Tabelle").toMatch(/fill-opacity:\s*\.28/);
-    expect(rule[1], "die Kante traegt nicht den Zwischenton der Tabelle").toMatch(/stroke-opacity:\s*\.66/);
-    /* Die Gegenprobe: KEINE Regel faerbt `.as-bg-quiet` ausserhalb der Spalte um. */
-    const wide = deskBlock.match(/[^{}]*\.as-bg-quiet[^{}]*\{[^}]*\}/g) || [];
-    const stray = wide.filter((r) => !/\.as-brandgrid-column/.test(r)).map((r) => r.split("{")[0].trim());
-    expect(stray, `.as-bg-quiet wird ausserhalb der Spalte umgefaerbt: ${stray.join(" | ")}`).toEqual([]);
-  });
+  /* C5 STAND HIER ZWEIMAL: die Spalte sitzt buendig, und ihre unbeleuchteten Zellen tragen den
+     Zwischenton. Beide Zusicherungen sind mit C6 gegenstandslos geworden, weil es die Spalte nicht
+     mehr gibt — sie sind deshalb ERSATZLOS gestrichen und nicht auf etwas anderes umgebogen. Was von
+     C5 uebrig bleibt, steht als Messung in `measurements/C5.md`; die Versalhoehe von Orbitron
+     (.71875em, fuer jede Versalie gleich) ist dort dokumentiert und gilt weiter, sie hat nur keinen
+     Verbraucher mehr. Die Gegenprobe dazu ist die Abwesenheitspruefung oben. */
 
   it("das zweite Schloss steht auch dann noch, wenn der Hook irrt", () => {
     /* Die JS-Weiche hält das Zeichen aus der schmalen Fassung heraus; diese Regel hält es aus dem
