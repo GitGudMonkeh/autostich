@@ -24,7 +24,8 @@
    was earned: an unpinned as-panel-sweep made the shop differ from itself by 0.66 % of its pixels
    (evidence-T1.md §7.6.1).
 
-   SURFACES ONLY. CONTROL STATES ARE NOT CAPTURED AND ARE VERIFIED BY HAND.
+   SURFACES ONLY. CONTROL STATES ARE NOT CAPTURED, NOR IS SVG PAINT (FILL, STROKE), AND BOTH ARE
+   VERIFIED BY HAND.
 
    Every cell below is a surface in its RESTING state. The navigation reaches the screen and the probe
    reads it as it lands; nothing clicks, hovers, focuses or disables anything afterwards. So the

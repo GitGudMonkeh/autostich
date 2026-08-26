@@ -144,7 +144,7 @@ out.write(`
 `);
 /* MENU-56, and it is printed on EVERY run including the green one. A gate that names its blind spot
    only when it fails is a gate that reassures precisely when it is trusted most. */
-out.write(`  Surfaces only. Control states are not captured and are verified by hand.
+out.write(`  Surfaces only. Control states are not captured, nor is SVG paint (fill, stroke), and both are verified by hand.
 `);
 
 if (missingCells.length) {

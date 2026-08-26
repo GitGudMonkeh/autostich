@@ -15,7 +15,7 @@ silently, and with the counter-check still green.
 | **Task** | `MH4` — make an exemption say which half it means |
 | **Branch** | `task/menu-mh4-exemption-reach` — create it yourself |
 | **Base** | **`dev`.** The round was integrated on 2026-08-26 (`cbb07216`); the feature branch is merged and no longer the base |
-| **Base SHA** | tip at start. Record it here |
+| **Base SHA** | `fe1d36b3fedddd49c415745dbfe742d3a8698dbd` — `dev` tip at start, 2026-08-26 |
 | **Tier** | A — a known file surface, carrying out a decision already taken |
 | **Owner stops** | One, before integration |
 | **Worktree** | `C:/Code/Autostich-worktrees/menu-rework` — shared, **leave it in place** |
@@ -24,6 +24,13 @@ silently, and with the counter-check still green.
 **Baseline, measured bare on `a0dc6885` (`npm test`, no pipe):** 147 files / 2380 tests. `dev` at
 `cbb07216` carries the same source. Re-measure at your base and record what you got — a number in a
 contract says how it was taken.
+
+**Re-measured at `fe1d36b3` (`npm test`, bare):** **149 files / 2394 tests**, exit 0. The tree is
+newer than the one the line above was taken on; the difference is work integrated since.
+
+**Worktree, as used:** `C:/Code/Autostich-worktrees/menu-mh4` on the `dev` tip, created by the owner
+and named for this task. The row above names `menu-rework`, which now holds `task/cubematrix-perf` —
+entering it would have put two writers in one worktree.
 
 ---
 
