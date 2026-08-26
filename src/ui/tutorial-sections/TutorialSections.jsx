@@ -8,6 +8,7 @@ import { SECTIONS, sectionTitleKey, sectionSubKey, lessonTitleKey, beatKey, beat
 import { Satz, Block, Merk, Regeln, Tabelle, Tip, PROBES } from "./beats.jsx";
 import * as C from "../../game/constants.js";
 import { VARS } from "./vars.js";
+import * as GL from "../../game/glacier.js";
 
 /* Die Platzhalter liegen in vars.js, weil der Wächter dieselbe Liste braucht — siehe dort. */
 const localeVars = (locale) => ({
@@ -15,6 +16,9 @@ const localeVars = (locale) => ({
   streakPct: fmtNum(Math.round(C.STREAK_BASE_STEP * 100), locale),
   critMult: fmtNum(C.CRIT_BASE_MULT.toFixed(2), locale),
   critMultPerSkill: fmtNum(C.LIGHTNING_CRIT_MULT_PER_SKILL.toFixed(1), locale),
+  wucht1: fmtNum(GL.TIER_MULT[1].toFixed(1), locale),
+  wucht2: fmtNum(GL.TIER_MULT[2].toFixed(1), locale),
+  wucht3: fmtNum(GL.TIER_MULT[3].toFixed(1), locale),
 });
 // `offered` bedeutet je nach Lektion etwas anderes — Perk-Angebot oder Skill-Angebot.
 /* `none` hat nur, wer einen Leerzustand kennt. Die Aufstellungs-Runden kennen ihn: eine Reihe ohne
@@ -165,6 +169,11 @@ export function TutorialSections({ onClose, onOpenGlossary = null, onOpenGuide =
           undo: t("tut.d.undo"), reset: t("tut.d.reset"), energy: t("tut.d.energy"),
           rotate: t("tut.d.rotate"), scoreUnit: t("tut.d.scoreUnit"),
           more: t("tut.d.more"), less: t("tut.d.less"), deck: t("tut.d.deck"), deckWide: t("tut.d.deckWide"),
+          forge: t("tut.d.forge"), brand: t("tut.d.brand"), heats: t("tut.d.heats"),
+          yes: t("tut.d.yes"), no: t("tut.d.no"), blade: t("tut.d.blade"), force: t("tut.d.force"),
+          pureOnly: t("tut.d.pureOnly"), mixed: t("tut.d.mixed"),
+          none: t("tut.d.none"), twoThirds: t("tut.d.twoThirds"), all: t("tut.d.all"),
+          block: t("tut.d.block"), kreuz: t("tut.d.kreuz"), linie: t("tut.d.linie"), flaeche: t("tut.d.flaeche"),
           zeile: t("tut.d.zeile"), spalte: t("tut.d.spalte"), diag: t("tut.d.diag"), distrikt: t("tut.d.distrikt"),
           win: t("tut.d.win"), tie: t("tut.d.tie"), loss: t("tut.d.loss") }} />;
     });

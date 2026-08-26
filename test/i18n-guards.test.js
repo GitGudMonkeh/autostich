@@ -81,6 +81,10 @@ describe("i18n · Katalog-Parität", () => {
     "tut.wahl.perks.1.label",
     "tut.wahl.perks.2.label",
     "tut.blitz.wasist.1.label",
+    "tut.feuer.wasist.1.label",
+    "tut.pflanze.wasist.1.label",
+    "tut.eis.wasist.1.label",
+    "tut.d.block",                  // Gletscherform „Block" — in beiden Sprachen dasselbe Wort
     "build.perks.head",      // „Perks — {count}" — Perk bleibt Perk (Begriffstabelle §3.1)
     "build.skills.head",     // dito für Skill
     "start.tile.upgrades",   // „Upgrades" ist im Deutschen der etablierte Begriff (§3.5)

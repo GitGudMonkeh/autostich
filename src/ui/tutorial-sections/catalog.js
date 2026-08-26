@@ -168,12 +168,71 @@ export const SECTIONS = [
     ],
   },
   {
-    id: "archetypen",
+    /* Die alte Sektion „archetypen" mit ihren vier Verweis-Karten ist weg. Der freigegebene
+       Entwurf gibt jedem Archetyp eine eigene Sektion mit gespielten Runden; ein Verweis auf
+       den Leitfaden war keine Lektion. */
+    id: "feuer",
     lessons: [
-      { id: "feuer",   beats: [{ kind: "satz" }, { kind: "bild", probe: "guideFire" },      { kind: "tip" }] },
-      { id: "blitz",   beats: [{ kind: "satz" }, { kind: "bild", probe: "guideLightning" }, { kind: "tip" }] },
-      { id: "eis",     beats: [{ kind: "satz" }, { kind: "bild", probe: "guideIce" },       { kind: "tip" }] },
-      { id: "pflanze", beats: [{ kind: "satz" }, { kind: "bild", probe: "guidePlant" },     { kind: "tip" }] },
+      { id: "wasist", art: "voll", beats: [
+        { kind: "block" },
+        { kind: "block", label: true },
+        { kind: "regeln" },
+        { kind: "tip" }] },
+      { id: "karte", art: "voll", beats: [
+        { kind: "probierfeld", probe: "feuerkarten" },
+        { kind: "block", label: true },
+        { kind: "tip" }] },
+      { id: "feld", art: "voll", beats: [
+        { kind: "probierfeld", probe: "hitze" },
+        { kind: "block", label: true },
+        { kind: "tip" }] },
+      { id: "tipps", art: "kurz", beats: [
+        { kind: "liste" },
+        { kind: "tip" }] },
+    ],
+  },
+  {
+    id: "pflanze",
+    lessons: [
+      { id: "wasist", art: "voll", beats: [
+        { kind: "block" },
+        { kind: "block", label: true },
+        { kind: "merk" },
+        { kind: "regeln" },
+        { kind: "tip" }] },
+      { id: "karte", art: "voll", beats: [
+        { kind: "probierfeld", probe: "pflanzkarte" },
+        { kind: "block", label: true },
+        { kind: "tip" }] },
+      { id: "feld", art: "voll", beats: [
+        { kind: "probierfeld", probe: "gruenfeld" },
+        { kind: "block", label: true },
+        { kind: "tip" }] },
+      { id: "tipps", art: "kurz", beats: [
+        { kind: "liste" },
+        { kind: "tip" }] },
+    ],
+  },
+  {
+    id: "eis",
+    lessons: [
+      { id: "wasist", art: "voll", beats: [
+        { kind: "block" },
+        { kind: "block", label: true },
+        { kind: "merk" },
+        { kind: "regeln" },
+        { kind: "tip" }] },
+      { id: "karte", art: "voll", beats: [
+        { kind: "probierfeld", probe: "gletscher" },
+        { kind: "block", label: true },
+        { kind: "tip" }] },
+      { id: "feld", art: "voll", beats: [
+        { kind: "probierfeld", probe: "gletscherfeld" },
+        { kind: "block", label: true },
+        { kind: "tip" }] },
+      { id: "tipps", art: "kurz", beats: [
+        { kind: "liste" },
+        { kind: "tip" }] },
     ],
   },
   {
@@ -337,7 +396,12 @@ const PROBE_PX = { formation: 215, streak: 150, score: 195, board: 215,
      mal fünf Spalten. GEMESSEN archmock 299 · bauen 286 · struktur 438. */
   archmock: 320, bauen: 310, struktur: 460,
   // Wahl und Blitz, gemessen: kategorien 199 · raritaet 157 · blitzkarte 272.
-  kategorien: 215, raritaet: 175, blitzkarte: 290 };
+  kategorien: 215, raritaet: 175, blitzkarte: 290,
+  /* Feuer, Pflanze, Eis — gemessen: feuerkarten 271 · hitze 152 · pflanzkarte 305 ·
+     gruenfeld 315 · gletscher 252 · gletscherfeld 358. Zum VIERTEN Mal in diesem Task war ein
+     neues Feld hier zuerst nicht eingetragen und fiel auf PROBE_MAX; wer ein Probierfeld baut,
+     trägt es HIER ein, sonst misst das Budget etwas anderes als der Leser sieht. */
+  feuerkarten: 290, hitze: 170, pflanzkarte: 325, gruenfeld: 335, gletscher: 270, gletscherfeld: 375 };
 const PROBE_MAX = Math.max(...Object.values(PROBE_PX));
 
 const lines = (text) => Math.max(1, Math.ceil(String(text || "").length / CHARS_PER_LINE));

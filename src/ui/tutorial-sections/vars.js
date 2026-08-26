@@ -16,6 +16,7 @@ import { SEGMENT_SIZE, WECHSEL_MIN_DIFF, MAX_TREPPE_STEP } from "../../game/form
 import { ENERGY_FLOOR, COVER_FLOOR, NODES } from "../../game/progression.js";
 import { ARCHITECT_FAMILIES, tierNum, DISTRICT_BONUS, DISTRICT_CAP, ROWS } from "../../game/architect.js";
 import { FAMILY_DEFS } from "../../game/families.js";
+import { THRESHOLDS, TIER_MULT, BURST_AT, WIN_MASS, EWIGER_FROST, DECLINE_MIN_SKILLS } from "../../game/glacier.js";
 
 /* Der Grundwert eines Gebäudes steckt in einem OBJEKT, nicht in einer Zahl: `{ kind: "flat",
    score: 35 }` bei Score-Gebäuden, `{ kind: "flat", value: 1 }` bei Wert-Gebäuden. */
@@ -66,6 +67,20 @@ export const VARS = {
   charge: C.LIGHTNING_MAX_CHARGE,
   ionMax: C.ION_MAX_STACKS, ionCap: C.ION_CRIT_STACK_CAP,
   ionCapPct: Math.round(C.ION_CRIT_STACK_CAP * C.ION_CRIT_PP_PER_STACK * 100),
+  // Feuer
+  heatMax: C.HEAT_MAX, heatMinMargin: C.HEAT_MIN_MARGIN, heatLossMax: C.HEAT_LOSS_MAX,
+  firePerSkill: C.FIRE_SCORE_PER_SKILL, dividendCap: C.FIRE_DIVIDEND_HEAT_CAP,
+  glowT1: C.GLOWING_T1_HEAT, glowT2: C.GLOWING_T2_HEAT, glowT3: C.GLOWING_T3_HEAT,
+  glowV1: C.GLOWING_T1_VALUE, glowV2: C.GLOWING_T2_VALUE, glowV3: C.GLOWING_T3_VALUE,
+  forgeCost: C.FORGE_COST, forgeValue: C.FORGE_VALUE, brandAsh: C.BRAND_ASH,
+  // Pflanze
+  plantGreen: C.PLANT_GREEN_THRESHOLD, plantCap: C.PLANT_VALUE_CAP,
+  plantSkillRef: C.PLANT_GROWTH_SKILL_REF, plantPerValue: C.WURZELSCHLAG_PER_GROWTH,
+  // Der Zuwachs je Schritt ist eins; als Platzhalter, weil im Text keine Ziffer stehen darf.
+  plantPerValue2: 1,
+  // Eis
+  massBurst: BURST_AT, massT1: THRESHOLDS[0], massT2: THRESHOLDS[1], massT3: THRESHOLDS[2],
+  iceWin: WIN_MASS, iceTick: EWIGER_FROST, iceDeclineMin: DECLINE_MIN_SKILLS,
   suits: C.SUIT_ORDER.length, rankMin: C.RANKS[0], rankMax: C.RANKS[C.RANKS.length - 1],
   perksOffered: C.PERKS_OFFERED, skillsOffered: C.SKILLS_OFFERED,
   ...countSchedule(),
@@ -80,4 +95,5 @@ export const MEASURE_VARS = {
   streakPct: String(Math.round(C.STREAK_BASE_STEP * 100)),
   critMult: C.CRIT_BASE_MULT.toFixed(2),
   critMultPerSkill: C.LIGHTNING_CRIT_MULT_PER_SKILL.toFixed(1),
+  wucht1: TIER_MULT[1].toFixed(1), wucht2: TIER_MULT[2].toFixed(1), wucht3: TIER_MULT[3].toFixed(1),
 };
