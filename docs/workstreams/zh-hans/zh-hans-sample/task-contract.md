@@ -203,6 +203,28 @@ sites.
 `zh-hans-plan` (`019f8bf9f0696e97`, `8c2e0d7828f244cb`) came from a different implementation and are
 not reproducible by the script in this repository; the script here is the reference from now on.
 
+### Wording baseline — re-established 2026-08-26, after taking dev
+
+Measured with `node scripts/wording-digest.mjs origin/dev`. The branch has merged `origin/dev`
+twice since the first entry, and dev moved the German and English wording both times, so the
+baseline moves with it. That is the entry the rule asks for; it is not a silent rebasing.
+
+| | `de` | `en` | Keys |
+| --- | --- | --- | --- |
+| Base — `origin/dev` | `4305f140ef6827c5` | `bba41bc71d4f4f30` | 2,664 |
+| This branch | `a9320c064807749f` | `483e0a3c6bb77ea3` | 2,660 |
+
+**Verdict: still purely structural.** Zero wording changes in either language, zero removed keys
+whose text is lost. The four-key gap is the same merge as before: six fragment keys became two, and
+every removed value still stands verbatim inside the value that replaced it.
+
+**What dev changed and this branch answered.** `unlock.games` and `unlock.games.one` were retired
+upstream in favour of `unlock.completedGames` and `unlock.completedRun`. The two new keys are
+translated; the two retired ones are dropped from the Chinese catalogue rather than left to rot,
+because a translation without a source is an orphan the parity guard rightly rejects.
+`scripts/zh-add.mjs` now does that on its own and names each dropped key, instead of refusing to
+write.
+
 ### Measured inputs
 
 | Input | Value | Kind |
