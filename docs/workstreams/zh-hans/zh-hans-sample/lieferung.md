@@ -309,3 +309,58 @@ Die beiden Code-Punkte aus §5 sind auf diesem Branch behoben, nicht nur notiert
 offen: der externe Terminologie-Durchgang, und die Frage, ob weitere Fragment-Stellen im Katalog
 dasselbe Muster haben. Geprüft wurden nur die zwei, die im Sample auffielen; der Volljob über alle
 2.639 Schlüssel wird zeigen, ob es mehr sind.
+
+## 7. Abgleich des Contracts gegen `zh-hans-plan`
+
+Der Owner hat Scope, Non-Goals, Acceptance Gate und Definition of Done für
+`task/zh-hans-sample` geliefert. Der Auftrag dazu war, sie gegen `task/zh-hans-plan` auf
+Widersprüche zu prüfen. Zuerst das, was aufgeht: die Verweise stimmen alle. `VITE_PREVIEW` existiert
+(`src/App.jsx:1124`), `docs/design-sprache.md` existiert, das Zitat in Tripwire 2 steht wörtlich in
+`docs/engineering/conventions.md:130`, und A2, A3 sowie Z3 stehen so im `zh-hans-plan`-Contract, wie
+die Blöcke sie zitieren. Der Port 5198 deckt sich mit dessen Z7.
+
+Vier Punkte gehen nicht auf. Keiner davon ist ein Fehler in den Blöcken; alle vier sind
+Zuständigkeitsfragen, die nur der Owner entscheiden kann.
+
+**1. Dieser Branch hat bereits zwei Dateien geändert, die `zh-hans-plan` auf seine
+Must-not-change-Liste setzt.** Commit `84c16954` fasst die Fragment-Keys zusammen und ändert dabei
+`src/i18n/de.js` und `src/i18n/en.js`; dazu wurde
+`docs/localization/strings_de_pixi_2026-08-15.csv` neu erzeugt. `zh-hans-plan` führt unter *Expected
+file surface* genau diese Katalogmodule als „must not change — verifiable by blob hash" mit der
+Begründung „no German or English wording changes in this task".
+
+Zwei Dinge entschärfen das, keines löst es auf. Erstens bindet jene Liste ihren eigenen Branch, nicht
+diesen. Zweitens hat sich der **Wortlaut** nachweislich nicht geändert: die alten drei Fragmente mit
+Leerzeichen verbunden sind zeichengleich mit dem neuen Wert ohne seine Marker, in beiden Sprachen, an
+beiden Stellen. Geändert hat sich die **Struktur**, und damit der Blob-Hash. Ein Gate, das per Hash
+prüft, schlägt an; ein Mensch, der den sichtbaren Text vergleicht, sieht keinen Unterschied.
+
+Entscheidung nötig: entweder nimmt *Expected file surface* dieses Contracts die beiden Dateien
+ausdrücklich auf, oder der Refactor wandert auf einen eigenen Branch.
+
+**2. Scope Teil 1 sagt „Nothing in `src/i18n/**` is registered by this task".** Registriert wird auch
+nichts. Aber derselbe Commit *editiert* `src/i18n/**`. Der Satz meint erkennbar die Locale-
+Registrierung und nicht jede Bearbeitung; wenn er als Hash-Prüfung gelesen wird, widerspricht er
+Punkt 1 doppelt. Eine Präzisierung auf „registers no locale in `src/i18n/**`" würde das schließen.
+
+**3. Scope Teil 3 und 4 doppeln `zh-hans-plan` Teil 3.** Dessen Definition of Done führt weiterhin
+„Part 3 — CJK branch drafted on returned Chinese text, through a visual gate, appended to
+`docs/design-sprache.md` in German", und dessen *Expected file surface* beansprucht
+`docs/design-sprache.md`, `src/index.css`, `src/assets/fonts/**` und `index.html` für sich. Genau
+diese Dateien schreibt der neue Scope ebenfalls. Zwei Contracts auf einer Dateifläche ist das, was
+die Reihenfolge verhindern soll.
+
+Sauber wird das erst, wenn `zh-hans-plan` seinen Teil 3 ausdrücklich abgibt. Solange das dort nicht
+steht, ist die Fläche doppelt vergeben, und der Worker weiß nicht, welcher Contract ihn bindet.
+
+**4. „The translator" ist noch keine externe Instanz.** Scope Teil 1 und das Acceptance Gate setzen
+eine zurückgekommene externe Übersetzung samt Terminologieliste und Fit-Warnungen voraus. Was
+tatsächlich vorliegt, ist mein Entwurf: die 115 Strings sind übersetzt, Terminologie und
+Fit-Warnungen liegen bei, aber die Terminologie ist ausdrücklich Arbeitsstand und geht erst noch an
+einen externen Übersetzer (§2, §6). Das Gate ist damit erfüllbar, der Non-Goal „Translating
+anything" beschreibt aber einen Branch, der bereits eine Übersetzung enthält.
+
+Nebenbei, kleiner und rein mechanisch: Teil 1 nennt als Quelle der gefüllten Spalte
+`docs/workstreams/zh-hans/zh-hans-plan/sample-order.csv`. Die gefüllte Datei liegt auf diesem Branch
+unter `docs/workstreams/zh-hans/zh-hans-sample/sample-order.csv`. Einer der beiden Pfade sollte
+gewinnen, sonst sucht der Worker an der falschen Stelle.
