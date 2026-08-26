@@ -168,7 +168,10 @@ describe("#flach — der Baum haelt seinen Inhalt im Rahmen", () => {
     const jsx = src("ui/UpgradeScreen.jsx");
     const body = jsx.match(/className="up-facbody">([\s\S]*?)<\/div>/);
     expect(body, ".up-facbody nicht mehr gefunden").toBeTruthy();
-    const kinder = [...body[1].matchAll(/<([A-Z][A-Za-z0-9]*)/g)].map((m) => m[1]);
+    /* #health-check G4: [A-Z] sah nur Komponenten-Tags — ein rohes <img>/<div>-Kind (genau der alte
+       Fehler) blieb unsichtbar. Kleinbuchstaben zaehlen mit; das erste fremde OEFFNENDE Tag faellt
+       damit auch dann auf, wenn der lazy-Match dahinter abschneidet. */
+    const kinder = [...body[1].matchAll(/<([A-Za-z][A-Za-z0-9]*)/g)].map((m) => m[1]);
     expect(kinder, "im Rasterkoerper steht etwas anderes als die Skill-Liste").toEqual(["SkillGrid"]);
   });
 });

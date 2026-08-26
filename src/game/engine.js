@@ -93,6 +93,18 @@ export function effectivePlayerValue(baseValue, perks, ctx) {
    mischen, Perk-/Skill-Angebot) gebraucht — als Abhängigkeit injiziert, damit die Schicht
    deterministisch/seedbar bleibt (kein Math.random hier drin).
    Spieler-Reihenfolge ist PERSISTENT: nur das Gegnerdeck wird pro Durchlauf neu gemischt. */
+/* #370 Bau-Boost als EXPORTIERTE reine Funktion (#health-check G4): test/qa-fixes.test.js prüfte
+   vorher eine handkopierte Fassung dieser Zeilen — genau die "Wächter testet eine Kopie"-Falle
+   (testing.md §4/§5). Jetzt importiert der Test die echte Naht. Nur der Gewinn-Anteil skaliert:
+   negative Flats (gamble-Strafe) bleiben unberührt, der Mult verdoppelt nur den Überschuss über 1. */
+export function applyBuildBoost(res, factor) {
+  if (res.flat > 0) res.flat *= factor;
+  const sf = res.streakFlat || 0;
+  res.streakFlat = sf > 0 ? sf * factor : sf;
+  res.mult = 1 + ((res.mult || 1) - 1) * factor;
+  return res;
+}
+
 export function resolveTrick(state, rng) {
   if (state.phase !== "play") return state; // Nicht-Play → No-op, braucht keine rng
   requireRng(rng, "resolveTrick"); // #229 N8: rng ist Pflicht (kein Math.random-Default mehr); Zufall kommt primär aus state.seed via rngAtOr
@@ -733,12 +745,7 @@ export function resolveTrick(state, rng) {
     //   NEGATIVEN Flat (`flat += ctx.isCrit ? e.crit : -e.penalty`, architect.js) — pauschales ×2 verdoppelte damit
     //   ausgerechnet die Strafe, ein positiver Mod verschlechterte also gezielt Risiko-Bauten. Die Behandlung ist
     //   jetzt symmetrisch zum Multiplikator, der schon immer nur den Überschuss über 1 verdoppelt hat.
-    if (hasWeekMod(state.weekMods, "buildBoost")) {
-      if (architectScoreRes.flat > 0) architectScoreRes.flat *= BOOST_FACTOR;
-      const sf = architectScoreRes.streakFlat || 0;
-      architectScoreRes.streakFlat = sf > 0 ? sf * BOOST_FACTOR : sf;
-      architectScoreRes.mult = 1 + ((architectScoreRes.mult || 1) - 1) * BOOST_FACTOR;
-    }
+    if (hasWeekMod(state.weekMods, "buildBoost")) applyBuildBoost(architectScoreRes, BOOST_FACTOR);
     architectBump = architectScoreRes.bump;
     const architectMult = architectScoreRes.mult;
     // Serien-Flat (Reihenhaus): läuft am globalen Serien-Mult VORBEI (kein Doppel-Dip — die Serie skaliert diesen Flat
