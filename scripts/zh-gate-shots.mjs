@@ -106,6 +106,42 @@ try {
         await sleep(500);
       }
     }
+
+    /* DIE DICHTEN FLAECHEN. Die Menues oben sind die leichte Haelfte; Typografie bricht dort, wo
+       viel Text auf wenig Platz trifft — HUD, Status-Leiste, Aufstellung, Kartenuebersicht. Die
+       liegen alle IM Lauf.
+
+       Der DEV RUN waere der kurze Weg dorthin, aber er hat keinen Einstieg mehr: `onDevRun` wird
+       in App.jsx an StartScreen uebergeben und dort nicht ausgepackt, der Zustand `showDevSetup`
+       ist damit unerreichbar. Also ueber einen normalen Lauf. */
+    const lauf = await evaluate(c, KLICK(t("start.normal", null, locale)));
+    notiz.push(`${locale} lauf: starten → ${lauf}`);
+    await sleep(2500);
+
+    const b1 = await screenshot(c, null, { format: "webp", quality: 86 });
+    writeFileSync(join(ZIEL, `6-lauf-start-${locale}.webp`), Buffer.from(b1, "base64"));
+    console.log(`  6-lauf-start-${locale}.webp`);
+
+    /* Kartenuebersicht: 40 Karten mit ihren Formations-Kuerzeln — der dichteste Text im Spiel und
+       die einzige Flaeche, auf der die acht Ein-Zeichen-Kuerzel nebeneinander stehen. */
+    const chronik = await evaluate(c, KLICK(t("hud.cards", null, locale)));
+    notiz.push(`${locale} lauf: Kartenuebersicht → ${chronik}`);
+    await sleep(1200);
+    const b2 = await screenshot(c, null, { format: "webp", quality: 86 });
+    writeFileSync(join(ZIEL, `7-chronik-${locale}.webp`), Buffer.from(b2, "base64"));
+    console.log(`  7-chronik-${locale}.webp`);
+    await evaluate(c, `(() => { document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })); return 1; })()`);
+    await sleep(600);
+
+    /* Hoechstes Tempo, dann laufen lassen: nach 40 Stichen endet der Durchlauf und die naechste
+       Entscheidung steht an — Aufstellung oder eine Wahl. Beides ist Flaeche mit viel Text. */
+    await evaluate(c, KLICK(t("hud.speed.max.label", null, locale)));
+    await sleep(300);
+    await evaluate(c, KLICK(t("bf.ready", null, locale)));
+    await sleep(20000);
+    const b3 = await screenshot(c, null, { format: "webp", quality: 86 });
+    writeFileSync(join(ZIEL, `8-nach-durchlauf-${locale}.webp`), Buffer.from(b3, "base64"));
+    console.log(`  8-nach-durchlauf-${locale}.webp`);
   }
 } finally {
   await c.close();
