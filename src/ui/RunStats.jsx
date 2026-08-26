@@ -97,7 +97,7 @@ export function RunStatCells({ entry = {}, sourceCells = true }) {
       {bestGlacierTrickScore != null && bestGlacierTrickScore > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
           <StatCard label={t("runstats.bestGlacier")} value={shortOrNull(bestGlacierTrickScore)}
-            title={fullTitle("Höchster Score aus einem Gletscher-Stich (Bruch)", bestGlacierTrickScore)} color="#5ec8f0" />
+            title={fullTitle(t("runstats.bestGlacier.title"), bestGlacierTrickScore)} color="#5ec8f0" />
         </div>
       )}
 

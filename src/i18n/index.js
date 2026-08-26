@@ -36,15 +36,11 @@ export const LOCALES = [
   { id: "de", label: "Deutsch",  short: "DE", ready: true },
   { id: "en", label: "English",  short: "EN", ready: true },
   { id: "es", label: "Español",  short: "ES", ready: true,  via: ["en"] },  // #es-locale
-  /* #zh-hans: ANGEMELDET, nicht auslieferbar. Der Katalog ist ein Fixture aus der
-     Muster-Übersetzung (111 von allen Schlüsseln) und existiert, damit die CJK-Typografie an
-     echtem chinesischem Text statt an lateinischem Platzhalter entworfen werden kann.
-     `ready: false` ist genau der Schalter dafür: `setLocale` nimmt die Sprache nicht an, die
-     UI bietet sie nicht an, und die verlangenden Paritätsprüfungen laufen an ihr vorbei —
-     während die verbietenden weiter greifen. Kein `via`: ein fehlender Schlüssel soll sichtbar
-     auf Deutsch zurückfallen, damit im Entwurf sofort auffällt, was Fixture ist und was nicht.
-     Vollständig wird der Katalog erst mit dem Vollauftrag; die Ratsche unten verlangt dann
-     `ready: true`. Siehe docs/workstreams/zh-hans/zh-hans-sample/task-contract.md. */
+  /* #zh-hans: AUSLIEFERBAR seit dem Vollausbau (Basis: task/zh-hans-sample). Der Katalog ist
+     vollständig und `ready: true` schaltet ihn frei; `via: ["en"]` lässt einen künftig fehlenden
+     Schlüssel sichtbar auf Englisch zurückfallen, bevor die Quellsprache greift. Die Historie der
+     Fixture-Phase (111 Muster-Schlüssel, `ready: false` als Schalter) steht im Task-Contract:
+     docs/workstreams/zh-hans/zh-hans-sample/task-contract.md. */
   { id: "zh-Hans", label: "简体中文", short: "ZH", ready: true,  via: ["en"] },  // #zh-hans
 ];
 export const LOCALE_IDS = LOCALES.map((l) => l.id);
@@ -181,12 +177,6 @@ export function t(key, vars, locale) {
   }
   if (raw == null) return key;              // letzter Rückfall: der Schlüssel selbst, nie „undefined"
   return interpolate(raw, vars);
-}
-
-// Prüfen, ob ein Schlüssel existiert (für optionale Texte, z. B. Tutorial-Schritte ohne Hinweis).
-export function hasKey(key, locale) {
-  const cat = CATALOGS[locale || current] || {};
-  return cat[key] != null || cat[key + "_one"] != null;
 }
 
 // Roher Katalog — nur für Guards/Export, NICHT für die UI.

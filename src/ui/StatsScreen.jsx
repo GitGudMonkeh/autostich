@@ -251,9 +251,12 @@ function useRunCap(wide, total) {
 }
 
 export function StatsScreen({ onClose, onPlaySeed = null }) {
-  useEscape(onClose);
   const wide = useIsWide();
   const [detail, setDetail] = useState(null); // { entry, rank } | null
+  /* Escape bei offener Detailansicht: NUR die Detailansicht schliessen. RunDetail hat seinen eigenen
+     useEscape am selben window-Listener (Falle wie in UpgradeScreen dokumentiert) — beide Handler
+     feuern, beide setzen dann idempotent detail=null, der Screen bleibt stehen. */
+  useEscape(detail ? () => setDetail(null) : onClose);
 
   // Beim Öffnen einmal frisch laden (nach jedem Lauf aktuell).
   const history = useMemo(() => loadRunHistory(), []);

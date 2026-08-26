@@ -2,6 +2,7 @@ import { layoutPerks, rarityMeta } from "../game/perks.js";
 
 import { tierColor, romanOf } from "../game/rarity.js";
 import { layoutFamilies, perkDef } from "../i18n/labels.js"; // #sprache: Perks zur Anzeigezeit
+import { t } from "../i18n/index.js";
 
 /* Aufstellungshilfe (Issue #95 / #166): listet die gehaltenen Perks UND Familien, deren Wirkung von Position/
    Reihenfolge/Nachbarschaft oder Formations-Zugehörigkeit abhängt — damit man beim Aufstellen weiß, worauf es
@@ -13,7 +14,7 @@ export function LayoutPerks({ perks, familyTiers = {} }) {
   return (
     <div className="rounded-lg px-3 py-2" style={{ background: "#1b1b22", border: "1px solid #5ab87a55" }}>
       {/* #104: Panel als aktiv/informativ kennzeichnen — grüner Akzent (Aufstellungs-Kontext) statt grau-in-grau. */}
-      <div className="text-meta-1 uppercase tracking-wide mb-1 font-semibold" style={{ color: "#5ab87a" }}>Positions- &amp; Formations-Perks</div>
+      <div className="text-meta-1 uppercase tracking-wide mb-1 font-semibold" style={{ color: "#5ab87a" }}>{t("layoutperks.title")}</div>
       <div className="grid gap-0.5">
         {fams.map((f) => (
           <div key={f.id} className="text-meta-3 leading-snug">

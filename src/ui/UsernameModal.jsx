@@ -55,7 +55,7 @@ export function UsernameModal({ initial = "", firstTime = false, onLang = null, 
   useEscape(onClose); // #58: Escape schließt (Backdrop existiert bereits)
 
   return overlayPortal((
-    <div onClick={onClose} className="un-root fixed inset-0 overlay-root z-40 flex items-center justify-center p-4"
+    <div onClick={onClose} role="dialog" aria-modal="true" aria-label={t(firstTime ? "name.title.first" : "name.title.change")} className="un-root fixed inset-0 overlay-root z-40 flex items-center justify-center p-4"
       /* #menu-rework M9, Vokabular: `--sf-scrim` IST `rgba(12, 12, 16, .8)` — wertgleich zu
          `#0c0c10cc`, und der Ueberzug-Wert, aus dem der Schritt abgeleitet wurde. Ab 1280 px zeigt
          `.un-root, .fb-root` ihn auf `--sf-scrim-desk` um (94 %), was die sanktionierte Form ist:

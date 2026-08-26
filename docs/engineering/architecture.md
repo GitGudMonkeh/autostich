@@ -144,8 +144,8 @@ otherwise.
 through every branch and gets assigned freely — and it landed in the `pixi` chunk, which made the
 entry a static importer of the whole Pixi chunk. It is routed explicitly to `vendor`.
 
-Separately, `assetsInlineLimit` is overridden for skill emblems: they are **never** inlined as data
-URIs. Vite's default threshold is small enough that the leanest emblems fall under it and migrate
+Separately, `assetsInlineLimit` is overridden for skill emblems, perk-category art and legendary
+art: they are **never** inlined as data URIs. Vite's default threshold is small enough that the leanest emblems fall under it and migrate
 into the entry chunk — which inverts the intent, since they are only rendered on wide viewports but
 would then be downloaded by every phone on every page load. Everything else keeps the default.
 

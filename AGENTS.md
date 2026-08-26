@@ -105,38 +105,16 @@ through, and **a missing review does not block integration** where none was requ
 - the branch is clean and committed,
 - known blockers are resolved, or documented as open with their consequence stated.
 
-**When to ask for one anyway.** Risky architectural change; save, persistence or migration logic; a
-defect that will not reproduce reliably; anything security-relevant; a large or risky integration; a
-release-critical change; or simply because the planner, worker, integrator or owner wants a second
-technical opinion. Asking is cheap and is never wrong — the point is that *not* asking is also
-correct, and needs no justification.
+**When to ask for one anyway.** Risky architectural change; save, persistence or migration logic;
+a defect that will not reproduce reliably; anything security-relevant; a large or risky
+integration; a release-critical change; or simply because someone wants a second technical
+opinion. Asking is cheap and is never wrong — and *not* asking is also correct, and needs no
+justification.
 
-### When a review is requested, it converges
-
-Review reduces relevant risk. It does not enforce perfection. **Good, correct and integration-ready
-is enough.**
-
-**The first independent review is a full review.** It may examine the whole agreed scope, and it may
-return blocking findings, non-blocking findings, an approval, or changes requested.
-
-**Every review after it is a closure review.** It examines two things and no others: whether the open
-findings were closed, and whether those specific fixes caused a regression. Scope that has already
-been reviewed and closed is not reopened, and a closed finding stays closed.
-
-**A closure review does not move the finish line.** It may block the workstream again only where the
-finding was created by the current fix, or is a genuine blocker — a correctness defect, data loss, a
-security problem, a broken build or test suite, or a violated project invariant. Everything else —
-improvement ideas, documentation refinements, robustness wishes, style, optional cleanup — is recorded
-as a **follow-up** and does not block the current integration.
-
-**The normal budget is one full review plus one closure review.** A further closure round is
-permitted only where a known blocking finding is still unfixed, or its fix caused a new regression.
-There is no second full review.
-
-How a requested review is run, and what a handoff must state: `docs/engineering/task-lifecycle.md`
-§8.
-
----
+**How a requested review runs** — full versus closure review, what may block, and the review
+budget — is `docs/engineering/task-lifecycle.md` §8, which is canonical for those mechanics.
+Review reduces relevant risk; it does not enforce perfection. Good, correct and integration-ready
+is enough.
 
 ## Branch model
 
@@ -165,19 +143,9 @@ Both commands must exit successfully.
 feature/task -> dev --ff-only-> test --ff-only-> main
 ```
 
-Canonical promotion commands:
-
-```bash
-git checkout test
-git merge --ff-only dev
-```
-
-then:
-
-```bash
-git checkout main
-git merge --ff-only test
-```
+The step-by-step promotion commands, including the catch-up merge against the remote, are
+`docs/engineering/git-workflow.md` §12. Promotion is an integrator act; do not promote from
+memory.
 
 ### Branch rules
 
@@ -458,6 +426,11 @@ The core rule is:
 
 > One active writer = one task = one branch = one worktree.
 
+**The cockpit checkout is a worktree too, and it belongs to integration.** A worker gets its own
+worktree; where it does not have one, it asks for one rather than writing into the cockpit beside the
+integrator. Two sessions writing there is the same collision as anywhere else — it just looks
+harmless because the directory is the one everybody knows.
+
 A task may use several **sequential** agent sessions in the same worktree.
 
 Allowed:
@@ -536,6 +509,21 @@ Task lifecycle — tiers, contract, evidence, handoff:
   - proposed.
 - Never claim a gate ran if it did not.
 - Never describe planned work as completed.
+
+### Output discipline
+
+Reasoning is worth recording. Length is not, and the two get confused constantly.
+
+- **Code comment: at most ~5 lines.** Longer only where the reasoning is genuinely non-obvious and a
+  later reader would otherwise undo the change. A two-line fix does not get a thirty-line comment.
+- **Commit message: subject plus at most ~10 lines.** What changed, why, what was measured, what was
+  not. Not an essay; the diff is right there.
+- **Report to the owner: what fits on a phone screen.** The finding, the fix, what is still open.
+  Detail on request.
+
+This is not a licence to skip the reasoning — it is a limit on restating it. Where a decision needs
+more room, put it in the one place that already exists for it (the log in `docs/decisions/`), not in
+three places at once.
 
 ---
 

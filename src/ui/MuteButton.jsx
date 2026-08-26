@@ -3,8 +3,10 @@
    (SFX + Musik, siehe App.jsx-Effekte + OptionsModal) → kein zweiter, paralleler Zustand; Schnell-Button und
    Options-Toggle bleiben automatisch synchron und die Options-Persistenz greift weiter.
    Größe/Rand matchen die übrigen Steuer-Buttons (Controls.Btn: rounded-lg px-3 py-1.5 text-sm). */
+import { t } from "../i18n/index.js"; // #health-check F1
+
 export function MuteButton({ muted, onToggle, className = "" }) {
-  const label = muted ? "Ton einschalten" : "Ton stummschalten";
+  const label = muted ? t("mute.enable") : t("mute.disable");
   return (
     <button
       onClick={onToggle}

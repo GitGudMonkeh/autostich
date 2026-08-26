@@ -183,7 +183,18 @@ describe("#mainscreen-branding — die Wortmarken-Falle", () => {
 
 describe("#mainscreen-branding — die schmale Fassung sieht das Zeichen nicht", () => {
   it("enthält außerhalb der Desktop-Sektion keine .as-brandgrid-Regel außer `display: none`", () => {
-    const outside = css.split(DESKTOP_BLOCK_AT)[0] + (css.split(DESKTOP_BLOCK_AT)[1] || "").slice(deskBlock.length);
+    /* #health-check G4: der Marker kommt mehrfach vor (weitere 1280er-Bloecke weiter unten); der
+       alte split warf alles nach dem ZWEITEN Vorkommen weg und uebertrimmte den Rest. Jetzt wird
+       JEDER 1280er-Block per Klammertiefe entfernt — "outside" ist wirklich alles Schmale. */
+    const outside = (() => {
+      let s = css, at;
+      while ((at = s.indexOf(DESKTOP_BLOCK_AT)) >= 0) {
+        let depth = 0, j = s.indexOf("{", at);
+        for (; j < s.length; j++) { if (s[j] === "{") depth++; else if (s[j] === "}" && --depth === 0) break; }
+        s = s.slice(0, at) + s.slice(j + 1);
+      }
+      return s;
+    })();
     const offenders = rules(outside)
       .filter((r) => /\.as-brandgrid/.test(r.sel))
       .filter((r) => !/^\s*display:\s*none;?\s*$/.test(r.body.trim()))

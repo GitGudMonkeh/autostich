@@ -291,9 +291,10 @@ describe("#400 · das Preview-Gate", () => {
   });
 
   it("„Aus“ nimmt weiterhin den bisherigen Boot-Pfad", () => {
-    // Der else-Zweig ist die Zeile, die diese Datei immer hatte. Ändert sie sich, ändert sich das
-    // Verhalten JEDES Produktionsbuilds — nicht nur das des Harness.
-    expect(bareMain).toMatch(/else\s*\{\s*createRoot\(rootEl\)\.render\(<Autostich \/>\);\s*\}/);
+    // Der else-Zweig ist der Produktions-Boot. Seit #health-check S3 gehört die App-weite
+    // Error-Boundary ZUM gewollten Produktionspfad — der Wächter pinnt die neue Zeile und fällt
+    // weiter bei jeder anderen Änderung (Gegenprobe: Boundary entfernt → rot).
+    expect(bareMain).toMatch(/else\s*\{\s*createRoot\(rootEl\)\.render\(<AppErrorBoundary><Autostich \/><\/AppErrorBoundary>\);\s*\}/);
   });
 
   it("OptionsModal.jsx hält alle Harness-Fundstellen INNERHALB des einen Gates", () => {

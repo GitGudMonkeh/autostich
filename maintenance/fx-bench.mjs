@@ -24,6 +24,8 @@
  */
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { join, dirname } from "node:path";
 
 const arg = (n, d) => { const i = process.argv.indexOf(n); return i >= 0 && i + 1 < process.argv.length ? process.argv[i + 1] : d; };
 const ALL = ["leer", "aurora", "neonsurf", "cubematrix", "cubelite", "cubespots", "cubespotsl", "frostice", "mossgrow"];
@@ -34,11 +36,14 @@ const PORT = Number(arg("--port", 5199));
 
 const pct = (sorted, q) => (sorted.length ? sorted[Math.min(sorted.length - 1, Math.round((sorted.length - 1) * q))] : 0);
 
-/* `detached` + Kill auf die PROZESSGRUPPE (negative PID): `npx` ist nur ein Wrapper, das eigentliche Vite ist sein
-   Kind. Ein SIGTERM an den Wrapper allein lässt Vite verwaist auf dem Port zurück — der nächste Lauf scheitert dann
-   an „Port already in use", und zwar erst nach 60 s Wartezeit. */
-const server = spawn("npx", ["vite", "--port", String(PORT), "--strictPort"], { stdio: ["ignore", "pipe", "pipe"], detached: true });
-const stop = () => { try { process.kill(-server.pid, "SIGTERM"); } catch { /* schon weg */ } };
+/* #health-check G3: vorher `spawn("npx", …, detached)` + Kill auf die Prozessgruppe (negative PID).
+   Beides ist POSIX-only — auf Windows ist npx eine .cmd (Node 24 verweigert den Spawn ohne Shell) und
+   process.kill(-pid) wirft. Wie scripts/check-preview-exclusion.mjs: Vites eigenen JS-Einstieg mit
+   DIESEM Node starten — dann gibt es keinen Wrapper, das Kind IST Vite, und ein normales kill reicht
+   auf beiden Plattformen. */
+const VITE_BIN = join(dirname(fileURLToPath(import.meta.url)), "..", "node_modules", "vite", "bin", "vite.js");
+const server = spawn(process.execPath, [VITE_BIN, "--port", String(PORT), "--strictPort"], { stdio: ["ignore", "pipe", "pipe"] });
+const stop = () => { try { server.kill("SIGTERM"); } catch { /* schon weg */ } };
 process.on("exit", stop); process.on("SIGINT", () => { stop(); process.exit(1); });
 
 // Auf „ready" warten statt blind zu schlafen — sonst misst man je nach Maschine mal einen kalten, mal einen warmen Start.

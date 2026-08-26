@@ -92,7 +92,3 @@ export function tintImage(src, a1, a2) {
   return job;
 }
 
-/** Mehrere Motive derselben Deckfarbe — in der Reihenfolge der Eingabe, Fehler eingeschlossen. */
-export function tintImages(srcs, a1, a2) {
-  return Promise.all((srcs || []).map((s) => tintImage(s, a1, a2)));
-}

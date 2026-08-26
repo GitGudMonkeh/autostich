@@ -734,6 +734,35 @@ export default {
   "carddetail.building.tier": " · nivel {tier}",
   "carddetail.building.none": "sin efecto directo sobre esta carta",
 
+  /* ---- Carta y textos sueltos (#health-check F1) ---- */
+  "card.perm.title": "Permanente +{n} (base {base})",
+  "card.forged.title": "Forjado +{n} de valor (permanente)",
+  "card.ring.grown": "Valor {value} / {cap} → completamente desarrollada",
+  "card.ring.ripening": "Crecimiento {growth} / {cap} → madura",
+  "card.colonized.title": "Colonizada (estolón) · cosecha +{n} de crecimiento",
+  "card.green.title": "Verde (madura) — parte del bloque de color",
+  "card.branded.title": "Marcada −{n} de valor",
+  "card.ion.title": "Ionizada {n}/{max} — +{score} de puntuación al ganar",
+  "card.ion.titleFull": "Ionizada {n}/{max} — +{score} de puntuación al ganar · TOTALMENTE IONIZADA",
+  "card.base": "Base {base}",
+  "card.trickBonus": "⚔ +{n} de baza",
+  "gameover.progress.next": "Siguiente desbloqueo con {at}/{total}: {label}",
+  "deckdetail.skin.free": "✓ desbloqueado",
+  "deckdetail.skin.locked": "🔒 bloqueado",
+  "layoutperks.title": "Ventajas de posición y formación",
+  "mute.enable": "Activar el sonido",
+  "mute.disable": "Silenciar el sonido",
+  "bar.lightning.shieldHeld": "🛡 {n}× racha mantenida",
+  "bar.lightning.consumer": "Consumidor: {name}",
+  "cardgrid.glacierMass.title": "Glaciar · masa {mass}",
+  "cardgrid.glacierMass.reserve": "Glaciar · masa {mass} · reserva {firn} (se rellena a {cap} al inicio del ciclo)",
+  "cardgrid.segbridge.title": "Trabajo de segmentos: las formaciones pueden cruzar el límite entre los segmentos {a} y {b}",
+  "arch.glacier.reserve": "Glaciar · masa {mass} · reserva {firn}",
+  "runstats.bestGlacier.title": "Puntuación más alta de una baza de glaciar (ruptura)",
+  "error.crash.title": "Algo ha salido mal",
+  "error.crash.body": "Un error interrumpió la pantalla. Tu progreso está guardado: una partida en curso se reanuda tras recargar.",
+  "error.crash.reload": "Recargar",
+
   /* ---- Card grid badges ---- */
   "cardgrid.openBoundary": "⇕ límite abierto",
   "cardgrid.arch.title": "🏗 {name} · +{boost} de valor",
@@ -2059,7 +2088,7 @@ export default {
      zur nächsten Auszahlung ist; das Wort trug also nichts, was die Zeile nicht schon zeigt. Der
      etablierte Begriff „Bonificación" bleibt — ein zweites Wort für denselben Begriff wäre der
      schlechtere Tausch als ein gestrichenes Adjektiv. Länge jetzt wie im Deutschen und Englischen. */
-  "start.progress.bonus": "Bonificación {cur} · +5",
+  "start.progress.bonus": "Bonificación {cur} · +{n}",
   "start.progress.runs": "{done} / {total} partidas",
   "start.progress.links": "{done} / {total}",
   "start.progress.next": "Próximo desbloqueo:",

@@ -19,8 +19,7 @@
    E6 Karte in zwei Treppen · E7/E8 Anker · E9 Formationen über Segmentgrenzen.
    ============================================================ */
 import { ANCHOR_FORM_FACTOR, FORMATION_CORE_FACTOR,
-  UEBERWUCHERUNG_FIELD, UEBERWUCHERUNG_FACTOR, EWIGER_FRUEHLING_FARBBLOCK, EWIGER_FRUEHLING_FIELD, PLANT_GREEN_FARBBLOCK_CAP,
-  FORMATION_LABELS as C_FORMATION_LABELS } from "./constants.js";
+  UEBERWUCHERUNG_FIELD, UEBERWUCHERUNG_FACTOR, EWIGER_FRUEHLING_FARBBLOCK, EWIGER_FRUEHLING_FIELD, PLANT_GREEN_FARBBLOCK_CAP } from "./constants.js";
 import { hasEwigerFruehling, hasUeberwucherung, greenCount } from "./skills.js";
 import { activeFamilyEntries, familyTierParam, allianceGroups } from "./families.js";
 import { architectFormSpec } from "./architect.js";
@@ -43,9 +42,6 @@ export const WECHSEL_MIN_DIFF = 4;   // [Balance: 5→4 — Wechsel eine Stufe l
 export const MAX_TREPPE_STEP = 4;   // [Balance: 3→4 — Treppe eine Stufe leichter, größerer Schritt je Nachbarpaar erlaubt]
 // Die vier Basis-Formationstypen (ohne Anker) — Zielauswahl F-L1 Formationskern + Anzeige-Labels.
 export const FORMATION_TYPES = ["wiederholung", "farbblock", "treppe", "wechsel"];
-// Anzeigenamen: EINE Quelle in constants.js (Sprachprüfung A12/E1) — hier nur die vier Basistypen davon,
-// damit die bestehenden Aufrufer (Zielauswahl Formationskern) unverändert bleiben.
-export const FORMATION_TYPE_LABELS = Object.fromEntries(FORMATION_TYPES.map((t) => [t, C_FORMATION_LABELS[t]]));
 
 /* #sprache: Die Faktoren sind EXPORTIERT, weil die Formations-Legende (ArchPanels) sie anzeigt. Vorher standen
    dieselben Zahlen dort ein zweites Mal als deutscher Fließtext — beim Balancing wäre die Legende still
@@ -423,23 +419,6 @@ export const positionHasFormation = (posForm) => !!posForm && posForm.mult > 1;
 // positionHasFormation: ≥1 ⟺ mult > 1. Formations-Einträge mit factor ≤ 1 (z. B. Farbblock-Ordinal 1) zählen nicht.
 export const activeFormationCount = (posForm) =>
   (posForm?.formations || []).filter((f) => (f.factor || 1) > 1).length;
-
-// #165: die vier Basis-Formationstypen (ohne Anker/Nachhall/Kern/Kristallform) als Set.
-const BASE_FORMATION_SET = new Set(FORMATION_TYPES);
-// Anzahl der Basis-Formationen (Nicht-Anker) an einer Position — Eisblüte verlangt ≥ 2 (§5.4).
-export const baseFormationCount = (posForm) =>
-  (posForm?.formations || []).filter((f) => BASE_FORMATION_SET.has(f.type)).length;
-// Hat ein Segment (SEGMENT_SIZE Positionen ab segStart) durch die Umstellung eine NEUE Basis-Formation gewonnen?
-// (§5.4-8: eine verlängerte Formation zählt, wenn eine zuvor nicht enthaltene Position beitritt.) Vergleicht je
-// Position die Menge der Basis-Formationstypen: gewinnt eine Position einen Typ, der vorher dort nicht lag → true.
-export function segmentGainedFormation(before, after, segStart, segSize = SEGMENT_SIZE) {
-  for (let k = segStart; k < segStart + segSize; k++) {
-    const b = new Set((before[k]?.formations || []).filter((f) => BASE_FORMATION_SET.has(f.type)).map((f) => f.type));
-    const a = (after[k]?.formations || []).filter((f) => BASE_FORMATION_SET.has(f.type));
-    if (a.some((f) => !b.has(f.type))) return true;
-  }
-  return false;
-}
 
 // Formations-Potential einer Anordnung (#Pass6): Σ(mult−1) über alle Positionen der unmodifizierten
 // Formationen (keine Rollen/Perks/Skills/Anker). Maß fürs freie Start-Potential → speist das Startdeck-Band.

@@ -442,6 +442,10 @@ const MIGRATED_SELECTORS = [/\.op-/, /\.as-opt-/, /\.as-panel-sunken/, /\.as-she
      Auftrag NEU angelegt hat — die Marke, das Lockup, die Tagline und die Deck-Tafel: sie gehoeren
      demselben Screen und waeren sonst der einzige Teil von ihm, den die Ratsche nicht sieht. */
   /\.hub-/, /\.as-hub-/, /\.as-deck/, /\.as-lockup/, /\.as-tagline/, /\.as-brandgrid/, /\.as-bg-/,
+  /* #health-check G4: .as-kpi gehoert ZUR selben Tafel wie .as-deck und fehlte hier — seine Regeln
+     waren fuer ALLE Achsen unsichtbar, und die .as-kpi-Innenabstands-Ausnahme unten war deshalb tot
+     (gefunden von der vervollstaendigten Lebendigkeits-Gegenprobe). */
+  /\.as-kpi/,
   /\.as-week-chip/,
   /* M7: `.st-` und `.rd-` MEINEN DIE ZWEI SCREENS, wie `.cz-` und `.up-` ihre. `.rs-` und `.rg-`
      gehoeren dazu, aber nur SO WEIT SIE DIESER SCREEN FAERBT: die drei Komponenten teilen sich
@@ -971,6 +975,11 @@ const C_SURFACE_EXEMPT = [
   /^\.as-deck-attr$/,
 ];
 const C_EDGE_EXEMPT = [
+  /* #health-check G4: die Trennlinien der Deck-Tafel — rgba(60, 58, 78, .5), eine TRANSLUZENTE
+     Kante und damit Mitglied der ratchierten, bewusst nicht bemuenzten Familie (MENU-38/MH1).
+     Bestand, nicht neu: die Regeln standen schon da, nur sah die Ratsche .as-kpi bis heute nicht.
+     Gezaehlt statt gepraegt, wie M2b es vormacht. */
+  /^\.as-kpis$/, /^\.as-kpi \+ \.as-kpi$/,
   /* PHONE — s. die Flächenliste: ohne `.hub-play` davor, damit die Desktop-Regeln geprüft bleiben. */
   /^\.as-hub-tile$/, /^\.as-hub-field$/,
   /* MEANING-CODED: der Fehlerrahmen des Seed-Feldes. §2c nimmt bedeutungstragende Kanten dauerhaft
@@ -1149,12 +1158,19 @@ describe("#menu-rework — migrierte CSS-Regeln fuehren keine Werte ein", () => 
        genau das faellt hier auf. Beide Achsen mit Ausnahmen werden geprueft, nicht nur die neue.
        Der Anlass ist MENU-37: derselbe Waechter meldete einmal Erfolg fuer eine Liste, von der nur
        ein Teil noch etwas traf. */
+    /* #health-check G4: die Schleife liess zehn ihrer eigenen Listen aus (M3/M4/M5/C_*) — ein toter
+       Eintrag dort war unauffindbar, exakt der MENU-37-Fall, den der Kommentar oben nennt. */
     for (const [name, liste] of [["Innenabstand", INSET_EXEMPT], ["Hoehe", ELEV_EXEMPT],
       ["Flaeche", M7_SURFACE_EXEMPT], ["Kante", M7_EDGE_EXEMPT], ["Radius", M7_RADIUS_EXEMPT],
       ["Flaeche M8", M8_SURFACE_EXEMPT], ["Kante M8", M8_EDGE_EXEMPT], ["Radius M8", M8_RADIUS_EXEMPT],
       ["Flaeche M9", M9_SURFACE_EXEMPT], ["Kante M9", M9_EDGE_EXEMPT], ["Hoehe M9", M9_ELEV_EXEMPT],
       ["Innenabstand M6", M6_INSET_EXEMPT], ["Hoehe M6", M6_ELEV_EXEMPT],
-      ["Flaeche M6", M6_SURFACE_EXEMPT], ["Kante M6", M6_EDGE_EXEMPT], ["Radius M6", M6_RADIUS_EXEMPT]]) {
+      ["Flaeche M6", M6_SURFACE_EXEMPT], ["Kante M6", M6_EDGE_EXEMPT], ["Radius M6", M6_RADIUS_EXEMPT],
+      ["Flaeche M3", M3_SURFACE_EXEMPT], ["Kante M3", M3_EDGE_EXEMPT],
+      ["Flaeche M4", M4_SURFACE_EXEMPT],
+      ["Flaeche M5", M5_SURFACE_EXEMPT], ["Radius M5", M5_RADIUS_EXEMPT],
+      ["Flaeche C", C_SURFACE_EXEMPT], ["Kante C", C_EDGE_EXEMPT], ["Hoehe C", C_ELEV_EXEMPT],
+      ["Radius C", C_RADIUS_EXEMPT], ["Innenabstand C", C_INSET_EXEMPT]]) {
       /* MH4: THE SAME INVARIANT, now with the media context in it — "every exemption covers at least
          one migrated rule". Rewriting it to a smaller number would be H-b: a qualified entry that
          covers nothing is as dead as a selector that no longer exists, and that is exactly what has

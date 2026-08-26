@@ -11,9 +11,10 @@ import { Component } from "react";
    stattdessen den `fallback` — beim Kompositor also die bisherige Canvas-Fassung. Der Spieler sieht dann den
    alten Effekt statt gar nichts und merkt im Zweifel nichts.
 
-   Bewusst klein gehalten und NICHT als globale Boundary gedacht: eine App-weite Fehlerbehandlung ist eine eigene
-   Entscheidung (was zeigt man, was meldet man, wie kommt der Spieler zurück in den Lauf). Hier geht es nur darum,
-   dass ein zuschaltbarer Effekt-Pfad keinen Totalausfall verursachen kann. */
+   Bewusst klein gehalten und NICHT als globale Boundary gedacht. Die App-weite Fehlerbehandlung ist seit
+   #health-check S3 ihre eigene Schicht (src/ui/AppErrorBoundary.jsx: Meldung + Neu laden, Resume über den
+   gespeicherten Lauf). Diese Grenze hier bleibt trotzdem: bei einem Effekt-Fehler ist der ALTE Effekt die
+   bessere Antwort als der Fehler-Screen — es geht nur um Schmuck. */
 export class FxBoundary extends Component {
   constructor(props) {
     super(props);

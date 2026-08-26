@@ -39,7 +39,7 @@ export function loadGhost() {
   return { traj: [], total: 0, step: GHOST_STEP };
 }
 export function saveGhost(traj, total) {
-  try { localStorage.setItem(k("as_ghost"), JSON.stringify({ traj, total, step: GHOST_STEP })); } catch (e) {}
+  try { localStorage.setItem(k("as_ghost"), JSON.stringify({ traj, total, step: GHOST_STEP })); } catch (e) { if (isQuotaError(e)) signalQuota("Ghost"); }
 }
 
 /* Lokaler Nickname (#14) — hängt an globalen Highscore-Einträgen. Leer ⇒ „erster Start". */
@@ -58,7 +58,9 @@ export const HIGHSCORE_CAP = 20; // #217 Bestenliste: „Meine Runs"/„Master" 
 export function loadHighscores() {
   try {
     const raw = localStorage.getItem(k("as_highscores"));
-    if (raw) { const l = JSON.parse(raw); if (Array.isArray(l)) return l; }
+    // Formvalidierung (#health-check S8): ein von Hand editierter/teilkorrumpierter Eintrag mit
+    // nicht-numerischem score sortiert als NaN instabil und kann einen Top-Platz dauerhaft besetzen.
+    if (raw) { const l = JSON.parse(raw); if (Array.isArray(l)) return l.filter((e) => e && Number.isFinite(e.score)); }
   } catch (e) {}
   return [];
 }
@@ -298,7 +300,7 @@ export function loadProfile() {
 export function saveProfile(profile) {
   // #349 C: einen bereits höheren (neueren Build) Versions-Stempel nicht herunterstufen.
   const out = { ...profile, schemaVersion: Math.max(PROFILE_SCHEMA_VERSION, Number(profile?.schemaVersion) || 0) };
-  try { localStorage.setItem(k("as_profile"), JSON.stringify(out)); } catch (e) {}
+  try { localStorage.setItem(k("as_profile"), JSON.stringify(out)); } catch (e) { if (isQuotaError(e)) signalQuota("Profil"); }
   return out;
 }
 
@@ -512,7 +514,7 @@ export function recordRun(record) {
     // #299: Onboarding-Abschluss (6/6) hat oben ggf. das Genesis-Pack ergänzt.
     ownedCosmetics,
   };
-  try { localStorage.setItem(k("as_profile"), JSON.stringify(profile)); } catch (e) {}
+  try { localStorage.setItem(k("as_profile"), JSON.stringify(profile)); } catch (e) { if (isQuotaError(e)) signalQuota("Profil (recordRun)"); }
   // #304 Verdienst-Rollup (Victory-Screen): die Lauf-Erträge + Onboarding-Fortschritt fürs Count-up/Balken/Countdown.
   const earn = { sp: gainedSp, dpGross: gainedDp, dpNet: runDp, dpComplete: completionDp, spSweep, welcomeDp };
   const onboarding = { before: onboardingBefore, after: onbAfter, links: ONBOARDING_LINKS };

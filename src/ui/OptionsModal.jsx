@@ -155,7 +155,7 @@ export function OptionsModal({ options, onChange, onClose, onPrivacy = null }) {
   };
 
   return overlayPortal((
-    <div onClick={onClose} className="op-root fixed inset-0 overlay-root z-30 flex items-center justify-center p-4" style={{ background: "var(--sf-scrim)", backdropFilter: "blur(3px)" }}>
+    <div onClick={onClose} role="dialog" aria-modal="true" aria-label={t("options.title")} className="op-root fixed inset-0 overlay-root z-30 flex items-center justify-center p-4" style={{ background: "var(--sf-scrim)", backdropFilter: "blur(3px)" }}>
       {/* #deckui: äußere Karte zieht den deck-getönten Rahmen-Verlauf (as-panel-deck). */}
       <div onClick={(e) => e.stopPropagation()} className="op-card w-full max-w-lg rounded-2xl max-h-[90dvh] overflow-hidden overlay-card as-panel as-panel-deck flex flex-col" style={MODAL_CARD}>
         {/* #desktop: ab 1280 px wandert die Linie per `order` UNTER den Kopf (Zeile 2 des Kopf-Rasters). */}

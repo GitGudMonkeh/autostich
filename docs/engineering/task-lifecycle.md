@@ -38,6 +38,17 @@ That rule is the only thing preventing this file from becoming a second copy of 
 **Tier A is the default.** A task is Tier A unless one sentence says why it is not, written where the
 task starts — the task note, or the message that sets the work going. No sentence, no apparatus.
 
+### The small fix, below Tier A
+
+`implement -> gates -> commit`. No owner stops, no task note. It qualifies only when ALL of these
+hold: one or two files, obvious from the diff; no player-visible behaviour, balance, wording or
+layout decision (a clipped list is a defect, a reworded button is not); no new dependency, no rule
+document, no migration of stored data; and any guard it turned red was bookkeeping
+(`testing.md` §4). **When in doubt it is Tier A** — the doubt is the signal.
+
+What does not change: the four gates, the honesty rules, one writer per worktree. This lane removes
+ceremony, not verification.
+
 Escalating later costs one planning session. Starting one tier too high costs the whole apparatus on
 work that never needed it, and nobody notices, because the result looks thorough either way.
 
@@ -197,6 +208,12 @@ rows to judge the finding. Captured output is heavy and permanent: `viewport-128
 evidence, one file of which is 268,070 lines, and Git keeps it for good. Decide per workstream rather
 than by habit.
 
+**The size tripwire.** No single committed evidence file over **1 MB**, and no workstream
+`evidence/` directory over **25 MB**, without a one-line ruling in the workstream's contract or
+evidence document naming what a reader must see in the raw file. The judgement clause above,
+alone, let ~950 MB of geometry dumps into shared history within five days of being written
+(measured — health-check report, 2026-08-26); a number decides from here, not a mood.
+
 ---
 
 ## 8. Handoff to independent review
@@ -220,8 +237,8 @@ A handoff with no open questions is usually one that has not looked hard enough.
 
 ### Review type
 
-The canonical rule is `AGENTS.md` — *Independent review*. This section is how a requested review is
-run.
+Whether a review happens at all is `AGENTS.md` — *Independent review* (optional, risk-based).
+This section is **canonical** for how a requested review is run.
 
 Every handoff states its type in one line. A reviewer who cannot find one treats the review as
 **full**, which is the conservative default.
@@ -256,8 +273,6 @@ record already goes — the handoff or the contract — and become their own tas
 if they should outlive the workstream. No new document and no backlog system is created for them.
 
 ### Review budget
-
-The numbers are canonical in `AGENTS.md` — *Independent review*; what follows is how they are applied.
 
 One full review plus one closure review is the normal case. A further closure round is permitted only
 where a known blocking finding is still unfixed, or its fix caused a new regression. **There is no

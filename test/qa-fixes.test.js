@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { reducer, initialState } from "../src/game/reducer.js";
-import { formationEnergyFor } from "../src/game/engine.js";
+import { formationEnergyFor, applyBuildBoost } from "../src/game/engine.js";
 import { architectScore } from "../src/game/architect.js";
 import { makeRng } from "../src/game/deck.js";
 import * as C from "../src/game/constants.js";
@@ -17,13 +17,9 @@ const N = C.TRICKS_PER_CYCLE;
 describe("#370 Bau-Boost skaliert nur den Gewinn-Anteil (F-06)", () => {
   // Minimales Precompute-Objekt, wie architectScore es liest.
   const preWith = (entry) => ({ score: { 0: entry }, segFactor: {}, relayFlat: {}, cover: {} });
-  const boost = (res) => { // exakt die Engine-Naht
-    if (res.flat > 0) res.flat *= 2;
-    const sf = res.streakFlat || 0;
-    res.streakFlat = sf > 0 ? sf * 2 : sf;
-    res.mult = 1 + ((res.mult || 1) - 1) * 2;
-    return res;
-  };
+  // #health-check G4: vorher stand hier eine Handkopie "exakt die Engine-Naht" — eine Kopie testet
+  // sich selbst. Jetzt die echte Naht, importiert; regressiert die Engine, wird DIESER Test rot.
+  const boost = (res) => applyBuildBoost(res, 2);
 
   it("Jackpot (Crit) wird verdoppelt", () => {
     const r = boost(architectScore(preWith({ kind: "gamble", crit: 260, penalty: 60 }), 0, { isCrit: true }, {}));

@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
+import { locTodo } from "../scripts/loc-todo.mjs";
 import de from "../src/i18n/de.js";
 import en from "../src/i18n/en.js";
 import { t, fmtNum, fmtPct, fmtDayMonth, LOCALE_IDS, READY_LOCALE_IDS, setLocale, getLocale,
@@ -1088,6 +1089,9 @@ describe("i18n · Ratsche gegen neue deutsche Inline-Texte", () => {
     "src/ui/ScoreMilestoneBar.jsx",
     // Build-Übersicht unter dem Brett und die zwei Listen, die sie teilt (#sprache-Nachzügler).
     "src/ui/BuildPanel.jsx", "src/ui/BuildSummary.jsx",
+    // #health-check F1: Karte, Positions-Perk-Panel und Mute-Button — ihre Badges/Tooltips liefen
+    // als Template-Literale bzw. title-Attribute an der Ratsche vorbei und standen im EN-Build deutsch.
+    "src/ui/Card.jsx", "src/ui/LayoutPerks.jsx", "src/ui/MuteButton.jsx",
     // #lv-fluegel: die zwei Seitenleisten der Level-up-Karte.
     "src/ui/LevelupWings.jsx",
     // Datenschutz-Hinweis (#datenschutz) — von der ersten Zeile an zweisprachig gebaut.
@@ -1099,25 +1103,14 @@ describe("i18n · Ratsche gegen neue deutsche Inline-Texte", () => {
      wird nicht auf „deutsch aussehend" geprüft (das ließe „Normaler Lauf" durch, kein Umlaut),
      sondern auf „enthält überhaupt ein Wort". Symbole, Pfeile, Ziffern und einzelne Buchstaben
      (das „v" vor der Versionsnummer) bleiben erlaubt. */
-  const HAS_WORD = /[A-Za-zÄÖÜäöüß]{3,}/;
-  // Der Greifer >…< fischt zwangsläufig auch Code auf (das „>" eines Pfeils bis zum nächsten „<").
-  // Alles mit Code-Zeichen fliegt raus — echter Anzeigetext enthält keine Klammern/Semikola/Gleichheitszeichen.
-  const CODEISH = /[;=(){}[\]]|=>/;
-
-  const stripComments = (src) =>
-    src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/[^\n]*/g, "$1");
+  /* #health-check G3: Greifer und Filter kommen jetzt aus scripts/loc-todo.mjs — vorher stand hier
+     eine byte-gleiche Kopie, und die zwei Regelsätze konnten still auseinanderlaufen (genau das, was
+     der Kopf des Skripts verspricht zu verhindern). */
 
   it("migrierte Dateien enthalten keinen fest verdrahteten Anzeigetext mehr", () => {
     const bad = [];
     for (const file of MIGRATED) {
-      const src = stripComments(readFileSync(new URL(`../${file}`, import.meta.url), "utf8"));
-      // JSX-Textknoten: >…< sowie deutsche String-Literale in Text-Props (title/placeholder/aria-label/alt).
-      const found = new Set();
-      for (const m of src.matchAll(/>\s*([^<>{}\n][^<>{}]*?)\s*</g)) found.add(m[1]);
-      for (const m of src.matchAll(/(?:title|placeholder|aria-label|alt|label)=\{?"([^"]+)"/g)) found.add(m[1]);
-      for (const s of found) {
-        if (HAS_WORD.test(s) && !CODEISH.test(s)) bad.push(`${file}: „${s.trim()}“`);
-      }
+      for (const s of locTodo(new URL(`../${file}`, import.meta.url))) bad.push(`${file}: „${s}“`);
     }
     expect(bad, `Fest verdrahteter Text in migrierter Datei — gehört in de.js/en.js:\n  ${bad.join("\n  ")}`).toEqual([]);
   });
