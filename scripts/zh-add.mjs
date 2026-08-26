@@ -38,7 +38,15 @@ function pruefe(k, text) {
   const f = [];
   if (!(k in de)) return [`${k}: im deutschen Katalog nicht vorhanden`];
   if (typeof text !== "string" || !text) return [`${k}: leerer Text`];
-  if (text !== text.trim() || /\n/.test(text)) f.push(`${k}: Leerzeichen am Rand oder Zeilenumbruch`);
+  if (/\n/.test(text)) f.push(`${k}: Zeilenumbruch`);
+  /* Randleerzeichen sind nur dann falsch, wenn die deutsche Zeile keines hat. Einige Strings
+     werden angehaengt (" · noch {n} Energie") und tragen ihren Abstand selbst; ihn zu trimmen
+     klebte die Teile im gerenderten Satz aneinander. */
+  const randDe = [de[k].startsWith(" "), de[k].endsWith(" ")];
+  const randZh = [text.startsWith(" "), text.endsWith(" ")];
+  if (randDe[0] !== randZh[0] || randDe[1] !== randZh[1]) {
+    f.push(`${k}: Randleerzeichen weicht ab — de [${randDe}] vs zh [${randZh}]`);
+  }
   if (mengen(de[k]) !== mengen(text)) f.push(`${k}: Platzhalter — de [${mengen(de[k])}] vs zh [${mengen(text)}]`);
   const nDe = (String(de[k]).match(/\*\*/g) || []).length;
   const nZh = (text.match(/\*\*/g) || []).length;
