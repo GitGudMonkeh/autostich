@@ -30,6 +30,7 @@ import { RARITY_ES } from "./esTerms.js";
 import esSkills from "./esSkills.js";       // 84 skills + archetype names — own file, it is long
 import esPerks from "./esPerks.js";         // legendary perks + perk categories
 import esMeta from "./esMeta.js";           // upgrade tree + weekly modifiers
+import esGlossary from "./esGlossary.js";   // 109 glossary entries + categories + groups
 import esCosmetics from "./esCosmetics.js"; // skin sets + global effects
 import esGuides from "./esGuides.js";       // the four archetype guides
 
@@ -37,6 +38,7 @@ export default {
   ...esSkills,
   ...esPerks,
   ...esMeta,
+  ...esGlossary,
   ...esCosmetics,
   ...esGuides,
 

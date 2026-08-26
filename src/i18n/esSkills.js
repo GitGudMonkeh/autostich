@@ -184,7 +184,7 @@ export default {
   "ability.SK_PLANT_06.name": "Semillas al Viento",
   "ability.SK_PLANT_06.desc": `${AMP} La siembra se salta las cartas que ya están verdes y siembra la siguiente carta gris que haya detrás.\n${PRUNE}`,
   "ability.SK_PLANT_07.name": "Semillero",
-  "ability.SK_PLANT_07.desc": `La carta más baja de cada segmento empieza la partida con +${C.SETZLINGSBEET_GROWTH} de crecimiento de ventaja.\n${PRUNE}`,
+  "ability.SK_PLANT_07.desc": `La carta más baja de cada segmento empieza la partida con +${C.SETZLINGSBEET_GROWTH} de crecimiento de adelanto.\n${PRUNE}`,
   "ability.SK_PLANT_08.name": "Tallo Resistente",
   "ability.SK_PLANT_08.desc": `Las cartas sin madurar (grises) crecen +1 también con una derrota, hasta que están verdes.\n${PRUNE}`,
   "ability.SK_PLANT_09.name": "Zarcillos",
