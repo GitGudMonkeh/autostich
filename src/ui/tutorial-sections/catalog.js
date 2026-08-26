@@ -104,17 +104,30 @@ export const SECTIONS = [
   },
   {
     id: "aufstellung",
+    /* FÜNF Lektionen statt sechs: der freigegebene Entwurf zieht „tauschen" und „position" in EINE
+       Runde am Brett zusammen. Beide erklärten dasselbe aus zwei Blickwinkeln. */
     lessons: [
-      { id: "phase",       beats: [{ kind: "satz" }, { kind: "tip" }] },
-      { id: "tauschen",    beats: [{ kind: "satz" }, { kind: "probierfeld", probe: "formation" }, { kind: "tip" }] },
-      { id: "position",    beats: [{ kind: "satz" }, { kind: "tip" }] },
-      { id: "karte",       beats: [{ kind: "satz" }, { kind: "tip" }] },
-      /* `voll`, weil die Lektion GEMESSEN nicht ins kurze Budget passt: 408 px gegen 400. Aufgefallen
-         ist das erst, als BODY_CHROME dazukam — die 30 px Rumpfpolsterung fehlten dem Modell vorher
-         ganz, und diese Lektion lag damit knapp unter der Grenze, ohne es zu sein. Der Wert ist
-         vorläufig: die Sektion wird noch aus dem freigegebenen Entwurf neu gebaut. */
-      { id: "formationen", art: "voll", beats: [{ kind: "satz" }, { kind: "probierfeld", probe: "formation" }, { kind: "tip" }] },
-      { id: "stapeln",     beats: [{ kind: "satz" }, { kind: "probierfeld", probe: "formation" }, { kind: "tip" }] },
+      { id: "phase", art: "voll", beats: [
+        { kind: "block" },
+        { kind: "regeln" },
+        { kind: "liste" },
+        { kind: "tip" }] },
+      { id: "brett", art: "voll", beats: [
+        { kind: "probierfeld", probe: "aufstellen" },
+        { kind: "block", label: true },
+        { kind: "tip" }] },
+      { id: "karte", art: "voll", beats: [
+        { kind: "probierfeld", probe: "kartenteile" },
+        { kind: "block", label: true },
+        { kind: "tip" }] },
+      { id: "formationen", art: "voll", beats: [
+        { kind: "probierfeld", probe: "formation" },
+        { kind: "regeln" },
+        { kind: "tip" }] },
+      { id: "stapeln", art: "voll", beats: [
+        { kind: "probierfeld", probe: "overlap" },
+        { kind: "block", label: true },
+        { kind: "tip" }] },
     ],
   },
   {
@@ -252,7 +265,11 @@ const BLOCK_CHROME = 42, BLOCK_LABEL = 22;
    wurden. GEMESSEN 30 px, und der Wert trifft alle sieben. */
 const BODY_CHROME = 30;
 const MERK_LINE = 22, MERK_CHROME = 26;
-const REGEL_LINE = 26, REGEL_CHROME = 20;
+/* `regeln` und `liste` setzen in der KLEINEREN Schrift (text-body-5, nicht text-body-lg-5): mehr
+   Zeichen je Zeile, niedrigere Zeile. GEMESSEN an drei Aufzählungen (2, 3 und 4 Einträge, real 150,
+   142 und 237 px) trifft 52 Zeichen je Zeile bei 21 px Zeile und 26 px Chrome je Eintrag; mit den
+   44 Zeichen des Fließtexts lag das Modell 35 bis 72 px zu hoch. */
+const REGEL_CHARS = 52, REGEL_LINE = 21, REGEL_CHROME = 26;
 const TAB_ROW = 26, TAB_CHROME = 30;
 const TAB_ROWS_DEFAULT = 4;
 
@@ -270,10 +287,16 @@ const TAB_ROWS_DEFAULT = 4;
    ist die einzige Richtung, in die ein Budget nicht irren darf. Die Werte hier stehen deshalb
    knapp über der Messung, aufgerundet. */
 const PROBE_PX = { formation: 215, streak: 150, score: 195, board: 215,
-  duell: 280, kampfwert: 335, serie: 375, laufmock: 340, herkunft: 300 };
+  duell: 280, kampfwert: 335, serie: 375, laufmock: 340, herkunft: 300,
+  /* Die Aufstellungs-Runden, ebenfalls nachgemessen: aufstellen 243 · kartenteile 186 ·
+     overlap 190 (dieselbe Komponente wie formation). Sie fehlten hier zuerst ganz und fielen
+     damit auf PROBE_MAX — 375 px für ein 186-px-Feld. Das Modell lag dadurch bis zu 40 % zu hoch,
+     und ein Budget, das so weit danebenliegt, misst nichts mehr. */
+  aufstellen: 260, kartenteile: 215, overlap: 215 };
 const PROBE_MAX = Math.max(...Object.values(PROBE_PX));
 
 const lines = (text) => Math.max(1, Math.ceil(String(text || "").length / CHARS_PER_LINE));
+const regelLines = (text) => Math.max(1, Math.ceil(String(text || "").trim().length / REGEL_CHARS));
 
 /* Höhe EINES Takts. `text` ist der aufgelöste Anzeigetext — der Katalog kennt ihn nicht, der Aufrufer
    schon (der Wächter liest ihn aus de.js, die Laufzeit aus `t`). */
@@ -296,7 +319,7 @@ export function beatHeight(beat, text) {
     case "regeln":
     case "liste": {
       const teile = String(text || "").split("·");
-      return teile.reduce((s, t) => s + lines(t) * REGEL_LINE + REGEL_CHROME, 0);
+      return teile.reduce((s, t) => s + regelLines(t) * REGEL_LINE + REGEL_CHROME, 0);
     }
     /* Eine Tabelle hängt an ihrer Zeilenzahl, nicht an ihrer Textlänge. Sie steht am Takt, weil
        der Katalog den Text nicht kennt. Fehlt sie, wird der häufigste Fall angenommen. */

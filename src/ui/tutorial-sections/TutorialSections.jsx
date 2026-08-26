@@ -16,7 +16,9 @@ const localeVars = (locale) => ({
   critMult: fmtNum(C.CRIT_BASE_MULT.toFixed(2), locale),
 });
 // `offered` bedeutet je nach Lektion etwas anderes — Perk-Angebot oder Skill-Angebot.
-const NONE_LABEL = new Set(["formation", "board"]);
+/* `none` hat nur, wer einen Leerzustand kennt. Die Aufstellungs-Runden kennen ihn: eine Reihe ohne
+   Formation ist ein gültiger Zustand und braucht ein Wort dafür. */
+const NONE_LABEL = new Set(["formation", "board", "aufstellen", "kartenteile", "overlap"]);
 const OFFERED = { "tut.wahl.perks.0": C.PERKS_OFFERED, "tut.wahl.skills.0": C.SKILLS_OFFERED };
 
 /* TUTORIAL-SEKTIONEN — die dritte Lehr-Ebene (Glossar = nachschlagen · Leitfaden = Strategie ·
@@ -158,6 +160,8 @@ export function TutorialSections({ onClose, onOpenGlossary = null, onOpenGuide =
         labels={{ streak: t("tut.f.streak"), crit: t("tut.f.crit"), form: t("tut.f.form"), build: t("tut.f.build"),
           gegner: t("tut.d.gegner"), du: t("tut.d.du"), gegen: t("tut.d.gegen"),
           play: t("tut.d.play"), next: t("tut.d.next"), trickValue: t("tut.d.trickValue"),
+          cardValue: t("tut.d.cardValue"), suit: t("tut.d.suit"), wins: t("tut.f.wins"),
+          undo: t("tut.d.undo"), reset: t("tut.d.reset"), energy: t("tut.d.energy"),
           win: t("tut.d.win"), tie: t("tut.d.tie"), loss: t("tut.d.loss") }} />;
     });
     const foot = (

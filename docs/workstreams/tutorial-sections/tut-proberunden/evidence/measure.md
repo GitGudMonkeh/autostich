@@ -1,4 +1,4 @@
-# Grundlagen — V1–V4 measurement
+# Grundlagen and Aufstellung — V1–V4 measurement
 
 Production build, viewport 390 × 844, German, Chrome via `scripts/cdp.mjs`.
 Walked lesson 1 → 7 with the footer's **Weiter** button.
@@ -75,3 +75,67 @@ In lesson 4 the text renders as `…um 2` / `%.` across a line break. German typ
 number and the sign to stay together. Neither `de.js` nor `en.js` contains a single no-break space
 today, so this affects every percentage in the game and not this lesson — filed as its own task
 rather than fixed with a lone inconsistent character here.
+
+
+---
+
+# Aufstellung
+
+Same method, walked lesson 1 → 5.
+
+## V1 — every lesson renders
+
+| # | Lesson | Content px | Viewport px | Beats | Tap targets < 44 px | Horizontal overflow |
+| --- | --- | ---: | ---: | ---: | ---: | --- |
+| 1 | Die Aufstellungsphase | 527 | 527 | 4 | 0 | none |
+| 2 | Das Brett | 525 | 525 | 3 | 0 | none |
+| 3 | Was auf einer Karte steht | 531 | 531 | 3 | 0 | none |
+| 4 | Die vier Formationen | 538 | 538 | 3 | 0 | none |
+| 5 | Übereinander | 472 | 472 | 3 | 0 | none |
+
+No page errors. None of the five scrolls — all fit the 635 px viewport — yet all exceed the 400 px
+short budget, so `voll` is the correct kind for each.
+
+## V2 — model against reality
+
+| Lesson | Model | Measured | Deviation |
+| --- | ---: | ---: | ---: |
+| phase | 540 | 527 | +13 |
+| brett | 544 | 525 | +19 |
+| karte | 540 | 531 | +9 |
+| formationen | 603 | 538 | +65 |
+| stapeln | 499 | 472 | +27 |
+
+The first run of this table read +81 to +187, that is 15 % to 40 % over. Two causes, both fixed:
+
+1. The three new practice rounds were **not in `PROBE_PX` at all** and fell back to `PROBE_MAX`,
+   375 px for a field that measures 186. A budget that far off measures nothing.
+2. `regeln` and `liste` set in the smaller face (`text-body-5`), which the model did not know. Three
+   lists measured 150, 142 and 237 px; 52 characters per line at 21 px with 26 px of chrome per
+   entry fits all three, where the body text's 44 characters put the model 35 to 72 px high.
+
+## V3 — numbers from constants, and one that was wrong
+
+`aufstellung-2-brett.png` shows **Energie 3**. The shipped text said 4, because `VARS.energy` read
+`C.FORMATION_ENERGY`. That constant is the engine default for sim, standard and dev runs; a normal
+run with a profile starts at `ENERGY_FLOOR = 3` and reaches 5 through the upgrade tree. Same trap as
+`COVER_FLOOR` 20 against `ARCH_MAX_COVER` 24. Both the placeholder and the practice round now read
+`ENERGY_FLOOR`, and `energyMax` is summed from the tree nodes rather than typed.
+
+## V4 — two defects the build itself surfaced
+
+**Card colour never rendered.** `beats.jsx` carried its own suit table keyed `H / D / S / C` — the
+French-deck suits. Autostich uses `R / B / G / Y`, so every lookup missed and every cell fell back to
+grey. It went unnoticed because no earlier lesson depended on colour; the colour-block lesson does.
+The cells now take `suitColor` from `constants.js`, and the screenshots show red, blue, green and
+yellow borders.
+
+**The tip contradicted the round beside it.** `aufstellung-3-karte.png` shows a Wiederholung paying
+×1,25 on its *second* card while the tip below claimed a formation pays nothing until the third.
+The code is unambiguous: `wiederholungFactor` sets `WIED_F2 = 1.25` at `ordinal === 2`, whereas
+`escalatingFactor` holds Farbblock, Treppe and Wechsel at 1 through `ordinal <= 2`. The tip now
+names both rules. It was wrong in the approved draft as well, and the draft and spec are corrected.
+
+The card also renders its anatomy now — formation marks below, the position multiplier top right.
+Without it the lesson titled *Was auf einer Karte steht* showed a card carrying nothing but its
+value.

@@ -75,6 +75,7 @@ describe("i18n · Katalog-Parität", () => {
     "tut.probe.duell.readout",     // Ablesung „Score" — Score bleibt Score (§3.1)
     "tut.probe.kampfwert.readout", // dito
     "tut.probe.herkunft.readout",  // dito
+    "tut.probe.aufstellen.readout", // Ablesung „Formation" — in beiden Sprachen dasselbe Wort (§3.1)
     "build.perks.head",      // „Perks — {count}" — Perk bleibt Perk (Begriffstabelle §3.1)
     "build.skills.head",     // dito für Skill
     "start.tile.upgrades",   // „Upgrades" ist im Deutschen der etablierte Begriff (§3.5)

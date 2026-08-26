@@ -109,6 +109,30 @@ describe("Tutorial-Sektionen · Katalog", () => {
     }
   });
 
+  /* AUCH DIESER WÄCHTER HAT EINEN ECHTEN FEHLER GEFUNDEN.
+
+     Die Runden lesen ihre Wörter aus einem `labels`-Objekt, das die Schale zusammenstellt. Fünf
+     davon — `wins`, `undo`, `reset`, `energy`, `cardValue` — standen in beats.jsx und waren in der
+     Schale nicht verdrahtet. Das Ergebnis ist kein Fehler und keine rote Zeile, sondern das Wort
+     „undefined" auf einem Knopf.
+
+     Beide Enden werden geprüft: was beats.jsx liest, muss die Schale liefern, und was die Schale
+     liefert, muss in beiden Katalogen stehen. */
+  it("jedes Wort, das eine Runde liest, wird von der Schale geliefert", () => {
+    const probes = SRC("beats.jsx");
+    const shell = SRC("TutorialSections.jsx");
+    // `L` ist in beats.jsx durchgehend der Name des labels-Objekts.
+    const gelesen = new Set([...probes.matchAll(/\bL\.(\w+)/g)].map((m) => m[1]));
+    gelesen.delete("length");   // Array-Eigenschaft, kein Wort
+    const geliefert = new Map([...shell.matchAll(/(\w+):\s*t\("(tut\.[df]\.\w+)"\)/g)].map((m) => [m[1], m[2]]));
+    for (const name of gelesen) {
+      expect(geliefert.has(name), `beats.jsx liest L.${name}, die Schale liefert es nicht — auf dem Schirm steht „undefined"`).toBe(true);
+      const key = geliefert.get(name);
+      expect(de[key], `${key} fehlt in de.js`).toBeTruthy();
+      expect(en[key], `${key} fehlt in en.js`).toBeTruthy();
+    }
+  });
+
   it("jeder Probierfeld-/Bild-Takt nennt einen Baustein, den beats.jsx auch kennt", () => {
     const probes = SRC("beats.jsx");
     for (const s of SECTIONS) for (const l of s.lessons) for (const b of l.beats) {

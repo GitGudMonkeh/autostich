@@ -1,11 +1,13 @@
 import { useMemo, useState } from "react";
 import { useLocale } from "../../i18n/useLocale.js"; // #sprache: Neuberechnung bei Sprachwechsel
-import { formationName } from "../../i18n/labels.js";
+import { formationName, formationAbbr } from "../../i18n/labels.js";
 import { fmtNum, t } from "../../i18n/index.js"; // Dezimaltrennzeichen je Sprache — nie toFixed+replace
 import { buildDeck } from "../../game/deck.js";
 import { computeFormations, summarizeFormations, SEGMENT_SIZE } from "../../game/formations.js";
 import { effectivePlayerValue } from "../../game/engine.js";
 import * as C from "../../game/constants.js";
+// ENERGY_FLOOR, nicht C.FORMATION_ENERGY: siehe die Begründung in vars.js.
+import { ENERGY_FLOOR } from "../../game/progression.js";
 import { ARCHETYPE_META } from "../../game/skills.js";
 import { COLS, posOf, boardFactorMap, completedStructures } from "../../game/architect.js";
 
@@ -144,11 +146,24 @@ export function Tip({ label, text }) {
    Gemessen: fünf Zellen über die 364-px-Inhaltsbreite ergeben 54,8 × 78,3 px — lesbar und tippbar.
    Zehn wären 27 px breit. Dass die lesbare Breite genau SEGMENT_SIZE ist, ist der Grund, warum die
    Formations-Lektionen Segment und Formation in EINEM Bild zeigen statt in zweien. */
-const SUIT_COLOR = { H: "#c0433f", D: "#c0433f", S: "#3f6cc0", C: "#3f6cc0" };
-const suitColor = (c) => SUIT_COLOR[c?.suit] || "#33333e";
+/* DIE FARBE KOMMT AUS DEM SPIEL, nicht aus einer zweiten Tabelle hier.
 
-function CardCell({ card, on, onClick, dim }) {
-  const border = dim ? "#33333e" : suitColor(card);
+   Vorher stand hier `{ H, D, S, C }` — Herz, Karo, Pik, Kreuz. Autostich hat aber R, B, G, Y
+   (constants.js SUIT_ORDER), also traf der Schlüssel nie, und JEDE Zelle fiel auf den grauen
+   Rückfallwert. Aufgefallen ist das erst beim Bauen der Aufstellungs-Sektion: die Lektion über den
+   FARBBLOCK lässt sich ohne Farbe nicht lesen.
+
+   Ein zweiter Wahrheitsort für die Farben ist genau der Fehler, den planning-report.md §1.3 für
+   die Rechnung beschreibt, eine Ebene tiefer. `suitColor` aus constants.js ist die eine Quelle. */
+const cardColor = (c) => (c?.suit ? C.suitColor(c.suit) : "#33333e");
+
+/* `marks` und `mult` zeichnen die ANATOMIE der Karte: unten die Kürzel der Formationen, oben rechts
+   der Multiplikator dieser Position. Beides bleibt leer, wo eine Lektion es nicht braucht.
+
+   Ohne sie versprach die Lektion „Was auf einer Karte steht" etwas, das die Karte nicht zeigte —
+   sie trug nur ihren Wert, und die Erklärung stand daneben statt darauf. */
+function CardCell({ card, on, onClick, dim, marks = null, mult = null }) {
+  const border = dim ? "#33333e" : cardColor(card);
   const cls = "tut-cell text-body-lg-6 flex items-center justify-center font-bold";
   const style = {
     flex: "1 1 0", minWidth: 0, aspectRatio: "0.7", borderRadius: 6, color: "#e8e8ea",
@@ -157,8 +172,15 @@ function CardCell({ card, on, onClick, dim }) {
     outline: on ? `2px solid var(--deck-a1,#8a7de0)` : undefined,
     outlineOffset: on ? -2 : undefined,
   };
-  if (!onClick) return <div className={cls} style={style}>{card.value}</div>;
-  return <button type="button" className={cls} style={style} onClick={onClick} aria-pressed={on ? "true" : "false"}>{card.value}</button>;
+  const inhalt = marks === null && mult === null ? card.value : (
+    <span style={{ position: "relative", display: "block", width: "100%", height: "100%" }}>
+      {mult ? <span className="text-meta-1 ty-num-sm" style={{ position: "absolute", top: 2, right: 3, color: "#8a8a95", fontWeight: 600 }}>{mult}</span> : null}
+      <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>{card.value}</span>
+      {marks ? <span className="text-meta-1" style={{ position: "absolute", bottom: 2, left: 0, right: 0, textAlign: "center", color: "#5c5c68", letterSpacing: ".1em", fontWeight: 600 }}>{marks}</span> : null}
+    </span>
+  );
+  if (!onClick) return <div className={cls} style={style}>{inhalt}</div>;
+  return <button type="button" className={cls} style={style} onClick={onClick} aria-pressed={on ? "true" : "false"}>{inhalt}</button>;
 }
 
 export function Bild({ cards, caption }) {
@@ -225,11 +247,11 @@ const DECK = buildDeck();
    geschätzt: die Kandidaten wurden über computeFormations durchgerechnet. */
 const START_ORDER = [26, 18, 24, 15, 20];   // Werte 7 · 9 · 5 · 6 · 1
 
-export function FormationProbe({ title, hint, readoutLabel, noneLabel }) {
+export function FormationProbe({ title, hint, readoutLabel, noneLabel, start = START_ORDER }) {
   /* formationName() liest die aktive Sprache intern (wie glossaryEntries im Glossar) → der Locale
      muss als Trigger in die Abhängigkeiten, sonst bliebe der Name beim Sprachwechsel stehen. */
   const [locale] = useLocale();
-  const [order, setOrder] = useState(START_ORDER);
+  const [order, setOrder] = useState(start);
   const swap = (a, b) => setOrder((o) => { const n = o.slice(); [n[a], n[b]] = [n[b], n[a]]; return n; });
 
   const readout = useMemo(() => {
@@ -635,6 +657,141 @@ export function HerkunftProbe({ title, hint, readoutLabel, labels }) {
   );
 }
 
+/* ---- Aufstellen: tauschen kostet Energie ----
+
+   Das Formations-Feld lässt beliebig oft tauschen. Die echte Aufstellungsphase nicht: jeder Tausch
+   kostet eine Energie, und `FORMATION_ENERGY` sagt, wie viele es je Phase sind. Diese Runde ist
+   dieselbe Fläche mit der echten Schranke davor, plus Rückgängig und Zurücksetzen.
+
+   Rückgängig gibt die Energie ZURÜCK. Das ist keine Bequemlichkeit, sondern das Verhalten des
+   Spiels: ein zurückgenommener Tausch hat nicht stattgefunden. Wer das im Tutorial anders baut,
+   lehrt eine Regel, die es nicht gibt. */
+const AUF_START = [26, 18, 24, 15, 20];
+
+export function AufstellenProbe({ title, hint, readoutLabel, noneLabel, labels }) {
+  const [locale] = useLocale();
+  const [verlauf, setVerlauf] = useState([AUF_START]);
+  const order = verlauf[verlauf.length - 1];
+  const genutzt = verlauf.length - 1;
+  const uebrig = ENERGY_FLOOR - genutzt;
+  const L = labels || {};
+
+  const swap = (a, b) => {
+    if (uebrig <= 0) return;                       // keine Energie, kein Tausch
+    setVerlauf((v) => {
+      const n = order.slice(); [n[a], n[b]] = [n[b], n[a]];
+      return [...v, n];
+    });
+  };
+  const zurueck = () => setVerlauf((v) => (v.length > 1 ? v.slice(0, -1) : v));
+  const anfang = () => setVerlauf([AUF_START]);
+
+  const readout = useMemo(() => {
+    const { count, maxMult } = summarizeFormations(computeFormations(order, DECK));
+    return count ? `×${fmtNum(maxMult.toFixed(2), locale)}` : noneLabel;
+  }, [order, noneLabel, locale]);
+
+  return (
+    <div className="tut-beat tut-probe" style={{ margin: "0 0 14px", padding: "12px 12px 11px", ...ZEILE }}>
+      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 8 }}>{title}</div>
+      <Reihe cards={DECK} order={order} onSwap={swap} gesperrt={uebrig <= 0} />
+      <div style={{ display: "flex", gap: 6, marginTop: 9 }}>
+        <KnopfKlein text={L.undo} onClick={zurueck} aktiv={genutzt > 0} />
+        <KnopfKlein text={L.reset} onClick={anfang} aktiv={genutzt > 0} />
+      </div>
+      <div className="tut-probe-out" style={{ marginTop: 10, paddingTop: 9, borderTop: HAIR, display: "flex", alignItems: "baseline", gap: 8 }}>
+        <span className="text-meta-1" style={LABEL}>{L.energy}</span>
+        <span className="text-body-lg-5" style={{ color: uebrig > 0 ? "#e8e8ea" : "#c0433f", fontWeight: 700 }}>{uebrig}</span>
+        <span className="text-meta-1" style={{ ...LABEL, marginLeft: "auto" }}>{readoutLabel}</span>
+        <span className="text-body-lg-5" style={{ color: "#e8e8ea", fontWeight: 700 }}>{readout}</span>
+      </div>
+      {hint && <div className="text-meta-1" style={{ color: "#71717c", marginTop: 7, lineHeight: 1.4 }}>{hint}</div>}
+    </div>
+  );
+}
+
+/* Die tippbare Kartenreihe, geteilt von den Aufstellungs-Runden. Tippen-Tippen statt Ziehen, aus
+   demselben Grund wie beim Probierfeld: eine 55-px-Zelle verliert jeden Ziehwettstreit gegen den
+   Scroller darunter. */
+function Reihe({ cards, order, onSwap, gesperrt = false, markiert = null, onTap = null, anatomie = null }) {
+  const [sel, setSel] = useState(null);
+  const tap = (i) => {
+    if (onTap) { onTap(i); return; }
+    if (gesperrt) return;
+    if (sel === null) { setSel(i); return; }
+    if (sel === i) { setSel(null); return; }
+    onSwap(sel, i); setSel(null);
+  };
+  return (
+    <div className="tut-probe-row" style={{ display: "flex", gap: 6 }}>
+      {order.map((di, i) => (
+        <CardCell key={`${di}-${i}`} card={cards[di]} on={onTap ? markiert === i : sel === i} onClick={() => tap(i)}
+          marks={anatomie ? anatomie[i].marks : null} mult={anatomie ? anatomie[i].mult : null} />
+      ))}
+    </div>
+  );
+}
+
+function KnopfKlein({ text, onClick, aktiv }) {
+  return (
+    <button type="button" onClick={onClick} disabled={!aktiv}
+      className="tut-chip text-body-5 font-semibold"
+      style={{ flex: "1 1 0", minHeight: 44, borderRadius: 8, padding: "6px 8px",
+        color: aktiv ? "#c8c8d0" : "#5c5c68", background: "rgba(15,15,21,.72)",
+        border: "1px solid rgba(150,150,170,.12)", cursor: aktiv ? "pointer" : "default" }}>
+      {text}
+    </button>
+  );
+}
+
+/* ---- Was auf einer Karte steht ----
+
+   Kein Umsortieren, nur Hinsehen: der Leser tippt eine Karte an und bekommt aufgeschlüsselt, was
+   die Zeichen darauf bedeuten. Die Kürzel kommen aus dem Register (`formationAbbr`), der
+   Multiplikator aus `computeFormations` — dieselbe Rechnung wie im Lauf.
+
+   Die Lage ist fest und trägt bewusst MEHRERE Formationen auf einer Karte, sonst hätte die Lektion
+   nichts aufzuschlüsseln. */
+const KARTE_LAGE = [7, 0, 33, 3, 9];   // R8 R1 Y4 R4 R10
+
+export function KartenteileProbe({ title, hint, readoutLabel, noneLabel, labels }) {
+  const [locale] = useLocale();
+  const [sel, setSel] = useState(null);
+  const L = labels || {};
+  const per = useMemo(() => computeFormations(KARTE_LAGE, DECK), []);
+  /* Was auf der Karte STEHT: unten die Kürzel ihrer Formationen, oben rechts der Multiplikator
+     dieser Position. „×1,00" bleibt weg — eine Karte, die nichts zahlt, soll auch nichts anzeigen,
+     und genau das ist der Punkt der Lektion. */
+  const anatomie = useMemo(() => per.map((p) => ({
+    marks: p.formations.map((x) => formationAbbr(x.type)).join("") || null,
+    mult: p.mult > 1 ? `×${fmtNum(p.mult.toFixed(2), locale)}` : null,
+  })), [per, locale]);
+
+  const zeile = () => {
+    if (sel === null) return hint;
+    const karte = DECK[KARTE_LAGE[sel]];
+    const f = per[sel]?.formations ?? [];
+    const teile = [`${L.cardValue}: ${karte.value}`, `${L.suit}: ${C.suitName(karte.suit)}`];
+    if (!f.length) return `${teile.join(" · ")} · ${noneLabel}`;
+    const namen = f.map((x) => `${formationAbbr(x.type)} ${formationName(x.type)}`).join(" + ");
+    /* `mult` steht JE POSITION, nicht je Formation. Genau darum geht es in dieser Lektion: die
+       ersten beiden Karten einer Formation tragen ihr Kürzel und stehen trotzdem bei ×1,00. */
+    return `${teile.join(" · ")} · ${namen} · ×${fmtNum(per[sel].mult.toFixed(2), locale)}`;
+  };
+
+  return (
+    <div className="tut-beat tut-probe" style={{ margin: "0 0 14px", padding: "12px 12px 11px", ...ZEILE }}>
+      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 8 }}>{title}</div>
+      <Reihe cards={DECK} order={KARTE_LAGE} markiert={sel} onTap={(i) => setSel(sel === i ? null : i)}
+        anatomie={anatomie} />
+      <div className="tut-probe-out" style={{ marginTop: 10, paddingTop: 9, borderTop: HAIR }}>
+        <div className="text-meta-1" style={LABEL}>{readoutLabel}</div>
+        <p className="text-body-5" style={{ color: "#c8c8d0", margin: "5px 0 0", lineHeight: 1.45 }}>{zeile()}</p>
+      </div>
+    </div>
+  );
+}
+
 /* Katalog → Komponente. Der Katalog nennt nur einen NAMEN, damit er React-frei bleibt. */
 export const PROBES = {
   formation: FormationProbe,
@@ -653,5 +810,13 @@ export const PROBES = {
   serie: SerieProbe,
   laufmock: LaufmockProbe,
   herkunft: HerkunftProbe,
+  aufstellen: AufstellenProbe,
+  kartenteile: KartenteileProbe,
+  /* Dieselbe Flaeche wie `formation`, andere Ausgangslage. GESUCHT statt geraten: von 29.988
+     brauchbaren Lagen ist diese eine, in der KEIN Tausch den Wert senkt und vier davon eine
+     Ueberlappung schaffen. Start ×1,25 (eine Wiederholung), erreichbar ×4,96 mit einer Karte in
+     drei Formationen. Ein Probierfeld, das den Leser fuer den offensichtlichen Zug bestraft,
+     lehrt das Gegenteil. */
+  overlap: (p) => <FormationProbe {...p} start={[7, 0, 33, 3, 9]} />,
 };
 export { SEGMENT_SIZE };

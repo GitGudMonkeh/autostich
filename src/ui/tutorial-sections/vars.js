@@ -12,7 +12,8 @@
    SPRACHE und kann deshalb nicht in einer Modulkonstante stehen — das steht in TutorialSections.jsx
    als `localeVars(locale)`. */
 import * as C from "../../game/constants.js";
-import { SEGMENT_SIZE } from "../../game/formations.js";
+import { SEGMENT_SIZE, WECHSEL_MIN_DIFF, MAX_TREPPE_STEP } from "../../game/formations.js";
+import { ENERGY_FLOOR, NODES } from "../../game/progression.js";
 
 /* Wie oft welche Entscheidung im Lauf vorkommt — GEZÄHLT aus DECISION_SCHEDULE, nicht gesetzt.
    `shop` ist die Architekten-Phase; das steht so im Plan-Kommentar in constants.js. */
@@ -25,7 +26,16 @@ export function countSchedule(schedule = C.DECISION_SCHEDULE) {
 
 export const VARS = {
   cards: C.TRICKS_PER_CYCLE, cycles: C.MAX_CYCLES, segment: SEGMENT_SIZE,
-  energy: C.FORMATION_ENERGY, cycle: C.LEG_PHASE_CYCLE, slots: C.SKILL_SLOTS,
+  /* ENERGY_FLOOR, NICHT C.FORMATION_ENERGY. Die Engine-Konstante ist 4 und gilt für Sim-, Standard-
+     und Dev-Läufe; ein normaler Lauf mit Profil startet bei 3 und kommt über den Baum auf 5
+     (progression.js §„Böden"). Der ausgelieferte Text sagte deshalb 4, wo der Spieler 3 hat —
+     dieselbe Falle wie beim Baufeld, wo COVER_FLOOR 20 und ARCH_MAX_COVER 24 ist. */
+  energy: ENERGY_FLOOR,
+  energyMax: ENERGY_FLOOR + NODES.reduce((n, x) => n + (x.energy || 0), 0),
+  cycle: C.LEG_PHASE_CYCLE, slots: C.SKILL_SLOTS,
+  // Die Formationsregeln, die eine Lektion nennt. Aus formations.js, nie abgetippt.
+  wechselDiff: WECHSEL_MIN_DIFF, treppeStep: MAX_TREPPE_STEP,
+  segments: C.TRICKS_PER_CYCLE / SEGMENT_SIZE,
   suits: C.SUIT_ORDER.length, rankMin: C.RANKS[0], rankMax: C.RANKS[C.RANKS.length - 1],
   perksOffered: C.PERKS_OFFERED, skillsOffered: C.SKILLS_OFFERED,
   ...countSchedule(),
