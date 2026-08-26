@@ -27,8 +27,12 @@
    ============================================================ */
 import { LEG_PHASE_CYCLE } from "../game/constants.js";
 import { RARITY_ES } from "./esTerms.js";
+import esMeta from "./esMeta.js";           // upgrade tree + weekly modifiers
+import esCosmetics from "./esCosmetics.js"; // skin sets + global effects
 
 export default {
+  ...esMeta,
+  ...esCosmetics,
 
   /* ---- Rarity ladder (package §3.5) ----
      Ends on "Épica", not "Legendaria": legendary is a separate axis in this game (legendary perks,
