@@ -1132,10 +1132,10 @@ export default {
      "Platz 1" stays the numeral `puesto 1`. The English catalog needed two entries in the number
      guard's exception list here because "place 1" reads wrong in English; Spanish does not. */
   "unlock.none": "Siempre disponible",
-  "unlock.games": "Juega {n} partidas",
-  "unlock.games.one": "Juega una partida",
+  "unlock.completedGames": "Termina {n} partidas",
   "unlock.streak": "Consigue una racha de {n}",
   "unlock.score": "Alcanza {n} de puntuación",
+  "unlock.completedRun": "Termina una partida completa",
   "unlock.noRerollRun": "Termina una partida sin usar ni un solo relanzamiento",
   "unlock.monoArchetypeRun": "Termina {n} partidas solo con habilidades de {archetype}",
   "unlock.allMonoArchetypes": "Desbloquea los cuatro mazos elementales ({n} partidas mono cada uno)",
@@ -1481,7 +1481,12 @@ export default {
   "start.logo.alt": "AUTOBAZA",
   "start.tagline": "Ordena. Vence. Escala.",
   "start.progress.onboarding": "Introducción",
-  "start.progress.bonus": "Bonificación {cur} · siguiente +5",
+  /* #es-kuerze: „siguiente" fällt weg — die Zeile brach am Telefon zweizeilig um (gemeldet mit Bild,
+     411 px). Der Fortschrittszähler direkt daneben („0 / 10 partidas") sagt ohnehin, wie weit es bis
+     zur nächsten Auszahlung ist; das Wort trug also nichts, was die Zeile nicht schon zeigt. Der
+     etablierte Begriff „Bonificación" bleibt — ein zweites Wort für denselben Begriff wäre der
+     schlechtere Tausch als ein gestrichenes Adjektiv. Länge jetzt wie im Deutschen und Englischen. */
+  "start.progress.bonus": "Bonificación {cur} · +5",
   "start.progress.runs": "{done} / {total} partidas",
   "start.progress.links": "{done} / {total}",
   "start.progress.next": "Próximo desbloqueo:",

@@ -113,8 +113,8 @@ describe("packs — Zustände & Besitz", () => {
       "feuer", "eis", "blitz", "pflanze", "elementar", // #310 Element-Challenges + Prisma-Multi
       "genesis", // #: Genesis = Onboarding-Freischalt-Pack (cond, nicht kaufbar)
       "kataklysmus", // #tiered: zweites Score-Stufen-Deck (150/250/400 Mio), oberhalb von Titan
-      "insertcoin"]; // #deck-insertcoin: GESCHENK-Pack, kein erspieltes — cond nur, weil es an `games: 1`
-                     // hängt statt an einem Preis. Steht hier, damit die „alles Übrige ist buy“-Klammer
+      "insertcoin"]; // #deck-insertcoin: GESCHENK-Pack, kein erspieltes — cond nur, weil es an einem
+                     // abgeschlossenen Lauf hängt statt an einem Preis. Steht hier, damit die „alles Übrige ist buy“-Klammer
                      // unten hält; im Hub läuft es über die Packs-Seite (siehe CHALLENGES_TAB).
     for (const id of challenge) {
       const t = THEME_DEFS[id];
@@ -161,23 +161,28 @@ describe("Deck-Werkstatt — jedes Pack erscheint in genau einem Reiter", () => 
   });
 });
 
-/* #deck-insertcoin „Insert Coin“ — das Willkommensgeschenk. Gewacht wird die Schwelle selbst: bei
-   `games: 0` ist das Paar noch zu, ab dem ersten abgeschlossenen Lauf offen. Und dass Deck und Battlefield
-   DIESELBE Bedingung tragen — ginge nur eins von beiden auf, stuende im Hub ein halbes Pack. */
-describe("#deck-insertcoin — Willkommens-Deck „Insert Coin“ (games 1)", () => {
+/* #deck-insertcoin „Insert Coin“ — das Willkommensgeschenk. Gewacht wird die Schwelle selbst, und dass
+   Deck und Battlefield DIESELBE Bedingung tragen — ginge nur eins von beiden auf, stuende im Hub ein
+   halbes Pack.
+
+   NACHGEZOGEN: Der Satz „ab dem ersten ABGESCHLOSSENEN Lauf offen" stand hier von Anfang an, geprüft
+   wurde aber `games` — und das zählt jeden BEGONNENEN Lauf, Abbrüche eingeschlossen. Das Deck ging
+   deshalb auch nach einem Abbruch auf (gemeldet). Der Test prüft jetzt, was sein Kommentar immer sagte. */
+describe("#deck-insertcoin — Willkommens-Deck „Insert Coin“ (abgeschlossener Lauf)", () => {
   const DECK = DECK_DEFS.deck_insertcoin;
   const BF = BATTLEFIELD_DEFS.bf_insertcoin;
 
-  it("ist bei games: 0 gesperrt und ab games: 1 frei", () => {
+  it("ein ABGEBROCHENER Lauf reicht nicht — erst ein abgeschlossener macht es frei", () => {
     expect(isUnlocked(DECK, prof({ games: 0 }))).toBe(false);
-    expect(isUnlocked(DECK, prof({ games: 1 }))).toBe(true);
-    expect(isUnlocked(DECK, prof({ games: 7 }))).toBe(true);
+    expect(isUnlocked(DECK, prof({ games: 1, hadCompletedRun: false })), "Abbruch zählt nicht").toBe(false);
+    expect(isUnlocked(DECK, prof({ games: 7, hadCompletedRun: false })), "auch sieben Abbrüche nicht").toBe(false);
+    expect(isUnlocked(DECK, prof({ games: 1, hadCompletedRun: true }))).toBe(true);
   });
 
   it("das Battlefield traegt dieselbe Bedingung wie sein Deck", () => {
     expect(BF.unlock).toEqual(DECK.unlock);
-    expect(isUnlocked(BF, prof({ games: 0 }))).toBe(false);
-    expect(isUnlocked(BF, prof({ games: 1 }))).toBe(true);
+    expect(isUnlocked(BF, prof({ games: 1, hadCompletedRun: false }))).toBe(false);
+    expect(isUnlocked(BF, prof({ games: 1, hadCompletedRun: true }))).toBe(true);
   });
 
   it("das Pack zeigt auf genau dieses Paar und kostet nichts", () => {
@@ -291,16 +296,21 @@ describe("#tiered — Titan (Score 25/50/100 Mio) & Hirsch (10/20/30 Läufe)", (
     expect(packUnlock(prof(), T)).toMatchObject({ target: 25000000 });
     expect(resolvePackByDeckId("deck_titan2").a1).toBe("#9b3fff");
   });
-  it("Hirsch: drei Läufe-Stufen, Cover = höchste freie Stufe", () => {
+  /* NACHGEZOGEN: die Leiter zählt ABGESCHLOSSENE Läufe (`runsCompleted`), nicht `games` — das zählte
+     jeden begonnenen mit, Abbrüche eingeschlossen, und der Kommentar dieser Gruppe sagte schon immer
+     „Läufe". Die letzte Zeile hält den Fehler in seiner allgemeinen Form fest. */
+  it("Hirsch: drei Stufen über ABGESCHLOSSENE Läufe, Cover = höchste freie Stufe", () => {
     const H = THEME_DEFS.hirsch;
     expect(isTieredPack(H)).toBe(true);
     expect(H.tiers.map((t) => t.deckId)).toEqual(["deck_hirsch1", "deck_hirsch2", "deck_hirsch3"]);
-    expect(unlockedTiers(prof({ games: 9 }), H)).toEqual([]);
-    expect(unlockedTiers(prof({ games: 20 }), H).map((t) => t.roman)).toEqual(["I", "II"]);
-    expect(coverTier(prof({ games: 30 }), H).roman).toBe("III");
-    expect(packOwned(prof({ games: 10 }), H)).toBe(true);
-    expect(packOwned(prof({ games: 9 }), H)).toBe(false);
+    expect(unlockedTiers(prof({ runsCompleted: 9 }), H)).toEqual([]);
+    expect(unlockedTiers(prof({ runsCompleted: 20 }), H).map((t) => t.roman)).toEqual(["I", "II"]);
+    expect(coverTier(prof({ runsCompleted: 30 }), H).roman).toBe("III");
+    expect(packOwned(prof({ runsCompleted: 10 }), H)).toBe(true);
+    expect(packOwned(prof({ runsCompleted: 9 }), H)).toBe(false);
     expect(resolvePackByDeckId("deck_hirsch3").pack.id).toBe("hirsch");
+    // 30 begonnene, keiner abgeschlossen → die Leiter bleibt zu.
+    expect(packOwned(prof({ games: 30, runsCompleted: 0 }), H)).toBe(false);
   });
 });
 

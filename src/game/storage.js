@@ -137,6 +137,10 @@ const DEFAULT_PROFILE = { schemaVersion: PROFILE_SCHEMA_VERSION,
      rausgeht, hat nichts gesehen. Ebenso bewusst NICHT an den Tutorial-Lauf gebunden — jeder
      abgeschlossene Lauf zählt. */
   hadCompletedRun: false,
+  /* #hirsch-abgeschlossen: Zähler der ABGESCHLOSSENEN Läufe. `games` daneben zählt jeden BEGONNENEN
+     (Abbrüche eingeschlossen) und bleibt, was er ist — die Statistik zeigt ihn so an. Freischaltungen
+     über eine Laufzahl lesen ab jetzt diesen hier; ein abgebrochener Lauf soll keine Belohnung tragen. */
+  runsCompleted: 0,
   // #299 Deckpunkte (DP): zweite Währung für die Werkstatt-Packs. #316: Fresh-Start mit START_DECK_POINTS (50).
   deckPoints: START_DECK_POINTS, deckSpent: 0,
   // Deck-Werkstatt (#deckshop): mit SP gekaufte Kosmetik-Elemente als Map "theme:element" → true
@@ -229,6 +233,12 @@ export function migrateProfile(p) {
     // rückwirkend nicht (ob die Läufe abgeschlossen waren, steht nirgends), und die Richtung stimmt:
     // wer schon gespielt hat, braucht das Tutorial-Angebot nicht mehr im Menü.
     if (typeof out.hadCompletedRun !== "boolean") out.hadCompletedRun = (Number(out.games) || 0) > 0;
+    /* #hirsch-abgeschlossen: derselbe Fall eine Zeile tiefer. Für Alt-Profile ist `games` das einzige
+       Signal, das es gibt — es zählt zu großzügig (Abbrüche sind mit drin), aber die Gegenrichtung wäre
+       schlimmer: ein kleinerer Startwert könnte ein bereits freigeschaltetes Hirsch-Deck wieder ZUSPERREN.
+       Etwas geschenkt zu haben ist verzeihlich, etwas wegzunehmen nicht. Ab dem nächsten Lauf zählt der
+       Zähler exakt. */
+    if (typeof out.runsCompleted !== "number") out.runsCompleted = Number(out.games) || 0;
     v = 9;
   }
   if (v < 10) {
@@ -489,6 +499,7 @@ export function recordRun(record) {
     // Sticky: einmal ausgezahlt, nie wieder (auch wenn der Spieler später Punkte ausgibt).
     welcomeBonusPaid: !!p.welcomeBonusPaid || welcomeDp > 0,
     hadCompletedRun: !!p.hadCompletedRun || record.completed === true,
+    runsCompleted: n0(p.runsCompleted) + (record.completed === true ? 1 : 0), // #hirsch-abgeschlossen
     stichSpent: n0(p.stichSpent),
     nodes: (p.nodes && typeof p.nodes === "object") ? p.nodes : {},
     // #299 DP: Guthaben wächst um den DP-Ertrag + das gefegte SP-Guthaben (bei vollem Baum); ausgegebene DP bleiben.

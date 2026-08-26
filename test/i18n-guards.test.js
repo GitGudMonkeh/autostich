@@ -803,6 +803,22 @@ describe("i18n · Längenschranken", () => {
     }
   });
 
+  /* #es-kuerze — die Bonus-Zeile im Hub steht neben einem Zähler („0 / 10 partidas") und hat nur eine
+     Zeile Platz. Die spanische Fassung war mit „Bonificación {cur} · siguiente +5" so lang, dass sie
+     am Telefon umbrach (gemeldet mit Bild, 411 px).
+
+     Geprüft wird die BEZIEHUNG statt einer erfundenen Obergrenze: Das Layout ist an der Quellsprache
+     entworfen, also darf keine Übersetzung diese Zeile spürbar länger machen als das deutsche Original.
+     Zwei Zeichen Luft, damit eine Übersetzung nicht an einem Buchstaben scheitert. */
+  it("die Bonus-Zeile des Hubs bleibt in jeder Sprache so kurz wie im Deutschen", () => {
+    const KEY = "start.progress.bonus";
+    const quelle = [...CATS[SOURCE_LOCALE][KEY]].length;
+    for (const id of READY_TARGETS) {
+      const len = [...CATS[id][KEY]].length;
+      expect(len, `${id}: „${CATS[id][KEY]}" ist ${len} Zeichen, Deutsch hat ${quelle}`).toBeLessThanOrEqual(quelle + 2);
+    }
+  });
+
   /* Die Raritätsleiter darf im Englischen NICHT auf „Legendary" enden: legendär ist bei uns eine
      eigene Achse (Übersetzerpaket §3.5, genre-terminologie.md §3). */
   it("die englische Raritätsleiter endet auf Epic, nicht Legendary", () => {

@@ -1440,10 +1440,10 @@ export default {
      Der Satz stand bis zur Übersetzung in cosmetics.js; `unlockProgress` liefert jetzt nur noch
      `kind` + `vars`, den Text setzt src/i18n/unlockText.js daraus zusammen. */
   "unlock.none": "Immer verfügbar",
-  "unlock.games": "Spiele {n} Läufe",
-  "unlock.games.one": "Spiele einen Lauf",
+  "unlock.completedGames": "Schließe {n} Läufe ab",
   "unlock.streak": "Erreiche eine Serie von {n}",
   "unlock.score": "Erreiche Score {n}",
+  "unlock.completedRun": "Schließe einen Lauf vollständig ab",
   "unlock.noRerollRun": "Schließe einen Lauf ab, ohne einen Reroll zu benutzen",
   "unlock.monoArchetypeRun": "Schließe {n} Läufe nur mit {archetype}-Skills ab",
   "unlock.allMonoArchetypes": "Schalte alle vier Element-Decks frei (je {n} Mono-Läufe)",

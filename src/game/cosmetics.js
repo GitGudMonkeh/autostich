@@ -7,9 +7,10 @@
 
    Freischalt-Bedingung `unlock`:
      null                    → immer frei (Default = aktueller Look)
-     { kind: "games",  n }   → profile.games      >= n   (gespielte Läufe)
+     { kind: "completedGames", n } → profile.runsCompleted >= n (ABGESCHLOSSENE Läufe — `games` zählt Abbrüche mit)
      { kind: "streak", n }   → profile.bestStreak >= n
      { kind: "score",  n }   → profile.bestScore  >= n
+     { kind: "completedRun" } → profile.hadCompletedRun === true (EIN abgeschlossener Lauf — NICHT `games`, das zählt Abbrüche mit)
      { kind: "noRerollRun" } → profile.hadNoRerollRun === true  (Lauf ohne benutzten Reroll, Sparfuchs deck_c3 · #214)
      { kind: "monoArchetypeRun", archetype, n } → profile.monoArchetypeRuns[archetype] >= n (#310: n Mono-Läufe dieser Fraktion — deck_feuer/eis/blitz/pflanze)
      { kind: "allMonoArchetypes", n }           → alle vier monoArchetypeRuns[*] >= n (#310: alle Element-Decks frei → Prisma-Multi deck_elementar)
@@ -75,9 +76,9 @@ export const DECK_DEFS = {
   deck_titan2:  { id: "deck_titan2",  name: "Titan · Aufstieg",   unlock: { kind: "score", n: 50000000 } },
   deck_titan3:  { id: "deck_titan3",  name: "Titan · Entfesselt", unlock: { kind: "score", n: 100000000 } },
   // #tiered Hirsch — Stufen-Challenge über abgeschlossene Läufe (10/20/30).
-  deck_hirsch1: { id: "deck_hirsch1", name: "Hirsch · Sternbild",  unlock: { kind: "games", n: 10 } },
-  deck_hirsch2: { id: "deck_hirsch2", name: "Hirsch · Erwacht",    unlock: { kind: "games", n: 20 } },
-  deck_hirsch3: { id: "deck_hirsch3", name: "Hirsch · Sternenlauf", unlock: { kind: "games", n: 30 } },
+  deck_hirsch1: { id: "deck_hirsch1", name: "Hirsch · Sternbild",  unlock: { kind: "completedGames", n: 10 } },
+  deck_hirsch2: { id: "deck_hirsch2", name: "Hirsch · Erwacht",    unlock: { kind: "completedGames", n: 20 } },
+  deck_hirsch3: { id: "deck_hirsch3", name: "Hirsch · Sternenlauf", unlock: { kind: "completedGames", n: 30 } },
   // #tiered Thron — Ranglisten-Serie über gewonnene Wochen (Platz 1 im Meister-Wochen-Board, 1./2./3. Sieg).
   deck_thron1: { id: "deck_thron1", name: "Thron · Anwärter",     unlock: { kind: "championWeek", n: 1 } },
   deck_thron2: { id: "deck_thron2", name: "Thron · Souverän",     unlock: { kind: "championWeek", n: 2 } },
@@ -119,7 +120,7 @@ export const DECK_DEFS = {
      Genesis, Prisma, Solfatara) und meint beides: den Münzeinwurf des Motivs und den ersten Lauf.
      Nicht zu verwechseln mit `deck_arcade` — das trägt seit der Umbenennung zu „Beryll“ ein
      Smaragd-Motiv und ist nur dem Ordnernamen nach noch Arcade. */
-  deck_insertcoin: { id: "deck_insertcoin", name: "Insert Coin", unlock: { kind: "games", n: 1 } },
+  deck_insertcoin: { id: "deck_insertcoin", name: "Insert Coin", unlock: { kind: "completedRun" } },
 };
 
 /* Sprachprüfung: Der Spielfeld-Name ist der DECK-Name plus Suffix. Vorher stand jeder der 27 Namen
@@ -169,9 +170,9 @@ export const BATTLEFIELD_DEFS = {
   bf_titan1:  { id: "bf_titan1",  name: bfName("deck_titan1"),  unlock: { kind: "score", n: 25000000 } },
   bf_titan2:  { id: "bf_titan2",  name: bfName("deck_titan2"),  unlock: { kind: "score", n: 50000000 } },
   bf_titan3:  { id: "bf_titan3",  name: bfName("deck_titan3"),  unlock: { kind: "score", n: 100000000 } },
-  bf_hirsch1: { id: "bf_hirsch1", name: bfName("deck_hirsch1"), unlock: { kind: "games", n: 10 } },
-  bf_hirsch2: { id: "bf_hirsch2", name: bfName("deck_hirsch2"), unlock: { kind: "games", n: 20 } },
-  bf_hirsch3: { id: "bf_hirsch3", name: bfName("deck_hirsch3"), unlock: { kind: "games", n: 30 } },
+  bf_hirsch1: { id: "bf_hirsch1", name: bfName("deck_hirsch1"), unlock: { kind: "completedGames", n: 10 } },
+  bf_hirsch2: { id: "bf_hirsch2", name: bfName("deck_hirsch2"), unlock: { kind: "completedGames", n: 20 } },
+  bf_hirsch3: { id: "bf_hirsch3", name: bfName("deck_hirsch3"), unlock: { kind: "completedGames", n: 30 } },
   // #tiered Thron Battlefields (gleiche Bedingung wie ihr Deck).
   bf_thron1: { id: "bf_thron1", name: bfName("deck_thron1"), unlock: { kind: "championWeek", n: 1 } },
   bf_thron2: { id: "bf_thron2", name: bfName("deck_thron2"), unlock: { kind: "championWeek", n: 2 } },
@@ -199,7 +200,7 @@ export const BATTLEFIELD_DEFS = {
   bf_solfatara:   { id: "bf_solfatara",   name: bfName("deck_solfatara"),   unlock: { kind: "buy", ownKey: "pack:solfatara" } },
   bf_origami:     { id: "bf_origami",     name: bfName("deck_origami"),     unlock: { kind: "buy", ownKey: "pack:origami" } },
   // #deck-insertcoin Battlefield (dieselbe Bedingung wie sein Deck — Paar geht gemeinsam auf):
-  bf_insertcoin:  { id: "bf_insertcoin",  name: bfName("deck_insertcoin"),  unlock: { kind: "games", n: 1 } },
+  bf_insertcoin:  { id: "bf_insertcoin",  name: bfName("deck_insertcoin"),  unlock: { kind: "completedRun" } },
 };
 
 // Tausender-Punkte ohne ICU-Abhängigkeit (node-Tests deterministisch): 10000000 → "10.000.000".
@@ -228,9 +229,10 @@ export function isUnlocked(def, profile) {
   if (!u) return true;
   const p = profile || {};
   switch (u.kind) {
-    case "games":       return (p.games      || 0) >= u.n;
+    case "completedGames": return (p.runsCompleted || 0) >= u.n; // #hirsch-abgeschlossen: NICHT `games` — das zählt Abbrüche mit
     case "streak":      return (p.bestStreak || 0) >= u.n;
     case "score":       return (p.bestScore  || 0) >= u.n;
+    case "completedRun": return !!p.hadCompletedRun; // #deck-insertcoin: EIN abgeschlossener Lauf — Abbrüche zählen nicht
     case "noRerollRun": return !!p.hadNoRerollRun; // #214 Sparfuchs
     case "monoArchetypeRun": return monoCount(p, u.archetype) >= (u.n || 1);                     // #310: N Mono-Läufe dieser Fraktion
     case "allMonoArchetypes": return ARCHS.every((a) => monoCount(p, a) >= (u.n || 1));           // #310: alle vier Element-Decks frei (Prisma-Multi)
@@ -257,8 +259,8 @@ export function unlockProgress(def, profile) {
   if (!u) return { done: true, cur: 1, target: 1, kind: "none", vars: {} };
   const p = profile || {};
   switch (u.kind) {
-    case "games": {
-      const have = p.games || 0;
+    case "completedGames": {
+      const have = p.runsCompleted || 0;
       return { done: have >= u.n, cur: Math.min(have, u.n), target: u.n, kind: u.kind, vars: { n: u.n } };
     }
     case "streak": {
@@ -268,6 +270,10 @@ export function unlockProgress(def, profile) {
     case "score": {
       const have = p.bestScore || 0;
       return { done: have >= u.n, cur: Math.min(have, u.n), target: u.n, kind: u.kind, vars: { n: u.n } };
+    }
+    case "completedRun": {
+      const done = !!p.hadCompletedRun;
+      return { done, cur: done ? 1 : 0, target: 1, kind: u.kind, vars: {} };
     }
     case "noRerollRun": {
       const done = !!p.hadNoRerollRun;
