@@ -114,8 +114,25 @@ Binding, not suggestions. Items 1–5 are owner decisions taken before implement
    Already present in the brand table in `test/i18n-guards.test.js`.
 4. **The layout pass is not part of this task.** It is the named successor `es-layout`.
 5. **The fallback chain stays `es → en → de`.** Not to be touched.
-6. TODO — the agent's own binding structural decisions (the split across sub-catalogs, hand-written
-   versus generated catalogs, the self-check harness), with the rejected alternatives, once taken.
+6. **The catalog is the source, the CSV is downstream.** `scripts/export-strings.mjs:217` reads the
+   `es` column out of the CATALOG, so the delivery CSV is a generated view of `src/i18n/es.js` and
+   not an input to it. Generating catalogs FROM the returned CSV — the other option the work order
+   left open — would have run the pipeline backwards. **Rejected for that reason, and the choice
+   also settles H6:** `npm run loc:export` keeps the CSV in step automatically.
+   One consequence recorded here because it contradicts the translator package: `note` is generated
+   too, so a translator note written into the CSV does not survive the next export. Package §10 is
+   right for an external translator returning a file and wrong for the in-house case; the notes live
+   in `docs/localization/unsicherheiten_es.md` instead.
+7. **`es.js` mirrors `en.js` file for file** — same eight sub-catalogs, same key order, same
+   generator shape where `enFamilies`/`enGlossary` are generators rather than flat lists. Rejected:
+   a different, tidier split. Mirroring is what makes F1 checkable, because the English
+   interpolation sites can be walked one by one against the Spanish ones.
+8. **The number helpers are the GERMAN pair, not the English one.** `num` uses the decimal comma
+   and `grp` the thousands point in every Spanish file that has them. Copying the English helpers
+   verbatim would have shipped `×1.6` and `6,300` into a Spanish catalog.
+9. **A self-check harness runs the guards' own rules early**, without pulling `ready: true`
+   forward (`docs/workstreams/es-translate/selfcheck.mjs`). Rejected: flipping the flag early to
+   arm the real guards — that is Tripwire 2. Rejected: translating blind until the end.
 
 ## Task-specific inputs
 
@@ -127,7 +144,7 @@ Measured in this worktree unless marked otherwise.
 | Categories | 2639 `i18n`, 107 `building`, 54 `system` |
 | Rows carrying a length limit | 30 — **lower bounds**; where broken, set `note` rather than bend the text (H4) |
 | Catalog keys | 2639 per language |
-| Template interpolations to restore | ~164 — inferred from `en.js` and its sub-catalogs; to be counted exactly during part 4 |
+| Template interpolations to restore | **352 measured** (the work order's "~164" counted interpolation-bearing KEYS, not sites; `enFamilies`/`enGlossary` are generators whose `${}` also build keys) |
 | Drift since the freeze | **none** — measured, see below |
 | Order brief | `docs/localization/uebersetzerpaket_es_2026-08-26.md` |
 | Uncertainty-list model | `docs/localization/unsicherheiten_en.md` |
@@ -184,17 +201,17 @@ Indicative. Anything outside it is recorded and reported before it is changed.
 Ticked only when true.
 
 - [x] Drift check run and its result recorded — zero drift at `b5dd4a15`
-- [ ] All 2746 open rows translated from German
-- [ ] Catalog files written; key parity with `de`/`en` at 2639
-- [ ] All template interpolations restored; numbers identical to German
-- [ ] `glossary.*.match` rewritten for Spanish; both measuring tests pass
-- [ ] `TERMS.es` and `SAME_OK.es` filled
-- [ ] `ready: true` set, after parity
-- [ ] Tripwire 1 re-measured: `2639 111236 104771`
-- [ ] `npm test`, `npm run lint -- --max-warnings=0`, `npm run build`, `npm run gen:db`, `npm run loc:export` — all green
-- [ ] Counter-check recorded for every new guard (`testing.md` §5)
-- [ ] `docs/localization/unsicherheiten_es.md` written
-- [ ] Evidence package written
+- [x] All 2746 open rows translated from German
+- [x] Catalog files written; key parity with `de`/`en` at 2639
+- [x] All template interpolations restored; numbers identical to German
+- [x] `glossary.*.match` rewritten for Spanish; both measuring tests pass
+- [x] `TERMS.es` and `SAME_OK.es` filled
+- [x] `ready: true` set, after parity
+- [x] Tripwire 1 re-measured: `2639 111236 104771`
+- [x] `npm test`, `npm run lint -- --max-warnings=0`, `npm run build`, `npm run gen:db`, `npm run loc:export` — all green
+- [x] Counter-check recorded for every new guard (`testing.md` §5)
+- [x] `docs/localization/unsicherheiten_es.md` written
+- [x] Evidence package written
 - [ ] Decision block delivered — at most three questions, 400 words, each with a recommendation
 
 ## Open questions
