@@ -37,7 +37,13 @@ const ORIGIN = `http://localhost:5181${BASE}`;
 const Q = ".hub-play .as-brandgrid-column .as-bg-quiet";
 /* The design's own three states are 3/22 (quiet), 28/66 (mid) and 100/100 (lit). What ships is the
    middle one; a and c are the steps either side of it, and d is what it looked like before. */
+const COL = ".hub-play .as-brandgrid-column";
 const VARIANTS = {
+  /* THE STATE BEFORE THIS COMMIT, restored in full — the overshooting column AND the pale cells, so
+     the pair below is a fair before/after and not a comparison of one change against two. Both come
+     out of this file, at the same crop, on the same deck, in the same run. */
+  "z-before-c5": `${COL}{height:.874em;vertical-align:-.087em;width:.09em}`
+    + `${Q}{fill:#ffffff;stroke:#ffffff;fill-opacity:.03;stroke-opacity:.22}`,
   "a-before": `${Q}{fill:#ffffff;stroke:#ffffff;fill-opacity:.03;stroke-opacity:.22}`,
   "b-half": `${Q}{fill-opacity:.16;stroke-opacity:.48}`,
   "c-ships-mid": "",
