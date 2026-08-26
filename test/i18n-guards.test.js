@@ -1078,9 +1078,6 @@ describe("i18n · Ratsche gegen neue deutsche Inline-Texte", () => {
      eine byte-gleiche Kopie, und die zwei Regelsätze konnten still auseinanderlaufen (genau das, was
      der Kopf des Skripts verspricht zu verhindern). */
 
-  const stripComments = (src) =>
-    src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/[^\n]*/g, "$1");
-
   it("migrierte Dateien enthalten keinen fest verdrahteten Anzeigetext mehr", () => {
     const bad = [];
     for (const file of MIGRATED) {
