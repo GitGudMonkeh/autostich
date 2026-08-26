@@ -26,7 +26,7 @@ No reviewer row: no independent review was requested. Review is optional and ris
 | --- | --- |
 | Worktree | `C:/Code/Autostich-worktrees/zh-hans-sample` |
 | Branch checked out there | `task/zh-hans-sample` |
-| Upstream | none — the branch deliberately does not track its base |
+| Upstream | `origin/task/zh-hans-sample`, its own remote, set when the branch was first pushed. It deliberately does **not** track its base `feature/zh-hans`. |
 | Preview port | 5198 |
 | Preview URL | http://localhost:5198 |
 | Server invocation | `npm run dev -- --port 5198 --strictPort` |
