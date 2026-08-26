@@ -569,9 +569,7 @@ export default {
   "form.confirm.title": "Diferencia de formación desde el inicio del ciclo · energía de orden restante",
   "form.delta": "{sign}{pct} %",
   "form.energyLeft": " · quedan {n} de energía",
-  "form.hint.pre": "Toca dos cartas para intercambiarlas (1 de energía) · las formaciones solo surgen",
-  "form.hint.within": "dentro de",
-  "form.hint.post": "los segmentos de {size}",
+  "form.hint": "Toca dos cartas para intercambiarlas (1 de energía) · las formaciones solo surgen **dentro de** los segmentos de {size}",
   "form.seg.strength": "+{pct} %",
   "form.seg.strength.title": "Bonificación de formación de este segmento en porcentaje. Verde: más fuerte que al inicio del ciclo, rojo: más débil",
   "form.segwork": "Trabajo de segmento:",
@@ -662,9 +660,7 @@ export default {
   /* ---- Glacier pick ---- */
   "glacierpick.eyebrow": "Glaciar",
   "glacierpick.title": "Elige una carta para convertirla en glaciar",
-  "glacierpick.intro.a": "Se congela en su celda. A partir de entonces queda",
-  "glacierpick.intro.rigid": "rígida",
-  "glacierpick.intro.b": "(ya no se puede mover) y acumula masa hasta que estalla. Decide entre posición y valor.",
+  "glacierpick.intro": "Se congela en su celda. A partir de entonces queda **rígida** (ya no se puede mover) y acumula masa hasta que estalla. Decide entre posición y valor.",
   "glacierpick.chosen": "Selección: {n} / 1",
 
   /* ---- Glacier formation legend (GlacierFormLegend.jsx) ----

@@ -32,6 +32,13 @@ const UEBERHOLT = new Set([
   "glacierpick.intro.a", "glacierpick.intro.rigid", "glacierpick.intro.b",
 ]);
 
+/* Seit dem Einfrieren auf d9763883 ersatzlos entfallen. Gemessen: beide wurden in 5c95868d
+   („M7 — the statistics screen and the run window, restructured") entfernt, und ihr deutscher
+   Text steht in keinem Katalog mehr, ist also nicht umbenannt worden. Ihre Uebersetzung ist
+   damit hinfaellig. Bewusst als benannte Liste und nicht als stilles Ueberspringen: genau
+   dafuer nennt die Order einen eingefrorenen Quell-Commit. */
+const ENTFALLEN = new Set(["stats.desk.readout", "stats.noSkills"]);
+
 const NACHFOLGER = {
   "form.hint": "点击两张卡牌交换位置（1能量） · 阵型只能**在段内**形成（每段{size}张）",
   "glacierpick.intro": "它会冻结在所在的格子上，从此**僵固**（无法再移动），并每轮积累质量，直到碎裂。请在位置和数值之间做出取舍。",
@@ -63,7 +70,7 @@ const iId = head.indexOf("id"), iDe = head.indexOf("de"), iZh = head.indexOf("zh
 const fixture = {};
 const quelle = {};
 for (const r of rows.slice(1)) {
-  if (!r[iId] || UEBERHOLT.has(r[iId])) continue;
+  if (!r[iId] || UEBERHOLT.has(r[iId]) || ENTFALLEN.has(r[iId])) continue;
   if (!r[iZh]) continue;
   fixture[r[iId]] = r[iZh];
   quelle[r[iId]] = r[iDe];
@@ -89,6 +96,7 @@ const keys = Object.keys(fixture);
 console.log(`Fixture: ${keys.length} Schluessel`);
 console.log(`  aus der CSV uebernommen : ${keys.length - Object.keys(NACHFOLGER).length}`);
 console.log(`  ueberholte CSV-Zeilen   : ${UEBERHOLT.size} (ersetzt durch ${Object.keys(NACHFOLGER).length})`);
+console.log(`  seit d9763883 entfallen : ${ENTFALLEN.size} — ${[...ENTFALLEN].join(", ")}`);
 console.log(`  deutscher Katalog       : ${Object.keys(de).length} Schluessel`);
 for (const f of fehler) console.log(`  FEHLER ${f}`);
 if (fehler.length) process.exit(1);
