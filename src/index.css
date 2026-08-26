@@ -2269,6 +2269,10 @@ b, strong { font-weight: 600; }
    Einträgen kein Unterschied, den man ohne Vergleich sieht. */
 .op-dd-item[data-sel="1"] { color: #f0eefc; }
 .op-dd-tick { width: 14px; height: 14px; color: var(--deck-a1, #8a7de0); }
+/* #zh-hans: Im Willkommens-Dialog steht die Sprachwahl ALLEIN in ihrer Zeile und fuellt sie
+   deshalb, waehrend sie in den Optionen rechts neben einer Beschriftung sitzt und schmal bleibt. */
+.un-lang .op-dd, .un-lang .op-dd-btn { width: 100%; }
+.un-lang .op-dd-list { left: 0; right: 0; }
 
 /* Die Float-Gruppe ist auf dem Handy eine reine Klammer — dieselbe `display: contents`-Technik wie
    `.op-col2`, damit Reihenfolge und Abstände der abgenommenen schmalen Fassung exakt bleiben. Erst
@@ -5127,25 +5131,10 @@ b, strong { font-weight: 600; }
      `#willkommen-ton`-Durchgang hat sie gebaut). Sie bleibt unveraendert; was sich aendert, sind die
      vier Flaechen- und Kantenwerte darum herum. Beide Signale sitzen damit auf der gewaehlten Seite,
      unabhaengig davon, welche der beiden es ist — die Forderung des Entwurfs, jetzt vollstaendig. */
-  .un-first .un-lang {
-    gap: 0;
-    border: 1px solid var(--ctl-edge);
-    border-radius: var(--rd-md);
-    overflow: hidden;
-  }
-  .un-first .un-lang > [role="radio"] {
-    border: 0 !important;
-    border-radius: 0 !important;
-    box-shadow: none !important;
-    background: var(--ctl-face) !important;
-    color: #8a8a95;
-  }
-  .un-first .un-lang > [role="radio"] + [role="radio"] { border-left: 1px solid var(--ctl-edge) !important; }
-  .un-first .un-lang > [aria-checked="true"] {
-    background: var(--ctl-face-on) !important;
-    color: #f0eefc;
-    box-shadow: inset 0 -2px 0 var(--deck-a1, #26c6e6) !important;
-  }
+  /* #zh-hans: Die Reiterzeile ist einem Dropdown gewichen (UsernameModal.jsx), also sind die vier
+     Regeln fuer `[role="radio"]` hier ersatzlos entfallen. Sie haetten nichts mehr getroffen, und
+     `overflow: hidden` haette die aufgeklappte Liste sogar abgeschnitten. Das Aussehen des
+     Dropdowns kommt aus den globalen `.op-dd-*`-Regeln, dieselben wie in den Optionen. */
 
   /* Vorschau: eine dezente Karte statt einer grünen Fläche. Der Rang sitzt als Chip vorn, der Name trägt
      die Textfarbe des Bildschirms, und nur der Punktestand bleibt farbig — er ist die Zahl, um die es geht. */

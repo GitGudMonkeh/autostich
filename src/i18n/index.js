@@ -45,7 +45,7 @@ export const LOCALES = [
      auf Deutsch zurückfallen, damit im Entwurf sofort auffällt, was Fixture ist und was nicht.
      Vollständig wird der Katalog erst mit dem Vollauftrag; die Ratsche unten verlangt dann
      `ready: true`. Siehe docs/workstreams/zh-hans/zh-hans-sample/task-contract.md. */
-  { id: "zh-Hans", label: "简体中文", short: "ZH", ready: false },
+  { id: "zh-Hans", label: "简体中文", short: "ZH", ready: true,  via: ["en"] },  // #zh-hans
 ];
 export const LOCALE_IDS = LOCALES.map((l) => l.id);
 // Was die UI anbietet und was `setLocale` annimmt. Nie LOCALE_IDS dafür benutzen.

@@ -6,6 +6,7 @@ import { READY_LOCALES, fmtNum } from "../i18n/index.js";
 import { useT, useLocale } from "../i18n/useLocale.js"; // #sprache: Erstwahl der Sprache lebt hier
 import { isAllowedUsername } from "../game/profanity.js"; // #174 Profanity-Filter (rein, testbar)
 import { ModalIcon } from "./modalIcons.jsx"; // #menu-rework M9: gezeichnet statt getippt (M9-F06)
+import { Dropdown } from "./optionsBits.jsx"; // #zh-hans: dieselbe Sprachwahl wie in den Optionen
 
 /* Lokaler Nickname (#14): dient der Ersteinrichtung (beim ersten Start) und dem
    späteren Ändern. Validiert Trim + Länge 1–20 und seit #174 zusätzlich gegen die
@@ -155,20 +156,16 @@ export function UsernameModal({ initial = "", firstTime = false, onLang = null, 
         {firstTime && (
           <div className="un-block mt-4">
             <div className="un-slabel text-meta-1 uppercase tracking-widest opacity-40 mb-1.5">{t("name.lang.label")}</div>
-            <div className="un-lang grid gap-2"
-              style={{ gridTemplateColumns: `repeat(${READY_LOCALES.length}, minmax(0, 1fr))` }}>
-              {READY_LOCALES.map((l) => {
-                const on = locale === l.id;
-                return (
-                  /* #kante: gewählte Sprache mit violetter Kante und Schein statt gefüllter Fläche. */
-                  <button key={l.id} type="button" role="radio" aria-checked={on}
-                    onClick={() => { setLocaleId(l.id); if (onLang) onLang(l.id); }}
-                    className={`${on ? "as-edge-strong" : "as-edge-neutral"} as-edge-thin px-3 py-2 rounded-lg text-body-lg-5 font-semibold transition-all`}
-                    style={on ? { "--c": `var(--deck-a1, ${VI})` } : undefined}>
-                    {l.label}
-                  </button>
-                );
-              })}
+            {/* #zh-hans: Dropdown statt Reiterzeile — dieselbe Entscheidung, die die Optionen schon
+                getroffen haben (#optionen-redesign), aus demselben Grund: die Liste WÄCHST. Bei vier
+                Sprachen sind vier gleich breite Felder nebeneinander schon eng, die fünfte bräche die
+                Zeile. Dieselbe Komponente wie dort, damit die Sprachwahl an beiden Stellen gleich
+                aussieht und sich gleich bedient. Englisch bleibt die Vorbelegung (DEFAULT_LOCALE);
+                der Dialog wählt nichts vor, er zeigt nur, was gilt. */}
+            <div className="un-lang">
+              <Dropdown value={locale} label={t("name.lang.label")}
+                options={READY_LOCALES.map((l) => ({ v: l.id, label: l.label }))}
+                onChange={(v) => { setLocaleId(v); if (onLang) onLang(v); }} />
             </div>
           </div>
         )}

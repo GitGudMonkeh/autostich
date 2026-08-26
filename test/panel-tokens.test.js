@@ -1611,7 +1611,10 @@ describe("#menu-rework — die Tinten-Ratsche: Textfarb-Literale wachsen nicht",
     ["src/ui/PrivacyModal.jsx (ganze Datei)", () => inkOfJsx("src/ui/PrivacyModal.jsx"), 1],
     ["src/ui/UsernameModal.jsx (ganze Datei)", () => inkOfJsx("src/ui/UsernameModal.jsx"), 3],
     ["src/ui/FeedbackModal.jsx (ganze Datei)", () => inkOfJsx("src/ui/FeedbackModal.jsx"), 8],
-    ["index.css — .un-* / .fb-* (M9)", () => inkOfCss([/\.un-/, /\.fb-/]), 14],
+    /* #zh-hans: 14 -> 12. Die Sprachwahl im Erststart ist von einer Reiterzeile auf das Dropdown
+       der Optionen umgestellt; die vier Regeln fuer `[role="radio"]` sind damit ersatzlos
+       entfallen und mit ihnen zwei Farbliterale. Genau die Richtung, fuer die die Ratsche da ist. */
+    ["index.css — .un-* / .fb-* (M9)", () => inkOfCss([/\.un-/, /\.fb-/]), 12],
     /* #menu-rework M6 — das Glossar. Tinte ist weiterhin eine benannte Luecke des Vokabulars (2c,
        "What the vocabulary does not claim"), das Fenster ist zu, also gezaehlt statt gepraegt. Der
        Screen ist ein NACHSCHLAGEWERK — acht Kategorien, fuenf Archetypen, rund 110 Begriffe —, und
