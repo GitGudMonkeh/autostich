@@ -21,6 +21,7 @@
 import de from "./de.js";
 import en from "./en.js";
 import es from "./es.js";
+import zhHans from "./zhHans.js";
 
 /* `ready` trennt ANGEMELDET von AUSLIEFERBAR — und das ist keine Aufweichung der Parität,
    sondern ihr Schalter. Eine Sprache steht hier, sobald der Code sie kennt (Export, Wächter,
@@ -35,6 +36,16 @@ export const LOCALES = [
   { id: "de", label: "Deutsch",  short: "DE", ready: true },
   { id: "en", label: "English",  short: "EN", ready: true },
   { id: "es", label: "Español",  short: "ES", ready: true,  via: ["en"] },  // #es-locale
+  /* #zh-hans: ANGEMELDET, nicht auslieferbar. Der Katalog ist ein Fixture aus der
+     Muster-Übersetzung (111 von allen Schlüsseln) und existiert, damit die CJK-Typografie an
+     echtem chinesischem Text statt an lateinischem Platzhalter entworfen werden kann.
+     `ready: false` ist genau der Schalter dafür: `setLocale` nimmt die Sprache nicht an, die
+     UI bietet sie nicht an, und die verlangenden Paritätsprüfungen laufen an ihr vorbei —
+     während die verbietenden weiter greifen. Kein `via`: ein fehlender Schlüssel soll sichtbar
+     auf Deutsch zurückfallen, damit im Entwurf sofort auffällt, was Fixture ist und was nicht.
+     Vollständig wird der Katalog erst mit dem Vollauftrag; die Ratsche unten verlangt dann
+     `ready: true`. Siehe docs/workstreams/zh-hans/zh-hans-sample/task-contract.md. */
+  { id: "zh-Hans", label: "简体中文", short: "ZH", ready: false },
 ];
 export const LOCALE_IDS = LOCALES.map((l) => l.id);
 // Was die UI anbietet und was `setLocale` annimmt. Nie LOCALE_IDS dafür benutzen.
@@ -50,7 +61,7 @@ export const READY_LOCALE_IDS = READY_LOCALES.map((l) => l.id);
 export const SOURCE_LOCALE = "de";
 export const DEFAULT_LOCALE = "en";
 
-const CATALOGS = { de, en, es };
+const CATALOGS = { de, en, es, "zh-Hans": zhHans };
 
 /* Rückfallkette je Sprache: erst `via`, dann die Quellsprache. Die eigene Sprache fliegt raus
    (sie ist schon gescheitert), Doppelte ebenso — `de` behält damit eine LEERE Kette. */
@@ -68,14 +79,36 @@ const listeners = new Set();
 
 export function getLocale() { return current; }
 
-// READY_LOCALE_IDS, nicht LOCALE_IDS: eine angemeldete, aber unfertige Sprache ist für den
-// Spieler nicht wählbar — auch nicht über ein altes `options.lang` aus dem localStorage.
-export function setLocale(id) {
-  const next = READY_LOCALE_IDS.includes(id) ? id : DEFAULT_LOCALE;
+// Wechsel anwenden und die Abonnenten wecken. Geteilt, damit es genau EINE Stelle gibt, an der
+// `current` sich bewegt — welche Sprache überhaupt zulässig ist, entscheiden die Aufrufer.
+function applyLocale(next) {
   if (next === current) return current;
   current = next;
   for (const fn of [...listeners]) { try { fn(next); } catch (e) {} }
   return current;
+}
+
+// READY_LOCALE_IDS, nicht LOCALE_IDS: eine angemeldete, aber unfertige Sprache ist für den
+// Spieler nicht wählbar — auch nicht über ein altes `options.lang` aus dem localStorage.
+export function setLocale(id) {
+  return applyLocale(READY_LOCALE_IDS.includes(id) ? id : DEFAULT_LOCALE);
+}
+
+/* #zh-hans: der Vorschau-Zweig darf eine ANGEMELDETE, aber unfertige Sprache setzen — sonst
+   lässt sich CJK-Typografie nur an lateinischem Platzhaltertext entwerfen, und genau das ist
+   der Fehler, den die Gestaltungsrunde vermeiden soll.
+
+   Bewusst eine eigene Funktion und keine Aufweichung von `setLocale`: dessen Zusage ist, dass
+   ein Spieler eine unfertige Sprache nie zu sehen bekommt. Ein zusätzliches Schlupfloch dort
+   hätte diese Zusage still kassiert; hier steht sie unangetastet daneben.
+
+   Das Tor ist `VITE_PREVIEW`. In jedem anderen Build gibt die Funktion `current` unverändert
+   zurück, ohne die Abonnenten zu wecken. `import.meta.env` wird defensiv gelesen, weil dieses
+   Modul auch aus reinem Node läuft (scripts/export-strings.mjs). */
+export function setPreviewLocale(id) {
+  const env = typeof import.meta !== "undefined" ? import.meta.env : null;
+  if (!env || env.VITE_PREVIEW !== "1") return current;
+  return applyLocale(LOCALE_IDS.includes(id) ? id : current);
 }
 
 export function subscribeLocale(fn) {
@@ -167,6 +200,10 @@ const FMT = {
   de: { dec: ",", grp: ".", pct: "{n} %", day: "{dd}.{mm}." },
   en: { dec: ".", grp: ",", pct: "{n}%",  day: "{mm}/{dd}" },
   es: { dec: ",", grp: ".", pct: "{n} %", day: "{dd}/{mm}" },
+  /* #zh-hans: Ziffern bleiben westlich, Tausender wie im Englischen, Prozent OHNE
+     Leerzeichen (die deutsche Form hat ein schmales, die chinesische keines). Der Tag
+     traegt seine Einheiten mit: 12月24日, nicht 24/12. */
+  "zh-Hans": { dec: ".", grp: ",", pct: "{n}%",  day: "{mm}月{dd}日" },
 };
 
 // Für Wächter und Export: dieselbe Tabelle, die die Formatierer benutzen. NICHT für die UI.

@@ -39,6 +39,14 @@ const UEBERHOLT = new Set([
    dafuer nennt die Order einen eingefrorenen Quell-Commit. */
 const ENTFALLEN = new Set(["stats.desk.readout", "stats.noSkills"]);
 
+/* #zh-hans: die Marke wechselt mit der Sprache (test/i18n-guards.test.js, BRAND). Die Order
+   zum Muster sagte noch „Autostich nicht uebersetzen" — das war vor dieser Entscheidung und
+   ist damit ueberholt. Ersetzt wird ueber ALLE Werte statt fuer einen Schluessel, damit ein
+   spaeter dazukommender String nicht durchrutscht. */
+const MARKE_DE = "Autostich";
+const MARKE_ZH = "自动墩";
+const FREMDE_MARKEN = [MARKE_DE, "Autotrick", "Autobaza"];
+
 const NACHFOLGER = {
   "form.hint": "点击两张卡牌交换位置（1能量） · 阵型只能**在段内**形成（每段{size}张）",
   "glacierpick.intro": "它会冻结在所在的格子上，从此**僵固**（无法再移动），并每轮积累质量，直到碎裂。请在位置和数值之间做出取舍。",
@@ -80,6 +88,13 @@ for (const [k, v] of Object.entries(NACHFOLGER)) {
   quelle[k] = de[k];
 }
 
+const mitMarke = [];
+for (const [k, v] of Object.entries(fixture)) {
+  if (!v.includes(MARKE_DE)) continue;
+  fixture[k] = v.replaceAll(MARKE_DE, MARKE_ZH);
+  mitMarke.push(k);
+}
+
 const PH = /\{(\w+)\}/g;
 const mengen = (s) => [...String(s).matchAll(PH)].map((m) => m[0]).sort().join(",");
 const fehler = [];
@@ -90,6 +105,9 @@ for (const [k, zh] of Object.entries(fixture)) {
   const nZh = (zh.match(/\*\*/g) || []).length;
   if (nDe !== nZh) fehler.push(`${k}: **-Marker — de ${nDe} vs zh ${nZh}`);
   if (zh !== zh.trim()) fehler.push(`${k}: fuehrende oder folgende Leerzeichen`);
+  for (const m of FREMDE_MARKEN) {
+    if (zh.includes(m)) fehler.push(`${k}: fremder Markenname „${m}" im chinesischen Text`);
+  }
 }
 
 const keys = Object.keys(fixture);
@@ -97,6 +115,7 @@ console.log(`Fixture: ${keys.length} Schluessel`);
 console.log(`  aus der CSV uebernommen : ${keys.length - Object.keys(NACHFOLGER).length}`);
 console.log(`  ueberholte CSV-Zeilen   : ${UEBERHOLT.size} (ersetzt durch ${Object.keys(NACHFOLGER).length})`);
 console.log(`  seit d9763883 entfallen : ${ENTFALLEN.size} — ${[...ENTFALLEN].join(", ")}`);
+console.log(`  Marke eingesetzt        : ${mitMarke.length} — ${mitMarke.join(", ") || "keiner"}`);
 console.log(`  deutscher Katalog       : ${Object.keys(de).length} Schluessel`);
 for (const f of fehler) console.log(`  FEHLER ${f}`);
 if (fehler.length) process.exit(1);

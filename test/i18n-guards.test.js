@@ -431,6 +431,9 @@ describe("i18n · Zahl- und Satzformate", () => {
     de: { open: "„", close: "“" },
     en: { open: "“", close: "”" },
     es: { open: "“", close: "”" },
+    // #zh-hans: Chinesisch setzt Vollbreiten-Ecken. Sie kommen damit auch in ALL_QUOTES und
+    // sind ab jetzt fuer de/en/es fremde Zeichen — die Paar-Regel wird schaerfer, nicht milder.
+    "zh-Hans": { open: "「", close: "」" },
   };
   const ALL_QUOTES = [...new Set(Object.values(QUOTES).flatMap((q) => [q.open, q.close]))];
 
@@ -658,7 +661,12 @@ describe("i18n · Terminologie", () => {
      „Autostich" als Nähbegriff). Am 26.08.2026 auf Spanisch angewandt statt neu verhandelt: der
      spanische Stich ist die „baza", also Autobaza. Die Marke folgt damit in jeder Sprache derselben
      Abbildung wie das Wort in ihr (Stich → trick → baza). */
-  const BRAND = { de: "Autostich", en: "Autotrick", es: "Autobaza" };
+  /* #zh-hans, 26.08.2026: dieselbe Abbildung ein drittes Mal angewandt statt neu verhandelt.
+     Der chinesische Stich ist die 墩, also 自动墩 — „automatischer Stich", die Konstruktion von
+     Autostich und Autobaza. Die Order zum Muster sagte noch „Autostich nicht übersetzen"; das
+     war vor dieser Regel geschrieben und ist damit überholt, denn zwei Sprachen mit derselben
+     Marke entwerten die Kreuzprüfung unten. */
+  const BRAND = { de: "Autostich", en: "Autotrick", es: "Autobaza", "zh-Hans": "自动墩" };
 
   it("die Marke trägt je Sprache ihren eigenen Namen — nie über Kreuz", () => {
     for (const loc of LOCALE_IDS) {
@@ -833,16 +841,16 @@ describe("i18n · Auflösung", () => {
       expect(setLocale(loc), `${loc} ist nicht ready und darf nicht wählbar sein`).toBe(DEFAULT_LOCALE);
     }
     setLocale(before);
-    expect(LOCALE_IDS).toEqual(["de", "en", "es"]);
-    /* Seit dem 26.08.2026 ist Spanisch fertig (#es-translate), also ist JEDE angemeldete Sprache
-       auch ausgeliefert — und die Schleife darüber läuft heute über eine leere Menge.
+    expect(LOCALE_IDS).toEqual(["de", "en", "es", "zh-Hans"]);
+    /* Zwischen dem 26.08.2026 und der Anmeldung von zh-Hans war JEDE angemeldete Sprache auch
+       ausgeliefert, und die Schleife darüber lief über eine leere Menge. Damals wurde das hier
+       ausgesprochen statt verschwiegen, mit der Ansage, sie schärfe sich wieder, sobald eine
+       vierte Sprache angemeldet wird.
 
-       Das wird hier ausgesprochen statt verschwiegen: die Schleife prüft ab jetzt nichts mehr,
-       bis eine vierte Sprache angemeldet wird, und schärft sich in genau dem Moment von selbst
-       wieder. Die Zeile darunter ist das, was heute tatsächlich gemessen wird. Ein stillschweigend
-       leerer Durchlauf wäre die gefährlichere Variante — dieselbe Falle, in die die Sonde der
-       Rückfallkette weiter unten schon einmal getappt ist. */
-    expect(unfertig, "angemeldet, aber nicht ausgeliefert").toEqual([]);
+       Genau das ist jetzt eingetreten (#zh-hans): der Katalog ist ein Fixture aus der
+       Muster-Übersetzung und bewusst unvollständig. Die Schleife misst damit wieder etwas —
+       nämlich dass `setLocale` eine angemeldete, aber unfertige Sprache abweist. */
+    expect(unfertig, "angemeldet, aber nicht ausgeliefert").toEqual(["zh-Hans"]);
     expect(READY_LOCALE_IDS).toEqual(["de", "en", "es"]);
   });
 
