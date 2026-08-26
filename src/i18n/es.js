@@ -267,6 +267,277 @@ export default {
   "rail.trend.record": "Récord",
   "rail.trend.first": "primera partida",
 
+  /* ---- Archetype bars (StatusBar.jsx) ----
+     Vocabulary per package §3.4, with one deliberate departure: the ice resource is `nieve`, not
+     the `neviza` the package proposes for "Firn". The German text was renamed Firn -> Schnee
+     before this task started (the key names still say `firn`, the strings say Schnee/snow), so
+     `neviza` would translate a word the game no longer says. Recorded in unsicherheiten_es.md. */
+
+  /* Fire */
+  "bar.fire.heat": "Calor",
+  "bar.fire.conflagReady": " · INCENDIO LISTO",
+  "bar.fire.whiteGlow": " · CALOR BLANCO",
+  "bar.fire.state.conflag": "Incendio listo",
+  "bar.fire.state.white": "Calor blanco",
+  "bar.fire.state.over": "Sobrecalentamiento +{n} % de puntuación de fuego",
+  "bar.fire.state.heat": "Calor {value}/{max}",
+  "bar.fire.badge.fireRoll": "Oleada de fuego",
+  "bar.fire.badge.fireRoll.n": "Oleada de fuego +{n}",
+  "bar.fire.badge.glow": "Hoja incandescente",
+  "bar.fire.badge.glow.n": "Hoja incandescente +{n}",
+  "bar.fire.badge.glow.title": "Hoja incandescente: +{v1} desde {h1} % de calor · +{v2} desde {h2} % · +{v3} con {h3} % de calor. Los niveles superiores exigen por segmento una victoria con más de {m2} o {m3} de ventaja en valor de combate; si un segmento se queda sin ella, retrocedes.",
+  "bar.fire.badge.spark": "Lluvia de chispas",
+  "bar.fire.badge.spark.n": "Lluvia de chispas {n}",
+  "bar.fire.badge.spark.title": "Depósito de lluvia de chispas: las victorias por debajo de {m} de ventaja en valor de combate ingresan, y una victoria desde {m} lo reparte. Una derrota lo reduce a la mitad.",
+  "bar.fire.tick.glow": "Hoja incandescente: +valor desde {n} % de calor",
+  "bar.fire.tick.full": "100 % de calor; por encima empieza el sobrecalentamiento",
+  "bar.fire.tick.white": "Calor blanco: el calor por encima del 100 % se acumula como sobrecalentamiento (hasta {max} %); cuanto más caliente, menos llega. Cada punto da +{n} % sobre toda la puntuación de fuego y se disipa de nuevo en cada baza.",
+  "bar.fire.ash": "Ceniza",
+  "bar.fire.ash.title": "Ceniza: {text}",
+  "bar.fire.forges": "Forjas",
+  "bar.fire.forges.title": "Valor de carta forjado: suma de las mejoras ⚒ en todas las cartas.",
+  "bar.fire.yield": "Rendimiento de fuego",
+  "bar.fire.yield.base": "Puntuación de fuego",
+  "bar.fire.yield.over": "Desbordamiento",
+  "bar.fire.yield.over.hint": "Calor blanco (sobrecalentamiento por encima del 100 % de calor) + brasa de ceniza (ceniza por encima de la capacidad de la forja)",
+  "bar.fire.overRun": "en toda la partida",
+  "bar.fire.ashBurned": "Ceniza quemada",
+  "bar.fire.brand": "Marca · rival",
+
+  /* Lightning */
+  "bar.lightning.chain": "🔗 Cadena de racha",
+  "bar.lightning.chain.holds": " · aguanta",
+  "bar.lightning.saturation": "🌐 Saturación de tormenta",
+  "bar.lightning.breadth": "Amplitud de tormenta",
+  "bar.lightning.breadth.payoff": "+{n} de valor / carta",
+  "bar.lightning.depth": "Intensidad de tormenta",
+  "bar.lightning.depth.payoff": "Arco: {n} puntos porcentuales → 1 carga",
+  "bar.lightning.state.full": "Carga completa",
+  "bar.lightning.state.crit": "Crítico ×{mult}",
+  "bar.lightning.state.charge": "Carga {charge}/{max}",
+  "bar.lightning.fullBadge": " · CARGA COMPLETA",
+  "bar.lightning.noConsumer": "Llena: sin consumidor la carga se pierde. Elige {skill} para gastarla.",
+  "bar.lightning.consumes": "Descargas",
+  "bar.lightning.consumes.title": "Consumos de carga completa en esta partida: el ritmo central de la tormenta.",
+  "bar.lightning.storm": "Frente de tormenta",
+  "bar.lightning.storm.title": "Frente de tormenta: impulso de probabilidad de crítico por descarga (hasta +{cap} %).",
+  "bar.lightning.discharge": "Descarga",
+  "bar.lightning.discharge.title": "Descarga: impulso permanente del multiplicador de crítico por descarga.",
+  "bar.lightning.frequency": "Frecuencia de rayo",
+  "bar.lightning.frequency.over": "Crítico al máximo: la barra muestra ahora el multiplicador de crítico.",
+  "bar.lightning.frequency.title": "Probabilidad de crítico de la próxima victoria.",
+  "bar.lightning.streakGuard": "Protección de racha: una derrota con carga suficiente mantuvo la racha (½ carga gastada).",
+  "bar.lightning.streak.broken": "rota",
+
+  /* Ice */
+  "bar.ice.chip.title": "Glaciar · masa {mass} · nivel {tier}",
+  "bar.ice.chip.title.burst": "Glaciar · masa {mass} · nivel {tier} · ESTALLA",
+  "bar.ice.bursting": "Estalla",
+  "bar.ice.critical": "crítica",
+  "bar.ice.playOrder": "Orden de juego (posición)",
+  "bar.ice.cardValue": "Valor de carta",
+  "bar.ice.state.ready": "Estallido listo",
+  "bar.ice.state.count": "{n} glaciares",
+  "bar.ice.yield": "Rendimiento de glaciar",
+  "bar.ice.cascade": "Cascada",
+  "bar.ice.cascade.unit": "estallan",
+  "bar.ice.biggest": "Mayor agrupación",
+  "bar.ice.empty": "Aún no hay glaciares. Congela cartas en la fase de orden.",
+  "bar.ice.firnGround": "La nieve se acumula",
+  "bar.ice.firnReserve": "Reserva del suelo",
+  "bar.ice.frozenOpp": "Rivales congelados",
+  "bar.ice.duoBuff": "Bonificación de dúo",
+  "bar.ice.avalanche.ready": "Gran avalancha · lista",
+  "bar.ice.avalanche.used": "Gran avalancha · gastada",
+
+  /* Plant */
+  "bar.plant.yield": "Rendimiento del jardín",
+  "bar.plant.root": "Raíz",
+  "bar.plant.bloom": "Floración",
+  "bar.plant.harvest": "Cosecha",
+  "bar.plant.grown": "Crecido",
+  "bar.plant.grown.unit": "crecimiento total",
+  "bar.plant.trimmed": "✂ Podado",
+  "bar.plant.trimmed.unit": "· raíz/floración",
+  "bar.plant.trimmed.title": "Poda: cada habilidad de crecimiento sustituida ({skills}) eleva de forma permanente la puntuación de raíz y floración.",
+  "bar.plant.tallest": "🌳 Árbol más alto",
+  "bar.plant.tallest.value": "Valor {value}",
+  "bar.plant.overflow": "· desbordamiento",
+  "bar.plant.perWin": "puntuación/victoria",
+  "bar.plant.tallest.title": "Árbol madre: el árbol más profundo (crecimiento de desbordamiento por encima del tope de valor) paga en cada victoria verde y duplica su puntuación de raíz.",
+  "bar.plant.forest": "🌲 Bosque",
+  "bar.plant.forest.unit": "crecimiento de desbordamiento",
+  "bar.plant.forest.title": "Árbol del mundo: la suma del crecimiento de desbordamiento de todas las cartas verdes paga en cada victoria verde (todo el bosque viejo).",
+  "bar.plant.state.overgrown": "Invadido",
+  "bar.plant.state.green": "Verde {pct} %",
+  "bar.plant.share": "Proporción verde del campo",
+  "bar.plant.share.badge": " · INVADIDO",
+  "bar.plant.share.value": "{green} / {total} · {pct} %",
+  "bar.plant.share.title": "Proporción de cartas verdes (maduras y desarrolladas) en el campo.",
+  "bar.plant.mark.spring": "Prim. eterna",
+  "bar.plant.mark.spring.title": "Primavera eterna: la invasión empieza ya con {pct} % del campo verde",
+  "bar.plant.mark.overgrowth": "Invasión",
+  "bar.plant.mark.overgrowth.title": "Invasión: desde {pct} %, todos los bloques de palo +factor",
+  "bar.plant.nextRipe": "Próxima maduración",
+  "bar.plant.nextRipe.title": "Estimación aproximada: la próxima plántula se pone verde (a partir de la tasa de crecimiento × distancia restante).",
+  "bar.plant.nextRipe.wins_one": "~{count} victoria",
+  "bar.plant.nextRipe.wins_other": "~{count} victorias",
+  "bar.plant.stage.seed": "Plántula",
+  "bar.plant.stage.seed.title": "Cartas en crecimiento que aún no están maduras (barra = Ø progreso hasta la madurez).",
+  "bar.plant.stage.green": "Verde",
+  "bar.plant.stage.green.title": "Cartas verdes maduras con valor por debajo del tope (barra = Ø progreso hasta el tope de valor).",
+  "bar.plant.stage.full": "Desarrollada",
+  "bar.plant.stage.full.title": "Completamente desarrollada (valor {cap}).",
+  "bar.plant.strip.seed": "Plántula {growth}/{need}",
+  "bar.plant.strip.green": "Verde · V{value}",
+  "bar.plant.maturing": "Cartas madurando · {n}",
+  "bar.plant.maturing.more": "+{n} más",
+  "bar.plant.runners": "Estolones · colonizado",
+
+  /* ---- Battlefield (Battlefield.jsx) ----
+     The result banners take the canonical trio from package §3.1 — victoria / derrota / empate —
+     rather than a participle. "Gewonnen" has no gender in German; "ganada" would agree with
+     `baza`, and the same banner also sits over rows that are not a baza. The noun form is right in
+     every position (§4.4).
+
+     `bf.big.*` are the score announcements (§3.6), rendered in capitals by CSS. Stored in capitals
+     here the way the released English side stores them. The Spanish escalation chain is a SOUND
+     decision and goes to the owner in the decision block rather than being frozen here: the
+     English chain carries a release date (15.08.2026), the Spanish one does not yet. */
+  "bf.ready": "Listo: inicia el autobattler",
+  "bf.trickCount": "Baza {n} / {total}",
+  "bf.side.you": "Tú",
+  "bf.side.opponent": "Rival",
+  "bf.banner.win": "Victoria",
+  "bf.banner.winCrit": "Victoria · crítica",
+  "bf.banner.winTie": "Empate → victoria",
+  "bf.banner.loss": "Derrota",
+  "bf.banner.tie": "Empate",
+  "bf.big.fierce": "BIEN",
+  "bf.big.brutal": "BRUTAL",
+  "bf.big.insane": "DEMENCIAL",
+  "bf.big.godlike": "DIVINO",
+  "bf.big.avalanche": "AVALANCHA",
+  "bf.big.letsgo": "¡VAMOS!",
+  "bf.crit": "¡Crítico!",
+  "bf.crit.mult": "Crítico ×{n}",
+  "bf.bd.base": "Base",
+  "bf.bd.base.title": "Valor base de la victoria más todas las bonificaciones planas (ventajas, fijos de crítico, puntuación de arquetipo).",
+  "bf.bd.streak": "Racha",
+  "bf.bd.streak.title": "Multiplicador de la racha de victorias en curso.",
+  "bf.bd.perks": "Ventajas",
+  "bf.bd.perks.title": "Multiplicador de ventajas y familias, además de Ira Solar y los edificios de puntuación del Arquitecto.",
+  "bf.bd.form": "Form.",
+  "bf.bd.form.title": "Multiplicador de las formaciones en esta posición, incluidos Eco y Núcleo.",
+  "bf.bd.crit": "Crít.",
+  "bf.bd.crit.title": "Multiplicador de crítico de esta baza.",
+  "bf.bd.direct": "Directo",
+  "bf.bd.direct.title": "Puntuación directa que se salta la cadena: dividendo de brasas, rayo, planta, glaciar, Todo o Nada.",
+  "bf.bd.total": "Total",
+  "bf.bd.total.title": "Puntuación total de esta baza.",
+  "bf.bd.aria": "Desglose de la puntuación de la baza",
+
+  /* ---- Document title ----
+     The brand changes with the language and a guard fails the moment one catalog carries another
+     language's title (§3.1): Autostich · Autotrick · Autobaza. */
+  "meta.title": "Autobaza · Prototipo",
+
+  /* ---- Service-worker update prompt ---- */
+  "update.available": "Nueva versión disponible",
+  "update.reload": "Recargar",
+  "update.dismiss": "Ocultar",
+
+  /* ---- Skill selection (SkillSelect.jsx) ----
+     `habilidad` is feminine, so every badge and participle around a skill agrees feminine:
+     LEGENDARIA, seleccionada, Nueva. That is a fixed noun in the template rather than an inserted
+     one, so it is safe — unlike the `{name}` cases §4.4 warns about. */
+  "skill.eyebrow": "Habilidad · ciclo {cycle} · {held}/{slots} ranuras",
+  "skill.title": "Elige una habilidad",
+  "skill.arch.none": "Habilidad",
+  "skill.reroll": "🎲 Relanzar · {n}",
+  "skill.decline": "Rechazar → ventaja",
+  "skill.skipCycle": "Saltar la ronda",
+  "skill.bonus.hint": "Ranura extra de tu última ventaja. Elige otra habilidad ahora mismo.",
+  "skill.declinePlain": "Rechazar",
+  "skill.nav.prev": "tipo anterior",
+  "skill.nav.next": "tipo siguiente",
+  "skill.guide.title": "Guía: {arch}",
+  "skill.guide.aria": "Abrir la guía de {arch}",
+  "skill.more": "más",
+  "skill.less": "menos",
+  "skill.consumer.heat": "calor",
+  "skill.consumer.charge": "carga",
+  "skill.consumer.pre": "Ya tienes el consumidor de {kind}",
+  "skill.consumer.post": "lo sustituye (como máximo 1 consumidor de {kind}). Tu recurso actual se conserva.",
+  "skill.replace": "Sustituir",
+  "skill.cancel": "Cancelar",
+  "skill.slotsFull": "Ranuras llenas",
+  "skill.slotsFull.hint": "Las {slots} ranuras están ocupadas. Elige una habilidad nueva; una ventana te preguntará a cuál sustituye.",
+  "skill.replace.which": "¿Qué habilidad sustituyes?",
+  "skill.replace.new": "Nueva:",
+  "skill.replace.tap": "Toca la habilidad que debe salir.",
+  "skill.replace.this": "↔ sustituir esta",
+  "skill.badge.consumer": "CONSUMIDOR",
+  "skill.badge.legendary": "★ LEGENDARIA",
+  "skill.selected": "✓ seleccionada",
+  "skill.held": "Tus habilidades: {held}/{slots} · ya en tu poder",
+  "skill.heldBadge": "✓ en tu poder",
+  "skill.lastOfArch": "⚠ Última habilidad de {arch}: {loss}.",
+  "skill.lastOfArch.baked": " El valor de carta ya ganado se conserva.",
+  "skill.loss.plant": "se pierden todas las cartas verdes, el crecimiento y las colonizaciones",
+  "skill.loss.ice": "todos los glaciares se derriten; se pierden la masa y la reserva del suelo",
+  "skill.loss.fire": "se pierden el calor, la ceniza y el contador de forja",
+  "skill.loss.lightning": "se pierde la carga",
+  "skill.passive.head": "{arch} · pasiva",
+  "skill.passive.expand": "{arch}: desplegar la pasiva",
+  "skill.passive.collapse": "{arch}: plegar la pasiva",
+  "skill.passive.lightning": "La primera habilidad de Rayo da +{first} % de probabilidad de crítico, y cada una siguiente +{each} %. Además +{mult}× de multiplicador de crítico por cada habilidad de Rayo.",
+  "skill.passive.fire": "Las victorias desde {margin} de ventaja en valor de combate dan +{heat} % de calor y +{score} de puntuación de fuego. Cuanto mayor sea la ventaja, más de ambos. Las derrotas cuestan {cool} % de calor, más tu desventaja de valor, como máximo {coolMax}. Cada habilidad de Fuego adicional da +{perSkill} de puntuación de fuego por punto de ventaja.",
+  "skill.passive.ice": "Cada habilidad de Hielo congela una de tus cartas como glaciar, también cuando la cambias con las ranuras llenas. Deja de poder moverse en cualquier fase de orden, pero acumula masa en cada ciclo y acaba estallando sobre sus vecinas. A partir de {declineFrom} habilidades de Hielo en tu poder, incluso rechazar una oferta congela un glaciar, así que puedes tener más glaciares que ranuras de habilidad.",
+  "skill.passive.plant": "Cada victoria da a la carta hasta +1 de crecimiento, a pleno ritmo desde {ref} habilidades de Planta. Desde {green} de crecimiento se pone verde. Si solo tienes habilidades de Planta, cada {perValue} de crecimiento da +1 de valor de carta, hasta {cap}; entonces está completamente desarrollada. Desde {minSkills} habilidades de Planta crece además con cada {everyLoss} derrotas.",
+  "skill.forms.head": "Tus formaciones activas",
+  "skill.forms.expand": "Desplegar el tablero de orden",
+  "skill.forms.collapse": "Plegar el tablero de orden",
+  "skill.forms.iceTitle": "El hielo dobla la detección",
+
+  /* ---- Perk selection (PerkSelect.jsx) ----
+     `build` is kept as the borrowed word, exactly as the German keeps it: it is the established
+     roguelite term in Spanish too, and translating it to `configuración` would trade a word every
+     player of the genre knows for one nobody uses. */
+  "perk.start": "Inicio",
+  "perk.cycle": "Ciclo {cycle}",
+  "perk.title": "Elige una ventaja",
+  "perk.reroll": "🎲 Relanzar · {n}",
+  "perk.declineAll": "Rechazar todas",
+  "perk.stat.crit": "Crít.",
+  "perk.stat.scoreMult": "Mult. punt.",
+  "perk.upgrade": "⬆ MEJORAR · {from}→{to}",
+  "perk.onceHint": "Cada ventaja solo se puede elegir una vez por partida.",
+  "perk.deckStrength": "Fuerza del mazo por palo",
+  "perk.formations": "Formaciones",
+  "perk.build_one": "Tu build: {count} ventaja",
+  "perk.build_other": "Tu build: {count} ventajas",
+  "perk.build.empty": "Aún no has elegido ninguna ventaja.",
+
+  /* ---- Build summary ---- */
+  "build.perks.head": "Ventajas: {count}",
+  "build.skills.head": "Habilidades: {count}",
+  "build.perks.empty": "Aún no hay ventajas.",
+  "build.skills.empty": "Aún no hay habilidades.",
+  "build.perks.emptyRun": "Aún no hay ventajas. En algunos ciclos eliges una.",
+  "build.skills.emptyRun": "Aún no hay habilidades; se pueden elegir a partir del ciclo {cycle}.",
+  "build.skill.yield.term": "Rendimiento",
+  "build.skill.spark.yield": "hasta ahora **{score}** de puntuación en **{n}** repartos; **{store}** en el depósito.",
+  "build.skill.spark.empty": "aún sin reparto; **{store}** en el depósito.",
+  "build.deck.legend": "Barra = valor Ø · ◆ violeta = imbatible (>{over}, supera cualquier carta rival).",
+
+  /* ---- Legendary skill phase ---- */
+  "leg.fallbackLabel": "Legendaria",
+  "leg.eyebrow": "Legendaria · elección única",
+  "leg.title": "★ Habilidad legendaria",
+  "leg.reroll": "↻ Relanzar",
+  "leg.decline": "Sin legendaria, elegir una habilidad",
+
   /* ---- Order phase (FormationPhase.jsx) ----
      `form.hint.pre` + `form.hint.within` + `form.hint.post` are rendered as one sentence with the
      middle part emphasised. Spanish needs the preposition in the emphasised middle rather than at
@@ -398,4 +669,127 @@ export default {
   "glacierlegend.mark.compact": "azul = carta en formación activa",
   "glacierlegend.mark.pre": "Las cartas en una formación activa llevan una",
   "glacierlegend.mark.post": "azul · cuenta el factor más alto por tipo.",
+
+  /* ---- Family targeting ----
+     `famtarget.alreadyBound` avoids a participle after `{n}`: "ya con rol asignado" carries no
+     agreement, while "ya asignadas" would have to guess the gender of whatever is counted (§4.4). */
+  "famtarget.alreadyBound": " ({n} ya con rol asignado)",
+  "famtarget.pickType": "Elige un tipo de formación",
+  "famtarget.deck": "Tu mazo · formaciones actuales",
+  "famtarget.deck.arch": "Tu mazo · formaciones y edificios actuales",
+  "famtarget.ordered": "El orden cuenta: primer palo = ganador (+), segundo = perdedor (−)",
+  "famtarget.pickSuits_one": "Elige un palo",
+  "famtarget.pickSuits_other": "Elige {count} palos",
+  "famtarget.deckValues": "Valores del mazo por palo",
+  "famtarget.strength": "Fuerza de formación:",
+
+  /* ---- Cycle score ---- */
+  "roundscore.label": "Puntuación del ciclo",
+  "roundscore.diff": "{sign}{pct} %",
+  "roundscore.diff.title": "Diferencia con el ciclo anterior",
+  "roundscore.noPrev.title": "no hay ciclo anterior con el que comparar",
+  "roundscore.firstCycle": "primer ciclo",
+
+  /* ---- Interest / investment perk ---- */
+  "zins.capital": "Capital:",
+  "zins.rate": "· tipo de interés",
+  "zins.payout": "Pago si tiene éxito:",
+  "zins.wins": "Victorias en este ciclo:",
+  "zins.cleared": "· obstáculo superado",
+  "zins.crash": "· si no, quiebra",
+  "zins.paid": "Pagado hasta ahora:",
+
+  /* ---- Card detail panel ---- */
+  "carddetail.empty": "Toca una carta para ver rol y modificadores …",
+  "carddetail.origin": "Origen {base} (+{boost} de valor de carta)",
+  "carddetail.roles": "Roles:",
+  "carddetail.none": "ninguno",
+  "carddetail.formations": "Formaciones:",
+  "carddetail.member": " (miembro)",
+  "carddetail.ion": "Ionización:",
+  "carddetail.fieldCrit": "+{pct} % de crítico de campo",
+  "carddetail.plant": "Planta:",
+  "carddetail.plant.full": "Desarrollada",
+  "carddetail.plant.ripe": "Verde (madura)",
+  "carddetail.plant.seed": "Plántula",
+  "carddetail.growth": "Crecimiento {n}",
+  "carddetail.cardValue": "Valor de carta {value} / {cap}",
+  "carddetail.rootScore": "+{n} de puntuación de raíz/victoria",
+  "carddetail.rootScore.tap": " (×2 form.)",
+  "carddetail.overflow": "Desbordamiento {n}",
+  "carddetail.fire": "Fuego:",
+  "carddetail.forged": "⚒ Forjada +{n} de valor de carta",
+  "carddetail.building": "🏗 Edificio:",
+  "carddetail.building.tier": " · nivel {tier}",
+  "carddetail.building.none": "sin efecto directo sobre esta carta",
+
+  /* ---- Card grid badges ---- */
+  "cardgrid.openBoundary": "⇕ límite abierto",
+  "cardgrid.arch.title": "🏗 {name} · +{boost} de valor",
+  "cardgrid.glacier.title": "Parte de una formación de glaciar activa (2D)",
+  "cardgrid.ripe.title": "Verde (madura): cuenta para el bloque de palo",
+  "cardgrid.anchor.title": "⚓ Ancla · {type}",
+
+  /* ---- Architect side panels ---- */
+  "archpanels.tapHint": "Al tocar se ve dónde está en el tablero, y a la inversa.",
+  "archpanels.roleLegend": "● Rol: objetivo de una ventaja o familia en esta carta",
+
+  /* ---- Sparkline ---- */
+  "sparkline.empty": "El historial aparece tras las primeras bazas…",
+  "sparkline.axis.x": "Bazas",
+  "sparkline.axis.y": "Puntuación",
+
+  /* ---- Chronicle ---- */
+  "chronik.eyebrow": "Crónica",
+  "chronik.title": "Vista de cartas",
+  "chronik.anchors": "Anclas",
+  "chronik.anchor.row": "⚓ Pos {pos} · {type}",
+  "chronik.formations": "Formaciones actuales",
+  "chronik.noFormations": "No hay formaciones activas con multiplicador.",
+  "chronik.archPhase": "🏗 Fase del Arquitecto",
+  "chronik.archCount": "{n} edificios · {used}/{max} celdas",
+
+  /* ---- Weekly modifiers ---- */
+  "weekmods.title": "Modificadores semanales",
+  "weekmods.range": " ({from}–{to})",
+
+  /* ---- App-level dialogs ---- */
+  "app.abort.title": "¿Pausar o terminar la partida?",
+  "app.abort.help": "Terminar y guardar recuerda la partida; puedes continuarla más tarde desde el menú. Terminar la puntúa y muestra la pantalla final.",
+  "app.abort.save": "Terminar y guardar",
+  "app.keepPlaying": "Seguir jugando",
+  "app.end": "Terminar",
+  "app.abort.save.sub": "La partida se recuerda y la continúas más tarde desde el menú.",
+  "app.abort.end.sub": "La partida se puntúa y aparece la pantalla final.",
+  "app.keepPlaying.sub": "De vuelta al juego, no pasa nada.",
+  "app.restart.title": "¿Seguro que quieres reiniciar?",
+  "app.restart": "Reiniciar",
+  "app.restart.help": "La partida actual se descarta y empieza una nueva de inmediato. Esto no se puede deshacer.",
+
+  /* ---- Music ---- */
+  "music.title": "Música",
+  "music.next": "Pista siguiente",
+  "music.playing": "Sonando: {title} · pista siguiente",
+
+  /* ---- PWA install prompt ---- */
+  "pwa.install": "Instalar",
+  "pwa.title": "Añadir como aplicación a la pantalla de inicio",
+  "pwa.ios": "Con el icono de compartir → “Añadir a pantalla de inicio”.",
+
+  /* ---- Performance overlay (dev) ---- */
+  "perf.report": "Informe → consola y portapapeles",
+  "perf.reset": "Restablecer la medición",
+
+  /* ---- Run loader ---- */
+  "runloader.loading": "Cargando el mazo …",
+
+  /* ---- Dev run configurator ---- */
+  "dev.legendary": "★ Legendaria",
+  "dev.run.title": "DEV RUN",
+  "dev.run.sub": "Partida de prueba configurable libremente, solo para desarrolladores.",
+  "dev.run.cycles": "Ciclos",
+  "dev.run.offerTypes": "Tipos de oferta en el plan",
+  "dev.run.distribute": "⇄ Repartir de forma uniforme",
+  "dev.run.plan": "Plan por ciclo",
+  "dev.run.energy": "Energía de orden",
 };
