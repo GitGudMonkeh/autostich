@@ -293,7 +293,6 @@ describe("i18n · Katalog-Parität", () => {
      in keiner Sprache uebersetzt werden. Die erfundenen Deck- und Effektnamen faengt schon
      SAME_OK_CLASS ab und stehen deshalb nicht noch einmal hier. */
   const SAME_OK_ZH = new Set([
-    "hud.speed.max.label",         // „MAX" — Kuerzel auf dem Tempo-Knopf
     "options.chip.display",        // „HUD" — das Kuerzel der Sprungleiste
     "dev.run.title",               // „DEV RUN" — Dev-Bildschirm, bewusst unuebersetzt
     "start.board.week.val",        // „{have}/{max}" — nur Ziffern und ein Schraegstrich
