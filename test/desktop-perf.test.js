@@ -22,6 +22,23 @@ import { DESKTOP_BLOCK_AT } from "./desktopBreakpoint.js";
 const src = (p) => readFileSync(new URL(`../src/${p}`, import.meta.url), "utf8");
 const css = src("index.css");
 
+/* #mainscreen-branding C3 — KOMMENTARE RAUS, BEVOR KLASSEN GEZAEHLT WERDEN.
+
+   Die Ratsche unten zaehlt, wie oft `as-ring` und `as-ring-run` in einer Datei VORKOMMEN, und liest
+   dafuer den rohen Quelltext. Das ist ein Stellvertreter fuer die Aussage, die sie eigentlich macht —
+   *jedes Element mit `as-ring` hat genau ein `as-ring-run` als Kind* — und der Stellvertreter bricht
+   an einer Stelle, an der nichts kaputt ist: an einem KOMMENTAR, der eine der beiden Klassen nennt.
+
+   Gemessen: `StartScreen.jsx` bekam in C3 einen Kommentar, der `.as-ring` erwaehnt, und der Waechter
+   meldete „3x as-ring, aber 2x as-ring-run" an einer Datei, in der sich am Markup nichts geaendert
+   hatte. Zweiter Fall dieser Sorte in dieser Runde (M11-F06 war der erste, an einem anderen Waechter).
+
+   DAS IST KEINE AUFWEICHUNG, SONDERN DIE INVARIANTE. Der Fehler geht in BEIDE Richtungen: so wie ein
+   Kommentar bisher einen Fehlalarm ausloesen konnte, konnte ein Kommentar, der `as-ring-run` nennt,
+   ein FEHLENDES Kind zudecken. Nach dem Strippen zaehlt der Waechter, was er zu zaehlen behauptet.
+   Gegenproben dazu in `docs/workstreams/mainscreen-branding/evidence/C3/counter-checks.txt`. */
+const stripComments = (s) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
+
 // Alle JSX-Dateien, die Klassen vergeben.
 const jsxFiles = ["App.jsx", ...readdirSync(new URL("../src/ui", import.meta.url))
   .filter((f) => f.endsWith(".jsx")).map((f) => `ui/${f}`)];
@@ -30,7 +47,7 @@ describe("#perf-ring — der Ring ist ein Paar aus zwei Boxen", () => {
   it("jedes `as-ring` hat genau ein `as-ring-run` als Kind", () => {
     const fehlt = [];
     for (const f of jsxFiles) {
-      const s = src(f);
+      const s = stripComments(src(f));
       // `as-ring` OHNE Bindestrich dahinter — sonst zaehlt `as-ring-run` doppelt.
       const ringe = (s.match(/as-ring(?![-\w])/g) || []).length;
       const kinder = (s.match(/as-ring-run/g) || []).length;
@@ -136,9 +153,23 @@ describe("#flach — der Baum haelt seinen Inhalt im Rahmen", () => {
   it("Panel klemmt, Knotenspalten scrollen, die Rasterzeile waechst nicht mit dem Bild", () => {
     expect(css).toMatch(/\.up-page \{[^}]*overflow:\s*hidden/);
     expect(css).toMatch(/\.up-vgrid \{[^}]*overflow-y:\s*auto/);
-    // Der Kern: ohne die Zeilenangabe zieht die Challenge-Karte das ganze Raster aus dem Panel.
+    // Der Kern: ohne die Zeilenangabe waechst die einzige Rasterzeile nach ihrem hoechsten Kind.
     expect(css).toMatch(/\.up-facbody \{[^}]*grid-template-rows:\s*minmax\(0,\s*1fr\)/);
-    expect(css).toMatch(/\.up-chall \{[^}]*max-height:\s*100%/);
+    /* #menu-rework M3 — hier stand `.up-chall { max-height: 100% }`, und das war der MECHANISMUS,
+       nicht die Zusicherung: die Challenge war eine Karte IM Rasterkoerper, mit einem Deckbild, das
+       auf flachen Fenstern hoeher war als der ganze Platz — der Deckel hielt sie im Rahmen.
+       Die Karte ist gefallen (sie verbarg gemessen 151 px ihres eigenen Inhalts bei 1280 x 720); die
+       Challenge ist jetzt eine Zeile am FUSS des Panels und steht gar nicht mehr im Raster.
+       Damit haengt die Zusicherung an zwei anderen Stellen, und beide werden hier geprueft statt der
+       alten Zeile: der Scroller, der die Resthoehe jetzt allein traegt, und die Gegenprobe, dass in
+       den Rasterkoerper NICHTS ausser der Skill-Liste zurueckwandert. Die zweite ist die wichtigere —
+       ein zweites Kind mit Bild waere genau der alte Fehler in neuem Gewand. */
+    expect(css).toMatch(/\.up-skills \{[^}]*min-height:\s*0[^}]*overflow-y:\s*auto/);
+    const jsx = src("ui/UpgradeScreen.jsx");
+    const body = jsx.match(/className="up-facbody">([\s\S]*?)<\/div>/);
+    expect(body, ".up-facbody nicht mehr gefunden").toBeTruthy();
+    const kinder = [...body[1].matchAll(/<([A-Z][A-Za-z0-9]*)/g)].map((m) => m[1]);
+    expect(kinder, "im Rasterkoerper steht etwas anderes als die Skill-Liste").toEqual(["SkillGrid"]);
   });
 });
 
@@ -161,18 +192,34 @@ describe("#breite — alle gerahmten Screens stehen gleich breit im Bild", () =>
 });
 
 describe("#rd-scroll — die Lauf-Details müssen scrollen können", () => {
-  it("der Wurzelknoten hat den Scroller und verankert die Karte oben", () => {
+  it("EIN Element trägt den Scroller, und die Karte klemmt nur, wenn es ein anderes tut", () => {
     /* Der Fehler, wie er ausgeliefert war: die Karte gab auf dem Desktop ihren eigenen Scroller ab
        (`overflow: visible`, sonst klippte sie die Kopfzeile) — und der Wurzelknoten hatte nie einen.
-       Inhalt über der Fensterhöhe war damit unerreichbar. `align-items: flex-start` gehört dazu:
-       ein zentriertes Flex-Kind, das höher ist als sein Container, ragt nach OBEN heraus, und dorthin
-       kommt kein Scrollbalken. Statistik und Bestenliste tragen ihren Scroller im JSX. */
+       Inhalt über der Fensterhöhe war damit unerreichbar.
+
+       #menu-rework M7 — DIE ZUSICHERUNG IST DIE ERREICHBARKEIT, NICHT DER MECHANISMUS, und die alte
+       Fassung nagelte den Mechanismus fest: „die Karte darf sich NICHT auf die Fensterhöhe klemmen".
+       Seit der Kopf den Scroller verlassen hat, KLEMMT sie — und genau deshalb ist der Inhalt
+       erreichbar: `.rd-body` scrollt darunter. Beide Bauarten sind richtig, und die falsche ist die
+       dritte: geklemmte Karte OHNE inneren Scroller. Genau die schließt dieser Test jetzt aus.
+
+       `align-items: flex-start` gehört weiter dazu: ein zentriertes Flex-Kind, das höher ist als sein
+       Container, ragt nach OBEN heraus, und dorthin kommt kein Scrollbalken. */
     const rdRoot = css.match(/\.rd-root \{([^}]*)\}/);
     expect(rdRoot, ".rd-root-Regel fehlt").toBeTruthy();
     expect(rdRoot[1]).toMatch(/overflow-y:\s*auto/);
     expect(rdRoot[1]).toMatch(/align-items:\s*flex-start/);
-    // Und die Karte darf sich NICHT wieder auf die Fensterhöhe klemmen — sonst scrollt gar nichts mehr.
-    expect(css).toMatch(/\.rd-card \{[^}]*max-height:\s*none/);
+    const cardRule = css.match(/\.rd-card \{([^}]*)\}/);
+    expect(cardRule, ".rd-card-Regel fehlt").toBeTruthy();
+    const geklemmt = /max-height:\s*(?!none)[^;]*;/.test(cardRule[1]);
+    if (geklemmt) {
+      const body = css.match(/\.rd-body \{([^}]*)\}/);
+      expect(body, "die Karte klemmt, aber es gibt keinen .rd-body — der Inhalt wäre unerreichbar").toBeTruthy();
+      expect(body[1], ".rd-body scrollt nicht — geklemmte Karte ohne inneren Scroller schneidet ab")
+        .toMatch(/overflow-y:\s*auto/);
+      expect(body[1], ".rd-body kann ohne `min-height: 0` nicht unter seine Inhaltshöhe schrumpfen")
+        .toMatch(/min-height:\s*0/);
+    }
   });
 
   it("die vier Panels tragen den Ring wie die Statistik-Sektionen", () => {
@@ -257,7 +304,25 @@ describe("#lb-rahmen — die Bestenliste steht wie die anderen Screens im Bild",
 
 describe("#ueberzug — alle Overlays liegen gleich stark auf dem Hauptschirm", () => {
   it("auch die Lauf-Details, sie waren als einzige deckend", () => {
-    expect(css).toMatch(/\.rd-root \{[^}]*background:\s*rgba\(12,\s*12,\s*16,\s*\.94\)/);
+    /* #menu-rework M7 — GEPRUEFT WIRD „DERSELBE UEBERZUG WIE DIE NACHBARN", NICHT SEINE SCHREIBWEISE.
+       Der Wert steht seit diesem Auftrag als `var(--sf-scrim-desk)` da statt als `rgba(12, 12, 16,
+       .94)` — dasselbe Bild, ein Literal weniger. Die alte Fassung tippte die Zahl ab und waere an
+       genau dieser Umstellung gefallen, ohne dass sich ein Pixel bewegt haette. Verglichen wird
+       deshalb gegen die drei randverankerten Screens: liegt das Lauf-Fenster auf demselben Ueberzug
+       wie sie, ist die Zusicherung erfuellt, egal wie er geschrieben ist. */
+    const wert = (sel) => {
+      const m = css.match(new RegExp(`${sel} \\{([^}]*)\\}`));
+      if (!m) return null;
+      const b = m[1].match(/(?:^|;|\s)background:\s*([^;]+);/);
+      return b ? b[1].replace(/\s*!important/, "").trim() : null;
+    };
+    const nachbarn = wert("\\.st-root, \\.lb-root, \\.go-root");
+    expect(nachbarn, "die Regel der drei randverankerten Screens ist nicht mehr auffindbar").toBeTruthy();
+    expect(wert("\\.rd-root"), "das Lauf-Fenster liegt anders auf dem Hauptschirm als seine Nachbarn")
+      .toBe(nachbarn);
+    /* Und die Gegenprobe, dass es wirklich der Ueberzug-Schritt ist und nicht irgendein geteilter
+       Wert: er muss den Desktop-Wasch nennen, den das Vokabular fuehrt. */
+    expect(nachbarn).toMatch(/--sf-scrim-desk|rgba\(12,\s*12,\s*16,\s*\.94\)/);
   });
 });
 

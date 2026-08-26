@@ -6,7 +6,7 @@ import { unlockLabel } from "../src/i18n/unlockText.js"; // #sprache: der Klarte
 import { setLocale, SOURCE_LOCALE } from "../src/i18n/index.js";
 
 // Minimal-Profil-Helfer (nur die Felder, die die Freischalt-Logik liest).
-const prof = (o = {}) => ({ games: 0, bestStreak: 0, bestScore: 0, hadNoRerollRun: false, ...o });
+const prof = (o = {}) => ({ games: 0, runsCompleted: 0, bestStreak: 0, bestScore: 0, hadNoRerollRun: false, ...o });
 
 describe("cosmetics — Katalog", () => {
   it("Default-Decks/Battlefields sind ohne unlock (immer frei)", () => {
@@ -17,11 +17,11 @@ describe("cosmetics — Katalog", () => {
     for (const id of ["deck_p1", "deck_p2", "deck_p3", "deck_p4"]) expect(DECK_DEFS[id]).toBeUndefined();
     for (const id of ["bf_1", "bf_2", "bf_3", "bf_4"]) expect(BATTLEFIELD_DEFS[id]).toBeUndefined();
   });
-  it("isUnlocked/unlockProgress verarbeiten die games-Bedingung weiterhin generisch", () => {
-    const def = { unlock: { kind: "games", n: 10 } };
-    expect(isUnlocked(def, prof({ games: 9 }))).toBe(false);
-    expect(isUnlocked(def, prof({ games: 10 }))).toBe(true);
-    expect(unlockProgress(def, prof({ games: 4 })).cur).toBe(4);
+  it("isUnlocked/unlockProgress verarbeiten die Laufzahl-Bedingung weiterhin generisch", () => {
+    const def = { unlock: { kind: "completedGames", n: 10 } };
+    expect(isUnlocked(def, prof({ runsCompleted: 9 }))).toBe(false);
+    expect(isUnlocked(def, prof({ runsCompleted: 10 }))).toBe(true);
+    expect(unlockProgress(def, prof({ runsCompleted: 4 })).cur).toBe(4);
   });
   it("v0.4 Kauf-Pack-Decks haben eine buy-Bedingung; alte Challenge-Decks sind entfernt", () => {
     for (const id of ["deck_beach", "deck_cat", "deck_spacedog", "deck_wale"]) {
@@ -44,15 +44,30 @@ describe("cosmetics — Katalog", () => {
       expect(unlockProgress(def, prof({ onboarding: 6 })).done).toBe(true);
     }
   });
-  it("games-Bedingung nur noch für das Hirsch-Stufen-Deck (#tiered: 10/20/30 abgeschlossene Läufe)", () => {
-    const deckGames = Object.values(DECK_DEFS).filter((d) => d.unlock?.kind === "games").map((d) => d.id);
-    const bfGames   = Object.values(BATTLEFIELD_DEFS).filter((d) => d.unlock?.kind === "games").map((d) => d.id);
+  /* An der Laufzahl-Bedingung hängt die Hirsch-Leiter (10/20/30). Die Erwartung bleibt eine HARTE Liste
+     statt eines `contains`, denn genau das ist ihr Zweck: eine neue Schwelle soll auffallen, weil
+     sie sich mit der Leiter überschneiden könnte.
+
+     NACHGEZOGEN, ZWEIMAL — „Insert Coin" stand hier mit `games: 1` und ist ganz ausgezogen (es hängt
+     an `completedRun`). Und die Leiter selbst zählt nicht mehr `games`, sondern `runsCompleted`: `profile.games`
+     zählt jeden BEGONNENEN Lauf, Abbrüche eingeschlossen, das Deck ging also nach einem Abbruch auf
+     (gemeldet). Es hängt jetzt an `completedRun`; die Prüfungen dazu stehen weiter unten in einer
+     eigenen Gruppe. Die Aussage dieser Gruppe ist unverändert — sie ist nur wieder allein über die
+     Leiter, für die sie geschrieben wurde. */
+  it("Laufzahl-Bedingung: nur die Hirsch-Stufen (10/20/30)", () => {
+    const deckGames = Object.values(DECK_DEFS).filter((d) => d.unlock?.kind === "completedGames").map((d) => d.id);
+    const bfGames   = Object.values(BATTLEFIELD_DEFS).filter((d) => d.unlock?.kind === "completedGames").map((d) => d.id);
+    // Die alte, abbruch-blinde Bedingung darf NIRGENDS mehr stehen — sonst zählt wieder ein Abbruch mit.
+    expect(Object.values({ ...DECK_DEFS, ...BATTLEFIELD_DEFS }).filter((d) => d.unlock?.kind === "games")).toEqual([]);
     expect(deckGames).toEqual(["deck_hirsch1", "deck_hirsch2", "deck_hirsch3"]);
     expect(bfGames).toEqual(["bf_hirsch1", "bf_hirsch2", "bf_hirsch3"]);
     // korrekte Schwellen
     expect(DECK_DEFS.deck_hirsch1.unlock.n).toBe(10);
     expect(DECK_DEFS.deck_hirsch2.unlock.n).toBe(20);
     expect(DECK_DEFS.deck_hirsch3.unlock.n).toBe(30);
+    // keine Schwelle doppelt: sonst gingen zwei Decks gleichzeitig auf, die Meldung zeigt aber nur eins
+    const ns = deckGames.map((id) => DECK_DEFS[id].unlock.n);
+    expect(new Set(ns).size).toBe(ns.length);
   });
 });
 
@@ -62,11 +77,13 @@ describe("cosmetics — isUnlocked", () => {
     expect(isUnlocked(DECK_DEFS.default, prof())).toBe(true);
   });
 
-  it("games: erst ab der Schwelle frei", () => {
-    const d = { unlock: { kind: "games", n: 5 } };
-    expect(isUnlocked(d, prof({ games: 4 }))).toBe(false);
-    expect(isUnlocked(d, prof({ games: 5 }))).toBe(true);
-    expect(isUnlocked(d, prof({ games: 99 }))).toBe(true);
+  it("abgeschlossene Läufe: erst ab der Schwelle frei — Abbrüche zählen nicht mit", () => {
+    const d = { unlock: { kind: "completedGames", n: 5 } };
+    expect(isUnlocked(d, prof({ runsCompleted: 4 }))).toBe(false);
+    expect(isUnlocked(d, prof({ runsCompleted: 5 }))).toBe(true);
+    expect(isUnlocked(d, prof({ runsCompleted: 99 }))).toBe(true);
+    // Der gemeldete Fehler in seiner allgemeinen Form: viele begonnene Läufe, keiner zu Ende gespielt.
+    expect(isUnlocked(d, prof({ games: 99, runsCompleted: 0 }))).toBe(false);
   });
 
   it("streak/score: Schwellen greifen exakt", () => {
@@ -141,6 +158,39 @@ describe("cosmetics — isUnlocked", () => {
   });
 });
 
+describe("#deck-insertcoin — das Willkommens-Deck hängt am ABGESCHLOSSENEN Lauf", () => {
+  /* Gemeldet: „Insert Coin" ging auch nach einem ABGEBROCHENEN Lauf auf. Ursache war die Bedingung
+     `{ kind: "games", n: 1 }` — und `profile.games` zählt jeden begonnenen Lauf, Abbrüche
+     eingeschlossen. Der Merker dafür existierte längst und sagt es in storage.js selbst:
+     „Bewusst NICHT `games > 0`: das zählt auch Abbrüche, und wer nach zwei Stichen rausgeht, hat
+     nichts gesehen." Genau dieser Merker (`hadCompletedRun`) trägt die Bedingung jetzt.
+
+     Geprüft wird der Fall, der den Fehler ausmacht: EIN gespielter Lauf, aber keiner abgeschlossen. */
+  const abgebrochen = prof({ games: 1, hadCompletedRun: false });
+  const abgeschlossen = prof({ games: 1, hadCompletedRun: true });
+
+  it("ein abgebrochener Lauf schaltet weder Deck noch Spielfeld frei", () => {
+    expect(isUnlocked(DECK_DEFS.deck_insertcoin, abgebrochen)).toBe(false);
+    expect(isUnlocked(BATTLEFIELD_DEFS.bf_insertcoin, abgebrochen)).toBe(false);
+  });
+
+  it("ein abgeschlossener Lauf schaltet beide frei — Deck und Spielfeld gehen gemeinsam auf", () => {
+    expect(isUnlocked(DECK_DEFS.deck_insertcoin, abgeschlossen)).toBe(true);
+    expect(isUnlocked(BATTLEFIELD_DEFS.bf_insertcoin, abgeschlossen)).toBe(true);
+  });
+
+  it("der Fortschritt zeigt 0/1 bzw. 1/1 — kein Zähler über Läufe", () => {
+    expect(unlockProgress(DECK_DEFS.deck_insertcoin, abgebrochen)).toMatchObject({ done: false, cur: 0, target: 1 });
+    expect(unlockProgress(DECK_DEFS.deck_insertcoin, abgeschlossen)).toMatchObject({ done: true, cur: 1, target: 1 });
+  });
+
+  it("die Bedingung hat in jeder fertigen Sprache einen Klartext", () => {
+    // Ohne Katalogtext stünde in der Kollektion eine leere Zeile statt der Bedingung.
+    setLocale(SOURCE_LOCALE);
+    expect(unlockLabel(unlockProgress(DECK_DEFS.deck_insertcoin, abgebrochen))).not.toBe("");
+  });
+});
+
 describe("cosmetics — unlockProgress", () => {
   it("null-unlock: done, immer verfügbar", () => {
     setLocale(SOURCE_LOCALE);
@@ -149,12 +199,13 @@ describe("cosmetics — unlockProgress", () => {
     expect(unlockLabel(p)).toMatch(/verfügbar/i);
   });
 
-  it("games: cur auf target gedeckelt, Klartext-Label", () => {
-    const d = { unlock: { kind: "games", n: 5 } };
+  it("abgeschlossene Läufe: cur auf target gedeckelt, Klartext-Label", () => {
+    const d = { unlock: { kind: "completedGames", n: 5 } };
     setLocale(SOURCE_LOCALE);
-    expect(unlockProgress(d, prof({ games: 3 }))).toMatchObject({ done: false, cur: 3, target: 5 });
-    expect(unlockProgress(d, prof({ games: 8 }))).toMatchObject({ done: true, cur: 5, target: 5 });
-    expect(unlockLabel(unlockProgress(d, prof({ games: 3 })))).toBe("Spiele 5 Läufe");
+    expect(unlockProgress(d, prof({ runsCompleted: 3 }))).toMatchObject({ done: false, cur: 3, target: 5 });
+    expect(unlockProgress(d, prof({ runsCompleted: 8 }))).toMatchObject({ done: true, cur: 5, target: 5 });
+    // Der Klartext muss das ABSCHLIESSEN nennen — „Spiele 5 Läufe" wäre jetzt eine falsche Ansage.
+    expect(unlockLabel(unlockProgress(d, prof({ runsCompleted: 3 })))).toBe("Schließe 5 Läufe ab");
   });
 
   it("streak: Label nennt die Serie, cur = beste bisher (gedeckelt)", () => {

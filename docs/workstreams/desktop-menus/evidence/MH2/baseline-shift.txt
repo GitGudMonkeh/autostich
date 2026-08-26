@@ -1,0 +1,2854 @@
+
+  compared 160 cells, 25029 matched nodes
+  Surfaces only. Control states are not captured and are verified by hand.
+
+  unmatched nodes: 230 pre-registered (H-c: leaderboard, victory), 0 elsewhere
+
+  710 computed delta(s), all of them printed:
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/1/1/1/1:SPAN  bg
+        before: rgba(0, 0, 0, 0)
+        after : rgb(21, 21, 29)
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/1/1/1/1:SPAN  bs
+        before: dashed dashed dashed dashed
+        after : solid solid solid solid
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/1/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1:SPAN  box[x]
+        before: 448
+        after : 461
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1/0:SPAN  box[x]
+        before: 449
+        after : 462
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 30.33
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1/1:B  box[x]
+        before: 455
+        after : 468
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/3/1/1/1:SPAN  bg
+        before: rgb(21, 21, 29)
+        after : rgba(0, 0, 0, 0)
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/3/1/1/1:SPAN  bs
+        before: solid solid solid solid
+        after : dashed dashed dashed dashed
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/3/1/1/1:SPAN  box[x]
+        before: 448
+        after : 461
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1:SPAN  box[x]
+        before: 448
+        after : 474
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1/0:SPAN  box[x]
+        before: 449
+        after : 475
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 21.66
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1/1:B  box[x]
+        before: 455
+        after : 481
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/5/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/5/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 17.33
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/5/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/6/1/1/1:SPAN  box[x]
+        before: 448
+        after : 461
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/6/1/1/1/0:SPAN  box[x]
+        before: 449
+        after : 462
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/6/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 11.2
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/6/1/1/1/1:B  box[x]
+        before: 455
+        after : 468
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/8/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 3.73
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1:SPAN  box[x]
+        before: 448
+        after : 461
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1/0:SPAN  box[x]
+        before: 449
+        after : 462
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 39
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1/1:B  box[x]
+        before: 455
+        after : 468
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1:SPAN  box[x]
+        before: 867
+        after : 880
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1/0:SPAN  box[x]
+        before: 868
+        after : 881
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 34.66
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1/1:B  box[x]
+        before: 874
+        after : 887
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1:SPAN  box[x]
+        before: 867
+        after : 893
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1/0:SPAN  box[x]
+        before: 868
+        after : 894
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 30.33
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1/1:B  box[x]
+        before: 874
+        after : 900
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/12/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/12/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 26
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/12/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1:SPAN  box[x]
+        before: 867
+        after : 880
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1/0:SPAN  box[x]
+        before: 868
+        after : 881
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 21.66
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1/1:B  box[x]
+        before: 874
+        after : 887
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/15/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 11.2
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/16/1/1/1:SPAN  box[x]
+        before: 867
+        after : 880
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/16/1/1/1/0:SPAN  box[x]
+        before: 868
+        after : 881
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/16/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 7.47
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/16/1/1/1/1:B  box[x]
+        before: 874
+        after : 887
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/17/1/1/1:SPAN  box[x]
+        before: 867
+        after : 880
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/17/1/1/1/0:SPAN  box[x]
+        before: 868
+        after : 881
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/17/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 3.73
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/17/1/1/1/1:B  box[x]
+        before: 874
+        after : 887
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1:SPAN  box[x]
+        before: 867
+        after : 893
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1/0:SPAN  box[x]
+        before: 868
+        after : 894
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 39
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1/1:B  box[x]
+        before: 874
+        after : 900
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/19/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/19/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 34.66
+    de/1280x720/leaderboard
+      1/0/1/2/1/0/2/19/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/1/1/1/1:SPAN  bg
+        before: rgba(0, 0, 0, 0)
+        after : rgb(21, 21, 29)
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/1/1/1/1:SPAN  bs
+        before: dashed dashed dashed dashed
+        after : solid solid solid solid
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/1/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1:SPAN  box[x]
+        before: 448
+        after : 461
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1/0:SPAN  box[x]
+        before: 449
+        after : 462
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 30.33
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1/1:B  box[x]
+        before: 455
+        after : 468
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/3/1/1/1:SPAN  bg
+        before: rgb(21, 21, 29)
+        after : rgba(0, 0, 0, 0)
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/3/1/1/1:SPAN  bs
+        before: solid solid solid solid
+        after : dashed dashed dashed dashed
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/3/1/1/1:SPAN  box[x]
+        before: 448
+        after : 461
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1:SPAN  box[x]
+        before: 448
+        after : 474
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1/0:SPAN  box[x]
+        before: 449
+        after : 475
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 21.66
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1/1:B  box[x]
+        before: 455
+        after : 481
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/5/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/5/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 17.33
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/5/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/6/1/1/1:SPAN  box[x]
+        before: 448
+        after : 461
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/6/1/1/1/0:SPAN  box[x]
+        before: 449
+        after : 462
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/6/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 11.2
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/6/1/1/1/1:B  box[x]
+        before: 455
+        after : 468
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/8/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 3.73
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1:SPAN  box[x]
+        before: 448
+        after : 461
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1/0:SPAN  box[x]
+        before: 449
+        after : 462
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 39
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1/1:B  box[x]
+        before: 455
+        after : 468
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1:SPAN  box[x]
+        before: 923
+        after : 936
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1/0:SPAN  box[x]
+        before: 924
+        after : 937
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 34.66
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1/1:B  box[x]
+        before: 930
+        after : 943
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1:SPAN  box[x]
+        before: 923
+        after : 949
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1/0:SPAN  box[x]
+        before: 924
+        after : 950
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 30.33
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1/1:B  box[x]
+        before: 930
+        after : 956
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/12/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/12/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 26
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/12/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1:SPAN  box[x]
+        before: 923
+        after : 936
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1/0:SPAN  box[x]
+        before: 924
+        after : 937
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 21.66
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1/1:B  box[x]
+        before: 930
+        after : 943
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/15/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 11.2
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/16/1/1/1:SPAN  box[x]
+        before: 923
+        after : 936
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/16/1/1/1/0:SPAN  box[x]
+        before: 924
+        after : 937
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/16/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 7.47
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/16/1/1/1/1:B  box[x]
+        before: 930
+        after : 943
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/17/1/1/1:SPAN  box[x]
+        before: 923
+        after : 936
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/17/1/1/1/0:SPAN  box[x]
+        before: 924
+        after : 937
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/17/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 3.73
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/17/1/1/1/1:B  box[x]
+        before: 930
+        after : 943
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1:SPAN  box[x]
+        before: 923
+        after : 949
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1/0:SPAN  box[x]
+        before: 924
+        after : 950
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 39
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1/1:B  box[x]
+        before: 930
+        after : 956
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/19/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/19/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 34.66
+    de/1400x700/leaderboard
+      1/0/1/2/1/0/2/19/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/1/1/1/1:SPAN  bg
+        before: rgba(0, 0, 0, 0)
+        after : rgb(21, 21, 29)
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/1/1/1/1:SPAN  bs
+        before: dashed dashed dashed dashed
+        after : solid solid solid solid
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/1/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1:SPAN  box[x]
+        before: 448
+        after : 461
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1/0:SPAN  box[x]
+        before: 449
+        after : 462
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 30.33
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1/1:B  box[x]
+        before: 455
+        after : 468
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/3/1/1/1:SPAN  bg
+        before: rgb(21, 21, 29)
+        after : rgba(0, 0, 0, 0)
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/3/1/1/1:SPAN  bs
+        before: solid solid solid solid
+        after : dashed dashed dashed dashed
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/3/1/1/1:SPAN  box[x]
+        before: 448
+        after : 461
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1:SPAN  box[x]
+        before: 448
+        after : 474
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1/0:SPAN  box[x]
+        before: 449
+        after : 475
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 21.66
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1/1:B  box[x]
+        before: 455
+        after : 481
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/5/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/5/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 17.33
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/5/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/6/1/1/1:SPAN  box[x]
+        before: 448
+        after : 461
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/6/1/1/1/0:SPAN  box[x]
+        before: 449
+        after : 462
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/6/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 11.2
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/6/1/1/1/1:B  box[x]
+        before: 455
+        after : 468
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/8/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 3.73
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1:SPAN  box[x]
+        before: 448
+        after : 461
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1/0:SPAN  box[x]
+        before: 449
+        after : 462
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 39
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1/1:B  box[x]
+        before: 455
+        after : 468
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1:SPAN  box[x]
+        before: 995
+        after : 1008
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1/0:SPAN  box[x]
+        before: 996
+        after : 1009
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 34.66
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1/1:B  box[x]
+        before: 1002
+        after : 1015
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1:SPAN  box[x]
+        before: 995
+        after : 1021
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1/0:SPAN  box[x]
+        before: 996
+        after : 1022
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 30.33
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1/1:B  box[x]
+        before: 1002
+        after : 1028
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/12/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/12/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 26
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/12/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1:SPAN  box[x]
+        before: 995
+        after : 1008
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1/0:SPAN  box[x]
+        before: 996
+        after : 1009
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 21.66
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1/1:B  box[x]
+        before: 1002
+        after : 1015
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/15/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 11.2
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/16/1/1/1:SPAN  box[x]
+        before: 995
+        after : 1008
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/16/1/1/1/0:SPAN  box[x]
+        before: 996
+        after : 1009
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/16/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 7.47
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/16/1/1/1/1:B  box[x]
+        before: 1002
+        after : 1015
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/17/1/1/1:SPAN  box[x]
+        before: 995
+        after : 1008
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/17/1/1/1/0:SPAN  box[x]
+        before: 996
+        after : 1009
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/17/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 3.73
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/17/1/1/1/1:B  box[x]
+        before: 1002
+        after : 1015
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1:SPAN  box[x]
+        before: 995
+        after : 1021
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1/0:SPAN  box[x]
+        before: 996
+        after : 1022
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 39
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1/1:B  box[x]
+        before: 1002
+        after : 1028
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/19/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/19/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 34.66
+    de/1536x791/leaderboard
+      1/0/1/2/1/0/2/19/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/1/1/1/1:SPAN  bg
+        before: rgba(0, 0, 0, 0)
+        after : rgb(21, 21, 29)
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/1/1/1/1:SPAN  bs
+        before: dashed dashed dashed dashed
+        after : solid solid solid solid
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/1/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1:SPAN  box[x]
+        before: 448
+        after : 461
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1/0:SPAN  box[x]
+        before: 449
+        after : 462
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 30.33
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1/1:B  box[x]
+        before: 455
+        after : 468
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/3/1/1/1:SPAN  bg
+        before: rgb(21, 21, 29)
+        after : rgba(0, 0, 0, 0)
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/3/1/1/1:SPAN  bs
+        before: solid solid solid solid
+        after : dashed dashed dashed dashed
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/3/1/1/1:SPAN  box[x]
+        before: 448
+        after : 461
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1:SPAN  box[x]
+        before: 448
+        after : 474
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1/0:SPAN  box[x]
+        before: 449
+        after : 475
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 21.66
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1/1:B  box[x]
+        before: 455
+        after : 481
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/5/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/5/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 17.33
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/5/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/6/1/1/1:SPAN  box[x]
+        before: 448
+        after : 461
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/6/1/1/1/0:SPAN  box[x]
+        before: 449
+        after : 462
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/6/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 11.2
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/6/1/1/1/1:B  box[x]
+        before: 455
+        after : 468
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/8/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 3.73
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1:SPAN  box[x]
+        before: 448
+        after : 461
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1/0:SPAN  box[x]
+        before: 449
+        after : 462
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 39
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1/1:B  box[x]
+        before: 455
+        after : 468
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1:SPAN  box[x]
+        before: 1027
+        after : 1040
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1/0:SPAN  box[x]
+        before: 1028
+        after : 1041
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 34.66
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1/1:B  box[x]
+        before: 1034
+        after : 1047
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1:SPAN  box[x]
+        before: 1027
+        after : 1053
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1/0:SPAN  box[x]
+        before: 1028
+        after : 1054
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 30.33
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1/1:B  box[x]
+        before: 1034
+        after : 1060
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/12/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/12/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 26
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/12/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1:SPAN  box[x]
+        before: 1027
+        after : 1040
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1/0:SPAN  box[x]
+        before: 1028
+        after : 1041
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 21.66
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1/1:B  box[x]
+        before: 1034
+        after : 1047
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/15/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 11.2
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/16/1/1/1:SPAN  box[x]
+        before: 1027
+        after : 1040
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/16/1/1/1/0:SPAN  box[x]
+        before: 1028
+        after : 1041
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/16/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 7.47
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/16/1/1/1/1:B  box[x]
+        before: 1034
+        after : 1047
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/17/1/1/1:SPAN  box[x]
+        before: 1027
+        after : 1040
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/17/1/1/1/0:SPAN  box[x]
+        before: 1028
+        after : 1041
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/17/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 3.73
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/17/1/1/1/1:B  box[x]
+        before: 1034
+        after : 1047
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1:SPAN  box[x]
+        before: 1027
+        after : 1053
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1/0:SPAN  box[x]
+        before: 1028
+        after : 1054
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 39
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1/1:B  box[x]
+        before: 1034
+        after : 1060
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/19/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/19/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 34.66
+    de/1600x900/leaderboard
+      1/0/1/2/1/0/2/19/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/1/1/1/1:SPAN  bg
+        before: rgba(0, 0, 0, 0)
+        after : rgb(21, 21, 29)
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/1/1/1/1:SPAN  bs
+        before: dashed dashed dashed dashed
+        after : solid solid solid solid
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/1/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1:SPAN  box[x]
+        before: 512
+        after : 525
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1/0:SPAN  box[x]
+        before: 513
+        after : 526
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 30.33
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1/1:B  box[x]
+        before: 519
+        after : 532
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/3/1/1/1:SPAN  bg
+        before: rgb(21, 21, 29)
+        after : rgba(0, 0, 0, 0)
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/3/1/1/1:SPAN  bs
+        before: solid solid solid solid
+        after : dashed dashed dashed dashed
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/3/1/1/1:SPAN  box[x]
+        before: 512
+        after : 525
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1:SPAN  box[x]
+        before: 512
+        after : 538
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1/0:SPAN  box[x]
+        before: 513
+        after : 539
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 21.66
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1/1:B  box[x]
+        before: 519
+        after : 545
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/5/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/5/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 17.33
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/5/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/6/1/1/1:SPAN  box[x]
+        before: 512
+        after : 525
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/6/1/1/1/0:SPAN  box[x]
+        before: 513
+        after : 526
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/6/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 11.2
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/6/1/1/1/1:B  box[x]
+        before: 519
+        after : 532
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/8/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 3.73
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1:SPAN  box[x]
+        before: 512
+        after : 525
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1/0:SPAN  box[x]
+        before: 513
+        after : 526
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 39
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1/1:B  box[x]
+        before: 519
+        after : 532
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1:SPAN  box[x]
+        before: 1191
+        after : 1204
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1/0:SPAN  box[x]
+        before: 1192
+        after : 1205
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 34.66
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1/1:B  box[x]
+        before: 1198
+        after : 1211
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1:SPAN  box[x]
+        before: 1191
+        after : 1217
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1/0:SPAN  box[x]
+        before: 1192
+        after : 1218
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 30.33
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1/1:B  box[x]
+        before: 1198
+        after : 1224
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/12/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/12/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 26
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/12/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1:SPAN  box[x]
+        before: 1191
+        after : 1204
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1/0:SPAN  box[x]
+        before: 1192
+        after : 1205
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 21.66
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1/1:B  box[x]
+        before: 1198
+        after : 1211
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/15/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 11.2
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/16/1/1/1:SPAN  box[x]
+        before: 1191
+        after : 1204
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/16/1/1/1/0:SPAN  box[x]
+        before: 1192
+        after : 1205
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/16/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 7.47
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/16/1/1/1/1:B  box[x]
+        before: 1198
+        after : 1211
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/17/1/1/1:SPAN  box[x]
+        before: 1191
+        after : 1204
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/17/1/1/1/0:SPAN  box[x]
+        before: 1192
+        after : 1205
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/17/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 3.73
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/17/1/1/1/1:B  box[x]
+        before: 1198
+        after : 1211
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1:SPAN  box[x]
+        before: 1191
+        after : 1217
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1/0:SPAN  box[x]
+        before: 1192
+        after : 1218
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 39
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1/1:B  box[x]
+        before: 1198
+        after : 1224
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/19/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/19/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 34.66
+    de/1920x1080/leaderboard
+      1/0/1/2/1/0/2/19/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/1/1/1/1:SPAN  bg
+        before: rgba(0, 0, 0, 0)
+        after : rgb(21, 21, 29)
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/1/1/1/1:SPAN  bs
+        before: dashed dashed dashed dashed
+        after : solid solid solid solid
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/1/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1:SPAN  box[x]
+        before: 448
+        after : 461
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1/0:SPAN  box[x]
+        before: 449
+        after : 462
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 30.33
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1/1:B  box[x]
+        before: 455
+        after : 468
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/3/1/1/1:SPAN  bg
+        before: rgb(21, 21, 29)
+        after : rgba(0, 0, 0, 0)
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/3/1/1/1:SPAN  bs
+        before: solid solid solid solid
+        after : dashed dashed dashed dashed
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/3/1/1/1:SPAN  box[x]
+        before: 448
+        after : 461
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1:SPAN  box[x]
+        before: 448
+        after : 474
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1/0:SPAN  box[x]
+        before: 449
+        after : 475
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 21.66
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1/1:B  box[x]
+        before: 455
+        after : 481
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/5/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/5/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 17.33
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/5/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/6/1/1/1:SPAN  box[x]
+        before: 448
+        after : 461
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/6/1/1/1/0:SPAN  box[x]
+        before: 449
+        after : 462
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/6/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 11.2
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/6/1/1/1/1:B  box[x]
+        before: 455
+        after : 468
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/8/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 3.73
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1:SPAN  box[x]
+        before: 448
+        after : 461
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1/0:SPAN  box[x]
+        before: 449
+        after : 462
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 39
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1/1:B  box[x]
+        before: 455
+        after : 468
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1:SPAN  box[x]
+        before: 867
+        after : 880
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1/0:SPAN  box[x]
+        before: 868
+        after : 881
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 34.66
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1/1:B  box[x]
+        before: 874
+        after : 887
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1:SPAN  box[x]
+        before: 867
+        after : 893
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1/0:SPAN  box[x]
+        before: 868
+        after : 894
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 30.33
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1/1:B  box[x]
+        before: 874
+        after : 900
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/12/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/12/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 26
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/12/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1:SPAN  box[x]
+        before: 867
+        after : 880
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1/0:SPAN  box[x]
+        before: 868
+        after : 881
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 21.66
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1/1:B  box[x]
+        before: 874
+        after : 887
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/15/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 11.2
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/16/1/1/1:SPAN  box[x]
+        before: 867
+        after : 880
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/16/1/1/1/0:SPAN  box[x]
+        before: 868
+        after : 881
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/16/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 7.47
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/16/1/1/1/1:B  box[x]
+        before: 874
+        after : 887
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/17/1/1/1:SPAN  box[x]
+        before: 867
+        after : 880
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/17/1/1/1/0:SPAN  box[x]
+        before: 868
+        after : 881
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/17/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 3.73
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/17/1/1/1/1:B  box[x]
+        before: 874
+        after : 887
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1:SPAN  box[x]
+        before: 867
+        after : 893
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1/0:SPAN  box[x]
+        before: 868
+        after : 894
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 39
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1/1:B  box[x]
+        before: 874
+        after : 900
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/19/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/19/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 34.66
+    en/1280x720/leaderboard
+      1/0/1/2/1/0/2/19/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/1/1/1/1:SPAN  bg
+        before: rgba(0, 0, 0, 0)
+        after : rgb(21, 21, 29)
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/1/1/1/1:SPAN  bs
+        before: dashed dashed dashed dashed
+        after : solid solid solid solid
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/1/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1:SPAN  box[x]
+        before: 448
+        after : 461
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1/0:SPAN  box[x]
+        before: 449
+        after : 462
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 30.33
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1/1:B  box[x]
+        before: 455
+        after : 468
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/3/1/1/1:SPAN  bg
+        before: rgb(21, 21, 29)
+        after : rgba(0, 0, 0, 0)
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/3/1/1/1:SPAN  bs
+        before: solid solid solid solid
+        after : dashed dashed dashed dashed
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/3/1/1/1:SPAN  box[x]
+        before: 448
+        after : 461
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1:SPAN  box[x]
+        before: 448
+        after : 474
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1/0:SPAN  box[x]
+        before: 449
+        after : 475
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 21.66
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1/1:B  box[x]
+        before: 455
+        after : 481
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/5/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/5/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 17.33
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/5/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/6/1/1/1:SPAN  box[x]
+        before: 448
+        after : 461
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/6/1/1/1/0:SPAN  box[x]
+        before: 449
+        after : 462
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/6/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 11.2
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/6/1/1/1/1:B  box[x]
+        before: 455
+        after : 468
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/8/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 3.73
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1:SPAN  box[x]
+        before: 448
+        after : 461
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1/0:SPAN  box[x]
+        before: 449
+        after : 462
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 39
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1/1:B  box[x]
+        before: 455
+        after : 468
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1:SPAN  box[x]
+        before: 923
+        after : 936
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1/0:SPAN  box[x]
+        before: 924
+        after : 937
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 34.66
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1/1:B  box[x]
+        before: 930
+        after : 943
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1:SPAN  box[x]
+        before: 923
+        after : 949
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1/0:SPAN  box[x]
+        before: 924
+        after : 950
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 30.33
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1/1:B  box[x]
+        before: 930
+        after : 956
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/12/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/12/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 26
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/12/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1:SPAN  box[x]
+        before: 923
+        after : 936
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1/0:SPAN  box[x]
+        before: 924
+        after : 937
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 21.66
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1/1:B  box[x]
+        before: 930
+        after : 943
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/15/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 11.2
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/16/1/1/1:SPAN  box[x]
+        before: 923
+        after : 936
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/16/1/1/1/0:SPAN  box[x]
+        before: 924
+        after : 937
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/16/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 7.47
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/16/1/1/1/1:B  box[x]
+        before: 930
+        after : 943
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/17/1/1/1:SPAN  box[x]
+        before: 923
+        after : 936
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/17/1/1/1/0:SPAN  box[x]
+        before: 924
+        after : 937
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/17/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 3.73
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/17/1/1/1/1:B  box[x]
+        before: 930
+        after : 943
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1:SPAN  box[x]
+        before: 923
+        after : 949
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1/0:SPAN  box[x]
+        before: 924
+        after : 950
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 39
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1/1:B  box[x]
+        before: 930
+        after : 956
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/19/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/19/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 34.66
+    en/1400x700/leaderboard
+      1/0/1/2/1/0/2/19/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/1/1/1/1:SPAN  bg
+        before: rgba(0, 0, 0, 0)
+        after : rgb(21, 21, 29)
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/1/1/1/1:SPAN  bs
+        before: dashed dashed dashed dashed
+        after : solid solid solid solid
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/1/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1:SPAN  box[x]
+        before: 448
+        after : 461
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1/0:SPAN  box[x]
+        before: 449
+        after : 462
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 30.33
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1/1:B  box[x]
+        before: 455
+        after : 468
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/3/1/1/1:SPAN  bg
+        before: rgb(21, 21, 29)
+        after : rgba(0, 0, 0, 0)
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/3/1/1/1:SPAN  bs
+        before: solid solid solid solid
+        after : dashed dashed dashed dashed
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/3/1/1/1:SPAN  box[x]
+        before: 448
+        after : 461
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1:SPAN  box[x]
+        before: 448
+        after : 474
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1/0:SPAN  box[x]
+        before: 449
+        after : 475
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 21.66
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1/1:B  box[x]
+        before: 455
+        after : 481
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/5/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/5/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 17.33
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/5/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/6/1/1/1:SPAN  box[x]
+        before: 448
+        after : 461
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/6/1/1/1/0:SPAN  box[x]
+        before: 449
+        after : 462
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/6/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 11.2
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/6/1/1/1/1:B  box[x]
+        before: 455
+        after : 468
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/8/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 3.73
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1:SPAN  box[x]
+        before: 448
+        after : 461
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1/0:SPAN  box[x]
+        before: 449
+        after : 462
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 39
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1/1:B  box[x]
+        before: 455
+        after : 468
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1:SPAN  box[x]
+        before: 995
+        after : 1008
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1/0:SPAN  box[x]
+        before: 996
+        after : 1009
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 34.66
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1/1:B  box[x]
+        before: 1002
+        after : 1015
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1:SPAN  box[x]
+        before: 995
+        after : 1021
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1/0:SPAN  box[x]
+        before: 996
+        after : 1022
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 30.33
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1/1:B  box[x]
+        before: 1002
+        after : 1028
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/12/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/12/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 26
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/12/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1:SPAN  box[x]
+        before: 995
+        after : 1008
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1/0:SPAN  box[x]
+        before: 996
+        after : 1009
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 21.66
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1/1:B  box[x]
+        before: 1002
+        after : 1015
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/15/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 11.2
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/16/1/1/1:SPAN  box[x]
+        before: 995
+        after : 1008
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/16/1/1/1/0:SPAN  box[x]
+        before: 996
+        after : 1009
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/16/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 7.47
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/16/1/1/1/1:B  box[x]
+        before: 1002
+        after : 1015
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/17/1/1/1:SPAN  box[x]
+        before: 995
+        after : 1008
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/17/1/1/1/0:SPAN  box[x]
+        before: 996
+        after : 1009
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/17/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 3.73
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/17/1/1/1/1:B  box[x]
+        before: 1002
+        after : 1015
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1:SPAN  box[x]
+        before: 995
+        after : 1021
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1/0:SPAN  box[x]
+        before: 996
+        after : 1022
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 39
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1/1:B  box[x]
+        before: 1002
+        after : 1028
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/19/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/19/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 34.66
+    en/1536x791/leaderboard
+      1/0/1/2/1/0/2/19/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/1/1/1/1:SPAN  bg
+        before: rgba(0, 0, 0, 0)
+        after : rgb(21, 21, 29)
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/1/1/1/1:SPAN  bs
+        before: dashed dashed dashed dashed
+        after : solid solid solid solid
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/1/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1:SPAN  box[x]
+        before: 448
+        after : 461
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1/0:SPAN  box[x]
+        before: 449
+        after : 462
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 30.33
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1/1:B  box[x]
+        before: 455
+        after : 468
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/3/1/1/1:SPAN  bg
+        before: rgb(21, 21, 29)
+        after : rgba(0, 0, 0, 0)
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/3/1/1/1:SPAN  bs
+        before: solid solid solid solid
+        after : dashed dashed dashed dashed
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/3/1/1/1:SPAN  box[x]
+        before: 448
+        after : 461
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1:SPAN  box[x]
+        before: 448
+        after : 474
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1/0:SPAN  box[x]
+        before: 449
+        after : 475
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 21.66
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1/1:B  box[x]
+        before: 455
+        after : 481
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/5/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/5/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 17.33
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/5/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/6/1/1/1:SPAN  box[x]
+        before: 448
+        after : 461
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/6/1/1/1/0:SPAN  box[x]
+        before: 449
+        after : 462
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/6/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 11.2
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/6/1/1/1/1:B  box[x]
+        before: 455
+        after : 468
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/8/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 3.73
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1:SPAN  box[x]
+        before: 448
+        after : 461
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1/0:SPAN  box[x]
+        before: 449
+        after : 462
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 39
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1/1:B  box[x]
+        before: 455
+        after : 468
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1:SPAN  box[x]
+        before: 1027
+        after : 1040
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1/0:SPAN  box[x]
+        before: 1028
+        after : 1041
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 34.66
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1/1:B  box[x]
+        before: 1034
+        after : 1047
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1:SPAN  box[x]
+        before: 1027
+        after : 1053
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1/0:SPAN  box[x]
+        before: 1028
+        after : 1054
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 30.33
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1/1:B  box[x]
+        before: 1034
+        after : 1060
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/12/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/12/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 26
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/12/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1:SPAN  box[x]
+        before: 1027
+        after : 1040
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1/0:SPAN  box[x]
+        before: 1028
+        after : 1041
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 21.66
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1/1:B  box[x]
+        before: 1034
+        after : 1047
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/15/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 11.2
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/16/1/1/1:SPAN  box[x]
+        before: 1027
+        after : 1040
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/16/1/1/1/0:SPAN  box[x]
+        before: 1028
+        after : 1041
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/16/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 7.47
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/16/1/1/1/1:B  box[x]
+        before: 1034
+        after : 1047
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/17/1/1/1:SPAN  box[x]
+        before: 1027
+        after : 1040
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/17/1/1/1/0:SPAN  box[x]
+        before: 1028
+        after : 1041
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/17/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 3.73
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/17/1/1/1/1:B  box[x]
+        before: 1034
+        after : 1047
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1:SPAN  box[x]
+        before: 1027
+        after : 1053
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1/0:SPAN  box[x]
+        before: 1028
+        after : 1054
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 39
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1/1:B  box[x]
+        before: 1034
+        after : 1060
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/19/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/19/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 34.66
+    en/1600x900/leaderboard
+      1/0/1/2/1/0/2/19/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/1/1/1/1:SPAN  bg
+        before: rgba(0, 0, 0, 0)
+        after : rgb(21, 21, 29)
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/1/1/1/1:SPAN  bs
+        before: dashed dashed dashed dashed
+        after : solid solid solid solid
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/1/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1:SPAN  box[x]
+        before: 512
+        after : 525
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1/0:SPAN  box[x]
+        before: 513
+        after : 526
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 30.33
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1/1:B  box[x]
+        before: 519
+        after : 532
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/2/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/3/1/1/1:SPAN  bg
+        before: rgb(21, 21, 29)
+        after : rgba(0, 0, 0, 0)
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/3/1/1/1:SPAN  bs
+        before: solid solid solid solid
+        after : dashed dashed dashed dashed
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/3/1/1/1:SPAN  box[x]
+        before: 512
+        after : 525
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1:SPAN  box[x]
+        before: 512
+        after : 538
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1/0:SPAN  box[x]
+        before: 513
+        after : 539
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 21.66
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1/1:B  box[x]
+        before: 519
+        after : 545
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/4/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/5/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/5/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 17.33
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/5/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/6/1/1/1:SPAN  box[x]
+        before: 512
+        after : 525
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/6/1/1/1/0:SPAN  box[x]
+        before: 513
+        after : 526
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/6/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 11.2
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/6/1/1/1/1:B  box[x]
+        before: 519
+        after : 532
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/8/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 3.73
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1:SPAN  box[x]
+        before: 512
+        after : 525
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1/0:SPAN  box[x]
+        before: 513
+        after : 526
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 39
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1/1:B  box[x]
+        before: 519
+        after : 532
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/9/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1:SPAN  box[x]
+        before: 1191
+        after : 1204
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1/0:SPAN  box[x]
+        before: 1192
+        after : 1205
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 34.66
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1/1:B  box[x]
+        before: 1198
+        after : 1211
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/10/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1:SPAN  box[x]
+        before: 1191
+        after : 1217
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1/0:SPAN  box[x]
+        before: 1192
+        after : 1218
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 30.33
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1/1:B  box[x]
+        before: 1198
+        after : 1224
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/11/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/12/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/12/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 26
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/12/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1:SPAN  box[x]
+        before: 1191
+        after : 1204
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1/0:SPAN  box[x]
+        before: 1192
+        after : 1205
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 21.66
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1/1:B  box[x]
+        before: 1198
+        after : 1211
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/13/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/15/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 11.2
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/16/1/1/1:SPAN  box[x]
+        before: 1191
+        after : 1204
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/16/1/1/1/0:SPAN  box[x]
+        before: 1192
+        after : 1205
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/16/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 7.47
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/16/1/1/1/1:B  box[x]
+        before: 1198
+        after : 1211
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/17/1/1/1:SPAN  box[x]
+        before: 1191
+        after : 1204
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/17/1/1/1/0:SPAN  box[x]
+        before: 1192
+        after : 1205
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/17/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 3.73
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/17/1/1/1/1:B  box[x]
+        before: 1198
+        after : 1211
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1:SPAN  box[x]
+        before: 1191
+        after : 1217
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1/0:SPAN  box[x]
+        before: 1192
+        after : 1218
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 39
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1/1:B  box[x]
+        before: 1198
+        after : 1224
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/18/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/19/1/1/1:SPAN  box[w]
+        before: 35.61
+        after : 41
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/19/1/1/1/0:SPAN  box[w]
+        before: 0
+        after : 34.66
+    en/1920x1080/leaderboard
+      1/0/1/2/1/0/2/19/1/1/1/1:B  box[w]
+        before: 21.61
+        after : 27
+
+  distribution of the 710 delta(s) — stated, not left to the eye:
+      by cell: de/1280x720/leaderboard=71  de/1400x700/leaderboard=71  de/1536x791/leaderboard=71  de/1600x900/leaderboard=71  de/1920x1080/leaderboard=71  en/1280x720/leaderboard=71  en/1400x700/leaderboard=71  en/1536x791/leaderboard=71  en/1600x900/leaderboard=71  en/1920x1080/leaderboard=71
+      by lang: de=355  en=355
+      by size: 1280x720=142  1400x700=142  1536x791=142  1600x900=142  1920x1080=142
+      by surface: leaderboard=710
+      by property: box[w]=360  box[x]=310  bg=20  bs=20

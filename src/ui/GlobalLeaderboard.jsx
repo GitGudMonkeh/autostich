@@ -199,7 +199,11 @@ export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, fr
   return (
     <>
       {framed ? (
-        <div className="w-full max-w-sm rounded-xl p-4 as-panel" style={{ background: "#17171c", border: "1px solid #26262e" }}>
+        /* #menu-rework M8 — `#17171c` IST `--sf-base`: das ist der Wert, aus dem der Schritt
+           ABGELEITET wurde (alle 30 `.as-panel`-Fundstellen tragen ihn). Wertgleich, und diese
+           Fassung steht ohnehin im Hub, nicht in der Bestenliste.
+           `#26262e` bleibt Literal und wird gezählt — dieselbe Lücke wie an `.lb-page` (M8-G5). */
+        <div className="w-full max-w-sm rounded-xl p-4 as-panel" style={{ background: "var(--sf-base)", border: "1px solid #26262e" }}>
           {body}
         </div>
       ) : (

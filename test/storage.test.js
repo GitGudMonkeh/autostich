@@ -25,7 +25,10 @@ function mockLS() {
 const DEFAULT_OPTIONS = {
   lang: null, // #sprache: noch nicht gewählt → die UI nimmt beim ersten Start die Browsersprache
   skin: "crt", muted: false, sfxVol: 0.4, musicVol: 0.2, deckId: "deck_onboarding", battlefieldId: "bf_onboarding",
-  reducedFx: "aus", haptics: true, archShowCombos: true, archShowForms: true,
+  /* #arch-default: Combos AN, Formationen AUS. Die Formationsrahmen gehören der Aufstellung; auf dem
+     Bau-Brett liegen sie als zweite Rahmenlage über demselben Feld. `archFormsDefaultLift` unten ist
+     der Marker der EINMALIGEN Absenkung bestehender Stände (s. storage.js `liftArchFormsDefault`). */
+  reducedFx: "aus", haptics: true, archShowCombos: true, archShowForms: false,
   calmMusic: false,
   telemetry: true, // #telemetrie: anonyme Lauf-Daten, Default an (Opt-out in den Optionen)
   collapseScoreSource: true, collapseScoreTrend: true, finisher: "standard", archColor: "standard",
@@ -50,6 +53,7 @@ const DEFAULT_OPTIONS = {
   fxSonnenPulsDeck: true, fxLaserFaecherDeck: true, fxPrismaKaskadeDeck: true, fxHoloCubeDeck: true, fxSupernovaDeck: true,
   fxGottStandardDeck: true, // #vorschau-deck: Farbmodus für „Gottgleich · Standard“
   fxDeckDefaultLift: false,
+  archFormsDefaultLift: false,
 };
 
 describe("rankHighscores", () => {
@@ -198,6 +202,24 @@ describe("Progression/Upgrades — Profil-Felder, Migration, SP-Ernte, Onboardin
     const q = recordRun(runRec({ completed: false })).profile;
     expect(q.onboarding).toBe(ONBOARDING_LINKS);
     expect(q.games).toBe(3); // games zählt jeden Lauf
+  });
+
+  /* #hirsch-abgeschlossen — die zwei Zähler dürfen NICHT dasselbe zählen.
+
+     `games` ist die Statistik „begonnene Läufe" und zählt Abbrüche mit; daran hingen bis dahin die
+     Freischaltungen über eine Laufzahl, und ein abgebrochener Lauf trug damit eine Belohnung
+     (gemeldet an „Insert Coin", dieselbe Ursache an der Hirsch-Leiter). `runsCompleted` ist der neue
+     Zähler und darf ausschließlich bei `completed === true` steigen — das ist der ganze Fix. */
+  it("runsCompleted zählt NUR abgeschlossene Läufe, games zählt jeden begonnenen", () => {
+    let p = recordRun(runRec({ ts: 1 })).profile;                       // abgeschlossen
+    expect(p.games).toBe(1);
+    expect(p.runsCompleted).toBe(1);
+    p = recordRun(runRec({ ts: 2, completed: false })).profile;         // Abbruch
+    expect(p.games, "der Abbruch zählt als begonnener Lauf").toBe(2);
+    expect(p.runsCompleted, "aber NICHT als abgeschlossener").toBe(1);
+    p = recordRun(runRec({ ts: 3 })).profile;                           // wieder abgeschlossen
+    expect(p.games).toBe(3);
+    expect(p.runsCompleted).toBe(2);
   });
 
   /* Die SP-Tests unten messen den LAUF-Ertrag. Der einmalige Willkommensbonus (WELCOME_DP, fällt nach

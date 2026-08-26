@@ -197,7 +197,7 @@ const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], sele
       )}
       {/* #386 Firn-Boden-Marker: dezenter ❄ + Boden-Reserve (kein Icon/Glow), klar abgesetzt vom Gletscher-Marker. */}
       {firn && (
-        <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 inline-flex items-center gap-0.5 text-[8px] sm:text-[9px] font-bold leading-none tabular-nums" style={{ color: "#7fbfe0", opacity: 0.85 }} title={`Firn-Boden · Reserve ${Math.round(firnMass)} (füllt einen Gletscher hier zum Durchlauf-Beginn)`}>
+        <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 inline-flex items-center gap-0.5 text-[8px] sm:text-[9px] font-bold leading-none tabular-nums" style={{ color: "#7fbfe0", opacity: 0.85 }} title={`Schnee · Reserve ${Math.round(firnMass)} (füllt einen Gletscher hier zum Durchlauf-Beginn)`}>
           <FactionIcon type="ice" size={8} glow={false} />{Math.round(firnMass)}
         </span>
       )}

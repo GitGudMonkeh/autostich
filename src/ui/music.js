@@ -91,7 +91,8 @@ const TIER_MIN = { mid: 3000000, hot: 30000000, overdrive: 70000000, overdrive_p
 // (er läuft aus → onEnded reiht den neuen-Stufen-Track). Lief er schon länger, wird weich (kurzer Fade) gewechselt.
 // Verhindert das „nur 5 s anspielen, dann Schnitt".
 const SWITCH_MIN_PLAY = 40; // s [TUNING]
-const TIER_FADE_MS = 600;   // #334: ms je Fade-Halbwelle (aus/ein) — satter (war 320) für Sofort-Wechsel UND Songende-Ein-Fade [TUNING]
+const TIER_FADE_MS = 1100;  // #334/#musik-blende: ms je Fade-Halbwelle (aus/ein) — 320 → 600 → 1100, weicher Stufenwechsel [TUNING]
+const PRIME_MAX_MS = 900;   // #musik-blende: so lange wird der nächste Track höchstens ANGELADEN, bevor die Blende startet [TUNING]
 // Run-Zufallspool (harmonisiert auf −14 LUFS). Titel = Anzeige im Musik-Panel.
 const POOL = [
   // calm
@@ -263,9 +264,52 @@ function rampVol(from, to, ms, done) {
   fadeTimer = setInterval(() => {
     if (!audible()) { stopFade(); return; } // Mute/Pause während des Fades → abbrechen (syncPlayback regelt den Pegel)
     k += 1;
-    try { a.volume = from + (to - from) * (k / steps); } catch (e) {}
+    /* #musik-blende: quadratische statt linearer Kurve. Lautheit folgt nicht der Amplitude — bei halbem
+       Pegel hört man noch rund zwei Drittel. Eine LINEARE Rampe klingt deshalb falschherum: sie hält den
+       Song erst laut und stürzt am Ende ab. Mit `t²` (Einblende) bzw. `(1−t)²` (Ausblende) verteilt sich
+       die gehörte Änderung gleichmäßig über die Blende — dasselbe Mittel, das Schnittprogramme als
+       „smooth/exponential fade" anbieten. Beide Richtungen aus EINER Formel, damit sie nicht auseinanderlaufen. */
+    const t = k / steps;
+    const p = to > from ? t * t : 1 - (1 - t) * (1 - t);
+    try { a.volume = from + (to - from) * p; } catch (e) {}
     if (k >= steps) { stopFade(); if (done) done(); }
   }, 25);
+}
+/* #musik-blende: den nächsten Track ANLADEN, bevor die Blende überhaupt beginnt.
+
+   Die Musik streamt von einer URL (`MEDIA_BASE`, s. Kopf) und das Element steht auf `preload: "none"`.
+   Beim Stufenwechsel wurde bisher ausgeblendet, `src` getauscht und wieder eingeblendet — der Netzweg
+   des neuen Titels fiel damit GENAU in die Stille zwischen beiden Halbwellen. Auf dem Handy im Mobilnetz
+   ist das die Lücke, die man hört; die Blende selbst war nur der kleinere Teil.
+
+   Ein eigenes, stummes Element lädt vor (dieselbe URL landet im HTTP-Cache, der Tausch am echten Element
+   ist danach sofort da). Gedeckelt: nach PRIME_MAX_MS läuft die Blende so oder so los — ein hängender
+   Ladevorgang darf den Stufenwechsel nicht verschlucken. Der laufende Song spielt derweil weiter, das
+   Vorladen ist also nicht hörbar. Referenz festhalten, sonst räumt der GC den Ladevorgang ab. */
+const priming = new Set();  // laufende Vorlade-Elemente
+function primeTrack(url, done) {
+  if (typeof Audio === "undefined" || !url) { done(); return; }
+  let fired = false;
+  let timer = null;
+  let a = null;
+  const finish = () => {
+    if (fired) return;
+    fired = true;
+    if (timer) clearTimeout(timer);
+    if (a) priming.delete(a);   // ab hier darf der GC — der Titel liegt im Cache, das Element hat seinen Zweck erfüllt
+    done();
+  };
+  try {
+    a = new Audio();
+    priming.add(a);
+    a.preload = "auto";
+    a.muted = true;
+    a.addEventListener("canplaythrough", finish);
+    a.addEventListener("error", finish);
+    a.src = url;
+    timer = setTimeout(finish, PRIME_MAX_MS);
+    if (typeof a.load === "function") a.load();
+  } catch (e) { finish(); }
 }
 // #334: Quelle setzen und starten — optional als Ein-Fade (Volume rampt von ~0 auf effVol) statt hart auf Vollpegel.
 // Genutzt vom Songende-Reihen (fade) und als Einblend-Hälfte des Sofort-Stufenwechsels. Nicht hörbar → lazy (kein Fade).
@@ -281,7 +325,11 @@ function startTrack(track, { fade = false } = {}) {
 function fadeSwitchTo(track) {
   const a = ensureEl();
   if (!a || !track || !audible()) { playTrack(track); return; }         // nicht hörbar → einfach (lazy) umschalten
-  rampVol(effVol(), 0.0001, TIER_FADE_MS, () => startTrack(track, { fade: true })); // ausblenden → tauschen & einblenden
+  // #musik-blende: erst anladen, dann blenden — sonst liegt der Netzweg des neuen Titels in der Stille.
+  primeTrack(track.url, () => {
+    if (!audible()) { playTrack(track); return; }                       // währenddessen stumm/pausiert → syncPlayback übernimmt
+    rampVol(effVol(), 0.0001, TIER_FADE_MS, () => startTrack(track, { fade: true })); // ausblenden → tauschen & einblenden
+  });
 }
 
 function tracksForTier(wantTier) {

@@ -1,0 +1,6820 @@
+{
+  "takenAgainst": "production build in dist/",
+  "frozenClock": "2026-08-24T12:00:00.000Z",
+  "sizes": [
+    "1280x720",
+    "1400x700",
+    "1536x791",
+    "1600x900",
+    "1920x1080",
+    "1700x760",
+    "1800x820",
+    "1920x850"
+  ],
+  "langs": [
+    "de",
+    "en"
+  ],
+  "cells": [
+    {
+      "id": "1280x720/de",
+      "size": "1280x720",
+      "lang": "de",
+      "settle": {
+        "fontsOk": true,
+        "images": 2,
+        "timedOut": 0
+      },
+      "reached": true,
+      "missing": [],
+      "viewport": {
+        "w": 1280,
+        "h": 720,
+        "dpr": 1
+      },
+      "scrolls": {
+        "scrollH": 720,
+        "clientH": 720,
+        "overflowPx": 0,
+        "scrollbar": 0
+      },
+      "zoom": {
+        "declared": "0.85",
+        "effectivePair": 0.8503,
+        "effectiveFoot": 0.8587
+      },
+      "blocks": {
+        "min-1280": true,
+        "max-h-950": true,
+        "max-h-900": true,
+        "max-h-820": true
+      },
+      "boxes": {
+        "root": {
+          "x": 24,
+          "y": 24,
+          "w": 1232,
+          "h": 672
+        },
+        "pair": {
+          "x": 24,
+          "y": 30.39,
+          "w": 1232,
+          "h": 603.73
+        },
+        "play": {
+          "x": 24,
+          "y": 94.03,
+          "w": 575.75,
+          "h": 476.45
+        },
+        "stand": {
+          "x": 647.34,
+          "y": 30.39,
+          "w": 608.66,
+          "h": 603.73
+        },
+        "foot": {
+          "x": 24,
+          "y": 652.5,
+          "w": 1232,
+          "h": 39.5
+        },
+        "wordmark": {
+          "x": 43.31,
+          "y": 34.53,
+          "w": 537.11,
+          "h": 86.02
+        }
+      },
+      "layoutH": {
+        "play": 561,
+        "stand": 710,
+        "pair": 710
+      },
+      "rhythm": {
+        "rootGap": 18,
+        "rootPadTop": 6,
+        "playGap": 14,
+        "standGap": 12,
+        "pairColGap": 56,
+        "playAlign": "center",
+        "pairAlign": "center"
+      },
+      "wordmark": {
+        "wmSize": 88,
+        "fontSize": 88,
+        "lineHeight": 101.2,
+        "marginTop": -70,
+        "letterSpacing": 5.28,
+        "text": "AUTOSTCH",
+        "chars": 8
+      },
+      "columns": {
+        "playLayoutH": 561,
+        "standLayoutH": 710,
+        "columnHeadroom": 149
+      },
+      "budget": {
+        "probeMax": 137,
+        "gapPerRow": 14,
+        "oneRowTotal": 151,
+        "zoomedIntoCssPx": 0.8503
+      },
+      "mark": {
+        "wmPx": 88,
+        "cellPx": 7.92,
+        "gutPx": 1.936,
+        "borderPx": 1.056,
+        "radiusPx": 1.232,
+        "column": {
+          "layoutW": 8,
+          "layoutH": 77,
+          "cssW": 6.72,
+          "cssH": 65.23
+        },
+        "columnPerDesign": 76.91,
+        "full": {
+          "layoutW": 47,
+          "layoutH": 77,
+          "cssW": 40.16,
+          "cssH": 65.23
+        }
+      },
+      "markScale": [
+        {
+          "k": 1,
+          "cellPx": 7.92,
+          "layoutH": 77,
+          "layoutW": 47,
+          "cssH": 65.23,
+          "cssW": 40.16
+        },
+        {
+          "k": 0.85,
+          "cellPx": 6.732,
+          "layoutH": 65,
+          "layoutW": 40,
+          "cssH": 55.48,
+          "cssW": 34.16
+        },
+        {
+          "k": 0.7,
+          "cellPx": 5.544,
+          "layoutH": 54,
+          "layoutW": 33,
+          "cssH": 45.61,
+          "cssW": 28.08
+        },
+        {
+          "k": 0.6,
+          "cellPx": 4.752,
+          "layoutH": 46,
+          "layoutW": 28,
+          "cssH": 39.14,
+          "cssW": 24.09
+        },
+        {
+          "k": 0.5,
+          "cellPx": 3.96,
+          "layoutH": 38,
+          "layoutW": 24,
+          "cssH": 32.56,
+          "cssW": 20.05
+        },
+        {
+          "k": 0.4,
+          "cellPx": 3.168,
+          "layoutH": 31,
+          "layoutW": 19,
+          "cssH": 26.09,
+          "cssW": 16.06
+        }
+      ],
+      "tagline": {
+        "roleToken": "--text-body-lg",
+        "roleSize": "15.5px",
+        "designSize": "15px (mainscreen-marke.md) — nearest rung is the role above",
+        "de": {
+          "fontSize": 15.5,
+          "lineHeight": 23.25,
+          "layoutH": 23,
+          "layoutW": 213,
+          "cssH": 19.75,
+          "cssW": 180.92
+        },
+        "en": {
+          "fontSize": 15.5,
+          "lineHeight": 23.25,
+          "layoutH": 23,
+          "layoutW": 168,
+          "cssH": 19.75,
+          "cssW": 143.13
+        },
+        "atBody": {
+          "fontSize": 13,
+          "lineHeight": 19.5,
+          "layoutH": 19,
+          "layoutW": 179,
+          "cssH": 16.56,
+          "cssW": 151.8
+        },
+        "atMeta": {
+          "fontSize": 11,
+          "lineHeight": 16.5,
+          "layoutH": 16,
+          "layoutW": 151,
+          "cssH": 14.02,
+          "cssW": 128.44
+        }
+      },
+      "compose": [
+        {
+          "k": 1,
+          "cellPx": 7.92,
+          "scrollH": 720,
+          "innerH": 720,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 688,
+          "standLayoutH": 710
+        },
+        {
+          "k": 0.85,
+          "cellPx": 6.732,
+          "scrollH": 720,
+          "innerH": 720,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 677,
+          "standLayoutH": 710
+        },
+        {
+          "k": 0.7,
+          "cellPx": 5.544,
+          "scrollH": 720,
+          "innerH": 720,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 665,
+          "standLayoutH": 710
+        },
+        {
+          "k": 0.6,
+          "cellPx": 4.752,
+          "scrollH": 720,
+          "innerH": 720,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 658,
+          "standLayoutH": 710
+        },
+        {
+          "k": 0.5,
+          "cellPx": 3.96,
+          "scrollH": 720,
+          "innerH": 720,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 650,
+          "standLayoutH": 710
+        },
+        {
+          "k": 0.4,
+          "cellPx": 3.168,
+          "scrollH": 720,
+          "innerH": 720,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 642,
+          "standLayoutH": 710
+        }
+      ],
+      "deckPanel": {
+        "reached": true,
+        "box": {
+          "x": 647.34,
+          "y": 30.39,
+          "w": 608.66,
+          "h": 314.48
+        },
+        "layoutH": 370,
+        "layoutW": 716,
+        "cls": "as-deck hidden dt:flex as-glass as-ring flex-col gap-[18px] rounded-2xl",
+        "rootClass": "none of its own — reached as the non-bank ring-bearing child of .hub-stand",
+        "art": {
+          "layoutW": 117,
+          "layoutH": 161,
+          "cssW": 99.39,
+          "cssH": 136.8
+        }
+      },
+      "standBudget": {
+        "reached": true,
+        "panelWas": 370,
+        "zeroFits": true,
+        "growthMax": 1,
+        "restored": true
+      },
+      "c3Probe": {
+        "reached": true,
+        "artWas": {
+          "w": 117,
+          "h": 161
+        },
+        "artAt": {
+          "w": 196,
+          "h": 268
+        },
+        "standWas": 710,
+        "standLayoutH": 817,
+        "scrollH": 810,
+        "innerH": 720,
+        "overflowPx": 90,
+        "holds": false,
+        "artRestored": true
+      },
+      "c3Options": {
+        "A": {
+          "artHeightMax": 162.3,
+          "artWidthAtMax": 118.7,
+          "designAsks": 268,
+          "todayIs": 161,
+          "reachesDesign": false
+        },
+        "B": {
+          "bankWas": 328,
+          "bankMustCapAt": 222.6,
+          "bankGivesUp": 105.4,
+          "enoughAlone": true
+        },
+        "C": {
+          "zoomFloorToday": 0.85,
+          "zoomNeeded": 0.739,
+          "ctaLayoutH": 76,
+          "ctaCssHAtNeededZoom": 56.2,
+          "floorReasonIs": "below 0.85 the start button falls under 22 px (index.css, the zoom comment)"
+        },
+        "restored": true
+      },
+      "children": {
+        "play": [
+          {
+            "tag": "h1",
+            "cls": "as-wordmark select-none",
+            "layoutH": 101,
+            "layoutW": 632,
+            "cssH": 86.02,
+            "cssW": 537.11
+          },
+          {
+            "tag": "div",
+            "cls": "as-lockup hidden dt:flex flex-col items-center self-stretch",
+            "layoutH": 109,
+            "layoutW": 677,
+            "cssH": 92.31,
+            "cssW": 575.75
+          },
+          {
+            "tag": "div",
+            "cls": "as-hub-bonus w-[88%] max-w-sm dt:w-full dt:max-w-none rounded-xl px-4 py-2.5 flex flex-col gap-1.5 dt:gap-2",
+            "layoutH": 68,
+            "layoutW": 677,
+            "cssH": 57.84,
+            "cssW": 575.75
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none",
+            "layoutH": 82,
+            "layoutW": 677,
+            "cssH": 69.55,
+            "cssW": 575.75
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none flex flex-col gap-2.5",
+            "layoutH": 139,
+            "layoutW": 677,
+            "cssH": 118.02,
+            "cssW": 575.75
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none flex flex-col gap-2.5",
+            "layoutH": 62,
+            "layoutW": 677,
+            "cssH": 52.77,
+            "cssW": 575.75
+          }
+        ],
+        "stand": [
+          {
+            "tag": "div",
+            "cls": "as-deck hidden dt:flex as-glass as-ring flex-col gap-[18px] rounded-2xl",
+            "layoutH": 370,
+            "layoutW": 716,
+            "cssH": 314.48,
+            "cssW": 608.66
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none as-hub-list as-glass as-ring grid grid-cols-2 gap-2.5 dt:grid-cols-1 dt:gap-0",
+            "layoutH": 328,
+            "layoutW": 716,
+            "cssH": 279.06,
+            "cssW": 608.66
+          }
+        ]
+      },
+      "centringTrial": {
+        "was": "center",
+        "moved": [],
+        "unchanged": 6,
+        "total": 6,
+        "restored": true
+      },
+      "restored": {
+        "probesLeft": 0,
+        "scrollH": 720,
+        "playLayoutH": 561,
+        "standLayoutH": 710
+      }
+    },
+    {
+      "id": "1400x700/de",
+      "size": "1400x700",
+      "lang": "de",
+      "settle": {
+        "fontsOk": true,
+        "images": 2,
+        "timedOut": 0
+      },
+      "reached": true,
+      "missing": [],
+      "viewport": {
+        "w": 1400,
+        "h": 700,
+        "dpr": 1
+      },
+      "scrolls": {
+        "scrollH": 700,
+        "clientH": 700,
+        "overflowPx": 0,
+        "scrollbar": 0
+      },
+      "zoom": {
+        "declared": "0.85",
+        "effectivePair": 0.8497,
+        "effectiveFoot": 0.8587
+      },
+      "blocks": {
+        "min-1280": true,
+        "max-h-950": true,
+        "max-h-900": true,
+        "max-h-820": true
+      },
+      "boxes": {
+        "root": {
+          "x": 24,
+          "y": 24,
+          "w": 1352,
+          "h": 652
+        },
+        "pair": {
+          "x": 54,
+          "y": 30.39,
+          "w": 1292,
+          "h": 583.73
+        },
+        "play": {
+          "x": 54,
+          "y": 84.03,
+          "w": 604.91,
+          "h": 476.45
+        },
+        "stand": {
+          "x": 706.5,
+          "y": 30.39,
+          "w": 639.5,
+          "h": 583.73
+        },
+        "foot": {
+          "x": 54,
+          "y": 632.5,
+          "w": 1292,
+          "h": 39.5
+        },
+        "wordmark": {
+          "x": 87.89,
+          "y": 24.53,
+          "w": 537.11,
+          "h": 86.02
+        }
+      },
+      "layoutH": {
+        "play": 561,
+        "stand": 687,
+        "pair": 687
+      },
+      "rhythm": {
+        "rootGap": 18,
+        "rootPadTop": 6,
+        "playGap": 14,
+        "standGap": 12,
+        "pairColGap": 56,
+        "playAlign": "center",
+        "pairAlign": "center"
+      },
+      "wordmark": {
+        "wmSize": 88,
+        "fontSize": 88,
+        "lineHeight": 101.2,
+        "marginTop": -70,
+        "letterSpacing": 5.28,
+        "text": "AUTOSTCH",
+        "chars": 8
+      },
+      "columns": {
+        "playLayoutH": 561,
+        "standLayoutH": 687,
+        "columnHeadroom": 126
+      },
+      "budget": {
+        "probeMax": 113.5,
+        "gapPerRow": 14,
+        "oneRowTotal": 127.5,
+        "zoomedIntoCssPx": 0.8497
+      },
+      "mark": {
+        "wmPx": 88,
+        "cellPx": 7.92,
+        "gutPx": 1.936,
+        "borderPx": 1.056,
+        "radiusPx": 1.232,
+        "column": {
+          "layoutW": 8,
+          "layoutH": 77,
+          "cssW": 6.72,
+          "cssH": 65.23
+        },
+        "columnPerDesign": 76.91,
+        "full": {
+          "layoutW": 47,
+          "layoutH": 77,
+          "cssW": 40.16,
+          "cssH": 65.23
+        }
+      },
+      "markScale": [
+        {
+          "k": 1,
+          "cellPx": 7.92,
+          "layoutH": 77,
+          "layoutW": 47,
+          "cssH": 65.23,
+          "cssW": 40.16
+        },
+        {
+          "k": 0.85,
+          "cellPx": 6.732,
+          "layoutH": 65,
+          "layoutW": 40,
+          "cssH": 55.48,
+          "cssW": 34.16
+        },
+        {
+          "k": 0.7,
+          "cellPx": 5.544,
+          "layoutH": 54,
+          "layoutW": 33,
+          "cssH": 45.61,
+          "cssW": 28.08
+        },
+        {
+          "k": 0.6,
+          "cellPx": 4.752,
+          "layoutH": 46,
+          "layoutW": 28,
+          "cssH": 39.14,
+          "cssW": 24.09
+        },
+        {
+          "k": 0.5,
+          "cellPx": 3.96,
+          "layoutH": 38,
+          "layoutW": 24,
+          "cssH": 32.56,
+          "cssW": 20.05
+        },
+        {
+          "k": 0.4,
+          "cellPx": 3.168,
+          "layoutH": 31,
+          "layoutW": 19,
+          "cssH": 26.09,
+          "cssW": 16.06
+        }
+      ],
+      "tagline": {
+        "roleToken": "--text-body-lg",
+        "roleSize": "15.5px",
+        "designSize": "15px (mainscreen-marke.md) — nearest rung is the role above",
+        "de": {
+          "fontSize": 15.5,
+          "lineHeight": 23.25,
+          "layoutH": 23,
+          "layoutW": 213,
+          "cssH": 19.75,
+          "cssW": 180.92
+        },
+        "en": {
+          "fontSize": 15.5,
+          "lineHeight": 23.25,
+          "layoutH": 23,
+          "layoutW": 168,
+          "cssH": 19.75,
+          "cssW": 143.13
+        },
+        "atBody": {
+          "fontSize": 13,
+          "lineHeight": 19.5,
+          "layoutH": 19,
+          "layoutW": 179,
+          "cssH": 16.56,
+          "cssW": 151.8
+        },
+        "atMeta": {
+          "fontSize": 11,
+          "lineHeight": 16.5,
+          "layoutH": 16,
+          "layoutW": 151,
+          "cssH": 14.02,
+          "cssW": 128.44
+        }
+      },
+      "compose": [
+        {
+          "k": 1,
+          "cellPx": 7.92,
+          "scrollH": 701,
+          "innerH": 700,
+          "overflowPx": 1,
+          "holds": false,
+          "playLayoutH": 688,
+          "standLayoutH": 687
+        },
+        {
+          "k": 0.85,
+          "cellPx": 6.732,
+          "scrollH": 700,
+          "innerH": 700,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 677,
+          "standLayoutH": 687
+        },
+        {
+          "k": 0.7,
+          "cellPx": 5.544,
+          "scrollH": 700,
+          "innerH": 700,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 665,
+          "standLayoutH": 687
+        },
+        {
+          "k": 0.6,
+          "cellPx": 4.752,
+          "scrollH": 700,
+          "innerH": 700,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 658,
+          "standLayoutH": 687
+        },
+        {
+          "k": 0.5,
+          "cellPx": 3.96,
+          "scrollH": 700,
+          "innerH": 700,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 650,
+          "standLayoutH": 687
+        },
+        {
+          "k": 0.4,
+          "cellPx": 3.168,
+          "scrollH": 700,
+          "innerH": 700,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 642,
+          "standLayoutH": 687
+        }
+      ],
+      "deckPanel": {
+        "reached": true,
+        "box": {
+          "x": 706.5,
+          "y": 30.39,
+          "w": 639.5,
+          "h": 294.48
+        },
+        "layoutH": 346,
+        "layoutW": 752,
+        "cls": "as-deck hidden dt:flex as-glass as-ring flex-col gap-[18px] rounded-2xl",
+        "rootClass": "none of its own — reached as the non-bank ring-bearing child of .hub-stand",
+        "art": {
+          "layoutW": 100,
+          "layoutH": 137,
+          "cssW": 84.94,
+          "cssH": 116.8
+        }
+      },
+      "standBudget": {
+        "reached": true,
+        "panelWas": 346,
+        "zeroFits": true,
+        "growthMax": 1.5,
+        "restored": true
+      },
+      "c3Probe": {
+        "reached": true,
+        "artWas": {
+          "w": 100,
+          "h": 137
+        },
+        "artAt": {
+          "w": 196,
+          "h": 268
+        },
+        "standWas": 687,
+        "standLayoutH": 817,
+        "scrollH": 810,
+        "innerH": 700,
+        "overflowPx": 110,
+        "holds": false,
+        "artRestored": true
+      },
+      "c3Options": {
+        "A": {
+          "artHeightMax": 138.7,
+          "artWidthAtMax": 101.4,
+          "designAsks": 268,
+          "todayIs": 137,
+          "reachesDesign": false
+        },
+        "B": {
+          "bankWas": 328,
+          "bankMustCapAt": 198.9,
+          "bankGivesUp": 129.1,
+          "enoughAlone": true
+        },
+        "C": {
+          "zoomFloorToday": 0.85,
+          "zoomNeeded": 0.715,
+          "ctaLayoutH": 76,
+          "ctaCssHAtNeededZoom": 54.3,
+          "floorReasonIs": "below 0.85 the start button falls under 22 px (index.css, the zoom comment)"
+        },
+        "restored": true
+      },
+      "children": {
+        "play": [
+          {
+            "tag": "h1",
+            "cls": "as-wordmark select-none",
+            "layoutH": 101,
+            "layoutW": 632,
+            "cssH": 86.02,
+            "cssW": 537.11
+          },
+          {
+            "tag": "div",
+            "cls": "as-lockup hidden dt:flex flex-col items-center self-stretch",
+            "layoutH": 109,
+            "layoutW": 712,
+            "cssH": 92.31,
+            "cssW": 604.91
+          },
+          {
+            "tag": "div",
+            "cls": "as-hub-bonus w-[88%] max-w-sm dt:w-full dt:max-w-none rounded-xl px-4 py-2.5 flex flex-col gap-1.5 dt:gap-2",
+            "layoutH": 68,
+            "layoutW": 712,
+            "cssH": 57.84,
+            "cssW": 604.91
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none",
+            "layoutH": 82,
+            "layoutW": 712,
+            "cssH": 69.55,
+            "cssW": 604.91
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none flex flex-col gap-2.5",
+            "layoutH": 139,
+            "layoutW": 712,
+            "cssH": 118.02,
+            "cssW": 604.91
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none flex flex-col gap-2.5",
+            "layoutH": 62,
+            "layoutW": 712,
+            "cssH": 52.77,
+            "cssW": 604.91
+          }
+        ],
+        "stand": [
+          {
+            "tag": "div",
+            "cls": "as-deck hidden dt:flex as-glass as-ring flex-col gap-[18px] rounded-2xl",
+            "layoutH": 346,
+            "layoutW": 752,
+            "cssH": 294.48,
+            "cssW": 639.5
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none as-hub-list as-glass as-ring grid grid-cols-2 gap-2.5 dt:grid-cols-1 dt:gap-0",
+            "layoutH": 328,
+            "layoutW": 752,
+            "cssH": 279.06,
+            "cssW": 639.5
+          }
+        ]
+      },
+      "centringTrial": {
+        "was": "center",
+        "moved": [],
+        "unchanged": 6,
+        "total": 6,
+        "restored": true
+      },
+      "restored": {
+        "probesLeft": 0,
+        "scrollH": 700,
+        "playLayoutH": 561,
+        "standLayoutH": 687
+      }
+    },
+    {
+      "id": "1536x791/de",
+      "size": "1536x791",
+      "lang": "de",
+      "settle": {
+        "fontsOk": true,
+        "images": 2,
+        "timedOut": 0
+      },
+      "reached": true,
+      "missing": [],
+      "viewport": {
+        "w": 1536,
+        "h": 791,
+        "dpr": 1
+      },
+      "scrolls": {
+        "scrollH": 791,
+        "clientH": 791,
+        "overflowPx": 0,
+        "scrollbar": 0
+      },
+      "zoom": {
+        "declared": "0.85",
+        "effectivePair": 0.8498,
+        "effectiveFoot": 0.8587
+      },
+      "blocks": {
+        "min-1280": true,
+        "max-h-950": true,
+        "max-h-900": true,
+        "max-h-820": true
+      },
+      "boxes": {
+        "root": {
+          "x": 24,
+          "y": 24,
+          "w": 1488,
+          "h": 743
+        },
+        "pair": {
+          "x": 122,
+          "y": 30.39,
+          "w": 1292,
+          "h": 674.73
+        },
+        "play": {
+          "x": 122,
+          "y": 129.53,
+          "w": 604.91,
+          "h": 476.45
+        },
+        "stand": {
+          "x": 774.5,
+          "y": 30.39,
+          "w": 639.5,
+          "h": 674.73
+        },
+        "foot": {
+          "x": 122,
+          "y": 723.5,
+          "w": 1292,
+          "h": 39.5
+        },
+        "wordmark": {
+          "x": 155.89,
+          "y": 70.03,
+          "w": 537.11,
+          "h": 86.02
+        }
+      },
+      "layoutH": {
+        "play": 561,
+        "stand": 794,
+        "pair": 794
+      },
+      "rhythm": {
+        "rootGap": 18,
+        "rootPadTop": 6,
+        "playGap": 14,
+        "standGap": 12,
+        "pairColGap": 56,
+        "playAlign": "center",
+        "pairAlign": "center"
+      },
+      "wordmark": {
+        "wmSize": 88,
+        "fontSize": 88,
+        "lineHeight": 101.2,
+        "marginTop": -70,
+        "letterSpacing": 5.28,
+        "text": "AUTOSTCH",
+        "chars": 8
+      },
+      "columns": {
+        "playLayoutH": 561,
+        "standLayoutH": 794,
+        "columnHeadroom": 233
+      },
+      "budget": {
+        "probeMax": 220.5,
+        "gapPerRow": 14,
+        "oneRowTotal": 234.5,
+        "zoomedIntoCssPx": 0.8498
+      },
+      "mark": {
+        "wmPx": 88,
+        "cellPx": 7.92,
+        "gutPx": 1.936,
+        "borderPx": 1.056,
+        "radiusPx": 1.232,
+        "column": {
+          "layoutW": 8,
+          "layoutH": 77,
+          "cssW": 6.72,
+          "cssH": 65.23
+        },
+        "columnPerDesign": 76.91,
+        "full": {
+          "layoutW": 47,
+          "layoutH": 77,
+          "cssW": 40.16,
+          "cssH": 65.23
+        }
+      },
+      "markScale": [
+        {
+          "k": 1,
+          "cellPx": 7.92,
+          "layoutH": 77,
+          "layoutW": 47,
+          "cssH": 65.23,
+          "cssW": 40.16
+        },
+        {
+          "k": 0.85,
+          "cellPx": 6.732,
+          "layoutH": 65,
+          "layoutW": 40,
+          "cssH": 55.48,
+          "cssW": 34.16
+        },
+        {
+          "k": 0.7,
+          "cellPx": 5.544,
+          "layoutH": 54,
+          "layoutW": 33,
+          "cssH": 45.61,
+          "cssW": 28.08
+        },
+        {
+          "k": 0.6,
+          "cellPx": 4.752,
+          "layoutH": 46,
+          "layoutW": 28,
+          "cssH": 39.14,
+          "cssW": 24.09
+        },
+        {
+          "k": 0.5,
+          "cellPx": 3.96,
+          "layoutH": 38,
+          "layoutW": 24,
+          "cssH": 32.56,
+          "cssW": 20.05
+        },
+        {
+          "k": 0.4,
+          "cellPx": 3.168,
+          "layoutH": 31,
+          "layoutW": 19,
+          "cssH": 26.09,
+          "cssW": 16.06
+        }
+      ],
+      "tagline": {
+        "roleToken": "--text-body-lg",
+        "roleSize": "15.5px",
+        "designSize": "15px (mainscreen-marke.md) — nearest rung is the role above",
+        "de": {
+          "fontSize": 15.5,
+          "lineHeight": 23.25,
+          "layoutH": 23,
+          "layoutW": 213,
+          "cssH": 19.75,
+          "cssW": 180.92
+        },
+        "en": {
+          "fontSize": 15.5,
+          "lineHeight": 23.25,
+          "layoutH": 23,
+          "layoutW": 168,
+          "cssH": 19.75,
+          "cssW": 143.13
+        },
+        "atBody": {
+          "fontSize": 13,
+          "lineHeight": 19.5,
+          "layoutH": 19,
+          "layoutW": 179,
+          "cssH": 16.56,
+          "cssW": 151.8
+        },
+        "atMeta": {
+          "fontSize": 11,
+          "lineHeight": 16.5,
+          "layoutH": 16,
+          "layoutW": 151,
+          "cssH": 14.02,
+          "cssW": 128.44
+        }
+      },
+      "compose": [
+        {
+          "k": 1,
+          "cellPx": 7.92,
+          "scrollH": 791,
+          "innerH": 791,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 688,
+          "standLayoutH": 794
+        },
+        {
+          "k": 0.85,
+          "cellPx": 6.732,
+          "scrollH": 791,
+          "innerH": 791,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 677,
+          "standLayoutH": 794
+        },
+        {
+          "k": 0.7,
+          "cellPx": 5.544,
+          "scrollH": 791,
+          "innerH": 791,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 665,
+          "standLayoutH": 794
+        },
+        {
+          "k": 0.6,
+          "cellPx": 4.752,
+          "scrollH": 791,
+          "innerH": 791,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 658,
+          "standLayoutH": 794
+        },
+        {
+          "k": 0.5,
+          "cellPx": 3.96,
+          "scrollH": 791,
+          "innerH": 791,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 650,
+          "standLayoutH": 794
+        },
+        {
+          "k": 0.4,
+          "cellPx": 3.168,
+          "scrollH": 791,
+          "innerH": 791,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 642,
+          "standLayoutH": 794
+        }
+      ],
+      "deckPanel": {
+        "reached": true,
+        "box": {
+          "x": 774.5,
+          "y": 30.39,
+          "w": 639.5,
+          "h": 385.48
+        },
+        "layoutH": 454,
+        "layoutW": 752,
+        "cls": "as-deck hidden dt:flex as-glass as-ring flex-col gap-[18px] rounded-2xl",
+        "rootClass": "none of its own — reached as the non-bank ring-bearing child of .hub-stand",
+        "art": {
+          "layoutW": 177,
+          "layoutH": 244,
+          "cssW": 150.7,
+          "cssH": 207.8
+        }
+      },
+      "standBudget": {
+        "reached": true,
+        "panelWas": 454,
+        "zeroFits": true,
+        "growthMax": 0.5,
+        "restored": true
+      },
+      "c3Probe": {
+        "reached": true,
+        "artWas": {
+          "w": 177,
+          "h": 244
+        },
+        "artAt": {
+          "w": 196,
+          "h": 268
+        },
+        "standWas": 794,
+        "standLayoutH": 817,
+        "scrollH": 810,
+        "innerH": 791,
+        "overflowPx": 19,
+        "holds": false,
+        "artRestored": true
+      },
+      "c3Options": {
+        "A": {
+          "artHeightMax": 245.8,
+          "artWidthAtMax": 179.7,
+          "designAsks": 268,
+          "todayIs": 244,
+          "reachesDesign": false
+        },
+        "B": {
+          "bankWas": 328,
+          "bankMustCapAt": 306.2,
+          "bankGivesUp": 21.8,
+          "enoughAlone": true
+        },
+        "C": {
+          "zoomFloorToday": 0.85,
+          "zoomNeeded": 0.827,
+          "ctaLayoutH": 76,
+          "ctaCssHAtNeededZoom": 62.9,
+          "floorReasonIs": "below 0.85 the start button falls under 22 px (index.css, the zoom comment)"
+        },
+        "restored": true
+      },
+      "children": {
+        "play": [
+          {
+            "tag": "h1",
+            "cls": "as-wordmark select-none",
+            "layoutH": 101,
+            "layoutW": 632,
+            "cssH": 86.02,
+            "cssW": 537.11
+          },
+          {
+            "tag": "div",
+            "cls": "as-lockup hidden dt:flex flex-col items-center self-stretch",
+            "layoutH": 109,
+            "layoutW": 712,
+            "cssH": 92.31,
+            "cssW": 604.91
+          },
+          {
+            "tag": "div",
+            "cls": "as-hub-bonus w-[88%] max-w-sm dt:w-full dt:max-w-none rounded-xl px-4 py-2.5 flex flex-col gap-1.5 dt:gap-2",
+            "layoutH": 68,
+            "layoutW": 712,
+            "cssH": 57.84,
+            "cssW": 604.91
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none",
+            "layoutH": 82,
+            "layoutW": 712,
+            "cssH": 69.55,
+            "cssW": 604.91
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none flex flex-col gap-2.5",
+            "layoutH": 139,
+            "layoutW": 712,
+            "cssH": 118.02,
+            "cssW": 604.91
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none flex flex-col gap-2.5",
+            "layoutH": 62,
+            "layoutW": 712,
+            "cssH": 52.77,
+            "cssW": 604.91
+          }
+        ],
+        "stand": [
+          {
+            "tag": "div",
+            "cls": "as-deck hidden dt:flex as-glass as-ring flex-col gap-[18px] rounded-2xl",
+            "layoutH": 454,
+            "layoutW": 752,
+            "cssH": 385.48,
+            "cssW": 639.5
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none as-hub-list as-glass as-ring grid grid-cols-2 gap-2.5 dt:grid-cols-1 dt:gap-0",
+            "layoutH": 328,
+            "layoutW": 752,
+            "cssH": 279.06,
+            "cssW": 639.5
+          }
+        ]
+      },
+      "centringTrial": {
+        "was": "center",
+        "moved": [],
+        "unchanged": 6,
+        "total": 6,
+        "restored": true
+      },
+      "restored": {
+        "probesLeft": 0,
+        "scrollH": 791,
+        "playLayoutH": 561,
+        "standLayoutH": 794
+      }
+    },
+    {
+      "id": "1600x900/de",
+      "size": "1600x900",
+      "lang": "de",
+      "settle": {
+        "fontsOk": true,
+        "images": 2,
+        "timedOut": 0
+      },
+      "reached": true,
+      "missing": [],
+      "viewport": {
+        "w": 1600,
+        "h": 900,
+        "dpr": 1
+      },
+      "scrolls": {
+        "scrollH": 900,
+        "clientH": 900,
+        "overflowPx": 0,
+        "scrollbar": 0
+      },
+      "zoom": {
+        "declared": "0.85",
+        "effectivePair": 0.8503,
+        "effectiveFoot": 0.8587
+      },
+      "blocks": {
+        "min-1280": true,
+        "max-h-950": true,
+        "max-h-900": true,
+        "max-h-820": false
+      },
+      "boxes": {
+        "root": {
+          "x": 40,
+          "y": 24,
+          "w": 1520,
+          "h": 852
+        },
+        "pair": {
+          "x": 154,
+          "y": 74.89,
+          "w": 1292,
+          "h": 694.73
+        },
+        "play": {
+          "x": 154,
+          "y": 184.03,
+          "w": 604.91,
+          "h": 476.45
+        },
+        "stand": {
+          "x": 806.5,
+          "y": 74.89,
+          "w": 639.5,
+          "h": 694.73
+        },
+        "foot": {
+          "x": 154,
+          "y": 832.5,
+          "w": 1292,
+          "h": 39.5
+        },
+        "wordmark": {
+          "x": 187.89,
+          "y": 124.53,
+          "w": 537.11,
+          "h": 86.02
+        }
+      },
+      "layoutH": {
+        "play": 561,
+        "stand": 817,
+        "pair": 817
+      },
+      "rhythm": {
+        "rootGap": 18,
+        "rootPadTop": 6,
+        "playGap": 14,
+        "standGap": 12,
+        "pairColGap": 56,
+        "playAlign": "center",
+        "pairAlign": "center"
+      },
+      "wordmark": {
+        "wmSize": 88,
+        "fontSize": 88,
+        "lineHeight": 101.2,
+        "marginTop": -70,
+        "letterSpacing": 5.28,
+        "text": "AUTOSTCH",
+        "chars": 8
+      },
+      "columns": {
+        "playLayoutH": 561,
+        "standLayoutH": 817,
+        "columnHeadroom": 256
+      },
+      "budget": {
+        "probeMax": 349,
+        "gapPerRow": 14,
+        "oneRowTotal": 363,
+        "zoomedIntoCssPx": 0.8503
+      },
+      "mark": {
+        "wmPx": 88,
+        "cellPx": 7.92,
+        "gutPx": 1.936,
+        "borderPx": 1.056,
+        "radiusPx": 1.232,
+        "column": {
+          "layoutW": 8,
+          "layoutH": 77,
+          "cssW": 6.72,
+          "cssH": 65.23
+        },
+        "columnPerDesign": 76.91,
+        "full": {
+          "layoutW": 47,
+          "layoutH": 77,
+          "cssW": 40.16,
+          "cssH": 65.23
+        }
+      },
+      "markScale": [
+        {
+          "k": 1,
+          "cellPx": 7.92,
+          "layoutH": 77,
+          "layoutW": 47,
+          "cssH": 65.23,
+          "cssW": 40.16
+        },
+        {
+          "k": 0.85,
+          "cellPx": 6.732,
+          "layoutH": 65,
+          "layoutW": 40,
+          "cssH": 55.48,
+          "cssW": 34.16
+        },
+        {
+          "k": 0.7,
+          "cellPx": 5.544,
+          "layoutH": 54,
+          "layoutW": 33,
+          "cssH": 45.61,
+          "cssW": 28.08
+        },
+        {
+          "k": 0.6,
+          "cellPx": 4.752,
+          "layoutH": 46,
+          "layoutW": 28,
+          "cssH": 39.14,
+          "cssW": 24.09
+        },
+        {
+          "k": 0.5,
+          "cellPx": 3.96,
+          "layoutH": 38,
+          "layoutW": 24,
+          "cssH": 32.56,
+          "cssW": 20.05
+        },
+        {
+          "k": 0.4,
+          "cellPx": 3.168,
+          "layoutH": 31,
+          "layoutW": 19,
+          "cssH": 26.09,
+          "cssW": 16.06
+        }
+      ],
+      "tagline": {
+        "roleToken": "--text-body-lg",
+        "roleSize": "15.5px",
+        "designSize": "15px (mainscreen-marke.md) — nearest rung is the role above",
+        "de": {
+          "fontSize": 15.5,
+          "lineHeight": 23.25,
+          "layoutH": 23,
+          "layoutW": 213,
+          "cssH": 19.75,
+          "cssW": 180.92
+        },
+        "en": {
+          "fontSize": 15.5,
+          "lineHeight": 23.25,
+          "layoutH": 23,
+          "layoutW": 168,
+          "cssH": 19.75,
+          "cssW": 143.13
+        },
+        "atBody": {
+          "fontSize": 13,
+          "lineHeight": 19.5,
+          "layoutH": 19,
+          "layoutW": 179,
+          "cssH": 16.56,
+          "cssW": 151.8
+        },
+        "atMeta": {
+          "fontSize": 11,
+          "lineHeight": 16.5,
+          "layoutH": 16,
+          "layoutW": 151,
+          "cssH": 14.02,
+          "cssW": 128.44
+        }
+      },
+      "compose": [
+        {
+          "k": 1,
+          "cellPx": 7.92,
+          "scrollH": 900,
+          "innerH": 900,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 688,
+          "standLayoutH": 817
+        },
+        {
+          "k": 0.85,
+          "cellPx": 6.732,
+          "scrollH": 900,
+          "innerH": 900,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 677,
+          "standLayoutH": 817
+        },
+        {
+          "k": 0.7,
+          "cellPx": 5.544,
+          "scrollH": 900,
+          "innerH": 900,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 665,
+          "standLayoutH": 817
+        },
+        {
+          "k": 0.6,
+          "cellPx": 4.752,
+          "scrollH": 900,
+          "innerH": 900,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 658,
+          "standLayoutH": 817
+        },
+        {
+          "k": 0.5,
+          "cellPx": 3.96,
+          "scrollH": 900,
+          "innerH": 900,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 650,
+          "standLayoutH": 817
+        },
+        {
+          "k": 0.4,
+          "cellPx": 3.168,
+          "scrollH": 900,
+          "innerH": 900,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 642,
+          "standLayoutH": 817
+        }
+      ],
+      "deckPanel": {
+        "reached": true,
+        "box": {
+          "x": 806.5,
+          "y": 74.89,
+          "w": 639.5,
+          "h": 405.48
+        },
+        "layoutH": 477,
+        "layoutW": 752,
+        "cls": "as-deck hidden dt:flex as-glass as-ring flex-col gap-[18px] rounded-2xl",
+        "rootClass": "none of its own — reached as the non-bank ring-bearing child of .hub-stand",
+        "art": {
+          "layoutW": 194,
+          "layoutH": 268,
+          "cssW": 165.16,
+          "cssH": 227.8
+        }
+      },
+      "standBudget": {
+        "reached": true,
+        "panelWas": 477,
+        "zeroFits": true,
+        "growthMax": 106,
+        "restored": true
+      },
+      "c3Probe": {
+        "reached": true,
+        "artWas": {
+          "w": 194,
+          "h": 268
+        },
+        "artAt": {
+          "w": 196,
+          "h": 268
+        },
+        "standWas": 817,
+        "standLayoutH": 817,
+        "scrollH": 900,
+        "innerH": 900,
+        "overflowPx": 0,
+        "holds": true,
+        "artRestored": true
+      },
+      "c3Options": {
+        "A": {
+          "artHeightMax": 267.7,
+          "artWidthAtMax": 195.8,
+          "designAsks": 268,
+          "todayIs": 268,
+          "reachesDesign": false
+        },
+        "B": {
+          "bankWas": 328,
+          "bankMustCapAt": 328,
+          "bankGivesUp": 0,
+          "enoughAlone": true
+        },
+        "C": {
+          "zoomFloorToday": 0.85,
+          "zoomNeeded": 0.85,
+          "ctaLayoutH": 76,
+          "ctaCssHAtNeededZoom": null,
+          "floorReasonIs": "below 0.85 the start button falls under 22 px (index.css, the zoom comment)"
+        },
+        "restored": true
+      },
+      "children": {
+        "play": [
+          {
+            "tag": "h1",
+            "cls": "as-wordmark select-none",
+            "layoutH": 101,
+            "layoutW": 632,
+            "cssH": 86.02,
+            "cssW": 537.11
+          },
+          {
+            "tag": "div",
+            "cls": "as-lockup hidden dt:flex flex-col items-center self-stretch",
+            "layoutH": 109,
+            "layoutW": 712,
+            "cssH": 92.31,
+            "cssW": 604.91
+          },
+          {
+            "tag": "div",
+            "cls": "as-hub-bonus w-[88%] max-w-sm dt:w-full dt:max-w-none rounded-xl px-4 py-2.5 flex flex-col gap-1.5 dt:gap-2",
+            "layoutH": 68,
+            "layoutW": 712,
+            "cssH": 57.84,
+            "cssW": 604.91
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none",
+            "layoutH": 82,
+            "layoutW": 712,
+            "cssH": 69.55,
+            "cssW": 604.91
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none flex flex-col gap-2.5",
+            "layoutH": 139,
+            "layoutW": 712,
+            "cssH": 118.02,
+            "cssW": 604.91
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none flex flex-col gap-2.5",
+            "layoutH": 62,
+            "layoutW": 712,
+            "cssH": 52.77,
+            "cssW": 604.91
+          }
+        ],
+        "stand": [
+          {
+            "tag": "div",
+            "cls": "as-deck hidden dt:flex as-glass as-ring flex-col gap-[18px] rounded-2xl",
+            "layoutH": 477,
+            "layoutW": 752,
+            "cssH": 405.48,
+            "cssW": 639.5
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none as-hub-list as-glass as-ring grid grid-cols-2 gap-2.5 dt:grid-cols-1 dt:gap-0",
+            "layoutH": 328,
+            "layoutW": 752,
+            "cssH": 279.06,
+            "cssW": 639.5
+          }
+        ]
+      },
+      "centringTrial": {
+        "was": "center",
+        "moved": [],
+        "unchanged": 6,
+        "total": 6,
+        "restored": true
+      },
+      "restored": {
+        "probesLeft": 0,
+        "scrollH": 900,
+        "playLayoutH": 561,
+        "standLayoutH": 817
+      }
+    },
+    {
+      "id": "1920x1080/de",
+      "size": "1920x1080",
+      "lang": "de",
+      "settle": {
+        "fontsOk": true,
+        "images": 2,
+        "timedOut": 0
+      },
+      "reached": true,
+      "missing": [],
+      "viewport": {
+        "w": 1920,
+        "h": 1080,
+        "dpr": 1
+      },
+      "scrolls": {
+        "scrollH": 1080,
+        "clientH": 1080,
+        "overflowPx": 0,
+        "scrollbar": 0
+      },
+      "zoom": {
+        "declared": "1",
+        "effectivePair": 1,
+        "effectiveFoot": 1.0031
+      },
+      "blocks": {
+        "min-1280": true,
+        "max-h-950": false,
+        "max-h-900": false,
+        "max-h-820": false
+      },
+      "boxes": {
+        "root": {
+          "x": 200,
+          "y": 24,
+          "w": 1520,
+          "h": 1032
+        },
+        "pair": {
+          "x": 200,
+          "y": 94.44,
+          "w": 1520,
+          "h": 825
+        },
+        "play": {
+          "x": 200,
+          "y": 207.45,
+          "w": 700,
+          "h": 598.95
+        },
+        "stand": {
+          "x": 980,
+          "y": 94.44,
+          "w": 740,
+          "h": 825
+        },
+        "foot": {
+          "x": 200,
+          "y": 1005.86,
+          "w": 1520,
+          "h": 46.14
+        },
+        "wordmark": {
+          "x": 234.05,
+          "y": 137.45,
+          "w": 631.91,
+          "h": 101.19
+        }
+      },
+      "layoutH": {
+        "play": 599,
+        "stand": 825,
+        "pair": 825
+      },
+      "rhythm": {
+        "rootGap": 40,
+        "rootPadTop": 24,
+        "playGap": 22,
+        "standGap": 20,
+        "pairColGap": 80,
+        "playAlign": "center",
+        "pairAlign": "center"
+      },
+      "wordmark": {
+        "wmSize": 88,
+        "fontSize": 88,
+        "lineHeight": 101.2,
+        "marginTop": -70,
+        "letterSpacing": 5.28,
+        "text": "AUTOSTCH",
+        "chars": 8
+      },
+      "columns": {
+        "playLayoutH": 599,
+        "standLayoutH": 825,
+        "columnHeadroom": 226
+      },
+      "budget": {
+        "probeMax": 297,
+        "gapPerRow": 22,
+        "oneRowTotal": 319,
+        "zoomedIntoCssPx": 1
+      },
+      "mark": {
+        "wmPx": 88,
+        "cellPx": 7.92,
+        "gutPx": 1.936,
+        "borderPx": 1.056,
+        "radiusPx": 1.232,
+        "column": {
+          "layoutW": 8,
+          "layoutH": 77,
+          "cssW": 7.91,
+          "cssH": 76.7
+        },
+        "columnPerDesign": 76.91,
+        "full": {
+          "layoutW": 47,
+          "layoutH": 77,
+          "cssW": 47.22,
+          "cssH": 76.7
+        }
+      },
+      "markScale": [
+        {
+          "k": 1,
+          "cellPx": 7.92,
+          "layoutH": 77,
+          "layoutW": 47,
+          "cssH": 76.7,
+          "cssW": 47.22
+        },
+        {
+          "k": 0.85,
+          "cellPx": 6.732,
+          "layoutH": 65,
+          "layoutW": 40,
+          "cssH": 65.23,
+          "cssW": 40.16
+        },
+        {
+          "k": 0.7,
+          "cellPx": 5.544,
+          "layoutH": 54,
+          "layoutW": 33,
+          "cssH": 53.66,
+          "cssW": 33.03
+        },
+        {
+          "k": 0.6,
+          "cellPx": 4.752,
+          "layoutH": 46,
+          "layoutW": 28,
+          "cssH": 46.09,
+          "cssW": 28.38
+        },
+        {
+          "k": 0.5,
+          "cellPx": 3.96,
+          "layoutH": 38,
+          "layoutW": 24,
+          "cssH": 38.3,
+          "cssW": 23.58
+        },
+        {
+          "k": 0.4,
+          "cellPx": 3.168,
+          "layoutH": 31,
+          "layoutW": 19,
+          "cssH": 30.61,
+          "cssW": 18.84
+        }
+      ],
+      "tagline": {
+        "roleToken": "--text-body-lg",
+        "roleSize": "15.5px",
+        "designSize": "15px (mainscreen-marke.md) — nearest rung is the role above",
+        "de": {
+          "fontSize": 15.5,
+          "lineHeight": 23.25,
+          "layoutH": 23,
+          "layoutW": 213,
+          "cssH": 23.25,
+          "cssW": 212.92
+        },
+        "en": {
+          "fontSize": 15.5,
+          "lineHeight": 23.25,
+          "layoutH": 23,
+          "layoutW": 168,
+          "cssH": 23.25,
+          "cssW": 168.44
+        },
+        "atBody": {
+          "fontSize": 13,
+          "lineHeight": 19.5,
+          "layoutH": 20,
+          "layoutW": 179,
+          "cssH": 19.5,
+          "cssW": 178.58
+        },
+        "atMeta": {
+          "fontSize": 11,
+          "lineHeight": 16.5,
+          "layoutH": 17,
+          "layoutW": 151,
+          "cssH": 16.5,
+          "cssW": 151.11
+        }
+      },
+      "compose": [
+        {
+          "k": 1,
+          "cellPx": 7.92,
+          "scrollH": 1080,
+          "innerH": 1080,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 743,
+          "standLayoutH": 825
+        },
+        {
+          "k": 0.85,
+          "cellPx": 6.732,
+          "scrollH": 1080,
+          "innerH": 1080,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 731,
+          "standLayoutH": 825
+        },
+        {
+          "k": 0.7,
+          "cellPx": 5.544,
+          "scrollH": 1080,
+          "innerH": 1080,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 720,
+          "standLayoutH": 825
+        },
+        {
+          "k": 0.6,
+          "cellPx": 4.752,
+          "scrollH": 1080,
+          "innerH": 1080,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 712,
+          "standLayoutH": 825
+        },
+        {
+          "k": 0.5,
+          "cellPx": 3.96,
+          "scrollH": 1080,
+          "innerH": 1080,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 705,
+          "standLayoutH": 825
+        },
+        {
+          "k": 0.4,
+          "cellPx": 3.168,
+          "scrollH": 1080,
+          "innerH": 1080,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 697,
+          "standLayoutH": 825
+        }
+      ],
+      "deckPanel": {
+        "reached": true,
+        "box": {
+          "x": 980,
+          "y": 94.44,
+          "w": 740,
+          "h": 477
+        },
+        "layoutH": 477,
+        "layoutW": 740,
+        "cls": "as-deck hidden dt:flex as-glass as-ring flex-col gap-[18px] rounded-2xl",
+        "rootClass": "none of its own — reached as the non-bank ring-bearing child of .hub-stand",
+        "art": {
+          "layoutW": 194,
+          "layoutH": 268,
+          "cssW": 194.2,
+          "cssH": 268
+        }
+      },
+      "standBudget": {
+        "reached": true,
+        "panelWas": 477,
+        "zeroFits": true,
+        "growthMax": 93,
+        "restored": true
+      },
+      "c3Probe": {
+        "reached": true,
+        "artWas": {
+          "w": 194,
+          "h": 268
+        },
+        "artAt": {
+          "w": 196,
+          "h": 268
+        },
+        "standWas": 825,
+        "standLayoutH": 825,
+        "scrollH": 1080,
+        "innerH": 1080,
+        "overflowPx": 0,
+        "holds": true,
+        "artRestored": true
+      },
+      "c3Options": {
+        "A": {
+          "artHeightMax": 267.7,
+          "artWidthAtMax": 195.8,
+          "designAsks": 268,
+          "todayIs": 268,
+          "reachesDesign": false
+        },
+        "B": {
+          "bankWas": 328,
+          "bankMustCapAt": 328,
+          "bankGivesUp": 0,
+          "enoughAlone": true
+        },
+        "C": {
+          "zoomFloorToday": 0.85,
+          "zoomNeeded": 0.85,
+          "ctaLayoutH": 76,
+          "ctaCssHAtNeededZoom": null,
+          "floorReasonIs": "below 0.85 the start button falls under 22 px (index.css, the zoom comment)"
+        },
+        "restored": true
+      },
+      "children": {
+        "play": [
+          {
+            "tag": "h1",
+            "cls": "as-wordmark select-none",
+            "layoutH": 101,
+            "layoutW": 632,
+            "cssH": 101.19,
+            "cssW": 631.91
+          },
+          {
+            "tag": "div",
+            "cls": "as-lockup hidden dt:flex flex-col items-center self-stretch",
+            "layoutH": 109,
+            "layoutW": 700,
+            "cssH": 108.59,
+            "cssW": 700
+          },
+          {
+            "tag": "div",
+            "cls": "as-hub-bonus w-[88%] max-w-sm dt:w-full dt:max-w-none rounded-xl px-4 py-2.5 flex flex-col gap-1.5 dt:gap-2",
+            "layoutH": 68,
+            "layoutW": 700,
+            "cssH": 67.75,
+            "cssW": 700
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none",
+            "layoutH": 82,
+            "layoutW": 700,
+            "cssH": 81.5,
+            "cssW": 700
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none flex flex-col gap-2.5",
+            "layoutH": 138,
+            "layoutW": 700,
+            "cssH": 138.17,
+            "cssW": 700
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none flex flex-col gap-2.5",
+            "layoutH": 62,
+            "layoutW": 700,
+            "cssH": 61.75,
+            "cssW": 700
+          }
+        ],
+        "stand": [
+          {
+            "tag": "div",
+            "cls": "as-deck hidden dt:flex as-glass as-ring flex-col gap-[18px] rounded-2xl",
+            "layoutH": 477,
+            "layoutW": 740,
+            "cssH": 477,
+            "cssW": 740
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none as-hub-list as-glass as-ring grid grid-cols-2 gap-2.5 dt:grid-cols-1 dt:gap-0",
+            "layoutH": 328,
+            "layoutW": 740,
+            "cssH": 328,
+            "cssW": 740
+          }
+        ]
+      },
+      "centringTrial": {
+        "was": "center",
+        "moved": [],
+        "unchanged": 6,
+        "total": 6,
+        "restored": true
+      },
+      "restored": {
+        "probesLeft": 0,
+        "scrollH": 1080,
+        "playLayoutH": 599,
+        "standLayoutH": 825
+      }
+    },
+    {
+      "id": "1700x760/de",
+      "size": "1700x760",
+      "lang": "de",
+      "settle": {
+        "fontsOk": true,
+        "images": 2,
+        "timedOut": 0
+      },
+      "reached": true,
+      "missing": [],
+      "viewport": {
+        "w": 1700,
+        "h": 760,
+        "dpr": 1
+      },
+      "scrolls": {
+        "scrollH": 760,
+        "clientH": 760,
+        "overflowPx": 0,
+        "scrollbar": 0
+      },
+      "zoom": {
+        "declared": "0.885417",
+        "effectivePair": 0.8857,
+        "effectiveFoot": 0.8927
+      },
+      "blocks": {
+        "min-1280": true,
+        "max-h-950": true,
+        "max-h-900": true,
+        "max-h-820": true
+      },
+      "boxes": {
+        "root": {
+          "x": 90,
+          "y": 24,
+          "w": 1520,
+          "h": 712
+        },
+        "pair": {
+          "x": 177.08,
+          "y": 30.39,
+          "w": 1345.83,
+          "h": 642.16
+        },
+        "play": {
+          "x": 177.08,
+          "y": 103.52,
+          "w": 630.11,
+          "h": 495.91
+        },
+        "stand": {
+          "x": 856.77,
+          "y": 30.39,
+          "w": 666.14,
+          "h": 642.16
+        },
+        "foot": {
+          "x": 177.08,
+          "y": 690.94,
+          "w": 1345.83,
+          "h": 41.06
+        },
+        "wordmark": {
+          "x": 212.41,
+          "y": 41.55,
+          "w": 559.45,
+          "h": 89.61
+        }
+      },
+      "layoutH": {
+        "play": 560,
+        "stand": 725,
+        "pair": 725
+      },
+      "rhythm": {
+        "rootGap": 18,
+        "rootPadTop": 6,
+        "playGap": 14,
+        "standGap": 12,
+        "pairColGap": 56,
+        "playAlign": "center",
+        "pairAlign": "center"
+      },
+      "wordmark": {
+        "wmSize": 88,
+        "fontSize": 88,
+        "lineHeight": 101.2,
+        "marginTop": -70,
+        "letterSpacing": 5.28,
+        "text": "AUTOSTCH",
+        "chars": 8
+      },
+      "columns": {
+        "playLayoutH": 560,
+        "standLayoutH": 725,
+        "columnHeadroom": 165
+      },
+      "budget": {
+        "probeMax": 152.5,
+        "gapPerRow": 14,
+        "oneRowTotal": 166.5,
+        "zoomedIntoCssPx": 0.8857
+      },
+      "mark": {
+        "wmPx": 88,
+        "cellPx": 7.92,
+        "gutPx": 1.936,
+        "borderPx": 1.056,
+        "radiusPx": 1.232,
+        "column": {
+          "layoutW": 8,
+          "layoutH": 77,
+          "cssW": 7,
+          "cssH": 67.92
+        },
+        "columnPerDesign": 76.91,
+        "full": {
+          "layoutW": 47,
+          "layoutH": 77,
+          "cssW": 41.81,
+          "cssH": 67.92
+        }
+      },
+      "markScale": [
+        {
+          "k": 1,
+          "cellPx": 7.92,
+          "layoutH": 77,
+          "layoutW": 47,
+          "cssH": 67.92,
+          "cssW": 41.81
+        },
+        {
+          "k": 0.85,
+          "cellPx": 6.732,
+          "layoutH": 65,
+          "layoutW": 40,
+          "cssH": 57.8,
+          "cssW": 35.58
+        },
+        {
+          "k": 0.7,
+          "cellPx": 5.544,
+          "layoutH": 54,
+          "layoutW": 33,
+          "cssH": 47.56,
+          "cssW": 29.28
+        },
+        {
+          "k": 0.6,
+          "cellPx": 4.752,
+          "layoutH": 46,
+          "layoutW": 28,
+          "cssH": 40.73,
+          "cssW": 25.08
+        },
+        {
+          "k": 0.5,
+          "cellPx": 3.96,
+          "layoutH": 38,
+          "layoutW": 24,
+          "cssH": 33.91,
+          "cssW": 20.88
+        },
+        {
+          "k": 0.4,
+          "cellPx": 3.168,
+          "layoutH": 31,
+          "layoutW": 19,
+          "cssH": 27.08,
+          "cssW": 16.67
+        }
+      ],
+      "tagline": {
+        "roleToken": "--text-body-lg",
+        "roleSize": "15.5px",
+        "designSize": "15px (mainscreen-marke.md) — nearest rung is the role above",
+        "de": {
+          "fontSize": 15.5,
+          "lineHeight": 23.25,
+          "layoutH": 23,
+          "layoutW": 213,
+          "cssH": 20.58,
+          "cssW": 188.47
+        },
+        "en": {
+          "fontSize": 15.5,
+          "lineHeight": 23.25,
+          "layoutH": 23,
+          "layoutW": 168,
+          "cssH": 20.58,
+          "cssW": 149.09
+        },
+        "atBody": {
+          "fontSize": 13,
+          "lineHeight": 19.5,
+          "layoutH": 20,
+          "layoutW": 179,
+          "cssH": 17.27,
+          "cssW": 158.11
+        },
+        "atMeta": {
+          "fontSize": 11,
+          "lineHeight": 16.5,
+          "layoutH": 16,
+          "layoutW": 151,
+          "cssH": 14.59,
+          "cssW": 133.67
+        }
+      },
+      "compose": [
+        {
+          "k": 1,
+          "cellPx": 7.92,
+          "scrollH": 760,
+          "innerH": 760,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 688,
+          "standLayoutH": 725
+        },
+        {
+          "k": 0.85,
+          "cellPx": 6.732,
+          "scrollH": 760,
+          "innerH": 760,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 677,
+          "standLayoutH": 725
+        },
+        {
+          "k": 0.7,
+          "cellPx": 5.544,
+          "scrollH": 760,
+          "innerH": 760,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 665,
+          "standLayoutH": 725
+        },
+        {
+          "k": 0.6,
+          "cellPx": 4.752,
+          "scrollH": 760,
+          "innerH": 760,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 657,
+          "standLayoutH": 725
+        },
+        {
+          "k": 0.5,
+          "cellPx": 3.96,
+          "scrollH": 760,
+          "innerH": 760,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 650,
+          "standLayoutH": 725
+        },
+        {
+          "k": 0.4,
+          "cellPx": 3.168,
+          "scrollH": 760,
+          "innerH": 760,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 642,
+          "standLayoutH": 725
+        }
+      ],
+      "deckPanel": {
+        "reached": true,
+        "box": {
+          "x": 856.77,
+          "y": 30.39,
+          "w": 666.14,
+          "h": 340.91
+        },
+        "layoutH": 385,
+        "layoutW": 752,
+        "cls": "as-deck hidden dt:flex as-glass as-ring flex-col gap-[18px] rounded-2xl",
+        "rootClass": "none of its own — reached as the non-bank ring-bearing child of .hub-stand",
+        "art": {
+          "layoutW": 128,
+          "layoutH": 176,
+          "cssW": 113.14,
+          "cssH": 155.83
+        }
+      },
+      "standBudget": {
+        "reached": true,
+        "panelWas": 385,
+        "zeroFits": true,
+        "growthMax": 1,
+        "restored": true
+      },
+      "c3Probe": {
+        "reached": true,
+        "artWas": {
+          "w": 128,
+          "h": 176
+        },
+        "artAt": {
+          "w": 196,
+          "h": 268
+        },
+        "standWas": 725,
+        "standLayoutH": 817,
+        "scrollH": 841,
+        "innerH": 760,
+        "overflowPx": 81,
+        "holds": false,
+        "artRestored": true
+      },
+      "c3Options": {
+        "A": {
+          "artHeightMax": 177.2,
+          "artWidthAtMax": 129.6,
+          "designAsks": 268,
+          "todayIs": 176,
+          "reachesDesign": false
+        },
+        "B": {
+          "bankWas": 328,
+          "bankMustCapAt": 237.7,
+          "bankGivesUp": 90.3,
+          "enoughAlone": true
+        },
+        "C": {
+          "zoomFloorToday": 0.85,
+          "zoomNeeded": 0.786,
+          "ctaLayoutH": 76,
+          "ctaCssHAtNeededZoom": 59.7,
+          "floorReasonIs": "below 0.85 the start button falls under 22 px (index.css, the zoom comment)"
+        },
+        "restored": true
+      },
+      "children": {
+        "play": [
+          {
+            "tag": "h1",
+            "cls": "as-wordmark select-none",
+            "layoutH": 101,
+            "layoutW": 632,
+            "cssH": 89.61,
+            "cssW": 559.45
+          },
+          {
+            "tag": "div",
+            "cls": "as-lockup hidden dt:flex flex-col items-center self-stretch",
+            "layoutH": 109,
+            "layoutW": 712,
+            "cssH": 96.14,
+            "cssW": 630.11
+          },
+          {
+            "tag": "div",
+            "cls": "as-hub-bonus w-[88%] max-w-sm dt:w-full dt:max-w-none rounded-xl px-4 py-2.5 flex flex-col gap-1.5 dt:gap-2",
+            "layoutH": 68,
+            "layoutW": 712,
+            "cssH": 60.19,
+            "cssW": 630.11
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none",
+            "layoutH": 82,
+            "layoutW": 712,
+            "cssH": 72.34,
+            "cssW": 630.11
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none flex flex-col gap-2.5",
+            "layoutH": 139,
+            "layoutW": 712,
+            "cssH": 122.77,
+            "cssW": 630.11
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none flex flex-col gap-2.5",
+            "layoutH": 62,
+            "layoutW": 712,
+            "cssH": 54.88,
+            "cssW": 630.11
+          }
+        ],
+        "stand": [
+          {
+            "tag": "div",
+            "cls": "as-deck hidden dt:flex as-glass as-ring flex-col gap-[18px] rounded-2xl",
+            "layoutH": 385,
+            "layoutW": 752,
+            "cssH": 340.91,
+            "cssW": 666.14
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none as-hub-list as-glass as-ring grid grid-cols-2 gap-2.5 dt:grid-cols-1 dt:gap-0",
+            "layoutH": 328,
+            "layoutW": 752,
+            "cssH": 290.63,
+            "cssW": 666.14
+          }
+        ]
+      },
+      "centringTrial": {
+        "was": "center",
+        "moved": [],
+        "unchanged": 6,
+        "total": 6,
+        "restored": true
+      },
+      "restored": {
+        "probesLeft": 0,
+        "scrollH": 760,
+        "playLayoutH": 560,
+        "standLayoutH": 725
+      }
+    },
+    {
+      "id": "1800x820/de",
+      "size": "1800x820",
+      "lang": "de",
+      "settle": {
+        "fontsOk": true,
+        "images": 2,
+        "timedOut": 0
+      },
+      "reached": true,
+      "missing": [],
+      "viewport": {
+        "w": 1800,
+        "h": 820,
+        "dpr": 1
+      },
+      "scrolls": {
+        "scrollH": 820,
+        "clientH": 820,
+        "overflowPx": 0,
+        "scrollbar": 0
+      },
+      "zoom": {
+        "declared": "0.9375",
+        "effectivePair": 0.937,
+        "effectiveFoot": 0.9429
+      },
+      "blocks": {
+        "min-1280": true,
+        "max-h-950": true,
+        "max-h-900": true,
+        "max-h-820": true
+      },
+      "boxes": {
+        "root": {
+          "x": 140,
+          "y": 24,
+          "w": 1520,
+          "h": 772
+        },
+        "pair": {
+          "x": 187.5,
+          "y": 30.34,
+          "w": 1425,
+          "h": 699.94
+        },
+        "play": {
+          "x": 187.5,
+          "y": 117.98,
+          "w": 667.19,
+          "h": 524.64
+        },
+        "stand": {
+          "x": 907.19,
+          "y": 30.34,
+          "w": 705.31,
+          "h": 699.94
+        },
+        "foot": {
+          "x": 187.5,
+          "y": 748.63,
+          "w": 1425,
+          "h": 43.38
+        },
+        "wordmark": {
+          "x": 224.88,
+          "y": 52.36,
+          "w": 592.44,
+          "h": 94.88
+        }
+      },
+      "layoutH": {
+        "play": 560,
+        "stand": 747,
+        "pair": 747
+      },
+      "rhythm": {
+        "rootGap": 18,
+        "rootPadTop": 6,
+        "playGap": 14,
+        "standGap": 12,
+        "pairColGap": 56,
+        "playAlign": "center",
+        "pairAlign": "center"
+      },
+      "wordmark": {
+        "wmSize": 88,
+        "fontSize": 88,
+        "lineHeight": 101.2,
+        "marginTop": -70,
+        "letterSpacing": 5.28,
+        "text": "AUTOSTCH",
+        "chars": 8
+      },
+      "columns": {
+        "playLayoutH": 560,
+        "standLayoutH": 747,
+        "columnHeadroom": 187
+      },
+      "budget": {
+        "probeMax": 174,
+        "gapPerRow": 14,
+        "oneRowTotal": 188,
+        "zoomedIntoCssPx": 0.937
+      },
+      "mark": {
+        "wmPx": 88,
+        "cellPx": 7.92,
+        "gutPx": 1.936,
+        "borderPx": 1.056,
+        "radiusPx": 1.232,
+        "column": {
+          "layoutW": 8,
+          "layoutH": 77,
+          "cssW": 7.42,
+          "cssH": 72.06
+        },
+        "columnPerDesign": 76.91,
+        "full": {
+          "layoutW": 47,
+          "layoutH": 77,
+          "cssW": 44.36,
+          "cssH": 72.06
+        }
+      },
+      "markScale": [
+        {
+          "k": 1,
+          "cellPx": 7.92,
+          "layoutH": 77,
+          "layoutW": 47,
+          "cssH": 72.06,
+          "cssW": 44.36
+        },
+        {
+          "k": 0.85,
+          "cellPx": 6.732,
+          "layoutH": 65,
+          "layoutW": 40,
+          "cssH": 61.09,
+          "cssW": 37.61
+        },
+        {
+          "k": 0.7,
+          "cellPx": 5.544,
+          "layoutH": 54,
+          "layoutW": 33,
+          "cssH": 50.36,
+          "cssW": 31
+        },
+        {
+          "k": 0.6,
+          "cellPx": 4.752,
+          "layoutH": 46,
+          "layoutW": 28,
+          "cssH": 43.17,
+          "cssW": 26.58
+        },
+        {
+          "k": 0.5,
+          "cellPx": 3.96,
+          "layoutH": 38,
+          "layoutW": 24,
+          "cssH": 35.97,
+          "cssW": 22.14
+        },
+        {
+          "k": 0.4,
+          "cellPx": 3.168,
+          "layoutH": 31,
+          "layoutW": 19,
+          "cssH": 28.78,
+          "cssW": 17.72
+        }
+      ],
+      "tagline": {
+        "roleToken": "--text-body-lg",
+        "roleSize": "15.5px",
+        "designSize": "15px (mainscreen-marke.md) — nearest rung is the role above",
+        "de": {
+          "fontSize": 15.5,
+          "lineHeight": 23.25,
+          "layoutH": 23,
+          "layoutW": 213,
+          "cssH": 21.8,
+          "cssW": 199.59
+        },
+        "en": {
+          "fontSize": 15.5,
+          "lineHeight": 23.25,
+          "layoutH": 23,
+          "layoutW": 168,
+          "cssH": 21.8,
+          "cssW": 157.89
+        },
+        "atBody": {
+          "fontSize": 13,
+          "lineHeight": 19.5,
+          "layoutH": 20,
+          "layoutW": 178,
+          "cssH": 18.28,
+          "cssW": 167.33
+        },
+        "atMeta": {
+          "fontSize": 11,
+          "lineHeight": 16.5,
+          "layoutH": 17,
+          "layoutW": 151,
+          "cssH": 15.47,
+          "cssW": 141.63
+        }
+      },
+      "compose": [
+        {
+          "k": 1,
+          "cellPx": 7.92,
+          "scrollH": 820,
+          "innerH": 820,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 688,
+          "standLayoutH": 747
+        },
+        {
+          "k": 0.85,
+          "cellPx": 6.732,
+          "scrollH": 820,
+          "innerH": 820,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 676,
+          "standLayoutH": 747
+        },
+        {
+          "k": 0.7,
+          "cellPx": 5.544,
+          "scrollH": 820,
+          "innerH": 820,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 665,
+          "standLayoutH": 747
+        },
+        {
+          "k": 0.6,
+          "cellPx": 4.752,
+          "scrollH": 820,
+          "innerH": 820,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 657,
+          "standLayoutH": 747
+        },
+        {
+          "k": 0.5,
+          "cellPx": 3.96,
+          "scrollH": 820,
+          "innerH": 820,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 649,
+          "standLayoutH": 747
+        },
+        {
+          "k": 0.4,
+          "cellPx": 3.168,
+          "scrollH": 820,
+          "innerH": 820,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 642,
+          "standLayoutH": 747
+        }
+      ],
+      "deckPanel": {
+        "reached": true,
+        "box": {
+          "x": 907.19,
+          "y": 30.34,
+          "w": 705.31,
+          "h": 381
+        },
+        "layoutH": 406,
+        "layoutW": 752,
+        "cls": "as-deck hidden dt:flex as-glass as-ring flex-col gap-[18px] rounded-2xl",
+        "rootClass": "none of its own — reached as the non-bank ring-bearing child of .hub-stand",
+        "art": {
+          "layoutW": 143,
+          "layoutH": 197,
+          "cssW": 134.22,
+          "cssH": 185
+        }
+      },
+      "standBudget": {
+        "reached": true,
+        "panelWas": 406,
+        "zeroFits": true,
+        "growthMax": 1.5,
+        "restored": true
+      },
+      "c3Probe": {
+        "reached": true,
+        "artWas": {
+          "w": 143,
+          "h": 197
+        },
+        "artAt": {
+          "w": 196,
+          "h": 268
+        },
+        "standWas": 747,
+        "standLayoutH": 817,
+        "scrollH": 886,
+        "innerH": 820,
+        "overflowPx": 66,
+        "holds": false,
+        "artRestored": true
+      },
+      "c3Options": {
+        "A": {
+          "artHeightMax": 198.4,
+          "artWidthAtMax": 145.1,
+          "designAsks": 268,
+          "todayIs": 197,
+          "reachesDesign": false
+        },
+        "B": {
+          "bankWas": 328,
+          "bankMustCapAt": 258.5,
+          "bankGivesUp": 69.5,
+          "enoughAlone": true
+        },
+        "C": {
+          "zoomFloorToday": 0.85,
+          "zoomNeeded": 0.85,
+          "ctaLayoutH": 76,
+          "ctaCssHAtNeededZoom": null,
+          "floorReasonIs": "below 0.85 the start button falls under 22 px (index.css, the zoom comment)"
+        },
+        "restored": true
+      },
+      "children": {
+        "play": [
+          {
+            "tag": "h1",
+            "cls": "as-wordmark select-none",
+            "layoutH": 101,
+            "layoutW": 632,
+            "cssH": 94.88,
+            "cssW": 592.44
+          },
+          {
+            "tag": "div",
+            "cls": "as-lockup hidden dt:flex flex-col items-center self-stretch",
+            "layoutH": 109,
+            "layoutW": 712,
+            "cssH": 101.81,
+            "cssW": 667.19
+          },
+          {
+            "tag": "div",
+            "cls": "as-hub-bonus w-[88%] max-w-sm dt:w-full dt:max-w-none rounded-xl px-4 py-2.5 flex flex-col gap-1.5 dt:gap-2",
+            "layoutH": 68,
+            "layoutW": 712,
+            "cssH": 63.64,
+            "cssW": 667.19
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none",
+            "layoutH": 82,
+            "layoutW": 712,
+            "cssH": 76.52,
+            "cssW": 667.19
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none flex flex-col gap-2.5",
+            "layoutH": 138,
+            "layoutW": 712,
+            "cssH": 129.78,
+            "cssW": 667.19
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none flex flex-col gap-2.5",
+            "layoutH": 62,
+            "layoutW": 712,
+            "cssH": 58.02,
+            "cssW": 667.19
+          }
+        ],
+        "stand": [
+          {
+            "tag": "div",
+            "cls": "as-deck hidden dt:flex as-glass as-ring flex-col gap-[18px] rounded-2xl",
+            "layoutH": 406,
+            "layoutW": 752,
+            "cssH": 381,
+            "cssW": 705.31
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none as-hub-list as-glass as-ring grid grid-cols-2 gap-2.5 dt:grid-cols-1 dt:gap-0",
+            "layoutH": 328,
+            "layoutW": 752,
+            "cssH": 307.69,
+            "cssW": 705.31
+          }
+        ]
+      },
+      "centringTrial": {
+        "was": "center",
+        "moved": [],
+        "unchanged": 6,
+        "total": 6,
+        "restored": true
+      },
+      "restored": {
+        "probesLeft": 0,
+        "scrollH": 820,
+        "playLayoutH": 560,
+        "standLayoutH": 747
+      }
+    },
+    {
+      "id": "1920x850/de",
+      "size": "1920x850",
+      "lang": "de",
+      "settle": {
+        "fontsOk": true,
+        "images": 2,
+        "timedOut": 0
+      },
+      "reached": true,
+      "missing": [],
+      "viewport": {
+        "w": 1920,
+        "h": 850,
+        "dpr": 1
+      },
+      "scrolls": {
+        "scrollH": 850,
+        "clientH": 850,
+        "overflowPx": 0,
+        "scrollbar": 0
+      },
+      "zoom": {
+        "declared": "1",
+        "effectivePair": 1,
+        "effectiveFoot": 1.0031
+      },
+      "blocks": {
+        "min-1280": true,
+        "max-h-950": true,
+        "max-h-900": true,
+        "max-h-820": false
+      },
+      "boxes": {
+        "root": {
+          "x": 200,
+          "y": 24,
+          "w": 1520,
+          "h": 802
+        },
+        "pair": {
+          "x": 200,
+          "y": 30.44,
+          "w": 1520,
+          "h": 727
+        },
+        "play": {
+          "x": 200,
+          "y": 114.45,
+          "w": 711.66,
+          "h": 558.95
+        },
+        "stand": {
+          "x": 967.66,
+          "y": 30.44,
+          "w": 752.33,
+          "h": 727
+        },
+        "foot": {
+          "x": 200,
+          "y": 775.86,
+          "w": 1520,
+          "h": 46.14
+        },
+        "wordmark": {
+          "x": 239.88,
+          "y": 44.45,
+          "w": 631.91,
+          "h": 101.19
+        }
+      },
+      "layoutH": {
+        "play": 559,
+        "stand": 727,
+        "pair": 727
+      },
+      "rhythm": {
+        "rootGap": 18,
+        "rootPadTop": 6,
+        "playGap": 14,
+        "standGap": 12,
+        "pairColGap": 56,
+        "playAlign": "center",
+        "pairAlign": "center"
+      },
+      "wordmark": {
+        "wmSize": 88,
+        "fontSize": 88,
+        "lineHeight": 101.2,
+        "marginTop": -70,
+        "letterSpacing": 5.28,
+        "text": "AUTOSTCH",
+        "chars": 8
+      },
+      "columns": {
+        "playLayoutH": 559,
+        "standLayoutH": 727,
+        "columnHeadroom": 168
+      },
+      "budget": {
+        "probeMax": 155,
+        "gapPerRow": 14,
+        "oneRowTotal": 169,
+        "zoomedIntoCssPx": 1
+      },
+      "mark": {
+        "wmPx": 88,
+        "cellPx": 7.92,
+        "gutPx": 1.936,
+        "borderPx": 1.056,
+        "radiusPx": 1.232,
+        "column": {
+          "layoutW": 8,
+          "layoutH": 77,
+          "cssW": 7.91,
+          "cssH": 76.7
+        },
+        "columnPerDesign": 76.91,
+        "full": {
+          "layoutW": 47,
+          "layoutH": 77,
+          "cssW": 47.22,
+          "cssH": 76.7
+        }
+      },
+      "markScale": [
+        {
+          "k": 1,
+          "cellPx": 7.92,
+          "layoutH": 77,
+          "layoutW": 47,
+          "cssH": 76.7,
+          "cssW": 47.22
+        },
+        {
+          "k": 0.85,
+          "cellPx": 6.732,
+          "layoutH": 65,
+          "layoutW": 40,
+          "cssH": 65.23,
+          "cssW": 40.16
+        },
+        {
+          "k": 0.7,
+          "cellPx": 5.544,
+          "layoutH": 54,
+          "layoutW": 33,
+          "cssH": 53.66,
+          "cssW": 33.03
+        },
+        {
+          "k": 0.6,
+          "cellPx": 4.752,
+          "layoutH": 46,
+          "layoutW": 28,
+          "cssH": 46.09,
+          "cssW": 28.38
+        },
+        {
+          "k": 0.5,
+          "cellPx": 3.96,
+          "layoutH": 38,
+          "layoutW": 24,
+          "cssH": 38.3,
+          "cssW": 23.58
+        },
+        {
+          "k": 0.4,
+          "cellPx": 3.168,
+          "layoutH": 31,
+          "layoutW": 19,
+          "cssH": 30.61,
+          "cssW": 18.84
+        }
+      ],
+      "tagline": {
+        "roleToken": "--text-body-lg",
+        "roleSize": "15.5px",
+        "designSize": "15px (mainscreen-marke.md) — nearest rung is the role above",
+        "de": {
+          "fontSize": 15.5,
+          "lineHeight": 23.25,
+          "layoutH": 23,
+          "layoutW": 213,
+          "cssH": 23.25,
+          "cssW": 212.92
+        },
+        "en": {
+          "fontSize": 15.5,
+          "lineHeight": 23.25,
+          "layoutH": 23,
+          "layoutW": 168,
+          "cssH": 23.25,
+          "cssW": 168.44
+        },
+        "atBody": {
+          "fontSize": 13,
+          "lineHeight": 19.5,
+          "layoutH": 20,
+          "layoutW": 179,
+          "cssH": 19.5,
+          "cssW": 178.58
+        },
+        "atMeta": {
+          "fontSize": 11,
+          "lineHeight": 16.5,
+          "layoutH": 17,
+          "layoutW": 151,
+          "cssH": 16.5,
+          "cssW": 151.11
+        }
+      },
+      "compose": [
+        {
+          "k": 1,
+          "cellPx": 7.92,
+          "scrollH": 850,
+          "innerH": 850,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 687,
+          "standLayoutH": 727
+        },
+        {
+          "k": 0.85,
+          "cellPx": 6.732,
+          "scrollH": 850,
+          "innerH": 850,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 675,
+          "standLayoutH": 727
+        },
+        {
+          "k": 0.7,
+          "cellPx": 5.544,
+          "scrollH": 850,
+          "innerH": 850,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 664,
+          "standLayoutH": 727
+        },
+        {
+          "k": 0.6,
+          "cellPx": 4.752,
+          "scrollH": 850,
+          "innerH": 850,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 656,
+          "standLayoutH": 727
+        },
+        {
+          "k": 0.5,
+          "cellPx": 3.96,
+          "scrollH": 850,
+          "innerH": 850,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 649,
+          "standLayoutH": 727
+        },
+        {
+          "k": 0.4,
+          "cellPx": 3.168,
+          "scrollH": 850,
+          "innerH": 850,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 641,
+          "standLayoutH": 727
+        }
+      ],
+      "deckPanel": {
+        "reached": true,
+        "box": {
+          "x": 967.66,
+          "y": 30.44,
+          "w": 752.33,
+          "h": 387
+        },
+        "layoutH": 387,
+        "layoutW": 752,
+        "cls": "as-deck hidden dt:flex as-glass as-ring flex-col gap-[18px] rounded-2xl",
+        "rootClass": "none of its own — reached as the non-bank ring-bearing child of .hub-stand",
+        "art": {
+          "layoutW": 129,
+          "layoutH": 178,
+          "cssW": 129.17,
+          "cssH": 178
+        }
+      },
+      "standBudget": {
+        "reached": true,
+        "panelWas": 387,
+        "zeroFits": true,
+        "growthMax": 1,
+        "restored": true
+      },
+      "c3Probe": {
+        "reached": true,
+        "artWas": {
+          "w": 129,
+          "h": 178
+        },
+        "artAt": {
+          "w": 196,
+          "h": 268
+        },
+        "standWas": 727,
+        "standLayoutH": 817,
+        "scrollH": 939,
+        "innerH": 850,
+        "overflowPx": 89,
+        "holds": false,
+        "artRestored": true
+      },
+      "c3Options": {
+        "A": {
+          "artHeightMax": 179.3,
+          "artWidthAtMax": 131.1,
+          "designAsks": 268,
+          "todayIs": 178,
+          "reachesDesign": false
+        },
+        "B": {
+          "bankWas": 328,
+          "bankMustCapAt": 239.3,
+          "bankGivesUp": 88.7,
+          "enoughAlone": true
+        },
+        "C": {
+          "zoomFloorToday": 0.85,
+          "zoomNeeded": 0.85,
+          "ctaLayoutH": 76,
+          "ctaCssHAtNeededZoom": null,
+          "floorReasonIs": "below 0.85 the start button falls under 22 px (index.css, the zoom comment)"
+        },
+        "restored": true
+      },
+      "children": {
+        "play": [
+          {
+            "tag": "h1",
+            "cls": "as-wordmark select-none",
+            "layoutH": 101,
+            "layoutW": 632,
+            "cssH": 101.19,
+            "cssW": 631.91
+          },
+          {
+            "tag": "div",
+            "cls": "as-lockup hidden dt:flex flex-col items-center self-stretch",
+            "layoutH": 109,
+            "layoutW": 712,
+            "cssH": 108.59,
+            "cssW": 711.66
+          },
+          {
+            "tag": "div",
+            "cls": "as-hub-bonus w-[88%] max-w-sm dt:w-full dt:max-w-none rounded-xl px-4 py-2.5 flex flex-col gap-1.5 dt:gap-2",
+            "layoutH": 68,
+            "layoutW": 712,
+            "cssH": 67.75,
+            "cssW": 711.66
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none",
+            "layoutH": 82,
+            "layoutW": 712,
+            "cssH": 81.5,
+            "cssW": 711.66
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none flex flex-col gap-2.5",
+            "layoutH": 138,
+            "layoutW": 712,
+            "cssH": 138.17,
+            "cssW": 711.66
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none flex flex-col gap-2.5",
+            "layoutH": 62,
+            "layoutW": 712,
+            "cssH": 61.75,
+            "cssW": 711.66
+          }
+        ],
+        "stand": [
+          {
+            "tag": "div",
+            "cls": "as-deck hidden dt:flex as-glass as-ring flex-col gap-[18px] rounded-2xl",
+            "layoutH": 387,
+            "layoutW": 752,
+            "cssH": 387,
+            "cssW": 752.33
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none as-hub-list as-glass as-ring grid grid-cols-2 gap-2.5 dt:grid-cols-1 dt:gap-0",
+            "layoutH": 328,
+            "layoutW": 752,
+            "cssH": 328,
+            "cssW": 752.33
+          }
+        ]
+      },
+      "centringTrial": {
+        "was": "center",
+        "moved": [],
+        "unchanged": 6,
+        "total": 6,
+        "restored": true
+      },
+      "restored": {
+        "probesLeft": 0,
+        "scrollH": 850,
+        "playLayoutH": 559,
+        "standLayoutH": 727
+      }
+    },
+    {
+      "id": "1280x720/en",
+      "size": "1280x720",
+      "lang": "en",
+      "settle": {
+        "fontsOk": true,
+        "images": 2,
+        "timedOut": 0
+      },
+      "reached": true,
+      "missing": [],
+      "viewport": {
+        "w": 1280,
+        "h": 720,
+        "dpr": 1
+      },
+      "scrolls": {
+        "scrollH": 720,
+        "clientH": 720,
+        "overflowPx": 0,
+        "scrollbar": 0
+      },
+      "zoom": {
+        "declared": "0.85",
+        "effectivePair": 0.8503,
+        "effectiveFoot": 0.8587
+      },
+      "blocks": {
+        "min-1280": true,
+        "max-h-950": true,
+        "max-h-900": true,
+        "max-h-820": true
+      },
+      "boxes": {
+        "root": {
+          "x": 24,
+          "y": 24,
+          "w": 1232,
+          "h": 672
+        },
+        "pair": {
+          "x": 24,
+          "y": 30.39,
+          "w": 1232,
+          "h": 603.73
+        },
+        "play": {
+          "x": 24,
+          "y": 94.03,
+          "w": 575.75,
+          "h": 476.45
+        },
+        "stand": {
+          "x": 647.34,
+          "y": 30.39,
+          "w": 608.66,
+          "h": 603.73
+        },
+        "foot": {
+          "x": 24,
+          "y": 652.5,
+          "w": 1232,
+          "h": 39.5
+        },
+        "wordmark": {
+          "x": 45.27,
+          "y": 34.53,
+          "w": 533.22,
+          "h": 86.02
+        }
+      },
+      "layoutH": {
+        "play": 561,
+        "stand": 710,
+        "pair": 710
+      },
+      "rhythm": {
+        "rootGap": 18,
+        "rootPadTop": 6,
+        "playGap": 14,
+        "standGap": 12,
+        "pairColGap": 56,
+        "playAlign": "center",
+        "pairAlign": "center"
+      },
+      "wordmark": {
+        "wmSize": 88,
+        "fontSize": 88,
+        "lineHeight": 101.2,
+        "marginTop": -70,
+        "letterSpacing": 5.28,
+        "text": "AUTOTRCK",
+        "chars": 8
+      },
+      "columns": {
+        "playLayoutH": 561,
+        "standLayoutH": 710,
+        "columnHeadroom": 149
+      },
+      "budget": {
+        "probeMax": 137,
+        "gapPerRow": 14,
+        "oneRowTotal": 151,
+        "zoomedIntoCssPx": 0.8503
+      },
+      "mark": {
+        "wmPx": 88,
+        "cellPx": 7.92,
+        "gutPx": 1.936,
+        "borderPx": 1.056,
+        "radiusPx": 1.232,
+        "column": {
+          "layoutW": 8,
+          "layoutH": 77,
+          "cssW": 6.72,
+          "cssH": 65.23
+        },
+        "columnPerDesign": 76.91,
+        "full": {
+          "layoutW": 47,
+          "layoutH": 77,
+          "cssW": 40.16,
+          "cssH": 65.23
+        }
+      },
+      "markScale": [
+        {
+          "k": 1,
+          "cellPx": 7.92,
+          "layoutH": 77,
+          "layoutW": 47,
+          "cssH": 65.23,
+          "cssW": 40.16
+        },
+        {
+          "k": 0.85,
+          "cellPx": 6.732,
+          "layoutH": 65,
+          "layoutW": 40,
+          "cssH": 55.48,
+          "cssW": 34.16
+        },
+        {
+          "k": 0.7,
+          "cellPx": 5.544,
+          "layoutH": 54,
+          "layoutW": 33,
+          "cssH": 45.61,
+          "cssW": 28.08
+        },
+        {
+          "k": 0.6,
+          "cellPx": 4.752,
+          "layoutH": 46,
+          "layoutW": 28,
+          "cssH": 39.14,
+          "cssW": 24.09
+        },
+        {
+          "k": 0.5,
+          "cellPx": 3.96,
+          "layoutH": 38,
+          "layoutW": 24,
+          "cssH": 32.56,
+          "cssW": 20.05
+        },
+        {
+          "k": 0.4,
+          "cellPx": 3.168,
+          "layoutH": 31,
+          "layoutW": 19,
+          "cssH": 26.09,
+          "cssW": 16.06
+        }
+      ],
+      "tagline": {
+        "roleToken": "--text-body-lg",
+        "roleSize": "15.5px",
+        "designSize": "15px (mainscreen-marke.md) — nearest rung is the role above",
+        "de": {
+          "fontSize": 15.5,
+          "lineHeight": 23.25,
+          "layoutH": 23,
+          "layoutW": 213,
+          "cssH": 19.75,
+          "cssW": 180.92
+        },
+        "en": {
+          "fontSize": 15.5,
+          "lineHeight": 23.25,
+          "layoutH": 23,
+          "layoutW": 168,
+          "cssH": 19.75,
+          "cssW": 143.13
+        },
+        "atBody": {
+          "fontSize": 13,
+          "lineHeight": 19.5,
+          "layoutH": 19,
+          "layoutW": 179,
+          "cssH": 16.56,
+          "cssW": 151.8
+        },
+        "atMeta": {
+          "fontSize": 11,
+          "lineHeight": 16.5,
+          "layoutH": 16,
+          "layoutW": 151,
+          "cssH": 14.02,
+          "cssW": 128.44
+        }
+      },
+      "compose": [
+        {
+          "k": 1,
+          "cellPx": 7.92,
+          "scrollH": 720,
+          "innerH": 720,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 688,
+          "standLayoutH": 710
+        },
+        {
+          "k": 0.85,
+          "cellPx": 6.732,
+          "scrollH": 720,
+          "innerH": 720,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 677,
+          "standLayoutH": 710
+        },
+        {
+          "k": 0.7,
+          "cellPx": 5.544,
+          "scrollH": 720,
+          "innerH": 720,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 665,
+          "standLayoutH": 710
+        },
+        {
+          "k": 0.6,
+          "cellPx": 4.752,
+          "scrollH": 720,
+          "innerH": 720,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 658,
+          "standLayoutH": 710
+        },
+        {
+          "k": 0.5,
+          "cellPx": 3.96,
+          "scrollH": 720,
+          "innerH": 720,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 650,
+          "standLayoutH": 710
+        },
+        {
+          "k": 0.4,
+          "cellPx": 3.168,
+          "scrollH": 720,
+          "innerH": 720,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 642,
+          "standLayoutH": 710
+        }
+      ],
+      "deckPanel": {
+        "reached": true,
+        "box": {
+          "x": 647.34,
+          "y": 30.39,
+          "w": 608.66,
+          "h": 314.48
+        },
+        "layoutH": 370,
+        "layoutW": 716,
+        "cls": "as-deck hidden dt:flex as-glass as-ring flex-col gap-[18px] rounded-2xl",
+        "rootClass": "none of its own — reached as the non-bank ring-bearing child of .hub-stand",
+        "art": {
+          "layoutW": 117,
+          "layoutH": 161,
+          "cssW": 99.39,
+          "cssH": 136.8
+        }
+      },
+      "standBudget": {
+        "reached": true,
+        "panelWas": 370,
+        "zeroFits": true,
+        "growthMax": 1,
+        "restored": true
+      },
+      "c3Probe": {
+        "reached": true,
+        "artWas": {
+          "w": 117,
+          "h": 161
+        },
+        "artAt": {
+          "w": 196,
+          "h": 268
+        },
+        "standWas": 710,
+        "standLayoutH": 817,
+        "scrollH": 810,
+        "innerH": 720,
+        "overflowPx": 90,
+        "holds": false,
+        "artRestored": true
+      },
+      "c3Options": {
+        "A": {
+          "artHeightMax": 162.3,
+          "artWidthAtMax": 118.7,
+          "designAsks": 268,
+          "todayIs": 161,
+          "reachesDesign": false
+        },
+        "B": {
+          "bankWas": 328,
+          "bankMustCapAt": 222.6,
+          "bankGivesUp": 105.4,
+          "enoughAlone": true
+        },
+        "C": {
+          "zoomFloorToday": 0.85,
+          "zoomNeeded": 0.739,
+          "ctaLayoutH": 76,
+          "ctaCssHAtNeededZoom": 56.2,
+          "floorReasonIs": "below 0.85 the start button falls under 22 px (index.css, the zoom comment)"
+        },
+        "restored": true
+      },
+      "children": {
+        "play": [
+          {
+            "tag": "h1",
+            "cls": "as-wordmark select-none",
+            "layoutH": 101,
+            "layoutW": 627,
+            "cssH": 86.02,
+            "cssW": 533.22
+          },
+          {
+            "tag": "div",
+            "cls": "as-lockup hidden dt:flex flex-col items-center self-stretch",
+            "layoutH": 109,
+            "layoutW": 677,
+            "cssH": 92.31,
+            "cssW": 575.75
+          },
+          {
+            "tag": "div",
+            "cls": "as-hub-bonus w-[88%] max-w-sm dt:w-full dt:max-w-none rounded-xl px-4 py-2.5 flex flex-col gap-1.5 dt:gap-2",
+            "layoutH": 68,
+            "layoutW": 677,
+            "cssH": 57.84,
+            "cssW": 575.75
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none",
+            "layoutH": 82,
+            "layoutW": 677,
+            "cssH": 69.55,
+            "cssW": 575.75
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none flex flex-col gap-2.5",
+            "layoutH": 139,
+            "layoutW": 677,
+            "cssH": 118.02,
+            "cssW": 575.75
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none flex flex-col gap-2.5",
+            "layoutH": 62,
+            "layoutW": 677,
+            "cssH": 52.77,
+            "cssW": 575.75
+          }
+        ],
+        "stand": [
+          {
+            "tag": "div",
+            "cls": "as-deck hidden dt:flex as-glass as-ring flex-col gap-[18px] rounded-2xl",
+            "layoutH": 370,
+            "layoutW": 716,
+            "cssH": 314.48,
+            "cssW": 608.66
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none as-hub-list as-glass as-ring grid grid-cols-2 gap-2.5 dt:grid-cols-1 dt:gap-0",
+            "layoutH": 328,
+            "layoutW": 716,
+            "cssH": 279.06,
+            "cssW": 608.66
+          }
+        ]
+      },
+      "centringTrial": {
+        "was": "center",
+        "moved": [],
+        "unchanged": 6,
+        "total": 6,
+        "restored": true
+      },
+      "restored": {
+        "probesLeft": 0,
+        "scrollH": 720,
+        "playLayoutH": 561,
+        "standLayoutH": 710
+      }
+    },
+    {
+      "id": "1400x700/en",
+      "size": "1400x700",
+      "lang": "en",
+      "settle": {
+        "fontsOk": true,
+        "images": 2,
+        "timedOut": 0
+      },
+      "reached": true,
+      "missing": [],
+      "viewport": {
+        "w": 1400,
+        "h": 700,
+        "dpr": 1
+      },
+      "scrolls": {
+        "scrollH": 700,
+        "clientH": 700,
+        "overflowPx": 0,
+        "scrollbar": 0
+      },
+      "zoom": {
+        "declared": "0.85",
+        "effectivePair": 0.8497,
+        "effectiveFoot": 0.8587
+      },
+      "blocks": {
+        "min-1280": true,
+        "max-h-950": true,
+        "max-h-900": true,
+        "max-h-820": true
+      },
+      "boxes": {
+        "root": {
+          "x": 24,
+          "y": 24,
+          "w": 1352,
+          "h": 652
+        },
+        "pair": {
+          "x": 54,
+          "y": 30.39,
+          "w": 1292,
+          "h": 583.73
+        },
+        "play": {
+          "x": 54,
+          "y": 84.03,
+          "w": 604.91,
+          "h": 476.45
+        },
+        "stand": {
+          "x": 706.5,
+          "y": 30.39,
+          "w": 639.5,
+          "h": 583.73
+        },
+        "foot": {
+          "x": 54,
+          "y": 632.5,
+          "w": 1292,
+          "h": 39.5
+        },
+        "wordmark": {
+          "x": 89.84,
+          "y": 24.53,
+          "w": 533.22,
+          "h": 86.02
+        }
+      },
+      "layoutH": {
+        "play": 561,
+        "stand": 687,
+        "pair": 687
+      },
+      "rhythm": {
+        "rootGap": 18,
+        "rootPadTop": 6,
+        "playGap": 14,
+        "standGap": 12,
+        "pairColGap": 56,
+        "playAlign": "center",
+        "pairAlign": "center"
+      },
+      "wordmark": {
+        "wmSize": 88,
+        "fontSize": 88,
+        "lineHeight": 101.2,
+        "marginTop": -70,
+        "letterSpacing": 5.28,
+        "text": "AUTOTRCK",
+        "chars": 8
+      },
+      "columns": {
+        "playLayoutH": 561,
+        "standLayoutH": 687,
+        "columnHeadroom": 126
+      },
+      "budget": {
+        "probeMax": 113.5,
+        "gapPerRow": 14,
+        "oneRowTotal": 127.5,
+        "zoomedIntoCssPx": 0.8497
+      },
+      "mark": {
+        "wmPx": 88,
+        "cellPx": 7.92,
+        "gutPx": 1.936,
+        "borderPx": 1.056,
+        "radiusPx": 1.232,
+        "column": {
+          "layoutW": 8,
+          "layoutH": 77,
+          "cssW": 6.72,
+          "cssH": 65.23
+        },
+        "columnPerDesign": 76.91,
+        "full": {
+          "layoutW": 47,
+          "layoutH": 77,
+          "cssW": 40.16,
+          "cssH": 65.23
+        }
+      },
+      "markScale": [
+        {
+          "k": 1,
+          "cellPx": 7.92,
+          "layoutH": 77,
+          "layoutW": 47,
+          "cssH": 65.23,
+          "cssW": 40.16
+        },
+        {
+          "k": 0.85,
+          "cellPx": 6.732,
+          "layoutH": 65,
+          "layoutW": 40,
+          "cssH": 55.48,
+          "cssW": 34.16
+        },
+        {
+          "k": 0.7,
+          "cellPx": 5.544,
+          "layoutH": 54,
+          "layoutW": 33,
+          "cssH": 45.61,
+          "cssW": 28.08
+        },
+        {
+          "k": 0.6,
+          "cellPx": 4.752,
+          "layoutH": 46,
+          "layoutW": 28,
+          "cssH": 39.14,
+          "cssW": 24.09
+        },
+        {
+          "k": 0.5,
+          "cellPx": 3.96,
+          "layoutH": 38,
+          "layoutW": 24,
+          "cssH": 32.56,
+          "cssW": 20.05
+        },
+        {
+          "k": 0.4,
+          "cellPx": 3.168,
+          "layoutH": 31,
+          "layoutW": 19,
+          "cssH": 26.09,
+          "cssW": 16.06
+        }
+      ],
+      "tagline": {
+        "roleToken": "--text-body-lg",
+        "roleSize": "15.5px",
+        "designSize": "15px (mainscreen-marke.md) — nearest rung is the role above",
+        "de": {
+          "fontSize": 15.5,
+          "lineHeight": 23.25,
+          "layoutH": 23,
+          "layoutW": 213,
+          "cssH": 19.75,
+          "cssW": 180.92
+        },
+        "en": {
+          "fontSize": 15.5,
+          "lineHeight": 23.25,
+          "layoutH": 23,
+          "layoutW": 168,
+          "cssH": 19.75,
+          "cssW": 143.13
+        },
+        "atBody": {
+          "fontSize": 13,
+          "lineHeight": 19.5,
+          "layoutH": 19,
+          "layoutW": 179,
+          "cssH": 16.56,
+          "cssW": 151.8
+        },
+        "atMeta": {
+          "fontSize": 11,
+          "lineHeight": 16.5,
+          "layoutH": 16,
+          "layoutW": 151,
+          "cssH": 14.02,
+          "cssW": 128.44
+        }
+      },
+      "compose": [
+        {
+          "k": 1,
+          "cellPx": 7.92,
+          "scrollH": 701,
+          "innerH": 700,
+          "overflowPx": 1,
+          "holds": false,
+          "playLayoutH": 688,
+          "standLayoutH": 687
+        },
+        {
+          "k": 0.85,
+          "cellPx": 6.732,
+          "scrollH": 700,
+          "innerH": 700,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 677,
+          "standLayoutH": 687
+        },
+        {
+          "k": 0.7,
+          "cellPx": 5.544,
+          "scrollH": 700,
+          "innerH": 700,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 665,
+          "standLayoutH": 687
+        },
+        {
+          "k": 0.6,
+          "cellPx": 4.752,
+          "scrollH": 700,
+          "innerH": 700,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 658,
+          "standLayoutH": 687
+        },
+        {
+          "k": 0.5,
+          "cellPx": 3.96,
+          "scrollH": 700,
+          "innerH": 700,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 650,
+          "standLayoutH": 687
+        },
+        {
+          "k": 0.4,
+          "cellPx": 3.168,
+          "scrollH": 700,
+          "innerH": 700,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 642,
+          "standLayoutH": 687
+        }
+      ],
+      "deckPanel": {
+        "reached": true,
+        "box": {
+          "x": 706.5,
+          "y": 30.39,
+          "w": 639.5,
+          "h": 294.48
+        },
+        "layoutH": 346,
+        "layoutW": 752,
+        "cls": "as-deck hidden dt:flex as-glass as-ring flex-col gap-[18px] rounded-2xl",
+        "rootClass": "none of its own — reached as the non-bank ring-bearing child of .hub-stand",
+        "art": {
+          "layoutW": 100,
+          "layoutH": 137,
+          "cssW": 84.94,
+          "cssH": 116.8
+        }
+      },
+      "standBudget": {
+        "reached": true,
+        "panelWas": 346,
+        "zeroFits": true,
+        "growthMax": 1.5,
+        "restored": true
+      },
+      "c3Probe": {
+        "reached": true,
+        "artWas": {
+          "w": 100,
+          "h": 137
+        },
+        "artAt": {
+          "w": 196,
+          "h": 268
+        },
+        "standWas": 687,
+        "standLayoutH": 817,
+        "scrollH": 810,
+        "innerH": 700,
+        "overflowPx": 110,
+        "holds": false,
+        "artRestored": true
+      },
+      "c3Options": {
+        "A": {
+          "artHeightMax": 138.7,
+          "artWidthAtMax": 101.4,
+          "designAsks": 268,
+          "todayIs": 137,
+          "reachesDesign": false
+        },
+        "B": {
+          "bankWas": 328,
+          "bankMustCapAt": 198.9,
+          "bankGivesUp": 129.1,
+          "enoughAlone": true
+        },
+        "C": {
+          "zoomFloorToday": 0.85,
+          "zoomNeeded": 0.715,
+          "ctaLayoutH": 76,
+          "ctaCssHAtNeededZoom": 54.3,
+          "floorReasonIs": "below 0.85 the start button falls under 22 px (index.css, the zoom comment)"
+        },
+        "restored": true
+      },
+      "children": {
+        "play": [
+          {
+            "tag": "h1",
+            "cls": "as-wordmark select-none",
+            "layoutH": 101,
+            "layoutW": 627,
+            "cssH": 86.02,
+            "cssW": 533.22
+          },
+          {
+            "tag": "div",
+            "cls": "as-lockup hidden dt:flex flex-col items-center self-stretch",
+            "layoutH": 109,
+            "layoutW": 712,
+            "cssH": 92.31,
+            "cssW": 604.91
+          },
+          {
+            "tag": "div",
+            "cls": "as-hub-bonus w-[88%] max-w-sm dt:w-full dt:max-w-none rounded-xl px-4 py-2.5 flex flex-col gap-1.5 dt:gap-2",
+            "layoutH": 68,
+            "layoutW": 712,
+            "cssH": 57.84,
+            "cssW": 604.91
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none",
+            "layoutH": 82,
+            "layoutW": 712,
+            "cssH": 69.55,
+            "cssW": 604.91
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none flex flex-col gap-2.5",
+            "layoutH": 139,
+            "layoutW": 712,
+            "cssH": 118.02,
+            "cssW": 604.91
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none flex flex-col gap-2.5",
+            "layoutH": 62,
+            "layoutW": 712,
+            "cssH": 52.77,
+            "cssW": 604.91
+          }
+        ],
+        "stand": [
+          {
+            "tag": "div",
+            "cls": "as-deck hidden dt:flex as-glass as-ring flex-col gap-[18px] rounded-2xl",
+            "layoutH": 346,
+            "layoutW": 752,
+            "cssH": 294.48,
+            "cssW": 639.5
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none as-hub-list as-glass as-ring grid grid-cols-2 gap-2.5 dt:grid-cols-1 dt:gap-0",
+            "layoutH": 328,
+            "layoutW": 752,
+            "cssH": 279.06,
+            "cssW": 639.5
+          }
+        ]
+      },
+      "centringTrial": {
+        "was": "center",
+        "moved": [],
+        "unchanged": 6,
+        "total": 6,
+        "restored": true
+      },
+      "restored": {
+        "probesLeft": 0,
+        "scrollH": 700,
+        "playLayoutH": 561,
+        "standLayoutH": 687
+      }
+    },
+    {
+      "id": "1536x791/en",
+      "size": "1536x791",
+      "lang": "en",
+      "settle": {
+        "fontsOk": true,
+        "images": 2,
+        "timedOut": 0
+      },
+      "reached": true,
+      "missing": [],
+      "viewport": {
+        "w": 1536,
+        "h": 791,
+        "dpr": 1
+      },
+      "scrolls": {
+        "scrollH": 791,
+        "clientH": 791,
+        "overflowPx": 0,
+        "scrollbar": 0
+      },
+      "zoom": {
+        "declared": "0.85",
+        "effectivePair": 0.8498,
+        "effectiveFoot": 0.8587
+      },
+      "blocks": {
+        "min-1280": true,
+        "max-h-950": true,
+        "max-h-900": true,
+        "max-h-820": true
+      },
+      "boxes": {
+        "root": {
+          "x": 24,
+          "y": 24,
+          "w": 1488,
+          "h": 743
+        },
+        "pair": {
+          "x": 122,
+          "y": 30.39,
+          "w": 1292,
+          "h": 674.73
+        },
+        "play": {
+          "x": 122,
+          "y": 129.53,
+          "w": 604.91,
+          "h": 476.45
+        },
+        "stand": {
+          "x": 774.5,
+          "y": 30.39,
+          "w": 639.5,
+          "h": 674.73
+        },
+        "foot": {
+          "x": 122,
+          "y": 723.5,
+          "w": 1292,
+          "h": 39.5
+        },
+        "wordmark": {
+          "x": 157.84,
+          "y": 70.03,
+          "w": 533.22,
+          "h": 86.02
+        }
+      },
+      "layoutH": {
+        "play": 561,
+        "stand": 794,
+        "pair": 794
+      },
+      "rhythm": {
+        "rootGap": 18,
+        "rootPadTop": 6,
+        "playGap": 14,
+        "standGap": 12,
+        "pairColGap": 56,
+        "playAlign": "center",
+        "pairAlign": "center"
+      },
+      "wordmark": {
+        "wmSize": 88,
+        "fontSize": 88,
+        "lineHeight": 101.2,
+        "marginTop": -70,
+        "letterSpacing": 5.28,
+        "text": "AUTOTRCK",
+        "chars": 8
+      },
+      "columns": {
+        "playLayoutH": 561,
+        "standLayoutH": 794,
+        "columnHeadroom": 233
+      },
+      "budget": {
+        "probeMax": 220.5,
+        "gapPerRow": 14,
+        "oneRowTotal": 234.5,
+        "zoomedIntoCssPx": 0.8498
+      },
+      "mark": {
+        "wmPx": 88,
+        "cellPx": 7.92,
+        "gutPx": 1.936,
+        "borderPx": 1.056,
+        "radiusPx": 1.232,
+        "column": {
+          "layoutW": 8,
+          "layoutH": 77,
+          "cssW": 6.72,
+          "cssH": 65.23
+        },
+        "columnPerDesign": 76.91,
+        "full": {
+          "layoutW": 47,
+          "layoutH": 77,
+          "cssW": 40.16,
+          "cssH": 65.23
+        }
+      },
+      "markScale": [
+        {
+          "k": 1,
+          "cellPx": 7.92,
+          "layoutH": 77,
+          "layoutW": 47,
+          "cssH": 65.23,
+          "cssW": 40.16
+        },
+        {
+          "k": 0.85,
+          "cellPx": 6.732,
+          "layoutH": 65,
+          "layoutW": 40,
+          "cssH": 55.48,
+          "cssW": 34.16
+        },
+        {
+          "k": 0.7,
+          "cellPx": 5.544,
+          "layoutH": 54,
+          "layoutW": 33,
+          "cssH": 45.61,
+          "cssW": 28.08
+        },
+        {
+          "k": 0.6,
+          "cellPx": 4.752,
+          "layoutH": 46,
+          "layoutW": 28,
+          "cssH": 39.14,
+          "cssW": 24.09
+        },
+        {
+          "k": 0.5,
+          "cellPx": 3.96,
+          "layoutH": 38,
+          "layoutW": 24,
+          "cssH": 32.56,
+          "cssW": 20.05
+        },
+        {
+          "k": 0.4,
+          "cellPx": 3.168,
+          "layoutH": 31,
+          "layoutW": 19,
+          "cssH": 26.09,
+          "cssW": 16.06
+        }
+      ],
+      "tagline": {
+        "roleToken": "--text-body-lg",
+        "roleSize": "15.5px",
+        "designSize": "15px (mainscreen-marke.md) — nearest rung is the role above",
+        "de": {
+          "fontSize": 15.5,
+          "lineHeight": 23.25,
+          "layoutH": 23,
+          "layoutW": 213,
+          "cssH": 19.75,
+          "cssW": 180.92
+        },
+        "en": {
+          "fontSize": 15.5,
+          "lineHeight": 23.25,
+          "layoutH": 23,
+          "layoutW": 168,
+          "cssH": 19.75,
+          "cssW": 143.13
+        },
+        "atBody": {
+          "fontSize": 13,
+          "lineHeight": 19.5,
+          "layoutH": 19,
+          "layoutW": 179,
+          "cssH": 16.56,
+          "cssW": 151.8
+        },
+        "atMeta": {
+          "fontSize": 11,
+          "lineHeight": 16.5,
+          "layoutH": 16,
+          "layoutW": 151,
+          "cssH": 14.02,
+          "cssW": 128.44
+        }
+      },
+      "compose": [
+        {
+          "k": 1,
+          "cellPx": 7.92,
+          "scrollH": 791,
+          "innerH": 791,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 688,
+          "standLayoutH": 794
+        },
+        {
+          "k": 0.85,
+          "cellPx": 6.732,
+          "scrollH": 791,
+          "innerH": 791,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 677,
+          "standLayoutH": 794
+        },
+        {
+          "k": 0.7,
+          "cellPx": 5.544,
+          "scrollH": 791,
+          "innerH": 791,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 665,
+          "standLayoutH": 794
+        },
+        {
+          "k": 0.6,
+          "cellPx": 4.752,
+          "scrollH": 791,
+          "innerH": 791,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 658,
+          "standLayoutH": 794
+        },
+        {
+          "k": 0.5,
+          "cellPx": 3.96,
+          "scrollH": 791,
+          "innerH": 791,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 650,
+          "standLayoutH": 794
+        },
+        {
+          "k": 0.4,
+          "cellPx": 3.168,
+          "scrollH": 791,
+          "innerH": 791,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 642,
+          "standLayoutH": 794
+        }
+      ],
+      "deckPanel": {
+        "reached": true,
+        "box": {
+          "x": 774.5,
+          "y": 30.39,
+          "w": 639.5,
+          "h": 385.48
+        },
+        "layoutH": 454,
+        "layoutW": 752,
+        "cls": "as-deck hidden dt:flex as-glass as-ring flex-col gap-[18px] rounded-2xl",
+        "rootClass": "none of its own — reached as the non-bank ring-bearing child of .hub-stand",
+        "art": {
+          "layoutW": 177,
+          "layoutH": 244,
+          "cssW": 150.7,
+          "cssH": 207.8
+        }
+      },
+      "standBudget": {
+        "reached": true,
+        "panelWas": 454,
+        "zeroFits": true,
+        "growthMax": 0.5,
+        "restored": true
+      },
+      "c3Probe": {
+        "reached": true,
+        "artWas": {
+          "w": 177,
+          "h": 244
+        },
+        "artAt": {
+          "w": 196,
+          "h": 268
+        },
+        "standWas": 794,
+        "standLayoutH": 817,
+        "scrollH": 810,
+        "innerH": 791,
+        "overflowPx": 19,
+        "holds": false,
+        "artRestored": true
+      },
+      "c3Options": {
+        "A": {
+          "artHeightMax": 245.8,
+          "artWidthAtMax": 179.7,
+          "designAsks": 268,
+          "todayIs": 244,
+          "reachesDesign": false
+        },
+        "B": {
+          "bankWas": 328,
+          "bankMustCapAt": 306.2,
+          "bankGivesUp": 21.8,
+          "enoughAlone": true
+        },
+        "C": {
+          "zoomFloorToday": 0.85,
+          "zoomNeeded": 0.827,
+          "ctaLayoutH": 76,
+          "ctaCssHAtNeededZoom": 62.9,
+          "floorReasonIs": "below 0.85 the start button falls under 22 px (index.css, the zoom comment)"
+        },
+        "restored": true
+      },
+      "children": {
+        "play": [
+          {
+            "tag": "h1",
+            "cls": "as-wordmark select-none",
+            "layoutH": 101,
+            "layoutW": 627,
+            "cssH": 86.02,
+            "cssW": 533.22
+          },
+          {
+            "tag": "div",
+            "cls": "as-lockup hidden dt:flex flex-col items-center self-stretch",
+            "layoutH": 109,
+            "layoutW": 712,
+            "cssH": 92.31,
+            "cssW": 604.91
+          },
+          {
+            "tag": "div",
+            "cls": "as-hub-bonus w-[88%] max-w-sm dt:w-full dt:max-w-none rounded-xl px-4 py-2.5 flex flex-col gap-1.5 dt:gap-2",
+            "layoutH": 68,
+            "layoutW": 712,
+            "cssH": 57.84,
+            "cssW": 604.91
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none",
+            "layoutH": 82,
+            "layoutW": 712,
+            "cssH": 69.55,
+            "cssW": 604.91
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none flex flex-col gap-2.5",
+            "layoutH": 139,
+            "layoutW": 712,
+            "cssH": 118.02,
+            "cssW": 604.91
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none flex flex-col gap-2.5",
+            "layoutH": 62,
+            "layoutW": 712,
+            "cssH": 52.77,
+            "cssW": 604.91
+          }
+        ],
+        "stand": [
+          {
+            "tag": "div",
+            "cls": "as-deck hidden dt:flex as-glass as-ring flex-col gap-[18px] rounded-2xl",
+            "layoutH": 454,
+            "layoutW": 752,
+            "cssH": 385.48,
+            "cssW": 639.5
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none as-hub-list as-glass as-ring grid grid-cols-2 gap-2.5 dt:grid-cols-1 dt:gap-0",
+            "layoutH": 328,
+            "layoutW": 752,
+            "cssH": 279.06,
+            "cssW": 639.5
+          }
+        ]
+      },
+      "centringTrial": {
+        "was": "center",
+        "moved": [],
+        "unchanged": 6,
+        "total": 6,
+        "restored": true
+      },
+      "restored": {
+        "probesLeft": 0,
+        "scrollH": 791,
+        "playLayoutH": 561,
+        "standLayoutH": 794
+      }
+    },
+    {
+      "id": "1600x900/en",
+      "size": "1600x900",
+      "lang": "en",
+      "settle": {
+        "fontsOk": true,
+        "images": 2,
+        "timedOut": 0
+      },
+      "reached": true,
+      "missing": [],
+      "viewport": {
+        "w": 1600,
+        "h": 900,
+        "dpr": 1
+      },
+      "scrolls": {
+        "scrollH": 900,
+        "clientH": 900,
+        "overflowPx": 0,
+        "scrollbar": 0
+      },
+      "zoom": {
+        "declared": "0.85",
+        "effectivePair": 0.8503,
+        "effectiveFoot": 0.8587
+      },
+      "blocks": {
+        "min-1280": true,
+        "max-h-950": true,
+        "max-h-900": true,
+        "max-h-820": false
+      },
+      "boxes": {
+        "root": {
+          "x": 40,
+          "y": 24,
+          "w": 1520,
+          "h": 852
+        },
+        "pair": {
+          "x": 154,
+          "y": 74.89,
+          "w": 1292,
+          "h": 694.73
+        },
+        "play": {
+          "x": 154,
+          "y": 184.03,
+          "w": 604.91,
+          "h": 476.45
+        },
+        "stand": {
+          "x": 806.5,
+          "y": 74.89,
+          "w": 639.5,
+          "h": 694.73
+        },
+        "foot": {
+          "x": 154,
+          "y": 832.5,
+          "w": 1292,
+          "h": 39.5
+        },
+        "wordmark": {
+          "x": 189.84,
+          "y": 124.53,
+          "w": 533.22,
+          "h": 86.02
+        }
+      },
+      "layoutH": {
+        "play": 561,
+        "stand": 817,
+        "pair": 817
+      },
+      "rhythm": {
+        "rootGap": 18,
+        "rootPadTop": 6,
+        "playGap": 14,
+        "standGap": 12,
+        "pairColGap": 56,
+        "playAlign": "center",
+        "pairAlign": "center"
+      },
+      "wordmark": {
+        "wmSize": 88,
+        "fontSize": 88,
+        "lineHeight": 101.2,
+        "marginTop": -70,
+        "letterSpacing": 5.28,
+        "text": "AUTOTRCK",
+        "chars": 8
+      },
+      "columns": {
+        "playLayoutH": 561,
+        "standLayoutH": 817,
+        "columnHeadroom": 256
+      },
+      "budget": {
+        "probeMax": 349,
+        "gapPerRow": 14,
+        "oneRowTotal": 363,
+        "zoomedIntoCssPx": 0.8503
+      },
+      "mark": {
+        "wmPx": 88,
+        "cellPx": 7.92,
+        "gutPx": 1.936,
+        "borderPx": 1.056,
+        "radiusPx": 1.232,
+        "column": {
+          "layoutW": 8,
+          "layoutH": 77,
+          "cssW": 6.72,
+          "cssH": 65.23
+        },
+        "columnPerDesign": 76.91,
+        "full": {
+          "layoutW": 47,
+          "layoutH": 77,
+          "cssW": 40.16,
+          "cssH": 65.23
+        }
+      },
+      "markScale": [
+        {
+          "k": 1,
+          "cellPx": 7.92,
+          "layoutH": 77,
+          "layoutW": 47,
+          "cssH": 65.23,
+          "cssW": 40.16
+        },
+        {
+          "k": 0.85,
+          "cellPx": 6.732,
+          "layoutH": 65,
+          "layoutW": 40,
+          "cssH": 55.48,
+          "cssW": 34.16
+        },
+        {
+          "k": 0.7,
+          "cellPx": 5.544,
+          "layoutH": 54,
+          "layoutW": 33,
+          "cssH": 45.61,
+          "cssW": 28.08
+        },
+        {
+          "k": 0.6,
+          "cellPx": 4.752,
+          "layoutH": 46,
+          "layoutW": 28,
+          "cssH": 39.14,
+          "cssW": 24.09
+        },
+        {
+          "k": 0.5,
+          "cellPx": 3.96,
+          "layoutH": 38,
+          "layoutW": 24,
+          "cssH": 32.56,
+          "cssW": 20.05
+        },
+        {
+          "k": 0.4,
+          "cellPx": 3.168,
+          "layoutH": 31,
+          "layoutW": 19,
+          "cssH": 26.09,
+          "cssW": 16.06
+        }
+      ],
+      "tagline": {
+        "roleToken": "--text-body-lg",
+        "roleSize": "15.5px",
+        "designSize": "15px (mainscreen-marke.md) — nearest rung is the role above",
+        "de": {
+          "fontSize": 15.5,
+          "lineHeight": 23.25,
+          "layoutH": 23,
+          "layoutW": 213,
+          "cssH": 19.75,
+          "cssW": 180.92
+        },
+        "en": {
+          "fontSize": 15.5,
+          "lineHeight": 23.25,
+          "layoutH": 23,
+          "layoutW": 168,
+          "cssH": 19.75,
+          "cssW": 143.13
+        },
+        "atBody": {
+          "fontSize": 13,
+          "lineHeight": 19.5,
+          "layoutH": 19,
+          "layoutW": 179,
+          "cssH": 16.56,
+          "cssW": 151.8
+        },
+        "atMeta": {
+          "fontSize": 11,
+          "lineHeight": 16.5,
+          "layoutH": 16,
+          "layoutW": 151,
+          "cssH": 14.02,
+          "cssW": 128.44
+        }
+      },
+      "compose": [
+        {
+          "k": 1,
+          "cellPx": 7.92,
+          "scrollH": 900,
+          "innerH": 900,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 688,
+          "standLayoutH": 817
+        },
+        {
+          "k": 0.85,
+          "cellPx": 6.732,
+          "scrollH": 900,
+          "innerH": 900,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 677,
+          "standLayoutH": 817
+        },
+        {
+          "k": 0.7,
+          "cellPx": 5.544,
+          "scrollH": 900,
+          "innerH": 900,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 665,
+          "standLayoutH": 817
+        },
+        {
+          "k": 0.6,
+          "cellPx": 4.752,
+          "scrollH": 900,
+          "innerH": 900,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 658,
+          "standLayoutH": 817
+        },
+        {
+          "k": 0.5,
+          "cellPx": 3.96,
+          "scrollH": 900,
+          "innerH": 900,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 650,
+          "standLayoutH": 817
+        },
+        {
+          "k": 0.4,
+          "cellPx": 3.168,
+          "scrollH": 900,
+          "innerH": 900,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 642,
+          "standLayoutH": 817
+        }
+      ],
+      "deckPanel": {
+        "reached": true,
+        "box": {
+          "x": 806.5,
+          "y": 74.89,
+          "w": 639.5,
+          "h": 405.48
+        },
+        "layoutH": 477,
+        "layoutW": 752,
+        "cls": "as-deck hidden dt:flex as-glass as-ring flex-col gap-[18px] rounded-2xl",
+        "rootClass": "none of its own — reached as the non-bank ring-bearing child of .hub-stand",
+        "art": {
+          "layoutW": 194,
+          "layoutH": 268,
+          "cssW": 165.16,
+          "cssH": 227.8
+        }
+      },
+      "standBudget": {
+        "reached": true,
+        "panelWas": 477,
+        "zeroFits": true,
+        "growthMax": 106,
+        "restored": true
+      },
+      "c3Probe": {
+        "reached": true,
+        "artWas": {
+          "w": 194,
+          "h": 268
+        },
+        "artAt": {
+          "w": 196,
+          "h": 268
+        },
+        "standWas": 817,
+        "standLayoutH": 817,
+        "scrollH": 900,
+        "innerH": 900,
+        "overflowPx": 0,
+        "holds": true,
+        "artRestored": true
+      },
+      "c3Options": {
+        "A": {
+          "artHeightMax": 267.7,
+          "artWidthAtMax": 195.8,
+          "designAsks": 268,
+          "todayIs": 268,
+          "reachesDesign": false
+        },
+        "B": {
+          "bankWas": 328,
+          "bankMustCapAt": 328,
+          "bankGivesUp": 0,
+          "enoughAlone": true
+        },
+        "C": {
+          "zoomFloorToday": 0.85,
+          "zoomNeeded": 0.85,
+          "ctaLayoutH": 76,
+          "ctaCssHAtNeededZoom": null,
+          "floorReasonIs": "below 0.85 the start button falls under 22 px (index.css, the zoom comment)"
+        },
+        "restored": true
+      },
+      "children": {
+        "play": [
+          {
+            "tag": "h1",
+            "cls": "as-wordmark select-none",
+            "layoutH": 101,
+            "layoutW": 627,
+            "cssH": 86.02,
+            "cssW": 533.22
+          },
+          {
+            "tag": "div",
+            "cls": "as-lockup hidden dt:flex flex-col items-center self-stretch",
+            "layoutH": 109,
+            "layoutW": 712,
+            "cssH": 92.31,
+            "cssW": 604.91
+          },
+          {
+            "tag": "div",
+            "cls": "as-hub-bonus w-[88%] max-w-sm dt:w-full dt:max-w-none rounded-xl px-4 py-2.5 flex flex-col gap-1.5 dt:gap-2",
+            "layoutH": 68,
+            "layoutW": 712,
+            "cssH": 57.84,
+            "cssW": 604.91
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none",
+            "layoutH": 82,
+            "layoutW": 712,
+            "cssH": 69.55,
+            "cssW": 604.91
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none flex flex-col gap-2.5",
+            "layoutH": 139,
+            "layoutW": 712,
+            "cssH": 118.02,
+            "cssW": 604.91
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none flex flex-col gap-2.5",
+            "layoutH": 62,
+            "layoutW": 712,
+            "cssH": 52.77,
+            "cssW": 604.91
+          }
+        ],
+        "stand": [
+          {
+            "tag": "div",
+            "cls": "as-deck hidden dt:flex as-glass as-ring flex-col gap-[18px] rounded-2xl",
+            "layoutH": 477,
+            "layoutW": 752,
+            "cssH": 405.48,
+            "cssW": 639.5
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none as-hub-list as-glass as-ring grid grid-cols-2 gap-2.5 dt:grid-cols-1 dt:gap-0",
+            "layoutH": 328,
+            "layoutW": 752,
+            "cssH": 279.06,
+            "cssW": 639.5
+          }
+        ]
+      },
+      "centringTrial": {
+        "was": "center",
+        "moved": [],
+        "unchanged": 6,
+        "total": 6,
+        "restored": true
+      },
+      "restored": {
+        "probesLeft": 0,
+        "scrollH": 900,
+        "playLayoutH": 561,
+        "standLayoutH": 817
+      }
+    },
+    {
+      "id": "1920x1080/en",
+      "size": "1920x1080",
+      "lang": "en",
+      "settle": {
+        "fontsOk": true,
+        "images": 2,
+        "timedOut": 0
+      },
+      "reached": true,
+      "missing": [],
+      "viewport": {
+        "w": 1920,
+        "h": 1080,
+        "dpr": 1
+      },
+      "scrolls": {
+        "scrollH": 1080,
+        "clientH": 1080,
+        "overflowPx": 0,
+        "scrollbar": 0
+      },
+      "zoom": {
+        "declared": "1",
+        "effectivePair": 1,
+        "effectiveFoot": 1.0031
+      },
+      "blocks": {
+        "min-1280": true,
+        "max-h-950": false,
+        "max-h-900": false,
+        "max-h-820": false
+      },
+      "boxes": {
+        "root": {
+          "x": 200,
+          "y": 24,
+          "w": 1520,
+          "h": 1032
+        },
+        "pair": {
+          "x": 200,
+          "y": 94.44,
+          "w": 1520,
+          "h": 825
+        },
+        "play": {
+          "x": 200,
+          "y": 207.45,
+          "w": 700,
+          "h": 598.95
+        },
+        "stand": {
+          "x": 980,
+          "y": 94.44,
+          "w": 740,
+          "h": 825
+        },
+        "foot": {
+          "x": 200,
+          "y": 1005.86,
+          "w": 1520,
+          "h": 46.14
+        },
+        "wordmark": {
+          "x": 236.33,
+          "y": 137.45,
+          "w": 627.34,
+          "h": 101.19
+        }
+      },
+      "layoutH": {
+        "play": 599,
+        "stand": 825,
+        "pair": 825
+      },
+      "rhythm": {
+        "rootGap": 40,
+        "rootPadTop": 24,
+        "playGap": 22,
+        "standGap": 20,
+        "pairColGap": 80,
+        "playAlign": "center",
+        "pairAlign": "center"
+      },
+      "wordmark": {
+        "wmSize": 88,
+        "fontSize": 88,
+        "lineHeight": 101.2,
+        "marginTop": -70,
+        "letterSpacing": 5.28,
+        "text": "AUTOTRCK",
+        "chars": 8
+      },
+      "columns": {
+        "playLayoutH": 599,
+        "standLayoutH": 825,
+        "columnHeadroom": 226
+      },
+      "budget": {
+        "probeMax": 297,
+        "gapPerRow": 22,
+        "oneRowTotal": 319,
+        "zoomedIntoCssPx": 1
+      },
+      "mark": {
+        "wmPx": 88,
+        "cellPx": 7.92,
+        "gutPx": 1.936,
+        "borderPx": 1.056,
+        "radiusPx": 1.232,
+        "column": {
+          "layoutW": 8,
+          "layoutH": 77,
+          "cssW": 7.91,
+          "cssH": 76.7
+        },
+        "columnPerDesign": 76.91,
+        "full": {
+          "layoutW": 47,
+          "layoutH": 77,
+          "cssW": 47.22,
+          "cssH": 76.7
+        }
+      },
+      "markScale": [
+        {
+          "k": 1,
+          "cellPx": 7.92,
+          "layoutH": 77,
+          "layoutW": 47,
+          "cssH": 76.7,
+          "cssW": 47.22
+        },
+        {
+          "k": 0.85,
+          "cellPx": 6.732,
+          "layoutH": 65,
+          "layoutW": 40,
+          "cssH": 65.23,
+          "cssW": 40.16
+        },
+        {
+          "k": 0.7,
+          "cellPx": 5.544,
+          "layoutH": 54,
+          "layoutW": 33,
+          "cssH": 53.66,
+          "cssW": 33.03
+        },
+        {
+          "k": 0.6,
+          "cellPx": 4.752,
+          "layoutH": 46,
+          "layoutW": 28,
+          "cssH": 46.09,
+          "cssW": 28.38
+        },
+        {
+          "k": 0.5,
+          "cellPx": 3.96,
+          "layoutH": 38,
+          "layoutW": 24,
+          "cssH": 38.3,
+          "cssW": 23.58
+        },
+        {
+          "k": 0.4,
+          "cellPx": 3.168,
+          "layoutH": 31,
+          "layoutW": 19,
+          "cssH": 30.61,
+          "cssW": 18.84
+        }
+      ],
+      "tagline": {
+        "roleToken": "--text-body-lg",
+        "roleSize": "15.5px",
+        "designSize": "15px (mainscreen-marke.md) — nearest rung is the role above",
+        "de": {
+          "fontSize": 15.5,
+          "lineHeight": 23.25,
+          "layoutH": 23,
+          "layoutW": 213,
+          "cssH": 23.25,
+          "cssW": 212.92
+        },
+        "en": {
+          "fontSize": 15.5,
+          "lineHeight": 23.25,
+          "layoutH": 23,
+          "layoutW": 168,
+          "cssH": 23.25,
+          "cssW": 168.44
+        },
+        "atBody": {
+          "fontSize": 13,
+          "lineHeight": 19.5,
+          "layoutH": 20,
+          "layoutW": 179,
+          "cssH": 19.5,
+          "cssW": 178.58
+        },
+        "atMeta": {
+          "fontSize": 11,
+          "lineHeight": 16.5,
+          "layoutH": 17,
+          "layoutW": 151,
+          "cssH": 16.5,
+          "cssW": 151.11
+        }
+      },
+      "compose": [
+        {
+          "k": 1,
+          "cellPx": 7.92,
+          "scrollH": 1080,
+          "innerH": 1080,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 743,
+          "standLayoutH": 825
+        },
+        {
+          "k": 0.85,
+          "cellPx": 6.732,
+          "scrollH": 1080,
+          "innerH": 1080,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 731,
+          "standLayoutH": 825
+        },
+        {
+          "k": 0.7,
+          "cellPx": 5.544,
+          "scrollH": 1080,
+          "innerH": 1080,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 720,
+          "standLayoutH": 825
+        },
+        {
+          "k": 0.6,
+          "cellPx": 4.752,
+          "scrollH": 1080,
+          "innerH": 1080,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 712,
+          "standLayoutH": 825
+        },
+        {
+          "k": 0.5,
+          "cellPx": 3.96,
+          "scrollH": 1080,
+          "innerH": 1080,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 705,
+          "standLayoutH": 825
+        },
+        {
+          "k": 0.4,
+          "cellPx": 3.168,
+          "scrollH": 1080,
+          "innerH": 1080,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 697,
+          "standLayoutH": 825
+        }
+      ],
+      "deckPanel": {
+        "reached": true,
+        "box": {
+          "x": 980,
+          "y": 94.44,
+          "w": 740,
+          "h": 477
+        },
+        "layoutH": 477,
+        "layoutW": 740,
+        "cls": "as-deck hidden dt:flex as-glass as-ring flex-col gap-[18px] rounded-2xl",
+        "rootClass": "none of its own — reached as the non-bank ring-bearing child of .hub-stand",
+        "art": {
+          "layoutW": 194,
+          "layoutH": 268,
+          "cssW": 194.2,
+          "cssH": 268
+        }
+      },
+      "standBudget": {
+        "reached": true,
+        "panelWas": 477,
+        "zeroFits": true,
+        "growthMax": 93,
+        "restored": true
+      },
+      "c3Probe": {
+        "reached": true,
+        "artWas": {
+          "w": 194,
+          "h": 268
+        },
+        "artAt": {
+          "w": 196,
+          "h": 268
+        },
+        "standWas": 825,
+        "standLayoutH": 825,
+        "scrollH": 1080,
+        "innerH": 1080,
+        "overflowPx": 0,
+        "holds": true,
+        "artRestored": true
+      },
+      "c3Options": {
+        "A": {
+          "artHeightMax": 267.7,
+          "artWidthAtMax": 195.8,
+          "designAsks": 268,
+          "todayIs": 268,
+          "reachesDesign": false
+        },
+        "B": {
+          "bankWas": 328,
+          "bankMustCapAt": 328,
+          "bankGivesUp": 0,
+          "enoughAlone": true
+        },
+        "C": {
+          "zoomFloorToday": 0.85,
+          "zoomNeeded": 0.85,
+          "ctaLayoutH": 76,
+          "ctaCssHAtNeededZoom": null,
+          "floorReasonIs": "below 0.85 the start button falls under 22 px (index.css, the zoom comment)"
+        },
+        "restored": true
+      },
+      "children": {
+        "play": [
+          {
+            "tag": "h1",
+            "cls": "as-wordmark select-none",
+            "layoutH": 101,
+            "layoutW": 627,
+            "cssH": 101.19,
+            "cssW": 627.34
+          },
+          {
+            "tag": "div",
+            "cls": "as-lockup hidden dt:flex flex-col items-center self-stretch",
+            "layoutH": 109,
+            "layoutW": 700,
+            "cssH": 108.59,
+            "cssW": 700
+          },
+          {
+            "tag": "div",
+            "cls": "as-hub-bonus w-[88%] max-w-sm dt:w-full dt:max-w-none rounded-xl px-4 py-2.5 flex flex-col gap-1.5 dt:gap-2",
+            "layoutH": 68,
+            "layoutW": 700,
+            "cssH": 67.75,
+            "cssW": 700
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none",
+            "layoutH": 82,
+            "layoutW": 700,
+            "cssH": 81.5,
+            "cssW": 700
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none flex flex-col gap-2.5",
+            "layoutH": 138,
+            "layoutW": 700,
+            "cssH": 138.17,
+            "cssW": 700
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none flex flex-col gap-2.5",
+            "layoutH": 62,
+            "layoutW": 700,
+            "cssH": 61.75,
+            "cssW": 700
+          }
+        ],
+        "stand": [
+          {
+            "tag": "div",
+            "cls": "as-deck hidden dt:flex as-glass as-ring flex-col gap-[18px] rounded-2xl",
+            "layoutH": 477,
+            "layoutW": 740,
+            "cssH": 477,
+            "cssW": 740
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none as-hub-list as-glass as-ring grid grid-cols-2 gap-2.5 dt:grid-cols-1 dt:gap-0",
+            "layoutH": 328,
+            "layoutW": 740,
+            "cssH": 328,
+            "cssW": 740
+          }
+        ]
+      },
+      "centringTrial": {
+        "was": "center",
+        "moved": [],
+        "unchanged": 6,
+        "total": 6,
+        "restored": true
+      },
+      "restored": {
+        "probesLeft": 0,
+        "scrollH": 1080,
+        "playLayoutH": 599,
+        "standLayoutH": 825
+      }
+    },
+    {
+      "id": "1700x760/en",
+      "size": "1700x760",
+      "lang": "en",
+      "settle": {
+        "fontsOk": true,
+        "images": 2,
+        "timedOut": 0
+      },
+      "reached": true,
+      "missing": [],
+      "viewport": {
+        "w": 1700,
+        "h": 760,
+        "dpr": 1
+      },
+      "scrolls": {
+        "scrollH": 760,
+        "clientH": 760,
+        "overflowPx": 0,
+        "scrollbar": 0
+      },
+      "zoom": {
+        "declared": "0.885417",
+        "effectivePair": 0.8857,
+        "effectiveFoot": 0.8927
+      },
+      "blocks": {
+        "min-1280": true,
+        "max-h-950": true,
+        "max-h-900": true,
+        "max-h-820": true
+      },
+      "boxes": {
+        "root": {
+          "x": 90,
+          "y": 24,
+          "w": 1520,
+          "h": 712
+        },
+        "pair": {
+          "x": 177.08,
+          "y": 30.39,
+          "w": 1345.83,
+          "h": 642.16
+        },
+        "play": {
+          "x": 177.08,
+          "y": 103.52,
+          "w": 630.11,
+          "h": 495.91
+        },
+        "stand": {
+          "x": 856.77,
+          "y": 30.39,
+          "w": 666.14,
+          "h": 642.16
+        },
+        "foot": {
+          "x": 177.08,
+          "y": 690.94,
+          "w": 1345.83,
+          "h": 41.06
+        },
+        "wordmark": {
+          "x": 214.42,
+          "y": 41.55,
+          "w": 555.41,
+          "h": 89.61
+        }
+      },
+      "layoutH": {
+        "play": 560,
+        "stand": 725,
+        "pair": 725
+      },
+      "rhythm": {
+        "rootGap": 18,
+        "rootPadTop": 6,
+        "playGap": 14,
+        "standGap": 12,
+        "pairColGap": 56,
+        "playAlign": "center",
+        "pairAlign": "center"
+      },
+      "wordmark": {
+        "wmSize": 88,
+        "fontSize": 88,
+        "lineHeight": 101.2,
+        "marginTop": -70,
+        "letterSpacing": 5.28,
+        "text": "AUTOTRCK",
+        "chars": 8
+      },
+      "columns": {
+        "playLayoutH": 560,
+        "standLayoutH": 725,
+        "columnHeadroom": 165
+      },
+      "budget": {
+        "probeMax": 152.5,
+        "gapPerRow": 14,
+        "oneRowTotal": 166.5,
+        "zoomedIntoCssPx": 0.8857
+      },
+      "mark": {
+        "wmPx": 88,
+        "cellPx": 7.92,
+        "gutPx": 1.936,
+        "borderPx": 1.056,
+        "radiusPx": 1.232,
+        "column": {
+          "layoutW": 8,
+          "layoutH": 77,
+          "cssW": 7,
+          "cssH": 67.92
+        },
+        "columnPerDesign": 76.91,
+        "full": {
+          "layoutW": 47,
+          "layoutH": 77,
+          "cssW": 41.81,
+          "cssH": 67.92
+        }
+      },
+      "markScale": [
+        {
+          "k": 1,
+          "cellPx": 7.92,
+          "layoutH": 77,
+          "layoutW": 47,
+          "cssH": 67.92,
+          "cssW": 41.81
+        },
+        {
+          "k": 0.85,
+          "cellPx": 6.732,
+          "layoutH": 65,
+          "layoutW": 40,
+          "cssH": 57.8,
+          "cssW": 35.58
+        },
+        {
+          "k": 0.7,
+          "cellPx": 5.544,
+          "layoutH": 54,
+          "layoutW": 33,
+          "cssH": 47.56,
+          "cssW": 29.28
+        },
+        {
+          "k": 0.6,
+          "cellPx": 4.752,
+          "layoutH": 46,
+          "layoutW": 28,
+          "cssH": 40.73,
+          "cssW": 25.08
+        },
+        {
+          "k": 0.5,
+          "cellPx": 3.96,
+          "layoutH": 38,
+          "layoutW": 24,
+          "cssH": 33.91,
+          "cssW": 20.88
+        },
+        {
+          "k": 0.4,
+          "cellPx": 3.168,
+          "layoutH": 31,
+          "layoutW": 19,
+          "cssH": 27.08,
+          "cssW": 16.67
+        }
+      ],
+      "tagline": {
+        "roleToken": "--text-body-lg",
+        "roleSize": "15.5px",
+        "designSize": "15px (mainscreen-marke.md) — nearest rung is the role above",
+        "de": {
+          "fontSize": 15.5,
+          "lineHeight": 23.25,
+          "layoutH": 23,
+          "layoutW": 213,
+          "cssH": 20.58,
+          "cssW": 188.47
+        },
+        "en": {
+          "fontSize": 15.5,
+          "lineHeight": 23.25,
+          "layoutH": 23,
+          "layoutW": 168,
+          "cssH": 20.58,
+          "cssW": 149.09
+        },
+        "atBody": {
+          "fontSize": 13,
+          "lineHeight": 19.5,
+          "layoutH": 20,
+          "layoutW": 179,
+          "cssH": 17.27,
+          "cssW": 158.11
+        },
+        "atMeta": {
+          "fontSize": 11,
+          "lineHeight": 16.5,
+          "layoutH": 16,
+          "layoutW": 151,
+          "cssH": 14.59,
+          "cssW": 133.67
+        }
+      },
+      "compose": [
+        {
+          "k": 1,
+          "cellPx": 7.92,
+          "scrollH": 760,
+          "innerH": 760,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 688,
+          "standLayoutH": 725
+        },
+        {
+          "k": 0.85,
+          "cellPx": 6.732,
+          "scrollH": 760,
+          "innerH": 760,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 677,
+          "standLayoutH": 725
+        },
+        {
+          "k": 0.7,
+          "cellPx": 5.544,
+          "scrollH": 760,
+          "innerH": 760,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 665,
+          "standLayoutH": 725
+        },
+        {
+          "k": 0.6,
+          "cellPx": 4.752,
+          "scrollH": 760,
+          "innerH": 760,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 657,
+          "standLayoutH": 725
+        },
+        {
+          "k": 0.5,
+          "cellPx": 3.96,
+          "scrollH": 760,
+          "innerH": 760,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 650,
+          "standLayoutH": 725
+        },
+        {
+          "k": 0.4,
+          "cellPx": 3.168,
+          "scrollH": 760,
+          "innerH": 760,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 642,
+          "standLayoutH": 725
+        }
+      ],
+      "deckPanel": {
+        "reached": true,
+        "box": {
+          "x": 856.77,
+          "y": 30.39,
+          "w": 666.14,
+          "h": 340.91
+        },
+        "layoutH": 385,
+        "layoutW": 752,
+        "cls": "as-deck hidden dt:flex as-glass as-ring flex-col gap-[18px] rounded-2xl",
+        "rootClass": "none of its own — reached as the non-bank ring-bearing child of .hub-stand",
+        "art": {
+          "layoutW": 128,
+          "layoutH": 176,
+          "cssW": 113.14,
+          "cssH": 155.83
+        }
+      },
+      "standBudget": {
+        "reached": true,
+        "panelWas": 385,
+        "zeroFits": true,
+        "growthMax": 1,
+        "restored": true
+      },
+      "c3Probe": {
+        "reached": true,
+        "artWas": {
+          "w": 128,
+          "h": 176
+        },
+        "artAt": {
+          "w": 196,
+          "h": 268
+        },
+        "standWas": 725,
+        "standLayoutH": 817,
+        "scrollH": 841,
+        "innerH": 760,
+        "overflowPx": 81,
+        "holds": false,
+        "artRestored": true
+      },
+      "c3Options": {
+        "A": {
+          "artHeightMax": 177.2,
+          "artWidthAtMax": 129.6,
+          "designAsks": 268,
+          "todayIs": 176,
+          "reachesDesign": false
+        },
+        "B": {
+          "bankWas": 328,
+          "bankMustCapAt": 237.7,
+          "bankGivesUp": 90.3,
+          "enoughAlone": true
+        },
+        "C": {
+          "zoomFloorToday": 0.85,
+          "zoomNeeded": 0.786,
+          "ctaLayoutH": 76,
+          "ctaCssHAtNeededZoom": 59.7,
+          "floorReasonIs": "below 0.85 the start button falls under 22 px (index.css, the zoom comment)"
+        },
+        "restored": true
+      },
+      "children": {
+        "play": [
+          {
+            "tag": "h1",
+            "cls": "as-wordmark select-none",
+            "layoutH": 101,
+            "layoutW": 627,
+            "cssH": 89.61,
+            "cssW": 555.41
+          },
+          {
+            "tag": "div",
+            "cls": "as-lockup hidden dt:flex flex-col items-center self-stretch",
+            "layoutH": 109,
+            "layoutW": 712,
+            "cssH": 96.14,
+            "cssW": 630.11
+          },
+          {
+            "tag": "div",
+            "cls": "as-hub-bonus w-[88%] max-w-sm dt:w-full dt:max-w-none rounded-xl px-4 py-2.5 flex flex-col gap-1.5 dt:gap-2",
+            "layoutH": 68,
+            "layoutW": 712,
+            "cssH": 60.19,
+            "cssW": 630.11
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none",
+            "layoutH": 82,
+            "layoutW": 712,
+            "cssH": 72.34,
+            "cssW": 630.11
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none flex flex-col gap-2.5",
+            "layoutH": 139,
+            "layoutW": 712,
+            "cssH": 122.77,
+            "cssW": 630.11
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none flex flex-col gap-2.5",
+            "layoutH": 62,
+            "layoutW": 712,
+            "cssH": 54.88,
+            "cssW": 630.11
+          }
+        ],
+        "stand": [
+          {
+            "tag": "div",
+            "cls": "as-deck hidden dt:flex as-glass as-ring flex-col gap-[18px] rounded-2xl",
+            "layoutH": 385,
+            "layoutW": 752,
+            "cssH": 340.91,
+            "cssW": 666.14
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none as-hub-list as-glass as-ring grid grid-cols-2 gap-2.5 dt:grid-cols-1 dt:gap-0",
+            "layoutH": 328,
+            "layoutW": 752,
+            "cssH": 290.63,
+            "cssW": 666.14
+          }
+        ]
+      },
+      "centringTrial": {
+        "was": "center",
+        "moved": [],
+        "unchanged": 6,
+        "total": 6,
+        "restored": true
+      },
+      "restored": {
+        "probesLeft": 0,
+        "scrollH": 760,
+        "playLayoutH": 560,
+        "standLayoutH": 725
+      }
+    },
+    {
+      "id": "1800x820/en",
+      "size": "1800x820",
+      "lang": "en",
+      "settle": {
+        "fontsOk": true,
+        "images": 2,
+        "timedOut": 0
+      },
+      "reached": true,
+      "missing": [],
+      "viewport": {
+        "w": 1800,
+        "h": 820,
+        "dpr": 1
+      },
+      "scrolls": {
+        "scrollH": 820,
+        "clientH": 820,
+        "overflowPx": 0,
+        "scrollbar": 0
+      },
+      "zoom": {
+        "declared": "0.9375",
+        "effectivePair": 0.937,
+        "effectiveFoot": 0.9429
+      },
+      "blocks": {
+        "min-1280": true,
+        "max-h-950": true,
+        "max-h-900": true,
+        "max-h-820": true
+      },
+      "boxes": {
+        "root": {
+          "x": 140,
+          "y": 24,
+          "w": 1520,
+          "h": 772
+        },
+        "pair": {
+          "x": 187.5,
+          "y": 30.34,
+          "w": 1425,
+          "h": 699.94
+        },
+        "play": {
+          "x": 187.5,
+          "y": 117.98,
+          "w": 667.19,
+          "h": 524.64
+        },
+        "stand": {
+          "x": 907.19,
+          "y": 30.34,
+          "w": 705.31,
+          "h": 699.94
+        },
+        "foot": {
+          "x": 187.5,
+          "y": 748.63,
+          "w": 1425,
+          "h": 43.38
+        },
+        "wordmark": {
+          "x": 227.03,
+          "y": 52.36,
+          "w": 588.13,
+          "h": 94.88
+        }
+      },
+      "layoutH": {
+        "play": 560,
+        "stand": 747,
+        "pair": 747
+      },
+      "rhythm": {
+        "rootGap": 18,
+        "rootPadTop": 6,
+        "playGap": 14,
+        "standGap": 12,
+        "pairColGap": 56,
+        "playAlign": "center",
+        "pairAlign": "center"
+      },
+      "wordmark": {
+        "wmSize": 88,
+        "fontSize": 88,
+        "lineHeight": 101.2,
+        "marginTop": -70,
+        "letterSpacing": 5.28,
+        "text": "AUTOTRCK",
+        "chars": 8
+      },
+      "columns": {
+        "playLayoutH": 560,
+        "standLayoutH": 747,
+        "columnHeadroom": 187
+      },
+      "budget": {
+        "probeMax": 174,
+        "gapPerRow": 14,
+        "oneRowTotal": 188,
+        "zoomedIntoCssPx": 0.937
+      },
+      "mark": {
+        "wmPx": 88,
+        "cellPx": 7.92,
+        "gutPx": 1.936,
+        "borderPx": 1.056,
+        "radiusPx": 1.232,
+        "column": {
+          "layoutW": 8,
+          "layoutH": 77,
+          "cssW": 7.42,
+          "cssH": 72.06
+        },
+        "columnPerDesign": 76.91,
+        "full": {
+          "layoutW": 47,
+          "layoutH": 77,
+          "cssW": 44.36,
+          "cssH": 72.06
+        }
+      },
+      "markScale": [
+        {
+          "k": 1,
+          "cellPx": 7.92,
+          "layoutH": 77,
+          "layoutW": 47,
+          "cssH": 72.06,
+          "cssW": 44.36
+        },
+        {
+          "k": 0.85,
+          "cellPx": 6.732,
+          "layoutH": 65,
+          "layoutW": 40,
+          "cssH": 61.09,
+          "cssW": 37.61
+        },
+        {
+          "k": 0.7,
+          "cellPx": 5.544,
+          "layoutH": 54,
+          "layoutW": 33,
+          "cssH": 50.36,
+          "cssW": 31
+        },
+        {
+          "k": 0.6,
+          "cellPx": 4.752,
+          "layoutH": 46,
+          "layoutW": 28,
+          "cssH": 43.17,
+          "cssW": 26.58
+        },
+        {
+          "k": 0.5,
+          "cellPx": 3.96,
+          "layoutH": 38,
+          "layoutW": 24,
+          "cssH": 35.97,
+          "cssW": 22.14
+        },
+        {
+          "k": 0.4,
+          "cellPx": 3.168,
+          "layoutH": 31,
+          "layoutW": 19,
+          "cssH": 28.78,
+          "cssW": 17.72
+        }
+      ],
+      "tagline": {
+        "roleToken": "--text-body-lg",
+        "roleSize": "15.5px",
+        "designSize": "15px (mainscreen-marke.md) — nearest rung is the role above",
+        "de": {
+          "fontSize": 15.5,
+          "lineHeight": 23.25,
+          "layoutH": 23,
+          "layoutW": 213,
+          "cssH": 21.8,
+          "cssW": 199.59
+        },
+        "en": {
+          "fontSize": 15.5,
+          "lineHeight": 23.25,
+          "layoutH": 23,
+          "layoutW": 168,
+          "cssH": 21.8,
+          "cssW": 157.89
+        },
+        "atBody": {
+          "fontSize": 13,
+          "lineHeight": 19.5,
+          "layoutH": 20,
+          "layoutW": 178,
+          "cssH": 18.28,
+          "cssW": 167.33
+        },
+        "atMeta": {
+          "fontSize": 11,
+          "lineHeight": 16.5,
+          "layoutH": 17,
+          "layoutW": 151,
+          "cssH": 15.47,
+          "cssW": 141.63
+        }
+      },
+      "compose": [
+        {
+          "k": 1,
+          "cellPx": 7.92,
+          "scrollH": 820,
+          "innerH": 820,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 688,
+          "standLayoutH": 747
+        },
+        {
+          "k": 0.85,
+          "cellPx": 6.732,
+          "scrollH": 820,
+          "innerH": 820,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 676,
+          "standLayoutH": 747
+        },
+        {
+          "k": 0.7,
+          "cellPx": 5.544,
+          "scrollH": 820,
+          "innerH": 820,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 665,
+          "standLayoutH": 747
+        },
+        {
+          "k": 0.6,
+          "cellPx": 4.752,
+          "scrollH": 820,
+          "innerH": 820,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 657,
+          "standLayoutH": 747
+        },
+        {
+          "k": 0.5,
+          "cellPx": 3.96,
+          "scrollH": 820,
+          "innerH": 820,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 649,
+          "standLayoutH": 747
+        },
+        {
+          "k": 0.4,
+          "cellPx": 3.168,
+          "scrollH": 820,
+          "innerH": 820,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 642,
+          "standLayoutH": 747
+        }
+      ],
+      "deckPanel": {
+        "reached": true,
+        "box": {
+          "x": 907.19,
+          "y": 30.34,
+          "w": 705.31,
+          "h": 381
+        },
+        "layoutH": 406,
+        "layoutW": 752,
+        "cls": "as-deck hidden dt:flex as-glass as-ring flex-col gap-[18px] rounded-2xl",
+        "rootClass": "none of its own — reached as the non-bank ring-bearing child of .hub-stand",
+        "art": {
+          "layoutW": 143,
+          "layoutH": 197,
+          "cssW": 134.22,
+          "cssH": 185
+        }
+      },
+      "standBudget": {
+        "reached": true,
+        "panelWas": 406,
+        "zeroFits": true,
+        "growthMax": 1.5,
+        "restored": true
+      },
+      "c3Probe": {
+        "reached": true,
+        "artWas": {
+          "w": 143,
+          "h": 197
+        },
+        "artAt": {
+          "w": 196,
+          "h": 268
+        },
+        "standWas": 747,
+        "standLayoutH": 817,
+        "scrollH": 886,
+        "innerH": 820,
+        "overflowPx": 66,
+        "holds": false,
+        "artRestored": true
+      },
+      "c3Options": {
+        "A": {
+          "artHeightMax": 198.4,
+          "artWidthAtMax": 145.1,
+          "designAsks": 268,
+          "todayIs": 197,
+          "reachesDesign": false
+        },
+        "B": {
+          "bankWas": 328,
+          "bankMustCapAt": 258.5,
+          "bankGivesUp": 69.5,
+          "enoughAlone": true
+        },
+        "C": {
+          "zoomFloorToday": 0.85,
+          "zoomNeeded": 0.85,
+          "ctaLayoutH": 76,
+          "ctaCssHAtNeededZoom": null,
+          "floorReasonIs": "below 0.85 the start button falls under 22 px (index.css, the zoom comment)"
+        },
+        "restored": true
+      },
+      "children": {
+        "play": [
+          {
+            "tag": "h1",
+            "cls": "as-wordmark select-none",
+            "layoutH": 101,
+            "layoutW": 627,
+            "cssH": 94.88,
+            "cssW": 588.13
+          },
+          {
+            "tag": "div",
+            "cls": "as-lockup hidden dt:flex flex-col items-center self-stretch",
+            "layoutH": 109,
+            "layoutW": 712,
+            "cssH": 101.81,
+            "cssW": 667.19
+          },
+          {
+            "tag": "div",
+            "cls": "as-hub-bonus w-[88%] max-w-sm dt:w-full dt:max-w-none rounded-xl px-4 py-2.5 flex flex-col gap-1.5 dt:gap-2",
+            "layoutH": 68,
+            "layoutW": 712,
+            "cssH": 63.64,
+            "cssW": 667.19
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none",
+            "layoutH": 82,
+            "layoutW": 712,
+            "cssH": 76.52,
+            "cssW": 667.19
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none flex flex-col gap-2.5",
+            "layoutH": 138,
+            "layoutW": 712,
+            "cssH": 129.78,
+            "cssW": 667.19
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none flex flex-col gap-2.5",
+            "layoutH": 62,
+            "layoutW": 712,
+            "cssH": 58.02,
+            "cssW": 667.19
+          }
+        ],
+        "stand": [
+          {
+            "tag": "div",
+            "cls": "as-deck hidden dt:flex as-glass as-ring flex-col gap-[18px] rounded-2xl",
+            "layoutH": 406,
+            "layoutW": 752,
+            "cssH": 381,
+            "cssW": 705.31
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none as-hub-list as-glass as-ring grid grid-cols-2 gap-2.5 dt:grid-cols-1 dt:gap-0",
+            "layoutH": 328,
+            "layoutW": 752,
+            "cssH": 307.69,
+            "cssW": 705.31
+          }
+        ]
+      },
+      "centringTrial": {
+        "was": "center",
+        "moved": [],
+        "unchanged": 6,
+        "total": 6,
+        "restored": true
+      },
+      "restored": {
+        "probesLeft": 0,
+        "scrollH": 820,
+        "playLayoutH": 560,
+        "standLayoutH": 747
+      }
+    },
+    {
+      "id": "1920x850/en",
+      "size": "1920x850",
+      "lang": "en",
+      "settle": {
+        "fontsOk": true,
+        "images": 2,
+        "timedOut": 0
+      },
+      "reached": true,
+      "missing": [],
+      "viewport": {
+        "w": 1920,
+        "h": 850,
+        "dpr": 1
+      },
+      "scrolls": {
+        "scrollH": 850,
+        "clientH": 850,
+        "overflowPx": 0,
+        "scrollbar": 0
+      },
+      "zoom": {
+        "declared": "1",
+        "effectivePair": 1,
+        "effectiveFoot": 1.0031
+      },
+      "blocks": {
+        "min-1280": true,
+        "max-h-950": true,
+        "max-h-900": true,
+        "max-h-820": false
+      },
+      "boxes": {
+        "root": {
+          "x": 200,
+          "y": 24,
+          "w": 1520,
+          "h": 802
+        },
+        "pair": {
+          "x": 200,
+          "y": 30.44,
+          "w": 1520,
+          "h": 727
+        },
+        "play": {
+          "x": 200,
+          "y": 114.45,
+          "w": 711.66,
+          "h": 558.95
+        },
+        "stand": {
+          "x": 967.66,
+          "y": 30.44,
+          "w": 752.33,
+          "h": 727
+        },
+        "foot": {
+          "x": 200,
+          "y": 775.86,
+          "w": 1520,
+          "h": 46.14
+        },
+        "wordmark": {
+          "x": 242.16,
+          "y": 44.45,
+          "w": 627.34,
+          "h": 101.19
+        }
+      },
+      "layoutH": {
+        "play": 559,
+        "stand": 727,
+        "pair": 727
+      },
+      "rhythm": {
+        "rootGap": 18,
+        "rootPadTop": 6,
+        "playGap": 14,
+        "standGap": 12,
+        "pairColGap": 56,
+        "playAlign": "center",
+        "pairAlign": "center"
+      },
+      "wordmark": {
+        "wmSize": 88,
+        "fontSize": 88,
+        "lineHeight": 101.2,
+        "marginTop": -70,
+        "letterSpacing": 5.28,
+        "text": "AUTOTRCK",
+        "chars": 8
+      },
+      "columns": {
+        "playLayoutH": 559,
+        "standLayoutH": 727,
+        "columnHeadroom": 168
+      },
+      "budget": {
+        "probeMax": 155,
+        "gapPerRow": 14,
+        "oneRowTotal": 169,
+        "zoomedIntoCssPx": 1
+      },
+      "mark": {
+        "wmPx": 88,
+        "cellPx": 7.92,
+        "gutPx": 1.936,
+        "borderPx": 1.056,
+        "radiusPx": 1.232,
+        "column": {
+          "layoutW": 8,
+          "layoutH": 77,
+          "cssW": 7.91,
+          "cssH": 76.7
+        },
+        "columnPerDesign": 76.91,
+        "full": {
+          "layoutW": 47,
+          "layoutH": 77,
+          "cssW": 47.22,
+          "cssH": 76.7
+        }
+      },
+      "markScale": [
+        {
+          "k": 1,
+          "cellPx": 7.92,
+          "layoutH": 77,
+          "layoutW": 47,
+          "cssH": 76.7,
+          "cssW": 47.22
+        },
+        {
+          "k": 0.85,
+          "cellPx": 6.732,
+          "layoutH": 65,
+          "layoutW": 40,
+          "cssH": 65.23,
+          "cssW": 40.16
+        },
+        {
+          "k": 0.7,
+          "cellPx": 5.544,
+          "layoutH": 54,
+          "layoutW": 33,
+          "cssH": 53.66,
+          "cssW": 33.03
+        },
+        {
+          "k": 0.6,
+          "cellPx": 4.752,
+          "layoutH": 46,
+          "layoutW": 28,
+          "cssH": 46.09,
+          "cssW": 28.38
+        },
+        {
+          "k": 0.5,
+          "cellPx": 3.96,
+          "layoutH": 38,
+          "layoutW": 24,
+          "cssH": 38.3,
+          "cssW": 23.58
+        },
+        {
+          "k": 0.4,
+          "cellPx": 3.168,
+          "layoutH": 31,
+          "layoutW": 19,
+          "cssH": 30.61,
+          "cssW": 18.84
+        }
+      ],
+      "tagline": {
+        "roleToken": "--text-body-lg",
+        "roleSize": "15.5px",
+        "designSize": "15px (mainscreen-marke.md) — nearest rung is the role above",
+        "de": {
+          "fontSize": 15.5,
+          "lineHeight": 23.25,
+          "layoutH": 23,
+          "layoutW": 213,
+          "cssH": 23.25,
+          "cssW": 212.92
+        },
+        "en": {
+          "fontSize": 15.5,
+          "lineHeight": 23.25,
+          "layoutH": 23,
+          "layoutW": 168,
+          "cssH": 23.25,
+          "cssW": 168.44
+        },
+        "atBody": {
+          "fontSize": 13,
+          "lineHeight": 19.5,
+          "layoutH": 20,
+          "layoutW": 179,
+          "cssH": 19.5,
+          "cssW": 178.58
+        },
+        "atMeta": {
+          "fontSize": 11,
+          "lineHeight": 16.5,
+          "layoutH": 17,
+          "layoutW": 151,
+          "cssH": 16.5,
+          "cssW": 151.11
+        }
+      },
+      "compose": [
+        {
+          "k": 1,
+          "cellPx": 7.92,
+          "scrollH": 850,
+          "innerH": 850,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 687,
+          "standLayoutH": 727
+        },
+        {
+          "k": 0.85,
+          "cellPx": 6.732,
+          "scrollH": 850,
+          "innerH": 850,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 675,
+          "standLayoutH": 727
+        },
+        {
+          "k": 0.7,
+          "cellPx": 5.544,
+          "scrollH": 850,
+          "innerH": 850,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 664,
+          "standLayoutH": 727
+        },
+        {
+          "k": 0.6,
+          "cellPx": 4.752,
+          "scrollH": 850,
+          "innerH": 850,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 656,
+          "standLayoutH": 727
+        },
+        {
+          "k": 0.5,
+          "cellPx": 3.96,
+          "scrollH": 850,
+          "innerH": 850,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 649,
+          "standLayoutH": 727
+        },
+        {
+          "k": 0.4,
+          "cellPx": 3.168,
+          "scrollH": 850,
+          "innerH": 850,
+          "overflowPx": 0,
+          "holds": true,
+          "playLayoutH": 641,
+          "standLayoutH": 727
+        }
+      ],
+      "deckPanel": {
+        "reached": true,
+        "box": {
+          "x": 967.66,
+          "y": 30.44,
+          "w": 752.33,
+          "h": 387
+        },
+        "layoutH": 387,
+        "layoutW": 752,
+        "cls": "as-deck hidden dt:flex as-glass as-ring flex-col gap-[18px] rounded-2xl",
+        "rootClass": "none of its own — reached as the non-bank ring-bearing child of .hub-stand",
+        "art": {
+          "layoutW": 129,
+          "layoutH": 178,
+          "cssW": 129.17,
+          "cssH": 178
+        }
+      },
+      "standBudget": {
+        "reached": true,
+        "panelWas": 387,
+        "zeroFits": true,
+        "growthMax": 1,
+        "restored": true
+      },
+      "c3Probe": {
+        "reached": true,
+        "artWas": {
+          "w": 129,
+          "h": 178
+        },
+        "artAt": {
+          "w": 196,
+          "h": 268
+        },
+        "standWas": 727,
+        "standLayoutH": 817,
+        "scrollH": 939,
+        "innerH": 850,
+        "overflowPx": 89,
+        "holds": false,
+        "artRestored": true
+      },
+      "c3Options": {
+        "A": {
+          "artHeightMax": 179.3,
+          "artWidthAtMax": 131.1,
+          "designAsks": 268,
+          "todayIs": 178,
+          "reachesDesign": false
+        },
+        "B": {
+          "bankWas": 328,
+          "bankMustCapAt": 239.3,
+          "bankGivesUp": 88.7,
+          "enoughAlone": true
+        },
+        "C": {
+          "zoomFloorToday": 0.85,
+          "zoomNeeded": 0.85,
+          "ctaLayoutH": 76,
+          "ctaCssHAtNeededZoom": null,
+          "floorReasonIs": "below 0.85 the start button falls under 22 px (index.css, the zoom comment)"
+        },
+        "restored": true
+      },
+      "children": {
+        "play": [
+          {
+            "tag": "h1",
+            "cls": "as-wordmark select-none",
+            "layoutH": 101,
+            "layoutW": 627,
+            "cssH": 101.19,
+            "cssW": 627.34
+          },
+          {
+            "tag": "div",
+            "cls": "as-lockup hidden dt:flex flex-col items-center self-stretch",
+            "layoutH": 109,
+            "layoutW": 712,
+            "cssH": 108.59,
+            "cssW": 711.66
+          },
+          {
+            "tag": "div",
+            "cls": "as-hub-bonus w-[88%] max-w-sm dt:w-full dt:max-w-none rounded-xl px-4 py-2.5 flex flex-col gap-1.5 dt:gap-2",
+            "layoutH": 68,
+            "layoutW": 712,
+            "cssH": 67.75,
+            "cssW": 711.66
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none",
+            "layoutH": 82,
+            "layoutW": 712,
+            "cssH": 81.5,
+            "cssW": 711.66
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none flex flex-col gap-2.5",
+            "layoutH": 138,
+            "layoutW": 712,
+            "cssH": 138.17,
+            "cssW": 711.66
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none flex flex-col gap-2.5",
+            "layoutH": 62,
+            "layoutW": 712,
+            "cssH": 61.75,
+            "cssW": 711.66
+          }
+        ],
+        "stand": [
+          {
+            "tag": "div",
+            "cls": "as-deck hidden dt:flex as-glass as-ring flex-col gap-[18px] rounded-2xl",
+            "layoutH": 387,
+            "layoutW": 752,
+            "cssH": 387,
+            "cssW": 752.33
+          },
+          {
+            "tag": "div",
+            "cls": "w-[88%] max-w-sm dt:w-full dt:max-w-none as-hub-list as-glass as-ring grid grid-cols-2 gap-2.5 dt:grid-cols-1 dt:gap-0",
+            "layoutH": 328,
+            "layoutW": 752,
+            "cssH": 328,
+            "cssW": 752.33
+          }
+        ]
+      },
+      "centringTrial": {
+        "was": "center",
+        "moved": [],
+        "unchanged": 6,
+        "total": 6,
+        "restored": true
+      },
+      "restored": {
+        "probesLeft": 0,
+        "scrollH": 850,
+        "playLayoutH": 559,
+        "standLayoutH": 727
+      }
+    }
+  ]
+}

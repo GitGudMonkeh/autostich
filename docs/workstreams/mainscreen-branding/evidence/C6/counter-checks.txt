@@ -1,0 +1,11 @@
+  BASELINE before  exit 0  GREEN as required
+  CC1  exit 1  RED as required  — the cut helper comes back into the screen
+  CC2  exit 1  RED as required  — the split values come back
+  CC3  exit 1  RED as required  — the breakpoint hook comes back into the screen
+  CC4  exit 1  RED as required  — the column cut is rendered again
+  CC5  exit 1  RED as required  — the component grows its second cut back
+  CC6  exit 1  RED as required  — the cut returns under different names, as working code
+  CC7  exit 1  RED as required  — the stylesheet grows a rule for a column that is not rendered
+  BASELINE after   exit 0  GREEN — the tree is restored
+
+  7 sabotages, 2 baselines, 0 unexpected

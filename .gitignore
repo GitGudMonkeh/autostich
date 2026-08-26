@@ -58,3 +58,8 @@ src/assets/**/_raw/
 # Die Belege, die bleiben sollen, stehen als Begruendung an den Eintraegen in
 # src/ui/cosmeticAssets.js — so wie bei BATTLEFIELD_VEIL.
 test/evidence/
+
+# #menu-rework: beide sind Streufunde einer Perf-Sitzung, die ein `add -A` sonst einsammelt.
+# `zz-perf.mjs` ist genau so einmal auf einen Feature-Branch geraten.
+dist-perf/
+zz-*.mjs

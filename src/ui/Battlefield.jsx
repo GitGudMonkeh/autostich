@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react";
 import { Card, CardBack } from "./Card.jsx";
+import { tintImage } from "./deckTint.js"; // #gegnerdeck-farbe: Phasendecks in der Deckfarbe (einmal gebacken)
 import { clamp } from "../game/deck.js";
 import { TRICKS_PER_CYCLE, suitColor, AUSLAEUFER_HARVEST, ION_MAX_STACKS, HEAT_MAX, BASE_FLIP_MS, PLANT_GREEN_THRESHOLD } from "../game/constants.js";
 import { linkedPartnerOf } from "../game/shop.js";
@@ -799,7 +800,20 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const deckPos = t ? (t.originalPosition ?? 0) + 1 : 0;
   // #186: Gegner-Deck-Skin nach kommender Auswahl. back = Cover (verdeckter Stapel), front = Rahmen (Zahl darüber, Holo entfällt).
   const oppSkin = OPP_DECK_SKINS[oppDeck] || OPP_DECK_SKINS.stat;
-  const oppBackImg = oppSkin.back, oppFrontImg = oppSkin.front;
+  /* #gegnerdeck-farbe: Cover UND Rahmen des Gegnerdecks nehmen die Deckfarbe an (zweifarbig, a1→a2).
+     Gebacken in deckTint.js, nicht gefiltert — beide Zeichenwege (DOM-Karte und Pixi-Textur, `backSrc`)
+     bekommen so dieselbe URL. Ohne Deckfarbe (`deckA1` fehlt) bleibt es beim Original, also bei den
+     phasen-farbcodierten Motiven. Bis die Fassung da ist, steht das Original — kein leeres Feld. */
+  const [oppTint, setOppTint] = useState(null);
+  useEffect(() => {
+    if (!deckA1) { setOppTint(null); return undefined; }
+    let alive = true;
+    Promise.all([tintImage(oppSkin.back, deckA1, deckA2), tintImage(oppSkin.front, deckA1, deckA2)])
+      .then(([back, front]) => { if (alive) setOppTint({ back, front }); });
+    return () => { alive = false; };
+  }, [oppSkin.back, oppSkin.front, deckA1, deckA2]);
+  const oppBackImg = (oppTint && oppTint.back) || oppSkin.back;
+  const oppFrontImg = (oppTint && oppTint.front) || oppSkin.front;
   // F4 Farballianz (#125): Partnerfarbe einer Kartenfarbe → diagonaler Split auf der Karte (rein kosmetisch).
   const allyColorFor = (suit) => { const a = linkedPartnerOf(pe, suit); return a ? suitColor(a) : null; };
   const win = t && (t.result === "win" || t.result === "win_tie");

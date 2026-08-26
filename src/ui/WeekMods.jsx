@@ -68,8 +68,13 @@ export function WeekModChips({ mods, size = "md" }) {
 export function WeekModPanel({ mods, className = "" }) {
   if (!mods || !mods.length) return null;
   return (
+    /* #menu-rework M8 — `linear-gradient(180deg, #1b1a24, #141019)` IST `--sf-raised`, Zeichen für
+       Zeichen: `--sf-head` ist die öffnende Stufe, `--sf-deep` die schließende. Wertgleich.
+       DIESE FASSUNG STEHT NICHT AUF MEINEM SCREEN — sie rendert nur im Ranglisten-LAUF, unter dem
+       Brett (App.jsx:1293), und der Survey spielt casual. Sie ist damit in keiner Zelle der Matrix;
+       die Zusicherung hier ist die Wertgleichheit, nicht das Tor. */
     <div className={`rounded-xl p-4 as-panel as-panel-deck ${className}`}
-      style={{ background: "linear-gradient(180deg,#1b1a24,#141019)", border: `1px solid ${DECK_BORDER}` }}>
+      style={{ background: "var(--sf-raised)", border: `1px solid ${DECK_BORDER}` }}>
       <div className="text-meta-3 uppercase tracking-wide opacity-50 mb-2">{t("weekmods.title")}</div>
       <WeekModChips mods={mods} />
     </div>

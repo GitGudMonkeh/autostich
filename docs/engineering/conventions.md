@@ -179,6 +179,501 @@ weight ladder is enforced by review.
 
 ---
 
+## 2c. Panels — surface, edge, elevation, radius, inset
+
+Five axes, nineteen steps, defined in the `@theme` block of `src/index.css`. This is §2b applied to
+surfaces: the same shape, the same rule with one noun changed, the same escape hatch and its price.
+
+Two layers, and they must not merge.
+
+| Layer | Carries | Written as |
+| --- | --- | --- |
+| **Step** `--sf-*` `--ed-*` `--el-*` `--rd-*` `--in-*` | one value on one axis | a custom property: `var(--sf-base)` |
+| **Role** `.as-panel`, `.as-shell`, … | all five at once, for one kind of box | a class: `as-panel-sunken` |
+
+A role is four steps that belong together. Pick the role when a box *is* one of these things; pick a
+step when you are dressing something that is not.
+
+### Why custom properties and not utility classes
+
+Three consumers have to reach the same value: a Tailwind utility, a stylesheet rule, and an **inline
+style** emitted from `src/ui/modalStyle.jsx`. A class cannot reach the third, and half the menu
+surfaces in this tree are set inline.
+
+The indirection also removes the reason `!important` kept appearing. An inline **literal** beats every
+stylesheet rule; an inline `var(--sf-head)` does not, because a rule can redefine `--sf-head` **on the
+element** and the inline declaration picks up the new value with the cascade intact. Measured, three
+cases, `#menu-rework` planning report §2.1.
+
+### The steps
+
+| Axis | Token | Value | For |
+| --- | --- | --- | --- |
+| **Surface** | `--sf-sunken` | `#141320` | an **inset panel** inside another surface: readouts, list rows, tiles |
+| | `--sf-base` | `#17171c` | the neutral panel fill |
+| | `--sf-head` | `#1b1a24` | a sticky head |
+| | `--sf-raised` | `#1b1a24 → #141019` | the card or overlay shell above a panel |
+| **Edge** | `--ed-quiet` | `#2a2a34` | a divider inside a panel |
+| | `--ed-base` | `#2c2a3a` | the standard frame |
+| | `--ed-strong` | `#302d40` | the crisp frame that carries the framed look |
+| | `--ed-deck` | `var(--deck-border)` | deck-tinted, **neutral structure panels only** |
+| **Elevation** | `--el-flat` | `none` | on the board — and the desktop's `#ruhe` choice |
+| | `--el-rest` | `0 0 14px` deck 22 % | a panel at rest |
+| | `--el-float` | `0 14px 44px rgba(0,0,0,.42)` | a card off the board |
+| | `--el-modal` | `0 18px 48px rgba(0,0,0,.5)` | an overlay over it all |
+| | `--el-glow-blur` · `--el-glow-spread` | `16px` · `-8px` | **the primary CTA, and nothing else.** Two scalars, not one composite — see below |
+| **Radius** | `--rd-sm` | `6px` | tiles, buttons, rows, chips |
+| | `--rd-md` | `0.5rem` | a control that is not a tile |
+| | `--rd-lg` | `14px` | a panel |
+| **Inset** | `--in-tight` | `11px` | a row or a chip |
+| | `--in-snug` | `13px` | an inner box |
+| | `--in-base` | `18px` | a panel |
+
+The values are **derived by counting call sites**, not chosen. `--sf-base` is `#17171c` because that
+is what all 30 `.as-panel` sites carry *and* the dark half of `--deck-border`'s colour mix — the tree
+had written its panel ground down twice, in two unrelated places, with the same value.
+
+`--sf-head` is **defined as** `--sf-raised`'s opening stop. That is what makes the head/card seam
+invisible, and it is now true by construction rather than by two numbers someone keeps in step.
+
+**Mixed units are deliberate**, exactly as in §2b: `--rd-md` replaces Tailwind's `rounded-lg`, which
+emits `0.5rem`. Writing it as `8px` would compute identically today and differently for a reader who
+has changed their browser's base size. Value-preserving means preserving the value, not its current
+evaluation.
+
+### Outside the ladder, deliberately
+
+The same distinction §2b draws between its seven roles and `text-display-*`. These are not steps and
+not choices: composites built from steps, or values a ladder cannot rank.
+
+| Token | What it is |
+| --- | --- |
+| `--sf-glass` · `--sf-head-fade` | the **desktop translucencies**: what `--sf-base` and `--sf-head` look like above 1280 px. Outside the ladder because a translucency depends on what is behind it. Neither is invented — 13 rules already carried the glass gradient verbatim and 7 carried the fade |
+| `--sf-deck` · `--ed-deck-panel` | a panel tinted with the active deck colour, 9/5 % over the glass with a 26 % border. The `.as-hub-tile` recipe at a lower strength. **Rows inside a tinted panel stay neutral** |
+| `--sf-scrim` · `--sf-scrim-desk` | the full-screen overlay wash, phone and desktop |
+| `--sf-ground` | what a panel *sits on*: the application's own background |
+| `--sf-deep` | internal — `--sf-raised`'s closing stop. No call site names it |
+| `--sf-cone-*` | the light cone at the head of a card, as scalars — see *A token only sees what is present where it is declared* for why it is not one composite |
+| `--ed-accent-a` · `--ed-accent-a-quiet` | the two accent-edge opacities |
+| `--el-halo-blur` · `--el-halo-a` | the coloured halo of a **loud** phase card — the value `#ruhe` removes |
+| `--rd-shell` | the overlay shell's outer corner. Not chosen, **matched**: the hairline clips against it |
+| `--btn-pad-y` · `--btn-pad-x` | a button pads against its **label**, not against a panel edge |
+| `--ctl-*` | switches, segments, dropdowns, sliders. A control is not a panel |
+| `--ac-*` | the six phase identity colours. Not a ladder — each says which phase you are in |
+
+### The rule
+
+> **A menu picks a token, or changes a token for everyone. A menu does not introduce a value.**
+
+**The escape hatch, and its price.** Where a screen genuinely needs a surface no token provides, it
+proposes a **new token** — reviewed once by the planner, then available everywhere. Never a value at
+the call site. A worker that builds its own panel stops and reports; extensions go through the
+planner, not around the pilot.
+
+**Where a value is changed:** one edit, in the `@theme` block of `src/index.css`. Changing it anywhere
+else is a bug.
+
+**A screen may re-point a step on its own root**, inside the desktop block — but only **to another
+named token**, never to a fresh literal:
+
+```css
+.op-head { --sf-head: var(--sf-head-fade); background: var(--sf-head); }
+```
+
+That is the sanctioned form, and it is how the desktop's translucent variants reach a screen.
+
+`test/panel-tokens.test.js` guards all of it, in migrated files only. Its allowlist grows by one entry
+per worker, so it tightens as the round proceeds and never blocks work that has not happened yet.
+
+### A token only sees what is present where it is *declared*
+
+**The single most expensive thing to learn twice.** A custom property that references another custom
+property is substituted **on the element that declares it**, and the resolved string then inherits.
+
+```css
+:root { --cone: rgba(var(--ac-rgb, 155,130,240), .14); }   /* --ac-rgb resolved HERE, at :root */
+```
+
+An element further down that sets `--ac-rgb` on itself arrives far too late: `:root` already baked in
+the fallback. This cost `#menu-rework` M1 a full capture run — 120 nodes went violet.
+
+Two shapes that **do** work:
+
+- redefine a **flat** property on the element (`.op-head { --sf-head: … }`) — this is the mechanism the
+  whole vocabulary rests on;
+- declare the composite **on a class the element carries**, so both live on the same element.
+
+Anything parameterised at runtime — an accent colour from game data — therefore **decomposes**: every
+length and every alpha is a token, and only the colour is assembled at the call site.
+
+### The geometry hook — `--ui-scale`
+
+Every **length** in every token is defined through `calc(N * var(--ui-scale, 1))`, so a later
+UI-scaling feature is one variable instead of a sweep over nineteen values.
+
+**The rule is about values, not families.** A length scales wherever it sits, including the gradient
+axes of the light cone. A colour, an opacity or a percentage does not — a percentage is already
+relative.
+
+**One deliberate exception: `--text-*` stays out.** Those are lengths, and typography is frozen with
+its own ladder and its own workstream. Without this sentence the value-shaped rule above would sweep
+it in.
+
+`--ui-scale` is a **reserved hook, not a control**. No screen and no worker sets it. A per-screen
+`--ui-scale` is the tripwire in a new costume.
+
+### `#ruhe`, stated beside `--el-glow`
+
+> **Only the primary CTA glows.**
+
+`--el-glow-*` exists so that rule stays expressible, and a step named for a rule is harder to spread
+than a shadow value copied. A desktop panel at rest is `--el-flat`, which is exactly what
+`as-ring-quiet` already sets — so the rule is a step you *pick*, not an absence you have to remember.
+
+**It is two scalars rather than one composite**, and that is the substitution rule above, not
+untidiness: the glow's *colour* is `--c`, which the call site sets on the button itself, because the
+colour is the signal — it says which CTA this is. A composite declared at `:root` would resolve
+`var(--c)` there and freeze the grey fallback. It did exactly that on a victory-screen button, in the
+same task that wrote the rule down, until the zero-delta gate said so. The shape lives in the
+vocabulary; the colour belongs to the call site.
+
+`--el-halo-*` is the other half of the same decision: the loud phase card's coloured halo, kept so the
+phone branch stays value-preserving, and it is what `quiet` takes away. Nothing new takes it.
+
+### The role classes
+
+| Class | Composition | For |
+| --- | --- | --- |
+| `.as-panel` | `--sf-base` + the animated deck frame | the neutral content panel |
+| `.as-panel-sunken` | `--sf-sunken` `--ed-quiet` `--rd-sm` `--el-flat` | **an inset panel** — a readout, a list row, a tile sunk into the surface it sits on, wherever that surface is |
+| `.as-shell` | `--sf-raised` `--ed-base` `--rd-shell` `--el-modal` | the overlay card itself |
+| `.as-head` | `--sf-head` + bottom `--ed-quiet` | sticky heads |
+| `.as-ring` | `--el-rest`; `.as-ring-quiet` stills it to `--el-flat` | the running deck ring |
+| `.as-edge-*` | "Kante statt Fläche" — one colour signal as a left edge; `--el-glow` on the strong one | buttons and choice cards |
+
+**`.as-shell`, not `.as-card`.** `.as-card` was already taken by the **game card** in
+`src/ui/Card.jsx` and by a CRT rule that gives it a neon glow. A bare class selector cannot avoid
+either.
+
+### What the vocabulary does not claim
+
+Both are real gaps, named rather than hidden, and both belong to the planner:
+
+- **Text colour.** Seven ink values remain literal on the pilot screen alone. The five axes are
+  surface, edge, elevation, radius and inset; the tripwire names background, border, radius and
+  shadow. Ink is the nearest extension and has not been taken.
+- **Padding that is not a box inset.** Three steps cannot cover every padding on a screen and were
+  never meant to. A control pads against its **label** (which is why `--btn-pad-*` sits outside the
+  ladder), screen margins are layout, heading spacing belongs to the type system.
+
+### The planner's ruling at the freeze, 2026-08-24
+
+The vocabulary above is **frozen**. Three decisions close it.
+
+**1. The annex is closed, not open.** *Outside the ladder* is a complete list as of this freeze, not a
+category anyone may add to. A screen that needs an entry which is not on it **stops and reports** —
+the same rule as for a missing step, and for the same reason. An open annex beside a capped ladder is
+the ladder's escape valve, and it would undo the cap within three screens.
+
+**2. The two extensions the pilot proposed are ratified.** Both were raised rather than taken, which
+is what the escape hatch is for:
+
+| Extension | Ruling |
+| --- | --- |
+| `--sf-deck` · `--ed-deck-panel` | **Approved.** The deck-colour system predates this round and panels have to participate in it. Bounded by its own clause: rows inside a tinted panel stay neutral |
+| `--ctl-*` (nine) | **Approved as a closed set of nine.** A control genuinely is not a panel — it pads against its label and carries state colour. `--ctl-*` is not an open prefix: those nine are the set |
+
+**3. The two named gaps stay gaps — but ink gets a ratchet, not an axis.**
+
+*Padding that is not a box inset* is correctly outside. Screen margins are layout and heading spacing
+belongs to §2b. No action.
+
+*Text colour* is the nearest extension and is **not taken in this round.** Opening a sixth axis after
+the freeze is what the freeze exists to prevent. But seven literals on one screen become seventy
+across eleven if nothing watches them — that is precisely how the 43 shadows happened. So:
+
+> **`panel-tokens.test.js` counts ink literals per migrated file and fails on growth.**
+
+A ratchet, not a vocabulary. It stops the spread without opening an axis mid-round, and it hands the
+successor workstream a measured number instead of an impression. Implemented by M2a.
+
+### The window is closed — the planner's second ruling, 2026-08-24
+
+**M2a did not spend the extension window, and the planner accepts that reading.** The vocabulary is
+closed for the rest of the round.
+
+The workshop was chosen as the stress test precisely so this answer would mean something: 2128 lines,
+a sticky head and 60 inline backgrounds against a ladder derived from a 362-line modal. It made the
+case **role by role in its measurement record**, not as an assurance, and it named the request it
+would have filed had the reading gone the other way. That is what makes "nothing was missing"
+evidence rather than a claim.
+
+**Two real gaps were named rather than taken. Both stay gaps, and one gains a ratchet.**
+
+| ID | Gap | Ruling |
+| --- | --- | --- |
+| **MENU-38** | The neutral **translucent** edge — `rgba(150, 150, 170, …)` at **seven alphas** across 15+ rules, carried by the `.as-edge-*` role classes. Every edge in the ladder is opaque | **Not an axis. Ratcheted**, exactly as ink was. Taking one step of a seven-member family from inside one screen is a half-migration decided by a screen that can only see one member — and a half-migrated family is how the 43 shadows happened. `panel-tokens.test.js` counts translucent-edge literals per migrated file and fails on growth |
+| **MENU-39** | The deck hairline written twice, with its two fallbacks mirrored | **Backlog.** A duplication, not a missing token. Nothing to add to the ladder; it collapses whenever someone touches both sites |
+
+**Why not simply grant MENU-38.** It is the more tempting call, and it is wrong for the same reason
+the cap exists. `.as-edge-*` has 143 call sites and is not migrated in this round. A token minted for
+one of its seven alphas would sit in a frozen vocabulary carrying a value the workshop had no standing
+to choose, and the eventual migration would have to either honour it or break it. The ratchet costs
+nothing and hands the successor a measured number instead of an impression.
+
+### The first *no*, and the threshold that answers it — 2026-08-24
+
+M2b is the first screen to report that the vocabulary did **not** fully hold: **29 of 35 menu literals
+had a step for their role, six did not.** Three state-colour pairs, a selection ring, a chip's label
+padding.
+
+**All six are ratcheted, none coined.** M2b had already applied the right shape without asking —
+each is enumerated in `panel-tokens.test.js` (`stateLiterals`, `ELEV_EXEMPT`, `utilExempt`) with
+counter-checks, so none can grow without someone editing a list. *Count it, do not coin it.*
+
+| ID | Gap | Why not a token, now |
+| --- | --- | --- |
+| **MENU-46** | accent-tinted state pair | `--sf-deck` is 22/255 away **and in the wrong hue** — the row hard-codes violet while `--deck-a1` varies. The finding is that this screen does not participate in the deck system; a token would paper over it |
+| **MENU-47** | unlock pair on the tier pills | 108/255 from `--ctl-edge`. It is a **signal, not chrome** — already covered by *meaning-coded borders* below |
+| **MENU-48** | affirmative state pair | The strongest of the six. See the threshold |
+| **MENU-50** | selection ring written as a shadow | `--el-glow-*` is reserved for the primary CTA by `#ruhe`. Spending it here would break the rule it exists to express. **Correctly refused** |
+| **MENU-51** | chip label padding, `py-[3px]` | `--btn-pad-y` is five times over; Tailwind's neighbours are 2 px and 4 px. A genuine micro-gap with one sighting |
+
+**The threshold, and it is the general rule from here on:**
+
+> **A gap becomes a token on the third independent sighting, not the first.**
+
+This is not caution for its own sake — it is §2c's own derivation principle applied to its own growth.
+The steps in the ladder were **derived by counting call sites**; a token minted from one screen's need
+is chosen, not derived, and the screen that chose it had no way to see the other ten. MENU-48 is the
+case that makes this concrete: `--ctl-danger` + `--ctl-danger-wash` are the destructive pair and there
+is no affirmative one, but transposing the recipe onto `--ac-green` lands **15/15/7 away** — so the
+affirmative pair is not the same recipe in another hue, and nobody yet knows what it *is*. Two more
+sightings would say.
+
+**MENU-48 stands at one.** The ratchet bounds the cost until it reaches three or the round ends.
+
+**What this admits.** `--ctl-*` was ratified as a closed set of nine, derived from Options — a screen
+with destructive actions and no affirmative-state control. Closing a set on one screen's evidence is
+what produced this asymmetry, and that was the planner's call, not a worker's. The threshold is the
+correction: sets close on counting, and reopen on counting.
+
+### MENU-38 re-measured — the family is twelve, and the ruling scoped it wrongly
+
+*MH1, 2026-08-24, measuring before building the ratchet as its contract required.*
+
+The freeze ruling said **seven** alphas. M2b found an eighth. The measurement says **twelve**, across
+**64 literals**:
+
+```
+.07  .08  .10  .12  .13  .14  .16  .18  .22  .25  .30  .35
+```
+
+Four were unknown to both the ruling and to MENU-44: `.08` and `.30` in `index.css`, `.22` and `.25`
+**inline in `StartScreen.jsx`**.
+
+**Why the ruling was short, and it is not an arithmetic slip.** It scoped the family by
+`.as-edge-*` — *the class that carries it*. The family is wider than the class. A value does not stop
+being part of a family because it is written somewhere the family's usual class is not, and a ruling
+that defines a set by its most visible carrier will always undercount it.
+
+Two consequences:
+
+- **The ratchet starts at 0 in all seven migrated units** — and that zero is an **achieved state**,
+  not an absence. M2b pulled the workshop onto `--ed-quiet`. A later reader must not mistake the
+  ratchet's floor for "there was never anything here".
+- **`.22` and `.25` live in `StartScreen.jsx`**, which belongs to the mainscreen workstream, not to
+  this round. Named there as an input rather than migrated from here.
+
+**The threshold is unaffected.** Twelve sightings of a *family* is not twelve sightings of one gap;
+the rule counts screens that miss the same step, and the translucent edge still belongs to whoever
+migrates `.as-edge-*`. What changes is the number the successor inherits: **twelve, measured**, rather
+than seven, inferred from a class name.
+
+### One sub-1280 exception, granted and named — 2026-08-24
+
+Owner decision 9 holds: this round changes nothing below 1280 px. **M3 has one exception, and it is
+granted because it was declared rather than buried.**
+
+`.up-root`'s sub-1280 scrim was the literal `#0c0c10ee`. M3 pointed it at `--sf-scrim`, which the
+vocabulary already carries. **Measured delta: ≤ 1.8/255 — below perception on an overlay wash.**
+
+**Why granted rather than reverted.** Reverting would leave the tree carrying a literal where every
+sibling carries a token, which is the exact condition this round removes; and the change is smaller
+than the noise floor of the eye, on a surface whose whole job is to be unnoticed. The mobile strand
+inherits one fewer literal and no visible difference.
+
+**Why it needed a ruling at all.** Because the rule is *nothing below 1280*, not *nothing visible
+below 1280*. A worker who decides for itself which sub-threshold changes are small enough has
+replaced the rule with its own judgement. M3 did not — it named the value, the delta and the reason,
+and left the decision here. That is the shape any further exception must take, and there is no
+standing permission: **the next one is asked for too.**
+
+### The threshold meets the ink exclusion — and the threshold was counting the wrong thing
+
+*M8's first planner question, 2026-08-24. The first case where two rules of this section point in
+opposite directions, and a worker correctly refused to settle it.*
+
+`color-mix(in srgb, var(--deck-a1) 62%, #ffffff)` — deck colour at reading brightness, as **text** —
+was M3's first sighting, M7's second, M8's third.
+
+| Rule | Says |
+| --- | --- |
+| *The first no* — the threshold | a gap becomes a token **on the third independent sighting** |
+| *The planner's ruling at the freeze* | text colour is **not taken in this round** |
+
+**Ruling: do not mint. And the reason is a correction to the threshold, not a win for the exclusion.**
+
+M8 supplied the measurement that decides it: after its work, **the three screens read that value
+through one shared rule** — `.st-eyebrow, .lb-eyebrow`. The cost of it remaining a literal is
+**one call site, not three.**
+
+**The threshold exists to stop a value spreading across call sites.** That is its whole purpose:
+§2c's steps were *derived by counting call sites*, and a token minted from one screen's need is
+chosen rather than derived. But here the spread was already collapsed — by a shared CSS rule, which
+is the same collapse a token performs, reached by a different road. Minting would add a name for
+something that occurs once.
+
+**So the threshold is restated, and this is what it should have said from the start:**
+
+> **A gap becomes a token on the third independent *call site*, not the third screen.**
+
+Three screens behind one rule are one site. One screen writing a value in four places is four.
+Counting screens was a proxy for counting spread, and a proxy is wrong exactly when someone does the
+right thing for other reasons — which is what happened here.
+
+**The ink exclusion is untouched by this** and keeps its own reason: opening a sixth axis mid-round is
+what the freeze prevents. Had the count been three real sites, the two rules would genuinely have
+collided and the answer would have been the owner's.
+
+**Carried to the successor with its number:** the target-brightness mix is the ink axis's **first
+named entry**, at one call site and three consumers. The ratchet keeps counting.
+
+### `--sf-row` — the threshold fires, and the vocabulary grows once — 2026-08-25
+
+*M9-F09. The first token added after the freeze, and the only one so far.*
+
+M9 counted and reported instead of minting, which is what the closure requires of a **worker**. The
+closure never barred the *planner* from acting on the threshold — those two rules govern different
+people, and this is the first time that distinction has had to do any work.
+
+**Measured before ruling, because the last count was taken from screens and was wrong for it:**
+
+```
+rgba(15, 15, 21, .72)   8 call sites, 4 screens
+  index.css:4348, 4789, 4976, 5548, 5566, 5610      six rules, four of them !important
+  FeedbackModal.jsx:38, UsernameModal.jsx:37        two JS constants, set inline
+```
+
+**Eight sites against a threshold of three.** Not a marginal case, and not ink — it is a **surface**,
+which is the vocabulary's own domain, so the ink exclusion does not reach it.
+
+**Three things make this a transcription rather than an invention:**
+
+1. **`design-sprache.md` §1 already names it as *the* row surface.** The canon decided it is a role;
+   §2c giving it a name records that decision rather than making one.
+2. **Four of the eight sites carry `!important`**, and they carry it for the reason this round
+   exists: `ROW_BG` is a JS constant set **inline**, so no stylesheet rule can reach it. That is H2
+   and H5 exactly, on four screens, in a round created to remove them. Leaving it means shipping the
+   disease the round was formed to cure.
+3. **The value does not change.** `--sf-row: rgba(15, 15, 21, .72)` is what those eight sites already
+   paint, so adopting it is value-preserving and provable at zero delta.
+
+**This is not a second window.** A window is a worker's licence to add what it needs. This is the
+planner acting on a rule that was written down before the case arose, on a count that was measured
+rather than asserted, for a value the canon had already named. **A worker that finds a ninth gap
+still stops and reports.**
+
+**The migration is its own task** — `task-contract-MR1-row-ground.md`. It spans four screens that are
+already approved, so it is value-preserving and gated at zero delta, and it removes four `!important`
+on the way.
+
+### The sub-1280 threshold, stated once instead of ruled three times — 2026-08-25
+
+Three workers have now asked to convert a literal that is *almost* a token, on a value read below
+1280 px. Deciding each on its own has worked, and it has also produced a precedent nobody could
+predict from. **M5-F02 is the third, and it is the one that turns the practice into a rule.**
+
+| Task | The delta | Ruling |
+| --- | --- | --- |
+| **M3** | scrim, **≤ 1.8/255**, no alpha change | granted |
+| **M4** | scrim, **4/4/4 per channel + .02 alpha**, visible at every width | **refused** |
+| **M5** | `#2a2a33` against `--ed-quiet` `#2a2a34` — **1/255, blue only**, eight sites | **granted** |
+
+**The rule these three describe:**
+
+> **A sub-1280 conversion is granted where the maximum per-channel delta is ≤ 2/255 and no alpha
+> changes.** Above that, or where alpha moves, it is the owner's.
+
+M5's is the smallest of the three — an order below perception — and it covers **the entire neutral
+edge vocabulary of that file**. Refusing would leave eight literals standing in a migrated file,
+precisely where this round's subject is.
+
+M4's refusal stands on measurably different facts: more than double the channel delta, an alpha
+change, and visible at every width on a screen with no approved design. **The distinction is a
+number, not a mood.**
+
+**What does *not* change: the worker still asks.** The threshold makes the answer predictable, not
+automatic. A worker that applies it itself has replaced *"nothing below 1280"* with its own
+arithmetic, which is what the original clause exists to prevent — and all three of these were found
+*because* someone asked instead of taking. The rule shortens the answer; it does not remove the
+question.
+
+**Every grant is recorded with its number**, so the fourth case is decided against three measurements
+rather than against a memory.
+
+### The alpha clause — derived, not picked — 2026-08-25
+
+**M11-F03 is the first pure-alpha case, and the rule above does not cover it.** `#0c0c10f2` against
+`--sf-scrim-desk` `rgba(12, 12, 16, .94)`: **the colour is identical** and only the opacity moves, by
+**Δα = 0.009**.
+
+The `≤ 2/255 per channel` bound was **picked from three colour cases**. It has no authority over
+alpha, and saying so is more useful than stretching it — *overlays differ in opacity more often than
+in tone*, so the next strand meets this again.
+
+**So alpha gets its own bound, and it is derived:**
+
+> **Alpha, with the colour unchanged: Δα ≤ 0.01** — one percentage point of opacity.
+
+**Why that number and not another.** A change of Δα moves the *composited* pixel by at most
+`Δα × 255` — the full range — and that worst case only occurs against a **white** backdrop. At
+Δα = 0.01 the bound is 2.55/255 in the worst case and **under 1/255 against the dark surfaces these
+overlays actually cover.** So one percentage point of opacity is comparable to, and in practice
+smaller than, the colour bound already in force.
+
+**M11-F03 at Δα = 0.009 is granted.** M4's refused request moved alpha by **0.02** — twice this
+clause — *and* moved colour by 4/255, so it stays refused under both halves.
+
+**The colour bound is untouched at ≤ 2/255.** A clause was added; nothing was loosened. Four cases
+have now been decided and none of the earlier three changes.
+
+**And the worker still asks.** Two clauses do not make an entitlement — they make the answer
+predictable, which is the point.
+
+### What is permanently exempt
+
+- **`PHASE_ACCENTS` in `modalStyle.jsx`** keeps its six colours as literal strings. `.c` is handed to
+  `LevelupWings.jsx`, which builds an 8-digit hex by concatenation (`${accent}4d`) — `var(--ac-red)4d`
+  is not a colour — and two more screens build the same shape from game data at runtime. The colours
+  are mirrored as `--ac-*` for the CSS side.
+- **Everything below 1280 px.** The phone keeps its own values *and its own Tailwind padding
+  utilities*, exactly as §2b's `-N` size variants do. A token that a phone-visible call site reads
+  therefore carries the **phone's** value, and the desktop block re-points it. Where the tree has two
+  values for one role below 1280, the vocabulary keeps both until a mobile strand collapses them —
+  that is what `--ctl-off` and `--ctl-off-alt` are.
+- **Meaning-coded borders** — rarity, faction, ice, state. They encode information, not depth.
+- **`--deck-border`** keeps its name; `--ed-deck` is its vocabulary alias.
+
+### A token you do not use does not ship
+
+Tailwind 4 prunes `@theme` variables that nothing references. A step defined here but never written as
+`var(--step)` in `index.html` or `src/**` is **absent from the built stylesheet** — correct (it is
+dead-code elimination) and occasionally surprising. Writing `var(--in-base)` anywhere Tailwind scans
+brings it back. Nothing else is needed.
+
+---
+
 ## 3. Language layers
 
 Three layers, one rule each.

@@ -1,0 +1,19 @@
+  BASELINE before  test/deck-tafel.test.js  exit 0  GREEN as required
+  BASELINE before  test/desktop-perf.test.js  exit 0  GREEN as required
+  CC1   deck  exit 1  RED as required  — the deck art gets a fixed height again — the decision the owner did not take
+  CC2   deck  exit 1  RED as required  — the cap moves off the design's 268 px
+  CC3   deck  exit 1  RED as required  — a width is forced on the art — the card would stretch
+  CC4   deck  exit 1  RED as required  — the .25 alpha goes back inline, where no rule can reach it
+  CC5   deck  exit 1  RED as required  — the .22 alpha goes back inline on the music chip
+  CC6   deck  exit 1  RED as required  — a KPI cell gets its own fill back — four surfaces inside one surface
+  CC7   deck  exit 1  RED as required  — the one dividing line above the KPIs is removed
+  CC8   deck  exit 1  RED as required  — a second element claims the panel's own hook
+  CC9   deck  exit 1  RED as required  — the chip row grows a catalog key of its own — scope nobody ordered
+  CC10  deck  exit 1  RED as required  — Build DNA appears in the panel as real markup — Q4, and the data does not exist
+  CC11  perf  exit 1  RED as required  — a panel carries as-ring with no as-ring-run child — the real defect
+  CC12  perf  exit 1  RED as required  — the same defect, masked by a comment naming as-ring-run
+  CC12' perf  exit 0  GREEN before the rewrite — which is what the rewrite fixed  — same defect, same comment, guard without the comment strip
+  BASELINE after   test/deck-tafel.test.js  exit 0  GREEN — the tree is restored
+  BASELINE after   test/desktop-perf.test.js  exit 0  GREEN — the tree is restored
+
+  13 sabotage runs, 4 baselines, 0 unexpected

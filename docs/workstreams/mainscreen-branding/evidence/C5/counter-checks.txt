@@ -1,0 +1,11 @@
+  BASELINE before  exit 0  GREEN as required
+  CC1  exit 1  RED as required  — the column goes back to the design's .874em — the overshoot returns
+  CC2  exit 1  RED as required  — the height is nudged by a hair — the kind of drift nobody sees in a diff
+  CC3  exit 1  RED as required  — the unlit cells go pale again
+  CC4  exit 1  RED as required  — the fill is loud but the edge was forgotten — half the step
+  CC5  exit 1  RED as required  — a vertical correction value comes back — the nudge the decision replaces
+  CC6  exit 1  RED as required  — the width is set instead of taken from the viewBox — the cell leaves the grid
+  CC7  exit 1  RED as required  — the mid tone is applied to the standalone mark as well, not only the column
+  BASELINE after   exit 0  GREEN — the tree is restored
+
+  7 sabotages, 2 baselines, 0 unexpected

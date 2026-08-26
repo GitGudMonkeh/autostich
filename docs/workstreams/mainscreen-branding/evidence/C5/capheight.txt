@@ -1,0 +1,43 @@
+  font: 450 88px Orbitron, ui-monospace, monospace
+  size: 88px · line box of one capital: 110px
+  font bounding box: ascent 89 descent 21
+
+  letter   ink ascent   in em   ink descent
+     A             64   0.7273   0
+     U             64   0.7273   0
+     T             64   0.7273   0
+     O             64   0.7273   0
+     S             64   0.7273   0
+     H             64   0.7273   0
+     I             64   0.7273   0
+     R             64   0.7273   0
+     C             64   0.7273   0
+     K             64   0.7273   0
+
+  cap height, flat-topped letters (A H I T K): 0.7273 .. 0.7273 em
+  cap height, all sampled:                     0.7273 .. 0.7273 em
+
+  THE SAME RATIO AT RISING SIZES — one pixel is a smaller share of an em each time:
+       88px ->     64 px ink = 0.727273 em
+      176px ->    127 px ink = 0.721591 em
+      352px ->    253 px ink = 0.71875 em
+      880px ->  632.5 px ink = 0.71875 em
+     1760px ->   1265 px ink = 0.71875 em
+     3520px ->   2530 px ink = 0.71875 em
+
+  cap height taken as 0.71875 em (largest sample, resolution 1/3520)
+
+  FLUSH BY SCALING THE SIGN’S OWN GEOMETRY — one factor, proportion untouched:
+    column today   0.8740 em  (8 x .09 + 7 x .022)
+    factor         0.718750 / 0.8740 = 0.822368
+    cell    0.09em -> 0.074013em  (6.51px at 88px, 5.54 device px at 1280)
+    gutter  0.022em -> 0.018092em  (1.59px at 88px, 1.35 device px at 1280)
+    border  0.012em -> 0.009868em  (0.87px at 88px, 0.74 device px at 1280)
+    radius  0.014em -> 0.011513em  (1.01px at 88px, 0.86 device px at 1280)
+    check          8 x cell + 7 x gutter = 0.718750 em
+
+  THE ALTERNATIVE THE OWNER OFFERED — keep the square, take it all out of the gap:
+    cell 0.09em -> gap -0.00018em (-0.02px at 88px, -0.01 device px at 1280)   <- under one device pixel
+    cell 0.085em -> gap 0.00554em (0.49px at 88px, 0.41 device px at 1280)   <- under one device pixel
+    cell 0.08em -> gap 0.01125em (0.99px at 88px, 0.84 device px at 1280)   <- under one device pixel
+    cell 0.075em -> gap 0.01696em (1.49px at 88px, 1.27 device px at 1280)

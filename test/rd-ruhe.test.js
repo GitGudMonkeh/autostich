@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { DESKTOP_BLOCK_AT } from "./desktopBreakpoint.js";
+import { resolve, themeTokens } from "./cssTokens.js";
 
 /* ============================================================
    #rd-ruhe (19.08.2026) — die Lauf-Details im Desktop-Ton.
@@ -36,6 +37,14 @@ const wert = (sel, prop) => {
   return m ? m[1].replace(/\s*!important/, "").trim() : null;
 };
 const regel = (sel) => regeln(sel)[0] ?? null;
+/* Einen Radius AUFLOESEN statt ihn abzulesen — dieselbe Begruendung und dasselbe Werkzeug wie in
+   st-ruhe: seit dem Vokabular steht dort `var(--rd-sm)`, und eine Ablesung auf `[\d.]+px` faende
+   nichts. `cssTokens.js` folgt der Referenz bis in den `@theme`-Block. */
+const px = (v) => {
+  if (v == null) return null;
+  const m = resolve(String(v), themeTokens(css)).match(/([\d.]+)px/);
+  return m ? Number(m[1]) : null;
+};
 
 describe("#rd-ruhe — die vier Ringe stehen still", () => {
   it("jedes Panel trägt den Modifikator", () => {
@@ -53,29 +62,51 @@ describe("#rd-ruhe — die vier Ringe stehen still", () => {
 
 describe("#rd-ruhe — dieselbe Kachelform wie in Statistik und Victory", () => {
   it("Fläche und Rahmen sind Wert für Wert die von .st-box", () => {
+    /* #menu-rework M7 — die Kachel der Statistik neutralisiert ihren Rahmen jetzt, indem sie den
+       SCHRITT am Element umdefiniert (`--ed-strong: var(--ed-quiet)`) statt mit `!important` eine
+       zweite Deklaration danebenzustellen. Das ist die Bauart, die conventions.md 2c als die richtige
+       Antwort auf einen Inline-Stil nennt — und sie hat keine `border`-Deklaration mehr, die man
+       ablesen koennte. Verglichen wird deshalb, was am Ende STEHT: die Flaeche direkt, die Kante ueber
+       den Schritt, auf den beide Seiten zeigen. */
     expect(wert("\\.st-box", "background"), ".st-box nicht mehr gefunden").toBeTruthy();
     expect(wert("\\.rd-card \\.rs-cell", "background"), "andere Fläche als in der Statistik")
       .toBe(wert("\\.st-box", "background"));
+    const stKante = wert("\\.st-box", "--ed-strong") || wert("\\.st-box", "border");
+    expect(stKante, "die Statistik-Kachel sagt nichts mehr über ihren Rahmen").toBeTruthy();
     expect(wert("\\.rd-card \\.rs-cell", "border"), "anderer Rahmen als in der Statistik")
-      .toBe(wert("\\.st-box", "border"));
+      .toBe(`1px solid ${stKante}`);
   });
 
   it("Radius 6 innen, 14 am Panel", () => {
-    expect(wert("\\.rd-card \\.rs-cell", "border-radius")).toBe("6px");
-    expect(wert("\\.rd-c1, \\.rd-c2, \\.rd-c3, \\.rd-c4", "border-radius")).toBe("14px");
+    /* Aufgeloest statt abgelesen, aus demselben Grund wie in st-ruhe: seit der Vokabular-Umstellung
+       stehen dort `var(--rd-sm)` und `var(--rd-lg)`, und eine Ablesung auf `[\d.]+px` lieferte
+       `null` — der Waechter waere gefallen, waehrend die Zusicherung („dieselbe Kachelform") intakt
+       ist. Der Referenz folgen, nicht den Token-NAMEN pruefen. */
+    expect(px(wert("\\.rd-card \\.rs-cell", "border-radius"))).toBe(6);
+    expect(px(wert("\\.rd-c1, \\.rd-c2, \\.rd-c3, \\.rd-c4", "border-radius"))).toBe(14);
   });
 
-  it("Chips und Gebäude-Einträge ziehen mit", () => {
-    expect(deskBlock).toMatch(/\.rd-card \.rs-chips > \*, \.rd-card \.rd-blist button \{ border-radius: 6px; \}/);
+  it("die Gebäude-Einträge ziehen mit", () => {
+    /* `.rs-chips` ist hier raus: ab 1280 px zaehlt das Build-Panel, statt Chips aufzuzaehlen — es
+       gibt dort keine mehr, und eine Regel fuer etwas, das nicht rendert, sichert nichts zu. Die
+       Chips bleiben der schmalen Fassung, und die hat diese Regel nie gesehen. */
+    expect(deskBlock).not.toMatch(/\.rd-card \.rs-chips/);
+    expect(px(wert("\\.rd-card \\.rd-blist button", "border-radius"))).toBe(6);
   });
 });
 
 describe("#rd-ruhe — was der Ton NICHT anfassen darf", () => {
-  it("jede Regel ist auf .rd-card eingegrenzt — RunStats teilen sich drei Screens", () => {
-    /* Ohne die Eingrenzung nähme dieser Screen Victory und Chronik mit, die ihre eigene Fassung haben. */
+  it("jede Regel ist auf DIESEN Screen eingegrenzt — RunStats teilen sich drei Screens", () => {
+    /* Ohne die Eingrenzung nähme dieser Screen Victory und Chronik mit, die ihre eigene Fassung haben.
+
+       #menu-rework M7 — die Zusicherung ist „auf DIESEN Screen eingegrenzt", und die alte Fassung
+       nannte dafür EINEN Träger: `.rd-card`. Das ist derselbe Fehler wie bei MENU-38, nur kleiner —
+       eine Grenze, die nach ihrem sichtbarsten Träger gezogen wird, trifft irgendwann etwas, das
+       genauso dazugehört. `.rd-c1 .rs-cell` grenzt exakt so scharf ein wie `.rd-card .rs-cell`: die
+       vier Panel-Haken gibt es nur in diesem Screen. Geprüft wird deshalb der PRÄFIX. */
     for (const klasse of ["rs-cell", "rs-tree", "rs-note", "rd-blist"])
       for (const m of css.matchAll(new RegExp(`([^{}\\n]*\\.${klasse}[^{}]*)\\{`, "g")))
-        expect(m[1], `\\.${klasse} ohne .rd-card-Eingrenzung: ${m[1].trim().slice(0, 70)}`).toMatch(/\.rd-card|\.go-/);
+        expect(m[1], `\\.${klasse} ohne Screen-Eingrenzung: ${m[1].trim().slice(0, 70)}`).toMatch(/\.rd-|\.go-/);
   });
 
   it("die Gebäudeliste behält ihren blauen Rahmen (Architekt-Signal)", () => {

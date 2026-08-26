@@ -14,10 +14,15 @@ import { archetypeLabel } from "./labels.js";
 export function unlockLabel(progress) {
   if (!progress || !progress.kind) return "";
   const { kind, vars = {} } = progress;
-  const key = `unlock.${kind}`;
   const filled = { ...vars };
   if (vars.n != null) filled.n = fmtNum(vars.n);            // Score-Schwellen sind sechsstellig
   if (vars.archetype) filled.archetype = archetypeLabel(vars.archetype);
+  /* #: Singularform, wo eine Bedingung bei n = 1 steht. Vorher gab es keine — die kleinste Schwelle war
+     Hirsch mit 10 Läufen —, bis „Insert Coin“ bei 1 aufging und „Spiele 1 Läufe“ / „Play 1 runs“ ausgab.
+     Der `.one`-Schlüssel ist optional: fehlt er für ein kind, bleibt es beim Plural-Text. */
+  const base = `unlock.${kind}`;
+  const one = `${base}.one`;
+  const key = Number(vars.n) === 1 && t(one, filled) !== one ? one : base;
   const s = t(key, filled);
   return s === key ? "" : s;   // unbekanntes kind → leer (wie der Default-Zweig vorher)
 }

@@ -137,6 +137,10 @@ const DEFAULT_PROFILE = { schemaVersion: PROFILE_SCHEMA_VERSION,
      rausgeht, hat nichts gesehen. Ebenso bewusst NICHT an den Tutorial-Lauf gebunden — jeder
      abgeschlossene Lauf zählt. */
   hadCompletedRun: false,
+  /* #hirsch-abgeschlossen: Zähler der ABGESCHLOSSENEN Läufe. `games` daneben zählt jeden BEGONNENEN
+     (Abbrüche eingeschlossen) und bleibt, was er ist — die Statistik zeigt ihn so an. Freischaltungen
+     über eine Laufzahl lesen ab jetzt diesen hier; ein abgebrochener Lauf soll keine Belohnung tragen. */
+  runsCompleted: 0,
   // #299 Deckpunkte (DP): zweite Währung für die Werkstatt-Packs. #316: Fresh-Start mit START_DECK_POINTS (50).
   deckPoints: START_DECK_POINTS, deckSpent: 0,
   // Deck-Werkstatt (#deckshop): mit SP gekaufte Kosmetik-Elemente als Map "theme:element" → true
@@ -229,6 +233,12 @@ export function migrateProfile(p) {
     // rückwirkend nicht (ob die Läufe abgeschlossen waren, steht nirgends), und die Richtung stimmt:
     // wer schon gespielt hat, braucht das Tutorial-Angebot nicht mehr im Menü.
     if (typeof out.hadCompletedRun !== "boolean") out.hadCompletedRun = (Number(out.games) || 0) > 0;
+    /* #hirsch-abgeschlossen: derselbe Fall eine Zeile tiefer. Für Alt-Profile ist `games` das einzige
+       Signal, das es gibt — es zählt zu großzügig (Abbrüche sind mit drin), aber die Gegenrichtung wäre
+       schlimmer: ein kleinerer Startwert könnte ein bereits freigeschaltetes Hirsch-Deck wieder ZUSPERREN.
+       Etwas geschenkt zu haben ist verzeihlich, etwas wegzunehmen nicht. Ab dem nächsten Lauf zählt der
+       Zähler exakt. */
+    if (typeof out.runsCompleted !== "number") out.runsCompleted = Number(out.games) || 0;
     v = 9;
   }
   if (v < 10) {
@@ -489,6 +499,7 @@ export function recordRun(record) {
     // Sticky: einmal ausgezahlt, nie wieder (auch wenn der Spieler später Punkte ausgibt).
     welcomeBonusPaid: !!p.welcomeBonusPaid || welcomeDp > 0,
     hadCompletedRun: !!p.hadCompletedRun || record.completed === true,
+    runsCompleted: n0(p.runsCompleted) + (record.completed === true ? 1 : 0), // #hirsch-abgeschlossen
     stichSpent: n0(p.stichSpent),
     nodes: (p.nodes && typeof p.nodes === "object") ? p.nodes : {},
     // #299 DP: Guthaben wächst um den DP-Ertrag + das gefegte SP-Guthaben (bei vollem Baum); ausgegebene DP bleiben.
@@ -538,7 +549,11 @@ export function recordChampionWeeks(count) {
 const DEFAULT_OPTIONS = {
   lang: null,
   skin: "crt", muted: false, sfxVol: 0.4, musicVol: 0.2, deckId: "deck_onboarding", battlefieldId: "bf_onboarding",
-  reducedFx: "aus", haptics: true, archShowCombos: true, archShowForms: true,
+  /* #arch-default: Combos AN, Formationen AUS. Der Architekt ist der Bau-Bildschirm — Struktur- und
+     Distrikt-Boni entscheiden dort, wohin ein Gebäude gehört; die Formationsrahmen gehören der
+     Aufstellung und liegen hier als zweite Rahmenlage über demselben Brett. Beide Schalter bleiben,
+     und eine spätere Wahl gewinnt weiterhin (s. `liftArchFormsDefault`). */
+  reducedFx: "aus", haptics: true, archShowCombos: true, archShowForms: false,
   // Ruhiger Modus (Default aus): kappt die score-abhängige Musik-Eskalation bei „mid" — nur calm/mid-Tracks. Reine UI-Pref (überlebt Reset).
   calmMusic: false,
   // #telemetrie: anonyme Lauf-Daten senden (Default AN, in den Optionen abschaltbar). Reine Pref → NICHT in
@@ -593,6 +608,9 @@ const DEFAULT_OPTIONS = {
   // umfärben konnte. Der Schlüssel passt auf die `/^fx.+Deck$/`-Regex und hängt sich damit von selbst in
   // FX_DECK_KEYS (Anhebung + Dev-Reset) ein — nichts weiter einzutragen.
   fxGottStandardDeck: true,
+  /* #arch-default: Marker der EINMALIGEN Absenkung bestehender Stände (s. `liftArchFormsDefault`).
+     Aus demselben Grund `false` wie der Marker darunter. */
+  archFormsDefaultLift: false,
   /* Marker der EINMALIGEN Anhebung bestehender Stände (s. `liftFxDeckDefaults`). Muss `false` sein: der
      Merge in `loadOptions` legt DEFAULT_OPTIONS UNTER den gespeicherten Stand — stünde hier `true`, käme
      der Marker für Alt-Profile aus den Defaults und die Anhebung liefe nie. */
@@ -642,6 +660,27 @@ export function liftFxDeckDefaults(o) {
   o.fxDeckDefaultLift = true;
   return true;
 }
+/* #arch-default — bestehende Stände EINMALIG auf den neuen Vorgabewert bringen (Formationen AUS).
+
+   Dieselbe Naht wie bei `liftFxDeckDefaults` darüber, nur in die andere Richtung: `loadOptions` merged
+   `{...DEFAULT_OPTIONS, ...o}`, der gespeicherte Wert gewinnt also immer. Und gespeichert ist der Wert
+   bei JEDEM Profil, das je eine Option angefasst hat — `saveOptions` schreibt das ganze Objekt. Ein
+   geänderter Vorgabewert allein wäre damit für niemanden sichtbar, auch nicht für ein frisch wirkendes
+   Profil.
+
+   EHRLICH DAZU: Hier lässt sich ein gespeichertes `true` NICHT von einer bewussten Wahl unterscheiden —
+   anders als bei der Anhebung darüber, wo der alte Default `false` war. Übergangen wird trotzdem fast
+   niemand: `true` war bis hierher der Default, eine bewusste Wahl „an" setzt also voraus, dass jemand
+   den Schalter erst aus- und dann wieder eingeschaltet hat. Wen es doch trifft, dem kostet es EINEN
+   Klick — und ab da gewinnt seine Wahl wieder, dafür sorgt der Marker.
+
+   `archShowCombos` bleibt unangetastet: dessen Default war schon `true` und ist es weiterhin. */
+export function liftArchFormsDefault(o) {
+  if (o.archFormsDefaultLift) return false;
+  o.archShowForms = false;
+  o.archFormsDefaultLift = true;
+  return true;
+}
 export function normalizeFxOptions(o) {
   if (!o || typeof o !== "object") return o;
   liftFxDeckDefaults(o);
@@ -668,6 +707,39 @@ export function migrateReducedFx(raw) {
   if (REDUCED_FX_VALUES.includes(raw)) return raw;
   return deviceDefaultReducedFx();
 }
+/* #optionen-redesign: EXACTLY the keys the options screen owns, at their defaults.
+
+   The reset button in that screen's footer writes these and nothing else. DEFAULT_OPTIONS also holds
+   the chosen deck, the battlefield, the finisher, the archetype colour and a dozen collapse states —
+   a "reset settings" button that discarded a player's cosmetic choices would be a different button
+   than its label promises. Note the direction: the COSMETIC_OPTION_KEYS reset above clears exactly
+   the set this one leaves alone, and vice versa. Two resets, disjoint, and neither is the other.
+
+   `lang` is deliberately absent. The player just used it to read the button.
+
+   `reducedFx` resolves through deviceDefaultReducedFx() rather than the raw literal, because the
+   effective default is device-dependent (phone "mobile", desktop "aus") and a reset that ignored
+   that would hand a phone the desktop's effect budget.
+
+   `numScale` is 0.75 and that is not a typo: the smallest step is the deliberate default (see the
+   comment at the key itself). */
+export function defaultScreenOptions() {
+  return {
+    muted: DEFAULT_OPTIONS.muted,
+    sfxVol: DEFAULT_OPTIONS.sfxVol,
+    musicVol: DEFAULT_OPTIONS.musicVol,
+    haptics: DEFAULT_OPTIONS.haptics,
+    calmMusic: DEFAULT_OPTIONS.calmMusic,
+    telemetry: DEFAULT_OPTIONS.telemetry,
+    reducedFx: deviceDefaultReducedFx(),
+    hideFloatScore: DEFAULT_OPTIONS.hideFloatScore,
+    hideFloatMult: DEFAULT_OPTIONS.hideFloatMult,
+    hideFloatWinLose: DEFAULT_OPTIONS.hideFloatWinLose,
+    hideBreakdown: DEFAULT_OPTIONS.hideBreakdown,
+    numScale: DEFAULT_OPTIONS.numScale,
+  };
+}
+
 export function loadOptions() {
   try {
     const raw = localStorage.getItem(k("as_options"));
@@ -675,12 +747,14 @@ export function loadOptions() {
       const o = JSON.parse(raw);
       if (o && typeof o === "object") {
         const before = o.reducedFx, hatteLift = !!o.fxDeckDefaultLift;
+        const hatteArchLift = !!o.archFormsDefaultLift;   // #arch-default: eigener Marker, eigene Einmaligkeit
         const merged = normalizeFxOptions({ ...DEFAULT_OPTIONS, ...o });
+        liftArchFormsDefault(merged);
         merged.reducedFx = migrateReducedFx(before);
         /* #363 einmalig zurückschreiben, damit kein „auto"/„ausgewogen" (oder fehlender Schlüssel) im Profil
            verbleibt. #fx-deckdefault: die Anhebung MUSS mit zurückgeschrieben werden — sonst fehlt der Marker
            beim nächsten Laden wieder und sie überschriebe ein bewusstes „Standard" bei jedem Start erneut. */
-        if (merged.reducedFx !== before || !hatteLift) { try { saveOptions(merged); } catch (e) {} }
+        if (merged.reducedFx !== before || !hatteLift || !hatteArchLift) { try { saveOptions(merged); } catch (e) {} }
         return merged;
       }
     }

@@ -403,4 +403,6 @@ const allIdentical = report.sizes.every((s) => s.layoutIdentical);
 const deterministic = report.determinism.sameViewport && report.determinism.sameState;
 process.stdout.write(`\n${allIdentical ? "PASS" : "FAIL"} · layout identical at every size\n`);
 process.stdout.write(`${deterministic ? "PASS" : "FAIL"} · harness captures are deterministic\n`);
-if (!allIdentical || !deterministic) process.exit(1);
+/* MH3: the code, not `process.exit()` — a pipe stdout is async on POSIX and an exit call drops
+   whatever is still queued, which here would be the two verdict lines themselves. */
+if (!allIdentical || !deterministic) process.exitCode = 1;
