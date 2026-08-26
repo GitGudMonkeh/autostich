@@ -38,7 +38,12 @@ function pruefe(k, text) {
   const f = [];
   if (!(k in de)) return [`${k}: im deutschen Katalog nicht vorhanden`];
   if (typeof text !== "string" || !text) return [`${k}: leerer Text`];
-  if (/\n/.test(text)) f.push(`${k}: Zeilenumbruch`);
+  /* Ein Zeilenumbruch ist nur dann falsch, wenn die deutsche Zeile keinen hat. Einige Regeltexte
+     sind mehrzeilig aufgebaut (Aufzaehlungen, der Trimmen-Nachsatz); ihre Struktur gehoert zum
+     String und muss mitwandern. */
+  const nlDe = (de[k].match(/\n/g) || []).length;
+  const nlZh = (text.match(/\n/g) || []).length;
+  if (nlDe !== nlZh) f.push(`${k}: Zeilenumbrueche — de ${nlDe} vs zh ${nlZh}`);
   /* Randleerzeichen sind nur dann falsch, wenn die deutsche Zeile keines hat. Einige Strings
      werden angehaengt (" · noch {n} Energie") und tragen ihren Abstand selbst; ihn zu trimmen
      klebte die Teile im gerenderten Satz aneinander. */
@@ -55,7 +60,10 @@ function pruefe(k, text) {
   if (new RegExp(`[${HAN}][,;:?!]|[,;:?!][${HAN}]`).test(text)) f.push(`${k}: halbbreites Satzzeichen am Han-Zeichen`);
   if (new RegExp(`[${HAN}]\\s[A-Za-z0-9{]|[A-Za-z0-9}%]\\s[${HAN}]`).test(text)) f.push(`${k}: Leerzeichen zwischen Han und Latein`);
   if (/\d\s%/.test(text)) f.push(`${k}: Leerzeichen vor dem Prozentzeichen`);
-  if (/\d,\d/.test(text)) f.push(`${k}: deutsches Dezimalkomma — Zahlen bleiben westlich (§5)`);
+  /* Das Komma darf NUR Tausender trennen, nie Dezimalstellen. Beides sieht auf den ersten Blick
+     gleich aus, unterscheidet sich aber an der Stellenzahl: „1,234" gruppiert drei Ziffern,
+     „1,45" ist ein deutsches Dezimalkomma und muesste im Chinesischen ein Punkt sein (§5). */
+  if (/\d,\d{1,2}(?!\d)/.test(text)) f.push(`${k}: deutsches Dezimalkomma — Zahlen bleiben westlich (§5)`);
   return f;
 }
 
