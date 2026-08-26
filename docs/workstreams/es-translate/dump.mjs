@@ -31,18 +31,26 @@ function rawEntries(file) {
   const keyRe = /(?:^|[\s{,])"([\w.]+)"\s*:\s*/gm;
   let m;
   while ((m = keyRe.exec(src))) {
-    let i = keyRe.lastIndex, depth = 0, quote = null, expr = "";
+    /* A stack, not a counter. The first version tracked `${` inside a template literal by bumping
+       a depth counter, but the matching `}` arrives while still in string mode, where the closing
+       branch never ran — so the literal never closed and the scan swallowed the rest of the file.
+       Each entry is either a quote character or "expr" for a `${ … }` hole, and the mode is
+       whatever sits on top. */
+    let i = keyRe.lastIndex, expr = "";
+    const stack = [];
+    const top = () => stack[stack.length - 1];
     while (i < src.length) {
-      const c = src[i], prev = src[i - 1];
-      if (quote) {
+      const c = src[i], prev = src[i - 1], inStr = top() && top() !== "expr";
+      if (inStr) {
         expr += c;
-        if (c === quote && prev !== "\\") quote = null;
-        else if (quote === "`" && c === "{" && prev === "$") depth++;
-      } else if (c === '"' || c === "'" || c === "`") { quote = c; expr += c; }
-      else if (c === "(" || c === "[" || c === "{") { depth++; expr += c; }
-      else if (c === ")" || c === "]" || c === "}") { depth--; expr += c; }
-      else if (c === "," && depth === 0) break;
-      else if (c === "\n" && depth === 0 && quote === null && expr.trim() && !expr.trim().endsWith("+")) break;
+        if (prev === "\\") { /* escaped — consumes nothing */ }
+        else if (c === top()) stack.pop();
+        else if (top() === "`" && c === "$" && src[i + 1] === "{") { stack.push("expr"); expr += "{"; i++; }
+      } else if (c === '"' || c === "'" || c === "`") { stack.push(c); expr += c; }
+      else if (c === "(" || c === "[" || c === "{") { stack.push("expr"); expr += c; }
+      else if (c === ")" || c === "]" || c === "}") { stack.pop(); expr += c; }
+      else if (c === "," && !stack.length) break;
+      else if (c === "\n" && !stack.length && expr.trim() && !expr.trim().endsWith("+")) break;
       else expr += c;
       i++;
     }

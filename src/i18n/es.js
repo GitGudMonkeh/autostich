@@ -25,6 +25,7 @@
    this file interpolates the same constant at the same site; a typed-out number there would stop
    tracking the next balance pass without any guard noticing until it had already drifted.
    ============================================================ */
+import { LEG_PHASE_CYCLE } from "../game/constants.js";
 import { RARITY_ES } from "./esTerms.js";
 
 export default {
@@ -184,7 +185,7 @@ export default {
   "gameover.milestones.max": "Máximo",
   "gameover.milestones.next": "siguiente en {n} M",
   "gameover.welcome": "✦ Bonificación de bienvenida",
-  "gameover.welcome.hint": "por tu primera partida completada. Inviértela en el taller de mazos y hazte con un sobre.",
+  "gameover.welcome.hint": "por tu primera partida completada. Inviértela en el taller de mazos y hazte con un pack.",
   "gameover.welcome.value": "+{n} PM",
   "gameover.sp": "Puntos de baza",
   "gameover.dp": "Puntos de mazo",
@@ -1185,4 +1186,383 @@ export default {
   "upgrades.buyable": "se pueden comprar",
   "upgrades.locked": "🔒 bloqueadas ·",
   "upgrades.soon": "Pronto = marcador de posición",
+
+  /* ---- Deck workshop (CustomizeScreen.jsx) ----
+     `pack` stays the borrowed word, and so it is identical to the German — an honest SAME_OK entry
+     rather than a missed translation. The register already tolerates it: the German catalog itself
+     writes "Battlefield" untranslated one line further down, and the English one writes "packs" as
+     an ordinary noun. `Battlefield` however DOES get translated here (`campo de batalla`), because
+     English treats it as a common noun too and only German left it standing.
+
+     "Prunk" is the pomp effect on a godlike trick. English flattened it to "score effect"; Spanish
+     keeps the flourish the German has — `efecto de gala` — because package §3 asks for the
+     idiosyncratic word where the German is idiosyncratic.
+
+     Two German verbs that both mean "activate" are kept apart: `aktivieren` -> `activar` for a
+     pack or tier, `einschalten` -> `encender` for a toggle, which then pairs with `apagar`. */
+  "shop.unlock": "🔒 Desbloquear: {cond}",
+  "shop.title": "Taller de mazos",
+  "shop.tier.active": "Nivel {roman} activo ✓",
+  "shop.tier.activate": "Activar el nivel {roman}",
+  "shop.head.packs": "{n} packs · {own} desbloqueados",
+  "shop.head.challenges": "{n} desafíos · {own} desbloqueados",
+  "shop.head.hint": "Toca una carta para ver el dorso, el anverso y el campo de batalla.",
+  "shop.tile.dblEquip": "Doble clic para equipar al instante",
+  "shop.tile.sub.active": "activo",
+  "shop.tile.sub.details": "tocar → detalles",
+  "shop.tile.sub.detailsTier": "Nivel {roman} · tocar → detalles",
+  "shop.tile.sub.owned": "desbloqueado",
+  "shop.tile.sub.ownedTier": "Nivel {roman} · desbloqueado",
+  "shop.tile.sub.buyable": "disponible",
+  "shop.randomDeck.title": "Mazo aleatorio por partida",
+  "shop.randomDeck.desc": "Cada partida empieza con uno de tus mazos al azar; todos los efectos activos en el color del mazo.",
+  "shop.randomDeck.aria": "Mazo aleatorio por partida",
+  "shop.noBattlefield": "Sin campo de batalla",
+  "shop.emptyView": "No hay nada en esta vista.",
+  "shop.hint.challenge": "Un mazo de desafío no se compra: se desbloquea superando un desafío. Tócalo → vista previa y condición de desbloqueo; en cuanto la cumplas, lo activas directamente.",
+  "shop.hint.pack": "Un pack reúne la carta (anverso y dorso) y un campo de batalla. Toca un pack → vista de detalle con vista previa; al comprarlo se activa directamente.",
+  "shop.activeCheck": "Activo ✓",
+  "shop.activate": "Activar",
+  "shop.activeChip": "ACTIVO",
+  "shop.tab.packs": "Packs",
+  "shop.tab.challenges": "Desafíos",
+  "shop.tab.fx": "Efectos",
+  "shop.filter.all": "Todos",
+  "shop.filter.owned": "En posesión",
+  "shop.filter.buyable": "Comprables",
+  "shop.filter.free": "Gratis",
+  "shop.filter.locked": "Bloqueados",
+  "shop.sort.color": "Color",
+  "shop.sort.price": "Precio",
+  "shop.sort.default": "Predeterminado",
+  "shop.sort.hint": "Cambiar el orden de las casillas",
+  "shop.fx.hint": "Los efectos son globales: se compran una vez y valen para todos los packs. Elige una categoría arriba y toca un efecto → se reproduce en el escenario; ahí lo compras, lo eliges o lo enciendes y apagas. Un doble toque en la lista lo cambia al instante.",
+  "shop.standardFree": "Predeterminado: siempre activo, no hace falta comprarlo",
+  "shop.buy": "Comprar · {price} PM",
+  "shop.tooFewDp": " (PM insuficientes)",
+  "shop.selected": "✓ Seleccionado",
+  "shop.chooseFinisher": "Elegir como remate",
+  "shop.chooseBg": "Elegir como fondo",
+  "shop.chooseGott": "Elegir como efecto de gala",
+  "shop.chooseGottStandard": "Elegir como predeterminado (sin efecto de gala)",
+  "shop.chooseAnim": "Elegir como animación",
+  "shop.on.tapOff": "✓ Encendido: toca para apagarlo",
+  "shop.turnOn": "Encender",
+  "shop.bg.noneActive": "✓ Activo: sin fondo",
+  "shop.bg.none": "Sin fondo",
+  "shop.packSel.back": "Dorso de la carta",
+  "shop.packSel.front": "Anverso de la carta",
+  "shop.packSel.bg": "Fondo",
+  "shop.anim.noneActive": "✓ Activo: sin animación",
+  "shop.anim.none": "Todas las animaciones apagadas",
+  "shop.color.standard": "Predeterminado",
+  "shop.color.deck": "Color del mazo",
+  "shop.cube.filled": "Relleno",
+  "shop.cube.wire": "◇ Solo el contorno",
+  "shop.status.active": "activo",
+  "shop.status.owned": "en posesión",
+  "shop.dblTap.on": "Doble toque: seleccionar",
+  "shop.dblTap.off": "Doble toque: quitar la selección",
+
+  /* ---- Start screen (StartScreen.jsx) ----
+     `start.logo.alt` is the word mark and the guard names it explicitly: it must equal the brand
+     for this language in capitals, so AUTOBAZA — never AUTOSTICH or AUTOTRICK.
+
+     `start.onb.legendary` is the one interpolation in this file, and it is the F1 case in
+     miniature: the cycle number is `${LEG_PHASE_CYCLE}`, at the same site the English uses it. A
+     typed-out 29 would read correctly today and go silently wrong at the next balance pass.
+
+     "Bonus" becomes `bonificación` throughout rather than the borrowed "bonus". The English
+     catalog could leave it standing because it is the same word there — which is why it sits in
+     the English SAME_OK list — but Spanish has its own word and the exception would hide a real
+     missing translation. */
+  "start.tutorial": "Tutorial",
+  "start.tutorial.offer": "Iniciar el tutorial",
+  "start.tutorial.offer.sub": "Una partida guiada te lo explica todo paso a paso",
+  "start.feedback": "Comentarios",
+  "start.discord": "Abrir Discord",
+  "start.logo.alt": "AUTOBAZA",
+  "start.progress.onboarding": "Introducción",
+  "start.progress.bonus": "Bonificación {cur} · siguiente +5",
+  "start.progress.runs": "{done} / {total} partidas",
+  "start.progress.links": "{done} / {total}",
+  "start.progress.next": "Próximo desbloqueo:",
+  "start.onb.reroll": "Relanzamiento +1",
+  "start.onb.plant": "Planta desbloqueada",
+  "start.onb.ice": "Hielo desbloqueado",
+  "start.onb.rarity": "Rareza: {tier}",
+  "start.onb.legendary": `Legendaria ⭐ (ciclo ${LEG_PHASE_CYCLE})`,
+
+  "start.resume": "▶ Continuar la partida",
+  "start.resume.sub": "Ciclo {cycle}/{total} · Puntuación {score}",
+  "start.normal": "Empezar una partida",
+
+  "start.seed.placeholder": "Pegar una semilla",
+  "start.seed.aria": "Pegar una semilla y jugar",
+  "start.seed.play": "↻ Jugar",
+  "start.seed.error": "La semilla no es válida. Revisa el código e inténtalo de nuevo.",
+  "start.secret.unlock": "🔓 Todo desbloqueado.",
+  "start.secret.onboarding": "⏭️ Introducción omitida · +10 PB · +50 PM",
+  "start.secret.reset": "🔄 Restableciendo el perfil …",
+
+  "start.ranked": "Clasificatoria",
+  "start.ranked.badge": "Semana {n}",
+  "start.ranked.badge.aria": "Desafío semanal, semana {n}",
+  "start.ranked.bonus": "Bonificación {have}/{max}",
+  "start.ranked.open": "Abrir la clasificación semanal",
+  "start.ranked.locked": "Ver la clasificación semanal. Jugar se desbloquea cuando todos los mazos estén desbloqueados y cada uno de los cuatro arquetipos haya estado presente en una partida jugada hasta el final (basta con una habilidad suya)",
+
+  "start.tile.workshop": "Taller de mazos",
+  "start.tile.workshop.locked": "El taller de mazos se desbloquea al terminar la introducción",
+  "start.tile.upgrades": "Mejoras",
+  "start.tile.upgrades.title": "Árbol de mejoras",
+  "start.tile.upgrades.locked": "Se desbloquea al terminar la introducción",
+  "start.tile.upgrades.buyable": "{n} disponibles",
+  "start.tile.upgrades.complete": "✓ completo",
+  "start.tile.leaderboard": "Clasificación",
+  "start.tile.leaderboard.sub": "Mejores puntuaciones globales",
+  "start.tile.stats": "Estadísticas",
+  "start.tile.stats.sub": "Partidas y récords",
+  "start.tile.lock_one": "🔒 falta {count} partida",
+  "start.tile.lock_other": "🔒 faltan {count} partidas",
+
+  /* #desktop — status board on the start screen (shown from 1280 px). Terminology per the frozen
+     table: Durchlauf = ciclo, Stichpunkte = Puntos de baza, Spielfeld = campo de batalla. */
+  "start.board.title": "Tu situación",
+  "start.board.field": "Campo de batalla · {name}",
+  "start.board.fx": "Efectos · {list}",
+  "start.board.sp": "Puntos de baza",
+  "start.board.sp.sub": "{done} / {total} nodos",
+  "start.board.dp": "Puntos de mazo",
+  "start.board.dp.sub": "Saldo del taller",
+  "start.board.week": "Semana {n}",
+  "start.board.week.val": "{have}/{max}",
+  "start.board.week.bonus": "+{sp} PB · +{dp} PM",
+  "start.board.week.bonus.full": "+{dp} PM",
+  "start.board.week.open": "Bonificación pendiente",
+  "start.board.week.done": "Bonificación conseguida",
+  "start.board.last": "Última partida",
+  "start.board.last.sub": "Ciclo {cycle}",
+  "start.board.last.none": "—",
+  "start.board.last.none.sub": "aún sin partidas",
+  "start.tile.upgrades.sub": "Mejoras permanentes",
+  "start.tile.workshop.sub": "Mazos, campos de batalla, efectos",
+
+  "start.options": "Opciones",
+  "start.name.set": "Elegir un nombre para la clasificación global",
+  "start.name.change": "cambiar el nombre",
+  "start.name.signedIn": "Sesión iniciada como",
+  "start.version.title": "Versión · entorno · commit",
+
+  /* ---- Cosmetic effect groups ---- */
+  "fxgroup.karten.title": "Cartas",
+  "fxgroup.karten.hint": "habilidad siempre activa · una animación",
+  "fxgroup.stich.title": "Baza",
+  "fxgroup.stich.hint": "solo uno activo",
+  "fxgroup.hintergrund.title": "Fondo",
+  "fxgroup.hintergrund.hint": "uno activo · el brillo es gratis",
+  "fxgroup.score.title": "Puntuación",
+  "fxgroup.score.hint": "solo uno activo",
+
+  /* ---- Cosmetic effect descriptions ----
+     The decimal multipliers in `fxsyn.klinge.desc` are transcribed straight from the German —
+     ×1,25 · ×1,5 · ×2,0 — because Spanish uses the comma too. The English catalog had to convert
+     them; Spanish does not, which is also why the number guard sees the same set on both sides.
+
+     `Hologrid` is coined in German and gets a coined Spanish counterpart (`holomalla`) rather than
+     being left standing: package §8 asks for cosmetic effect names to be translated but kept
+     consistent as a set, and the word appears again inside the description. */
+  "fxsyn.standard.name": "Predeterminado",
+  "fxsyn.standard.desc": "El remate básico y sencillo (siempre disponible, opción predeterminada): la carta rival vencida sale volando hacia un lado después de la baza, igual que tu propia carta cuando pierdes. Al ganar, el sonido de revelado suena un poco más agudo. Sin corte, sin gala.",
+  "fxsyn.klinge.name": "Hoja",
+  "fxsyn.klinge.desc": "Una hoja coreografiada parte la carta rival. El movimiento base es un tajo desde la izquierda; cuanto mayor sea tu multiplicador de racha, más direcciones entran una tras otra (desde ×1,25 alternando izquierda y derecha, desde ×1,5 además desde arriba, desde ×2,0 las cuatro, incluido el corte en Z). La hoja también corta con más fuerza. Una derrota reinicia la racha. En blanco acero frío o en el color del mazo.",
+  "fxsyn.scorch.name": "Láser",
+  "fxsyn.scorch.desc": "Un láser dispara una vez desde una dirección aleatoria contra la carta rival. Después esta se consume de forma orgánica: un borde de quemadura irregular avanza por la carta con el filo al rojo, mientras se elevan brasas suaves, cae ceniza y saltan chispas. En fuego estándar o en el color del mazo.",
+  "fxsyn.hologridSlice.name": "Láser de holomalla",
+  "fxsyn.hologridSlice.desc": "Una línea láser recorre la carta rival vencida en paralelo a los ejes y descubre una retícula de juntas. Después la carta se descompone en una cuadrícula de teselas: los trozos salen girando y rebotan en el suelo mientras la ilustración se desvanece pronto, de modo que solo queda el marco luminoso de holomalla. En cian y magenta estándar o en el color del mazo.",
+  "fxsyn.blackhole.name": "Agujero negro",
+  "fxsyn.blackhole.desc": "Un agujero negro persistente en mitad del campo que crece con tu racha de victorias: cada victoria arrastra la carta rival vencida en espiral hacia el horizonte de sucesos y alimenta el disco de acreción giratorio; una derrota lo encoge. Cuando ha crecido lo suficiente y colapsa, una supernova desgarra el campo. En azul y rosa estándar o en el color del mazo.",
+  "fxsyn.gottStandard.name": "Predeterminado",
+  "fxsyn.gottStandard.desc": "Victoria divina SIN efecto de gala: la base para comparar (opción predeterminada, sin compra).",
+  "fxsyn.spezial.name": "Efecto de habilidad",
+  "fxsyn.spezial.desc": "Los cuatro efectos de arquetipo (Fuego · Rayo · Hielo · Planta) están siempre activos. Elige el color: el neón estándar fijo o el color de tu mazo activo.",
+  "fxsyn.fieldNone.name": "Sin efecto",
+  "fxsyn.fieldNone.desc": "Sin efecto de fondo: solo la imagen del campo de batalla (siempre disponible). El brillo puede seguir activo además.",
+  "fxsyn.animNone.name": "Sin animación",
+  "fxsyn.animNone.desc": "Sin animación de cartas: las cartas se quedan sencillas. Seleccionarlo apaga todas las animaciones de cartas (siempre disponible).",
+
+  /* ---- Cosmetic effect one-liners ---- */
+  "fx.short.noAnim": "Todas las animaciones de cartas apagadas.",
+  "fx.short.noBg": "Sin efecto de fondo (el brillo sigue siendo posible).",
+  "fx.short.spezial": "Fuego · Rayo · Hielo · Planta: siempre activos, solo se elige el color (estándar o color del mazo).",
+  "fx.short.standard": "La carta perdedora sale volando hacia un lado.",
+  "fx.short.gottStandard": "Victoria divina sin efecto de gala.",
+  "fx.edgeglow.short": "Borde de neón permanente en el color del mazo.",
+  "fx.holo.short": "Banda de luz prismática, reactiva a la inclinación.",
+  "fx.glitch.short": "Glitch cyberpunk con ráfagas ocasionales.",
+  "fx.aurora.short": "Velos suaves; un pulso de bloom por baza.",
+  "fx.neonsurf.short": "Mar de plasma en el borde inferior. Los anuncios fuertes hunden el agua por el centro y esta sube por los lados.",
+  "fx.cubematrix.short": "Campo de cubos de neón que reacciona a la música.",
+  "fx.starfield.short": "Una estrella fugaz por baza, más grande cuanta más puntuación.",
+  "fx.klinge.short": "Tajo de hoja que escala con la racha.",
+  "fx.scorch.short": "Láser y quemadura orgánica; la velocidad sigue al turbo.",
+  "fx.blackhole.short": "Un agujero negro se traga la carta rival.",
+  "fx.sonnenPuls.short": "El sol outrun dispara en una victoria divina.",
+  "fx.laserFaecher.short": "Los láseres se abren en abanico en una victoria divina.",
+  "fx.prismaKaskade.short": "Ondas de choque prismáticas en una victoria divina.",
+  "fx.holoCube.short": "El holocubo estalla en una victoria divina.",
+  "fx.supernova.short": "En una victoria divina: colapso, luego detonación, luego túnel.",
+
+  /* ---- Name dialog ----
+     `name.eyebrow.first` is the NOUN `Bienvenida`, not the adjective `Bienvenido`. The German
+     "Willkommen" says nothing about the player and neither should the Spanish; the adjective would
+     have to pick a gender for someone the game has never met (§4.4). Listed in
+     unsicherheiten_es.md as a sound question, because the noun reading depends on it standing
+     alone as a heading. */
+  "name.eyebrow.first": "Bienvenida",
+  "name.eyebrow.change": "Cambiar el nombre",
+  "name.title.first": "Elige tu nombre",
+  "name.title.change": "Tu nombre",
+  "name.placeholder": "Tu nombre",
+  "name.hint": "De 1 a {max} caracteres · aparece en la clasificación global. Se puede cambiar en el menú en cualquier momento.",
+  "name.cancel": "Cancelar",
+  "name.save": "Guardar",
+  "name.lang.label": "Idioma",
+  "name.preview.label": "Vista previa · clasificación",
+  "name.preview.you": "tú",
+  "name.err.profanity": "Este nombre contiene una palabra bloqueada. Elige otro, por favor.",
+  "name.err.length": "{max} caracteres como máximo.",
+
+  /* ---- Feedback form ----
+     `Bug`, `Balance` and `Playtest` stay as they are: all three are the established words in
+     Spanish game development too, and the German catalog borrowed them from English for the same
+     reason. Honest SAME_OK entries rather than missed translations. */
+  "feedback.eyebrow": "Playtest",
+  "feedback.title": "Enviar comentarios",
+  "feedback.desk.readout": "Va directamente a los desarrolladores. La semilla y el ciclo de tu última partida se adjuntan automáticamente.",
+  "feedback.kind": "Tipo",
+  "feedback.kind.bug": "Bug",
+  "feedback.kind.idea": "Idea",
+  "feedback.kind.balance": "Balance",
+  "feedback.kind.other": "Otros",
+  "feedback.message": "¿Qué ha pasado?",
+  "feedback.message.placeholder": "Cuanto más preciso, mejor: ¿qué hiciste, qué pasó y qué esperabas que pasara?",
+  "feedback.name": "Nombre",
+  "feedback.name.placeholder": "opcional",
+  "feedback.run.with": "Se refiere a: partida con semilla {seed}, ciclo {cycle}",
+  "feedback.run.none": "No se encontró ninguna partida que adjuntar",
+  "feedback.run.hint": "La semilla y el ciclo se envían con el mensaje; sin ellos, un bug casi nunca se puede reproducir.",
+  "feedback.send": "Enviar",
+  "feedback.sending": "Enviando …",
+  "feedback.thanks": "Gracias, ha llegado.",
+  "feedback.detailHint": "Cuantos más detalles, más rápido podremos ayudarte.",
+  "feedback.tooShort": "Faltan al menos {n} caracteres.",
+  "feedback.draftSent": "Tu último informe atascado ya se ha enviado.",
+  "feedback.err.send": "No se ha podido enviar. Tu texto está guardado (y en el portapapeles) y saldrá automáticamente la próxima vez que abras esto.",
+  "feedback.err.tooSoon": "Espera un momento: quedan {s} segundos hasta el próximo informe.",
+  "feedback.err.dailyCap": "Por hoy ya es suficiente. Mañana se puede seguir.",
+  "feedback.err.offline": "El notificador no está configurado en este build; ahora mismo tu texto no va a ninguna parte.",
+
+  /* ---- Options ----
+     The three-way `options.rfx.*` control grows a lot: Aus/An are 3 and 2 characters, Apagado and
+     Encendido are 7 and 9. No shorter pair says the same thing without turning the control into a
+     yes/no question, so the text stands and the chip gets re-measured — recorded for es-layout.
+
+     `options.float.desc` names the score-announcement ladder, which makes it the Spanish
+     counterpart of the string the English guard watches: if the chain changes, this sentence has
+     to change with it. It currently carries the PROPOSED Spanish chain, pending the owner. */
+  "options.sec.general": "General",
+  "options.sec.graphics": "Gráficos y rendimiento",
+  "options.sec.sound": "Sonido",
+  "options.sec.display": "Pantalla",
+  "options.chip.general": "General",
+  "options.chip.graphics": "Gráficos",
+  "options.chip.sound": "Sonido",
+  "options.chip.display": "Pantalla",
+  "options.eyebrow": "Opciones",
+  "options.title": "Ajustes",
+  "options.desk.readout": "Todo tiene efecto y se guarda al instante.",
+
+  "options.language.title": "Idioma",
+  "options.language.desc": "Idioma de los textos del juego.",
+
+  "options.mute.title": "Silenciar",
+  "options.mute.desc": "Desactiva todos los sonidos de clic y de juego.",
+  "options.sfx.title": "Volumen de efectos",
+  "options.sfx.desc": "Volumen de los sonidos de clic y de juego (SFX).",
+  "options.sfx.aria": "Volumen de SFX",
+  "options.music.title": "Volumen de la música",
+  "options.music.desc": "Volumen de la música de fondo.",
+  "options.music.aria": "Volumen de la música",
+
+  // #394 Number size: {pct} arrives pre-formatted (fmtPct) — Spanish sets the percent sign with a
+  // space like German, so the sign never lives in the template.
+  "options.numScale.title": "Tamaño de los números",
+  "options.numScale.desc": "Tamaño de los números de puntuación que suben. {pct}",
+  "options.numScale.aria": "Tamaño de los números",
+
+  "options.rfx.title": "Efectos reducidos",
+  "options.rfx.aus": "Apagado",
+  "options.rfx.mobile": "Móvil",
+  "options.rfx.an": "Encendido",
+  "options.rfx.desc.aus": "Efectos completos.",
+  "options.rfx.desc.mobile": "Equilibrado: se mantienen el volteo de cartas, el fondo, el brillo y los remates; se apagan la sacudida de pantalla, las fuentes de chispas, el desenfoque y los barridos. Alivia los dispositivos más débiles.",
+  "options.rfx.desc.an": "Todos los efectos al mínimo: lo más tranquilo posible; alivia mucho los dispositivos débiles.",
+
+  "options.haptics.title": "Háptica (vibración)",
+  "options.haptics.desc": "Una vibración corta al confirmar. Solo se nota en dispositivos táctiles (móviles); se respeta el ajuste del sistema “reducir movimiento”.",
+  "options.calm.title": "Modo tranquilo",
+  "options.calm.desc": "La música ya no sube con tu puntuación; solo suenan las pistas tranquilas y las de ritmo medio, nunca las rápidas ni las máximas.",
+  "options.telemetry.title": "Enviar datos de juego anónimos",
+  "options.telemetry.desc": "Después de cada partida envía la puntuación, las ventajas y habilidades elegidas, tu progreso y un contexto aproximado del dispositivo (identificación del navegador, núcleos, tamaño de la ventana), sin nombre y sin cuenta. Nos ayuda a equilibrar el juego. Apagado = no se envía nada.",
+  "options.telemetry.more": "Qué se envía exactamente",
+
+  "options.perfHud.title": "Contador de FPS e informe",
+  "options.perfHud.desc": "Muestra arriba a la derecha FPS · p95 · jank y registra datos de rendimiento (⧉ informe → consola y portapapeles). Solo en la rama de pruebas. Apagado = ni se muestra ni se mide.",
+
+  "options.testvp.title": "Viewport de pruebas",
+  "options.testvp.desc": "Muestra el juego dentro de un marco de tamaño fijo, para capturas reproducibles y comprobaciones de diseño. Solo en la rama de pruebas. Cambiarlo recarga la página. La densidad de píxeles del monitor no se simula.",
+  "options.testvp.off": "Apagado",
+  "options.testvp.hint": "Para salir, vuelve a poner esto en Apagado aquí mismo, en las opciones.",
+
+  "options.float.title": "Mostrar el texto flotante",
+  "options.float.desc": "Números y textos que suben sobre el campo. Interruptor principal de los tres de abajo. Los anuncios grandes (BIEN/BRUTAL/DEMENCIAL/DIVINO) siempre se ven.",
+  "options.float.score.title": "↳ Puntuación",
+  "options.float.score.desc": "Números de puntuación que suben en las bazas que ganas.",
+  "options.float.mult.title": "↳ Multiplicador",
+  "options.float.mult.desc": "Texto de “¡Crítico!” y de formaciones (bonificaciones de multiplicador).",
+  "options.float.winlose.title": "↳ Victoria / derrota",
+  "options.float.winlose.desc": "Texto de victoria o derrota al resolverse la baza.",
+  "options.breakdown.title": "Mostrar el desglose de la baza",
+  "options.breakdown.desc": "Cadena de factores bajo el campo: base × racha × ventajas × formación × crítico = total de la baza en curso. El espacio queda reservado; las cartas están en el mismo sitio de todos modos.",
+
+  /* ---- Privacy notice (#datenschutz) ----
+     {ua} comes from UA_MAX in game/telemetry.js — the same expression as the German side, never a
+     typed-in number (guard: "every language names the same numbers").
+
+     The brand appears three times here and is `Autobaza` in all three. A guard fails the moment a
+     catalog carries another language's title, and this notice is the most likely place to leak one
+     by copying a paragraph across. */
+  "privacy.eyebrow": "Playtest",
+  "privacy.title": "Qué envía Autobaza",
+  "privacy.intro": "Autobaza funciona en el navegador, sin cuenta y sin registro. Dos cosas salen de tu dispositivo, y aquí están las dos al completo.",
+
+  "privacy.sec.telemetry.title": "Datos de juego anónimos (se pueden desactivar)",
+  "privacy.sec.telemetry.body": "Después de cada partida: puntuación, ciclos, bazas, las ventajas, habilidades y edificios elegidos, tu progreso en el árbol de mejoras, la cosmética comprada y la semilla. Además, un contexto aproximado del dispositivo: identificación del navegador (recortada a {ua} caracteres), núcleos del procesador, memoria del dispositivo, idioma, tamaño de la ventana, densidad de píxeles y si el dispositivo tiene pantalla táctil. Y un identificador de instalación generado al azar, para que varias partidas del mismo dispositivo vayan juntas. Sin nombre, sin correo electrónico, sin registro. Para desactivarlo: Opciones → “Enviar datos de juego anónimos”. Apagado significa apagado de verdad: también se borra lo que aún esté en la cola.",
+  "privacy.sec.board.title": "Clasificación (solo al publicar)",
+  "privacy.sec.board.body": "Cuando publicas una partida en la clasificación: el apodo que hayas elegido, la puntuación, los ciclos, las bazas, los arquetipos, las ventajas, las habilidades, la semilla, hasta dónde habías construido tu árbol de mejoras (cuántos nodos estaban desbloqueados) y las métricas de la partida (mejor racha, formaciones, críticos, victorias, mejor baza, partes de la puntuación). El apodo es visible para todos los jugadores; así que no elijas nada por lo que se te pueda encontrar. Sin apodo no se publica nada.",
+  "privacy.sec.local.title": "Qué se queda en tu dispositivo",
+  "privacy.sec.local.body": "El perfil, el historial de partidas, las opciones y cualquier partida empezada están en el almacenamiento de tu navegador y no salen del dispositivo. No hay cookies publicitarias, ni scripts de terceros, ni seguimiento a través de otras páginas.",
+  "privacy.sec.host.title": "Adónde va",
+  "privacy.sec.host.body": "Ambas cosas acaban en una base de datos de Supabase, separadas en dos tablas; así, una telemetría que se llene no puede dañar la clasificación. El acceso se hace con una clave pública que solo permite leer y añadir.",
+  "privacy.sec.contact.title": "Quién está detrás",
+  "privacy.sec.contact.body": "Autobaza es un proyecto personal de aficionado en playtest abierto. Las preguntas, las objeciones o la petición de borrar tus datos se gestionan por el Discord del proyecto.",
+
+  "privacy.installId.label": "Tu identificador de instalación",
+  "privacy.installId.copy": "Copiar",
+  "privacy.installId.copied": "Copiado",
+  "privacy.installId.hint": "Indícalo si quieres que se borren los datos que has enviado; sin él no se pueden encontrar tus filas. Solo existe en este dispositivo y no dice nada sobre quién eres.",
+  "privacy.contact.discord": "Abrir Discord",
+  "privacy.updated": "Actualizado: 2026-08-16 · playtest beta",
+  "privacy.link": "Privacidad",
 };
