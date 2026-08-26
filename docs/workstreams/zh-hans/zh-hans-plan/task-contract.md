@@ -46,9 +46,11 @@ Five parts, in this order. Part 1 is done; the rest are not.
    and the three premises of the brief that did not survive measurement.
 2. **The sample order goes out.** Done as an artefact — `sample-order.csv` (115 strings) and
    `sample-order.md`. Not done as an act: a human sends it and a translator returns it.
-3. **The design round, on the returned sample.** The CJK branch is drafted against real Chinese text,
-   passes a visual gate, and only then is written into `docs/design-sprache.md` — in German, appended
-   to that document's fixed template (`AGENTS.md` — *Appending to an existing German document*).
+3. **The design round — CEDED to `task/zh-hans-sample`.** This part was written here before that task
+   existed. It is now owned there in full: the CJK branch drafted against real Chinese text, the
+   visual gate, and the German entry in `docs/design-sprache.md`. **This contract does not bind the
+   design round and does not claim its files.** Two contracts over one scope leaves a worker unable
+   to tell which one binds; the cession, not the overlap, is the load-bearing sentence.
 4. **`zh-Hans` registered in code.** Depends on `task/spanish-locale` — see *Approved architecture*.
    Adds only what is genuinely CJK on top of the seam Spanish builds: the font faces, the
    `:lang(zh-Hans)` rules, the pre-mount `lang` script, the third case in `fmtDayMonth`, and the
@@ -148,17 +150,20 @@ Indicative. Anything outside it is recorded and reported before it is changed.
 **This task writes:**
 
 - `docs/workstreams/zh-hans/zh-hans-plan/**` — report, contract, sample order, package
-- `docs/design-sprache.md` — the CJK branch, appended in German (part 3)
 - `src/index.css` — the `@font-face` block, the `:lang(zh-Hans)` rules, and the correction at
   `src/index.css:788` (part 4)
 - `src/assets/fonts/**` — the Noto Sans SC slices (part 4)
 - `index.html` — the pre-mount `lang` script (part 4)
 - `src/i18n/index.js` — **`fmtDayMonth` only**, the third case (part 4)
 
-**Must not change** — verifiable by blob hash:
+**Must not change:**
 
-- `src/i18n/de.js`, `src/i18n/en.js` and every other catalogue module: no German or English wording
-  changes in this task
+- `src/i18n/de.js`, `src/i18n/en.js` and every other catalogue module — **no German or English
+  *wording* change.** Checked on the parsed catalogue, not on the file: a blob hash also fires on
+  structural edits that leave every string identical, and `task/zh-hans-sample` legitimately makes
+  those. The instrument is the sorted `key + value` digest of the imported module — *measured:*
+  appending a comment to `de.js` moves its blob hash and leaves the wording digest at
+  `019f8bf9f0696e97` across all 2,639 keys.
 - `src/i18n/index.js` beyond `fmtDayMonth`: `LOCALES`, `CATALOGS`, `SEP`, `fmtNum`, `fmtPct` belong to
   `task/spanish-locale`
 - `scripts/export-strings.mjs`, `test/i18n-guards.test.js`, `test/loc-csv.test.js`,
@@ -186,8 +191,8 @@ survived.
 
 - [ ] Part 1 — feasibility measured and written (`planning-report.md`)
 - [ ] Part 2 — sample order produced and handed to a human to send
-- [ ] Part 3 — CJK branch drafted on returned Chinese text, through a visual gate, appended to
-      `docs/design-sprache.md` in German
+- [x] Part 3 — **ceded to `task/zh-hans-sample`.** Not this task's to tick; done here means the
+      cession is stated, which it now is under *Scope*.
 - [ ] Part 4 — `zh-Hans` registered in code on top of the Spanish seam; `src/index.css:788` corrected
 - [ ] Part 5 — full order written, naming the frozen source SHA
 - [ ] Gates green and reported bare: `npm test`, `npm run lint -- --max-warnings=0`, `npm run build`,
