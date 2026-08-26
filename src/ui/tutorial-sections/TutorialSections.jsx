@@ -12,9 +12,22 @@ import * as GL from "../../game/glacier.js";
 import * as AR from "../../game/architect.js";
 import * as FM from "../../game/formations.js";
 import { ARCHETYPE_META } from "../../game/skills.js";
+import { familyDef, archFamily } from "../../i18n/labels.js";
 
 /* Die Platzhalter liegen in vars.js, weil der Wächter dieselbe Liste braucht — siehe dort. */
+/* NAMEN VON PERKS UND GEBÄUDEN werden ABGELEITET, nicht in den Text getippt — dieselbe Regel wie
+   für jede Zahl. Sie standen zuerst auf Deutsch in ALLEN VIER Katalogen: ein spanischer oder
+   chinesischer Spieler las „Segmentarbeit" und „Pfeiler", Wörter, die im Spiel selbst
+   „Trabajo de Segmento" / 区段作业 und „Pilar" / 石柱 heißen. Sogar der englische Text sagte
+   „Segmentarbeit III".
+
+   Die Register lesen die aktive Sprache selbst, deshalb hängen sie hier am Locale und nicht an
+   einer Modulkonstante. */
 const localeVars = (locale) => ({
+  segWork: familyDef("E_SEGMENT")?.name ?? "",
+  pillar: archFamily("A_PFEILER")?.name ?? "",
+  zollhaus: archFamily("A_ZOLLHAUS")?.name ?? "",
+  kontor: archFamily("A_KONTOR")?.name ?? "",
   base: fmtNum(C.SCORE_PER_WIN, locale),
   streakPct: fmtNum(Math.round(C.STREAK_BASE_STEP * 100), locale),
   critMult: fmtNum(C.CRIT_BASE_MULT.toFixed(2), locale),
@@ -184,7 +197,10 @@ export function TutorialSections({ onClose, onOpenGlossary = null, onOpenGuide =
            Schlüssel gewesen, und genau danach sucht der i18n-Wächter. */
         noneLabel={NONE_LABEL.has(b.probe) ? t(`tut.probe.${b.probe}.none`) : undefined}
         /* Die Wörter der gespielten Runden. Sie liegen unter `tut.d.*` statt bei den Takten,
-           weil sie zur RUNDE gehören und nicht zur Lektion: dasselbe „Sieg" steht in jeder. */
+           weil sie zur RUNDE gehören und nicht zur Lektion: dasselbe „Sieg" steht in jeder.
+           Wer hier eine Beschriftung mit einem Platzhalter einträgt, muss `vars` MITGEBEN:
+           `t(key)` allein interpoliert nicht, und auf dem Knopf stand dann wörtlich der
+           rohe Platzhalter statt des Namens. */
         labels={{ streak: t("tut.f.streak"), crit: t("tut.f.crit"), form: t("tut.f.form"), build: t("tut.f.build"),
           gegner: t("tut.d.gegner"), du: t("tut.d.du"), gegen: t("tut.d.gegen"),
           play: t("tut.d.play"), next: t("tut.d.next"), trickValue: t("tut.d.trickValue"),
@@ -198,7 +214,7 @@ export function TutorialSections({ onClose, onOpenGlossary = null, onOpenGuide =
           none: t("tut.d.none"), twoThirds: t("tut.d.twoThirds"), all: t("tut.d.all"),
           block: t("tut.d.block"), kreuz: t("tut.d.kreuz"), linie: t("tut.d.linie"), flaeche: t("tut.d.flaeche"),
           stitchPoints: t("tut.d.stitchPoints"), branchGen: t("tut.d.branchGen"), branchDeck: t("tut.d.branchDeck"),
-          closed: t("tut.d.closed"), segIII: t("tut.d.segIII"), segIV: t("tut.d.segIV"), sum: t("tut.d.sum"),
+          closed: t("tut.d.closed"), segIII: t("tut.d.segIII", vars), segIV: t("tut.d.segIV", vars), sum: t("tut.d.sum"),
           zeile: t("tut.d.zeile"), spalte: t("tut.d.spalte"), diag: t("tut.d.diag"), distrikt: t("tut.d.distrikt"),
           win: t("tut.d.win"), tie: t("tut.d.tie"), loss: t("tut.d.loss") }} />;
     });

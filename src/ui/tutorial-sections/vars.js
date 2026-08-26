@@ -58,6 +58,13 @@ export const VARS = {
   firstShop: C.DECISION_SCHEDULE.indexOf("shop") + 1,
   districtPct: Math.round(DISTRICT_BONUS * 100), districtCap: DISTRICT_CAP,
   ...stufen("A_ZOLLHAUS", "zoll"), ...stufen("A_KONTOR", "kontor"),
+  /* Die Namen selbst, fuer den Hoehenwaechter. Die Anzeige holt sie über das Register in der
+     aktiven Sprache (TutorialSections.jsx); hier steht die deutsche Form, weil das Modell die
+     LAENGE braucht und Deutsch die längere der beiden gemessenen Sprachen ist. */
+  segWork: FAMILY_DEFS.E_SEGMENT?.name ?? "",
+  pillar: ARCHITECT_FAMILIES.A_PFEILER?.name ?? "",
+  zollhaus: ARCHITECT_FAMILIES.A_ZOLLHAUS?.name ?? "",
+  kontor: ARCHITECT_FAMILIES.A_KONTOR?.name ?? "",
   // Perk-Familien: GEZAEHLT, damit die Zahl mitwandert, wenn eine Familie dazukommt.
   perkFamilies: Object.keys(FAMILY_DEFS).length,
   /* Blitz. Der erste Skill gibt Sockel PLUS Beitrag, jeder weitere nur den Beitrag — deshalb 13

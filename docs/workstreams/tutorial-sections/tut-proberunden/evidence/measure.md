@@ -425,3 +425,46 @@ und die spanische `fmtPct`-Erwartung ging noch vom gewöhnlichen Leerzeichen aus
 Das geschützte Leerzeichen gilt jetzt auch für Spanisch: dev hatte `fmtPct` auf eine Tabelle je
 Sprache umgebaut, und Spanisch setzt dort dieselbe Form wie Deutsch — also denselben Umbruchfehler
 und dieselbe Behebung.
+
+
+---
+
+# Vier Eigennamen, die keine waren
+
+Beim Durchsehen der Übersetzung fiel auf, dass vier Namen auf Deutsch in **allen vier** Katalogen
+standen: `Segmentarbeit`, `Pfeiler`, `Zollhaus` und `Kontor`. Ich hatte sie für Eigennamen gehalten.
+
+Das Spiel selbst übersetzt sie:
+
+| | de | en | es | zh |
+| --- | --- | --- | --- | --- |
+| `E_SEGMENT` | Segmentarbeit | Segment Work | Trabajo de Segmento | 区段作业 |
+| `A_PFEILER` | Pfeiler | Pillar | Pilar | 石柱 |
+| `A_ZOLLHAUS` | Zollhaus | Customs House | Aduana | 关税所 |
+| `A_KONTOR` | Kontor | Trading Post | Factoría | 商馆 |
+
+Ein spanischer Spieler las also „Segmentarbeit III" auf einem Knopf — ein Wort, das es in seinem
+Spiel nicht gibt. Selbst der englische Text sagte „Segmentarbeit III".
+
+**Behoben wurde es nicht durch viermaliges Übersetzen, sondern durch Ableiten** — dieselbe Regel
+wie für jede Zahl in diesem Tutorial. Die Texte tragen `{segWork}`, `{pillar}`, `{zollhaus}` und
+`{kontor}`; die Schale füllt sie aus `familyDef` und `archFamily`, denselben Registern, aus denen
+der Perk- und der Architekt-Bildschirm ihre Namen nehmen. Damit kann der Name in keiner Sprache
+mehr veralten.
+
+## Und der Fehler, den das ausgelöst hat
+
+Die Wörter der Runden werden mit `t(key)` geholt — **ohne** zweites Argument. Solange keins einen
+Platzhalter trug, ging das gut. Kaum trugen `tut.d.segIII` und `segIV` einen, stand auf den Knöpfen
+wörtlich `{segWork} III`.
+
+Kein Fehler, keine rote Zeile, kein Test. Gefunden nur, weil nach der Änderung noch einmal
+hingesehen wurde. Ein vierter Wächter fordert jetzt: ein Wort mit Platzhalter muss `vars`
+mitbekommen. Gegengeprobt, indem `vars` wieder entfernt wurde — er meldet
+*„{segWork} III" trägt einen Platzhalter, wird aber ohne vars geholt*.
+
+Nebenbei korrigiert: im Chinesischen standen Leerzeichen um den eingesetzten Namen
+(„天赋 区段作业 在一级"). Chinesisch setzt zwischen Wörtern keine; vor Ziffern schon, und die
+bleiben.
+
+Danach noch einmal alle vier Sprachen durchlaufen: je zehn Themen, 42 Lektionen, keine Beanstandung.

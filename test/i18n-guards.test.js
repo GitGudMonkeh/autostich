@@ -115,6 +115,12 @@ describe("i18n · Katalog-Parität", () => {
      würde die vergessene spanische Übersetzung genau dort durchlassen, wo sie am wahrscheinlichsten
      ist — bei den Wörtern, die aus dem Englischen schon vertraut aussehen. */
   const SAME_OK_EN = new Set([
+    /* „{segWork} III" — der Rohtext IST in allen Sprachen gleich, weil der ganze Unterschied im
+       Platzhalter steckt: das Register füllt ihn je Sprache (Segmentarbeit / Segment Work /
+       Trabajo de Segmento / 区段作业). Vorher stand hier der deutsche Name im Text, und ein
+       spanischer Spieler las ein Wort, das es in seinem Spiel nicht gibt. */
+    "tut.d.segIII",
+    "tut.d.segIV",
     "common.cur.dp",             // DP = Deckpunkte / Deck Points — dasselbe Kuerzel in beiden Sprachen
     "gameover.welcome.value",    // „+{n} DP" — Zahl plus dieses Kuerzel
     "start.board.week.bonus.full", // „+{dp} DP" — dito
@@ -143,8 +149,6 @@ describe("i18n · Katalog-Parität", () => {
     "tut.eis.wasist.1.label",
     "tut.d.block",                  // Gletscherform „Block" — in beiden Sprachen dasselbe Wort
     "tut.d.branchDeck",             // Baumzweig „Decks" — Deck bleibt Deck (§3.1)
-    "tut.d.segIII",                 // Perk-Name Segmentarbeit, Eigenname
-    "tut.d.segIV",
     "build.perks.head",      // „Perks — {count}" — Perk bleibt Perk (Begriffstabelle §3.1)
     "build.skills.head",     // dito für Skill
     "start.tile.upgrades",   // „Upgrades" ist im Deutschen der etablierte Begriff (§3.5)
@@ -264,7 +268,11 @@ describe("i18n · Katalog-Parität", () => {
      3. ZWEI KÜRZEL, die zufällig zusammenfallen: Wechsel/Zigzag → Z und Anker/Ancla → A. Die
         anderen sechs Formations-Kürzel unterscheiden sich. */
   const SAME_OK_ES = new Set([
-    "tut.d.segIII",               // Perk-Name Segmentarbeit — Eigenname, in jeder Sprache gleich
+    /* „{segWork} III" — der Rohtext IST in allen Sprachen gleich, weil der ganze Unterschied im
+       Platzhalter steckt: das Register füllt ihn je Sprache (Segmentarbeit / Segment Work /
+       Trabajo de Segmento / 区段作业). Vorher stand hier der deutsche Name im Text, und ein
+       spanischer Spieler las ein Wort, das es in seinem Spiel nicht gibt. */
+    "tut.d.segIII",
     "tut.d.segIV",
     // 1 · reine Struktur: Platzhalter, Zahlen, Trennzeichen — kein übersetzbares Wort
     "building.kick.active",      // „{base} · {kick}"
@@ -311,9 +319,13 @@ describe("i18n · Katalog-Parität", () => {
      in keiner Sprache uebersetzt werden. Die erfundenen Deck- und Effektnamen faengt schon
      SAME_OK_CLASS ab und stehen deshalb nicht noch einmal hier. */
   const SAME_OK_ZH = new Set([
-    "tut.progress",               // „{n} / {total}" — reine Platzhalterzeile, kein Wort
-    "tut.d.segIII",               // Perk-Name Segmentarbeit — Eigenname, lateinisch belassen
+    /* „{segWork} III" — der Rohtext IST in allen Sprachen gleich, weil der ganze Unterschied im
+       Platzhalter steckt: das Register füllt ihn je Sprache (Segmentarbeit / Segment Work /
+       Trabajo de Segmento / 区段作业). Vorher stand hier der deutsche Name im Text, und ein
+       spanischer Spieler las ein Wort, das es in seinem Spiel nicht gibt. */
+    "tut.d.segIII",
     "tut.d.segIV",
+    "tut.progress",               // „{n} / {total}" — reine Platzhalterzeile, kein Wort
     "options.chip.display",        // „HUD" — das Kuerzel der Sprungleiste
     "dev.run.title",               // „DEV RUN" — Dev-Bildschirm, bewusst unuebersetzt
     "start.board.week.val",        // „{have}/{max}" — nur Ziffern und ein Schraegstrich

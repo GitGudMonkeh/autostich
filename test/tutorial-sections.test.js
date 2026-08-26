@@ -124,7 +124,9 @@ describe("Tutorial-Sektionen · Katalog", () => {
     // `L` ist in beats.jsx durchgehend der Name des labels-Objekts.
     const gelesen = new Set([...probes.matchAll(/\bL\.(\w+)/g)].map((m) => m[1]));
     gelesen.delete("length");   // Array-Eigenschaft, kein Wort
-    const geliefert = new Map([...shell.matchAll(/(\w+):\s*t\("(tut\.[df]\.\w+)"\)/g)].map((m) => [m[1], m[2]]));
+    // Das Muster laesst `vars` zu: eine Beschriftung MIT Platzhalter muss sie mitbekommen,
+    // und der Waechter darunter erzwingt genau das.
+    const geliefert = new Map([...shell.matchAll(/(\w+):\s*t\("(tut\.[df]\.\w+)"(?:,\s*vars)?\)/g)].map((m) => [m[1], m[2]]));
     for (const name of gelesen) {
       expect(geliefert.has(name), `beats.jsx liest L.${name}, die Schale liefert es nicht — auf dem Schirm steht „undefined"`).toBe(true);
       const key = geliefert.get(name);
@@ -189,6 +191,29 @@ describe("Tutorial-Sektionen · Katalog", () => {
     }
     expect(mitArch.map((s) => s.id).sort(), "die vier Archetyp-Sektionen tragen ihren Archetyp")
       .toEqual(["blitz", "eis", "feuer", "pflanze"]);
+  });
+
+  /* DER VIERTE WÄCHTER AUS EINEM ECHTEN FEHLER.
+
+     Die Wörter der Runden werden mit `t(key)` geholt — ohne zweites Argument. Solange keins davon
+     einen Platzhalter trug, ging das gut. Dann bekamen `tut.d.segIII` und `segIV` einen
+     ({segWork}, damit der Perkname aus dem Register kommt statt auf Deutsch im Text zu stehen),
+     und auf den Knöpfen stand fortan wörtlich „{segWork} III".
+
+     Kein Fehler, keine rote Zeile. Gefunden nur, weil jemand hingesehen hat.
+
+     Der Wächter fordert deshalb: ein Wort mit Platzhalter muss `vars` mitbekommen. */
+  it("jede Beschriftung mit Platzhalter bekommt auch vars", () => {
+    const shell = SRC("TutorialSections.jsx");
+    const schlecht = [];
+    for (const m of shell.matchAll(/(\w+):\s*t\("(tut\.[df]\.\w+)"(,\s*vars)?\)/g)) {
+      const [, name, key, mitVars] = m;
+      const text = String(de[key] ?? "");
+      if (/\{\w+\}/.test(text) && !mitVars) {
+        schlecht.push(`${name} → ${key}: „${text}" trägt einen Platzhalter, wird aber ohne vars geholt`);
+      }
+    }
+    expect(schlecht, `Roher Platzhalter auf dem Schirm:\n  ${schlecht.join("\n  ")}`).toEqual([]);
   });
 
   it("jeder Probierfeld-/Bild-Takt nennt einen Baustein, den beats.jsx auch kennt", () => {
