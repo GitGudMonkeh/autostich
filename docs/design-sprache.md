@@ -769,6 +769,54 @@ misst, bekommt einen vollständigen Satz selbstsicherer, wertloser Zahlen. Zwei 
 jedes Messskript: die Größe der CSS-Antwort prüfen, und abbrechen, wenn `#root` weniger als ein paar
 Dutzend Knoten hat. `scripts/phone-proof.mjs:162` beschreibt dieselbe Falle.
 
+### Die zwei Lektionsarten
+
+Der erste Bau kannte **eine** Art und **ein** Budget: 400 px, „kurz und knackig". Die Proberunden
+passen da nicht hinein, und das ist ihr Zweck, nicht ihr Fehler — ein Schirm, auf dem man etwas
+**tut**, darf länger sein als einer, den man liest.
+
+*Gemessen* am freigegebenen Entwurf bei 390 × 844: Median **645 px**, **31 von 41** Lektionen über
+400, Maximum 1.360. Drei Auflösungen standen zur Wahl — das Budget fällt · der Entwurf wird zerlegt ·
+zwei Arten. Der Owner hat die zwei Arten gewählt.
+
+| Art | Budget | Was sie ist |
+| --- | --- | --- |
+| **karte** | **400 px** | Eine Sache, ein Blick. Sie scrollt nicht. |
+| **runde** | **960 px** | Man arbeitet damit. Sie scrollt einmal. |
+
+**Woher die 960 kommen.** Eineinhalb Schalenhöhen: 638 × 1,5 = 957, aufgerundet. Einmal
+weiterschieben ist zumutbar, dreimal ist eine Seite ohne Ende. Die Zahl ist hergeleitet, nicht an den
+Bestand angepasst — *gemessen* reißt bei dieser Grenze **genau eine** der 41 Lektionen ihr Budget.
+Ein Budget, das nichts fängt, wäre keins.
+
+**Was beide Arten teilen:** der Tipp steht am Ende, genau einmal. Das ist die Regel, die den
+ursprünglichen Fehler verhindert — das Fazit hinter dem Fuß, während „Weiter" daneben leuchtet — und
+sie gilt für beide unverändert.
+
+**Was eine Runde von einer Karte unterscheidet, ist nicht ihre Länge, sondern ihr beweglicher Teil.**
+Eine Runde ohne Probierfeld ist eine Karte, die ihr Budget missbraucht; genau so wird ein gehobenes
+Budget still zum neuen Normalmaß. Der Wächter verlangt deshalb mindestens ein Probierfeld je Runde
+und lässt der Karte weiterhin höchstens eines.
+
+### Die Takt-Arten
+
+Vier trugen den ersten Bau, vier kamen mit den Proberunden dazu.
+
+| Takt | Was er ist |
+| --- | --- |
+| `satz` | Fließtext, der eine Sache sagt |
+| `bild` | eine stehende Abbildung mit Unterschrift |
+| `probierfeld` | der bewegliche Teil |
+| `tip` | der Abschluss, an einer Linie nach oben |
+| `merk` | ein hervorgehobener Satz, den man behalten soll |
+| `regeln` | nummerierte Punkte, jeder ein eigener Kasten |
+| `tabelle` | Werte nebeneinander; ihre Zeilenzahl steht am Takt |
+| `liste` | die Tipps am Ende einer Sektion |
+
+`merk` und `tip` sind **nicht** dasselbe: der Tipp schließt die Lektion ab und steht genau einmal am
+Ende, ein Merksatz steht mittendrin und darf mehrfach vorkommen. Beide bleiben bei `§1 — Kein Panel
+im Panel`.
+
 ### Was §11 NICHT anfasst
 
 - Das Band 640–1279 px. Es ist weiterhin unbeauftragt.

@@ -13,14 +13,42 @@
    auseinanderlaufen.
 
    TAKT-SCHEMA
-     kind   "satz" · "bild" · "probierfeld" · "tip" — mehr gibt es nicht (Design-Entscheidung,
-            planning-report.md §1.2). Ein fünfter Takt braucht erst einen Eintrag in
-            docs/design-sprache.md §11.
+     kind   siehe BEAT_KINDS. Eine neue Art braucht erst einen Eintrag in
+            docs/design-sprache.md §11 — der Wächter liest die Liste unten.
      probe  nur bei kind "probierfeld"/"bild": der Name des Bausteins, den beats.jsx auflöst.
-            Der Katalog kennt keine Komponenten — sonst wäre er nicht mehr React-frei. */
+            Der Katalog kennt keine Komponenten — sonst wäre er nicht mehr React-frei.
 
-/* Genau vier Takt-Arten. Der Wächter liest diese Liste, damit ein fünfter nicht still durchrutscht. */
-export const BEAT_KINDS = ["satz", "bild", "probierfeld", "tip"];
+   LEKTIONS-SCHEMA
+     art    "karte" (Vorgabe) oder "runde". Zwei Arten, zwei Budgets, siehe unten.
+     beats  die Takte in Reihenfolge. Der letzte ist immer der Tipp. */
+
+/* Die Takt-Arten. Die ersten vier tragen die Karten-Lektionen; die vier weiteren kamen mit den
+   Proberunden dazu (docs/design-sprache.md §11 — Die zwei Lektionsarten). Der Wächter liest diese
+   Liste, damit eine neunte nicht still durchrutscht. */
+export const BEAT_KINDS = [
+  "satz", "bild", "probierfeld", "tip",
+  "merk", "regeln", "tabelle", "liste",
+];
+
+/* ============================================================
+   DIE ZWEI LEKTIONSARTEN — Owner-Entscheidung, diese Runde.
+
+   Der erste Bau kannte nur eine Art und ein Budget von 400 px („kurz und knackig"). Die Proberunden
+   passen da nicht hinein, und das ist keine Nachlässigkeit, sondern ihr Zweck: ein Schirm, auf dem
+   man etwas TUT, darf länger sein als einer, den man liest. GEMESSEN am freigegebenen Entwurf bei
+   390 × 844: Median 645 px, 31 von 41 Lektionen über 400.
+
+   Drei Auflösungen standen zur Wahl (Budget fällt · Entwurf zerlegen · zwei Arten); der Owner hat
+   die zwei Arten gewählt.
+
+     karte  400 px — eine Sache, ein Blick, kein Scrollen.
+     runde  960 px — man arbeitet damit. Das sind EINEINHALB Schalenhöhen (638 × 1,5 = 957,
+            aufgerundet): einmal weiterschieben ist zumutbar, dreimal ist eine Seite ohne Ende.
+
+   Die 960 sind hergeleitet, nicht an den Bestand angepasst. GEMESSEN reißt bei dieser Grenze
+   genau EINE der 41 Lektionen das Budget — ein Budget, das nichts fängt, wäre keins. */
+export const LESSON_KINDS = ["karte", "runde"];
+export const lessonKind = (lesson) => lesson.art || "karte";
 
 export const SECTIONS = [
   {
@@ -134,8 +162,13 @@ export const totalLessons = () => SECTIONS.reduce((n, s) => n + s.lessons.length
      Tipp  69 Zeichen      → 90 px
    44 Zeichen je Zeile ist der einzige Wert, der alle fünf Satz-Messungen trifft (58/44→2 Zeilen,
    99→3, 110→3, 130→3, 140→4). Bei 42 fiele der 130er auf 4 Zeilen und das Modell schätzte zu hoch. */
-export const LESSON_BUDGET_PX = 400;
-export const SHELL_CEILING_PX = 638;   // gemessen; was die Schale überhaupt zeigen kann
+export const LESSON_BUDGET_PX = 400;   // Art „karte"
+export const RUNDE_BUDGET_PX = 960;    // Art „runde" — 1,5 Schalenhöhen, siehe oben
+export const SHELL_CEILING_PX = 638;   // gemessen; was die Schale ohne Scrollen zeigen kann
+
+/* Das Budget EINER Lektion. Der Wächter fragt hier, damit die Zuordnung an einer Stelle steht. */
+export const lessonBudget = (lesson) =>
+  lessonKind(lesson) === "runde" ? RUNDE_BUDGET_PX : LESSON_BUDGET_PX;
 
 const CHARS_PER_LINE = 44;
 const SATZ_LINE = 21;      // 0.875rem × line-height 1.5
@@ -143,6 +176,19 @@ const SATZ_MARGIN = 14;
 const TIP_LINE = 20;      // line-height 1.45
 const TIP_CHROME = 46;    // Trennlinie + Label + Abstände (gemessen 90 bei 2 Zeilen)
 const BILD_PX = 123;       // obere Messung
+
+/* Die vier Arten der Proberunden. KALIBRIERT am Entwurf bei 390 × 844 (lineare Anpassung über 20
+   Merk-, 11 Regel- und 20 Tipp-Kästen), dann aufgerundet — das Modell soll eher zu viel schätzen
+   als zu wenig. Der Entwurf ist NICHT der Produktionsbuild; diese Werte sind eine Näherung, und
+   der Nachweis bleibt die V1–V4-Messung je Task.
+     merk    gemessen 22 px/Zeile + 23 Chrome
+     regeln  gemessen 31 px/Zeile, je Eintrag ein eigener Kasten
+     liste   wie regeln, mit Nummer statt Aufzählung
+     tabelle Kopfzeile plus Datenzeilen; die Zeilenzahl steht am Takt (`rows`) */
+const MERK_LINE = 22, MERK_CHROME = 26;
+const REGEL_LINE = 26, REGEL_CHROME = 20;
+const TAB_ROW = 26, TAB_CHROME = 30;
+const TAB_ROWS_DEFAULT = 4;
 
 /* JE BAUSTEIN, nicht je Takt-Art. Die erste Fassung setzte jedes Probierfeld auf 215 px und ließ
    damit eine 486-px-Lektion durchs Budget — das Architekt-Brett ist deutlich höher als eine
@@ -159,9 +205,21 @@ const lines = (text) => Math.max(1, Math.ceil(String(text || "").length / CHARS_
 export function beatHeight(beat, text) {
   switch (beat.kind) {
     case "satz":        return lines(text) * SATZ_LINE + SATZ_MARGIN;
-    case "tip":    return lines(text) * TIP_LINE + TIP_CHROME;
+    case "tip":         return lines(text) * TIP_LINE + TIP_CHROME;
     case "bild":        return BILD_PX;
     case "probierfeld": return PROBE_PX[beat.probe] ?? PROBE_MAX;
+    case "merk":        return lines(text) * MERK_LINE + MERK_CHROME;
+    /* regeln und liste sind mehrere Kästen unter einem Schlüssel: der Text trägt die Einträge
+       durch `·` getrennt. Ein Eintrag weniger zu zählen wäre der Fehler, der ein Budget
+       durchwinkt, also zählt jeder Eintrag sein eigenes Chrome. */
+    case "regeln":
+    case "liste": {
+      const teile = String(text || "").split("·");
+      return teile.reduce((s, t) => s + lines(t) * REGEL_LINE + REGEL_CHROME, 0);
+    }
+    /* Eine Tabelle hängt an ihrer Zeilenzahl, nicht an ihrer Textlänge. Sie steht am Takt, weil
+       der Katalog den Text nicht kennt. Fehlt sie, wird der häufigste Fall angenommen. */
+    case "tabelle":     return (beat.rows ?? TAB_ROWS_DEFAULT) * TAB_ROW + TAB_CHROME;
     default:            return 0;
   }
 }

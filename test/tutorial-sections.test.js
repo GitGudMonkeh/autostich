@@ -3,8 +3,8 @@ import { readFileSync } from "node:fs";
 import de from "../src/i18n/de.js";
 import en from "../src/i18n/en.js";
 import {
-  SECTIONS, BEAT_KINDS, allKeys, beatKey, lessonHeight, totalLessons,
-  LESSON_BUDGET_PX, SHELL_CEILING_PX,
+  SECTIONS, BEAT_KINDS, LESSON_KINDS, allKeys, beatKey, lessonHeight, lessonKind, lessonBudget,
+  totalLessons, LESSON_BUDGET_PX, RUNDE_BUDGET_PX, SHELL_CEILING_PX,
 } from "../src/ui/tutorial-sections/catalog.js";
 
 /* ============================================================
@@ -35,19 +35,49 @@ describe("Tutorial-Sektionen · Katalog", () => {
     }
   });
 
-  it("es gibt genau vier Takt-Arten — eine fünfte braucht erst einen Eintrag im Design-Dokument", () => {
+  it("jede Takt-Art steht in BEAT_KINDS — eine neue braucht erst einen Eintrag im Design-Dokument", () => {
     const used = new Set(SECTIONS.flatMap((s) => s.lessons.flatMap((l) => l.beats.map((b) => b.kind))));
     for (const k of used) expect(BEAT_KINDS, `unbekannte Takt-Art „${k}"`).toContain(k);
   });
 
-  it("eine Lektion ist DREI Takte: ein Satz, ein Bild oder Probierfeld, ein Tipp", () => {
+  it("jede Lektion trägt eine bekannte Art", () => {
+    for (const s of SECTIONS) for (const l of s.lessons)
+      expect(LESSON_KINDS, `${s.id}/${l.id}: unbekannte Art „${lessonKind(l)}"`).toContain(lessonKind(l));
+  });
+
+  /* Die Form je Art. Der erste Bau kannte nur eine: „Satz, Bild oder Probierfeld, Tipp". Die
+     Proberunden brechen sie bewusst — sie haben mehrere Blöcke und teils zwei bewegliche Teile.
+     Was BEIDE Arten teilen, ist der Abschluss: der Tipp steht am Ende, genau einmal. Das ist die
+     Regel, die den ursprünglichen Fehler verhindert (der Tipp verschwindet, „Weiter" leuchtet),
+     und sie gilt unverändert weiter. */
+  it("jede Lektion endet mit genau einem Tipp", () => {
     for (const s of SECTIONS) for (const l of s.lessons) {
       const kinds = l.beats.map((b) => b.kind);
       const where = `${s.id}/${l.id}: ${kinds.join(" · ")}`;
       expect(kinds.filter((k) => k === "tip").length, `${where} — genau ein Tipp`).toBe(1);
       expect(kinds[kinds.length - 1], `${where} — der Tipp steht am Ende`).toBe("tip");
+    }
+  });
+
+  it("eine Karten-Lektion bleibt bei höchstens einem Bild oder Probierfeld", () => {
+    for (const s of SECTIONS) for (const l of s.lessons) {
+      if (lessonKind(l) !== "karte") continue;
+      const kinds = l.beats.map((b) => b.kind);
       expect(kinds.filter((k) => k === "bild" || k === "probierfeld").length,
-        `${where} — höchstens ein Bild ODER ein Probierfeld`).toBeLessThanOrEqual(1);
+        `${s.id}/${l.id}: ${kinds.join(" · ")} — eine Karte trägt höchstens einen beweglichen Teil`)
+        .toBeLessThanOrEqual(1);
+    }
+  });
+
+  /* Eine Proberunde heisst so, weil man etwas TUT. Eine ohne beweglichen Teil ist eine Karte, die
+     ihr Budget missbraucht — das ist genau der Weg, auf dem ein gehobenes Budget still zum neuen
+     Normalmass wird. */
+  it("eine Proberunde hat mindestens einen beweglichen Teil", () => {
+    for (const s of SECTIONS) for (const l of s.lessons) {
+      if (lessonKind(l) !== "runde") continue;
+      const beweglich = l.beats.filter((b) => b.kind === "probierfeld").length;
+      expect(beweglich, `${s.id}/${l.id} ist als Runde geführt, hat aber kein Probierfeld`)
+        .toBeGreaterThanOrEqual(1);
     }
   });
 
@@ -103,29 +133,61 @@ describe("Tutorial-Sektionen · das Höhenbudget", () => {
   /* Deutsch ist die Budget-Sprache: sie ist die längere von beiden. Passt Deutsch, passt Englisch. */
   const heightDe = (s, l) => lessonHeight(s, l, (k) => de[k] ?? "");
 
-  it("keine Lektion überschreitet das Budget", () => {
+  it("keine Lektion überschreitet das Budget ihrer Art", () => {
     const over = [];
     for (const s of SECTIONS) for (const l of s.lessons) {
-      const h = Math.round(heightDe(s, l));
-      if (h > LESSON_BUDGET_PX) over.push(`${s.id}/${l.id}: ${h} px > ${LESSON_BUDGET_PX} px — das sind zwei Lektionen`);
+      const h = Math.round(heightDe(s, l)), b = lessonBudget(l);
+      if (h > b) over.push(`${s.id}/${l.id} (${lessonKind(l)}): ${h} px > ${b} px`);
     }
     expect(over, `Über Budget:\n  ${over.join("\n  ")}`).toEqual([]);
   });
 
-  it("das Budget liegt unter der gemessenen Decke der Schale", () => {
-    // 638 px ist gemessen (92dvh minus Kopf und Fuß bei 390 × 844). Ein Budget darüber wäre sinnlos.
+  it("das Karten-Budget liegt unter der gemessenen Decke der Schale", () => {
+    // 638 px ist gemessen (92dvh minus Kopf und Fuß bei 390 × 844). Eine Karte scrollt nicht.
     expect(LESSON_BUDGET_PX).toBeLessThan(SHELL_CEILING_PX);
+  });
+
+  /* Das Runden-Budget liegt ÜBER der Decke — eine Proberunde scrollt, und das ist der Unterschied
+     zur Karte. Was es nicht darf, ist beliebig werden: eineinhalb Schalenhöhen heisst einmal
+     weiterschieben. Diese Grenze steht hier, damit ein späteres Anheben eine sichtbare Änderung
+     ist und keine stille. */
+  it("das Runden-Budget sind genau eineinhalb Schalenhöhen, aufgerundet", () => {
+    expect(RUNDE_BUDGET_PX).toBeGreaterThan(SHELL_CEILING_PX);
+    expect(RUNDE_BUDGET_PX).toBeLessThanOrEqual(Math.ceil(SHELL_CEILING_PX * 1.5 / 10) * 10);
   });
 
   /* GEGENPROBE, eingebaut statt einmalig von Hand gefahren (testing.md §5): ein Wächter, der nur grün
      ist, ist kein Beweis. Ein künstlich überlanger Satz MUSS das Budget reißen — sonst rechnet das
-     Modell nicht, sondern nickt. */
+     Modell nicht, sondern nickt. Es braucht sie ZWEIMAL: das höhere Budget ohne eigene Gegenprobe
+     wäre genau die Stelle, an der ein Modell unbemerkt aufhört zu rechnen. */
   it("Gegenprobe: eine überlange Lektion reißt das Budget", () => {
     const fake = { id: "x", beats: [{ kind: "satz" }, { kind: "probierfeld", probe: "formation" }, { kind: "tip" }] };
     const sec = { id: "y" };
     const lang = { [beatKey(sec, fake, 0)]: "W".repeat(1200), [beatKey(sec, fake, 1)]: "", [beatKey(sec, fake, 2)]: "kurz" };
     const h = lessonHeight(sec, fake, (k) => lang[k] ?? "");
     expect(h, "das Modell hält eine 1200-Zeichen-Lektion für budgetkonform").toBeGreaterThan(LESSON_BUDGET_PX);
+  });
+
+  it("Gegenprobe: auch das Runden-Budget ist zu reißen", () => {
+    const fake = { id: "x", art: "runde",
+      beats: [{ kind: "satz" }, { kind: "probierfeld", probe: "board" },
+              { kind: "merk" }, { kind: "tabelle", rows: 8 }, { kind: "tip" }] };
+    const sec = { id: "y" };
+    const lang = { [beatKey(sec, fake, 0)]: "W".repeat(1400), [beatKey(sec, fake, 2)]: "W".repeat(600),
+                   [beatKey(sec, fake, 4)]: "kurz" };
+    const h = lessonHeight(sec, fake, (k) => lang[k] ?? "");
+    expect(lessonBudget(fake), "die Fake-Runde bekommt gar nicht das Runden-Budget").toBe(RUNDE_BUDGET_PX);
+    expect(h, "das Modell hält eine 2000-Zeichen-Runde für budgetkonform").toBeGreaterThan(RUNDE_BUDGET_PX);
+  });
+
+  /* Und die Umkehrung: eine kurze Runde muss DURCHkommen. Ohne diese Probe wäre ein Modell, das
+     alles reißen lässt, ebenso „grün" wie eines, das rechnet. */
+  it("Gegenprobe: eine knappe Runde bleibt im Budget", () => {
+    const fake = { id: "x", art: "runde",
+      beats: [{ kind: "satz" }, { kind: "probierfeld", probe: "streak" }, { kind: "tip" }] };
+    const sec = { id: "y" };
+    const lang = { [beatKey(sec, fake, 0)]: "W".repeat(120), [beatKey(sec, fake, 2)]: "W".repeat(80) };
+    expect(lessonHeight(sec, fake, (k) => lang[k] ?? "")).toBeLessThan(RUNDE_BUDGET_PX);
   });
 });
 
