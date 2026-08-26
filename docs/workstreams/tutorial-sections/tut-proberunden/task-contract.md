@@ -189,7 +189,25 @@ Auflösungen, die zur Wahl standen:
   etwas tut, bekommen ein eigenes, höheres. Das trägt den Namen des Entwurfs und die Entscheidung
   *„man spielt statt zu blättern"*, verlangt aber ein zweites, begründetes Budget im Wächter.
 
-**2. Der Erstkontakt.** `StartScreen.jsx:191` zeigt das laute Angebot, solange
+**2. Der Erstkontakt — ERLEDIGT, ohne Codeänderung.** Geprüft in `src/App.jsx:279`:
+`tutOpened = tutLegacy || tutProgress.seen.length > 0`. Das laute Angebot über „Lauf beginnen"
+verschwindet also bereits, sobald **eine Lektion geöffnet** wurde, nicht schon beim Öffnen des
+Overlays. Genau das war gewünscht. Der ruhige Chip unten neben „Optionen" bleibt dauerhaft
+erreichbar (`canTutorial = !!onTutorial`, StartScreen.jsx:179).
+
+Eine Einschränkung, die im Code steht und hier festgehalten gehört: „abgeschlossen" heißt
+**geöffnet**. Die Schale kennt keinen Abschluss, den man erreichen könnte, und der Kommentar in
+App.jsx begründet das: „es gibt keinen Abschluss mehr … also wäre ‚fertig‘ gelogen".
+
+**3. Die Archetyp-Panels** je Archetyp einfärben: NÄCHSTER TASK. Die vier Sektionen stehen jetzt;
+ihre Einfärbung ist ein Gestaltungsdurchgang über fertige Inhalte, kein Teil des Aufbaus.
+
+**4. Der Sprachprüfer** bleibt vorerst im Scratchpad. Er prüft den Entwurf gegen den Styleguide;
+was davon dauerhaft gehört, entscheidet der Task `text-sprachpass`, der ohnehin die 18 Befunde im
+übrigen Katalog trägt.
+
+<!-- alte Fassung, zur Nachvollziehbarkeit:
+**2. Der Erstkontakt.****2. Der Erstkontakt.** `StartScreen.jsx:191` zeigt das laute Angebot, solange
 `!hadCompletedRun && !tutorialDone`, wobei `tutorialDone` heute „Overlay war offen" heißt. Gewünscht
 ist „bis eine Lektion abgeschlossen ist". Die Schale kennt keinen Abschluss, sie zählt
 *gemacht = geöffnet*. Vorschlag: `seen.size > 0`. Zu bestätigen.
@@ -199,3 +217,4 @@ ist „bis eine Lektion abgeschlossen ist". Die Schale kennt keinen Abschluss, s
 
 **4. Der Sprachprüfer** (`sprachpruefer.mjs`, `klang.mjs`) liegt im Scratchpad. Gehört er nach
 `scripts/`, neben `text-voice-check.mjs`?
+-->
