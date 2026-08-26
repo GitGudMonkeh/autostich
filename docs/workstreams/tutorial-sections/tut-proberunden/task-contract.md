@@ -60,10 +60,27 @@ anhalten. Verlinken oder das Glossar ändern, nie danebenschreiben.
 
 ## Approved architecture
 
-TODO — **entscheidungsbedürftig, siehe Offene Fragen 1.** Der heutige Bau ist eine
-Drei-Takt-Architektur mit einem 400-px-Budget je Lektion. Der freigegebene Entwurf passt nicht
-hinein. Welche der drei Auflösungen gilt, ist noch nicht entschieden, und davon hängt ab, ob dieser
-Task den Katalog füllt oder seine Form umbaut.
+**Entschieden — Owner wählte Auflösung C, zwei Lektionsarten mit zwei Budgets.** Gebaut in
+`ff087c16`, korrigiert in `da842d51`. Vollständig in `docs/design-sprache.md` §11.
+
+| Art | Budget | Was sie ist |
+| --- | --- | --- |
+| `kurz` (Vorgabe) | 400 px | eine Sache, ein Blick, kein Scrollen |
+| `voll` | 960 px | die ganze Lektion, scrollt einmal |
+
+960 px sind eineinhalb Schalenhöhen (638 × 1,5 = 957, aufgerundet) — hergeleitet, nicht an den
+Bestand angepasst. *Gemessen* reißen zwei der 41 Lektionen diese Grenze.
+
+**Verworfen:** die Arten an der Beweglichkeit aufzuhängen (`karte`/`runde`, höheres Budget nur mit
+Probierfeld). *Gemessen* sind Beweglichkeit und Höhe unkorreliert — die längste Lektion des
+Entwurfs ist ein reiner Lesetext, und rund zehn stille Erklärschirme zwischen 539 und 774 px wären
+ins 400er Budget gezwungen worden. Details im Commit `da842d51`.
+
+**Was `voll` begrenzt:** die 960er Decke plus die **Umkehrregel** — eine als `voll` geführte
+Lektion, die auch in 400 px passt, wird vom Wächter zurückgewiesen.
+
+Vier Takt-Arten kamen hinzu (`merk`, `regeln`, `tabelle`, `liste`), kalibriert am Entwurf und
+aufgerundet. Der Entwurf ist nicht der Produktionsbuild; der Nachweis bleibt die V1–V4-Messung.
 
 ## Task-specific inputs
 
@@ -82,8 +99,6 @@ gegen `architect.js`, `formations.js`, `glacier.js` und `progression.js` nach. S
 für die Wächter dieses Tasks.
 
 ## Acceptance gate
-
-TODO — **hängt an Offene Fragen 1.** Fest steht, was in jedem Fall gilt:
 
 - `npm test` grün, einschließlich der umgebauten Wächter in `test/tutorial-sections.test.js`
 - `npm run lint` grün
@@ -109,7 +124,7 @@ Alles darüber hinaus ist im Review zu begründen. `src/game/**` erscheint hier 
 
 ## Known hazards
 
-**1. Das Höhenbudget ist der Kern des Problems, nicht ein Detail.**
+**1. Das Höhenbudget — GELÖST, siehe *Approved architecture*.** Der Befund bleibt als Beleg stehen.
 `catalog.js` setzt `LESSON_BUDGET_PX = 400` mit dem Vermerk *„die Entscheidung kurz und knackig
 (Owner)"*, und `test/tutorial-sections.test.js` erzwingt es. Gemessen am Entwurf, 390 × 844:
 
@@ -120,11 +135,11 @@ Alles darüber hinaus ist im Review zu begründen. `src/game/**` erscheint hier 
 | über der Schalen-Decke von 638 px | **21 von 41** |
 | Maximum | **1.360 px** |
 
-Der Wächter darf **nicht abgeschwächt** werden, um grün zu werden (`AGENTS.md`). Entweder das
-Budget wird bewusst neu gesetzt, oder der Entwurf wird zerlegt. Siehe Offene Fragen 1.
+Der Wächter darf **nicht abgeschwächt** werden, um grün zu werden (`AGENTS.md`). Aufgelöst durch
+zwei bewusst gesetzte Budgets; eine Lektion bleibt zu kürzen (*Definition of done*).
 
-**2. Die Drei-Takt-Regel.** Der Wächter verlangt genau drei Takte je Lektion, höchstens ein Bild
-oder Probierfeld. Die Lektionen des Entwurfs haben mehrere Blöcke und teils zwei interaktive Teile.
+**2. Die Drei-Takt-Regel — GELÖST.** Ersetzt durch vier artbewusste Wächter: bekannte Art, genau
+ein Tipp am Ende (beide Arten), höchstens ein beweglicher Teil je *kurzer* Lektion, Umkehrregel.
 
 **3. Die Zahlen im Text.** Der Wächter verbietet Ziffern im Lektionstext. Der Entwurf nennt viele
 Zahlen; sie stammen alle aus Konstanten und müssen als Platzhalter durchgereicht werden, so wie
@@ -142,14 +157,17 @@ eine Zahl zurückgibt. Heute folgenlos, aber tot.
 
 ## Definition of done
 
-TODO — **hängt an Offene Fragen 1.** Der Rahmen steht: alle zehn Sektionen im Katalog, beide
-Sprachen vollständig, alle Wächter grün, das visuelle Gate gemessen und die Belege im
-Workstream-Ordner.
+- alle zehn Sektionen mit 41 Lektionen im Katalog, jede mit ihrer `art`
+- beide Sprachkataloge vollständig, `npm run loc:export` gelaufen
+- alle Wächter grün, einschließlich der beiden Budgets und der Umkehrregel
+- **die eine Lektion über Budget gekürzt:** „Zwei Builds, die sich selbst verstärken“
+  (Fortgeschritten 3), *gemessen* 1.360 px gegen 960
+- V1–V4 bei 390 × 844 gemessen, Belege im Workstream-Ordner
 
 ## Open questions
 
-**1. Das Höhenbudget.** Der freigegebene Entwurf und das geltende Budget schließen einander aus.
-Drei Auflösungen stehen zur Wahl, jede mit anderer Arbeit:
+**1. Das Höhenbudget — ENTSCHIEDEN (C).** Steht unter *Approved architecture*. Die drei
+Auflösungen, die zur Wahl standen:
 
 - **A — Das Budget fällt.** Die Schale scrollt ohnehin (`tut-scroll`, `overflow-y-auto`). Der
   ursprüngliche Grund war ein Tipp, der hinter dem Fuß verschwand; das war ein Layoutfehler, kein
