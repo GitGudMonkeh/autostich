@@ -664,6 +664,9 @@ export default {
   "cardgrid.segbridge.title": "Segmentarbeit: Formationen dürfen die Grenze zwischen Segment {a} und {b} überschreiten",
   "arch.glacier.reserve": "Gletscher · Masse {mass} · Reserve {firn}",
   "runstats.bestGlacier.title": "Höchster Score aus einem Gletscher-Stich (Bruch)",
+  "error.crash.title": "Etwas ist schiefgegangen",
+  "error.crash.body": "Ein Fehler hat die Anzeige unterbrochen. Dein Fortschritt ist gespeichert — ein angefangener Lauf wird nach dem Neuladen fortgesetzt.",
+  "error.crash.reload": "Neu laden",
 
   /* ---- Brett-Raster (CardGrid) · Architekt-Panels (ArchPanels) ---- */
   "cardgrid.openBoundary": "⇕ Grenze offen",

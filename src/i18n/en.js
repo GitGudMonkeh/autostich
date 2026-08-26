@@ -648,6 +648,9 @@ export default {
   "cardgrid.segbridge.title": "Segment work: formations may cross the boundary between segments {a} and {b}",
   "arch.glacier.reserve": "Glacier · mass {mass} · reserve {firn}",
   "runstats.bestGlacier.title": "Highest score from a single glacier trick (break)",
+  "error.crash.title": "Something went wrong",
+  "error.crash.body": "An error interrupted the display. Your progress is saved — a run in progress resumes after reloading.",
+  "error.crash.reload": "Reload",
 
   /* ---- Board grid (CardGrid) · architect panels (ArchPanels) ---- */
   "cardgrid.openBoundary": "⇕ boundary open",

@@ -759,6 +759,9 @@ export default {
   "cardgrid.segbridge.title": "Trabajo de segmentos: las formaciones pueden cruzar el límite entre los segmentos {a} y {b}",
   "arch.glacier.reserve": "Glaciar · masa {mass} · reserva {firn}",
   "runstats.bestGlacier.title": "Puntuación más alta de una baza de glaciar (ruptura)",
+  "error.crash.title": "Algo ha salido mal",
+  "error.crash.body": "Un error interrumpió la pantalla. Tu progreso está guardado: una partida en curso se reanuda tras recargar.",
+  "error.crash.reload": "Recargar",
 
   /* ---- Card grid badges ---- */
   "cardgrid.openBoundary": "⇕ límite abierto",
