@@ -925,6 +925,30 @@ function AutostichGame() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- deckFx bewusst nur beim Trigger gelesen (Deckfarben je Lauf stabil)
   }, [state.activeArchetypes, state.phase, offeredArchs]);
 
+  /* #372c — dieselbe Wärmung, aber im LADEBILDSCHIRM statt im Lauf.
+
+     Der Effekt oben wärmt, solange ein Angebot offen steht. Das nahm den Hänger auf der ersten reifen
+     Karte, verschob ihn aber auf die Skill-Auswahl — gemeldet als kurzes Stocken beim Öffnen. Beides
+     sind Frames, die flüssig sein sollen; der Ladebalken beim Run-Start ist der einzige Ort im Lauf,
+     an dem Warten vorgesehen ist. Also dorthin.
+
+     WELCHE Archetypen: die FREIGESCHALTETEN. Welcher gewählt wird, steht beim Run-Start noch nicht
+     fest, und der Angebots-Pool ist genau darauf begrenzt (buildSkillOffer). Alles andere wäre ein
+     Bitmap für eine Fraktion, die dieser Spieler diesen Lauf gar nicht sehen kann.
+
+     Die Merkliste (`fxPrewarmedRef`) ist dieselbe wie beim Effekt oben — was hier gewärmt wurde,
+     überspringt er später. Er bleibt als Netz bestehen: reißt der Deckel `maxWait` im Ladebildschirm,
+     wärmt er beim ersten Angebot nach. Ein zweiter Aufruf kostet ohnehin nichts (Map-Treffer).
+
+     FEUER fehlt bewusst: für FireHead gibt es keine Vorwärm-Funktion, es stünde also nur der
+     Chunk-Import da. Wer sie baut, trägt „fire" in FX_PREWARM ein — hier ändert sich dann nichts. */
+  const fxWarmTasks = () => {
+    const opts = { deckTint: deckFx.archDeckColor, deckColor: deckFx.deckA1, deckColor2: deckFx.deckA2 };
+    return unlockedArchetypes(profile)
+      .filter((a) => FX_PREWARM[a] && !fxPrewarmedRef.current.has(a))
+      .map((a) => () => { fxPrewarmedRef.current.add(a); return FX_PREWARM[a](opts); });
+  };
+
   function beginRun() {
     clearActiveRun(); setResumable(null); // frischer Lauf ersetzt einen evtl. gespeicherten Resume-Snapshot
     // #205: Challenge-Seed (falls per Paste/Nachspielen gesetzt) ODER frischer Zufalls-Seed. Der Seed macht
@@ -1403,7 +1427,7 @@ function AutostichGame() {
 
       {/* #190: Vorlade-Balken beim Run-Start — lädt die aktiven Skins, dann startet der Lauf wirklich. */}
       {pendingRun && (
-        <RunLoader images={pendingRun} onReady={() => { setPendingRun(null); beginRun(); }} />
+        <RunLoader images={pendingRun} tasks={fxWarmTasks()} onReady={() => { setPendingRun(null); beginRun(); }} />
       )}
 
       {/* #datenschutz: eigene Suspense-Grenze AUSSERHALB der Menü-Overlay-Grenze — er wird ÜBER den Optionen

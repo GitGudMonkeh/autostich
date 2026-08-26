@@ -9,14 +9,25 @@ import { t } from "../i18n/index.js"; // #sprache
    Sicherheitsnetz: nach `maxWait` ms wird trotzdem gestartet (nie hängen bleiben).
    Optik (#): an die Hub-Bildsprache angeglichen — Modal-Karte + Tri-Color-Haarlinie, Gradient-Wortmarke und ein
    Ladebalken im LOGO-VERLAUF (Cyan→Violett→Amber, voll-breit verankert wie die Haarlinie, links→rechts aufgedeckt). */
-export function RunLoader({ images = [], onReady, showDelay = 150, maxWait = 3000 }) {
+/* #372c `tasks` — Aufgaben, die NICHT Bilder sind: das Vorwärmen der Archetyp-Effekte.
+
+   Sie gehören hierher und nicht ins Spiel. Der Ladebalken ist der einzige Ort im ganzen Lauf, an dem
+   Warten vorgesehen ist; jede Wärmung danach fällt in einen Frame, der flüssig sein soll — erst war es
+   der Umdreh-Frame der ersten reifen Karte (#372b), dann die Skill-Auswahl. Hier stört sie niemanden.
+
+   Eine Aufgabe je Idle-Slot, nie zwei in einem Frame: ein Moos- oder Frost-Bitmap ist ein teures
+   Canvas-Rendering, und zwei davon nebeneinander sind genau der Ruckler, den das Vorwärmen vermeiden
+   soll (dieselbe Regel wie `enqueueFxWarm` in der Deck-Werkstatt). Sie zählen in denselben Fortschritt
+   wie die Bilder, und dasselbe `maxWait` deckelt sie: eine hängende Aufgabe darf keinen Lauf aufhalten. */
+export function RunLoader({ images = [], tasks = [], onReady, showDelay = 150, maxWait = 3000 }) {
   const [done, setDone] = useState(0);
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     const urls = [...new Set(images.filter(Boolean))];
-    const total = urls.length;
+    const jobs = (tasks || []).filter(Boolean);
+    const total = urls.length + jobs.length;
     if (total === 0) { onReady(); return; }
 
     let count = 0;
@@ -38,6 +49,21 @@ export function RunLoader({ images = [], onReady, showDelay = 150, maxWait = 300
       if (typeof im.decode === "function") { im.decode().then(settle, settle); }
       else { im.onload = settle; if (im.complete) settle(); }
     }
+    // Die Nicht-Bild-Aufgaben laufen NACH dem Anstoßen der Bilder, eine je Idle-Slot (Rückfall: Timer).
+    const idle = window.requestIdleCallback || ((fn) => setTimeout(fn, 60));
+    let k = 0;
+    const step = () => {
+      if (cancelled || k >= jobs.length) return;
+      const job = jobs[k++];
+      /* Gezählt wird bei FERTIG, nicht bei angestoßen — und die nächste Aufgabe startet erst danach.
+         Ein Vorwärmen besteht aus einem dynamischen Import UND dem teuren Aufbau dahinter; würde hier
+         schon der Anstoß zählen, könnte der Ladebalken durchlaufen, während der Aufbau noch aussteht,
+         und der landete dann doch im Spiel — also genau dort, wo er nicht hin soll. */
+      let p;
+      try { p = Promise.resolve(job()); } catch (e) { p = Promise.resolve(); }
+      p.catch(() => {}).then(() => { if (cancelled) return; bump(); idle(step, { timeout: 1000 }); });
+    };
+    if (jobs.length) idle(step, { timeout: 1000 });
     const showTimer = setTimeout(() => { if (!cancelled) setVisible(true); }, showDelay);
     const safety = setTimeout(() => { if (!cancelled) { cancelled = true; onReady(); } }, maxWait);
     return () => { cancelled = true; clearTimeout(showTimer); clearTimeout(safety); };
@@ -45,7 +71,8 @@ export function RunLoader({ images = [], onReady, showDelay = 150, maxWait = 300
   }, []);
 
   if (!visible) return null;
-  const total = Math.max(1, [...new Set(images.filter(Boolean))].length);
+  // Der Balken muss dieselbe Summe zeigen, die der Effekt zählt — sonst steht er bei den Vorwärm-Aufgaben.
+  const total = Math.max(1, [...new Set(images.filter(Boolean))].length + (tasks || []).filter(Boolean).length);
   const pct = Math.min(100, Math.round((done / total) * 100));
   return overlayPortal((
     <div className="fixed inset-0 z-50 overlay-root flex items-center justify-center p-4" style={{ background: "#0c0c10f2", backdropFilter: "blur(3px)" }}>

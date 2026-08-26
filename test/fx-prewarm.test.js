@@ -41,7 +41,37 @@ describe("#372b — warum der Pick zu spät kommt", () => {
   });
 });
 
-describe("#372b — vorgewärmt wird, solange das Angebot offen steht", () => {
+describe("#372c — der Ladebildschirm wärmt vor, nicht der Lauf", () => {
+  const loader = readFileSync(new URL("../src/ui/RunLoader.jsx", import.meta.url), "utf8");
+
+  it("der Run-Start-Ladebalken bekommt die Vorwärm-Aufgaben mit", () => {
+    expect(app).toContain("<RunLoader images={pendingRun} tasks={fxWarmTasks()}");
+  });
+
+  it("gewärmt werden die FREIGESCHALTETEN Archetypen — der Angebots-Pool ist genau darauf begrenzt", () => {
+    expect(app).toContain("return unlockedArchetypes(profile)");
+    expect(app).toContain("fxPrewarmedRef.current.add(a); return FX_PREWARM[a](opts);");
+  });
+
+  it("eine Aufgabe zählt erst, wenn sie FERTIG ist — sonst läuft der Balken dem Aufbau davon", () => {
+    /* Ein Vorwärmen ist Import PLUS teurer Aufbau. Zählte schon der Anstoß, könnte der Ladebalken
+       durchlaufen, während der Aufbau noch aussteht — und der landete dann doch im Spiel. */
+    expect(loader).toContain("p.catch(() => {}).then(() => { if (cancelled) return; bump(); idle(step, { timeout: 1000 }); });");
+  });
+
+  it("die Aufgaben zählen in dieselbe Summe wie die Bilder", () => {
+    // Sonst steht der Balken bei den Vorwärm-Aufgaben und der Spieler sieht einen hängenden Ladebildschirm.
+    expect(loader).toMatch(/const total = Math\.max\(1, \[\.\.\.new Set\(images\.filter\(Boolean\)\)\]\.length \+ \(tasks \|\| \[\]\)\.filter\(Boolean\)\.length\);/);
+    expect(loader).toContain("const total = urls.length + jobs.length;");
+  });
+
+  it("ein hängendes Vorwärmen hält keinen Lauf auf", () => {
+    // `maxWait` deckelt den ganzen Ladebildschirm — der Deckel galt schon für Bilder und gilt jetzt auch hier.
+    expect(loader).toContain("const safety = setTimeout(() => { if (!cancelled) { cancelled = true; onReady(); } }, maxWait);");
+  });
+});
+
+describe("#372b — das Angebot bleibt das Netz", () => {
   it("die angebotenen Archetypen zählen mit, nicht nur die aktiven", () => {
     expect(app).toContain("const offeredArchs = (state.skillOffer || []).map(archetypeOf).filter(Boolean).join(\",\");");
     expect(app).toMatch(/const arch = \[\.\.\.new Set\(\[\.\.\.\(state\.activeArchetypes \|\| \[\]\), \.\.\./);
