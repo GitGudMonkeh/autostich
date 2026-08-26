@@ -13,7 +13,7 @@
    Spanish would need `1.ª`, and the ordinal indicator is missing from the font (§5.3), so the
    scale reads "Umbral 1 · 2 · 3" — same digits, no glyph the font cannot draw.
 
-   Terminology per §3: ciclo · baza · ventaja/margen · racha · carga · ionización · acumulación ·
+   Terminology per §3: ciclo · baza · margen · racha · carga · ionización · acumulación ·
    calor · marca · ceniza · forja · glaciar · masa · estallido · umbral · nieve · crecimiento ·
    verde/maduro · raíces · floración · poda · consumidor · compromiso · desbordamiento.
    ============================================================ */
@@ -56,25 +56,25 @@ export default {
 
   /* ---- 🔥 Fuego ---- */
   "guide.fire.subtitle": "El calor premia la superioridad total: cuanto más claramente domines una baza, más caliente estará la barra y más puntuación caerá al instante.",
-  "guide.fire.kernidee": "Fuego no premia el mero hecho de ganar, sino ganar **con superioridad**. Cuanto mayor sea tu **ventaja de valor de combate**, más caliente estará la barra y más fuerte golpeará cada victoria. El arquetipo del dominio bruto.",
+  "guide.fire.kernidee": "Fuego no premia el mero hecho de ganar, sino ganar **con superioridad**. Cuanto mayor sea tu **margen de valor de combate**, más caliente estará la barra y más fuerte golpeará cada victoria. El arquetipo del dominio bruto.",
   "guide.fire.pillarsLabel": "Los tres recursos",
-  "guide.fire.pillars.0.name": "Ventaja de valor de combate",
-  "guide.fire.pillars.0.sub": "· el margen",
+  "guide.fire.pillars.0.name": "Margen de valor de combate",
+  "guide.fire.pillars.0.sub": "· la diferencia",
   "guide.fire.pillars.0.text": "La verdadera moneda de Fuego. No cuenta **si** ganas, sino **con cuánta claridad**. Una victoria justa apenas paga; una aplastante paga muchísimo.",
   "guide.fire.pillars.1.name": "Calor",
-  "guide.fire.pillars.1.text": "La barra (de vacía a llena). Cada victoria la calienta, sobre todo con ventaja; las derrotas claras la enfrían. El calor que mantienes paga un **dividendo de brasas** en **cada** victoria de fuego; además es una reserva para **soltar**, y con la habilidad Hoja Incandescente hace más fuertes tus cartas.",
+  "guide.fire.pillars.1.text": "La barra (de vacía a llena). Cada victoria la calienta, sobre todo con margen; las derrotas claras la enfrían. El calor que mantienes paga un **dividendo de brasas** en **cada** victoria de fuego; además es una reserva para **soltar**, y con la habilidad Hoja Incandescente hace más fuertes tus cartas.",
   "guide.fire.pillars.2.name": "Ceniza y forja",
   "guide.fire.pillars.2.text": "La inversión duradera. Las marcas bajan las cartas rivales y dan ceniza; la forja convierte la ceniza en **valor de carta permanente**.",
-  "guide.fire.loop.nodes.0": "Ventaja",
+  "guide.fire.loop.nodes.0": "Margen",
   "guide.fire.loop.nodes.1": "Calor ↑",
   "guide.fire.loop.nodes.2": "Cartas ↑",
   "guide.fire.loop.nodes.3": "Bonif.",
   "guide.fire.loop.center.0": "OLEADA",
   "guide.fire.loop.center.1": "sigue rodando",
-  "guide.fire.loop.steps.0": "Gana con **mucha ventaja** → mucho **calor** y puntuación directa al instante (cuenta de forma plana, sin rodeos).",
+  "guide.fire.loop.steps.0": "Gana con **mucho margen** → mucho **calor** y puntuación directa al instante (cuenta de forma plana, sin rodeos).",
   "guide.fire.loop.steps.1": "El calor que mantienes paga además el **dividendo de brasas** en cada victoria, el motor de Fuego, siempre en marcha.",
   "guide.fire.loop.steps.2": "Con Hoja Incandescente, un calor alto desbloquea **bonificaciones de umbral** → tus cartas ganan valor de baza → ganas con más claridad todavía. Los niveles superiores hay que volver a ganárselos en cada segmento con una victoria contundente.",
-  "guide.fire.loop.steps.3": "En paralelo: las **marcas** debilitan las cartas rivales y llenan la **forja** → tus cartas se vuelven más fuertes de forma permanente, y las ventajas crecen con ellas.",
+  "guide.fire.loop.steps.3": "En paralelo: las **marcas** debilitan las cartas rivales y llenan la **forja** → tus cartas se vuelven más fuertes de forma permanente, y los márgenes crecen con ellos.",
   "guide.fire.loop.valve": "Cuando la barra está **llena**, el calor que llegue de más se desperdicia, salvo que tengas la habilidad **Calor Blanco**: entonces el excedente se acumula como **sobrecalentamiento** y sube toda tu puntuación de fuego mientras lo sigas alimentando. Y cuando quieras, sueltas el calor acumulado: de un solo golpe o a goteo constante.",
   "guide.fire.status.label": "¿Cómo de caliente estás?",
   "guide.fire.status.bars.0.name": "Calor",
@@ -82,13 +82,13 @@ export default {
   "guide.fire.status.bars.0.scale.1": "↑ bonif. de umbral ↑",
   "guide.fire.status.bars.0.scale.2": "lleno → desbordamiento",
   "guide.fire.principle.0.tag": "Margen",
-  "guide.fire.principle.0.text": "**Gana a lo grande, no por poco.** La moneda de Fuego es la ventaja. Monta tus cartas y tu orden de robo buscando una superioridad clara. Una victoria aplastante vale muchas veces una justa.",
+  "guide.fire.principle.0.text": "**Gana a lo grande, no por poco.** La moneda de Fuego es el margen. Monta tus cartas y tu orden de robo buscando una superioridad clara. Una victoria aplastante vale muchas veces una justa.",
   "guide.fire.principle.1.tag": "Beneficio",
   "guide.fire.principle.1.text": "**Mantener el calor es cobrar.** Cuanto más alta esté la barra, mayor será el dividendo de cada victoria y, con Hoja Incandescente, también el valor de tus cartas. Las derrotas te enfrían; protege tu calor para quedarte arriba.",
   "guide.fire.principle.2.tag": "Elección",
   "guide.fire.principle.2.text": "**Soltar o mantener.** Convierte el calor en golpes de puntuación (los consumidores de fuego **se combinan**), o simplemente mantenlo alto y vive de las bonificaciones de umbral.",
   "guide.fire.principle.3.tag": "Forja",
-  "guide.fire.principle.3.text": "**La forja acumula.** Marca → ceniza → valor de carta permanente. Esa línea no paga de inmediato: ensancha tus ventajas a lo largo de toda la partida.",
+  "guide.fire.principle.3.text": "**La forja acumula.** Marca → ceniza → valor de carta permanente. Esa línea no paga de inmediato: ensancha tus márgenes a lo largo de toda la partida.",
 
   /* ---- ❄️ Hielo ---- */
   "guide.ice.subtitle": "El arquetipo espacial: congelas cartas para convertirlas en glaciares, acumulas masa y desencadenas una cascada de estallidos.",

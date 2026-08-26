@@ -12,7 +12,7 @@
    Spanish catalog, which the number-format guard rejects and which reads as the wrong figure.
 
    Terminology per docs/localization/uebersetzerpaket_es_2026-08-26.md §3:
-   ciclo · baza · valor de baza · valor de carta · margen/ventaja · racha · carga · ionización ·
+   ciclo · baza · valor de baza · valor de carta · margen · racha · carga · ionización ·
    acumulación · calor · marca · ceniza · forja · calor blanco · brasa de ceniza · glaciar · masa ·
    estallido · umbral · nieve · crecimiento · verde/maduro · raíces · floración · colonizar ·
    estolón · poda.
@@ -83,9 +83,9 @@ export default {
 
   /* ---- 🔥 Fuego ---- */
   "ability.SK_FIRE_01.name": "Brasa",
-  "ability.SK_FIRE_01.desc": `Las victorias con ventaja de valor de combate dan +${pct(C.EMBER_MULT - 1)} % más de calor.`,
+  "ability.SK_FIRE_01.desc": `Las victorias con margen de valor de combate dan +${pct(C.EMBER_MULT - 1)} % más de calor.`,
   "ability.SK_FIRE_02.name": "Yesca",
-  "ability.SK_FIRE_02.desc": `Cada victoria da +${C.ZUNDER_HEAT} % de calor, incluso con una ventaja escasa.`,
+  "ability.SK_FIRE_02.desc": `Cada victoria da +${C.ZUNDER_HEAT} % de calor, incluso con un margen escaso.`,
   "ability.SK_FIRE_03.name": "Tormenta de Fuego",
   "ability.SK_FIRE_03.desc": `Cada victoria seguida da +${C.FEUERSTURM_STEP} % más de calor (hasta +${C.FEUERSTURM_CAP} %). Una derrota lo reinicia.`,
   "ability.SK_FIRE_04.name": "Lecho de Brasas",
@@ -93,15 +93,15 @@ export default {
   "ability.SK_FIRE_05.name": "Reencendido",
   "ability.SK_FIRE_05.desc": `Tras una derrota, la siguiente victoria da +${C.RUECKZUENDUNG_HEAT_PER_DEFICIT} % de calor por cada punto de desventaja de valor y da a la carta ganadora +${C.RUECKZUENDUNG_VALUE} de valor de baza.`,
   "ability.SK_FIRE_06.name": "Hoja Incandescente",
-  "ability.SK_FIRE_06.desc": `Todas tus cartas ganan valor de baza según el calor: +${C.GLOWING_T1_VALUE} desde el ${C.GLOWING_T1_HEAT} %, +${C.GLOWING_T2_VALUE} desde el ${C.GLOWING_T2_HEAT} %, +${C.GLOWING_T3_VALUE} con el ${C.GLOWING_T3_HEAT} %. Los dos niveles superiores exigen además, dentro del segmento en curso, una victoria con ${C.GLOWING_T2_MARGIN} o ${C.GLOWING_T3_MARGIN} de ventaja respectivamente.`,
+  "ability.SK_FIRE_06.desc": `Todas tus cartas ganan valor de baza según el calor: +${C.GLOWING_T1_VALUE} desde el ${C.GLOWING_T1_HEAT} %, +${C.GLOWING_T2_VALUE} desde el ${C.GLOWING_T2_HEAT} %, +${C.GLOWING_T3_VALUE} con el ${C.GLOWING_T3_HEAT} %. Los dos niveles superiores exigen además, dentro del segmento en curso, una victoria con ${C.GLOWING_T2_MARGIN} o ${C.GLOWING_T3_MARGIN} de margen respectivamente.`,
   "ability.SK_FIRE_07.name": "Calor Blanco",
   "ability.SK_FIRE_07.desc": `El calor por encima del ${C.HEAT_MAX} % se acumula como sobrecalentamiento, hasta el ${C.HEAT_MAX + C.OVERHEAT_MAX} %; cuanto más alto está, menos llega. Cada punto da +${pct(C.OVERHEAT_SCORE_STEP)} % de puntuación de fuego. Se disipa ${C.OVERHEAT_DECAY} puntos por baza, ${C.OVERHEAT_DECAY_LOSS} con una derrota.`,
   "ability.SK_FIRE_08.name": "Oleada de Fuego",
   "ability.SK_FIRE_08.desc": `A partir del ${C.FIREROLL_MIN_HEAT} % de calor, cada victoria seguida da a la carta siguiente +1 de valor de baza (hasta +${C.FIREROLL_MAX}). Una derrota lo reinicia.`,
   "ability.SK_FIRE_09.name": "Combustión",
-  "ability.SK_FIRE_09.desc": `Una ventaja grande de valor de combate da más puntuación de fuego: ×${num(C.VERBRENNUNG_T1_MULT)} desde ${C.VERBRENNUNG_T1_MARGIN}, ×${num(C.VERBRENNUNG_T2_MULT)} desde ${C.VERBRENNUNG_T2_MARGIN}.`,
+  "ability.SK_FIRE_09.desc": `Un margen grande de valor de combate da más puntuación de fuego: ×${num(C.VERBRENNUNG_T1_MULT)} desde ${C.VERBRENNUNG_T1_MARGIN}, ×${num(C.VERBRENNUNG_T2_MULT)} desde ${C.VERBRENNUNG_T2_MARGIN}.`,
   "ability.SK_FIRE_10.name": "Lluvia de Chispas",
-  "ability.SK_FIRE_10.desc": `Cada victoria con menos de ${C.SPARKFLIGHT_MIN_MARGIN} de ventaja ingresa ${num(C.SPARKFLIGHT_BANK_MULT)}× su puntuación de fuego más ${C.SPARKFLIGHT_FLOOR_BASE} en un depósito, +${C.SPARKFLIGHT_FLOOR_PER_SKILL} por cada habilidad de Fuego adicional. Una victoria desde ${C.SPARKFLIGHT_MIN_MARGIN} de ventaja lo reparte como puntuación; una derrota lo reduce a la mitad.`,
+  "ability.SK_FIRE_10.desc": `Cada victoria con menos de ${C.SPARKFLIGHT_MIN_MARGIN} de margen ingresa ${num(C.SPARKFLIGHT_BANK_MULT)}× su puntuación de fuego más ${C.SPARKFLIGHT_FLOOR_BASE} en un depósito, +${C.SPARKFLIGHT_FLOOR_PER_SKILL} por cada habilidad de Fuego adicional. Una victoria desde ${C.SPARKFLIGHT_MIN_MARGIN} de margen lo reparte como puntuación; una derrota lo reduce a la mitad.`,
   "ability.SK_FIRE_11.name": "Incendio",
   "ability.SK_FIRE_11.desc": `A partir del ${C.CONFLAG_MIN_HEAT} % de calor, la siguiente victoria quema hasta el ${C.CONFLAG_KEEP} %: +${C.CONFLAG_PER_HEAT} de puntuación por punto de calor quemado, +${C.CONFLAG_PER_SKILL} por cada habilidad de Fuego adicional (con ${C.SKILL_SLOTS} habilidades de Fuego ≈ +${grp((C.HEAT_MAX - C.CONFLAG_KEEP) * (C.CONFLAG_PER_HEAT + C.CONFLAG_PER_SKILL * (C.SKILL_SLOTS - 1)))}).`,
   "ability.SK_FIRE_12.name": "Punto de Fusión",
