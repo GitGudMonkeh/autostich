@@ -91,6 +91,12 @@ which is worth doing for its own sake.
 Where a relationship genuinely cannot be computed — wiring, imports, the presence of a switch — a
 source-text ratchet is the honest fallback. Say so in the guard's comment.
 
+**A ratchet that broke on a rename is bookkeeping, not a finding.** Where the assertion still means
+what it meant and only the spelling moved, update it and move on — that is not weakening a guard, and
+it needs no write-up beyond the diff. Reserve the full §3 treatment for a red guard whose *claim*
+might have changed. Three quarters of this suite reads source as text; treating every one of them as
+a possible regression is what makes a one-line change cost an afternoon.
+
 ---
 
 ## 5. The counter-check

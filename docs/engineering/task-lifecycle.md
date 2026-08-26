@@ -38,6 +38,17 @@ That rule is the only thing preventing this file from becoming a second copy of 
 **Tier A is the default.** A task is Tier A unless one sentence says why it is not, written where the
 task starts — the task note, or the message that sets the work going. No sentence, no apparatus.
 
+### The small fix, below Tier A
+
+`implement -> gates -> commit`. No owner stops, no task note. It qualifies only when ALL of these
+hold: one or two files, obvious from the diff; no player-visible behaviour, balance, wording or
+layout decision (a clipped list is a defect, a reworded button is not); no new dependency, no rule
+document, no migration of stored data; and any guard it turned red was bookkeeping
+(`testing.md` §4). **When in doubt it is Tier A** — the doubt is the signal.
+
+What does not change: the four gates, the honesty rules, one writer per worktree. This lane removes
+ceremony, not verification.
+
 Escalating later costs one planning session. Starting one tier too high costs the whole apparatus on
 work that never needed it, and nobody notices, because the result looks thorough either way.
 
