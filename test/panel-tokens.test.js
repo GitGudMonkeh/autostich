@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
+/* MH4: THE SAME implementation `node scripts/exempt-reach.mjs` prints — not a second one beside it.
+   A counter-check that inspects a copy is green while the original fails. */
+import { reichweite } from "../scripts/exempt-reach.mjs";
 
 /* ============================================================================
    #menu-rework — DIE RATSCHE DES PANEL-VOKABULARS.
@@ -1038,13 +1041,98 @@ const CSS_AXES = [
   { axis: "Innenabstand", re: /(?:^|[;{\s])padding(?:-top|-right|-bottom|-left)?\s*:(?!\s*(?:var\(|0\s*[;}]))[^;}]*[1-9]/g, exempt: [...INSET_EXEMPT, ...C_INSET_EXEMPT] },
 ];
 
-/* Jede CSS-Regel als [Selektor, Rumpf]. Kommentare sind vorher raus: eine Begruendung, die eine
-   Eigenschaft beim Namen nennt, darf einen Waechter weder erfuellen noch ausloesen. */
-function rules(css) {
+/* ============================================================================
+   #menu-rework MH4 — AN EXEMPTION SAYS WHICH HALF IT MEANS.
+
+   An exemption names a SELECTOR, and a selector stands in both halves of the stylesheet. The entry
+   for a phone rule silently took the desktop rule of the same class out with it — measured at C4/CC1
+   and CC2, which stayed GREEN with `#141419` and `#2a2a33` at the call site. A guard reporting
+   success over a rule it no longer looks at.
+
+   (New material is English per AGENTS.md — Language policy; the older German comments around it stay
+   as written.)
+   ============================================================================ */
+
+/* The threshold is DERIVED, not transcribed. It stands as `--breakpoint-dt` in the sheet, and a
+   guard keeping its own copy eventually measures against a number that reads differently there.
+   If the site disappears this is `null` — and the negative probe below fails, instead of the halves
+   separation quietly collapsing back to "both". */
+const BREAKPOINT_DT = (() => {
+  const m = read("src/index.css").match(/--breakpoint-dt:\s*([\d.]+)px/);
+  return m ? parseFloat(m[1]) : null;
+})();
+
+/* The `@media` blocks with their bounds in the stripped sheet. Nested blocks both appear in the
+   list, so a rule collects EVERY header enclosing it. */
+function mediaBloecke(css) {
   const out = [];
-  for (const m of strip(css).matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+  for (const m of css.matchAll(/@media([^{]*)\{/g)) {
+    let tiefe = 0, ende = css.length;
+    for (let j = m.index + m[0].length - 1; j < css.length; j++) {
+      if (css[j] === "{") tiefe++;
+      else if (css[j] === "}" && --tiefe === 0) { ende = j; break; }
+    }
+    out.push({ kopf: m[1].trim(), start: m.index, ende });
+  }
+  return out;
+}
+
+/* Which half a rule REACHES — not which block it sits in. A rule without a width condition reaches
+   both, and that is the normal case: 31 `@media` blocks face thousands of rules. `min-width: 641px`
+   reaches both as well, because 641 is below the threshold — the question is never "does it have a
+   media query" but "which widths does it admit". */
+function haelften(medien = []) {
+  let handy = true, desktop = true;
+  for (const kopf of medien) {
+    for (const b of kopf.matchAll(/\(\s*(min|max)-width\s*:\s*([\d.]+)px\s*\)/g)) {
+      const wert = parseFloat(b[2]);
+      if (b[1] === "min") { if (wert >= BREAKPOINT_DT) handy = false; }
+      else if (wert < BREAKPOINT_DT) desktop = false;
+    }
+  }
+  return { phone: handy, desktop };
+}
+
+/* The qualification is OPTIONAL, and that is the whole caution of this change: a bare regex stays
+   what it was and covers both halves. The other way round, this task would change the meaning of 187
+   existing entries at once, and five workers' guards would shift under their feet (H-a).
+
+   `function` AND NOT `const`, and that is not style: the exemption lists sit higher up in the file
+   than this line. A `const` would still be in its temporal dead zone there, and the first worker to
+   scope an entry would get `Cannot access 'nurHandy' before initialization` — an error about the
+   file, not about their exemption. Measured: it failed exactly that way on the first attempt to set
+   up this task's counter-check. Declarations are hoisted. */
+function nurHandy(re) { return { re, haelfte: "phone" }; }
+function nurDesktop(re) { return { re, haelfte: "desktop" }; }
+
+const deckt = (eintrag, sel, medien) => {
+  const re = eintrag instanceof RegExp ? eintrag : eintrag.re;
+  if (!re.test(sel)) return false;
+  const haelfte = eintrag instanceof RegExp ? null : eintrag.haelfte;
+  return haelfte ? haelften(medien)[haelfte] : true;
+};
+
+/* One entry inside a failure message. `String({re, haelfte})` would be "[object Object]" — a message
+   that no longer names the dead entry costs exactly the time it is meant to save. */
+const zeige = (e) => (e instanceof RegExp ? String(e)
+  : `${e.re} (nur ${e.haelfte === "phone" ? "Handy" : "Desktop"})`);
+
+/* Every CSS rule as [selector, body, media headers]. Comments are out first: a rationale naming a
+   property must neither satisfy nor trigger a guard.
+   THE THIRD FIELD IS APPENDED, NOT INSERTED: the three call sites read `[sel, body]` and stay
+   untouched. The selector derivation below is deliberately unchanged, character for character —
+   `.pop()` still throws the media header away, and that is precisely why it now sits beside it,
+   rather than someone rebuilding the derivation and re-deciding every selector in the sheet. */
+function rules(css) {
+  const rein = strip(css);
+  const bloecke = mediaBloecke(rein);
+  const out = [];
+  for (const m of rein.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
     const sel = m[1].trim().split("\n").pop().trim();
-    if (sel) out.push([sel, m[2]]);
+    if (sel) {
+      const medien = bloecke.filter((b) => m.index >= b.start && m.index < b.ende).map((b) => b.kopf);
+      out.push([sel, m[2], medien]);
+    }
   }
   return out;
 }
@@ -1067,8 +1155,12 @@ describe("#menu-rework — migrierte CSS-Regeln fuehren keine Werte ein", () => 
       ["Flaeche M9", M9_SURFACE_EXEMPT], ["Kante M9", M9_EDGE_EXEMPT], ["Hoehe M9", M9_ELEV_EXEMPT],
       ["Innenabstand M6", M6_INSET_EXEMPT], ["Hoehe M6", M6_ELEV_EXEMPT],
       ["Flaeche M6", M6_SURFACE_EXEMPT], ["Kante M6", M6_EDGE_EXEMPT], ["Radius M6", M6_RADIUS_EXEMPT]]) {
-      const tot = liste.filter((re) => !mine.some(([sel]) => re.test(sel)));
-      expect(tot, `${name}: Ausnahme trifft keine migrierte Regel:\n  ${tot.map(String).join("\n  ")}`).toEqual([]);
+      /* MH4: THE SAME INVARIANT, now with the media context in it — "every exemption covers at least
+         one migrated rule". Rewriting it to a smaller number would be H-b: a qualified entry that
+         covers nothing is as dead as a selector that no longer exists, and that is exactly what has
+         to surface here. */
+      const tot = liste.filter((e) => !mine.some(([sel, , medien]) => deckt(e, sel, medien)));
+      expect(tot, `${name}: Ausnahme trifft keine migrierte Regel:\n  ${tot.map(zeige).join("\n  ")}`).toEqual([]);
     }
   });
 
@@ -1126,8 +1218,8 @@ describe("#menu-rework — migrierte CSS-Regeln fuehren keine Werte ein", () => 
   for (const { axis, re, exempt } of CSS_AXES) {
     it(`${axis}: kein Literal in einer migrierten Regel`, () => {
       const bad = [];
-      for (const [sel, body] of mine) {
-        if (exempt && exempt.some((x) => x.test(sel))) continue;
+      for (const [sel, body, medien] of mine) {
+        if (exempt && exempt.some((x) => deckt(x, sel, medien))) continue;
         for (const hit of withoutFallbacks(body).matchAll(new RegExp(re.source, "g"))) {
           bad.push(`${sel}  ->  ${hit[0].trim().slice(0, 72)}`);
         }
@@ -1953,5 +2045,76 @@ describe("#menu-rework MR1 — der Zeilengrund steht genau einmal", () => {
     const use = (src) => [...strip(src).matchAll(/var\(\s*--sf-row\s*[,)]/g)].length;
     expect(use(CSS), "keine Regel liest --sf-row mehr").toBeGreaterThan(0);
     expect(JSX.reduce((n, [, src]) => n + use(src), 0), "kein JSX liest --sf-row mehr").toBeGreaterThan(0);
+  });
+});
+
+describe("#menu-rework MH4 — how far an exemption reaches is stated HERE, not in a private probe", () => {
+  const { beide, nurOben } = reichweite(read("src/index.css"), read("test/panel-tokens.test.js"));
+  const kennung = (e) => `${e.liste} ${e.quelle}`;
+
+  /* ============================================================================
+     THE ENTRIES THAT TAKE TWO RULES OUT UNDER ONE REASON — one on each side of the threshold.
+
+     NOTHING IS JUDGED HERE. Where both halves share the reason — a button pads against its label, at
+     any width — the reach is harmless, and that is the majority. It is a defect only where the
+     reasons differ: untouchable below the threshold, tokenisable above it. Only whoever knows the
+     screen can decide that; this list makes them visible and leaves the decision open.
+
+     WHOEVER JUDGES ONE scopes it with `nurHandy(…)` or `nurDesktop(…)` and strikes it from here.
+     ============================================================================ */
+  const UEBER_DIE_SCHWELLE = [
+    "INSET_EXEMPT /\\.op-dd-btn/",
+    "INSET_EXEMPT /\\.op-foot/",
+    "INSET_EXEMPT /\\.op-col2/",
+    "INSET_EXEMPT /\\.cz-root/",
+    "INSET_EXEMPT /^\\.up-root$/",
+  ];
+
+  it("no entry reaches across the threshold other than those named", () => {
+    /* WRITTEN AS "CONTAINS NO X OTHER THAN Y", in both directions. Checking only the one half would
+       be asking whether something is THERE — and a list matching nothing at all would pass (H-c). A
+       new double grip surfaces above, a vanished one below. */
+    const ist = beide.map(kennung);
+    const unbenannt = ist.filter((x) => !UEBER_DIE_SCHWELLE.includes(x));
+    expect(unbenannt, `new entry reaching across the threshold:\n  ${unbenannt.join("\n  ")}`).toEqual([]);
+    const verschwunden = UEBER_DIE_SCHWELLE.filter((x) => !ist.includes(x));
+    expect(verschwunden, `named but no longer reaching — update the list:\n  ${verschwunden.join("\n  ")}`)
+      .toEqual([]);
+  });
+
+  it("the halves separation actually separates — negative probe", () => {
+    /* H-b IN ITS QUIETEST FORM: if `haelften()` always returned "both", the whole guard would behave
+       exactly as it did before MH4, and EVERY test in this file would stay green — including this
+       one, if it merely counted. So it measures the separation itself, on two real rules. */
+    expect(BREAKPOINT_DT, "`--breakpoint-dt` is gone from the sheet — the separation falls back to `both`")
+      .toBeGreaterThan(0);
+    const alle = rules(read("src/index.css"));
+    const oben = alle.find(([sel, , medien]) => sel === ".hub-root" && medien.length > 0);
+    const offen = alle.find(([sel, , medien]) => sel === ".as-hub-field" && medien.length === 0);
+    expect(oben, "`.hub-root` is no longer inside a media block — then this probe measures nothing").toBeTruthy();
+    expect(offen, "`.as-hub-field` has no base rule left — then this probe measures nothing").toBeTruthy();
+    expect(haelften(oben[2]), "a rule above the threshold does not reach the narrow version")
+      .toEqual({ phone: false, desktop: true });
+    expect(haelften(offen[2]), "a rule without a width condition reaches both halves")
+      .toEqual({ phone: true, desktop: true });
+    /* And the effect on an exemption, in both directions: unqualified it still covers the rule above
+       (H-a), scoped to the phone half it does not. */
+    expect(deckt(/^\.hub-root$/, ".hub-root", oben[2]), "an unqualified entry covers as before").toBe(true);
+    expect(deckt(nurHandy(/^\.hub-root$/), ".hub-root", oben[2]), "scoped to phone must not cover above").toBe(false);
+    expect(deckt(nurDesktop(/^\.hub-root$/), ".hub-root", oben[2]), "scoped to desktop covers above").toBe(true);
+    expect(deckt(nurHandy(/^\.as-hub-field$/), ".as-hub-field", offen[2]), "the base rule carries the narrow version").toBe(true);
+  });
+
+  it("the second group is counted apart — a double grip WITHIN one half is not one", () => {
+    /* Why the historical measurement counted sixteen and this one five: eleven of those entries cover
+       two rules that BOTH sit above the threshold — a width block and its height variant
+       (`… and (max-height: 950px)`) for the flat desktop window. The C4 probe knew only the first
+       `@media (min-width: 1280px)` block and treated every rule outside it as a phone rule. Measured
+       on `.hub-root`: both sites sit above, and there is no base rule at all. 5 + 11 = the sixteen.
+       The group is stated here so the difference does not read as a finding that disappeared. */
+    expect(nurOben.map(kennung), "the mainscreen's height variants belong in this group")
+      .toContain("C_INSET_EXEMPT /^\\.hub-root$/");
+    expect(beide.map(kennung), "`.hub-root` does NOT reach across the threshold")
+      .not.toContain("C_INSET_EXEMPT /^\\.hub-root$/");
   });
 });

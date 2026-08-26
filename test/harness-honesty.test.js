@@ -45,7 +45,14 @@ import { distBundle, servedBundle, verdict, entryOf, assertServesDist } from "..
 const root = new URL("../", import.meta.url);
 const read = (p) => readFileSync(new URL(p, root), "utf8");
 const DELTA = fileURLToPath(new URL("scripts/surface-delta.mjs", root));
-const SURFACES_ONLY = "Surfaces only. Control states are not captured and are verified by hand.";
+/* MH4: the line now names SVG paint as well. A `fill` and a `stroke` sit on NONE of the four surface
+   axes the probe compares — the brand mark is invisible to the delta gate by construction. No fifth
+   axis for it: `lockup.mjs` covers the mark directly, and a gate that names what it cannot see is
+   more honest than one carrying half an axis.
+   The load-bearing clause "control states are not captured" is deliberately left intact — the survey
+   check matches exactly that, so rewording around it must not trip the guard while deleting the
+   statement itself still does. */
+const SURFACES_ONLY = "Surfaces only. Control states are not captured, nor is SVG paint (fill, stroke), and both are verified by hand.";
 
 /* One probe row. `p` is the structural path; the twelve properties plus the box are what the gate
    compares, so a row differing in exactly one of them is exactly one delta. */
