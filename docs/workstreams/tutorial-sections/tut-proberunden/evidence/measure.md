@@ -377,3 +377,51 @@ English tip: it reports `blitz/tipps (kurz): 528 px > 400 px`, where before the 
 and passed.
 
 A guess about a language is not a measurement, even when it is usually right.
+
+
+---
+
+# Vier Sprachen, nach dem Merge auf dev
+
+dev war 260 Commits weiter und hatte zwei neue Sprachen dazubekommen. Der Umbau ersetzt 152 alte
+Tutorial-Schlüssel durch 392 neue, die damit auch auf Spanisch und Chinesisch existieren müssen.
+Der Owner hat entschieden, sie zu übersetzen statt den Zweig liegen zu lassen.
+
+**Alle vier Sprachen durchlaufen, je zehn Themen und 42 Lektionen, keine Beanstandung.** Geprüft
+wurde in jeder Sprache dasselbe: das Wort `undefined` in irgendeinem Takt, ein sichtbarer
+`tut.`-Rohschlüssel, ein ungelöster Platzhalter, ein Tippziel unter 44 px, seitlicher Überlauf und
+jeder Seiten- oder Promise-Fehler.
+
+| Sprache | Themen | Lektionen | Befund |
+| --- | ---: | ---: | --- |
+| Deutsch | 10 | 42 | keine |
+| Englisch | 10 | 42 | keine |
+| Spanisch | 10 | 42 | keine |
+| Chinesisch | 10 | 42 | keine |
+
+Belege: `es-grundlagen.png`, `zh-feuer.png`.
+
+## Wie übersetzt wurde
+
+Gegen die Begriffstabellen in `test/i18n-guards.test.js`, nicht frei: Stich→baza/墩,
+Durchlauf→ciclo/轮, Perk→ventaja/天赋, Skill→habilidad/技能,
+Stichpunkte→Puntos de baza/墩点, Kampfwert→valor de combate/战斗数值
+und der Rest.
+
+**„Proberunde" ist bewusst NICHT „ronda de prueba".** `ronda` steht in TERMS_ES zweimal
+ausdrücklich auf der Verbotsliste, einmal für Durchlauf und einmal für Stich. Ein Titel
+„Ronda de prueba · cuatro bazas" hätte das verbotene Wort direkt neben den Begriff gesetzt, den es
+ersetzen soll. Stattdessen „Práctica", im Chinesischen 练习.
+
+Die **Platzhalter-Parität wurde vor dem Einspielen geprüft**, nicht dem Wächter überlassen: alle
+392 × 2 tragen genau die Platzhalter, die der deutsche Text trägt. Ein fehlender hätte eine Zahl
+spurlos verschwinden lassen.
+
+Vier Wächter-Befunde sind behoben und nicht stillgelegt worden: der Perk-Name Segmentarbeit ist ein
+Eigenname und in jeder Sprache gleich; `tut.progress` ist eine reine Platzhalterzeile; dem
+spanischen `architekt/wohin.1` fehlte das Wort „edificios", das das deutsche „Gebäude" verlangt;
+und die spanische `fmtPct`-Erwartung ging noch vom gewöhnlichen Leerzeichen aus.
+
+Das geschützte Leerzeichen gilt jetzt auch für Spanisch: dev hatte `fmtPct` auf eine Tabelle je
+Sprache umgebaut, und Spanisch setzt dort dieselbe Form wie Deutsch — also denselben Umbruchfehler
+und dieselbe Behebung.
