@@ -845,7 +845,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                     {boost > 0 && <span className="absolute top-[1px] left-[3px] text-micro-2 font-extrabold" style={{ color: b ? "#fff" : "#3fb56a" }}>+{boost}</span>}
                     {/* Eis: Gletscher-Marker (Icon + Masse) bzw. Firn-Boden (dezenter ❄ + Masse) oben rechts. */}
                     {isGlacier && (
-                      <span className="absolute top-[1px] right-[2px] inline-flex items-center gap-[1px] text-micro-2 ty-num leading-none z-10" style={{ color: "#8be6ff", textShadow: "0 0 3px #5ec8f0" }} title={`Gletscher · Masse ${gMass}${fMass >= 1 ? ` · Reserve ${fMass}` : ""}`}>
+                      <span className="absolute top-[1px] right-[2px] inline-flex items-center gap-[1px] text-micro-2 ty-num leading-none z-10" style={{ color: "#8be6ff", textShadow: "0 0 3px #5ec8f0" }} title={fMass >= 1 ? t("arch.glacier.reserve", { mass: gMass, firn: fMass }) : t("cardgrid.glacierMass.title", { mass: gMass })}>
                         <FactionIcon type="ice" size={9} />
                         {gMass}
                       </span>

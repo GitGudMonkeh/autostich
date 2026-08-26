@@ -202,50 +202,6 @@ export function SkillList({ skills = [], empty = t("build.skills.empty"), heat =
   );
 }
 
-/* Deck-Werte je Farbe: 4 Zeilen (eine je Farbe), Werte auf der x-Achse, Anzahl als Säulenhöhe.
-   Gemeinsame x-Achse (unter der letzten Zeile) + gemeinsame Höhen-Skala über alle Zeilen (#24). */
-const ROW_H = 22; // px Säulenhöhe je Farb-Zeile
-export function DeckHistogram({ deck }) {
-  const counts = {};
-  let maxV = 0, maxCount = 1;
-  for (const c of deck) {
-    (counts[c.value] ||= {});
-    const n = (counts[c.value][c.suit] = (counts[c.value][c.suit] || 0) + 1);
-    if (n > maxCount) maxCount = n;
-    if (c.value > maxV) maxV = c.value;
-  }
-  const values = Array.from({ length: maxV }, (_, v) => v + 1); // Werte 1..maxV (#34: keine leere 0-Spalte)
-  return (
-    <div>
-      <div className="grid gap-1">
-        {SUIT_ORDER.map((su) => (
-          <div key={su} className="flex items-end gap-1">
-            <div className="w-8 shrink-0 text-meta-1 font-bold leading-none pb-0.5" style={{ color: suitColor(su) }}>{suitLabel(su)}</div>
-            <div className="flex-1 flex items-end gap-[2px]" style={{ height: ROW_H }}>
-              {values.map((v) => {
-                const n = (counts[v] && counts[v][su]) || 0;
-                return <div key={v} className="flex-1 rounded-t" title={`${suitLabel(su)} ${v}: ${n} Karten`}
-                  style={{ height: (n / maxCount) * ROW_H, minHeight: n ? 1 : 0, background: suitColor(su) }} />;
-              })}
-            </div>
-          </div>
-        ))}
-        {/* Gemeinsame x-Achse (Wertebeschriftung), an den Säulen ausgerichtet. */}
-        <div className="flex gap-1">
-          <div className="w-8 shrink-0" />
-          <div className="flex-1 flex gap-[2px]">
-            {values.map((v) => (
-              <div key={v} className="flex-1 text-center text-micro-1 leading-none tabular-nums"
-                style={{ color: v > 10 ? "#8a7de0" : undefined, opacity: v > 10 ? 1 : 0.4 }}>{v}</div>
-            ))}
-          </div>
-        </div>
-      </div>
-      <div className="text-meta-1 opacity-35 mt-1.5">Werte über 10 (violett) überbieten jede Gegnerkarte.</div>
-    </div>
-  );
-}
-
 /* #UI: Kompakte Deck-Stärke je Farbe — ein Balken je Farbe (= Durchschnittswert), violettes End-Segment + ◆-Badge =
    Anzahl unschlagbarer Karten (Wert > 10, überbietet jede Gegnerkarte). Ersetzt das platzintensive 4×11-Histogramm
    in der Perk-Auswahl: zeigt Farb-Stärke und Auto-Siege auf einen Blick. */

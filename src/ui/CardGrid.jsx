@@ -6,7 +6,7 @@ import { anchorTypeAt, linkedPartnerOf } from "../game/shop.js";
 import { formationBorder } from "./formationStyle.js";
 import { formationAbbr } from "./formationLabels.js";
 import { PLANT_RIPE, PLANT_FULL } from "./indicators/vocab.js";
-import { glacierFormations } from "../game/glacier.js";
+import { glacierFormations, FIRN_REFILL_TARGET } from "../game/glacier.js";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon (Eis ersetzt glacier.webp)
 import { familyDef, perkDef, anchorLabel } from "../i18n/labels.js"; // #sprache: Perks/Anker zur Anzeigezeit
 import { t } from "../i18n/index.js";
@@ -190,14 +190,14 @@ const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], sele
       {labels && <span className="cg-lab absolute bottom-0.5 right-1 text-[8px] sm:text-[11px] font-bold opacity-80" style={{ color: fb.color || "#5ab87a" }}>{labels}</span>}
       {/* Eis-Neudesign: Gletscher-Marker (starr festgefroren) + aktuelle Masse. */}
       {glacier && (
-        <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 inline-flex items-center gap-0.5 text-[8px] sm:text-[10px] font-bold leading-none tabular-nums" style={{ color: "#8be6ff", textShadow: "0 0 4px #5ec8f0" }} title={`Gletscher · Masse ${Math.round(glacierMass)}${firnMass >= 0.5 ? ` · Reserve ${Math.round(firnMass)} (füllt zum Durchlauf-Beginn auf 12)` : ""}`}>
+        <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 inline-flex items-center gap-0.5 text-[8px] sm:text-[10px] font-bold leading-none tabular-nums" style={{ color: "#8be6ff", textShadow: "0 0 4px #5ec8f0" }} title={firnMass >= 0.5 ? t("cardgrid.glacierMass.reserve", { mass: Math.round(glacierMass), firn: Math.round(firnMass), cap: FIRN_REFILL_TARGET }) : t("cardgrid.glacierMass.title", { mass: Math.round(glacierMass) })}>
           <FactionIcon type="ice" size={11} />
           {Math.round(glacierMass)}
         </span>
       )}
       {/* #386 Firn-Boden-Marker: dezenter ❄ + Boden-Reserve (kein Icon/Glow), klar abgesetzt vom Gletscher-Marker. */}
       {firn && (
-        <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 inline-flex items-center gap-0.5 text-[8px] sm:text-[9px] font-bold leading-none tabular-nums" style={{ color: "#7fbfe0", opacity: 0.85 }} title={`Schnee · Reserve ${Math.round(firnMass)} (füllt einen Gletscher hier zum Durchlauf-Beginn)`}>
+        <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 inline-flex items-center gap-0.5 text-[8px] sm:text-[9px] font-bold leading-none tabular-nums" style={{ color: "#7fbfe0", opacity: 0.85 }} title={t("arch.firn.title", { n: Math.round(firnMass) })}>
           <FactionIcon type="ice" size={8} glow={false} />{Math.round(firnMass)}
         </span>
       )}
@@ -221,7 +221,7 @@ const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], sele
 function SegmentBridge({ segA, segB }) {
   const line = { background: "linear-gradient(90deg, #5ab87a00, #5ab87a99, #5ab87a00)" };
   return (
-    <div className="flex items-center gap-2" title={`Segmentarbeit: Formationen dürfen die Grenze zwischen Segment ${segA} und ${segB} überschreiten`}>
+    <div className="flex items-center gap-2" title={t("cardgrid.segbridge.title", { a: segA, b: segB })}>
       <div className="w-9 shrink-0" />
       <div className="flex-1 flex items-center gap-1.5">
         <div className="h-px flex-1" style={line} />

@@ -1059,6 +1059,9 @@ describe("i18n · Ratsche gegen neue deutsche Inline-Texte", () => {
     "src/ui/ScoreMilestoneBar.jsx",
     // Build-Übersicht unter dem Brett und die zwei Listen, die sie teilt (#sprache-Nachzügler).
     "src/ui/BuildPanel.jsx", "src/ui/BuildSummary.jsx",
+    // #health-check F1: Karte, Positions-Perk-Panel und Mute-Button — ihre Badges/Tooltips liefen
+    // als Template-Literale bzw. title-Attribute an der Ratsche vorbei und standen im EN-Build deutsch.
+    "src/ui/Card.jsx", "src/ui/LayoutPerks.jsx", "src/ui/MuteButton.jsx",
     // #lv-fluegel: die zwei Seitenleisten der Level-up-Karte.
     "src/ui/LevelupWings.jsx",
     // Datenschutz-Hinweis (#datenschutz) — von der ersten Zeile an zweisprachig gebaut.

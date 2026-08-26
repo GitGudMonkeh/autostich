@@ -2,6 +2,7 @@ import { memo } from "react";
 import { suitColor, ION_MAX_STACKS, ION_SCORE_PER_STACK, PLANT_GREEN_THRESHOLD, PLANT_VALUE_CAP } from "../game/constants.js";
 import { plantNumberColor, PLANT, PLANT_RIPE } from "./indicators/vocab.js";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
+import { t, fmtNum } from "../i18n/index.js"; // #health-check F1: Badges/Tooltips über den Katalog
 
 /* Eine Karte. Die große Zahl = effektiver Kampfwert dieses Stichs (= value + stichBonus),
    damit sie immer zum Stich-Ausgang passt.
@@ -73,8 +74,8 @@ function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, g
     : Math.min(100, ((growth || 0) / PLANT_GREEN_THRESHOLD) * 100);
   const ringColor = growingStage2 ? PLANT_RIPE : PLANT;             // Stufe 2 heller abgesetzt
   const ringTitle = growingStage2
-    ? `Wert ${value} / ${PLANT_VALUE_CAP} → ausgewachsen`
-    : `Wachstum ${String(Math.round((growth || 0) * 10) / 10).replace(".", ",")} / ${PLANT_GREEN_THRESHOLD} → reif`;
+    ? t("card.ring.grown", { value, cap: PLANT_VALUE_CAP })
+    : t("card.ring.ripening", { growth: fmtNum(Math.round((growth || 0) * 10) / 10), cap: PLANT_GREEN_THRESHOLD });
   return (
     <div
       className="as-card as-card-holo relative rounded-xl overflow-hidden flex flex-col items-center justify-center select-none transition-all"
@@ -90,7 +91,7 @@ function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, g
       {permBoost > 0 && (
         <div className="absolute top-1.5 right-2 text-meta-3 font-bold px-1 rounded"
           style={{ color: "#8a7de0", background: "#8a7de022" }}
-          title={`Dauerhaft +${permBoost} (Basis ${baseRank})`}>
+          title={t("card.perm.title", { n: permBoost, base: baseRank })}>
           +{permBoost}
         </div>
       )}
@@ -98,7 +99,7 @@ function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, g
       {forged > 0 && (
         <div className="absolute right-2 text-meta-1 font-bold px-1 rounded leading-none"
           style={{ top: permBoost > 0 ? 24 : 6, color: "#f0b74a", background: "#f0b74a22", textShadow: "0 0 5px #f0a83a88" }}
-          title={`Geschmiedet +${forged} Wert (dauerhaft)`}>
+          title={t("card.forged.title", { n: forged })}>
           ⚒+{forged}
         </div>
       )}
@@ -118,23 +119,23 @@ function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, g
           🌿-reif (top-left) noch mit ❖-Schichten (bottom-left) noch mit der zentrierten Zahl. */}
       {colonized > 0 && (
         <div className="absolute left-0.5 top-1/2 -translate-y-1/2 flex flex-col items-center leading-none"
-          title={`Kolonisiert (Ausläufer) · Ernte +${colonized} Wachstum`}>
+          title={t("card.colonized.title", { n: colonized })}>
           <FactionIcon type="plant" size={15} />
           <span className="text-micro-3 font-bold mt-0.5" style={{ color: "#86e0a0" }}>+{colonized}</span>
         </div>
       )}
       {/* Pflanze (v0): grünes Blatt oben links markiert eine reife/grüne Karte (Teil des Farbblocks, dauerhaft). */}
       {green && (
-        <div className="absolute top-1 left-1 leading-none" title="Grün (reif) — Teil des Farbblocks"><FactionIcon type="plant" size={15} /></div>
+        <div className="absolute top-1 left-1 leading-none" title={t("card.green.title")}><FactionIcon type="plant" size={15} /></div>
       )}
       {/* Feuer (#206): Brandmarke auf der GEGNERkarte — warmes −N oben links (versetzt zu 🌿) + Flamme unten rechts. Warm/orange → „Feuer, nicht Eis". */}
       {branded > 0 && (
         <>
           <div className="absolute top-1 text-meta-1 font-bold px-1 rounded leading-none"
             style={{ left: green ? 22 : 4, color: "#f7c48a", background: "#e0714a33", textShadow: "0 0 5px #e0714a" }}
-            title={`Gebrandmarkt −${branded} Wert`}>−{branded}</div>
+            title={t("card.branded.title", { n: branded })}>−{branded}</div>
           <div className="absolute bottom-1 leading-none" style={{ right: 4 }}
-            title={`Gebrandmarkt −${branded} Wert`}><FactionIcon type="fire" size={15} /></div>
+            title={t("card.branded.title", { n: branded })}><FactionIcon type="fire" size={15} /></div>
         </>
       )}
       {/* Ionisierung (#208): Pip-Track MITTIG auf der oberen Rahmenkante (gefüllt = Stapel, max ION_MAX_STACKS). Der
@@ -142,7 +143,7 @@ function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, g
           (für Eis/Pflanze reserviert, vocab.CORNER). Mittig platziert → kollisionsfrei mit 🌿/−N (links) und +X/⚒ (rechts). */}
       {ionStacks > 0 && (
         <div className="absolute top-1 left-1/2 -translate-x-1/2 flex gap-0.5 leading-none"
-          title={`Ionisiert ${ionStacks}/${ION_MAX_STACKS} — +${ionStacks * ION_SCORE_PER_STACK} Score bei Sieg${ionFull ? " · VOLL IONISIERT" : ""}`}>
+          title={t(ionFull ? "card.ion.titleFull" : "card.ion.title", { n: ionStacks, max: ION_MAX_STACKS, score: ionStacks * ION_SCORE_PER_STACK })}>
           {Array.from({ length: ION_MAX_STACKS }, (_, i) => {
             const on = i < ionStacks;
             return (
@@ -156,8 +157,8 @@ function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, g
         </div>
       )}
       <div className="absolute bottom-1.5 flex flex-col items-center leading-tight text-meta-1">
-        {permBoost > 0 && <span className="opacity-55">Basis {baseRank}</span>}
-        {stichBonus > 0 && <span style={{ color: "#e0605a" }}>⚔ +{stichBonus} Stich</span>}
+        {permBoost > 0 && <span className="opacity-55">{t("card.base", { base: baseRank })}</span>}
+        {stichBonus > 0 && <span style={{ color: "#e0605a" }}>{t("card.trickBonus", { n: stichBonus })}</span>}
       </div>
     </div>
   );

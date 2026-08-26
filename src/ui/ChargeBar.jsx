@@ -200,7 +200,7 @@ export function ChargeBar({ lightning, skills = [], winStreak = 0, critChance = 
         <div className="flex">
           <span className="text-meta-1 px-1.5 py-0.5 rounded font-semibold" title={t("bar.lightning.streakGuard")}
             style={{ background: `${CASCADE}22`, color: CASCADE_BRIGHT, border: `1px solid ${CASCADE}66` }}>
-            🛡 {shieldCount}× Serie gehalten
+            {t("bar.lightning.shieldHeld", { n: shieldCount })}
           </span>
         </div>
       )}
@@ -209,7 +209,7 @@ export function ChargeBar({ lightning, skills = [], winStreak = 0, critChance = 
         <div className="flex flex-wrap gap-1.5">
           <span className="text-meta-1 px-1.5 py-0.5 rounded font-semibold"
             style={{ background: `${LIGHTNING}22`, color: LIGHTNING, border: `1px solid ${LIGHTNING}66` }}>
-            Konsument: {consumer}
+            {t("bar.lightning.consumer", { name: consumer })}
           </span>
         </div>
       ) : full ? (
