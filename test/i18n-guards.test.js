@@ -360,26 +360,51 @@ describe("i18n · Zahl- und Satzformate", () => {
     expect(bad, `Zahlen laufen zwischen den Sprachen auseinander:\n  ${bad.join("\n  ")}`).toEqual([]);
   });
 
-  /* Öffnendes Anführungszeichen je Sprache. Deutsch „…", Englisch “…”, Spanisch ebenfalls “…” —
-     neutrales Spanisch, also NICHT die spanientypischen «…». Die Guillemets fehlen ohnehin im
-     Orbitron-Subset (Kartenzahlen, Wortmarke), gemessen am 26.08.2026.
-     VERBIETEND: kein Katalog darf das öffnende Zeichen einer ANDEREN Sprache benutzen. */
-  const QUOTE_OPEN = { de: "„", en: "“", es: "“" };
+  /* Anführungszeichen als PAAR je Sprache, nicht als einzelnes Zeichen. Der erste Anlauf prüfte
+     nur das öffnende Zeichen und ließ ein deutsches „…“ im spanischen Katalog durch — aufgeflogen
+     in der Gegenprobe, nicht im Kopf. Der Grund ist eine Zweideutigkeit, die man leicht übersieht:
 
-  it("jede Sprache benutzt ihr eigenes Anführungszeichen", () => {
+       U+201C ist im DEUTSCHEN das SCHLIESSENDE und im Englischen/Spanischen das ÖFFNENDE Zeichen.
+       Es ist damit kein Erkennungsmerkmal, und jede Prüfung, die es als solches benutzt, muss
+       entweder deutsche Zitate fälschlich anmahnen oder fremde durchlassen.
+
+     Deshalb die Paar-Regel: ein Text darf nur Zeichen aus dem Paar SEINER Sprache tragen. Gemessen
+     am 26.08.2026: de benutzt U+201E (10 Zeilen) und U+201C (9), nie U+201D; en benutzt U+201C (10)
+     und U+201D (10), nie U+201E. Spanisch bekommt das englische Paar — neutrales Spanisch, also
+     NICHT die spanientypischen Guillemets, die ohnehin im Orbitron-Subset fehlen. */
+  const QUOTES = {
+    de: { open: "„", close: "“" },
+    en: { open: "“", close: "”" },
+    es: { open: "“", close: "”" },
+  };
+  const ALL_QUOTES = [...new Set(Object.values(QUOTES).flatMap((q) => [q.open, q.close]))];
+
+  it("jede Sprache benutzt ihr eigenes Anführungszeichen-Paar", () => {
     for (const loc of LOCALE_IDS) {
-      const own = QUOTE_OPEN[loc];
-      const foreign = [...new Set(Object.values(QUOTE_OPEN))].filter((q) => q !== own);
+      const own = [QUOTES[loc].open, QUOTES[loc].close];
+      const foreign = ALL_QUOTES.filter((q) => !own.includes(q));
       if (!foreign.length) continue;
       const re = new RegExp(`[${foreign.join("")}]`);
-      const bad = KEYS[loc].filter((k) => re.test(CATS[loc][k]) && !CATS[loc][k].includes(own));
-      expect(bad, `${loc}.js benutzt ein fremdes Anführungszeichen (eigenes: ${own}):\n  ${bad.join("\n  ")}`).toEqual([]);
+      const bad = KEYS[loc].filter((k) => re.test(CATS[loc][k]));
+      expect(bad, `${loc}.js benutzt ein Zeichen außerhalb seines Paars ${own.join("…")}:\n  ${bad.join("\n  ")}`).toEqual([]);
     }
   });
 
-  it("jede angemeldete Sprache hat ein eingetragenes Anführungszeichen", () => {
+  /* Zusätzlich die ursprüngliche Regel für die Quellsprache, dem Sinn nach übernommen. Die
+     Paar-Regel oben kann sie nicht ersetzen: ein deutscher Text mit NUR dem schließenden Zeichen
+     trägt ausschließlich Zeichen aus dem deutschen Paar und käme dort durch, obwohl das öffnende
+     fehlt. Weniger zu prüfen als vorher wäre eine Abschwächung, auch wenn die neue Regel
+     allgemeiner ist. */
+  it("die Quellsprache setzt kein schließendes Zeichen ohne ihr öffnendes", () => {
+    const q = QUOTES[SOURCE_LOCALE];
+    const bad = KEYS_SRC.filter((k) => SRC[k].includes(q.close) && !SRC[k].includes(q.open));
+    expect(bad, `${SOURCE_LOCALE}.js: schließendes Zeichen ohne öffnendes:\n  ${bad.join("\n  ")}`).toEqual([]);
+  });
+
+  it("jede angemeldete Sprache hat ein eingetragenes Anführungszeichen-Paar", () => {
     for (const loc of LOCALE_IDS) {
-      expect(QUOTE_OPEN[loc], `${loc}: kein Anführungszeichen in QUOTE_OPEN`).toBeTruthy();
+      expect(QUOTES[loc]?.open, `${loc}: kein öffnendes Zeichen in QUOTES`).toBeTruthy();
+      expect(QUOTES[loc]?.close, `${loc}: kein schließendes Zeichen in QUOTES`).toBeTruthy();
     }
   });
 
