@@ -241,7 +241,15 @@ Machine-checked:
 3. `LOCALE_IDS` is `["de", "en", "es"]` and `READY_LOCALE_IDS` is `["de", "en"]`.
 4. The four formatters produce the Spanish forms: `fmtNum(1234567,"es") === "1.234.567"`,
    `fmtNum(2.25,"es") === "2,25"`, `fmtPct(0.07,"es") === "7 %"`, `fmtDayMonth(…,"es") === "24/12"`,
-   and the Architect factor renders `×1,10` under `es`.
+   ~~and the Architect factor renders `×1,10` under `es`~~.
+
+   **Narrowed during implementation, recorded rather than dropped.** The last clause cannot be
+   satisfied and its impossibility is the design working: `setLocale("es")` is refused while `es`
+   is not ready, so the application cannot be rendered in Spanish at all — which is what owner
+   decision 2 asked for. Replaced by two checks that hold today: the formatter is asserted per
+   locale from the table, and a source ratchet asserts that `buildingText.js` no longer decides a
+   number format by comparing locales. The full path runs the moment `ready` flips, and the ratchet
+   in the guard file is what forces that flip.
 5. `t()` under `es` falls back to English, not German, for a key `es` does not have.
 6. The character totals are unchanged: 2639 keys, 111 236 German, 104 771 English.
 
@@ -251,16 +259,18 @@ that a translator would have to ask about.
 
 ## Definition of done
 
-- [ ] Acceptance gate green, all six machine checks.
-- [ ] Gates green: `npm test`, `npm run lint -- --max-warnings=0`, `npm run build`,
-      `npm run gen:db`, `npm run loc:export`.
-- [ ] Every new guard counter-checked by deliberately breaking the seam it protects, and the
-      counter-check recorded (`testing.md` §5). This includes the `ready` ratchet: set `es` complete
-      and prove the suite goes red.
-- [ ] Both language pickers measured at 390×844 and 1280×720 with three entries, every number
-      labelled. `UsernameModal.jsx:124` no longer hard-codes `grid-cols-2`.
-- [ ] Evidence package with the diff range as SHAs and the limits of the evidence stated.
-- [ ] `docs/localization/i18n.md` §6 and §7 reflect three languages and the `ready` gate.
+- [x] Acceptance gate green, all six machine checks (criterion 4 narrowed, see above).
+- [x] Gates green: `npm test` (2194 / 142 files), `npm run lint -- --max-warnings=0` (0 warnings),
+      `npm run build`, `npm run gen:db`, `npm run loc:export` (re-run leaves the tree clean).
+- [x] Every new guard counter-checked by deliberately breaking the seam it protects, and the
+      counter-check recorded (`testing.md` §5). 13 cases, reproducible via
+      `bash docs/workstreams/spanish-locale/counter-checks.sh`. Includes the `ready` ratchet, and a
+      case that demonstrates the dead-key guard being **disarmed** by the hard-coded `(de|en)`.
+      One real defect surfaced this way and was fixed — see the evidence package.
+- [x] Both language pickers measured at 390×844 and 1280×720 with three entries, every number
+      labelled. `UsernameModal.jsx` no longer hard-codes `grid-cols-2`.
+- [x] Evidence package with the diff range as SHAs and the limits of the evidence stated.
+- [x] `docs/localization/i18n.md` reflects three languages, the `ready` gate and the fallback chain.
 
 ## Owner decisions taken before implementation
 
@@ -280,7 +290,28 @@ Carried in from the planning order and not reopened: translation is external; ne
 
 ## Status at integration
 
-TODO — filled at handoff.
+**Complete, and waiting on the owner's integration authorization** (the *End* stop,
+`task-lifecycle.md` §2). All five gates pass, all six acceptance checks hold, and 13 counter-checks
+confirm the new guards bite.
+
+What the round delivered: `es` is registered in the code and not selectable; the four locale
+switches are one table; the guard file follows a forbid/require rule over N languages instead of a
+hard-wired pair; the export writes one CSV per target language; the `limit` column is filled where
+it is provable; and `docs/localization/uebersetzerpaket_es_2026-08-26.md` names the frozen source
+state and hands a translator everything needed to start.
+
+Two things a reader should know without digging:
+
+1. **Criterion 4 was narrowed**, not met as written, for the reason above. That is a downgrade of an
+   acceptance criterion and is recorded where the criterion stands, not only here.
+2. **The Spanish vocabulary in §3 of the package is a proposal.** The English table was frozen by
+   the owner; this one is explicitly open, because settling it without a native speaker's text would
+   be the same mistake the terminology guard exists to prevent. The translator confirms or
+   counter-proposes, and the owner settles it when the translation returns.
+
+## Staffing — integrator
+
+Still `TODO`. Naming an integrator is a decision, not a derivation.
 
 ## Open questions
 
