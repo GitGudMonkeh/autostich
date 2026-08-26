@@ -707,11 +707,33 @@ describe("i18n · Auflösung", () => {
 
   /* Die Rückfallkette, und zwar an der Stelle, die einen Spieler betrifft. Ohne sie fiele ein
      fehlender spanischer Schlüssel auf SOURCE_LOCALE zurück — ein spanischer Spieler bekäme
-     DEUTSCH zu sehen, nicht Englisch. Der spanische Katalog ist noch leer, also prüft dieser Test
-     die Kette heute über ihre volle Länge. */
+     DEUTSCH zu sehen, nicht Englisch.
+
+     DIE SONDE IST BEWUSST KÜNSTLICH (#es-translate). Bis hierher prüfte dieser Test die Kette an
+     `common.close` und verließ sich darauf, dass der spanische Katalog LEER ist. Das war eine
+     Sonde mit Verfallsdatum: sobald Spanisch den Schlüssel selbst führt, löst `t()` ihn direkt
+     auf, die Kette wird gar nicht mehr betreten — und der Test wäre grün geblieben, ohne noch
+     irgendetwas zu prüfen. Genau dieser stille Ausgang ist schlimmer als ein roter Test.
+
+     Ein Schlüssel, der zur Laufzeit aus dem ZIELKATALOG genommen und danach zurückgelegt wird,
+     erzwingt den Rückfall bei JEDEM Füllstand — auch bei voller Parität. `catalog()` liefert das
+     lebende Objekt, das `t()` selbst benutzt; deshalb wirkt das Entfernen, und deshalb muss das
+     Zurücklegen in `finally` stehen. */
   it("eine Sprache mit `via` fällt erst dorthin zurück, nicht sofort auf die Quellsprache", () => {
-    expect(t("common.close", null, "es")).toBe(en["common.close"]);
-    expect(t("common.close", null, "es")).not.toBe(de["common.close"]);
+    const esCat = catalog("es");
+    const probe = "common.close";
+    const had = Object.prototype.hasOwnProperty.call(esCat, probe);
+    const saved = esCat[probe];
+    // Vorbedingung der Sonde: die beiden Rückfallstufen müssen sich unterscheiden, sonst wiese
+    // die Prüfung darunter nichts nach.
+    expect(en[probe]).not.toBe(de[probe]);
+    try {
+      delete esCat[probe];
+      expect(t(probe, null, "es")).toBe(en[probe]);
+      expect(t(probe, null, "es")).not.toBe(de[probe]);
+    } finally {
+      if (had) esCat[probe] = saved;
+    }
     expect(t("gibt.es.nicht", null, "es")).toBe("gibt.es.nicht");   // Kette erschöpft → Schlüssel
   });
 
