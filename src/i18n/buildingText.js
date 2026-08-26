@@ -13,16 +13,24 @@
    Damit gibt es weiterhin GENAU EINEN Wortlaut je Sprache — 41 Familien × bis zu 4 Stufen wären
    sonst über 100 fast identische Katalogeinträge, die einzeln veralten könnten.
    ============================================================ */
-import { t, getLocale, SOURCE_LOCALE } from "./index.js";
+import { t, fmtNum } from "./index.js";
 import { formationName } from "./labels.js";
 import { tierNum, tierFactor, bindSpanFor } from "../game/architect.js";
 import { ARCH_STREAK_CAP } from "../game/constants.js";
 
-// Faktor mit zwei Nachkommastellen, im Zahlformat der aktiven Sprache (1,10 vs. 1.10).
-const factor = (x) => {
-  const s = x.toFixed(2);
-  return getLocale() === SOURCE_LOCALE ? s.replace(".", ",") : s;
-};
+/* Faktor mit zwei Nachkommastellen, im Zahlformat der aktiven Sprache (1,10 vs. 1.10).
+
+   Bis 26.08.2026 fragte diese Stelle `getLocale() === SOURCE_LOCALE` — also „bin ich Deutsch",
+   nicht „welches Dezimalzeichen gilt hier". Mit einer dritten Sprache ist das nicht mehr dasselbe:
+   Spanisch wäre in den englischen Zweig gefallen und hätte ×1.10 statt ×1,10 gezeigt. Das war die
+   VIERTE Sprachweiche im Code und die einzige außerhalb von index.js — gefunden wurde sie bei der
+   Vorbereitung der dritten Sprache, nicht von einem Wächter (die Gebäude-Effekttexte sind erzeugt,
+   keine Katalogeinträge, also sieht keine Paritätsprüfung sie).
+
+   `fmtNum` liest die Formattabelle statt eine Sprache zu raten. Die zwei Nachkommastellen kommen
+   weiterhin von `toFixed(2)`, weil `fmtNum` allein die Null wegkürzte (×1,40 → ×1,4) und die
+   Faktoren sich dann nicht mehr als Reihe lesen. Dasselbe Muster wie `archEffects.js:26`. */
+const factor = (x) => fmtNum(x.toFixed(2));
 
 const ROMAN_TIER = { 1: "I", 2: "II", 3: "III", 4: "IV" };
 

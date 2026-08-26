@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import { useEscape } from "./useEscape.js";
 import { MODAL_CARD, ModalHairline, ActionButton, STICKY_HEAD_BG } from "./modalStyle.jsx";
-import { LOCALES, fmtPct } from "../i18n/index.js";
+import { READY_LOCALES, fmtPct } from "../i18n/index.js";
 import { useT, useLocale } from "../i18n/useLocale.js"; // #sprache: alle Texte über t()
 // #400 Test-Viewport — nur im Preview-Build gelesen (Gate an der Zeile unten in der Grafik-Sektion).
 import { TEST_VIEWPORTS, TEST_VIEWPORT_OFF, optionValue, reloadAfterViewportChange } from "./testViewport.js";
@@ -215,7 +215,7 @@ export function OptionsModal({ options, onChange, onClose, onPrivacy = null }) {
               („Deutsch"/„English") — wer die aktuelle Sprache nicht lesen kann, findet die eigene trotzdem. */}
           <Row icon="⊕" title={t("options.language.title")} desc={t("options.language.desc")}>
             <Segmented value={locale}
-              options={LOCALES.map((l) => ({ v: l.id, label: l.label }))}
+              options={READY_LOCALES.map((l) => ({ v: l.id, label: l.label }))}
               onChange={(v) => { setLocaleId(v); onChange({ lang: v }); }} />
           </Row>
           {/* #207: Haptik — kurzes Vibrations-Feedback bei Bestätigungen. Wirkt nur auf Touch-Geräten (Handy); System-„reduzierte Bewegung“ schaltet sie ohnehin ab. */}

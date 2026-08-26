@@ -13,7 +13,7 @@ and binds every language added after it.
 | Concurrency | one writer; sequential sessions may continue the task in the same worktree |
 | Worktree | `C:/Code/Autostich-worktrees/spanish-locale` |
 | Branch checked out there | `task/spanish-locale` |
-| Upstream | none — the branch deliberately does not track its base |
+| Upstream | `origin/task/spanish-locale` — its own remote counterpart, deliberately not `dev` |
 | Preview port | 5196 |
 | Preview URL | http://localhost:5196 |
 | Server invocation | `npm run dev -- --port 5196 --strictPort` |

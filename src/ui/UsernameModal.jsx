@@ -2,7 +2,7 @@ import { useState } from "react";
 import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import { useEscape } from "./useEscape.js";
 import { MODAL_CARD, ModalHairline, ActionBar, ActionButton, STICKY_HEAD_BG } from "./modalStyle.jsx"; // #362 einheitliche Aktionsleiste oben
-import { LOCALES, fmtNum } from "../i18n/index.js";
+import { READY_LOCALES, fmtNum } from "../i18n/index.js";
 import { useT, useLocale } from "../i18n/useLocale.js"; // #sprache: Erstwahl der Sprache lebt hier
 import { isAllowedUsername } from "../game/profanity.js"; // #174 Profanity-Filter (rein, testbar)
 
@@ -115,14 +115,20 @@ export function UsernameModal({ initial = "", firstTime = false, onLang = null, 
           </div>
         )}
 
-        {/* #sprache — nur beim Erststart. Zwei gleich breite Knöpfe, damit keine der beiden Sprachen
-            wie die „richtige" aussieht. Die Umschaltung wirkt SOFORT (der Dialog selbst wechselt mit),
-            damit man das Ergebnis seiner Wahl sieht, bevor man weiterklickt. */}
+        {/* #sprache — nur beim Erststart. Gleich breite Knöpfe, damit keine der Sprachen wie die
+            „richtige" aussieht. Die Umschaltung wirkt SOFORT (der Dialog selbst wechselt mit),
+            damit man das Ergebnis seiner Wahl sieht, bevor man weiterklickt.
+
+            #es-locale: die Spaltenzahl kommt aus der Anzahl der fertigen Sprachen, nicht mehr aus
+            einem festen `grid-cols-2`. Als Inline-Style und nicht als Tailwind-Klasse, weil eine
+            zur Laufzeit zusammengesetzte Klasse (`grid-cols-${n}`) vom Tailwind-Scanner nicht
+            gefunden und deshalb gar nicht erst gebaut würde. */}
         {firstTime && (
           <div className="un-block mt-4">
             <div className="un-slabel text-meta-1 uppercase tracking-widest opacity-40 mb-1.5">{t("name.lang.label")}</div>
-            <div className="un-lang grid grid-cols-2 gap-2">
-              {LOCALES.map((l) => {
+            <div className="un-lang grid gap-2"
+              style={{ gridTemplateColumns: `repeat(${READY_LOCALES.length}, minmax(0, 1fr))` }}>
+              {READY_LOCALES.map((l) => {
                 const on = locale === l.id;
                 return (
                   /* #kante: gewählte Sprache mit violetter Kante und Schein statt gefüllter Fläche. */
