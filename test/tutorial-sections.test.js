@@ -3,9 +3,10 @@ import { readFileSync } from "node:fs";
 import de from "../src/i18n/de.js";
 import en from "../src/i18n/en.js";
 import {
-  SECTIONS, BEAT_KINDS, LESSON_KINDS, allKeys, beatKey, lessonHeight, lessonKind, lessonBudget,
+  SECTIONS, BEAT_KINDS, LESSON_KINDS, allKeys, beatKey, beatLabelKey, lessonHeight, lessonKind, lessonBudget,
   totalLessons, LESSON_BUDGET_PX, VOLL_BUDGET_PX, SHELL_CEILING_PX,
 } from "../src/ui/tutorial-sections/catalog.js";
+import { MEASURE_VARS } from "../src/ui/tutorial-sections/vars.js";
 
 /* ============================================================
    TUTORIAL-SEKTIONEN — die Wächter der Schale (#tutorial-sections T1).
@@ -69,6 +70,45 @@ describe("Tutorial-Sektionen · Katalog", () => {
     }
   });
 
+  /* Der Beschriftungs-Schlüssel eines Kastens hängt an `label: true`, nicht an der Takt-Art. Beide
+     Richtungen können schiefgehen, und beide bleiben ohne diesen Wächter still: fehlt der Schlüssel,
+     zeigt der Kasten seinen Rohschlüssel als Überschrift; steht er ohne `label: true` im Katalog,
+     ist er ein toter Eintrag, den der i18n-Wächter später als verwaist meldet. */
+  it("nur ein Kasten mit label verlangt einen Beschriftungs-Schlüssel", () => {
+    const keys = new Set(allKeys());
+    for (const s of SECTIONS) for (const l of s.lessons) {
+      l.beats.forEach((b, i) => {
+        const lk = beatLabelKey(s, l, i);
+        const soll = b.kind === "block" && !!b.label;
+        expect(keys.has(lk), soll
+          ? `${s.id}/${l.id} Takt ${i} trägt label, aber ${lk} fehlt in allKeys()`
+          : `${s.id}/${l.id} Takt ${i} trägt kein label, aber ${lk} steht in allKeys()`).toBe(soll);
+        if (soll) {
+          expect(de[lk], `${lk} fehlt in de.js`).toBeTruthy();
+          expect(en[lk], `${lk} fehlt in en.js`).toBeTruthy();
+        }
+      });
+    }
+  });
+
+  /* DIESER WÄCHTER HAT EINEN ECHTEN FEHLER GEFUNDEN, nicht einen gedachten.
+
+     `regeln` stand in BEAT_KINDS, hatte ein Höhenmodell, einen §11-Eintrag und wurde von einer
+     Lektion benutzt — aber die Schale kannte keinen Zweig dafür. Der Takt fiel durch bis zu
+     `PROBES[b.probe]`, das war `undefined`, und die Lektion rendert den Block einfach NICHT. Kein
+     Fehler, keine rote Zeile, nur ein fehlender Absatz, den erst ein Mensch am Telefon bemerkt.
+
+     Eine Art ohne Zeichner ist deshalb schlimmer als eine fehlende Art: sie sieht im Katalog aus
+     wie Inhalt und ist keiner. */
+  it("jede Takt-Art hat einen Zweig in der Schale", () => {
+    const shell = SRC("TutorialSections.jsx");
+    for (const k of BEAT_KINDS) {
+      if (k === "bild" || k === "probierfeld") continue;   // die beiden gehen über PROBES
+      expect(shell, `die Schale zeichnet „${k}" nicht — der Takt fiele still aus der Lektion`)
+        .toMatch(new RegExp(`b\\.kind === "${k}"`));
+    }
+  });
+
   it("jeder Probierfeld-/Bild-Takt nennt einen Baustein, den beats.jsx auch kennt", () => {
     const probes = SRC("beats.jsx");
     for (const s of SECTIONS) for (const l of s.lessons) for (const b of l.beats) {
@@ -118,8 +158,29 @@ describe("Tutorial-Sektionen · Texte", () => {
 });
 
 describe("Tutorial-Sektionen · das Höhenbudget", () => {
-  /* Deutsch ist die Budget-Sprache: sie ist die längere von beiden. Passt Deutsch, passt Englisch. */
-  const heightDe = (s, l) => lessonHeight(s, l, (k) => de[k] ?? "");
+  /* Deutsch ist die Budget-Sprache: sie ist die längere von beiden. Passt Deutsch, passt Englisch.
+
+     GEMESSEN WIRD DER AUFGELÖSTE TEXT, nicht der rohe. „{skillsOffered}" sind 15 Zeichen, auf dem
+     Schirm steht die Zahl mit zweien. Über eine Lektion mit vierzehn Platzhaltern waren das drei
+     Zeilen zu viel — das Modell hätte eine Lektion gerissen, die der Leser nie so sieht. Ein
+     Wächter, der etwas anderes misst als der Leser sieht, misst das Falsche. */
+  const fuellen = (text) => String(text).replace(/\{(\w+)\}/g,
+    (m, k) => (k in MEASURE_VARS ? String(MEASURE_VARS[k]) : m));
+  const heightDe = (s, l) => lessonHeight(s, l, (k) => fuellen(de[k] ?? ""));
+
+  /* Die Gegenprobe dazu: ein Platzhalter, den niemand füllt, bleibt als Text stehen. Ohne diesen
+     Wächter rechnete ein Tippfehler im Namen die Lektion still größer und wäre nur daran zu
+     erkennen, dass auf dem Schirm „{skillsOfferd}" steht. */
+  it("jeder Platzhalter in einem Lektionstext hat einen Wert", () => {
+    const offen = [];
+    for (const k of allKeys()) {
+      // `offered` wird je Lektion gesetzt, nicht global — siehe OFFERED in TutorialSections.jsx.
+      for (const m of fuellen(de[k] ?? "").matchAll(/\{(\w+)\}/g)) {
+        if (m[1] !== "offered") offen.push(`${k}: {${m[1]}}`);
+      }
+    }
+    expect(offen, `Platzhalter ohne Wert in vars.js:\n  ${offen.join("\n  ")}`).toEqual([]);
+  });
 
   it("keine Lektion überschreitet das Budget ihrer Art", () => {
     const over = [];

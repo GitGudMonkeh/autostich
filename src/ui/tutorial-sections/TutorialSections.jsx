@@ -1,20 +1,20 @@
 import { useState } from "react";
 import { overlayPortal } from "../overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
-import { useT } from "../../i18n/useLocale.js";
+import { useT, useLocale } from "../../i18n/useLocale.js";
+import { fmtNum } from "../../i18n/index.js"; // Dezimaltrennzeichen je Sprache
 import { useEscape } from "../useEscape.js";
 import { MODAL_CARD, STICKY_HEAD_BG, ActionButton } from "../modalStyle.jsx";
-import { SECTIONS, sectionTitleKey, sectionSubKey, lessonTitleKey, beatKey } from "./catalog.js";
-import { Satz, Tip, PROBES } from "./beats.jsx";
+import { SECTIONS, sectionTitleKey, sectionSubKey, lessonTitleKey, beatKey, beatLabelKey } from "./catalog.js";
+import { Satz, Block, Merk, Regeln, Tabelle, Tip, PROBES } from "./beats.jsx";
 import * as C from "../../game/constants.js";
-import { SEGMENT_SIZE } from "../../game/formations.js";
+import { VARS } from "./vars.js";
 
-/* Zahlen, die in Lektionstexten als {platzhalter} stehen. NIE abgetippt — text-style-guide.md §4:
-   ein abgetipptes „50 Durchläufe" ist beim nächsten Balancing still falsch. Der Wächter in
-   test/tutorial-sections.test.js hält fest, dass in keinem Text eine Ziffer ohne Platzhalter steht. */
-const VARS = {
-  cards: C.TRICKS_PER_CYCLE, cycles: C.MAX_CYCLES, segment: SEGMENT_SIZE,
-  energy: C.FORMATION_ENERGY, cycle: C.LEG_PHASE_CYCLE, slots: C.SKILL_SLOTS,
-};
+/* Die Platzhalter liegen in vars.js, weil der Wächter dieselbe Liste braucht — siehe dort. */
+const localeVars = (locale) => ({
+  base: fmtNum(C.SCORE_PER_WIN, locale),
+  streakPct: fmtNum(Math.round(C.STREAK_BASE_STEP * 100), locale),
+  critMult: fmtNum(C.CRIT_BASE_MULT.toFixed(2), locale),
+});
 // `offered` bedeutet je nach Lektion etwas anderes — Perk-Angebot oder Skill-Angebot.
 const NONE_LABEL = new Set(["formation", "board"]);
 const OFFERED = { "tut.wahl.perks.0": C.PERKS_OFFERED, "tut.wahl.skills.0": C.SKILLS_OFFERED };
@@ -85,6 +85,7 @@ export const lessonPath = (s, l) => `${s.id}/${l.id}`;
 
 export function TutorialSections({ onClose, onOpenGlossary = null, onOpenGuide = null, seen = [], last = null, onSeen = null }) {
   const t = useT();
+  const [locale] = useLocale();
   const seenSet = new Set(seen);
   useEscape(onClose);
   // null = Themenliste · {section} = Lektionsliste · {section,lesson} = Lektion
@@ -129,8 +130,14 @@ export function TutorialSections({ onClose, onOpenGlossary = null, onOpenGuide =
   if (lesson) {
     const body = lesson.beats.map((b, i) => {
       const key = beatKey(section, lesson, i);
-      const vars = { ...VARS, offered: OFFERED[key] };
+      const vars = { ...VARS, ...localeVars(locale), offered: OFFERED[key] };
       if (b.kind === "satz") return <Satz key={i} text={t(key, vars)} />;
+      if (b.kind === "block") return <Block key={i} text={t(key, vars)}
+        label={b.label ? t(beatLabelKey(section, lesson, i), vars) : undefined} />;
+      if (b.kind === "merk") return <Merk key={i} text={t(key, vars)} />;
+      if (b.kind === "regeln") return <Regeln key={i} text={t(key, vars)} nummer />;
+      if (b.kind === "liste") return <Regeln key={i} text={t(key, vars)} />;
+      if (b.kind === "tabelle") return <Tabelle key={i} text={t(key, vars)} />;
       if (b.kind === "tip") return <Tip key={i} label={t("tut.tip")} text={t(key, vars)} />;
       const Probe = PROBES[b.probe];
       if (!Probe) return null;   // ein unbekannter Baustein rendert nichts — der Wächter fängt ihn vorher
@@ -146,7 +153,12 @@ export function TutorialSections({ onClose, onOpenGlossary = null, onOpenGuide =
            und ein Sieg ohne Faktoren zahlt trotzdem. Ein Platzhalter-Strich für beide wäre ein toter
            Schlüssel gewesen, und genau danach sucht der i18n-Wächter. */
         noneLabel={NONE_LABEL.has(b.probe) ? t(`tut.probe.${b.probe}.none`) : undefined}
-        labels={{ streak: t("tut.f.streak"), crit: t("tut.f.crit"), form: t("tut.f.form"), build: t("tut.f.build") }} />;
+        /* Die Wörter der gespielten Runden. Sie liegen unter `tut.d.*` statt bei den Takten,
+           weil sie zur RUNDE gehören und nicht zur Lektion: dasselbe „Sieg" steht in jeder. */
+        labels={{ streak: t("tut.f.streak"), crit: t("tut.f.crit"), form: t("tut.f.form"), build: t("tut.f.build"),
+          gegner: t("tut.d.gegner"), du: t("tut.d.du"), gegen: t("tut.d.gegen"),
+          play: t("tut.d.play"), next: t("tut.d.next"), trickValue: t("tut.d.trickValue"),
+          win: t("tut.d.win"), tie: t("tut.d.tie"), loss: t("tut.d.loss") }} />;
     });
     const foot = (
       <>

@@ -17,6 +17,8 @@
             docs/design-sprache.md §11 — der Wächter liest die Liste unten.
      probe  nur bei kind "probierfeld"/"bild": der Name des Bausteins, den beats.jsx auflöst.
             Der Katalog kennt keine Komponenten — sonst wäre er nicht mehr React-frei.
+     label  nur bei kind "block": `true` heißt, der Kasten trägt eine Überschrift. Sie hängt am
+            Schlüssel des Takts mit dem Zusatz `.label` — siehe beatLabelKey().
 
    LEKTIONS-SCHEMA
      art    "kurz" (Vorgabe) oder "voll". Zwei Arten, zwei Budgets, siehe unten.
@@ -26,7 +28,7 @@
    Proberunden dazu (docs/design-sprache.md §11 — Die zwei Lektionsarten). Der Wächter liest diese
    Liste, damit eine neunte nicht still durchrutscht. */
 export const BEAT_KINDS = [
-  "satz", "bild", "probierfeld", "tip",
+  "satz", "block", "bild", "probierfeld", "tip",
   "merk", "regeln", "tabelle", "liste",
 ];
 
@@ -63,15 +65,41 @@ export const lessonKind = (lesson) => lesson.art || "kurz";
 export const SECTIONS = [
   {
     id: "grundlagen",
+    /* SIEBEN Lektionen, nicht mehr acht. Der freigegebene Entwurf zieht „Durchlauf und Lauf" in
+       die erste Lektion und „Crit" in „Der Score" — beide waren Textkarten ohne eigene Runde, und
+       genau die sollte der Umbau abschaffen. */
     lessons: [
-      { id: "wasist",    beats: [{ kind: "satz" }, { kind: "bild", probe: "deckstrip" }, { kind: "tip" }] },
-      { id: "stich",     beats: [{ kind: "satz" }, { kind: "tip" }] },
-      { id: "werte",     beats: [{ kind: "satz" }, { kind: "tip" }] },
-      { id: "durchlauf", beats: [{ kind: "satz" }, { kind: "tip" }] },
-      { id: "serie",     beats: [{ kind: "satz" }, { kind: "probierfeld", probe: "streak" }, { kind: "tip" }] },
-      { id: "crit",      beats: [{ kind: "satz" }, { kind: "tip" }] },
-      { id: "score",     beats: [{ kind: "satz" }, { kind: "probierfeld", probe: "score" }, { kind: "tip" }] },
-      { id: "anzeigen",  beats: [{ kind: "satz" }, { kind: "tip" }] },
+      { id: "wasist", art: "voll", beats: [
+        { kind: "block" },
+        { kind: "block", label: true },
+        { kind: "block", label: true },
+        { kind: "regeln" },
+        { kind: "tip" }] },
+      { id: "stich", art: "kurz", beats: [
+        { kind: "probierfeld", probe: "duell" },
+        { kind: "tip" }] },
+      { id: "werte", art: "voll", beats: [
+        { kind: "probierfeld", probe: "kampfwert" },
+        { kind: "block", label: true },
+        { kind: "tip" }] },
+      { id: "serie", art: "voll", beats: [
+        { kind: "probierfeld", probe: "serie" },
+        { kind: "block", label: true },
+        { kind: "tip" }] },
+      { id: "score", art: "voll", beats: [
+        { kind: "block", label: true },
+        { kind: "probierfeld", probe: "score" },
+        { kind: "block", label: true },
+        { kind: "block", label: true },
+        { kind: "tip" }] },
+      { id: "anzeigen", art: "voll", beats: [
+        { kind: "probierfeld", probe: "laufmock" },
+        { kind: "block", label: true },
+        { kind: "tip" }] },
+      { id: "herkunft", art: "voll", beats: [
+        { kind: "block", label: true },
+        { kind: "probierfeld", probe: "herkunft" },
+        { kind: "tip" }] },
     ],
   },
   {
@@ -81,7 +109,11 @@ export const SECTIONS = [
       { id: "tauschen",    beats: [{ kind: "satz" }, { kind: "probierfeld", probe: "formation" }, { kind: "tip" }] },
       { id: "position",    beats: [{ kind: "satz" }, { kind: "tip" }] },
       { id: "karte",       beats: [{ kind: "satz" }, { kind: "tip" }] },
-      { id: "formationen", beats: [{ kind: "satz" }, { kind: "probierfeld", probe: "formation" }, { kind: "tip" }] },
+      /* `voll`, weil die Lektion GEMESSEN nicht ins kurze Budget passt: 408 px gegen 400. Aufgefallen
+         ist das erst, als BODY_CHROME dazukam — die 30 px Rumpfpolsterung fehlten dem Modell vorher
+         ganz, und diese Lektion lag damit knapp unter der Grenze, ohne es zu sein. Der Wert ist
+         vorläufig: die Sektion wird noch aus dem freigegebenen Entwurf neu gebaut. */
+      { id: "formationen", art: "voll", beats: [{ kind: "satz" }, { kind: "probierfeld", probe: "formation" }, { kind: "tip" }] },
       { id: "stapeln",     beats: [{ kind: "satz" }, { kind: "probierfeld", probe: "formation" }, { kind: "tip" }] },
     ],
   },
@@ -132,6 +164,9 @@ export const sectionTitleKey = (s) => `tut.${s.id}.title`;
 export const sectionSubKey = (s) => `tut.${s.id}.sub`;
 export const lessonTitleKey = (s, l) => `tut.${s.id}.${l.id}.title`;
 export const beatKey = (s, l, i) => `tut.${s.id}.${l.id}.${i}`;
+/* Die Überschrift eines Kastens hängt am Schlüssel ihres Takts. Eine eigene Schlüsselspalte wäre
+   der Ort, an dem Überschrift und Text auseinanderlaufen. */
+export const beatLabelKey = (s, l, i) => `${beatKey(s, l, i)}.label`;
 
 /* Jeder Schlüssel, den der Katalog verlangt — die Grundlage der Paritäts- und Vollständigkeitstests. */
 export function allKeys() {
@@ -143,6 +178,9 @@ export function allKeys() {
       l.beats.forEach((b, i) => { if (b.kind !== "bild") out.push(beatKey(s, l, i)); });
       // Das Bild trägt eine Bildunterschrift; sie hängt am selben Index.
       l.beats.forEach((b, i) => { if (b.kind === "bild") out.push(beatKey(s, l, i)); });
+      // Ein beschrifteter Kasten braucht einen ZWEITEN Schlüssel. Ohne diese Zeile fehlte die
+      // Überschrift in beiden Katalogen und kein Wächter hätte es gemerkt.
+      l.beats.forEach((b, i) => { if (b.kind === "block" && b.label) out.push(beatLabelKey(s, l, i)); });
     }
   }
   return out;
@@ -171,7 +209,20 @@ export const totalLessons = () => SECTIONS.reduce((n, s) => n + s.lessons.length
      Probierfeld               → 204–215 px
      Tipp  69 Zeichen      → 90 px
    44 Zeichen je Zeile ist der einzige Wert, der alle fünf Satz-Messungen trifft (58/44→2 Zeilen,
-   99→3, 110→3, 130→3, 140→4). Bei 42 fiele der 130er auf 4 Zeilen und das Modell schätzte zu hoch. */
+   99→3, 110→3, 130→3, 140→4). Bei 42 fiele der 130er auf 4 Zeilen und das Modell schätzte zu hoch.
+
+   NACHGEPRÜFT AN DEN SIEBEN GRUNDLAGEN-LEKTIONEN (Produktionsbuild, 390 × 844, Deutsch), Modell
+   gegen Messung:
+     wasist 897/811 · stich 396/368 · werte 620/609 · serie 639/626 · score 755/706 ·
+     anzeigen 604/562 · herkunft 563/539
+   Das Modell liegt überall ÜBER der Messung, um 11 bis 86 px (1,4 bis 10,6 %). Das ist die
+   Richtung, in die es irren darf.
+
+   Zwei Fehler standen dem im Weg, und beide sind nur gefunden worden, weil nachgemessen und nicht
+   bloß „grün" gelesen wurde:
+     1. Drei Probierfelder waren zu niedrig angesetzt — 250/305/300 gegen gemessene 271/325/364.
+     2. BODY_CHROME fehlte GANZ. Der Rumpf einer Lektion hat 30 px eigene Polsterung, die kein
+        Takt trägt; ohne sie rechneten vier der sieben Lektionen kleiner, als sie sind. */
 export const LESSON_BUDGET_PX = 400;   // Art „kurz"
 export const VOLL_BUDGET_PX = 960;     // Art „voll" — 1,5 Schalenhöhen, siehe oben
 export const SHELL_CEILING_PX = 638;   // gemessen; was die Schale ohne Scrollen zeigen kann
@@ -195,6 +246,11 @@ const BILD_PX = 123;       // obere Messung
      regeln  gemessen 31 px/Zeile, je Eintrag ein eigener Kasten
      liste   wie regeln, mit Nummer statt Aufzählung
      tabelle Kopfzeile plus Datenzeilen; die Zeilenzahl steht am Takt (`rows`) */
+const BLOCK_CHROME = 42, BLOCK_LABEL = 22;
+/* Der Rumpf der Lektion hat eigene Polsterung, die KEIN Takt trägt. Sie fehlte im Modell ganz und
+   war der Grund, warum vier von sieben Grundlagen-Lektionen unter ihrer echten Höhe gerechnet
+   wurden. GEMESSEN 30 px, und der Wert trifft alle sieben. */
+const BODY_CHROME = 30;
 const MERK_LINE = 22, MERK_CHROME = 26;
 const REGEL_LINE = 26, REGEL_CHROME = 20;
 const TAB_ROW = 26, TAB_CHROME = 30;
@@ -205,7 +261,16 @@ const TAB_ROWS_DEFAULT = 4;
    Kartenreihe. Ein Wächter, der ein Budget durchwinkt, ist schlimmer als keiner.
    Unbekannter Baustein → der höchste bekannte Wert: raten fällt dann zu Lasten des Budgets, nicht
    zu Lasten des Lesers. */
-const PROBE_PX = { formation: 215, streak: 150, score: 195, board: 215 };
+/* Die Runden der Grundlagen. Alle sind höher als das Formations-Feld, weil sie zwei Kartenreihen
+   tragen (Gegner und du) oder mehrere Zeilen untereinander.
+
+   NACHGEMESSEN im Produktionsbuild bei 390 × 844, nicht geschätzt: duell 271 · kampfwert 325 ·
+   serie 364 · laufmock 299 · herkunft 277. Die erste Fassung dieser Zeile hatte drei davon ZU
+   NIEDRIG angesetzt (250/305/300) — das Modell hätte eine zu lange Lektion durchgewunken, und das
+   ist die einzige Richtung, in die ein Budget nicht irren darf. Die Werte hier stehen deshalb
+   knapp über der Messung, aufgerundet. */
+const PROBE_PX = { formation: 215, streak: 150, score: 195, board: 215,
+  duell: 280, kampfwert: 335, serie: 375, laufmock: 340, herkunft: 300 };
 const PROBE_MAX = Math.max(...Object.values(PROBE_PX));
 
 const lines = (text) => Math.max(1, Math.ceil(String(text || "").length / CHARS_PER_LINE));
@@ -215,6 +280,12 @@ const lines = (text) => Math.max(1, Math.ceil(String(text || "").length / CHARS_
 export function beatHeight(beat, text) {
   switch (beat.kind) {
     case "satz":        return lines(text) * SATZ_LINE + SATZ_MARGIN;
+    /* Der beschriftete Kasten. Die Zahlen sind NICHT an den Entwurf angepasst, sondern aus der
+       Polsterung der Komponente abgeleitet (beats.jsx, Block): 12 + 12 Polsterung, 2 Rahmen,
+       14 Abstand = 40; die Überschrift 15 Zeile + 6 Abstand = 21. Beides aufgerundet, weil das
+       Modell eher zu viel schätzen soll. Eine Kurvenanpassung an die `.zeile`-Kästen des Entwurfs
+       wäre hier falsch gewesen: die tragen Listen und verschachtelte Teile und streuen um 31 px. */
+    case "block":       return lines(text) * SATZ_LINE + BLOCK_CHROME + (beat.label ? BLOCK_LABEL : 0);
     case "tip":         return lines(text) * TIP_LINE + TIP_CHROME;
     case "bild":        return BILD_PX;
     case "probierfeld": return PROBE_PX[beat.probe] ?? PROBE_MAX;
@@ -237,5 +308,5 @@ export function beatHeight(beat, text) {
 /* Höhe einer ganzen Lektion. `resolve(key)` liefert den Text zu einem Schlüssel. */
 export function lessonHeight(section, lesson, resolve) {
   return lesson.beats.reduce(
-    (sum, b, i) => sum + beatHeight(b, resolve(beatKey(section, lesson, i))), 0);
+    (sum, b, i) => sum + beatHeight(b, resolve(beatKey(section, lesson, i))), BODY_CHROME);
 }

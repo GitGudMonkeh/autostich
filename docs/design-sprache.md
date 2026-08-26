@@ -812,11 +812,12 @@ geändertes Feld im Diff statt still in einer Zeile Text.
 
 ### Die Takt-Arten
 
-Vier trugen den ersten Bau, vier kamen mit den vollen Lektionen dazu.
+Vier trugen den ersten Bau, fünf kamen mit den vollen Lektionen dazu.
 
 | Takt | Was er ist |
 | --- | --- |
 | `satz` | Fließtext, der eine Sache sagt |
+| `block` | ein Kasten mit optionaler Überschrift; der häufigste Block des Entwurfs |
 | `bild` | eine stehende Abbildung mit Unterschrift |
 | `probierfeld` | der bewegliche Teil |
 | `tip` | der Abschluss, an einer Linie nach oben |
@@ -824,6 +825,18 @@ Vier trugen den ersten Bau, vier kamen mit den vollen Lektionen dazu.
 | `regeln` | nummerierte Punkte, jeder ein eigener Kasten |
 | `tabelle` | Werte nebeneinander; ihre Zeilenzahl steht am Takt |
 | `liste` | die Tipps am Ende einer Sektion |
+
+**`block` gliedert, `satz` erzählt.** Der Entwurf teilt eine volle Lektion in benannte Abschnitte
+(„Dein Deck“, „Ein Lauf“), und die Überschrift *ist* die Gliederung; als Fließtext ohne Rahmen
+liefen die Abschnitte ineinander. Die Überschrift ist optional — ohne sie ist der Kasten der
+Einleitungsblock. Sie hängt am Schlüssel des Takts mit dem Zusatz `.label`, damit Überschrift und
+Text nicht in zwei Spalten auseinanderlaufen können, und `label: true` im Katalog ist es, was den
+zweiten Schlüssel überhaupt entstehen lässt. Beides prüft ein Wächter in beide Richtungen: fehlt
+der Schlüssel, zeigt der Kasten seinen Rohschlüssel als Überschrift; steht er ohne `label: true`
+im Katalog, ist er ein toter Eintrag.
+
+Auch der Kasten bleibt bei `§1 — Kein Panel im Panel`: er sitzt IM Scroller der Lektion, nicht in
+einem zweiten Rahmen. Eine Zeile mit Kontur, kein Fenster.
 
 `merk` und `tip` sind **nicht** dasselbe: der Tipp schließt die Lektion ab und steht genau einmal am
 Ende, ein Merksatz steht mittendrin und darf mehrfach vorkommen. Beide bleiben bei `§1 — Kein Panel
