@@ -1,7 +1,25 @@
 # Autostich — Tutorial / Guided Run (Durchplanung)
 
-> **Status:** GEBAUT (Wellen W0–W4, 2026-08-15). Die Durchplanung unten steht weiter; was beim Bauen
-> anders entschieden wurde, steht in §13.9 mit Begründung.
+> **SUPERSEDED IN PART — der geführte Lauf ist zurückgebaut (`#tutorial-sections`, T2).**
+>
+> **Was abgelöst ist:** das PRODUKT. Es gibt keinen geführten Lauf mehr. `src/ui/tutorial/` ist
+> gelöscht, die `data-tut`-Anker sind aus acht Komponenten entfernt, die 42 `tutorial.*`-Schlüssel
+> sind aus beiden Katalogen raus. An seine Stelle tritt eine eigene Tutorial-Sektion, mobil zuerst
+> und interaktiv — `docs/workstreams/tutorial-sections/tutorial-plan/planning-report.md`.
+>
+> **Was weiter trägt und deshalb NICHT gelöscht ist:**
+> - **§1** — die Arbeitsteilung der drei Lehr-Ebenen: *Glossar = nachschlagen · Leitfaden =
+>   Strategie · Tutorial = einmal machen.* Sie ist unverändert die Grundlage der neuen Sektion.
+> - **§3** — der Seed-Pfad über `START_RUN`, und die Erkenntnis, dass das Tutorial ohne jede
+>   `game/`-Änderung auskommt. Die neue Sektion hält dieselbe Grenze ein.
+> - **§6 / §14** — die Trennung von Ablauf-DATEN und Anzeige-TEXT. Der neue Katalog
+>   (`src/ui/tutorial-sections/catalog.js`) kopiert genau diese Bauart.
+>
+> **Was historisch zu lesen ist:** alles Übrige — die Phasentabelle §4, die Coach-Mark-Liste §5, die
+> Wellen W0–W4, §13.9. Sie beschreiben ein Feature, das es nicht mehr gibt.
+>
+> **Status vor dem Rückbau:** GEBAUT (Wellen W0–W4, 2026-08-15). Die Durchplanung unten stand
+> weiter; was beim Bauen anders entschieden wurde, steht in §13.9 mit Begründung.
 > **Stand:** 2026-08-15 — auf den aktuellen Mechanikstand gezogen (Branch `Autostich/pixi`).
 > **Idee (Nutzer):** Ein **Tutorial-Button** startet einen **geführten Lauf**, der einem alles erklärt.
 > **Vor jeder Phase** erscheint ein Erklär-Pop-up, das sagt, was man in der Phase macht, und kurz die Panels erklärt.

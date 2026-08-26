@@ -397,10 +397,10 @@ const DESCS = {
     "Carries the strongest single factor over and holds it for the next two cards.",
   ],
   E_COLOR_ALLIANCE: [
-    "Choose 2 suits: they count as the same suit in all suit scoring — except for Suit Boost and Suit Duel.",
-    "Choose 3 suits: they count as the same suit in all suit scoring — except for Suit Boost and Suit Duel.",
-    "All four count as the same suit in all suit scoring — except for Suit Boost and Suit Duel.",
-    "All four count as the same suit, and suit blocks start at ×1.55 (instead of ×1.35) — except for Suit Boost and Suit Duel.",
+    "Choose 2 suits: they count as the same suit in all suit scoring, except for Suit Boost and Suit Duel.",
+    "Choose 3 suits: they count as the same suit in all suit scoring, except for Suit Boost and Suit Duel.",
+    "All four count as the same suit in all suit scoring, except for Suit Boost and Suit Duel.",
+    "All four count as the same suit, and suit blocks start at ×1.55 (instead of ×1.35), except for Suit Boost and Suit Duel.",
   ],
   E_CORE: [
     "Choose 1 formation type: its active formations ×1.15 on top.",

@@ -87,7 +87,7 @@ export function StatusRail({ state, currentTraj = [], recordTraj = [], options =
     // state.perks gehört ebenfalls dazu: „Fundament" (v0.3) hebt die Strukturfaktoren → Gebäude-Bonus ändert sich.
   }, [state.architect, state.architectEnabled, state.playerOrder, state.deck, state.roles, state.familyTiers, state.perks]);
   return (
-    <div className="rounded-xl p-4 grid gap-3 as-panel as-panel-deck" data-tut="bf-rail" style={{ background: "linear-gradient(180deg,#1b1a24,#141019)", border: `1px solid ${DECK_BORDER}` }}>
+    <div className="rounded-xl p-4 grid gap-3 as-panel as-panel-deck" style={{ background: "linear-gradient(180deg,#1b1a24,#141019)", border: `1px solid ${DECK_BORDER}` }}>
       {/* Multiplikatoren — die stehenden Score-Treiber (Formation/Gebäude/Crit) dauerhaft sichtbar. */}
       <div>
         <div className="text-meta-1 uppercase tracking-wide opacity-50 mb-2">{t("rail.mults")}</div>

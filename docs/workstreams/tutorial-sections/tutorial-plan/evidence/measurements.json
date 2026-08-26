@@ -1,0 +1,114 @@
+{
+  "top": {
+    "card": {
+      "y": 12,
+      "w": 366,
+      "h": 524.2,
+      "bottom": 536.2
+    },
+    "head": {
+      "y": 13,
+      "w": 364,
+      "h": 70,
+      "bottom": 83
+    },
+    "foot": {
+      "y": 469.2,
+      "w": 364,
+      "h": 66,
+      "bottom": 535.2
+    },
+    "scroll": {
+      "y": 83,
+      "w": 364,
+      "h": 386.2,
+      "bottom": 469.2
+    },
+    "contentH": 386,
+    "visibleH": 386,
+    "overflowPx": 0,
+    "airAbove": 12,
+    "airBelow": 307.8,
+    "airTotal": 319.8,
+    "cardShareOfScreen": 62.1,
+    "horizontalOverflow": false,
+    "beats": [
+      {
+        "kind": "satz",
+        "chars": 110,
+        "withMargins": 77,
+        "bottom": 160
+      },
+      {
+        "kind": "probe",
+        "chars": 100,
+        "withMargins": 203.6,
+        "bottom": 363.6
+      },
+      {
+        "kind": "merk",
+        "chars": 69,
+        "withMargins": 89.6,
+        "bottom": 453.2
+      }
+    ],
+    "beatsHiddenByFoot": [],
+    "tapsUnder44": []
+  },
+  "mitte": {
+    "card": {
+      "y": 159.9,
+      "w": 366,
+      "h": 524.2,
+      "bottom": 684.1
+    },
+    "head": {
+      "y": 160.9,
+      "w": 364,
+      "h": 70,
+      "bottom": 230.9
+    },
+    "foot": {
+      "y": 617.1,
+      "w": 364,
+      "h": 66,
+      "bottom": 683.1
+    },
+    "scroll": {
+      "y": 230.9,
+      "w": 364,
+      "h": 386.2,
+      "bottom": 617.1
+    },
+    "contentH": 386,
+    "visibleH": 386,
+    "overflowPx": 0,
+    "airAbove": 159.9,
+    "airBelow": 159.9,
+    "airTotal": 319.8,
+    "cardShareOfScreen": 62.1,
+    "horizontalOverflow": false,
+    "beats": [
+      {
+        "kind": "satz",
+        "chars": 110,
+        "withMargins": 77,
+        "bottom": 307.9
+      },
+      {
+        "kind": "probe",
+        "chars": 100,
+        "withMargins": 203.6,
+        "bottom": 511.5
+      },
+      {
+        "kind": "merk",
+        "chars": 69,
+        "withMargins": 89.6,
+        "bottom": 601.1
+      }
+    ],
+    "beatsHiddenByFoot": [],
+    "tapsUnder44": []
+  }
+}

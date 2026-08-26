@@ -118,7 +118,12 @@ const KEPT = [
 describe("#viewport-1280 — the threshold moved completely", () => {
   it("the file walk reaches nested directories — otherwise everything below is vacuous", () => {
     expect(FILES.length, "the walk found almost nothing; it is not reaching src/").toBeGreaterThan(150);
-    for (const deep of ["ui/fx/cardFx", "ui/tutorial", "ui/indicators", "i18n", "game"]) {
+    /* `ui/tutorial` stood here until the guided run was retired and the directory ceased to exist.
+       It was one of five SAMPLES of "the walk descends"; the property it sampled is still covered —
+       `ui/fx/cardFx` proves three levels, `ui/indicators` two. When `src/ui/tutorial-sections/`
+       landed with T1, so it is back in the list — added at INTEGRATION, because neither branch could
+       see the other's change: T2 removed the directory, T1 created its successor. */
+    for (const deep of ["ui/fx/cardFx", "ui/indicators", "ui/tutorial-sections", "i18n", "game"]) {
       expect(FILES.some((f) => f.rel.startsWith(deep + "/")), `the walk never reached src/${deep}/`).toBe(true);
     }
   });

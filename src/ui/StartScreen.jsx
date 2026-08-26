@@ -6,7 +6,7 @@ import { currentWeek } from "../game/weeklySeed.js"; // #370: Wochennummer + Woc
 import { RANKED_WEEK_SP, RANKED_WEEK_DP, RANKED_WEEK_DP_FULL } from "../game/storage.js"; // #bonus-benennen: die Tafel NENNT den Wochenbonus — Zahlen aus der Quelle
 import { matchSecretSeed, ownedCount, nodeState, treeComplete, rankedUnlocked, NODES, TOTAL_NODES, ONBOARDING_LINKS, SP_LOYALTY_EVERY } from "../game/progression.js"; // Test-Codes + Hub-Progressionsanzeige
 import { GlossaryPanel } from "./Glossary.jsx";
-import { battlefieldVeil } from "./cosmeticAssets.js"; // #deck-mobil: Schleier-Deckel fuer zu helle Spielfelder
+import { battlefieldVeil, battlefieldDim } from "./cosmeticAssets.js"; // #deck-mobil: Schleier-Deckel fuer zu helle Spielfelder; #bf-desktop: Bild-Daempfung ab 1280 px
 import { rarityLabel, deckDef, battlefieldDef, globalFxDef } from "../i18n/labels.js"; // Raritäts-/Kosmetik-/Effekt-Namen: EINE Quelle, übersetzt (Sprachprüfung C1)
 import { VERSION_FULL } from "./version.js"; // #250: Versions-/Build-Stempel, seit 16.08.2026 direkt unter der Marke
 import { PwaInstall } from "./PwaInstall.jsx"; // PWA · „Zum Startbildschirm" (Installieren-Link)
@@ -354,9 +354,13 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
 
       {battlefield && (
         <div aria-hidden="true" className="hidden dt:block pointer-events-none fixed inset-x-0 bottom-0 -z-10 h-[768px]">
+          {/* #bf-desktop: `--bfdim` dämpft die gemessenen Ausreißer. Anders als am Handy wird hier das
+              BILD gedämpft und nicht der Schleier verstärkt — der endet schon bei 82 %, ein Faktor
+              darüber klemmt ihn auf deckend und löscht die untere Bildhälfte. Liste + Messung in
+              cosmeticAssets.js. */}
           <img src={battlefield.desktop} alt="" draggable="false"
-            className="absolute inset-0 w-full h-full object-cover select-none"
-            style={{ WebkitMaskImage: "linear-gradient(180deg,transparent 0%,#000 30%)", maskImage: "linear-gradient(180deg,transparent 0%,#000 30%)" }} />
+            className="as-bf-dim absolute inset-0 w-full h-full object-cover select-none"
+            style={{ "--bfdim": battlefieldDim(bfId, "hub"), WebkitMaskImage: "linear-gradient(180deg,transparent 0%,#000 30%)", maskImage: "linear-gradient(180deg,transparent 0%,#000 30%)" }} />
           <div className="absolute inset-0"
             style={{ background: "linear-gradient(180deg,rgba(20,20,25,0) 0%,rgba(17,17,22,.55) 45%,rgba(17,17,22,.82) 100%)" }} />
         </div>

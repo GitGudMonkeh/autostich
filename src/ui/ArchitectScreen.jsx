@@ -700,7 +700,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                 {/* #248: „⟳ Drehen" wandert in die schwebende Aktionsleiste (unten) — dort beim Ziehen ohne Scrollen erreichbar. */}
               </div>
             </div>
-            <div ref={boardRef} data-tut="arch-board" className="relative grid grid-cols-5 gap-1" style={{ maxWidth: 300, margin: "0 auto" }}>
+            <div ref={boardRef} className="relative grid grid-cols-5 gap-1" style={{ maxWidth: 300, margin: "0 auto" }}>
               {/* #UI: durchgezogene Gebäude-Kontur (SVG) über dem Brett — eine Linie je Gebäude in seiner Form (wie Aufstellung).
                   Während eines Drags ausgeblendet (das Gebäude schwebt frei) → snappt beim Loslassen wieder an seine neue Form. */}
               {archFrame && archFrame.lines.length > 0 && !dragPrev && (
@@ -818,6 +818,21 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                         rot auf (über der persistenten Vollflächen-Rotfläche). Am key gekeyt → jede Platzierung neu. */}
                     {showCombos && !dragPrev && b && placeFlash && placeFlash.structCells.has(pos) && (
                       <span key={placeFlash.key} aria-hidden className="arch-struct-flash rounded-md" />
+                    )}
+                    {/* #eis-arch: Gletscher und Schnee unterscheiden sich hier bisher NUR am Marker — gleiches Icon,
+                        eine Nummer kleiner, etwas blasser. Auf einer Bau-Zelle ist das kein Unterschied, den man sieht.
+                        Die Aufstellungsphase trennt beides über die FLÄCHE (CardGrid: Schnee = zarter Blau-Wash,
+                        Gletscher zusätzlich Rahmen + Schein), und genau diese Sprache kommt hier her.
+
+                        Der Rahmen ist BEWUSST dünner und halbdurchlässig statt der 2px-Vollfarbe aus dem Aufstellboard:
+                        Cyan ist auf diesem Bildschirm schon vergeben — `isInspected` malt das inspizierte Gebäude mit
+                        `inset 0 0 0 2px #5ec8f0` plus kräftigem Außenschein. Ein zweiter kräftiger Cyan-Rahmen hieße
+                        „inspiziert" und „Gletscher" sähen gleich aus, und der Fehler wäre schlimmer als der behobene.
+                        Als eigene Ebene, nicht im `boxShadow`-Stapel der Zelle: der führt schon acht Zustände. */}
+                    {(isGlacier || isFirn) && (
+                      <span aria-hidden className="absolute inset-0 rounded-md pointer-events-none"
+                        style={{ background: isGlacier ? "#5ec8f01f" : "#5ec8f014",
+                                 boxShadow: isGlacier ? "inset 0 0 0 1.5px #5ec8f066" : undefined }} />
                     )}
                     {/* #301 C2: dauerhaft gesperrte Bau-Zelle — rote Diagonal-Schraffur (Querbalken) + Rim, KEIN Schloss. */}
                     {chLocked && (
@@ -976,7 +991,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                     <DevArchCatalog offers={offers} onChoose={chooseOffer} canUpgradeAny={canUpgradeAny}
                       onUpgrade={() => { if (canUpgradeAny) { setUpgradeMsg(null); setPendingUpgrade(null); setPhase("upgrade"); } }} />
                   ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2" data-tut="arch-offers">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {offers.map((o, idx) => {
                       const fam = familyDef(o.familyId);
                       if (!fam) return null;
@@ -1150,12 +1165,12 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                 // #279: Umstellen muss auch möglich sein, wenn nichts (mehr) baubar ist. Sobald Gebäude stehen,
                 // führt „Gebäude umstellen" in die Verschiebe-Phase (dort ziehen/drehen, dann „Bestätigen").
                 committed.length > 0 ? (
-                  <div className="flex gap-2" data-tut="arch-done">
+                  <div className="flex gap-2">
                     <button onClick={() => { setInspectId(null); setSelId(null); setPhase("move"); }} className="flex-1 rounded-lg py-2 text-body-5 font-bold" style={{ background: `${CAT.value.color}22`, border: `1px solid ${CAT.value.color}`, color: "#cfe3f5" }}>{t("arch.rearrange")}</button>
                     <button onClick={() => onDone?.()} className="flex-1 rounded-lg py-2 text-body-5 font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>{t("arch.buildNothing")}</button>
                   </div>
                 ) : (
-                  <button onClick={() => onDone?.()} data-tut="arch-done" className="w-full rounded-lg py-2 text-body-5 font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>{t("arch.buildNothing")}</button>
+                  <button onClick={() => onDone?.()} className="w-full rounded-lg py-2 text-body-5 font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>{t("arch.buildNothing")}</button>
                 )
               ) : phase === "upgrade" && pendingUpgrade != null ? (
                 <div className="flex gap-2">

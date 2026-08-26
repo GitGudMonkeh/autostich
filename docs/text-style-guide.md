@@ -32,7 +32,8 @@ Kurzerklärungen, aus `constants.js`/`glacier.js`/`rarity.js` gespeist und im Sp
 | **Stich** | — | ein Kartenduell |
 | **Durchlauf** | Runde* | 40 Stiche = das Deck einmal durch (*HUD kürzt „Durchl.") |
 | **Lauf** | Run | ein ganzes Spiel (`MAX_CYCLES` Durchläufe) |
-| **Position** | Feld, Slot | fester Platz 1–40 in der Ziehreihenfolge (daran hängen Perks/Anker/Gebäude) |
+| **Position** | Feld, Slot* | fester Platz 1–40 in der Ziehreihenfolge (daran hängen Perks/Anker/Gebäude) |
+| **Skill-Slot** | Skill-Position | der Platz für einen gehaltenen Skill — die eine erlaubte Verwendung von „Slot"* |
 | **Segment** | — | Block aus 5 Positionen |
 | **Kartenwert** | Dauerwert | bleibender Wert einer Karte |
 | **Stichwert** | temp Wert | Wertbonus nur für diesen Stich |
@@ -45,6 +46,10 @@ Kurzerklärungen, aus `constants.js`/`glacier.js`/`rarity.js` gespeist und im Sp
 | **Rarität** | Seltenheit, Seltenheitsstufe | Normal · Selten · Sehr selten · Rar (Namen aus `TIER_META`) |
 | **Archetyp** | Fraktion | Feuer · Blitz · Eis · Pflanze |
 | **Neuwurf (Reroll)** | — | Angebot neu würfeln |
+
+\* **Die Ausnahme zu „Slot".** §1e reserviert „Position" für den festen Kartenplatz 1–40 —
+„Skill-Position" wäre also genau die Doppelbelegung, die §1e verhindern soll. Deshalb bleibt
+**Slot** in *Skill-Slot* stehen, und nur dort. Für den Kartenplatz bleibt „Slot" verboten.
 
 ### 1b. Formationen & Aufstellung
 
@@ -71,7 +76,7 @@ Kurzerklärungen, aus `constants.js`/`glacier.js`/`rarity.js` gespeist und im Sp
 | **Kaskade** | — | Ereignis zündet Ereignis — **bei Blitz und bei Eis** |
 | **Masse** | Tiefe, Schicht | Eis-Ansammelwert auf dem Brettfeld |
 | **Gletscher** | Frostkarte | auf ihr Brettfeld festgefrorene Karte |
-| **Firn** / **Firn-Reserve** | — | Boden-Vorrat, der einen Gletscher nachfüllt |
+| **Schnee** / **Boden-Reserve** | Firn, Firn-Boden, Firn-Reserve | Boden-Vorrat, der einen Gletscher nachfüllt |
 | **Bersten** (Subst.) / **bricht**, **brechen** (Verb) | birst, Burst | der Eis-Payoff-Event |
 | **Berst-Score** | Burst-Score, Score-Burst | der Score eines Bruchs |
 | **Schwelle** | Stufe | die Masse-Marken 4 / 8 / 12 (siehe §1e) |
@@ -146,6 +151,37 @@ Kurzerklärungen, aus `constants.js`/`glacier.js`/`rarity.js` gespeist und im Sp
 - **Keine Dev-/Sim-Sprache**: keine Ticket-Nummern (`#288`), keine Variablennamen (`±Span`,
   `Feldtiefe`), keine Kürzel ohne Einführung (`R29`, `pp`, `Diff`), keine Anglizismen, wo es ein
   deutsches Wort gibt (Burst, Pivot, Payoff, Board, triggern, self-feeding).
+- **Kein Gedankenstrich** (`—`) im Spielertext. Er ist die bequemste Fuge der Welt und genau deshalb
+  verdächtig: er hängt einen Nachsatz an, ohne dass man sich entscheiden muss, wie er zum Satz gehört.
+  Bei der Bestandsaufnahme zu `#text-voice` standen **221 deutsche und 222 englische** Zeilen so da,
+  **93 % davon im selben Muster** — Aussage, Strich, Nachtrag. Ein Text, der das durchgehend tut,
+  klingt nicht nach diesem Spiel, sondern nach jedem beliebigen generierten Text.
+
+  Entscheide stattdessen, was die zweite Hälfte wirklich ist:
+
+  | Werkzeug | Wenn der Nachsatz … | Beispiel |
+  |---|---|---|
+  | **Punkt** | ein eigener Satz ist | „Du baust es vorher**.** Im Stich greifst du nicht mehr ein." |
+  | **Doppelpunkt** | auflöst, was der erste Teil ankündigt | „Ein einzelnes Kartenduell**:** deine Karte gegen die Gegnerkarte." |
+  | **Semikolon** | zu eng gekoppelt für einen Punkt ist | „Der Basis-Crit ist 0**;** für Nicht-Blitz-Builds kommt Crit-Chance aus …" |
+  | **Komma** | nur eine Apposition ist | „Die Währung der Deck-Werkstatt**,** rein kosmetisch." |
+  | **Klammer** | ein Einschub zwischen zwei Strichen war | „… auf einen Schlag **(**auch die noch nicht vollen**)**, jeder mit …" |
+  | **Umbau** | keins davon trägt | „Laser fächern **beim gottgleichen Sieg** auf." |
+
+  **Nicht gemeint ist der Bindestrich.** Komposita bleiben unangetastet — *Upgrade-Baum,
+  Boden-Reserve, 8-Nachbarschaft, Firn-Reserve.* 537 deutsche Zeilen tragen einen, und ein
+  zerbrochenes Kompositum liest sich nicht wie ein Fehler, sondern wie ein Tippfehler.
+  Ebenso bleibt der **Halbgeviertstrich in Zahlenbereichen** (`Wert 4–7`, `Position 1–5`) — das ist
+  richtige deutsche Typografie.
+
+  **Für Englisch gilt dieselbe Regel in derselben Härte.** Der Em-Dash ist dort zwar reguläre
+  Zeichensetzung, aber der englische Katalog ist eine Spiegelung des deutschen: dieselben Nachsätze
+  an denselben Stellen, übersetzt statt gewachsen. Er trägt denselben Tic.
+
+  **Ausnahmen werden gebucht, nicht entschieden.** Wo ein Strich stehen bleibt — als Leerwert-Marke
+  oder als Listenzeichen —, steht er mit Begründung in `docs/localization/text-voice-keep.txt`.
+  `node scripts/text-voice-check.mjs` lässt nichts durch, was dort nicht steht, und prüft zugleich,
+  dass kein Kompositum und keine interpolierte Zahl angefasst wurde.
 
 ---
 

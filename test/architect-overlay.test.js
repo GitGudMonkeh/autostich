@@ -99,7 +99,16 @@ describe("CardGrid — Render-Smoke mit Architekt-Overlay", () => {
       onTilePick: () => {},
     }));
     expect(html).toContain('data-pos="0"');
-    expect(count(html, "inset 0 0 0 9999px")).toBe(2);   // Wash je abgedeckter Zelle (SVG-Kontur erst im Browser)
+    /* Gezählt wird die PADDING-BOX-Klammer: sie steht genau einmal je Wash-Ebene (der Grundton und der
+       Farballianz-Split enden an der Border-Box). Damit zählt der Wächter die Waschungen, ohne an der
+       Schreibweise des Farbverlaufs zu kleben — den benutzt auch der Grundton. */
+    expect(count(html, "padding-box")).toBe(2);          // Wash je abgedeckter Zelle (SVG-Kontur erst im Browser)
+    /* NACHGEZOGEN 24.08.2026 (#kachel-wash). Die Aussage bleibt „ein Wash je abgedeckter Zelle" — sie
+       zählt nur nicht mehr Riesen-Schatten, sondern Hintergrund-Ebenen. Die zweite Zeile ist neu und
+       hält den GRUND fest: ein `inset … 9999px` bläht das Malrechteck der Kachel auf ~20 000 px und
+       ließ auf Android-Chrome nach dem Scrollen einzelne Kacheln ungemalt. Kommt die Konstruktion
+       zurück — hier oder an einer der anderen Flächen —, schlägt der Wächter an. */
+    expect(html).not.toContain("9999px");
   });
 });
 

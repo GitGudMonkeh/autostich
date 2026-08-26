@@ -79,12 +79,17 @@ describe("i18n · Katalog-Parität", () => {
     "start.tile.upgrades",   // „Upgrades" ist im Deutschen der etablierte Begriff (§3.5)
     "start.board.last.none", // Gedankenstrich als Platzhalter „noch kein Lauf" — Zeichen, kein Wort
     "start.tutorial",        // „Tutorial" ebenso — dasselbe Wort in beiden Sprachen
+    "tut.eyebrow",           // dito — die Kopfzeile der Tutorial-Sektionen
+    "tut.progress",          // „{n} / {total}" — nur Zahlen und ein Schrägstrich
+    "tut.f.crit",            // „Crit" bleibt Crit (Begriffstabelle §3.1)
+    "tut.f.form",            // „Formation" ist in beiden Sprachen dasselbe Wort
+    "tut.wahl.perks.title",  // „Perks" — im Deutschen der etablierte Begriff (§3.5)
+    "tut.wahl.skills.title", // dito für Skills
     "upgrades.tab.decks",    // „Decks" — dasselbe Wort in beiden Sprachen
     "upgrades.nav.decks",    // dito — Überschrift der Deck-Spalte in der Desktop-Fassung
     "upgrades.deckLead",     // „Deck" — dasselbe Wort in beiden Sprachen
     "upgrades.lane.rerolls", // „Rerolls" — im Deutschen bereits das englische Wort
     "shop.tab.packs",        // „Packs" — dasselbe Wort in beiden Sprachen
-    "tutorial.eyebrow",      // dito (Kopfzeile des Tutorial-Fensters)
     "formation.wechsel.abbr", // Wechsel/Zigzag → beide Z
     "formation.anker.abbr",   // Anker/Anchor  → beide A
     "perkcat.A.name",         // „Deck" ist in beiden Sprachen dasselbe Wort
@@ -540,8 +545,12 @@ describe("i18n · Ratsche gegen neue deutsche Inline-Texte", () => {
     "src/ui/Glossary.jsx", "src/ui/GuideOverlay.jsx", "src/ui/Controls.jsx", "src/ui/PwaInstall.jsx",
     "src/ui/PerfOverlay.jsx", "src/ui/MusicBar.jsx", "src/ui/RunLoader.jsx",
     "src/ui/DevPerkCatalog.jsx", "src/ui/DevRunSetup.jsx",
-    // Tutorial (geführter Lauf) — von der ersten Zeile an zweisprachig gebaut.
-    "src/ui/tutorial/TutorialOverlay.jsx",
+    /* Hier stand `src/ui/tutorial/TutorialOverlay.jsx`, bis der geführte Lauf zurückgebaut wurde.
+       Der Eintrag ist MIT der Datei gegangen, und das ist keine Aufweichung der Ratsche: der Wächter
+       darunter heißt „zeigt nur auf existierende, i18n-nutzende Dateien" und liest jede Zeile mit
+       readFileSync — ein Eintrag ohne Datei WIRFT, er wird nicht rot. Die Invariante der Liste ist
+       „in einer migrierten Datei steht kein Text als Literal"; eine Datei, die es nicht mehr gibt,
+       kann keinen halten. Kein anderer Eintrag wurde angefasst. */
     // Der Meilenstein-Balken lief bis zuletzt einsprachig mit — im Stichspiel dauerhaft sichtbar.
     "src/ui/ScoreMilestoneBar.jsx",
     // Build-Übersicht unter dem Brett und die zwei Listen, die sie teilt (#sprache-Nachzügler).
@@ -549,7 +558,9 @@ describe("i18n · Ratsche gegen neue deutsche Inline-Texte", () => {
     // #lv-fluegel: die zwei Seitenleisten der Level-up-Karte.
     "src/ui/LevelupWings.jsx",
     // Datenschutz-Hinweis (#datenschutz) — von der ersten Zeile an zweisprachig gebaut.
-    "src/ui/PrivacyModal.jsx"];
+    "src/ui/PrivacyModal.jsx",
+    // Tutorial-Sektionen (#tutorial-sections) — von der ersten Zeile an zweisprachig gebaut.
+    "src/ui/tutorial-sections/TutorialSections.jsx", "src/ui/tutorial-sections/beats.jsx"];
 
   /* In einer migrierten Datei steht KEIN Wort mehr als Literal — egal welcher Sprache. Deshalb
      wird nicht auf „deutsch aussehend" geprüft (das ließe „Normaler Lauf" durch, kein Umlaut),

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react";
 import { Card, CardBack } from "./Card.jsx";
+import { tintImage } from "./deckTint.js"; // #gegnerdeck-farbe: Phasendecks in der Deckfarbe (einmal gebacken)
 import { clamp } from "../game/deck.js";
 import { TRICKS_PER_CYCLE, suitColor, AUSLAEUFER_HARVEST, ION_MAX_STACKS, HEAT_MAX, BASE_FLIP_MS, PLANT_GREEN_THRESHOLD } from "../game/constants.js";
 import { linkedPartnerOf } from "../game/shop.js";
@@ -10,6 +11,7 @@ import { gottSpeedFor } from "./fx/gottTiming.js"; // #prunk-laenge: In-Game-Spi
 import { formationLabel } from "./formationLabels.js";
 import { audio } from "./audio.js";
 import { useFxLevel } from "./useReducedFx.js";
+import { battlefieldDim } from "./cosmeticAssets.js"; // #bf-desktop: gemessene Bild-Daempfung im Lauf
 // Pixi-Umbau Phase 0/1: koexistierende GPU-Bühne. LAZY geladen → Pixi (~200 KB) landet in einem eigenen Chunk,
 // der NUR im Preview/Dev geladen wird (der Mount ist env-gegatet). Produktion (main) zieht Pixi nie in den Bundle.
 const PixiStage = lazy(() => import("./fx/PixiStage.jsx").then((m) => ({ default: m.PixiStage })));
@@ -685,7 +687,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   growth = {}, colonized = {},
   // #190 Kosmetik: gewähltes Spieler-Deck (front=Rahmen, back=Cover) + Battlefield-Skin ({desktop,mobile}|null).
   // Defaults = bestehende Karten → ohne Auswahl identisches Verhalten (Gegner-Deck bleibt OPP_DECK_SKINS).
-  deckFront = cardFrontImg, deckBack = cardBackImg, battlefield = null,
+  // #bf-desktop: `bfId` dient allein der gemessenen Helligkeits-Dämpfung (battlefieldDim) — das
+  // Bild selbst kommt weiter über `battlefield`. Default null → Faktor 1, also unverändert.
+  deckFront = cardFrontImg, deckBack = cardBackImg, battlefield = null, bfId = null,
   // #deckshop: Deck-Werkstatt-Animationen (an das aktive Theme gekoppelt): deckA1 = Deck-Hauptfarbe für
   // #kategorien: zwei UNABHÄNGIGE Feld-Slots — bgFx = reiner Hintergrund-Effekt (Aurora), bgFinisher = Hintergrund-
   // Finisher mit Stich-Interaktion (Glutfunken). Beide können gleichzeitig aktiv sein (bg hinter Finisher gerendert).
@@ -796,7 +800,20 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const deckPos = t ? (t.originalPosition ?? 0) + 1 : 0;
   // #186: Gegner-Deck-Skin nach kommender Auswahl. back = Cover (verdeckter Stapel), front = Rahmen (Zahl darüber, Holo entfällt).
   const oppSkin = OPP_DECK_SKINS[oppDeck] || OPP_DECK_SKINS.stat;
-  const oppBackImg = oppSkin.back, oppFrontImg = oppSkin.front;
+  /* #gegnerdeck-farbe: Cover UND Rahmen des Gegnerdecks nehmen die Deckfarbe an (zweifarbig, a1→a2).
+     Gebacken in deckTint.js, nicht gefiltert — beide Zeichenwege (DOM-Karte und Pixi-Textur, `backSrc`)
+     bekommen so dieselbe URL. Ohne Deckfarbe (`deckA1` fehlt) bleibt es beim Original, also bei den
+     phasen-farbcodierten Motiven. Bis die Fassung da ist, steht das Original — kein leeres Feld. */
+  const [oppTint, setOppTint] = useState(null);
+  useEffect(() => {
+    if (!deckA1) { setOppTint(null); return undefined; }
+    let alive = true;
+    Promise.all([tintImage(oppSkin.back, deckA1, deckA2), tintImage(oppSkin.front, deckA1, deckA2)])
+      .then(([back, front]) => { if (alive) setOppTint({ back, front }); });
+    return () => { alive = false; };
+  }, [oppSkin.back, oppSkin.front, deckA1, deckA2]);
+  const oppBackImg = (oppTint && oppTint.back) || oppSkin.back;
+  const oppFrontImg = (oppTint && oppTint.front) || oppSkin.front;
   // F4 Farballianz (#125): Partnerfarbe einer Kartenfarbe → diagonaler Split auf der Karte (rein kosmetisch).
   const allyColorFor = (suit) => { const a = linkedPartnerOf(pe, suit); return a ? suitColor(a) : null; };
   const win = t && (t.result === "win" || t.result === "win_tie");
@@ -1498,7 +1515,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
 
   return (
    <>
-    <div ref={panelRef} data-tut="bf-board" className="bf-panel rounded-xl p-6 overflow-hidden as-panel as-panel-deck relative"
+    <div ref={panelRef} className="bf-panel rounded-xl p-6 overflow-hidden as-panel as-panel-deck relative"
       style={{ background: "radial-gradient(360px 130px at 50% 0%, rgba(155,130,240,.10), transparent 70%), linear-gradient(180deg,#1b1a24,#141019)",
                // #296: eigener Stacking-Context → die Panel-Overlays (Schwarzes Loch/BounceBurst/PrunkFx mit hohem
                // zIndex) bleiben INNERHALB des Battlefields und liegen nie über anderen Screens (z. B. Perk-Auswahl).
@@ -1695,9 +1712,14 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
           und den Karten (z-10). Dunkler Scrim hält Karten/Text lesbar. Ohne Skin (null) → nichts, Standard bleibt. */}
       {battlefield && (
         <div aria-hidden="true" className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none" style={{ zIndex: 0 }}>
+          {/* #bf-desktop: Dämpfung der gemessenen Ausreißer. Hier stehen die Karten DIREKT auf dem
+              Bild, deshalb sind die Faktoren härter als im Hub (Ascension 0.37 gegen 0.56). Die
+              Klasse greift erst ab 641 px — genau dort, wo `source` von `mobile.jpg` wegschaltet;
+              für den Lauf am Handy liegt keine Messung vor, also bleibt er unverändert. */}
           <picture>
             <source media="(max-width: 640px)" srcSet={battlefield.mobile} />
-            <img src={battlefield.desktop} alt="" className="w-full h-full object-cover" />
+            <img src={battlefield.desktop} alt="" className="as-bf-dim-run w-full h-full object-cover"
+              style={{ "--bfdim": battlefieldDim(bfId, "run") }} />
           </picture>
           <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(12,12,16,0.55) 0%, rgba(12,12,16,0.38) 45%, rgba(12,12,16,0.62) 100%)" }} />
         </div>

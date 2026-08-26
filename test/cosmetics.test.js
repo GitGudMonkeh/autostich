@@ -44,15 +44,23 @@ describe("cosmetics — Katalog", () => {
       expect(unlockProgress(def, prof({ onboarding: 6 })).done).toBe(true);
     }
   });
-  it("games-Bedingung nur noch für das Hirsch-Stufen-Deck (#tiered: 10/20/30 abgeschlossene Läufe)", () => {
+  /* #deck-insertcoin: an der „games“-Bedingung hängen jetzt ZWEI Dinge — die Hirsch-Leiter (10/20/30) und
+     das Willkommensgeschenk bei 1. Die Erwartung bleibt eine harte Liste statt eines `contains`, denn genau
+     das ist ihr Zweck: eine neue games-Schwelle soll auffallen, weil sie sich mit der Leiter überschneiden
+     könnte. Insert Coin bei 1 liegt unterhalb der ersten Hirsch-Stufe, also gehen nie zwei auf einmal auf. */
+  it("games-Bedingung: Hirsch-Stufen (10/20/30) plus das Willkommens-Deck (1)", () => {
     const deckGames = Object.values(DECK_DEFS).filter((d) => d.unlock?.kind === "games").map((d) => d.id);
     const bfGames   = Object.values(BATTLEFIELD_DEFS).filter((d) => d.unlock?.kind === "games").map((d) => d.id);
-    expect(deckGames).toEqual(["deck_hirsch1", "deck_hirsch2", "deck_hirsch3"]);
-    expect(bfGames).toEqual(["bf_hirsch1", "bf_hirsch2", "bf_hirsch3"]);
+    expect(deckGames).toEqual(["deck_hirsch1", "deck_hirsch2", "deck_hirsch3", "deck_insertcoin"]);
+    expect(bfGames).toEqual(["bf_hirsch1", "bf_hirsch2", "bf_hirsch3", "bf_insertcoin"]);
     // korrekte Schwellen
     expect(DECK_DEFS.deck_hirsch1.unlock.n).toBe(10);
     expect(DECK_DEFS.deck_hirsch2.unlock.n).toBe(20);
     expect(DECK_DEFS.deck_hirsch3.unlock.n).toBe(30);
+    expect(DECK_DEFS.deck_insertcoin.unlock.n).toBe(1);
+    // keine Schwelle doppelt: sonst gingen zwei Decks gleichzeitig auf, die Meldung zeigt aber nur eins
+    const ns = deckGames.map((id) => DECK_DEFS[id].unlock.n);
+    expect(new Set(ns).size).toBe(ns.length);
   });
 });
 
