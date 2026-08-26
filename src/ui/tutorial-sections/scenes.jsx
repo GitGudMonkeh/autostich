@@ -28,7 +28,7 @@ import * as PROG from "../../game/progression.js";
 import { RUN_COMPLETE_DP } from "../../game/storage.js";
 import { buildingEffect } from "../../i18n/buildingText.js";
 import { FACTION_ICON_SRC, GLOSSARY_IMG_SRC } from "../FactionIcon.jsx";
-import { familyDef, perkDef, perkCat, formationName, formationAbbr, rarityLabel, nodeDef, skillDef, glacierFormName, archFamily, archCatDef, branchList } from "../../i18n/labels.js";
+import { familyDef, perkDef, perkCat, formationName, formationAbbr, rarityLabel, nodeDef, skillDef, glacierFormName, archFamily, archCatDef } from "../../i18n/labels.js";
 import { TIER_META, ROMAN } from "../../game/rarity.js";
 import { ENERGY_FLOOR } from "../../game/progression.js";
 import { perkCatArt, legendaryPerkArt } from "../perkArt.js";
@@ -2163,8 +2163,8 @@ export function BaumSzene({ hint }) {
   const kosten = (ids) => ids.reduce((a, id) => a + (PROG.NODES.find((n) => n.id === id)?.cost ?? 0), 0);
   const deckIds = PROG.NODES.filter((n) => n.branch === "deck" && !n.placeholder).map((n) => n.id);
   const bahnen = [
-    ...NC_BAHNEN.map((b) => ({ ...b, nm: t(b.nmKey), zweigNm: branchList().find((x) => x.key === b.zweig)?.name ?? "", sp: kosten(b.ids) })),
-    { txt: "decks", nm: t("tut.sz.nc.decks"), zweigNm: branchList().find((x) => x.key === "deck")?.name ?? "", sp: kosten(deckIds), ids: deckIds },
+    ...NC_BAHNEN.map((b) => ({ ...b, nm: t(b.nmKey), zweigNm: t(`branch.${b.zweig}.name`), sp: kosten(b.ids) })),
+    { txt: "decks", nm: t("tut.sz.nc.decks"), zweigNm: t("branch.deck.name"), sp: kosten(deckIds), ids: deckIds },
   ];
   return (
     <div className="tsz">
