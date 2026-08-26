@@ -301,7 +301,12 @@ describe("i18n · Zahl- und Satzformate", () => {
     expect(fmtNum(2.25, "de")).toBe("2,25");
     expect(fmtNum(2.25, "en")).toBe("2.25");
     expect(fmtNum(-1234.5, "de")).toBe("-1.234,5");
-    expect(fmtPct(0.07, "de")).toBe("7 %");
+    /* GESCHÜTZTES Leerzeichen, ausdrücklich als Escape geprüft. Ein gewöhnliches erlaubte den
+       Umbruch zwischen Zahl und Zeichen — gemessen im Tutorial, wo „2" und „%." auf zwei Zeilen
+       standen (text-style-guide.md §2). Würde hier ein normales Leerzeichen stehen, sähe man den
+       Unterschied im Test nicht; deshalb der Escape und nicht das Zeichen selbst. */
+    expect(fmtPct(0.07, "de")).toBe("7\u00a0%");
+    expect(fmtPct(0.07, "de")).not.toBe("7 %");   // Gegenprobe: NICHT das gewöhnliche
     expect(fmtPct(0.07, "en")).toBe("7%");
   });
 });

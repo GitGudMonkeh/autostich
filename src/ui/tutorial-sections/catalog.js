@@ -20,6 +20,12 @@
      label  nur bei kind "block": `true` heißt, der Kasten trägt eine Überschrift. Sie hängt am
             Schlüssel des Takts mit dem Zusatz `.label` — siehe beatLabelKey().
 
+   SEKTIONS-SCHEMA
+     id     bildet den Schlüssel und muss eindeutig sein.
+     arch   optional: der Archetyp, dessen Farbe die Sektion trägt. Der Katalog nennt nur den
+            SCHLÜSSEL ("fire"), die Farbe holt die Schale aus ARCHETYPE_META — dieselbe Arbeitsteilung
+            wie bei den Bausteinen, und der Grund, warum hier keine Farbe steht.
+
    LEKTIONS-SCHEMA
      art    "kurz" (Vorgabe) oder "voll". Zwei Arten, zwei Budgets, siehe unten.
      beats  die Takte in Reihenfolge. Der letzte ist immer der Tipp. */
@@ -152,6 +158,7 @@ export const SECTIONS = [
   },
   {
     id: "blitz",
+    arch: "lightning",
     lessons: [
       { id: "wasist", art: "voll", beats: [
         { kind: "block" },
@@ -172,6 +179,7 @@ export const SECTIONS = [
        Entwurf gibt jedem Archetyp eine eigene Sektion mit gespielten Runden; ein Verweis auf
        den Leitfaden war keine Lektion. */
     id: "feuer",
+    arch: "fire",
     lessons: [
       { id: "wasist", art: "voll", beats: [
         { kind: "block" },
@@ -193,6 +201,7 @@ export const SECTIONS = [
   },
   {
     id: "pflanze",
+    arch: "plant",
     lessons: [
       { id: "wasist", art: "voll", beats: [
         { kind: "block" },
@@ -215,6 +224,7 @@ export const SECTIONS = [
   },
   {
     id: "eis",
+    arch: "ice",
     lessons: [
       { id: "wasist", art: "voll", beats: [
         { kind: "block" },

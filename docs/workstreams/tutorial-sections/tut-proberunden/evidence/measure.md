@@ -298,3 +298,51 @@ exactly: ×1,75 closed, ×2,55 at Segmentarbeit III, ×3,19 at IV, and only a Fa
 
 - *Rangliste* is **ranked / ranking** in English, never "leaderboard".
 - *Stichpunkte* are **Trick Points**, never "stitch points".
+
+
+---
+
+# The two points left open at handover
+
+## Archetype colouring
+
+The four archetype sections now carry their own accent. The catalog names only the key
+(`arch: "fire"`); the shell resolves the colour from `ARCHETYPE_META`, the same source the skill
+selection reads for its frame.
+
+It sets **one** CSS variable, `--deck-a1`, on the lesson card. The shell already reads it in four
+places — the hairline, the eyebrow, the tip label, the outline of a selected chip — so one variable
+colours the whole lesson coherently and there is no spot anyone can forget to update. `--deck-a2`
+goes with it, or the hairline would run from the archetype colour into violet and back.
+
+`feuer-1-akzent.png` shows the fire section: hairline, border, eyebrow and tip label all in
+`#e0714a`. Sections without an archetype keep the deck accent they inherit.
+
+A guard checks both directions: every `arch` key must resolve in `ARCHETYPE_META` and carry a hex
+colour, and the four archetype sections must actually declare one — without the second direction the
+guard would stay green if someone simply deleted the key.
+
+## The line break before the percent sign
+
+Fixed at the source. `fmtPct` now emits a **no-break space** (U+00A0) for German, and the 48 places
+in `de.js` that write the sign next to a placeholder were pulled along. `prozent-umbruch-behoben.png`
+shows the lesson that exposed it: "… um 2 %. Eine Niederlage …" now holds together where it
+previously broke after the 2.
+
+**Why U+00A0 and not U+202F.** Measured in the real font: the narrow no-break space renders
+correctly at 1,75 px against 3,50 px for a normal one — no fallback box, so it was a genuine option.
+It was rejected anyway. It would narrow *every* percentage in the game, and the defect was the
+break, not the width. Fixing what is broken without smuggling in a redesign; the comment in
+`index.js` records that a later typographic pass need only swap one character.
+
+Three details fell out of doing it:
+
+- The escape is written as ` ` in the source, not as the character. A no-break space is
+  indistinguishable from a normal one in an editor and would quietly become one at the next edit.
+- ESLint's `no-irregular-whitespace` flagged the character in a **comment** while allowing it inside
+  string literals. That is exactly the right split, and it caught the one place I had put it wrong.
+- The existing `fmtPct` guard expected `"7 %"` with a normal space. Its expectation was updated to
+  the escape and given a counter-proof (`not.toBe("7 %")`), so a silent regression to the ordinary
+  space fails the suite instead of passing it.
+
+The full walk was repeated after both changes: 10 topics, 42 lessons, no problems.

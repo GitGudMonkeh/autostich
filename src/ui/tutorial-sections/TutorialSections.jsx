@@ -11,6 +11,7 @@ import { VARS } from "./vars.js";
 import * as GL from "../../game/glacier.js";
 import * as AR from "../../game/architect.js";
 import * as FM from "../../game/formations.js";
+import { ARCHETYPE_META } from "../../game/skills.js";
 
 /* Die Platzhalter liegen in vars.js, weil der Wächter dieselbe Liste braucht — siehe dort. */
 const localeVars = (locale) => ({
@@ -124,11 +125,25 @@ export function TutorialSections({ onClose, onOpenGlossary = null, onOpenGuide =
      identisch, aber test/overlay-nesting.js sucht `overlayPortal(` im Fenster VOR dem Klassen-Literal
      und sah keins. Der Wächter hatte recht, wenn auch aus dem falschen Grund: ein Portal-Aufrufort
      ist besser als drei. */
+  /* DIE SEKTION FÄRBT SICH SELBST. Vier Sektionen tragen einen Archetyp; ihre Farbe kommt aus
+     ARCHETYPE_META, derselben Quelle, aus der die Skill-Auswahl ihren Rahmen nimmt — dort steht
+     dazu: „der Rahmen sagt wo bin ich, die Karten wie gut ist das". Der Katalog nennt nur den
+     Schlüssel, nie eine Farbe.
+
+     Gesetzt wird EINE Variable, `--deck-a1`. Die ganze Schale liest sie schon: die Haarlinie oben,
+     das Tipp-Etikett, der Rahmen ausgewählter Chips, die Markierung im Probierfeld. Eine Variable
+     statt eines Dutzends durchgereichter Farbwerte, und keine Stelle, die man zu ändern vergisst.
+     `--deck-a2` geht mit, sonst liefe die Haarlinie vom Archetyp ins Violett und zurück.
+
+     Sektionen ohne Archetyp behalten den Deck-Akzent, den das Overlay ohnehin erbt. */
+  const archFarbe = section?.arch ? ARCHETYPE_META[section.arch]?.color : null;
+  const akzent = archFarbe ? { "--deck-a1": archFarbe, "--deck-a2": archFarbe } : null;
+
   const shell = (eyebrow, title, body, foot) => overlayPortal(
     <div className="fixed inset-0 overlay-root z-[60]" role="dialog" aria-modal="true" aria-label={t("tut.title")}>
       <div className="absolute inset-0" style={{ background: "rgba(6,6,10,.66)", backdropFilter: "blur(2px)" }} onClick={onClose} />
       <div className={FRAME}>
-        <div className={CARD} style={{ maxHeight: "92dvh", ...MODAL_CARD, boxShadow: "0 30px 80px -30px #000" }}>
+        <div className={CARD} style={{ maxHeight: "92dvh", ...MODAL_CARD, boxShadow: "0 30px 80px -30px #000", ...akzent }}>
           <Hairline />
           <Head eyebrow={eyebrow} title={title} onClose={onClose} closeLabel={t("common.close")} />
           <div className="tut-scroll flex-1 overflow-y-auto overlay-card px-4 py-3.5"

@@ -174,6 +174,23 @@ describe("Tutorial-Sektionen · Katalog", () => {
     }
   });
 
+  /* Der Archetyp-Schlüssel einer Sektion muss AUFLÖSBAR sein. Ein Tippfehler gäbe kein `undefined`
+     auf dem Schirm, sondern gar keine Farbe — die Sektion sähe aus wie jede andere, und niemand
+     bemerkte, dass die Einfärbung fehlt. Genau die Sorte Fehler, die ein Auge nicht findet.
+
+     Umgekehrt gilt: die vier Archetyp-Sektionen MÜSSEN einen tragen. Ohne diese Richtung wäre der
+     Wächter grün, sobald jemand den Schlüssel einfach löscht. */
+  it("jede Archetyp-Sektion nennt einen Archetyp, den das Spiel kennt", async () => {
+    const { ARCHETYPE_META } = await import("../src/game/skills.js");
+    const mitArch = SECTIONS.filter((s) => s.arch);
+    for (const s of mitArch) {
+      expect(ARCHETYPE_META[s.arch], `Sektion ${s.id}: „${s.arch}" ist kein Archetyp des Spiels`).toBeTruthy();
+      expect(ARCHETYPE_META[s.arch].color, `Archetyp ${s.arch} hat keine Farbe`).toMatch(/^#[0-9a-f]{6}$/i);
+    }
+    expect(mitArch.map((s) => s.id).sort(), "die vier Archetyp-Sektionen tragen ihren Archetyp")
+      .toEqual(["blitz", "eis", "feuer", "pflanze"]);
+  });
+
   it("jeder Probierfeld-/Bild-Takt nennt einen Baustein, den beats.jsx auch kennt", () => {
     const probes = SRC("beats.jsx");
     for (const s of SECTIONS) for (const l of s.lessons) for (const b of l.beats) {

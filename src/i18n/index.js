@@ -130,12 +130,24 @@ export function fmtNum(x, locale) {
   return sign + grouped + (frac ? s.dec + frac : "");
 }
 
-// Prozent als ganze Zahl inkl. Zeichen (0.07 → „7 %" / „7%").
-// Im Deutschen steht ein schmales Leerzeichen vor dem Zeichen, im Englischen keines.
+/* Prozent als ganze Zahl inkl. Zeichen: 0.07 wird im Deutschen zu einer 7, einem GESCHÜTZTEN Leerzeichen und dem Zeichen, im Englischen zu „7%".
+   Im Deutschen steht ein Leerzeichen vor dem Zeichen, im Englischen keines.
+
+   DAS LEERZEICHEN IST GESCHÜTZT (U+00A0), und das ist kein Detail: mit einem gewöhnlichen
+   Leerzeichen darf die Zeile GENAU DORT umbrechen. GEMESSEN im Tutorial bei 390 × 844 stand
+   „… um 2" am Zeilenende und „%." allein in der nächsten — die Zahl war von ihrem Zeichen
+   getrennt.
+
+   U+00A0 und nicht das typografisch feinere U+202F: beide rendert die Schrift sauber (gemessen
+   3,50 px gegen 1,75 px), aber das schmale würde JEDE Prozentangabe im Spiel enger setzen. Der
+   Fehler war der Umbruch, nicht die Breite. Wer die Feintypografie will, tauscht hier ein Zeichen. */
 export function fmtPct(x, locale) {
   const loc = locale || current;
   const n = Math.round(x * 100);
-  return loc === "de" ? `${n} %` : `${n}%`;
+  /* Als ESCAPE geschrieben, nicht als unsichtbares Zeichen: ein geschütztes Leerzeichen ist im
+     Editor von einem gewöhnlichen nicht zu unterscheiden und wäre beim nächsten Bearbeiten
+     wieder eines. */
+  return loc === "de" ? `${n}\u00a0%` : `${n}%`;
 }
 
 /* Kurzes Tagesdatum (Tag.Monat) — die Reihenfolge unterscheidet sich: de „24.12." · en „12/24".
