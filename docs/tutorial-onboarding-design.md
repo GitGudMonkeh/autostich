@@ -74,8 +74,11 @@ architect, measured):
   owner-directed first-run gate); hint H2 sits as a quiet banner *above* the real offer, and one
   "Guter Start" badge marks the Blitz consumer. Three options, one marked. No pop-up in front of it.
 - **Cycle 1, play:** the deck plays. Event hints fire as their events first occur — first win
-  (E1), the new resource bar (E5), possibly first tie (E2) — under the pacing rules of §5.3.
-- **Cycle 2, perk:** banner H3. **Cycle 3, formation:** banner H4. **Cycle 4, architect:** banner H5.
+  (E1), the new resource bar (E5), possibly first tie (E2) — under the pacing rules of §5.4.
+- **Cycle 2, perk:** banner H3. **Cycle 3, formation:** suggestion S-F1 ("one segment, same
+  colours"). **Cycle 4, architect:** suggestion S-A1 ("place your first building").
+- **Later formation and architect visits** continue their sequences: another pattern (S-F2), a
+  district (S-A2), the structure outlook (S-A3) — each visit one task, skipped if already achieved.
 - **Later, whenever they first happen:** streak (E3), crit (E4), a formation scoring in play (E6),
   first milestone (E7), the conditional phases (C1–C3), the legendary phase in cycle 29 (C4),
   first run end (E8).
@@ -104,14 +107,55 @@ needs to block). Dismiss with ✕ or by deciding; "Mehr dazu →" opens the link
 | **H2** | first skill offer (run 1 — Blitz only, §6) | Blitz ist dein erster Archetyp: Seine Skills laden die Blitz-Leiste und entladen sie als Crits. Eine falsche Wahl gibt es nicht. | Lightning is your first archetype: its skills charge the Lightning bar and discharge it as crits. There is no wrong choice. | blitz / wasist |
 | **H2b** | first skill offer with more than one archetype (run 2+) | Ab jetzt stehen mehrere Archetypen zur Wahl. Dein erster Skill eines Archetyps schaltet ihn frei — mischen ist erlaubt. | From now on, more than one archetype is on offer. Your first skill of an archetype activates it — mixing is allowed. | wahl / perks |
 | **H3** | first perk offer | Ein Perk wirkt sofort und bleibt bis zum Ende des Laufs. Passt keiner, lehn ab — das kostet nichts. | A perk takes effect immediately and lasts the whole run. If none fits, decline — it costs nothing. | wahl / perks |
-| **H4** | first formation phase | Tausche Karten, bis ein Muster entsteht — Formationen vervielfachen den Score ihrer Karten. Jeder Tausch kostet eine deiner {energy} Energien. | Swap cards until a pattern forms — formations multiply their cards' score. Each swap costs one of your {energy} energy. | aufstellung / formationen |
-| **H5** | first architect phase | Lege ein Gebäude aufs Brett. Es wirkt auf die Karte unter ihm — zahlt aber nur, wenn die ihren Stich gewinnt. | Place a building on the board. It affects the card beneath it — but it only pays if that card wins its trick. | architekt / wasist |
 
-Deliberately absent from H4: the segment rule. It lands in E6, where a live formation is on screen
-as its referent, and in the Probierfeld lesson. Deliberately absent from H5: categories, rotation,
-structures, districts — all Handbuch.
+The formation and architect phases carry no descriptive hint — they get **suggestion sequences**
+instead (§5.2), which teach the same content as tasks.
 
-### 5.2 Event hints — during play, first occurrence only
+### 5.2 Suggestion sequences — the working phases teach by task (owner direction, 2026-08-27)
+
+The formation and architect phases are the two places the player *does* something rather than
+picks something. There, a description ("formations multiply score") is the weakest form of
+teaching and a **doable task** is the strongest — the player learns the rule by producing its
+effect. So these phases get a short sequence of task-shaped suggestions, one per phase visit,
+instead of a one-shot phase hint.
+
+This supersedes the guided-run decision "nur erklären, nie empfehlen" (plan §13.2) the same way §6
+does: the drift objection was aimed at *content-specific* picks ("build building X"). These
+suggestions are **mechanic-shaped** — they name only mechanics as old as the game (Farbblock,
+Distrikt, Struktur), pull every display name from the registries at render time
+(`formationName()`, measured — the guided run's `tutorialVars.js` pattern), and so cannot go stale.
+
+| id | Trigger | DE draft | EN draft | Mehr dazu |
+| --- | --- | --- | --- | --- |
+| **S-F1** | formation phase, visit 1 | Fang mit einem Segment an: Tausche gleiche Farben zusammen — das ergibt einen {farbblock}, und Formationen vervielfachen den Score ihrer Karten. | Start with one segment: swap same colours together — that makes a {farbblock}, and formations multiply their cards' score. | aufstellung / formationen |
+| **S-F2** | formation phase, visit 2+ | Dein nächstes Muster: Die Legende zeigt, welche Formationen es gibt — jede weitere multipliziert dazu. | Your next pattern: the legend shows which formations exist — each additional one multiplies on top. | aufstellung / formationen |
+| **S-A1** | architect phase, visit 1 | Setz dein erstes Gebäude irgendwo aufs Brett. Es wirkt auf die Karte unter ihm — zahlt aber nur, wenn die ihren Stich gewinnt. | Place your first building anywhere on the board. It affects the card beneath it — but it only pays if that card wins its trick. | architekt / wasist |
+| **S-A2** | architect phase, visit 2+ | Bau einen Distrikt: Setz ein gleichartiges Gebäude neben dein erstes — Nachbarn derselben Art verstärken sich. | Build a district: place a matching building next to your first — neighbours of the same kind reinforce each other. | architekt / wohin |
+| **S-A3** | architect phase, visit 3+ | Dein Fernziel: Eine volle Zeile, Spalte oder Diagonale schließt eine Struktur und legt einen Faktor auf alle Positionen darin. | Your long game: a full row, column or diagonal closes a structure and puts a factor on every position inside it. | architekt / wohin |
+
+Sequence rules:
+
+1. **One suggestion per phase visit, at most** — it occupies the phase's banner slot, so the
+   pacing picture of a visit never changes: one line.
+2. **A step whose goal is already met is skipped**, checked with the same pure functions the
+   Probierfelder call (`computeFormations` for the Farbblock, `neighborCounts` /
+   `structureFactorMap` for district and structure — measured, all exported). A player who builds
+   a district on visit 1 never sees S-A2; the sequence advances to what they have not done.
+3. **The sequence ends when its steps are exhausted or dismissed.** No tracking UI, no quest log,
+   no completion reward — the game's own factor chips and legend markers are the confirmation
+   (and E6 narrates the first formation that scores). Each step fires once. S-A3 is deliberately
+   phrased as an outlook ("Fernziel"), not a this-visit task: a full row on the 8-wide board takes
+   several phases of persistent buildings, and detecting "genuinely reachable" is not worth the
+   machinery.
+4. Terminology is the game's: **Struktur** and **Distrikt** for building geometry, never
+   "Formation" (the tut-proberunden tripwire).
+
+S-F1 is deliberately concrete (one segment, one colour): the first formation phase has {energy}
+swaps, and the old plan measured that patterns are reachable in the first formation phase across
+2000/2000 seeds (recorded in `tutorial-guided-run-plan.md` §13.9c — not re-measured here). The
+segment rule still gets its explicit sentence in E6, with a live referent.
+
+### 5.3 Event hints — during play, first occurrence only
 
 The run pauses (existing overlay-pause pattern), a small card appears near the status bar naming
 what just happened, "Weiter" resumes. Spotlighting is not needed — the event itself is the
@@ -133,7 +177,7 @@ E3, E4 and E6 interpolate the **actual current values** from run state — the g
 words in E7/E8 render via `t("common.cur.*")`-backed phrasing, never a literal "SP"/"TP"
 (the tut-proberunden planning report documents why).
 
-### 5.3 Pacing rules
+### 5.4 Pacing rules
 
 Without these, cycle 1 can stack E1+E2+E3+E5 and rebuild the wall this paper removes:
 
@@ -141,11 +185,12 @@ Without these, cycle 1 can stack E1+E2+E3+E5 and rebuild the wall this paper rem
    the quota is spent is *not* queued — it waits for the event's next occurrence. Every listed
    event recurs naturally, so nothing is lost, only deferred.
 2. E5 outranks the others in its play phase (it explains a UI element that just appeared and stays).
-3. Phase hints (H*) are exempt — they never stack, one per decision screen by construction.
+3. Phase hints (H*) and suggestions (S-*) are exempt — they never stack, one per decision screen
+   by construction (§5.2 rule 1).
 4. Everything is per-profile persisted (`as_hints_seen`, added to `RESET_KEYS`) — first occurrence
    means first in the profile's life, not per run. **No hint ever repeats.**
 
-### 5.4 Conditional phases and legendary
+### 5.5 Conditional phases and legendary
 
 Carried over from the guided run unchanged in spirit — the phase already blocks, one sentence, now
 with a link:
@@ -157,9 +202,10 @@ with a link:
 | **C3** | first family target | Diese Perk-Familie braucht ein Ziel — wähle, worauf sie wirken soll. | wahl / kategorien |
 | **C4** | legendary phase (cycle {cycle}) | Ein legendärer Skill aus deinen aktiven Archetypen: eigener Slot, kein Tausch. | wahl / legendaer |
 
-**Total: 6 + 8 + 4 = 18 hints across a profile's whole life**, of which a typical first run meets
-eight to ten. The guided run carried 42 keys of body text plus coach-mark chains; the sections carry
-730. This layer is deliberately the smallest of the three.
+**Total: 4 phase hints + 5 suggestions + 8 event hints + 4 conditionals = 21 across a profile's
+whole life**, of which a typical first run meets eight to ten. The guided run carried 42 keys of
+body text plus coach-mark chains; the sections carry 730. This layer is deliberately the smallest
+of the three.
 
 ---
 
@@ -294,7 +340,7 @@ milestone tick) is not surfaced, surfacing it read-only is in scope, `src/game/`
 
 | # | Task | Depends on | Content |
 | --- | --- | --- | --- |
-| **T-O1** | Hint engine + phase hints (H1–H5, H2b, C1–C4), banner + pause card, storage, i18n | — | 10 hints |
+| **T-O1** | Hint engine + phase hints (H1–H3, H2b, C1–C4) + suggestion sequences (S-F1/2, S-A1/2/3 with visit counters and done-predicates over the exported pure functions), banner + pause card, storage, i18n | — | 13 hints |
 | **T-O2** | Event hints (E1–E8), signal plumbing, pacing rules | T-O1 | 8 hints |
 | **T-O3** | Blitz-only first run (§6): `START_RUN` gate on `hadCompletedRun`, "Guter Start" badge on the Blitz consumer, guard tests (gate lifts after first completed run; badge finds its skill; sim path byte-identical) | — | 1 short text |
 | **T-O4** | Handbuch: deep-link prop, rename, progress posture, hub first-contact offer → first run | T-O1 for the link wiring | — |
@@ -325,6 +371,9 @@ the `scarceSkills` reduced-offer path; the `devSchedule` override; 21 skills per
 `SKILL_DEFS` (16 legendaries across all four); the empty-skill-pool → perk fallback in the engine;
 the Handbuch lesson counts per archetype section (Blitz 3 · Eis 4 · Feuer 5 · Pflanze 5); the `dev`
 catalog's 10 sections and lesson ids (all "Mehr dazu" targets in §5 exist on `dev`);
+`formationName()` / `FORMATION_LABELS` as render-time name sources and `computeFormations`,
+`neighborCounts`, `structureFactorMap`, `districtFactorMap` as exported pure functions for the
+§5.2 done-predicates;
 `TutorialSections`' current prop surface; 730 `tut.*` keys on `dev` vs. 42 `tutorial.*` on `main`.
 Not run: any build, test, or measurement of the proposed UI — this is a design paper, and no gate
 is claimed.
