@@ -70,8 +70,9 @@ What a brand-new profile experiences, cycle by cycle (schedule: skill → perk �
 architect, measured):
 
 - **Run start:** one welcome card (H1) — the only blocking full card in the whole system.
-- **Cycle 1, skill choice:** the offer opens immediately; hint H2 sits as a quiet banner *above*
-  the real offer, and the recommendation badges (§6) carry the choice. No pop-up in front of it.
+- **Cycle 1, skill choice:** the offer opens immediately and shows **Blitz only** (§6 — the
+  owner-directed first-run gate); hint H2 sits as a quiet banner *above* the real offer, and one
+  "Guter Start" badge marks the Blitz consumer. Three options, one marked. No pop-up in front of it.
 - **Cycle 1, play:** the deck plays. Event hints fire as their events first occur — first win
   (E1), the new resource bar (E5), possibly first tie (E2) — under the pacing rules of §5.3.
 - **Cycle 2, perk:** banner H3. **Cycle 3, formation:** banner H4. **Cycle 4, architect:** banner H5.
@@ -100,7 +101,8 @@ needs to block). Dismiss with ✕ or by deciding; "Mehr dazu →" opens the link
 | id | Trigger | DE draft | EN draft | Mehr dazu |
 | --- | --- | --- | --- | --- |
 | **H1** | first-ever run start (blocking card, the one exception) | Autostich spielt sich selbst: Dein Deck schlägt sich durch {cards} Stiche, du entscheidest dazwischen. Verlieren kannst du nicht. | Autostich plays itself: your deck fights through {cards} tricks — you decide in between. You cannot lose. | grundlagen / wasist |
-| **H2** | first skill offer | Dein erster Skill wählt eine Richtung: Er schaltet seinen Archetyp und dessen Leiste frei. Eine falsche Wahl gibt es nicht. | Your first skill picks a direction: it activates its archetype and its bar. There is no wrong choice. | wahl / perks |
+| **H2** | first skill offer (run 1 — Blitz only, §6) | Blitz ist dein erster Archetyp: Seine Skills laden die Blitz-Leiste und entladen sie als Crits. Eine falsche Wahl gibt es nicht. | Lightning is your first archetype: its skills charge the Lightning bar and discharge it as crits. There is no wrong choice. | blitz / wasist |
+| **H2b** | first skill offer with more than one archetype (run 2+) | Ab jetzt stehen mehrere Archetypen zur Wahl. Dein erster Skill eines Archetyps schaltet ihn frei — mischen ist erlaubt. | From now on, more than one archetype is on offer. Your first skill of an archetype activates it — mixing is allowed. | wahl / perks |
 | **H3** | first perk offer | Ein Perk wirkt sofort und bleibt bis zum Ende des Laufs. Passt keiner, lehn ab — das kostet nichts. | A perk takes effect immediately and lasts the whole run. If none fits, decline — it costs nothing. | wahl / perks |
 | **H4** | first formation phase | Tausche Karten, bis ein Muster entsteht — Formationen vervielfachen den Score ihrer Karten. Jeder Tausch kostet eine deiner {energy} Energien. | Swap cards until a pattern forms — formations multiply their cards' score. Each swap costs one of your {energy} energy. | aufstellung / formationen |
 | **H5** | first architect phase | Lege ein Gebäude aufs Brett. Es wirkt auf die Karte unter ihm — zahlt aber nur, wenn die ihren Stich gewinnt. | Place a building on the board. It affects the card beneath it — but it only pays if that card wins its trick. | architekt / wasist |
@@ -155,59 +157,74 @@ with a link:
 | **C3** | first family target | Diese Perk-Familie braucht ein Ziel — wähle, worauf sie wirken soll. | wahl / kategorien |
 | **C4** | legendary phase (cycle {cycle}) | Ein legendärer Skill aus deinen aktiven Archetypen: eigener Slot, kein Tausch. | wahl / legendaer |
 
-**Total: 5 + 8 + 4 = 17 hints across a profile's whole life**, of which a typical first run meets
+**Total: 6 + 8 + 4 = 18 hints across a profile's whole life**, of which a typical first run meets
 eight to ten. The guided run carried 42 keys of body text plus coach-mark chains; the sections carry
 730. This layer is deliberately the smallest of the three.
 
 ---
 
-## 6. The first skill choice — the owner's named fear
+## 6. The first skill choice — the Blitz-only first run
 
 Facts first (all measured): fresh profile → fire + lightning only → offer of 6 skills, 3 per
 archetype; each offered consumer archetype has its consumer guaranteed in the offer (#191/#223);
 `SKILL_SLOTS` = 6; the offer is the first screen of the game (§1).
 
-**Stage 1 — recommendation badges (proposed to build now).** The owner asked for
-recommendations; the guided-run plan (§13.2) rejected them for drift reasons — hardcoded picks go
-stale with every balance pass. Both are right, so the recommendation must be **rule-derived, not
-curated**:
+**Owner direction (2026-08-27): the first run offers only Blitz.** This paper adopts it — the
+supporting evidence is better than a taste call:
 
-> In the **first skill offer of a profile's first run**, the guaranteed **consumer skill of each
-> unlocked archetype** carries a badge — DE **„Guter Start"** / EN **"Good start"** — and a shared
-> one-liner beneath the offer: DE *„Beide Empfehlungen sind Motoren: Sie verbrauchen die Leiste
-> ihres Archetyps und machen sie sichtbar. Wähl die Richtung, die dich reizt."* / EN *"Both
-> recommendations are engines: they consume their archetype's bar and make it visible. Pick the
-> direction that appeals to you."*
+- **Blitz is measurably the leanest archetype to explain.** The `dev` Handbuch needed **3 lessons
+  for Blitz** against 5 for Feuer, 5 for Pflanze, 4 for Eis (measured — catalog on `origin/dev`).
+  The game's own teaching material already ranked the archetypes by complexity; Blitz won.
+- **Blitz teaches the game's core lesson with the loudest feedback.** Its loop — charge the bar,
+  discharge as crits — manufactures the multiplier event the whole score system is built on
+  ("Bei allen anderen Archetypen ist er Zufall. Blitz stellt ihn selbst her", `tut.blitz.wasist.0`).
+  E4 (first crit) and E5 (first bar) land in run 1 with high probability instead of by luck.
+- **The pool sustains it.** 21 skills per archetype (measured, `SKILL_DEFS`), 16 legendaries
+  across all four — a Blitz-only run feeds all of its skill phases without exhausting; and the
+  engine already degrades an empty skill pool to a perk offer (observed), so there is no cliff.
 
-Why the consumers: they are guaranteed present (measured — the offer builder enforces it precisely
-so no engine is shown incomplete), they exist per archetype (fire and lightning both), and choosing
-one makes the archetype's core loop *visible in the very next play phase* — which is what E5 then
-explains. Why **two** badges, not one: the real round-1 decision is a direction (Feuer oder Blitz),
-not a specific skill. Two badges shrink six options to a two-way identity choice without taking the
-choice away, and no archetype is shadowed by the tutorial. A guard test asserts the badge rule finds
-its skill in the first offer across seeds (it holds by construction today; the test catches the day
-the consumer guarantee changes).
+**Screen one then reads:** three Blitz skills, one badge. The badge sits on the guaranteed **Blitz
+consumer** — DE **„Guter Start"** / EN **"Good start"** — because picking the consumer makes the
+charge loop visible in the very next play phase, which E5 then names. The badge rule stays
+**rule-derived, not curated** (the guided-run plan §13.2 rejected hardcoded picks for drift
+reasons, and that reasoning still holds): "the consumer of the offered archetype", shipped as one
+pure function, moves with every balance pass. A guard test asserts the badge finds its skill in a
+fresh profile's first offer.
 
-The rule ships as data + one pure function (UI layer), so a later balance pass that renames or
-reworks consumers moves the badge with it — no second truth.
+**Mechanism — smaller than every alternative.** The allowlist already exists end to end:
+`buildSkillOffer(..., unlockedArchetypes)` filters offers per run (measured, §4b Archetyp-Gatung),
+and the reducer feeds it from the profile's tree at `START_RUN`. The gate is: **when
+`hadCompletedRun` is false, the run starts with `unlockedArchetypes = ["lightning"]`** —
+a run-level parameter like seed and week mods, not new engine logic. The sim/standard path passes
+`null` and stays byte-identical; `hadCompletedRun` is the same existing flag the hub's loud
+first-contact offer keys on (measured, `StartScreen.jsx`), so an aborted first run stays gated and
+the gate lifts exactly when the loud offer disappears. From run 2 the profile's normal tree gating
+applies: Blitz + Feuer, later Eis/Pflanze — see §7.
 
-**Stage 2 — reduce the first offer (proposed as an option, only if playtests still show
-overwhelm).** The mechanism half-exists: the `scarceSkills` week mod already drops the offer to one
-skill per archetype (measured — `engine.js`). A `firstRun` reduction to **one designated starter
-skill per unlocked archetype** would turn screen one into a clean two-card choice: Feuer oder
-Blitz. Costs, stated honestly: it touches offer building in `src/game/` (the guided run was
-deliberately UI-only), it needs a starter-skill designation per archetype (owner/balancing call),
-and a reduced first offer mildly changes the first run that still counts for stats and leaderboard.
-Stage 1 buys most of the relief for none of these costs — hence the staging.
+**Costs, stated honestly:**
+
+- **A full run (50 cycles) without an archetype direction choice.** The bet is that perks,
+  formations and the architect carry enough decision variety for one run, and that a no-lose game
+  makes the constraint painless. This is the thing the first playtest must answer; the revisit
+  trigger is a first-time player saying "why can't I pick fire".
+- The first run still counts for stats and leaderboard as a constrained run — same precedent the
+  guided run's fixed seed set, and shallower.
+- It touches the `START_RUN` payload (reducer edge, not `src/game/` engine logic). The task
+  carries the tripwire anyway.
 
 **Rejected, recorded:**
 
-- **Auto-pick / forced first skill.** Removes the identity choice that makes run 1 *theirs*; the
-  no-lose design makes a free choice safe, so taking it away buys nothing.
-- **A watch-first cycle** (run 1 plays before any decision; mechanically reachable via the existing
-  `devSchedule` override — observed). Cleanest fix for the blind commit, but it forks the schedule
-  of a run that counts for stats/leaderboard and adds a game-visible mode. Revisit only if Stage 1
-  + H1 do not defuse screen one; H1's "you cannot lose" plus two badges is the cheap 80 %.
+- **Two badges on both archetypes' consumers** (this paper's earlier Stage 1+2). Superseded: the
+  Blitz gate removes the six-way screen entirely instead of annotating it, for less mechanism than
+  the two-card reduced offer would have needed.
+- **In-run unlock (Blitz-only for the first skill phase, Feuer from cycle 5).** Softer, but
+  `unlockedArchetypes` is per-run state; making it cycle-dependent is real engine logic with
+  determinism surface. The per-run gate buys nearly the same ramp for a payload field.
+- **Auto-pick / forced first skill.** Even within Blitz, the three-way pick is worth keeping — a
+  no-lose game makes a free choice safe, and the badge already carries the undecided player.
+- **A watch-first cycle** (run 1 plays before any decision; reachable via the `devSchedule`
+  override — observed). Forks the schedule of a counting run; H1 plus a three-option badged screen
+  defuses the blind commit more cheaply. Revisit only if playtests still show screen-one stalls.
 
 ---
 
@@ -220,18 +237,19 @@ already exists — it is the upgrade tree**, and the job is to use it, not to re
 - Rarity ceiling and the legendary perk layer: tree-gated (measured, `nodeEffects`).
 - The legendary phase: cycle 29, and only with the tree's legendary levels (measured).
 
-So a fresh profile's first runs are *already* the simplest version of the game. Two consequences:
+With the §6 gate in front of it, the ladder reads: **run 1 = Blitz only → run 2 = Blitz + Feuer →
+tree purchases = Eis, Pflanze, higher rarity, the legendary layer.** Each rung introduces exactly
+one new thing, and each rung's first appearance is what H2b and the first-occurrence hints narrate.
+Two consequences:
 
-1. **No new gating is proposed.** Principle 5 (never explain what the tree has not unlocked) plus
-   first-occurrence triggers make the hint layer track the existing ramp automatically — a player
-   who buys ice meets C1 exactly when it first matters.
+1. **Beyond §6, no new gating is proposed.** Principle 5 (never explain what the tree has not
+   unlocked) plus first-occurrence triggers make the hint layer track the ramp automatically — a
+   player who buys ice meets C1 exactly when it first matters.
 2. **The SP-onboarding chain stays inert.** Owner-confirmed in the sections round (H1 there);
    nothing here rewires it.
 
-If the owner later wants a *steeper* ramp (Balatro-style: fewer systems in run 1), Stage 2 of §6 is
-the one lever this paper endorses; gating perks or the architect out of early runs is **not**
-proposed — the schedule's four-block is the game's identity and each block already gets exactly one
-banner.
+Gating perks or the architect out of early runs is **not** proposed — the schedule's four-block is
+the game's identity and each block already gets exactly one banner.
 
 ---
 
@@ -276,14 +294,13 @@ milestone tick) is not surfaced, surfacing it read-only is in scope, `src/game/`
 
 | # | Task | Depends on | Content |
 | --- | --- | --- | --- |
-| **T-O1** | Hint engine + phase hints (H1–H5, C1–C4), banner + pause card, storage, i18n | — | 9 hints |
+| **T-O1** | Hint engine + phase hints (H1–H5, H2b, C1–C4), banner + pause card, storage, i18n | — | 10 hints |
 | **T-O2** | Event hints (E1–E8), signal plumbing, pacing rules | T-O1 | 8 hints |
-| **T-O3** | Recommendation badges (§6 Stage 1) + guard test | — | 2 short texts |
+| **T-O3** | Blitz-only first run (§6): `START_RUN` gate on `hadCompletedRun`, "Guter Start" badge on the Blitz consumer, guard tests (gate lifts after first completed run; badge finds its skill; sim path byte-identical) | — | 1 short text |
 | **T-O4** | Handbuch: deep-link prop, rename, progress posture, hub first-contact offer → first run | T-O1 for the link wiring | — |
 
 T-O3 and T-O4 are independent of T-O2. The work builds on `dev` (the sections live there; the
-guided run is already removed there). Stage 2 of §6 is deliberately **not** a task until the owner
-calls for it after playtesting Stage 1.
+guided run is already removed there).
 
 ---
 
@@ -293,7 +310,7 @@ calls for it after playtesting Stage 1.
 | --- | --- | --- |
 | 1 | Copy approval for all DE/EN drafts in §5 and §6 | — (owner voice check) |
 | 2 | Handbuch naming: „Handbuch"/"Handbook" vs. alternatives | Handbuch |
-| 3 | Stage 2 (two-card first offer) — decide only after playtesting Stage 1 | hold |
+| 3 | Blitz-only first run (§6) — confirmed as directed 2026-08-27; the playtest question that can reopen it: does a full run without an archetype choice stay fun? | build it; watch the first playtests |
 | 4 | Drop vs. demote the global lesson count on the topic list | demote to per-section only |
 | 5 | Event-hint pause behaviour: pause on every E-hint (proposed) vs. non-blocking toast | pause — a missed referent is worse than a beat of stillness |
 
@@ -304,7 +321,10 @@ calls for it after playtesting Stage 1.
 Measured directly in this checkout / on `origin/dev`: `BASE_SCHEDULE` order and its opening
 `skill`; `SKILLS_OFFERED` = 12 with archetype gating via `unlockedArchetypes`
 (fire+lightning base, ice/plant tree nodes at 4 SP); the consumer guarantee in `buildSkillOffer`;
-the `scarceSkills` reduced-offer path; the `devSchedule` override; the `dev` catalog's 10 sections
-and lesson ids (all "Mehr dazu" targets in §5 exist on `dev`); `TutorialSections`' current prop
-surface; 730 `tut.*` keys on `dev` vs. 42 `tutorial.*` on `main`. Not run: any build, test, or
-measurement of the proposed UI — this is a design paper, and no gate is claimed.
+the `scarceSkills` reduced-offer path; the `devSchedule` override; 21 skills per archetype in
+`SKILL_DEFS` (16 legendaries across all four); the empty-skill-pool → perk fallback in the engine;
+the Handbuch lesson counts per archetype section (Blitz 3 · Eis 4 · Feuer 5 · Pflanze 5); the `dev`
+catalog's 10 sections and lesson ids (all "Mehr dazu" targets in §5 exist on `dev`);
+`TutorialSections`' current prop surface; 730 `tut.*` keys on `dev` vs. 42 `tutorial.*` on `main`.
+Not run: any build, test, or measurement of the proposed UI — this is a design paper, and no gate
+is claimed.
