@@ -44,8 +44,9 @@ each with archetype, resource and consumer/booster semantics, before the first t
    pop-ups in the run.
 3. **Show before tell.** Where the UI already demonstrates something (the score chain, the live
    formation markers), the hint names what was just seen instead of predicting it.
-4. **Push the minimum, pull the rest.** Every hint links one Handbuch lesson ("Mehr dazu"). The
-   Handbuch (the `dev` sections) is the depth layer — reached by curiosity, never by obligation.
+4. **Push the minimum, pull the rest.** Every hint links one Probierfeld screen ("Mehr dazu").
+   The Probierfeld (the `dev` sections, rebuilt — §8) is the depth layer — reached by curiosity,
+   never by obligation.
 5. **Never explain what the tree has not unlocked.** The upgrade tree already ramps content
    (archetypes, rarity, legendary layer — measured in `nodeEffects()`). First-occurrence triggers
    honour this by construction: what cannot appear cannot fire.
@@ -55,12 +56,12 @@ each with archetype, resource and consumer/booster semantics, before the first t
 | Layer | Answers | Form |
 | --- | --- | --- |
 | **Hints** (new, this paper) | "what just happened / what do I decide now" | 1–2 sentences in the run, first occurrence only, each with a "Mehr dazu" link |
-| **Handbuch** (the `dev` sections) | "how does this system work" | lessons with Proberunden, pull-only |
+| **Probierfeld** (the `dev` sections, rebuilt — §8) | "how does this system work" | flat collection of probe screens, pull-only |
 | **Glossar** | "what does this word mean" | 109 entries, on demand |
 | **Leitfaden** | "how do I play Feuer" | 4 archetype guides |
 
-The `dev` build stays. This paper does not shrink or rewrite the sections — it stops them from
-being the front door.
+The `dev` build's probes all survive; its text lessons and its curriculum shell do not — §8 has
+the cut. Either way it stops being the front door.
 
 ---
 
@@ -99,14 +100,14 @@ owner approval**; keys live in both catalogs under a new `hint.*` namespace (not
 ### 5.1 Phase hints — banner on the decision screen, first occurrence only
 
 Rendered as a one-line strip above the decision UI (the screen already waits for input — nothing
-needs to block). Dismiss with ✕ or by deciding; "Mehr dazu →" opens the linked Handbuch lesson.
+needs to block). Dismiss with ✕ or by deciding; "Mehr dazu →" opens the linked Probierfeld screen.
 
 | id | Trigger | DE draft | EN draft | Mehr dazu |
 | --- | --- | --- | --- | --- |
-| **H1** | first-ever run start (blocking card, the one exception) | Autostich spielt sich selbst: Dein Deck schlägt sich durch {cards} Stiche, du entscheidest dazwischen. Verlieren kannst du nicht. | Autostich plays itself: your deck fights through {cards} tricks — you decide in between. You cannot lose. | grundlagen / wasist |
-| **H2** | first skill offer (run 1 — Blitz only, §6) | Blitz ist dein erster Archetyp: Seine Skills laden die Blitz-Leiste und entladen sie als Crits. Eine falsche Wahl gibt es nicht. | Lightning is your first archetype: its skills charge the Lightning bar and discharge it as crits. There is no wrong choice. | blitz / wasist |
-| **H2b** | first skill offer with more than one archetype (run 2+) | Ab jetzt stehen mehrere Archetypen zur Wahl. Dein erster Skill eines Archetyps schaltet ihn frei — mischen ist erlaubt. | From now on, more than one archetype is on offer. Your first skill of an archetype activates it — mixing is allowed. | wahl / perks |
-| **H3** | first perk offer | Ein Perk wirkt sofort und bleibt bis zum Ende des Laufs. Passt keiner, lehn ab — das kostet nichts. | A perk takes effect immediately and lasts the whole run. If none fits, decline — it costs nothing. | wahl / perks |
+| **H1** | first-ever run start (blocking card, the one exception) | Autostich spielt sich selbst: Dein Deck schlägt sich durch {cards} Stiche, du entscheidest dazwischen. Verlieren kannst du nicht. | Autostich plays itself: your deck fights through {cards} tricks — you decide in between. You cannot lose. | grundlagen / stich |
+| **H2** | first skill offer (run 1 — Blitz only, §6) | Blitz ist dein erster Archetyp: Seine Skills laden die Blitz-Leiste und entladen sie als Crits. Eine falsche Wahl gibt es nicht. | Lightning is your first archetype: its skills charge the Lightning bar and discharge it as crits. There is no wrong choice. | blitz / karte |
+| **H2b** | first skill offer with more than one archetype (run 2+) | Ab jetzt stehen mehrere Archetypen zur Wahl. Dein erster Skill eines Archetyps schaltet ihn frei — mischen ist erlaubt. | From now on, more than one archetype is on offer. Your first skill of an archetype activates it — mixing is allowed. | wahl / kategorien |
+| **H3** | first perk offer | Ein Perk wirkt sofort und bleibt bis zum Ende des Laufs. Passt keiner, lehn ab — das kostet nichts. | A perk takes effect immediately and lasts the whole run. If none fits, decline — it costs nothing. | wahl / kategorien |
 
 The formation and architect phases carry no descriptive hint — they get **suggestion sequences**
 instead (§5.2), which teach the same content as tasks.
@@ -166,11 +167,11 @@ spotlight. Respects the three FX levels (`useFxLevel`), per the guided-run playt
 | **E1** | first won trick | Dein erster Sieg: {win} Basispunkte. Alles Weitere — Serie, Crit, Formation, Gebäude — multipliziert darauf. | Your first win: {win} base points. Everything else — streak, crit, formation, buildings — multiplies on top. | grundlagen / score |
 | **E2** | first tie | Gleichstand: Niemand punktet. Nur Siege zahlen. | A tie pays nobody. Only wins score. | grundlagen / stich |
 | **E3** | streak reaches 3 | Serie {n}: Dein Serien-Faktor steht auf ×{mult}. Eine Niederlage setzt ihn zurück. | Streak {n}: your streak factor stands at ×{mult}. One loss resets it. | grundlagen / serie |
-| **E4** | first crit | Crit: Dieser Stich zählt ×{critMult}. Crit-Chance kommt aus Präzisions-Perks — und aus Blitz. | Crit: this trick counts ×{critMult}. Crit chance comes from precision perks — and from Lightning. | blitz / wasist |
-| **E5** | first resource bar appears | Das ist deine {arch}-Leiste. Sie füllt sich in den Stichen und treibt deine Skills an. | This is your {arch} bar. It fills during tricks and powers your skills. | *\<arch\>* / wasist |
+| **E4** | first crit | Crit: Dieser Stich zählt ×{critMult}. Crit-Chance kommt aus Präzisions-Perks — und aus Blitz. | Crit: this trick counts ×{critMult}. Crit chance comes from precision perks — and from Lightning. | blitz / karte |
+| **E5** | first resource bar appears | Das ist deine {arch}-Leiste. Sie füllt sich in den Stichen und treibt deine Skills an. | This is your {arch} bar. It fills during tricks and powers your skills. | *\<arch\>* / karte |
 | **E6** | first formation scores in play | Formation {name}: Diese Karte zählt ×{mult}. Muster zählen nur innerhalb eines Segments. | Formation {name}: this card counts ×{mult}. Patterns only count inside one segment. | aufstellung / formationen |
 | **E7** | first milestone reached | Meilenstein erreicht — das bringt dir Stichpunkte für den Upgrade-Baum nach dem Lauf. | Milestone reached — that earns you trick points for the upgrade tree after the run. | danach / punkte |
-| **E8** | first-ever run end | Dein Lauf zählt: Stichpunkte für den Upgrade-Baum, Deckpunkte für die Werkstatt. Alles Weitere steht im Handbuch — jederzeit, Kapitel für Kapitel. | Your run counts: trick points for the upgrade tree, deck points for the workshop. Everything else is in the handbook — any time, chapter by chapter. | danach / endscreen |
+| **E8** | first-ever run end | Dein Lauf zählt: Stichpunkte für den Upgrade-Baum, Deckpunkte für die Werkstatt. Alles Weitere probierst du im Probierfeld aus — jederzeit. | Your run counts: trick points for the upgrade tree, deck points for the workshop. Everything else you can try in the playground — any time. | danach / endscreen |
 
 E3, E4 and E6 interpolate the **actual current values** from run state — the guided run's rejected
 "example math" ({exStreak}/{exStreakMult}) becomes real math with a live referent. The currency
@@ -197,8 +198,8 @@ with a link:
 
 | id | Trigger | DE draft (main's texts, trimmed) | Mehr dazu |
 | --- | --- | --- | --- |
-| **C1** | first glacier pick | Nach jedem Eis-Skill wählst du genau eine Karte für den Gletscher — dieser Schritt ist Pflicht. | eis / wasist |
-| **C2** | first target select | Dieser Perk braucht Karten: Tippe so viele an, wie er verlangt. | wahl / perks |
+| **C1** | first glacier pick | Nach jedem Eis-Skill wählst du genau eine Karte für den Gletscher — dieser Schritt ist Pflicht. | eis / feld |
+| **C2** | first target select | Dieser Perk braucht Karten: Tippe so viele an, wie er verlangt. | wahl / kategorien |
 | **C3** | first family target | Diese Perk-Familie braucht ein Ziel — wähle, worauf sie wirken soll. | wahl / kategorien |
 | **C4** | legendary phase (cycle {cycle}) | Ein legendärer Skill aus deinen aktiven Archetypen: eigener Slot, kein Tausch. | wahl / legendaer |
 
@@ -218,7 +219,7 @@ archetype; each offered consumer archetype has its consumer guaranteed in the of
 **Owner direction (2026-08-27): the first run offers only Blitz.** This paper adopts it — the
 supporting evidence is better than a taste call:
 
-- **Blitz is measurably the leanest archetype to explain.** The `dev` Handbuch needed **3 lessons
+- **Blitz is measurably the leanest archetype to explain.** The `dev` sections needed **3 lessons
   for Blitz** against 5 for Feuer, 5 for Pflanze, 4 for Eis (measured — catalog on `origin/dev`).
   The game's own teaching material already ranked the archetypes by complexity; Blitz won.
 - **Blitz teaches the game's core lesson with the loudest feedback.** Its loop — charge the bar,
@@ -299,21 +300,58 @@ the game's identity and each block already gets exactly one banner.
 
 ---
 
-## 8. The Handbuch — reframing the `dev` sections
+## 8. The Probierfeld — rebuilding the `dev` sections to complement the hints
 
-Three changes, all small, none touching lesson content:
+**Owner verdict (2026-08-27): the `dev` tutorial as it stands is still too much text and too hard
+to navigate — get rid of it or rebuild it as a complement to the hint layer.** This section is the
+rebuild proposal; full deletion is assessed and rejected at the end.
 
-1. **Deep links.** `TutorialSections` gains an optional `initial={sectionId, lessonId}` prop
-   (observed: the shell resolves lessons internally today; no external entry). "Mehr dazu" opens
-   the exact lesson, run paused underneath, close returns to the run.
-2. **Name and posture.** Hub chip and title become DE **„Handbuch"** / EN **"Handbook"** (owner
-   naming decision — alternatives: „Schule", "Guide"). The word "Tutorial" implies an obligation to
-   complete; a handbook implies a place to look things up. The loud first-contact offer above
-   "Lauf beginnen" now starts **the first run** (where H1/H2 receive the player), not the section
-   list.
-3. **Progress posture.** Per-section progress rails stay (they serve returning readers); the
-   overall "n of 42" line on the topic list is dropped or demoted — completeness is the layer's
-   property, not the player's task.
+**What the catalog actually holds (measured, `origin/dev`):** 48 lessons. **37 are already pure
+probe screens** — Probierfeld plus one Tipp, zero reading beats; the Proberunden pass did that
+conversion. **11 are text-only lessons** (the five archetype/section "wasist" screens, `formel`,
+`phase`, `perks`, `regeln`, `aufwerten`, `rangliste`). So the overload is not the interactive
+content — it is (a) the 11 explainer lessons, whose job the in-run hints now do, and (b) the
+three-level curriculum shell (Themenliste → Lektionsliste → Lektion) over 48 entries.
+
+**The rebuild — cut the text, flatten the shell, keep every probe:**
+
+1. **Delete the 11 text-only lessons.** Each one's job has a better home now: the phase and
+   archetype intros are H1–H3, H2b and the suggestion sequences (§5); word-level definitions are
+   the Glossar's job (the sections' own planning rule — a lesson links the glossary, never
+   restates it — applied retroactively); archetype strategy is the Leitfaden's. Sentences worth
+   keeping (e.g. `tut.blitz.wasist.0`, "Blitz stellt ihn selbst her") move into the one intro
+   Satz of the neighbouring probe screen, not into a screen of their own.
+2. **Flatten the navigation.** One flat list of probe screens, grouped under the run's own phase
+   names — no topic level, no lesson level, no resume row, no global progress. A pull-only
+   reference reached mostly through "Mehr dazu" deep links needs an index, not a curriculum.
+3. **Rename it.** Hub chip and title become DE **„Probierfeld"** / EN **"Playground"** — the name
+   the players already meet inside the lessons, and a word that promises trying, not studying.
+   "Tutorial" now names the in-run hint layer, which matches what players expect the word to mean.
+   The loud first-contact offer above "Lauf beginnen" starts **the first run** (where H1/H2
+   receive the player), never the list.
+4. **Deep links.** The shell gains an optional `initial={sectionId, lessonId}` prop (observed: it
+   resolves lessons internally today; no external entry). "Mehr dazu" opens the exact probe, run
+   paused underneath, close returns to the run.
+5. **The form is locked to probe + Tipp.** The 400 px "kurz" budget and the beat-kind guard exist
+   (measured — `catalog.js`, `test/tutorial-sections.test.js`); after the cut the only allowed
+   screen shape is the one 37 screens already have, and the guard enforces what the first build's
+   budget could not.
+
+**Retargeting the hints.** The "Mehr dazu" targets that pointed at deleted text lessons are
+remapped in the tables above: H1 → `grundlagen/stich` (the "Vier Stiche. Sieh zu." probe — a
+better first touch than any intro screen), H2/E4 → `blitz/karte`, E5 → the archetype's `karte`
+probe, H2b/H3/C2 → `wahl/kategorien`, C1 → `eis/feld` (the Gletscherfeld probe). A guard test
+asserts every hint target exists in the catalog, so the next catalog cut cannot silently orphan a
+link.
+
+**Full deletion, assessed and rejected.** Deleting the feature entirely would discard the 37 probe
+screens — the only teaching asset in the project that is *structurally incapable of drifting*,
+because it calls the live game functions (`computeFormations`, `boardFactorMap`, …). The hints
+deliberately stay at one to two sentences; without the probes, "Mehr dazu" would dead-end in
+glossary definitions, and the depth layer of §3 would be gone. The text and the shell are the
+problem; both are removable without touching a single probe. If the owner still wants full
+deletion after seeing the rebuilt flat Probierfeld, the teardown follows the same guard checklist
+the sections round documented for the guided run (dead keys, `MIGRATED` ratchet, foreign tests).
 
 ---
 
@@ -321,7 +359,7 @@ Three changes, all small, none touching lesson content:
 
 All UI-layer except the optional Stage 2. New surface (proposed):
 
-- `src/ui/hints/hintScript.js` — the 17 hints as data: id, trigger, i18n key, vars, Handbuch target.
+- `src/ui/hints/hintScript.js` — the hints as data: id, trigger, i18n key, vars, Probierfeld target.
   Same data-not-text discipline as both predecessors; numbers interpolated from `constants.js`.
 - `src/ui/hints/useHints.js` — watches `state.phase`, offer fields and play events; per-profile
   seen-set; pacing rules from §5.3. Far smaller than the removed guided-run engine: no seed, no
@@ -343,7 +381,7 @@ milestone tick) is not surfaced, surfacing it read-only is in scope, `src/game/`
 | **T-O1** | Hint engine + phase hints (H1–H3, H2b, C1–C4) + suggestion sequences (S-F1/2, S-A1/2/3 with visit counters and done-predicates over the exported pure functions), banner + pause card, storage, i18n | — | 13 hints |
 | **T-O2** | Event hints (E1–E8), signal plumbing, pacing rules | T-O1 | 8 hints |
 | **T-O3** | Blitz-only first run (§6): `START_RUN` gate on `hadCompletedRun`, "Guter Start" badge on the Blitz consumer, guard tests (gate lifts after first completed run; badge finds its skill; sim path byte-identical) | — | 1 short text |
-| **T-O4** | Handbuch: deep-link prop, rename, progress posture, hub first-contact offer → first run | T-O1 for the link wiring | — |
+| **T-O4** | Probierfeld rebuild (§8): delete the 11 text lessons and their keys, flatten the shell to one grouped list, rename, deep-link prop, hint-target guard, hub first-contact offer → first run | T-O1 for the link wiring | −11 lessons |
 
 T-O3 and T-O4 are independent of T-O2. The work builds on `dev` (the sections live there; the
 guided run is already removed there).
@@ -355,9 +393,9 @@ guided run is already removed there).
 | # | Question | Recommendation |
 | --- | --- | --- |
 | 1 | Copy approval for all DE/EN drafts in §5 and §6 | — (owner voice check) |
-| 2 | Handbuch naming: „Handbuch"/"Handbook" vs. alternatives | Handbuch |
+| 2 | The `dev` sections: rebuild to the flat Probierfeld (§8) vs. delete entirely | rebuild — the 37 probes are the one drift-proof asset; only text and shell go |
 | 3 | Blitz-only first run (§6) — confirmed as directed 2026-08-27; the playtest question that can reopen it: does a full run without an archetype choice stay fun? | build it; watch the first playtests |
-| 4 | Drop vs. demote the global lesson count on the topic list | demote to per-section only |
+| 4 | Naming for the rebuilt layer: „Probierfeld"/"Playground" vs. alternatives | Probierfeld |
 | 5 | Event-hint pause behaviour: pause on every E-hint (proposed) vs. non-blocking toast | pause — a missed referent is worse than a beat of stillness |
 
 ---
@@ -369,7 +407,9 @@ Measured directly in this checkout / on `origin/dev`: `BASE_SCHEDULE` order and 
 (fire+lightning base, ice/plant tree nodes at 4 SP); the consumer guarantee in `buildSkillOffer`;
 the `scarceSkills` reduced-offer path; the `devSchedule` override; 21 skills per archetype in
 `SKILL_DEFS` (16 legendaries across all four); the empty-skill-pool → perk fallback in the engine;
-the Handbuch lesson counts per archetype section (Blitz 3 · Eis 4 · Feuer 5 · Pflanze 5); the `dev`
+the section lesson counts per archetype (Blitz 3 · Eis 4 · Feuer 5 · Pflanze 5); the lesson census
+behind §8 (48 lessons: 37 probe-plus-Tipp, 11 text-only, classified from the catalog's beat kinds);
+the `dev`
 catalog's 10 sections and lesson ids (all "Mehr dazu" targets in §5 exist on `dev`);
 `formationName()` / `FORMATION_LABELS` as render-time name sources and `computeFormations`,
 `neighborCounts`, `structureFactorMap`, `districtFactorMap` as exported pure functions for the
