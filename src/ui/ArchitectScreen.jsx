@@ -672,7 +672,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                 title={dragDelta ? t("arch.boostDelta.title") : t("arch.boostDelta.phaseTitle")}>
                 {t("arch.boostDelta", { arrow: boostTone.arrow, pct: shownBoostDelta })}
               </span>
-              <div className="flex items-center gap-1.5 ml-auto">
+              <div className="flex items-center gap-1.5 ml-auto" data-hint-anchor="archtoggles">
                 {/* #kante: Die zwei Anzeige-Schalter — an trägt seine Farbe an der Kante (Kombos gold,
                     Formationen blau), aus bleibt neutral. Farben unverändert, nur die Form folgt der Familie. */}
                 <button onClick={toggleCombos}

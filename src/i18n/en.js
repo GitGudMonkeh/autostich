@@ -1139,6 +1139,7 @@ export default {
   "hint.c2.body": "This perk needs cards: tap as many as it asks for.",
   "hint.c3.body": "This perk family needs a target: choose what it should act on.",
   "hint.c5.body": "Your build board is full. Space is limited, but nothing is final: demolish a building or upgrade one.",
+  "hint.c6.body": "Combos and Formations toggle the frames on the build board on and off. That keeps the board readable while you build.",
   "hint.h4.body": "The glossary at the top right lets you look up almost anything.",
   "hint.c4.body": "A legendary skill from your active archetypes: its own slot, no swapping.",
 

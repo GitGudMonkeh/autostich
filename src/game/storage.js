@@ -824,16 +824,20 @@ export function loadHintProgress() {
   try {
     const raw = localStorage.getItem(k(HINTS_KEY));
     const p = raw ? JSON.parse(raw) : null;
-    if (!p || typeof p !== "object") return { seen: [], visits: {}, last: {} };
+    if (!p || typeof p !== "object") return { seen: [], visits: {}, last: {}, seenAt: {} };
     return { seen: Array.isArray(p.seen) ? p.seen.filter((x) => typeof x === "string") : [],
              visits: (p.visits && typeof p.visits === "object") ? p.visits : {},
-             last: (p.last && typeof p.last === "object") ? p.last : {} };
-  } catch (e) { return { seen: [], visits: {}, last: {} }; }
+             last: (p.last && typeof p.last === "object") ? p.last : {},
+             // Runde 2, R19: je Hint der Phasen-Kontext, in dem er gesehen wurde — C6 („Phase danach")
+             // braucht die Unterscheidung „C5 in DIESER Phase ✕" vs. „in einer früheren".
+             seenAt: (p.seenAt && typeof p.seenAt === "object") ? p.seenAt : {} };
+  } catch (e) { return { seen: [], visits: {}, last: {}, seenAt: {} }; }
 }
 export function saveHintProgress(p) {
   try {
     localStorage.setItem(k(HINTS_KEY), JSON.stringify({
       seen: [...new Set((p && p.seen) || [])], visits: (p && p.visits) || {}, last: (p && p.last) || {},
+      seenAt: (p && p.seenAt) || {},
     }));
   } catch (e) {}
 }

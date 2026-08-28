@@ -80,6 +80,9 @@ export const HINT_DEFS = {
   /* C5 (Review-Runde, Zeile 14): kein angebotener Bauplan passt mehr aufs Brett — einmalig,
      mit Glow auf dem Baufeld-Panel. H4 (Zeile 30): das i oeffnet das Glossar, dritte Perkwahl. */
   C5:    { kind: "banner", bodyKey: "hint.c5.body", anchor: "baufeld" },
+  /* C6 (Runde 2, R19): die Kombis/Formationen-Toggles überm Baufeld — in der Architekt-Phase
+     NACH der, in der C5 weggeklickt wurde. Der Glow liegt auf der Toggle-Zeile. */
+  C6:    { kind: "banner", bodyKey: "hint.c6.body", anchor: "archtoggles" },
   H4:    { kind: "banner", bodyKey: "hint.h4.body", anchor: "glossar" },
   /* ---- Ereignis-Hints (T-O2, Papier §5.3): Pause-Karten im Stichspiel, erste Begegnung je
      Profil. Die vars lesen den ECHTEN Lauf — das verworfene Rechenbeispiel des geführten Laufs
@@ -189,6 +192,8 @@ export function hintForScreen(screen, ctx) {
   if (screen === "formation" || screen === "architect") {
     // C5 schlaegt die Sequenz: wer nichts mehr bauen kann, braucht den Ausweg vor dem Curriculum.
     if (screen === "architect" && ctx.architectStuck && un("C5")) return "C5";
+    // C6 folgt C5 in der NÄCHSTEN Architekt-Phase (ctx.c5Done: gesehen, aber nicht in dieser).
+    if (screen === "architect" && ctx.c5Done && un("C6")) return "C6";
     const v = ctx.visits?.[screen] || 0;
     for (const step of SEQUENCES[screen]) {
       if (seen.has(step.id)) continue;

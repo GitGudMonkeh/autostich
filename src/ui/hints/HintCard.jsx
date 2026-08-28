@@ -11,7 +11,7 @@
    The "Mehr dazu ›" link renders ONLY when an onMore handler exists — T-O4 wires it to the
    Probierfeld deep link; until then the affordance simply is not there (contract: no dead
    controls). */
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { t } from "../../i18n/index.js";
 import { MODAL_CARD, ModalHairline } from "../modalStyle.jsx";
 import { overlayPortal } from "../overlayPortal.jsx";
@@ -42,37 +42,49 @@ const TUT_GLOW = `0 0 0 1px ${TUT_ACCENT}59, 0 0 14px ${TUT_ACCENT}40`;
    Element (erste Fassung) verschwand: er lag unter dem Scrim der Karte und war damit auf dem
    Handy unsichtbar. Der Effekt misst das Rechteck und misst bei Scroll/Resize nach (der Spieler
    kann unter der offenen Karte weiterscrollen). */
+/* Runde 2, R12: die Geometrie läuft über eine rAF-Schleife DIREKT ans DOM statt über
+   React-State — Scroll-Event → setState → Render hinkte dem Scrollen sichtbar einen Takt
+   hinterher, der Rahmen „wanderte" bis zum Stillstand. Die Schleife misst jeden Frame und
+   schreibt transform/Größe im selben Frame; das Scrim-Loch selbst bleibt EIN Element. */
 function useAnchorSpotlight(anchor) {
-  const [rect, setRect] = useState(null);
+  const [visible, setVisible] = useState(false);
+  const boxRef = useRef(null);
   useEffect(() => {
-    if (!anchor) { setRect(null); return; }
+    if (!anchor) { setVisible(false); return; }
     const el = document.querySelector(`[data-hint-anchor="${anchor}"]`);
-    if (!el) { setRect(null); return; }
-    const measure = () => {
-      const r = el.getBoundingClientRect();
-      setRect(r.width > 0 && r.height > 0
-        ? { top: r.top, left: r.left, width: r.width, height: r.height } : null);
-    };
-    measure();
+    if (!el) { setVisible(false); return; }
+    setVisible(true);
     try { el.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (e) { /* alte Engines: ohne Scroll weiter */ }
-    window.addEventListener("scroll", measure, true); // capture: fängt auch scrollende Container
-    window.addEventListener("resize", measure);
-    return () => {
-      window.removeEventListener("scroll", measure, true);
-      window.removeEventListener("resize", measure);
+    const PAD = 4;
+    let raf = null;
+    const tick = () => {
+      const box = boxRef.current;
+      if (box) {
+        const r = el.getBoundingClientRect();
+        if (r.width > 0 && r.height > 0) {
+          box.style.opacity = "1";
+          box.style.transform = `translate(${r.left - PAD}px, ${r.top - PAD}px)`;
+          box.style.width = `${r.width + 2 * PAD}px`;
+          box.style.height = `${r.height + 2 * PAD}px`;
+        } else {
+          box.style.opacity = "0";
+        }
+      }
+      raf = requestAnimationFrame(tick);
     };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
   }, [anchor]);
-  return rect;
+  return { visible, boxRef };
 }
 
 /* Das Scrim-Loch: EIN Element — der Ring als innere Schatten, das Abdunkeln als 9999-px-Schatten
-   drumherum. So ist der Referent der einzige helle Fleck und der Ring liegt über allem. */
-function SpotlightScrim({ rect }) {
-  const PAD = 4;
+   drumherum. So ist der Referent der einzige helle Fleck und der Ring liegt über allem. Position
+   und Größe schreibt die rAF-Schleife oben; hier steht nur die statische Optik. */
+function SpotlightScrim({ boxRef }) {
   return (
-    <div aria-hidden="true" className="absolute pointer-events-none"
-      style={{ top: rect.top - PAD, left: rect.left - PAD,
-        width: rect.width + 2 * PAD, height: rect.height + 2 * PAD, borderRadius: 12,
+    <div aria-hidden="true" ref={boxRef} className="fixed top-0 left-0 pointer-events-none"
+      style={{ opacity: 0, borderRadius: 12, willChange: "transform",
         boxShadow: `0 0 0 2px ${TUT_ACCENT}, 0 0 18px 3px ${TUT_ACCENT}aa, 0 0 0 9999px #0c0c1066` }} />
   );
 }
@@ -88,9 +100,15 @@ function useBannerGlow(anchor) {
     const el = els[els.length - 1];
     if (!el) return;
     const prev = { boxShadow: el.style.boxShadow, borderRadius: el.style.borderRadius };
-    el.style.boxShadow = `0 0 0 2px ${TUT_ACCENT}, 0 0 14px ${TUT_ACCENT}aa`;
+    /* Runde 2, R11: das Glossar-i PULSIERT (Keyframes in index.css) — ein ruhiger Dauer-Glow
+       wird dort übersehen. Die übrigen Anker behalten den statischen Glow. */
+    if (anchor === "glossar") el.classList.add("as-hint-anchor-pulse");
+    else el.style.boxShadow = `0 0 0 2px ${TUT_ACCENT}, 0 0 14px ${TUT_ACCENT}aa`;
     if (!el.style.borderRadius) el.style.borderRadius = "10px";
-    return () => { el.style.boxShadow = prev.boxShadow; el.style.borderRadius = prev.borderRadius; };
+    return () => {
+      el.classList.remove("as-hint-anchor-pulse");
+      el.style.boxShadow = prev.boxShadow; el.style.borderRadius = prev.borderRadius;
+    };
   }, [anchor]);
 }
 
@@ -176,9 +194,9 @@ export function EventHintCard({ hint, onGo, onMore }) {
     // Mit Referent kommt das Abdunkeln aus dem Spotlight-Loch (der Referent bleibt hell),
     // ohne Referent aus dem flächigen Scrim wie bisher.
     <div className="fixed inset-0 overlay-root z-30 flex items-end justify-center p-4 pb-16"
-      style={{ background: spot ? "transparent" : "#0c0c1066" }}
+      style={{ background: spot.visible ? "transparent" : "#0c0c1066" }}
       role="dialog" aria-modal="true" aria-label={t("hint.eyebrow")} data-hint={hint.id}>
-      {spot && <SpotlightScrim rect={spot} />}
+      {spot.visible && <SpotlightScrim boxRef={spot.boxRef} />}
       <div className="relative w-full max-w-sm rounded-2xl overflow-hidden"
         style={{ ...MODAL_CARD, boxShadow: TUT_GLOW }}>
         <ModalHairline />

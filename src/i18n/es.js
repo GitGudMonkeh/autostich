@@ -1370,6 +1370,7 @@ export default {
   "hint.c2.body": "Esta ventaja necesita cartas: toca tantas como pida.",
   "hint.c3.body": "Esta familia de ventajas necesita un objetivo: elige sobre qué debe actuar.",
   "hint.c5.body": "Tu tablero de obra está lleno. El espacio es limitado, pero nada es definitivo: demuele un edificio o mejora uno.",
+  "hint.c6.body": "Con Combos y Formaciones muestras u ocultas los marcos del tablero de obra. Así mantienes la vista clara mientras construyes.",
   "hint.h4.body": "En el glosario arriba a la derecha puedes consultar casi todo.",
   "hint.c4.body": "Una habilidad legendaria de tus arquetipos activos: su propio puesto, sin cambio.",
 

@@ -1186,6 +1186,7 @@ export default {
   "hint.c2.body": "Dieser Perk braucht Karten: Tippe so viele an, wie er verlangt.",
   "hint.c3.body": "Diese Perk-Familie braucht ein Ziel: Wähle, worauf sie wirken soll.",
   "hint.c5.body": "Dein Baufeld ist voll. Der Platz ist begrenzt, aber nichts steht fest: Reiß ein Gebäude ab oder werte eins auf.",
+  "hint.c6.body": "Mit Kombis und Formationen blendest du die Rahmen auf dem Baufeld ein und aus. So behältst du beim Bauen den Überblick.",
   "hint.h4.body": "Im Glossar oben rechts schlägst du fast alles nach.",
   "hint.c4.body": "Ein legendärer Skill aus deinen aktiven Archetypen: eigener Slot, kein Tausch.",
 

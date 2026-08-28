@@ -22,9 +22,13 @@ const COUNTED = new Set(["formation", "architect", "perk", "skill", "play"]);
 export function useHints({ state, profile, onMore = null, breakdownOn = true }) {
   const [prog, setProg] = useState(loadHintProgress);
   const seen = useMemo(() => new Set(prog.seen), [prog.seen]);
+  // Ref-Spiegel des aktuellen Phasen-Kontexts für markSeen (das Callback bleibt dep-frei):
+  // `seenAt` merkt sich, in WELCHER Phase ein Hint gesehen wurde — C6 wartet auf „C5 war früher".
+  const ctxKeyRef = useRef(null);
   const markSeen = useCallback((id) => setProg((p) => {
     if (!id || p.seen.includes(id)) return p;
-    const next = { ...p, seen: [...p.seen, id] };
+    const next = { ...p, seen: [...p.seen, id],
+      seenAt: { ...p.seenAt, [id]: ctxKeyRef.current } };
     saveHintProgress(next);
     return next;
   }), []);
@@ -34,6 +38,7 @@ export function useHints({ state, profile, onMore = null, breakdownOn = true }) 
   // React re-renders or the tab reloads mid-phase. `play` zählt als eigener Kontext mit.
   const countKey = screen || (state?.phase === "play" ? "play" : null);
   const ctxKey = countKey ? `${countKey}:${state?.seed ?? "x"}:${state?.cycle ?? 0}` : null;
+  ctxKeyRef.current = ctxKey;
   const isNewVisit = !!(countKey && COUNTED.has(countKey) && prog.last?.[countKey] !== ctxKey);
   // Effective counters for THIS render — the commit below persists the same values, so the
   // banner does not arrive one frame late.
@@ -73,6 +78,9 @@ export function useHints({ state, profile, onMore = null, breakdownOn = true }) 
     multiArch: archs.size >= 2,
     slotsFull: (state?.skills?.length || 0) >= slots,
     slots, architectStuck,
+    /* Runde 2, R19: C6 (Kombis/Formationen-Toggles) kommt in der Architekt-Phase NACH der,
+       in der C5 weggeklickt wurde — „C5 gesehen, aber nicht in dieser Phase". */
+    c5Done: seen.has("C5") && prog.seenAt?.C5 !== ctxKey,
   };
   const bannerId = screen ? hintForScreen(screen, ctx) : null;
 
@@ -80,7 +88,10 @@ export function useHints({ state, profile, onMore = null, breakdownOn = true }) 
   const shownRef = useRef(null);
   useEffect(() => {
     const prev = shownRef.current;
-    if (prev && prev.key !== ctxKey) { shownRef.current = null; markSeen(prev.id); }
+    /* Runde 2, R18: C5 (Baufeld voll) wird NICHT durch Verlassen der Phase „gesehen" — der
+       Ausweg-Hinweis ist zu wichtig, um unbemerkt zu verfallen (Owner-Playtest: er kam nie an).
+       Er bleibt in jeder festgefahrenen Phase sichtbar, bis der Spieler ihn per ✕ wegklickt. */
+    if (prev && prev.key !== ctxKey) { shownRef.current = null; if (prev.id !== "C5") markSeen(prev.id); }
     if (ctxKey && bannerId) shownRef.current = { key: ctxKey, id: bannerId };
   }, [ctxKey, bannerId, markSeen]);
 

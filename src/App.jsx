@@ -1315,7 +1315,7 @@ function AutostichGame() {
                 gottEffect={deckFx.gottEffect} gottDeck={deckFx.gottDeck} archDeckColor={deckFx.archDeckColor}
                 reducedFx={options.reducedFx}
                 hideFloatScore={options.hideFloatScore} hideFloatMult={options.hideFloatMult} hideFloatWinLose={options.hideFloatWinLose}
-                hideBreakdown={options.hideBreakdown} boardVisible={boardVisible}
+                hideBreakdown={options.hideBreakdown} boardVisible={boardVisible} hintHold={!!hints.eventCard}
                 oppDeck={DECISION_SCHEDULE[state.cycle + 1] || DECISION_SCHEDULE[state.cycle] || "perk"} />
             </div>
             {/* #buehne: Bank aus Bars · Analyse · Build · Wochen-Mods. Unter 1280 px ist sie `display: contents`,
