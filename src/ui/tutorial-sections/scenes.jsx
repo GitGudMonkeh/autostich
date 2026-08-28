@@ -749,9 +749,11 @@ export function RaritaetSzene({ hint }) {
           );
         })}
       </div>
+      {/* Runde 2, R9: scoreFlat verlangt den Formations-Fall im Kontext — ein leeres Objekt
+          ergab 0/0 („+0 anstatt +0"). hasFormation:true liefert die echten Stufenwerte. */}
       <div className="merk3">{rich(t("tut.sz.n.merk1", {
-        a: fmtNum(FAMILY_DEFS.D_FORMATION_BONUS?.tiers?.[1]?.scoreFlat?.({}) ?? 0),
-        b: fmtNum(FAMILY_DEFS.D_FORMATION_BONUS?.tiers?.[2]?.scoreFlat?.({}) ?? 0),
+        a: fmtNum(FAMILY_DEFS.D_FORMATION_BONUS?.tiers?.[1]?.scoreFlat?.({ hasFormation: true }) ?? 0),
+        b: fmtNum(FAMILY_DEFS.D_FORMATION_BONUS?.tiers?.[2]?.scoreFlat?.({ hasFormation: true }) ?? 0),
       }))}</div>
     </div>
   );
@@ -799,7 +801,9 @@ export function LegendaerSzene({ hint }) {
    an ein Bogen quer über die Karte. */
 const ION = "#5ec8f0";
 function ionSturm(canvas) {
-  const T = { N: 84, CORNER: 12, JIT: 3.4, TAN: 1.6, PAD: 18, RESEED: 50,
+  /* PAD ist der ÜBERSTAND der Canvas über die Karte (scenes.css .grosskarte canvas: -12px):
+     die Kontur liegt damit genau auf der Kartenkante, unabhängig von der Kartengröße (R7). */
+  const T = { N: 84, CORNER: 12, JIT: 3.4, TAN: 1.6, PAD: 12, RESEED: 50,
     ARC_MIN: 380, ARC_MAX: 1280, ARC_LIFE: 210, ARC_SEGS: 15, ARC_AMP: 13,
     W_GLOW: 5.5, W_MID: 0.5, W_CORE: 0.6 };
   const ctx = canvas.getContext("2d");
@@ -1957,7 +1961,7 @@ export function StrukturenSzene({ hint, labels: L }) {
   }
   return (
     <div className="tsz">
-      <p className="auftrag">{hint}</p>
+      {hint ? <p className="auftrag">{hint}</p> : null}
       <div className="werkzeuge formen">
         {["zeile", "spalte", "diag"].map((k) => (
           <button key={k} type="button" className="tbtn" aria-pressed={lage === k} onClick={() => setLage(k)}>
@@ -2220,7 +2224,7 @@ export function SegmenteSzene({ hint, labels: L }) {
   return (
     <div className="tsz seg1">
       <p className="auftrag">{hint}</p>
-      <div className="werkzeuge formen" style={{ gridTemplateColumns: "repeat(3,minmax(0,1fr))" }}>
+      <div className="werkzeuge formen">
         <button type="button" className="tbtn" aria-pressed={lage === "zu"} onClick={() => setLage("zu")}>{t("tut.sz.sg.zu")}</button>
         <button type="button" className="tbtn" aria-pressed={lage === "drei"} onClick={() => setLage("drei")}>{L.segIII}</button>
         <button type="button" className="tbtn" aria-pressed={lage === "vier"} onClick={() => setLage("vier")}>{L.segIV}</button>

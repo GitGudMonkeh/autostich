@@ -169,6 +169,7 @@ describe("i18n · Katalog-Parität", () => {
     "start.tile.upgrades",   // „Upgrades" ist im Deutschen der etablierte Begriff (§3.5)
     "start.board.last.none", // Gedankenstrich als Platzhalter „noch kein Lauf" — Zeichen, kein Wort
     "start.tutorial",        // „Tutorial" ebenso — dasselbe Wort in beiden Sprachen
+    "tut.title",             // dito — der Schirm heisst wieder „Tutorial" (Runde 2, R3)
     "tut.eyebrow",           // dito — die Kopfzeile der Tutorial-Sektionen
     "tut.progress",          // „{n} / {total}" — nur Zahlen und ein Schrägstrich
     "tut.f.crit",            // „Crit" bleibt Crit (Begriffstabelle §3.1)
@@ -322,7 +323,7 @@ describe("i18n · Katalog-Parität", () => {
     "gameover.build",            // „Build" ist auch im Spanischen der Roguelite-Begriff
     "hud.mult",                  // „Mult" — Kurzform von multiplicador, gleiche Schreibung
     "shop.tab.packs",            // „Packs" — dito, und das Deutsche borgt es aus demselben Grund
-    "tut.eyebrow", "start.tutorial",  // „Tutorial"
+    "tut.eyebrow", "start.tutorial", "tut.title",  // „Tutorial" (R3: der Schirm heisst wieder so)
     "feedback.eyebrow", "privacy.eyebrow",  // „Playtest"
     "feedback.kind.bug",         // „Bug"
     "feedback.kind.balance",     // „Balance"

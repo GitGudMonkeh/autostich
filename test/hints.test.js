@@ -203,3 +203,46 @@ describe("hints · Ereignis-Auswahl im Stichspiel (T-O2, pur)", () => {
     expect(hintForScreen("gameover", { seen: new Set(["E8"]) })).toBe(null);
   });
 });
+
+/* ---- Runde 2, R18/R19: C5-Prädikat gegen den Owner-Repro + C6 („Phase danach") ---- */
+import { noOfferPlaceable, N_POS, shapeRotations, ARCHITECT_FAMILIES } from "../src/game/architect.js";
+
+describe("hints · C5-Prädikat (noOfferPlaceable) und C6-Folge", () => {
+  const ctx = (over = {}) => ({ seen: new Set(), visits: {}, state: {}, firstRun: false,
+    blitzOnly: false, multiArch: false, slotsFull: false, ...over });
+  // Eine echte Familie je Formgröße — das Prädikat rechnet mit den echten Rotationen.
+  const famOfSize = (n) => Object.values(ARCHITECT_FAMILIES).find(
+    (f) => f && f.form && !f.legendary && shapeRotations(f.form)[0].length === n);
+
+  it("Owner-Repro (Durchlauf 28): 18/20 belegt, drei Angebote ab Größe 3 — kein Bauplan passt", () => {
+    const fam3 = famOfSize(3), fam4 = famOfSize(4);
+    expect(fam3 && fam4, "Familien der Größen 3/4 existieren").toBeTruthy();
+    const buildings = [{ id: 1, footprint: Array.from({ length: 18 }, (_, i) => i) }];
+    const architect = { buildings, maxCover: 20,
+      offers: [{ familyId: fam4.id }, { familyId: fam4.id }, { familyId: fam3.id }] };
+    // 18 + 3 > 20 → schon der Deckel macht jedes Angebot unbaubar; Ersetzen zählt NICHT als Platz.
+    expect(noOfferPlaceable(architect, [])).toBe(true);
+  });
+
+  it("Geometrie-Fall: Deckel frei, aber die freien Zellen tragen keine Angebots-Form", () => {
+    const fam3 = famOfSize(3);
+    // Alles voll bis auf zwei einzelne, weit getrennte Zellen — eine 3er-Form findet keinen Platz.
+    const frei = new Set([0, N_POS - 1]);
+    const buildings = [{ id: 1, footprint: Array.from({ length: N_POS }, (_, i) => i).filter((p) => !frei.has(p)) }];
+    const architect = { buildings, maxCover: N_POS, offers: [{ familyId: fam3.id }] };
+    expect(noOfferPlaceable(architect, [])).toBe(true);
+    // Gegenprobe: leeres Brett → alles baubar.
+    expect(noOfferPlaceable({ buildings: [], maxCover: N_POS, offers: [{ familyId: fam3.id }] }, [])).toBe(false);
+  });
+
+  it("C6 kommt in der Architekt-Phase NACH C5 (c5Done), einmalig, und schlägt die Sequenz", () => {
+    expect(hintForScreen("architect", ctx({ visits: { architect: 3 }, c5Done: true,
+      seen: new Set(["C5", "S-A1", "S-A2"]) }))).toBe("C6");
+    // Gleiche Phase wie das C5-✕ (c5Done false) → noch kein C6, die Sequenz läuft normal.
+    expect(hintForScreen("architect", ctx({ visits: { architect: 3 }, c5Done: false,
+      seen: new Set(["C5", "S-A1", "S-A2"]) }))).toBe("S-A3");
+    // C6 gesehen → nie wieder.
+    expect(hintForScreen("architect", ctx({ visits: { architect: 4 }, c5Done: true,
+      seen: new Set(["C5", "C6", "S-A1", "S-A2", "S-A3"]) }))).toBe("S-A4");
+  });
+});

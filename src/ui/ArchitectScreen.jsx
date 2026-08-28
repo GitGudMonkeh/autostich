@@ -672,7 +672,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                 title={dragDelta ? t("arch.boostDelta.title") : t("arch.boostDelta.phaseTitle")}>
                 {t("arch.boostDelta", { arrow: boostTone.arrow, pct: shownBoostDelta })}
               </span>
-              <div className="flex items-center gap-1.5 ml-auto">
+              <div className="flex items-center gap-1.5 ml-auto" data-hint-anchor="archtoggles">
                 {/* #kante: Die zwei Anzeige-Schalter — an trägt seine Farbe an der Kante (Kombos gold,
                     Formationen blau), aus bleibt neutral. Farben unverändert, nur die Form folgt der Familie. */}
                 <button onClick={toggleCombos}
@@ -1008,10 +1008,11 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                       );
                     })}
                     {/* 4. Karte: Aufwerten */}
-                    {/* #kante: „Aufwerten" ist kein Angebot, sondern ein Weg — gestrichelte Kante (`is-soon`
-                        führt genau das), gedimmt wenn nichts aufwertbar ist. */}
+                    {/* Runde 2, R14 (Owner): die gestrichelte `is-soon`-Kante las sich als „ausgegraut",
+                        obwohl Aufwerten möglich war. Aktiv trägt die Karte jetzt die normale Angebots-
+                        Optik; gedimmt (gestrichelt + is-locked) NUR, wenn wirklich nichts aufwertbar ist. */}
                     <button onClick={() => { if (canUpgradeAny) { setUpgradeMsg(null); setPendingUpgrade(null); setPhase("upgrade"); } }} disabled={!canUpgradeAny}
-                      className={`as-edge-card as-edge-thin is-soon${canUpgradeAny ? "" : " is-locked"} rounded-lg p-2 text-left flex flex-col gap-1.5 transition-all hover:brightness-110`}
+                      className={`as-edge-card as-edge-thin${canUpgradeAny ? "" : " is-soon is-locked"} rounded-lg p-2 text-left flex flex-col gap-1.5 transition-all hover:brightness-110`}
                       style={{ "--c": CAT.value.color, cursor: canUpgradeAny ? "pointer" : "not-allowed" }}>
                       <div className="text-title-5 leading-none">⬆</div>
                       <div className="text-body-3 font-bold leading-tight">{t("arch.upgrade")}</div>

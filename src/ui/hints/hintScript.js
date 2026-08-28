@@ -48,12 +48,15 @@ export const resolveAnchor = (def, ctx) =>
 export const resolveBodyKey = (def, ctx) =>
   (typeof def?.bodyKey === "function" ? def.bodyKey(ctx) : def?.bodyKey) || null;
 
+/* Multiplikator mit zwei Nachkommastellen — dasselbe Muster wie dfmt2 in ArchPanels.jsx. */
+const mult2 = (x) => fmtNum((Number(x) || 0).toFixed(2));
+
 export const recommendedStarter = (offer) =>
   (offer || []).find((id) => { const d = SKILL_DEFS[id]; return !!(d && (d.heatConsumer || d.onFullCharge)); }) || null;
 
 export const HINT_DEFS = {
   H1:    { kind: "card", titleKey: "hint.h1.title", bodyKey: "hint.h1.body",
-           vars: () => ({ cards: C.TRICKS_PER_CYCLE }), target: "grundlagen/stich" },
+           vars: () => ({ cards: C.TRICKS_PER_CYCLE }) },
   H2:    { kind: "banner", bodyKey: "hint.h2.body", target: "blitz/karte" },
   H2b:   { kind: "banner", bodyKey: "hint.h2b.body", target: "wahl/kategorien" },
   H3:    { kind: "banner", bodyKey: "hint.h3.body", target: "wahl/kategorien" },
@@ -72,11 +75,14 @@ export const HINT_DEFS = {
   "S-A4": { kind: "banner", eyebrow: "suggest", bodyKey: "hint.sa4.body", target: "architekt/aufwerten" },
   C1:    { kind: "banner", bodyKey: "hint.c1.body", target: "eis/feld" },
   C2:    { kind: "banner", bodyKey: "hint.c2.body", target: "wahl/kategorien" },
-  C3:    { kind: "banner", bodyKey: "hint.c3.body", target: "wahl/kategorien" },
+  C3:    { kind: "banner", bodyKey: "hint.c3.body" },
   C4:    { kind: "banner", bodyKey: "hint.c4.body", target: "wahl/legendaer" },
   /* C5 (Review-Runde, Zeile 14): kein angebotener Bauplan passt mehr aufs Brett — einmalig,
      mit Glow auf dem Baufeld-Panel. H4 (Zeile 30): das i oeffnet das Glossar, dritte Perkwahl. */
   C5:    { kind: "banner", bodyKey: "hint.c5.body", anchor: "baufeld" },
+  /* C6 (Runde 2, R19): die Kombis/Formationen-Toggles überm Baufeld — in der Architekt-Phase
+     NACH der, in der C5 weggeklickt wurde. Der Glow liegt auf der Toggle-Zeile. */
+  C6:    { kind: "banner", bodyKey: "hint.c6.body", anchor: "archtoggles" },
   H4:    { kind: "banner", bodyKey: "hint.h4.body", anchor: "glossar" },
   /* ---- Ereignis-Hints (T-O2, Papier §5.3): Pause-Karten im Stichspiel, erste Begegnung je
      Profil. Die vars lesen den ECHTEN Lauf — das verworfene Rechenbeispiel des geführten Laufs
@@ -84,11 +90,13 @@ export const HINT_DEFS = {
   E1: { kind: "event", bodyKey: "hint.e1.body",
         vars: () => ({ win: fmtNum(C.SCORE_PER_WIN) }), target: "grundlagen/score", anchor: "scorerow" },
   E2: { kind: "event", bodyKey: "hint.e2.body", target: "grundlagen/stich" },
+  /* Multiplikatoren durchlaufen `mult2` (Runde 2, R1): streakBaseMult liefert rohes Gleitkomma
+     (×1,1400000000000001) — zwei Nachkommastellen, dasselbe toFixed(2)-Muster wie überall. */
   E3: { kind: "event", bodyKey: "hint.e3.body",
         vars: (ctx) => { const n = ctx?.state?.lastTrick?.winStreak ?? ctx?.state?.winStreak ?? 0;
-          return { n, mult: fmtNum(streakBaseMult(n)) }; }, anchor: "scorerow" },
+          return { n, mult: mult2(streakBaseMult(n)) }; }, anchor: "scorerow" },
   E4: { kind: "event", bodyKey: "hint.e4.body",
-        vars: (ctx) => ({ critMult: fmtNum(ctx?.state?.lastTrick?.critMultiplier ?? 1) }), target: "blitz/karte" },
+        vars: (ctx) => ({ critMult: mult2(ctx?.state?.lastTrick?.critMultiplier ?? 1) }) },
   /* E5: Leiste je Archetyp — Ziel, Anker UND Text wechseln mit. Der Blitz-Text nennt die echte
      Mechanik (Crits füllen die Ladung, voll → Ionisierung; Owner-Korrektur 2026-08-28); die
      anderen Leisten behalten den generischen Satz. */
@@ -103,7 +111,7 @@ export const HINT_DEFS = {
   E6: { kind: "event", bodyKey: "hint.e6.body",
         vars: (ctx) => { const lt = ctx?.state?.lastTrick;
           const f = (lt?.formations || []).find((x) => x?.type === "farbblock") || (lt?.formations || [])[0];
-          return { name: f ? formationName(f.type) : "", mult: fmtNum(lt?.formationMult ?? 1) }; } },
+          return { name: f ? formationName(f.type) : "", mult: mult2(lt?.formationMult ?? 1) }; } },
   E7: { kind: "event", bodyKey: "hint.e7.body", target: "danach/punkte", anchor: "milestone" },
   E8: { kind: "banner", bodyKey: "hint.e8.body" },
   E9: { kind: "event", bodyKey: "hint.e9.body",
@@ -184,6 +192,8 @@ export function hintForScreen(screen, ctx) {
   if (screen === "formation" || screen === "architect") {
     // C5 schlaegt die Sequenz: wer nichts mehr bauen kann, braucht den Ausweg vor dem Curriculum.
     if (screen === "architect" && ctx.architectStuck && un("C5")) return "C5";
+    // C6 folgt C5 in der NÄCHSTEN Architekt-Phase (ctx.c5Done: gesehen, aber nicht in dieser).
+    if (screen === "architect" && ctx.c5Done && un("C6")) return "C6";
     const v = ctx.visits?.[screen] || 0;
     for (const step of SEQUENCES[screen]) {
       if (seen.has(step.id)) continue;

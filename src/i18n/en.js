@@ -232,8 +232,6 @@ export default {
   "bar.fire.brand": "Brand · opponent",
 
   /* ---- Lightning bar (ChargeBar) ---- */
-  "bar.lightning.chain": "🔗 Streak chain",
-  "bar.lightning.chain.holds": " · holding",
   "bar.lightning.saturation": "🌐 Storm saturation",
   "bar.lightning.breadth": "Storm breadth",
   "bar.lightning.breadth.payoff": "+{n} value / card",
@@ -250,11 +248,6 @@ export default {
   "bar.lightning.storm.title": "Storm Front: crit-chance momentum per discharge (up to +{cap}%).",
   "bar.lightning.discharge": "Discharge",
   "bar.lightning.discharge.title": "Discharge: permanent crit-multiplier momentum per discharge.",
-  "bar.lightning.frequency": "Strike rate",
-  "bar.lightning.frequency.over": "Crit is full: the bar now shows the crit multiplier.",
-  "bar.lightning.frequency.title": "Crit chance of the next win.",
-  "bar.lightning.streakGuard": "Streak Guard: a loss with enough charge held the streak (½ charge spent).",
-  "bar.lightning.streak.broken": "broken",
 
   /* ---- Ice bar (GlacierBar) ---- */
   "bar.ice.chip.title": "Glacier · mass {mass} · tier {tier}",
@@ -641,7 +634,6 @@ export default {
   "layoutperks.title": "Position & formation perks",
   "mute.enable": "Turn sound on",
   "mute.disable": "Mute sound",
-  "bar.lightning.shieldHeld": "🛡 {n}× streak held",
   "bar.lightning.consumer": "Consumer: {name}",
   "cardgrid.glacierMass.title": "Glacier · mass {mass}",
   "cardgrid.glacierMass.reserve": "Glacier · mass {mass} · reserve {firn} (refills to {cap} at the start of the cycle)",
@@ -1110,7 +1102,7 @@ export default {
   "hint.e4.body": "Crit: this trick counts ×{critMult}.",
   "hint.e5.body": "This is your {arch} bar. It fills during tricks and powers your skills.",
   "hint.e5.blitz.body": "This is your charge bar: your crits fill it. Once the bar is full, a card gets ionized.",
-  "hint.e6.body": "Formation {name}: this card counts ×{mult}. Patterns only count inside one segment.",
+  "hint.e6.body": "Formation {name}: this card counts ×{mult}. Formations only count inside one segment.",
   "hint.e7.body": "Milestone reached: that earns you Trick Points for the upgrade tree after the run.",
   "hint.e8.body": "Trick Points flow into the upgrade tree, Deck Points into the workshop. Score milestones earn you extra Trick Points.",
   "hint.e9.body": "Your card fights at {kampfwert} instead of {kartenwert}: card value plus trick-value bonuses make the combat value. The higher one wins the trick.",
@@ -1139,11 +1131,12 @@ export default {
   "hint.c2.body": "This perk needs cards: tap as many as it asks for.",
   "hint.c3.body": "This perk family needs a target: choose what it should act on.",
   "hint.c5.body": "Your build board is full. Space is limited, but nothing is final: demolish a building or upgrade one.",
-  "hint.h4.body": "The i up top opens the glossary: you can look up almost anything there.",
+  "hint.c6.body": "Combos and Formations toggle the frames on the build board on and off. That keeps the board readable while you build.",
+  "hint.h4.body": "The glossary at the top right lets you look up almost anything.",
   "hint.c4.body": "A legendary skill from your active archetypes: its own slot, no swapping.",
 
   "tut.eyebrow": "Tutorial",
-  "tut.title": "Playground",
+  "tut.title": "Tutorial",
   "tut.sub": "Every round runs on the real game rules — try them.",
   "tut.seen": "read",
   "tut.tip": "Tip",
@@ -1569,8 +1562,8 @@ export default {
   "tut.sz.mf.wechsel": "Zigzag: up, down, up. Every jump at least {wechselDiff}. Here: 2, 9, 4. The 6 after that breaks off, its jump is too small.",
   "tut.sz.ue.buntBtn": "Colour block + staircase",
   "tut.sz.ue.zickBtn": "Repeat + zigzag",
-  "tut.sz.ue.bunt": "A same-coloured segment carries three patterns at once here. Every card sits in at least two, their factors multiply.",
-  "tut.sz.ue.zick": "It stacks even without matching colours: the second 1 sits in both patterns and counts twice.",
+  "tut.sz.ue.bunt": "A same-coloured segment carries three formations at once here. Every card sits in at least two, their factors multiply.",
+  "tut.sz.ue.zick": "It stacks even without matching colours: the second 1 sits in both formations and counts twice.",
   "tut.sz.dx.zweiBtn": "Two neighbours",
   "tut.sz.dx.dreiBtn": "Three in a block",
   "tut.sz.dx.keinBtn": "No district",
@@ -1692,7 +1685,7 @@ export default {
   "tut.aufstellung.formationen.0": "Tap a formation and see how it comes about.",
   "tut.aufstellung.formationen.1": "The longer a formation, the higher its factor.",
   "tut.aufstellung.stapeln.title": "Several formations",
-  "tut.aufstellung.stapeln.0": "Formations may overlap: one card can sit in several patterns and then counts several times.",
+  "tut.aufstellung.stapeln.0": "Formations may overlap: one card can sit in several formations and then counts several times.",
   "tut.aufstellung.stapeln.1": "Win the trick and the multiplier counts. Lose it and nothing counts, however high it stood.",
 
   "tut.wahl.title": "Perks and skills",
@@ -1780,8 +1773,6 @@ export default {
   "tut.danach.sub": "End screen, points, upgrade tree, ranking.",
   "tut.architekt.strukturen.title": "Structures",
   "tut.architekt.strukturen.0": "Cover a full row, column or diagonal with buildings and you close a structure: every position inside gets a factor. The category does not matter.",
-  "tut.architekt.strukturen.1": "The marked cell is always the same one, so only the buildings' position makes the difference.",
-  "tut.architekt.strukturen.2": "The column is the hardest to fill and pays the most.",
   "tut.danach.endscreen.title": "The end screen",
   "tut.danach.endscreen.0": "After the last cycle the run is over. The end screen shows what it brought in and what you get for it.",
   "tut.danach.endscreen.1": "Tap a part of the screen.",
@@ -1821,7 +1812,7 @@ export default {
      (`canTutorial = !!onTutorial`), so none of them renders.
      NOTE for T9: `start.tutorial.offer.sub` still promises a "guided run". The sentence is invisible
      but wrong — rewrite it when the chip points at the new sections. */
-  "start.tutorial": "Playground",
+  "start.tutorial": "Tutorial",
   "start.tutorial.offer": "Start the tutorial",
   "start.tutorial.offer.sub": "A guided run walks you through everything, step by step",
 

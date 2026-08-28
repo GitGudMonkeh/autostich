@@ -170,7 +170,9 @@ describe("#deckzug · erst ziehen BEIDE, dann wird aufgeloest", () => {
 
   it("der Zustand haengt an der STICH-NUMMER, nicht an einem Flag", () => {
     // Ein `setState(false)` im Effekt kaeme einen Frame zu spaet — die Aufloesung blitzte fuer ein Bild auf.
-    expect(bf).toMatch(/const gezogen = !zugMs \|\| drawnNo === trickNo;/);
+    // Runde 2, R17: `hintHold` (offene Ereignis-Hint-Karte) ueberspringt den Zug zusaetzlich — der
+    // festgehaltene Stich liegt sofort offen. Die Stich-Nummer bleibt die Identitaet.
+    expect(bf).toMatch(/const gezogen = !zugMs \|\| drawnNo === trickNo \|\| hintHold;/);
     expect(bf, "kein setState(false) beim Stichwechsel").not.toMatch(/setDrawnNo\(null\)/);
   });
 
@@ -182,7 +184,8 @@ describe("#deckzug · erst ziehen BEIDE, dann wird aufgeloest", () => {
       expect(m, `${n} nicht gefunden — der Waechter greift ins Leere`).toBeTruthy();
       expect(m[1], `${n} loest noch im Zug-Takt auf`).toContain("aufOn");
     }
-    expect(bf, "aufOn ist sliceOn NACH dem Zug").toMatch(/const aufOn = sliceOn && gezogen;/);
+    // R17: mit offener Hint-Karte loest NICHTS auf — beide Karten bleiben liegen (kein Wegflug/Finisher).
+    expect(bf, "aufOn ist sliceOn NACH dem Zug, gehalten von hintHold").toMatch(/const aufOn = sliceOn && gezogen && !hintHold;/);
   });
 
   it("die Finisher mit eigenem Trigger warten mit", () => {

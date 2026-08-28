@@ -101,12 +101,13 @@ export function loadRunHistory() {
 // v2 (Progression/Upgrades, docs §9): das Profil bekommt die SP-/Baum-/Onboarding-Felder. Rein additiv, aber
 // als eigene Schema-Epoche markiert (Migrations-Anker für spätere Baum-Umformungen).
 // v6 (#316): Onboarding-Phase entfernt — jedes Profil startet mit onboarding = ONBOARDING_LINKS (alle Archetypen,
-// Raritäts-Cap, Legendär-Phase + Genesis-Pack frei). Fresh-Start: 0 SP / 50 DP.
+// Raritäts-Cap, Legendär-Phase + Genesis-Pack frei). Fresh-Start: 0 SP / 0 DP (R22).
 // v7 (#369): Progression-Rework — der alte Baum (bau/auf/rar/mei) ist ersetzt (Deck- + Allgemein-Zweig, neue Knoten-IDs).
 // Archetyp-/Rarität-/Legendär-Gating hängt jetzt am Baum. Migration leert Alt-Knoten + bucht die investierten SP zurück.
 export const PROFILE_SCHEMA_VERSION = 11;
-// #316 Start-Deckpunkte eines frischen Profils (früher 0). Onboarding ist weg → man startet direkt mit etwas DP.
-const START_DECK_POINTS = 50;
+// #316 gab einem frischen Profil 50 Start-DP. Runde 2, R22 (Owner): zurück auf 0 — die erste
+// Währung kommt über den Willkommensbonus nach dem ersten ABGESCHLOSSENEN Lauf (WELCOME_DP).
+const START_DECK_POINTS = 0;
 const DEFAULT_PROFILE = { schemaVersion: PROFILE_SCHEMA_VERSION,
   games: 0, totalScore: 0, totalDurationMs: 0, bestScore: 0, bestStreak: 0, maxCrits: 0, archetypesEver: [], firstTs: 0,
   // #go-ruhe: bester EINZELSTICH als All-Time-Rekord. Er stand bisher nur je Lauf in der Highscore-Liste —
@@ -824,16 +825,20 @@ export function loadHintProgress() {
   try {
     const raw = localStorage.getItem(k(HINTS_KEY));
     const p = raw ? JSON.parse(raw) : null;
-    if (!p || typeof p !== "object") return { seen: [], visits: {}, last: {} };
+    if (!p || typeof p !== "object") return { seen: [], visits: {}, last: {}, seenAt: {} };
     return { seen: Array.isArray(p.seen) ? p.seen.filter((x) => typeof x === "string") : [],
              visits: (p.visits && typeof p.visits === "object") ? p.visits : {},
-             last: (p.last && typeof p.last === "object") ? p.last : {} };
-  } catch (e) { return { seen: [], visits: {}, last: {} }; }
+             last: (p.last && typeof p.last === "object") ? p.last : {},
+             // Runde 2, R19: je Hint der Phasen-Kontext, in dem er gesehen wurde — C6 („Phase danach")
+             // braucht die Unterscheidung „C5 in DIESER Phase ✕" vs. „in einer früheren".
+             seenAt: (p.seenAt && typeof p.seenAt === "object") ? p.seenAt : {} };
+  } catch (e) { return { seen: [], visits: {}, last: {}, seenAt: {} }; }
 }
 export function saveHintProgress(p) {
   try {
     localStorage.setItem(k(HINTS_KEY), JSON.stringify({
       seen: [...new Set((p && p.seen) || [])], visits: (p && p.visits) || {}, last: (p && p.last) || {},
+      seenAt: (p && p.seenAt) || {},
     }));
   } catch (e) {}
 }
