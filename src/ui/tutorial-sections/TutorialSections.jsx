@@ -123,7 +123,7 @@ function Head({ eyebrow, title, onClose, closeLabel }) {
    eigenen Speicher, damit sie ohne localStorage rendert (Server-Render, Tests). */
 export const lessonPath = (s, l) => `${s.id}/${l.id}`;
 
-export function TutorialSections({ onClose, onOpenGlossary = null, onOpenGuide = null, seen = [], onSeen = null, initial = null }) {
+export function TutorialSections({ onClose, onOpenGlossary = null, onOpenGuide = null, onTutorialRun = null, seen = [], onSeen = null, initial = null }) {
   const t = useT();
   const [locale] = useLocale();
   const seenSet = new Set(seen);
@@ -254,6 +254,16 @@ export function TutorialSections({ onClose, onOpenGlossary = null, onOpenGuide =
      die Aufgabe des Spielers. Das kleine „gelesen" je Zeile bleibt als Lesezeichen. */
   const body = (
     <>
+      {/* Runde 3 (Owner): der Tutorial-Lauf — setzt alle Tipps zurück und startet einen neuen,
+          wieder komplett geführten Lauf. Bei aktivem Lauf fragt App vorher nach (der ginge verloren). */}
+      {onTutorialRun && (
+        <div style={{ marginBottom: 16 }}>
+          <button type="button" onClick={onTutorialRun}
+            className="w-full rounded-xl px-4 py-3 font-bold text-body-3 transition-all hover:brightness-110"
+            style={{ background: "#26c6e6", color: "#06222a" }}>{t("tut.run")}</button>
+          <div className="text-meta-1 mt-1.5" style={{ color: "#8a8a95" }}>{t("tut.run.sub")}</div>
+        </div>
+      )}
       {SECTIONS.map((sec) => {
         const farbe = sec.arch ? ARCHETYPE_META[sec.arch]?.color : null;
         return (

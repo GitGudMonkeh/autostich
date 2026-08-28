@@ -19,7 +19,7 @@ import { resolveHint } from "./HintCard.jsx";
 // den play-Ordinal — Papier §5.3: „play start, cycle 2/6/9" ist der Besuchs-Ordinal, keine feste Nummer).
 const COUNTED = new Set(["formation", "architect", "perk", "skill", "play"]);
 
-export function useHints({ state, profile, onMore = null, breakdownOn = true }) {
+export function useHints({ state, profile, onMore = null, breakdownOn = true, guided = false }) {
   const [prog, setProg] = useState(loadHintProgress);
   const seen = useMemo(() => new Set(prog.seen), [prog.seen]);
   // Ref-Spiegel des aktuellen Phasen-Kontexts für markSeen (das Callback bleibt dep-frei):
@@ -32,6 +32,20 @@ export function useHints({ state, profile, onMore = null, breakdownOn = true }) 
     saveHintProgress(next);
     return next;
   }), []);
+  /* Runde 3 (Owner): „Alle Tutorial-Tipps überspringen" auf der H1-Karte — JEDER Hint gilt als
+     gesehen (auch die späten Eis-/Pflanze-/Legendär-Tipps), es kommt nie wieder einer. */
+  const skipAll = useCallback(() => setProg((p) => {
+    const next = { ...p, seen: [...new Set([...p.seen, ...Object.keys(HINT_DEFS)])] };
+    saveHintProgress(next);
+    return next;
+  }), []);
+  /* „Tutorial-Lauf": kompletter Reset — Tipps, Besuchszähler und Kontexte, damit der nächste Lauf
+     wieder von vorn führt (U1/U2/U3 takten über die Besuchszähler). */
+  const resetAll = useCallback(() => {
+    const next = { seen: [], visits: {}, last: {}, seenAt: {} };
+    saveHintProgress(next);
+    setProg(next);
+  }, []);
 
   const screen = screenOf(state);
   // The visit identity: same run (seed) + same cycle + same screen = one visit, however often
@@ -65,7 +79,8 @@ export function useHints({ state, profile, onMore = null, breakdownOn = true }) 
     for (const id of offer || []) { const a = SKILL_DEFS[id]?.archetype; if (a) s.add(a); }
     return s;
   }, [offer]);
-  const firstRun = !!profile && profile.hadCompletedRun === false;
+  // `guided` (Runde 3, Tutorial-Lauf): der Lauf führt wie ein Erstlauf, auch auf Veteranen-Profilen.
+  const firstRun = (!!profile && profile.hadCompletedRun === false) || guided;
   const slots = state?.skillSlots ?? C.SKILL_SLOTS;
   /* C5: „kein Bauplan passt mehr" — nur auf dem Architekt-Screen gerechnet (die Prüfung zählt
      Platzierungen auf dem 5×8-Brett) und am Angebots-/Gebäude-Objekt memoisiert. */
@@ -151,6 +166,7 @@ export function useHints({ state, profile, onMore = null, breakdownOn = true }) 
     dismissEvent,
     bannerFor,
     dismiss: markSeen,
+    skipAll, resetAll,
     // App adds this to the play-freeze condition chain like any overlay: H1 UND jede offene
     // Ereignis-Karte halten den Lauf an, solange der Spieler liest.
     freeze: !!cardId || !!activeEvent,

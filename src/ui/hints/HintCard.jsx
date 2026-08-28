@@ -154,7 +154,7 @@ export function PhaseHintSlot({ screen }) {
 /* The H1 welcome card — grid place-items-center like the other centered dialogs (the guided
    run's playtest finding §15.1: horizontally AND vertically centered). Blocks the run beneath;
    the freeze itself is App's condition chain, fed by useHints. */
-export function HintCardOverlay({ hint, onGo, onMore }) {
+export function HintCardOverlay({ hint, onGo, onMore, onSkipAll = null }) {
   if (!hint) return null;
   const { def, vars } = hint;
   return overlayPortal(
@@ -175,6 +175,12 @@ export function HintCardOverlay({ hint, onGo, onMore }) {
           {onMore && (
             <button type="button" onClick={onMore} className="text-body-5 transition-all hover:brightness-125"
               style={{ color: "#26c6e6" }}>{t("hint.more")} ›</button>
+          )}
+          {/* Runde 3 (Owner): der leise Ausstieg — alle Tutorial-Tipps überspringen, normales Spiel.
+              Bewusst gedämpft unter dem CTA; die Karte schließt sich, weil auch H1 als gesehen gilt. */}
+          {onSkipAll && (
+            <button type="button" onClick={onSkipAll} className="text-body-5 transition-all hover:brightness-125"
+              style={{ color: "#8a8a95" }}>{t("hint.h1.skipAll")}</button>
           )}
         </div>
       </div>
