@@ -1162,12 +1162,13 @@ function AutostichGame() {
   return (
     // Onboarding-Hints: der Provider reicht die Banner-Steuerung an die PhaseHintSlot-Zeilen der
     // Entscheidungsscreens durch — eine Quelle, kein Prop-Drilling durch acht Screens.
-    <HintContext.Provider value={hints}>
-    {/* #356: Deck-Akzentfarben als CSS-Variablen am Run-Container — die neutralen Struktur-Panel-Rahmen tönen sich darüber */}
+    //
+    // #356: Deck-Akzentfarben als CSS-Variablen am Run-Container — die neutralen Struktur-Panel-Rahmen tönen sich darüber
     //   in die Deckfarbe (color-mix, s. panelKit/StatusRail/…). Wechselt das Deck, ziehen die Rahmen mit.
     //   #desktop: seit dem Desktop-Pass AUCH im Menü gesetzt (vorher nur `inRun`) — der Startbildschirm färbt
     //   ab 1280 px Knöpfe, Panel-Rahmen und Streifen aus dem aktiven Deck und braucht die Variablen dort.
     //   Ohne aktives Deck bleiben sie undefined → überall greifen dieselben Violett-Rückfälle wie bisher.
+    <HintContext.Provider value={hints}>
     <div className="app-root relative w-full flex justify-center"
       style={{ "--deck-a1": deckFx.deckA1 || undefined, "--deck-a2": deckFx.deckA2 || undefined }}>
       {/* CRT-Scanline-/Vignette-Overlay (#41) — immer im DOM, nur unter [data-skin="crt"]
