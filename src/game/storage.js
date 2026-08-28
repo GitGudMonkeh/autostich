@@ -314,7 +314,7 @@ export function saveProfile(profile) {
    aber altem Namen. Die übrigen Präferenzen (Lautstärke, Haptik, SPRACHE) überleben den Reset
    weiterhin: sie hängen nicht am Fortschritt, und die Sprache lässt sich im Namens-Dialog ohnehin
    direkt wieder wählen. */
-export const RESET_KEYS = ["as_profile", "as_highscores", "as_ghost", "as_runhistory", "as_activerun", "as_tutorial_done", "as_tut_progress", "as_username", "as_feedback_draft", "as_feedback_sent"];
+export const RESET_KEYS = ["as_profile", "as_highscores", "as_ghost", "as_runhistory", "as_activerun", "as_tutorial_done", "as_tut_progress", "as_hints", "as_username", "as_feedback_draft", "as_feedback_sent"];
 export function wipeProfileStorage() {
   for (const key of RESET_KEYS) {
     try { localStorage.removeItem(k(key)); } catch (e) {}
@@ -808,6 +808,34 @@ export function saveTutorialProgress(p) {
 export function tutorialOpened() {
   try { if (localStorage.getItem(k(TUT_LEGACY))) return true; } catch (e) { /* kein localStorage */ }
   return loadTutorialProgress().seen.length > 0;
+}
+
+/* ONBOARDING-HINTS (docs/tutorial-onboarding-design.md §5) — the in-run hint layer's memory.
+   `seen`   hint ids already shown (or skipped for good) — first occurrence means first in the
+            profile's life, no hint ever repeats (§5.4 rule 4).
+   `visits` 1-based phase-visit counters ({ formation, architect, perk, skill }) — the suggestion
+            sequences and H3b/H5 key off these.
+   `last`   per screen, the context key ("screen:seed:cycle") of the visit already counted, so a
+            reload mid-phase does not double-count.
+   Its own key, not part of the tutorial-sections progress: the Probierfeld is pull material with
+   its own lifecycle; wiping one must not wipe the other except through the full reset. */
+const HINTS_KEY = "as_hints";
+export function loadHintProgress() {
+  try {
+    const raw = localStorage.getItem(k(HINTS_KEY));
+    const p = raw ? JSON.parse(raw) : null;
+    if (!p || typeof p !== "object") return { seen: [], visits: {}, last: {} };
+    return { seen: Array.isArray(p.seen) ? p.seen.filter((x) => typeof x === "string") : [],
+             visits: (p.visits && typeof p.visits === "object") ? p.visits : {},
+             last: (p.last && typeof p.last === "object") ? p.last : {} };
+  } catch (e) { return { seen: [], visits: {}, last: {} }; }
+}
+export function saveHintProgress(p) {
+  try {
+    localStorage.setItem(k(HINTS_KEY), JSON.stringify({
+      seen: [...new Set((p && p.seen) || [])], visits: (p && p.visits) || {}, last: (p && p.last) || {},
+    }));
+  } catch (e) {}
 }
 
 /* AKTIVER LAUF (Resume) — Snapshot des laufenden Reducer-States, damit ein Run das Wegtabben/Schließen

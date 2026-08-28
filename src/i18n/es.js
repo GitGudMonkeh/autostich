@@ -1329,6 +1329,31 @@ export default {
      upgrade tree buys. That is `beneficios`, NOT `ventajas` — `ventaja` is the frozen word for a
      Perk (§3.5), and using it for a plain noun here would blur exactly the term the terminology
      guard exists to keep sharp. */
+  /* ---- ONBOARDING HINTS (docs/tutorial-onboarding-design.md §5) — traducido del alemán. */
+  "hint.eyebrow": "Tutorial",
+  "hint.eyebrow.suggest": "Tutorial · Sugerencia",
+  "hint.more": "Más información",
+  "hint.aria.close": "Cerrar el aviso",
+  "hint.h1.title": "Bienvenido a Autobaza",
+  "hint.h1.go": "Vamos",
+  "hint.h1.body": "Autobaza se juega solo: tu mazo pelea {cards} bazas y tú decides entre medias. Perder es imposible.\n\nEl primer ciclo es para mirar — tu primera decisión llega después.",
+  "hint.h2.body": "Rayo es tu primer arquetipo. Un crítico multiplica la puntuación de una baza — las habilidades de Rayo lo hacen más probable, y cada crítico carga la barra. No hay elección equivocada.",
+  "hint.h2b.body": "A partir de ahora hay varios arquetipos en oferta. Tu primera habilidad de un arquetipo lo activa — mezclar está permitido.",
+  "hint.h3.body": "Una ventaja actúa enseguida y se queda hasta el final de la partida. Si ninguna encaja, rechaza — no cuesta nada.",
+  "hint.h3b.body": "El chip de color nombra la categoría; el borde, la rareza.",
+  "hint.h5.body": "Con los {slots} puestos llenos, una nueva elección sustituye a una habilidad vieja — lo que ya pagó se queda.",
+  "hint.sf1.body": "Empieza con un segmento: junta cartas del mismo color — eso da un {farbblock}, y las formaciones multiplican la puntuación de sus cartas.",
+  "hint.sf2.body": "Tu siguiente patrón: la leyenda muestra qué formaciones existen — cada una más multiplica encima.",
+  "hint.sf3.body": "Las formaciones pueden solaparse — una carta puede estar en varios patrones a la vez.",
+  "hint.sa1.body": "Coloca tu primer edificio donde quieras del tablero. Actúa sobre la carta de debajo — pero solo paga su bono si esa carta gana su baza.",
+  "hint.sa2.body": "Construye un distrito: coloca un edificio del mismo tipo junto al primero — los vecinos de la misma clase se refuerzan.",
+  "hint.sa3.body": "Tu meta a largo plazo: una fila, columna o diagonal completa cierra una estructura y pone un factor sobre todas las posiciones de dentro.",
+  "hint.sa4.body": "Un edificio nunca está clavado: mejorar, mover y demoler se puede siempre.",
+  "hint.c1.body": "Después de cada habilidad de Hielo eliges exactamente una carta para el glaciar — este paso es obligatorio.",
+  "hint.c2.body": "Esta ventaja necesita cartas: toca tantas como pida.",
+  "hint.c3.body": "Esta familia de ventajas necesita un objetivo — elige sobre qué debe actuar.",
+  "hint.c4.body": "Una habilidad legendaria de tus arquetipos activos: su propio puesto, sin cambio.",
+
   "tut.allProgress": "Todos los temas · {done} de {total}",
   "tut.allTopics": "Todos los temas",
   "tut.architekt.hauptaktion.0": "Toca un plano y luego colócalo donde quieras.",

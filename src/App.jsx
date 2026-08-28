@@ -24,6 +24,8 @@ import { StatusBar } from "./ui/StatusBar.jsx"; // Gameplay-Neu-Aufbau Phase 1: 
 import { architectCoverFor } from "./ui/architectCover.js"; // Lauf-Details: Gebäude-Overlay in den Snapshot persistieren
 import { Battlefield, OPP_SKIN_URLS } from "./ui/Battlefield.jsx";
 import { useFxLevel } from "./ui/useReducedFx.js"; // Perf: löst reducedFx dreistufig auf (full/balanced/minimal) → steuert Overlay-Blur + Sweeps
+import { useHints } from "./ui/hints/useHints.js"; // Onboarding-Hints (docs/tutorial-onboarding-design.md §5): Banner auf Entscheidungsscreens + die H1-Karte
+import { HintContext, HintCardOverlay } from "./ui/hints/HintCard.jsx";
 import { PerfOverlay } from "./ui/PerfOverlay.jsx"; // Perf-Recorder-HUD (nur Preview-Build)
 import { perfMark, getReport, formatReport } from "./ui/perfRecorder.js"; // Perf-Recorder (No-op außerhalb Preview)
 import { GlossaryPanel } from "./ui/Glossary.jsx";
@@ -282,6 +284,11 @@ function AutostichGame() {
     saveTutorialProgress(next);
     return next;
   });        // Glossar-Overlay offen → friert den Lauf ein (wie Optionen/Chronik)
+  /* Onboarding-Hints: Banner je Entscheidungsscreen (über HintContext an die Slots) + die H1-Karte.
+     `hintFreeze` reiht sich in die Overlay-Einfrier-Kette ein — die H1-Karte hält den Lauf an wie
+     Optionen/Chronik, sonst liefe der erste Durchlauf hinter der Begrüßung weiter. */
+  const hints = useHints({ state, profile });
+  const hintFreeze = hints.freeze;
   const [confirmAbort, setConfirmAbort] = useState(false);        // #254: Rückfrage „Lauf wirklich abbrechen?" (Beenden-Button ODER Zurück-Geste im Run)
   const [confirmRestart, setConfirmRestart] = useState(false);    // Komfort: Rückfrage „Wirklich neustarten?" (Neustart-Button) — kein Ein-Tap-Verlust bei Fettfingern
   const [speedMult, setSpeedMult] = useState(1); // Ablaufbeschleunigung intern 1×/2×/4×/5× (Buttons X2/X4/MAX; #27, kein Score-Effekt)
@@ -470,11 +477,11 @@ function AutostichGame() {
   // (Lauf zu Ende, aber der letzte Sieg-Loop hängt noch) — werden sie verstummt. Positiv-Logik (statt inRun-gated), damit
   // auch der Gameover-Zustand (inRun=false) sicher greift.
   useEffect(() => {
-    const inActivePlay = inRun && state.phase === "play" && !paused && !showOptions && !showChronik && !glossaryOpen && !confirmAbort && !confirmRestart && visible;
+    const inActivePlay = inRun && state.phase === "play" && !paused && !showOptions && !showChronik && !glossaryOpen && !confirmAbort && !confirmRestart && !hintFreeze && visible;
     const loopsAllowed = inActivePlay || showCustomize; // Werkstatt-Showcase = einziger Nicht-Spiel-Ort mit Loop-Betten
     audio.setLoopsSuspended(!loopsAllowed);
     audio.setFxSuspended(!loopsAllowed); // #329: Effekt-One-Shots (fx_*) exakt wie die Loop-Betten gaten → kein Sound-Schwanz im Victory/Overlay
-  }, [inRun, state.phase, paused, showOptions, showChronik, glossaryOpen, confirmAbort, confirmRestart, visible, showCustomize]);
+  }, [inRun, state.phase, paused, showOptions, showChronik, glossaryOpen, confirmAbort, confirmRestart, hintFreeze, visible, showCustomize]);
   const changeOptions = (patch) => setOptions((o) => {
     // #telemetrie: Abschalten verwirft auch das, was noch in der Warteschlange liegt (siehe telemetry.purge).
     if (patch.telemetry === false && o.telemetry !== false) telemetry.purge();
@@ -585,7 +592,7 @@ function AutostichGame() {
 
   // Auto-Play: nach jedem Stich (trickNo ändert sich) den nächsten planen. Pause hält alles an.
   useEffect(() => {
-    if (state.phase !== "play" || paused || showOptions || showChronik || glossaryOpen || confirmAbort || confirmRestart || !visible) return; // #254: Abbruch-/Neustart-Rückfrage friert den Lauf ein (wie ein Overlay) · !visible: Hintergrund-Tab hält den Lauf an (Akku/Hitze)
+    if (state.phase !== "play" || paused || showOptions || showChronik || glossaryOpen || confirmAbort || confirmRestart || hintFreeze || !visible) return; // #254: Abbruch-/Neustart-Rückfrage friert den Lauf ein (wie ein Overlay) · Onboarding-H1 ebenso · !visible: Hintergrund-Tab hält den Lauf an (Akku/Hitze)
     // #188 v2: nach einem großen Krit-Sieg um hitStopMs verzögert (kurzer „Hit-Stop"/Slow-Mo), sonst normaler Takt.
     // #351: Delay hart auf ein endliches Minimum clampen (nie 0/NaN/Infinity → setTimeout feuert zuverlässig).
     const delay = Math.max(MIN_FLIP_MS, Number.isFinite(flipMs + hitStopMs) ? flipMs + hitStopMs : BASE_FLIP_MS);
@@ -594,7 +601,7 @@ function AutostichGame() {
     // #56: flipMs direkt (statt seiner Einzel-Eingaben speedPct/speedMult) → Deps veralten nicht,
     // falls flipMs künftig von weiteren Variablen abhängt.
     // #148: showChronik friert den Lauf ein (wie showOptions) — Tricks laufen nicht mehr hinter dem Overlay weiter.
-  }, [state.phase, state.trickNo, paused, showOptions, showChronik, glossaryOpen, confirmAbort, confirmRestart, visible, flipMs, hitStopMs]);
+  }, [state.phase, state.trickNo, paused, showOptions, showChronik, glossaryOpen, confirmAbort, confirmRestart, hintFreeze, visible, flipMs, hitStopMs]);
 
   // #351/#366 Watchdog (Sicherheitsnetz gegen seltene Start-/Race-Hänger): Läuft der Lauf (phase play, keine Overlays/
   //   Pause), bewegt sich trickNo aber > STUCK_MS nicht UND ist die Seite LIVE sichtbar, den Guard-Zustand EINMAL loggen
@@ -608,7 +615,7 @@ function AutostichGame() {
     // #366: Der Watchdog darf NICHT auf `visible` gaten — genau der Fall „stale visible===false" (führender Verdacht)
     //   soll ihn nicht mitlahmlegen. Stattdessen prüft er die Sichtbarkeit im Intervall LIVE (document.visibilityState):
     //   echt im Hintergrund → nichts tun (Akku/Hitze bleibt respektiert); sichtbar, aber trickNo hängt → resync + nudge.
-    if (state.phase !== "play" || paused || showOptions || showChronik || glossaryOpen || confirmAbort || confirmRestart) return;
+    if (state.phase !== "play" || paused || showOptions || showChronik || glossaryOpen || confirmAbort || confirmRestart || hintFreeze) return;
     const STUCK_MS = 3000;
     const id = setInterval(() => {
       if (stuckNudged.current || Date.now() - lastTrickAt.current < STUCK_MS) return;
@@ -620,7 +627,7 @@ function AutostichGame() {
       dispatch({ type: "RESOLVE_TRICK", rng: Math.random });
     }, 1000);
     return () => clearInterval(id);
-  }, [state.phase, state.trickNo, paused, showOptions, showChronik, glossaryOpen, confirmAbort, confirmRestart, flipMs, speedMult]);
+  }, [state.phase, state.trickNo, paused, showOptions, showChronik, glossaryOpen, confirmAbort, confirmRestart, hintFreeze, flipMs, speedMult]);
 
   // Geist-Trajektorie des laufenden Runs mitschreiben.
   useEffect(() => {
@@ -1153,7 +1160,10 @@ function AutostichGame() {
   const bfPe = useMemo(() => ({ linkedGroups }), [linkedGroups]);
 
   return (
-    // #356: Deck-Akzentfarben als CSS-Variablen am Run-Container — die neutralen Struktur-Panel-Rahmen tönen sich darüber
+    // Onboarding-Hints: der Provider reicht die Banner-Steuerung an die PhaseHintSlot-Zeilen der
+    // Entscheidungsscreens durch — eine Quelle, kein Prop-Drilling durch acht Screens.
+    <HintContext.Provider value={hints}>
+    {/* #356: Deck-Akzentfarben als CSS-Variablen am Run-Container — die neutralen Struktur-Panel-Rahmen tönen sich darüber */}
     //   in die Deckfarbe (color-mix, s. panelKit/StatusRail/…). Wechselt das Deck, ziehen die Rahmen mit.
     //   #desktop: seit dem Desktop-Pass AUCH im Menü gesetzt (vorher nur `inRun`) — der Startbildschirm färbt
     //   ab 1280 px Knöpfe, Panel-Rahmen und Streifen aus dem aktiven Deck und braucht die Variablen dort.
@@ -1458,6 +1468,11 @@ function AutostichGame() {
         <RestartConfirm onKeepPlaying={() => setConfirmRestart(false)}
           onRestart={() => { setConfirmRestart(false); restartRun(); }} />
       )}
+
+      {/* Onboarding-H1: die EINZIGE blockierende Hint-Karte (Erstlauf-Begrüßung). Über allem außer
+          den Bestätigungs-Dialogen; der Lauf darunter ist über hintFreeze eingefroren. */}
+      {hints.card && <HintCardOverlay hint={hints.card} onGo={hints.dismissCard} />}
     </div>
+    </HintContext.Provider>
   );
 }
