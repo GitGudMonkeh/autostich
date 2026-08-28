@@ -37,6 +37,8 @@ player text** (text-style-guide.md, "Kein Gedankenstrich").
 
 | 20 | **NEW lesson `architekt/strukturen`** (owner decision) | The Zeile/Spalte/Diagonale examples move to their own page in the same board style (real building shapes, true 5x8 grid, categories mixed to show they do not matter). S-A3 retargets there; the page is what the next architect phase's suggestion links to. Mockup: https://claude.ai/code/artifact/42fbe019-db98-43f8-8da6-65955463ac2d — awaiting approval. |
 
+| 21 | **E9** (Kampfwert) | Copy stays (dash goes with the sweep). "Mehr dazu" link goes. |
+
 ## Probierfeld lessons (Mehr-dazu targets)
 
 | # | Lesson | Change |
