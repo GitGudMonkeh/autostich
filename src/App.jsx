@@ -650,7 +650,15 @@ function AutostichGame() {
   // Aktuellen Lauf werten: Highscore + Geist sichern (idempotent via recorded-Ref).
   // Genutzt von Game-Over UND vom vorzeitigen Beenden (#5), damit nichts verloren geht.
   function saveRun() {
-    if (recorded.current || !state.trickNo) return;
+    if (recorded.current) return;
+    /* Lauf ohne einen einzigen Stich (Abbruch in den Eröffnungsphasen): nichts zu werten — aber
+       die Anzeige-Reste des VORHERIGEN Laufs müssen weg. Sonst zeigt der Endscreen dessen
+       SP/DP-Chips und Willkommensbonus für einen Lauf, der nie etwas gutgeschrieben hat
+       (Review-Runde 2026-08-28, Zeile 34). */
+    if (!state.trickNo) {
+      setRunEarn(null); setProgressUnlocks([]); setOnboardingBanner(null); setNewUnlocks([]); setPrevBests(null);
+      return;
+    }
     recorded.current = true;
     const finalScore = Math.floor(state.score);
     // #169 FB-8: Run-Rückblick-Stats für die lokale Detailansicht (RunStats). perks/skills als ID-Arrays.
