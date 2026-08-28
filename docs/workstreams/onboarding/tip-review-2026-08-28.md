@@ -141,3 +141,9 @@ Next: owner playtest round 3.
 - wahl/legendaer (C4 fires on the legendary pick, which is locked on a first run)
 
 **Reached on a first run (12):** grundlagen/stich, grundlagen/score, aufstellung/formationen, aufstellung/stapeln, wahl/kategorien, wahl/raritaet, blitz/karte, feuer/karte (if fire is the first archetype), architekt/wohin, architekt/strukturen, architekt/aufwerten, danach/punkte.
+
+## Round 3 (owner playtest after round 2 + entry rework) — COLLECTING
+
+| # | Item | Change |
+| --- | --- | --- |
+| Q1 | **E1 (first win): Mehr dazu goes** | The first-win event card ("Dein erster Sieg: {win} Basispunkte…") loses its "Mehr dazu" link (drop `target` from the E1 def). |
