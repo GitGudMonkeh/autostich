@@ -1150,6 +1150,8 @@ export default {
   "hint.eyebrow.suggest": "Tutorial · Vorschlag",
   "hint.more": "Mehr dazu",
   "hint.aria.close": "Hinweis schließen",
+  "hint.badge": "Guter Start",
+  "hint.badge.reason": "Empfohlen: Deine Crits füllen die Leiste — ist sie voll, ionisiert er Karten, und die bringen mehr Score und Crit-Chance.",
   "hint.h1.title": "Willkommen bei Autostich",
   "hint.h1.go": "Los geht's",
   "hint.h1.body": "Autostich spielt sich selbst: Dein Deck schlägt sich durch {cards} Stiche, du entscheidest dazwischen. Verlieren kannst du nicht.\n\nDer erste Durchlauf gehört dem Zuschauen — deine erste Entscheidung kommt danach.",

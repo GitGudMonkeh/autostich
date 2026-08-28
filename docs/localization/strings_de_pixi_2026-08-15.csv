@@ -1982,6 +1982,8 @@ Pruning: replacing the skill permanently grants +20% root/bloom score (up to +15
 "guide.subtitle","i18n","So spielst du jeden Archetyp, durchklicken","How to play each archetype, click through","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "guide.title","i18n","Leitfaden","Guide","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "hint.aria.close","i18n","Hinweis schließen","Close hint","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
+"hint.badge","i18n","Guter Start","Good start","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
+"hint.badge.reason","i18n","Empfohlen: Deine Crits füllen die Leiste — ist sie voll, ionisiert er Karten, und die bringen mehr Score und Crit-Chance.","Recommended: your crits fill the bar — when it is full, it ionises cards, and those pay more score and crit chance.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "hint.c1.body","i18n","Nach jedem Eis-Skill wählst du genau eine Karte für den Gletscher — dieser Schritt ist Pflicht.","After every ice skill you pick exactly one card for the glacier — this step is mandatory.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "hint.c2.body","i18n","Dieser Perk braucht Karten: Tippe so viele an, wie er verlangt.","This perk needs cards: tap as many as it asks for.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "hint.c3.body","i18n","Diese Perk-Familie braucht ein Ziel — wähle, worauf sie wirken soll.","This perk family needs a target — choose what it should act on.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""

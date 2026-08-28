@@ -23,6 +23,7 @@ import { skillDef, archMeta } from "../i18n/labels.js"; // #sprache: Skills/Arch
 import { glossaryEntry } from "../i18n/glossaryText.js"; // #sprache: Glossartext zur Anzeigezeit
 import { t, fmtNum } from "../i18n/index.js";
 import { PhaseHintSlot } from "./hints/HintCard.jsx"; // Onboarding-Hints: Banner-Slot unter dem Kopf (docs/tutorial-onboarding-design.md)
+import { recommendedStarter } from "./hints/hintScript.js"; // §6.2 „Guter Start": regelbasiert der Konsument des Erstlauf-Angebots
 
 // Archetyp-Meta eines Skills (Theming) — Fallback neutral (#93 F0).
 const ac = (id) => archMeta(archetypeOf(id)) || { label: t("skill.arch.none"), icon: "•", color: "#8a8a95" };
@@ -131,6 +132,11 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
       default: return "";
     }
   };
+
+  /* §6.2 Erstlauf-Empfehlung: NUR im ersten Angebot des ersten Laufs (state.firstRun, noch kein
+     Skill gehalten) trägt der garantierte Konsument das „Guter Start"-Badge samt Begründungszeile.
+     Regelbasiert abgeleitet, nie kuratiert — siehe recommendedStarter in hintScript.js. */
+  const starterId = state.firstRun && (skills || []).length === 0 ? recommendedStarter(offer) : null;
 
   // Angebot nach Archetyp gruppieren (feste Reihenfolge). #93 F0: 2+2 …; jetzt bis zu 4 Fraktionen im Angebot.
   // #118: defensiver Guard — ein bereits gehaltener Skill erscheint NIE als Angebots-Karte (selbst bei inkonsistentem State).
@@ -467,6 +473,12 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                         style={{ background: `${col}22`, color: col, border: `1px solid ${col}88` }}>
                         <ArchIcon meta={curG.meta} size={12} /> {curG.meta.label.toUpperCase()}
                       </span>
+                      {id === starterId && (
+                        <span className="text-meta-1 px-1.5 py-0.5 rounded-full font-bold tracking-wide uppercase"
+                          style={{ background: "#26c6e6", color: "#06222a" }}>
+                          {t("hint.badge")}
+                        </span>
+                      )}
                       {(s.heatConsumer || s.onFullCharge) && (
                         <span className="text-meta-1 px-1.5 py-0.5 rounded font-bold tracking-wide"
                           style={{ background: "#d4a63a22", color: "#d4a63a", border: "1px solid #d4a63a88" }}>
@@ -499,6 +511,12 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                       {badges}{title}
                       {/* #387: volle Beschreibung — auch für Legendäre (kein erster-Satz-Zuschnitt mehr); umbricht per whitespace-pre-line. */}
                       <div className="text-body-lg-5 opacity-75 leading-snug whitespace-pre-line"><GlossaryText text={s.desc} /></div>
+                      {/* §6.2: Die Empfehlung erklärt sich selbst — und definiert den Crit in dem Moment,
+                          in dem er relevant wird. Text baut auf dem H2-Banner darüber auf. */}
+                      {id === starterId && (
+                        <div className="text-body-5 leading-snug pt-1.5 mt-0.5 border-t"
+                          style={{ color: "#7fdcf0", borderColor: "rgba(38,198,230,0.18)" }}>{t("hint.badge.reason")}</div>
+                      )}
                     </button>
                   );
                 })}
