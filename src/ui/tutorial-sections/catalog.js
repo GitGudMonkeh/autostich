@@ -70,35 +70,6 @@ export const lessonKind = (lesson) => lesson.art || "kurz";
 
 export const SECTIONS = [
   {
-    id: "grundlagen",
-    /* T-O4 (docs/tutorial-onboarding-design.md §8): die reinen Text-Lektionen sind raus — ihre
-       Arbeit machen jetzt die In-Run-Hints, das Glossar und der Leitfaden. Geblieben ist, was
-       eine Runde traegt. */
-    lessons: [
-      /* Runde 2, R13 (Owner): Lektionsreihenfolge = Reihenfolge im ersten Lauf. Hier: erster
-         Stich → erster Sieg (Score) → Serie → Kampfwert (braucht Boni, kommt später) → Herkunft. */
-      { id: "stich", art: "voll", beats: [
-        { kind: "probierfeld", probe: "duell" },
-        { kind: "tip" }] },
-      /* Der Score-Schirm des Entwurfs traegt Formel, Runde und zwei Erklaerkaesten auf einem
-         Schirm (1344 px gemessen). Das reisst das volle Budget; der Owner-Entscheid dazu ist
-         AUFTEILEN statt kuerzen — die Runde bleibt komplett, die Kaesten ruecken in die
-         Folgelektion. */
-      { id: "score", art: "voll", beats: [
-        { kind: "probierfeld", probe: "score" },
-        { kind: "tip" }] },
-      { id: "serie", art: "voll", beats: [
-        { kind: "probierfeld", probe: "serie" },
-        { kind: "tip" }] },
-      { id: "werte", art: "voll", beats: [
-        { kind: "probierfeld", probe: "kampfwert" },
-        { kind: "tip" }] },
-      { id: "herkunft", art: "voll", beats: [
-        { kind: "probierfeld", probe: "herkunft" },
-        { kind: "tip" }] },
-    ],
-  },
-  {
     id: "blitz",
     arch: "lightning",
     lessons: [
@@ -132,35 +103,18 @@ export const SECTIONS = [
     id: "aufstellung",
 
     lessons: [
-      { id: "brett", art: "voll", beats: [
-        { kind: "probierfeld", probe: "aufstellen" },
-        { kind: "tip" }] },
-      { id: "karte", art: "voll", beats: [
-        { kind: "probierfeld", probe: "kartenteile" },
-        { kind: "tip" }] },
       { id: "formationen", art: "voll", beats: [
         { kind: "probierfeld", probe: "formation" },
         { kind: "tip" }] },
       { id: "stapeln", art: "voll", beats: [
         { kind: "probierfeld", probe: "overlap" },
-        { kind: "tip" }] },
-    ],
+        { kind: "tip" }] },],
   },
   {
     id: "architekt",
     /* VIER Lektionen statt sechs. „brett" und „sorten" waren Textkarten; was sie sagten, steht
        jetzt in der ersten Runde und in den Regeln darunter. */
     lessons: [
-      /* Die Architekt-Schirme des Entwurfs maßen 1050 bis 1350 px — über dem Budget.
-         Owner-Entscheid: aufteilen statt kürzen. Die Regeln-Liste und die Aufwerten-Tabelle
-         sind eigene Lektionen. */
-      { id: "wasist", art: "voll", beats: [
-        { kind: "block" },
-        { kind: "probierfeld", probe: "archmock" },
-        { kind: "tip" }] },
-      { id: "hauptaktion", art: "voll", beats: [
-        { kind: "probierfeld", probe: "bauen" },
-        { kind: "tip" }] },
       /* Review-Runde (Zeilen 19/20): „wohin" ist jetzt die Distrikt-Lektion, die Strukturen haben
          ihre eigene Runde — S-A2 verlinkt auf wohin, S-A3 auf strukturen. R13: Aufwerten rückt
          HINTER Distrikte und Strukturen — so tauchen die Themen auch im Lauf auf (S-A2 → S-A3 → S-A4). */
@@ -179,8 +133,7 @@ export const SECTIONS = [
         { kind: "tip" }] },
       { id: "tipps", art: "voll", beats: [
         { kind: "probierfeld", probe: "tipps" },
-        { kind: "tip" }] },
-    ],
+        { kind: "tip" }] },],
   },
   {
     /* Die alte Sektion „archetypen" mit ihren vier Verweis-Karten ist weg. Der freigegebene
@@ -209,22 +162,12 @@ export const SECTIONS = [
   {
     id: "danach",
     lessons: [
-      { id: "endscreen", art: "voll", beats: [
-        { kind: "block" },
-        { kind: "probierfeld", probe: "gomock" },
-        { kind: "merk" },
-        { kind: "tip" }] },
       { id: "punkte", art: "voll", beats: [
         { kind: "block" },
         { kind: "probierfeld", probe: "meilenstein" },
         { kind: "merk" },
         { kind: "merk" },
-        { kind: "tip" }] },
-      { id: "baum", art: "voll", beats: [
-        { kind: "block" },
-        { kind: "probierfeld", probe: "baum" },
-        { kind: "tip" }] },
-    ],
+        { kind: "tip" }] },],
   },
   {
     id: "pflanze",
@@ -258,32 +201,6 @@ export const SECTIONS = [
         { kind: "tip" }] },
       { id: "tipps", art: "voll", beats: [
         { kind: "probierfeld", probe: "tipps" },
-        { kind: "tip" }] },
-    ],
-  },
-  {
-    /* Die zehnte Sektion, vom Owner nachgefordert: was man tun kann, wenn die Grundlagen sitzen.
-       VIER Lektionen, seit „Zwei Builds" geteilt wurde — die Lektion maß 1.360 px gegen ein
-       Budget von 960, und beide Builds waren ausdrücklich gewollt. */
-    id: "fortgeschritten",
-    lessons: [
-      { id: "laenge", art: "voll", beats: [
-        { kind: "block" },
-        { kind: "probierfeld", probe: "laenge" },
-        { kind: "merk" },
-        { kind: "tip" }] },
-      /* Der Segmente-Schirm maß 1375 px — die Kernaussagen des Blocks und des Merksatzes
-         stecken jetzt in Szene und Tipp, die Rechen-Zeile entfiel (die Faktoren stehen
-         ohnehin unter jeder Karte). */
-      { id: "segmente", art: "voll", beats: [
-        { kind: "probierfeld", probe: "segmente" },
-        { kind: "tip" }] },
-      { id: "glut", art: "voll", beats: [
-        { kind: "probierfeld", probe: "glutbuild" },
-        { kind: "tip" }] },
-      { id: "klinge", art: "voll", beats: [
-        { kind: "probierfeld", probe: "klingebuild" },
-        { kind: "merk" },
         { kind: "tip" }] },
     ],
   },];
@@ -403,24 +320,16 @@ const TAB_ROWS_DEFAULT = 4;
    NIEDRIG angesetzt (250/305/300) — das Modell hätte eine zu lange Lektion durchgewunken, und das
    ist die einzige Richtung, in die ein Budget nicht irren darf. Die Werte hier stehen deshalb
    knapp über der Messung, aufgerundet. */
-const PROBE_PX = { formation: 520, streak: 150, board: 215,
-  /* Die Grundlagen-Szenen des Entwurfs, nachgemessen im Build (mess-welle1.mjs, 390 x 844):
-     duell 494 · kampfwert 773 · serie 414 ungespielt (+5 Logzeilen im gespielten Zustand)
-     · score 785 · laufmock 538 (+Tippzeile) · herkunft 601. Eingetragen ist der gespielte
-     Zustand, aufgerundet. */
-  score: 790, duell: 500, kampfwert: 780, serie: 700, herkunft: 610,
-  /* Welle 2, nachgemessen (mess-welle2.mjs): aufstellen 553 ungespielt (+Log), kartenteile 657,
-     formation 697, overlap 337, kategorien 600, blitzkarte 763, tipps 470 (Eis hat sechs
-     Einträge, deshalb höher angesetzt), raritaet/legendaer nach dem Split gemessen. */
-  tipps: 560, legendaer: 620,
-  /* Die Aufstellungs-Runden, ebenfalls nachgemessen: aufstellen 243 · kartenteile 186 ·
-     overlap 190 (dieselbe Komponente wie formation). Sie fehlten hier zuerst ganz und fielen
-     damit auf PROBE_MAX — 375 px für ein 186-px-Feld. Das Modell lag dadurch bis zu 40 % zu hoch,
-     und ein Budget, das so weit danebenliegt, misst nichts mehr. */
-  aufstellen: 730, kartenteile: 660, overlap: 480,
-  /* Die Architekt-Runden. Das Brett ist der teuerste Baustein des ganzen Tutorials: acht Zeilen
-     mal fünf Spalten. GEMESSEN archmock 299 · bauen 286 · struktur 438. */
-  archmock: 630, bauen: 770, struktur: 560, strukturen: 620, glutbuild: 470, klingebuild: 490,
+/* Runde 3, Q17 (Owner): die Einträge der gestrichenen Lektionen (Grundlagen, Fortgeschritten,
+   Architekt-Mocks, Build-Kästen) sind mit ihren Bausteinen entfernt — was hier steht, existiert
+   auch in PROBES (beats.jsx). */
+const PROBE_PX = { formation: 520,
+  /* Welle 2, nachgemessen (mess-welle2.mjs): formation 697, overlap 337, kategorien 600,
+     blitzkarte 763, tipps 470 (Eis hat sechs Einträge, deshalb höher angesetzt),
+     raritaet/legendaer nach dem Split gemessen. */
+  tipps: 560, legendaer: 620, overlap: 480,
+  // Die Architekt-Runden. GEMESSEN struktur 438.
+  struktur: 560, strukturen: 620,
   // Wahl und Blitz, gemessen: kategorien 199 · raritaet 157 · blitzkarte 272.
   kategorien: 600, raritaet: 620, blitzkarte: 800,
   /* Feuer, Pflanze, Eis — gemessen: feuerkarten 271 · hitze 152 · pflanzkarte 305 ·
@@ -428,9 +337,8 @@ const PROBE_PX = { formation: 520, streak: 150, board: 215,
      neues Feld hier zuerst nicht eingetragen und fiel auf PROBE_MAX; wer ein Probierfeld baut,
      trägt es HIER ein, sonst misst das Budget etwas anderes als der Leser sieht. */
   feuerkarten: 425, schmiede: 465, hitze: 715, pflanzkarte: 710, pflanzzeichen: 262, gruenfeld: 670, gletscher: 645, gletscherfeld: 755,
-  // Nach dem Lauf und Fortgeschritten, gemessen: gomock 299 · meilenstein 169 · baum 352 ·
-  // laenge 299 · segmente 311.
-  gomock: 470, meilenstein: 400, baum: 455, laenge: 370, segmente: 772 };
+  // Nach dem Lauf, gemessen: meilenstein 169.
+  meilenstein: 400 };
 const PROBE_MAX = Math.max(...Object.values(PROBE_PX));
 
 const lines = (text) => Math.max(1, Math.ceil(String(text || "").length / CHARS_PER_LINE));

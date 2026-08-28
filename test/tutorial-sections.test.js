@@ -384,8 +384,10 @@ describe("Tutorial-Sektionen · das Höhenbudget", () => {
   /* Und die Umkehrung: eine knappe volle Lektion muss DURCHkommen. Ohne diese Probe wäre ein Modell, das
      alles reißen lässt, ebenso „grün" wie eines, das rechnet. */
   it("Gegenprobe: eine knappe volle Lektion bleibt im Budget", () => {
+    /* Runde 3, Q17: `streak` (150 px) ist mit seiner Lektion gestrichen; `pflanzzeichen` (262 px)
+       ist jetzt der kleinste eingetragene Baustein — die Probe misst weiter dieselbe Umkehrung. */
     const fake = { id: "x", art: "voll",
-      beats: [{ kind: "satz" }, { kind: "probierfeld", probe: "streak" }, { kind: "tip" }] };
+      beats: [{ kind: "satz" }, { kind: "probierfeld", probe: "pflanzzeichen" }, { kind: "tip" }] };
     const sec = { id: "y" };
     const lang = { [beatKey(sec, fake, 0)]: "W".repeat(120), [beatKey(sec, fake, 2)]: "W".repeat(80) };
     expect(lessonHeight(sec, fake, (k) => lang[k] ?? "")).toBeLessThan(VOLL_BUDGET_PX);

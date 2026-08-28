@@ -1104,6 +1104,11 @@ describe("i18n · Ratsche gegen neue deutsche Inline-Texte", () => {
     // Tutorial-Sektionen (#tutorial-sections) — von der ersten Zeile an zweisprachig gebaut.
     "src/ui/tutorial-sections/TutorialSections.jsx", "src/ui/tutorial-sections/beats.jsx"];
 
+  /* Runde 3, Q17: beats.jsx trägt seit dem Lektions-Rückbau KEINEN Anzeigetext mehr — alle Sätze
+     laufen als Props aus TutorialSections.jsx hinein, ein i18n-Import wäre tot. Die Datei bleibt
+     in MIGRATED (kein Wort-Literal darf zurückkommen), nur die Import-Pflicht entfällt. */
+  const TEXTLESS = new Set(["src/ui/tutorial-sections/beats.jsx"]);
+
   /* In einer migrierten Datei steht KEIN Wort mehr als Literal — egal welcher Sprache. Deshalb
      wird nicht auf „deutsch aussehend" geprüft (das ließe „Normaler Lauf" durch, kein Umlaut),
      sondern auf „enthält überhaupt ein Wort". Symbole, Pfeile, Ziffern und einzelne Buchstaben
@@ -1122,6 +1127,7 @@ describe("i18n · Ratsche gegen neue deutsche Inline-Texte", () => {
 
   it("die Ratschen-Liste zeigt nur auf existierende, i18n-nutzende Dateien", () => {
     for (const file of MIGRATED) {
+      if (TEXTLESS.has(file)) continue;
       const src = readFileSync(new URL(`../${file}`, import.meta.url), "utf8");
       // App.jsx liegt eine Ebene höher (./i18n/), alles unter src/ui/ zwei (../i18n/).
       // Beliebige Tiefe: `./i18n/`, `../i18n/` — und `../../i18n/`, seit das Tutorial in src/ui/tutorial/ liegt.
