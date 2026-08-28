@@ -713,6 +713,13 @@ b, strong { font-weight: 600; }
 @media (prefers-reduced-motion: reduce) {
   .as-hint-anchor-pulse { animation: none; box-shadow: 0 0 0 2px #8a7de0, 0 0 14px rgba(138,125,224,.67); }
 }
+
+/* Runde 3, Q9 (Owner): die Faktorenkette unter den Karten bricht bei vielen Faktoren auf zwei
+   Zeilen um — das Panel wuchs je Stich und zuckte bei hohem Tempo. Unter 1280 px reserviert die
+   Zeile deshalb FEST die Zwei-Zeilen-Höhe (ein- wie zweizeilig identisch); ab 1280 px bleibt die
+   alte Höhe, dort bricht die Kette nicht um. */
+@media (max-width: 1279.98px) { .bf-kette { min-height: 32px; } }
+
 /* Leitfaden-Kreislauf: wandernder Funke auf dem Ring (Overlay). */
 @keyframes guide-ring-run { to { stroke-dashoffset: -302; } }
 .guide-ring-spark { animation: guide-ring-run 3.6s linear infinite; }
