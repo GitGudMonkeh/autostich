@@ -147,3 +147,4 @@ Next: owner playtest round 3.
 | # | Item | Change |
 | --- | --- | --- |
 | Q1 | **E1 (first win): Mehr dazu goes** | The first-win event card ("Dein erster Sieg: {win} Basispunkte…") loses its "Mehr dazu" link (drop `target` from the E1 def). |
+| Q2 | **E2 (first tie): Mehr dazu goes** | The tie event card ("Gleichstand: Niemand punktet. Nur Siege zahlen.") loses its "Mehr dazu" link (drop `target` from the E2 def). |
