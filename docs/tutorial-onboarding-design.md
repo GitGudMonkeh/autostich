@@ -83,7 +83,7 @@ architect, measured):
   suggestion S-A1 ("place your first building").
 - **Cycle 5, the first skill offer:** now with four play phases, a perk, a formation and a
   building behind the player — and it shows **Blitz only** (§6); banner H2 above it, one
-  "Guter Start" badge on the Blitz consumer. Three options, one marked. E5 (the new resource bar)
+  „Empfohlen" badge on the Blitz consumer. Three options, one marked. E5 (the new resource bar)
   follows in the next play phase.
 - **Later formation and architect visits** continue their sequences: another pattern (S-F2), a
   district (S-A2), the structure outlook (S-A3) — each visit one task, skipped if already achieved.
@@ -192,7 +192,7 @@ Distrikt, Struktur), pull every display name from the registries at render time
 | **S-F2** | formation phase, visit 2+ | Dein nächstes Muster: Die Legende zeigt, welche Formationen es gibt — jede weitere multipliziert dazu. | Your next pattern: the legend shows which formations exist — each additional one multiplies on top. | aufstellung / formationen |
 | **S-F3** | formation phase, visit 3+ | Formationen dürfen sich überlappen — eine Karte kann in mehreren Mustern stecken. | Formations may overlap — one card can sit in several patterns. | aufstellung / stapeln |
 | **S-A1** | architect phase, visit 1 | Setz dein erstes Gebäude irgendwo aufs Brett. Es wirkt auf die Karte unter ihm — seinen Bonus zahlt es nur, wenn die ihren Stich gewinnt. | Place your first building anywhere on the board. It affects the card beneath it — and pays its bonus only if that card wins its trick. | architekt / wasist |
-| **S-A2** | architect phase, visit 2+ | Bau einen Distrikt: Setz ein gleichartiges Gebäude neben dein erstes — Nachbarn derselben Art verstärken sich. | Build a district: place a matching building next to your first — neighbours of the same kind reinforce each other. | architekt / wohin |
+| **S-A2** | architect phase, visit 2+ | Bau einen Distrikt: Setz ein Gebäude derselben Kategorie — gleiche Farbe — neben dein erstes. Solche Nachbarn verstärken sich. | Build a district: place a building of the same category — same colour — next to your first. Such neighbours reinforce each other. | architekt / wohin |
 | **S-A3** | architect phase, visit 3+ | Dein Fernziel: Eine volle Zeile, Spalte oder Diagonale schließt eine Struktur und legt einen Faktor auf alle Positionen darin. | Your long game: a full row, column or diagonal closes a structure and puts a factor on every position inside it. | architekt / wohin |
 | **S-A4** | architect phase, visit 4+ | Ein Gebäude ist nie festgenagelt: Aufwerten, versetzen und abreißen darfst du jederzeit. | A building is never nailed down: upgrade, move and demolish any time. | architekt / aufwerten |
 
@@ -234,7 +234,7 @@ spotlight. Respects the three FX levels (`useFxLevel`), per the guided-run playt
 | **E6** | first formation scores in play | Formation {name}: Diese Karte zählt ×{mult}. Muster zählen nur innerhalb eines Segments. | Formation {name}: this card counts ×{mult}. Patterns only count inside one segment. | aufstellung / formationen |
 | **E7** | first milestone reached | Meilenstein erreicht — das bringt dir Stichpunkte für den Upgrade-Baum nach dem Lauf. | Milestone reached — that earns you trick points for the upgrade tree after the run. | danach / punkte |
 | **E8** | first-ever run end | Dein Lauf zählt: Stichpunkte für den Upgrade-Baum, Deckpunkte für die Werkstatt. Alles Weitere probierst du im Probierfeld aus — jederzeit. | Your run counts: trick points for the upgrade tree, deck points for the workshop. Everything else you can try in the playground — any time. | danach / endscreen |
-| **E9** | first trick where a card's Kampfwert differs from its Kartenwert | Die {karte} kämpft mit {kampfwert} statt {kartenwert}: Kartenwert plus Stichwert-Boni ergeben den Kampfwert — und der höhere gewinnt den Stich. | The {karte} fights at {kampfwert} instead of {kartenwert}: card value plus trick-value boni make the combat value — and the higher one wins the trick. | grundlagen / werte |
+| **E9** | first trick where a card's Kampfwert differs from its Kartenwert | Deine Karte kämpft mit {kampfwert} statt {kartenwert}: Kartenwert plus Stichwert-Boni ergeben den Kampfwert — der höhere gewinnt den Stich. | Your card fights at {kampfwert} instead of {kartenwert}: card value plus trick-value bonuses make the combat value — the higher one wins the trick. | grundlagen / werte |
 
 **UI hints (owner direction, 2026-08-28): quiet cycles teach the run screen itself.** Speed,
 Chronik and the score panels are UI literacy, not decisions — they get their own slot: **the start
@@ -244,8 +244,8 @@ never in cycle 1, and it counts against the phase's two-card cap.
 
 | id | Trigger | DE draft | EN draft | Mehr dazu |
 | --- | --- | --- | --- | --- |
-| **U1** | play start, cycle 2 (after one full cycle at 1×) | Über die Leiste oben hältst du den Lauf an oder stellst das Tempo: ×2, ×4 oder Max. | The bar up top pauses the run or sets the speed: ×2, ×4 or max. | grundlagen / anzeigen |
-| **U2** | play start, cycle 6 (the first skill is in, factors are real) | Die Seitenpanels zeigen, woraus dein Score gerade entsteht — jeder Faktor einzeln. | The side panels show what your score is made of right now — each factor on its own. | grundlagen / herkunft |
+| **U1** | play start, cycle 2 (after one full cycle at normal speed) | Über die Leiste oben hältst du den Lauf an — oder stellst das Tempo hoch, bis auf Max. | The bar up top pauses the run — or turns the speed up, all the way to max. | grundlagen / anzeigen |
+| **U2** | play start, cycle 6 (the first skill is in, factors are real) | Die Panels unter dem Spielfeld zeigen, woraus dein Score entsteht — jeder Faktor einzeln. | The panels below the battlefield show what your score is made of — each factor on its own. | grundlagen / herkunft |
 | **U3** | play start, cycle 9 (enough picks to look up) | Das Karten-Symbol oben öffnet die Chronik: alle deine Karten, Formationen und Gebäude in diesem Lauf. | The card icon up top opens the Chronik: all your cards, formations and buildings in this run. | grundlagen / anzeigen |
 
 U2 carries one verification for T-O2: the side panels are a desktop affordance — on the phone the
@@ -347,14 +347,14 @@ supporting evidence is better than a taste call:
 **The first skill screen (cycle 5, after §6.1) then reads:** three Blitz skills, one badge. The
 badge sits on the guaranteed **Blitz consumer — Ionisierung** (measured: line 2 of the lightning
 skills, "volle Ladung → Payoff", `onFullCharge: "ionize"`; without a consumer a full bar
-evaporates — `bar.lightning.noConsumer` says so in the live UI) — DE **„Guter Start"** / EN
-**"Good start"** — because the consumer is what makes the full-bar payoff visible, which E5 then
+evaporates — `bar.lightning.noConsumer` says so in the live UI) — DE **„Empfohlen"** / EN
+**"Recommended"** (owner rename, 2026-08-28 — „Guter Start" read oddly in German) — because the consumer is what makes the full-bar payoff visible, which E5 then
 names. **The badge explains itself** (owner direction, 2026-08-28): the badged card carries one
 reason line that says what the skill does — and, in the same breath, what a crit is, because this
-is the moment the crit becomes relevant. Draft: DE *„Empfohlen: Deine Crits füllen die Leiste —
-ist sie voll, ionisiert er Karten, und die bringen mehr Score und Crit-Chance."* / EN
-*"Recommended: your crits fill the bar — when it is full, it ionises cards, and those pay more
-score and crit chance."* What a crit *is* stands one line above, in H2 — the badge builds on it;
+is the moment the crit becomes relevant. Draft: DE *„Deine Crits füllen die Leiste — ist sie voll,
+ionisiert er Karten, und die bringen mehr Score und Crit-Chance."* / EN *"Your crits fill the
+bar — when it is full, it ionises cards, and those pay more score and crit chance."* (the badge
+itself already says „Empfohlen", so the line no longer repeats it) What a crit *is* stands one line above, in H2 — the badge builds on it;
 the E4 pause card then only names the number when the first one lands (§5.3). The badge rule stays
 **rule-derived, not curated** (the guided-run plan §13.2 rejected hardcoded picks for drift
 reasons, and that reasoning still holds): "the consumer of the offered archetype", shipped as one

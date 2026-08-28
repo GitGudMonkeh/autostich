@@ -9,8 +9,8 @@
       Balancing. */
 import { describe, it, expect } from "vitest";
 import de from "../src/i18n/de.js";
-import { HINT_DEFS, SEQUENCES, hintForScreen, screenOf, hasFormationType, activeTypeCount,
-  hasOverlap, hasBuilding, hasDistrict, hasStructure } from "../src/ui/hints/hintScript.js";
+import { HINT_DEFS, SEQUENCES, hintForScreen, screenOf, eventForPlay, hasFormationType,
+  activeTypeCount, hasOverlap, hasBuilding, hasDistrict, hasStructure } from "../src/ui/hints/hintScript.js";
 import { SECTIONS } from "../src/ui/tutorial-sections/catalog.js";
 
 const LESSON_PATHS = new Set(SECTIONS.flatMap((s) => s.lessons.map((l) => `${s.id}/${l.id}`)));
@@ -112,5 +112,48 @@ describe("hints · Screen-Erkennung", () => {
     expect(screenOf({ phase: "glacier-target" })).toBe("glacier");
     expect(screenOf({ phase: "play" })).toBe(null);
     expect(screenOf(null)).toBe(null);
+  });
+});
+
+describe("hints · Ereignis-Auswahl im Stichspiel (T-O2, pur)", () => {
+  const ectx = (over = {}) => ({ seen: new Set(), state: {}, atPhaseStart: false, playVisit: 1,
+    shownThisPhase: 0, sameTrickAsLast: false, ...over });
+  const win = { result: "win", winStreak: 1, isCrit: false, formationMult: 1, pCard: { value: 7 }, pValue: 7 };
+
+  it("Quoten: höchstens zwei je Stichphase, höchstens eine je Stich", () => {
+    expect(eventForPlay(ectx({ state: { lastTrick: win }, shownThisPhase: 2 }))).toBe(null);
+    expect(eventForPlay(ectx({ state: { lastTrick: win }, sameTrickAsLast: true }))).toBe(null);
+    expect(eventForPlay(ectx({ state: { lastTrick: win } }))).toBe("E1");
+  });
+
+  it("E5 hat Vorrang und darf auch am Phasenstart feuern (die Leiste ist ein bleibender Referent)", () => {
+    expect(eventForPlay(ectx({ state: { lastTrick: win, activeArchetypes: ["lightning"] } }))).toBe("E5");
+    expect(eventForPlay(ectx({ state: { activeArchetypes: ["lightning"] }, atPhaseStart: true }))).toBe("E5");
+  });
+
+  it("die Ereignisse erkennen ihre Bedingungen aus lastTrick", () => {
+    expect(eventForPlay(ectx({ state: { lastTrick: { ...win, result: "tie" } }, seen: new Set(["E1"]) }))).toBe("E2");
+    expect(eventForPlay(ectx({ state: { lastTrick: { ...win, winStreak: 3 } }, seen: new Set(["E1"]) }))).toBe("E3");
+    expect(eventForPlay(ectx({ state: { lastTrick: { ...win, isCrit: true } }, seen: new Set(["E1", "E3"]) }))).toBe("E4");
+    expect(eventForPlay(ectx({ state: { lastTrick: { ...win, formationMult: 1.4 } }, seen: new Set(["E1"]) }))).toBe("E6");
+    // Kampfwert weicht vom Kartenwert ab → E9, mit den echten Zahlen.
+    expect(eventForPlay(ectx({ state: { lastTrick: { ...win, pValue: 9 } }, seen: new Set(["E1"]) }))).toBe("E9");
+    // Ein hoher Score über dem ersten Meilenstein → E7 (über die echte milestoneBarState).
+    expect(eventForPlay(ectx({ state: { lastTrick: win, score: 1e9 }, seen: new Set(["E1"]) }))).toBe("E7");
+  });
+
+  it("UI-Hints nur am Phasenstart, getaktet über den play-Besuchs-Ordinal, nie in Besuch 1", () => {
+    expect(eventForPlay(ectx({ atPhaseStart: true, playVisit: 1 }))).toBe(null);
+    expect(eventForPlay(ectx({ atPhaseStart: true, playVisit: 2 }))).toBe("U1");
+    expect(eventForPlay(ectx({ atPhaseStart: true, playVisit: 6, seen: new Set(["U1"]) }))).toBe("U2");
+    expect(eventForPlay(ectx({ atPhaseStart: true, playVisit: 9, seen: new Set(["U1", "U2"]) }))).toBe("U3");
+    // mitten in der Phase feuern die U-Hints nicht — sie haben dort keinen freien Slot.
+    expect(eventForPlay(ectx({ playVisit: 9, state: {} }))).toBe(null);
+  });
+
+  it("E8 sitzt als Banner auf dem Endscreen, einmalig", () => {
+    expect(screenOf({ phase: "gameover" })).toBe("gameover");
+    expect(hintForScreen("gameover", { seen: new Set() })).toBe("E8");
+    expect(hintForScreen("gameover", { seen: new Set(["E8"]) })).toBe(null);
   });
 });
