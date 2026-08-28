@@ -24,6 +24,7 @@
                the tutorial glow (owner playtest 2026-08-28: the pointed-at field must light up).
                A guard test asserts every anchor value exists in the source. */
 import * as C from "../../game/constants.js";
+import { SEGMENT_SIZE } from "../../game/formations.js";
 import { formationName, archetypeLabel } from "../../i18n/labels.js";
 import { fmtNum } from "../../i18n/index.js";
 import { SKILL_DEFS } from "../../game/skills.js";
@@ -58,7 +59,8 @@ export const HINT_DEFS = {
   H1:    { kind: "card", titleKey: "hint.h1.title", bodyKey: "hint.h1.body",
            vars: () => ({ cards: C.TRICKS_PER_CYCLE }) },
   H2:    { kind: "banner", bodyKey: "hint.h2.body", target: "blitz/karte" },
-  H2b:   { kind: "banner", bodyKey: "hint.h2b.body", target: "wahl/kategorien" },
+  /* Q14 (Runde 3): H2b kündigt Feuer an und verweist auf die neuen Feuer-Seiten. */
+  H2b:   { kind: "banner", bodyKey: "hint.h2b.body", target: "feuer/karte" },
   H3:    { kind: "banner", bodyKey: "hint.h3.body", target: "wahl/kategorien" },
   H3b:   { kind: "banner", bodyKey: "hint.h3b.body", target: "wahl/raritaet" },
   // Spec deviation, recorded in the task contract: the paper's H5 row says wahl/perks, but that
@@ -73,7 +75,7 @@ export const HINT_DEFS = {
   "S-A2": { kind: "banner", eyebrow: "suggest", bodyKey: "hint.sa2.body", target: "architekt/wohin" },
   "S-A3": { kind: "banner", eyebrow: "suggest", bodyKey: "hint.sa3.body", target: "architekt/strukturen" },
   "S-A4": { kind: "banner", eyebrow: "suggest", bodyKey: "hint.sa4.body", target: "architekt/aufwerten" },
-  C1:    { kind: "banner", bodyKey: "hint.c1.body", target: "eis/feld" },
+  C1:    { kind: "banner", bodyKey: "hint.c1.body", target: "eis/karte" },
   C2:    { kind: "banner", bodyKey: "hint.c2.body", target: "wahl/kategorien" },
   C3:    { kind: "banner", bodyKey: "hint.c3.body" },
   C4:    { kind: "banner", bodyKey: "hint.c4.body", target: "wahl/legendaer" },
@@ -83,13 +85,25 @@ export const HINT_DEFS = {
   /* C6 (Runde 2, R19): die Kombis/Formationen-Toggles überm Baufeld — in der Architekt-Phase
      NACH der, in der C5 weggeklickt wurde. Der Glow liegt auf der Toggle-Zeile. */
   C6:    { kind: "banner", bodyKey: "hint.c6.body", anchor: "archtoggles" },
+  /* Q15 (Runde 3): Freischalt-Hinweise — ein neu freigeschalteter Archetyp steht erstmals im
+     Skill-Angebot. Sind BEIDE gleichzeitig neu, zeigt C7b beide Zeilen; sein markSeen räumt
+     C7 und C8 mit ab (Aliasing in useHints.markSeen). */
+  C7:    { kind: "banner", bodyKey: "hint.c7.body", target: "eis/karte" },
+  C8:    { kind: "banner", bodyKey: "hint.c8.body", target: "pflanze/karte" },
+  C7b:   { kind: "banner", bodyKey: "hint.c7b.body", target: "eis/karte" },
   H4:    { kind: "banner", bodyKey: "hint.h4.body", anchor: "glossar" },
+  /* Q8 (Runde 3): der erste Anker-Perk im Angebot — Anker zählen als Formation. */
+  H6:    { kind: "banner", bodyKey: "hint.h6.body" },
+  /* Q4/Q5 (Runde 3): blockende Intro-Karten der ersten Aufstellungs- bzw. Bauphase (H1-Bauart). */
+  HF:    { kind: "card", titleKey: "hint.hf.title", bodyKey: "hint.hf.body",
+           vars: () => ({ segments: C.TRICKS_PER_CYCLE / SEGMENT_SIZE }) },
+  HA:    { kind: "card", titleKey: "hint.ha.title", bodyKey: "hint.ha.body" },
   /* ---- Ereignis-Hints (T-O2, Papier §5.3): Pause-Karten im Stichspiel, erste Begegnung je
      Profil. Die vars lesen den ECHTEN Lauf — das verworfene Rechenbeispiel des geführten Laufs
      wird echte Mathematik mit Referent auf dem Schirm. */
   E1: { kind: "event", bodyKey: "hint.e1.body",
-        vars: () => ({ win: fmtNum(C.SCORE_PER_WIN) }), target: "grundlagen/score", anchor: "scorerow" },
-  E2: { kind: "event", bodyKey: "hint.e2.body", target: "grundlagen/stich" },
+        vars: () => ({ win: fmtNum(C.SCORE_PER_WIN) }), anchor: "scorerow" },
+  E2: { kind: "event", bodyKey: "hint.e2.body" },
   /* Multiplikatoren durchlaufen `mult2` (Runde 2, R1): streakBaseMult liefert rohes Gleitkomma
      (×1,1400000000000001) — zwei Nachkommastellen, dasselbe toFixed(2)-Muster wie überall. */
   E3: { kind: "event", bodyKey: "hint.e3.body",
@@ -125,6 +139,10 @@ export const HINT_DEFS = {
   /* U4 (Owner-Playtest 2026-08-28): die Stich-Aufschlüsselung unter den Karten — spät im Lauf,
      nach einem Sieg (nur dann trägt die Zeile Zahlen) und nur, solange die Option sie zeigt. */
   U4: { kind: "event", bodyKey: "hint.u4.body", anchor: "breakdown" },
+  /* Q7 (Runde 3): die erste ionisierte Karte erklärt Sturmgröße und Sturmintensität — Glow auf
+     dem Blitz-Panel; {v} ist der Breite-Payoff aus den Konstanten. */
+  E10: { kind: "event", bodyKey: "hint.e10.body",
+         vars: () => ({ v: C.ION_SATURATION_VALUE }), anchor: "faction-lightning" },
 };
 
 /* ---- The suggestion sequences (paper §5.2): one task per phase visit, in order. The first cut
@@ -180,11 +198,19 @@ export function hintForScreen(screen, ctx) {
   if (screen === "skill") {
     if (ctx.firstRun && ctx.blitzOnly && un("H2")) return "H2";
     if (ctx.multiArch && un("H2b")) return "H2b";
+    /* Q15: neu freigeschaltete Archetypen melden sich, sobald sie im Angebot stehen.
+       Beide gleichzeitig neu → C7b (beide Zeilen; markSeen räumt C7+C8 mit ab). */
+    const iceNew = ctx.iceAvail && un("C7"), plantNew = ctx.plantAvail && un("C8");
+    if (iceNew && plantNew && un("C7b")) return "C7b";
+    if (iceNew) return "C7";
+    if (plantNew) return "C8";
     if (ctx.slotsFull && un("H5")) return "H5";
     return null;
   }
   if (screen === "perk") {
     if (un("H3")) return "H3";
+    // Q8: der erste Anker-Perk im Angebot erklärt die Mechanik.
+    if (ctx.offerHasAnker && un("H6")) return "H6";
     if ((ctx.visits?.perk || 0) >= 2 && un("H3b")) return "H3b";
     if ((ctx.visits?.perk || 0) >= 3 && un("H4")) return "H4";
     return null;
@@ -227,6 +253,8 @@ export function eventForPlay(ctx) {
   if ((ctx?.shownThisPhase || 0) >= 2) return null;
   if (!ctx?.atPhaseStart && ctx?.sameTrickAsLast) return null;
   if (un("E5") && (state?.activeArchetypes || []).length > 0) return "E5";
+  // Q7: die erste ionisierte Karte im Deck — einmalig, erklärt die Sturm-Leisten.
+  if (un("E10") && (state?.deck || []).some((c) => (c?.ionStacks || 0) > 0)) return "E10";
   if (ctx?.atPhaseStart) {
     const v = ctx?.playVisit || 0;
     if (un("U1") && v >= 2) return "U1";
