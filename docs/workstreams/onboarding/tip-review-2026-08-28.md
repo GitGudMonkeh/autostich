@@ -41,6 +41,8 @@ player text** (text-style-guide.md, "Kein Gedankenstrich").
 
 | 22 | **Card visual (outside the hints)** | The Stichwert bonus shown on a card in the trick (e.g. "+1 Stich" at the card foot) renders in WHITE from now on; the current red is hard to read. |
 
+| 23 | **U3** (Chronik) | "Mehr dazu" link goes (copy stays). Together with row 7 this settles U3: the deleted anzeigen page needs no replacement target. |
+
 ## Probierfeld lessons (Mehr-dazu targets)
 
 | # | Lesson | Change |
