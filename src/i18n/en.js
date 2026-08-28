@@ -232,8 +232,6 @@ export default {
   "bar.fire.brand": "Brand · opponent",
 
   /* ---- Lightning bar (ChargeBar) ---- */
-  "bar.lightning.chain": "🔗 Streak chain",
-  "bar.lightning.chain.holds": " · holding",
   "bar.lightning.saturation": "🌐 Storm saturation",
   "bar.lightning.breadth": "Storm breadth",
   "bar.lightning.breadth.payoff": "+{n} value / card",
@@ -250,11 +248,6 @@ export default {
   "bar.lightning.storm.title": "Storm Front: crit-chance momentum per discharge (up to +{cap}%).",
   "bar.lightning.discharge": "Discharge",
   "bar.lightning.discharge.title": "Discharge: permanent crit-multiplier momentum per discharge.",
-  "bar.lightning.frequency": "Strike rate",
-  "bar.lightning.frequency.over": "Crit is full: the bar now shows the crit multiplier.",
-  "bar.lightning.frequency.title": "Crit chance of the next win.",
-  "bar.lightning.streakGuard": "Streak Guard: a loss with enough charge held the streak (½ charge spent).",
-  "bar.lightning.streak.broken": "broken",
 
   /* ---- Ice bar (GlacierBar) ---- */
   "bar.ice.chip.title": "Glacier · mass {mass} · tier {tier}",
@@ -641,7 +634,6 @@ export default {
   "layoutperks.title": "Position & formation perks",
   "mute.enable": "Turn sound on",
   "mute.disable": "Mute sound",
-  "bar.lightning.shieldHeld": "🛡 {n}× streak held",
   "bar.lightning.consumer": "Consumer: {name}",
   "cardgrid.glacierMass.title": "Glacier · mass {mass}",
   "cardgrid.glacierMass.reserve": "Glacier · mass {mass} · reserve {firn} (refills to {cap} at the start of the cycle)",

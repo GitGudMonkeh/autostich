@@ -234,8 +234,6 @@ export default {
   "bar.fire.brand": "Brand · Gegner",
 
   /* ---- Blitz-Leiste (ChargeBar) ---- */
-  "bar.lightning.chain": "🔗 Serienkette",
-  "bar.lightning.chain.holds": " · hält",
   "bar.lightning.saturation": "🌐 Sturm-Sättigung",
   "bar.lightning.breadth": "Sturmgröße",
   "bar.lightning.breadth.payoff": "+{n} Wert / Karte",
@@ -252,11 +250,6 @@ export default {
   "bar.lightning.storm.title": "Gewitterfront: Crit-Chance-Momentum je Entladung (bis +{cap} %).",
   "bar.lightning.discharge": "Entladung",
   "bar.lightning.discharge.title": "Entladung: dauerhaftes Crit-Multiplikator-Momentum je Entladung.",
-  "bar.lightning.frequency": "Blitzfrequenz",
-  "bar.lightning.frequency.over": "Crit voll: die Leiste zeigt jetzt den Crit-Multiplikator.",
-  "bar.lightning.frequency.title": "Crit-Chance des nächsten Siegs.",
-  "bar.lightning.streakGuard": "Serienschutz: eine Niederlage mit genug Ladung hielt die Serie (½ Ladung verbraucht).",
-  "bar.lightning.streak.broken": "gerissen",
 
   /* ---- Eis-Leiste (GlacierBar) ---- */
   "bar.ice.chip.title": "Gletscher · Masse {mass} · Stufe {tier}",
@@ -657,7 +650,6 @@ export default {
   "layoutperks.title": "Positions- & Formations-Perks",
   "mute.enable": "Ton einschalten",
   "mute.disable": "Ton stummschalten",
-  "bar.lightning.shieldHeld": "🛡 {n}× Serie gehalten",
   "bar.lightning.consumer": "Konsument: {name}",
   "cardgrid.glacierMass.title": "Gletscher · Masse {mass}",
   "cardgrid.glacierMass.reserve": "Gletscher · Masse {mass} · Reserve {firn} (füllt zum Durchlauf-Beginn auf {cap})",

@@ -340,15 +340,19 @@ export function milestoneBarState(score) {
   const total = SP_MILESTONES.length;
   const reached = SP_MILESTONES.reduce((k, m) => (s >= m.at ? k + 1 : k), 0);
   const atMax = reached >= total;
-  let fill;
-  if (atMax) fill = 1;
+  let fill, segFill;
+  if (atMax) { fill = 1; segFill = 1; }
   else {
     const prev = reached === 0 ? 0 : SP_MILESTONES[reached - 1].at;
     const next = SP_MILESTONES[reached].at;
     const frac = next > prev ? (s - prev) / (next - prev) : 0;
-    fill = (reached + Math.max(0, Math.min(1, frac))) / total;
+    // segFill (Runde 2, R21): Füllung NUR im aktuellen Meilenstein-Segment (0..1) — die Leiste
+    // läuft je Meilenstein einmal voll und fällt danach auf 0 zurück; fill bleibt die alte
+    // Gesamt-Füllung für Abnehmer, die den Gesamtfortschritt wollen (E7-Trigger unberührt).
+    segFill = Math.max(0, Math.min(1, frac));
+    fill = (reached + segFill) / total;
   }
-  return { reached, total, fill, atMax, spSoFar: spMilestones(s), next: atMax ? null : SP_MILESTONES[reached] };
+  return { reached, total, fill, segFill, atMax, spSoFar: spMilestones(s), next: atMax ? null : SP_MILESTONES[reached] };
 }
 
 // Zählt der Lauf für die SP-Ökonomie? Nur ein abgeschlossener Lauf NACH vollendetem Onboarding (Start 6/6 → immer).

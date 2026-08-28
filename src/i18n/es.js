@@ -320,8 +320,6 @@ export default {
   "bar.fire.brand": "Marca · rival",
 
   /* Lightning */
-  "bar.lightning.chain": "🔗 Cadena de racha",
-  "bar.lightning.chain.holds": " · aguanta",
   "bar.lightning.saturation": "🌐 Saturación de tormenta",
   "bar.lightning.breadth": "Amplitud de tormenta",
   "bar.lightning.breadth.payoff": "+{n} de valor / carta",
@@ -338,11 +336,6 @@ export default {
   "bar.lightning.storm.title": "Frente de tormenta: impulso de probabilidad de crítico por descarga (hasta +{cap} %).",
   "bar.lightning.discharge": "Descarga",
   "bar.lightning.discharge.title": "Descarga: impulso permanente del multiplicador de crítico por descarga.",
-  "bar.lightning.frequency": "Frecuencia de rayo",
-  "bar.lightning.frequency.over": "Crítico al máximo: la barra muestra ahora el multiplicador de crítico.",
-  "bar.lightning.frequency.title": "Probabilidad de crítico de la próxima victoria.",
-  "bar.lightning.streakGuard": "Protección de racha: una derrota con carga suficiente mantuvo la racha (½ carga gastada).",
-  "bar.lightning.streak.broken": "rota",
 
   /* Ice */
   "bar.ice.chip.title": "Glaciar · masa {mass} · nivel {tier}",
@@ -752,7 +745,6 @@ export default {
   "layoutperks.title": "Ventajas de posición y formación",
   "mute.enable": "Activar el sonido",
   "mute.disable": "Silenciar el sonido",
-  "bar.lightning.shieldHeld": "🛡 {n}× racha mantenida",
   "bar.lightning.consumer": "Consumidor: {name}",
   "cardgrid.glacierMass.title": "Glaciar · masa {mass}",
   "cardgrid.glacierMass.reserve": "Glaciar · masa {mass} · reserva {firn} (se rellena a {cap} al inicio del ciclo)",

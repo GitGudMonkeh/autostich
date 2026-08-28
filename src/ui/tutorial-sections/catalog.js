@@ -75,14 +75,10 @@ export const SECTIONS = [
        Arbeit machen jetzt die In-Run-Hints, das Glossar und der Leitfaden. Geblieben ist, was
        eine Runde traegt. */
     lessons: [
+      /* Runde 2, R13 (Owner): Lektionsreihenfolge = Reihenfolge im ersten Lauf. Hier: erster
+         Stich → erster Sieg (Score) → Serie → Kampfwert (braucht Boni, kommt später) → Herkunft. */
       { id: "stich", art: "voll", beats: [
         { kind: "probierfeld", probe: "duell" },
-        { kind: "tip" }] },
-      { id: "werte", art: "voll", beats: [
-        { kind: "probierfeld", probe: "kampfwert" },
-        { kind: "tip" }] },
-      { id: "serie", art: "voll", beats: [
-        { kind: "probierfeld", probe: "serie" },
         { kind: "tip" }] },
       /* Der Score-Schirm des Entwurfs traegt Formel, Runde und zwei Erklaerkaesten auf einem
          Schirm (1344 px gemessen). Das reisst das volle Budget; der Owner-Entscheid dazu ist
@@ -91,9 +87,45 @@ export const SECTIONS = [
       { id: "score", art: "voll", beats: [
         { kind: "probierfeld", probe: "score" },
         { kind: "tip" }] },
+      { id: "serie", art: "voll", beats: [
+        { kind: "probierfeld", probe: "serie" },
+        { kind: "tip" }] },
+      { id: "werte", art: "voll", beats: [
+        { kind: "probierfeld", probe: "kampfwert" },
+        { kind: "tip" }] },
       { id: "herkunft", art: "voll", beats: [
         { kind: "probierfeld", probe: "herkunft" },
         { kind: "tip" }] },
+    ],
+  },
+  {
+    id: "blitz",
+    arch: "lightning",
+    lessons: [
+      /* T-O4: Der Kernsatz der geloeschten wasist-Lektion („Blitz stellt ihn selbst her") lebt
+         im Probe-Hinweis dieser Runde weiter — als eigener Satz-Takt riss er das 960er-Budget. */
+      { id: "karte", art: "voll", beats: [
+        { kind: "probierfeld", probe: "blitzkarte" },
+        { kind: "tip" }] },
+      { id: "tipps", art: "voll", beats: [
+        { kind: "probierfeld", probe: "tipps" },
+        { kind: "tip" }] },
+    ],
+  },
+  {
+    id: "wahl",
+
+    lessons: [
+      /* Review-Runde (Zeilen 4-6): die Tipp-Takte dieser drei Lektionen sind auf Owner-Wunsch
+         gestrichen — der Familienzaehler, der Stufen-Absatz und der Legendaer-Tipp waren Ballast. */
+      { id: "kategorien", art: "voll", beats: [
+        { kind: "probierfeld", probe: "kategorien" }] },
+      { id: "raritaet", art: "voll", beats: [
+        { kind: "probierfeld", probe: "raritaet" }] },
+      /* Der Raritäten-Schirm des Entwurfs maß 1285 px — über dem vollen Budget. Owner-Entscheid:
+         aufteilen statt kürzen; der Legendär-Teil ist eine eigene Lektion. */
+      { id: "legendaer", art: "voll", beats: [
+        { kind: "probierfeld", probe: "legendaer" }] },
     ],
   },
   {
@@ -115,29 +147,35 @@ export const SECTIONS = [
     ],
   },
   {
-    id: "wahl",
-
+    id: "architekt",
+    /* VIER Lektionen statt sechs. „brett" und „sorten" waren Textkarten; was sie sagten, steht
+       jetzt in der ersten Runde und in den Regeln darunter. */
     lessons: [
-      /* Review-Runde (Zeilen 4-6): die Tipp-Takte dieser drei Lektionen sind auf Owner-Wunsch
-         gestrichen — der Familienzaehler, der Stufen-Absatz und der Legendaer-Tipp waren Ballast. */
-      { id: "kategorien", art: "voll", beats: [
-        { kind: "probierfeld", probe: "kategorien" }] },
-      { id: "raritaet", art: "voll", beats: [
-        { kind: "probierfeld", probe: "raritaet" }] },
-      /* Der Raritäten-Schirm des Entwurfs maß 1285 px — über dem vollen Budget. Owner-Entscheid:
-         aufteilen statt kürzen; der Legendär-Teil ist eine eigene Lektion. */
-      { id: "legendaer", art: "voll", beats: [
-        { kind: "probierfeld", probe: "legendaer" }] },
-    ],
-  },
-  {
-    id: "blitz",
-    arch: "lightning",
-    lessons: [
-      /* T-O4: Der Kernsatz der geloeschten wasist-Lektion („Blitz stellt ihn selbst her") lebt
-         im Probe-Hinweis dieser Runde weiter — als eigener Satz-Takt riss er das 960er-Budget. */
-      { id: "karte", art: "voll", beats: [
-        { kind: "probierfeld", probe: "blitzkarte" },
+      /* Die Architekt-Schirme des Entwurfs maßen 1050 bis 1350 px — über dem Budget.
+         Owner-Entscheid: aufteilen statt kürzen. Die Regeln-Liste und die Aufwerten-Tabelle
+         sind eigene Lektionen. */
+      { id: "wasist", art: "voll", beats: [
+        { kind: "block" },
+        { kind: "probierfeld", probe: "archmock" },
+        { kind: "tip" }] },
+      { id: "hauptaktion", art: "voll", beats: [
+        { kind: "probierfeld", probe: "bauen" },
+        { kind: "tip" }] },
+      /* Review-Runde (Zeilen 19/20): „wohin" ist jetzt die Distrikt-Lektion, die Strukturen haben
+         ihre eigene Runde — S-A2 verlinkt auf wohin, S-A3 auf strukturen. R13: Aufwerten rückt
+         HINTER Distrikte und Strukturen — so tauchen die Themen auch im Lauf auf (S-A2 → S-A3 → S-A4). */
+      { id: "wohin", art: "voll", beats: [
+        { kind: "block" },
+        { kind: "probierfeld", probe: "struktur" },
+        { kind: "tip" }] },
+      /* Runde 2, R10: Auftragszeile und Tipp gestrichen — die Seite trägt alles Nötige selbst.
+         `stumm` lässt das Probierfeld ohne eigenen Satz stehen (kein Schlüssel, keine Zeile). */
+      { id: "strukturen", art: "voll", beats: [
+        { kind: "block" },
+        { kind: "probierfeld", probe: "strukturen", stumm: true }] },
+      { id: "aufwerten", art: "voll", beats: [
+        { kind: "tabelle", rows: 5 },
+        { kind: "merk" },
         { kind: "tip" }] },
       { id: "tipps", art: "voll", beats: [
         { kind: "probierfeld", probe: "tipps" },
@@ -156,81 +194,13 @@ export const SECTIONS = [
       { id: "karte", art: "voll", beats: [
         { kind: "probierfeld", probe: "feuerkarten" },
         { kind: "tip" }] },
-      { id: "schmiede", art: "voll", beats: [
-        { kind: "probierfeld", probe: "schmiede" },
-        { kind: "tip" }] },
+      /* R13: das Hitze-Feld erscheint mit dem ersten Feuer-Skill sofort — vor der Schmiede-Kette. */
       { id: "feld", art: "voll", beats: [
         { kind: "probierfeld", probe: "hitze" },
         { kind: "tip" }] },
-      { id: "tipps", art: "voll", beats: [
-        { kind: "probierfeld", probe: "tipps" },
+      { id: "schmiede", art: "voll", beats: [
+        { kind: "probierfeld", probe: "schmiede" },
         { kind: "tip" }] },
-    ],
-  },
-  {
-    id: "pflanze",
-    arch: "plant",
-    lessons: [
-      /* Der Pflanzen-Karten-Schirm maß 1083 px — Owner-Entscheid: aufteilen statt kürzen. */
-      { id: "karte", art: "voll", beats: [
-        { kind: "probierfeld", probe: "pflanzkarte" },
-        { kind: "tip" }] },
-      { id: "erkennen", art: "kurz", beats: [
-        { kind: "probierfeld", probe: "pflanzzeichen" },
-        { kind: "tip" }] },
-      { id: "feld", art: "voll", beats: [
-        { kind: "probierfeld", probe: "gruenfeld" },
-        { kind: "tip" }] },
-      { id: "tipps", art: "voll", beats: [
-        { kind: "probierfeld", probe: "tipps" },
-        { kind: "tip" }] },
-    ],
-  },
-  {
-    id: "eis",
-    arch: "ice",
-    lessons: [
-      { id: "karte", art: "voll", beats: [
-        { kind: "probierfeld", probe: "gletscher" },
-        { kind: "tip" }] },
-      { id: "feld", art: "voll", beats: [
-        { kind: "probierfeld", probe: "gletscherfeld" },
-        { kind: "tip" }] },
-      { id: "tipps", art: "voll", beats: [
-        { kind: "probierfeld", probe: "tipps" },
-        { kind: "tip" }] },
-    ],
-  },
-  {
-    id: "architekt",
-    /* VIER Lektionen statt sechs. „brett" und „sorten" waren Textkarten; was sie sagten, steht
-       jetzt in der ersten Runde und in den Regeln darunter. */
-    lessons: [
-      /* Die Architekt-Schirme des Entwurfs maßen 1050 bis 1350 px — über dem Budget.
-         Owner-Entscheid: aufteilen statt kürzen. Die Regeln-Liste und die Aufwerten-Tabelle
-         sind eigene Lektionen. */
-      { id: "wasist", art: "voll", beats: [
-        { kind: "block" },
-        { kind: "probierfeld", probe: "archmock" },
-        { kind: "tip" }] },
-      { id: "hauptaktion", art: "voll", beats: [
-        { kind: "probierfeld", probe: "bauen" },
-        { kind: "tip" }] },
-      { id: "aufwerten", art: "voll", beats: [
-        { kind: "tabelle", rows: 5 },
-        { kind: "merk" },
-        { kind: "tip" }] },
-      /* Review-Runde (Zeilen 19/20): „wohin" ist jetzt die Distrikt-Lektion, die Strukturen haben
-         ihre eigene Runde — S-A2 verlinkt auf wohin, S-A3 auf strukturen. */
-      { id: "wohin", art: "voll", beats: [
-        { kind: "block" },
-        { kind: "probierfeld", probe: "struktur" },
-        { kind: "tip" }] },
-      /* Runde 2, R10: Auftragszeile und Tipp gestrichen — die Seite trägt alles Nötige selbst.
-         `stumm` lässt das Probierfeld ohne eigenen Satz stehen (kein Schlüssel, keine Zeile). */
-      { id: "strukturen", art: "voll", beats: [
-        { kind: "block" },
-        { kind: "probierfeld", probe: "strukturen", stumm: true }] },
       { id: "tipps", art: "voll", beats: [
         { kind: "probierfeld", probe: "tipps" },
         { kind: "tip" }] },
@@ -253,6 +223,41 @@ export const SECTIONS = [
       { id: "baum", art: "voll", beats: [
         { kind: "block" },
         { kind: "probierfeld", probe: "baum" },
+        { kind: "tip" }] },
+    ],
+  },
+  {
+    id: "pflanze",
+    arch: "plant",
+    lessons: [
+      /* Der Pflanzen-Karten-Schirm maß 1083 px — Owner-Entscheid: aufteilen statt kürzen. */
+      { id: "karte", art: "voll", beats: [
+        { kind: "probierfeld", probe: "pflanzkarte" },
+        { kind: "tip" }] },
+      /* R13: das Wachstums-Feld erscheint mit dem ersten Pflanze-Skill sofort — vor den Zeichen. */
+      { id: "feld", art: "voll", beats: [
+        { kind: "probierfeld", probe: "gruenfeld" },
+        { kind: "tip" }] },
+      { id: "erkennen", art: "kurz", beats: [
+        { kind: "probierfeld", probe: "pflanzzeichen" },
+        { kind: "tip" }] },
+      { id: "tipps", art: "voll", beats: [
+        { kind: "probierfeld", probe: "tipps" },
+        { kind: "tip" }] },
+    ],
+  },
+  {
+    id: "eis",
+    arch: "ice",
+    lessons: [
+      { id: "karte", art: "voll", beats: [
+        { kind: "probierfeld", probe: "gletscher" },
+        { kind: "tip" }] },
+      { id: "feld", art: "voll", beats: [
+        { kind: "probierfeld", probe: "gletscherfeld" },
+        { kind: "tip" }] },
+      { id: "tipps", art: "voll", beats: [
+        { kind: "probierfeld", probe: "tipps" },
         { kind: "tip" }] },
     ],
   },
@@ -281,8 +286,7 @@ export const SECTIONS = [
         { kind: "merk" },
         { kind: "tip" }] },
     ],
-  },
-];
+  },];
 
 /* ---- abgeleitete Schlüssel ---- */
 export const sectionTitleKey = (s) => `tut.${s.id}.title`;

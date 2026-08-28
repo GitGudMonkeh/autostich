@@ -822,6 +822,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // F4 Farballianz (#125): Partnerfarbe einer Kartenfarbe → diagonaler Split auf der Karte (rein kosmetisch).
   // Review-Runde Zeile 32: alle Partnerfarben der Allianz (Baender auf der Karte statt nur einer).
   const allyColorsFor = (suit) => { const a = linkedPartnersOf(pe, suit); return a.length ? a.map(suitColor) : null; };
+  // Runde 2, R16: die Farballianz ist ein SPIELER-Perk — die Gegnerkarte trägt nie das Allianz-Band.
   const win = t && (t.result === "win" || t.result === "win_tie");
   const lost = t && t.result === "loss";
   const isCrit = !!(t && t.isCrit);
@@ -1045,7 +1046,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const oCardEl = t && (
     <div className="relative" style={{ display: "inline-block", lineHeight: 0 }}>
       <Card suit={t.oCard.suit} value={t.oValue} baseRank={t.oCard.baseRank} glow={lost ? "#e0605a" : null}
-            green={!!t.oCard.green} branded={brandActive[t.oCard.id] || 0} colonized={colonized[t.oCard.id] ? AUSLAEUFER_HARVEST : 0} allyColors={allyColorsFor(t.oCard.suit)} frontImage={oppFrontImg} />
+            green={!!t.oCard.green} branded={brandActive[t.oCard.id] || 0} colonized={colonized[t.oCard.id] ? AUSLAEUFER_HARVEST : 0} frontImage={oppFrontImg} />
       {edgeGlowEl}
     </div>
   );
@@ -1397,7 +1398,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
         color: suitColor(t.oCard.suit), bladeColor: klingeDeck ? (deckA1 || deckA2 || null) : null, seed: t.trickNo * 3 + 1, // #klinge-deck: Deckfarbe → Deck-Glühen · sonst null → kühles Stahlweiß (bladeTint)
         suit: t.oCard.suit, value: t.oValue, baseRank: t.oCard.baseRank, stichBonus: 0,
         ionStacks: 0, green: !!t.oCard.green,
-        branded: brandActive[t.oCard.id] || 0, colonized: colonized[t.oCard.id] ? AUSLAEUFER_HARVEST : 0, allyColors: allyColorsFor(t.oCard.suit), frontImage: oppFrontImg });
+        branded: brandActive[t.oCard.id] || 0, colonized: colonized[t.oCard.id] ? AUSLAEUFER_HARVEST : 0, frontImage: oppFrontImg });
     }
     if (!spawned.length) return;
     setSlashGhosts((cur) => [...cur, ...spawned].slice(-ghostCap)); // Pool gedeckelt (turbo-abhängig, #200 A)
