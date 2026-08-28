@@ -11,7 +11,7 @@
    The "Mehr dazu ›" link renders ONLY when an onMore handler exists — T-O4 wires it to the
    Probierfeld deep link; until then the affordance simply is not there (contract: no dead
    controls). */
-import { createContext, useContext, useEffect } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { t } from "../../i18n/index.js";
 import { MODAL_CARD, ModalHairline } from "../modalStyle.jsx";
 import { overlayPortal } from "../overlayPortal.jsx";
@@ -36,21 +36,45 @@ const CloseX = ({ onClick, size = 12 }) => (
    brauchen mehr Sichtbarkeit). Statisch — keine Animation, damit alle FX-Stufen ihn tragen. */
 const TUT_GLOW = `0 0 0 1px ${TUT_ACCENT}59, 0 0 14px ${TUT_ACCENT}40`;
 
-/* Referent-Markierung (Owner-Playtest 2026-08-28): solange eine Ereignis-Karte offen ist, wird
-   das erklärte Feld (`data-hint-anchor`) in den Blick gescrollt und trägt den Tutorial-Glow.
-   Inline-Styles mit Restore statt einer Klasse: die Elemente stylen ihre Schatten teils selbst,
-   und der Effekt darf beim Schließen exakt den vorherigen Zustand hinterlassen. */
-function useAnchorGlow(anchor) {
+/* Referent-Spotlight (Owner-Playtest 2026-08-28, Runde 2): solange eine Ereignis-Karte offen ist,
+   wird das erklärte Feld (`data-hint-anchor`) in den Blick gescrollt und per Scrim-Loch
+   markiert — der Ring liegt ÜBER dem Abdunkeln, das Feld selbst bleibt hell. Ein boxShadow AM
+   Element (erste Fassung) verschwand: er lag unter dem Scrim der Karte und war damit auf dem
+   Handy unsichtbar. Der Effekt misst das Rechteck und misst bei Scroll/Resize nach (der Spieler
+   kann unter der offenen Karte weiterscrollen). */
+function useAnchorSpotlight(anchor) {
+  const [rect, setRect] = useState(null);
   useEffect(() => {
-    if (!anchor) return;
+    if (!anchor) { setRect(null); return; }
     const el = document.querySelector(`[data-hint-anchor="${anchor}"]`);
-    if (!el) return;
-    const prev = { boxShadow: el.style.boxShadow, borderRadius: el.style.borderRadius };
-    el.style.boxShadow = TUT_GLOW;
-    if (!el.style.borderRadius) el.style.borderRadius = "10px";
+    if (!el) { setRect(null); return; }
+    const measure = () => {
+      const r = el.getBoundingClientRect();
+      setRect(r.width > 0 && r.height > 0
+        ? { top: r.top, left: r.left, width: r.width, height: r.height } : null);
+    };
+    measure();
     try { el.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (e) { /* alte Engines: ohne Scroll weiter */ }
-    return () => { el.style.boxShadow = prev.boxShadow; el.style.borderRadius = prev.borderRadius; };
+    window.addEventListener("scroll", measure, true); // capture: fängt auch scrollende Container
+    window.addEventListener("resize", measure);
+    return () => {
+      window.removeEventListener("scroll", measure, true);
+      window.removeEventListener("resize", measure);
+    };
   }, [anchor]);
+  return rect;
+}
+
+/* Das Scrim-Loch: EIN Element — der Ring als innere Schatten, das Abdunkeln als 9999-px-Schatten
+   drumherum. So ist der Referent der einzige helle Fleck und der Ring liegt über allem. */
+function SpotlightScrim({ rect }) {
+  const PAD = 4;
+  return (
+    <div aria-hidden="true" className="absolute pointer-events-none"
+      style={{ top: rect.top - PAD, left: rect.left - PAD,
+        width: rect.width + 2 * PAD, height: rect.height + 2 * PAD, borderRadius: 12,
+        boxShadow: `0 0 0 2px ${TUT_ACCENT}, 0 0 18px 3px ${TUT_ACCENT}aa, 0 0 0 9999px #0c0c1066` }} />
+  );
 }
 
 /* One banner. `hint` = { id, def, vars, bodyKey, anchor } resolved by the provider. */
@@ -127,13 +151,16 @@ export function HintCardOverlay({ hint, onGo, onMore }) {
    §5.3). Der Lauf darunter ist über hints.freeze angehalten; „Weiter" lässt ihn weiterlaufen. */
 export function EventHintCard({ hint, onGo, onMore }) {
   // Hook VOR dem Early-Return (rules-of-hooks); ohne Anker ist der Effekt ein No-op.
-  useAnchorGlow(hint ? hint.anchor : null);
+  const spot = useAnchorSpotlight(hint ? hint.anchor : null);
   if (!hint) return null;
   const { def, vars } = hint;
   return overlayPortal(
+    // Mit Referent kommt das Abdunkeln aus dem Spotlight-Loch (der Referent bleibt hell),
+    // ohne Referent aus dem flächigen Scrim wie bisher.
     <div className="fixed inset-0 overlay-root z-30 flex items-end justify-center p-4 pb-16"
-      style={{ background: "#0c0c1066" }}
+      style={{ background: spot ? "transparent" : "#0c0c1066" }}
       role="dialog" aria-modal="true" aria-label={t("hint.eyebrow")} data-hint={hint.id}>
+      {spot && <SpotlightScrim rect={spot} />}
       <div className="relative w-full max-w-sm rounded-2xl overflow-hidden"
         style={{ ...MODAL_CARD, boxShadow: TUT_GLOW }}>
         <ModalHairline />
