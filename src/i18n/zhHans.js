@@ -2228,6 +2228,8 @@ export default {
   "hint.eyebrow.suggest": "教程 · 建议",
   "hint.more": "了解更多",
   "hint.aria.close": "关闭提示",
+  "hint.badge": "好的开局",
+  "hint.badge.reason": "推荐：你的暴击会填满充能 — 充满后它会电离牌，那些牌给更多得分和暴击率。",
   "hint.h1.title": "欢迎来到自动墩",
   "hint.h1.go": "开始吧",
   "hint.h1.body": "自动墩自己玩自己：你的卡组打完 {cards} 墩，你在中间做决定。你不可能输。\n\n第一轮就看着 — 你的第一个决定在它之后。",

@@ -1334,6 +1334,8 @@ export default {
   "hint.eyebrow.suggest": "Tutorial · Sugerencia",
   "hint.more": "Más información",
   "hint.aria.close": "Cerrar el aviso",
+  "hint.badge": "Buen comienzo",
+  "hint.badge.reason": "Recomendado: tus críticos llenan la barra — cuando está llena, ioniza cartas, y esas dan más puntuación y probabilidad de crítico.",
   "hint.h1.title": "Bienvenido a Autobaza",
   "hint.h1.go": "Vamos",
   "hint.h1.body": "Autobaza se juega solo: tu mazo pelea {cards} bazas y tú decides entre medias. Perder es imposible.\n\nEl primer ciclo es para mirar — tu primera decisión llega después.",

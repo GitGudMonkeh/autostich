@@ -1103,6 +1103,8 @@ export default {
   "hint.eyebrow.suggest": "Tutorial · Suggestion",
   "hint.more": "Learn more",
   "hint.aria.close": "Close hint",
+  "hint.badge": "Good start",
+  "hint.badge.reason": "Recommended: your crits fill the bar — when it is full, it ionises cards, and those pay more score and crit chance.",
   "hint.h1.title": "Welcome to Autotrick",
   "hint.h1.go": "Let's go",
   "hint.h1.body": "Autotrick plays itself: your deck fights through {cards} tricks — you decide in between. You cannot lose.\n\nThe first cycle is for watching — your first decision comes after it.",

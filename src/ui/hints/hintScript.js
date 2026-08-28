@@ -21,7 +21,16 @@
                target exists, so a catalog cut cannot silently orphan a hint. */
 import * as C from "../../game/constants.js";
 import { formationName } from "../../i18n/labels.js";
+import { SKILL_DEFS } from "../../game/skills.js";
 import { occupiedCells, completedStructures, districtFactorMap } from "../../game/architect.js";
+
+/* §6.2 "Guter Start": the rule-derived recommendation for the first-run first skill offer — the
+   consumer of the offered archetype (heat consumer or charge consumer), which the offer builder
+   guarantees to be present (#191/#223). Rule, not curated id: a balance pass that reworks the
+   consumers moves the badge with them. Null when no consumer is offered — then no badge shows,
+   and the guard test tells us the guarantee changed. */
+export const recommendedStarter = (offer) =>
+  (offer || []).find((id) => { const d = SKILL_DEFS[id]; return !!(d && (d.heatConsumer || d.onFullCharge)); }) || null;
 
 export const HINT_DEFS = {
   H1:    { kind: "card", titleKey: "hint.h1.title", bodyKey: "hint.h1.body",

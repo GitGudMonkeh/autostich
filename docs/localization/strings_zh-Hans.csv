@@ -1992,6 +1992,8 @@ Pruning: replacing the skill permanently grants +20% root/bloom score (up to +15
 "guide.subtitle","i18n","So spielst du jeden Archetyp, durchklicken","每个流派怎么玩，逐页点开看","How to play each archetype, click through","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "guide.title","i18n","Leitfaden","指南","Guide","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "hint.aria.close","i18n","Hinweis schließen","关闭提示","Close hint","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
+"hint.badge","i18n","Guter Start","好的开局","Good start","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
+"hint.badge.reason","i18n","Empfohlen: Deine Crits füllen die Leiste — ist sie voll, ionisiert er Karten, und die bringen mehr Score und Crit-Chance.","推荐：你的暴击会填满充能 — 充满后它会电离牌，那些牌给更多得分和暴击率。","Recommended: your crits fill the bar — when it is full, it ionises cards, and those pay more score and crit chance.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "hint.c1.body","i18n","Nach jedem Eis-Skill wählst du genau eine Karte für den Gletscher — dieser Schritt ist Pflicht.","每个冰技能之后，你要为冰川正好选一张牌 — 这一步是必须的。","After every ice skill you pick exactly one card for the glacier — this step is mandatory.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "hint.c2.body","i18n","Dieser Perk braucht Karten: Tippe so viele an, wie er verlangt.","这个天赋需要牌：它要几张就点几张。","This perk needs cards: tap as many as it asks for.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "hint.c3.body","i18n","Diese Perk-Familie braucht ein Ziel — wähle, worauf sie wirken soll.","这个天赋家族需要一个目标 — 选择它该作用在什么上。","This perk family needs a target — choose what it should act on.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
