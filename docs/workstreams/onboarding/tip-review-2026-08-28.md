@@ -24,7 +24,7 @@ player text** (text-style-guide.md, "Kein Gedankenstrich").
 
 | # | Lesson | Change |
 | --- | --- | --- |
-| 10 | **aufstellung/formationen** ("Die vier Formationen") | Rebuilt: the interactive "find all four by sorting" probe goes. Instead: four buttons (Wiederholung, Farbblock, Treppe, Wechsel); tapping one shows an example segment below with the matching cards marked and a short explanation of how that formation arises. |
+| 10 | **aufstellung/formationen** ("Die vier Formationen") | Rebuilt: the interactive "find all four by sorting" probe goes. Instead: four buttons (Wiederholung, Farbblock, Treppe, Wechsel); tapping one shows an example segment below with the matching cards marked and a short explanation of how that formation arises. Mockup for owner sign-off: https://claude.ai/code/artifact/c4dcf6cd-e427-42f1-9bb1-ad0d0daf667a — awaiting approval. **Finding while mocking:** the current lesson text claims a Treppe can "steigen oder fallen"; since #195 the code only marks ascending runs. The rebuilt copy says ascending only. |
 | 4 | **wahl/kategorien** | Remove the TIPP beat ("Rechts steht, wie viele Familien jede Kategorie hat, zusammen 73.") entirely. |
 | 5 | **wahl/raritaet** | Opening sentence replaced: "Perks kommen in unterschiedlicher Rarität, sichtbar am Rahmen." Example cards stay. "Ersetzen, nicht stapeln" merk stays. Everything after it goes: the "Höhere Stufen sind stärker ... Stufe IV schließt eine Familie ab ..." paragraph and the TIPP ("Eine Familie zweimal auf derselben Stufe ..."). |
 | 6 | **wahl/legendaer** | Intro shortened to: "Legendäre sind besonders starke Perks und müssen erst freigeschaltet werden." Example cards stay. The "Erst freischalten." block goes. The TIPP goes. |
