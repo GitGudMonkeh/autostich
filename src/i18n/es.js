@@ -797,6 +797,8 @@ export default {
   "app.restart.title": "¿Seguro que quieres reiniciar?",
   "app.restart": "Reiniciar",
   "app.restart.help": "La partida actual se descarta y empieza una nueva de inmediato. Esto no se puede deshacer.",
+  "app.tutrun.title": "¿Iniciar la partida de tutorial?",
+  "app.tutrun.help": "La partida actual se descarta. La nueva partida te guía de nuevo con todos los consejos del tutorial.",
 
   /* ---- Music ---- */
   "music.title": "Música",
@@ -1345,6 +1347,7 @@ export default {
   "hint.badge.reason": "Tus críticos llenan la barra de carga. Cuando está llena, ioniza cartas, y esas dan más puntuación y probabilidad de crítico.",
   "hint.h1.title": "Bienvenido a Autobaza",
   "hint.h1.go": "Vamos",
+  "hint.h1.skipAll": "Saltar todos los consejos del tutorial",
   "hint.h1.body": "Autobaza se juega solo: tu mazo pelea las {cards} bazas por su cuenta, tú tomas las decisiones entre medias.\n\nEn cada baza, ambos mazos revelan su carta superior. Gana la más alta, el color no importa.",
   "hint.h2.body": "Rayo es tu primer arquetipo. Un crítico multiplica la puntuación de una baza. Las habilidades de Rayo hacen los críticos más probables, y cada crítico llena tu barra de carga.",
   "hint.h2b.body": "A partir de ahora hay varios arquetipos en oferta. Tu primera habilidad de un arquetipo lo activa, mezclar está permitido.",
@@ -2019,6 +2022,8 @@ export default {
   "tut.sub": "Cada ronda funciona con las reglas reales del juego — pruébalas.",
   "tut.tip": "Consejo",
   "tut.title": "Tutorial",
+  "tut.run": "Partida de tutorial",
+  "tut.run.sub": "Inicia una nueva partida con todos los consejos del tutorial.",
   "tut.wahl.kategorien.0": "Cada ventaja lleva su categoría arriba a la izquierda.",
   "tut.wahl.kategorien.title": "Las categorías",
   "tut.wahl.raritaet.0": "Las ventajas vienen en distintas rarezas, visibles en el borde.",
@@ -2041,8 +2046,6 @@ export default {
      the English SAME_OK list — but Spanish has its own word and the exception would hide a real
      missing translation. */
   "start.tutorial": "Tutorial",
-  "start.tutorial.offer": "Iniciar el tutorial",
-  "start.tutorial.offer.sub": "Una partida guiada te lo explica todo paso a paso",
   "start.feedback": "Comentarios",
   "start.discord": "Abrir Discord",
   "start.logo.alt": "AUTOBAZA",

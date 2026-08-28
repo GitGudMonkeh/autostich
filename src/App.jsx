@@ -8,7 +8,7 @@ import { allianceGroups } from "./game/families.js";
 import { computeFormations } from "./game/formations.js"; // #201.8 Stufe B: Deck-Snapshot in der Historie
 import { formatSeed } from "./game/rng.js"; // #205 Challenger Mode: Seed anzeigen (Base32)
 import { randomSeed } from "./ui/seedShare.js"; // #229 N7: Lauf-Seed würfeln (UI-Layer — Math.random raus aus game/)
-import { loadGhost, saveGhost, loadHighscores, recordHighscore, recordRun, recordChampionWeeks, loadOptions, saveOptions, loadUsername, saveUsername, loadProfile, saveProfile, wipeProfileStorage, saveActiveRun, loadActiveRun, clearActiveRun, loadTutorialProgress, saveTutorialProgress, tutorialOpened, loadRunHistory } from "./game/storage.js";
+import { loadGhost, saveGhost, loadHighscores, recordHighscore, recordRun, recordChampionWeeks, loadOptions, saveOptions, loadUsername, saveUsername, loadProfile, saveProfile, wipeProfileStorage, saveActiveRun, loadActiveRun, clearActiveRun, loadTutorialProgress, saveTutorialProgress, loadRunHistory } from "./game/storage.js";
 import { unlockAllProfile, skipOnboardingProfile, ONBOARDING_LINKS, nextOnboardingReward, ownedCount, unlockedArchetypes } from "./game/progression.js"; // Test-Codes: unlock (alles frei) / onboarding (skip +10 SP/+50 DP) / reset (Wipe) · §6 Meilenstein-Balken-Gate · #304 Onboarding-Fortschritt
 import { currentWeek } from "./game/weeklySeed.js"; // §7 Meister-Rangliste: Wochen-Seed (für alle gleich)
 import { leaderboardConfigured, publishRun } from "./game/leaderboard.js";
@@ -38,7 +38,7 @@ import { WeekModPanel } from "./ui/WeekMods.jsx"; // #381 Ranked-Modifikatoren-P
 import { PerkSelect } from "./ui/PerkSelect.jsx";
 import { SkillSelect } from "./ui/SkillSelect.jsx";
 import { skillArtUrls } from "./ui/skillArt.js"; // #mobil-emblem: Emblem-URLs je Archetyp für den Leerlauf-Vorlader
-import { AbortConfirm, RestartConfirm } from "./ui/RunConfirm.jsx"; // #run-dialoge: Beenden/Neustarten (Desktop-Fassung)
+import { AbortConfirm, RestartConfirm, TutorialRunConfirm } from "./ui/RunConfirm.jsx"; // #run-dialoge: Beenden/Neustarten/Tutorial-Lauf (Desktop-Fassung)
 import { LegendarySelect } from "./ui/LegendarySelect.jsx"; // #272 Legendär-Phase (Runde 29)
 import { FormationPhase } from "./ui/FormationPhase.jsx";
 import { TargetSelect } from "./ui/TargetSelect.jsx";
@@ -275,10 +275,8 @@ function AutostichGame() {
      Lohn, kein Tor), also wäre „fertig" gelogen und „für immer weiter anwerben" lästig. Wer eine
      Lektion geöffnet hat, hat den Einstieg gefunden — das laute Angebot hat seine Arbeit getan.
      Der ruhige Chip unten neben „Optionen" bleibt davon unberührt und immer erreichbar.
-     Der Altschlüssel des geführten Laufs wird EINMAL beim Mounten gelesen (tutorialOpened) und zählt
-     mit, damit Bestandsspieler nicht erneut angeworben werden. */
-  const [tutLegacy] = useState(() => tutorialOpened());
-  const tutOpened = tutLegacy || tutProgress.seen.length > 0;
+     Runde 3 (Owner): das laute Erstkontakt-Angebot ist WEG — der erste Lauf führt selbst
+     (H1-Karte + Tipps), der Hub braucht keinen zweiten Start-Knopf mehr. */
   const markLessonSeen = (path) => setTutProgress((p) => {
     const next = { seen: p.seen.includes(path) ? p.seen : [...p.seen, path], last: path };
     saveTutorialProgress(next);
@@ -298,10 +296,15 @@ function AutostichGame() {
     markLessonSeen(target);
     setTutOpen({ section: sec, lesson: les });
   };
-  const hints = useHints({ state, profile, onMore: openProbe, breakdownOn: !options.hideBreakdown });
+  /* Tutorial-Lauf (Runde 3, Owner): `guidedRun` lässt die Hints diesen Lauf wie einen Erstlauf
+     führen (alle Tipps, H1-Karte), auch auf einem Profil mit abgeschlossenen Läufen. Gesetzt
+     nur über den „Tutorial-Lauf"-Knopf; jeder normale Start räumt es ab (launchRun). */
+  const [guidedRun, setGuidedRun] = useState(false);
+  const hints = useHints({ state, profile, onMore: openProbe, breakdownOn: !options.hideBreakdown, guided: guidedRun });
   const hintFreeze = hints.freeze;
   const [confirmAbort, setConfirmAbort] = useState(false);        // #254: Rückfrage „Lauf wirklich abbrechen?" (Beenden-Button ODER Zurück-Geste im Run)
   const [confirmRestart, setConfirmRestart] = useState(false);    // Komfort: Rückfrage „Wirklich neustarten?" (Neustart-Button) — kein Ein-Tap-Verlust bei Fettfingern
+  const [confirmTutRun, setConfirmTutRun] = useState(false);      // Tutorial-Lauf aus der Übersicht bei AKTIVEM Lauf → Rückfrage (der Lauf ginge verloren)
   const [speedMult, setSpeedMult] = useState(1); // Ablaufbeschleunigung intern 1×/2×/4×/5× (Buttons X2/X4/MAX; #27, kein Score-Effekt)
   // #perf A1: Der Timer tickt nicht mehr die ganze App (früher: setClock alle 250 ms → Full-Tree-Re-Render inkl.
   // Battlefield). Die Zeit rechnet ein stabiler Getter aus den Refs; das 250-ms-Ticken lebt jetzt allein im RunTimer-Leaf.
@@ -1019,7 +1022,11 @@ function AutostichGame() {
   // #205: `seed` (Zahl) startet einen Challenge-Lauf (Nachspielen/Paste); als Event-Handler aufgerufen (Zahl-Guard)
   // ODER ohne Argument → frischer Zufalls-Seed in beginRun.
   // #190: Skins vorladen, dann beginRun. Zentraler Trigger, den alle Lauf-Arten teilen (Normal/Meister/Neustart).
-  function launchRun({ seed = null, dev = null, ranked = null } = {}) {
+  function launchRun({ seed = null, dev = null, ranked = null, guided = false } = {}) {
+    /* Tutorial-Lauf (Runde 3): `guided` lässt useHints den Lauf wie einen Erstlauf führen —
+       H1-Karte und alle Tipps, auch auf einem Veteranen-Profil. Jeder normale Start setzt das
+       Flag zurück, damit es nie an einem späteren Lauf klebt. */
+    setGuidedRun(guided);
     pendingSeed.current = (typeof seed === "number" && Number.isFinite(seed)) ? (seed >>> 0) : null;
     pendingDev.current = dev; // Dev-Run-Config (null = normaler Lauf)
     pendingRanked.current = ranked; // §7: 'ranked' = Wochen-Modus (tree-unabhängige Baseline)
@@ -1040,6 +1047,14 @@ function AutostichGame() {
   }
   // Lauf beginnen — auch der Challenge-Seed-Pfad (Nachspielen/Paste) läuft hier.
   function startRun(seed) { launchRun({ seed: (typeof seed === "number" && Number.isFinite(seed)) ? seed : null }); }
+  /* Tutorial-Lauf (Runde 3): Tipps zurücksetzen, Übersicht schließen, neuen geführten Lauf starten.
+     Aus der Übersicht bei aktivem Lauf kommt vorher die Rückfrage (confirmTutRun). */
+  function startGuidedRun() {
+    setConfirmTutRun(false);
+    setTutOpen(false);
+    hints.resetAll();
+    launchRun({ guided: true });
+  }
   // Test-Codes im Seed-Feld (nur Preview, StartScreen fängt sie ab): `unlock` = Onboarding fertig + alle
   // Upgrades + SP-Polster (Profil-Update, kein Reload). `onboarding` = nur Onboarding überspringen (6/6) +
   // 10 SP / 50 DP. `reset` = ganzes Profil wipen → Reload gibt den sauberen Erstbesuch-Zustand.
@@ -1232,7 +1247,7 @@ function AutostichGame() {
             resume={resumable ? { cycle: resumable.state.cycle, totalCycles: resumable.state.maxCycles || resumable.state.difficulty?.maxCycles || MAX_CYCLES, score: resumable.state.score } : null}
             onStats={() => setShowStats(true)} onCustomize={() => setShowCustomize(true)} onLeaderboard={() => setShowLeaderboard("board")}
             onUpgrades={() => setShowUpgrades(true)} profile={profile}
-            onTutorial={() => setTutOpen(true)} tutorialDone={tutOpened}
+            onTutorial={() => setTutOpen(true)}
             onDevRun={import.meta.env.VITE_PREVIEW === "1" ? () => setShowDevSetup(true) : null}
             muted={!!options.muted} onToggleMute={() => changeOptions({ muted: !options.muted })}
             onFeedback={() => setShowFeedback(true)} onPrivacy={() => setShowPrivacy(true)}
@@ -1410,6 +1425,7 @@ function AutostichGame() {
       {/* Tutorial-Sektionen: Vollbild-Overlay über dem Hub. Ohne `tutOpen` rendert es nichts. */}
       {tutOpen && (
         <TutorialSections onClose={() => setTutOpen(false)} onOpenGlossary={() => { setTutOpen(false); setGlossaryOpen(true); }}
+          onTutorialRun={() => { if (inRun) setConfirmTutRun(true); else startGuidedRun(); }}
           onOpenGuide={setTutGuide}
           initial={typeof tutOpen === "object" ? tutOpen : null}
           seen={tutProgress.seen} onSeen={markLessonSeen} />
@@ -1490,9 +1506,16 @@ function AutostichGame() {
           onRestart={() => { setConfirmRestart(false); restartRun(); }} />
       )}
 
+      {/* Tutorial-Lauf aus der Übersicht bei AKTIVEM Lauf: der laufende Lauf ginge verloren → Rückfrage.
+          Liegt ÜBER der Tutorial-Übersicht (z-70 in der Komponente); der Lauf ist über tutOpen eingefroren. */}
+      {confirmTutRun && (
+        <TutorialRunConfirm onKeepPlaying={() => setConfirmTutRun(false)} onStart={startGuidedRun} />
+      )}
+
       {/* Onboarding-H1: die EINZIGE blockierende Hint-Karte (Erstlauf-Begrüßung). Über allem außer
           den Bestätigungs-Dialogen; der Lauf darunter ist über hintFreeze eingefroren. */}
       {hints.card && <HintCardOverlay hint={hints.card} onGo={hints.dismissCard}
+        onSkipAll={hints.skipAll}
         onMore={hints.onMore && hints.card.target ? () => hints.onMore(hints.card) : null} />}
       {/* Ereignis-/UI-Hints im Stichspiel (T-O2): Pause-Karte am unteren Rand, Referent bleibt
           sichtbar; der Lauf ist über hintFreeze angehalten, bis „Weiter" gedrückt wird. */}

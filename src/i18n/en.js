@@ -962,6 +962,8 @@ export default {
   "app.restart.title": "Really restart?",
   "app.restart": "Restart",
   "app.restart.help": "The current run is discarded and a new one starts immediately. This cannot be undone.",
+  "app.tutrun.title": "Start a tutorial run?",
+  "app.tutrun.help": "The current run is discarded. The new run guides you with all tutorial tips again.",
 
   /* ---- Control bar (Controls) ---- */
   "controls.options": "⚙ Options",
@@ -1114,6 +1116,7 @@ export default {
   "hint.badge.reason": "Your crits fill the charge bar. When it is full, it ionises cards, and those pay more score and crit chance.",
   "hint.h1.title": "Welcome to Autotrick",
   "hint.h1.go": "Let's go",
+  "hint.h1.skipAll": "Skip all tutorial tips",
   "hint.h1.body": "Autotrick plays itself: your deck fights the {cards} tricks on its own, you make the decisions in between.\n\nEach trick, both decks reveal their top card. The higher one wins, the colour does not matter.",
   "hint.h2.body": "Lightning is your first archetype. A crit multiplies a trick's score. Lightning skills make crits more likely, and every crit fills your charge bar.",
   "hint.h2b.body": "From now on, more than one archetype is on offer. Your first skill of an archetype activates it, mixing is allowed.",
@@ -1137,6 +1140,8 @@ export default {
 
   "tut.eyebrow": "Tutorial",
   "tut.title": "Tutorial",
+  "tut.run": "Tutorial run",
+  "tut.run.sub": "Starts a new run with all tutorial tips.",
   "tut.sub": "Every round runs on the real game rules — try them.",
   "tut.seen": "read",
   "tut.tip": "Tip",
@@ -1813,8 +1818,6 @@ export default {
      NOTE for T9: `start.tutorial.offer.sub` still promises a "guided run". The sentence is invisible
      but wrong — rewrite it when the chip points at the new sections. */
   "start.tutorial": "Tutorial",
-  "start.tutorial.offer": "Start the tutorial",
-  "start.tutorial.offer.sub": "A guided run walks you through everything, step by step",
 
 
 

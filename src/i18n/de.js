@@ -1002,6 +1002,8 @@ export default {
   "app.restart.title": "Wirklich neustarten?",
   "app.restart": "Neustarten",
   "app.restart.help": "Der aktuelle Lauf wird verworfen und ein neuer beginnt sofort. Das lässt sich nicht rückgängig machen.",
+  "app.tutrun.title": "Tutorial-Lauf starten?",
+  "app.tutrun.help": "Der aktuelle Lauf wird verworfen. Der neue Lauf führt dich wieder mit allen Tutorial-Tipps.",
 
   /* ---- Steuerleiste (Controls) ---- */
   "controls.options": "⚙ Optionen",
@@ -1161,6 +1163,7 @@ export default {
   "hint.badge.reason": "Deine Crits füllen die Ladungsleiste. Ist sie voll, ionisiert er Karten, und die bringen mehr Score und Crit-Chance.",
   "hint.h1.title": "Willkommen bei Autostich",
   "hint.h1.go": "Los geht's",
+  "hint.h1.skipAll": "Alle Tutorial-Tipps überspringen",
   "hint.h1.body": "Autostich spielt sich selbst: Dein Deck kämpft die {cards} Stiche allein, du triffst die Entscheidungen dazwischen.\n\nBei jedem Stich decken beide Decks ihre oberste Karte auf. Die höhere gewinnt, die Farbe spielt keine Rolle.",
   "hint.h2.body": "Blitz ist dein erster Archetyp. Ein Crit vervielfacht den Score eines Stichs. Blitz-Skills machen Crits wahrscheinlicher, und jeder Crit füllt deine Ladungsleiste.",
   "hint.h2b.body": "Ab jetzt stehen mehrere Archetypen zur Wahl. Dein erster Skill eines Archetyps schaltet ihn frei, mischen ist erlaubt.",
@@ -1184,6 +1187,8 @@ export default {
 
   "tut.eyebrow": "Tutorial",
   "tut.title": "Tutorial",
+  "tut.run": "Tutorial-Lauf",
+  "tut.run.sub": "Startet einen neuen Lauf mit allen Tutorial-Tipps.",
   "tut.sub": "Jede Runde rechnet mit den echten Spielregeln — probier sie aus.",
   "tut.seen": "gelesen",
   "tut.tip": "Tipp",
@@ -1860,8 +1865,6 @@ export default {
      ACHTUNG für T9: `start.tutorial.offer.sub` verspricht noch einen „geführten Lauf". Der Satz ist
      unsichtbar, aber falsch — er gehört umgeschrieben, wenn der Chip auf die neuen Sektionen zeigt. */
   "start.tutorial": "Tutorial",
-  "start.tutorial.offer": "Tutorial starten",
-  "start.tutorial.offer.sub": "Ein geführter Lauf erklärt dir alles Schritt für Schritt",
 
 
 
