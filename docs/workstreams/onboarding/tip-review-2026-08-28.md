@@ -5,7 +5,8 @@ implemented until the walkthrough is done, then everything lands in one task. Ge
 the binding wording (EN/ES/ZH follow at implementation). Style rule enforced here: **no em-dash in
 player text** (text-style-guide.md, "Kein Gedankenstrich").
 
-## Status: COLLECTING — not yet implemented
+## Status: IMPLEMENTED (task/tip-review → dev, 2026-08-28) — next: owner playtest round 2.
+Implementation record: docs/workstreams/onboarding/onb-tipreview/task-contract.md on dev.
 
 ## Hints
 
