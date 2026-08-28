@@ -44,6 +44,7 @@ const localeVars = (locale) => ({
   eskStep: fmtNum(FM.ESKALATION_STEP.toFixed(2), locale),
   wiedStep: fmtNum(FM.WIED_STEP.toFixed(2), locale),
   // Welle 3: Skill-Namen und Dezimalfaktoren der Archetyp-Lektionen
+  ionSkill: skillDef("SK_LIGHTNING_02")?.name ?? "",
   gkSkill: skillDef("SK_FIRE_06")?.name ?? "",
   fbSkill: skillDef("SK_FIRE_11")?.name ?? "",
   spSkill: skillDef("SK_FIRE_12")?.name ?? "",
@@ -55,7 +56,7 @@ const localeVars = (locale) => ({
 // `offered` bedeutet je nach Lektion etwas anderes — Perk-Angebot oder Skill-Angebot.
 /* `none` hat nur, wer einen Leerzustand kennt. Die Aufstellungs-Runden kennen ihn: eine Reihe ohne
    Formation ist ein gültiger Zustand und braucht ein Wort dafür. */
-const NONE_LABEL = new Set(["formation", "aufstellen", "kartenteile", "overlap", "bauen"]);
+const NONE_LABEL = new Set(["aufstellen", "kartenteile", "bauen"]);
 const OFFERED = { "tut.wahl.perks.0": C.PERKS_OFFERED, "tut.wahl.skills.0": C.SKILLS_OFFERED };
 
 /* TUTORIAL-SEKTIONEN — die dritte Lehr-Ebene (Glossar = nachschlagen · Leitfaden = Strategie ·

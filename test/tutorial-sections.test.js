@@ -48,15 +48,16 @@ describe("Tutorial-Sektionen · Katalog", () => {
 
   /* Die Form je Art. Der erste Bau kannte nur eine: „Satz, Bild oder Probierfeld, Tipp". Die
      vollen Lektionen brechen sie bewusst — sie haben mehrere Blöcke und teils zwei bewegliche Teile.
-     Was BEIDE Arten teilen, ist der Abschluss: der Tipp steht am Ende, genau einmal. Das ist die
-     Regel, die den ursprünglichen Fehler verhindert (der Tipp verschwindet, „Weiter" leuchtet),
-     und sie gilt unverändert weiter. */
-  it("jede Lektion endet mit genau einem Tipp", () => {
+     Was BEIDE Arten teilen: HAT eine Lektion einen Tipp, steht er am Ende, genau einmal. Seit der
+     Review-Runde 2026-08-28 (Zeilen 4-6) darf eine Lektion auch OHNE Tipp enden — der Owner hat
+     die Tipp-Takte von kategorien/raritaet/legendaer gestrichen. */
+  it("hoechstens ein Tipp je Lektion, und wenn, dann am Ende", () => {
     for (const s of SECTIONS) for (const l of s.lessons) {
       const kinds = l.beats.map((b) => b.kind);
       const where = `${s.id}/${l.id}: ${kinds.join(" · ")}`;
-      expect(kinds.filter((k) => k === "tip").length, `${where} — genau ein Tipp`).toBe(1);
-      expect(kinds[kinds.length - 1], `${where} — der Tipp steht am Ende`).toBe("tip");
+      const tips = kinds.filter((k) => k === "tip").length;
+      expect(tips <= 1, `${where} — hoechstens ein Tipp`).toBe(true);
+      if (tips === 1) expect(kinds[kinds.length - 1], `${where} — der Tipp steht am Ende`).toBe("tip");
     }
   });
 

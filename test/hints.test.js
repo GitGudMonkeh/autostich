@@ -86,10 +86,18 @@ describe("hints · Auswahl-Logik (pur, ohne React)", () => {
     expect(hintForScreen("skill", ctx())).toBe(null);
   });
 
-  it("Perk-Screen: H3 beim ersten Besuch, H3b ab dem zweiten", () => {
+  it("Perk-Screen: H3 beim ersten Besuch, H3b ab dem zweiten, H4 (Glossar) ab dem dritten", () => {
     expect(hintForScreen("perk", ctx({ visits: { perk: 1 } }))).toBe("H3");
     expect(hintForScreen("perk", ctx({ seen: new Set(["H3"]), visits: { perk: 2 } }))).toBe("H3b");
-    expect(hintForScreen("perk", ctx({ seen: new Set(["H3", "H3b"]), visits: { perk: 3 } }))).toBe(null);
+    expect(hintForScreen("perk", ctx({ seen: new Set(["H3", "H3b"]), visits: { perk: 3 } }))).toBe("H4");
+    expect(hintForScreen("perk", ctx({ seen: new Set(["H3", "H3b", "H4"]), visits: { perk: 4 } }))).toBe(null);
+  });
+
+  it("C5: kein Bauplan passt mehr — schlaegt die Architekt-Sequenz, einmalig", () => {
+    expect(hintForScreen("architect", ctx({ visits: { architect: 2 }, architectStuck: true }))).toBe("C5");
+    expect(hintForScreen("architect", ctx({ visits: { architect: 2 }, architectStuck: true,
+      seen: new Set(["C5", "S-A1"]) }))).toBe("S-A2");
+    expect(hintForScreen("architect", ctx({ visits: { architect: 1 } }))).toBe("S-A1");
   });
 
   it("Sequenzen: ein Schritt je Besuch, spätere Schritte warten auf ihren Besuch", () => {
@@ -155,7 +163,15 @@ describe("hints · Ereignis-Auswahl im Stichspiel (T-O2, pur)", () => {
     expect(eventForPlay(ectx({ state: { lastTrick: { ...win, result: "tie" } }, seen: new Set(["E1"]) }))).toBe("E2");
     expect(eventForPlay(ectx({ state: { lastTrick: { ...win, winStreak: 3 } }, seen: new Set(["E1"]) }))).toBe("E3");
     expect(eventForPlay(ectx({ state: { lastTrick: { ...win, isCrit: true } }, seen: new Set(["E1", "E3"]) }))).toBe("E4");
-    expect(eventForPlay(ectx({ state: { lastTrick: { ...win, formationMult: 1.4 } }, seen: new Set(["E1"]) }))).toBe("E6");
+    // E6 wartet auf die erste Aufstellphase (Review Zeile 8): ohne formationVisit kein E6 …
+    expect(eventForPlay(ectx({ state: { lastTrick: { ...win, formationMult: 1.4 } }, seen: new Set(["E1"]) }))).toBe(null);
+    // … mit Farbblock ab Besuch 1, ohne Farbblock erst ab Besuch 2 (Fallback gegen Verhungern).
+    expect(eventForPlay(ectx({ formationVisit: 1, state: { lastTrick: { ...win, formationMult: 1.4,
+      formations: [{ type: "farbblock" }] } }, seen: new Set(["E1"]) }))).toBe("E6");
+    expect(eventForPlay(ectx({ formationVisit: 1, state: { lastTrick: { ...win, formationMult: 1.4,
+      formations: [{ type: "treppe" }] } }, seen: new Set(["E1"]) }))).toBe(null);
+    expect(eventForPlay(ectx({ formationVisit: 2, state: { lastTrick: { ...win, formationMult: 1.4,
+      formations: [{ type: "treppe" }] } }, seen: new Set(["E1"]) }))).toBe("E6");
     // Kampfwert weicht vom Kartenwert ab → E9, mit den echten Zahlen.
     expect(eventForPlay(ectx({ state: { lastTrick: { ...win, pValue: 9 } }, seen: new Set(["E1"]) }))).toBe("E9");
     // Ein hoher Score über dem ersten Meilenstein → E7 (über die echte milestoneBarState).
