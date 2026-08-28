@@ -94,3 +94,4 @@ Implementation record: docs/workstreams/onboarding/onb-tipreview/task-contract.m
 | # | Item | Change |
 | --- | --- | --- |
 | R1 | **E3 mult formatting (bug)** | Shows ×1,1400000000000001: `streakBaseMult(n)` is raw floating point and E3's vars call `fmtNum` without rounding. Format to two decimals (`.toFixed(2)`, the f2 pattern) — audit the other hint vars (E4 critMult etc.) for the same hole. |
+| R2 | **Formationen tabs wrap** | On the rebuilt "Die vier Formationen" page the tab label "Wiederholung" breaks onto two lines. Smaller font on the formation tab buttons (`.werkzeuge.formen .tbtn`, FormationenSzene) so every label fits one line. |
