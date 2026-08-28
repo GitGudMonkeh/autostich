@@ -136,9 +136,9 @@ Distrikt, Struktur), pull every display name from the registries at render time
 
 | id | Trigger | DE draft | EN draft | Mehr dazu |
 | --- | --- | --- | --- | --- |
-| **S-F1** | formation phase, visit 1 | Fang mit einem Segment an: Tausche gleiche Farben zusammen — das ergibt einen {farbblock}, und Formationen vervielfachen den Score ihrer Karten. | Start with one segment: swap same colours together — that makes a {farbblock}, and formations multiply their cards' score. | aufstellung / formationen |
+| **S-F1** | formation phase, visit 1 | Fang mit einem Segment an: Schieb gleiche Farben zusammen — das ergibt einen {farbblock}, und Formationen vervielfachen den Score ihrer Karten. | Start with one segment: push same colours together — that makes a {farbblock}, and formations multiply their cards' score. | aufstellung / formationen |
 | **S-F2** | formation phase, visit 2+ | Dein nächstes Muster: Die Legende zeigt, welche Formationen es gibt — jede weitere multipliziert dazu. | Your next pattern: the legend shows which formations exist — each additional one multiplies on top. | aufstellung / formationen |
-| **S-A1** | architect phase, visit 1 | Setz dein erstes Gebäude irgendwo aufs Brett. Es wirkt auf die Karte unter ihm — zahlt aber nur, wenn die ihren Stich gewinnt. | Place your first building anywhere on the board. It affects the card beneath it — but it only pays if that card wins its trick. | architekt / wasist |
+| **S-A1** | architect phase, visit 1 | Setz dein erstes Gebäude irgendwo aufs Brett. Es wirkt auf die Karte unter ihm — seinen Bonus zahlt es nur, wenn die ihren Stich gewinnt. | Place your first building anywhere on the board. It affects the card beneath it — and pays its bonus only if that card wins its trick. | architekt / wasist |
 | **S-A2** | architect phase, visit 2+ | Bau einen Distrikt: Setz ein gleichartiges Gebäude neben dein erstes — Nachbarn derselben Art verstärken sich. | Build a district: place a matching building next to your first — neighbours of the same kind reinforce each other. | architekt / wohin |
 | **S-A3** | architect phase, visit 3+ | Dein Fernziel: Eine volle Zeile, Spalte oder Diagonale schließt eine Struktur und legt einen Faktor auf alle Positionen darin. | Your long game: a full row, column or diagonal closes a structure and puts a factor on every position inside it. | architekt / wohin |
 
@@ -172,7 +172,7 @@ spotlight. Respects the three FX levels (`useFxLevel`), per the guided-run playt
 
 | id | Trigger | DE draft | EN draft | Mehr dazu |
 | --- | --- | --- | --- | --- |
-| **E1** | first won trick | Dein erster Sieg: {win} Basispunkte. Alles Weitere — Serie, Crit, Formation, Gebäude — multipliziert darauf. | Your first win: {win} base points. Everything else — streak, crit, formation, buildings — multiplies on top. | grundlagen / score |
+| **E1** | first won trick | Dein erster Sieg: {win} Basispunkte. Serie, Crits, Formationen und Gebäude legen sich als Faktoren darauf. | Your first win: {win} base points. Streak, crits, formations and buildings stack on top as factors. | grundlagen / score |
 | **E2** | first tie | Gleichstand: Niemand punktet. Nur Siege zahlen. | A tie pays nobody. Only wins score. | grundlagen / stich |
 | **E3** | streak reaches 3 | Serie {n}: Dein Serien-Faktor steht auf ×{mult}. Eine Niederlage setzt ihn zurück. | Streak {n}: your streak factor stands at ×{mult}. One loss resets it. | grundlagen / serie |
 | **E4** | first crit | Crit: Dieser Stich zählt ×{critMult}. Crit-Chance kommt aus Präzisions-Perks — und aus Blitz. | Crit: this trick counts ×{critMult}. Crit chance comes from precision perks — and from Lightning. | blitz / karte |
