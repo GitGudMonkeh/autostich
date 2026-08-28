@@ -24,6 +24,9 @@ player text** (text-style-guide.md, "Kein Gedankenstrich").
 
 | 12 | **S-A1** (first architect) | Mechanic made precise, dash-free: "Setz dein erstes Gebäude irgendwo aufs Brett. Es wirkt auf die Karte unter ihm: Der Score-Bonus zahlt nur bei Sieg, Boni auf den Stichwert zahlen immer." |
 
+| 13 | **S-A1** addendum | The "Mehr dazu" link goes here as well. |
+| 14 | **NEW hint (C5, architect board full)** | Once per profile, in the first architect phase where the board has no free cell left: a banner pointing out the limited build space and that demolishing or upgrading is the way on. Draft, dash-free: "Dein Baufeld ist voll. Der Platz ist begrenzt, aber nichts steht fest: Reiß ein Gebäude ab oder werte eins auf." While it shows, the Baufeld panel (occupancy readout) carries the tutorial glow (banner-anchored highlight, like the event-card spotlight but without the scrim). |
+
 ## Probierfeld lessons (Mehr-dazu targets)
 
 | # | Lesson | Change |
