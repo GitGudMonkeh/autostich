@@ -63,6 +63,8 @@ player text** (text-style-guide.md, "Kein Gedankenstrich").
 
 | 33 | **E8** (end screen) | Compact rewrite covering Stichpunkte, Deck-Punkte AND Meilensteine; the Probierfeld sentence and the "Mehr dazu" link go. Final (owner picked A, "Dein Lauf zählt" dropped): "Stichpunkte fließen in den Upgrade-Baum, Deck-Punkte in die Werkstatt. Score-Meilensteine bringen dir zusätzliche Stichpunkte." ("Deck-Punkte" spelled as the end screen spells it.) |
 
+| 34 | **BUG: aborted runs earn rewards** | An aborted run (screenshot: 1 cycle, score 0) still granted +5 Stichpunkte AND the Willkommensbonus ("first completed run"). Aborted runs must grant no SP; verify the welcome bonus and `hadCompletedRun` are also gated on genuinely completed runs. |
+
 ## Probierfeld lessons (Mehr-dazu targets)
 
 | # | Lesson | Change |
