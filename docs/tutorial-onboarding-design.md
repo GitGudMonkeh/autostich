@@ -1,6 +1,7 @@
 # First-contact onboarding — design paper
 
-> **Status:** PROPOSAL — owner review pending. Nothing in this paper is built.
+> **Status:** APPROVED FOR IMPLEMENTATION (owner, 2026-08-28) — nothing is built yet; the §9 tasks
+> are the cut. Copy drafts get their final owner pass during the build (§10.1).
 > **Branch:** `claude/tutorial-design-review-ic49dg` (design review session, 2026-08-27).
 > **Basis:** the guided run on `main` (`docs/tutorial-guided-run-plan.md`, removed on `dev`) and the
 > tutorial sections with Proberunden on `dev` (`docs/workstreams/tutorial-sections/`). This paper
@@ -507,6 +508,17 @@ milestone tick) is not surfaced, surfacing it read-only is in scope, `src/game/`
 
 T-O3 and T-O4 are independent of T-O2. The work builds on `dev` (the sections live there; the
 guided run is already removed there).
+
+**Build order for a first playtest:** T-O1 alone is already testable in a normal run (banners and
+suggestion sequences); **T-O1 + T-O3 is the first-run experience** and the earliest build worth
+the owner's judgement; T-O2 completes the play-phase teaching; T-O4 closes the loop with the
+Probierfeld deep links ("Mehr dazu" stays hidden or inert until it lands).
+
+**Language reach (measured, `origin/dev`):** since #es-locale the i18n guards enforce key parity
+across **all** catalogs (de, en, es, zh-Hans), not two. Every task that adds `hint.*` keys ships
+them in all four languages and runs `npm run loc:export` — the German and English drafts in this
+paper are owner-reviewed copy; the Spanish and Chinese lines follow the existing catalogs'
+conventions.
 
 ---
 
