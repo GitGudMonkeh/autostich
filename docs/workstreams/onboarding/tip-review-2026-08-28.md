@@ -18,6 +18,8 @@ player text** (text-style-guide.md, "Kein Gedankenstrich").
 | 7 | **U1** (tempo bar) | "Mehr dazu" link goes. The Probierfeld page `grundlagen/anzeigen` ("Der Lauf-Bildschirm") is deleted entirely; U3 links there too and loses its link with it (pending owner confirmation on U3). |
 | 8 | **E6** (first formation scores) | Fires too early today (a dealt formation before the first Aufstellung). New timing: only AFTER the player's first formation phase, and preferably on a **Farbblock** multiplier, closing the loop with S-F1 ("bau einen Farbblock"). Proposed fallback: if no Farbblock has scored by the second Aufstellung, the next scoring formation of any type triggers it, so the hint cannot starve. Also: the "Mehr dazu" link goes (not needed here; the lesson itself stays, S-F1/S-F2 still link it). |
 
+| 9 | **S-F1** (first Aufstellung) | New copy, dash-free: "Tippe zwei Karten an, um ihre Position zu tauschen. Versuch, in einem Segment gleiche Farben zu sammeln." Plus: while S-F1 is visible, mark one segment (the first) with the tutorial accent frame ("eventuell", owner). Note: the word "Farbblock" drops out of S-F1; the E6 loop then leans on the in-game FARBBLOCK label. |
+
 ## Probierfeld lessons (Mehr-dazu targets)
 
 | # | Lesson | Change |
