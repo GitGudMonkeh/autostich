@@ -1485,11 +1485,11 @@ function AutostichGame() {
       {/* Onboarding-H1: die EINZIGE blockierende Hint-Karte (Erstlauf-Begrüßung). Über allem außer
           den Bestätigungs-Dialogen; der Lauf darunter ist über hintFreeze eingefroren. */}
       {hints.card && <HintCardOverlay hint={hints.card} onGo={hints.dismissCard}
-        onMore={hints.onMore ? () => hints.onMore(hints.card) : null} />}
+        onMore={hints.onMore && hints.card.target ? () => hints.onMore(hints.card) : null} />}
       {/* Ereignis-/UI-Hints im Stichspiel (T-O2): Pause-Karte am unteren Rand, Referent bleibt
           sichtbar; der Lauf ist über hintFreeze angehalten, bis „Weiter" gedrückt wird. */}
       {!hints.card && hints.eventCard && <EventHintCard hint={hints.eventCard} onGo={hints.dismissEvent}
-        onMore={hints.onMore ? () => hints.onMore(hints.eventCard) : null} />}
+        onMore={hints.onMore && hints.eventCard.target ? () => hints.onMore(hints.eventCard) : null} />}
     </div>
     </HintContext.Provider>
   );

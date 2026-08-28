@@ -622,7 +622,9 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
             <span className="text-meta-1 uppercase tracking-wide font-bold" style={{ color: "#6d7f8e" }}>{t("arch.boost")}</span>
             <span className="ty-num leading-none" style={{ fontVariantNumeric: "tabular-nums", fontSize: 25, color: archBoostPct > 0 ? "#5fce86" : "#8a97a5" }}>+{archBoostPct} %</span>
           </div>
-          <div className="flex flex-col justify-center gap-1 px-3.5 py-2.5 text-right border-l" style={{ borderColor: "rgba(59,125,190,.32)" }}>
+          {/* data-hint-anchor: C5 (kein Bauplan passt mehr) laesst das Baufeld-Panel leuchten. */}
+          <div className="flex flex-col justify-center gap-1 px-3.5 py-2.5 text-right border-l" data-hint-anchor="baufeld"
+            style={{ borderColor: "rgba(59,125,190,.32)" }}>
             <span className="text-meta-1 uppercase tracking-wide font-bold" style={{ color: "#6d7f8e" }}>{t("arch.plot")}</span>
             <span className="ty-num leading-none" style={{ fontVariantNumeric: "tabular-nums", fontSize: 19, color: GOLD }}>{Math.max(0, maxCover - coverCount)}<span className="text-body-5 opacity-60"> / {maxCover}</span></span>
             <span className="text-micro-3 ty-num-sm opacity-45">{t("arch.plot.used", { n: coverCount, pct: Math.round(coverCount / maxCover * 100) })}</span>

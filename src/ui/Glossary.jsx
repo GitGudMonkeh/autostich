@@ -43,6 +43,7 @@ export function GlossaryButton({ onClick, className = "", style, title = null })
       onClick={onClick}
       title={title ?? t("glossary.title")}
       aria-label={t("glossary.open")}
+      data-hint-anchor="glossar"
       className={"gloss-i-btn " + className}
       style={style}
     >
