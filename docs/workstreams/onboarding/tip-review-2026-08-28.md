@@ -148,3 +148,4 @@ Next: owner playtest round 3.
 | --- | --- | --- |
 | Q1 | **E1 (first win): Mehr dazu goes** | The first-win event card ("Dein erster Sieg: {win} Basispunkte…") loses its "Mehr dazu" link (drop `target` from the E1 def). |
 | Q2 | **E2 (first tie): Mehr dazu goes** | The tie event card ("Gleichstand: Niemand punktet. Nur Siege zahlen.") loses its "Mehr dazu" link (drop `target` from the E2 def). |
+| Q3 | **S-F1: mention the energy** | The first formation hint also explains that the energy shows how many swaps remain this phase. Proposed DE body (pending owner ok, dash-free, no typed digits): "Tippe zwei Karten an, um ihre Position zu tauschen. Die Energie zeigt, wie oft du in dieser Phase noch tauschen kannst. Versuch, in einem Segment gleiche Farben zu sammeln." |
