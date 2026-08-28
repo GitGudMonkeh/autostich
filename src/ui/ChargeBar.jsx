@@ -3,7 +3,7 @@ import { ION_MAX_STACKS, ION_SAT_BREADTH_FRAC, ION_SAT_DEPTH_FRAC, ION_SATURATIO
   STORM_CRIT_CAP, UEBERSCHLAG_DEPTH_PP_PER_CHARGE } from "../game/constants.js";
 import { FactionShell, PanelSkills } from "./indicators/panelKit.jsx";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
-import { LIGHTNING, CASCADE, CASCADE_BRIGHT } from "./indicators/vocab.js";
+import { LIGHTNING, CASCADE_BRIGHT } from "./indicators/vocab.js";
 import { t } from "../i18n/index.js"; // #sprache
 import { skillDef, archetypeLabel } from "../i18n/labels.js";
 

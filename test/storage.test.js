@@ -140,14 +140,14 @@ describe("Progression/Upgrades — Profil-Felder, Migration, SP-Ernte, Onboardin
 
   const runRec = (over = {}) => ({ score: 0, ts: 1, completed: true, ...over });
 
-  it("#316 frisches Profil: Onboarding fertig (6/6), 50 DP Startbonus, 0 SP", () => {
+  it("frisches Profil: Onboarding fertig (6/6), 0 DP, 0 SP (R22: Startbonus gestrichen)", () => {
     const p = loadProfile();
     expect(p.stichPoints).toBe(0);
     expect(p.stichSpent).toBe(0);
     expect(p.nodes).toEqual({});
     expect(p.onboarding).toBe(ONBOARDING_LINKS); // #316: kein Onboarding mehr → direkt „fertig"
     expect(p.spRuns).toBe(0);
-    expect(p.deckPoints).toBe(50);               // #316: Fresh-Start-Bonus
+    expect(p.deckPoints).toBe(0);                // Runde 2, R22: kein Startbonus mehr — erste DP via WELCOME_DP
     expect(p.ownedCosmetics).toEqual({});
     expect(p.schemaVersion).toBe(PROFILE_SCHEMA_VERSION);
   });
@@ -268,18 +268,18 @@ describe("Progression/Upgrades — Profil-Felder, Migration, SP-Ernte, Onboardin
   it("DP: Score-DP = SP-Meilensteine ab dem ersten Lauf; SP laufen normal (auf den 50-DP-Startbonus)", () => {
     veteran();
     let p = loadProfile();
-    expect(p.deckPoints).toBe(50);         // Startbonus
+    expect(p.deckPoints).toBe(0);          // R22: frisch = 0 DP
     p = recordRun(runRec({ ts: 1, score: 55_000_000 })).profile;
-    expect(p.deckPoints).toBe(50 + 3 + 5); // 55 Mio → +3 DP (Meilensteine 10M+25M+50M) + #382 Abschluss-Bonus 5
+    expect(p.deckPoints).toBe(3 + 5);      // 55 Mio → +3 DP (Meilensteine 10M+25M+50M) + #382 Abschluss-Bonus 5
     expect(p.stichPoints).toBe(SP_PER_RUN + 3);     // Grundstock + 3 Meilensteine (10M+25M+50M)
   });
 
   it("#382 Abschluss-Bonus: +5 DP je abgeschlossenem Nicht-Ranked-Lauf (nicht bei Abbruch)", () => {
     veteran();   // ohne das läge der einmalige Willkommensbonus (DP) mit im Delta
-    const done = recordRun(runRec({ ts: 1, score: 0 })).profile;                        // Startbonus 50 + Abschluss 5
-    expect(done.deckPoints).toBe(50 + 5);
+    const done = recordRun(runRec({ ts: 1, score: 0 })).profile;                        // R22: Start 0 + Abschluss 5
+    expect(done.deckPoints).toBe(5);
     const aborted = recordRun(runRec({ ts: 2, score: 0, completed: false })).profile;   // Abbruch → kein Bonus
-    expect(aborted.deckPoints).toBe(50 + 5);                                            // unverändert
+    expect(aborted.deckPoints).toBe(5);                                                 // unverändert
   });
 
   it("#299 DP: bei vollem Baum zahlt die SP-Ökonomie DP statt SP; SP-Rest wird zu DP gefegt", () => {
@@ -390,9 +390,9 @@ describe("Progression/Upgrades — Profil-Felder, Migration, SP-Ernte, Onboardin
 
     wipeProfileStorage();
 
-    // Fortschritt weg → Defaults (#316: frisches Profil ist wieder 6/6 fertig mit 50 DP, 0 SP).
+    // Fortschritt weg → Defaults (R22: frisches Profil ist wieder 6/6 fertig mit 0 DP, 0 SP).
     expect(loadProfile().onboarding).toBe(ONBOARDING_LINKS);
-    expect(loadProfile().deckPoints).toBe(50);
+    expect(loadProfile().deckPoints).toBe(0);
     expect(loadProfile().stichPoints).toBe(0);
     expect(loadProfile().nodes).toEqual({});
     expect(loadHighscores()).toEqual([]);
