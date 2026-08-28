@@ -159,7 +159,7 @@ needs to block). Dismiss with ✕ or by deciding; "Mehr dazu →" opens the link
 | id | Trigger | DE draft | EN draft | Mehr dazu |
 | --- | --- | --- | --- | --- |
 | **H1** | first-ever run start (blocking card, the one exception) | Autostich spielt sich selbst: Dein Deck schlägt sich durch {cards} Stiche, du entscheidest dazwischen. Verlieren kannst du nicht. Der erste Durchlauf gehört dem Zuschauen — deine erste Entscheidung kommt danach. | Autostich plays itself: your deck fights through {cards} tricks — you decide in between. You cannot lose. The first round is for watching — your first decision comes after it. | grundlagen / stich |
-| **H2** | first skill offer (run 1 — Blitz only, §6) | Blitz ist dein erster Archetyp: Seine Skills laden die Blitz-Leiste und entladen sie als Crits. Eine falsche Wahl gibt es nicht. | Lightning is your first archetype: its skills charge the Lightning bar and discharge it as crits. There is no wrong choice. | blitz / karte |
+| **H2** | first skill offer (run 1 — Blitz only, §6) | Blitz ist dein erster Archetyp. Ein Crit vervielfacht den Score eines Stichs — Blitz-Skills machen ihn wahrscheinlicher, und jeder Crit lädt die Leiste. Eine falsche Wahl gibt es nicht. | Lightning is your first archetype. A crit multiplies a trick's score — Lightning skills make it more likely, and every crit charges the bar. There is no wrong choice. | blitz / karte |
 | **H2b** | first skill offer with more than one archetype (run 2+) | Ab jetzt stehen mehrere Archetypen zur Wahl. Dein erster Skill eines Archetyps schaltet ihn frei — mischen ist erlaubt. | From now on, more than one archetype is on offer. Your first skill of an archetype activates it — mixing is allowed. | wahl / kategorien |
 | **H3** | first perk offer | Ein Perk wirkt sofort und bleibt bis zum Ende des Laufs. Passt keiner, lehn ab — das kostet nichts. | A perk takes effect immediately and lasts the whole run. If none fits, decline — it costs nothing. | wahl / kategorien |
 | **H3b** | perk offer, visit 2 | Der Farbchip nennt die Kategorie, der Rand die Rarität. | The colour chip names the category, the border the rarity. | wahl / raritaet |
@@ -314,23 +314,28 @@ supporting evidence is better than a taste call:
 - **Blitz is measurably the leanest archetype to explain.** The `dev` sections needed **3 lessons
   for Blitz** against 5 for Feuer, 5 for Pflanze, 4 for Eis (measured — catalog on `origin/dev`).
   The game's own teaching material already ranked the archetypes by complexity; Blitz won.
-- **Blitz teaches the game's core lesson with the loudest feedback.** Its loop — charge the bar,
-  discharge as crits — manufactures the multiplier event the whole score system is built on
-  ("Bei allen anderen Archetypen ist er Zufall. Blitz stellt ihn selbst her", `tut.blitz.wasist.0`).
+- **Blitz teaches the game's core lesson with the loudest feedback.** Its loop — skills raise
+  crit chance, every crit charges the bar, a full bar pays off through the consumer (measured:
+  the passive is crit chance per skill, `chargeOnCrit`, and `onFullCharge: "ionize"`) —
+  manufactures the multiplier event the whole score system is built on ("Bei allen anderen
+  Archetypen ist er Zufall. Blitz stellt ihn selbst her", `tut.blitz.wasist.0`).
   E4 (first crit) and E5 (first bar) land in run 1 with high probability instead of by luck.
 - **The pool sustains it.** 21 skills per archetype (measured, `SKILL_DEFS`), 16 legendaries
   across all four — a Blitz-only run feeds all of its skill phases without exhausting; and the
   engine already degrades an empty skill pool to a perk offer (observed), so there is no cliff.
 
 **The first skill screen (cycle 5, after §6.1) then reads:** three Blitz skills, one badge. The
-badge sits on the guaranteed **Blitz consumer** — DE **„Guter Start"** / EN **"Good start"** —
-because picking the consumer makes the charge loop visible in the very next play phase, which E5
-then names. **The badge explains itself** (owner direction, 2026-08-28): the badged card carries
-one reason line that says what the skill does — and, in the same breath, what a crit is, because
-this is the moment the crit becomes relevant. Draft: DE *„Empfohlen: Er macht aus deiner Ladung
-Crits — ein Crit vervielfacht den Score seines Stichs."* / EN *"Recommended: it turns your charge
-into crits — a crit multiplies its trick's score."* E4 consequently shrinks to naming the number
-when the first crit actually lands (§5.3) — the concept is taught here, at the choice. The badge rule stays
+badge sits on the guaranteed **Blitz consumer — Ionisierung** (measured: line 2 of the lightning
+skills, "volle Ladung → Payoff", `onFullCharge: "ionize"`; without a consumer a full bar
+evaporates — `bar.lightning.noConsumer` says so in the live UI) — DE **„Guter Start"** / EN
+**"Good start"** — because the consumer is what makes the full-bar payoff visible, which E5 then
+names. **The badge explains itself** (owner direction, 2026-08-28): the badged card carries one
+reason line that says what the skill does — and, in the same breath, what a crit is, because this
+is the moment the crit becomes relevant. Draft: DE *„Empfohlen: Deine Crits füllen die Leiste —
+ist sie voll, ionisiert er Karten, und die bringen mehr Score und Crit-Chance."* / EN
+*"Recommended: your crits fill the bar — when it is full, it ionises cards, and those pay more
+score and crit chance."* What a crit *is* stands one line above, in H2 — the badge builds on it;
+the E4 pause card then only names the number when the first one lands (§5.3). The badge rule stays
 **rule-derived, not curated** (the guided-run plan §13.2 rejected hardcoded picks for drift
 reasons, and that reasoning still holds): "the consumer of the offered archetype", shipped as one
 pure function, moves with every balance pass. A guard test asserts the badge finds its skill in a
