@@ -18,14 +18,17 @@
                only, so the next balance pass cannot make a hint lie.
      target    "section/lesson" in the tutorial-sections catalog — the "Mehr dazu" deep link
                (wired in T-O4; until then the link is not rendered). A guard test asserts every
-               target exists, so a catalog cut cannot silently orphan a hint. */
+               target exists, so a catalog cut cannot silently orphan a hint.
+     anchor    optional referent on the run screen: matches a `data-hint-anchor` attribute in the
+               UI. While the hint's card is open, the element is scrolled into view and carries
+               the tutorial glow (owner playtest 2026-08-28: the pointed-at field must light up).
+               A guard test asserts every anchor value exists in the source. */
 import * as C from "../../game/constants.js";
 import { formationName, archetypeLabel } from "../../i18n/labels.js";
 import { fmtNum } from "../../i18n/index.js";
 import { SKILL_DEFS } from "../../game/skills.js";
 import { streakBaseMult } from "../../game/perks.js";
 import { milestoneBarState } from "../../game/progression.js";
-import { occupiedCells, completedStructures, districtFactorMap } from "../../game/architect.js";
 
 /* §6.2 "Guter Start": the rule-derived recommendation for the first-run first skill offer — the
    consumer of the offered archetype (heat consumer or charge consumer), which the offer builder
@@ -39,6 +42,11 @@ export const ARCH_SECTION = { lightning: "blitz", fire: "feuer", ice: "eis", pla
 /* Ein Ziel ist ein "sektion/lektion"-String oder eine Funktion (ctx) => String. */
 export const resolveTarget = (def, ctx) =>
   (typeof def?.target === "function" ? def.target(ctx) : def?.target) || null;
+// Anker und bodyKey folgen derselben Regel (E5 wechselt beide mit dem aktiven Archetyp).
+export const resolveAnchor = (def, ctx) =>
+  (typeof def?.anchor === "function" ? def.anchor(ctx) : def?.anchor) || null;
+export const resolveBodyKey = (def, ctx) =>
+  (typeof def?.bodyKey === "function" ? def.bodyKey(ctx) : def?.bodyKey) || null;
 
 export const recommendedStarter = (offer) =>
   (offer || []).find((id) => { const d = SKILL_DEFS[id]; return !!(d && (d.heatConsumer || d.onFullCharge)); }) || null;
@@ -70,65 +78,56 @@ export const HINT_DEFS = {
      Profil. Die vars lesen den ECHTEN Lauf — das verworfene Rechenbeispiel des geführten Laufs
      wird echte Mathematik mit Referent auf dem Schirm. */
   E1: { kind: "event", bodyKey: "hint.e1.body",
-        vars: () => ({ win: fmtNum(C.SCORE_PER_WIN) }), target: "grundlagen/score" },
+        vars: () => ({ win: fmtNum(C.SCORE_PER_WIN) }), target: "grundlagen/score", anchor: "scorerow" },
   E2: { kind: "event", bodyKey: "hint.e2.body", target: "grundlagen/stich" },
   E3: { kind: "event", bodyKey: "hint.e3.body",
         vars: (ctx) => { const n = ctx?.state?.lastTrick?.winStreak ?? ctx?.state?.winStreak ?? 0;
-          return { n, mult: fmtNum(streakBaseMult(n)) }; }, target: "grundlagen/serie" },
+          return { n, mult: fmtNum(streakBaseMult(n)) }; }, target: "grundlagen/serie", anchor: "scorerow" },
   E4: { kind: "event", bodyKey: "hint.e4.body",
         vars: (ctx) => ({ critMult: fmtNum(ctx?.state?.lastTrick?.critMultiplier ?? 1) }), target: "blitz/karte" },
-  E5: { kind: "event", bodyKey: "hint.e5.body",
+  /* E5: Leiste je Archetyp — Ziel, Anker UND Text wechseln mit. Der Blitz-Text nennt die echte
+     Mechanik (Crits füllen die Ladung, voll → Ionisierung; Owner-Korrektur 2026-08-28); die
+     anderen Leisten behalten den generischen Satz. */
+  E5: { kind: "event",
+        bodyKey: (ctx) => ((ctx?.state?.activeArchetypes || [])[0] || "lightning") === "lightning"
+          ? "hint.e5.blitz.body" : "hint.e5.body",
         vars: (ctx) => ({ arch: archetypeLabel((ctx?.state?.activeArchetypes || [])[0]) || "" }),
-        target: (ctx) => `${ARCH_SECTION[(ctx?.state?.activeArchetypes || [])[0]] || "blitz"}/karte` },
+        target: (ctx) => `${ARCH_SECTION[(ctx?.state?.activeArchetypes || [])[0]] || "blitz"}/karte`,
+        anchor: (ctx) => `faction-${(ctx?.state?.activeArchetypes || [])[0] || "lightning"}` },
   E6: { kind: "event", bodyKey: "hint.e6.body",
         vars: (ctx) => { const lt = ctx?.state?.lastTrick; const f = (lt?.formations || [])[0];
           return { name: f ? formationName(f.type) : "", mult: fmtNum(lt?.formationMult ?? 1) }; },
         target: "aufstellung/formationen" },
-  E7: { kind: "event", bodyKey: "hint.e7.body", target: "danach/punkte" },
+  E7: { kind: "event", bodyKey: "hint.e7.body", target: "danach/punkte", anchor: "milestone" },
   E8: { kind: "banner", bodyKey: "hint.e8.body", target: "danach/endscreen" },
   E9: { kind: "event", bodyKey: "hint.e9.body",
         vars: (ctx) => { const lt = ctx?.state?.lastTrick;
           return { kampfwert: fmtNum(lt?.pValue ?? 0), kartenwert: fmtNum(lt?.pCard?.value ?? 0) }; },
         target: "grundlagen/werte" },
   /* UI-Hints (Papier §5.3): ruhige Phasenstarts lehren den Lauf-Schirm selbst. */
-  U1: { kind: "event", bodyKey: "hint.u1.body", target: "grundlagen/anzeigen" },
-  U2: { kind: "event", bodyKey: "hint.u2.body", target: "grundlagen/herkunft" },
-  U3: { kind: "event", bodyKey: "hint.u3.body", target: "grundlagen/anzeigen" },
+  U1: { kind: "event", bodyKey: "hint.u1.body", target: "grundlagen/anzeigen", anchor: "tempo" },
+  U2: { kind: "event", bodyKey: "hint.u2.body", target: "grundlagen/herkunft", anchor: "panels" },
+  U3: { kind: "event", bodyKey: "hint.u3.body", target: "grundlagen/anzeigen", anchor: "chronik" },
+  /* U4 (Owner-Playtest 2026-08-28): die Stich-Aufschlüsselung unter den Karten — spät im Lauf,
+     nach einem Sieg (nur dann trägt die Zeile Zahlen) und nur, solange die Option sie zeigt. */
+  U4: { kind: "event", bodyKey: "hint.u4.body", target: "grundlagen/score", anchor: "breakdown" },
 };
 
-/* ---- Done-predicates over run state, via the exported pure game functions (paper §5.2 rule 2).
-   They read the same data the UI reads; a predicate that reimplemented a rule would be the
-   second truth the whole design avoids. All are defensive against absent state (menu, tests). */
-const perPos = (state) => (Array.isArray(state?.formations) ? state.formations : []);
-export const hasFormationType = (state, type) =>
-  perPos(state).some((p) => (p?.formations || []).some((f) => f?.type === type));
-export const activeTypeCount = (state) => {
-  const s = new Set();
-  for (const p of perPos(state)) for (const f of (p?.formations || [])) s.add(f?.type);
-  return s.size;
-};
-export const hasOverlap = (state) => perPos(state).some((p) => (p?.formations || []).length >= 2);
-const blds = (state) => state?.architect?.buildings || [];
-export const hasBuilding = (state) => blds(state).length > 0;
-// Both maps are per-position factor arrays initialised to 1 — "achieved" means any factor moved.
-export const hasDistrict = (state) => districtFactorMap(blds(state)).some((f) => f > 1);
-export const hasStructure = (state) => completedStructures(occupiedCells(blds(state))) > 0;
-
-/* ---- The suggestion sequences (paper §5.2): one task per phase visit, in order; a step whose
-   goal is already met is skipped FOR GOOD (it counts as seen), a step whose visit has not come
-   yet waits. minVisit keeps the cadence the curriculum names even when earlier steps were
-   skipped. */
+/* ---- The suggestion sequences (paper §5.2): one task per phase visit, in order. The first cut
+   carried done-predicates that skipped a step whose goal the dealt deck already met — the owner's
+   playtest (2026-08-28) killed them: a randomly dealt Farbblock swallowed the whole formation
+   curriculum. Every step now shows on its visit, whether or not the board already complies. */
 export const SEQUENCES = {
   formation: [
-    { id: "S-F1", minVisit: 1, done: (st) => hasFormationType(st, "farbblock") },
-    { id: "S-F2", minVisit: 2, done: (st) => activeTypeCount(st) >= 2 },
-    { id: "S-F3", minVisit: 3, done: (st) => hasOverlap(st) },
+    { id: "S-F1", minVisit: 1 },
+    { id: "S-F2", minVisit: 2 },
+    { id: "S-F3", minVisit: 3 },
   ],
   architect: [
-    { id: "S-A1", minVisit: 1, done: (st) => hasBuilding(st) },
-    { id: "S-A2", minVisit: 2, done: (st) => hasDistrict(st) },
-    { id: "S-A3", minVisit: 3, done: (st) => hasStructure(st) },
-    { id: "S-A4", minVisit: 4, done: null }, // informational — nothing to detect
+    { id: "S-A1", minVisit: 1 },
+    { id: "S-A2", minVisit: 2 },
+    { id: "S-A3", minVisit: 3 },
+    { id: "S-A4", minVisit: 4 },
   ],
 };
 
@@ -160,9 +159,8 @@ export function screenOf(state) {
                 T-O3; until the gate exists a fresh profile gets the generic H2b instead)
      multiArch  the current skill offer spans ≥ 2 archetypes (H2b's condition)
      slotsFull  held skills ≥ slots (H5's condition)
-   Returns a hint id or null. markSkipped (optional) is called for sequence steps whose goal is
-   already met, so the skip persists instead of re-evaluating forever. */
-export function hintForScreen(screen, ctx, markSkipped) {
+   Returns a hint id or null. */
+export function hintForScreen(screen, ctx) {
   const seen = ctx?.seen || new Set();
   const un = (id) => !seen.has(id);
   if (screen === "skill") {
@@ -180,9 +178,7 @@ export function hintForScreen(screen, ctx, markSkipped) {
     const v = ctx.visits?.[screen] || 0;
     for (const step of SEQUENCES[screen]) {
       if (seen.has(step.id)) continue;
-      if (v < step.minVisit) return null;
-      if (step.done && step.done(ctx.state)) { if (markSkipped) markSkipped(step.id); continue; }
-      return step.id;
+      return v >= step.minVisit ? step.id : null;
     }
     return null;
   }
@@ -200,6 +196,7 @@ export function hintForScreen(screen, ctx, markSkipped) {
      playVisit       1-based counter of play phases entered (per profile)
      shownThisPhase  event cards already shown this play phase (cap 2 — §5.4 rule 1)
      sameTrickAsLast the current trick already carried a card (max 1 per trick)
+     breakdownOn     the trick-breakdown line under the field is visible (options) — U4's referent
    Deferred, never queued: every condition below recurs naturally, so a hint that loses its slot
    simply waits for the next occurrence. E5 outranks (§5.4 rule 2) and may also use the phase
    start — the bar it names is a persistent referent. */
@@ -226,5 +223,8 @@ export function eventForPlay(ctx) {
   if (un("E6") && (lt.formationMult || 1) > 1) return "E6";
   if (un("E9") && lt.pCard && lt.pValue !== lt.pCard.value) return "E9";
   if (un("E7") && milestoneBarState(state?.score || 0).reached > 0) return "E7";
+  // U4 spät im Lauf, nach einem Sieg (nur dann trägt die Aufschlüsselung Zahlen) und nur,
+  // solange die Options-Zeile sichtbar ist.
+  if (un("U4") && ctx?.breakdownOn && (ctx?.playVisit || 0) >= 12 && lt.breakdown) return "U4";
   return null;
 }

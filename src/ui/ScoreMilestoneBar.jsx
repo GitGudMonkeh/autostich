@@ -26,7 +26,7 @@ export function ScoreMilestoneBar({ score = 0 }) {
   };
 
   return (
-    <div className="rounded-xl px-3 py-1.5 as-panel as-panel-deck" style={frame}
+    <div className="rounded-xl px-3 py-1.5 as-panel as-panel-deck" style={frame} data-hint-anchor="milestone"
       title={atMax ? t("milestone.title.max") : t("milestone.title.next", { at: mio(next.at), sp: next.sp })}>
       <div className="flex items-center justify-between mb-1">
         <span className="text-meta-3 font-semibold tracking-wide" style={{ color: accHi }}>

@@ -11,11 +11,11 @@
    The "Mehr dazu ›" link renders ONLY when an onMore handler exists — T-O4 wires it to the
    Probierfeld deep link; until then the affordance simply is not there (contract: no dead
    controls). */
-import { createContext, useContext } from "react";
+import { createContext, useContext, useEffect } from "react";
 import { t } from "../../i18n/index.js";
 import { MODAL_CARD, ModalHairline } from "../modalStyle.jsx";
 import { overlayPortal } from "../overlayPortal.jsx";
-import { HINT_DEFS } from "./hintScript.js";
+import { HINT_DEFS, resolveAnchor, resolveBodyKey } from "./hintScript.js";
 
 /* The tutorial voice's accent — the violet the guided run's eyebrow used. One constant, one
    place; deliberately NOT ARCHETYPE_META.lightning.color even though the value matches today:
@@ -36,7 +36,24 @@ const CloseX = ({ onClick, size = 12 }) => (
    brauchen mehr Sichtbarkeit). Statisch — keine Animation, damit alle FX-Stufen ihn tragen. */
 const TUT_GLOW = `0 0 0 1px ${TUT_ACCENT}59, 0 0 14px ${TUT_ACCENT}40`;
 
-/* One banner. `hint` = { id, def, vars } resolved by the provider. */
+/* Referent-Markierung (Owner-Playtest 2026-08-28): solange eine Ereignis-Karte offen ist, wird
+   das erklärte Feld (`data-hint-anchor`) in den Blick gescrollt und trägt den Tutorial-Glow.
+   Inline-Styles mit Restore statt einer Klasse: die Elemente stylen ihre Schatten teils selbst,
+   und der Effekt darf beim Schließen exakt den vorherigen Zustand hinterlassen. */
+function useAnchorGlow(anchor) {
+  useEffect(() => {
+    if (!anchor) return;
+    const el = document.querySelector(`[data-hint-anchor="${anchor}"]`);
+    if (!el) return;
+    const prev = { boxShadow: el.style.boxShadow, borderRadius: el.style.borderRadius };
+    el.style.boxShadow = TUT_GLOW;
+    if (!el.style.borderRadius) el.style.borderRadius = "10px";
+    try { el.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (e) { /* alte Engines: ohne Scroll weiter */ }
+    return () => { el.style.boxShadow = prev.boxShadow; el.style.borderRadius = prev.borderRadius; };
+  }, [anchor]);
+}
+
+/* One banner. `hint` = { id, def, vars, bodyKey, anchor } resolved by the provider. */
 export function HintBanner({ hint, onClose, onMore }) {
   const { def, vars } = hint;
   return (
@@ -50,7 +67,7 @@ export function HintBanner({ hint, onClose, onMore }) {
         <CloseX onClick={onClose} />
       </div>
       <div className="text-body-5 leading-relaxed mt-1" style={{ color: "#cfcfd8" }}>
-        {t(def.bodyKey, vars)}
+        {t(hint.bodyKey || def.bodyKey, vars)}
         {onMore && (
           <>
             {" "}
@@ -90,7 +107,7 @@ export function HintCardOverlay({ hint, onGo, onMore }) {
           <div className="text-meta-3 uppercase tracking-[0.14em]" style={{ color: TUT_ACCENT }}>{t("hint.eyebrow")}</div>
           <h2 className="text-title-6 font-bold">{t(def.titleKey, vars)}</h2>
           <div className="text-body-4 leading-relaxed whitespace-pre-line" style={{ color: "#cfcfd8" }}>
-            {t(def.bodyKey, vars)}
+            {t(hint.bodyKey || def.bodyKey, vars)}
           </div>
           <button type="button" onClick={onGo}
             className="mt-1 w-full rounded-xl px-4 py-3 font-bold text-body-3 transition-all hover:brightness-110"
@@ -109,6 +126,8 @@ export function HintCardOverlay({ hint, onGo, onMore }) {
    Scrim — das Ereignis, das sie benennt, bleibt sichtbar (der Referent ist der Spotlight, Papier
    §5.3). Der Lauf darunter ist über hints.freeze angehalten; „Weiter" lässt ihn weiterlaufen. */
 export function EventHintCard({ hint, onGo, onMore }) {
+  // Hook VOR dem Early-Return (rules-of-hooks); ohne Anker ist der Effekt ein No-op.
+  useAnchorGlow(hint ? hint.anchor : null);
   if (!hint) return null;
   const { def, vars } = hint;
   return overlayPortal(
@@ -121,7 +140,7 @@ export function EventHintCard({ hint, onGo, onMore }) {
         <div className="px-4 pb-4 pt-3 grid gap-2.5">
           <div className="text-meta-3 uppercase tracking-[0.14em]" style={{ color: TUT_ACCENT }}>{t("hint.eyebrow")}</div>
           <div className="text-body-4 leading-relaxed" style={{ color: "#e2e2e9" }}>
-            {t(def.bodyKey, vars)}
+            {t(hint.bodyKey || def.bodyKey, vars)}
           </div>
           <div className="flex gap-2 mt-0.5">
             <button type="button" onClick={onGo}
@@ -141,9 +160,11 @@ export function EventHintCard({ hint, onGo, onMore }) {
 }
 
 /* Resolve an id into what the components consume. Kept here (not in useHints) so a screen test
-   can render a banner from an id alone. */
+   can render a banner from an id alone. bodyKey und anchor werden HIER aufgelöst (E5 wechselt
+   beide mit dem Archetyp) — die Komponenten sehen nur noch Strings. */
 export function resolveHint(id, ctx) {
   const def = HINT_DEFS[id];
   if (!def) return null;
-  return { id, def, vars: def.vars ? def.vars(ctx) : undefined };
+  return { id, def, vars: def.vars ? def.vars(ctx) : undefined,
+    bodyKey: resolveBodyKey(def, ctx), anchor: resolveAnchor(def, ctx) };
 }

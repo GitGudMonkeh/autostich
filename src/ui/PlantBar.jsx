@@ -93,7 +93,7 @@ export function PlantBar({ active, deck = [], growth = {}, colonized = {}, skill
   const stateText = overgrown ? t("bar.plant.state.overgrown") : t("bar.plant.state.green", { pct: Math.round(pct) });
 
   return (
-    <FactionShell icon={<FactionIcon type="plant" size={15} />} name={archetypeLabel("plant")} color={PLANT} stateText={stateText} stateOn={overgrown} collapsed={collapsed} onToggle={onToggle}
+    <FactionShell anchor="faction-plant" icon={<FactionIcon type="plant" size={15} />} name={archetypeLabel("plant")} color={PLANT} stateText={stateText} stateOn={overgrown} collapsed={collapsed} onToggle={onToggle}
       footer={showSkills ? <PanelSkills skills={skills} arch="plant" color={PLANT} /> : null}>
       {/* #270.2 Eigen-Score auf einen Blick: nach Fantasie (Wurzel/Blüte/Ernte) + Gewachsen (Lauf-Zähler). */}
       <div className="mb-2">

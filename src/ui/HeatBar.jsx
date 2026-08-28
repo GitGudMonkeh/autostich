@@ -105,7 +105,7 @@ export function HeatBar({ heat, skills = [], ash = 0, forged = {}, ashBurned = 0
   const ambientPulse = heatRatio >= 0.9 ? "as-heat-pulse" : null;
 
   return (
-    <FactionShell icon={<FactionIcon type="fire" size={15} />} name={archetypeLabel("fire")} color={FIRE} stateText={stateText} stateOn={stateOn} collapsed={collapsed} onToggle={onToggle}
+    <FactionShell anchor="faction-fire" icon={<FactionIcon type="fire" size={15} />} name={archetypeLabel("fire")} color={FIRE} stateText={stateText} stateOn={stateOn} collapsed={collapsed} onToggle={onToggle}
       footer={showSkills ? <PanelSkills skills={skills} arch="fire" color={FIRE} /> : null}
       ambient={ambient} ambientPulse={ambientPulse}>
       {/* #270.2 Eigen-Score auf einen Blick: nach Fantasie (Feuer-Grund / Überlauf) + verbrannte Asche (Lauf-Zähler).
