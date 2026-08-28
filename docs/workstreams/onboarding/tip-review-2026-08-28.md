@@ -29,7 +29,7 @@ player text** (text-style-guide.md, "Kein Gedankenstrich").
 
 | 15 | **H2** (first skill, Blitz) | "jeder Crit lädt die Leiste" says nothing to a player; "Eine falsche Wahl gibt es nicht" is fluff, both go. The bar is called **Ladungsleiste** from now on, everywhere it is named (H2, E5 Blitz body, badge reason). Draft, dash-free: "Blitz ist dein erster Archetyp. Ein Crit vervielfacht den Score eines Stichs. Blitz-Skills machen Crits wahrscheinlicher, und jeder Crit füllt deine Ladungsleiste." |
 
-| 17 | **U2** (panels) | Compact, dash-free: "Hier siehst du deine Multiplikatoren und deine Score-Herkunft." (Spotlight already points at the panel, so "hier" carries the reference.) |
+| 17 | **U2** (panels) | Compact, dash-free: "Hier siehst du deine Multiplikatoren und deine Score-Herkunft." (Spotlight already points at the panel, so "hier" carries the reference.) The "Mehr dazu" link goes. |
 
 ## Probierfeld lessons (Mehr-dazu targets)
 
