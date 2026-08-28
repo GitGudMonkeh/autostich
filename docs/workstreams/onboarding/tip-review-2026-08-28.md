@@ -23,10 +23,11 @@ player text** (text-style-guide.md, "Kein Gedankenstrich").
 | 5 | **wahl/raritaet** | Opening sentence replaced: "Perks kommen in unterschiedlicher Rarität, sichtbar am Rahmen." Example cards stay. "Ersetzen, nicht stapeln" merk stays. Everything after it goes: the "Höhere Stufen sind stärker ... Stufe IV schließt eine Familie ab ..." paragraph and the TIPP ("Eine Familie zweimal auf derselben Stufe ..."). |
 | 6 | **wahl/legendaer** | Intro shortened to: "Legendäre sind besonders starke Perks und müssen erst freigeschaltet werden." Example cards stay. The "Erst freischalten." block goes. The TIPP goes. |
 
-## Open questions
+## Decided sweep
 
-- Several existing hint texts still carry em-dashes (H2, S-F1, S-A2, E3, U1, ...). Sweep them
-  dash-free in the same pass, or leave shipped copy untouched?
+- **All existing hint texts get swept dash-free in the same pass** (owner decision): every `hint.*`
+  key in all four catalogs loses its em-dashes, reworded where a plain comma or period reads
+  better. No meaning changes beyond what the rows above name.
 
 ## Ground rules for this round (owner, 2026-08-28)
 
