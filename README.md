@@ -1,5 +1,13 @@
 # Autostich — Gesamtübersicht
 
+*A card game about who stands next to whom: put the right cards side by side for fifty rounds, and
+your skills turn a polite little line-up into an engine that scores high enough to unlock tracks most
+players never hear.*
+
+Der Pitch in allen vier Projektsprachen, mit den kurzen Fassungen und der Genre-Angabe:
+`docs/pitch.md`. Er ist **kein Spielertext** — er steht in keinem i18n-Katalog und wird nirgends im
+Spiel angezeigt.
+
 > **Roguelite-Autobattler-Stechspiel** (Prototyp, Vite + React).
 > Eigenes Repo `GitGudMonkeh/autostich`, Deploy auf GitHub Pages unter `/autostich/`.
 > UI-Text **Deutsch**, Code-Identifier **Englisch**.
