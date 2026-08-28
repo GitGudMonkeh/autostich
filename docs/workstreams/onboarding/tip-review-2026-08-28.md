@@ -22,6 +22,8 @@ player text** (text-style-guide.md, "Kein Gedankenstrich").
 
 | 11 | **E3** (streak 3) | Copy stays as shipped (owner: passt). "Mehr dazu" link goes, not needed here. |
 
+| 12 | **S-A1** (first architect) | Mechanic made precise, dash-free: "Setz dein erstes Gebäude irgendwo aufs Brett. Es wirkt auf die Karte unter ihm: Der Score-Bonus zahlt nur bei Sieg, Boni auf den Stichwert zahlen immer." |
+
 ## Probierfeld lessons (Mehr-dazu targets)
 
 | # | Lesson | Change |
