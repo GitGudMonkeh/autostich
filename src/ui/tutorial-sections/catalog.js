@@ -91,9 +91,6 @@ export const SECTIONS = [
       { id: "score", art: "voll", beats: [
         { kind: "probierfeld", probe: "score" },
         { kind: "tip" }] },
-      { id: "anzeigen", art: "voll", beats: [
-        { kind: "probierfeld", probe: "laufmock" },
-        { kind: "tip" }] },
       { id: "herkunft", art: "voll", beats: [
         { kind: "probierfeld", probe: "herkunft" },
         { kind: "tip" }] },
@@ -121,17 +118,16 @@ export const SECTIONS = [
     id: "wahl",
 
     lessons: [
+      /* Review-Runde (Zeilen 4-6): die Tipp-Takte dieser drei Lektionen sind auf Owner-Wunsch
+         gestrichen — der Familienzaehler, der Stufen-Absatz und der Legendaer-Tipp waren Ballast. */
       { id: "kategorien", art: "voll", beats: [
-        { kind: "probierfeld", probe: "kategorien" },
-        { kind: "tip" }] },
+        { kind: "probierfeld", probe: "kategorien" }] },
       { id: "raritaet", art: "voll", beats: [
-        { kind: "probierfeld", probe: "raritaet" },
-        { kind: "tip" }] },
+        { kind: "probierfeld", probe: "raritaet" }] },
       /* Der Raritäten-Schirm des Entwurfs maß 1285 px — über dem vollen Budget. Owner-Entscheid:
          aufteilen statt kürzen; der Legendär-Teil ist eine eigene Lektion. */
       { id: "legendaer", art: "voll", beats: [
-        { kind: "probierfeld", probe: "legendaer" },
-        { kind: "tip" }] },
+        { kind: "probierfeld", probe: "legendaer" }] },
     ],
   },
   {
@@ -224,9 +220,15 @@ export const SECTIONS = [
         { kind: "tabelle", rows: 5 },
         { kind: "merk" },
         { kind: "tip" }] },
+      /* Review-Runde (Zeilen 19/20): „wohin" ist jetzt die Distrikt-Lektion, die Strukturen haben
+         ihre eigene Runde — S-A2 verlinkt auf wohin, S-A3 auf strukturen. */
       { id: "wohin", art: "voll", beats: [
         { kind: "block" },
         { kind: "probierfeld", probe: "struktur" },
+        { kind: "tip" }] },
+      { id: "strukturen", art: "voll", beats: [
+        { kind: "block" },
+        { kind: "probierfeld", probe: "strukturen" },
         { kind: "tip" }] },
       { id: "tipps", art: "voll", beats: [
         { kind: "probierfeld", probe: "tipps" },
@@ -395,12 +397,12 @@ const TAB_ROWS_DEFAULT = 4;
    NIEDRIG angesetzt (250/305/300) — das Modell hätte eine zu lange Lektion durchgewunken, und das
    ist die einzige Richtung, in die ein Budget nicht irren darf. Die Werte hier stehen deshalb
    knapp über der Messung, aufgerundet. */
-const PROBE_PX = { formation: 700, streak: 150, board: 215,
+const PROBE_PX = { formation: 520, streak: 150, board: 215,
   /* Die Grundlagen-Szenen des Entwurfs, nachgemessen im Build (mess-welle1.mjs, 390 x 844):
      duell 494 · kampfwert 773 · serie 414 ungespielt (+5 Logzeilen im gespielten Zustand)
      · score 785 · laufmock 538 (+Tippzeile) · herkunft 601. Eingetragen ist der gespielte
      Zustand, aufgerundet. */
-  score: 790, duell: 500, kampfwert: 780, serie: 700, laufmock: 610, herkunft: 610,
+  score: 790, duell: 500, kampfwert: 780, serie: 700, herkunft: 610,
   /* Welle 2, nachgemessen (mess-welle2.mjs): aufstellen 553 ungespielt (+Log), kartenteile 657,
      formation 697, overlap 337, kategorien 600, blitzkarte 763, tipps 470 (Eis hat sechs
      Einträge, deshalb höher angesetzt), raritaet/legendaer nach dem Split gemessen. */
@@ -409,12 +411,12 @@ const PROBE_PX = { formation: 700, streak: 150, board: 215,
      overlap 190 (dieselbe Komponente wie formation). Sie fehlten hier zuerst ganz und fielen
      damit auf PROBE_MAX — 375 px für ein 186-px-Feld. Das Modell lag dadurch bis zu 40 % zu hoch,
      und ein Budget, das so weit danebenliegt, misst nichts mehr. */
-  aufstellen: 730, kartenteile: 660, overlap: 340,
+  aufstellen: 730, kartenteile: 660, overlap: 480,
   /* Die Architekt-Runden. Das Brett ist der teuerste Baustein des ganzen Tutorials: acht Zeilen
      mal fünf Spalten. GEMESSEN archmock 299 · bauen 286 · struktur 438. */
-  archmock: 560, bauen: 700, struktur: 655, glutbuild: 470, klingebuild: 490,
+  archmock: 630, bauen: 770, struktur: 560, strukturen: 620, glutbuild: 470, klingebuild: 490,
   // Wahl und Blitz, gemessen: kategorien 199 · raritaet 157 · blitzkarte 272.
-  kategorien: 600, raritaet: 650, blitzkarte: 765,
+  kategorien: 600, raritaet: 620, blitzkarte: 800,
   /* Feuer, Pflanze, Eis — gemessen: feuerkarten 271 · hitze 152 · pflanzkarte 305 ·
      gruenfeld 315 · gletscher 252 · gletscherfeld 358. Zum VIERTEN Mal in diesem Task war ein
      neues Feld hier zuerst nicht eingetragen und fiel auf PROBE_MAX; wer ein Probierfeld baut,
