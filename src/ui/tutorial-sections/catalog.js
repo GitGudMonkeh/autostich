@@ -141,19 +141,15 @@ export const SECTIONS = [
        den Leitfaden war keine Lektion. */
     id: "feuer",
     arch: "fire",
+    /* Runde 3, Q13 (Mockup freigegeben): drei schlanke Seiten — Vorsprung, Hitzeleiste,
+       Schmiede. Merksätze wohnen IN den Szenen (wie im Mockup), der Tipp-Takt entfällt. */
     lessons: [
-      /* Der Karten-Schirm des Entwurfs maß 1037 px — über dem Budget. Owner-Entscheid:
-         aufteilen statt kürzen; die Schmiede-Kette ist eine eigene Lektion. */
       { id: "karte", art: "voll", beats: [
-        { kind: "probierfeld", probe: "feuerkarten" },
-        { kind: "tip" }] },
-      /* R13: das Hitze-Feld erscheint mit dem ersten Feuer-Skill sofort — vor der Schmiede-Kette. */
+        { kind: "probierfeld", probe: "feuerkarten" }] },
       { id: "feld", art: "voll", beats: [
-        { kind: "probierfeld", probe: "hitze" },
-        { kind: "tip" }] },
+        { kind: "probierfeld", probe: "hitze" }] },
       { id: "schmiede", art: "voll", beats: [
-        { kind: "probierfeld", probe: "schmiede" },
-        { kind: "tip" }] },
+        { kind: "probierfeld", probe: "schmiede" }] },
       { id: "tipps", art: "voll", beats: [
         { kind: "probierfeld", probe: "tipps" },
         { kind: "tip" }] },
@@ -172,18 +168,15 @@ export const SECTIONS = [
   {
     id: "pflanze",
     arch: "plant",
+    /* Runde 3, Q16 (Mockup freigegeben): „karte" zeigt das echte Neon-Moos-Wachstum und
+       ersetzt zugleich „erkennen"; „tempo" (neu) fasst Tempo, Reinheit und Trimmen. */
     lessons: [
-      /* Der Pflanzen-Karten-Schirm maß 1083 px — Owner-Entscheid: aufteilen statt kürzen. */
       { id: "karte", art: "voll", beats: [
-        { kind: "probierfeld", probe: "pflanzkarte" },
-        { kind: "tip" }] },
-      /* R13: das Wachstums-Feld erscheint mit dem ersten Pflanze-Skill sofort — vor den Zeichen. */
+        { kind: "probierfeld", probe: "pflanzkarte" }] },
       { id: "feld", art: "voll", beats: [
-        { kind: "probierfeld", probe: "gruenfeld" },
-        { kind: "tip" }] },
-      { id: "erkennen", art: "kurz", beats: [
-        { kind: "probierfeld", probe: "pflanzzeichen" },
-        { kind: "tip" }] },
+        { kind: "probierfeld", probe: "gruenfeld" }] },
+      { id: "tempo", art: "voll", beats: [
+        { kind: "probierfeld", probe: "pflanztempo" }] },
       { id: "tipps", art: "voll", beats: [
         { kind: "probierfeld", probe: "tipps" },
         { kind: "tip" }] },
@@ -192,13 +185,17 @@ export const SECTIONS = [
   {
     id: "eis",
     arch: "ice",
+    /* Runde 3, Q16 (Mockup freigegeben): „karte" läuft als Masse-Loop mit echtem Frost
+       und trägt den Nachbar-Bonus; „formationen" (neu) zeigt die vier Geometrie-Formen
+       samt Stapeln, „einfrieren" (neu) die Entstehungsregeln. Das freie Gletscherfeld
+       ist mit seiner Lektion entfallen. */
     lessons: [
       { id: "karte", art: "voll", beats: [
-        { kind: "probierfeld", probe: "gletscher" },
-        { kind: "tip" }] },
-      { id: "feld", art: "voll", beats: [
-        { kind: "probierfeld", probe: "gletscherfeld" },
-        { kind: "tip" }] },
+        { kind: "probierfeld", probe: "gletscher" }] },
+      { id: "formationen", art: "voll", beats: [
+        { kind: "probierfeld", probe: "gletscherformen" }] },
+      { id: "einfrieren", art: "kurz", beats: [
+        { kind: "probierfeld", probe: "einfrieren" }] },
       { id: "tipps", art: "voll", beats: [
         { kind: "probierfeld", probe: "tipps" },
         { kind: "tip" }] },
@@ -332,11 +329,13 @@ const PROBE_PX = { formation: 520,
   struktur: 560, strukturen: 620,
   // Wahl und Blitz, gemessen: kategorien 199 · raritaet 157 · blitzkarte 272.
   kategorien: 600, raritaet: 620, blitzkarte: 800,
-  /* Feuer, Pflanze, Eis — gemessen: feuerkarten 271 · hitze 152 · pflanzkarte 305 ·
-     gruenfeld 315 · gletscher 252 · gletscherfeld 358. Zum VIERTEN Mal in diesem Task war ein
-     neues Feld hier zuerst nicht eingetragen und fiel auf PROBE_MAX; wer ein Probierfeld baut,
-     trägt es HIER ein, sonst misst das Budget etwas anderes als der Leser sieht. */
-  feuerkarten: 425, schmiede: 465, hitze: 715, pflanzkarte: 710, pflanzzeichen: 262, gruenfeld: 670, gletscher: 645, gletscherfeld: 755,
+  /* Feuer, Pflanze, Eis — die Runde-3-Seiten (Q13/Q16), Modellwerte NACH dem Umbau
+     konservativ angesetzt und per CDP-Screenshot gegengeprüft. Zum VIERTEN Mal in diesem
+     Task war ein neues Feld hier zuerst nicht eingetragen und fiel auf PROBE_MAX; wer ein
+     Probierfeld baut, trägt es HIER ein, sonst misst das Budget etwas anderes als der
+     Leser sieht. */
+  feuerkarten: 620, schmiede: 640, hitze: 660, pflanzkarte: 760, pflanztempo: 500, gruenfeld: 560,
+  gletscher: 860, gletscherformen: 620, einfrieren: 330,
   // Nach dem Lauf, gemessen: meilenstein 169.
   meilenstein: 400 };
 const PROBE_MAX = Math.max(...Object.values(PROBE_PX));

@@ -14,18 +14,18 @@
    Katalogen. Wörter, die die Schale ohnehin liefert (Sieg/Niederlage, Gegner/Du, …),
    kommen aus `tut.d.*` — dieselbe Quelle wie in beats.jsx, kein Zweittext.
    ============================================================ */
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { useLocale } from "../../i18n/useLocale.js"; // #sprache: Neuberechnung bei Sprachwechsel
 import { fmtNum, fmtPct, t } from "../../i18n/index.js";
 import * as C from "../../game/constants.js";
 import { FAMILY_DEFS } from "../../game/families.js";
-import { computeFormations, FARBBLOCK_BASE } from "../../game/formations.js";
+import { computeFormations, ESKALATION_STEP, FARBBLOCK_BASE } from "../../game/formations.js";
 import { marginHeatPoints } from "../../game/skills.js";
 import * as GLACIER from "../../game/glacier.js";
 import * as AR from "../../game/architect.js";
 import * as PROG from "../../game/progression.js";
 import { RUN_COMPLETE_DP } from "../../game/storage.js";
-import { FACTION_ICON_SRC, GLOSSARY_IMG_SRC } from "../FactionIcon.jsx";
+import { GLOSSARY_IMG_SRC } from "../FactionIcon.jsx";
 import { familyDef, perkDef, perkCat, formationName, formationAbbr, rarityLabel, skillDef, glacierFormName, archFamily, archCatDef } from "../../i18n/labels.js";
 import { TIER_META, ROMAN } from "../../game/rarity.js";
 import { perkCatArt, legendaryPerkArt } from "../perkArt.js";
@@ -58,9 +58,6 @@ function Karte({ v, s, cls = "", onClick, badge, kuerzel }) {
 }
 
 const WIN = C.SCORE_PER_WIN;
-const STEP = C.STREAK_BASE_STEP;
-const CRIT = C.CRIT_BASE_MULT;
-const D_FORM = 1.5; // Wiederholung über ein Segment: ×1,50 — wie Entwurf und guide
 
 /* ════════════════════ Welle 2 · Aufstellung, Wahl, Blitz ════════════════════ */
 
@@ -489,112 +486,116 @@ export function TippsSzene({ hint }) {
 
 /* ════════════════════ Welle 3 · Feuer, Pflanze, Eis ════════════════════ */
 
-/* ── Szene Ka · Die Feuer-Karten (Entwurf Schirm 18) ────────────
-   Vier echte Zustände statt eines freien Reglers: Schmieden gibt FORGE_VALUE je Schmiedung
-   (höchstens drei), Brandmale stapeln nicht (engine nimmt Math.max; mit Schmelzofen −2). */
-const F_ZUST = [
-  { f: 0, b: 0, wie: "tut.sz.fb.wie0" },
-  { f: C.FORGE_VALUE, b: C.BRAND_VALUE, wie: "tut.sz.fb.wie1" },
-  { f: 2 * C.FORGE_VALUE, b: C.BRAND_VALUE, wie: "tut.sz.fb.wie2" },
-  { f: C.FORGE_MAX_PER_CARD, b: C.BRAND_VALUE + C.SCHMELZOFEN_BRAND_BONUS, wie: "tut.sz.fb.wie3" },
-];
-const FB_DEIN = 4, FB_SEIN = 9;
+/* Runde 3 (Q13/Q16, Mockups freigegeben): drei schlanke Seiten je Archetyp statt der
+   textlastigen Erstfassung. Die Karten tragen die ECHTEN Karteneffekte des Spiels
+   (MossGrow/FrostIce als Kartenkind, wie CustomizeScreen.jsx SpezialScene) — lazy, weil
+   die Effekte sonst im Tutorial-Chunk vorgeladen würden. Alle Zahlen kommen live aus
+   den Konstanten; die Mockup-Werte waren die heutigen Stände. */
+const MossGrow = lazy(() => import("../fx/MossGrow.jsx"));
+const FrostIce = lazy(() => import("../fx/FrostIce.jsx"));
+
+/* Skill/Passiv-Marke der Archetyp-Seiten: jede Zeile nennt, WOHER ein Effekt kommt —
+   ein Passiv läuft immer, ein Skill erst, wenn er gewählt ist (Owner-Korrektur am
+   Feuer-Mockup: „nicht jeder Sieg gibt automatisch Asche"). */
+function ChipBadge({ skill = null }) {
+  return skill
+    ? <span className="cbadge skill">{t("tut.sz.chipSkill", { nm: skill })}</span>
+    : <span className="cbadge passiv">{t("tut.sz.chipPassiv")}</span>;
+}
+
+/* ── Szene Fv · Der Vorsprung (Feuer Seite 1) ───────────────────
+   Drei Fälle als Tabs: Niederlage kostet Hitze, ein knapper Sieg zahlt nichts
+   (unter HEAT_MIN_MARGIN), ein klarer Sieg zahlt EXTRA-Score plus Hitze — obendrauf
+   auf den normalen Stich-Score (Owner-Korrektur am Mockup). Score/Hitze aus der
+   echten Kurve. */
 export const fireScoreAt = (m) => Math.round((m - C.FIRE_MARGIN_OFFSET) * C.FIRE_SCORE_BASE
   + C.FIRE_SCORE_BASE * C.FIRE_SCORE_SQRT_K * Math.sqrt(Math.max(0, m - C.FIRE_MARGIN_OFFSET)));
 const fireHeatAt = (m) => Math.round(marginHeatPoints(m) * C.HEAT_PER_POINT);
 
-export function FeuerkartenSzene({ hint }) {
+/* Die Fälle sind aus den Konstanten ABGELEITET, nicht abgetippt: „knapp" liegt genau
+   einen Punkt unter der Schwelle, „klar" genau auf der Stufe-II-Marge der Klinge. */
+const FV_FAELLE = [
+  { id: "verlust", du: 4, geg: 9 },
+  { id: "knapp", du: 6 + C.HEAT_MIN_MARGIN - 1, geg: 6 },
+  { id: "klar", du: 4 + C.GLOWING_T2_MARGIN, geg: 4 },
+];
+const FV_WIN_ST = { boxShadow: "0 0 0 2px #5ab87a, 0 0 12px -2px #5ab87a" };
+const FV_LOSE_ST = { opacity: 0.55, boxShadow: "0 0 0 1px #e0605a" };
+
+export function FeuerkartenSzene({ hint, labels: L }) {
   useLocale();
-  const [i, setI] = useState(0);
-  const z = F_ZUST[i];
-  const dein = FB_DEIN + z.f, seiner = FB_SEIN - z.b, vor = dein - seiner;
-  const ofen = skillDef("SK_FIRE_17")?.name ?? "";
+  const [fall, setFall] = useState("knapp");
+  const f = FV_FAELLE.find((x) => x.id === fall);
+  const vor = f.du - f.geg, sieg = vor > 0, zahlt = vor >= C.HEAT_MIN_MARGIN;
   return (
     <div className="tsz">
       <p className="auftrag">{hint}</p>
+      <div className="werkzeuge formen" style={{ marginTop: 0 }}>
+        {FV_FAELLE.map((x) => (
+          <button key={x.id} type="button" className="tbtn" aria-pressed={fall === x.id}
+            onClick={() => setFall(x.id)}>{t(`tut.sz.fv.tab.${x.id}`)}</button>
+        ))}
+      </div>
       <div className="paar">
-        <div><span className="label">{t("tut.sz.fb.mein")}</span>
-          <div className="buehne klein"><div className={`grosskarte fk ${z.f === 0 ? "aus" : ""}`}>
-            <span className="amboss">⚒+{z.f}</span>
-            <span className="cwert">{dein}</span>
-          </div></div>
-        </div>
-        <div><span className="label">{t("tut.sz.fb.gegner")}</span>
-          <div className="buehne klein"><div className={`grosskarte bk ${z.b === 0 ? "aus" : ""}`}>
-            <span className="brandm">−{z.b}</span>
-            <span className="cwert">{seiner}</span>
-            <img className="fzeichen" src={FACTION_ICON_SRC.fire} alt="" aria-hidden="true" />
-          </div></div>
-        </div>
+        <div><span className="label">{L.du}</span>
+          <div className="buehne klein"><div className={`grosskarte ${zahlt ? "fk" : "aus"}`}
+            style={sieg ? FV_WIN_ST : FV_LOSE_ST}>
+            <span className="cwert">{f.du}</span>
+          </div></div></div>
+        <div><span className="label">{L.gegner}</span>
+          <div className="buehne klein"><div className="grosskarte aus" style={sieg ? FV_LOSE_ST : FV_WIN_ST}>
+            <span className="cwert">{f.geg}</span>
+          </div></div></div>
       </div>
-      <div className="werkzeuge">
-        <button type="button" className="tbtn" onClick={() => setI(Math.max(0, i - 1))} disabled={i === 0}>{t("tut.back")}</button>
-        <button type="button" className="tbtn" onClick={() => setI(Math.min(F_ZUST.length - 1, i + 1))}
-          disabled={i >= F_ZUST.length - 1}>{t("tut.next")}</button>
-      </div>
-      <p className="hint">{t(z.wie, { ofen })}</p>
-      <div className={`res ${vor < 0 ? "l" : vor < C.HEAT_MIN_MARGIN ? "" : "kern2"}`}>
+      <div className={`res ${!sieg ? "l" : zahlt ? "kern2" : ""}`}>
         <div>
           <div className="verdikt" style={{ fontSize: 13 }}>
-            {vor < 0 ? t("tut.sz.niederlage") : vor < C.HEAT_MIN_MARGIN ? t("tut.sz.fb.nmKnapp") : t("tut.sz.fb.nmVor", { v: vor })}
+            {sieg ? t("tut.sz.fv.nmSieg", { v: vor }) : t("tut.sz.niederlage")}
           </div>
           <div className="rechnung">
-            {vor < 0 ? t("tut.sz.fb.txtVerlust", { a: dein, b: seiner })
-              : vor < C.HEAT_MIN_MARGIN ? t("tut.sz.fb.txtKnapp", { v: vor, min: C.HEAT_MIN_MARGIN })
-              : t("tut.sz.fb.txtVor", { v: vor, score: fmtNum(fireScoreAt(vor)), heiz: fireHeatAt(vor) })}
+            {!sieg ? t("tut.sz.fv.txtVerlust", { a: f.du, b: f.geg })
+              : !zahlt ? t("tut.sz.fv.txtKnapp", { min: C.HEAT_MIN_MARGIN })
+              : t("tut.sz.fv.txtKlar", { score: fmtNum(fireScoreAt(vor)), heiz: fireHeatAt(vor) })}
           </div>
         </div>
-        <div className="pkt" style={{ whiteSpace: "nowrap" }}>{dein} : {seiner}</div>
+        <div className="pkt" style={{ whiteSpace: "nowrap" }}>
+          {!sieg ? t("tut.sz.fv.pktVerlust") : !zahlt ? `+${fmtNum(0)}` : t("tut.sz.fv.pktKlar", { score: fmtNum(fireScoreAt(vor)) })}
+        </div>
       </div>
+      <div className="merk3 warm">{rich(t(`tut.sz.fv.merk.${fall}`, { min: C.HEAT_MIN_MARGIN }))}</div>
     </div>
   );
 }
 
-
-/* ── Szene Ka2 · Die Schmiede (Entwurf Schirm 18, unterer Teil) ──
-   Der Karten-Schirm des Entwurfs maß 1037 px — über dem vollen Budget. Owner-Entscheid:
-   aufteilen statt kürzen; Kette und Erkennungszeichen sind eine eigene Lektion. */
-export function SchmiedeSzene({ hint }) {
-  useLocale();
-  return (
-    <div className="tsz">
-      <p className="auftrag">{hint}</p>
-      <div className="zeile"><span className="label">{t("tut.sz.fb.ketteLabel")}</span>
-        <div className="kette" style={{ marginTop: 7 }}>
-          <div><b>{t("tut.sz.fb.k1b")}</b><span>{rich(t("tut.sz.fb.k1", { n: C.BRAND_ASH }))}</span></div>
-          <div><b>{t("tut.sz.fb.k2b")}</b><span>{rich(t("tut.sz.fb.k2", { c: C.FORGE_COST }))}</span></div>
-          <div><b>{t("tut.sz.fb.k3b")}</b><span>{rich(t("tut.sz.fb.k3", {
-            skill: skillDef("SK_FIRE_15")?.name ?? "", v: C.FORGE_VALUE }))}</span></div>
-        </div></div>
-      <div className="zeile"><span className="label">{t("tut.sz.cx.erkennLabel")}</span>
-        <div className="regeln" style={{ marginTop: 7 }}>
-          <div><b>1</b><span>{t("tut.sz.fb.e1")}</span></div>
-          <div><b>2</b><span>{t("tut.sz.fb.e2")}</span></div>
-        </div></div>
-    </div>
-  );
-}
-
-/* ── Szene Hi · Die Hitzeleiste (Entwurf Schirm 19) ─────────────
-   Regler von 0 bis über die Leiste hinaus (Weißglut), Skill-Stufen aus den echten
-   Konstanten, Dividende min(h, Cap) × FIRE_HEAT_DIVIDEND. */
-export function HitzeSzene({ hint, readoutLabel }) {
+/* ── Szene Fh · Die Hitzeleiste (Feuer Seite 2) ─────────────────
+   Auto-Loop wie die Ladungsleiste bei Blitz (BlitzkarteSzene): die Leiste heizt von
+   selbst, die Stufen schalten sich nacheinander ein. Schwellen und Werte sind die
+   echten Konstanten; reduzierte Bewegung = stehendes Endbild. */
+export function HitzeSzene({ hint }) {
   useLocale();
   const [h, setH] = useState(0);
-  const MAX = C.HEAT_MAX, UEBER = C.OVERHEAT_MAX;
-  const ueber = Math.max(0, h - MAX), leiste = Math.min(h, MAX);
-  const div = Math.min(leiste, C.FIRE_DIVIDEND_HEAT_CAP) * C.FIRE_HEAT_DIVIDEND;
+  const MAX = C.HEAT_MAX;
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) { setH(MAX); return undefined; }
+    let alive = true, id = null, hh = 0;
+    const tick = (wait) => { id = setTimeout(() => {
+      if (!alive) return;
+      if (hh < MAX) { hh = Math.min(MAX, hh + 2); setH(hh); tick(hh >= MAX ? 2600 : 120); }
+      else { hh = 0; setH(0); tick(700); }
+    }, wait); };
+    tick(600);
+    return () => { alive = false; clearTimeout(id); };
+  }, [MAX]);
   const gk = skillDef("SK_FIRE_06")?.name ?? "";
   const stufen = [
-    { ab: C.GLOWING_T1_HEAT, key: "tut.sz.fc.s1", vars: { gk, v: C.GLOWING_T1_VALUE } },
-    { ab: C.SCHMELZOFEN_MIN_HEAT, key: "tut.sz.fc.s2", vars: {
-      ofen: skillDef("SK_FIRE_17")?.name ?? "", schmiede: skillDef("SK_FIRE_15")?.name ?? "",
-      r: Math.round(C.SCHMELZOFEN_FORGE_DISCOUNT * 100) } },
-    { ab: C.GLOWING_T2_HEAT, key: "tut.sz.fc.s3", vars: { gk, v: C.GLOWING_T2_VALUE, m: C.GLOWING_T2_MARGIN } },
-    { ab: C.CONFLAG_MIN_HEAT, key: "tut.sz.fc.s4", vars: {
-      fb: skillDef("SK_FIRE_11")?.name ?? "", t: C.GLOWING_T1_HEAT } },
-    { ab: C.GLOWING_T3_HEAT, key: "tut.sz.fc.s5", vars: { gk, v: C.GLOWING_T3_VALUE, m: C.GLOWING_T3_MARGIN } },
+    { ab: 1, chip: null, key: "tut.sz.fh.s0", vars: { cap: C.FIRE_DIVIDEND_HEAT_CAP } },
+    { ab: C.GLOWING_T1_HEAT, chip: gk, key: "tut.sz.fh.s40", vars: { v: C.GLOWING_T1_VALUE } },
+    { ab: C.GLOWING_T2_HEAT, chip: gk, key: "tut.sz.fh.s70", vars: { v: C.GLOWING_T2_VALUE, m: C.GLOWING_T2_MARGIN } },
+    { ab: C.CONFLAG_MIN_HEAT, chip: skillDef("SK_FIRE_11")?.name ?? "", key: "tut.sz.fh.s80", vars: { keep: C.CONFLAG_KEEP } },
+    { ab: C.GLOWING_T3_HEAT, chip: gk, key: "tut.sz.fh.s100", vars: { v: C.GLOWING_T3_VALUE,
+      wg: skillDef("SK_FIRE_07")?.name ?? "", max: C.HEAT_MAX + C.OVERHEAT_MAX, p: Math.round(C.OVERHEAT_SCORE_STEP * 100) } },
   ];
+  const ticks = [C.GLOWING_T1_HEAT, C.GLOWING_T2_HEAT, C.CONFLAG_MIN_HEAT];
   return (
     <div className="tsz">
       <p className="auftrag">{hint}</p>
@@ -602,50 +603,59 @@ export function HitzeSzene({ hint, readoutLabel }) {
         <div className="ziel"><span className="label">{t("bar.fire.heat")}</span>
           <span className="num" style={{ marginLeft: "auto" }}>{fmtPct(h / 100)}</span></div>
         <div className="hleiste" style={{ marginTop: 7 }}>
-          <div className="hfill" style={{ width: `${(h / (MAX + UEBER) * 100).toFixed(1)}%` }}
-            {...(ueber > 0 ? { className: "hfill gluehend" } : null)} />
-          {stufen.map((s) => (
-            <i key={s.ab} className="htick" style={{ left: `${(s.ab / (MAX + UEBER) * 100).toFixed(1)}%` }} />
-          ))}
-        </div>
-        <input type="range" min="0" max={MAX + UEBER} step="1" value={h} className="warm"
-          onChange={(e) => setH(Number(e.target.value))} aria-label={t("bar.fire.heat")} />
-        <div className="werkzeuge">
-          <button type="button" className="tbtn" onClick={() => setH(0)}>{t("tut.sz.fc.kalt")}</button>
-          <button type="button" className="tbtn" onClick={() => setH(C.FIRE_DIVIDEND_HEAT_CAP)}>{fmtPct(C.FIRE_DIVIDEND_HEAT_CAP / 100)}</button>
-          <button type="button" className="tbtn" onClick={() => setH(MAX)}>{t("tut.sz.fc.voll")}</button>
+          <div className={`hfill ${h >= MAX ? "gluehend" : ""}`} style={{ width: `${h}%` }} />
+          {ticks.map((ab) => <i key={ab} className="htick" style={{ left: `${ab}%` }} />)}
         </div>
       </div>
-      <div className="zeile"><span className="label">{t("tut.sz.fc.skillsLabel")}</span>
-        <div className="stufen" style={{ marginTop: 7 }}>
-          {stufen.map((s) => (
-            <div key={s.ab} className={`stufe ${h >= s.ab ? "an" : ""}`}>
-              <b>{fmtPct(s.ab / 100)}</b>
-              <span>{rich(t(s.key, s.vars))}</span>
-            </div>
-          ))}
-        </div></div>
-      <div className={`res ${div > 0 ? "kern2" : ""}`}>
-        <div>
-          <div className="verdikt" style={{ fontSize: 13 }}>{readoutLabel}</div>
-          <div className="rechnung">{t("tut.sz.fc.txt")}</div>
-        </div>
-        <div className="pkt" style={{ whiteSpace: "nowrap" }}>+{fmtNum(div)}</div>
+      <div className="stufen" style={{ marginTop: 4 }}>
+        {stufen.map((s) => (
+          <div key={s.key} className={`stufe ${h >= s.ab ? "an" : ""}`}>
+            <b>{fmtPct(s.ab / 100)}</b>
+            <span><ChipBadge skill={s.chip} />{rich(t(s.key, s.vars))}</span>
+          </div>
+        ))}
       </div>
-      <div className="merk3 warm">{rich(
-        ueber > 0
-          ? t("tut.sz.fc.mUeber", { u: ueber, plus: fmtNum(Math.round(ueber * C.OVERHEAT_SCORE_STEP * 100)) })
-          : h >= C.FIRE_DIVIDEND_HEAT_CAP
-            ? t("tut.sz.fc.mDeckel", { cap: C.FIRE_DIVIDEND_HEAT_CAP, fb: skillDef("SK_FIRE_11")?.name ?? "" })
-            : t("tut.sz.fc.mWachs", { d: C.FIRE_HEAT_DIVIDEND, cap: C.FIRE_DIVIDEND_HEAT_CAP }))}</div>
     </div>
   );
 }
 
-/* ── Szene Kp · Die Pflanzen-Karte (Entwurf Schirm 22) ──────────
-   Zahlfarbe blendet von der Kartenfarbe ins Grün (vocab.js plantNumberColor), der Wuchs
-   steigt von unten, der Ring läuft nur während des Wachsens. */
-const SUIT_B = "#5a8ade";
+/* ── Szene Fs · Die Schmiede (Feuer Seite 3) ────────────────────
+   Drei Glieder mit Skill-Marken (Owner-Korrektur: Asche braucht Brandmal, Schmieden
+   braucht Ascheschmiede) plus die zwei Kartenzustände aus dem Spiel. */
+export function SchmiedeSzene({ hint }) {
+  useLocale();
+  const brand = skillDef("SK_FIRE_13")?.name ?? "", schmiede = skillDef("SK_FIRE_15")?.name ?? "";
+  return (
+    <div className="tsz">
+      <p className="auftrag">{hint}</p>
+      <div className="kette">
+        <div><b>{t("tut.sz.fs.n1")}</b><span><ChipBadge skill={brand} />
+          {rich(t("tut.sz.fs.k1", { b: C.BRAND_VALUE, a: C.BRAND_ASH }))}</span></div>
+        <div><b>{t("tut.sz.fs.n2")}</b><span>{t("tut.sz.fs.k2")}</span></div>
+        <div><b>{t("tut.sz.fs.n3")}</b><span><ChipBadge skill={schmiede} />
+          {rich(t("tut.sz.fs.k3", { c: C.FORGE_COST, v: C.FORGE_VALUE }))}</span></div>
+      </div>
+      <div className="paar" style={{ marginTop: 4 }}>
+        <div className="buehne klein"><div className="grosskarte fk">
+          <span className="amboss">⚒+{C.FORGE_VALUE}</span>
+          <span className="cwert">2</span>
+          <span className="fuss">{t("tut.sz.fs.fussForge")}</span>
+        </div></div>
+        <div className="buehne klein"><div className="grosskarte bk">
+          <span className="brandm">−{C.BRAND_VALUE}</span>
+          <span className="cwert">7</span>
+          <span className="fuss">{t("tut.sz.fs.fussBrand")}</span>
+        </div></div>
+      </div>
+      <div className="merk3 warm">{rich(t("tut.sz.fs.merk"))}</div>
+    </div>
+  );
+}
+
+/* ── Szene Pw · Das Wachstum (Pflanze Seite 1) ──────────────────
+   Auto-Loop: eine ROTE Karte wächst zu (das echte Neon-Moos aus dem Spiel), die Zahl
+   färbt sich mit dem Wachstum ins Grün, der Ring läuft mit. Der Tab vergleicht den
+   reinen Bau (Wert steigt je WURZELSCHLAG_PER_GROWTH) mit dem Mix (nur grün). */
 const PLANT = "#5ab87a", PLANT_RIPE = "#86e0a0", PLANT_FULL = "#c8ffdc";
 const mischHex = (a, b, tt) => {
   const hx = (x) => [1, 3, 5].map((k) => parseInt(x.slice(k, k + 2), 16));
@@ -653,400 +663,276 @@ const mischHex = (a, b, tt) => {
   const cc = (x, y) => Math.round(x + (y - x) * tt).toString(16).padStart(2, "0");
   return "#" + cc(ar, br) + cc(ag, bg) + cc(abl, bb);
 };
+const PW_START = 4;
 
 export function PflanzkarteSzene({ hint }) {
   useLocale();
   const [g, setG] = useState(0);
   const [rein, setRein] = useState(true);
   const GRUEN = C.PLANT_GREEN_THRESHOLD, CAP = C.PLANT_VALUE_CAP, PRO = C.WURZELSCHLAG_PER_GROWTH;
+  const G_MAX = (CAP - PW_START) * PRO; // hier steht der Wert am Deckel
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) { setG(GRUEN); return undefined; }
+    let alive = true, id = null, gg = 0;
+    const tick = (wait) => { id = setTimeout(() => {
+      if (!alive) return;
+      if (gg < G_MAX) { gg++; setG(gg); tick(gg === GRUEN ? 900 : gg === G_MAX ? 2400 : 330); }
+      else { gg = 0; setG(0); tick(700); }
+    }, wait); };
+    tick(600);
+    return () => { alive = false; clearTimeout(id); };
+  }, [GRUEN, G_MAX]);
   const gruen = g >= GRUEN;
-  const wert = rein ? Math.min(CAP, 4 + Math.floor(g / PRO)) : 4;
+  const wert = rein ? Math.min(CAP, PW_START + Math.floor(g / PRO)) : PW_START;
   const voll = rein && wert >= CAP;
   const p = Math.min(1, g / GRUEN);
-  const bis = Math.min(GRUEN, g);
-  const nm = voll ? "tut.sz.pb.nmVoll" : gruen ? "tut.sz.pb.nmReif" : g > 0 ? "tut.sz.pb.nmSetzling" : "tut.sz.pb.nmFrisch";
-  const txt = !rein ? t("tut.sz.pb.txtMix", { w: 4 })
-    : voll ? t("tut.sz.pb.txtVoll", { cap: CAP })
-    : gruen ? t("tut.sz.pb.txtReif", { g: GRUEN, pro: PRO, plus: 1 })
-    : g > 0 ? t("tut.sz.pb.txtSetzling")
-    : t("tut.sz.pb.txtFrisch");
+  const nm = voll ? "tut.sz.pw.nmVoll" : gruen ? "tut.sz.pw.nmReif" : g > 0 ? "tut.sz.pw.nmSetzling" : "tut.sz.pw.nmFrisch";
+  const sub = voll ? t("tut.sz.pw.subVoll", { cap: CAP })
+    : gruen ? (rein ? t("tut.sz.pw.subReif", { pro: PRO, plus: 1 }) : t("tut.sz.pw.subReifMix"))
+    : g > 0 ? t("tut.sz.pw.subSetzling")
+    : t("tut.sz.pw.subFrisch");
   return (
     <div className="tsz">
       <p className="auftrag">{hint}</p>
+      <div className="werkzeuge formen" style={{ marginTop: 0 }}>
+        <button type="button" className="tbtn" aria-pressed={rein} onClick={() => setRein(true)}>{t("tut.sz.pw.tabRein")}</button>
+        <button type="button" className="tbtn" aria-pressed={!rein} onClick={() => setRein(false)}>{t("tut.sz.pw.tabMix")}</button>
+      </div>
       <div className="buehne">
-        <div className="grosskarte" style={{ boxShadow: gruen ? "inset 0 0 0 1px #5ab87a88, inset 0 0 16px #5ab87a55" : "none" }}>
-          <span className={`wuchs ${gruen ? "reif" : ""}`} style={{ height: `${(bis / GRUEN * 100).toFixed(0)}%` }} />
+        <div className="grosskarte" style={{
+          borderColor: gruen ? PLANT : undefined,
+          boxShadow: gruen ? "0 0 0 1px #5ab87a, 0 0 14px -4px #5ab87a" : "none" }}>
+          <Suspense fallback={null}><MossGrow growth={Math.min(GRUEN, g)} /></Suspense>
           <span className="cwert" style={{
-            color: gruen ? (voll ? PLANT_FULL : PLANT_RIPE) : mischHex(SUIT_B, PLANT, p * 0.85),
-            textShadow: gruen ? `0 0 10px ${voll ? PLANT_FULL : PLANT_RIPE}88` : "none",
-          }}>{wert}</span>
+            color: gruen ? (voll ? PLANT_FULL : PLANT_RIPE) : mischHex(C.suitColor("R"), PLANT, p * 0.85),
+            textShadow: gruen ? "0 0 10px #86e0a088" : "none" }}>{wert}</span>
           {!gruen && g > 0 && (
             <span className="wring" style={{ display: "block",
               background: `conic-gradient(${PLANT} ${Math.round(p * 100)}%, #ffffff1f ${Math.round(p * 100)}%)` }} />
           )}
         </div>
       </div>
-      <div className="zeile">
-        <div className="ziel"><span className="label">{t("tut.sz.pb.bisLabel")}</span>
-          <span className="num" style={{ marginLeft: "auto" }}>
-            {gruen ? t("tut.sz.pb.reif") : t("tut.sz.pb.bisN", { n: bis, max: GRUEN })}</span></div>
-        <div className="wleiste" style={{ marginTop: 6 }}>
-          <div className={`wfill ${gruen ? "reif" : ""}`} style={{ width: `${(bis / GRUEN * 100).toFixed(0)}%` }} />
-        </div>
-        <p className="hint">{gruen
-          ? (rein ? t("tut.sz.pb.hReif", { pro: PRO, plus: 1, cap: CAP }) : t("tut.sz.pb.hReifMix"))
-          : t("tut.sz.pb.hWachs", { plus: 1 })}</p>
-      </div>
-      <div className="zeile">
-        <div className="ziel"><span className="label">{t("tut.sz.pb.wachsLabel")}</span>
-          <span className="num" style={{ marginLeft: "auto" }}>{g}</span></div>
-        <input type="range" min="0" max="28" step="1" value={g} className="gruen"
-          onChange={(e) => setG(Number(e.target.value))} aria-label={t("tut.sz.pb.wachsLabel")} />
-        <div className="werkzeuge">
-          <button type="button" className="tbtn" onClick={() => setG(0)}>{t("tut.sz.pb.frisch")}</button>
-          <button type="button" className="tbtn" onClick={() => setG(GRUEN)}>{t("tut.sz.pb.reifBtn")}</button>
-          <button type="button" className="tbtn" onClick={() => setG(28)}>{t("tut.sz.pb.vollBtn")}</button>
-        </div>
-      </div>
-      <div className="zeile"><span className="label">{t("tut.sz.pb.skillsLabel")}</span>
-        <div className="chips" style={{ marginTop: 8 }}>
-          <button type="button" className="chip" aria-pressed={rein} onClick={() => setRein(true)}>{t("tut.sz.pb.rein")}</button>
-          <button type="button" className="chip" aria-pressed={!rein} onClick={() => setRein(false)}>{t("tut.sz.pb.mix")}</button>
-        </div>
-        <p className="hint">{rich(t("tut.sz.pb.skillsHint", { ref: C.PLANT_GROWTH_SKILL_REF }))}</p>
-      </div>
       <div className={`res ${voll ? "kern2" : gruen ? "w" : ""}`}>
         <div>
           <div className="verdikt" style={{ fontSize: 13 }}>{t(nm)}</div>
-          <div className="rechnung">{txt}</div>
+          <div className="rechnung">{sub}</div>
         </div>
-        <div className="pkt" style={{ whiteSpace: "nowrap" }}>{t("tut.sz.pb.wert", { v: wert })}</div>
+        <div className="pkt" style={{ whiteSpace: "nowrap" }}>
+          {gruen ? (rein ? t("tut.sz.pw.pktWert", { v: wert }) : t("tut.sz.pw.pktReif")) : `${g} / ${GRUEN}`}
+        </div>
       </div>
+      <div className="regeln" style={{ marginTop: 4 }}>
+        <div><b>→</b><span>{rich(t("tut.sz.pw.a1"))}</span></div>
+        <div><b>→</b><span>{rich(t("tut.sz.pw.a2", { g: GRUEN }))}</span></div>
+      </div>
+      <div className="merk3 gruen">{rich(t("tut.sz.pw.merk", { pro: PRO, plus: 1, cap: CAP }))}</div>
     </div>
   );
 }
 
+/* ── Szene Pg · Grüne Karten zahlen (Pflanze Seite 2) ───────────
+   Ein Segment mit drei grünen Karten, darunter die drei Zahlkanäle mit Skill/Passiv-
+   Marken. Der Farbblock-Deckel ist aus der Engine gerechnet (escalatingFactor am
+   Grün-Cap), NICHT aus dem Mockup übernommen — dort stand ×3, die Engine zahlt
+   ×{greenCap} (dieselbe Zahl wie tut.pflanze.tipps.0). */
+const PG_KARTEN = [[9, true], [7, true], [11, true], [4, false], [6, false]];
 
-/* ── Szene Kp2 · Woran du es erkennst (Entwurf Schirm 22, unterer Teil) ──
-   Der Pflanzen-Karten-Schirm maß 1083 px — Owner-Entscheid: aufteilen statt kürzen. */
-export function PflanzzeichenSzene({ hint }) {
+export function GruenfeldSzene({ hint }) {
   useLocale();
-  const GRUEN = C.PLANT_GREEN_THRESHOLD;
+  const capF = FARBBLOCK_BASE + Math.max(0, C.PLANT_GREEN_FARBBLOCK_CAP - 3) * ESKALATION_STEP;
+  const wt = skillDef("SK_PLANT_02")?.name ?? "", bl = skillDef("SK_PLANT_10")?.name ?? "";
   return (
     <div className="tsz">
       <p className="auftrag">{hint}</p>
-      <div className="zeile"><span className="label">{t("tut.sz.cx.erkennLabel")}</span>
-        <div className="regeln" style={{ marginTop: 7 }}>
-          <div><b>1</b><span>{rich(t("tut.sz.pb.e1"))}</span></div>
-          <div><b>2</b><span>{rich(t("tut.sz.pb.e2"))}</span></div>
-          <div><b>3</b><span>{rich(t("tut.sz.pb.e3", { g: GRUEN }))}</span></div>
-        </div></div>
-    </div>
-  );
-}
-
-/* ── Szene Fl · Das grüne Feld (Entwurf Schirm 23) ──────────────
-   Fünfzehn tappbare Karten, drei Segmente; die Rechnung nutzt FARBBLOCK_BASE,
-   UEBERWUCHERUNG_FACTOR/FIELD und BLUETE_SCORE — dieselben Konstanten wie der Lauf. */
-const PC_N = 15;
-
-export function GruenfeldSzene({ hint, labels: L }) {
-  useLocale();
-  const [feld, setFeld] = useState(() => new Array(PC_N).fill(false));
-  const n = feld.filter(Boolean).length, anteil = n / PC_N;
-  const ueber = anteil >= C.UEBERWUCHERUNG_FIELD;
-  const seg = feld.slice(0, 5), imSeg = seg.filter(Boolean).length;
-  let best = 0, lauf = 0;
-  for (const x of seg) { lauf = x ? lauf + 1 : 0; if (lauf > best) best = lauf; }
-  const kette = best;
-  const block = kette >= 3 ? FARBBLOCK_BASE + (ueber ? C.UEBERWUCHERUNG_FACTOR : 0) : 1;
-  const nachBlock = Math.round(WIN * block);
-  const bluete = kette >= 3 ? C.BLUETE_SCORE * imSeg * (ueber ? 2 : 1) : 0;
-  const gesamt = nachBlock + bluete;
-  const skUeber = skillDef("SK_PLANT_14")?.name ?? "";
-  const skBluete = skillDef("SK_PLANT_10")?.name ?? "";
-  const fbWort = formationName("farbblock");
-  return (
-    <div className="tsz">
-      <p className="auftrag">{hint}</p>
-      <div><span className="label">{t("tut.sz.pc.feldLabel")}</span>
-        <div className="feld gross" style={{ marginTop: 6, gridTemplateColumns: "repeat(5,1fr)", gap: 5 }}>
-          {feld.map((gr, k) => (
-            <button key={k} type="button" className={`kz pfl ${gr ? "reif" : ""}`}
-              onClick={() => setFeld((f) => { const nf = [...f]; nf[k] = !nf[k]; return nf; })}>
-              <span className="kzn">{k + 1}</span>
-              <span className="pwert">{gr ? t("tut.sz.pb.reif") : t("tut.sz.pc.grau")}</span>
-            </button>
+      <div className="zeile">
+        <span className="label">{t("tut.sz.pg.segLabel")}</span>
+        <div className="reihe" style={{ marginTop: 6 }}>
+          {PG_KARTEN.map(([v, gr], i) => (
+            <Karte key={i} v={v} s={gr ? "G" : "N"} cls={gr ? "" : "dim"}
+              kuerzel={gr ? t("tut.sz.pg.fussGruen") : undefined} />
           ))}
         </div>
-        <div className="werkzeuge">
-          <button type="button" className="tbtn" onClick={() => setFeld(new Array(PC_N).fill(false))}>{L.none}</button>
-          <button type="button" className="tbtn" onClick={() => setFeld(feld.map((_, k) => k < 10))}>{L.twoThirds}</button>
-          <button type="button" className="tbtn" onClick={() => setFeld(new Array(PC_N).fill(true))}>{L.all}</button>
-        </div></div>
-      <div className={`res ${ueber ? "w" : ""}`}>
-        <div>
-          <div className="verdikt" style={{ fontSize: 13 }}>{t("tut.sz.pc.nm", { n, max: PC_N })}</div>
-          <div className="rechnung">{ueber ? t("tut.sz.pc.txtUeber", { skill: skUeber })
-            : t("tut.sz.pc.txtNoch", { n: Math.ceil(PC_N * C.UEBERWUCHERUNG_FIELD) - n, skill: skUeber })}</div>
-        </div>
-        <div className="pkt" style={{ whiteSpace: "nowrap" }}>{fmtPct(anteil)}</div>
       </div>
-      <div className="zeile"><span className="label">{t("tut.sz.pc.eqLabel")}</span>
-        <div className="eq" style={{ marginTop: 7 }}>
-          <span className="step">{rich(t("tut.sz.d.eqBasis", { v: fmtNum(WIN) }))}</span>
-          <span className={`step ${block > 1 ? "" : "off"}`}>{rich(t("tut.sz.pc.eqBlock", {
-            fb: fbWort, f: f2(block),
-            zusatz: kette >= 3 ? "" : t("tut.sz.pc.eqBlockAb", { min: 3 }),
-            v: fmtNum(nachBlock) }))}</span>
-          <span className={`step ${bluete ? "" : "off"}`}>{rich(t("tut.sz.pc.eqBluete", {
-            sk: skBluete,
-            teil: kette >= 3
-              ? `${fmtNum(C.BLUETE_SCORE)} × ${t("tut.sz.pc.gruene", { n: imSeg })}${ueber ? " × 2" : ""}`
-              : t("tut.sz.pc.teilBraucht", { min: 3 }),
-            v: fmtNum(bluete) }))}</span>
-          <span className="step trenn">{rich(t("tut.sz.pc.eqGesamt", { v: fmtNum(gesamt) }))}</span>
-        </div>
-        <p className="hint">{rich(t("tut.sz.pc.eqHint", { b: skBluete, u: skUeber }))}</p>
+      <div className="stufen">
+        <div className="stufe gruen an"><span><ChipBadge />{rich(t("tut.sz.pg.s1", { cap: f2(capF) }))}</span></div>
+        <div className="stufe gruen an"><span><ChipBadge skill={wt} />{rich(t("tut.sz.pg.s2", { v: fmtNum(C.WURZELTIEFE_SCORE) }))}</span></div>
+        <div className="stufe gruen an"><span><ChipBadge skill={bl} />{rich(t("tut.sz.pg.s3", { v: fmtNum(C.BLUETE_SCORE) }))}</span></div>
       </div>
-      <div className="merk3 gruen">{rich(ueber
-        ? t("tut.sz.pc.merkUeber", { skill: skUeber, a: f2(FARBBLOCK_BASE), b: f2(FARBBLOCK_BASE + C.UEBERWUCHERUNG_FACTOR) })
-        : t("tut.sz.pc.merkCap", { a: f2(FARBBLOCK_BASE) }))}</div>
+      <div className="merk3 gruen">{rich(t("tut.sz.pg.merk"))}</div>
     </div>
   );
 }
 
-/* ── Szene Ek · Die Eis-Karte (Entwurf Schirm 27) ───────────────
-   Die Frostfront springt an den Schwellen (FrostIce.jsx frontOf): COVER 0,47 der Karte,
-   unter Stufe 1 nur COVER × BASE_FREEZE. Werte 0,47/0,06 aus FrostIce.jsx TUNE —
-   dort nicht exportiert, deshalb hier zitiert statt importiert. */
-const E_COVER = 0.47, E_BASISFROST = 0.06;
-
-export function GletscherSzene({ hint, readoutLabel }) {
+/* ── Szene Pt · Tempo und Trimmen (Pflanze Seite 3, neu) ────────
+   Fasst Tempo, Reinheit und Trimmen — inhaltsgleich mit den Tipps formuliert, aber
+   als eigene kurze Seite mit dem Überwucherungs-Merksatz aus der Engine. */
+export function PflanztempoSzene({ hint }) {
   useLocale();
-  const [m, setM] = useState(0);
+  const ueb = skillDef("SK_PLANT_14")?.name ?? "";
+  return (
+    <div className="tsz">
+      <p className="auftrag">{hint}</p>
+      <div className="stufen">
+        <div className="stufe gruen an"><span><ChipBadge />{rich(t("tut.sz.pt.s1", { ref: C.PLANT_GROWTH_SKILL_REF }))}</span></div>
+        <div className="stufe gruen an"><span><ChipBadge />{rich(t("tut.sz.pt.s2"))}</span></div>
+        <div className="stufe gruen an"><span><ChipBadge />{rich(t("tut.sz.pt.s3", {
+          step: Math.round(C.TRIM_STEP * 100), cap: Math.round(C.TRIM_CAP * 100) }))}</span></div>
+      </div>
+      <div className="merk3 gruen">{rich(t("tut.sz.pt.merk", {
+        ueb, pct: Math.round(C.UEBERWUCHERUNG_FIELD * 100), f: f2(C.UEBERWUCHERUNG_FACTOR) }))}</div>
+    </div>
+  );
+}
+
+/* ── Szene Eg · Der Gletscher (Eis Seite 1) ─────────────────────
+   Auto-Loop: die Masse tickt hoch, der ECHTE Frost aus dem Spiel (FrostIce) springt
+   an den Schwellen, bei BURST_AT bricht der Gletscher sichtbar und beginnt von vorn.
+   Der Nachbar-Bonus steht seit dem Mockup-Review auf dieser Seite. */
+export function GletscherSzene({ hint }) {
+  useLocale();
   const SCHWELLEN = GLACIER.THRESHOLDS, WUCHT = GLACIER.TIER_MULT, BURST = GLACIER.BURST_AT;
+  const [m, setM] = useState(0);
+  const [bruch, setBruch] = useState(false);
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) { setM(BURST); return undefined; }
+    let alive = true, id = null, mm = 0;
+    const tick = (wait) => { id = setTimeout(() => {
+      if (!alive) return;
+      if (mm < BURST) {
+        mm++; setM(mm);
+        if (mm === BURST) { setBruch(true); tick(2400); } else tick(420);
+      } else { mm = 0; setM(0); setBruch(false); tick(700); }
+    }, wait); };
+    tick(600);
+    return () => { alive = false; clearTimeout(id); };
+  }, [BURST]);
   const stufe = SCHWELLEN.reduce((acc, sw) => acc + (m >= sw ? 1 : 0), 0);
-  const bricht = m >= BURST;
-  const front = m <= 0 ? 0 : stufe === 0 ? E_COVER * E_BASISFROST : E_COVER * (SCHWELLEN[stufe - 1] / BURST);
-  const gg = front / E_COVER;
-  const al = (x) => (x * gg).toFixed(3);
-  const frostBg = gg <= 0 ? "none"
-    : `linear-gradient(180deg,rgba(94,200,240,0) ${(100 - 66 * gg).toFixed(1)}%,`
-      + `rgba(94,200,240,${al(0.55)}) ${(100 - 26 * gg).toFixed(1)}%,`
-      + `rgba(207,238,255,${al(0.9)}) 100%),`
-    + `linear-gradient(90deg,rgba(207,238,255,${al(0.55)}) 0%,rgba(94,200,240,0) ${(20 * gg).toFixed(1)}%,`
-      + `rgba(94,200,240,0) ${(100 - 20 * gg).toFixed(1)}%,rgba(207,238,255,${al(0.55)}) 100%)`;
-  const nm = bricht ? "tut.sz.eb.nmBricht" : m === 0 ? "tut.sz.eb.nmFrisch"
-    : stufe === 0 ? "tut.sz.eb.nmWaechst" : null;
   return (
     <div className="tsz">
       <p className="auftrag">{hint}</p>
       <div className="buehne">
-        <div className="grosskarte ek">
-          <span className={`frost ${bricht ? "voll" : ""}`} style={{ background: frostBg }} />
-          <span className="cwert">6</span>
+        <div className="grosskarte ek" style={bruch
+          ? { boxShadow: "0 0 0 3px #d8f4ff, 0 0 30px 2px #8fdcf7" } : undefined}>
+          <Suspense fallback={null}><FrostIce mass={m} /></Suspense>
+          <span className="cwert" style={{ color: ["#e8e8ea", "#bfe4f5", "#9fdcf7", "#d8f4ff"][stufe] }}>7</span>
           <span className="gmarke"><img src={GLOSSARY_IMG_SRC.glacier} alt="" width="11" height="11" /><b>{m}</b></span>
         </div>
       </div>
-      <div className="zeile">
-        <div className="ziel"><span className="label">{readoutLabel}</span>
-          <span className="num" style={{ marginLeft: "auto" }}>{m}</span></div>
-        <div className="mleiste" style={{ marginTop: 7 }}>
-          <div className={`mfill ${bricht ? "voll" : ""}`} style={{ width: `${(m / BURST * 100).toFixed(0)}%` }} />
-          {SCHWELLEN.slice(0, 2).map((sw) => (
-            <i key={sw} className="mtick" style={{ left: `${(sw / BURST * 100).toFixed(1)}%` }} />
+      <div className="zeile" style={{ marginTop: 10 }}>
+        <div className="ziel"><span className="label">{t("tut.sz.eg.masseLabel")}</span>
+          <span className="num" style={{ marginLeft: "auto" }}>{m} / {BURST}</span></div>
+        <div className="massb" style={{ marginTop: 7, gridTemplateColumns: `repeat(${BURST}, 1fr)` }}>
+          {Array.from({ length: BURST }, (_, i) => (
+            <i key={i} className={`${i < m ? "an" : ""} ${SCHWELLEN.slice(0, -1).includes(i + 1) ? "schw" : ""}`} />
           ))}
         </div>
-        <input type="range" min="0" max={BURST} step="1" value={m} className="kalt"
-          onChange={(e) => setM(Number(e.target.value))} aria-label={readoutLabel} />
-        <div className="werkzeuge">
-          <button type="button" className="tbtn" onClick={() => setM(0)}>0</button>
-          <button type="button" className="tbtn" onClick={() => setM(SCHWELLEN[1])}>{SCHWELLEN[1]}</button>
-          <button type="button" className="tbtn" onClick={() => setM(BURST)}>{BURST}</button>
-        </div>
       </div>
-      <div className={`res ${bricht ? "eis" : stufe === 0 ? "" : "kern2"}`}>
+      <div className={`res ${bruch ? "eis" : stufe > 0 ? "kern2" : ""}`}>
         <div>
           <div className="verdikt" style={{ fontSize: 13 }}>
-            {nm ? t(nm) : t("tut.sz.eb.nmStufe", { n: stufe })}
+            {bruch ? t("tut.sz.eg.nmBruch") : t("tut.sz.eg.nmStufe", { n: stufe })}
           </div>
           <div className="rechnung">
-            {bricht ? t("tut.sz.eb.txtBricht", { max: BURST })
-              : m === 0 ? t("tut.sz.eb.txtFrisch", { a: GLACIER.EWIGER_FROST, b: GLACIER.WIN_MASS })
-              : stufe === 0 ? t("tut.sz.eb.txtWaechst", { t1: SCHWELLEN[0] })
-              : t("tut.sz.eb.txtNoch", { n: BURST - m })}
+            {bruch ? t("tut.sz.eg.subBruch")
+              : stufe === 0 ? t("tut.sz.eg.sub0", { t1: SCHWELLEN[0] })
+              : stufe === 1 ? t("tut.sz.eg.sub1", { t1: SCHWELLEN[0] })
+              : stufe === 2 ? t("tut.sz.eg.sub2", { t2: SCHWELLEN[1] })
+              : t("tut.sz.eg.sub3")}
           </div>
         </div>
-        <div className="pkt" style={{ whiteSpace: "nowrap" }}>
-          {t("tut.sz.eb.wucht", { w: f1(WUCHT[stufe]) })}
-        </div>
+        <div className="pkt" style={{ whiteSpace: "nowrap" }}>×{f1(WUCHT[stufe])}</div>
       </div>
-      <div className="zeile"><span className="label">{t("tut.sz.eb.stufenLabel")}</span>
-        <div className="stufen" style={{ marginTop: 7 }}>
-          {SCHWELLEN.map((sw, i2) => (
-            <div key={sw} className={`stufe eis ${m >= sw ? "an" : ""}`}>
-              <b>{sw}</b>
-              <span>{t("tut.sz.eb.sZeile", { m: f1(WUCHT[i2 + 1]) })}{i2 === 2 ? t("tut.sz.eb.sBricht") : ""}</span>
-            </div>
-          ))}
-        </div></div>
+      <div className="regeln" style={{ marginTop: 4 }}>
+        <div><b>→</b><span>{rich(t("tut.sz.eg.a1", { a: GLACIER.EWIGER_FROST, b: GLACIER.WIN_MASS }))}</span></div>
+        <div><b>→</b><span>{rich(t("tut.sz.eg.a2", { t1: SCHWELLEN[0], t2: SCHWELLEN[1], t3: SCHWELLEN[2] }))}</span></div>
+      </div>
+      <div className="stufen">
+        <div className="stufe eis an"><span><ChipBadge />{rich(t("tut.sz.eg.nachbarn", {
+          k: Math.round(GLACIER.KASKADE_PER_NEIGHBOR * 100), x: f2(GLACIER.KOLLISION_MULT) }))}</span></div>
+      </div>
+      <div className="merk3 eis">{rich(t("tut.sz.eg.merk", { max: BURST }))}</div>
     </div>
   );
 }
 
-/* ── Szene Ef · Das Gletscherfeld (Entwurf Schirm 28) ───────────
-   Frei tappbares 5×8-Brett plus vier Formen-Presets. Die Formations-Erkennung ist die
-   Logik aus glacier.js glacierFormations (jedes Vorkommen multipliziert, Überlappende
-   stapeln); die Faktoren sind die exportierten GEO_-Konstanten. */
-const EC_SP = 5, EC_ZE = 8, EC_N = EC_SP * EC_ZE;
-const EC_SOFTCAP = 40000, EC_SLOPE = 0.06;   // glacier.js:23 — dort nicht exportiert, zitiert
-const EC_SCALE = 340;                        // glacier.js:19 BURST_SCALE
+/* ── Szene Ef · Gletscherformationen (Eis Seite 2, neu) ─────────
+   Die vier Geometrie-Formen aus glacier.js als Tabs auf einem Brett-Ausschnitt.
+   Owner-Wunsch: die Fläche zeigt das STAPELN — in ihr stecken vier Blöcke und ein
+   Kreuz, die Mitte trägt das Produkt aller Faktoren (aus den Konstanten gerechnet). */
+const EF_SP = 5;
+const EF_FORMEN = {
+  block: { faktor: () => GLACIER.GEO_BLOCK, zellen: [[1, 1], [1, 2], [2, 1], [2, 2]] },
+  kreuz: { faktor: () => GLACIER.GEO_KREUZ, zellen: [[2, 2], [1, 2], [3, 2], [2, 1], [2, 3]] },
+  linie: { faktor: () => GLACIER.GEO_LINIE, zellen: [[2, 0], [2, 1], [2, 2], [2, 3], [2, 4]] },
+  flaeche: { faktor: () => GLACIER.GEO_FLAECHE, mitte: [2, 2],
+    zellen: [[1, 1], [1, 2], [1, 3], [2, 1], [2, 2], [2, 3], [3, 1], [3, 2], [3, 3]] },
+};
 
-function ecGeoAt(gSet, p) {
-  const pos = (r, cc) => r * EC_SP + cc;
-  const isG = (q) => gSet.has(q);
-  const f = new Array(EC_N).fill(1); const namen = new Map();
-  const add = (typ, faktor, felder) => {
-    for (const q of felder) { f[q] *= faktor; if (q === p) namen.set(typ, (namen.get(typ) || 0) + 1); }
-  };
-  for (let r = 0; r < EC_ZE; r++) {
-    let voll = true;
-    for (let cc = 0; cc < EC_SP; cc++) if (!isG(pos(r, cc))) { voll = false; break; }
-    if (voll) add("linie", GLACIER.GEO_LINIE, Array.from({ length: EC_SP }, (_, cc) => pos(r, cc)));
-  }
-  for (let cc = 0; cc < EC_SP; cc++) {
-    let voll = true;
-    for (let r = 0; r < EC_ZE; r++) if (!isG(pos(r, cc))) { voll = false; break; }
-    if (voll) add("linie", GLACIER.GEO_LINIE, Array.from({ length: EC_ZE }, (_, r) => pos(r, cc)));
-  }
-  for (let r = 0; r < EC_ZE - 1; r++) for (let cc = 0; cc < EC_SP - 1; cc++)
-    if (isG(pos(r, cc)) && isG(pos(r, cc + 1)) && isG(pos(r + 1, cc)) && isG(pos(r + 1, cc + 1)))
-      add("block", GLACIER.GEO_BLOCK, [pos(r, cc), pos(r, cc + 1), pos(r + 1, cc), pos(r + 1, cc + 1)]);
-  for (let r = 1; r < EC_ZE - 1; r++) for (let cc = 1; cc < EC_SP - 1; cc++) {
-    const z = pos(r, cc);
-    if (isG(z) && isG(pos(r - 1, cc)) && isG(pos(r + 1, cc)) && isG(pos(r, cc - 1)) && isG(pos(r, cc + 1)))
-      add("kreuz", GLACIER.GEO_KREUZ, [z, pos(r - 1, cc), pos(r + 1, cc), pos(r, cc - 1), pos(r, cc + 1)]);
-  }
-  for (let r = 0; r < EC_ZE - 2; r++) for (let cc = 0; cc < EC_SP - 2; cc++) {
-    let voll = true;
-    for (let dr = 0; dr < 3 && voll; dr++) for (let dc = 0; dc < 3; dc++) if (!isG(pos(r + dr, cc + dc))) { voll = false; break; }
-    if (voll) {
-      const ps = [];
-      for (let dr = 0; dr < 3; dr++) for (let dc = 0; dc < 3; dc++) ps.push(pos(r + dr, cc + dc));
-      add("flaeche", GLACIER.GEO_FLAECHE, ps);
-    }
-  }
-  return { f: f[p], namen: [...namen].map(([typ, k]) => (k > 1 ? `${glacierFormName(typ)} ×${k}` : glacierFormName(typ))) };
-}
-
-export function GletscherfeldSzene({ hint }) {
+export function GletscherformenSzene({ hint }) {
   useLocale();
-  const [gSet, setGSet] = useState(() => new Set());
-  const [sel, setSel] = useState(null);
-  const nbOf = (p) => {
-    const x = p % EC_SP, y = (p / EC_SP) | 0, out = [];
-    if (y > 0) out.push(p - EC_SP);
-    if (y < EC_ZE - 1) out.push(p + EC_SP);
-    if (x > 0) out.push(p - 1);
-    if (x < EC_SP - 1) out.push(p + 1);
-    return out;
+  const [form, setForm] = useState("block");
+  const g = EF_FORMEN[form];
+  const set = new Set(g.zellen.map(([r, c2]) => r * EF_SP + c2));
+  const mitte = g.mitte ? g.mitte[0] * EF_SP + g.mitte[1] : -1;
+  /* Die Mitte der Fläche liegt zugleich in vier Blöcken und einem Kreuz — das Produkt
+     rechnet die Konstanten nach, statt die Mockup-Zahl abzuschreiben. */
+  const mitteF = Math.pow(GLACIER.GEO_BLOCK, 4) * GLACIER.GEO_KREUZ * GLACIER.GEO_FLAECHE;
+  const subVars = {
+    block: {}, kreuz: {},
+    linie: { sp: VARS.segment, ze: VARS.segments, ew: skillDef("SK_ICE_08")?.name ?? "", fe: f2(GLACIER.EISWALL_LINIE) },
+    flaeche: { m: f2(mitteF) },
   };
-  const tap = (p) => {
-    const n = new Set(gSet);
-    if (n.has(p) && sel === p) n.delete(p); else n.add(p);
-    setGSet(n); setSel(n.has(p) ? p : null);
-  };
-  const preset = (felder, s2) => { setGSet(new Set(felder)); setSel(s2); };
-  const listeJoin = (a) => (a.length < 2 ? a[0] || "" : `${a.slice(0, -1).join(", ")} ${t("tut.sz.und")} ${a[a.length - 1]}`);
-  const n = gSet.size;
-  const aktiv = sel != null && gSet.has(sel);
-  let body = null;
-  if (aktiv) {
-    const nb = nbOf(sel), gN = nb.filter((p) => gSet.has(p)).length;
-    const kask = 1 + GLACIER.KASKADE_PER_NEIGHBOR * gN;
-    const koll = 1 + (GLACIER.KOLLISION_MULT - 1) * (nb.length ? gN / nb.length : 0);
-    const geo = ecGeoAt(gSet, sel), formen = listeJoin(geo.namen);
-    const grund = GLACIER.BURST_AT * GLACIER.TIER_MULT[3] * EC_SCALE;
-    const roh = grund * kask * koll * geo.f;
-    const gedeckelt = roh > EC_SOFTCAP;
-    const burst = Math.round(gedeckelt ? EC_SOFTCAP + (roh - EC_SOFTCAP) * EC_SLOPE : roh);
-    const sieg = Math.round(burst * (1 + STEP * 5) * D_FORM * CRIT);
-    body = { gN, kask, koll, geo, formen, grund, roh, gedeckelt, burst, sieg };
-  }
   return (
     <div className="tsz">
       <p className="auftrag">{hint}</p>
-      <div className="zeile"><p style={{ margin: 0, fontSize: 13, color: "var(--ink)" }}>{rich(t("tut.sz.ec.kern"))}</p></div>
-      <div>
-        <div className="ziel"><span className="label">{t("tut.sz.ec.brettLabel", { a: EC_SP, b: EC_ZE })}</span>
-          <button type="button" className="tbtn leer" style={{ marginLeft: "auto" }}
-            onClick={() => { setGSet(new Set()); setSel(null); }}>{t("tut.sz.ec.leeren")}</button></div>
-        <div className="brett eis" style={{ marginTop: 6 }}>
-          {Array.from({ length: EC_ZE }, (_, y) => (
-            <div key={y} className="zr">
-              {Array.from({ length: EC_SP }, (_, x) => {
-                const p = y * EC_SP + x;
-                return <button key={x} type="button" onClick={() => tap(p)}
-                  className={`z ${gSet.has(p) ? "gl" : ""} ${p === sel ? "sel" : ""}`} />;
+      <div className="werkzeuge formen" style={{ marginTop: 0 }}>
+        {Object.keys(EF_FORMEN).map((k) => (
+          <button key={k} type="button" className="tbtn" aria-pressed={form === k} onClick={() => setForm(k)}>
+            {glacierFormName(k)}
+          </button>
+        ))}
+      </div>
+      <div className="zeile">
+        <span className="label">{t("tut.sz.ef.brettLabel")}</span>
+        <div className="brett eis formen" style={{ marginTop: 6 }}>
+          {Array.from({ length: EF_SP }, (_, r) => (
+            <div key={r} className="zr">
+              {Array.from({ length: EF_SP }, (_, c2) => {
+                const p = r * EF_SP + c2;
+                return (
+                  <div key={c2} className={`z ${set.has(p) ? "gl" : ""} ${p === mitte ? "gx" : ""}`}>
+                    {p === mitte ? <span className="zf">×{f2(mitteF)}</span> : null}
+                  </div>
+                );
               })}
             </div>
           ))}
         </div>
-        <span className="label" style={{ display: "block", marginTop: 11 }}>{t("tut.sz.ec.formenLabel")}</span>
-        <div className="werkzeuge formen">
-          <button type="button" className="tbtn" onClick={() => preset([11, 12, 16, 17], 11)}>{glacierFormName("block")}</button>
-          <button type="button" className="tbtn" onClick={() => preset([12, 16, 17, 18, 22], 17)}>{glacierFormName("kreuz")}</button>
-          <button type="button" className="tbtn" onClick={() => preset([15, 16, 17, 18, 19], 17)}>{glacierFormName("linie")}</button>
-          <button type="button" className="tbtn" onClick={() => {
-            const f = []; for (let y = 2; y < 5; y++) for (let x = 1; x < 4; x++) f.push(y * EC_SP + x);
-            preset(f, 3 * EC_SP + 2);
-          }}>{glacierFormName("flaeche")}</button>
-        </div>
       </div>
-      <div className={`res ${body && body.geo.namen.length ? "eis" : body ? "kern2" : ""}`}>
+      <div className="res eis">
         <div>
-          <div className="verdikt" style={{ fontSize: 13 }}>
-            {n === 0 ? t("tut.sz.ec.nmKein") : t("tut.sz.ec.nmN", { n })}
-          </div>
-          <div className="rechnung">
-            {!aktiv ? (n ? t("tut.sz.ec.txtTapGl") : t("tut.sz.ec.txtTapFeld"))
-              : `${body.gN === 1 ? t("tut.sz.ec.nb1", { n: 1 }) : t("tut.sz.ec.nbN", { n: body.gN })}, ${body.geo.namen.length ? body.formen : t("tut.sz.ec.keineForm")}`}
-          </div>
+          <div className="verdikt" style={{ fontSize: 13 }}>{glacierFormName(form)}</div>
+          <div className="rechnung">{t(`tut.sz.ef.sub.${form}`, subVars[form])}</div>
         </div>
-        <div className="pkt" style={{ whiteSpace: "nowrap" }}>{aktiv ? fmtNum(body.burst) : "0"}</div>
+        <div className="pkt" style={{ whiteSpace: "nowrap" }}>×{f2(g.faktor())}</div>
       </div>
-      <div className="zeile"><span className="label">{t("tut.sz.ec.eqLabel")}</span>
-        <div className="eq" style={{ marginTop: 7 }}>
-          {!aktiv ? <span className="step off">{t("tut.sz.ec.eqKein")}</span> : (
-            <>
-              <span className="step">{rich(t("tut.sz.ec.eqGrund", {
-                m: GLACIER.BURST_AT, w: f1(GLACIER.TIER_MULT[3]), scale: fmtNum(EC_SCALE), v: fmtNum(body.grund) }))}</span>
-              <span className={`step ${body.gN ? "" : "off"}`}>{t("tut.sz.ec.eqKask", {
-                f: f2(body.kask), nb: body.gN === 1 ? t("tut.sz.ec.nb1", { n: 1 }) : t("tut.sz.ec.nbN", { n: body.gN }) })}</span>
-              <span className={`step ${body.gN ? "" : "off"}`}>{t("tut.sz.ec.eqKoll", { f: f2(body.koll) })}</span>
-              <span className={`step ${body.geo.namen.length ? "" : "off"}`}>{t("tut.sz.ec.eqGeo", {
-                f: f2(body.geo.f), formen: body.geo.namen.length ? ` (${body.formen})` : "" })}</span>
-              {body.gedeckelt && <span className="step deckel">{t("tut.sz.ec.eqDeckel", {
-                cap: fmtNum(EC_SOFTCAP), slope: Math.round(EC_SLOPE * 100), roh: fmtNum(Math.round(body.roh)), v: fmtNum(body.burst) })}</span>}
-              <span className="step trenn">{rich(t("tut.sz.ec.eqZahlt", { v: fmtNum(body.burst) }))}</span>
-              <span className="step sieg trenn">{t("tut.sz.ec.eqSieg")}</span>
-              <span className="step sieg">{t("tut.sz.ec.eqSiegStep", { nm: t("tut.f.streak"), f: f2(1 + STEP * 5) })}</span>
-              <span className="step sieg">{t("tut.sz.ec.eqSiegStep", { nm: t("tut.f.form"), f: f2(D_FORM) })}</span>
-              <span className="step sieg">{t("tut.sz.ec.eqSiegStep", { nm: t("tut.f.crit"), f: f2(CRIT) })}</span>
-              <span className="step sieg">{rich(t("tut.sz.ec.eqDann", { v: fmtNum(body.sieg) }))}</span>
-            </>
-          )}
-        </div>
-        <p className="hint">{rich(t("tut.sz.ec.hint2", { scale: fmtNum(EC_SCALE), win: fmtNum(WIN) }))}</p>
+      <div className="merk3 eis">{rich(t("tut.sz.ef.merk"))}</div>
+    </div>
+  );
+}
+
+/* ── Szene Ee · Einfrieren (Eis Seite 3, neu) ───────────────────
+   Nur die Entstehungsregeln — die Wirkung steht auf Seite 1 und 2. */
+export function EinfrierenSzene({ hint }) {
+  useLocale();
+  return (
+    <div className="tsz">
+      <p className="auftrag">{hint}</p>
+      <div className="stufen">
+        <div className="stufe eis an"><span><ChipBadge />{rich(t("tut.sz.ee.s1"))}</span></div>
+        <div className="stufe eis an"><span><ChipBadge />{rich(t("tut.sz.ee.s2", { n: GLACIER.DECLINE_MIN_SKILLS }))}</span></div>
       </div>
-      <div className="merk3 eis">{rich(!aktiv || !body.geo.namen.length
-        ? (aktiv
-          ? t("tut.sz.ec.merkKeine", { block: glacierFormName("block"), kreuz: glacierFormName("kreuz"), linie: glacierFormName("linie"), flaeche: glacierFormName("flaeche") })
-          : t("tut.sz.ec.merkEin", { k: Math.round(GLACIER.KASKADE_PER_NEIGHBOR * 100) }))
-        : t("tut.sz.ec.merkForm", { formen: body.formen,
-          liste: ["block", "kreuz", "linie", "flaeche"].map((k) =>
-            `${glacierFormName(k)} ×${fmtNum(String({ block: GLACIER.GEO_BLOCK, kreuz: GLACIER.GEO_KREUZ, linie: GLACIER.GEO_LINIE, flaeche: GLACIER.GEO_FLAECHE }[k]))}`).join(" · ") }))}</div>
+      <div className="merk3 eis">{rich(t("tut.sz.ee.merk"))}</div>
     </div>
   );
 }

@@ -117,19 +117,13 @@ describe("i18n · Katalog-Parität", () => {
      ist — bei den Wörtern, die aus dem Englischen schon vertraut aussehen. */
   const SAME_OK_EN = new Set([
     "hint.eyebrow",      // „Tutorial" — im Englischen dasselbe Wort
-    "tut.sz.aa.pillBoost",  // „Boost →0 %" — reines Kuerzel, beide Sprachen gleich
     "tut.sz.ax.eqStep",     // reine Formelzeile aus Platzhaltern
     "tut.sz.nb.maximum",    // dasselbe Wort
-    "tut.sz.nc.decks",      // Deck bleibt Deck (§3.1)
-    "tut.sz.fb.k1b",       // „Brand" — im Englischen dasselbe Wort
-    "tut.sz.pc.eqBlock",    // reine Formelzeile aus Platzhaltern
-    "tut.sz.pc.eqBluete",   // dito
-    "tut.sz.ec.eqSiegStep", // dito
-    /* Die zwei eq-Schritte der Szenen sind reine Formelzeilen — „× {f} {nm} = **{v}**":
-       alles Sichtbare steckt in Platzhaltern, der Rohtext ist in jeder Sprache identisch. */
-    "tut.sz.d.eqStep",
-    "tut.sz.f.eqStep",
-    "tut.sz.h.pos",          // „Position {n}" — dasselbe Wort in Quell- und Zielsprache
+    /* Runde 3 (Q13): die neuen Archetyp-Seiten. „Skill" und „Brand" sind im Englischen dieselben
+       Wörter, „+{score} extra" ist Platzhalter plus ein geteiltes Lehnwort. */
+    "tut.sz.chipSkill",     // „Skill · {nm}" — Skill bleibt Skill
+    "tut.sz.fs.n1",         // „1 · Brand" — im Englischen dasselbe Wort
+    "tut.sz.fv.pktKlar",    // „+{score} extra" — Platzhalter plus geteiltes Wort
     /* „{segWork} III" — der Rohtext IST in allen Sprachen gleich, weil der ganze Unterschied im
        Platzhalter steckt: das Register füllt ihn je Sprache (Segmentarbeit / Segment Work /
        Trabajo de Segmento / 区段作业). Vorher stand hier der deutsche Name im Text, und ein
@@ -286,13 +280,7 @@ describe("i18n · Katalog-Parität", () => {
   const SAME_OK_ES = new Set([
     "hint.eyebrow",      // „Tutorial" — im Spanischen dasselbe Wort
     "tut.sz.ax.eqStep",     // reine Formelzeile aus Platzhaltern
-    "tut.sz.pc.eqBlock",    // reine Formelzeile aus Platzhaltern
-    "tut.sz.pc.eqBluete",   // dito
-    "tut.sz.ec.eqSiegStep", // dito
-    /* Die zwei eq-Schritte der Szenen sind reine Formelzeilen — „× {f} {nm} = **{v}**":
-       alles Sichtbare steckt in Platzhaltern, der Rohtext ist in jeder Sprache identisch. */
-    "tut.sz.d.eqStep",
-    "tut.sz.f.eqStep",
+    "tut.sz.fv.pktKlar",    // „+{score} extra" — Platzhalter plus geteiltes Lehnwort
     /* „{segWork} III" — der Rohtext IST in allen Sprachen gleich, weil der ganze Unterschied im
        Platzhalter steckt: das Register füllt ihn je Sprache (Segmentarbeit / Segment Work /
        Trabajo de Segmento / 区段作业). Vorher stand hier der deutsche Name im Text, und ein
@@ -345,13 +333,6 @@ describe("i18n · Katalog-Parität", () => {
      SAME_OK_CLASS ab und stehen deshalb nicht noch einmal hier. */
   const SAME_OK_ZH = new Set([
     "tut.sz.ax.eqStep",     // reine Formelzeile aus Platzhaltern
-    "tut.sz.pc.eqBlock",    // reine Formelzeile aus Platzhaltern
-    "tut.sz.pc.eqBluete",   // dito
-    "tut.sz.ec.eqSiegStep", // dito
-    /* Die zwei eq-Schritte der Szenen sind reine Formelzeilen — „× {f} {nm} = **{v}**":
-       alles Sichtbare steckt in Platzhaltern, der Rohtext ist in jeder Sprache identisch. */
-    "tut.sz.d.eqStep",
-    "tut.sz.f.eqStep",
     /* „{segWork} III" — der Rohtext IST in allen Sprachen gleich, weil der ganze Unterschied im
        Platzhalter steckt: das Register füllt ihn je Sprache (Segmentarbeit / Segment Work /
        Trabajo de Segmento / 区段作业). Vorher stand hier der deutsche Name im Text, und ein

@@ -2,8 +2,8 @@
 import {
   FormationenSzene, UeberSzene, KatsSzene, RaritaetSzene,
   BlitzkarteSzene, TippsSzene, LegendaerSzene,
-  FeuerkartenSzene, SchmiedeSzene, HitzeSzene, PflanzkarteSzene, PflanzzeichenSzene,
-  GruenfeldSzene, GletscherSzene, GletscherfeldSzene,
+  FeuerkartenSzene, SchmiedeSzene, HitzeSzene, PflanzkarteSzene, PflanztempoSzene,
+  GruenfeldSzene, GletscherSzene, GletscherformenSzene, EinfrierenSzene,
   DistriktSzene, StrukturenSzene, PunkteSzene,
 } from "./scenes.jsx";
 
@@ -151,13 +151,14 @@ export const PROBES = {
   blitzkarte: BlitzkarteSzene,
   // Dieselbe Form, zwei Archetypen: eine Karte, eine wachsende Zahl, drei Schwellen.
   pflanzkarte: PflanzkarteSzene,
-  pflanzzeichen: PflanzzeichenSzene,
+  pflanztempo: PflanztempoSzene,
   gletscher: GletscherSzene,
   hitze: HitzeSzene,
   feuerkarten: FeuerkartenSzene,
   schmiede: SchmiedeSzene,
   gruenfeld: GruenfeldSzene,
-  gletscherfeld: GletscherfeldSzene,
+  gletscherformen: GletscherformenSzene,
+  einfrieren: EinfrierenSzene,
   meilenstein: PunkteSzene,
   tipps: TippsSzene,
   /* Dieselbe Flaeche wie `formation`, andere Ausgangslage. GESUCHT statt geraten: von 29.988
