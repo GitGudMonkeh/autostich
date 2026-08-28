@@ -66,7 +66,7 @@ export function StatusBar({
             direkte Felder EINER Leiste. `sb-ctl` hält die vier Ablauf-Knöpfe dabei als Gruppe zusammen. */}
         <div className="sb-row1 flex items-center gap-1.5 px-2.5 py-1.5" style={{ borderBottom: `1px solid ${DECK_BORDER}` }}>
           {/* data-hint-anchor: Referenten der Onboarding-Hints (U1 Tempo · U3 Chronik · E1/E3 Score-Zeile) —
-              die offene Hint-Karte scrollt hierher und legt den Tutorial-Glow an (HintCard.useAnchorGlow). */}
+              die offene Hint-Karte scrollt hierher und setzt den Spotlight (HintCard.useAnchorSpotlight). */}
           <div className="sb-ctl flex items-center gap-1.5" data-hint-anchor="tempo">
             {/* Pause/Weiter — dauerhaft violett getönt, bei Pause gefüllt (Layout-Akzent, kein ablenkendes Orange). */}
             <button type="button" onClick={onTogglePause} title={t(paused ? "hud.resume" : "hud.pause")}
