@@ -69,7 +69,7 @@ const CARD_FX_ENABLED = true;
 import { PIXI_FIELD_KEYS } from "./fx/fieldFxKeys.js"; // pixi-FREI: welche Feld-Effekte der GPU-Emitter übernimmt
 const PIXI_FIELD = new Set(PIXI_FIELD_KEYS);
 import { floorEffectPlacement, MOBILE_MQ } from "./fx/effectZones.js"; // fest verankerter Feld-Boden → Effekt-Front bündig am Panel-Rahmen
-import { useMediaQuery, useIsWide } from "./useIsWide.js";
+import { useMediaQuery } from "./useIsWide.js";
 import FieldLayer from "./fx/FieldLayer.jsx"; // #kompositor: der EINE Renderpfad der Shader-Feldeffekte
 import { useOnScreen } from "./fx/useOnScreen.js"; // #perf-scroll: aus dem Bild gescrollt = Effekte anhalten
 import { perfMark } from "./perfRecorder.js"; // #perf-scroll: Scroll-Wechsel im Report auffindbar machen
@@ -882,8 +882,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const sBoom    = clamp(flipMs * 0.22, 90, 230);    // Krit-Zentral-Flash (kurz & hell)
   const sWinner  = clamp(flipMs * 0.5, 170, 520);    // Sieger-Ankippen (~500 ms)
   const sFloat   = clamp(flipMs * 0.55, 220, 820);   // Float-Away NACH dem Slice (nur noch Gegnerseite, #187)
-  const wide = useIsWide();
-  /* #turbo-takt: Ab 1280 px muss die ganze Choreografie IN den Stich passen — sonst schneidet der nächste
+  /* #turbo-takt: Die ganze Choreografie muss IN den Stich passen — sonst schneidet der nächste
      Stich sie ab, und genau das las sich als „bei Turbo werden die Animationen verkürzt oder übersprungen".
      Gemessen am laufenden Brett (1920 px, Zug + Wegflug gegen den Stich-Takt): 1× 1360 von 1750 ms ✔ ·
      ×2 1060 von 880 ✗ · ×4 540 von 440 ✗ · MAX 540 von 300 ✗. Schuld sind die festen UNTERGRENZEN
@@ -894,24 +893,27 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
      sie beide Takte mit dem Tempo mit — jede Animation läuft dann VOLLSTÄNDIG, nur schneller. Zusammen
      92 %; die restlichen 8 % sind der Atemzug zwischen zwei Stichen.
      Es gibt bewusst KEINE Untergrenze mehr: eine wäre genau der Fehler, den diese Zeilen beheben.
-     Nur oberhalb 1280 px — die Handy-Fassung hat keinen Zug-Takt und bleibt bei ihren Rohwerten. */
+     Seit 2026-08-28 (Owner) gelten die Deckel auf ALLEN Breiten — der Zug-Takt läuft jetzt auch am
+     Handy (s. #deckzug unten), also braucht auch dort die Choreografie den Platz im Stich. */
   const ZUG_ANTEIL = 0.40, WEG_ANTEIL = 0.52;
   const flyDurRoh  = clamp(flipMs * 0.7, 320, 900);   // Wegflug-Dauer der eigenen Verlierer-Karte (kein Schnitt mehr)
   const flipDurRoh = clamp(flipMs * 0.55, 220, 460);  // Flug vom Stapel + Flip der einlaufenden Karte
-  const flyDur   = wide ? Math.min(flyDurRoh, flipMs * WEG_ANTEIL) : flyDurRoh;
-  const flipDur  = wide ? Math.min(flipDurRoh, flipMs * ZUG_ANTEIL) : flipDurRoh;
-  /* #deckzug: Ab 1280 px läuft ein Stich in ZWEI Takten — erst ZIEHEN beide Seiten (Flug vom Stapel + Flip),
-     danach wird AUFGELÖST (Sieger kippt an, Finisher/Wegflug der Verliererkarte). Vorher fiel beides in denselben
-     Frame: der Stich ist beim Rendern längst entschieden, also stand `flyAway`/`oppFlyAway` schon im ersten Bild —
-     und `flipOn`/`oppFlipOn` schließen die wegfliegende Seite aus. Gezogen hat damit IMMER nur eine Seite (die
-     Gewinnerin), bei gewähltem Finisher (Klinge/Scorch/Hologrid/Loch) flippte die Gegnerkarte gar nicht, und nur
-     beim Unentschieden zogen beide. Genau das las sich als „mal ziehen beide Decks, mal nur eines".
-     `zugMs` ist die Zugdauer (= Flug/Flip); unterhalb 1280 px, bei reduzierter Bewegung und bei hohem Turbo ist
-     sie 0 — dort bleibt alles wie bisher, die Handy-Fassung ist unberührt.
+  const flyDur   = Math.min(flyDurRoh, flipMs * WEG_ANTEIL);
+  const flipDur  = Math.min(flipDurRoh, flipMs * ZUG_ANTEIL);
+  /* #deckzug: Ein Stich läuft in ZWEI Takten — erst ZIEHEN beide Seiten (Flug vom Stapel + Flip;
+     am Handy ohne Deck-Flug, dort ist der Zug der gemeinsame Flip), danach wird AUFGELÖST (Sieger
+     kippt an, Finisher/Wegflug der Verliererkarte). Vorher fiel beides in denselben Frame: der
+     Stich ist beim Rendern längst entschieden, also stand `flyAway`/`oppFlyAway` schon im ersten
+     Bild — und `flipOn`/`oppFlipOn` schließen die wegfliegende Seite aus. Gezogen hat damit IMMER
+     nur eine Seite (die Gewinnerin), bei gewähltem Finisher (Klinge/Scorch/Hologrid/Loch) flippte
+     die Gegnerkarte gar nicht, und nur beim Unentschieden zogen beide.
+     Zuerst nur ab 1280 px gebaut; seit 2026-08-28 (Owner-Playtest: „beide Karten gleichzeitig
+     umdrehen, dann auflösen — wie Desktop") auf allen Breiten. `zugMs` ist die Zugdauer (= Flug/
+     Flip); bei reduzierter Bewegung und bei sehr hohem Turbo ist sie 0 — dort löst alles sofort auf.
      Der Zustand hängt an der STICH-NUMMER, nicht an einem Flag: `drawnNo !== t.trickNo` ist schon im ERSTEN Render
      des neuen Stichs falsch. Ein `setState(false)` im Effekt käme einen Frame zu spät und ließe die Auflösung für
      ein Bild aufblitzen. */
-  const zugMs = wide && !reduced && !!t && flipMs > 170 ? Math.round(flipDur) : 0;
+  const zugMs = !reduced && !!t && flipMs > 170 ? Math.round(flipDur) : 0;
   const [drawnNo, setDrawnNo] = useState(null);
   const gezogen = !zugMs || drawnNo === trickNo;   // trickNo: oben aus lastTrick (= t) abgeleitet
   useEffect(() => {
