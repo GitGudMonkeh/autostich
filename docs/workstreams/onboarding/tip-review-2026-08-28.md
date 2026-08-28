@@ -61,6 +61,8 @@ player text** (text-style-guide.md, "Kein Gedankenstrich").
 
 | 32 | **Card visual, Farballianz (outside the hints)** | With a 3- or 4-color alliance the card still shows only ONE partner color: `linkedPartnerOf` (shop.js) returns a single partner and Card.jsx renders one diagonal ally-color wash. Build variants: all partner colors of the group render as two/three diagonal bands in the lower half (same spot, same opacity, purely cosmetic). Mockup approved with one revision: opacity raised a touch (hex alpha 33 = 20 percent instead of today's 24 = 14 percent, applies to the existing 2-color wash too): https://claude.ai/code/artifact/84425a62-eb63-4060-9d46-32c89ccaad7b |
 
+| 33 | **E8** (end screen) | Compact rewrite covering Stichpunkte, Deck-Punkte AND Meilensteine; the Probierfeld sentence and the "Mehr dazu" link go. Draft, dash-free: "Dein Lauf zählt: Stichpunkte für den Upgrade-Baum, Deck-Punkte für die Werkstatt. Score-Meilensteine bringen dir zusätzliche Stichpunkte." ("Deck-Punkte" spelled as the end screen spells it.) |
+
 ## Probierfeld lessons (Mehr-dazu targets)
 
 | # | Lesson | Change |
