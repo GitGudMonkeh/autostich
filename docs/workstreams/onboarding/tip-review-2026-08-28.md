@@ -49,6 +49,8 @@ player text** (text-style-guide.md, "Kein Gedankenstrich").
 
 | 26 | **UI copy (outside the hints)** | The architect button "Nichts bauen · Fortfahren →" gets cut off on the phone; shorten to "Nichts bauen →" (all four catalogs). |
 
+| 27 | **U4** (breakdown line) | "Mehr dazu" link goes (copy stays). |
+
 ## Probierfeld lessons (Mehr-dazu targets)
 
 | # | Lesson | Change |
