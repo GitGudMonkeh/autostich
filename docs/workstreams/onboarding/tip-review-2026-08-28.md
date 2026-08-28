@@ -57,6 +57,8 @@ player text** (text-style-guide.md, "Kein Gedankenstrich").
 
 | 30 | **NEW hint (H4, glossary)** | Later in the run, at a perk choice (proposed: third perk visit, after H3/H3b are done): a banner that the i button opens the Glossar for looking things up. Draft, dash-free: "Das i oben öffnet das Glossar: Dort schlägst du fast alles nach." While it shows, the i button carries the tutorial glow (same banner-anchored highlight as C5). |
 
+| 31 | **H5** (slots full) | Copy stays (dash goes with the sweep). "Mehr dazu" link goes. |
+
 ## Probierfeld lessons (Mehr-dazu targets)
 
 | # | Lesson | Change |
