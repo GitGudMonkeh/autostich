@@ -45,6 +45,8 @@ player text** (text-style-guide.md, "Kein Gedankenstrich").
 
 | 24 | **S-F3** (third Aufstellung) | Replaced (overlap now lives in S-F2's rebuilt page). New copy, dash-free: "Formationen gehen nie über Segmentgrenzen hinaus. Versuch deshalb, in jedem Segment eigene Formationen zu bauen." "Mehr dazu" link goes. |
 
+| 25 | **S-A3** (structures) | "Fernziel" reads oddly; compact rewrite, dash-free: "Versuch, neben Distrikten auch volle Zeilen zu bauen: Sie schließen eine Struktur und verstärken jede Position darin." The "Mehr dazu" link STAYS and opens the new `architekt/strukturen` page (row 20). |
+
 ## Probierfeld lessons (Mehr-dazu targets)
 
 | # | Lesson | Change |
