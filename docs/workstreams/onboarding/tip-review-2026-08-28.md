@@ -59,7 +59,7 @@ player text** (text-style-guide.md, "Kein Gedankenstrich").
 
 | 31 | **H5** (slots full) | Copy stays (dash goes with the sweep). "Mehr dazu" link goes. |
 
-| 32 | **Card visual, Farballianz (outside the hints)** | With a 3- or 4-color alliance the card still shows only ONE partner color: `linkedPartnerOf` (shop.js) returns a single partner and Card.jsx renders one diagonal ally-color wash. Build variants: all partner colors of the group render as two/three diagonal bands in the lower half (same spot, same opacity, purely cosmetic). |
+| 32 | **Card visual, Farballianz (outside the hints)** | With a 3- or 4-color alliance the card still shows only ONE partner color: `linkedPartnerOf` (shop.js) returns a single partner and Card.jsx renders one diagonal ally-color wash. Build variants: all partner colors of the group render as two/three diagonal bands in the lower half (same spot, same opacity, purely cosmetic). Mockup: https://claude.ai/code/artifact/84425a62-eb63-4060-9d46-32c89ccaad7b — awaiting approval. |
 
 ## Probierfeld lessons (Mehr-dazu targets)
 
