@@ -3,7 +3,7 @@ import { Card, CardBack } from "./Card.jsx";
 import { tintImage } from "./deckTint.js"; // #gegnerdeck-farbe: Phasendecks in der Deckfarbe (einmal gebacken)
 import { clamp } from "../game/deck.js";
 import { TRICKS_PER_CYCLE, suitColor, AUSLAEUFER_HARVEST, ION_MAX_STACKS, HEAT_MAX, BASE_FLIP_MS, PLANT_GREEN_THRESHOLD } from "../game/constants.js";
-import { linkedPartnerOf } from "../game/shop.js";
+import { linkedPartnersOf } from "../game/shop.js";
 import { formationBorder } from "./formationStyle.js";
 import { holeSound } from "./blackholeSnd.js"; // Bett-Pegel des Schwarzen Lochs: EINE Quelle mit der Werkstatt-Vorschau
 import { supernovaSwellDelay } from "./fx/supernovaTiming.js"; // Swell-Vorlauf: EINE Quelle mit dem Showcase (Pixi-frei)
@@ -648,7 +648,7 @@ function SlashGhostLayer({ ghosts }) {
           <Card suit={g.suit} value={g.value} baseRank={g.baseRank} stichBonus={g.stichBonus}
             ionStacks={g.ionStacks} green={g.green}
             forged={g.forged || 0} branded={g.branded || 0} growth={g.growth || 0} colonized={g.colonized || 0}
-            allyColor={g.allyColor} frontImage={g.frontImage} />
+            allyColors={g.allyColors} frontImage={g.frontImage} />
         );
         // Reihenfolge (Wunsch): Karte liegt (rest) → Klingenschnitt IN PLACE (delay = g.rest) → DANACH floatet der
         // Ghost weg. #187: Slice driftet nach dem SCHNITT (driftDelay = rest + cut) in eine ZUFÄLLIGE Richtung
@@ -815,7 +815,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const oppBackImg = (oppTint && oppTint.back) || oppSkin.back;
   const oppFrontImg = (oppTint && oppTint.front) || oppSkin.front;
   // F4 Farballianz (#125): Partnerfarbe einer Kartenfarbe → diagonaler Split auf der Karte (rein kosmetisch).
-  const allyColorFor = (suit) => { const a = linkedPartnerOf(pe, suit); return a ? suitColor(a) : null; };
+  // Review-Runde Zeile 32: alle Partnerfarben der Allianz (Baender auf der Karte statt nur einer).
+  const allyColorsFor = (suit) => { const a = linkedPartnersOf(pe, suit); return a.length ? a.map(suitColor) : null; };
   const win = t && (t.result === "win" || t.result === "win_tie");
   const lost = t && t.result === "loss";
   const isCrit = !!(t && t.isCrit);
@@ -1015,7 +1016,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     <div className="relative" style={{ display: "inline-block", lineHeight: 0 }}>
       <Card suit={t.pCard.suit} value={t.pCard.value} baseRank={t.pCard.baseRank}
             stichBonus={t.pValue - t.pCard.value} glow={win ? (isCrit ? critColor : "#5ab87a") : null}
-            ionStacks={t.pCard.ionStacks || 0} green={!!t.pCard.green} forged={forged[t.pCard.id] || 0} growth={growth[t.pCard.id] || 0} allyColor={allyColorFor(t.pCard.suit)}
+            ionStacks={t.pCard.ionStacks || 0} green={!!t.pCard.green} forged={forged[t.pCard.id] || 0} growth={growth[t.pCard.id] || 0} allyColors={allyColorsFor(t.pCard.suit)}
             frontImage={deckFront} />
       {edgeGlowEl /* z-0: unter Eis/Moos, über dem Skin */}
       {/* #blitz/#flip: Ionensturm-Rahmen als flippendes Kind auf der EdgeGlow-Ebene (z-0), UNTER Eis/Moos, ÜBER dem Skin.
@@ -1037,7 +1038,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const oCardEl = t && (
     <div className="relative" style={{ display: "inline-block", lineHeight: 0 }}>
       <Card suit={t.oCard.suit} value={t.oValue} baseRank={t.oCard.baseRank} glow={lost ? "#e0605a" : null}
-            green={!!t.oCard.green} branded={brandActive[t.oCard.id] || 0} colonized={colonized[t.oCard.id] ? AUSLAEUFER_HARVEST : 0} allyColor={allyColorFor(t.oCard.suit)} frontImage={oppFrontImg} />
+            green={!!t.oCard.green} branded={brandActive[t.oCard.id] || 0} colonized={colonized[t.oCard.id] ? AUSLAEUFER_HARVEST : 0} allyColors={allyColorsFor(t.oCard.suit)} frontImage={oppFrontImg} />
       {edgeGlowEl}
     </div>
   );
@@ -1389,7 +1390,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
         color: suitColor(t.oCard.suit), bladeColor: klingeDeck ? (deckA1 || deckA2 || null) : null, seed: t.trickNo * 3 + 1, // #klinge-deck: Deckfarbe → Deck-Glühen · sonst null → kühles Stahlweiß (bladeTint)
         suit: t.oCard.suit, value: t.oValue, baseRank: t.oCard.baseRank, stichBonus: 0,
         ionStacks: 0, green: !!t.oCard.green,
-        branded: brandActive[t.oCard.id] || 0, colonized: colonized[t.oCard.id] ? AUSLAEUFER_HARVEST : 0, allyColor: allyColorFor(t.oCard.suit), frontImage: oppFrontImg });
+        branded: brandActive[t.oCard.id] || 0, colonized: colonized[t.oCard.id] ? AUSLAEUFER_HARVEST : 0, allyColors: allyColorsFor(t.oCard.suit), frontImage: oppFrontImg });
     }
     if (!spawned.length) return;
     setSlashGhosts((cur) => [...cur, ...spawned].slice(-ghostCap)); // Pool gedeckelt (turbo-abhängig, #200 A)

@@ -324,7 +324,7 @@
 .tsz .res.eis .pkt{color:#5ec8f0}
 
 /* ---- Architekt: Brett mit verschmelzenden Gebäuden (ArchitectScreen.jsx:620) ---- */
-.tsz .brett.arch .z{position:relative;height:16px;border:1px solid #2c2a3a;background:#232330}
+.tsz .brett.arch .z{position:relative;height:24px;border:1px solid #2c2a3a;border-radius:4px;background:#232330}
 .tsz .brett.arch .z.hat{background:transparent;border-color:transparent}
 .tsz .brett.arch .z i{position:absolute;top:0;right:0;bottom:0;left:0;display:block;
   border:1px solid;border-radius:4px}

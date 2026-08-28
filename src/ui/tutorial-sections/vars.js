@@ -76,7 +76,7 @@ export const VARS = {
   critFirst: Math.round((C.LIGHTNING_CRIT_BASE + C.LIGHTNING_CRIT_PER_SKILL) * 100),
   critPerSkill: Math.round(C.LIGHTNING_CRIT_PER_SKILL * 100),
   charge: C.LIGHTNING_MAX_CHARGE,
-  ionMax: C.ION_MAX_STACKS, ionCap: C.ION_CRIT_STACK_CAP,
+  ionMax: C.ION_MAX_STACKS, ionCap: C.ION_CRIT_STACK_CAP, ionN: C.ION_BASE_COUNT,
   ionCapPct: Math.round(C.ION_CRIT_STACK_CAP * C.ION_CRIT_PP_PER_STACK * 100),
   // Feuer. Der Feuer-Score je Vorsprung ist die Formel aus SkillSelect.jsx:43, nicht abgetippt.
   conflagAt: C.CONFLAG_MIN_HEAT,
@@ -122,6 +122,7 @@ export const MEASURE_VARS = {
   legNode: NODES.find((n) => n.id === "legLayer")?.label ?? "",
   rar4: TIER_META[4].label,
   // Skill-Namen der Archetyp-Lektionen — deutsch, wie das Register sie fuehrt
+  ionSkill: SKILL_DEFS.SK_LIGHTNING_02?.name ?? "",
   gkSkill: SKILL_DEFS.SK_FIRE_06?.name ?? "",
   fbSkill: SKILL_DEFS.SK_FIRE_11?.name ?? "",
   spSkill: SKILL_DEFS.SK_FIRE_12?.name ?? "",

@@ -19,7 +19,6 @@ import { useLocale } from "../../i18n/useLocale.js"; // #sprache: Neuberechnung 
 import { fmtNum, fmtPct, t } from "../../i18n/index.js";
 import * as C from "../../game/constants.js";
 import { FAMILY_DEFS } from "../../game/families.js";
-import { PERK_DEFS } from "../../game/perks.js";
 import { computeFormations, summarizeFormations, FARBBLOCK_BASE } from "../../game/formations.js";
 import { marginHeatPoints } from "../../game/skills.js";
 import * as GLACIER from "../../game/glacier.js";
@@ -28,7 +27,7 @@ import * as PROG from "../../game/progression.js";
 import { RUN_COMPLETE_DP } from "../../game/storage.js";
 import { buildingEffect } from "../../i18n/buildingText.js";
 import { FACTION_ICON_SRC, GLOSSARY_IMG_SRC } from "../FactionIcon.jsx";
-import { familyDef, perkDef, perkCat, formationName, formationAbbr, rarityLabel, nodeDef, skillDef, glacierFormName, archFamily, archCatDef } from "../../i18n/labels.js";
+import { familyDef, perkDef, perkCat, formationName, formationAbbr, rarityLabel, skillDef, glacierFormName, archFamily, archCatDef } from "../../i18n/labels.js";
 import { TIER_META, ROMAN } from "../../game/rarity.js";
 import { ENERGY_FLOOR } from "../../game/progression.js";
 import { perkCatArt, legendaryPerkArt } from "../perkArt.js";
@@ -348,86 +347,6 @@ export function ScoreSzene({ hint }) {
   );
 }
 
-/* ── Szene E · Der Lauf-Bildschirm (Entwurf Schirm 5) ───────────
-   Sechs anfassbare Bereiche als Nachbildung des echten Lauf-Bildschirms; die res-Zeile
-   erklärt den angetippten, zwei Bereiche tragen einen eigenen Tipp. Die Beispielwerte
-   sind die des Entwurfs — Kulisse, keine Spielrechnung. */
-const E_ELS = ["bar", "tempo", "ms", "board", "bars", "rail"];
-
-export function LaufmockSzene({ hint }) {
-  useLocale();
-  const [sel, setSel] = useState(null);
-  const tip = sel ? t(`tut.sz.e.${sel}.tip`) : "";
-  const hatTip = sel === "ms" || sel === "bars";
-  const hot = (el, inner) => (
-    <button key={el} type="button" className="hot" aria-pressed={sel === el}
-      onClick={() => setSel(sel === el ? null : el)}>
-      <span className="pin">{E_ELS.indexOf(el) + 1}</span>
-      {inner}
-    </button>
-  );
-  return (
-    <div className="tsz">
-      <p className="auftrag">{hint}</p>
-      <div className="mock">
-        {hot("bar",
-          <div className="mockbar">
-            <span>{t("tut.d.scoreUnit")} <b>{fmtNum(7020)}</b></span>
-            <span>{t("tut.f.streak")} <b>5</b></span>
-            <span>{t("tut.sz.e.durchl")} <b>3/50</b></span>
-          </div>)}
-        {hot("tempo",
-          <div className="tempo">
-            <span className="pill">⏸</span><span className="pill">×2</span>
-            <span className="pill on">×4</span><span className="pill">MAX</span>
-            <span className="pill" style={{ marginLeft: 6 }}>🂠</span>
-          </div>)}
-        {hot("ms",
-          <>
-            <div className="nm">💠 {t("tut.sz.e.msWort")} 2/5</div>
-            <span className="minibar"><i style={{ width: "38%", background: "var(--gold)" }} /></span>
-          </>)}
-        {hot("board",
-          <div className="mockboard">
-            <Karte v={7} s="B" />
-            <span className="label" style={{ margin: "0 4px" }}>{t("tut.d.gegen")}</span>
-            <Karte v={9} s="R" cls="w" />
-          </div>)}
-        {hot("bars",
-          <>
-            <div className="nm">{t("bar.fire.heat")}</div>
-            <span className="minibar"><i style={{ width: "62%", background: "var(--rot)" }} /></span>
-          </>)}
-        {hot("rail",
-          <>
-            <div className="label" style={{ marginBottom: 5 }}>{t("tut.sz.e.mult")}</div>
-            <div className="mcells">
-              <div><span>{t("tut.f.form")}</span><b style={{ color: "var(--gruen)" }}>2 · +{fmtPct(0.5)}</b></div>
-              <div><span>{t("tut.f.build")}</span><b style={{ color: "var(--gold)" }}>+{fmtPct(0.35)}</b></div>
-              <div><span>{t("tut.sz.e.critChance")}</span><b style={{ color: "#e879f9" }}>{fmtPct(0.18)}</b></div>
-              <div><span>{t("tut.sz.e.critMult")}</span><b style={{ color: "#e879f9" }}>×{f2(C.CRIT_BASE_MULT)}</b></div>
-            </div>
-            <div className="mstats">
-              <span>{t("tut.f.wins")} <b style={{ color: "var(--gruen)" }}>31</b></span>
-              <span>{t("tut.sz.e.verl")} <b style={{ color: "var(--lose)" }}>9</b></span>
-              <span>{t("tut.sz.e.quote")} <b style={{ color: "var(--gruen)" }}>{fmtPct(0.78)}</b></span>
-              <span>{t("tut.sz.e.herk")} ▸</span>
-            </div>
-          </>)}
-      </div>
-      <div className="res">
-        <div>
-          <div className="verdikt" style={{ fontSize: 13 }}>{sel ? t(`tut.sz.e.${sel}.nm`) : ""}</div>
-          <div className="rechnung">{sel ? t(`tut.sz.e.${sel}.txt`) : t("tut.sz.e.tap")}</div>
-        </div>
-      </div>
-      {hatTip && (
-        <div className="tipp2"><b>!</b><span>{tip}</span></div>
-      )}
-    </div>
-  );
-}
-
 /* ── Szene F · Woher dein Score kommt (Entwurf Schirm 6) ────────
    Die Bilanz eines Beispiel-Laufs: vier Faktorzeilen, jede erklärt sich beim Antippen,
    darunter die Kette in echter Reihenfolge. Werte aus den Konstanten gerechnet. */
@@ -676,97 +595,85 @@ export function KarteSzene({ hint }) {
 
 /* ── Szene I · Die vier Formationen (Entwurf Schirm 9) ──────────
    Tauschen bis alle vier Typen einmal erkannt wurden; die Chips sammeln. */
-export function FormationenSzene({ hint, noneLabel }) {
+/* Beispiel-Segmente je Formation — GESUCHT gegen die echte Engine: jede Hand traegt genau die
+   eine Formation ihres Tabs, sonst nichts (Suchlauf 2026-08-28, computeFormations). Das
+   Farbblock-Beispiel traegt bewusst eine vierte rote Karte, die NICHT mitzaehlt: nebeneinander
+   ist die Regel, und das Beispiel zeigt sie. */
+const MF_BEISPIELE = {
+  wiederholung: [[6, "G"], [6, "R"], [5, "B"], [2, "G"], [3, "R"]],
+  farbblock:    [[7, "R"], [10, "R"], [6, "R"], [3, "B"], [6, "R"]],
+  treppe:       [[2, "G"], [5, "B"], [8, "R"], [4, "Y"], [1, "G"]],
+  wechsel:      [[2, "B"], [9, "R"], [4, "G"], [6, "Y"], [5, "R"]],
+};
+const mfLook = (hand) => computeFormations([0, 1, 2, 3, 4],
+  hand.map(([v, su], i) => ({ id: `mf${i}`, value: v, suit: su })));
+
+export function FormationenSzene({ hint }) {
   useLocale();
-  const [ord, setOrd] = useState(START);
-  const [sel, setSel] = useState(null);
-  const [found, setFound] = useState(() => new Set());
-  const r = look(ord);
-  if (r.types.some((typ) => !found.has(typ))) {
-    setFound((f) => { const n = new Set(f); r.types.forEach((typ) => n.add(typ)); return n; });
-  }
-  const alle = FORM_TYPEN.every((k) => found.has(k));
-  const tap = (i) => {
-    if (sel === null) setSel(i);
-    else if (sel === i) setSel(null);
-    else { const n = [...ord]; [n[sel], n[i]] = [n[i], n[sel]]; setOrd(n); setSel(null); }
-  };
+  const [typ, setTyp] = useState("wiederholung");
+  const hand = MF_BEISPIELE[typ];
+  const per = mfLook(hand);
   return (
     <div className="tsz">
       <p className="auftrag">{hint}</p>
+      <div className="werkzeuge formen">
+        {Object.keys(MF_BEISPIELE).map((k) => (
+          <button key={k} type="button" className="tbtn" aria-pressed={typ === k} onClick={() => setTyp(k)}>
+            {formationName(k)}
+          </button>
+        ))}
+      </div>
       <div className="reihe">
-        {ord.map((h, i) => <KartePro key={i} v={HAND[h][0]} s={HAND[h][1]} abbr={r.p[i].abbr}
-          mult={r.p[i].mult} sel={sel === i} mode="suit" onClick={() => tap(i)} />)}
+        {hand.map(([v, su], i) => (
+          <KartePro key={`${typ}${i}`} v={v} s={su} abbr={per[i].formations.map((f) => formationAbbr(f.type)).join("")}
+            mult={per[i].mult} sel={per[i].formations.length > 0} mode="suit" />
+        ))}
       </div>
-      <div className={`res ${r.types.length ? "w" : ""}`}>
-        <div>
-          <div className="verdikt" style={{ fontSize: 13 }}>
-            {r.types.length ? r.types.map((typ) => formationName(typ)).join(" + ") : noneLabel}
-          </div>
-          <div className="rechnung">{r.types.length ? t("tut.sz.i.erkannt") : t("tut.sz.i.sortier")}</div>
-        </div>
-        <div className="pkt">×{f2(r.m)}</div>
-      </div>
-      <div className="zeile"><span className="label">{t("tut.sz.i.gefunden")}</span>
-        <div className="chips" style={{ marginTop: 8 }}>
-          {FORM_TYPEN.map((k) => (
-            <button key={k} type="button" className="chip" aria-pressed={found.has(k)} disabled>
-              {formationName(k)}
-            </button>
-          ))}
-        </div></div>
-      <div className="zeile"><span className="label">{t("tut.sz.i.wie")}</span>
-        <div className="regeln" style={{ marginTop: 7 }}>
-          {t("tut.sz.i.regeln", VARS).split("·").map((teil, i) => (
-            <div key={i}><b>{formationAbbr(FORM_TYPEN[i])}</b><span>{teil.trim()}</span></div>
-          ))}
-        </div></div>
-      <p className="say">{alle ? t("tut.sz.i.alle") : found.size
-        ? t("tut.sz.i.count", { n: found.size, total: FORM_TYPEN.length })
-        : t("tut.sz.i.say0")}</p>
-      <button type="button" className="tbtn" onClick={() => { setOrd(START); setSel(null); }}>
-        {t("tut.sz.neu")}
-      </button>
+      <div className="merk3">{rich(t(`tut.sz.mf.${typ}`, VARS))}</div>
     </div>
   );
 }
 
 /* ── Szene J · Übereinander (Entwurf Schirm 10) ─────────────────
    Dieselbe Hand; Ziel ist eine Karte in zwei Formationen, die Faktoren multiplizieren sich. */
-export function UeberSzene({ hint, noneLabel }) {
+/* Zwei Beispiel-Segmente mit MEHREREN Formationen zugleich — engine-verifiziert wie oben:
+   `bunt` = ein komplett gruenes Segment mit Farbblock + Treppe + Wiederholung (die Geschichte
+   aus S-F1 → S-F2), `zick` = Wiederholung + Wechsel ohne Farbgleichheit, Karte 2 in beiden. */
+const UE_BEISPIELE = {
+  bunt: [[2, "G"], [5, "G"], [8, "G"], [3, "G"], [3, "G"]],
+  zick: [[1, "B"], [1, "R"], [10, "R"], [4, "G"], [8, "G"]],
+};
+
+export function UeberSzene({ hint }) {
   useLocale();
-  const [ord, setOrd] = useState(START);
-  const [sel, setSel] = useState(null);
-  const r = look(ord);
-  const zwei = r.types.length >= 2;
-  const tap = (i) => {
-    if (sel === null) setSel(i);
-    else if (sel === i) setSel(null);
-    else { const n = [...ord]; [n[sel], n[i]] = [n[i], n[sel]]; setOrd(n); setSel(null); }
-  };
+  const [bsp, setBsp] = useState("bunt");
+  const hand = UE_BEISPIELE[bsp];
+  const per = mfLook(hand);
+  const types = [];
+  for (const q of per) for (const f of q.formations) if (!types.includes(f.type)) types.push(f.type);
   return (
     <div className="tsz">
       <p className="auftrag">{hint}</p>
+      <div className="werkzeuge formen">
+        {Object.keys(UE_BEISPIELE).map((k) => (
+          <button key={k} type="button" className="tbtn" aria-pressed={bsp === k} onClick={() => setBsp(k)}>
+            {t(`tut.sz.ue.${k}Btn`)}
+          </button>
+        ))}
+      </div>
       <div className="reihe">
-        {ord.map((h, i) => <KartePro key={i} v={HAND[h][0]} s={HAND[h][1]} abbr={r.p[i].abbr}
-          mult={r.p[i].mult} sel={sel === i} mode="suit" onClick={() => tap(i)} />)}
+        {hand.map(([v, su], i) => (
+          <KartePro key={`${bsp}${i}`} v={v} s={su} abbr={per[i].formations.map((f) => formationAbbr(f.type)).join("")}
+            mult={per[i].mult} sel={per[i].formations.length >= 2} mode="suit" />
+        ))}
       </div>
-      <div className={`res ${r.types.length ? "w" : ""}`}>
+      <div className="res w">
         <div>
-          <div className="verdikt" style={{ fontSize: 13 }}>
-            {r.types.length ? r.types.map((typ) => formationName(typ)).join(" + ") : noneLabel}
-          </div>
-          <div className="rechnung">{zwei ? t("tut.sz.j.txt2") : t("tut.sz.j.txt0")}</div>
+          <div className="verdikt" style={{ fontSize: 13 }}>{types.map((typ) => formationName(typ)).join(" + ")}</div>
+          <div className="rechnung">{t(`tut.sz.ue.${bsp}`)}</div>
         </div>
-        <div className="pkt">×{f2(r.m)}</div>
+        <div className="pkt">×{f2(Math.max(...per.map((q) => q.mult)))}</div>
       </div>
-      <div className="zeile">
-        <div style={{ display: "flex", alignItems: "baseline", gap: 9 }}>
-          <span className="label">{t("tut.sz.j.zahlt")}</span>
-          <span className="big" style={{ fontSize: 20, marginLeft: "auto" }}>{fmtNum(Math.round(WIN * r.m))}</span>
-        </div>
-      </div>
-      <p className="say">{zwei ? t("tut.sz.j.say2", { m: f2(r.m) }) : t("tut.sz.j.say0")}</p>
     </div>
   );
 }
@@ -846,7 +753,6 @@ export function RaritaetSzene({ hint }) {
         a: fmtNum(FAMILY_DEFS.D_FORMATION_BONUS?.tiers?.[1]?.scoreFlat?.({}) ?? 0),
         b: fmtNum(FAMILY_DEFS.D_FORMATION_BONUS?.tiers?.[2]?.scoreFlat?.({}) ?? 0),
       }))}</div>
-      <p className="text">{t("tut.sz.n.text1")}</p>
     </div>
   );
 }
@@ -856,14 +762,10 @@ export function RaritaetSzene({ hint }) {
    1285 px und riss das Budget — Owner-Entscheid: aufteilen statt kürzen. */
 export function LegendaerSzene({ hint }) {
   useLocale();
-  const nLeg = Object.values(PERK_DEFS).filter((x) => x.rarity === "legendary").length;
-  const legNode = nodeDef("legLayer");
   const gold = "#d4a63a";
   return (
     <div className="tsz">
       <p className="auftrag">{hint}</p>
-      <div className="trenner"><span>{t("leg.fallbackLabel")}</span></div>
-      <p className="text">{t("tut.sz.n.text2", { n: nLeg })}</p>
       <div className="pks">
         {LEG_IDS.map((id) => {
           const perk = perkDef(id);
@@ -887,9 +789,6 @@ export function LegendaerSzene({ hint }) {
             </div>
           );
         })}
-      </div>
-      <div className="merk3" style={{ background: "rgba(212,166,58,.07)", borderLeftColor: gold }}>
-        {rich(t("tut.sz.n.merk2", { node: legNode?.label ?? "", sp: legNode?.cost ?? 0, tier4: rarityLabel(4) }))}
       </div>
     </div>
   );
@@ -996,9 +895,10 @@ function ionSturm(canvas) {
 /* ── Szene C_ · Die Blitz-Karte (Entwurf Schirm 15) ─────────────
    Große Karte mit Punktleiste und Ionensturm-Canvas; Mehr/Weniger setzt Stapel,
    beide Anzeigen rechnen mit den echten ION_-Konstanten. */
-export function BlitzkarteSzene({ hint, labels: L }) {
+export function BlitzkarteSzene({ hint }) {
   useLocale();
   const [n, setN] = useState(0);
+  const [q, setQ] = useState(0);
   const canvasRef = useRef(null);
   const fxRef = useRef(null);
   const voll = n >= C.ION_MAX_STACKS;
@@ -1007,9 +907,40 @@ export function BlitzkarteSzene({ hint, labels: L }) {
     return () => fxRef.current?.stop();
   }, []);
   useEffect(() => { fxRef.current?.setzeAktiv(voll); }, [voll]);
+  /* Ladungs-Loop (Review-Runde Zeile 16, Mockup freigegeben): die Ladungsleiste füllt sich von
+     selbst, voll heißt +1 Stapel auf der Karte, bei 5/5 kurze Ruhe, dann von vorn. Die Karte
+     selbst rendert wie im Spiel: Rahmen ab Stapel 1, Blitze erst bei voll (ionSturm oben).
+     Reduzierte Bewegung: stehendes Endbild statt Loop. */
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setN(C.ION_MAX_STACKS); setQ(C.LIGHTNING_MAX_CHARGE);
+      return undefined;
+    }
+    let alive = true, id = null, qq = 0, nn = 0;
+    const tick = (wait) => { id = setTimeout(() => {
+      if (!alive) return;
+      if (qq < C.LIGHTNING_MAX_CHARGE) { qq++; setQ(qq); tick(qq === C.LIGHTNING_MAX_CHARGE ? 600 : 170); }
+      else if (nn < C.ION_MAX_STACKS) { nn++; qq = 0; setN(nn); setQ(0); tick(nn === C.ION_MAX_STACKS ? 2600 : 700); }
+      else { nn = 0; qq = 0; setN(0); setQ(0); tick(900); }
+    }, wait); };
+    tick(600);
+    return () => { alive = false; clearTimeout(id); };
+  }, []);
   return (
     <div className="tsz">
       <p className="auftrag">{hint}</p>
+      <div className="zeile">
+        <span className="label">{t("bar.lightning.state.charge", { charge: q, max: C.LIGHTNING_MAX_CHARGE })}</span>
+        <div style={{ display: "grid", gridTemplateColumns: `repeat(${C.LIGHTNING_MAX_CHARGE}, 1fr)`, gap: 4, marginTop: 6 }}>
+          {Array.from({ length: C.LIGHTNING_MAX_CHARGE }, (_, i) => (
+            <i key={i} style={{ height: 10, borderRadius: 3,
+              background: i < q ? "#8a7de0" : "#1d1d28",
+              border: `1px solid ${i < q ? "#8a7de0" : "#2a2a36"}`,
+              boxShadow: i < q ? "0 0 7px rgba(138,125,224,.55)" : "none" }} />
+          ))}
+        </div>
+        <p className="hint" style={{ textAlign: "center", marginTop: 6 }}>{t("tut.sz.cx.vollzu")}</p>
+      </div>
       <div className="buehne">
         <div className="grosskarte" style={{ boxShadow: n > 0
           ? `0 0 0 2px ${ION}, 0 0 ${voll ? 12 : 9}px ${ION}${voll ? "aa" : "77"}` : "none" }}>
@@ -1019,10 +950,6 @@ export function BlitzkarteSzene({ hint, labels: L }) {
           <span className="cwert">7</span>
           <canvas ref={canvasRef} width="280" height="368" style={{ opacity: 0 }} />
         </div>
-      </div>
-      <div className="werkzeuge">
-        <button type="button" className="tbtn" onClick={() => setN(Math.max(0, n - 1))} disabled={n === 0}>{L.less}</button>
-        <button type="button" className="tbtn" onClick={() => setN(Math.min(C.ION_MAX_STACKS, n + 1))} disabled={voll}>{L.more}</button>
       </div>
       <div className="res">
         <div>
@@ -1945,9 +1872,53 @@ export function HauptaktionSzene({ hint }) {
   );
 }
 
-/* ── Szene Ax · Wohin du baust (Entwurf Schirm 32) ──────────────
-   Vier feste Lagen aus echten Gebäuden; jede isoliert genau eine Sache. Die Faktoren der
-   markierten Zelle kommen aus structureFactorMap und districtFactorMap. */
+/* ── Distrikte (Review-Runde Zeile 19, Mockup freigegeben) ──────
+   Drei feste Lagen aus echten Gebäuden: der kleinste Distrikt, ein Block aus dreien, und das
+   Gegenbeispiel verschiedener Kategorien. Faktoren aus districtFactorMap, nie abgetippt. */
+const DX_LAGEN = {
+  zwei: () => [bauGeb("A_STUETZE", 1, [AR.posOf(3, 1), AR.posOf(3, 2)]),
+    bauGeb("A_QUADER", 1, [AR.posOf(4, 2), AR.posOf(4, 3), AR.posOf(5, 2), AR.posOf(5, 3)])],
+  drei: () => [bauGeb("A_STUETZE", 1, [AR.posOf(2, 1), AR.posOf(2, 2)]),
+    bauGeb("A_ZUNFTV", 1, [AR.posOf(3, 1), AR.posOf(4, 1), AR.posOf(4, 2)]),
+    bauGeb("A_QUADER", 1, [AR.posOf(3, 3), AR.posOf(3, 4), AR.posOf(4, 3), AR.posOf(4, 4)])],
+  kein: () => [bauGeb("A_STUETZE", 1, [AR.posOf(3, 1), AR.posOf(3, 2)]),
+    bauGeb("A_ZOLLHAUS", 1, [AR.posOf(4, 2), AR.posOf(4, 3)])],
+};
+
+export function DistriktSzene({ hint }) {
+  useLocale();
+  const [lage, setLage] = useState("zwei");
+  const geb = DX_LAGEN[lage]();
+  const df = AR.districtFactorMap(geb);
+  const je = geb.map((g) => df[g.footprint[0]]);
+  const max = Math.max(...je);
+  return (
+    <div className="tsz">
+      <p className="auftrag">{hint}</p>
+      <div className="werkzeuge formen">
+        {Object.keys(DX_LAGEN).map((k) => (
+          <button key={k} type="button" className="tbtn" aria-pressed={lage === k} onClick={() => setLage(k)}>
+            {t(`tut.sz.dx.${k}Btn`)}
+          </button>
+        ))}
+      </div>
+      <ArchBrett zeilen={AR.ROWS} geb={geb} sel={null} />
+      <GebListe geb={geb} />
+      <div className={`res arch${max > 1 ? " kv" : ""}`}>
+        <div>
+          <div className="verdikt" style={{ fontSize: 13 }}>{max > 1 ? t("tut.sz.dx.ja") : t("tut.sz.dx.nein")}</div>
+          <div className="rechnung">{geb.map((g, i) => `${g.nm} ×${f2(je[i])}`).join(" · ")}</div>
+        </div>
+        <div className="pkt" style={{ whiteSpace: "nowrap" }}>×{f2(max)}</div>
+      </div>
+      <div className="merk3">{rich(t(`tut.sz.dx.${lage}Merk`, { pct: VARS.districtPct }))}</div>
+    </div>
+  );
+}
+
+/* ── Strukturen (eigene Lektion seit der Review-Runde, Zeile 20; Ziel von S-A3) ──
+   Drei feste Lagen aus echten Gebäuden; die Faktoren der markierten Zelle kommen aus
+   structureFactorMap. Die Distrikt-Beispiele wohnen jetzt in DistriktSzene. */
 const AX_SEL = AR.posOf(3, 2);
 const AX_LAGEN = {
   zeile: () => [bauGeb("A_ZOLLHAUS", 2, [AR.posOf(3, 0), AR.posOf(3, 1)]),
@@ -1956,17 +1927,14 @@ const AX_LAGEN = {
     bauGeb("A_FIRST", 1, [AR.posOf(4, 2), AR.posOf(5, 2), AR.posOf(6, 2), AR.posOf(7, 2)])],
   diag: () => [bauGeb("A_LAUFGANG", 1, [AR.posOf(1, 0), AR.posOf(2, 1), AR.posOf(3, 2)]),
     bauGeb("A_FRIES", 1, [AR.posOf(4, 3), AR.posOf(4, 4), AR.posOf(5, 3), AR.posOf(5, 4)])],
-  distrikt: () => [bauGeb("A_STUETZE", 1, [AR.posOf(3, 1), AR.posOf(3, 2)]),
-    bauGeb("A_QUADER", 1, [AR.posOf(4, 2), AR.posOf(4, 3), AR.posOf(5, 2), AR.posOf(5, 3)])],
 };
 
-export function WohinSzene({ hint, labels: L }) {
+export function StrukturenSzene({ hint, labels: L }) {
   useLocale();
   const [lage, setLage] = useState("zeile");
   const geb = AX_LAGEN[lage]();
   const felder = new Set(geb.flatMap((g) => g.footprint));
   const sf = AR.structureFactorMap(felder);
-  const df = AR.districtFactorMap(geb);
   /* Die Namen der Strukturen an der markierten Zelle, aus der Geometrie abgelesen. */
   const namen = [];
   const r = AR.rowOf(AX_SEL);
@@ -1978,8 +1946,7 @@ export function WohinSzene({ hint, labels: L }) {
     for (let k = 0; k < AR.COLS; k++) { haupt.push(AR.posOf(r0 + k, k)); gegen.push(AR.posOf(r0 + k, AR.COLS - 1 - k)); }
     for (const d of [haupt, gegen]) if (d.includes(AX_SEL) && d.every((p) => felder.has(p))) namen.push(L.diag);
   }
-  const sF = sf[AX_SEL], dF = df[AX_SEL], ges = sF * dF;
-  const dN = dF > 1 ? Math.round((dF - 1) / AR.DISTRICT_BONUS) : 0;
+  const sF = sf[AX_SEL];
   let v = WIN;
   const steps = [];
   steps.push(rich(t("tut.sz.ax.eqBasis", { v: fmtNum(WIN) })));
@@ -1988,15 +1955,11 @@ export function WohinSzene({ hint, labels: L }) {
     v = v * einzel;
     steps.push(rich(t("tut.sz.ax.eqStep", { nm, f: f2(einzel), v: fmtNum(Math.round(v)) })));
   }
-  if (dN) {
-    v = v * dF;
-    steps.push(rich(t("tut.sz.ax.eqDistrikt", { f: f2(dF), n: dN, v: fmtNum(Math.round(v)) })));
-  }
   return (
     <div className="tsz">
       <p className="auftrag">{hint}</p>
       <div className="werkzeuge formen">
-        {["zeile", "spalte", "diag", "distrikt"].map((k) => (
+        {["zeile", "spalte", "diag"].map((k) => (
           <button key={k} type="button" className="tbtn" aria-pressed={lage === k} onClick={() => setLage(k)}>
             {t(`tut.sz.ax.${k}Btn`)}
           </button>
@@ -2004,25 +1967,19 @@ export function WohinSzene({ hint, labels: L }) {
       </div>
       <ArchBrett zeilen={AR.ROWS} geb={geb} sel={AX_SEL} />
       <GebListe geb={geb} />
-      <div className={`res arch${ges > 1 ? " kv" : ""}`}>
+      <div className={`res arch${sF > 1 ? " kv" : ""}`}>
         <div>
-          <div className="verdikt" style={{ fontSize: 13 }}>
-            {namen.length ? namen.join(" + ") : dN ? L.distrikt : t("tut.sz.ax.keinBonus")}
-          </div>
-          <div className="rechnung">
-            {(namen.length ? t("tut.sz.ax.mitStruktur", { f: f2(sF) }) : t("tut.sz.ax.keineStruktur"))
-              + " · " + (dN ? t("tut.sz.ax.mitDistrikt", { f: f2(dF) }) : t("tut.sz.ax.keinDistrikt"))}
-          </div>
+          <div className="verdikt" style={{ fontSize: 13 }}>{namen.length ? namen.join(" + ") : t("tut.sz.ax.keinBonus")}</div>
+          <div className="rechnung">{namen.length ? t("tut.sz.ax.mitStruktur", { f: f2(sF) }) : t("tut.sz.ax.keineStruktur")}</div>
         </div>
-        <div className="pkt" style={{ whiteSpace: "nowrap" }}>×{f2(ges)}</div>
+        <div className="pkt" style={{ whiteSpace: "nowrap" }}>×{f2(sF)}</div>
       </div>
       <div className="zeile"><span className="label">{t("tut.sz.ax.eqLabel")}</span>
         <div className="eq" style={{ marginTop: 7 }}>
           {steps.map((x, k) => <span key={k} className="step">{x}</span>)}
           <span className="step trenn">{rich(t("tut.sz.ax.eqZahlt", { v: fmtNum(Math.round(v)), basis: fmtNum(WIN) }))}</span>
         </div></div>
-      <div className="merk3">{rich(t(`tut.sz.ax.${lage}Merk`, {
-        cover: PROG.COVER_FLOOR, pct: VARS.districtPct }))}</div>
+      <div className="merk3">{rich(t(`tut.sz.ax.${lage}Merk`, { cover: PROG.COVER_FLOOR, pct: VARS.districtPct }))}</div>
     </div>
   );
 }

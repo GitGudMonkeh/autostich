@@ -650,7 +650,15 @@ function AutostichGame() {
   // Aktuellen Lauf werten: Highscore + Geist sichern (idempotent via recorded-Ref).
   // Genutzt von Game-Over UND vom vorzeitigen Beenden (#5), damit nichts verloren geht.
   function saveRun() {
-    if (recorded.current || !state.trickNo) return;
+    if (recorded.current) return;
+    /* Lauf ohne einen einzigen Stich (Abbruch in den Eröffnungsphasen): nichts zu werten — aber
+       die Anzeige-Reste des VORHERIGEN Laufs müssen weg. Sonst zeigt der Endscreen dessen
+       SP/DP-Chips und Willkommensbonus für einen Lauf, der nie etwas gutgeschrieben hat
+       (Review-Runde 2026-08-28, Zeile 34). */
+    if (!state.trickNo) {
+      setRunEarn(null); setProgressUnlocks([]); setOnboardingBanner(null); setNewUnlocks([]); setPrevBests(null);
+      return;
+    }
     recorded.current = true;
     const finalScore = Math.floor(state.score);
     // #169 FB-8: Run-Rückblick-Stats für die lokale Detailansicht (RunStats). perks/skills als ID-Arrays.
@@ -1485,11 +1493,11 @@ function AutostichGame() {
       {/* Onboarding-H1: die EINZIGE blockierende Hint-Karte (Erstlauf-Begrüßung). Über allem außer
           den Bestätigungs-Dialogen; der Lauf darunter ist über hintFreeze eingefroren. */}
       {hints.card && <HintCardOverlay hint={hints.card} onGo={hints.dismissCard}
-        onMore={hints.onMore ? () => hints.onMore(hints.card) : null} />}
+        onMore={hints.onMore && hints.card.target ? () => hints.onMore(hints.card) : null} />}
       {/* Ereignis-/UI-Hints im Stichspiel (T-O2): Pause-Karte am unteren Rand, Referent bleibt
           sichtbar; der Lauf ist über hintFreeze angehalten, bis „Weiter" gedrückt wird. */}
       {!hints.card && hints.eventCard && <EventHintCard hint={hints.eventCard} onGo={hints.dismissEvent}
-        onMore={hints.onMore ? () => hints.onMore(hints.eventCard) : null} />}
+        onMore={hints.onMore && hints.eventCard.target ? () => hints.onMore(hints.eventCard) : null} />}
     </div>
     </HintContext.Provider>
   );

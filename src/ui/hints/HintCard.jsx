@@ -15,7 +15,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { t } from "../../i18n/index.js";
 import { MODAL_CARD, ModalHairline } from "../modalStyle.jsx";
 import { overlayPortal } from "../overlayPortal.jsx";
-import { HINT_DEFS, resolveAnchor, resolveBodyKey } from "./hintScript.js";
+import { HINT_DEFS, resolveAnchor, resolveBodyKey, resolveTarget } from "./hintScript.js";
 
 /* The tutorial voice's accent — the violet the guided run's eyebrow used. One constant, one
    place; deliberately NOT ARCHETYPE_META.lightning.color even though the value matches today:
@@ -77,8 +77,26 @@ function SpotlightScrim({ rect }) {
   );
 }
 
-/* One banner. `hint` = { id, def, vars, bodyKey, anchor } resolved by the provider. */
+/* Banner-Anker (C5 Baufeld-Panel, H4 Glossar-Knopf): auf Entscheidungsscreens gibt es keinen
+   Scrim, der Glow liegt direkt am Element und ist deshalb kraeftiger als der Karten-Spotlight. */
+function useBannerGlow(anchor) {
+  useEffect(() => {
+    if (!anchor) return;
+    // Das LETZTE Vorkommen: der Glossar-Knopf existiert je Screen einmal, und das Overlay des
+    // aktuellen Entscheidungsscreens rendert nach dem Rest — es ist der sichtbare Referent.
+    const els = document.querySelectorAll(`[data-hint-anchor="${anchor}"]`);
+    const el = els[els.length - 1];
+    if (!el) return;
+    const prev = { boxShadow: el.style.boxShadow, borderRadius: el.style.borderRadius };
+    el.style.boxShadow = `0 0 0 2px ${TUT_ACCENT}, 0 0 14px ${TUT_ACCENT}aa`;
+    if (!el.style.borderRadius) el.style.borderRadius = "10px";
+    return () => { el.style.boxShadow = prev.boxShadow; el.style.borderRadius = prev.borderRadius; };
+  }, [anchor]);
+}
+
+/* One banner. `hint` = { id, def, vars, bodyKey, anchor, target } resolved by the provider. */
 export function HintBanner({ hint, onClose, onMore }) {
+  useBannerGlow(hint.anchor || null);
   const { def, vars } = hint;
   return (
     <div className="rounded-lg px-3 py-2.5 mb-2"
@@ -112,7 +130,7 @@ export function PhaseHintSlot({ screen }) {
   const hint = ctl.bannerFor(screen);
   if (!hint) return null;
   return <HintBanner hint={hint} onClose={() => ctl.dismiss(hint.id)}
-    onMore={ctl.onMore ? () => ctl.onMore(hint) : null} />;
+    onMore={ctl.onMore && hint.target ? () => ctl.onMore(hint) : null} />;
 }
 
 /* The H1 welcome card — grid place-items-center like the other centered dialogs (the guided
@@ -193,5 +211,6 @@ export function resolveHint(id, ctx) {
   const def = HINT_DEFS[id];
   if (!def) return null;
   return { id, def, vars: def.vars ? def.vars(ctx) : undefined,
-    bodyKey: resolveBodyKey(def, ctx), anchor: resolveAnchor(def, ctx) };
+    bodyKey: resolveBodyKey(def, ctx), anchor: resolveAnchor(def, ctx),
+    target: resolveTarget(def, ctx) };
 }

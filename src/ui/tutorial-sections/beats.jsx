@@ -7,12 +7,12 @@ import * as C from "../../game/constants.js";
 import { ARCHETYPE_META } from "../../game/skills.js";
 // Die Proberunden des freigegebenen Entwurfs, 1:1 portiert (Mockup proberunden.html).
 import {
-  StichSzene, KampfwertSzene, SerieSzene, ScoreSzene, LaufmockSzene, BilanzSzene,
+  StichSzene, KampfwertSzene, SerieSzene, ScoreSzene, BilanzSzene,
   BrettSzene, KarteSzene, FormationenSzene, UeberSzene, KatsSzene, RaritaetSzene,
   BlitzkarteSzene, TippsSzene, LegendaerSzene,
   FeuerkartenSzene, SchmiedeSzene, HitzeSzene, PflanzkarteSzene, PflanzzeichenSzene,
   GruenfeldSzene, GletscherSzene, GletscherfeldSzene,
-  ArchmockSzene, HauptaktionSzene, WohinSzene, EndscreenSzene, PunkteSzene, BaumSzene,
+  ArchmockSzene, HauptaktionSzene, DistriktSzene, StrukturenSzene, EndscreenSzene, PunkteSzene, BaumSzene,
   LaengeSzene, SegmenteSzene, BuildSzene,
 } from "./scenes.jsx";
 
@@ -266,7 +266,8 @@ export const PROBES = {
   formation: FormationenSzene,
   streak: StreakProbe,
   score: ScoreSzene,
-  struktur: WohinSzene,
+  struktur: DistriktSzene,
+  strukturen: StrukturenSzene,
   bauen: HauptaktionSzene,
   archmock: ArchmockSzene,
   kategorien: KatsSzene,
@@ -300,7 +301,6 @@ export const PROBES = {
   duell: StichSzene,
   kampfwert: KampfwertSzene,
   serie: SerieSzene,
-  laufmock: LaufmockSzene,
   herkunft: BilanzSzene,
   aufstellen: BrettSzene,
   kartenteile: KarteSzene,

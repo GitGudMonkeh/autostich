@@ -2,7 +2,7 @@ import { memo, useRef, useState, useLayoutEffect } from "react";
 import { suitColor, PLANT_VALUE_CAP } from "../game/constants.js";
 
 import { SEGMENT_SIZE } from "../game/formations.js";
-import { anchorTypeAt, linkedPartnerOf } from "../game/shop.js";
+import { anchorTypeAt, linkedPartnersOf } from "../game/shop.js";
 import { formationBorder } from "./formationStyle.js";
 import { formationAbbr } from "./formationLabels.js";
 import { PLANT_RIPE, PLANT_FULL } from "./indicators/vocab.js";
@@ -69,7 +69,7 @@ export function archFrameLines(cover, cells, total, exH, exV, exVOut = exV) {
    `arrow` = Farbpfeil „→X" (Shop-Farbwechsel) · `disabled` = ausgegraut, nicht klickbar (z. B. belegte Anker). */
 // #259: eine von bis zu 40 Grid-Kacheln → React.memo überspringt Re-Render bei unveränderten Props (bes. in
 // read-only Grids wie Chronik/Vorschau, wo onClick fehlt und posForm stabil bleibt).
-const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], selected, onClick, anchorType = null, allyColor = null,
+const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], selected, onClick, anchorType = null, allyColors = null,
                    picked = false, disabled = false, arrow = null, quiet = false, ring = false, ringTitle = null, dimmed = false, arch = null, structLit = false, distrLit = false, formFlash = false,
                    quietFrames = false,
                    glacier = false, glacierMass = 0, firnMass = 0, glacierForm = false, locked = false }) {
@@ -126,7 +126,12 @@ const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], sele
      ihn eigenständig ansprechen kann — s. `tileClip`. */
   const tileBg = [
     ...washes.map((w) => `linear-gradient(0deg, ${w}, ${w})`),
-    allyColor ? `linear-gradient(135deg, ${col}30 0%, ${col}30 49%, ${allyColor}30 51%, ${allyColor}30 100%)` : null,
+    (allyColors && allyColors.length)
+      ? `linear-gradient(135deg, ${col}30 0%, ${col}30 49%, ${allyColors.map((a, i) => {
+          const span = 51 / allyColors.length, from = 49 + i * span, to = 49 + (i + 1) * span;
+          return `${a}30 ${(from + 2).toFixed(0)}%, ${a}30 ${to.toFixed(0)}%`;
+        }).join(", ")})`
+      : null,
     "linear-gradient(0deg, #20202a, #20202a)",
   ].join(", ");
   /* Die Wash-Ebenen enden an der PADDING-Box, alles andere an der Border-Box. Das ist kein Detail: ein
@@ -134,7 +139,7 @@ const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], sele
      Der Kachelrahmen ist ohne Formation/Auswahl halbdurchlässig (`col + "55"`) — ohne diese Zeile läge der
      Wash plötzlich AUCH unter dem Rahmen und die abgedeckte Kachel bekäme einen 2 px breiten, leicht anderen
      Rand als vorher. Mit ihr ist der Tausch Schatten → Ebene pixelgleich. */
-  const tileClip = [...washes.map(() => "padding-box"), ...(allyColor ? ["border-box"] : []), "border-box"].join(", ");
+  const tileClip = [...washes.map(() => "padding-box"), ...(allyColors && allyColors.length ? ["border-box"] : []), "border-box"].join(", ");
   return (
     <button onClick={onClick} disabled={disabled} data-sfx={quiet ? "none" : undefined} data-pos={arch ? pos : undefined}
       title={anchorType ? t("cardgrid.anchor.title", { type: anchorLabel(anchorType) }) : ring ? (ringTitle || undefined) : undefined}
@@ -344,10 +349,10 @@ export function CardGrid({ cards = [], formations = [], roles = {}, anchors = []
             <div className="grid grid-cols-5 gap-1.5 flex-1">
               {cards.slice(s * SEGMENT_SIZE, s * SEGMENT_SIZE + SEGMENT_SIZE).map((c, k) => {
                 const pos = s * SEGMENT_SIZE + k;
-                const ally = linkedPartnerOf(pe, c.suit);
+                const allies = linkedPartnersOf(pe, c.suit);
                 const disabled = disabledSet.has(pos);
                 return <CardTile key={pos} card={c} pos={pos} posForm={formations[pos]} roleIds={rolesByCard[c.id] || EMPTY_ROLES}
-                  anchorType={anchorTypeAt(anchors, pos)} allyColor={ally ? suitColor(ally) : null}
+                  anchorType={anchorTypeAt(anchors, pos)} allyColors={allies.length ? allies.map(suitColor) : null}
                   selected={selectedPos === pos} picked={pickedSet.has(c.id) || pickedPos === pos}
                   disabled={disabled} arrow={arrows[c.id] || null} quiet={quietTiles} quietFrames={quietFrames}
                   ring={highlightSet.has(pos)} ringTitle={highlightTitle}

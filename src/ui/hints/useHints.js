@@ -10,6 +10,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as C from "../../game/constants.js";
 import { SKILL_DEFS } from "../../game/skills.js";
+import { noOfferPlaceable } from "../../game/architect.js";
 import { loadHintProgress, saveHintProgress } from "../../game/storage.js";
 import { hintForScreen, screenOf, eventForPlay, resolveTarget, HINT_DEFS } from "./hintScript.js";
 import { resolveHint } from "./HintCard.jsx";
@@ -61,12 +62,17 @@ export function useHints({ state, profile, onMore = null, breakdownOn = true }) 
   }, [offer]);
   const firstRun = !!profile && profile.hadCompletedRun === false;
   const slots = state?.skillSlots ?? C.SKILL_SLOTS;
+  /* C5: „kein Bauplan passt mehr" — nur auf dem Architekt-Screen gerechnet (die Prüfung zählt
+     Platzierungen auf dem 5×8-Brett) und am Angebots-/Gebäude-Objekt memoisiert. */
+  const architectStuck = useMemo(() => (
+    screen === "architect" ? noOfferPlaceable(state?.architect, state?.challengeBlockArch || []) : false
+  ), [screen, state?.architect, state?.challengeBlockArch]);
   const ctx = {
     seen, visits, state, firstRun,
     blitzOnly: archs.size === 1 && archs.has("lightning"),
     multiArch: archs.size >= 2,
     slotsFull: (state?.skills?.length || 0) >= slots,
-    slots,
+    slots, architectStuck,
   };
   const bannerId = screen ? hintForScreen(screen, ctx) : null;
 
@@ -99,6 +105,7 @@ export function useHints({ state, profile, onMore = null, breakdownOn = true }) 
   const trickNo = state?.trickNo ?? 0;
   const atPhaseStart = (state?.pos || 0) === 0;
   const playVisit = visits.play || 0;
+  const formationVisit = visits.formation || 0;   // E6 wartet auf die erste Aufstellphase
   if (playKey && phaseQuota.current.key !== playKey) phaseQuota.current = { key: playKey, count: 0 };
   useEffect(() => {
     // Kontextwechsel raus aus dem Stichspiel räumt eine offene Karte ab (Lauf beendet/abgebrochen).
@@ -107,11 +114,12 @@ export function useHints({ state, profile, onMore = null, breakdownOn = true }) 
     const st = stateRef.current;
     const id = eventForPlay({
       seen, state: st, atPhaseStart, playVisit, breakdownOn,
+      formationVisit,
       shownThisPhase: phaseQuota.current.count,
       sameTrickAsLast: lastEventTrick.current != null && lastEventTrick.current === trickNo,
     });
     if (id) setActiveEvent({ id, key: playKey, trick: trickNo });
-  }, [playKey, trickNo, atPhaseStart, playVisit, breakdownOn, activeEvent, cardId, seen]);
+  }, [playKey, trickNo, atPhaseStart, playVisit, breakdownOn, formationVisit, activeEvent, cardId, seen]);
   const dismissEvent = () => {
     if (!activeEvent) return;
     phaseQuota.current = { key: playKey, count: phaseQuota.current.count + 1 };

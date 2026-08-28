@@ -453,6 +453,24 @@ export function boardFactorMap(buildings = [], structBonus = 0) {
   return sf;
 }
 
+/* C5 (Onboarding, Review-Runde 2026-08-28): Kann KEIN unverbrauchtes Angebot dieser Phase noch
+   gebaut werden? Deckel UND Geometrie — 19/20 kann schon unbaubar sein, wenn die angebotenen
+   Formen nicht mehr passen. Dieselbe Rechnung wie fitFor im ArchitectScreen, als pure Funktion. */
+export function noOfferPlaceable(architect, blocked = []) {
+  const offers = (architect?.offers || []).filter((o) => o && !o.used);
+  if (!offers.length) return false;
+  const buildings = architect.buildings || [];
+  const cover = occupiedCells(buildings).size;
+  const maxCover = architect.maxCover ?? N_POS;
+  return offers.every((o) => {
+    const fam = familyDef(o.familyId);
+    if (!fam) return true;
+    const size = shapeRotations(fam.form)[0].length;
+    if (cover + size > maxCover) return true;
+    return enumeratePlacements(fam.form, buildings, blocked).length === 0;
+  });
+}
+
 // Anzahl VOLLENDETER Strukturen (volle Zeilen + volle Spalten + volle Diagonalen) im Cover-Set — die Zähl-Variante
 // zu structureFactorMap (dort Faktor je Position). Quelle für das Gebäude-Legendäre „Richtfest" (Durchlauf-Ende).
 export function completedStructures(coverSet) {

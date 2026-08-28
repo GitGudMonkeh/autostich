@@ -61,19 +61,23 @@ export const HINT_DEFS = {
   // Spec deviation, recorded in the task contract: the paper's H5 row says wahl/perks, but that
   // lesson is deleted by T-O4's cut — kategorien is the surviving neighbour.
   H5:    { kind: "banner", bodyKey: "hint.h5.body",
-           vars: (ctx) => ({ slots: ctx?.slots ?? C.SKILL_SLOTS }), target: "wahl/kategorien" },
+           vars: (ctx) => ({ slots: ctx?.slots ?? C.SKILL_SLOTS }) },
   "S-F1": { kind: "banner", eyebrow: "suggest", bodyKey: "hint.sf1.body",
             vars: () => ({ farbblock: formationName("farbblock") }), target: "aufstellung/formationen" },
-  "S-F2": { kind: "banner", eyebrow: "suggest", bodyKey: "hint.sf2.body", target: "aufstellung/formationen" },
-  "S-F3": { kind: "banner", eyebrow: "suggest", bodyKey: "hint.sf3.body", target: "aufstellung/stapeln" },
-  "S-A1": { kind: "banner", eyebrow: "suggest", bodyKey: "hint.sa1.body", target: "architekt/wasist" },
+  "S-F2": { kind: "banner", eyebrow: "suggest", bodyKey: "hint.sf2.body", target: "aufstellung/stapeln" },
+  "S-F3": { kind: "banner", eyebrow: "suggest", bodyKey: "hint.sf3.body" },
+  "S-A1": { kind: "banner", eyebrow: "suggest", bodyKey: "hint.sa1.body" },
   "S-A2": { kind: "banner", eyebrow: "suggest", bodyKey: "hint.sa2.body", target: "architekt/wohin" },
-  "S-A3": { kind: "banner", eyebrow: "suggest", bodyKey: "hint.sa3.body", target: "architekt/wohin" },
+  "S-A3": { kind: "banner", eyebrow: "suggest", bodyKey: "hint.sa3.body", target: "architekt/strukturen" },
   "S-A4": { kind: "banner", eyebrow: "suggest", bodyKey: "hint.sa4.body", target: "architekt/aufwerten" },
   C1:    { kind: "banner", bodyKey: "hint.c1.body", target: "eis/feld" },
   C2:    { kind: "banner", bodyKey: "hint.c2.body", target: "wahl/kategorien" },
   C3:    { kind: "banner", bodyKey: "hint.c3.body", target: "wahl/kategorien" },
   C4:    { kind: "banner", bodyKey: "hint.c4.body", target: "wahl/legendaer" },
+  /* C5 (Review-Runde, Zeile 14): kein angebotener Bauplan passt mehr aufs Brett — einmalig,
+     mit Glow auf dem Baufeld-Panel. H4 (Zeile 30): das i oeffnet das Glossar, dritte Perkwahl. */
+  C5:    { kind: "banner", bodyKey: "hint.c5.body", anchor: "baufeld" },
+  H4:    { kind: "banner", bodyKey: "hint.h4.body", anchor: "glossar" },
   /* ---- Ereignis-Hints (T-O2, Papier §5.3): Pause-Karten im Stichspiel, erste Begegnung je
      Profil. Die vars lesen den ECHTEN Lauf — das verworfene Rechenbeispiel des geführten Laufs
      wird echte Mathematik mit Referent auf dem Schirm. */
@@ -82,7 +86,7 @@ export const HINT_DEFS = {
   E2: { kind: "event", bodyKey: "hint.e2.body", target: "grundlagen/stich" },
   E3: { kind: "event", bodyKey: "hint.e3.body",
         vars: (ctx) => { const n = ctx?.state?.lastTrick?.winStreak ?? ctx?.state?.winStreak ?? 0;
-          return { n, mult: fmtNum(streakBaseMult(n)) }; }, target: "grundlagen/serie", anchor: "scorerow" },
+          return { n, mult: fmtNum(streakBaseMult(n)) }; }, anchor: "scorerow" },
   E4: { kind: "event", bodyKey: "hint.e4.body",
         vars: (ctx) => ({ critMult: fmtNum(ctx?.state?.lastTrick?.critMultiplier ?? 1) }), target: "blitz/karte" },
   /* E5: Leiste je Archetyp — Ziel, Anker UND Text wechseln mit. Der Blitz-Text nennt die echte
@@ -94,23 +98,25 @@ export const HINT_DEFS = {
         vars: (ctx) => ({ arch: archetypeLabel((ctx?.state?.activeArchetypes || [])[0]) || "" }),
         target: (ctx) => `${ARCH_SECTION[(ctx?.state?.activeArchetypes || [])[0]] || "blitz"}/karte`,
         anchor: (ctx) => `faction-${(ctx?.state?.activeArchetypes || [])[0] || "lightning"}` },
+  /* E6 zeigt bevorzugt den Farbblock (der Kreis zu S-F1) und feuert erst NACH der ersten
+     Aufstellphase (Review-Runde, Zeile 8). */
   E6: { kind: "event", bodyKey: "hint.e6.body",
-        vars: (ctx) => { const lt = ctx?.state?.lastTrick; const f = (lt?.formations || [])[0];
-          return { name: f ? formationName(f.type) : "", mult: fmtNum(lt?.formationMult ?? 1) }; },
-        target: "aufstellung/formationen" },
+        vars: (ctx) => { const lt = ctx?.state?.lastTrick;
+          const f = (lt?.formations || []).find((x) => x?.type === "farbblock") || (lt?.formations || [])[0];
+          return { name: f ? formationName(f.type) : "", mult: fmtNum(lt?.formationMult ?? 1) }; } },
   E7: { kind: "event", bodyKey: "hint.e7.body", target: "danach/punkte", anchor: "milestone" },
-  E8: { kind: "banner", bodyKey: "hint.e8.body", target: "danach/endscreen" },
+  E8: { kind: "banner", bodyKey: "hint.e8.body" },
   E9: { kind: "event", bodyKey: "hint.e9.body",
         vars: (ctx) => { const lt = ctx?.state?.lastTrick;
           return { kampfwert: fmtNum(lt?.pValue ?? 0), kartenwert: fmtNum(lt?.pCard?.value ?? 0) }; },
-        target: "grundlagen/werte" },
+      },
   /* UI-Hints (Papier §5.3): ruhige Phasenstarts lehren den Lauf-Schirm selbst. */
-  U1: { kind: "event", bodyKey: "hint.u1.body", target: "grundlagen/anzeigen", anchor: "tempo" },
-  U2: { kind: "event", bodyKey: "hint.u2.body", target: "grundlagen/herkunft", anchor: "panels" },
-  U3: { kind: "event", bodyKey: "hint.u3.body", target: "grundlagen/anzeigen", anchor: "chronik" },
+  U1: { kind: "event", bodyKey: "hint.u1.body", anchor: "tempo" },
+  U2: { kind: "event", bodyKey: "hint.u2.body", anchor: "panels" },
+  U3: { kind: "event", bodyKey: "hint.u3.body", anchor: "chronik" },
   /* U4 (Owner-Playtest 2026-08-28): die Stich-Aufschlüsselung unter den Karten — spät im Lauf,
      nach einem Sieg (nur dann trägt die Zeile Zahlen) und nur, solange die Option sie zeigt. */
-  U4: { kind: "event", bodyKey: "hint.u4.body", target: "grundlagen/score", anchor: "breakdown" },
+  U4: { kind: "event", bodyKey: "hint.u4.body", anchor: "breakdown" },
 };
 
 /* ---- The suggestion sequences (paper §5.2): one task per phase visit, in order. The first cut
@@ -172,9 +178,12 @@ export function hintForScreen(screen, ctx) {
   if (screen === "perk") {
     if (un("H3")) return "H3";
     if ((ctx.visits?.perk || 0) >= 2 && un("H3b")) return "H3b";
+    if ((ctx.visits?.perk || 0) >= 3 && un("H4")) return "H4";
     return null;
   }
   if (screen === "formation" || screen === "architect") {
+    // C5 schlaegt die Sequenz: wer nichts mehr bauen kann, braucht den Ausweg vor dem Curriculum.
+    if (screen === "architect" && ctx.architectStuck && un("C5")) return "C5";
     const v = ctx.visits?.[screen] || 0;
     for (const step of SEQUENCES[screen]) {
       if (seen.has(step.id)) continue;
@@ -197,6 +206,7 @@ export function hintForScreen(screen, ctx) {
      shownThisPhase  event cards already shown this play phase (cap 2 — §5.4 rule 1)
      sameTrickAsLast the current trick already carried a card (max 1 per trick)
      breakdownOn     the trick-breakdown line under the field is visible (options) — U4's referent
+     formationVisit  1-based counter of formation phases entered — E6 waits for the first one
    Deferred, never queued: every condition below recurs naturally, so a hint that loses its slot
    simply waits for the next occurrence. E5 outranks (§5.4 rule 2) and may also use the phase
    start — the bar it names is a persistent referent. */
@@ -220,7 +230,10 @@ export function eventForPlay(ctx) {
   if (un("E2") && lt.result === "tie") return "E2";
   if (un("E3") && (lt.winStreak || 0) >= 3) return "E3";
   if (un("E4") && lt.isCrit) return "E4";
-  if (un("E6") && (lt.formationMult || 1) > 1) return "E6";
+  if (un("E6") && (lt.formationMult || 1) > 1 && (ctx?.formationVisit || 0) >= 1) {
+    const farb = (lt.formations || []).some((f) => f?.type === "farbblock");
+    if (farb || (ctx?.formationVisit || 0) >= 2) return "E6";
+  }
   if (un("E9") && lt.pCard && lt.pValue !== lt.pCard.value) return "E9";
   if (un("E7") && milestoneBarState(state?.score || 0).reached > 0) return "E7";
   // U4 spät im Lauf, nach einem Sieg (nur dann trägt die Aufschlüsselung Zahlen) und nur,
