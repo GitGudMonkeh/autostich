@@ -33,6 +33,8 @@ player text** (text-style-guide.md, "Kein Gedankenstrich").
 
 | 18 | **S-F2** (second Aufstellung) | New copy, dash-free: "Versuch nun, innerhalb eines gleichfarbigen Segments weitere Formationen zu bilden, zum Beispiel eine Treppe." Its Mehr-dazu page gets the same rebuild style as formationen: example segments carrying SEVERAL formations at once (overlap), browsable via buttons. Home for that content: `aufstellung/stapeln` (overlap is its topic); S-F2 retargets there, S-F3 already points there. Mockup approved: https://claude.ai/code/artifact/ca889e2c-9a74-4abf-87dc-ee80f4415bb0. |
 
+| 19 | **S-A2** (district) | Dash-free rewrite: "Bau einen Distrikt: Setz ein Gebäude derselben Kategorie, also gleicher Farbe, neben dein erstes. Solche Nachbarn verstärken sich." Its Mehr-dazu page (`architekt/wohin`) is rebuilt to show **district examples only**, rendered like the real game board (no abstract slim-bar grid as today). Mockup for owner sign-off: https://claude.ai/code/artifact/6e2daff6-99ba-465b-aa2f-6fda9e7562c8 — awaiting approval. **OPEN:** S-A3 (Struktur) points at the same page today; with wohin district-only, where do the Zeile/Spalte/Diagonale examples live, or does S-A3 lose its link? |
+
 ## Probierfeld lessons (Mehr-dazu targets)
 
 | # | Lesson | Change |
