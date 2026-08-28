@@ -118,6 +118,7 @@ their event first happens, under the §5.4 pacing rules.
 | Cycle 5 | The first skill: Blitz as the one archetype; the badged consumer explains what it does — and what a crit is | banner + badge + reason line | H2 | blitz / karte |
 | Cycle 5, play | The resource bar that just appeared | pause card | E5 | blitz / karte |
 | First crit, whenever | The crit that just landed, with its number | pause card | E4 | blitz / karte |
+| First value divergence, whenever (typically cycles 2–5, after the first perk or Wert building) | Kartenwert vs. Stichwert vs. Kampfwert, with the live numbers | pause card | E9 | grundlagen / werte |
 | Cycle 6 (perk visit 2) | Category chip and rarity border | banner | H3b | wahl / raritaet |
 | Cycle 7 (formation visit 2) | A second pattern, via the legend | task banner | S-F2 | aufstellung / formationen |
 | First formation scores, whenever | The formation's factor, and the segment rule | pause card | E6 | aufstellung / formationen |
@@ -229,8 +230,14 @@ spotlight. Respects the three FX levels (`useFxLevel`), per the guided-run playt
 | **E6** | first formation scores in play | Formation {name}: Diese Karte zählt ×{mult}. Muster zählen nur innerhalb eines Segments. | Formation {name}: this card counts ×{mult}. Patterns only count inside one segment. | aufstellung / formationen |
 | **E7** | first milestone reached | Meilenstein erreicht — das bringt dir Stichpunkte für den Upgrade-Baum nach dem Lauf. | Milestone reached — that earns you trick points for the upgrade tree after the run. | danach / punkte |
 | **E8** | first-ever run end | Dein Lauf zählt: Stichpunkte für den Upgrade-Baum, Deckpunkte für die Werkstatt. Alles Weitere probierst du im Probierfeld aus — jederzeit. | Your run counts: trick points for the upgrade tree, deck points for the workshop. Everything else you can try in the playground — any time. | danach / endscreen |
+| **E9** | first trick where a card's Kampfwert differs from its Kartenwert | Die {karte} kämpft mit {kampfwert} statt {kartenwert}: Kartenwert plus Stichwert-Boni ergeben den Kampfwert — und der höhere gewinnt den Stich. | The {karte} fights at {kampfwert} instead of {kartenwert}: card value plus trick-value boni make the combat value — and the higher one wins the trick. | grundlagen / werte |
 
-E3, E4 and E6 interpolate the **actual current values** from run state — the guided run's rejected
+E9 deliberately does **not** fire earlier: in a vanilla deck all three values are identical, so
+before the first bonus exists there is no difference on screen to point at — the hint waits for
+its referent. Once a perk or a Wert building creates the first divergence, one sentence with the
+live numbers covers all three terms.
+
+E3, E4, E6 and E9 interpolate the **actual current values** from run state — the guided run's rejected
 "example math" ({exStreak}/{exStreakMult}) becomes real math with a live referent. The currency
 words in E7/E8 render via `t("common.cur.*")`-backed phrasing, never a literal "SP"/"TP"
 (the tut-proberunden planning report documents why).
@@ -260,7 +267,7 @@ with a link:
 | **C3** | first family target | Diese Perk-Familie braucht ein Ziel — wähle, worauf sie wirken soll. | wahl / kategorien |
 | **C4** | legendary phase (cycle {cycle}) | Ein legendärer Skill aus deinen aktiven Archetypen: eigener Slot, kein Tausch. | wahl / legendaer |
 
-**Total: 6 phase hints + 7 suggestions + 8 event hints + 4 conditionals = 25 across a profile's
+**Total: 6 phase hints + 7 suggestions + 9 event hints + 4 conditionals = 26 across a profile's
 whole life** — the §4a curriculum lays them on the first run's timeline. The guided run carried 42
 keys of body text plus coach-mark chains; the sections carry 730. This layer is deliberately the
 smallest of the three, and it spends its budget across 50 cycles instead of the first five
@@ -470,7 +477,7 @@ milestone tick) is not surfaced, surfacing it read-only is in scope, `src/game/`
 | # | Task | Depends on | Content |
 | --- | --- | --- | --- |
 | **T-O1** | Hint engine + phase hints (H1–H3, H3b, H5, H2b, C1–C4) + suggestion sequences (S-F1–3, S-A1–4 with visit counters and done-predicates over the exported pure functions), banner + pause card, storage, i18n | — | 17 hints |
-| **T-O2** | Event hints (E1–E8), signal plumbing, pacing rules | T-O1 | 8 hints |
+| **T-O2** | Event hints (E1–E9), signal plumbing, pacing rules | T-O1 | 9 hints |
 | **T-O3** | First-run start behaviour (§6): skip the opening skill decision (§6.1) and gate the run to Blitz (§6.2), both keyed on `hadCompletedRun` at the `START_RUN` site; "Guter Start" badge on the Blitz consumer; guard tests (skip and gate lift after first completed run; rng streams unshifted; badge finds its skill; sim path byte-identical) | — | 1 short text |
 | **T-O4** | Probierfeld rebuild (§8): delete the 11 text lessons and their keys, flatten the shell to one grouped list, rename, deep-link prop, hint-target guard, hub first-contact offer → first run | T-O1 for the link wiring | −11 lessons |
 
