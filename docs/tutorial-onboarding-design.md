@@ -200,10 +200,11 @@ Sequence rules:
 
 1. **One suggestion per phase visit, at most** — it occupies the phase's banner slot, so the
    pacing picture of a visit never changes: one line.
-2. **A step whose goal is already met is skipped**, checked with the same pure functions the
-   Probierfelder call (`computeFormations` for the Farbblock, `neighborCounts` /
-   `structureFactorMap` for district and structure — measured, all exported). A player who builds
-   a district on visit 1 never sees S-A2; the sequence advances to what they have not done.
+2. ~~**A step whose goal is already met is skipped**~~ — **removed (owner decision, 2026-08-28
+   playtest).** The done-predicates read the *dealt* board too: a randomly dealt Farbblock plus a
+   second type plus one overlap silently swallowed the whole formation curriculum on visit 1.
+   Every step now shows on its visit, whether or not the board already complies — a suggestion the
+   player has accidentally met still teaches the rule it names.
 3. **The sequence ends when its steps are exhausted or dismissed.** No tracking UI, no quest log,
    no completion reward — the game's own factor chips and legend markers are the confirmation
    (and E6 narrates the first formation that scores). Each step fires once. S-A3 is deliberately
@@ -221,16 +222,22 @@ segment rule still gets its explicit sentence in E6, with a live referent.
 ### 5.3 Event hints — during play, first occurrence only
 
 The run pauses (existing overlay-pause pattern), a small card appears near the status bar naming
-what just happened, "Weiter" resumes. Spotlighting is not needed — the event itself is the
-spotlight. Respects the three FX levels (`useFxLevel`), per the guided-run playtest learnings.
+what just happened, "Weiter" resumes. Respects the three FX levels (`useFxLevel`), per the
+guided-run playtest learnings.
+
+**Referent marking (owner decision, 2026-08-28 playtest):** a card whose referent is a standing
+screen element (score row, tempo bar, faction bar, milestone bar, Chronik button, breakdown line)
+scrolls it into view and frames it with the static tutorial glow while the card is open — the
+`anchor` field of the hint def against `data-hint-anchor` attributes in the UI. Cards whose
+referent is the trick itself (E2, E4, E9) carry no anchor; the event is the spotlight there.
 
 | id | Trigger | DE draft | EN draft | Mehr dazu |
 | --- | --- | --- | --- | --- |
 | **E1** | first won trick | Dein erster Sieg: {win} Basispunkte. Serie, Crits, Formationen und Gebäude legen sich als Faktoren darauf. | Your first win: {win} base points. Streak, crits, formations and buildings stack on top as factors. | grundlagen / score |
 | **E2** | first tie | Gleichstand: Niemand punktet. Nur Siege zahlen. | A tie pays nobody. Only wins score. | grundlagen / stich |
-| **E3** | streak reaches 3 | Serie {n}: Dein Serien-Faktor steht auf ×{mult}. Eine Niederlage setzt ihn zurück. | Streak {n}: your streak factor stands at ×{mult}. One loss resets it. | grundlagen / serie |
+| **E3** | streak reaches 3 | Serie {n}: Sieg auf Sieg lässt die Serie wachsen — und mit ihr den Multiplikator, gerade ×{mult}. Eine Niederlage setzt ihn zurück. | Streak {n}: win after win grows the streak — and with it the multiplier, now ×{mult}. One loss resets it. | grundlagen / serie |
 | **E4** | first crit | Crit: Dieser Stich zählt ×{critMult}. | Crit: this trick counts ×{critMult}. | blitz / karte |
-| **E5** | first resource bar appears | Das ist deine {arch}-Leiste. Sie füllt sich in den Stichen und treibt deine Skills an. | This is your {arch} bar. It fills during tricks and powers your skills. | *\<arch\>* / karte |
+| **E5** | first resource bar appears | *Blitz (owner correction, 2026-08-28):* Das ist deine {arch}-Leiste: Deine Crits füllen die Ladung — ist die Leiste voll, wird eine Karte ionisiert. *Other archetypes keep the generic line:* Das ist deine {arch}-Leiste. Sie füllt sich in den Stichen und treibt deine Skills an. | This is your {arch} bar: your crits fill the charge — once the bar is full, a card gets ionized. / generic: This is your {arch} bar. It fills during tricks and powers your skills. | *\<arch\>* / karte |
 | **E6** | first formation scores in play | Formation {name}: Diese Karte zählt ×{mult}. Muster zählen nur innerhalb eines Segments. | Formation {name}: this card counts ×{mult}. Patterns only count inside one segment. | aufstellung / formationen |
 | **E7** | first milestone reached | Meilenstein erreicht — das bringt dir Stichpunkte für den Upgrade-Baum nach dem Lauf. | Milestone reached — that earns you trick points for the upgrade tree after the run. | danach / punkte |
 | **E8** | first-ever run end | Dein Lauf zählt: Stichpunkte für den Upgrade-Baum, Deckpunkte für die Werkstatt. Alles Weitere probierst du im Probierfeld aus — jederzeit. | Your run counts: trick points for the upgrade tree, deck points for the workshop. Everything else you can try in the playground — any time. | danach / endscreen |
@@ -247,6 +254,7 @@ never in cycle 1, and it counts against the phase's two-card cap.
 | **U1** | play start, cycle 2 (after one full cycle at normal speed) | Über die Leiste oben hältst du den Lauf an — oder stellst das Tempo hoch, bis auf Max. | The bar up top pauses the run — or turns the speed up, all the way to max. | grundlagen / anzeigen |
 | **U2** | play start, cycle 6 (the first skill is in, factors are real) | Die Panels unter dem Spielfeld zeigen, woraus dein Score entsteht — jeder Faktor einzeln. | The panels below the battlefield show what your score is made of — each factor on its own. | grundlagen / herkunft |
 | **U3** | play start, cycle 9 (enough picks to look up) | Das Karten-Symbol oben öffnet die Chronik: alle deine Karten, Formationen und Gebäude in diesem Lauf. | The card icon up top opens the Chronik: all your cards, formations and buildings in this run. | grundlagen / anzeigen |
+| **U4** | first won trick from play visit 12 on, while the breakdown line is enabled (owner addition, 2026-08-28) | Die Zeile unter den Karten rechnet den Stich vor: Basis × Serie × Perks × Formation × Crit ergeben die Summe. | The line under the cards spells the trick out: base × streak × perks × formation × crit make the total. | grundlagen / score |
 
 U2 carries one verification for T-O2: the side panels are a desktop affordance — on the phone the
 hint must anchor to wherever that viewport actually shows the score source, or fall back to the

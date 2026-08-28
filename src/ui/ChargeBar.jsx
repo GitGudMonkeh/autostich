@@ -125,7 +125,7 @@ export function ChargeBar({ lightning, skills = [], winStreak = 0, critChance = 
   const ambientPulse = full ? "as-charge-pulse" : null;
 
   return (
-    <FactionShell className="relative" icon={<FactionIcon type="lightning" size={15} />} name={archetypeLabel("lightning")} color={LIGHTNING}
+    <FactionShell className="relative" anchor="faction-lightning" icon={<FactionIcon type="lightning" size={15} />} name={archetypeLabel("lightning")} color={LIGHTNING}
       footer={showSkills ? <PanelSkills skills={skills} arch="lightning" color={LIGHTNING} /> : null}
       stateText={stateText} stateOn={stateOn} collapsed={collapsed} onToggle={onToggle}
       ambient={ambient} ambientPulse={ambientPulse}>

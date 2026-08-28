@@ -65,7 +65,9 @@ export function StatusBar({
             `sb-row1`/`sb-row2` sind ab 1280 px keine Boxen mehr (display: contents): die Zellen werden dann
             direkte Felder EINER Leiste. `sb-ctl` hält die vier Ablauf-Knöpfe dabei als Gruppe zusammen. */}
         <div className="sb-row1 flex items-center gap-1.5 px-2.5 py-1.5" style={{ borderBottom: `1px solid ${DECK_BORDER}` }}>
-          <div className="sb-ctl flex items-center gap-1.5">
+          {/* data-hint-anchor: Referenten der Onboarding-Hints (U1 Tempo · U3 Chronik · E1/E3 Score-Zeile) —
+              die offene Hint-Karte scrollt hierher und legt den Tutorial-Glow an (HintCard.useAnchorGlow). */}
+          <div className="sb-ctl flex items-center gap-1.5" data-hint-anchor="tempo">
             {/* Pause/Weiter — dauerhaft violett getönt, bei Pause gefüllt (Layout-Akzent, kein ablenkendes Orange). */}
             <button type="button" onClick={onTogglePause} title={t(paused ? "hud.resume" : "hud.pause")}
               className="text-body-5 font-bold px-2.5 py-1.5 rounded-lg transition-all whitespace-nowrap"
@@ -80,7 +82,7 @@ export function StatusBar({
           </div>
           {music}
           {onChronik && (
-            <button type="button" onClick={onChronik} title={t("hud.cards.title")}
+            <button type="button" onClick={onChronik} title={t("hud.cards.title")} data-hint-anchor="chronik"
               className="sb-chronik as-edge-neutral as-edge-thin flex items-center gap-1 text-body-5 font-bold px-2 py-1.5 rounded-lg transition-all hover:brightness-125 whitespace-nowrap">
               {deckBack
                 ? <img src={deckBack} alt="" draggable="false" className="h-4 w-auto rounded-[2px] object-cover" style={{ border: "1px solid #ffffff22" }} />
@@ -102,7 +104,7 @@ export function StatusBar({
 
         {/* Zeile 2: Score = wichtigster Wert, volle Breite (Platz bis 999.999.999, nie abgeschnitten). Das Rekord-Delta
             steht in der Label-Zeile darüber, damit die große Zahl beim Wachsen nicht verrutscht. Serie + Mult rechts. */}
-        <div className="sb-row2 flex items-stretch">
+        <div className="sb-row2 flex items-stretch" data-hint-anchor="scorerow">
           <div className="sb-score flex-1 flex flex-col justify-center gap-1 px-3.5 py-2">
             <div className="flex items-baseline gap-2">
               <span className="text-meta-1 uppercase tracking-wide font-bold" style={{ color: "#6d7288" }}>{t("hud.score")}</span>

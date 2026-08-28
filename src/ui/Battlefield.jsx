@@ -1508,7 +1508,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
      Kein overflow-hidden: passt die Kette bei sehr vielen Faktoren nicht in eine Zeile, darf sie per
      flex-wrap auf eine zweite Zeile ausweichen, statt am Rand abgeschnitten zu werden (#ui). */
   const kette = (
-    <div className={`bf-kette relative z-10 min-h-5 ${ketteOben ? "-mt-3" : "mt-1"} flex items-center justify-center`}>
+    <div className={`bf-kette relative z-10 min-h-5 ${ketteOben ? "-mt-3" : "mt-1"} flex items-center justify-center`}
+      data-hint-anchor="breakdown">
       {!hideBreakdown && <TrickBreakdown trick={t} />}
     </div>
   );

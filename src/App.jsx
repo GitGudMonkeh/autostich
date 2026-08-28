@@ -298,7 +298,7 @@ function AutostichGame() {
     markLessonSeen(target);
     setTutOpen({ section: sec, lesson: les });
   };
-  const hints = useHints({ state, profile, onMore: openProbe });
+  const hints = useHints({ state, profile, onMore: openProbe, breakdownOn: !options.hideBreakdown });
   const hintFreeze = hints.freeze;
   const [confirmAbort, setConfirmAbort] = useState(false);        // #254: Rückfrage „Lauf wirklich abbrechen?" (Beenden-Button ODER Zurück-Geste im Run)
   const [confirmRestart, setConfirmRestart] = useState(false);    // Komfort: Rückfrage „Wirklich neustarten?" (Neustart-Button) — kein Ein-Tap-Verlust bei Fettfingern

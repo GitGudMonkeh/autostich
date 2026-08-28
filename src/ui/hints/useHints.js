@@ -18,7 +18,7 @@ import { resolveHint } from "./HintCard.jsx";
 // den play-Ordinal — Papier §5.3: „play start, cycle 2/6/9" ist der Besuchs-Ordinal, keine feste Nummer).
 const COUNTED = new Set(["formation", "architect", "perk", "skill", "play"]);
 
-export function useHints({ state, profile, onMore = null }) {
+export function useHints({ state, profile, onMore = null, breakdownOn = true }) {
   const [prog, setProg] = useState(loadHintProgress);
   const seen = useMemo(() => new Set(prog.seen), [prog.seen]);
   const markSeen = useCallback((id) => setProg((p) => {
@@ -106,12 +106,12 @@ export function useHints({ state, profile, onMore = null }) {
     if (activeEvent || cardId) return;
     const st = stateRef.current;
     const id = eventForPlay({
-      seen, state: st, atPhaseStart, playVisit,
+      seen, state: st, atPhaseStart, playVisit, breakdownOn,
       shownThisPhase: phaseQuota.current.count,
       sameTrickAsLast: lastEventTrick.current != null && lastEventTrick.current === trickNo,
     });
     if (id) setActiveEvent({ id, key: playKey, trick: trickNo });
-  }, [playKey, trickNo, atPhaseStart, playVisit, activeEvent, cardId, seen]);
+  }, [playKey, trickNo, atPhaseStart, playVisit, breakdownOn, activeEvent, cardId, seen]);
   const dismissEvent = () => {
     if (!activeEvent) return;
     phaseQuota.current = { key: playKey, count: phaseQuota.current.count + 1 };
