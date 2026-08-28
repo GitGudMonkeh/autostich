@@ -55,6 +55,8 @@ player text** (text-style-guide.md, "Kein Gedankenstrich").
 
 | 29 | **StatusBar bug (outside the hints)** | The border around the SERIE cell shifts whenever the streak number changes width (content-driven cell). Give the cell a stable width so the frame stays fixed. |
 
+| 30 | **NEW hint (H4, glossary)** | Later in the run, at a perk choice (proposed: third perk visit, after H3/H3b are done): a banner that the i button opens the Glossar for looking things up. Draft, dash-free: "Das i oben öffnet das Glossar: Dort schlägst du fast alles nach." While it shows, the i button carries the tutorial glow (same banner-anchored highlight as C5). |
+
 ## Probierfeld lessons (Mehr-dazu targets)
 
 | # | Lesson | Change |
