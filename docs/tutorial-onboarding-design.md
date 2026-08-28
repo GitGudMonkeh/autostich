@@ -167,7 +167,7 @@ needs to block). Dismiss with ✕ or by deciding; "Mehr dazu →" opens the link
 | **H2b** | first skill offer with more than one archetype (run 2+) | Ab jetzt stehen mehrere Archetypen zur Wahl. Dein erster Skill eines Archetyps schaltet ihn frei — mischen ist erlaubt. | From now on, more than one archetype is on offer. Your first skill of an archetype activates it — mixing is allowed. | wahl / kategorien |
 | **H3** | first perk offer | Ein Perk wirkt sofort und bleibt bis zum Ende des Laufs. Passt keiner, lehn ab — das kostet nichts. | A perk takes effect immediately and lasts the whole run. If none fits, decline — it costs nothing. | wahl / kategorien |
 | **H3b** | perk offer, visit 2 | Der Farbchip nennt die Kategorie, der Rand die Rarität. | The colour chip names the category, the border the rarity. | wahl / raritaet |
-| **H5** | first skill offer with all slots full | Deine {slots} Slots sind voll: Eine neue Wahl ersetzt ab jetzt einen alten Skill — was er schon ausgezahlt hat, bleibt. | Your {slots} slots are full: a new pick now replaces an old skill — what it already paid out stays. | wahl / perks |
+| **H5** | first skill offer with all slots full | Deine {slots} Slots sind voll: Eine neue Wahl ersetzt ab jetzt einen alten Skill — was er schon ausgezahlt hat, bleibt. | Your {slots} slots are full: a new pick now replaces an old skill — what it already paid out stays. | wahl / kategorien |
 
 The formation and architect phases carry no descriptive hint — they get **suggestion sequences**
 instead (§5.2), which teach the same content as tasks.

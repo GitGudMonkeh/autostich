@@ -26,6 +26,7 @@ import { phaseCard, phasePanel, PhaseHairline, PHASE_ACCENTS } from "./modalStyl
 import { buildingEffect } from "../i18n/buildingText.js"; // #sprache: Gebäude-Effekttext zur Anzeigezeit
 import { t, fmtNum } from "../i18n/index.js";
 import { suitLabel } from "../i18n/labels.js";
+import { PhaseHintSlot } from "./hints/HintCard.jsx"; // Onboarding-Hints: Banner-Slot unter dem Kopf (docs/tutorial-onboarding-design.md)
 
 /* ============================================================
    Der Architekt (#202) — Präsentations-Rework (#261): perk-artige Auswahl + EIN durchgehender Verschiebe-Flow.
@@ -611,6 +612,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
           </div>
           <div className="ml-auto shrink-0"><GlossaryPanel /></div>
         </div>
+        <div className="mt-2"><PhaseHintSlot screen="architect" /></div>
         {/* Hero-Stat-Leiste: der Gebäude-Boost ist das, was man beim Bauen maximiert → Hero-Wert (grün). Baufeld & Durchlauf-
             Score als Nebenzellen (ersetzt den verstreuten Kopf-Cluster + das separate Score-Badge). Gleicher Bau wie die
             Hero-Leiste der Aufstellphase. */}

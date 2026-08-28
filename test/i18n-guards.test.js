@@ -116,6 +116,7 @@ describe("i18n · Katalog-Parität", () => {
      würde die vergessene spanische Übersetzung genau dort durchlassen, wo sie am wahrscheinlichsten
      ist — bei den Wörtern, die aus dem Englischen schon vertraut aussehen. */
   const SAME_OK_EN = new Set([
+    "hint.eyebrow",      // „Tutorial" — im Englischen dasselbe Wort
     "tut.sz.aa.pillBoost",  // „Boost →0 %" — reines Kuerzel, beide Sprachen gleich
     "tut.sz.ax.eqStep",     // reine Formelzeile aus Platzhaltern
     "tut.sz.nb.maximum",    // dasselbe Wort
@@ -282,6 +283,7 @@ describe("i18n · Katalog-Parität", () => {
      3. ZWEI KÜRZEL, die zufällig zusammenfallen: Wechsel/Zigzag → Z und Anker/Ancla → A. Die
         anderen sechs Formations-Kürzel unterscheiden sich. */
   const SAME_OK_ES = new Set([
+    "hint.eyebrow",      // „Tutorial" — im Spanischen dasselbe Wort
     "tut.sz.ax.eqStep",     // reine Formelzeile aus Platzhaltern
     "tut.sz.pc.eqBlock",    // reine Formelzeile aus Platzhaltern
     "tut.sz.pc.eqBluete",   // dito
@@ -1053,6 +1055,8 @@ describe("i18n · Ratsche gegen neue deutsche Inline-Texte", () => {
      migriert sind. */
   const MIGRATED = ["src/ui/OptionsModal.jsx", "src/ui/StartScreen.jsx", "src/ui/UsernameModal.jsx",
     "src/ui/GameOver.jsx",
+    // Onboarding-Hints (docs/tutorial-onboarding-design.md §5) — von der ersten Zeile an i18n-fest.
+    "src/ui/hints/HintCard.jsx",
     // Die vier Fraktions-Leisten — sie laufen im Stichspiel dauerhaft mit.
     "src/ui/HeatBar.jsx", "src/ui/ChargeBar.jsx", "src/ui/GlacierBar.jsx", "src/ui/PlantBar.jsx",
     // Die Spielschleife selbst: Kopfleiste, Seitenleiste, Brett, Aufstellungsphase.

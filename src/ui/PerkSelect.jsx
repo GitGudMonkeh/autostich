@@ -18,6 +18,7 @@ import { LevelupRig } from "./LevelupWings.jsx"; // #lv-fluegel: Deck links, Ken
 import { perkArt } from "./perkArt.js"; // #perkart: Kategorie-Emblem bzw. eigenes Emblem (nur ab 1280 px gerendert)
 import { CardCorners } from "./CardCorners.jsx"; // #cornerart: Eck-Ornamente im Kartenkopf
 import { CORNER_PERK } from "./cornerArt.js";
+import { PhaseHintSlot } from "./hints/HintCard.jsx"; // Onboarding-Hints: Banner-Slot unter dem Kopf (docs/tutorial-onboarding-design.md)
 
 // Legendär-Akzent: durchgehend gold (Rahmen, Ring, Badge, Titel) — Teil des Grau/Grün/Gold-Schemas (#71).
 const LEG_GOLD = "#d4a63a";
@@ -93,6 +94,7 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
           <h2 className="text-title-6 font-bold mt-1">{tr("perk.title")}</h2>
           {state.lastCycleScore != null && <div className="mt-3"><RoundScoreBadge state={state} className="lv-score" /></div>}
         </div>
+        <PhaseHintSlot screen="perk" />
 
         {!state.devMode && (onDecline || canReroll) && (
           <ActionBar pad={6}>
