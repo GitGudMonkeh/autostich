@@ -329,13 +329,13 @@ const PROBE_PX = { formation: 520,
   struktur: 560, strukturen: 620,
   // Wahl und Blitz, gemessen: kategorien 199 · raritaet 157 · blitzkarte 272.
   kategorien: 600, raritaet: 620, blitzkarte: 800,
-  /* Feuer, Pflanze, Eis — die Runde-3-Seiten (Q13/Q16), Modellwerte NACH dem Umbau
-     konservativ angesetzt und per CDP-Screenshot gegengeprüft. Zum VIERTEN Mal in diesem
-     Task war ein neues Feld hier zuerst nicht eingetragen und fiel auf PROBE_MAX; wer ein
-     Probierfeld baut, trägt es HIER ein, sonst misst das Budget etwas anderes als der
-     Leser sieht. */
-  feuerkarten: 620, schmiede: 640, hitze: 660, pflanzkarte: 760, pflanztempo: 500, gruenfeld: 560,
-  gletscher: 860, gletscherformen: 620, einfrieren: 330,
+  /* Feuer, Pflanze, Eis — die Runde-3-Seiten (Q13/Q16). GEMESSEN per CDP im Produktions-
+     build bei 390 × 844 (Deutsch): feuerkarten 461 · hitze 432 · schmiede 529 ·
+     pflanzkarte 538 · gruenfeld 434 · pflanztempo 375 · gletscher 638 ·
+     gletscherformen 535 (Fläche-Tab, der längste) · einfrieren 219. Eingetragen knapp
+     darüber, weil Englisch länger laufen kann und das Modell eher zu viel schätzen soll. */
+  feuerkarten: 500, schmiede: 570, hitze: 470, pflanzkarte: 580, pflanztempo: 410, gruenfeld: 480,
+  gletscher: 690, gletscherformen: 580, einfrieren: 250,
   // Nach dem Lauf, gemessen: meilenstein 169.
   meilenstein: 400 };
 const PROBE_MAX = Math.max(...Object.values(PROBE_PX));
