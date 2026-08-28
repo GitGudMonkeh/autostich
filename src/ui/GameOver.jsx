@@ -19,6 +19,7 @@ import { milestoneBarState } from "../game/progression.js"; // #304 Verdienst-Ro
 import { GuideOverlay } from "./GuideOverlay.jsx"; // #: Leitfaden direkt auf der Fraktions-Seite eines Archetyp-Unlocks öffnen
 import { archFamily, archCatDef } from "../i18n/labels.js"; // #sprache: Gebäudename zur Anzeigezeit
 import { t, fmtNum } from "../i18n/index.js"; // #sprache
+import { PhaseHintSlot } from "./hints/HintCard.jsx"; // Onboarding-E8: der Abschluss-Hinweis
 
 /* #menu-rework M4 — THREE INLINE LITERALS ON THIS SCREEN ARE STEPS OF THE VOCABULARY, and they are
    the only three. Migrating them is value-preserving by construction, so all three are provable at
@@ -268,6 +269,10 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
             Am HANDY ändert sich nichts: `go-hero` bleibt der zentrierte Block, `go-col1` ist dort
             `display: contents`, und die Reihenfolge im DOM ist unverändert Augenbraue → Zahl →
             Rekord-Chip → Kleinschrift-Zeile. */}
+        {/* Onboarding-E8 (T-O2): einmaliger Abschluss-Hinweis — als Banner IM Endscreen, nicht als
+            blockierende Karte davor (der Victory-Schirm ist selbst der Payoff, den nichts verdecken
+            soll; Abweichung vom Papier §5.3 „pause card", im Task-Contract festgehalten). */}
+        <PhaseHintSlot screen="gameover" />
         <div className="go-hero text-center mt-4">
           <div className="go-eyebrow text-body-5 uppercase tracking-widest" style={{ color: "#e0605a" }}>{t("gameover.eyebrow")}</div>
           {/* #go-ruhe: Auf dem DESKTOP wird aus der Kleinschrift-Zeile unter dem Score die Kennzahlenreihe

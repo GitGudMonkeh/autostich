@@ -32,12 +32,16 @@ const CloseX = ({ onClick, size = 12 }) => (
   </button>
 );
 
+/* Der Leucht-Rahmen der Tutorial-Stimme (Owner-Feedback aus dem ersten Playtest: die Tipps
+   brauchen mehr Sichtbarkeit). Statisch — keine Animation, damit alle FX-Stufen ihn tragen. */
+const TUT_GLOW = `0 0 0 1px ${TUT_ACCENT}59, 0 0 14px ${TUT_ACCENT}40`;
+
 /* One banner. `hint` = { id, def, vars } resolved by the provider. */
 export function HintBanner({ hint, onClose, onMore }) {
   const { def, vars } = hint;
   return (
     <div className="rounded-lg px-3 py-2.5 mb-2"
-      style={{ background: "rgba(15,15,21,0.72)", border: "1px solid rgba(150,150,170,0.12)" }}
+      style={{ background: "rgba(15,15,21,0.72)", border: `1px solid ${TUT_ACCENT}66`, boxShadow: TUT_GLOW }}
       role="note" data-hint={hint.id}>
       <div className="flex items-center justify-between gap-2">
         <div className="text-meta-3 uppercase tracking-[0.14em]" style={{ color: TUT_ACCENT }}>
@@ -95,6 +99,41 @@ export function HintCardOverlay({ hint, onGo, onMore }) {
             <button type="button" onClick={onMore} className="text-body-5 transition-all hover:brightness-125"
               style={{ color: "#26c6e6" }}>{t("hint.more")} ›</button>
           )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* Die Ereignis-/UI-Hint-Karte im Stichspiel (T-O2, Mockup-Board 2): unten verankert, LEICHTER
+   Scrim — das Ereignis, das sie benennt, bleibt sichtbar (der Referent ist der Spotlight, Papier
+   §5.3). Der Lauf darunter ist über hints.freeze angehalten; „Weiter" lässt ihn weiterlaufen. */
+export function EventHintCard({ hint, onGo, onMore }) {
+  if (!hint) return null;
+  const { def, vars } = hint;
+  return overlayPortal(
+    <div className="fixed inset-0 overlay-root z-30 flex items-end justify-center p-4 pb-16"
+      style={{ background: "#0c0c1066" }}
+      role="dialog" aria-modal="true" aria-label={t("hint.eyebrow")} data-hint={hint.id}>
+      <div className="relative w-full max-w-sm rounded-2xl overflow-hidden"
+        style={{ ...MODAL_CARD, boxShadow: TUT_GLOW }}>
+        <ModalHairline />
+        <div className="px-4 pb-4 pt-3 grid gap-2.5">
+          <div className="text-meta-3 uppercase tracking-[0.14em]" style={{ color: TUT_ACCENT }}>{t("hint.eyebrow")}</div>
+          <div className="text-body-4 leading-relaxed" style={{ color: "#e2e2e9" }}>
+            {t(def.bodyKey, vars)}
+          </div>
+          <div className="flex gap-2 mt-0.5">
+            <button type="button" onClick={onGo}
+              className="flex-1 rounded-xl px-4 py-2.5 font-bold text-body-4 transition-all hover:brightness-110"
+              style={{ background: "#26c6e6", color: "#06222a" }}>{t("hint.btn.next")}</button>
+            {onMore && (
+              <button type="button" onClick={onMore}
+                className="flex-1 rounded-xl px-4 py-2.5 text-body-4 transition-all hover:brightness-125"
+                style={{ background: "rgba(15,15,21,0.72)", border: "1px solid rgba(150,150,170,0.12)", color: "#cfcfd8" }}>
+                {t("hint.more")} ›</button>
+            )}
+          </div>
         </div>
       </div>
     </div>

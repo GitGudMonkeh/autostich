@@ -25,7 +25,7 @@ import { architectCoverFor } from "./ui/architectCover.js"; // Lauf-Details: Geb
 import { Battlefield, OPP_SKIN_URLS } from "./ui/Battlefield.jsx";
 import { useFxLevel } from "./ui/useReducedFx.js"; // Perf: löst reducedFx dreistufig auf (full/balanced/minimal) → steuert Overlay-Blur + Sweeps
 import { useHints } from "./ui/hints/useHints.js"; // Onboarding-Hints (docs/tutorial-onboarding-design.md §5): Banner auf Entscheidungsscreens + die H1-Karte
-import { HintContext, HintCardOverlay } from "./ui/hints/HintCard.jsx";
+import { HintContext, HintCardOverlay, EventHintCard } from "./ui/hints/HintCard.jsx";
 import { PerfOverlay } from "./ui/PerfOverlay.jsx"; // Perf-Recorder-HUD (nur Preview-Build)
 import { perfMark, getReport, formatReport } from "./ui/perfRecorder.js"; // Perf-Recorder (No-op außerhalb Preview)
 import { GlossaryPanel } from "./ui/Glossary.jsx";
@@ -1473,6 +1473,9 @@ function AutostichGame() {
       {/* Onboarding-H1: die EINZIGE blockierende Hint-Karte (Erstlauf-Begrüßung). Über allem außer
           den Bestätigungs-Dialogen; der Lauf darunter ist über hintFreeze eingefroren. */}
       {hints.card && <HintCardOverlay hint={hints.card} onGo={hints.dismissCard} />}
+      {/* Ereignis-/UI-Hints im Stichspiel (T-O2): Pause-Karte am unteren Rand, Referent bleibt
+          sichtbar; der Lauf ist über hintFreeze angehalten, bis „Weiter" gedrückt wird. */}
+      {!hints.card && hints.eventCard && <EventHintCard hint={hints.eventCard} onGo={hints.dismissEvent} />}
     </div>
     </HintContext.Provider>
   );

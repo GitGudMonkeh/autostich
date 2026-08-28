@@ -11,10 +11,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as C from "../../game/constants.js";
 import { SKILL_DEFS } from "../../game/skills.js";
 import { loadHintProgress, saveHintProgress } from "../../game/storage.js";
-import { hintForScreen, screenOf } from "./hintScript.js";
+import { hintForScreen, screenOf, eventForPlay } from "./hintScript.js";
 import { resolveHint } from "./HintCard.jsx";
 
-const COUNTED = new Set(["formation", "architect", "perk", "skill"]);
+// Besuchszähler: die vier Entscheidungsscreens plus die Stichphase selbst (U-Hints takten über
+// den play-Ordinal — Papier §5.3: „play start, cycle 2/6/9" ist der Besuchs-Ordinal, keine feste Nummer).
+const COUNTED = new Set(["formation", "architect", "perk", "skill", "play"]);
 
 export function useHints({ state, profile }) {
   const [prog, setProg] = useState(loadHintProgress);
@@ -28,26 +30,27 @@ export function useHints({ state, profile }) {
 
   const screen = screenOf(state);
   // The visit identity: same run (seed) + same cycle + same screen = one visit, however often
-  // React re-renders or the tab reloads mid-phase.
-  const ctxKey = screen ? `${screen}:${state?.seed ?? "x"}:${state?.cycle ?? 0}` : null;
-  const isNewVisit = !!(screen && COUNTED.has(screen) && prog.last?.[screen] !== ctxKey);
+  // React re-renders or the tab reloads mid-phase. `play` zählt als eigener Kontext mit.
+  const countKey = screen || (state?.phase === "play" ? "play" : null);
+  const ctxKey = countKey ? `${countKey}:${state?.seed ?? "x"}:${state?.cycle ?? 0}` : null;
+  const isNewVisit = !!(countKey && COUNTED.has(countKey) && prog.last?.[countKey] !== ctxKey);
   // Effective counters for THIS render — the commit below persists the same values, so the
   // banner does not arrive one frame late.
   const visits = useMemo(() => {
     const v = { ...prog.visits };
-    if (isNewVisit) v[screen] = (v[screen] || 0) + 1;
+    if (isNewVisit) v[countKey] = (v[countKey] || 0) + 1;
     return v;
-  }, [prog.visits, isNewVisit, screen]);
+  }, [prog.visits, isNewVisit, countKey]);
   useEffect(() => {
     if (!isNewVisit) return;
     setProg((p) => {
-      if (p.last?.[screen] === ctxKey) return p;
-      const next = { ...p, visits: { ...p.visits, [screen]: (p.visits?.[screen] || 0) + 1 },
-        last: { ...p.last, [screen]: ctxKey } };
+      if (p.last?.[countKey] === ctxKey) return p;
+      const next = { ...p, visits: { ...p.visits, [countKey]: (p.visits?.[countKey] || 0) + 1 },
+        last: { ...p.last, [countKey]: ctxKey } };
       saveHintProgress(next);
       return next;
     });
-  }, [isNewVisit, screen, ctxKey]);
+  }, [isNewVisit, countKey, ctxKey]);
 
   // ---- selection context for the skill screen
   const offer = state?.skillOffer || null;
@@ -79,6 +82,44 @@ export function useHints({ state, profile }) {
   const inRun = state && state.phase !== "menu" && state.phase !== "gameover";
   const cardId = inRun && firstRun && !seen.has("H1") ? "H1" : null;
 
+  /* ---- Ereignis-/UI-Hints im Stichspiel (T-O2, Papier §5.3/§5.4). Die Auswahl ist pur
+     (eventForPlay); hier leben nur die Quoten und der offene Karten-Zustand:
+     · höchstens 2 Karten je Stichphase (Zähler je play-Kontext),
+     · höchstens 1 je Stich (globale trickNo als Identität),
+     · aufgeschoben statt eingereiht — jede Bedingung kehrt von selbst wieder. */
+  const [activeEvent, setActiveEvent] = useState(null);
+  const phaseQuota = useRef({ key: null, count: 0 });
+  const lastEventTrick = useRef(null);
+  // Ref-Spiegel des States (Haus-Muster aus test/hook-deps-budget): der Effekt taktet über die
+  // SIGNATUR (playKey · trickNo · pos), liest den vollen State aber aus dem Spiegel — so bleibt
+  // die Dep-Liste ehrlich, ohne bei jedem Reducer-Tick neu zu feuern.
+  const stateRef = useRef(state);
+  stateRef.current = state;
+  const playKey = state?.phase === "play" ? `play:${state?.seed ?? "x"}:${state?.cycle ?? 0}` : null;
+  const trickNo = state?.trickNo ?? 0;
+  const atPhaseStart = (state?.pos || 0) === 0;
+  const playVisit = visits.play || 0;
+  if (playKey && phaseQuota.current.key !== playKey) phaseQuota.current = { key: playKey, count: 0 };
+  useEffect(() => {
+    // Kontextwechsel raus aus dem Stichspiel räumt eine offene Karte ab (Lauf beendet/abgebrochen).
+    if (!playKey) { setActiveEvent((ev) => (ev ? null : ev)); return; }
+    if (activeEvent || cardId) return;
+    const st = stateRef.current;
+    const id = eventForPlay({
+      seen, state: st, atPhaseStart, playVisit,
+      shownThisPhase: phaseQuota.current.count,
+      sameTrickAsLast: lastEventTrick.current != null && lastEventTrick.current === trickNo,
+    });
+    if (id) setActiveEvent({ id, key: playKey, trick: trickNo });
+  }, [playKey, trickNo, atPhaseStart, playVisit, activeEvent, cardId, seen]);
+  const dismissEvent = () => {
+    if (!activeEvent) return;
+    phaseQuota.current = { key: playKey, count: phaseQuota.current.count + 1 };
+    lastEventTrick.current = activeEvent.trick;
+    markSeen(activeEvent.id);
+    setActiveEvent(null);
+  };
+
   // Plain function on purpose: the slots re-render with the provider anyway, and a useCallback
   // here would need the whole ctx in its deps — an exhaustive-deps exception for zero gain.
   const bannerFor = (slotScreen) =>
@@ -87,9 +128,13 @@ export function useHints({ state, profile }) {
   return {
     card: cardId ? resolveHint(cardId, ctx) : null,
     dismissCard: () => markSeen("H1"),
+    eventCard: activeEvent ? resolveHint(activeEvent.id, ctx) : null,
+    dismissEvent,
     bannerFor,
     dismiss: markSeen,
-    freeze: !!cardId,     // App adds this to the play-freeze condition chain like any overlay
+    // App adds this to the play-freeze condition chain like any overlay: H1 UND jede offene
+    // Ereignis-Karte halten den Lauf an, solange der Spieler liest.
+    freeze: !!cardId || !!activeEvent,
     onMore: null,         // T-O4 wires the Probierfeld deep link; until then no link renders
   };
 }
