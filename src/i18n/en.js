@@ -769,7 +769,7 @@ export default {
   "arch.reset": "Reset",
   "arch.otherPlan": "← Different blueprint",
   "arch.rearrange": "↔ Rearrange buildings",
-  "arch.buildNothing": "Build nothing · continue →",
+  "arch.buildNothing": "Build nothing →",
   "arch.cancel": "Cancel",
   "arch.confirmStart": "✓ Confirm · start the cycle",
   "arch.yourBuildings": "Your buildings ({n})",

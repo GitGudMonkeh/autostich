@@ -34,9 +34,9 @@ function MiniCell({ label, children, className = "" }) {
 }
 
 // Nachbar-Zelle des Scores (Zeile 2: Serie/Mult) — rechtsbündig, feste Grundschrift.
-function Cell({ label, children, className = "" }) {
+function Cell({ label, children, className = "", style = null }) {
   return (
-    <div className={`flex flex-col justify-center gap-1 px-2.5 py-2 ${className}`} style={{ textAlign: "right" }}>
+    <div className={`flex flex-col justify-center gap-1 px-2.5 py-2 ${className}`} style={{ textAlign: "right", ...style }}>
       <span className="text-meta-1 uppercase tracking-wide font-bold" style={{ color: "#6d7288" }}>{label}</span>
       <span className="ty-num leading-none whitespace-nowrap"
         style={{ fontVariantNumeric: "tabular-nums", fontSize: 18 }}>{children}</span>
@@ -118,8 +118,10 @@ export function StatusBar({
                 zusammen mit hoher Serie (z. B. 1000×) nicht rechts über den Rahmen hinausläuft. */}
             <span className="ty-num leading-none whitespace-nowrap" style={{ fontVariantNumeric: "tabular-nums", fontSize: score >= 1000000000 ? 19 : score >= 100000000 ? 21 : 25, color: "#d4a63a" }}>{fmtScore(score)}</span>
           </div>
-          {/* Serie — kann in den Tausenderbereich gehen; rechtsbündig neben dem Score. */}
-          <Cell label={t("hud.streak")} className="sb-streak border-l border-[color:var(--deck-border)]">
+          {/* Serie — kann in den Tausenderbereich gehen; rechtsbündig neben dem Score. Feste
+              Mindestbreite (Review-Runde, Zeile 29): der Rahmen wanderte sonst mit jeder
+              Serienänderung, weil die Zelle inhaltsbreit war. */}
+          <Cell label={t("hud.streak")} className="sb-streak border-l border-[color:var(--deck-border)]" style={{ minWidth: 104 }}>
             <span style={{ color: winStreak >= 3 ? "#e0605a" : "#e8e8ea" }}>{winStreak > 0 ? `${winStreak}×` : "–"}</span>
             <span className="text-micro-3 opacity-45 ml-1">{t("hud.streak.best", { n: bestStreak })}</span>
           </Cell>

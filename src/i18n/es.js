@@ -941,7 +941,7 @@ export default {
   "arch.reset": "Restablecer",
   "arch.otherPlan": "← Otro plano",
   "arch.rearrange": "↔ Reordenar los edificios",
-  "arch.buildNothing": "No construir nada · continuar →",
+  "arch.buildNothing": "No construir →",
   "arch.cancel": "Cancelar",
   "arch.confirmStart": "✓ Confirmar · iniciar el ciclo",
   "arch.yourBuildings": "Tus edificios ({n})",

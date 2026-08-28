@@ -1938,7 +1938,7 @@ export default {
   "arch.reset": "重置",
   "arch.otherPlan": "← 换一张蓝图",
   "arch.rearrange": "↔ 重新摆放建筑",
-  "arch.buildNothing": "不建造 · 继续 →",
+  "arch.buildNothing": "不建造 →",
   "arch.cancel": "取消",
   "arch.confirmStart": "✓ 确认 · 开始本轮",
   "arch.yourBuildings": "你的建筑（{n}）",

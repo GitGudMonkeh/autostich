@@ -23,6 +23,13 @@ export const linkedPartnerOf = (view, suit) => {
   for (const g of groups) { if (g.includes(suit)) return g.find((s) => s !== suit) || null; }
   return null;
 };
+/* Review-Runde 2026-08-28 (Zeile 32): ALLE Partnerfarben der Allianz-Gruppe — eine 3er/4er-Allianz
+   zeigte auf der Karte sonst nur eine der verbündeten Farben. */
+export const linkedPartnersOf = (view, suit) => {
+  const groups = (view && view.linkedGroups) || ((view && (view.linkedColors || []).length === 2) ? [view.linkedColors] : []);
+  for (const g of groups) { if (g.includes(suit)) return g.filter((s) => s !== suit); }
+  return [];
+};
 
 // Legendär-Chance je Perk-/Skill-Angebot: Basis + additiver Bonus (bis Cap). Ohne Shop = reine Basis.
 export const perkLegendaryChance  = (shop = {}) => C.PERK_LEGENDARY_BASE  + Math.min(shop.perkLegendaryBonus  || 0, C.MAX_LEGENDARY_CHANCE_BONUS);

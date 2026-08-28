@@ -788,7 +788,7 @@ export default {
   "arch.reset": "Zurücksetzen",
   "arch.otherPlan": "← Anderer Bauplan",
   "arch.rearrange": "↔ Gebäude umstellen",
-  "arch.buildNothing": "Nichts bauen · Fortfahren →",
+  "arch.buildNothing": "Nichts bauen →",
   "arch.cancel": "Abbrechen",
   "arch.confirmStart": "✓ Bestätigen · Durchlauf starten",
   "arch.yourBuildings": "Deine Gebäude ({n})",

@@ -8,10 +8,10 @@ import { t, fmtNum } from "../i18n/index.js"; // #health-check F1: Badges/Toolti
    damit sie immer zum Stich-Ausgang passt.
      value      = dauerhafter Kartenwert (inkl. Kat.-A-Mods)
      baseRank   = Ursprungswert → dauerhafter Boost = value − baseRank (violett „+X")
-     stichBonus = temporärer Bonus dieses Stichs (Kat.-B-Perks, rot) */
+     stichBonus = temporärer Bonus dieses Stichs (Kat.-B-Perks, weiß — rot war auf der Karte schwer lesbar, Review-Runde 2026-08-28) */
 // #259: reiner Präsentations-Leaf mit teuren Bild-Layern → React.memo überspringt Re-Render bei unveränderten
 // (primitiven) Props. Beim Auto-Play/Timer-Takt rendern nur die tatsächlich wechselnden Karten neu, nicht alle.
-function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, glow = null, ionStacks = 0, green = false, forged = 0, branded = 0, growth = 0, colonized = 0, allyColor = null, frontImage = null }) {
+function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, glow = null, ionStacks = 0, green = false, forged = 0, branded = 0, growth = 0, colonized = 0, allyColors = null, frontImage = null }) {
   const color = suitColor(suit);
   // Holo-Front (#178): rahmenlose „Hologramm"-Oberfläche in Kartenfarbe — Punktraster + diagonaler
   // Energiestrahl + farbiger Kern-Schein, statt des früheren harten 2px-Rahmens. Zahl bleibt groß & mittig.
@@ -20,8 +20,18 @@ function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, g
   const HOLO_BASE = "#131318";
   const skinned = !!frontImage;
   const layers = [];
-  // F4 Farballianz (#125): Partnerfarbe als diagonaler Zweitfarben-Hauch in der unteren Hälfte (rein kosmetisch).
-  if (allyColor) layers.push({ img: `linear-gradient(135deg, transparent 50%, ${allyColor}24 52%, ${allyColor}24 100%)`, size: "cover", repeat: "no-repeat" });
+  /* F4 Farballianz (#125): Partnerfarben als diagonaler Hauch in der unteren Hälfte (rein
+     kosmetisch). Seit der Review-Runde 2026-08-28: ALLE Partner der Allianz-Gruppe als Bänder
+     (2 Partner = zwei, 3 = drei), Deckkraft von 14 auf 20 Prozent angehoben. */
+  const allies = Array.isArray(allyColors) ? allyColors.filter(Boolean) : (allyColors ? [allyColors] : []);
+  if (allies.length) {
+    const span = 50 / allies.length;
+    const stops = allies.map((c, i) => {
+      const from = 50 + i * span, to = 50 + (i + 1) * span;
+      return `${c}33 ${(from + (i ? 1 : 2)).toFixed(0)}%, ${c}33 ${to.toFixed(0)}%`;
+    }).join(", ");
+    layers.push({ img: `linear-gradient(135deg, transparent 50%, ${stops})`, size: "cover", repeat: "no-repeat" });
+  }
   if (skinned) {
     layers.push({ img: `url(${frontImage})`, size: "100% 100%", repeat: "no-repeat" }); // Pixel-Art-Rahmen füllt die Karte
   } else {
@@ -158,7 +168,7 @@ function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, g
       )}
       <div className="absolute bottom-1.5 flex flex-col items-center leading-tight text-meta-1">
         {permBoost > 0 && <span className="opacity-55">{t("card.base", { base: baseRank })}</span>}
-        {stichBonus > 0 && <span style={{ color: "#e0605a" }}>{t("card.trickBonus", { n: stichBonus })}</span>}
+        {stichBonus > 0 && <span style={{ color: "#f2f2f6" }}>{t("card.trickBonus", { n: stichBonus })}</span>}
       </div>
     </div>
   );
