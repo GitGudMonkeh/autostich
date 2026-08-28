@@ -51,7 +51,7 @@ player text** (text-style-guide.md, "Kein Gedankenstrich").
 
 | 27 | **U4** (breakdown line) | "Mehr dazu" link goes (copy stays). |
 
-| 28 | **S-A4** (buildings movable) | Reworded ("festgenagelt" sounded odd), owner picked variant A: "Du kannst jedes Gebäude jederzeit aufwerten, versetzen oder abreißen." |
+| 28 | **S-A4** (buildings movable) | Reworded ("festgenagelt" sounded odd), owner picked variant A: "Du kannst jedes Gebäude jederzeit aufwerten, versetzen oder abreißen." Link and its page (`architekt/aufwerten`) stay as they are. |
 
 ## Probierfeld lessons (Mehr-dazu targets)
 
