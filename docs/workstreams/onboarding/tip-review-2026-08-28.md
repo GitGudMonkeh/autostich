@@ -115,6 +115,7 @@ Implementation record: docs/workstreams/onboarding/onb-tipreview/task-contract.m
 | R20 | **Blitz panel: drop duplicated info** | The expanded Blitz panel repeats what already lives elsewhere: the "Blitzfrequenz" row with its Crit ×N value (also in the Multiplikatoren panel as Crit-Mult) and the "Serienkette · hält ×N" row with the "N× Serie gehalten" badge (Serie already sits in the status bar). Remove these from the Blitz panel. |
 | R21 | **Milestone bar: one bar per milestone** | Same visual as today, but the fill is per milestone, not total: it runs 0 → 100 % toward the current milestone's threshold (e.g. 10 Mio). On reaching it the counter ticks (1/5), the bar drops back to 0 and refills toward the next threshold in a DIFFERENT color (distinct color per milestone stage). ScoreMilestoneBar. |
 | R22 | **New profile starts with 0 DP** | A fresh profile currently starts with 50 DP (`START_DECK_POINTS = 50` in storage.js, decision #316). Owner decision: a new profile starts with 0 DP → constant goes to 0. The one-time welcome bonus of 50 DP after the first COMPLETED run (WELCOME_DP, progression.js) STAYS — owner confirmed. |
+| R23 | **H1 (welcome card): Mehr dazu goes** | The welcome card loses its "Mehr dazu" link (drop `target` from the H1 def). |
 
 ### R13 appendix — lessons not reached during the first run (state: dev, 2026-08-28)
 
