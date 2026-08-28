@@ -88,3 +88,9 @@ Implementation record: docs/workstreams/onboarding/onb-tipreview/task-contract.m
 - Collect first, implement everything in one task at the end.
 - No em-dashes in any new or reworded player text.
 - The Mehr-dazu lessons are reviewed alongside the hints; expect heavy cuts.
+
+## Round 2 (owner playtest after implementation) — COLLECTING
+
+| # | Item | Change |
+| --- | --- | --- |
+| R1 | **E3 mult formatting (bug)** | Shows ×1,1400000000000001: `streakBaseMult(n)` is raw floating point and E3's vars call `fmtNum` without rounding. Format to two decimals (`.toFixed(2)`, the f2 pattern) — audit the other hint vars (E4 critMult etc.) for the same hole. |
