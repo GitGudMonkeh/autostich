@@ -43,6 +43,8 @@ player text** (text-style-guide.md, "Kein Gedankenstrich").
 
 | 23 | **U3** (Chronik) | "Mehr dazu" link goes (copy stays). Together with row 7 this settles U3: the deleted anzeigen page needs no replacement target. |
 
+| 24 | **S-F3** (third Aufstellung) | Replaced (overlap now lives in S-F2's rebuilt page). New copy, dash-free: "Formationen gehen nie über Segmentgrenzen hinaus. Versuch deshalb, in jedem Segment eigene Formationen zu bauen." "Mehr dazu" link goes. |
+
 ## Probierfeld lessons (Mehr-dazu targets)
 
 | # | Lesson | Change |
