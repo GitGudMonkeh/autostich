@@ -115,9 +115,9 @@ their event first happens, under the §5.4 pacing rules.
 | Cycle 2 | Perk basics: immediate, permanent, declining is free | banner | H3 | wahl / kategorien |
 | Cycle 3 | Formation basics as a task: one segment, colour block | task banner | S-F1 | aufstellung / formationen |
 | Cycle 4 | Architect basics as a task: place a building, the win condition | task banner | S-A1 | architekt / wasist |
-| Cycle 5 | The first skill: Blitz as the one archetype, consumer badged | banner + badge | H2 | blitz / karte |
+| Cycle 5 | The first skill: Blitz as the one archetype; the badged consumer explains what it does — and what a crit is | banner + badge + reason line | H2 | blitz / karte |
 | Cycle 5, play | The resource bar that just appeared | pause card | E5 | blitz / karte |
-| First crit, whenever | Crit ×{critMult}; where crit chance comes from | pause card | E4 | blitz / karte |
+| First crit, whenever | The crit that just landed, with its number | pause card | E4 | blitz / karte |
 | Cycle 6 (perk visit 2) | Category chip and rarity border | banner | H3b | wahl / raritaet |
 | Cycle 7 (formation visit 2) | A second pattern, via the legend | task banner | S-F2 | aufstellung / formationen |
 | First formation scores, whenever | The formation's factor, and the segment rule | pause card | E6 | aufstellung / formationen |
@@ -224,7 +224,7 @@ spotlight. Respects the three FX levels (`useFxLevel`), per the guided-run playt
 | **E1** | first won trick | Dein erster Sieg: {win} Basispunkte. Serie, Crits, Formationen und Gebäude legen sich als Faktoren darauf. | Your first win: {win} base points. Streak, crits, formations and buildings stack on top as factors. | grundlagen / score |
 | **E2** | first tie | Gleichstand: Niemand punktet. Nur Siege zahlen. | A tie pays nobody. Only wins score. | grundlagen / stich |
 | **E3** | streak reaches 3 | Serie {n}: Dein Serien-Faktor steht auf ×{mult}. Eine Niederlage setzt ihn zurück. | Streak {n}: your streak factor stands at ×{mult}. One loss resets it. | grundlagen / serie |
-| **E4** | first crit | Crit: Dieser Stich zählt ×{critMult}. Crit-Chance kommt aus Präzisions-Perks — und aus Blitz. | Crit: this trick counts ×{critMult}. Crit chance comes from precision perks — and from Lightning. | blitz / karte |
+| **E4** | first crit | Crit: Dieser Stich zählt ×{critMult}. | Crit: this trick counts ×{critMult}. | blitz / karte |
 | **E5** | first resource bar appears | Das ist deine {arch}-Leiste. Sie füllt sich in den Stichen und treibt deine Skills an. | This is your {arch} bar. It fills during tricks and powers your skills. | *\<arch\>* / karte |
 | **E6** | first formation scores in play | Formation {name}: Diese Karte zählt ×{mult}. Muster zählen nur innerhalb eines Segments. | Formation {name}: this card counts ×{mult}. Patterns only count inside one segment. | aufstellung / formationen |
 | **E7** | first milestone reached | Meilenstein erreicht — das bringt dir Stichpunkte für den Upgrade-Baum nach dem Lauf. | Milestone reached — that earns you trick points for the upgrade tree after the run. | danach / punkte |
@@ -318,7 +318,12 @@ supporting evidence is better than a taste call:
 **The first skill screen (cycle 5, after §6.1) then reads:** three Blitz skills, one badge. The
 badge sits on the guaranteed **Blitz consumer** — DE **„Guter Start"** / EN **"Good start"** —
 because picking the consumer makes the charge loop visible in the very next play phase, which E5
-then names. The badge rule stays
+then names. **The badge explains itself** (owner direction, 2026-08-28): the badged card carries
+one reason line that says what the skill does — and, in the same breath, what a crit is, because
+this is the moment the crit becomes relevant. Draft: DE *„Empfohlen: Er macht aus deiner Ladung
+Crits — ein Crit vervielfacht den Score seines Stichs."* / EN *"Recommended: it turns your charge
+into crits — a crit multiplies its trick's score."* E4 consequently shrinks to naming the number
+when the first crit actually lands (§5.3) — the concept is taught here, at the choice. The badge rule stays
 **rule-derived, not curated** (the guided-run plan §13.2 rejected hardcoded picks for drift
 reasons, and that reasoning still holds): "the consumer of the offered archetype", shipped as one
 pure function, moves with every balance pass. A guard test asserts the badge finds its skill in a
