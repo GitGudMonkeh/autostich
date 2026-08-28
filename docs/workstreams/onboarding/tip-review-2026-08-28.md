@@ -47,6 +47,8 @@ player text** (text-style-guide.md, "Kein Gedankenstrich").
 
 | 25 | **S-A3** (structures) | "Fernziel" reads oddly; compact rewrite, dash-free: "Versuch, neben Distrikten auch volle Zeilen zu bauen: Sie schließen eine Struktur und verstärken jede Position darin." The "Mehr dazu" link STAYS and opens the new `architekt/strukturen` page (row 20). |
 
+| 26 | **UI copy (outside the hints)** | The architect button "Nichts bauen · Fortfahren →" gets cut off on the phone; shorten to "Nichts bauen →" (all four catalogs). |
+
 ## Probierfeld lessons (Mehr-dazu targets)
 
 | # | Lesson | Change |
