@@ -89,7 +89,10 @@ Implementation record: docs/workstreams/onboarding/onb-tipreview/task-contract.m
 - No em-dashes in any new or reworded player text.
 - The Mehr-dazu lessons are reviewed alongside the hints; expect heavy cuts.
 
-## Round 2 (owner playtest after implementation) — COLLECTING
+## Round 2 (owner playtest after implementation) — IMPLEMENTED (task/tip-review-2 → dev, 2026-08-28)
+
+Implementation record: docs/workstreams/onboarding/onb-tipreview2/task-contract.md on dev.
+Next: owner playtest round 3.
 
 | # | Item | Change |
 | --- | --- | --- |
