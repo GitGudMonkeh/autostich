@@ -105,3 +105,26 @@ Implementation record: docs/workstreams/onboarding/onb-tipreview/task-contract.m
 | R10 | **Strukturen lesson: cut lead and tip** | On the "Strukturen" page both text blocks go: the probe lead "Markiert ist immer dieselbe Zelle, damit nur die Lage der Gebäude den Unterschied macht." (`tut.architekt.strukturen.1`) and the bottom tip "Die Spalte ist am schwersten zu füllen und zahlt am stärksten." (`tut.architekt.strukturen.2`, tip beat removed from the catalog entry). The page carries everything needed without them (owner). Keys deleted in all four catalogs; PROBE_PX/budget adjusted if needed. |
 | R11 | **H4 (glossary hint): reword + blinking icon** | Owner wants the wording to lead with the icon location, like "Im Glossar-Icon oben rechts…". Proposed DE (pending owner ok): "Im Glossar oben rechts schlägst du fast alles nach." And the glossary icon must BLINK while H4 shows, a steady glow is overlooked: the banner-glow on the `glossar` anchor becomes a pulsing animation (CSS keyframes on the box-shadow, static fallback under prefers-reduced-motion). |
 | R12 | **Highlight frames lag while scrolling** | Minor (owner: "kein großes Thema"): every highlight frame (spotlight hole and glow frames) drifts during scroll and only snaps back onto its element when scrolling settles. Cause: the overlay is fixed-position and re-measured per scroll event, one step behind the page. Fix: anchor the frame so it moves natively with the content, position it in document coordinates inside a scrolling container (or apply the glow to the element itself), keeping the fixed overlay only for the darkening scrim; rAF-tracking as fallback where that is not possible. |
+| R13 | **Lesson order = first-run order** | Within every section (not just architekt) the lessons are reordered to match the order in which their subject appears in the first run; the section order in the overview follows the same principle. Example that triggered this: "Aufwerten" sits at 3/6 in the architect section ahead of pages whose subject comes earlier. The concrete target order is fixed at implementation against the actual first-run flow (perk/skill → play → formation → architect → gameover). |
+
+### R13 appendix — lessons not reached during the first run (state: dev, 2026-08-28)
+
+"Reached" = deep-linked from a hint's "Mehr dazu" that can actually fire on a first run (Blitz/Feuer only, no Eis/Pflanze, no legendaries, no glacier). Every lesson stays browsable through the tutorial overview; this list is about the guided path only.
+
+**Never linked from any hint (22):**
+- grundlagen/werte, grundlagen/serie, grundlagen/herkunft
+- aufstellung/brett, aufstellung/karte
+- blitz/tipps
+- feuer/schmiede, feuer/feld, feuer/tipps
+- pflanze/erkennen, pflanze/feld, pflanze/tipps
+- eis/tipps
+- architekt/wasist, architekt/hauptaktion, architekt/tipps
+- danach/endscreen, danach/baum
+- fortgeschritten/laenge, fortgeschritten/segmente, fortgeschritten/glut, fortgeschritten/klinge
+
+**Linked, but the linking hint cannot fire on a first run (4):**
+- eis/karte and pflanze/karte (E5 links the active archetype's karte lesson; first run offers only Blitz/Feuer)
+- eis/feld (C1 fires on the glacier phase, which needs an ice skill)
+- wahl/legendaer (C4 fires on the legendary pick, which is locked on a first run)
+
+**Reached on a first run (12):** grundlagen/stich, grundlagen/score, aufstellung/formationen, aufstellung/stapeln, wahl/kategorien, wahl/raritaet, blitz/karte, feuer/karte (if fire is the first archetype), architekt/wohin, architekt/strukturen, architekt/aufwerten, danach/punkte.
