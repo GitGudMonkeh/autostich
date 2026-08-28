@@ -1,1 +1,0 @@
-import{q as l,aH as s,t as u}from"./index-CtOwB8uA.js";function k(t){if(!t||!t.kind)return"";const{kind:i,vars:n={}}=t,e={...n};n.n!=null&&(e.n=l(n.n)),n.archetype&&(e.archetype=s(n.archetype));const a=`unlock.${i}`,c=`${a}.one`,o=Number(n.n)===1&&u(c,e)!==c?c:a,r=u(o,e);return r===o?"":r}export{k as u};
