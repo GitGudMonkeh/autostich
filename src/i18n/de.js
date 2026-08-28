@@ -1827,8 +1827,6 @@ export default {
   "tut.danach.sub": "Endscreen, Punkte, Upgrade-Baum, Rangliste.",
   "tut.architekt.strukturen.title": "Strukturen",
   "tut.architekt.strukturen.0": "Deckst du eine volle Zeile, Spalte oder Diagonale mit Gebäuden ab, schließt du eine Struktur: Jede Position darin bekommt einen Faktor. Die Kategorie ist dabei egal.",
-  "tut.architekt.strukturen.1": "Markiert ist immer dieselbe Zelle, damit nur die Lage der Gebäude den Unterschied macht.",
-  "tut.architekt.strukturen.2": "Die Spalte ist am schwersten zu füllen und zahlt am stärksten.",
   "tut.danach.endscreen.title": "Der Endscreen",
   "tut.danach.endscreen.0": "Nach dem letzten Durchlauf ist der Lauf zu Ende. Der Endscreen zeigt, was er gebracht hat und was du dafür bekommst.",
   "tut.danach.endscreen.1": "Tipp einen Teil des Bildschirms an.",

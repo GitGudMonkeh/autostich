@@ -2367,8 +2367,6 @@ export default {
   "tut.danach.endscreen.3": "从这里你可以直接去工坊、升级树或者排位。",
   "tut.architekt.strukturen.title": "结构",
   "tut.architekt.strukturen.0": "用建筑盖满一整行、一整列或一条对角线，就形成一个结构：其中每个位置都获得一个系数。类别无关紧要。",
-  "tut.architekt.strukturen.1": "标记的始终是同一个格子，这样只有建筑的位置带来差别。",
-  "tut.architekt.strukturen.2": "整列最难填满，付出的也最多。",
   "tut.danach.endscreen.title": "结算界面",
   "tut.danach.punkte.0": "每完成一局都给固定的 {spPerRun} 点底。此外还有里程碑：挂在你得分上的标记。",
   "tut.danach.punkte.1": "把得分拉高。",

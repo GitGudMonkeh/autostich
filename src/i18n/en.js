@@ -1780,8 +1780,6 @@ export default {
   "tut.danach.sub": "End screen, points, upgrade tree, ranking.",
   "tut.architekt.strukturen.title": "Structures",
   "tut.architekt.strukturen.0": "Cover a full row, column or diagonal with buildings and you close a structure: every position inside gets a factor. The category does not matter.",
-  "tut.architekt.strukturen.1": "The marked cell is always the same one, so only the buildings' position makes the difference.",
-  "tut.architekt.strukturen.2": "The column is the hardest to fill and pays the most.",
   "tut.danach.endscreen.title": "The end screen",
   "tut.danach.endscreen.0": "After the last cycle the run is over. The end screen shows what it brought in and what you get for it.",
   "tut.danach.endscreen.1": "Tap a part of the screen.",

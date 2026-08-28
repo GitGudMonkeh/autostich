@@ -1473,8 +1473,6 @@ export default {
   "tut.danach.endscreen.3": "Desde aquí vas directo al taller, al árbol de mejoras o a la clasificatoria.",
   "tut.architekt.strukturen.title": "Estructuras",
   "tut.architekt.strukturen.0": "Cubre una fila, columna o diagonal completa con edificios y cierras una estructura: cada posición de dentro recibe un factor. La categoría no importa.",
-  "tut.architekt.strukturen.1": "La celda marcada es siempre la misma, para que solo la posición de los edificios marque la diferencia.",
-  "tut.architekt.strukturen.2": "La columna es la más difícil de llenar y la que más paga.",
   "tut.danach.endscreen.title": "La pantalla final",
   "tut.danach.punkte.0": "Cada partida terminada paga una base fija de {spPerRun}. A eso se suman los hitos: marcas que dependen de tu puntuación.",
   "tut.danach.punkte.1": "Sube la puntuación.",

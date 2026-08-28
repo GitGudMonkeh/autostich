@@ -147,7 +147,10 @@ export function TutorialSections({ onClose, onOpenGlossary = null, onOpenGuide =
   const go = (delta) => {
     const next = section.lessons[lessonIdx + delta];
     if (next) open(section, next);
-    else setAt(null);   // über das Ende hinaus → zurück in die Liste
+    /* Runde 2, R5: „Weiter" auf der letzten Seite schließt das Tutorial ganz — zurück ins
+       Spiel, nicht in die Liste. Rückwärts unter den Anfang bleibt der Weg in die Liste. */
+    else if (delta > 0) onClose?.();
+    else setAt(null);
   };
 
   /* `shell` portalt SELBST. Erste Fassung hatte drei `return overlayPortal(shell(...))` — verhalten
@@ -205,7 +208,7 @@ export function TutorialSections({ onClose, onOpenGlossary = null, onOpenGuide =
          Formations-Feldes — das Architekt-Brett trug damit „ein Segment" und „keine Formation",
          also Formations-Vokabular auf einem Gebäude-Brett. text-style-guide.md §1e reserviert
          „Formation" für Karten-Formationen; Tripwire 2 des Workstreams trifft genau das. */
-      return <Probe key={i} title={t(`tut.probe.${b.probe}.title`)} hint={t(key, vars)}
+      return <Probe key={i} title={t(`tut.probe.${b.probe}.title`)} hint={b.stumm ? null : t(key, vars)}
         readoutLabel={t(`tut.probe.${b.probe}.readout`)}
         /* `none` hat nur, wer einen Leerzustand kennt: das Formations-Feld („keine Formation") und
            das Brett („kein Boost"). Serie und Faktoren haben keinen — eine Serie von 0 ist eine Zahl,

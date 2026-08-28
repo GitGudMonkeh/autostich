@@ -226,10 +226,11 @@ export const SECTIONS = [
         { kind: "block" },
         { kind: "probierfeld", probe: "struktur" },
         { kind: "tip" }] },
+      /* Runde 2, R10: Auftragszeile und Tipp gestrichen — die Seite trägt alles Nötige selbst.
+         `stumm` lässt das Probierfeld ohne eigenen Satz stehen (kein Schlüssel, keine Zeile). */
       { id: "strukturen", art: "voll", beats: [
         { kind: "block" },
-        { kind: "probierfeld", probe: "strukturen" },
-        { kind: "tip" }] },
+        { kind: "probierfeld", probe: "strukturen", stumm: true }] },
       { id: "tipps", art: "voll", beats: [
         { kind: "probierfeld", probe: "tipps" },
         { kind: "tip" }] },
@@ -299,7 +300,8 @@ export function allKeys() {
     out.push(sectionTitleKey(s), sectionSubKey(s));
     for (const l of s.lessons) {
       out.push(lessonTitleKey(s, l));
-      l.beats.forEach((b, i) => { if (b.kind !== "bild") out.push(beatKey(s, l, i)); });
+      // `stumm` (R10): ein Probierfeld ohne eigenen Satz verlangt auch keinen Schlüssel.
+      l.beats.forEach((b, i) => { if (b.kind !== "bild" && !b.stumm) out.push(beatKey(s, l, i)); });
       // Das Bild trägt eine Bildunterschrift; sie hängt am selben Index.
       l.beats.forEach((b, i) => { if (b.kind === "bild") out.push(beatKey(s, l, i)); });
       // Ein beschrifteter Kasten braucht einen ZWEITEN Schlüssel. Ohne diese Zeile fehlte die

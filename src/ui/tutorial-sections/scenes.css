@@ -167,9 +167,12 @@
 .tsz .pips i{display:block;width:9px;height:9px;border-radius:50%;background:var(--a1)}
 .tsz .pips i.off{background:var(--hair)}
 .tsz .werkzeuge{display:flex;gap:6px;margin-top:7px}
-.tsz .werkzeuge.formen{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
-.tsz .werkzeuge.formen .tbtn{font-size:12px;padding:9px 4px;min-height:44px;
-  white-space:normal;line-height:1.2;overflow-wrap:anywhere}
+/* Runde 2, R2+R4: Spalten folgen der KNOPFZAHL (auto-flow column) statt fest vier — zwei Tabs
+   füllten sonst nur die halbe Zeile. Font klein genug, dass „Wiederholung" bei 390 px einzeilig
+   bleibt (Owner: kleinere Schrift statt Umbruch). */
+.tsz .werkzeuge.formen{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr)}
+.tsz .werkzeuge.formen .tbtn{font-size:10.5px;padding:9px 3px;min-height:44px;
+  white-space:normal;line-height:1.25;overflow-wrap:anywhere}
 .tsz .tbtn{font-family:var(--sans);font-weight:600;font-size:13px;min-height:44px;padding:11px 8px;flex:1 1 0;
   border-radius:8px;cursor:pointer;background:var(--row);border:1px solid var(--rowedge);color:var(--ink)}
 .tsz .tbtn.primary{background:var(--a1-bg2);border-color:var(--a1-edge);color:var(--ink)}
@@ -229,7 +232,11 @@
   display:flex;align-items:center;justify-content:center;
   background:linear-gradient(180deg,#242433,#1a1a26);border:1px solid #33333e}
 .tsz .grosskarte .cwert{position:relative;z-index:2;font-size:34px;font-weight:700;font-variant-numeric:tabular-nums}
-.tsz .grosskarte canvas{position:absolute;inset:0;width:100%;height:100%;border-radius:12px;pointer-events:none}
+/* Runde 2, R7: die Canvas ragt um den Sturm-Rand (ionSturm T.PAD = 12) ÜBER die Karte hinaus,
+   damit die gezackte Kontur AUF der Kartenkante liegt statt 18 px innen — dieselbe Bauweise wie
+   CardIonStorm.jsx (MGN). Kein border-radius: der würde die außen blutenden Zacken beschneiden.
+   Die 12 px hier und T.PAD in scenes.jsx müssen zusammenpassen. */
+.tsz .grosskarte canvas{position:absolute;left:-12px;top:-12px;width:calc(100% + 24px);height:calc(100% + 24px);pointer-events:none}
 .tsz .cpips{position:absolute;top:6px;left:50%;transform:translateX(-50%);display:flex;gap:3px;z-index:2}
 .tsz .cpips i{display:block;width:6px;height:3px;border-radius:1px;background:#3a3a48}
 .tsz .cpips i.an{background:#5ec8f0;box-shadow:0 0 5px #5ec8f0}
