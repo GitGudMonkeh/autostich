@@ -239,7 +239,13 @@ export function reducer(state, action) {
       const normalRerolls = treeEff ? rerollBase(effProfile) : C.BASE_REROLLS;
       // Archetyp-Allowlist + Rarität-Deckel + Archetyp-Legendär-Phase — alles aus dem BAUM (#369, früher Onboarding).
       // Nur mit Profil (treeEff≠null); sonst neutral (null / 4 / an) für Sim/Standard/Dev = byte-identisch.
-      const unlockedArch = treeEff ? treeEff.unlockedArchetypes : null;
+      // §6 Erstlauf-Onboarding (docs/tutorial-onboarding-design.md): Ein Profil, das noch NIE einen
+      // Lauf abgeschlossen hat (hadCompletedRun false — dieselbe Flagge, an der das laute Hub-Angebot
+      // hängt), startet (a) Blitz-only über die bestehende §4b-Allowlist und (b) OHNE die
+      // Start-Skill-Entscheidung, s. startPatch unten. Ranked und Sim/Standard (kein Profil) bleiben
+      // byte-identisch: firstRun ist dort immer false.
+      const firstRun = !!(treeEff && effProfile && effProfile.hadCompletedRun === false && !ranked);
+      const unlockedArch = treeEff ? (firstRun ? ["lightning"] : treeEff.unlockedArchetypes) : null;
       const rareCap = treeEff ? treeEff.maxTier : 4;
       const legPhaseEnabled = treeEff ? treeEff.archLegPhaseOn : true;
       // Formations-Energie-Basis (#369 §1): Normal-Lauf-Boden 3 + Baum (→ max 5); Sim/Standard/Dev = C.FORMATION_ENERGY.
@@ -285,8 +291,13 @@ export function reducer(state, action) {
         weekMods: weekModsState,
         challengeBlockArch: [...new Set(wmBlockArch)],
         challengeBlockForm: [...new Set(wmBlockForm)] };
-      const startPatch = startDecisionSetup(C.DECISION_SCHEDULE[0] || "skill", sBase, seed, action.rng, architectEnabled, undefined, false);
-      return { ...sBase, architectEnabled,
+      // §6.1: Der Erstlauf überspringt die Start-Entscheidung — der Plan bleibt unberührt, der
+      // Handler nimmt nur seinen bestehenden phase:"play"-Ausgang. Die rng-Ströme sind adressiert
+      // (rngAtOr → rngAt(seed, 0, …)), die übersprungene Ziehung verschiebt also nichts; die erste
+      // Skill-Wahl kommt planmäßig vor Durchlauf 5.
+      const startPatch = firstRun ? { phase: "play" }
+        : startDecisionSetup(C.DECISION_SCHEDULE[0] || "skill", sBase, seed, action.rng, architectEnabled, undefined, false);
+      return { ...sBase, architectEnabled, firstRun,
         difficulty: null,
         // #263: drei getrennte Reroll-Pools. (Schritt 4) Normal-/Meister-Lauf MIT Profil: Basis 1 aus Onboarding-Glied 1
         // + A1/A2 (rerollBase, Cap 3) — erster Lauf = 0. OHNE Profil (Sim/Standard) bleibt es C.BASE_REROLLS (2/2/2).

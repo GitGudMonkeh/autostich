@@ -1143,6 +1143,35 @@ export default {
      ein Tipp — und höchstens 400 px bei 390 × 844 auf Deutsch (Budget in catalog.js).
      Deutsch ist die Budget-Sprache, weil sie die längere von beiden ist.
      Zahlen NIE abtippen: Platzhalter aus constants.js (text-style-guide.md §4). */
+  /* ---- ONBOARDING-HINTS (docs/tutorial-onboarding-design.md §5) — die In-Run-Einzeiler.
+     Banner auf Entscheidungsscreens + die H1-Karte. Höchstens zwei Sätze; Zahlen und Namen kommen
+     als Platzhalter aus constants.js und den Registern, nie abgetippt. */
+  "hint.eyebrow": "Tutorial",
+  "hint.eyebrow.suggest": "Tutorial · Vorschlag",
+  "hint.more": "Mehr dazu",
+  "hint.aria.close": "Hinweis schließen",
+  "hint.badge": "Guter Start",
+  "hint.badge.reason": "Empfohlen: Deine Crits füllen die Leiste — ist sie voll, ionisiert er Karten, und die bringen mehr Score und Crit-Chance.",
+  "hint.h1.title": "Willkommen bei Autostich",
+  "hint.h1.go": "Los geht's",
+  "hint.h1.body": "Autostich spielt sich selbst: Dein Deck schlägt sich durch {cards} Stiche, du entscheidest dazwischen. Verlieren kannst du nicht.\n\nDer erste Durchlauf gehört dem Zuschauen — deine erste Entscheidung kommt danach.",
+  "hint.h2.body": "Blitz ist dein erster Archetyp. Ein Crit vervielfacht den Score eines Stichs — Blitz-Skills machen ihn wahrscheinlicher, und jeder Crit lädt die Leiste. Eine falsche Wahl gibt es nicht.",
+  "hint.h2b.body": "Ab jetzt stehen mehrere Archetypen zur Wahl. Dein erster Skill eines Archetyps schaltet ihn frei — mischen ist erlaubt.",
+  "hint.h3.body": "Ein Perk wirkt sofort und bleibt bis zum Ende des Laufs. Passt keiner, lehn ab — das kostet nichts.",
+  "hint.h3b.body": "Der Farbchip nennt die Kategorie, der Rand die Rarität.",
+  "hint.h5.body": "Deine {slots} Slots sind voll: Eine neue Wahl ersetzt ab jetzt einen alten Skill — was er schon ausgezahlt hat, bleibt.",
+  "hint.sf1.body": "Fang mit einem Segment an: Schieb gleiche Farben zusammen — das ergibt einen {farbblock}, und Formationen vervielfachen den Score ihrer Karten.",
+  "hint.sf2.body": "Dein nächstes Muster: Die Legende zeigt, welche Formationen es gibt — jede weitere multipliziert dazu.",
+  "hint.sf3.body": "Formationen dürfen sich überlappen — eine Karte kann in mehreren Mustern stecken.",
+  "hint.sa1.body": "Setz dein erstes Gebäude irgendwo aufs Brett. Es wirkt auf die Karte unter ihm — seinen Bonus zahlt es nur, wenn die ihren Stich gewinnt.",
+  "hint.sa2.body": "Bau einen Distrikt: Setz ein gleichartiges Gebäude neben dein erstes — Nachbarn derselben Art verstärken sich.",
+  "hint.sa3.body": "Dein Fernziel: Eine volle Zeile, Spalte oder Diagonale schließt eine Struktur und legt einen Faktor auf alle Positionen darin.",
+  "hint.sa4.body": "Ein Gebäude ist nie festgenagelt: Aufwerten, versetzen und abreißen darfst du jederzeit.",
+  "hint.c1.body": "Nach jedem Eis-Skill wählst du genau eine Karte für den Gletscher — dieser Schritt ist Pflicht.",
+  "hint.c2.body": "Dieser Perk braucht Karten: Tippe so viele an, wie er verlangt.",
+  "hint.c3.body": "Diese Perk-Familie braucht ein Ziel — wähle, worauf sie wirken soll.",
+  "hint.c4.body": "Ein legendärer Skill aus deinen aktiven Archetypen: eigener Slot, kein Tausch.",
+
   "tut.eyebrow": "Tutorial",
   "tut.title": "Lerne Autostich",
   "tut.sub": "Einzelne Themen, jedes in einer Minute.",

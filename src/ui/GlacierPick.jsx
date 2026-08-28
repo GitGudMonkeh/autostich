@@ -6,6 +6,7 @@ import { CardGrid } from "./CardGrid.jsx";
 import { architectCoverFor } from "./architectCover.js";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { t } from "../i18n/index.js"; // #sprache
+import { PhaseHintSlot } from "./hints/HintCard.jsx"; // Onboarding-Hints: Banner-Slot unter dem Kopf (docs/tutorial-onboarding-design.md)
 
 const ICE = "#7fd4f0";
 
@@ -40,6 +41,7 @@ export function GlacierPick({ state, onConfirm }) {
               : <span key={i}>{part}</span>))}
           </p>
         </div>
+        <PhaseHintSlot screen="glacier" />
 
         <ActionBar pad={5}>
           <span className="text-body-5 opacity-60 tabular-nums self-center">{t("glacierpick.chosen", { n: sel != null ? 1 : 0 })}</span>

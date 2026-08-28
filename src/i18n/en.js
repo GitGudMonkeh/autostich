@@ -1098,6 +1098,33 @@ export default {
      Tip — and at most 400 px at 390 × 844 in German (budget in catalog.js). German is the
      budget language because it is the longer of the two.
      Never type a number: placeholders from constants.js (text-style-guide.md §4). */
+  /* ---- ONBOARDING HINTS (docs/tutorial-onboarding-design.md §5) — the in-run one-liners. */
+  "hint.eyebrow": "Tutorial",
+  "hint.eyebrow.suggest": "Tutorial · Suggestion",
+  "hint.more": "Learn more",
+  "hint.aria.close": "Close hint",
+  "hint.badge": "Good start",
+  "hint.badge.reason": "Recommended: your crits fill the bar — when it is full, it ionises cards, and those pay more score and crit chance.",
+  "hint.h1.title": "Welcome to Autotrick",
+  "hint.h1.go": "Let's go",
+  "hint.h1.body": "Autotrick plays itself: your deck fights through {cards} tricks — you decide in between. You cannot lose.\n\nThe first cycle is for watching — your first decision comes after it.",
+  "hint.h2.body": "Lightning is your first archetype. A crit multiplies a trick's score — Lightning skills make it more likely, and every crit charges the bar. There is no wrong choice.",
+  "hint.h2b.body": "From now on, more than one archetype is on offer. Your first skill of an archetype activates it — mixing is allowed.",
+  "hint.h3.body": "A perk takes effect immediately and lasts the whole run. If none fits, decline — it costs nothing.",
+  "hint.h3b.body": "The colour chip names the category, the border the rarity.",
+  "hint.h5.body": "Your {slots} slots are full: a new pick now replaces an old skill — what it already paid out stays.",
+  "hint.sf1.body": "Start with one segment: push same colours together — that makes a {farbblock}, and formations multiply their cards' score.",
+  "hint.sf2.body": "Your next pattern: the legend shows which formations exist — each additional one multiplies on top.",
+  "hint.sf3.body": "Formations may overlap — one card can sit in several patterns.",
+  "hint.sa1.body": "Place your first building anywhere on the board. It affects the card beneath it — and pays its bonus only if that card wins its trick.",
+  "hint.sa2.body": "Build a district: place a matching building next to your first — neighbours of the same kind reinforce each other.",
+  "hint.sa3.body": "Your long game: a full row, column or diagonal closes a structure and puts a factor on every position inside it.",
+  "hint.sa4.body": "A building is never nailed down: upgrade, move and demolish any time.",
+  "hint.c1.body": "After every ice skill you pick exactly one card for the glacier — this step is mandatory.",
+  "hint.c2.body": "This perk needs cards: tap as many as it asks for.",
+  "hint.c3.body": "This perk family needs a target — choose what it should act on.",
+  "hint.c4.body": "A legendary skill from your active archetypes: its own slot, no swapping.",
+
   "tut.eyebrow": "Tutorial",
   "tut.title": "Learn Autotrick",
   "tut.sub": "One topic at a time, a minute each.",
