@@ -27,6 +27,8 @@ player text** (text-style-guide.md, "Kein Gedankenstrich").
 | 13 | **S-A1** addendum | The "Mehr dazu" link goes here as well. |
 | 14 | **NEW hint (C5, architect board full)** | Once per profile, in the first architect phase where **none of the offered building plans has a valid placement** (owner refinement: 19/20 can already be unbuildable when the offered shapes do not fit; check placements, not free-cell count): a banner pointing out the limited build space and that demolishing or upgrading is the way on. Draft, dash-free: "Dein Baufeld ist voll. Der Platz ist begrenzt, aber nichts steht fest: Reiß ein Gebäude ab oder werte eins auf." While it shows, the Baufeld panel (occupancy readout) carries the tutorial glow (banner-anchored highlight, like the event-card spotlight but without the scrim). |
 
+| 15 | **H2** (first skill, Blitz) | "jeder Crit lädt die Leiste" says nothing to a player; "Eine falsche Wahl gibt es nicht" is fluff, both go. The bar is called **Ladungsleiste** from now on, everywhere it is named (H2, E5 Blitz body, badge reason). Draft, dash-free: "Blitz ist dein erster Archetyp. Ein Crit vervielfacht den Score eines Stichs. Blitz-Skills machen Crits wahrscheinlicher, und jeder Crit füllt deine Ladungsleiste." |
+
 ## Probierfeld lessons (Mehr-dazu targets)
 
 | # | Lesson | Change |
@@ -35,6 +37,8 @@ player text** (text-style-guide.md, "Kein Gedankenstrich").
 | 4 | **wahl/kategorien** | Remove the TIPP beat ("Rechts steht, wie viele Familien jede Kategorie hat, zusammen 73.") entirely. |
 | 5 | **wahl/raritaet** | Opening sentence replaced: "Perks kommen in unterschiedlicher Rarität, sichtbar am Rahmen." Example cards stay. "Ersetzen, nicht stapeln" merk stays. Everything after it goes: the "Höhere Stufen sind stärker ... Stufe IV schließt eine Familie ab ..." paragraph and the TIPP ("Eine Familie zweimal auf derselben Stufe ..."). |
 | 6 | **wahl/legendaer** | Intro shortened to: "Legendäre sind besonders starke Perks und müssen erst freigeschaltet werden." Example cards stay. The "Erst freischalten." block goes. The TIPP goes. |
+
+| 16 | **blitz/karte** ("Die Karte", both pages good in principle) | Better intro: "Nach 10 Crits ist deine Ladungsleiste voll: Der Skill Ionisierung ionisiert dann 2 ungespielte Karten." (10 stays a constant placeholder.) The page gets a looping demo: a Ladungsleiste fills to 10, on full a card below gains an ion stack (1 to 5), then the loop restarts. **The Blitzrahmen must sit right: today's ion frame is too small; it hugs the card edge like in-game.** Mockup before implementation (like the formationen page). |
 
 ## Decided sweep
 
