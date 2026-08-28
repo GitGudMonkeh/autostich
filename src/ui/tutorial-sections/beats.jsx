@@ -1,19 +1,10 @@
-import { useState } from "react";
-import { useLocale } from "../../i18n/useLocale.js"; // #sprache: Neuberechnung bei Sprachwechsel
-import { fmtNum } from "../../i18n/index.js"; // Dezimaltrennzeichen je Sprache — nie toFixed+replace
-import { buildDeck } from "../../game/deck.js";
-import { SEGMENT_SIZE } from "../../game/formations.js";
-import * as C from "../../game/constants.js";
-import { ARCHETYPE_META } from "../../game/skills.js";
 // Die Proberunden des freigegebenen Entwurfs, 1:1 portiert (Mockup proberunden.html).
 import {
-  StichSzene, KampfwertSzene, SerieSzene, ScoreSzene, BilanzSzene,
-  BrettSzene, KarteSzene, FormationenSzene, UeberSzene, KatsSzene, RaritaetSzene,
+  FormationenSzene, UeberSzene, KatsSzene, RaritaetSzene,
   BlitzkarteSzene, TippsSzene, LegendaerSzene,
-  FeuerkartenSzene, SchmiedeSzene, HitzeSzene, PflanzkarteSzene, PflanzzeichenSzene,
-  GruenfeldSzene, GletscherSzene, GletscherfeldSzene,
-  ArchmockSzene, HauptaktionSzene, DistriktSzene, StrukturenSzene, EndscreenSzene, PunkteSzene, BaumSzene,
-  LaengeSzene, SegmenteSzene, BuildSzene,
+  FeuerkartenSzene, SchmiedeSzene, HitzeSzene, PflanzkarteSzene, PflanztempoSzene,
+  GruenfeldSzene, GletscherSzene, GletscherformenSzene, EinfrierenSzene,
+  DistriktSzene, StrukturenSzene, PunkteSzene,
 } from "./scenes.jsx";
 
 /* DIE TAKT-ARTEN. Vier trugen den ersten Bau, fünf kamen mit den vollen Lektionen dazu; die
@@ -147,163 +138,29 @@ export function Tip({ label, text }) {
   );
 }
 
-/* ---- Karten-Streifen: fünf Positionen = EIN Segment ----
-   Gemessen: fünf Zellen über die 364-px-Inhaltsbreite ergeben 54,8 × 78,3 px — lesbar und tippbar.
-   Zehn wären 27 px breit. Dass die lesbare Breite genau SEGMENT_SIZE ist, ist der Grund, warum die
-   Formations-Lektionen Segment und Formation in EINEM Bild zeigen statt in zweien. */
-/* DIE FARBE KOMMT AUS DEM SPIEL, nicht aus einer zweiten Tabelle hier.
-
-   Vorher stand hier `{ H, D, S, C }` — Herz, Karo, Pik, Kreuz. Autostich hat aber R, B, G, Y
-   (constants.js SUIT_ORDER), also traf der Schlüssel nie, und JEDE Zelle fiel auf den grauen
-   Rückfallwert. Aufgefallen ist das erst beim Bauen der Aufstellungs-Sektion: die Lektion über den
-   FARBBLOCK lässt sich ohne Farbe nicht lesen.
-
-   Ein zweiter Wahrheitsort für die Farben ist genau der Fehler, den planning-report.md §1.3 für
-   die Rechnung beschreibt, eine Ebene tiefer. `suitColor` aus constants.js ist die eine Quelle. */
-const cardColor = (c) => (c?.suit ? C.suitColor(c.suit) : "#33333e");
-
-/* `marks` und `mult` zeichnen die ANATOMIE der Karte: unten die Kürzel der Formationen, oben rechts
-   der Multiplikator dieser Position. Beides bleibt leer, wo eine Lektion es nicht braucht.
-
-   Ohne sie versprach die Lektion „Was auf einer Karte steht" etwas, das die Karte nicht zeigte —
-   sie trug nur ihren Wert, und die Erklärung stand daneben statt darauf. */
-function CardCell({ card, on, onClick, dim, marks = null, mult = null }) {
-  const border = dim ? "#33333e" : cardColor(card);
-  const cls = "tut-cell text-body-lg-6 flex items-center justify-center font-bold";
-  const style = {
-    flex: "1 1 0", minWidth: 0, aspectRatio: "0.7", borderRadius: 6, color: "#e8e8ea",
-    background: "linear-gradient(180deg,#242433,#1a1a26)",
-    border: `1px solid ${border}`,
-    outline: on ? `2px solid var(--deck-a1,#8a7de0)` : undefined,
-    outlineOffset: on ? -2 : undefined,
-  };
-  const inhalt = marks === null && mult === null ? card.value : (
-    <span style={{ position: "relative", display: "block", width: "100%", height: "100%" }}>
-      {mult ? <span className="text-meta-1 ty-num-sm" style={{ position: "absolute", top: 2, right: 3, color: "#8a8a95", fontWeight: 600 }}>{mult}</span> : null}
-      <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>{card.value}</span>
-      {marks ? <span className="text-meta-1" style={{ position: "absolute", bottom: 2, left: 0, right: 0, textAlign: "center", color: "#5c5c68", letterSpacing: ".1em", fontWeight: 600 }}>{marks}</span> : null}
-    </span>
-  );
-  if (!onClick) return <div className={cls} style={style}>{inhalt}</div>;
-  return <button type="button" className={cls} style={style} onClick={onClick} aria-pressed={on ? "true" : "false"}>{inhalt}</button>;
-}
-
-export function Bild({ cards, caption }) {
-  return (
-    <div className="tut-beat tut-bild" style={{ margin: "0 0 14px" }}>
-      <div style={{ display: "flex", gap: 6 }}>
-        {cards.map((c) => <CardCell key={c.id} card={c} dim />)}
-      </div>
-      {caption && <div className="text-meta-1" style={{ color: "#71717c", marginTop: 6 }}>{caption}</div>}
-    </div>
-  );
-}
-
-/* ---- der Formations-Probierbaustein ----
-   EIN Aufrufort für computeFormations, geteilt von jeder Lektion, die ihn braucht. Drei Aufrufstellen,
-   die auseinanderlaufen, sind der Defekt, den docs/text-style-guide.md §4 unter „Einen Text an EINER
-   Stelle bauen" beschreibt — hier dieselbe Regel, eine Ebene tiefer.
-
-   Neutraler Aufruf: keine Rollen, keine Perks, keine Skills, keine Anker, kein Architekt. Eine Lektion
-   lehrt die Grundregel; was ein Perk daran biegt, steht auf der Perk-Karte. */
-const DECK = buildDeck();
-/* Die Ausgangslage lehrt mit, und das ist keine Kleinigkeit.
-
-   Erster Versuch war 9,9,4,9,4 — dort stand schon ×1,88, und der naheliegende Zug (drei Neunen
-   nebeneinander) SENKTE den Wert auf ×1,50: zwei sich überlappende Formationen schlagen eine längere.
-   Ein Probierfeld, das den Leser für den offensichtlichen Zug bestraft, lehrt das Gegenteil von dem,
-   was es soll.
-
-   Diese Lage steht bei ×1,00 — „keine Formation". Von den zehn möglichen Tauschen erzeugen SECHS
-   eine, und keiner kann es schlechter machen, weil es nichts zu verlieren gibt. Gemessen, nicht
-   geschätzt: die Kandidaten wurden über computeFormations durchgerechnet. */
-const START_ORDER = [26, 18, 24, 15, 20];   // Werte 7 · 9 · 5 · 6 · 1
-
-
-
-/* ---- Serien-Probierfeld ----
-   Kein Brett, ein Regler: die Serie hat keine Geometrie. Der Faktor kommt aus den Konstanten, nicht
-   aus einer Tabelle im Text — bewegt das Balancing STREAK_BASE_STEP, bewegt sich die Lektion mit. */
-export function StreakProbe({ title, hint, readoutLabel }) {
-  const [locale] = useLocale();
-  const [n, setN] = useState(6);
-  const mult = Math.min(C.STREAK_BASE_CAP, n * C.STREAK_BASE_STEP);
-  return (
-    <div className="tut-beat tut-probe" style={{ margin: "0 0 14px", padding: "12px 12px 11px", ...ZEILE }}>
-      <div className="text-meta-1" style={{ ...LABEL, marginBottom: 10 }}>{title}</div>
-      <input type="range" min="0" max="80" value={n} onChange={(e) => setN(Number(e.target.value))}
-        className="tut-slider" style={{ width: "100%" }} aria-label={title} />
-      <div className="tut-probe-out" style={{ marginTop: 10, paddingTop: 9, borderTop: HAIR, display: "flex", alignItems: "baseline", gap: 8 }}>
-        <span className="text-meta-1" style={LABEL}>{readoutLabel}</span>
-        <span className="text-body-lg-5" style={{ color: "#e8e8ea", fontWeight: 700 }}>
-          {n} · ×{fmtNum((1 + mult).toFixed(2), locale)}
-        </span>
-      </div>
-      {hint && <div className="text-meta-1" style={{ color: "#71717c", marginTop: 7, lineHeight: 1.4 }}>{hint}</div>}
-    </div>
-  );
-}
-
-/* ---- Leitfaden-Verweis ----
-   KEINE fünfte Takt-Art: er belegt den Bild-Platz. Die Archetyp-Lektionen VERLINKEN den Leitfaden,
-   statt ihn abzuschreiben — die Arbeitsteilung aus tutorial-guided-run-plan.md §1, und der Grund,
-   warum es hier nur einen Verweis und keinen zweiten Strategietext gibt. */
-export function GuideLink({ caption, arch, onOpenGuide }) {
-  const meta = ARCHETYPE_META[arch];
-  return (
-    <button type="button" className="tut-beat tut-bild tut-guidelink block w-full text-left"
-      onClick={() => onOpenGuide?.(arch)}
-      style={{ margin: "0 0 14px", padding: "12px 13px", minHeight: 44, ...ZEILE,
-        border: `1px solid ${meta ? meta.color + "55" : "rgba(150,150,170,.12)"}` }}>
-      <span className="text-body-4 font-semibold" style={{ color: meta ? meta.color : "#e8e8ea" }}>{caption}</span>
-    </button>
-  );
-}
-
-
-/* Katalog → Komponente. Der Katalog nennt nur einen NAMEN, damit er React-frei bleibt. */
+/* Katalog → Komponente. Der Katalog nennt nur einen NAMEN, damit er React-frei bleibt.
+   Runde 3, Q17 (Owner): die Bausteine der gestrichenen Lektionen (Grundlagen, Fortgeschritten,
+   Architekt-Mocks, Deck-Streifen, Leitfaden-Verweise) sind mit ihren Lektionen entfernt. */
 export const PROBES = {
   formation: FormationenSzene,
-  streak: StreakProbe,
-  score: ScoreSzene,
   struktur: DistriktSzene,
   strukturen: StrukturenSzene,
-  bauen: HauptaktionSzene,
-  archmock: ArchmockSzene,
   kategorien: KatsSzene,
   raritaet: RaritaetSzene,
   legendaer: LegendaerSzene,
   blitzkarte: BlitzkarteSzene,
   // Dieselbe Form, zwei Archetypen: eine Karte, eine wachsende Zahl, drei Schwellen.
   pflanzkarte: PflanzkarteSzene,
-  pflanzzeichen: PflanzzeichenSzene,
+  pflanztempo: PflanztempoSzene,
   gletscher: GletscherSzene,
   hitze: HitzeSzene,
   feuerkarten: FeuerkartenSzene,
   schmiede: SchmiedeSzene,
   gruenfeld: GruenfeldSzene,
-  gletscherfeld: GletscherfeldSzene,
-  gomock: EndscreenSzene,
+  gletscherformen: GletscherformenSzene,
+  einfrieren: EinfrierenSzene,
   meilenstein: PunkteSzene,
-  baum: BaumSzene,
-  laenge: LaengeSzene,
-  segmente: SegmenteSzene,
-  glutbuild: (p) => <BuildSzene {...p} kopfKey="tut.sz.b1" />,
-  klingebuild: (p) => <BuildSzene {...p} warm kopfKey="tut.sz.b2" />,
-  deckstrip: ({ caption }) => <Bild cards={START_ORDER.map((i) => DECK[i])} caption={caption} />,
-  // Bezeichner ohne Bindestrich: ein zitierter Schlüssel wäre im Wächter nicht als Name erkennbar.
-  guideFire: (p) => <GuideLink {...p} arch="fire" />,
-  guideLightning: (p) => <GuideLink {...p} arch="lightning" />,
-  guideIce: (p) => <GuideLink {...p} arch="ice" />,
-  guidePlant: (p) => <GuideLink {...p} arch="plant" />,
-  // Dieselbe Runde, zwei Lektionen: einmal nur der Vergleich, einmal mit gesetztem Stichwert.
   tipps: TippsSzene,
-  duell: StichSzene,
-  kampfwert: KampfwertSzene,
-  serie: SerieSzene,
-  herkunft: BilanzSzene,
-  aufstellen: BrettSzene,
-  kartenteile: KarteSzene,
   /* Dieselbe Flaeche wie `formation`, andere Ausgangslage. GESUCHT statt geraten: von 29.988
      brauchbaren Lagen ist diese eine, in der KEIN Tausch den Wert senkt und vier davon eine
      Ueberlappung schaffen. Start ×1,25 (eine Wiederholung), erreichbar ×4,96 mit einer Karte in
@@ -311,4 +168,3 @@ export const PROBES = {
      lehrt das Gegenteil. */
   overlap: UeberSzene,
 };
-export { SEGMENT_SIZE };

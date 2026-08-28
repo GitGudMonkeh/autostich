@@ -11,6 +11,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as C from "../../game/constants.js";
 import { SKILL_DEFS } from "../../game/skills.js";
 import { noOfferPlaceable } from "../../game/architect.js";
+import { familyDef } from "../../game/families.js";
 import { loadHintProgress, saveHintProgress } from "../../game/storage.js";
 import { hintForScreen, screenOf, eventForPlay, resolveTarget, HINT_DEFS } from "./hintScript.js";
 import { resolveHint } from "./HintCard.jsx";
@@ -27,8 +28,12 @@ export function useHints({ state, profile, onMore = null, breakdownOn = true, gu
   const ctxKeyRef = useRef(null);
   const markSeen = useCallback((id) => setProg((p) => {
     if (!id || p.seen.includes(id)) return p;
-    const next = { ...p, seen: [...p.seen, id],
-      seenAt: { ...p.seenAt, [id]: ctxKeyRef.current } };
+    // Q15: C7b („Eis und Pflanze verfügbar") deckt beide Einzel-Hinweise mit ab.
+    const ids = id === "C7b" ? ["C7b", "C7", "C8"] : [id];
+    const add = ids.filter((x) => !p.seen.includes(x));
+    if (!add.length) return p;
+    const at = Object.fromEntries(add.map((x) => [x, ctxKeyRef.current]));
+    const next = { ...p, seen: [...p.seen, ...add], seenAt: { ...p.seenAt, ...at } };
     saveHintProgress(next);
     return next;
   }), []);
@@ -87,10 +92,19 @@ export function useHints({ state, profile, onMore = null, breakdownOn = true, gu
   const architectStuck = useMemo(() => (
     screen === "architect" ? noOfferPlaceable(state?.architect, state?.challengeBlockArch || []) : false
   ), [screen, state?.architect, state?.challengeBlockArch]);
+  /* Q8: enthält das Perk-Angebot einen Anker-Perk? (Familien-Einträge {familyId,tier} mit anchor-Feld.) */
+  const offerHasAnker = useMemo(() => (state?.offer || []).some((o) => {
+    if (!o || typeof o !== "object" || !o.familyId) return false;
+    return !!familyDef(o.familyId)?.tiers?.[o.tier || 1]?.anchor;
+  }), [state?.offer]);
   const ctx = {
     seen, visits, state, firstRun,
     blitzOnly: archs.size === 1 && archs.has("lightning"),
     multiArch: archs.size >= 2,
+    // Q15: neu freigeschaltete Archetypen, sobald sie im Skill-Angebot auftauchen.
+    iceAvail: archs.has("ice"),
+    plantAvail: archs.has("plant"),
+    offerHasAnker,
     slotsFull: (state?.skills?.length || 0) >= slots,
     slots, architectStuck,
     /* Runde 2, R19: C6 (Kombis/Formationen-Toggles) kommt in der Architekt-Phase NACH der,
@@ -103,16 +117,18 @@ export function useHints({ state, profile, onMore = null, breakdownOn = true, gu
   const shownRef = useRef(null);
   useEffect(() => {
     const prev = shownRef.current;
-    /* Runde 2, R18: C5 (Baufeld voll) wird NICHT durch Verlassen der Phase „gesehen" — der
-       Ausweg-Hinweis ist zu wichtig, um unbemerkt zu verfallen (Owner-Playtest: er kam nie an).
-       Er bleibt in jeder festgefahrenen Phase sichtbar, bis der Spieler ihn per ✕ wegklickt. */
-    if (prev && prev.key !== ctxKey) { shownRef.current = null; if (prev.id !== "C5") markSeen(prev.id); }
+    /* Q10 (Runde 3, Owner): C5 zeigt sich wie jeder Banner genau einmal — die R18-Ausnahme
+       (sticky bis ✕) ist zurückgenommen; seit R18 feuert er zuverlässig, einmal reicht. */
+    if (prev && prev.key !== ctxKey) { shownRef.current = null; markSeen(prev.id); }
     if (ctxKey && bannerId) shownRef.current = { key: ctxKey, id: bannerId };
   }, [ctxKey, bannerId, markSeen]);
 
-  // ---- H1: the one blocking card. First-ever run, before anything else; freezes play beneath.
+  // ---- Blockende Karten: H1 (Erstlauf-Begrüßung) plus die Phasen-Intros HF/HA (Q4/Q5) —
+  //      einmal je Profil beim ERSTEN Betreten der Aufstellungs- bzw. Bauphase.
   const inRun = state && state.phase !== "menu" && state.phase !== "gameover";
-  const cardId = inRun && firstRun && !seen.has("H1") ? "H1" : null;
+  const cardId = inRun && firstRun && !seen.has("H1") ? "H1"
+    : screen === "formation" && !seen.has("HF") ? "HF"
+    : screen === "architect" && !seen.has("HA") ? "HA" : null;
 
   /* ---- Ereignis-/UI-Hints im Stichspiel (T-O2, Papier §5.3/§5.4). Die Auswahl ist pur
      (eventForPlay); hier leben nur die Quoten und der offene Karten-Zustand:
@@ -161,7 +177,7 @@ export function useHints({ state, profile, onMore = null, breakdownOn = true, gu
 
   return {
     card: cardId ? resolveHint(cardId, ctx) : null,
-    dismissCard: () => markSeen("H1"),
+    dismissCard: () => markSeen(cardId),
     eventCard: activeEvent ? resolveHint(activeEvent.id, ctx) : null,
     dismissEvent,
     bannerFor,

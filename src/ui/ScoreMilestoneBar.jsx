@@ -7,8 +7,9 @@ import { DECK_BORDER } from "./modalStyle.jsx"; // #: deck-getönter Rahmen wie 
 import { t } from "../i18n/index.js";
 
 // Aufsteigende Neon-Palette (Logo-Verlauf): Farbe je erreichter Stufe 0..4 — Cyan → Grün → Blau → Violett → Gold.
-const TIER = ["#26c6e6", "#4ade80", "#5a8ade", "#9b82f0", "#f2a83a"];
-const TIER_HI = ["#5fe0f7", "#86efac", "#93b4f2", "#b3a8f5", "#f5c76a"];
+// Exportiert (Q11): der Endscreen-Meilensteinbalken zieht dieselbe Stufen-Palette.
+export const TIER = ["#26c6e6", "#4ade80", "#5a8ade", "#9b82f0", "#f2a83a"];
+export const TIER_HI = ["#5fe0f7", "#86efac", "#93b4f2", "#b3a8f5", "#f5c76a"];
 // „10 Mio" / „10M" — die Einheit gehört in den Katalog, die Rundung hierher.
 const mio = (n) => t("milestone.mio", { n: Math.round(n / 1_000_000) });
 

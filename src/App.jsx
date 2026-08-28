@@ -1514,8 +1514,10 @@ function AutostichGame() {
 
       {/* Onboarding-H1: die EINZIGE blockierende Hint-Karte (Erstlauf-Begrüßung). Über allem außer
           den Bestätigungs-Dialogen; der Lauf darunter ist über hintFreeze eingefroren. */}
+      {/* Q4/Q5 (Runde 3): neben H1 blocken auch die Phasen-Intros HF/HA — der Überspringen-Link
+          gehört nur auf die Willkommenskarte. */}
       {hints.card && <HintCardOverlay hint={hints.card} onGo={hints.dismissCard}
-        onSkipAll={hints.skipAll}
+        onSkipAll={hints.card.id === "H1" ? hints.skipAll : null}
         onMore={hints.onMore && hints.card.target ? () => hints.onMore(hints.card) : null} />}
       {/* Ereignis-/UI-Hints im Stichspiel (T-O2): Pause-Karte am unteren Rand, Referent bleibt
           sichtbar; der Lauf ist über hintFreeze angehalten, bis „Weiter" gedrückt wird. */}

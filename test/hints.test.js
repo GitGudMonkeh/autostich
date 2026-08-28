@@ -93,6 +93,23 @@ describe("hints · Auswahl-Logik (pur, ohne React)", () => {
     expect(hintForScreen("perk", ctx({ seen: new Set(["H3", "H3b", "H4"]), visits: { perk: 4 } }))).toBe(null);
   });
 
+  it("Q15: neu freigeschaltete Archetypen melden sich im Skill-Angebot — beide zugleich als C7b", () => {
+    expect(hintForScreen("skill", ctx({ iceAvail: true }))).toBe("C7");
+    expect(hintForScreen("skill", ctx({ plantAvail: true }))).toBe("C8");
+    expect(hintForScreen("skill", ctx({ iceAvail: true, plantAvail: true }))).toBe("C7b");
+    // C7b räumt per markSeen-Aliasing auch C7/C8 ab — danach fällt der Screen auf H5/null zurück.
+    expect(hintForScreen("skill", ctx({ iceAvail: true, plantAvail: true,
+      seen: new Set(["C7b", "C7", "C8"]) }))).toBe(null);
+    expect(hintForScreen("skill", ctx({ iceAvail: true, seen: new Set(["C7"]), slotsFull: true }))).toBe("H5");
+  });
+
+  it("Q8: der erste Anker-Perk im Angebot bringt H6 — nach H3, vor H3b", () => {
+    expect(hintForScreen("perk", ctx({ visits: { perk: 1 }, offerHasAnker: true }))).toBe("H3");
+    expect(hintForScreen("perk", ctx({ seen: new Set(["H3"]), visits: { perk: 2 }, offerHasAnker: true }))).toBe("H6");
+    expect(hintForScreen("perk", ctx({ seen: new Set(["H3", "H6"]), visits: { perk: 2 }, offerHasAnker: true }))).toBe("H3b");
+    expect(hintForScreen("perk", ctx({ seen: new Set(["H3"]), visits: { perk: 2 } }))).toBe("H3b");
+  });
+
   it("C5: kein Bauplan passt mehr — schlaegt die Architekt-Sequenz, einmalig", () => {
     expect(hintForScreen("architect", ctx({ visits: { architect: 2 }, architectStuck: true }))).toBe("C5");
     expect(hintForScreen("architect", ctx({ visits: { architect: 2 }, architectStuck: true,
@@ -157,6 +174,15 @@ describe("hints · Ereignis-Auswahl im Stichspiel (T-O2, pur)", () => {
     expect(resolveBodyKey(d, { state: { activeArchetypes: ["lightning"] } })).toBe("hint.e5.blitz.body");
     expect(resolveBodyKey(d, { state: { activeArchetypes: ["fire"] } })).toBe("hint.e5.body");
     expect(resolveAnchor(d, { state: { activeArchetypes: ["ice"] } })).toBe("faction-ice");
+  });
+
+  it("Q7/E10: die erste ionisierte Karte im Deck — einmalig, nach E5", () => {
+    const ion = { deck: [{ value: 4 }, { value: 7, ionStacks: 1 }] };
+    expect(eventForPlay(ectx({ state: ion, seen: new Set(["E5"]) }))).toBe("E10");
+    // E5 (die Leisten-Erklärung) geht vor, solange sie aussteht und eine Leiste läuft.
+    expect(eventForPlay(ectx({ state: { ...ion, activeArchetypes: ["lightning"] } }))).toBe("E5");
+    expect(eventForPlay(ectx({ state: { deck: [{ value: 4 }] }, seen: new Set(["E5"]) }))).toBe(null);
+    expect(eventForPlay(ectx({ state: ion, seen: new Set(["E5", "E10"]) }))).toBe(null);
   });
 
   it("die Ereignisse erkennen ihre Bedingungen aus lastTrick", () => {
