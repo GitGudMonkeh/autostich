@@ -142,7 +142,12 @@ Next: owner playtest round 3.
 
 **Reached on a first run (12):** grundlagen/stich, grundlagen/score, aufstellung/formationen, aufstellung/stapeln, wahl/kategorien, wahl/raritaet, blitz/karte, feuer/karte (if fire is the first archetype), architekt/wohin, architekt/strukturen, architekt/aufwerten, danach/punkte.
 
-## Round 3 (owner playtest after round 2 + entry rework) — COLLECTING
+## Round 3 (owner playtest after round 2 + entry rework) — IMPLEMENTED (task/tip-review-3 → dev, 2026-08-28)
+
+Implementation record: `docs/workstreams/onboarding/onb-tipreview3/task-contract.md` (on `dev`).
+One deviation against the approved plant mockup: the green colour block cap is interpolated from
+the engine (×1,35, with Überwucherung ×1,55 from 66 % green) — the mockup's ×3/×4/60 % figures
+were wrong; the engine and `tut.pflanze.tipps.0` agree.
 
 | # | Item | Change |
 | --- | --- | --- |
