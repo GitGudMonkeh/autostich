@@ -96,6 +96,51 @@ context, instead of first with none — the exact inversion of the blind commit 
 the schedule reads normally (skill first), which is fine: the player has been through everything
 once.
 
+## 4a. The first-run curriculum — every mechanic, when, and how
+
+**Owner direction (2026-08-28): a run is 50 cycles — use them.** The teaching does not stop after
+cycle 5; each later phase visit and each first event carries exactly one more mechanic. This table
+is the consolidated answer to "what gets explained in the first game, when, and how" — one row per
+mechanic, in the order a typical first run meets them. Cycle numbers are computed from
+`BASE_SCHEDULE` (skill phases sit before cycles 1·5·9·13·17·21·25·33·39·43, perk before 2·6·10…,
+formation before 3·7·11…, architect before 4·8·12…, legendary before 29); event rows fire whenever
+their event first happens, under the §5.4 pacing rules.
+
+| When (run 1) | Mechanic taught | How | Hint | Mehr dazu |
+| --- | --- | --- | --- | --- |
+| Run start | The game loop: deck plays itself, no losing, first cycle is for watching | blocking card (the only one) | H1 | grundlagen / stich |
+| Cycle 1, play | A won trick pays {win} base points; everything else stacks as factors | pause card | E1 | grundlagen / score |
+| First tie, whenever | A tie pays nobody | pause card | E2 | grundlagen / stich |
+| First streak of 3, whenever | The streak factor, with the live numbers | pause card | E3 | grundlagen / serie |
+| Cycle 2 | Perk basics: immediate, permanent, declining is free | banner | H3 | wahl / kategorien |
+| Cycle 3 | Formation basics as a task: one segment, colour block | task banner | S-F1 | aufstellung / formationen |
+| Cycle 4 | Architect basics as a task: place a building, the win condition | task banner | S-A1 | architekt / wasist |
+| Cycle 5 | The first skill: Blitz as the one archetype, consumer badged | banner + badge | H2 | blitz / karte |
+| Cycle 5, play | The resource bar that just appeared | pause card | E5 | blitz / karte |
+| First crit, whenever | Crit ×{critMult}; where crit chance comes from | pause card | E4 | blitz / karte |
+| Cycle 6 (perk visit 2) | Category chip and rarity border | banner | H3b | wahl / raritaet |
+| Cycle 7 (formation visit 2) | A second pattern, via the legend | task banner | S-F2 | aufstellung / formationen |
+| First formation scores, whenever | The formation's factor, and the segment rule | pause card | E6 | aufstellung / formationen |
+| Cycle 8 (architect visit 2) | The district: a matching neighbour | task banner | S-A2 | architekt / wohin |
+| Cycle 11 (formation visit 3) | Formations may overlap | task banner | S-F3 | aufstellung / stapeln |
+| Cycle 12 (architect visit 3) | The structure, as a long game | task banner | S-A3 | architekt / wohin |
+| Cycle 16 (architect visit 4) | Upgrade, move, demolish — a building is never final | task banner | S-A4 | architekt / aufwerten |
+| First milestone, score-driven | Milestones pay Stichpunkte | pause card | E7 | danach / punkte |
+| If a perk asks, whenever | Target select / family target | one-liner | C2 / C3 | wahl / kategorien |
+| Cycle 29 | The legendary phase | one-liner | C4 | wahl / legendaer |
+| Cycle 33 (first offer with full slots) | A new skill now replaces an old one; what it paid out stays | banner | H5 | wahl / perks |
+| Run end | SP and DP; the Probierfeld invitation | pause card | E8 | danach / endscreen |
+| Run 2, first skill offer | A second archetype; mixing is allowed | banner | H2b | wahl / kategorien |
+
+Deliberately **not** in the first run, each with its home: Neuwurf (tree-gated — principle 5),
+the glacier pick (needs ice, tree-gated — C1 fires when it first exists), every archetype's second
+layer (Leitfaden), rarity ladder details and per-card rules (Glossar/Probierfeld), the meta
+screens (E8 points at them once).
+
+The visit-based rows self-heal: a step whose goal is already met is skipped (§5.2 rule 2), and a
+dismissed sequence stays dismissed. The cycle numbers name the *typical* first run — what actually
+schedules a row is its phase-visit ordinal or its event, never a hardcoded cycle.
+
 ---
 
 ## 5. The hint list
@@ -116,6 +161,8 @@ needs to block). Dismiss with ✕ or by deciding; "Mehr dazu →" opens the link
 | **H2** | first skill offer (run 1 — Blitz only, §6) | Blitz ist dein erster Archetyp: Seine Skills laden die Blitz-Leiste und entladen sie als Crits. Eine falsche Wahl gibt es nicht. | Lightning is your first archetype: its skills charge the Lightning bar and discharge it as crits. There is no wrong choice. | blitz / karte |
 | **H2b** | first skill offer with more than one archetype (run 2+) | Ab jetzt stehen mehrere Archetypen zur Wahl. Dein erster Skill eines Archetyps schaltet ihn frei — mischen ist erlaubt. | From now on, more than one archetype is on offer. Your first skill of an archetype activates it — mixing is allowed. | wahl / kategorien |
 | **H3** | first perk offer | Ein Perk wirkt sofort und bleibt bis zum Ende des Laufs. Passt keiner, lehn ab — das kostet nichts. | A perk takes effect immediately and lasts the whole run. If none fits, decline — it costs nothing. | wahl / kategorien |
+| **H3b** | perk offer, visit 2 | Der Farbchip nennt die Kategorie, der Rand die Rarität. | The colour chip names the category, the border the rarity. | wahl / raritaet |
+| **H5** | first skill offer with all slots full | Deine {slots} Slots sind voll: Eine neue Wahl ersetzt ab jetzt einen alten Skill — was er schon ausgezahlt hat, bleibt. | Your {slots} slots are full: a new pick now replaces an old skill — what it already paid out stays. | wahl / perks |
 
 The formation and architect phases carry no descriptive hint — they get **suggestion sequences**
 instead (§5.2), which teach the same content as tasks.
@@ -138,9 +185,11 @@ Distrikt, Struktur), pull every display name from the registries at render time
 | --- | --- | --- | --- | --- |
 | **S-F1** | formation phase, visit 1 | Fang mit einem Segment an: Schieb gleiche Farben zusammen — das ergibt einen {farbblock}, und Formationen vervielfachen den Score ihrer Karten. | Start with one segment: push same colours together — that makes a {farbblock}, and formations multiply their cards' score. | aufstellung / formationen |
 | **S-F2** | formation phase, visit 2+ | Dein nächstes Muster: Die Legende zeigt, welche Formationen es gibt — jede weitere multipliziert dazu. | Your next pattern: the legend shows which formations exist — each additional one multiplies on top. | aufstellung / formationen |
+| **S-F3** | formation phase, visit 3+ | Formationen dürfen sich überlappen — eine Karte kann in mehreren Mustern stecken. | Formations may overlap — one card can sit in several patterns. | aufstellung / stapeln |
 | **S-A1** | architect phase, visit 1 | Setz dein erstes Gebäude irgendwo aufs Brett. Es wirkt auf die Karte unter ihm — seinen Bonus zahlt es nur, wenn die ihren Stich gewinnt. | Place your first building anywhere on the board. It affects the card beneath it — and pays its bonus only if that card wins its trick. | architekt / wasist |
 | **S-A2** | architect phase, visit 2+ | Bau einen Distrikt: Setz ein gleichartiges Gebäude neben dein erstes — Nachbarn derselben Art verstärken sich. | Build a district: place a matching building next to your first — neighbours of the same kind reinforce each other. | architekt / wohin |
 | **S-A3** | architect phase, visit 3+ | Dein Fernziel: Eine volle Zeile, Spalte oder Diagonale schließt eine Struktur und legt einen Faktor auf alle Positionen darin. | Your long game: a full row, column or diagonal closes a structure and puts a factor on every position inside it. | architekt / wohin |
+| **S-A4** | architect phase, visit 4+ | Ein Gebäude ist nie festgenagelt: Aufwerten, versetzen und abreißen darfst du jederzeit. | A building is never nailed down: upgrade, move and demolish any time. | architekt / aufwerten |
 
 Sequence rules:
 
@@ -211,10 +260,11 @@ with a link:
 | **C3** | first family target | Diese Perk-Familie braucht ein Ziel — wähle, worauf sie wirken soll. | wahl / kategorien |
 | **C4** | legendary phase (cycle {cycle}) | Ein legendärer Skill aus deinen aktiven Archetypen: eigener Slot, kein Tausch. | wahl / legendaer |
 
-**Total: 4 phase hints + 5 suggestions + 8 event hints + 4 conditionals = 21 across a profile's
-whole life**, of which a typical first run meets eight to ten. The guided run carried 42 keys of
-body text plus coach-mark chains; the sections carry 730. This layer is deliberately the smallest
-of the three.
+**Total: 6 phase hints + 7 suggestions + 8 event hints + 4 conditionals = 25 across a profile's
+whole life** — the §4a curriculum lays them on the first run's timeline. The guided run carried 42
+keys of body text plus coach-mark chains; the sections carry 730. This layer is deliberately the
+smallest of the three, and it spends its budget across 50 cycles instead of the first five
+minutes.
 
 ---
 
@@ -242,9 +292,11 @@ existing `phase: "play"` exit. The offer's rng draw is an addressed sub-stream
 (`rngAtOr("skill", 0)`, observed), not a shared sequence, so skipping the draw shifts nothing —
 the implementing task verifies this before relying on it.
 
-**What it costs (computed from the schedule):** run 1 has 8 skill picks instead of 9, and the six
-slots fill by cycle 31 instead of 22. A mildly slower first build in a run that cannot be lost —
-acceptable, and invisible to a player with no baseline. The rejection of the *schedule-fork*
+**What it costs (computed from the schedule):** run 1 has 9 skill picks instead of 10 (the
+schedule holds skill phases before cycles 1·5·9·13·17·21·25·33·39·43 — the in-code comment saying
+"9 Skill / full at 22" predates #293 and is stale), and the six slots fill by cycle 25 instead of
+21. A mildly slower first build in a run that cannot be lost — acceptable, and invisible to a
+player with no baseline. The rejection of the *schedule-fork*
 mechanism stands; the idea it carried was right and is hereby adopted in its cheap form.
 
 ### 6.2 When the skill offer does come: Blitz only
@@ -412,7 +464,7 @@ milestone tick) is not surfaced, surfacing it read-only is in scope, `src/game/`
 
 | # | Task | Depends on | Content |
 | --- | --- | --- | --- |
-| **T-O1** | Hint engine + phase hints (H1–H3, H2b, C1–C4) + suggestion sequences (S-F1/2, S-A1/2/3 with visit counters and done-predicates over the exported pure functions), banner + pause card, storage, i18n | — | 13 hints |
+| **T-O1** | Hint engine + phase hints (H1–H3, H3b, H5, H2b, C1–C4) + suggestion sequences (S-F1–3, S-A1–4 with visit counters and done-predicates over the exported pure functions), banner + pause card, storage, i18n | — | 17 hints |
 | **T-O2** | Event hints (E1–E8), signal plumbing, pacing rules | T-O1 | 8 hints |
 | **T-O3** | First-run start behaviour (§6): skip the opening skill decision (§6.1) and gate the run to Blitz (§6.2), both keyed on `hadCompletedRun` at the `START_RUN` site; "Guter Start" badge on the Blitz consumer; guard tests (skip and gate lift after first completed run; rng streams unshifted; badge finds its skill; sim path byte-identical) | — | 1 short text |
 | **T-O4** | Probierfeld rebuild (§8): delete the 11 text lessons and their keys, flatten the shell to one grouped list, rename, deep-link prop, hint-target guard, hub first-contact offer → first run | T-O1 for the link wiring | −11 lessons |
