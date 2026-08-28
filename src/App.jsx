@@ -287,7 +287,18 @@ function AutostichGame() {
   /* Onboarding-Hints: Banner je Entscheidungsscreen (über HintContext an die Slots) + die H1-Karte.
      `hintFreeze` reiht sich in die Overlay-Einfrier-Kette ein — die H1-Karte hält den Lauf an wie
      Optionen/Chronik, sonst liefe der erste Durchlauf hinter der Begrüßung weiter. */
-  const hints = useHints({ state, profile });
+  /* T-O4 „Mehr dazu": oeffnet die Probierfeld-Runde des Hints ueber dem Lauf. tutOpen traegt
+     dafuer jetzt entweder true (Hub-Chip: die Liste) oder { section, lesson } (Deep-Link).
+     Oeffnen zaehlt als gelesen — dieselbe Regel wie ein Klick in der Liste. */
+  // Bewusst KEIN useCallback: markLessonSeen ist selbst je Render neu, ein Memo hier waere nur
+  // eine exhaustive-deps-Ausnahme ohne Gewinn (dieselbe Abwaegung wie bannerFor in useHints).
+  const openProbe = (target) => {
+    const [sec, les] = String(target).split("/");
+    if (!sec || !les) return;
+    markLessonSeen(target);
+    setTutOpen({ section: sec, lesson: les });
+  };
+  const hints = useHints({ state, profile, onMore: openProbe });
   const hintFreeze = hints.freeze;
   const [confirmAbort, setConfirmAbort] = useState(false);        // #254: Rückfrage „Lauf wirklich abbrechen?" (Beenden-Button ODER Zurück-Geste im Run)
   const [confirmRestart, setConfirmRestart] = useState(false);    // Komfort: Rückfrage „Wirklich neustarten?" (Neustart-Button) — kein Ein-Tap-Verlust bei Fettfingern
@@ -477,11 +488,11 @@ function AutostichGame() {
   // (Lauf zu Ende, aber der letzte Sieg-Loop hängt noch) — werden sie verstummt. Positiv-Logik (statt inRun-gated), damit
   // auch der Gameover-Zustand (inRun=false) sicher greift.
   useEffect(() => {
-    const inActivePlay = inRun && state.phase === "play" && !paused && !showOptions && !showChronik && !glossaryOpen && !confirmAbort && !confirmRestart && !hintFreeze && visible;
+    const inActivePlay = inRun && state.phase === "play" && !paused && !showOptions && !showChronik && !glossaryOpen && !confirmAbort && !confirmRestart && !hintFreeze && !tutOpen && visible;
     const loopsAllowed = inActivePlay || showCustomize; // Werkstatt-Showcase = einziger Nicht-Spiel-Ort mit Loop-Betten
     audio.setLoopsSuspended(!loopsAllowed);
     audio.setFxSuspended(!loopsAllowed); // #329: Effekt-One-Shots (fx_*) exakt wie die Loop-Betten gaten → kein Sound-Schwanz im Victory/Overlay
-  }, [inRun, state.phase, paused, showOptions, showChronik, glossaryOpen, confirmAbort, confirmRestart, hintFreeze, visible, showCustomize]);
+  }, [inRun, state.phase, paused, showOptions, showChronik, glossaryOpen, confirmAbort, confirmRestart, hintFreeze, tutOpen, visible, showCustomize]);
   const changeOptions = (patch) => setOptions((o) => {
     // #telemetrie: Abschalten verwirft auch das, was noch in der Warteschlange liegt (siehe telemetry.purge).
     if (patch.telemetry === false && o.telemetry !== false) telemetry.purge();
@@ -592,7 +603,7 @@ function AutostichGame() {
 
   // Auto-Play: nach jedem Stich (trickNo ändert sich) den nächsten planen. Pause hält alles an.
   useEffect(() => {
-    if (state.phase !== "play" || paused || showOptions || showChronik || glossaryOpen || confirmAbort || confirmRestart || hintFreeze || !visible) return; // #254: Abbruch-/Neustart-Rückfrage friert den Lauf ein (wie ein Overlay) · Onboarding-H1 ebenso · !visible: Hintergrund-Tab hält den Lauf an (Akku/Hitze)
+    if (state.phase !== "play" || paused || showOptions || showChronik || glossaryOpen || confirmAbort || confirmRestart || hintFreeze || tutOpen || !visible) return; // #254: Abbruch-/Neustart-Rückfrage friert den Lauf ein (wie ein Overlay) · Onboarding-H1 ebenso · !visible: Hintergrund-Tab hält den Lauf an (Akku/Hitze)
     // #188 v2: nach einem großen Krit-Sieg um hitStopMs verzögert (kurzer „Hit-Stop"/Slow-Mo), sonst normaler Takt.
     // #351: Delay hart auf ein endliches Minimum clampen (nie 0/NaN/Infinity → setTimeout feuert zuverlässig).
     const delay = Math.max(MIN_FLIP_MS, Number.isFinite(flipMs + hitStopMs) ? flipMs + hitStopMs : BASE_FLIP_MS);
@@ -601,7 +612,7 @@ function AutostichGame() {
     // #56: flipMs direkt (statt seiner Einzel-Eingaben speedPct/speedMult) → Deps veralten nicht,
     // falls flipMs künftig von weiteren Variablen abhängt.
     // #148: showChronik friert den Lauf ein (wie showOptions) — Tricks laufen nicht mehr hinter dem Overlay weiter.
-  }, [state.phase, state.trickNo, paused, showOptions, showChronik, glossaryOpen, confirmAbort, confirmRestart, hintFreeze, visible, flipMs, hitStopMs]);
+  }, [state.phase, state.trickNo, paused, showOptions, showChronik, glossaryOpen, confirmAbort, confirmRestart, hintFreeze, tutOpen, visible, flipMs, hitStopMs]);
 
   // #351/#366 Watchdog (Sicherheitsnetz gegen seltene Start-/Race-Hänger): Läuft der Lauf (phase play, keine Overlays/
   //   Pause), bewegt sich trickNo aber > STUCK_MS nicht UND ist die Seite LIVE sichtbar, den Guard-Zustand EINMAL loggen
@@ -615,7 +626,7 @@ function AutostichGame() {
     // #366: Der Watchdog darf NICHT auf `visible` gaten — genau der Fall „stale visible===false" (führender Verdacht)
     //   soll ihn nicht mitlahmlegen. Stattdessen prüft er die Sichtbarkeit im Intervall LIVE (document.visibilityState):
     //   echt im Hintergrund → nichts tun (Akku/Hitze bleibt respektiert); sichtbar, aber trickNo hängt → resync + nudge.
-    if (state.phase !== "play" || paused || showOptions || showChronik || glossaryOpen || confirmAbort || confirmRestart || hintFreeze) return;
+    if (state.phase !== "play" || paused || showOptions || showChronik || glossaryOpen || confirmAbort || confirmRestart || hintFreeze || tutOpen) return;
     const STUCK_MS = 3000;
     const id = setInterval(() => {
       if (stuckNudged.current || Date.now() - lastTrickAt.current < STUCK_MS) return;
@@ -627,7 +638,7 @@ function AutostichGame() {
       dispatch({ type: "RESOLVE_TRICK", rng: Math.random });
     }, 1000);
     return () => clearInterval(id);
-  }, [state.phase, state.trickNo, paused, showOptions, showChronik, glossaryOpen, confirmAbort, confirmRestart, hintFreeze, flipMs, speedMult]);
+  }, [state.phase, state.trickNo, paused, showOptions, showChronik, glossaryOpen, confirmAbort, confirmRestart, hintFreeze, tutOpen, flipMs, speedMult]);
 
   // Geist-Trajektorie des laufenden Runs mitschreiben.
   useEffect(() => {
@@ -1392,7 +1403,8 @@ function AutostichGame() {
       {tutOpen && (
         <TutorialSections onClose={() => setTutOpen(false)} onOpenGlossary={() => { setTutOpen(false); setGlossaryOpen(true); }}
           onOpenGuide={setTutGuide}
-          seen={tutProgress.seen} last={tutProgress.last} onSeen={markLessonSeen} />
+          initial={typeof tutOpen === "object" ? tutOpen : null}
+          seen={tutProgress.seen} onSeen={markLessonSeen} />
       )}
       {tutGuide && <GuideOverlay initial={tutGuide} onClose={() => setTutGuide(null)} />}
 
@@ -1472,10 +1484,12 @@ function AutostichGame() {
 
       {/* Onboarding-H1: die EINZIGE blockierende Hint-Karte (Erstlauf-Begrüßung). Über allem außer
           den Bestätigungs-Dialogen; der Lauf darunter ist über hintFreeze eingefroren. */}
-      {hints.card && <HintCardOverlay hint={hints.card} onGo={hints.dismissCard} />}
+      {hints.card && <HintCardOverlay hint={hints.card} onGo={hints.dismissCard}
+        onMore={hints.onMore ? () => hints.onMore(hints.card) : null} />}
       {/* Ereignis-/UI-Hints im Stichspiel (T-O2): Pause-Karte am unteren Rand, Referent bleibt
           sichtbar; der Lauf ist über hintFreeze angehalten, bis „Weiter" gedrückt wird. */}
-      {!hints.card && hints.eventCard && <EventHintCard hint={hints.eventCard} onGo={hints.dismissEvent} />}
+      {!hints.card && hints.eventCard && <EventHintCard hint={hints.eventCard} onGo={hints.dismissEvent}
+        onMore={hints.onMore ? () => hints.onMore(hints.eventCard) : null} />}
     </div>
     </HintContext.Provider>
   );

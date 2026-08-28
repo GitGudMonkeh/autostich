@@ -71,16 +71,10 @@ export const lessonKind = (lesson) => lesson.art || "kurz";
 export const SECTIONS = [
   {
     id: "grundlagen",
-    /* SIEBEN Lektionen, nicht mehr acht. Der freigegebene Entwurf zieht „Durchlauf und Lauf" in
-       die erste Lektion und „Crit" in „Der Score" — beide waren Textkarten ohne eigene Runde, und
-       genau die sollte der Umbau abschaffen. */
+    /* T-O4 (docs/tutorial-onboarding-design.md §8): die reinen Text-Lektionen sind raus — ihre
+       Arbeit machen jetzt die In-Run-Hints, das Glossar und der Leitfaden. Geblieben ist, was
+       eine Runde traegt. */
     lessons: [
-      { id: "wasist", art: "voll", beats: [
-        { kind: "block" },
-        { kind: "block", label: true },
-        { kind: "block", label: true },
-        { kind: "regeln" },
-        { kind: "tip" }] },
       { id: "stich", art: "voll", beats: [
         { kind: "probierfeld", probe: "duell" },
         { kind: "tip" }] },
@@ -97,11 +91,6 @@ export const SECTIONS = [
       { id: "score", art: "voll", beats: [
         { kind: "probierfeld", probe: "score" },
         { kind: "tip" }] },
-      { id: "formel", art: "voll", beats: [
-        { kind: "block" },
-        { kind: "block", label: true },
-        { kind: "block", label: true },
-        { kind: "tip" }] },
       { id: "anzeigen", art: "voll", beats: [
         { kind: "probierfeld", probe: "laufmock" },
         { kind: "tip" }] },
@@ -112,14 +101,8 @@ export const SECTIONS = [
   },
   {
     id: "aufstellung",
-    /* FÜNF Lektionen statt sechs: der freigegebene Entwurf zieht „tauschen" und „position" in EINE
-       Runde am Brett zusammen. Beide erklärten dasselbe aus zwei Blickwinkeln. */
+
     lessons: [
-      { id: "phase", art: "voll", beats: [
-        { kind: "block" },
-        { kind: "regeln" },
-        { kind: "liste" },
-        { kind: "tip" }] },
       { id: "brett", art: "voll", beats: [
         { kind: "probierfeld", probe: "aufstellen" },
         { kind: "tip" }] },
@@ -136,14 +119,8 @@ export const SECTIONS = [
   },
   {
     id: "wahl",
-    /* DREI Lektionen statt sechs. Der freigegebene Entwurf zieht Angebot, Neuwurf, Motor und
-       Legendäres in die erste Runde und die Raritäten-Lektion zusammen. */
+
     lessons: [
-      { id: "perks", art: "voll", beats: [
-        { kind: "block" },
-        { kind: "block", label: true },
-        { kind: "block", label: true },
-        { kind: "tip" }] },
       { id: "kategorien", art: "voll", beats: [
         { kind: "probierfeld", probe: "kategorien" },
         { kind: "tip" }] },
@@ -161,11 +138,8 @@ export const SECTIONS = [
     id: "blitz",
     arch: "lightning",
     lessons: [
-      { id: "wasist", art: "voll", beats: [
-        { kind: "block" },
-        { kind: "block", label: true },
-        { kind: "regeln" },
-        { kind: "tip" }] },
+      /* T-O4: Der Kernsatz der geloeschten wasist-Lektion („Blitz stellt ihn selbst her") lebt
+         im Probe-Hinweis dieser Runde weiter — als eigener Satz-Takt riss er das 960er-Budget. */
       { id: "karte", art: "voll", beats: [
         { kind: "probierfeld", probe: "blitzkarte" },
         { kind: "tip" }] },
@@ -181,11 +155,6 @@ export const SECTIONS = [
     id: "feuer",
     arch: "fire",
     lessons: [
-      { id: "wasist", art: "voll", beats: [
-        { kind: "block" },
-        { kind: "block", label: true },
-        { kind: "regeln" },
-        { kind: "tip" }] },
       /* Der Karten-Schirm des Entwurfs maß 1037 px — über dem Budget. Owner-Entscheid:
          aufteilen statt kürzen; die Schmiede-Kette ist eine eigene Lektion. */
       { id: "karte", art: "voll", beats: [
@@ -206,12 +175,6 @@ export const SECTIONS = [
     id: "pflanze",
     arch: "plant",
     lessons: [
-      { id: "wasist", art: "voll", beats: [
-        { kind: "block" },
-        { kind: "block", label: true },
-        { kind: "merk" },
-        { kind: "regeln" },
-        { kind: "tip" }] },
       /* Der Pflanzen-Karten-Schirm maß 1083 px — Owner-Entscheid: aufteilen statt kürzen. */
       { id: "karte", art: "voll", beats: [
         { kind: "probierfeld", probe: "pflanzkarte" },
@@ -231,12 +194,6 @@ export const SECTIONS = [
     id: "eis",
     arch: "ice",
     lessons: [
-      { id: "wasist", art: "voll", beats: [
-        { kind: "block" },
-        { kind: "block", label: true },
-        { kind: "merk" },
-        { kind: "regeln" },
-        { kind: "tip" }] },
       { id: "karte", art: "voll", beats: [
         { kind: "probierfeld", probe: "gletscher" },
         { kind: "tip" }] },
@@ -259,9 +216,6 @@ export const SECTIONS = [
       { id: "wasist", art: "voll", beats: [
         { kind: "block" },
         { kind: "probierfeld", probe: "archmock" },
-        { kind: "tip" }] },
-      { id: "regeln", art: "kurz", beats: [
-        { kind: "liste" },
         { kind: "tip" }] },
       { id: "hauptaktion", art: "voll", beats: [
         { kind: "probierfeld", probe: "bauen" },
@@ -296,10 +250,6 @@ export const SECTIONS = [
       { id: "baum", art: "voll", beats: [
         { kind: "block" },
         { kind: "probierfeld", probe: "baum" },
-        { kind: "tip" }] },
-      { id: "rangliste", art: "kurz", beats: [
-        { kind: "block" },
-        { kind: "block", label: true },
         { kind: "tip" }] },
     ],
   },

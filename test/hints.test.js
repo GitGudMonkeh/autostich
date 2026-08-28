@@ -9,16 +9,23 @@
       Balancing. */
 import { describe, it, expect } from "vitest";
 import de from "../src/i18n/de.js";
-import { HINT_DEFS, SEQUENCES, hintForScreen, screenOf, eventForPlay, hasFormationType,
-  activeTypeCount, hasOverlap, hasBuilding, hasDistrict, hasStructure } from "../src/ui/hints/hintScript.js";
+import { HINT_DEFS, SEQUENCES, hintForScreen, screenOf, eventForPlay, resolveTarget, ARCH_SECTION,
+  hasFormationType, activeTypeCount, hasOverlap, hasBuilding, hasDistrict, hasStructure } from "../src/ui/hints/hintScript.js";
 import { SECTIONS } from "../src/ui/tutorial-sections/catalog.js";
 
 const LESSON_PATHS = new Set(SECTIONS.flatMap((s) => s.lessons.map((l) => `${s.id}/${l.id}`)));
 
 describe("hints · Skript-Integrität", () => {
-  it("jedes „Mehr dazu“-Ziel existiert im Sektions-Katalog", () => {
-    const bad = Object.entries(HINT_DEFS).filter(([, d]) => d.target && !LESSON_PATHS.has(d.target));
-    expect(bad.map(([id, d]) => `${id} → ${d.target}`)).toEqual([]);
+  it("jedes „Mehr dazu“-Ziel existiert im Sektions-Katalog — Funktions-Ziele über alle Archetypen", () => {
+    const bad = [];
+    for (const [id, d] of Object.entries(HINT_DEFS)) {
+      if (!d.target) continue;
+      const targets = typeof d.target === "function"
+        ? Object.keys(ARCH_SECTION).map((arch) => resolveTarget(d, { state: { activeArchetypes: [arch] } }))
+        : [d.target];
+      for (const tgt of targets) if (!LESSON_PATHS.has(tgt)) bad.push(`${id} → ${tgt}`);
+    }
+    expect(bad).toEqual([]);
   });
 
   it("jeder referenzierte Schlüssel steht im deutschen Katalog", () => {
