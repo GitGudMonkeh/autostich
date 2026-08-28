@@ -112,6 +112,7 @@ their event first happens, under the §5.4 pacing rules.
 | Cycle 1, play | A won trick pays {win} base points; everything else stacks as factors | pause card | E1 | grundlagen / score |
 | First tie, whenever | A tie pays nobody | pause card | E2 | grundlagen / stich |
 | First streak of 3, whenever | The streak factor, with the live numbers | pause card | E3 | grundlagen / serie |
+| Cycle 2, play start | The status bar: pause and speed (×2, ×4, max) | pause card at phase start | U1 | grundlagen / anzeigen |
 | Cycle 2 | Perk basics: immediate, permanent, declining is free | banner | H3 | wahl / kategorien |
 | Cycle 3 | Formation basics as a task: one segment, colour block | task banner | S-F1 | aufstellung / formationen |
 | Cycle 4 | Architect basics as a task: place a building, the win condition | task banner | S-A1 | architekt / wasist |
@@ -120,9 +121,11 @@ their event first happens, under the §5.4 pacing rules.
 | First crit, whenever | The crit that just landed, with its number | pause card | E4 | blitz / karte |
 | First value divergence, whenever (typically cycles 2–5, after the first perk or Wert building) | Kartenwert vs. Stichwert vs. Kampfwert, with the live numbers | pause card | E9 | grundlagen / werte |
 | Cycle 6 (perk visit 2) | Category chip and rarity border | banner | H3b | wahl / raritaet |
+| Cycle 6, play start | The side panels: what the score is made of | pause card at phase start | U2 | grundlagen / herkunft |
 | Cycle 7 (formation visit 2) | A second pattern, via the legend | task banner | S-F2 | aufstellung / formationen |
 | First formation scores, whenever | The formation's factor, and the segment rule | pause card | E6 | aufstellung / formationen |
 | Cycle 8 (architect visit 2) | The district: a matching neighbour | task banner | S-A2 | architekt / wohin |
+| Cycle 9, play start | The Chronik: everything picked this run, behind the card icon | pause card at phase start | U3 | grundlagen / anzeigen |
 | Cycle 11 (formation visit 3) | Formations may overlap | task banner | S-F3 | aufstellung / stapeln |
 | Cycle 12 (architect visit 3) | The structure, as a long game | task banner | S-A3 | architekt / wohin |
 | Cycle 16 (architect visit 4) | Upgrade, move, demolish — a building is never final | task banner | S-A4 | architekt / aufwerten |
@@ -232,6 +235,22 @@ spotlight. Respects the three FX levels (`useFxLevel`), per the guided-run playt
 | **E8** | first-ever run end | Dein Lauf zählt: Stichpunkte für den Upgrade-Baum, Deckpunkte für die Werkstatt. Alles Weitere probierst du im Probierfeld aus — jederzeit. | Your run counts: trick points for the upgrade tree, deck points for the workshop. Everything else you can try in the playground — any time. | danach / endscreen |
 | **E9** | first trick where a card's Kampfwert differs from its Kartenwert | Die {karte} kämpft mit {kampfwert} statt {kartenwert}: Kartenwert plus Stichwert-Boni ergeben den Kampfwert — und der höhere gewinnt den Stich. | The {karte} fights at {kampfwert} instead of {kartenwert}: card value plus trick-value boni make the combat value — and the higher one wins the trick. | grundlagen / werte |
 
+**UI hints (owner direction, 2026-08-28): quiet cycles teach the run screen itself.** Speed,
+Chronik and the score panels are UI literacy, not decisions — they get their own slot: **the start
+of a play phase, before the first trick.** Pausing there costs nothing (nothing is running yet),
+the referent is on screen, and "Weiter" starts the cycle. One U-hint at most per play-phase start,
+never in cycle 1, and it counts against the phase's two-card cap.
+
+| id | Trigger | DE draft | EN draft | Mehr dazu |
+| --- | --- | --- | --- | --- |
+| **U1** | play start, cycle 2 (after one full cycle at 1×) | Über die Leiste oben hältst du den Lauf an oder stellst das Tempo: ×2, ×4 oder Max. | The bar up top pauses the run or sets the speed: ×2, ×4 or max. | grundlagen / anzeigen |
+| **U2** | play start, cycle 6 (the first skill is in, factors are real) | Die Seitenpanels zeigen, woraus dein Score gerade entsteht — jeder Faktor einzeln. | The side panels show what your score is made of right now — each factor on its own. | grundlagen / herkunft |
+| **U3** | play start, cycle 9 (enough picks to look up) | Das Karten-Symbol oben öffnet die Chronik: alle deine Karten, Formationen und Gebäude in diesem Lauf. | The card icon up top opens the Chronik: all your cards, formations and buildings in this run. | grundlagen / anzeigen |
+
+U2 carries one verification for T-O2: the side panels are a desktop affordance — on the phone the
+hint must anchor to wherever that viewport actually shows the score source, or fall back to the
+next viewport that has it, never point at a panel that is not there.
+
 E9 deliberately does **not** fire earlier: in a vanilla deck all three values are identical, so
 before the first bonus exists there is no difference on screen to point at — the hint waits for
 its referent. Once a perk or a Wert building creates the first divergence, one sentence with the
@@ -267,8 +286,8 @@ with a link:
 | **C3** | first family target | Diese Perk-Familie braucht ein Ziel — wähle, worauf sie wirken soll. | wahl / kategorien |
 | **C4** | legendary phase (cycle {cycle}) | Ein legendärer Skill aus deinen aktiven Archetypen: eigener Slot, kein Tausch. | wahl / legendaer |
 
-**Total: 6 phase hints + 7 suggestions + 9 event hints + 4 conditionals = 26 across a profile's
-whole life** — the §4a curriculum lays them on the first run's timeline. The guided run carried 42
+**Total: 6 phase hints + 7 suggestions + 9 event hints + 3 UI hints + 4 conditionals = 29 across
+a profile's whole life** — the §4a curriculum lays them on the first run's timeline. The guided run carried 42
 keys of body text plus coach-mark chains; the sections carry 730. This layer is deliberately the
 smallest of the three, and it spends its budget across 50 cycles instead of the first five
 minutes.
@@ -482,7 +501,7 @@ milestone tick) is not surfaced, surfacing it read-only is in scope, `src/game/`
 | # | Task | Depends on | Content |
 | --- | --- | --- | --- |
 | **T-O1** | Hint engine + phase hints (H1–H3, H3b, H5, H2b, C1–C4) + suggestion sequences (S-F1–3, S-A1–4 with visit counters and done-predicates over the exported pure functions), banner + pause card, storage, i18n | — | 17 hints |
-| **T-O2** | Event hints (E1–E9), signal plumbing, pacing rules | T-O1 | 9 hints |
+| **T-O2** | Event hints (E1–E9) + UI hints (U1–U3, incl. the mobile anchor check for U2), signal plumbing, pacing rules | T-O1 | 12 hints |
 | **T-O3** | First-run start behaviour (§6): skip the opening skill decision (§6.1) and gate the run to Blitz (§6.2), both keyed on `hadCompletedRun` at the `START_RUN` site; "Guter Start" badge on the Blitz consumer; guard tests (skip and gate lift after first completed run; rng streams unshifted; badge finds its skill; sim path byte-identical) | — | 1 short text |
 | **T-O4** | Probierfeld rebuild (§8): delete the 11 text lessons and their keys, flatten the shell to one grouped list, rename, deep-link prop, hint-target guard, hub first-contact offer → first run | T-O1 for the link wiring | −11 lessons |
 
