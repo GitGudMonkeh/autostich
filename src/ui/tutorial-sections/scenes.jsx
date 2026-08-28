@@ -19,7 +19,6 @@ import { useLocale } from "../../i18n/useLocale.js"; // #sprache: Neuberechnung 
 import { fmtNum, fmtPct, t } from "../../i18n/index.js";
 import * as C from "../../game/constants.js";
 import { FAMILY_DEFS } from "../../game/families.js";
-import { PERK_DEFS } from "../../game/perks.js";
 import { computeFormations, summarizeFormations, FARBBLOCK_BASE } from "../../game/formations.js";
 import { marginHeatPoints } from "../../game/skills.js";
 import * as GLACIER from "../../game/glacier.js";
@@ -28,7 +27,7 @@ import * as PROG from "../../game/progression.js";
 import { RUN_COMPLETE_DP } from "../../game/storage.js";
 import { buildingEffect } from "../../i18n/buildingText.js";
 import { FACTION_ICON_SRC, GLOSSARY_IMG_SRC } from "../FactionIcon.jsx";
-import { familyDef, perkDef, perkCat, formationName, formationAbbr, rarityLabel, nodeDef, skillDef, glacierFormName, archFamily, archCatDef } from "../../i18n/labels.js";
+import { familyDef, perkDef, perkCat, formationName, formationAbbr, rarityLabel, skillDef, glacierFormName, archFamily, archCatDef } from "../../i18n/labels.js";
 import { TIER_META, ROMAN } from "../../game/rarity.js";
 import { ENERGY_FLOOR } from "../../game/progression.js";
 import { perkCatArt, legendaryPerkArt } from "../perkArt.js";
