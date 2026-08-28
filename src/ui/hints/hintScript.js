@@ -32,6 +32,14 @@ import { occupiedCells, completedStructures, districtFactorMap } from "../../gam
    guarantees to be present (#191/#223). Rule, not curated id: a balance pass that reworks the
    consumers moves the badge with them. Null when no consumer is offered — then no badge shows,
    and the guard test tells us the guarantee changed. */
+/* T-O4: Archetyp-Schluessel → Probierfeld-Sektion. E5 zeigt auf die karte-Runde des Archetyps,
+   dessen Leiste gerade erschienen ist — ein statisches Ziel waere fuer Feuer/Eis/Pflanze falsch. */
+export const ARCH_SECTION = { lightning: "blitz", fire: "feuer", ice: "eis", plant: "pflanze" };
+
+/* Ein Ziel ist ein "sektion/lektion"-String oder eine Funktion (ctx) => String. */
+export const resolveTarget = (def, ctx) =>
+  (typeof def?.target === "function" ? def.target(ctx) : def?.target) || null;
+
 export const recommendedStarter = (offer) =>
   (offer || []).find((id) => { const d = SKILL_DEFS[id]; return !!(d && (d.heatConsumer || d.onFullCharge)); }) || null;
 
@@ -71,7 +79,7 @@ export const HINT_DEFS = {
         vars: (ctx) => ({ critMult: fmtNum(ctx?.state?.lastTrick?.critMultiplier ?? 1) }), target: "blitz/karte" },
   E5: { kind: "event", bodyKey: "hint.e5.body",
         vars: (ctx) => ({ arch: archetypeLabel((ctx?.state?.activeArchetypes || [])[0]) || "" }),
-        target: "blitz/karte" },
+        target: (ctx) => `${ARCH_SECTION[(ctx?.state?.activeArchetypes || [])[0]] || "blitz"}/karte` },
   E6: { kind: "event", bodyKey: "hint.e6.body",
         vars: (ctx) => { const lt = ctx?.state?.lastTrick; const f = (lt?.formations || [])[0];
           return { name: f ? formationName(f.type) : "", mult: fmtNum(lt?.formationMult ?? 1) }; },

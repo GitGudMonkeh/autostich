@@ -11,14 +11,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as C from "../../game/constants.js";
 import { SKILL_DEFS } from "../../game/skills.js";
 import { loadHintProgress, saveHintProgress } from "../../game/storage.js";
-import { hintForScreen, screenOf, eventForPlay } from "./hintScript.js";
+import { hintForScreen, screenOf, eventForPlay, resolveTarget, HINT_DEFS } from "./hintScript.js";
 import { resolveHint } from "./HintCard.jsx";
 
 // Besuchszähler: die vier Entscheidungsscreens plus die Stichphase selbst (U-Hints takten über
 // den play-Ordinal — Papier §5.3: „play start, cycle 2/6/9" ist der Besuchs-Ordinal, keine feste Nummer).
 const COUNTED = new Set(["formation", "architect", "perk", "skill", "play"]);
 
-export function useHints({ state, profile }) {
+export function useHints({ state, profile, onMore = null }) {
   const [prog, setProg] = useState(loadHintProgress);
   const seen = useMemo(() => new Set(prog.seen), [prog.seen]);
   const markSeen = useCallback((id) => setProg((p) => {
@@ -135,6 +135,8 @@ export function useHints({ state, profile }) {
     // App adds this to the play-freeze condition chain like any overlay: H1 UND jede offene
     // Ereignis-Karte halten den Lauf an, solange der Spieler liest.
     freeze: !!cardId || !!activeEvent,
-    onMore: null,         // T-O4 wires the Probierfeld deep link; until then no link renders
+    /* T-O4: „Mehr dazu" — oeffnet die Probierfeld-Runde des Hints. Nur vorhanden, wenn App einen
+       Handler gibt; ohne ihn rendert kein toter Knopf (Contract onb-hints). */
+    onMore: onMore ? (hint) => { const tgt = resolveTarget(HINT_DEFS[hint.id], ctx); if (tgt) onMore(tgt); } : null,
   };
 }

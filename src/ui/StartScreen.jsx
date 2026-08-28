@@ -484,7 +484,10 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           Tutorial gesehen ist, und lebt danach nur noch als Chip neben „Optionen" (Plan §13.4). */}
       {firstContact && (
         <div className={LANE_LEAD}>
-          <button onClick={onTutorial}
+          {/* T-O4 (docs/tutorial-onboarding-design.md §8): das laute Angebot startet den ERSTEN
+              LAUF — der ist seit dem Onboarding-Umbau selbst der gefuehrte Einstieg (H1-Karte,
+              Banner, Vorschlaege). Die Liste bleibt am ruhigen Probierfeld-Chip unten. */}
+          <button onClick={() => onStart()}
             className="as-tut-btn w-full px-5 py-3 rounded-xl ty-title transition-all hover:-translate-y-0.5 flex flex-col items-center dt:items-start leading-tight">
             <span className="text-title-2 dt:text-head-1">{t("start.tutorial.offer")}</span>
             <span className="text-body-1 dt:text-body-lg-1 font-normal opacity-75">{t("start.tutorial.offer.sub")}</span>
