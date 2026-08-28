@@ -13,7 +13,7 @@ player text** (text-style-guide.md, "Kein Gedankenstrich").
 | --- | --- | --- |
 | 1 | **H1** (welcome card) | New body: "Autostich spielt sich selbst: Dein Deck kämpft die {cards} Stiche allein, du triffst die Entscheidungen dazwischen." + "Bei jedem Stich decken beide Decks ihre oberste Karte auf. Die höhere gewinnt, die Farbe spielt keine Rolle." ({cards} stays a constant placeholder.) |
 | 2 | **E1** (first win) | "Dein erster Sieg: {win} Basispunkte. Serie, Crits, Formationen und Gebäude werden mit dem Basisscore multipliziert." (replaces "legen sich als Faktoren darauf") |
-| 3 | **H3** (first perk) | Drop the "das kostet nichts" claim (declining forfeits the perk). **OPEN: wording** — (a) neutral: "Ein Perk wirkt sofort und bleibt bis zum Ende des Laufs. Passt keiner, kannst du ablehnen." or (b) with the price named: "... Passt keiner, kannst du ablehnen. Der Perk verfällt dann." |
+| 3 | **H3** (first perk) | Neutral wording (owner decision): "Ein Perk wirkt sofort und bleibt bis zum Ende des Laufs. Passt keiner, kannst du ablehnen." (The "das kostet nichts" claim goes; declining forfeits the perk.) |
 
 ## Probierfeld lessons (Mehr-dazu targets)
 
@@ -25,7 +25,6 @@ player text** (text-style-guide.md, "Kein Gedankenstrich").
 
 ## Open questions
 
-- H3 wording (a) or (b), see row 3.
 - Several existing hint texts still carry em-dashes (H2, S-F1, S-A2, E3, U1, ...). Sweep them
   dash-free in the same pass, or leave shipped copy untouched?
 
