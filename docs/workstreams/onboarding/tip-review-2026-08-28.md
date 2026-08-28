@@ -53,6 +53,8 @@ player text** (text-style-guide.md, "Kein Gedankenstrich").
 
 | 28 | **S-A4** (buildings movable) | Reworded ("festgenagelt" sounded odd), owner picked variant A: "Du kannst jedes Gebäude jederzeit aufwerten, versetzen oder abreißen." Link and its page (`architekt/aufwerten`) stay as they are. |
 
+| 29 | **StatusBar bug (outside the hints)** | The border around the SERIE cell shifts whenever the streak number changes width (content-driven cell). Give the cell a stable width so the frame stays fixed. |
+
 ## Probierfeld lessons (Mehr-dazu targets)
 
 | # | Lesson | Change |
