@@ -70,23 +70,31 @@ the cut. Either way it stops being the front door.
 What a brand-new profile experiences, cycle by cycle (schedule: skill → perk → formation →
 architect, measured):
 
-- **Run start:** one welcome card (H1) — the only blocking full card in the whole system.
-- **Cycle 1, skill choice:** the offer opens immediately and shows **Blitz only** (§6 — the
-  owner-directed first-run gate); hint H2 sits as a quiet banner *above* the real offer, and one
-  "Guter Start" badge marks the Blitz consumer. Three options, one marked. No pop-up in front of it.
-- **Cycle 1, play:** the deck plays. Event hints fire as their events first occur — first win
-  (E1), the new resource bar (E5), possibly first tie (E2) — under the pacing rules of §5.4.
-- **Cycle 2, perk:** banner H3. **Cycle 3, formation:** suggestion S-F1 ("one segment, same
-  colours"). **Cycle 4, architect:** suggestion S-A1 ("place your first building").
+- **Run start:** one welcome card (H1) — the only blocking full card in the whole system. **The
+  opening skill choice is skipped in the first run** (§6 — owner direction): the deck goes
+  straight into cycle 1.
+- **Cycle 1, play:** the player *watches*. With no skills and no perks, the play phase is the
+  game at its barest — card against card, win, tie, streak. E1 (first win) and possibly E2/E3
+  fire here, under the pacing rules of §5.4.
+- **Cycle 2, perk:** the first decision of the game, and the gentlest one — three options,
+  declining allowed. Banner H3.
+- **Cycle 3, formation:** suggestion S-F1 ("one segment, same colours"). **Cycle 4, architect:**
+  suggestion S-A1 ("place your first building").
+- **Cycle 5, the first skill offer:** now with four play phases, a perk, a formation and a
+  building behind the player — and it shows **Blitz only** (§6); banner H2 above it, one
+  "Guter Start" badge on the Blitz consumer. Three options, one marked. E5 (the new resource bar)
+  follows in the next play phase.
 - **Later formation and architect visits** continue their sequences: another pattern (S-F2), a
   district (S-A2), the structure outlook (S-A3) — each visit one task, skipped if already achieved.
 - **Later, whenever they first happen:** streak (E3), crit (E4), a formation scoring in play (E6),
   first milestone (E7), the conditional phases (C1–C3), the legendary phase in cycle 29 (C4),
   first run end (E8).
 
-After cycle 4 every screen type has been met exactly once, with one banner each — the same arc the
-guided run had, at roughly a quarter of its text volume, and with the play-phase teaching moved to
-the moments that demonstrate it.
+The first five cycles now introduce **exactly one decision type each, in rising weight: none →
+perk → formation task → architect task → skill.** The identity choice comes last, with the most
+context, instead of first with none — the exact inversion of the blind commit §1 names. From run 2
+the schedule reads normally (skill first), which is fine: the player has been through everything
+once.
 
 ---
 
@@ -104,7 +112,7 @@ needs to block). Dismiss with ✕ or by deciding; "Mehr dazu →" opens the link
 
 | id | Trigger | DE draft | EN draft | Mehr dazu |
 | --- | --- | --- | --- | --- |
-| **H1** | first-ever run start (blocking card, the one exception) | Autostich spielt sich selbst: Dein Deck schlägt sich durch {cards} Stiche, du entscheidest dazwischen. Verlieren kannst du nicht. | Autostich plays itself: your deck fights through {cards} tricks — you decide in between. You cannot lose. | grundlagen / stich |
+| **H1** | first-ever run start (blocking card, the one exception) | Autostich spielt sich selbst: Dein Deck schlägt sich durch {cards} Stiche, du entscheidest dazwischen. Verlieren kannst du nicht. Der erste Durchlauf gehört dem Zuschauen — deine erste Entscheidung kommt danach. | Autostich plays itself: your deck fights through {cards} tricks — you decide in between. You cannot lose. The first round is for watching — your first decision comes after it. | grundlagen / stich |
 | **H2** | first skill offer (run 1 — Blitz only, §6) | Blitz ist dein erster Archetyp: Seine Skills laden die Blitz-Leiste und entladen sie als Crits. Eine falsche Wahl gibt es nicht. | Lightning is your first archetype: its skills charge the Lightning bar and discharge it as crits. There is no wrong choice. | blitz / karte |
 | **H2b** | first skill offer with more than one archetype (run 2+) | Ab jetzt stehen mehrere Archetypen zur Wahl. Dein erster Skill eines Archetyps schaltet ihn frei — mischen ist erlaubt. | From now on, more than one archetype is on offer. Your first skill of an archetype activates it — mixing is allowed. | wahl / kategorien |
 | **H3** | first perk offer | Ein Perk wirkt sofort und bleibt bis zum Ende des Laufs. Passt keiner, lehn ab — das kostet nichts. | A perk takes effect immediately and lasts the whole run. If none fits, decline — it costs nothing. | wahl / kategorien |
@@ -210,11 +218,36 @@ of the three.
 
 ---
 
-## 6. The first skill choice — the Blitz-only first run
+## 6. The first skill choice — skip it first, then gate it
 
 Facts first (all measured): fresh profile → fire + lightning only → offer of 6 skills, 3 per
 archetype; each offered consumer archetype has its consumer guaranteed in the offer (#191/#223);
 `SKILL_SLOTS` = 6; the offer is the first screen of the game (§1).
+
+### 6.1 Skip the opening skill phase in the first run (owner direction, 2026-08-28)
+
+**In the profile's first run, the start decision is skipped entirely: the run opens straight into
+cycle 1's play phase.** The player's first decision becomes cycle 2's perk (the gentlest choice in
+the game), and the first *skill* offer arrives on schedule at cycle 5 — after four play phases, a
+perk, a formation and a building. Nobody chooses anything before they have seen what choosing is
+for. From run 2 the schedule reads normally.
+
+**Why this is cheap where the earlier "watch-first" idea was expensive.** This paper's first cut
+rejected a watch-first cycle because the mechanism assessed then was a schedule fork
+(`devSchedule`). The owner's version needs no schedule change at all: the schedule stays byte-
+identical, and only the *start decision handler* is touched — the same `START_RUN` site the §6.2
+gate lives at, which already contains this exact fallback shape (observed, `reducer.js`: empty
+skill pool → perk offer → `{ phase: "play" }` as the last resort). A first-run branch takes the
+existing `phase: "play"` exit. The offer's rng draw is an addressed sub-stream
+(`rngAtOr("skill", 0)`, observed), not a shared sequence, so skipping the draw shifts nothing —
+the implementing task verifies this before relying on it.
+
+**What it costs (computed from the schedule):** run 1 has 8 skill picks instead of 9, and the six
+slots fill by cycle 31 instead of 22. A mildly slower first build in a run that cannot be lost —
+acceptable, and invisible to a player with no baseline. The rejection of the *schedule-fork*
+mechanism stands; the idea it carried was right and is hereby adopted in its cheap form.
+
+### 6.2 When the skill offer does come: Blitz only
 
 **Owner direction (2026-08-27): the first run offers only Blitz.** This paper adopts it — the
 supporting evidence is better than a taste call:
@@ -230,9 +263,10 @@ supporting evidence is better than a taste call:
   across all four — a Blitz-only run feeds all of its skill phases without exhausting; and the
   engine already degrades an empty skill pool to a perk offer (observed), so there is no cliff.
 
-**Screen one then reads:** three Blitz skills, one badge. The badge sits on the guaranteed **Blitz
-consumer** — DE **„Guter Start"** / EN **"Good start"** — because picking the consumer makes the
-charge loop visible in the very next play phase, which E5 then names. The badge rule stays
+**The first skill screen (cycle 5, after §6.1) then reads:** three Blitz skills, one badge. The
+badge sits on the guaranteed **Blitz consumer** — DE **„Guter Start"** / EN **"Good start"** —
+because picking the consumer makes the charge loop visible in the very next play phase, which E5
+then names. The badge rule stays
 **rule-derived, not curated** (the guided-run plan §13.2 rejected hardcoded picks for drift
 reasons, and that reasoning still holds): "the consumer of the offered archetype", shipped as one
 pure function, moves with every balance pass. A guard test asserts the badge finds its skill in a
@@ -269,9 +303,9 @@ applies: Blitz + Feuer, later Eis/Pflanze — see §7.
   determinism surface. The per-run gate buys nearly the same ramp for a payload field.
 - **Auto-pick / forced first skill.** Even within Blitz, the three-way pick is worth keeping — a
   no-lose game makes a free choice safe, and the badge already carries the undecided player.
-- **A watch-first cycle** (run 1 plays before any decision; reachable via the `devSchedule`
-  override — observed). Forks the schedule of a counting run; H1 plus a three-option badged screen
-  defuses the blind commit more cheaply. Revisit only if playtests still show screen-one stalls.
+- **A watch-first cycle via a schedule fork** (`devSchedule` override — observed). Rejected as a
+  *mechanism* only; the idea is adopted in §6.1 through the start-decision handler, which needs no
+  schedule change and no new mode.
 
 ---
 
@@ -284,8 +318,8 @@ already exists — it is the upgrade tree**, and the job is to use it, not to re
 - Rarity ceiling and the legendary perk layer: tree-gated (measured, `nodeEffects`).
 - The legendary phase: cycle 29, and only with the tree's legendary levels (measured).
 
-With the §6 gate in front of it, the ladder reads: **run 1 = Blitz only → run 2 = Blitz + Feuer →
-tree purchases = Eis, Pflanze, higher rarity, the legendary layer.** Each rung introduces exactly
+With §6 in front of it, the ladder reads: **run 1 = watch first, then Blitz only → run 2 = Blitz +
+Feuer → tree purchases = Eis, Pflanze, higher rarity, the legendary layer.** Each rung introduces exactly
 one new thing, and each rung's first appearance is what H2b and the first-occurrence hints narrate.
 Two consequences:
 
@@ -380,7 +414,7 @@ milestone tick) is not surfaced, surfacing it read-only is in scope, `src/game/`
 | --- | --- | --- | --- |
 | **T-O1** | Hint engine + phase hints (H1–H3, H2b, C1–C4) + suggestion sequences (S-F1/2, S-A1/2/3 with visit counters and done-predicates over the exported pure functions), banner + pause card, storage, i18n | — | 13 hints |
 | **T-O2** | Event hints (E1–E8), signal plumbing, pacing rules | T-O1 | 8 hints |
-| **T-O3** | Blitz-only first run (§6): `START_RUN` gate on `hadCompletedRun`, "Guter Start" badge on the Blitz consumer, guard tests (gate lifts after first completed run; badge finds its skill; sim path byte-identical) | — | 1 short text |
+| **T-O3** | First-run start behaviour (§6): skip the opening skill decision (§6.1) and gate the run to Blitz (§6.2), both keyed on `hadCompletedRun` at the `START_RUN` site; "Guter Start" badge on the Blitz consumer; guard tests (skip and gate lift after first completed run; rng streams unshifted; badge finds its skill; sim path byte-identical) | — | 1 short text |
 | **T-O4** | Probierfeld rebuild (§8): delete the 11 text lessons and their keys, flatten the shell to one grouped list, rename, deep-link prop, hint-target guard, hub first-contact offer → first run | T-O1 for the link wiring | −11 lessons |
 
 T-O3 and T-O4 are independent of T-O2. The work builds on `dev` (the sections live there; the
@@ -394,7 +428,7 @@ guided run is already removed there).
 | --- | --- | --- |
 | 1 | Copy approval for all DE/EN drafts in §5 and §6 | — (owner voice check) |
 | 2 | The `dev` sections: rebuild to the flat Probierfeld (§8) vs. delete entirely | rebuild — the 37 probes are the one drift-proof asset; only text and shell go |
-| 3 | Blitz-only first run (§6) — confirmed as directed 2026-08-27; the playtest question that can reopen it: does a full run without an archetype choice stay fun? | build it; watch the first playtests |
+| 3 | First-run start (§6): skip the opening skill phase (6.1) + Blitz-only offers (6.2) — both owner-directed; the playtest question that can reopen them: does a full run without an archetype choice stay fun? | build both; watch the first playtests |
 | 4 | Naming for the rebuilt layer: „Probierfeld"/"Playground" vs. alternatives | Probierfeld |
 | 5 | Event-hint pause behaviour: pause on every E-hint (proposed) vs. non-blocking toast | pause — a missed referent is worse than a beat of stillness |
 
