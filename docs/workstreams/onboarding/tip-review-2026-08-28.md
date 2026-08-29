@@ -180,7 +180,9 @@ Implementation record: `docs/workstreams/onboarding/onb-tipreview4/task-contract
 | V3 | **Glossary tip goes from all archetype tipps pages (screenshot)** | The four archetype tipps lessons (blitz, feuer, pflanze, eis) all close with the same tip beat "Was einzelne Skills tun, steht im Glossar." — it goes. The tipps lessons drop their `tip` beat (beats = probierfeld only), keys `tut.<arch>.tipps.1` deleted in all four catalogs. NOT touched: architekt/tipps keeps its different tip ("Was ein einzelnes Gebäude tut, steht auf seinem Bauplan.") — architekt is not an archetype; confirm at implementation only if the owner flags it too. |
 | V4 | **BUG: GameOver shows +0 DP on a completed run (the +5 completion bonus is invisible)** | The credit is correct (`recordRun`: deckPoints += runDp + completionDp + spSweep + rankedDpBonus + welcomeDp), but the end screen's DP counter renders only `earn.dpGross`/`earn.dpNet` = the MILESTONE DP (`gainedDp`). `earn.dpComplete` (RUN_COMPLETE_DP = 5), `spSweep` (full tree) and the ranked week bonus are computed into `earn` but never rendered — a completed run without milestone DP shows "+0" although +5 land. Fix: the displayed DP number includes everything actually credited except welcomeDp (which has its own row): dpGross/dpNet fold in completionDp + rankedDpBonus + spSweep. |
 
-## Round 5 (owner playtest after round 4) — COLLECTING
+## Round 5 (owner playtest after round 4) — IMPLEMENTED (task/tip-review-5 → dev, 2026-08-29)
+
+Implementation record: `docs/workstreams/onboarding/onb-tipreview5/task-contract.md` (on `dev`).
 
 | # | Item | Change |
 | --- | --- | --- |
