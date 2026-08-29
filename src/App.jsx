@@ -28,7 +28,7 @@ import { useHints } from "./ui/hints/useHints.js"; // Onboarding-Hints (docs/tut
 import { HintContext, HintCardOverlay, EventHintCard } from "./ui/hints/HintCard.jsx";
 import { PerfOverlay } from "./ui/PerfOverlay.jsx"; // Perf-Recorder-HUD (nur Preview-Build)
 import { perfMark, getReport, formatReport } from "./ui/perfRecorder.js"; // Perf-Recorder (No-op außerhalb Preview)
-import { GlossaryPanel } from "./ui/Glossary.jsx";
+import { GlossaryPanel, GlossaryOverlay } from "./ui/Glossary.jsx"; // W2: Overlay auch eigenständig (Tutorial-Fuß, außerhalb des Lauf-HUD)
 // Tutorial-Sektionen (#tutorial-sections): reine UI-Schicht über dem Hub, kein Lauf, keine game/-Berührung.
 import { TutorialSections } from "./ui/tutorial-sections/TutorialSections.jsx";
 import { GuideOverlay } from "./ui/GuideOverlay.jsx"; // Archetyp-Leitfaden — aus den Tutorial-Sektionen VERLINKT, nicht abgeschrieben
@@ -264,6 +264,12 @@ function AutostichGame() {
   const [showDevSetup, setShowDevSetup] = useState(false);        // Dev-Run-Setup-Overlay (nur Preview-Build)
   const [showChronik, setShowChronik] = useState(false);          // Chronik-Kartenübersicht (§22.11)
   const [glossaryOpen, setGlossaryOpen] = useState(false);
+  /* W2: das eigenständige Glossar-Overlay (aus dem Tutorial-Fuß). glossaryOpen bleibt die
+     Pause-Flagge der Auto-Play-Wächter und läuft in den Handlern synchron mit — so brauchen
+     die Wächter-Ketten und ihre Dep-Listen keinen zweiten Namen. */
+  const [glossaryStandalone, setGlossaryStandalone] = useState(false);
+  const openGlossaryStandalone = () => { setTutOpen(false); setGlossaryStandalone(true); setGlossaryOpen(true); };
+  const closeGlossaryStandalone = () => { setGlossaryStandalone(false); setGlossaryOpen(false); };
   /* Tutorial-Sektionen: offen? und der Fortschritt. Beides reine UI — kein Lohn, kein Tor, keine
      Kopplung an die Onboarding-Kette (Owner-Entscheidung; sie wiederzubeleben nähme neuen Spielern
      die ersten sechs Läufe SP UND DP, siehe progression.js:355). */
@@ -514,6 +520,7 @@ function AutostichGame() {
     if (showDevSetup) { setShowDevSetup(false); return true; }    // #350: Dev-Run-Setup → schließen (Preview-Build)
     if (tutGuide) { setTutGuide(null); return true; }
     if (tutOpen) { setTutOpen(false); return true; }
+    if (glossaryStandalone) { closeGlossaryStandalone(); return true; } // W2: das eigenständige Overlay zuerst
     if (glossaryOpen) { setGlossaryOpen(false); return true; }
     if (showChronik) { setShowChronik(false); return true; }
     if (showOptions) { setShowOptions(false); return true; }
@@ -1435,12 +1442,18 @@ function AutostichGame() {
       )}
       {/* Tutorial-Sektionen: Vollbild-Overlay über dem Hub. Ohne `tutOpen` rendert es nichts. */}
       {tutOpen && (
-        <TutorialSections onClose={() => setTutOpen(false)} onOpenGlossary={() => { setTutOpen(false); setGlossaryOpen(true); }}
+        <TutorialSections onClose={() => setTutOpen(false)} onOpenGlossary={openGlossaryStandalone}
           onTutorialRun={() => { if (inRun) setConfirmTutRun(true); else startGuidedRun(); }}
           onOpenGuide={setTutGuide}
           initial={typeof tutOpen === "object" ? tutOpen : null}
           seen={tutProgress.seen} onSeen={markLessonSeen} />
       )}
+      {/* Runde 5, W2 (Owner-Fund): der Glossar-Fuß der Tutorial-Übersicht öffnete NICHTS —
+          setGlossaryOpen ist nur die Pause-Buchhaltung, das Glossar-UI lebte allein im
+          GlossaryPanel des Lauf-HUD (eigener State, im Menü gar nicht gerendert; im Lauf fror
+          der Klick den Lauf unsichtbar ein). Jetzt rendert App das Overlay selbst; die
+          Pause-Flagge läuft synchron mit, damit die Auto-Play-Wächter unverändert greifen. */}
+      {glossaryStandalone && <GlossaryOverlay onClose={closeGlossaryStandalone} />}
       {tutGuide && <GuideOverlay initial={tutGuide} onClose={() => setTutGuide(null)} />}
 
       {/* #update: „Neue Version verfügbar"-Hinweis — pollt version.json, meldet neue Deploys ohne Zwangs-Reload. */}
