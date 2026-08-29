@@ -191,3 +191,23 @@ Implementation record: `docs/workstreams/onboarding/onb-tipreview5/task-contract
 | # | Item | Change |
 | --- | --- | --- |
 | W1 | **"Tutorial überspringen" also lifts the Blitz-only gate** | Skipping the tutorial (the skip-all button on the H1 welcome card) currently only marks all hints seen — the first-run archetype gate stays: the reducer forces `unlockedArchetypes = ["lightning"]` while `profile.hadCompletedRun === false`, so the player is locked to Blitz until they COMPLETE a whole run. Owner: skipping must also open the archetypes — from the next skill round on, Feuer is available, plus Eis/Pflanze where the unlock tree has them (i.e. the normal tree allowlist `treeEff.unlockedArchetypes`, which already is base + purchased nodes). Plan: (a) new sticky profile flag `tutorialSkipped`, set by skip-all; every first-run gate checks `hadCompletedRun === false && !tutorialSkipped` (reducer Blitz-only + startPatch, useHints firstRun, StartScreen loud offer, App guided wiring) so future runs are ungated too; (b) skip-all additionally dispatches a gate-lift action into the RUNNING run (state.firstRun = false, state.unlockedArchetypes = tree allowlist) so the current run's next skill offer already carries the other archetypes. An already-built Blitz-only offer on screen is not rebuilt (next one is open). The deliberate "Tutorial-Lauf" (guided) stays hint-guided only — it never had the archetype gate on veteran profiles. |
+
+## Round 6 (owner balance review — building upgrades) — APPROVED (go für alles)
+
+Owner request: "das Gebäude guildquater und alle nicht upgradebaren Gebäude benötigen eine
+Steigerung wenn sie upgegraded werden" — every non-legendary building must gain something on
+every upgrade step. Buffs are ok. Legendaries stay tierless by design; the fixed gamble penalty
+(Losbude/Wetthalle) stays by design ("echte Wette").
+
+Findings: three effect kinds (`joker`, `transparentFarb`, `crossSeg`) never read `tier` — Arkade,
+Fries, Gewölbe and Pfeiler are pinned to tier I in offers and cannot upgrade at all. Rounding
+plateaus: base value 1 yields 1/2/**2**/3 (II→III dead) for Stützbalken, Riegel and Zunftviertel
+(per-neighbor value; cap fixed at 3). Kreuzgang's bind span is ±1/±1/±2/±2 (I→II and III→IV dead).
+Klammer's kick fires only at III (I→II dead, IV unreachable).
+
+| # | Item | Change |
+| --- | --- | --- |
+| X1 | **Monotone tier steps for numeric effects** | `tierNum` guarantees each tier raises the value by at least 1. Only base-1 families change: Stützbalken, Riegel and Zunftviertel go 1/2/**3**/**4** instead of 1/2/2/3. All bases ≥ 2 were already strictly increasing and stay bit-identical. |
+| X2 | **Zunftviertel scales, Zwinger stays above it** | Per-neighbor value 1/2/3/4 (from X1), cap stays 3 → max bonus 3/6/9/12. The legendary Zwinger is buffed from value 2 to **3** per neighbor (cap 5 → max 15) so the legendary stays above a tier-IV Zunftviertel. |
+| X3 | **Formation buildings: per-tier ladder instead of no-op** | New `tierValue` ladder (flat Stichwert on the building's cells, reusing the Grundstein-III write path) plus qualitative kicks: **Arkade** II +1 / III transparent becomes a real Farbblock-Joker (cells actively count as the matching colour; new kick flag `farbJoker`) / IV +2; **Fries** II +1 / III adds Joker-Typ Farbblock / IV +2; **Gewölbe** II +1 / III adds Farbblock (3 types; Prisma keeps Wechsel + "comes finished") / IV +2; **Klammer** II +1 / III +Wiederholung (as today) / IV +2; **Pfeiler** II +1 / III +2 / IV +3; **Kreuzgang** span ±1/±2/±3, IV keeps ±3 and adds +2 Stichwert. Ladder amounts are deliberately small (Stützbalken IV = 4 on 2 cells as the reference) — formation buildings must not become value buildings on the side. |
+| X4 | **Consequences wired through** | `upgradeInfo` and the offer tier-pinning treat ladder families as fully upgradable to IV (rng stream untouched); `bindSpanFor` becomes 1/2/3; player texts (`buildingText.js` + all four catalogs, loc:export), the DB generator's max-tier logic and the T2 offer guard update with the genuinely changed invariant. |
