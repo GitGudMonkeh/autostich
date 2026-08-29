@@ -93,14 +93,16 @@ describe("hints · Auswahl-Logik (pur, ohne React)", () => {
     expect(hintForScreen("perk", ctx({ seen: new Set(["H3", "H3b", "H4"]), visits: { perk: 4 } }))).toBe(null);
   });
 
-  it("Q15: neu freigeschaltete Archetypen melden sich im Skill-Angebot — beide zugleich als C7b", () => {
-    expect(hintForScreen("skill", ctx({ iceAvail: true }))).toBe("C7");
-    expect(hintForScreen("skill", ctx({ plantAvail: true }))).toBe("C8");
-    expect(hintForScreen("skill", ctx({ iceAvail: true, plantAvail: true }))).toBe("C7b");
-    // C7b räumt per markSeen-Aliasing auch C7/C8 ab — danach fällt der Screen auf H5/null zurück.
-    expect(hintForScreen("skill", ctx({ iceAvail: true, plantAvail: true,
-      seen: new Set(["C7b", "C7", "C8"]) }))).toBe(null);
-    expect(hintForScreen("skill", ctx({ iceAvail: true, seen: new Set(["C7"]), slotsFull: true }))).toBe("H5");
+  it("Q15/V1: Freischalt-Hinweise nur auf der eigenen Swiper-Seite (kein Kombi-Banner mehr)", () => {
+    expect(hintForScreen("skill", ctx({ iceAvail: true, skillArch: "ice" }))).toBe("C7");
+    expect(hintForScreen("skill", ctx({ plantAvail: true, skillArch: "plant" }))).toBe("C8");
+    // Auf einer fremden Seite bleibt der Hinweis stumm — er wartet auf seine eigene.
+    expect(hintForScreen("skill", ctx({ iceAvail: true, skillArch: "fire" }))).toBe(null);
+    expect(hintForScreen("skill", ctx({ iceAvail: true }))).toBe(null);
+    // Beide neu: jede Seite zeigt IHREN Hinweis, nie den der anderen.
+    expect(hintForScreen("skill", ctx({ iceAvail: true, plantAvail: true, skillArch: "ice" }))).toBe("C7");
+    expect(hintForScreen("skill", ctx({ iceAvail: true, plantAvail: true, skillArch: "plant" }))).toBe("C8");
+    expect(hintForScreen("skill", ctx({ iceAvail: true, skillArch: "ice", seen: new Set(["C7"]), slotsFull: true }))).toBe("H5");
   });
 
   it("Q8: der erste Anker-Perk im Angebot bringt H6 — nach H3, vor H3b", () => {

@@ -3,7 +3,7 @@ import {
   FormationenSzene, UeberSzene, KatsSzene, RaritaetSzene,
   BlitzkarteSzene, TippsSzene, LegendaerSzene,
   FeuerkartenSzene, SchmiedeSzene, HitzeSzene, PflanzkarteSzene, PflanztempoSzene,
-  GruenfeldSzene, GletscherSzene, GletscherformenSzene, EinfrierenSzene,
+  GruenfeldSzene, GletscherSzene, GletscherformenSzene, SchneeSzene,
   DistriktSzene, StrukturenSzene, PunkteSzene,
 } from "./scenes.jsx";
 
@@ -158,7 +158,7 @@ export const PROBES = {
   schmiede: SchmiedeSzene,
   gruenfeld: GruenfeldSzene,
   gletscherformen: GletscherformenSzene,
-  einfrieren: EinfrierenSzene,
+  schnee: SchneeSzene,
   meilenstein: PunkteSzene,
   tipps: TippsSzene,
   /* Dieselbe Flaeche wie `formation`, andere Ausgangslage. GESUCHT statt geraten: von 29.988

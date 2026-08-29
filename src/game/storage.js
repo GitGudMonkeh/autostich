@@ -517,7 +517,14 @@ export function recordRun(record) {
   };
   try { localStorage.setItem(k("as_profile"), JSON.stringify(profile)); } catch (e) { if (isQuotaError(e)) signalQuota("Profil (recordRun)"); }
   // #304 Verdienst-Rollup (Victory-Screen): die Lauf-Erträge + Onboarding-Fortschritt fürs Count-up/Balken/Countdown.
-  const earn = { sp: gainedSp, dpGross: gainedDp, dpNet: runDp, dpComplete: completionDp, spSweep, welcomeDp };
+  /* Runde 4, V4 (Owner-Fund): die ANGEZEIGTE DP-Zahl muss alles tragen, was wirklich aufs Konto
+     geht — vorher zählte sie nur die Meilenstein-DP (gainedDp), und ein abgeschlossener Lauf ohne
+     Meilenstein zeigte „+0", obwohl der Abschluss-Bonus (+RUN_COMPLETE_DP) gutgeschrieben wurde.
+     Deshalb hier dieselbe Summe wie in `deckPoints` oben, NUR OHNE welcomeDp: der Willkommensbonus
+     hat auf dem Endscreen seine eigene Zeile und würde sonst doppelt erscheinen. Gross = Netto,
+     seit der Challenge-Abzug weg ist (#382) — der Countdown-Zweig des Rollups bleibt schlafend. */
+  const dpShown = runDp + completionDp + spSweep + rankedDpBonus;
+  const earn = { sp: gainedSp, dpGross: dpShown, dpNet: dpShown, dpComplete: completionDp, spSweep, welcomeDp };
   const onboarding = { before: onboardingBefore, after: onbAfter, links: ONBOARDING_LINKS };
   return { history, profile, unlocks, earn, onboarding };
 }

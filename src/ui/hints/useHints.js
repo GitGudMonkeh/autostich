@@ -22,18 +22,17 @@ const COUNTED = new Set(["formation", "architect", "perk", "skill", "play"]);
 
 export function useHints({ state, profile, onMore = null, breakdownOn = true, guided = false }) {
   const [prog, setProg] = useState(loadHintProgress);
+  /* Runde 4, V1: der Archetyp der aktiven Swiper-Seite der Skill-Wahl. SkillSelect meldet ihn
+     über den HintContext (setSkillArch) — C7/C8 erscheinen nur auf IHRER Seite, damit ihr
+     „Mehr dazu" immer zum gezeigten Archetyp führt. */
+  const [skillArch, setSkillArch] = useState(null);
   const seen = useMemo(() => new Set(prog.seen), [prog.seen]);
   // Ref-Spiegel des aktuellen Phasen-Kontexts für markSeen (das Callback bleibt dep-frei):
   // `seenAt` merkt sich, in WELCHER Phase ein Hint gesehen wurde — C6 wartet auf „C5 war früher".
   const ctxKeyRef = useRef(null);
   const markSeen = useCallback((id) => setProg((p) => {
     if (!id || p.seen.includes(id)) return p;
-    // Q15: C7b („Eis und Pflanze verfügbar") deckt beide Einzel-Hinweise mit ab.
-    const ids = id === "C7b" ? ["C7b", "C7", "C8"] : [id];
-    const add = ids.filter((x) => !p.seen.includes(x));
-    if (!add.length) return p;
-    const at = Object.fromEntries(add.map((x) => [x, ctxKeyRef.current]));
-    const next = { ...p, seen: [...p.seen, ...add], seenAt: { ...p.seenAt, ...at } };
+    const next = { ...p, seen: [...p.seen, id], seenAt: { ...p.seenAt, [id]: ctxKeyRef.current } };
     saveHintProgress(next);
     return next;
   }), []);
@@ -101,9 +100,11 @@ export function useHints({ state, profile, onMore = null, breakdownOn = true, gu
     seen, visits, state, firstRun,
     blitzOnly: archs.size === 1 && archs.has("lightning"),
     multiArch: archs.size >= 2,
-    // Q15: neu freigeschaltete Archetypen, sobald sie im Skill-Angebot auftauchen.
+    // Q15/V1: neu freigeschaltete Archetypen, sobald sie im Skill-Angebot auftauchen —
+    // panel-scoped über den Archetyp der aktiven Swiper-Seite.
     iceAvail: archs.has("ice"),
     plantAvail: archs.has("plant"),
+    skillArch,
     offerHasAnker,
     slotsFull: (state?.skills?.length || 0) >= slots,
     slots, architectStuck,
@@ -183,6 +184,8 @@ export function useHints({ state, profile, onMore = null, breakdownOn = true, gu
     bannerFor,
     dismiss: markSeen,
     skipAll, resetAll,
+    // V1: SkillSelect meldet die aktive Swiper-Seite (Archetyp) — sonst niemand.
+    setSkillArch,
     // App adds this to the play-freeze condition chain like any overlay: H1 UND jede offene
     // Ereignis-Karte halten den Lauf an, solange der Spieler liest.
     freeze: !!cardId || !!activeEvent,
