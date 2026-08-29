@@ -17,6 +17,8 @@ import { recommendedStarter } from "../src/ui/hints/hintScript.js";
 
 const fresh = () => ({ ...loadProfile(), hadCompletedRun: false });
 const veteran = () => ({ ...loadProfile(), hadCompletedRun: true });
+// Runde 5, W1: frisches Profil, aber Tutorial übersprungen — muss wie ein Veteran starten.
+const skipped = () => ({ ...loadProfile(), hadCompletedRun: false, tutorialSkipped: true });
 const start = (over = {}) =>
   reducer(null, { type: "START_RUN", rng: makeRng(7), architect: true, seed: 12345, profile: fresh(), ...over });
 
@@ -66,6 +68,35 @@ describe("Erstlauf · Blitz-Gatung (§6.2)", () => {
     const offer = buildSkillOffer([], [], makeRng(3), 12, 0, false, start().unlockedArchetypes);
     expect(offer.length).toBeGreaterThan(0);
     for (const id of offer) expect(SKILL_DEFS[id].archetype).toBe("lightning");
+  });
+});
+
+/* Runde 5, W1 (Owner): „Tutorial überspringen" hebt die Blitz-only-Sperre — sticky fürs Profil
+   (nächster Lauf startet offen) UND sofort im laufenden Lauf (SKIP_TUTORIAL). */
+describe("Erstlauf · Tutorial überspringen (W1)", () => {
+  it("tutorialSkipped startet wie ein Veteran: kein firstRun, normale Baum-Allowlist", () => {
+    const s = start({ profile: skipped() });
+    expect(s.firstRun).toBe(false);
+    expect(s.phase).toBe("levelup");
+    const u = s.unlockedArchetypes;
+    expect(u).toContain("lightning");
+    expect(u).toContain("fire");
+  });
+
+  it("SKIP_TUTORIAL hebt die Sperre im LAUFENDEN Erstlauf — das nächste Angebot trägt Feuer", () => {
+    const s0 = start();
+    expect(s0.unlockedArchetypes).toEqual(["lightning"]);
+    const s1 = reducer(s0, { type: "SKIP_TUTORIAL", profile: skipped() });
+    expect(s1.firstRun).toBe(false);
+    expect(s1.unlockedArchetypes).toContain("fire");
+    const offer = buildSkillOffer([], [], makeRng(3), 12, 0, false, s1.unlockedArchetypes);
+    expect(offer.some((id) => SKILL_DEFS[id].archetype === "fire")).toBe(true);
+  });
+
+  it("SKIP_TUTORIAL außerhalb eines Erstlaufs ist ein No-op", () => {
+    const s0 = start({ profile: veteran() });
+    const s1 = reducer(s0, { type: "SKIP_TUTORIAL", profile: veteran() });
+    expect(s1).toBe(s0);
   });
 });
 

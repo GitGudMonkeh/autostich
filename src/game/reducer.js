@@ -244,7 +244,10 @@ export function reducer(state, action) {
       // hängt), startet (a) Blitz-only über die bestehende §4b-Allowlist und (b) OHNE die
       // Start-Skill-Entscheidung, s. startPatch unten. Ranked und Sim/Standard (kein Profil) bleiben
       // byte-identisch: firstRun ist dort immer false.
-      const firstRun = !!(treeEff && effProfile && effProfile.hadCompletedRun === false && !ranked);
+      // Runde 5, W1: „Tutorial überspringen" (tutorialSkipped) beendet die Erstlauf-Führung
+      // dauerhaft — auch ohne abgeschlossenen Lauf startet der nächste mit der Baum-Allowlist.
+      const firstRun = !!(treeEff && effProfile && effProfile.hadCompletedRun === false
+        && !effProfile.tutorialSkipped && !ranked);
       const unlockedArch = treeEff ? (firstRun ? ["lightning"] : treeEff.unlockedArchetypes) : null;
       const rareCap = treeEff ? treeEff.maxTier : 4;
       const legPhaseEnabled = treeEff ? treeEff.archLegPhaseOn : true;
@@ -319,6 +322,17 @@ export function reducer(state, action) {
     case "END_RUN":     // Lauf freiwillig beenden → Endscreen (GameOver) statt direkt ins Menü.
       // Highscore/Geist sichert der gameover-Effekt in App.jsx (saveRun). Menü/Gameover ignorieren.
       return (state.phase === "menu" || state.phase === "gameover") ? state : { ...state, phase: "gameover" };
+
+    /* Runde 5, W1: „Tutorial überspringen" hebt die Erstlauf-Sperre IM LAUFENDEN Lauf — ab dem
+       nächsten Skill-Angebot gilt die normale Baum-Allowlist (Feuer plus gekaufte Eis/Pflanze).
+       Ein schon gebautes Blitz-only-Angebot auf dem Schirm wird nicht neu gewürfelt; erst das
+       nächste ist offen. Außerhalb eines Erstlaufs (firstRun false) ein No-op. */
+    case "SKIP_TUTORIAL": {
+      if (!state.firstRun || state.phase === "menu" || state.phase === "gameover") return state;
+      const eff = action.profile ? nodeEffects(action.profile) : null;
+      return { ...state, firstRun: false,
+        unlockedArchetypes: eff ? eff.unlockedArchetypes : state.unlockedArchetypes };
+    }
 
 
     /* ---- Architekt (#202, Shop-Ersatz): Bau-Aktionen. Hauptaktion (errichten ODER ausbauen) ist EXKLUSIV je Phase;

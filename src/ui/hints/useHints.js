@@ -84,7 +84,9 @@ export function useHints({ state, profile, onMore = null, breakdownOn = true, gu
     return s;
   }, [offer]);
   // `guided` (Runde 3, Tutorial-Lauf): der Lauf führt wie ein Erstlauf, auch auf Veteranen-Profilen.
-  const firstRun = (!!profile && profile.hadCompletedRun === false) || guided;
+  // W1: ein übersprungenes Tutorial (tutorialSkipped) beendet die Erstlauf-Führung auch hier —
+  // sonst käme H1 im nächsten Lauf wieder, obwohl der Spieler sie eben weggeklickt hat.
+  const firstRun = (!!profile && profile.hadCompletedRun === false && !profile.tutorialSkipped) || guided;
   const slots = state?.skillSlots ?? C.SKILL_SLOTS;
   /* C5: „kein Bauplan passt mehr" — nur auf dem Architekt-Screen gerechnet (die Prüfung zählt
      Platzierungen auf dem 5×8-Brett) und am Angebots-/Gebäude-Objekt memoisiert. */
