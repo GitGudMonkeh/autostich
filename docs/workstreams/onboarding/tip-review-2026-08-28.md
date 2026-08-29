@@ -192,7 +192,9 @@ Implementation record: `docs/workstreams/onboarding/onb-tipreview5/task-contract
 | --- | --- | --- |
 | W1 | **"Tutorial überspringen" also lifts the Blitz-only gate** | Skipping the tutorial (the skip-all button on the H1 welcome card) currently only marks all hints seen — the first-run archetype gate stays: the reducer forces `unlockedArchetypes = ["lightning"]` while `profile.hadCompletedRun === false`, so the player is locked to Blitz until they COMPLETE a whole run. Owner: skipping must also open the archetypes — from the next skill round on, Feuer is available, plus Eis/Pflanze where the unlock tree has them (i.e. the normal tree allowlist `treeEff.unlockedArchetypes`, which already is base + purchased nodes). Plan: (a) new sticky profile flag `tutorialSkipped`, set by skip-all; every first-run gate checks `hadCompletedRun === false && !tutorialSkipped` (reducer Blitz-only + startPatch, useHints firstRun, StartScreen loud offer, App guided wiring) so future runs are ungated too; (b) skip-all additionally dispatches a gate-lift action into the RUNNING run (state.firstRun = false, state.unlockedArchetypes = tree allowlist) so the current run's next skill offer already carries the other archetypes. An already-built Blitz-only offer on screen is not rebuilt (next one is open). The deliberate "Tutorial-Lauf" (guided) stays hint-guided only — it never had the archetype gate on veteran profiles. |
 
-## Round 6 (owner balance review — building upgrades) — APPROVED (go für alles)
+## Round 6 (owner balance review — building upgrades) — IMPLEMENTED (task/tip-review-6 → dev, 2026-08-29)
+
+Implementation record: `docs/workstreams/onboarding/onb-tipreview6/task-contract.md` (on `dev`).
 
 Owner request: "das Gebäude guildquater und alle nicht upgradebaren Gebäude benötigen eine
 Steigerung wenn sie upgegraded werden" — every non-legendary building must gain something on
