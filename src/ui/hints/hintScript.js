@@ -86,11 +86,11 @@ export const HINT_DEFS = {
      NACH der, in der C5 weggeklickt wurde. Der Glow liegt auf der Toggle-Zeile. */
   C6:    { kind: "banner", bodyKey: "hint.c6.body", anchor: "archtoggles" },
   /* Q15 (Runde 3): Freischalt-Hinweise — ein neu freigeschalteter Archetyp steht erstmals im
-     Skill-Angebot. Sind BEIDE gleichzeitig neu, zeigt C7b beide Zeilen; sein markSeen räumt
-     C7 und C8 mit ab (Aliasing in useHints.markSeen). */
+     Skill-Angebot. Runde 4, V1 (Owner): jeder Hinweis lebt in SEINEM Panel — er erscheint
+     erst, wenn die Seite des Archetyps im Swiper aktiv ist (ctx.skillArch), damit sein
+     „Mehr dazu" immer zum gezeigten Archetyp führt. Der frühere Kombi-Banner C7b ist weg. */
   C7:    { kind: "banner", bodyKey: "hint.c7.body", target: "eis/karte" },
   C8:    { kind: "banner", bodyKey: "hint.c8.body", target: "pflanze/karte" },
-  C7b:   { kind: "banner", bodyKey: "hint.c7b.body", target: "eis/karte" },
   H4:    { kind: "banner", bodyKey: "hint.h4.body", anchor: "glossar" },
   /* Q8 (Runde 3): der erste Anker-Perk im Angebot — Anker zählen als Formation. */
   H6:    { kind: "banner", bodyKey: "hint.h6.body" },
@@ -198,12 +198,10 @@ export function hintForScreen(screen, ctx) {
   if (screen === "skill") {
     if (ctx.firstRun && ctx.blitzOnly && un("H2")) return "H2";
     if (ctx.multiArch && un("H2b")) return "H2b";
-    /* Q15: neu freigeschaltete Archetypen melden sich, sobald sie im Angebot stehen.
-       Beide gleichzeitig neu → C7b (beide Zeilen; markSeen räumt C7+C8 mit ab). */
-    const iceNew = ctx.iceAvail && un("C7"), plantNew = ctx.plantAvail && un("C8");
-    if (iceNew && plantNew && un("C7b")) return "C7b";
-    if (iceNew) return "C7";
-    if (plantNew) return "C8";
+    /* Q15/V1: neu freigeschaltete Archetypen melden sich, sobald sie im Angebot stehen —
+       aber nur auf IHRER Swiper-Seite (ctx.skillArch = Archetyp des aktiven Panels). */
+    if (ctx.skillArch === "ice" && ctx.iceAvail && un("C7")) return "C7";
+    if (ctx.skillArch === "plant" && ctx.plantAvail && un("C8")) return "C8";
     if (ctx.slotsFull && un("H5")) return "H5";
     return null;
   }

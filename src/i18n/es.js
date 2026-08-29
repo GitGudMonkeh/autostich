@@ -1368,7 +1368,6 @@ export default {
   "hint.c6.body": "Con Combos y Formaciones muestras u ocultas los marcos del tablero de obra. Así mantienes la vista clara mientras construyes.",
   "hint.c7.body": "Hielo ya está disponible.",
   "hint.c8.body": "Planta ya está disponible.",
-  "hint.c7b.body": "Hielo ya está disponible.\nPlanta ya está disponible.",
   "hint.h6.body": "Las anclas cuentan como formación. Cuantas más formaciones lleva una carta, mayor es su multiplicador.",
   "hint.hf.title": "Tu orden de cartas",
   "hint.hf.body": "Este es el orden de robo de tu mazo, dividido en {segments} segmentos. Se mantiene igual hasta el final de la partida.\n\nEn cada fase de orden puedes intercambiar cartas mientras te alcance la energía. El mazo rival se baraja de nuevo antes de cada ciclo.",

@@ -1184,7 +1184,6 @@ export default {
   "hint.c6.body": "Mit Kombis und Formationen blendest du die Rahmen auf dem Baufeld ein und aus. So behältst du beim Bauen den Überblick.",
   "hint.c7.body": "Eis steht jetzt zur Auswahl bereit.",
   "hint.c8.body": "Pflanze steht jetzt zur Auswahl bereit.",
-  "hint.c7b.body": "Eis steht jetzt zur Auswahl bereit.\nPflanze steht jetzt zur Auswahl bereit.",
   "hint.h6.body": "Anker zählen als Formation. Je mehr Formationen eine Karte trägt, desto höher ihr Multiplikator.",
   "hint.hf.title": "Deine Aufstellung",
   "hint.hf.body": "Das ist die Ziehreihenfolge deines Decks, unterteilt in {segments} Segmente. Sie bleibt bis zum Ende des Laufs gleich.\n\nIn jeder Aufstellungsphase kannst du Karten tauschen, so oft deine Energie reicht. Das Gegnerdeck wird vor jedem Durchlauf neu gemischt.",

@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useContext, useEffect, useState, useRef } from "react";
 import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import { PANEL_BG, phaseCard, PhaseHairline, PHASE_ACCENTS, ActionButton } from "./modalStyle.jsx";
 import { ARCHETYPE_ORDER, archetypeOf, marginHeatPoints, isLegendarySkill } from "../game/skills.js";
@@ -22,7 +22,7 @@ import { CardCorners } from "./CardCorners.jsx"; // #cornerart: Eck-Ornamente im
 import { skillDef, archMeta } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
 import { glossaryEntry } from "../i18n/glossaryText.js"; // #sprache: Glossartext zur Anzeigezeit
 import { t, fmtNum } from "../i18n/index.js";
-import { PhaseHintSlot } from "./hints/HintCard.jsx"; // Onboarding-Hints: Banner-Slot unter dem Kopf (docs/tutorial-onboarding-design.md)
+import { PhaseHintSlot, HintContext } from "./hints/HintCard.jsx"; // Onboarding-Hints: Banner-Slot unter dem Kopf (docs/tutorial-onboarding-design.md) · V1: aktive Seite melden
 import { recommendedStarter } from "./hints/hintScript.js"; // §6.2 „Guter Start": regelbasiert der Konsument des Erstlauf-Angebots
 
 // Archetyp-Meta eines Skills (Theming) — Fallback neutral (#93 F0).
@@ -172,6 +172,19 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
   const groupKws = curG ? (PASSIVE_KEYWORDS[curG.arch] || []) : [];
   const go = (d) => { dir.current = d < 0 ? -1 : 1; setPageState(nPages > 0 ? (((page + d) % nPages) + nPages) % nPages : 0); };
   const goTo = (i) => { dir.current = i > page ? 1 : (i < page ? -1 : dir.current); setPageState(i); };
+
+  /* Runde 4, V1: die aktive Swiper-Seite (Archetyp) an die Hint-Schicht melden — die
+     Freischalt-Hinweise C7/C8 erscheinen nur auf ihrer eigenen Seite. Beim Verlassen des
+     Screens wird der Wert geräumt, sonst hielte die nächste Skill-Phase den alten Stand. */
+  const hintCtl = useContext(HintContext);
+  // Nur der Setter in die Deps: seine Identität ist stabil (useState), der Provider-Wert nicht —
+  // sonst liefe der Effekt in jedem App-Render statt nur beim Seitenwechsel.
+  const setSkillArch = hintCtl?.setSkillArch;
+  const curArch = curG?.arch || null;
+  useEffect(() => {
+    setSkillArch?.(curArch);
+    return () => setSkillArch?.(null);
+  }, [setSkillArch, curArch]);
 
   // Konsumenten-Typ eines Skills (#93): Hitze („heat") / Ladung („charge") / kein Konsument (null).
   const consumerTypeOf = (id) => (skillDef(id)?.heatConsumer ? "heat" : skillDef(id)?.onFullCharge ? "charge" : null);

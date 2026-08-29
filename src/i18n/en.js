@@ -1137,7 +1137,6 @@ export default {
   "hint.c6.body": "Combos and Formations toggle the frames on the build board on and off. That keeps the board readable while you build.",
   "hint.c7.body": "Ice is now available.",
   "hint.c8.body": "Plant is now available.",
-  "hint.c7b.body": "Ice is now available.\nPlant is now available.",
   "hint.h6.body": "Anchors count as a formation. The more formations a card carries, the higher its multiplier.",
   "hint.hf.title": "Your lineup",
   "hint.hf.body": "This is your deck's draw order, split into {segments} segments. It stays the same until the end of the run.\n\nIn every order phase you can swap cards as long as your energy lasts. The opponent deck is reshuffled before every cycle.",
