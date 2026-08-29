@@ -72,6 +72,8 @@ export const SECTIONS = [
   {
     id: "blitz",
     arch: "lightning",
+    /* Runde 4, V3 (Owner): der Glossar-Schluss-Tipp ist von allen vier Archetyp-Tipps-Seiten
+       gestrichen — sie enden mit der Liste. Der Architekt behält seinen (anderen) Tipp. */
     lessons: [
       /* T-O4: Der Kernsatz der geloeschten wasist-Lektion („Blitz stellt ihn selbst her") lebt
          im Probe-Hinweis dieser Runde weiter — als eigener Satz-Takt riss er das 960er-Budget. */
@@ -79,8 +81,7 @@ export const SECTIONS = [
         { kind: "probierfeld", probe: "blitzkarte" },
         { kind: "tip" }] },
       { id: "tipps", art: "voll", beats: [
-        { kind: "probierfeld", probe: "tipps" },
-        { kind: "tip" }] },
+        { kind: "probierfeld", probe: "tipps" }] },
     ],
   },
   {
@@ -151,8 +152,7 @@ export const SECTIONS = [
       { id: "schmiede", art: "voll", beats: [
         { kind: "probierfeld", probe: "schmiede" }] },
       { id: "tipps", art: "voll", beats: [
-        { kind: "probierfeld", probe: "tipps" },
-        { kind: "tip" }] },
+        { kind: "probierfeld", probe: "tipps" }] },
     ],
   },
   {
@@ -178,8 +178,7 @@ export const SECTIONS = [
       { id: "tempo", art: "voll", beats: [
         { kind: "probierfeld", probe: "pflanztempo" }] },
       { id: "tipps", art: "voll", beats: [
-        { kind: "probierfeld", probe: "tipps" },
-        { kind: "tip" }] },
+        { kind: "probierfeld", probe: "tipps" }] },
     ],
   },
   {
@@ -187,18 +186,19 @@ export const SECTIONS = [
     arch: "ice",
     /* Runde 3, Q16 (Mockup freigegeben): „karte" läuft als Masse-Loop mit echtem Frost
        und trägt den Nachbar-Bonus; „formationen" (neu) zeigt die vier Geometrie-Formen
-       samt Stapeln, „einfrieren" (neu) die Entstehungsregeln. Das freie Gletscherfeld
+       samt Stapeln, „schnee" (Runde 4, V2) das Reserve-System. Das freie Gletscherfeld
        ist mit seiner Lektion entfallen. */
     lessons: [
       { id: "karte", art: "voll", beats: [
         { kind: "probierfeld", probe: "gletscher" }] },
       { id: "formationen", art: "voll", beats: [
         { kind: "probierfeld", probe: "gletscherformen" }] },
-      { id: "einfrieren", art: "kurz", beats: [
-        { kind: "probierfeld", probe: "einfrieren" }] },
+      /* Runde 4, V2 (Owner): statt der Einfrier-Regeln (die stehen in den Tipps) erklärt
+         Seite 3 den Schnee — die Boden-Reserve, die spätere Gletscher nachfüllt. */
+      { id: "schnee", art: "voll", beats: [
+        { kind: "probierfeld", probe: "schnee" }] },
       { id: "tipps", art: "voll", beats: [
-        { kind: "probierfeld", probe: "tipps" },
-        { kind: "tip" }] },
+        { kind: "probierfeld", probe: "tipps" }] },
     ],
   },];
 
@@ -335,7 +335,7 @@ const PROBE_PX = { formation: 520,
      gletscherformen 535 (Fläche-Tab, der längste) · einfrieren 219. Eingetragen knapp
      darüber, weil Englisch länger laufen kann und das Modell eher zu viel schätzen soll. */
   feuerkarten: 500, schmiede: 570, hitze: 470, pflanzkarte: 580, pflanztempo: 410, gruenfeld: 480,
-  gletscher: 690, gletscherformen: 580, einfrieren: 250,
+  gletscher: 690, gletscherformen: 580, schnee: 450,
   // Nach dem Lauf, gemessen: meilenstein 169.
   meilenstein: 400 };
 const PROBE_MAX = Math.max(...Object.values(PROBE_PX));

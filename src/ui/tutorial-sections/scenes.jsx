@@ -921,18 +921,25 @@ export function GletscherformenSzene({ hint }) {
   );
 }
 
-/* ── Szene Ee · Einfrieren (Eis Seite 3, neu) ───────────────────
-   Nur die Entstehungsregeln — die Wirkung steht auf Seite 1 und 2. */
-export function EinfrierenSzene({ hint }) {
+/* ── Szene Sn · Der Schnee (Eis Seite 3 — Runde 4, V2) ──────────
+   Ersetzt die Einfrieren-Seite (deren Regeln stehen in den Tipps, Punkt 1 und 6). Erklärt
+   das Schnee-System: die Boden-Reserve (firnStack) liegt auf dem FELD, nicht auf der Karte,
+   und füllt spätere Gletscher zum Durchlauf-Beginn nach. Ohne die legendäre Eiszeit
+   (Owner-Entscheid). Wortwahl wie im Lauf: „Schnee" und „Boden-Reserve" (bar.ice.*). */
+export function SchneeSzene({ hint }) {
   useLocale();
+  const treiben = skillDef("SK_ICE_02")?.name ?? "", frost = skillDef("SK_ICE_03")?.name ?? "";
   return (
     <div className="tsz">
       <p className="auftrag">{hint}</p>
       <div className="stufen">
-        <div className="stufe eis an"><span><ChipBadge />{rich(t("tut.sz.ee.s1"))}</span></div>
-        <div className="stufe eis an"><span><ChipBadge />{rich(t("tut.sz.ee.s2", { n: GLACIER.DECLINE_MIN_SKILLS }))}</span></div>
+        <div className="stufe eis an"><span><ChipBadge />{rich(t("tut.sz.sn.s1"))}</span></div>
+        <div className="stufe eis an"><span><ChipBadge />{rich(t("tut.sz.sn.s2", { max: GLACIER.FIRN_REFILL_TARGET }))}</span></div>
+        <div className="stufe eis an"><span><ChipBadge skill={treiben} />{rich(t("tut.sz.sn.s3", { n: GLACIER.SCHNEETREIBEN_SEED }))}</span></div>
+        <div className="stufe eis an"><span><ChipBadge skill={frost} />{rich(t("tut.sz.sn.s4", { near: GLACIER.DAUERFROST_NEAR, far: GLACIER.DAUERFROST_FAR }))}</span></div>
       </div>
-      <div className="merk3 eis">{rich(t("tut.sz.ee.merk"))}</div>
+      <div className="merk3 eis">{rich(t("tut.sz.sn.merk", {
+        ground: t("bar.ice.firnGround"), reserve: t("bar.ice.firnReserve") }))}</div>
     </div>
   );
 }
