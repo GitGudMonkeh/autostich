@@ -2,14 +2,15 @@
 
 **Branch:** `task/tip-review-5` (from `dev`) → merged into `dev`.
 **Source of scope:** `docs/workstreams/onboarding/tip-review-2026-08-28.md`, section
-"Round 5 (owner playtest after round 4)" — row W1, confirmed by the owner on 2026-08-29,
-implemented on the owner's go ("umsetzten").
+"Round 5 (owner playtest after round 4)" — rows W1 and W2, confirmed by the owner on 2026-08-29
+(W1 on the go "umsetzten"; W2 a follow-up bug report, fixed via `task/tip-review-5b`).
 
 ## Scope delivered
 
 | Row | Change | Where |
 | --- | --- | --- |
 | W1 | "Alle Tutorial-Tipps überspringen" (H1) now also lifts the Blitz-only first-run gate. One gesture, three effects: all hints marked seen (as before); sticky profile flag `tutorialSkipped` so every FUTURE run starts with the normal tree allowlist (fire, plus purchased ice/plant); and a new `SKIP_TUTORIAL` reducer action lifts the gate in the RUNNING run (`state.firstRun` → false, `state.unlockedArchetypes` → tree allowlist), so the run's next skill offer already carries the other archetypes. An already rolled Blitz-only offer on screen is not rerolled. Outside a first run the action is a no-op. The deliberate guided "Tutorial-Lauf" is unaffected (it never had the archetype gate on veteran profiles). | storage.js, reducer.js, useHints.js, App.jsx |
+| W2 | **BUG: the tutorial overview's "Glossar öffnen" foot did nothing.** `setGlossaryOpen` is only the pause bookkeeping flag — the glossary UI lived solely inside the run-HUD `GlossaryPanel` (own state, not rendered in the menu at all; in a run the click silently froze the run). App now renders the already-exported `GlossaryOverlay` itself (`glossaryStandalone` state); the pause flag runs in sync so the auto-play guard chains and their dep lists stay untouched; Escape closes the standalone overlay first. | App.jsx |
 
 ## Guard updates
 
