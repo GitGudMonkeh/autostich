@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { rankHighscores, loadGhost, saveGhost, loadHighscores, recordHighscore,
   loadOptions, loadUsername, saveUsername, loadTutorialProgress, saveTutorialProgress, tutorialOpened,
-  recordRun, recordChampionWeeks, loadProfile, isNoRerollRun,
+  recordRun, recordChampionWeeks, loadProfile, isNoRerollRun, RUN_COMPLETE_DP,
   monoArchetypeOf, isAllArchetypesRun, migrateProfile, PROFILE_SCHEMA_VERSION,
   isGottgleichRun, isMeisterNoRerollRun, GOTTGLEICH_TRICK_MIN,
   saveActiveRun, loadActiveRun, clearActiveRun, ACTIVE_RUN_SCHEMA,
@@ -297,6 +297,24 @@ describe("Progression/Upgrades — Profil-Felder, Migration, SP-Ernte, Onboardin
     expect(p.nodes).toEqual({ B1: 1 }); // Knoten bleiben
     expect(p.stichSpent).toBe(2);        // ausgegeben bleibt
     expect(p.stichPoints).toBe(3 + SP_PER_RUN);       // Grundstock auf die 3 mitgegebenen (Onboarding war fertig)
+  });
+
+  /* Runde 4, V4 (Owner-Fund): der Endscreen zeigte „+0 DP" auf einem abgeschlossenen Lauf,
+     weil earn.dpGross nur die Meilenstein-DP trug — der Abschluss-Bonus war unsichtbar. Die
+     angezeigte Zahl muss dem echten Konto-Zuwachs OHNE Willkommensbonus entsprechen (der hat
+     seine eigene Endscreen-Zeile). */
+  it("V4: die angezeigte DP-Zahl trägt den Abschluss-Bonus (und deckt den Konto-Zuwachs)", () => {
+    veteran();
+    const dp0 = loadProfile().deckPoints;
+    // Abgeschlossener Lauf ohne Meilenstein: sichtbar ist der Abschluss-Bonus, nicht „+0".
+    const done = recordRun(runRec({ ts: 1, score: 10_000 }));
+    expect(done.earn.dpGross).toBe(RUN_COMPLETE_DP);
+    expect(done.earn.dpNet).toBe(done.earn.dpGross);
+    expect(done.profile.deckPoints - dp0).toBe(done.earn.dpGross);
+    // Abbruch: kein Abschluss-Bonus, Anzeige und Konto bleiben bei 0.
+    const aborted = recordRun(runRec({ ts: 2, score: 10_000, completed: false }));
+    expect(aborted.earn.dpGross).toBe(0);
+    expect(aborted.profile.deckPoints).toBe(done.profile.deckPoints);
   });
 
   /* ---- Willkommensbonus (WELCOME_DP) ---- */
