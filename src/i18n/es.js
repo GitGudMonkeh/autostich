@@ -178,7 +178,9 @@ export default {
   "building.kick.critFlatMult": "con crítico ×{n} puntuación directa",
   "building.kick.streakDoubleFrom": "doble a partir de racha {n}",
   "building.kick.addType": "segundo tipo de comodín: {type}",
+  "building.kick.farbJoker": "se convierte en comodín de bloque de palo: la celda cuenta como el palo correspondiente",
   "building.kick.ankerValue": "+{n} valor de baza por celda de ancla",
+  "building.eff.tierValue": "además +{n} valor de baza en cada celda",
   "building.kick.active": "{base} · {kick}",
   "building.kick.preview": "{base} (nivel {tier}: {kick})",
 

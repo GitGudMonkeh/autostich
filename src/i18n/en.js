@@ -144,7 +144,9 @@ export default {
   "building.kick.critFlatMult": "×{n} direct score on a crit",
   "building.kick.streakDoubleFrom": "double from streak {n}",
   "building.kick.addType": "second wild type: {type}",
+  "building.kick.farbJoker": "becomes a suit-block wild: the cell counts as the matching suit",
   "building.kick.ankerValue": "+{n} trick value per anchor cell",
+  "building.eff.tierValue": "plus +{n} trick value on each cell",
   "building.kick.active": "{base} · {kick}",
   "building.kick.preview": "{base} (tier {tier}: {kick})",
 
