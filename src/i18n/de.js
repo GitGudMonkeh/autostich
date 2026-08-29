@@ -145,7 +145,10 @@ export default {
   "building.kick.critFlatMult": "bei Crit ×{n} Direkt-Score",
   "building.kick.streakDoubleFrom": "ab Serie {n} doppelt",
   "building.kick.addType": "zweiter Joker-Typ: {type}",
+  "building.kick.farbJoker": "wird zum Farbblock-Joker: die Zelle zählt als passende Farbe",
   "building.kick.ankerValue": "+{n} Stichwert je Ankerzelle",
+  // Stufen-Leiter (Runde 6): flacher Stichwert auf den Zellen der Formations-Gebäude, je Stufe.
+  "building.eff.tierValue": "dazu +{n} Stichwert auf jeder Zelle",
   "building.kick.active": "{base} · {kick}",
   "building.kick.preview": "{base} (Stufe {tier}: {kick})",
 
