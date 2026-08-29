@@ -1055,6 +1055,17 @@ function AutostichGame() {
     hints.resetAll();
     launchRun({ guided: true });
   }
+  /* Runde 5, W1 (Owner): „Alle Tutorial-Tipps überspringen" (H1) heißt jetzt auch: keine
+     Blitz-only-Erstlauf-Sperre mehr. Drei Wirkungen, eine Geste — Tipps als gesehen markieren,
+     das Profil sticky auf tutorialSkipped stellen (künftige Läufe starten offen) und den
+     LAUFENDEN Lauf per SKIP_TUTORIAL auf die Baum-Allowlist heben (Feuer, plus gekaufte
+     Eis/Pflanze), sodass schon das nächste Skill-Angebot sie führt. */
+  function skipTutorial() {
+    hints.skipAll();
+    const np = saveProfile({ ...profile, tutorialSkipped: true });
+    setProfile(np);
+    dispatch({ type: "SKIP_TUTORIAL", profile: np });
+  }
   // Test-Codes im Seed-Feld (nur Preview, StartScreen fängt sie ab): `unlock` = Onboarding fertig + alle
   // Upgrades + SP-Polster (Profil-Update, kein Reload). `onboarding` = nur Onboarding überspringen (6/6) +
   // 10 SP / 50 DP. `reset` = ganzes Profil wipen → Reload gibt den sauberen Erstbesuch-Zustand.
@@ -1517,7 +1528,7 @@ function AutostichGame() {
       {/* Q4/Q5 (Runde 3): neben H1 blocken auch die Phasen-Intros HF/HA — der Überspringen-Link
           gehört nur auf die Willkommenskarte. */}
       {hints.card && <HintCardOverlay hint={hints.card} onGo={hints.dismissCard}
-        onSkipAll={hints.card.id === "H1" ? hints.skipAll : null}
+        onSkipAll={hints.card.id === "H1" ? skipTutorial : null}
         onMore={hints.onMore && hints.card.target ? () => hints.onMore(hints.card) : null} />}
       {/* Ereignis-/UI-Hints im Stichspiel (T-O2): Pause-Karte am unteren Rand, Referent bleibt
           sichtbar; der Lauf ist über hintFreeze angehalten, bis „Weiter" gedrückt wird. */}

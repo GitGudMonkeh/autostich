@@ -140,6 +140,11 @@ const DEFAULT_PROFILE = { schemaVersion: PROFILE_SCHEMA_VERSION,
      rausgeht, hat nichts gesehen. Ebenso bewusst NICHT an den Tutorial-Lauf gebunden — jeder
      abgeschlossene Lauf zählt. */
   hadCompletedRun: false,
+  /* Runde 5, W1 (Owner): „Tutorial überspringen" auf der Willkommenskarte hebt auch die
+     Blitz-only-Erstlauf-Sperre — sticky, damit KÜNFTIGE Läufe ebenfalls offen sind, ohne dass
+     erst ein ganzer Lauf abgeschlossen werden muss. Kein Migrations-Glied nötig: false ist für
+     jedes Alt-Profil die richtige Antwort, und loadProfile füllt fehlende Felder aus dem Default. */
+  tutorialSkipped: false,
   /* #hirsch-abgeschlossen: Zähler der ABGESCHLOSSENEN Läufe. `games` daneben zählt jeden BEGONNENEN
      (Abbrüche eingeschlossen) und bleibt, was er ist — die Statistik zeigt ihn so an. Freischaltungen
      über eine Laufzahl lesen ab jetzt diesen hier; ein abgebrochener Lauf soll keine Belohnung tragen. */
