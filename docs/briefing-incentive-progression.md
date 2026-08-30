@@ -16,6 +16,29 @@ Du hast keinen Zugriff auf den Code — alles, was du brauchst, steht hier.
 
 Lies erst alles, dann arbeite den Auftrag am Ende ab.
 
+## Rahmen dieser Session — bitte zuerst lesen
+
+Autostich ist ein **Prototyp**. Nichts an der heutigen Umsetzung ist in Stein gemeißelt — auch nicht
+der Upgrade-Baum, die Reihenfolge, in der Mechaniken im Lauf angeboten werden, die Lauflänge, die
+Reihenfolge, in der *wir* neue Mechaniken überhaupt erst bauen, oder das Versprechen im Pitch. Was
+unten als „so funktioniert es heute" beschrieben ist, ist eine **Momentaufnahme, kein Lastenheft**.
+§7 sagt, was davon wirklich fest ist — alles andere ist Verhandlungsmasse, und du darfst sie
+verhandeln.
+
+Zwei Präferenzen für die ganze Session:
+
+- Ich bin offen für einen **echten Umbau**, wenn er dem Spiel ein weiteres **Alleinstellungsmerkmal**
+  gibt — nicht nur für kleine Zusatzsysteme obendrauf. Wenn eine gute Idee bedeutet, eine bestehende
+  Struktur anzufassen (Upgrade-Baum, Entscheidungsplan, sogar die Lauflänge), ist das erwünscht, kein
+  Hindernis.
+- Ich will lieber **vom Mainstream des Genres abweichen** als ihn zu kopieren — ohne dabei ein
+  **breites Publikum** zu verlieren. Bewerte jede Richtung auch danach, wie eigenständig sie ist.
+
+Und die wichtigste Regel für dich: **Verwirf keine Idee nur, weil sie gerade nicht sauber in die
+bestehende Mechanik passt.** Nenne sie trotzdem. Sag, was heute dagegenspricht, und was sich ändern
+müsste — an Autostich oder an der Idee — damit sie passt. Eine Idee mit Reibung ist mehr wert als
+gar keine Idee.
+
 ## 1 · Was Autostich ist
 
 Ein **Roguelite-Autobattler-Stechspiel** im Browser (Vite + React + Pixi, Deploy auf GitHub Pages).
@@ -281,7 +304,13 @@ dort „noch ein Lauf".
 
 Richtung 3 ist der Berührungspunkt zu §5, und sie ist die am wenigsten durchdachte der vier.
 
+Diese vier sind bewusst klein und wiederverwertend gedacht — reine Umdeutung bestehender Daten,
+keine neue Struktur. Nach dem Rahmen oben: das ist der Boden, nicht die Decke. Wenn ein größerer
+Umbau ein eigenständigeres Spiel daraus macht, will ich den sehen.
+
 ## 7 · Randbedingungen
+
+### Was wirklich fest ist
 
 - **Solo-Entwickler** mit KI-Agenten. Kein Team, kein Budget für Vertonung oder viel neues Artwork.
   **Neue Musik ist dagegen billig** — der Soundtrack ist KI-generiert und über ein Skript
@@ -293,10 +322,24 @@ Richtung 3 ist der Berührungspunkt zu §5, und sie ist die am wenigsten durchda
   Supabase-Tabelle mit Benutzernamen.
 - **Läuft im Browser**, auch mobil. Sitzungen können unterbrochen werden. Audio startet erst nach
   der ersten Nutzergeste (Autoplay-Sperre der Browser), und manche Spieler spielen stumm.
-- **Der Pitch verspricht ausdrücklich: „ein Kartenspiel, das man nicht verlieren kann."** Alles, was
-  Scheitern einführt, steht dazu in Spannung und muss das bewusst auflösen.
-- **Score ist aktuell die einzige Ziel-Metrik.**
-- **Ein Lauf dauert 20–70 Minuten** (siehe §3). Das ist die härteste Randbedingung.
+
+### Was offen ist — hier nicht selbst zensieren
+
+- **Score als einzige Ziel-Metrik.** Heutiger Stand, keine Vorgabe für morgen.
+- **Die Lauflänge.** Heute `MAX_CYCLES = 50`, also 2000 Stiche — ≈58 Minuten bei 1×, ≈15 Minuten bei
+  4×, realistisch 15–60 Minuten je nach Tempo-Mix (§3). Eine Zahl, mit der du rechnen sollst, aber
+  keine, die du respektieren musst: wenn ein Umbau eine andere Lauflänge braucht, um zu
+  funktionieren, sag das offen, statt die Idee deswegen zu verwerfen.
+- **Der Upgrade-Baum.** Struktur, Äste, was er überhaupt freischaltet — alles offen. (§4 beschreibt
+  den heutigen Stand, zwei Zweige *Decks* und *Allgemein* — das ist Bestandsaufnahme, keine Vorgabe.)
+- **Die Reihenfolge der Entscheidungstypen im Lauf.** Heute ein fester 50-Einträge-Plan (13 Perk ·
+  13 Aufstellung · 13 Architekt · 10 Skill · 1 Legendär, Skill zuerst, Legendär in Durchlauf 29) —
+  auch das ist änderbar, wenn eine Richtung davon profitiert.
+- **Die Reihenfolge, in der *wir* neue Mechaniken bauen.** Unentschieden. Schlägst du mehrere
+  Richtungen vor, sag auch, was zuerst drankäme und was worauf aufbaut.
+- **Das Pitch-Versprechen „ein Kartenspiel, das man nicht verlieren kann".** Aktueller Stand, keine
+  heilige Kuh. Soll eine Richtung das kippen, sag es ausdrücklich und sag, warum es sich lohnt — nicht
+  beiläufig als Nebeneffekt einer anderen Idee.
 
 ## 8 · Dein Auftrag
 
@@ -330,12 +373,21 @@ Je Richtung:
 - **Welchen Hook-Archetyp** aus der Tabelle in §6 sie bedient — und welche der vier Fragen sie
   beantwortet und welche nicht. Eine Richtung, die alle vier beantwortet, ist verdächtig.
 - **Was der Spieler konkret tut**, das er heute nicht tut.
-- **Was sie an System braucht** — und was sie aus §4 und §5 wiederverwenden kann.
+- **Was sie an System braucht** — und was sie aus §4 und §5 wiederverwenden kann. Fasst sie eine der
+  in §7 als „offen" markierten Strukturen an (Upgrade-Baum, Entscheidungsplan, Lauflänge), sag das
+  ausdrücklich statt es zu verstecken.
 - **Aufwand** grob (klein / mittel / groß) und **wo das Risiko liegt.**
-- **Wie sie mit der 20–70-Minuten-Laufzeit umgeht.**
-- **Wie sie zum „man kann nicht verlieren"-Versprechen steht.**
+- **Wie mainstream oder eigenständig sie ist**, und ob sie trotzdem ein breites Publikum erreichen
+  kann. Eine Richtung, die ein bekanntes Genre-Muster übernimmt, ist willkommen — sag es dann aber
+  dazu. Eine Richtung ohne echtes Vorbild im Genre ist ausdrücklich erwünscht, keine Notlösung.
+- **Wie sie mit der Lauflänge umgeht** (§7) — und ob sie diese absichtlich verändert.
+- **Wie sie zum „man kann nicht verlieren"-Versprechen steht** — eingeschlossen die Option, es bewusst
+  zu kippen, wenn du das für richtig hältst.
 - Bei den Musik-Richtungen zusätzlich: **wie sie mit stummen Spielern und mit dem „Ruhigen Modus"
   umgeht**, und ob sie auf den *Moment des Umschaltens* oder auf die *Sammlung* setzt.
+
+Wenn mehrere Richtungen zusammen mehr ergeben als einzeln, sag auch, **in welcher Reihenfolge** ich
+sie bauen sollte und was wovon abhängt — die Umsetzungsreihenfolge ist bei mir komplett offen.
 
 ### Dann entscheiden
 
@@ -348,6 +400,8 @@ Je Richtung:
   bedeutet, dass die Schwellen falsch stehen und nicht, dass dort ein Hook liegt, sag das.
 - Wenn dir eine Angabe fehlt, die deine Antwort verändern würde, **frag zuerst**, statt zu raten.
 
-Was ich **nicht** will: eine dritte Währung, eine Verlängerung des bestehenden Upgrade-Baums, eine
-höhere Score-Decke, oder einen Theme-Wechsel als Anreiz-Reparatur. Falls du eines davon trotzdem für
-richtig hältst, begründe es ausdrücklich gegen diesen Absatz.
+Was früher hier als Verbot stand, ist jetzt nur noch **Skepsis, kein Veto**: eine dritte Währung,
+eine höhere Score-Decke, ein Theme-Wechsel als reine Anreiz-Reparatur ohne echte strukturelle
+Änderung dahinter. Wenn du eine davon für richtig hältst, sag kurz, wogegen sie bisher stand und
+warum sie es trotzdem wert ist — mehr Hürde ist das nicht. Die Verlängerung des Upgrade-Baums nehme
+ich ganz zurück: die ist so offen wie alles andere in §7.
