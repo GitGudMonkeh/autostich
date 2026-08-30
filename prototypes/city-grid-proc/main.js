@@ -183,16 +183,76 @@ async function main() {
     g.circle(tx, tipY, 1.6).fill({ color: MINT, alpha: 1 });
     g.circle(tx, tipY, 4).fill({ color: MINT, alpha: 0.18 });
   }
+  // Additional pocket decorations beyond trees: lamp post, holo billboard, plaza fountain,
+  // and a vermilion torii gate for the Japanese quarter feel.
+  function drawLamp(g, x, y, s, color) {
+    g.moveTo(x, y).lineTo(x, y - 18 * s).stroke({ width: 1.6, color: 0x3a4260, alpha: 0.95 });
+    g.poly([x, y - 18 * s, x - 6 * s, y + 1, x + 6 * s, y + 1]).fill({ color, alpha: 0.06 }); // light cone
+    g.circle(x, y - 18 * s, 2.2 * s).fill({ color, alpha: 1 });
+    g.circle(x, y - 18 * s, 5 * s).fill({ color, alpha: 0.2 });
+  }
+  function drawBillboard(g, x, y, s, color) {
+    g.moveTo(x, y).lineTo(x, y - 10 * s).stroke({ width: 1.6, color: 0x3a4260, alpha: 0.95 });
+    const q = [x - 8 * s, y - 14 * s, x + 8 * s, y - 22 * s, x + 8 * s, y - 12 * s, x - 8 * s, y - 4 * s - 0.001];
+    // panel leans like an iso wall; scanlines give it the holo-screen look
+    g.poly([q[0], q[1], q[2], q[3], q[4], q[5], q[6], y - 4 * s]).fill({ color: 0x0a0f1c, alpha: 0.95 });
+    g.poly([q[0], q[1], q[2], q[3], q[4], q[5], q[6], y - 4 * s]).stroke({ width: 1.3, color, alpha: 0.95 });
+    for (let i = 1; i <= 3; i++) {
+      const t = i / 4;
+      g.moveTo(x - 8 * s, y - 14 * s + 10 * s * t).lineTo(x + 8 * s, y - 22 * s + 10 * s * t)
+        .stroke({ width: 1, color, alpha: 0.45 });
+    }
+  }
+  function drawFountain(g, x, y, s) {
+    g.ellipse(x, y, 16 * s, 8 * s).stroke({ width: 1.6, color: CYAN, alpha: 0.8 });
+    g.ellipse(x, y, 9 * s, 4.5 * s).stroke({ width: 1.2, color: CYAN, alpha: 0.5 });
+    for (const dx of [-3, 0, 3]) {
+      g.moveTo(x, y - 1).lineTo(x + dx * s, y - 10 * s).stroke({ width: 1, color: 0x9feaff, alpha: 0.7 });
+    }
+    g.circle(x, y - 10 * s, 1.4).fill({ color: 0x9feaff, alpha: 0.9 });
+  }
+  function drawTorii(g, x, y, s) {
+    const h = 17 * s, w = 9 * s;
+    g.moveTo(x - w, y).lineTo(x - w, y - h).stroke({ width: 2.5, color: VERMILION, alpha: 0.95 });
+    g.moveTo(x + w, y).lineTo(x + w, y - h).stroke({ width: 2.5, color: VERMILION, alpha: 0.95 });
+    g.moveTo(x - w * 1.45, y - h).lineTo(x + w * 1.45, y - h - 2 * s).stroke({ width: 3, color: VERMILION, alpha: 0.95 });
+    g.moveTo(x - w, y - h * 0.72).lineTo(x + w, y - h * 0.78).stroke({ width: 2, color: VERMILION, alpha: 0.9 });
+    g.circle(x - w * 1.45, y - h, 1.5).fill({ color: GOLD, alpha: 0.95 });
+    g.circle(x + w * 1.45, y - h - 2 * s, 1.5).fill({ color: GOLD, alpha: 0.95 });
+  }
+
   function makePark(r, c) {
     const kk = key(r, c);
     if (treeG.has(kk)) return;
     const rand = seededRand(r + 100, c + 100);
     const g = new Graphics();
-    drawTree(g, 0, TILE_H * 0.1, 0.95 + rand() * 0.35, rand);
-    const extras = 1 + Math.floor(rand() * 2);
-    for (let i = 0; i < extras; i++) {
-      const u = (rand() - 0.5) * 0.5, v = (rand() - 0.5) * 0.5;
-      drawTree(g, (u + v) * (TILE_W / 2), (v - u) * (TILE_H / 2) + TILE_H * 0.16, 0.55 + rand() * 0.3, rand);
+    const off = (fu, fv, dy) => {
+      const u = (rand() - 0.5) * fu, v = (rand() - 0.5) * fv;
+      return [(u + v) * (TILE_W / 2), (v - u) * (TILE_H / 2) + dy];
+    };
+    // deterministic decoration mix per pocket — not only trees
+    const kind = rand();
+    if (kind < 0.34) {                 // grove
+      drawTree(g, 0, TILE_H * 0.1, 0.95 + rand() * 0.35, rand);
+      const extras = 1 + Math.floor(rand() * 2);
+      for (let i = 0; i < extras; i++) {
+        const [ox, oy] = off(0.5, 0.5, TILE_H * 0.16);
+        drawTree(g, ox, oy, 0.55 + rand() * 0.3, rand);
+      }
+    } else if (kind < 0.53) {          // lamp + tree
+      drawLamp(g, -TILE_W * 0.14, TILE_H * 0.16, 1, rand() < 0.5 ? CYAN : MAGENTA);
+      drawTree(g, TILE_W * 0.12, TILE_H * 0.08, 0.8 + rand() * 0.3, rand);
+    } else if (kind < 0.72) {          // holo billboard + small tree
+      drawBillboard(g, TILE_W * 0.08, TILE_H * 0.14, 1, rand() < 0.5 ? CYAN : MAGENTA);
+      drawTree(g, -TILE_W * 0.18, TILE_H * 0.12, 0.6 + rand() * 0.25, rand);
+    } else if (kind < 0.88) {          // fountain plaza
+      drawFountain(g, 0, TILE_H * 0.08, 1);
+      drawTree(g, -TILE_W * 0.22, TILE_H * 0.05, 0.55, rand);
+      drawTree(g, TILE_W * 0.2, TILE_H * 0.14, 0.5, rand);
+    } else {                           // torii shrine garden
+      drawTorii(g, 0, TILE_H * 0.12, 1);
+      drawTree(g, -TILE_W * 0.22, TILE_H * 0.06, 0.6, rand);
+      drawLamp(g, TILE_W * 0.2, TILE_H * 0.1, 0.8, GOLD);
     }
     const { x, y } = cellPos(r, c);
     g.position.set(x, y);
@@ -251,7 +311,7 @@ async function main() {
   function drawCar(g, dirKey, color, alt) {
     g.clear();
     const u = unit(EDGE_MID[dirKey]), w = unit(EDGE_MID[CW[dirKey]]);
-    const L = 19, W2 = 9, H = 5;
+    const L = 21, W2 = 10, H = 8; // chunkier hull — the first pass read too flat
     const f = [u[0] * L / 2, u[1] * L / 2], b = [-f[0], -f[1]];
     const wv = [w[0] * W2 / 2, w[1] * W2 / 2];
     const y0 = -alt;
@@ -267,12 +327,20 @@ async function main() {
       f[0] + wv[0], f[1] + wv[1] + y0 - H, b[0] + wv[0], b[1] + wv[1] + y0 - H]).fill(0x161c30);
     g.poly(quad(y0 - H)).fill(0x1a2138);                                  // deck
     g.poly(quad(y0 - H)).stroke({ width: 1.2, color, alpha: 0.95 });      // neon rim
-    // cabin canopy (translucent glow, sits toward the rear)
-    const cf = [u[0] * L * 0.12, u[1] * L * 0.12], cb = [-u[0] * L * 0.32, -u[1] * L * 0.32];
-    const cw = [w[0] * W2 * 0.32, w[1] * W2 * 0.32];
-    g.poly([cb[0] - cw[0], cb[1] - cw[1] + y0 - H - 3, cb[0] + cw[0], cb[1] + cw[1] + y0 - H - 3,
-      cf[0] + cw[0], cf[1] + cw[1] + y0 - H - 3, cf[0] - cw[0], cf[1] - cw[1] + y0 - H - 3])
-      .fill({ color, alpha: 0.45 });
+    // cabin canopy: a raised glowing pod (roof plate + visible glass walls), not a flat sticker
+    const CH = 5;
+    const cf = [u[0] * L * 0.14, u[1] * L * 0.14], cb = [-u[0] * L * 0.34, -u[1] * L * 0.34];
+    const cw = [w[0] * W2 * 0.34, w[1] * W2 * 0.34];
+    const cq = (dy) => [cb[0] - cw[0], cb[1] - cw[1] + dy, cb[0] + cw[0], cb[1] + cw[1] + dy,
+      cf[0] + cw[0], cf[1] + cw[1] + dy, cf[0] - cw[0], cf[1] - cw[1] + dy];
+    g.poly([cb[0] - cw[0], cb[1] - cw[1] + y0 - H, cf[0] - cw[0], cf[1] - cw[1] + y0 - H,
+      cf[0] - cw[0], cf[1] - cw[1] + y0 - H - CH, cb[0] - cw[0], cb[1] - cw[1] + y0 - H - CH])
+      .fill({ color, alpha: 0.28 });
+    g.poly([cb[0] + cw[0], cb[1] + cw[1] + y0 - H, cf[0] + cw[0], cf[1] + cw[1] + y0 - H,
+      cf[0] + cw[0], cf[1] + cw[1] + y0 - H - CH, cb[0] + cw[0], cb[1] + cw[1] + y0 - H - CH])
+      .fill({ color, alpha: 0.42 });
+    g.poly(cq(y0 - H - CH)).fill({ color, alpha: 0.55 });
+    g.poly(cq(y0 - H - CH)).stroke({ width: 1, color: 0xffffff, alpha: 0.5 });
     // light bars across the front and rear deck edges
     g.moveTo(f[0] - wv[0] * 0.7, f[1] - wv[1] * 0.7 + y0 - H).lineTo(f[0] + wv[0] * 0.7, f[1] + wv[1] * 0.7 + y0 - H)
       .stroke({ width: 2, color: 0xfff2b8, alpha: 0.95 });
@@ -304,9 +372,76 @@ async function main() {
   }
 
   function manageCarPopulation() {
-    const target = Math.min(8, Math.max(1, Math.floor(roadG.size / 6)));
+    // deliberately sparse traffic — a handful of craft, not a swarm
+    const target = Math.min(4, Math.max(1, Math.floor(roadG.size / 14)));
     while (cars.length < target) spawnCar();
+    managePedPopulation();
   }
+
+  // ---- pedestrians ---------------------------------------------------------
+  // Tiny glowing figures strolling the sidewalks: they follow the same road graph as the
+  // cars but laterally offset toward the curb (right-hand side of their walking direction),
+  // much slower, with a little walk bob. Grounded — no altitude, just a soft shadow.
+  const PED_COLORS = [0xf3f6ff, 0x35d6ff, 0xff4fd8, 0xffc94a];
+  const PED_OFFSET = 21; // px from lane center toward the curb
+  const peds = [];
+  function drawPed(g, color) {
+    g.clear();
+    g.ellipse(0, 0.8, 2.6, 1.2).fill({ color: 0x000000, alpha: 0.4 });
+    g.moveTo(0, 0).lineTo(0, -4.6).stroke({ width: 1.5, color, alpha: 0.95 });
+    g.circle(0, -6.2, 1.6).fill({ color, alpha: 1 });
+  }
+  function spawnPed() {
+    const keys = [...roadG.keys()];
+    if (!keys.length) return;
+    const kk = keys[Math.floor(Math.random() * keys.length)];
+    const [r, c] = kk.split(",").map(Number);
+    const conn = connectionsOf(r, c);
+    if (!conn.size) return;
+    const to = [...conn][Math.floor(Math.random() * conn.size)];
+    const ped = {
+      r, c, from: OPP[to], to, t: 0.5,
+      speed: 11 + Math.random() * 7,
+      phase: Math.random() * Math.PI * 2,
+      color: PED_COLORS[Math.floor(Math.random() * PED_COLORS.length)],
+      g: new Graphics(),
+    };
+    drawPed(ped.g, ped.color);
+    world.addChild(ped.g);
+    peds.push(ped);
+  }
+  function managePedPopulation() {
+    const target = Math.min(10, Math.floor(roadG.size / 4));
+    while (peds.length < target) spawnPed();
+  }
+
+  app.ticker.add((ticker) => {
+    const dt = ticker.deltaMS / 1000;
+    const now = performance.now() / 1000;
+    for (const ped of peds) {
+      ped.t += (ped.speed * dt) / (2 * SEG_LEN);
+      if (ped.t >= 1) {
+        const [dr, dc] = DIRS[ped.to];
+        ped.r += dr; ped.c += dc;
+        ped.from = OPP[ped.to];
+        const conn = connectionsOf(ped.r, ped.c);
+        const options = [...conn].filter((d) => d !== ped.from);
+        ped.to = options.length ? options[Math.floor(Math.random() * options.length)] : ped.from;
+        ped.t -= 1;
+      }
+      const heading = ped.t < 0.5 ? OPP[ped.from] : ped.to;
+      const local = ped.t < 0.5
+        ? (() => { const s = ped.t * 2, [mx, my] = EDGE_MID[ped.from]; return [mx * (1 - s), my * (1 - s)]; })()
+        : (() => { const s = (ped.t - 0.5) * 2, [mx, my] = EDGE_MID[ped.to]; return [mx * s, my * s]; })();
+      const side = unit(EDGE_MID[CW[heading]]);
+      const { x, y } = cellPos(ped.r, ped.c);
+      const px = x + local[0] + side[0] * PED_OFFSET;
+      const py = y + local[1] + side[1] * PED_OFFSET;
+      const bob = Math.sin(now * 9 + ped.phase) * 0.5;
+      ped.g.position.set(px, py + bob);
+      ped.g.zIndex = (2 * py) / TILE_H + 0.36;
+    }
+  });
 
   app.ticker.add((ticker) => {
     const dt = ticker.deltaMS / 1000;
@@ -376,20 +511,42 @@ async function main() {
     }
   }
 
+  // Flared pagoda roof slab: a thin box overhanging its tier, with glow dots on the three
+  // visible eave corners to suggest the upturned edges of Japanese roofs.
+  function drawRoof(g, cx, cyBase, fw, pal) {
+    drawBox(g, cx, cyBase, fw, 3.5, pal, () => 1, false);
+    const a = (TILE_W / 2) * fw, b = (TILE_H / 2) * fw;
+    for (const [px, py] of [[cx - a, cyBase - 3.5], [cx + a, cyBase - 3.5], [cx, cyBase + b - 3.5]]) {
+      g.circle(px, py, 1.6).fill({ color: pal.edge, alpha: 0.95 });
+    }
+  }
+
   // Building types: stacked boxes with per-type footprints/heights. All deterministic per cell.
+  // Weighted mix: real high-rises and Japanese pagodas appear often, the low fillers less so.
+  const VERMILION = 0xff6a4d, GOLD = 0xffc94a;
   function drawBuilding(g, r, c, progress, flash) {
     g.clear();
     const rand = seededRand(r, c);
-    const type = Math.floor(rand() * 4);
-    const totalH = 60 + rand() * 80;
+    const tr = rand();
+    let type;
+    if (tr < 0.16) type = 0;        // setback tower
+    else if (tr < 0.32) type = 1;   // low slab
+    else if (tr < 0.47) type = 2;   // ziggurat
+    else if (tr < 0.61) type = 3;   // twin blocks
+    else if (tr < 0.8) type = 4;    // super skyscraper
+    else type = 5;                  // Japanese pagoda
+    const totalH = type === 4 ? 150 + rand() * 90 : type === 5 ? 95 + rand() * 40 : 60 + rand() * 80;
     const accent = rand() < 0.5 ? CYAN : MAGENTA;
+    const jp = type === 5;
     const pal = flash
       ? { top: 0xffffff, left: 0xdff6ff, right: 0xeafaff, edge: 0xffffff, winA: 0xffffff, winB: 0xffffff }
-      : { top: 0x1a2030, left: 0x0c101c, right: 0x121828, edge: accent, winA: CYAN, winB: MAGENTA };
+      : jp
+        ? { top: 0x2a1a20, left: 0x170f14, right: 0x231620, edge: VERMILION, winA: GOLD, winB: MAGENTA }
+        : { top: 0x1a2030, left: 0x0c101c, right: 0x121828, edge: accent, winA: CYAN, winB: MAGENTA };
     const cx = 0, cyB = 0;
     // lot plinth (full progress from the start — the "foundation")
     diamondPath(g, TILE_W * 0.96, TILE_H * 0.96).fill(0x0d1120);
-    diamondPath(g, TILE_W * 0.96, TILE_H * 0.96).stroke({ width: 1.5, color: accent, alpha: 0.5 });
+    diamondPath(g, TILE_W * 0.96, TILE_H * 0.96).stroke({ width: 1.5, color: pal.edge === 0xffffff ? 0xffffff : (jp ? VERMILION : accent), alpha: 0.5 });
 
     const H = totalH * progress;
     if (H < 2) return;
@@ -407,9 +564,35 @@ async function main() {
       drawBox(g, cx, cyB, 0.8, H * 0.34, pal, rand, true);
       drawBox(g, cx, cyB - H * 0.34, 0.6, H * 0.33, pal, rand, true);
       drawBox(g, cx, cyB - H * 0.67, 0.4, H * 0.33, pal, rand, false);
-    } else {                     // twin blocks
+    } else if (type === 3) {     // twin blocks
       drawBox(g, cx - TILE_W * 0.17, cyB, 0.34, H * 0.8, pal, rand, true);
       drawBox(g, cx + TILE_W * 0.17, cyB, 0.34, H, pal, rand, true);
+    } else if (type === 4) {     // super skyscraper: five setbacks, spire, beacon
+      drawBox(g, cx, cyB, 0.62, H * 0.3, pal, rand, true);
+      drawBox(g, cx, cyB - H * 0.3, 0.52, H * 0.25, pal, rand, true);
+      drawBox(g, cx, cyB - H * 0.55, 0.43, H * 0.2, pal, rand, true);
+      drawBox(g, cx, cyB - H * 0.75, 0.34, H * 0.15, pal, rand, false);
+      drawBox(g, cx, cyB - H * 0.9, 0.24, H * 0.1, pal, rand, false);
+      if (progress > 0.97) {
+        const topY = cyB - H - (TILE_H / 2) * 0.24;
+        g.moveTo(cx, topY).lineTo(cx, topY - 26).stroke({ width: 1.5, color: pal.edge, alpha: 0.95 });
+        g.circle(cx, topY - 26, 2).fill({ color: MAGENTA, alpha: 1 });
+        g.circle(cx, topY - 26, 5).fill({ color: MAGENTA, alpha: 0.22 });
+      }
+    } else {                     // Japanese pagoda: tiers with flared, glowing roof slabs
+      const tiers = 3;
+      let base = cyB, fw = 0.72;
+      for (let i = 0; i < tiers; i++) {
+        const th = H * (0.3 - i * 0.045);
+        drawBox(g, cx, base, fw * 0.82, th, pal, rand, i < 2);
+        drawRoof(g, cx, base - th, fw, pal);
+        base -= th + 3.5;
+        fw -= 0.16;
+      }
+      if (progress > 0.97) { // finial spire
+        g.moveTo(cx, base - 2).lineTo(cx, base - 14).stroke({ width: 1.5, color: GOLD, alpha: 0.95 });
+        g.circle(cx, base - 14, 1.8).fill({ color: GOLD, alpha: 1 });
+      }
     }
   }
 

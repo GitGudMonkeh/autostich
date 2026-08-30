@@ -31,10 +31,20 @@ hier prinzipiell nicht auftreten.
 
 ## Gebäude
 
-Vier deterministische Typen (Seed aus Zellkoordinaten, gleiche Zelle → gleiches Gebäude):
-Turm mit Rücksprüngen + Antenne, flacher Riegel mit Dachaufbauten, Zikkurat, Doppel-Türme.
-Iso-Boxen mit drei sichtbaren Flächen, Neon-Silhouette (Cyan oder Magenta je Gebäude) und
-teilweise erleuchteten Fenstern auf beiden Frontflächen.
+Sechs deterministische Typen (Seed aus Zellkoordinaten, gleiche Zelle → gleiches Gebäude):
+Turm mit Rücksprüngen + Antenne, flacher Riegel mit Dachaufbauten, Zikkurat, Doppel-Türme,
+**Super-Wolkenkratzer** (fünf Rücksprünge, Spitze mit Magenta-Beacon, bis ~240 px) und
+**japanische Pagode** (drei Etagen mit überhängenden, an den Ecken glühenden Vermilion-Dächern,
+Gold-Fenstern und Gold-Finial). Iso-Boxen mit drei sichtbaren Flächen, Neon-Silhouette und
+teilweise erleuchteten Fenstern.
+
+## Straßenleben
+
+- **Fußgänger** schlendern am Straßenrand: gleiche Wegelogik wie die Autos, aber seitlich zum
+  Bordstein versetzt, deutlich langsamer, mit Geh-Wippen. Winzige Leuchtfiguren (Kopf + Körper).
+- Parks in den Zwischenräumen variieren deterministisch: Baumgruppe, Laterne + Baum,
+  Holo-Billboard mit Scanlines, Brunnen-Plaza mit Neon-Ringen, oder Torii-Schrein-Garten
+  (Vermilion-Tor + Gold-Laterne) passend zu den Pagoden.
 
 ## Starten
 
