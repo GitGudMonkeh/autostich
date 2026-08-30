@@ -90,7 +90,66 @@ async function main() {
       const h = dispH * eased;
       mask.clear();
       mask.rect(sprite.x - dispW / 2 - 4, sprite.y - h, dispW + 8, h).fill(0xffffff);
-      if (t >= 1) app.ticker.remove(tick);
+      if (t >= 1) { app.ticker.remove(tick); neonFlash(sprite); }
+    };
+    app.ticker.add(tick);
+  }
+
+  // Fertigstellungs-Blitz: additiv geblendetes Sprite-Aufblitzen + zwei auslaufende Neon-Ringe am
+  // Kachel-Fußpunkt. Reine Pixi-Grafik (Graphics + additive Blend-Mode), keine Zusatz-Bibliothek.
+  function neonFlash(sprite) {
+    const baseX = sprite.x, baseY = sprite.y; // anchor(0.5,1) → sprite.y ist bereits der Bodenpunkt
+
+    // Zwei überlagerte additive Kopien (Weiß + Neon-Cyan) fürs "massige" Aufglühen — eine einzelne
+    // weiße additive Kopie blieb zu dezent, die Doppelung liest deutlich stärker als Neon-Blitz.
+    const flashWhite = new Sprite(sprite.texture);
+    flashWhite.anchor.copyFrom(sprite.anchor);
+    flashWhite.scale.copyFrom(sprite.scale);
+    flashWhite.position.copyFrom(sprite.position);
+    flashWhite.mask = sprite.mask;
+    flashWhite.tint = 0xffffff;
+    flashWhite.blendMode = "add";
+    flashWhite.zIndex = sprite.zIndex + 0.4;
+    world.addChild(flashWhite);
+
+    const flashCyan = new Sprite(sprite.texture);
+    flashCyan.anchor.copyFrom(sprite.anchor);
+    flashCyan.scale.set(sprite.scale.x * 1.015);
+    flashCyan.position.copyFrom(sprite.position);
+    flashCyan.mask = sprite.mask;
+    flashCyan.tint = 0x9fe8ff;
+    flashCyan.blendMode = "add";
+    flashCyan.zIndex = sprite.zIndex + 0.45;
+    world.addChild(flashCyan);
+
+    const ring = new Graphics();
+    ring.blendMode = "add";
+    ring.zIndex = sprite.zIndex + 0.6;
+    world.addChild(ring);
+
+    const t0 = performance.now();
+    const FLASH_MS = 1100, RING_MS = 1400;
+    const tick = () => {
+      const now = performance.now();
+      const tFlash = Math.min(1, (now - t0) / FLASH_MS);
+      const flashEase = 1 - Math.pow(1 - tFlash, 2);
+      flashWhite.alpha = 1 * (1 - flashEase);
+      flashCyan.alpha = 0.9 * (1 - flashEase);
+
+      const tRing = Math.min(1, (now - t0) / RING_MS);
+      const iso = TILE_H / TILE_W; // Ring flach stauchen, sonst wirkt er wie eine schwebende Kugel statt einer Bodenspur
+      ring.clear();
+      const rings = [
+        { from: 0.15, to: 1.35, w0: 9, color: 0x9fe8ff, a0: 1.0 },
+        { from: 0.12, to: 0.95, w0: 7, color: 0xff6fe0, a0: 0.9 },
+        { from: 0.10, to: 1.75, w0: 5, color: 0xc9f2ff, a0: 0.7 },
+      ];
+      for (const rg of rings) {
+        const r = TILE_W * rg.from + tRing * TILE_W * (rg.to - rg.from);
+        ring.ellipse(baseX, baseY, r, r * iso).stroke({ width: rg.w0 * (1 - tRing) + 1, color: rg.color, alpha: (1 - tRing) * rg.a0 });
+      }
+
+      if (tFlash >= 1 && tRing >= 1) { app.ticker.remove(tick); flashWhite.destroy(); flashCyan.destroy(); ring.destroy(); }
     };
     app.ticker.add(tick);
   }
