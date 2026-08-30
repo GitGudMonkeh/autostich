@@ -138,6 +138,7 @@ async function main() {
       const [r, c] = kk.split(",").map(Number);
       drawRoad(g, connectionsOf(r, c));
     }
+    manageCarPopulation();
   }
 
   function makeRoad(r, c) {
@@ -146,6 +147,7 @@ async function main() {
     state.set(kk, "road");
     const old = groundG.get(kk);
     if (old) { old.destroy(); groundG.delete(kk); }
+    clearTrees(kk);
     const g = new Graphics();
     const { x, y } = cellPos(r, c);
     g.position.set(x, y);
@@ -153,6 +155,120 @@ async function main() {
     world.addChild(g);
     roadG.set(kk, g);
   }
+
+  // ---- trees ---------------------------------------------------------------
+  // Sparse neon "holo-pines" on free ground cells: stacked diamond canopies over a thin trunk,
+  // mint accent so vegetation reads distinct from the cyan/magenta architecture. Deterministic
+  // per cell; removed as soon as the cell becomes road or building.
+  const MINT = 0x51ffc4;
+  const treeG = new Map(); // key -> Graphics
+  function drawTree(g, tx, ty, s, rand) {
+    const trunkH = 6 * s, tiers = 2 + Math.floor(rand() * 2);
+    g.moveTo(tx, ty).lineTo(tx, ty - trunkH).stroke({ width: 1.5, color: 0x2a6f5a, alpha: 0.9 });
+    for (let i = 0; i < tiers; i++) {
+      const w = (16 - i * 4.5) * s, h = w / 2, cy = ty - trunkH - i * 7 * s;
+      g.poly([tx, cy - h / 2, tx + w / 2, cy, tx, cy + h / 2, tx - w / 2, cy]).fill({ color: 0x0c1a16, alpha: 0.9 });
+      g.poly([tx, cy - h / 2, tx + w / 2, cy, tx, cy + h / 2, tx - w / 2, cy])
+        .stroke({ width: 1.2, color: MINT, alpha: 0.85 - i * 0.15 });
+    }
+    g.circle(tx, ty - trunkH - tiers * 7 * s - 1, 1.2).fill({ color: MINT, alpha: 0.9 });
+  }
+  function scatterTrees() {
+    for (let r = 0; r < GRID; r++) for (let c = 0; c < GRID; c++) {
+      const rand = seededRand(r + 100, c + 100); // separate stream from the building look
+      if (rand() > 0.2) continue;
+      const g = new Graphics();
+      const { x, y } = cellPos(r, c);
+      const n = 1 + Math.floor(rand() * 3);
+      for (let i = 0; i < n; i++) {
+        // keep trees inside the inner half of the diamond so they never poke into neighbors
+        const u = (rand() - 0.5) * 0.55, v = (rand() - 0.5) * 0.55;
+        drawTree(g, (u + v) * (TILE_W / 2), (v - u) * (TILE_H / 2) + TILE_H * 0.12, 0.8 + rand() * 0.5, rand);
+      }
+      g.position.set(x, y);
+      g.zIndex = r + c + 0.2;
+      g.eventMode = "none"; // clicks fall through to the ground cell below
+      world.addChild(g);
+      treeG.set(key(r, c), g);
+    }
+  }
+  function clearTrees(kk) {
+    const t = treeG.get(kk);
+    if (t) { t.destroy(); treeG.delete(kk); }
+  }
+  scatterTrees();
+
+  // ---- cars ----------------------------------------------------------------
+  // Cars drive exactly on the drawn lanes: edge midpoint -> cell center -> next edge midpoint.
+  // At each cell center they pick a random onward connection (no U-turn unless dead end), so
+  // they follow the merged road network wherever it grows.
+  const OPP = { N: "S", S: "N", E: "W", W: "E" };
+  const CW = { N: "E", E: "S", S: "W", W: "N" };  // width axis for the iso car body
+  const unit = ([x, y]) => { const l = Math.hypot(x, y); return [x / l, y / l]; };
+  const SEG_LEN = Math.hypot(TILE_W / 4, TILE_H / 4);
+  const CAR_SPEED = 55; // px/s
+  const CAR_COLORS = [0x35d6ff, 0xff4fd8, 0xf3f6ff, 0x51ffc4];
+  const cars = [];
+
+  function drawCar(g, dirKey, color) {
+    g.clear();
+    const u = unit(EDGE_MID[dirKey]), w = unit(EDGE_MID[CW[dirKey]]);
+    const L = 15, W2 = 7, H = 5;
+    const f = [u[0] * L / 2, u[1] * L / 2], b = [-f[0], -f[1]];
+    const wv = [w[0] * W2 / 2, w[1] * W2 / 2];
+    const quad = (dy) => [b[0] - wv[0], b[1] - wv[1] + dy, b[0] + wv[0], b[1] + wv[1] + dy,
+      f[0] + wv[0], f[1] + wv[1] + dy, f[0] - wv[0], f[1] - wv[1] + dy];
+    g.poly(quad(0)).fill(0x05060c);                                     // body base
+    g.poly(quad(-H)).fill(0x141827);                                    // roof
+    g.poly(quad(-H)).stroke({ width: 1.2, color, alpha: 0.95 });        // neon trim
+    g.circle(f[0], f[1] - H / 2, 1.7).fill({ color: 0xfff2b8, alpha: 0.95 }); // headlight
+    g.circle(b[0], b[1] - H / 2, 1.3).fill({ color: 0xff4560, alpha: 0.9 });  // taillight
+  }
+
+  function spawnCar() {
+    const keys = [...roadG.keys()];
+    if (!keys.length) return;
+    const kk = keys[Math.floor(Math.random() * keys.length)];
+    const [r, c] = kk.split(",").map(Number);
+    const conn = connectionsOf(r, c);
+    if (!conn.size) return;
+    const to = [...conn][Math.floor(Math.random() * conn.size)];
+    const car = { r, c, from: OPP[to], to, t: 0.5, color: CAR_COLORS[Math.floor(Math.random() * CAR_COLORS.length)], g: new Graphics(), seg: 2 };
+    drawCar(car.g, car.to, car.color);
+    world.addChild(car.g);
+    cars.push(car);
+  }
+
+  function manageCarPopulation() {
+    const target = Math.min(8, Math.max(1, Math.floor(roadG.size / 6)));
+    while (cars.length < target) spawnCar();
+  }
+
+  app.ticker.add((ticker) => {
+    const dt = ticker.deltaMS / 1000;
+    for (const car of cars) {
+      car.t += (CAR_SPEED * dt) / (2 * SEG_LEN);
+      if (car.t >= 1) {  // reached the exit edge midpoint -> hand over to the next cell
+        const [dr, dc] = DIRS[car.to];
+        car.r += dr; car.c += dc;
+        car.from = OPP[car.to];
+        const conn = connectionsOf(car.r, car.c);
+        const options = [...conn].filter((d) => d !== car.from);
+        car.to = options.length ? options[Math.floor(Math.random() * options.length)] : car.from;
+        car.t -= 1;
+        car.seg = 0;
+        drawCar(car.g, OPP[car.from], car.color); // heading toward the center
+      }
+      // segment 1: entry midpoint -> center; segment 2: center -> exit midpoint
+      const local = car.t < 0.5
+        ? (() => { const s = car.t * 2, [mx, my] = EDGE_MID[car.from]; return [mx * (1 - s), my * (1 - s)]; })()
+        : (() => { const s = (car.t - 0.5) * 2, [mx, my] = EDGE_MID[car.to]; return [mx * s, my * s]; })();
+      if (car.t >= 0.5 && car.seg !== 2) { car.seg = 2; drawCar(car.g, car.to, car.color); } // turn at center
+      const { x, y } = cellPos(car.r, car.c);
+      car.g.position.set(x + local[0], y + local[1]);
+      car.g.zIndex = (2 * (y + local[1])) / TILE_H + 0.4; // painter order from screen depth
+    }
+  });
 
   // ---- buildings -----------------------------------------------------------
   // An iso box: footprint is the cell diamond scaled by (fw), extruded by `h` pixels.
@@ -255,6 +371,7 @@ async function main() {
     state.set(kk, "building");
     const old = groundG.get(kk);
     if (old) { old.destroy(); groundG.delete(kk); }
+    clearTrees(kk);
 
     // road ring around the lot (8 neighbors; skips cells that are outside or already built on)
     for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
