@@ -2,7 +2,8 @@
 
 > **Zweck:** Ein selbsttragendes Briefing, das in einen Claude-Chat **ohne Repo-Zugriff** kopiert
 > werden kann, um Designrichtungen für Anreiz und Progression zu planen.
-> **Quelle der Zahlen:** `README.md`, `src/game/*`, `docs/pitch.md`, `docs/genre-und-hook-recherche.md`.
+> **Quelle der Zahlen:** `README.md`, `src/game/*`, `src/ui/music.js`, `test/sim-balance-guard.test.js`,
+> `docs/sim-harness-plan.md`, `docs/pitch.md`, `docs/genre-und-hook-recherche.md`.
 > **Pflege:** Wenn sich Konstanten ändern, ist dieses Briefing veraltet — es ist eine Momentaufnahme
 > vom 2026-08-30, keine zweite Quelle der Wahrheit. Bei Widerspruch gilt der Code.
 
@@ -24,10 +25,13 @@ Der Pitch, den ich benutze:
 
 > Ein Kartenspiel darüber, wer neben wem steht: Stell 50 Durchläufe lang die richtigen Karten
 > nebeneinander, und deine Skills machen aus einer braven kleinen Reihe eine Engine, die hoch genug
-> punktet, um Tracks freizuschalten, die kaum jemand hört.
+> punktet, um **Tracks freizuschalten, die kaum jemand hört**.
 
 Die Pointe: **es gibt keine Spielerentscheidung im Kampf.** Du entscheidest nicht, welche Karte du
 spielst. Du baust *zwischen* den Durchläufen und schaust dann zu.
+
+Merk dir den letzten Halbsatz des Pitches. §5 handelt davon, und er ist der Grund, warum ich diese
+Session mache.
 
 ## 2 · Wie ein Lauf funktioniert
 
@@ -114,11 +118,117 @@ Nichts davon muss erfunden werden — das läuft bereits:
 | **Globale Bestenliste** | Supabase, Top-N lesen und veröffentlichen. Kein Account-System, nur ein Benutzername. |
 | **Lokale Bestenliste** | Top 5. |
 | **Geist des Rekordlaufs** | Speichert die Score-Trajektorie des besten Laufs (Stützstelle alle 13 Stiche) — man sieht während des Laufs, ob man vor oder hinter dem eigenen Rekord liegt. |
-| **Soundtrack-Stufen** | Die Musik eskaliert mit dem Score (Synthwave → Darksynth/Phonk). Die oberste Stufe startet erst weit oben auf der Skala. Das ist die Belohnung, die der Pitch verkauft — sie ist im Spiel aber nirgends *sichtbar* angekündigt. |
+| **Soundtrack-Eskalation** | Der interessanteste Posten. Eigener Abschnitt — siehe §5. |
 
-## 5 · Meine Diagnose (aus einer Recherche, die ich schon gemacht habe)
+## 5 · Die Musik-Eskalation — der Schwerpunkt dieser Session
 
-Ich habe den Markt und die Hook-Mechaniken des Genres untersucht. Das Ergebnis:
+Ich glaube, hier liegt der stärkste ungenutzte Hook des Spiels, und ich will, dass du ihn ernst
+nimmst statt ihn als Politur zu behandeln.
+
+### Was gebaut ist
+
+**54 Tracks**, alle produziert, normalisiert (−14 LUFS, AAC/.m4a) und ausgeliefert. Genre:
+Synthwave/Outrun, eskalierend in Darksynth und Phonk. Ein Menü-/Victory-Theme („Midnight Drive")
+plus **53 Run-Tracks** in fünf Intensitätsstufen:
+
+| Stufe | Tracks | Greift ab Score |
+| --- | --- | --- |
+| `calm` — ruhig | 13 | 0 |
+| `mid` — treibend | 10 | 3.000.000 |
+| `hot` — schnell | 9 | 30.000.000 |
+| `overdrive` — maximal | 9 | 70.000.000 |
+| `overdrive+` — darüber | 12 | 90.000.000 |
+
+**Die Eskalation folgt dem Score, nicht der Runde.** Das ist im Code ausdrücklich so entschieden und
+von den Durchläufen entkoppelt: nicht „Durchlauf 40 klingt härter", sondern „drei Millionen Punkte
+klingen härter".
+
+Die Übergänge sind bereits sorgfältig gebaut — das ist keine Rohfassung:
+
+- Ein Song, der noch keine 40 Sekunden läuft, wird **nie angeschnitten**; er läuft aus, dann reiht
+  der nächste aus der neuen Stufe.
+- Lief er länger, wird weich geblendet (1,1 s je Halbwelle, quadratische Kurve statt linear, weil
+  Lautheit nicht der Amplitude folgt).
+- Der nächste Track wird **vorgeladen**, bevor die Blende beginnt — sonst läge der Netzweg genau in
+  der Stille zwischen den Halbwellen, hörbar auf dem Handy im Mobilnetz.
+- Ein fortgesetzter Lauf startet sofort auf der score-richtigen Stufe.
+- Eine leere Stufe fällt automatisch auf die nächstniedrigere zurück.
+- Das Menü spielt nur `calm` und `mid` — „im Menü eskaliert nichts", bewusst so.
+- In den Auswahlphasen wird die Musik abgesenkt (Ducking).
+- Ein AnalyserNode hängt bereits am Audio-Element und speist eine audio-reaktive Grafik.
+
+Außerdem existiert eine **generierte Download-Liste** des kompletten Soundtracks mit Direktlinks und
+einer Sparse-Clone-Anleitung, sowie ein Werkzeug, das Laufzeiten je Track und Stufe ausgibt.
+
+### Was der Spieler davon sieht
+
+Eine Leiste am unteren Rand mit **dem Titel des laufenden Tracks** und einem Skip-Knopf.
+
+Das ist alles. Kein Stufen-Indikator. Keine Ankündigung, dass es Stufen *gibt*. Kein Hinweis, wie
+weit die nächste entfernt ist. Keine Sammlung, keine Liste, kein „gehört/nicht gehört". Nichts im
+Spiel sagt dem Spieler, dass die Musik überhaupt auf ihn reagiert.
+
+### Wie weit die Stufen wirklich weg sind
+
+Ich habe eine Simulations-Harness, die komplette Läufe fährt. Zwei gemessene Referenzpunkte:
+
+| Referenz | Median-Score | Erreichte Stufe |
+| --- | --- | --- |
+| **Zufalls-Policy** (wählt blind — der Boden, kein Spieler) | ≈ 3,5 Mio | kratzt gerade an `mid` |
+| **Solver-Policy** (kompetent, aus meinen Balance-Messläufen) | ≈ 38,2 Mio | erreicht `hot` |
+| `overdrive` (70 Mio) | — | ≈ 1,8× über dem Solver-Median |
+| `overdrive+` (90 Mio) | — | ≈ 2,4× über dem Solver-Median |
+
+Daraus folgt: **21 der 53 Run-Tracks — 40 % des Soundtracks — liegen oberhalb dessen, was ein
+kompetenter simulierter Lauf im Median erreicht.**
+
+*Belegstatus: Das sind Sim-Policies, keine Menschen. Die Zufalls-Policy ist der Boden, die
+Solver-Policy eine starke, aber nicht optimale Referenz. Wie sich echte Spieler verteilen, weiß ich
+nicht — das ist eine offene Frage, keine Behauptung.*
+
+Der Pitch verspricht „Tracks, die kaum jemand hört". Das ist buchstäblich wahr. Es ist gleichzeitig
+das Problem: **die größte fertige Belohnungsmenge im Spiel ist unsichtbar und für die meisten
+Läufe unerreichbar, und niemand erfährt je, dass sie existiert.**
+
+### Warum ich glaube, dass hier der Hook liegt
+
+1. **Es ist bezahlt und fertig.** 53 Tracks sind das größte bereits produzierte Belohnungsinventar,
+   das ich habe. Jede Idee, die sie nutzt, kostet Anzeige — nicht Produktion.
+2. **Die Kopplung an den Score existiert schon.** Meine Diagnose in §6 ist, dass dem Score ein
+   Gegenüber fehlt. Bei der Musik ist dieses Gegenüber bereits verdrahtet — es ist nur stumm.
+3. **Es ist die einzige Belohnung, die *während* des Laufs eintritt und *fühlbar* ist.** Alles andere
+   im Spiel ist eine Zahl. Ein Stufenwechsel ist ein Zustandswechsel, den man körperlich merkt.
+4. **Es hat schon eine Sammel-Dimension** (Titel, Stufen) und sogar eine Außenwirkung (die
+   Download-Liste).
+5. **Der Pitch verkauft es bereits** — das Versprechen steht, das Spiel löst es nur nicht ein.
+
+### Die Spannung, die dabei aufzulösen ist
+
+Es gibt eine Option **„Ruhiger Modus"**, die die Eskalation bei `mid` deckelt — für Spieler, denen
+die harten Stufen zu viel sind. Sobald Musik zu Progression wird, kostet eine Komfort- und
+Barrierefreiheits-Option plötzlich Fortschritt. Das muss eine Antwort bekommen.
+
+Zweitens: Musik ist die einzige Belohnung, die man **abschalten** kann. Ein stummgeschalteter Spieler
+verliert den gesamten Hook. Auch das braucht eine Antwort — vermutlich eine sichtbare Entsprechung
+zur hörbaren Eskalation.
+
+### Was ich aus fremden Spielen dazu weiß
+
+- **RuneScape** behandelt Musik als vollwertiges Sammelsystem: rund 1.400 einzeln freischaltbare
+  Tracks mit eigenem Player, und das Freischalten von 500 Stück gibt eine eigene Belohnung. Beweis,
+  dass eine Musik-Sammlung ein tragendes Meta-System sein kann — allerdings über Orte und Quests
+  freigeschaltet, nicht über Leistung.
+- **Tetris Effect** (von den Machern von Rez und Lumines): die Musik baut sich aus dem Spielerhandeln
+  auf, jede Bewegung fügt Klangbausteine hinzu, der Spieler „komponiert" mit. Der Zone-Modus ist der
+  Payoff-Moment — statt Einzelnoten kommen Akkorde, der Filter öffnet sich.
+- **Peggle 2**: das Audio-Design ist als bewusster emotionaler Bogen gebaut, der genau im richtigen
+  Moment drückt.
+
+Meine Lesart daraus: **der stärkste Musik-Hook ist nicht die Liste, sondern der Moment des
+Umschaltens.** Tetris Effect und Peggle investieren in den Übergang, RuneScape in die Sammlung.
+Ich habe den Übergang bereits technisch sehr gut gebaut — und feiere ihn null.
+
+## 6 · Meine Diagnose (aus einer Recherche, die ich schon gemacht habe)
 
 **Es fehlt kein Meta-System.** Ich habe mehr davon als die meisten Wettbewerber. Der Hook fehlt aus
 einem strukturellen Grund:
@@ -137,7 +247,7 @@ Die vier Fragen, die ich beantworten will, und was das Spiel heute liefert:
 | --- | --- | --- |
 | Warum will ich besser werden? | Etwas Vorenthaltenes, das **sichtbar** ist | Freischaltungen existieren, aber die leeren Plätze sieht niemand |
 | Was will ich erreichen? | Eine **benannte Schwelle** | nichts — Score hat keine Schwelle |
-| Wo will ich hin? | Ein **gezeichnetes** Ziel | Musikstufen vorhanden, aber unsichtbar |
+| Wo will ich hin? | Ein **gezeichnetes** Ziel | die Musikstufen sind genau das, aber unsichtbar (§5) |
 | Wen will ich besiegen? | Ein **Gesicht mit Namen** | nichts — die Gegenseite ist ein anonymer Wert ≤10 |
 
 **Die Hook-Archetypen des Genres**, nach Kosten-Wirkung sortiert, mit meiner Einschätzung:
@@ -158,53 +268,84 @@ Schwierigkeits-Leiter, weil der Spieler die Härte **selbst zusammenstellt** und
 wird**. Und Balatro zahlt auch aus **verlorenen** Läufen noch Fortschritt aus — deshalb funktioniert
 dort „noch ein Lauf".
 
-**Vier Richtungen, die ich mir selbst schon notiert habe** (als Ausgangspunkt, nicht als Beschluss):
+**Vier Richtungen, die ich mir selbst schon notiert habe** (Ausgangspunkt, nicht Beschluss):
 
 1. **„Das Soll"** — jeder Lauf bekommt vor dem Start eine Zielpunktzahl. Am Ende steht *bestanden*
    oder *nicht bestanden*. Gibt dem Lauf ein Urteil, ohne ihm einen Tod zu geben.
 2. **„Die Rivalen"** — aus dem anonymen Rekord-Geist wird eine Riege benannter Gegner mit je eigener
    Trajektorie und eigenem Soll, aufsteigend.
-3. **„Die Route"** — die Score-Skala als sichtbare Strecke mit den Soundtrack-Stufen als Stationen,
+3. **„Die Route"** — die Score-Skala als sichtbare Strecke mit den Musikstufen als Stationen,
    inklusive der noch nicht erreichten.
 4. **„Die Vitrine"** — das Skin-Raster zeigt alle Plätze, verschlossene ausgegraut mit ihrer
    Bedingung im Klartext.
 
-## 6 · Randbedingungen
+Richtung 3 ist der Berührungspunkt zu §5, und sie ist die am wenigsten durchdachte der vier.
+
+## 7 · Randbedingungen
 
 - **Solo-Entwickler** mit KI-Agenten. Kein Team, kein Budget für Vertonung oder viel neues Artwork.
+  **Neue Musik ist dagegen billig** — der Soundtrack ist KI-generiert und über ein Skript
+  normalisiert; eine weitere Stufe wäre kein Kostenproblem.
 - **Jeder Spielertext kostet ×4** — die UI läuft in Deutsch, Englisch, Spanisch und vereinfachtem
-  Chinesisch über Lokalisierungs-Kataloge.
+  Chinesisch über Lokalisierungs-Kataloge. **Track-Titel sind davon ausgenommen**, die bleiben
+  englische Eigennamen.
 - **Kein Account-System**, kein echtes PvP-Matchmaking. Was es gibt: `localStorage` und eine
   Supabase-Tabelle mit Benutzernamen.
-- **Läuft im Browser**, auch mobil. Sitzungen können unterbrochen werden.
+- **Läuft im Browser**, auch mobil. Sitzungen können unterbrochen werden. Audio startet erst nach
+  der ersten Nutzergeste (Autoplay-Sperre der Browser), und manche Spieler spielen stumm.
 - **Der Pitch verspricht ausdrücklich: „ein Kartenspiel, das man nicht verlieren kann."** Alles, was
   Scheitern einführt, steht dazu in Spannung und muss das bewusst auflösen.
 - **Score ist aktuell die einzige Ziel-Metrik.**
 - **Ein Lauf dauert 20–70 Minuten** (siehe §3). Das ist die härteste Randbedingung.
 
-## 7 · Dein Auftrag
+## 8 · Dein Auftrag
+
+### Erst recherchieren
+
+**Verlass dich nicht auf meine Zusammenfassung.** Meine Recherche ist vom 30.08.2026, sie kann
+unvollständig oder überholt sein, und ich habe sie selbst aufgestellt — ich brauche keine
+Bestätigung, ich brauche eine Prüfung. Recherchiere selbst, mindestens zu:
+
+- **Musik als Progression und Belohnung** in Spielen: Wer koppelt Musik an Leistung statt an Ort
+  oder Story? Was ist dabei gescheitert und warum? Gibt es Spiele, in denen eine Musikstufe ein
+  *erklärtes Ziel* ist und nicht nur ein Effekt?
+- **Score-getriebene adaptive Musik** — wie wird der Übergang gefeiert, wenn er gefeiert wird?
+- **Was seit Mitte 2026 im Roguelike-Deckbuilder-Genre dazugekommen ist**, das meine Tabelle in §6
+  nicht kennt.
+
+Sag mir, was du gefunden hast, und **wo es meiner Darstellung widerspricht**.
+
+### Dann entwerfen
 
 Entwickle **3 bis 5 klar unterscheidbare Designrichtungen** für Anreiz und Progression. Nicht eine
 Empfehlung mit Varianten — echte Alternativen, die verschiedene Wetten eingehen.
 
+**Mindestens zwei davon müssen die Musik-Eskalation aus §5 zum tragenden Element machen**, nicht zur
+Dekoration am Rand. Die übrigen dürfen sie ignorieren — ich will auch sehen, wie eine Lösung
+aussieht, die ohne sie auskommt.
+
 Je Richtung:
 
 - **Ein Satz**, der sie beschreibt, und ein Name, den ich benutzen kann.
-- **Welchen Hook-Archetyp** aus der Tabelle sie bedient — und welche der vier Fragen aus §5 sie
+- **Welchen Hook-Archetyp** aus der Tabelle in §6 sie bedient — und welche der vier Fragen sie
   beantwortet und welche nicht. Eine Richtung, die alle vier beantwortet, ist verdächtig.
 - **Was der Spieler konkret tut**, das er heute nicht tut.
-- **Was sie an System braucht** — und was sie aus dem wiederverwenden kann, was ich laut §4 schon habe.
+- **Was sie an System braucht** — und was sie aus §4 und §5 wiederverwenden kann.
 - **Aufwand** grob (klein / mittel / groß) und **wo das Risiko liegt.**
-- **Wie sie mit der 20–70-Minuten-Laufzeit umgeht.** Richtungen, die viele kurze Läufe voraussetzen,
-  funktionieren bei mir nicht ohne Weiteres.
+- **Wie sie mit der 20–70-Minuten-Laufzeit umgeht.**
 - **Wie sie zum „man kann nicht verlieren"-Versprechen steht.**
+- Bei den Musik-Richtungen zusätzlich: **wie sie mit stummen Spielern und mit dem „Ruhigen Modus"
+  umgeht**, und ob sie auf den *Moment des Umschaltens* oder auf die *Sammlung* setzt.
 
-Dann:
+### Dann entscheiden
 
 - **Sag mir, welche du empfiehlst und warum**, mit einer klaren Begründung statt einer Abwägung.
-- **Widersprich meiner Diagnose in §5, wenn du sie für falsch hältst.** Ich habe sie selbst
-  aufgestellt und will sie geprüft haben, nicht bestätigt. Besonders die These „ein Lauf ohne Urteil
-  hat keinen Hook" — wenn es Gegenbeispiele gibt (Spiele, die ohne Scheiterzustand binden), nenne sie.
+- **Widersprich meiner Diagnose in §6, wenn du sie für falsch hältst.** Besonders die These „ein
+  Lauf ohne Urteil hat keinen Hook" — wenn es Gegenbeispiele gibt, also Spiele, die ohne
+  Scheiterzustand binden, nenne sie.
+- **Sag mir auch, wenn du meine Musik-These für überschätzt hältst.** Ich bin darin verliebt, und
+  das ist genau der Zustand, in dem man Unsinn baut. Wenn 40 % unerreichbarer Soundtrack schlicht
+  bedeutet, dass die Schwellen falsch stehen und nicht, dass dort ein Hook liegt, sag das.
 - Wenn dir eine Angabe fehlt, die deine Antwort verändern würde, **frag zuerst**, statt zu raten.
 
 Was ich **nicht** will: eine dritte Währung, eine Verlängerung des bestehenden Upgrade-Baums, eine

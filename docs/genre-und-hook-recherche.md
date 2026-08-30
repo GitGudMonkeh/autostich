@@ -384,12 +384,62 @@ Das ist eine Produktentscheidung und gehört dem Owner.
 
 ---
 
+# Nachtrag — die Musik-Eskalation, nachgemessen
+
+P3 („Die Route") war im Bericht die dünnste der vier Empfehlungen. Eine Nachmessung an `music.js`
+und der Sim-Harness zeigt, dass sie die tragfähigste ist.
+
+**Gebaut (gemessen an `src/ui/music.js`):** 53 Run-Tracks + 1 Menü-Theme in fünf Stufen —
+`calm` 13 · `mid` 10 · `hot` 9 · `overdrive` 9 · `overdrive+` 12. Die Stufe hängt am **Score**, nicht
+an der Runde (im Code ausdrücklich „von Runden ENTKOPPELT"). Schwellen: `mid` 3 Mio · `hot` 30 Mio ·
+`overdrive` 70 Mio · `overdrive+` 90 Mio. Die Übergänge sind sorgfältig gebaut (kein Anschneiden
+unter 40 s, quadratische Blende über 1,1 s, Vorladen gegen die Mobilfunk-Lücke, score-richtiger
+Wiedereinstieg).
+
+**Angezeigt (`MusicBar.jsx`):** der Titel des laufenden Tracks und ein Skip-Knopf. Kein
+Stufen-Indikator, keine Ankündigung, keine Sammlung. Die Eskalation ist im Spiel nirgends als System
+erkennbar.
+
+**Reichweite (gemessen an `test/sim-balance-guard.test.js` und `docs/sim-harness-plan.md`):**
+
+| Referenz | Median-Score | Stufe |
+| --- | --- | --- |
+| Zufalls-Policy (Boden, kein Können) | ≈ 3,5 Mio | kratzt an `mid` |
+| Solver-Policy (kompetente Messläufe) | ≈ 38,2 Mio | erreicht `hot` |
+| `overdrive` (70 Mio) | — | ≈ 1,8× über dem Solver-Median |
+| `overdrive+` (90 Mio) | — | ≈ 2,4× über dem Solver-Median |
+
+→ **21 der 53 Run-Tracks (40 %) liegen über dem Median eines kompetenten simulierten Laufs.**
+
+*Belegstatus: Sim-Policies, keine Menschen. Zufall = Boden, Solver = starke, nicht optimale Referenz.
+Die menschliche Score-Verteilung ist unbekannt und wäre der nächste Messpunkt.*
+
+**Schlussfolgerung.** Der Pitch verspricht „Tracks, die kaum jemand hört", und das stimmt
+wörtlich — 40 % des Soundtracks liegen oberhalb kompetenten Spiels. Damit ist die Musik zugleich das
+**größte fertig produzierte Belohnungsinventar des Spiels** und die **am vollständigsten verborgene
+Belohnung**: die Kopplung an den Score, die dem Score sonst überall fehlt, ist hier bereits
+verdrahtet — sie ist nur stumm. Anders als bei P1/P2/P4 kostet das Erschließen keine Produktion,
+sondern nur Anzeige.
+
+Zwei Fragen, die diese Richtung mitbringt: der **„Ruhige Modus"** deckelt die Eskalation bei `mid` —
+sobald Musik Progression ist, kostet eine Komfort-Option Fortschritt. Und Musik ist die einzige
+Belohnung, die man **abschalten** kann; stumme Spieler bräuchten eine sichtbare Entsprechung.
+
+---
+
 ## Offene Punkte
 
 - **Overtrick ist nicht am Produkt verifiziert.** Steam war aus dieser Session nicht erreichbar.
   Vor einer Positionierungsentscheidung sollte jemand das Spiel tatsächlich ansehen.
 - **Die A20-Abschlussquote ist abgeleitet, nicht gemessen.** Die Aussage „Schwierigkeits-Leitern
   sättigen stark" stützt sich auf Community-Diskussion, nicht auf die Steam-Statistik.
+- **Die menschliche Score-Verteilung ist unbekannt.** Der Nachtrag stützt sich auf Sim-Policies.
+  Wie viele echte Läufe je 3/30/70/90 Mio überschreiten, ließe sich aus der globalen Bestenliste
+  oder der Telemetrie ablesen — das ist die Messung, die vor einer Entscheidung über die
+  Musik-Richtung anstünde.
+- **Kommentar-Drift in `src/ui/music.js`**: die Stufen-Überschrift im Track-Pool schreibt
+  „overdrive+ (Score 60 Mio+)", während `TIER_MIN.overdrive_plus` auf 90 Mio steht. Der Code
+  gewinnt; der Kommentar ist eine ältere Fassung der Schwelle.
 - **Der Kopfkommentar in `src/game/weekMods.js` ist veraltet**: er kündigt die Wirkung der
   Modifikatoren für „Phase 3" an, obwohl `reducer.js` und `engine.js` sie bereits auswerten.
   Kleinigkeit, aber sie führt beim Lesen in die Irre.
