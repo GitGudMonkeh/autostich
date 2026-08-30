@@ -45,6 +45,22 @@ der passenden Kachel (gerade/Ecke/T/Kreuzung) belegt.
   für den Prototyp-Zweck.
 - **Chroma-Key-Freistellung funktioniert** für Gebäude (Grün raus) und Straßen (dunkler Hintergrund
   raus) ohne sichtbare Löcher; ein dünner Farbsaum an Kanten ist normale Anti-Aliasing-Restfarbe.
+- **Kachel-Nähte: gefunden, behoben, eine Grenze bleibt** (zweite Iterationsrunde, gegen die
+  ersten Screenshots geprüft). Ursache der sichtbaren Lücken/Versätze war NICHT das Grid, sondern
+  dass jede Straßen-Kachel von der ursprünglichen Zuschneide-Logik eine eigene, leicht andere
+  Pixel-Größe bekam (Tight-Bbox je Motiv) — dieselbe `TILE_W`-Skalierung ergab dadurch pro Kachel
+  eine andere Höhe. Behoben durch **eine einzige kanonische Leinwandgröße (242×150) für alle
+  Kacheln**, zentriert auf den vermessenen Mittelpunkt im Original-Sheet zugeschnitten, plus ~9 %
+  **Bleed** (Kacheln geringfügig größer als der Grid-Schritt gerendert, überlappen sich leicht statt
+  mit Ein-Pixel-Spalt aneinanderzustoßen). Zusätzlich: `road_cross`/`road_tjunction`/`road_corner`
+  im Sheet malen nur die Fahrbahn selbst, lassen die Diamant-Ecken dazwischen transparent (eigene
+  Bildkomposition, kein Zuschnittfehler) — dort schien vorher der schwarze Canvas-Hintergrund durch.
+  Eine schlichte Pflaster-Unterlage (`road_straight` als Füllkachel hinter jeder aktiven Straßenzelle)
+  behebt das. **Nicht behebbar durch Zuschneiden:** Die Ecken-Kachel (`road_corner`) hat im Sheet
+  eine runde/blockige Silhouette, während gerade/Kreuz/Grundstück-Kacheln scharfe Diamantspitzen
+  haben — ich habe die Alternativ-Kandidaten im Sheet (die zwei „Kurven"-Kacheln aus Zeile 1, die
+  gespiegelte Ecke aus Zeile 3) geprüft, keine ist eine scharfe 90°-Diamant-Ecke. Echte Konsistenz
+  braucht hier neue Artwork, nicht mehr Zuschneide-Iteration.
 
 ## Dateien
 

@@ -5,7 +5,16 @@
 import { Application, Assets, Sprite, Graphics, Container } from "./vendor/pixi.min.mjs";
 
 const GRID = 5;                 // 5x5 Zellen: Grundstücke auf geraden (r,c), Straßen dazwischen
-const TILE_W = 240, TILE_H = 140; // grob aus dem Straßen-Sheet vermessen (siehe Konversation)
+// Alle Kachel-PNGs sind jetzt auf EXAKT dieselbe Leinwand (242×150, aus dem Sheet vermessen und
+// zentriert zugeschnitten) gebracht — nur so landen Kanten benachbarter Kacheln auf derselben
+// Linie. Vorher hatte jede Kachel eine eigene, leicht andere Größe (Tight-Bbox je Motiv), wodurch
+// „TILE_W / tex.width“ pro Kachel eine ANDERE Bildhöhe ergab → sichtbare Versätze/Lücken.
+const TILE_W = 242, TILE_H = 150;
+// Kacheln werden geringfügig größer als der Grid-Schritt gerendert (Bleed), damit ihre gerenderten
+// Ränder einander leicht überlappen statt mit einer Ein-Pixel-Lücke aneinanderzustoßen — die
+// Sheet-Kacheln tragen je eine eigene Leuchtrand-Deko, kein nahtloses Straßenmuster; das Bleed
+// kaschiert die doppelte Randlinie an der Naht, ersetzt sie aber nicht durch echte Nahtlosigkeit.
+const TILE_BLEED = 1.09;
 const BUILD_MS = 750;
 
 const isPlot = (r, c) => r % 2 === 0 && c % 2 === 0;
@@ -44,6 +53,7 @@ async function main() {
   const built = new Map();       // key -> buildingIndex (0|1)
   const plotSprites = new Map(); // key -> leere-Grundstück-Sprite (entfernt sobald gebaut)
   const roadSprites = new Map(); // key -> aktives Straßen-Sprite
+  const roadFillSprites = new Map(); // key -> Pflaster-Unterlage (füllt die Kreuz-/Ecken-Kerben)
   let buildCount = 0;
 
   // ---- Leeres Grid: nur die Grundstücks-Platzhalter, keine Straße sichtbar --
@@ -53,9 +63,9 @@ async function main() {
       const { x, y } = cellToScreen(r, c);
       const tex = textures[ASSETS.plot];
       const s = new Sprite(tex);
-      s.anchor.set(0.5, 0);
-      s.scale.set(TILE_W / tex.width);
-      s.position.set(x, y);
+      s.anchor.set(0.5, 0.5); // Bleed muss symmetrisch um die Kachel-Mitte wachsen, nicht nur nach unten
+      s.scale.set((TILE_W * TILE_BLEED) / tex.width);
+      s.position.set(x, y + TILE_H / 2);
       s.zIndex = r + c;
       s.eventMode = "static";
       s.cursor = "pointer";
@@ -182,11 +192,30 @@ async function main() {
       if (!active.has(k)) {
         const existing = roadSprites.get(k);
         if (existing) { existing.destroy(); roadSprites.delete(k); }
+        const fill = roadFillSprites.get(k);
+        if (fill) { fill.destroy(); roadFillSprites.delete(k); }
         continue;
       }
       const conn = connectionsFor(r, c, active);
       const { tex: texKey, rotation } = tileFor(conn);
       const tex = textures[texKey];
+      const { x, y } = cellToScreen(r, c);
+
+      // Pflaster-Unterlage: road_cross/road_corner lassen an ihren Diamant-Ecken transparente Kerben
+      // frei (eigene Bildkomposition, kein Zuschnittfehler — siehe Konversation). Eine schlichte
+      // volle Kachel dahinter verhindert, dass dort der schwarze Canvas-Hintergrund durchscheint.
+      let fill = roadFillSprites.get(k);
+      if (!fill) {
+        fill = new Sprite(textures[ASSETS.roadStraight]);
+        fill.anchor.set(0.5, 0.5);
+        fill.zIndex = r + c - 0.1;
+        world.addChild(fill);
+        roadFillSprites.set(k, fill);
+      }
+      const fillScale = (TILE_W * TILE_BLEED) / textures[ASSETS.roadStraight].width;
+      fill.scale.set(fillScale);
+      fill.position.set(x, y + (textures[ASSETS.roadStraight].height * fillScale) / 2);
+
       let s = roadSprites.get(k);
       if (!s) {
         s = new Sprite(tex);
@@ -196,10 +225,9 @@ async function main() {
         roadSprites.set(k, s);
       }
       s.texture = tex;
-      const scale = TILE_W / tex.width;
+      const scale = (TILE_W * TILE_BLEED) / tex.width;
       s.scale.set(scale);
       s.rotation = rotation;
-      const { x, y } = cellToScreen(r, c);
       s.position.set(x, y + (tex.height * scale) / 2); // anchor moved to center → recenter on the tile's midpoint
     }
   }
