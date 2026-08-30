@@ -11,7 +11,7 @@ import { rarityLabel, deckDef, battlefieldDef, globalFxDef } from "../i18n/label
 import { VERSION_FULL } from "./version.js"; // #250: Versions-/Build-Stempel, seit 16.08.2026 direkt unter der Marke
 import { PwaInstall } from "./PwaInstall.jsx"; // PWA · „Zum Startbildschirm" (Installieren-Link)
 import BrandGrid from "./BrandGrid.jsx"; // #mainscreen-branding: das Zeichen — die Spalte im I und die Bildmarke
-import { DISCORD_URL, DISCORD_BLURPLE } from "./links.js"; // #datenschutz: Invite jetzt geteilt (s. u.)
+import { DISCORD_URL, DISCORD_BLURPLE, SPOTIFY_URL, SPOTIFY_GREEN } from "./links.js"; // #datenschutz: Invite jetzt geteilt (s. u.)
 import { fmtNum } from "../i18n/index.js";
 import { useT } from "../i18n/useLocale.js"; // #sprache: alle Texte über t()
 
@@ -922,6 +922,15 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
             style={{ color: DISCORD_BLURPLE, borderLeftColor: "rgba(150,150,170,.18)" }}>
             <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
               <path fill="currentColor" d="M20.317 4.369a19.79 19.79 0 0 0-4.885-1.515a.074.074 0 0 0-.079.037c-.21.375-.444.865-.608 1.25a18.27 18.27 0 0 0-5.487 0a12.64 12.64 0 0 0-.617-1.25a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057a19.9 19.9 0 0 0 5.993 3.03a.078.078 0 0 0 .084-.028a14.09 14.09 0 0 0 1.226-1.994a.076.076 0 0 0-.041-.106a13.107 13.107 0 0 1-1.872-.892a.077.077 0 0 1-.008-.128a10.2 10.2 0 0 0 .372-.292a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127a12.299 12.299 0 0 1-1.873.892a.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028a19.839 19.839 0 0 0 6.002-3.03a.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.331c-1.183 0-2.157-1.086-2.157-2.42c0-1.333.956-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.956 2.419-2.157 2.419zm7.975 0c-1.183 0-2.157-1.086-2.157-2.42c0-1.333.955-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.946 2.419-2.157 2.419z"/>
+            </svg>
+          </a>
+          {/* Album des Projekts auf Spotify — gleiches Muster wie der Discord-Knopf: rund, Markenfarbe, Logo statt Text. */}
+          <a href={SPOTIFY_URL} target="_blank" rel="noopener noreferrer"
+            aria-label={t("start.spotify")} title={t("start.spotify")}
+            className="as-edge-neutral p-2 rounded-full transition-all hover:-translate-y-0.5 inline-flex items-center justify-center"
+            style={{ color: SPOTIFY_GREEN, borderLeftColor: "var(--ed-quiet)" }}>
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+              <path fill="currentColor" d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.6 0 12 0zm5.5 17.31c-.22.36-.68.47-1.04.26-2.85-1.75-6.44-2.14-10.67-1.17-.41.09-.82-.16-.91-.57-.1-.41.16-.82.57-.92 4.62-1.05 8.59-.6 11.77 1.35.37.22.48.68.27 1.05zm1.47-3.27c-.28.45-.87.59-1.32.32-3.26-2.01-8.23-2.59-12.08-1.42-.51.16-1.05-.13-1.2-.64-.15-.51.13-1.05.64-1.2 4.41-1.34 9.88-.69 13.63 1.62.45.28.6.86.32 1.31zm.13-3.4C15.24 8.31 8.82 8.09 5.09 9.22c-.6.18-1.23-.16-1.41-.76-.18-.6.16-1.23.76-1.41 4.29-1.3 11.4-1.05 15.9 1.63.54.32.72 1.02.4 1.56-.32.53-1.03.71-1.56.4z"/>
             </svg>
           </a>
           {/* #desktop: Der Glossar-Knopf, hinter dem Discord-Zeichen. Bis 1279 px sitzt er oben rechts in der

@@ -2549,6 +2549,7 @@ In every order phase you can swap cards as long as your energy lasts. The oppone
 "start.seed.error","i18n","Kein gültiger Seed. Prüf den Code und versuch es erneut.","Not a valid seed. Check the code and try again.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "start.seed.placeholder","i18n","Seed einfügen","Paste seed","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "start.seed.play","i18n","↻ Spielen","↻ Play","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
+"start.spotify","i18n","Album auf Spotify","Album on Spotify","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "start.tagline","i18n","Legen. Stechen. Eskalieren.","Order. Trick. Escalate.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "start.tile.leaderboard","i18n","Bestenliste","Leaderboard","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "start.tile.leaderboard.sub","i18n","Globale Highscores","Global high scores","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""

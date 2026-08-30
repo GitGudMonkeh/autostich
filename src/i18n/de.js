@@ -1683,6 +1683,7 @@ export default {
   /* ---- Feedback-Melder (#396) ---- */
   "start.feedback": "Feedback",
   "start.discord": "Discord öffnen",
+  "start.spotify": "Album auf Spotify",
   "feedback.eyebrow": "Playtest",
   "feedback.title": "Feedback senden",
   /* #desktop: Auskunftszeile im Kopf (ab 1280 px) — sagt, wohin die Meldung geht und was mitgeht. */

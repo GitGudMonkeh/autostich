@@ -2708,6 +2708,7 @@ export default {
   "unlock.onboardingDone": "完成新手引导",
   "start.feedback": "反馈",
   "start.discord": "打开Discord",
+  "start.spotify": "Spotify专辑",
   "feedback.eyebrow": "试玩测试",
   "feedback.title": "发送反馈",
   "feedback.desk.readout": "直接发给开发者。上一局的种子和轮次会自动附上。",

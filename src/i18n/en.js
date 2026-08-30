@@ -1627,6 +1627,7 @@ export default {
   /* ---- Feedback reporter (#396) ---- */
   "start.feedback": "Feedback",
   "start.discord": "Open Discord",
+  "start.spotify": "Album on Spotify",
   "feedback.eyebrow": "Playtest",
   "feedback.title": "Send feedback",
   "feedback.desk.readout": "Goes straight to the developers. Seed and cycle of your last run are attached automatically.",

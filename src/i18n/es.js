@@ -1688,6 +1688,7 @@ export default {
   "start.tutorial": "Tutorial",
   "start.feedback": "Comentarios",
   "start.discord": "Abrir Discord",
+  "start.spotify": "Álbum en Spotify",
   "start.logo.alt": "AUTOBAZA",
   "start.tagline": "Ordena. Vence. Escala.",
   "start.progress.onboarding": "Introducción",
