@@ -1,0 +1,3 @@
+# Vendored Pixi build — copied locally so the prototype runs offline, not duplicated into git history.
+# Regenerate after `npm ci`: cp ../../node_modules/pixi.js/dist/pixi.min.mjs vendor/pixi.min.mjs
+vendor/
