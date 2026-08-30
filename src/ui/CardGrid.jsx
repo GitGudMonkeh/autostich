@@ -200,7 +200,9 @@ const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], sele
       {/* Formations-Gewinn-Blitz: EIN Overlay je Karte in ihrer Formationsfarbe (kein Sammelrahmen um
           die Gruppe). `key` am Flash-Zähler → derselbe Keyframe startet auch beim zweiten Mal neu. */}
       {formFlash && <span key={formFlash} className="form-gain-flash" style={{ "--form-flash": fb.color || "#5ab87a" }} />}
-      {labels && <span className="cg-lab absolute bottom-0.5 right-1 text-[8px] sm:text-[11px] font-bold opacity-80" style={{ color: fb.color || "#5ab87a" }}>{labels}</span>}
+      {/* Kürzel in Weiß statt Formationsfarbe: die Farbe trägt schon der Rahmen, und auf den Deck-Skin-Fronten
+          war der farbige Text nicht mehr verlässlich lesbar. Dunkler Schein hält ihn auf jedem Artwork sichtbar. */}
+      {labels && <span className="cg-lab absolute bottom-0.5 right-1 text-[8px] sm:text-[11px] font-bold" style={{ color: "#fff", textShadow: "0 1px 3px rgba(0,0,0,.9), 0 0 2px rgba(0,0,0,.7)" }}>{labels}</span>}
       {/* Eis-Neudesign: Gletscher-Marker (starr festgefroren) + aktuelle Masse. */}
       {glacier && (
         <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 inline-flex items-center gap-0.5 text-[8px] sm:text-[10px] font-bold leading-none tabular-nums" style={{ color: "#8be6ff", textShadow: "0 0 4px #5ec8f0" }} title={firnMass >= 0.5 ? t("cardgrid.glacierMass.reserve", { mass: Math.round(glacierMass), firn: Math.round(firnMass), cap: FIRN_REFILL_TARGET }) : t("cardgrid.glacierMass.title", { mass: Math.round(glacierMass) })}>
