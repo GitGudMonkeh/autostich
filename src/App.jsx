@@ -39,6 +39,7 @@ import { skillArtUrls } from "./ui/skillArt.js"; // #mobil-emblem: Emblem-URLs j
 import { AbortConfirm, RestartConfirm } from "./ui/RunConfirm.jsx"; // #run-dialoge: Beenden/Neustarten (Desktop-Fassung)
 import { LegendarySelect } from "./ui/LegendarySelect.jsx"; // #272 Legendär-Phase (Runde 29)
 import { FormationPhase } from "./ui/FormationPhase.jsx";
+import { DeckFrontContext } from "./ui/CardGrid.jsx";
 import { TargetSelect } from "./ui/TargetSelect.jsx";
 import { GlacierPick } from "./ui/GlacierPick.jsx";
 import { FamilyTargetSelect } from "./ui/FamilyTargetSelect.jsx";
@@ -1153,11 +1154,14 @@ function AutostichGame() {
   const bfPe = useMemo(() => ({ linkedGroups }), [linkedGroups]);
 
   return (
-    // #356: Deck-Akzentfarben als CSS-Variablen am Run-Container — die neutralen Struktur-Panel-Rahmen tönen sich darüber
-    //   in die Deckfarbe (color-mix, s. panelKit/StatusRail/…). Wechselt das Deck, ziehen die Rahmen mit.
-    //   #desktop: seit dem Desktop-Pass AUCH im Menü gesetzt (vorher nur `inRun`) — der Startbildschirm färbt
-    //   ab 1280 px Knöpfe, Panel-Rahmen und Streifen aus dem aktiven Deck und braucht die Variablen dort.
-    //   Ohne aktives Deck bleiben sie undefined → überall greifen dieselben Violett-Rückfälle wie bisher.
+    // Deck-Skin fürs Kartengitter: die Front des aktiven Decks als Context (s. CardGrid) — jede Karten-Ansicht
+    // (Aufstellung, Chronik, Zielwahl, GameOver, …) zieht sie sich selbst, ohne Prop-Fädelung je Aufrufstelle.
+    <DeckFrontContext.Provider value={deckSkin.front}>
+    {/* #356: Deck-Akzentfarben als CSS-Variablen am Run-Container — die neutralen Struktur-Panel-Rahmen tönen sich darüber
+        in die Deckfarbe (color-mix, s. panelKit/StatusRail/…). Wechselt das Deck, ziehen die Rahmen mit.
+        #desktop: seit dem Desktop-Pass AUCH im Menü gesetzt (vorher nur `inRun`) — der Startbildschirm färbt
+        ab 1280 px Knöpfe, Panel-Rahmen und Streifen aus dem aktiven Deck und braucht die Variablen dort.
+        Ohne aktives Deck bleiben sie undefined → überall greifen dieselben Violett-Rückfälle wie bisher. */}
     <div className="app-root relative w-full flex justify-center"
       style={{ "--deck-a1": deckFx.deckA1 || undefined, "--deck-a2": deckFx.deckA2 || undefined }}>
       {/* CRT-Scanline-/Vignette-Overlay (#41) — immer im DOM, nur unter [data-skin="crt"]
@@ -1459,5 +1463,6 @@ function AutostichGame() {
           onRestart={() => { setConfirmRestart(false); restartRun(); }} />
       )}
     </div>
+    </DeckFrontContext.Provider>
   );
 }
