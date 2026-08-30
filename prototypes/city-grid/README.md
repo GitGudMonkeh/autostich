@@ -1,11 +1,10 @@
 # City-Grid Asset-Technik-Prototyp
 
 Reiner Technik-Test, bewusst **außerhalb** von `src/`: kein App-Screen, keine Wirkung auf den
-Produktions-Bundle, kein neuer Dependency (Pixi.js läuft aus einer lokalen Kopie der bereits im
-Projekt installierten Version, `node_modules/pixi.js/dist/pixi.min.mjs`). Prüft nur, ob die beiden
-Gebäude-Renders und das Straßen-Sheet aus dem Chat sich zu einem funktionierenden isometrischen
-Grid mit Kauf-Bauanimation und Auto-Tiling-Straßen zusammensetzen lassen. Stil ist bewusst
-zweitrangig — es geht um die Mechanik.
+Produktions-Bundle, keine neue Dependency (Pixi.js läuft aus einer lokalen Kopie der bereits im
+Projekt installierten Version). Prüft, ob die KI-generierten Assets (Gebäude-Renders +
+Straßen-Sheet) sich zu einem funktionierenden Stadt-Grid mit Kauf-Bauanimation, Neon-Blitz und
+aufleuchtenden Straßen zusammensetzen lassen.
 
 ## Starten
 
@@ -21,65 +20,76 @@ Statischer Server nötig (ES-Module laden nicht von `file://`):
 ```bash
 cd prototypes/city-grid
 python3 -m http.server 8080
-# oder: npx serve .
 ```
 
-Dann `http://localhost:8080/` öffnen. Klick auf eine leere Grundstücks-Kachel (gelber Rahmen) baut
-eines von sechs Gebäuden (reihum) von unten nach oben auf und lässt es neon aufblitzen; angrenzende
-Straßenzellen werden automatisch mit der passenden Kachel (gerade/Ecke/T/Kreuzung, korrekt gedreht)
-belegt.
+Dann `http://localhost:8080/` öffnen. Klick auf eine helle Boden-Kachel baut eines von vier
+Gebäuden von unten nach oben auf (mit Neon-Abschlussblitz); das Straßensegment vor dem Grundstück
+leuchtet auf. Gedimmte Kacheln sind Deko-/Straßenland.
 
-## Ergebnis (verifiziert per Headless-Browser-Lauf gegen die echten Assets, dritte Iterationsrunde)
+## Anschlussmodell der Straßen-Kacheln (Kernbefund, dritte Iterationsrunde)
 
-- **Grid, Klick-Kauf, Bauanimation, Neon-Blitz, Straßen-Auto-Tiling funktionieren technisch,
-  jetzt mit sechs Gebäuden** (die ursprüngliche Pagode/Turm plus vier neu generierte: schlanker
-  Turm, breites niedriges Gebäude, Stufenpyramide, rundes Eckgebäude) und einem **zweiten,
-  saubereren Straßen-Sheet**.
-- **Rotation ist gelöst, nicht mehr nur umgangen.** Die Straßen-Kacheln sind 2:1-Iso-Diamanten
-  (keine Quadrate) — eine gleichmäßige 90°/270°-Sprite-Rotation sprengt die Kachel-Fläche (siehe
-  vorherige Runde: schiefe, spitze Kacheln). Fix: bei 90°/270° werden die Skalierungsachsen
-  **vertauscht** (`applyRoadTransform` in `main.js`) angewendet, sodass die gedrehte Bounding-Box
-  wieder exakt auf `TILE_W×TILE_H` trifft. Das zerrt die Kachel-Grafik geringfügig (Kauf des
-  Nutzers, bewusst in Kauf genommen), liefert aber echte 4-Wege-Rotation ohne zusätzliche Artwork —
-  Ecken/T-Stücke zeigen jetzt in alle vier Richtungen, gerade Straßen laufen in beide Achsen.
-- **Das zweite Straßen-Sheet braucht keine Pflaster-Unterlage mehr.** Anders als das erste Sheet
-  (transparente Kerben an Kreuzung/Ecke, siehe Historie unten) haben alle vier Kacheln im zweiten
-  Sheet volle Diamant-Pflasterfläche — der Behelf von letzter Runde (`road_straight` als Füllkachel
-  hinter jeder aktiven Zelle) wurde ersatzlos entfernt.
-- **Ecken-Kachel jetzt scharf statt rund/blockig.** Das zweite Sheet liefert eine echte
-  90°-Diamant-Ecke mit sauberem Kurvenradius — die stilistische Einschränkung aus der letzten
-  Runde (keine scharfe Ecke im ersten Sheet verfügbar) ist damit erledigt.
-- **Anker/Zuschnitt der Gebäude passt bei allen sechs.** Jedes Gebäude ist so gezeichnet, dass sein
-  visueller Fußpunkt (die untere Spitze bzw. Kante) sauber auf `anchor(0.5,1)` sitzt.
-- **Chroma-Key-Freistellung funktioniert** für alle Gebäude (Grün raus) und Straßen (Grün raus,
-  Sheet 2 nutzt anders als Sheet 1 ebenfalls Grün statt dunklem Hintergrund) ohne sichtbare Löcher.
-- **Ladezeit als neuer, ehrlicher Punkt:** sechs Gebäude-PNGs plus vier Straßen-Kacheln sind
-  zusammen ~8,7 MB (ungefähre `assets/`-Größe) — beim allerersten Laden spürbar mehr als die
-  ursprünglichen zwei Gebäude. Kein Bug, aber vor einem echten Feature-Einbau ein Punkt für die
-  Asset-Pipeline (Kompression/WebP, Atlas) statt für den Techniktest selbst.
+Die entscheidende Korrektur nach dem Schief-/Falschsegment-Feedback: **diese Straßen-Plates
+verbinden sich über die Diamant-ECKEN (bildschirm-horizontal), nicht über die Kantenmitten.**
+Per Composite-Test (Kacheln in beiden Modellen nebeneinandergelegt, Screenshots verglichen)
+nachgewiesen: Kante-an-Kante — das Modell der ersten beiden Runden — erzeugt parallel versetzte,
+nie verbundene Fahrbahnbänder; genau das war das „Schiefe" im Mobil-Screenshot. Ecke-an-Ecke in
+Bildschirm-Reihen fluchtet die Fahrbahn sauber durch.
 
-### Historie (erste Iterationsrunde, erstes Straßen-Sheet — inzwischen ersetzt)
+Konsequenz für den Stadtplan: Funktionszellen liegen Ecke-an-Ecke (Δx = Kachelbreite), die
+versetzten Zwischenreihen füllen die Lücken mit der Plaza-Bodenkachel des Sheets (Kante-an-Kante).
 
-Ursache der ursprünglich sichtbaren Kachel-Lücken war NICHT das Grid, sondern dass jede
-Straßen-Kachel von der ursprünglichen Zuschneide-Logik eine eigene, leicht andere Pixel-Größe bekam
-(Tight-Bbox je Motiv) — dieselbe `TILE_W`-Skalierung ergab dadurch pro Kachel eine andere Höhe.
-Behoben durch eine einzige kanonische Leinwandgröße für alle Kacheln, zentriert auf den vermessenen
-Mittelpunkt im Original-Sheet zugeschnitten, plus Bleed (Kacheln geringfügig größer als der
-Grid-Schritt gerendert). Das erste Sheet hatte zusätzlich transparente Kerben an Kreuzung/Ecke und
-nur eine runde/blockige Ecken-Kachel — beides mit dem zweiten Sheet (oben) erledigt.
+## Welche Straßen-Kacheln „gehen" — und welche nicht
+
+Vorgabe des Owners: nur Straßen verwenden, die nachweislich funktionieren. Ergebnis der
+Composite-Prüfung jeder einzelnen Kachel:
+
+| Kachel | Befund | Verwendung |
+| --- | --- | --- |
+| Gerade (horizontal) | Fahrbahn fluchtet in Bildschirm-Reihen sauber durch | ✅ in Gebrauch |
+| Gerade (vertikal, 90° gedreht/gebacken) | Scheitert an der **eingebackenen Perspektive** der KI-Kacheln: die Fahrbahn läuft nicht exakt durch die Diamant-Ecken, gedreht wird sie zur anschlusslosen Diagonale (per Markierungslinien-Test belegt: die Transformation selbst ist korrekt, das Artwork ist es nicht) | ❌ verworfen |
+| Kreuzung | Artwork in sich stimmig, braucht aber eine funktionierende vertikale Gerade als Anschluss | ❌ verworfen (bis vertikales Artwork existiert) |
+| T-Stück | wie Kreuzung | ❌ verworfen |
+| „Kurve" | Ist **keine 90°-Abzweigung**: unten geschlossener Pflasterblock, oben Pflasterplatten, Fahrbahn läuft links→rechts mit Bogen — eine gebogene Gerade | ❌ verworfen |
+| Plaza | Volle Diamant-Pflasterfläche | ✅ als Boden-/Grundstückskachel |
+
+Der Stadtplan nutzt deshalb **nur horizontale Straßenzüge** (zwei Reihen), ohne Kreuzungen. Das
+ist die ehrliche Obergrenze dieses Sheets.
+
+## Weitere Korrekturen dieser Runde (alle gegen Screenshots verifiziert)
+
+- **Uneinheitliche Diamant-Größen behoben:** T/Kreuzung waren im Sheet ~5–10 % kleiner gezeichnet
+  als Gerade/Kurve; der frühere „einheitliche Leinwand"-Zuschnitt konservierte das (und schnitt
+  bei der Kreuzung Reste der Nachbarkacheln mit). Jetzt: tight-Zuschnitt pro Kachel + im Code
+  Nicht-uniform-Skalierung jeder Bodenkachel auf exakt `TILE_W×TILE_H` — das Raster stimmt per
+  Konstruktion.
+- **Gebäudegröße:** Basis jetzt ~0,95× Kachelbreite (vorher 1,3×) — Gebäude stehen auf ihrem
+  Grundstück statt in die Straße zu ragen. Nur noch die 4 stilkonsistenten Gebäude der letzten
+  Generation im Zyklus (Pagode/Alt-Turm haben einen anderen Kamerawinkel; Dateien bleiben liegen).
+- **Diamant-Hitareas** statt rechteckiger Sprite-Bounds — bei Ecke-an-Ecke-Kacheln überlappen
+  Rechteck-Hitboxen die Nachbarzellen massiv (gefunden, als der Testklick zunächst ins Leere
+  ging: das Polygon muss in lokalen Anchor-Koordinaten um (0,0) zentriert sein).
+
+## Bekannte, bewusste Grenzen
+
+- Kein vertikaler Straßenzug, keine Kreuzungen — braucht neu generiertes Artwork in **strenger
+  orthografischer 2:1-Projektion mit Fahrbahn exakt durch die Diamant-Ecken** (nächste
+  Asset-Runde; der Generierungs-Prompt muss das explizit verlangen, „isometric" allein reicht
+  nicht — die aktuelle Generation hat leichte Perspektive eingebacken).
+- Kachelränder tragen je eigene Neon-Deko → an Nahtstellen doppelte Randlinien. Art-Eigenschaft,
+  kein Alignment-Fehler.
+- Karten-Ränder der Füllreihen sind gezackt (Deko-Reihen enden versetzt). Kosmetik.
+- `assets/` enthält auch die aktuell ungenutzten Kacheln (Kreuzung, T, Kurve, vertikale Gerade,
+  Alt-Gebäude) als Material für die nächste Runde; geladen wird nur, was der Plan nutzt.
 
 ## Dateien
 
-- `index.html`, `main.js` — die Szene (Grid-Logik + Pixi-Rendering in einer Datei, kein Build-Schritt).
-- `vendor/pixi.min.mjs` — 1:1-Kopie der Projekt-Pixi-Version, damit der Prototyp offline läuft.
-- `assets/` — aus den Chat-Bildern zugeschnittene/freigestellte Einzel-Kacheln:
-  sechs `building_*.png`, `plot_empty.png`,
-  `road_straight.png`, `road_corner.png`, `road_tjunction.png`, `road_cross.png`.
+- `index.html`, `main.js` — Szene (Stadtplan, Aktivierungslogik, Pixi-Rendering; kein Build-Schritt).
+- `vendor/pixi.min.mjs` — lokale Kopie der Projekt-Pixi-Version (nicht eingecheckt).
+- `assets/` — aus den Chat-Bildern zugeschnittene/freigestellte Kacheln und Gebäude.
 
 ## Was das NICHT ist
 
-Kein fertiges Gameplay-Feature, keine i18n-Anbindung, kein `src/game`-Domänenmodell, keine
-Bundle-Split-Prüfung. Nächster Schritt (falls gewünscht): das hier bewährte Muster
-(Grid-Zustand als reine Logik, Iso-Rendering separat) als echten `src/game/` + `src/ui/`-Screen
-nach Projektkonventionen bauen — inklusive der offenen Art-Entscheidungen aus dem Chat (welche der
-sechs Gebäude bleiben, finale Asset-Pipeline/Kompression).
+Kein fertiges Gameplay-Feature, keine i18n-Anbindung, kein `src/game`-Domänenmodell. Nächster
+Schritt (falls gewünscht): Straßen-Sheet in korrekter Orthografie neu generieren (dann vertikale
+Züge + Kreuzungen), und das bewährte Muster als echten `src/game/` + `src/ui/`-Screen nach
+Projektkonventionen bauen.
