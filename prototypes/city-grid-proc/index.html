@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>City Grid — prozeduraler Prototyp</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #05050c; color: #d8d8e8; font-family: system-ui, sans-serif; }
+  #hud { position: fixed; top: 0; left: 0; right: 0; padding: 10px 14px; font-size: 13px; line-height: 1.5;
+         background: rgba(8,8,16,.85); border-bottom: 1px solid #2a2a3a; z-index: 10; }
+  #hud b { color: #7fd8ff; }
+  #stage-host { position: absolute; inset: 0; padding-top: 74px; box-sizing: border-box; }
+  canvas { display: block; }
+</style>
+</head>
+<body>
+  <div id="hud">
+    <div><b>City-Grid Prototyp (prozedural)</b> — komplett gezeichnet, keine Bild-Assets.</div>
+    <div>Klick auf eine freie Kachel → Gebäude wächst von unten nach oben und bekommt automatisch einen Straßenring; benachbarte Ringe verschmelzen zu durchgehenden Straßen mit Kreuzungen.</div>
+  </div>
+  <div id="stage-host"></div>
+  <script type="module" src="./main.js"></script>
+</body>
+</html>
