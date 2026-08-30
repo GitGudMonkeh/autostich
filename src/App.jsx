@@ -41,6 +41,7 @@ import { skillArtUrls } from "./ui/skillArt.js"; // #mobil-emblem: Emblem-URLs j
 import { AbortConfirm, RestartConfirm, TutorialRunConfirm } from "./ui/RunConfirm.jsx"; // #run-dialoge: Beenden/Neustarten/Tutorial-Lauf (Desktop-Fassung)
 import { LegendarySelect } from "./ui/LegendarySelect.jsx"; // #272 Legendär-Phase (Runde 29)
 import { FormationPhase } from "./ui/FormationPhase.jsx";
+import { DeckFrontContext } from "./ui/CardGrid.jsx";
 import { TargetSelect } from "./ui/TargetSelect.jsx";
 import { GlacierPick } from "./ui/GlacierPick.jsx";
 import { FamilyTargetSelect } from "./ui/FamilyTargetSelect.jsx";
@@ -1212,7 +1213,7 @@ function AutostichGame() {
   const bfPe = useMemo(() => ({ linkedGroups }), [linkedGroups]);
 
   return (
-    // Onboarding-Hints: der Provider reicht die Banner-Steuerung an die PhaseHintSlot-Zeilen der
+// Onboarding-Hints: der Provider reicht die Banner-Steuerung an die PhaseHintSlot-Zeilen der
     // Entscheidungsscreens durch — eine Quelle, kein Prop-Drilling durch acht Screens.
     //
     // #356: Deck-Akzentfarben als CSS-Variablen am Run-Container — die neutralen Struktur-Panel-Rahmen tönen sich darüber
@@ -1221,6 +1222,9 @@ function AutostichGame() {
     //   ab 1280 px Knöpfe, Panel-Rahmen und Streifen aus dem aktiven Deck und braucht die Variablen dort.
     //   Ohne aktives Deck bleiben sie undefined → überall greifen dieselben Violett-Rückfälle wie bisher.
     <HintContext.Provider value={hints}>
+    {/* Deck-Skin fürs Kartengitter: die Front des aktiven Decks als Context (s. CardGrid) — jede Karten-Ansicht
+        (Aufstellung, Chronik, Zielwahl, GameOver, …) zieht sie sich selbst, ohne Prop-Fädelung je Aufrufstelle. */}
+    <DeckFrontContext.Provider value={deckSkin.front}>
     <div className="app-root relative w-full flex justify-center"
       style={{ "--deck-a1": deckFx.deckA1 || undefined, "--deck-a2": deckFx.deckA2 || undefined }}>
       {/* CRT-Scanline-/Vignette-Overlay (#41) — immer im DOM, nur unter [data-skin="crt"]
@@ -1548,6 +1552,7 @@ function AutostichGame() {
       {!hints.card && hints.eventCard && <EventHintCard hint={hints.eventCard} onGo={hints.dismissEvent}
         onMore={hints.onMore && hints.eventCard.target ? () => hints.onMore(hints.eventCard) : null} />}
     </div>
+    </DeckFrontContext.Provider>
     </HintContext.Provider>
   );
 }

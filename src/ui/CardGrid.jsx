@@ -1,4 +1,4 @@
-import { memo, useRef, useState, useLayoutEffect } from "react";
+import { memo, useRef, useState, useLayoutEffect, createContext, useContext } from "react";
 import { suitColor, PLANT_VALUE_CAP } from "../game/constants.js";
 
 import { SEGMENT_SIZE } from "../game/formations.js";
@@ -14,6 +14,11 @@ import { t } from "../i18n/index.js";
 // #350: stabile Leer-Referenz für rollenlose Karten (Normalfall) — `|| []` erzeugte je Render ein neues Array und
 //   ließ den React.memo-Vergleich von CardTile für fast alle Kacheln fehlschlagen (Memo praktisch wirkungslos).
 const EMPTY_ROLES = [];
+
+// Deck-Skin fürs Kartengitter: EIN Context statt einer Prop durch jede Aufrufstelle (Aufstellung, Chronik,
+// Zielwahl, GameOver, …). App setzt den Provider auf die Front des aktiven Decks; der Architekt hat ein
+// eigenes Grid und bleibt automatisch außen vor. Die `frontImage`-Prop übersteuert den Context (null = aus).
+export const DeckFrontContext = createContext(null);
 
 // Anker-Typ → Kurzlabel (Tooltip); gleiche Bedeutung wie in ChronikOverview (#119).
 const fmt = (x) => x.toFixed(2).replace(".", ",");
@@ -71,7 +76,7 @@ export function archFrameLines(cover, cells, total, exH, exV, exVOut = exV) {
 // read-only Grids wie Chronik/Vorschau, wo onClick fehlt und posForm stabil bleibt).
 const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], selected, onClick, anchorType = null, allyColors = null,
                    picked = false, disabled = false, arrow = null, quiet = false, ring = false, ringTitle = null, dimmed = false, arch = null, structLit = false, distrLit = false, formFlash = false,
-                   quietFrames = false,
+                   quietFrames = false, frontImage = null,
                    glacier = false, glacierMass = 0, firnMass = 0, glacierForm = false, locked = false }) {
   const pf = posForm || { mult: 1, formations: [] };
   const inForm = pf.mult > 1;
@@ -132,14 +137,17 @@ const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], sele
           return `${a}30 ${(from + 2).toFixed(0)}%, ${a}30 ${to.toFixed(0)}%`;
         }).join(", ")})`
       : null,
+    // Deck-Skin: liegt ein `frontImage` an, trägt die Kachel den Pixel-Art-Rahmen des aktiven Decks
+    // (wie die Battlefield-Karte, #180) statt nur der neutralen Fläche. Darunter bleibt der dunkle Grund.
+    frontImage ? `url(${frontImage}) center / 100% 100% no-repeat` : null,
     "linear-gradient(0deg, #20202a, #20202a)",
-  ].join(", ");
+  ].filter(Boolean).join(", ");
   /* Die Wash-Ebenen enden an der PADDING-Box, alles andere an der Border-Box. Das ist kein Detail: ein
      `inset`-Schatten wird an der Padding-Box geclippt, eine Hintergrund-Ebene standardmäßig an der Border-Box.
      Der Kachelrahmen ist ohne Formation/Auswahl halbdurchlässig (`col + "55"`) — ohne diese Zeile läge der
      Wash plötzlich AUCH unter dem Rahmen und die abgedeckte Kachel bekäme einen 2 px breiten, leicht anderen
      Rand als vorher. Mit ihr ist der Tausch Schatten → Ebene pixelgleich. */
-  const tileClip = [...washes.map(() => "padding-box"), ...(allyColors && allyColors.length ? ["border-box"] : []), "border-box"].join(", ");
+  const tileClip = [...washes.map(() => "padding-box"), ...(allyColors && allyColors.length ? ["border-box"] : []), ...(frontImage ? ["border-box"] : []), "border-box"].join(", ");
   return (
     <button onClick={onClick} disabled={disabled} data-sfx={quiet ? "none" : undefined} data-pos={arch ? pos : undefined}
       title={anchorType ? t("cardgrid.anchor.title", { type: anchorLabel(anchorType) }) : ring ? (ringTitle || undefined) : undefined}
@@ -242,7 +250,10 @@ export function CardGrid({ cards = [], formations = [], roles = {}, anchors = []
                           selectedPos, pickedIds = [], pickedPos, disabledPos = [], arrows = {}, onTilePick, quietTiles = false,
                           highlightPos = [], highlightTitle = null, openSegments = null, swappedIds = new Set(),
                           segStrength = [], segDelta = [], flashPos = null, flashKey = 0, architectCover = null, structPos = null, distrPos = null, glowBid = null,
-                          glacierPos = null, glacierMassByPos = null, firnStackByPos = null, lockedPos = [], quietFrames = false }) {
+                          glacierPos = null, glacierMassByPos = null, firnStackByPos = null, lockedPos = [], quietFrames = false, frontImage }) {
+  // `frontImage` explizit gesetzt (auch null) gewinnt; sonst kommt die Front des aktiven Decks aus dem Context.
+  const ctxFront = useContext(DeckFrontContext);
+  const skinFront = frontImage === undefined ? ctxFront : frontImage;
   const rolesByCard = {};
   for (const [pid, ids] of Object.entries(roles || {})) for (const id of ids || []) (rolesByCard[id] ||= []).push(pid);
   // Eis-Neudesign: Positionen, die Teil einer aktiven 2D-Gletscher-Formation sind (Block/Kreuz/Linie/Fläche) → blaues „G" auf der Karte.
@@ -354,7 +365,7 @@ export function CardGrid({ cards = [], formations = [], roles = {}, anchors = []
                 return <CardTile key={pos} card={c} pos={pos} posForm={formations[pos]} roleIds={rolesByCard[c.id] || EMPTY_ROLES}
                   anchorType={anchorTypeAt(anchors, pos)} allyColors={allies.length ? allies.map(suitColor) : null}
                   selected={selectedPos === pos} picked={pickedSet.has(c.id) || pickedPos === pos}
-                  disabled={disabled} arrow={arrows[c.id] || null} quiet={quietTiles} quietFrames={quietFrames}
+                  disabled={disabled} arrow={arrows[c.id] || null} quiet={quietTiles} quietFrames={quietFrames} frontImage={skinFront}
                   ring={highlightSet.has(pos)} ringTitle={highlightTitle}
                   dimmed={swappedIds.has(c.id)} arch={architectCover ? architectCover[pos] : null}
                   structLit={structPos ? structPos.has(pos) : false} distrLit={distrPos ? distrPos.has(pos) : false}
