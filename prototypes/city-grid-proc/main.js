@@ -138,6 +138,7 @@ async function main() {
       const [r, c] = kk.split(",").map(Number);
       drawRoad(g, connectionsOf(r, c));
     }
+    updateParks();
     manageCarPopulation();
   }
 
@@ -156,47 +157,77 @@ async function main() {
     roadG.set(kk, g);
   }
 
-  // ---- trees ---------------------------------------------------------------
-  // Sparse neon "holo-pines" on free ground cells: stacked diamond canopies over a thin trunk,
-  // mint accent so vegetation reads distinct from the cyan/magenta architecture. Deterministic
-  // per cell; removed as soon as the cell becomes road or building.
+  // ---- parks (trees) -------------------------------------------------------
+  // Trees do NOT pre-populate the field. They grow into the leftover pockets of the road
+  // network: a ground cell hemmed in by roads/buildings on 3+ orthogonal sides is a spot no
+  // street would ever need — it turns into a small neon park (with a grow-in animation).
+  // Faceted low-poly canopies (dark left face, lighter right face, mint rim) match the
+  // building style; deterministic per cell.
   const MINT = 0x51ffc4;
   const treeG = new Map(); // key -> Graphics
   function drawTree(g, tx, ty, s, rand) {
-    const trunkH = 6 * s, tiers = 2 + Math.floor(rand() * 2);
-    g.moveTo(tx, ty).lineTo(tx, ty - trunkH).stroke({ width: 1.5, color: 0x2a6f5a, alpha: 0.9 });
+    g.ellipse(tx, ty + 1, 8 * s, 4 * s).stroke({ width: 1, color: MINT, alpha: 0.3 }); // landing ring
+    const trunkH = 9 * s;
+    g.moveTo(tx - 1, ty).lineTo(tx, ty - trunkH).stroke({ width: 2, color: 0x2a6f5a, alpha: 0.95 });
+    const tiers = 2 + Math.floor(rand() * 2);
     for (let i = 0; i < tiers; i++) {
-      const w = (16 - i * 4.5) * s, h = w / 2, cy = ty - trunkH - i * 7 * s;
-      g.poly([tx, cy - h / 2, tx + w / 2, cy, tx, cy + h / 2, tx - w / 2, cy]).fill({ color: 0x0c1a16, alpha: 0.9 });
-      g.poly([tx, cy - h / 2, tx + w / 2, cy, tx, cy + h / 2, tx - w / 2, cy])
-        .stroke({ width: 1.2, color: MINT, alpha: 0.85 - i * 0.15 });
+      const w = (22 - i * 6) * s, h = (13 - i * 2) * s;
+      const cy = ty - trunkH - i * 8.5 * s;
+      const T = [tx, cy - h], B = [tx, cy + h * 0.25], L = [tx - w / 2, cy], R = [tx + w / 2, cy];
+      g.poly([...T, ...L, ...B]).fill(0x0b241d);        // left facet (dark)
+      g.poly([...T, ...R, ...B]).fill(0x14453a);        // right facet (lit)
+      g.poly([...T, ...L, ...B, ...R]).stroke({ width: 1.2, color: MINT, alpha: 0.9 - i * 0.15 });
+      g.moveTo(...T).lineTo(...B).stroke({ width: 1, color: MINT, alpha: 0.35 }); // facet ridge
     }
-    g.circle(tx, ty - trunkH - tiers * 7 * s - 1, 1.2).fill({ color: MINT, alpha: 0.9 });
+    const tipY = ty - trunkH - (tiers - 1) * 8.5 * s - (13 - (tiers - 1) * 2) * s;
+    g.circle(tx, tipY, 1.6).fill({ color: MINT, alpha: 1 });
+    g.circle(tx, tipY, 4).fill({ color: MINT, alpha: 0.18 });
   }
-  function scatterTrees() {
+  function makePark(r, c) {
+    const kk = key(r, c);
+    if (treeG.has(kk)) return;
+    const rand = seededRand(r + 100, c + 100);
+    const g = new Graphics();
+    drawTree(g, 0, TILE_H * 0.1, 0.95 + rand() * 0.35, rand);
+    const extras = 1 + Math.floor(rand() * 2);
+    for (let i = 0; i < extras; i++) {
+      const u = (rand() - 0.5) * 0.5, v = (rand() - 0.5) * 0.5;
+      drawTree(g, (u + v) * (TILE_W / 2), (v - u) * (TILE_H / 2) + TILE_H * 0.16, 0.55 + rand() * 0.3, rand);
+    }
+    const { x, y } = cellPos(r, c);
+    g.position.set(x, y);
+    g.zIndex = r + c + 0.2;
+    g.eventMode = "none"; // clicks fall through to the ground cell below
+    g.scale.set(0.01);
+    world.addChild(g);
+    treeG.set(kk, g);
+    const t0 = performance.now();
+    const grow = () => {
+      const t = Math.min(1, (performance.now() - t0) / 450);
+      if (g.destroyed) { app.ticker.remove(grow); return; }
+      const e = 1 - Math.pow(1 - t, 3);
+      g.scale.set(0.3 + 0.7 * e);
+      g.alpha = e;
+      if (t >= 1) app.ticker.remove(grow);
+    };
+    app.ticker.add(grow);
+  }
+  function updateParks() {
     for (let r = 0; r < GRID; r++) for (let c = 0; c < GRID; c++) {
-      const rand = seededRand(r + 100, c + 100); // separate stream from the building look
-      if (rand() > 0.2) continue;
-      const g = new Graphics();
-      const { x, y } = cellPos(r, c);
-      const n = 1 + Math.floor(rand() * 3);
-      for (let i = 0; i < n; i++) {
-        // keep trees inside the inner half of the diamond so they never poke into neighbors
-        const u = (rand() - 0.5) * 0.55, v = (rand() - 0.5) * 0.55;
-        drawTree(g, (u + v) * (TILE_W / 2), (v - u) * (TILE_H / 2) + TILE_H * 0.12, 0.8 + rand() * 0.5, rand);
+      if (state.get(key(r, c)) !== "ground") continue;
+      let enclosed = 0;
+      for (const [dr, dc] of Object.values(DIRS)) {
+        if (!inGrid(r + dr, c + dc)) continue;
+        const s = state.get(key(r + dr, c + dc));
+        if (s === "road" || s === "building") enclosed++;
       }
-      g.position.set(x, y);
-      g.zIndex = r + c + 0.2;
-      g.eventMode = "none"; // clicks fall through to the ground cell below
-      world.addChild(g);
-      treeG.set(key(r, c), g);
+      if (enclosed >= 3) makePark(r, c);
     }
   }
   function clearTrees(kk) {
     const t = treeG.get(kk);
     if (t) { t.destroy(); treeG.delete(kk); }
   }
-  scatterTrees();
 
   // ---- cars ----------------------------------------------------------------
   // Cars drive exactly on the drawn lanes: edge midpoint -> cell center -> next edge midpoint.
@@ -208,21 +239,45 @@ async function main() {
   const SEG_LEN = Math.hypot(TILE_W / 4, TILE_H / 4);
   const CAR_SPEED = 55; // px/s
   const CAR_COLORS = [0x35d6ff, 0xff4fd8, 0xf3f6ff, 0x51ffc4];
+  // Hover altitude slots: each car flies on its own level (plus a gentle bob), so two cars
+  // meeting at a junction pass above/below each other instead of clipping.
+  const ALT_SLOTS = [8, 13, 18, 23, 28];
   const cars = [];
+  let carSpawnCount = 0;
 
-  function drawCar(g, dirKey, color) {
+  // Hover car: faceted 3D hull (top + two shaded skirt halves), glowing cabin canopy, light
+  // bar front/rear, additive anti-grav underglow. Drawn hovering at (0,-alt); the ground
+  // shadow lives in a separate Graphics pinned to the road surface.
+  function drawCar(g, dirKey, color, alt) {
     g.clear();
     const u = unit(EDGE_MID[dirKey]), w = unit(EDGE_MID[CW[dirKey]]);
-    const L = 15, W2 = 7, H = 5;
+    const L = 19, W2 = 9, H = 5;
     const f = [u[0] * L / 2, u[1] * L / 2], b = [-f[0], -f[1]];
     const wv = [w[0] * W2 / 2, w[1] * W2 / 2];
+    const y0 = -alt;
     const quad = (dy) => [b[0] - wv[0], b[1] - wv[1] + dy, b[0] + wv[0], b[1] + wv[1] + dy,
       f[0] + wv[0], f[1] + wv[1] + dy, f[0] - wv[0], f[1] - wv[1] + dy];
-    g.poly(quad(0)).fill(0x05060c);                                     // body base
-    g.poly(quad(-H)).fill(0x141827);                                    // roof
-    g.poly(quad(-H)).stroke({ width: 1.2, color, alpha: 0.95 });        // neon trim
-    g.circle(f[0], f[1] - H / 2, 1.7).fill({ color: 0xfff2b8, alpha: 0.95 }); // headlight
-    g.circle(b[0], b[1] - H / 2, 1.3).fill({ color: 0xff4560, alpha: 0.9 });  // taillight
+    // anti-grav underglow (between hull and ground)
+    g.ellipse(0, y0 + 3, L * 0.42, L * 0.16).fill({ color, alpha: 0.22 });
+    // hull: lower rim, then two shaded skirt halves (port darker, starboard lighter), then deck
+    g.poly(quad(y0)).fill(0x07080f);
+    g.poly([b[0] - wv[0], b[1] - wv[1] + y0, f[0] - wv[0], f[1] - wv[1] + y0,
+      f[0] - wv[0], f[1] - wv[1] + y0 - H, b[0] - wv[0], b[1] - wv[1] + y0 - H]).fill(0x0b0e1a);
+    g.poly([b[0] + wv[0], b[1] + wv[1] + y0, f[0] + wv[0], f[1] + wv[1] + y0,
+      f[0] + wv[0], f[1] + wv[1] + y0 - H, b[0] + wv[0], b[1] + wv[1] + y0 - H]).fill(0x161c30);
+    g.poly(quad(y0 - H)).fill(0x1a2138);                                  // deck
+    g.poly(quad(y0 - H)).stroke({ width: 1.2, color, alpha: 0.95 });      // neon rim
+    // cabin canopy (translucent glow, sits toward the rear)
+    const cf = [u[0] * L * 0.12, u[1] * L * 0.12], cb = [-u[0] * L * 0.32, -u[1] * L * 0.32];
+    const cw = [w[0] * W2 * 0.32, w[1] * W2 * 0.32];
+    g.poly([cb[0] - cw[0], cb[1] - cw[1] + y0 - H - 3, cb[0] + cw[0], cb[1] + cw[1] + y0 - H - 3,
+      cf[0] + cw[0], cf[1] + cw[1] + y0 - H - 3, cf[0] - cw[0], cf[1] - cw[1] + y0 - H - 3])
+      .fill({ color, alpha: 0.45 });
+    // light bars across the front and rear deck edges
+    g.moveTo(f[0] - wv[0] * 0.7, f[1] - wv[1] * 0.7 + y0 - H).lineTo(f[0] + wv[0] * 0.7, f[1] + wv[1] * 0.7 + y0 - H)
+      .stroke({ width: 2, color: 0xfff2b8, alpha: 0.95 });
+    g.moveTo(b[0] - wv[0] * 0.7, b[1] - wv[1] * 0.7 + y0 - H).lineTo(b[0] + wv[0] * 0.7, b[1] + wv[1] * 0.7 + y0 - H)
+      .stroke({ width: 2, color: 0xff4560, alpha: 0.9 });
   }
 
   function spawnCar() {
@@ -233,8 +288,17 @@ async function main() {
     const conn = connectionsOf(r, c);
     if (!conn.size) return;
     const to = [...conn][Math.floor(Math.random() * conn.size)];
-    const car = { r, c, from: OPP[to], to, t: 0.5, color: CAR_COLORS[Math.floor(Math.random() * CAR_COLORS.length)], g: new Graphics(), seg: 2 };
-    drawCar(car.g, car.to, car.color);
+    const alt = ALT_SLOTS[carSpawnCount++ % ALT_SLOTS.length];
+    const car = {
+      r, c, from: OPP[to], to, t: 0.5, seg: 2, alt,
+      phase: Math.random() * Math.PI * 2,
+      color: CAR_COLORS[Math.floor(Math.random() * CAR_COLORS.length)],
+      g: new Graphics(), shadow: new Graphics(),
+    };
+    car.shadow.ellipse(0, 0, 8, 3.5).fill({ color: 0x000000, alpha: 0.5 });
+    car.shadow.ellipse(0, 0, 5, 2.2).fill({ color: car.color, alpha: 0.12 });
+    drawCar(car.g, car.to, car.color, car.alt);
+    world.addChild(car.shadow);
     world.addChild(car.g);
     cars.push(car);
   }
@@ -246,6 +310,7 @@ async function main() {
 
   app.ticker.add((ticker) => {
     const dt = ticker.deltaMS / 1000;
+    const now = performance.now() / 1000;
     for (const car of cars) {
       car.t += (CAR_SPEED * dt) / (2 * SEG_LEN);
       if (car.t >= 1) {  // reached the exit edge midpoint -> hand over to the next cell
@@ -257,16 +322,21 @@ async function main() {
         car.to = options.length ? options[Math.floor(Math.random() * options.length)] : car.from;
         car.t -= 1;
         car.seg = 0;
-        drawCar(car.g, OPP[car.from], car.color); // heading toward the center
+        drawCar(car.g, OPP[car.from], car.color, car.alt); // heading toward the center
       }
       // segment 1: entry midpoint -> center; segment 2: center -> exit midpoint
       const local = car.t < 0.5
         ? (() => { const s = car.t * 2, [mx, my] = EDGE_MID[car.from]; return [mx * (1 - s), my * (1 - s)]; })()
         : (() => { const s = (car.t - 0.5) * 2, [mx, my] = EDGE_MID[car.to]; return [mx * s, my * s]; })();
-      if (car.t >= 0.5 && car.seg !== 2) { car.seg = 2; drawCar(car.g, car.to, car.color); } // turn at center
+      if (car.t >= 0.5 && car.seg !== 2) { car.seg = 2; drawCar(car.g, car.to, car.color, car.alt); } // turn at center
       const { x, y } = cellPos(car.r, car.c);
-      car.g.position.set(x + local[0], y + local[1]);
-      car.g.zIndex = (2 * (y + local[1])) / TILE_H + 0.4; // painter order from screen depth
+      const gx = x + local[0], gy = y + local[1];
+      const bob = Math.sin(now * 2.2 + car.phase) * 1.6;
+      car.g.position.set(gx, gy + bob);           // hull hovers at -alt inside the Graphics
+      car.shadow.position.set(gx, gy);
+      const z = (2 * gy) / TILE_H;                // painter order from ground position
+      car.shadow.zIndex = z + 0.32;
+      car.g.zIndex = z + 0.4;
     }
   });
 

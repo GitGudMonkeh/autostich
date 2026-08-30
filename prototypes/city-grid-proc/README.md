@@ -12,6 +12,17 @@ hier prinzipiell nicht auftreten.
 - Klick auf eine freie Kachel → Gebäude wächst von unten nach oben (Höhen-Interpolation beim
   Zeichnen, kein Masken-Trick), danach weißer Abschluss-Blitz + Neon-Bodenringe.
 - Jedes Gebäude legt automatisch einen **Straßenring** um sein Grundstück (die 8 Nachbarzellen).
+- **Schwebe-Autos** fliegen auf dem Netz: facettierter 3D-Rumpf mit Neon-Deck, leuchtender
+  Kanzel, Licht-Bars vorn/hinten und Anti-Grav-Glow. Jedes Auto bekommt einen eigenen
+  Höhen-Slot plus sanftes Auf-und-ab — zwei Autos an einer Kreuzung passieren sich also
+  über-/untereinander statt zu clippen. Ein Bodenschatten auf der Fahrbahn macht die
+  Flughöhe ablesbar. Gefahren wird exakt auf den gezeichneten Fahrspuren (Kantenmitte →
+  Zellmitte → Kantenmitte), Abbiegen an jeder Zellmitte entlang des echten Straßengraphen.
+- **Bäume wachsen nur in Zwischenräumen**: kein Vorab-Streuen übers Feld. Eine Bodenzelle,
+  die auf ≥3 orthogonalen Seiten von Straße/Gebäude umschlossen ist (dort wäre nie eine
+  Straße nötig), begrünt sich mit einer kleinen Park-Animation. Baum-Design passend zu den
+  Gebäuden: facettierte Low-Poly-Kronen (dunkle/helle Seite), Mint-Rim, Glow-Spitze,
+  Landering am Boden.
 - Ringe benachbarter Gebäude **verschmelzen**: jede Straßenzelle bestimmt ihre Verbindungen aus
   den 4 orthogonalen Straßen-Nachbarn (Bitmask) und zeichnet sich neu — Geraden, Kurven,
   T-Stücke und Kreuzungen entstehen dadurch von selbst, Kreuzungen ab 3 Verbindungen mit
