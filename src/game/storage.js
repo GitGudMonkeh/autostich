@@ -101,12 +101,13 @@ export function loadRunHistory() {
 // v2 (Progression/Upgrades, docs §9): das Profil bekommt die SP-/Baum-/Onboarding-Felder. Rein additiv, aber
 // als eigene Schema-Epoche markiert (Migrations-Anker für spätere Baum-Umformungen).
 // v6 (#316): Onboarding-Phase entfernt — jedes Profil startet mit onboarding = ONBOARDING_LINKS (alle Archetypen,
-// Raritäts-Cap, Legendär-Phase + Genesis-Pack frei). Fresh-Start: 0 SP / 50 DP.
+// Raritäts-Cap, Legendär-Phase + Genesis-Pack frei). Fresh-Start: 0 SP / 0 DP (R22).
 // v7 (#369): Progression-Rework — der alte Baum (bau/auf/rar/mei) ist ersetzt (Deck- + Allgemein-Zweig, neue Knoten-IDs).
 // Archetyp-/Rarität-/Legendär-Gating hängt jetzt am Baum. Migration leert Alt-Knoten + bucht die investierten SP zurück.
 export const PROFILE_SCHEMA_VERSION = 11;
-// #316 Start-Deckpunkte eines frischen Profils (früher 0). Onboarding ist weg → man startet direkt mit etwas DP.
-const START_DECK_POINTS = 50;
+// #316 gab einem frischen Profil 50 Start-DP. Runde 2, R22 (Owner): zurück auf 0 — die erste
+// Währung kommt über den Willkommensbonus nach dem ersten ABGESCHLOSSENEN Lauf (WELCOME_DP).
+const START_DECK_POINTS = 0;
 const DEFAULT_PROFILE = { schemaVersion: PROFILE_SCHEMA_VERSION,
   games: 0, totalScore: 0, totalDurationMs: 0, bestScore: 0, bestStreak: 0, maxCrits: 0, archetypesEver: [], firstTs: 0,
   // #go-ruhe: bester EINZELSTICH als All-Time-Rekord. Er stand bisher nur je Lauf in der Highscore-Liste —
@@ -139,6 +140,11 @@ const DEFAULT_PROFILE = { schemaVersion: PROFILE_SCHEMA_VERSION,
      rausgeht, hat nichts gesehen. Ebenso bewusst NICHT an den Tutorial-Lauf gebunden — jeder
      abgeschlossene Lauf zählt. */
   hadCompletedRun: false,
+  /* Runde 5, W1 (Owner): „Tutorial überspringen" auf der Willkommenskarte hebt auch die
+     Blitz-only-Erstlauf-Sperre — sticky, damit KÜNFTIGE Läufe ebenfalls offen sind, ohne dass
+     erst ein ganzer Lauf abgeschlossen werden muss. Kein Migrations-Glied nötig: false ist für
+     jedes Alt-Profil die richtige Antwort, und loadProfile füllt fehlende Felder aus dem Default. */
+  tutorialSkipped: false,
   /* #hirsch-abgeschlossen: Zähler der ABGESCHLOSSENEN Läufe. `games` daneben zählt jeden BEGONNENEN
      (Abbrüche eingeschlossen) und bleibt, was er ist — die Statistik zeigt ihn so an. Freischaltungen
      über eine Laufzahl lesen ab jetzt diesen hier; ein abgebrochener Lauf soll keine Belohnung tragen. */
@@ -314,7 +320,7 @@ export function saveProfile(profile) {
    aber altem Namen. Die übrigen Präferenzen (Lautstärke, Haptik, SPRACHE) überleben den Reset
    weiterhin: sie hängen nicht am Fortschritt, und die Sprache lässt sich im Namens-Dialog ohnehin
    direkt wieder wählen. */
-export const RESET_KEYS = ["as_profile", "as_highscores", "as_ghost", "as_runhistory", "as_activerun", "as_tutorial_done", "as_tut_progress", "as_username", "as_feedback_draft", "as_feedback_sent"];
+export const RESET_KEYS = ["as_profile", "as_highscores", "as_ghost", "as_runhistory", "as_activerun", "as_tutorial_done", "as_tut_progress", "as_hints", "as_username", "as_feedback_draft", "as_feedback_sent"];
 export function wipeProfileStorage() {
   for (const key of RESET_KEYS) {
     try { localStorage.removeItem(k(key)); } catch (e) {}
@@ -516,7 +522,14 @@ export function recordRun(record) {
   };
   try { localStorage.setItem(k("as_profile"), JSON.stringify(profile)); } catch (e) { if (isQuotaError(e)) signalQuota("Profil (recordRun)"); }
   // #304 Verdienst-Rollup (Victory-Screen): die Lauf-Erträge + Onboarding-Fortschritt fürs Count-up/Balken/Countdown.
-  const earn = { sp: gainedSp, dpGross: gainedDp, dpNet: runDp, dpComplete: completionDp, spSweep, welcomeDp };
+  /* Runde 4, V4 (Owner-Fund): die ANGEZEIGTE DP-Zahl muss alles tragen, was wirklich aufs Konto
+     geht — vorher zählte sie nur die Meilenstein-DP (gainedDp), und ein abgeschlossener Lauf ohne
+     Meilenstein zeigte „+0", obwohl der Abschluss-Bonus (+RUN_COMPLETE_DP) gutgeschrieben wurde.
+     Deshalb hier dieselbe Summe wie in `deckPoints` oben, NUR OHNE welcomeDp: der Willkommensbonus
+     hat auf dem Endscreen seine eigene Zeile und würde sonst doppelt erscheinen. Gross = Netto,
+     seit der Challenge-Abzug weg ist (#382) — der Countdown-Zweig des Rollups bleibt schlafend. */
+  const dpShown = runDp + completionDp + spSweep + rankedDpBonus;
+  const earn = { sp: gainedSp, dpGross: dpShown, dpNet: dpShown, dpComplete: completionDp, spSweep, welcomeDp };
   const onboarding = { before: onboardingBefore, after: onbAfter, links: ONBOARDING_LINKS };
   return { history, profile, unlocks, earn, onboarding };
 }
@@ -808,6 +821,38 @@ export function saveTutorialProgress(p) {
 export function tutorialOpened() {
   try { if (localStorage.getItem(k(TUT_LEGACY))) return true; } catch (e) { /* kein localStorage */ }
   return loadTutorialProgress().seen.length > 0;
+}
+
+/* ONBOARDING-HINTS (docs/tutorial-onboarding-design.md §5) — the in-run hint layer's memory.
+   `seen`   hint ids already shown (or skipped for good) — first occurrence means first in the
+            profile's life, no hint ever repeats (§5.4 rule 4).
+   `visits` 1-based phase-visit counters ({ formation, architect, perk, skill }) — the suggestion
+            sequences and H3b/H5 key off these.
+   `last`   per screen, the context key ("screen:seed:cycle") of the visit already counted, so a
+            reload mid-phase does not double-count.
+   Its own key, not part of the tutorial-sections progress: the Probierfeld is pull material with
+   its own lifecycle; wiping one must not wipe the other except through the full reset. */
+const HINTS_KEY = "as_hints";
+export function loadHintProgress() {
+  try {
+    const raw = localStorage.getItem(k(HINTS_KEY));
+    const p = raw ? JSON.parse(raw) : null;
+    if (!p || typeof p !== "object") return { seen: [], visits: {}, last: {}, seenAt: {} };
+    return { seen: Array.isArray(p.seen) ? p.seen.filter((x) => typeof x === "string") : [],
+             visits: (p.visits && typeof p.visits === "object") ? p.visits : {},
+             last: (p.last && typeof p.last === "object") ? p.last : {},
+             // Runde 2, R19: je Hint der Phasen-Kontext, in dem er gesehen wurde — C6 („Phase danach")
+             // braucht die Unterscheidung „C5 in DIESER Phase ✕" vs. „in einer früheren".
+             seenAt: (p.seenAt && typeof p.seenAt === "object") ? p.seenAt : {} };
+  } catch (e) { return { seen: [], visits: {}, last: {}, seenAt: {} }; }
+}
+export function saveHintProgress(p) {
+  try {
+    localStorage.setItem(k(HINTS_KEY), JSON.stringify({
+      seen: [...new Set((p && p.seen) || [])], visits: (p && p.visits) || {}, last: (p && p.last) || {},
+      seenAt: (p && p.seenAt) || {},
+    }));
+  } catch (e) {}
 }
 
 /* AKTIVER LAUF (Resume) — Snapshot des laufenden Reducer-States, damit ein Run das Wegtabben/Schließen

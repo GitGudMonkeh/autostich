@@ -26,6 +26,7 @@ import { phaseCard, phasePanel, PhaseHairline, PHASE_ACCENTS } from "./modalStyl
 import { buildingEffect } from "../i18n/buildingText.js"; // #sprache: Gebäude-Effekttext zur Anzeigezeit
 import { t, fmtNum } from "../i18n/index.js";
 import { suitLabel } from "../i18n/labels.js";
+import { PhaseHintSlot } from "./hints/HintCard.jsx"; // Onboarding-Hints: Banner-Slot unter dem Kopf (docs/tutorial-onboarding-design.md)
 
 /* ============================================================
    Der Architekt (#202) — Präsentations-Rework (#261): perk-artige Auswahl + EIN durchgehender Verschiebe-Flow.
@@ -611,6 +612,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
           </div>
           <div className="ml-auto shrink-0"><GlossaryPanel /></div>
         </div>
+        <div className="mt-2"><PhaseHintSlot screen="architect" /></div>
         {/* Hero-Stat-Leiste: der Gebäude-Boost ist das, was man beim Bauen maximiert → Hero-Wert (grün). Baufeld & Durchlauf-
             Score als Nebenzellen (ersetzt den verstreuten Kopf-Cluster + das separate Score-Badge). Gleicher Bau wie die
             Hero-Leiste der Aufstellphase. */}
@@ -620,7 +622,9 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
             <span className="text-meta-1 uppercase tracking-wide font-bold" style={{ color: "#6d7f8e" }}>{t("arch.boost")}</span>
             <span className="ty-num leading-none" style={{ fontVariantNumeric: "tabular-nums", fontSize: 25, color: archBoostPct > 0 ? "#5fce86" : "#8a97a5" }}>+{archBoostPct} %</span>
           </div>
-          <div className="flex flex-col justify-center gap-1 px-3.5 py-2.5 text-right border-l" style={{ borderColor: "rgba(59,125,190,.32)" }}>
+          {/* data-hint-anchor: C5 (kein Bauplan passt mehr) laesst das Baufeld-Panel leuchten. */}
+          <div className="flex flex-col justify-center gap-1 px-3.5 py-2.5 text-right border-l" data-hint-anchor="baufeld"
+            style={{ borderColor: "rgba(59,125,190,.32)" }}>
             <span className="text-meta-1 uppercase tracking-wide font-bold" style={{ color: "#6d7f8e" }}>{t("arch.plot")}</span>
             <span className="ty-num leading-none" style={{ fontVariantNumeric: "tabular-nums", fontSize: 19, color: GOLD }}>{Math.max(0, maxCover - coverCount)}<span className="text-body-5 opacity-60"> / {maxCover}</span></span>
             <span className="text-micro-3 ty-num-sm opacity-45">{t("arch.plot.used", { n: coverCount, pct: Math.round(coverCount / maxCover * 100) })}</span>
@@ -668,7 +672,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                 title={dragDelta ? t("arch.boostDelta.title") : t("arch.boostDelta.phaseTitle")}>
                 {t("arch.boostDelta", { arrow: boostTone.arrow, pct: shownBoostDelta })}
               </span>
-              <div className="flex items-center gap-1.5 ml-auto">
+              <div className="flex items-center gap-1.5 ml-auto" data-hint-anchor="archtoggles">
                 {/* #kante: Die zwei Anzeige-Schalter — an trägt seine Farbe an der Kante (Kombos gold,
                     Formationen blau), aus bleibt neutral. Farben unverändert, nur die Form folgt der Familie. */}
                 <button onClick={toggleCombos}
@@ -1004,10 +1008,11 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                       );
                     })}
                     {/* 4. Karte: Aufwerten */}
-                    {/* #kante: „Aufwerten" ist kein Angebot, sondern ein Weg — gestrichelte Kante (`is-soon`
-                        führt genau das), gedimmt wenn nichts aufwertbar ist. */}
+                    {/* Runde 2, R14 (Owner): die gestrichelte `is-soon`-Kante las sich als „ausgegraut",
+                        obwohl Aufwerten möglich war. Aktiv trägt die Karte jetzt die normale Angebots-
+                        Optik; gedimmt (gestrichelt + is-locked) NUR, wenn wirklich nichts aufwertbar ist. */}
                     <button onClick={() => { if (canUpgradeAny) { setUpgradeMsg(null); setPendingUpgrade(null); setPhase("upgrade"); } }} disabled={!canUpgradeAny}
-                      className={`as-edge-card as-edge-thin is-soon${canUpgradeAny ? "" : " is-locked"} rounded-lg p-2 text-left flex flex-col gap-1.5 transition-all hover:brightness-110`}
+                      className={`as-edge-card as-edge-thin${canUpgradeAny ? "" : " is-soon is-locked"} rounded-lg p-2 text-left flex flex-col gap-1.5 transition-all hover:brightness-110`}
                       style={{ "--c": CAT.value.color, cursor: canUpgradeAny ? "pointer" : "not-allowed" }}>
                       <div className="text-title-5 leading-none">⬆</div>
                       <div className="text-body-3 font-bold leading-tight">{t("arch.upgrade")}</div>

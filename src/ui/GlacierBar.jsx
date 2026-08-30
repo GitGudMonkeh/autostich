@@ -153,7 +153,7 @@ export function GlacierBar({ active, glacierLocked = [], glacierMass = [], firnS
   const stateText = readyBreak ? t("bar.ice.state.ready") : t("bar.ice.state.count", { n: glaciers.length });
 
   return (
-    <FactionShell className="relative" icon={<FactionIcon type="ice" size={15} />} name={archetypeLabel("ice")} color={FROST_BRIGHT}
+    <FactionShell className="relative" anchor="faction-ice" icon={<FactionIcon type="ice" size={15} />} name={archetypeLabel("ice")} color={FROST_BRIGHT}
       stateText={stateText} stateOn={readyBreak} collapsed={collapsed} onToggle={onToggle}
       footer={showSkills ? <PanelSkills skills={skills} arch="ice" color={FROST_BRIGHT} /> : null}>
       {burst && <div key={burst.key} className="as-frost-pulse" style={{ position: "absolute", inset: 0, borderRadius: 12, pointerEvents: "none" }} />}

@@ -70,109 +70,71 @@ export const lessonKind = (lesson) => lesson.art || "kurz";
 
 export const SECTIONS = [
   {
-    id: "grundlagen",
-    /* SIEBEN Lektionen, nicht mehr acht. Der freigegebene Entwurf zieht „Durchlauf und Lauf" in
-       die erste Lektion und „Crit" in „Der Score" — beide waren Textkarten ohne eigene Runde, und
-       genau die sollte der Umbau abschaffen. */
+    id: "blitz",
+    arch: "lightning",
+    /* Runde 4, V3 (Owner): der Glossar-Schluss-Tipp ist von allen vier Archetyp-Tipps-Seiten
+       gestrichen — sie enden mit der Liste. Der Architekt behält seinen (anderen) Tipp. */
     lessons: [
-      { id: "wasist", art: "voll", beats: [
-        { kind: "block" },
-        { kind: "block", label: true },
-        { kind: "block", label: true },
-        { kind: "regeln" },
-        { kind: "tip" }] },
-      { id: "stich", art: "kurz", beats: [
-        { kind: "probierfeld", probe: "duell" },
-        { kind: "tip" }] },
-      { id: "werte", art: "voll", beats: [
-        { kind: "probierfeld", probe: "kampfwert" },
-        { kind: "block", label: true },
-        { kind: "tip" }] },
-      { id: "serie", art: "voll", beats: [
-        { kind: "probierfeld", probe: "serie" },
-        { kind: "block", label: true },
-        { kind: "tip" }] },
-      { id: "score", art: "voll", beats: [
-        { kind: "block", label: true },
-        { kind: "probierfeld", probe: "score" },
-        { kind: "block", label: true },
-        { kind: "block", label: true },
-        { kind: "tip" }] },
-      { id: "anzeigen", art: "voll", beats: [
-        { kind: "probierfeld", probe: "laufmock" },
-        { kind: "block", label: true },
-        { kind: "tip" }] },
-      { id: "herkunft", art: "voll", beats: [
-        { kind: "block", label: true },
-        { kind: "probierfeld", probe: "herkunft" },
-        { kind: "tip" }] },
-    ],
-  },
-  {
-    id: "aufstellung",
-    /* FÜNF Lektionen statt sechs: der freigegebene Entwurf zieht „tauschen" und „position" in EINE
-       Runde am Brett zusammen. Beide erklärten dasselbe aus zwei Blickwinkeln. */
-    lessons: [
-      { id: "phase", art: "voll", beats: [
-        { kind: "block" },
-        { kind: "regeln" },
-        { kind: "liste" },
-        { kind: "tip" }] },
-      { id: "brett", art: "voll", beats: [
-        { kind: "probierfeld", probe: "aufstellen" },
-        { kind: "block", label: true },
-        { kind: "tip" }] },
+      /* T-O4: Der Kernsatz der geloeschten wasist-Lektion („Blitz stellt ihn selbst her") lebt
+         im Probe-Hinweis dieser Runde weiter — als eigener Satz-Takt riss er das 960er-Budget. */
       { id: "karte", art: "voll", beats: [
-        { kind: "probierfeld", probe: "kartenteile" },
-        { kind: "block", label: true },
+        { kind: "probierfeld", probe: "blitzkarte" },
         { kind: "tip" }] },
-      { id: "formationen", art: "voll", beats: [
-        { kind: "probierfeld", probe: "formation" },
-        { kind: "regeln" },
-        { kind: "tip" }] },
-      { id: "stapeln", art: "voll", beats: [
-        { kind: "probierfeld", probe: "overlap" },
-        { kind: "block", label: true },
-        { kind: "tip" }] },
+      { id: "tipps", art: "voll", beats: [
+        { kind: "probierfeld", probe: "tipps" }] },
     ],
   },
   {
     id: "wahl",
-    /* DREI Lektionen statt sechs. Der freigegebene Entwurf zieht Angebot, Neuwurf, Motor und
-       Legendäres in die erste Runde und die Raritäten-Lektion zusammen. */
+
     lessons: [
-      { id: "perks", art: "voll", beats: [
-        { kind: "block" },
-        { kind: "block", label: true },
-        { kind: "block", label: true },
-        { kind: "tip" }] },
-      { id: "kategorien", art: "kurz", beats: [
-        { kind: "probierfeld", probe: "kategorien" },
-        { kind: "tip" }] },
+      /* Review-Runde (Zeilen 4-6): die Tipp-Takte dieser drei Lektionen sind auf Owner-Wunsch
+         gestrichen — der Familienzaehler, der Stufen-Absatz und der Legendaer-Tipp waren Ballast. */
+      { id: "kategorien", art: "voll", beats: [
+        { kind: "probierfeld", probe: "kategorien" }] },
       { id: "raritaet", art: "voll", beats: [
-        { kind: "probierfeld", probe: "raritaet" },
-        { kind: "merk" },
-        { kind: "block", label: true },
-        { kind: "tip" }] },
+        { kind: "probierfeld", probe: "raritaet" }] },
+      /* Der Raritäten-Schirm des Entwurfs maß 1285 px — über dem vollen Budget. Owner-Entscheid:
+         aufteilen statt kürzen; der Legendär-Teil ist eine eigene Lektion. */
+      { id: "legendaer", art: "voll", beats: [
+        { kind: "probierfeld", probe: "legendaer" }] },
     ],
   },
   {
-    id: "blitz",
-    arch: "lightning",
+    id: "aufstellung",
+
     lessons: [
-      { id: "wasist", art: "voll", beats: [
+      { id: "formationen", art: "voll", beats: [
+        { kind: "probierfeld", probe: "formation" },
+        { kind: "tip" }] },
+      { id: "stapeln", art: "voll", beats: [
+        { kind: "probierfeld", probe: "overlap" },
+        { kind: "tip" }] },],
+  },
+  {
+    id: "architekt",
+    /* VIER Lektionen statt sechs. „brett" und „sorten" waren Textkarten; was sie sagten, steht
+       jetzt in der ersten Runde und in den Regeln darunter. */
+    lessons: [
+      /* Review-Runde (Zeilen 19/20): „wohin" ist jetzt die Distrikt-Lektion, die Strukturen haben
+         ihre eigene Runde — S-A2 verlinkt auf wohin, S-A3 auf strukturen. R13: Aufwerten rückt
+         HINTER Distrikte und Strukturen — so tauchen die Themen auch im Lauf auf (S-A2 → S-A3 → S-A4). */
+      { id: "wohin", art: "voll", beats: [
         { kind: "block" },
-        { kind: "block", label: true },
-        { kind: "regeln" },
+        { kind: "probierfeld", probe: "struktur" },
         { kind: "tip" }] },
-      { id: "karte", art: "voll", beats: [
-        { kind: "probierfeld", probe: "blitzkarte" },
-        { kind: "block", label: true },
+      /* Runde 2, R10: Auftragszeile und Tipp gestrichen — die Seite trägt alles Nötige selbst.
+         `stumm` lässt das Probierfeld ohne eigenen Satz stehen (kein Schlüssel, keine Zeile). */
+      { id: "strukturen", art: "voll", beats: [
+        { kind: "block" },
+        { kind: "probierfeld", probe: "strukturen", stumm: true }] },
+      { id: "aufwerten", art: "voll", beats: [
+        { kind: "tabelle", rows: 5 },
+        { kind: "merk" },
         { kind: "tip" }] },
-      { id: "tipps", art: "kurz", beats: [
-        { kind: "liste" },
-        { kind: "tip" }] },
-    ],
+      { id: "tipps", art: "voll", beats: [
+        { kind: "probierfeld", probe: "tipps" },
+        { kind: "tip" }] },],
   },
   {
     /* Die alte Sektion „archetypen" mit ihren vier Verweis-Karten ist weg. Der freigegebene
@@ -180,148 +142,65 @@ export const SECTIONS = [
        den Leitfaden war keine Lektion. */
     id: "feuer",
     arch: "fire",
+    /* Runde 3, Q13 (Mockup freigegeben): drei schlanke Seiten — Vorsprung, Hitzeleiste,
+       Schmiede. Merksätze wohnen IN den Szenen (wie im Mockup), der Tipp-Takt entfällt. */
     lessons: [
-      { id: "wasist", art: "voll", beats: [
-        { kind: "block" },
-        { kind: "block", label: true },
-        { kind: "regeln" },
-        { kind: "tip" }] },
       { id: "karte", art: "voll", beats: [
-        { kind: "probierfeld", probe: "feuerkarten" },
-        { kind: "block", label: true },
-        { kind: "tip" }] },
+        { kind: "probierfeld", probe: "feuerkarten" }] },
       { id: "feld", art: "voll", beats: [
-        { kind: "probierfeld", probe: "hitze" },
-        { kind: "block", label: true },
-        { kind: "tip" }] },
-      { id: "tipps", art: "kurz", beats: [
-        { kind: "liste" },
-        { kind: "tip" }] },
-    ],
-  },
-  {
-    id: "pflanze",
-    arch: "plant",
-    lessons: [
-      { id: "wasist", art: "voll", beats: [
-        { kind: "block" },
-        { kind: "block", label: true },
-        { kind: "merk" },
-        { kind: "regeln" },
-        { kind: "tip" }] },
-      { id: "karte", art: "voll", beats: [
-        { kind: "probierfeld", probe: "pflanzkarte" },
-        { kind: "block", label: true },
-        { kind: "tip" }] },
-      { id: "feld", art: "voll", beats: [
-        { kind: "probierfeld", probe: "gruenfeld" },
-        { kind: "block", label: true },
-        { kind: "tip" }] },
-      { id: "tipps", art: "kurz", beats: [
-        { kind: "liste" },
-        { kind: "tip" }] },
-    ],
-  },
-  {
-    id: "eis",
-    arch: "ice",
-    lessons: [
-      { id: "wasist", art: "voll", beats: [
-        { kind: "block" },
-        { kind: "block", label: true },
-        { kind: "merk" },
-        { kind: "regeln" },
-        { kind: "tip" }] },
-      { id: "karte", art: "voll", beats: [
-        { kind: "probierfeld", probe: "gletscher" },
-        { kind: "block", label: true },
-        { kind: "tip" }] },
-      { id: "feld", art: "voll", beats: [
-        { kind: "probierfeld", probe: "gletscherfeld" },
-        { kind: "block", label: true },
-        { kind: "tip" }] },
-      { id: "tipps", art: "kurz", beats: [
-        { kind: "liste" },
-        { kind: "tip" }] },
-    ],
-  },
-  {
-    id: "architekt",
-    /* VIER Lektionen statt sechs. „brett" und „sorten" waren Textkarten; was sie sagten, steht
-       jetzt in der ersten Runde und in den Regeln darunter. */
-    lessons: [
-      { id: "wasist", art: "voll", beats: [
-        { kind: "block" },
-        { kind: "probierfeld", probe: "archmock" },
-        { kind: "liste" },
-        { kind: "tip" }] },
-      { id: "hauptaktion", art: "voll", beats: [
-        { kind: "probierfeld", probe: "bauen" },
-        { kind: "tabelle", rows: 5 },
-        { kind: "merk" },
-        { kind: "tip" }] },
-      { id: "wohin", art: "voll", beats: [
-        { kind: "block" },
-        { kind: "probierfeld", probe: "struktur" },
-        { kind: "block", label: true },
-        { kind: "tip" }] },
-      { id: "tipps", art: "kurz", beats: [
-        { kind: "liste" },
-        { kind: "tip" }] },
+        { kind: "probierfeld", probe: "hitze" }] },
+      { id: "schmiede", art: "voll", beats: [
+        { kind: "probierfeld", probe: "schmiede" }] },
+      { id: "tipps", art: "voll", beats: [
+        { kind: "probierfeld", probe: "tipps" }] },
     ],
   },
   {
     id: "danach",
     lessons: [
-      { id: "endscreen", art: "voll", beats: [
-        { kind: "block" },
-        { kind: "probierfeld", probe: "gomock" },
-        { kind: "merk" },
-        { kind: "tip" }] },
       { id: "punkte", art: "voll", beats: [
         { kind: "block" },
         { kind: "probierfeld", probe: "meilenstein" },
         { kind: "merk" },
-        { kind: "tip" }] },
-      { id: "baum", art: "voll", beats: [
-        { kind: "block" },
-        { kind: "probierfeld", probe: "baum" },
-        { kind: "tip" }] },
-      { id: "rangliste", art: "kurz", beats: [
-        { kind: "block" },
-        { kind: "block", label: true },
-        { kind: "tip" }] },
+        { kind: "merk" },
+        { kind: "tip" }] },],
+  },
+  {
+    id: "pflanze",
+    arch: "plant",
+    /* Runde 3, Q16 (Mockup freigegeben): „karte" zeigt das echte Neon-Moos-Wachstum und
+       ersetzt zugleich „erkennen"; „tempo" (neu) fasst Tempo, Reinheit und Trimmen. */
+    lessons: [
+      { id: "karte", art: "voll", beats: [
+        { kind: "probierfeld", probe: "pflanzkarte" }] },
+      { id: "feld", art: "voll", beats: [
+        { kind: "probierfeld", probe: "gruenfeld" }] },
+      { id: "tempo", art: "voll", beats: [
+        { kind: "probierfeld", probe: "pflanztempo" }] },
+      { id: "tipps", art: "voll", beats: [
+        { kind: "probierfeld", probe: "tipps" }] },
     ],
   },
   {
-    /* Die zehnte Sektion, vom Owner nachgefordert: was man tun kann, wenn die Grundlagen sitzen.
-       VIER Lektionen, seit „Zwei Builds" geteilt wurde — die Lektion maß 1.360 px gegen ein
-       Budget von 960, und beide Builds waren ausdrücklich gewollt. */
-    id: "fortgeschritten",
+    id: "eis",
+    arch: "ice",
+    /* Runde 3, Q16 (Mockup freigegeben): „karte" läuft als Masse-Loop mit echtem Frost
+       und trägt den Nachbar-Bonus; „formationen" (neu) zeigt die vier Geometrie-Formen
+       samt Stapeln, „schnee" (Runde 4, V2) das Reserve-System. Das freie Gletscherfeld
+       ist mit seiner Lektion entfallen. */
     lessons: [
-      { id: "laenge", art: "voll", beats: [
-        { kind: "block" },
-        { kind: "probierfeld", probe: "laenge" },
-        { kind: "merk" },
-        { kind: "tip" }] },
-      { id: "segmente", art: "voll", beats: [
-        { kind: "block" },
-        { kind: "probierfeld", probe: "segmente" },
-        { kind: "merk" },
-        { kind: "tip" }] },
-      { id: "glut", art: "voll", beats: [
-        { kind: "block" },
-        { kind: "block", label: true },
-        { kind: "block", label: true },
-        { kind: "tip" }] },
-      { id: "klinge", art: "voll", beats: [
-        { kind: "block", label: true },
-        { kind: "block", label: true },
-        { kind: "merk" },
-        { kind: "tip" }] },
+      { id: "karte", art: "voll", beats: [
+        { kind: "probierfeld", probe: "gletscher" }] },
+      { id: "formationen", art: "voll", beats: [
+        { kind: "probierfeld", probe: "gletscherformen" }] },
+      /* Runde 4, V2 (Owner): statt der Einfrier-Regeln (die stehen in den Tipps) erklärt
+         Seite 3 den Schnee — die Boden-Reserve, die spätere Gletscher nachfüllt. */
+      { id: "schnee", art: "voll", beats: [
+        { kind: "probierfeld", probe: "schnee" }] },
+      { id: "tipps", art: "voll", beats: [
+        { kind: "probierfeld", probe: "tipps" }] },
     ],
-  },
-];
+  },];
 
 /* ---- abgeleitete Schlüssel ---- */
 export const sectionTitleKey = (s) => `tut.${s.id}.title`;
@@ -339,7 +218,8 @@ export function allKeys() {
     out.push(sectionTitleKey(s), sectionSubKey(s));
     for (const l of s.lessons) {
       out.push(lessonTitleKey(s, l));
-      l.beats.forEach((b, i) => { if (b.kind !== "bild") out.push(beatKey(s, l, i)); });
+      // `stumm` (R10): ein Probierfeld ohne eigenen Satz verlangt auch keinen Schlüssel.
+      l.beats.forEach((b, i) => { if (b.kind !== "bild" && !b.stumm) out.push(beatKey(s, l, i)); });
       // Das Bild trägt eine Bildunterschrift; sie hängt am selben Index.
       l.beats.forEach((b, i) => { if (b.kind === "bild") out.push(beatKey(s, l, i)); });
       // Ein beschrifteter Kasten braucht einen ZWEITEN Schlüssel. Ohne diese Zeile fehlte die
@@ -437,26 +317,27 @@ const TAB_ROWS_DEFAULT = 4;
    NIEDRIG angesetzt (250/305/300) — das Modell hätte eine zu lange Lektion durchgewunken, und das
    ist die einzige Richtung, in die ein Budget nicht irren darf. Die Werte hier stehen deshalb
    knapp über der Messung, aufgerundet. */
-const PROBE_PX = { formation: 215, streak: 150, score: 195, board: 215,
-  duell: 280, kampfwert: 335, serie: 375, laufmock: 340, herkunft: 300,
-  /* Die Aufstellungs-Runden, ebenfalls nachgemessen: aufstellen 243 · kartenteile 186 ·
-     overlap 190 (dieselbe Komponente wie formation). Sie fehlten hier zuerst ganz und fielen
-     damit auf PROBE_MAX — 375 px für ein 186-px-Feld. Das Modell lag dadurch bis zu 40 % zu hoch,
-     und ein Budget, das so weit danebenliegt, misst nichts mehr. */
-  aufstellen: 260, kartenteile: 215, overlap: 215,
-  /* Die Architekt-Runden. Das Brett ist der teuerste Baustein des ganzen Tutorials: acht Zeilen
-     mal fünf Spalten. GEMESSEN archmock 299 · bauen 286 · struktur 438. */
-  archmock: 320, bauen: 310, struktur: 460,
+/* Runde 3, Q17 (Owner): die Einträge der gestrichenen Lektionen (Grundlagen, Fortgeschritten,
+   Architekt-Mocks, Build-Kästen) sind mit ihren Bausteinen entfernt — was hier steht, existiert
+   auch in PROBES (beats.jsx). */
+const PROBE_PX = { formation: 520,
+  /* Welle 2, nachgemessen (mess-welle2.mjs): formation 697, overlap 337, kategorien 600,
+     blitzkarte 763, tipps 470 (Eis hat sechs Einträge, deshalb höher angesetzt),
+     raritaet/legendaer nach dem Split gemessen. */
+  tipps: 560, legendaer: 620, overlap: 480,
+  // Die Architekt-Runden. GEMESSEN struktur 438.
+  struktur: 560, strukturen: 620,
   // Wahl und Blitz, gemessen: kategorien 199 · raritaet 157 · blitzkarte 272.
-  kategorien: 215, raritaet: 175, blitzkarte: 290,
-  /* Feuer, Pflanze, Eis — gemessen: feuerkarten 271 · hitze 152 · pflanzkarte 305 ·
-     gruenfeld 315 · gletscher 252 · gletscherfeld 358. Zum VIERTEN Mal in diesem Task war ein
-     neues Feld hier zuerst nicht eingetragen und fiel auf PROBE_MAX; wer ein Probierfeld baut,
-     trägt es HIER ein, sonst misst das Budget etwas anderes als der Leser sieht. */
-  feuerkarten: 290, hitze: 170, pflanzkarte: 325, gruenfeld: 335, gletscher: 270, gletscherfeld: 375,
-  // Nach dem Lauf und Fortgeschritten, gemessen: gomock 299 · meilenstein 169 · baum 352 ·
-  // laenge 299 · segmente 311.
-  gomock: 320, meilenstein: 190, baum: 370, laenge: 320, segmente: 330 };
+  kategorien: 600, raritaet: 620, blitzkarte: 800,
+  /* Feuer, Pflanze, Eis — die Runde-3-Seiten (Q13/Q16). GEMESSEN per CDP im Produktions-
+     build bei 390 × 844 (Deutsch): feuerkarten 461 · hitze 432 · schmiede 529 ·
+     pflanzkarte 538 · gruenfeld 434 · pflanztempo 375 · gletscher 638 ·
+     gletscherformen 535 (Fläche-Tab, der längste) · einfrieren 219. Eingetragen knapp
+     darüber, weil Englisch länger laufen kann und das Modell eher zu viel schätzen soll. */
+  feuerkarten: 500, schmiede: 570, hitze: 470, pflanzkarte: 580, pflanztempo: 410, gruenfeld: 480,
+  gletscher: 690, gletscherformen: 580, schnee: 450,
+  // Nach dem Lauf, gemessen: meilenstein 169.
+  meilenstein: 400 };
 const PROBE_MAX = Math.max(...Object.values(PROBE_PX));
 
 const lines = (text) => Math.max(1, Math.ceil(String(text || "").length / CHARS_PER_LINE));

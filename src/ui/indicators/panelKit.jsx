@@ -25,11 +25,13 @@ export function IndicatorPanel({ children, className = "" }) {
 // `ambient` (box-shadow-String) + `ambientPulse` (Klassenname) tragen das Archetyp-Eigen-Ambiente, das von der
 // Battlefield-Fläche zu den Fraktions-Panels gewandert ist (#deckshop): eine an die Ressource gekoppelte Innen-Aura
 // (Feuer warm / Blitz blau→violett), als eigene Ebene HINTER dem Inhalt (Puls beeinflusst den Text nicht).
-export function FactionShell({ icon, name, color, stateText, stateOn = false, collapsed = false, onToggle, ambient = null, ambientPulse = null, className = "", footer = null, children }) {
+export function FactionShell({ icon, name, color, stateText, stateOn = false, collapsed = false, onToggle, ambient = null, ambientPulse = null, className = "", footer = null, anchor = null, children }) {
   return (
     // isolation:isolate → eigener Stacking-Context, damit die negative-z Ambient-Ebene HINTER den Inhalt fällt,
     // ohne dass der Inhalt (oder ein absoluter Kind-Effekt wie ChargeBars as-blitz-pulse) positioniert werden muss.
+    // `anchor` → data-hint-anchor: E5 (Onboarding) markiert die Leiste des gerade aktivierten Archetyps.
     <div className={`rounded-xl p-3 as-panel as-panel-fac relative overflow-hidden ${className}`}
+      data-hint-anchor={anchor || undefined}
       style={{ ...PANEL_STYLE, border: `1px solid ${color}33`, isolation: "isolate", "--fac": color }}>
       {ambient && (
         <div aria-hidden="true" className={`absolute inset-0 rounded-xl pointer-events-none${ambientPulse ? ` ${ambientPulse}` : ""}`}

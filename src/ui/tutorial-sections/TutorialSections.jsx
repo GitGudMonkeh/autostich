@@ -12,7 +12,7 @@ import * as GL from "../../game/glacier.js";
 import * as AR from "../../game/architect.js";
 import * as FM from "../../game/formations.js";
 import { ARCHETYPE_META } from "../../game/skills.js";
-import { familyDef, archFamily } from "../../i18n/labels.js";
+import { familyDef, archFamily, nodeDef, rarityLabel, skillDef } from "../../i18n/labels.js";
 
 /* Die Platzhalter liegen in vars.js, weil der Wächter dieselbe Liste braucht — siehe dort. */
 /* NAMEN VON PERKS UND GEBÄUDEN werden ABGELEITET, nicht in den Text getippt — dieselbe Regel wie
@@ -25,6 +25,8 @@ import { familyDef, archFamily } from "../../i18n/labels.js";
    einer Modulkonstante. */
 const localeVars = (locale) => ({
   segWork: familyDef("E_SEGMENT")?.name ?? "",
+  legNode: nodeDef("legLayer")?.label ?? "",
+  rar4: rarityLabel(4),
   pillar: archFamily("A_PFEILER")?.name ?? "",
   zollhaus: archFamily("A_ZOLLHAUS")?.name ?? "",
   kontor: archFamily("A_KONTOR")?.name ?? "",
@@ -41,11 +43,20 @@ const localeVars = (locale) => ({
   colAmp: "×" + fmtNum((1 + (AR.SPALTE_FACTOR - 1) * C.FIRE_STRUCT_DIVIDEND_AMP).toFixed(2), locale),
   eskStep: fmtNum(FM.ESKALATION_STEP.toFixed(2), locale),
   wiedStep: fmtNum(FM.WIED_STEP.toFixed(2), locale),
+  // Welle 3: Skill-Namen und Dezimalfaktoren der Archetyp-Lektionen
+  ionSkill: skillDef("SK_LIGHTNING_02")?.name ?? "",
+  gkSkill: skillDef("SK_FIRE_06")?.name ?? "",
+  fbSkill: skillDef("SK_FIRE_11")?.name ?? "",
+  spSkill: skillDef("SK_FIRE_12")?.name ?? "",
+  schmiedeSkill: skillDef("SK_FIRE_15")?.name ?? "",
+  greenCap: fmtNum(FM.FARBBLOCK_BASE.toFixed(2), locale),
+  greenCapUeber: fmtNum((FM.FARBBLOCK_BASE + C.UEBERWUCHERUNG_FACTOR).toFixed(2), locale),
+  kollFakt: fmtNum(String(GL.KOLLISION_MULT), locale),
 });
 // `offered` bedeutet je nach Lektion etwas anderes — Perk-Angebot oder Skill-Angebot.
 /* `none` hat nur, wer einen Leerzustand kennt. Die Aufstellungs-Runden kennen ihn: eine Reihe ohne
    Formation ist ein gültiger Zustand und braucht ein Wort dafür. */
-const NONE_LABEL = new Set(["formation", "aufstellen", "kartenteile", "overlap", "bauen"]);
+const NONE_LABEL = new Set(["aufstellen", "kartenteile", "bauen"]);
 const OFFERED = { "tut.wahl.perks.0": C.PERKS_OFFERED, "tut.wahl.skills.0": C.SKILLS_OFFERED };
 
 /* TUTORIAL-SEKTIONEN — die dritte Lehr-Ebene (Glossar = nachschlagen · Leitfaden = Strategie ·
@@ -112,13 +123,18 @@ function Head({ eyebrow, title, onClose, closeLabel }) {
    eigenen Speicher, damit sie ohne localStorage rendert (Server-Render, Tests). */
 export const lessonPath = (s, l) => `${s.id}/${l.id}`;
 
-export function TutorialSections({ onClose, onOpenGlossary = null, onOpenGuide = null, seen = [], last = null, onSeen = null }) {
+export function TutorialSections({ onClose, onOpenGlossary = null, onOpenGuide = null, onTutorialRun = null, seen = [], onSeen = null, initial = null }) {
   const t = useT();
   const [locale] = useLocale();
   const seenSet = new Set(seen);
   useEscape(onClose);
-  // null = Themenliste · {section} = Lektionsliste · {section,lesson} = Lektion
-  const [at, setAt] = useState(null);
+  /* T-O4: EINE flache Liste statt Themenliste → Lektionsliste → Lektion (Papier §8). Ein
+     Pull-Nachschlagewerk, das meist über die „Mehr dazu"-Deep-Links der Hints geöffnet wird,
+     braucht einen Index, kein Curriculum — deshalb auch kein Weitermachen-Block und kein
+     globaler Fortschritt mehr. `initial` ist der Deep-Link: { section, lesson } öffnet die
+     Runde direkt, der Lauf pausiert darunter (App-Einfrier-Kette). */
+  // null = flache Liste · {section,lesson} = Lektion
+  const [at, setAt] = useState(initial ? { section: initial.section, lesson: initial.lesson } : null);
 
   const section = at ? SECTIONS.find((s) => s.id === at.section) : null;
   const lesson = section && at.lesson ? section.lessons.find((l) => l.id === at.lesson) : null;
@@ -131,7 +147,10 @@ export function TutorialSections({ onClose, onOpenGlossary = null, onOpenGuide =
   const go = (delta) => {
     const next = section.lessons[lessonIdx + delta];
     if (next) open(section, next);
-    else setAt({ section: section.id });   // über das Ende hinaus → zurück in die Lektionsliste
+    /* Runde 2, R5: „Weiter" auf der letzten Seite schließt das Tutorial ganz — zurück ins
+       Spiel, nicht in die Liste. Rückwärts unter den Anfang bleibt der Weg in die Liste. */
+    else if (delta > 0) onClose?.();
+    else setAt(null);
   };
 
   /* `shell` portalt SELBST. Erste Fassung hatte drei `return overlayPortal(shell(...))` — verhalten
@@ -189,7 +208,7 @@ export function TutorialSections({ onClose, onOpenGlossary = null, onOpenGuide =
          Formations-Feldes — das Architekt-Brett trug damit „ein Segment" und „keine Formation",
          also Formations-Vokabular auf einem Gebäude-Brett. text-style-guide.md §1e reserviert
          „Formation" für Karten-Formationen; Tripwire 2 des Workstreams trifft genau das. */
-      return <Probe key={i} title={t(`tut.probe.${b.probe}.title`)} hint={t(key, vars)}
+      return <Probe key={i} title={t(`tut.probe.${b.probe}.title`)} hint={b.stumm ? null : t(key, vars)}
         readoutLabel={t(`tut.probe.${b.probe}.readout`)}
         /* `none` hat nur, wer einen Leerzustand kennt: das Formations-Feld („keine Formation") und
            das Brett („kein Boost"). Serie und Faktoren haben keinen — eine Serie von 0 ist eine Zahl,
@@ -230,64 +249,38 @@ export function TutorialSections({ onClose, onOpenGlossary = null, onOpenGuide =
     return shell(t(sectionTitleKey(section)), t(lessonTitleKey(section, lesson)), body, foot);
   }
 
-  /* ---- Ebene 2: die Lektionen einer Sektion ---- */
-  if (section) {
-    const body = section.lessons.map((l) => (
-      <Row key={l.id} onClick={() => open(section, l)}>
-        <div className="flex items-baseline gap-2.5">
-          <div className="text-body-4 font-semibold flex-1 min-w-0" style={{ color: "#e8e8ea" }}>{t(lessonTitleKey(section, l))}</div>
-          {seenSet.has(lessonPath(section, l)) && (
-            <span className="text-meta-1 flex-none" style={{ color: "var(--deck-a1, #8a7de0)" }}>{t("tut.seen")}</span>
-          )}
-        </div>
-      </Row>
-    ));
-    const foot = <ActionButton kind="secondary" flex onClick={() => setAt(null)}>{t("tut.allTopics")}</ActionButton>;
-    return shell(t("tut.title"), t(sectionTitleKey(section)), body, foot);
-  }
-
-  /* ---- Ebene 1: die Themenliste ---- */
-  const doneIn = (sec) => sec.lessons.filter((l) => seenSet.has(lessonPath(sec, l))).length;
-  const total = SECTIONS.reduce((n, sec) => n + sec.lessons.length, 0);
-
-  /* Die Weitermachen-Zeile ist Inhalt, nicht Polsterung: GEMESSEN ließ eine Liste aus nackten Zeilen
-     228,5 px Schwarz unter der Karte (27 % des Schirms), mit ihr sind es 104,2
-     (planning-report.md §1.4a). Sie ist zugleich der nützlichste Knopf für jeden, der wiederkommt. */
-  const resume = (() => {
-    if (!last) return null;
-    const [sid, lid] = last.split("/");
-    const sec = SECTIONS.find((x) => x.id === sid);
-    const les = sec && sec.lessons.find((x) => x.id === lid);
-    if (!sec || !les) return null;   // Lektion umbenannt/entfernt → keine tote Zeile zeigen
-    return (
-      <Row accent onClick={() => open(sec, les)}>
-        <div className={EYEBROW} style={{ color: "var(--deck-a1, #8a7de0)", marginBottom: 4 }}>{t("tut.resume")}</div>
-        <div className="text-body-4 font-semibold" style={{ color: "#e8e8ea" }}>
-          {t(sectionTitleKey(sec))} · {t(lessonTitleKey(sec, les))}
-        </div>
-      </Row>
-    );
-  })();
-
+  /* ---- die flache Liste: Sektionen als Gruppenkoepfe, Runden als Zeilen (Papier §8, Mockup
+     Board 7). Kein Fortschrittszaehler — Vollstaendigkeit ist die Eigenschaft der Ebene, nicht
+     die Aufgabe des Spielers. Das kleine „gelesen" je Zeile bleibt als Lesezeichen. */
   const body = (
     <>
-      {resume}
-      <div className={EYEBROW} style={{ color: "var(--deck-a1, #8a7de0)", paddingBottom: 10 }}>
-        {t("tut.allProgress", { done: seenSet.size, total })}
-      </div>
-      {SECTIONS.map((s) => {
-        const done = doneIn(s);
+      {/* Runde 3 (Owner): der Tutorial-Lauf — setzt alle Tipps zurück und startet einen neuen,
+          wieder komplett geführten Lauf. Bei aktivem Lauf fragt App vorher nach (der ginge verloren). */}
+      {onTutorialRun && (
+        <div style={{ marginBottom: 16 }}>
+          <button type="button" onClick={onTutorialRun}
+            className="w-full rounded-xl px-4 py-3 font-bold text-body-3 transition-all hover:brightness-110"
+            style={{ background: "#26c6e6", color: "#06222a" }}>{t("tut.run")}</button>
+          <div className="text-meta-1 mt-1.5" style={{ color: "#8a8a95" }}>{t("tut.run.sub")}</div>
+        </div>
+      )}
+      {SECTIONS.map((sec) => {
+        const farbe = sec.arch ? ARCHETYPE_META[sec.arch]?.color : null;
         return (
-          <Row key={s.id} onClick={() => setAt({ section: s.id })}>
-            <div className="flex items-baseline gap-2.5">
-              <div className="text-body-4 font-semibold flex-1 min-w-0" style={{ color: "#e8e8ea" }}>{t(sectionTitleKey(s))}</div>
-              <div className="text-meta-1 ty-num-sm flex-none" style={{ color: "#71717c" }}>{done} / {s.lessons.length}</div>
-            </div>
-            <div className="text-body-1" style={{ color: "#8a8a95", marginTop: 3, lineHeight: 1.38 }}>{t(sectionSubKey(s))}</div>
-            <div style={{ height: 3, borderRadius: 2, background: "rgba(150,150,170,.14)", marginTop: 8, overflow: "hidden" }}>
-              <div style={{ height: "100%", width: `${Math.round(done / s.lessons.length * 100)}%`, background: "var(--deck-a1,#8a7de0)" }} />
-            </div>
-          </Row>
+          <div key={sec.id} style={{ marginBottom: 16 }}>
+            <div className={EYEBROW} style={{ color: farbe || "var(--deck-a1, #8a7de0)", marginBottom: 2 }}>{t(sectionTitleKey(sec))}</div>
+            <div className="text-body-1" style={{ color: "#8a8a95", margin: "0 0 8px", lineHeight: 1.38 }}>{t(sectionSubKey(sec))}</div>
+            {sec.lessons.map((l) => (
+              <Row key={l.id} onClick={() => open(sec, l)}>
+                <div className="flex items-baseline gap-2.5">
+                  <div className="text-body-4 font-semibold flex-1 min-w-0" style={{ color: "#e8e8ea" }}>{t(lessonTitleKey(sec, l))}</div>
+                  {seenSet.has(lessonPath(sec, l)) && (
+                    <span className="text-meta-1 flex-none" style={{ color: "var(--deck-a1, #8a7de0)" }}>{t("tut.seen")}</span>
+                  )}
+                </div>
+              </Row>
+            ))}
+          </div>
         );
       })}
     </>

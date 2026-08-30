@@ -116,6 +116,14 @@ describe("i18n · Katalog-Parität", () => {
      würde die vergessene spanische Übersetzung genau dort durchlassen, wo sie am wahrscheinlichsten
      ist — bei den Wörtern, die aus dem Englischen schon vertraut aussehen. */
   const SAME_OK_EN = new Set([
+    "hint.eyebrow",      // „Tutorial" — im Englischen dasselbe Wort
+    "tut.sz.ax.eqStep",     // reine Formelzeile aus Platzhaltern
+    "tut.sz.nb.maximum",    // dasselbe Wort
+    /* Runde 3 (Q13): die neuen Archetyp-Seiten. „Skill" und „Brand" sind im Englischen dieselben
+       Wörter, „+{score} extra" ist Platzhalter plus ein geteiltes Lehnwort. */
+    "tut.sz.chipSkill",     // „Skill · {nm}" — Skill bleibt Skill
+    "tut.sz.fs.n1",         // „1 · Brand" — im Englischen dasselbe Wort
+    "tut.sz.fv.pktKlar",    // „+{score} extra" — Platzhalter plus geteiltes Wort
     /* „{segWork} III" — der Rohtext IST in allen Sprachen gleich, weil der ganze Unterschied im
        Platzhalter steckt: das Register füllt ihn je Sprache (Segmentarbeit / Segment Work /
        Trabajo de Segmento / 区段作业). Vorher stand hier der deutsche Name im Text, und ein
@@ -155,6 +163,7 @@ describe("i18n · Katalog-Parität", () => {
     "start.tile.upgrades",   // „Upgrades" ist im Deutschen der etablierte Begriff (§3.5)
     "start.board.last.none", // Gedankenstrich als Platzhalter „noch kein Lauf" — Zeichen, kein Wort
     "start.tutorial",        // „Tutorial" ebenso — dasselbe Wort in beiden Sprachen
+    "tut.title",             // dito — der Schirm heisst wieder „Tutorial" (Runde 2, R3)
     "tut.eyebrow",           // dito — die Kopfzeile der Tutorial-Sektionen
     "tut.progress",          // „{n} / {total}" — nur Zahlen und ein Schrägstrich
     "tut.f.crit",            // „Crit" bleibt Crit (Begriffstabelle §3.1)
@@ -269,6 +278,9 @@ describe("i18n · Katalog-Parität", () => {
      3. ZWEI KÜRZEL, die zufällig zusammenfallen: Wechsel/Zigzag → Z und Anker/Ancla → A. Die
         anderen sechs Formations-Kürzel unterscheiden sich. */
   const SAME_OK_ES = new Set([
+    "hint.eyebrow",      // „Tutorial" — im Spanischen dasselbe Wort
+    "tut.sz.ax.eqStep",     // reine Formelzeile aus Platzhaltern
+    "tut.sz.fv.pktKlar",    // „+{score} extra" — Platzhalter plus geteiltes Lehnwort
     /* „{segWork} III" — der Rohtext IST in allen Sprachen gleich, weil der ganze Unterschied im
        Platzhalter steckt: das Register füllt ihn je Sprache (Segmentarbeit / Segment Work /
        Trabajo de Segmento / 区段作业). Vorher stand hier der deutsche Name im Text, und ein
@@ -299,7 +311,7 @@ describe("i18n · Katalog-Parität", () => {
     "gameover.build",            // „Build" ist auch im Spanischen der Roguelite-Begriff
     "hud.mult",                  // „Mult" — Kurzform von multiplicador, gleiche Schreibung
     "shop.tab.packs",            // „Packs" — dito, und das Deutsche borgt es aus demselben Grund
-    "tut.eyebrow", "start.tutorial",  // „Tutorial"
+    "tut.eyebrow", "start.tutorial", "tut.title",  // „Tutorial" (R3: der Schirm heisst wieder so)
     "feedback.eyebrow", "privacy.eyebrow",  // „Playtest"
     "feedback.kind.bug",         // „Bug"
     "feedback.kind.balance",     // „Balance"
@@ -320,6 +332,7 @@ describe("i18n · Katalog-Parität", () => {
      in keiner Sprache uebersetzt werden. Die erfundenen Deck- und Effektnamen faengt schon
      SAME_OK_CLASS ab und stehen deshalb nicht noch einmal hier. */
   const SAME_OK_ZH = new Set([
+    "tut.sz.ax.eqStep",     // reine Formelzeile aus Platzhaltern
     /* „{segWork} III" — der Rohtext IST in allen Sprachen gleich, weil der ganze Unterschied im
        Platzhalter steckt: das Register füllt ihn je Sprache (Segmentarbeit / Segment Work /
        Trabajo de Segmento / 区段作业). Vorher stand hier der deutsche Name im Text, und ein
@@ -1024,6 +1037,8 @@ describe("i18n · Ratsche gegen neue deutsche Inline-Texte", () => {
      migriert sind. */
   const MIGRATED = ["src/ui/OptionsModal.jsx", "src/ui/StartScreen.jsx", "src/ui/UsernameModal.jsx",
     "src/ui/GameOver.jsx",
+    // Onboarding-Hints (docs/tutorial-onboarding-design.md §5) — von der ersten Zeile an i18n-fest.
+    "src/ui/hints/HintCard.jsx",
     // Die vier Fraktions-Leisten — sie laufen im Stichspiel dauerhaft mit.
     "src/ui/HeatBar.jsx", "src/ui/ChargeBar.jsx", "src/ui/GlacierBar.jsx", "src/ui/PlantBar.jsx",
     // Die Spielschleife selbst: Kopfleiste, Seitenleiste, Brett, Aufstellungsphase.
@@ -1070,6 +1085,11 @@ describe("i18n · Ratsche gegen neue deutsche Inline-Texte", () => {
     // Tutorial-Sektionen (#tutorial-sections) — von der ersten Zeile an zweisprachig gebaut.
     "src/ui/tutorial-sections/TutorialSections.jsx", "src/ui/tutorial-sections/beats.jsx"];
 
+  /* Runde 3, Q17: beats.jsx trägt seit dem Lektions-Rückbau KEINEN Anzeigetext mehr — alle Sätze
+     laufen als Props aus TutorialSections.jsx hinein, ein i18n-Import wäre tot. Die Datei bleibt
+     in MIGRATED (kein Wort-Literal darf zurückkommen), nur die Import-Pflicht entfällt. */
+  const TEXTLESS = new Set(["src/ui/tutorial-sections/beats.jsx"]);
+
   /* In einer migrierten Datei steht KEIN Wort mehr als Literal — egal welcher Sprache. Deshalb
      wird nicht auf „deutsch aussehend" geprüft (das ließe „Normaler Lauf" durch, kein Umlaut),
      sondern auf „enthält überhaupt ein Wort". Symbole, Pfeile, Ziffern und einzelne Buchstaben
@@ -1088,6 +1108,7 @@ describe("i18n · Ratsche gegen neue deutsche Inline-Texte", () => {
 
   it("die Ratschen-Liste zeigt nur auf existierende, i18n-nutzende Dateien", () => {
     for (const file of MIGRATED) {
+      if (TEXTLESS.has(file)) continue;
       const src = readFileSync(new URL(`../${file}`, import.meta.url), "utf8");
       // App.jsx liegt eine Ebene höher (./i18n/), alles unter src/ui/ zwei (../i18n/).
       // Beliebige Tiefe: `./i18n/`, `../i18n/` — und `../../i18n/`, seit das Tutorial in src/ui/tutorial/ liegt.

@@ -3,7 +3,7 @@ import { Card, CardBack } from "./Card.jsx";
 import { tintImage } from "./deckTint.js"; // #gegnerdeck-farbe: Phasendecks in der Deckfarbe (einmal gebacken)
 import { clamp } from "../game/deck.js";
 import { TRICKS_PER_CYCLE, suitColor, AUSLAEUFER_HARVEST, ION_MAX_STACKS, HEAT_MAX, BASE_FLIP_MS, PLANT_GREEN_THRESHOLD } from "../game/constants.js";
-import { linkedPartnerOf } from "../game/shop.js";
+import { linkedPartnersOf } from "../game/shop.js";
 import { formationBorder } from "./formationStyle.js";
 import { holeSound } from "./blackholeSnd.js"; // Bett-Pegel des Schwarzen Lochs: EINE Quelle mit der Werkstatt-Vorschau
 import { supernovaSwellDelay } from "./fx/supernovaTiming.js"; // Swell-Vorlauf: EINE Quelle mit dem Showcase (Pixi-frei)
@@ -69,7 +69,7 @@ const CARD_FX_ENABLED = true;
 import { PIXI_FIELD_KEYS } from "./fx/fieldFxKeys.js"; // pixi-FREI: welche Feld-Effekte der GPU-Emitter übernimmt
 const PIXI_FIELD = new Set(PIXI_FIELD_KEYS);
 import { floorEffectPlacement, MOBILE_MQ } from "./fx/effectZones.js"; // fest verankerter Feld-Boden → Effekt-Front bündig am Panel-Rahmen
-import { useMediaQuery, useIsWide } from "./useIsWide.js";
+import { useMediaQuery } from "./useIsWide.js";
 import FieldLayer from "./fx/FieldLayer.jsx"; // #kompositor: der EINE Renderpfad der Shader-Feldeffekte
 import { useOnScreen } from "./fx/useOnScreen.js"; // #perf-scroll: aus dem Bild gescrollt = Effekte anhalten
 import { perfMark } from "./perfRecorder.js"; // #perf-scroll: Scroll-Wechsel im Report auffindbar machen
@@ -648,7 +648,7 @@ function SlashGhostLayer({ ghosts }) {
           <Card suit={g.suit} value={g.value} baseRank={g.baseRank} stichBonus={g.stichBonus}
             ionStacks={g.ionStacks} green={g.green}
             forged={g.forged || 0} branded={g.branded || 0} growth={g.growth || 0} colonized={g.colonized || 0}
-            allyColor={g.allyColor} frontImage={g.frontImage} />
+            allyColors={g.allyColors} frontImage={g.frontImage} />
         );
         // Reihenfolge (Wunsch): Karte liegt (rest) → Klingenschnitt IN PLACE (delay = g.rest) → DANACH floatet der
         // Ghost weg. #187: Slice driftet nach dem SCHNITT (driftDelay = rest + cut) in eine ZUFÄLLIGE Richtung
@@ -719,7 +719,12 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // Legendär) legt ein Vollbild-Overlay ÜBER das weiterhin gemountete Battlefield — die Effekt-Schleifen liefen
   // dort mit voller Rate für ein Bild, das niemand sieht. Gemessen: 99 von 386 Rucklern eines Laufs fielen in
   // 4 Architekt-Besuche. Bisher hielt nur `visibilitychange` (Tab im Hintergrund) sie an.
-  boardVisible = true }) {
+  boardVisible = true,
+  // Runde 2, R17: solange eine Ereignis-Hint-Karte offen ist, HÄLT das Feld den aufgelösten Stich
+  // face-up fest — kein Wegflug, kein Finisher, kein Zug-Takt. Bei Turbo/MAX war die referenzierte
+  // Karte sonst längst weggeflogen, bevor der Spieler den Hinweis las (E9: „kämpft mit 4 statt 3"
+  // neben einem Kartenrücken).
+  hintHold = false }) {
   /* #perf-scroll: …und „zu sehen" heißt AUCH: nicht aus dem Bild gescrollt. Die Spielseite ist deutlich höher als
      ein Handy-Viewport (Fraktions-Panels unter dem Brett); wer nach unten scrollt, lässt das Battlefield oben
      stehen — bisher liefen alle Effektschleifen dort mit voller Rate für ein Bild, das niemand sieht. Es gab im
@@ -815,7 +820,9 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const oppBackImg = (oppTint && oppTint.back) || oppSkin.back;
   const oppFrontImg = (oppTint && oppTint.front) || oppSkin.front;
   // F4 Farballianz (#125): Partnerfarbe einer Kartenfarbe → diagonaler Split auf der Karte (rein kosmetisch).
-  const allyColorFor = (suit) => { const a = linkedPartnerOf(pe, suit); return a ? suitColor(a) : null; };
+  // Review-Runde Zeile 32: alle Partnerfarben der Allianz (Baender auf der Karte statt nur einer).
+  const allyColorsFor = (suit) => { const a = linkedPartnersOf(pe, suit); return a.length ? a.map(suitColor) : null; };
+  // Runde 2, R16: die Farballianz ist ein SPIELER-Perk — die Gegnerkarte trägt nie das Allianz-Band.
   const win = t && (t.result === "win" || t.result === "win_tie");
   const lost = t && t.result === "loss";
   const isCrit = !!(t && t.isCrit);
@@ -882,8 +889,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const sBoom    = clamp(flipMs * 0.22, 90, 230);    // Krit-Zentral-Flash (kurz & hell)
   const sWinner  = clamp(flipMs * 0.5, 170, 520);    // Sieger-Ankippen (~500 ms)
   const sFloat   = clamp(flipMs * 0.55, 220, 820);   // Float-Away NACH dem Slice (nur noch Gegnerseite, #187)
-  const wide = useIsWide();
-  /* #turbo-takt: Ab 1280 px muss die ganze Choreografie IN den Stich passen — sonst schneidet der nächste
+  /* #turbo-takt: Die ganze Choreografie muss IN den Stich passen — sonst schneidet der nächste
      Stich sie ab, und genau das las sich als „bei Turbo werden die Animationen verkürzt oder übersprungen".
      Gemessen am laufenden Brett (1920 px, Zug + Wegflug gegen den Stich-Takt): 1× 1360 von 1750 ms ✔ ·
      ×2 1060 von 880 ✗ · ×4 540 von 440 ✗ · MAX 540 von 300 ✗. Schuld sind die festen UNTERGRENZEN
@@ -894,26 +900,30 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
      sie beide Takte mit dem Tempo mit — jede Animation läuft dann VOLLSTÄNDIG, nur schneller. Zusammen
      92 %; die restlichen 8 % sind der Atemzug zwischen zwei Stichen.
      Es gibt bewusst KEINE Untergrenze mehr: eine wäre genau der Fehler, den diese Zeilen beheben.
-     Nur oberhalb 1280 px — die Handy-Fassung hat keinen Zug-Takt und bleibt bei ihren Rohwerten. */
+     Seit 2026-08-28 (Owner) gelten die Deckel auf ALLEN Breiten — der Zug-Takt läuft jetzt auch am
+     Handy (s. #deckzug unten), also braucht auch dort die Choreografie den Platz im Stich. */
   const ZUG_ANTEIL = 0.40, WEG_ANTEIL = 0.52;
   const flyDurRoh  = clamp(flipMs * 0.7, 320, 900);   // Wegflug-Dauer der eigenen Verlierer-Karte (kein Schnitt mehr)
   const flipDurRoh = clamp(flipMs * 0.55, 220, 460);  // Flug vom Stapel + Flip der einlaufenden Karte
-  const flyDur   = wide ? Math.min(flyDurRoh, flipMs * WEG_ANTEIL) : flyDurRoh;
-  const flipDur  = wide ? Math.min(flipDurRoh, flipMs * ZUG_ANTEIL) : flipDurRoh;
-  /* #deckzug: Ab 1280 px läuft ein Stich in ZWEI Takten — erst ZIEHEN beide Seiten (Flug vom Stapel + Flip),
-     danach wird AUFGELÖST (Sieger kippt an, Finisher/Wegflug der Verliererkarte). Vorher fiel beides in denselben
-     Frame: der Stich ist beim Rendern längst entschieden, also stand `flyAway`/`oppFlyAway` schon im ersten Bild —
-     und `flipOn`/`oppFlipOn` schließen die wegfliegende Seite aus. Gezogen hat damit IMMER nur eine Seite (die
-     Gewinnerin), bei gewähltem Finisher (Klinge/Scorch/Hologrid/Loch) flippte die Gegnerkarte gar nicht, und nur
-     beim Unentschieden zogen beide. Genau das las sich als „mal ziehen beide Decks, mal nur eines".
-     `zugMs` ist die Zugdauer (= Flug/Flip); unterhalb 1280 px, bei reduzierter Bewegung und bei hohem Turbo ist
-     sie 0 — dort bleibt alles wie bisher, die Handy-Fassung ist unberührt.
+  const flyDur   = Math.min(flyDurRoh, flipMs * WEG_ANTEIL);
+  const flipDur  = Math.min(flipDurRoh, flipMs * ZUG_ANTEIL);
+  /* #deckzug: Ein Stich läuft in ZWEI Takten — erst ZIEHEN beide Seiten (Flug vom Stapel + Flip;
+     am Handy ohne Deck-Flug, dort ist der Zug der gemeinsame Flip), danach wird AUFGELÖST (Sieger
+     kippt an, Finisher/Wegflug der Verliererkarte). Vorher fiel beides in denselben Frame: der
+     Stich ist beim Rendern längst entschieden, also stand `flyAway`/`oppFlyAway` schon im ersten
+     Bild — und `flipOn`/`oppFlipOn` schließen die wegfliegende Seite aus. Gezogen hat damit IMMER
+     nur eine Seite (die Gewinnerin), bei gewähltem Finisher (Klinge/Scorch/Hologrid/Loch) flippte
+     die Gegnerkarte gar nicht, und nur beim Unentschieden zogen beide.
+     Zuerst nur ab 1280 px gebaut; seit 2026-08-28 (Owner-Playtest: „beide Karten gleichzeitig
+     umdrehen, dann auflösen — wie Desktop") auf allen Breiten. `zugMs` ist die Zugdauer (= Flug/
+     Flip); bei reduzierter Bewegung und bei sehr hohem Turbo ist sie 0 — dort löst alles sofort auf.
      Der Zustand hängt an der STICH-NUMMER, nicht an einem Flag: `drawnNo !== t.trickNo` ist schon im ERSTEN Render
      des neuen Stichs falsch. Ein `setState(false)` im Effekt käme einen Frame zu spät und ließe die Auflösung für
      ein Bild aufblitzen. */
-  const zugMs = wide && !reduced && !!t && flipMs > 170 ? Math.round(flipDur) : 0;
+  const zugMs = !reduced && !!t && flipMs > 170 ? Math.round(flipDur) : 0;
   const [drawnNo, setDrawnNo] = useState(null);
-  const gezogen = !zugMs || drawnNo === trickNo;   // trickNo: oben aus lastTrick (= t) abgeleitet
+  // R17: `hintHold` überspringt den Zug-Takt — der festgehaltene Stich liegt sofort offen.
+  const gezogen = !zugMs || drawnNo === trickNo || hintHold;   // trickNo: oben aus lastTrick (= t) abgeleitet
   useEffect(() => {
     if (!zugMs || trickNo == null) return undefined;
     const id = setTimeout(() => setDrawnNo(trickNo), zugMs);
@@ -936,7 +946,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // (Krit: Explosion), Spielerkarte kippt als Sieger an.
   // #deckzug: `aufOn` ist `sliceOn` NACH dem Zug — alles, was die Verliererkarte betrifft, hängt daran. `sliceOn`
   // selbst bleibt das Gate „dieser Stich wird überhaupt animiert" (Ghost-Spawn, Loch-Puls); die verzögern über nachZug.
-  const aufOn = sliceOn && gezogen;
+  // R17: mit offener Hint-Karte KEINE Auflösung — beide Karten bleiben liegen, bis „Weiter" fällt.
+  const aufOn = sliceOn && gezogen && !hintHold;
   const flyAway      = aufOn && lost;                         // eigene Karte verliert → fliegt einfach weg (ohne Schnitt)
   // #finisher: Der Sieg-Finisher ist wählbar. „klinge" → Gegnerkarte wird in-place vom Klinge-Ghost geschnitten.
   // „standard" (Default) → die Gegnerkarte fliegt einfach zur Seite weg (spiegelbildlich zum eigenen Wegflug bei
@@ -1013,7 +1024,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
     <div className="relative" style={{ display: "inline-block", lineHeight: 0 }}>
       <Card suit={t.pCard.suit} value={t.pCard.value} baseRank={t.pCard.baseRank}
             stichBonus={t.pValue - t.pCard.value} glow={win ? (isCrit ? critColor : "#5ab87a") : null}
-            ionStacks={t.pCard.ionStacks || 0} green={!!t.pCard.green} forged={forged[t.pCard.id] || 0} growth={growth[t.pCard.id] || 0} allyColor={allyColorFor(t.pCard.suit)}
+            ionStacks={t.pCard.ionStacks || 0} green={!!t.pCard.green} forged={forged[t.pCard.id] || 0} growth={growth[t.pCard.id] || 0} allyColors={allyColorsFor(t.pCard.suit)}
             frontImage={deckFront} />
       {edgeGlowEl /* z-0: unter Eis/Moos, über dem Skin */}
       {/* #blitz/#flip: Ionensturm-Rahmen als flippendes Kind auf der EdgeGlow-Ebene (z-0), UNTER Eis/Moos, ÜBER dem Skin.
@@ -1035,7 +1046,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const oCardEl = t && (
     <div className="relative" style={{ display: "inline-block", lineHeight: 0 }}>
       <Card suit={t.oCard.suit} value={t.oValue} baseRank={t.oCard.baseRank} glow={lost ? "#e0605a" : null}
-            green={!!t.oCard.green} branded={brandActive[t.oCard.id] || 0} colonized={colonized[t.oCard.id] ? AUSLAEUFER_HARVEST : 0} allyColor={allyColorFor(t.oCard.suit)} frontImage={oppFrontImg} />
+            green={!!t.oCard.green} branded={brandActive[t.oCard.id] || 0} colonized={colonized[t.oCard.id] ? AUSLAEUFER_HARVEST : 0} frontImage={oppFrontImg} />
       {edgeGlowEl}
     </div>
   );
@@ -1387,7 +1398,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
         color: suitColor(t.oCard.suit), bladeColor: klingeDeck ? (deckA1 || deckA2 || null) : null, seed: t.trickNo * 3 + 1, // #klinge-deck: Deckfarbe → Deck-Glühen · sonst null → kühles Stahlweiß (bladeTint)
         suit: t.oCard.suit, value: t.oValue, baseRank: t.oCard.baseRank, stichBonus: 0,
         ionStacks: 0, green: !!t.oCard.green,
-        branded: brandActive[t.oCard.id] || 0, colonized: colonized[t.oCard.id] ? AUSLAEUFER_HARVEST : 0, allyColor: allyColorFor(t.oCard.suit), frontImage: oppFrontImg });
+        branded: brandActive[t.oCard.id] || 0, colonized: colonized[t.oCard.id] ? AUSLAEUFER_HARVEST : 0, frontImage: oppFrontImg });
     }
     if (!spawned.length) return;
     setSlashGhosts((cur) => [...cur, ...spawned].slice(-ghostCap)); // Pool gedeckelt (turbo-abhängig, #200 A)
@@ -1508,7 +1519,8 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
      Kein overflow-hidden: passt die Kette bei sehr vielen Faktoren nicht in eine Zeile, darf sie per
      flex-wrap auf eine zweite Zeile ausweichen, statt am Rand abgeschnitten zu werden (#ui). */
   const kette = (
-    <div className={`bf-kette relative z-10 min-h-5 ${ketteOben ? "-mt-3" : "mt-1"} flex items-center justify-center`}>
+    <div className={`bf-kette relative z-10 min-h-5 ${ketteOben ? "-mt-3" : "mt-1"} flex items-center justify-center`}
+      data-hint-anchor="breakdown">
       {!hideBreakdown && <TrickBreakdown trick={t} />}
     </div>
   );

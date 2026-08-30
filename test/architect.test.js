@@ -3,7 +3,8 @@ import {
   ARCHITECT_FAMILIES, familyDef, shapeRotations, enumeratePlacements, isValidFootprint, occupiedCells,
   nextRotationFootprint, currentRotationIndex, ROWS, COLS,
   buildArchitectOffer, initialArchitect, precomputeArchitect, architectValueBonus, architectScore,
-  architectFormSpec, summarizeArchitect, tierNum, ARCHITECT_OFFER, HAEUSERZEILE_FACTOR,
+  architectFormSpec, summarizeArchitect, tierNum, upgradeInfo, bindSpanFor, MAX_TIER,
+  ARCHITECT_OFFER, HAEUSERZEILE_FACTOR,
   posOf, rowOf, colOf, N_POS,
   districtFactorMap, boardFactorMap, DISTRICT_BONUS, DISTRICT_CAP,
 } from "../src/game/architect.js";
@@ -142,26 +143,33 @@ describe("Architekt — Angebot (deterministisch)", () => {
     expect(maxLeg).toBeLessThanOrEqual(1);
   });
 
-  it("T2 (#229/#Pool): stufen-inerte Familien OHNE Kick nur Stufe 1; MIT tierKick bis zur Kick-Stufe `at`", () => {
-    // Ihr Effekt kennt keine Stufe → sie dürfen nicht mit höherem Raritätsrahmen angeboten werden (Aufrüsten
-    // ist dort ohnehin No-op). Ausnahme #Pool: inerte Familien MIT tierKick (z. B. Klammer) sind bis `at` sinnvoll
-    // aufwertbar → sie dürfen bis Stufe `at` angeboten werden. Normale Familien skalieren weiter über Stufen > 1.
+  it("T2 (#229/#Pool, Runde 6): tierValue-Leiter hebt das Stufen-Pinning — jede Familie darf Stufen > 1 tragen", () => {
+    // Vor Runde 6 wurden stufen-inerte Familien (joker/transparentFarb/crossSeg) im Angebot auf Stufe 1 gepinnt
+    // (bzw. mit Kick auf ≤ at), weil Aufrüsten dort ein No-op war. Mit der tierValue-Leiter zählt jede Stufe →
+    // das Pinning entfällt. Wächter: jede früher gepinnte Familie taucht über die Seeds auch mit Stufe > 1 auf,
+    // und KEIN Angebot einer Nicht-Legendär-Familie liegt über MAX_TIER.
     const INERT = new Set(["joker", "transparentFarb", "crossSeg"]);
-    let sawInertPinned = false, sawInertKicked = false, sawScaledNormal = false;
+    const seenHighTier = new Set();
     for (let s = 0; s < 300; s++) {
       for (const o of buildArchitectOffer(initialArchitect(), makeRng(s))) {
         if (o.legendary) continue;
         const fam = familyDef(o.familyId);
-        const kind = fam?.base?.kind;
-        if (INERT.has(kind)) {
-          if (fam.tierKick) { sawInertKicked = true; expect(o.tier).toBeLessThanOrEqual(fam.tierKick.at); } // MIT Kick: ≤ at
-          else { sawInertPinned = true; expect(o.tier).toBe(1); }                                            // OHNE Kick: Stufe 1
-        } else if (typeof o.tier === "number" && o.tier > 1) sawScaledNormal = true;
+        expect(o.tier).toBeLessThanOrEqual(MAX_TIER);
+        if (INERT.has(fam?.base?.kind) && o.tier > 1) seenHighTier.add(fam.id);
       }
     }
-    expect(sawInertPinned).toBe(true);  // inerte Familien ohne Kick tauchen auf und bleiben auf Stufe 1
-    expect(sawInertKicked).toBe(true);  // inerte Familien mit Kick tauchen auf und dürfen Stufen > 1 (bis at)
-    expect(sawScaledNormal).toBe(true); // ... normale Familien skalieren weiter über Stufen > 1
+    for (const fam of Object.values(ARCHITECT_FAMILIES)) {
+      if (fam.legendary || !INERT.has(fam.base && fam.base.kind)) continue;
+      expect(seenHighTier.has(fam.id), `${fam.id} muss auch mit Stufe > 1 angeboten werden`).toBe(true);
+    }
+  });
+
+  it("Runde 6 (X4): upgradeInfo — Leiter-Familien sind bis Stufe IV aufwertbar, IV meldet `max`", () => {
+    for (const id of ["A_ARKADE", "A_FRIES", "A_GEWOELBE", "A_PFEILER", "A_KLAMMER", "A_KREUZGANG"]) {
+      const fam = ARCHITECT_FAMILIES[id];
+      for (let t = 1; t < MAX_TIER; t++) expect(upgradeInfo(fam, t).can, `${id} Stufe ${t}`).toBe(true);
+      expect(upgradeInfo(fam, MAX_TIER)).toEqual({ can: false, reason: "max" });
+    }
   });
 });
 
@@ -287,7 +295,7 @@ describe("Architekt — formation-Direktiven & computeFormations", () => {
       B("A_GRUNDSTEIN", [20, 21, 25, 26]), B("A_KATHEDRALE", [30, 31, 32, 33, 34], "legendary"),
     ] }, idOrder, deck);
     expect(spec.jokerF.has(0)).toBe(true);        // Klammer → Farbblock-Joker
-    expect(spec.bind[10]).toBe(2);                // Kreuzgang Stufe 3 → Span 2
+    expect(spec.bind[10]).toBe(3);                // Kreuzgang Stufe 3 → Span 3 (Runde 6: ±1/±2/±3)
     expect(spec.crossSeg.has(0)).toBe(true);      // Pfeiler → Zeile 0 offen (rowOf(0))
     expect(spec.anker[20]).toBeGreaterThan(1);    // Grundstein → Anker-Faktor
     expect(spec.formMult[30]).toBe(ARCHITECT_FAMILIES.A_KATHEDRALE.base.factor); // Kathedrale → ×Faktor
@@ -309,6 +317,57 @@ describe("Architekt — formation-Direktiven & computeFormations", () => {
     const inFarbblock = (forms, p) => (forms[p].formations || []).some((f) => f.type === "farbblock");
     expect(inFarbblock(without, 0)).toBe(false);  // Position 0 (R) hängt ohne Joker nicht am Farbblock (B-Lücke bei 1)
     expect(inFarbblock(withJoker, 0)).toBe(true);  // Joker verbindet 0 über die B-Lücke mit 2..4
+  });
+});
+
+describe("Architekt — Runde 6: jede Aufwertung trägt (X1–X3)", () => {
+  it("X1: tierNum ist streng monoton — Basis 1 wird 1/2/3/4, Basen ≥ 2 bleiben unverändert", () => {
+    expect([1, 2, 3, 4].map((t) => tierNum(1, t))).toEqual([1, 2, 3, 4]);   // vorher 1/2/2/3 (II→III tot)
+    expect([1, 2, 3, 4].map((t) => tierNum(2, t))).toEqual([2, 3, 4, 6]);   // wie bisher
+    expect([1, 2, 3, 4].map((t) => tierNum(35, t))).toEqual([35, 53, 77, 109]); // wie bisher (Zollhaus)
+    for (const base of [1, 2, 3, 9, 20, 35, 40, 50, 65, 70, 80, 90, 130, 160, 200, 260]) {
+      for (let t = 2; t <= MAX_TIER; t++) expect(tierNum(base, t)).toBeGreaterThan(tierNum(base, t - 1));
+    }
+  });
+
+  it("X3: die tierValue-Leiter legt flachen Stichwert auf die Zellen der Formations-Gebäude", () => {
+    const deck = fakeDeck();
+    const at = (tier) => {
+      const pre = precomputeArchitect({ buildings: [B("A_ARKADE", [0, 1], tier)] }, idOrder, deck);
+      return architectValueBonus(pre, 0, deck[0]);
+    };
+    expect(at(1)).toBe(0); expect(at(2)).toBe(1); expect(at(3)).toBe(1); expect(at(4)).toBe(2);
+    // Pfeiler steigt jede Stufe (1/2/3), Kreuzgang erst auf IV (+2).
+    const pfeiler = precomputeArchitect({ buildings: [B("A_PFEILER", [0, 5, 10, 15], 3)] }, idOrder, deck);
+    expect(architectValueBonus(pfeiler, 5, deck[5])).toBe(2);
+    const kreuz3 = precomputeArchitect({ buildings: [B("A_KREUZGANG", [10, 15, 16], 3)] }, idOrder, deck);
+    const kreuz4 = precomputeArchitect({ buildings: [B("A_KREUZGANG", [10, 15, 16], 4)] }, idOrder, deck);
+    expect(architectValueBonus(kreuz3, 10, deck[10])).toBe(0);
+    expect(architectValueBonus(kreuz4, 10, deck[10])).toBe(2);
+  });
+
+  it("X3: Arkade III wird zum Farbblock-Joker (Kick), bleibt darunter transparent", () => {
+    const deck = fakeDeck();
+    const s1 = architectFormSpec({ buildings: [B("A_ARKADE", [0, 1], 1)] }, idOrder, deck);
+    const s3 = architectFormSpec({ buildings: [B("A_ARKADE", [0, 1], 3)] }, idOrder, deck);
+    expect(s1.transparentFarb.has(0)).toBe(true); expect(s1.jokerF.has(0)).toBe(false);
+    expect(s3.transparentFarb.has(0)).toBe(true); expect(s3.jokerF.has(0)).toBe(true);
+  });
+
+  it("X3: Fries/Gewölbe III schalten den Joker-Typ Farbblock dazu", () => {
+    const deck = fakeDeck();
+    for (const id of ["A_FRIES", "A_GEWOELBE"]) {
+      const fp = id === "A_FRIES" ? [0, 1, 5, 6] : [0, 1, 2, 6];
+      const lo = architectFormSpec({ buildings: [B(id, fp, 2)] }, idOrder, deck);
+      const hi = architectFormSpec({ buildings: [B(id, fp, 3)] }, idOrder, deck);
+      expect(lo.jokerF.has(0), `${id} Stufe 2 ohne Farbblock-Joker`).toBe(false);
+      expect(hi.jokerF.has(0), `${id} Stufe 3 mit Farbblock-Joker`).toBe(true);
+      expect(hi.jokerW.has(0), `${id} behält Wiederholung`).toBe(true);
+    }
+  });
+
+  it("X3: bindSpanFor ist ±1/±2/±3 ohne tote Stufe bis III", () => {
+    expect([1, 2, 3, 4].map(bindSpanFor)).toEqual([1, 2, 3, 3]);
   });
 });
 

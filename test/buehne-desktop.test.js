@@ -159,16 +159,20 @@ describe("#deckflug · Stapel am Rand, Karte fliegt", () => {
 });
 
 describe("#deckzug · erst ziehen BEIDE, dann wird aufgeloest", () => {
-  it("der Zug-Takt greift nur ab 1280 px, nicht am Handy", () => {
-    // `wide` ist die einzige Stelle, an der der zweite Takt haengt — faellt sie weg, bekommt auch die
-    // Handy-Fassung eine Verzoegerung, die sie nie hatte.
-    expect(bf, "zugMs muss an useIsWide haengen").toMatch(/const zugMs = wide && !reduced && !!t && flipMs > 170/);
-    expect(bf, "useIsWide muss importiert sein").toMatch(/import \{ useMediaQuery, useIsWide \} from "\.\/useIsWide\.js"/);
+  it("der Zug-Takt greift auf ALLEN Breiten (Owner-Entscheidung 2026-08-28), gated nur ueber Bewegung/Turbo", () => {
+    // Zuerst war der zweite Takt an `wide` gebunden — am Handy drehte damit weiter nur die
+    // Gewinnerkarte um, die Verliererkarte fiel ungedreht weg (Owner-Playtest). Jetzt haengt er
+    // ausschliesslich an reduzierter Bewegung und Turbo; eine wieder eingefuehrte Breiten-Bindung
+    // waere die Rueckkehr genau dieses Fehlers.
+    expect(bf, "zugMs darf nicht mehr an der Breite haengen").toMatch(/const zugMs = !reduced && !!t && flipMs > 170/);
+    expect(bf, "keine wide-Bindung am Zug-Takt").not.toMatch(/const zugMs = wide/);
   });
 
   it("der Zustand haengt an der STICH-NUMMER, nicht an einem Flag", () => {
     // Ein `setState(false)` im Effekt kaeme einen Frame zu spaet — die Aufloesung blitzte fuer ein Bild auf.
-    expect(bf).toMatch(/const gezogen = !zugMs \|\| drawnNo === trickNo;/);
+    // Runde 2, R17: `hintHold` (offene Ereignis-Hint-Karte) ueberspringt den Zug zusaetzlich — der
+    // festgehaltene Stich liegt sofort offen. Die Stich-Nummer bleibt die Identitaet.
+    expect(bf).toMatch(/const gezogen = !zugMs \|\| drawnNo === trickNo \|\| hintHold;/);
     expect(bf, "kein setState(false) beim Stichwechsel").not.toMatch(/setDrawnNo\(null\)/);
   });
 
@@ -180,7 +184,8 @@ describe("#deckzug · erst ziehen BEIDE, dann wird aufgeloest", () => {
       expect(m, `${n} nicht gefunden — der Waechter greift ins Leere`).toBeTruthy();
       expect(m[1], `${n} loest noch im Zug-Takt auf`).toContain("aufOn");
     }
-    expect(bf, "aufOn ist sliceOn NACH dem Zug").toMatch(/const aufOn = sliceOn && gezogen;/);
+    // R17: mit offener Hint-Karte loest NICHTS auf — beide Karten bleiben liegen (kein Wegflug/Finisher).
+    expect(bf, "aufOn ist sliceOn NACH dem Zug, gehalten von hintHold").toMatch(/const aufOn = sliceOn && gezogen && !hintHold;/);
   });
 
   it("die Finisher mit eigenem Trigger warten mit", () => {
@@ -220,11 +225,12 @@ describe("#deckzug · erst ziehen BEIDE, dann wird aufgeloest", () => {
       expect(Math.min(clamp(t * 0.55, 220, 460), t * zug) + Math.min(clamp(t * 0.7, 320, 900), t * weg),
         `bei Takt ${Math.round(t)} ms laeuft die Choreografie ueber`).toBeLessThan(t);
     }
-    expect(bf, "beide Deckel haengen an der Breite").toMatch(/const flyDur\s+= wide \? Math\.min\(flyDurRoh, flipMs \* WEG_ANTEIL\) : flyDurRoh;/);
-    expect(bf, "beide Deckel haengen an der Breite").toMatch(/const flipDur\s+= wide \? Math\.min\(flipDurRoh, flipMs \* ZUG_ANTEIL\) : flipDurRoh;/);
+    // Die Deckel gelten seit dem Handy-Zug-Takt (2026-08-28) auf allen Breiten.
+    expect(bf, "beide Deckel gelten ueberall").toMatch(/const flyDur\s+= Math\.min\(flyDurRoh, flipMs \* WEG_ANTEIL\);/);
+    expect(bf, "beide Deckel gelten ueberall").toMatch(/const flipDur\s+= Math\.min\(flipDurRoh, flipMs \* ZUG_ANTEIL\);/);
   });
 
-  it("ohne Zug-Takt laeuft alles SOFORT — die Handy-Fassung ist unveraendert", () => {
+  it("ohne Zug-Takt (reduzierte Bewegung, sehr hoher Turbo) laeuft alles SOFORT", () => {
     expect(bf).toMatch(/const ms = zugRef\.current;\s*if \(!ms\) \{ fn\(\); return undefined; \}/);
     expect(bf).toMatch(/if \(!zugMs\) \{ fn\(\); return; \}/);   // pulsZug
   });

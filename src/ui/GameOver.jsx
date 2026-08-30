@@ -16,9 +16,11 @@ import { architectCoverFor } from "./architectCover.js"; // #UI: Gebäude-Rahmen
 import FormIcon from "./FormIcon.jsx";
 import { ArchToggle } from "./ArchPanels.jsx"; // #398: geteilter Gebäude-Umschalter (eine Quelle für alle vier Bildschirme)
 import { milestoneBarState } from "../game/progression.js"; // #304 Verdienst-Rollup: Meilensteinbalken
+import { TIER as MS_TIER, TIER_HI as MS_TIER_HI } from "./ScoreMilestoneBar.jsx"; // Q11: dieselbe Stufen-Palette wie im Lauf
 import { GuideOverlay } from "./GuideOverlay.jsx"; // #: Leitfaden direkt auf der Fraktions-Seite eines Archetyp-Unlocks öffnen
 import { archFamily, archCatDef } from "../i18n/labels.js"; // #sprache: Gebäudename zur Anzeigezeit
 import { t, fmtNum } from "../i18n/index.js"; // #sprache
+import { PhaseHintSlot } from "./hints/HintCard.jsx"; // Onboarding-E8: der Abschluss-Hinweis
 
 /* #menu-rework M4 — THREE INLINE LITERALS ON THIS SCREEN ARE STEPS OF THE VOCABULARY, and they are
    the only three. Migrating them is value-preserving by construction, so all three are provable at
@@ -197,7 +199,11 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
   // #304 Verdienst-Rollup: Score/Meilensteinbalken/SP/DP animiert hochzählen (Challenge: Countdown Brutto→Netto).
   const mb = milestoneBarState(score);
   const scoreUp = useCountUp(score, 1100);
-  const barFill = useCountUp(Math.round((mb.fill || 0) * 1000), 850, 300) / 1000; // 0..1 (×1000 für ganzzahliges Count-up)
+  // Q11 (Runde 3): wie im Lauf zählt die Leiste nur den AKTUELLEN Meilenstein (segFill) und
+  // trägt die Farbe der erreichten Stufe — keine Gesamt-Füllung, keine Viertel-Marken mehr.
+  const barFill = useCountUp(Math.round((mb.segFill || 0) * 1000), 850, 300) / 1000; // 0..1 (×1000 für ganzzahliges Count-up)
+  const msAcc = MS_TIER[Math.min(mb.reached, MS_TIER.length - 1)];
+  const msAccHi = MS_TIER_HI[Math.min(mb.reached, MS_TIER_HI.length - 1)];
   const spUp = useCountUp(earn ? earn.sp : 0, 1100, 200);
   const dpRoll = useDpRollup({ gross: earn ? earn.dpGross : 0, net: earn ? earn.dpNet : 0 });
   // #201.8 Stufe A: finale Aufstellung aus dem Live-state; Formationen frisch berechnet (rein, matcht das Enddeck).
@@ -268,6 +274,10 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
             Am HANDY ändert sich nichts: `go-hero` bleibt der zentrierte Block, `go-col1` ist dort
             `display: contents`, und die Reihenfolge im DOM ist unverändert Augenbraue → Zahl →
             Rekord-Chip → Kleinschrift-Zeile. */}
+        {/* Onboarding-E8 (T-O2): einmaliger Abschluss-Hinweis — als Banner IM Endscreen, nicht als
+            blockierende Karte davor (der Victory-Schirm ist selbst der Payoff, den nichts verdecken
+            soll; Abweichung vom Papier §5.3 „pause card", im Task-Contract festgehalten). */}
+        <PhaseHintSlot screen="gameover" />
         <div className="go-hero text-center mt-4">
           <div className="go-eyebrow text-body-5 uppercase tracking-widest" style={{ color: "#e0605a" }}>{t("gameover.eyebrow")}</div>
           {/* #go-ruhe: Auf dem DESKTOP wird aus der Kleinschrift-Zeile unter dem Score die Kennzahlenreihe
@@ -348,11 +358,8 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
                 <span style={{ color: "#8a8896" }}>{mb.atMax ? t("gameover.milestones.max") : t("gameover.milestones.next", { n: Math.round(mb.next.at / 1_000_000) })}</span>
               </div>
               <div className="relative h-2 rounded-full overflow-hidden" style={{ background: "#0e0e13" }}>
-                {/* #deckui: Meilenstein-Fortschrittsbalken zieht die Deckfarbe statt fixem Cyan. */}
-                <div className="absolute inset-y-0 left-0 rounded-full" style={{ width: `${Math.round(barFill * 100)}%`, background: "linear-gradient(90deg, var(--deck-a1, #26c6e6), var(--deck-a2, #5fe0f7))" }} />
-                {Array.from({ length: mb.total - 1 }, (_, i) => (
-                  <i key={i} className="absolute inset-y-0" style={{ left: `${(i + 1) / mb.total * 100}%`, width: 1.5, background: "#0e0e13" }} />
-                ))}
+                {/* Q11: Füllung = aktuelles Meilenstein-Segment, Farbe = erreichte Stufe (wie ScoreMilestoneBar). */}
+                <div className="absolute inset-y-0 left-0 rounded-full" style={{ width: `${Math.round(barFill * 100)}%`, background: `linear-gradient(90deg, ${msAcc}, ${msAccHi})` }} />
               </div>
             </div>
             {earn && (

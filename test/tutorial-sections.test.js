@@ -48,15 +48,16 @@ describe("Tutorial-Sektionen · Katalog", () => {
 
   /* Die Form je Art. Der erste Bau kannte nur eine: „Satz, Bild oder Probierfeld, Tipp". Die
      vollen Lektionen brechen sie bewusst — sie haben mehrere Blöcke und teils zwei bewegliche Teile.
-     Was BEIDE Arten teilen, ist der Abschluss: der Tipp steht am Ende, genau einmal. Das ist die
-     Regel, die den ursprünglichen Fehler verhindert (der Tipp verschwindet, „Weiter" leuchtet),
-     und sie gilt unverändert weiter. */
-  it("jede Lektion endet mit genau einem Tipp", () => {
+     Was BEIDE Arten teilen: HAT eine Lektion einen Tipp, steht er am Ende, genau einmal. Seit der
+     Review-Runde 2026-08-28 (Zeilen 4-6) darf eine Lektion auch OHNE Tipp enden — der Owner hat
+     die Tipp-Takte von kategorien/raritaet/legendaer gestrichen. */
+  it("hoechstens ein Tipp je Lektion, und wenn, dann am Ende", () => {
     for (const s of SECTIONS) for (const l of s.lessons) {
       const kinds = l.beats.map((b) => b.kind);
       const where = `${s.id}/${l.id}: ${kinds.join(" · ")}`;
-      expect(kinds.filter((k) => k === "tip").length, `${where} — genau ein Tipp`).toBe(1);
-      expect(kinds[kinds.length - 1], `${where} — der Tipp steht am Ende`).toBe("tip");
+      const tips = kinds.filter((k) => k === "tip").length;
+      expect(tips <= 1, `${where} — hoechstens ein Tipp`).toBe(true);
+      if (tips === 1) expect(kinds[kinds.length - 1], `${where} — der Tipp steht am Ende`).toBe("tip");
     }
   });
 
@@ -119,7 +120,7 @@ describe("Tutorial-Sektionen · Katalog", () => {
      Beide Enden werden geprüft: was beats.jsx liest, muss die Schale liefern, und was die Schale
      liefert, muss in beiden Katalogen stehen. */
   it("jedes Wort, das eine Runde liest, wird von der Schale geliefert", () => {
-    const probes = SRC("beats.jsx");
+    const probes = SRC("beats.jsx") + SRC("scenes.jsx");
     const shell = SRC("TutorialSections.jsx");
     // `L` ist in beats.jsx durchgehend der Name des labels-Objekts.
     const gelesen = new Set([...probes.matchAll(/\bL\.(\w+)/g)].map((m) => m[1]));
@@ -154,7 +155,7 @@ describe("Tutorial-Sektionen · Katalog", () => {
        Geprüft wird deshalb NAMENTLICH: jeder `import { a, b } from "..."` wird gegen die
        tatsächlichen Exporte des Zielmoduls gehalten. */
     const fehlt = [];
-    for (const datei of ["beats.jsx", "TutorialSections.jsx", "catalog.js", "vars.js"]) {
+    for (const datei of ["beats.jsx", "scenes.jsx", "TutorialSections.jsx", "catalog.js", "vars.js"]) {
       const src = SRC(datei);
       for (const m of src.matchAll(/import\s*\{([^}]+)\}\s*from\s*"([^"]+)"/g)) {
         if (!m[2].startsWith(".")) continue;   // Pakete wie "react" prüft npm, nicht dieser Wächter
@@ -383,8 +384,10 @@ describe("Tutorial-Sektionen · das Höhenbudget", () => {
   /* Und die Umkehrung: eine knappe volle Lektion muss DURCHkommen. Ohne diese Probe wäre ein Modell, das
      alles reißen lässt, ebenso „grün" wie eines, das rechnet. */
   it("Gegenprobe: eine knappe volle Lektion bleibt im Budget", () => {
+    /* Runde 4, V2: `einfrieren` ist der Schnee-Seite gewichen; `pflanztempo` ist jetzt der
+       kleinste eingetragene Baustein — die Probe misst weiter dieselbe Umkehrung. */
     const fake = { id: "x", art: "voll",
-      beats: [{ kind: "satz" }, { kind: "probierfeld", probe: "streak" }, { kind: "tip" }] };
+      beats: [{ kind: "satz" }, { kind: "probierfeld", probe: "pflanztempo" }, { kind: "tip" }] };
     const sec = { id: "y" };
     const lang = { [beatKey(sec, fake, 0)]: "W".repeat(120), [beatKey(sec, fake, 2)]: "W".repeat(80) };
     expect(lessonHeight(sec, fake, (k) => lang[k] ?? "")).toBeLessThan(VOLL_BUDGET_PX);
@@ -452,7 +455,7 @@ describe("Tutorial-Sektionen · Schale", () => {
   });
 
   it("das Probierfeld ruft die echte Funktion, statt sie nachzubauen", () => {
-    const src = SRC("beats.jsx");
+    const src = SRC("beats.jsx") + SRC("scenes.jsx");
     expect(src, "computeFormations wird nicht aufgerufen").toMatch(/computeFormations\(/);
     expect(src, "der Formationsname muss aus dem Register kommen").toMatch(/formationName\(/);
     /* GEGEN DEN KOMMENTAR GEPRÜFT, nicht mit ihm. Die erste Fassung dieser Zusicherung wurde von der

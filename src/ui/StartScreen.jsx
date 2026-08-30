@@ -157,7 +157,7 @@ function TileGlyph({ kind }) {
   );
 }
 
-export function StartScreen({ onStart, onResume = null, resume = null, onPlaySeed = null, onSecretSeed = null, onRankedBoard = null, onOptions, onStats, onCustomize, onLeaderboard = null, onUpgrades = null, onTutorial = null, onFeedback = null, onPrivacy = null, tutorialDone = false, profile = null, muted, onToggleMute, username = "", onEditName,
+export function StartScreen({ onStart, onResume = null, resume = null, onPlaySeed = null, onSecretSeed = null, onRankedBoard = null, onOptions, onStats, onCustomize, onLeaderboard = null, onUpgrades = null, onTutorial = null, onFeedback = null, onPrivacy = null, profile = null, muted, onToggleMute, username = "", onEditName,
   // #desktop — Zutaten für Status-Tafel und Deck-Hintergrund. Beide erscheinen erst ab 1280 px;
   // darunter bleiben die Props ungenutzt.
   deckId = null, bfId = null, deckBack = null, lastRun = null, battlefield = null,
@@ -188,7 +188,6 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
      Der ruhige Tutorial-CHIP unten neben „Optionen" BLEIBT dagegen dauerhaft (jederzeit wiederholbar), solange
      ein Tutorial-Handler existiert. Seit dem Onboarding-Rückbau (#316) ist das Tutorial die EINZIGE Führung. */
   const canTutorial = !!onTutorial;                                            // Chip unten: immer verfügbar
-  const firstContact = canTutorial && !prof.hadCompletedRun && !tutorialDone;  // lautes Angebot: bis zum ersten abgeschlossenen Lauf
   const progBuyable = NODES.filter((n) => nodeState(prof, n.id) === "buy").length;
   const progLigaFree = treeComplete(prof);
   const onbStep = Math.max(0, Math.min(ONBOARDING_LINKS, Math.floor(Number(prof.onboarding) || 0)));
@@ -479,18 +478,9 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
         )}
       </div>
 
-      {/* Erstkontakt-Angebot: einmalig laut, solange kein Lauf beendet und das Tutorial nie gesehen wurde.
-          Bewusst KEIN dritter Dauer-CTA — es verschwindet nach dem ersten beendeten Lauf bzw. sobald das
-          Tutorial gesehen ist, und lebt danach nur noch als Chip neben „Optionen" (Plan §13.4). */}
-      {firstContact && (
-        <div className={LANE_LEAD}>
-          <button onClick={onTutorial}
-            className="as-tut-btn w-full px-5 py-3 rounded-xl ty-title transition-all hover:-translate-y-0.5 flex flex-col items-center dt:items-start leading-tight">
-            <span className="text-title-2 dt:text-head-1">{t("start.tutorial.offer")}</span>
-            <span className="text-body-1 dt:text-body-lg-1 font-normal opacity-75">{t("start.tutorial.offer.sub")}</span>
-          </button>
-        </div>
-      )}
+      {/* Runde 3 (Owner): kein separater Tutorial-Start-Knopf mehr — der ERSTE Lauf über
+          „Lauf beginnen" führt selbst (H1-Karte, Banner, Vorschläge). Die Übersicht bleibt am
+          ruhigen Tutorial-Chip unten, und dort sitzt der „Tutorial-Lauf"-Knopf zum Wiederholen. */}
 
       {/* Play-Gruppe — Fortsetzen + Lauf beginnen. Lauf beginnen klappt Normal (+ Dev Run) und das
           Seed-Feld auf → weniger Dauer-sichtbares im Haupt-Stapel. */}

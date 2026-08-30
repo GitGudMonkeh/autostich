@@ -2,7 +2,7 @@ import { memo, useRef, useState, useLayoutEffect, createContext, useContext } fr
 import { suitColor, PLANT_VALUE_CAP } from "../game/constants.js";
 
 import { SEGMENT_SIZE } from "../game/formations.js";
-import { anchorTypeAt, linkedPartnerOf } from "../game/shop.js";
+import { anchorTypeAt, linkedPartnersOf } from "../game/shop.js";
 import { formationBorder } from "./formationStyle.js";
 import { formationAbbr } from "./formationLabels.js";
 import { PLANT_RIPE, PLANT_FULL } from "./indicators/vocab.js";
@@ -74,7 +74,7 @@ export function archFrameLines(cover, cells, total, exH, exV, exVOut = exV) {
    `arrow` = Farbpfeil „→X" (Shop-Farbwechsel) · `disabled` = ausgegraut, nicht klickbar (z. B. belegte Anker). */
 // #259: eine von bis zu 40 Grid-Kacheln → React.memo überspringt Re-Render bei unveränderten Props (bes. in
 // read-only Grids wie Chronik/Vorschau, wo onClick fehlt und posForm stabil bleibt).
-const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], selected, onClick, anchorType = null, allyColor = null,
+const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], selected, onClick, anchorType = null, allyColors = null,
                    picked = false, disabled = false, arrow = null, quiet = false, ring = false, ringTitle = null, dimmed = false, arch = null, structLit = false, distrLit = false, formFlash = false,
                    quietFrames = false, frontImage = null,
                    glacier = false, glacierMass = 0, firnMass = 0, glacierForm = false, locked = false }) {
@@ -131,8 +131,13 @@ const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], sele
      ihn eigenständig ansprechen kann — s. `tileClip`. */
   const tileBg = [
     ...washes.map((w) => `linear-gradient(0deg, ${w}, ${w})`),
-    allyColor ? `linear-gradient(135deg, ${col}30 0%, ${col}30 49%, ${allyColor}30 51%, ${allyColor}30 100%)` : null,
-    // Deck-Skin-Test: liegt ein `frontImage` an, trägt die Kachel den Pixel-Art-Rahmen des aktiven Decks
+    (allyColors && allyColors.length)
+      ? `linear-gradient(135deg, ${col}30 0%, ${col}30 49%, ${allyColors.map((a, i) => {
+          const span = 51 / allyColors.length, from = 49 + i * span, to = 49 + (i + 1) * span;
+          return `${a}30 ${(from + 2).toFixed(0)}%, ${a}30 ${to.toFixed(0)}%`;
+        }).join(", ")})`
+      : null,
+    // Deck-Skin: liegt ein `frontImage` an, trägt die Kachel den Pixel-Art-Rahmen des aktiven Decks
     // (wie die Battlefield-Karte, #180) statt nur der neutralen Fläche. Darunter bleibt der dunkle Grund.
     frontImage ? `url(${frontImage}) center / 100% 100% no-repeat` : null,
     "linear-gradient(0deg, #20202a, #20202a)",
@@ -142,7 +147,7 @@ const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], sele
      Der Kachelrahmen ist ohne Formation/Auswahl halbdurchlässig (`col + "55"`) — ohne diese Zeile läge der
      Wash plötzlich AUCH unter dem Rahmen und die abgedeckte Kachel bekäme einen 2 px breiten, leicht anderen
      Rand als vorher. Mit ihr ist der Tausch Schatten → Ebene pixelgleich. */
-  const tileClip = [...washes.map(() => "padding-box"), ...(allyColor ? ["border-box"] : []), ...(frontImage ? ["border-box"] : []), "border-box"].join(", ");
+  const tileClip = [...washes.map(() => "padding-box"), ...(allyColors && allyColors.length ? ["border-box"] : []), ...(frontImage ? ["border-box"] : []), "border-box"].join(", ");
   return (
     <button onClick={onClick} disabled={disabled} data-sfx={quiet ? "none" : undefined} data-pos={arch ? pos : undefined}
       title={anchorType ? t("cardgrid.anchor.title", { type: anchorLabel(anchorType) }) : ring ? (ringTitle || undefined) : undefined}
@@ -195,7 +200,9 @@ const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], sele
       {/* Formations-Gewinn-Blitz: EIN Overlay je Karte in ihrer Formationsfarbe (kein Sammelrahmen um
           die Gruppe). `key` am Flash-Zähler → derselbe Keyframe startet auch beim zweiten Mal neu. */}
       {formFlash && <span key={formFlash} className="form-gain-flash" style={{ "--form-flash": fb.color || "#5ab87a" }} />}
-      {labels && <span className="cg-lab absolute bottom-0.5 right-1 text-[8px] sm:text-[11px] font-bold opacity-80" style={{ color: fb.color || "#5ab87a" }}>{labels}</span>}
+      {/* Kürzel in Weiß statt Formationsfarbe: die Farbe trägt schon der Rahmen, und auf den Deck-Skin-Fronten
+          war der farbige Text nicht mehr verlässlich lesbar. Dunkler Schein hält ihn auf jedem Artwork sichtbar. */}
+      {labels && <span className="cg-lab absolute bottom-0.5 right-1 text-[8px] sm:text-[11px] font-bold" style={{ color: "#fff", textShadow: "0 1px 3px rgba(0,0,0,.9), 0 0 2px rgba(0,0,0,.7)" }}>{labels}</span>}
       {/* Eis-Neudesign: Gletscher-Marker (starr festgefroren) + aktuelle Masse. */}
       {glacier && (
         <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 inline-flex items-center gap-0.5 text-[8px] sm:text-[10px] font-bold leading-none tabular-nums" style={{ color: "#8be6ff", textShadow: "0 0 4px #5ec8f0" }} title={firnMass >= 0.5 ? t("cardgrid.glacierMass.reserve", { mass: Math.round(glacierMass), firn: Math.round(firnMass), cap: FIRN_REFILL_TARGET }) : t("cardgrid.glacierMass.title", { mass: Math.round(glacierMass) })}>
@@ -355,10 +362,10 @@ export function CardGrid({ cards = [], formations = [], roles = {}, anchors = []
             <div className="grid grid-cols-5 gap-1.5 flex-1">
               {cards.slice(s * SEGMENT_SIZE, s * SEGMENT_SIZE + SEGMENT_SIZE).map((c, k) => {
                 const pos = s * SEGMENT_SIZE + k;
-                const ally = linkedPartnerOf(pe, c.suit);
+                const allies = linkedPartnersOf(pe, c.suit);
                 const disabled = disabledSet.has(pos);
                 return <CardTile key={pos} card={c} pos={pos} posForm={formations[pos]} roleIds={rolesByCard[c.id] || EMPTY_ROLES}
-                  anchorType={anchorTypeAt(anchors, pos)} allyColor={ally ? suitColor(ally) : null}
+                  anchorType={anchorTypeAt(anchors, pos)} allyColors={allies.length ? allies.map(suitColor) : null}
                   selected={selectedPos === pos} picked={pickedSet.has(c.id) || pickedPos === pos}
                   disabled={disabled} arrow={arrows[c.id] || null} quiet={quietTiles} quietFrames={quietFrames} frontImage={skinFront}
                   ring={highlightSet.has(pos)} ringTitle={highlightTitle}
