@@ -205,7 +205,7 @@ function styleFracture(g, add, seed) {
 }
 
 // C · Draht-Skelett — no solid volume at all: edges, a breath of holo fill, scanlines.
-function styleWire(g, add, seed) {
+function styleWire(g, add, _seed) {   // fully deterministic shape — no seeded variation needed
   let base = 0;
   const scan = new Graphics();
   for (const t of TIERS) {
@@ -282,7 +282,7 @@ function styleCrystal(g, add, seed) {
 }
 
 // F · Projektion — the upper floors are still a hologram; ties into the build-up animation.
-function styleProjection(g, add, seed) {
+function styleProjection(g, add, _seed) {   // fully deterministic shape — no seeded variation
   let base = 0;
   const ghost = new Graphics();
   ghost.blendMode = "add";
