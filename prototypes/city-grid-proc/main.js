@@ -153,8 +153,31 @@ async function main() {
     const { x, y } = cellPos(r, c);
     g.position.set(x, y);
     g.zIndex = r + c;
+    // Roads are buildable too (that is how blocks grow into their own ring): clicking one
+    // attempts a placement, which the block-size rule below may reject.
+    g.eventMode = "static";
+    g.cursor = "pointer";
+    g.hitArea = diamondHit;
+    g.on("pointerdown", () => placeBuilding(r, c));
     world.addChild(g);
     roadG.set(kk, g);
+  }
+
+  // Brief red pulse on a cell whose placement was rejected (block would exceed 4 buildings).
+  function rejectFlash(r, c) {
+    const g = new Graphics();
+    diamondPath(g, TILE_W - 4, TILE_H - 2).stroke({ width: 2.5, color: 0xff3b30, alpha: 1 });
+    const { x, y } = cellPos(r, c);
+    g.position.set(x, y);
+    g.zIndex = r + c + 0.9;
+    world.addChild(g);
+    const t0 = performance.now();
+    const tick = () => {
+      const t = Math.min(1, (performance.now() - t0) / 500);
+      g.alpha = 1 - t;
+      if (t >= 1) { app.ticker.remove(tick); g.destroy(); }
+    };
+    app.ticker.add(tick);
   }
 
   // ---- parks (trees) -------------------------------------------------------
@@ -529,13 +552,16 @@ async function main() {
     const rand = seededRand(r, c);
     const tr = rand();
     let type;
-    if (tr < 0.16) type = 0;        // setback tower
-    else if (tr < 0.32) type = 1;   // low slab
-    else if (tr < 0.47) type = 2;   // ziggurat
-    else if (tr < 0.61) type = 3;   // twin blocks
-    else if (tr < 0.8) type = 4;    // super skyscraper
-    else type = 5;                  // Japanese pagoda
-    const totalH = type === 4 ? 150 + rand() * 90 : type === 5 ? 95 + rand() * 40 : 60 + rand() * 80;
+    if (tr < 0.13) type = 0;        // setback tower
+    else if (tr < 0.26) type = 1;   // low slab
+    else if (tr < 0.39) type = 2;   // ziggurat
+    else if (tr < 0.51) type = 3;   // twin blocks
+    else if (tr < 0.68) type = 4;   // super skyscraper
+    else if (tr < 0.82) type = 5;   // Japanese pagoda
+    else if (tr < 0.92) type = 6;   // neon park lot
+    else type = 7;                  // arena
+    const totalH = type === 4 ? 150 + rand() * 90 : type === 5 ? 95 + rand() * 40
+      : type === 6 ? 30 : type === 7 ? 55 + rand() * 25 : 60 + rand() * 80;
     const accent = rand() < 0.5 ? CYAN : MAGENTA;
     const jp = type === 5;
     const pal = flash
@@ -579,7 +605,7 @@ async function main() {
         g.circle(cx, topY - 26, 2).fill({ color: MAGENTA, alpha: 1 });
         g.circle(cx, topY - 26, 5).fill({ color: MAGENTA, alpha: 0.22 });
       }
-    } else {                     // Japanese pagoda: tiers with flared, glowing roof slabs
+    } else if (type === 5) {     // Japanese pagoda: tiers with flared, glowing roof slabs
       const tiers = 3;
       let base = cyB, fw = 0.72;
       for (let i = 0; i < tiers; i++) {
@@ -592,6 +618,42 @@ async function main() {
       if (progress > 0.97) { // finial spire
         g.moveTo(cx, base - 2).lineTo(cx, base - 14).stroke({ width: 1.5, color: GOLD, alpha: 0.95 });
         g.circle(cx, base - 14, 1.8).fill({ color: GOLD, alpha: 1 });
+      }
+    } else if (type === 6) {     // neon park lot: lawn plate, fountain, grove, lamp
+      if (flash) { diamondPath(g, TILE_W * 0.9, TILE_H * 0.9).fill({ color: 0xffffff, alpha: 0.85 }); return; }
+      diamondPath(g, TILE_W * 0.9, TILE_H * 0.9).fill(0x0b1a16);
+      diamondPath(g, TILE_W * 0.9, TILE_H * 0.9).stroke({ width: 1.5, color: MINT, alpha: 0.7 });
+      const s = 0.25 + 0.75 * progress; // the garden grows in with the build animation
+      drawFountain(g, TILE_W * 0.1, TILE_H * 0.12, 0.8 * s);
+      drawTree(g, -TILE_W * 0.2, TILE_H * 0.02, (0.9 + rand() * 0.3) * s, rand);
+      drawTree(g, -TILE_W * 0.02, -TILE_H * 0.16, (0.6 + rand() * 0.25) * s, rand);
+      drawTree(g, TILE_W * 0.26, -TILE_H * 0.05, (0.55 + rand() * 0.25) * s, rand);
+      drawLamp(g, -TILE_W * 0.3, TILE_H * 0.18, 0.8 * s, CYAN);
+    } else {                     // arena: elliptical bowl, glowing pitch, floodlights
+      if (flash) { diamondPath(g, TILE_W * 0.95, TILE_H * 0.95).fill({ color: 0xffffff, alpha: 0.85 }); return; }
+      const rx = TILE_W * 0.44, ry = rx * 0.5, h = H * 0.55 + 6;
+      const ep = (rxx, ryy, y0, a0, a1, n = 26) => {
+        const pts = [];
+        for (let i = 0; i <= n; i++) { const t = a0 + (a1 - a0) * i / n; pts.push(rxx * Math.cos(t), y0 + ryy * Math.sin(t)); }
+        return pts;
+      };
+      const wall = [...ep(rx, ry, 0, 0, Math.PI), ...ep(rx, ry, -h, Math.PI, 0)]; // visible outer wall band
+      g.poly(wall).fill(0x10142a);
+      g.poly(wall).stroke({ width: 1, color: accent, alpha: 0.35 });
+      g.ellipse(0, -h, rx, ry).fill(0x1a2138);
+      g.ellipse(0, -h, rx, ry).stroke({ width: 1.6, color: accent, alpha: 0.95 });
+      g.ellipse(0, -h + 2, rx * 0.78, ry * 0.78).fill(0x0a0e18);           // seating bowl
+      g.ellipse(0, -h + 3, rx * 0.52, ry * 0.52).fill(0x0d2a22);           // pitch
+      g.ellipse(0, -h + 3, rx * 0.52, ry * 0.52).stroke({ width: 1.2, color: MINT, alpha: 0.85 });
+      g.moveTo(0, -h + 3 - ry * 0.52).lineTo(0, -h + 3 + ry * 0.52).stroke({ width: 1, color: MINT, alpha: 0.4 });
+      g.circle(0, -h + 3, 1.6).fill({ color: MINT, alpha: 0.9 });
+      if (progress > 0.9) { // floodlight masts on the rim
+        for (const th of [0.3 * Math.PI, 0.7 * Math.PI, -0.3 * Math.PI, -0.7 * Math.PI]) {
+          const fx = rx * Math.cos(th) * 0.92, fy = -h + ry * Math.sin(th) * 0.92;
+          g.moveTo(fx, fy).lineTo(fx, fy - 13).stroke({ width: 1.3, color: 0x3a4260, alpha: 0.95 });
+          g.circle(fx, fy - 14, 1.8).fill({ color: 0xfff2b8, alpha: 0.95 });
+          g.circle(fx, fy - 14, 4).fill({ color: 0xfff2b8, alpha: 0.2 });
+        }
       }
     }
   }
@@ -618,18 +680,59 @@ async function main() {
     app.ticker.add(tick);
   }
 
+  // Size of the 4-connected building block that would exist if (r,c) were built on.
+  function blockSizeWith(r, c) {
+    const seen = new Set([key(r, c)]);
+    const queue = [[r, c]];
+    while (queue.length) {
+      const [qr, qc] = queue.pop();
+      for (const [dr, dc] of Object.values(DIRS)) {
+        const nr = qr + dr, nc = qc + dc, nk = key(nr, nc);
+        if (inGrid(nr, nc) && !seen.has(nk) && state.get(nk) === "building") {
+          seen.add(nk);
+          queue.push([nr, nc]);
+        }
+      }
+    }
+    return seen.size;
+  }
+
   function placeBuilding(r, c) {
     const kk = key(r, c);
-    if (state.get(kk) !== "ground") return;
+    const st = state.get(kk);
+    if (st === "building") return;
+    // Blocks: buildings may stand directly adjacent, but a connected block is capped at 4 —
+    // the street ring then wraps the whole block instead of the single lot.
+    if (blockSizeWith(r, c) > 4) { rejectFlash(r, c); return; }
+
     state.set(kk, "building");
-    const old = groundG.get(kk);
-    if (old) { old.destroy(); groundG.delete(kk); }
+    const oldGround = groundG.get(kk);
+    if (oldGround) { oldGround.destroy(); groundG.delete(kk); }
+    const oldRoad = roadG.get(kk);
+    if (oldRoad) { oldRoad.destroy(); roadG.delete(kk); }
     clearTrees(kk);
 
-    // road ring around the lot (8 neighbors; skips cells that are outside or already built on)
-    for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
-      if (dr === 0 && dc === 0) continue;
-      if (inGrid(r + dr, c + dc)) makeRoad(r + dr, c + dc);
+    // Streets are DERIVED: every non-building cell touching a building (8-neighborhood)
+    // becomes road. Growing a block absorbs its inner road cells and the ring re-wraps.
+    for (let rr = 0; rr < GRID; rr++) for (let cc = 0; cc < GRID; cc++) {
+      if (state.get(key(rr, cc)) !== "ground") continue;
+      let touches = false;
+      for (let dr = -1; dr <= 1 && !touches; dr++) for (let dc = -1; dc <= 1; dc++) {
+        if (dr === 0 && dc === 0) continue;
+        if (inGrid(rr + dr, cc + dc) && state.get(key(rr + dr, cc + dc)) === "building") { touches = true; break; }
+      }
+      if (touches) makeRoad(rr, cc);
+    }
+    // Cars/pedestrians whose cell just got built over are respawned elsewhere.
+    for (const list of [cars, peds]) {
+      for (let i = list.length - 1; i >= 0; i--) {
+        const a = list[i];
+        if (state.get(key(a.r, a.c)) !== "road") {
+          a.g.destroy();
+          if (a.shadow) a.shadow.destroy();
+          list.splice(i, 1);
+        }
+      }
     }
     recomputeRoads();
 

@@ -11,7 +11,12 @@ hier prinzipiell nicht auftreten.
 
 - Klick auf eine freie Kachel → Gebäude wächst von unten nach oben (Höhen-Interpolation beim
   Zeichnen, kein Masken-Trick), danach weißer Abschluss-Blitz + Neon-Bodenringe.
-- Jedes Gebäude legt automatisch einen **Straßenring** um sein Grundstück (die 8 Nachbarzellen).
+- Straßen werden **abgeleitet**: jede freie Zelle, die (8-fach) an ein Gebäude grenzt, wird
+  Straße. Ein Einzelgebäude bekommt so seinen Ring; stehen Gebäude aneinander, läuft die
+  Straße um den gemeinsamen Block statt zwischen den Gebäuden hindurch.
+- **Blöcke:** bis zu 4 Gebäude dürfen direkt aneinander gebaut werden (4er-Nachbarschaft,
+  auch auf einer bestehenden Straßenzelle). Ein Klick, der einen Block auf 5 vergrößern
+  würde, wird abgelehnt — kurzer roter Diamant-Blitz auf der Zelle.
 - **Schwebe-Autos** fliegen auf dem Netz: facettierter 3D-Rumpf mit Neon-Deck, leuchtender
   Kanzel, Licht-Bars vorn/hinten und Anti-Grav-Glow. Jedes Auto bekommt einen eigenen
   Höhen-Slot plus sanftes Auf-und-ab — zwei Autos an einer Kreuzung passieren sich also
@@ -31,12 +36,14 @@ hier prinzipiell nicht auftreten.
 
 ## Gebäude
 
-Sechs deterministische Typen (Seed aus Zellkoordinaten, gleiche Zelle → gleiches Gebäude):
+Acht deterministische Typen (Seed aus Zellkoordinaten, gleiche Zelle → gleiches Gebäude):
 Turm mit Rücksprüngen + Antenne, flacher Riegel mit Dachaufbauten, Zikkurat, Doppel-Türme,
-**Super-Wolkenkratzer** (fünf Rücksprünge, Spitze mit Magenta-Beacon, bis ~240 px) und
+**Super-Wolkenkratzer** (fünf Rücksprünge, Spitze mit Magenta-Beacon, bis ~240 px),
 **japanische Pagode** (drei Etagen mit überhängenden, an den Ecken glühenden Vermilion-Dächern,
-Gold-Fenstern und Gold-Finial). Iso-Boxen mit drei sichtbaren Flächen, Neon-Silhouette und
-teilweise erleuchteten Fenstern.
+Gold-Fenstern und Gold-Finial), **Park** (mint-gerahmte Rasenfläche mit Brunnen, Bäumen und
+Laterne — wächst als Garten statt in die Höhe) und **Arena** (elliptische Schüssel mit
+Sitzrängen, Mint-Spielfeld und vier Flutlicht-Masten). Iso-Boxen mit drei sichtbaren Flächen,
+Neon-Silhouette und teilweise erleuchteten Fenstern.
 
 ## Straßenleben
 
@@ -60,6 +67,9 @@ python3 -m http.server 8080
 - Einzelgebäude: geschlossener Straßenring, Markierungen fließen durch die Ring-Ecken.
 - Mehrere Gebäude (auch diagonal versetzt): Ringe teilen sich Straßen, Junction-Pads genau an
   den echten Verzweigungen, Bordsteine umranden Außenkanten und eingeschlossene Leerblöcke.
+- 2×2-Block: Straße läuft geschlossen um den ganzen Block, keine Straße zwischen den vier
+  Gebäuden; der 5. angrenzende Bauversuch wird mit rotem Blitz abgelehnt. Park- und
+  Arena-Zellen im Screenshot-Test bestätigt.
 - Kein Asset-Laden → Start praktisch sofort, Gesamtgröße wenige KB statt mehrerer MB.
 
 ## Verhältnis zu ../city-grid/
