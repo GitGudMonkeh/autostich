@@ -6,8 +6,8 @@
 // This file is the RULES, not the art.
 //
 // Rules:
-//   · Click a free cell to build. Up to four buildings may stand directly adjacent and form a
-//     block; a fifth neighbour is refused with a red flash.
+//   · Click a free cell to build. Up to six buildings may stand directly adjacent and form a
+//     district; one more is refused with a red flash.
 //   · Streets are derived, never placed: every free cell touching a building (8-neighbourhood)
 //     becomes road, and each road cell draws itself from its four connections — so junctions,
 //     T-pieces, bends and dead ends appear on their own.
@@ -25,6 +25,7 @@ import {
 import { vehicle, VEHICLES } from "./vehicles.js";
 
 const GRID = 12;
+const DISTRICT = 6;             // how many buildings may stand directly adjacent as one district
 const BUILD_MS = 2200;
 const HOLO = 0xb06bff, HOT = 0xe8fbff, C1 = 0x35d6ff;
 // A building does not float on the tile: it stands on a podium level with the street footway,
@@ -68,12 +69,25 @@ async function main() {
 
   /* ---- empty plot ------------------------------------------------------------------------- */
 
+  // One plate per cell for the life of the city. It keeps its hit shape even once a street runs
+  // over it — a road may still be built on, and that is what lets districts grow beyond a single
+  // building: every free neighbour of a building is a road, so without this nothing could ever
+  // stand next to anything.
   const plate = (r, c, hover) => {
     const g = groundG.get(key(r, c));
     if (!g) return;
     g.clear();
     const [x, y] = pt(r, c);
     const d = [x, y - TILE_H / 2, x + TILE_W / 2, y, x, y + TILE_H / 2, x - TILE_W / 2, y];
+    g.poly(d).fill({ color: 0x000000, alpha: 0 });          // invisible, but still clickable
+    const st = state.get(key(r, c));
+    if (st === "building") return;
+    if (st === "road") {                                    // buildable, so it answers the cursor
+      g.zIndex = hover ? r + c + 0.45 : r + c;               // over its own street while hovered
+      if (!hover) return;
+      g.poly(d).stroke({ width: 1.4, color: C1, alpha: 0.75 });
+      return;
+    }
     g.poly(d).fill({ color: hover ? 0x1b1440 : 0x0a0818, alpha: hover ? 0.9 : 0.75 });
     for (let n = 0; n < 4; n++) {
       dashLine(g, d[n * 2], d[n * 2 + 1], d[((n + 1) % 4) * 2], d[((n + 1) % 4) * 2 + 1], 5, 4);
@@ -160,8 +174,7 @@ async function main() {
     const kk = key(r, c);
     if (state.get(kk) !== "ground") return;
     state.set(kk, "road");
-    const old = groundG.get(kk);
-    if (old) { old.destroy(); groundG.delete(kk); }
+    plate(r, c, false);
     clearPark(kk);
   }
 
@@ -293,11 +306,10 @@ async function main() {
   function place(r, c) {
     const kk = key(r, c);
     if (state.get(kk) === "building") return;
-    if (blockSizeWith(r, c) > 4) { rejectFlash(r, c); return; }
+    if (blockSizeWith(r, c) > DISTRICT) { rejectFlash(r, c); return; }
 
     state.set(kk, "building");
-    const old = groundG.get(kk);
-    if (old) { old.destroy(); groundG.delete(kk); }
+    plate(r, c, false);
     const oldRoad = roadG.get(kk);
     if (oldRoad) { oldRoad.destroy({ children: true }); roadG.delete(kk); }
     clearPark(kk);
