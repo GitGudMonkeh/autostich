@@ -22,9 +22,13 @@ const SHOW = [
 ];
 
 // The plate is the real grid cell, so every type is judged at the size it will actually have.
-function plate() {
+// The plate is the real plot the type occupies — one tile, or two, or two by two.
+function plate(w, h) {
   const g = new Graphics();
-  const d = [0, -TILE_H / 2, TILE_W / 2, 0, 0, TILE_H / 2, -TILE_W / 2, 0];
+  // The plot is a rectangle in tile space, so only a 1 × 1 or 2 × 2 plot is a diamond on screen.
+  const q = (a, b) => [(a - (w - 1) / 2 - (b - (h - 1) / 2)) * (TILE_W / 2),
+    (a - (w - 1) / 2 + (b - (h - 1) / 2)) * (TILE_H / 2)];
+  const d = [...q(-0.5, -0.5), ...q(w - 0.5, -0.5), ...q(w - 0.5, h - 0.5), ...q(-0.5, h - 0.5)];
   g.poly(d).fill({ color: 0x0a0818, alpha: 0.8 });
   for (let n = 0; n < 4; n++) {
     dashLine(g, d[n * 2], d[n * 2 + 1], d[((n + 1) % 4) * 2], d[((n + 1) % 4) * 2 + 1], 5, 4);
@@ -35,18 +39,23 @@ function plate() {
 
 function panel(entry, seed) {
   const c = new Container();
-  c.addChild(plate());
+  c.addChild(plate(...entry.def.plot));
   const cells = entry.def.build();
   const win = WIN_SETS[entry.def.key];
   const opts = FACADE_OPTS[entry.def.key] ?? {};
   const variant = VARIANTS.find((v) => v.key === entry.variant) ?? VARIANTS[0];
-  const { solid, glows, box } = buildFacade(cells, variant, win, seed, 1, opts);
-  let si = 0, sj = 0;
-  for (const [i, j] of cells) { si += i; sj += j; }
-  const ox = -(si / cells.length - sj / cells.length) * CS;
-  const oy = -(si / cells.length + sj / cells.length) * CS * ISO;
+  const { solid, glows, minK, box } = buildFacade(cells, variant, win, seed, 1, opts);
+  // Scale and centring from the GROUND floor and the declared plot — the same rule the city
+  // uses, so this page shows the type at exactly the size it will have there.
+  const ground = cells.filter(([, , k]) => k === minK);
+  const gi0 = Math.min(...ground.map(([i]) => i)), gi1 = Math.max(...ground.map(([i]) => i));
+  const gj0 = Math.min(...ground.map(([, j]) => j)), gj1 = Math.max(...ground.map(([, j]) => j));
+  const ox = -((gi0 + gi1) / 2 - (gj0 + gj1) / 2) * CS;
+  const oy = -((gi0 + gi1) / 2 + (gj0 + gj1) / 2) * CS * ISO;
   const inner = new Container();
-  const fit = Math.min(1, (TILE_W * 1.05) / Math.max(1, box.maxX - box.minX));
+  const [pw, ph] = entry.def.plot;
+  const groundW = ((gi1 - gj0) - (gi0 - gj1) + 1) * CS;
+  const fit = Math.min(1, ((pw + ph) * (TILE_W / 2) * 1.04) / Math.max(1, groundW));
   inner.scale.set(fit);
   for (const g of [...solid, ...glows]) { g.position.set(ox, oy); inner.addChild(g); }
   c.addChild(inner);
@@ -92,7 +101,7 @@ async function main() {
       const cx = cw * (n % cols) + cw / 2;
       const top = rowH * Math.floor(n / cols);
       // Scaled to fit its own height too, or the tall types run out of their row.
-      const s = Math.min(1.5, cw / 260, (rowH - 120) / Math.max(1, p.h));
+      const s = Math.min(1.35, cw / 300, (rowH - 120) / Math.max(1, p.h));
       p.node.scale.set(s);
       p.node.position.set(cx, top + rowH * 0.84);
     });

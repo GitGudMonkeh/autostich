@@ -85,15 +85,25 @@ export const WIN_SETS = {
   station: [0xf5e56b, 0xfff6c2],    // sodium yellow
 };
 
-// How a type behaves on its walls: how much of it burns, and how much signage it carries. A
-// shopping street is nearly all light and signs; a data hall is a wall with a door.
+// How a type behaves: its wall TONE, how much of it burns, how much signage it carries, and how
+// much of it is blind wall.
+//
+// The tone is what a single shared palette cost us. With one plum for every mass, colour reached
+// the eye only through the windows, and a whole city of that mixes down to one lilac field. Now a
+// data hall is graphite, a corporate slab is pale concrete and a market row is dark red-brown, so
+// the value contrast is carried by the MASSES and the windows only accent them.
+//
+// tone: [right face (lit), left face (shadow), roof]
 export const FACADE_OPTS = {
-  mall: { litP: 0.66, signP: 0.3 },
-  markt: { litP: 0.74, signP: 0.42 },
-  konzern: { litP: 0.32, signP: 0.05 },
-  daten: { litP: 0.12, signP: 0.02 },
-  kapsel: { litP: 0.58, signP: 0.14 },
-  station: { litP: 0.52, signP: 0.2 },
+  kragturm: { tone: [0x2a2446, 0x171334, 0x342c55], litP: 0.42, signP: 0.09, blindP: 0.16 },
+  torbau: { tone: [0x3a2b3e, 0x201628, 0x46354a], litP: 0.42, signP: 0.09, blindP: 0.16 },
+  drilling: { tone: [0x232a4e, 0x121736, 0x2e3660], litP: 0.42, signP: 0.09, blindP: 0.16 },
+  mall: { tone: [0x6a6183, 0x453f5c, 0x7d7396], litP: 0.6, signP: 0.28, blindP: 0.34, roofP: 0.25 },
+  markt: { tone: [0x3d2434, 0x24131f, 0x4a2d3f], litP: 0.74, signP: 0.42, blindP: 0.18, roofP: 0.4 },
+  konzern: { tone: [0x8f8aa8, 0x625d7d, 0xa5a0bd], litP: 0.34, signP: 0.04, blindP: 0.4, roofP: 0.6 },
+  daten: { tone: [0x1a1a26, 0x0d0d16, 0x22222f], litP: 0.1, signP: 0.02, blindP: 0.82, roofP: 0.3 },
+  kapsel: { tone: [0x453224, 0x281c14, 0x53402e], litP: 0.58, signP: 0.14, blindP: 0.24, roofP: 0.7 },
+  station: { tone: [0x2f3c4a, 0x1a232e, 0x3c4c5c], litP: 0.52, signP: 0.2, blindP: 0.3, roofP: 0.4 },
 };
 const STEEL = 0x8a7fc4;   // frames and railings — cool grey-violet, reads on plum
 
@@ -182,12 +192,17 @@ function roofBox(g, i, j, lv, s, h, top, side) {
 
 // What the reference actually shows on its roofs: a parapet, planting, plant housings, and a lit
 // sign box on the crown. Without this the roofs are the one surface that stays empty.
-function roofDetail(g, glow, f, rand, maxK, win) {
+function roofDetail(g, glow, f, rand, maxK, win, roofP = 1) {
   const { i, j, k } = f;
   const lv = k + 1;
-  g.poly([...P(i - 0.5, j - 0.5, lv + 0.14), ...P(i + 0.5, j - 0.5, lv + 0.14),
-    ...P(i + 0.5, j + 0.5, lv + 0.14), ...P(i - 0.5, j + 0.5, lv + 0.14)])
-    .stroke({ width: 1, color: STEEL, alpha: 0.45 });          // parapet rail
+  // The parapet belongs to the EDGE of a roof. Drawn around every cell it turns a large flat
+  // roof into a grid — the same uniform texture the facades were cured of.
+  if (!f.edge) { if (k !== maxK && rand() > roofP * 0.7) return; }
+  if (f.edge) {                                                // parapet rail
+    g.poly([...P(i - 0.5, j - 0.5, lv + 0.14), ...P(i + 0.5, j - 0.5, lv + 0.14),
+      ...P(i + 0.5, j + 0.5, lv + 0.14), ...P(i - 0.5, j + 0.5, lv + 0.14)])
+      .stroke({ width: 1, color: STEEL, alpha: 0.45 });
+  }
   const r = rand();
   if (k === maxK) {                                            // lit sign box on the crown
     roofBox(g, i, j, lv, 0.3, 0.5, 0x2a2247, 0x1d1836);
@@ -200,16 +215,32 @@ function roofDetail(g, glow, f, rand, maxK, win) {
       .fill({ color: win[0], alpha: 0.14 });
     return;
   }
-  if (r < 0.34) {                                              // planting boxes
+  if (r > roofP) return;                                       // a big roof stays mostly empty
+  if (r < 0.34 * roofP) {                                      // planting boxes
     for (const [du, dv] of [[-0.22, -0.18], [0.2, 0.24], [0.05, -0.26]]) {
       const [x, y] = P(i + du, j + dv, lv);
       g.ellipse(x, y - 1.5, 3.4, 2.4).fill(0x1e5c3c);
       g.ellipse(x - 0.8, y - 2.6, 2.2, 1.5).fill(0x2f8a58);
     }
-  } else if (r < 0.62) {                                       // plant housing + vent
+  } else if (r < 0.62 * roofP) {                               // plant housing + vent
     roofBox(g, i - 0.14, j + 0.1, lv, 0.2, 0.32, 0x3b3366, 0x241d40);
     g.moveTo(...P(i + 0.26, j - 0.2, lv)).lineTo(...P(i + 0.26, j - 0.2, lv + 0.7))
       .stroke({ width: 1, color: STEEL, alpha: 0.7 });
+  }
+}
+
+// A blind wall: no windows at all, just panel joints and now and then one big painted sign.
+// This is the rest between the detail — a facade module that never stops is texture, not
+// architecture, and from a distance texture is what turns a city into mush.
+function blindWall(g, glow, f, win, rand) {
+  const { pt, i, j, k } = f;
+  g.moveTo(...pt(i, j, k, 0.5, 0.06)).lineTo(...pt(i, j, k, 0.5, 0.94));
+  g.stroke({ width: 0.8, color: STEEL, alpha: 0.08 });
+  if (rand() < 0.14) {                                          // sign painted flat on the wall
+    const q = faceQuad(pt, i, j, k, 0.14, 0.86, 0.22, 0.7);
+    g.poly(q).fill({ color: win[0], alpha: 0.14 });
+    g.poly(q).stroke({ width: 1.1, color: win[0], alpha: 0.55 });
+    glow.poly(faceQuad(pt, i, j, k, 0.08, 0.92, 0.16, 0.76)).fill({ color: win[0], alpha: 0.05 });
   }
 }
 
@@ -243,19 +274,28 @@ export function buildFacade(cells, variant, win, seed, bands = 14, opts = {}) {
     gg.blendMode = "add";
     return gg;
   });
+  const tone = opts.tone ?? [FACE_R, FACE_L, FACE_T];
+  // Blind walls are decided per COLUMN, not per face: a per-face coin flip speckles the building
+  // instead of giving it one quiet side.
+  const blindAt = (i, j) => (opts.blindP ?? 0) > 0
+    && rng((i * 374761393) ^ (j * 668265263) ^ (seed * 2246822519))() < opts.blindP;
   const sorted = faces.slice().sort((a, b) => (a.i + a.j + a.k) - (b.i + b.j + b.k));
   let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
   for (const f of sorted) {
     const g = solid[bandOf(f.k)], glow = glows[bandOf(f.k)];
     const rand = rng((f.i * 73856093) ^ (f.j * 19349663) ^ (f.k * 83492791) ^ seed);
     if (f.kind === "top") {
-      g.poly(topPoly(f.i, f.j, f.k)).fill(FACE_T);
-      roofDetail(g, glow, f, rand, maxK, win);
+      g.poly(topPoly(f.i, f.j, f.k)).fill(tone[2]);
+      f.edge = !(has(f.i + 1, f.j, f.k) && has(f.i - 1, f.j, f.k)
+        && has(f.i, f.j + 1, f.k) && has(f.i, f.j - 1, f.k));
+      roofDetail(g, glow, f, rand, maxK, win, opts.roofP ?? 1);
     } else {
       const pt = f.kind === "right" ? rPt : lPt;
-      g.poly(faceQuad(pt, f.i, f.j, f.k, 0, 1, 0, 1)).fill(f.kind === "right" ? FACE_R : FACE_L);
-      variant.draw(g, { pt, i: f.i, j: f.j, k: f.k, rand, ground: f.k === minK, win, glow,
-        litP: opts.litP });
+      g.poly(faceQuad(pt, f.i, f.j, f.k, 0, 1, 0, 1)).fill(f.kind === "right" ? tone[0] : tone[1]);
+      const args = { pt, i: f.i, j: f.j, k: f.k, rand, ground: f.k === minK, win, glow, litP: opts.litP };
+      // The ground floor is never blind — the street needs shopfronts even on a data hall.
+      if (f.k > minK && blindAt(f.i, f.j)) blindWall(g, glow, args, win, rand);
+      else variant.draw(g, args);
       if (f.k > minK && f.k < maxK - 1 && has(f.i, f.j, f.k + 1) && rand() < (opts.signP ?? 0.09)) {
         wallSign(g, glow, f, win);
       }

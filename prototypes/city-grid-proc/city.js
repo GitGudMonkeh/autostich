@@ -26,7 +26,7 @@ import { vehicle, VEHICLES } from "./vehicles.js";
 import {
   hazeStrip, skyline, drawBeacons, lightCone, wetSmear, pulseBand, shockRing,
   walkerDot, crowdCluster, ventPlume, flyerShadow, flyerLights,
-  roofProps, roofBillboard, liftFace, liftCab,
+  roofProps, roofBillboard, liftFace, liftCab, plazaTile,
 } from "./cityFx.js";
 
 const GRID = 12;
@@ -309,9 +309,18 @@ async function main() {
         if (s === "road" || s === "building") enclosed++;
       }
       if (enclosed < 3) continue;
-      const def = PARKS[Math.floor(rng((r * 31) ^ (c * 17))() * PARKS.length)];
+      // Half of the pockets become a plaza instead of a park: a second green tile would only
+      // add more of the same noise, and the eye needs somewhere flat to rest.
+      const rand = rng((r * 31) ^ (c * 17));
       const g = new Graphics();
-      def.draw(g);
+      if (rand() < 0.5) {
+        const glow = new Graphics();
+        glow.blendMode = "add";
+        plazaTile(g, glow, (r * 131) ^ c, districtLead(r, c));
+        g.addChild(glow);
+      } else {
+        PARKS[Math.floor(rand() * PARKS.length)].draw(g);
+      }
       const [x, y] = pt(r, c);
       g.position.set(x, y);
       g.zIndex = r + c + 0.2;
@@ -332,9 +341,11 @@ async function main() {
 
   /* ---- building placement ------------------------------------------------------------------ */
 
-  function blockSizeWith(r, c) {
-    const seen = new Set([key(r, c)]);
-    const queue = [[r, c]];
+  // A district is measured in CELLS, not in buildings: a two-tile mall already fills a third of
+  // one. Counted over the whole footprint at once, because the new block may join two districts.
+  function districtSizeWith(cells) {
+    const seen = new Set(cells.map(([r, c]) => key(r, c)));
+    const queue = [...cells];
     while (queue.length) {
       const [qr, qc] = queue.pop();
       for (const [dr, dc] of Object.values(DIRS)) {
@@ -365,16 +376,48 @@ async function main() {
   }
 
   // What stands on a cell is fixed by its coordinates: the same plot always yields the same
-  // building, so a rebuilt city looks like the same city.
+  // building, so a rebuilt city looks like the same city. `swap` mirrors the massing across the
+  // lattice diagonal, which turns a 2 × 1 plot into a 1 × 2 one — without it every wide building
+  // in the city would face the same way.
   function pick(r, c) {
     const rand = rng((r * 92837111) ^ (c * 689287499) ^ 0x2f6e2b1);
     const roll = rand();
-    if (roll < 0.16) return { park: PARKS[Math.floor(rand() * PARKS.length)] };
+    if (roll < 0.14) return { park: PARKS[Math.floor(rand() * PARKS.length)] };
     let pool = rand() * CITY_BUILDINGS.reduce((s, b) => s + (MIX[b.key] ?? 10), 0);
     const def = CITY_BUILDINGS.find((b) => (pool -= MIX[b.key] ?? 10) < 0) ?? CITY_BUILDINGS[0];
+    return dressed(def, rand() < 0.5, rand);
+  }
+
+  const SMALL = CITY_BUILDINGS.filter((b) => b.plot[0] === 1 && b.plot[1] === 1);
+
+  function dressed(def, swap, rand) {
     const variant = VARIANTS[Math.floor(rand() * VARIANTS.length)];
     const win = WIN_SETS[def.key];
-    return { def, variant, win, lead: win[0], opts: FACADE_OPTS[def.key] ?? {} };
+    const [w, h] = def.plot;
+    return {
+      def, variant, win, swap,
+      lead: win[0],
+      opts: FACADE_OPTS[def.key] ?? {},
+      plot: swap ? [h, w] : [w, h],
+    };
+  }
+
+  // The cells a building would cover if it were anchored so that (r, c) is inside it. The offsets
+  // are tried in a fixed order, so the same click always yields the same block.
+  function footprint(r, c, choice) {
+    const [w, h] = choice.plot;
+    for (let dr = 0; dr < w; dr++) for (let dc = 0; dc < h; dc++) {
+      const r0 = r - dr, c0 = c - dc;
+      const cells = [];
+      let ok = true;
+      for (let a = 0; a < w && ok; a++) for (let b = 0; b < h && ok; b++) {
+        const rr = r0 + a, cc = c0 + b;
+        if (!inGrid(rr, cc) || state.get(key(rr, cc)) === "building") ok = false;
+        else cells.push([rr, cc]);
+      }
+      if (ok) return cells;
+    }
+    return null;
   }
 
   /* ---- foundations -------------------------------------------------------------------------- */
@@ -455,15 +498,28 @@ async function main() {
   }
 
   function place(r, c) {
-    const kk = key(r, c);
-    if (state.get(kk) === "building") return;
-    if (blockSizeWith(r, c) > DISTRICT) { rejectFlash(r, c); return; }
+    if (state.get(key(r, c)) === "building") return;
 
-    state.set(kk, "building");
-    plate(r, c, false);
-    const oldRoad = roadG.get(kk);
-    if (oldRoad) { oldRoad.destroy({ children: true }); roadG.delete(kk); }
-    clearPark(kk);
+    // The type decides how much ground it needs. If its plot does not fit here, the plot falls
+    // back to a single tile rather than refusing the click — a full district would otherwise be
+    // unbuildable the moment one large type came up.
+    let choice = pick(r, c);
+    let cells = choice.park ? [[r, c]] : footprint(r, c, choice);
+    if (!cells || districtSizeWith(cells) > DISTRICT) {
+      const rand = rng((r * 40499) ^ (c * 86969) ^ 0x51a3);
+      choice = choice.park ? choice : dressed(SMALL[Math.floor(rand() * SMALL.length)], rand() < 0.5, rand);
+      cells = [[r, c]];
+      if (districtSizeWith(cells) > DISTRICT) { rejectFlash(r, c); return; }
+    }
+
+    for (const [rr, cc] of cells) {
+      const ck = key(rr, cc);
+      state.set(ck, "building");
+      plate(rr, cc, false);
+      const oldRoad = roadG.get(ck);
+      if (oldRoad) { oldRoad.destroy({ children: true }); roadG.delete(ck); }
+      clearPark(ck);
+    }
 
     for (let rr = 0; rr < GRID; rr++) for (let cc = 0; cc < GRID; cc++) {
       if (state.get(key(rr, cc)) === "ground" && touchesBuilding(rr, cc)) makeRoad(rr, cc);
@@ -482,26 +538,32 @@ async function main() {
     spawnWalkers();
     updateVents();
 
-    const [x, y] = pt(r, c);
+    // The building sits on the centre of its whole plot and sorts by its NEAREST corner, so it is
+    // drawn after everything it stands in front of.
+    const rs = cells.map(([rr]) => rr), cs = cells.map(([, cc]) => cc);
+    const r0 = Math.min(...rs), r1 = Math.max(...rs), c0 = Math.min(...cs), c1 = Math.max(...cs);
+    const [x, y] = pt((r0 + r1) / 2, (c0 + c1) / 2);
+    const kk = key(r0, c0);
     const node = new Container();
-    node.zIndex = r + c + 0.5;
+    node.zIndex = r1 + c1 + 0.5;
     world.addChild(node);
     builtG.set(kk, node);
 
-    const choice = pick(r, c);
     if (!choice.park) {
-      const f = foundation(r, c, districtLead(r, c));
-      f.zIndex = r + c + 0.05;
-      world.addChild(f);
-      foundG.set(kk, f);
+      for (const [rr, cc] of cells) {                    // one podium slab per tile, they merge
+        const f = foundation(rr, cc, districtLead(rr, cc));
+        f.zIndex = rr + cc + 0.05;
+        world.addChild(f);
+        foundG.set(key(rr, cc), f);
+      }
       // The whole district is redrawn: the neighbours lose their kerb towards the new plot, and
       // a grown district may have moved its anchor and therefore its colour.
-      for (const dk of districtCells(r, c)) {
+      for (const dk of districtCells(cells[0][0], cells[0][1])) {
         const [dr, dc] = dk.split(",").map(Number);
         redrawFoundation(dr, dc);
       }
     }
-    shockwave(r, c);
+    for (const [rr, cc] of cells) shockwave(rr, cc);
     node.position.set(x, choice.park ? y : y - PLINTH);
     if (choice.park) {                                  // a park plot: no massing, just a garden
       const g = new Graphics();
@@ -518,23 +580,32 @@ async function main() {
       app.ticker.add(grow);
       return;
     }
-    raise(node, choice, r, c);
+    raise(node, choice, kk, r1 - r0 + 1, c1 - c0 + 1);
   }
 
   // Projection → matter: the construction cage draws itself, a scan plane rises and the floors
   // materialise underneath it, then the cage fades and leaves the finished building.
-  function raise(node, choice, r, c) {
-    const cells = choice.def.build();
+  function raise(node, choice, kk, plotW, plotH) {
+    // `swap` mirrors the lattice across its diagonal, which turns a building that runs along the
+    // a-axis into one that runs along b. It is a mirror, not a rotation — for these masses that
+    // reads as the same building seen from the other side, and it is what keeps the wide types
+    // from all lying the same way.
+    const cells = choice.def.build().map(([i, j, k]) => (choice.swap ? [j, i, k] : [i, j, k]));
+    const [ar, ac] = kk.split(",").map(Number);
     const BANDS = 12;
-    const { solid, glows, maxK, box } =
-      buildFacade(cells, choice.variant, choice.win, r * 31 + c, BANDS, choice.opts);
-    let si = 0, sj = 0;
-    for (const [i, j] of cells) { si += i; sj += j; }
-    const ox = -(si / cells.length - sj / cells.length) * CS;
-    const oy = -(si / cells.length + sj / cells.length) * CS * 0.5;
-    // A plot is one cell wide; a silhouette is not. Fit the massing to its plot so a tower does
-    // not swallow the street it is supposed to stand on.
-    const fit = Math.min(1, (TILE_W * 1.05) / Math.max(1, box.maxX - box.minX));
+    const { solid, glows, minK, maxK } =
+      buildFacade(cells, choice.variant, choice.win, ar * 31 + ac, BANDS, choice.opts);
+
+    // Scale and centring come from the GROUND floor, not from the whole silhouette: the ground
+    // floor is what has to match the plot, and the upper floors are meant to overhang it.
+    const ground = cells.filter(([, , k]) => k === minK);
+    const gi0 = Math.min(...ground.map(([i]) => i)), gi1 = Math.max(...ground.map(([i]) => i));
+    const gj0 = Math.min(...ground.map(([, j]) => j)), gj1 = Math.max(...ground.map(([, j]) => j));
+    const ci = (gi0 + gi1) / 2, cj = (gj0 + gj1) / 2;
+    const ox = -(ci - cj) * CS;
+    const oy = -(ci + cj) * CS * 0.5;
+    const groundW = ((gi1 - gj0) - (gi0 - gj1) + 1) * CS;
+    const fit = Math.min(1, ((plotW + plotH) * (TILE_W / 2) * 1.04) / Math.max(1, groundW));
     const inner = new Container();
     inner.scale.set(fit);
     node.addChild(inner);
@@ -543,11 +614,11 @@ async function main() {
       glows[b].position.set(ox, oy);
       inner.addChild(solid[b], glows[b]);
     }
-    glowsG.set(key(r, c), glows);
+    glowsG.set(kk, glows);
 
     // Roof life and the lift. Both belong to the top band, so they appear with the last floor
     // rather than standing finished over a half-built tower.
-    const seed = r * 31 + c;
+    const seed = ar * 31 + ac;
     const crown = new Graphics();
     const crownGlow = new Graphics();
     crownGlow.blendMode = "add";
@@ -567,7 +638,7 @@ async function main() {
     if (hasLift) inner.addChild(lift);
 
     const cage = new Graphics();
-    const R = TILE_W * 0.48;
+    const R = (plotW + plotH) * (TILE_W / 4) * 0.96;
     const top = -(maxK + 2) * CS * fit;
     for (const lv of [0, top]) {
       cage.poly([0, lv - R * 0.5, R, lv, 0, lv + R * 0.5, -R, lv]);

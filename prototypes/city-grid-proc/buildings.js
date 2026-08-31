@@ -7,6 +7,11 @@
 // Lattice → screen: 2:1 isometry, +i goes right-down, +j left-down, +k up. A cell (i,j,k)
 // occupies [i±0.5, j±0.5] and the height band k..k+1, so fractional coordinates address the
 // corners and faces of a cell.
+//
+// PLOTS. One grid tile is 6 × 6 lattice cells (6 · CS · 2 = 132 px). Every building declares the
+// plot it needs in tiles, and its GROUND floor is designed to fill that plot — so the city can
+// render every type at the same scale and a window is the same size everywhere. Upper floors may
+// overhang the plot; that is architecture, not an error, and it is what breaks the grid rhythm.
 
 export const TILE_W = 132, TILE_H = 66;   // one grid cell in screen px
 export const ISO = 0.5;
@@ -67,6 +72,7 @@ export function cageBox(g, i0, i1, j0, j1, k0, k1, alpha = 0.45, dashed = false,
 //     the silhouette has to stay recognisable from any of the four iso rotations.
 export const KRAGTURM = {
   key: "kragturm",
+  plot: [1, 1],
   name: "Kragturm",
   desc: "Schlanker Schaft, auskragender Block, Gegengewicht.",
   build() {
@@ -93,6 +99,7 @@ export const KRAGTURM = {
 // 2 · Torbau — two legs and a bridge; the hole in the middle is the whole point.
 export const TORBAU = {
   key: "torbau",
+  plot: [1, 1],
   name: "Torbau",
   desc: "Zwei Beine, Brückenriegel, echtes Loch in der Mitte.",
   build() {
@@ -119,6 +126,7 @@ export const TORBAU = {
 // 3 · Drillingsturm — three shafts of different heights, tied by wireframe sky bridges.
 export const DRILLING = {
   key: "drilling",
+  plot: [1, 1],
   name: "Drillingsturm",
   desc: "Drei gestaffelte Schäfte, verbunden durch Brücken.",
   build() {
@@ -157,109 +165,118 @@ export const BUILDINGS = [KRAGTURM, TORBAU, DRILLING];
 // and the transit that ties it together. They are deliberately low where a tower would be wrong —
 // a skyline is only tall if something around it is not.
 
-// 4 · Einkaufszentrum — wide, low, an atrium cut through the roof and a drum over it.
+// 4 · Einkaufszentrum — two tiles square. Wide, low, an atrium cut through the roof, a drum
+//     over it and a canopy reaching over the pavement.
 export const MALL = {
   key: "mall",
+  plot: [2, 2],
   name: "Einkaufszentrum",
-  desc: "Breiter Riegel, Atrium durch das Dach, Zylinder darüber.",
+  desc: "Breiter Riegel über zwei mal zwei Kacheln, Atrium durch das Dach, Zylinder darüber.",
   build() {
     const v = volume();
-    v.add(0, 6, 0, 5, 0, 3);          // the box itself
-    v.cut(2, 4, 2, 3, 3, 3);          // atrium void in the roof slab
-    v.add(1, 5, 1, 4, 4, 4);          // upper deck ring
-    v.add(2, 4, 2, 3, 5, 6);          // drum over the atrium
-    v.add(7, 8, 2, 3, 0, 1);          // entrance porch
+    v.add(0, 11, 0, 11, 0, 3);        // the box, filling the plot
+    v.cut(4, 7, 4, 7, 3, 3);          // atrium void in the roof slab
+    v.add(1, 10, 1, 10, 4, 4);        // upper deck ring
+    v.add(4, 7, 4, 7, 5, 7);          // drum over the atrium
+    v.add(12, 13, 4, 7, 1, 2);        // canopy out over the pavement
     return v.list();
   },
-  cage(g) { cageBox(g, 0, 6, 0, 5, 0, 6, 0.4); },
+  cage(g) { cageBox(g, 0, 11, 0, 11, 0, 7, 0.4); },
 };
 
-// 5 · Ladenzeile — the row of shops at the bottom of every cyberpunk street. Two storeys, a
-//     taller end unit, one sign pylon.
+// 5 · Ladenzeile — two tiles long, one deep, so it lies ALONG the street instead of sitting on
+//     it. Two storeys, a taller end unit, one sign pylon.
 export const MARKT = {
   key: "markt",
+  plot: [2, 1],
   name: "Ladenzeile",
-  desc: "Zweigeschossige Ladenzeile mit höherem Kopfbau und Schilderpylon.",
+  desc: "Zweigeschossige Zeile über zwei Kacheln, höherer Kopfbau, Schilderpylon.",
   build() {
     const v = volume();
-    v.add(0, 7, 0, 2, 0, 1);          // the row
-    v.add(0, 3, 0, 2, 2, 2);          // upper storey over half of it
-    v.add(5, 7, 0, 2, 2, 4);          // taller end unit
-    v.add(1, 1, 1, 1, 3, 6);          // sign pylon
+    v.add(0, 11, 0, 5, 0, 1);         // the row
+    v.add(0, 5, 0, 5, 2, 2);          // upper storey over half of it
+    v.add(8, 11, 0, 5, 2, 4);         // taller end unit
+    v.add(2, 3, 1, 2, 3, 7);          // sign pylon
+    v.add(6, 7, 6, 7, 0, 0);          // a shop spilling onto the forecourt
     return v.list();
   },
-  cage(g) { cageBox(g, 0, 7, 0, 2, 0, 4, 0.4); },
+  cage(g) { cageBox(g, 0, 11, 0, 5, 0, 4, 0.4); },
 };
 
-// 6 · Konzernturm — the slab with setbacks that owns the district. Deliberately the plainest
-//     massing here: authority reads as repetition, not as sculpture.
+// 6 · Konzernturm — one tile, all height. Deliberately the plainest massing here: authority
+//     reads as repetition, not as sculpture.
 export const KONZERN = {
   key: "konzern",
+  plot: [1, 1],
   name: "Konzernturm",
   desc: "Scheibe mit Rücksprüngen, Sky-Lobby, Krone und Mast.",
   build() {
     const v = volume();
-    v.add(0, 4, 0, 3, 0, 1);          // podium
-    v.add(0, 3, 0, 2, 2, 13);         // slab
-    v.cut(1, 2, 1, 1, 7, 8);          // sky lobby cut through
-    v.add(0, 2, 0, 2, 14, 16);        // setback
-    v.add(1, 2, 1, 1, 17, 18);        // crown
-    v.add(1, 1, 1, 1, 19, 21);        // mast
+    v.add(0, 5, 0, 5, 0, 1);          // podium filling the plot
+    v.add(0, 4, 1, 4, 2, 13);         // slab
+    v.cut(1, 3, 2, 3, 7, 8);          // sky lobby cut through
+    v.add(1, 4, 1, 4, 14, 16);        // setback
+    v.add(2, 3, 2, 3, 17, 18);        // crown
+    v.add(2, 2, 2, 2, 19, 21);        // mast
     return v.list();
   },
-  cage(g) { cageBox(g, 0, 3, 0, 2, 0, 21, 0.4); },
+  cage(g) { cageBox(g, 0, 5, 0, 5, 0, 21, 0.4); },
 };
 
-// 7 · Datenhalle — the building nobody looks at: almost no windows, all cooling.
+// 7 · Datenhalle — two tiles of the building nobody looks at: almost no windows, all cooling.
 export const DATEN = {
   key: "daten",
+  plot: [2, 1],
   name: "Datenhalle",
-  desc: "Fensterarme Halle, Kühltürme, Aggregateblock.",
+  desc: "Fensterarme Halle über zwei Kacheln, Kühltürme, Aggregateblock.",
   build() {
     const v = volume();
-    v.add(0, 5, 0, 4, 0, 4);          // hall
-    v.add(0, 5, 0, 4, 5, 5);          // roof slab
-    v.add(1, 1, 1, 1, 6, 9);          // cooling stack
-    v.add(3, 3, 3, 3, 6, 8);          // cooling stack
-    v.add(4, 5, 0, 1, 6, 7);          // chiller block
+    v.add(0, 11, 0, 5, 0, 4);         // hall
+    v.add(0, 11, 0, 5, 5, 5);         // roof slab
+    v.add(2, 3, 1, 2, 6, 10);         // cooling stack
+    v.add(7, 8, 3, 4, 6, 9);          // cooling stack
+    v.add(9, 11, 0, 1, 6, 7);         // chiller block
     return v.list();
   },
-  cage(g) { cageBox(g, 0, 5, 0, 4, 0, 9, 0.4); },
+  cage(g) { cageBox(g, 0, 11, 0, 5, 0, 10, 0.4); },
 };
 
-// 8 · Kapselhotel — a thin stack of sleeping pods with two capsule clusters pushed out of it.
+// 8 · Kapselhotel — one tile, and it does not fill it. Small on purpose: without something
+//     small the towers have nothing to be tall against.
 export const KAPSEL = {
   key: "kapsel",
+  plot: [1, 1],
   name: "Kapselhotel",
   desc: "Schmaler Schaft, ausgeschobene Kapselcluster, Leuchtkrone.",
   build() {
     const v = volume();
-    v.add(0, 2, 0, 2, 0, 1);          // base with the lobby
-    v.add(0, 1, 0, 1, 2, 11);         // shaft — mid-rise, not another tower
-    v.add(2, 3, 0, 1, 4, 5);          // capsule cluster
-    v.add(-2, -1, 0, 1, 8, 9);        // capsule cluster on the other side
-    v.add(0, 1, 0, 1, 12, 13);        // lit crown
+    v.add(0, 3, 0, 3, 0, 1);          // base with the lobby
+    v.add(1, 2, 1, 2, 2, 11);         // shaft
+    v.add(3, 4, 1, 2, 4, 5);          // capsule cluster
+    v.add(-1, 0, 1, 2, 8, 9);         // capsule cluster on the other side
+    v.add(1, 2, 1, 2, 12, 13);        // lit crown
     return v.list();
   },
-  cage(g) { cageBox(g, 0, 1, 0, 1, 0, 13, 0.4); },
+  cage(g) { cageBox(g, 1, 2, 1, 2, 0, 13, 0.4); },
 };
 
-// 9 · Transitstation — an elevated deck on pylons with a hall over it. The one piece that says
-//     the city continues past the edge of the plot.
+// 9 · Transitstation — two tiles of elevated deck on pylons. The one piece that says the city
+//     continues past the edge of the plot.
 export const STATION = {
   key: "station",
+  plot: [2, 1],
   name: "Transitstation",
-  desc: "Aufgeständertes Deck, Halle darüber, Trassenkante.",
+  desc: "Aufgeständertes Deck über zwei Kacheln, Halle darüber, Trassenkante.",
   build() {
     const v = volume();
-    for (const i of [0, 3, 6]) v.add(i, i, 1, 2, 0, 4);   // pylons
-    v.add(0, 6, 1, 2, 5, 6);          // platform deck
-    v.add(0, 6, 0, 0, 5, 5);          // track ledge along the deck
-    v.add(1, 5, 1, 2, 7, 8);          // hall
-    v.add(2, 4, 1, 2, 9, 9);          // roof
+    for (const i of [0, 5, 11]) v.add(i, i + 1, 1, 4, 0, 4);   // pylons
+    v.add(-2, 13, 1, 4, 5, 6);        // deck, running out over the street at both ends
+    v.add(-2, 13, 0, 0, 5, 5);        // track ledge
+    v.add(2, 9, 1, 4, 7, 8);          // hall
+    v.add(3, 8, 2, 3, 9, 9);          // roof
     return v.list();
   },
-  cage(g) { cageBox(g, 0, 6, 1, 2, 0, 9, 0.4); },
+  cage(g) { cageBox(g, 0, 11, 1, 4, 0, 9, 0.4); },
 };
 
 // Everything the city may put on a plot.

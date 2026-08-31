@@ -188,6 +188,43 @@ export function flyerLights(g, t, colour) {
   g.circle(0, -6, 4.5).fill({ color: colour, alpha: 0.1 + f * 0.1 });
 }
 
+// A plaza: the other thing an enclosed pocket can be. Paved, lit, and mostly EMPTY — a city
+// needs somewhere the eye can rest, and a second park would only add more green noise.
+export function plazaTile(g, glow, seed, lead) {
+  const rand = rng(seed * 15485863 + 7);
+  const d = (w, h) => [0, -h, w, 0, 0, h, -w, 0];
+  g.poly(d(TILE_W / 2 - 3, TILE_H / 2 - 1.5)).fill(0x241f3c);
+  g.poly(d(TILE_W / 2 - 3, TILE_H / 2 - 1.5)).stroke({ width: 1, color: 0x3a3360, alpha: 0.7 });
+  for (let n = 1; n < 5; n++) {                        // paving joints, parallel to the tile
+    const f = -0.5 + n / 5;
+    g.moveTo(...pt(f, -0.46)).lineTo(...pt(f, 0.46));
+    g.moveTo(...pt(-0.46, f)).lineTo(...pt(0.46, f));
+  }
+  g.stroke({ width: 0.7, color: 0x3a3360, alpha: 0.35 });
+  g.poly(d(30, 15)).stroke({ width: 1.4, color: lead, alpha: 0.55 });   // lit inlay
+  glow.poly(d(34, 17)).fill({ color: lead, alpha: 0.07 });
+  for (const [bx, by] of [[-38, 6], [36, -8]]) {                        // two benches
+    g.poly([bx - 8, by, bx, by - 4, bx + 8, by, bx, by + 4]).fill(0x2f2a4a);
+    g.poly([bx - 8, by - 3, bx, by - 7, bx + 8, by - 3, bx, by + 1]).fill(0x3b3560);
+  }
+  for (const [px, py] of [[6, 20], [-14, -16]]) {                       // planters
+    g.ellipse(px, py, 9, 4.5).fill(0x1b3a2c);
+    g.ellipse(px, py - 1, 9, 4.5).stroke({ width: 1, color: 0x2f7a4e, alpha: 0.8 });
+    g.circle(px - 2, py - 5, 3.4).fill({ color: 0x2f8a58, alpha: 0.9 });
+  }
+  const mx = 14 + rand() * 8, my = -6;                                  // holo pillar
+  g.moveTo(mx, my).lineTo(mx, my - 26).stroke({ width: 1.2, color: 0x5a5480 });
+  g.poly([mx - 7, my - 34, mx + 7, my - 34, mx + 7, my - 24, mx - 7, my - 24])
+    .fill({ color: 0x0d0a20, alpha: 0.85 }).stroke({ width: 1, color: lead, alpha: 0.9 });
+  for (let n = 0; n < 3; n++) {
+    g.rect(mx - 5, my - 32 + n * 3, 3 + rand() * 8, 1.4).fill({ color: lead, alpha: 0.55 + rand() * 0.4 });
+  }
+  glow.poly([mx - 10, my - 37, mx + 10, my - 37, mx + 10, my - 21, mx - 10, my - 21])
+    .fill({ color: lead, alpha: 0.1 });
+  crowdCluster(g, 0.18, -0.1, rand, lead);
+  crowdCluster(g, -0.2, 0.16, rand, 0xffd8a0);
+}
+
 /* ---- rooftops ---------------------------------------------------------------------------- */
 
 // Roof life. One prop per building, at the centre of whatever cells are actually on top —
