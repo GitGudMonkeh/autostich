@@ -37,15 +37,37 @@ const HOLO = 0xb06bff, HOT = 0xe8fbff, C1 = 0x35d6ff;
 // which is why PLINTH is the kerb height from streetRender and not a free choice.
 const PLINTH = 3;
 const PLOT_TOP = 0x2b2648, PLOT_FACE = 0x1a1730, PLOT_JOINT = 0x3a3360;
-// How often each type turns up. A city is mostly shops, sheds and housing with a few towers in
-// it — an even draw over nine types gives a skyline of nine equal monuments and no street.
+// How often each type turns up when nothing else decides. A city is mostly shops, sheds and
+// housing with a few towers in it — an even draw over nine types gives a skyline of nine equal
+// monuments and no street.
 const MIX = {
   markt: 17, mall: 12, kapsel: 12, daten: 10, station: 8, konzern: 9,
   kragturm: 11, torbau: 10, drilling: 11,
 };
-// A district gets one colour and everything on it carries it: podium trim, kerb light, street
-// furniture. That is what makes a district readable as a district and not as six houses.
-const HUES = [0x35d6ff, 0xff8ad8, 0xffc478, 0x7cf7c4, 0xb06bff, 0xff6f91];
+
+// QUARTERS. Drawing the type per plot scattered nine colours evenly over the whole plate, and an
+// even scatter is noise however varied the pieces are. A real city groups its uses, so the map
+// carries four zones and each one draws mostly from its own table. Everything on a plot follows
+// its quarter: kerb light, podium trim, street furniture. One plot in eight is deliberately an
+// outsider — a quarter of nothing but one type would be the same mistake at a larger scale.
+const QUARTERS = [
+  // `low` is how often a plot in this quarter is built short, and `cut` how much of it is left.
+  // It is what gives the city a profile: a tall core, low outskirts, and a flat industrial edge.
+  { key: "handel", hue: 0xff6f91, low: 0.62, cut: [0.42, 0.72],
+    mix: { markt: 34, mall: 24, kapsel: 14, drilling: 10, station: 8, konzern: 5, kragturm: 5 } },
+  { key: "konzern", hue: 0x9fd8ff, low: 0.24, cut: [0.62, 0.95],
+    mix: { konzern: 19, kragturm: 20, torbau: 17, drilling: 17, mall: 10, daten: 8, kapsel: 9 } },
+  { key: "industrie", hue: 0x7cf7c4, low: 0.7, cut: [0.34, 0.6],
+    mix: { daten: 36, station: 22, torbau: 14, markt: 9, kapsel: 8, konzern: 6, kragturm: 5 } },
+  { key: "wohnen", hue: 0xffc478, low: 0.42, cut: [0.55, 0.85],
+    mix: { kapsel: 32, markt: 20, drilling: 16, torbau: 12, mall: 8, station: 7, kragturm: 5 } },
+];
+// Fixed seeds, so the same map always has the same quarters — the city is meant to be
+// recognisable, not re-rolled on every reload.
+const QSEEDS = (() => {
+  const rand = rng(0x5eed17);
+  return QUARTERS.map((q, n) => ({ n, r: 1.5 + rand() * (GRID - 3), c: 1.5 + rand() * (GRID - 3) }));
+})();
 
 const key = (r, c) => `${r},${c}`;
 const inGrid = (r, c) => r >= 0 && r < GRID && c >= 0 && c < GRID;
@@ -120,21 +142,18 @@ async function main() {
     return seen;
   };
 
-  // The colour follows from the district's lowest cell, so it survives the district growing and
-  // does not reshuffle every time a neighbour is added.
-  function districtLead(r, c) {
-    if (state.get(key(r, c)) !== "building") {
-      for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
-        if (inGrid(r + dr, c + dc) && state.get(key(r + dr, c + dc)) === "building") {
-          return districtLead(r + dr, c + dc);
-        }
-      }
-      return HUES[0];
+  // Which quarter a cell belongs to: nearest seed, with a per-cell wobble on the distance so the
+  // borders are ragged instead of straight bisectors.
+  function quarterOf(r, c) {
+    let best = QUARTERS[0], bd = Infinity;
+    for (const s of QSEEDS) {
+      const d = Math.hypot(r - s.r, c - s.c) + rng((r * 7919) ^ (c * 104729) ^ (s.n * 31))() * 2.4;
+      if (d < bd) { bd = d; best = QUARTERS[s.n]; }
     }
-    const anchor = [...districtCells(r, c)].sort()[0];
-    const [ar, ac] = anchor.split(",").map(Number);
-    return HUES[Math.floor(rng((ar * 48611) ^ (ac * 96137))() * HUES.length)];
+    return best;
   }
+
+  const districtLead = (r, c) => quarterOf(r, c).hue;
 
   /* ---- empty plot ------------------------------------------------------------------------- */
 
@@ -220,7 +239,7 @@ async function main() {
       crowdCluster(node, r + side * 0.4, c + side * 0.9, rand, 0xffc478);
     }
     if (rand() < 0.3) crowdCluster(node, r - side * 0.75, c + side * 0.8, rand, lead);
-    if (rand() < 0.16) {
+    if (rand() < 0.11) {
       // The display gets its own layers so one of them can stutter like a broken sign.
       const colour = rand() < 0.5 ? 0x8ceaff : 0xff8ad8;
       const sg = new Graphics(), sglow = new Graphics();
@@ -383,21 +402,32 @@ async function main() {
     const rand = rng((r * 92837111) ^ (c * 689287499) ^ 0x2f6e2b1);
     const roll = rand();
     if (roll < 0.14) return { park: PARKS[Math.floor(rand() * PARKS.length)] };
-    let pool = rand() * CITY_BUILDINGS.reduce((s, b) => s + (MIX[b.key] ?? 10), 0);
-    const def = CITY_BUILDINGS.find((b) => (pool -= MIX[b.key] ?? 10) < 0) ?? CITY_BUILDINGS[0];
+    const table = rand() < 0.12 ? MIX : quarterOf(r, c).mix;
+    let pool = rand() * CITY_BUILDINGS.reduce((s, b) => s + (table[b.key] ?? 0), 0);
+    const def = CITY_BUILDINGS.find((b) => (pool -= table[b.key] ?? 0) < 0) ?? CITY_BUILDINGS[0];
     return dressed(def, rand() < 0.5, rand);
   }
 
   const SMALL = CITY_BUILDINGS.filter((b) => b.plot[0] === 1 && b.plot[1] === 1);
 
+  // Two houses of the same type standing next to each other in exactly the same grey is what a
+  // copy-paste city looks like. Every plot shifts its type's tone a little, which keeps the type
+  // recognisable and the row alive.
+  const shade = (colour, f) => {
+    const cl = (v) => Math.max(0, Math.min(255, Math.round(v * f)));
+    return (cl(colour >> 16) << 16) | (cl((colour >> 8) & 255) << 8) | cl(colour & 255);
+  };
+
   function dressed(def, swap, rand) {
     const variant = VARIANTS[Math.floor(rand() * VARIANTS.length)];
     const win = WIN_SETS[def.key];
     const [w, h] = def.plot;
+    const base = FACADE_OPTS[def.key] ?? {};
+    const f = 0.82 + rand() * 0.38;
     return {
       def, variant, win, swap,
       lead: win[0],
-      opts: FACADE_OPTS[def.key] ?? {},
+      opts: base.tone ? { ...base, tone: base.tone.map((c) => shade(c, f)) } : base,
       plot: swap ? [h, w] : [w, h],
     };
   }
@@ -590,10 +620,20 @@ async function main() {
     // a-axis into one that runs along b. It is a mirror, not a rotation — for these masses that
     // reads as the same building seen from the other side, and it is what keeps the wide types
     // from all lying the same way.
-    const cells = choice.def.build().map(([i, j, k]) => (choice.swap ? [j, i, k] : [i, j, k]));
+    let cells = choice.def.build().map(([i, j, k]) => (choice.swap ? [j, i, k] : [i, j, k]));
     const [ar, ac] = kk.split(",").map(Number);
+    // A third of the plots are built short. Two neighbours of the same type at exactly the same
+    // height is what makes a quarter read as a copy-paste row rather than as a street.
+    const jitter = rng(ar * 6151 + ac * 769 + 17);
+    const q = quarterOf(ar, ac);
+    if (jitter() < q.low) {
+      const top = Math.max(...cells.map((x) => x[2])), bottom = Math.min(...cells.map((x) => x[2]));
+      const f = q.cut[0] + jitter() * (q.cut[1] - q.cut[0]);
+      const cut = bottom + Math.ceil((top - bottom + 1) * f);
+      if (cut > bottom + 1) cells = cells.filter(([, , k]) => k <= cut);
+    }
     const BANDS = 12;
-    const { solid, glows, minK, maxK } =
+    const { solid, glows, minK, maxK, box } =
       buildFacade(cells, choice.variant, choice.win, ar * 31 + ac, BANDS, choice.opts);
 
     // Scale and centring come from the GROUND floor, not from the whole silhouette: the ground
@@ -605,7 +645,11 @@ async function main() {
     const ox = -(ci - cj) * CS;
     const oy = -(ci + cj) * CS * 0.5;
     const groundW = ((gi1 - gj0) - (gi0 - gj1) + 1) * CS;
-    const fit = Math.min(1, ((plotW + plotH) * (TILE_W / 2) * 1.04) / Math.max(1, groundW));
+    const plotPx = (plotW + plotH) * (TILE_W / 2);
+    // Overhang is wanted, unlimited overhang is not: at full density the upper floors roofed the
+    // streets over completely and the ground — the thing that makes the blocks readable — vanished.
+    const fit = Math.min(1, (plotPx * 1.04) / Math.max(1, groundW),
+      (plotPx * 1.5) / Math.max(1, box.maxX - box.minX));
     const inner = new Container();
     inner.scale.set(fit);
     node.addChild(inner);
