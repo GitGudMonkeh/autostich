@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Neon-Stadt — interaktiv</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #04040a; color: #dcdaf0;
+               font-family: system-ui, sans-serif; overflow: hidden; display: flex; flex-direction: column; }
+  body { background: radial-gradient(ellipse 120% 60% at 50% 18%, #140b22 0%, #04040a 62%), #04040a; }
+  #hud { flex: none; padding: 10px 14px; background: rgba(8,8,16,.9); border-bottom: 1px solid #262040;
+         font-size: 13px; line-height: 1.5; display: flex; gap: 16px; align-items: center;
+         justify-content: space-between; }
+  #hud b { color: #7fd8ff; }
+  #hud span { color: #b06bff; }
+  #reset { flex: none; font: 500 11px/1 ui-monospace, monospace; letter-spacing: .08em;
+           text-transform: uppercase; color: #dcdaf0; background: transparent;
+           border: 1px solid #2f2850; border-radius: 4px; padding: 8px 14px; cursor: pointer; }
+  #reset:hover { border-color: #7fd8ff; color: #7fd8ff; }
+  #stage-host { position: relative; flex: 1 1 auto; min-height: 0; }
+  canvas { display: block; }
+  @media (max-width: 819px) { #hud { flex-direction: column; align-items: flex-start; gap: 8px; } }
+</style>
+</head>
+<body>
+  <div id="hud">
+    <div><b>Neon-Stadt.</b> Klick auf eine Kachel → das Gebäude materialisiert sich. Bis zu <span>4 Gebäude</span> dürfen aneinander stehen; die Straßen entstehen von selbst darum herum, samt Kreuzungen, Ampeln, Beschilderung und Verkehr. Eingeschlossene Zwischenräume werden zu Parks.</div>
+    <button id="reset" type="button">Neu anfangen</button>
+  </div>
+  <div id="stage-host"></div>
+  <script type="module" src="./city.js"></script>
+</body>
+</html>

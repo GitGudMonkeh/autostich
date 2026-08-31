@@ -5,9 +5,9 @@
 
 import { dashLine, TILE_W, TILE_H } from "./buildings.js";
 
-const HOLO = 0xb06bff;              // hologrid violet — accent only
+const CAR_HOLO = 0xb06bff;              // hologrid violet — accent only
 
-export const DIRS = {
+export const CAR_DIRS = {
   N: [TILE_W / 4, -TILE_H / 4], E: [TILE_W / 4, TILE_H / 4],
   S: [-TILE_W / 4, TILE_H / 4], W: [-TILE_W / 4, -TILE_H / 4],
 };
@@ -36,7 +36,7 @@ function isoBox(g, at, f0, f1, s0, s1, yTop, yBot, col) {
 // One vehicle. `spec` carries the proportions and the two-colour palette; every model is drawn
 // by the same routine so they stay a fleet instead of three unrelated props.
 export function vehicle(g, dir, spec) {
-  const u = unit(DIRS[dir]), w = unit(DIRS[CW[dir]]);
+  const u = unit(CAR_DIRS[dir]), w = unit(CAR_DIRS[CW[dir]]);
   const { L, W2, H, cab, lead, light, alt = 5 } = spec;
   const y0 = -alt;
   const at = (fwd, side, lift) => [u[0] * fwd + w[0] * side, u[1] * fwd + w[1] * side + lift];
@@ -96,7 +96,7 @@ export function vehicle(g, dir, spec) {
     const a = at(-L * 0.3, side * W2 * 0.34, 1.5), b2 = at(L * 0.3, side * W2 * 0.34, 1.5);
     dashLine(g, a[0], a[1], b2[0], b2[1], 3, 3);
   }
-  g.stroke({ width: 1, color: HOLO, alpha: 0.5 });
+  g.stroke({ width: 1, color: CAR_HOLO, alpha: 0.5 });
 }
 
 export const VEHICLES = [
