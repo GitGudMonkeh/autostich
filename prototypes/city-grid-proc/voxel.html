@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Voxel-Drahtgitter — drei Gebäude</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #04040a; color: #dcdaf0; font-family: system-ui, sans-serif; }
+  body { background: radial-gradient(ellipse 120% 70% at 50% 25%, #120a1e 0%, #04040a 60%), #04040a;
+         display: flex; flex-direction: column; overflow: hidden; }
+  #hud { flex: none; padding: 10px 14px; background: rgba(8,8,16,.86); border-bottom: 1px solid #262040;
+         font-size: 13px; line-height: 1.5; display: flex; gap: 16px; align-items: center; justify-content: space-between; }
+  #hud b { color: #7fd8ff; }
+  #hud span { color: #b06bff; }
+  #replay { flex: none; font: 500 11px/1 ui-monospace, monospace; letter-spacing: .08em; text-transform: uppercase;
+            color: #dcdaf0; background: transparent; border: 1px solid #2f2850; border-radius: 4px;
+            padding: 8px 14px; cursor: pointer; }
+  #replay:hover { border-color: #7fd8ff; color: #7fd8ff; }
+  #wrap { position: relative; flex: 1 1 auto; min-height: 0; }
+  #stage-host { position: absolute; inset: 0; }
+  #labels { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(3, 1fr);
+            pointer-events: none; z-index: 10; }
+  .cell { padding: 12px 16px; }
+  .cell h2 { margin: 0; font: 600 12px/1.2 ui-monospace, monospace; letter-spacing: .12em;
+             text-transform: uppercase; color: #7fd8ff; }
+  .cell h2 i { font-style: normal; color: #b06bff; margin-right: 6px; }
+  .cell p { margin: 5px 0 0; font-size: 12px; line-height: 1.45; color: #8e8aa8; max-width: 30ch; }
+  canvas { display: block; }
+  @media (max-width: 819px) { #labels { grid-template-columns: 1fr; grid-template-rows: repeat(3, 1fr); } }
+</style>
+</head>
+<body>
+  <div id="hud">
+    <div><b>Voxel × Drahtgitter.</b> Masse aus <span>massiven Voxeln</span>, Käfig als Drahtgitter — die Transparenz steckt im Käfig, nicht im Gebäude. Der Bau läuft als <span>Projektion → Materie</span> einmal beim Erscheinen — <span>Neu bauen</span> spielt ihn erneut ab.</div>
+    <button id="replay" type="button">Neu bauen</button>
+  </div>
+  <div id="wrap">
+    <div id="stage-host"></div>
+    <div id="labels">
+      <div class="cell"><h2><i>1</i> Kragturm</h2><p>Schlanker Schaft, auskragender Block, Gegengewicht. Der Käfig trägt die Auskragung sichtbar.</p></div>
+      <div class="cell"><h2><i>2</i> Torbau</h2><p>Zwei Beine, ein Brückenriegel, ein echtes Loch in der Mitte — im Grid sofort erkennbar.</p></div>
+      <div class="cell"><h2><i>3</i> Drillingsturm</h2><p>Drei Schäfte auf einer Parzelle, verbunden durch Drahtgitter-Brücken. Vertikal gestaffelt.</p></div>
+    </div>
+  </div>
+  <script type="module" src="./voxel.js"></script>
+</body>
+</html>
