@@ -8,6 +8,7 @@
 // occupies [i±0.5, j±0.5] and the height band k..k+1, so fractional coordinates address the
 // corners and faces of a cell.
 
+export const TILE_W = 132, TILE_H = 66;   // one grid cell in screen px
 export const ISO = 0.5;
 export const CS = 11;                 // voxel half-width in px
 export const P = (i, j, level) => [(i - j) * CS, (i + j) * CS * ISO - level * CS];
