@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Fassaden — drei Gebäude, drei Sprachen</title>
+<style>
+  html, body { margin: 0; background: #04040a; color: #dcdaf0; font-family: system-ui, sans-serif; }
+  body { background: radial-gradient(ellipse 120% 50% at 50% 12%, #120a1e 0%, #04040a 60%), #04040a;
+         background-attachment: fixed; }
+  #hud { position: sticky; top: 0; z-index: 30; padding: 10px 14px; background: rgba(8,8,16,.92);
+         border-bottom: 1px solid #262040; font-size: 13px; line-height: 1.5;
+         display: flex; gap: 16px; align-items: center; justify-content: space-between; }
+  #hud b { color: #7fd8ff; }
+  #hud span { color: #b06bff; }
+  #replay { flex: none; font: 500 11px/1 ui-monospace, monospace; letter-spacing: .08em; text-transform: uppercase;
+            color: #dcdaf0; background: transparent; border: 1px solid #2f2850; border-radius: 4px;
+            padding: 8px 14px; cursor: pointer; }
+  #replay:hover { border-color: #7fd8ff; color: #7fd8ff; }
+  #wrap { position: relative; }
+  #stage-host { position: relative; width: 100%; }
+  #labels { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(3, 1fr);
+            grid-auto-rows: 430px; pointer-events: none; z-index: 10; }
+  .cell { padding: 14px 18px; }
+  .cell h2 { margin: 0; font: 600 12px/1.2 ui-monospace, monospace; letter-spacing: .12em;
+             text-transform: uppercase; color: #7fd8ff; }
+  .cell h2 i { font-style: normal; color: #b06bff; margin-right: 7px; }
+  .cell h3 { margin: 3px 0 0; font: 500 11px/1.2 ui-monospace, monospace; letter-spacing: .1em;
+             text-transform: uppercase; color: #6e6a8a; }
+  .cell p { margin: 6px 0 0; font-size: 12px; line-height: 1.45; color: #8e8aa8; max-width: 34ch; }
+  canvas { display: block; }
+  @media (max-width: 819px) { #labels { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+  <div id="hud">
+    <div><b>Fassaden.</b> Dieselben drei Gebäude, drei Fassaden-Sprachen. Die Voxel bestimmen nur noch die <span>Masse</span> — gezeichnet werden zusammenhängende Wandflächen mit Fenstern und Struktur. Das Hologrid ist jetzt <span>Akzent</span>: Bodenplatte, Käfig über der Krone, lose Voxel, Scan-Band.</div>
+    <button id="replay" type="button">Neu bauen</button>
+  </div>
+  <div id="wrap">
+    <div id="stage-host"></div>
+    <div id="labels">
+      <div class="cell"><h2><i>A</i> Rasterfassade</h2><h3>Kragturm</h3><p>Zwei Fenster je Modul über einem Geschossband. Der gewöhnliche Büroturm — genau deshalb liest er sich als Gebäude.</p></div>
+      <div class="cell"><h2><i>A</i> Rasterfassade</h2><h3>Torbau</h3></div>
+      <div class="cell"><h2><i>A</i> Rasterfassade</h2><h3>Drillingsturm</h3></div>
+      <div class="cell"><h2><i>B</i> Bandfassade</h2><h3>Kragturm</h3><p>Durchlaufende Fensterbänder mit Brüstungen dazwischen. Ruhiger, horizontal; das Lichtband trägt die Neonfarbe.</p></div>
+      <div class="cell"><h2><i>B</i> Bandfassade</h2><h3>Torbau</h3></div>
+      <div class="cell"><h2><i>B</i> Bandfassade</h2><h3>Drillingsturm</h3></div>
+      <div class="cell"><h2><i>C</i> Exoskelett</h2><h3>Kragturm</h3><p>Tragwerk vor dem Glas, schwerer Riegel je drittes Geschoss. Die Diagonalen sind der einzige Ort, an dem das Hologrid durchscheint.</p></div>
+      <div class="cell"><h2><i>C</i> Exoskelett</h2><h3>Torbau</h3></div>
+      <div class="cell"><h2><i>C</i> Exoskelett</h2><h3>Drillingsturm</h3></div>
+    </div>
+  </div>
+  <script type="module" src="./facades.js"></script>
+</body>
+</html>
