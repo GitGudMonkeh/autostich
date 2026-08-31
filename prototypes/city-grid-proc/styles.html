@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Gebäude-Stile — Hologrid-Mockups</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #04040a; color: #dcdaf0; font-family: system-ui, sans-serif; }
+  body { background: radial-gradient(ellipse 120% 70% at 50% 25%, #120a1e 0%, #04040a 60%), #04040a;
+         display: flex; flex-direction: column; overflow: hidden; }
+  /* The stage owns the leftover height, so a wrapping headline can never cover the first row. */
+  #hud { flex: none; z-index: 20; padding: 10px 14px;
+         background: rgba(8,8,16,.86); border-bottom: 1px solid #262040; font-size: 13px; line-height: 1.5; }
+  #hud b { color: #7fd8ff; }
+  #hud span { color: #b06bff; }
+  #wrap { position: relative; flex: 1 1 auto; min-height: 0; }
+  #stage-host { position: absolute; inset: 0; }
+  #labels { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(2, 1fr); pointer-events: none; z-index: 10; }
+  .cell { padding: 12px 16px; }
+  .cell h2 { margin: 0; font-size: 13px; letter-spacing: .1em; text-transform: uppercase; color: #7fd8ff; }
+  .cell h2 i { font-style: normal; color: #b06bff; }
+  .cell p { margin: 4px 0 0; font-size: 12px; line-height: 1.45; color: #8e8aa8; max-width: 30ch; }
+  canvas { display: block; }
+  @media (max-width: 899px) { #labels { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(3, 1fr); } }
+</style>
+</head>
+<body>
+  <div id="hud">
+    <div><b>Gebäude-Stile — Hologrid-Mockups.</b> Sechs Richtungen, <span>dieselbe Silhouette</span> — so vergleicht man Stil und nicht Motiv. Farben hier bewusst einheitlich (Cyan/Violett); im Spiel trägt jedes Gebäude die Farbe seiner Fraktion.</div>
+  </div>
+  <div id="wrap">
+  <div id="stage-host"></div>
+  <div id="labels">
+    <div class="cell"><h2><i>A</i> Voxel-Cluster</h2><p>Die Masse zerfällt in Würfel mit Lücken, dazwischen brennt ein Kern. Am nächsten an der Referenz.</p></div>
+    <div class="cell"><h2><i>B</i> Riss-Kern</h2><p>Massiver dunkler Block, aus dessen Brüchen Licht quillt. Ruhig aus der Distanz, dramatisch von nah.</p></div>
+    <div class="cell"><h2><i>C</i> Draht-Skelett</h2><p>Kein Volumen, nur Kanten, ein Hauch Holo-Füllung und laufende Scanlines. Am leichtesten lesbar.</p></div>
+    <div class="cell"><h2><i>D</i> Datenschichten</h2><p>Gestapelte Platten mit Licht in den Fugen, einzelne Schichten aktiv. Liest sich als Serverturm.</p></div>
+    <div class="cell"><h2><i>E</i> Kristall</h2><p>Verjüngte Prismen statt Kisten, von innen beleuchtet. Organischer, näher an den Skill-Referenzen.</p></div>
+    <div class="cell"><h2><i>F</i> Projektion</h2><p>Nur das Erdgeschoss ist real, die oberen Etagen sind noch Hologramm. Erklärt den Bau-Vorgang.</p></div>
+  </div>
+  </div>
+  <script type="module" src="./styles.js"></script>
+</body>
+</html>
