@@ -77,6 +77,23 @@ export const WIN_SETS = {
   kragturm: [0x8ceaff, 0xd6f2ff],   // ice blue
   torbau: [0xffc478, 0xffe2b0],     // amber
   drilling: [0xff8ad8, 0xffc2ec],   // magenta
+  mall: [0x7cf7c4, 0xc9ffe8],       // mint
+  markt: [0xff6f91, 0xffb3c6],      // shop pink
+  konzern: [0xc9d4ff, 0xeef2ff],    // corporate white-blue
+  daten: [0x5ee0ff, 0xb8f2ff],      // machine cyan
+  kapsel: [0xffa24d, 0xffd0a0],     // capsule orange
+  station: [0xf5e56b, 0xfff6c2],    // sodium yellow
+};
+
+// How a type behaves on its walls: how much of it burns, and how much signage it carries. A
+// shopping street is nearly all light and signs; a data hall is a wall with a door.
+export const FACADE_OPTS = {
+  mall: { litP: 0.66, signP: 0.3 },
+  markt: { litP: 0.74, signP: 0.42 },
+  konzern: { litP: 0.32, signP: 0.05 },
+  daten: { litP: 0.12, signP: 0.02 },
+  kapsel: { litP: 0.58, signP: 0.14 },
+  station: { litP: 0.52, signP: 0.2 },
 };
 const STEEL = 0x8a7fc4;   // frames and railings — cool grey-violet, reads on plum
 
@@ -123,7 +140,7 @@ function facadeGrid(g, f) {
 function facadeRibbon(g, f) {
   const { pt, i, j, k, ground, win } = f;
   const t0 = ground ? 0.12 : 0.24, t1 = ground ? 0.8 : 0.76;
-  pane(g, f.glow, { ...f, litP: ground ? 0.9 : 0.58 }, 0.04, 0.96, t0, t1);
+  pane(g, f.glow, { ...f, litP: ground ? 0.9 : (f.litP ?? 0.58) }, 0.04, 0.96, t0, t1);
   g.moveTo(...pt(i, j, k, 0.03, t1)).lineTo(...pt(i, j, k, 0.97, t1))
     .stroke({ width: 1.2, color: win[1], alpha: 0.6 });        // bright lip of the band
   for (const s of [0.28, 0.52, 0.76]) {
@@ -138,7 +155,7 @@ function facadeRibbon(g, f) {
 //     and the diagonal braces are the one place where the hologrid shows through the building.
 function facadeExo(g, f) {
   const { pt, i, j, k } = f;
-  pane(g, f.glow, { ...f, litP: 0.4 }, 0.16, 0.84, 0.16, 0.84);
+  pane(g, f.glow, { ...f, litP: f.litP ?? 0.4 }, 0.16, 0.84, 0.16, 0.84);
   g.poly(faceQuad(pt, i, j, k, 0.15, 0.85, 0.15, 0.85)).stroke({ width: 2, color: STEEL, alpha: 0.7 });
   if (k % 3 === 0) g.poly(faceQuad(pt, i, j, k, 0, 1, 0, 0.11)).fill({ color: 0x3b3366, alpha: 1 });
   if ((i + j + k) % 5 === 0) {
@@ -215,7 +232,7 @@ function wallSign(g, glow, f, win) {
 
 // Build one facade into height bands. Bands exist so the build animation can switch whole
 // floors without redrawing geometry; the additive twin carries the window bloom of that floor.
-export function buildFacade(cells, variant, win, seed, bands = 14) {
+export function buildFacade(cells, variant, win, seed, bands = 14, opts = {}) {
   const { faces, has } = shellFaces(cells);
   let minK = Infinity, maxK = -Infinity;
   for (const [, , k] of cells) { minK = Math.min(minK, k); maxK = Math.max(maxK, k); }
@@ -237,8 +254,9 @@ export function buildFacade(cells, variant, win, seed, bands = 14) {
     } else {
       const pt = f.kind === "right" ? rPt : lPt;
       g.poly(faceQuad(pt, f.i, f.j, f.k, 0, 1, 0, 1)).fill(f.kind === "right" ? FACE_R : FACE_L);
-      variant.draw(g, { pt, i: f.i, j: f.j, k: f.k, rand, ground: f.k === minK, win, glow });
-      if (f.k > minK && f.k < maxK - 1 && has(f.i, f.j, f.k + 1) && rand() < 0.09) {
+      variant.draw(g, { pt, i: f.i, j: f.j, k: f.k, rand, ground: f.k === minK, win, glow,
+        litP: opts.litP });
+      if (f.k > minK && f.k < maxK - 1 && has(f.i, f.j, f.k + 1) && rand() < (opts.signP ?? 0.09)) {
         wallSign(g, glow, f, win);
       }
     }

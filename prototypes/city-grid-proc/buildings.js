@@ -146,4 +146,121 @@ export const DRILLING = {
   },
 };
 
+// The three above are the approved study set and stay the study set — the facade matrix compares
+// variants, and that comparison only works with a small, fixed cast.
 export const BUILDINGS = [KRAGTURM, TORBAU, DRILLING];
+
+/* ---- the rest of the city ------------------------------------------------------------------ */
+//
+// A city is not nine towers. These six carry the programme a cyberpunk block actually needs:
+// somewhere to shop, somewhere to work, somewhere to sleep, the infrastructure nobody looks at,
+// and the transit that ties it together. They are deliberately low where a tower would be wrong —
+// a skyline is only tall if something around it is not.
+
+// 4 · Einkaufszentrum — wide, low, an atrium cut through the roof and a drum over it.
+export const MALL = {
+  key: "mall",
+  name: "Einkaufszentrum",
+  desc: "Breiter Riegel, Atrium durch das Dach, Zylinder darüber.",
+  build() {
+    const v = volume();
+    v.add(0, 6, 0, 5, 0, 3);          // the box itself
+    v.cut(2, 4, 2, 3, 3, 3);          // atrium void in the roof slab
+    v.add(1, 5, 1, 4, 4, 4);          // upper deck ring
+    v.add(2, 4, 2, 3, 5, 6);          // drum over the atrium
+    v.add(7, 8, 2, 3, 0, 1);          // entrance porch
+    return v.list();
+  },
+  cage(g) { cageBox(g, 0, 6, 0, 5, 0, 6, 0.4); },
+};
+
+// 5 · Ladenzeile — the row of shops at the bottom of every cyberpunk street. Two storeys, a
+//     taller end unit, one sign pylon.
+export const MARKT = {
+  key: "markt",
+  name: "Ladenzeile",
+  desc: "Zweigeschossige Ladenzeile mit höherem Kopfbau und Schilderpylon.",
+  build() {
+    const v = volume();
+    v.add(0, 7, 0, 2, 0, 1);          // the row
+    v.add(0, 3, 0, 2, 2, 2);          // upper storey over half of it
+    v.add(5, 7, 0, 2, 2, 4);          // taller end unit
+    v.add(1, 1, 1, 1, 3, 6);          // sign pylon
+    return v.list();
+  },
+  cage(g) { cageBox(g, 0, 7, 0, 2, 0, 4, 0.4); },
+};
+
+// 6 · Konzernturm — the slab with setbacks that owns the district. Deliberately the plainest
+//     massing here: authority reads as repetition, not as sculpture.
+export const KONZERN = {
+  key: "konzern",
+  name: "Konzernturm",
+  desc: "Scheibe mit Rücksprüngen, Sky-Lobby, Krone und Mast.",
+  build() {
+    const v = volume();
+    v.add(0, 4, 0, 3, 0, 1);          // podium
+    v.add(0, 3, 0, 2, 2, 13);         // slab
+    v.cut(1, 2, 1, 1, 7, 8);          // sky lobby cut through
+    v.add(0, 2, 0, 2, 14, 16);        // setback
+    v.add(1, 2, 1, 1, 17, 18);        // crown
+    v.add(1, 1, 1, 1, 19, 21);        // mast
+    return v.list();
+  },
+  cage(g) { cageBox(g, 0, 3, 0, 2, 0, 21, 0.4); },
+};
+
+// 7 · Datenhalle — the building nobody looks at: almost no windows, all cooling.
+export const DATEN = {
+  key: "daten",
+  name: "Datenhalle",
+  desc: "Fensterarme Halle, Kühltürme, Aggregateblock.",
+  build() {
+    const v = volume();
+    v.add(0, 5, 0, 4, 0, 4);          // hall
+    v.add(0, 5, 0, 4, 5, 5);          // roof slab
+    v.add(1, 1, 1, 1, 6, 9);          // cooling stack
+    v.add(3, 3, 3, 3, 6, 8);          // cooling stack
+    v.add(4, 5, 0, 1, 6, 7);          // chiller block
+    return v.list();
+  },
+  cage(g) { cageBox(g, 0, 5, 0, 4, 0, 9, 0.4); },
+};
+
+// 8 · Kapselhotel — a thin stack of sleeping pods with two capsule clusters pushed out of it.
+export const KAPSEL = {
+  key: "kapsel",
+  name: "Kapselhotel",
+  desc: "Schmaler Schaft, ausgeschobene Kapselcluster, Leuchtkrone.",
+  build() {
+    const v = volume();
+    v.add(0, 2, 0, 2, 0, 1);          // base with the lobby
+    v.add(0, 1, 0, 1, 2, 11);         // shaft — mid-rise, not another tower
+    v.add(2, 3, 0, 1, 4, 5);          // capsule cluster
+    v.add(-2, -1, 0, 1, 8, 9);        // capsule cluster on the other side
+    v.add(0, 1, 0, 1, 12, 13);        // lit crown
+    return v.list();
+  },
+  cage(g) { cageBox(g, 0, 1, 0, 1, 0, 13, 0.4); },
+};
+
+// 9 · Transitstation — an elevated deck on pylons with a hall over it. The one piece that says
+//     the city continues past the edge of the plot.
+export const STATION = {
+  key: "station",
+  name: "Transitstation",
+  desc: "Aufgeständertes Deck, Halle darüber, Trassenkante.",
+  build() {
+    const v = volume();
+    for (const i of [0, 3, 6]) v.add(i, i, 1, 2, 0, 4);   // pylons
+    v.add(0, 6, 1, 2, 5, 6);          // platform deck
+    v.add(0, 6, 0, 0, 5, 5);          // track ledge along the deck
+    v.add(1, 5, 1, 2, 7, 8);          // hall
+    v.add(2, 4, 1, 2, 9, 9);          // roof
+    return v.list();
+  },
+  cage(g) { cageBox(g, 0, 6, 1, 2, 0, 9, 0.4); },
+};
+
+// Everything the city may put on a plot.
+export const CITY_BUILDINGS = [KRAGTURM, TORBAU, DRILLING, MALL, MARKT, KONZERN, DATEN, KAPSEL, STATION];

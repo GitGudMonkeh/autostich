@@ -141,10 +141,36 @@ export function shockRing(g, f) {
 // with a halo and a short body reads instantly.
 export function walkerDot(g, colour) {
   g.clear();
-  g.ellipse(0, 1, 3.4, 1.7).fill({ color: 0x000000, alpha: 0.35 });
-  g.moveTo(0, 0).lineTo(0, -4.4).stroke({ width: 1.6, color: colour, alpha: 0.9 });
-  g.circle(0, -5, 1.5).fill({ color: 0xffffff, alpha: 0.9 });
-  g.circle(0, -4.6, 4).fill({ color: colour, alpha: 0.16 });
+  g.ellipse(0, 1.5, 4.6, 2.3).fill({ color: 0x000000, alpha: 0.45 });
+  g.ellipse(0, 1.5, 7, 3.5).fill({ color: colour, alpha: 0.12 });      // light pooling at the feet
+  g.moveTo(0, 1).lineTo(0, -6).stroke({ width: 2.2, color: colour, alpha: 0.95 });
+  g.circle(0, -7, 2).fill({ color: 0xffffff, alpha: 0.95 });
+  g.circle(0, -6, 5.5).fill({ color: colour, alpha: 0.2 });
+}
+
+// People standing still: a shop queue, a knot at the crossing. Movement alone is not life —
+// a city where everyone is walking and nobody is waiting reads as a conveyor belt.
+export function crowdCluster(g, a, b, rand, colour) {
+  for (let n = 0; n < 3 + Math.floor(rand() * 3); n++) {
+    const [x, y] = pt(a + (rand() - 0.5) * 0.34, b + (rand() - 0.5) * 0.34, 3);
+    const c = rand() < 0.5 ? colour : 0xffd8a0;
+    g.ellipse(x, y + 1.5, 4, 2).fill({ color: 0x000000, alpha: 0.4 });
+    g.moveTo(x, y + 1).lineTo(x, y - 5).stroke({ width: 2, color: c, alpha: 0.85 });
+    g.circle(x, y - 6, 1.7).fill({ color: 0xffffff, alpha: 0.85 });
+    g.circle(x, y - 5, 4.5).fill({ color: c, alpha: 0.14 });
+  }
+}
+
+// Steam off a street vent. Nothing says "this street is warm and lived in" as cheaply.
+export function ventPlume(g, x, y, t, colour) {
+  g.clear();
+  for (let n = 0; n < 5; n++) {
+    const f = ((t * 0.4 + n / 5) % 1);
+    const rise = f * 26;
+    g.ellipse(x + Math.sin((f + n) * 3.1) * 4, y - rise, 5 + f * 11, (5 + f * 11) * 0.5)
+      .fill({ color: colour, alpha: 0.11 * (1 - f) });
+  }
+  g.ellipse(x, y, 7, 3.5).fill({ color: colour, alpha: 0.1 });
 }
 
 // The shadow an aircraft drops on the ground — the thing that actually sells the altitude.

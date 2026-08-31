@@ -15,8 +15,8 @@
 //   · Traffic drives the derived road graph.
 
 import { Application, Graphics, Container } from "./vendor/pixi.min.mjs";
-import { TILE_W, TILE_H, CS, rng, dashLine, BUILDINGS } from "./buildings.js";
-import { VARIANTS, WIN_SETS, buildFacade } from "./facadeRender.js";
+import { TILE_W, TILE_H, CS, rng, dashLine, CITY_BUILDINGS } from "./buildings.js";
+import { VARIANTS, WIN_SETS, FACADE_OPTS, buildFacade } from "./facadeRender.js";
 import { PARKS } from "./parkRender.js";
 import {
   pt, slab, wallA, wallB, LANE, roadCell, cellMarkings, crossing, junctionBox,
@@ -25,7 +25,8 @@ import {
 import { vehicle, VEHICLES } from "./vehicles.js";
 import {
   hazeStrip, skyline, drawBeacons, lightCone, wetSmear, pulseBand, shockRing,
-  walkerDot, flyerShadow, flyerLights, roofProps, roofBillboard, liftFace, liftCab,
+  walkerDot, crowdCluster, ventPlume, flyerShadow, flyerLights,
+  roofProps, roofBillboard, liftFace, liftCab,
 } from "./cityFx.js";
 
 const GRID = 12;
@@ -36,7 +37,12 @@ const HOLO = 0xb06bff, HOT = 0xe8fbff, C1 = 0x35d6ff;
 // which is why PLINTH is the kerb height from streetRender and not a free choice.
 const PLINTH = 3;
 const PLOT_TOP = 0x2b2648, PLOT_FACE = 0x1a1730, PLOT_JOINT = 0x3a3360;
-const LEAD = { kragturm: 0x8ceaff, torbau: 0xffc478, drilling: 0xff8ad8 };
+// How often each type turns up. A city is mostly shops, sheds and housing with a few towers in
+// it — an even draw over nine types gives a skyline of nine equal monuments and no street.
+const MIX = {
+  markt: 17, mall: 12, kapsel: 12, daten: 10, station: 8, konzern: 9,
+  kragturm: 11, torbau: 10, drilling: 11,
+};
 // A district gets one colour and everything on it carries it: podium trim, kerb light, street
 // furniture. That is what makes a district readable as a district and not as six houses.
 const HUES = [0x35d6ff, 0xff8ad8, 0xffc478, 0x7cf7c4, 0xb06bff, 0xff6f91];
@@ -193,6 +199,7 @@ async function main() {
       if (rand() < 0.75) {
         signal(node, glow, r + 0.44, c + 0.44, rand() < 0.5 ? 2 : 0);
         wetSmear(wet, r + 0.44, c + 0.3, 0x7cf7c4, 7, 6);
+        crowdCluster(node, r + 0.42, c + 0.42, rand, lead);
       }
       return null;
     }
@@ -210,7 +217,9 @@ async function main() {
     else if (roll < 0.72 && touchesBuilding(r, c)) {
       kiosk(node, glow, r + side, c + side, 0xffc478);
       wetSmear(wet, r + side, c + side * 0.2, 0xffc478, 12, 6);
+      crowdCluster(node, r + side * 0.4, c + side * 0.9, rand, 0xffc478);
     }
+    if (rand() < 0.3) crowdCluster(node, r - side * 0.75, c + side * 0.8, rand, lead);
     if (rand() < 0.16) {
       // The display gets its own layers so one of them can stutter like a broken sign.
       const colour = rand() < 0.5 ? 0x8ceaff : 0xff8ad8;
@@ -361,9 +370,11 @@ async function main() {
     const rand = rng((r * 92837111) ^ (c * 689287499) ^ 0x2f6e2b1);
     const roll = rand();
     if (roll < 0.16) return { park: PARKS[Math.floor(rand() * PARKS.length)] };
-    const def = BUILDINGS[Math.floor(rand() * BUILDINGS.length)];
+    let pool = rand() * CITY_BUILDINGS.reduce((s, b) => s + (MIX[b.key] ?? 10), 0);
+    const def = CITY_BUILDINGS.find((b) => (pool -= MIX[b.key] ?? 10) < 0) ?? CITY_BUILDINGS[0];
     const variant = VARIANTS[Math.floor(rand() * VARIANTS.length)];
-    return { def, variant, win: WIN_SETS[def.key], lead: LEAD[def.key] };
+    const win = WIN_SETS[def.key];
+    return { def, variant, win, lead: win[0], opts: FACADE_OPTS[def.key] ?? {} };
   }
 
   /* ---- foundations -------------------------------------------------------------------------- */
@@ -469,6 +480,7 @@ async function main() {
     spawnTraffic();
     retireStrandedWalkers();
     spawnWalkers();
+    updateVents();
 
     const [x, y] = pt(r, c);
     const node = new Container();
@@ -514,7 +526,8 @@ async function main() {
   function raise(node, choice, r, c) {
     const cells = choice.def.build();
     const BANDS = 12;
-    const { solid, glows, maxK, box } = buildFacade(cells, choice.variant, choice.win, r * 31 + c, BANDS);
+    const { solid, glows, maxK, box } =
+      buildFacade(cells, choice.variant, choice.win, r * 31 + c, BANDS, choice.opts);
     let si = 0, sj = 0;
     for (const [i, j] of cells) { si += i; sj += j; }
     const ox = -(si / cells.length - sj / cells.length) * CS;
@@ -620,7 +633,7 @@ async function main() {
 
   function spawnTraffic() {
     const keys = [...roadG.keys()];
-    const target = Math.min(5, Math.floor(keys.length / 8));
+    const target = Math.min(10, Math.floor(keys.length / 4));
     while (cars.length < target) {
       const kk = keys[Math.floor(Math.random() * keys.length)];
       const [r, c] = kk.split(",").map(Number);
@@ -678,11 +691,11 @@ async function main() {
 
   // Walkers use the same derived road graph as the traffic, just on the footway and slower.
   const walkers = [];
-  const WALK = 11;
+  const WALK = 12;
 
   function spawnWalkers() {
     const keys = [...roadG.keys()];
-    const target = Math.min(9, Math.floor(keys.length / 3));
+    const target = Math.min(30, Math.floor(keys.length / 1.3));
     let guard = 40;
     while (walkers.length < target && guard-- > 0) {
       const kk = keys[Math.floor(Math.random() * keys.length)];
@@ -695,7 +708,8 @@ async function main() {
       const colour = [0xffd8a0, 0x9fd8ff, 0xff9fe0][Math.floor(Math.random() * 3)];
       walkerDot(g, colour);
       world.addChild(g);
-      walkers.push({ r, c, from: OPP[to], to, t: Math.random(), g, side: Math.random() < 0.5 ? 1 : -1 });
+      walkers.push({ r, c, from: OPP[to], to, t: Math.random(), g,
+        side: Math.random() < 0.5 ? 1 : -1, speed: 8 + Math.random() * 9 });
     }
   }
 
@@ -705,6 +719,33 @@ async function main() {
         walkers[i].g.destroy();
         walkers.splice(i, 1);
       }
+    }
+  }
+
+  /* ---- street vents ---------------------------------------------------------------------------- */
+
+  // Steam off the grates. Deterministic per cell, so the same street always breathes in the same
+  // places, and retired as soon as the cell stops being a street.
+  const vents = [];
+
+  function updateVents() {
+    for (let i = vents.length - 1; i >= 0; i--) {
+      if (state.get(key(vents[i].r, vents[i].c)) !== "road") {
+        vents[i].g.destroy();
+        vents.splice(i, 1);
+      }
+    }
+    for (const kk of roadG.keys()) {
+      if (vents.some((v) => key(v.r, v.c) === kk)) continue;
+      const [r, c] = kk.split(",").map(Number);
+      const rand = rng((r * 26699) ^ (c * 55291) ^ 0x7f4a);
+      if (rand() > 0.22) continue;
+      const g = new Graphics();
+      g.blendMode = "add";
+      g.zIndex = r + c + 0.3;
+      world.addChild(g);
+      const side = rand() < 0.5 ? 0.3 : -0.3;
+      vents.push({ r, c, g, a: r + side, b: c - side * 0.6, phase: rand() * 8 });
     }
   }
 
@@ -736,7 +777,7 @@ async function main() {
     const now = performance.now() / 1000;
 
     for (const w of walkers) {                          // pedestrians
-      w.t += (WALK * dt) / (TILE_W * 0.5);
+      w.t += ((w.speed ?? WALK) * dt) / (TILE_W * 0.5);
       if (w.t >= 1) {
         const [dr, dc] = DIRS[w.to];
         w.r += dr; w.c += dc;
@@ -775,6 +816,11 @@ async function main() {
       f.g.zIndex = f.a + f.b + 0.8;
       f.lights.zIndex = f.a + f.b + 0.81;
       f.shadow.zIndex = f.a + f.b + 0.03;
+    }
+
+    for (const v of vents) {                             // steam off the grates
+      const [vx, vy] = pt(v.a, v.b, 0);
+      ventPlume(v.g, vx, vy, now + v.phase, 0xbfd4ff);
     }
 
     drawBeacons(sky.beacons, sky.masts, now);            // horizon
