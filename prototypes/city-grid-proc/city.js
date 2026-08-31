@@ -23,6 +23,10 @@ import {
   lamp, signal, signPost, holoDisplay, kiosk, bollard, groundPanel,
 } from "./streetRender.js";
 import { vehicle, VEHICLES } from "./vehicles.js";
+import {
+  hazeStrip, skyline, drawBeacons, lightCone, wetSmear, pulseBand, shockRing,
+  walkerDot, flyerShadow, flyerLights, roofProps, roofBillboard, liftFace, liftCab,
+} from "./cityFx.js";
 
 const GRID = 12;
 const DISTRICT = 6;             // how many buildings may stand directly adjacent as one district
@@ -33,6 +37,9 @@ const HOLO = 0xb06bff, HOT = 0xe8fbff, C1 = 0x35d6ff;
 const PLINTH = 3;
 const PLOT_TOP = 0x2b2648, PLOT_FACE = 0x1a1730, PLOT_JOINT = 0x3a3360;
 const LEAD = { kragturm: 0x8ceaff, torbau: 0xffc478, drilling: 0xff8ad8 };
+// A district gets one colour and everything on it carries it: podium trim, kerb light, street
+// furniture. That is what makes a district readable as a district and not as six houses.
+const HUES = [0x35d6ff, 0xff8ad8, 0xffc478, 0x7cf7c4, 0xb06bff, 0xff6f91];
 
 const key = (r, c) => `${r},${c}`;
 const inGrid = (r, c) => r >= 0 && r < GRID && c >= 0 && c < GRID;
@@ -54,7 +61,8 @@ async function main() {
   const recentre = () => {
     const s = Math.min(1, app.screen.width / (GRID * TILE_W * 0.62), app.screen.height / (GRID * TILE_H * 1.15));
     world.scale.set(s);
-    world.position.set(app.screen.width / 2, app.screen.height / 2 - (GRID * TILE_H) / 2 * s + 30 * s);
+    // The extra offset leaves room above the back corner for the horizon.
+    world.position.set(app.screen.width / 2, app.screen.height / 2 - (GRID * TILE_H) / 2 * s + 58 * s);
   };
   recentre();
   app.renderer.on("resize", recentre);
@@ -65,7 +73,62 @@ async function main() {
   const parkG = new Map();        // key -> Graphics (pocket park)
   const builtG = new Map();       // key -> the finished building node
   const foundG = new Map();       // key -> the podium the building stands on
+  const glowsG = new Map();       // key -> the building's additive window layers
   for (let r = 0; r < GRID; r++) for (let c = 0; c < GRID; c++) state.set(key(r, c), "ground");
+
+  /* ---- atmosphere -------------------------------------------------------------------------- */
+
+  // Horizon first, then the grid, then one haze strip per depth. The strips sit between the
+  // depth layers, so each of them veils only what stands further back.
+  const sky = skyline(GRID, 20260831);
+  sky.glow.zIndex = -102; sky.node.zIndex = -101; sky.beacons.zIndex = -100;
+  world.addChild(sky.glow, sky.node, sky.beacons);
+  for (let d = 0; d <= GRID * 2; d++) {
+    const h = hazeStrip(d, GRID);
+    if (!h) continue;
+    h.zIndex = d + 0.72;
+    world.addChild(h);
+  }
+
+  // The net pulse: every few seconds a scan runs down the grid and lights the hologrid seams.
+  const pulse = new Graphics();
+  pulse.blendMode = "add";
+  pulse.visible = false;
+  world.addChild(pulse);
+  let pulseT = -3;
+
+  /* ---- district colours ---------------------------------------------------------------------- */
+
+  const districtCells = (r, c) => {
+    const seen = new Set([key(r, c)]);
+    const queue = [[r, c]];
+    while (queue.length) {
+      const [qr, qc] = queue.pop();
+      for (const [dr, dc] of Object.values(DIRS)) {
+        const nr = qr + dr, nc = qc + dc, nk = key(nr, nc);
+        if (inGrid(nr, nc) && !seen.has(nk) && state.get(nk) === "building") {
+          seen.add(nk); queue.push([nr, nc]);
+        }
+      }
+    }
+    return seen;
+  };
+
+  // The colour follows from the district's lowest cell, so it survives the district growing and
+  // does not reshuffle every time a neighbour is added.
+  function districtLead(r, c) {
+    if (state.get(key(r, c)) !== "building") {
+      for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+        if (inGrid(r + dr, c + dc) && state.get(key(r + dr, c + dc)) === "building") {
+          return districtLead(r + dr, c + dc);
+        }
+      }
+      return HUES[0];
+    }
+    const anchor = [...districtCells(r, c)].sort()[0];
+    const [ar, ac] = anchor.split(",").map(Number);
+    return HUES[Math.floor(rng((ar * 48611) ^ (ac * 96137))() * HUES.length)];
+  }
 
   /* ---- empty plot ------------------------------------------------------------------------- */
 
@@ -120,26 +183,46 @@ async function main() {
 
   // Furniture is deterministic per cell, so a street does not reshuffle itself every time the
   // city grows. Signals only appear where there is actually a junction to control.
-  function furnish(node, glow, r, c, conn) {
+  // `wet` is the reflection layer on the carriageway: every light above the road smears down it.
+  function furnish(node, glow, wet, r, c, conn, lead) {
     const rand = rng((r * 73856093) ^ (c * 19349663) ^ 0x51ed27);
     const open = Object.values(conn).filter(Boolean).length;
-    const lead = 0x8ceaff;
     if (open >= 3) {
       junctionBox(node, glow, r, c, lead);
       for (const d of Object.keys(DIRS)) if (conn[d]) crossing(node, r, c, d, 0xe9e6ff);
-      if (rand() < 0.75) signal(node, glow, r + 0.44, c + 0.44, rand() < 0.5 ? 2 : 0);
-      return;
+      if (rand() < 0.75) {
+        signal(node, glow, r + 0.44, c + 0.44, rand() < 0.5 ? 2 : 0);
+        wetSmear(wet, r + 0.44, c + 0.3, 0x7cf7c4, 7, 6);
+      }
+      return null;
     }
     const side = rand() < 0.5 ? 0.44 : -0.44;
     const roll = rand();
-    if (roll < 0.3) lamp(node, glow, r + side, c + side, 0x9fd8ff);
-    else if (roll < 0.44) signPost(node, glow, r + side, c - side, 0xff8ad8, rand);
-    else if (roll < 0.56) groundPanel(node, glow, r + side, c + side, 0x8ceaff);
+    if (roll < 0.3) {
+      lamp(node, glow, r + side, c + side, 0x9fd8ff);
+      lightCone(wet, r + side, c + side, 26, 0x9fd8ff, 0.42);
+      wetSmear(wet, r + side, c + side * 0.2, 0x9fd8ff, 11, 7);
+    } else if (roll < 0.44) {
+      signPost(node, glow, r + side, c - side, 0xff8ad8, rand);
+      wetSmear(wet, r + side, c - side * 0.3, 0xff8ad8, 9, 7);
+    } else if (roll < 0.56) groundPanel(node, glow, r + side, c + side, 0x8ceaff);
     else if (roll < 0.64) bollard(node, r + side, c - side, 0x9fd8ff);
-    else if (roll < 0.72 && touchesBuilding(r, c)) kiosk(node, glow, r + side, c + side, 0xffc478);
-    if (rand() < 0.14) {
-      holoDisplay(node, glow, r, c + 0.55, 30, 0.2, 13, rand() < 0.5 ? 0x8ceaff : 0xff8ad8, rand);
+    else if (roll < 0.72 && touchesBuilding(r, c)) {
+      kiosk(node, glow, r + side, c + side, 0xffc478);
+      wetSmear(wet, r + side, c + side * 0.2, 0xffc478, 12, 6);
     }
+    if (rand() < 0.16) {
+      // The display gets its own layers so one of them can stutter like a broken sign.
+      const colour = rand() < 0.5 ? 0x8ceaff : 0xff8ad8;
+      const sg = new Graphics(), sglow = new Graphics();
+      sglow.blendMode = "add";
+      holoDisplay(sg, sglow, r, c + 0.55, 30, 0.2, 13, colour, rand);
+      node.addChild(sg, sglow);
+      lightCone(wet, r, c + 0.55, 26, colour, 0.3);
+      wetSmear(wet, r, c + 0.2, colour, 16, 9);
+      return { g: sg, glow: sglow, broken: rand() < 0.35, phase: rand() * 6.28 };
+    }
+    return null;
   }
 
   const touchesBuilding = (r, c) => {
@@ -160,14 +243,33 @@ async function main() {
     }
     node.removeChildren().forEach((ch) => ch.destroy());
     const surface = new Graphics();
+    const wet = new Graphics();                         // reflections, between road and props
+    wet.blendMode = "add";
     const glow = new Graphics();
     glow.blendMode = "add";
     const conn = connOf(r, c);
-    roadCell(surface, r, c, conn, 0x35d6ff);
+    const lead = districtLead(r, c);
+    roadCell(surface, r, c, conn, lead);
     cellMarkings(surface, r, c, conn, 0xffc94a);
     const props = new Graphics();
-    furnish(props, glow, r, c, conn);
-    node.addChild(surface, props, glow);
+    node.addChild(surface, wet, props, glow);
+    const sign = furnish(props, glow, wet, r, c, conn, lead);
+    if (sign?.broken) flickerSign(sign);
+  }
+
+  // A broken sign does not fade, it drops out and comes back — the stutter is the whole point.
+  function flickerSign(sign) {
+    const t0 = performance.now();
+    const step = () => {
+      if (sign.g.destroyed) { app.ticker.remove(step); return; }
+      const t = (performance.now() - t0) / 1000 + sign.phase;
+      const cycle = t % 4.2;
+      const on = cycle > 0.9 || (cycle > 0.45 && cycle < 0.6);
+      const a = on ? 1 : 0.06 + 0.25 * Math.abs(Math.sin(t * 40));
+      sign.g.alpha = a;
+      sign.glow.alpha = a;
+    };
+    app.ticker.add(step);
   }
 
   function makeRoad(r, c) {
@@ -300,7 +402,45 @@ async function main() {
 
   function redrawFoundation(r, c) {
     const g = foundG.get(key(r, c));
-    if (g) drawFoundation(g, r, c, pick(r, c).lead);
+    if (g) drawFoundation(g, r, c, districtLead(r, c));
+  }
+
+  /* ---- shockwave ------------------------------------------------------------------------------ */
+
+  // A building landing is a power event: a ring runs across the plot and the neighbourhood's
+  // windows brown out for a moment.
+  function shockwave(r, c) {
+    const g = new Graphics();
+    g.blendMode = "add";
+    const [x, y] = pt(r, c);
+    g.position.set(x, y - PLINTH);
+    g.zIndex = r + c + 0.9;              // over its own street, not under it
+    world.addChild(g);
+    const t0 = performance.now();
+    const step = () => {
+      const t = Math.min(1, (performance.now() - t0) / 720);
+      shockRing(g, t);
+      if (t >= 1) { app.ticker.remove(step); g.destroy(); }
+    };
+    app.ticker.add(step);
+
+    for (const [nk, layers] of glowsG) {                // neighbours flicker
+      const [nr, nc] = nk.split(",").map(Number);
+      if (Math.abs(nr - r) > 2 || Math.abs(nc - c) > 2 || (nr === r && nc === c)) continue;
+      const f0 = performance.now() + Math.hypot(nr - r, nc - c) * 45;
+      const flick = () => {
+        const e = performance.now() - f0;
+        if (e < 0) return;
+        if (e > 420 || layers.some((l) => l.destroyed)) {
+          app.ticker.remove(flick);
+          for (const l of layers) if (!l.destroyed) l.alpha = 1;
+          return;
+        }
+        const a = e < 90 ? 0.25 : e < 150 ? 1 : e < 220 ? 0.4 : 1;
+        for (const l of layers) l.alpha = a;
+      };
+      app.ticker.add(flick);
+    }
   }
 
   function place(r, c) {
@@ -327,6 +467,8 @@ async function main() {
     updateParks();
     retireStrandedTraffic();
     spawnTraffic();
+    retireStrandedWalkers();
+    spawnWalkers();
 
     const [x, y] = pt(r, c);
     const node = new Container();
@@ -336,15 +478,18 @@ async function main() {
 
     const choice = pick(r, c);
     if (!choice.park) {
-      const f = foundation(r, c, choice.lead);
+      const f = foundation(r, c, districtLead(r, c));
       f.zIndex = r + c + 0.05;
       world.addChild(f);
       foundG.set(kk, f);
-      for (const [dr, dc] of Object.values(DIRS)) {      // neighbours lose their kerb towards us
-        const nk = key(r + dr, c + dc);
-        if (foundG.has(nk)) redrawFoundation(r + dr, c + dc);
+      // The whole district is redrawn: the neighbours lose their kerb towards the new plot, and
+      // a grown district may have moved its anchor and therefore its colour.
+      for (const dk of districtCells(r, c)) {
+        const [dr, dc] = dk.split(",").map(Number);
+        redrawFoundation(dr, dc);
       }
     }
+    shockwave(r, c);
     node.position.set(x, choice.park ? y : y - PLINTH);
     if (choice.park) {                                  // a park plot: no massing, just a garden
       const g = new Graphics();
@@ -385,6 +530,28 @@ async function main() {
       glows[b].position.set(ox, oy);
       inner.addChild(solid[b], glows[b]);
     }
+    glowsG.set(key(r, c), glows);
+
+    // Roof life and the lift. Both belong to the top band, so they appear with the last floor
+    // rather than standing finished over a half-built tower.
+    const seed = r * 31 + c;
+    const crown = new Graphics();
+    const crownGlow = new Graphics();
+    crownGlow.blendMode = "add";
+    crown.position.set(ox, oy);
+    crownGlow.position.set(ox, oy);
+    if (!roofProps(crown, cells, maxK, seed)) {
+      roofBillboard(crown, crownGlow, cells, maxK, seed, choice.lead);
+    }
+    inner.addChild(crown, crownGlow);
+    crown.alpha = 0; crownGlow.alpha = 0;
+
+    const face = liftFace(cells);
+    const lift = new Graphics();
+    lift.blendMode = "add";
+    lift.position.set(ox, oy);
+    const hasLift = rng(seed * 7717 + 3)() < 0.55 && face && face.maxK - face.minK > 3;
+    if (hasLift) inner.addChild(lift);
 
     const cage = new Graphics();
     const R = TILE_W * 0.48;
@@ -426,9 +593,24 @@ async function main() {
         scan.y = -f * (maxK + 1) * CS * fit;
         scan.alpha = 0.35 + 0.65 * Math.sin(f * Math.PI);
       }
+      crown.alpha = crownGlow.alpha = Math.max(0, Math.min(1, (t - 0.86) / 0.16));
       if (t >= 1) { app.ticker.remove(step); cage.destroy(); scan.destroy(); }
     };
     app.ticker.add(step);
+
+    if (hasLift) {
+      const t0lift = performance.now() + 900;
+      const ride = () => {
+        if (lift.destroyed) { app.ticker.remove(ride); return; }
+        const e = (performance.now() - t0lift) / 5200;
+        if (e < 0) return;
+        const f = e % 1;
+        const up = f < 0.5 ? f * 2 : 1 - (f - 0.5) * 2;   // up, then back down
+        liftCab(lift, face, face.minK + up * (face.maxK - face.minK), choice.win[1]);
+        lift.alpha = Math.min(1, Math.max(0, 1 - Math.abs(up - 0.5) * 0.4));
+      };
+      app.ticker.add(ride);
+    }
   }
 
   /* ---- traffic ----------------------------------------------------------------------------- */
@@ -489,6 +671,128 @@ async function main() {
       const [x, y] = pt(car.r + e[0] * s + hb * lat, car.c + e[1] * s - ha * lat);
       car.g.position.set(x, y);
       car.g.zIndex = car.r + car.c + 0.35;
+    }
+  });
+
+  /* ---- pedestrians --------------------------------------------------------------------------- */
+
+  // Walkers use the same derived road graph as the traffic, just on the footway and slower.
+  const walkers = [];
+  const WALK = 11;
+
+  function spawnWalkers() {
+    const keys = [...roadG.keys()];
+    const target = Math.min(9, Math.floor(keys.length / 3));
+    let guard = 40;
+    while (walkers.length < target && guard-- > 0) {
+      const kk = keys[Math.floor(Math.random() * keys.length)];
+      const [r, c] = kk.split(",").map(Number);
+      const conn = connOf(r, c);
+      const open = Object.keys(DIRS).filter((d) => conn[d]);
+      if (!open.length) continue;
+      const to = open[Math.floor(Math.random() * open.length)];
+      const g = new Graphics();
+      const colour = [0xffd8a0, 0x9fd8ff, 0xff9fe0][Math.floor(Math.random() * 3)];
+      walkerDot(g, colour);
+      world.addChild(g);
+      walkers.push({ r, c, from: OPP[to], to, t: Math.random(), g, side: Math.random() < 0.5 ? 1 : -1 });
+    }
+  }
+
+  function retireStrandedWalkers() {
+    for (let i = walkers.length - 1; i >= 0; i--) {
+      if (state.get(key(walkers[i].r, walkers[i].c)) !== "road") {
+        walkers[i].g.destroy();
+        walkers.splice(i, 1);
+      }
+    }
+  }
+
+  /* ---- air traffic ----------------------------------------------------------------------------- */
+
+  const flyers = [];
+  let nextFlyer = 0;
+
+  function spawnFlyer() {
+    if (!roadG.size || flyers.length >= 2) return;
+    const dir = Object.keys(DIRS)[Math.floor(Math.random() * 4)];
+    const [da, db] = DIRS[dir];
+    const lane = Math.random() * GRID;
+    const a = da ? (da > 0 ? -3 : GRID + 3) : lane;
+    const b = db ? (db > 0 ? -3 : GRID + 3) : lane;
+    const spec = VEHICLES[Math.floor(Math.random() * VEHICLES.length)].spec;
+    const g = new Graphics();
+    vehicle(g, HEAD[dir], { ...spec, alt: 0 });
+    const lights = new Graphics();
+    lights.blendMode = "add";
+    const shadow = new Graphics();
+    flyerShadow(shadow);
+    world.addChild(shadow, g, lights);
+    flyers.push({ a, b, dir, g, lights, shadow, alt: 120 + Math.random() * 70, colour: spec.lead ?? 0x8ceaff });
+  }
+
+  app.ticker.add((ticker) => {
+    const dt = ticker.deltaMS / 1000;
+    const now = performance.now() / 1000;
+
+    for (const w of walkers) {                          // pedestrians
+      w.t += (WALK * dt) / (TILE_W * 0.5);
+      if (w.t >= 1) {
+        const [dr, dc] = DIRS[w.to];
+        w.r += dr; w.c += dc;
+        w.from = OPP[w.to];
+        const conn = connOf(w.r, w.c);
+        const options = Object.keys(DIRS).filter((d) => conn[d] && d !== w.from);
+        w.to = options.length ? options[Math.floor(Math.random() * options.length)] : w.from;
+        w.t -= 1;
+      }
+      const heading = w.t < 0.5 ? OPP[w.from] : w.to;
+      const e = w.t < 0.5 ? EDGE[w.from] : EDGE[w.to];
+      const s = w.t < 0.5 ? 1 - w.t * 2 : (w.t - 0.5) * 2;
+      const lat = (LANE + 0.11) * w.side;
+      const [ha, hb] = DIRS[heading];
+      const [x, y] = pt(w.r + e[0] * s + hb * lat, w.c + e[1] * s - ha * lat, PLINTH);
+      w.g.position.set(x, y);
+      w.g.zIndex = w.r + w.c + 0.34;
+    }
+
+    if (now > nextFlyer) { spawnFlyer(); nextFlyer = now + 6 + Math.random() * 10; }
+    for (let i = flyers.length - 1; i >= 0; i--) {       // air traffic
+      const f = flyers[i];
+      const [da, db] = DIRS[f.dir];
+      f.a += da * dt * 1.15; f.b += db * dt * 1.15;
+      if (f.a < -5 || f.a > GRID + 5 || f.b < -5 || f.b > GRID + 5) {
+        f.g.destroy(); f.lights.destroy(); f.shadow.destroy();
+        flyers.splice(i, 1);
+        continue;
+      }
+      const [x, y] = pt(f.a, f.b, f.alt);
+      f.g.position.set(x, y);
+      f.lights.position.set(x, y);
+      flyerLights(f.lights, now, f.colour);
+      const [sx, sy] = pt(f.a, f.b, 0);
+      f.shadow.position.set(sx, sy);
+      f.g.zIndex = f.a + f.b + 0.8;
+      f.lights.zIndex = f.a + f.b + 0.81;
+      f.shadow.zIndex = f.a + f.b + 0.03;
+    }
+
+    drawBeacons(sky.beacons, sky.masts, now);            // horizon
+
+    pulseT += dt;                                        // the net pulse
+    const span = GRID * 2 + 3;
+    if (pulseT > 0 && pulseT < 2.6) {
+      const d = -1.5 + (pulseT / 2.6) * span;
+      // The band is cut to the grid's own width at that depth, so it stays inside the plate
+      // instead of drawing a stray line across the whole page.
+      pulseBand(pulse, (Math.min(d, 2 * (GRID - 1) - d, GRID - 1) + 1) * (TILE_W / 2), C1);
+      pulse.visible = true;
+      pulse.y = d * (TILE_H / 2);
+      pulse.zIndex = d + 0.74;
+      pulse.alpha = Math.sin((pulseT / 2.6) * Math.PI) * 0.9;
+    } else {
+      pulse.visible = false;
+      if (pulseT >= 2.6) pulseT = -7.5;
     }
   });
 
