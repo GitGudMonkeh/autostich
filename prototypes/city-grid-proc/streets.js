@@ -177,6 +177,113 @@ function groundPanel(g, glow, a, b, colour) {
   glow.poly(slab(a - 0.2, a + 0.2, b - 0.1, b + 0.1, 3.2)).fill({ color: colour, alpha: 0.12 });
 }
 
+
+/* ---- connection pieces --------------------------------------------------------------------- */
+
+// One road cell driven by its connections. The carriageway is the centre square plus an arm
+// toward every connected side; everything else on the cell is raised footway. That is the same
+// model the city grid uses, so a piece drawn here is the piece the grid would place.
+function roadCell(g, ca, cb, conn, lead) {
+  const L = LANE, H = 0.5;
+  const A = (x) => ca + x, B = (y) => cb + y;
+  g.poly(slab(A(-H), A(H), B(-H), B(H), 0)).fill(0x0d0b1a);
+  g.poly(slab(A(-L), A(L), B(-L), B(L), 0)).fill(ASPHALT);
+  if (conn.pa) g.poly(slab(A(L), A(H), B(-L), B(L), 0)).fill(ASPHALT);
+  if (conn.na) g.poly(slab(A(-H), A(-L), B(-L), B(L), 0)).fill(ASPHALT);
+  if (conn.pb) g.poly(slab(A(-L), A(L), B(L), B(H), 0)).fill(ASPHALT);
+  if (conn.nb) g.poly(slab(A(-L), A(L), B(-H), B(-L), 0)).fill(ASPHALT);
+
+  // footway = the tile minus the arms: four corner blocks plus the stub of every closed side
+  const blocks = [];
+  for (const sa of [-1, 1]) for (const sb of [-1, 1]) {
+    blocks.push([Math.min(sa * L, sa * H), Math.max(sa * L, sa * H),
+      Math.min(sb * L, sb * H), Math.max(sb * L, sb * H)]);
+  }
+  if (!conn.pa) blocks.push([L, H, -L, L]);
+  if (!conn.na) blocks.push([-H, -L, -L, L]);
+  if (!conn.pb) blocks.push([-L, L, L, H]);
+  if (!conn.nb) blocks.push([-L, L, -H, -L]);
+  blocks.sort((x, y) => (x[1] + y[3]) - (y[1] + x[3]));
+  for (const [a0, a1, b0, b1] of blocks) {
+    g.poly(wallA(A(a0), A(a1), B(b1), 0, 3)).fill(KERB);        // kerb faces toward the camera
+    g.poly(wallB(B(b0), B(b1), A(a1), 0, 3)).fill(KERB);
+    g.poly(slab(A(a0), A(a1), B(b0), B(b1), 3)).fill(KERB_TOP);
+    for (let a = a0 + 0.06; a < a1; a += 0.16) {                // paving joints
+      g.moveTo(...pt(A(a), B(b0), 3)).lineTo(...pt(A(a), B(b1), 3));
+    }
+  }
+  g.stroke({ width: 0.8, color: 0x241f3d, alpha: 0.9 });
+  for (const [a0, a1, b0, b1] of blocks) {                      // kerb light along the road edge
+    g.poly(slab(A(a0), A(a1), B(b0), B(b0 + 0.03), 3)).fill({ color: lead, alpha: 0.45 });
+    g.poly(slab(A(a0), A(a0 + 0.03), B(b0), B(b1), 3)).fill({ color: lead, alpha: 0.45 });
+  }
+  const seam = [[A(-H), B(-H)], [A(H), B(-H)], [A(H), B(H)], [A(-H), B(H)]];
+  for (let n = 0; n < 4; n++) {                                 // hologrid tile seam
+    const p = pt(...seam[n]), q = pt(...seam[(n + 1) % 4]);
+    dashLine(g, p[0], p[1], q[0], q[1], 5, 4);
+  }
+  g.stroke({ width: 1, color: SEAM, alpha: 0.3 });
+}
+
+// Lane dashes from the cell centre out to every connected edge.
+function cellMarkings(g, ca, cb, conn, colour) {
+  const ends = [];
+  if (conn.pa) ends.push([ca + 0.5, cb]);
+  if (conn.na) ends.push([ca - 0.5, cb]);
+  if (conn.pb) ends.push([ca, cb + 0.5]);
+  if (conn.nb) ends.push([ca, cb - 0.5]);
+  for (const [ea, eb] of ends) {
+    const p = pt(ca + (ea - ca) * 0.42, cb + (eb - cb) * 0.42), q = pt(ea, eb);
+    dashLine(g, p[0], p[1], q[0], q[1], 7, 6);
+  }
+  g.stroke({ width: 1.5, color: colour, alpha: 0.8 });
+}
+
+// Zebra crossing across one arm, just outside the junction box.
+function crossing(g, ca, cb, dir, colour) {
+  const along = dir === "pa" || dir === "na";
+  const sgn = dir === "pa" || dir === "pb" ? 1 : -1;
+  for (let n = 0; n < 5; n++) {
+    const t = -LANE + 0.03 + n * 0.14;
+    const off = sgn * (LANE + 0.06);
+    const q = along
+      ? slab(ca + off - sgn * 0.05, ca + off + sgn * 0.05, cb + t, cb + t + 0.08, 0.4)
+      : slab(ca + t, ca + t + 0.08, cb + off - sgn * 0.05, cb + off + sgn * 0.05, 0.4);
+    g.poly(q).fill({ color: colour, alpha: 0.55 });
+  }
+}
+
+// Stop bar and a lit junction box — what tells the eye this is a controlled crossing.
+function junctionBox(g, glow, ca, cb, colour) {
+  g.poly(slab(ca - LANE, ca + LANE, cb - LANE, cb + LANE, 0.3))
+    .stroke({ width: 1, color: colour, alpha: 0.35 });
+  glow.poly(slab(ca - LANE, ca + LANE, cb - LANE, cb + LANE, 0.3))
+    .fill({ color: colour, alpha: 0.05 });
+}
+
+const OPP = { pa: "na", na: "pa", pb: "nb", nb: "pb" };
+const OFF = { pa: [1, 0], na: [-1, 0], pb: [0, 1], nb: [0, -1] };
+
+// A piece = the centre cell plus one straight neighbour on every connected side, so the streets
+// run off the edge instead of stopping in mid-air.
+function drawPiece(g, glow, dirs, lead, marking) {
+  const conn = { pa: false, na: false, pb: false, nb: false };
+  for (const d of dirs) conn[d] = true;
+  const cells = [[0, 0, conn]];
+  for (const d of dirs) {
+    const [da, db] = OFF[d];
+    const through = { pa: false, na: false, pb: false, nb: false };
+    through[d] = true;
+    through[OPP[d]] = true;
+    cells.push([da, db, through]);
+  }
+  cells.sort((x, y) => (x[0] + x[1]) - (y[0] + y[1]));
+  for (const [ca, cb, cn] of cells) roadCell(g, ca, cb, cn, lead);
+  for (const [ca, cb, cn] of cells) cellMarkings(g, ca, cb, cn, marking);
+  if (dirs.length >= 3) junctionBox(g, glow, 0, 0, lead);
+  return conn;
+}
+
 /* ---- the three street variants ------------------------------------------------------------ */
 
 // S1 · Boulevard — the ordinary lit street: wide lanes, kerb light, lamps, signage, one signal.
@@ -278,6 +385,76 @@ const MAGISTRALE = {
   },
 };
 
+
+/* ---- the four connection pieces ------------------------------------------------------------ */
+
+// K1 · Kreuzung — the controlled crossing: four arms, zebra on each, two signals diagonally
+//      opposite and a display hanging over the middle.
+const KREUZUNG = {
+  key: "kreuzung", name: "Kreuzung", kind: "piece",
+  draw(g, glow, rand) {
+    drawPiece(g, glow, ["pa", "na", "pb", "nb"], 0x35d6ff, 0xffc94a);
+    for (const d of ["pa", "na", "pb", "nb"]) crossing(g, 0, 0, d, WHITE);
+    const items = [];
+    items.push([0.44 + 0.44, (gg) => signal(gg, glow, 0.44, 0.44, 2)]);
+    items.push([-0.88, (gg) => signal(gg, glow, -0.44, -0.44, 0)]);
+    items.push([0.0, (gg) => holoDisplay(gg, glow, 0, 0.62, 34, 0.24, 15, 0x8ceaff, rand)]);
+    items.push([-0.44 + 0.44, (gg) => lamp(gg, glow, -0.44, 0.44, 0x9fd8ff)]);
+    items.push([0.44 - 0.44, (gg) => groundPanel(gg, glow, 0.44, -0.44, 0x8ceaff)]);
+    return items;
+  },
+};
+
+// K2 · T-Stück — the side street meets the through road: one signal, zebra only where the side
+//      street crosses, and a sign post that names the turn.
+const TSTUECK = {
+  key: "tstueck", name: "T-Stück", kind: "piece",
+  draw(g, glow, rand) {
+    drawPiece(g, glow, ["pa", "na", "pb"], 0xff8ad8, 0xffc94a);
+    crossing(g, 0, 0, "pb", WHITE);
+    const items = [];
+    items.push([0.88, (gg) => signal(gg, glow, 0.44, 0.44, 2)]);
+    items.push([-0.88, (gg) => signPost(gg, glow, -0.44, -0.44, 0xff8ad8, rand)]);
+    items.push([-0.44 + 0.44, (gg) => lamp(gg, glow, -0.44, 0.44, 0xff9fe0)]);
+    items.push([0.0, (gg) => holoDisplay(gg, glow, 0.1, -0.62, 30, 0.2, 13, 0xff8ad8, rand)]);
+    items.push([0.44 - 0.44, (gg) => kiosk(gg, glow, 0.44, -0.44, 0xffc478)]);
+    return items;
+  },
+};
+
+// K3 · Kurve — the bend: the kerb light follows it round, bollards guard the outer corner.
+const KURVE = {
+  key: "kurve", name: "Kurve", kind: "piece",
+  draw(g, glow, rand) {
+    drawPiece(g, glow, ["pa", "pb"], 0xffc478, 0xffc94a);
+    const items = [];
+    items.push([-0.88, (gg) => lamp(gg, glow, -0.44, -0.44, 0xffd8a0)]);
+    for (const [a, b] of [[0.42, -0.42], [0.2, -0.44], [0.44, -0.2]]) {
+      items.push([a + b, (gg) => bollard(gg, a, b, 0xffc478)]);
+    }
+    items.push([0.0, (gg) => signPost(gg, glow, -0.42, 0.42, 0xffc478, rand)]);
+    items.push([0.2, (gg) => holoDisplay(gg, glow, -0.15, 0.6, 28, 0.18, 12, 0xffc478, rand)]);
+    return items;
+  },
+};
+
+// K4 · Sackgasse — the dead end: the road stops, bollards close it off and the sign says so.
+const SACKGASSE = {
+  key: "sackgasse", name: "Sackgasse", kind: "piece",
+  draw(g, glow, rand) {
+    drawPiece(g, glow, ["na"], 0x8ceaff, 0xffc94a);
+    g.poly(slab(0.2, 0.3, -LANE, LANE, 0.4)).fill({ color: 0xff4d5e, alpha: 0.5 });
+    const items = [];
+    for (const b of [-0.2, 0, 0.2]) items.push([0.34 + b, (gg) => bollard(gg, 0.34, b, 0x8ceaff)]);
+    items.push([-0.88, (gg) => lamp(gg, glow, -0.44, -0.44, 0x9fd8ff)]);
+    items.push([0.0, (gg) => signPost(gg, glow, 0.44, 0.3, 0x8ceaff, rand)]);
+    items.push([0.1, (gg) => holoDisplay(gg, glow, 0.42, -0.58, 26, 0.16, 11, 0x8ceaff, rand)]);
+    return items;
+  },
+};
+
+const PIECES = [KREUZUNG, TSTUECK, KURVE, SACKGASSE];
+
 const STREETS = [BOULEVARD, GASSE, MAGISTRALE];
 
 /* ---- page --------------------------------------------------------------------------------- */
@@ -292,9 +469,10 @@ function streetPanel(def, seed) {
 
   // One vehicle per street, on the carriageway, so every sign has something to be read from.
   const v = VEHICLES[seed % VEHICLES.length];
-  items.push([0.99, (gg) => {                                        // one car on the carriageway
+  const carAt = def.kind === "piece" ? [-0.7, -0.16] : [1.15, -0.16];
+  items.push([carAt[0] + carAt[1], (gg) => {                         // one car on the carriageway
     vehicle(gg, "E", { ...v.spec, alt: 4 });
-    const cp = pt(1.15, -0.16, 0);
+    const cp = pt(carAt[0], carAt[1], 0);
     gg.position.set(cp[0], cp[1]);
   }]);
 
@@ -307,7 +485,14 @@ function streetPanel(def, seed) {
     layer.addChild(gg);
   });
   c.addChild(g, layer, glow);
-  return { node: c, glow, phase: rand() * 6.28 };
+  // Fit on the ROAD, not on the drawing. getLocalBounds() counts the additive light pools and
+  // holo halos, which reach much further on one side than the other and pushed the crossing off
+  // centre. The carriageway is what the eye centres on, and its extent is known exactly:
+  // a piece is a plus of five cells, a run is three cells long; signage adds headroom above.
+  const box = def.kind === "piece"
+    ? { x0: -2.3 * TILE_W / 2, x1: 2.3 * TILE_W / 2, y0: -1 * TILE_H / 2 - 58, y1: 1.15 * TILE_H }
+    : { x0: pt(A0, 0.55)[0] - 14, x1: pt(A1, -0.55)[0] + 14, y0: pt(A0, -0.55, 58)[1], y1: pt(A1, 0.55)[1] };
+  return { node: c, glow, box, phase: rand() * 6.28 };
 }
 
 async function main() {
@@ -316,7 +501,7 @@ async function main() {
   await app.init({ resizeTo: host, backgroundAlpha: 0, antialias: true });
   host.appendChild(app.canvas);
 
-  const panels = STREETS.map((d, n) => {
+  const panels = [...STREETS, ...PIECES].map((d, n) => {
     const p = streetPanel(d, n + 1);
     app.stage.addChild(p.node);
     return p;
@@ -333,17 +518,16 @@ async function main() {
     const labels = document.getElementById("labels");
     labels.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
     labels.style.gridAutoRows = `${rowH}px`;
-    // Extent of a three-tile run including the tallest signage, so the panel is fitted and
-    // centred instead of nudged by hand.
-    const x0 = pt(A0, 0.6)[0], x1 = pt(A1, -0.6)[0];
-    const y0 = pt(A0, -0.6, 58)[1], y1 = pt(A1, 0.6, 0)[1];
-    const cxc = (x0 + x1) / 2, cyc = (y0 + y1) / 2;
+    // Every panel is fitted from ITS OWN extent. Runs and junction pieces have different
+    // footprints; one shared box centred the crossing on the run's centre and pushed it out
+    // of its cell.
     const cw = app.screen.width / cols;
     panels.forEach((p, n) => {
+      const { x0, x1, y0, y1 } = p.box;
       const s = Math.min(cw * 0.92 / (x1 - x0), (rowH - labelH) * 0.94 / (y1 - y0), 2.2);
       p.node.scale.set(s);
-      p.node.position.set(cw * (n % cols) + cw / 2 - cxc * s,
-        rowH * Math.floor(n / cols) + labelH + (rowH - labelH) / 2 - cyc * s);
+      p.node.position.set(cw * (n % cols) + cw / 2 - (x0 + x1) / 2 * s,
+        rowH * Math.floor(n / cols) + labelH + (rowH - labelH) / 2 - (y0 + y1) / 2 * s);
     });
   };
   layout();
