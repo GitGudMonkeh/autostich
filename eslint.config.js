@@ -24,6 +24,9 @@ export default [
       "coverage/**", ".nyc_output/**",
       "sim/out/**", "logs/**",
       ".claude/**", "**/*.scratch.mjs",
+      // Prototypen laden Pixi aus einer lokalen Kopie (git-ignoriert, CI sieht sie nie). Ohne
+      // diesen Eintrag meldet ein lokales `lint` hunderte Fehler aus dem minifizierten Bundle.
+      "prototypes/*/vendor/**",
     ],
   },
   js.configs.recommended,

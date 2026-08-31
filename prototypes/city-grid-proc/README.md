@@ -45,6 +45,24 @@ Laterne — wächst als Garten statt in die Höhe) und **Arena** (elliptische Sc
 Sitzrängen, Mint-Spielfeld und vier Flutlicht-Masten). Iso-Boxen mit drei sichtbaren Flächen,
 Neon-Silhouette und teilweise erleuchteten Fenstern.
 
+## Neon-Look
+
+- **Farbe:** jedes Grundstück zieht seine Röhrenfarbe aus einer 8-farbigen Neon-Palette
+  (Cyan, Magenta, Violett, Grün, Orange, Gold, Rot, Eisblau) plus eine zweite Farbe für die
+  Fenster — ein Block ist damit nie einfarbig. Fahrbahnlinien wechseln über das Raster
+  zwischen Magenta und Bernstein.
+- **Glow:** jedes Gebäude bekommt eine zweite, additive Zeichnung derselben Silhouette mit
+  fetten, blassen Strichen — kein Filter, kein Blur-Pass, nur eine zweite Graphics-Ebene.
+  Dazu ein weicher Lichtsee auf dem Grundstück (verschachtelte Ellipsen als Radial-Abfall),
+  der auf die angrenzenden Straßen ausblutet. Die Ebene atmet mit eigener Frequenz pro Haus.
+- **Blinken:** ein Teil der Fenster wird beim Zeichnen als Blinker markiert und in der
+  Grundebene nur schwach gefüllt; eine additive Blink-Ebene schaltet sie mit ~9 Hz und
+  individueller Phase hell. Türme mit Antenne tragen zusätzlich ein rotes Warnlicht.
+- **Dachstrahler:** Gebäude ab ~115 px Höhe bekommen einen Lichtschacht (gestapelte Quads,
+  die nach oben ausfaden), viele zusätzlich einen langsam schwenkenden Suchscheinwerfer-Kegel;
+  die Arena bekommt vier Flutlichtkegel. Die Strahlen werden einmal gezeichnet und danach nur
+  noch rotiert und in der Deckkraft moduliert — kein Neuzeichnen pro Frame.
+
 ## Straßenleben
 
 - **Fußgänger** schlendern am Straßenrand: gleiche Wegelogik wie die Autos, aber seitlich zum
@@ -70,6 +88,9 @@ python3 -m http.server 8080
 - 2×2-Block: Straße läuft geschlossen um den ganzen Block, keine Straße zwischen den vier
   Gebäuden; der 5. angrenzende Bauversuch wird mit rotem Blitz abgelehnt. Park- und
   Arena-Zellen im Screenshot-Test bestätigt.
+- Blinken: Differenzbild zweier Aufnahmen derselben Fassade (500 ms Abstand, ohne Straße im
+  Ausschnitt) zeigt einzelne umschaltende Fenster-Rechtecke — also echtes Blinken und nicht
+  nur das globale Atmen der Glow-Ebene.
 - Kein Asset-Laden → Start praktisch sofort, Gesamtgröße wenige KB statt mehrerer MB.
 
 ## Verhältnis zu ../city-grid/

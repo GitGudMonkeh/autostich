@@ -16,6 +16,9 @@ const GRID = 12;                 // 12x12 cells
 const BUILD_MS = 900;
 
 const CYAN = 0x35d6ff, MAGENTA = 0xff4fd8, CURB = 0x2a9fd8;
+// Full sign-district spectrum. Two accent colours read too tame — every lot now picks its own
+// tube colour, and a second one for its windows, so a block never looks monochrome.
+const NEON = [0x35d6ff, 0xff4fd8, 0x9d5cff, 0x2bff88, 0xff8a3d, 0xffc94a, 0xff3b5c, 0x66f0ff];
 const key = (r, c) => `${r},${c}`;
 const inGrid = (r, c) => r >= 0 && r < GRID && c >= 0 && c < GRID;
 
@@ -61,7 +64,7 @@ async function main() {
   function drawGround(g, hover) {
     g.clear();
     diamondPath(g, TILE_W - 2, TILE_H - 1).fill(hover ? 0x141d30 : 0x0a0e18);
-    diamondPath(g, TILE_W - 2, TILE_H - 1).stroke({ width: 1, color: hover ? CYAN : 0x1c2740, alpha: hover ? 0.9 : 0.8 });
+    diamondPath(g, TILE_W - 2, TILE_H - 1).stroke({ width: 1, color: hover ? CYAN : 0x24204a, alpha: hover ? 0.9 : 0.85 });
   }
 
   for (let r = 0; r < GRID; r++) for (let c = 0; c < GRID; c++) {
@@ -97,26 +100,32 @@ async function main() {
   };
   const DIRS = { N: [-1, 0], E: [0, 1], S: [1, 0], W: [0, -1] };
 
-  function drawRoad(g, conn) {
+  const AMBER = 0xffa347;
+  function drawRoad(g, conn, lane) {
     g.clear();
     diamondPath(g, TILE_W, TILE_H).fill(0x11121c); // asphalt
     // curbs on unconnected edges (inset slightly so neighboring curbs don't double up)
     for (const d of Object.keys(EDGE_CORNERS)) {
       if (conn.has(d)) continue;
       const [[x1, y1], [x2, y2]] = EDGE_CORNERS[d];
+      // wide faint pass first: a cheap halo, so the curb reads as a lit tube on dark asphalt
       g.moveTo(x1 * 0.88, y1 * 0.88).lineTo(x2 * 0.88, y2 * 0.88)
-        .stroke({ width: 2.5, color: CURB, alpha: 0.85 });
+        .stroke({ width: 7, color: CURB, alpha: 0.13 });
+      g.moveTo(x1 * 0.88, y1 * 0.88).lineTo(x2 * 0.88, y2 * 0.88)
+        .stroke({ width: 2.5, color: CURB, alpha: 0.9 });
     }
     // dashed centerlines from center to each connected edge midpoint
     for (const d of conn) {
       const [mx, my] = EDGE_MID[d];
       const SEGS = 4;
-      for (let i = 0; i < SEGS; i++) {
-        const t0 = 0.18 + (i / SEGS) * 0.78, t1 = t0 + 0.42 / SEGS;
-        g.moveTo(mx * t0 * 2 * 0.5, my * t0 * 2 * 0.5); // center(0,0) -> midpoint at t=1
-        g.lineTo(mx * t1, my * t1);
+      for (const [w, a] of [[6, 0.14], [2, 0.95]]) {
+        for (let i = 0; i < SEGS; i++) {
+          const t0 = 0.18 + (i / SEGS) * 0.78, t1 = t0 + 0.42 / SEGS;
+          g.moveTo(mx * t0 * 2 * 0.5, my * t0 * 2 * 0.5); // center(0,0) -> midpoint at t=1
+          g.lineTo(mx * t1, my * t1);
+        }
+        g.stroke({ width: w, color: lane, alpha: a });
       }
-      g.stroke({ width: 2, color: MAGENTA, alpha: 0.9 });
     }
     // junction pad at 3+ connections
     if (conn.size >= 3) {
@@ -136,7 +145,8 @@ async function main() {
   function recomputeRoads() {
     for (const [kk, g] of roadG) {
       const [r, c] = kk.split(",").map(Number);
-      drawRoad(g, connectionsOf(r, c));
+      // lane colour alternates across the grid so the street net is not one flat magenta
+      drawRoad(g, connectionsOf(r, c), (r + c) % 2 ? AMBER : MAGENTA);
     }
     updateParks();
     manageCarPopulation();
@@ -505,16 +515,20 @@ async function main() {
     const a = (TILE_W / 2) * fw, b = (TILE_H / 2) * fw;
     const L = [cx - a, cyBase], R = [cx + a, cyBase], B = [cx, cyBase + b];
     const Lt = [L[0], L[1] - h], Rt = [R[0], R[1] - h], Bt = [B[0], B[1] - h], Tt = [cx, cyBase - b - h];
-    // faces
-    g.poly([...Lt, ...Bt, ...B, ...L]).fill(pal.left);
-    g.poly([...Bt, ...Rt, ...R, ...B]).fill(pal.right);
-    g.poly([...Tt, ...Rt, ...Bt, ...Lt]).fill(pal.top);
-    // neon silhouette
-    g.poly([...Lt, ...Bt, ...Rt]).stroke({ width: 1.5, color: pal.edge, alpha: 0.9 });
-    g.moveTo(...Lt).lineTo(...Tt).lineTo(...Rt).stroke({ width: 1.5, color: pal.edge, alpha: 0.9 });
-    g.moveTo(...Bt).lineTo(...B).stroke({ width: 1.5, color: pal.edge, alpha: 0.75 });
-    g.moveTo(...Lt).lineTo(...L).stroke({ width: 1.5, color: pal.edge, alpha: 0.55 });
-    g.moveTo(...Rt).lineTo(...R).stroke({ width: 1.5, color: pal.edge, alpha: 0.55 });
+    // pal.glow marks the bloom pass: same silhouette on an additive layer, no solid faces,
+    // fat and faint — that halo is what makes the tubes read as light instead of line art.
+    const gl = pal.glow;
+    if (!gl) {
+      g.poly([...Lt, ...Bt, ...B, ...L]).fill(pal.left);
+      g.poly([...Bt, ...Rt, ...R, ...B]).fill(pal.right);
+      g.poly([...Tt, ...Rt, ...Bt, ...Lt]).fill(pal.top);
+    }
+    const sw = gl ? gl.w : 1.6, sa = gl ? gl.a : 1;
+    g.poly([...Lt, ...Bt, ...Rt]).stroke({ width: sw, color: pal.edge, alpha: 0.95 * sa });
+    g.moveTo(...Lt).lineTo(...Tt).lineTo(...Rt).stroke({ width: sw, color: pal.edge, alpha: 0.95 * sa });
+    g.moveTo(...Bt).lineTo(...B).stroke({ width: sw, color: pal.edge, alpha: 0.8 * sa });
+    g.moveTo(...Lt).lineTo(...L).stroke({ width: sw, color: pal.edge, alpha: 0.6 * sa });
+    g.moveTo(...Rt).lineTo(...R).stroke({ width: sw, color: pal.edge, alpha: 0.6 * sa });
     if (!windows || h < 18) return;
     // window grid on both front faces; u runs along the face edge, v runs up
     for (const side of ["L", "R"]) {
@@ -522,14 +536,21 @@ async function main() {
       const ux = (to[0] - from[0]), uy = (to[1] - from[1]);
       const cols = Math.max(2, Math.round(fw * 4)), rows = Math.max(2, Math.floor(h / 14));
       for (let i = 0; i < cols; i++) for (let j = 0; j < rows; j++) {
-        if (rand() < 0.25) continue; // some windows stay dark
+        // fixed number of draws from the stream, so every pass sees the same window pattern
+        const dark = rand() < 0.22, blink = rand() < 0.26;
+        const col = rand() < 0.5 ? pal.winA : pal.winB;
+        const ph = rand() * 6.283, rate = 1.3 + rand() * 5;
+        if (dark) continue;
         const u0 = 0.14 + (i / cols) * 0.74, u1 = u0 + 0.45 / cols;
         const v = 8 + (j / rows) * (h - 16);
         const x0 = from[0] + ux * u0, y0 = from[1] + uy * u0 - v;
         const x1 = from[0] + ux * u1, y1 = from[1] + uy * u1 - v;
         const wh = Math.min(6, h / rows * 0.45);
-        g.poly([x0, y0, x1, y1, x1, y1 - wh, x0, y0 - wh])
-          .fill({ color: rand() < 0.5 ? pal.winA : pal.winB, alpha: 0.85 });
+        const quad = [x0, y0, x1, y1, x1, y1 - wh, x0, y0 - wh];
+        if (gl) { g.poly(quad).fill({ color: col, alpha: 3.2 * sa }); continue; }
+        // blinkers idle dim here; the blink layer switches them bright on its own clock
+        g.poly(quad).fill({ color: col, alpha: blink ? 0.32 : 0.9 });
+        if (blink && pal.sink) pal.sink.push({ q: quad, color: col, ph, rate });
       }
     }
   }
@@ -539,15 +560,23 @@ async function main() {
   function drawRoof(g, cx, cyBase, fw, pal) {
     drawBox(g, cx, cyBase, fw, 3.5, pal, () => 1, false);
     const a = (TILE_W / 2) * fw, b = (TILE_H / 2) * fw;
+    const gl = pal.glow;
     for (const [px, py] of [[cx - a, cyBase - 3.5], [cx + a, cyBase - 3.5], [cx, cyBase + b - 3.5]]) {
-      g.circle(px, py, 1.6).fill({ color: pal.edge, alpha: 0.95 });
+      g.circle(px, py, gl ? 5.5 : 1.6).fill({ color: pal.edge, alpha: gl ? 5 * gl.a : 0.95 });
     }
   }
 
   // Building types: stacked boxes with per-type footprints/heights. All deterministic per cell.
   // Weighted mix: real high-rises and Japanese pagodas appear often, the low fillers less so.
   const VERMILION = 0xff6a4d, GOLD = 0xffc94a;
-  function drawBuilding(g, r, c, progress, flash) {
+  // Fake radial falloff: nested additive ellipses accumulate toward the centre, so a light pool
+  // fades out instead of ending in the hard rim a single filled ellipse leaves behind.
+  function softPool(g, x, y, rx, ry, color, a) {
+    for (let i = 4; i >= 1; i--) g.ellipse(x, y, rx * i / 4, ry * i / 4).fill({ color, alpha: a });
+  }
+  // fx (optional): { glow } draws the additive bloom pass instead of the solid building,
+  // { sink } collects blinking windows, { meta } reports type/accent/rooftop apex to the caller.
+  function drawBuilding(g, r, c, progress, flash, fx = {}) {
     g.clear();
     const rand = seededRand(r, c);
     const tr = rand();
@@ -562,17 +591,28 @@ async function main() {
     else type = 7;                  // arena
     const totalH = type === 4 ? 150 + rand() * 90 : type === 5 ? 95 + rand() * 40
       : type === 6 ? 30 : type === 7 ? 55 + rand() * 25 : 60 + rand() * 80;
-    const accent = rand() < 0.5 ? CYAN : MAGENTA;
+    const accent = NEON[Math.floor(rand() * NEON.length)];
+    const accent2 = NEON[Math.floor(rand() * NEON.length)];
     const jp = type === 5;
+    const gl = fx.glow;
     const pal = flash
       ? { top: 0xffffff, left: 0xdff6ff, right: 0xeafaff, edge: 0xffffff, winA: 0xffffff, winB: 0xffffff }
       : jp
         ? { top: 0x2a1a20, left: 0x170f14, right: 0x231620, edge: VERMILION, winA: GOLD, winB: MAGENTA }
-        : { top: 0x1a2030, left: 0x0c101c, right: 0x121828, edge: accent, winA: CYAN, winB: MAGENTA };
+        : { top: 0x1a2030, left: 0x0c101c, right: 0x121828, edge: accent, winA: accent, winB: accent2 };
+    pal.glow = gl;
+    pal.sink = fx.sink;
+    if (fx.meta) Object.assign(fx.meta, { type, accent, accent2, totalH });
     const cx = 0, cyB = 0;
-    // lot plinth (full progress from the start — the "foundation")
-    diamondPath(g, TILE_W * 0.96, TILE_H * 0.96).fill(0x0d1120);
-    diamondPath(g, TILE_W * 0.96, TILE_H * 0.96).stroke({ width: 1.5, color: pal.edge === 0xffffff ? 0xffffff : (jp ? VERMILION : accent), alpha: 0.5 });
+    if (gl) {
+      // colour pool on the lot — it spills onto the surrounding streets and lifts the whole block
+      softPool(g, 0, 0, TILE_W * 0.62, TILE_H * 0.62, accent, 0.16 * gl.a);
+      softPool(g, 0, 0, TILE_W * 0.3, TILE_H * 0.3, jp ? VERMILION : accent2, 0.14 * gl.a);
+    } else {
+      // lot plinth (full progress from the start — the "foundation")
+      diamondPath(g, TILE_W * 0.96, TILE_H * 0.96).fill(0x0d1120);
+      diamondPath(g, TILE_W * 0.96, TILE_H * 0.96).stroke({ width: 1.5, color: pal.edge, alpha: 0.6 });
+    }
 
     const H = totalH * progress;
     if (H < 2) return;
@@ -580,8 +620,11 @@ async function main() {
       drawBox(g, cx, cyB, 0.66, H * 0.5, pal, rand, true);
       drawBox(g, cx, cyB - H * 0.5, 0.5, H * 0.33, pal, rand, true);
       drawBox(g, cx, cyB - H * 0.83, 0.36, H * 0.17, pal, rand, false);
-      if (progress > 0.97) g.moveTo(cx, cyB - H - (TILE_H / 2) * 0.36).lineTo(cx, cyB - H - 16 - (TILE_H / 2) * 0.36)
-        .stroke({ width: 1.5, color: pal.edge, alpha: 0.9 });
+      if (progress > 0.97) {
+        const topY = cyB - H - (TILE_H / 2) * 0.36;
+        g.moveTo(cx, topY).lineTo(cx, topY - 16).stroke({ width: 1.5, color: pal.edge, alpha: 0.9 });
+        if (fx.meta) fx.meta.apex = [cx, topY - 16];
+      }
     } else if (type === 1) {     // low slab with roof gear
       drawBox(g, cx, cyB, 0.8, H * 0.45, pal, rand, true);
       drawBox(g, cx - TILE_W * 0.12, cyB - H * 0.45, 0.2, H * 0.12, pal, rand, false);
@@ -590,9 +633,11 @@ async function main() {
       drawBox(g, cx, cyB, 0.8, H * 0.34, pal, rand, true);
       drawBox(g, cx, cyB - H * 0.34, 0.6, H * 0.33, pal, rand, true);
       drawBox(g, cx, cyB - H * 0.67, 0.4, H * 0.33, pal, rand, false);
+      if (fx.meta) fx.meta.apex = [cx, cyB - H - (TILE_H / 2) * 0.4];
     } else if (type === 3) {     // twin blocks
       drawBox(g, cx - TILE_W * 0.17, cyB, 0.34, H * 0.8, pal, rand, true);
       drawBox(g, cx + TILE_W * 0.17, cyB, 0.34, H, pal, rand, true);
+      if (fx.meta) fx.meta.apex = [cx + TILE_W * 0.17, cyB - H - (TILE_H / 2) * 0.34];
     } else if (type === 4) {     // super skyscraper: five setbacks, spire, beacon
       drawBox(g, cx, cyB, 0.62, H * 0.3, pal, rand, true);
       drawBox(g, cx, cyB - H * 0.3, 0.52, H * 0.25, pal, rand, true);
@@ -604,6 +649,7 @@ async function main() {
         g.moveTo(cx, topY).lineTo(cx, topY - 26).stroke({ width: 1.5, color: pal.edge, alpha: 0.95 });
         g.circle(cx, topY - 26, 2).fill({ color: MAGENTA, alpha: 1 });
         g.circle(cx, topY - 26, 5).fill({ color: MAGENTA, alpha: 0.22 });
+        if (fx.meta) fx.meta.apex = [cx, topY - 26];
       }
     } else if (type === 5) {     // Japanese pagoda: tiers with flared, glowing roof slabs
       const tiers = 3;
@@ -618,9 +664,15 @@ async function main() {
       if (progress > 0.97) { // finial spire
         g.moveTo(cx, base - 2).lineTo(cx, base - 14).stroke({ width: 1.5, color: GOLD, alpha: 0.95 });
         g.circle(cx, base - 14, 1.8).fill({ color: GOLD, alpha: 1 });
+        if (fx.meta) fx.meta.apex = [cx, base - 14];
       }
     } else if (type === 6) {     // neon park lot: lawn plate, fountain, grove, lamp
       if (flash) { diamondPath(g, TILE_W * 0.9, TILE_H * 0.9).fill({ color: 0xffffff, alpha: 0.85 }); return; }
+      if (gl) {
+        diamondPath(g, TILE_W * 0.9, TILE_H * 0.9).stroke({ width: gl.w, color: MINT, alpha: 3 * gl.a });
+        softPool(g, 0, 0, TILE_W * 0.34, TILE_H * 0.34, MINT, 0.16 * gl.a);
+        return;
+      }
       diamondPath(g, TILE_W * 0.9, TILE_H * 0.9).fill(0x0b1a16);
       diamondPath(g, TILE_W * 0.9, TILE_H * 0.9).stroke({ width: 1.5, color: MINT, alpha: 0.7 });
       const s = 0.25 + 0.75 * progress; // the garden grows in with the build animation
@@ -638,6 +690,11 @@ async function main() {
         return pts;
       };
       const wall = [...ep(rx, ry, 0, 0, Math.PI), ...ep(rx, ry, -h, Math.PI, 0)]; // visible outer wall band
+      if (gl) { // rim tube + the pitch lighting the bowl from inside
+        g.ellipse(0, -h, rx, ry).stroke({ width: gl.w, color: accent, alpha: 4 * gl.a });
+        softPool(g, 0, -h + 3, rx * 0.6, ry * 0.6, MINT, 0.2 * gl.a);
+        return;
+      }
       g.poly(wall).fill(0x10142a);
       g.poly(wall).stroke({ width: 1, color: accent, alpha: 0.35 });
       g.ellipse(0, -h, rx, ry).fill(0x1a2138);
@@ -648,12 +705,15 @@ async function main() {
       g.moveTo(0, -h + 3 - ry * 0.52).lineTo(0, -h + 3 + ry * 0.52).stroke({ width: 1, color: MINT, alpha: 0.4 });
       g.circle(0, -h + 3, 1.6).fill({ color: MINT, alpha: 0.9 });
       if (progress > 0.9) { // floodlight masts on the rim
+        const masts = [];
         for (const th of [0.3 * Math.PI, 0.7 * Math.PI, -0.3 * Math.PI, -0.7 * Math.PI]) {
-          const fx = rx * Math.cos(th) * 0.92, fy = -h + ry * Math.sin(th) * 0.92;
-          g.moveTo(fx, fy).lineTo(fx, fy - 13).stroke({ width: 1.3, color: 0x3a4260, alpha: 0.95 });
-          g.circle(fx, fy - 14, 1.8).fill({ color: 0xfff2b8, alpha: 0.95 });
-          g.circle(fx, fy - 14, 4).fill({ color: 0xfff2b8, alpha: 0.2 });
+          const mx = rx * Math.cos(th) * 0.92, my = -h + ry * Math.sin(th) * 0.92;
+          g.moveTo(mx, my).lineTo(mx, my - 13).stroke({ width: 1.3, color: 0x3a4260, alpha: 0.95 });
+          g.circle(mx, my - 14, 1.8).fill({ color: 0xfff2b8, alpha: 0.95 });
+          g.circle(mx, my - 14, 4).fill({ color: 0xfff2b8, alpha: 0.2 });
+          masts.push([mx, my - 14]);
         }
+        if (fx.meta) fx.meta.masts = masts;
       }
     }
   }
@@ -679,6 +739,100 @@ async function main() {
     };
     app.ticker.add(tick);
   }
+
+  // ---- neon effect layers --------------------------------------------------
+  // A finished building carries three additive layers over its solid body: a breathing bloom,
+  // a blink layer that switches a subset of its windows, and rooftop searchlights. One shared
+  // ticker drives all of them; the beams are drawn once and only rotated/faded afterwards.
+  const GLOW = { w: 7, a: 0.17 };
+  const fxList = [];
+
+  function makeShaft(color, len, wide) {
+    const g = new Graphics();
+    g.blendMode = "add";
+    for (let i = 0; i < 4; i++) {  // stacked quads fade the light shaft out toward the sky
+      const y0 = -len * (i / 4), y1 = -len * ((i + 1) / 4);
+      const w0 = wide * (0.55 + i * 0.3), w1 = wide * (0.55 + (i + 1) * 0.3);
+      g.poly([-w0, y0, w0, y0, w1, y1, -w1, y1]).fill({ color, alpha: 0.24 * (1 - i / 4.6) });
+    }
+    g.circle(0, 0, 2.4).fill({ color: 0xffffff, alpha: 0.9 });
+    g.circle(0, 0, 7).fill({ color, alpha: 0.45 });
+    g.circle(0, 0, 13).fill({ color, alpha: 0.16 });
+    return g;
+  }
+
+  function makeCone(color, len) {
+    const g = new Graphics();
+    g.blendMode = "add";
+    g.poly([0, 0, -len * 0.14, -len, len * 0.14, -len]).fill({ color, alpha: 0.13 });
+    g.poly([0, 0, -len * 0.05, -len * 0.9, len * 0.05, -len * 0.9]).fill({ color, alpha: 0.2 });
+    return g;
+  }
+
+  function registerFx(r, c, x, y, z, glowG, sink, meta) {
+    const rand = seededRand(r + 7, c + 13);
+    const blinkG = new Graphics();
+    blinkG.blendMode = "add";
+    blinkG.position.set(x, y);
+    blinkG.zIndex = z + 0.03;
+    world.addChild(blinkG);
+
+    const beamG = new Container();
+    beamG.position.set(x, y);
+    beamG.zIndex = z + 0.04;
+    world.addChild(beamG);
+
+    let sweep = null;
+    const apex = meta.apex || null;
+    if (apex && meta.totalH >= 115) {   // searchlights only on genuinely tall towers
+      const shaft = makeShaft(meta.type === 5 ? GOLD : meta.accent, 120 + rand() * 90, 5);
+      shaft.position.set(apex[0], apex[1]);
+      beamG.addChild(shaft);
+      if (meta.type === 4 || rand() < 0.45) {
+        sweep = makeCone(meta.accent2, 110 + rand() * 70);
+        sweep.position.set(apex[0], apex[1]);
+        beamG.addChild(sweep);
+      }
+    }
+    for (const [mx, my] of meta.masts || []) {   // stadium floodlight cones
+      const cone = makeCone(0xfff2b8, 46);
+      cone.position.set(mx, my);
+      cone.rotation = (mx > 0 ? 1 : -1) * 0.5;
+      beamG.addChild(cone);
+    }
+
+    fxList.push({
+      glowG, blinkG, beamG, sweep, sink, apex,
+      beacon: meta.type === 0 || meta.type === 4,
+      phase: rand() * 6.283,
+      pulse: 0.8 + rand() * 1.5,
+      sweepRate: 0.25 + rand() * 0.3,
+    });
+  }
+
+  let blinkAcc = 0;
+  app.ticker.add((ticker) => {
+    const now = performance.now() / 1000;
+    blinkAcc += ticker.deltaMS;
+    const step = blinkAcc >= 110;   // the blink layer runs on its own ~9 Hz clock
+    if (step) blinkAcc = 0;
+    for (const fx of fxList) {
+      fx.glowG.alpha = 0.7 + 0.3 * Math.sin(now * fx.pulse + fx.phase);
+      fx.beamG.alpha = 0.72 + 0.28 * Math.sin(now * 1.6 + fx.phase);
+      if (fx.sweep) fx.sweep.rotation = Math.sin(now * fx.sweepRate + fx.phase) * 0.9;
+      if (!step) continue;
+      const b = fx.blinkG;
+      b.clear();
+      for (const w of fx.sink) {
+        if (Math.sin(now * w.rate + w.ph) < 0.15) continue;
+        b.poly(w.q).fill({ color: w.color, alpha: 0.9 });
+      }
+      if (fx.beacon && fx.apex && Math.sin(now * 2.4 + fx.phase) > 0) {
+        b.circle(fx.apex[0], fx.apex[1], 2.6).fill({ color: 0xff3b5c, alpha: 0.95 });
+        b.circle(fx.apex[0], fx.apex[1], 8).fill({ color: 0xff3b5c, alpha: 0.25 });
+      }
+    }
+  });
 
   // Size of the 4-connected building block that would exist if (r,c) were built on.
   function blockSizeWith(r, c) {
@@ -741,14 +895,23 @@ async function main() {
     g.position.set(x, y);
     g.zIndex = r + c + 0.5;
     world.addChild(g);
+    const glowG = new Graphics();   // additive bloom pass, painted over its own building
+    glowG.blendMode = "add";
+    glowG.position.set(x, y);
+    glowG.zIndex = g.zIndex + 0.02;
+    world.addChild(glowG);
 
     const t0 = performance.now();
     const grow = () => {
       const t = Math.min(1, (performance.now() - t0) / BUILD_MS);
       const eased = 1 - Math.pow(1 - t, 3);
       drawBuilding(g, r, c, eased, false);
+      drawBuilding(glowG, r, c, eased, false, { glow: GLOW });
       if (t >= 1) {
         app.ticker.remove(grow);
+        const sink = [], meta = {};
+        drawBuilding(g, r, c, 1, false, { sink, meta }); // final pass collects blinkers + apex
+        registerFx(r, c, x, y, g.zIndex, glowG, sink, meta);
         // completion flash: white additive copy fading out over the finished building
         const f = new Graphics();
         f.position.set(x, y);
