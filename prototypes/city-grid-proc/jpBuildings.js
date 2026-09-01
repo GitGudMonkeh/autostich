@@ -12,7 +12,7 @@ import { P, rng } from "./buildings.js";
 import { PAL, drawBlock, railing } from "./refRender.js";
 import {
   ledScreen, signStack, marquee, awning, lanterns, noren, vending,
-  ventStack, waterTank, mast, cableRun, gate, capsulePods,
+  ventStack, waterTank, mast, cableRun, gate, capsulePods, roofLights,
 } from "./jpRender.js";
 
 // One tile of the builder grid, in lattice cells. Every plot above is a multiple of it.
@@ -29,6 +29,7 @@ export const JP_BUILDINGS = [
       const r = rng(0x2101);
       drawBlock(g, glow, { i0: 0, i1: 2, j0: 0, j1: 2, k0: 0, k1: 4, temp: "cool", cols: 2, lit: 0.72, roof: "rail" }, r);
       drawBlock(g, glow, { i0: 0, i1: 1, j0: 0, j1: 1, k0: 5, k1: 7, temp: "cool", cols: 2, lit: 0.85, roof: "plant", dark: 0.94 }, r);
+      roofLights(g, glow, { i0: 0, i1: 1, j0: 0, j1: 1 }, 8, 0x3101, PAL.cyan);
     },
   },
   // 2 — the low shop row we already have.
@@ -43,6 +44,7 @@ export const JP_BUILDINGS = [
         i0: 0, i1: 3, j0: 0, j1: 2, k0: 0, k1: 1, temp: "warm", cols: 3, lit: 0.92,
         roof: "garden", wallSign: "pink",
       }, r);
+      roofLights(g, glow, { i0: 0, i1: 3, j0: 0, j1: 2 }, 2, 0x3102, PAL.warm);
     },
   },
   // 3 — the LED wall. One building in a street may have this; it sets the light for all the rest.
@@ -63,6 +65,7 @@ export const JP_BUILDINGS = [
       awning(g, glow, base, "left", 0.7);
       lanterns(g, glow, base, "left", 0.7, 4);
       ventStack(g, b, 6, r);
+      roofLights(g, glow, b, 6, 0x3103, PAL.cyan);
     },
   },
   // 4 — the sign tower: narrow, and every square metre of it is let to somebody.
@@ -78,6 +81,7 @@ export const JP_BUILDINGS = [
       signStack(g, glow, b, "right", 0x77);
       signStack(g, glow, b, "left", 0xa3);
       mast(g, glow, b, 8, 2);
+      roofLights(g, glow, b, 8, 0x3104, PAL.pink);
     },
   },
   // 5 — the amusement hall: wide, low, and lit like a machine.
@@ -93,6 +97,7 @@ export const JP_BUILDINGS = [
       marquee(g, glow, b, "right", PAL.warm);
       vending(g, glow, b, "left", 0, 3, 0x19);
       ventStack(g, b, 2, r);
+      roofLights(g, glow, b, 2, 0x3105, PAL.pink);
     },
   },
   // 6 — the alley. Two tiny buildings and the gap between them; the gap is the building.
@@ -122,6 +127,8 @@ export const JP_BUILDINGS = [
       drawBlock(g, glow, east, r);
       signStack(g, glow, east, "right", 0x5f);
       cableRun(g, 2.9, 0.6, 2.4, -0.2, 3, 0.3, 4, 0x5b);
+      roofLights(g, glow, east, 3, 0x3106, PAL.warm);
+      roofLights(g, glow, west, 2, 0x3116, PAL.pink);
     },
   },
   // 7 — the capsule tower: the pods ARE the building, and each one is a lit porthole.
@@ -136,6 +143,7 @@ export const JP_BUILDINGS = [
       const b = { i0: 0, i1: 0, j0: 0, j1: 0, k0: 1, k1: 8, temp: "cool", cols: 1, lit: 0.35, roof: "rail" };
       drawBlock(g, glow, b, r);
       capsulePods(g, glow, b, 0xc1);
+      roofLights(g, glow, { i0: -0.4, i1: 0.4, j0: -0.4, j1: 0.4 }, 9, 0x3107, PAL.cyan);
     },
   },
   // 8 — the shrine corner: a low hall set back behind a neon gate.
@@ -150,6 +158,7 @@ export const JP_BUILDINGS = [
       drawBlock(g, glow, b, r);
       gate(g, glow, 4.4, 0.5, 0, 2.4, 2.6);
       lanterns(g, glow, b, "left", 0.9, 2);
+      roofLights(g, glow, b, 2, 0x3108, PAL.warm);
     },
   },
   // 9 — the smallest thing in the set. Without it the towers have nothing to be tall against.
@@ -166,6 +175,7 @@ export const JP_BUILDINGS = [
       noren(g, glow, b, "right", 0);
       lanterns(g, glow, b, "right", 0.75, 2);
       vending(g, glow, b, "left", 0, 2, 0x31);
+      roofLights(g, glow, b, 1, 0x3109, PAL.warm);
     },
   },
   // 10 — the dark one. Every lit building in the set needs this standing next to it.

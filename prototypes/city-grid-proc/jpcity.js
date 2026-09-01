@@ -452,6 +452,8 @@ async function main() {
       if (state.get(key(rr, cc)) === "road") drawRoad(rr, cc);
     }
     updateVents();
+    drawHarbour();
+    updateBoats();
 
     const rs = cells.map(([rr]) => rr), cs = cells.map(([, cc]) => cc);
     const r0 = Math.min(...rs), r1 = Math.max(...rs), c0 = Math.min(...cs), c1 = Math.max(...cs);
@@ -544,6 +546,68 @@ async function main() {
     return [x, y + (DECK + DROP) * CS + 3, 1 - n * 0.32];
   }
 
+  /* ---- the harbour ------------------------------------------------------------------------------- */
+
+  // One small harbour, on the nearest stretch of open shore: a deck on posts out over the water,
+  // two lamps, bollards and moored boats. It is chosen, never placed — the shore moves as the city
+  // grows, so the harbour moves with it.
+  const harbourG = new Graphics();
+  const harbourGlow = new Graphics();
+  harbourGlow.blendMode = "add";
+  world.addChild(harbourG, harbourGlow);
+  let harbour = null;
+
+  function pickHarbour() {
+    let best = null;
+    for (let r = 0; r < GRID; r++) for (let c = 0; c < GRID; c++) {
+      if (state.get(key(r, c)) === "water") continue;
+      if (inGrid(r + 1, c) && state.get(key(r + 1, c)) !== "water") continue;
+      if (!best || r + c > best[0] + best[1]) best = [r, c];
+    }
+    return best;
+  }
+
+  function drawHarbour() {
+    const spot = pickHarbour();
+    harbourG.clear();
+    harbourGlow.clear();
+    harbour = spot;
+    if (!spot) return;
+    const [r, c] = spot;
+    harbourG.zIndex = harbourGlow.zIndex = r + c + 0.34;
+    const i0 = hi(r), i1 = hi(r) + 3.4;
+    const j0 = lo(c) + 0.9, j1 = hi(c) - 0.9;
+    for (let s = 0; s <= 1.001; s += 0.25) {                    // posts down into the water
+      const pi = i0 + (i1 - i0) * s;
+      for (const pj of [j0 + 0.2, j1 - 0.2]) {
+        harbourG.moveTo(...P(pi, pj, DECK)).lineTo(...P(pi, pj, -DROP))
+          .stroke({ width: 2, color: 0x14121f, alpha: 0.9 });
+      }
+    }
+    harbourG.poly([...P(i1, j0, DECK), ...P(i1, j1, DECK),
+      ...P(i1, j1, DECK - 0.28), ...P(i1, j0, DECK - 0.28)]).fill(0x1b192c);
+    harbourG.poly([...P(i0, j1, DECK), ...P(i1, j1, DECK),
+      ...P(i1, j1, DECK - 0.28), ...P(i0, j1, DECK - 0.28)]).fill(0x141222);
+    harbourG.poly([...P(i0, j0, DECK), ...P(i1, j0, DECK), ...P(i1, j1, DECK), ...P(i0, j1, DECK)])
+      .fill(ROAD.walk);
+    harbourG.poly([...P(i0, j0, DECK), ...P(i1, j0, DECK), ...P(i1, j1, DECK), ...P(i0, j1, DECK)])
+      .stroke({ width: 1, color: SEA.quayEdge, alpha: 0.35 });
+    for (const [pi, pj] of [[i1 - 0.4, j0 + 0.3], [i0 + 1.1, j1 - 0.3]]) {   // two lamps
+      const [x, y] = P(pi, pj, DECK);
+      harbourG.moveTo(x, y).lineTo(x, y - 2.2 * CS).stroke({ width: 1.2, color: PAL.steel, alpha: 0.75 });
+      harbourG.circle(x, y - 2.2 * CS, 1.8).fill({ color: PAL.white, alpha: 0.95 });
+      harbourGlow.circle(x, y - 2.2 * CS, 6).fill({ color: PAL.white, alpha: 0.18 });
+      for (let n = 4; n >= 1; n--) {
+        harbourGlow.ellipse(x, y, 2 * CS * (n / 4), CS * (n / 4)).fill({ color: PAL.white, alpha: 0.04 });
+      }
+    }
+    for (let s = 0.2; s < 1; s += 0.3) {                        // bollards along the deck
+      const [x, y] = P(i0 + (i1 - i0) * s, j0 + 0.25, DECK);
+      harbourG.rect(x - 1.4, y - 3.4, 2.8, 3.4).fill(0x241f38);
+      harbourG.ellipse(x, y - 3.6, 2.1, 1).fill(0x2f2a45);
+    }
+  }
+
   /* ---- life ---------------------------------------------------------------------------------- */
 
   // Everything that moves gets its OWN node, because it also has to sort: a car two tiles further
@@ -557,59 +621,82 @@ async function main() {
     glow.blendMode = "add";
     node.addChild(g, glow);
     world.addChild(node);
-    const a = { kind, node, g, glow, r: 0, c: 0, u: 0, axis: "i", speed: 0, hue: PAL.cyan, seed: 0 };
+    const a = { kind, node, g, glow, path: null, u: 0, speed: 0, lane: 0, hue: PAL.cyan, seed: 0 };
     respawn(a);
     agents.push(a);
     return a;
   }
 
-  // Put an agent somewhere it belongs. Both live on the street: a walker set down on a building
-  // tile walks THROUGH the building, and the building — drawn later — hides it completely. So a
-  // walker takes a road tile that touches a plot and keeps to the kerb.
+  // A vehicle drives a ROUTE through the street graph, turning at junctions, not one tile and not
+  // one straight run. Both earlier versions respawned within a second or two — in a derived
+  // network most tiles are the end of something — and the streets read as flickering rather than
+  // as traffic. A route of up to sixteen tiles at half a tile per second is a journey of half a
+  // minute, which is what "driving" looks like.
+  const PATH_MAX = 16;
+
+  function route(startAt) {
+    const path = [startAt];
+    let prev = null;
+    for (let n = 0; n < PATH_MAX; n++) {
+      const [r, c] = path[path.length - 1];
+      const opts = DIRS
+        .map(([dr, dc]) => [r + dr, c + dc])
+        .filter(([nr, nc]) => inGrid(nr, nc) && state.get(key(nr, nc)) === "road"
+          && !(prev && nr === prev[0] && nc === prev[1]));
+      if (!opts.length) break;
+      // Straight on is four times as likely as a turn, so traffic runs down streets rather than
+      // wandering in circles.
+      const straight = prev && opts.find(([nr, nc]) => nr - r === r - prev[0] && nc - c === c - prev[1]);
+      const next = straight && Math.random() < 0.8 ? straight : opts[Math.floor(Math.random() * opts.length)];
+      prev = [r, c];
+      path.push(next);
+    }
+    return path;
+  }
+
   function respawn(a) {
     const spots = [];
     for (let r = 0; r < GRID; r++) for (let c = 0; c < GRID; c++) {
-      if (state.get(key(r, c)) !== "road") continue;
-      if (a.kind === "walker" && !touchesBuilding(r, c)) continue;
-      spots.push([r, c]);
+      if (state.get(key(r, c)) === "road") spots.push([r, c]);
     }
-    if (!spots.length) { a.node.visible = false; return; }
+    if (!spots.length) { a.node.visible = false; a.path = null; return; }
     a.node.visible = true;
+    a.path = route(spots[Math.floor(Math.random() * spots.length)]);
     a.seed = Math.floor(Math.random() * 1e6);
-    const [r, c] = spots[Math.floor(Math.random() * spots.length)];
-    a.r = r; a.c = c;
-    a.axis = Math.random() < 0.5 ? "i" : "j";
-    a.u = -0.5;
-    a.speed = a.kind === "car" ? 1.6 + Math.random() * 1.4 : 0.5 + Math.random() * 0.4;
+    a.u = 0;
+    a.speed = a.kind === "car" ? 0.5 + Math.random() * 0.3 : 0.16 + Math.random() * 0.1;
     a.hue = [PAL.cyan, PAL.pink, PAL.white, PAL.warm][Math.floor(Math.random() * 4)];
-    // Cars keep to the middle, people to the kerb.
+    // Cars keep to the middle of the carriageway, people to the kerb.
     a.lane = (Math.random() < 0.5 ? -1 : 1) * (a.kind === "car" ? 0.9 : 1.55);
   }
 
   function stepAgent(a, dt, t) {
-    if (!a.node.visible) { respawn(a); return; }
+    if (!a.node.visible || !a.path || a.path.length < 2) { respawn(a); return; }
     a.u += a.speed * dt;
-    if (a.u > TILE + 0.5) {                      // moved off its tile: carry on or find a new one
-      a.u -= TILE + 1;
-      const [dr, dc] = a.axis === "i" ? [1, 0] : [0, 1];
-      const nr = a.r + dr, nc = a.c + dc;
-      if (!inGrid(nr, nc) || state.get(key(nr, nc)) !== "road") { respawn(a); return; }
-      a.r = nr; a.c = nc;
-    }
-    if (state.get(key(a.r, a.c)) !== "road") { respawn(a); return; }
+    const segs = a.path.length - 1;
+    if (a.u >= segs) { respawn(a); return; }
+    const n = Math.floor(a.u), f = a.u - n;
+    const [r0, c0] = a.path[n], [r1, c1] = a.path[n + 1];
+    if (state.get(key(r0, c0)) !== "road" || state.get(key(r1, c1)) !== "road") { respawn(a); return; }
+    const mid = (x) => x * TILE + (TILE - 1) / 2;
+    const axis = r1 !== r0 ? "i" : "j";
+    const back = axis === "i" ? r1 < r0 : c1 < c0;
+    // The lane sits to one side of the direction of travel, so the two directions pass each other.
+    const off = back ? -a.lane : a.lane;
+    const i = mid(r0) + (mid(r1) - mid(r0)) * f + (axis === "i" ? 0 : off);
+    const j = mid(c0) + (mid(c1) - mid(c0)) * f + (axis === "i" ? off : 0);
     a.g.clear();
     a.glow.clear();
-    const mid = (x) => x * TILE + (TILE - 1) / 2;
-    const i = a.axis === "i" ? lo(a.r) + a.u : mid(a.r) + a.lane;
-    const j = a.axis === "i" ? mid(a.c) + a.lane : lo(a.c) + a.u;
-    a.node.zIndex = a.r + a.c + 0.32;
-    if (a.kind === "car") car(a.g, a.glow, i, j, a.axis, a.hue, DECK);
+    a.node.zIndex = (r0 + (r1 - r0) * f) + (c0 + (c1 - c0) * f) + 0.32;
+    // Fade in and out at the ends of the route, so nothing pops into existence mid-street.
+    a.node.alpha = Math.min(1, Math.min(a.u, segs - a.u) / 0.6);
+    if (a.kind === "car") car(a.g, a.glow, i, j, axis, a.hue, DECK, back);
     else walker(a.g, a.glow, i, j, a.hue, t + a.seed);
   }
 
   // A car: tiny, dark, identified by its lights. At this size a modelled car is mush; two lights
   // and a shadow read instantly.
-  function car(g, glow, i, j, dir, hue, k) {
+  function car(g, glow, i, j, dir, hue, k, back) {
     const L = 1.1, W = 0.45, H = 0.42;
     const b = dir === "i"
       ? { i0: i - L, i1: i + L, j0: j - W, j1: j + W }
@@ -622,8 +709,10 @@ async function main() {
       .fill(0x191530);
     g.poly([...P(b.i0, b.j0, k + H), ...P(b.i1, b.j0, k + H),
       ...P(b.i1, b.j1, k + H), ...P(b.i0, b.j1, k + H)]).fill(0x2e2a48);
-    const head = dir === "i" ? P(b.i1, j, k + H * 0.6) : P(i, b.j1, k + H * 0.6);
-    const tail = dir === "i" ? P(b.i0, j, k + H * 0.6) : P(i, b.j0, k + H * 0.6);
+    const front = back ? b.i0 : b.i1, rear = back ? b.i1 : b.i0;
+    const frontJ = back ? b.j0 : b.j1, rearJ = back ? b.j1 : b.j0;
+    const head = dir === "i" ? P(front, j, k + H * 0.6) : P(i, frontJ, k + H * 0.6);
+    const tail = dir === "i" ? P(rear, j, k + H * 0.6) : P(i, rearJ, k + H * 0.6);
     g.circle(head[0], head[1], 1.2).fill({ color: PAL.white, alpha: 0.95 });
     g.circle(tail[0], tail[1], 1).fill({ color: PAL.pink, alpha: 0.9 });
     glow.circle(head[0], head[1], 5).fill({ color: PAL.white, alpha: 0.16 });
@@ -700,6 +789,13 @@ async function main() {
       const x = ((t * b.speed + b.off) % 2400) - 1200;
       passingBoat(boatG, boatGlow, x * b.dir, b.y, t, b.hue);
     }
+    if (harbour) {                                   // two moored alongside the pier
+      const [hr, hc] = harbour;
+      for (const [n, dj] of [[0, -1.3], [1, 1.3]]) {
+        const [mx, my] = P(hi(hr) + 1.6, (lo(hc) + hi(hc)) / 2 + dj, 0);
+        passingBoat(boatG, boatGlow, mx, my, t + n * 2.1, n ? PAL.cyan : PAL.warm);
+      }
+    }
     if (t - lastRefl > 0.05) {                     // the reflections carry the water, at ~20 fps
       lastRefl = t;
       reflectG.clear();
@@ -717,11 +813,33 @@ async function main() {
     }
   });
 
+  // A bigger city is a busier port: the traffic on the water grows with what stands on it.
+  const BOATS = [];
+  function updateBoats() {
+    const want = Math.min(8, 2 + Math.floor(new Set([...owner.values()]).size / 4));
+    const rand = rng(0x50a7 + want);
+    while (BOATS.length > want) BOATS.pop();
+    while (BOATS.length < want) {
+      const n = BOATS.length;
+      BOATS.push({
+        speed: 13 + rand() * 18,
+        off: rand() * 2400,
+        y: CORNER[1] + (n % 2 ? 150 : -420) + rand() * 420,
+        dir: rand() < 0.5 ? 1 : -1,
+        hue: rand() < 0.5 ? PAL.warm : PAL.cyan,
+      });
+    }
+  }
+  for (let n = 0; n < 5; n++) agent("car");
+  for (let n = 0; n < 16; n++) agent("walker");
+
   // A handle on the rules from outside, so the district limit can be checked by a test instead of
   // being read off a screenshot — a two-tile building makes tile counting misleading.
   window.jpcity = {
     state,
     owner,
+    agents,
+    boats: BOATS,
     districts() {
       const seen = new Set(), out = [];
       for (const [k, st] of state) {
@@ -734,14 +852,6 @@ async function main() {
       return out;
     },
   };
-
-  const BOATS = [
-    { speed: 26, off: 0, y: CORNER[1] + 210, dir: 1, hue: PAL.warm },
-    { speed: 19, off: 900, y: CORNER[1] + 330, dir: -1, hue: PAL.cyan },
-    { speed: 14, off: 1700, y: CORNER[1] - 520, dir: 1, hue: PAL.warm },
-  ];
-  for (let n = 0; n < 7; n++) agent("car");
-  for (let n = 0; n < 20; n++) agent("walker");
 
   /* ---- a city to start from --------------------------------------------------------------------- */
 

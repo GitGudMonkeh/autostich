@@ -316,3 +316,27 @@ export function padSlab(g, glow, foot, hue = PAL.pink) {
       .fill({ color: hue, alpha: 0.04 });
   }
 }
+
+// The top of a building is what you see from across the water, and in the reference it is never
+// dark: a lit strip along the parapet and a few point lights standing on the roof. This is also
+// most of what the water reflection ends up being made of, so it emits like any other light.
+export function roofLights(g, glow, b, k, seed, hue = PAL.cyan) {
+  const rand = rng(seed);
+  const a1 = P(b.i1 + 0.5, b.j0 - 0.5, k), a2 = P(b.i1 + 0.5, b.j1 + 0.5, k);
+  const a3 = P(b.i0 - 0.5, b.j1 + 0.5, k);
+  g.moveTo(...a1).lineTo(...a2).lineTo(...a3).stroke({ width: 1.4, color: hue, alpha: 0.75 });
+  glow.moveTo(...a1).lineTo(...a2).lineTo(...a3).stroke({ width: 5, color: hue, alpha: 0.13 });
+  emitLight((a1[0] + a3[0]) / 2, Math.max(a1[1], a2[1], a3[1]),
+    Math.max(6, Math.abs(a1[0] - a3[0]) * 0.5), hue, 1.3);
+  for (let s = 0, n = 2 + Math.floor(rand() * 3); s < n; s++) {
+    const i = b.i0 - 0.3 + rand() * (b.i1 - b.i0 + 0.6);
+    const j = b.j0 - 0.3 + rand() * (b.j1 - b.j0 + 0.6);
+    const h = 0.3 + rand() * 0.55;
+    const [x, y] = P(i, j, k);
+    const col = rand() < 0.45 ? PAL.white : hue;
+    g.moveTo(x, y).lineTo(x, y - h * CS).stroke({ width: 1, color: JP.metal, alpha: 0.7 });
+    g.circle(x, y - h * CS, 1.5).fill({ color: col, alpha: 0.95 });
+    glow.circle(x, y - h * CS, 5.5).fill({ color: col, alpha: 0.2 });
+    emitLight(x, y - h * CS + 2, 4.5, col, 0.9);
+  }
+}
