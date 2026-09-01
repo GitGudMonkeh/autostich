@@ -23,13 +23,15 @@ import {
 } from "./refStreet.js";
 
 const SEA = {
-  far: 0x39406a,              // at the horizon, closest to the sky
-  near: 0x141a30,             // under the viewer, the deepest value
-  crest: 0x5c6796,            // the facet turned towards the light
-  trough: 0x0e1224,           // and the one turned away
+  far: 0x2c3358,              // the flat base under the mesh, at the horizon
+  near: 0x111731,             // and under the viewer
+  deep: 0x16203f,             // open water
+  shallow: 0x2f7392,          // the lit band along the shore — the only saturated tone in the sea
+  crest: 0x4f89a8,            // a facet turned towards the light
+  trough: 0x0d1428,           // and one turned away
   quay: 0x0b0a12,
   quayEdge: 0x9aa6d8,
-  foam: 0xd8e2ff,
+  foam: 0xcfeaff,
 };
 
 // The island, in lattice coordinates.
@@ -58,46 +60,112 @@ function seaBase(g, x0, x1, y0, y1) {
 // The wave field: three long sines crossed. Gentle on purpose — the water has to stay a surface
 // the city sits on, not a sea the city is in.
 const WAVE = (i, j, t) =>
-  0.20 * Math.sin(i * 0.30 + t * 0.75)
-  + 0.15 * Math.sin(j * 0.24 - t * 0.62)
-  + 0.11 * Math.sin((i + j) * 0.17 + t * 1.05);
+  0.22 * Math.sin(i * 0.30 + t * 0.75)
+  + 0.16 * Math.sin(j * 0.24 - t * 0.62)
+  + 0.12 * Math.sin((i + j) * 0.17 + t * 1.05);
 
-// Low-poly water: the surface is one grid of flat quads, each filled with a single tone taken
-// from its own slope. Flat facets are what make the low-poly look — a smooth gradient would just
-// be a rendered wave, and this style has no smooth surfaces anywhere else either.
-const STEP = 3.4;                            // one facet, in lattice units
-const W0 = -30, W1 = 62;                     // far enough that the mesh reaches past the frame
+// Low-poly water, the way the stylized references do it. Two things matter and the first one is
+// what the earlier version got wrong:
+//
+//   · The mesh must be IRREGULAR. A grid of equal quads reads as a grid, however it is shaded —
+//     the eye locks onto the repeat instantly. Every node is therefore pushed off its lattice
+//     position by a fixed random offset, and every cell is split into two triangles, so no two
+//     facets share a shape.
+//   · Water has ZONES, not one colour: bright shallows along the shore, deep dark water further
+//     out. That gradient — distance to land, not distance to the viewer — is what makes it read
+//     as a body of water with a bottom rather than as a painted plane.
+const STEP = 4.0;                            // one facet, in lattice units
+const W0 = -34, W1 = 66;                     // far enough that the mesh reaches past the frame
+const NODES = Math.ceil((W1 - W0) / STEP) + 1;
+
+// The node offsets are fixed once: the mesh may move up and down, but it must not crawl.
+const OFF = (() => {
+  const rand = rng(0xc0ffee);
+  const a = [];
+  for (let gi = 0; gi < NODES; gi++) {
+    a.push([]);
+    for (let gj = 0; gj < NODES; gj++) {
+      a[gi].push([(rand() - 0.5) * STEP * 0.62, (rand() - 0.5) * STEP * 0.62, rand()]);
+    }
+  }
+  return a;
+})();
+
+// How far a point is from the island, in lattice units. Zero on the quay, growing outwards.
+const toShore = (i, j) => Math.hypot(
+  Math.max(I0 - i, 0, i - I1), Math.max(J0 - j, 0, j - J1));
 
 function waveMesh(g, t) {
   g.clear();
-  const h = (i, j) => WAVE(i, j, t);
-  for (let i = W0; i < W1; i += STEP) {
-    for (let j = W0; j < W1; j += STEP) {
-      const hA = h(i, j), hB = h(i + STEP, j), hC = h(i + STEP, j + STEP), hD = h(i, j + STEP);
-      // Fake normal: how much the facet rises towards the light, which sits up and to the left.
-      const slope = (hB - hA) * 0.6 + (hD - hA) * 0.6 + (hC - hA) * 0.3;
-      const depth = Math.min(1, Math.max(0, (i + j - W0 * 2) / ((W1 - W0) * 2)));
-      const base = mix(SEA.far, SEA.near, Math.pow(depth, 0.75));
-      // The facet keeps a floor of contrast even in the dark near water, or the whole lower half
-      // of the picture flattens out into one tone.
-      const lit = Math.min(1, Math.max(-1, slope * 2.6));
-      g.poly([...P(i, j, hA), ...P(i + STEP, j, hB), ...P(i + STEP, j + STEP, hC), ...P(i, j + STEP, hD)])
-        .fill(mix(base, lit > 0 ? SEA.crest : SEA.trough, Math.min(0.7, Math.abs(lit) * 0.55 + 0.08)));
+  const node = (gi, gj) => {
+    const [di, dj, r] = OFF[gi][gj];
+    const i = W0 + gi * STEP + di, j = W0 + gj * STEP + dj;
+    return { i, j, h: WAVE(i, j, t), r, d: toShore(i, j) };
+  };
+  let row = [];
+  for (let gj = 0; gj < NODES; gj++) row.push(node(0, gj));
+  for (let gi = 1; gi < NODES; gi++) {
+    const next = [];
+    for (let gj = 0; gj < NODES; gj++) next.push(node(gi, gj));
+    for (let gj = 0; gj < NODES - 1; gj++) {
+      const A = row[gj], B = next[gj], C = next[gj + 1], D = row[gj + 1];
+      tri(g, A, B, C, t);
+      tri(g, A, C, D, t);
     }
+    row = next;
   }
 }
 
-// The bright edge of a wave, and a handful of sparkles the neon leaves on the crests.
-function crests(g, t) {
-  for (let i = W0; i < W1; i += STEP) {
-    for (let j = W0; j < W1; j += STEP) {
-      const hA = WAVE(i, j, t), hB = WAVE(i + STEP, j, t);
-      if (hB - hA < 0.1) continue;
-      const a = P(i + STEP, j, hB), b = P(i + STEP, j + STEP, WAVE(i + STEP, j + STEP, t));
-      g.moveTo(a[0], a[1]).lineTo(b[0], b[1]);
-    }
+// One facet: flat, one tone, taken from its depth, its slope and a little of its own randomness.
+function tri(g, A, B, C, t) {
+  const d = (A.d + B.d + C.d) / 3;
+  const shallow = Math.max(0, 1 - d / 5.5);
+  let base = mix(SEA.deep, SEA.shallow, Math.pow(shallow, 1.5));
+  if (d < 1.8) base = mix(base, SEA.foam, ((1.8 - d) / 1.8) * 0.55);   // the water breaks on the quay
+  // Fake normal: how much the facet rises towards the light, which sits up and to the left.
+  const slope = (B.h - A.h) * 0.7 + (C.h - A.h) * 0.5;
+  const lit = Math.max(-1, Math.min(1, slope * 2.2));
+  const tone = mix(base, lit > 0 ? SEA.crest : SEA.trough, Math.min(0.5, Math.abs(lit) * 0.42 + 0.05));
+  g.poly([...P(A.i, A.j, A.h), ...P(B.i, B.j, B.h), ...P(C.i, C.j, C.h)])
+    .fill(mix(tone, SEA.crest, A.r * 0.06));                          // a touch of facet variation
+  // Sparkle: the steepest facets near the shore catch the city light for a moment.
+  if (lit > 0.72 && d < 16 && Math.sin(t * 2.2 + A.i + B.j) > 0.55) {
+    g.poly([...P(A.i, A.j, A.h), ...P(B.i, B.j, B.h), ...P(C.i, C.j, C.h)])
+      .fill({ color: SEA.foam, alpha: 0.14 });
   }
-  g.stroke({ width: 1, color: SEA.foam, alpha: 0.16 });
+}
+
+// Foam: an irregular bright band lapping at the quay, and one loose band a little further out.
+function foam(g, t) {
+  const edge = (from, to, fixed, axis) => {
+    for (let s = from; s < to; s += 1.1) {
+      const w = 0.55 + Math.sin(s * 1.7 + t * 1.1) * 0.3;
+      const off = 0.35 + Math.sin(s * 0.9 - t * 1.4) * 0.28;
+      const a = 0.26 + Math.sin(s * 2.3 + t * 1.9) * 0.16;
+      const q = axis === "i"
+        ? [...P(s, fixed + off, 0), ...P(s + 0.9, fixed + off, 0),
+          ...P(s + 0.9, fixed + off + w, 0), ...P(s, fixed + off + w, 0)]
+        : [...P(fixed + off, s, 0), ...P(fixed + off, s + 0.9, 0),
+          ...P(fixed + off + w, s + 0.9, 0), ...P(fixed + off + w, s, 0)];
+      g.poly(q).fill({ color: SEA.foam, alpha: Math.max(0.04, a) });
+    }
+  };
+  edge(I0, I1 + 1, J1, "i");                 // along the two shores that face the viewer
+  edge(J0, J1 + 1, I1, "j");
+}
+
+// Caustics: a few big soft loops drifting over the surface. In the stylized references these are
+// what say "water" before any wave does.
+function caustics(g, t) {
+  g.clear();
+  for (let n = 0; n < 5; n++) {
+    const cx = I1 * 0.5 + Math.sin(t * 0.12 + n * 1.7) * 22 + (n - 2) * 12;
+    const cy = J1 * 0.7 + Math.cos(t * 0.1 + n * 2.3) * 18 + (n - 2) * 9;
+    const r = 7 + n * 2.2 + Math.sin(t * 0.3 + n) * 1.2;
+    const [x, y] = P(cx, cy, 0);
+    g.ellipse(x, y, r * CS, r * CS * 0.5).stroke({ width: 2.2, color: SEA.shallow, alpha: 0.1 });
+    g.ellipse(x, y, r * CS * 0.72, r * CS * 0.36).stroke({ width: 1.4, color: SEA.crest, alpha: 0.08 });
+  }
 }
 
 /* ---- the shore ------------------------------------------------------------------------------ */
@@ -251,8 +319,10 @@ async function main() {
   const X0 = -1500, X1 = 1500, Y0 = -900, Y1 = 1500;
   const water = new Graphics();
   seaBase(water, X0, X1, Y0, Y1);
-  const rippleG = new Graphics();
-  const crestG = new Graphics();
+  const rippleG = new Graphics();                          // the wave mesh itself
+  const crestG = new Graphics();                           // foam at the quay
+  const causticG = new Graphics();                         // loops drifting over the surface
+  causticG.blendMode = "add";
   const seaGlow = new Graphics();
   seaGlow.blendMode = "add";
   // The city throws its colour onto the water long before any reflection is resolved.
@@ -261,7 +331,7 @@ async function main() {
   pool(seaGlow, MIDI - 6, J1 + 4, 13, PAL.white, 0.32);
   const reflect = new Graphics();
   reflect.blendMode = "add";
-  world.addChild(water, rippleG, crestG, reflect, seaGlow);
+  world.addChild(water, rippleG, causticG, crestG, reflect, seaGlow);
 
   const shore = new Graphics();
   const shoreGlow = new Graphics();
@@ -320,8 +390,9 @@ async function main() {
     if (t - lastMesh > 0.05) {
       lastMesh = t;
       waveMesh(rippleG, t);
+      caustics(causticG, t);
       crestG.clear();
-      crests(crestG, t);
+      foam(crestG, t);
       reflect.clear();
       for (const b of STREET_BLOCKS) reflection(reflect, b, t);
     }
