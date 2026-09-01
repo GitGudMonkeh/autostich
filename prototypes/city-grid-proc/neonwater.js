@@ -25,6 +25,8 @@ import {
 const SEA = {
   far: 0x39406a,              // at the horizon, closest to the sky
   near: 0x141a30,             // under the viewer, the deepest value
+  crest: 0x5c6796,            // the facet turned towards the light
+  trough: 0x0e1224,           // and the one turned away
   quay: 0x0b0a12,
   quayEdge: 0x9aa6d8,
   foam: 0xd8e2ff,
@@ -37,36 +39,65 @@ const CORNER = P(I1, J1, 0);                // the near corner: both waterlines 
 
 /* ---- the sea ------------------------------------------------------------------------------- */
 
-const mix = (a, b, t) => {
-  const ch = (s) => Math.round(((a >> s) & 255) * (1 - t) + ((b >> s) & 255) * t);
+const mix = (a, b, f) => {
+  const ch = (s) => Math.round(((a >> s) & 255) * (1 - f) + ((b >> s) & 255) * f);
   return (ch(16) << 16) | (ch(8) << 8) | ch(0);
 };
 
-// The open water: bands from the horizon down to the viewer. Bands rather than one flat fill,
-// because the gradient IS the depth cue — a single colour reads as a tabletop.
-function sea(g, x0, x1, y0, y1) {
-  const N = 26;
+// The flat ground under the wave mesh: bands from the horizon down to the viewer. It is what
+// shows wherever the mesh does not reach, and it carries the depth gradient.
+function seaBase(g, x0, x1, y0, y1) {
+  const N = 22;
   for (let n = 0; n < N; n++) {
-    const t = n / (N - 1);
-    const y = y0 + (y1 - y0) * (n / N);
-    g.rect(x0, y - 1, x1 - x0, (y1 - y0) / N + 2).fill(mix(SEA.far, SEA.near, Math.pow(t, 0.8)));
+    const f = n / (N - 1);
+    g.rect(x0, y0 + (y1 - y0) * (n / N) - 1, x1 - x0, (y1 - y0) / N + 2)
+      .fill(mix(SEA.far, SEA.near, Math.pow(f, 0.8)));
   }
 }
 
-// Ripples: short horizontal strokes, denser and brighter near the island, thinning out towards
-// the horizon. They are the only texture the water gets.
-function ripples(g, x0, x1, y0, y1, seed) {
-  const rand = rng(seed);
-  const [cx, cy] = CORNER;
-  for (let n = 0; n < 1800; n++) {
-    const x = x0 + rand() * (x1 - x0);
-    const y = y0 + rand() * (y1 - y0);
-    const d = Math.hypot((x - cx) / 320, (y - cy) / 190);
-    if (rand() < d * 0.55) continue;                      // sparse far away, dense near the shore
-    const w = 5 + rand() * 26 * (1.2 - Math.min(1, d));
-    const a = 0.06 + rand() * 0.14 * (1.35 - Math.min(1, d));
-    g.rect(x - w / 2, y, w, 1).fill({ color: rand() < 0.18 ? PAL.cyan : SEA.foam, alpha: a });
+// The wave field: three long sines crossed. Gentle on purpose — the water has to stay a surface
+// the city sits on, not a sea the city is in.
+const WAVE = (i, j, t) =>
+  0.20 * Math.sin(i * 0.30 + t * 0.75)
+  + 0.15 * Math.sin(j * 0.24 - t * 0.62)
+  + 0.11 * Math.sin((i + j) * 0.17 + t * 1.05);
+
+// Low-poly water: the surface is one grid of flat quads, each filled with a single tone taken
+// from its own slope. Flat facets are what make the low-poly look — a smooth gradient would just
+// be a rendered wave, and this style has no smooth surfaces anywhere else either.
+const STEP = 3.4;                            // one facet, in lattice units
+const W0 = -30, W1 = 62;                     // far enough that the mesh reaches past the frame
+
+function waveMesh(g, t) {
+  g.clear();
+  const h = (i, j) => WAVE(i, j, t);
+  for (let i = W0; i < W1; i += STEP) {
+    for (let j = W0; j < W1; j += STEP) {
+      const hA = h(i, j), hB = h(i + STEP, j), hC = h(i + STEP, j + STEP), hD = h(i, j + STEP);
+      // Fake normal: how much the facet rises towards the light, which sits up and to the left.
+      const slope = (hB - hA) * 0.6 + (hD - hA) * 0.6 + (hC - hA) * 0.3;
+      const depth = Math.min(1, Math.max(0, (i + j - W0 * 2) / ((W1 - W0) * 2)));
+      const base = mix(SEA.far, SEA.near, Math.pow(depth, 0.75));
+      // The facet keeps a floor of contrast even in the dark near water, or the whole lower half
+      // of the picture flattens out into one tone.
+      const lit = Math.min(1, Math.max(-1, slope * 2.6));
+      g.poly([...P(i, j, hA), ...P(i + STEP, j, hB), ...P(i + STEP, j + STEP, hC), ...P(i, j + STEP, hD)])
+        .fill(mix(base, lit > 0 ? SEA.crest : SEA.trough, Math.min(0.7, Math.abs(lit) * 0.55 + 0.08)));
+    }
   }
+}
+
+// The bright edge of a wave, and a handful of sparkles the neon leaves on the crests.
+function crests(g, t) {
+  for (let i = W0; i < W1; i += STEP) {
+    for (let j = W0; j < W1; j += STEP) {
+      const hA = WAVE(i, j, t), hB = WAVE(i + STEP, j, t);
+      if (hB - hA < 0.1) continue;
+      const a = P(i + STEP, j, hB), b = P(i + STEP, j + STEP, WAVE(i + STEP, j + STEP, t));
+      g.moveTo(a[0], a[1]).lineTo(b[0], b[1]);
+    }
+  }
+  g.stroke({ width: 1, color: SEA.foam, alpha: 0.16 });
 }
 
 /* ---- the shore ------------------------------------------------------------------------------ */
@@ -108,7 +139,7 @@ function reflection(g, block, t) {
   const top = shoreY(x);
   const colour = block.temp === "hot" ? PAL.pink : block.temp === "warm" ? PAL.warm : PAL.cyan;
   const height = 34 + (block.k1 - block.k0) * 13;
-  const slices = 16;
+  const slices = 10;
   for (let n = 0; n < slices; n++) {
     const f = n / slices;
     const y = top + 4 + f * height;
@@ -219,9 +250,9 @@ async function main() {
   // sizing the view to the water would shrink the city to a dot.
   const X0 = -1500, X1 = 1500, Y0 = -900, Y1 = 1500;
   const water = new Graphics();
-  sea(water, X0, X1, Y0, Y1);
+  seaBase(water, X0, X1, Y0, Y1);
   const rippleG = new Graphics();
-  ripples(rippleG, X0, X1, Y0, Y1, 0x51a7);
+  const crestG = new Graphics();
   const seaGlow = new Graphics();
   seaGlow.blendMode = "add";
   // The city throws its colour onto the water long before any reflection is resolved.
@@ -230,7 +261,7 @@ async function main() {
   pool(seaGlow, MIDI - 6, J1 + 4, 13, PAL.white, 0.32);
   const reflect = new Graphics();
   reflect.blendMode = "add";
-  world.addChild(water, rippleG, reflect, seaGlow);
+  world.addChild(water, rippleG, crestG, reflect, seaGlow);
 
   const shore = new Graphics();
   const shoreGlow = new Graphics();
@@ -281,16 +312,24 @@ async function main() {
   app.renderer.on("resize", layout);
 
   const t0 = performance.now();
+  let lastMesh = -1;
   app.ticker.add(() => {
     const t = (performance.now() - t0) / 1000;
-    reflect.clear();
-    for (const b of STREET_BLOCKS) reflection(reflect, b, t);
+    // The mesh is the most expensive thing on the page, so it is rebuilt at about 20 fps. Gentle
+    // waves do not need 60 — and on a phone the difference is the whole frame budget.
+    if (t - lastMesh > 0.05) {
+      lastMesh = t;
+      waveMesh(rippleG, t);
+      crestG.clear();
+      crests(crestG, t);
+      reflect.clear();
+      for (const b of STREET_BLOCKS) reflection(reflect, b, t);
+    }
     floating.clear();
     floatGlow.clear();
     boat(floating, floatGlow, I1 + 9, MIDJ - 5.5, t);
     buoy(floating, floatGlow, I1 + 5.5, J1 + 3.5, PAL.pink, t, 0);
     buoy(floating, floatGlow, I0 + 5, J1 + 7, PAL.cyan, t, 2.1);
-    rippleG.y = (Math.sin(t * 0.18) * 6);                  // the whole surface breathes
     glow.alpha = 0.94 + Math.sin(t * 0.9) * 0.06;
     seaGlow.alpha = 0.9 + Math.sin(t * 0.5) * 0.1;
   });
