@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Zehn Gebäude — japanischer Cyberpunk</title>
+<style>
+  /* The whole point of this study: the ground is LIGHT. The city is the dark thing on it. */
+  html, body { margin: 0; }
+  body {
+    background:
+      radial-gradient(ellipse 80% 40% at 50% 62%, rgba(255,110,180,.16), transparent 66%),
+      radial-gradient(ellipse 70% 36% at 76% 58%, rgba(90,225,235,.14), transparent 62%),
+      linear-gradient(#8f95b3 0%, #7b8098 32%, #4e5473 62%, #343a58 100%);
+    color: #23263a; font-family: system-ui, sans-serif;
+  }
+  #hud { padding: 12px 16px; font-size: 13px; line-height: 1.5; color: #2b2f47;
+         background: rgba(255,255,255,.16); border-bottom: 1px solid rgba(255,255,255,.22); }
+  #hud b { color: #b3196b; }
+  #hud span { color: #106b83; }
+  #wrap { position: relative; }
+  #stage-host { position: relative; width: 100%; }
+  .cell { padding: 14px 18px; }
+  .cell h2 { margin: 0; font: 600 12px/1.2 ui-monospace, monospace; letter-spacing: .12em;
+             text-transform: uppercase; color: #1c5a6b; }
+  .cell h2 i { font-style: normal; color: #b3196b; margin-right: 7px; }
+  .cell h2 em { font-style: normal; font-size: 9px; letter-spacing: .1em; margin-left: 8px;
+                padding: 2px 6px; border-radius: 3px; vertical-align: 1px; }
+  .cell h2 em.neu { background: rgba(179,25,107,.16); color: #8d1355; }
+  .cell h2 em.bekannt { background: rgba(16,107,131,.16); color: #0d5568; }
+  .cell p { margin: 6px 0 0; font-size: 12px; line-height: 1.45; color: #3d4258; max-width: 40ch; }
+  /* Pixi writes touch-action:none on its canvas. This page is far taller than a phone screen,
+     so that would swallow every swipe and it could not be scrolled. */
+  canvas { display: block; touch-action: pan-y !important; }
+  @media (max-width: 859px) { .cell p { max-width: none; } }
+</style>
+</head>
+<body>
+  <div id="hud">
+    <b>Zehn Gebäude.</b> Zwei in der Sprache, die wir schon haben — als Maßstab —, und acht neue, an
+    japanischen Cyberpunk angelehnt. Der Unterschied liegt nicht in der Höhe: die Referenzstraße besteht nicht aus
+    schöneren Türmen, sondern aus Häusern, die <span>zugehängt</span> sind — Schilder über die ganze Fassade, Markise
+    und Laternen auf Kopfhöhe, Technik auf dem Dach, Kabel über die Lücke. Deshalb sind vier der acht bewusst flach
+    oder winzig und eines fast <span>unbeleuchtet</span>: ohne etwas Kleines und etwas Dunkles hat das Neon nichts,
+    wogegen es hell sein kann.
+  </div>
+  <div id="wrap">
+    <div id="stage-host"></div>
+  <div id="labels" style="position:absolute;inset:0;display:grid;grid-template-columns:repeat(2,1fr);grid-auto-rows:430px;pointer-events:none;z-index:10">
+    <div class="cell"><h2><i>01</i>Wohnturm<em class="bekannt">bekannt</em></h2><p>Der Turm, den wir schon haben: gestapelte Blöcke, große Fenster, Dachgarten. Steht hier als Maßstab.</p></div>
+    <div class="cell"><h2><i>02</i>Ladenzeile<em class="bekannt">bekannt</em></h2><p>Die flache Zeile, die wir schon haben: drei Fensterachsen, Dachgarten, ein Wandschild.</p></div>
+    <div class="cell"><h2><i>03</i>Bildschirmhaus<em class="neu">neu</em></h2><p>Die halbe Fassade ist ein Bildschirm. Hellster Gegenstand der Straße, harter weißer Rahmen, Halo weit über die Wand hinaus. Darunter Markise und Laternen.</p></div>
+    <div class="cell"><h2><i>04</i>Schilderturm<em class="neu">neu</em></h2><p>Schmaler Schaft, beide Fassaden voll gestapelter Leuchtkästen in vier Farben. Nicht die Höhe macht die Variation, sondern wie viel an der Wand hängt.</p></div>
+    <div class="cell"><h2><i>05</i>Spielhalle<em class="neu">neu</em></h2><p>Breiter flacher Kasten, Marquee mit Lampenreihe über der ganzen Front, Automatenreihe an der Seite. Innen heller als draußen.</p></div>
+    <div class="cell"><h2><i>06</i>Yokocho-Gasse<em class="neu">neu</em></h2><p>Zwei winzige Häuser und die Lücke dazwischen. Markisen, Laternen, Noren, und Kabel quer über die Gasse — der Zwischenraum trägt das Motiv, nicht die Bauten.</p></div>
+    <div class="cell"><h2><i>07</i>Kapselturm<em class="neu">neu</em></h2><p>Ein dünner Schaft, an den Wohnkapseln gehängt sind — jede mit einem runden Fenster. Die Silhouette ist unregelmäßig, weil manche Kapseln fehlen.</p></div>
+    <div class="cell"><h2><i>08</i>Torhof<em class="neu">neu</em></h2><p>Flache Halle, davor ein Tor aus Licht statt aus Stein. Der einzige Bau, bei dem der Vorplatz mehr zählt als das Haus.</p></div>
+    <div class="cell"><h2><i>09</i>Ramen-Ecke<em class="neu">neu</em></h2><p>Ein Geschoss, sechs Plätze. Noren über dem Eingang, Automatenwand daneben, warmes Licht das nach draußen fällt. Das kleinste Gebäude im Satz.</p></div>
+    <div class="cell"><h2><i>10</i>Technikturm<em class="neu">neu</em></h2><p>Fast unbeleuchtet: Wassertank, Lüfterkästen, Rohre, ein rotes Blinklicht, Kabelbündel. Die Fläche, gegen die alles andere hell wirkt.</p></div>
+  </div>
+  </div>
+  <script type="module" src="./jpblocks.js"></script>
+</body>
+</html>
