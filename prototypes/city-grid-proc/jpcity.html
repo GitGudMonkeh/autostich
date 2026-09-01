@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Bausystem auf dem Wasser</title>
+<style>
+  html, body { margin: 0; }
+  body {
+    background:
+      radial-gradient(ellipse 80% 40% at 50% 62%, rgba(255,110,180,.16), transparent 66%),
+      radial-gradient(ellipse 70% 36% at 76% 58%, rgba(90,225,235,.14), transparent 62%),
+      linear-gradient(#8f95b3 0%, #7b8098 32%, #4e5473 62%, #343a58 100%);
+    color: #23263a; font-family: system-ui, sans-serif;
+  }
+  #hud { padding: 12px 16px; font-size: 13px; line-height: 1.5; color: #2b2f47;
+         background: rgba(255,255,255,.16); border-bottom: 1px solid rgba(255,255,255,.22); }
+  #hud b { color: #b3196b; }
+  #hud span { color: #106b83; }
+  #stage-host { position: relative; height: min(78vh, 820px); }
+  canvas { display: block; touch-action: pan-y !important; }
+  @media (max-width: 819px) { #stage-host { height: 66vh; } }
+</style>
+</head>
+<body>
+  <div id="hud">
+    <b>Bauen auf dem Wasser.</b> Eine freie Kachel anklicken. Es gibt keine Insel darunter — jedes Grundstück
+    hebt seine eigene <span>Kaimauer</span> aus dem Meer, und die Stadt ist genau das, was du gebaut hast.
+    <b>Straßen</b> werden nie gesetzt, sondern abgeleitet: jede freie Nachbarkachel eines Gebäudes wird Straße und
+    zeichnet sich aus ihren vier Anschlüssen selbst. Jedes Haus steht auf einem <span>Fundament</span> auf
+    Gehweghöhe; stoßen zwei Grundstücke aneinander, fällt der Bordstein dazwischen weg und die Sockel verschmelzen.
+    Höchstens <span>vier Gebäude</span> dürfen einen Distrikt bilden — das fünfte wird rot abgewiesen.
+  </div>
+  <div id="stage-host"></div>
+  <script type="module" src="./jpcity.js"></script>
+</body>
+</html>

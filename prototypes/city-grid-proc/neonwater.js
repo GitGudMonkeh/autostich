@@ -19,148 +19,16 @@
 import { Application, Graphics, Container } from "./vendor/pixi.min.mjs";
 import { CS, P, rng } from "./buildings.js";
 import { PAL, drawBlock } from "./refRender.js";
+import { SEA, sea, ripples, farRipples, rings, rain, smear } from "./waterRender.js";
 import {
   STREET_BLOCKS, MARGIN, A0, A1, B0, B1, C0, C1, D0, D1, MIDI, MIDJ,
   streetGround, lamp, car, tram, pool,
 } from "./refStreet.js";
 
-const SEA = {
-  far: 0x39406a,              // at the horizon, closest to the sky
-  near: 0x141a30,             // under the viewer, the deepest value
-  quay: 0x0b0a12,
-  quayEdge: 0x9aa6d8,
-  foam: 0xd8e2ff,
-};
-
 // The island, in lattice coordinates.
 const I0 = A0 - MARGIN, I1 = B1 + MARGIN, J0 = C0 - MARGIN, J1 = D1 + MARGIN;
 const QUAY_H = 1.5;                         // how far the quay wall drops into the water
 const CORNER = P(I1, J1, 0);                // the near corner: both waterlines meet here
-
-/* ---- the sea ------------------------------------------------------------------------------- */
-
-const mix = (a, b, f) => {
-  const ch = (s) => Math.round(((a >> s) & 255) * (1 - f) + ((b >> s) & 255) * f);
-  return (ch(16) << 16) | (ch(8) << 8) | ch(0);
-};
-
-// The surface: bands from the horizon down to the viewer. Bands rather than one flat fill,
-// because the gradient IS the depth cue — a single colour reads as a tabletop.
-//
-// This replaced a faceted low-poly mesh. The mesh was livelier and wrong: a surface made of
-// visible facets competes with the buildings, and this picture only works while the water is the
-// quietest thing in it. What carries the water instead is the reflection.
-function sea(g, x0, x1, y0, y1) {
-  const N = 26;
-  for (let n = 0; n < N; n++) {
-    const f = n / (N - 1);
-    g.rect(x0, y0 + (y1 - y0) * (n / N) - 1, x1 - x0, (y1 - y0) / N + 2)
-      .fill(mix(SEA.far, SEA.near, Math.pow(f, 0.8)));
-  }
-}
-
-// Ripples: short horizontal strokes, denser and brighter near the island, thinning out towards
-// the horizon. They are the only texture the water gets, and they are drawn once — the whole
-// field then breathes as one, which is a calmer motion than any per-wave animation.
-function ripples(g, x0, x1, y0, y1, seed) {
-  const rand = rng(seed);
-  const [cx, cy] = CORNER;
-  for (let n = 0; n < 1400; n++) {
-    const x = x0 + rand() * (x1 - x0);
-    const y = y0 + rand() * (y1 - y0);
-    const d = Math.hypot((x - cx) / 320, (y - cy) / 190);
-    if (rand() < d * 0.55) continue;                      // sparse far away, dense near the shore
-    const w = 5 + rand() * 26 * (1.2 - Math.min(1, d));
-    const a = 0.05 + rand() * 0.1 * (1.35 - Math.min(1, d));
-    g.rect(x - w / 2, y, w, 1).fill({ color: rand() < 0.16 ? PAL.cyan : SEA.foam, alpha: a });
-  }
-}
-
-// The far water. `ripples` above thins its marks out towards the top, which is a PERSPECTIVE
-// convention — and this projection is parallel: there is no horizon and nothing shrinks with
-// distance. A surface that loses all its texture up there stops reading as a plane and starts
-// reading as a backdrop standing behind the island. So the far field keeps the same mark sizes as
-// the near one; only the light falls off, because the city is what lights the water.
-const FAR_TOP = -820;
-const FAR_BOTTOM = CORNER[1] - 140;                       // where the near field already covers
-// Light, not geometry: away from the city and out to the sides the water is simply darker.
-const farLight = (x, y) => 1 - 0.28 * Math.min(1, (FAR_BOTTOM - y) / 560)
-  - 0.12 * Math.min(1, Math.abs(x) / 1000);
-
-function farRipples(g, seed) {
-  const rand = rng(seed);
-  for (let n = 0; n < 2100; n++) {
-    const x = -1300 + rand() * 2600;
-    const y = FAR_TOP + rand() * (FAR_BOTTOM - FAR_TOP);
-    const fade = Math.min(1, (FAR_BOTTOM - y) / 170);      // no seam against the near field
-    const w = 5 + rand() * 30;
-    g.rect(x - w / 2, y, w, 1).fill({
-      color: rand() < 0.14 ? PAL.cyan : SEA.foam,
-      alpha: (0.05 + rand() * 0.12) * fade * farLight(x, y),
-    });
-  }
-}
-
-/* ---- rain, and the rings it leaves ------------------------------------------------------------ */
-
-// Two slow sources spreading wide rings — the wave treatment itself. They sit in open water,
-// away from the quay, so they never compete with the waterline.
-const RING_SRC = [[-260, 90, 0], [300, 30, 1.7]];
-// Impact rings: one per drop that lands, small and quick. Deterministic, so nothing is allocated
-// per frame and the pattern does not drift between reloads.
-// Roughly a third of these land where the island covers them, so the count is higher than what
-// ends up visible.
-const DROPS = 48;
-
-function rings(g, t) {
-  g.clear();
-  for (const [dx, dy, phase] of RING_SRC) {
-    const x = CORNER[0] + dx, y = CORNER[1] + dy;
-    for (let n = 0; n < 3; n++) {
-      const f = (t * 0.3 + phase + n / 3) % 1;
-      const r = 14 + f * 96;
-      g.ellipse(x, y, r, r * 0.5)
-        .stroke({ width: 1.6 - f, color: SEA.foam, alpha: 0.16 * (1 - f) });
-    }
-  }
-  const rand = rng(0x2b71);
-  for (let n = 0; n < DROPS; n++) {
-    const x = CORNER[0] - 560 + rand() * 1120;
-    const y = CORNER[1] - 60 + rand() * 330;
-    const f = ((t / (2.2 + rand() * 2.4)) + rand()) % 1;
-    const r = 1.5 + f * 22;
-    g.ellipse(x, y, r, r * 0.5)
-      .stroke({ width: 0.4 + 1.1 * (1 - f), color: SEA.foam, alpha: 0.26 * (1 - f) * (1 - f) });
-  }
-  // The same rain falls on the far water, so the same rings are there — same size, dimmer.
-  for (let n = 0; n < 34; n++) {
-    const x = -1150 + rand() * 2300;
-    const y = FAR_TOP + 60 + rand() * (FAR_BOTTOM - FAR_TOP - 60);
-    const f = ((t / (2.4 + rand() * 2.6)) + rand()) % 1;
-    const r = 1.5 + f * 22;
-    g.ellipse(x, y, r, r * 0.5).stroke({
-      width: 0.4 + 1.1 * (1 - f), color: SEA.foam,
-      alpha: 0.26 * (1 - f) * (1 - f) * farLight(x, y),
-    });
-  }
-}
-
-// Light rain: thin slanted streaks, sparse enough that the city stays the subject. They are
-// drawn over everything, because rain is between the viewer and the scene.
-const RAIN_N = 300;
-const RAIN_SPAN = 1700;                 // the loop height; wide enough to cover a phone framing too
-function rain(g, t) {
-  g.clear();
-  const rand = rng(0x9c31);
-  for (let n = 0; n < RAIN_N; n++) {
-    const x0 = -1200 + rand() * 2400;
-    const speed = 340 + rand() * 240;
-    const y = ((rand() * RAIN_SPAN) + t * speed) % RAIN_SPAN - 700;
-    const len = 11 + rand() * 17;
-    g.moveTo(x0, y).lineTo(x0 + len * 0.3, y + len)
-      .stroke({ width: 0.9, color: rand() < 0.18 ? PAL.cyan : SEA.foam, alpha: 0.09 + rand() * 0.13 });
-  }
-}
 
 /* ---- the shore ------------------------------------------------------------------------------ */
 
@@ -198,23 +66,9 @@ const shoreY = (x) => CORNER[1] - Math.abs(x - CORNER[0]) * 0.5 - QUAY_H * CS;
 function reflection(g, block, t) {
   const w = ((block.i1 - block.i0 + 1) + (block.j1 - block.j0 + 1)) * CS * 0.5;
   const x = ((block.i0 + block.i1) / 2 - (block.j0 + block.j1) / 2) * CS;
-  const top = shoreY(x);
   const colour = block.temp === "hot" ? PAL.pink : block.temp === "warm" ? PAL.warm : PAL.cyan;
   const height = 34 + (block.k1 - block.k0) * 13;
-  const slices = 14;
-  for (let n = 0; n < slices; n++) {
-    const f = n / slices;
-    const y = top + 4 + f * height;
-    const jitter = Math.sin(t * 0.8 + n * 0.55 + x * 0.01) * (1.4 + f * 4.5);
-    const ww = w * (0.85 + f * 0.5);
-    const a = 0.42 * Math.pow(1 - f, 1.4) * (block.lit ?? 0.8);
-    g.rect(x - ww / 2 + jitter, y, ww, (height / slices) * 1.05).fill({ color: colour, alpha: a });
-    g.rect(x - ww * 0.9 + jitter * 0.6, y - 1, ww * 1.8, height / slices)
-      .fill({ color: colour, alpha: a * 0.22 });             // the halo around the smear
-  }
-  // The bright core right under the shore, where the reflection is still coherent.
-  g.rect(x - w * 0.34, top + 3, w * 0.68, 5)
-    .fill({ color: PAL.white, alpha: 0.3 * (block.lit ?? 0.8) });
+  smear(g, x, shoreY(x), w, height, colour, block.lit ?? 0.8, t);
 }
 
 /* ---- what floats on it ----------------------------------------------------------------------- */
@@ -318,8 +172,8 @@ async function main() {
   const water = new Graphics();
   sea(water, X0, X1, Y0, Y1);
   const rippleG = new Graphics();
-  ripples(rippleG, X0, X1, Y0, Y1, 0x51a7);
-  farRipples(rippleG, 0x7d13);
+  ripples(rippleG, X0, X1, Y0, Y1, CORNER, 0x51a7);
+  farRipples(rippleG, CORNER, 0x7d13);
   const seaGlow = new Graphics();
   seaGlow.blendMode = "add";
   // The city throws its colour onto the water long before any reflection is resolved.
@@ -397,7 +251,7 @@ async function main() {
       for (const b of STREET_BLOCKS) reflection(reflect, b, t);
     }
     rippleG.y = Math.sin(t * 0.22) * 5;                    // the whole surface breathes, slowly
-    rings(ringG, t);
+    rings(ringG, t, CORNER);
     rain(rainG, t);
     floating.clear();
     floatGlow.clear();
