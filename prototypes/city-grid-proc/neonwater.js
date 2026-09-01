@@ -13,6 +13,8 @@
 //   3. Ripples are horizontal, thin and sparse, and they are brightest where the light hits.
 //   4. The waterline is one bright line plus a dark contact shadow under the quay. That single
 //      line is what makes the island stand IN the water instead of floating over it.
+//   5. Movement: spreading rings (variant W3 of the wave study) and light rain. Rain is the reason
+//      the rings are there — every drop that lands leaves one — so the two are drawn as one idea.
 
 import { Application, Graphics, Container } from "./vendor/pixi.min.mjs";
 import { CS, P, rng } from "./buildings.js";
@@ -71,6 +73,56 @@ function ripples(g, x0, x1, y0, y1, seed) {
     const w = 5 + rand() * 26 * (1.2 - Math.min(1, d));
     const a = 0.05 + rand() * 0.1 * (1.35 - Math.min(1, d));
     g.rect(x - w / 2, y, w, 1).fill({ color: rand() < 0.16 ? PAL.cyan : SEA.foam, alpha: a });
+  }
+}
+
+/* ---- rain, and the rings it leaves ------------------------------------------------------------ */
+
+// Two slow sources spreading wide rings — the wave treatment itself. They sit in open water,
+// away from the quay, so they never compete with the waterline.
+const RING_SRC = [[-260, 90, 0], [300, 30, 1.7]];
+// Impact rings: one per drop that lands, small and quick. Deterministic, so nothing is allocated
+// per frame and the pattern does not drift between reloads.
+// Roughly a third of these land where the island covers them, so the count is higher than what
+// ends up visible.
+const DROPS = 48;
+
+function rings(g, t) {
+  g.clear();
+  for (const [dx, dy, phase] of RING_SRC) {
+    const x = CORNER[0] + dx, y = CORNER[1] + dy;
+    for (let n = 0; n < 3; n++) {
+      const f = (t * 0.3 + phase + n / 3) % 1;
+      const r = 14 + f * 96;
+      g.ellipse(x, y, r, r * 0.5)
+        .stroke({ width: 1.6 - f, color: SEA.foam, alpha: 0.16 * (1 - f) });
+    }
+  }
+  const rand = rng(0x2b71);
+  for (let n = 0; n < DROPS; n++) {
+    const x = CORNER[0] - 560 + rand() * 1120;
+    const y = CORNER[1] - 60 + rand() * 330;
+    const f = ((t / (2.2 + rand() * 2.4)) + rand()) % 1;
+    const r = 1.5 + f * 22;
+    g.ellipse(x, y, r, r * 0.5)
+      .stroke({ width: 0.4 + 1.1 * (1 - f), color: SEA.foam, alpha: 0.26 * (1 - f) * (1 - f) });
+  }
+}
+
+// Light rain: thin slanted streaks, sparse enough that the city stays the subject. They are
+// drawn over everything, because rain is between the viewer and the scene.
+const RAIN_N = 300;
+const RAIN_SPAN = 1700;                 // the loop height; wide enough to cover a phone framing too
+function rain(g, t) {
+  g.clear();
+  const rand = rng(0x9c31);
+  for (let n = 0; n < RAIN_N; n++) {
+    const x0 = -1200 + rand() * 2400;
+    const speed = 340 + rand() * 240;
+    const y = ((rand() * RAIN_SPAN) + t * speed) % RAIN_SPAN - 700;
+    const len = 11 + rand() * 17;
+    g.moveTo(x0, y).lineTo(x0 + len * 0.3, y + len)
+      .stroke({ width: 0.9, color: rand() < 0.18 ? PAL.cyan : SEA.foam, alpha: 0.09 + rand() * 0.13 });
   }
 }
 
@@ -216,6 +268,10 @@ async function main() {
   const app = new Application();
   await app.init({ resizeTo: host, backgroundAlpha: 0, antialias: true });
   host.appendChild(app.canvas);
+  // Pixi writes touch-action:none on its canvas; the canvas covers the scrollable page, so on a
+  // phone that swallows every swipe. Nothing here is interactive.
+  app.stage.eventMode = "none";
+  app.canvas.style.touchAction = "pan-y";
 
   const world = new Container();
   app.stage.addChild(world);
@@ -233,9 +289,11 @@ async function main() {
   pool(seaGlow, MIDI + 4, J1 + 5, 16, PAL.pink, 0.5);
   pool(seaGlow, I1 + 6, MIDJ, 15, PAL.cyan, 0.5);
   pool(seaGlow, MIDI - 6, J1 + 4, 13, PAL.white, 0.32);
+  // The rings sit under the reflections: the reflection is the subject, the rings are weather.
+  const ringG = new Graphics();
   const reflect = new Graphics();
   reflect.blendMode = "add";
-  world.addChild(water, rippleG, reflect, seaGlow);
+  world.addChild(water, rippleG, ringG, reflect, seaGlow);
 
   const shore = new Graphics();
   const shoreGlow = new Graphics();
@@ -271,7 +329,8 @@ async function main() {
   ].sort((a, b) => a.d - b.d);
   for (const it of items) it.run();
   jetty(body, glow);
-  world.addChild(body, glow, floating, floatGlow);
+  const rainG = new Graphics();
+  world.addChild(body, glow, floating, floatGlow, rainG);
 
   const layout = () => {
     world.scale.set(1);
@@ -297,6 +356,8 @@ async function main() {
       for (const b of STREET_BLOCKS) reflection(reflect, b, t);
     }
     rippleG.y = Math.sin(t * 0.22) * 5;                    // the whole surface breathes, slowly
+    rings(ringG, t);
+    rain(rainG, t);
     floating.clear();
     floatGlow.clear();
     boat(floating, floatGlow, I1 + 9, MIDJ - 5.5, t);
