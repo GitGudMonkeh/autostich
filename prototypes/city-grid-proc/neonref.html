@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Referenz-Nachbau — Neon City</title>
+<style>
+  /* The whole point of this study: the ground is LIGHT. The city is the dark thing on it. */
+  html, body { margin: 0; height: 100%; }
+  body {
+    background:
+      radial-gradient(ellipse 70% 45% at 32% 78%, rgba(255,110,180,.30), transparent 62%),
+      radial-gradient(ellipse 60% 40% at 74% 72%, rgba(90,225,235,.26), transparent 60%),
+      radial-gradient(ellipse 90% 70% at 50% 8%, #9aa0bb 0%, #7b8098 45%, #6a6f8a 100%);
+    color: #23263a; font-family: system-ui, sans-serif;
+  }
+  #hud { padding: 12px 16px; font-size: 13px; line-height: 1.5; color: #2b2f47;
+         background: rgba(255,255,255,.16); border-bottom: 1px solid rgba(255,255,255,.22); }
+  #hud b { color: #b3196b; }
+  #hud span { color: #106b83; }
+  #stage-host { position: relative; height: min(70vh, 720px); }
+  canvas { display: block; }
+  #swatches { display: flex; flex-wrap: wrap; gap: 10px; padding: 14px 16px 22px; }
+  .sw { width: 92px; }
+  .sw i { display: block; height: 34px; border-radius: 4px; border: 1px solid rgba(0,0,0,.18); }
+  .sw b { display: block; font: 600 10px/1.6 ui-monospace, monospace; letter-spacing: .06em;
+          color: #23263a; text-transform: uppercase; }
+  .sw em { display: block; font: 400 10px/1.4 ui-monospace, monospace; color: #4a4f68; font-style: normal; }
+  @media (max-width: 819px) { #stage-host { height: 54vh; } .sw { width: 76px; } }
+</style>
+</head>
+<body>
+  <div id="hud">
+    <b>Referenz-Nachbau.</b> Dieselbe Isometrie und dasselbe Gitter wie unsere Assets, aber die Farblogik der Referenz:
+    der Boden ist <span>hell</span> und die Stadt das Dunkle darauf; die Wände bleiben matt und fast neutral;
+    die Farbe steckt im <span>Licht</span> — im Glas, als Schimmer auf der Wand daneben und als Pfütze auf dem Sockel.
+    Genau zwei Neontöne, Pink und Cyan, dazu Weiß.
+  </div>
+  <div id="stage-host"></div>
+  <div id="swatches">
+    <div class="sw"><i style="background:#7b8098"></i><b>Grund</b><em>#7B8098</em></div>
+    <div class="sw"><i style="background:#191826"></i><b>Sockel</b><em>#191826</em></div>
+    <div class="sw"><i style="background:#413d5c"></i><b>Wand hell</b><em>#413D5C</em></div>
+    <div class="sw"><i style="background:#312e49"></i><b>Wand rechts</b><em>#312E49</em></div>
+    <div class="sw"><i style="background:#1f1d34"></i><b>Wand links</b><em>#1F1D34</em></div>
+    <div class="sw"><i style="background:#14162a"></i><b>Glas</b><em>#14162A</em></div>
+    <div class="sw"><i style="background:#f2f4ff"></i><b>Licht</b><em>#F2F4FF</em></div>
+    <div class="sw"><i style="background:#ff4f9b"></i><b>Neon Pink</b><em>#FF4F9B</em></div>
+    <div class="sw"><i style="background:#61dfff"></i><b>Neon Cyan</b><em>#61DFFF</em></div>
+    <div class="sw"><i style="background:#ffe9d2"></i><b>Warmlicht</b><em>#FFE9D2</em></div>
+    <div class="sw"><i style="background:#3f8f6a"></i><b>Grün</b><em>#3F8F6A</em></div>
+  </div>
+  <script type="module" src="./neonref.js"></script>
+</body>
+</html>
