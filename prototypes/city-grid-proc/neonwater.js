@@ -76,6 +76,31 @@ function ripples(g, x0, x1, y0, y1, seed) {
   }
 }
 
+// The far water. `ripples` above thins its marks out towards the top, which is a PERSPECTIVE
+// convention — and this projection is parallel: there is no horizon and nothing shrinks with
+// distance. A surface that loses all its texture up there stops reading as a plane and starts
+// reading as a backdrop standing behind the island. So the far field keeps the same mark sizes as
+// the near one; only the light falls off, because the city is what lights the water.
+const FAR_TOP = -820;
+const FAR_BOTTOM = CORNER[1] - 140;                       // where the near field already covers
+// Light, not geometry: away from the city and out to the sides the water is simply darker.
+const farLight = (x, y) => 1 - 0.28 * Math.min(1, (FAR_BOTTOM - y) / 560)
+  - 0.12 * Math.min(1, Math.abs(x) / 1000);
+
+function farRipples(g, seed) {
+  const rand = rng(seed);
+  for (let n = 0; n < 2100; n++) {
+    const x = -1300 + rand() * 2600;
+    const y = FAR_TOP + rand() * (FAR_BOTTOM - FAR_TOP);
+    const fade = Math.min(1, (FAR_BOTTOM - y) / 170);      // no seam against the near field
+    const w = 5 + rand() * 30;
+    g.rect(x - w / 2, y, w, 1).fill({
+      color: rand() < 0.14 ? PAL.cyan : SEA.foam,
+      alpha: (0.05 + rand() * 0.12) * fade * farLight(x, y),
+    });
+  }
+}
+
 /* ---- rain, and the rings it leaves ------------------------------------------------------------ */
 
 // Two slow sources spreading wide rings — the wave treatment itself. They sit in open water,
@@ -106,6 +131,17 @@ function rings(g, t) {
     const r = 1.5 + f * 22;
     g.ellipse(x, y, r, r * 0.5)
       .stroke({ width: 0.4 + 1.1 * (1 - f), color: SEA.foam, alpha: 0.26 * (1 - f) * (1 - f) });
+  }
+  // The same rain falls on the far water, so the same rings are there — same size, dimmer.
+  for (let n = 0; n < 34; n++) {
+    const x = -1150 + rand() * 2300;
+    const y = FAR_TOP + 60 + rand() * (FAR_BOTTOM - FAR_TOP - 60);
+    const f = ((t / (2.4 + rand() * 2.6)) + rand()) % 1;
+    const r = 1.5 + f * 22;
+    g.ellipse(x, y, r, r * 0.5).stroke({
+      width: 0.4 + 1.1 * (1 - f), color: SEA.foam,
+      alpha: 0.26 * (1 - f) * (1 - f) * farLight(x, y),
+    });
   }
 }
 
@@ -283,12 +319,17 @@ async function main() {
   sea(water, X0, X1, Y0, Y1);
   const rippleG = new Graphics();
   ripples(rippleG, X0, X1, Y0, Y1, 0x51a7);
+  farRipples(rippleG, 0x7d13);
   const seaGlow = new Graphics();
   seaGlow.blendMode = "add";
   // The city throws its colour onto the water long before any reflection is resolved.
   pool(seaGlow, MIDI + 4, J1 + 5, 16, PAL.pink, 0.5);
   pool(seaGlow, I1 + 6, MIDJ, 15, PAL.cyan, 0.5);
   pool(seaGlow, MIDI - 6, J1 + 4, 13, PAL.white, 0.32);
+  // …and behind it too. Colour only in front of the island is what made the far water read as a
+  // different surface: a city lights the water on every side of itself.
+  pool(seaGlow, MIDI - 2, C0 - 9, 19, PAL.cyan, 0.3);
+  pool(seaGlow, MIDI + 9, C0 - 7, 15, PAL.pink, 0.24);
   // The rings sit under the reflections: the reflection is the subject, the rings are weather.
   const ringG = new Graphics();
   const reflect = new Graphics();
