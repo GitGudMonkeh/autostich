@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Küstenkante — sechs Varianten</title>
+<style>
+  html, body { margin: 0; }
+  body {
+    background:
+      radial-gradient(ellipse 80% 40% at 50% 62%, rgba(255,110,180,.16), transparent 66%),
+      radial-gradient(ellipse 70% 36% at 76% 58%, rgba(90,225,235,.14), transparent 62%),
+      linear-gradient(#8f95b3 0%, #7b8098 32%, #4e5473 62%, #343a58 100%);
+    color: #23263a; font-family: system-ui, sans-serif;
+  }
+  #hud { padding: 12px 16px; font-size: 13px; line-height: 1.5; color: #2b2f47;
+         background: rgba(255,255,255,.16); border-bottom: 1px solid rgba(255,255,255,.22); }
+  #hud b { color: #b3196b; }
+  #hud span { color: #106b83; }
+  #wrap { position: relative; }
+  #stage-host { position: relative; width: 100%; }
+  .cell { padding: 13px 17px; }
+  .cell h2 { margin: 0; font: 600 12px/1.2 ui-monospace, monospace; letter-spacing: .12em;
+             text-transform: uppercase; color: #1c5a6b; }
+  .cell h2 i { font-style: normal; color: #b3196b; margin-right: 7px; }
+  .cell h2 em { font-style: normal; font-size: 9px; letter-spacing: .1em; margin-left: 8px;
+                padding: 2px 6px; border-radius: 3px; vertical-align: 1px;
+                background: rgba(179,25,107,.15); color: #8d1355; }
+  .cell p { margin: 6px 0 0; font-size: 12px; line-height: 1.45; color: #3d4258; max-width: 44ch; }
+  .cell p b { color: #23263a; }
+  canvas { display: block; touch-action: pan-y !important; }
+  @media (max-width: 859px) { .cell p { max-width: none; } }
+</style>
+</head>
+<body>
+  <div id="hud">
+    <b>Wie die Stadt ans Wasser stößt.</b> Heute endet sie in einer Kaimauer von einem Geschoss, und die
+    ganze Platte liest sich deshalb als <span>Brett auf einem Tisch</span>. Drei Dinge fehlen, und jedes Feld fügt
+    eines davon hinzu: <b>Masse</b> — die Platte ist eine Scheibe mit gerader Schnittkante, Land hat Gewicht unter
+    der Wasserlinie und endet nie in einer geraden Linie. <b>Flachwasser</b> — an jeder Küste ist das Wasser flach
+    hell und wird nach außen dunkel; unser Meer wird nur <span>zum Betrachter hin</span> dunkler und weiß damit
+    nichts vom Land. <b>Berührung</b> — Brandung, nasser Fels, Schatten der Masse im Wasser.
+    Gleiches Deck, gleiche Häuser in jedem Feld; nur die Kante ist anders.
+  </div>
+  <div id="wrap">
+    <div id="stage-host"></div>
+  <div id="labels" style="position:absolute;inset:0;display:grid;grid-template-columns:repeat(2,1fr);grid-auto-rows:408px;pointer-events:none;z-index:10">
+    <div class="cell"><h2><i>U1</i>Kaimauer<em>heute</em></h2><p>Was der Bauer jetzt zeichnet: eine Mauer von einem Geschoss, gerade abgeschnitten. Die Platte bleibt eine Scheibe — deshalb liest sie sich als Brett auf einem Tisch.</p></div>
+    <div class="cell"><h2><i>U2</i>Klippe<em>Masse</em></h2><p>Fels unter dem Deck, mit Schichten und Geröll am Fuß. Entscheidend ist nicht der Fels, sondern die <b>unregelmäßige Unterkante</b>: eine gerade Kante ist gebaut, eine krumme ist gewachsen.</p></div>
+    <div class="cell"><h2><i>U3</i>Klippe + Flachwasser<em>Masse + Meer</em></h2><p>Dazu das Flachwasser: ums Land herum ist das Wasser heller und wird nach außen dunkler. Das Billigste mit der größten Wirkung — ein Meer, das nichts vom Land weiß, lässt das Land aufgeklebt aussehen.</p></div>
+    <div class="cell"><h2><i>U4</i>Brandung<em>alles drei</em></h2><p>Dazu die Berührung: Schaum, der an den Fels schlägt, und das nasse Band, das er hinterlässt. Erst hier steht die Stadt wirklich <b>im</b> Wasser.</p></div>
+    <div class="cell"><h2><i>U5</i>Flaches Ufer<em>weiche Variante</em></h2><p>Kies statt Wand: das Land läuft unter dem Wasser weiter, statt an ihm aufzuhören. Ruhiger und weniger dramatisch — eine Lagunenstadt statt einer Felsenstadt.</p></div>
+    <div class="cell"><h2><i>U6</i>Stelzen<em>gebaute Variante</em></h2><p>Das Deck steht auf Pfählen im Wasser, und man sieht darunter durch. Ganz künstlich, aber die einzige Variante, in der das Wasser sichtbar unter der Stadt weiterläuft.</p></div>
+  </div>
+  </div>
+  <script type="module" src="./jpedge.js"></script>
+</body>
+</html>
