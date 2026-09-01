@@ -3,9 +3,9 @@
 //
 // Same rules as the first interactive city, different assets and a different ground:
 //
-//   · You build ON THE WATER. There is no island underneath — every plot you place raises its own
-//     cliff out of the sea, and the city is whatever you have built so far. The coastline is the
-//     outline of what you built, so it changes shape with every plot.
+//   · You build ON THE WATER, starting from nothing. Every plot raises its own cliff out of the
+//     sea, and the coastline is the outline of whatever you have built — so it changes shape with
+//     every plot, and it is drawn from that outline rather than face by face.
 //   · Click a free tile to build. Up to FOUR buildings may stand directly adjacent and form a
 //     district; the fifth is refused with a red flash.
 //   · Streets are derived, never placed: every free tile touching a building becomes road, and
@@ -27,7 +27,7 @@ import { SEA, sea, ripples, farRipples, rings, rain, smear, passingBoat } from "
 
 const GRID = 11;
 const DISTRICT = 4;               // how many buildings may stand adjacent as one district
-// Heights, in lattice units above the water plane. The deck is what lifts the city clear of the sea. It is high because the face below it is a
+// Heights, in lattice units above the water plane. The deck is high because the face below it is a
 // CLIFF: the visible height of that face is exactly the height of the deck, so a low deck can only
 // ever be a kerb. The footway is the extra step a building plot stands on.
 const DECK = 4.6;
@@ -163,179 +163,177 @@ async function main() {
 
   /* ---- the coast --------------------------------------------------------------------------------- */
 
-  // Every side of a tile that stands in open water, as the lattice endpoints of that edge. Only
-  // the +i and +j faces of a box can be SEEN, so only those get rock — but the water itself goes
-  // all the way round, so the shallows and the foam use all four.
-  const SIDES = [
-    { d: [1, 0], out: [1, 0], seen: true, e: (r, c) => [hi(r), lo(c), hi(r), hi(c)] },
-    { d: [0, 1], out: [0, 1], seen: true, e: (r, c) => [lo(r), hi(c), hi(r), hi(c)] },
-    { d: [-1, 0], out: [-1, 0], seen: false, e: (r, c) => [lo(r), lo(c), lo(r), hi(c)] },
-    { d: [0, -1], out: [0, -1], seen: false, e: (r, c) => [lo(r), lo(c), hi(r), lo(c)] },
-  ];
+  // The coast is drawn from the island's OUTLINE, not face by face. Per-tile faces meet at hard
+  // right angles, and every corner the builder can produce — an outer corner, an inner notch, a
+  // one-tile spit, a diagonal pinch between two districts — would then be its own special case.
+  // Chained into loops there are no cases at all: the same strip of rock runs round whatever was
+  // built, and a corner is just a place where it turns.
+  //
+  // Orientation is fixed so that the four sides of a single tile chain head-to-tail into a loop;
+  // adjacent tiles then merge into one loop on their own.
+  function coastLoops() {
+    const segs = new Map();                       // start point -> segments leaving it
+    const push = (a, b, out) => {
+      const k = `${a[0]},${a[1]}`;
+      if (!segs.has(k)) segs.set(k, []);
+      segs.get(k).push({ a, b, out });
+    };
+    for (let r = 0; r < GRID; r++) for (let c = 0; c < GRID; c++) {
+      if (state.get(key(r, c)) === "water") continue;
+      const wet = (dr, dc) => !inGrid(r + dr, c + dc) || state.get(key(r + dr, c + dc)) === "water";
+      if (wet(1, 0)) push([hi(r), lo(c)], [hi(r), hi(c)], [1, 0]);
+      if (wet(0, 1)) push([hi(r), hi(c)], [lo(r), hi(c)], [0, 1]);
+      if (wet(-1, 0)) push([lo(r), hi(c)], [lo(r), lo(c)], [-1, 0]);
+      if (wet(0, -1)) push([lo(r), lo(c)], [hi(r), lo(c)], [0, -1]);
+    }
+    const loops = [];
+    let left = 0;
+    for (const list of segs.values()) left += list.length;
+    while (left) {
+      let startKey = null;
+      for (const [k, list] of segs) if (list.length) { startKey = k; break; }
+      const loop = [];
+      let k = startKey;
+      // A diagonal pinch has two segments leaving the same point; taking them one at a time is
+      // what keeps the two shores of the pinch separate instead of welding them together.
+      while (segs.has(k) && segs.get(k).length) {
+        const s = segs.get(k).pop();
+        left--;
+        loop.push(s);
+        k = `${s.b[0]},${s.b[1]}`;
+      }
+      if (loop.length >= 3) loops.push(loop);
+    }
+    return loops;
+  }
 
-  function edgesAround(r, c, seenOnly) {
+  // How far the rock leans out from under the deck at the waterline. Varying it along the coast is
+  // what turns a vertical extrusion into a mass: a cliff is wider at its foot than at its lip.
+  const bulge = (i, j) => 0.35 + 0.5 * (0.5 + 0.5 * Math.sin(i * 0.47 + j * 0.29 + 2.1))
+    + 0.25 * (0.5 + 0.5 * Math.sin(j * 0.83 - i * 0.61));
+
+  // One sample of the coast: where the rock leaves the deck, where it enters the water, and which
+  // way it faces. A face is only visible when its outward normal points towards the viewer, which
+  // in this projection is simply i + j > 0.
+  const sample = (i, j, n) => {
+    const b = bulge(i, j);
+    const bi = i + n[0] * b, bj = j + n[1] * b;
+    return { i, j, bi, bj, k: coastK(bi, bj), n, vis: n[0] + n[1] > 0.01 };
+  };
+
+  const SAMPLES = 4, CORNER_ARC = 3;
+
+  // Walk one loop into a list of samples: along each edge, then round each corner. Rounding the
+  // corner is the whole point — the top stays the square edge the deck sits on, while the foot
+  // swings round it on an arc, so the rock twists round the corner instead of meeting itself in a
+  // vertical crease.
+  function loopSamples(loop) {
     const out = [];
-    for (const s of SIDES) {
-      if (seenOnly && !s.seen) continue;
-      const [dr, dc] = s.d;
-      if (inGrid(r + dr, c + dc) && state.get(key(r + dr, c + dc)) !== "water") continue;
-      const [i0, j0, i1, j1] = s.e(r, c);
-      out.push({ i0, j0, i1, j1, out: s.out, seen: s.seen });
+    for (let m = 0; m < loop.length; m++) {
+      const s = loop[m], next = loop[(m + 1) % loop.length];
+      for (let n = 0; n < SAMPLES; n++) {
+        const f = n / SAMPLES;
+        out.push(sample(s.a[0] + (s.b[0] - s.a[0]) * f, s.a[1] + (s.b[1] - s.a[1]) * f, s.out));
+      }
+      if (next.out[0] === s.out[0] && next.out[1] === s.out[1]) continue;   // straight on
+      for (let n = 0; n <= CORNER_ARC; n++) {
+        const f = n / CORNER_ARC;
+        const ni = s.out[0] + (next.out[0] - s.out[0]) * f;
+        const nj = s.out[1] + (next.out[1] - s.out[1]) * f;
+        const len = Math.hypot(ni, nj) || 1;
+        out.push(sample(s.b[0], s.b[1], [ni / len, nj / len]));
+      }
     }
     return out;
   }
 
-  const openEdges = (r, c) => edgesAround(r, c, true);
-
-  // Sample an edge into points, each with the height at which the rock enters the water.
-  const SAMPLES = 5;
-  function coastLine(e) {
-    const pts = [];
-    for (let n = 0; n <= SAMPLES; n++) {
-      const f = n / SAMPLES;
-      const i = e.i0 + (e.i1 - e.i0) * f, j = e.j0 + (e.j1 - e.j0) * f;
-      pts.push({ i, j, k: coastK(i, j) });
-    }
-    return pts;
-  }
-
-  // The cliff: rock from the deck down to the waterline, in bands from a lit top to a dark foot.
-  // As one flat fill it sits at the same value as the water and disappears; the layering is what
-  // makes it read as rock rather than as a thicker slab.
-  const BANDS = 5;
-  function cliffFaces(g, glow, r, c, top) {
-    const edges = openEdges(r, c);
-    if (!edges.length) return;
-    const rand = rng((r * 8191) ^ (c * 65537) ^ 0x2c1);
-    for (const e of edges) {
-      const line = coastLine(e);
-      for (let n = 0; n < BANDS; n++) {
-        const f0 = n / BANDS, f1 = (n + 1) / BANDS;
-        const upper = line.map((p) => P(p.i, p.j, top + (p.k - top) * f0));
-        const lower = line.map((p) => P(p.i, p.j, top + (p.k - top) * f1));
-        const band = [...upper.flat(), ...lower.slice().reverse().flat()];
-        g.poly(band).fill(mixHex(ROCK.lit, ROCK.deep, Math.pow(f0, 0.62)));
-        // A line at every band boundary. Without them the face is a smooth wall: the strata are
-        // what make it read as rock rather than as a taller version of the old quay.
-        if (n) {
-          upper.forEach(([x, y], m) => (m ? g.lineTo(x, y) : g.moveTo(x, y)));
-          g.stroke({ width: 1, color: ROCK.deep, alpha: 0.45 });
-        }
-      }
-      // The wet band: the strip the sea keeps washing, darker than the rock above it.
-      const wetTop = line.map((p) => P(p.i, p.j, p.k + 0.42));
-      const wetBot = line.map((p) => P(p.i, p.j, p.k));
-      g.poly([...wetTop.flat(), ...wetBot.slice().reverse().flat()])
-        .fill({ color: ROCK.wet, alpha: 0.55 });
-      // Cracks down the face, and blocks fallen at its foot.
-      for (let n = 0; n < 5; n++) {
-        const f = rand();
-        const i = e.i0 + (e.i1 - e.i0) * f, j = e.j0 + (e.j1 - e.j0) * f;
-        const k0 = top - rand() * (top - coastK(i, j)) * 0.5;
-        g.moveTo(...P(i, j, k0)).lineTo(...P(i, j, k0 - 0.5 - rand() * 1.4))
-          .stroke({ width: 1, color: ROCK.deep, alpha: 0.5 });
-      }
-      for (let n = 0; n < 4; n++) {
-        const f = rand();
-        const i = e.i0 + (e.i1 - e.i0) * f + e.out[0] * (0.2 + rand() * 0.5);
-        const j = e.j0 + (e.j1 - e.j0) * f + e.out[1] * (0.2 + rand() * 0.5);
-        const [x, y] = P(i, j, coastK(i, j) - rand() * DROP);
-        const s = 2.5 + rand() * 5;
-        g.poly([x, y - s * 0.6, x + s, y, x, y + s * 0.6, x - s, y])
-          .fill({ color: rand() < 0.5 ? ROCK.block : ROCK.wet, alpha: 0.95 });
-      }
-      // The waterline, and the shadow the mass throws into the water beneath it.
-      const wl = line.map((p) => P(p.i, p.j, p.k));
-      const trace = (pts, dy) => {
-        pts.forEach(([x, y], n) => (n ? g.lineTo(x, y + dy) : g.moveTo(x, y + dy)));
-      };
-      trace(wl, 0);
-      g.stroke({ width: 1.6, color: SEA.foam, alpha: 0.45 });
-      for (let n = 1; n <= 4; n++) {
-        trace(wl, n * 2.4);
-        g.stroke({ width: 2.2, color: 0x05050c, alpha: 0.15 * (1 - n / 5) });
-      }
-      wl.forEach(([x, y], n) => (n ? glow.lineTo(x, y) : glow.moveTo(x, y)));
-      glow.stroke({ width: 5, color: PAL.cyan, alpha: 0.09 });
-      // A neon strip along the top of the cliff on some tiles: the city's outline seen from the
-      // water, and the light the reflection is largely made of.
-      if (rand() < 0.55) {
-        const hue = rand() < 0.5 ? PAL.pink : PAL.cyan;
-        const a = P(e.i0, e.j0, top - 0.12), b = P(e.i1, e.j1, top - 0.12);
-        g.moveTo(...a).lineTo(...b).stroke({ width: 1.8, color: hue, alpha: 0.85 });
-        glow.moveTo(...a).lineTo(...b).stroke({ width: 7, color: hue, alpha: 0.15 });
-      }
-    }
-  }
-
-  // The shallows: the water hugging the coast is lighter and darkens outward. Our sea otherwise
-  // only darkens towards the VIEWER, which says nothing about where the land is — and a sea that
-  // ignores the land is what makes the land look pasted on. This is the cheapest of the three
-  // things that sell an island, and the most effective.
-  const coastG = new Graphics();
+  const cliffG = new Graphics();
+  const cliffGlow = new Graphics();
+  cliffGlow.blendMode = "add";
+  const coastG = new Graphics();          // the shallows
+  const surfG = new Graphics();
+  // All four live between the sea and the city: the rock hangs BELOW every tile it belongs to, so
+  // one layer under the whole city sorts correctly and no tile can ever cover the wrong piece.
   coastG.zIndex = -198.5;
-  world.addChild(coastG);
-  const RINGS = 5, REACH = 2.6;
+  cliffG.zIndex = -196.6;
+  cliffGlow.zIndex = -196.5;
+  surfG.zIndex = -196.4;
+  world.addChild(coastG, cliffG, cliffGlow, surfG);
 
-  function drawShallows() {
+  let coast = [];                          // the sampled loops, kept for the foam
+  const BANDS = 5, RINGS = 5, REACH = 2.6;
+
+  function drawCoast() {
+    coast = coastLoops().map(loopSamples);
+    cliffG.clear();
+    cliffGlow.clear();
     coastG.clear();
-    for (let r = 0; r < GRID; r++) for (let c = 0; c < GRID; c++) {
-      if (state.get(key(r, c)) === "water") continue;
-      for (const e of edgesAround(r, c, false)) {
-        const line = coastLine(e);
-        for (let n = RINGS; n >= 1; n--) {
-          const d = REACH * (n / RINGS);
-          const near = line.map((p) => P(p.i, p.j, p.k));
-          const far = line.map((p) => P(p.i + e.out[0] * d, p.j + e.out[1] * d, p.k - 0.05));
-          coastG.poly([...near.flat(), ...far.reverse().flat()])
+    const rand = rng(0x2c17);
+    for (const pts of coast) {
+      const at = (s, f) => P(s.i + (s.bi - s.i) * f, s.j + (s.bj - s.j) * f, DECK + (s.k - DECK) * f);
+      for (let n = 0; n < pts.length; n++) {
+        const a = pts[n], b = pts[(n + 1) % pts.length];
+        // The shallows go all the way round: the far side has no visible rock, but it does have
+        // water, and a halo on two sides only reads as a cut-out.
+        for (let ring = RINGS; ring >= 1; ring--) {
+          const d = REACH * (ring / RINGS);
+          coastG.poly([
+            ...P(a.bi, a.bj, a.k), ...P(b.bi, b.bj, b.k),
+            ...P(b.bi + b.n[0] * d, b.bj + b.n[1] * d, b.k - 0.05),
+            ...P(a.bi + a.n[0] * d, a.bj + a.n[1] * d, a.k - 0.05)])
             .fill({ color: SHALLOW, alpha: 0.045 });
         }
-      }
-    }
-  }
-
-  // Surf: a broken bright line riding the waterline. One graphics per edge tile, because a single
-  // layer over the whole city would draw a near tile's foam across a building standing behind it.
-  const surfG = new Map();
-
-  function rebuildSurf() {
-    for (const [k, pair] of surfG) {
-      const [r, c] = k.split(",").map(Number);
-      if (state.get(k) === "water" || !edgesAround(r, c, false).length) {
-        pair.front.destroy(); pair.back.destroy(); surfG.delete(k);
-      }
-    }
-    for (let r = 0; r < GRID; r++) for (let c = 0; c < GRID; c++) {
-      const k = key(r, c);
-      if (state.get(k) === "water" || !edgesAround(r, c, false).length || surfG.has(k)) continue;
-      const front = new Graphics(), back = new Graphics();
-      front.zIndex = r + c + 0.22;
-      // Behind its own tile: at the far edges the land is nearer the viewer than the water, so
-      // foam drawn in front would sit on the road instead of on the sea.
-      back.zIndex = r + c - 0.6;
-      world.addChild(front, back);
-      surfG.set(k, { front, back });
-    }
-  }
-
-  function drawSurf(t) {
-    for (const [k, pair] of surfG) {
-      const [r, c] = k.split(",").map(Number);
-      pair.front.clear();
-      pair.back.clear();
-      for (const e of edgesAround(r, c, false)) {
-        const g = e.seen ? pair.front : pair.back;
-        for (let n = 0; n < 7; n++) {
-          const f = (n + 0.5) / 7;
-          const i = e.i0 + (e.i1 - e.i0) * f, j = e.j0 + (e.j1 - e.j0) * f;
-          const ph = (i * 1.7 + j * 2.3);
-          const a = 0.12 + 0.4 * Math.pow(Math.max(0, Math.sin(t * 1.1 + ph)), 2);
-          const swell = Math.sin(t * 1.3 + ph) * 0.05;
-          const [x, y] = P(i, j, coastK(i, j) + swell);
-          const w = 7 + ((n * 37) % 13);
-          g.rect(x - w / 2, y - 1, w, 2.2).fill({ color: SEA.foam, alpha: a });
-          g.rect(x - w * 0.7, y + 2, w * 1.4, 1.4).fill({ color: SEA.foam, alpha: a * 0.32 });
+        if (!a.vis || !b.vis) continue;
+        for (let band = 0; band < BANDS; band++) {
+          const f0 = band / BANDS, f1 = (band + 1) / BANDS;
+          cliffG.poly([...at(a, f0), ...at(b, f0), ...at(b, f1), ...at(a, f1)])
+            .fill(mixHex(ROCK.lit, ROCK.deep, Math.pow(f0, 0.62)));
         }
+        // A line at every band boundary. Without them the face is a smooth wall: the strata are
+        // what make it read as rock rather than as a taller version of the old quay.
+        for (let band = 1; band < BANDS; band++) {
+          const f = band / BANDS;
+          cliffG.moveTo(...at(a, f)).lineTo(...at(b, f))
+            .stroke({ width: 1, color: ROCK.deep, alpha: 0.4 });
+        }
+        cliffG.poly([...at(a, 0.86), ...at(b, 0.86), ...at(b, 1), ...at(a, 1)])
+          .fill({ color: ROCK.wet, alpha: 0.5 });          // the strip the sea keeps washing
+        cliffG.moveTo(...P(a.bi, a.bj, a.k)).lineTo(...P(b.bi, b.bj, b.k))
+          .stroke({ width: 1.5, color: SEA.foam, alpha: 0.4 });
+        for (let s = 1; s <= 4; s++) {                      // the shadow the mass throws down
+          const [ax, ay] = P(a.bi, a.bj, a.k), [bx, by] = P(b.bi, b.bj, b.k);
+          cliffG.moveTo(ax, ay + s * 2.4).lineTo(bx, by + s * 2.4)
+            .stroke({ width: 2.2, color: 0x05050c, alpha: 0.15 * (1 - s / 5) });
+        }
+        if (rand() < 0.35) {                                // blocks fallen at the foot
+          const [x, y] = P(a.bi + a.n[0] * (0.2 + rand() * 0.5),
+            a.bj + a.n[1] * (0.2 + rand() * 0.5), a.k - rand() * DROP);
+          const sz = 2.5 + rand() * 5;
+          cliffG.poly([x, y - sz * 0.6, x + sz, y, x, y + sz * 0.6, x - sz, y])
+            .fill({ color: rand() < 0.5 ? ROCK.block : ROCK.wet, alpha: 0.95 });
+        }
+        if (rand() < 0.16) {                                // a neon strip along the cliff lip
+          const hue = rand() < 0.5 ? PAL.pink : PAL.cyan;
+          cliffG.moveTo(...P(a.i, a.j, DECK - 0.12)).lineTo(...P(b.i, b.j, DECK - 0.12))
+            .stroke({ width: 1.8, color: hue, alpha: 0.85 });
+          cliffGlow.moveTo(...P(a.i, a.j, DECK - 0.12)).lineTo(...P(b.i, b.j, DECK - 0.12))
+            .stroke({ width: 7, color: hue, alpha: 0.15 });
+        }
+      }
+    }
+  }
+
+  // Surf: a broken bright line riding the waterline, all the way round.
+  function drawSurf(t) {
+    surfG.clear();
+    for (const pts of coast) {
+      for (const s of pts) {
+        const ph = s.bi * 1.7 + s.bj * 2.3;
+        const a = 0.12 + 0.4 * Math.pow(Math.max(0, Math.sin(t * 1.1 + ph)), 2);
+        const [x, y] = P(s.bi, s.bj, s.k + Math.sin(t * 1.3 + ph) * 0.05);
+        const w = 7 + ((Math.round(ph * 7) % 13) + 13) % 13;
+        surfG.rect(x - w / 2, y - 1, w, 2.2).fill({ color: SEA.foam, alpha: a });
+        surfG.rect(x - w * 0.7, y + 2, w * 1.4, 1.4).fill({ color: SEA.foam, alpha: a * 0.3 });
       }
     }
   }
@@ -355,7 +353,6 @@ async function main() {
     const glow = new Graphics();
     glow.blendMode = "add";
     node.addChild(g, glow);
-    cliffFaces(g, glow, r, c, DECK);
     g.poly(tilePoly(r, c, DECK)).fill(ROAD.asphalt);
     g.poly(tilePoly(r, c, DECK)).stroke({ width: 1.2, color: ROAD.edge, alpha: 0.3 });
     // Each road draws itself from its connections: a lane dash where the street runs on, a
@@ -438,11 +435,9 @@ async function main() {
     g.clear();
     glow.clear();
     const top = DECK + WALK;
-    cliffFaces(g, glow, r, c, top);
     const kerb = (dr, dc) => {
       const nk = key(r + dr, c + dc);
-      if (!inGrid(r + dr, c + dc) || state.get(nk) === "water") return;   // the quay drew it
-      if (state.get(nk) === "building") return;                            // podiums merge
+      if (inGrid(r + dr, c + dc) && state.get(nk) === "building") return;   // podiums merge
       const a = dr ? P(hi(r), lo(c), top) : P(lo(r), hi(c), top);
       const b = dr ? P(hi(r), hi(c), top) : P(hi(r), hi(c), top);
       g.poly([...a, ...b, b[0], b[1] + WALK * CS, a[0], a[1] + WALK * CS]).fill(ROAD.kerb);
@@ -607,8 +602,7 @@ async function main() {
       if (state.get(key(rr, cc)) === "road") drawRoad(rr, cc);
     }
     updateVents();
-    drawShallows();
-    rebuildSurf();
+    drawCoast();
     drawHarbour();
     updateBoats();
 
@@ -771,6 +765,7 @@ async function main() {
   // Everything that moves gets its OWN node, because it also has to sort: a car two tiles further
   // back belongs behind the tower in front of it, and one shared layer would put it on top.
   const agents = [];
+  let carBudget = 0, walkBudget = 0;
 
   function agent(kind) {
     const node = new Container();
@@ -779,7 +774,8 @@ async function main() {
     glow.blendMode = "add";
     node.addChild(g, glow);
     world.addChild(node);
-    const a = { kind, node, g, glow, path: null, u: 0, speed: 0, lane: 0, hue: PAL.cyan, seed: 0 };
+    const a = { kind, node, g, glow, slot: agents.filter((x) => x.kind === kind).length,
+      path: null, u: 0, speed: 0, lane: 0, hue: PAL.cyan, seed: 0 };
     respawn(a);
     agents.push(a);
     return a;
@@ -829,6 +825,7 @@ async function main() {
   }
 
   function stepAgent(a, dt, t) {
+    if (a.slot >= (a.kind === "car" ? carBudget : walkBudget)) { a.node.visible = false; return; }
     if (!a.node.visible || !a.path || a.path.length < 2) { respawn(a); return; }
     a.u += a.speed * dt;
     const segs = a.path.length - 1;
@@ -975,7 +972,10 @@ async function main() {
   // A bigger city is a busier port: the traffic on the water grows with what stands on it.
   const BOATS = [];
   function updateBoats() {
-    const want = Math.min(8, 2 + Math.floor(new Set([...owner.values()]).size / 4));
+    const town = new Set([...owner.values()]).size;
+    carBudget = Math.min(4, Math.floor(town / 4));
+    walkBudget = Math.min(14, Math.floor(town * 1.2));
+    const want = Math.min(8, 2 + Math.floor(town / 4));
     const rand = rng(0x50a7 + want);
     while (BOATS.length > want) BOATS.pop();
     while (BOATS.length < want) {
@@ -1012,11 +1012,7 @@ async function main() {
     },
   };
 
-  /* ---- a city to start from --------------------------------------------------------------------- */
-
-  // An empty grid does not show what the rules do. Three plots, placed apart, so the first click
-  // already has streets and a shoreline to grow against.
-  for (const [r, c] of [[4, 4], [6, 2], [2, 6], [7, 7]]) place(r, c);
+  drawCoast();
 }
 
 main().catch((err) => {
