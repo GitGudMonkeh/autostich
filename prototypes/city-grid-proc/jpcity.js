@@ -19,11 +19,11 @@
 
 import { Application, Graphics, Container } from "./vendor/pixi.min.mjs";
 import { CS, P, rng, dashLine } from "./buildings.js";
-import { PAL } from "./refRender.js";
+import { PAL, captureLights } from "./refRender.js";
 import { JP_BUILDINGS, TILE } from "./jpBuildings.js";
-import { SEA, sea, ripples, farRipples, rings, rain, smear } from "./waterRender.js";
+import { SEA, sea, ripples, farRipples, rings, rain, smear, passingBoat } from "./waterRender.js";
 
-const GRID = 7;
+const GRID = 11;
 const DISTRICT = 4;               // how many buildings may stand adjacent as one district
 // Heights, in lattice units above the water plane. The deck is what lifts the whole city clear of
 // the sea; the footway is the extra step a building plot stands on.
@@ -86,9 +86,16 @@ async function main() {
   const reflectG = new Graphics();
   reflectG.blendMode = "add";
   reflectG.zIndex = -197;
+  const ventG = new Graphics();
+  ventG.blendMode = "add";
+  ventG.zIndex = 800;
+  const boatG = new Graphics();
+  const boatGlow = new Graphics();
+  boatGlow.blendMode = "add";
+  boatG.zIndex = -196; boatGlow.zIndex = -195;
   const rainG = new Graphics();
   rainG.zIndex = 900;
-  world.addChild(water, rippleG, ringG, reflectG, rainG);
+  world.addChild(water, rippleG, ringG, reflectG, boatG, boatGlow, ventG, rainG);
 
   /* ---- the grid ------------------------------------------------------------------------------- */
 
@@ -163,6 +170,19 @@ async function main() {
       glow.moveTo(a[0], a[1] + (top + DROP) * CS).lineTo(b[0], b[1] + (top + DROP) * CS);
     }
     if (edges.length) glow.stroke({ width: 5, color: PAL.cyan, alpha: 0.1 });
+    // A neon strip on the quay wall itself, on some edge tiles. It is the city's outline seen from
+    // the water, and it is the light that the waterline reflection is actually made of.
+    const rand = rng((r * 8191) ^ (c * 65537) ^ 0x2c1);
+    if (edges.length && rand() < 0.55) {
+      const hue = rand() < 0.5 ? PAL.pink : PAL.cyan;
+      for (const [a, b] of edges) {
+        const yy = a[1] + (top + DROP * 0.45) * CS;
+        g.moveTo(a[0], yy).lineTo(b[0], b[1] + (top + DROP * 0.45) * CS)
+          .stroke({ width: 1.8, color: hue, alpha: 0.85 });
+        glow.moveTo(a[0], yy).lineTo(b[0], b[1] + (top + DROP * 0.45) * CS)
+          .stroke({ width: 7, color: hue, alpha: 0.15 });
+      }
+    }
   }
 
   /* ---- streets --------------------------------------------------------------------------------- */
@@ -217,6 +237,20 @@ async function main() {
           : [...P(at + s, along - 0.3, DECK + 0.01), ...P(at + s + 0.3, along - 0.3, DECK + 0.01),
             ...P(at + s + 0.3, along + 0.3, DECK + 0.01), ...P(at + s, along + 0.3, DECK + 0.01)];
         g.poly(q).fill({ color: ROAD.line, alpha: 0.4 });
+      }
+    }
+    // A lamp where streets actually cross — and not on every one of those either. In a derived
+    // network most tiles have three road neighbours, so "a lamp at every junction" put a pole on
+    // nearly every tile and the deck read as a forest. Nothing is placed by hand: the bigger the
+    // city, the more crossings it has, so the neon still grows with it.
+    const open = DIRS.filter(([dr, dc]) => roadAt(dr, dc)).length;
+    if (open === 4 && rng((r * 2749) ^ (c * 9721) ^ 0x1a7)() < 0.55) {
+      const [lx, ly] = P(hi(r) - 0.6, hi(c) - 0.6, DECK);
+      g.moveTo(lx, ly).lineTo(lx, ly - 2.6 * CS).stroke({ width: 1.3, color: PAL.steel, alpha: 0.75 });
+      g.circle(lx, ly - 2.6 * CS, 1.9).fill({ color: PAL.white, alpha: 0.95 });
+      glow.circle(lx, ly - 2.6 * CS, 6.5).fill({ color: PAL.white, alpha: 0.16 });
+      for (let n = 5; n >= 1; n--) {
+        glow.ellipse(lx, ly, 2.6 * CS * (n / 5), 1.3 * CS * (n / 5)).fill({ color: PAL.white, alpha: 0.035 });
       }
     }
     // Light pools only where a building actually stands next to the road. One on every tile read
@@ -417,6 +451,7 @@ async function main() {
     for (let rr = 0; rr < GRID; rr++) for (let cc = 0; cc < GRID; cc++) {
       if (state.get(key(rr, cc)) === "road") drawRoad(rr, cc);
     }
+    updateVents();
 
     const rs = cells.map(([rr]) => rr), cs = cells.map(([, cc]) => cc);
     const r0 = Math.min(...rs), r1 = Math.max(...rs), c0 = Math.min(...cs), c1 = Math.max(...cs);
@@ -445,7 +480,9 @@ async function main() {
     const body = new Graphics();
     const glow = new Graphics();
     glow.blendMode = "add";
-    def.draw(body, glow);
+    // The reflection is made of the building's OWN lights: every lit window and every sign reports
+    // where it is while it draws, so what lies on the water is this facade and not an average of it.
+    const sources = captureLights(() => def.draw(body, glow));
     // Two containers: the inner one moves the drawing so that local (0, 0) is the plot's ground
     // point, the outer one puts that point on the tile. The grow animation then collapses toward
     // the ground instead of toward whatever y the authoring happened to land on.
@@ -463,11 +500,15 @@ async function main() {
 
     // Its light on the water, if it stands on the shore: the smear starts at the plot's near
     // corner and is only drawn while there is open water in front of it.
-    lit.set(id, {
-      w: 22 + (r1 - r0 + c1 - c0) * 11,
-      height: 40 + (def.plot[0] + def.plot[1]) * 11,
-      colour: def.hue, strength: 0.5, r: r1, c: c1,
-    });
+    // Only the strongest survive: a facade has dozens of windows and the water cannot carry them
+    // all without turning into a stripe pattern. Signs outrank windows because they outshine them.
+    const picked = sources
+      .map((s) => ({ ...s, x: s.x - bx + ox, y: s.y - by + oy }))
+      .sort((a, b) => b.strength * b.w - a.strength * a.w)
+      .slice(0, 12);
+    // `colour` is the building's lead hue — what the district trim and the road pools ask for.
+    // The reflection uses `sources` instead, which is the real light rather than an average.
+    lit.set(id, { sources: picked, colour: def.hue, r: r1, c: c1 });
 
     // Projection → matter: the plot lands, then the building grows out of it.
     node.scale.set(1, 0.08);
@@ -498,9 +539,138 @@ async function main() {
     let n = 0;
     while (n < GRID && inGrid(r + n + 1, c + n + 1)
       && state.get(key(r + n + 1, c + n + 1)) !== "water") n++;
-    if (n > 3) return null;
+    if (n > 2) return null;                        // only what stands at the edge reaches the water
     const [x, y] = cornerOf(r + n, c + n, DECK);
-    return [x, y + (DECK + DROP) * CS + 3];
+    return [x, y + (DECK + DROP) * CS + 3, 1 - n * 0.32];
+  }
+
+  /* ---- life ---------------------------------------------------------------------------------- */
+
+  // Everything that moves gets its OWN node, because it also has to sort: a car two tiles further
+  // back belongs behind the tower in front of it, and one shared layer would put it on top.
+  const agents = [];
+
+  function agent(kind) {
+    const node = new Container();
+    const g = new Graphics();
+    const glow = new Graphics();
+    glow.blendMode = "add";
+    node.addChild(g, glow);
+    world.addChild(node);
+    const a = { kind, node, g, glow, r: 0, c: 0, u: 0, axis: "i", speed: 0, hue: PAL.cyan, seed: 0 };
+    respawn(a);
+    agents.push(a);
+    return a;
+  }
+
+  // Put an agent somewhere it belongs. Both live on the street: a walker set down on a building
+  // tile walks THROUGH the building, and the building — drawn later — hides it completely. So a
+  // walker takes a road tile that touches a plot and keeps to the kerb.
+  function respawn(a) {
+    const spots = [];
+    for (let r = 0; r < GRID; r++) for (let c = 0; c < GRID; c++) {
+      if (state.get(key(r, c)) !== "road") continue;
+      if (a.kind === "walker" && !touchesBuilding(r, c)) continue;
+      spots.push([r, c]);
+    }
+    if (!spots.length) { a.node.visible = false; return; }
+    a.node.visible = true;
+    a.seed = Math.floor(Math.random() * 1e6);
+    const [r, c] = spots[Math.floor(Math.random() * spots.length)];
+    a.r = r; a.c = c;
+    a.axis = Math.random() < 0.5 ? "i" : "j";
+    a.u = -0.5;
+    a.speed = a.kind === "car" ? 1.6 + Math.random() * 1.4 : 0.5 + Math.random() * 0.4;
+    a.hue = [PAL.cyan, PAL.pink, PAL.white, PAL.warm][Math.floor(Math.random() * 4)];
+    // Cars keep to the middle, people to the kerb.
+    a.lane = (Math.random() < 0.5 ? -1 : 1) * (a.kind === "car" ? 0.9 : 1.55);
+  }
+
+  function stepAgent(a, dt, t) {
+    if (!a.node.visible) { respawn(a); return; }
+    a.u += a.speed * dt;
+    if (a.u > TILE + 0.5) {                      // moved off its tile: carry on or find a new one
+      a.u -= TILE + 1;
+      const [dr, dc] = a.axis === "i" ? [1, 0] : [0, 1];
+      const nr = a.r + dr, nc = a.c + dc;
+      if (!inGrid(nr, nc) || state.get(key(nr, nc)) !== "road") { respawn(a); return; }
+      a.r = nr; a.c = nc;
+    }
+    if (state.get(key(a.r, a.c)) !== "road") { respawn(a); return; }
+    a.g.clear();
+    a.glow.clear();
+    const mid = (x) => x * TILE + (TILE - 1) / 2;
+    const i = a.axis === "i" ? lo(a.r) + a.u : mid(a.r) + a.lane;
+    const j = a.axis === "i" ? mid(a.c) + a.lane : lo(a.c) + a.u;
+    a.node.zIndex = a.r + a.c + 0.32;
+    if (a.kind === "car") car(a.g, a.glow, i, j, a.axis, a.hue, DECK);
+    else walker(a.g, a.glow, i, j, a.hue, t + a.seed);
+  }
+
+  // A car: tiny, dark, identified by its lights. At this size a modelled car is mush; two lights
+  // and a shadow read instantly.
+  function car(g, glow, i, j, dir, hue, k) {
+    const L = 1.1, W = 0.45, H = 0.42;
+    const b = dir === "i"
+      ? { i0: i - L, i1: i + L, j0: j - W, j1: j + W }
+      : { i0: i - W, i1: i + W, j0: j - L, j1: j + L };
+    const [sx, sy] = P(i, j, k);
+    g.ellipse(sx, sy + 1, (dir === "i" ? L : W) * CS * 1.2, CS * 0.32).fill({ color: 0x000000, alpha: 0.35 });
+    g.poly([...P(b.i1, b.j0, k), ...P(b.i1, b.j1, k), ...P(b.i1, b.j1, k + H), ...P(b.i1, b.j0, k + H)])
+      .fill(0x231f38);
+    g.poly([...P(b.i0, b.j1, k), ...P(b.i1, b.j1, k), ...P(b.i1, b.j1, k + H), ...P(b.i0, b.j1, k + H)])
+      .fill(0x191530);
+    g.poly([...P(b.i0, b.j0, k + H), ...P(b.i1, b.j0, k + H),
+      ...P(b.i1, b.j1, k + H), ...P(b.i0, b.j1, k + H)]).fill(0x2e2a48);
+    const head = dir === "i" ? P(b.i1, j, k + H * 0.6) : P(i, b.j1, k + H * 0.6);
+    const tail = dir === "i" ? P(b.i0, j, k + H * 0.6) : P(i, b.j0, k + H * 0.6);
+    g.circle(head[0], head[1], 1.2).fill({ color: PAL.white, alpha: 0.95 });
+    g.circle(tail[0], tail[1], 1).fill({ color: PAL.pink, alpha: 0.9 });
+    glow.circle(head[0], head[1], 5).fill({ color: PAL.white, alpha: 0.16 });
+    glow.circle(tail[0], tail[1], 4).fill({ color: PAL.pink, alpha: 0.14 });
+    for (let n = 4; n >= 1; n--) {
+      glow.ellipse(sx, sy, 1.4 * CS * (n / 4), 0.7 * CS * (n / 4)).fill({ color: hue, alpha: 0.05 });
+    }
+  }
+
+  // A person: two pixels and a shadow, with the bob that makes them read as walking rather than
+  // sliding. Anything more detailed at this scale is a smudge.
+  function walker(g, glow, i, j, hue, t) {
+    const k = DECK;
+    const [x, y] = P(i, j, k);
+    const bob = Math.abs(Math.sin(t * 3.4)) * 1.6;
+    g.ellipse(x, y + 1, 2.2, 1.1).fill({ color: 0x000000, alpha: 0.4 });
+    g.rect(x - 1, y - 6.2 - bob, 2, 5).fill({ color: 0x2a2540, alpha: 0.95 });
+    g.rect(x - 1, y - 7.6 - bob, 2, 1.8).fill({ color: hue, alpha: 0.85 });
+    glow.circle(x, y - 5.5 - bob, 4).fill({ color: hue, alpha: 0.14 });
+  }
+
+  // Steam out of the deck. Cheap, and it is what stops a street reading as a printed board.
+  const vents = [];
+  function drawVents(t) {
+    ventG.clear();
+    for (const v of vents) {
+      if (state.get(key(v.r, v.c)) !== "road") continue;
+      const [x, y] = P(v.i, v.j, DECK);
+      for (let n = 0; n < 4; n++) {
+        const f = ((t * 0.28 + v.phase + n / 4) % 1);
+        ventG.ellipse(x + Math.sin(f * 3 + v.phase) * 5, y - f * 34, 4 + f * 13, (4 + f * 13) * 0.55)
+          .fill({ color: 0xbcc6ff, alpha: 0.09 * (1 - f) * (1 - f) });
+      }
+    }
+  }
+
+  function updateVents() {
+    vents.length = 0;
+    for (let r = 0; r < GRID; r++) for (let c = 0; c < GRID; c++) {
+      if (state.get(key(r, c)) !== "road") continue;
+      const rand = rng((r * 6151) ^ (c * 24593) ^ 0x71fe);
+      if (rand() > 0.3) continue;
+      vents.push({
+        r, c, phase: rand() * 6.3,
+        i: lo(r) + 0.6 + rand() * (TILE - 1.2), j: lo(c) + 0.6 + rand() * (TILE - 1.2),
+      });
+    }
   }
 
   /* ---- frame ---------------------------------------------------------------------------------- */
@@ -515,18 +685,34 @@ async function main() {
   recentre();
   app.renderer.on("resize", recentre);
 
-  let lastRefl = -1;
+  let lastRefl = -1, lastT = performance.now() / 1000;
   app.ticker.add(() => {
     const t = performance.now() / 1000;
+    const dt = Math.min(0.05, t - lastT);
+    lastT = t;
     rings(ringG, t, CORNER);
     rain(rainG, t);
+    for (const a of agents) stepAgent(a, dt, t);
+    drawVents(t);
+    boatG.clear();
+    boatGlow.clear();
+    for (const b of BOATS) {
+      const x = ((t * b.speed + b.off) % 2400) - 1200;
+      passingBoat(boatG, boatGlow, x * b.dir, b.y, t, b.hue);
+    }
     if (t - lastRefl > 0.05) {                     // the reflections carry the water, at ~20 fps
       lastRefl = t;
       reflectG.clear();
       for (const l of lit.values()) {
         const shore = shoreBelow(l.r, l.c);
         if (!shore) continue;
-        smear(reflectG, shore[0], shore[1], l.w, l.height, l.colour, l.strength, t);
+        for (const s of l.sources) {
+          // How high the light stands over the waterline decides how far its reflection runs —
+          // that is what makes a tower's smear long and a shopfront's short.
+          const rise = Math.max(8, shore[1] - s.y);
+          smear(reflectG, s.x, shore[1], Math.max(5, s.w * 0.85), rise * 0.75,
+            s.colour, Math.min(0.5, 0.2 * s.strength) * shore[2], t);
+        }
       }
     }
   });
@@ -549,11 +735,19 @@ async function main() {
     },
   };
 
+  const BOATS = [
+    { speed: 26, off: 0, y: CORNER[1] + 210, dir: 1, hue: PAL.warm },
+    { speed: 19, off: 900, y: CORNER[1] + 330, dir: -1, hue: PAL.cyan },
+    { speed: 14, off: 1700, y: CORNER[1] - 520, dir: 1, hue: PAL.warm },
+  ];
+  for (let n = 0; n < 7; n++) agent("car");
+  for (let n = 0; n < 20; n++) agent("walker");
+
   /* ---- a city to start from --------------------------------------------------------------------- */
 
   // An empty grid does not show what the rules do. Three plots, placed apart, so the first click
   // already has streets and a shoreline to grow against.
-  for (const [r, c] of [[2, 2], [4, 1], [1, 4]]) place(r, c);
+  for (const [r, c] of [[4, 4], [6, 2], [2, 6], [7, 7]]) place(r, c);
 }
 
 main().catch((err) => {

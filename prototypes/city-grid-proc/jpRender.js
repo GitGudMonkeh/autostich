@@ -13,7 +13,7 @@
 //      would be mush, and invented ones would be wrong.
 
 import { P, CS, rng } from "./buildings.js";
-import { PAL, shade, topFace, rp, lp, quad } from "./refRender.js";
+import { PAL, shade, topFace, rp, lp, quad, emitLight, quadLight } from "./refRender.js";
 
 export const JP = {
   screen: 0x120f1f,
@@ -62,6 +62,7 @@ export function ledScreen(g, glow, b, side, seed, hue = PAL.cyan) {
   g.poly(quad(f, b, u0, u1, v0, v1)).stroke({ width: 2.6, color: PAL.white, alpha: 0.95 });
   glow.poly(quad(f, b, u0 - 0.06, u1 + 0.06, v0 - 0.05, v1 + 0.04)).fill({ color: hue, alpha: 0.16 });
   glow.poly(quad(f, b, u0 - 0.16, u1 + 0.16, v0 - 0.13, v1 + 0.1)).fill({ color: hue, alpha: 0.07 });
+  quadLight(quad(f, b, u0, u1, v0, v1), hue, 4);
 }
 
 /* ---- signs ------------------------------------------------------------------------------------ */
@@ -86,6 +87,7 @@ export function signStack(g, glow, b, side, seed) {
         .fill({ color: hue, alpha: 0.6 + rand() * 0.35 });
     }
     glow.poly(quad(f, b, u0 - 0.05, u1 + 0.05, v - 0.02, v + h + 0.02)).fill({ color: hue, alpha: 0.13 });
+    quadLight(quad(f, b, u0, u1, v, v + h), hue, 1.6);
     v += h + 0.025 + rand() * 0.045;
     n++;
   }
@@ -101,6 +103,7 @@ export function marquee(g, glow, b, side, hue = PAL.warm) {
     g.poly(quad(f, b, u, u + 0.03, v0 + 0.05, v1 - 0.05)).fill({ color: PAL.white, alpha: 0.85 });
   }
   glow.poly(quad(f, b, -0.02, 1.02, v0 - 0.06, v1 + 0.06)).fill({ color: hue, alpha: 0.18 });
+  quadLight(quad(f, b, 0.04, 0.96, v0, v1), hue, 2.6);
 }
 
 /* ---- head height ------------------------------------------------------------------------------ */
@@ -129,6 +132,7 @@ export function lanterns(g, glow, b, side, k, n = 4) {
     g.ellipse(x, y + CS * 0.2, CS * 0.24, CS * 0.3).fill({ color: JP.lantern, alpha: 0.95 });
     g.ellipse(x, y + CS * 0.2, CS * 0.24, CS * 0.3).stroke({ width: 1, color: JP.red, alpha: 0.6 });
     glow.circle(x, y + CS * 0.2, CS * 0.75).fill({ color: JP.lantern, alpha: 0.16 });
+    emitLight(x, y + CS * 0.5, CS * 0.5, JP.lantern, 0.5);
   }
 }
 

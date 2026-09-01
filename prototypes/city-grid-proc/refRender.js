@@ -53,6 +53,34 @@ export const rp = (b, u, v) => P(b.i1 + 0.5, b.j0 - 0.5 + u * (b.j1 - b.j0 + 1),
 export const lp = (b, u, v) => P(b.i0 - 0.5 + u * (b.i1 - b.i0 + 1), b.j1 + 0.5, b.k0 + v * (b.k1 - b.k0 + 1));
 export const quad = (f, b, u0, u1, v0, v1) => [...f(b, u0, v0), ...f(b, u1, v0), ...f(b, u1, v1), ...f(b, u0, v1)];
 
+/* ---- light capture ---------------------------------------------------------------------------- */
+
+// A page that needs to know where a facade's lights actually ARE — a water reflection made of the
+// real windows rather than one average colour per building — wraps the drawing in captureLights().
+// Off by default: when nothing is capturing, emitLight costs one null check.
+let lightSink = null;
+
+export function captureLights(draw) {
+  const out = [];
+  const prev = lightSink;
+  lightSink = out;
+  try { draw(); } finally { lightSink = prev; }
+  return out;
+}
+
+// One light, in the same coordinates the drawing used: centre, the height of its lowest edge,
+// its width, its colour, and how much of the picture it is worth.
+export function emitLight(x, y, w, colour, strength = 1) {
+  if (lightSink) lightSink.push({ x, y, w, colour, strength });
+}
+
+// The centre and footprint of a face quad, which is what a light emitted from a window reports.
+export function quadLight(q, colour, strength) {
+  const xs = [q[0], q[2], q[4], q[6]], ys = [q[1], q[3], q[5], q[7]];
+  const x0 = Math.min(...xs), x1 = Math.max(...xs);
+  emitLight((x0 + x1) / 2, Math.max(...ys), x1 - x0, colour, strength);
+}
+
 /* ---- windows ------------------------------------------------------------------------------- */
 
 // One window. Dark glass, a bright core, a wash of neon inside it, and — the part that does the
@@ -83,6 +111,7 @@ export function window0(g, glow, f, b, u0, u1, v0, v1, temp, lit, rand) {
     .fill({ color: t.wash, alpha: 0.1 });
   glow.poly(quad(f, b, u0 - du, u1 + du, v0 - dv, v1 + dv)).fill({ color: t.wash, alpha: 0.05 });
   glow.poly(q).fill({ color: t.core, alpha: 0.12 });
+  quadLight(q, t.wash, 0.7);
 }
 
 // A wall of windows: one row per storey, two or three tall panes per row, with a slab band
@@ -177,6 +206,7 @@ export function signBox(g, glow, b, k, hue = PAL.pink) {
     }
     glow.poly([...fn(-0.1, -0.05), ...fn(1.1, -0.05), ...fn(1.1, 1.05), ...fn(-0.1, 1.05)])
       .fill({ color: hue, alpha: 0.14 });
+    quadLight([...fn(0.12, 0.16), ...fn(0.88, 0.16), ...fn(0.88, 0.84), ...fn(0.12, 0.84)], hue, 2.2);
   }
 }
 
@@ -200,6 +230,7 @@ export function signPylon(g, glow, b, hue = PAL.pink) {
   }
   glow.poly([rect[0] - 6, rect[1] - 7, rect[2] + 6, rect[3] - 7,
     rect[4] + 6, rect[5] + 7, rect[6] - 6, rect[7] + 7]).fill({ color: hue, alpha: 0.16 });
+  quadLight(rect, hue, 2);
 }
 
 // A neon square on the wall itself: frame plus two glyph bars, with a halo the size of the wall.
@@ -214,6 +245,7 @@ export function facadeSign(g, glow, b, hue = PAL.pink) {
   g.poly(quad(f, b, u0 + iu, u1 - iu, v0 + iv, v1 - iv)).stroke({ width: 1.6, color: hue, alpha: 0.7 });
   glow.poly(quad(f, b, u0 - 0.12, u1 + 0.12, v0 - 0.1, v1 + 0.1)).fill({ color: hue, alpha: 0.16 });
   glow.poly(quad(f, b, u0 - 0.25, u1 + 0.25, v0 - 0.2, v1 + 0.2)).fill({ color: hue, alpha: 0.07 });
+  quadLight(quad(f, b, u0, u1, v0, v1), hue, 2.4);
 }
 
 /* ---- the block ----------------------------------------------------------------------------- */

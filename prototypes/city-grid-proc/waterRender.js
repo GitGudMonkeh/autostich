@@ -165,3 +165,23 @@ export function smear(g, x, top, w, height, colour, strength, t) {
   // The bright core right under the shore, where the reflection is still coherent.
   g.rect(x - w * 0.34, top + 3, w * 0.68, 5).fill({ color: PAL.white, alpha: 0.3 * strength });
 }
+
+/* ---- what passes by ------------------------------------------------------------------------------ */
+
+// A boat crossing the open water, in screen space — a moored boat belongs to its jetty and is
+// drawn in lattice coordinates, but a passing one only ever needs a track across the picture.
+// Same idea as the cars: it is recognised by its lights, not by its shape.
+export function passingBoat(g, glow, x, y, t, colour = PAL.warm) {
+  const bob = Math.sin(t * 0.9 + x * 0.01) * 1.6;
+  const yy = y + bob;
+  g.poly([x - 17, yy, x + 17, yy, x + 12, yy + 5, x - 12, yy + 5]).fill(0x1d1a2e);
+  g.poly([x - 6, yy - 7, x + 7, yy - 7, x + 7, yy, x - 6, yy]).fill(0x241f38);
+  g.rect(x - 4, yy - 5.5, 10, 3).fill({ color: colour, alpha: 0.9 });
+  g.moveTo(x - 11, yy - 2).lineTo(x - 11, yy - 15).stroke({ width: 1.1, color: PAL.steel, alpha: 0.7 });
+  g.circle(x - 11, yy - 15, 1.5).fill({ color: PAL.white, alpha: 0.95 });
+  glow.circle(x - 11, yy - 15, 5.5).fill({ color: colour, alpha: 0.18 });
+  for (let n = 0; n < 6; n++) {                             // its own smear on the water
+    glow.rect(x - 10 + Math.sin(t * 1.4 + n) * 2.4, yy + 6 + n * 3.2, 20, 2)
+      .fill({ color: colour, alpha: 0.11 * (1 - n / 6) });
+  }
+}
