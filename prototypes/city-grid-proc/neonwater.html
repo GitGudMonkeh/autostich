@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Insel im Wasser — Neon City</title>
+<style>
+  /* The whole point of this study: the ground is LIGHT. The city is the dark thing on it. */
+  html, body { margin: 0; height: 100%; }
+  body {
+    background:
+      radial-gradient(ellipse 80% 40% at 50% 62%, rgba(255,110,180,.16), transparent 66%),
+      radial-gradient(ellipse 70% 36% at 76% 58%, rgba(90,225,235,.14), transparent 62%),
+      linear-gradient(#8f95b3 0%, #7b8098 32%, #4e5473 62%, #343a58 100%);
+    color: #23263a; font-family: system-ui, sans-serif;
+  }
+  #hud { padding: 12px 16px; font-size: 13px; line-height: 1.5; color: #2b2f47;
+         background: rgba(255,255,255,.16); border-bottom: 1px solid rgba(255,255,255,.22); }
+  #hud b { color: #b3196b; }
+  #hud span { color: #106b83; }
+  #stage-host { position: relative; height: min(70vh, 720px); }
+  canvas { display: block; }
+  #swatches { display: flex; flex-wrap: wrap; gap: 10px; padding: 14px 16px 22px; }
+  .sw { width: 92px; }
+  .sw i { display: block; height: 34px; border-radius: 4px; border: 1px solid rgba(0,0,0,.18); }
+  .sw b { display: block; font: 600 10px/1.6 ui-monospace, monospace; letter-spacing: .06em;
+          color: #23263a; text-transform: uppercase; }
+  .sw em { display: block; font: 400 10px/1.4 ui-monospace, monospace; color: #4a4f68; font-style: normal; }
+  @media (max-width: 819px) { #stage-host { height: 54vh; } .sw { width: 76px; } }
+</style>
+</head>
+<body>
+  <div id="hud">
+    <b>Insel.</b> Dieselbe Stadt, aber alles außerhalb der bebauten Fläche ist Wasser. Wasser ist hier keine blaue Fläche,
+    sondern ein <span>aufgerauter Spiegel</span>: die Oberfläche selbst ist dunkel und fast farblos, sie wird zum Betrachter hin
+    tiefer, und alles Sichtbare darauf ist <span>Licht von woanders</span> — die Spiegelung jedes beleuchteten Hauses,
+    senkrecht gestreckt und in Wellenscheiben zerschnitten. Dazu eine helle Wasserlinie an der Kaimauer und der dunkle
+    Kontaktschatten darunter; erst der lässt die Insel <span>im</span> Wasser stehen statt darüber zu schweben.
+  </div>
+  <div id="stage-host"></div>
+  <div id="swatches">
+    <div class="sw"><i style="background:#39406a"></i><b>Wasser fern</b><em>#39406A</em></div>
+    <div class="sw"><i style="background:#141a30"></i><b>Wasser nah</b><em>#141A30</em></div>
+    <div class="sw"><i style="background:#0b0a12"></i><b>Kaimauer</b><em>#0B0A12</em></div>
+    <div class="sw"><i style="background:#d8e2ff"></i><b>Wasserlinie</b><em>#D8E2FF</em></div>
+    <div class="sw"><i style="background:#0f0e19"></i><b>Asphalt</b><em>#0F0E19</em></div>
+    <div class="sw"><i style="background:#2a2743"></i><b>Gehweg</b><em>#2A2743</em></div>
+    <div class="sw"><i style="background:#ff4f9b"></i><b>Neon Pink</b><em>#FF4F9B</em></div>
+    <div class="sw"><i style="background:#61dfff"></i><b>Neon Cyan</b><em>#61DFFF</em></div>
+  </div>
+  <script type="module" src="./neonwater.js"></script>
+</body>
+</html>
