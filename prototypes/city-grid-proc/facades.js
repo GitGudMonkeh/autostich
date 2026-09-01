@@ -149,6 +149,10 @@ async function main() {
   const app = new Application();
   await app.init({ resizeTo: host, backgroundAlpha: 0, antialias: true });
   host.appendChild(app.canvas);
+  // Pixi puts touch-action:none on its canvas. The canvas here is taller than a phone screen,
+  // so that swallows every swipe and the page cannot be scrolled. Nothing on it is interactive.
+  app.stage.eventMode = "none";
+  app.canvas.style.touchAction = "pan-y";
 
   // 3 buildings × 3 facade variants — the matrix is the deliverable, so it is laid out as one.
   const panels = [];

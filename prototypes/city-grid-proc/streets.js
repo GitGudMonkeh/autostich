@@ -234,6 +234,10 @@ async function main() {
   const app = new Application();
   await app.init({ resizeTo: host, backgroundAlpha: 0, antialias: true });
   host.appendChild(app.canvas);
+  // Pixi puts touch-action:none on its canvas. The canvas here is taller than a phone screen,
+  // so that swallows every swipe and the page cannot be scrolled. Nothing on it is interactive.
+  app.stage.eventMode = "none";
+  app.canvas.style.touchAction = "pan-y";
 
   const panels = [...STREETS, ...PIECES].map((d, n) => {
     const p = streetPanel(d, n + 1);
