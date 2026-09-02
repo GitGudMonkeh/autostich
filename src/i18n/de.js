@@ -8,20 +8,18 @@
    - Tuning-Zahlen aus den Konstanten interpolieren (Template-Literal), nicht abtippen.
    - Plural: Schlüsselpaare `…_one` / `…_other`, ausgewählt über die Variable `count`.
    ============================================================ */
-import { LEG_PHASE_CYCLE, FORMATION_LABELS, SUITS } from "../game/constants.js";
+import { FORMATION_LABELS, SUITS } from "../game/constants.js";
 import { TIER_META } from "../game/rarity.js";
 import { SKILL_LIST, ARCHETYPE_META } from "../game/skills.js";
 import { PERK_DEFS, CATEGORIES as PERK_CATS } from "../game/perks.js";
 import { FAMILY_LIST } from "../game/families.js";
 import { ARCHITECT_FAMILIES } from "../game/architect.js";
-import { NODES, BRANCHES } from "../game/progression.js";
 import { WEEK_MODS } from "../game/weekMods.js";
 import { GLOSSARY, GLOSSARY_CATEGORIES, GLOSSARY_GROUPS } from "../game/glossary.js";
 import { GLACIER_FORM_LABEL } from "../game/glacier.js";
 import { DECK_DEFS, BF_SUFFIX } from "../game/cosmetics.js";
 import { GLOBAL_FX } from "../game/themes.js";
 import { ARCH_CAT } from "../ui/indicators/vocab.js";
-import { guideStrings } from "./guideWalk.js";
 
 /* Register-Einträge werden aus dem Register ERZEUGT, nicht abgetippt: die deutschen Namen leben
    weiter genau einmal (in rarity.js bzw. constants.js), und dieser Katalog ist ihre Ansicht.
@@ -56,14 +54,6 @@ for (const f of FAMILY_LIST) {
     if (d) fromRegistries[`family.${f.id}.tier${tr}.desc`] = d;
   }
 }
-for (const n of NODES) {
-  fromRegistries[`node.${n.id}.label`] = n.label;
-  if (n.detail) fromRegistries[`node.${n.id}.detail`] = n.detail;
-}
-for (const b of BRANCHES) {
-  fromRegistries[`branch.${b.key}.name`] = b.name;
-  fromRegistries[`branch.${b.key}.desc`] = b.desc;
-}
 /* Wochen-Mods: `desc` ist eine Funktion der Stärke (v). Ruft man sie MIT DEM PLATZHALTER auf,
    liefert sie genau die Vorlage zurück — so wandert der Satz ins Katalog-Format, ohne ihn
    abzutippen und ohne die Funktion zweimal zu pflegen. */
@@ -92,8 +82,6 @@ for (const f of GLOBAL_FX) {
   fromRegistries[`fx.${f.key}.name`] = f.name;
   if (f.desc) fromRegistries[`fx.${f.key}.desc`] = f.desc;
 }
-// Archetyp-Leitfäden: EIN Baum-Durchlauf sammelt alle Anzeigetexte (src/i18n/guideText.js).
-Object.assign(fromRegistries, guideStrings());
 // Architekt-Gebäude: NUR die Namen. Die Effekttexte werden erzeugt (src/i18n/buildingText.js).
 for (const b of Object.values(ARCHITECT_FAMILIES)) fromRegistries[`building.${b.id}.name`] = b.name;
 // Nur anbietbare Perks — `offerable: false` sind Alt-Einträge, die kein Spieler je sieht.
@@ -162,23 +150,6 @@ export default {
   "gameover.perTrick": "Ø {score}/Stich",
   "gameover.cycles_one": "{count} Durchlauf",
   "gameover.cycles_other": "{count} Durchläufe",
-  "gameover.milestones": "💠 Meilensteine {done}/{total}",
-  "gameover.milestones.max": "Maximum",
-  "gameover.milestones.next": "nächster bei {n} Mio",
-  "gameover.welcome": "✦ Willkommensbonus",
-  "gameover.welcome.hint": "für deinen ersten abgeschlossenen Lauf. Steck sie in die Deck-Werkstatt und hol dir ein Pack.",
-  "gameover.welcome.value": "+{n} DP",
-  "gameover.sp": "Stichpunkte",
-  "gameover.dp": "Deck-Punkte",
-  "gameover.unlocked.inline": "✦ Freigeschaltet: {label}",
-  "gameover.progress.saved": "Fortschritt gesichert",
-  "gameover.progress.done": "Lauf abgeschlossen",
-  "gameover.skins.title": "★ Neu freigeschaltet",
-  "gameover.skins.hint": "Auswählbar im Menü unter „Deck“.",
-  "gameover.unlocked.title": "✦ Freigeschaltet",
-  "gameover.nav.workshop": "Zur Werkstatt",
-  "gameover.nav.upgrades": "Zu den Upgrades",
-  "gameover.nav.leaderboard": "Zur Rangliste",
   // #go-ruhe: Kopf-Kennzahlenreihe (nur Desktop) + Bestleistungs-Panel.
   "gameover.kpi.duration": "Dauer",
   "gameover.kpi.tricks": "Stiche",
@@ -452,8 +423,6 @@ export default {
   "format.short.giga": "{n} Mrd.",
   "format.short.tera": "{n} Bio.",
   // Währungs-Kürzel. Stichpunkte heißen im Englischen „Trick Points" → TP, nicht SP.
-  "common.cur.sp": "SP",
-  "common.cur.dp": "DP",
 
   /* ---- Allgemein (Auswahl-Panels) ---- */
   "common.confirm": "Bestätigen",
@@ -473,8 +442,6 @@ export default {
   "skill.declinePlain": "Ablehnen",
   "skill.nav.prev": "vorheriger Typ",
   "skill.nav.next": "nächster Typ",
-  "skill.guide.title": "Leitfaden: {arch}",
-  "skill.guide.aria": "Leitfaden {arch} öffnen",
   "skill.more": "mehr",
   "skill.less": "weniger",
   // Konsumenten (Hitze/Ladung): höchstens einer je Art — der zweite ersetzt den ersten.
@@ -647,9 +614,6 @@ export default {
   "card.ion.titleFull": "Ionisiert {n}/{max} — +{score} Score bei Sieg · VOLL IONISIERT",
   "card.base": "Basis {base}",
   "card.trickBonus": "⚔ +{n} Stich",
-  "gameover.progress.next": "Nächste Freischaltung bei {at}/{total}: {label}",
-  "deckdetail.skin.free": "✓ frei",
-  "deckdetail.skin.locked": "🔒 gesperrt",
   "layoutperks.title": "Positions- & Formations-Perks",
   "mute.enable": "Ton einschalten",
   "mute.disable": "Ton stummschalten",
@@ -878,8 +842,6 @@ export default {
   "runstats.perks": "Perks: {n}",
   "runstats.skills": "Skills",
   "runstats.tree": "Upgrade-Baum",
-  "runstats.tree.nodes": "{done} / {total} Knoten",
-  "runstats.tree.note": "Der Baum wirkt dauerhaft in jedem Lauf außerhalb der Rangliste; zwei Scores lassen sich erst vergleichen, wenn man weiß, wie viel Meta-Fortschritt dahinterstand.",
   "runstats.hidden": "Perks und Aufstellung bleiben bei fremden Läufen verdeckt: Die sechs Skills zeigen den Stil eines Laufs, nachbauen ließe er sich erst über die Perks.",
 
   /* ---- Score-Herkunft & Verlauf (RunGraphs) ---- */
@@ -973,7 +935,6 @@ export default {
      (App.jsx `archetypesUsed`), alle vier können also in einem einzigen Lauf zusammenkommen. Und
      „beendet" heißt bis zum letzten Durchlauf gespielt (`state.cycle >= totalCycles`); ein Abbruch
      zählt nicht. */
-  "board.locked": "🔒 Frei, sobald alle Decks freigeschaltet sind und jeder der vier Archetypen einmal in einem bis zum Ende gespielten Lauf dabei war; ein Skill daraus genügt, und mehrere Archetypen zählen im selben Lauf. Abgebrochene Läufe zählen nicht.",
   "board.weekMods": "Modifikatoren dieser Woche",
   "board.unavailable": "Bestenliste ist nicht verfügbar.",
   "board.loading": "Lädt Bestenliste …",
@@ -986,8 +947,6 @@ export default {
   "board.global.sub": "alle Läufe",
   "board.global.empty": "Noch kein Lauf im Global-Board. Mach den Anfang.",
   "board.row.cycle": "Durchlauf {n}",
-  "board.tree.title": "{done} von {total} Knoten im Upgrade-Baum freigeschaltet",
-  "board.tree.none.title": "Für diesen Lauf ist kein Baumstand gespeichert",
   "board.week.viewOnly": "Die Platzierung dieser Woche. Gespielt wird über den Ranglisten-Knopf im Menü.",
   "weekmods.title": "Wochen-Modifikatoren",
   "weekmods.range": " ({from}–{to})",
@@ -1005,8 +964,6 @@ export default {
   "app.restart.title": "Wirklich neustarten?",
   "app.restart": "Neustarten",
   "app.restart.help": "Der aktuelle Lauf wird verworfen und ein neuer beginnt sofort. Das lässt sich nicht rückgängig machen.",
-  "app.tutrun.title": "Tutorial-Lauf starten?",
-  "app.tutrun.help": "Der aktuelle Lauf wird verworfen. Der neue Lauf führt dich wieder mit allen Tutorial-Tipps.",
 
   /* ---- Steuerleiste (Controls) ---- */
   "controls.options": "⚙ Optionen",
@@ -1032,108 +989,25 @@ export default {
   "glossary.count_other": "{count} Begriffe",
 
   /* ---- Leitfaden (GuideOverlay) ---- */
-  "guide.title": "Leitfaden",
-  "guide.open": "Leitfaden öffnen",
-  "guide.subtitle": "So spielst du jeden Archetyp, durchklicken",
-  "guide.archOf": "Archetyp {n} von {total}",
-  "guide.core": "Kernidee",
-  "guide.loop": "Der Kreislauf",
-  "guide.principles": "Spielprinzip",
   // #desktop: Überschrift und Fußnote der Archetyp-Spalte (ab 1280 px statt der Reiterzeile).
-  "guide.nav.archetypes": "Archetypen",
-  "guide.nav.note": "Der Leitfaden erklärt das Spielprinzip. Begriffe und Sonderregeln stehen im Glossar.",
 
   /* ---- Upgrade-Baum (UpgradeScreen) ---- */
-  "upgrades.eyebrow": "Upgrades",
-  "upgrades.title": "Upgrade-Baum",
-  "upgrades.subtitle": "Dauerhafte Verbesserungen für jeden Lauf.",
-  "upgrades.respec": "↺ Zurücksetzen",
   /* #menu-rework M3 — zwei benannte Ablesungen statt einer nackten Zahl am Titel. Der alte
      `upgrades.nodes` begann mit einem Leerzeichen, wurde an eine Zahl geklebt und ergab zusammen mit
      `upgrades.ranked.at` dreimal „Knoten" und zweimal dieselbe Zahl (design-sprache.md §7). */
-  "upgrades.readout.sp": "Guthaben",
-  "upgrades.readout.nodes": "Knoten",
-  "upgrades.readout.nodes.val": "{owned} / {total}",
-  "upgrades.ranked.label": "Ranglisten-Lauf",
-  "upgrades.ranked.open": "Noch nicht freigeschaltet",
-  "upgrades.ranked.free": "Freigeschaltet",
-  "upgrades.tapHint": "Knoten antippen zeigt, was er bewirkt.",
-  "upgrades.legend.hint": "Klick auf einen Knoten erklärt ihn.",
-  "upgrades.details": "Details ›",
-  "upgrades.legPhase": "Legendär-Phase",
-  "upgrades.tab.decks": "Decks",
-  "upgrades.tab.gen": "Allgemein",
-  "upgrades.lane.cover": "Baufeld",
-  "upgrades.lane.energy": "Energie",
-  "upgrades.lane.rerolls": "Rerolls",
-  "upgrades.lane.rarity": "Rarität",
-  "upgrades.lane.drops": "Drop-Raten",
-  "upgrades.lane.perk2": "2. Perk-Phase",
-  "upgrades.lane.note.afterLeg": "öffnet sich mit Rarität · Legendär",
-  "upgrades.free": "frei",
-  "upgrades.state.soon": "Bald",
-  "upgrades.state.owned": "Gekauft",
-  "upgrades.state.soonFull": "Bald verfügbar",
-  "upgrades.state.buyable": "Kaufbar",
-  "upgrades.state.lockSp": "Zu wenig SP: kostet {cost} SP",
-  "upgrades.state.after": "Erst nach: {name}",
-  "upgrades.state.needPrereq": "Vorgänger nötig",
-  "upgrades.state.lockGate": "Braucht eine freigeschaltete Legendär-Stufe",
-  "upgrades.state.locked": "Noch gesperrt",
-  "upgrades.buy": "Kaufen · {cost} SP",
   // #desktop — senkrechte Baum-Fassung ab 1280 px: kurze Preismarke am Knoten + Auswirkungs-Kasten.
-  "upgrades.buy.short": "{cost} SP",
-  "upgrades.impact.title": "Was der Baum gerade bewirkt",
-  "upgrades.impact.cover": "Baufeld",
-  "upgrades.impact.energy": "Formations-Energie",
-  "upgrades.impact.rerolls": "Rerolls je Angebot",
-  "upgrades.impact.legRerolls": "Legendär-Rerolls",
-  "upgrades.impact.of": "von {max}",
-  "upgrades.impact.maxed": "Maximiert",
-  "upgrades.impact.dropNow": "Perk-Qualität jetzt",
-  "upgrades.page.general": "Allgemein",
-  "upgrades.page.generalHint": "Gilt für jeden Lauf, unabhängig vom Deck.",
-  "upgrades.nav.decks": "Decks",
   // Kachel am Anfang der Kette bei Feuer/Blitz — deren Deck ist von Beginn an spielbar.
-  "upgrades.deckLead": "Deck",
-  "upgrades.skills.title": "Skills dieser Fraktion",
-  "upgrades.skills.legendary": "Legendäre Skills",
-  "upgrades.owned": "gekauft",
-  "upgrades.buyable": "kaufbar",
-  "upgrades.locked": "gesperrt",
-  "upgrades.soon": "Bald = Platzhalter",
   /* #menu-rework M3 — die Fraktionsseite: Challenge als Zeile am Fuß statt als Karte im Panel.
      Der Bedingungssatz und der Zähler kommen unverändert aus `packUnlock()`; neu ist nur der Rahmen. */
-  "upgrades.chall.label": "Herausforderung",
-  "upgrades.chall.link": "Werkstatt ›",
-  "upgrades.chall.done": "Freigeschaltet",
   /* Die zwei Kärtchen der Legendär-Phase tragen ihren Zustand selbst (design-sprache.md §5). */
-  "upgrades.leg.missing": "{n} SP fehlen",
 
   /* ---- Deck-Detail (DeckDetail) ---- */
-  "deckdetail.back": "‹ Zurück",
-  "deckdetail.back.title": "Zurück",
-  "deckdetail.deck": "Deck",
-  "deckdetail.tab.skills": "Skills",
-  "deckdetail.tab.challenges": "Herausforderungen",
-  "deckdetail.legendaries": "Legendäre",
-  "deckdetail.noUnlocks": "Keine deck-gebundenen Freischaltungen.",
-  "deckdetail.consumer": "Konsument",
-  "deckdetail.trimmable": "trimmbar",
-  "deckdetail.needs": "braucht {name}",
 
   /* ---- Deck-Werkstatt (CustomizeScreen) ---- */
   "shop.unlock": "🔒 Freischalten: {cond}",
   "shop.title": "Deck-Werkstatt",
 
   /* ---- Score-Meilenstein-Balken (ScoreMilestoneBar) ---- */
-  "milestone.mio": "{n} Mio",
-  "milestone.label": "💠 Meilensteine {n}/{total}",
-  "milestone.label.sp": "💠 Meilensteine {n}/{total} · +{sp} SP",
-  "milestone.max": "Maximum · +{sp} SP",
-  "milestone.next": "→ {at} +{sp}",
-  "milestone.title.max": "Alle Score-Meilensteine erreicht",
-  "milestone.title.next": "Nächster Meilenstein: {at} (+{sp} SP)",
   /* ===================== TUTORIAL-SEKTIONEN (#tutorial-sections) =====================
      Die Sektionen sind die dritte Lehr-Ebene: Glossar = nachschlagen · Leitfaden = Strategie ·
      Tutorial = einmal machen. Eine Lektion sind DREI Takte — ein Satz, ein Bild oder Probierfeld,
@@ -1143,361 +1017,19 @@ export default {
   /* ---- ONBOARDING-HINTS (docs/tutorial-onboarding-design.md §5) — die In-Run-Einzeiler.
      Banner auf Entscheidungsscreens + die H1-Karte. Höchstens zwei Sätze; Zahlen und Namen kommen
      als Platzhalter aus constants.js und den Registern, nie abgetippt. */
-  "hint.eyebrow": "Tutorial",
-  "hint.eyebrow.suggest": "Tutorial · Vorschlag",
-  "hint.more": "Mehr dazu",
-  "hint.aria.close": "Hinweis schließen",
-  "hint.btn.next": "Weiter",
-  "hint.e1.body": "Dein erster Sieg: {win} Basispunkte. Serie, Crits, Formationen und Gebäude werden mit dem Basisscore multipliziert.",
-  "hint.e2.body": "Gleichstand: Niemand punktet. Nur Siege zahlen.",
-  "hint.e3.body": "Serie {n}: Sieg auf Sieg lässt die Serie wachsen, und mit ihr den Multiplikator, gerade ×{mult}. Eine Niederlage setzt ihn zurück.",
-  "hint.e4.body": "Crit: Dieser Stich zählt ×{critMult}.",
-  "hint.e5.body": "Das ist deine {arch}-Leiste. Sie füllt sich in den Stichen und treibt deine Skills an.",
-  "hint.e5.blitz.body": "Das ist deine Ladungsleiste: Deine Crits füllen sie. Ist die Leiste voll, wird eine Karte ionisiert.",
-  "hint.e6.body": "Formation {name}: Diese Karte zählt ×{mult}. Formationen zählen nur innerhalb eines Segments.",
-  "hint.e7.body": "Meilenstein erreicht: Das bringt dir Stichpunkte für den Upgrade-Baum nach dem Lauf.",
-  "hint.e8.body": "Stichpunkte fließen in den Upgrade-Baum, Deck-Punkte in die Werkstatt. Score-Meilensteine bringen dir zusätzliche Stichpunkte.",
-  "hint.e9.body": "Deine Karte kämpft mit {kampfwert} statt {kartenwert}: Kartenwert plus Stichwert-Boni ergeben den Kampfwert. Der höhere gewinnt den Stich.",
-  "hint.u1.body": "Über die Leiste oben hältst du den Lauf an oder stellst das Tempo hoch, bis auf Max.",
-  "hint.u2.body": "Hier siehst du deine Multiplikatoren und deine Score-Herkunft.",
-  "hint.u3.body": "Das Karten-Symbol oben öffnet die Chronik: alle deine Karten, Formationen und Gebäude in diesem Lauf.",
-  "hint.u4.body": "Die Zeile unter den Karten rechnet den Stich vor: Basis × Serie × Perks × Formation × Crit ergeben die Summe.",
-  "hint.badge": "Empfohlen",
-  "hint.badge.reason": "Deine Crits füllen die Ladungsleiste. Ist sie voll, ionisiert er Karten, und die bringen mehr Score und Crit-Chance.",
-  "hint.h1.title": "Willkommen bei Autostich",
-  "hint.h1.go": "Los geht's",
-  "hint.h1.skipAll": "Alle Tutorial-Tipps überspringen",
-  "hint.h1.body": "Autostich spielt sich selbst: Dein Deck kämpft die {cards} Stiche allein, du triffst die Entscheidungen dazwischen.\n\nBei jedem Stich decken beide Decks ihre oberste Karte auf. Die höhere gewinnt, die Farbe spielt keine Rolle.",
-  "hint.h2.body": "Blitz ist dein erster Archetyp. Ein Crit vervielfacht den Score eines Stichs. Blitz-Skills machen Crits wahrscheinlicher, und jeder Crit füllt deine Ladungsleiste.",
-  "hint.h2b.body": "Ab jetzt steht neben Blitz auch Feuer zur Auswahl, wische nach rechts. Skills kannst du frei mischen. Weitere Archetypen schaltest du im Upgrade-Baum frei.",
-  "hint.h3.body": "Ein Perk wirkt sofort und bleibt bis zum Ende des Laufs. Passt keiner, kannst du ablehnen.",
-  "hint.h3b.body": "Der Farbchip nennt die Kategorie, der Rand die Rarität.",
-  "hint.h5.body": "Deine {slots} Slots sind voll: Eine neue Wahl ersetzt ab jetzt einen alten Skill. Was er schon ausgezahlt hat, bleibt.",
-  "hint.sf1.body": "Tippe zwei Karten an, um ihre Position zu tauschen. Die Energie zeigt, wie oft du in dieser Phase noch tauschen kannst. Versuch, in einem Segment gleiche Farben zu sammeln.",
-  "hint.sf2.body": "Versuch nun, innerhalb eines gleichfarbigen Segments weitere Formationen zu bilden, zum Beispiel eine Treppe.",
-  "hint.sf3.body": "Formationen gehen nie über Segmentgrenzen hinaus. Versuch deshalb, in jedem Segment eigene Formationen zu bauen.",
-  "hint.sa1.body": "Setz dein erstes Gebäude irgendwo aufs Brett. Es wirkt auf die Karte unter ihm: Der Score-Bonus zahlt nur bei Sieg, Boni auf den Stichwert zahlen immer.",
-  "hint.sa2.body": "Bau einen Distrikt: Setz ein Gebäude derselben Kategorie, also gleicher Farbe, neben dein erstes. Solche Nachbarn verstärken sich.",
-  "hint.sa3.body": "Versuch, neben Distrikten auch volle Zeilen zu bauen: Sie schließen eine Struktur und verstärken jede Position darin.",
-  "hint.sa4.body": "Du kannst jedes Gebäude jederzeit aufwerten, versetzen oder abreißen.",
-  "hint.c1.body": "Nach jedem Eis-Skill wählst du genau eine Karte für den Gletscher. Dieser Schritt ist Pflicht.",
-  "hint.c2.body": "Dieser Perk braucht Karten: Tippe so viele an, wie er verlangt.",
-  "hint.c3.body": "Diese Perk-Familie braucht ein Ziel: Wähle, worauf sie wirken soll.",
-  "hint.c5.body": "Dein Baufeld ist voll. Der Platz ist begrenzt, aber nichts steht fest: Reiß ein Gebäude ab oder werte eins auf.",
-  "hint.c6.body": "Mit Kombis und Formationen blendest du die Rahmen auf dem Baufeld ein und aus. So behältst du beim Bauen den Überblick.",
-  "hint.c7.body": "Eis steht jetzt zur Auswahl bereit.",
-  "hint.c8.body": "Pflanze steht jetzt zur Auswahl bereit.",
-  "hint.h6.body": "Anker zählen als Formation. Je mehr Formationen eine Karte trägt, desto höher ihr Multiplikator.",
-  "hint.hf.title": "Deine Aufstellung",
-  "hint.hf.body": "Das ist die Ziehreihenfolge deines Decks, unterteilt in {segments} Segmente. Sie bleibt bis zum Ende des Laufs gleich.\n\nIn jeder Aufstellungsphase kannst du Karten tauschen, so oft deine Energie reicht. Das Gegnerdeck wird vor jedem Durchlauf neu gemischt.",
-  "hint.ha.title": "Der Architekt",
-  "hint.ha.body": "Das Baufeld liegt über deiner Ziehreihenfolge: Jede Zelle gehört zu einer Position, ein Gebäude wirkt auf die Karte darunter. Score-Effekte zahlen nur, wenn die Karte ihren Stich gewinnt. Effekte auf den Kartenwert und Formations-Boni wirken immer.\n\nJe Bauphase hast du eine Hauptaktion: ein Gebäude bauen oder eins aufwerten. Gebäude bleiben bis zum Ende des Laufs liegen, du kannst sie aber jederzeit versetzen oder abreißen.",
-  "hint.e10.body": "Deine erste Karte ist ionisiert. Sturmgröße zählt die ionisierten Karten deines Decks: Ist die Leiste voll, bekommt jede Karte +{v} Wert. Sturmintensität zählt die voll ionisierten: Ist sie voll, wandelt der Skill Überschlag deine Crit-Chance doppelt so schnell in Ladung um.",
-  "hint.h4.body": "Im Glossar oben rechts schlägst du fast alles nach.",
-  "hint.c4.body": "Ein legendärer Skill aus deinen aktiven Archetypen: eigener Slot, kein Tausch.",
 
-  "tut.eyebrow": "Tutorial",
-  "tut.title": "Tutorial",
-  "tut.run": "Tutorial-Lauf",
-  "tut.run.sub": "Startet einen neuen Lauf mit allen Tutorial-Tipps.",
-  "tut.sub": "Jede Runde rechnet mit den echten Spielregeln — probier sie aus.",
-  "tut.seen": "gelesen",
-  "tut.tip": "Tipp",
-  "tut.back": "Zurück",
-  "tut.next": "Weiter",
-  "tut.progress": "{n} / {total}",
-  "tut.openGlossary": "Glossar öffnen",
-  "tut.pflanze.tempo.title": "Tempo und Trimmen",
-  "tut.pflanze.tempo.0": "Wie schnell dein Feld ergrünt, und was ein ersetzter Skill wert ist.",
-  "tut.eis.formationen.title": "Gletscher-Formationen",
-  "tut.eis.formationen.0": "Gefrorene Karten in geometrischen Formen verstärken jeden Bruch darin.",
-  "tut.sz.chipPassiv": "Passiv",
-  "tut.sz.chipSkill": "Skill · {nm}",
-  "tut.sz.fv.tab.verlust": "Niederlage",
-  "tut.sz.fv.tab.knapp": "Sieg, zu knapp",
-  "tut.sz.fv.tab.klar": "Klarer Sieg",
-  "tut.sz.fv.nmSieg": "Sieg · Vorsprung {v}",
-  "tut.sz.fv.txtVerlust": "Eine {a} gegen eine {b}. Kein Extra-Score, und die Niederlage kostet Hitze: je heißer die Leiste, desto mehr.",
-  "tut.sz.fv.txtKnapp": "Der Stich punktet normal, aber unter {min} Vorsprung legt Feuer nichts obendrauf.",
-  "tut.sz.fv.txtKlar": "Der Stich punktet normal, und Feuer legt {score} Extra-Score obendrauf, plus +{heiz} % Hitze.",
-  "tut.sz.fv.pktVerlust": "−Hitze",
-  "tut.sz.fv.pktKlar": "+{score} extra",
-  "tut.sz.fv.merk.verlust": "**Niederlagen kühlen.** Jede Niederlage zieht Hitze ab, bei hoher Hitze überproportional.",
-  "tut.sz.fv.merk.knapp": "**Der Vorsprung zählt, nicht der Sieg allein.** Erst ab {min} Vorsprung fließen Extra-Score und Hitze.",
-  "tut.sz.fv.merk.klar": "**Je größer der Vorsprung, desto mehr von beidem.** Boni auf den Stichwert zahlen bei Feuer doppelt ein.",
-  "tut.sz.fh.s0": "**Glutdividende.** Direkter Score bei jedem Feuer-Sieg, wächst je Hitzeprozent. Bei {cap} % ist der Deckel erreicht.",
-  "tut.sz.fh.s40": "**Stufe I.** Alle deine Karten +{v} Stichwert.",
-  "tut.sz.fh.s70": "**Stufe II.** +{v} Stichwert, braucht einen Sieg mit {m} Vorsprung.",
-  "tut.sz.fh.s80": "**Bereit.** Der nächste Sieg verbrennt die Leiste bis {keep} % zu direktem Score.",
-  "tut.sz.fh.s100": "**Stufe III.** +{v} Stichwert. Darüber sammelt der Skill {wg} bis {max} % und gibt +{p} % Feuer-Score je Punkt.",
-  "tut.sz.fs.n1": "1 · Brand",
-  "tut.sz.fs.n2": "2 · Asche",
-  "tut.sz.fs.n3": "3 · Schmieden",
-  "tut.sz.fs.k1": "Mit ihm brandmarkt jeder Feuer-Sieg die Gegnerkarte: **−{b} Wert** für sie, **+{a} Asche** für dich. Ohne den Skill gibt es keine Asche.",
-  "tut.sz.fs.k2": "Die Asche sammelt sich über den Durchlauf an.",
-  "tut.sz.fs.k3": "Erst mit ihm werden am Ende des Durchlaufs je **{c} Asche** zu einer Schmiedung: Deine **niedrigste** Karte bekommt **+{v} dauerhaften Wert**. Danach ist eine andere Karte die niedrigste.",
-  "tut.sz.fs.fussForge": "geschmiedet",
-  "tut.sz.fs.fussBrand": "gebrandmarkt",
-  "tut.sz.fs.merk": "**Geschmiedet bleibt geschmiedet.** Der Wert steht dauerhaft im Deck, auch nach einem Skill-Tausch. Brandmale stapeln nicht: Ein neues ersetzt das alte.",
-  "tut.sz.pw.tabRein": "Nur Pflanzen-Skills",
-  "tut.sz.pw.tabMix": "Mit anderen Skills",
-  "tut.sz.pw.nmFrisch": "Frisch",
-  "tut.sz.pw.nmSetzling": "Setzling",
-  "tut.sz.pw.nmReif": "Reif, also grün",
-  "tut.sz.pw.nmVoll": "Voll ausgewachsen",
-  "tut.sz.pw.subFrisch": "Noch kein Wachstum. Eine gewöhnliche Karte.",
-  "tut.sz.pw.subSetzling": "Wächst, zählt aber noch nicht zum grünen Farbblock.",
-  "tut.sz.pw.subReif": "Je {pro} Wachstum ist sie um {plus} wertvoller geworden.",
-  "tut.sz.pw.subReifMix": "Der Wert steigt nicht: ein fremder Skill ist im Bau.",
-  "tut.sz.pw.subVoll": "Wert {cap}, der Deckel.",
-  "tut.sz.pw.pktWert": "Wert {v}",
-  "tut.sz.pw.pktReif": "reif",
-  "tut.sz.pw.a1": "Die **Zahl** färbt sich mit dem Wachstum ins Grün, der **Ring** unten rechts läuft mit.",
-  "tut.sz.pw.a2": "Ab **{g} Wachstum** ist sie **reif**: grüner Rand, der Ring verschwindet.",
-  "tut.sz.pw.merk": "**Nur Pflanzen-Skills:** Je {pro} Wachstum wird die Karte um {plus} wertvoller, bis Wert {cap}. **Wachstum geht nie zurück.**",
-  "tut.sz.pg.segLabel": "Ein Segment · drei grüne Karten",
-  "tut.sz.pg.fussGruen": "grün",
-  "tut.sz.pg.s1": "**Grüner Farbblock.** Grüne Karten nebeneinander bilden einen eigenen Farbblock. Sein Faktor ist bei ×{cap} gedeckelt, egal wie lang er wird.",
-  "tut.sz.pg.s2": "Jeder Sieg einer grünen Karte zahlt **+{v} Wurzel-Score**, dazu ein Bonus, der mit dem Gesamtwachstum deines Decks steigt.",
-  "tut.sz.pg.s3": "Ein grüner Sieg zahlt **+{v} je grüner Karte im Segment**, wenn ihre Nachbarn grün sind.",
-  "tut.sz.pg.merk": "**Grün bleibt grün.** Auch nach Niederlagen zählt die Karte weiter für Farbblock, Wurzeln und Blüte.",
-  "tut.sz.pt.s1": "**Wachstumstempo.** Das Wachstum je Sieg steigt mit der Zahl deiner Pflanzen-Skills. Ab {ref} Skills ist volles Tempo erreicht, mehr beschleunigt nicht weiter.",
-  "tut.sz.pt.s2": "**Kartenwert nur im reinen Bau.** Sobald ein fremder Skill dabei ist, wird die Karte grün, aber nicht wertvoller. Später Skills zu wechseln lohnt sich trotzdem: Der Wert wächst wieder, und der Tausch zählt als Trimmung.",
-  "tut.sz.pt.s3": "**Trimmen.** Einen Wachstums-Skill zu ersetzen zählt als Trimmung: dauerhaft +{step} % auf Wurzel-Score und Blüten-Score, bis +{cap} %. Der ersetzte Skill ist nicht einfach weg.",
-  "tut.sz.pt.merk": "Mit dem Skill **{ueb}** legt ein grünes Feld noch zu: Ab {pct} % grünen Karten steigt jeder Farbblock um +{f} Faktor, und der Blüten-Score zählt doppelt.",
-  "tut.sz.eg.masseLabel": "Masse",
-  "tut.sz.eg.nmStufe": "Stufe {n}",
-  "tut.sz.eg.nmBruch": "Bruch!",
-  "tut.sz.eg.sub0": "Unter {t1} Masse zahlt ein Bruch nichts.",
-  "tut.sz.eg.sub1": "Ab {t1} Masse: Der Bruch zahlt.",
-  "tut.sz.eg.sub2": "Ab {t2} Masse: Der Frost wird dichter.",
-  "tut.sz.eg.sub3": "Volle Masse: Gleich bricht er.",
-  "tut.sz.eg.subBruch": "Die Masse entlädt sich als Score und beginnt von vorn.",
-  "tut.sz.eg.a1": "**Masse kommt jeden Durchlauf:** +{a} bedingungslos, +{b} extra bei einem Sieg des Gletschers.",
-  "tut.sz.eg.a2": "Der **Frost auf der Karte springt an den Schwellen** {t1}, {t2} und {t3}: Du siehst die Stufe von außen.",
-  "tut.sz.eg.nachbarn": "**Nachbarn verstärken.** Jeder angrenzende Gletscher gibt +{k} % auf den Bruch, und ein Bruch, der Gletscher trifft, zählt zusätzlich bis ×{x}.",
-  "tut.sz.eg.merk": "**Der Gletscher bleibt liegen.** Eine gefrorene Karte behält ihre Position für den Rest des Laufs. Bei {max} Masse bricht sie und fängt von vorn an.",
-  "tut.sz.ef.brettLabel": "Ausschnitt deines Bretts",
-  "tut.sz.ef.sub.block": "Vier Gletscher im Quadrat.",
-  "tut.sz.ef.sub.kreuz": "Ein Zentrum plus vier orthogonale Nachbarn.",
-  "tut.sz.ef.sub.linie": "Eine volle Zeile mit {sp} oder eine volle Spalte mit {ze} Gletschern. Der Skill {ew} hebt sie auf ×{fe}.",
-  "tut.sz.ef.sub.flaeche": "Neun Gletscher als gefülltes Quadrat. In ihr stecken zugleich vier Blöcke und ein Kreuz: Alle Faktoren multiplizieren sich, die Mitte kommt so auf ×{m}.",
-  "tut.sz.ef.merk": "**Formationen stapeln sich.** Liegt eine Karte in mehreren Formen zugleich, multiplizieren sich ihre Faktoren. Der Bruch zahlt auch bei einer Niederlage; bei einem Sieg kommen Serie, Perks, Formation und Crit obendrauf.",
-  "tut.eis.schnee.title": "Der Schnee",
-  "tut.eis.schnee.0": "Schnee lädt Felder auf, bevor dort ein Gletscher liegt.",
-  "tut.sz.sn.s1": "**Die Reserve liegt auf dem Feld, nicht auf der Karte.** Offener Boden sammelt Schnee als Reserve. Friert dort später eine Karte fest, gehört die Reserve ihrem Gletscher.",
-  "tut.sz.sn.s2": "**Der Nachschub.** Ein frischer Gletscher startet leer und zieht sich zu jedem Durchlauf-Beginn aus seiner Reserve wieder auf volle {max} Masse, bis die Reserve leer ist.",
-  "tut.sz.sn.s3": "Ein Sieg des Gletschers verweht +{n} Schnee auf ein offenes Nachbarfeld, nie unter einen Gletscher.",
-  "tut.sz.sn.s4": "Am Ende jedes Durchlaufs schneit es auf offenen Boden, je weiter vom nächsten Gletscher, desto mehr: +{near} in der Nähe, +{far} fern.",
-  "tut.sz.sn.merk": "**Wo viel Schnee liegt, lohnt das nächste Einfrieren.** Der neue Gletscher ist dort sofort wieder voll, statt bei null anzufangen. Im Lauf zeigt die Eis-Leiste beides: „{ground}“ und „{reserve}“.",
-  "tut.probe.formation.title": "Tutorial · ein Segment",
-  "tut.probe.formation.readout": "Erkannt",
-  "tut.probe.formation.none": "keine Formation",
-  "tut.f.streak": "Serie",
-  "tut.f.crit": "Crit",
-  "tut.f.form": "Formation",
-  "tut.f.build": "Gebäude",
-  "tut.d.gegner": "Gegner",
-  "tut.d.du": "Du",
-  "tut.d.gegen": "gegen",
-  "tut.d.play": "Spielen",
-  "tut.d.next": "Nächster Stich",
-  "tut.d.trickValue": "Stichwert",
-  "tut.d.win": "Gewonnen",
-  "tut.d.tie": "Gleichstand",
-  "tut.d.loss": "Verloren",
-  "tut.probe.overlap.title": "Proberunde · übereinander",
-  "tut.probe.overlap.readout": "Erkannt",
-  "tut.probe.overlap.none": "keine Formation",
-  "tut.d.undo": "Rückgängig",
-  "tut.d.reset": "Zurücksetzen",
-  "tut.d.energy": "Energie",
-  "tut.d.cardValue": "Kartenwert",
-  "tut.probe.struktur.title": "Vier Lagen aus echten Gebäuden",
-  "tut.probe.struktur.readout": "Markierte Zelle",
-  "tut.d.zeile": "Zeile",
-  "tut.d.spalte": "Spalte",
-  "tut.d.diag": "Diagonale",
-  "tut.d.distrikt": "Distrikt",
-  "tut.d.rotate": "Drehen",
-  "tut.d.scoreUnit": "Score",
-  "tut.probe.kategorien.title": "Sechs Kategorien",
-  "tut.probe.kategorien.readout": "Diese Kategorie",
-  "tut.probe.raritaet.title": "Vier Stufen und Legendär",
-  "tut.probe.raritaet.readout": "Diese Stufe",
-  "tut.probe.blitzkarte.title": "Proberunde · Ionisierung",
-  "tut.probe.blitzkarte.readout": "Auf dieser Karte",
-  "tut.d.more": "Mehr",
-  "tut.d.less": "Weniger",
-  "tut.d.deck": "Im Deck",
-  "tut.d.deckWide": "Fürs Deck",
-  "tut.d.forge": "Schmieden",
-  "tut.d.brand": "Brandmarken",
-  "tut.d.heats": "Heizt",
-  "tut.d.yes": "ja",
-  "tut.d.no": "nein",
-  "tut.d.blade": "Klinge",
-  "tut.d.force": "Wucht",
-  "tut.d.pureOnly": "Nur Pflanze",
-  "tut.d.mixed": "Auch fremd",
-  "tut.d.none": "Keine",
-  "tut.d.twoThirds": "Zwei Drittel",
-  "tut.d.all": "Alle",
-  "tut.d.block": "Block",
-  "tut.d.kreuz": "Kreuz",
-  "tut.d.linie": "Linie",
-  "tut.d.flaeche": "Fläche",
-  "tut.probe.meilenstein.title": "Score und Meilensteine",
-  "tut.probe.meilenstein.readout": "Meilensteine",
-  "tut.d.stitchPoints": "Stichpunkte",
-  "tut.d.branchGen": "Allgemein",
-  "tut.d.branchDeck": "Decks",
-  "tut.d.closed": "Grenzen zu",
-  "tut.d.segIII": "{segWork} III",
-  "tut.d.segIV": "{segWork} IV",
-  "tut.d.sum": "Summe",
-  "tut.d.suit": "Farbe",
-  "tut.f.wins": "Siege",
   // ---- S1 Grundlagen ----
   /* ---- Szenen (tut.sz.*) — die Woerter der portierten Proberunden des Entwurfs.
      Dynamische Zeilen (Verdikte, Log, Rechnungen); Zahlen kommen als Platzhalter
      aus den Konstanten, nie abgetippt. ---- */
-  "tut.sz.niederlage": "Niederlage",
-  "tut.sz.n.merk1": "**Ersetzen, nicht stapeln.** Nimmst du Stufe II, verschwindet Stufe I. Du hast danach +{b} anstatt +{a}.",
-  "tut.sz.cx.nm0": "Nicht ionisiert",
-  "tut.sz.cx.nm1": "Ionisiert",
-  "tut.sz.cx.nmVoll": "Voll ionisiert",
-  "tut.sz.cx.txt0": "Eine gewöhnliche Karte. Kein Rahmen, keine Punkte.",
-  "tut.sz.cx.txtN": "{n} Stapel. Der blaue Rahmen ist da, {n} von {max} Punkten leuchten.",
-  "tut.sz.cx.txtVoll": "Fünf Stapel. Der Rahmen glüht auf und Blitze zucken um die Kante.",
-  "tut.sz.cx.wasLabel": "Was diese Stapel bewirken",
-  "tut.sz.cx.aufKarte": "Auf dieser Karte",
-  "tut.sz.cx.zeA": "Score beim Sieg mit ihr",
-  "tut.sz.cx.imDeck": "Im ganzen Deck",
-  "tut.sz.cx.zeB": "Crit-Chance für jede Karte",
-  "tut.sz.cx.hint": "Der rechte Wert zählt **alle** Stapel im Deck, nicht nur die dieser Karte. Bei {cap} Stapeln ist er zu Ende, das sind +{pct} %.",
-  "tut.sz.cx.erkennLabel": "Woran du es erkennst",
-  "tut.sz.cx.erk1": "Fünf Punkte oben auf der Kante. Gefüllt heißt Stapel.",
-  "tut.sz.cx.erk2": "Ein blauer Rahmen um die ganze Karte, sobald mindestens ein Stapel liegt.",
-  "tut.sz.cx.erk3": "Bei fünf Stapeln ist sie voll. Dann zucken Blitze um die Kante.",
-  "tut.sz.mf.wiederholung": "Zwei oder mehr gleiche Werte nebeneinander, die Farbe ist egal. Hier: die beiden 6er.",
-  "tut.sz.mf.farbblock": "Drei oder mehr Karten derselben Farbe nebeneinander, der Wert ist egal. Die rote Karte rechts außen zählt nicht mit: Die blaue unterbricht die Reihe.",
-  "tut.sz.mf.treppe": "Drei oder mehr Werte, die Schritt für Schritt steigen, jeder Schritt höchstens {treppeStep}. Hier: 2, 5, 8.",
-  "tut.sz.mf.wechsel": "Im Zick-Zack: hoch, runter, hoch. Jeder Sprung mindestens {wechselDiff}. Hier: 2, 9, 4. Die 6 danach bricht ab, ihr Sprung ist zu klein.",
-  "tut.sz.ue.buntBtn": "Farbblock + Treppe",
-  "tut.sz.ue.zickBtn": "Wiederholung + Wechsel",
-  "tut.sz.ue.bunt": "Ein gleichfarbiges Segment trägt hier drei Formationen zugleich. Jede Karte steckt in mindestens zwei, ihre Faktoren multiplizieren sich.",
-  "tut.sz.ue.zick": "Auch ohne gleiche Farben stapelt es sich: Die zweite 1 steckt in beiden Formationen und zählt doppelt.",
-  "tut.sz.dx.zweiBtn": "Zwei Nachbarn",
-  "tut.sz.dx.dreiBtn": "Drei im Block",
-  "tut.sz.dx.keinBtn": "Kein Distrikt",
-  "tut.sz.dx.ja": "Distrikt",
-  "tut.sz.dx.nein": "Kein Distrikt",
-  "tut.sz.dx.zweiMerk": "Zwei Gebäude derselben Kategorie Seite an Seite: der kleinste Distrikt. **Beide** steigen um {pct} % je Nachbar.",
-  "tut.sz.dx.dreiMerk": "Je mehr Nachbarn derselben Kategorie, desto höher der Faktor jedes Gebäudes. Ein Block zahlt mehr als eine Kette.",
-  "tut.sz.dx.keinMerk": "Verschiedene Kategorien nebeneinander bilden **keinen** Distrikt: Die Farben müssen gleich sein.",
-  "tut.sz.cx.vollzu": "Volle Leiste = 1 Stapel auf die Karte",
-  "tut.sz.ax.zeileBtn": "Volle Zeile",
-  "tut.sz.ax.spalteBtn": "Volle Spalte",
-  "tut.sz.ax.diagBtn": "Diagonale",
-  "tut.sz.ax.keinBonus": "Kein Bonus",
-  "tut.sz.ax.mitStruktur": "Struktur ×{f}",
-  "tut.sz.ax.keineStruktur": "Keine Struktur",
-  "tut.sz.ax.eqLabel": "Ein gewonnener Stich auf der markierten Zelle",
-  "tut.sz.ax.eqBasis": "Basis **{v}**",
-  "tut.sz.ax.eqStep": "× {nm} {f} = **{v}**",
-  "tut.sz.ax.eqZahlt": "Dieser Stich zahlt **{v}** statt {basis}",
-  "tut.sz.ax.zeileMerk": "**Eine volle Zeile ist ein ganzes Segment.** Sie kostet fünf der {cover} Zellen und ist die günstigste der drei Strukturen. Die beiden Gebäude sind verschiedene Kategorien, deshalb entsteht hier kein Distrikt.",
-  "tut.sz.ax.spalteMerk": "**Eine volle Spalte geht durch alle acht Segmente.** Sie ist die teuerste Struktur, acht der {cover} Zellen, und dafür die stärkste. Zwei gedrehte Vierer-Gebäude füllen sie genau.",
-  "tut.sz.ax.diagMerk": "**Eine Diagonale berührt sich nie über eine Kante.** Sie gibt den zweitgrößten Struktur-Faktor, aber keinen einzigen Distrikt-Nachbarn. Der Laufgang liegt selbst diagonal, das Fries schließt die letzten beiden Zellen.",
-  "tut.sz.na.naechster": "nächster bei {n} Mio",
-  "tut.sz.na.dp": "Deck-Punkte",
-  "tut.sz.nb.scoreLab": "Score des Laufs",
-  "tut.sz.nb.marken": "{n} von {total} Meilensteinen",
-  "tut.sz.nb.maximum": "Maximum",
-  "tut.sz.nb.eqLabel": "Wie sich das zusammensetzt",
-  "tut.sz.nb.eqGrund": "Grundstock **{n}** von beidem",
-  "tut.sz.nb.eqMarken": "Erreichte Marken **+{n}** von beidem",
-  "tut.sz.nb.eqKeine": "Noch keine Marke erreicht, die erste liegt bei {m1} Mio",
-  "tut.sz.nb.eqSumme": "Macht **{sp} Stichpunkte** und **{dp} Deck-Punkte**",
 
-  "tut.aufstellung.title": "Aufstellung",
-  "tut.aufstellung.sub": "Kartenreihenfolge, Energie, Formationen, Segmente.",
-  "tut.aufstellung.formationen.title": "Die vier Formationen",
-  "tut.aufstellung.formationen.0": "Tipp eine Formation an und sieh, wie sie entsteht.",
-  "tut.aufstellung.formationen.1": "Je länger eine Formation, desto höher ihr Faktor.",
-  "tut.aufstellung.stapeln.title": "Mehrere Formationen",
-  "tut.aufstellung.stapeln.0": "Formationen dürfen sich überlappen: Eine Karte kann in mehreren Formationen stecken und zählt dann mehrfach.",
-  "tut.aufstellung.stapeln.1": "Gewinnst du den Stich, zählt der Multiplikator. Verlierst du ihn, zählt gar nichts, egal wie hoch er war.",
 
-  "tut.wahl.title": "Perks und Skills",
-  "tut.wahl.sub": "Angebote, Skill-Slots, Kategorien, Raritäten.",
-  "tut.wahl.kategorien.title": "Die Kategorien",
-  "tut.wahl.kategorien.0": "Jeder Perk trägt oben links seine Kategorie.",
-  "tut.wahl.raritaet.title": "Raritäten",
-  "tut.wahl.raritaet.0": "Perks kommen in unterschiedlicher Rarität, sichtbar am Rahmen.",
-  "tut.wahl.legendaer.title": "Legendär",
-  "tut.wahl.legendaer.0": "Legendäre sind besonders starke Perks und müssen erst freigeschaltet werden.",
 
-  "tut.blitz.title": "Blitz",
-  "tut.blitz.sub": "Ionisierung, Ladung, kritische Treffer.",
-  "tut.blitz.karte.title": "Die Karte",
-  "tut.blitz.karte.0": "Nach {charge} Crits ist deine Ladungsleiste voll: Der Skill {ionSkill} ionisiert dann {ionN} ungespielte Karten.",
-  "tut.blitz.karte.1": "Eine volle Karte nimmt keine Stapel mehr an. Was der Konsument auf sie werfen würde, verpufft, solange du keinen Skill hältst, der etwas daraus macht.",
-  "tut.blitz.tipps.title": "Tipps für den Anfang",
-  "tut.blitz.tipps.0": "**Zuerst den Konsumenten.** Blitz hat genau einen: Ionisierung. Ohne ihn füllt sich die Ladung, bleibt voll stehen und nichts passiert. Das Spiel legt ihn dir deshalb garantiert ins Angebot, solange du keinen hältst. · **Ein zweiter ersetzt den ersten.** Ladungs-Konsumenten stapeln nicht. Wählst du einen zweiten, ist der erste weg. · **Jeder weitere Blitz-Skill zahlt.** +{critPerSkill} % Crit-Chance und +{critMultPerSkill}× Crit-Multiplikator, allein fürs Halten. Und ab dem dritten ionisiert der Konsument je Skill eine Karte mehr. · **Erst Ladung, dann Feinheiten.** Skills, die Ladung erzeugen, lassen den Konsumenten öfter feuern. Verstärker wirken erst, wenn er überhaupt läuft. · **Stapel sammeln sich über den ganzen Lauf.** Sie bleiben auf den Karten liegen. Der Konsument feuert erst bei voller Ladung, und bis dahin baut sich die Leiste über mehrere Stiche auf.",
 
-  "tut.feuer.title": "Feuer",
-  "tut.feuer.sub": "Vorsprung, Hitze, Asche.",
-  "tut.feuer.karte.title": "Der Vorsprung",
-  "tut.feuer.karte.0": "Feuer zahlt bei Siegen mit Vorsprung extra, obendrauf auf den normalen Score, und erzeugt Hitze. Tipp die drei Fälle durch.",
-  "tut.feuer.schmiede.title": "Die Schmiede",
-  "tut.feuer.schmiede.0": "Aus jedem Sieg wird Asche, aus Asche dauerhafter Wert.",
-  "tut.feuer.feld.title": "Die Hitzeleiste",
-  "tut.feuer.feld.0": "Jeder Vorsprungs-Sieg heizt. Sieh zu, was sich nacheinander einschaltet.",
-  "tut.feuer.tipps.title": "Tipps für den Anfang",
-  "tut.feuer.tipps.0": "**Vorsprung zählt, nicht der Sieg allein.** Unter {heatMinMargin} Vorsprung gibt Feuer gar nichts. Bei {heatMinMargin} sind es {fireAtMin} Feuer-Score, bei {glowM3} schon {fireAtM3}. · **Zwei Konsumenten sind erlaubt.** Anders als bei Blitz heben sich Hitze-Konsumenten nicht auf. {fbSkill} ist der Schlag ab {conflagAt} %, {spSkill} der Tropf bei jedem Sieg. Du darfst beide halten. · **Hitze zu halten zahlt schon von allein.** Die Glutdividende gibt bei jedem Feuer-Sieg direkten Score. Sie wird nicht mit Serie, Crit und Formationen multipliziert. Bei {dividendCap} % sind das {divAtCap} je Sieg. · **Über {dividendCap} % heizt du für etwas anderes.** Die Dividende wächst dort nicht mehr. Was höher liegt, macht mit {gkSkill} deine Karten stärker und macht ab {conflagAt} % den {fbSkill} bereit. · **Die Schmiede schreibt sich ins Deck.** Mit dem Skill {schmiedeSkill} werden {forgeCost} Asche zu +{forgeValue} dauerhaftem Wert auf deiner niedrigsten Karte. Der Wert bleibt dort, auch wenn du den Skill später tauschst.",
 
-  "tut.pflanze.title": "Pflanze",
-  "tut.pflanze.sub": "Wachstum, grüne Karten, das Feld.",
-  "tut.pflanze.karte.title": "Das Wachstum",
-  "tut.pflanze.karte.0": "Jeder Sieg lässt die Karte wachsen. Sieh ihr dabei zu.",
-  "tut.pflanze.feld.title": "Grüne Karten zahlen",
-  "tut.pflanze.feld.0": "Was ein Segment mit grünen Karten einbringt.",
-  "tut.pflanze.tipps.title": "Tipps für den Anfang",
-  "tut.pflanze.tipps.0": "**Kartenwert nur im reinen Bau.** Sobald ein fremder Skill dabei ist, wächst die Karte weiter und wird grün, aber ihr Wert steigt nicht mehr. · **Wachstum geht nie zurück.** Eine Karte, die einmal grün ist, bleibt grün. Niederlagen kosten dich Score, aber nie Wachstum. · **Mehr Pflanzen-Skills, schnelleres Wachstum.** Mit einem Pflanzen-Skill wächst eine Karte ein Drittel so schnell wie mit dreien. Ab {plantSkillRef} ist volles Tempo erreicht, mehr beschleunigt nicht weiter. · **Einen Wachstums-Skill zu ersetzen zählt als Trimmung.** Das gibt dauerhaft +{trimPct} % auf Wurzel- und Blüten-Score, bis +{trimCap2} %. Der ersetzte Skill ist damit nicht einfach weg. · **Der grüne Farbblock ist gedeckelt.** Er zahlt ×{greenCap}, egal wie viele grüne Karten nebeneinander liegen. Ab {ueberPct} % grünem Feld steigt er auf ×{greenCapUeber} und der Blüten-Score zählt doppelt.",
 
-  "tut.eis.title": "Eis",
-  "tut.eis.sub": "Masse sammeln, Gletscher brechen.",
-  "tut.eis.karte.title": "Der Gletscher",
-  "tut.eis.karte.0": "Jeder Eis-Skill friert eine Karte fest. Sieh zu, wie ihre Masse steigt und bricht.",
-  "tut.eis.tipps.title": "Tipps für den Anfang",
-  "tut.eis.tipps.0": "**Jeder Eis-Skill friert eine Karte fest.** Auch ein Tausch bei vollen Skill-Slots. Die Karte bleibt danach für den Rest des Laufs auf ihrer Position. · **Masse kommt jeden Durchlauf.** +{iceTick} bedingungslos, +{iceWin} zusätzlich bei einem Sieg des Gletschers. Bei {massBurst} bricht er und fängt wieder von vorn an. · **Unter {massT1} Masse zahlt ein Bruch nichts.** Die Wucht steigt in drei Stufen: ab {massT1} ×{wucht1}, ab {massT2} ×{wucht2}, ab {massT3} ×{wucht3}. · **Nachbarn verstärken den Bruch.** Jeder angrenzende Gletscher gibt +{kaskPct} %, und ein Bruch, der Gletscher trifft, zählt zusätzlich bis zum {kollFakt}-fachen. · **Der Bruch zahlt auch bei einer Niederlage.** Er hängt an der Masse, nicht am Ausgang des Stichs. Gewinnt die Karte ihren Stich, kommen Serie, Perks, Formation und Crit als Multiplikator obendrauf. · **Ab {iceDeclineMin} Eis-Skills friert auch das Ablehnen.** Du kannst dann mehr Gletscher haben als Skill-Slots.",
 
-  "tut.architekt.title": "Der Architekt",
-  "tut.architekt.sub": "Bauphase, Gebäude, Struktur und Distrikt.",
-  "tut.architekt.aufwerten.title": "Aufwerten",
-  "tut.architekt.aufwerten.0": "Stufe | {zollhaus} | {kontor} · I | +{zoll1} | +{kontor1} · II | +{zoll2} | +{kontor2} · III | +{zoll3} | +{kontor3} · IV | +{zoll4} | +{kontor4}",
-  "tut.architekt.aufwerten.1": "Aufwerten ist die zweite Hauptaktion. Es kostet dieselbe Phase wie ein Neubau, gibt aber keine neue Zelle, sondern hebt ein Gebäude eine Stufe. Legendäre Gebäude haben keine Stufen, und Stufe IV ist das Ende.",
-  "tut.architekt.aufwerten.2": "Ob bauen oder aufwerten: dieselbe Phase, ein Zug. Rechne, was mehr Boost bringt.",
-  "tut.architekt.wohin.title": "Distrikte",
-  "tut.architekt.wohin.0": "Liegen Gebäude derselben Kategorie aneinander, bilden sie einen Distrikt: Jeder Nachbar erhöht den Faktor beider Gebäude.",
-  "tut.architekt.wohin.1": "Schalte durch die Beispiele und sieh, wie der Faktor je Gebäude wächst.",
-  "tut.architekt.wohin.2": "Für den Distrikt zählt die Kategorie, also die Farbe. Ein Block zahlt mehr als eine Kette.",
-  "tut.architekt.tipps.title": "Tipps für den Anfang",
-  "tut.architekt.tipps.0": "**Früh schließen zahlt sich aus.** Der Faktor einer Struktur greift ab dem Durchlauf, in dem sie fertig ist, und danach in jedem weiteren. · **Rechne mit dem Platz.** Eine Zeile kostet fünf Zellen, eine Spalte {rows}. Bebauen darfst du zu Beginn {cover} Zellen, über den Upgrade-Baum bis {coverMax}. · **Gleiches zu Gleichem.** Gebäude derselben Kategorie, die sich berühren, geben je Nachbar {districtPct} Prozent mehr Score. Bis zu {districtCap} Nachbarn zählen. · **Diagonalen sind Einzelgänger.** Ihre Zellen berühren sich nie über eine Kante. Struktur ja, Distrikt nein. · **Aufwerten statt bauen.** Beides verbraucht dieselbe Phase. Legendäre Gebäude haben keine Stufen. · **Du musst nicht bauen.** Passt kein Bauplan, kannst du die Phase überspringen. Reicht der Platz nicht, kannst du stehende Gebäude abreißen, um einen Bauplan unterzubringen.",
-  "tut.architekt.tipps.1": "Was ein einzelnes Gebäude tut, steht auf seinem Bauplan.",
 
-  "tut.danach.title": "Nach dem Lauf",
-  "tut.danach.sub": "Endscreen, Punkte, Upgrade-Baum, Rangliste.",
-  "tut.architekt.strukturen.title": "Strukturen",
-  "tut.architekt.strukturen.0": "Deckst du eine volle Zeile, Spalte oder Diagonale mit Gebäuden ab, schließt du eine Struktur: Jede Position darin bekommt einen Faktor. Die Kategorie ist dabei egal.",
-  "tut.danach.punkte.title": "Was ein Lauf einbringt",
-  "tut.danach.punkte.0": "Jeder abgeschlossene Lauf zahlt einen festen Grundstock von {spPerRun}. Dazu kommen Meilensteine: Marken, die an deinem Score hängen.",
-  "tut.danach.punkte.1": "Zieh den Score hoch.",
-  "tut.danach.punkte.2": "Ein Abbruch zahlt nichts, weder Stichpunkte noch Deck-Punkte. Der Lauf muss bis zum letzten Durchlauf gespielt sein.",
-  "tut.danach.punkte.3": "Zwei Zugaben gibt es noch: jeder {loyaltyEvery}. abgeschlossene Lauf legt {loyaltySp} Stichpunkte obendrauf, und für deinen allerersten gibt es einmalig {welcomeDp} Deck-Punkte.",
-  "tut.danach.punkte.4": "Stichpunkte und Deck-Punkte fallen bei einem normalen Lauf immer gleich hoch aus. Ist der Upgrade-Baum irgendwann ganz gekauft, wandern die Stichpunkte als Deck-Punkte weiter.",
 
   /* ===================== TUTORIAL =====================
      Die 42 Schlüssel des geführten Laufs sind mit ihm gegangen (Rückbau T2). Was hier steht, sind die
@@ -1505,7 +1037,7 @@ export default {
      ist zurzeit nicht gesetzt (`canTutorial = !!onTutorial`), also rendert keiner von ihnen.
      ACHTUNG für T9: `start.tutorial.offer.sub` verspricht noch einen „geführten Lauf". Der Satz ist
      unsichtbar, aber falsch — er gehört umgeschrieben, wenn der Chip auf die neuen Sektionen zeigt. */
-  "start.tutorial": "Tutorial",
+  "start.devrun": "Dev-Run",
 
 
 
@@ -1720,19 +1252,9 @@ export default {
 
   // Ohne führendes Emoji: das Zeichen steht seit 18.08.2026 als eigenes Element im JSX (unter 1280 px
   // dasselbe Emoji, ab 1280 px ein Vektor im Textton). Im String ließe es sich nicht austauschen.
-  "start.progress.onboarding": "Onboarding",
-  "start.progress.bonus": "Bonus-{cur} · nächste +{n}",
-  "start.progress.runs": "{done} / {total} Läufe",
-  "start.progress.links": "{done} / {total}",
-  "start.progress.next": "Nächste Freischaltung:",
 
   // Belohnungen der Onboarding-Kette. Die Legendär-Phase nennt den Durchlauf aus dem
   // Entscheidungsplan (constants.js) — kein abgetipptes „R29" mehr.
-  "start.onb.reroll": "Reroll +1",
-  "start.onb.plant": "Pflanze frei",
-  "start.onb.ice": "Eis frei",
-  "start.onb.rarity": "Rarität: {tier}",
-  "start.onb.legendary": `Legendär ⭐ (Durchlauf ${LEG_PHASE_CYCLE})`,
 
   "start.resume": "▶ Lauf fortsetzen",
   "start.resume.sub": "Durchlauf {cycle}/{total} · Score {score}",
@@ -1742,8 +1264,6 @@ export default {
   "start.seed.aria": "Seed einfügen und spielen",
   "start.seed.play": "↻ Spielen",
   "start.seed.error": "Kein gültiger Seed. Prüf den Code und versuch es erneut.",
-  "start.secret.unlock": "🔓 Alles freigeschaltet.",
-  "start.secret.onboarding": "⏭️ Onboarding übersprungen · +10 SP · +50 DP",
   "start.secret.reset": "🔄 Profil wird zurückgesetzt …",
 
   "start.ranked": "Rangliste",
@@ -1752,23 +1272,14 @@ export default {
   /* #370 Wochenbonus: die erste abgeschlossene Ranked-Runde je Woche zahlt ihn aus. Die Anzeige verschwindet,
      sobald er geholt ist — es gibt also nie „1/1" zu sehen, {have} steht immer auf 0. Der Platzhalter bleibt
      trotzdem, damit die Zeile nicht lügt, falls der Bonus später mehrfach vergeben wird. */
-  "start.ranked.bonus": "Bonus {have}/{max}",
   "start.ranked.open": "Wochen-Rangliste öffnen",
-  "start.ranked.locked": "Wochen-Rangliste ansehen. Spielen wird frei, sobald alle Decks freigeschaltet sind und jeder der vier Archetypen einmal in einem bis zum Ende gespielten Lauf dabei war (ein Skill daraus genügt)",
 
   "start.tile.workshop": "Deck-Werkstatt",
   "start.tile.workshop.locked": "Die Deck-Werkstatt wird nach Abschluss des Onboardings frei",
-  "start.tile.upgrades": "Upgrades",
-  "start.tile.upgrades.title": "Upgrade-Baum",
-  "start.tile.upgrades.locked": "Frei nach Abschluss des Onboardings",
-  "start.tile.upgrades.buyable": "{n} kaufbar",
-  "start.tile.upgrades.complete": "✓ komplett",
   "start.tile.leaderboard": "Bestenliste",
   "start.tile.leaderboard.sub": "Globale Highscores",
   "start.tile.stats": "Statistiken",
   "start.tile.stats.sub": "Läufe & Rekorde",
-  "start.tile.lock_one": "🔒 noch {count} Lauf",
-  "start.tile.lock_other": "🔒 noch {count} Läufe",
 
   /* #desktop — Status-Tafel des Startbildschirms. Sie erscheint erst ab 1280 px und zeigt, was der
      Spieler wissen will, BEVOR er startet: welches Deck aktiv ist, wie die Guthaben stehen, was die
@@ -1777,27 +1288,16 @@ export default {
   "start.board.title": "Dein Stand",
   "start.board.field": "Spielfeld · {name}",
   "start.board.fx": "Effekte · {list}",
-  "start.board.sp": "Stichpunkte",
-  "start.board.sp.sub": "{done} / {total} Knoten",
-  "start.board.dp": "Deck-Punkte",
-  "start.board.dp.sub": "Werkstatt-Guthaben",
-  "start.board.week": "Woche {n}",
   // Reine Zahlenzeile: die Kennzahl der Wochen-Kachel trägt nur noch das Verhältnis. Das Wort „Bonus"
   // stand vorher IN der großen Zahl und wiederholte, was die Unterzeile darunter ohnehin sagt.
-  "start.board.week.val": "{have}/{max}",
   /* #bonus-benennen: Über „Bonus noch offen" steht jetzt, WAS es zu holen gibt. Zwei Fassungen, weil
      der Bonus zwei Gestalten hat: normal +SP und +DP, bei vollem Baum stattdessen der doppelte
      DP-Betrag (SP sind dort nutzlos, s. `recordRun`). Die Zahlen kommen aus storage.js.
      Eigene Zeile, weil beides zusammen gemessen nicht in die 118 px der Kachel passt. */
-  "start.board.week.bonus": "+{sp} SP · +{dp} DP",
-  "start.board.week.bonus.full": "+{dp} DP",
-  "start.board.week.open": "Bonus noch offen",
-  "start.board.week.done": "Bonus geholt",
   "start.board.last": "Letzter Lauf",
   "start.board.last.sub": "Durchlauf {cycle}",
   "start.board.last.none": "—",
   "start.board.last.none.sub": "noch kein Lauf",
-  "start.tile.upgrades.sub": "Dauerhafte Verbesserungen",
   "start.tile.workshop.sub": "Decks, Spielfelder, Effekte",
 
   "start.options": "Optionen",

@@ -23,7 +23,6 @@ import { ARCH_CAT } from "../ui/indicators/vocab.js";
 import { PERK_DEFS, CATEGORIES as PERK_CATS } from "../game/perks.js";
 import { familyDef as rawFamilyDef, layoutFamilies as rawLayoutFamilies } from "../game/families.js";
 import { ARCHITECT_FAMILIES } from "../game/architect.js";
-import { NODES } from "../game/progression.js";
 import { WEEK_MODS } from "../game/weekMods.js";
 import { DECK_DEFS, BATTLEFIELD_DEFS } from "../game/cosmetics.js";
 import { THEME_DEFS, GLOBAL_FX } from "../game/themes.js";
@@ -134,16 +133,6 @@ export function archFamily(id) {
   if (!f) return null;
   return { ...f, name: t(`building.${id}.name`) };
 }
-
-/* ---- Upgrade-Baum (NODES / BRANCHES) ---- */
-export const nodeList = () => NODES.map((n) => ({
-  ...n, label: t(`node.${n.id}.label`), detail: n.detail ? t(`node.${n.id}.detail`) : n.detail,
-}));
-export const nodeDef = (id) => {
-  const n = NODES.find((x) => x.id === id);
-  if (!n) return null;
-  return { ...n, label: t(`node.${id}.label`), detail: n.detail ? t(`node.${id}.detail`) : n.detail };
-};
 
 /* ---- Wochen-Modifikatoren (WEEK_MODS) ----
    `desc` bleibt eine FUNKTION der gewürfelten Stärke — der Katalog trägt sie als {v}-Vorlage. */

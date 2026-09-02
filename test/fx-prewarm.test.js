@@ -49,7 +49,7 @@ describe("#372c — der Ladebildschirm wärmt vor, nicht der Lauf", () => {
   });
 
   it("gewärmt werden die FREIGESCHALTETEN Archetypen — der Angebots-Pool ist genau darauf begrenzt", () => {
-    expect(app).toContain("return unlockedArchetypes(profile)");
+    expect(app).toContain("return ARCHETYPE_ORDER"); // exp: kein Baum — alle vier Archetypen werden gewärmt
     expect(app).toContain("fxPrewarmedRef.current.add(a); return FX_PREWARM[a](opts);");
   });
 

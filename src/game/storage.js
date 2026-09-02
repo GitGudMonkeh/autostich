@@ -143,11 +143,6 @@ const DEFAULT_PROFILE = { schemaVersion: PROFILE_SCHEMA_VERSION,
      rausgeht, hat nichts gesehen. Ebenso bewusst NICHT an den Tutorial-Lauf gebunden — jeder
      abgeschlossene Lauf zählt. */
   hadCompletedRun: false,
-  /* Runde 5, W1 (Owner): „Tutorial überspringen" auf der Willkommenskarte hebt auch die
-     Blitz-only-Erstlauf-Sperre — sticky, damit KÜNFTIGE Läufe ebenfalls offen sind, ohne dass
-     erst ein ganzer Lauf abgeschlossen werden muss. Kein Migrations-Glied nötig: false ist für
-     jedes Alt-Profil die richtige Antwort, und loadProfile füllt fehlende Felder aus dem Default. */
-  tutorialSkipped: false,
   /* #hirsch-abgeschlossen: Zähler der ABGESCHLOSSENEN Läufe. `games` daneben zählt jeden BEGONNENEN
      (Abbrüche eingeschlossen) und bleibt, was er ist — die Statistik zeigt ihn so an. Freischaltungen
      über eine Laufzahl lesen ab jetzt diesen hier; ein abgebrochener Lauf soll keine Belohnung tragen. */
@@ -323,7 +318,7 @@ export function saveProfile(profile) {
    aber altem Namen. Die übrigen Präferenzen (Lautstärke, Haptik, SPRACHE) überleben den Reset
    weiterhin: sie hängen nicht am Fortschritt, und die Sprache lässt sich im Namens-Dialog ohnehin
    direkt wieder wählen. */
-export const RESET_KEYS = ["as_profile", "as_highscores", "as_ghost", "as_runhistory", "as_activerun", "as_tutorial_done", "as_tut_progress", "as_hints", "as_username", "as_feedback_draft", "as_feedback_sent"];
+export const RESET_KEYS = ["as_profile", "as_highscores", "as_ghost", "as_runhistory", "as_activerun", "as_username", "as_feedback_draft", "as_feedback_sent"];
 export function wipeProfileStorage() {
   for (const key of RESET_KEYS) {
     try { localStorage.removeItem(k(key)); } catch (e) {}
@@ -782,80 +777,6 @@ export function loadOptions() {
 export function saveOptions(opts) {
   try { localStorage.setItem(k("as_options"), JSON.stringify(opts)); } catch (e) {}
   return opts;
-}
-
-/* TUTORIAL-FORTSCHRITT — hier zentral, damit der Preview-Namespace (P) auch diese Keys trennt und der
-   Test-Build den Erstbesuch-Zustand der echten Seite nicht setzt.
-
-   Der geführte Lauf kannte nur einen Boolean („gesehen, ja/nein"). Die Sektionen brauchen mehr: WELCHE
-   Lektionen gelesen sind und WO man weitermachen kann. Das ist eine andere Form, also ein anderer
-   Schlüssel — `as_tutorial_done` wird NICHT umgedeutet.
-
-   Der alte Schlüssel wird aber weiter GELESEN (nie geschrieben): wer den geführten Lauf seinerzeit
-   durchlaufen hat, soll das laute Erstkontakt-Angebot im Hub nicht ein zweites Mal bekommen. Das ist
-   eine Zeile statt einer Migration, und ein verwaister Boolean im localStorage kostet nichts. */
-const TUT_PROGRESS = "as_tut_progress";
-const TUT_LEGACY   = "as_tutorial_done";   // geführter Lauf, zurückgebaut — nur noch gelesen
-
-// { seen: ["sektion/lektion", …], last: "sektion/lektion" | null }
-export function loadTutorialProgress() {
-  try {
-    const raw = localStorage.getItem(k(TUT_PROGRESS));
-    const p = raw ? JSON.parse(raw) : null;
-    if (!p || typeof p !== "object") return { seen: [], last: null };
-    return { seen: Array.isArray(p.seen) ? p.seen.filter((x) => typeof x === "string") : [],
-             last: typeof p.last === "string" ? p.last : null };
-  } catch (e) { return { seen: [], last: null }; }
-}
-export function saveTutorialProgress(p) {
-  try {
-    localStorage.setItem(k(TUT_PROGRESS), JSON.stringify({
-      seen: [...new Set((p && p.seen) || [])], last: (p && p.last) || null,
-    }));
-  } catch (e) {}
-}
-
-/* Hat der Spieler das Tutorial je GEÖFFNET? Steuert allein, ob das laute Erstkontakt-Angebot über
-   „Lauf beginnen" noch erscheint — der ruhige Chip unten bleibt ohnehin immer.
-
-   Bewusst „geöffnet", nicht „abgeschlossen": es gibt keinen Abschluss mehr, den man erreichen könnte
-   (kein Lohn, kein Tor — Owner-Entscheidung). Wer eine Lektion gelesen hat, hat den Einstieg gefunden;
-   ihn weiter anzuwerben wäre lästig, ihm „fertig" zu sagen wäre gelogen. */
-export function tutorialOpened() {
-  try { if (localStorage.getItem(k(TUT_LEGACY))) return true; } catch (e) { /* kein localStorage */ }
-  return loadTutorialProgress().seen.length > 0;
-}
-
-/* ONBOARDING-HINTS (docs/tutorial-onboarding-design.md §5) — the in-run hint layer's memory.
-   `seen`   hint ids already shown (or skipped for good) — first occurrence means first in the
-            profile's life, no hint ever repeats (§5.4 rule 4).
-   `visits` 1-based phase-visit counters ({ formation, architect, perk, skill }) — the suggestion
-            sequences and H3b/H5 key off these.
-   `last`   per screen, the context key ("screen:seed:cycle") of the visit already counted, so a
-            reload mid-phase does not double-count.
-   Its own key, not part of the tutorial-sections progress: the Probierfeld is pull material with
-   its own lifecycle; wiping one must not wipe the other except through the full reset. */
-const HINTS_KEY = "as_hints";
-export function loadHintProgress() {
-  try {
-    const raw = localStorage.getItem(k(HINTS_KEY));
-    const p = raw ? JSON.parse(raw) : null;
-    if (!p || typeof p !== "object") return { seen: [], visits: {}, last: {}, seenAt: {} };
-    return { seen: Array.isArray(p.seen) ? p.seen.filter((x) => typeof x === "string") : [],
-             visits: (p.visits && typeof p.visits === "object") ? p.visits : {},
-             last: (p.last && typeof p.last === "object") ? p.last : {},
-             // Runde 2, R19: je Hint der Phasen-Kontext, in dem er gesehen wurde — C6 („Phase danach")
-             // braucht die Unterscheidung „C5 in DIESER Phase ✕" vs. „in einer früheren".
-             seenAt: (p.seenAt && typeof p.seenAt === "object") ? p.seenAt : {} };
-  } catch (e) { return { seen: [], visits: {}, last: {}, seenAt: {} }; }
-}
-export function saveHintProgress(p) {
-  try {
-    localStorage.setItem(k(HINTS_KEY), JSON.stringify({
-      seen: [...new Set((p && p.seen) || [])], visits: (p && p.visits) || {}, last: (p && p.last) || {},
-      seenAt: (p && p.seenAt) || {},
-    }));
-  } catch (e) {}
 }
 
 /* AKTIVER LAUF (Resume) — Snapshot des laufenden Reducer-States, damit ein Run das Wegtabben/Schließen

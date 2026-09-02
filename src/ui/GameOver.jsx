@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 import { useIsWide } from "./useIsWide.js"; // #desktop: ab 1280 px steht die finale Aufstellung offen
-import { useEscape } from "./useEscape.js";
 import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import { Sparkline } from "./Sparkline.jsx";
 import { RunStatCells, RunBuildChips } from "./RunStats.jsx"; // Victory-Redesign: Kennzahlen (Stats-Sektion) + Build-Chips (Build-Sektion) getrennt platziert
@@ -9,18 +8,13 @@ import { CardGrid } from "./CardGrid.jsx";
 import { MODAL_CARD, MENU_PANEL, TopHairline, STICKY_HEAD_BG } from "./modalStyle.jsx";
 import { glacierGridProps } from "./glacierBoard.js";
 import { fmtScore, fmtScoreShort } from "./format.js";
-import { deckAssets, battlefieldAssets } from "./cosmeticAssets.js"; // #190: Freischalt-Vorschau
 import { computeFormations } from "../game/formations.js"; // #201.8: finale Aufstellung + Rahmen
 import { allianceGroups } from "../game/families.js";
 import { architectCoverFor } from "./architectCover.js"; // #UI: Gebäude-Rahmen auch im Victory-Screen (wie Chronik)
 import FormIcon from "./FormIcon.jsx";
 import { ArchToggle } from "./ArchPanels.jsx"; // #398: geteilter Gebäude-Umschalter (eine Quelle für alle vier Bildschirme)
-import { milestoneBarState } from "../game/progression.js"; // #304 Verdienst-Rollup: Meilensteinbalken
-import { TIER as MS_TIER, TIER_HI as MS_TIER_HI } from "./ScoreMilestoneBar.jsx"; // Q11: dieselbe Stufen-Palette wie im Lauf
-import { GuideOverlay } from "./GuideOverlay.jsx"; // #: Leitfaden direkt auf der Fraktions-Seite eines Archetyp-Unlocks öffnen
 import { archFamily, archCatDef } from "../i18n/labels.js"; // #sprache: Gebäudename zur Anzeigezeit
 import { t, fmtNum } from "../i18n/index.js"; // #sprache
-import { PhaseHintSlot } from "./hints/HintCard.jsx"; // Onboarding-E8: der Abschluss-Hinweis
 
 /* #menu-rework M4 — THREE INLINE LITERALS ON THIS SCREEN ARE STEPS OF THE VOCABULARY, and they are
    the only three. Migrating them is value-preserving by construction, so all three are provable at
@@ -100,112 +94,16 @@ function useCountUp(target, dur = 1100, delay = 0) {
   }, [target, dur, delay]);
   return val;
 }
-// DP-Rollup mit Challenge-Countdown: erst auf Brutto (bzw. direkt Netto, wenn kein Abzug) hoch; bei Abzug (raw<0) nach
-// kurzer Pause runter auf Netto (bei 0 gedeckelt) + rotes „Minus". Rückgabe { val, minus }.
-function useDpRollup({ gross = 0, net = 0, raw = 0 }) {
-  const [val, setVal] = useState(0);
-  const [minus, setMinus] = useState(false);
-  useEffect(() => {
-    const g = Math.max(0, Math.round(gross)), n = Math.max(0, Math.round(net));
-    if (prefersReduced()) { setVal(n); setMinus(raw < 0); return undefined; }
-    const peak = raw < 0 ? g : n;
-    const UP = 1100, PAUSE = 1300, DOWN = 800;
-    let raf = 0, start = null;
-    const step = (ts) => {
-      if (start == null) start = ts;
-      const el = ts - start;
-      if (el < UP) { setVal(Math.round(peak * easeOutCubic(el / UP))); raf = requestAnimationFrame(step); return; }
-      setVal(peak);
-      if (raw < 0) {
-        if (el < UP + PAUSE) { raf = requestAnimationFrame(step); return; }
-        setMinus(true);
-        const dp = Math.min(1, (el - UP - PAUSE) / DOWN);
-        setVal(Math.round(peak + (n - peak) * easeOutCubic(dp)));
-        if (dp < 1) raf = requestAnimationFrame(step);
-      }
-    };
-    raf = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf);
-  }, [gross, net, raw]);
-  return { val, minus };
-}
-
 // Highscore-Listen (lokal + global) bewusst NICHT hier — sie stehen auf dem Startbildschirm und
 // machten dieses (nicht scrollbare) Overlay zu lang. Der GameOver-Screen zeigt nur den Lauf.
 // #169 FB-8: der Statblock (Serie/Perks/Formationen/Crits + Perk-/Skill-Chips) steckt jetzt in der
 // geteilten RunStats-Komponente — dieselbe Anzeige nutzt die Leaderboard-Detailansicht (RunDetail).
-/* #unlock-fenster (18.08.2026): Frisch freigeschaltete Skins bekommen auf dem DESKTOP ein eigenes Fenster
-   statt einer Bahn im Screen. Grund ist das Format: die Bahn läuft über die volle Breite (1720 px) und trägt
-   darin zwei 74-px-Kacheln — am Handy ist das eine gefüllte Karte, auf dem Desktop ein leeres Band mit einem
-   Fleck in der Mitte. Als Fenster ist die Freischaltung das, was sie ist: eine Nachricht, die man einmal
-   ansieht und wegklickt. Der goldene Funkel-Rahmen ist derselbe wie an den Meta-Freischaltungen (as-legendary).
-   Das Bild steht groß — es ist der einzige Grund, warum jemand hinsieht. */
-function UnlockModal({ unlocks, onConfirm }) {
-  useEscape(onConfirm);
-  /* Groß steht das DECK-COVER — es ist das Bild, wegen dem man hinsieht. Ein Deck-Skin schaltet meist sein
-     Spielfeld gleich mit frei; das ist dieselbe Nachricht in klein und stünde als zweite große Kachel neben
-     dem Cover nur im Weg. Es wird deshalb NAMENTLICH genannt statt abgebildet — verschwiegen wird nichts.
-     Gibt es ausnahmsweise gar kein Deck (nur ein Spielfeld), zeigt das Fenster eben das. */
-  const covers = unlocks.filter((u) => u.type === "deck");
-  const shown = covers.length ? covers : unlocks;
-  const alsoNames = covers.length ? unlocks.filter((u) => u.type !== "deck").map((u) => u.name) : [];
-  return overlayPortal((
-    <div className="ul-root fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6"
-      style={{ background: "rgba(8, 8, 12, .82)" }} onClick={onConfirm}>
-      {/* Die Maße sind auf beiden Seiten dieselbe Idee, nur andere Zahlen: das Bild so groß, wie der Schirm
-          es hergibt, drumherum nur so viel Rahmen wie nötig. Am Handy heißt das ein Cover über die halbe
-          Fensterbreite und knapperes Polster; auf dem Desktop ein gedeckeltes Fenster. */}
-      <div className="ul-card as-legendary rounded-2xl px-5 pt-6 pb-5 sm:px-8 sm:pt-7 sm:pb-6 text-center"
-        style={{ background: "linear-gradient(180deg, #1c1708, #14110c)", maxWidth: "min(92vw, 760px)", maxHeight: "90dvh", overflowY: "auto" }}
-        onClick={(e) => e.stopPropagation()}>
-        <div className="text-body-5 sm:text-body-lg-5 uppercase tracking-[.2em] sm:tracking-[.28em] font-semibold" style={{ color: "#f2c14a" }}>
-          {t("gameover.skins.title")}
-        </div>
-        <div className="flex flex-wrap justify-center items-end gap-5 sm:gap-7 mt-5 sm:mt-6">
-          {shown.map((u) => {
-            const img = u.type === "deck" ? deckAssets(u.id).back : (battlefieldAssets(u.id) || {}).desktop;
-            return (
-              <div key={`${u.type}:${u.id}`} className="ul-item flex flex-col items-center gap-2.5"
-                style={{ width: u.type === "deck" ? "min(240px, 64vw)" : "min(380px, 82vw)" }}>
-                {/* Ohne Bild KEINE leere Kachel — der Name allein sagt mehr als ein leerer Rahmen. */}
-                {img && (
-                  <div className="ul-img rounded-xl overflow-hidden w-full"
-                    style={{ aspectRatio: u.type === "deck" ? "3 / 4" : "16 / 9", background: "#0c0c10", border: "1px solid #d4a63a55" }}>
-                    <img src={img} alt="" decoding="async" className={`w-full h-full ${u.type === "deck" ? "object-contain" : "object-cover"}`} />
-                  </div>
-                )}
-                <span className="text-body-lg-3 font-semibold leading-tight">{u.name}</span>
-              </div>
-            );
-          })}
-        </div>
-        {alsoNames.length > 0 && (
-          <div className="text-body-3 opacity-70 mt-4">+ {alsoNames.join(" · ")}</div>
-        )}
-        <div className="text-body-5 opacity-55 mt-5">{t("gameover.skins.hint")}</div>
-        <button onClick={onConfirm} autoFocus
-          className="as-actbtn as-edge-strong mt-5 sm:mt-6 w-full py-3 rounded-lg font-bold transition-all hover:brightness-110"
-          style={{ "--c": "#d4a63a" }}>
-          {t("common.confirm")}
-        </button>
-      </div>
-    </div>
-  ));
-}
+/* exp: the earn rollup (SP/DP, milestone bar, welcome bonus), the onboarding banner, the meta-unlock
+   list and the skin-unlock window left with the meta-progression. The screen shows the run. */
 
-export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentTraj = [], recordTraj = [], newUnlocks = [], progressUnlocks = [], earn = null, onboarding = null, prevBests = null, onCustomize = null, onUpgrades = null, onLeaderboard = null }) {
+export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentTraj = [], recordTraj = [], prevBests = null }) {
   const score = Math.floor(state.score); // Zahlenwert für Record-Vergleich; Anzeige über fmtScore
-  const [guideArch, setGuideArch] = useState(null); // #: Leitfaden-Overlay aus einem Archetyp-Freischalt-Button (Onboarding)
-  // #304 Verdienst-Rollup: Score/Meilensteinbalken/SP/DP animiert hochzählen (Challenge: Countdown Brutto→Netto).
-  const mb = milestoneBarState(score);
   const scoreUp = useCountUp(score, 1100);
-  // Q11 (Runde 3): wie im Lauf zählt die Leiste nur den AKTUELLEN Meilenstein (segFill) und
-  // trägt die Farbe der erreichten Stufe — keine Gesamt-Füllung, keine Viertel-Marken mehr.
-  const barFill = useCountUp(Math.round((mb.segFill || 0) * 1000), 850, 300) / 1000; // 0..1 (×1000 für ganzzahliges Count-up)
-  const msAcc = MS_TIER[Math.min(mb.reached, MS_TIER.length - 1)];
-  const msAccHi = MS_TIER_HI[Math.min(mb.reached, MS_TIER_HI.length - 1)];
-  const spUp = useCountUp(earn ? earn.sp : 0, 1100, 200);
-  const dpRoll = useDpRollup({ gross: earn ? earn.dpGross : 0, net: earn ? earn.dpNet : 0 });
   // #201.8 Stufe A: finale Aufstellung aus dem Live-state; Formationen frisch berechnet (rein, matcht das Enddeck).
   const finalOrder = state.playerOrder || [];
   const finalCards = finalOrder.map((di) => state.deck[di]);
@@ -238,7 +136,6 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
   // #graph-fuellt: der Score-Verlauf fuellt die freie Hoehe seiner Spalte (nur ab 1280 px gemessen).
   const chartRef = useRef(null);
   const chartVh = useFuellHoehe(chartRef, wide);
-  const [unlockSeen, setUnlockSeen] = useState(false);   // #unlock-fenster: einmal bestätigen, dann weg
   const [showArch, setShowArch] = useState(true);        // Gebäude-Overlay auf dem Brett an/aus
   const [inspectBid, setInspectBid] = useState(null);    // Liste ↔ Brett: angetipptes Gebäude glüht am Grid
 
@@ -277,7 +174,6 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
         {/* Onboarding-E8 (T-O2): einmaliger Abschluss-Hinweis — als Banner IM Endscreen, nicht als
             blockierende Karte davor (der Victory-Schirm ist selbst der Payoff, den nichts verdecken
             soll; Abweichung vom Papier §5.3 „pause card", im Task-Contract festgehalten). */}
-        <PhaseHintSlot screen="gameover" />
         <div className="go-hero text-center mt-4">
           <div className="go-eyebrow text-body-5 uppercase tracking-widest" style={{ color: "#e0605a" }}>{t("gameover.eyebrow")}</div>
           {/* #go-ruhe: Auf dem DESKTOP wird aus der Kleinschrift-Zeile unter dem Score die Kennzahlenreihe
@@ -344,94 +240,6 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
             </div>
           )}
         </div>
-        {/* #304 Verdienst-Rollup (direkt unter dem Score-Hero, wo früher die Münzen-Zeile saß): Meilensteinbalken läuft
-            voll, SP (gold) & DP (cyan) zählen hoch; im Challenge zählt DP nach kurzer Pause auf Netto runter (rotes Minus).
-            Nur NACH dem Onboarding (davor gibt es keine SP/DP → dann zeigt unten das Onboarding-Banner den Fortschritt). */}
-        {/* Auch bei 0 SP / 0 DP: der Block bleibt stehen und zeigt die Nullen. Ein Lauf, den man sofort beendet,
-            soll denselben Screen sehen wie ein langer — nur mit anderen Zahlen. */}
-        {!onboarding && earn && (
-          <div className="go-earn as-ring as-ring-quiet mt-4">
-            <i className="as-ring-run" aria-hidden="true" />
-            <div className="go-box rounded-xl px-3 py-2.5" style={MENU_PANEL}>
-              <div className="flex items-center justify-between mb-1.5 text-meta-3 font-bold">
-                <span style={{ color: "#9a9aa6" }}>{t("gameover.milestones", { done: mb.reached, total: mb.total })}</span>
-                <span style={{ color: "#8a8896" }}>{mb.atMax ? t("gameover.milestones.max") : t("gameover.milestones.next", { n: Math.round(mb.next.at / 1_000_000) })}</span>
-              </div>
-              <div className="relative h-2 rounded-full overflow-hidden" style={{ background: "#0e0e13" }}>
-                {/* Q11: Füllung = aktuelles Meilenstein-Segment, Farbe = erreichte Stufe (wie ScoreMilestoneBar). */}
-                <div className="absolute inset-y-0 left-0 rounded-full" style={{ width: `${Math.round(barFill * 100)}%`, background: `linear-gradient(90deg, ${msAcc}, ${msAccHi})` }} />
-              </div>
-            </div>
-            {earn && (
-              <div className="grid grid-cols-2 gap-2 mt-2">
-                {/* #kante: Die beiden Währungs-Zeilen waren getönte Flächen (Braungold / Dunkelcyan). Als
-                    Kanten auf gleichem Grund lesen sie sich als ein Paar statt als zwei verschiedene Kästen;
-                    die Farbe steckt weiter in Kante und Zahl. */}
-                <div className="as-edge-card rounded-xl px-3 py-2 flex items-center justify-between" style={{ "--c": "#d4a63a" }}>
-                  <span className="text-meta-3 font-bold" style={{ color: "#d4a63a" }}>{t("gameover.sp")}</span>
-                  <span className="ty-num text-title-2" style={{ color: "#f2c14a" }}>+{spUp}</span>
-                </div>
-                <div className="as-edge-card relative rounded-xl px-3 py-2 flex items-center justify-between overflow-hidden" style={{ "--c": "#35c6e6" }}>
-                  <span className="text-meta-3 font-bold" style={{ color: "#35c6e6" }}>{t("gameover.dp")}</span>
-                  <span className="flex items-center gap-1.5">
-                    {dpRoll.minus && <span className="text-meta-1 font-extrabold px-1 rounded" style={{ background: "#3a1214", color: "#ff9a9a" }}>−{Math.max(0, (earn.dpGross || 0) - (earn.dpNet || 0))}</span>}
-                    <span className="ty-num text-title-2" style={{ color: "#5fe0f7" }}>+{dpRoll.val}</span>
-                  </span>
-                  {dpRoll.minus && <span aria-hidden className="absolute bottom-0 left-0 h-[3px]" style={{ width: "100%", background: "#e05555" }} />}
-                </div>
-              </div>
-            )}
-            {/* Willkommensbonus: einmalig nach dem ersten abgeschlossenen Lauf. Bewusst als EIGENE Zeile
-                statt in die SP-Kachel addiert — sonst stünde da nur eine große Zahl und der Spieler
-                wüsste nicht, wofür. Der goldene Rahmen (as-legendary) markiert das Einmalige. */}
-            {earn && earn.welcomeDp > 0 && (
-              <div className="as-legendary mt-2 rounded-xl px-3 py-2.5 flex items-center justify-between gap-3"
-                style={{ background: "#1a1608" }}>
-                <span className="min-w-0">
-                  <span className="text-body-1 font-extrabold block" style={{ color: "#f2c14a" }}>{t("gameover.welcome")}</span>
-                  <span className="text-meta-2 leading-snug block" style={{ color: "#c8bb8a" }}>{t("gameover.welcome.hint")}</span>
-                </span>
-                <span className="ty-num text-title-2 shrink-0" style={{ color: "#f2c14a" }}>
-                  {t("gameover.welcome.value", { n: earn.welcomeDp })}
-                </span>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* #: Onboarding-Fortschritt — NACH JEDEM Onboarding-Lauf: golden funkelnder Rahmen mit dem Stand + gerade
-            freigeschalteter Belohnung (progressUnlocks) bzw. der nächsten Freischaltung. Nur während des Onboardings. */}
-        {onboarding && (
-          <div className="go-onb as-legendary mt-4 rounded-xl p-3" style={{ background: "#1a1608" }}>
-            <div className="text-body-5 uppercase tracking-widest text-center mb-2" style={{ color: "#f2c14a" }}>
-              ✦ Onboarding {onboarding.step}/{onboarding.links}
-            </div>
-            {progressUnlocks.length > 0 ? (
-              <div className="flex flex-col gap-2">
-                {progressUnlocks.map((u) => (
-                  <div key={u.id} className="flex flex-col items-center gap-2 rounded-lg px-3 py-2 text-center" style={{ background: "#141019", border: "1px solid #3a2f12" }}>
-                    <span className="text-body-1 font-bold leading-snug" style={{ color: "#f0d27a" }}>{t("gameover.unlocked.inline", { label: u.label })}</span>
-                    {u.guide && (
-                      <button type="button" onClick={() => setGuideArch(u.guide)}
-                        className="rounded-full px-3 py-1 text-body-1 font-bold transition-all hover:-translate-y-0.5"
-                        style={{ background: "#241b34", color: "#e8d9ff", border: "1px solid #6b4fa0" }}>
-                        📖 {t("skill.guide.title", { arch: u.guideName })}
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-body-1 text-center font-bold" style={{ color: "#f0d27a" }}>
-                {t(onboarding.advanced ? "gameover.progress.saved" : "gameover.progress.done")}
-                {onboarding.nextLabel ? ` · ${t("gameover.progress.next", { at: onboarding.nextAt, total: onboarding.links, label: onboarding.nextLabel })}` : ""}
-              </div>
-            )}
-          </div>
-        )}
-        {/* #: Leitfaden-Overlay — vom „📖 Leitfaden"-Button eines Archetyp-Unlocks geöffnet, direkt auf dessen Fraktions-Seite. */}
-        {guideArch && <GuideOverlay initial={guideArch} onClose={() => setGuideArch(null)} />}
-
         {/* #go-ruhe: BESTLEISTUNGEN — welche persönlichen Bestmarken sind in DIESEM Lauf gefallen.
             Der Rekord-Chip im Kopf sagt bisher nur „neuer Rekord, +55 %" und meint dabei allein den Score;
             dass nebenbei die längste Serie oder der beste Einzelstich gefallen ist, stand nirgends — obwohl
@@ -502,41 +310,6 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
             <i className="as-ring-run" aria-hidden="true" />
           <ScoreHerkunft state={state} />
         </div>
-
-        {/* #unlock-fenster: EIN Fenster in jeder Breite (seit 18.08.2026 auch am Handy). Die Bahn im Screen
-            gibt es nicht mehr — sie war auf dem Desktop ein leeres Band und am Handy eine Karte, die man
-            beim Scrollen überliest. Als Fenster ist die Freischaltung das, was sie ist: eine Nachricht. */}
-        {newUnlocks.length > 0 && !unlockSeen && (
-          <UnlockModal unlocks={newUnlocks} onConfirm={() => setUnlockSeen(true)} />
-        )}
-
-        {/* #299 Meta-Freischaltungen dieses Laufs (Onboarding-Abschluss/Archetyp/Rarität) — funkelnder Gold-Rahmen
-            (as-legendary) + kontextpassender Ziel-Button je Freischaltung. Während des Onboardings zeigt das
-            Onboarding-Banner oben die Freischaltungen (kein Ziel-Button nötig) → hier nur NACH dem Onboarding. */}
-        {!onboarding && progressUnlocks.length > 0 && (
-          <div className="go-unlocks as-legendary mt-4 rounded-xl p-3" style={{ background: "#1a1608" }}>
-            <div className="text-body-5 uppercase tracking-widest text-center mb-2" style={{ color: "#f2c14a" }}>{t("gameover.unlocked.title")}</div>
-            <div className="flex flex-col gap-2">
-              {progressUnlocks.map((u) => {
-                const nav = u.target === "workshop" ? { fn: onCustomize, label: t("gameover.nav.workshop") }
-                  : u.target === "upgrades" ? { fn: onUpgrades, label: t("gameover.nav.upgrades") }
-                  : u.target === "leaderboard" ? { fn: onLeaderboard, label: t("gameover.nav.leaderboard") } : null;
-                return (
-                  <div key={u.id} className="flex items-center justify-between gap-3 rounded-lg px-3 py-2" style={{ background: "#141019", border: "1px solid #3a2f12" }}>
-                    <span className="text-body-1 font-bold leading-snug" style={{ color: "#f0d27a" }}>✦ {u.label}</span>
-                    {nav && nav.fn && (
-                      /* #kante: Weiterleitung in der Freischaltungs-Zeile — starker Kanten-Knopf statt
-                         gefüllter Goldtaste. Die Zeile drumherum behält bewusst ihre Fläche. */
-                      <button onClick={nav.fn} className="as-edge-strong as-edge-thin shrink-0 text-meta-3 font-extrabold px-3 py-1.5 rounded-lg whitespace-nowrap transition-transform hover:-translate-y-0.5"
-                        style={{ "--c": "#d4a63a" }}>{nav.label} ›</button>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
 
         {/* Victory-Redesign · BUILD-Sektion: Archetyp-Zusammenfassung + Perk-/Skill-Chips, darunter die Motor-Kennzahlen
             je aktiver Fraktion (die „Engine-Story" des Runs, nur Zähler > 0). */}

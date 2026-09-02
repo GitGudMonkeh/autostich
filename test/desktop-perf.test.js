@@ -149,33 +149,6 @@ describe("#skilltext — die Skill-Beschreibungen stehen ganz da", () => {
   });
 });
 
-describe("#flach — der Baum haelt seinen Inhalt im Rahmen", () => {
-  it("Panel klemmt, Knotenspalten scrollen, die Rasterzeile waechst nicht mit dem Bild", () => {
-    expect(css).toMatch(/\.up-page \{[^}]*overflow:\s*hidden/);
-    expect(css).toMatch(/\.up-vgrid \{[^}]*overflow-y:\s*auto/);
-    // Der Kern: ohne die Zeilenangabe waechst die einzige Rasterzeile nach ihrem hoechsten Kind.
-    expect(css).toMatch(/\.up-facbody \{[^}]*grid-template-rows:\s*minmax\(0,\s*1fr\)/);
-    /* #menu-rework M3 — hier stand `.up-chall { max-height: 100% }`, und das war der MECHANISMUS,
-       nicht die Zusicherung: die Challenge war eine Karte IM Rasterkoerper, mit einem Deckbild, das
-       auf flachen Fenstern hoeher war als der ganze Platz — der Deckel hielt sie im Rahmen.
-       Die Karte ist gefallen (sie verbarg gemessen 151 px ihres eigenen Inhalts bei 1280 x 720); die
-       Challenge ist jetzt eine Zeile am FUSS des Panels und steht gar nicht mehr im Raster.
-       Damit haengt die Zusicherung an zwei anderen Stellen, und beide werden hier geprueft statt der
-       alten Zeile: der Scroller, der die Resthoehe jetzt allein traegt, und die Gegenprobe, dass in
-       den Rasterkoerper NICHTS ausser der Skill-Liste zurueckwandert. Die zweite ist die wichtigere —
-       ein zweites Kind mit Bild waere genau der alte Fehler in neuem Gewand. */
-    expect(css).toMatch(/\.up-skills \{[^}]*min-height:\s*0[^}]*overflow-y:\s*auto/);
-    const jsx = src("ui/UpgradeScreen.jsx");
-    const body = jsx.match(/className="up-facbody">([\s\S]*?)<\/div>/);
-    expect(body, ".up-facbody nicht mehr gefunden").toBeTruthy();
-    /* #health-check G4: [A-Z] sah nur Komponenten-Tags — ein rohes <img>/<div>-Kind (genau der alte
-       Fehler) blieb unsichtbar. Kleinbuchstaben zaehlen mit; das erste fremde OEFFNENDE Tag faellt
-       damit auch dann auf, wenn der lazy-Match dahinter abschneidet. */
-    const kinder = [...body[1].matchAll(/<([A-Za-z][A-Za-z0-9]*)/g)].map((m) => m[1]);
-    expect(kinder, "im Rasterkoerper steht etwas anderes als die Skill-Liste").toEqual(["SkillGrid"]);
-  });
-});
-
 /* ============================================================
    #breite · #rd-scroll — die zwei Nähte vom 18.08.2026, die beide STUMM kaputtgehen.
    ============================================================ */
@@ -345,33 +318,6 @@ describe("#go-stiche — der Durchlauf-Graph steht unten, an EINER Stelle", () =
        600 px, die den ganzen Screen nach unten ziehen. Die genaue Prüfung steht in go-ruhe.test.js. */
     const ticks = jsx.slice(jsx.indexOf('className="go-ticks"'));
     expect(ticks.slice(0, ticks.indexOf("/>") + 2)).not.toMatch(/\bopen\b/);
-  });
-});
-
-describe("#leerlauf — ein sofort beendeter Lauf sieht aus wie ein langer, nur mit Nullen", () => {
-  it("Verdienst und Score-Herkunft bleiben stehen", () => {
-    const go = src("ui/GameOver.jsx");
-    const rg = src("ui/RunGraphs.jsx");
-    // Der Verdienst-Block hing an „irgendein Wert > 0" — bei 0 SP / 0 DP / 0 Score fiel er ganz weg.
-    expect(go).toMatch(/\{!onboarding && earn && \(/);
-    expect(go).not.toMatch(/earn\.sp > 0 \|\| earn\.dpGross > 0/);
-    /* ScoreHerkunft gab bei Score 0 `null` zurück — sein Panel im Victory-Screen wird trotzdem gerendert,
-       dort stand also ein leerer Kasten mit Rahmen. Jetzt zeigt es die Null. */
-    expect(rg).toMatch(/if \(!score \|\| !rows\.length\) \{\s*\n\s*return \(/);
-  });
-});
-
-describe("#unlock-fenster — Freischaltungen als eigenes Fenster, in jeder Breite", () => {
-  const jsx = src("ui/GameOver.jsx");
-  it("EIN Fenster in jeder Breite, und der Griff ist ein Bestätigen-Knopf", () => {
-    /* Die alte Bahn lief über die volle Breite (1720 px) und trug darin zwei 74-px-Kacheln — auf dem
-       Desktop ein leeres Band mit einem Fleck in der Mitte. Sie ist ersatzlos weg, auch am Handy: dort
-       war sie eine Karte, die man beim Scrollen überliest. Kein zweiter Renderpfad. */
-    expect(jsx).toMatch(/\{newUnlocks\.length > 0 && !unlockSeen && \(/);
-    expect(jsx).not.toMatch(/go-skins/);
-    expect(jsx).toMatch(/t\("common\.confirm"\)/);
-    // Goldener Funkel-Rahmen wie an den Meta-Freischaltungen — kein zweiter Rahmen-Look.
-    expect(jsx).toMatch(/ul-card as-legendary/);
   });
 });
 

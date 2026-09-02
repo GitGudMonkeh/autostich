@@ -1277,12 +1277,7 @@ export function CustomizeScreen({ options, profile, onChoose, onClose, onProfile
             <div className="cz-topline flex flex-wrap items-center gap-x-3 gap-y-2">
               <h2 className="text-title-5 dt:text-head-3 font-bold whitespace-nowrap">{t("shop.title")}</h2>
               <div className="cz-headrow flex items-center gap-2.5 shrink-0 ml-auto">
-                {/* Nur DP anzeigen — die Werkstatt-Währung (Packs UND Effekte, #307). SP ist hier irrelevant (nur der
-                    Upgrade-Baum nutzt SP) und wird deshalb nicht mehr gezeigt. Kompakte Inline-Währung wie im Upgrade-Screen. */}
-                <span className="cz-bal flex items-baseline gap-1 whitespace-nowrap">
-                  <span className="text-title-5 dt:text-display-1 font-extrabold tabular-nums" style={{ color: "#35c6e6" }}>{dpBal}</span>
-                  <span className="text-meta-1 dt:text-body-3 font-bold tracking-wider" style={{ color: "#35c6e6", opacity: .8 }}>DP</span>
-                </span>
+                {/* exp: the DP balance left with the meta-progression — every pack and effect is owned. */}
                 <button onClick={onClose} className="cz-close as-edge-neutral as-edge-thin shrink-0 px-3 py-1.5 rounded-lg text-body-lg-5">{t("common.close")}</button>
               </div>
               {/* Auskunft wie im Baum: was der Reiter enthält, und was ein Antippen bewirkt. Erst ab

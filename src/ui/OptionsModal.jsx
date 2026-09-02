@@ -195,11 +195,14 @@ export function OptionsModal({ options, onChange, onClose, onPrivacy = null }) {
               #optionen-redesign: Dropdown statt Segmented — die Liste WÄCHST, und drei Reiter nebeneinander
               wären bei der vierten Sprache eine Reiterzeile, die niemand mehr überblickt.
               #es-locale: READY_LOCALES, nicht LOCALES — angemeldet ist nicht dasselbe wie übersetzt. */}
-          <Row icon="language" title={t("options.language.title")} desc={t("options.language.desc")}>
-            <Dropdown value={locale} label={t("options.language.title")}
-              options={READY_LOCALES.map((l) => ({ v: l.id, label: l.label, lang: l.id }))}
-              onChange={(v) => { setLocaleId(v); onChange({ lang: v }); }} />
-          </Row>
+          {/* exp: the row exists only while there is a choice — one active language, no selector. */}
+          {READY_LOCALES.length > 1 && (
+            <Row icon="language" title={t("options.language.title")} desc={t("options.language.desc")}>
+              <Dropdown value={locale} label={t("options.language.title")}
+                options={READY_LOCALES.map((l) => ({ v: l.id, label: l.label, lang: l.id }))}
+                onChange={(v) => { setLocaleId(v); onChange({ lang: v }); }} />
+            </Row>
+          )}
           {/* #207: Haptik — kurzes Vibrations-Feedback bei Bestätigungen. Wirkt nur auf Touch-Geräten (Handy); System-„reduzierte Bewegung“ schaltet sie ohnehin ab. */}
           <Row icon="haptics" title={t("options.haptics.title")} desc={t("options.haptics.desc")}>
             <Toggle on={options.haptics !== false} label={t("options.haptics.title")}

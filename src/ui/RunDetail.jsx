@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useIsWide } from "./useIsWide.js"; // #desktop: ab 1280 px derselbe gerahmte Screen wie nach einem Lauf
 import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import { useEscape } from "./useEscape.js";
-import { RunStatCells, RunBuildChips, RunTreeBlock } from "./RunStats.jsx";
+import { RunStatCells, RunBuildChips } from "./RunStats.jsx";
 import { Sparkline } from "./Sparkline.jsx";   // #rd-verlauf: derselbe Graph wie im Victory-Screen
 import { RunGraphs } from "./RunGraphs.jsx";   // #rd-verlauf: Stich-Score je Durchlauf
 import { fmtDuration } from "../game/deck.js";
@@ -336,7 +336,6 @@ export function RunDetail({ entry, rank = null, onClose, anonymized = false, onP
         <div className="rd-c1 as-ring as-ring-quiet">
           <i className="as-ring-run" aria-hidden="true" />
           <div className="rd-ph hidden dt:block">{t("gameover.stats")}</div>
-          <RunTreeBlock treeNodes={entry.treeNodes} />
           <RunStatCells entry={entry} sourceCells />
         </div>
         <div className="rd-c2 as-ring as-ring-quiet">

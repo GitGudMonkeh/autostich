@@ -13,7 +13,6 @@ import { PERKS_OFFERED } from "./constants.js";
 import * as C from "./constants.js";
 import { isLegendarySkill, isTrimmableSkill } from "./skills.js"; // #217: Garantie-Erkennung (Legendär im Skill-Reroll-Angebot) · #288 Trimmen
 import { DECLINE_MIN_SKILLS as G_DECLINE_MIN_SKILLS } from "./glacier.js"; // Eis-Neudesign: Ablehn-Gletscher-Schwelle (gehaltene Eis-Skills)
-import { nodeEffects, legPerk2Force, rerollBase, COVER_FLOOR, ENERGY_FLOOR } from "./progression.js"; // #369 Progression-Baum: Cover/Energie-Floor + Rarität + Archetyp-/Legendär-Gatung + Reroll-Pools (alles aus dem Baum, treeEff-Felder)
 import { pickWeekMods, hasWeekMod, weekModMag, TIGHT_BUILD_COVER } from "./weekMods.js"; // #370 Ranked-Rework Phase 3: Wochen-Modifikatoren (seed-deterministisch)
 
 import { initialArchitect, familyDef as archFamily, isValidFootprint, occupiedCells as archOccupied, buildArchitectOffer, MAX_TIER as ARCH_MAX_TIER, MAX_COVER as ARCH_MAX_COVER, N_POS } from "./architect.js";
@@ -217,42 +216,12 @@ export function reducer(state, action) {
       // Dev-Run (nur Preview): action.dev = { rounds, schedule, cover, energy } konfiguriert einen frei einstellbaren Lauf.
       // Nur dieser Zweig weicht ab; ohne action.dev bleibt der normale Lauf-Start UNVERÄNDERT (Start = Stat).
       const dev = action.dev && typeof action.dev === "object" ? action.dev : null;
-      // #370 EIN Ranglisten-Modus („ranked") über den `ranked`-Flag: tree-UNABHÄNGIGE, faire Baseline (kein Baum →
-      //   fix 2 Rerolls, alle Archetypen, rareCap 4, R29 an) — für alle gleich, unabhängig vom echten Upgrade-Tree.
-      //   Ersetzt den alten Standard/Meister-Split. Sonst (Normal-/Seed-Lauf) zählt das echte Profil (action.profile).
-      //   effProfile null → treeEff null (Baseline/Sim/profil-los). Die Wochen-Modifikatoren kommen in Phase 2/3 obendrauf.
+      /* #370 EIN Ranglisten-Modus („ranked") über den `ranked`-Flag: die Wochen-Modifikatoren kommen nur dort obendrauf.
+         exp (owner decision, 2026-09-02): the upgrade tree is out. EVERY run now starts from the profile-less
+         baseline that Sim, Standard and Ranked already shared — BASE_REROLLS per pool, all archetypes, rarity
+         cap 4, legendary phase on, FORMATION_ENERGY and the engine's cover base. `action.profile` is ignored;
+         the neutral tree fields below stay in the state because engine and screens still read them. */
       const ranked = action.ranked || null;
-      const effProfile = ranked ? null : action.profile;
-      const treeEff = (!dev && effProfile) ? nodeEffects(effProfile) : null;
-      const treeCover = treeEff ? treeEff.treeCoverBonus : 0;      // +Baufeld-Zellen (0..4)
-      const treeEnergyBonus = treeEff ? treeEff.treeEnergyBonus : 0; // +Formations-Energie (0..2)
-      const treeRareShift = treeEff ? treeEff.treeRareShift : 0;   // Drop-Raten-Stufe (0..4)
-      // #369 §4: Legendär-PERK-Chance — 0 ohne Legendär-Schicht (kein Legendär-Perk vor dem „Legendär"-Knoten),
-      // sonst ×(1 + Drop·Schritt) bis ~×3.3. Sim/Standard/Dev → 1 (byte-identisch). Die Perk-Nähte lesen ?? 1,
-      // die Gebäude-Nähte || 1 (0 → Basis-Chance), s. u.
-      const treeLegMult = treeEff ? treeEff.legMult : 1;
-      const treeLegForce2 = legPerk2Force(treeEff); // #369 §5b: 2. Perk-Phase → generelle Legendär-Phase (voller Satz)
-      const treeLegSlotReroll = treeEff ? treeEff.rerollDeckLeg : 0; // Deck-Reroll: +1 in der Archetyp-Legendär-Phase
-      const rerollPerk2 = treeEff ? treeEff.rerollPerk2 : 0;         // +1 in der generellen Legendär-Phase (2. Perk-Phase)
-      const legCountMap = treeEff ? treeEff.legCountByArch : null;   // #369 §5a: Zähl-Map je Archetyp (Pool = alle freigeschalteten)
-      // (#369 §6) Reroll-Basis je Pool: Normal-/Meister-Lauf mit Profil → fest 1; profil-los (Sim/Standard) → C.BASE_REROLLS.
-      const normalRerolls = treeEff ? rerollBase(effProfile) : C.BASE_REROLLS;
-      // Archetyp-Allowlist + Rarität-Deckel + Archetyp-Legendär-Phase — alles aus dem BAUM (#369, früher Onboarding).
-      // Nur mit Profil (treeEff≠null); sonst neutral (null / 4 / an) für Sim/Standard/Dev = byte-identisch.
-      // §6 Erstlauf-Onboarding (docs/tutorial-onboarding-design.md): Ein Profil, das noch NIE einen
-      // Lauf abgeschlossen hat (hadCompletedRun false — dieselbe Flagge, an der das laute Hub-Angebot
-      // hängt), startet (a) Blitz-only über die bestehende §4b-Allowlist und (b) OHNE die
-      // Start-Skill-Entscheidung, s. startPatch unten. Ranked und Sim/Standard (kein Profil) bleiben
-      // byte-identisch: firstRun ist dort immer false.
-      // Runde 5, W1: „Tutorial überspringen" (tutorialSkipped) beendet die Erstlauf-Führung
-      // dauerhaft — auch ohne abgeschlossenen Lauf startet der nächste mit der Baum-Allowlist.
-      const firstRun = !!(treeEff && effProfile && effProfile.hadCompletedRun === false
-        && !effProfile.tutorialSkipped && !ranked);
-      const unlockedArch = treeEff ? (firstRun ? ["lightning"] : treeEff.unlockedArchetypes) : null;
-      const rareCap = treeEff ? treeEff.maxTier : 4;
-      const legPhaseEnabled = treeEff ? treeEff.archLegPhaseOn : true;
-      // Formations-Energie-Basis (#369 §1): Normal-Lauf-Boden 3 + Baum (→ max 5); Sim/Standard/Dev = C.FORMATION_ENERGY.
-      const formationEnergyBase = treeEff ? ENERGY_FLOOR + treeEnergyBonus : C.FORMATION_ENERGY;
       if (dev) {
         const devRounds = Math.max(1, Math.min(200, Math.floor(Number(dev.rounds) || 0)));
         const devSchedule = Array.from({ length: devRounds }, (_, i) => (Array.isArray(dev.schedule) && dev.schedule[i]) || C.DECISION_SCHEDULE[i] || "perk");
@@ -268,10 +237,8 @@ export function reducer(state, action) {
       }
       // #267: Erste Entscheidung (Runde 1) folgt dem Plan = DECISION_SCHEDULE[0] = "skill" (Blind-Commit, gewollt) —
       // NICHT mehr die entfernte Stat-Phase. startDecisionSetup baut das Erst-Angebot (Skill-Offer) deterministisch.
-      // Baufeld (#369 §1): Normal-Lauf setzt auf dem Boden 20 auf (+0..4 aus dem Baum → max 24); Sim/Standard nutzen
-      // die Engine-Basis ARCH_MAX_COVER (byte-identisch). Der Dev-Zweig setzt maxCover separat (devCover).
-      const coverBase = treeEff ? COVER_FLOOR : s.architect.maxCover;
-      const architectStart = { ...s.architect, maxCover: coverBase + treeCover };
+      // Baufeld: die Engine-Basis ARCH_MAX_COVER (exp: kein Baum-Bonus mehr). Der Dev-Zweig setzt maxCover separat.
+      const coverBase = s.architect.maxCover;
       // #370 Wochen-Modifikatoren (nur Ranked, seed-deterministisch) — Reducer-native Nähte: Rerolls, Feld-Sperren,
       //   Bauplätze, Aufstell-Energie, Perk-Rarität-Deckel. Die Engine-Nähte (Karten-Wert/Boni/Angebote/Deck-Shuffle)
       //   lesen dieselbe state.weekMods-Liste. Eigene rngAt-Adress-Ströme (kein Deal-Störer). #382: Challenge-Modus
@@ -279,32 +246,26 @@ export function reducer(state, action) {
       const wmActive = (ranked && seed != null) ? pickWeekMods(seed) : [];
       const wm = Object.fromEntries(wmActive.map((m) => [m.effect, m]));
       const noReroll = !!wm.noReroll;
-      const effReroll = noReroll ? 0 : normalRerolls;
+      const effReroll = noReroll ? 0 : C.BASE_REROLLS;
       const wmBlockForm = wm.blockForm ? pickCells(rngAt(seed, "weekmods", "blockForm"), N_POS, wm.blockForm.mag) : [];
       const wmBlockArch = wm.blockArch ? pickCells(rngAt(seed, "weekmods", "blockArch"), N_POS, wm.blockArch.mag) : [];
-      const effRareCap = wm.perkCap ? 2 : rareCap;                                   // Perk-Deckel → max Selten (kein Sehr selten/Rar)
+      const effRareCap = wm.perkCap ? 2 : 4;                                         // Perk-Deckel → max Selten (kein Sehr selten/Rar)
       const effRareFloor = wm.perkBlessing ? 3 : 1;                                  // Perk-Segen → Boden Sehr selten (nur Stufe III/IV)
       const effSkillSlots = C.SKILL_SLOTS + (wm.skillSlots?.mag || 0);               // Skill-Fülle → +mag Skillslots (Halten mehr Skills)
-      const effEnergy = wm.energyEbb ? 0 : wm.energyFlood ? formationEnergyBase * 2 : formationEnergyBase;
-      const effCover = wm.tightBuild ? TIGHT_BUILD_COVER : wm.noBuildLimit ? N_POS : (coverBase + treeCover); // Enge Aufstellung / Kein Gebäudelimit
+      const effEnergy = wm.energyEbb ? 0 : wm.energyFlood ? C.FORMATION_ENERGY * 2 : C.FORMATION_ENERGY;
+      const effCover = wm.tightBuild ? TIGHT_BUILD_COVER : wm.noBuildLimit ? N_POS : coverBase; // Enge Aufstellung / Kein Gebäudelimit
       const weekModsState = wmActive.map((m) => ({ id: m.id, effect: m.effect, sign: m.sign, mag: m.mag, name: m.name, text: m.text }));
-      const sBase = { ...s, architect: { ...architectStart, maxCover: effCover }, architectEnabled, treeRareShift, treeLegMult, treeLegForce2,
-        rerollsLeg: noReroll ? 0 : treeLegSlotReroll, rerollsPerk2: noReroll ? 0 : rerollPerk2,
-        legCountByArch: legCountMap, formationEnergyBase: effEnergy, unlockedArchetypes: unlockedArch, rareCap: effRareCap, rareFloor: effRareFloor, skillSlots: effSkillSlots, legPhaseEnabled, ranked,
+      // Neutral tree fields: shift 0, ×1 legendary chance, no forced legendaries, no extra rerolls, open archetype pool.
+      const sBase = { ...s, architect: { ...s.architect, maxCover: effCover }, architectEnabled, treeRareShift: 0, treeLegMult: 1, treeLegForce2: 0,
+        rerollsLeg: 0, rerollsPerk2: 0,
+        legCountByArch: null, formationEnergyBase: effEnergy, unlockedArchetypes: null, rareCap: effRareCap, rareFloor: effRareFloor, skillSlots: effSkillSlots, legPhaseEnabled: true, ranked,
         weekMods: weekModsState,
         challengeBlockArch: [...new Set(wmBlockArch)],
         challengeBlockForm: [...new Set(wmBlockForm)] };
-      // §6.1: Der Erstlauf überspringt die Start-Entscheidung — der Plan bleibt unberührt, der
-      // Handler nimmt nur seinen bestehenden phase:"play"-Ausgang. Die rng-Ströme sind adressiert
-      // (rngAtOr → rngAt(seed, 0, …)), die übersprungene Ziehung verschiebt also nichts; die erste
-      // Skill-Wahl kommt planmäßig vor Durchlauf 5.
-      const startPatch = firstRun ? { phase: "play" }
-        : startDecisionSetup(C.DECISION_SCHEDULE[0] || "skill", sBase, seed, action.rng, architectEnabled, undefined, false);
-      return { ...sBase, architectEnabled, firstRun,
+      const startPatch = startDecisionSetup(C.DECISION_SCHEDULE[0] || "skill", sBase, seed, action.rng, architectEnabled, undefined, false);
+      return { ...sBase, architectEnabled,
         difficulty: null,
-        // #263: drei getrennte Reroll-Pools. (Schritt 4) Normal-/Meister-Lauf MIT Profil: Basis 1 aus Onboarding-Glied 1
-        // + A1/A2 (rerollBase, Cap 3) — erster Lauf = 0. OHNE Profil (Sim/Standard) bleibt es C.BASE_REROLLS (2/2/2).
-        // #301 C1 (Keine Rerolls) / #370 Wochen-Mod „Kein Reroll" nullen alle drei Pools (noReroll → effReroll).
+        // #263: drei getrennte Reroll-Pools, exp: immer C.BASE_REROLLS (2/2/2). #370 Wochen-Mod „Kein Reroll" nullt alle drei.
         rerollsPerk: effReroll,
         rerollsArch: effReroll,
         rerollsSkill: effReroll,
@@ -322,17 +283,6 @@ export function reducer(state, action) {
     case "END_RUN":     // Lauf freiwillig beenden → Endscreen (GameOver) statt direkt ins Menü.
       // Highscore/Geist sichert der gameover-Effekt in App.jsx (saveRun). Menü/Gameover ignorieren.
       return (state.phase === "menu" || state.phase === "gameover") ? state : { ...state, phase: "gameover" };
-
-    /* Runde 5, W1: „Tutorial überspringen" hebt die Erstlauf-Sperre IM LAUFENDEN Lauf — ab dem
-       nächsten Skill-Angebot gilt die normale Baum-Allowlist (Feuer plus gekaufte Eis/Pflanze).
-       Ein schon gebautes Blitz-only-Angebot auf dem Schirm wird nicht neu gewürfelt; erst das
-       nächste ist offen. Außerhalb eines Erstlaufs (firstRun false) ein No-op. */
-    case "SKIP_TUTORIAL": {
-      if (!state.firstRun || state.phase === "menu" || state.phase === "gameover") return state;
-      const eff = action.profile ? nodeEffects(action.profile) : null;
-      return { ...state, firstRun: false,
-        unlockedArchetypes: eff ? eff.unlockedArchetypes : state.unlockedArchetypes };
-    }
 
 
     /* ---- Architekt (#202, Shop-Ersatz): Bau-Aktionen. Hauptaktion (errichten ODER ausbauen) ist EXKLUSIV je Phase;

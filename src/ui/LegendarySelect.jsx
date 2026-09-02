@@ -12,7 +12,6 @@ import { CardCorners } from "./CardCorners.jsx"; // #cornerart: Eck-Ornamente im
 import { useIsWide, useIsPhone } from "./useIsWide.js";
 import { skillDef, archMeta } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
 import { t } from "../i18n/index.js";
-import { PhaseHintSlot } from "./hints/HintCard.jsx"; // Onboarding-Hints: Banner-Slot unter dem Kopf (docs/tutorial-onboarding-design.md)
 
 /* #272 Legendär-Phase (Runde 29, build-defining): fixer 7. Slot, kein Tausch. Angebotsgröße skaliert mit
    der Build-Breite. Ablehnen → stattdessen normale Skill-Wahl (nie „verschwendet").
@@ -90,7 +89,6 @@ export function LegendarySelect({ offer = [], onPick, onDecline, onReroll = null
             <h2 className="text-title-6 font-bold mt-1" style={{ color: GOLD }}>{t("leg.title")}</h2>
             {state.lastCycleScore != null && <div className="mt-3"><RoundScoreBadge state={state} /></div>}
           </div>
-          <PhaseHintSlot screen="legendary" />
           {/* #leg-gleich: Der Intro-Absatz ist RAUS. Er behauptete, das Angebot komme „nur aus Fraktionen,
               in denen du schon aktive Skills hast" — seit #369 §5a stimmt das nicht mehr (der Pool sind alle
               freigeschalteten Archetypen). Ein Hinweistext, der etwas Falsches sagt, ist schlimmer als keiner. */}

@@ -724,7 +724,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // face-up fest — kein Wegflug, kein Finisher, kein Zug-Takt. Bei Turbo/MAX war die referenzierte
   // Karte sonst längst weggeflogen, bevor der Spieler den Hinweis las (E9: „kämpft mit 4 statt 3"
   // neben einem Kartenrücken).
-  hintHold = false }) {
+  }) {
   /* #perf-scroll: …und „zu sehen" heißt AUCH: nicht aus dem Bild gescrollt. Die Spielseite ist deutlich höher als
      ein Handy-Viewport (Fraktions-Panels unter dem Brett); wer nach unten scrollt, lässt das Battlefield oben
      stehen — bisher liefen alle Effektschleifen dort mit voller Rate für ein Bild, das niemand sieht. Es gab im
@@ -922,8 +922,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
      ein Bild aufblitzen. */
   const zugMs = !reduced && !!t && flipMs > 170 ? Math.round(flipDur) : 0;
   const [drawnNo, setDrawnNo] = useState(null);
-  // R17: `hintHold` überspringt den Zug-Takt — der festgehaltene Stich liegt sofort offen.
-  const gezogen = !zugMs || drawnNo === trickNo || hintHold;   // trickNo: oben aus lastTrick (= t) abgeleitet
+  const gezogen = !zugMs || drawnNo === trickNo;   // trickNo: oben aus lastTrick (= t) abgeleitet
   useEffect(() => {
     if (!zugMs || trickNo == null) return undefined;
     const id = setTimeout(() => setDrawnNo(trickNo), zugMs);
@@ -946,8 +945,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // (Krit: Explosion), Spielerkarte kippt als Sieger an.
   // #deckzug: `aufOn` ist `sliceOn` NACH dem Zug — alles, was die Verliererkarte betrifft, hängt daran. `sliceOn`
   // selbst bleibt das Gate „dieser Stich wird überhaupt animiert" (Ghost-Spawn, Loch-Puls); die verzögern über nachZug.
-  // R17: mit offener Hint-Karte KEINE Auflösung — beide Karten bleiben liegen, bis „Weiter" fällt.
-  const aufOn = sliceOn && gezogen && !hintHold;
+  const aufOn = sliceOn && gezogen;
   const flyAway      = aufOn && lost;                         // eigene Karte verliert → fliegt einfach weg (ohne Schnitt)
   // #finisher: Der Sieg-Finisher ist wählbar. „klinge" → Gegnerkarte wird in-place vom Klinge-Ghost geschnitten.
   // „standard" (Default) → die Gegnerkarte fliegt einfach zur Seite weg (spiegelbildlich zum eigenen Wegflug bei

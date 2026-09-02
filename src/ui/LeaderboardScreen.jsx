@@ -13,7 +13,6 @@ import { fmtScore } from "./format.js";
 import { leaderboardConfigured, fetchBoardTop } from "../game/leaderboard.js";
 import { currentWeek, pastWeeks, msUntilWeekEnd } from "../game/weeklySeed.js";
 import { formatSeed } from "../game/rng.js";
-import { rankedUnlocked } from "../game/progression.js";
 import { BASE_REROLLS, LEG_PHASE_CYCLE } from "../game/constants.js"; // Baseline-Zahlen aus dem Code, nicht im Text gepflegt
 import { WEEK_MOD_BY_ID, WEEK_MOD_PAIRS, pickWeekMods } from "../game/weekMods.js"; // #370 Wochen-Modifikatoren
 import { WeekModChips, catalogDisplayMods, pickedDisplayMods, MOD_POS, MOD_NEG } from "./WeekMods.jsx"; // #381 gemeinsame Chip-Anzeige
@@ -214,7 +213,7 @@ function ChampionsList({ reloadToken, username, onChampionWeeks }) {
   );
 }
 
-export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPlaySeed = null, onPlayRanked = null, profile = null, initialTab = "meister", username = "", onChampionWeeks = null, mode = "ranked" }) {
+export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPlaySeed = null, onPlayRanked = null, initialTab = "meister", username = "", onChampionWeeks = null, mode = "ranked" }) {
   useEscape(onClose);
   const boardMode = mode === "board";                 // #global: Nachschlage-Ansicht statt Spiel-Einstieg
   const TABS = boardMode ? TABS_BOARD : TABS_RANKED;
@@ -233,7 +232,7 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPla
 
   const week = useMemo(() => currentWeek(new Date(now)), [now]);
   const weekMods = useMemo(() => pickWeekMods(week.seed), [week.seed]); // #370 Wochen-Modifikatoren (seed-deterministisch)
-  const canPlayRanked = rankedUnlocked(profile || {}); // #370: frei bei allen Decks + je ≥1 abgeschlossenem Lauf
+  const canPlayRanked = true; // exp: no tree, no unlock gate — the weekly run is always open
 
   return overlayPortal((
     <div className="lb-root fixed inset-0 overlay-root z-40 flex items-start justify-center p-3 sm:p-6"
@@ -308,7 +307,7 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPla
                 Kein `board`-Prop → fetchGlobalTop statt fetchBoardTop. */}
             {tab === "global" && (
               leaderboardConfigured
-                ? <GlobalLeaderboard limit={TOP_N} mine={mine} reloadToken={reloadToken} onPlaySeed={onPlaySeed} showTree />
+                ? <GlobalLeaderboard limit={TOP_N} mine={mine} reloadToken={reloadToken} onPlaySeed={onPlaySeed} />
                 : <div className="text-body-lg-5 opacity-40 text-center py-8">{tr("board.unavailable")}</div>
             )}
 
@@ -355,11 +354,6 @@ export function LeaderboardScreen({ onClose, mine = null, reloadToken = 0, onPla
                     {canPlayRanked && (
                       <button onClick={onPlayRanked || undefined}
                         className="as-cta-primary w-full mt-3 rounded-lg font-extrabold text-body-3 px-4 py-2.5 cursor-pointer transition-transform hover:-translate-y-0.5">{tr("board.play")}</button>
-                    )}
-                    {!canPlayRanked && (
-                      <div className="text-meta-3 font-semibold mt-2 flex items-center gap-1.5" style={{ color: "#c9b98a" }}>
-                        {tr("board.locked")}
-                      </div>
                     )}
                   </div>
                   {/* #370/#381 Aktive Wochen-Modifikatoren (für alle gleich, seed-deterministisch).

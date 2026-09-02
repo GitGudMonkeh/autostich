@@ -149,7 +149,7 @@ describe("#skillart — der Leerlauf-Vorlader (#mobil-emblem, playtest-fixes)", 
        den Animationsframes hat mehrere Frames blockiert. Die Skill-Auswahl liegt in `phase:levelup`,
        also IM Lauf — vorgeladen wird deshalb dort, wo nichts läuft, nicht dort, wo es gebraucht wird. */
     expect(app).toContain('if (state.phase !== "menu" && state.phase !== "gameover") return undefined;');
-    expect(app).toContain("const queue = [...LAZY_PREFETCH, ...emblemPrefetchTasks(profile)];");
+    expect(app).toContain("const queue = [...LAZY_PREFETCH, ...emblemPrefetchTasks()];");
   });
 
   it("die Teilmenge ist begrenzt: zwei Gates, freigeschaltete Archetypen, kein Datensparen", () => {
@@ -158,7 +158,7 @@ describe("#skillart — der Leerlauf-Vorlader (#mobil-emblem, playtest-fixes)", 
        dritte gilt das auch für Spieler, die ausdrücklich Daten sparen wollen. */
     expect(app).toContain("window.matchMedia(`(max-width: ${PHONE_MAX}px)`).matches");
     expect(app).toContain("window.matchMedia(`(min-width: ${DESKTOP_MIN}px)`).matches");
-    expect(app).toContain("skillArtUrls(unlockedArchetypes(profile))");
+    expect(app).toContain("skillArtUrls(ARCHETYPE_ORDER)"); // exp: kein Baum, keine Allowlist — alle vier
     expect(app).toContain("if (navigator.connection && navigator.connection.saveData) return [];");
     // Keine Verneinung des Desktop-Gates — dieselbe Falle wie in SkillSelect.jsx.
     expect(app).not.toMatch(/emblemPrefetchTasks[\s\S]{0,400}!wide/);

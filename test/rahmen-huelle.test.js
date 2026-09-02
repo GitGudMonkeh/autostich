@@ -124,8 +124,8 @@ describe("#run-dialoge — Beenden und Neustarten", () => {
     expect(resolve(rd, theme).trim(), "der Radius liest die NACHBARSPROSSE — 6 waere es dann nicht mehr")
       .not.toBe(resolve("var(--rd-md)", theme).trim());
     expect(rc).toMatch(/className="rc-row as-edge-card/);
-    // Runde 3 (Owner): + der Tutorial-Lauf-Dialog — sein Aktionsknopf traegt dieselbe rc-btn-Sprosse.
-    expect((rc.match(/className="rc-btn"/g) || []).length, "die Aktionsknoepfe der Rueckfragen (Neustart, Tutorial-Lauf)").toBe(3);
+    // exp: der Tutorial-Lauf-Dialog ist mit dem Onboarding gegangen — Beenden und Neustart bleiben.
+    expect((rc.match(/className="rc-btn"/g) || []).length, "die Aktionsknoepfe der Rueckfragen (Beenden, Neustart)").toBe(2);
   });
 
   it("die Optionszeile zeigt, wohin sie führt — und nur sie bewegt sich", () => {

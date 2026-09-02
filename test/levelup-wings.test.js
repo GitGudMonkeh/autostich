@@ -260,9 +260,7 @@ describe("#sk-reiter — die Fraktionsreiter der Skill-Wahl", () => {
       .toHaveLength(1);
   });
 
-  it("der Leitfaden bleibt erreichbar (der i-Chip am Pager-Badge fällt auf dem Desktop weg)", () => {
-    expect(skill).toMatch(/\{wide && \(\s*<button type="button" onClick=\{\(\) => setGuideArch\(curG\.arch\)\}/);
-  });
+  // exp: „der Leitfaden bleibt erreichbar" stand hier — der Archetyp-Leitfaden ist mit dem Onboarding gegangen.
 
   it("das Angebot steht auf dem Desktop dreispaltig (drei Skills je Fraktion, kein Loch)", () => {
     expect(skill).toMatch(/className="sk-offers grid sm:grid-cols-2/);

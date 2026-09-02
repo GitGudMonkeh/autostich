@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState, useRef } from "react";
+import { useState, useRef } from "react";
 import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import { PANEL_BG, phaseCard, PhaseHairline, PHASE_ACCENTS, ActionButton } from "./modalStyle.jsx";
 import { ARCHETYPE_ORDER, archetypeOf, marginHeatPoints, isLegendarySkill } from "../game/skills.js";
@@ -12,7 +12,6 @@ import { DECLINE_MIN_SKILLS as G_DECLINE_MIN_SKILLS } from "../game/glacier.js";
 
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 import { GlossaryPanel, GlossaryText } from "./Glossary.jsx";
-import { GuideOverlay } from "./GuideOverlay.jsx";
 import { FormationPanel } from "./FormationPanel.jsx";
 import { LevelupRig } from "./LevelupWings.jsx"; // #lv-fluegel: Deck links, Kennzahlen rechts (ab 1280 px)
 import { HeldSkills } from "./HeldSkills.jsx"; // gehaltene Skills — geteilt mit der Perk-Auswahl
@@ -22,8 +21,6 @@ import { CardCorners } from "./CardCorners.jsx"; // #cornerart: Eck-Ornamente im
 import { skillDef, archMeta } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
 import { glossaryEntry } from "../i18n/glossaryText.js"; // #sprache: Glossartext zur Anzeigezeit
 import { t, fmtNum } from "../i18n/index.js";
-import { PhaseHintSlot, HintContext } from "./hints/HintCard.jsx"; // Onboarding-Hints: Banner-Slot unter dem Kopf (docs/tutorial-onboarding-design.md) · V1: aktive Seite melden
-import { recommendedStarter } from "./hints/hintScript.js"; // §6.2 „Guter Start": regelbasiert der Konsument des Erstlauf-Angebots
 
 // Archetyp-Meta eines Skills (Theming) — Fallback neutral (#93 F0).
 const ac = (id) => archMeta(archetypeOf(id)) || { label: t("skill.arch.none"), icon: "•", color: "#8a8a95" };
@@ -111,7 +108,6 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
   const [pageState, setPageState] = useState(null);
   const tx = useRef(0);
   const dir = useRef(1); // Richtung des letzten Seitenwechsels (−1 zurück / +1 vor) → steuert die Slide-in-Animation
-  const [guideArch, setGuideArch] = useState(null); // offener Leitfaden (Archetyp) — vom i-Chip geöffnet, direkt auf der passenden Seite
   const [openForms, setOpenForms] = useState(false); // Aufstellfeld (Formations-Panel) unten — einklappbar, default zu (#UI)
 
   // Passiv-Beschreibung je Archetyp — EIN Text, unabhängig davon, ob es der freischaltende oder ein weiterer Pick ist.
@@ -132,11 +128,6 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
       default: return "";
     }
   };
-
-  /* §6.2 Erstlauf-Empfehlung: NUR im ersten Angebot des ersten Laufs (state.firstRun, noch kein
-     Skill gehalten) trägt der garantierte Konsument das „Guter Start"-Badge samt Begründungszeile.
-     Regelbasiert abgeleitet, nie kuratiert — siehe recommendedStarter in hintScript.js. */
-  const starterId = state.firstRun && (skills || []).length === 0 ? recommendedStarter(offer) : null;
 
   // Angebot nach Archetyp gruppieren (feste Reihenfolge). #93 F0: 2+2 …; jetzt bis zu 4 Fraktionen im Angebot.
   // #118: defensiver Guard — ein bereits gehaltener Skill erscheint NIE als Angebots-Karte (selbst bei inkonsistentem State).
@@ -173,18 +164,6 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
   const go = (d) => { dir.current = d < 0 ? -1 : 1; setPageState(nPages > 0 ? (((page + d) % nPages) + nPages) % nPages : 0); };
   const goTo = (i) => { dir.current = i > page ? 1 : (i < page ? -1 : dir.current); setPageState(i); };
 
-  /* Runde 4, V1: die aktive Swiper-Seite (Archetyp) an die Hint-Schicht melden — die
-     Freischalt-Hinweise C7/C8 erscheinen nur auf ihrer eigenen Seite. Beim Verlassen des
-     Screens wird der Wert geräumt, sonst hielte die nächste Skill-Phase den alten Stand. */
-  const hintCtl = useContext(HintContext);
-  // Nur der Setter in die Deps: seine Identität ist stabil (useState), der Provider-Wert nicht —
-  // sonst liefe der Effekt in jedem App-Render statt nur beim Seitenwechsel.
-  const setSkillArch = hintCtl?.setSkillArch;
-  const curArch = curG?.arch || null;
-  useEffect(() => {
-    setSkillArch?.(curArch);
-    return () => setSkillArch?.(null);
-  }, [setSkillArch, curArch]);
 
   // Konsumenten-Typ eines Skills (#93): Hitze („heat") / Ladung („charge") / kein Konsument (null).
   const consumerTypeOf = (id) => (skillDef(id)?.heatConsumer ? "heat" : skillDef(id)?.onFullCharge ? "charge" : null);
@@ -243,7 +222,6 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
           )}
           {state.lastCycleScore != null && <div className="mt-3"><RoundScoreBadge state={state} /></div>}
         </div>
-        <PhaseHintSlot screen="skill" />
 
         {/* Reroll + Ablehnen: direkt unter dem Kopf, nebeneinander & STICKY → schweben beim Scrollen mit, damit man
             zum Neuwürfeln/Ablehnen nicht ans Ende der Skill-Liste scrollen muss. Voller Hintergrund maskiert durchscrollende Karten. */}
@@ -317,12 +295,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                 <span className="inline-flex items-center gap-1.5 font-bold text-body-lg-5 px-3 py-1 rounded-full whitespace-nowrap"
                   style={{ color: curG.meta.color, background: `${curG.meta.color}1f`, border: `1px solid ${curG.meta.color}55` }}>
                   <ArchIcon meta={curG.meta} size={14} /> {curG.meta.label}
-                  {/* i im Kreis → öffnet den Leitfaden direkt auf der Seite dieses Archetyps (#UI). */}
-                  <button type="button" onClick={() => setGuideArch(curG.arch)}
-                    title={t("skill.guide.title", { arch: curG.meta.label })} aria-label={t("skill.guide.aria", { arch: curG.meta.label })}
-                    className="inline-grid place-items-center rounded-full leading-none transition-all hover:brightness-125"
-                    style={{ width: 16, height: 16, fontSize: 10, fontStyle: "italic", fontFamily: "Georgia, serif",
-                             color: curG.meta.color, background: `${curG.meta.color}22`, border: `1px solid ${curG.meta.color}99` }}>i</button>
+                  {/* exp: der i-Chip zum Archetyp-Leitfaden ist mit dem Onboarding gegangen. */}
                 </span>
                 {nPages > 1 ? (
                   <button type="button" onClick={() => go(1)}
@@ -447,15 +420,6 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                 </span>
                 <div className="flex-1 h-px" style={{ background: `${curG.meta.color}33` }} />
               </button>
-              {/* Der i-Chip saß am Pager-Badge — das gibt es ab 1280 px nicht mehr. Ohne diesen Ersatz wäre der
-                  Archetyp-Leitfaden auf dem Desktop von der Skill-Wahl aus gar nicht mehr erreichbar. */}
-              {wide && (
-                <button type="button" onClick={() => setGuideArch(curG.arch)}
-                  title={t("skill.guide.title", { arch: curG.meta.label })} aria-label={t("skill.guide.aria", { arch: curG.meta.label })}
-                  className="shrink-0 inline-grid place-items-center rounded-full leading-none transition-all hover:brightness-125"
-                  style={{ width: 18, height: 18, fontSize: 11, fontStyle: "italic", fontFamily: "Georgia, serif",
-                           color: curG.meta.color, background: `${curG.meta.color}22`, border: `1px solid ${curG.meta.color}99` }}>i</button>
-              )}
               </div>
               {detailOpen && (
                 <div className="mb-3 rounded-lg px-3 py-2 text-body-5 leading-snug"
@@ -486,12 +450,6 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                         style={{ background: `${col}22`, color: col, border: `1px solid ${col}88` }}>
                         <ArchIcon meta={curG.meta} size={12} /> {curG.meta.label.toUpperCase()}
                       </span>
-                      {id === starterId && (
-                        <span className="text-meta-1 px-1.5 py-0.5 rounded-full font-bold tracking-wide uppercase"
-                          style={{ background: "#26c6e6", color: "#06222a" }}>
-                          {t("hint.badge")}
-                        </span>
-                      )}
                       {(s.heatConsumer || s.onFullCharge) && (
                         <span className="text-meta-1 px-1.5 py-0.5 rounded font-bold tracking-wide"
                           style={{ background: "#d4a63a22", color: "#d4a63a", border: "1px solid #d4a63a88" }}>
@@ -524,12 +482,6 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                       {badges}{title}
                       {/* #387: volle Beschreibung — auch für Legendäre (kein erster-Satz-Zuschnitt mehr); umbricht per whitespace-pre-line. */}
                       <div className="text-body-lg-5 opacity-75 leading-snug whitespace-pre-line"><GlossaryText text={s.desc} /></div>
-                      {/* §6.2: Die Empfehlung erklärt sich selbst — und definiert den Crit in dem Moment,
-                          in dem er relevant wird. Text baut auf dem H2-Banner darüber auf. */}
-                      {id === starterId && (
-                        <div className="text-body-5 leading-snug pt-1.5 mt-0.5 border-t"
-                          style={{ color: "#7fdcf0", borderColor: "rgba(38,198,230,0.18)" }}>{t("hint.badge.reason")}</div>
-                      )}
                     </button>
                   );
                 })}
@@ -563,8 +515,6 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
         )}
         </div>
       </LevelupRig>
-      {/* Leitfaden-Overlay — vom i-Chip geöffnet, direkt auf der Seite des jeweiligen Archetyps (#UI). */}
-      {guideArch && <GuideOverlay onClose={() => setGuideArch(null)} initial={guideArch} />}
     </div>
   ));
 }

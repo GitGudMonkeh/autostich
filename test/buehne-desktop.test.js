@@ -172,7 +172,7 @@ describe("#deckzug · erst ziehen BEIDE, dann wird aufgeloest", () => {
     // Ein `setState(false)` im Effekt kaeme einen Frame zu spaet — die Aufloesung blitzte fuer ein Bild auf.
     // Runde 2, R17: `hintHold` (offene Ereignis-Hint-Karte) ueberspringt den Zug zusaetzlich — der
     // festgehaltene Stich liegt sofort offen. Die Stich-Nummer bleibt die Identitaet.
-    expect(bf).toMatch(/const gezogen = !zugMs \|\| drawnNo === trickNo \|\| hintHold;/);
+    expect(bf).toMatch(/const gezogen = !zugMs \|\| drawnNo === trickNo;/); // exp: der Hint-Halt (hintHold) ist mit dem Onboarding gegangen
     expect(bf, "kein setState(false) beim Stichwechsel").not.toMatch(/setDrawnNo\(null\)/);
   });
 
@@ -185,7 +185,7 @@ describe("#deckzug · erst ziehen BEIDE, dann wird aufgeloest", () => {
       expect(m[1], `${n} loest noch im Zug-Takt auf`).toContain("aufOn");
     }
     // R17: mit offener Hint-Karte loest NICHTS auf — beide Karten bleiben liegen (kein Wegflug/Finisher).
-    expect(bf, "aufOn ist sliceOn NACH dem Zug, gehalten von hintHold").toMatch(/const aufOn = sliceOn && gezogen && !hintHold;/);
+    expect(bf, "aufOn ist sliceOn NACH dem Zug").toMatch(/const aufOn = sliceOn && gezogen;/);
   });
 
   it("die Finisher mit eigenem Trigger warten mit", () => {

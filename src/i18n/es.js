@@ -33,7 +33,6 @@ import esFamilies from "./esFamilies.js";   // 73 perk families x name + tier de
 import esMeta from "./esMeta.js";           // upgrade tree + weekly modifiers
 import esGlossary from "./esGlossary.js";   // 109 glossary entries + categories + groups
 import esCosmetics from "./esCosmetics.js"; // skin sets + global effects
-import esGuides from "./esGuides.js";       // the four archetype guides
 
 export default {
   ...esSkills,
@@ -42,7 +41,6 @@ export default {
   ...esMeta,
   ...esGlossary,
   ...esCosmetics,
-  ...esGuides,
 
   /* ---- Rarity ladder (package §3.5) ----
      Ends on "Épica", not "Legendaria": legendary is a separate axis in this game (legendary perks,

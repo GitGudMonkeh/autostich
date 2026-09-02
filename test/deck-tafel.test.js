@@ -116,7 +116,7 @@ describe("#mainscreen-branding — umgewandelt, nicht kopiert", () => {
     /* Die Gegenprobe zur Umwandlung: `.10` und `.18` stehen unverändert inline. Wer sie mitnimmt,
        ohne es zu sagen, hat die Familie halb migriert — und eine halb migrierte Familie ist, wie die
        43 Schatten entstanden sind (conventions.md §2c, MENU-38). */
-    expect(code, "das .10-Alpha der Bonus-Leiste ist verschwunden").toMatch(/rgba\(150,150,170,0\.10\)/);
+    // exp: die Bonus-Leiste (.10) ist mit der Meta-Progression gegangen — es bleibt der Streifen (.18).
     expect(code, "das .18-Alpha des Streifens ist verschwunden").toMatch(/rgba\(150,150,170,\.18\)/);
   });
 });

@@ -78,10 +78,11 @@ const radiusOfBody = (body) => {
 
 describe("#go-ruhe — der Ring steht still", () => {
   it("jedes Panel des Screens trägt den Modifikator", () => {
-    /* Verdienst · Bestleistungen · Herkunft · Build · Kennzahlen · Aufstellung. Ein `as-ring` ohne
-       `as-ring-quiet` wäre das einzige wandernde Band auf einem sonst stillen Screen. */
+    /* Bestleistungen · Herkunft · Build · Kennzahlen · Aufstellung (exp: der Verdienst ist mit der
+       Meta-Progression gegangen). Ein `as-ring` ohne `as-ring-quiet` wäre das einzige wandernde Band
+       auf einem sonst stillen Screen. */
     const ringe = goBare.match(/className="go-[a-z]+ as-ring[^"]*"/g) || [];
-    expect(ringe.length, "Zahl der Ring-Panels hat sich geändert").toBe(6);
+    expect(ringe.length, "Zahl der Ring-Panels hat sich geändert").toBe(5);
     for (const r of ringe) expect(r, `Panel ohne as-ring-quiet: ${r}`).toMatch(/\bas-ring-quiet\b/);
   });
 
@@ -90,7 +91,7 @@ describe("#go-ruhe — der Ring steht still", () => {
        SIEBEN, nicht sechs: Das Score-Panel (#go-score-panel) ist das siebte Ring-Panel. In der Zählung
        darüber taucht es nicht auf, weil seine Klasse dynamisch ist (Rekord → Gold) und deshalb aus einer
        Zeichenkette mit Platzhalter kommt statt aus einem festen `className="…"`. */
-    expect((go.match(/className="as-ring-run"/g) || []).length).toBe(7);
+    expect((go.match(/className="as-ring-run"/g) || []).length).toBe(6); // exp: sechs — der Verdienst ist weg
   });
 
   it("das Score-Panel trägt denselben stillen Ring wie die anderen", () => {

@@ -128,28 +128,3 @@ export function RestartConfirm({ onKeepPlaying, onRestart }) {
     </div>
   );
 }
-
-/* Tutorial-Lauf-Rückfrage (Runde 3, Owner): der „Tutorial-Lauf"-Knopf der Tutorial-Übersicht bei
-   AKTIVEM Lauf — der laufende Lauf ginge verloren. Gleicher Bau wie RestartConfirm; z-70, weil die
-   Übersicht selbst auf z-60 liegt und die Rückfrage darüber stehen muss. */
-export function TutorialRunConfirm({ onKeepPlaying, onStart }) {
-  const wide = useIsWide();
-  return overlayPortal(
-    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4"
-      style={{ background: "var(--sf-scrim)", backdropFilter: "blur(3px)" }} onClick={onKeepPlaying}>
-      <div className={`w-full ${wide ? "rc-narrow" : "max-w-xs"} rounded-2xl overflow-hidden as-panel as-panel-deck`}
-        style={MODAL_CARD} onClick={(e) => e.stopPropagation()}>
-        <ModalHairline />
-        <div className={wide ? "p-6" : "p-5"}>
-          <div className={wide ? "text-title-5 font-bold" : "text-body-lg-6 font-bold"}>{t("app.tutrun.title")}</div>
-          {wide && <div className="text-body-lg-5 opacity-70 mt-2.5">{t("app.tutrun.help")}</div>}
-          <ActionBar pad={wide ? 6 : 5} bg={STICKY_HEAD_BG} className={wide ? "mt-5" : "mt-3"}>
-            <ActionButton kind="secondary" flex onClick={onKeepPlaying}>{t("app.keepPlaying")}</ActionButton>
-            <ActionButton kind="danger" flex className="rc-btn" onClick={onStart}>{t("tut.run")}</ActionButton>
-          </ActionBar>
-          {!wide && <div className="text-body-lg-5 opacity-70">{t("app.tutrun.help")}</div>}
-        </div>
-      </div>
-    </div>
-  );
-}

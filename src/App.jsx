@@ -2,14 +2,12 @@ import { useReducer, useEffect, useRef, useState, useMemo, useCallback, lazy, Su
 import { overlayPortal } from "./ui/overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import { reducer, menuState } from "./game/reducer.js";
 import { BASE_FLIP_MS, GHOST_STEP, DECISION_SCHEDULE, MAX_CYCLES } from "./game/constants.js";
-import { rarityLabel, deckDef, battlefieldDef } from "./i18n/labels.js"; // Raritäts-Namen: EINE Quelle, übersetzt (Sprachprüfung C1)
 import { baseScoreMultFor, totalCritChanceRaw, totalCritMult, zinsReadout } from "./game/perks.js";
 import { allianceGroups } from "./game/families.js";
 import { computeFormations } from "./game/formations.js"; // #201.8 Stufe B: Deck-Snapshot in der Historie
 import { formatSeed } from "./game/rng.js"; // #205 Challenger Mode: Seed anzeigen (Base32)
 import { randomSeed } from "./ui/seedShare.js"; // #229 N7: Lauf-Seed würfeln (UI-Layer — Math.random raus aus game/)
-import { loadGhost, saveGhost, loadHighscores, recordHighscore, recordRun, recordChampionWeeks, loadOptions, saveOptions, loadUsername, saveUsername, loadProfile, saveProfile, wipeProfileStorage, saveActiveRun, loadActiveRun, clearActiveRun, loadTutorialProgress, saveTutorialProgress, loadRunHistory } from "./game/storage.js";
-import { unlockAllProfile, skipOnboardingProfile, ONBOARDING_LINKS, nextOnboardingReward, ownedCount, unlockedArchetypes } from "./game/progression.js"; // Test-Codes: unlock (alles frei) / onboarding (skip +10 SP/+50 DP) / reset (Wipe) · §6 Meilenstein-Balken-Gate · #304 Onboarding-Fortschritt
+import { loadGhost, saveGhost, loadHighscores, recordHighscore, recordRun, recordChampionWeeks, loadOptions, saveOptions, loadUsername, saveUsername, loadProfile, saveProfile, wipeProfileStorage, saveActiveRun, loadActiveRun, clearActiveRun, loadRunHistory } from "./game/storage.js";
 import { currentWeek } from "./game/weeklySeed.js"; // §7 Meister-Rangliste: Wochen-Seed (für alle gleich)
 import { leaderboardConfigured, publishRun } from "./game/leaderboard.js";
 import { isAllowedUsername } from "./game/profanity.js"; // #174 gilt auch für Altnamen aus dem localStorage
@@ -24,21 +22,16 @@ import { StatusBar } from "./ui/StatusBar.jsx"; // Gameplay-Neu-Aufbau Phase 1: 
 import { architectCoverFor } from "./ui/architectCover.js"; // Lauf-Details: Gebäude-Overlay in den Snapshot persistieren
 import { Battlefield, OPP_SKIN_URLS } from "./ui/Battlefield.jsx";
 import { useFxLevel } from "./ui/useReducedFx.js"; // Perf: löst reducedFx dreistufig auf (full/balanced/minimal) → steuert Overlay-Blur + Sweeps
-import { useHints } from "./ui/hints/useHints.js"; // Onboarding-Hints (docs/tutorial-onboarding-design.md §5): Banner auf Entscheidungsscreens + die H1-Karte
-import { HintContext, HintCardOverlay, EventHintCard } from "./ui/hints/HintCard.jsx";
 import { PerfOverlay } from "./ui/PerfOverlay.jsx"; // Perf-Recorder-HUD (nur Preview-Build)
 import { perfMark, getReport, formatReport } from "./ui/perfRecorder.js"; // Perf-Recorder (No-op außerhalb Preview)
-import { GlossaryPanel, GlossaryOverlay } from "./ui/Glossary.jsx"; // W2: Overlay auch eigenständig (Tutorial-Fuß, außerhalb des Lauf-HUD)
-// Tutorial-Sektionen (#tutorial-sections): reine UI-Schicht über dem Hub, kein Lauf, keine game/-Berührung.
-import { TutorialSections } from "./ui/tutorial-sections/TutorialSections.jsx";
-import { GuideOverlay } from "./ui/GuideOverlay.jsx"; // Archetyp-Leitfaden — aus den Tutorial-Sektionen VERLINKT, nicht abgeschrieben
+import { GlossaryPanel } from "./ui/Glossary.jsx";
 import { Controls } from "./ui/Controls.jsx";
 import { BuildPanel } from "./ui/BuildPanel.jsx";
 import { WeekModPanel } from "./ui/WeekMods.jsx"; // #381 Ranked-Modifikatoren-Panel (unter den Perks)
 import { PerkSelect } from "./ui/PerkSelect.jsx";
 import { SkillSelect } from "./ui/SkillSelect.jsx";
 import { skillArtUrls } from "./ui/skillArt.js"; // #mobil-emblem: Emblem-URLs je Archetyp für den Leerlauf-Vorlader
-import { AbortConfirm, RestartConfirm, TutorialRunConfirm } from "./ui/RunConfirm.jsx"; // #run-dialoge: Beenden/Neustarten/Tutorial-Lauf (Desktop-Fassung)
+import { AbortConfirm, RestartConfirm } from "./ui/RunConfirm.jsx"; // #run-dialoge: Beenden/Neustarten (Desktop-Fassung)
 import { LegendarySelect } from "./ui/LegendarySelect.jsx"; // #272 Legendär-Phase (Runde 29)
 import { FormationPhase } from "./ui/FormationPhase.jsx";
 import { DeckFrontContext } from "./ui/CardGrid.jsx";
@@ -49,14 +42,13 @@ import { ChargeBar } from "./ui/ChargeBar.jsx";
 import { HeatBar } from "./ui/HeatBar.jsx";
 import { GlacierBar } from "./ui/GlacierBar.jsx";
 import { PlantBar } from "./ui/PlantBar.jsx";
-import { ScoreMilestoneBar } from "./ui/ScoreMilestoneBar.jsx"; // §6: Score-Meilenstein-Balken (Normal-Lauf nach Onboarding)
-import { archetypeOf } from "./game/skills.js";
+import { archetypeOf, ARCHETYPE_ORDER } from "./game/skills.js";
 import { cycleLenFor } from "./game/shop.js";
 import { GameOver } from "./ui/GameOver.jsx";
 import { StartScreen } from "./ui/StartScreen.jsx";
 import { RunLoader } from "./ui/RunLoader.jsx";
 import { resolveSkinId, isUnlocked, DECK_DEFS, BATTLEFIELD_DEFS } from "./game/cosmetics.js";
-import { THEMES, unlockAllCosmetics, activeBgFx, activeBgFinisher, activeCardAnims, activeGottFx, packOwned,
+import { THEMES, activeBgFx, activeBgFinisher, activeCardAnims, activeGottFx, packOwned,
   isTieredPack, tierByDeckId, highestUnlockedTier, resolvePackByDeckId } from "./game/themes.js";
 import { deckAssets, battlefieldAssets } from "./ui/cosmeticAssets.js";
 import { audio } from "./ui/audio.js";
@@ -89,7 +81,6 @@ const importStats       = () => import("./ui/StatsScreen.jsx");
 const importCustomize   = () => import("./ui/CustomizeScreen.jsx");
 const importDevSetup    = () => import("./ui/DevRunSetup.jsx");
 const importLeaderboard = () => import("./ui/LeaderboardScreen.jsx");
-const importUpgrade     = () => import("./ui/UpgradeScreen.jsx");
 const importOptions     = () => import("./ui/OptionsModal.jsx");
 const importFeedback    = () => import("./ui/FeedbackModal.jsx");   // #396 Melder — nur im Menü
 const importPrivacy     = () => import("./ui/PrivacyModal.jsx");    // #datenschutz — selten geöffnet, deshalb lazy
@@ -99,11 +90,10 @@ const StatsScreen      = lazy(() => importStats().then((m) => ({ default: m.Stat
 const CustomizeScreen  = lazy(() => importCustomize().then((m) => ({ default: m.CustomizeScreen })));
 const DevRunSetup      = lazy(() => importDevSetup().then((m) => ({ default: m.DevRunSetup })));
 const LeaderboardScreen = lazy(() => importLeaderboard().then((m) => ({ default: m.LeaderboardScreen })));
-const UpgradeScreen    = lazy(() => importUpgrade().then((m) => ({ default: m.UpgradeScreen })));
 const OptionsModal     = lazy(() => importOptions().then((m) => ({ default: m.OptionsModal })));
 const FeedbackModal    = lazy(() => importFeedback().then((m) => ({ default: m.FeedbackModal })));
 const PrivacyModal     = lazy(() => importPrivacy().then((m) => ({ default: m.PrivacyModal })));
-const LAZY_PREFETCH = [importOptions, importStats, importLeaderboard, importUpgrade, importCustomize, importChronik, importDevSetup, importArchitect];
+const LAZY_PREFETCH = [importOptions, importStats, importLeaderboard, importCustomize, importChronik, importDevSetup, importArchitect];
 
 /* #mobil-emblem — die Kachel-Embleme der Skill-Wahl in denselben Leerlauf hängen wie die Module oben.
    Am Telefon standen sie beim ersten Angebot rund eine Sekunde lang nicht da: das <img> entsteht erst,
@@ -115,9 +105,7 @@ const LAZY_PREFETCH = [importOptions, importStats, importLeaderboard, importUpgr
      · Nur wo eine Fassung überhaupt rendert. `phone` (< 640 px) und `wide` (≥ 1280 px) sind die zwei
        Gates in SkillSelect.jsx; das Band dazwischen zeigt kein <img> und bekommt deshalb auch keine
        Bytes. Bewusst KEINE Verneinung des Desktop-Gates — dieselbe Falle, die dort beschrieben ist.
-     · Nur FREIGESCHALTETE Archetypen. Der Angebots-Pool ist darauf begrenzt (buildSkillOffer), also
-       ist alles andere Bytes für Kacheln, die dieser Spieler diesen Lauf gar nicht sehen kann. Früh
-       im Baum ist das ein Los statt vier.
+     · exp: alle vier Archetypen — ohne Baum gibt es keine Allowlist mehr, jeder Lauf kann jede Kachel zeigen.
      · Nichts bei `saveData`. Alle vier Lose wiegen 1,28 MB (gemessen, s. skillArt.js) — kein Nulltarif
        auf Mobilfunk. Wer Datensparen anhat, bekommt weiter das alte Verhalten (Nachladen beim Öffnen).
 
@@ -130,13 +118,13 @@ const LAZY_PREFETCH = [importOptions, importStats, importLeaderboard, importUpgr
    Der Halter gibt das Bild wieder frei, sobald es da ist: die Bytes leben danach im Cache, nicht in
    einem Objekt, das die App weiter festhält. */
 const warmingEmblems = new Set();
-function emblemPrefetchTasks(profile) {
+function emblemPrefetchTasks() {
   if (typeof window === "undefined" || !window.matchMedia) return [];
   const showsEmblem = window.matchMedia(`(max-width: ${PHONE_MAX}px)`).matches
     || window.matchMedia(`(min-width: ${DESKTOP_MIN}px)`).matches;
   if (!showsEmblem) return [];
   if (navigator.connection && navigator.connection.saveData) return [];
-  return skillArtUrls(unlockedArchetypes(profile)).map((url) => () => {
+  return skillArtUrls(ARCHETYPE_ORDER).map((url) => () => {
     const im = new Image();
     warmingEmblems.add(im);
     const done = () => warmingEmblems.delete(im);
@@ -242,16 +230,11 @@ function AutostichGame() {
      (der große Ranglisten-Knopf). Vorher stand hier `true` gegen `"meister"`, und der Unterschied
      verschwand in einer typeof-Prüfung an der Rendering-Stelle. */
   const [showLeaderboard, setShowLeaderboard] = useState(false);
-  const [showUpgrades, setShowUpgrades] = useState(false);        // Progression-Vorschau: Upgrade-Baum-Screen
-  const [profile, setProfile] = useState(loadProfile);            // #190: Profil (Freischalt-Status) — nach jedem Lauf aktualisiert
-  const [newUnlocks, setNewUnlocks] = useState([]);               // #190: in DIESEM Lauf frisch freigeschaltete Skins → GameOver
-  const [progressUnlocks, setProgressUnlocks] = useState([]);     // #299: Onboarding-/Meta-Freischaltungen dieses Laufs → Victory-Banner
-  const [runEarn, setRunEarn] = useState(null);                   // #304: Lauf-Ertrag (SP/DP) für den Victory-Rollup
+  const [profile, setProfile] = useState(loadProfile);            // #190: Profil (Bestmarken, Lauf-Zähler) — nach jedem Lauf aktualisiert
   /* #go-ruhe: die All-Time-Bestmarken, wie sie VOR diesem Lauf standen. Der Endscreen kann sie nicht selbst
      laden — wenn er rendert, hat recordRun das Profil längst überschrieben und jeder Vergleich ergäbe
      „gleich hoch", also nie ein NEU. Der Schnappschuss entsteht deshalb hier, eine Zeile vor der Wertung. */
   const [prevBests, setPrevBests] = useState(null);
-  const [onboardingBanner, setOnboardingBanner] = useState(null); // #: Onboarding-Fortschritt/Belohnung fürs Victory-Banner
   const [pendingRun, setPendingRun] = useState(null);             // #190: Vorlade-Gate beim Run-Start (Skin-Bild-URLs)
   const [runVisual, setRunVisual] = useState(null);               // #393: Zufalls-Deck-Override für DIESEN Lauf ({deckId,battlefieldId}) oder null (gewähltes Deck)
   const pendingSeed = useRef(null);                               // #205: Challenge-Seed für den nächsten Lauf (null → frischer Zufalls-Seed)
@@ -264,54 +247,9 @@ function AutostichGame() {
   const [showPrivacy, setShowPrivacy] = useState(false);
   const [showDevSetup, setShowDevSetup] = useState(false);        // Dev-Run-Setup-Overlay (nur Preview-Build)
   const [showChronik, setShowChronik] = useState(false);          // Chronik-Kartenübersicht (§22.11)
-  const [glossaryOpen, setGlossaryOpen] = useState(false);
-  /* W2: das eigenständige Glossar-Overlay (aus dem Tutorial-Fuß). glossaryOpen bleibt die
-     Pause-Flagge der Auto-Play-Wächter und läuft in den Handlern synchron mit — so brauchen
-     die Wächter-Ketten und ihre Dep-Listen keinen zweiten Namen. */
-  const [glossaryStandalone, setGlossaryStandalone] = useState(false);
-  const openGlossaryStandalone = () => { setTutOpen(false); setGlossaryStandalone(true); setGlossaryOpen(true); };
-  const closeGlossaryStandalone = () => { setGlossaryStandalone(false); setGlossaryOpen(false); };
-  /* Tutorial-Sektionen: offen? und der Fortschritt. Beides reine UI — kein Lohn, kein Tor, keine
-     Kopplung an die Onboarding-Kette (Owner-Entscheidung; sie wiederzubeleben nähme neuen Spielern
-     die ersten sechs Läufe SP UND DP, siehe progression.js:355). */
-  const [tutOpen, setTutOpen] = useState(false);
-  const [tutGuide, setTutGuide] = useState(null);   // Archetyp-Leitfaden aus einer Archetyp-Lektion
-  const [tutProgress, setTutProgress] = useState(() => loadTutorialProgress());
-  /* GEFAHR D, entschieden: Was räumt das LAUTE Erstkontakt-Angebot über „Lauf beginnen" ab?
-     Antwort: EINE gelesene Lektion. Es gibt keinen Abschluss mehr, den man erreichen könnte (kein
-     Lohn, kein Tor), also wäre „fertig" gelogen und „für immer weiter anwerben" lästig. Wer eine
-     Lektion geöffnet hat, hat den Einstieg gefunden — das laute Angebot hat seine Arbeit getan.
-     Der ruhige Chip unten neben „Optionen" bleibt davon unberührt und immer erreichbar.
-     Runde 3 (Owner): das laute Erstkontakt-Angebot ist WEG — der erste Lauf führt selbst
-     (H1-Karte + Tipps), der Hub braucht keinen zweiten Start-Knopf mehr. */
-  const markLessonSeen = (path) => setTutProgress((p) => {
-    const next = { seen: p.seen.includes(path) ? p.seen : [...p.seen, path], last: path };
-    saveTutorialProgress(next);
-    return next;
-  });        // Glossar-Overlay offen → friert den Lauf ein (wie Optionen/Chronik)
-  /* Onboarding-Hints: Banner je Entscheidungsscreen (über HintContext an die Slots) + die H1-Karte.
-     `hintFreeze` reiht sich in die Overlay-Einfrier-Kette ein — die H1-Karte hält den Lauf an wie
-     Optionen/Chronik, sonst liefe der erste Durchlauf hinter der Begrüßung weiter. */
-  /* T-O4 „Mehr dazu": oeffnet die Probierfeld-Runde des Hints ueber dem Lauf. tutOpen traegt
-     dafuer jetzt entweder true (Hub-Chip: die Liste) oder { section, lesson } (Deep-Link).
-     Oeffnen zaehlt als gelesen — dieselbe Regel wie ein Klick in der Liste. */
-  // Bewusst KEIN useCallback: markLessonSeen ist selbst je Render neu, ein Memo hier waere nur
-  // eine exhaustive-deps-Ausnahme ohne Gewinn (dieselbe Abwaegung wie bannerFor in useHints).
-  const openProbe = (target) => {
-    const [sec, les] = String(target).split("/");
-    if (!sec || !les) return;
-    markLessonSeen(target);
-    setTutOpen({ section: sec, lesson: les });
-  };
-  /* Tutorial-Lauf (Runde 3, Owner): `guidedRun` lässt die Hints diesen Lauf wie einen Erstlauf
-     führen (alle Tipps, H1-Karte), auch auf einem Profil mit abgeschlossenen Läufen. Gesetzt
-     nur über den „Tutorial-Lauf"-Knopf; jeder normale Start räumt es ab (launchRun). */
-  const [guidedRun, setGuidedRun] = useState(false);
-  const hints = useHints({ state, profile, onMore: openProbe, breakdownOn: !options.hideBreakdown, guided: guidedRun });
-  const hintFreeze = hints.freeze;
+  const [glossaryOpen, setGlossaryOpen] = useState(false); // Glossar-Overlay offen → friert den Lauf ein (wie Optionen/Chronik)
   const [confirmAbort, setConfirmAbort] = useState(false);        // #254: Rückfrage „Lauf wirklich abbrechen?" (Beenden-Button ODER Zurück-Geste im Run)
   const [confirmRestart, setConfirmRestart] = useState(false);    // Komfort: Rückfrage „Wirklich neustarten?" (Neustart-Button) — kein Ein-Tap-Verlust bei Fettfingern
-  const [confirmTutRun, setConfirmTutRun] = useState(false);      // Tutorial-Lauf aus der Übersicht bei AKTIVEM Lauf → Rückfrage (der Lauf ginge verloren)
   const [speedMult, setSpeedMult] = useState(1); // Ablaufbeschleunigung intern 1×/2×/4×/5× (Buttons X2/X4/MAX; #27, kein Score-Effekt)
   // #perf A1: Der Timer tickt nicht mehr die ganze App (früher: setClock alle 250 ms → Full-Tree-Re-Render inkl.
   // Battlefield). Die Zeit rechnet ein stabiler Getter aus den Refs; das 250-ms-Ticken lebt jetzt allein im RunTimer-Leaf.
@@ -329,7 +267,7 @@ function AutostichGame() {
     // #mobil-emblem: die Embleme hängen HINTEN dran — ein Modul-Chunk kostet einen Frame, ein Bild
     // kostet einen Request. Die Bildschirme bleiben also so schnell wie bisher, und die Bilder nehmen
     // den Leerlauf danach mit (ein Posten je Idle-Slot wie gehabt, kein Burst).
-    const queue = [...LAZY_PREFETCH, ...emblemPrefetchTasks(profile)];
+    const queue = [...LAZY_PREFETCH, ...emblemPrefetchTasks()];
     let i = 0;
     /* #health-check M2: vorher wurde nur die ERSTE Idle-Id gemerkt — die Folge-Slots der Kette waren
        nicht mehr stornierbar, und das „NIE während eines laufenden Stichspiels" oben galt nur bis zum
@@ -339,7 +277,7 @@ function AutostichGame() {
     const step = () => { if (cancelled || i >= queue.length) return; try { queue[i++](); } catch (e) { /* Prefetch nie kritisch */ } id = idle(step); };
     id = idle(step);
     return () => { cancelled = true; if (id != null) (window.cancelIdleCallback || clearTimeout)(id); };
-  }, [state.phase, profile]);
+  }, [state.phase]);
   const [highscores, setHighscores] = useState(() => loadHighscores());
   const [isRecord, setIsRecord] = useState(false);
   // Globaler Highscore (#14): lokaler Nickname + Ersteinrichtungs-Modal.
@@ -498,11 +436,11 @@ function AutostichGame() {
   // (Lauf zu Ende, aber der letzte Sieg-Loop hängt noch) — werden sie verstummt. Positiv-Logik (statt inRun-gated), damit
   // auch der Gameover-Zustand (inRun=false) sicher greift.
   useEffect(() => {
-    const inActivePlay = inRun && state.phase === "play" && !paused && !showOptions && !showChronik && !glossaryOpen && !confirmAbort && !confirmRestart && !hintFreeze && !tutOpen && visible;
+    const inActivePlay = inRun && state.phase === "play" && !paused && !showOptions && !showChronik && !glossaryOpen && !confirmAbort && !confirmRestart && visible;
     const loopsAllowed = inActivePlay || showCustomize; // Werkstatt-Showcase = einziger Nicht-Spiel-Ort mit Loop-Betten
     audio.setLoopsSuspended(!loopsAllowed);
     audio.setFxSuspended(!loopsAllowed); // #329: Effekt-One-Shots (fx_*) exakt wie die Loop-Betten gaten → kein Sound-Schwanz im Victory/Overlay
-  }, [inRun, state.phase, paused, showOptions, showChronik, glossaryOpen, confirmAbort, confirmRestart, hintFreeze, tutOpen, visible, showCustomize]);
+  }, [inRun, state.phase, paused, showOptions, showChronik, glossaryOpen, confirmAbort, confirmRestart, visible, showCustomize]);
   const changeOptions = (patch) => setOptions((o) => {
     // #telemetrie: Abschalten verwirft auch das, was noch in der Warteschlange liegt (siehe telemetry.purge).
     if (patch.telemetry === false && o.telemetry !== false) telemetry.purge();
@@ -519,16 +457,12 @@ function AutostichGame() {
     if (showPrivacy) { setShowPrivacy(false); return true; }
     if (showUsername) { setShowUsername(false); return true; }
     if (showDevSetup) { setShowDevSetup(false); return true; }    // #350: Dev-Run-Setup → schließen (Preview-Build)
-    if (tutGuide) { setTutGuide(null); return true; }
-    if (tutOpen) { setTutOpen(false); return true; }
-    if (glossaryStandalone) { closeGlossaryStandalone(); return true; } // W2: das eigenständige Overlay zuerst
     if (glossaryOpen) { setGlossaryOpen(false); return true; }
     if (showChronik) { setShowChronik(false); return true; }
     if (showOptions) { setShowOptions(false); return true; }
     if (showStats) { setShowStats(false); return true; }
     if (showCustomize) { setShowCustomize(false); return true; }
     if (showLeaderboard) { setShowLeaderboard(false); return true; }
-    if (showUpgrades) { setShowUpgrades(false); return true; }
     if (confirmRestart) { setConfirmRestart(false); return true; } // offene Neustart-Rückfrage → schließen
     if (confirmAbort) { setConfirmAbort(false); return true; }   // offene Rückfrage → abbrechen (schließen)
     if (inRun) { setConfirmAbort(true); return true; }            // aktiver Lauf → erst fragen, nichts verlieren
@@ -614,7 +548,7 @@ function AutostichGame() {
 
   // Auto-Play: nach jedem Stich (trickNo ändert sich) den nächsten planen. Pause hält alles an.
   useEffect(() => {
-    if (state.phase !== "play" || paused || showOptions || showChronik || glossaryOpen || confirmAbort || confirmRestart || hintFreeze || tutOpen || !visible) return; // #254: Abbruch-/Neustart-Rückfrage friert den Lauf ein (wie ein Overlay) · Onboarding-H1 ebenso · !visible: Hintergrund-Tab hält den Lauf an (Akku/Hitze)
+    if (state.phase !== "play" || paused || showOptions || showChronik || glossaryOpen || confirmAbort || confirmRestart || !visible) return; // #254: Abbruch-/Neustart-Rückfrage friert den Lauf ein (wie ein Overlay) · !visible: Hintergrund-Tab hält den Lauf an (Akku/Hitze)
     // #188 v2: nach einem großen Krit-Sieg um hitStopMs verzögert (kurzer „Hit-Stop"/Slow-Mo), sonst normaler Takt.
     // #351: Delay hart auf ein endliches Minimum clampen (nie 0/NaN/Infinity → setTimeout feuert zuverlässig).
     const delay = Math.max(MIN_FLIP_MS, Number.isFinite(flipMs + hitStopMs) ? flipMs + hitStopMs : BASE_FLIP_MS);
@@ -623,7 +557,7 @@ function AutostichGame() {
     // #56: flipMs direkt (statt seiner Einzel-Eingaben speedPct/speedMult) → Deps veralten nicht,
     // falls flipMs künftig von weiteren Variablen abhängt.
     // #148: showChronik friert den Lauf ein (wie showOptions) — Tricks laufen nicht mehr hinter dem Overlay weiter.
-  }, [state.phase, state.trickNo, paused, showOptions, showChronik, glossaryOpen, confirmAbort, confirmRestart, hintFreeze, tutOpen, visible, flipMs, hitStopMs]);
+  }, [state.phase, state.trickNo, paused, showOptions, showChronik, glossaryOpen, confirmAbort, confirmRestart, visible, flipMs, hitStopMs]);
 
   // #351/#366 Watchdog (Sicherheitsnetz gegen seltene Start-/Race-Hänger): Läuft der Lauf (phase play, keine Overlays/
   //   Pause), bewegt sich trickNo aber > STUCK_MS nicht UND ist die Seite LIVE sichtbar, den Guard-Zustand EINMAL loggen
@@ -637,7 +571,7 @@ function AutostichGame() {
     // #366: Der Watchdog darf NICHT auf `visible` gaten — genau der Fall „stale visible===false" (führender Verdacht)
     //   soll ihn nicht mitlahmlegen. Stattdessen prüft er die Sichtbarkeit im Intervall LIVE (document.visibilityState):
     //   echt im Hintergrund → nichts tun (Akku/Hitze bleibt respektiert); sichtbar, aber trickNo hängt → resync + nudge.
-    if (state.phase !== "play" || paused || showOptions || showChronik || glossaryOpen || confirmAbort || confirmRestart || hintFreeze || tutOpen) return;
+    if (state.phase !== "play" || paused || showOptions || showChronik || glossaryOpen || confirmAbort || confirmRestart) return;
     const STUCK_MS = 3000;
     const id = setInterval(() => {
       if (stuckNudged.current || Date.now() - lastTrickAt.current < STUCK_MS) return;
@@ -649,7 +583,7 @@ function AutostichGame() {
       dispatch({ type: "RESOLVE_TRICK", rng: Math.random });
     }, 1000);
     return () => clearInterval(id);
-  }, [state.phase, state.trickNo, paused, showOptions, showChronik, glossaryOpen, confirmAbort, confirmRestart, hintFreeze, tutOpen, flipMs, speedMult]);
+  }, [state.phase, state.trickNo, paused, showOptions, showChronik, glossaryOpen, confirmAbort, confirmRestart, flipMs, speedMult]);
 
   // Geist-Trajektorie des laufenden Runs mitschreiben.
   useEffect(() => {
@@ -663,11 +597,9 @@ function AutostichGame() {
   function saveRun() {
     if (recorded.current) return;
     /* Lauf ohne einen einzigen Stich (Abbruch in den Eröffnungsphasen): nichts zu werten — aber
-       die Anzeige-Reste des VORHERIGEN Laufs müssen weg. Sonst zeigt der Endscreen dessen
-       SP/DP-Chips und Willkommensbonus für einen Lauf, der nie etwas gutgeschrieben hat
-       (Review-Runde 2026-08-28, Zeile 34). */
+       die Anzeige-Reste des VORHERIGEN Laufs müssen weg (Review-Runde 2026-08-28, Zeile 34). */
     if (!state.trickNo) {
-      setRunEarn(null); setProgressUnlocks([]); setOnboardingBanner(null); setNewUnlocks([]); setPrevBests(null);
+      setPrevBests(null);
       return;
     }
     recorded.current = true;
@@ -717,47 +649,18 @@ function AutostichGame() {
        Bewusst NICHT in `localEntry`: Highscore-Liste und Telemetrie brauchen sie nicht und bleiben unverändert. */
     const trajSnap = currentTraj.current.filter((v) => typeof v === "number");
     const trickLogSnap = (state.trickLog || []).map((c) => (c || []).map((tk) => ({ gained: Math.round(tk.gained || 0), won: tk.won ? 1 : 0 })));
-    const { profile: nextProfile, unlocks: metaUnlocks, earn: runEarn, onboarding: onbInfo } = recordRun({ ...localEntry, durationMs, archetypes: archetypesUsed,
+    /* exp: recordRun still books SP/DP/unlocks in the profile (data model untouched, nothing to migrate on
+       the way back), but nothing here reads them any more — the earn rollup, the onboarding banner and the
+       skin-unlock window left with the meta-progression. */
+    const { profile: nextProfile } = recordRun({ ...localEntry, durationMs, archetypes: archetypesUsed,
       traj: trajSnap, trickLog: trickLogSnap, // #rd-verlauf: Score-Verlauf + Stich-Score je Durchlauf (Lauf-Details)
       shopPurchases: state.shop?.purchaseLog?.length ?? 0, rerollsUsed: state.rerollsUsed || 0, // #214: Rerolls im Lauf → Sparfuchs (noRerollRun)
       ranked: state.ranked || null, // #303 Sparfuchs: Ranked-Wochen-Seed (Freischalt-Bedingung)
       completed, deckSnapshot }); // #382 Challenge-Modus entfernt
     setProfile(nextProfile);
-    setRunEarn(runEarn || null);                  // #304 Lauf-Ertrag (SP/DP-Rollup)
     // #go-ruhe: Vorher-Stand der vier All-Time-Rekorde fürs Bestleistungs-Panel (prevProfile = Profil vor recordRun).
     setPrevBests({ score: prevProfile.bestScore || 0, streak: prevProfile.bestStreak || 0,
       crits: prevProfile.maxCrits || 0, trick: prevProfile.bestTrickScore || 0 });
-    // #299 Meta-Freischaltungen dieses Laufs (Onboarding-Glieder → Archetyp/Rarität/Abschluss) fürs Victory-Banner.
-    const ARCH_DE = { plant: "Pflanze", ice: "Eis", fire: "Feuer", lightning: "Blitz" };
-    // Sprachprüfung C1: EIN Vokabular für die Raritätsstufen — die Namen kommen aus rarity.js (TIER_META),
-// nicht aus einer zweiten, hier gepflegten Liste („Seltenheit III (Blau)" u. Ä.).
-  const RAR_DE = { 3: `Rarität: ${rarityLabel(3)}`, 4: `Rarität: ${rarityLabel(4)}` };
-    const rewardLabel = (r) => r == null ? null
-      : r.type === "onboardingDone" ? "Genesis-Pack · Werkstatt · Upgrades"
-      : r.type === "archetype" ? `Archetyp: ${ARCH_DE[r.key] || r.key}`
-      : r.type === "rarity" ? (RAR_DE[r.tier] || "Neue Raritätsstufe") : "Freischaltung";
-    setProgressUnlocks((metaUnlocks || []).map((u) => {
-      if (u.type === "onboardingDone") return { id: "onb-done", label: "Onboarding abgeschlossen — Genesis-Pack, Werkstatt & Upgrades frei", target: "workshop" };
-      if (u.type === "archetype") return { id: `arch-${u.key}`, label: `Neuer Archetyp: ${ARCH_DE[u.key] || u.key}`, target: null, guide: u.key, guideName: ARCH_DE[u.key] || u.key }; // #: guide → Leitfaden-Button im Onboarding-Banner (öffnet die Fraktions-Seite)
-      if (u.type === "rarity") return { id: `rar-${u.tier}`, label: `Neue Rarität freigeschaltet: ${rarityLabel(u.tier)}`.trim(), target: null };
-      return { id: `u-${u.link}`, label: "Freischaltung", target: null };
-    }));
-    // #: Onboarding-Fortschritt fürs Victory-Banner — damit NACH JEDEM Onboarding-Lauf sichtbar ist, wo man steht und was
-    // als Nächstes/gerade freigeschaltet wird (golden funkelnder Rahmen). null, sobald das Onboarding durch ist.
-    const nextR = onbInfo ? nextOnboardingReward(onbInfo.after) : null;
-    setOnboardingBanner(onbInfo && onbInfo.after < onbInfo.links
-      ? { step: onbInfo.after, links: onbInfo.links, advanced: onbInfo.after > onbInfo.before, nextLabel: nextR ? rewardLabel(nextR.reward) : null, nextAt: nextR ? nextR.link : null }
-      : null);
-    // #190: in DIESEM Lauf frisch freigeschaltete Skins (Bedingung vorher NICHT erfüllt, jetzt schon) → Siegesscreen.
-    const catalog = [
-      ...Object.keys(DECK_DEFS).map((id) => ({ def: deckDef(id), type: "deck" })),
-      ...Object.keys(BATTLEFIELD_DEFS).map((id) => ({ def: battlefieldDef(id), type: "battlefield" })),
-    ];
-    setNewUnlocks(
-      catalog
-        .filter(({ def }) => def.unlock && isUnlocked(def, nextProfile) && !isUnlocked(def, prevProfile))
-        .map(({ def, type }) => ({ id: def.id, name: def.name, type }))
-    );
     // #telemetrie: denselben Lauf anonym an die Telemetrie-Tabelle schicken — UNABHÄNGIG vom Leaderboard.
     // Bewusst getrennt: das Board schreibt nur mit gesetztem Namen und nur den Wettbewerbs-Ausschnitt; fürs
     // Balancing brauchen wir JEDEN Lauf (auch namenlose und vorzeitig beendete) samt Entscheidungs-Mitschrift.
@@ -783,10 +686,7 @@ function AutostichGame() {
       best_streak: state.bestStreak, perks: (state.perks || []).join(","), skills: (state.skills || []).join(","),
       max_formations: state.maxFormations, formation_score: state.formationScore,
       crits: state.crits, wins: state.wins, crit_bonus_score: state.critBonusScore, best_trick_score: state.bestTrickScore,
-      // #global: Baumstand, mit dem DIESER Lauf gespielt wurde → das Global-Board kann Scores einordnen (x/27).
-      // `prevProfile` (Stand VOR der Wertung), nicht `nextProfile`: Knoten kauft man zwar nur zwischen den Läufen,
-      // aber der Lauf gehört zu dem Baum, mit dem er lief — nicht zu dem, den die Wertung gerade mitfinanziert hat.
-      tree_nodes: ownedCount(prevProfile),
+      // exp: no tree → no tree_nodes column; the board's optional column stays NULL for playground runs.
       // #370: Ranglisten-Läufe posten aufs Wochen-Board (Board-String bleibt vorerst "meister" = bestehendes
       //   Wochen-Board + Champions; Seed segmentiert die Woche). Casual-Läufe posten OHNE board (→ NULL).
       ...(state.ranked ? { board: "meister" } : {}) };
@@ -866,12 +766,9 @@ function AutostichGame() {
     bgFx: activeBgFx(profile, vOpt),
     bgFinisher: activeBgFinisher(profile, vOpt),
     cardAnims: activeCardAnims(profile, vOpt), // #318 aktive Karten-Animationen (group "anim", stapelbar)
-    // #finisher/#klinge-kaufbar: gewählter Sieg-Finisher (standard=Wegflug|klinge). „klinge" gilt nur bei Besitz
-    // (fx:klinge gekauft) — sonst zurück auf den Gratis-Standard, damit eine ungekaufte Auswahl nicht doch rendert.
-    finisher: (vOpt.finisher === "klinge" && !!profile?.ownedCosmetics?.["fx:klinge"]) ? "klinge"
-            : (vOpt.finisher === "scorch" && !!profile?.ownedCosmetics?.["fx:scorch"]) ? "scorch"
-            : (vOpt.finisher === "hologridSlice" && !!profile?.ownedCosmetics?.["fx:hologridSlice"]) ? "hologridSlice"
-            : (vOpt.finisher === "blackhole" && !!profile?.ownedCosmetics?.["fx:blackhole"]) ? "blackhole" : "standard",
+    // #finisher: gewählter Sieg-Finisher (standard=Wegflug|klinge|scorch|hologridSlice|blackhole). exp: alles ist
+    // im Besitz (ALL_UNLOCKED), die Auswahl gilt also ohne Kauf-Gate.
+    finisher: ["klinge", "scorch", "hologridSlice", "blackhole"].includes(vOpt.finisher) ? vOpt.finisher : "standard",
     scorchDeck: !!vOpt.fxScorchDeck, // #319 Scorch-Farbmodus: false = warmes Feuer, true = Deckfarbe
     blackholeDeck: !!vOpt.fxBlackholeDeck, // #320 Schwarzes-Loch-Farbmodus: false = Standard blau/pink, true = Deckfarbe
     klingeDeck: !!vOpt.fxKlingeDeck, // #klinge-deck: false = kühles Stahlweiß, true = Deckfarbe
@@ -986,7 +883,7 @@ function AutostichGame() {
      Chunk-Import da. Wer sie baut, trägt „fire" in FX_PREWARM ein — hier ändert sich dann nichts. */
   const fxWarmTasks = () => {
     const opts = { deckTint: deckFx.archDeckColor, deckColor: deckFx.deckA1, deckColor2: deckFx.deckA2 };
-    return unlockedArchetypes(profile)
+    return ARCHETYPE_ORDER
       .filter((a) => FX_PREWARM[a] && !fxPrewarmedRef.current.has(a))
       .map((a) => () => { fxPrewarmedRef.current.add(a); return FX_PREWARM[a](opts); });
   };
@@ -1020,21 +917,16 @@ function AutostichGame() {
     setConfirmAbort(false);
     setConfirmRestart(false);
     setIsRecord(false);
-    setNewUnlocks([]); // #190: Freischalt-Hinweis des Vorlaufs zurücksetzen
     const dev = pendingDev.current; pendingDev.current = null; // Dev-Run-Config (Test-Layout) für DIESEN Lauf, dann zurücksetzen
     const ranked = pendingRanked.current; pendingRanked.current = null; // §7: Ranglisten-Lauf ('ranked' = Wochen-Modus)
-    dispatch({ type: "START_RUN", rng: Math.random, architect: true, seed, dev, ranked, profile }); // #202 Architekt · #205 Seed · Dev-Run · Progression-Baum · §7 Rangliste
+    dispatch({ type: "START_RUN", rng: Math.random, architect: true, seed, dev, ranked }); // #202 Architekt · #205 Seed · Dev-Run · §7 Rangliste (exp: kein Profil, kein Baum)
   }
   // #190: aktive Skin-Bilder vorladen, DANN starten. Der RunLoader zeigt sich nur bei spürbarer Ladezeit
   // (Cache-Treffer → sofort) und hat ein Timeout-Sicherheitsnetz → Start hängt nie.
   // #205: `seed` (Zahl) startet einen Challenge-Lauf (Nachspielen/Paste); als Event-Handler aufgerufen (Zahl-Guard)
   // ODER ohne Argument → frischer Zufalls-Seed in beginRun.
   // #190: Skins vorladen, dann beginRun. Zentraler Trigger, den alle Lauf-Arten teilen (Normal/Meister/Neustart).
-  function launchRun({ seed = null, dev = null, ranked = null, guided = false } = {}) {
-    /* Tutorial-Lauf (Runde 3): `guided` lässt useHints den Lauf wie einen Erstlauf führen —
-       H1-Karte und alle Tipps, auch auf einem Veteranen-Profil. Jeder normale Start setzt das
-       Flag zurück, damit es nie an einem späteren Lauf klebt. */
-    setGuidedRun(guided);
+  function launchRun({ seed = null, dev = null, ranked = null } = {}) {
     pendingSeed.current = (typeof seed === "number" && Number.isFinite(seed)) ? (seed >>> 0) : null;
     pendingDev.current = dev; // Dev-Run-Config (null = normaler Lauf)
     pendingRanked.current = ranked; // §7: 'ranked' = Wochen-Modus (tree-unabhängige Baseline)
@@ -1055,31 +947,9 @@ function AutostichGame() {
   }
   // Lauf beginnen — auch der Challenge-Seed-Pfad (Nachspielen/Paste) läuft hier.
   function startRun(seed) { launchRun({ seed: (typeof seed === "number" && Number.isFinite(seed)) ? seed : null }); }
-  /* Tutorial-Lauf (Runde 3): Tipps zurücksetzen, Übersicht schließen, neuen geführten Lauf starten.
-     Aus der Übersicht bei aktivem Lauf kommt vorher die Rückfrage (confirmTutRun). */
-  function startGuidedRun() {
-    setConfirmTutRun(false);
-    setTutOpen(false);
-    hints.resetAll();
-    launchRun({ guided: true });
-  }
-  /* Runde 5, W1 (Owner): „Alle Tutorial-Tipps überspringen" (H1) heißt jetzt auch: keine
-     Blitz-only-Erstlauf-Sperre mehr. Drei Wirkungen, eine Geste — Tipps als gesehen markieren,
-     das Profil sticky auf tutorialSkipped stellen (künftige Läufe starten offen) und den
-     LAUFENDEN Lauf per SKIP_TUTORIAL auf die Baum-Allowlist heben (Feuer, plus gekaufte
-     Eis/Pflanze), sodass schon das nächste Skill-Angebot sie führt. */
-  function skipTutorial() {
-    hints.skipAll();
-    const np = saveProfile({ ...profile, tutorialSkipped: true });
-    setProfile(np);
-    dispatch({ type: "SKIP_TUTORIAL", profile: np });
-  }
-  // Test-Codes im Seed-Feld (nur Preview, StartScreen fängt sie ab): `unlock` = Onboarding fertig + alle
-  // Upgrades + SP-Polster (Profil-Update, kein Reload). `onboarding` = nur Onboarding überspringen (6/6) +
-  // 10 SP / 50 DP. `reset` = ganzes Profil wipen → Reload gibt den sauberen Erstbesuch-Zustand.
+  // Test-Code im Seed-Feld (StartScreen fängt ihn ab): `reset` = ganzes Profil wipen → Reload gibt den
+  // sauberen Erstbesuch-Zustand. `unlock`/`onboarding` sind mit der Meta-Progression gegangen (exp).
   function handleSecretSeed(kind) {
-    if (kind === "unlock") { setProfile(saveProfile(unlockAllCosmetics(unlockAllProfile(loadProfile())))); return; }
-    if (kind === "onboarding") { setProfile(saveProfile(skipOnboardingProfile(loadProfile()))); return; } // Onboarding skippen + 10 SP / 50 DP
     if (kind === "reset") { wipeProfileStorage(); try { window.location.reload(); } catch (e) {} }
   }
   // #370 EIN Ranglisten-Modus: tree-unabhängige Baseline, alle spielen den Wochen-Seed (für alle gleich).
@@ -1109,7 +979,7 @@ function AutostichGame() {
     seedWasChosen.current = !!m.seedWasChosen; // #205: Challenge-Seed-Eigenschaft übersteht das Fortsetzen (→ Neustart)
     runStartRecordTraj.current = recordTraj.current.slice();
     recorded.current = false;
-    setPaused(false); setIsRecord(false); setNewUnlocks([]);
+    setPaused(false); setIsRecord(false);
     setResumable(null);
     dispatch({ type: "RESTORE_RUN", state: r.state });
   }
@@ -1213,17 +1083,13 @@ function AutostichGame() {
   const bfPe = useMemo(() => ({ linkedGroups }), [linkedGroups]);
 
   return (
-// Onboarding-Hints: der Provider reicht die Banner-Steuerung an die PhaseHintSlot-Zeilen der
-    // Entscheidungsscreens durch — eine Quelle, kein Prop-Drilling durch acht Screens.
-    //
     // #356: Deck-Akzentfarben als CSS-Variablen am Run-Container — die neutralen Struktur-Panel-Rahmen tönen sich darüber
     //   in die Deckfarbe (color-mix, s. panelKit/StatusRail/…). Wechselt das Deck, ziehen die Rahmen mit.
     //   #desktop: seit dem Desktop-Pass AUCH im Menü gesetzt (vorher nur `inRun`) — der Startbildschirm färbt
     //   ab 1280 px Knöpfe, Panel-Rahmen und Streifen aus dem aktiven Deck und braucht die Variablen dort.
     //   Ohne aktives Deck bleiben sie undefined → überall greifen dieselben Violett-Rückfälle wie bisher.
-    <HintContext.Provider value={hints}>
-    {/* Deck-Skin fürs Kartengitter: die Front des aktiven Decks als Context (s. CardGrid) — jede Karten-Ansicht
-        (Aufstellung, Chronik, Zielwahl, GameOver, …) zieht sie sich selbst, ohne Prop-Fädelung je Aufrufstelle. */}
+    /* Deck-Skin fürs Kartengitter: die Front des aktiven Decks als Context (s. CardGrid) — jede Karten-Ansicht
+       (Aufstellung, Chronik, Zielwahl, GameOver, …) zieht sie sich selbst, ohne Prop-Fädelung je Aufrufstelle. */
     <DeckFrontContext.Provider value={deckSkin.front}>
     <div className="app-root relative w-full flex justify-center"
       style={{ "--deck-a1": deckFx.deckA1 || undefined, "--deck-a2": deckFx.deckA2 || undefined }}>
@@ -1268,9 +1134,7 @@ function AutostichGame() {
             onResume={resumable ? resumeRun : null}
             resume={resumable ? { cycle: resumable.state.cycle, totalCycles: resumable.state.maxCycles || resumable.state.difficulty?.maxCycles || MAX_CYCLES, score: resumable.state.score } : null}
             onStats={() => setShowStats(true)} onCustomize={() => setShowCustomize(true)} onLeaderboard={() => setShowLeaderboard("board")}
-            onUpgrades={() => setShowUpgrades(true)} profile={profile}
-            onTutorial={() => setTutOpen(true)}
-            onDevRun={import.meta.env.VITE_PREVIEW === "1" ? () => setShowDevSetup(true) : null}
+            onDevRun={() => setShowDevSetup(true)}
             muted={!!options.muted} onToggleMute={() => changeOptions({ muted: !options.muted })}
             onFeedback={() => setShowFeedback(true)} onPrivacy={() => setShowPrivacy(true)}
             username={username} onEditName={() => setShowUsername(true)}
@@ -1319,9 +1183,7 @@ function AutostichGame() {
             onTogglePause={() => setPaused((p) => !p)}
             speedMult={speedMult} onSpeed={(m) => setSpeedMult((cur) => (cur === m ? 1 : m))}
             onChronik={() => setShowChronik(true)} deckBack={deckSkin.back}
-            milestone={wide && (profile?.onboarding || 0) >= ONBOARDING_LINKS
-              ? <div className="sb-ms"><ScoreMilestoneBar score={state.score} /></div>
-              : null}
+            milestone={null}
             music={wide && state.phase !== "gameover"
               ? <MusicBar className="sb-music" title={musicTitle} onNext={() => music.next()} />
               : null}
@@ -1335,13 +1197,6 @@ function AutostichGame() {
               der linken Spalte); die order-/lg-Klassen halten die Reihenfolge darunter unverändert. */}
           <div className="rn-body grid lg:grid-cols-[1fr_340px] gap-4 items-start">
             <div className="rn-main grid gap-4 order-1 lg:col-start-1 lg:row-start-1">
-              {/* §6: Score-Meilenstein-Balken — NACH dem Onboarding (dann greifen die SP-Meilensteine).
-                  Ab 1280 px steht er IN der Vitalleiste (s. `milestone`-Prop der StatusBar oben). */}
-              {!wide && (profile?.onboarding || 0) >= ONBOARDING_LINKS && (
-                <div className="rn-milestone">
-                  <ScoreMilestoneBar score={state.score} />
-                </div>
-              )}
               <Battlefield lastTrick={state.lastTrick} remaining={cycleLenFor(state.shop) - state.pos} deckLen={cycleLenFor(state.shop)} flipMs={flipMs} pe={bfPe}
                 heat={state.heat} lightning={state.lightning} score={state.score || 0}
                 forged={state.forged || {}} brandActive={state.brandActive || {}}
@@ -1352,7 +1207,7 @@ function AutostichGame() {
                 gottEffect={deckFx.gottEffect} gottDeck={deckFx.gottDeck} archDeckColor={deckFx.archDeckColor}
                 reducedFx={options.reducedFx}
                 hideFloatScore={options.hideFloatScore} hideFloatMult={options.hideFloatMult} hideFloatWinLose={options.hideFloatWinLose}
-                hideBreakdown={options.hideBreakdown} boardVisible={boardVisible} hintHold={!!hints.eventCard}
+                hideBreakdown={options.hideBreakdown} boardVisible={boardVisible}
                 oppDeck={DECISION_SCHEDULE[state.cycle + 1] || DECISION_SCHEDULE[state.cycle] || "perk"} />
             </div>
             {/* #buehne: Bank aus Bars · Analyse · Build · Wochen-Mods. Unter 1280 px ist sie `display: contents`,
@@ -1444,22 +1299,6 @@ function AutostichGame() {
           skills={state.skills} state={state} options={options} onOption={changeOptions}
           currentTraj={currentTraj.current} recordTraj={recordTraj.current} best={best} />
       )}
-      {/* Tutorial-Sektionen: Vollbild-Overlay über dem Hub. Ohne `tutOpen` rendert es nichts. */}
-      {tutOpen && (
-        <TutorialSections onClose={() => setTutOpen(false)} onOpenGlossary={openGlossaryStandalone}
-          onTutorialRun={() => { if (inRun) setConfirmTutRun(true); else startGuidedRun(); }}
-          onOpenGuide={setTutGuide}
-          initial={typeof tutOpen === "object" ? tutOpen : null}
-          seen={tutProgress.seen} onSeen={markLessonSeen} />
-      )}
-      {/* Runde 5, W2 (Owner-Fund): der Glossar-Fuß der Tutorial-Übersicht öffnete NICHTS —
-          setGlossaryOpen ist nur die Pause-Buchhaltung, das Glossar-UI lebte allein im
-          GlossaryPanel des Lauf-HUD (eigener State, im Menü gar nicht gerendert; im Lauf fror
-          der Klick den Lauf unsichtbar ein). Jetzt rendert App das Overlay selbst; die
-          Pause-Flagge läuft synchron mit, damit die Auto-Play-Wächter unverändert greifen. */}
-      {glossaryStandalone && <GlossaryOverlay onClose={closeGlossaryStandalone} />}
-      {tutGuide && <GuideOverlay initial={tutGuide} onClose={() => setTutGuide(null)} />}
-
       {/* #update: „Neue Version verfügbar"-Hinweis — pollt version.json, meldet neue Deploys ohne Zwangs-Reload. */}
       <UpdateBanner />
 
@@ -1467,8 +1306,7 @@ function AutostichGame() {
         <GameOver state={{ ...state, runId: runId.current }} highscores={highscores} isRecord={isRecord} timeStr={fmtDuration(elapsedMs)}
           currentTraj={currentTraj.current} recordTraj={runStartRecordTraj.current} onRestart={startRun} onMenu={toMenu}
           myEntry={myEntry} pubToken={pubToken} hasUsername={!!(username || "").trim()} onEditName={() => setShowUsername(true)}
-          newUnlocks={newUnlocks} progressUnlocks={progressUnlocks} earn={runEarn} onboarding={onboardingBanner} prevBests={prevBests}
-          onCustomize={() => setShowCustomize(true)} onUpgrades={() => setShowUpgrades(true)} onLeaderboard={() => setShowLeaderboard("board")} />
+          prevBests={prevBests} />
       )}
 
       {/* #perf B1: gemeinsame Suspense-Grenze für die (sich gegenseitig ausschließenden) Menü-/Settings-Overlays. */}
@@ -1488,9 +1326,8 @@ function AutostichGame() {
           <DevRunSetup onStart={(cfg) => { setShowDevSetup(false); startDevRun(cfg); }} onClose={() => setShowDevSetup(false)} />
         )}
 
-        {showUpgrades && <UpgradeScreen onClose={() => setShowUpgrades(false)} profile={profile} onProfileChange={(np) => setProfile(saveProfile(np))} />}
         {showLeaderboard && (
-          <LeaderboardScreen mine={myEntry} reloadToken={pubToken} profile={profile}
+          <LeaderboardScreen mine={myEntry} reloadToken={pubToken}
             username={username}
             // Wochensiege aus dem Champions-Archiv ins Profil spiegeln → schaltet die gestuften Ranglisten-Decks frei.
             onChampionWeeks={(wins) => setProfile((prev) => { const np = recordChampionWeeks(wins); return np || prev; })}
@@ -1534,25 +1371,7 @@ function AutostichGame() {
           onRestart={() => { setConfirmRestart(false); restartRun(); }} />
       )}
 
-      {/* Tutorial-Lauf aus der Übersicht bei AKTIVEM Lauf: der laufende Lauf ginge verloren → Rückfrage.
-          Liegt ÜBER der Tutorial-Übersicht (z-70 in der Komponente); der Lauf ist über tutOpen eingefroren. */}
-      {confirmTutRun && (
-        <TutorialRunConfirm onKeepPlaying={() => setConfirmTutRun(false)} onStart={startGuidedRun} />
-      )}
-
-      {/* Onboarding-H1: die EINZIGE blockierende Hint-Karte (Erstlauf-Begrüßung). Über allem außer
-          den Bestätigungs-Dialogen; der Lauf darunter ist über hintFreeze eingefroren. */}
-      {/* Q4/Q5 (Runde 3): neben H1 blocken auch die Phasen-Intros HF/HA — der Überspringen-Link
-          gehört nur auf die Willkommenskarte. */}
-      {hints.card && <HintCardOverlay hint={hints.card} onGo={hints.dismissCard}
-        onSkipAll={hints.card.id === "H1" ? skipTutorial : null}
-        onMore={hints.onMore && hints.card.target ? () => hints.onMore(hints.card) : null} />}
-      {/* Ereignis-/UI-Hints im Stichspiel (T-O2): Pause-Karte am unteren Rand, Referent bleibt
-          sichtbar; der Lauf ist über hintFreeze angehalten, bis „Weiter" gedrückt wird. */}
-      {!hints.card && hints.eventCard && <EventHintCard hint={hints.eventCard} onGo={hints.dismissEvent}
-        onMore={hints.onMore && hints.eventCard.target ? () => hints.onMore(hints.eventCard) : null} />}
     </div>
     </DeckFrontContext.Provider>
-    </HintContext.Provider>
   );
 }

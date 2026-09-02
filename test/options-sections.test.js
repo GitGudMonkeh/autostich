@@ -2,7 +2,9 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { OptionsModal } from "../src/ui/OptionsModal.jsx";
-import { setLocale, SOURCE_LOCALE } from "../src/i18n/index.js";
+import { setLocale, SOURCE_LOCALE, READY_LOCALE_IDS } from "../src/i18n/index.js";
+// exp: English is inactive on the playground (LOCALES in index.js) — the English render-checks sleep until it is ready again.
+const EN_OFF = !READY_LOCALE_IDS.includes("en");
 import { readFileSync } from "node:fs";
 import { DEFAULT_OPTIONS } from "../src/game/storage.js";
 import { DESKTOP_AT } from "./desktopBreakpoint.js";
@@ -44,11 +46,18 @@ describe("Optionen-Overlay — Sektionen (#395)", () => {
 
   it("jede Einstellung sitzt in ihrer Sektion (Zuordnung aus dem Issue)", () => {
     const s = html();
-    // Sprache + Haptik unter „Allgemein", vor der Grafik-Sektion.
-    const [general, sprache, haptik, graphics] = orderOf(s, "Allgemein</h3>", "Sprache", "Haptik", "Grafik &amp; Leistung</h3>");
-    expect(general).toBeLessThan(sprache);
-    expect(sprache).toBeLessThan(haptik);
+    // Sprache + Haptik unter „Allgemein", vor der Grafik-Sektion. exp: die Sprachzeile rendert nur,
+    // solange es eine Wahl gibt (READY_LOCALES > 1) — mit einer aktiven Sprache fehlt sie im DOM.
+    const [general, haptik, graphics] = orderOf(s, "Allgemein</h3>", "Haptik", "Grafik &amp; Leistung</h3>");
+    expect(general).toBeLessThan(haptik);
     expect(haptik).toBeLessThan(graphics);
+    if (READY_LOCALE_IDS.length > 1) {
+      const [, sprache] = orderOf(s, "Allgemein</h3>", "Sprache");
+      expect(general).toBeLessThan(sprache);
+      expect(sprache).toBeLessThan(haptik);
+    } else {
+      expect(s).not.toContain("Sprache");
+    }
     /* Ton-Sektion trägt die drei Ton-Zeilen, danach erst „HUD & Text". Angekert wird auf die
        Effekt-Lautstärke statt auf die erste Zeile: die heißt seit #optionen-redesign „Ton" und damit
        genauso wie ihre Sektion — ein Anker, der beides trifft, prüft nichts. */
@@ -70,7 +79,7 @@ describe("Optionen-Overlay — Sektionen (#395)", () => {
     expect((s.match(/sticky top-0/g) || []).length).toBe(4);
   });
 
-  it("englisch: dieselbe Struktur, übersetzte Marken", () => {
+  it.skipIf(EN_OFF)("englisch: dieselbe Struktur, übersetzte Marken", () => {
     setLocale("en");
     const s = html();
     expect(ascending(orderOf(s, "General</h3>", "Graphics &amp; performance</h3>", "Sound</h3>", "HUD &amp; Text</h3>"))).toBe(true);

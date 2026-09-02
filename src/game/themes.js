@@ -15,7 +15,7 @@
 
    Die UI (CustomizeScreen) rendert rein aus diesen Ableitungen — dieselbe Wahrheit für Tests & Screen. */
 
-import { DECK_DEFS, isUnlocked, unlockProgress } from "./cosmetics.js";
+import { DECK_DEFS, isUnlocked, unlockProgress, ALL_UNLOCKED } from "./cosmetics.js";
 
 /* GLOBALE Effekte (#deckshop, Kategorie „Effekte"): einmalig gekauft (nicht pro Pack), wirken laufweit. #307: Kauf in
    DP, je Effekt ein eigener Preis (fx.price); Besitz in ownedCosmetics[ownKey]; ein An/Aus-Toggle (option) steuert sie.
@@ -77,7 +77,8 @@ export const GLOBAL_FX = [
     ownKey: "fx:supernova", option: "fxSupernova", preview: "supernova", price: 40, group: "gott" },
 ];
 export const GLOBAL_FX_BY_KEY = Object.fromEntries(GLOBAL_FX.map((f) => [f.key, f]));
-export const globalFxOwned = (profile, fx) => !!(profile && profile.ownedCosmetics && profile.ownedCosmetics[fx.ownKey]);
+// exp: ALL_UNLOCKED (cosmetics.js) — every effect is owned, the DP purchase path never renders.
+export const globalFxOwned = (profile, fx) => ALL_UNLOCKED || !!(profile && profile.ownedCosmetics && profile.ownedCosmetics[fx.ownKey]);
 // #307: Effekte kosten jetzt DP (Deckpunkte), je Effekt ein eigener Preis (fx.price) — analog zu den Packs.
 export const globalFxPrice = (fx) => Math.max(0, Math.floor(Number(fx && fx.price) || 0));
 export const canBuyGlobalFx = (profile, fx) => !globalFxOwned(profile, fx) && dp(profile) >= globalFxPrice(fx);
@@ -464,7 +465,7 @@ export function packCond(pack) {
 
 // Pack im Besitz? (gekauft ODER über Bedingung frei). Nutzt dieselbe isUnlocked-Wahrheit wie die Auswahl.
 export function packOwned(profile, pack) {
-  return isUnlocked({ unlock: packCond(pack) }, profile);
+  return ALL_UNLOCKED || isUnlocked({ unlock: packCond(pack) }, profile); // exp: every pack is owned
 }
 
 // Pack-Zustand fürs Badge: "own" | "buy" (DP-kaufbar) | "lock" (Bedingung offen).

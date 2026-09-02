@@ -2,12 +2,10 @@ import { useState } from "react";
 import { RankIcon } from "./RankIcon.jsx"; // #pokal-eins: Ranglisten-Zeichen, geteilt mit der Bestenliste
 import { MuteButton } from "./MuteButton.jsx";
 import { parseSeed } from "../game/rng.js"; // #205 Challenger Mode: eingefügten Seed dekodieren
-import { currentWeek } from "../game/weeklySeed.js"; // #370: Wochennummer + Wochen-Seed für die Bonus-Anzeige
-import { RANKED_WEEK_SP, RANKED_WEEK_DP, RANKED_WEEK_DP_FULL } from "../game/storage.js"; // #bonus-benennen: die Tafel NENNT den Wochenbonus — Zahlen aus der Quelle
-import { matchSecretSeed, ownedCount, nodeState, treeComplete, rankedUnlocked, NODES, TOTAL_NODES, ONBOARDING_LINKS, SP_LOYALTY_EVERY, SP_LOYALTY_SP } from "../game/progression.js"; // Test-Codes + Hub-Progressionsanzeige
+import { currentWeek } from "../game/weeklySeed.js"; // #370: Wochennummer für den Ranglisten-Knopf
 import { GlossaryPanel } from "./Glossary.jsx";
 import { battlefieldVeil, battlefieldDim } from "./cosmeticAssets.js"; // #deck-mobil: Schleier-Deckel fuer zu helle Spielfelder; #bf-desktop: Bild-Daempfung ab 1280 px
-import { rarityLabel, deckDef, battlefieldDef, globalFxDef } from "../i18n/labels.js"; // Raritäts-/Kosmetik-/Effekt-Namen: EINE Quelle, übersetzt (Sprachprüfung C1)
+import { deckDef, battlefieldDef, globalFxDef } from "../i18n/labels.js"; // Raritäts-/Kosmetik-/Effekt-Namen: EINE Quelle, übersetzt (Sprachprüfung C1)
 import { VERSION_FULL } from "./version.js"; // #250: Versions-/Build-Stempel, seit 16.08.2026 direkt unter der Marke
 import { PwaInstall } from "./PwaInstall.jsx"; // PWA · „Zum Startbildschirm" (Installieren-Link)
 import BrandGrid from "./BrandGrid.jsx"; // #mainscreen-branding: das Zeichen — die Spalte im I und die Bildmarke
@@ -53,21 +51,8 @@ import { useT } from "../i18n/useLocale.js"; // #sprache: alle Texte über t()
    Ab 1280 px ziehen Knöpfe, Marke und Glow ohnehin ihren Ton aus dem AKTIVEN DECK (Regeln in der
    1280-px-Sektion von index.css) — dort greift von hier nichts. Diese Palette ist die Handy-Fassung. */
 const CY = "#26c6e6";   // Logo links (Cyan) — Start / Lauf beginnen; einzige unangetastete Farbe
-const VI = "#9b82f0";   // Logo Mitte (Violett) — nur noch Onboarding-Leiste + Desktop-Status-Tafel
-const AM = "#d6ab6b";   // Währung (war #f2a83a) — Upgrades / SP / DP / Bonus-Leiste
-const RANK = "#6696a4"; // Rangliste + Tutorial: CY zur Hälfte ins Neutrale gezogen, dann entsättigt
+const AM = "#d6ab6b";   // Werkstatt-Kachel (war die Währungsfarbe — exp: kein SP/DP mehr, die Kante bleibt)
 const NEU = "#8a8a95";  // Kachel-Kante ohne Aussage — der Rückfallton der Kanten-Familie (index.css)
-const SP = AM;          // Stichpunkte = Upgrade-Währung → Gold
-
-// (Schritt 4e) Onboarding-Kette (docs §4): Reward je Glied — Index i = Belohnung fürs Erreichen von Glied i+1.
-// Nur Anzeige (nächste Freischaltung im Hub); die Wirkung sitzt in progression.js / reducer.
-// Sprachprüfung C1/E3: Raritäts-Namen aus TIER_META (kein „Blau"/„Violett"), Legendär-Phase mit ausgeschriebenem
-// Durchlauf statt der Chiffre „R29" — die Zahl kommt aus dem Entscheidungsplan (constants.js).
-// #sprache: als Funktion, damit der Sprachwechsel greift — Name UND Raritätsstufe lösen zur Anzeigezeit auf.
-const onbRewards = (t) => [
-  t("start.onb.reroll"), t("start.onb.plant"), t("start.onb.rarity", { tier: rarityLabel(3) }),
-  t("start.onb.ice"), t("start.onb.rarity", { tier: rarityLabel(4) }), t("start.onb.legendary"),
-];
 
 /* #kachel-glyph (17.08.2026) — das Wasserzeichen in der Ecke der vier Verwaltungskacheln.
    Die Kacheln trugen bewusst KEINE Icons: vier gleich aussehende Flächen, deren einziges Farbsignal
@@ -91,8 +76,6 @@ const onbRewards = (t) => [
    Schlüsselname der nächsten Zeile ging als „fest verdrahteter Anzeigetext" durch. Mit Pfaddaten
    entsteht die Stelle gar nicht erst. */
 const GLYPHS = {
-  // Upgrades — Pfeil nach oben: der Baum wächst, das Guthaben geht hinein.
-  upgrades: { paths: ["M12 20V5", "M5.5 11.5 12 5l6.5 6.5"] },
   // Deck-Werkstatt — vier Bausteine: Deck, Spielfeld, Effekt, Rückseite.
   workshop: { rects: [[4, 4], [13, 4], [4, 13], [13, 13]] },
   /* Bestenliste — Treppchen. Die Grundlinie ist nicht Zierrat: ohne sie sind es drei frei
@@ -102,26 +85,11 @@ const GLYPHS = {
   stats: { paths: ["M12 4a8 8 0 1 1 0 16a8 8 0 1 1 0-16", "M12 4v8h8"] },
 };
 
-/* #premium (18.08.2026) — das führende Zeichen der Bonus-/Onboarding-Zeile.
-   Bis 1279 px steht dort weiter das Emoji, das vorher IM i18n-String stand (💠 bzw. 🎓); die Zeile
-   sieht am Handy also unverändert aus, was sie auch soll — Handy ist ein anderer Durchgang.
-   Ab 1280 px übernimmt eine schlichte Raute in der Textfarbe. Emoji bringen ihre eigene Farbe und
-   ihr eigenes Gewicht mit, und beides steht quer zu einem Screen, der seine Farben aus dem aktiven
-   Deck zieht — 💠 ist immer blau, egal ob das Deck grün, rot oder gold ist.
-   Die Raute ist bewusst KEIN zweites Symbol je Zustand: sie markiert die Zeile, benannt wird der
-   Zustand vom Text dahinter. Zwei Vektoren wären zwei Bedeutungsträger für dieselbe Aussage.
-   Als Konstanten und nicht als JSX-Text, aus demselben Grund wie bei GLYPHS oben. */
-const EMO_BONUS = "💠";
-const EMO_ONB = "🎓";
-
-/* Die Zeichen der drei Fuß-Chips. Wieder Pfaddaten statt JSX (s. GLYPHS), und wieder erst ab 1280 px
+/* Die Zeichen der Fuß-Chips. Wieder Pfaddaten statt JSX (s. GLYPHS), und wieder erst ab 1280 px
    sichtbar: am Handy steht die Reihe eng, dort kostet jedes Zeichen Breite, die die Wörter brauchen. */
 const CHIP_PATHS = {
   // Optionen — drei Regler. Die Linien sind unterbrochen, damit die Knöpfe nicht überzeichnet werden.
   options: ["M3 6h3M11 6h10M3 12h9M17 12h4M3 18h5M14 18h7"],
-  // Tutorial — aufgeschlagenes Buch.
-  tutorial: ["M3 5.5A1.5 1.5 0 0 1 4.5 4H10a2 2 0 0 1 2 2v13a2 2 0 0 0-2-1.6H4.5A1.5 1.5 0 0 1 3 16z",
-    "M21 5.5A1.5 1.5 0 0 0 19.5 4H14a2 2 0 0 0-2 2v13a2 2 0 0 1 2-1.6h5.5a1.5 1.5 0 0 0 1.5-1.4z"],
   // Feedback — Sprechblase.
   feedback: ["M20 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z"],
 };
@@ -137,15 +105,6 @@ function ChipIcon({ kind }) {
   );
 }
 
-function Lead({ emoji }) {
-  return (
-    <>
-      <span className="dt:hidden">{emoji}</span>
-      <span aria-hidden="true" className="as-lead-gem hidden dt:block" />
-    </>
-  );
-}
-
 function TileGlyph({ kind }) {
   const g = GLYPHS[kind];
   return (
@@ -157,7 +116,7 @@ function TileGlyph({ kind }) {
   );
 }
 
-export function StartScreen({ onStart, onResume = null, resume = null, onPlaySeed = null, onSecretSeed = null, onRankedBoard = null, onOptions, onStats, onCustomize, onLeaderboard = null, onUpgrades = null, onTutorial = null, onFeedback = null, onPrivacy = null, profile = null, muted, onToggleMute, username = "", onEditName,
+export function StartScreen({ onStart, onResume = null, resume = null, onPlaySeed = null, onSecretSeed = null, onRankedBoard = null, onOptions, onStats, onCustomize, onLeaderboard = null, onDevRun = null, onFeedback = null, onPrivacy = null, muted, onToggleMute, username = "", onEditName,
   // #desktop — Zutaten für Status-Tafel und Deck-Hintergrund. Beide erscheinen erst ab 1280 px;
   // darunter bleiben die Props ungenutzt.
   deckId = null, bfId = null, deckBack = null, lastRun = null, battlefield = null,
@@ -166,7 +125,6 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
   const [seedError, setSeedError] = useState(false);
   const [secretMsg, setSecretMsg] = useState("");
   const t = useT();
-  const ONB_REWARDS = onbRewards(t);
 
   /* Die gedämpften Punkte der Tagline. Der Katalogtext wird AN ihnen zerlegt, nicht um sie herum
      zusammengesetzt: enthält eine Übersetzung keinen Punkt, ergibt das genau einen Teil und rendert
@@ -177,31 +135,8 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
     part === "." ? <span key={i} className="as-tagline-dot">.</span> : <span key={i}>{part}</span>
   ));
 
-  // Echte Progressionsanzeige aus dem Profil (progression.js). Leeres Profil = frischer Spieler.
-  const prof = profile || {};
-  const progSp = Math.max(0, Math.floor(Number(prof.stichPoints) || 0));
-  const progDp = Math.max(0, Math.floor(Number(prof.deckPoints) || 0)); // #299/#301: Deck-Punkte-Guthaben (Werkstatt-Währung)
-  const progOwned = ownedCount(prof);
-  /* #tutorial-sichtbarkeit: Nur das LAUTE Angebot über „Lauf beginnen" verschwindet, sobald der Spieler seinen
-     ersten (Best-)Lauf ABGESCHLOSSEN hat (hadCompletedRun kippt genau beim ersten completed-Lauf, nicht bei
-     Abbrüchen) oder das Tutorial gesehen wurde — danach braucht der Einstieg keinen prominenten Platz mehr.
-     Der ruhige Tutorial-CHIP unten neben „Optionen" BLEIBT dagegen dauerhaft (jederzeit wiederholbar), solange
-     ein Tutorial-Handler existiert. Seit dem Onboarding-Rückbau (#316) ist das Tutorial die EINZIGE Führung. */
-  const canTutorial = !!onTutorial;                                            // Chip unten: immer verfügbar
-  const progBuyable = NODES.filter((n) => nodeState(prof, n.id) === "buy").length;
-  const progLigaFree = treeComplete(prof);
-  const onbStep = Math.max(0, Math.min(ONBOARDING_LINKS, Math.floor(Number(prof.onboarding) || 0)));
-  const onbDone = onbStep >= ONBOARDING_LINKS;
-  // #299/#369 Hub-Gates: Werkstatt/Upgrades ab 6/6. #370 Rangliste frei, sobald alle Decks freigeschaltet + je ≥1 Lauf beendet.
-  const rankedFree = rankedUnlocked(prof);
-  /* #370 Wochen-Anzeige an der Ranglisten-Kachel: Nummer der laufenden Woche + ob der Wochenbonus noch offen ist.
-     Die Bonus-Regel steht in storage.js (recordRun): die ERSTE abgeschlossene Ranked-Runde je Woche zahlt
-     +5 SP & +5 DP (bei vollem Baum +10 DP) und schreibt den Wochen-Seed nach `lastRankedWeekSeed`. Genau dieser
-     Vergleich ist deshalb die ganze Wahrheit über „schon geholt oder nicht" — die Anzeige leitet sich davon ab
-     und hat KEINEN eigenen Zähler, der auseinanderlaufen könnte.
-     Ranked-Läufe starten auf dem Wochen-Seed (App.jsx startRankedRun), darum ist der Vergleich mit currentWeek()
-     exakt und nicht nur ungefähr. Bewusst ohne useMemo: currentWeek() ist ein paar Rechenschritte, und so ist die
-     Nummer über einen Wochenwechsel hinweg in einer langen Sitzung immer aktuell. */
+  /* exp: kein Profil-Fortschritt mehr im Hub — Baum, SP, DP, Onboarding-Kette und die Ranglisten-Sperre sind
+     mit der Meta-Progression gegangen. Die Rangliste ist immer offen; die Wochennummer bleibt am Knopf. */
   // #desktop — Namen für die Status-Tafel, einmal aufgelöst (beide Leser sind übersetzte Register).
   const deckName = deckId ? deckDef(deckId).name : "";
   const bfName = bfId ? battlefieldDef(bfId).name : "";
@@ -212,18 +147,13 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
     .map((f) => (f.syn ? t(`fxsyn.${f.key}.name`) : globalFxDef(f.key)?.name))
     .filter(Boolean);
   const week = currentWeek(new Date());
-  const weekBonusOpen = (prof.lastRankedWeekSeed ?? null) !== week.seed;
-  const spRuns = Math.max(0, Math.floor(Number(prof.spRuns) || 0));
-  const dripInto = SP_LOYALTY_EVERY > 0 ? (spRuns % SP_LOYALTY_EVERY) : 0; // Läufe seit letztem Treue-+5
   const tryPlaySeed = () => {
-    // Test-Codes „unlock"/„reset" VOR parseSeed abfangen (beide würden sonst als gültiger Seed durchgehen).
-    // onSecretSeed ist nur im Preview-Build gesetzt → im Live-Spiel sind die Codes wirkungslos.
-    const secret = onSecretSeed && matchSecretSeed(seedInput);
+    // Test-Code „reset" VOR parseSeed abfangen (er ginge sonst als Seed durch). onSecretSeed ist nur im
+    // Preview-Build gesetzt → im Live-Spiel ist der Code wirkungslos. exp: `unlock`/`onboarding` sind weg.
+    const secret = onSecretSeed && seedInput.trim().toLowerCase() === "reset" ? "reset" : null;
     if (secret) {
       setSeedError(false); setSeedInput("");
-      setSecretMsg(secret === "unlock" ? t("start.secret.unlock")
-        : secret === "onboarding" ? t("start.secret.onboarding")
-        : t("start.secret.reset"));
+      setSecretMsg(t("start.secret.reset"));
       onSecretSeed(secret);
       return;
     }
@@ -432,58 +362,9 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           „angemeldet als"-Zeile. Das gibt der Wortmarke die Zeile darunter frei → größere Marke am Handy
           (index.css `.hub-play .as-wordmark`), und der Stempel steht dort, wo die übrigen Fuß-/Meta-Infos sitzen. */}
 
-      {/* Fortschritts-/Bonus-Leiste — ein Element, zwei Leben: Onboarding (bis 6/6), danach SP-Treue-Drip.
-          Frosted-Glass: halbtransparenter Grund (das Kopf-Glühen blutet oben ins Panel → weicher Übergang statt
-          harter Kante) + Hairline-Border + Backdrop-Blur (Text bleibt scharf). */}
-      <div className={`as-hub-bonus ${LANE_LEAD} rounded-xl px-4 py-2.5 flex flex-col gap-1.5 dt:gap-2`}
-        style={{ background: "rgba(23,23,28,0.5)", border: "1px solid rgba(150,150,170,0.10)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}>
-        <div className="flex items-center justify-between gap-3">
-          {/* Der Flex-Kontext gilt ERST ab 1280 px. Darunter bleibt die Zeile ein normaler Textfluss —
-              Emoji, Leerzeichen, Text — also Zeichen für Zeichen das, was vorher im i18n-String stand.
-              Als Flex-Zeile mit `gap` läge dort ein 6-px-Abstand statt der Breite eines Leerzeichens,
-              und das wäre eine sichtbare Änderung am Handy (anderer Durchgang, anderer Chat). */}
-          {onbDone ? (
-            <span className="dt:flex dt:items-center dt:gap-1.5 text-body-3 dt:text-title-1 font-medium opacity-90" style={{ color: SP }}>
-              <Lead emoji={EMO_BONUS} />{" "}<span>{t("start.progress.bonus", { cur: t(progLigaFree ? "common.cur.dp" : "common.cur.sp"), n: SP_LOYALTY_SP })}</span>
-            </span>
-          ) : (
-            <span className="dt:flex dt:items-center dt:gap-1.5 text-body-3 dt:text-title-1 font-medium opacity-90" style={{ color: VI }}>
-              <Lead emoji={EMO_ONB} />{" "}<span>{t("start.progress.onboarding")}</span>
-            </span>
-          )}
-          <span className="ty-num-sm text-meta-3 dt:text-body-lg-3 opacity-55">
-            {onbDone ? t("start.progress.runs", { done: dripInto, total: SP_LOYALTY_EVERY })
-                     : t("start.progress.links", { done: onbStep, total: ONBOARDING_LINKS })}
-          </span>
-        </div>
-        {/* #ruhe Glow-Budget: der Balken hatte einen eigenen `boxShadow`. Auf dem Bildschirm leuchteten damit
-            gleichzeitig CTA, Balken, beide Guthaben-Zahlen und drei Ambient-Blasen — wenn alles glüht, zeigt
-            kein Glow mehr irgendwohin. Ab jetzt leuchtet NUR der Primär-CTA; er ist das eine Ziel der Seite.
-            Der Balken behält seine Farbe, er verliert nur den Schein. */}
-        {/* #premium: Fläche und Rahmen kommen aus `.as-bonus-track` statt aus einem inline-style — ab
-            1280 px wird aus der 7-px-Röhre ein 2-px-Faden, und ein inline gesetzter Grund ließe sich
-            davon nicht überschreiben (inline schlägt jedes Stylesheet). Die Klasse liefert unterhalb
-            exakt dieselben Werte wie vorher. */}
-        <div className="as-bonus-track h-[7px] dt:h-[2px] rounded-full overflow-hidden">
-          <div className="h-full rounded-full" style={onbDone
-            ? { width: `${dripInto / SP_LOYALTY_EVERY * 100}%`, background: `linear-gradient(90deg,#a27f49,${SP})` }
-            : { width: `${onbStep / ONBOARDING_LINKS * 100}%`, background: `linear-gradient(90deg,#6a5fb0,${VI})` }} />
-        </div>
-        {/* (Schritt 4e) Nächste Freischaltung — nur während des Onboardings; danach übernimmt die SP-Drip-Zeile oben. */}
-        {!onbDone && ONB_REWARDS[onbStep] && (
-          <div className="flex items-center gap-1.5 text-meta-3 -mb-0.5">
-            <span className="opacity-50">{t("start.progress.next")}</span>
-            <b style={{ color: VI }}>{ONB_REWARDS[onbStep]}</b>
-          </div>
-        )}
-      </div>
+      {/* exp: die Fortschritts-/Bonus-Leiste (Onboarding-Kette, SP-Treue-Drip) ist mit der Meta-Progression gegangen. */}
 
-      {/* Runde 3 (Owner): kein separater Tutorial-Start-Knopf mehr — der ERSTE Lauf über
-          „Lauf beginnen" führt selbst (H1-Karte, Banner, Vorschläge). Die Übersicht bleibt am
-          ruhigen Tutorial-Chip unten, und dort sitzt der „Tutorial-Lauf"-Knopf zum Wiederholen. */}
-
-      {/* Play-Gruppe — Fortsetzen + Lauf beginnen. Lauf beginnen klappt Normal (+ Dev Run) und das
-          Seed-Feld auf → weniger Dauer-sichtbares im Haupt-Stapel. */}
+      {/* Play-Gruppe — Fortsetzen + Lauf beginnen + das Seed-Feld. */}
       <div className={`${LANE_LEAD} flex flex-col gap-2.5`}>
         {/* Resume (#Auto-Save): gespeicherter laufender Run → einzige gefüllte Primär-Aktion (hell). */}
         {onResume && resume && (
@@ -550,26 +431,15 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
         )}
       </div>
 
-      {/* #370 Ranglisten-Gruppe — EIN Wochen-Ranked-Modus (ersetzt Standard/Meister): fixe faire Baseline, alle spielen
-          den Wochen-Seed. Frei, sobald alle Decks freigeschaltet sind UND mit jedem ≥1 Lauf beendet wurde. */}
-      {/* #370: EIN Einstieg „Rangliste" → öffnet die Übersicht (Reiter Diese Woche · Challenger · Regeln). Gespielt wird
-          im Reiter „Diese Woche" (▶ Spielen, gegated). Der Einstieg ist IMMER offen (ansehen jederzeit); das Schloss
-          signalisiert nur, dass Spielen noch gesperrt ist. */}
+      {/* #370 Ranglisten-Gruppe — EIN Wochen-Ranked-Modus: fixe faire Baseline, alle spielen den Wochen-Seed.
+          exp: immer offen (kein Baum, keine Sperre) — der Pokal steht fest. */}
       {onRankedBoard && (
         <div className={`${LANE_MID} flex flex-col gap-2.5`}>
           <button onClick={onRankedBoard}
             className="as-ranked-btn relative w-full px-5 py-2.5 rounded-xl ty-title text-body-lg-3 dt:text-title-3 transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2"
-            title={t(rankedFree ? "start.ranked.open" : "start.ranked.locked")}>
-            {/* #premium/#pokal: Hier zeichnet auf JEDER Breite ein Vektor in der Knopffarbe — Schloss
-                für „Spielen noch gesperrt", Pokal für „frei". Die Emoji-Fassung darunter ist entfallen.
-                Das ist der eine Punkt, an dem dieser Knopf weiter geht als der übrige #premium-Pass
-                (der hält Emoji bis 1279 px, s. `Lead` oben): Das Argument gegen Emoji — sie bringen
-                ihre eigene Farbe mit und stehen damit quer zu einem Screen, der seine Farben aus dem
-                aktiven Deck zieht — gilt am Handy seit #deck-mobil genauso. Und der Pokal ist das eine
-                Zeichen dieses Screens, für das es eine gezeichnete Vorlage gibt.
-                Zwei Zustände, EIN Ausdruck: `rankedFree` wählt die Pfade, nicht zwei Codepfade. */}
+            title={t("start.ranked.open")}>
             <span className="flex items-center gap-2">
-              <RankIcon free={rankedFree} />
+              <RankIcon free />
               {t("start.ranked")}
             </span>
             {/* #370 Wochen-Ecke: Nummer der laufenden Woche, darunter der offene Wochenbonus.
@@ -595,15 +465,6 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
               <span className="as-week-chip ty-num-sm px-1 rounded text-meta-1 dt:text-body-1 leading-tight">
                 {t("start.ranked.badge", { n: week.week })}
               </span>
-              {/* #desktop: Auf breiten Bildschirmen entfällt die Bonus-Zeile am Knopf — die Status-Tafel
-                  rechts zeigt denselben Stand ausführlicher (Woche · 0/1 · „Bonus noch offen"). Zweimal
-                  dieselbe Information nebeneinander ist keine Betonung, nur Rauschen. Unterhalb von
-                  1280 px gibt es die Tafel nicht, dort bleibt die Zeile die einzige Quelle. */}
-              {weekBonusOpen && (
-                <span className="ty-num-sm text-micro-4 dt:hidden leading-tight" style={{ color: `${RANK}c0` }}>
-                  {t("start.ranked.bonus", { have: 0, max: 1 })}
-                </span>
-              )}
             </span>
           </button>
         </div>
@@ -732,31 +593,9 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
             Haarlinien zwischen den Zellen bleiben — sie trennen vier Werte, sie rahmen nichts ein.
             WERTGLEICH umgestellt: die Linie trägt denselben Ton, den der Rahmen trug; sie steht nur
             an einer Kante statt an vieren. Ein Schritt aus dem Vokabular wird sie in C4. */}
-        <div className="as-kpis grid grid-cols-4">
+        {/* exp: von den vier Kennzahlen bleibt der letzte Lauf — SP, DP und der Wochenbonus sind Meta-Progression. */}
+        <div className="as-kpis grid grid-cols-1">
           {[
-            { k: t("start.board.sp"), v: progSp, c: SP, s: t("start.board.sp.sub", { done: progOwned, total: TOTAL_NODES }) },
-            { k: t("start.board.dp"), v: progDp, c: AM, s: t("start.board.dp.sub") },
-            /* Nur das Verhältnis als Kennzahl — das Wort „Bonus" stand vorher IN der großen Zahl und
-               wiederholte damit, was die Unterzeile ohnehin sagt („Bonus noch offen"). Die Zeile darüber
-               nennt die Woche, die darunter den Zustand; in der Mitte gehört die Zahl allein. */
-            /* #bonus-benennen: „Bonus noch offen" sagte nicht, was es zu holen gibt. Der Betrag steht
-               jetzt darüber — und er hat zwei Gestalten: normal +SP und +DP, bei vollem Baum der
-               doppelte DP-Betrag statt beidem (SP sind dann nutzlos). Zahlen aus storage.js, nicht
-               abgetippt: ein Balancing-Schritt dort ließe die Tafel sonst still falsch werden.
-               EIGENE ZEILE, nicht davorgestellt: gemessen braucht „+5 SP · +5 DP Bonus noch offen"
-               131 px, die Kachel hat 118–140 — es bräche also ohnehin um, nur an zufälliger Stelle.
-               Der Betrag trägt die Ranglisten-Farbe, der Zustand darunter bleibt die stille Zeile. */
-            { k: t("start.board.week", { n: week.week }), v: t("start.board.week.val", { have: weekBonusOpen ? 0 : 1, max: 1 }), c: VI,
-              s: weekBonusOpen
-                ? (<>
-                    <span className="block" style={{ color: `${VI}c0` }}>
-                      {progLigaFree
-                        ? t("start.board.week.bonus.full", { dp: RANKED_WEEK_DP_FULL })
-                        : t("start.board.week.bonus", { sp: RANKED_WEEK_SP, dp: RANKED_WEEK_DP })}
-                    </span>
-                    {t("start.board.week.open")}
-                  </>)
-                : t("start.board.week.done") },
             { k: t("start.board.last"), v: lastRun ? fmtNum(Math.round(lastRun.score || 0)) : t("start.board.last.none"),
               c: CY, s: lastRun ? t("start.board.last.sub", { cycle: lastRun.cycles ?? 0 }) : t("start.board.last.none.sub") },
           ].map((s, i) => (
@@ -800,71 +639,17 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           const sub = (s) => (<span className="hidden dt:block text-body-3 opacity-50 font-normal">{s}</span>);
           const arrowDesk = <span className="hidden dt:block text-title-4 opacity-35">›</span>;
           const headBox = "flex items-center justify-between gap-1 dt:flex-1 dt:flex-col dt:items-start dt:gap-0.5";
-          const lockBadge = (bg) => (<span className="ty-badge self-start shrink-0 px-1.5 py-0.5 rounded text-meta-1 leading-tight whitespace-nowrap"
-            style={{ background: bg, color: "#c9c9d2" }}>{t("start.tile.lock", { count: ONBOARDING_LINKS - onbStep })}</span>);
           return (<>
-            {/* 1 · Upgrades (getauscht mit Deck-Werkstatt) — Stripe AM: hier liegt das SP-Guthaben. „kaufbar"-Hinweis, Onboarding-Gate. */}
-            {onbDone ? (
-              <button onClick={onUpgrades || undefined} className={tileCls} title={t("start.tile.upgrades.title")}>
-                <Stripe c={AM} /><TileGlyph kind="upgrades" />
-                <div className={headBox}>
-                  {head(t("start.tile.upgrades"))}
-                  {/* „kaufbar"-Hinweis. Am Handy steht hier NUR DIE ZAHL im goldenen Ring, der ganze
-                      Satz erst ab 1280 px — und das ist eine Fehlerbehebung, keine Verknappung:
-                      nachgemessen lief die Kachel in JEDER Kombination über und wurde am Kachelrand
-                      abgeschnitten (390 px/DE 11 px, 390 px/EN 18 px, 375 px/EN 25 px, „9 availabl…").
-                      „Upgrades" (63 px) plus „9 available" (74 px) brauchen 141 px, die Kachel hat
-                      116–123 px Innenbreite — kein Innenabstand und keine Schriftgröße holt das auf,
-                      eines von beiden muss weichen. Die Zahl allein trägt hier, weil Gold auf diesem
-                      Bildschirm bereits „hier liegt ein Guthaben" heißt (#ruhe) und direkt darunter
-                      steht, worum es geht. Der volle Satz bleibt als `title` erreichbar. */}
-                  {progBuyable > 0
-                    ? <span className="shrink-0 font-semibold text-meta-3 dt:text-body-1 px-1.5 py-0.5 rounded-full whitespace-nowrap"
-                        style={{ border: `1px solid ${AM}66`, color: AM }}
-                        title={t("start.tile.upgrades.buyable", { n: progBuyable })}>
-                        <span className="ty-num-sm dt:hidden">{progBuyable}</span>
-                        <span className="hidden dt:inline">{t("start.tile.upgrades.buyable", { n: progBuyable })}</span>
-                      </span>
-                    : arrow}
-                  {sub(t("start.tile.upgrades.sub"))}
-                </div>
-                {progLigaFree ? (
-                  <span className="text-body-3 dt:text-title-2 font-semibold" style={{ color: AM }}>{t("start.tile.upgrades.complete")}</span>
-                ) : (
-                  <span className="flex items-baseline gap-1">
-                    <span className="as-hub-num ty-num text-title-1 dt:text-figure-1">{progSp}</span>
-                    <span className="as-hub-cur ty-unit text-meta-1 dt:text-body-1 opacity-75">{t("common.cur.sp")}</span>
-                    <span className="ty-num-sm text-meta-1 dt:hidden opacity-45 ml-1">{progOwned}/{TOTAL_NODES}</span>
-                  </span>
-                )}
-                {arrowDesk}
-              </button>
-            ) : (
-              <div className={tileCls + " cursor-default opacity-60"} title={t("start.tile.upgrades.locked")}>
-                <Stripe c={AM} dim /><TileGlyph kind="upgrades" />
-                {head(t("start.tile.upgrades"))}
-                {lockBadge("#20202a")}
-              </div>
-            )}
-
-            {/* 2 · Deck-Werkstatt (getauscht mit Upgrades) — Stripe AM: hier liegt das DP-Guthaben. Onboarding-Gate. */}
-            {onCustomize && (onbDone ? (
+            {/* exp: die Upgrades-Kachel ist mit dem Baum gegangen; die Werkstatt ist immer offen und zeigt kein Guthaben. */}
+            {/* 1 · Deck-Werkstatt — Stripe AM (die alte Währungskante bleibt als Farbsignal der Kachel). */}
+            {onCustomize && (
               <button onClick={onCustomize} className={tileCls} title={t("start.tile.workshop")}>
                 <Stripe c={AM} /><TileGlyph kind="workshop" />
                 <div className={headBox}>{head(t("start.tile.workshop"))}{arrow}{sub(t("start.tile.workshop.sub"))}</div>
-                <span className="flex items-baseline gap-1">
-                  <span className="as-hub-num ty-num text-title-1 dt:text-figure-1">{progDp}</span>
-                  <span className="as-hub-cur ty-unit text-meta-1 dt:text-body-1 opacity-75">{t("common.cur.dp")}</span>
-                </span>
+                <span className="text-body-1 dt:hidden opacity-50">{t("start.tile.workshop.sub")}</span>
                 {arrowDesk}
               </button>
-            ) : (
-              <div className={tileCls + " cursor-default opacity-60"} title={t("start.tile.workshop.locked")}>
-                <Stripe c={AM} dim /><TileGlyph kind="workshop" />
-                {head(t("start.tile.workshop"))}
-                {lockBadge("#20202a")}
-              </div>
-            ))}
+            )}
 
             {/* 3 · Bestenliste — Stripe NEU: kein Guthaben, nur nachschlagen. */}
             {onLeaderboard && (
@@ -895,8 +680,10 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           (Chips links, Nachschlage-Links rechts). Darunter bleiben es zwei gestapelte Blöcke wie bisher. */}
       <div className="hub-foot">
 
-      {/* Optionen + Tutorial — zwei ruhige Chips unter dem Grid (kein eigener Grid-Platz nötig). Das Tutorial
-          steht bewusst hier und nicht als fünfte Kachel: es ist jederzeit wiederholbar, aber kein Dauerziel.
+      {/* Optionen + Dev-Run — zwei ruhige Chips unter dem Grid (kein eigener Grid-Platz nötig). exp: der Tutorial-Chip
+          ist mit dem Onboarding gegangen; an seiner Stelle steht der Dev-Run (frei konfigurierbarer Testlauf), ohne
+          eigenes Zeichen — die Chip-Zeichen erscheinen ohnehin erst ab 1280 px, und ein neues Glyph ist eine
+          Owner-Entscheidung (House rules).
           Feedback bekommt eine EIGENE Zeile darunter: die beiden oberen Chips führen ins Spiel, der
           Melder führt heraus. Nebeneinander lasen sich alle drei wie eine Reihe gleichrangiger Knöpfe. */}
       <div className="grid gap-2 justify-items-center dt:grid-flow-col dt:justify-items-start dt:gap-3">
@@ -904,8 +691,8 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
           {onOptions && (
             <button onClick={onOptions} aria-label={t("start.options")} className={chipCls}><ChipIcon kind="options" />{t("start.options")}</button>
           )}
-          {canTutorial && (
-            <button onClick={onTutorial} aria-label={t("start.tutorial")} className={chipCls}><ChipIcon kind="tutorial" />{t("start.tutorial")}</button>
+          {onDevRun && (
+            <button onClick={onDevRun} aria-label={t("start.devrun")} className={chipCls}>{t("start.devrun")}</button>
           )}
         </div>
         {/* #396 Feedback-Melder — bewusst „Feedback" und nicht „Bug melden": sonst kommen nur Bugs

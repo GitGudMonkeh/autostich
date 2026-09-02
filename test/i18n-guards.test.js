@@ -3,7 +3,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { locTodo } from "../scripts/loc-todo.mjs";
 import de from "../src/i18n/de.js";
 import en from "../src/i18n/en.js";
-import { t, fmtNum, fmtPct, fmtDayMonth, LOCALE_IDS, READY_LOCALE_IDS, setLocale, getLocale,
+import { t, fmtNum, fmtPct, fmtDayMonth, LOCALE_IDS, READY_LOCALE_IDS, INACTIVE_LOCALE_IDS, setLocale, getLocale,
   interpolate, SOURCE_LOCALE, DEFAULT_LOCALE, catalog, numberFormat } from "../src/i18n/index.js";
 import { tokenizeGlossary } from "../src/i18n/glossaryText.js";
 
@@ -73,9 +73,14 @@ describe("i18n · Katalog-Parität", () => {
   /* VERBIETEND: über ALLE Sprachen, auch die unfertige. Ein Schlüssel, den die Quellsprache nicht
      kennt, ist in JEDEM Katalog eine verwaiste Zeile — ob der Katalog sonst vollständig ist oder
      nicht, ändert daran nichts. Genau diese Prüfung fängt einen Tippfehler im spanischen Katalog,
-     bevor Spanisch überhaupt sichtbar ist. */
+     bevor Spanisch überhaupt sichtbar ist.
+     exp: an INACTIVE catalog is exempt on purpose. The playground removes whole subsystems from the
+     source language and never touches the switched-off catalogs, so their surplus keys are the
+     expected drift, not a typo. They are pruned when the language is reactivated — the demanding
+     parity check above fires on that day. Catalogs still being translated (ready:false without
+     `inactive`) stay under this check. */
   it("keine Sprache führt Schlüssel, die die Quellsprache nicht kennt", () => {
-    for (const loc of TARGETS) {
+    for (const loc of TARGETS.filter((id) => !INACTIVE_LOCALE_IDS.includes(id))) {
       const verwaist = KEYS[loc].filter((k) => !(k in SRC));
       expect(verwaist, `Verwaiste Übersetzung in ${loc}.js:\n  ${verwaist.join("\n  ")}`).toEqual([]);
     }
@@ -789,10 +794,7 @@ describe("i18n · Terminologie", () => {
     expect(new Set(Object.values(BRAND)).size, "zwei Sprachen tragen denselben Markennamen").toBe(LOCALE_IDS.length);
   });
 
-  it("Stichpunkte heißen im Englischen TP (Trick Points), nicht SP", () => {
-    expect(de["common.cur.sp"]).toBe("SP");
-    expect(en["common.cur.sp"]).toBe("TP");
-  });
+  // exp: „Stichpunkte heißen im Englischen TP" stand hier — die Währung ist mit der Meta-Progression gegangen.
 
   /* Die Score-Ansagen sind eingefroren (Übersetzerpaket §3.6, Freigabe 15.08.2026). Sie stehen
      heute noch als BIG_SCORE_TIERS in Battlefield.jsx und wandern bei deren Migration in den
@@ -862,14 +864,7 @@ describe("i18n · Längenschranken", () => {
      Geprüft wird die BEZIEHUNG statt einer erfundenen Obergrenze: Das Layout ist an der Quellsprache
      entworfen, also darf keine Übersetzung diese Zeile spürbar länger machen als das deutsche Original.
      Zwei Zeichen Luft, damit eine Übersetzung nicht an einem Buchstaben scheitert. */
-  it("die Bonus-Zeile des Hubs bleibt in jeder Sprache so kurz wie im Deutschen", () => {
-    const KEY = "start.progress.bonus";
-    const quelle = [...CATS[SOURCE_LOCALE][KEY]].length;
-    for (const id of READY_TARGETS) {
-      const len = [...CATS[id][KEY]].length;
-      expect(len, `${id}: „${CATS[id][KEY]}" ist ${len} Zeichen, Deutsch hat ${quelle}`).toBeLessThanOrEqual(quelle + 2);
-    }
-  });
+  // exp: „die Bonus-Zeile des Hubs bleibt kurz" stand hier — die Zeile ist mit der Meta-Progression gegangen.
 
   /* Die Raritätsleiter darf im Englischen NICHT auf „Legendary" enden: legendär ist bei uns eine
      eigene Achse (Übersetzerpaket §3.5, genre-terminologie.md §3). */
@@ -938,10 +933,15 @@ describe("i18n · Auflösung", () => {
   });
 
   it("t() wählt die Plural-Form über `count`", () => {
-    expect(t("start.tile.lock", { count: 1 }, "de")).toBe("🔒 noch 1 Lauf");
-    expect(t("start.tile.lock", { count: 3 }, "de")).toBe("🔒 noch 3 Läufe");
-    expect(t("start.tile.lock", { count: 1 }, "en")).toBe("🔒 1 more run");
-    expect(t("start.tile.lock", { count: 3 }, "en")).toBe("🔒 3 more runs");
+    // exp: die Sonde war `start.tile.lock` (Onboarding-Sperre der Kacheln) — der Schlüssel ist mit der
+    // Meta-Progression gegangen. Dieselbe Prüfung an einem Paar, das bleibt: `gameover.cycles`.
+    const KEY = "gameover.cycles";
+    for (const loc of ["de", "en"]) {
+      expect(CATS[loc][`${KEY}_one`], `${loc}: Plural-Paar fehlt`).toBeTruthy();
+      expect(t(KEY, { count: 1 }, loc)).toBe(interpolate(CATS[loc][`${KEY}_one`], { count: 1 }));
+      expect(t(KEY, { count: 3 }, loc)).toBe(interpolate(CATS[loc][`${KEY}_other`], { count: 3 }));
+      expect(t(KEY, { count: 1 }, loc)).not.toBe(t(KEY, { count: 3 }, loc));
+    }
   });
 
   it("setLocale akzeptiert nur FERTIGE Sprachen", () => {
@@ -957,14 +957,12 @@ describe("i18n · Auflösung", () => {
     }
     setLocale(before);
     expect(LOCALE_IDS).toEqual(["de", "en", "es", "zh-Hans"]);
-    /* Die Schleife über die unfertigen Sprachen läuft wieder über eine leere Menge, und das
-       wird hier ausgesprochen statt verschwiegen: zh-Hans war eine Weile angemeldet und nicht
-       ausgeliefert, hat seinen Katalog vervollständigt und ist über die Ratsche ganz unten auf
-       `ready: true` gegangen. Die Schleife prüft ab jetzt wieder nichts, bis eine FÜNFTE Sprache
-       angemeldet wird, und schärft sich in genau dem Moment von selbst. Die beiden Zeilen darunter
-       sind das, was heute tatsächlich gemessen wird. */
-    expect(unfertig, "angemeldet, aber nicht ausgeliefert").toEqual([]);
-    expect(READY_LOCALE_IDS).toEqual(["de", "en", "es", "zh-Hans"]);
+    /* exp: three complete catalogs are deliberately switched off — registered, not delivered. The
+       loop above therefore checks something again: an old `options.lang: "en"` must fall back to
+       German instead of opening an inactive catalog. */
+    expect(unfertig, "angemeldet, aber nicht ausgeliefert").toEqual(["en", "es", "zh-Hans"]);
+    expect(INACTIVE_LOCALE_IDS).toEqual(["en", "es", "zh-Hans"]);
+    expect(READY_LOCALE_IDS).toEqual(["de"]);
   });
 
   /* Die Rückfallkette, und zwar an der Stelle, die einen Spieler betrifft. Ohne sie fiele ein
@@ -1010,20 +1008,26 @@ describe("i18n · Auflösung", () => {
      Hier fliegt genau das auf: sobald ein unfertiger Katalog Schlüssel-Parität erreicht, wird die
      Suite rot und verlangt das Flag. Das Flag kann nicht verrotten. */
   it("eine unfertige Sprache, die vollständig ist, verlangt `ready: true`", () => {
-    for (const loc of LOCALE_IDS.filter((id) => !READY_LOCALE_IDS.includes(id))) {
+    /* exp: a catalog marked `inactive` is complete AND switched off on purpose — the ratchet does not
+       apply to it. The flag is the loud part: without it a complete unready catalog still goes red. */
+    for (const loc of LOCALE_IDS.filter((id) => !READY_LOCALE_IDS.includes(id) && !INACTIVE_LOCALE_IDS.includes(id))) {
       const fehlt = KEYS_SRC.filter((k) => !(k in CATS[loc]));
       expect(fehlt.length,
         `${loc} ist vollständig übersetzt (${KEYS_SRC.length} Schlüssel) — setz \`ready: true\` in LOCALES, `
         + "sonst überspringen die verlangenden Wächter einen fertigen Katalog").toBeGreaterThan(0);
     }
+    // An inactive catalog is never also ready — the two flags name different states.
+    for (const loc of INACTIVE_LOCALE_IDS) expect(READY_LOCALE_IDS, `${loc} ist inaktiv UND ready`).not.toContain(loc);
   });
 
   /* Zwei Standards, die gern verwechselt werden — der Test hält sie auseinander:
      Geschrieben wird auf Deutsch (Quellsprache, immer vollständig → Rückfall bei fehlendem
-     Schlüssel), ausgeliefert wird an neue Spieler auf Englisch (Produktentscheidung). */
-  it("Quellsprache ist Deutsch, Auslieferungs-Standard ist Englisch", () => {
+     Schlüssel). exp: ausgeliefert wird ebenfalls Deutsch — die einzige aktive Sprache ist der
+     Standard, sonst fiele `setLocale` auf eine Sprache zurück, die es nicht anbietet. */
+  it("Quellsprache ist Deutsch, Auslieferungs-Standard ist Deutsch (exp)", () => {
     expect(SOURCE_LOCALE).toBe("de");
-    expect(DEFAULT_LOCALE).toBe("en");
+    expect(DEFAULT_LOCALE).toBe("de");
+    expect(READY_LOCALE_IDS).toContain(DEFAULT_LOCALE);
     // Ein Schlüssel, den es nur auf Deutsch gäbe, fiele auf Deutsch zurück — nie auf den Schlüssel.
     expect(t("common.close", null, "de")).toBe("Schließen");
     expect(t("common.close", null, "en")).toBe("Close");
@@ -1037,8 +1041,6 @@ describe("i18n · Ratsche gegen neue deutsche Inline-Texte", () => {
      migriert sind. */
   const MIGRATED = ["src/ui/OptionsModal.jsx", "src/ui/StartScreen.jsx", "src/ui/UsernameModal.jsx",
     "src/ui/GameOver.jsx",
-    // Onboarding-Hints (docs/tutorial-onboarding-design.md §5) — von der ersten Zeile an i18n-fest.
-    "src/ui/hints/HintCard.jsx",
     // Die vier Fraktions-Leisten — sie laufen im Stichspiel dauerhaft mit.
     "src/ui/HeatBar.jsx", "src/ui/ChargeBar.jsx", "src/ui/GlacierBar.jsx", "src/ui/PlantBar.jsx",
     // Die Spielschleife selbst: Kopfleiste, Seitenleiste, Brett, Aufstellungsphase.
@@ -1061,8 +1063,8 @@ describe("i18n · Ratsche gegen neue deutsche Inline-Texte", () => {
     "src/ui/ChronikOverview.jsx", "src/ui/LeaderboardScreen.jsx", "src/ui/GlobalLeaderboard.jsx",
     "src/ui/SeedChip.jsx", "src/ui/Sparkline.jsx", "src/ui/WeekMods.jsx",
     // Menü, Werkstatt und die restlichen Bausteine — damit ist die UI vollständig migriert.
-    "src/App.jsx", "src/ui/CustomizeScreen.jsx", "src/ui/UpgradeScreen.jsx", "src/ui/DeckDetail.jsx",
-    "src/ui/Glossary.jsx", "src/ui/GuideOverlay.jsx", "src/ui/Controls.jsx", "src/ui/PwaInstall.jsx",
+    "src/App.jsx", "src/ui/CustomizeScreen.jsx",
+    "src/ui/Glossary.jsx", "src/ui/Controls.jsx", "src/ui/PwaInstall.jsx",
     "src/ui/PerfOverlay.jsx", "src/ui/MusicBar.jsx", "src/ui/RunLoader.jsx",
     "src/ui/DevPerkCatalog.jsx", "src/ui/DevRunSetup.jsx",
     /* Hier stand `src/ui/tutorial/TutorialOverlay.jsx`, bis der geführte Lauf zurückgebaut wurde.
@@ -1071,8 +1073,6 @@ describe("i18n · Ratsche gegen neue deutsche Inline-Texte", () => {
        readFileSync — ein Eintrag ohne Datei WIRFT, er wird nicht rot. Die Invariante der Liste ist
        „in einer migrierten Datei steht kein Text als Literal"; eine Datei, die es nicht mehr gibt,
        kann keinen halten. Kein anderer Eintrag wurde angefasst. */
-    // Der Meilenstein-Balken lief bis zuletzt einsprachig mit — im Stichspiel dauerhaft sichtbar.
-    "src/ui/ScoreMilestoneBar.jsx",
     // Build-Übersicht unter dem Brett und die zwei Listen, die sie teilt (#sprache-Nachzügler).
     "src/ui/BuildPanel.jsx", "src/ui/BuildSummary.jsx",
     // #health-check F1: Karte, Positions-Perk-Panel und Mute-Button — ihre Badges/Tooltips liefen
@@ -1081,14 +1081,15 @@ describe("i18n · Ratsche gegen neue deutsche Inline-Texte", () => {
     // #lv-fluegel: die zwei Seitenleisten der Level-up-Karte.
     "src/ui/LevelupWings.jsx",
     // Datenschutz-Hinweis (#datenschutz) — von der ersten Zeile an zweisprachig gebaut.
-    "src/ui/PrivacyModal.jsx",
-    // Tutorial-Sektionen (#tutorial-sections) — von der ersten Zeile an zweisprachig gebaut.
-    "src/ui/tutorial-sections/TutorialSections.jsx", "src/ui/tutorial-sections/beats.jsx"];
+    "src/ui/PrivacyModal.jsx"];
+  /* exp: HintCard, UpgradeScreen, DeckDetail, GuideOverlay, ScoreMilestoneBar and the tutorial sections
+     left the list WITH their files (onboarding and meta-progression are out on this branch) — same
+     rule as the TutorialOverlay note above: a file that no longer exists cannot hold a literal. */
 
   /* Runde 3, Q17: beats.jsx trägt seit dem Lektions-Rückbau KEINEN Anzeigetext mehr — alle Sätze
      laufen als Props aus TutorialSections.jsx hinein, ein i18n-Import wäre tot. Die Datei bleibt
      in MIGRATED (kein Wort-Literal darf zurückkommen), nur die Import-Pflicht entfällt. */
-  const TEXTLESS = new Set(["src/ui/tutorial-sections/beats.jsx"]);
+  const TEXTLESS = new Set();
 
   /* In einer migrierten Datei steht KEIN Wort mehr als Literal — egal welcher Sprache. Deshalb
      wird nicht auf „deutsch aussehend" geprüft (das ließe „Normaler Lauf" durch, kein Umlaut),

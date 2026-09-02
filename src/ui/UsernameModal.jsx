@@ -153,7 +153,9 @@ export function UsernameModal({ initial = "", firstTime = false, onLang = null, 
             einem festen `grid-cols-2`. Als Inline-Style und nicht als Tailwind-Klasse, weil eine
             zur Laufzeit zusammengesetzte Klasse (`grid-cols-${n}`) vom Tailwind-Scanner nicht
             gefunden und deshalb gar nicht erst gebaut würde. */}
-        {firstTime && (
+        {/* exp: with a single active language there is nothing to choose — the block stays out of the
+            DOM until a second language is reactivated (READY_LOCALES grows). */}
+        {firstTime && READY_LOCALES.length > 1 && (
           <div className="un-block mt-4">
             <div className="un-slabel text-meta-1 uppercase tracking-widest opacity-40 mb-1.5">{t("name.lang.label")}</div>
             {/* #zh-hans: Dropdown statt Reiterzeile — dieselbe Entscheidung, die die Optionen schon

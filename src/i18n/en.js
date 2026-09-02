@@ -14,7 +14,6 @@ import enFamilies from "./enFamilies.js"; // 73 perk families × name + tier des
 import enMeta from "./enMeta.js";       // upgrade tree + weekly modifiers
 import enGlossary from "./enGlossary.js"; // 109 glossary entries + categories + groups
 import enCosmetics from "./enCosmetics.js"; // skin sets + global effects
-import enGuides from "./enGuides.js";   // the four archetype guides
 
 export default {
   ...enSkills,
@@ -23,7 +22,6 @@ export default {
   ...enMeta,
   ...enGlossary,
   ...enCosmetics,
-  ...enGuides,
 
   /* ---- Rarity ladder (Übersetzerpaket §3.5) ----
      Ends on "Epic", not "Legendary": legendary is a separate axis in this game (legendary perks,
