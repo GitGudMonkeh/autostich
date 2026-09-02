@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<!-- #zh-hans S1: `en` statt `de`, weil DEFAULT_LOCALE Englisch ist — der Rahmen vor dem
+     React-Mount soll nicht eine Sprache behaupten, die niemand vorgewaehlt hat. Den
+     tatsaechlichen Wert setzt src/main.jsx, bevor gerendert wird. -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Autostich — Prototyp</title>
+
+  <!-- PWA: „Zum Startbildschirm hinzufügen" → Vollbild (Android + iOS). /autostich/exp/ respektiert den Deploy-Unterpfad. -->
+  <link rel="manifest" href="/autostich/exp/manifest.webmanifest" />
+  <meta name="theme-color" content="#141419" />
+  <link rel="icon" type="image/png" href="/autostich/exp/favicon-64.png" />
+
+  <!-- iOS: Standalone-Start (ohne Safari-Leisten) + Home-Screen-Icon. iOS nutzt diese Meta-Tags statt des Manifests. -->
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Autostich" />
+  <link rel="apple-touch-icon" href="/autostich/exp/apple-touch-icon.png" />
+  <script type="module" crossorigin src="/autostich/exp/assets/index-CLUtObUD.js"></script>
+  <link rel="modulepreload" crossorigin href="/autostich/exp/assets/vendor-CJ_OtNEw.js">
+  <link rel="modulepreload" crossorigin href="/autostich/exp/assets/game-DtYZGtoY.js">
+  <link rel="stylesheet" crossorigin href="/autostich/exp/assets/index-j_rqlCHk.css">
+</head>
+<body>
+  <div id="root" class="min-h-screen"></div>
+</body>
+</html>
