@@ -1,0 +1,52 @@
+name: Deploy Exp Playground to Pages (/exp/)
+
+# Deploys the experimental branch `exp` as the sub-path /autostich/exp/ on the SAME Pages site as main,
+# test and dev. Its own slot: `exp` is the stripped-down core-loop playground (rounds, offers, balance)
+# and never promotes into dev/test/main. VITE_PREVIEW="1" keeps the leaderboard read-only and the preview
+# marker on; VITE_STORAGE_NS="exp" gives the slot its own localStorage namespace — /test/ and /pixi/ share
+# the `preview_` namespace, and a run saved there under other rules must not show up here as resumable.
+on:
+  push:
+    branches: [exp]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# Same group as main/test/dev -> serializes the gh-pages pushes (no publishing race).
+concurrency:
+  group: gh-pages-publish
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history -> git rev-list --count HEAD as build number
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run lint -- --max-warnings=0
+      - name: Build metadata
+        run: |
+          echo "VITE_BUILD_NUM=$(git rev-list --count HEAD)" >> "$GITHUB_ENV"
+          echo "VITE_BUILD_SHA=$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
+          echo "VITE_ENV=exp" >> "$GITHUB_ENV"
+      - run: npm run build
+        env:
+          DEPLOY_BASE: /autostich/exp/
+          VITE_PREVIEW: "1"
+          VITE_STORAGE_NS: exp
+      - run: npm run gen:db
+      - uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: dist
+          destination_dir: exp
+          keep_files: false
+          commit_message: "deploy(exp): ${{ github.sha }}"

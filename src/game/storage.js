@@ -14,8 +14,11 @@ export const RANKED_WEEK_DP_FULL = 10;
 
 /* Preview-Build (Testbranch auf /autostich/test/) teilt sich die Origin mit der echten
    Seite → derselbe localStorage. Ein Präfix trennt die Namespaces, damit Test-Runs den
-   echten Geist/Highscore nicht überschreiben. Produktions-/Dev-Build: kein Präfix (P=""). */
-const P = import.meta.env.VITE_PREVIEW === "1" ? "preview_" : "";
+   echten Geist/Highscore nicht überschreiben. Produktions-/Dev-Build: kein Präfix (P="").
+   VITE_STORAGE_NS names a slot explicitly (the `exp` playground sets "exp" -> "exp_"): /test/ and
+   /pixi/ share `preview_`, and a run saved there under other rules must not resume here. */
+const NS = import.meta.env.VITE_STORAGE_NS;
+const P = NS ? `${NS}_` : (import.meta.env.VITE_PREVIEW === "1" ? "preview_" : "");
 const k = (key) => P + key;
 // #telemetrie: derselbe Namespace-Präfix auch für Nicht-Storage-Module (telemetry.js hält seine eigene
 // Install-ID) — EIN Ort, an dem die Preview-Trennung definiert ist, statt einer stillen Kopie.

@@ -551,6 +551,17 @@ describe("VITE_PREVIEW-Präfix trennt Namespaces (#152)", () => {
     expect(global.localStorage.getItem("preview_as_username")).toBe("PreviewUser");
     expect(global.localStorage.getItem("as_username")).toBeNull(); // echter Namespace isoliert
   });
+  it("VITE_STORAGE_NS names the slot and wins over the preview prefix (exp playground)", async () => {
+    global.localStorage = mockLS();
+    vi.resetModules();
+    vi.stubEnv("VITE_PREVIEW", "1");
+    vi.stubEnv("VITE_STORAGE_NS", "exp");
+    const mod = await import("../src/game/storage.js"); // fresh -> P = "exp_"
+    mod.saveUsername("ExpUser");
+    expect(global.localStorage.getItem("exp_as_username")).toBe("ExpUser");
+    expect(global.localStorage.getItem("preview_as_username")).toBeNull(); // /test/ and /pixi/ untouched
+    expect(global.localStorage.getItem("as_username")).toBeNull();
+  });
 });
 
 describe("#190 Challenge-Erkennung (rein) + sticky Flags", () => {
