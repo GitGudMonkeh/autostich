@@ -145,8 +145,29 @@ async function main() {
       }
       return;
     }
-    g.poly(d).fill({ color: HOVER, alpha: st === "water" ? 0.1 : 0.06 });
-    g.poly(d).stroke({ width: 1.6, color: HOVER, alpha: 0.8 });
+    if (hover) aim(r, c, k);
+    else if (aimAt === key(r, c)) aim(null);
+  }
+
+  // The cursor, on top of everything. A tile ringed by taller buildings is covered at its own
+  // depth, and an aim you cannot see reads as a tile you cannot build on.
+  const cursorG = new Graphics();
+  cursorG.zIndex = 1000;
+  world.addChild(cursorG);
+  let aimAt = null;
+
+  function aim(r, c, k) {
+    cursorG.clear();
+    aimAt = r === null ? null : key(r, c);
+    if (r === null) return;
+    const d = tilePoly(r, c, k);
+    cursorG.poly(d).fill({ color: HOVER, alpha: 0.12 });
+    cursorG.poly(d).stroke({ width: 1.8, color: HOVER, alpha: 0.9 });
+    for (let n = 0; n < 4; n++) {          // corner ticks, so the target reads even over a facade
+      const x = d[n * 2], y = d[n * 2 + 1];
+      cursorG.moveTo(x, y - 5).lineTo(x, y + 5).moveTo(x - 5, y).lineTo(x + 5, y);
+    }
+    cursorG.stroke({ width: 1.4, color: HOVER, alpha: 0.55 });
   }
 
   for (let r = 0; r < GRID; r++) for (let c = 0; c < GRID; c++) {
@@ -215,8 +236,8 @@ async function main() {
   // One sample of the coast: where the rock leaves the deck, where it enters the water, and which
   // way it faces. A face is only visible when its outward normal points towards the viewer, which
   // in this projection is simply i + j > 0.
-  const sample = (i, j, n) => {
-    const b = bulge(i, j);
+  const sample = (i, j, n, scale = 1) => {
+    const b = bulge(i, j) * scale;
     const bi = i + n[0] * b, bj = j + n[1] * b;
     return { i, j, bi, bj, k: coastK(bi, bj), n, vis: n[0] + n[1] > 0.01 };
   };
@@ -236,6 +257,18 @@ async function main() {
         out.push(sample(s.a[0] + (s.b[0] - s.a[0]) * f, s.a[1] + (s.b[1] - s.a[1]) * f, s.out));
       }
       if (next.out[0] === s.out[0] && next.out[1] === s.out[1]) continue;   // straight on
+      // An outer corner and an inner one are not the same shape, and treating them alike is what
+      // made the corners look built. Outside, the foot swings round on an arc — rock erodes round.
+      // Inside, a bay, the arc would fan a wedge across the notch: there the foot tucks in instead.
+      const d1 = [s.b[0] - s.a[0], s.b[1] - s.a[1]];
+      const d2 = [next.b[0] - next.a[0], next.b[1] - next.a[1]];
+      const convex = d1[0] * d2[1] - d1[1] * d2[0] > 0;
+      if (!convex) {
+        const ni = s.out[0] + next.out[0], nj = s.out[1] + next.out[1];
+        const len = Math.hypot(ni, nj) || 1;
+        out.push(sample(s.b[0], s.b[1], [ni / len, nj / len], 0.4));
+        continue;
+      }
       for (let n = 0; n <= CORNER_ARC; n++) {
         const f = n / CORNER_ARC;
         const ni = s.out[0] + (next.out[0] - s.out[0]) * f;
@@ -532,7 +565,7 @@ async function main() {
 
   function rejectFlash(r, c) {
     const g = new Graphics();
-    g.zIndex = r + c + 0.9;
+    g.zIndex = 1001;                        // over the city, like the cursor: a refusal must show
     world.addChild(g);
     const t0 = performance.now();
     const step = () => {
@@ -596,7 +629,12 @@ async function main() {
     // Streets are derived from the whole map every time, so a new plot can also close a gap that
     // was road a moment ago.
     for (let rr = 0; rr < GRID; rr++) for (let cc = 0; cc < GRID; cc++) {
-      if (state.get(key(rr, cc)) === "water" && touchesBuilding(rr, cc)) state.set(key(rr, cc), "road");
+      if (state.get(key(rr, cc)) !== "water" || !touchesBuilding(rr, cc)) continue;
+      state.set(key(rr, cc), "road");
+      // The hit shape sits at the height the tile is drawn at, so it has to be redrawn when the
+      // tile rises out of the water. Without this an enclosed plot keeps its target at sea level,
+      // under the island, and cannot be clicked however plainly you can see the gap.
+      plate(rr, cc, false);
     }
     for (let rr = 0; rr < GRID; rr++) for (let cc = 0; cc < GRID; cc++) {
       if (state.get(key(rr, cc)) === "road") drawRoad(rr, cc);
@@ -919,21 +957,49 @@ async function main() {
 
   /* ---- frame ---------------------------------------------------------------------------------- */
 
-  const recentre = () => {
-    const span = GRID * TILE * CS;                 // half the grid's screen width
-    const s = Math.min(1.5, (app.screen.width * 0.92) / (span * 2),
-      (app.screen.height * 0.84) / (span * 1.15));
-    world.scale.set(s);
-    world.position.set(app.screen.width / 2, app.screen.height / 2 - span * 0.42 * s);
-  };
-  recentre();
-  app.renderer.on("resize", recentre);
+  // The camera frames what has been BUILT, not the whole board. Fitting the empty grid put the
+  // city in the middle distance and left it there however small it was — on a phone that is a
+  // model on a table. It follows the city out as it grows, and eases rather than jumping, because
+  // a cut on every click is what makes a view feel like a slideshow.
+  let camS = 0, camX = 0, camY = 0, camInit = false;
+
+  function frame() {
+    let r0 = GRID, r1 = -1, c0 = GRID, c1 = -1;
+    for (let r = 0; r < GRID; r++) for (let c = 0; c < GRID; c++) {
+      if (state.get(key(r, c)) === "water") continue;
+      r0 = Math.min(r0, r); r1 = Math.max(r1, r);
+      c0 = Math.min(c0, c); c1 = Math.max(c1, c);
+    }
+    // Nothing built yet: show the board itself, so the first click has somewhere obvious to go.
+    const empty = r1 < 0;
+    if (empty) { r0 = 1; c0 = 1; r1 = GRID - 2; c1 = GRID - 2; }
+    const x0 = (lo(r0) - hi(c1)) * CS, x1 = (hi(r1) - lo(c0)) * CS;
+    // Room above for the towers, and below for the cliff and its reflection.
+    const y0 = (lo(r0) + lo(c0)) * CS * 0.5 - (DECK + 11) * CS;
+    const y1 = (hi(r1) + hi(c1)) * CS * 0.5 + (DROP + 3) * CS + 60;
+    const s = Math.min(empty ? 1.05 : 2.1,
+      (app.screen.width * 0.9) / (x1 - x0), (app.screen.height * 0.9) / (y1 - y0));
+    return { s, x: app.screen.width / 2 - ((x0 + x1) / 2) * s, y: app.screen.height / 2 - ((y0 + y1) / 2) * s };
+  }
+
+  function stepCamera(dt) {
+    const f = frame();
+    if (!camInit) { camInit = true; camS = f.s; camX = f.x; camY = f.y; }
+    const k = Math.min(1, dt * 3.5);
+    camS += (f.s - camS) * k;
+    camX += (f.x - camX) * k;
+    camY += (f.y - camY) * k;
+    world.scale.set(camS);
+    world.position.set(camX, camY);
+  }
+  app.renderer.on("resize", () => { camInit = false; });
 
   let lastRefl = -1, lastT = performance.now() / 1000;
   app.ticker.add(() => {
     const t = performance.now() / 1000;
     const dt = Math.min(0.05, t - lastT);
     lastT = t;
+    stepCamera(dt);
     rings(ringG, t, CORNER);
     rain(rainG, t);
     drawSurf(t);
@@ -999,6 +1065,16 @@ async function main() {
     owner,
     agents,
     boats: BOATS,
+    place,
+    // Where a tile actually is on screen right now. The camera moves, so a test that works
+    // out its own coordinates would be clicking at yesterday's framing.
+    screenOf(r, c) {
+      const st = state.get(key(r, c));
+      const k = st === "water" ? 0 : DECK + 0.02;
+      const i = r * TILE + (TILE - 1) / 2, j = c * TILE + (TILE - 1) / 2;
+      const [x, y] = P(i, j, k);
+      return [camX + x * camS, camY + y * camS];
+    },
     districts() {
       const seen = new Set(), out = [];
       for (const [k, st] of state) {
