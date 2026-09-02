@@ -29,6 +29,7 @@ import { precomputeGlacier, ewigerFrostTick, dauerfrostTick, glacierOpts, driftT
   VERDICHTUNG_RATE as GLACIER_VERDICHTUNG_RATE, ERSTARRUNG_FRAC as GLACIER_ERSTARRUNG_FRAC,
   FIRN_REFILL_TARGET as GLACIER_FIRN_REFILL_TARGET } from "./glacier.js"; // Eis-Neudesign (isoliert, activeArchetypes "ice") · #386 Firn-Reserve-Nachschub
 import { fullPerkOffer, fullSkillOffer, fullArchitectOffer } from "./devCatalog.js"; // Dev-Run: Voll-Katalog statt Zufallsangebot (nur state.devMode)
+import { runRules, perksOfferedFor, skillOfferParams } from "./rules.js"; // exp: Regeln je Lauf (state.rules; null → Konstanten, byte-identisch)
 
 /* Energie-Budget einer Formationsphase — EINE Quelle für den Phasen-Eintritt (unten, Durchlauf-Ende) UND für
    RESET_FORMATION im Reducer. Die Formel stand vorher zweimal da, und die Reducer-Kopie hatte `state.devEnergy`
@@ -43,7 +44,9 @@ export function formationEnergyFor(state) {
 
 // ERKUNDUNG Hebel 7: Commitment-Scaler mit Konvexitäts-Exponent. commitScale(count) = min(1, count/SKILL_SLOTS)^COMMIT_EXP.
 // COMMIT_EXP=1 (Default) → linear = bisheriges Verhalten (neutral). >1 → konvex (Verdünnung kostet superlinear).
-const commitScale = (count) => Math.pow(Math.min(1, count / C.SKILL_SLOTS), C.COMMIT_EXP);
+// exp: `slots` = the run's BASE slot count (rules.skillSlots). Bonus slots (Meisterhand, week mod) still do not
+// dilute the commitment (#370 decision) — only the base the run was configured with moves the denominator.
+const commitScale = (count, slots = C.SKILL_SLOTS) => Math.pow(Math.min(1, count / slots), C.COMMIT_EXP);
 
 function sumHook(perks, name, ctx) {
   let t = 0;
@@ -108,6 +111,9 @@ export function applyBuildBoost(res, factor) {
 export function resolveTrick(state, rng) {
   if (state.phase !== "play") return state; // Nicht-Play → No-op, braucht keine rng
   requireRng(rng, "resolveTrick"); // #229 N8: rng ist Pflicht (kein Math.random-Default mehr); Zufall kommt primär aus state.seed via rngAtOr
+  // exp: base slot count of THIS run for the commitment scalers below. Read once per trick, and only when a run
+  // carries rules at all — the Sim's millions of tricks never touch the rules path.
+  const commitSlots = state.rules ? runRules(state).skillSlots : C.SKILL_SLOTS;
 
   let {
     deck, oppDeck, playerOrder, oppOrder, pos, cycle, trickNo,
@@ -573,7 +579,7 @@ export function resolveTrick(state, rng) {
     let plantDirect = 0; // Pflanze-Legendär-Reshape: DIREKTe, post-stack, gedeckelte Dividende aus den Fluten (unten zu `gained`)
     if ((activeArchetypes || []).includes("plant")) {
       const inFormation = positionHasFormation(posForm);
-      const plantCommit = commitScale(plantSkillCount(skills)); // Bekenntnis-Skalierung (cross-health) für die post-stack Direkt-Dividenden (#270.2 + #Ceiling)
+      const plantCommit = commitScale(plantSkillCount(skills), commitSlots); // Bekenntnis-Skalierung (cross-health) für die post-stack Direkt-Dividenden (#270.2 + #Ceiling)
       // #288 „Trimmen": dauerhafter Multiplikator auf Wurzel- & Blüten-Score, je ersetztem Wachstums-Skill höher (gedeckelt).
       const trimMult = 1 + Math.min((trimCount || 0) * C.TRIM_STEP, C.TRIM_CAP);
       // Wachstum: je Sieg +Zuwachs, GEGATET an die Pflanzen-Skill-Anzahl (Anti-Splash, v0.3): min(1, PflanzenSkills / SKILL_REF).
@@ -860,7 +866,7 @@ export function resolveTrick(state, rng) {
     // (kleine Mults) relativ stärker als das Ceiling (große Mults) = Feuers fehlende „Immer-an-Engine". Skaliert mit
     // dem FEUER-BEKENNTNIS (Anteil Feuer-Skills an den Slots), damit ein 2-Skill-Splash die Dividende nicht in
     // High-Winrate-Kombis (Eis/Pflanze) trägt → hält Spezialisieren ≈ Mischen (cross-health).
-    const fireCommit = commitScale(activeFireCount(skills));
+    const fireCommit = commitScale(activeFireCount(skills), commitSlots);
     let fireDirect = C.FIRE_HEAT_DIVIDEND > 0 && fireDividendHeat > 0 && fireCommit > 0
       ? Math.min(fireDividendHeat, C.FIRE_DIVIDEND_HEAT_CAP) * C.FIRE_HEAT_DIVIDEND * fireCommit : 0;
     // (#268: die per-Sieg-Asche-Dividende ist entfernt — ungenutzte Asche wird jetzt am Durchlauf-Ende über den
@@ -872,7 +878,7 @@ export function resolveTrick(state, rng) {
     // (activeLightningCount/SKILL_SLOTS = cross-health). Nur Legendär-Halter → generisches Blitz (ION_SCORE_PER_STACK) unberührt.
     let lightDirect = 0;
     if ((pCard.ionStacks || 0) > 0 && (hasAreaIonize(skills) || hasDoubleDischarge(skills))) {
-      const lightCommit = commitScale(activeLightningCount(skills));
+      const lightCommit = commitScale(activeLightningCount(skills), commitSlots);
       let nIon = 0, sumIon = 0;                                        // EIN Scan: Breite (# ionisierte Karten) + Energie (Σ Stapel)
       for (const c of deck) { const st = c.ionStacks || 0; if (st > 0) { nIon++; sumIon += st; } }
       // Flächenionisation (Sturmzelle, BREITE): je breiter das ionisierte Feld, desto größer jeder Treffer.
@@ -1459,17 +1465,18 @@ export function resolveTrick(state, rng) {
       const rareFloorEff = state.rareFloor || 1; // #370 Perk-Segen: Rarität-Boden (1 = kein Boden)
       // #370 Wochen-Mods (nur Ranked): Perk-Verknappung → nur 1 Perk je Auswahl · Skill-Verknappung → 1 Skill je Fraktion
       //   (Default 12 = 3/Fraktion → 4 = 1/Fraktion). Sonst die Konstanten (Normal-/Sim-Lauf byte-identisch).
-      const perksOffered = hasWeekMod(state.weekMods, "scarcePerks") ? 1 : C.PERKS_OFFERED;
-      const skillsOffered = hasWeekMod(state.weekMods, "scarceSkills") ? 4 : C.SKILLS_OFFERED;
+      // exp: beide über rules.js — ohne state.rules exakt die alten Werte (Wochen-Mod vor Konstante).
+      const perksOffered = perksOfferedFor(state);
+      const skillP = skillOfferParams(state);
       if (decision === "skill") {
-        const soff = state.devMode ? fullSkillOffer() : buildSkillOffer(skills, activeArchetypes, rngAtOr(cycle, "skill", 0), skillsOffered, skillLegendaryChance(shop), false, state.unlockedArchetypes); // §4b: Archetyp-Gatung
+        const soff = state.devMode ? fullSkillOffer() : buildSkillOffer(skills, activeArchetypes, rngAtOr(cycle, "skill", 0), skillP.count, skillLegendaryChance(shop), false, state.unlockedArchetypes, skillP.maxArchetypes, skillP.perArchCap); // §4b: Archetyp-Gatung
         if (soff.length > 0) {
           phase = "levelup"; newSkillOffer = soff;
         } else { const off = buildPerkOffer(perks, familyTiers, rngAtOr(cycle, "perk", 0), perksOffered, perkLegendaryChance(shop) * legMultPerk, rareShift, architectEnabled, 0, rareCapEff, rareFloorEff); if (off.length > 0) { phase = "levelup"; newOffer = off; } } // leerer Skill-Pool → Perk · Rarität-Deckel
       } else if (decision === "perk") {
         // M4/M5: In der 2. Perk-Phase garantierte Legendäre erzwingen (1 = M4, 3 = M5); sonst 0 = normaler Pfad.
         const legForce2Base = C.perkPhaseAt(state.devSchedule || C.DECISION_SCHEDULE, cycle) === C.LEG_PERK2_PHASE ? (state.treeLegForce2 || 0) : 0;
-        const legForce2 = onLegTakt ? C.PERKS_OFFERED : legForce2Base; // #381 Legendär-Takt: alle 3 Angebots-Slots legendär
+        const legForce2 = onLegTakt ? runRules(state).perksOffered : legForce2Base; // #381 Legendär-Takt: alle 3 Angebots-Slots legendär
         const off = state.devMode ? fullPerkOffer(architectEnabled) : buildPerkOffer(perks, familyTiers, rngAtOr(cycle, "perk", 0), perksOffered, perkLegendaryChance(shop) * legMultPerk, rareShift, architectEnabled, legForce2, rareCapEff, rareFloorEff); // #369: Perk-Legendär (Schicht+Drop) · 2. Perk-Phase · Rarität-Deckel
         if (off.length > 0) { phase = "levelup"; newOffer = off; }
       } else if (decision === "shop" && architectEnabled) {
@@ -1516,7 +1523,7 @@ export function resolveTrick(state, rng) {
           const legOff = buildLegendaryOffer(activeArchetypes, skills, rngAtOr(cycle, "legendary", 0), null, 0, state.legCountByArch || null); // #369 §5a: Pool = alle freigeschalteten Archetypen (Zähl-Map); Sim/Standard → null = Bestand
           if (legOff.length > 0) { phase = "legendary"; newLegendaryOffer = legOff; }
           else {
-            const soff = buildSkillOffer(skills, activeArchetypes, rngAtOr(cycle, "skill", 0), skillsOffered, 0, false, state.unlockedArchetypes); // §4b: Archetyp-Gatung
+            const soff = buildSkillOffer(skills, activeArchetypes, rngAtOr(cycle, "skill", 0), skillP.count, 0, false, state.unlockedArchetypes, skillP.maxArchetypes, skillP.perArchCap); // §4b: Archetyp-Gatung
             if (soff.length > 0) { phase = "levelup"; newSkillOffer = soff; }
           }
         } else {

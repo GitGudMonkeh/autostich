@@ -1,78 +1,75 @@
 import { useState } from "react";
 import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
-import { N_POS, MAX_COVER } from "../game/architect.js";
-import { FORMATION_ENERGY } from "../game/constants.js";
+import { N_POS } from "../game/architect.js";
+import { LEG_PHASE_CYCLE, buildSchedule } from "../game/constants.js";
+import { RULE_LIMITS, DEFAULT_RULES } from "../game/rules.js";
 import { useEscape } from "./useEscape.js"; // #350: Esc/Zurück schließt (Konsistenz mit den anderen Overlays)
 import { ActionButton } from "./modalStyle.jsx";
 import { t } from "../i18n/index.js"; // #sprache
+import { loadDevRunLast, saveDevRunLast, loadDevRunPresets, saveDevRunPresets, upsertDevRunPreset, removeDevRunPreset } from "../game/storage.js";
+import { DECISION_TOKENS, PLAN_TOKENS, MIN_ROUNDS, MAX_ROUNDS, distribute, legendaryRoundOf, withLegendaryAt,
+  normalizeConfig, toDevAction } from "./devRunConfig.js";
 
-/* Dev-Run-Setup (Test-Layout, nur Preview-Build) — ein frei konfigurierbarer Lauf zum Testen.
-   Phase 1: Rundenzahl (20–100), Master-Auswahl der Angebotstypen, Gleichverteilung, Pro-Runde-Plan (aufklappbar),
-   Baupunkte (Baufeld/maxCover) und {t("dev.run.energy")}. Die freie Perk-/Skill-/Bau-Auswahl im Lauf folgt in Phase 2.
-   Rein UI: baut eine dev-Config { rounds, schedule, cover, energy } und reicht sie via onStart nach oben. */
+/* Dev-Run-Setup — ein frei konfigurierbarer Lauf zum Testen. exp: der Regel-Spielplatz für den Kernloop.
+   Rundenzahl, Angebotstypen und Pro-Runde-Plan (inkl. Legendär-Phase), Regeln je Lauf (Skills je Fraktion,
+   Fraktionen, Slots, Perks), Voll-Katalog als Schalter, Baupunkte/Energie, Presets (lokal gespeichert).
+   Rein UI: die Config lebt als Daten in devRunConfig.js; hier wird sie nur bearbeitet und via onStart gereicht. */
 
-// Die vier Entscheidungstypen (#267: „Stat" entfernt). `token` = interner Plan-Wert (Engine/Reducer), `label` = Anzeige.
-const TYPES = [
-  { token: "skill",     label: "Skill",       color: "#8a7de0" },
-  { token: "perk",      label: "Perk",        color: "#5ab87a" },
-  { token: "formation", label: "Aufstellung", color: "#5a8ade" },
-  { token: "shop",      label: "Architekt",   color: "#e0605a" },
-];
-const LABEL = Object.fromEntries(TYPES.map((t) => [t.token, t.label]));
-const COLOR = Object.fromEntries(TYPES.map((t) => [t.token, t.color]));
-
-const MIN_ROUNDS = 20, MAX_ROUNDS = 100;
+const COLOR = { skill: "#8a7de0", perk: "#5ab87a", formation: "#5a8ade", shop: "#e0605a", legendary: "#d4a63a" };
+const RULE_KEYS = ["skillsPerArch", "maxArchetypes", "skillSlots", "perksOffered"];
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
-
-// Gleichverteilung: die aktiven Typen reihum über n Runden legen (gleichmäßig verschränkt, kein Cluster).
-function distribute(n, enabledTokens) {
-  const pool = TYPES.map((t) => t.token).filter((tk) => enabledTokens.includes(tk));
-  if (!pool.length) return Array.from({ length: n }, () => "perk");
-  return Array.from({ length: n }, (_, i) => pool[i % pool.length]);
-}
+const int = (raw) => Math.floor(Number(raw) || 0);
+const label = (tk) => t(`dev.run.type.${tk}`);
 
 export function DevRunSetup({ onStart, onClose }) {
   useEscape(onClose); // #350: Escape schließt das Fenster
-  const [rounds, setRounds] = useState(40);
-  const [enabled, setEnabled] = useState(["skill", "perk", "formation", "shop"]); // Stats default aus (Test-Layout)
-  const [schedule, setSchedule] = useState(() => distribute(40, ["skill", "perk", "formation", "shop"]));
-  const [cover, setCover] = useState(MAX_COVER);
-  const [energy, setEnergy] = useState(FORMATION_ENERGY);
+  const [cfg, setCfg] = useState(() => normalizeConfig(loadDevRunLast())); // zuletzt benutzte Config, sonst Standard
+  const [presets, setPresets] = useState(() => loadDevRunPresets());
+  const [presetName, setPresetName] = useState("");
   const [showPlan, setShowPlan] = useState(false);
+  const { rounds, enabled, schedule, cover, energy, fullCatalog, rules } = cfg;
+  // Jede Änderung läuft durch normalizeConfig: Plan auf die Rundenzahl bringen, abgewählte Typen ersetzen, Regeln klemmen.
+  const update = (patch) => setCfg((prev) => normalizeConfig({ ...prev, ...patch }));
 
-  const enabledOrdered = TYPES.map((t) => t.token).filter((tk) => enabled.includes(tk));
+  const enabledOrdered = DECISION_TOKENS.filter((tk) => enabled.includes(tk));
+  const legOn = enabled.includes("legendary");
+  const legRound = legendaryRoundOf(schedule);
 
-  // Rundenzahl ändern → Plan auf die neue Länge bringen (bestehende Runden behalten, neue reihum auffüllen).
-  const changeRounds = (raw) => {
-    const n = clamp(Math.floor(Number(raw) || 0), MIN_ROUNDS, MAX_ROUNDS);
-    setRounds(n);
-    setSchedule((prev) => {
-      const fill = distribute(n, enabledOrdered);
-      return Array.from({ length: n }, (_, i) => (i < prev.length ? prev[i] : fill[i]));
-    });
+  // Typ an-/abwählen. Mind. ein Plan-Typ bleibt aktiv. Legendär einschalten setzt die Phase auf die Standardrunde,
+  // sofern der Lauf so lang ist — sonst bleibt sie „keine", bis eine Runde gewählt wird.
+  const toggleType = (tk) => {
+    const next = enabled.includes(tk) ? enabled.filter((x) => x !== tk) : [...enabled, tk];
+    if (!PLAN_TOKENS.some((x) => next.includes(x))) return;
+    let sch = schedule;
+    if (tk === "legendary" && !enabled.includes(tk) && legRound === 0 && rounds >= LEG_PHASE_CYCLE)
+      sch = withLegendaryAt(schedule, LEG_PHASE_CYCLE, buildSchedule(rounds));
+    update({ enabled: next, schedule: sch });
   };
-
-  // Typ an-/abwählen. Mind. einer muss aktiv bleiben. Beim Abwählen: bisher so belegte Plan-Runden auf den
-  // ersten noch aktiven Typ umbiegen (sonst stünde ein deaktivierter Typ weiter im Plan).
-  const toggleType = (token) => {
-    setEnabled((prev) => {
-      const next = prev.includes(token) ? prev.filter((t) => t !== token) : [...prev, token];
-      if (!next.length) return prev; // nie alle aus
-      const stillOrdered = TYPES.map((t) => t.token).filter((tk) => next.includes(tk));
-      const fallback = stillOrdered[0];
-      setSchedule((sch) => sch.map((tk) => (next.includes(tk) ? tk : fallback)));
-      return next;
-    });
+  const setLegRound = (raw) => update({ schedule: withLegendaryAt(schedule, clamp(int(raw), 0, rounds), buildSchedule(rounds)) });
+  const evenDistribute = () => {
+    const rr = distribute(rounds, enabled);
+    update({ schedule: legOn && legRound ? withLegendaryAt(rr, legRound, rr) : rr });
   };
+  const standardPlan = () => update({ schedule: buildSchedule(rounds) });
+  const setRound = (i, tk) => update({ schedule: schedule.map((x, j) => (j === i ? tk : x)) });
+  const setRule = (key, raw) => update({ rules: { ...rules, [key]: raw } });
+  const counts = DECISION_TOKENS.map((tk) => ({ tk, n: schedule.filter((x) => x === tk).length })).filter((c) => c.n > 0);
 
-  const evenDistribute = () => setSchedule(distribute(rounds, enabledOrdered));
-  const setRound = (i, token) => setSchedule((sch) => sch.map((tk, j) => (j === i ? token : tk)));
+  const savePreset = () => {
+    const next = upsertDevRunPreset(presets, presetName, cfg);
+    if (next === presets) return;
+    setPresets(saveDevRunPresets(next));
+    setPresetName("");
+  };
+  const loadPreset = (p) => setCfg(normalizeConfig(p.cfg));
+  const deletePreset = (name) => setPresets(saveDevRunPresets(removeDevRunPreset(presets, name)));
 
-  const counts = TYPES.map((t) => ({ ...t, n: schedule.filter((tk) => tk === t.token).length })).filter((t) => t.n > 0);
-
-  const start = () => onStart({ rounds, schedule: schedule.slice(0, rounds), cover, energy });
+  const start = () => { saveDevRunLast(cfg); onStart(toDevAction(cfg)); };
 
   const panel = { background: "#17171c", border: "1px solid #26262e" };
+  const box = { background: "#141419", border: "1px solid #26262e" };
+  const field = { background: "#0f0f13", border: "1px solid #30303a", color: "#e8e8ea" };
+  const plainBtn = { background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" };
   const chip = (active, color) => ({
     background: active ? `${color}26` : "#1c1c22",
     border: `1px solid ${active ? color : "#30303a"}`,
@@ -93,48 +90,62 @@ export function DevRunSetup({ onStart, onClose }) {
         </div>
 
         {/* Rundenzahl */}
-        <div className="rounded-xl p-3 flex flex-col gap-2" style={{ background: "#141419", border: "1px solid #26262e" }}>
+        <div className="rounded-xl p-3 flex flex-col gap-2" style={box}>
           <div className="flex items-center justify-between">
             <span className="text-body-lg-5 font-semibold">{t("dev.run.cycles")}</span>
             <input type="number" min={MIN_ROUNDS} max={MAX_ROUNDS} value={rounds}
-              onChange={(e) => changeRounds(e.target.value)}
-              className="w-16 text-right px-2 py-1 rounded text-body-lg-5 ty-num"
-              style={{ background: "#0f0f13", border: "1px solid #30303a", color: "#e8e8ea" }} />
+              onChange={(e) => update({ rounds: e.target.value })}
+              className="w-16 text-right px-2 py-1 rounded text-body-lg-5 ty-num" style={field} />
           </div>
-          <input type="range" min={MIN_ROUNDS} max={MAX_ROUNDS} value={rounds} onChange={(e) => changeRounds(e.target.value)} className="w-full" />
+          <input type="range" min={MIN_ROUNDS} max={MAX_ROUNDS} value={rounds} onChange={(e) => update({ rounds: e.target.value })} className="w-full" />
           <div className="text-meta-3 opacity-45">{MIN_ROUNDS}–{MAX_ROUNDS} {t("dev.run.cycles")}</div>
         </div>
 
-        {/* Master-Auswahl der Typen */}
-        <div className="rounded-xl p-3 flex flex-col gap-2" style={{ background: "#141419", border: "1px solid #26262e" }}>
+        {/* Master-Auswahl der Typen + Legendär-Runde */}
+        <div className="rounded-xl p-3 flex flex-col gap-2" style={box}>
           <span className="text-body-lg-5 font-semibold">{t("dev.run.offerTypes")}</span>
           <div className="flex flex-wrap gap-2">
-            {TYPES.map((t) => (
-              <button key={t.token} onClick={() => toggleType(t.token)}
+            {DECISION_TOKENS.map((tk) => (
+              <button key={tk} onClick={() => toggleType(tk)}
                 className="px-3 py-1.5 rounded-full text-body-lg-5 font-medium transition-all"
-                style={chip(enabled.includes(t.token), t.color)}>
-                {enabled.includes(t.token) ? "✓ " : ""}{t.label}
+                style={chip(enabled.includes(tk), COLOR[tk])}>
+                {enabled.includes(tk) ? "✓ " : ""}{label(tk)}
               </button>
             ))}
           </div>
-          <button onClick={evenDistribute}
-            className="mt-1 self-start px-3.5 py-1.5 rounded-lg text-body-lg-5 font-semibold transition-all hover:-translate-y-0.5"
-            style={{ background: "#20202a", color: "#e8e8ea", border: "1px solid #30303a" }}>
-            {t("dev.run.distribute")}
-          </button>
+          {legOn && (
+            <div className="flex items-center justify-between text-body-lg-5">
+              <span className="font-semibold" style={{ color: COLOR.legendary }}>{t("dev.run.legendaryRound")}</span>
+              <span className="flex items-center gap-2">
+                <span className="text-meta-3 opacity-45">{legRound ? "" : t("dev.run.legendaryNone")}</span>
+                <input type="number" min={0} max={rounds} value={legRound} onChange={(e) => setLegRound(e.target.value)}
+                  className="w-16 text-right px-2 py-1 rounded text-body-lg-5 ty-num" style={field} />
+              </span>
+            </div>
+          )}
+          <div className="mt-1 flex flex-wrap gap-2">
+            <button onClick={evenDistribute}
+              className="px-3.5 py-1.5 rounded-lg text-body-lg-5 font-semibold transition-all hover:-translate-y-0.5" style={plainBtn}>
+              {t("dev.run.distribute")}
+            </button>
+            <button onClick={standardPlan}
+              className="px-3.5 py-1.5 rounded-lg text-body-lg-5 font-semibold transition-all hover:-translate-y-0.5" style={plainBtn}>
+              {t("dev.run.standardPlan")}
+            </button>
+          </div>
           {/* Verteilungs-Zusammenfassung */}
           <div className="flex flex-wrap gap-x-3 gap-y-1 text-meta-3 mt-0.5">
             {counts.map((c) => (
-              <span key={c.token} style={{ color: c.color }}>{c.label}: <b>{c.n}</b></span>
+              <span key={c.tk} style={{ color: COLOR[c.tk] }}>{label(c.tk)}: <b>{c.n}</b></span>
             ))}
           </div>
         </div>
 
         {/* Pro-Runde-Plan (aufklappbar) */}
-        <div className="rounded-xl overflow-hidden" style={{ background: "#141419", border: "1px solid #26262e" }}>
+        <div className="rounded-xl overflow-hidden" style={box}>
           <button onClick={() => setShowPlan((v) => !v)} className="w-full flex items-center justify-between px-3 py-2.5 text-body-lg-5 font-semibold">
             <span>{t("dev.run.plan")}</span>
-            <span className="opacity-60">{showPlan ? "▲ einklappen" : "▼ aufklappen"}</span>
+            <span className="opacity-60">{showPlan ? `▲ ${t("dev.run.collapse")}` : `▼ ${t("dev.run.expand")}`}</span>
           </button>
           {showPlan && (
             <div className="max-h-72 overflow-y-auto px-3 pb-3 flex flex-col gap-1.5">
@@ -146,7 +157,7 @@ export function DevRunSetup({ onStart, onClose }) {
                       <button key={token} onClick={() => setRound(i, token)}
                         className="px-2 py-0.5 rounded text-meta-3 font-medium transition-all"
                         style={chip(tk === token, COLOR[token])}>
-                        {LABEL[token]}
+                        {label(token)}
                       </button>
                     ))}
                   </div>
@@ -156,28 +167,93 @@ export function DevRunSetup({ onStart, onClose }) {
           )}
         </div>
 
+        {/* Regeln je Lauf (exp) — Slider über die Grenzen aus rules.js; der Wert in Klammern ist der Standard */}
+        <div className="rounded-xl p-3 flex flex-col gap-3" style={box}>
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <span className="text-body-lg-5 font-semibold">{t("dev.run.rules")}</span>
+              <p className="text-meta-3 opacity-45">{t("dev.run.rulesSub")}</p>
+            </div>
+            <button onClick={() => update({ rules: { ...DEFAULT_RULES } })}
+              className="shrink-0 px-3 py-1.5 rounded-lg text-body-5 font-semibold transition-all hover:-translate-y-0.5" style={plainBtn}>
+              {t("dev.run.defaultRules")}
+            </button>
+          </div>
+          {RULE_KEYS.map((key) => {
+            const [lo, hi] = RULE_LIMITS[key];
+            const changed = rules[key] !== DEFAULT_RULES[key];
+            return (
+              <div key={key} className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between text-body-lg-5">
+                  <span className="font-semibold">{t(`dev.run.rule.${key}`)}</span>
+                  <span className="ty-num" style={{ color: changed ? "#d4a63a" : "#8a7de0" }}>
+                    {rules[key]}{changed ? ` (${DEFAULT_RULES[key]})` : ""}
+                  </span>
+                </div>
+                <input type="range" min={lo} max={hi} value={rules[key]} onChange={(e) => setRule(key, e.target.value)} className="w-full" />
+              </div>
+            );
+          })}
+          <button onClick={() => update({ fullCatalog: !fullCatalog })}
+            className="self-start px-3 py-1.5 rounded-full text-body-lg-5 font-medium transition-all"
+            style={chip(fullCatalog, "#d4a63a")}>
+            {fullCatalog ? "✓ " : ""}{t("dev.run.fullCatalog")}
+          </button>
+        </div>
+
         {/* Startressourcen */}
-        <div className="rounded-xl p-3 flex flex-col gap-3" style={{ background: "#141419", border: "1px solid #26262e" }}>
+        <div className="rounded-xl p-3 flex flex-col gap-3" style={box}>
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between text-body-lg-5">
-              <span className="font-semibold">Baupunkte (Baufeld)</span>
+              <span className="font-semibold">{t("dev.run.cover")}</span>
               <span className="ty-num" style={{ color: "#e0605a" }}>{cover} / {N_POS}</span>
             </div>
-            <input type="range" min={0} max={N_POS} value={cover} onChange={(e) => setCover(clamp(Math.floor(Number(e.target.value) || 0), 0, N_POS))} className="w-full" />
+            <input type="range" min={0} max={N_POS} value={cover} onChange={(e) => update({ cover: e.target.value })} className="w-full" />
           </div>
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between text-body-lg-5">
               <span className="font-semibold">{t("dev.run.energy")}</span>
               <span className="ty-num" style={{ color: "#5a8ade" }}>{energy}</span>
             </div>
-            <input type="range" min={0} max={N_POS} value={energy} onChange={(e) => setEnergy(clamp(Math.floor(Number(e.target.value) || 0), 0, N_POS))} className="w-full" />
+            <input type="range" min={0} max={N_POS} value={energy} onChange={(e) => update({ energy: e.target.value })} className="w-full" />
+          </div>
+        </div>
+
+        {/* Presets (lokal, Namespace des Builds) — Name antippen lädt, „Löschen" entfernt */}
+        <div className="rounded-xl p-3 flex flex-col gap-2" style={box}>
+          <span className="text-body-lg-5 font-semibold">{t("dev.run.presets")}</span>
+          {presets.length ? (
+            <div className="flex flex-wrap gap-2">
+              {presets.map((p) => (
+                <span key={p.name} className="inline-flex items-stretch rounded-full overflow-hidden" style={{ border: "1px solid #30303a" }}>
+                  <button onClick={() => loadPreset(p)} className="px-3 py-1.5 text-body-lg-5 font-medium" style={{ background: "#1c1c22", color: "#e8e8ea" }}>
+                    {p.name}
+                  </button>
+                  <button onClick={() => deletePreset(p.name)} className="px-2.5 py-1.5 text-meta-3 font-medium"
+                    style={{ background: "#20202a", color: "#8a8a92", borderLeft: "1px solid #30303a" }}>
+                    {t("dev.run.presetDelete")}
+                  </button>
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="text-meta-3 opacity-45">{t("dev.run.presetsEmpty")}</p>
+          )}
+          <div className="flex gap-2">
+            <input type="text" value={presetName} maxLength={24} placeholder={t("dev.run.presetName")}
+              onChange={(e) => setPresetName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") savePreset(); }}
+              className="flex-1 min-w-0 px-2 py-1 rounded text-body-lg-5" style={field} />
+            <button onClick={savePreset} disabled={!presetName.trim()}
+              className="px-3.5 py-1.5 rounded-lg text-body-lg-5 font-semibold transition-all hover:-translate-y-0.5 disabled:opacity-40" style={plainBtn}>
+              {t("dev.run.presetSave")}
+            </button>
           </div>
         </div>
 
         <button onClick={start}
           className="w-full px-5 py-3 rounded-lg text-body-lg-6 font-bold transition-all hover:-translate-y-0.5"
           style={{ background: "#d4a63a", color: "#141419" }}>
-          Dev Run starten ({rounds} Runden)
+          {t("dev.run.start", { n: rounds })}
         </button>
       </div>
     </div>

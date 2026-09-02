@@ -317,13 +317,14 @@ export function archetypesWithSkills(owned = []) {
 /* Aus welchen Archetypen wird das nächste Skill-Angebot gezogen (max C.MAX_ARCHETYPES = 4)? Rein & testbar.
    - 0 aktiv → bis zu 4 zufällige verfügbare Archetypen (Erstangebot).
    - 1–3 aktiv → die aktiven + zufällige noch nicht aktive, bis max. C.MAX_ARCHETYPES.
-   - 4 aktiv → nur die vier aktiven. */
-export function offerArchetypes(activeArchetypes = [], available = [], rng = Math.random) {
+   - 4 aktiv → nur die vier aktiven.
+   exp: `max` overrides the constant for one run (rules.js); the default keeps every existing caller byte-identical. */
+export function offerArchetypes(activeArchetypes = [], available = [], rng = Math.random, max = C.MAX_ARCHETYPES) {
   const active = (activeArchetypes || []).filter((a) => available.includes(a));
-  if (active.length >= C.MAX_ARCHETYPES) return active.slice(0, C.MAX_ARCHETYPES);
+  if (active.length >= max) return active.slice(0, max);
   const picks = [...active];
   const pool = shuffle(available.filter((a) => !active.includes(a)), rng);
-  while (picks.length < C.MAX_ARCHETYPES && pool.length) picks.push(pool.shift());
+  while (picks.length < max && pool.length) picks.push(pool.shift());
   return picks;
 }
 
@@ -569,12 +570,18 @@ function ownsConsumerFor(arch, skills) {
 // #217 Meistergrade: ob eine Skill-id ein Legendär ist (Garantie-Erkennung bei Grad V). Rein & node-testbar.
 export const isLegendarySkill = (id) => !!SKILL_DEFS[id]?.legendary;
 
+// Immer HÖCHSTENS 3 Skills je Archetyp anbieten (das ganze Spiel, inkl. Onboarding). Bei wenigen freigeschalteten
+// Archetypen (Onboarding) ergäbe count/chosen.length sonst 6 pro Archetyp — daher hart auf PER_ARCH_CAP gedeckelt.
+// exp: exported as the default of buildSkillOffer's `perArchCap`; a Dev-Run passes its own (rules.js).
+export const SKILL_OFFER_PER_ARCH_CAP = 3;
+
 // unlockedArchetypes (Progression §4): Allowlist der im Lauf anbietbaren Archetypen (Onboarding-Gatung).
 // null/undefined = keine Gatung (Sim/Standard/Meister → alle 4, byte-identisch).
-export function buildSkillOffer(owned, activeArchetypes, rng, count, legendaryChance = 0, guaranteeOne = false, unlockedArchetypes = null) {
+// exp: maxArchetypes/perArchCap = per-run rules; the defaults are the constants → existing callers byte-identical.
+export function buildSkillOffer(owned, activeArchetypes, rng, count, legendaryChance = 0, guaranteeOne = false, unlockedArchetypes = null, maxArchetypes = C.MAX_ARCHETYPES, perArchCap = SKILL_OFFER_PER_ARCH_CAP) {
   let available = archetypesWithSkills(owned);
   if (unlockedArchetypes) available = available.filter((a) => unlockedArchetypes.includes(a));
-  const chosen = offerArchetypes(activeArchetypes || [], available, rng);
+  const chosen = offerArchetypes(activeArchetypes || [], available, rng, maxArchetypes);
   if (!chosen.length) return [];
   // #247: Legendäre laufen über einen eigenen Wurf JE ARCHETYP (nicht mehr EIN globaler Roll). Bei gateLeg werden sie
   // aus dem normalen Zug ausgeschlossen und kommen ausschließlich über diese Würfe — je getroffenem Archetyp EINER
@@ -592,9 +599,7 @@ export function buildSkillOffer(owned, activeArchetypes, rng, count, legendaryCh
   // insgesamt. Sonst zeigt das Erst-Angebot z. B. Blitz-Ladungsaufbau OHNE Blitz-Konsument (die Ladung „verpufft"),
   // wenn die chosen-Reihenfolge Feuer zuerst nimmt. Jede angebotene Engine ist so von Anfang an komplett sichtbar.
   const guaranteeAny = (activeArchetypes || []).length === 0;
-  // Immer HÖCHSTENS 3 Skills je Archetyp anbieten (das ganze Spiel, inkl. Onboarding). Bei wenigen freigeschalteten
-  // Archetypen (Onboarding) ergäbe count/chosen.length sonst 6 pro Archetyp — daher hart auf PER_ARCH_CAP gedeckelt.
-  const PER_ARCH_CAP = 3;
+  const PER_ARCH_CAP = perArchCap; // s. SKILL_OFFER_PER_ARCH_CAP oben — Deckel je Archetyp (Bestand 3, Dev-Run frei)
   const perArch = Math.max(1, Math.min(PER_ARCH_CAP, Math.floor(count / chosen.length)));
   const offer = [];
   const rest = [];

@@ -960,7 +960,9 @@ function AutostichGame() {
   function restartRun() {
     const seed = state.ranked ? currentWeek(new Date()).seed
       : (seedWasChosen.current ? (state.seed ?? null) : null);
-    launchRun({ ranked: state.ranked || null, seed });
+    // exp: ein Dev-Run startet mit DERSELBEN Config neu (Plan, Regeln, Voll-Katalog) — sonst würde „Neustart" still
+    // zum Normal-Lauf. state.devConfig hält die vom Reducer bereinigte Fassung; null = normaler Lauf.
+    launchRun({ ranked: state.ranked || null, seed, dev: state.devConfig || null });
   }
   // Dev-Run (nur Preview): frei konfigurierter Lauf aus dem DevRunSetup-Overlay.
   function startDevRun(dev) { launchRun({ dev }); }

@@ -779,6 +779,47 @@ export function saveOptions(opts) {
   return opts;
 }
 
+/* exp: Dev-Run — the last used configuration and named presets. Local only, under the build namespace
+   like every other key. Deliberately NOT in RESET_KEYS: like the options they survive a profile reset,
+   because a preset is a test setup, not a play record. The panel (devRunConfig.js) normalises whatever
+   comes back here, so a stale or hand-edited record can never crash it. */
+export const DEVRUN_PRESET_MAX = 12;
+const DEVRUN_NAME_MAX = 24;
+export function loadDevRunLast() {
+  try {
+    const raw = localStorage.getItem(k("as_devrun_last"));
+    const o = raw ? JSON.parse(raw) : null;
+    return o && typeof o === "object" ? o : null;
+  } catch (e) { return null; }
+}
+export function saveDevRunLast(cfg) {
+  try { localStorage.setItem(k("as_devrun_last"), JSON.stringify(cfg)); } catch (e) {}
+  return cfg;
+}
+export function loadDevRunPresets() {
+  try {
+    const raw = localStorage.getItem(k("as_devrun_presets"));
+    const a = raw ? JSON.parse(raw) : null;
+    return Array.isArray(a) ? a.filter((p) => p && typeof p.name === "string" && p.cfg && typeof p.cfg === "object") : [];
+  } catch (e) { return []; }
+}
+export function saveDevRunPresets(list) {
+  try { localStorage.setItem(k("as_devrun_presets"), JSON.stringify(list)); } catch (e) {}
+  return list;
+}
+// Same name → replaced in place; new name → appended, oldest dropped beyond DEVRUN_PRESET_MAX. Pure (new list).
+export function upsertDevRunPreset(list, name, cfg) {
+  const n = String(name || "").trim().slice(0, DEVRUN_NAME_MAX);
+  if (!n) return list;
+  const entry = { name: n, cfg };
+  const i = list.findIndex((p) => p.name === n);
+  const next = i >= 0 ? list.map((p, j) => (j === i ? entry : p)) : [...list, entry];
+  return next.slice(-DEVRUN_PRESET_MAX);
+}
+export function removeDevRunPreset(list, name) {
+  return list.filter((p) => p.name !== name);
+}
+
 /* AKTIVER LAUF (Resume) — Snapshot des laufenden Reducer-States, damit ein Run das Wegtabben/Schließen
    des Browsers überlebt (Mobile verwirft Background-Tabs; der State liegt sonst nur im Arbeitsspeicher).
    Der State ist voll serialisierbar (~6 KB, keine Funktionen). `meta` trägt UI-seitige Ephemera aus App.jsx

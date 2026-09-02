@@ -9,8 +9,8 @@ import { archetypeOf, initLightning, initHeat, heatMaxFor, maxChargeFor, chargeC
 import { computeFormations, formationPotential, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
 import { initialShop, perkLegendaryChance, skillLegendaryChance } from "./shop.js";
 import { resolveTrick, formationEnergyFor } from "./engine.js"; // formationEnergyFor: eine Quelle für Phasen-Eintritt + RESET_FORMATION
-import { PERKS_OFFERED } from "./constants.js";
 import * as C from "./constants.js";
+import { runRules, perksOfferedFor, skillOfferParams, sanitizeRules } from "./rules.js"; // exp: Regeln je Lauf (state.rules; null → Konstanten)
 import { isLegendarySkill, isTrimmableSkill } from "./skills.js"; // #217: Garantie-Erkennung (Legendär im Skill-Reroll-Angebot) · #288 Trimmen
 import { DECLINE_MIN_SKILLS as G_DECLINE_MIN_SKILLS } from "./glacier.js"; // Eis-Neudesign: Ablehn-Gletscher-Schwelle (gehaltene Eis-Skills)
 import { pickWeekMods, hasWeekMod, weekModMag, TIGHT_BUILD_COVER } from "./weekMods.js"; // #370 Ranked-Rework Phase 3: Wochen-Modifikatoren (seed-deterministisch)
@@ -38,6 +38,8 @@ const archPushMove = (a) => [...(a.phaseHistory || []), archFpMap(a)];
 // adressierter Sub-Strom `(seed, ...parts)`; sonst der als Action-Payload injizierte rng (Sim/Alt-Verhalten
 // byte-identisch). Adressen nutzen state.cycle + eine feste Kennung, damit jeder Zieh-Punkt seinen eigenen Strom hat.
 const rngFor = (state, action, ...parts) => (state.seed != null ? rngAt(state.seed, ...parts) : action.rng);
+// exp: die Entscheidungs-Typen, die ein Dev-Run-Plan tragen darf (= alles, was die Engine am Durchlauf-Ende kennt).
+const DEV_DECISIONS = ["skill", "perk", "formation", "shop", "legendary"];
 // Start-playerOrder mit Formations-Potential im Ziel-Band (#Pass6): neu mischen, bis Σ(mult−1) in
 // [FORMATION_START_MIN, MAX] liegt, sonst nach TRIES die potential-nächste Anordnung (Fallback → terminiert
 // immer). Rein deterministisch (rng injiziert); begrenzt die Start-Varianz des Formations-Potentials.
@@ -66,8 +68,9 @@ function startDecisionSetup(decision, s, seed, actionRng, architectEnabled, devE
   const rareCap = s.rareCap || 4; // (Schritt 4c) Onboarding-Rarität-Deckel (4 = kein Deckel)
   const rareFloor = s.rareFloor || 1; // #370 Perk-Segen: Rarität-Boden (1 = kein Boden)
   // #370 Wochen-Mods (nur Ranked): Perk-/Skill-Verknappung verkleinern das Erst-Angebot (Perks 3→1, Skills 12→4 = 1/Fraktion).
-  const perksOffered = hasWeekMod(s.weekMods, "scarcePerks") ? 1 : PERKS_OFFERED;
-  const skillsOffered = hasWeekMod(s.weekMods, "scarceSkills") ? 4 : C.SKILLS_OFFERED;
+  // exp: beide über rules.js — ohne s.rules exakt die alten Werte.
+  const perksOffered = perksOfferedFor(s);
+  const skillP = skillOfferParams(s);
   if (decision === "perk") {
     const off = devMode ? fullPerkOffer(architectEnabled) : buildPerkOffer([], {}, rngAtOr("perk", 0), perksOffered, perkLegendaryChance(s.shop) * legMultPerk, mRareShift, architectEnabled, 0, rareCap, rareFloor);
     return off.length ? { phase: "levelup", offer: off } : { phase: "play" };
@@ -84,7 +87,7 @@ function startDecisionSetup(decision, s, seed, actionRng, architectEnabled, devE
     return { phase: "formation", formationEnergy: (devEnergy ?? s.formationEnergyBase ?? C.FORMATION_ENERGY), formationSwaps: [], formations };
   }
   // "skill" (Default): Skill-Angebot; leerer Skill-Pool → Perk-Fallback (Runde nicht verschwenden).
-  const soff = devMode ? fullSkillOffer() : buildSkillOffer([], [], rngAtOr("skill", 0), skillsOffered, skillLegendaryChance(s.shop), false, s.unlockedArchetypes); // §4b: Archetyp-Gatung
+  const soff = devMode ? fullSkillOffer() : buildSkillOffer([], [], rngAtOr("skill", 0), skillP.count, skillLegendaryChance(s.shop), false, s.unlockedArchetypes, skillP.maxArchetypes, skillP.perArchCap); // §4b: Archetyp-Gatung
   if (soff.length) return { phase: "levelup", skillOffer: soff };
   const off = buildPerkOffer([], {}, rngAtOr("perk", 0), perksOffered, perkLegendaryChance(s.shop) * legMultPerk, mRareShift, architectEnabled, 0, rareCap, rareFloor);
   return off.length ? { phase: "levelup", offer: off } : { phase: "play" };
@@ -161,6 +164,8 @@ export function initialState(rng = Math.random, seed = null) {
     // Dev-Run (nur Preview): pro-Lauf-Overrides. null/false → Bestandsverhalten (globaler Plan, C.MAX_CYCLES,
     // C.FORMATION_ENERGY, Zufallsangebote). Von START_RUN mit action.dev gesetzt; die Engine liest sie im Übergang.
     devSchedule: null, maxCycles: null, devEnergy: null, devMode: false,
+    // exp: Regeln je Lauf (rules.js) + die komplette Dev-Run-Config für den Neustart mit denselben Regeln. null = Bestand.
+    rules: null, devConfig: null,
     // #263: DREI getrennte Reroll-Pools je Lauf (Perks · Gebäude · Skills), je BASE_REROLLS (2), nicht untereinander
     // teilbar, kein Nachschub. Ersetzt den einen geteilten Pool; Gebäude/Architekt hat jetzt auch einen Reroll.
     rerollsPerk: C.BASE_REROLLS, rerollsArch: C.BASE_REROLLS, rerollsSkill: C.BASE_REROLLS,
@@ -224,13 +229,24 @@ export function reducer(state, action) {
       const ranked = action.ranked || null;
       if (dev) {
         const devRounds = Math.max(1, Math.min(200, Math.floor(Number(dev.rounds) || 0)));
-        const devSchedule = Array.from({ length: devRounds }, (_, i) => (Array.isArray(dev.schedule) && dev.schedule[i]) || C.DECISION_SCHEDULE[i] || "perk");
+        // exp: nur bekannte Plan-Werte; alles andere fällt auf den Standardplan zurück (ein Tippfehler im Preset
+        // darf keine stumme Runde ohne Entscheidung erzeugen).
+        const devSchedule = Array.from({ length: devRounds }, (_, i) => {
+          const tk = Array.isArray(dev.schedule) ? dev.schedule[i] : null;
+          return DEV_DECISIONS.includes(tk) ? tk : (C.DECISION_SCHEDULE[i] || "perk");
+        });
         const devCover = Math.max(0, Math.min(N_POS, Math.floor(Number(dev.cover) || 0)));
         const devEnergy = Math.max(0, Math.min(N_POS, Math.floor(Number(dev.energy) || 0)));
-        const sBase = { ...s, architect: { ...s.architect, maxCover: devCover } };
-        const patch = startDecisionSetup(devSchedule[0], sBase, seed, action.rng, true, devEnergy, true);
+        // exp: Regeln je Lauf + Voll-Katalog als Schalter. Ohne das Flag gilt der alte Vertrag (Test-Layout = Voll-Katalog);
+        // das Panel schickt es immer mit. devConfig hält die bereinigte Config für „Neustart" mit denselben Regeln.
+        const rules = sanitizeRules(dev.rules);
+        const fullCatalog = dev.fullCatalog == null ? true : !!dev.fullCatalog;
+        const devConfig = { rounds: devRounds, schedule: devSchedule, cover: devCover, energy: devEnergy, fullCatalog, rules };
+        const sBase = { ...s, architect: { ...s.architect, maxCover: devCover }, rules, devConfig,
+          skillSlots: runRules({ rules }).skillSlots, legPhaseEnabled: true };
+        const patch = startDecisionSetup(devSchedule[0], sBase, seed, action.rng, true, devEnergy, fullCatalog);
         return { ...sBase, architectEnabled: true,
-          devSchedule, maxCycles: devRounds, devEnergy, devMode: true,
+          devSchedule, maxCycles: devRounds, devEnergy, devMode: fullCatalog,
           difficulty: null,
           rerollsPerk: C.BASE_REROLLS, rerollsArch: C.BASE_REROLLS, rerollsSkill: C.BASE_REROLLS,
           skillOffer: null, offer: null, ...patch };
@@ -450,9 +466,10 @@ export function reducer(state, action) {
       // Durchlaufs zwar frei, aber ein eigener Name kann per Konstruktion nie mit einem kollidieren.
       // Legendär-Chance 0 — der legendäre SKILL hat seine eigene Phase und seinen eigenen Slot (#272);
       // ein Perk soll keinen zweiten nachliefern.
+      const skillP = skillOfferParams(state); // exp: Regeln je Lauf (Bestand = Konstanten)
       const bonusSkillOffer = (def.skillSlotBonus && !goTarget)
         ? buildSkillOffer(state.skills, state.activeArchetypes || [], rngFor(state, action, state.cycle, "meisterhand", 0),
-            hasWeekMod(state.weekMods, "scarceSkills") ? 4 : C.SKILLS_OFFERED, 0, false, state.unlockedArchetypes)
+            skillP.count, 0, false, state.unlockedArchetypes, skillP.maxArchetypes, skillP.perArchCap)
         : null;
       const formations = (def.redistribute || def.opfergang)
         ? computeFormations(state.playerOrder, deck, state.roles, perks, state.skills, state.shop?.anchors || [], state.familyTiers, archOf(state))
@@ -585,7 +602,7 @@ export function reducer(state, action) {
       // Archetyp-Deckel (#93 F0 → v0.3: MAX_ARCHETYPES=4, alle Fraktionen mischbar): ein Skill eines weiteren, noch nicht aktiven Archetyps ist nicht wählbar, sobald das Limit erreicht ist. [#230 N13]
       const arch = archetypeOf(skillId);
       const active0 = state.activeArchetypes || [];
-      if (arch && !active0.includes(arch) && active0.length >= C.MAX_ARCHETYPES) return state;
+      if (arch && !active0.includes(arch) && active0.length >= runRules(state).maxArchetypes) return state; // exp: Deckel je Lauf (Bestand = C.MAX_ARCHETYPES)
       let skills;
       let trimmed = false; // #288: wurde ein wachstums-stützender Skill ersetzt? → Trimmung
       // #272: Der Legendär im 7. Slot zählt NICHT gegen SKILL_SLOTS und wird nie durch einen normalen Pick ersetzt.
@@ -672,7 +689,7 @@ export function reducer(state, action) {
       // Dev-Run ein Bonus ist. Der Eis-Ablehn-Gletscher unten entfällt aus demselben Grund.
       if (state.skillOfferBonus) return { ...state, skillOffer: null, skillOfferBonus: false, phase: "play" };
       if (state.devMode) return { ...state, skillOffer: null, phase: "play" }; // Dev-Run: „Runde überspringen" → direkt weiter, KEIN Perk-Ersatz
-      const off = buildPerkOffer(state.perks, state.familyTiers, rngFor(state, action, state.cycle, "perk", 0), PERKS_OFFERED, perkLegendaryChance(state.shop) * (state.treeLegMult ?? 1), state.treeRareShift || 0, state.architectEnabled, C.perkPhaseAt(state.devSchedule || C.DECISION_SCHEDULE, state.cycle) === C.LEG_PERK2_PHASE ? (state.treeLegForce2 || 0) : 0, state.rareCap || 4, state.rareFloor || 1); // M4/M5: 2. Perk-Phase (Reroll behält Garantie) · §4c Rarität-Deckel · #370 Rarität-Boden
+      const off = buildPerkOffer(state.perks, state.familyTiers, rngFor(state, action, state.cycle, "perk", 0), runRules(state).perksOffered, perkLegendaryChance(state.shop) * (state.treeLegMult ?? 1), state.treeRareShift || 0, state.architectEnabled, C.perkPhaseAt(state.devSchedule || C.DECISION_SCHEDULE, state.cycle) === C.LEG_PERK2_PHASE ? (state.treeLegForce2 || 0) : 0, state.rareCap || 4, state.rareFloor || 1); // M4/M5: 2. Perk-Phase (Reroll behält Garantie) · §4c Rarität-Deckel · #370 Rarität-Boden
       // Eis-Neudesign: bei VOLLEN Eis-Slots (SKILL_SLOTS Eis-Skills) friert das Ablehnen trotzdem einen Gletscher fest —
       // Ausgleich dafür, dass kein weiterer Eis-Skill mehr in die Slots passt (analog: ein Tausch bei vollen Slots gibt
       // ebenfalls einen). Der Perk bleibt: das Perk-Angebot wird geparkt (pendingPerkOffer) und nach der Gletscher-Wahl
@@ -716,7 +733,8 @@ export function reducer(state, action) {
     // #272 Legendär ablehnen → stattdessen normale Skill-Wahl (Nutzer-Wunsch), nie „verschwendet".
     case "DECLINE_LEGENDARY": {
       if (state.phase !== "legendary" || !state.legendaryOffer) return state;
-      const off = buildSkillOffer(state.skills, state.activeArchetypes, rngFor(state, action, state.cycle, "skill", 0), C.SKILLS_OFFERED, 0, false, state.unlockedArchetypes); // §4b: Archetyp-Gatung
+      const skillP = skillOfferParams(state);
+      const off = buildSkillOffer(state.skills, state.activeArchetypes, rngFor(state, action, state.cycle, "skill", 0), skillP.count, 0, false, state.unlockedArchetypes, skillP.maxArchetypes, skillP.perArchCap); // §4b: Archetyp-Gatung
       return off.length > 0
         ? { ...state, legendaryOffer: null, skillOffer: off, phase: "levelup", offerRerolls: 0, legPicksMade: 0 } // → normale Skill-Auswahl
         : { ...state, legendaryOffer: null, phase: "play", legPicksMade: 0 };                                     // Skill-Pool leer → weiterspielen
@@ -762,8 +780,9 @@ export function reducer(state, action) {
       const legTaktMag = weekModMag(state.weekMods, "legTakt");
       const legTaktPP = C.perkPhaseAt(state.devSchedule || C.DECISION_SCHEDULE, state.cycle);
       const onLegTakt = legTaktMag > 0 && legTaktPP > 0 && legTaktPP % legTaktMag === 0;
-      const legForce = onLegTakt ? PERKS_OFFERED : (inLegPerkPhase ? (state.treeLegForce2 || 0) : 0);
-      const offer = buildPerkOffer(state.perks, state.familyTiers, rngFor(state, action, state.cycle, "perk", idx), PERKS_OFFERED, perkLegendaryChance(state.shop) * (state.treeLegMult ?? 1), state.treeRareShift || 0, state.architectEnabled, legForce, state.rareCap || 4, state.rareFloor || 1); // #369: 2. Perk-Phase = generelle Legendär-Phase (Reroll behält den Legendär-Satz) · Rarität-Deckel · #370 Rarität-Boden · Legendär-Takt
+      const perksOffered = runRules(state).perksOffered; // exp: Regel je Lauf (Bestand = C.PERKS_OFFERED, auch unter „Perk-Verknappung" — wie bisher)
+      const legForce = onLegTakt ? perksOffered : (inLegPerkPhase ? (state.treeLegForce2 || 0) : 0);
+      const offer = buildPerkOffer(state.perks, state.familyTiers, rngFor(state, action, state.cycle, "perk", idx), perksOffered, perkLegendaryChance(state.shop) * (state.treeLegMult ?? 1), state.treeRareShift || 0, state.architectEnabled, legForce, state.rareCap || 4, state.rareFloor || 1); // #369: 2. Perk-Phase = generelle Legendär-Phase (Reroll behält den Legendär-Satz) · Rarität-Deckel · #370 Rarität-Boden · Legendär-Takt
       return { ...state, offer, offerRerolls: idx, ...(usePerk2 ? { rerollsPerk2: perk2 - 1 } : { rerollsPerk: tokens - 1 }), rerollsUsed: (state.rerollsUsed || 0) + 1 };
     }
 
@@ -774,7 +793,8 @@ export function reducer(state, action) {
       const tokens = state.rerollsSkill || 0;                        // #263: eigener Skill-Pool
       if (tokens <= 0) return state;
       const idx = (state.offerRerolls || 0) + 1;                     // #205: Reroll-Index → frischer adressierter Strom (Original-Angebot = 0)
-      const offer = buildSkillOffer(state.skills, state.activeArchetypes, rngFor(state, action, state.cycle, "skill", idx), C.SKILLS_OFFERED, skillLegendaryChance(state.shop), false, state.unlockedArchetypes); // §4b: Archetyp-Gatung
+      const skillP = skillOfferParams(state);
+      const offer = buildSkillOffer(state.skills, state.activeArchetypes, rngFor(state, action, state.cycle, "skill", idx), skillP.count, skillLegendaryChance(state.shop), false, state.unlockedArchetypes, skillP.maxArchetypes, skillP.perArchCap); // §4b: Archetyp-Gatung
       if (offer.length === 0) return state;                         // nichts Neues verfügbar → Ressource behalten
       return { ...state, skillOffer: offer, offerRerolls: idx, rerollsSkill: tokens - 1, rerollsUsed: (state.rerollsUsed || 0) + 1 };
     }
