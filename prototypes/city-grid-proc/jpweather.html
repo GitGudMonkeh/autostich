@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Wetter — sechs Stimmungen</title>
+<style>
+  html, body { margin: 0; }
+  body {
+    background:
+      radial-gradient(ellipse 80% 40% at 50% 62%, rgba(255,110,180,.16), transparent 66%),
+      radial-gradient(ellipse 70% 36% at 76% 58%, rgba(90,225,235,.14), transparent 62%),
+      linear-gradient(#8f95b3 0%, #7b8098 32%, #4e5473 62%, #343a58 100%);
+    color: #23263a; font-family: system-ui, sans-serif;
+  }
+  #hud { padding: 12px 16px; font-size: 13px; line-height: 1.5; color: #2b2f47;
+         background: rgba(255,255,255,.16); border-bottom: 1px solid rgba(255,255,255,.22); }
+  #hud b { color: #b3196b; }
+  #hud span { color: #106b83; }
+  #wrap { position: relative; }
+  #stage-host { position: relative; width: 100%; }
+  .cell { padding: 13px 17px; }
+  .cell h2 { margin: 0; font: 600 12px/1.2 ui-monospace, monospace; letter-spacing: .12em;
+             text-transform: uppercase; color: #1c5a6b; }
+  .cell h2 i { font-style: normal; color: #b3196b; margin-right: 7px; }
+  .cell h2 em { font-style: normal; font-size: 9px; letter-spacing: .1em; margin-left: 8px;
+                padding: 2px 6px; border-radius: 3px; vertical-align: 1px;
+                background: rgba(179,25,107,.15); color: #8d1355; }
+  .cell p { margin: 6px 0 0; font-size: 12px; line-height: 1.45; color: #3d4258; max-width: 44ch; }
+  .cell p b { color: #23263a; }
+  canvas { display: block; touch-action: pan-y !important; }
+  @media (max-width: 859px) { .cell p { max-width: none; } }
+</style>
+</head>
+<body>
+  <div id="hud">
+    <b>Wetter ist nicht Partikel.</b> Regen ist das Billigste und das Unwichtigste daran. Drei Dinge machen die
+    Stimmung, und jedes Feld stellt alle drei ein: die <span>Luft</span> — ein Ton, der über alles multipliziert wird
+    und Wert und Farbe von allem entscheidet, was nicht leuchtet; das <span>Streulicht</span> — Dunst wirft zurück,
+    was die Stadt abstrahlt, und zieht das ganze Bild zur Farbe der stärksten Quelle; und das <span>Wasser</span>,
+    das dem Himmel antworten muss, sonst sieht Wetter aus wie ein Filter über dem Bild. Für die dunklere, rötere
+    Stimmung ist <b>W4</b> der Kandidat: rot ist dort die <span>Luft</span>, nicht die Schilder.
+  </div>
+  <div id="wrap">
+    <div id="stage-host"></div>
+  <div id="labels" style="position:absolute;inset:0;display:grid;grid-template-columns:repeat(2,1fr);grid-auto-rows:404px;pointer-events:none;z-index:10">
+    <div class="cell"><h2><i>W1</i>Nieselregen<em>heute</em></h2><p>Was das Bausystem jetzt zeigt: dünner Regen, kühle Luft, das Neon liegt sauber auf dem Dunkel. Als Vergleichspunkt.</p></div>
+    <div class="cell"><h2><i>W2</i>Gewitter<em>hart</em></h2><p>Schwerer, schräg stehender Regen und ein Blitz alle paar Sekunden. Nicht der Blitz macht es, sondern dass das ganze Bild für vier Frames fahl wird — die Stadt ist kurz nur noch Silhouette.</p></div>
+    <div class="cell"><h2><i>W3</i>Seenebel<em>weich</em></h2><p>Eine Nebelbank über dem Wasser. Die Lichter bekommen Höfe, die Ferne verschwindet, das Wasser wird hell und stumpf. Am stärksten von allen, was Tiefe angeht.</p></div>
+    <div class="cell"><h2><i>W4</i>Roter Smog<em>düster + rot</em></h2><p>Die Luft selbst ist rot, nicht die Schilder. Alles Nicht-Leuchtende geht ins Rotbraune, das Neon scheint hindurch, und Asche steigt auf. <b>Das ist die Variante für die dunklere, rötere Stimmung.</b></p></div>
+    <div class="cell"><h2><i>W5</i>Schneeregen<em>kalt</em></h2><p>Langsame Flocken, gedämpfte Luft, das Wasser blaugrau. Die einzige Variante, in der die Stadt ruhig statt bedrängt wirkt.</p></div>
+    <div class="cell"><h2><i>W6</i>Klare Nacht<em>Kontrast</em></h2><p>Kein Niederschlag, Sterne, ruhiges Wasser, die härtesten Kontraste. Als Gegenpol — ohne so eine Variante wirkt jedes Wetter gleich schwer.</p></div>
+  </div>
+  </div>
+  <script type="module" src="./jpweather.js"></script>
+</body>
+</html>
