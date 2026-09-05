@@ -1,9 +1,9 @@
 import { useState, useRef } from "react";
 import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import { PANEL_BG, phaseCard, PhaseHairline, PHASE_ACCENTS, ActionButton } from "./modalStyle.jsx";
-import { ARCHETYPE_ORDER, archetypeOf, marginHeatPoints, isLegendarySkill } from "../game/skills.js";
+import { ARCHETYPE_ORDER, archetypeOf, marginHeatPoints, isLegendarySkill, tierOf } from "../game/skills.js";
 import { FactionIcon, ArchIcon, GlossaryIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
-import { SKILL_SLOTS, LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_CRIT_MULT_PER_SKILL,
+import { SKILL_SLOT_LIMIT, LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_CRIT_MULT_PER_SKILL,
          PLANT_GROWTH_SKILL_REF, PLANT_GREEN_THRESHOLD, WURZELSCHLAG_PER_GROWTH, PLANT_VALUE_CAP,
          WURZELSCHLAG_LOSS_MIN_SKILLS, WURZELSCHLAG_LOSS_EVERY,
          FIRE_MARGIN_OFFSET, FIRE_SCORE_BASE, FIRE_SCORE_PER_SKILL, FIRE_SCORE_SQRT_K,
@@ -14,7 +14,7 @@ import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 import { GlossaryPanel, GlossaryText } from "./Glossary.jsx";
 import { FormationPanel } from "./FormationPanel.jsx";
 import { LevelupRig } from "./LevelupWings.jsx"; // #lv-fluegel: Deck links, Kennzahlen rechts (ab 1280 px)
-import { HeldSkills } from "./HeldSkills.jsx"; // gehaltene Skills — geteilt mit der Perk-Auswahl
+import { HeldSkills, SkillTierBadge, skillTierColor } from "./HeldSkills.jsx"; // gehaltene Skills — geteilt mit der Perk-Auswahl · exp: Stufen-Badge/-Farbe
 import { useIsWide, useIsPhone } from "./useIsWide.js";      // #sk-reiter: Reiterzeile statt Pager — DOM, nicht Anordnung
 import { skillArt } from "./skillArt.js";        // #skillart: Emblem je Skill (nur ab 1280 px gerendert)
 import { CardCorners } from "./CardCorners.jsx"; // #cornerart: Eck-Ornamente im Kartenkopf (folgen dem Reiter)
@@ -86,16 +86,20 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
   // Neuwurf (#263): eigener Skill-Reroll-Pool (2 je Lauf), kein Free-Reroll mehr.
   const rerollTokens = state.rerollsSkill || 0;
   const canReroll = !!onReroll && rerollTokens > 0;
-  const slots = state.skillSlots || SKILL_SLOTS; // #370 Skill-Fülle / Meisterhand: erhöhtes Slot-Limit (sonst Basis)
-  /* #272: Der legendäre Skill sitzt in einem EIGENEN, festen Slot — er zählt nicht gegen `slots` und kann nie
-     ersetzt werden. Die Zählung hier muss dieselbe sein wie im Reducer (PICK_SKILL: `normalCount`), sonst laufen
-     UI und Regel auseinander. Genau das war der Meisterhand-Bug: `skills.length` schloss den Legendär mit ein,
-     also galten 6 normale + 1 legendärer Skill schon bei 7 Slots als „voll" — der gewonnene Slot war über die
-     Oberfläche nicht erreichbar, und der einzige Ausweg (Ersetzen-Fenster) tauschte nur, statt hinzuzufügen. */
+  /* exp skill rework: Slots sind standardmäßig unbegrenzt (SKILL_SLOT_LIMIT heißt „kein Limit"); nur eine Dev-Run-
+     Regel darunter begrenzt. Unbegrenzt rechnet `slots` als Infinity, damit `full` und das Ersetzen-Fenster
+     unverändert bleiben (nie voll) und der Reducer (PICK_SKILL: `state.skillSlots || C.SKILL_SLOT_LIMIT`) dasselbe sieht. */
+  const rawSlots = state.skillSlots || SKILL_SLOT_LIMIT;
+  const unlimited = rawSlots >= SKILL_SLOT_LIMIT;
+  const slots = unlimited ? Infinity : rawSlots;
+  /* #272: Der legendäre Skill zählt nicht gegen `slots` und kann nie ersetzt werden. Die Zählung hier muss dieselbe
+     sein wie im Reducer (PICK_SKILL: `normalCount`), sonst laufen UI und Regel auseinander. Genau das war der
+     Meisterhand-Bug: `skills.length` schloss den Legendär mit ein, also galten 6 normale + 1 legendärer Skill
+     schon bei 7 Slots als „voll" — der gewonnene Slot war über die Oberfläche nicht erreichbar. */
   const legendaryHeld = skills.filter(isLegendarySkill).length;
   const normalHeld = skills.length - legendaryHeld;
   const full = normalHeld >= slots;
-  // Anzeige: der Legendär bringt seinen eigenen Slot mit → „7 / 7" statt „7 / 6", nach Meisterhand „7 / 8".
+  // Anzeige (nur mit Limit): der Legendär bringt seinen eigenen Slot mit → „7 / 7" statt „7 / 6".
   const slotsShown = slots + legendaryHeld;
   const [pending, setPending] = useState(null); // bei vollen Slots gewählter neuer Skill — wartet auf Ersetzungsziel
   const devMode = !!state.devMode;                  // Dev-Run: Reroll aus, „Runde überspringen"
@@ -211,7 +215,10 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
         {(wide || phone) && curG && <CardCorners artKey={curG.arch} />}
         <GlossaryPanel className="absolute top-3 right-3 z-10" />
         <div className="co-head text-center mb-1 pt-6">
-          <div className="text-body-5 uppercase tracking-widest" style={{ color: LIGHT }}>{t("skill.eyebrow", { cycle: (state.cycle || 0) + 1, held: skills.length, slots: slotsShown })}</div>
+          <div className="text-body-5 uppercase tracking-widest" style={{ color: LIGHT }}>
+            {unlimited ? t("skill.eyebrow.free", { cycle: (state.cycle || 0) + 1, held: skills.length })
+                       : t("skill.eyebrow", { cycle: (state.cycle || 0) + 1, held: skills.length, slots: slotsShown })}
+          </div>
           <h2 className="text-title-6 font-bold mt-1">{t("skill.title")}</h2>
           {/* Ohne diesen Satz steht mitten in einer PERK-Runde plötzlich eine Skill-Wahl — der Spieler sucht
               sonst den Fehler bei sich. */}
@@ -373,6 +380,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                     style={{ "--c": deactivates ? "#d1462f" : ac(s.id).color }}>
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="text-meta-1 px-1.5 py-0.5 rounded font-bold tracking-wide" style={{ background: `${ac(s.id).color}22`, color: ac(s.id).color, border: `1px solid ${ac(s.id).color}88` }}><ArchIcon meta={ac(s.id)} size={11} /> {ac(s.id).label.toUpperCase()}</span>
+                      <SkillTierBadge tier={tierOf(state, s.id)} />{/* exp: gehaltene Stufe */}
                       {(s.heatConsumer || s.onFullCharge) && <span className="text-meta-1 px-1.5 py-0.5 rounded font-bold tracking-wide" style={{ background: "#d4a63a22", color: "#d4a63a", border: "1px solid #d4a63a88" }}>{t("skill.badge.consumer")}</span>}
                       {s.legendary && <span className="text-meta-1 px-1.5 py-0.5 rounded font-bold tracking-wide" style={{ background: "#e0b84522", color: "#e0b845", border: "1px solid #e0b84588" }}>{t("skill.badge.legendary")}</span>}
                     </div>
@@ -444,12 +452,17 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                      Das Gate sitzt im JSX und nicht in CSS, damit im ausgelassenen Band gar kein <img>
                      im DOM steht und kein Gerät Bilder lädt, die es nicht zeigt. */
                   const art = (wide || phone) ? skillArt(id) : null;
+                  /* exp skill rework: die für DIESEN Angebotsplatz gewürfelte Stufe (state.skillOfferTiers, Reducer/Engine
+                     rollSkillOfferTiers). Legendäre haben keine (null) — sie tragen ihr Gold. Ohne Eintrag (Dev-Pfade,
+                     ältere Snapshots) Normal, wie PICK_SKILL es dann auch einträgt. */
+                  const tier = s.legendary ? null : ((state.skillOfferTiers || {})[id] ?? 0);
                   const badges = (
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="text-meta-1 px-1.5 py-0.5 rounded font-bold tracking-wide"
                         style={{ background: `${col}22`, color: col, border: `1px solid ${col}88` }}>
                         <ArchIcon meta={curG.meta} size={12} /> {curG.meta.label.toUpperCase()}
                       </span>
+                      <SkillTierBadge tier={tier} />
                       {(s.heatConsumer || s.onFullCharge) && (
                         <span className="text-meta-1 px-1.5 py-0.5 rounded font-bold tracking-wide"
                           style={{ background: "#d4a63a22", color: "#d4a63a", border: "1px solid #d4a63a88" }}>
@@ -470,11 +483,11 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                     /* #kante: Karte in der Optik „Kante statt Fläche" (index.css .as-edge-card). Anders als beim
                        Perk-Angebot trägt die Kante hier die SELTENHEIT, nicht die Fraktion: man blättert die
                        Fraktionen einzeln durch, alle Karten einer Ansicht haben also dieselbe Fraktionsfarbe —
-                       als Kante würde sie nichts unterscheiden. Legendär (Gold) sticht damit sofort heraus.
-                       Die Fraktion steht weiterhin im Badge und in der Überschrift. */
+                       als Kante würde sie nichts unterscheiden. exp: die Kante ist die gewürfelte Stufe (Farben der
+                       Raritätsleiter I–IV), Legendär (Gold) sticht weiter heraus. Die Fraktion steht im Badge und in der Überschrift. */
                     <button key={id} onClick={() => clickSkill(id)}
                       className={`lv-offercard as-edge-card${sel ? " is-sel" : ""}${art ? (wide ? " sk-offer-art" : " mc-tile") : ""} text-left rounded-xl p-3 flex flex-col gap-1.5 transition-all hover:-translate-y-0.5${s.legendary ? " as-legendary" : ""}`}
-                      style={{ "--c": s.legendary ? "#e0b845" : "#8a8a95" }}>
+                      style={{ "--c": s.legendary ? "#e0b845" : skillTierColor(tier) }}>
                       {/* Der Streifen liegt ABSOLUT über dem Kartenkopf und schiebt nichts — die Zeilen darunter
                           stehen an derselben Stelle wie ohne Bild, nur tiefer (Polster in `.sk-offer-art`).
                           Ohne Bild bleibt der Baum exakt wie vorher: die Handy-Fassung ist unberührt. */}

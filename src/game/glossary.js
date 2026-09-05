@@ -202,8 +202,10 @@ export const GLOSSARY = {
   consume: { category: "frak", group: "gen", label: "Konsument", icon: "⊗", color: CLR.lightning,
     text: "Ein Skill, der eine angesammelte Ressource für einen starken Effekt verbraucht: Feuer verbrennt Hitze, Blitz verbraucht Ladung. Mehrere Feuer-Konsumenten wirken gleichzeitig; von den Blitz-Konsumenten immer nur einer, ein neuer ersetzt den alten.",
     match: ["Konsument", "Konsumenten", "Hitze-Konsument"] },
+  // exp skill rework (docs/skill-rework.md §1): Legendäre sind die fünfte Seltenheit des Skill-Angebots — kein Tor,
+  // keine eigene Phase, kein Ersetzen. (Wortlaut in Phase 4 mit den übrigen Texten abzunehmen.)
   legskill: { category: "frak", group: "gen", label: "Legendärer Skill", icon: "★", color: CLR.gold,
-    text: `Eine seltene, besonders mächtige Skill-Stufe (mit ★ markiert). Legendäre Skills kommen ausschließlich aus der Legendär-Phase (Durchlauf ${C.LEG_PHASE_CYCLE}). Welche Archetypen dort antreten, entscheidet der Upgrade-Baum.`,
+    text: "Eine seltene, besonders mächtige Skill-Stufe (mit ★ markiert). Legendäre Skills tauchen als fünfte Seltenheit im normalen Skill-Angebot auf – ohne Vorbedingung, immer aus der Fraktion des Platzes, den sie ersetzen. Mit Glück hält man zwei.",
     match: ["Legendärer Skill", "legendäre Skills"] },
   ueberlauf: { category: "frak", group: "gen", label: "Überlauf", icon: "≈", color: CLR.gold,
     text: `Sammelt eine Karte mehr an, als ihr normaler Nutzen verwertet (Wachstum über dem Wert-Deckel ${C.PLANT_VALUE_CAP}, Hitze über 100 %), sonst wäre er verschwendet. Feuer (Weißglut) staut ihn als Überhitzung auf; die Legendären (Weltenbaum/Mutterbaum) verwandeln den großen Rest.`,

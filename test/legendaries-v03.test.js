@@ -45,8 +45,9 @@ describe("Legendäre v0.3 — Ausbau & Deck (Pick-Zeitpunkt)", () => {
     expect(s1.phase).toBe("levelup");
     expect(s1.skillOffer.length).toBeGreaterThan(0);
     expect(s1.skillOfferBonus).toBe(true);
-    // Kein legendärer SKILL aus diesem Angebot — der hat seine eigene Phase und seinen eigenen Slot (#272).
-    expect(s1.skillOffer.some(isLegendarySkill)).toBe(false);
+    // exp skill rework: das Bonus-Angebot ist ein normales Angebot — jeder normale Platz trägt eine Stufe, ein
+    // Legendär kann als fünfte Seltenheit darin stehen (die eigene Legendär-Phase #272 ist entfernt).
+    for (const id of s1.skillOffer) expect(isLegendarySkill(id) ? !(id in s1.skillOfferTiers) : Number.isInteger(s1.skillOfferTiers[id])).toBe(true);
     // Und der Skill landet auch wirklich im Build.
     const s2 = reducer(s1, { type: "PICK_SKILL", skillId: s1.skillOffer[0], rng });
     expect(s2.skills).toContain(s1.skillOffer[0]);

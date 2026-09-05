@@ -1046,7 +1046,7 @@ describe("i18n · Ratsche gegen neue deutsche Inline-Texte", () => {
     // Die Spielschleife selbst: Kopfleiste, Seitenleiste, Brett, Aufstellungsphase.
     "src/ui/StatusBar.jsx", "src/ui/StatusRail.jsx", "src/ui/Battlefield.jsx", "src/ui/FormationPhase.jsx",
     // Die Entscheidungen eines Durchlaufs — Angebote, Ziel-Auswahlen und die Panels, die sie begleiten.
-    "src/ui/SkillSelect.jsx", "src/ui/PerkSelect.jsx", "src/ui/LegendarySelect.jsx", "src/ui/GlacierPick.jsx",
+    "src/ui/SkillSelect.jsx", "src/ui/PerkSelect.jsx", "src/ui/GlacierPick.jsx", // exp: LegendarySelect.jsx ging mit der Legendär-Phase
     "src/ui/TargetSelect.jsx", "src/ui/FamilyTargetSelect.jsx", "src/ui/RoundScoreBadge.jsx",
     "src/ui/TrickBreakdown.jsx",
     "src/ui/FormationPanel.jsx", "src/ui/GlacierFormLegend.jsx", "src/ui/CardDetail.jsx",

@@ -578,17 +578,14 @@ export const SKILL_OFFER_PER_ARCH_CAP = 3;
 // unlockedArchetypes (Progression §4): Allowlist der im Lauf anbietbaren Archetypen (Onboarding-Gatung).
 // null/undefined = keine Gatung (Sim/Standard/Meister → alle 4, byte-identisch).
 // exp: maxArchetypes/perArchCap = per-run rules; the defaults are the constants → existing callers byte-identical.
-export function buildSkillOffer(owned, activeArchetypes, rng, count, legendaryChance = 0, guaranteeOne = false, unlockedArchetypes = null, maxArchetypes = C.MAX_ARCHETYPES, perArchCap = SKILL_OFFER_PER_ARCH_CAP) {
+// exp skill rework: the 5th/6th parameters (legendary chance / guarantee) are kept in the signature for the existing
+// call sites and tests but are inert — legendaries never come out of this builder. They are the fifth rarity of
+// rollSkillOfferTiers() below.
+export function buildSkillOffer(owned, activeArchetypes, rng, count, _legendaryChance = 0, _guaranteeOne = false, unlockedArchetypes = null, maxArchetypes = C.MAX_ARCHETYPES, perArchCap = SKILL_OFFER_PER_ARCH_CAP) {
   let available = archetypesWithSkills(owned);
   if (unlockedArchetypes) available = available.filter((a) => unlockedArchetypes.includes(a));
   const chosen = offerArchetypes(activeArchetypes || [], available, rng, maxArchetypes);
   if (!chosen.length) return [];
-  // #247: Legendäre laufen über einen eigenen Wurf JE ARCHETYP (nicht mehr EIN globaler Roll). Bei gateLeg werden sie
-  // aus dem normalen Zug ausgeschlossen und kommen ausschließlich über diese Würfe — je getroffenem Archetyp EINER
-  // (mehrere je Angebot möglich, nie zwei im selben Archetyp). Ohne Chance UND ohne Garantie (Grad < V) bleibt das
-  // alte Verhalten exakt erhalten (kein rng-Drift, Legendäre gewichtet im Pool) → Bestandstests/Sim mit Chance 0 unberührt.
-  const gateLeg = legendaryChance > 0 || guaranteeOne;
-  const isLeg = (id) => !!SKILL_DEFS[id]?.legendary;
   // Konsument-Garantie: ein angebotener Feuer-/Blitz-Archetyp ohne gehaltenen Konsumenten bekommt garantiert (mind.)
   // einen seines Typs angeboten, solange einer verfügbar ist — sonst kann der Build nie „zünden" (frustrierend). Seit
   // Blitz-Rework v0 NICHT mehr an activeArchetypes gebunden: der Verbraucher wird angeboten, bis er gewählt ist, damit
@@ -603,17 +600,13 @@ export function buildSkillOffer(owned, activeArchetypes, rng, count, legendaryCh
   const perArch = Math.max(1, Math.min(PER_ARCH_CAP, Math.floor(count / chosen.length)));
   const offer = [];
   const rest = [];
-  const guaranteed = new Set();  // garantierte Konsumenten-Slots — vor dem Legendär-Ersatz geschützt
-  const archLegs = {};           // #247: getroffener Legendär je Archetyp (aus dessen eigenem Wurf)
-  const legPoolByArch = {};      // #247: verfügbare Legendäre je Archetyp (auch für die Grad-V-Garantie)
+  const guaranteed = new Set();  // garantierte Konsumenten-Slots
   for (const arch of chosen) {
     // Enabler-Gating (Anti-Pech): ein Verstärker-Skill (s.enabler) wird NUR angeboten, wenn seine Basis gehalten wird —
     // sonst ist er ein toter Pick (Variety-Befund: der schwache Tail sind fast durchweg ungegatete Verstärker).
-    // #272: Legendäre sind NIE Teil des normalen Skill-Angebots — sie kommen ausschließlich über die Legendär-Phase
-    // (buildLegendaryOffer, Runde 29). Daher hier hart rausgefiltert; die #247-Würfe unten laufen dadurch leer (legPoolByArch=[]).
-    let pool = shuffle(SKILL_LIST.filter((s) => s.archetype === arch && !(owned || []).includes(s.id)
+    // Legendäre sind nie Teil des normalen Zugs (fünfte Stufe des Wurfs, rollSkillOfferTiers).
+    const pool = shuffle(SKILL_LIST.filter((s) => s.archetype === arch && !(owned || []).includes(s.id)
       && !s.legendary && (!s.enabler || (owned || []).includes(s.enabler))).map((s) => s.id), rng);
-    if (gateLeg) { legPoolByArch[arch] = pool.filter(isLeg); pool = pool.filter((id) => !isLeg(id)); } // (#247, jetzt inert — Pool hat keine Legendäre mehr)
     // Garantierten Konsumenten dieses Archetyps nach vorne ziehen (deterministisch, kein zusätzlicher rng-Zug: die
     // Pool-Reihenfolge stammt schon aus dem Shuffle; perArch ≥ 1 → Slot 0 wird gewählt). Zwei Auslöser:
     //  · needsConsumer(arch): aktiver Archetyp ohne gehaltenen Konsumenten (Pro-Archetyp-Garantie, Runden 2+).
@@ -626,12 +619,6 @@ export function buildSkillOffer(owned, activeArchetypes, rng, count, legendaryCh
     // (v0.5: keine Pflanze-Kern-Garantie mehr — die Wert-aus-Wachstum-Mechanik ist jetzt die immer-aktive Mono-Passive.)
     for (let i = 0; i < perArch && pool.length; i++) offer.push(pool.shift());
     rest.push(...pool); // Reste des Archetyps für die Auffüllung
-    // #247: eigener Legendär-Wurf für DIESEN Archetyp — genau EIN rng()-Zug je Archetyp (nur wenn er Legendäre hat),
-    // stabile Reihenfolge (chosen). Der Meisterrang-Mult (IV+ ×3) steckt bereits im übergebenen legendaryChance;
-    // die Grad-V-Garantie („mindestens einer") kommt separat über guaranteeOne — NICHT als chance=1 (das wäre „in jedem").
-    if (legendaryChance > 0 && legPoolByArch[arch].length && rng() < legendaryChance) {
-      archLegs[arch] = shuffle(legPoolByArch[arch], rng)[0];
-    }
   }
   // Auffüllen bis count aus den Resten — aber NIE über PER_ARCH_CAP je Archetyp (bei wenigen Archetypen bleibt das
   // Angebot entsprechend kürzer: 3 je gezeigtem Archetyp). Sonst kämen im Onboarding wieder 6 desselben Archetyps.
@@ -645,62 +632,50 @@ export function buildSkillOffer(owned, activeArchetypes, rng, count, legendaryCh
     archCount[a] = (archCount[a] || 0) + 1;
     offer.push(id);
   }
-  // #247: je getroffenem Archetyp den Legendär einsetzen — ersetzt einen normalen Skill DESSELBEN Archetyps (Balance je
-  // Archetyp wahren: 3→2 normal + 1 legendär), garantierte Konsumenten überspringen. Kein ersetzbarer Slot dieses
-  // Archetyps (alles garantiert/schon legendär) → auslassen; so bleiben Angebotslänge UND Konsument-Garantie erhalten.
-  const placeLeg = (arch, leg) => {
-    if (!leg || offer.includes(leg)) return false;
-    for (let i = offer.length - 1; i >= 0; i--) {
-      if (archetypeOf(offer[i]) === arch && !guaranteed.has(offer[i]) && !isLeg(offer[i])) { offer[i] = leg; return true; }
-    }
-    return false;
-  };
-  for (const arch of chosen) placeLeg(arch, archLegs[arch]);
-  // #247 Grad-V-Garantie: kam über die Würfe KEIN Legendär, forciere (mind.) EINEN — erster Archetyp mit verfügbarem
-  // Legendär und ersetzbarem Slot. Bewusst „mindestens einer", nicht „in jedem Archetyp".
-  if (guaranteeOne && !offer.some(isLeg)) {
-    for (const arch of chosen) {
-      const pool = legPoolByArch[arch];
-      if (pool && pool.length && placeLeg(arch, shuffle(pool, rng)[0])) break;
-    }
-  }
   return offer;
 }
 
-// #272 Legendär-Phase (Runde 29, build-defining). Die Angebotsgröße richtet sich nach der Build-Breite (Nutzer-Wunsch):
-//   Mono (1 aktive Fraktion)  → 3 Legendäre dieser Fraktion
-//   Duo  (2 aktive Fraktionen) → 2 je Fraktion (4)
-//   Trio (3 aktive Fraktionen) → 2 je Fraktion (6)
-// Je Fraktion werden VERSCHIEDENE Legendäre gezogen (je Fraktion 4 im Pool); bereits gehaltene (owned, inkl. eines evtl.
-// schon gewählten Legendärs) sind ausgeschlossen. Reicht der Pool einer Fraktion nicht fürs Soll, füllt sie mit dem, was
-// da ist. Nur Fraktionen MIT verfügbarem Legendär zählen für die Breite. Deterministisch (seed-stabil), rein & testbar.
-const legendaryPerArch = (archCount) => (archCount <= 1 ? 3 : 2);
-// #369 §5a: countMap = { [arch]: n } — Pool = ALLE im Baum freigeschalteten Archetypen (unabhängig vom Build), je Archetyp
-// n VERSCHIEDENE Kandidaten (Tree-Stufe 1 = 1, Stufe 2 = 2; Beiträge addieren sich über die Archetypen). Ist countMap
-// gesetzt, ersetzt es activeArchetypes/perArch/perArchBonus komplett. null = Bestand (Sim/Standard: Build-Breite bestimmt die Größe).
-// perArchBonus (Alt): +N Kandidaten je aktivem Archetyp — reine „mehr Auswahl". 0 = byte-identisch.
-export function buildLegendaryOffer(activeArchetypes = [], owned = [], rng = Math.random, perArch = null, perArchBonus = 0, countMap = null) {
-  const ownedSet = new Set(owned || []);
-  const legsOf = (arch) => SKILL_LIST.filter((s) => s.legendary && s.archetype === arch && !ownedSet.has(s.id)).map((s) => s.id);
-  if (countMap) {
-    // Zähl-Map-Pfad (#369): stabile Reihenfolge (ARCHETYPE_ORDER), je Archetyp countMap[arch] verschiedene Legendäre.
-    const offer = [];
-    const archs = ARCHETYPE_ORDER.filter((a) => (countMap[a] || 0) > 0 && legsOf(a).length > 0);
-    for (const arch of shuffle(archs, rng)) {
-      const pool = shuffle(legsOf(arch), rng);
-      const per = countMap[arch] || 0;
-      for (let i = 0; i < per && pool.length; i++) offer.push(pool.shift());
+/* exp skill rework (docs/skill-rework.md §1, §3.7): rarity tiers.
+   Every held or offered non-legendary skill carries a tier 0..3 = Normal / Selten / Sehr selten / Episch; the
+   tier picks the row of the skill's tier table (Phase 2/3). Legendaries have no tier. */
+export const SKILL_TIER_COUNT = 4;
+export const TIER_NORMAL = 0, TIER_RARE = 1, TIER_VERY_RARE = 2, TIER_EPIC = 3;
+// Tier of a held skill: state.skillTiers[id], Normal when unknown (older snapshots), null for legendaries.
+export const tierOf = (state, id) => (isLegendarySkill(id) ? null : ((state && state.skillTiers && state.skillTiers[id]) ?? TIER_NORMAL));
+
+// One weighted draw over SKILL_TIER_WEIGHTS → tier index. Exactly one rng() call.
+export function rollTier(rng, weights = C.SKILL_TIER_WEIGHTS) {
+  const total = weights.reduce((a, b) => a + b, 0);
+  let r = rng() * total;
+  for (let i = 0; i < weights.length; i++) { if (r < weights[i]) return i; r -= weights[i]; }
+  return weights.length - 1;
+}
+
+/* Roll the tiers of an offer. Per slot, in offer order: first the legendary chance — a hit replaces the slot with an
+   unowned legendary of the same faction that is not already in the offer (fifth rarity; no gate, no replacing of held
+   skills, two in one run are possible) — then a weighted tier for every slot that stayed a normal skill. Deterministic
+   for a given rng; exactly two draws per slot at most. Returns { offer, tiers } with tiers = { [id]: 0..3 } for the
+   normal skills only. */
+export function rollSkillOfferTiers(offer, owned = [], rng = Math.random, legendaryChance = C.SKILL_LEGENDARY_PER_SLOT, weights = C.SKILL_TIER_WEIGHTS) {
+  const out = [...(offer || [])];
+  const tiers = {};
+  const taken = new Set([...(owned || []), ...out]);
+  for (let i = 0; i < out.length; i++) {
+    const id = out[i];
+    if (isLegendarySkill(id)) continue; // already a legendary (dev catalog) — nothing to roll
+    if (legendaryChance > 0 && rng() < legendaryChance) {
+      const arch = archetypeOf(id);
+      const pool = SKILL_LIST.filter((s) => s.legendary && s.archetype === arch && !taken.has(s.id)).map((s) => s.id);
+      if (pool.length) {
+        const leg = pool[Math.floor(rng() * pool.length)];
+        taken.add(leg);
+        out[i] = leg;
+        continue;
+      }
     }
-    return offer;
+    tiers[id] = rollTier(rng, weights);
   }
-  const archs = [...new Set(activeArchetypes || [])].filter((a) => legsOf(a).length > 0);
-  const per = (perArch ?? legendaryPerArch(archs.length)) + Math.max(0, perArchBonus);
-  const offer = [];
-  for (const arch of shuffle(archs, rng)) {
-    const pool = shuffle(legsOf(arch), rng);
-    for (let i = 0; i < per && pool.length; i++) offer.push(pool.shift());
-  }
-  return offer;
+  return { offer: out, tiers };
 }
 
 /* ---- Ionisierung (Stufe B, docs/blitz-archetyp.md Abschnitt 5/6) ---- */

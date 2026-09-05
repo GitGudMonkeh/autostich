@@ -15,7 +15,7 @@ const envNum = (name, def) => {
 // SIM-Sweep-Haken: per ENV übersteuerbar (im Browser existiert `process` nicht → immer 45). `SIM_MAX_CYCLES=50
 // node sim/batch.js …` verlängert/verkürzt für Diagnose; für n ≤ 45 wird ein Prefix des 45-Plans gespielt, darüber
 // hinaus wächst DECISION_SCHEDULE über buildSchedule() via TAIL_BLOCK weiter.
-export const MAX_CYCLES       = envNum("SIM_MAX_CYCLES", 50);     // #272: Run über so viele Deck-Durchläufe (45→50), danach Ende [TUNING · Sim-übersteuerbar]
+export const MAX_CYCLES       = envNum("SIM_MAX_CYCLES", 40);     // exp skill rework: 40 rounds, 10 skill phases (docs/skill-rework.md §1) [TUNING · Sim-übersteuerbar]
 // Architekt (#202, Shop-Ersatz): Modul-Default-Schalter. Das Spiel startet den Lauf mit architect:true (START_RUN, App.jsx);
 // dieser Default greift nur, wenn keine Action-Flag gesetzt ist (Sim ohne A/B). Im Browser existiert `process` nicht → false.
 export const ARCHITECT_ENABLED = (typeof process !== "undefined" && process.env && (process.env.ARCHITECT === "1" || process.env.ARCHITECT === "true")) || false;
@@ -52,30 +52,21 @@ export const WIN_SOFTCAP_SLOPE = envNum("SIM_WIN_SOFTCAP_SLOPE", 0.25); // Rest-
 //  sind damit obsolet und entfernt.)
 
 // Entscheidungsplan (#272): Typ der Entscheidung VOR Durchlauf n (1-indexiert) = DECISION_SCHEDULE[n-1].
-// Fester 50-Einträge-Plan (Commitment-Funnel Skill→Perk→Aufstellen→Architekt, vom Dev handgesetzt — löst den 45-Plan
-// #267 ab). Engine liest DECISION_SCHEDULE[cycle] (nach cycle += 1); der Start-Entscheid (Index 0 = "skill",
-// Runde 1) läuft über START_RUN. Bewusster Blind-Commit: das Deck ist noch vanilla, kein Infoverlust.
-// Verteilung: 9 Skill · 13 Perk · 13 Formation (Aufstellen) · 14 Shop (Architekt) · 1 LEGENDÄR. Skills sind
-// front-loaded (Runden 1,5,9,13,17,22 füllen die 6 Slots) und tapern aus (31,40,48 = Tausch-Fenster).
-// #272 Legendär-Phase (Runde 29, spätes Mid-Game, build-defining): 2 Legendäre aus AKTIVEN Archetypen → fixer
-// 7. Slot (kein Tausch); ablehnen → normale Skill-Wahl. Legendäre kommen NUR hier, nicht mehr im Skill-Angebot.
-// Ein Block = Skill→Perk→Aufstellen→Architekt: erst Brett stellen, dann das Gebäude drauf. Indizes = sim-tunebar.
-const BASE_SCHEDULE = [
-  "skill", "perk", "formation", "shop", "skill", "perk", "formation", "shop", "skill", "perk",         //  1–10
-  "formation", "shop", "skill", "perk", "formation", "shop", "skill", "perk", "formation", "shop",     // 11–20
-  "skill", "perk", "formation", "shop", "skill", "perk", "formation", "shop", "legendary", "perk",     // 21–30
-  "formation", "shop", "skill", "shop", "perk", "formation", "shop", "perk", "skill", "shop",          // 31–40  (#293: R39 Aufstellung→Skill)
-  "formation", "perk", "skill", "formation", "shop", "perk", "formation", "shop", "perk", "formation", // 41–50  (#293: R43 Skill eingeschoben → alles ab 43 rutscht +1, alter R50-Architekt fällt hinten raus)
-];
-// Schwanz-Block für Runs ÜBER 50 Cycles hinaus (nur SIM_MAX_CYCLES > 50, reine Sweep-Diagnose). Hält grob das
-// 50er-Mix-Verhältnis (ohne Legendär — die eine Legendär-Phase steckt fest im Basis-Plan), clustert nicht
-// (nie zwei Shop/Skill hintereinander) und doppelt nicht an der 50/51-Grenze (Cycle 50 = perk → Block-Start = formation).
+// exp skill rework (docs/skill-rework.md §1, §7): fixed 40-entry plan, ten blocks of Skill→Perk→Aufstellen→Architekt.
+// Skills sit at rounds 1, 5, 9 … 37 (ten skill phases), every formation phase is caught by an architect phase,
+// no two shop/skill decisions in a row. The engine reads DECISION_SCHEDULE[cycle] (after cycle += 1); the start
+// decision (index 0 = "skill", round 1) runs through START_RUN. The dedicated legendary phase (old round 29) is
+// gone: legendaries are the fifth rarity of the skill offer roll (skills.js, rollSkillOfferTiers).
+const BLOCK = ["skill", "perk", "formation", "shop"];
+const BASE_SCHEDULE = Array.from({ length: 40 }, (_, i) => BLOCK[i % BLOCK.length]);
+// Tail block for runs BEYOND the base plan (only SIM_MAX_CYCLES > 40, sweep diagnostics). Keeps roughly the
+// base mix, never clusters (no two shop/skill in a row) and does not double at the boundary (cycle 40 = shop →
+// block start = formation).
 const TAIL_BLOCK = [
   "formation", "shop", "skill", "perk", "formation", "shop", "perk", "skill", "formation", "shop", "perk", "formation",
 ];
-// Entscheidungsplan der Länge n: für n ≤ 50 ein exaktes Prefix des handgesetzten 50-Plans; darüber hinaus wird
-// TAIL_BLOCK wiederholt (nur für SIM_MAX_CYCLES-Sweeps > 50). Pur & testbar; die Engine liest ausschließlich
-// das daraus gebaute DECISION_SCHEDULE.
+// Decision plan of length n: for n ≤ 40 an exact prefix of the base plan; beyond that TAIL_BLOCK repeats (only
+// for SIM_MAX_CYCLES sweeps > 40). Pure and testable; the engine reads only the DECISION_SCHEDULE built from it.
 export function buildSchedule(n = MAX_CYCLES) {
   if (n <= BASE_SCHEDULE.length) return BASE_SCHEDULE.slice(0, n);
   const out = BASE_SCHEDULE.slice();
@@ -90,8 +81,8 @@ export const LEG_PERK2_PHASE = envNum("PROG_LEG_PERK2_PHASE", 2); // die „2. P
 // Erste Skill-Runde (1-indexierter Durchlauf), driftfest aus dem festen Plan abgeleitet — für UI-Texte, die dem
 // Spieler sagen, ab wann Skills wählbar sind. Ändert sich der Plan, wandert die Zahl automatisch mit.
 export const FIRST_SKILL_CYCLE = DECISION_SCHEDULE.indexOf("skill") + 1;
-// Legendär-Phase (1-indexierter Durchlauf), ebenfalls aus dem Plan abgeleitet — für UI-/Glossartexte, die sie
-// benennen. Verschiebt sich die Phase im Plan, wandert die Zahl automatisch mit (kein „R29" im Text hartkodiert).
+// Legendär-Phase (1-indexierter Durchlauf), aus dem Plan abgeleitet. exp skill rework: der Plan kennt keine
+// Legendär-Phase mehr → 0. Der Export bleibt nur für die inaktiven Kataloge (en/es), die ihn noch nennen.
 export const LEG_PHASE_CYCLE = DECISION_SCHEDULE.indexOf("legendary") + 1;
 
 // (#229: Shop-Münzökonomie + Shop-Angebots-Konstanten entfernt — der Shop ist weg, es gibt keine Münzen/Angebote mehr.)
@@ -163,7 +154,14 @@ export const MAX_LEGENDARIES_PER_OFFER = 1;    // höchstens so viele Legendarie
 // Legendär-Roll (Shop-Spec §10 P5/P6): expliziter Wurf vor jedem Perk-/Skill-Angebot. Bei Erfolg wird genau
 // EIN Legendäres erzwungen, sonst enthält das Angebot keins. Chance = Basis + Bonus (P5/P6, je +5 pp), Bonus-Cap. [TUNING]
 export const PERK_LEGENDARY_BASE       = envNum("SIM_PERK_LEGENDARY_BASE", 0.03); // Basis-Legendär-Chance Perk-Angebot [0,08→0,03; Sim-tunebar für Legendär-Perk-Messung]
-export const SKILL_LEGENDARY_BASE      = envNum("SIM_SKILL_LEGENDARY_BASE", 0.03); // Basis-Legendär-Chance Skill-Angebot = 3 %, JE ARCHETYP gewürfelt (#263: 0,04→0,03 zurück; #247-Mechanik bleibt: eigener Wurf pro Fraktion → mehrere Legendäre je Angebot möglich)
+// exp skill rework (docs/skill-rework.md §1, §3.7): every offered skill rolls a rarity tier — Normal / Selten /
+// Sehr selten / Episch with these weights — and, before that, a legendary chance PER SLOT: a hit replaces the slot
+// with an unowned legendary of the same faction (fifth rarity, no gate, no replacing). Owner start value 3–4 %.
+export const SKILL_TIER_WEIGHTS        = [62, 25, 10, 3];
+export const SKILL_LEGENDARY_PER_SLOT  = envNum("SIM_SKILL_LEGENDARY_PER_SLOT", 0.035);
+// Held skills are unlimited on exp (owner decision). The reducer and the screens treat a limit at or above this
+// value as "no limit"; SKILL_SLOTS below stays the reference count for the plant commitment scaler and legacy texts.
+export const SKILL_SLOT_LIMIT          = envNum("SIM_SKILL_SLOT_LIMIT", 99);
 export const MAX_LEGENDARY_CHANCE_BONUS = 0.15; // Cap des additiven Bonus (P5/P6): max +15 pp
 
 /* ============================================================

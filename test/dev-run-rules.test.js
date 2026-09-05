@@ -4,8 +4,8 @@ import { reducer, initialState, menuState } from "../src/game/reducer.js";
 import { resolveTrick } from "../src/game/engine.js";
 import { buildSkillOffer, offerArchetypes, archetypeOf, SKILL_DEFS, SKILL_OFFER_PER_ARCH_CAP } from "../src/game/skills.js";
 import { DEFAULT_RULES, RULE_LIMITS, sanitizeRules, runRules, perksOfferedFor, skillOfferParams } from "../src/game/rules.js";
-import { MAX_ARCHETYPES, SKILL_SLOTS, SKILLS_OFFERED, PERKS_OFFERED, TRICKS_PER_CYCLE, LEG_PHASE_CYCLE, buildSchedule } from "../src/game/constants.js";
-import { DECISION_TOKENS, PLAN_TOKENS, MIN_ROUNDS, MAX_ROUNDS, distribute, legendaryRoundOf, withLegendaryAt,
+import { MAX_ARCHETYPES, SKILL_SLOT_LIMIT, SKILLS_OFFERED, PERKS_OFFERED, TRICKS_PER_CYCLE, buildSchedule } from "../src/game/constants.js";
+import { DECISION_TOKENS, PLAN_TOKENS, MIN_ROUNDS, MAX_ROUNDS, distribute,
   defaultConfig, normalizeConfig, toDevAction } from "../src/ui/devRunConfig.js";
 import { loadDevRunLast, saveDevRunLast, loadDevRunPresets, saveDevRunPresets, upsertDevRunPreset, removeDevRunPreset,
   DEVRUN_PRESET_MAX, RESET_KEYS } from "../src/game/storage.js";
@@ -20,7 +20,9 @@ const archsOf = (offer) => new Set(offer.map(archetypeOf));
 
 describe("rules.js — defaults are the constants", () => {
   it("DEFAULT_RULES mirrors constants.js (12 skills = 3 per archetype × 4)", () => {
-    expect(DEFAULT_RULES).toEqual({ skillsPerArch: Math.floor(SKILLS_OFFERED / MAX_ARCHETYPES), maxArchetypes: MAX_ARCHETYPES, skillSlots: SKILL_SLOTS, perksOffered: PERKS_OFFERED });
+    // exp skill rework: the default slot rule is "unlimited" (SKILL_SLOT_LIMIT, the top of the slider range).
+    expect(DEFAULT_RULES).toEqual({ skillsPerArch: Math.floor(SKILLS_OFFERED / MAX_ARCHETYPES), maxArchetypes: MAX_ARCHETYPES, skillSlots: SKILL_SLOT_LIMIT, perksOffered: PERKS_OFFERED });
+    expect(RULE_LIMITS.skillSlots[1]).toBe(SKILL_SLOT_LIMIT);
     expect(DEFAULT_RULES.skillsPerArch).toBe(SKILL_OFFER_PER_ARCH_CAP);
   });
   it("runRules: no rules → defaults; junk ignored; numbers floored and clamped to RULE_LIMITS", () => {
@@ -77,7 +79,6 @@ describe("reducer — START_RUN with action.dev.rules", () => {
     expect(s.devMode).toBe(false);                 // random offers, not the full catalog
     expect(s.maxCycles).toBe(30);
     expect(s.devSchedule).toHaveLength(30);
-    expect(s.legPhaseEnabled).toBe(true);
     expect(s.devConfig).toEqual({ rounds: 30, schedule: buildSchedule(30), cover: 10, energy: 4, fullCatalog: false, rules: s.rules });
     // First decision = skill: the offer already follows the rules (2 × 2).
     expect(s.phase).toBe("levelup");
@@ -92,7 +93,7 @@ describe("reducer — START_RUN with action.dev.rules", () => {
     const s = reducer(menuState(), { type: "START_RUN", rng: makeRng(1), dev: { rounds: 40, schedule: [], cover: 10, energy: 4 } });
     expect(s.devMode).toBe(true);
     expect(s.rules).toBeNull();
-    expect(s.skillSlots).toBe(SKILL_SLOTS);
+    expect(s.skillSlots).toBe(SKILL_SLOT_LIMIT); // exp: unlimited by default
     expect(s.devConfig.fullCatalog).toBe(true);
   });
   it("unknown plan tokens fall back to the standard plan (no silent round without a decision)", () => {
@@ -149,20 +150,17 @@ describe("engine — cycle end reads the rules", () => {
     expect(archsOf(s4.skillOffer).size).toBe(4);
     const s12 = playCycle(withSchedule("skill", null), makeRng(7));
     expect(s12.skillOffer).toHaveLength(SKILLS_OFFERED);
+    // exp skill rework: every offered normal skill carries a rolled tier; the offer itself may hold legendaries.
+    for (const id of s12.skillOffer) expect(SKILL_DEFS[id].legendary ? !(id in s12.skillOfferTiers) : Number.isInteger(s12.skillOfferTiers[id])).toBe(true);
   });
-  it("a legendary decision in a Dev-Run plan opens the legendary phase (active archetype required)", () => {
-    const fire = Object.keys(SKILL_DEFS).find((id) => archetypeOf(id) === "fire" && !SKILL_DEFS[id].legendary);
-    const s = playCycle({ ...withSchedule("legendary", null), skills: [fire], activeArchetypes: ["fire"] }, makeRng(7));
-    expect(s.phase).toBe("legendary");
-    expect(s.legendaryOffer.length).toBeGreaterThan(0);
-  });
+  // exp skill rework: the dedicated legendary decision is gone from the plan — legendaries roll inside the skill offer.
 });
 
 describe("devRunConfig.js — the panel's data", () => {
-  it("defaultConfig is the real game: MAX_CYCLES rounds, the standard plan with its legendary phase, constants as rules", () => {
+  it("defaultConfig is the real game: MAX_CYCLES rounds, the standard plan, constants as rules", () => {
     const d = defaultConfig();
     expect(d.schedule).toEqual(buildSchedule(d.rounds));
-    expect(legendaryRoundOf(d.schedule)).toBe(LEG_PHASE_CYCLE);
+    expect(d.schedule.includes("legendary")).toBe(false);
     expect(d.rules).toEqual(DEFAULT_RULES);
     expect(d.fullCatalog).toBe(false);
     expect(d.enabled).toEqual(DECISION_TOKENS);
@@ -177,10 +175,9 @@ describe("devRunConfig.js — the panel's data", () => {
     expect(big.schedule.slice(1)).toEqual(buildSchedule(MAX_ROUNDS).slice(1)); // extension = standard plan
     const tiny = normalizeConfig({ rounds: 1 });
     expect(tiny.rounds).toBe(MIN_ROUNDS);
-    const noShop = normalizeConfig({ rounds: 50, enabled: ["skill", "perk", "formation", "legendary"], schedule: buildSchedule(50) });
+    const noShop = normalizeConfig({ rounds: 40, enabled: ["skill", "perk", "formation"], schedule: buildSchedule(40) });
     expect(noShop.schedule.includes("shop")).toBe(false);
-    expect(noShop.schedule.filter((tk) => tk === "legendary")).toHaveLength(1);
-    expect(noShop.schedule[LEG_PHASE_CYCLE - 1]).toBe("legendary");
+    expect(noShop.schedule.every((tk) => ["skill", "perk", "formation"].includes(tk))).toBe(true);
     const junkPlan = normalizeConfig({ rounds: 20, schedule: ["bogus", 3] });
     expect(junkPlan.schedule).toEqual(buildSchedule(20));
     const clamped = normalizeConfig({ rules: { skillSlots: 99, perksOffered: "2" }, cover: -5, energy: 999, fullCatalog: "yes" });
@@ -188,19 +185,14 @@ describe("devRunConfig.js — the panel's data", () => {
     expect(clamped.cover).toBe(0);
     expect(clamped.fullCatalog).toBe(true);
     // No plan type enabled at all → back to every type (the panel never lets it happen, a hand-edited record could).
-    expect(normalizeConfig({ enabled: ["legendary"] }).enabled).toEqual(DECISION_TOKENS);
+    expect(normalizeConfig({ enabled: ["bogus"] }).enabled).toEqual(DECISION_TOKENS);
   });
-  it("distribute never places the legendary phase; withLegendaryAt moves it, 0 removes it", () => {
+  it("distribute cycles the enabled types; the plan knows exactly the four decision types (no legendary)", () => {
     const rr = distribute(8, DECISION_TOKENS);
     expect(rr).toEqual(["skill", "perk", "formation", "shop", "skill", "perk", "formation", "shop"]);
     expect(distribute(3, [])).toEqual(["perk", "perk", "perk"]);
+    expect(PLAN_TOKENS).toEqual(DECISION_TOKENS);
     expect(PLAN_TOKENS).not.toContain("legendary");
-    const moved = withLegendaryAt(buildSchedule(50), 10, buildSchedule(50));
-    expect(legendaryRoundOf(moved)).toBe(10);
-    expect(moved.filter((tk) => tk === "legendary")).toHaveLength(1);
-    expect(moved[LEG_PHASE_CYCLE - 1]).toBe("perk"); // the standard slot itself is legendary → perk fallback
-    const none = withLegendaryAt(buildSchedule(50), 0, rr.concat(rr, rr, rr, rr, rr, rr));
-    expect(legendaryRoundOf(none)).toBe(0);
   });
   it("toDevAction carries exactly what the reducer reads and round-trips through START_RUN", () => {
     const cfg = normalizeConfig({ rounds: 25, rules: { skillsPerArch: 2 }, fullCatalog: false });

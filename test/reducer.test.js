@@ -125,10 +125,11 @@ describe("Skill-Auswahl — PICK_SKILL / DECLINE_SKILL (Stufe A)", () => {
   });
 
   it("PICK_SKILL bei vollen Slots: ohne replaceId no-op, mit gültigem Ziel wird ersetzt (#95)", () => {
-    // SKILL_SLOTS = 6 (echtes Spiel): volle Slots = 6 gehaltene Skills. Nur 02 (Ionisierung) ist Konsument.
+    // exp: Slots sind standardmäßig unbegrenzt — das Limit kommt hier als Dev-Run-Regel (skillSlots 6): volle Slots =
+    // 6 gehaltene Skills. Nur 02 (Ionisierung) ist Konsument.
     const six = ["SK_LIGHTNING_01", "SK_LIGHTNING_02", "SK_LIGHTNING_03", "SK_LIGHTNING_04", "SK_LIGHTNING_05", "SK_LIGHTNING_06"];
     const NEW = "SK_LIGHTNING_10"; // Entladung — kein Konsument, kollidiert also nicht mit dem verbleibenden 02
-    const full = skillState({ skills: six, skillOffer: [NEW], lightning: { active: true, charge: 0, maxCharge: 10 } });
+    const full = skillState({ skills: six, skillSlots: 6, skillOffer: [NEW], lightning: { active: true, charge: 0, maxCharge: 10 } });
     // ohne Ersetzungsziel → unverändert (das war der Bug: bei vollen Slots tat der Klick nichts)
     expect(reducer(full, { type: "PICK_SKILL", skillId: NEW, rng })).toBe(full);
     // ungültiges Ziel (nicht gehalten) → unverändert
@@ -475,45 +476,62 @@ describe("RESTORE_RUN (Resume)", () => {
   });
 });
 
-describe("PICK_LEGENDARY — #370 Doppel-Legendär (doubleLeg, nur Ranked)", () => {
-  const base = (weekMods, offer = ["SK_LIGHTNING_L01", "SK_FIRE_L01"]) =>
-    ({ ...initialState(makeRng(1)), phase: "legendary", legendaryOffer: offer, skills: [], weekMods });
-  it("ohne Mod: 1 Wahl → sofort play", () => {
-    const s = reducer(base([]), { type: "PICK_LEGENDARY", legendaryId: "SK_LIGHTNING_L01", rng: makeRng(1) });
+// exp skill rework: die Legendär-Phase (PICK_LEGENDARY, #272/#370) ist entfernt — Legendäre kommen als fünfte
+// Seltenheit im normalen Skill-Angebot und laufen über PICK_SKILL. Die gewürfelte Stufe eines Angebotsplatzes
+// (skillOfferTiers) wandert beim Pick in skillTiers; Legendäre haben keine Stufe.
+describe("PICK_SKILL — Stufen und Legendäre im normalen Angebot (exp skill rework)", () => {
+  const LR = "SK_LIGHTNING_01", LEG = "SK_LIGHTNING_L01";
+  const base = (over = {}) => ({ ...initialState(makeRng(1)), phase: "levelup", skillOffer: [LR, LEG], skillOfferTiers: { [LR]: 2 }, ...over });
+  it("die gewürfelte Stufe des Angebotsplatzes wandert mit dem Skill; das Angebot samt Stufen wird geleert", () => {
+    const s = reducer(base(), { type: "PICK_SKILL", skillId: LR, rng: makeRng(1) });
+    expect(s.skills).toEqual([LR]);
+    expect(s.skillTiers).toEqual({ [LR]: 2 });
+    expect(s.skillOffer).toBeNull();
+    expect(s.skillOfferTiers).toBeNull();
     expect(s.phase).toBe("play");
-    expect(s.skills).toContain("SK_LIGHTNING_L01");
-    expect(s.legendaryOffer).toBe(null);
   });
-  it("doubleLeg: nach 1. Wahl bleibt Phase legendary (Rest-Angebot ohne die genommene); 2. Wahl → play", () => {
-    let s = reducer(base([{ effect: "doubleLeg" }]), { type: "PICK_LEGENDARY", legendaryId: "SK_LIGHTNING_L01", rng: makeRng(1) });
-    expect(s.phase).toBe("legendary");
-    expect(s.legendaryOffer).toEqual(["SK_FIRE_L01"]);
-    expect(s.legPicksMade).toBe(1);
-    s = reducer(s, { type: "PICK_LEGENDARY", legendaryId: "SK_FIRE_L01", rng: makeRng(1) });
-    expect(s.phase).toBe("play");
-    expect(s.skills).toEqual(expect.arrayContaining(["SK_LIGHTNING_L01", "SK_FIRE_L01"]));
-    expect(s.legPicksMade).toBe(0);
+  it("ohne Stufeneintrag (ältere Snapshots, Dev-Pfade) → Normal (0)", () => {
+    const s = reducer(base({ skillOfferTiers: null }), { type: "PICK_SKILL", skillId: LR, rng: makeRng(1) });
+    expect(s.skillTiers).toEqual({ [LR]: 0 });
   });
-  it("doubleLeg mit nur 1 Angebot: 1 Wahl → play (kein Hängenbleiben)", () => {
-    const s = reducer(base([{ effect: "doubleLeg" }], ["SK_LIGHTNING_L01"]),
-      { type: "PICK_LEGENDARY", legendaryId: "SK_LIGHTNING_L01", rng: makeRng(1) });
+  it("ein Legendär aus dem Angebot: PICK_SKILL nimmt ihn wie jeden Skill, aktiviert die Fraktion, ohne Stufe", () => {
+    const s = reducer(base(), { type: "PICK_SKILL", skillId: LEG, rng: makeRng(1) });
+    expect(s.skills).toEqual([LEG]);
+    expect(s.skillTiers).toEqual({});
+    expect(s.activeArchetypes).toEqual(["lightning"]);
+    expect(s.lightning.active).toBe(true);
     expect(s.phase).toBe("play");
-    expect(s.legPicksMade).toBe(0);
+  });
+  it("Ersetzen löscht die Stufe des ersetzten Skills und trägt die neue ein", () => {
+    const st = base({ skills: ["SK_LIGHTNING_03"], skillTiers: { SK_LIGHTNING_03: 1 }, activeArchetypes: ["lightning"],
+                      lightning: { active: true, charge: 0, maxCharge: 10 } });
+    const s = reducer(st, { type: "PICK_SKILL", skillId: LR, replaceId: "SK_LIGHTNING_03", rng: makeRng(1) });
+    expect(s.skills).toEqual([LR]);
+    expect(s.skillTiers).toEqual({ [LR]: 2 });
+  });
+  it("Legendäre sind nie Ersetzungsziel", () => {
+    const st = base({ skills: [LEG], skillOffer: [LR], activeArchetypes: ["lightning"], lightning: { active: true, charge: 0, maxCharge: 10 } });
+    const s = reducer(st, { type: "PICK_SKILL", skillId: LR, replaceId: LEG, rng: makeRng(1) });
+    expect(s.skills).toEqual([LEG, LR]); // kein Tausch — hinzugefügt (Slots unbegrenzt)
   });
 });
 
-describe("PICK_SKILL — #370 Skill-Fülle (skillSlots, nur Ranked)", () => {
+describe("PICK_SKILL — Slot-Limit (exp: Standard unbegrenzt, eine Dev-Run-Regel kann begrenzen)", () => {
   const sixFire = ["SK_FIRE_01", "SK_FIRE_02", "SK_FIRE_03", "SK_FIRE_04", "SK_FIRE_05", "SK_FIRE_06"];
   const base = (skillSlots) => ({
     ...initialState(makeRng(1)), phase: "levelup", skillOffer: ["SK_FIRE_07"],
     skills: sixFire, activeArchetypes: ["fire"], ...(skillSlots ? { skillSlots } : {}),
   });
-  it("Basis 6 Slots: 7. Skill ohne Ersetzung abgelehnt (No-Op)", () => {
+  it("Standard (kein Limit): der 7. Skill wird angenommen", () => {
     const s = reducer(base(null), { type: "PICK_SKILL", skillId: "SK_FIRE_07", rng: makeRng(1) });
-    expect(s.skills).toHaveLength(6);
-    expect(s.skills).not.toContain("SK_FIRE_07");
+    expect(s.skills).toContain("SK_FIRE_07");
+    expect(s.skills).toHaveLength(7);
   });
-  it("skillSlots 8 (Skill-Fülle +2): 7. Skill wird angenommen", () => {
+  it("skillSlots 6 (Regel): 7. Skill ohne Ersetzung abgelehnt (No-Op)", () => {
+    const st = base(6);
+    expect(reducer(st, { type: "PICK_SKILL", skillId: "SK_FIRE_07", rng: makeRng(1) })).toBe(st);
+  });
+  it("skillSlots 8: 7. Skill wird angenommen", () => {
     const s = reducer(base(8), { type: "PICK_SKILL", skillId: "SK_FIRE_07", rng: makeRng(1) });
     expect(s.skills).toContain("SK_FIRE_07");
     expect(s.skills).toHaveLength(7);

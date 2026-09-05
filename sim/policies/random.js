@@ -69,13 +69,6 @@ export function randomPolicy({ architectGreedy = false } = {}) {
           return { type: "FROST_SELECT_CONFIRM" };
         }
 
-        // #272 Legendär-Phase (Runde 29): einen der 2 angebotenen Legendäre in den 7. Slot (build-defining). Baseline:
-        // zufällig aus dem Angebot (das schon nur aus aktiven Fraktionen stammt); leer → ablehnen (→ normale Skill-Wahl).
-        case "legendary":
-          return s.legendaryOffer && s.legendaryOffer.length
-            ? { type: "PICK_LEGENDARY", legendaryId: pick(s.legendaryOffer, rng), rng }
-            : { type: "DECLINE_LEGENDARY", rng };
-
         case "formation":
           return { type: "CONFIRM_FORMATION" }; // Baseline: Reihenfolge unangetastet lassen
 

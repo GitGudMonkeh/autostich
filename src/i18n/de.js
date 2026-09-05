@@ -459,8 +459,17 @@ export default {
   "skill.replace.this": "↔ diesen ersetzen",
   "skill.badge.consumer": "KONSUMENT",
   "skill.badge.legendary": "★ LEGENDÄR",
+  // exp skill rework (docs/skill-rework.md §1): die vier Stufen eines Skills — Badge im Angebot und im Bestand.
+  "skill.tier.0": "Normal",
+  "skill.tier.1": "Selten",
+  "skill.tier.2": "Sehr selten",
+  "skill.tier.3": "Episch",
+  // exp: Slots sind standardmäßig unbegrenzt — Kopfzeile und Bestand ohne „{held}/{slots}". Die Slot-Fassungen
+  // darüber/darunter gelten weiter, wenn eine Dev-Run-Regel die Slots begrenzt.
+  "skill.eyebrow.free": "Skill · Durchlauf {cycle} · {held} gehalten",
   "skill.selected": "✓ ausgewählt",
   "skill.held": "Deine Skills: {held}/{slots} · bereits gehalten",
+  "skill.held.free": "Deine Skills: {held} · bereits gehalten",
   "skill.heldBadge": "✓ gehalten",
   // Was verschwindet, wenn der LETZTE Skill einer Fraktion abgelegt wird.
   "skill.lastOfArch": "⚠ Letzter {arch}-Skill: {loss}.",
@@ -516,12 +525,8 @@ export default {
   "build.skill.spark.empty": "noch keine Ausschüttung; **{store}** liegen im Speicher.",
   "build.deck.legend": "Balken = Ø-Wert · violett ◆ = unschlagbar (>{over}, überbietet jede Gegnerkarte).",
 
-  /* ---- Legendär-Wahl (LegendarySelect) ---- */
-  "leg.fallbackLabel": "Legendär",
-  "leg.eyebrow": "Legendär · einmalige Wahl",
-  "leg.title": "★ Legendärer Skill",
-  "leg.reroll": "↻ Neu würfeln",
-  "leg.decline": "Keinen Legendär, Skill wählen",
+  // exp skill rework: die Legendär-Wahl (LegendarySelect, leg.*) ist mit der Legendär-Phase gegangen —
+  // Legendäre stehen als fünfte Seltenheit im normalen Skill-Angebot.
 
   /* ---- Gletscher-Wahl (GlacierPick) ---- */
   "glacierpick.eyebrow": "Gletscher",
@@ -909,7 +914,7 @@ export default {
   "board.nav.global.sub": "Allzeit · alle Läufe",
   "board.nav.champions.sub": "Platz 1 jeder abgelaufenen Woche",
   "board.nav.rules.sub": "Baseline und alle Modifikatoren",
-  "board.rules.intro": "Alle spielen wöchentlich denselben Seed unter fairer Baseline: der Upgrade-Baum hat keine Wirkung ({rerolls} Rerolls je Phase, alle Raritäten, Legendär-Phase in Durchlauf {legCycle}). Jede Woche verändern 3–5 zufällige Modifikatoren (≥2 positiv, ≥1 negativ) den Lauf, für alle identisch. Nur abgeschlossene Läufe zählen; am Wochenende wandert Platz 1 ins Challenger-Archiv, das Board startet neu.",
+  "board.rules.intro": "Alle spielen wöchentlich denselben Seed unter fairer Baseline: der Upgrade-Baum hat keine Wirkung ({rerolls} Rerolls je Phase, alle Raritäten). Jede Woche verändern 3–5 zufällige Modifikatoren (≥2 positiv, ≥1 negativ) den Lauf, für alle identisch. Nur abgeschlossene Läufe zählen; am Wochenende wandert Platz 1 ins Challenger-Archiv, das Board startet neu.",
   "board.rules.pos": "Positive Modifikatoren",
   "board.rules.neg": "Negative Modifikatoren",
   "board.rules.pairs": "Ausschluss-Paare (nie zusammen)",
@@ -1197,13 +1202,10 @@ export default {
   "dev.run.expand": "aufklappen",
   "dev.run.collapse": "einklappen",
   "dev.run.standardPlan": "Standardplan",
-  "dev.run.legendaryRound": "Legendär-Phase in Durchlauf",
-  "dev.run.legendaryNone": "keine",
   "dev.run.type.skill": "Skill",
   "dev.run.type.perk": "Perk",
   "dev.run.type.formation": "Aufstellung",
   "dev.run.type.shop": "Architekt",
-  "dev.run.type.legendary": "Legendär",
   "dev.run.rules": "Regeln je Lauf",
   "dev.run.rulesSub": "Gilt nur für diesen Lauf. Normale Läufe bleiben bei den Standardwerten.",
   "dev.run.rule.skillsPerArch": "Skills je Fraktion im Angebot",

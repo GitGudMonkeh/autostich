@@ -32,7 +32,6 @@ import { PerkSelect } from "./ui/PerkSelect.jsx";
 import { SkillSelect } from "./ui/SkillSelect.jsx";
 import { skillArtUrls } from "./ui/skillArt.js"; // #mobil-emblem: Emblem-URLs je Archetyp für den Leerlauf-Vorlader
 import { AbortConfirm, RestartConfirm } from "./ui/RunConfirm.jsx"; // #run-dialoge: Beenden/Neustarten (Desktop-Fassung)
-import { LegendarySelect } from "./ui/LegendarySelect.jsx"; // #272 Legendär-Phase (Runde 29)
 import { FormationPhase } from "./ui/FormationPhase.jsx";
 import { DeckFrontContext } from "./ui/CardGrid.jsx";
 import { TargetSelect } from "./ui/TargetSelect.jsx";
@@ -1013,9 +1012,6 @@ function AutostichGame() {
   // Skill-Auswahl (zu festen Zeitpunkten laut DECISION_SCHEDULE): wählen (optional einen belegten Slot ersetzen) oder ablehnen → Perk.
   const pickSkill = (skillId, replaceId) => dispatch({ type: "PICK_SKILL", skillId, replaceId, rng: Math.random });
   const declineSkill = () => dispatch({ type: "DECLINE_SKILL", rng: Math.random });
-  const pickLegendary = (legendaryId) => dispatch({ type: "PICK_LEGENDARY", legendaryId, rng: Math.random }); // #272 Legendär-Phase
-  const declineLegendary = () => dispatch({ type: "DECLINE_LEGENDARY", rng: Math.random });
-  const rerollLegendary = () => dispatch({ type: "REROLL_LEGENDARY", rng: Math.random }); // M1: R29-Legendär-Reroll
   const rerollPerk = () => dispatch({ type: "REROLL_PERK", rng: Math.random });
   const declinePerk = () => dispatch({ type: "DECLINE_PERK" }); // #138: Perk-Angebot ablehnen → +Münze
   const rerollSkill = () => dispatch({ type: "REROLL_SKILL", rng: Math.random });
@@ -1294,11 +1290,6 @@ function AutostichGame() {
       )}
       {state.phase === "levelup" && state.skillOffer && (
         <SkillSelect offer={state.skillOffer} onPick={pickSkill} onDecline={declineSkill} onReroll={rerollSkill} skills={state.skills} state={state} options={options} onOption={changeOptions}
-          currentTraj={currentTraj.current} recordTraj={recordTraj.current} best={best} />
-      )}
-      {state.phase === "legendary" && state.legendaryOffer && (
-        <LegendarySelect offer={state.legendaryOffer} onPick={pickLegendary} onDecline={declineLegendary} onReroll={rerollLegendary}
-          skills={state.skills} state={state} options={options} onOption={changeOptions}
           currentTraj={currentTraj.current} recordTraj={recordTraj.current} best={best} />
       )}
       {/* #update: „Neue Version verfügbar"-Hinweis — pollt version.json, meldet neue Deploys ohne Zwangs-Reload. */}

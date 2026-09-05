@@ -273,8 +273,7 @@ describe("#sk-reiter — die Fraktionsreiter der Skill-Wahl", () => {
        aussieht, als täte sie etwas, und nichts tut. */
     expect(offers[1], "grid-auto-rows: 1fr fehlt (Legendär-Muster)").toMatch(/grid-auto-rows:\s*1fr/);
     expect(offers[1], "align-items: stretch fehlt — items-start gewinnt sonst").toMatch(/align-items:\s*stretch/);
-    // Und die Legendär-Auswahl, von der das Muster stammt, muss es weiter benutzen.
-    expect(read("src/ui/LegendarySelect.jsx"), "Vorbild verloren").toMatch(/gridAutoRows: "1fr"/);
+    // exp skill rework: die Legendär-Auswahl, von der das Muster stammt, ist mit der Legendär-Phase gegangen.
   });
 });
 

@@ -35,7 +35,7 @@ const keys = (arr) => (Array.isArray(arr) ? arr.map(offerKey).filter(Boolean) : 
 
 // Welcher Reroll-Pool wurde angefasst? (Für „wie oft rerollt wer was".)
 const REROLL_KIND = {
-  REROLL_PERK: "perk", REROLL_SKILL: "skill", REROLL_LEGENDARY: "leg", REROLL_ARCHITECT: "arch",
+  REROLL_PERK: "perk", REROLL_SKILL: "skill", REROLL_ARCHITECT: "arch",
 };
 
 /* Einen Log-Eintrag aus (vorher, action, nachher) ableiten. null = nicht protokollwürdig.
@@ -59,10 +59,6 @@ export function decisionEntry(prev, action, next) {
         ...(action.replaceId ? { x: action.replaceId } : {}) }; // x = ersetzter Skill (Slot war voll)
     case "DECLINE_SKILL":
       return { ...base, k: "skill", o: keys(prev.skillOffer), p: null };
-    case "PICK_LEGENDARY":
-      return { ...base, k: "leg", o: keys(prev.legendaryOffer), p: action.legendaryId };
-    case "DECLINE_LEGENDARY":
-      return { ...base, k: "leg", o: keys(prev.legendaryOffer), p: null };
     case "ARCHITECT_BUILD":
       return { ...base, k: "arch", o: keys((prev.architect || {}).offers), p: archKey(action.familyId, action.tier) };
     case "ARCHITECT_UPGRADE": {
@@ -74,13 +70,12 @@ export function decisionEntry(prev, action, next) {
     case "GLACIER_LOCK":
       // Eis: welches Feld wurde festgefroren (Position 0..39) — die einzige Gletscher-Entscheidung des Spielers.
       return { ...base, k: "glacier", o: [], p: String(action.pos) };
-    case "REROLL_PERK": case "REROLL_SKILL": case "REROLL_LEGENDARY": case "REROLL_ARCHITECT":
+    case "REROLL_PERK": case "REROLL_SKILL": case "REROLL_ARCHITECT":
       // Reroll = eigener Eintrag (statt nur eines Zählers): so ist später rekonstruierbar, WELCHES Angebot
       // weggeworfen wurde — `o` ist das VERWORFENE Angebot.
       return { ...base, k: "reroll", w: REROLL_KIND[t],
         o: keys(t === "REROLL_PERK" ? prev.offer
               : t === "REROLL_SKILL" ? prev.skillOffer
-              : t === "REROLL_LEGENDARY" ? prev.legendaryOffer
               : (prev.architect || {}).offers), p: null };
     default:
       return null;

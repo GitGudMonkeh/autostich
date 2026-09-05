@@ -28,6 +28,6 @@ describe("sim formation solver (S4)", () => {
       s = reducer(s, base.act(s, rng));
     }
     expect(s.phase).toBe("gameover");
-    expect(phasesChecked).toBe(13); // #272: 13 Formationsentscheidungen je Run (50-Plan, DECISION_SCHEDULE)
+    expect(phasesChecked).toBe(10); // exp skill rework: 10 Formationsentscheidungen je Run (40-Plan, DECISION_SCHEDULE; war 13 im 50-Plan #272)
   });
 });

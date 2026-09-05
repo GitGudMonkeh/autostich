@@ -1,24 +1,22 @@
 import { useState } from "react";
 import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import { N_POS } from "../game/architect.js";
-import { LEG_PHASE_CYCLE, buildSchedule } from "../game/constants.js";
+import { buildSchedule } from "../game/constants.js";
 import { RULE_LIMITS, DEFAULT_RULES } from "../game/rules.js";
 import { useEscape } from "./useEscape.js"; // #350: Esc/Zurück schließt (Konsistenz mit den anderen Overlays)
 import { ActionButton } from "./modalStyle.jsx";
 import { t } from "../i18n/index.js"; // #sprache
 import { loadDevRunLast, saveDevRunLast, loadDevRunPresets, saveDevRunPresets, upsertDevRunPreset, removeDevRunPreset } from "../game/storage.js";
-import { DECISION_TOKENS, PLAN_TOKENS, MIN_ROUNDS, MAX_ROUNDS, distribute, legendaryRoundOf, withLegendaryAt,
+import { DECISION_TOKENS, PLAN_TOKENS, MIN_ROUNDS, MAX_ROUNDS, distribute,
   normalizeConfig, toDevAction } from "./devRunConfig.js";
 
 /* Dev-Run-Setup — ein frei konfigurierbarer Lauf zum Testen. exp: der Regel-Spielplatz für den Kernloop.
-   Rundenzahl, Angebotstypen und Pro-Runde-Plan (inkl. Legendär-Phase), Regeln je Lauf (Skills je Fraktion,
+   Rundenzahl, Angebotstypen und Pro-Runde-Plan, Regeln je Lauf (Skills je Fraktion,
    Fraktionen, Slots, Perks), Voll-Katalog als Schalter, Baupunkte/Energie, Presets (lokal gespeichert).
    Rein UI: die Config lebt als Daten in devRunConfig.js; hier wird sie nur bearbeitet und via onStart gereicht. */
 
-const COLOR = { skill: "#8a7de0", perk: "#5ab87a", formation: "#5a8ade", shop: "#e0605a", legendary: "#d4a63a" };
+const COLOR = { skill: "#8a7de0", perk: "#5ab87a", formation: "#5a8ade", shop: "#e0605a" };
 const RULE_KEYS = ["skillsPerArch", "maxArchetypes", "skillSlots", "perksOffered"];
-const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
-const int = (raw) => Math.floor(Number(raw) || 0);
 const label = (tk) => t(`dev.run.type.${tk}`);
 
 export function DevRunSetup({ onStart, onClose }) {
@@ -32,24 +30,14 @@ export function DevRunSetup({ onStart, onClose }) {
   const update = (patch) => setCfg((prev) => normalizeConfig({ ...prev, ...patch }));
 
   const enabledOrdered = DECISION_TOKENS.filter((tk) => enabled.includes(tk));
-  const legOn = enabled.includes("legendary");
-  const legRound = legendaryRoundOf(schedule);
 
-  // Typ an-/abwählen. Mind. ein Plan-Typ bleibt aktiv. Legendär einschalten setzt die Phase auf die Standardrunde,
-  // sofern der Lauf so lang ist — sonst bleibt sie „keine", bis eine Runde gewählt wird.
+  // Typ an-/abwählen. Mind. ein Plan-Typ bleibt aktiv. (exp skill rework: keine Legendär-Phase mehr im Plan.)
   const toggleType = (tk) => {
     const next = enabled.includes(tk) ? enabled.filter((x) => x !== tk) : [...enabled, tk];
     if (!PLAN_TOKENS.some((x) => next.includes(x))) return;
-    let sch = schedule;
-    if (tk === "legendary" && !enabled.includes(tk) && legRound === 0 && rounds >= LEG_PHASE_CYCLE)
-      sch = withLegendaryAt(schedule, LEG_PHASE_CYCLE, buildSchedule(rounds));
-    update({ enabled: next, schedule: sch });
+    update({ enabled: next });
   };
-  const setLegRound = (raw) => update({ schedule: withLegendaryAt(schedule, clamp(int(raw), 0, rounds), buildSchedule(rounds)) });
-  const evenDistribute = () => {
-    const rr = distribute(rounds, enabled);
-    update({ schedule: legOn && legRound ? withLegendaryAt(rr, legRound, rr) : rr });
-  };
+  const evenDistribute = () => update({ schedule: distribute(rounds, enabled) });
   const standardPlan = () => update({ schedule: buildSchedule(rounds) });
   const setRound = (i, tk) => update({ schedule: schedule.map((x, j) => (j === i ? tk : x)) });
   const setRule = (key, raw) => update({ rules: { ...rules, [key]: raw } });
@@ -101,7 +89,7 @@ export function DevRunSetup({ onStart, onClose }) {
           <div className="text-meta-3 opacity-45">{MIN_ROUNDS}–{MAX_ROUNDS} {t("dev.run.cycles")}</div>
         </div>
 
-        {/* Master-Auswahl der Typen + Legendär-Runde */}
+        {/* Master-Auswahl der Typen */}
         <div className="rounded-xl p-3 flex flex-col gap-2" style={box}>
           <span className="text-body-lg-5 font-semibold">{t("dev.run.offerTypes")}</span>
           <div className="flex flex-wrap gap-2">
@@ -113,16 +101,6 @@ export function DevRunSetup({ onStart, onClose }) {
               </button>
             ))}
           </div>
-          {legOn && (
-            <div className="flex items-center justify-between text-body-lg-5">
-              <span className="font-semibold" style={{ color: COLOR.legendary }}>{t("dev.run.legendaryRound")}</span>
-              <span className="flex items-center gap-2">
-                <span className="text-meta-3 opacity-45">{legRound ? "" : t("dev.run.legendaryNone")}</span>
-                <input type="number" min={0} max={rounds} value={legRound} onChange={(e) => setLegRound(e.target.value)}
-                  className="w-16 text-right px-2 py-1 rounded text-body-lg-5 ty-num" style={field} />
-              </span>
-            </div>
-          )}
           <div className="mt-1 flex flex-wrap gap-2">
             <button onClick={evenDistribute}
               className="px-3.5 py-1.5 rounded-lg text-body-lg-5 font-semibold transition-all hover:-translate-y-0.5" style={plainBtn}>

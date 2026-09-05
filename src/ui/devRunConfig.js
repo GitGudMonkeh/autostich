@@ -7,9 +7,9 @@ import { DEFAULT_RULES, sanitizeRules } from "../game/rules.js";
    same object, so a stale or hand-edited record is normalised here instead of crashing the panel.
    No React, node-testable. */
 
-export const DECISION_TOKENS = ["skill", "perk", "formation", "shop", "legendary"];
-// The types a round-robin plan cycles through. "legendary" is a timing (one phase), not a share of the plan.
-export const PLAN_TOKENS = DECISION_TOKENS.filter((tk) => tk !== "legendary");
+// exp skill rework: the legendary phase is gone (legendaries roll inside the skill offer), so every token is a plan type.
+export const DECISION_TOKENS = ["skill", "perk", "formation", "shop"];
+export const PLAN_TOKENS = DECISION_TOKENS;
 export const MIN_ROUNDS = 5;
 export const MAX_ROUNDS = 100;
 
@@ -23,17 +23,7 @@ export function distribute(n, enabled) {
   return Array.from({ length: n }, (_, i) => pool[i % pool.length]);
 }
 
-// 1-based round of the first legendary phase, 0 when the plan has none.
-export const legendaryRoundOf = (schedule) => schedule.indexOf("legendary") + 1;
-
-// Move the legendary phase to `round` (1-based; 0 = none). Former legendary slots take the fill plan's type.
-export function withLegendaryAt(schedule, round, fill) {
-  const out = schedule.map((tk, i) => (tk === "legendary" ? (fill[i] && fill[i] !== "legendary" ? fill[i] : "perk") : tk));
-  if (round >= 1 && round <= out.length) out[round - 1] = "legendary";
-  return out;
-}
-
-// The real game as a Dev-Run: its length, its plan (legendary phase included), its constants as rules.
+// The real game as a Dev-Run: its length, its plan, its constants as rules.
 export function defaultConfig() {
   return { rounds: MAX_CYCLES, enabled: [...DECISION_TOKENS], schedule: buildSchedule(MAX_CYCLES), cover: MAX_COVER,
     energy: FORMATION_ENERGY, fullCatalog: false, rules: { ...DEFAULT_RULES } };

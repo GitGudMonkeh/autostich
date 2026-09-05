@@ -5,7 +5,7 @@ import { weekModMag, hasWeekMod, BOOST_FACTOR } from "./weekMods.js"; // #370 Wo
 import { PERK_DEFS, buildPerkOffer, critChanceRawFor, critMultiplierFor, streakBaseMult, zinsHurdle } from "./perks.js";
 import { familySumHook, familyProdHook, familyTierParam, activeFamilyEntries, formationEnergyBonus, familyCritChanceRaw, familyCritMult, allianceGroups } from "./families.js";
 import { colorsAllied } from "./color.js"; // #289: Farb-Serie/Architekt/Farbfokus respektieren Farballianz
-import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, buildLegendaryOffer, ionScoreFor, ionCritChance, ionizeCountFor, consumeCharge, ionizeCards, ionizeCardsWithCatch,
+import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, rollSkillOfferTiers, ionScoreFor, ionCritChance, ionizeCountFor, consumeCharge, ionizeCards, ionizeCardsWithCatch,
   hasIonize, hasStorm, chargeFloorFor, fieldBreadthSaturated, fieldDepthSaturated, ionSpeedBonus, // Blitz-Rework v0.5: 2-Stufen-Sättigung + Speed
   lightningCritMult, hasStaticCharge, hasDischarge, hasBlitzcatcher, hasVoltageArc, // Blitz-Rework (v0)
   hasUeberspannung, hasKurzschluss, hasSpannungsstau, hasUeberschlag, hasBlitzschlag, hasDauerstrom, hasBlitzableiter, // Blitz-Rework (v0): Kaskade/Crit-Maschine/Serie
@@ -19,7 +19,7 @@ import { skillSum, lightningCritRaw, addCharge, buildSkillOffer, buildLegendaryO
   hasAuslaeufer, hasRhizom, hasErntedank, hasWeltenbaum, hasMutterbaum, hasBaumreihe, hasEwigerFruehling, plantSkillCount } from "./skills.js"; // Pflanze: Gegnerdeck/Legendäre + Bekenntnis-Skalierung
 // (#267: import aus stats.js entfernt — die Stat-Phase/Faktoren sind weg.)
 import { computeFormations, positionHasFormation, activeFormationCount, summarizeFormations, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
-import { perkLegendaryChance, skillLegendaryChance, anchorAt } from "./shop.js";
+import { perkLegendaryChance, anchorAt } from "./shop.js";
 import { precomputeArchitect, architectValueBonus, architectScore, buildArchitectOffer } from "./architect.js";
 import { precomputeGlacier, ewigerFrostTick, dauerfrostTick, glacierOpts, driftTarget as glacierDriftTarget,
   neighbors4 as glacierNeighbors4, glacierNeighborFn, verschmelzenPool, uebergletscherPool, packeisTick, verzahnungTick, eiszeitTick, glacierGeometry,
@@ -28,7 +28,7 @@ import { precomputeGlacier, ewigerFrostTick, dauerfrostTick, glacierOpts, driftT
   EISPANZER_MASS as GLACIER_EISPANZER_MASS, FROSTBUND_BUFF as GLACIER_FROSTBUND_BUFF,
   VERDICHTUNG_RATE as GLACIER_VERDICHTUNG_RATE, ERSTARRUNG_FRAC as GLACIER_ERSTARRUNG_FRAC,
   FIRN_REFILL_TARGET as GLACIER_FIRN_REFILL_TARGET } from "./glacier.js"; // Eis-Neudesign (isoliert, activeArchetypes "ice") · #386 Firn-Reserve-Nachschub
-import { fullPerkOffer, fullSkillOffer, fullArchitectOffer } from "./devCatalog.js"; // Dev-Run: Voll-Katalog statt Zufallsangebot (nur state.devMode)
+import { fullPerkOffer, devSkillOffer, fullArchitectOffer } from "./devCatalog.js"; // Dev-Run: Voll-Katalog statt Zufallsangebot (nur state.devMode)
 import { runRules, perksOfferedFor, skillOfferParams } from "./rules.js"; // exp: Regeln je Lauf (state.rules; null → Konstanten, byte-identisch)
 
 /* Energie-Budget einer Formationsphase — EINE Quelle für den Phasen-Eintritt (unten, Durchlauf-Ende) UND für
@@ -113,7 +113,9 @@ export function resolveTrick(state, rng) {
   requireRng(rng, "resolveTrick"); // #229 N8: rng ist Pflicht (kein Math.random-Default mehr); Zufall kommt primär aus state.seed via rngAtOr
   // exp: base slot count of THIS run for the commitment scalers below. Read once per trick, and only when a run
   // carries rules at all — the Sim's millions of tricks never touch the rules path.
-  const commitSlots = state.rules ? runRules(state).skillSlots : C.SKILL_SLOTS;
+  // exp skill rework: the default slot rule is "unlimited" (SKILL_SLOT_LIMIT); the scalers keep SKILL_SLOTS as
+  // their reference denominator and only follow a rule that actually limits below it.
+  const commitSlots = state.rules ? Math.min(runRules(state).skillSlots, C.SKILL_SLOTS) : C.SKILL_SLOTS;
 
   let {
     deck, oppDeck, playerOrder, oppOrder, pos, cycle, trickNo,
@@ -1271,7 +1273,7 @@ export function resolveTrick(state, rng) {
   let phase = "play";
   let newOffer = offer;
   let newSkillOffer = skillOffer;
-  let newLegendaryOffer = state.legendaryOffer || null; // #272 Legendär-Phase (Runde 29). Pool seit #369 §5a: ALLE freigeschalteten Archetypen, nicht nur die aktiven.
+  let newSkillOfferTiers = state.skillOfferTiers || null; // exp skill rework: tier per offered skill (rollSkillOfferTiers)
   let newFormationEnergy = formationEnergy;
   let newFormationSwaps = formationSwaps;
   // Architekt (#202): Meilenstein-Zähler nach diesem Stich fortschreiben (bump = Gebäude-id eines Siegs auf seiner Abdeckung).
@@ -1469,9 +1471,12 @@ export function resolveTrick(state, rng) {
       const perksOffered = perksOfferedFor(state);
       const skillP = skillOfferParams(state);
       if (decision === "skill") {
-        const soff = state.devMode ? fullSkillOffer() : buildSkillOffer(skills, activeArchetypes, rngAtOr(cycle, "skill", 0), skillP.count, skillLegendaryChance(shop), false, state.unlockedArchetypes, skillP.maxArchetypes, skillP.perArchCap); // §4b: Archetyp-Gatung
+        // exp skill rework: the offer rolls a tier per slot (and a legendary chance per slot) right after it is built,
+        // from the same addressed stream — one draw sequence per (seed, cycle, "skill", 0).
+        const rolled = state.devMode ? devSkillOffer() : rollSkillOfferTiers(buildSkillOffer(skills, activeArchetypes, rngAtOr(cycle, "skill", 0), skillP.count, 0, false, state.unlockedArchetypes, skillP.maxArchetypes, skillP.perArchCap), skills, rngAtOr(cycle, "skill", 0, "tiers")); // §4b: Archetyp-Gatung
+        const soff = rolled.offer;
         if (soff.length > 0) {
-          phase = "levelup"; newSkillOffer = soff;
+          phase = "levelup"; newSkillOffer = soff; newSkillOfferTiers = rolled.tiers;
         } else { const off = buildPerkOffer(perks, familyTiers, rngAtOr(cycle, "perk", 0), perksOffered, perkLegendaryChance(shop) * legMultPerk, rareShift, architectEnabled, 0, rareCapEff, rareFloorEff); if (off.length > 0) { phase = "levelup"; newOffer = off; } } // leerer Skill-Pool → Perk · Rarität-Deckel
       } else if (decision === "perk") {
         // M4/M5: In der 2. Perk-Phase garantierte Legendäre erzwingen (1 = M4, 3 = M5); sonst 0 = normaler Pfad.
@@ -1511,26 +1516,6 @@ export function resolveTrick(state, rng) {
         // #137: anchors + familyTiers mitgeben (wie bei pos-0/Tausch/Kauf), sonst zeigt die Formationsphase beim
         // Eintritt einen veralteten Stand (ohne regeländernde Familien-Effekte) — erst der erste Tausch korrigierte.
         formations = computeFormations(playerOrder, deck, roles, perks, skills, anchors, familyTiers, archState);
-      } else if (decision === "legendary") {
-        // (Schritt 4f) Legendär-Capstone (docs §4, Glied 6): die R29-Legendär-PICK-Phase ist im Normal-Lauf ERST ab
-        // Onboarding 6 aktiv. Profil-los (Sim/Standard-Rangliste)/Meister/Dev = an (state.legPhaseEnabled fehlt → true =
-        // Bestandsverhalten, byte-identisch). Vor der Freischaltung ist Runde 29 eine GANZ NORMALE Perk-Phase.
-        if (state.legPhaseEnabled ?? true) {
-          // #272 Legendär-Phase (Runde 29, build-defining): Legendäre NUR aus aktiven Fraktionen → fixer 7. Slot.
-          // Angebotsgröße skaliert mit der Build-Breite (Mono 3 · Duo 2/Fraktion=4 · Trio 2/Fraktion=6).
-          // Kein Legendär verfügbar (keine aktive Fraktion / alle der aktiven Fraktionen bereits gehalten) → wie ein
-          // leerer Skill-Pool auf die normale Skill-Wahl ausweichen (Runde nicht verschwenden).
-          const legOff = buildLegendaryOffer(activeArchetypes, skills, rngAtOr(cycle, "legendary", 0), null, 0, state.legCountByArch || null); // #369 §5a: Pool = alle freigeschalteten Archetypen (Zähl-Map); Sim/Standard → null = Bestand
-          if (legOff.length > 0) { phase = "legendary"; newLegendaryOffer = legOff; }
-          else {
-            const soff = buildSkillOffer(skills, activeArchetypes, rngAtOr(cycle, "skill", 0), skillP.count, 0, false, state.unlockedArchetypes, skillP.maxArchetypes, skillP.perArchCap); // §4b: Archetyp-Gatung
-            if (soff.length > 0) { phase = "levelup"; newSkillOffer = soff; }
-          }
-        } else {
-          // Capstone noch gesperrt (Onboarding < 6): Runde 29 = normale Perk-Phase (identisch zum "perk"-Zweig, legForce 0).
-          const off = state.devMode ? fullPerkOffer(architectEnabled) : buildPerkOffer(perks, familyTiers, rngAtOr(cycle, "perk", 0), perksOffered, perkLegendaryChance(shop) * legMultPerk, rareShift, architectEnabled, 0, rareCapEff, rareFloorEff);
-          if (off.length > 0) { phase = "levelup"; newOffer = off; }
-        }
       }
     }
   }
@@ -1572,7 +1557,7 @@ export function resolveTrick(state, rng) {
     zinsCapital, zinsRate, zinsPaidTotal, cycleWins, cycleLosses, cycleBestTrick, sammlerTypes, vabanquePaid, cycleOpenScore, // Legendär-Perks-Rework (#203) + Zinseszins-Bank
     richtfestBonus, cycleScoreSum, // Gebäude-Legendäres Richtfest (Struktur-Dividende auf den Durchlauf-Ertrag)
     roles, // (unverändert vom Reducer gesetzt, hier durchgereicht)
-    skillOffer: newSkillOffer, legendaryOffer: newLegendaryOffer, lightning, // Skill-System / Blitz-Archetyp · #272 Legendär-Phase
+    skillOffer: newSkillOffer, skillOfferTiers: newSkillOfferTiers, lightning, // Skill-System / Blitz-Archetyp · exp: Stufe je angebotenem Skill
     heat, // Feuer-Archetyp (#93 F1): Hitze-Substate (null solange kein Feuer-Skill aktiv)
     iceTemp: newIceTemp, // temporärer Wertbonus je card.id (Blitzfänger)
     ash: newAsh, brandPending: newBrandPending, brandActive: newBrandActive, forged: newForged, // Feuer-Rework (v0)

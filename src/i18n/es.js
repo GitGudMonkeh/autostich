@@ -1065,7 +1065,7 @@ export default {
   "board.nav.global.sub": "Histórico · todas las partidas",
   "board.nav.champions.sub": "Puesto 1 de cada semana finalizada",
   "board.nav.rules.sub": "Base y todos los modificadores",
-  "board.rules.intro": "Todo el mundo juega cada semana la misma semilla con una base justa: el árbol de mejoras no tiene efecto ({rerolls} relanzamientos por fase, todas las rarezas, fase legendaria en el ciclo {legCycle}). Cada semana, de 3 a 5 modificadores aleatorios (≥2 positivos, ≥1 negativo) cambian la partida, idénticos para todos. Solo cuentan las partidas completadas; al final de la semana el puesto 1 pasa al archivo Challenger y la clasificación empieza de nuevo.",
+  "board.rules.intro": "Todo el mundo juega cada semana la misma semilla con una base justa: el árbol de mejoras no tiene efecto ({rerolls} relanzamientos por fase, todas las rarezas). Cada semana, de 3 a 5 modificadores aleatorios (≥2 positivos, ≥1 negativo) cambian la partida, idénticos para todos. Solo cuentan las partidas completadas; al final de la semana el puesto 1 pasa al archivo Challenger y la clasificación empieza de nuevo.",
   "board.rules.pos": "Modificadores positivos",
   "board.rules.neg": "Modificadores negativos",
   "board.rules.pairs": "Pares excluyentes (nunca juntos)",

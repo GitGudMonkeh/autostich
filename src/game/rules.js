@@ -12,7 +12,7 @@ const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 export const RULE_LIMITS = Object.freeze({
   skillsPerArch: [1, 6],
   maxArchetypes: [1, ARCHETYPE_ORDER.length],
-  skillSlots: [1, 10],
+  skillSlots: [1, C.SKILL_SLOT_LIMIT], // exp skill rework: the top value means "unlimited" (the default)
   perksOffered: [1, 6],
 });
 
@@ -21,7 +21,7 @@ export const RULE_LIMITS = Object.freeze({
 export const DEFAULT_RULES = Object.freeze({
   skillsPerArch: clamp(Math.floor(C.SKILLS_OFFERED / Math.max(1, C.MAX_ARCHETYPES)), 1, SKILL_OFFER_PER_ARCH_CAP),
   maxArchetypes: C.MAX_ARCHETYPES,
-  skillSlots: C.SKILL_SLOTS,
+  skillSlots: C.SKILL_SLOT_LIMIT,
   perksOffered: C.PERKS_OFFERED,
 });
 

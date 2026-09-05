@@ -1,12 +1,14 @@
 import { describe, it, expect } from "vitest";
 import { makeRng } from "../src/game/deck.js";
-import { SKILL_DEFS, skillSum, initLightning, lightningCritRaw, addCharge, buildSkillOffer, buildLegendaryOffer,
+import { SKILL_DEFS, skillSum, initLightning, lightningCritRaw, addCharge, buildSkillOffer,
+  rollTier, rollSkillOfferTiers, tierOf, SKILL_TIER_COUNT, TIER_NORMAL, TIER_EPIC,
   isLegendarySkill, archetypeOf,
   offerArchetypes, archetypesWithSkills, decodeArchetypes,
   ionScoreFor, ionCritChance, consumesCharge, ionizeCountFor, consumeCharge, ionizeCards,
   hasIonize, hasSeriesCrit, hasStorm, chargeFloorFor } from "../src/game/skills.js";
 import { LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_MAX_CHARGE, MAX_ARCHETYPES,
-  ION_SCORE_PER_STACK, ION_CRIT_PP_PER_STACK, ION_CRIT_STACK_CAP, REST_CHARGE_FLOOR } from "../src/game/constants.js";
+  ION_SCORE_PER_STACK, ION_CRIT_PP_PER_STACK, ION_CRIT_STACK_CAP, REST_CHARGE_FLOOR,
+  SKILL_TIER_WEIGHTS, SKILL_LEGENDARY_PER_SLOT } from "../src/game/constants.js";
 
 const LR = "SK_LIGHTNING_01";
 const ALL = Object.keys(SKILL_DEFS);
@@ -102,7 +104,7 @@ describe("buildSkillOffer (3+3+3+3 über alle 4 Archetypen)", () => {
     expect(buildSkillOffer(ALL, [], makeRng(1), 4)).toEqual([]);
   });
 
-  // ---- #272: Legendäre kommen NICHT mehr im Skill-Angebot (nur über die Legendär-Phase, buildLegendaryOffer) ----
+  // ---- #272 / exp: der Zug selbst liefert NIE Legendäre — sie kommen als fünfte Stufe aus rollSkillOfferTiers ----
   it("ohne Legendär-Chance (0) == Default (kein rng-Drift)", () => {
     expect(buildSkillOffer([], [], makeRng(1), 6, 0)).toEqual(buildSkillOffer([], [], makeRng(1), 6));
   });
@@ -136,46 +138,95 @@ describe("buildSkillOffer (3+3+3+3 über alle 4 Archetypen)", () => {
   });
 });
 
-// #272 Legendär-Phase: 2 Legendäre NUR aus aktiven Fraktionen, deterministisch, verschieden, ohne gehaltene.
-describe("buildLegendaryOffer (#272 Legendär-Phase)", () => {
-  it("Mono (1 aktive Fraktion): 3 verschiedene Legendäre dieser Fraktion", () => {
-    for (let seed = 1; seed <= 30; seed++) {
-      const off = buildLegendaryOffer(["ice"], [], makeRng(seed));
-      expect(off).toHaveLength(3);
-      expect(new Set(off).size).toBe(3);
-      expect(off.every((id) => isLegendarySkill(id) && archetypeOf(id) === "ice")).toBe(true);
+// exp skill rework (docs/skill-rework.md §1, §7): jeder Angebotsplatz würfelt seine Stufe (Normal/Selten/Sehr selten/
+// Episch) — davor die Legendär-Chance, die den Platz durch einen ungehaltenen Legendär derselben Fraktion ersetzt.
+// Die alte Legendär-Phase (#272, buildLegendaryOffer) ist entfernt.
+describe("Stufenwurf — rollTier / rollSkillOfferTiers / tierOf (exp skill rework)", () => {
+  const W = [62, 25, 10, 3];
+  it("Konstanten: vier Stufen, Gewichte fallend, Legendär-Chance je Platz klein aber > 0", () => {
+    expect(SKILL_TIER_COUNT).toBe(4);
+    expect(SKILL_TIER_WEIGHTS).toHaveLength(SKILL_TIER_COUNT);
+    for (let i = 1; i < SKILL_TIER_WEIGHTS.length; i++) expect(SKILL_TIER_WEIGHTS[i]).toBeLessThan(SKILL_TIER_WEIGHTS[i - 1]);
+    expect(SKILL_LEGENDARY_PER_SLOT).toBeGreaterThan(0);
+    expect(SKILL_LEGENDARY_PER_SLOT).toBeLessThan(0.1);
+    expect(TIER_NORMAL).toBe(0);
+    expect(TIER_EPIC).toBe(SKILL_TIER_COUNT - 1);
+  });
+  it("rollTier: genau EIN rng-Aufruf, Stufe nach kumulierten Gewichten (Randwerte inklusive)", () => {
+    expect(rollTier(() => 0, W)).toBe(0);
+    expect(rollTier(() => 0.619, W)).toBe(0);   // 61,9 < 62
+    expect(rollTier(() => 0.62, W)).toBe(1);
+    expect(rollTier(() => 0.869, W)).toBe(1);   // 86,9 < 87
+    expect(rollTier(() => 0.87, W)).toBe(2);
+    expect(rollTier(() => 0.969, W)).toBe(2);   // 96,9 < 97
+    expect(rollTier(() => 0.97, W)).toBe(3);
+    expect(rollTier(() => 0.999999, W)).toBe(3);
+    let calls = 0;
+    rollTier(() => { calls++; return 0.5; });
+    expect(calls).toBe(1);
+  });
+  it("Verteilung folgt SKILL_TIER_WEIGHTS (20 000 Würfe, ±2 Prozentpunkte)", () => {
+    const rng = makeRng(7), n = 20000, hist = new Array(SKILL_TIER_COUNT).fill(0);
+    for (let i = 0; i < n; i++) hist[rollTier(rng)]++;
+    const total = SKILL_TIER_WEIGHTS.reduce((a, b) => a + b, 0);
+    for (let k = 0; k < SKILL_TIER_COUNT; k++) expect(Math.abs(hist[k] / n - SKILL_TIER_WEIGHTS[k] / total)).toBeLessThan(0.02);
+  });
+  it("Chance 0: Angebot unverändert, jeder normale Skill bekommt eine Stufe 0..3, deterministisch bei festem Seed", () => {
+    const off = buildSkillOffer([], [], makeRng(1), 12);
+    const a = rollSkillOfferTiers(off, [], makeRng(3), 0);
+    expect(a).toEqual(rollSkillOfferTiers(off, [], makeRng(3), 0));
+    expect(a.offer).toEqual(off);
+    expect(Object.keys(a.tiers).sort()).toEqual([...off].sort());
+    for (const id of off) expect(a.tiers[id]).toBeGreaterThanOrEqual(0);
+    for (const id of off) expect(a.tiers[id]).toBeLessThanOrEqual(TIER_EPIC);
+    // Verschiedene Seeds → (meist) verschiedene Stufen — der Seed treibt den Wurf wirklich.
+    const rolls = Array.from({ length: 8 }, (_, s) => JSON.stringify(rollSkillOfferTiers(off, [], makeRng(s + 1), 0).tiers));
+    expect(new Set(rolls).size).toBeGreaterThan(1);
+  });
+  it("Chance 1: jeder Platz wird ein ungehaltener Legendär DERSELBEN Fraktion, keine Duplikate, keine Stufe", () => {
+    const off = buildSkillOffer([], [], makeRng(2), 12); // 3+3+3+3 → je Fraktion 3 der 4 Legendären
+    const r = rollSkillOfferTiers(off, [], makeRng(5), 1);
+    expect(r.offer).toHaveLength(12);
+    expect(new Set(r.offer).size).toBe(12);
+    expect(r.offer.every(isLegendarySkill)).toBe(true);
+    for (let i = 0; i < off.length; i++) expect(archetypeOf(r.offer[i])).toBe(archetypeOf(off[i]));
+    expect(r.tiers).toEqual({});
+  });
+  it("Legendär-Pool erschöpft (gehaltene + schon im Angebot) → der Platz bleibt normal und bekommt eine Stufe", () => {
+    const five = ["SK_LIGHTNING_01", "SK_LIGHTNING_03", "SK_LIGHTNING_04", "SK_LIGHTNING_05", "SK_LIGHTNING_06"];
+    const r = rollSkillOfferTiers(five, ["SK_LIGHTNING_L01"], makeRng(4), 1); // 3 Legendäre frei, 5 Plätze
+    expect(r.offer).toHaveLength(5);
+    expect(new Set(r.offer).size).toBe(5);
+    expect(r.offer).not.toContain("SK_LIGHTNING_L01");            // gehalten → nie erneut
+    expect(r.offer.filter(isLegendarySkill)).toHaveLength(3);     // Pool leer nach dem dritten Treffer
+    expect(Object.keys(r.tiers)).toHaveLength(2);                 // die zwei normal gebliebenen Plätze
+    for (const id of Object.keys(r.tiers)) expect(isLegendarySkill(id)).toBe(false);
+  });
+  it("ein schon legendärer Eintrag (Dev-Katalog) wird nicht angefasst und blockiert seinen Legendär für den Rest", () => {
+    const r = rollSkillOfferTiers(["SK_FIRE_L01", "SK_FIRE_01"], [], makeRng(1), 1);
+    expect(r.offer[0]).toBe("SK_FIRE_L01");
+    expect(isLegendarySkill(r.offer[1])).toBe(true);
+    expect(r.offer[1]).not.toBe("SK_FIRE_L01");
+    expect(r.tiers).toEqual({});
+  });
+  it("Invariante über viele Seeds (Live-Chance): nie ein gehaltener Skill, nie ein Duplikat, Legendäre nur ungehalten", () => {
+    for (let seed = 1; seed <= 60; seed++) {
+      const owned = ["SK_FIRE_01", "SK_FIRE_L02", "SK_ICE_L01"];
+      const off = buildSkillOffer(owned, ["fire", "ice"], makeRng(seed), 12);
+      const r = rollSkillOfferTiers(off, owned, makeRng(seed + 100));
+      expect(r.offer).toHaveLength(off.length);
+      expect(new Set(r.offer).size).toBe(r.offer.length);
+      expect(r.offer.some((id) => owned.includes(id))).toBe(false);
+      for (const id of r.offer) expect(isLegendarySkill(id) ? !(id in r.tiers) : Number.isInteger(r.tiers[id])).toBe(true);
     }
   });
-  it("Duo (2 aktive Fraktionen): 2 je Fraktion (4), immer verschieden", () => {
-    for (let seed = 1; seed <= 30; seed++) {
-      const off = buildLegendaryOffer(["fire", "plant"], [], makeRng(seed));
-      expect(off).toHaveLength(4);
-      expect(new Set(off).size).toBe(4);
-      expect(off.filter((id) => archetypeOf(id) === "fire")).toHaveLength(2);
-      expect(off.filter((id) => archetypeOf(id) === "plant")).toHaveLength(2);
-    }
-  });
-  it("Trio (3 aktive Fraktionen): 2 je Fraktion (6)", () => {
-    for (let seed = 1; seed <= 30; seed++) {
-      const off = buildLegendaryOffer(["fire", "plant", "ice"], [], makeRng(seed));
-      expect(off).toHaveLength(6);
-      expect(new Set(off).size).toBe(6);
-      for (const a of ["fire", "plant", "ice"]) expect(off.filter((id) => archetypeOf(id) === a)).toHaveLength(2);
-    }
-  });
-  it("schließt bereits gehaltene Legendäre aus (owned) — Rest der Fraktion füllt bis zum Soll", () => {
-    const off = buildLegendaryOffer(["ice"], ["SK_ICE_L01", "SK_ICE_L02"], makeRng(3));
-    expect(off).not.toContain("SK_ICE_L01");
-    expect(off).not.toContain("SK_ICE_L02");
-    expect(off).toHaveLength(2); // Mono-Soll 3, aber nur noch 2 verfügbar → füllt mit dem, was da ist
-    expect(off.every((id) => archetypeOf(id) === "ice")).toBe(true);
-  });
-  it("deterministisch: gleicher Seed → identisches Angebot", () => {
-    expect(buildLegendaryOffer(["lightning", "ice"], [], makeRng(9)))
-      .toEqual(buildLegendaryOffer(["lightning", "ice"], [], makeRng(9)));
-  });
-  it("keine aktiven Fraktionen → leeres Angebot", () => {
-    expect(buildLegendaryOffer([], [], makeRng(1))).toEqual([]);
+  it("tierOf: Stufe aus state.skillTiers, Normal ohne Eintrag (ältere Snapshots), null für Legendäre", () => {
+    const st = { skillTiers: { SK_FIRE_01: 2 } };
+    expect(tierOf(st, "SK_FIRE_01")).toBe(2);
+    expect(tierOf(st, "SK_FIRE_02")).toBe(TIER_NORMAL);
+    expect(tierOf({}, "SK_FIRE_01")).toBe(TIER_NORMAL);
+    expect(tierOf(null, "SK_FIRE_01")).toBe(TIER_NORMAL);
+    expect(tierOf(st, "SK_FIRE_L01")).toBeNull();
   });
 });
 

@@ -1513,6 +1513,27 @@ Zustandsmodell: `skills` bleibt die Liste der IDs, daneben `skillTiers` (ID → 
 Kennwerte aus Stufentabellen in der Skill-Definition statt aus Einzelkonstanten; die Sim-Regler
 (`SIM_*`) bleiben für die Passiv-Größen (Leiste, Hitze je Punkt, Bonus je Stapel, Multiplikator je 10 %).
 
+### 7.1 Stand Phase 1 (2026-09-05, umgesetzt)
+
+- Stufenwurf je Platz (`rollSkillOfferTiers`, Gewichte `SKILL_TIER_WEIGHTS` 62 / 25 / 10 / 3, Legendär
+  `SKILL_LEGENDARY_PER_SLOT` 3,5 % je Platz, Sim-Regler). Ein Legendär-Treffer ersetzt den Platz durch einen
+  ungehaltenen Legendär derselben Fraktion; Pool leer → Platz bleibt normal. Der Stufenwurf hat einen eigenen
+  Zufallsstrom ("tiers"), der Zug selbst ist unverändert.
+- Plan: 40 Runden, zehn Blöcke Skill → Perk → Aufstellen → Architekt, Skills bei 1, 5, 9 … 37. Legendär-Phase,
+  Legendär-Wahl (Screen, Aktionen, Texte) und Dev-Run-Regler dafür entfernt.
+- Slots unbegrenzt (`SKILL_SLOT_LIMIT`, oberster Wert der Dev-Run-Regel heißt "kein Limit"); eine Dev-Run-Regel
+  darunter begrenzt weiterhin, das Ersetzen-Fenster bleibt dafür bestehen. Kopfzeile und Bestand zählen nur noch,
+  was gehalten wird.
+- Stufe sichtbar: Badge im Angebot und bei den gehaltenen Skills, Kante der Angebotskarte in der Stufenfarbe.
+  Farben und Namen sind die der bestehenden Raritätsleiter (Normal grau, Selten grün, Sehr selten blau, Episch
+  lila), Legendär bleibt Gold. Wortlaut und Farben in Phase 4 mit den Texten abnehmen.
+- Hochspannung (Stufe plus eins) folgt in Phase 2 mit den Stufentabellen des Blitz-Moduls; in Phase 1 gibt es
+  noch keine Tabellen, die sich verschieben ließen.
+- Vorläufig, bis Phase 2/3: die Skills lesen ihre Stufe noch nicht (Bestandseffekte unverändert); der Sim-Band-
+  Wächter ist auf den gemessenen Stand des 40er-Plans zentriert (Random-Policy Median ≈ 1,97M, Mean ≈ 2,33M) und
+  wird nach den Modulen erneut zentriert; die Glossartexte Skill-Slot und Legendärer Skill sowie der
+  Meisterhand-Text nennen noch den alten Stand (Phase 4).
+
 ## 5. Eis
 
 Offen.
@@ -1543,3 +1564,4 @@ Offen.
 | 2026-09-05 | Feuer begonnen. Reihenfolge vom Owner: Feuer durcharbeiten, Blitz und Feuer umsetzen und über die Sim tarieren, dann die weiteren Fraktionen. Passiv heute mit Messung, Passiv neu nach Owner-Idee (Hitze aus Siegen mit Abstand, Niederlagen kühlen, Skills nutzen die Hitze, Schmiede ohne Asche), Zahlen als Vorschlag, Bestand 17 + 4 aufgenommen. |
 | 2026-09-05 | Feuer-Passiv komplett gesetzt (dazu je 10 % Hitze +2 % Score, kein Direkt-Score, keine Abhängigkeit von gehaltenen Skills). Funkenflug und Schmelzofen gestrichen. Alle 15 Feuer-Skills mit vier Stufen gesetzt, Verbraucher-Regel entfällt, Regel "Hitze-Schwellen-Leitern brauchen ein Episch-Extra". Übersicht in 4.6. |
 | 2026-09-05 | Alle vier Feuer-Legendären gesetzt: Sonnenkern (Brände stapeln), Phönixfeuer (Niederlagen heizen, Neuzündung ohne Limit), Sonnenzorn (Spitzen-Hitze, doppelter Multiplikator), Damaststahl (freie Schmiede, doppelter Schmiedewert im Kampf). Blitz und Feuer damit fertig für die Umsetzung. |
+| 2026-09-05 | Phase 1 umgesetzt (7.1): Stufenwurf je Platz mit Legendär als fünfter Stufe, 40-Runden-Plan ohne Legendär-Phase, Slots unbegrenzt, Stufe sichtbar. Gates grün; Sim-Band vorläufig neu zentriert. |

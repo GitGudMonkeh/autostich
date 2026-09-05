@@ -13,7 +13,7 @@ import { fmtScore } from "./format.js";
 import { leaderboardConfigured, fetchBoardTop } from "../game/leaderboard.js";
 import { currentWeek, pastWeeks, msUntilWeekEnd } from "../game/weeklySeed.js";
 import { formatSeed } from "../game/rng.js";
-import { BASE_REROLLS, LEG_PHASE_CYCLE } from "../game/constants.js"; // Baseline-Zahlen aus dem Code, nicht im Text gepflegt
+import { BASE_REROLLS } from "../game/constants.js"; // Baseline-Zahlen aus dem Code, nicht im Text gepflegt (exp: keine Legendär-Phase mehr)
 import { WEEK_MOD_BY_ID, WEEK_MOD_PAIRS, pickWeekMods } from "../game/weekMods.js"; // #370 Wochen-Modifikatoren
 import { WeekModChips, catalogDisplayMods, pickedDisplayMods, MOD_POS, MOD_NEG } from "./WeekMods.jsx"; // #381 gemeinsame Chip-Anzeige
 import { MODAL_CARD, ModalHairline, ActionButton } from "./modalStyle.jsx";
@@ -129,7 +129,7 @@ function RegelnPanel() {
      tote Haken; die Reihenfolge im DOM bleibt die der Handy-Fassung. */
   return (
     <div className="rg-root text-body-1 leading-relaxed">
-      <p className="rg-intro opacity-75 mb-3">{tr("board.rules.intro", { rerolls: BASE_REROLLS, legCycle: LEG_PHASE_CYCLE })}</p>
+      <p className="rg-intro opacity-75 mb-3">{tr("board.rules.intro", { rerolls: BASE_REROLLS })}</p>
       <div className={`rg-h rg-h-pos ${head} mb-1.5`} style={{ color: MOD_POS }}>{tr("board.rules.pos")}</div>
       <div className="rg-pos grid gap-1.5">{pos.map((m) => <ModBox key={m.id} m={m} />)}</div>
       <div className={`rg-h rg-h-neg ${head} mt-3 mb-1.5`} style={{ color: MOD_NEG }}>{tr("board.rules.neg")}</div>

@@ -4,19 +4,19 @@ import { PERK_DEFS, buildPerkOffer } from "./perks.js";
 import { familyDef, applyFamilyPick } from "./families.js"; // formationEnergyBonus läuft jetzt über engine.formationEnergyFor
 import { UPGRADE_TYPES } from "./rarity.js";
 import { archetypeOf, initLightning, initHeat, heatMaxFor, maxChargeFor, chargeConsumerCount,
-  hasSetzlingsbeet, buildSkillOffer, buildLegendaryOffer, glacierRolesOf } from "./skills.js"; // Pflanze (v0): Aktivierungs-Effekte · Eis-Neudesign: glacierRolesOf · M1: R29-Reroll
+  hasSetzlingsbeet, buildSkillOffer, rollSkillOfferTiers, glacierRolesOf } from "./skills.js"; // Pflanze (v0): Aktivierungs-Effekte · Eis-Neudesign: glacierRolesOf · exp: Stufenwurf
 // (#267: import aus stats.js entfernt — die Stat-Phase ist weg.)
 import { computeFormations, formationPotential, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
-import { initialShop, perkLegendaryChance, skillLegendaryChance } from "./shop.js";
+import { initialShop, perkLegendaryChance } from "./shop.js";
 import { resolveTrick, formationEnergyFor } from "./engine.js"; // formationEnergyFor: eine Quelle für Phasen-Eintritt + RESET_FORMATION
 import * as C from "./constants.js";
 import { runRules, perksOfferedFor, skillOfferParams, sanitizeRules } from "./rules.js"; // exp: Regeln je Lauf (state.rules; null → Konstanten)
 import { isLegendarySkill, isTrimmableSkill } from "./skills.js"; // #217: Garantie-Erkennung (Legendär im Skill-Reroll-Angebot) · #288 Trimmen
 import { DECLINE_MIN_SKILLS as G_DECLINE_MIN_SKILLS } from "./glacier.js"; // Eis-Neudesign: Ablehn-Gletscher-Schwelle (gehaltene Eis-Skills)
-import { pickWeekMods, hasWeekMod, weekModMag, TIGHT_BUILD_COVER } from "./weekMods.js"; // #370 Ranked-Rework Phase 3: Wochen-Modifikatoren (seed-deterministisch)
+import { pickWeekMods, weekModMag, TIGHT_BUILD_COVER } from "./weekMods.js"; // #370 Ranked-Rework Phase 3: Wochen-Modifikatoren (seed-deterministisch) · exp: hasWeekMod ging mit PICK_LEGENDARY (doubleLeg)
 
 import { initialArchitect, familyDef as archFamily, isValidFootprint, occupiedCells as archOccupied, buildArchitectOffer, MAX_TIER as ARCH_MAX_TIER, MAX_COVER as ARCH_MAX_COVER, N_POS } from "./architect.js";
-import { fullPerkOffer, fullSkillOffer, fullArchitectOffer } from "./devCatalog.js"; // Dev-Run (nur Preview): Voll-Katalog-Angebote
+import { fullPerkOffer, devSkillOffer, fullArchitectOffer } from "./devCatalog.js"; // Dev-Run (nur Preview): Voll-Katalog-Angebote
 
 /* Reiner Reducer — Determinismus-Invariante: kein Math.random / Date hier drin.
    Zufall kommt als Action-Payload (rng), siehe App.jsx. Phasen:
@@ -39,7 +39,7 @@ const archPushMove = (a) => [...(a.phaseHistory || []), archFpMap(a)];
 // byte-identisch). Adressen nutzen state.cycle + eine feste Kennung, damit jeder Zieh-Punkt seinen eigenen Strom hat.
 const rngFor = (state, action, ...parts) => (state.seed != null ? rngAt(state.seed, ...parts) : action.rng);
 // exp: die Entscheidungs-Typen, die ein Dev-Run-Plan tragen darf (= alles, was die Engine am Durchlauf-Ende kennt).
-const DEV_DECISIONS = ["skill", "perk", "formation", "shop", "legendary"];
+const DEV_DECISIONS = ["skill", "perk", "formation", "shop"]; // exp skill rework: keine Legendär-Phase mehr
 // Start-playerOrder mit Formations-Potential im Ziel-Band (#Pass6): neu mischen, bis Σ(mult−1) in
 // [FORMATION_START_MIN, MAX] liegt, sonst nach TRIES die potential-nächste Anordnung (Fallback → terminiert
 // immer). Rein deterministisch (rng injiziert); begrenzt die Start-Varianz des Formations-Potentials.
@@ -87,8 +87,9 @@ function startDecisionSetup(decision, s, seed, actionRng, architectEnabled, devE
     return { phase: "formation", formationEnergy: (devEnergy ?? s.formationEnergyBase ?? C.FORMATION_ENERGY), formationSwaps: [], formations };
   }
   // "skill" (Default): Skill-Angebot; leerer Skill-Pool → Perk-Fallback (Runde nicht verschwenden).
-  const soff = devMode ? fullSkillOffer() : buildSkillOffer([], [], rngAtOr("skill", 0), skillP.count, skillLegendaryChance(s.shop), false, s.unlockedArchetypes, skillP.maxArchetypes, skillP.perArchCap); // §4b: Archetyp-Gatung
-  if (soff.length) return { phase: "levelup", skillOffer: soff };
+  // exp skill rework: Stufe je Platz (und Legendär-Chance je Platz) direkt nach dem Bau des Angebots würfeln.
+  const rolled = devMode ? devSkillOffer() : rollSkillOfferTiers(buildSkillOffer([], [], rngAtOr("skill", 0), skillP.count, 0, false, s.unlockedArchetypes, skillP.maxArchetypes, skillP.perArchCap), [], rngAtOr("skill", 0, "tiers")); // §4b: Archetyp-Gatung
+  if (rolled.offer.length) return { phase: "levelup", skillOffer: rolled.offer, skillOfferTiers: rolled.tiers };
   const off = buildPerkOffer([], {}, rngAtOr("perk", 0), perksOffered, perkLegendaryChance(s.shop) * legMultPerk, mRareShift, architectEnabled, 0, rareCap, rareFloor);
   return off.length ? { phase: "levelup", offer: off } : { phase: "play" };
 }
@@ -142,7 +143,7 @@ export function initialState(rng = Math.random, seed = null) {
     // denselben Fluss später für Karten-Ziele (Rollen).
     familyTarget: null,
     // Skill-System / Blitz-Archetyp (docs/blitz-archetyp.md). Inert, solange kein Skill gewählt ist.
-    skills: [], skillOffer: null, skillOfferBonus: false, legendaryOffer: null, activeArchetypes: [], lightning: initLightning(), // #272: legendaryOffer = Angebot der Legendär-Phase (Runde 29) · skillOfferBonus: das Angebot stammt aus Meisterhand (PICK_PERK), nicht aus dem Rundenplan
+    skills: [], skillOffer: null, skillOfferTiers: null, skillTiers: {}, skillOfferBonus: false, activeArchetypes: [], lightning: initLightning(), // exp: skillTiers = Stufe je gehaltenem Skill, skillOfferTiers = Stufe je angebotenem Skill · skillOfferBonus: das Angebot stammt aus Meisterhand (PICK_PERK), nicht aus dem Rundenplan
     heat: null, // Feuer-Archetyp (#93 F1): erst beim ersten Feuer-Skill via initHeat() aktiviert
     iceTemp: {}, // temporärer Wertbonus je card.id (Blitzfänger — Blitz-Archetyp, in engine.js gelesen)
     growth: {}, colonized: {}, plantLoss: {}, // Pflanze-Fraktion (v0): Wachstum je card.id (nur steigend) / kolonisierte Gegnerkarten (grün = card.green) / Niederlagen-Zähler (Wurzelschlag-Buff v0.4)
@@ -243,7 +244,7 @@ export function reducer(state, action) {
         const fullCatalog = dev.fullCatalog == null ? true : !!dev.fullCatalog;
         const devConfig = { rounds: devRounds, schedule: devSchedule, cover: devCover, energy: devEnergy, fullCatalog, rules };
         const sBase = { ...s, architect: { ...s.architect, maxCover: devCover }, rules, devConfig,
-          skillSlots: runRules({ rules }).skillSlots, legPhaseEnabled: true };
+          skillSlots: runRules({ rules }).skillSlots };
         const patch = startDecisionSetup(devSchedule[0], sBase, seed, action.rng, true, devEnergy, fullCatalog);
         return { ...sBase, architectEnabled: true,
           devSchedule, maxCycles: devRounds, devEnergy, devMode: fullCatalog,
@@ -267,14 +268,14 @@ export function reducer(state, action) {
       const wmBlockArch = wm.blockArch ? pickCells(rngAt(seed, "weekmods", "blockArch"), N_POS, wm.blockArch.mag) : [];
       const effRareCap = wm.perkCap ? 2 : 4;                                         // Perk-Deckel → max Selten (kein Sehr selten/Rar)
       const effRareFloor = wm.perkBlessing ? 3 : 1;                                  // Perk-Segen → Boden Sehr selten (nur Stufe III/IV)
-      const effSkillSlots = C.SKILL_SLOTS + (wm.skillSlots?.mag || 0);               // Skill-Fülle → +mag Skillslots (Halten mehr Skills)
+      const effSkillSlots = C.SKILL_SLOT_LIMIT;                                      // exp skill rework: Slots unbegrenzt (die Wochen-Mod „Skill-Fülle" ist damit wirkungslos)
       const effEnergy = wm.energyEbb ? 0 : wm.energyFlood ? C.FORMATION_ENERGY * 2 : C.FORMATION_ENERGY;
       const effCover = wm.tightBuild ? TIGHT_BUILD_COVER : wm.noBuildLimit ? N_POS : coverBase; // Enge Aufstellung / Kein Gebäudelimit
       const weekModsState = wmActive.map((m) => ({ id: m.id, effect: m.effect, sign: m.sign, mag: m.mag, name: m.name, text: m.text }));
       // Neutral tree fields: shift 0, ×1 legendary chance, no forced legendaries, no extra rerolls, open archetype pool.
       const sBase = { ...s, architect: { ...s.architect, maxCover: effCover }, architectEnabled, treeRareShift: 0, treeLegMult: 1, treeLegForce2: 0,
-        rerollsLeg: 0, rerollsPerk2: 0,
-        legCountByArch: null, formationEnergyBase: effEnergy, unlockedArchetypes: null, rareCap: effRareCap, rareFloor: effRareFloor, skillSlots: effSkillSlots, legPhaseEnabled: true, ranked,
+        rerollsPerk2: 0,
+        formationEnergyBase: effEnergy, unlockedArchetypes: null, rareCap: effRareCap, rareFloor: effRareFloor, skillSlots: effSkillSlots, ranked,
         weekMods: weekModsState,
         challengeBlockArch: [...new Set(wmBlockArch)],
         challengeBlockForm: [...new Set(wmBlockForm)] };
@@ -467,10 +468,11 @@ export function reducer(state, action) {
       // Legendär-Chance 0 — der legendäre SKILL hat seine eigene Phase und seinen eigenen Slot (#272);
       // ein Perk soll keinen zweiten nachliefern.
       const skillP = skillOfferParams(state); // exp: Regeln je Lauf (Bestand = Konstanten)
-      const bonusSkillOffer = (def.skillSlotBonus && !goTarget)
-        ? buildSkillOffer(state.skills, state.activeArchetypes || [], rngFor(state, action, state.cycle, "meisterhand", 0),
-            skillP.count, 0, false, state.unlockedArchetypes, skillP.maxArchetypes, skillP.perArchCap)
+      const bonusRolled = (def.skillSlotBonus && !goTarget)
+        ? rollSkillOfferTiers(buildSkillOffer(state.skills, state.activeArchetypes || [], rngFor(state, action, state.cycle, "meisterhand", 0),
+            skillP.count, 0, false, state.unlockedArchetypes, skillP.maxArchetypes, skillP.perArchCap), state.skills, rngFor(state, action, state.cycle, "meisterhand", 1))
         : null;
+      const bonusSkillOffer = bonusRolled ? bonusRolled.offer : null;
       const formations = (def.redistribute || def.opfergang)
         ? computeFormations(state.playerOrder, deck, state.roles, perks, state.skills, state.shop?.anchors || [], state.familyTiers, archOf(state))
         : state.formations;
@@ -478,7 +480,7 @@ export function reducer(state, action) {
                // Leeres Angebot (Skill-Pool erschöpft) → normal weiterspielen; der Slot bleibt, die nächste
                // reguläre Skill-Phase füllt ihn dann (`normalCount < skillSlots` → hinzufügen statt ersetzen).
                ...(bonusSkillOffer && bonusSkillOffer.length
-                 ? { skillOffer: bonusSkillOffer, skillOfferBonus: true, offerRerolls: 0 }
+                 ? { skillOffer: bonusSkillOffer, skillOfferTiers: bonusRolled.tiers, skillOfferBonus: true, offerRerolls: 0 }
                  : {}),
                phase: goTarget ? "target" : (bonusSkillOffer && bonusSkillOffer.length ? "levelup" : "play"),
                targetPerk: goTarget ? perkId : null };
@@ -605,17 +607,21 @@ export function reducer(state, action) {
       if (arch && !active0.includes(arch) && active0.length >= runRules(state).maxArchetypes) return state; // exp: Deckel je Lauf (Bestand = C.MAX_ARCHETYPES)
       let skills;
       let trimmed = false; // #288: wurde ein wachstums-stützender Skill ersetzt? → Trimmung
-      // #272: Der Legendär im 7. Slot zählt NICHT gegen SKILL_SLOTS und wird nie durch einen normalen Pick ersetzt.
+      // Legendäre zählen nicht gegen das Slot-Limit und werden nie ersetzt (exp: kein Ersetzen von Legendären).
       const normalCount = state.skills.filter((id) => !isLegendarySkill(id)).length;
       if (replaceId && state.skills.includes(replaceId) && !isLegendarySkill(replaceId)) {
         // Gezieltes Ersetzen (volle Slots ODER Konsumenten-Ersatzdialog #93): tauscht genau diesen (normalen) Slot.
         skills = state.skills.map((id) => (id === replaceId ? skillId : id));
         if (isTrimmableSkill(replaceId)) trimmed = true; // #288 Trimmen: Wachstums-Skill rausgetauscht
-      } else if (normalCount < (state.skillSlots || C.SKILL_SLOTS)) { // #370 Skill-Fülle hebt das Slot-Limit (sonst Basis)
+      } else if (normalCount < (state.skillSlots || C.SKILL_SLOT_LIMIT)) { // exp: Slots unbegrenzt (Dev-Run-Regel kann begrenzen)
         skills = [...state.skills, skillId];                       // freier Slot → hinzufügen
       } else {
         return state;                                              // volle Slots ohne gültiges Ersetzungsziel
       }
+      // exp skill rework: die für diesen Angebotsplatz gewürfelte Stufe wandert mit dem Skill; Legendäre haben keine.
+      const skillTiers = { ...(state.skillTiers || {}) };
+      if (replaceId && !skills.includes(replaceId)) delete skillTiers[replaceId];
+      if (!isLegendarySkill(skillId)) { const tk = (state.skillOfferTiers || {})[skillId]; skillTiers[skillId] = Number.isInteger(tk) ? tk : 0; }
       // Konsumenten-Exklusivität (#234): nur noch Blitz hält höchstens EINEN Ladungs-Konsumenten (ein zweiter ersetzt ihn).
       // Feuer darf mehrere Hitze-Konsumenten kombinieren (Flächenbrand ≠ Schmelzpunkt) — die Engine wendet jeden einzeln an.
       if (chargeConsumerCount(skills) > 1) return state;
@@ -669,7 +675,7 @@ export function reducer(state, action) {
       }
       // Formationen neu berechnen (Anker/Familien/Architekt beeinflussen die Erkennung).
       const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, skills, state.shop?.anchors || [], state.familyTiers, archOf(state));
-      return { ...state, skills, activeArchetypes, lightning, heat, deck, iceTemp, growth, colonized, plantLoss, ash, brandPending, brandActive, forged, formations,
+      return { ...state, skills, skillTiers, skillOfferTiers: null, activeArchetypes, lightning, heat, deck, iceTemp, growth, colonized, plantLoss, ash, brandPending, brandActive, forged, formations,
                glacierRoles, glacierMass, firnStack, glacierLocked, glacierYield, frozenOppPending, frozenOppActive, glacierBuffPending, glacierBuffActive, grosseLawineFired, // Eis-Neudesign (#386 Firn-Reserve mitgeführt)
                trimCount: (state.trimCount || 0) + (trimmed ? 1 : 0), // #288 Trimmen
                // Eis-Neudesign: jeder Eis-Skill-Pick öffnet SOFORT die Gletscher-Wahl (genau 1 Karte festfrieren, Pflicht) —
@@ -704,55 +710,8 @@ export function reducer(state, action) {
         : { ...state, skillOffer: null, phase: "play" };             // Perk-Pool leer → weiterspielen
     }
 
-    // #272 Legendär-Phase (Runde 29): EINEN der 2 angebotenen Legendäre in den fixen 7. Slot (kein Ersetzen, zählt
-    // nicht gegen SKILL_SLOTS). Der Archetyp ist bereits aktiv (Angebot nur aus aktiven Fraktionen) → seine Ressourcen
-    // bestehen; wir rechnen nur die legendär-abhängigen Aktivierungen nach (Donnergott: maxCharge, Eis: Frost-Ziel).
-    case "PICK_LEGENDARY": {
-      if (state.phase !== "legendary" || !state.legendaryOffer) return state;
-      const { legendaryId } = action;
-      if (!state.legendaryOffer.includes(legendaryId) || state.skills.includes(legendaryId) || !isLegendarySkill(legendaryId)) return state;
-      const arch = archetypeOf(legendaryId);
-      const skills = [...state.skills, legendaryId]; // 7. Slot — kein Cap-Check
-      let lightning = state.lightning, heat = state.heat, deck = state.deck;
-      if (arch === "lightning") lightning = { ...lightning, active: true, maxCharge: maxChargeFor(skills) }; // Donnergott → 15
-      if (arch === "fire" && !(heat && heat.active)) heat = { ...initHeat(), active: true, max: heatMaxFor(skills) };
-      // Eis-Neudesign: der legendäre Eis-Skill fügt nur seine Rolle hinzu (kein Einfrieren) → glacierRoles nachziehen.
-      const activeArchetypes = (state.activeArchetypes || []).includes(arch) ? state.activeArchetypes : [...(state.activeArchetypes || []), arch];
-      const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, skills, state.shop?.anchors || [], state.familyTiers, archOf(state));
-      const common = { ...state, skills, activeArchetypes, lightning, heat, deck, formations, glacierRoles: glacierRolesOf(skills) };
-      // #370 Doppel-Legendär (nur Ranked): 2 Legendäre je Phase wählbar. Nach der 1. Wahl in der Phase bleiben (Angebot
-      // ohne die genommene Karte), sofern noch etwas übrig ist — sonst normal weiterspielen. legPicksMade zählt in der Phase.
-      const picksAllowed = hasWeekMod(state.weekMods, "doubleLeg") ? 2 : 1;
-      const picksMade = (state.legPicksMade || 0) + 1;
-      const remainingOffer = state.legendaryOffer.filter((id) => id !== legendaryId && !skills.includes(id));
-      if (picksMade < picksAllowed && remainingOffer.length > 0)
-        return { ...common, phase: "legendary", legendaryOffer: remainingOffer, legPicksMade: picksMade };
-      return { ...common, phase: "play", legendaryOffer: null, legPicksMade: 0 };
-    }
-
-    // #272 Legendär ablehnen → stattdessen normale Skill-Wahl (Nutzer-Wunsch), nie „verschwendet".
-    case "DECLINE_LEGENDARY": {
-      if (state.phase !== "legendary" || !state.legendaryOffer) return state;
-      const skillP = skillOfferParams(state);
-      const off = buildSkillOffer(state.skills, state.activeArchetypes, rngFor(state, action, state.cycle, "skill", 0), skillP.count, 0, false, state.unlockedArchetypes, skillP.maxArchetypes, skillP.perArchCap); // §4b: Archetyp-Gatung
-      return off.length > 0
-        ? { ...state, legendaryOffer: null, skillOffer: off, phase: "levelup", offerRerolls: 0, legPicksMade: 0 } // → normale Skill-Auswahl
-        : { ...state, legendaryOffer: null, phase: "play", legPicksMade: 0 };                                     // Skill-Pool leer → weiterspielen
-    }
-
-    // M1 (legSlotReroll): das R29-Legendär-Angebot einmal neu würfeln — dedizierter Token (rerollsLeg), getrennt
-    // von den Perk/Gebäude/Skill-Pools. Adressierter Strom (seed,cycle,"legendary",idx). Leeres Neu-Angebot →
-    // Token NICHT verbrauchen (Angebot bleibt). Nur im Normal-Lauf mit gekauftem M1 überhaupt > 0.
-    case "REROLL_LEGENDARY": {
-      if (state.phase !== "legendary" || !state.legendaryOffer) return state;
-      const tokens = state.rerollsLeg || 0;
-      if (tokens <= 0) return state;
-      const idx = (state.offerRerolls || 0) + 1;
-      // #369 §5a: Pool = alle im Baum freigeschalteten Archetypen (Zähl-Map), unabhängig vom Build. Sim/Standard → null = Bestand.
-      const legOff = buildLegendaryOffer(state.activeArchetypes || [], state.skills || [], rngFor(state, action, state.cycle, "legendary", idx), null, 0, state.legCountByArch || null);
-      if (!legOff.length) return state;
-      return { ...state, legendaryOffer: legOff, offerRerolls: idx, rerollsLeg: tokens - 1, rerollsUsed: (state.rerollsUsed || 0) + 1 };
-    }
+    // exp skill rework: Legendäre kommen als fünfte Seltenheit im normalen Skill-Angebot (PICK_SKILL); die
+    // eigene Legendär-Phase (#272) und ihre Aktionen PICK_/DECLINE_/REROLL_LEGENDARY sind entfallen.
 
     // Perk-Angebot komplett ablehnen (#138): Angebot verworfen, weiter im Spiel — so ist eine Perk-Runde nie
     // „verschwendet". Keine Belohnung mehr: mit dem Architekten (#202/#225.1) gibt es keine Münzökonomie.
@@ -794,9 +753,9 @@ export function reducer(state, action) {
       if (tokens <= 0) return state;
       const idx = (state.offerRerolls || 0) + 1;                     // #205: Reroll-Index → frischer adressierter Strom (Original-Angebot = 0)
       const skillP = skillOfferParams(state);
-      const offer = buildSkillOffer(state.skills, state.activeArchetypes, rngFor(state, action, state.cycle, "skill", idx), skillP.count, skillLegendaryChance(state.shop), false, state.unlockedArchetypes, skillP.maxArchetypes, skillP.perArchCap); // §4b: Archetyp-Gatung
-      if (offer.length === 0) return state;                         // nichts Neues verfügbar → Ressource behalten
-      return { ...state, skillOffer: offer, offerRerolls: idx, rerollsSkill: tokens - 1, rerollsUsed: (state.rerollsUsed || 0) + 1 };
+      const rolled = rollSkillOfferTiers(buildSkillOffer(state.skills, state.activeArchetypes, rngFor(state, action, state.cycle, "skill", idx), skillP.count, 0, false, state.unlockedArchetypes, skillP.maxArchetypes, skillP.perArchCap), state.skills, rngFor(state, action, state.cycle, "skill", idx, "tiers")); // §4b: Archetyp-Gatung · exp: Stufenwurf
+      if (rolled.offer.length === 0) return state;                  // nichts Neues verfügbar → Ressource behalten
+      return { ...state, skillOffer: rolled.offer, skillOfferTiers: rolled.tiers, offerRerolls: idx, rerollsSkill: tokens - 1, rerollsUsed: (state.rerollsUsed || 0) + 1 };
     }
 
     // Formationsphase (V2 §22.8): beliebigen Tausch zweier Karten anwenden (1 Energie), Vorschau neu berechnen.
