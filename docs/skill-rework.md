@@ -1016,6 +1016,23 @@ Feuersturm; damit bleibt er der Skill für Decks, die hoch gewinnen (Wert-Skills
 Nutzer verpufft die Hitze an der 100, Glut braucht also einen Konsumenten oder Schwellen-Skill im
 Build.
 
+Entscheid Owner (2026-09-05): **gesetzt wie vorgeschlagen.**
+
+**Zunder** — Rate aus jedem Sieg. Heute: jeder Sieg +2 % Hitze, auch knappe. Neu dieselbe Form,
+gestuft; der Skill für Decks, die knapp, aber oft gewinnen.
+
+| Stufe | Effekt | Hitze je Runde zusätzlich | Extra |
+| --- | --- | --- | --- |
+| Normal | jeder Sieg +1 % Hitze | +26 % | – |
+| Selten | +2 % | +52 % | – |
+| Sehr selten | +3 % | +78 % | – |
+| Episch | +4 % | +104 % | – (stark) |
+
+Heute liegt auf Selten. Zunder Selten macht mehr Hitze als das ganze Passiv (49 % brutto), unabhängig
+vom Vorsprung. Ökonomie: Passiv netto etwa +21 % je Runde (49 brutto, 28 Kühlung); Schmelzpunkt Selten
+verbrennt heute 4 % je Sieg, also 104 % je Runde, und braucht darum Zunder oder Glut, um zu laufen.
+Zunder plus Schmelzpunkt ist das Tropf-Paar, Glut plus Flächenbrand das Burst-Paar.
+
 ## 5. Eis
 
 Offen.
