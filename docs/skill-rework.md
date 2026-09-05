@@ -1323,6 +1323,28 @@ Schmiede ist der Motor des "hoch gewinnen"-Builds: höhere Karten heißen mehr V
 Glut-Hitze und mehr Verbrennung. Ascheglut entfällt (Direkt-Score); Damaststahl (Legendär, schmiedet
 heute ohne Asche) bekommt später eine neue Fassung.
 
+Entscheid Owner (2026-09-05): **gesetzt wie vorgeschlagen.**
+
+**Glutstahl** — Wert zu Score. Heute: Verstärker (braucht Ascheschmiede): geschmiedete Karten geben bei
+Sieg +12 Basis-Score je geschmiedetem Wertpunkt. Neu eigenständig: jeder Punkt, den eine Siegkarte über
+ihrem Grundwert hat, gibt Basis-Score, egal woher der Punkt kommt: Schmiede (dauerhaft), Glühende
+Klinge, Feuerwalze, Rückzündung Episch, fremde Wert-Skills. Ein Effekt, der Score je Punkt ist der
+Regler.
+
+| Stufe | Effekt | Klinge Selten bei 90 % Hitze (+3 auf alle): je Sieg / je Runde | Extra |
+| --- | --- | --- | --- |
+| Normal | Sieg: +8 Basis-Score je Punkt Wert über dem Grundwert der Karte | +24 / +620 | – |
+| Selten | +12 je Punkt | +36 / +940 | – |
+| Sehr selten | +16 je Punkt | +48 / +1250 | – |
+| Episch | +20 je Punkt | +60 / +1560 | Schmiedewert zählt doppelt |
+
+Heute (+12, nur Schmiedewert) liegt auf Selten, zählt aber weniger Quellen. Glutstahl ist damit das
+Gegenstück zu Kurzschluss bei Blitz (Stapel zu Score): der Score-Ausgang für alles, was Wert baut, und
+das Bindeglied zwischen Halte-Build (Klinge) und Schmiede-Build. Warum eigenständig: ohne Basis-Bindung
+läuft er mit Klinge allein; mit Schmiede kommen je geschmiedeter Karte +3 (Episch +6) je Sieg dazu,
+nach zehn Runden Schmiede Selten rund +30 Deckwert, also im Schnitt +0,75 je Karte. Kein Kreislauf,
+Score speist nichts.
+
 ## 5. Eis
 
 Offen.
