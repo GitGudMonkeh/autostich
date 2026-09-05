@@ -315,6 +315,8 @@ Direkt-Score ist überall entfernt; die Ersatz-Payoffs stehen in der Basis (Kart
 | Sehr selten | jeder Crit +1 extra, volle Leiste gibt +1 zurück | – |
 | Episch | jeder Crit +1 extra, volle Leiste gibt +2 zurück | Ladung über 10 geht nicht verloren, sie bleibt für die nächste Leiste |
 
+Entscheid Owner (2026-09-04): **gesetzt wie vorgeschlagen.**
+
 **Statische Aufladung** — Rate aus Siegen. Heute: Sieg ohne Crit +1 Ladung, volle Leiste +40
 Direkt-Score. Direkt-Score entfällt, Ersatz ist Kartenwert.
 
