@@ -1156,7 +1156,7 @@ hat die nächste Karte +2 Wert. Ein Effekt, die Hitze-Schwelle ist der Regler un
 | Normal | ab 80 % Hitze: nach einem Sieg hat die nächste Karte +2 Wert | – |
 | Selten | ab 60 % | – |
 | Sehr selten | ab 40 % | – |
-| Episch | ab 20 % | – |
+| Episch | ab 20 % | die nächste Karte hat den Bonus auch nach einer Niederlage (nachgetragen 2026-09-05, Regel für Hitze-Schwellen-Leitern) |
 
 Heute (ab 40, gestaffelt +1 bis +3) liegt auf Sehr selten. Warum fest statt je Serienpunkt: offen
 skaliert wäre die nächste Karte bei Serie 8 um +8 stärker und gewänne fast sicher, die Serie endete
@@ -1270,9 +1270,33 @@ Hitze) ist in dieser Leiter aufgegangen.
 Late Game liegt die Hitze hoch, der Schritt von 40 auf 20 % ist dann wertlos. Brandmal Episch: auch
 die 14 Niederlagen je Runde brandmarken, also alle 40 Gegnerkarten, −80 statt −52, und es trifft genau
 die Karten, gegen die man verliert. Begrenzt durch die Deckgröße, kein Aufbau über Runden (Stapeln
-bleibt Legendär). Dieselbe Lücke hat die schon gesetzte **Feuerwalze** (Episch ab 20 %); Vorschlag
-dort: Extra "die nächste Karte hat den Bonus auch nach einer Niederlage", also +2 auf jede Karte,
-solange das Tor offen ist. Entscheid Owner.
+bleibt Legendär). Dieselbe Lücke hatte die schon gesetzte **Feuerwalze** (Episch ab 20 %); auf
+Owner-Entscheid nachgetragen: Extra "die nächste Karte hat den Bonus auch nach einer Niederlage", also
++2 auf jede Karte, solange das Tor offen ist.
+
+Entscheid Owner (2026-09-05): **Brandmal gesetzt wie überarbeitet**, Feuerwalze-Extra nachgetragen.
+
+**Lauffeuer** — Brand in die Breite. Heute: Verstärker (braucht Brandmal): Brände greifen auf eine
+Nachbarkarte über (−1), +1 Asche. Neu eigenständig, ohne Basis-Bindung: ein Sieg setzt die beiden
+Nachbarn der geschlagenen Gegnerkarte im Gegnerdeck in Brand, −1 Wert in der nächsten Runde; die
+geschlagene Karte selbst brennt nur mit Brandmal. Brände verschiedener Quellen addieren sich (Brandmal
+−2 auf der Karte, Lauffeuer −1 je Nachbarschaft), je Runde erneuert, kein Aufbau über Runden. Leiter
+wie Brandmal, mit Episch-Extra.
+
+| Stufe | Effekt | Extra |
+| --- | --- | --- |
+| Normal | ab 80 % Hitze: jeder Sieg brandmarkt beide Nachbarn der geschlagenen Gegnerkarte, −1 Wert in der nächsten Runde | – |
+| Selten | ab 60 % | – |
+| Sehr selten | ab 40 % | – |
+| Episch | ab 20 % | Reichweite zwei Karten, also vier Nachbarn |
+
+Heute (ein Nachbar, −1, plus Asche, nur mit Brandmal) liegt etwa auf Selten. Größe: 26 Siege mal zwei
+Nachbarn sind 52 Brände, mit Überlappung auf 40 Karten; allein trifft Lauffeuer so fast das ganze
+Gegnerdeck mit −1 (Größenordnung Glühende Klinge +1), mit Brandmal werden geschlagene Karten −3 und die
+übrigen −1. Episch: vier Nachbarn je Sieg, 104 Brände auf 40 Karten, im Schnitt −2,6 je Karte, begrenzt
+durch die Deckgröße. Warum eigenständig: an den Türen gibt es kein Tor, ein Verstärker ohne Basis wäre
+ein toter Pick; als Geschwister-Skill von Brandmal (Karte gegen Nachbarn) funktioniert er allein und
+stapelt mit ihm.
 
 ## 5. Eis
 
