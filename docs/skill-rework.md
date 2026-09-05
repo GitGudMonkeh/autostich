@@ -751,23 +751,33 @@ durch die Crits je Runde. Sim-Regler: der Bonus je Stapel und, falls nötig, "z�
 
 Entscheid Owner (2026-09-05): **gesetzt wie überarbeitet.**
 
-**Flächenionisation** — Feld. Heute: Sieg mit ionisierter Karte gibt beiden ungespielten Nachbarn
-+1 Stapel, dazu +130 Direkt-Score je ionisierter Karte im Feld (bis 30), anteilig zum Bekenntnis.
-Direkt-Score und Bekenntnis entfallen. Neu zwei Dinge, beide am Feld:
+**Drittes Legendär (heute Flächenionisation)** — Heute: Sieg mit ionisierter Karte gibt beiden
+ungespielten Nachbarn +1 Stapel, dazu +130 Direkt-Score je ionisierter Karte im Feld (bis 30),
+anteilig zum Bekenntnis. Ein erster Entwurf (Sprung auf beide Nachbarn plus +1 % Crit je ionisierter
+Karte) war dem Owner zu nah an den anderen Legendären: wieder Stapel, wieder Crit. Vorgabe: etwas
+Eigenes. Vorschlag, mit neuem Namen, weil der alte nicht mehr passt:
 
-> **Gewinnt eine ionisierte Karte, springt der Blitz auf beide Nachbarn in der Reihenfolge: +1 Stapel.**
-> **Jede ionisierte Karte im Deck gibt +1 % Crit-Chance.**
+**Hochspannung** — Kit.
 
-Der erste Teil ist der Regelbruch: Stapel entstehen aus Siegen, nicht nur aus der Leiste, und das Feld
-breitet sich von selbst aus; wo die Stapel landen, entscheidet die Aufstellung. Größenordnung: mit
-allen Karten ionisiert sind das 26 Siege je Runde, also +52 Stapel je Runde, spät im Mono-Build mehr
-als Leiste und Kettenblitz zusammen (rund 540 Stapel im Lauf). Bis alles ionisiert ist, wächst es wie
-ein Flächenbrand; danach bleibt es bei 52 je Runde, begrenzt durch die Siege. Der zweite Teil ist der
-Anzahl-Payoff: bis +40 % Crit-Chance beim vollen Deck, im Mono-Build Selten im Schnitt etwa +28 %.
-Beide Teile treiben sich gegenseitig, aber nur bis zur Sättigung bei 40 Karten; danach ist der Zuwachs
-linear. Sim-Regler: "jeder 2. Sieg" statt jeder, oder ein Nachbar statt beide; am zweiten Teil die 1 %.
-Wechselwirkung: Doppelentladung macht aus jedem Sprung 2 Stapel; Blitzfänger, Kurzschluss und
-Überspannung erreichen ihre Schwellen im ganzen Deck.
+> **Alle gehaltenen Blitz-Skills wirken eine Stufe höher.** Normal wie Selten, Selten wie Sehr selten,
+> Sehr selten wie Episch; Episch bleibt Episch.
+
+Keine neue Währung, kein neuer Zähler: der Regelbruch sitzt an der Leiter selbst. Jeder Blitz-Skill
+rückt in seiner Tabelle eine Zeile nach unten, das Extra der Episch-Zeile eingeschlossen. Der
+Blitz-Anteil von 5 % Crit je Skill ist nicht gestuft und bleibt. Sichtbarer Moment: alle Blitz-Karten
+im Build wechseln ihren Stufenrahmen. Größenordnung: eine Stufe ist je Skill etwa ×1,3 (Blitzableiter
+Normal auf Selten ×2 Extra-Ladung, Kettenblitz Selten auf Sehr selten ×1,5, Rampen ×1,33, Schwellen eine
+Stufe früher); über acht Blitz-Skills, die sich in Rate, Breite und Rampen multiplizieren, grob ×2 bis
+×3 auf den Blitz-Ausstoß, also in der Klasse von Donnergott und Doppelentladung. Skaliert mit der Zahl
+der gehaltenen Blitz-Skills und ist damit das Bekenntnis-Legendär ohne Tor: im Splash-Build mit vier
+Skills klein, im Mono-Build groß. Umsetzung: Stufenindex plus eins, bei Episch gedeckelt durch die
+Leiter selbst. Abgrenzung: Donnergott Rate, Doppelentladung Tiefe und Doppelschlag, Hochspannung das
+Kit, Durchschlag Crit.
+
+Alternative, falls ein Feld-Legendär gewünscht bleibt: **Rückschlag** — verliert eine ionisierte Karte,
+entlädt sie sich trotzdem: ihr Stapel-Score zählt als Basis des verlorenen Stichs. Neue Ereignisklasse
+(Niederlagen scoren), spät im Mono-Build rund +50 % Stapel-Score über die 14 Niederlagen je Runde;
+braucht einen Score-Pfad für verlorene Stiche in der Engine.
 
 ---
 
