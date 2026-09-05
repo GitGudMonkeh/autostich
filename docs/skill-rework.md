@@ -1198,16 +1198,19 @@ Neu dieselbe Form, Schwelle 80 und Boden 40 fest, der Score je Punkt ist der Reg
 | Normal | ab 80 % Hitze: der nächste Sieg brennt bis 40 herunter, +15 Basis-Score je Punkt | +600 | – |
 | Selten | +20 je Punkt | +800 | – |
 | Sehr selten | +25 je Punkt | +1000 | – |
-| Episch | +30 je Punkt | +1200 | – (stark) |
+| Episch | +30 je Punkt | +2400 | der Brand brennt die Leiste ganz herunter, bis 0 (80 Punkte) |
 
 Heute (+20, plus Skill-Zähler) liegt auf Selten. Takt: von 40 zurück auf 80 dauert mit Passiv und Glut
 Selten (rund 45 netto je Runde) etwa eine Runde, also ein Burst je Runde; mit Zunder dazu zwei. Der
 Burst landet in der Basis eines einzigen Stichs und wird mit dessen Multiplikatoren gerechnet, Serie,
 Formation, Crit, Verbrennung; das Burst-Paar Glut plus Flächenbrand will darum große Siege. Preis:
 der Brand senkt den Passiv-Multiplikator von ×1,16 auf ×1,08 und nimmt Glühende Klinge eine Stufe,
-das ist die "halten gegen verbrennen"-Spannung. Vorschlag dazu: die Verbraucher-Regel (höchstens ein
-Konsument) entfällt; Flächenbrand und Schmelzpunkt zusammen bremsen sich von selbst, Schmelzpunkt
-hält die Hitze unter 80.
+das ist die "halten gegen verbrennen"-Spannung. Episch (erster Entwurf +30 ohne Extra war dem Owner
+nicht episch genug): der Burst ist mit 80 Punkten 2,4-mal so groß wie auf Sehr selten, dafür steht die
+Leiste danach auf null, Multiplikator ×1,0 und Klinge ohne Stufe, und der Wiederaufbau bis 80 dauert
+knapp zwei Runden; je Runde etwa +20 % gegenüber Sehr selten, als Moment das Vielfache. Vorschlag
+dazu: die Verbraucher-Regel (höchstens ein Konsument) entfällt; Flächenbrand und Schmelzpunkt zusammen
+bremsen sich von selbst, Schmelzpunkt hält die Hitze unter 80.
 
 ## 5. Eis
 
