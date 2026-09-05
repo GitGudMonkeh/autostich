@@ -28,6 +28,9 @@ und gilt erst, wenn es nach Gesetzt wandert.
   der Sim. Wechselwirkung mit Überschlag, der denselben Überschuss in Ladung wandelt, wird bei Skill 11
   entschieden.
 - Slots unbegrenzt.
+- **Kein Selbstwachstum der Stapel (Lesart A, gesetzt 2026-09-05).** Stapel entstehen nur aus der Leiste
+  und aus Skills. Die heutige Engine-Regel "ionisierte Siegkarte +1 Stapel je Sieg" entfällt. Tiefe ist
+  keine Ressource, die Anzahl der Ionisierungen ist eine. Zahlen in 3.5 vor Blitzfänger.
 - Angebot: **zwei Türen**, jede zeigt **drei Fraktionssymbole** (drei Skills aus höchstens zwei
   Fraktionen, Wiederholung erlaubt). Nach der Wahl drei Skills mit ihren Stufen, einer wird genommen.
   Stufen sind an der Tür nicht sichtbar.
@@ -39,8 +42,6 @@ und gilt erst, wenn es nach Gesetzt wandert.
 - Fokus am Start (eine von drei gewürfelten Fraktionen, ihre Tür jede zweite Phase sicher).
 - Episch-Quote je Skill und Pity.
 - Anzahl und Abstand der Bosse.
-- **Selbstwachstum der Stapel:** bleibt die heutige Regel "ionisierte Siegkarte +1 Stapel je Sieg" unter
-  dem neuen Passiv? Entscheidet, ob Tiefe als Ressource existiert. Zahlen in 3.5 bei Blitzfänger.
 
 ### Vorschlag: Stufenleiter
 
@@ -142,6 +143,7 @@ fester Payoff. Skills ändern die Rate, den Payoff und tun etwas mit der Menge.
 | Jeder Crit +1 Ladung, Leiste 10, Verbraucher löst aus | Leiste 10 Crits, Payoff fest: eine Karte ionisieren |
 | Skill "Ionisierung" als einziger Verbraucher, höchstens einer im Build | Verbraucher-Regel entfällt, der Skill ist im Passiv aufgegangen |
 | Stapel geben Score und feldweit Crit-Chance, Sättigung gibt Kartenwert | nur noch Score |
+| Ionisierte Siegkarte erhält je Sieg +1 Stapel (Selbstwachstum) | entfällt (Lesart A, gesetzt 2026-09-05). Stapel nur aus Leiste und Skills |
 | Kaskade, Bekenntnis | unberührt, bleiben Skill-Sache |
 
 **Folge des offenen Deckels:** "voll ionisiert" gibt es nicht mehr als Zustand. Skills, die heute daran
@@ -449,22 +451,29 @@ bleibt ein fester Payoff, die Skills tragen die Skalierung (Kettenblitz 0,5× bi
 mehr Score" heißt genau das. Preis: zwei Skills bekommen einen anderen Auslöser. Ein Mittelweg wäre
 langsameres Wachstum (+1 Stapel je N Siege); die Zahl N wäre dann der Regler zwischen A und B.
 
-**Blitzfänger** — Tiefe zu Wert. Heute: Ionisierung trifft volle Karte (5 Stapel): +2 Stichwert beim
-nächsten Auftauchen, +1 Ladung. Heute sind ab Zyklus 20 fast alle Karten voll, der Skill feuert also
-spät bei fast jeder Ionisierung. Vorschlag unter Lesart A: Auslöser ist jede Ionisierung, die Zielkarte
-"fängt" den Blitz. Wert wirkt doppelt, als Basis-Score und als Siegchance.
+Entscheid Owner (2026-09-05): **Lesart A gesetzt.** Kettenblitz dazu noch einmal unter A bestätigt;
+gemessener Anteil des Stapel-Scores an der Kartenbasis über den Lauf, mono: ohne Kettenblitz 0,54×,
+Normal 0,80×, Selten 1,08×, Sehr selten 1,62×, Episch 2,69×; mit 3–4 Skills 0,40 / 0,59 / 0,81 / 1,21 /
+2,02×.
 
-| Stufe | Effekt je Ionisierung | Extra |
-| --- | --- | --- |
-| Normal | Zielkarte +1 Wert beim nächsten Auftauchen, +1 Ladung | – |
-| Selten | Zielkarte +2 Wert beim nächsten Auftauchen, +1 Ladung | – |
-| Sehr selten | Zielkarte +1 Wert dauerhaft, +1 Ladung | – |
-| Episch | Zielkarte +2 Wert dauerhaft, +2 Ladung | – (stark) |
+**Blitzfänger** — Ionisierung zu Wert (vorher Tiefe zu Wert). Heute: Ionisierung trifft volle Karte
+(5 Stapel): +2 Stichwert beim nächsten Auftauchen, +1 Ladung. Heute sind ab Zyklus 20 fast alle Karten
+voll, der Skill feuert also spät bei fast jeder Ionisierung. Neu: jede ionisierte Karte "fängt" den
+Blitz und bekommt Wert; die Ladung kommt je Leiste, nicht je Karte. Wert wirkt doppelt, als Basis-Score
+und als Siegchance.
 
-Auslöser je Lauf: mono 28, 3–4 Skills 17, ab Runde 7; mit Kettenblitz jede erfasste Karte, also mal 2 bis
-5. Episch mono: +56 Wert auf 220 Deckwert bis zum Ende, plus 20 % Leistentempo. Unter Lesart B bliebe die
-alte Fassung mit fester Schwelle ab 5 Stapeln (Auslöser je Lauf: mono 6, 3–4 Skills 2,6, mit Kettenblitz
-Selten 22 bzw. 9).
+| Stufe | Wert je ionisierter Karte | Ladung je voller Leiste | Extra |
+| --- | --- | --- | --- |
+| Normal | +1 beim nächsten Auftauchen | +1 | – |
+| Selten | +2 beim nächsten Auftauchen | +1 | – |
+| Sehr selten | +1 dauerhaft | +1 | – |
+| Episch | +2 dauerhaft | +2 | – (stark) |
+
+Heute liegt auf Selten. Karten je Lauf: mono 28, 3–4 Skills 17, ab Runde 7; mit Kettenblitz jede
+erfasste Karte, also mal 1,5 bis 5. Episch mono: +56 Wert auf 220 Deckwert bis zum Ende. Warum Ladung je
+Leiste: je Karte gerechnet würde Kettenblitz Episch (5 Karten je Leiste) mit +2 je Karte 10 Ladung
+zurückgeben, die Leiste füllte sich selbst. Je Leiste multipliziert Kettenblitz nur den Wert-Teil.
+Sim-Wachpunkt: Kettenblitz Episch mal Blitzfänger Episch gibt +282 Wert dauerhaft auf 220 Deckwert.
 
 **Kurzschluss** — Tiefe zu Score. Heute: Sieg mit voller Karte +250 Direkt-Score, +3 Ladung.
 Direkt-Score entfällt, Ersatz: die Stapel dieser Karte zählen in diesem Stich mehrfach.
