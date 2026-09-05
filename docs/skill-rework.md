@@ -25,8 +25,8 @@ und gilt erst, wenn es nach Gesetzt wandert.
   ist der Regler. Der harte Deckel des fertigen Crit-Multiplikators in der Engine (8×) ist davon nicht
   berührt, er bleibt, bis der Owner anderes sagt.
 - **Crit-Chance über 100 % gibt einen sehr kleinen Crit-Multiplikator-Bonus.** Systemregel, Größe in
-  der Sim. Wechselwirkung mit Überschlag, der denselben Überschuss in Ladung wandelt, wird bei Skill 11
-  entschieden.
+  der Sim. Überschlag (Skill 11, gesetzt 2026-09-05) wandelt denselben Überschuss in mehr Crit-Mult und
+  kommt obendrauf; die Regel bleibt der Sockel für alle Fraktionen.
 - Slots unbegrenzt.
 - **Kein Selbstwachstum der Stapel (Lesart A, gesetzt 2026-09-05).** Stapel entstehen nur aus der Leiste
   und aus Skills. Die heutige Engine-Regel "ionisierte Siegkarte +1 Stapel je Sieg" entfällt. Tiefe ist
@@ -556,17 +556,29 @@ Zustand heißt: der Bonus gilt, solange der Überschuss da ist, und fällt mit i
 speist keine Leiste. Kontext: Basis-Crit-Mult 2,25×, Entladung Selten baut +0,03× je Leiste dauerhaft
 auf; Überschlag liegt bewusst darunter. Überschuss in realen Builds: ein Mono-Build mit Gewitterfront
 Selten (0,75 % je Leiste, rund 230 Leisten) endet je nach Zeitpunkt des Skills 50 bis 150 Punkte über
-100. Wechselwirkung mit der Systemregel (Vorschlag): die Regel bleibt als kleiner Sockel für alle
-Fraktionen, Überschlag kommt obendrauf; die Sim setzt beide Zahlen zusammen.
+100. Wechselwirkung mit der Systemregel: die Regel bleibt als kleiner Sockel für alle Fraktionen,
+Überschlag kommt obendrauf; die Sim setzt beide Zahlen zusammen.
 
-**Überspannung** — Kaskade. Heute: Crit auf oder neben einer ionisierten Karte +3 Ladung.
+Entscheid Owner (2026-09-05): **gesetzt wie überarbeitet**, Systemregel als Sockel darunter.
+
+**Überspannung** — Kaskade, Tiefe zu Ladung. Heute: Crit auf oder neben einer ionisierten Karte
++3 Ladung. "Neben" entfällt: mit den realen Stapelzahlen ist spät jede Karte ionisiert, die Bedingung
+"ionisiert" wäre dann leer und der Skill ein zweiter Blitzableiter. Neu: Schwellenleiter, ein Effekt,
+fester Betrag. Dritter Schwellen-Skill neben Blitzfänger (Wert) und Kurzschluss (Score).
 
 | Stufe | Effekt | Extra |
 | --- | --- | --- |
-| Normal | +1 Ladung, nur auf der ionisierten Karte selbst | – |
-| Selten | +2 Ladung, auf oder neben | – |
-| Sehr selten | +3 Ladung, auf oder neben | – |
-| Episch | +4 Ladung, auf oder neben | Reichweite zwei Karten |
+| Normal | Crit mit einer Karte ab 6 Stapeln: +2 Ladung | – |
+| Selten | ab 5 Stapeln | – |
+| Sehr selten | ab 4 Stapeln | – |
+| Episch | ab 3 Stapeln | – |
+
+Anteil der Crits, die zählen, gleich Anteil der Karten über der Schwelle: mono Selten im Schnitt über
+den Lauf 29 / 35 / 42 / 50 %, am Ende alle; Splash 9 / 16 / 26 / 38 %, am Ende 43 / 63 / 80 / 93 %.
+Spät bei 50 % Crit: 13 Crits mal 2 sind 26 Ladung je Runde, 2,6 Leisten vor Rate-Skills; Blitzableiter
+Selten gibt 1,3. Die Rückkopplung Ladung → Stapel → tiefe Karten → Ladung ist durch die Crits je Runde
+begrenzt, kein Kreislauf. Heute gibt +3 auf jeder ionisierten Karte, spät also +3 je Crit; die Leiter
+liegt darunter, weil sie später anspringt.
 
 **Blitzschlag** — Ionisierung an der Leiste vorbei. Heute: jeder Crit ionisiert die Siegkarte. Das
 Passiv braucht zehn Crits je Ionisierung; die Stufen setzen den Skill in ein Verhältnis dazu.
