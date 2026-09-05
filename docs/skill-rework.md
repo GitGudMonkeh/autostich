@@ -1166,6 +1166,27 @@ Feuerwalze ist damit der Serien-Motor von Feuer und füttert Feuersturm (Hitze j
 fremde Serien-Skills. Die Schwelle koppelt ihn an den Halte-Build; ein Tropf-Build kommt erst mit
 Sehr selten oder Episch heran.
 
+Entscheid Owner (2026-09-05): **gesetzt wie vorgeschlagen.**
+
+**Verbrennung** — Vorsprung zu Score. Heute: Feuer-Score ×1,5 ab Vorsprung 8, ×2 ab 12. Das Passiv
+macht keinen Feuer-Score mehr, der alte Multiplikator hätte nur noch Skill-Score (Konsumenten,
+Schmiede) zu treffen. Neu trifft er den ganzen Stich: ein Sieg mit großem Vorsprung zählt ×1,5, Basis
+mal Multiplikatoren. Ein Effekt, die Vorsprungs-Schwelle sinkt mit der Stufe.
+
+| Stufe | Effekt | Anteil der Siege (Werte 1 bis 10, ohne Wert-Skills) | Extra |
+| --- | --- | --- | --- |
+| Normal | Sieg mit Vorsprung ab 8: der Stich zählt ×1,5 | 7 % | – |
+| Selten | ab 7 | 13 % | – |
+| Sehr selten | ab 6 | 22 % | – |
+| Episch | ab 5 | 33 % | – |
+
+Heute (×1,5 ab 8, nur auf Feuer-Score) liegt auf Normal, auf den ganzen Stich gerechnet ist Normal
+schon stärker als heute. Der Skill skaliert mit allem, was den Vorsprung hebt: Glühende Klinge +3
+verschiebt jede Schwelle um drei Punkte (Selten ab 7 trifft dann wie "ab 4", 44 % der Siege), Schmiede
+hebt die schwächsten Karten, Feuerwalze die nächste Karte. Damit ist Verbrennung der Score-Payoff des
+"hoch gewinnen"-Builds neben Glut (dessen Hitze-Seite) und ergänzt die Konsumenten, die den Score aus
+der Hitze holen. Kein Kreislauf, Score speist nichts.
+
 ## 5. Eis
 
 Offen.
