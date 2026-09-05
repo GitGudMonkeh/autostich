@@ -1104,6 +1104,25 @@ Rate-Quelle mit eigenem Auslöser: Glut belohnt hohe Siege, Zunder viele, Feuers
 Rückzündung das Wechselspiel; ein Deck, das oft knapp verliert und dann gewinnt, hat hier am meisten.
 Das Episch-Extra macht den Comeback-Sieg selbst wahrscheinlicher.
 
+Entscheid Owner (2026-09-05): **gesetzt wie vorgeschlagen.**
+
+**Glühende Klinge** — Hitze zu Wert. Heute: alle Karten +1 Wert ab 40 % Hitze, +2 ab 70 % (dazu ein
+Sieg mit Vorsprung 8 im Segment), +3 bei 100 % (Vorsprung 12). Neu ohne die Vorsprungs-Bedingungen, als
+Treppe wie der Passiv-Multiplikator: je Schritt Hitze +1 Wert auf alle Karten. Ein Effekt, der Schritt
+ist der Regler.
+
+| Stufe | Effekt | bei voller Leiste | Extra |
+| --- | --- | --- | --- |
+| Normal | alle Karten +1 Wert je 40 % Hitze | +2 | – |
+| Selten | je 30 % | +3 | – |
+| Sehr selten | je 25 % | +4 | – |
+| Episch | je 20 % | +5 | – (stark) |
+
+Heute (+3 bei 100, mit Bedingungen) liegt auf Selten. Wert wirkt doppelt, Siegchance und Basis; +1 auf
+alle 40 Karten hebt die Siegquote grob um 8 Punkte, +3 in Richtung 90 %. Das ist der Payoff des
+Halte-Builds: Hitze oben halten heißt starkes Deck, jeder Konsum kostet Wert. Zusammenspiel: Glutbett
+sichert die Stufen gegen Niederlagen, Feuerwalze legt Serie-Wert obendrauf.
+
 ## 5. Eis
 
 Offen.
