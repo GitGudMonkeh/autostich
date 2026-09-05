@@ -1609,6 +1609,55 @@ und 4.7. Technische Entscheide, die das Dokument offen ließ:
   Schmiede-Zähler, Brand-Zeile; Ertrag in zwei Kanälen (Feuer-Score, Multiplikator-Anteil).
 - Gates grün, Sim-Band-Wächter unverändert grün.
 
+### 7.4 Stand Phase 4 und 5 (2026-09-05, erste Zahlen)
+
+**Texte (Phase 4).** Die Skilltexte stehen seit Phase 2/3 im Skillkatalog (Normal-Stufe, dann die Leiter aus denselben
+Tabellen), die Passiv-Texte und die Glossareinträge Hitze, Brand, Weißglut, Schmieden, Konsument, Überlauf, Ladung,
+Ionisierung, Stapel, Legendärer Skill sind neu gefasst. Nachgezogen: Vorsprung, Skill-Slot (unbegrenzt), Bekenntnis
+(nur noch Pflanze), der Meisterhand-Text (sofortige Skill-Wahl statt Slot) und der Direkt-Score-Tooltip. **Offen für den
+Owner:** Wortlaut und Stufenfarben abnehmen; Karten-Pips zeigen weiter bis 5 Stapel (darüber nur der Tooltip) — Vorschlag:
+ab 6 eine Zahl statt Pips; die Meta-Glossareinträge (Stichpunkte, Deckpunkte, Upgrade-Baum) nennen noch das
+gestrichene Meta-System.
+
+**Anzeige.** Ladungsleiste folgt `lightning.maxCharge` (Donnergott 7); Hitzeleiste 0–100, mit Weißglut 0–200 mit Marke
+bei 100, Multiplikator im Kopf, Abzeichen für Klinge, Feuerwalze, Verbrennung, Schmiede und Sonnenzorn.
+
+**Gates und Deploy (Phase 5).** `npm test`, Lint, Build, Preview-Build, `gen:db`, `loc:export` grün; CI und
+Deploy-Slot `/autostich/exp/` grün für den Feuer-Stand (11278896). Der Sim-Band-Wächter (Random-Policy, Median
+1,3M–2,7M) bleibt grün und wird nicht neu zentriert.
+
+**Sim, erste Zahlen (Seeds 1…, Fraktions-Policy hält 10 Skills, alles andere Random-Baseline):**
+
+| Build (200 Läufe) | Median | vs. Mix | p90 | Siegquote |
+| --- | --- | --- | --- | --- |
+| Mix (Random) | 1,33M | 1,00× | 2,37M | 58,1 % |
+| Feuer mono | 2,69M | 2,02× | 7,87M | 65,9 % |
+| Blitz mono | 2,36M | 1,77× | 5,56M | 53,4 % |
+| Eis mono (alter Stand) | 5,83M | 4,38× | 19,5M | 53,5 % |
+| Pflanze mono (alter Stand) | 5,15M | 3,86× | 7,82M | 64,6 % |
+
+Splash (100 Läufe, Slot-Split): Feuer+Blitz 2,53M = 0,96× des besten reinen Members (gesund, Referenz ≈ 1,0); jede
+Kombination mit Eis oder Pflanze verwässert (0,39× bis 0,66×), weil die alten Fraktionen noch auf der alten Ökonomie
+stehen. Feuer+Pflanze ist mit 3,34M der beste Kombi-Floor.
+
+Skill-Lift (200 Läufe je Fraktion, Ø-Score mit Skill ÷ Ø gesamt; zufällige Builds, Stufen gewürfelt):
+
+- **Feuer:** Sonnenkern 2,70 · Damaststahl 1,16 · Sonnenzorn 1,13 · Feuersturm 1,10 · Median 1,01 · schwach: Glut 0,95,
+  Zunder 0,93, Verbrennung 0,93, Glutstahl 0,92, Glutbett 0,89, Schmelzpunkt 0,89, Flächenbrand 0,87, Phönixfeuer 0,77.
+  Lesart: mit zehn Feuer-Skills steht die Leiste meist voll (Wachpunkt „Einnahmen gegen die Leiste"); Rate-Skills und
+  Konsumenten tragen dann wenig, der Multiplikator und die Brände alles. Sonnenkern stapelt das Gegnerdeck wie in 4.7
+  vorhergesagt herunter (Regler: 20 je Brandpunkt, notfalls die −1).
+- **Blitz:** Durchschlag 1,76 · Doppelentladung 1,18 · Donnergott 1,18 · Median 0,99 · schwach: Serienschutz 0,94,
+  Reststrom 0,91, Hochspannung 0,90. Lesart: der Crit auf Niederlagen ist der stärkste Hebel; Hochspannung hebt
+  gewürfelte Normal-Stufen nur eine Stufe und liegt darum unter dem Schnitt.
+- Eis (Eiszeit 3,55, Erstarrung 2,39, Große Lawine 2,25) und Pflanze (Weltenbaum 1,48, Ewiger Frühling 1,44) zum
+  Vergleich, alter Stand.
+
+**Vorschlag für das Tarieren (Entscheid Owner):** erst Blitz und Feuer gegeneinander auf gleichen Floor bringen
+(Regler: `SIM_ION_SCORE_PER_STACK`, `SIM_HEAT_MULT_PER_10`, Sonnenkern 20 je Brandpunkt, Durchschlag), dann Eis und
+Pflanze in ihren Runden an dieses Niveau; die Verteilung der Lifts (Median ≈ 1, Legendäre oben) ist die gewünschte
+Form. Phönixfeuer und die beiden Konsumenten sind die ersten Kandidaten für eine Anhebung.
+
 ## 5. Eis
 
 Offen.
@@ -1642,3 +1691,4 @@ Offen.
 | 2026-09-05 | Phase 1 umgesetzt (7.1): Stufenwurf je Platz mit Legendär als fünfter Stufe, 40-Runden-Plan ohne Legendär-Phase, Slots unbegrenzt, Stufe sichtbar. Gates grün; Sim-Band vorläufig neu zentriert. |
 | 2026-09-05 | Phase 2 umgesetzt (7.2): Blitz-Modul mit Passiv, 15 Skills auf vier Stufen, 4 Legendären und Systemregel; Altlasten raus. Technische Entscheide dort festgehalten. Gates grün. |
 | 2026-09-05 | Phase 3 umgesetzt (7.3): Feuer-Modul mit Passiv (Hitze aus Vorsprung, Kühlung −2, Hitze-Multiplikator als Faktor), 15 Skills auf vier Stufen, 4 Legendären; Asche, Feuer-Score, Glutdividende, Überhitzung, Funkenflug, Schmelzofen, Verbraucher-Regel raus. Technische Entscheide dort festgehalten. Gates grün. |
+| 2026-09-05 | Phase 4 und 5 (7.4): veraltete Texte nachgezogen (Vorsprung, Skill-Slot, Bekenntnis, Meisterhand, Direkt-Score-Tooltip), Anzeige-Stand notiert, Deploy grün. Erste Sim-Zahlen: Feuer 2,69M und Blitz 2,36M mono gegen Eis 5,83M und Pflanze 5,15M (alter Stand), Feuer+Blitz Splash 0,96× gesund, Skill-Lifts je Fraktion. Tarier-Vorschlag an den Owner. |
