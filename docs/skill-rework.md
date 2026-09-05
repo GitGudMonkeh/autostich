@@ -1412,6 +1412,25 @@ vier Punkte je Runde und ist nach wenigen Runden wertlos. Größenordnung dann: 
 Serie bricht nie, Glut ohne Vorsprungsgrenze. Sim-Regler: die 20 je Brand, notfalls die −1. Abgrenzung
 zu den anderen drei: Sonnenkern schwächt den Gegner, die anderen stärken das eigene Spiel.
 
+Entscheid Owner (2026-09-05): **gesetzt wie vorgeschlagen.**
+
+**Phönixfeuer** — Rhythmus. Heute: Niederlagen kosten keine Hitze, sondern geben +8 % je Punkt
+Rückstand; auf 0 verbrauchte Hitze entzündet sich einmal je Runde auf 40 % neu. Beide Ideen bleiben,
+die Zahlen folgen dem neuen Passiv:
+
+> **Niederlagen kühlen nicht, sie heizen: +2 % Hitze je Punkt Rückstand.**
+> **Fällt die Hitze auf 0, entzündet sie sich neu auf 50 %, einmal je Runde.**
+
+Der Regelbruch dreht die Passiv-Regel um. Statt −28 je Runde (14 Niederlagen mal 2) kommen +104 (14 mal
+3,7 mal 2), ein Umschwung von rund 130 Hitze je Runde, so viel wie Zunder Episch plus Passiv. Ein Deck,
+das viel verliert, heizt damit am meisten; Rückzündung (Sieg nach Niederlage) legt obendrauf, Glutbett
+wird überflüssig. Der zweite Teil ist der Phönix-Moment für die Konsumenten: Flächenbrand Episch brennt
+bis 0 und zündet sofort auf 50 zurück, der Wiederaufbau bis 80 dauert dann keine halbe Runde;
+Schmelzpunkt brennt die letzten Punkte weg und läuft nach der Neuzündung auf 50 weiter. Einmal je
+Runde hält es begrenzt. Sim-Wachpunkt: Phönixfeuer mit Flächenbrand Episch (zwei Bursts je Runde) und
+mit Weißglut (Hitze steigt auch bei Niederlagen weiter, Leiste 200 ohne Kühlung); Regler die 2 je
+Punkt.
+
 ## 5. Eis
 
 Offen.
