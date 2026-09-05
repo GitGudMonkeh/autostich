@@ -990,6 +990,32 @@ Schmelzofen.** Dann bliebe Schmelzofen als reiner "ab 50 % Hitze"-Verstärker de
 die Stufen ihrer Basis-Skills aufnehmen; Verbraucher-Regel; Rückzündung auf einen Effekt; Schmiede
 kostet Hitze.
 
+**Entscheid Owner (2026-09-05): Funkenflug und Schmelzofen gestrichen.** Die 15 sind damit: Glut,
+Zunder, Feuersturm, Glutbett, Rückzündung, Glühende Klinge, Weißglut, Feuerwalze, Verbrennung,
+Flächenbrand, Schmelzpunkt, Brandmal, Lauffeuer, Schmiede (ex Ascheschmiede), Glutstahl.
+
+### 4.5 Stufen
+
+**Vorgaben (Owner, aus Blitz übernommen):** heutige Werte auf Selten bis Sehr selten; ein Effekt je
+Skill; keine Deckel, lieber niedrigere Werte; Schwellen sinken mit der Stufe; Episch mit kleinem Extra
+oder stark; kein Direkt-Score; keine Abhängigkeit von gehaltenen Feuer-Skills. Rechengrundlage: Passiv
+gibt (Vorsprung − 2) % Hitze ab Vorsprung 3, im Schnitt 1,9 % je Sieg und 49 % je Runde brutto;
+Niederlage −2 %; 26 Siege und 14 Niederlagen je Runde.
+
+**Glut** — Rate aus Vorsprung. Heute: Hitze aus Vorsprung ×1,5. Neu dieselbe Form, gestuft.
+
+| Stufe | Effekt | Hitze je Runde zusätzlich | Extra |
+| --- | --- | --- | --- |
+| Normal | Hitze aus Vorsprung ×1,25 | +12 % | – |
+| Selten | ×1,5 | +24 % | – |
+| Sehr selten | ×1,75 | +37 % | – |
+| Episch | ×2 | +49 % | – (stark) |
+
+Heute liegt auf Selten. Glut vervielfacht nur den Vorsprungs-Anteil des Passivs, nicht Zunder oder
+Feuersturm; damit bleibt er der Skill für Decks, die hoch gewinnen (Wert-Skills, Schmiede). Ohne
+Nutzer verpufft die Hitze an der 100, Glut braucht also einen Konsumenten oder Schwellen-Skill im
+Build.
+
 ## 5. Eis
 
 Offen.
