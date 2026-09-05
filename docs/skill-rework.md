@@ -1385,6 +1385,33 @@ Schritte (Owner); Hitze-Schwellen-Leitern, ob 80/60/40 im Late Game noch trennen
 
 **Noch offen für Feuer:** die vier Legendären (4.7), die Skilltexte für `de.js`, die Umsetzung.
 
+### 4.7 Legendäre Feuer
+
+Rahmen wie bei Blitz (3.7, gesetzt): keine Stufen, kein Tor, fünfte Stufe im Türwurf mit 3 bis 4 %,
+kein Ersetzen, zwei Effekte erlaubt, episch. Dazu aus dem Feuer-Durchgang: kein Direkt-Score, keine
+Asche, keine Abhängigkeit von gehaltenen Skills. Weil es kein Tor gibt, muss jedes Legendär allein
+laufen, darf also nicht an einem bestimmten Skill hängen. Achsen: Gegner (Brand), Rhythmus (Niederlagen),
+Halten (Multiplikator), Schmiede (Dauerwert).
+
+**Sonnenkern** — Gegner. Heute: Sieg gegen gebrandmarkte Karte +100 Score je Brand; endet eine Runde
+mit mindestens 60 % Hitze, stapeln sich Brände (bis 4) statt sich zu erneuern, und Karten unter Wert 9
+bekommen dauerhaft +2. Direkt-Score, Hitze-Bedingung, Brand-Deckel und Dauerwert-Anteil entfallen. Neu
+zwei Dinge am Brand, und der erste macht ihn eigenständig:
+
+> **Jeder Sieg brandmarkt die geschlagene Gegnerkarte (−1 Wert), und Brände erneuern sich nicht mehr:
+> sie stapeln sich über die Runden.**
+> **Sieg gegen eine gebrandmarkte Karte: +20 Basis-Score je Brand auf ihr.**
+
+Der Regelbruch ist das Stapeln: heute werden Brände jede Runde neu gesetzt, mit Sonnenkern bleiben sie
+und wachsen. Eine Gegnerkarte, die in zehn Runden geschlagen wird, steht bei −10, also für die meisten
+Karten (Werte 1 bis 10) bei null; der Wert einer Karte fällt nie unter null, das ist die natürliche
+Grenze der Schwächung. Der Score-Teil wächst weiter: je Sieg 20 mal Brände, spät 200 bis 400 Basis je
+Sieg, linear über die Runden. Allein trägt Sonnenkern sich mit dem eigenen −1 je Sieg; mit Brandmal
+(−2 je Sieg, spät auch bei Niederlagen) und Lauffeuer (Nachbarn) stapelt das ganze Gegnerdeck drei bis
+vier Punkte je Runde und ist nach wenigen Runden wertlos. Größenordnung dann: Siegquote nahe 100 %,
+Serie bricht nie, Glut ohne Vorsprungsgrenze. Sim-Regler: die 20 je Brand, notfalls die −1. Abgrenzung
+zu den anderen drei: Sonnenkern schwächt den Gegner, die anderen stärken das eigene Spiel.
+
 ## 5. Eis
 
 Offen.
