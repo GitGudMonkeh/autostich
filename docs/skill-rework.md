@@ -84,7 +84,7 @@ Entscheid: bleibt / geändert / gestrichen — Begründung in einem Satz
 
 | Fraktion | Passiv | Die 15 | Stufen | Legendäre |
 | --- | --- | --- | --- | --- |
-| Blitz | gesetzt | gesetzt (Ionisierung und Breitenbeschleuniger gestrichen) | **gesetzt, alle 15** (Übersicht 3.6) | separat, später |
+| Blitz | gesetzt | gesetzt (Ionisierung und Breitenbeschleuniger gestrichen) | **gesetzt, alle 15** (Übersicht 3.6) | **gesetzt, alle 4** (3.7; Hochspannung ersetzt Flächenionisation) |
 | Feuer | offen | offen | offen | separat, später |
 | Eis | offen | offen | offen | separat, später |
 | Pflanze | offen | offen | offen | separat, später |
@@ -687,7 +687,7 @@ Reststrom Episch mit Blitzableiter Sehr selten und Statische Aufladung; Ladungss
 (endlose Serie); Kettenblitz Episch × Blitzfänger; der Bonus je Stapel als Regler, wenn Stapel zu
 mächtig werden; Schwellen 6 / 5 / 4 / 3 gegen die gemessene Stapel-Tiefe.
 
-**Noch offen für Blitz:** die vier Legendären (3.7), die Skilltexte für `de.js`, die Umsetzung.
+**Noch offen für Blitz:** die Skilltexte für `de.js`, die Umsetzung. Die Legendären sind in 3.7 gesetzt.
 
 ### 3.7 Legendäre Blitz
 
@@ -800,6 +800,23 @@ für Crit-Builds leichter. Umsetzung: der Crit-Wurf läuft auch auf verlorenen S
 Zufallsstrom), ein Treffer wandelt das Ergebnis vor der Wertung. Ein zweiter Effekt ist möglich, aber
 nicht nötig; der Vorschlag lässt den Regelbruch allein stehen.
 
+Entscheid Owner (2026-09-05): **gesetzt wie vorgeschlagen.**
+
+**Übersicht Legendäre Blitz (gesetzt, Stand 2026-09-05).** Keine Stufen, kein Tor, fünfte Stufe im
+Türwurf mit 3 bis 4 % je Skill-Platz, kein Ersetzen, zwei gleichzeitig möglich.
+
+| Legendär | Achse | Effekte |
+| --- | --- | --- |
+| Donnergott | Rate | Die Ladungsleiste ist bei 7 voll. Dauerhaft +0,4× Crit-Multiplikator. |
+| Doppelentladung | Tiefe | Jede Ionisierung gibt 2 Stapel statt 1. Crit mit einer ionisierten Karte: der Stich zählt doppelt. |
+| Hochspannung (neu, ersetzt Flächenionisation) | Kit | Alle gehaltenen Blitz-Skills wirken eine Stufe höher, Episch bleibt Episch. |
+| Durchschlag | Crit | Auch Niederlagen können critten: ein Crit bei einer Niederlage gewinnt den Stich. |
+
+Sim-Wachpunkte: Donnergott mit Reststrom Episch und Blitzableiter; Doppelentladung mit Kettenblitz
+Episch (Stapel je Leiste ×2); Hochspannung im Mono-Build mit acht und mehr Skills; Durchschlag bei
+Crit-Chance nahe 100 % (Serie bricht nie, Serien-Mult und Ladungsserie am Maximum); zwei Legendäre
+zugleich, besonders Hochspannung plus eines der anderen.
+
 ---
 
 ## 4. Feuer
@@ -832,3 +849,4 @@ Offen.
 | 2026-09-05 | Ladungsserie (ohne Deckel) und Kettenblitz gesetzt. Lesart A gesetzt: kein Selbstwachstum der Stapel, Stapel nur aus Leiste und Skills. Messung beider Lesarten eingetragen. |
 | 2026-09-05 | Blitzfänger zweimal überarbeitet, zuletzt auf Owner-Vorgabe: ein Effekt, Stapel-Schwelle sinkt mit der Stufe. Stapel-Tiefe in realen Builds gemessen (Passiv-Zahlen waren die untere Schranke) und als Referenz für alle Schwellen-Skills eingetragen. |
 | 2026-09-05 | Stufen gesetzt: Blitzfänger, Kurzschluss, Spannungsstau (ohne Deckel), Überschlag (Crit-Mult statt Ladung), Überspannung, Blitzschlag, Dauerstrom (nur Serie zu Ladung), Serienschutz. Blitz damit komplett, Übersicht in 3.6. Sim-Notiz: Bonus je Stapel ist ein Regler. |
+| 2026-09-05 | Legendäre: Rahmen gesetzt (keine Stufen, kein Tor, 3–4 % je Platz im Türwurf, kein Ersetzen, zwei möglich, zwei Effekte erlaubt). Alle vier Blitz-Legendären gesetzt: Donnergott, Doppelentladung, Hochspannung (neu, ersetzt Flächenionisation), Durchschlag. Übersicht in 3.7. |
