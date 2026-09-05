@@ -361,7 +361,7 @@ export default {
   "bf.bd.crit": "Crit",
   "bf.bd.crit.title": "Crit-Multiplikator dieses Stichs.",
   "bf.bd.direct": "Direkt",
-  "bf.bd.direct.title": "Direkt-Score, der an der Kette vorbeiläuft: Glutdividende, Blitz, Pflanze, Gletscher, Vabanque.",
+  "bf.bd.direct.title": "Direkt-Score, der an der Kette vorbeiläuft: Pflanze, Gletscher, Vabanque.",
   "bf.bd.total": "Summe",
   "bf.bd.total.title": "Gesamter Score dieses Stichs.",
   "bf.bd.aria": "Aufschlüsselung des Stich-Scores",

@@ -90,7 +90,7 @@ export const GLOSSARY = {
      Gemessen wird der Kampfwert, also beides zusammen (engine.js: pValue − oValue). Der Begriff sagt das jetzt
      selbst; die Alt-Formen bleiben in `match`, damit ältere Texte weiter fett markiert werden. */
   wertvorsprung: { category: "grund", label: "Kampfwert-Vorsprung", icon: "⚔", color: CLR.fire,
-    text: "Der Abstand zwischen deinem Kampfwert und dem der Gegnerkarte, also Kartenwert plus Stichwert-Boni, nicht nur der Kartenwert. Nicht ob du gewinnst zählt für Feuer, sondern wie klar: Hitze und Feuer-Score wachsen mit dem Vorsprung.",
+    text: "Der Abstand zwischen deinem Kampfwert und dem der Gegnerkarte, also Kartenwert plus Stichwert-Boni, nicht nur der Kartenwert. Nicht ob du gewinnst zählt für Feuer, sondern wie klar: die Hitze wächst mit dem Vorsprung, und Verbrennung zählt einen Sieg ab ihrer Schwelle mehr.",
     match: ["Kampfwert-Vorsprung", "Wertvorsprung", "Vorsprung", "Wertabstand"] },
   kampfwert: { category: "grund", label: "Kampfwert", icon: "◆", color: CLR.grund,
     text: "Der effektive Wert einer Karte im Stich: Kartenwert plus alle Stichwert-Boni. Der höhere gewinnt.",
@@ -192,7 +192,7 @@ export const GLOSSARY = {
     text: `Eine Skill-Familie mit eigener Identität (Feuer · Blitz · Eis · Pflanze). Der erste Skill schaltet sie frei; bis zu ${C.MAX_ARCHETYPES} mischbar.`,
     match: ["Archetyp", "Archetypen", "Archetyps", "Fraktion", "Fraktionen"] },
   skillslot: { category: "frak", group: "gen", label: "Skill-Slot", icon: "▭", color: CLR.lightning,
-    text: `Du hältst höchstens ${C.SKILL_SLOTS} Skills gleichzeitig. Ist der Vorrat voll, ersetzt ein neuer einen alten. Der legendäre Skill aus der Legendär-Phase belegt einen zusätzlichen, festen Slot.`,
+    text: "Deine Skill-Slots sind nicht begrenzt: jeder gewählte Skill bleibt, Legendäre eingeschlossen. Nur eine Dev-Run-Regel kann ein Limit setzen; dann ersetzt ein neuer Skill einen alten.",
     match: ["Skill-Slot", "Skill-Slots", "Slots"] },
   skillrunde: { category: "frak", group: "gen", label: "Skill-Durchlauf", icon: "◷", color: CLR.lightning,
     text: `Zu festen Zeitpunkten im Lauf (erstmals Durchlauf ${C.FIRST_SKILL_CYCLE}) wählst du Skills statt eines Perks: ${C.SKILLS_OFFERED} Skills zur Auswahl, alle 4 Archetypen dabei.`,
@@ -209,8 +209,8 @@ export const GLOSSARY = {
     text: `Sammelt eine Karte mehr an, als ihr normaler Nutzen verwertet (Wachstum über dem Wert-Deckel ${C.PLANT_VALUE_CAP}, Hitze über ${C.HEAT_MAX} %), sonst wäre er verschwendet. Feuer (Weißglut) verlängert die Leiste bis ${C.WEISSGLUT_HEAT_MAX} %; die Legendären (Weltenbaum/Mutterbaum) verwandeln den großen Rest.`,
     match: ["Überlauf", "Überlauf-Wachstum"] },
   bekenntnis: { category: "frak", group: "gen", label: "Bekenntnis", icon: "◉", color: CLR.lightning,
-    text: "Wie stark du dich einem Archetyp verschrieben hast: der Anteil deiner Skill-Slots, den seine Skills belegen. Viele Effekte, vor allem Legendäre, zahlen anteilig danach, voll erst bei reinem Deck.",
-    match: ["Bekenntnis", "Blitz-Bekenntnis", "Feuer-Bekenntnis"] },
+    text: "Wie stark du dich der Pflanze verschrieben hast: der Anteil der Pflanzen-Skills an den Referenz-Slots. Die Direkt-Dividenden der Pflanzen-Legendären zahlen anteilig danach, voll erst bei reinem Deck. Blitz und Feuer kennen kein Bekenntnis mehr.",
+    match: ["Bekenntnis", "Pflanzen-Bekenntnis"] },
 
   /* ============ 4 · Feuer ============ */
   // exp skill rework (§4.2): Hitze, Brand, Weißglut und Schmieden neu beschrieben — Asche, Ascheglut und Glutdividende

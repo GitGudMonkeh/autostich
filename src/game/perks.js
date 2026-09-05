@@ -127,7 +127,7 @@ export const PERK_DEFS = {
   // --- v0.3-Erweiterung (2026-08-15): 7 neue gegen die Pool-Lücken. Zwei davon (Opfergang, Ballast) haben als ERSTE
   //     einen echten NACHTEIL — die #33-Definition „mächtig, aber mit Nachteil" hatte bis hier kein einziger Perk erfüllt. ---
   L_MEIS: { id: "L_MEIS", cat: "S", rarity: "legendary", label: "Meisterhand", skillSlotBonus: C.MEISTERHAND_SLOTS,
-        desc: `Sofort: du hältst dauerhaft ${C.MEISTERHAND_SLOTS === 1 ? "einen Skill" : `${C.MEISTERHAND_SLOTS} Skills`} mehr (${C.SKILL_SLOTS} → ${C.SKILL_SLOTS + C.MEISTERHAND_SLOTS}).` },
+        desc: `Sofort: eine zusätzliche Skill-Wahl außerhalb des Rundenplans (${C.MEISTERHAND_SLOTS === 1 ? "ein Skill" : `${C.MEISTERHAND_SLOTS} Skills`} mehr im Build).` }, // exp skill rework: Slots sind unbegrenzt — der Wert des Perks ist die sofortige Wahl
   L_SCHM: { id: "L_SCHM", cat: "A", rarity: "legendary", label: "Schmiede", schmiede: C.SCHMIEDE_STEP,
         desc: `Am Ende jedes Durchlaufs erhält die schwächste Karte deines Decks dauerhaft +${C.SCHMIEDE_STEP} Kartenwert.` },
   L_HOCH: { id: "L_HOCH", cat: "D", rarity: "legendary", label: "Hochseil", hochseil: true,
