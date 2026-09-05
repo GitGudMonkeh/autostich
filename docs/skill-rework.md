@@ -725,6 +725,22 @@ Blitzableiter, dann füllt jeder Crit eine Leiste; Regler sind die 7 (etwa 8) od
 auf 5). Warum nicht der Crit-Mult dazu: zwei Effekte, und +0,4× flach ist unter dem 8×-Deckel im
 Mono-Build ohnehin unsichtbar.
 
+Entscheid Owner (2026-09-05): **gesetzt wie vorgeschlagen.**
+
+**Doppelentladung** — Tiefe. Heute: der Verbraucher ionisiert dreimal so viele Karten, dazu Sieg mit
+ionisierter Karte +40 Direkt-Score je Stapel im Feld (bis 120), anteilig zum Bekenntnis. Direkt-Score
+und Bekenntnis entfallen. Neu ein Regelbruch an der Ionisierung selbst:
+
+> **Jede Ionisierung gibt 2 Stapel statt 1.**
+
+Gilt für jede Quelle: Leiste, Kettenblitz-Karten, Blitzschlag, Kettenblitz-Episch-Extra. Wirkung: der
+Stapel-Score verdoppelt sich, und die Schwellen 6 / 5 / 4 / 3 der drei Schwellen-Skills sind nach
+halb so vielen Treffern erreicht (Episch ab 3 Stapeln heißt: zweiter Treffer). Mono Selten aus
+`blitz-build.mjs`: rund 540 Stapel werden 1080. Abgrenzung: Kettenblitz macht Breite (mehr Karten je
+Leiste), Doppelentladung macht Tiefe (mehr je Treffer); Donnergott macht Rate. Kein Kreislauf, Stapel
+speisen keine Leiste; die einzige Rückkopplung läuft über Überspannung (Crit mit tiefer Karte gibt
+Ladung) und ist durch die Crits je Runde begrenzt. Sim-Regler: der Bonus je Stapel.
+
 ---
 
 ## 4. Feuer
