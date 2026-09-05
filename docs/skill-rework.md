@@ -707,10 +707,12 @@ skalieren mit dem Bekenntnis (Anteil der Fraktion an den Slots). Bestand siehe 3
    eines, 26 % zwei. Die eigene Legendär-Phase (Runde 29) entfällt.
 4. **Kein Ersetzen.** Ein Legendär verdrängt nichts; wer Glück hat, hält zwei.
 
-**Vorschlag (gilt je Legendär mit dem Entscheid zum Skill):** ein Regelbruch je Legendär, kein
-Zahlenpaket. Eine Regel der Fraktion wird gebrochen, ein Effekt, kein Direkt-Score, keine eigenen Deckel
-(die Engine-Deckel bleiben). Jeder der vier gehört zu einer anderen Achse des Kits: Rate (Leiste), Feld
-(Stapel im Deck), Tiefe (tiefe Karten), Crit.
+**Vorgabe Owner (2026-09-05): Legendäre dürfen zwei Dinge tun und sollen sich episch anfühlen.** Die
+Ein-Effekt-Regel der 15 gilt für sie nicht. Vorschlag dazu: je Legendär ein Regelbruch plus ein
+sichtbarer Moment, kein Direkt-Score, keine eigenen Deckel (die Engine-Deckel bleiben), jeder der vier
+auf einer anderen Achse des Kits: Rate (Leiste), Tiefe (Stapel je Treffer), Feld (Stapel im Deck), Crit.
+Donnergott ist mit einem Effekt gesetzt; der gestrichene Mult-Anteil kann als zweiter Effekt zurück,
+wenn der Owner es will.
 
 **Donnergott** — Rate. Heute: Verbraucher lösen schon bei 70 % Ladung aus, dazu dauerhaft +0,4×
 Crit-Multiplikator. Neu ein Effekt, der Regelbruch an der Leiste; der Mult-Anteil entfällt.
@@ -729,17 +731,22 @@ Entscheid Owner (2026-09-05): **gesetzt wie vorgeschlagen.**
 
 **Doppelentladung** — Tiefe. Heute: der Verbraucher ionisiert dreimal so viele Karten, dazu Sieg mit
 ionisierter Karte +40 Direkt-Score je Stapel im Feld (bis 120), anteilig zum Bekenntnis. Direkt-Score
-und Bekenntnis entfallen. Neu ein Regelbruch an der Ionisierung selbst:
+und Bekenntnis entfallen. Erster Entwurf nur mit "2 Stapel je Ionisierung": dem Owner zu schwach.
+Neu zwei Dinge, beide "doppelt":
 
 > **Jede Ionisierung gibt 2 Stapel statt 1.**
+> **Crit mit einer ionisierten Karte: der Blitz schlägt zweimal ein, der Stich zählt doppelt.**
 
-Gilt für jede Quelle: Leiste, Kettenblitz-Karten, Blitzschlag, Kettenblitz-Episch-Extra. Wirkung: der
-Stapel-Score verdoppelt sich, und die Schwellen 6 / 5 / 4 / 3 der drei Schwellen-Skills sind nach
-halb so vielen Treffern erreicht (Episch ab 3 Stapeln heißt: zweiter Treffer). Mono Selten aus
-`blitz-build.mjs`: rund 540 Stapel werden 1080. Abgrenzung: Kettenblitz macht Breite (mehr Karten je
-Leiste), Doppelentladung macht Tiefe (mehr je Treffer); Donnergott macht Rate. Kein Kreislauf, Stapel
-speisen keine Leiste; die einzige Rückkopplung läuft über Überspannung (Crit mit tiefer Karte gibt
-Ladung) und ist durch die Crits je Runde begrenzt. Sim-Regler: der Bonus je Stapel.
+Der erste Teil gilt für jede Quelle (Leiste, Kettenblitz-Karten, Blitzschlag): der Stapel-Score
+verdoppelt sich, und die Schwellen 6 / 5 / 4 / 3 sind nach halb so vielen Treffern erreicht. Der zweite
+Teil ist der sichtbare Moment: der ganze gewertete Stich (Basis mal Multiplikatoren) zählt zweimal.
+Größenordnung: spät im Mono-Build sind alle Karten ionisiert und die Crit-Chance liegt bei 50 % und
+mehr, also zählt jeder zweite Sieg doppelt, rund +50 % Score; früh, mit wenigen ionisierten Karten und
+15 % Crit, fast nichts. Splash am Ende (37 von 40 Karten ionisiert, 20 % Crit) rund +20 %. Der Effekt
+wächst mit Breite und Crit zugleich und ist damit der Schlussstein des Blitz-Builds. Abgrenzung:
+Kettenblitz macht Breite, Donnergott Rate, Doppelentladung Tiefe und den Doppelschlag. Kein Kreislauf:
+Stapel und Stichwertung speisen keine Leiste; Überspannung bleibt die einzige Rückkopplung, begrenzt
+durch die Crits je Runde. Sim-Regler: der Bonus je Stapel und, falls nötig, "zählt 1,5×" statt doppelt.
 
 ---
 
