@@ -19,6 +19,8 @@ und gilt erst, wenn es nach Gesetzt wandert.
 - **Jeder Skill hat vier Stufen:** Normal, Selten, Sehr selten, Episch. Stufen sind bessere Versionen
   desselben Skills. Episch hat ein kleines Extra oder ist sehr stark.
 - **Passive werden überarbeitet**, je Fraktion vor den Skills.
+- **Direkt-Score wird aus den Skills nach Möglichkeit entfernt.** Er ist im Late Game bedeutungslos.
+  Fraktions-Score geht in die Basis, vor die Multiplikatoren.
 - Slots unbegrenzt.
 - Angebot: **zwei Türen**, jede zeigt **drei Fraktionssymbole** (drei Skills aus höchstens zwei
   Fraktionen, Wiederholung erlaubt). Nach der Wahl drei Skills mit ihren Stufen, einer wird genommen.
@@ -138,18 +140,17 @@ fester Payoff. Skills ändern die Rate, den Payoff und tun etwas mit der Menge.
 hängen (Kurzschluss, Blitzfänger, Durchschlag), brauchen entweder eine Schwelle ("ab 5 Stapeln") oder
 skalieren je Stapel.
 
-**Wo der Stapel-Score in die Rechnung geht (Vorschlag, Entscheid beim Owner).** Ein gewonnener Stich
-rechnet Basis mal Multiplikatoren, also Kartenwert und Zuschläge, dann Serie, Perk-Multiplikator,
-Formation, Crit. Der Score je Stapel kann an zwei Stellen stehen:
+**Wo der Stapel-Score in die Rechnung geht. Gesetzt (Owner, 2026-09-04): in der Basis, vor den
+Multiplikatoren, wie heute.** Ein gewonnener Stich rechnet Basis mal Multiplikatoren, also Kartenwert
+und Zuschläge, dann Serie, Perk-Multiplikator, Formation, Crit. Der Stapel-Score steht in der Basis
+und wird mit dem ganzen Stack multipliziert. Beispiel mit Basis 20, drei Stapeln zu 12 und
+Multiplikator 8: 56 × 8 = 448. Die Tiefe der Stapel skaliert damit mit dem Build; das Tuning der Zahl
+je Stapel läuft über die Sim.
 
-| Stelle | Heute | Verhalten bei offenem Deckel |
-| --- | --- | --- |
-| in der Basis, vor den Multiplikatoren | so läuft ION_SCORE_PER_STACK heute | jeder Stapel wird mit dem ganzen Stack multipliziert, tiefe Stapel explodieren mit dem Build |
-| Direkt-Score, nach den Multiplikatoren | so laufen heute die Legendär-Dividenden | jeder Stapel zählt fest, tiefe Stapel wachsen linear |
-
-Beispiel mit Basis 20, drei Stapeln zu 12 und Multiplikator 8: in der Basis 56 × 8 = 448, als
-Direkt-Score 20 × 8 + 36 = 196. Vorschlag ist Direkt-Score, weil die Stapel jetzt keinen Deckel haben.
-Damit ist Ionisierung ein Boden, der mit der Anzahl wächst, kein zweiter Multiplikator.
+**Gesetzt (Owner, 2026-09-04): Direkt-Score wird aus den Skills nach Möglichkeit entfernt.** Direkt-Score
+nach den Multiplikatoren ist im Late Game bedeutungslos. Das gilt als Regel für alle Fraktionen. Im
+Blitz-Bestand betroffen: Statische Aufladung (+40 Direkt-Score je Verbrauch), Kurzschluss (+250
+Direkt-Score-Burst), bei den Legendären Doppelentladung und Flächenionisation (Direkt-Dividenden).
 
 Alle drei offenen Punkte sind gesetzt. Die 15er-Auswahl kann beginnen.
 
@@ -187,7 +188,8 @@ neue kommen, plus einer.
 | Gewitterfront, Entladung | Payoff bei voller Leiste, dauerhaft Crit-Chance oder Crit-Mult, mehrere gleichzeitig möglich |
 | Spannungsstau, Ladungsserie | Crit-Quelle aus Sieg ohne Crit oder aus der Serie |
 | Überspannung, Blitzschlag, Breitenbeschleuniger | Ionisierung außerhalb der Leiste oder an Position gebunden, Kaskade |
-| Kurzschluss, Blitzfänger | hängen an "voll ionisiert", brauchen eine Schwelle oder skalieren je Stapel |
+| Kurzschluss, Blitzfänger | hängen an "voll ionisiert", brauchen eine Schwelle oder skalieren je Stapel. Kurzschluss trägt Direkt-Score, der raus soll |
+| Statische Aufladung | Rate-Skill, aber ihr Verbrauchs-Payoff ist Direkt-Score, der raus soll |
 | Serienschutz | Ladung ausgeben statt Serie verlieren, bleibt |
 | neu, Anzahl-Skills | z. B. Crit-Chance je ionisierter Karte, Sättigung ab N ionisierten Karten, Ladung je Crit steigt mit der Anzahl |
 
@@ -284,3 +286,4 @@ Offen.
 | 2026-09-04 | Crit-Quelle gesetzt: +5 % je Blitz-Skill als passiver Anteil, Zahlen später in der Sim. Ionisierung als Skill gestrichen. Tempo-Tabelle auf gehaltene Skills umgestellt. |
 | 2026-09-04 | Stapel ohne Deckel gesetzt, Tuning über Sim. "Voll ionisiert" wird Schwelle oder Skalierer. Offen bleibt nur noch die Zielkarte. |
 | 2026-09-04 | Zielkarte gesetzt: die nächste in der Reihenfolge. Passiv damit komplett. Stelle des Stapel-Scores (Basis oder Direkt-Score) als Vorschlag mit Beispiel eingetragen. |
+| 2026-09-04 | Owner: Stapel-Score bleibt in der Basis. Regel für alle Fraktionen: Direkt-Score aus den Skills nach Möglichkeit entfernen. Betroffene Blitz-Skills markiert. |
