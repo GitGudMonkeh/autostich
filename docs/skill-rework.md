@@ -1212,6 +1212,31 @@ knapp zwei Runden; je Runde etwa +20 % gegenüber Sehr selten, als Moment das Vi
 dazu: die Verbraucher-Regel (höchstens ein Konsument) entfällt; Flächenbrand und Schmelzpunkt zusammen
 bremsen sich von selbst, Schmelzpunkt hält die Hitze unter 80.
 
+Entscheid Owner (2026-09-05): **gesetzt wie überarbeitet**, Episch mit dem Extra; die Verbraucher-Regel
+entfällt.
+
+**Schmelzpunkt** — Tropf-Konsument. Heute: jeder Sieg verbrennt 4 % Hitze, 10 Score je Punkt plus 6 je
+gehaltenem Prozent Hitze (bei voller Leiste 2440 je Sieg); Niederlagen kosten keine Hitze. Neu ohne den
+Hitze-Anteil im Preis und ohne die Niederlagen-Klausel (die gehört Glutbett): jeder Sieg verbrennt 4 %,
+jeder Punkt gibt festen Basis-Score. Dieselbe Leiter wie Flächenbrand, der Score je Punkt ist der
+Regler.
+
+| Stufe | Effekt | Basis-Score je Sieg (4 Punkte) | Extra |
+| --- | --- | --- | --- |
+| Normal | jeder Sieg verbrennt 4 % Hitze, +15 Basis-Score je Punkt | +60 | – |
+| Selten | +20 je Punkt | +80 | – |
+| Sehr selten | +25 je Punkt | +100 | – |
+| Episch | +30 je Punkt | +120 | jeder Sieg verbrennt 6 statt 4 |
+
+Heute liegt, ohne den Hitze-Anteil gerechnet, auf Normal bis Selten. Ökonomie: der Tropf verbrennt bis
+zu 104 % je Runde, mehr als jede Einnahme; die Hitze pendelt darum nahe null, und Schmelzpunkt setzt
+genau um, was hereinkommt, Einnahme mal Score je Punkt (Passiv plus Glut Selten rund 45 je Runde: +900
+auf Selten, mit Zunder Selten dazu +1900). Flächenbrand rechnet gleich: 800 je 45 Hitze sind 18 je
+Punkt. Beide Konsumenten wandeln Hitze zum selben Kurs, der Unterschied ist der Takt: der Burst hält
+die Hitze hoch (Multiplikator, Klinge) und legt alles in einen Stich, der Tropf hält sie niedrig,
+verteilt den Score auf jeden Sieg und braucht keinen Crit. Das Episch-Extra hebt den Durchsatz nur in
+Builds mit hoher Einnahme (Zunder, Feuersturm), sonst fließt nicht mehr, als hereinkommt.
+
 ## 5. Eis
 
 Offen.
