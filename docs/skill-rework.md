@@ -21,6 +21,12 @@ und gilt erst, wenn es nach Gesetzt wandert.
 - **Passive werden überarbeitet**, je Fraktion vor den Skills.
 - **Direkt-Score wird aus den Skills nach Möglichkeit entfernt.** Er ist im Late Game bedeutungslos.
   Fraktions-Score geht in die Basis, vor die Multiplikatoren.
+- **Keine Deckel auf Skill-Rampen, lieber niedrigere Werte.** Rampen laufen offen; die Zahl je Schritt
+  ist der Regler. Der harte Deckel des fertigen Crit-Multiplikators in der Engine (8×) ist davon nicht
+  berührt, er bleibt, bis der Owner anderes sagt.
+- **Crit-Chance über 100 % gibt einen sehr kleinen Crit-Multiplikator-Bonus.** Systemregel, Größe in
+  der Sim. Wechselwirkung mit Überschlag, der denselben Überschuss in Ladung wandelt, wird bei Skill 11
+  entschieden.
 - Slots unbegrenzt.
 - Angebot: **zwei Türen**, jede zeigt **drei Fraktionssymbole** (drei Skills aus höchstens zwei
   Fraktionen, Wiederholung erlaubt). Nach der Wahl drei Skills mit ihren Stufen, einer wird genommen.
@@ -348,14 +354,19 @@ Entscheid Owner (2026-09-04): **gesetzt wie vorgeschlagen**, Episch ohne Extra. 
 Episch mit Blitzableiter Sehr selten sind 1,5 Crits je Ionisierung, mit Statische Aufladung dazu lädt
 zusätzlich jeder Sieg. Diesen Dreier messen.
 
-**Gewitterfront** — Rampe Crit-Chance. Heute: volle Leiste +1 %, Deckel 50 %.
+**Gewitterfront** — Rampe Crit-Chance. Heute: volle Leiste +1 %, Deckel 50 %. Neu ohne Deckel, dafür
+niedrigere Schritte (Owner-Vorgabe).
 
-| Stufe | Effekt | Extra |
-| --- | --- | --- |
-| Normal | +0,5 % je volle Leiste, Deckel 20 % | – |
-| Selten | +1 %, Deckel 30 % | – |
-| Sehr selten | +1,5 %, Deckel 50 % | – |
-| Episch | +2 %, Deckel 60 % | – (stark) |
+| Stufe | Effekt | reiner Blitz, ~29 Leisten | Rate-Build, ~60 Leisten |
+| --- | --- | --- | --- |
+| Normal | +0,5 % je volle Leiste | +15 % | +30 % |
+| Selten | +0,75 % | +22 % | +45 % |
+| Sehr selten | +1 % | +29 % | +60 % |
+| Episch | +1,5 % | +44 % | +90 % |
+
+Episch ohne Extra, stark. Heute liegt bei +1 % mit Deckel 50, also zwischen Selten und Sehr selten:
+gleicher Schritt wie Sehr selten, aber gedeckelt. Über 100 % greift die Systemregel (kleiner
+Crit-Mult-Bonus) und Überschlag.
 
 **Entladung** — Rampe Crit-Mult. Heute: volle Leiste +0,1×, Deckel +1×.
 
