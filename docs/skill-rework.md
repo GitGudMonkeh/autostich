@@ -39,6 +39,8 @@ und gilt erst, wenn es nach Gesetzt wandert.
 - Fokus am Start (eine von drei gewürfelten Fraktionen, ihre Tür jede zweite Phase sicher).
 - Episch-Quote je Skill und Pity.
 - Anzahl und Abstand der Bosse.
+- **Selbstwachstum der Stapel:** bleibt die heutige Regel "ionisierte Siegkarte +1 Stapel je Sieg" unter
+  dem neuen Passiv? Entscheidet, ob Tiefe als Ressource existiert. Zahlen in 3.5 bei Blitzfänger.
 
 ### Vorschlag: Stufenleiter
 
@@ -419,15 +421,50 @@ Statische Aufladung, Ladungsserie Episch) wird mit ihm mitvervielfacht — Rate 
 Sim-Wachpunkt. Fällt Episch mit 5 Stapeln je Leiste zu stark aus: +3 Karten ohne Extra (4 je Leiste),
 wie Reststrom.
 
-**Blitzfänger** — Tiefe zu Wert. Heute: Ionisierung trifft volle Karte, +2 Stichwert beim nächsten
-Auftauchen, +1 Ladung. "Voll" wird Schwelle.
+Entscheid Owner (2026-09-05): **gesetzt wie vorgeschlagen**, ob Episch das Extra behält, entscheidet
+die Sim.
 
-| Stufe | Effekt | Extra |
+**Vorfrage vor Blitzfänger und Kurzschluss (Owner): wächst eine ionisierte Karte weiter?** Heute
+bekommt eine ionisierte Siegkarte je Sieg +1 Stapel (`engine.js`, "Ionisierte Siegkarte: +1 Stapel").
+3.2 sagt dazu nichts. Die Lesart entscheidet, ob Tiefe als Ressource existiert. Messung (Skript
+`stacks.mjs` im Scratchpad: 40 Karten in fester Reihenfolge, 40 Stiche je Runde, 65 % Siege, 5 % Crit je
+Skill, ohne Rate-Skills, Stapel-Score 12 je Stapel, 4000 Läufe):
+
+| Lesart | Build | Stapel am Ende | Karten ≥5 Stapel | tiefste Karte | Treffer auf Karte ≥4 Stapel je Lauf | Stapel-Score zu Kartenbasis über den Lauf |
+| --- | --- | --- | --- | --- | --- | --- |
+| A: Stapel nur aus der Leiste | mono | 28 | 0 | 3 | 0,02 | 0,54× |
+| A | 3–4 Skills | 17 | 0 | 2 | 0 | 0,40× |
+| A | mono + Kettenblitz Selten | 56 | 0,5 | 4 | 0,6 | 1,08× |
+| A | mono + Kettenblitz Episch | 141 | 12 | 9 | 25 | 2,69× |
+| B: Siegkarte +1 je Sieg (heute) | mono | 239 | 17 | 25 | 6,3 | 3,54× |
+| B | 3–4 Skills | 187 | 12 | 25 | 2,6 | 3,02× |
+| B | mono + Kettenblitz Selten | 410 | 27 | 27 | 21,5 | 6,41× |
+| B | mono + Kettenblitz Episch | 667 | 36 | 31 | 84 | 11,4× |
+
+Unter A sind Schwellen ab 3 Stapeln tot; Blitzfänger und Kurzschluss brauchen einen Auslöser je
+Ionisierung statt je Tiefe. Unter B entsteht Tiefe von selbst, fast unabhängig von der Build-Breite
+(3,0× gegen 3,5×), Kurzschluss "ab 5" trifft fast jeden ionisierten Sieg, und die 12 je Stapel müssten
+in der Sim auf etwa 2–3 fallen, womit ein frischer Stapel unsichtbar wird. **Empfehlung: A.** Das Passiv
+bleibt ein fester Payoff, die Skills tragen die Skalierung (Kettenblitz 0,5× bis 2,7×), und "nur noch
+mehr Score" heißt genau das. Preis: zwei Skills bekommen einen anderen Auslöser. Ein Mittelweg wäre
+langsameres Wachstum (+1 Stapel je N Siege); die Zahl N wäre dann der Regler zwischen A und B.
+
+**Blitzfänger** — Tiefe zu Wert. Heute: Ionisierung trifft volle Karte (5 Stapel): +2 Stichwert beim
+nächsten Auftauchen, +1 Ladung. Heute sind ab Zyklus 20 fast alle Karten voll, der Skill feuert also
+spät bei fast jeder Ionisierung. Vorschlag unter Lesart A: Auslöser ist jede Ionisierung, die Zielkarte
+"fängt" den Blitz. Wert wirkt doppelt, als Basis-Score und als Siegchance.
+
+| Stufe | Effekt je Ionisierung | Extra |
 | --- | --- | --- |
-| Normal | ab 5 Stapeln: +1 Wert beim nächsten Auftauchen, +1 Ladung | – |
-| Selten | ab 4 Stapeln: +2 Wert beim nächsten Auftauchen, +1 Ladung | – |
-| Sehr selten | ab 3 Stapeln: +2 Wert beim nächsten Auftauchen, +2 Ladung | – |
-| Episch | ab 3 Stapeln: +3 Wert, +2 Ladung | der Wert bleibt dauerhaft statt einmalig |
+| Normal | Zielkarte +1 Wert beim nächsten Auftauchen, +1 Ladung | – |
+| Selten | Zielkarte +2 Wert beim nächsten Auftauchen, +1 Ladung | – |
+| Sehr selten | Zielkarte +1 Wert dauerhaft, +1 Ladung | – |
+| Episch | Zielkarte +2 Wert dauerhaft, +2 Ladung | – (stark) |
+
+Auslöser je Lauf: mono 28, 3–4 Skills 17, ab Runde 7; mit Kettenblitz jede erfasste Karte, also mal 2 bis
+5. Episch mono: +56 Wert auf 220 Deckwert bis zum Ende, plus 20 % Leistentempo. Unter Lesart B bliebe die
+alte Fassung mit fester Schwelle ab 5 Stapeln (Auslöser je Lauf: mono 6, 3–4 Skills 2,6, mit Kettenblitz
+Selten 22 bzw. 9).
 
 **Kurzschluss** — Tiefe zu Score. Heute: Sieg mit voller Karte +250 Direkt-Score, +3 Ladung.
 Direkt-Score entfällt, Ersatz: die Stapel dieser Karte zählen in diesem Stich mehrfach.
