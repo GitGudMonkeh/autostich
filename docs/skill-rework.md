@@ -155,7 +155,8 @@ Multiplikatoren, wie heute.** Ein gewonnener Stich rechnet Basis mal Multiplikat
 und Zuschläge, dann Serie, Perk-Multiplikator, Formation, Crit. Der Stapel-Score steht in der Basis
 und wird mit dem ganzen Stack multipliziert. Beispiel mit Basis 20, drei Stapeln zu 12 und
 Multiplikator 8: 56 × 8 = 448. Die Tiefe der Stapel skaliert damit mit dem Build; das Tuning der Zahl
-je Stapel läuft über die Sim.
+je Stapel läuft über die Sim. **Sim-Notiz (Owner, 2026-09-05):** werden die Stapel zu mächtig, ist auch
+der Bonus je Stapel (heute 12) ein Regler, nicht nur die Raten und Schwellen der Skills.
 
 **Gesetzt (Owner, 2026-09-04): Direkt-Score wird aus den Skills nach Möglichkeit entfernt.** Direkt-Score
 nach den Multiplikatoren ist im Late Game bedeutungslos. Das gilt als Regel für alle Fraktionen. Im
@@ -601,18 +602,29 @@ Siegkarte, nicht auf der nächsten in der Reihenfolge. Starke Karten gewinnen ö
 werden tiefer; Blitzschlag ist damit der Tiefen-Motor für die drei Schwellen-Skills, während die Leiste
 und Kettenblitz die Breite machen.
 
-**Dauerstrom** — Serie zu Ladung plus Rampe. Heute: je 3 Serienpunkte +1 Ladung je Sieg, höchstens +3,
-volle Leiste +2 % Crit-Chance, Deckel 40 %.
+Entscheid Owner (2026-09-05): **gesetzt wie vorgeschlagen.** Sim-Notiz dazu: werden die Stapel zu
+mächtig, kann auch der Bonus je Stapel gesenkt werden (siehe 3.2).
 
-| Stufe | Effekt | Extra |
-| --- | --- | --- |
-| Normal | je 4 Serienpunkte +1 Ladung, höchstens +2; +1 % je volle Leiste, Deckel 20 % | – |
-| Selten | je 3, höchstens +2; +2 %, Deckel 30 % | – |
-| Sehr selten | je 3, höchstens +3; +2 %, Deckel 40 % | – |
-| Episch | je 2, höchstens +4; +3 %, Deckel 50 % | – (stark) |
+**Dauerstrom** — Serie zu Ladung. Heute: je 3 Serienpunkte +1 Ladung je Sieg, höchstens +3, dazu volle
+Leiste +2 % Crit-Chance, Deckel 40 %. Neu nur noch der erste Teil (ein Effekt je Skill; die Rampe gehört
+Gewitterfront). Statt "je 3 Punkte +1" eine Schwelle mit festem Betrag, Leiter sinkt mit der Stufe.
 
-Anmerkung: die Rampe überschneidet sich mit Gewitterfront. Ob Dauerstrom die Rampe behält oder ein
-reiner Serie-zu-Ladung-Skill wird, ist ein Entscheid des Owners; der Vorschlag lässt beides stehen.
+| Stufe | Effekt | Siege je Runde über der Schwelle (65 % Siege) | Leisten je Runde | Extra |
+| --- | --- | --- | --- | --- |
+| Normal | ab 5 Serienpunkten gibt jeder Sieg +1 Ladung | 4,6 | 0,5 | – |
+| Selten | ab 4 Serienpunkten | 7,1 | 0,7 | – |
+| Sehr selten | ab 3 Serienpunkten | 11 | 1,1 | – |
+| Episch | ab 2 Serienpunkten | 17 | 1,7 | – |
+
+Heute (je 3 Punkte, höchstens +3) gibt etwa 15 Ladung je Runde, liegt also zwischen Sehr selten und
+Episch. Warum fester Betrag statt "je N Punkte": Serienschutz hält die Serie über Niederlagen hinweg.
+Mit genug Ladung bricht sie den ganzen Lauf nicht, und "je 3 Punkte +1" gäbe bei Serie 40 schon +13 je
+Sieg, bei Serie 100 +33; das ist ein Kreislauf (Ladung hält die Serie, die Serie gibt Ladung). Der feste
+Betrag ist durch die Siege je Runde begrenzt: höchstens 26 Ladung, 2,6 Leisten, auch bei endloser Serie.
+Dauerstrom skaliert nicht mit Crit, sondern mit der Siegquote (Wert-Skills wie Blitzfänger verlängern
+die Serie), und ist damit wie Statische Aufladung eine Ladungsquelle für Builds mit wenig Crit.
+Ladungsserie (Crit je Serienpunkt, offen) hängt an derselben endlosen Serie; die Bremse dafür gehört zu
+Serienschutz (Skill 15).
 
 **Serienschutz** — Schutz. Heute: Niederlage mit mindestens 50 % Ladung bricht die Serie nicht, die
 Ladung wird verbraucht.
