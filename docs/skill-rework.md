@@ -85,7 +85,7 @@ Entscheid: bleibt / geändert / gestrichen — Begründung in einem Satz
 | Fraktion | Passiv | Die 15 | Stufen | Legendäre |
 | --- | --- | --- | --- | --- |
 | Blitz | gesetzt | gesetzt (Ionisierung und Breitenbeschleuniger gestrichen) | **gesetzt, alle 15** (Übersicht 3.6) | **gesetzt, alle 4** (3.7; Hochspannung ersetzt Flächenionisation) |
-| Feuer | offen | offen | offen | separat, später |
+| Feuer | Idee Owner gesetzt, Zahlen als Vorschlag (4.2) | offen (Bestand in 4.3) | offen | separat, später |
 | Eis | offen | offen | offen | separat, später |
 | Pflanze | offen | offen | offen | separat, später |
 | Fraktion 5 | – | – | – | – |
@@ -821,7 +821,131 @@ zugleich, besonders Hochspannung plus eines der anderen.
 
 ## 4. Feuer
 
-Offen.
+**Reihenfolge (Owner, 2026-09-05):** Feuer durcharbeiten, dann Blitz und Feuer umsetzen und über die Sim
+tarieren, danach die weiteren Fraktionen an den Blitz- und Feuer-Werten ausrichten.
+
+### 4.1 Passiv heute
+
+Spielertext (`skill.passive.fire`): *Siege ab 3 Kampfwert-Vorsprung geben Hitze und Feuer-Score, je
+größer der Vorsprung, desto mehr von beidem. Niederlagen kosten Hitze plus Wert-Rückstand, höchstens 10.
+Jeder weitere Feuer-Skill gibt +5 Feuer-Score je Vorsprungspunkt.*
+
+Code-Stand (`heatGainFor`, `heatLossFor`, Konstanten `HEAT_*`, `FIRE_*`):
+
+- **Hitze** ist eine Leiste 0 bis 100. Gewinn je Sieg ab Vorsprung 3: (Vorsprung − 2) %, linear bis
+  Vorsprung 8, darüber ein Wurzel-Schwanz (6 + 1,5·√(Vorsprung − 8)).
+- **Verlust je Niederlage:** min(Rückstand, 10) plus 25 % der aktuellen Hitze. Die proportionale
+  Kühlung ist ein weicher Deckel: je heißer, desto teurer die Niederlage.
+- **Feuer-Score:** (Vorsprung − 2) × 25 in der Basis (`fireFlat`, vor den Multiplikatoren), +5 je
+  weiterem Feuer-Skill. Dazu die **Hitze-Dividende:** 32 Direkt-Score je Hitze-Prozent je Feuer-Sieg
+  (Deckel 70 %), skaliert mit dem Bekenntnis. Das ist der einzige Direkt-Score-Anteil des Passivs.
+- **Konsumenten** (Flächenbrand, Schmelzpunkt): höchstens einer im Build. **Asche** aus Bränden speist
+  die Ascheschmiede.
+
+Gemessen mit gleichverteilten Werten 1 bis 10 gegen 1 bis 10: 62 % der Siege haben Vorsprung 3 oder
+mehr, 33 % Vorsprung 5 oder mehr, 7 % Vorsprung 8 oder mehr; mittlerer Vorsprung eines Siegs 3,7.
+Passiv-Hitze im Schnitt 1,9 % je Sieg, rund 49 % je Runde bei 26 Siegen. Die Verluste (14 Niederlagen,
+je 25 % der Hitze plus Rückstand) sind größer: das Passiv allein hält die Hitze nahe null, erst Glut,
+Zunder und Glutbett tragen sie.
+
+### 4.2 Passiv neu
+
+**Gesetzt (Owner, 2026-09-05):** Das Feuer-Passiv ist nur noch: **Siege mit Abstand erzeugen Hitze,
+Niederlagen reduzieren Hitze.** Kein Feuer-Score und keine Dividende im Passiv. **Die Skills nutzen die
+erzeugte Hitze.** Für die Schmiede: **Schmieden unabhängig von Asche.**
+
+Lesart, zu bestätigen: der Owner schrieb "Siege reduzieren Hitze"; gelesen als Niederlagen (heutige
+Regel). Sollte "Siege ohne Abstand kühlen" gemeint sein, ändert das die Rechnung unten.
+
+**Vorschlag Zahlen (Startwerte für die Sim, Entscheid Owner):**
+
+| Größe | Heute | Vorschlag | Grund |
+| --- | --- | --- | --- |
+| Hitze je Sieg mit Abstand | (Vorsprung − 2) %, Knie bei 8 | (Vorsprung − 2) %, linear ohne Knie | keine Deckel; große Siege zahlen voll |
+| Mindest-Vorsprung | 3 | 3 | 62 % der Siege zählen, knappe nicht |
+| Niederlage | min(Rückstand, 10) + 25 % der Hitze | −2 % flach | die proportionale Kühlung ist ein weicher Deckel |
+| Leiste | 0 bis 100 | 0 bis 100 | Skala wie die Blitz-Leiste, kein Rampen-Deckel; darüber nur per Skill (Weißglut) |
+| Passiv-Anteil je Feuer-Skill | +5 Feuer-Score je Punkt | **offen:** +1 % Hitze je Sieg mit Abstand je Feuer-Skill, oder nichts | Analog zu +5 % Crit je Blitz-Skill |
+| Direkt-Score | Hitze-Dividende 32 je % | entfällt | Regel aus dem Rahmen |
+
+Tempo mit den Vorschlagszahlen: netto je Stich 0,65 × 1,9 − 0,35 × 2 ≈ +0,55, also rund +22 je Runde
+ohne Skills, Leiste voll nach etwa 4,5 Runden. Mit vier Feuer-Skills und +1 je Skill: 0,65 × 5,9 − 0,7
+≈ +3,1 je Stich, voll in einer Runde. Konsumenten senken sie wieder (Schmelzpunkt heute −4 je Sieg).
+Ohne Konsument steht die Leiste voll und die Erzeugung verpufft; der erste Feuer-Skill muss deshalb
+ein Nutzer sein (Rollen-Raster).
+
+**Folgen für den Bestand (Vorschlag, Entscheid je Skill in 4.4):**
+
+| Skill | Unter dem neuen Passiv |
+| --- | --- |
+| Glut, Zunder, Feuersturm, Glutbett, Rückzündung | Rate-Skills (mehr Hitze, weniger Verlust), bleiben sinnvoll |
+| Glühende Klinge, Feuerwalze | Zustand nach Hitzestand, Schwellen-Skills |
+| Flächenbrand, Schmelzpunkt | Konsumenten, "nutzen die Hitze"; Verbraucher-Regel (höchstens einer) prüfen |
+| Verbrennung, Funkenflug | hängen am Vorsprung und am Feuer-Score der Basis, nicht an der Hitze |
+| Weißglut | Überhitzung über 100, einziger Weg über die Leiste |
+| Brandmal, Lauffeuer | Gegner-Debuff; Asche entfällt als Währung |
+| Ascheschmiede, Glutstahl, Schmelzofen | Schmiede ohne Asche: Vorschlag, Schmieden kostet Hitze |
+| 17 Bestand | zwei gehen, wie bei Blitz im Durchgang |
+
+### 4.3 Skills heute (17 normale, 4 legendäre)
+
+Linien wie im Code (`src/game/skills.js`), Kennwerte in Klammern die heutigen Konstanten.
+
+**Linie 1 — Hitze erzeugen**
+
+| ID | Name | Heute |
+| --- | --- | --- |
+| SK_FIRE_01 | Glut | Hitze aus Vorsprung ×1,5. |
+| SK_FIRE_02 | Zunder | Jeder Sieg +2 % Hitze, auch knappe. |
+| SK_FIRE_03 | Feuersturm | Jeder Sieg in Folge +1 % Hitze mehr, bis +5 %; Niederlage setzt zurück. |
+
+**Linie 2 — Verteidigung**
+
+| ID | Name | Heute |
+| --- | --- | --- |
+| SK_FIRE_04 | Glutbett | Niederlagen kosten nur 50 % der Hitze, unter 30 % Hitze gar nichts. |
+| SK_FIRE_05 | Rückzündung | Sieg nach Niederlage: +1 % Hitze je Rückstandspunkt, Siegkarte +2 Stichwert. |
+
+**Linie 3 — Schwellen-Payoffs**
+
+| ID | Name | Heute |
+| --- | --- | --- |
+| SK_FIRE_06 | Glühende Klinge | Alle Karten +1 Wert ab 40 % Hitze, +2 ab 70 % (dazu ein Sieg mit Vorsprung 8 im Segment), +3 bei 100 % (Vorsprung 12). |
+| SK_FIRE_07 | Weißglut | Hitze über 100 staut sich als Überhitzung bis 150, je höher, desto weniger kommt an; +2 % Feuer-Score je Punkt; baut 2 je Stich ab, 5 bei Niederlage. |
+
+**Linie 4 — Wert- und Score-Motoren**
+
+| ID | Name | Heute |
+| --- | --- | --- |
+| SK_FIRE_08 | Feuerwalze | Ab 40 % Hitze gibt jeder Sieg in Folge der nächsten Karte +1 Stichwert, bis +3; Niederlage setzt zurück. |
+| SK_FIRE_09 | Verbrennung | Feuer-Score ×1,5 ab Vorsprung 8, ×2 ab 12. |
+| SK_FIRE_10 | Funkenflug | Siege unter Vorsprung 8 legen das Doppelte ihres Feuer-Scores plus 60 (+20 je weiterem Feuer-Skill) in einen Speicher; ein Sieg ab 8 zahlt ihn aus, Niederlage halbiert. |
+
+**Linie 5 — Konsumenten (höchstens einer)**
+
+| ID | Name | Heute |
+| --- | --- | --- |
+| SK_FIRE_11 | Flächenbrand | Ab 80 % Hitze brennt der nächste Sieg bis 40 % herunter: +20 Score je Punkt (+17 je weiterem Feuer-Skill). |
+| SK_FIRE_12 | Schmelzpunkt | Jeder Sieg verbrennt 4 % Hitze: 10 Score je Punkt, +6 je gehaltenem Prozent Hitze; Niederlagen kosten keine Hitze. |
+
+**Linie 6 — Brand, Asche, Schmiede**
+
+| ID | Name | Heute |
+| --- | --- | --- |
+| SK_FIRE_13 | Brandmal | Jeder Sieg brandmarkt eine Gegnerkarte (−1 Wert), +1 Asche. |
+| SK_FIRE_14 | Lauffeuer | Verstärker (braucht Brandmal): Brände greifen auf eine Nachbarkarte über, +1 Asche. |
+| SK_FIRE_15 | Ascheschmiede | Rundenende: niedrigste Karte dauerhaft +3 Wert, solange 20 Asche da sind; Überlauf gibt 2000 Score je 20 Asche. |
+| SK_FIRE_16 | Glutstahl | Verstärker (braucht Ascheschmiede): geschmiedete Karten +12 Score je geschmiedetem Wert bei Sieg. |
+| SK_FIRE_17 | Schmelzofen | Ab 50 % Hitze: Brände −1 Wert und +1 Asche extra; Schmieden 25 % billiger. |
+
+**Legendäre (separat)**
+
+| ID | Name | Heute |
+| --- | --- | --- |
+| SK_FIRE_L01 | Sonnenkern | Sieg gegen gebrandmarkte Karte +100 Score je Brand; endet eine Runde mit ≥ 60 % Hitze, stapeln Brände (bis 4) und Karten unter Wert 9 bekommen dauerhaft +2. |
+| SK_FIRE_L02 | Phönixfeuer | Niederlagen kosten keine Hitze, sondern geben +8 % je Rückstandspunkt; auf 0 verbrauchte Hitze entzündet sich einmal je Runde auf 40 %. |
+| SK_FIRE_L03 | Sonnenzorn | Gesamter Sieg-Score mal höchster je erreichter Hitze: +1 % je Prozent bis 100 (×2), +3 % je Punkt Überhitzung (mit Weißglut ×3,5). |
+| SK_FIRE_L04 | Damaststahl | Schmiedet jede Runde die niedrigste Karte ohne Asche (+3, bis 10 Karten); geschmiedete Karten kämpfen mit +5; +14 Score je geschmiedetem Wertpunkt je Sieg. |
 
 ## 5. Eis
 
@@ -850,3 +974,4 @@ Offen.
 | 2026-09-05 | Blitzfänger zweimal überarbeitet, zuletzt auf Owner-Vorgabe: ein Effekt, Stapel-Schwelle sinkt mit der Stufe. Stapel-Tiefe in realen Builds gemessen (Passiv-Zahlen waren die untere Schranke) und als Referenz für alle Schwellen-Skills eingetragen. |
 | 2026-09-05 | Stufen gesetzt: Blitzfänger, Kurzschluss, Spannungsstau (ohne Deckel), Überschlag (Crit-Mult statt Ladung), Überspannung, Blitzschlag, Dauerstrom (nur Serie zu Ladung), Serienschutz. Blitz damit komplett, Übersicht in 3.6. Sim-Notiz: Bonus je Stapel ist ein Regler. |
 | 2026-09-05 | Legendäre: Rahmen gesetzt (keine Stufen, kein Tor, 3–4 % je Platz im Türwurf, kein Ersetzen, zwei möglich, zwei Effekte erlaubt). Alle vier Blitz-Legendären gesetzt: Donnergott, Doppelentladung, Hochspannung (neu, ersetzt Flächenionisation), Durchschlag. Übersicht in 3.7. |
+| 2026-09-05 | Feuer begonnen. Reihenfolge vom Owner: Feuer durcharbeiten, Blitz und Feuer umsetzen und über die Sim tarieren, dann die weiteren Fraktionen. Passiv heute mit Messung, Passiv neu nach Owner-Idee (Hitze aus Siegen mit Abstand, Niederlagen kühlen, Skills nutzen die Hitze, Schmiede ohne Asche), Zahlen als Vorschlag, Bestand 17 + 4 aufgenommen. |
