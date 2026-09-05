@@ -85,7 +85,7 @@ Entscheid: bleibt / geändert / gestrichen — Begründung in einem Satz
 | Fraktion | Passiv | Die 15 | Stufen | Legendäre |
 | --- | --- | --- | --- | --- |
 | Blitz | gesetzt | gesetzt (Ionisierung und Breitenbeschleuniger gestrichen) | **gesetzt, alle 15** (Übersicht 3.6) | **gesetzt, alle 4** (3.7; Hochspannung ersetzt Flächenionisation) |
-| Feuer | gesetzt (4.2) | gesetzt (Funkenflug und Schmelzofen gestrichen) | **gesetzt, alle 15** (Übersicht 4.6) | offen (4.7) |
+| Feuer | gesetzt (4.2) | gesetzt (Funkenflug und Schmelzofen gestrichen) | **gesetzt, alle 15** (Übersicht 4.6) | **gesetzt, alle 4** (4.7) |
 | Eis | offen | offen | offen | separat, später |
 | Pflanze | offen | offen | offen | separat, später |
 | Fraktion 5 | – | – | – | – |
@@ -1383,7 +1383,7 @@ Feuersturm × Serienschutz (Blitz) im gemischten Build; Siegquote aus Klinge, Br
 zusammen (Richtung 90 %); Schmiede offen (+120, Episch +240 Deckwert); Spürbarkeit der 25-Prozent-
 Schritte (Owner); Hitze-Schwellen-Leitern, ob 80/60/40 im Late Game noch trennen.
 
-**Noch offen für Feuer:** die vier Legendären (4.7), die Skilltexte für `de.js`, die Umsetzung.
+**Noch offen für Feuer:** die Skilltexte für `de.js`, die Umsetzung. Legendäre in 4.7 gesetzt.
 
 ### 4.7 Legendäre Feuer
 
@@ -1476,6 +1476,23 @@ zu Glutstahl Episch (Schmiedewert zählt doppelt für den Score): Damaststahl ve
 Sieg, Glutstahl für den Score; beide zusammen sind der Schmiede-Build. Kein Kreislauf: Dauerwert speist
 keine Hitze. Sim-Regler: die +3 der freien Schmiedung, notfalls "jede zweite Runde".
 
+Entscheid Owner (2026-09-05): **gesetzt wie vorgeschlagen.**
+
+**Übersicht Legendäre Feuer (gesetzt, Stand 2026-09-05).** Rahmen wie Blitz; jedes läuft allein.
+
+| Legendär | Achse | Effekte |
+| --- | --- | --- |
+| Sonnenkern | Gegner | Jeder Sieg brandmarkt die Gegnerkarte (−1), Brände stapeln sich über die Runden statt sich zu erneuern. Sieg gegen gebrandmarkte Karte +20 Basis-Score je Brand. |
+| Phönixfeuer | Rhythmus | Niederlagen heizen statt zu kühlen, +2 % je Punkt Rückstand. Fällt die Hitze auf 0, zündet sie auf 50 % neu, ohne Rundenlimit. |
+| Sonnenzorn | Multiplikator | Der Hitze-Multiplikator rechnet mit der höchsten je erreichten Hitze. Er zählt doppelt: je 10 % +4 % Score statt +2 %. |
+| Damaststahl | Schmiede | Jede Runde wird die niedrigste Karte ohne Preis geschmiedet (+3). Geschmiedete Karten kämpfen mit doppeltem Schmiedewert. |
+
+Sim-Wachpunkte: Sonnenkern mit Brandmal und Lauffeuer (Gegnerdeck nach wenigen Runden bei null);
+Phönixfeuer mit Flächenbrand Episch (mehrere Bursts je Runde) und mit Weißglut; Sonnenzorn mit Weißglut
+(×1,8 bis ×2,0 dauerhaft); Damaststahl mit Schmiede Episch und Glutstahl Episch; zwei Legendäre zugleich.
+
+**Noch offen für Feuer:** die Skilltexte für `de.js`, die Umsetzung. Die Legendären sind gesetzt.
+
 ## 5. Eis
 
 Offen.
@@ -1505,3 +1522,4 @@ Offen.
 | 2026-09-05 | Legendäre: Rahmen gesetzt (keine Stufen, kein Tor, 3–4 % je Platz im Türwurf, kein Ersetzen, zwei möglich, zwei Effekte erlaubt). Alle vier Blitz-Legendären gesetzt: Donnergott, Doppelentladung, Hochspannung (neu, ersetzt Flächenionisation), Durchschlag. Übersicht in 3.7. |
 | 2026-09-05 | Feuer begonnen. Reihenfolge vom Owner: Feuer durcharbeiten, Blitz und Feuer umsetzen und über die Sim tarieren, dann die weiteren Fraktionen. Passiv heute mit Messung, Passiv neu nach Owner-Idee (Hitze aus Siegen mit Abstand, Niederlagen kühlen, Skills nutzen die Hitze, Schmiede ohne Asche), Zahlen als Vorschlag, Bestand 17 + 4 aufgenommen. |
 | 2026-09-05 | Feuer-Passiv komplett gesetzt (dazu je 10 % Hitze +2 % Score, kein Direkt-Score, keine Abhängigkeit von gehaltenen Skills). Funkenflug und Schmelzofen gestrichen. Alle 15 Feuer-Skills mit vier Stufen gesetzt, Verbraucher-Regel entfällt, Regel "Hitze-Schwellen-Leitern brauchen ein Episch-Extra". Übersicht in 4.6. |
+| 2026-09-05 | Alle vier Feuer-Legendären gesetzt: Sonnenkern (Brände stapeln), Phönixfeuer (Niederlagen heizen, Neuzündung ohne Limit), Sonnenzorn (Spitzen-Hitze, doppelter Multiplikator), Damaststahl (freie Schmiede, doppelter Schmiedewert im Kampf). Blitz und Feuer damit fertig für die Umsetzung. |
