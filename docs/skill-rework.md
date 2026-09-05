@@ -1493,6 +1493,26 @@ Phönixfeuer mit Flächenbrand Episch (mehrere Bursts je Runde) und mit Weißglu
 
 **Noch offen für Feuer:** die Skilltexte für `de.js`, die Umsetzung. Die Legendären sind gesetzt.
 
+## 7. Umsetzung Blitz und Feuer (Plan, 2026-09-05)
+
+Technische Reihenfolge, Entscheid des Agenten; die Produktvorgaben stehen in 3 und 4. Branch `exp`,
+Eis und Pflanze bleiben bis zu ihrer Runde auf dem alten Stand. Jede Phase endet mit grünen Gates und
+einem Push.
+
+| Phase | Inhalt |
+| --- | --- |
+| 1 Stufenmodell und Angebot | Skill-Stufen im Zustand (`skillTiers` je gehaltenem Skill, Angebot mit gewürfelter Stufe je Platz 62 / 25 / 10 / 3, Legendär 3,5 % je Platz als fünfte Stufe). Legendär-Phase (Runde 29) entfällt, Plan auf 40 Runden mit 10 Skill-Phasen (Runden 1, 5, 9 … 37). Stufe sichtbar im Angebot und bei den gehaltenen Skills. Hochspannung als Stufe plus eins. Sim-Policies und Tests angepasst. |
+| 2 Blitz | Eigenes Modul für Passiv, 15 Skills, 4 Legendäre mit Stufentabellen. Raus: Feld-Crit, Sättigung, Verbraucher-Regel, Bekenntnis, Direkt-Score, Ionisierung und Breitenbeschleuniger, alte Legendäre. Neu: Ladung über 10 (Blitzableiter Episch), Leiste 7 (Donnergott), Doppelschlag, Crit bei Niederlage (Durchschlag), Systemregel über 100 %. |
+| 3 Feuer | Eigenes Modul für Passiv (Hitze aus Vorsprung, Kühlung −2, Hitze-Multiplikator als Faktor im Score), 15 Skills, 4 Legendäre. Raus: Asche, Feuer-Score des Passivs, Glutdividende, Bekenntnis, Verbraucher-Regel, Funkenflug, Schmelzofen, Deckel der Schmiede. Neu: Leiste bis 200 (Weißglut), Spitzen-Hitze (Sonnenzorn), stapelnde Brände (Sonnenkern), Kampfwert geschmiedeter Karten (Damaststahl). |
+| 4 Texte und Anzeige | Skilltexte je Stufe (Deutsch, im Skillkatalog), Passiv-Texte, Glossar, `loc:export`. Ladungs- und Hitzeleiste mit den neuen Größen. |
+| 5 Gates und Sim | `npm test`, Lint, Build, `gen:db`; Ratchets nur dort anpassen, wo sich die Invariante geändert hat. Deploy-Slot prüfen. Sim-Läufe Blitz und Feuer, mono und Splash, erste Zahlen an den Owner, dann Tarieren. |
+| später | Türen (zwei Türen, drei Symbole), Eis, Pflanze, Münzen und Bosse. |
+
+Zustandsmodell: `skills` bleibt die Liste der IDs, daneben `skillTiers` (ID → 0 bis 3) und
+`skillOfferTiers` für das aktuelle Angebot; Legendäre haben keine Stufe. Skill-Effekte lesen ihre
+Kennwerte aus Stufentabellen in der Skill-Definition statt aus Einzelkonstanten; die Sim-Regler
+(`SIM_*`) bleiben für die Passiv-Größen (Leiste, Hitze je Punkt, Bonus je Stapel, Multiplikator je 10 %).
+
 ## 5. Eis
 
 Offen.
