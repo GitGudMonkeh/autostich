@@ -1456,6 +1456,26 @@ Runde 2 bis 3 erstmals auf 100 und trägt ×1,4 durch den Rest des Laufs; Weißg
 Sonnenkern Gegner, Phönixfeuer Rhythmus, Sonnenzorn Multiplikator, Damaststahl Schmiede. Sim-Regler:
 die 4 %.
 
+Entscheid Owner (2026-09-05): **gesetzt**, Formulierung wie oben.
+
+**Damaststahl** — Schmiede. Heute: schmiedet jede Runde die niedrigste Karte ohne Asche (+3, bis 10
+Karten); geschmiedete Karten kämpfen mit +5 Wert; +14 Score je geschmiedetem Wertpunkt je Sieg. Der
+Score-Teil gehört jetzt Glutstahl, der Karten-Deckel fällt, und die Schmiede schmiedet selbst schon
+ohne Asche (für Hitze). Neu zwei Dinge, das erste macht ihn eigenständig:
+
+> **Jede Runde wird deine niedrigste Karte geschmiedet, +3 Wert dauerhaft, ohne Preis.**
+> **Geschmiedete Karten kämpfen mit doppeltem Schmiedewert.**
+
+Der erste Teil ist eine Schmiede, die nichts kostet: sie läuft ohne Hitze und ohne den Skill Schmiede,
+und mit ihm zusammen werden je Runde zwei Karten geschmiedet (Schmiede Episch: drei). Ab Runde 13 sind
+das rund +80 Deckwert bis zum Ende, mit Schmiede Selten dazu +160. Der zweite Teil ist der Damast: eine
+dreimal geschmiedete Karte (+9) kämpft mit +18, gewinnt also weit über ihrem Wert und macht Vorsprung
+für Glut und Verbrennung; der Basis-Score rechnet mit dem echten Wert, nur der Vergleich im Stich
+verdoppelt. Skaliert mit der Schmiede-Tiefe, nicht mit einer festen Zahl (heute +5 flach). Abgrenzung
+zu Glutstahl Episch (Schmiedewert zählt doppelt für den Score): Damaststahl verdoppelt ihn für den
+Sieg, Glutstahl für den Score; beide zusammen sind der Schmiede-Build. Kein Kreislauf: Dauerwert speist
+keine Hitze. Sim-Regler: die +3 der freien Schmiedung, notfalls "jede zweite Runde".
+
 ## 5. Eis
 
 Offen.
