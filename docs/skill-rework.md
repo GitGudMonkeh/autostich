@@ -368,14 +368,22 @@ Episch ohne Extra, stark. Heute liegt bei +1 % mit Deckel 50, also zwischen Selt
 gleicher Schritt wie Sehr selten, aber gedeckelt. Über 100 % greift die Systemregel (kleiner
 Crit-Mult-Bonus) und Überschlag.
 
-**Entladung** — Rampe Crit-Mult. Heute: volle Leiste +0,1×, Deckel +1×.
+Entscheid Owner (2026-09-04): **gesetzt wie überarbeitet.**
 
-| Stufe | Effekt | Extra |
-| --- | --- | --- |
-| Normal | +0,05× je volle Leiste, Deckel +0,5× | – |
-| Selten | +0,1×, Deckel +0,8× | – |
-| Sehr selten | +0,15×, Deckel +1,2× | – |
-| Episch | +0,2×, Deckel +1,5× | der Crit, der die Leiste füllt, hat den doppelten Crit-Multiplikator |
+**Entladung** — Rampe Crit-Mult. Heute: volle Leiste +0,1×, Deckel +1×. Neu ohne Deckel, niedrigere
+Schritte. Heute erreicht ein reiner Blitz-Build den Deckel nach zehn Leisten, effektiv +1×; das liegt
+zwischen Selten und Sehr selten.
+
+| Stufe | Effekt | reiner Blitz, ~29 Leisten | Rate-Build, ~60 Leisten | Extra |
+| --- | --- | --- | --- | --- |
+| Normal | +0,02× je volle Leiste | +0,6× | +1,2× | – |
+| Selten | +0,03× | +0,9× | +1,8× | – |
+| Sehr selten | +0,04× | +1,2× | +2,4× | – |
+| Episch | +0,06× | +1,7× | +3,6× | der Crit, der die Leiste füllt, hat den doppelten Crit-Multiplikator |
+
+Kontext: Basis-Crit-Multiplikator 2,25×, der alte Passiv-Anteil (+0,1× je Skill) ist weg, Entladung ist
+damit die Haupt-Mult-Quelle von Blitz neben dem Legendären Durchschlag und den Präzisions-Perks. Der
+Engine-Deckel 8× auf den fertigen Multiplikator bindet Rate-Builds auf Episch.
 
 **Ladungsserie** — Serie zu Crit. Heute: +2 % je Serienpunkt, Deckel 30 %.
 
