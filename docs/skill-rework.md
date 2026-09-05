@@ -385,14 +385,20 @@ Kontext: Basis-Crit-Multiplikator 2,25×, der alte Passiv-Anteil (+0,1× je Skil
 damit die Haupt-Mult-Quelle von Blitz neben dem Legendären Durchschlag und den Präzisions-Perks. Der
 Engine-Deckel 8× auf den fertigen Multiplikator bindet Rate-Builds auf Episch.
 
-**Ladungsserie** — Serie zu Crit. Heute: +2 % je Serienpunkt, Deckel 30 %.
+Entscheid Owner (2026-09-04): **gesetzt wie überarbeitet.**
 
-| Stufe | Effekt | Extra |
-| --- | --- | --- |
-| Normal | +1 % je Serienpunkt, Deckel 15 % | – |
-| Selten | +2 %, Deckel 20 % | – |
-| Sehr selten | +2 %, Deckel 40 % | – |
-| Episch | +3 %, Deckel 45 % | ab Serie 8 gibt jeder Sieg +1 Ladung |
+**Ladungsserie** — Serie zu Crit. Heute: +2 % je Serienpunkt, Deckel 30 %. Neu ohne Deckel. Der Bonus
+hängt an der laufenden Serie und fällt mit ihr, er begrenzt sich also selbst.
+
+| Stufe | Effekt | bei Serie 10 | bei Serie 20 | Extra |
+| --- | --- | --- | --- | --- |
+| Normal | +1 % je Serienpunkt | +10 % | +20 % | – |
+| Selten | +1,5 % | +15 % | +30 % | – |
+| Sehr selten | +2 % | +20 % | +40 % | – |
+| Episch | +2,5 % | +25 % | +50 % | ab Serie 8 gibt jeder Sieg +1 Ladung |
+
+Heute liegt bei +2 % mit Deckel 30, also zwischen Selten und Sehr selten. Wechselwirkung: Serienschutz
+hält die Serie und damit diesen Bonus, Dauerstrom zieht aus derselben Serie Ladung.
 
 **Kettenblitz** — Breite je Leiste. Heute: +2 Karten je Ionisierung, nur mit dem Skill Ionisierung.
 Neu ohne Bindung, die zusätzlichen Karten folgen in der Reihenfolge.
