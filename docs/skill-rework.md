@@ -1256,7 +1256,7 @@ der Stufe (Leiter wie Feuerwalze).
 | Normal | ab 80 % Hitze: jeder Sieg brandmarkt die geschlagene Gegnerkarte, −2 Wert in der nächsten Runde | – |
 | Selten | ab 60 % | – |
 | Sehr selten | ab 40 % | – |
-| Episch | ab 20 % | – |
+| Episch | ab 20 % | auch eine Niederlage brandmarkt die Gegnerkarte, die gewonnen hat |
 
 Heute (immer aktiv, −1, plus Asche) liegt etwa auf Sehr selten. Größe: bei aktivem Tor werden je Runde
 26 Gegnerkarten gebrandmarkt, das Gegnerdeck (Gesamtwert um 220) verliert 52 Punkte für die nächste
@@ -1265,6 +1265,14 @@ nur gegen die Karten, die man schon geschlagen hat, und trifft nächste Runde du
 andere Paarungen. Brände erneuern sich wie heute je Runde und stapeln nicht; das Stapeln bleibt dem
 Legendär (Sonnenkern, später) vorbehalten. Der frühere Schmelzofen-Bonus (Brände stärker ab 50 %
 Hitze) ist in dieser Leiter aufgegangen.
+
+**Regel aus dem Owner-Einwand (2026-09-05): bei Hitze-Schwellen-Leitern braucht Episch ein Extra.** Im
+Late Game liegt die Hitze hoch, der Schritt von 40 auf 20 % ist dann wertlos. Brandmal Episch: auch
+die 14 Niederlagen je Runde brandmarken, also alle 40 Gegnerkarten, −80 statt −52, und es trifft genau
+die Karten, gegen die man verliert. Begrenzt durch die Deckgröße, kein Aufbau über Runden (Stapeln
+bleibt Legendär). Dieselbe Lücke hat die schon gesetzte **Feuerwalze** (Episch ab 20 %); Vorschlag
+dort: Extra "die nächste Karte hat den Bonus auch nach einer Niederlage", also +2 auf jede Karte,
+solange das Tor offen ist. Entscheid Owner.
 
 ## 5. Eis
 
