@@ -711,23 +711,24 @@ skalieren mit dem Bekenntnis (Anteil der Fraktion an den Slots). Bestand siehe 3
 Ein-Effekt-Regel der 15 gilt für sie nicht. Vorschlag dazu: je Legendär ein Regelbruch plus ein
 sichtbarer Moment, kein Direkt-Score, keine eigenen Deckel (die Engine-Deckel bleiben), jeder der vier
 auf einer anderen Achse des Kits: Rate (Leiste), Tiefe (Stapel je Treffer), Feld (Stapel im Deck), Crit.
-Donnergott ist mit einem Effekt gesetzt; der gestrichene Mult-Anteil kann als zweiter Effekt zurück,
-wenn der Owner es will.
 
 **Donnergott** — Rate. Heute: Verbraucher lösen schon bei 70 % Ladung aus, dazu dauerhaft +0,4×
-Crit-Multiplikator. Neu ein Effekt, der Regelbruch an der Leiste; der Mult-Anteil entfällt.
+Crit-Multiplikator. Neu der Regelbruch an der Leiste; der Mult-Anteil war zuerst gestrichen (ein
+Effekt) und ist mit der Zwei-Effekte-Vorgabe wieder drin.
 
 > **Die Ladungsleiste ist bei 7 voll.**
+> **Dauerhaft +0,4× Crit-Multiplikator.**
 
 Wirkung: alles, was an der Leiste hängt, läuft mit 10/7, also ×1,43: Ionisierungen, Kettenblitz,
 Gewitterfront, Entladung, Blitzfänger-Ladung. Mit Reststrom mehr, weil der Rest fest ist: Reststrom
 Selten braucht 4 statt 7 Ladung je Leiste (×1,75), Reststrom Episch 1 statt 4 (×4). Mono Selten aus
 `blitz-build.mjs`: rund 230 Leisten werden etwa 400. Sim-Wachpunkt: Donnergott mit Reststrom Episch und
 Blitzableiter, dann füllt jeder Crit eine Leiste; Regler sind die 7 (etwa 8) oder Reststrom Episch (6
-auf 5). Warum nicht der Crit-Mult dazu: zwei Effekte, und +0,4× flach ist unter dem 8×-Deckel im
-Mono-Build ohnehin unsichtbar.
+auf 5). Der Crit-Mult ist der zweite, flache Effekt: +0,4× auf die Basis 2,25× sind früh +18 % je
+Crit, spät unter dem 8×-Deckel im Mono-Build ohne Wirkung, im Splash-Build spürbar.
 
-Entscheid Owner (2026-09-05): **gesetzt wie vorgeschlagen.**
+Entscheid Owner (2026-09-05): **gesetzt**, Leiste bei 7 plus +0,4× Crit-Mult (Mult-Anteil auf
+Owner-Wunsch zurück).
 
 **Doppelentladung** — Tiefe. Heute: der Verbraucher ionisiert dreimal so viele Karten, dazu Sieg mit
 ionisierter Karte +40 Direkt-Score je Stapel im Feld (bis 120), anteilig zum Bekenntnis. Direkt-Score
