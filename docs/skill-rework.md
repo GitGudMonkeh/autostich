@@ -536,15 +536,30 @@ Halbieren macht den Sprung. Wie Statische Aufladung wird der Skill mit jedem Cri
 Glättung statt Skalierer (Sim-Notiz). Über 100 % im Einzelfall greift die Systemregel, kleiner
 Crit-Mult-Bonus.
 
-**Überschlag** — Ventil. Heute: Crit-Chance über 100 % gibt je 10 Prozentpunkte +1 Ladung je Sieg.
-Tiefen-Klausel entfällt.
+Entscheid Owner (2026-09-05): **gesetzt wie überarbeitet.**
 
-| Stufe | Effekt | Extra |
-| --- | --- | --- |
-| Normal | je 20 Prozentpunkte +1 Ladung | – |
-| Selten | je 15 Prozentpunkte +1 Ladung | – |
-| Sehr selten | je 10 Prozentpunkte +1 Ladung | – |
-| Episch | je 5 Prozentpunkte +1 Ladung | zählt auch bei Niederlagen |
+**Überschlag** — Ventil nach oben. Heute: Crit-Chance über 100 % gibt je 10 Prozentpunkte +1 Ladung
+je Sieg, ab 85 % voller Karten je 5. Tiefen-Klausel entfällt. Neu als fester Betrag statt je
+Prozentpunkt: solange die Crit-Chance über 100 % liegt, gibt jeder Sieg Ladung.
+
+| Stufe | Effekt bei Crit-Chance über 100 % | Ladung je Runde (26 Siege) | Leisten je Runde vor Rate-Skills | Extra |
+| --- | --- | --- | --- | --- |
+| Normal | jeder Sieg +1 Ladung | 26 | 2,6 | – |
+| Selten | jeder Sieg +2 Ladung | 52 | 5,2 | – |
+| Sehr selten | jeder Sieg +3 Ladung | 78 | 7,8 | – |
+| Episch | jeder Sieg +3 Ladung | 120 | 12 | zählt auch bei Niederlagen |
+
+Heute bei 20 bis 30 Punkten Überschuss etwa +2 bis +3 je Sieg, also Selten bis Sehr selten. Warum
+fester Betrag: die Crit-Rampen laufen offen (Gewitterfront je Leiste). Je Prozentpunkt gerechnet wäre
+Überschlag ein Kreislauf: Leisten geben Crit-Chance, Überschuss gibt Ladung, Ladung gibt Leisten; die
+Zahl der Leisten wüchse exponentiell (Gewitterfront Selten mit "je 10 Punkte": Verdopplung alle 3,6
+Runden). Der feste Betrag je Sieg begrenzt den Zufluss über die Siege je Runde, nicht über einen Deckel.
+Gegenstück zu Statische Aufladung: die füttert die Leiste bei wenig Crit, Überschlag bei Crit über
+100 %, wo Statische nichts mehr gibt.
+
+Vorschlag zur Wechselwirkung mit der Systemregel (im Rahmen offen gelassen): **beides gilt.** Der
+kleine Crit-Mult-Bonus über 100 % bleibt für alle, Überschlag legt Ladung obendrauf. Ersetzen hieße,
+der Skill nimmt dem Spieler etwas weg.
 
 **Überspannung** — Kaskade. Heute: Crit auf oder neben einer ionisierten Karte +3 Ladung.
 
