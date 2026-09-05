@@ -495,15 +495,26 @@ Mono-Build auf jeder Stufe alle 40 Karten über der Schwelle, der Splash-Build 1
 wirkt doppelt, als Basis-Score und als Siegchance. Die Sim skaliert die +2 und kann die Schwellen
 verschieben; nach oben begrenzt das Deck selbst (40 Karten mal Wert).
 
+Entscheid Owner (2026-09-05): **gesetzt wie überarbeitet.** Die Schwellenleiter 6 / 5 / 4 / 3 gilt als
+Muster für die weiteren Schwellen-Skills.
+
 **Kurzschluss** — Tiefe zu Score. Heute: Sieg mit voller Karte +250 Direkt-Score, +3 Ladung.
-Direkt-Score entfällt, Ersatz: die Stapel dieser Karte zählen in diesem Stich mehrfach.
+Direkt-Score entfällt, der Ladungs-Burst auch (ein Effekt je Skill). Ersatz in der Basis: die Stapel
+der Siegkarte zählen doppelt. Schwellenleiter wie Blitzfänger.
 
 | Stufe | Effekt | Extra |
 | --- | --- | --- |
-| Normal | ab 6 Stapeln: Stapel zählen 1,5×, +1 Ladung | – |
-| Selten | ab 5 Stapeln: Stapel zählen 1,5×, +2 Ladung | – |
-| Sehr selten | ab 5 Stapeln: Stapel zählen 2×, +3 Ladung | – |
-| Episch | ab 4 Stapeln: Stapel zählen 2×, +4 Ladung | die nächste Karte in der Reihenfolge erhält +1 Stapel |
+| Normal | Sieg mit einer Karte ab 6 Stapeln: ihre Stapel zählen doppelt | – |
+| Selten | ab 5 Stapeln | – |
+| Sehr selten | ab 4 Stapeln | – |
+| Episch | ab 3 Stapeln | – |
+
+Karten über der Schwelle wie bei Blitzfänger (mono 11 / 14 / 17 / 20 im Schnitt über den Lauf, Splash
+3 / 6 / 10 / 15). Spät im Mono-Lauf verdoppelt Kurzschluss damit praktisch den ganzen Stapel-Score; er
+multipliziert mit Rate (Leisten), Breite (Kettenblitz) und der Zahl je Stapel, die die Sim setzt. Kein
+Rückfluss in die Leiste, also reiner Payoff ohne Rückkopplung. Warum nicht der Ladungs-Burst als
+einziger Effekt: mit allen 40 Karten über der Schwelle gäbe jeder Sieg Ladung, 26 Siege je Runde mal 3
+wären acht Leisten je Runde, die wieder Stapel erzeugen. Das läuft weg.
 
 **Spannungsstau** — Glättung. Heute: Sieg ohne Crit +5 % für den nächsten Sieg, Deckel 50 %, Crit setzt zurück.
 
