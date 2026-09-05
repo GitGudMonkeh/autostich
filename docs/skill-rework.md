@@ -1226,7 +1226,7 @@ Regler.
 | Normal | jeder Sieg verbrennt 4 % Hitze, +15 Basis-Score je Punkt | +60 | – |
 | Selten | +20 je Punkt | +80 | – |
 | Sehr selten | +25 je Punkt | +100 | – |
-| Episch | +30 je Punkt | +120 | jeder Sieg verbrennt 6 statt 4 |
+| Episch | +30 je Punkt | +120 | die Hälfte der verbrannten Hitze kommt zurück |
 
 Heute liegt, ohne den Hitze-Anteil gerechnet, auf Normal bis Selten. Ökonomie: der Tropf verbrennt bis
 zu 104 % je Runde, mehr als jede Einnahme; die Hitze pendelt darum nahe null, und Schmelzpunkt setzt
@@ -1234,8 +1234,14 @@ genau um, was hereinkommt, Einnahme mal Score je Punkt (Passiv plus Glut Selten 
 auf Selten, mit Zunder Selten dazu +1900). Flächenbrand rechnet gleich: 800 je 45 Hitze sind 18 je
 Punkt. Beide Konsumenten wandeln Hitze zum selben Kurs, der Unterschied ist der Takt: der Burst hält
 die Hitze hoch (Multiplikator, Klinge) und legt alles in einen Stich, der Tropf hält sie niedrig,
-verteilt den Score auf jeden Sieg und braucht keinen Crit. Das Episch-Extra hebt den Durchsatz nur in
-Builds mit hoher Einnahme (Zunder, Feuersturm), sonst fließt nicht mehr, als hereinkommt.
+verteilt den Score auf jeden Sieg und braucht keinen Crit.
+
+Episch: ein erster Entwurf ("verbrennt 6 statt 4") war nur teurer, weil der Tropf einnahme-begrenzt ist
+(Owner-Einwand). Der Rückfluss hebt die Grenze: jeder Hitzepunkt wird im Schnitt zweimal verbrannt, also
+doppelter Score je Einnahmepunkt, 60 statt 25 auf Sehr selten (2,4×, wie der Episch-Sprung bei
+Flächenbrand). Netto verbrennt der Tropf nur noch 2 je Sieg, 52 je Runde; bei Einnahmen über 52 (Zunder
+Selten) steigt die Hitze trotz Tropf, Multiplikator und Klinge kommen mit. Sim-Wachpunkt: Schmelzpunkt
+Episch mit Zunder und Glutbett, dann läuft der Tropf auf hoher Hitze.
 
 ## 5. Eis
 
