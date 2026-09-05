@@ -24,6 +24,7 @@ import { randomPolicy } from "../sim/policies/random.js";
 // das Angebot sind zwei Türen à drei Skills. Gemessen mit der Random-Policy über Seeds 1..40: Median ≈ 1,13M,
 // Mean ≈ 1,34M (Seeds 1..200: 1,23M / 1,73M — dasselbe Niveau wie das flache Feuer/Blitz-Angebot davor, 1,23M / 1,87M).
 // Die Bänder sind darauf zentriert (≈ ±35 %); nach der Eis-/Pflanze-Runde erneut zentrieren.
+// §7.10 (Kühlung 2 → 6, Vorsprung-Offset 2 → 1): Seeds 1..40 Median ≈ 1,04M, Mean ≈ 1,23M — im Band, nicht neu zentriert.
 describe("sim balance guard", () => {
   const SEEDS = 40; // feste Seeds 1..40 → deterministischer Median/Mean
   const scores = Array.from({ length: SEEDS }, (_, i) => runOne(1 + i, randomPolicy()).score).sort((a, b) => a - b);

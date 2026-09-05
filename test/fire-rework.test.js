@@ -24,6 +24,8 @@ const heat = (over = {}) => ({ ...initHeat(), active: true, ...over });
 const noCrit = () => 0.99;
 const B = C.SCORE_PER_WIN;
 const playCycle = (s) => { let g = 0; while (s.cycle === 0 && g++ < 100) s = resolveTrick(s, noCrit); return s; };
+// Passiv-Hitze eines Sieges mit Vorsprung m (§7.10: Offset 1, Kühlung 6 — die Tests rechnen aus den Konstanten, nicht aus Zahlen).
+const G = (m) => (m >= C.HEAT_MIN_MARGIN ? (m - C.HEAT_MARGIN_OFFSET) * C.HEAT_PER_POINT : 0);
 
 describe("Feuer — Roster und Stufenleitern", () => {
   it("19 Feuer-Skills: 15 normale mit vier Stufen + 4 Legendäre ohne Stufe; Funkenflug und Schmelzofen sind weg", () => {
@@ -100,9 +102,10 @@ describe("Feuer — Modul (reine Übergänge)", () => {
   });
   it("heatGainOnWin: Passiv ab Vorsprung 3, Glut, Zunder, Feuersturm, Rückzündung", () => {
     expect(heatGainOnWin([], {}, { margin: 2 })).toBe(0);
-    expect(heatGainOnWin([], {}, { margin: 6 })).toBe(4);
-    expect(heatGainOnWin([F.GLUT], st({ [F.GLUT]: 1 }), { margin: 6 })).toBe(4 * T.glut[1].heatMult);
-    expect(heatGainOnWin([F.GLUT], st({ [F.GLUT]: 3 }), { margin: 6 })).toBe(4 * T.glut[3].heatMult);
+    expect(heatGainOnWin([], {}, { margin: 6 })).toBe(G(6));
+    expect(G(6)).toBe(6 - C.HEAT_MARGIN_OFFSET);
+    expect(heatGainOnWin([F.GLUT], st({ [F.GLUT]: 1 }), { margin: 6 })).toBe(G(6) * T.glut[1].heatMult);
+    expect(heatGainOnWin([F.GLUT], st({ [F.GLUT]: 3 }), { margin: 6 })).toBe(G(6) * T.glut[3].heatMult);
     expect(heatGainOnWin([F.ZUNDER], st({ [F.ZUNDER]: 1 }), { margin: 1 })).toBe(T.zunder[1].heat);     // auch knapp
     expect(heatGainOnWin([F.FEUERSTURM], st({ [F.FEUERSTURM]: 1 }), { margin: 1, streak: 3 })).toBe(3 * T.feuersturm[1].perStreak);
     expect(heatGainOnWin([F.RUECKZUENDUNG], st({ [F.RUECKZUENDUNG]: 1 }), { margin: 1, lastResult: "loss", lastLossDeficit: 4 })).toBe(4 * T.rueckzuendung[1].perDeficit);
@@ -150,9 +153,10 @@ describe("Feuer — Modul (reine Übergänge)", () => {
     expect(burst.heat.value).toBe(T.flaechenbrand[0].keep); expect(burst.flat).toBe(50 * T.flaechenbrand[0].perPoint);
     const burstE = fireOnWin(heat({ value: 90 }), [F.FLAECHENBRAND], { [F.FLAECHENBRAND]: 3 }, { margin: 1 });
     expect(burstE.heat.value).toBe(0); expect(burstE.flat).toBe(90 * T.flaechenbrand[3].perPoint);
-    // Tor: 78 + Gewinn 3 = 81 ≥ 80 → brennt; die Hitze für den Multiplikator ist die vor dem Verbrauch (81).
+    // Tor: 78 + Gewinn (Vorsprung 5) ≥ 80 → brennt; die Hitze für den Multiplikator ist die vor dem Verbrauch.
     const gate = fireOnWin(heat({ value: 78 }), [F.FLAECHENBRAND], {}, { margin: 5 });
-    expect(gate.held).toBe(81); expect(gate.heat.value).toBe(40); expect(gate.heat.peak).toBe(81);
+    expect(78 + G(5)).toBeGreaterThanOrEqual(80);
+    expect(gate.held).toBe(78 + G(5)); expect(gate.heat.value).toBe(40); expect(gate.heat.peak).toBe(78 + G(5));
     expect(fireOnWin(heat({ value: 60 }), [F.FLAECHENBRAND], {}, { margin: 1 }).heat.value).toBe(60);
   });
   it("fireOnWin: Phönix zündet neu, Glutstahl je Punkt über dem Grundwert (Episch Schmiedewert doppelt), Sonnenkern je Brandpunkt", () => {
@@ -205,21 +209,22 @@ describe("Feuer — Modul (reine Übergänge)", () => {
 });
 
 describe("Feuer — Engine-Integration", () => {
-  it("Passiv: Sieg mit Vorsprung 6 gibt +4 Hitze, der Hitze-Multiplikator ist ein eigener Faktor auf den Stich", () => {
+  it("Passiv: Sieg mit Vorsprung 6 gibt (6 − Offset) Hitze, der Hitze-Multiplikator ist ein eigener Faktor auf den Stich", () => {
     const cold = resolveTrick(scen(12, 6, { skills: [F.VERBRENNUNG], heat: heat({ value: 0 }) }), noCrit);
     expect(cold.lastTrick.result).toBe("win");
-    expect(cold.heat.value).toBe(4);
+    expect(cold.heat.value).toBe(G(6));
     const warm = resolveTrick(scen(12, 6, { skills: [F.VERBRENNUNG], heat: heat({ value: 60 }) }), noCrit);
-    expect(warm.heat.value).toBe(64);
-    // gelesen wird die Hitze nach dem Gewinn (64 → sechs volle Zehner), gegen den kalten Lauf (4 → keiner).
-    expect(warm.lastTrick.scoreGain / cold.lastTrick.scoreGain).toBeCloseTo(heatMult([], {}, 64), 6);
-    expect(warm.lastTrick.breakdown.fireMult).toBeCloseTo(heatMult([], {}, 64), 6);
+    expect(warm.heat.value).toBe(60 + G(6));
+    // gelesen wird die Hitze nach dem Gewinn (60 + Gewinn → sechs volle Zehner), gegen den kalten Lauf (unter 10 → keiner).
+    expect(G(6)).toBeLessThan(10);
+    expect(warm.lastTrick.scoreGain / cold.lastTrick.scoreGain).toBeCloseTo(heatMult([], {}, 60 + G(6)), 6);
+    expect(warm.lastTrick.breakdown.fireMult).toBeCloseTo(heatMult([], {}, 60 + G(6)), 6);
     expect(warm.fireHeat).toBeGreaterThan(0);
     expect(warm.fireBase).toBe(0); // kein Feuer-Score im Passiv
   });
   it("Stufe aus state.skillTiers: Glut Episch verdoppelt die Passiv-Hitze", () => {
     const s = resolveTrick(scen(12, 6, { skills: [F.GLUT], skillTiers: { [F.GLUT]: 3 }, heat: heat({ value: 0 }) }), noCrit);
-    expect(s.heat.value).toBe(4 * T.glut[3].heatMult);
+    expect(s.heat.value).toBe(G(6) * T.glut[3].heatMult);
   });
   it("Niederlage kühlt −2 und merkt den Rückstand; Phönixfeuer heizt stattdessen", () => {
     const s = resolveTrick(scen(2, 9, { skills: [F.GLUT], heat: heat({ value: 50 }) }), noCrit);
@@ -238,14 +243,14 @@ describe("Feuer — Engine-Integration", () => {
   it("Flächenbrand: ab 80 % brennt der Sieg bis 40, der Burst steht in der multiplizierten Basis", () => {
     const s = resolveTrick(scen(12, 6, { skills: [F.FLAECHENBRAND], heat: heat({ value: 90 }) }), noCrit);
     expect(s.heat.value).toBe(T.flaechenbrand[0].keep);
-    const burst = (94 - T.flaechenbrand[0].keep) * T.flaechenbrand[0].perPoint;
+    const burst = (90 + G(6) - T.flaechenbrand[0].keep) * T.flaechenbrand[0].perPoint;
     expect(s.lastTrick.breakdown.flats).toBe(burst);
     expect(s.fireBase).toBe(burst);
-    expect(s.lastTrick.scoreGain).toBeCloseTo((B + burst) * s.lastTrick.breakdown.streakMult * heatMult([], {}, 94), 4);
+    expect(s.lastTrick.scoreGain).toBeCloseTo((B + burst) * s.lastTrick.breakdown.streakMult * heatMult([], {}, 90 + G(6)), 4);
   });
   it("Schmelzpunkt: jeder Sieg verbrennt 4 und zahlt je Punkt; eine Niederlage verbrennt nichts", () => {
     const s = resolveTrick(scen(12, 6, { skills: [F.SCHMELZPUNKT], heat: heat({ value: 50 }) }), noCrit);
-    expect(s.heat.value).toBe(50 + 4 - T.schmelzpunkt[0].burn);
+    expect(s.heat.value).toBe(50 + G(6) - T.schmelzpunkt[0].burn);
     expect(s.lastTrick.breakdown.flats).toBe(T.schmelzpunkt[0].burn * T.schmelzpunkt[0].perPoint);
     const lost = resolveTrick(scen(2, 9, { skills: [F.SCHMELZPUNKT], heat: heat({ value: 50 }) }), noCrit);
     expect(lost.heat.value).toBe(50 - C.HEAT_LOSS);
@@ -300,8 +305,8 @@ describe("Feuer — Engine-Integration", () => {
   it("Weißglut: die Engine gleicht die Leiste an den Build an (200) und der Multiplikator läuft über 100 weiter", () => {
     const s = resolveTrick(scen(12, 6, { skills: [F.WEISSGLUT], heat: heat({ value: 150 }) }), noCrit); // max noch 100 im Snapshot
     expect(s.heat.max).toBe(C.WEISSGLUT_HEAT_MAX);
-    expect(s.heat.value).toBe(154);
-    expect(s.lastTrick.breakdown.fireMult).toBeCloseTo(heatMult([F.WEISSGLUT], {}, 154), 6);
+    expect(s.heat.value).toBe(150 + G(6));
+    expect(s.lastTrick.breakdown.fireMult).toBeCloseTo(heatMult([F.WEISSGLUT], {}, 150 + G(6)), 6);
     const back = resolveTrick(scen(12, 6, { skills: [F.GLUT], heat: heat({ value: 150, max: 200 }) }), noCrit); // Weißglut ersetzt
     expect(back.heat.max).toBe(C.HEAT_MAX);
     expect(back.heat.value).toBe(C.HEAT_MAX);

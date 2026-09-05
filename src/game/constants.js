@@ -345,9 +345,13 @@ export const DOPPELENTLADUNG_STRIKE   = envNum("SIM_DOPPELENTLADUNG_STRIKE", 2);
 export const HEAT_MAX            = 100;                                            // Leiste des Passivs (fix)
 export const WEISSGLUT_HEAT_MAX  = envNum("SIM_WEISSGLUT_HEAT_MAX", 200);          // Leiste mit Weißglut (Skala, kein Rampen-Deckel)
 export const HEAT_MIN_MARGIN     = envNum("SIM_HEAT_MIN_MARGIN", 3);               // Mindest-Vorsprung für Passiv-Hitze
-export const HEAT_MARGIN_OFFSET  = envNum("SIM_HEAT_MARGIN_OFFSET", 2);            // Hitze = (Vorsprung − Offset) × je Punkt
+// docs/skill-rework.md §7.10 (owner: heat must drain faster so the boosters matter): cooling 2 → 6 per loss makes a
+// single booster worth +10 % (Glut) to +23 % (Zunder) over the core build; offset 2 → 1 gives every margin win one more
+// point and brings Feuer mono back level with Blitz mono (floor 1.00×). Rejected: cooling 4 (Glut still flat), a
+// steeper multiplier slope (barely moves the floor, decimal display).
+export const HEAT_MARGIN_OFFSET  = envNum("SIM_HEAT_MARGIN_OFFSET", 1);            // Hitze = (Vorsprung − Offset) × je Punkt
 export const HEAT_PER_POINT      = envNum("SIM_HEAT_PER_POINT", 1);                // % Hitze je Vorsprungspunkt über dem Offset, linear ohne Knie
-export const HEAT_LOSS           = envNum("SIM_HEAT_LOSS", 2);                     // % Hitze je Niederlage (flach)
+export const HEAT_LOSS           = envNum("SIM_HEAT_LOSS", 6);                     // % Hitze je Niederlage (flach)
 export const HEAT_MULT_PER_10    = envNum("SIM_HEAT_MULT_PER_10", 0.02);           // Score-Multiplikator je volle 10 % gehaltener Hitze (×1,2 bei 100)
 export const FORGE_VALUE         = envNum("SIM_FORGE_VALUE", 3);                   // Schmiede/Damaststahl: +Dauerwert je Schmiedung
 // Legendäre (§4.7): keine Stufe, zwei Effekte, jedes läuft allein.

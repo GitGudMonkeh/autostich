@@ -1353,7 +1353,7 @@ Startwerte für die Sim.
 ### 4.6 Übersicht Feuer (gesetzt, Stand 2026-09-05)
 
 **Passiv:** Siege ab Vorsprung 3 geben (Vorsprung − 2) % Hitze, linear ohne Knie. Niederlagen kühlen
-−2 %. Je 10 % gehaltener Hitze +2 % Score als eigener Multiplikator. Leiste 0 bis 100 (mit Weißglut
+−2 % (seit 7.10: Vorsprung − 1 und Kühlung −6 %, Owner-Vorgabe „Hitze schneller verbrauchen"). Je 10 % gehaltener Hitze +2 % Score als eigener Multiplikator. Leiste 0 bis 100 (mit Weißglut
 200). Kein Feuer-Score, kein Direkt-Score, keine Abhängigkeit von der Zahl gehaltener Feuer-Skills;
 Asche und Verbraucher-Regel entfallen. Rechengrundlage: 26 Siege und 14 Niederlagen je Runde, Passiv
 brutto 49 % und netto 21 % Hitze je Runde.
@@ -1891,6 +1891,39 @@ keinen Lauf, die Skills selbst tun es.
 5. Die Stufen tragen nicht: entweder die Leitern spreizen (Episch deutlich über Normal, z. B. Klinge je 40/30/20/10 %
    statt 40/30/25/20) oder akzeptieren, dass die Stufe vor allem der Angebots-Reiz ist.
 
+### 7.10 Hitze schneller verbrauchen (2026-09-05, umgesetzt)
+
+Owner: der Pool auf exp bleibt Feuer und Blitz (bestätigt). Hitze muss etwas schneller verbraucht werden, damit die
+Verstärker (Glut, Zunder, Feuersturm, Rückzündung) Sinn ergeben. Der Neuwurf würfelt die drei Skills der geöffneten Tür
+neu, nicht die Türen (7.7 nachgezogen).
+
+Werkzeug: `--mode motor --arch fire` (Feuer-Builds aus 7.8) und `--mode duel`, je über `SIM_HEAT_LOSS` /
+`SIM_HEAT_MARGIN_OFFSET`. Kühlung je Niederlage (Passiv-Zahl, Sim-Startwert des Owners aus 4.2):
+
+| Kühlung | Kern ohne Verstärker | Glut + Kern | Zunder + Kern | alle vier + Kern | Stiche ≥ 100 % (Kern) | Feuer mono (Fraktion) | Floor Feuer ÷ Blitz |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 2 (alt) | 10,06M | 9,82M (−2 %) | 9,77M (−3 %) | 6,06M (−40 %) | 62 % | 2,61M | 1,13× |
+| 4 | 6,55M | 6,73M (+3 %) | 7,75M (+18 %) | 6,10M (−7 %) | 30 % | 2,04M | 0,88× |
+| 6 | 5,08M | 5,72M (+13 %) | 6,56M (+29 %) | 5,86M (+15 %) | 24 % | 1,87M | 0,81× |
+| 10 | 4,46M | 4,06M (−9 %) | 5,03M (+13 %) | 5,47M (+23 %) | 18 % | 1,70M | 0,73× |
+| **6, Offset 1** | 6,12M | 6,71M (+10 %) | 7,54M (+23 %) | 5,87M (−4 %) | 30 % | 2,32M | **1,00×** |
+
+Motor-Sweeps 60 Läufe (Seeds 1–60), Duelle 100 Läufe; Blitz mono 2,32M in allen Zeilen.
+
+**Entscheid (technische Regler, Agent): Kühlung 2 → 6 je Niederlage, Vorsprung-Offset 2 → 1.** Ab Kühlung 6 zahlt ein
+einzelner Verstärker klar (Glut +10 %, Zunder +23 %); bei 4 bleibt Glut flach, bei 10 fällt Glut wieder (der
+Multiplikator auf eine Basis, die die Kühlung abträgt). Kühlung allein zieht den zufälligen Feuer-Build unter Blitz
+(0,81×); der Offset 1 gibt jedem Vorsprung-Sieg einen Hitzepunkt mehr und stellt den Floor auf 1,00× (Mean 0,97×,
+p90 0,92×) — ohne die Verstärker zu entwerten (Zunder +23 %, Glut +10 %). Verworfen: ein steilerer Multiplikator
+(2,5 % / 3 % je 10 %: Floor 0,83× / 0,85×, bewegt den Zufalls-Build kaum und bräuchte eine Nachkommastelle in den
+Texten), Kühlung 8 mit Offset 1 (0,92×). Alle vier Verstärker zusammen lohnen weiter nicht — vier Kern-Plätze kosten
+mehr als 60 % Stiche ≥ 100 % bringen; das ist gewollt: ein Verstärker, nicht vier.
+
+Neuer Kaltstart: die erste volle Leiste kommt im Kern-Build erst nach ~29 Runden (Median der Läufe, die sie erreichen),
+mit Zunder nach ~23, mit allen vier nach ~12. Die Hitze lebt jetzt in der Mitte der Leiste (Ø 50–90 %), der volle
+Multiplikator ist ein Ziel, kein Zustand. Texte (Passiv im Angebot, Glossar) interpolieren die Konstanten; der
+Sim-Band-Wächter wird auf die neue Welt zentriert.
+
 ## 5. Eis
 
 Offen.
@@ -1930,3 +1963,4 @@ Offen.
 | 2026-09-05 | Türen-Angebot umgesetzt (7.7): zwei Türen à drei Fraktionssymbole, Stufen hinter der Tür, Angebot auf einer Seite; Pool auf exp Feuer/Blitz (Annahme, Owner bestätigen); Sim-Policies wählen Türen. Stufentexte: ein Text je Stufe im Angebot und im Bestand. Sim-Band neu zentriert. |
 | 2026-09-05 | Motor-Diagnose (7.8, `--mode motor`): das Feuer-Passiv hält die Hitze allein (226 % Gewinn gegen 14 % Kühlung je Runde, 62 % der Stiche ≥ 100 %), Glut ist tot, weil die Leiste voll ist, Engpass ist der Kaltstart (532 Stiche bis 100 ohne, 263 mit Zunder); Konsumenten verbrennen die Basis. Blitz: Crit trägt 48–59 % des Scores, Stapel 13 % (Stapel-Build 33 %), Ionisierung alle 30 Stiche. Vorschläge an den Owner. |
 | 2026-09-05 | Große Auswertung mit Türen (7.9): robust stark Sonnenkern, Klinge, Weißglut, Ladungsserie, Doppelentladung, Durchschlag; robust schädlich Glut, Glutbett, Feuersturm, Spannungsstau; tot Glutstahl, Schmiede, Überspannung, Reststrom, Kurzschluss; Konsumenten und Phönixfeuer ungenommen. Gierig 14,4M gegen 16,4M flach. Stufen tragen weiter nicht. Fünf Punkte für den Owner. |
+| 2026-09-05 | Owner: Pool Feuer/Blitz bestätigt; Neuwurf würfelt die drei Skills der geöffneten Tür neu (umgesetzt); Hitze schneller verbrauchen (7.10): Kühlung 2 → 6, Vorsprung-Offset 2 → 1 nach Sweep — ein Verstärker zahlt jetzt +10 % (Glut) bis +23 % (Zunder), Feuer mono gegen Blitz mono 1,00×. Danach die große Runde mit Random-Picks (7.11). |
