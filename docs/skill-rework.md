@@ -696,21 +696,34 @@ kommen ausschließlich über eine eigene Legendär-Phase (Plan-Token `legendary`
 drei Legendäre der Fraktion, Duo und Trio zwei je Fraktion. Ein Legendär je Lauf. Direkt-Dividenden
 skalieren mit dem Bekenntnis (Anteil der Fraktion an den Slots). Bestand siehe 3.3.
 
-**Rahmen Legendäre (Vorschlag, Entscheid Owner):**
+**Rahmen Legendäre. Gesetzt (Owner, 2026-09-05):**
 
 1. **Keine Stufen.** Ein Legendär hat eine Fassung und steht über Episch.
-2. **Tor statt Bekenntnis.** Legendäre einer Fraktion erscheinen nur, wenn mindestens drei Skills dieser
-   Fraktion gehalten werden. Damit ist das Bekenntnis am Tor geprüft; eine Skalierung der Effekte mit
-   dem Bekenntnis-Anteil entfällt, die Effekte sind fest.
-3. **Kanal: die Tür.** Ein Legendär ist die fünfte Stufe im Würfelwurf nach der Türwahl, nur für
-   Fraktionen, deren Tor offen ist. Startwert für die Sim: 5 % je Skill-Platz einer offenen Fraktion,
-   im Schnitt knapp ein Legendär je Lauf; Quote und Pity zusammen mit Episch (offen). Die eigene
-   Legendär-Phase entfällt; der Zeitpunkt folgt dem Bekenntnis (drei Skills ab etwa Runde 13). Sobald
-   Bosse existieren, ist Boss-Beute der zweite mögliche Kanal.
-4. **Ein Regelbruch je Legendär**, kein Zahlenpaket: eine Regel der Fraktion wird gebrochen, ein Effekt,
-   kein Direkt-Score, keine eigenen Deckel (die Engine-Deckel bleiben). Jeder der vier gehört zu einer
-   anderen Achse des Kits: Rate (Leiste), Feld (Stapel im Deck), Tiefe (tiefe Karten), Crit.
-5. **Ersetzen erlaubt:** ein zweites Legendär derselben Fraktion ist möglich, wenn der Wurf es bringt.
+2. **Kein Tor.** Legendäre erscheinen ohne Bedingung an gehaltene Skills, rein zufällig. Eine Skalierung
+   der Effekte mit dem Bekenntnis-Anteil entfällt, die Effekte sind fest.
+3. **Kanal: die Tür.** Ein Legendär ist die fünfte Stufe im Würfelwurf nach der Türwahl, für jede
+   gezeigte Fraktion. **Startwert 3 bis 4 % je Skill-Platz**, die Sim passt an. Bei 3,5 % und drei
+   Plätzen sind das rund 10 % je Phase: im Schnitt ein Angebot je Lauf, 65 % der Läufe sehen mindestens
+   eines, 26 % zwei. Die eigene Legendär-Phase (Runde 29) entfällt.
+4. **Kein Ersetzen.** Ein Legendär verdrängt nichts; wer Glück hat, hält zwei.
+
+**Vorschlag (gilt je Legendär mit dem Entscheid zum Skill):** ein Regelbruch je Legendär, kein
+Zahlenpaket. Eine Regel der Fraktion wird gebrochen, ein Effekt, kein Direkt-Score, keine eigenen Deckel
+(die Engine-Deckel bleiben). Jeder der vier gehört zu einer anderen Achse des Kits: Rate (Leiste), Feld
+(Stapel im Deck), Tiefe (tiefe Karten), Crit.
+
+**Donnergott** — Rate. Heute: Verbraucher lösen schon bei 70 % Ladung aus, dazu dauerhaft +0,4×
+Crit-Multiplikator. Neu ein Effekt, der Regelbruch an der Leiste; der Mult-Anteil entfällt.
+
+> **Die Ladungsleiste ist bei 7 voll.**
+
+Wirkung: alles, was an der Leiste hängt, läuft mit 10/7, also ×1,43: Ionisierungen, Kettenblitz,
+Gewitterfront, Entladung, Blitzfänger-Ladung. Mit Reststrom mehr, weil der Rest fest ist: Reststrom
+Selten braucht 4 statt 7 Ladung je Leiste (×1,75), Reststrom Episch 1 statt 4 (×4). Mono Selten aus
+`blitz-build.mjs`: rund 230 Leisten werden etwa 400. Sim-Wachpunkt: Donnergott mit Reststrom Episch und
+Blitzableiter, dann füllt jeder Crit eine Leiste; Regler sind die 7 (etwa 8) oder Reststrom Episch (6
+auf 5). Warum nicht der Crit-Mult dazu: zwei Effekte, und +0,4× flach ist unter dem 8×-Deckel im
+Mono-Build ohnehin unsichtbar.
 
 ---
 
