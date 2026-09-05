@@ -1440,8 +1440,10 @@ multipliziert, +1 % je Prozent bis 100 (×2), +3 % je Punkt Überhitzung (mit We
 Hitze-Multiplikator steckt jetzt im Passiv (+2 % je 10 %); Sonnenzorn wird die legendäre Fassung davon,
 zwei Regelbrüche am selben Multiplikator:
 
-> **Der Hitze-Multiplikator zählt die höchste je erreichte Hitze statt der aktuellen.**
-> **Er ist doppelt so steil: +4 % Score je 10 % statt +2 %.**
+> **Der Hitze-Multiplikator rechnet mit der höchsten je erreichten Hitze, nicht mit der aktuellen.**
+> **Der Hitze-Multiplikator zählt doppelt: je 10 % Hitze +4 % Score statt +2 %.**
+
+(Formulierung auf Owner-Wunsch geändert, vorher "doppelt so steil".)
 
 Der erste Teil löst die Spannung "halten gegen verbrennen" zugunsten des Spielers: wer einmal auf 100
 war, behält ×1,4 (statt ×1,2 heute im Passiv bei voller Leiste), egal was Flächenbrand, Schmelzpunkt
