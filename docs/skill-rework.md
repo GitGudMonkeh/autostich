@@ -749,6 +749,26 @@ Kettenblitz macht Breite, Donnergott Rate, Doppelentladung Tiefe und den Doppels
 Stapel und Stichwertung speisen keine Leiste; Überspannung bleibt die einzige Rückkopplung, begrenzt
 durch die Crits je Runde. Sim-Regler: der Bonus je Stapel und, falls nötig, "zählt 1,5×" statt doppelt.
 
+Entscheid Owner (2026-09-05): **gesetzt wie überarbeitet.**
+
+**Flächenionisation** — Feld. Heute: Sieg mit ionisierter Karte gibt beiden ungespielten Nachbarn
++1 Stapel, dazu +130 Direkt-Score je ionisierter Karte im Feld (bis 30), anteilig zum Bekenntnis.
+Direkt-Score und Bekenntnis entfallen. Neu zwei Dinge, beide am Feld:
+
+> **Gewinnt eine ionisierte Karte, springt der Blitz auf beide Nachbarn in der Reihenfolge: +1 Stapel.**
+> **Jede ionisierte Karte im Deck gibt +1 % Crit-Chance.**
+
+Der erste Teil ist der Regelbruch: Stapel entstehen aus Siegen, nicht nur aus der Leiste, und das Feld
+breitet sich von selbst aus; wo die Stapel landen, entscheidet die Aufstellung. Größenordnung: mit
+allen Karten ionisiert sind das 26 Siege je Runde, also +52 Stapel je Runde, spät im Mono-Build mehr
+als Leiste und Kettenblitz zusammen (rund 540 Stapel im Lauf). Bis alles ionisiert ist, wächst es wie
+ein Flächenbrand; danach bleibt es bei 52 je Runde, begrenzt durch die Siege. Der zweite Teil ist der
+Anzahl-Payoff: bis +40 % Crit-Chance beim vollen Deck, im Mono-Build Selten im Schnitt etwa +28 %.
+Beide Teile treiben sich gegenseitig, aber nur bis zur Sättigung bei 40 Karten; danach ist der Zuwachs
+linear. Sim-Regler: "jeder 2. Sieg" statt jeder, oder ein Nachbar statt beide; am zweiten Teil die 1 %.
+Wechselwirkung: Doppelentladung macht aus jedem Sprung 2 Stapel; Blitzfänger, Kurzschluss und
+Überspannung erreichen ihre Schwellen im ganzen Deck.
+
 ---
 
 ## 4. Feuer
