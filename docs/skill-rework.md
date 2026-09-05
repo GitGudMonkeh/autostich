@@ -73,7 +73,7 @@ Entscheid: bleibt / geändert / gestrichen — Begründung in einem Satz
 
 | Fraktion | Passiv | Die 15 | Stufen | Legendäre |
 | --- | --- | --- | --- | --- |
-| Blitz | gesetzt, zwei Punkte offen | offen, Ionisierung gestrichen | offen | separat, später |
+| Blitz | gesetzt, ein Punkt offen | offen, Ionisierung gestrichen | offen | separat, später |
 | Feuer | offen | offen | offen | separat, später |
 | Eis | offen | offen | offen | separat, später |
 | Pflanze | offen | offen | offen | separat, später |
@@ -116,6 +116,8 @@ Was dahinter läuft (Code-Stand, Konstanten in `src/game/constants.js`):
 - **Ionisierte Karten geben nur noch mehr Score.** Keine Crit-Chance aus dem Feld, keine Sättigung.
 - Einige Skills werden so geändert, dass sie **mit der Anzahl an Ionisierungen** etwas machen.
 - **Ionisierung entfällt als Skill.**
+- **Stapel ohne Deckel.** Eine Karte kann beliebig oft ionisiert werden, jeder Stapel zählt. Tuning
+  notfalls über die Sim.
 
 Muster, das damit für alle Fraktionen gilt (Vorschlag): Passiv = eine Ressource freischalten plus ein
 fester Payoff. Skills ändern die Rate, den Payoff und tun etwas mit der Menge.
@@ -130,14 +132,17 @@ fester Payoff. Skills ändern die Rate, den Payoff und tun etwas mit der Menge.
 | Stapel geben Score und feldweit Crit-Chance, Sättigung gibt Kartenwert | nur noch Score |
 | Kaskade, Bekenntnis | unberührt, bleiben Skill-Sache |
 
-**Offene Punkte, die vor der 15er-Auswahl gesetzt sein müssen (Owner):**
+**Folge des offenen Deckels:** "voll ionisiert" gibt es nicht mehr als Zustand. Skills, die heute daran
+hängen (Kurzschluss, Blitzfänger, Durchschlag), brauchen entweder eine Schwelle ("ab 5 Stapeln") oder
+skalieren je Stapel. Der Score je Stapel bleibt flach und vor den Multiplikatoren, damit ein tiefer
+Stapel linear wächst und nicht mit dem Stack multipliziert.
 
-1. **Stapeln.** Kann eine Karte mehrfach ionisiert werden (Stapel wie heute, höchstens 5) oder ist eine
-   Karte ionisiert oder nicht? Kurzschluss, Blitzfänger und Durchschlag brauchen "voll ionisiert",
-   also Stapel. Ohne Stapel werden sie zu Anzahl-Skills.
-2. **Welche Karte.** Die Karte, die den zehnten Crit macht, eine zufällige noch nicht ionisierte Karte,
-   oder die nächste in der Reihenfolge. Die erste konzentriert Ionisierung auf starke Karten, die
-   zweite verteilt, die dritte macht die Aufstellung relevant.
+**Offener Punkt, der vor der 15er-Auswahl gesetzt sein muss (Owner):**
+
+1. **Welche Karte.** Die Karte, die den zehnten Crit macht, eine zufällige Karte, oder die nächste in der
+   Reihenfolge. Die erste konzentriert Ionisierung auf starke Karten und baut tiefe Stapel, die zweite
+   verteilt, die dritte macht die Aufstellung relevant. Mit offenem Deckel ist "zufällig" jede Karte,
+   nicht nur nicht ionisierte.
 
 Vorschlag am Rand: der passive Anteil von 5 % bleibt je Skill fest und skaliert nicht mit der Stufe.
 Die Stufe wirkt auf den Skill-Effekt. Das hält das Passiv einfach und die Leiter berechenbar.
@@ -173,7 +178,7 @@ neue kommen, plus einer.
 | Gewitterfront, Entladung | Payoff bei voller Leiste, dauerhaft Crit-Chance oder Crit-Mult, mehrere gleichzeitig möglich |
 | Spannungsstau, Ladungsserie | Crit-Quelle aus Sieg ohne Crit oder aus der Serie |
 | Überspannung, Blitzschlag, Breitenbeschleuniger | Ionisierung außerhalb der Leiste oder an Position gebunden, Kaskade |
-| Kurzschluss, Blitzfänger | brauchen Stapel, sonst Kandidaten für Anzahl-Effekte |
+| Kurzschluss, Blitzfänger | hängen an "voll ionisiert", brauchen eine Schwelle oder skalieren je Stapel |
 | Serienschutz | Ladung ausgeben statt Serie verlieren, bleibt |
 | neu, Anzahl-Skills | z. B. Crit-Chance je ionisierter Karte, Sättigung ab N ionisierten Karten, Ladung je Crit steigt mit der Anzahl |
 
@@ -268,3 +273,4 @@ Offen.
 | 2026-09-04 | Dokument angelegt. Rahmen aus der Planungssitzung, Blitz-Bestand aus dem Code aufgenommen. |
 | 2026-09-04 | Blitz-Passiv neu gesetzt (Leiste, 10 Crits, eine Karte ionisieren, nur Score). Folgen für den Bestand, Tempo-Tabelle und drei offene Punkte eingetragen. |
 | 2026-09-04 | Crit-Quelle gesetzt: +5 % je Blitz-Skill als passiver Anteil, Zahlen später in der Sim. Ionisierung als Skill gestrichen. Tempo-Tabelle auf gehaltene Skills umgestellt. |
+| 2026-09-04 | Stapel ohne Deckel gesetzt, Tuning über Sim. "Voll ionisiert" wird Schwelle oder Skalierer. Offen bleibt nur noch die Zielkarte. |
