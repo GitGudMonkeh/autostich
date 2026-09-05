@@ -580,15 +580,26 @@ Selten gibt 1,3. Die Rückkopplung Ladung → Stapel → tiefe Karten → Ladung
 begrenzt, kein Kreislauf. Heute gibt +3 auf jeder ionisierten Karte, spät also +3 je Crit; die Leiter
 liegt darunter, weil sie später anspringt.
 
-**Blitzschlag** — Ionisierung an der Leiste vorbei. Heute: jeder Crit ionisiert die Siegkarte. Das
-Passiv braucht zehn Crits je Ionisierung; die Stufen setzen den Skill in ein Verhältnis dazu.
+Entscheid Owner (2026-09-05): **gesetzt wie überarbeitet.**
 
-| Stufe | Effekt | Extra | Ionisierungen je 10 Crits mit Passiv |
+**Blitzschlag** — Ionisierung an der Leiste vorbei. Heute: jeder Crit ionisiert die Siegkarte
+(+1 Stapel). Das Passiv braucht zehn Crits je Ionisierung; ein Stapel je Crit macht die Leiste zur
+Nebensache. Die Stufen setzen den Skill deshalb in ein Verhältnis zum Passiv, heute läge über Episch,
+bewusst. Ein Effekt, ein Regler, ohne Extra (das frühere "Episch: 2 Stapel" ist gestrichen).
+
+| Stufe | Effekt | Stapel je 100 Crits | Extra |
 | --- | --- | --- | --- |
-| Normal | jeder 5. Crit ionisiert die Siegkarte | – | 3 |
-| Selten | jeder 4. Crit | – | 3,5 |
-| Sehr selten | jeder 3. Crit | – | 4,3 |
-| Episch | jeder 2. Crit | die Siegkarte erhält 2 Stapel | 6, davon 5 doppelt |
+| Normal | jeder 5. Crit ionisiert die Siegkarte | 20 | – |
+| Selten | jeder 4. Crit | 25 | – |
+| Sehr selten | jeder 3. Crit | 33 | – |
+| Episch | jeder 2. Crit | 50 | – (stark) |
+
+Größenordnung (`blitz-build.mjs`, andere Skills auf Selten): mono etwa 390 Crits im Lauf, also 78 / 98 /
+130 / 195 Stapel aus Blitzschlag neben rund 470 aus der Leiste mit Kettenblitz Selten; Splash 4 Skills
+177 Crits, also 35 / 44 / 59 / 89 neben rund 220. Unterschied zur Leiste: der Stapel landet auf der
+Siegkarte, nicht auf der nächsten in der Reihenfolge. Starke Karten gewinnen öfter, critten öfter und
+werden tiefer; Blitzschlag ist damit der Tiefen-Motor für die drei Schwellen-Skills, während die Leiste
+und Kettenblitz die Breite machen.
 
 **Dauerstrom** — Serie zu Ladung plus Rampe. Heute: je 3 Serienpunkte +1 Ladung je Sieg, höchstens +3,
 volle Leiste +2 % Crit-Chance, Deckel 40 %.
