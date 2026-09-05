@@ -123,7 +123,6 @@ export function GameOver({ state, isRecord, timeStr, onRestart, onMenu, currentT
   const pushM = (cond, label, value, color) => { if (cond && value > 0) motor.push({ label, value, color }); };
   pushM(arch.includes("plant"), t("gameover.metric.growth"), Math.round(state.growthTotal || 0), "#69cf59");
   pushM(arch.includes("lightning"), t("gameover.metric.ionizations"), Math.round(state.ionTotal || 0), "#8a7de0");
-  pushM(arch.includes("fire"), t("gameover.metric.ashBurned"), Math.round(state.ashBurned || 0), "#ff7a3c");
   pushM(arch.includes("fire"), t("gameover.metric.brands"), Math.round(state.brandTotal || 0), "#ff7a3c");
 
   // Architekt-Gebäude in der finalen Aufstellung — ein-/ausblendbar + Liste (Name · Form · Stufe), wie in der Chronik.

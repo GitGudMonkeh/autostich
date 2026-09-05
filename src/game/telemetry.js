@@ -131,9 +131,9 @@ export function buildRunPayload({ state, localEntry, profile, options, outcome, 
     channels: {
       glacier: int(s.glacierYield || 0), streak: int(s.streakScore || 0), light: int(s.lightYield || 0),
       plantRoot: int(s.plantRoot || 0), plantBloom: int(s.plantBloom || 0), plantHarvest: int(s.plantHarvest || 0),
-      fireBase: int(s.fireBase || 0), fireWhite: int(s.fireWhite || 0),
+      fireBase: int(s.fireBase || 0), fireHeat: int(s.fireHeat || 0), // exp skill rework: fireHeat = Anteil des Hitze-Multiplikators (ehemals fireWhite)
       formation: int(s.formationScore || 0), building: int(s.buildingScore || 0),
-      ion: int(s.ionTotal || 0), growth: int(s.growthTotal || 0), ashBurned: int(s.ashBurned || 0), brand: int(s.brandTotal || 0),
+      ion: int(s.ionTotal || 0), growth: int(s.growthTotal || 0), brand: int(s.brandTotal || 0), // (Asche entfällt mit dem Feuer-Rework)
     },
     // --- Build ------------------------------------------------------------------------------------
     perks: Array.isArray(s.perks) ? s.perks : [],

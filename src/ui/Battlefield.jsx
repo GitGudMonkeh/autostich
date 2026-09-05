@@ -1630,7 +1630,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
         <Suspense fallback={null}>
           <FireHead
             heat={FIRE_FORCE != null ? FIRE_FORCE
-              : (heat && heat.active ? Math.max(0, Math.min(1, (heat.value || 0) / (heat.max || HEAT_MAX))) : 0)}
+              : (heat && heat.active ? Math.max(0, Math.min(1, (heat.value || 0) / HEAT_MAX)) : 0) /* exp: volle Glut bei 100 %, auch mit Weißglut (Leiste 200) */}
             panelRef={panelRef} cardRef={deckSlotRef}
             deckTint={archDeckColor} deckColor={deckA1} deckColor2={deckA2} />
         </Suspense>

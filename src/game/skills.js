@@ -25,9 +25,9 @@ const TRIMMEN = `Trimmen: beim Ersetzen des Skills dauerhaft +${pct(C.TRIM_STEP)
 
    exp skill rework (docs/skill-rework.md): jeder normale Skill hat vier Stufen (Normal · Selten · Sehr selten ·
    Episch); die Kennwerte je Stufe stehen als `tiers[0..3]` am Skill, die Fraktionsmodule (src/game/factions/*.js)
-   lesen sie über die gehaltene Stufe (state.skillTiers). Blitz ist umgestellt; Feuer/Eis/Pflanze tragen bis zu ihrer
-   Runde noch die alten Flag-Hooks, die engine.js/skills.js-Helfer aggregieren.
-   Ein Skill mit archetype:"lightning" aktiviert beim ersten Pick den Blitz-Archetyp (lightning.active).
+   lesen sie über die gehaltene Stufe (state.skillTiers). Blitz und Feuer sind umgestellt; Eis/Pflanze tragen bis zu
+   ihrer Runde noch die alten Flag-Hooks, die engine.js/skills.js-Helfer aggregieren.
+   Der erste Skill eines Archetyps aktiviert dessen System (lightning.active / heat.active, Reducer).
    ============================================================ */
 // Stufentabellen der 15 Blitz-Skills (§3.5) — Zeile 0 Normal · 1 Selten · 2 Sehr selten · 3 Episch. Die Texte darunter
 // interpolieren dieselben Zahlen (kein Drift zwischen Regel und Beschreibung). Startwerte für die Sim.
@@ -51,6 +51,26 @@ const BLITZ = {
 export const BLITZ_TIERS = BLITZ;
 const pctS = (x) => de(Math.round(x * 1000) / 10); // Anteil → Prozent mit einer Nachkommastelle (0,0075 → „0,75")
 const ladder = (rows, f) => `Selten ${f(rows[1])}, Sehr selten ${f(rows[2])}, Episch ${f(rows[3])}`;
+// Stufentabellen der 15 Feuer-Skills (§4.5) — dieselbe Form; die Schwellen sinken, die Sätze steigen mit der Stufe.
+// Das Modul factions/fire.js liest sie über `fireParam`; Legendäre haben keine Zeile.
+const FEUER = {
+  glut:          [{ heatMult: 1.25 }, { heatMult: 1.5 }, { heatMult: 1.75 }, { heatMult: 2 }],
+  zunder:        [{ heat: 1 }, { heat: 2 }, { heat: 3 }, { heat: 4 }],
+  feuersturm:    [{ perStreak: 0.5 }, { perStreak: 1 }, { perStreak: 1.5 }, { perStreak: 2 }],
+  glutbett:      [{ floor: 40 }, { floor: 60 }, { floor: 80 }, { noCool: true }],
+  rueckzuendung: [{ perDeficit: 0.5 }, { perDeficit: 1 }, { perDeficit: 1.5 }, { perDeficit: 2, value: 2 }],
+  klinge:        [{ perHeat: 40, value: 1 }, { perHeat: 30, value: 1 }, { perHeat: 25, value: 1 }, { perHeat: 20, value: 1 }],
+  weissglut:     [{ multPer10: 0.03 }, { multPer10: 0.04 }, { multPer10: 0.05 }, { multPer10: 0.06 }],
+  feuerwalze:    [{ minHeat: 80, value: 2 }, { minHeat: 60, value: 2 }, { minHeat: 40, value: 2 }, { minHeat: 20, value: 2, afterLoss: true }],
+  verbrennung:   [{ minMargin: 8, mult: 1.5 }, { minMargin: 7, mult: 1.5 }, { minMargin: 6, mult: 1.5 }, { minMargin: 5, mult: 1.5 }],
+  flaechenbrand: [{ minHeat: 80, keep: 40, perPoint: 15 }, { minHeat: 80, keep: 40, perPoint: 20 }, { minHeat: 80, keep: 40, perPoint: 25 }, { minHeat: 80, keep: 0, perPoint: 30 }],
+  schmelzpunkt:  [{ burn: 4, perPoint: 15 }, { burn: 4, perPoint: 20 }, { burn: 4, perPoint: 25 }, { burn: 4, perPoint: 30, refund: 0.5 }],
+  brandmal:      [{ minHeat: 80, value: 2 }, { minHeat: 60, value: 2 }, { minHeat: 40, value: 2 }, { minHeat: 20, value: 2, onLoss: true }],
+  lauffeuer:     [{ minHeat: 80, value: 1, reach: 1 }, { minHeat: 60, value: 1, reach: 1 }, { minHeat: 40, value: 1, reach: 1 }, { minHeat: 20, value: 1, reach: 2 }],
+  schmiede:      [{ cost: 50, cards: 1 }, { cost: 40, cards: 1 }, { cost: 30, cards: 1 }, { cost: 20, cards: 2 }],
+  glutstahl:     [{ perPoint: 8 }, { perPoint: 12 }, { perPoint: 16 }, { perPoint: 20, forgedDouble: true }],
+};
+export const FEUER_TIERS = FEUER;
 
 export const SKILL_DEFS = {
   // ---- Blitz (exp skill rework, §3): Passiv +5 % Crit je Skill, Leiste 10 Crits → nächste Karte ionisieren.
@@ -100,57 +120,53 @@ export const SKILL_DEFS = {
   SK_LIGHTNING_L04: { id: "SK_LIGHTNING_L04", name: "Durchschlag", archetype: "lightning", legendary: true, keywords: ["crit"],
     desc: `Auch Niederlagen können critten: ein Crit bei einer Niederlage gewinnt den Stich.` },
 
-  // ---- Feuer-Rework (v0) — „Hitze belohnt totale Überlegenheit." 21 Skills auf 7 Linien.
-  //      Flags werden in skills.js-Helfern (heatGainFor/heatLossFor/fireScoreFor) + engine.js gelesen. ----
-  // Linie 1 — Generation (Marge · Konstanz · Serie)
-  SK_FIRE_01: { id: "SK_FIRE_01", name: "Glut", archetype: "fire", keywords: ["heat"],
-    desc: `Siege mit Kampfwert-Vorsprung geben +${pct(C.EMBER_MULT - 1)} % mehr Hitze.`, emberBoost: true },
-  SK_FIRE_02: { id: "SK_FIRE_02", name: "Zunder", archetype: "fire", keywords: ["heat"],
-    desc: `Jeder Sieg gibt +${C.ZUNDER_HEAT} % Hitze, auch bei knappem Vorsprung.`, zunder: true },
-  SK_FIRE_03: { id: "SK_FIRE_03", name: "Feuersturm", archetype: "fire", keywords: ["heat", "streak"],
-    desc: `Jeder Sieg in Folge gibt +${C.FEUERSTURM_STEP} % mehr Hitze (bis +${C.FEUERSTURM_CAP} %). Eine Niederlage setzt zurück.`, feuersturm: true },
-  // Linie 2 — Verteidigung (abschirmen · kontern)
-  SK_FIRE_04: { id: "SK_FIRE_04", name: "Glutbett", archetype: "fire", keywords: ["heat"],
-    desc: `Niederlagen kosten nur ${pct(C.GLUTBETT_MULT)} % der Hitze; unter ${C.GLUTBETT_FREE_BELOW} % Hitze gar keine.`, glutbett: true },
-  SK_FIRE_05: { id: "SK_FIRE_05", name: "Rückzündung", archetype: "fire", keywords: ["heat"],
-    desc: `Nach einer Niederlage gibt der nächste Sieg +${C.RUECKZUENDUNG_HEAT_PER_DEFICIT} % Hitze je Punkt Wert-Rückstand und der Siegkarte +${C.RUECKZUENDUNG_VALUE} Stichwert.`, rueckzuendung: true },
-  // Linie 3 — Schwellen-Payoffs (hohe Hitze → Belohnung)
-  SK_FIRE_06: { id: "SK_FIRE_06", name: "Glühende Klinge", archetype: "fire", keywords: ["heat"],
-    desc: `Alle deine Karten bekommen Stichwert nach Hitze: +${C.GLOWING_T1_VALUE} ab ${C.GLOWING_T1_HEAT} %, +${C.GLOWING_T2_VALUE} ab ${C.GLOWING_T2_HEAT} %, +${C.GLOWING_T3_VALUE} bei ${C.GLOWING_T3_HEAT} %. Die oberen beiden verlangen im laufenden Segment zusätzlich einen Sieg mit ${C.GLOWING_T2_MARGIN} bzw. ${C.GLOWING_T3_MARGIN} Kampfwert-Vorsprung.`, glowingBlade: true },
-  SK_FIRE_07: { id: "SK_FIRE_07", name: "Weißglut", archetype: "fire", keywords: ["heat"],
-    desc: `Hitze über ${C.HEAT_MAX} % staut sich als Überhitzung auf, bis ${C.HEAT_MAX + C.OVERHEAT_MAX} %; je höher sie steht, desto weniger kommt an. Jeder Punkt gibt +${pct(C.OVERHEAT_SCORE_STEP)} % Feuer-Score. Sie baut ${C.OVERHEAT_DECAY} Punkte je Stich ab, ${C.OVERHEAT_DECAY_LOSS} bei einer Niederlage.`, whiteHeat: true },
-  // Linie 4 — Wert-/Score-Motoren
-  SK_FIRE_08: { id: "SK_FIRE_08", name: "Feuerwalze", archetype: "fire", keywords: ["heat"],
-    desc: `Ab ${C.FIREROLL_MIN_HEAT} % Hitze gibt jeder Sieg in Folge der nächsten Karte +1 Stichwert (bis +${C.FIREROLL_MAX}). Eine Niederlage setzt zurück.`, fireRoll: true },
-  SK_FIRE_09: { id: "SK_FIRE_09", name: "Verbrennung", archetype: "fire", keywords: ["heat"],
-    desc: `Großer Kampfwert-Vorsprung gibt mehr Feuer-Score: ×${de(C.VERBRENNUNG_T1_MULT)} ab ${C.VERBRENNUNG_T1_MARGIN}, ×${de(C.VERBRENNUNG_T2_MULT)} ab ${C.VERBRENNUNG_T2_MARGIN}.`, verbrennung: true },
-  SK_FIRE_10: { id: "SK_FIRE_10", name: "Funkenflug", archetype: "fire", keywords: ["heat"],
-    desc: `Jeder Sieg unter ${C.SPARKFLIGHT_MIN_MARGIN} Kampfwert-Vorsprung legt das ${de(C.SPARKFLIGHT_BANK_MULT)}-fache seines Feuer-Scores plus ${C.SPARKFLIGHT_FLOOR_BASE} in einen Speicher, +${C.SPARKFLIGHT_FLOOR_PER_SKILL} je weiterem Feuer-Skill. Ein Sieg ab ${C.SPARKFLIGHT_MIN_MARGIN} Vorsprung zahlt ihn als Score aus, eine Niederlage halbiert ihn.`, sparkflight: true },
-  // Linie 5 — Konsumenten (max 1 im Build — Burst vs. Drip)
-  SK_FIRE_11: { id: "SK_FIRE_11", name: "Flächenbrand", archetype: "fire", keywords: ["heat", "consume"],
-    desc: `Ab ${C.CONFLAG_MIN_HEAT} % Hitze brennt der nächste Sieg bis auf ${C.CONFLAG_KEEP} % herunter: +${C.CONFLAG_PER_HEAT} Score je verbranntem Hitzepunkt, +${C.CONFLAG_PER_SKILL} je weiterem Feuer-Skill (mit ${C.SKILL_SLOTS} Feuer-Skills ≈ +${grp((C.HEAT_MAX - C.CONFLAG_KEEP) * (C.CONFLAG_PER_HEAT + C.CONFLAG_PER_SKILL * (C.SKILL_SLOTS - 1)))}).`, heatConsumer: "conflagration" },
-  SK_FIRE_12: { id: "SK_FIRE_12", name: "Schmelzpunkt", archetype: "fire", keywords: ["heat", "consume"],
-    desc: `Jeder Sieg verbrennt ${C.MELT_COST} % Hitze: ${C.MELT_SCORE_BASE} Score je verbranntem Punkt, +${de(C.MELT_SCORE_PER_HEAT)} je gehaltenem Prozent Hitze (bei voller Leiste ${grp(Math.round(C.MELT_COST * (C.MELT_SCORE_BASE + C.MELT_SCORE_PER_HEAT * C.HEAT_MAX)))} je Sieg). Niederlagen kosten keine Hitze.`, heatConsumer: "melt" },
-  // Linie 6 — Verbrennen → Schmieden (Brand · Asche · Schmiede)
-  SK_FIRE_13: { id: "SK_FIRE_13", name: "Brandmal", archetype: "fire", keywords: ["heat", "brand", "ash"],
-    desc: `Jeder Sieg brandmarkt eine Gegnerkarte (−${C.BRAND_VALUE} Wert) und gibt +${C.BRAND_ASH} Asche.`, brandmal: true },
-  SK_FIRE_14: { id: "SK_FIRE_14", name: "Lauffeuer", archetype: "fire", keywords: ["heat", "brand", "ash"],
-    desc: `Verstärker: Brände greifen auf eine Nachbarkarte über (−${C.BRAND_VALUE} Wert) und geben +${C.BRAND_ASH} Asche.`, enabler: "SK_FIRE_13", lauffeuer: true },
-  SK_FIRE_15: { id: "SK_FIRE_15", name: "Ascheschmiede", archetype: "fire", keywords: ["heat", "forge", "ash"],
-    desc: `Am Ende jedes Durchlaufs erhält jeweils deine niedrigste Karte dauerhaft +${C.FORGE_VALUE} Kartenwert, solange du ≥${C.FORGE_COST} Asche hast. Ist die Schmiede voll, verglüht weitere Asche als Ascheglut: +${grp(C.FORGE_OVERFLOW_SCORE)} Score je ${C.FORGE_COST} Asche.`, ascheschmiede: true },
-  SK_FIRE_16: { id: "SK_FIRE_16", name: "Glutstahl", archetype: "fire", keywords: ["heat", "forge"],
-    desc: `Verstärker: Geschmiedete Karten geben bei Sieg +${C.GLUTSTAHL_PER_VALUE} Score je geschmiedetem Wert.`, enabler: "SK_FIRE_15", glutstahl: true },
-  SK_FIRE_17: { id: "SK_FIRE_17", name: "Schmelzofen", archetype: "fire", keywords: ["heat", "brand", "forge", "ash"],
-    desc: `Ab ${C.SCHMELZOFEN_MIN_HEAT} % Hitze geben Brände zusätzlich −${C.SCHMELZOFEN_BRAND_BONUS} Wert und +${C.SCHMELZOFEN_BRAND_BONUS} Asche. Schmieden kostet ${pct(C.SCHMELZOFEN_FORGE_DISCOUNT)} % weniger Asche.`, schmelzofen: true },
-  // Legendäre (umgeformt: dauerhaft/compoundend/direkt — je eine eigene Achse & Feuer-Playstyle)
-  SK_FIRE_L01: { id: "SK_FIRE_L01", name: "Sonnenkern", archetype: "fire", legendary: true, keywords: ["heat"],
-    desc: `Jeder Sieg gegen eine gebrandmarkte Gegnerkarte gibt +${grp(C.SONNENKERN_BRAND_SCORE)} Score je Brand darauf. Endet ein Durchlauf mit ≥${C.SONNENKERN_MIN_HEAT} % Hitze, stapeln sich deine Brände statt sich zu erneuern (bis ${C.SONNENKERN_BRAND_CAP} je Karte), und deine Karten unter Wert ${C.SONNENKERN_CARD_CAP} bekommen dauerhaft +${C.SONNENKERN_VALUE} Kartenwert.`, suncore: true },
+  // ---- Feuer (exp skill rework, §4): Passiv = Siege mit Abstand geben Hitze, Niederlagen kühlen, je 10 % Hitze +2 % Score.
+  //      Die Mechanik liest die Stufentabellen oben (factions/fire.js). Texte: Normal-Stufe zuerst, dann die Leiter.
+  // Rate — Hitze erzeugen
+  SK_FIRE_01: { id: "SK_FIRE_01", name: "Glut", archetype: "fire", keywords: ["heat"], tiers: FEUER.glut,
+    desc: `Siege mit Kampfwert-Vorsprung geben ×${de(FEUER.glut[0].heatMult)} Hitze. ${ladder(FEUER.glut, (r) => `×${de(r.heatMult)}`)}.` },
+  SK_FIRE_02: { id: "SK_FIRE_02", name: "Zunder", archetype: "fire", keywords: ["heat"], tiers: FEUER.zunder,
+    desc: `Jeder Sieg gibt +${FEUER.zunder[0].heat} % Hitze, auch ein knapper. ${ladder(FEUER.zunder, (r) => `+${r.heat} %`)}.` },
+  SK_FIRE_03: { id: "SK_FIRE_03", name: "Feuersturm", archetype: "fire", keywords: ["heat", "streak"], tiers: FEUER.feuersturm,
+    desc: `Jeder Sieg gibt +${de(FEUER.feuersturm[0].perStreak)} % Hitze je Serienpunkt. ${ladder(FEUER.feuersturm, (r) => `+${de(r.perStreak)} %`)}.` },
+  SK_FIRE_05: { id: "SK_FIRE_05", name: "Rückzündung", archetype: "fire", keywords: ["heat"], tiers: FEUER.rueckzuendung,
+    desc: `Ein Sieg nach einer Niederlage gibt +${de(FEUER.rueckzuendung[0].perDeficit)} % Hitze je Punkt Rückstand. ${ladder(FEUER.rueckzuendung, (r) => `+${de(r.perDeficit)} %`)} — und die Karte nach einer Niederlage hat +${FEUER.rueckzuendung[3].value} Wert.` },
+  // Schutz
+  SK_FIRE_04: { id: "SK_FIRE_04", name: "Glutbett", archetype: "fire", keywords: ["heat"], tiers: FEUER.glutbett,
+    desc: `Niederlagen kühlen die Hitze nicht unter ${FEUER.glutbett[0].floor} %. Selten nicht unter ${FEUER.glutbett[1].floor} %, Sehr selten nicht unter ${FEUER.glutbett[2].floor} %, Episch: Niederlagen kühlen nicht.` },
+  // Zustand — Hitze zu Wert und Multiplikator
+  SK_FIRE_06: { id: "SK_FIRE_06", name: "Glühende Klinge", archetype: "fire", keywords: ["heat"], tiers: FEUER.klinge,
+    desc: `Alle deine Karten haben +${FEUER.klinge[0].value} Wert je ${FEUER.klinge[0].perHeat} % Hitze. ${ladder(FEUER.klinge, (r) => `je ${r.perHeat} %`)}.` },
+  SK_FIRE_07: { id: "SK_FIRE_07", name: "Weißglut", archetype: "fire", keywords: ["heat"], tiers: FEUER.weissglut,
+    desc: `Die Hitzeleiste reicht bis ${C.WEISSGLUT_HEAT_MAX} %. Über ${C.HEAT_MAX} % geben je 10 % Hitze +${pct(FEUER.weissglut[0].multPer10)} % Score. ${ladder(FEUER.weissglut, (r) => `+${pct(r.multPer10)} %`)}.` },
+  SK_FIRE_08: { id: "SK_FIRE_08", name: "Feuerwalze", archetype: "fire", keywords: ["heat", "streak"], tiers: FEUER.feuerwalze,
+    desc: `Ab ${FEUER.feuerwalze[0].minHeat} % Hitze hat die nächste Karte nach einem Sieg +${FEUER.feuerwalze[0].value} Wert. ${ladder(FEUER.feuerwalze, (r) => `ab ${r.minHeat} %`)} — und auch nach einer Niederlage.` },
+  SK_FIRE_09: { id: "SK_FIRE_09", name: "Verbrennung", archetype: "fire", keywords: ["heat"], tiers: FEUER.verbrennung,
+    desc: `Ein Sieg mit Kampfwert-Vorsprung ab ${FEUER.verbrennung[0].minMargin} zählt ×${de(FEUER.verbrennung[0].mult)}. ${ladder(FEUER.verbrennung, (r) => `ab ${r.minMargin}`)}.` },
+  // Konsumenten — Hitze zu Score
+  SK_FIRE_11: { id: "SK_FIRE_11", name: "Flächenbrand", archetype: "fire", keywords: ["heat", "consume"], tiers: FEUER.flaechenbrand,
+    desc: `Ab ${FEUER.flaechenbrand[0].minHeat} % Hitze brennt der nächste Sieg die Hitze bis ${FEUER.flaechenbrand[0].keep} herunter: +${FEUER.flaechenbrand[0].perPoint} Basis-Score je verbranntem Punkt. ${ladder(FEUER.flaechenbrand, (r) => `+${r.perPoint}`)} — und der Brand brennt bis ${FEUER.flaechenbrand[3].keep}.` },
+  SK_FIRE_12: { id: "SK_FIRE_12", name: "Schmelzpunkt", archetype: "fire", keywords: ["heat", "consume"], tiers: FEUER.schmelzpunkt,
+    desc: `Jeder Sieg verbrennt ${FEUER.schmelzpunkt[0].burn} % Hitze: +${FEUER.schmelzpunkt[0].perPoint} Basis-Score je Punkt. ${ladder(FEUER.schmelzpunkt, (r) => `+${r.perPoint}`)} — und die Hälfte der verbrannten Hitze kommt zurück.` },
+  // Gegner — Brände
+  SK_FIRE_13: { id: "SK_FIRE_13", name: "Brandmal", archetype: "fire", keywords: ["heat", "brand"], tiers: FEUER.brandmal,
+    desc: `Ab ${FEUER.brandmal[0].minHeat} % Hitze brandmarkt jeder Sieg die geschlagene Gegnerkarte: −${FEUER.brandmal[0].value} Wert in der nächsten Runde. ${ladder(FEUER.brandmal, (r) => `ab ${r.minHeat} %`)} — und auch eine Niederlage brandmarkt die Gegnerkarte, die gewonnen hat.` },
+  SK_FIRE_14: { id: "SK_FIRE_14", name: "Lauffeuer", archetype: "fire", keywords: ["heat", "brand"], tiers: FEUER.lauffeuer,
+    desc: `Ab ${FEUER.lauffeuer[0].minHeat} % Hitze brandmarkt jeder Sieg beide Nachbarn der geschlagenen Gegnerkarte: −${FEUER.lauffeuer[0].value} Wert in der nächsten Runde. ${ladder(FEUER.lauffeuer, (r) => `ab ${r.minHeat} %`)} — mit Reichweite ${FEUER.lauffeuer[3].reach}, also ${2 * FEUER.lauffeuer[3].reach} Nachbarn.` },
+  // Schmiede — Hitze zu Dauerwert, Wert zu Score
+  SK_FIRE_15: { id: "SK_FIRE_15", name: "Schmiede", archetype: "fire", keywords: ["heat", "forge", "consume"], tiers: FEUER.schmiede,
+    desc: `Rundenende: liegen mindestens ${FEUER.schmiede[0].cost} Hitze an, kostet die Schmiedung ${FEUER.schmiede[0].cost} und deine niedrigste Karte erhält dauerhaft +${C.FORGE_VALUE} Wert. ${ladder(FEUER.schmiede, (r) => `kostet ${r.cost}`)} — und schmiedet die ${FEUER.schmiede[3].cards} niedrigsten Karten.` },
+  SK_FIRE_16: { id: "SK_FIRE_16", name: "Glutstahl", archetype: "fire", keywords: ["heat", "forge"], tiers: FEUER.glutstahl,
+    desc: `Sieg: +${FEUER.glutstahl[0].perPoint} Basis-Score je Punkt Wert über dem Grundwert der Karte, egal woher der Punkt kommt. ${ladder(FEUER.glutstahl, (r) => `+${r.perPoint}`)} — und Schmiedewert zählt doppelt.` },
+  // Legendäre (§4.7): keine Stufe, zwei Effekte, jedes läuft allein.
+  SK_FIRE_L01: { id: "SK_FIRE_L01", name: "Sonnenkern", archetype: "fire", legendary: true, keywords: ["heat", "brand"],
+    desc: `Jeder Sieg brandmarkt die geschlagene Gegnerkarte (−${C.SONNENKERN_BRAND} Wert), und Brände erneuern sich nicht mehr: sie stapeln sich über die Runden. Sieg gegen eine gebrandmarkte Karte: +${C.SONNENKERN_SCORE_PER_BRAND} Basis-Score je Brandpunkt auf ihr.` },
   SK_FIRE_L02: { id: "SK_FIRE_L02", name: "Phönixfeuer", archetype: "fire", legendary: true, keywords: ["heat"],
-    desc: `Niederlagen kosten keine Hitze, sondern geben +${C.PHOENIX_LOSS_HEAT} % Hitze je Rückstandspunkt. Sinkt deine Hitze durch Verbrauch auf 0, entzündet sie sich 1×/Durchlauf auf ${Math.round(C.PHOENIX_REIGNITE * 100)} % neu.`, phoenix: true },
+    desc: `Niederlagen kühlen nicht, sie heizen: +${C.PHOENIX_LOSS_HEAT} % Hitze je Punkt Rückstand. Fällt die Hitze auf 0, entzündet sie sich neu auf ${C.PHOENIX_REIGNITE} %.` },
   SK_FIRE_L03: { id: "SK_FIRE_L03", name: "Sonnenzorn", archetype: "fire", legendary: true, keywords: ["heat"],
-    desc: `Dein gesamter Sieg-Score wird mit deinem höchsten je erreichten Hitzestand multipliziert: +${de(Math.round(C.SUNWRATH_PEAK_STEP * 1000) / 10)} % je Prozent bis ${C.HEAT_MAX} %, also bis ×${de(Math.round((1 + C.HEAT_MAX * C.SUNWRATH_PEAK_STEP) * 100) / 100)}, und +${de(Math.round(C.SUNWRATH_OVER_STEP * 1000) / 10)} % je Punkt Überhitzung darüber, mit Weißglut bis ×${de(Math.round((1 + C.HEAT_MAX * C.SUNWRATH_PEAK_STEP + C.OVERHEAT_MAX * C.SUNWRATH_OVER_STEP) * 100) / 100)}.`, sunwrath: true },
-  SK_FIRE_L04: { id: "SK_FIRE_L04", name: "Damaststahl", archetype: "fire", legendary: true, keywords: ["heat", "forge", "ash"],
-    desc: `Schmiedet jeden Durchlauf deine niedrigste Karte ohne Asche (+${C.FORGE_VALUE} Wert, bis ${C.DAMASCUS_MAX_FORGED} Karten). Geschmiedete Karten kämpfen mit +${C.DAMASCUS_COMBAT} Wert. Jeder Sieg gibt +${C.DAMASCUS_PER_VALUE} Score je Punkt geschmiedetem Wert im Deck. Eine Schmiedung sind ${C.FORGE_VALUE} Punkte.`, damascus: true },
+    desc: `Der Hitze-Multiplikator rechnet mit der höchsten je erreichten Hitze, nicht mit der aktuellen. Er zählt doppelt: je 10 % Hitze +${pct(C.SONNENZORN_MULT_PER_10)} % Score statt +${pct(C.HEAT_MULT_PER_10)} %.` },
+  SK_FIRE_L04: { id: "SK_FIRE_L04", name: "Damaststahl", archetype: "fire", legendary: true, keywords: ["heat", "forge"],
+    desc: `Jede Runde wird deine niedrigste Karte geschmiedet, +${C.FORGE_VALUE} Wert dauerhaft, ohne Preis. Geschmiedete Karten kämpfen mit doppeltem Schmiedewert.` },
 
   // ---- Eis-Neudesign — „Gletscher, Brechen & Kaskade." (docs/eis-rework.md) Spine = MASSE auf dem Brettfeld (Firn-Boden),
   //      Gletscher halten & brechen gewaltig. Jeder Skill trägt ein `role: G_…` (Mechanik in glacier.js). Gate = archetype
@@ -320,149 +336,11 @@ export function skillSum(skills, name, ctx) {
 
 // (exp skill rework: der Blitz-Substate und die Blitz-Mechanik leben in src/game/factions/lightning.js.)
 
-/* ---- Feuer-Archetyp (#93 F1) — Hitze-Substate + reine Helfer (testbar; Engine-Nutzung in resolveTrick) ---- */
-
-// Frischer Hitze-Substate — inaktiv. Wird beim ersten Feuer-Skill aktiviert (Reducer).
-// fireRoll = Feuerwalze-Stapel · sparkStore = Funkenflug-Speicher · phoenixUsed = Phönixfeuer (1×/Durchlauf).
-// over = Überhitzung (Weißglut, #fire-balance) · glowSegBest = größter Wertvorsprung im LAUFENDEN Segment, gelesen
-// von der Glühenden Klinge (s. glowMarginFor). Beide sind über `|| 0` abgesichert — Altstände laufen weiter.
-// sparkPaid/sparkPayouts (#384) = Bilanz des Funkenflugs für die Skill-Detailansicht: was seine Ausschüttungen
-// diesem Lauf WIRKLICH eingebracht haben (inkl. der Multiplikatoren des auslösenden Stichs, s. engine.js) und wie
-// oft er ausgeschüttet hat. Reine Anzeige — kein Leser im Regelwerk.
-export function initHeat() {
-  return { active: false, value: 0, max: C.HEAT_MAX, fireRoll: 0, sparkStore: 0, phoenixUsed: false, peak: 0,
-           over: 0, glowSegBest: 0, sparkPaid: 0, sparkPayouts: 0 };
-}
-
-// Anzahl gehaltener Feuer-Skills (Grundmechanik zählt nicht) & ob ein Feuer-Flag gehalten wird.
-export const activeFireCount = (skills) => (skills || []).filter((id) => SKILL_DEFS[id]?.archetype === "fire").length;
-// Anzahl gehaltener Blitz-Skills — Bekenntnis-Skalierung der Blitz-Legendär-Dividende (cross-health, wie activeFireCount/iceSkillCount).
+// Anzahl gehaltener Blitz-Skills — das Blitz-Passiv gibt je Skill Crit-Chance (factions/lightning.js).
 export const activeLightningCount = (skills) => (skills || []).filter((id) => SKILL_DEFS[id]?.archetype === "lightning").length;
-export const fireFlag = (skills, flag) => (skills || []).some((id) => SKILL_DEFS[id]?.[flag]);
-// Hitze-Maximum (fix 100).
-export const heatMaxFor = () => C.HEAT_MAX;
-// Anzahl gehaltener Hitze-Konsumenten (#234: informativ — nicht mehr im Reducer geblockt, seit Feuer mehrere halten darf).
-export const heatConsumerCount = (skills) => (skills || []).filter((id) => SKILL_DEFS[id]?.heatConsumer).length;
-// Hält der Spieler den Hitze-Konsumenten `kind` ("conflagration"/"melt")? #234: mehrere gleichzeitig erlaubt (heben sich
-// nicht auf) → die Engine prüft jeden Konsumenten EINZELN hiermit, statt nur den ersten.
-export const hasHeatConsumer = (skills, kind) => (skills || []).some((id) => SKILL_DEFS[id]?.heatConsumer === kind);
 
-// Hitzegewinn bei Sieg (%). ctx = { winStreak, lostLast, deficit } für Serie/Rückzündung.
-//  · Marge (ab HEAT_MIN_MARGIN): marginHeatPoints(Vorsprung)×PER_POINT (linear bis Knie, √-Schwanz darüber), Glut ×1,5 (kaufm. gerundet)
-//  · Zunder: +2 % flach, AUCH bei knappen Siegen unter der Marge-Schwelle
-//  · Feuersturm: +1 % je Serienstufe (bis +5 %)
-//  · Rückzündung: nach einer Niederlage +1 % je Wert-Rückstand des Vorstichs
-// Margen-Hitzepunkte: linear bis zum weichen Knie (HEAT_MARGIN_CAP), darüber √-Schwanz (uncapped, abnehmender
-// Ertrag — wie Wurzeltiefe). Ersetzt den früheren HARTEN Deckel: großer Vorsprung generiert weiter Hitze.
-export function marginHeatPoints(margin) {
-  const knee = C.HEAT_MARGIN_CAP;
-  const lin = Math.min(margin, knee) - C.FIRE_MARGIN_OFFSET; // linear bis zum Knie (wie bisher)
-  if (margin <= knee) return lin;
-  return lin + C.HEAT_MARGIN_TAIL_K * Math.sqrt(margin - knee); // √-Schwanz über dem Knie
-}
-export function heatGainFor(margin, skills, ctx = {}) {
-  let g = 0;
-  if (margin >= C.HEAT_MIN_MARGIN) {
-    let base = Math.round(marginHeatPoints(margin) * C.HEAT_PER_POINT); // ganzzahlige Hitze (√-Schwanz gerundet)
-    if (fireFlag(skills, "emberBoost")) base = Math.round(base * C.EMBER_MULT);
-    g += base;
-  }
-  if (fireFlag(skills, "zunder")) g += C.ZUNDER_HEAT;
-  if (fireFlag(skills, "feuersturm")) g += Math.min((ctx.winStreak || 0) * C.FEUERSTURM_STEP, C.FEUERSTURM_CAP);
-  if (fireFlag(skills, "rueckzuendung") && ctx.lostLast) g += (ctx.deficit || 0) * C.RUECKZUENDUNG_HEAT_PER_DEFICIT;
-  return g;
-}
-// Hitzeverlust bei Niederlage (%): Basis min(Rückstand,10). Glutbett: ×0,5, unter 30 % Hitze gar keiner.
-// `heatValue` = Hitze VOR dem Verlust.
-export function heatLossFor(deficit, skills, heatValue = 0) {
-  let l = Math.min(deficit, C.HEAT_LOSS_MAX) + heatValue * C.HEAT_LOSS_PCT; // Basis-Verlust + prozentuale Abkühlung (hält hohe Hitze nicht-trivial: mehr Verlust wenn heiß)
-  if (fireFlag(skills, "glutbett")) {
-    if (heatValue < C.GLUTBETT_FREE_BELOW) return 0;
-    l *= C.GLUTBETT_MULT;
-  }
-  return Math.floor(l);
-}
-// Verbrennung-Multiplikator auf den Feuer-Score nach Wertvorsprung (Linie 4).
-export function verbrennungMult(margin) {
-  if (margin >= C.VERBRENNUNG_T2_MARGIN) return C.VERBRENNUNG_T2_MULT;
-  if (margin >= C.VERBRENNUNG_T1_MARGIN) return C.VERBRENNUNG_T1_MULT;
-  return 1;
-}
-// Feuer-Flat-Score bei Sieg: (Vorsprung−FIRE_MARGIN_OFFSET) × (25 + 5×(FeuerSkills−1)) + additiver √-Bonus (Basis·K·√Vorsprung, uncapped), dann Verbrennung (×1,5/×2).
-// 0 ohne Feuer-Skill. (Sonnenzorn wirkt jetzt als peak-hitze-Multiplikator in der Engine, nicht mehr hier.)
-export function fireScoreFor(margin, skills, _heatValue = 0) {
-  const n = activeFireCount(skills);
-  if (n === 0 || margin < C.HEAT_MIN_MARGIN) return 0;
-  const base = C.FIRE_SCORE_BASE + C.FIRE_SCORE_PER_SKILL * (n - 1);
-  const over = Math.max(0, margin - C.FIRE_MARGIN_OFFSET);
-  // lineare Linie (wie bisher) + additiver √-Bonus (Wurzeltiefe-Muster): großer Vorsprung zahlt weiter mehr, uncapped.
-  let s = over * base + base * C.FIRE_SCORE_SQRT_K * Math.sqrt(over);
-  if (fireFlag(skills, "verbrennung")) s *= verbrennungMult(margin);
-  return Math.round(s);
-}
-// Maßgeblicher Wertvorsprung für die Glühende Klinge: der größte Sieg des LAUFENDEN Segments — kein Übertrag aus
-// dem vorigen. Jedes Segment beginnt damit auf der reinen Hitze-Stufe und hebt sich, sobald darin ein Sieg mit
-// genug Vorsprung fällt; bleiben alle fünf Karten darunter, steht die Klinge dieses Segment auf der Stufe, die der
-// beste Sieg darin hergibt. Ein einzelner knapper Sieg stuft NICHT zurück — der Beste des Segments zählt.
-export const glowMarginFor = (heat) => Math.max(0, heat?.glowSegBest || 0);
-
-// Glühende-Klinge-Wertbonus (Stufen +1/+2/+3). Reiner Nicht-Legendär-Skill.
-// #fire-balance: Stufe 1 hängt allein an der Hitze (verlässlicher Sockel), die OBEREN zusätzlich am Wertvorsprung —
-// sonst lag mit Feuerwalze dauerhaft +6 Wert auf jeder Karte und blies genau die Margen auf, aus denen die Hitze
-// kommt. `bestMargin` kommt aus glowMarginFor (Segment-Fenster). Voreinstellung Infinity = „kein Margen-Gate"
-// (Anzeige-/Testaufrufer ohne Kontext).
-export function glowingValueFor(heatValue, skills, bestMargin = Infinity) {
-  if (!fireFlag(skills, "glowingBlade")) return 0;
-  let v = 0;
-  if (heatValue >= C.GLOWING_T1_HEAT) v = C.GLOWING_T1_VALUE;
-  if (heatValue >= C.GLOWING_T2_HEAT && bestMargin >= C.GLOWING_T2_MARGIN) v = C.GLOWING_T2_VALUE;
-  if (heatValue >= C.GLOWING_T3_HEAT && bestMargin >= C.GLOWING_T3_MARGIN) v = C.GLOWING_T3_VALUE;
-  return v;
-}
-
-/* Weißglut → ÜBERHITZUNG (#fire-balance). Drei reine Helfer; die Zone liegt in `heat.over` und ist damit von
-   allem isoliert, was `heat.value` liest (Sonnenzorn-Peak, Glutdividende, Glühende Klinge, Flächenbrand). */
-// Zufluss aus dem Hitze-Überlauf, mit STEIGENDEN Kosten: ankommend = Überlauf / (1 + over/K). Bei 0 kommt alles an,
-// bei 30 noch ein Viertel — tiefe Überhitzung verlangt echten Wertvorsprung, nicht viele kleine Siege.
-export function overheatGain(over, overflow, skills) {
-  const o = Math.max(0, over || 0);
-  if (overflow <= 0 || !fireFlag(skills, "whiteHeat")) return o;
-  return Math.min(C.OVERHEAT_MAX, o + overflow / (1 + o / C.OVERHEAT_COST_K));
-}
-// Kontinuierlicher Abbau je Stich (nicht nur bei Niederlage) — `amount` = OVERHEAT_DECAY bzw. OVERHEAT_DECAY_LOSS.
-export const overheatDecay = (over, amount) => Math.max(0, (over || 0) - amount);
-// Der Hebel: Multiplikator auf den GESAMTEN Feuer-Score eines Stichs (+2 % je Punkt, bei OVERHEAT_MAX also ×2).
-export function overheatMult(over, skills) {
-  if (!fireFlag(skills, "whiteHeat")) return 1;
-  return 1 + Math.min(Math.max(0, over || 0), C.OVERHEAT_MAX) * C.OVERHEAT_SCORE_STEP;
-}
-// Sonnenzorn: Score-Multiplikator aus dem Hitze-HÖCHSTSTAND. Zwei Sätze — bis HEAT_MAX der leichte Teil, darüber
-// die teuer erkaufte Überhitzung (#fire-leg, s. Konstanten-Block).
-export function sunwrathMultFor(peak, skills) {
-  if (!fireFlag(skills, "sunwrath")) return 1;
-  const p = Math.max(0, peak || 0);
-  return 1 + Math.min(p, C.HEAT_MAX) * C.SUNWRATH_PEAK_STEP
-           + Math.max(0, p - C.HEAT_MAX) * C.SUNWRATH_OVER_STEP;
-}
-// Flächenbrand: Score je verbranntem Hitzepunkt — bekenntnis-skaliert wie fireScoreFor (ein 2-Skill-Splash bekommt wenig).
-export const conflagRateFor = (skills) =>
-  C.CONFLAG_PER_HEAT + C.CONFLAG_PER_SKILL * Math.max(0, activeFireCount(skills) - 1);
-// Schmelzpunkt: Score je verbranntem Punkt — steigt mit der GEHALTENEN Hitze (Halte-Mechanik, s. Konstanten-Block).
-export const meltRateFor = (heatValue) =>
-  C.MELT_SCORE_BASE + C.MELT_SCORE_PER_HEAT * Math.max(0, heatValue || 0);
-// Funkenflug: Einlage je kleinem Sieg — Vielfaches des Feuer-Scores + bekenntnis-skalierter Sockel (damit auch ein
-// Sieg mit 1–2 Vorsprung einzahlt; dessen Feuer-Score ist unter HEAT_MIN_MARGIN exakt 0).
-export const sparkBankFor = (fireScore, skills) =>
-  Math.round((fireScore || 0) * C.SPARKFLIGHT_BANK_MULT
-    + C.SPARKFLIGHT_FLOOR_BASE + C.SPARKFLIGHT_FLOOR_PER_SKILL * Math.max(0, activeFireCount(skills) - 1));
-// Schmieden: Asche-Kosten je Schmiedung. #268: Schmelzofen-Rabatt ab 50 % Hitze als FAKTOR (−25 %, skaliert mit den
-// Kosten: 20 → 15), nicht mehr flat −1 (bei Kosten 20 trivial). Ganzzahlig gerundet, min 1.
-export function forgeCostFor(skills, heatValue = 0) {
-  let c = C.FORGE_COST;
-  if (fireFlag(skills, "schmelzofen") && heatValue >= C.SCHMELZOFEN_MIN_HEAT) c *= (1 - C.SCHMELZOFEN_FORGE_DISCOUNT);
-  return Math.max(1, Math.round(c));
-}
-
+// (exp skill rework: der Hitze-Substate und die Feuer-Mechanik leben in src/game/factions/fire.js — Passiv, 15 Skills
+//  und 4 Legendäre lesen dort die Stufentabellen FEUER_TIERS.)
 
 /* ---- Pflanze-Fraktion (v0) — Wachstum (nur steigend) → Reife (grün) → Farbblock → Score. Reine Helfer. ---- */
 const plantFlag = (skills, flag) => (skills || []).some((id) => SKILL_DEFS[id]?.[flag]);
@@ -513,14 +391,8 @@ export const hasMutterbaum    = (skills) => plantFlag(skills, "mutterbaum");
 export const hasBaumreihe     = (skills) => plantFlag(skills, "baumreihe");
 export const hasEwigerFruehling = (skills) => plantFlag(skills, "ewigerFruehling");
 
-// Ein Skill ist ein „Konsument", wenn er eine verbrauchbare Ressource auslöst — seit dem Blitz-Rework nur noch der
-// Feuer-Hitze-Konsument (heatConsumer: Flächenbrand/Schmelzpunkt); Blitz hat keine Verbraucher mehr (Phase 3 räumt Feuer auf).
-const isConsumerSkill = (id) => { const d = SKILL_DEFS[id]; return !!(d && d.heatConsumer); };
-// Hält der Build für diesen Archetyp bereits einen Konsumenten? Nur Feuer kennt welche → alle anderen gelten als „hat einen".
-function ownsConsumerFor(arch, skills) {
-  if (arch === "fire") return heatConsumerCount(skills) > 0;
-  return true;
-}
+// (exp skill rework: die Konsument-Garantie des Angebots ist mit der Verbraucher-Regel entfallen — Blitz und Feuer
+//  tragen ihren Payoff im Passiv, ein Angebotsplatz wird nicht mehr erzwungen.)
 
 // Angebot (#93 F0): bis zu `count` noch nicht gehaltene Skills, nach Archetyp gruppiert (3+3+3+3),
 // aus max C.MAX_ARCHETYPES Archetypen (offerArchetypes). Deterministisch über den injizierten rng.
@@ -544,36 +416,16 @@ export function buildSkillOffer(owned, activeArchetypes, rng, count, _legendaryC
   if (unlockedArchetypes) available = available.filter((a) => unlockedArchetypes.includes(a));
   const chosen = offerArchetypes(activeArchetypes || [], available, rng, maxArchetypes);
   if (!chosen.length) return [];
-  // Konsument-Garantie: ein angebotener Feuer-/Blitz-Archetyp ohne gehaltenen Konsumenten bekommt garantiert (mind.)
-  // einen seines Typs angeboten, solange einer verfügbar ist — sonst kann der Build nie „zünden" (frustrierend). Seit
-  // Blitz-Rework v0 NICHT mehr an activeArchetypes gebunden: der Verbraucher wird angeboten, bis er gewählt ist, damit
-  // ein späterer Einstieg (z. B. Blitz nachträglich ins Deck) nie ohne Ladungsverbraucher dasteht.
-  const needsConsumer = (arch) => !ownsConsumerFor(arch, owned);
-  // #191/#223: SCHON beim ERSTEN Skill-Angebot (noch kein Archetyp aktiv) bekommt JEDER angebotene Konsumenten-
-  // Archetyp (Feuer & Blitz; Eis/Pflanze haben keinen) garantiert seinen Konsumenten ins Angebot — nicht nur EINER
-  // insgesamt. Sonst zeigt das Erst-Angebot z. B. Blitz-Ladungsaufbau OHNE Blitz-Konsument (die Ladung „verpufft"),
-  // wenn die chosen-Reihenfolge Feuer zuerst nimmt. Jede angebotene Engine ist so von Anfang an komplett sichtbar.
-  const guaranteeAny = (activeArchetypes || []).length === 0;
   const PER_ARCH_CAP = perArchCap; // s. SKILL_OFFER_PER_ARCH_CAP oben — Deckel je Archetyp (Bestand 3, Dev-Run frei)
   const perArch = Math.max(1, Math.min(PER_ARCH_CAP, Math.floor(count / chosen.length)));
   const offer = [];
   const rest = [];
-  const guaranteed = new Set();  // garantierte Konsumenten-Slots
   for (const arch of chosen) {
     // Enabler-Gating (Anti-Pech): ein Verstärker-Skill (s.enabler) wird NUR angeboten, wenn seine Basis gehalten wird —
     // sonst ist er ein toter Pick (Variety-Befund: der schwache Tail sind fast durchweg ungegatete Verstärker).
     // Legendäre sind nie Teil des normalen Zugs (fünfte Stufe des Wurfs, rollSkillOfferTiers).
     const pool = shuffle(SKILL_LIST.filter((s) => s.archetype === arch && !(owned || []).includes(s.id)
       && !s.legendary && (!s.enabler || (owned || []).includes(s.enabler))).map((s) => s.id), rng);
-    // Garantierten Konsumenten dieses Archetyps nach vorne ziehen (deterministisch, kein zusätzlicher rng-Zug: die
-    // Pool-Reihenfolge stammt schon aus dem Shuffle; perArch ≥ 1 → Slot 0 wird gewählt). Zwei Auslöser:
-    //  · needsConsumer(arch): aktiver Archetyp ohne gehaltenen Konsumenten (Pro-Archetyp-Garantie, Runden 2+).
-    //  · guaranteeAny (#191/#223): erstes Angebot → JEDER angebotene Feuer-/Blitz-Archetyp zeigt seinen Konsumenten.
-    if (needsConsumer(arch) || guaranteeAny) {
-      const ci = pool.findIndex(isConsumerSkill);
-      if (ci > 0) pool.unshift(pool.splice(ci, 1)[0]);
-      if (ci >= 0) guaranteed.add(pool[0]);
-    }
     // (v0.5: keine Pflanze-Kern-Garantie mehr — die Wert-aus-Wachstum-Mechanik ist jetzt die immer-aktive Mono-Passive.)
     for (let i = 0; i < perArch && pool.length; i++) offer.push(pool.shift());
     rest.push(...pool); // Reste des Archetyps für die Auffüllung

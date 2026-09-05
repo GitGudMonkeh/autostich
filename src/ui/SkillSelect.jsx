@@ -1,13 +1,12 @@
 import { useState, useRef } from "react";
 import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import { PANEL_BG, phaseCard, PhaseHairline, PHASE_ACCENTS, ActionButton } from "./modalStyle.jsx";
-import { ARCHETYPE_ORDER, archetypeOf, marginHeatPoints, isLegendarySkill, tierOf } from "../game/skills.js";
+import { ARCHETYPE_ORDER, archetypeOf, isLegendarySkill, tierOf } from "../game/skills.js";
 import { FactionIcon, ArchIcon, GlossaryIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { SKILL_SLOT_LIMIT, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_MAX_CHARGE, ION_SCORE_PER_STACK,
          PLANT_GROWTH_SKILL_REF, PLANT_GREEN_THRESHOLD, WURZELSCHLAG_PER_GROWTH, PLANT_VALUE_CAP,
          WURZELSCHLAG_LOSS_MIN_SKILLS, WURZELSCHLAG_LOSS_EVERY,
-         FIRE_MARGIN_OFFSET, FIRE_SCORE_BASE, FIRE_SCORE_PER_SKILL, FIRE_SCORE_SQRT_K,
-         HEAT_MIN_MARGIN, HEAT_PER_POINT, HEAT_LOSS_MAX, HEAT_LOSS_PCT } from "../game/constants.js";
+         HEAT_MIN_MARGIN, HEAT_MARGIN_OFFSET, HEAT_PER_POINT, HEAT_LOSS, HEAT_MULT_PER_10 } from "../game/constants.js";
 import { DECLINE_MIN_SKILLS as G_DECLINE_MIN_SKILLS } from "../game/glacier.js"; // Eis-Neudesign: Ablehn-Gletscher-Schwelle für den Passiv-Text
 
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
@@ -24,6 +23,10 @@ import { t } from "../i18n/index.js";
 
 // Archetyp-Meta eines Skills (Theming) — Fallback neutral (#93 F0).
 const ac = (id) => archMeta(archetypeOf(id)) || { label: t("skill.arch.none"), icon: "•", color: "#8a8a95" };
+// Konsument-Abzeichen (exp skill rework): am Glossar-Schlüsselwort „consume" der Skill-Definition, nicht mehr an
+// einem Effekt-Marker — die Verbraucher-Regel ist weg, das Abzeichen ist reine Lesehilfe (Feuer: Flächenbrand,
+// Schmelzpunkt, Schmiede).
+const isConsumer = (s) => !!(s && s.keywords && s.keywords.includes("consume"));
 
 // #238b: Was verschwindet, wenn der LETZTE Skill eines Archetyps abgelegt wird (Wahrheit: reducer.js stillActive-Pfad).
 // Bereits in die Karten gebackener Wert (geschmiedet/gewachsen) bleibt erhalten → Zusatz nur bei Feuer/Pflanze.
@@ -35,17 +38,13 @@ const ARCH_LOSS = {
 };
 
 const PER_SKILL_PCT = Math.round(LIGHTNING_CRIT_PER_SKILL * 100); // exp Blitz-Passiv: +Crit-Chance je Blitz-Skill (5 %)
-// Feuer-Passive: konkrete Zahlen (erster Feuer-Skill). Score = lineare Linie + √-Bonus; Hitze = marginHeatPoints (√-Schwanz).
-const fireScoreAt = (m) => Math.round((m - FIRE_MARGIN_OFFSET) * FIRE_SCORE_BASE + FIRE_SCORE_BASE * FIRE_SCORE_SQRT_K * Math.sqrt(m - FIRE_MARGIN_OFFSET));
-const fireHeatAt  = (m) => Math.round(marginHeatPoints(m) * HEAT_PER_POINT);
-const FIRE_MIN_HEAT = fireHeatAt(HEAT_MIN_MARGIN);         // Hitze bei Mindest-Vorsprung
-const FIRE_MIN_SCORE = fireScoreAt(HEAT_MIN_MARGIN);       // Score bei Mindest-Vorsprung
-const FIRE_LOSS_PCT = Math.round(HEAT_LOSS_PCT * 100);     // Abkühl-Anteil der aktuellen Hitze je Niederlage
+// Feuer-Passiv (exp skill rework §4.2): Hitze je Punkt Vorsprung über dem Offset, flache Kühlung, Multiplikator je 10 %.
+const FIRE_MULT_PCT = Math.round(HEAT_MULT_PER_10 * 100);  // +% Score je 10 % gehaltener Hitze
 // Kuratierte Schlüsselbegriffe je Archetyp-Passive — der Aufklapper zeigt AUSSCHLIESSLICH diese als kleine Unterkategorien
 // (Icon + Begriff + Kurztext aus dem Glossar), damit alle vier Passive gleich schön lesbar sind statt einer Textwand.
 const PASSIVE_KEYWORDS = {
   lightning: ["charge", "ionize"],
-  fire:      ["glutdividende", "ash"],
+  fire:      ["heat", "consume"],
   ice:       ["masse", "bersten", "eisformation"],
   plant:     ["green"],
 };
@@ -118,8 +117,8 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
       case "lightning":
         return t("skill.passive.lightning", { each: PER_SKILL_PCT, bar: LIGHTNING_MAX_CHARGE, stack: ION_SCORE_PER_STACK });
       case "fire":
-        return t("skill.passive.fire", { margin: HEAT_MIN_MARGIN, heat: FIRE_MIN_HEAT, score: FIRE_MIN_SCORE,
-          cool: FIRE_LOSS_PCT, coolMax: HEAT_LOSS_MAX, perSkill: FIRE_SCORE_PER_SKILL });
+        return t("skill.passive.fire", { margin: HEAT_MIN_MARGIN, offset: HEAT_MARGIN_OFFSET, per: HEAT_PER_POINT,
+          cool: HEAT_LOSS, mult: FIRE_MULT_PCT });
       case "ice":
         return t("skill.passive.ice", { declineFrom: G_DECLINE_MIN_SKILLS });
       case "plant":
@@ -378,7 +377,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="text-meta-1 px-1.5 py-0.5 rounded font-bold tracking-wide" style={{ background: `${ac(s.id).color}22`, color: ac(s.id).color, border: `1px solid ${ac(s.id).color}88` }}><ArchIcon meta={ac(s.id)} size={11} /> {ac(s.id).label.toUpperCase()}</span>
                       <SkillTierBadge tier={tierOf(state, s.id)} />{/* exp: gehaltene Stufe */}
-                      {(s.heatConsumer || s.onFullCharge) && <span className="text-meta-1 px-1.5 py-0.5 rounded font-bold tracking-wide" style={{ background: "#d4a63a22", color: "#d4a63a", border: "1px solid #d4a63a88" }}>{t("skill.badge.consumer")}</span>}
+                      {isConsumer(s) && <span className="text-meta-1 px-1.5 py-0.5 rounded font-bold tracking-wide" style={{ background: "#d4a63a22", color: "#d4a63a", border: "1px solid #d4a63a88" }}>{t("skill.badge.consumer")}</span>}
                       {s.legendary && <span className="text-meta-1 px-1.5 py-0.5 rounded font-bold tracking-wide" style={{ background: "#e0b84522", color: "#e0b845", border: "1px solid #e0b84588" }}>{t("skill.badge.legendary")}</span>}
                     </div>
                     <div className="font-bold text-body-lg-5" style={{ color: ac(s.id).color }}>{s.name}</div>
@@ -460,7 +459,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                         <ArchIcon meta={curG.meta} size={12} /> {curG.meta.label.toUpperCase()}
                       </span>
                       <SkillTierBadge tier={tier} />
-                      {(s.heatConsumer || s.onFullCharge) && (
+                      {isConsumer(s) && (
                         <span className="text-meta-1 px-1.5 py-0.5 rounded font-bold tracking-wide"
                           style={{ background: "#d4a63a22", color: "#d4a63a", border: "1px solid #d4a63a88" }}>
                           {t("skill.badge.consumer")}

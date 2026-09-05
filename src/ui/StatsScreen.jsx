@@ -283,7 +283,7 @@ export function StatsScreen({ onClose, onPlaySeed = null }) {
     r.seedCode ? t("stats.seed", { code: r.seedCode }) : null,
   ].filter(Boolean).join(" · ");
   // Grobes Herkunft-Modell? (Alt-Lauf ohne die neuen Fraktions-Kanäle → factionShares zeigt nur Formation/Crit/Gebäude/Sonstige.)
-  const hasFineOrigin = (r) => !!r && (["glacierYield", "lightYield", "plantRoot", "plantBloom", "plantHarvest", "fireBase", "fireWhite", "streakScore"]
+  const hasFineOrigin = (r) => !!r && (["glacierYield", "lightYield", "plantRoot", "plantBloom", "plantHarvest", "fireBase", "fireHeat", "streakScore"]
     .reduce((a, k) => a + (Number(r[k]) || 0), 0) > 0);
 
   /* #st-plaetze: die drei Auswertungszeilen sind ein ZIEL mit Höchstfall 3 — je der erste Eintrag

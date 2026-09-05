@@ -22,9 +22,6 @@ export const ARCHITECT_ENABLED = (typeof process !== "undefined" && process.env 
 // #202/#214: Baseline des geteilten Reroll-Pools (Perk+Skill) je Lauf. Fix, kein Nachschub — Rerolls sind die Belohnungs-
 // Fläche für die Meistergrade (#217). Rang-Bonus fädelt später über einen erhöhten Startwert ein.
 export const BASE_REROLLS      = envNum("SIM_BASE_REROLLS", 2);
-// Feuer-Ziel-Hebel (#202): Verstärkung, mit der eine volle Architekt-Struktur die Glutdividende hebt
-// (fireDirect × (1+(struktMult−1)×AMP)). Isoliert Feuer (fireDirect=0 sonst) [Sim-getunt amp=2].
-export const FIRE_STRUCT_DIVIDEND_AMP = envNum("SIM_FIRE_STRUCT_DIV_AMP", 2);
 // Merge test/sim←main: ENV-Sweep-Haken bleibt, Default = main's Live-Balance (SPW 100→400, Pacing-Pass Sim-validiert).
 export const SCORE_PER_WIN    = envNum("SIM_SCORE_PER_WIN", 400);    // Basispunkte je Sieg (Perks/Formationen skalieren darauf) [TUNING · Default = Live-Balance 400]
 // BACKSTOP (Crit-Bändigung 2026-08-15): harter Deckel auf den fertigen Crit-Multiplikator, egal aus welchen Kanälen er
@@ -329,219 +326,24 @@ export const DOPPELENTLADUNG_STACKS   = envNum("SIM_DOPPELENTLADUNG_STACKS", 2);
 export const DOPPELENTLADUNG_STRIKE   = envNum("SIM_DOPPELENTLADUNG_STRIKE", 2);      // Doppelentladung (L): Crit mit ionisierter Karte → der Stich zählt so oft (Sim-Regler, ggf. 1,5)
 
 /* ============================================================
-   FEUER-REWORK v0 — Hitzeleiste 0–100. „Hitze belohnt totale Überlegenheit."
-   Alle Zahlen sind Vorschlags-Startwerte (v0), geerdet an der bestehenden Hitze-Ökonomie
-   (Gewinn ≈ (Vorsprung−2) %, Score-Basis 400). Werte-Tuning: cross-archetype Sim-Pass. [v0 · tunebar]
+   FEUER — exp skill rework (docs/skill-rework.md §4). Passiv: Siege mit Abstand erzeugen Hitze, Niederlagen kühlen,
+   je 10 % gehaltener Hitze +2 % Score als eigener Multiplikator. Die 15 Skills lesen ihre Kennwerte aus den
+   Stufentabellen in skills.js (FEUER_TIERS); hier stehen nur die Passiv-Größen und die Legendär-Regler (Sim-Startwerte).
    ============================================================ */
-// Grundmechanik (passiv)
-export const HEAT_MAX          = 100;  // Hitzemaximum (fix)
-export const HEAT_MIN_MARGIN   = envNum("SIM_HEAT_MIN_MARGIN", 3);    // Mindest-Wertvorsprung für margen-basierten Hitzegewinn & Feuer-Score [Sim-tunebar]
-export const HEAT_PER_POINT    = envNum("SIM_HEAT_PER_POINT", 1);    // % Hitze je (Vorsprung−2) [Sim-tunebar]
-export const HEAT_MARGIN_CAP   = envNum("SIM_HEAT_MARGIN_CAP", 8);    // WEICHES KNIE des margen-Hitzegewinns: bis hier linear, darüber √-Schwanz (kein harter Deckel mehr) [Sim-tunebar]
-export const HEAT_MARGIN_TAIL_K = envNum("SIM_HEAT_MARGIN_TAIL_K", 1.5); // Skalar des √-Schwanzes über dem Knie: Margen-Hitze = (Knie−2) + K·√(Marge−Knie), uncapped/diminishing (wie Wurzeltiefe) [Sim-tunebar]
-export const HEAT_LOSS_MAX     = envNum("SIM_HEAT_LOSS_MAX", 10);   // max Hitzeverlust je Niederlage (%) [Sim-tunebar: Kühlung fürs Halte-Playstyle]
-export const HEAT_LOSS_PCT     = envNum("SIM_HEAT_LOSS_PCT", 0.25); // zusätzl. Hitzeverlust je Niederlage = Anteil der AKTUELLEN Hitze — hält hohe Hitze nicht-trivial (beißt NUR bei hoher Hitze → Konsum-Builds unberührt; Halte-Playstyle muss Hitze durch Siege halten) [Fire-Heat-Fix]
-export const FIRE_SCORE_BASE   = envNum("SIM_FIRE_SCORE_BASE", 25);   // Feuer-Flat-Score je Punkt (erster Feuer-Skill) [Sim-tunebar]
-export const FIRE_SCORE_PER_SKILL = 5; // +Feuer-Flat je Punkt je weiterem Feuer-Skill    // v0 — tunebar
-export const FIRE_MARGIN_OFFSET = envNum("SIM_FIRE_MARGIN_OFFSET", 2); // Feuer-Score-Offset: s = (Vorsprung − OFFSET) × Basis; kleiner = knappe Siege zahlen (Floor-Hebel) [Sim-tunebar]
-// Feuer-Score √-Bonus (wie Wurzeltiefe): additiv oben auf die lineare Linie, Basis·K·√(Vorsprung−OFFSET). Uncapped,
-// abnehmender Ertrag → großer Wertvorsprung bringt weiter mehr, ohne Deckel; kleine Margen bleiben ungestraft. [Sim-tunebar]
-export const FIRE_SCORE_SQRT_K  = envNum("SIM_FIRE_SCORE_SQRT_K", 1.0);
-// GLUTDIVIDENDE (Feuer-Rework, FLOOR-Hebel): ein DIREKTER Score je Feuer-Sieg, der NICHT durch den Serien/Crit/
-// Formations-Stack multipliziert wird (er zählt flach NACH der Multiplikation). Damit hebt er den Median (kleine
-// Mults → der flache Aufschlag ist relativ groß) deutlich stärker als das Ceiling (riesige Mults → der Aufschlag
-// verschwindet relativ). ∝ gehaltener Hitze beim Sieg, gedeckelt bei FIRE_DIVIDEND_HEAT_CAP (Sättigung: Top-Runs
-// mit Vollhitze ziehen den Deckel nicht weiter hoch → floor-clean). Das ist Feuers fehlende „Immer-an-Engine".
-// #fire-consumer 44 → 32: FRAKTIONS-Trimm, nachdem die drei Bauweisen gleichgezogen waren. Die Parität hatte Feuer
-// insgesamt auf 13,69 Mio gehoben (über Eis 11,74) — sie ist aber eine ANDERE Schraube als das Niveau, und beide
-// mussten gemeinsam gedreht werden: die Dividende allein zu senken bricht die Parität sofort (Spanne 1,02× → 1,31×
-// bei 22), weil der Halte-Build von ihr lebt und die Konsumenten nicht. FIRE_SCORE_BASE taugt dafür NICHT — 25 → 10
-// bewegt Feuer nur von 13,69 auf 13,10, der Grund-Score ist inzwischen ein kleiner Posten. Gefittet wurde deshalb
-// das Tripel Dividende/Flächenbrand/Schmelzpunkt gemeinsam (700 Läufe je Punkt):
-//   44/25/15 → 13,69 (Spanne 1,02×) · 32/17/9 → 11,02 (1,07×) · 30/15/8 → 10,54 (1,10×) · 28/13/7 → 10,01 (1,14×)
-export const FIRE_HEAT_DIVIDEND     = envNum("SIM_FIRE_HEAT_DIVIDEND", 32);      // direkter Score je Hitze-% je Feuer-Sieg (0 = aus), skaliert mit Feuer-Bekenntnis. #268: 48→44 (Feuer-Floor leicht runter: 2,17×→2,05× Mix) [TUNING · Feuer-Floor]
-// #fire-balance 45 → 70: der Deckel machte die OBERE LEISTENHÄLFTE wertlos. Über 45 % zahlte die Dividende nichts
-// mehr, und oberhalb lagen nur noch bedingte Skills (Glühende Klinge 70/100 · Schmelzofen 50 · Sonnenkern 60 ·
-// Weißglut 100) — Hitze zu HALTEN lohnte also strukturell nicht, genau die Klage „niemand spielt es als
-// Halte-Mechanik". Gemessen (700 reine Feuer-Läufe je Stand): Median 8,20 → 9,32 Mio bei 70, 9,97 bei 100. 70
-// gewählt, weil Feuer damit auf Blitz-Niveau landet, statt es zu überholen — alle vier Fraktionen bei n=700:
-// Feuer 9,95 · Blitz 9,93 · Pflanze 11,07 · Eis 11,74 (Spread 1,18× statt 1,88× vor dem Feuer-Pass).
-// ACHTUNG bei Nachmessungen: mit n=120 las derselbe Feuer-Stand 7,07 statt 8,20 — der Median dieser
-// Verteilung ist unter ~500 Läufen nicht belastbar.
-export const FIRE_DIVIDEND_HEAT_CAP = envNum("SIM_FIRE_DIVIDEND_HEAT_CAP", 70);  // Hitze-Deckel für die Dividende (Sättigung → floor-clean) [TUNING · Feuer-Floor]
-// Linie 1 — Generation (Marge · Konstanz · Serie)
-export const EMBER_MULT        = 1.5;  // Glut: Hitzegewinn ×1,5                            // v0 — tunebar
-export const ZUNDER_HEAT       = envNum("SIM_ZUNDER_HEAT", 2);    // Zunder: +2 % Hitze je Sieg (auch knappe Siege) [Sim-tunebar]
-export const FEUERSTURM_STEP   = 1;    // Feuersturm: +1 % Hitze je Serienstufe            // v0 — tunebar
-export const FEUERSTURM_CAP    = 5;    // Feuersturm: … bis +5 %                            // v0 — tunebar
-// Linie 2 — Verteidigung (abschirmen · kontern)
-export const GLUTBETT_MULT       = 0.5; // Glutbett: Hitzeverlust ×0,5                       // v0 — tunebar
-export const GLUTBETT_FREE_BELOW = 30;  // Glutbett: unter 30 % Hitze gar kein Verlust      // v0 — tunebar
-export const RUECKZUENDUNG_HEAT_PER_DEFICIT = 1; // Rückzündung: +1 % Hitze je Rückstandspunkt (Sieg nach Niederlage) // v0
-export const RUECKZUENDUNG_VALUE = 2;   // Rückzündung: … und die Siegkarte +2 Wert         // v0 — tunebar
-// Linie 3 — Schwellen-Payoffs (hohe Hitze → Belohnung)
-export const GLOWING_T1_HEAT = 40, GLOWING_T1_VALUE = 1; // Glühende Klinge: +1 Wert ab 40 % // v0 — tunebar
-export const GLOWING_T2_HEAT = 70, GLOWING_T2_VALUE = 2; //                 +2 Wert ab 70 %  // v0 — tunebar
-export const GLOWING_T3_HEAT = 100, GLOWING_T3_VALUE = 3;//                 +3 Wert bei 100 % // v0 — tunebar
-// #fire-balance: die OBEREN Stufen verlangen zusätzlich einen dominanten letzten Sieg. Grund: Hitze allein war zu
-// leicht oben zu halten — zusammen mit Feuerwalze (+3) lag dauerhaft +6 Wert auf JEDER Karte, was die Margen
-// aufblies, die die Hitze erzeugen (Rückkopplung). Die Stufe liest darum den Vorsprung des LETZTEN Siegs mit;
-// eine Niederlage setzt ihn auf 0 → die Klinge fällt ohne eigene Regel auf die Sockelstufe zurück. Die zwei Zahlen
-// sind bewusst die schon vorhandenen Fraktions-Schwellen (8 = groß · 12 = überlegen: Verbrennung, Funkenflug),
-// damit Feuer EINE Sprache spricht. Feuerwalze bleibt an der SERIE — die beiden trennen sich damit sauber:
-// eine Serie knapper Siege gibt Feuerwalze +3 und der Klinge nur +1.
-export const GLOWING_T2_MARGIN = 8;     // Glühende Klinge: +2 erst mit letztem Sieg ≥8 Vorsprung   // #fire-balance — tunebar
-export const GLOWING_T3_MARGIN = 12;    // Glühende Klinge: +3 erst mit letztem Sieg ≥12 Vorsprung  // #fire-balance — tunebar
-// WEISSGLUT → ÜBERHITZUNG (#fire-balance). Eigener Sub-Akku `heat.over` (0…OVERHEAT_MAX) NEBEN `heat.value` —
-// bewusst ein zweites Feld statt `heat.max = 150`: alles, was heat.value liest (Sonnenzorn-Peak, Glutdividende,
-// Glühende Klinge, Flächenbrand, Schmelzofen), bleibt damit OHNE eine einzige Zeile Sonderfall bei 100 gedeckelt.
-// Die Zone ist strukturell isoliert, nicht per Ausnahme. Die Leiste zeigt sie als 0–150 %.
-// Alt war „+10 Score je überlaufendem Hitzepunkt“ — ein flacher Betrag, der bei exakt 100 % Hitze ~160 Score gab und
-// mit dem Build nicht mitwuchs. Jetzt ist der Überlauf ein ZUSTAND mit steigenden Zuflusskosten und einem Hebel.
-export const OVERHEAT_MAX        = envNum("SIM_OVERHEAT_MAX", 50);   // Überhitzung max (= Leiste bis 150 %)                    // #fire-balance — tunebar
-export const OVERHEAT_COST_K     = envNum("SIM_OVERHEAT_COST_K", 10);   // Zuflusskosten: ankommender Anteil = 1/(1+Überhitzung/K) → tiefe Überhitzung verlangt echten Wertvorsprung, nicht Masse
-export const OVERHEAT_DECAY      = envNum("SIM_OVERHEAT_DECAY", 2);    // Abbau je Stich — KONTINUIERLICH (nicht nur bei Niederlage): nicht gefüttert = fällt auf 100 % zurück
-export const OVERHEAT_DECAY_LOSS = 5;    // Abbau bei Niederlage
-export const OVERHEAT_SCORE_STEP = envNum("SIM_OVERHEAT_SCORE_STEP", 0.02); // +2 % auf den GESAMTEN Feuer-Score je Punkt Überhitzung (bei MAX also ×2)
-// #fire-balance, 3. Durchgang — die 2 % waren richtig, mein Zwischenschritt auf 3,5 % beruhte auf einer FALSCHEN
-// MESSUNG: gemessen wurde in zufälligen Feuer-Builds, und in 46/47 % davon steckte Flächenbrand bzw. Schmelzpunkt.
-// Beide leeren genau die Leiste, von der Weißglut lebt — der Skill konnte dort per Konstruktion nicht wirken.
-// In SEINER Umgebung (reines Feuer OHNE Konsumenten, 700 Läufe) steigt sein Wert monoton mit der Siegquote:
-//   Siegquote 52–67 % → −0,4 Mio · 67–74 % → −0,6 · 74–79 % → +2,0 · 79–92 % → +5,2 · oberste 10 % → +11,8
-// Das ist die gewollte Bekenntnis-Wette: unten kostet der Slot, oben zahlt er groß. Mit 3,5 % wären es +3,7/+7,8/
-// +17,1 — dramatischer, aber der Skill braucht die Hilfe nicht, und es hob nur die Decke (p99 40,4 → 45,6).
-// NEBENBEI: pct() rundet für die Anzeige, 0,035 stand in der Beschreibung als „+4 %" statt 3,5 — bei 0,02 exakt.
-// Linie 4 — Wert-/Score-Motoren
-export const FIREROLL_MIN_HEAT = 40;    // Feuerwalze: erst ab 40 % Hitze                    // v0 — tunebar
-export const FIREROLL_MAX       = 3;    // Feuerwalze: +1 Wert je Sieg in Folge, bis +3      // v0 — tunebar
-export const VERBRENNUNG_T1_MARGIN = 8,  VERBRENNUNG_T1_MULT = 1.5; // Verbrennung: Feuer-Score ×1,5 ab 8 Vorsprung // v0
-export const VERBRENNUNG_T2_MARGIN = 12, VERBRENNUNG_T2_MULT = 2.0; // Verbrennung: Feuer-Score ×2 ab 12 Vorsprung  // v0
-export const SPARKFLIGHT_MIN_MARGIN = 8;  // Funkenflug: Sieg ≥8 Vorsprung entlädt den Speicher voll // v0 — tunebar
-export const SPARKFLIGHT_LOSS_KEEP  = 0.5;// Funkenflug: Niederlage halbiert den Speicher     // v0 — tunebar
-// #fire-balance: der Speicher bekam bisher eine 1:1-Kopie des Feuer-Scores kleiner Siege — und der ist bei kleiner
-// Marge naturgemäß klein (unter HEAT_MIN_MARGIN sogar exakt 0, ein Sieg mit 1–2 Vorsprung legte also NICHTS ein).
-// Jetzt das Doppelte plus einen bekenntnis-skalierten Sockel, damit auch der knappste Sieg sichtbar einzahlt.
-export const SPARKFLIGHT_BANK_MULT       = 2;  // Einlage = Vielfaches des Feuer-Scores des kleinen Siegs
-export const SPARKFLIGHT_FLOOR_BASE      = 60; // + Sockel je kleinem Sieg (erster Feuer-Skill)
-export const SPARKFLIGHT_FLOOR_PER_SKILL = 20; // + je weiterem Feuer-Skill (6 Skills → 160), Muster wie FIRE_SCORE_PER_SKILL
-// Linie 5 — Konsumenten (max 1 im Build — Burst vs. Drip)
-export const CONFLAG_MIN_HEAT = envNum("SIM_CONFLAG_MIN_HEAT", 80);     // Flächenbrand: ab 80 % Hitze bewaffnet [Sim-tunebar]
-// #fire-balance: Flächenbrand verbrannte die GANZE Leiste für einen flachen Satz. Der Verbrauch war nicht bezahlbar —
-// unten liegen VIER Dinge (Feuerwalze ≥40, Glühende Klinge 40/70/100, Glutdividende, Weißglut-Zufluss), und der
-// Wiederaufbau von 0 auf 80 dauert ~10 Siege. Jetzt: BODEN statt Totalverbrennung + bekenntnis-skalierter Satz.
-export const CONFLAG_KEEP     = envNum("SIM_CONFLAG_KEEP", 40);     // Boden: brennt bis hierher herunter, nicht auf 0 (Feuerwalze + Klingen-Sockel überleben; wieder scharf in ~3 Siegen statt ~10)
-export const CONFLAG_PER_HEAT = 20;     // Flächenbrand: Score je verbranntem Hitzepunkt (erster Feuer-Skill)
-// #fire-consumer: 5 → 25. GEMESSENE Parität — der Konsumenten-Weg war nicht „etwas schwach", er war schlechter als
-// GAR KEIN Konsument (700 Läufe: ohne Konsument 13,73 Mio · nur Flächenbrand 10,65 · nur Schmelzpunkt 8,07), und die
-// Angebots-Garantie (needsConsumer, s. buildSkillOffer) drückt ihn 93 % aller Feuer-Builds auf. Satz-Sweep über
-// dieselben 700 Seeds: 45/Punkt → 10,65 · 95 → 12,13 · 145 → 13,65 · 195 → 15,09. Bei 145 (= 20 + 25×5) sitzt der
-// Median auf dem Halte-Build. Die Decke läuft dabei NICHT davon — im Gegenteil: p99 36,3 gegen 56,3 des
-// Halte-Builds. Der Halte-Weg skaliert über Weißglut und den Sonnenzorn-Peak mit der Siegquote und hat deshalb die
-// extremen Läufe; der Burst zahlt gleichmäßig. Zwei Wege mit verschiedenem Risikoprofil statt zweier Kurvenvarianten.
-// 25 → 17 im Fraktions-Trimm (s. FIRE_HEAT_DIVIDEND): die Parität wurde bei 25 gemessen, das NIVEAU danach gemeinsam
-// gesenkt. Wer einen der drei Werte allein dreht, verschiebt nicht das Niveau, sondern die Wahl zwischen den Bauweisen.
-export const CONFLAG_PER_SKILL = envNum("SIM_CONFLAG_PER_SKILL", 17);    // … + je weiterem Feuer-Skill (6 Skills → 105/Punkt), Muster wie FIRE_SCORE_PER_SKILL
-// #fire-balance Schmelzpunkt: kostete 10 %/Stich — MEHR, als ein durchschnittlicher Sieg erzeugt (~16 % bei vollem
-// Feuer-Build, aber gezahlt wurde auch bei Niederlagen) — und gab dafür 50 Score. Er konnte gar nicht funktionieren.
-// Jetzt billiger UND mit einem Satz, der an der GEHALTENEN Hitze hängt: der Skill zahlt genau dann, wenn du oben
-// bleibst, und bremst sich selbst, wenn die Leiste leerläuft. Damit ist er erst die Halte-Mechanik, als die er gemeint war.
-export const MELT_COST           = envNum("SIM_MELT_COST", 4);   // Schmelzpunkt: −4 % Hitze je SIEG (nicht mehr je Stich)     // #fire-balance — tunebar
-export const MELT_SCORE_BASE     = 10;  // Score je verbranntem Punkt: Sockel …                     // #fire-balance — tunebar
-// Der Tropf geht in die MULTIPLIZIERTE Basis. Er lag zwischenzeitlich als Direkt-Score post-stack — das zähmt die
-// Decke sichtbar (p99/Median 3,3× gegen 4,5×), ist aber die falsche Bauform: ein fester Betrag verliert in einer
-// Ökonomie, deren Multiplikatoren über den Lauf davonziehen, laufend an Gewicht. Grundsatz: so wenig Direkt-Score
-// wie möglich. Der Preis ist gemessen und bewusst bezahlt — bei gleichem Median kostet der Wechsel rund ein Drittel
-// mehr Decke (Feuer p99 35,3 → 47,5). Gemessene Parität bei 6 (700 Läufe, Schmelzpunkt-Build / Feuer gesamt):
-//   Satz 5 → 10,17 / 10,88 · 6 → 10,86 / 11,06 · 7 → 11,64 / 11,22 · 8 → 12,26 / 11,35
-export const MELT_SCORE_PER_HEAT = envNum("SIM_MELT_SCORE_PER_HEAT", 6); // … + je % gehaltener Hitze           // #fire-consumer — tunebar
-// #fire-consumer: der Tropf hängt zusätzlich an der SIEGESSERIE. Ein Konsument, der jeden Sieg denselben Betrag
-// zahlt, hat keine eigene Kurve — Flächenbrand baut sichtbar eine Leiste auf und wirft sie ab, Schmelzpunkt tat
-// nichts dergleichen. Jetzt wächst sein Satz mit der Serie: dieselbe Auflade-Fantasie, nur kontinuierlich statt in
-// Bursts, und eine Niederlage kostet wirklich etwas (die Serie fällt). Der Deckel hält die Spitze endlich.
-// (Der zwischenzeitliche eigene SERIEN-Faktor am Tropf ist wieder entfallen. Er war als Gegenstück zu Flächenbrands
-//  Auflade-Leiste gedacht, ist aber redundant, seit der Tropf in der multiplizierten Basis liegt: dort skaliert er
-//  über streakBaseMult bereits mit der Serie. Ein zweiter Faktor darauf war ein Doppel-Dip und hat nur den Schwanz
-//  aufgebläht — gemessen p99/Median 5,8× mit gegen 4,5× ohne, bei gleichem Median.)
-// Linie 6 — Verbrennen → Schmieden (Brand · Asche · Schmiede)
-export const BRAND_VALUE      = 1;      // Brandmal: brandmarkierte Gegnerkarte −1 Wert (v0.1: 2→1, Brand-Winrate-Tail zähmen) // tunebar
-export const BRAND_ASH        = 1;      // Brandmal/Lauffeuer: +1 Asche je Brand              // v0 — tunebar
-export const BRAND_SPREAD_VALUE = 1;    // Lauffeuer: Übergriff auf eine Nachbarkarte −1 Wert // v0 — tunebar
-// #268 Asche-Ökonomie: Asche als KNAPPE, vollständig verbrauchte Ressource. Kosten hoch (≈ ein Durchlauf-Einkommen je
-// Schmiedung), Wert hoch (echter Payoff) → „früh nehmen, horten, später ernten". Am Durchlauf-Ende floor(Asche/Kosten)
-// Schmiedungen; Rest fließt über den Weißglut-Überlauf (unten) in Score → kein toter Haufen mehr.
-export const FORGE_COST       = envNum("SIM_FORGE_COST", 20);     // Ascheschmiede: 20 Asche je Schmiedung (≈ ein 50 %-Durchlauf-Einkommen) [#268 · Sim-tunebar]
-export const FORGE_VALUE      = envNum("SIM_FORGE_VALUE", 3);     // Ascheschmiede: niedrigste Karte +3 Dauerwert (echter Payoff) [#268 · Sim-tunebar]
-export const FORGE_MAX_PER_CARD = envNum("SIM_FORGE_MAX_PER_CARD", 9); // Schmieden: Deckel geschmiedeter Dauerwert je Karte (3 Schmiedungen/Karte bei Value 3) [#268: 6→9]
-export const FORGE_MAX_CARDS    = 10;   // Schmieden: max Anzahl VERSCHIEDENER geschmiedeter Karten (Boden heben, nicht ganzes Deck buffen)
-// Weißglut-Überlauf (#268, Variante A — ersetzt die alte Asche-Dividende): ist die Schmiede-Kapazität voll, wird die
-// RESTLICHE Asche am Durchlauf-Ende in Score-Häppchen (je FORGE_COST) verbrannt → „die Schmiede glüht weiß". Asche wird so
-// jeden Durchlauf auf < Kosten heruntergefahren (vollständig ausgegeben), mit konkretem Effekt. [#268 · Haupt-Balance-Hebel]
-export const FORGE_OVERFLOW_SCORE = envNum("SIM_FORGE_OVERFLOW_SCORE", 2000); // Score je FORGE_COST-Portion überlaufender Asche
-export const GLUTSTAHL_PER_VALUE = 12;  // Glutstahl: +Score je geschmiedetem Wert bei Sieg // v0.2: 20→12 (Feuer-Ceiling-Trim, Brand+Schmiede-Explosion)
-export const SCHMELZOFEN_MIN_HEAT = 50; // Schmelzofen: ab 50 % Hitze …                       // v0 — tunebar
-export const SCHMELZOFEN_BRAND_BONUS = 1;   // … Brände −1 extra Wert & +1 extra Asche         // v0 — tunebar
-export const SCHMELZOFEN_FORGE_DISCOUNT = envNum("SIM_SCHMELZOFEN_FORGE_DISCOUNT", 0.25); // … Schmieden −25 % Kosten (FAKTOR, skaliert mit den Kosten: 20→15) [#268: flat 1 → Faktor]
-// Legendäre — UMGEFORMT (dauerhaft/compoundend/direkt statt situativ), vier verschiedene Achsen.
-// Sonnenzorn (L) — SCORE-Mult ∝ HÖCHSTER je gehaltener Hitze (heat.peak): dauerhafter Feuer-Score-Multiplikator.
-// #fire-leg: der Peak zählt jetzt Hitze + ÜBERHITZUNG (heat.peak liest `value + over`) — Sonnenzorn ist damit an
-// Weißglut gekoppelt. Grund: 100 % Peak erreicht JEDER Feuer-Build nebenbei, der Multiplikator war praktisch ein
-// Fixwert. Die Zone darüber ist dagegen teuer erkauft (gedrosselter Zufluss, Abbau je Stich) und trägt deshalb den
-// dreifachen Satz. Zwei Sätze bewusst: der leichte Teil wird billiger (×2,3 → ×2,0), der schwere ist der Preis.
-//   Peak 100 (ohne Weißglut) → ×2,0 · Peak 125 → ×2,75 · Peak 150 (volle Überhitzung) → ×3,5
-// (Dreht die frühere „isolierte Zone"-Entscheidung NUR für den Peak. Glutdividende und Glühende Klinge lesen
-//  heat.value und bleiben unberührt.)
-export const SUNWRATH_PEAK_STEP    = envNum("SIM_SUNWRATH_PEAK_STEP", 0.010); // +GESAMT-Score je Peak-Hitze-% bis HEAT_MAX
-export const SUNWRATH_OVER_STEP    = envNum("SIM_SUNWRATH_OVER_STEP", 0.030); // … je Punkt Peak DARÜBER (Überhitzung)
-// Sonnenkern (L) — WIN-CONDITION: endet ein Durchlauf mit hoher Hitze, brennt sie sich dauerhaft in ALLE Karten (+Wert).
-export const SONNENKERN_MIN_HEAT   = envNum("SIM_SONNENKERN_MIN_HEAT", 60);   // ab dieser End-Hitze brennt Sonnenkern ein [Legendär-Angleich: 70→60 — häufiger auslösen]
-export const SONNENKERN_VALUE      = envNum("SIM_SONNENKERN_VALUE", 2);       // +Dauerwert je heißem Durchlauf (auf Karten unter dem Deckel) [Legendär-Angleich: 1→2]
-export const SONNENKERN_CARD_CAP   = envNum("SIM_SONNENKERN_CARD_CAP", 9);    // nur Karten UNTER diesem Wert brennen ein → hebt den Deck-BODEN [Legendär-Angleich: 7→9 — mehr Karten]
-// #fire-leg: Sonnenkern war ein SCHALTER ohne jede Interaktion — Hitze ≥ Schwelle am Durchlauf-Ende, alle Karten
-// unter dem Deckel +Wert, Hitze unangetastet, keine Entscheidung. Jetzt brennt die Sonne in BEIDE Decks: endet der
-// Durchlauf heiß, VERFALLEN die Brände dieses Durchlaufs nicht (normal hält ein Brand genau einen Durchlauf,
-// `brandActive = brandPending`), sondern stapeln sich auf den Gegnerkarten. Damit hängt er an der Brand-Linie
-// (Brandmal/Lauffeuer/Schmelzofen liefern das Material) UND weiter an der Hitze — endet ein Durchlauf kalt, fällt
-// der Stapel auf den normalen Ein-Durchlauf-Brand zurück. Der Deckel verhindert, dass ein Gegnerdeck auf 0 sinkt.
-export const SONNENKERN_BRAND_CAP   = envNum("SIM_SONNENKERN_BRAND_CAP", 4);   // max gestapelte Brände je Gegnerkarte
-// Der Stapel zahlt in SCORE, nicht in Wert: ein −4-Abzug würde die Gegnerkarte praktisch ausradieren (zusammen mit
-// dem +2 auf der eigenen Seite doppelt). Der Wert-Abzug bleibt deshalb auf dem normalen Brandmaß gedeckelt
-// (BRAND_VALUE_CAP), und die ANZAHL der Brände wird zur Score-Quelle: jeder Sieg gegen eine gebrandmarkte Karte
-// zahlt je Brand darauf. Das macht den Stapel sichtbar wertvoll, ohne den Gegner zu entwerten.
-// Gemessen (Halte-Build, 700 Laeufe je Punkt): Satz 100 -> Sonnenkern 16,63 Mio · 200 -> 17,90 · 350 -> 19,13.
-// 100 gewaehlt: das ist praktisch das Niveau der verworfenen −4-Fassung (16,20), also gleiche Staerke bei besserer
-// Mechanik. Nebenbefund derselben Messung: SONNENKERN_VALUE von 2 auf 1 bewegt nur 0,04 Mio — die alte
-// „+Kartenwert"-Passive ist fast wirkungslos, der Brand-Score traegt den Skill.
-export const SONNENKERN_BRAND_SCORE = envNum("SIM_SONNENKERN_BRAND_SCORE", 100); // Score je Brand auf der geschlagenen Karte
-// Deckel des WERT-Abzugs durch Brände — genau das bisherige Maximum (Brandmal + Schmelzofen-Bonus). Ohne Sonnenkern
-// stapeln Brände ohnehin nicht; der Deckel greift also nur für den Stapel und hält den Gegner spielbar.
-export const BRAND_VALUE_CAP        = BRAND_VALUE + SCHMELZOFEN_BRAND_BONUS;
-// Phönixfeuer (L) — KONSISTENZ: Niederlagen GEBEN Hitze (+je Rückstandspunkt) statt sie zu nehmen; + Reignite bei Konsum-0.
-export const PHOENIX_LOSS_HEAT     = envNum("SIM_PHOENIX_LOSS_HEAT", 8);      // +Hitze je Rückstandspunkt bei Niederlage (statt Verlust) [Legendär-Umbau]
-export const PHOENIX_REIGNITE      = envNum("SIM_PHOENIX_REIGNITE", 0.40);    // verbrauchte Hitze entzündet neu (Anteil zurück), 1×/Durchlauf
-// #fire-balance: Auslöser war allein „Hitze ≤ 0“. Seit Flächenbrand einen Boden hat (CONFLAG_KEEP), gibt es das aus
-// einem Konsum nicht mehr — die Klausel wäre still gestorben. Sie zündet jetzt zusätzlich nach einem GROSSEN Einzel-
-// verbrauch; der kleine Schmelzpunkt-Tropf (MELT_COST) liegt bewusst darunter, sonst verpuffte das 1×/Durchlauf sofort.
-export const PHOENIX_MIN_BURN      = 25;                                     // … oder: so viel Hitze auf einmal verbrannt
-// Damaststahl (L) — DIREKT-SCORE: geschmiedete Siegkarte → direkter Score ∝ geschmiedetem Wert (am Stack vorbei); Deckel entfällt; Asche verfällt nie.
-// #fire-nodirect 4 → 10: Damaststahl war mit -0,83 der schwaechste Feuer-Legendaer, und der Grund lag NICHT beim
-// Satz (4 → 14 bewegte sein Delta nur von -1,12 auf -0,83). Er lag hier: bei 4 Karten und FORGE_GROWTH = 0 ist der
-// Gesamt-Schmiedewert nach vier Durchlaeufen fuer immer 12 — die Damast-Dividende steht damit bei 12 x 14 = 168 je
-// Sieg, egal wie lange der Lauf noch geht. Der Deckel begrenzt seit dem Umbau auf GROWTH = 0 nur noch die BREITE,
-// nicht mehr das Compounding, gegen das er urspruenglich gesetzt wurde. Gemessen (700 Laeufe, Delta des Skills):
-//   4 Karten / kein Wachstum  -0,83  ·  10 / kein Wachstum  +2,16  ·  4 / +1 je Durchlauf  +2,29  ·  8 / +1  +6,81
-// 10 ohne Wachstum gewaehlt: Legendaer-Niveau (Sonnenzorn +1,63 · Sonnenkern +4,19), Decke unveraendert (p99 48,7),
-// und kein Compounding-Pfad zurueck.
-export const DAMASCUS_MAX_FORGED   = envNum("SIM_DAMASCUS_MAX_FORGED", 10);   // Selbst-Schmiede deckelt auf so viele Karten (Breite, nicht Compounding) [#fire-nodirect]
-export const DAMASCUS_FORGE_GROWTH = envNum("SIM_DAMASCUS_FORGE_GROWTH", 0);  // geschmiedete Karten +Dauerwert je Durchlauf (0 = kein Compounding) [Legendär-Umbau]
-// #fire-nodirect: war „DAMASCUS_DIRECT = 14", ein DIREKTER Score am Multiplikator-Stack vorbei. Umgestellt auf die
-// multiplizierte Basis (Name mitgezogen — „DIRECT" stimmte danach nicht mehr, und ein falscher Name ist schlimmer
-// als gar keiner). Grund ist derselbe wie beim Schmelzpunkt-Tropf: ein fester Betrag verliert gegen die über den
-// Lauf wachsenden Multiplikatoren. Gemessen am Feuer-Lauf: der Direkt-Anteil am Stich-Ertrag steigt bis Durchlauf
-// 20–29 auf 32,6 % und fällt danach auf 19,4 % — als kleiner Bonus (Glutdividende) trägt er, als Motor nicht.
-// Der Satz ist danach neu eingestellt, s. u. — multipliziert ist derselbe Zahlenwert ein Vielfaches wert.
-export const DAMASCUS_PER_VALUE    = envNum("SIM_DAMASCUS_PER_VALUE", 14);     // Score je Punkt GESAMT-Schmiedewert, je Sieg (Damast-Dividende), in der multiplizierten Basis
-export const DAMASCUS_COMBAT       = envNum("SIM_DAMASCUS_COMBAT", 5);        // Underdog: geschmiedete Karten kämpfen mit +Wert (schlagen über ihrem Gewicht) [Legendär-Umbau]
-// (Sonnenzorns alte ≥MIN_HEAT-Verstärkungen ausgebaut → Glühende Klinge/Weißglut sind jetzt reine Nicht-Legendär-Skills.)
+export const HEAT_MAX            = 100;                                            // Leiste des Passivs (fix)
+export const WEISSGLUT_HEAT_MAX  = envNum("SIM_WEISSGLUT_HEAT_MAX", 200);          // Leiste mit Weißglut (Skala, kein Rampen-Deckel)
+export const HEAT_MIN_MARGIN     = envNum("SIM_HEAT_MIN_MARGIN", 3);               // Mindest-Vorsprung für Passiv-Hitze
+export const HEAT_MARGIN_OFFSET  = envNum("SIM_HEAT_MARGIN_OFFSET", 2);            // Hitze = (Vorsprung − Offset) × je Punkt
+export const HEAT_PER_POINT      = envNum("SIM_HEAT_PER_POINT", 1);                // % Hitze je Vorsprungspunkt über dem Offset, linear ohne Knie
+export const HEAT_LOSS           = envNum("SIM_HEAT_LOSS", 2);                     // % Hitze je Niederlage (flach)
+export const HEAT_MULT_PER_10    = envNum("SIM_HEAT_MULT_PER_10", 0.02);           // Score-Multiplikator je volle 10 % gehaltener Hitze (×1,2 bei 100)
+export const FORGE_VALUE         = envNum("SIM_FORGE_VALUE", 3);                   // Schmiede/Damaststahl: +Dauerwert je Schmiedung
+// Legendäre (§4.7): keine Stufe, zwei Effekte, jedes läuft allein.
+export const SONNENKERN_BRAND           = 1;                                                   // Sonnenkern: jeder Sieg brandmarkt −1 (stapelt über die Runden)
+export const SONNENKERN_SCORE_PER_BRAND = envNum("SIM_SONNENKERN_SCORE_PER_BRAND", 20);        // Sonnenkern: Basis-Score je Brandpunkt auf der geschlagenen Karte
+export const PHOENIX_LOSS_HEAT          = envNum("SIM_PHOENIX_LOSS_HEAT", 2);                  // Phönixfeuer: +% Hitze je Punkt Rückstand statt Kühlung
+export const PHOENIX_REIGNITE           = envNum("SIM_PHOENIX_REIGNITE", 50);                  // Phönixfeuer: Hitze nach der Neuzündung (auf 0 gefallen), ohne Rundenlimit
+export const SONNENZORN_MULT_PER_10     = envNum("SIM_SONNENZORN_MULT_PER_10", 0.04);          // Sonnenzorn: Hitze-Multiplikator je 10 % Spitzen-Hitze (statt HEAT_MULT_PER_10)
 
 /* ============================================================
    EIS-REWORK v0 — „Was du richtig stellst, erstarrt für immer und wächst." Gletscher: Architektur × Permanenz.

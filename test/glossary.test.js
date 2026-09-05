@@ -44,9 +44,9 @@ describe("Glossar-Datenmodell", () => {
 });
 
 describe("Backcompat: glossaryKeywords / GLOSSARY[token]", () => {
-  it("die 14 Fraktions-Tokens bleiben als Keys erhalten", () => {
+  it("die Fraktions-Tokens bleiben als Keys erhalten (exp: ash ist mit der Asche gegangen)", () => {
     for (const tok of ["crit", "charge", "ionize", "streak", "heat", "consume",
-      "brand", "ash", "forge", "freeze", "formation", "growth", "green",
+      "brand", "forge", "freeze", "formation", "growth", "green",
       "colonize", "overgrowth", "eternalSpring"]) {
       expect(isGlossaryTerm(tok), tok).toBe(true);
       expect(GLOSSARY[tok].label).toBeTruthy();

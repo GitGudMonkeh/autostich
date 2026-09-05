@@ -31,8 +31,6 @@ import { WIN_MASS as G_WIN_MASS, EWIGER_FROST as G_EWIGER_FROST, THRESHOLDS as G
 const de = (x) => String(x).replace(".", ",");
 // Prozent(punkte) als ganze Zahl (0,07 → 7).
 const pct = (x) => Math.round(x * 100);
-// Tausendertrenner (2000 → „2.000").
-const grp = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 // Aus den Registern gezogene Aufzählungen (kein Text↔Code-Drift).
 const TRIMMABLE_NAMES = trimmableSkillNames();
 const RARITY_NAMES = Object.values(TIER_META).map((t) => t.label).join(" · ");
@@ -200,7 +198,7 @@ export const GLOSSARY = {
     text: `Zu festen Zeitpunkten im Lauf (erstmals Durchlauf ${C.FIRST_SKILL_CYCLE}) wählst du Skills statt eines Perks: ${C.SKILLS_OFFERED} Skills zur Auswahl, alle 4 Archetypen dabei.`,
     match: ["Skill-Durchlauf", "Skill-Durchläufe"] },
   consume: { category: "frak", group: "gen", label: "Konsument", icon: "⊗", color: CLR.lightning,
-    text: "Ein Skill, der eine angesammelte Ressource für einen starken Effekt verbraucht: Feuer verbrennt Hitze, Blitz verbraucht Ladung. Mehrere Feuer-Konsumenten wirken gleichzeitig; von den Blitz-Konsumenten immer nur einer, ein neuer ersetzt den alten.",
+    text: "Ein Skill, der eine angesammelte Ressource für einen starken Effekt verbraucht: bei Feuer verbrennen Flächenbrand, Schmelzpunkt und die Schmiede Hitze. Mehrere Konsumenten wirken gleichzeitig; Blitz kennt keine mehr, die Leiste ionisiert selbst.",
     match: ["Konsument", "Konsumenten", "Hitze-Konsument"] },
   // exp skill rework (docs/skill-rework.md §1): Legendäre sind die fünfte Seltenheit des Skill-Angebots — kein Tor,
   // keine eigene Phase, kein Ersetzen. (Wortlaut in Phase 4 mit den übrigen Texten abzunehmen.)
@@ -208,36 +206,27 @@ export const GLOSSARY = {
     text: "Eine seltene, besonders mächtige Skill-Stufe (mit ★ markiert). Legendäre Skills tauchen als fünfte Seltenheit im normalen Skill-Angebot auf – ohne Vorbedingung, immer aus der Fraktion des Platzes, den sie ersetzen. Mit Glück hält man zwei.",
     match: ["Legendärer Skill", "legendäre Skills"] },
   ueberlauf: { category: "frak", group: "gen", label: "Überlauf", icon: "≈", color: CLR.gold,
-    text: `Sammelt eine Karte mehr an, als ihr normaler Nutzen verwertet (Wachstum über dem Wert-Deckel ${C.PLANT_VALUE_CAP}, Hitze über 100 %), sonst wäre er verschwendet. Feuer (Weißglut) staut ihn als Überhitzung auf; die Legendären (Weltenbaum/Mutterbaum) verwandeln den großen Rest.`,
+    text: `Sammelt eine Karte mehr an, als ihr normaler Nutzen verwertet (Wachstum über dem Wert-Deckel ${C.PLANT_VALUE_CAP}, Hitze über ${C.HEAT_MAX} %), sonst wäre er verschwendet. Feuer (Weißglut) verlängert die Leiste bis ${C.WEISSGLUT_HEAT_MAX} %; die Legendären (Weltenbaum/Mutterbaum) verwandeln den großen Rest.`,
     match: ["Überlauf", "Überlauf-Wachstum"] },
   bekenntnis: { category: "frak", group: "gen", label: "Bekenntnis", icon: "◉", color: CLR.lightning,
     text: "Wie stark du dich einem Archetyp verschrieben hast: der Anteil deiner Skill-Slots, den seine Skills belegen. Viele Effekte, vor allem Legendäre, zahlen anteilig danach, voll erst bei reinem Deck.",
     match: ["Bekenntnis", "Blitz-Bekenntnis", "Feuer-Bekenntnis"] },
 
   /* ============ 4 · Feuer ============ */
+  // exp skill rework (§4.2): Hitze, Brand, Weißglut und Schmieden neu beschrieben — Asche, Ascheglut und Glutdividende
+  // sind mit dem Passiv gegangen. Wortlaut in Phase 4 mit den Skilltexten abnehmen.
   heat: { category: "frak", group: "fire", label: "Hitze", icon: "🜂", color: CLR.fire,
-    text: `Siege mit klarem Kampfwert-Vorsprung heizen die Hitzeleiste (0–100 %) auf und geben Feuer-Score = (Vorsprung − ${C.FIRE_MARGIN_OFFSET}) × ${C.FIRE_SCORE_BASE} (+${C.FIRE_SCORE_PER_SKILL} je weiterem Feuer-Skill). Großer Vorsprung zahlt weiter, ohne Deckel, mit abnehmendem Zuwachs; klare Niederlagen kühlen ab.`,
+    text: `Siege ab ${C.HEAT_MIN_MARGIN} Kampfwert-Vorsprung heizen die Hitzeleiste (0–${C.HEAT_MAX} %): +${C.HEAT_PER_POINT} % je Punkt Vorsprung über ${C.HEAT_MARGIN_OFFSET}, ohne Deckel. Niederlagen kühlen −${C.HEAT_LOSS} %. Je 10 % gehaltener Hitze zählt jeder Sieg +${pct(C.HEAT_MULT_PER_10)} % Score, als eigener Multiplikator. Die Feuer-Skills nutzen die Hitze.`,
     match: ["Hitze", "Hitzeleiste"] },
-  glutdividende: { category: "frak", group: "fire", label: "Glutdividende", icon: "🜂", color: CLR.fire,
-    text: "Zusätzlicher Score bei jedem Feuer-Sieg, der direkt zählt (ohne Serie/Crit/Formation zu durchlaufen). Je mehr Hitze du hältst, desto mehr, bis zu einem Deckel. Stark im frühen Spiel.",
-    match: ["Glutdividende"] },
   brand: { category: "frak", group: "fire", label: "Brandmal", icon: "🜂", color: CLR.fire,
-    text: `Eine gebrandmarkte Gegnerkarte verliert Wert; jeder Brand gibt +${C.BRAND_ASH} Asche, den Rohstoff der Feuer-Schmiede.`,
-    match: ["Brandmal", "Brand", "Brände", "gebrandmarkte"] },
-  ash: { category: "frak", group: "fire", label: "Asche", icon: "🜂", color: CLR.fire,
-    text: `Rohstoff der Feuer-Schmiede: Brände geben +${C.BRAND_ASH} Asche. Die Ascheschmiede verbraucht ${C.FORGE_COST} Asche je Schmiedung (+${C.FORGE_VALUE} Kartenwert); ist die Schmiede voll, verglüht restliche Asche als Ascheglut zu Score.`,
-    match: ["Asche"] },
-  // Zwei getrennte Überlauf-Pfade, die früher beide „Weißglut" hießen (Sprachprüfung B1): HITZE über 100 %
-  // (Skill Weißglut) und ASCHE über die Schmiede-Kapazität (Ascheglut). Ein Wort = eine Bedeutung.
+    text: "Eine gebrandmarkte Gegnerkarte verliert in der nächsten Runde ihre Brandpunkte an Wert (nie unter 0). Brände verschiedener Quellen addieren sich; sie erneuern sich je Runde und stapeln sich nur mit Sonnenkern über die Runden.",
+    match: ["Brandmal", "Brand", "Brände", "gebrandmarkte", "Brandpunkt", "Brandpunkte"] },
   whiteheat: { category: "frak", group: "fire", label: "Weißglut", icon: "🜂", color: CLR.fire,
-    text: `Der Hitze-Überlauf: Ist die Hitzeleiste voll, staut sich jeder weitere Hitzegewinn als Überhitzung auf (bis ${C.HEAT_MAX + C.OVERHEAT_MAX} %); je heißer, desto weniger davon kommt an. Jeder Punkt Überhitzung gibt +${Math.round(C.OVERHEAT_SCORE_STEP * 100)} % auf deinen Feuer-Score und baut sich je Stich wieder ab. Braucht den Skill Weißglut.`,
-    match: ["Weißglut", "Überhitzung"] },
-  ashglow: { category: "frak", group: "fire", label: "Ascheglut", icon: "🜂", color: CLR.fire,
-    text: `Der Asche-Überlauf: Ist die Schmiede-Kapazität voll, wird restliche Asche am Durchlauf-Ende in Score-Häppchen verbrannt (+${grp(C.FORGE_OVERFLOW_SCORE)} Score je ${C.FORGE_COST} Asche). Asche wird so jeden Durchlauf vollständig ausgegeben, kein toter Haufen mehr.`,
-    match: ["Ascheglut"] },
+    text: `Mit dem Skill Weißglut reicht die Hitzeleiste bis ${C.WEISSGLUT_HEAT_MAX} %, und über ${C.HEAT_MAX} % läuft der Hitze-Multiplikator steiler weiter. Es gibt keinen eigenen Abbau: über ${C.HEAT_MAX} % kühlt nur, was auch darunter kühlt (Niederlagen, Konsumenten).`,
+    match: ["Weißglut"] },
   forge: { category: "frak", group: "fire", label: "Schmieden", icon: "⚒", color: CLR.fire,
-    text: `Asche wird zu dauerhaftem Kartenwert (Ascheschmiede: ${C.FORGE_COST} Asche → +${C.FORGE_VALUE} Wert auf die niedrigste Karte).`,
-    match: ["Schmieden", "geschmiedet", "Schmiede", "Ascheschmiede"] },
+    text: `Hitze wird zu dauerhaftem Kartenwert: die Schmiede gibt am Rundenende deiner niedrigsten Karte +${C.FORGE_VALUE} Wert und kostet dafür Hitze; Damaststahl schmiedet ohne Preis. Der Schmiedewert bleibt in der Karte, auch nach einem Skill-Wechsel.`,
+    match: ["Schmieden", "geschmiedet", "Geschmiedete", "Schmiede", "Schmiedewert", "Schmiedung"] },
 
   /* ============ 4 · Blitz ============ */
   // exp skill rework (§3.2): Ladung, Ionisierung und Stapel neu beschrieben — Wortlaut in Phase 4 mit den Skilltexten abnehmen.

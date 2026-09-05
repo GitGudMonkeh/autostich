@@ -1383,7 +1383,8 @@ Feuersturm × Serienschutz (Blitz) im gemischten Build; Siegquote aus Klinge, Br
 zusammen (Richtung 90 %); Schmiede offen (+120, Episch +240 Deckwert); Spürbarkeit der 25-Prozent-
 Schritte (Owner); Hitze-Schwellen-Leitern, ob 80/60/40 im Late Game noch trennen.
 
-**Noch offen für Feuer:** die Skilltexte für `de.js`, die Umsetzung. Legendäre in 4.7 gesetzt.
+**Umgesetzt in Phase 3 (7.3).** Die Skilltexte stehen im Skillkatalog (Normal-Stufe, dann die Leiter) und werden in Phase 4
+abgenommen. Legendäre in 4.7 gesetzt.
 
 ### 4.7 Legendäre Feuer
 
@@ -1491,7 +1492,8 @@ Sim-Wachpunkte: Sonnenkern mit Brandmal und Lauffeuer (Gegnerdeck nach wenigen R
 Phönixfeuer mit Flächenbrand Episch (mehrere Bursts je Runde) und mit Weißglut; Sonnenzorn mit Weißglut
 (×1,8 bis ×2,0 dauerhaft); Damaststahl mit Schmiede Episch und Glutstahl Episch; zwei Legendäre zugleich.
 
-**Noch offen für Feuer:** die Skilltexte für `de.js`, die Umsetzung. Die Legendären sind gesetzt.
+**Umgesetzt in Phase 3 (7.3).** Die Legendären sind gesetzt; ihre Texte stehen im Skillkatalog und werden in Phase 4
+abgenommen.
 
 ## 7. Umsetzung Blitz und Feuer (Plan, 2026-09-05)
 
@@ -1561,6 +1563,52 @@ Passiv, 15 Skills und 4 Legendäre wie in 3.6 und 3.7. Technische Entscheide, di
 - Wird Spannungsstau ersetzt, geht sein Stau mit (Reducer); die Engine fasst den Stau ohne den Skill nicht an.
 - Gates grün, Sim-Band-Wächter unverändert grün.
 
+### 7.3 Stand Phase 3, Feuer (2026-09-05, umgesetzt)
+
+Modul `src/game/factions/fire.js` (reine Übergänge, kein React); die Stufentabellen der 15 Skills stehen als `tiers[0..3]`
+in `SKILL_DEFS` (`FEUER_TIERS`), die Texte interpolieren dieselben Zahlen. Passiv, 15 Skills und 4 Legendäre wie in 4.6
+und 4.7. Technische Entscheide, die das Dokument offen ließ:
+
+- **Hitze-Tore und Multiplikator eines Siegs** („ab X % Hitze", Flächenbrand-Schwelle, Brandmal, Lauffeuer, der Hitze-
+  Multiplikator) lesen die Hitze nach dem Gewinn dieses Siegs und vor dem Verbrauch der Konsumenten. Zustands-Boni
+  (Glühende Klinge, Feuerwalze, Rückzündung Episch) lesen die Hitze vor dem Stich. Die Hitze läuft mit Nachkommastellen
+  (Glut ×1,25, Feuersturm 0,5 je Punkt); die Anzeige rundet.
+- **Multiplikator:** je volle 10 % Hitze (abgerundet), ein Faktor `fireMult` = Hitze-Multiplikator × Verbrennung im
+  Score-Stack an der Stelle des alten Sonnenzorn-Faktors; Anteil am Score wird wie der Formations-Anteil geschätzt
+  (`fireHeat`, ehemals `fireWhite`).
+- **Reihenfolge im Sieg:** Hitzegewinn → Schmelzpunkt (verbrennt höchstens, was da ist; Episch gibt die Hälfte zurück) →
+  Flächenbrand (Tor auf der Hitze vor dem Tropf) → Phönix-Neuzündung (bei 0, ohne Rundenlimit) → Glutstahl → Sonnenkern-
+  Score → Brände. Alle Feuer-Flats in der multiplizierten Basis, kein Direkt-Score.
+- **Glutstahl** zählt den Kampfwert der Siegkarte über ihrem Grundwert (`baseRank`), alle Quellen, ohne den Damast-
+  Kampfbonus; Episch zählt den Schmiedewert doppelt.
+- **Brände** werden als Wertpunkte je Gegnerkarte geführt; Quellen addieren sich (Brandmal −2, Lauffeuer −1 je Nachbar,
+  Sonnenkern −1), kein Deckel, der Wert fällt nie unter 0. Lauffeuer-Nachbarn sind die Nachbarn im Gegnerdeck (kein
+  Wrap). Sonnenkern zahlt je Brandpunkt und stapelt am Rundenende auf die alten Brände; ohne ihn ersetzen die neuen
+  die alten. Brandmal Episch brandmarkt bei einer Niederlage die Siegerkarte (Tor auf der Hitze vor der Niederlage).
+- **Glutbett** ist ein Boden für Niederlagen: liegt die Hitze darunter, kühlt die Niederlage nicht, sonst nicht unter
+  den Boden; Episch kühlt nie. Konsumenten brennen weiter darunter.
+- **Schmiede** am Rundenende, ein Preis je Runde; Episch schmiedet zwei verschiedene Karten für denselben Preis.
+  Niedrigste Karte deterministisch (kleinster Wert, dann kleinste id). Damaststahl schmiedet danach die dann niedrigste,
+  ohne Preis, und verdoppelt im Kampf nur den Vergleich. Der Schmiedewert bleibt in der Karte, auch wenn Feuer fällt.
+- **Weißglut:** `heat.max` folgt dem Build (100, mit Weißglut 200), Reducer und Engine gleichen ihn an; wird Weißglut
+  ersetzt, klemmt die Hitze auf 100. Der Multiplikator über 100 liest die Stufe; ohne Weißglut ist bei 100 Schluss.
+- **Sonnenzorn** liest die Spitze (`heat.peak`, immer mitgeführt) für den ganzen Multiplikator, auch den Weißglut-Teil.
+- **Konsument-Garantie im Angebot** ist mit der Verbraucher-Regel entfallen (Blitz in Phase 2, Feuer jetzt): das Angebot
+  zieht rein aus dem Pool; das Konsument-Abzeichen hängt am Glossar-Schlüsselwort. Das Sim-Policy-Limit „höchstens ein
+  Konsument" ist weg.
+- **Sim-Regler des Passivs:** `SIM_HEAT_MIN_MARGIN` 3 · `SIM_HEAT_MARGIN_OFFSET` 2 · `SIM_HEAT_PER_POINT` 1 · `SIM_HEAT_LOSS` 2
+  · `SIM_HEAT_MULT_PER_10` 0,02 · `SIM_WEISSGLUT_HEAT_MAX` 200 · `SIM_FORGE_VALUE` 3; Legendäre `SIM_SONNENKERN_SCORE_PER_BRAND`
+  20 · `SIM_PHOENIX_LOSS_HEAT` 2 · `SIM_PHOENIX_REIGNITE` 50 · `SIM_SONNENZORN_MULT_PER_10` 0,04.
+- **Raus:** Asche (Ressource, Zähler, Anzeige, Glossar), Feuer-Score des Passivs, Glutdividende samt Architekt-Hebel,
+  Bekenntnis, Verbraucher-Regel, Überhitzung (eigener Akku, Abbau, Dämpfung), Funkenflug samt Ertragszeile, Schmelzofen,
+  Deckel der Schmiede (je Karte, Kartenzahl, Ascheglut), Sonnenkern-Dauerwert und Brand-Deckel, Phönix-Rundenlimit,
+  Damast-Dividende und Karten-Deckel, alle alten Feuer-Konstanten. Die Embleme der zwei gestrichenen Skills sind gelöscht,
+  das der Schmiede umbenannt.
+- **Anzeige (vorläufig, Phase 4):** Hitzeleiste 0–100 (mit Weißglut 0–200, Marke bei 100), Multiplikator im Kopf, Klingen-
+  Schritte als Striche, Abzeichen für Klinge, Feuerwalze, Verbrennung, Schmiede (Preis) und Sonnenzorn (Spitze),
+  Schmiede-Zähler, Brand-Zeile; Ertrag in zwei Kanälen (Feuer-Score, Multiplikator-Anteil).
+- Gates grün, Sim-Band-Wächter unverändert grün.
+
 ## 5. Eis
 
 Offen.
@@ -1593,3 +1641,4 @@ Offen.
 | 2026-09-05 | Alle vier Feuer-Legendären gesetzt: Sonnenkern (Brände stapeln), Phönixfeuer (Niederlagen heizen, Neuzündung ohne Limit), Sonnenzorn (Spitzen-Hitze, doppelter Multiplikator), Damaststahl (freie Schmiede, doppelter Schmiedewert im Kampf). Blitz und Feuer damit fertig für die Umsetzung. |
 | 2026-09-05 | Phase 1 umgesetzt (7.1): Stufenwurf je Platz mit Legendär als fünfter Stufe, 40-Runden-Plan ohne Legendär-Phase, Slots unbegrenzt, Stufe sichtbar. Gates grün; Sim-Band vorläufig neu zentriert. |
 | 2026-09-05 | Phase 2 umgesetzt (7.2): Blitz-Modul mit Passiv, 15 Skills auf vier Stufen, 4 Legendären und Systemregel; Altlasten raus. Technische Entscheide dort festgehalten. Gates grün. |
+| 2026-09-05 | Phase 3 umgesetzt (7.3): Feuer-Modul mit Passiv (Hitze aus Vorsprung, Kühlung −2, Hitze-Multiplikator als Faktor), 15 Skills auf vier Stufen, 4 Legendären; Asche, Feuer-Score, Glutdividende, Überhitzung, Funkenflug, Schmelzofen, Verbraucher-Regel raus. Technische Entscheide dort festgehalten. Gates grün. |

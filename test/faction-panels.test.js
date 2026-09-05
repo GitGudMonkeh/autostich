@@ -27,8 +27,8 @@ function agg(target, keys, seeds = [1, 2, 3, 4]) {
   return out;
 }
 
-const YIELD = ["glacierYield", "lightYield", "plantRoot", "plantBloom", "plantHarvest", "fireBase", "fireWhite"];
-const MOTOR = ["ionTotal", "growthTotal", "ashBurned", "brandTotal"];
+const YIELD = ["glacierYield", "lightYield", "plantRoot", "plantBloom", "plantHarvest", "fireBase", "fireHeat"]; // exp: fireHeat = Hitze-Multiplikator-Anteil (ehemals fireWhite)
+const MOTOR = ["ionTotal", "growthTotal", "brandTotal"]; // exp: Asche entfällt
 const ALL = [...YIELD, ...MOTOR];
 const plantYield = (a) => a.plantRoot + a.plantBloom + a.plantHarvest;
 
@@ -42,8 +42,8 @@ describe("#270 Fraktions-Panel-Kennzahlen — Ertrag-Kanäle + Motor-Zähler", (
     const a = agg("lightning", ALL);
     expect(a.ionTotal).toBeGreaterThan(0);
     expect(a.lightYield).toBeGreaterThan(0);
-    expect(plantYield(a) + a.fireBase + a.fireWhite + a.glacierYield).toBe(0); // Isolation
-    expect(a.growthTotal + a.ashBurned + a.brandTotal).toBe(0);
+    expect(plantYield(a) + a.fireBase + a.fireHeat + a.glacierYield).toBe(0); // Isolation
+    expect(a.growthTotal + a.brandTotal).toBe(0);
   });
 
   it("Pflanze-Lauf treibt Gewachsen + Wurzel-Score (mind. Wurzel-Kanal); keine Fremd-Fraktions-Kennzahl", () => {
@@ -51,13 +51,14 @@ describe("#270 Fraktions-Panel-Kennzahlen — Ertrag-Kanäle + Motor-Zähler", (
     expect(a.growthTotal).toBeGreaterThan(0);
     expect(a.plantRoot).toBeGreaterThan(0);      // Wurzeltiefe ist der verlässliche Grund-Kanal
     expect(plantYield(a)).toBeGreaterThan(0);
-    expect(a.lightYield + a.fireBase + a.fireWhite + a.glacierYield).toBe(0);
-    expect(a.ionTotal + a.ashBurned + a.brandTotal).toBe(0);
+    expect(a.lightYield + a.fireBase + a.fireHeat + a.glacierYield).toBe(0);
+    expect(a.ionTotal + a.brandTotal).toBe(0);
   });
 
-  it("Feuer-Lauf treibt den Feuer-Grund-Score (Feuers Kern); keine Fremd-Fraktions-Kennzahl", () => {
+  it("Feuer-Lauf treibt den Feuer-Ertrag (Hitze-Multiplikator-Anteil, Feuers Kern); keine Fremd-Fraktions-Kennzahl", () => {
     const a = agg("fire", ALL);
-    expect(a.fireBase).toBeGreaterThan(0);
+    expect(a.fireHeat).toBeGreaterThan(0); // exp: das Passiv zahlt als Multiplikator; Feuer-Score (fireBase) nur mit Konsumenten/Glutstahl/Sonnenkern
+    expect(a.fireBase).toBeGreaterThanOrEqual(0);
     expect(a.lightYield + plantYield(a) + a.glacierYield).toBe(0);
     expect(a.ionTotal + a.growthTotal).toBe(0);
   });
@@ -65,8 +66,8 @@ describe("#270 Fraktions-Panel-Kennzahlen — Ertrag-Kanäle + Motor-Zähler", (
   it("Eis-Lauf treibt den Gletscher-Ertrag (Masse→Bruch→Score); keine Fremd-Fraktions-Kennzahl", () => {
     const a = agg("ice", ALL);
     expect(a.glacierYield).toBeGreaterThan(0);
-    expect(a.lightYield + plantYield(a) + a.fireBase + a.fireWhite).toBe(0);
-    expect(a.ionTotal + a.growthTotal + a.ashBurned + a.brandTotal).toBe(0);
+    expect(a.lightYield + plantYield(a) + a.fireBase + a.fireHeat).toBe(0);
+    expect(a.ionTotal + a.growthTotal + a.brandTotal).toBe(0);
   });
 
   it("Kennzahlen wachsen monoton über den Lauf (nur steigend, Anzeige-Akkumulatoren)", () => {

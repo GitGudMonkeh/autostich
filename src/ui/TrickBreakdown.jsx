@@ -53,8 +53,8 @@ export function TrickBreakdown({ trick = null }) {
 
   const base = (b.base || 0) + (b.flats || 0);
   const streakMult = b.streakMult || 1;
-  // Perks/Sonnenzorn/Architekt-Score-Bauten sind alle „Build-Multiplikatoren" — ein Glied.
-  const perkMult = (b.perkMult || 1) * (b.sunwrathMult || 1) * (b.architectMult || 1);
+  // Perks/Feuer (Hitze-Multiplikator, Verbrennung)/Architekt-Score-Bauten sind alle „Build-Multiplikatoren" — ein Glied.
+  const perkMult = (b.perkMult || 1) * (b.fireMult || 1) * (b.architectMult || 1);
   // Formation + ihre beiden Meta-Faktoren Nachhall (F6) und Formationskern (F-L1).
   const formMult = (b.formMult || 1) * (b.afterglowMult || 1) * (b.coreMult || 1);
   const critMult = b.critMult || 1;

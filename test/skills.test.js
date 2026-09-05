@@ -225,45 +225,19 @@ describe("Stufenwurf — rollTier / rollSkillOfferTiers / tierOf (exp skill rewo
   });
 });
 
-// Konsument-Garantie: ein aktiver Feuer-Build ohne gehaltenen Konsumenten bekommt garantiert einen angeboten, solange
-// man keinen aktiv hat — sonst kann der Build nie „zünden". (exp skill rework: Blitz kennt keine Konsumenten mehr —
-// die Leiste ionisiert selbst; die Blitz-Hälfte dieser Garantie ist mit dem Skill Ionisierung gegangen. Feuer bis Phase 3.)
-describe("buildSkillOffer — Konsument-Garantie (aktive Feuer-Builds)", () => {
-  const isFireConsumer   = (id) => !!SKILL_DEFS[id]?.heatConsumer;  // Flächenbrand/Schmelzpunkt
-  const isChargeConsumer = (id) => !!SKILL_DEFS[id]?.onFullCharge;  // (exp: nie — Blitz hat keine Verbraucher mehr)
-  it("aktiver Feuer-Build ohne Hitze-Konsument → garantiert ein Hitze-Konsument im Angebot", () => {
-    for (let seed = 1; seed <= 40; seed++)
-      expect(buildSkillOffer(["SK_FIRE_01"], ["fire"], makeRng(seed), 6).some(isFireConsumer)).toBe(true);
-  });
-  it("exp: kein Blitz-Skill ist ein Ladungs-Konsument — ein Blitz-Angebot enthält nie einen", () => {
-    expect(Object.values(SKILL_DEFS).some(isChargeConsumer)).toBe(false);
-    for (let seed = 1; seed <= 10; seed++)
-      expect(buildSkillOffer(["SK_LIGHTNING_01"], ["lightning"], makeRng(seed), 6).some(isChargeConsumer)).toBe(false);
-  });
-  it("#223 Kontrolle Feuer: hält man einen Hitze-Konsumenten → KEINER erzwungen", () => {
-    // Flächenbrand (Hitze-Konsument) gehalten → über viele Seeds gibt es mind. ein Angebot ganz OHNE Hitze-Konsument.
-    const anyClean = Array.from({ length: 30 }, (_, s) =>
-      buildSkillOffer(["SK_FIRE_11"], ["fire"], makeRng(s + 1), 6)
-    ).some((off) => !off.some(isFireConsumer));
-    expect(anyClean).toBe(true);
+// exp skill rework: die Konsument-Garantie des Angebots ist mit der Verbraucher-Regel entfallen — Blitz kennt keine
+// Konsumenten mehr (die Leiste ionisiert selbst), Feuer trägt seinen Payoff im Passiv (Hitze-Multiplikator). Kein
+// Skill trägt mehr einen Effekt-Marker dafür; das Angebot zieht rein aus dem Pool (die Feuer-Seite in fire-rework.test.js).
+describe("buildSkillOffer — keine Konsument-Garantie mehr (exp)", () => {
+  it("kein Skill trägt mehr einen Konsumenten-Marker (heatConsumer / onFullCharge)", () => {
+    expect(Object.values(SKILL_DEFS).some((s) => s.heatConsumer || s.onFullCharge)).toBe(false);
   });
   it("Erst-Angebot (leeres activeArchetypes) bleibt deterministisch — kein rng-Drift", () => {
     expect(buildSkillOffer([], [], makeRng(1), 6)).toEqual(buildSkillOffer([], [], makeRng(1), 6));
   });
-  // #191/#223: schon beim ERSTEN Skill-Angebot (noch kein Archetyp aktiv) zeigt Feuer seinen Konsumenten — bei
-  // count 6 (je 1 + Fill) wie 12 (3+3+3+3) und mit dem (inerten) Legendär-Parameter.
-  it("#223 Erst-Angebot garantiert den Feuer-Konsumenten", () => {
-    for (let seed = 1; seed <= 40; seed++) {
-      for (const [count, chance] of [[6, 0], [12, 0], [12, 1]]) {
-        const off = buildSkillOffer([], [], makeRng(seed), count, chance);
-        expect(off.some(isFireConsumer)).toBe(true);
-      }
-    }
-  });
-  it("#191 Erst-Angebot: Konsument-Garantie hält mit dem Legendär-Parameter + 3+3+3+3-Balance", () => {
+  it("Erst-Angebot: 3+3+3+3-Balance über alle vier Archetypen, auch mit dem (inerten) Legendär-Parameter", () => {
     for (let seed = 1; seed <= 40; seed++) {
       const off = buildSkillOffer([], [], makeRng(seed), 12, 1);
-      expect(off.some(isFireConsumer)).toBe(true);
       expect(off).toHaveLength(12);
       const byArch = {};
       for (const id of off) byArch[archetypeOf(id)] = (byArch[archetypeOf(id)] || 0) + 1;

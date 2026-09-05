@@ -1217,9 +1217,9 @@ function AutostichGame() {
                   den Balken darüber. Das Build-Panel zeigt sie dann nicht mehr doppelt (`hideSkillArchs`). */}
               <ChargeBar lightning={state.lightning} skills={state.skills} critChance={totalCritChanceRaw(state)}
                 critMult={totalCritMult(state)} deck={state.deck || []} options={options} onOption={changeOptions} manyActive={wide ? false : manyFac} showSkills={wide} />
-              <HeatBar heat={state.heat} skills={state.skills} ash={state.ash || 0} forged={state.forged || {}}
-                ashBurned={state.ashBurned || 0} brandTotal={state.brandTotal || 0}
-                fireBase={state.fireBase || 0} fireWhite={state.fireWhite || 0} options={options} onOption={changeOptions} manyActive={wide ? false : manyFac} showSkills={wide} />
+              <HeatBar heat={state.heat} skills={state.skills} skillTiers={state.skillTiers || {}} forged={state.forged || {}}
+                lastResult={state.lastResult} brandTotal={state.brandTotal || 0}
+                fireBase={state.fireBase || 0} fireHeat={state.fireHeat || 0} options={options} onOption={changeOptions} manyActive={wide ? false : manyFac} showSkills={wide} />
               <PlantBar active={(state.activeArchetypes || []).includes("plant")}
                 deck={state.deck || []}
                 growth={state.growth || {}}

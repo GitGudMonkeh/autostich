@@ -26,7 +26,6 @@ import { RARITY_EN, RARE, EPIC } from "./enTerms.js";
 
 const num = (x) => String(x);
 const pct = (x) => Math.round(x * 100);
-const grp = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
 // Trimmbare Skills mit ihren ENGLISCHEN Namen — aus dem Register gefiltert, aus dem EN-Katalog benannt.
 const TRIMMABLE_EN = SKILL_LIST.filter((s) => s.trimGrowth).map((s) => enSkills[`ability.${s.id}.name`]).join(", ");
@@ -86,13 +85,11 @@ const E = [
   ["legskill", "Legendary skill", "A rare, especially powerful skill tier (marked with ★). Legendary skills show up as the fifth rarity of the normal skill offer – no prerequisite, always from the faction of the slot they replace. With luck you hold two.", ["legendary skill", "legendary skills"]],
   ["ueberlauf", "Overflow", `What a card accumulates beyond what its normal use can absorb (growth above the value cap of ${C.PLANT_VALUE_CAP}, heat above 100%), which would otherwise be wasted. Fire (white heat) banks it as overheat; the legendaries (World Tree/Mother Tree) convert the large remainder.`, ["overflow", "overflow growth"]],
   ["bekenntnis", "Commitment", "How far you have committed to an archetype: the share of your skill slots its skills occupy. Many effects, legendaries above all, pay proportionally to it, in full only on a pure deck.", ["commitment", "lightning commitment", "fire commitment"]],
-  ["heat", "Heat", `Wins with a clear margin heat up the heat bar (0–100%) and give fire score = (margin − ${C.FIRE_MARGIN_OFFSET}) × ${C.FIRE_SCORE_BASE} (+${C.FIRE_SCORE_PER_SKILL} per further fire skill). A large margin keeps paying without a cap, with diminishing gains; clear losses cool you down.`, ["heat", "heat bar"]],
-  ["glutdividende", "Ember dividend", "Extra score on every fire win that counts directly (without passing through streak, crit or formation). The more heat you hold, the more, up to a cap. Strong early.", ["ember dividend"]],
-  ["brand", "Brand", `A branded opponent card loses value; every brand gives +${C.BRAND_ASH} ash, the raw material of the fire forge.`, ["brand", "brands", "branded"]],
-  ["ash", "Ash", `Raw material of the fire forge: brands give +${C.BRAND_ASH} ash. The Ash Forge consumes ${C.FORGE_COST} ash per forging (+${C.FORGE_VALUE} card value); once the forge is full, remaining ash burns off as ash glow into score.`, ["ash"]],
-  ["whiteheat", "White heat", `The heat overflow: once the heat bar is full, every further heat gain banks as overheat (up to ${C.HEAT_MAX + C.OVERHEAT_MAX}%); the hotter you are, the less of it arrives. Every point of overheat gives +${Math.round(C.OVERHEAT_SCORE_STEP * 100)}% on your fire score, and it decays again every trick. Requires the skill White Heat.`, ["white heat", "overheat"]],
-  ["ashglow", "Ash glow", `The ash overflow: once the forge capacity is full, remaining ash is burnt into score at the end of the cycle (+${grp(C.FORGE_OVERFLOW_SCORE)} score per ${C.FORGE_COST} ash). Ash is thus fully spent every cycle, no dead pile left over.`, ["ash glow"]],
-  ["forge", "Forging", `Ash becomes permanent card value (Ash Forge: ${C.FORGE_COST} ash → +${C.FORGE_VALUE} value on the lowest card).`, ["forging", "forged", "forge", "ash forge"]],
+  // exp skill rework (inactive catalogue): heat, brand, white heat and forging follow the German source; ash and ash glow are gone.
+  ["heat", "Heat", "Wins with a margin of 3 or more heat up the heat bar (0–100%): +1% per point of margin above 2, no cap. Losses cool by −2%. Per 10% of heat held, every win counts +2% score as its own multiplier. The fire skills use the heat.", ["heat", "heat bar"]],
+  ["brand", "Brand", "A branded opponent card loses its brand points of value next cycle (never below 0). Brands from different sources add up; they renew every cycle and only stack across cycles with Sun Core.", ["brand", "brands", "branded", "brand point", "brand points"]],
+  ["whiteheat", "White heat", "With the skill White Heat the heat bar reaches 200%, and above 100% the heat multiplier keeps climbing, steeper. There is no decay of its own: above 100% only what cools below it cools (losses, consumers).", ["white heat"]],
+  ["forge", "Forging", "Heat becomes permanent card value: at the end of the cycle the Forge gives your lowest card +3 value and costs heat for it; Damascus Steel forges at no cost. Forged value stays in the card, even after a skill swap.", ["forging", "forged", "forge", "forged value"]],
   // exp skill rework (inactive catalogue): charge bar ionizes the next card, stacks are uncapped and score-only.
   ["charge", "Charge", `Every crit gives +1 charge (bar of ${C.LIGHTNING_MAX_CHARGE}). Once the bar is full it ionizes the next card in order and empties.`, ["charge", "charges"]],
   ["ionize", "Ionization", `A permanent card marking: an ionized card gives +${C.ION_SCORE_PER_STACK} score per stack into the base on a win, before the multipliers. Stacks come only from the full charge bar and from lightning skills, and they have no cap.`, ["ionization", "ionized", "ionize"]],

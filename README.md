@@ -230,9 +230,10 @@ angeboten, wenn ihr Basis-Skill gehalten wird.
 - **⚡ Blitz** — Ladung/Ionisierung/Crit: Ladung sammeln (`LIGHTNING_MAX_CHARGE`), Karten ionisieren
   (`ION_*` → +Score je Stapel), Gewitterfront/Reaktoren, Legendäre (Donnergott u. a.). Positionsgebundene
   Effekte (Leitfähigkeit/Ionisierung) lesen `actualPos` (korrekt unter Zeitsegment).
-- **🔥 Feuer** — Hitzeleiste 0–`HEAT_MAX`: belohnt totale Überlegenheit mit Feuer-Flat-Score
-  (`FIRE_SCORE_*`); Konsumenten (Flächenbrand/Schmelzpunkt) tauschen Hitze gegen große Boni; Legendäre
-  (Phönixfeuer/Sonnenkern).
+- **🔥 Feuer** — Hitzeleiste 0–`HEAT_MAX` (`factions/fire.js`): Siege mit Abstand erzeugen Hitze, Niederlagen
+  kühlen, je 10 % gehaltener Hitze ein eigener Score-Multiplikator (`HEAT_MULT_PER_10`); die Skills nutzen die
+  Hitze (Konsumenten Flächenbrand/Schmelzpunkt/Schmiede, Schwellen-Skills, Brände); Legendäre (Sonnenkern,
+  Phönixfeuer, Sonnenzorn, Damaststahl).
 - **❄ Eis** — Gletscher-Archetyp (`glacier.js`): jeder Eis-Skill friert eine Karte auf ihrem Brettfeld
   fest. Ein **Gletscher** ist ab dann starr, sammelt aber jeden Durchlauf **Masse** und **birst** an der
   obersten Schwelle über seine Nachbarn (Kaskade/Kollision). **Firn** liegt als Reserve auf offenem Boden

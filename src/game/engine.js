@@ -6,9 +6,6 @@ import { PERK_DEFS, buildPerkOffer, critChanceRawFor, critMultiplierFor, streakB
 import { familySumHook, familyProdHook, familyTierParam, activeFamilyEntries, formationEnergyBonus, familyCritChanceRaw, familyCritMult, allianceGroups } from "./families.js";
 import { colorsAllied } from "./color.js"; // #289: Farb-Serie/Architekt/Farbfokus respektieren Farballianz
 import { skillSum, buildSkillOffer, rollSkillOfferTiers,
-  fireFlag, hasHeatConsumer, heatGainFor, heatLossFor, fireScoreFor, activeFireCount, sunwrathMultFor, // Feuer-Rework (v0); #234: hasHeatConsumer statt heatConsumerOf (mehrere Hitze-Konsumenten je einzeln)
-  glowingValueFor, forgeCostFor, // Feuer-Rework (v0): Schwellen/Schmiede
-  overheatGain, overheatDecay, overheatMult, conflagRateFor, meltRateFor, sparkBankFor, glowMarginFor, // #fire-balance: Überhitzung + die drei Sätze + das Segment-Fenster der Klinge
   growthRipe, greenCount, // Pflanze-Fraktion (v0): Reife/Grün
   plantPassiveActive, hasKernholz, hasWurzeltiefe, hasPfahlwurzel, hasJahresringe, hasAussaat, hasFlugsamen, hasZaeherHalm, // Pflanze: Fraktions-Passive (Mono/Schwellen-Knick) / Kernholz / Tiefe / Breite
   hasRanken, hasBluete, hasBluetezeit, hasPhotosynthese, hasBlaetterdach, hasUeberwucherung, // Pflanze: Grün/Überwucherung
@@ -18,6 +15,10 @@ import { skillSum, buildSkillOffer, rollSkillOfferTiers,
 import { lightningCritChance, lightningCritMult, overcritMult, blitzfaengerValue, ionScoreFor as lightIonScore, chargeGainOnWin,
   critFillsBar, blitzschlagStacks, stauAfterWin, lightningOnLoss, fillBar as lightFillBar, lightningCycleEnd, maxChargeFor,
   lightParam, L as LIGHT, hasDoppelentladung, hasDurchschlag } from "./factions/lightning.js";
+// exp skill rework: die Feuer-Mechanik (Passiv, 15 Skills, 4 Legendäre) lebt ebenso im Fraktionsmodul — die Engine
+// ruft ihre Übergänge (Kampfwert-Bonus, Sieg, Niederlage, Hitze-Multiplikator, Rundenende, Brand-Wechsel).
+import { syncHeatMax, fireValueBonus, damascusCombat, fireOnWin, fireOnLoss, heatMult, verbrennungMult,
+  fireCycleEnd, nextBrandActive } from "./factions/fire.js";
 // (#267: import aus stats.js entfernt — die Stat-Phase/Faktoren sind weg.)
 import { computeFormations, positionHasFormation, activeFormationCount, summarizeFormations, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
 import { perkLegendaryChance, anchorAt } from "./shop.js";
@@ -149,13 +150,13 @@ export function resolveTrick(state, rng) {
     // bleiben je EIN kohärenter Kanal (Eis = „Schichten zahlen", Blitz = Ionisierung; Blitz-Crit steht global in der Rail).
     lightYield = 0, // Blitz-Eigen-Score (Kanal)
     plantRoot = 0, plantBloom = 0, plantHarvest = 0, // Pflanze: Wurzel- / Blüten- / Ernte-Score
-    fireBase = 0, fireWhite = 0, // Feuer: Grund-Score / Weißglut-Score
-    ionTotal = 0, growthTotal = 0, ashBurned = 0, brandTotal = 0, // Motor-Zähler: ionisierte Karten / Wachstum / verbrannte Asche / gebrandmarkte Gegnerkarten
+    fireBase = 0, fireHeat = 0, // Feuer: Feuer-Score (Konsumenten, Glutstahl, Sonnenkern) / Anteil des Hitze-Multiplikators und der Verbrennung
+    ionTotal = 0, growthTotal = 0, brandTotal = 0, // Motor-Zähler: ionisierte Karten / Wachstum / gebrandmarkte Gegnerkarten
     trimCount = 0, // #288 Trimmen: ersetzte Wachstums-Skills → Wurzel-/Blüten-Multiplikator
     skills = [], skillOffer = null, lightning = null, activeArchetypes = [], // Skill-System / Archetypen (#93)
     skillTiers = {}, // exp skill rework: Stufe je gehaltenem Skill (0 Normal … 3 Episch) — die Fraktionsmodule lesen ihre Tabellen damit
     iceTemp = {}, // (exp: ehemals Blitzfänger-Temp; wird nur noch durchgereicht)
-    ash = 0, brandPending = {}, brandActive = {}, forged = {}, // Feuer-Rework (v0): Asche-Ressource / Brand-Marker (Gegner, je card.id) / geschmiedete Dauerwerte
+    brandPending = {}, brandActive = {}, forged = {}, // Feuer: Brand-Marker (Gegner, je card.id, Wertabzug nächste Runde) / geschmiedete Dauerwerte
     growth = {}, colonized = {}, // Pflanze-Fraktion (v0): Wachstum je card.id (nur steigend) / kolonisierte Gegnerkarten (grün = card.green auf der Karte)
     plantLoss = {}, // Wurzelschlag-Buff (v0.4): Niederlagen-Zähler je card.id — je WURZELSCHLAG_LOSS_EVERY wächst die Karte trotzdem
 
@@ -338,28 +339,11 @@ export function resolveTrick(state, rng) {
   // Nachfolger-Bonus (C4 Staffelläufer / C5 Anführer): der Kopf der Queue gilt für DIESE Karte, dann verbraucht.
   const relayBonus = successorQueue[0] || 0;
   successorQueue = successorQueue.slice(1);
-  // ---- Feuer-Rework (v0): Vor-Stich-Effekte (Schmelzpunkt-Drip, Glühende Klinge, Feuerwalze, Rückzündung-Wert).
-  let heat = state.heat || null;
-  let fireValueBonus = 0;
-  const suncore = fireFlag(skills, "suncore"); // Sonnenkern (L): Win-Condition — brennt am Durchlauf-Ende hohe Hitze dauerhaft in den Deck-Boden (s. u., ~Z.1020); KEIN Konsum-Verstärker mehr [#230 N11]
-  // Phönixfeuer: verbrauchte Hitze entzündet 1×/Durchlauf neu (+40 % der Leiste). Nach jedem Konsum geprüft.
-  // #fire-balance: Auslöser ist zusätzlich ein GROSSER Einzelverbrauch (`burned`) — Flächenbrand hört seit dem
-  // Boden (CONFLAG_KEEP) bei 40 % auf, „value ≤ 0" allein wäre also aus einem Konsum nie mehr erreichbar.
-  const reignite = (h, burned = 0) =>
-    (fireFlag(skills, "phoenix") && !h.phoenixUsed && (h.value <= 0 || burned >= C.PHOENIX_MIN_BURN))
-      ? { ...h, value: Math.min(h.max, h.value + Math.round(C.PHOENIX_REIGNITE * h.max)), phoenixUsed: true } : h;
-  if (heat && heat.active) {
-    // Glühende Klinge (#fire-balance): Segmentwechsel — das Fenster beginnt bei 0, ohne Übertrag. Jedes Segment
-    // wird die Stufe darin neu erspielt. Muss VOR dem glowingValueFor-Lesen unten stehen.
-    if (actualPos % SEGMENT_SIZE === 0) heat = { ...heat, glowSegBest: 0 };
-    // (Schmelzpunkt sitzt seit #fire-balance im SIEG-Block — er verbrennt nicht mehr vor jedem Stich, s. u.)
-    // Glühende Klinge: +Wert je Hitze-Stufe; die OBEREN Stufen verlangen zusätzlich einen dominanten Sieg im
-    // Segment-Fenster (#fire-balance). Feuerwalze: aktueller Stapel (nur ab 40 % Hitze aufgebaut).
-    fireValueBonus += glowingValueFor(heat.value, skills, glowMarginFor(heat));
-    if (fireFlag(skills, "fireRoll")) fireValueBonus += Math.min(heat.fireRoll || 0, C.FIREROLL_MAX);
-  }
-  // Rückzündung: nach einer Niederlage bekommt die Karte +2 Wert (hilft, den Konter zu gewinnen).
-  if (fireFlag(skills, "rueckzuendung") && lastResult === "loss") fireValueBonus += C.RUECKZUENDUNG_VALUE;
+  // ---- Feuer (exp skill rework, §4): Leiste an den Build angleichen (Weißglut 200), dann der Zustands-Bonus der
+  //      gespielten Karte — Glühende Klinge (je Hitze-Schritt), Feuerwalze (ab der Schwelle nach einem Sieg, Episch auch
+  //      nach einer Niederlage), Rückzündung Episch (nach einer Niederlage). Alles im Modul.
+  let heat = syncHeatMax(state.heat || null, skills);
+  const fireValue = fireValueBonus(heat, skills, skillTiers, { lastResult });
   // Blitzfänger (exp skill rework): Karten ab der Stapel-Schwelle der Stufe kämpfen mit +Wert (Zustand, kein Ereignis).
   const blitzValueBonus = blitzfaengerValue(skills, skillTiers, pCard);
   const anchorPowerBonus = anchorType === "power" ? (aParam("power") || 0) : 0; // Kraftanker (§4.2, Stärke = Stufe)
@@ -370,8 +354,8 @@ export function resolveTrick(state, rng) {
   // Familien-Wertboni (Kategorie B, Rarität #167) laufen ADDITIV neben den flachen Perk-cardBonus-Hooks —
   // gleicher Kontext (inkl. pValueBase = Dauerwert der Karte), nur die aktive Familien-Stufe zählt.
   const familyValueBonus = familySumHook(familyTiers, "cardBonus", { ...ctx, pValueBase: pCard.value });
-  // Damaststahl (L, Underdog): geschmiedete Karten kämpfen mit +Wert → die tiefen Schmiede-Karten schlagen über ihrem Gewicht.
-  const damascusCombat = (fireFlag(skills, "damascus") && (forged[pCard.id] || 0) > 0) ? C.DAMASCUS_COMBAT : 0;
+  // Damaststahl (Feuer-Legendär): geschmiedete Karten kämpfen mit doppeltem Schmiedewert (nur der Vergleich, nicht die Basis).
+  const damascusValue = damascusCombat(skills, forged, pCard);
   // #289: Farballianz-Gruppen einmal je Stich — an ALLE Farb-Verbraucher (Architekt/Farbserie/Farbfokus) gereicht.
   const alliance = allianceGroups(familyTiers, roles);
   // Architekt value-Gebäude (#202, Tragwerk): +temp Wert VOR dem Vergleich (an dieser Position, Bedingung je Familie).
@@ -384,23 +368,21 @@ export function resolveTrick(state, rng) {
   // #370 Wochen-Mods (nur Ranked): „Starke Karten" hebt jede Spielerkarte, „Stärkere Gegner" jede Gegnerkarte um +mag.
   const wmCardBonus = weekModMag(state.weekMods, "cardValue");
   const wmEnemyBonus = weekModMag(state.weekMods, "enemyValue");
-  const pValue = effectivePlayerValue(pCard.value, perks, ctx) + familyValueBonus + relayBonus + fireValueBonus + blitzValueBonus + anchorPowerBonus + eQuickshotValue + architectValueEff + damascusCombat + glacierBuff + wmCardBonus;
+  const pValue = effectivePlayerValue(pCard.value, perks, ctx) + familyValueBonus + relayBonus + fireValue + blitzValueBonus + anchorPowerBonus + eQuickshotValue + architectValueEff + damascusValue + glacierBuff + wmCardBonus;
   // #226 Großmeister: Gegner-Aufschlag = flacher oppValue + mitwachsender Ramp (+1 Wert alle oppRampEvery Durchläufe),
   // additiv VOR den Debuffs (Frostbiss/Brand kontern ihn → gewollt). Meister/Basis (difficulty=null) → 0, byte-identisch.
   const rampMod = (difficulty && difficulty.oppRampEvery) ? Math.floor(cycle / difficulty.oppRampEvery) : 0;
   const oppValueMod = (difficulty ? (difficulty.oppValue || 0) + rampMod : 0) + wmEnemyBonus;
-  // Brand (#93 F3): in DIESEM Durchlauf markierte Gegnerkarten verlieren −Wert (nie < 0); sonst neutral (§12).
-  // Brand (Feuer): der WERT-Abzug ist auf das normale Brandmaß gedeckelt — mit Sonnenkern stapeln sich Brände, aber
-  // der Stapel zahlt in Score (s. u.), nicht in noch tieferem Abzug.
+  // Brand (Feuer, §4.5/§4.7): in dieser Runde gebrandmarkte Gegnerkarten verlieren ihre Brandpunkte an Wert (nie < 0);
+  // Brände verschiedener Quellen addieren sich, ohne Deckel — mit Sonnenkern stapeln sie sich über die Runden.
   const brandOnOpp = brandActive[oCard.id] || 0;
-  const oValue = Math.max(0, oCard.value + oppValueMod - Math.min(brandOnOpp, C.BRAND_VALUE_CAP));
+  const oValue = Math.max(0, oCard.value + oppValueMod - brandOnOpp);
   const newIceTemp = iceTemp; // (exp: nur durchgereicht, kein Leser mehr)
   let newFrozenOppPending = { ...frozenOppPending };  // Einfrieren: in diesem Durchlauf gesetzte Gegner-Marken (für den nächsten)
   let newFrozenOppActive = frozenOppActive;           // Einfrieren: in diesem Durchlauf aktive Marken (Gegnerkarte verliert)
   let newGlacierBuffPending = { ...glacierBuffPending }; // Frostbund: in diesem Durchlauf gebufften Nachbarkarten (für den nächsten)
   let newGlacierBuffActive = glacierBuffActive;         // Frostbund: in diesem Durchlauf aktive Wert-Buffs
-  // Feuer-Rework (v0): Asche-Zuwachs / Brand-Marker für den NÄCHSTEN Durchlauf (brandActive wird am Durchlauf-Ende getauscht).
-  let newAsh = ash;
+  // Feuer: Brand-Marker für die NÄCHSTE Runde (brandActive wird am Rundenende getauscht; Quellen summieren sich je Karte).
   let newBrandPending = { ...brandPending };
   let newBrandActive = brandActive;
   let newForged = forged;
@@ -493,94 +475,20 @@ export function resolveTrick(state, rng) {
     }
     // winStreak/wins enthalten hier bereits den gerade gewonnenen Stich — genau die Werte, mit denen wctx oben gebaut ist.
     winSuit = eSuit; winSuitStreak = suitStreak; // Farbserie fortschreiben (effektive Farbe: grün = „G")
-    // ---- Feuer-Rework (v0): Hitzegewinn (+Weißglut-Überhitzung), Feuer-Score, Flächenbrand-Burst, Feuerwalze, Funkenflug, Glutstahl, Brand.
+    // ---- Feuer (exp skill rework, §4): Hitzegewinn (Passiv, Glut, Zunder, Feuersturm, Rückzündung), Konsumenten
+    //      (Schmelzpunkt, Flächenbrand), Phönix, Glutstahl, Sonnenkern-Score und die Brände für die nächste Runde —
+    //      alles im Modul. `fireHeld` = Hitze nach dem Gewinn, vor dem Verbrauch: daran hängt der Hitze-Multiplikator
+    //      dieses Siegs (unten im Stack). Feuer-Flats gehen in die multiplizierte Basis; Direkt-Score gibt es nicht.
     let fireFlat = 0;
-    let fireWhiteWin = 0;     // #270.2: Weißglut-Anteil DIESES Siegs (Rest von fireFlat = Feuer-Grund-Score)
-    let sparkPayout = 0;      // #384: Funkenflug-Ausschüttung DIESES Stichs (Rohbetrag) → unten mit dem Stich-Faktor verrechnet
-    let fireDividendHeat = 0;  // gehaltene Hitze beim Sieg (vor evtl. Flächenbrand-Verbrauch) → Glutdividende (direkter Score, s. u.)
+    let fireHeld = 0;
     if (heat && heat.active) {
-      const fmargin = pValue - oValue;
-      // Hitzegewinn: Marge (Glut) + Zunder + Feuersturm (Serie) + Rückzündung (Rückstand des letzten Verlusts).
-      const gain = heatGainFor(fmargin, skills, { winStreak: serieStreak, lostLast: lastResult === "loss", deficit: heat.lastLossDeficit || 0 });
-      const raw = heat.value + gain;
-      const overflow = Math.max(0, raw - heat.max);
-      heat = { ...heat, value: Math.min(heat.max, raw),
-               glowSegBest: Math.max(heat.glowSegBest || 0, fmargin) }; // Glühende Klinge: größter Sieg dieses Segments
-      // Weißglut → Überhitzung (#fire-balance): erst der kontinuierliche Abbau, dann der gedrosselte Zufluss aus dem
-      // Überlauf. Reihenfolge zählt: andersherum bezahlte ein gefütterter Stich seinen eigenen Zufluss gleich wieder mit.
-      if (fireFlag(skills, "whiteHeat"))
-        heat = { ...heat, over: overheatGain(overheatDecay(heat.over || 0, C.OVERHEAT_DECAY), overflow, skills) };
-      // Sonnenzorn-Peak (#fire-leg): HÖCHSTSTAND aus Hitze + Überhitzung — deshalb erst HIER, nach dem
-      // Überhitzungs-Schritt. Ohne Weißglut ist `over` immer 0, der Peak bleibt also bei ≤ HEAT_MAX wie bisher.
-      heat = { ...heat, peak: Math.max(heat.peak || 0, heat.value + (heat.over || 0)) };
-      fireDividendHeat = heat.value; // gehaltene Hitze NACH diesem Sieg, VOR evtl. Flächenbrand-Verbrauch → Glutdividende
-      // Feuer-Score (Grund-Payoff): (Vorsprung−OFFSET)×Basis, ×Verbrennung (≥8/≥12), ×Sonnenzorn (≥80 %). Basis für Funkenflug.
-      const fireBaseFlat = fireScoreFor(fmargin, skills, heat.value);
-      fireFlat += fireBaseFlat;
-      // Schmelzpunkt (Konsument, Tropf): #fire-balance — verbrennt nur noch BEI SIEG. Vorher lief der Abzug vor JEDEM
-      // Stich, also auch bei Niederlagen; gemessen war der Skill damit die größte Falle der Fraktion (−3,42 Mio auf den
-      // Median), weil der Dauerabzug die halbe Leiste kostete und damit Glutdividende, Glühende Klinge, Schmelzofen und
-      // Weißglut gleich mit. Satz aus der Hitze VOR dem Abzug — der Skill zahlt für das, was du gehalten hast. Steht
-      // bewusst VOR Flächenbrand: andersherum nähme er dessen Boden die letzten 4 % und risse die Feuerwalzen-Schwelle.
-      if (hasHeatConsumer(skills, "melt") && heat.value >= C.MELT_COST) {
-        // Der Tropf geht in die MULTIPLIZIERTE Basis, nicht in den Direkt-Kanal. Er lag zwischenzeitlich post-stack
-        // (das zähmt die Decke, s. Konstanten-Block), aber Direkt-Score ist ein FESTER Betrag in einer Ökonomie,
-        // deren Multiplikatoren über den Lauf davonziehen: er hebt den Median früh und verschwindet spät im
-        // Rauschen. Grundsatzentscheidung — so wenig Direkt-Score wie möglich.
-        fireFlat += Math.round(C.MELT_COST * meltRateFor(heat.value));
-        heat = reignite({ ...heat, value: heat.value - C.MELT_COST }, C.MELT_COST);
-      }
-      // Flächenbrand (Konsument, Burst): Sieg ab CONFLAG_MIN_HEAT brennt bis auf CONFLAG_KEEP herunter → Score je
-      // verbranntem Punkt, bekenntnis-skaliert. [#230 N11: Sonnenkern-Bonus hier entfernt]
-      if (hasHeatConsumer(skills, "conflagration") && heat.value >= C.CONFLAG_MIN_HEAT) {
-        const burned = heat.value - C.CONFLAG_KEEP; // #fire-balance: BODEN statt Totalverbrennung (Feuerwalze + Klingen-Sockel überleben)
-        fireFlat += burned * conflagRateFor(skills);
-        heat = reignite({ ...heat, value: C.CONFLAG_KEEP }, burned); // Phönixfeuer: großer Einzelverbrauch entzündet 1×/Durchlauf neu
-      }
-      // Feuerwalze: nächste Karte +1 Wert (bis +3) — nur ab 40 % Hitze aufgebaut.
-      if (fireFlag(skills, "fireRoll") && heat.value >= C.FIREROLL_MIN_HEAT)
-        heat = { ...heat, fireRoll: Math.min((heat.fireRoll || 0) + 1, C.FIREROLL_MAX) };
-      // Funkenflug: kleine Siege banken ihren Feuer-Score; ein Sieg ≥8 Vorsprung entlädt den Speicher voll.
-      if (fireFlag(skills, "sparkflight")) {
-        if (fmargin >= C.SPARKFLIGHT_MIN_MARGIN) { sparkPayout = heat.sparkStore || 0; fireFlat += sparkPayout; heat = { ...heat, sparkStore: 0 }; }
-        else heat = { ...heat, sparkStore: (heat.sparkStore || 0) + sparkBankFor(fireBaseFlat, skills) };
-      }
-      // Weißglut-Hebel (#fire-balance): Überhitzung multipliziert den GESAMTEN Feuer-Score dieses Stichs — Grund-Score,
-      // Schmelzpunkt-Tropf, Flächenbrand-Burst und die Funkenflug-Ausschüttung. Bewusst EIN Satz auf die ganze
-      // Hitze-Linie statt drei Sonderfälle; Glutstahl (Schmiede-Linie) kommt erst danach dazu und bleibt draußen.
-      // Der Aufschlag ist der Weißglut-KANAL (#270.2) — fireBase bekommt unten den Rest.
-      const wMult = overheatMult(heat.over || 0, skills);
-      if (wMult > 1) { const extra = Math.round(fireFlat * (wMult - 1)); fireFlat += extra; fireWhiteWin += extra; sparkPayout *= wMult; }
-    }
-    // Glutstahl: geschmiedete Siegkarte → +GLUTSTAHL_PER_VALUE Score je geschmiedetem Wert (fließt in die multiplizierte Basis). [#230 N10: war „+20", ist 12]
-    if (fireFlag(skills, "glutstahl") && (forged[pCard.id] || 0) > 0) fireFlat += (forged[pCard.id] || 0) * C.GLUTSTAHL_PER_VALUE;
-    // Damaststahl (L): ∝ GESAMTEM geschmiedeten Wert im Deck — die „Damast-Dividende" zahlt die Schmiede-Investition
-    // bei JEDEM Sieg aus, nicht nur wenn die geschmiedete Karte gewinnt. #fire-nodirect: lief bis hierher am
-    // Multiplikator-Stack VORBEI und steht jetzt neben Glutstahl in der multiplizierten Basis — dieselbe Linie
-    // (Schmiede), dieselbe Bauform. Damit bleibt sie wie Glutstahl auch außerhalb des Weißglut-Hebels (Hitze-Linie).
-    if (fireFlag(skills, "damascus")) {
-      const totalForged = Object.values(forged).reduce((a, b) => a + b, 0);
-      if (totalForged > 0) fireFlat += totalForged * C.DAMASCUS_PER_VALUE;
-    }
-    // Sonnenkern (L, #fire-leg): jeder Sieg gegen eine gebrandmarkte Karte zahlt je Brand darauf. Das ist der Ertrag
-    // des Stapels, den ein heißes Durchlauf-Ende stehen lässt — je länger du heiß bleibst, desto mehr Brände liegen
-    // auf dem Gegnerdeck und desto mehr wirft jeder Sieg dagegen ab.
-    if (suncore && brandOnOpp > 0) fireFlat += brandOnOpp * C.SONNENKERN_BRAND_SCORE;
-    // Brand (Brandmal): jeder Sieg brandmarkt die geschlagene Gegnerkarte für den NÄCHSTEN Durchlauf (−Wert) + Asche.
-    // Lauffeuer: der Brand greift auf einen oppDeck-Nachbarn über. Schmelzofen (≥50 % Hitze): −1 Wert & +1 Asche stärker.
-    if (fireFlag(skills, "brandmal")) {
-      const hot = !!(heat && heat.active && heat.value >= C.SCHMELZOFEN_MIN_HEAT && fireFlag(skills, "schmelzofen"));
-      const brandBonus = hot ? C.SCHMELZOFEN_BRAND_BONUS : 0;
-      newBrandPending[oCard.id] = Math.max(newBrandPending[oCard.id] || 0, C.BRAND_VALUE + brandBonus);
-      newAsh += C.BRAND_ASH + brandBonus; brandTotal += 1; // #270.2: Motor-Zähler „gebrandmarkte Gegnerkarten"
-      if (fireFlag(skills, "lauffeuer")) {
-        const oi = oppOrder[actualPos];                     // Index der Gegnerkarte im oppDeck-Array
-        const nb = oi + 1 < oppDeck.length ? oi + 1 : oi - 1; // Deck-Nachbar (kein Wrap; Rand → linker Nachbar)
-        if (nb >= 0) {
-          newBrandPending[oppDeck[nb].id] = Math.max(newBrandPending[oppDeck[nb].id] || 0, C.BRAND_SPREAD_VALUE + brandBonus);
-          newAsh += C.BRAND_ASH + brandBonus; brandTotal += 1; // #270.2: Lauffeuer-Übergriff zählt mit
-        }
-      }
+      const r = fireOnWin(heat, skills, skillTiers, {
+        margin: pValue - oValue, streak: serieStreak, lastResult, card: pCard, forged, brandOnOpp,
+        valueOver: pValue - damascusValue - (pCard.baseRank ?? pCard.value), // Glutstahl: Kampfwert über dem Grundwert, ohne den Damast-Kampfbonus
+        oppId: oCard.id, oppIndex: oppOrder[actualPos], oppDeck,
+      });
+      heat = r.heat; fireFlat = r.flat; fireHeld = r.held;
+      for (const b of r.brands) { newBrandPending[b.id] = (newBrandPending[b.id] || 0) + b.value; brandTotal += 1; } // #270.2: Motor-Zähler „Brände"
     }
     // ---- Pflanze-Fraktion (v0): Wachstum (Sieg → +1), Reife-Recolor, Wurzeln (Score/Wert), Aussaat/Ranken (Breite/Grün),
     //      Blüte/Photosynthese/Blätterdach (Grün-Payoff), Ausläufer (Kolonisieren/Ernten). Grün = card.green.
@@ -777,7 +685,7 @@ export function resolveTrick(state, rng) {
     // #270: Fraktions-Flat-Anteile zum Ertrag (Roh-Score VOR dem Multiplikator-Stack). Blitz EIN Kanal; Feuer in
     // Grund/Weißglut gespalten (Pflanze-Kanäle Wurzel/Blüte/Ernte wurden schon an ihren Quellen oben akkumuliert).
     lightYield += lightIonScore(pCard, skills, skillTiers);
-    fireWhite += fireWhiteWin; fireBase += fireFlat - fireWhiteWin;
+    fireBase += fireFlat;
     // Score-Stapelung (§15/§22.7): Basis × Serie(#39) × Perk-scoreMult × Serien-Stat × Formations-Multiplikator
     // × Formations-Stat, DANN Crit. Zu benannten Faktoren gruppiert (identisches Produkt) → eine Quelle für
     // Score UND Ergebnis-Aufschlüsselung (§17), kein Drift.
@@ -820,33 +728,26 @@ export function resolveTrick(state, rng) {
     // #370 Formations-Boost (Wochen-Mod, nur Ranked): den Formations-BONUS (Überschuss über 1) verdoppeln — neutraler
     // Sieg (formMult==1) bleibt unberührt, Formations-Builds skalieren stärker. Wirkt auch auf glacierWinMult (nutzt formMult).
     if (hasWeekMod(state.weekMods, "formBoost")) formMult = 1 + (formMult - 1) * BOOST_FACTOR;
-    // Sonnenzorn (L): dauerhafter Score-Multiplikator ∝ HÖCHSTER je gehaltener Hitze (heat.peak) — auf den GESAMTEN Sieg-Score
-    // (nicht nur fireFlat), weil ein Halte-Build über Wert/Formationen gewinnt, nicht über Feuer-Score.
-    const sunwrathMult = (heat && heat.active) ? sunwrathMultFor(heat.peak, skills) : 1;
+    // Feuer (§4.2/§4.5): der Hitze-Multiplikator (je 10 % gehaltener Hitze; Sonnenzorn: Spitze, doppelt; Weißglut über
+    // 100) und Verbrennung (Sieg ab dem Vorsprung der Stufe ×1,5) sind EIN eigener Faktor auf den ganzen Sieg-Score —
+    // ein Halte-Build gewinnt über Wert und Formationen, nicht über Feuer-Flats. Gelesen wird die Hitze nach dem
+    // Gewinn dieses Siegs und vor dem Verbrauch (fireHeld).
+    const fireMult = (heat && heat.active)
+      ? heatMult(skills, skillTiers, fireHeld, heat.peak) * verbrennungMult(skills, skillTiers, pValue - oValue) : 1;
     // architectMult (#202, Architekt-Score-Gebäude: Struktur/Schatzkammer) läuft als eigener Faktor am Ende des Stacks.
     // #Pool Batch 4 (gamble/Risiko): Boden — der Architekt-Abzug (negativer Flat) darf den Stich höchstens auf 0 drücken,
     // nie ins Minus (sonst kippen die nachgelagerten Multiplikatoren). Bei Basis 400 praktisch immer ein No-op.
     // Serien-Flat (Reihenhaus) wird NEBEN der serien-multiplizierten Basis addiert → er bekommt Perk/Formation/Crit,
     // aber NICHT den globalen Serien-Mult (kein Doppel-Dip). Rest des Stacks unverändert.
     const streakMuldBase = Math.max(0, scoreBase) * streakMult;
-    scoreBeforeCrit = (streakMuldBase + architectStreakFlat) * perkMult * formMult * afterglowMult * coreMult * sunwrathMult * architectMult;
+    scoreBeforeCrit = (streakMuldBase + architectStreakFlat) * perkMult * formMult * afterglowMult * coreMult * fireMult * architectMult;
     gained = scoreBeforeCrit * (isCrit ? critMultiplier : 1);
     // Doppelentladung (Blitz-Legendär, §3.7): Crit mit einer ionisierten Karte — der Blitz schlägt zweimal ein, der ganze
     // gewertete Stich (Basis mal Multiplikatoren) zählt DOPPELENTLADUNG_STRIKE-fach. Kein Kreislauf: speist keine Leiste.
     const strikeMult = (isCrit && (pCard.ionStacks || 0) > 0 && hasDoppelentladung(skills)) ? C.DOPPELENTLADUNG_STRIKE : 1;
     gained *= strikeMult;
     // Eis: derselbe multiplikative Stack (ohne additive Flats) skaliert auch den Gletscher-Bruch dieses Stichs (unten).
-    glacierWinMult = streakMult * perkMult * formMult * afterglowMult * coreMult * sunwrathMult * architectMult * (isCrit ? critMultiplier : 1);
-    /* #384 Funkenflug-Bilanz (reine Anzeige): Die Ausschüttung liegt in `scoreBase` und fährt damit den GANZEN Stapel
-       dieses Stichs mit — Serie, Perk-/Formations-Multiplikatoren, Sonnenzorn, Architekt, Crit (der Weißglut-Anteil
-       steckt schon in `sparkPayout`). Genau dieser Gesamtfaktor steht als `glacierWinMult` bereits da, und weil
-       `gained` in `scoreBase` LINEAR ist, ist Ausschüttung × Faktor der exakte Beitrag — keine Schätzung.
-       Zwei bewusste Grenzen: bei scoreBase ≤ 0 (Architekt-Abzug frisst die Basis) kam nichts an, also 0; und der
-       Sim-Softcap WIN_SOFTCAP (Default aus) bliebe unberücksichtigt — er ist Diagnose, kein Spielzustand. */
-    if (sparkPayout > 0 && heat) {
-      const paid = scoreBase > 0 ? sparkPayout * glacierWinMult : 0;
-      heat = { ...heat, sparkPaid: Math.round((heat.sparkPaid || 0) + paid), sparkPayouts: (heat.sparkPayouts || 0) + 1 };
-    }
+    glacierWinMult = streakMult * perkMult * formMult * afterglowMult * coreMult * fireMult * architectMult * (isCrit ? critMultiplier : 1);
     // SIM-Sättigungshebel (Default aus, K=0 → No-op): weicher Deckel auf den Score je Sieg. Greift NACH der
     // Crit-Multiplikation und VOR dem Verbuchen, verbraucht kein rng → Determinismus/rng-Reihenfolge unverändert.
     // [#229 T5] WIN_SOFTCAP ist ein Sim-Hook (Default 0). Ist er aktiv, wird `gained` geklemmt, die Einzelfaktoren im
@@ -870,25 +771,13 @@ export function resolveTrick(state, rng) {
     if (architectScoreRes.flat > 0 && scoreBase > 0) buildingScore += (gained / architectMult) * (architectScoreRes.flat / scoreBase);
     // Serien-Flat (Reihenhaus) läuft am Serien-Mult vorbei → sein gained-Anteil = streakFlat / (serien-mult. Basis + streakFlat), analog zum flachen Handelsbau-Flat (architectMult separat gezählt).
     if (architectStreakFlat > 0 && streakStackTotal > 0) buildingScore += (gained / architectMult) * (architectStreakFlat / streakStackTotal);
-    // Glutdividende (Feuer-Rework, Floor-Hebel): DIREKTER Score je Feuer-Sieg (∝ gehaltener Hitze, gedeckelt bei
-    // FIRE_DIVIDEND_HEAT_CAP), NICHT durch Serie/Crit/Form multipliziert → flach NACH dem Stack. Hebt den Median
-    // (kleine Mults) relativ stärker als das Ceiling (große Mults) = Feuers fehlende „Immer-an-Engine". Skaliert mit
-    // dem FEUER-BEKENNTNIS (Anteil Feuer-Skills an den Slots), damit ein 2-Skill-Splash die Dividende nicht in
-    // High-Winrate-Kombis (Eis/Pflanze) trägt → hält Spezialisieren ≈ Mischen (cross-health).
-    const fireCommit = commitScale(activeFireCount(skills), commitSlots);
-    let fireDirect = C.FIRE_HEAT_DIVIDEND > 0 && fireDividendHeat > 0 && fireCommit > 0
-      ? Math.min(fireDividendHeat, C.FIRE_DIVIDEND_HEAT_CAP) * C.FIRE_HEAT_DIVIDEND * fireCommit : 0;
-    // (#268: die per-Sieg-Asche-Dividende ist entfernt — ungenutzte Asche wird jetzt am Durchlauf-Ende über den
-    //  Weißglut-Überlauf vollständig in Score verbrannt, statt als kleiner Dauer-Drip je Sieg zu tropfen.)
-    // exp skill rework: Blitz hat keinen Direkt-Score mehr (§1) — Stapel-Score steht in der Basis, die Legendären
-    // wirken über Leiste, Stapel, Stufe und Stich (lightDirect bleibt als Breakdown-Feld auf 0).
+    // Feuer-Anteil (#270, nur Anzeige): der Hitze-Multiplikator und die Verbrennung als Faktor-Anteil an `gained` —
+    // dieselbe Näherung wie formationScore. Die Feuer-Flats kamen oben bei scoreBase in den Feuer-Score-Kanal.
+    if (fireMult > 1) fireHeat += gained * (1 - 1 / fireMult);
+    // exp skill rework: Blitz und Feuer haben keinen Direkt-Score mehr (§1) — Stapel-Score und Feuer-Flats stehen in
+    // der Basis, die Legendären wirken über Leiste, Stapel, Stufe, Hitze und Stich (die Breakdown-Felder bleiben auf 0).
     const lightDirect = 0;
-    // Feuer-Ziel-Hebel (#202): die Architekt-STRUKTUR (volle Zeile/Spalte/Diagonale) multipliziert AUCH die Glutdividende.
-    // Ohne das umgeht Feuers bewusst mult-freier Floor die Architekt-Geometrie → Strukturen heben Feuer kaum. Nur der reine
-    // Struktur-Faktor (segFactor), NICHT Schatzkammer/Score-Bauten.
-    const archStructMult = archPreNow ? (archPreNow.segFactor[actualPos] || 1) : 1;
-    const fireStructMult = 1 + (archStructMult - 1) * C.FIRE_STRUCT_DIVIDEND_AMP; // Struktur-Hebel auf die Dividende verstärkt (Feuer-isoliert)
-    const fireDirectApplied = fireDirect * fireStructMult;
+    const fireDirectApplied = 0;
     // Voller Stich-Ertrag OHNE die Vabanque-Auszahlung — Bezugsgröße der Wette (s. u.) und Basis für `gained`.
     const gainedPreBet = gained + fireDirectApplied + lightDirect + plantDirect;
     // Vabanque (#203, Eröffnungs-Wette): die ersten VABANQUE_TRICKS Stiche eines DURCHLAUFS in Folge gewonnen →
@@ -922,14 +811,13 @@ export function resolveTrick(state, rng) {
     }
     gained = gainedPreBet + perkDirect;
     score += gained;
-    // #270: post-stack Direkt-Dividenden zum Fraktions-Ertrag (die Flat-Anteile kamen bei scoreBase oben dazu). Statischer
-    // Ladungs-Konsum-Score (unten, +CONSUME_SCORE) und der Weißglut-Überlauf-Burst (Durchlauf-Ende) kommen dort dazu.
-    // Feuer-Glutdividende → Grund-Kanal; Pflanze-Legendär-Direkt wurde schon oben in Wurzel/Ernte gebucht.
-    fireBase += fireDirectApplied; lightYield += lightDirect;
-    // streakFlat/sunwrathMult stehen mit im Breakdown, damit die Stich-Aufschlüsselung (UI) die Kette EXAKT
-    // nachrechnen kann: (Basis×Serie + streakFlat) × (Perks×Sonnenzorn×Architekt) × (Form×Nachhall×Kern) × Crit
+    // #270: post-stack Direkt-Dividenden zum Fraktions-Ertrag (die Flat-Anteile kamen bei scoreBase oben dazu).
+    // Pflanze-Legendär-Direkt wurde schon oben in Wurzel/Ernte gebucht; Blitz und Feuer haben keinen Direkt-Anteil.
+    lightYield += lightDirect;
+    // streakFlat/fireMult stehen mit im Breakdown, damit die Stich-Aufschlüsselung (UI) die Kette EXAKT
+    // nachrechnen kann: (Basis×Serie + streakFlat) × (Perks×Feuer×Architekt) × (Form×Nachhall×Kern) × Crit
     // + Direkt-Anteile = total. Ohne diese beiden blieb ein unerklärter Rest stehen. Reine Anzeige-Daten.
-    breakdown = { base: C.SCORE_PER_WIN, flats, streakFlat: architectStreakFlat, streakMult, perkMult, sunwrathMult, formMult, formBase: formBaseEff, afterglowMult, coreMult, architectMult, critMult: isCrit ? critMultiplier : 1, strikeMult, fireDirect: fireDirectApplied, lightDirect, plantDirect, perkDirect, total: gained };
+    breakdown = { base: C.SCORE_PER_WIN, flats, streakFlat: architectStreakFlat, streakMult, perkMult, fireMult, formMult, formBase: formBaseEff, afterglowMult, coreMult, architectMult, critMult: isCrit ? critMultiplier : 1, strikeMult, fireDirect: fireDirectApplied, lightDirect, plantDirect, perkDirect, total: gained };
     // Blitz (exp skill rework, §3): Ladungsgewinn dieses Siegs — Passiv (+1 je Crit), Blitzableiter, Überspannung,
     // Statische Aufladung, Dauerstrom, Ladungsserie Episch — mit fortgeschriebenen Zählern; Blitzschlag (jeder N. Crit
     // ionisiert die Siegkarte); Spannungsstau. Die volle Leiste zündet NACH der Verzweigung (unten), einmal je Stich.
@@ -1029,18 +917,12 @@ export function resolveTrick(state, rng) {
     if (interplayStoreOnLoss) interplayStored += interplayStoreOnLoss; // D_INTERPLAY IV: Niederlage bankt Score für den nächsten Sieg
     winSuit = null; winSuitStreak = 0; // #71 Farbserie: Niederlage beendet die Farbserie
     serieStreak = streakNoReset ? winStreak : 0; // Serienschutz/Serienanker: effektive Serie hält
-    // ---- Feuer-Rework (v0): Hitzeverlust (Glutbett), Feuerwalze zurücksetzen, Funkenflug halbieren, Rückstand merken.
+    // ---- Feuer (exp skill rework, §4): Kühlung (Passiv −2, Glutbett-Boden, Phönixfeuer heizt), Rückstand für Rückzündung
+    //      merken, Brandmal Episch brandmarkt die Gegnerkarte, die gewonnen hat — alles im Modul.
     if (heat && heat.active) {
-      const deficit = oValue - pValue;
-      // Phönixfeuer (L): Niederlagen GEBEN Hitze (+je Rückstandspunkt) statt sie zu nehmen — Anti-fragil/Konsistenz.
-      const phoenixGain = fireFlag(skills, "phoenix") ? deficit * C.PHOENIX_LOSS_HEAT : 0;
-      const loss = phoenixGain ? 0 : heatLossFor(deficit, skills, heat.value); // heat.value = Hitze VOR dem Verlust (Glutbett-Schwelle)
-      const nv = Math.min(heat.max, Math.max(0, heat.value - loss) + phoenixGain);
-      const nextOver = overheatDecay(heat.over || 0, C.OVERHEAT_DECAY_LOSS); // Weißglut: Überhitzung kühlt schneller aus
-      heat = { ...heat, value: nv, peak: Math.max(heat.peak || 0, nv + nextOver), fireRoll: 0,
-               sparkStore: Math.floor((heat.sparkStore || 0) * C.SPARKFLIGHT_LOSS_KEEP), // Funkenflug: Niederlage halbiert
-               over: nextOver,
-               lastLossDeficit: deficit }; // Rückzündung: Rückstand für den nächsten Sieg merken
+      const r = fireOnLoss(heat, skills, skillTiers, { deficit: oValue - pValue, oppId: oCard.id });
+      heat = r.heat;
+      for (const b of r.brands) { newBrandPending[b.id] = (newBrandPending[b.id] || 0) + b.value; brandTotal += 1; }
     }
     // Zäher Halm (Pflanze v0): unreife (graue) Karten wachsen auch bei Niederlage +1 — bis sie grün sind.
     if (hasZaeherHalm(skills) && !pCard.green) {
@@ -1255,62 +1137,12 @@ export function resolveTrick(state, rng) {
     // #98: temporäre Positions-Boni enden mit dem Durchlauf — sonst würde ein an Position 40 armierter
     // Relay (C4/C5) auf Position 1 des nächsten (persistenten) Durchlaufs durchsickern.
     successorQueue = [];
-    // ---- Feuer-Rework (v0): Durchlauf-Ende — Schmieden (Ascheschmiede), Damaststahl-Wachstum, Phönix-Reset.
+    // ---- Feuer (exp skill rework, §4.5/§4.7): Rundenende — Schmiede (kostet Hitze, niedrigste Karte +3 dauerhaft,
+    //      Episch zwei Karten), Damaststahl (niedrigste Karte ohne Preis), Phönix-Neuzündung. Alles im Modul; die
+    //      Schmiedewerte bleiben in den Karten gebacken.
     if (heat && heat.active) {
-      // Ascheschmiede: solange genug Asche, jeweils die aktuell niedrigste Karte dauerhaft +2 Wert (spreizt sich über
-      // die tiefen Karten, da nach jedem Schmieden neu die tiefste gesucht wird). Schmelzofen senkt die Kosten ab 50 % Hitze.
-      if (fireFlag(skills, "ascheschmiede")) {
-        const cost = forgeCostFor(skills, heat.value);
-        // Stufe 1 (permanent, gedeckelt): solange Asche & eine schmiedbare Karte da ist, die aktuell niedrigste Karte
-        // dauerhaft +FORGE_VALUE. Boden-Heber (wenige tiefe Karten), kein Ganz-Deck-Buff.
-        let guardF = 0;
-        while (newAsh >= cost && guardF++ < deck.length) {
-          // niedrigste schmiedbare Karte: unter dem Per-Karte-Deckel UND (schon geschmiedet ODER noch Platz unter FORGE_MAX_CARDS).
-          const forgedCount = Object.keys(newForged).length;
-          let lowId = null, lowV = Infinity;
-          for (const c of deck) {
-            if ((newForged[c.id] || 0) >= C.FORGE_MAX_PER_CARD && !fireFlag(skills, "damascus")) continue; // Per-Karte-Deckel (Damaststahl hebt ihn auf)
-            if (!(newForged[c.id] > 0) && forgedCount >= C.FORGE_MAX_CARDS) continue;    // keine NEUE Karte über dem Kartendeckel
-            if (c.value < lowV) { lowV = c.value; lowId = c.id; }
-          }
-          if (lowId == null) break; // Kapazität voll → raus aus Stufe 1 (Rest-Asche geht in den Weißglut-Überlauf)
-          newAsh -= cost; ashBurned += cost; // #270: Motor-Zähler „Asche verbrannt"
-          deck = deck.map((c) => (c.id === lowId ? { ...c, value: c.value + C.FORGE_VALUE } : c));
-          newForged = { ...newForged, [lowId]: (newForged[lowId] || 0) + C.FORGE_VALUE };
-        }
-        // Stufe 2 — Weißglut-Überlauf (#268): ist die Kapazität voll und liegt noch Asche ≥ Kosten, „glüht die Schmiede
-        // weiß" → je FORGE_COST-Portion +FORGE_OVERFLOW_SCORE (sichtbarer Score-Burst). Asche wird so auf < Kosten
-        // heruntergefahren (vollständig ausgegeben). Post-stack-Flat (am Sieg-Multiplikator vorbei), dem Schluss-Stich gutgeschrieben.
-        if (C.FORGE_OVERFLOW_SCORE > 0 && newAsh >= cost) {
-          const portions = Math.floor(newAsh / cost);
-          const burst = portions * C.FORGE_OVERFLOW_SCORE;
-          newAsh -= portions * cost; ashBurned += portions * cost; // #270: verbrannte Asche (Weißglut-Überlauf)
-          score += burst; fireWhite += burst; // #270.2: Weißglut-Überlauf-Burst → Weißglut-Kanal
-          if (lastTrick) { lastTrick.gained += burst; lastTrick.scoreGain += burst; } // Per-Karte-Ledger konsistent halten
-        }
-      }
-      // Damaststahl (L): SELBST-Schmiede (braucht Ascheschmiede/Asche NICHT) — nimmt je Durchlauf die niedrigste noch
-      // nicht geschmiedete Karte auf, dann wachsen ALLE geschmiedeten Karten weiter (Asche verfällt ohnehin nie).
-      if (fireFlag(skills, "damascus")) {
-        let lowId = null, lowV = Infinity;
-        if (Object.keys(newForged).length < C.DAMASCUS_MAX_FORGED) // Deckel: nur bis MAX_FORGED neue Karten aufnehmen
-          for (const c of deck) if (!(newForged[c.id] > 0) && c.value < lowV) { lowV = c.value; lowId = c.id; }
-        if (lowId != null) {
-          deck = deck.map((c) => (c.id === lowId ? { ...c, value: c.value + C.FORGE_VALUE } : c));
-          newForged = { ...newForged, [lowId]: (newForged[lowId] || 0) + C.FORGE_VALUE };
-        }
-        if (Object.keys(newForged).length) {
-          const grown = { ...newForged };
-          deck = deck.map((c) => (grown[c.id] ? { ...c, value: c.value + C.DAMASCUS_FORGE_GROWTH } : c));
-          for (const id of Object.keys(grown)) grown[id] += C.DAMASCUS_FORGE_GROWTH;
-          newForged = grown;
-        }
-      }
-      // Sonnenkern (L): endet der Durchlauf mit hoher Hitze, brennt sie sich dauerhaft in ALLE Karten UNTER dem Deckel (+Wert) →
-      // hebt über den Run den Deck-BODEN bis SONNENKERN_CARD_CAP (selbst-limitierend, kein Auto-Sieg-Runaway) = stetige Win-Condition.
-      if (suncore && heat.value >= C.SONNENKERN_MIN_HEAT)
-        deck = deck.map((c) => (c.value < C.SONNENKERN_CARD_CAP ? { ...c, value: c.value + C.SONNENKERN_VALUE } : c));
-      heat = { ...heat, phoenixUsed: false }; // Phönixfeuer: neuer Durchlauf → wieder verfügbar
+      const r = fireCycleEnd(heat, skills, skillTiers, deck, newForged);
+      heat = r.heat; deck = r.deck; newForged = r.forged;
     }
     // ---- Pflanze-Fraktion (v0): Weltenbaum — am Durchlauf-Ende wächst der ganze Wald (+1 Wachstum je 10 grüne im Feld); Nachzügler reifen.
     if (hasWeltenbaum(skills)) {
@@ -1338,18 +1170,9 @@ export function resolveTrick(state, rng) {
       // Frostbund (v0): die diesen Durchlauf gesetzten Nachbar-Buffs werden jetzt aktiv (+Stichwert im nächsten Durchlauf).
       newGlacierBuffActive = newGlacierBuffPending;
       newGlacierBuffPending = {};
-      // Feuer-Brand (v0): analog — die im gerade beendeten Durchlauf gesetzten Brandmarken werden jetzt aktiv (−Wert).
-      // Sonnenkern (L, #fire-leg): endet der Durchlauf HEISS, ERSETZEN die neuen Brandmarken die alten nicht, sondern
-      // stapeln sich darauf (verbrannte Erde, gedeckelt je Karte). Der Unterschied ist wirklich das STAPELN, nicht das
-      // Überleben: wer eine Karte jeden Durchlauf schlägt, brandmarkt sie ohnehin jedes Mal neu — normal endet sie
-      // deshalb immer bei genau einem Brand. Endet der Durchlauf kalt, gilt wieder diese Regel. Damit hängt Sonnenkern
-      // an Brand UND Hitze statt an einem Schalter.
-      if (suncore && heat && heat.active && heat.value >= C.SONNENKERN_MIN_HEAT) {
-        const stacked = { ...newBrandActive };
-        for (const id of Object.keys(newBrandPending))
-          stacked[id] = Math.min(C.SONNENKERN_BRAND_CAP, (stacked[id] || 0) + newBrandPending[id]);
-        newBrandActive = stacked;
-      } else newBrandActive = newBrandPending;
+      // Feuer-Brand: die in der beendeten Runde gesetzten Brände werden jetzt aktiv (−Wert). Normal ersetzen sie die
+      // alten; mit Sonnenkern (§4.7) stapeln sie sich darauf, über die Runden, ohne Deckel (der Wert fällt nie unter 0).
+      newBrandActive = nextBrandActive(skills, newBrandActive, newBrandPending);
       newBrandPending = {};
       // Entscheidung VOR dem neuen Durchlauf nach dem Plan (Shop-Spec §2.2): schedule[cycle]
       // (cycle wurde oben erhöht → Index cycle = Entscheid vor Durchlauf cycle+1). Start-Entscheid via START_RUN.
@@ -1442,8 +1265,8 @@ export function resolveTrick(state, rng) {
     scoreAtCycleStart, lastCycleScore, prevCycleScore, // #131 Rundenscore-Tracking
 
     crits, critBonusScore, bestTrickScore, bestGlacierTrickScore, maxFormations, formationScore, buildingScore, streakScore, // #161 FB-2 / #UI / #251: Run-Rückblick (+ bester Gletscher-Stich / Gebäude-/Serien-Score)
-    lightYield, plantRoot, plantBloom, plantHarvest, fireBase, fireWhite, // #270: Fraktions-Eigen-Score (Kanäle je Fantasie)
-    ionTotal, growthTotal, ashBurned, brandTotal, // #270: Motor-Zähler
+    lightYield, plantRoot, plantBloom, plantHarvest, fireBase, fireHeat, // #270: Fraktions-Eigen-Score (Kanäle je Fantasie)
+    ionTotal, growthTotal, brandTotal, // #270: Motor-Zähler
     trickLog: nextTrickLog, // #251: Score je Stich (+ Sieg/Niederlage), nach Durchlauf gebucket → Durchlauf-Graph
     initiative, lastResult, perks, offer: newOffer, tieArmed, sinceWin, lossStreak, lastWinValue,
     critFollowArmed, weaknessArmed, weaknessBig, interplayStored, misfireScore,
@@ -1464,7 +1287,7 @@ export function resolveTrick(state, rng) {
     skillOffer: newSkillOffer, skillOfferTiers: newSkillOfferTiers, lightning, // Skill-System / Blitz-Archetyp · exp: Stufe je angebotenem Skill
     heat, // Feuer-Archetyp (#93 F1): Hitze-Substate (null solange kein Feuer-Skill aktiv)
     iceTemp: newIceTemp, // temporärer Wertbonus je card.id (Blitzfänger)
-    ash: newAsh, brandPending: newBrandPending, brandActive: newBrandActive, forged: newForged, // Feuer-Rework (v0)
+    brandPending: newBrandPending, brandActive: newBrandActive, forged: newForged, // Feuer: Brände (nächste/aktive Runde) + Schmiedewerte
     growth: newGrowth, colonized: newColonized, plantLoss: newPlantLoss, // Pflanze-Fraktion (v0): Wachstum + Kolonisierung + Niederlagen-Zähler (Wurzelschlag-Buff v0.4)
     shop, // hält nur noch die (inerten) Positionsanker (#229: Shop entfernt)
     lastTrick, phase,

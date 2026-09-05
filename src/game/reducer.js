@@ -3,9 +3,10 @@ import { rngAt } from "./rng.js"; // #205 Challenger Mode: adressierte Sub-Strö
 import { PERK_DEFS, buildPerkOffer } from "./perks.js";
 import { familyDef, applyFamilyPick } from "./families.js"; // formationEnergyBonus läuft jetzt über engine.formationEnergyFor
 import { UPGRADE_TYPES } from "./rarity.js";
-import { archetypeOf, initHeat, heatMaxFor,
+import { archetypeOf,
   hasSetzlingsbeet, buildSkillOffer, rollSkillOfferTiers, glacierRolesOf } from "./skills.js"; // Pflanze (v0): Aktivierungs-Effekte · Eis-Neudesign: glacierRolesOf · exp: Stufenwurf
 import { initLightning, maxChargeFor, L as LIGHT } from "./factions/lightning.js"; // exp skill rework: Blitz-Substate (Leiste 10, Donnergott 7)
+import { initHeat, heatMaxFor, syncHeatMax } from "./factions/fire.js"; // exp skill rework: Hitze-Substate (Leiste 100, Weißglut 200)
 // (#267: import aus stats.js entfernt — die Stat-Phase ist weg.)
 import { computeFormations, formationPotential, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
 import { initialShop, perkLegendaryChance } from "./shop.js";
@@ -148,10 +149,10 @@ export function initialState(rng = Math.random, seed = null) {
     heat: null, // Feuer-Archetyp (#93 F1): erst beim ersten Feuer-Skill via initHeat() aktiviert
     iceTemp: {}, // temporärer Wertbonus je card.id (Blitzfänger — Blitz-Archetyp, in engine.js gelesen)
     growth: {}, colonized: {}, plantLoss: {}, // Pflanze-Fraktion (v0): Wachstum je card.id (nur steigend) / kolonisierte Gegnerkarten (grün = card.green) / Niederlagen-Zähler (Wurzelschlag-Buff v0.4)
-    ash: 0, brandPending: {}, brandActive: {}, forged: {}, // Feuer-Rework (v0): Asche-Ressource / Brand-Marker (Gegner, je card.id) / geschmiedete Dauerwerte
-    // #270 Fraktions-Panels: kumulative Lauf-Kennzahlen (nur Anzeige) — Direkt-Ertrag (Σ post-stack Direkt-Score) + Motor-Zähler.
-    lightYield: 0, plantRoot: 0, plantBloom: 0, plantHarvest: 0, fireBase: 0, fireWhite: 0, // #270 Eigen-Score-Kanäle
-    ionTotal: 0, growthTotal: 0, ashBurned: 0, brandTotal: 0, // #270 Motor-Zähler
+    brandPending: {}, brandActive: {}, forged: {}, // Feuer: Brand-Marker (Gegner, je card.id, Wertabzug nächste Runde) / geschmiedete Dauerwerte
+    // #270 Fraktions-Panels: kumulative Lauf-Kennzahlen (nur Anzeige) — Eigen-Score-Kanäle + Motor-Zähler.
+    lightYield: 0, plantRoot: 0, plantBloom: 0, plantHarvest: 0, fireBase: 0, fireHeat: 0, // #270 Eigen-Score-Kanäle (Feuer: Flats / Hitze-Multiplikator-Anteil)
+    ionTotal: 0, growthTotal: 0, brandTotal: 0, // #270 Motor-Zähler
     trimCount: 0, // #288 Trimmen: Anzahl ersetzter Wachstums-Skills → Wurzel-/Blüten-Multiplikator
     tieArmed: false,
     shop: initialShop(), // hält nur noch die (inerten) Positionsanker — der Shop ist entfernt (#229)
@@ -629,14 +630,15 @@ export function reducer(state, action) {
       let lightning = state.lightning;
       let heat = state.heat;
       let deck = state.deck;
-      // Feuer-Rework (v0): Asche / Brand-Marker / geschmiedete Werte (beim Deaktivieren des Feuer-Archetyps zurückgesetzt).
-      let ash = state.ash || 0, brandPending = state.brandPending || {}, brandActive = state.brandActive || {}, forged = state.forged || {};
+      // Feuer: Brand-Marker / geschmiedete Werte (beim Deaktivieren des Feuer-Archetyps zurückgesetzt).
+      let brandPending = state.brandPending || {}, brandActive = state.brandActive || {}, forged = state.forged || {};
       // Blitzfänger-Temp (iceTemp, Blitz-Archetyp) — beim Eis-Deaktivieren aus Alt-Verhalten geleert (#140).
       let iceTemp = state.iceTemp;
       let growth = state.growth || {}, colonized = state.colonized || {}; // Pflanze-Fraktion (v0): Wachstum / Kolonisierung
       if (arch === "lightning") lightning = { ...lightning, active: true, maxCharge: maxChargeFor(skills) }; // exp: Leiste 10, Donnergott 7
       if (replaceId === LIGHT.SPANNUNGSSTAU && lightning && lightning.stauBonus) lightning = { ...lightning, stauBonus: 0 }; // exp: Spannungsstau ersetzt → sein Stau geht mit
       if (arch === "fire" && !(heat && heat.active)) heat = { ...initHeat(), active: true, max: heatMaxFor(skills) };
+      heat = syncHeatMax(heat, skills); // exp: Weißglut gewählt oder ersetzt → Leiste 200 bzw. 100 (Hitze geklemmt)
       // Eis-Neudesign: der neue Eis-Archetyp friert KEINE Karten mehr ein — die Mechanik läuft über Masse/Gletscher
       // (glacier.js), getrieben von state.glacierRoles (unten aus den Skill-`role`s).
       // Pflanze (v0): erster Pflanze-Skill → Alter Anker (1 Karte reif: grün, Wert 11) + Setzlingsbeet/Dornenkönig.
@@ -661,7 +663,7 @@ export function reducer(state, action) {
       const stillActive = new Set(skills.map(archetypeOf).filter(Boolean));
       activeArchetypes = activeArchetypes.filter((a) => stillActive.has(a));
       if (!stillActive.has("lightning")) lightning = initLightning();               // Ladungsleiste weg
-      if (!stillActive.has("fire")) { heat = null; ash = 0; brandPending = {}; brandActive = {}; forged = {}; } // Hitze/Asche/Brand/Schmiede weg (geschmiedete Dauerwerte bleiben gebacken)
+      if (!stillActive.has("fire")) { heat = null; brandPending = {}; brandActive = {}; forged = {}; } // Hitze/Brand/Schmiede-Zähler weg (geschmiedete Dauerwerte bleiben gebacken)
       if (!stillActive.has("ice")) iceTemp = {};                                     // Blitzfänger-Temp beim Eis-Deaktivieren leeren (Alt-Verhalten)
       let plantLoss = state.plantLoss || {}; // Wurzelschlag-Buff (v0.4): Niederlagen-Zähler je card.id
       if (!stillActive.has("plant")) { deck = deck.map((c) => (c.green ? { ...c, green: false } : c)); growth = {}; colonized = {}; plantLoss = {}; } // Pflanze weg (Anker-Wert bleibt gebacken)
@@ -676,7 +678,7 @@ export function reducer(state, action) {
       }
       // Formationen neu berechnen (Anker/Familien/Architekt beeinflussen die Erkennung).
       const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, skills, state.shop?.anchors || [], state.familyTiers, archOf(state));
-      return { ...state, skills, skillTiers, skillOfferTiers: null, activeArchetypes, lightning, heat, deck, iceTemp, growth, colonized, plantLoss, ash, brandPending, brandActive, forged, formations,
+      return { ...state, skills, skillTiers, skillOfferTiers: null, activeArchetypes, lightning, heat, deck, iceTemp, growth, colonized, plantLoss, brandPending, brandActive, forged, formations,
                glacierRoles, glacierMass, firnStack, glacierLocked, glacierYield, frozenOppPending, frozenOppActive, glacierBuffPending, glacierBuffActive, grosseLawineFired, // Eis-Neudesign (#386 Firn-Reserve mitgeführt)
                trimCount: (state.trimCount || 0) + (trimmed ? 1 : 0), // #288 Trimmen
                // Eis-Neudesign: jeder Eis-Skill-Pick öffnet SOFORT die Gletscher-Wahl (genau 1 Karte festfrieren, Pflicht) —
