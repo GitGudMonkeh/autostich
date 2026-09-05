@@ -344,6 +344,10 @@ Blitz-Skills.
 | Sehr selten | startet bei 4 | – |
 | Episch | startet bei 6 | – (stark) |
 
+Entscheid Owner (2026-09-04): **gesetzt wie vorgeschlagen**, Episch ohne Extra. Sim-Notiz: Reststrom
+Episch mit Blitzableiter Sehr selten sind 1,5 Crits je Ionisierung, mit Statische Aufladung dazu lädt
+zusätzlich jeder Sieg. Diesen Dreier messen.
+
 **Gewitterfront** — Rampe Crit-Chance. Heute: volle Leiste +1 %, Deckel 50 %.
 
 | Stufe | Effekt | Extra |
