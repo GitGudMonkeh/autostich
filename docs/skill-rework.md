@@ -84,7 +84,7 @@ Entscheid: bleibt / geändert / gestrichen — Begründung in einem Satz
 
 | Fraktion | Passiv | Die 15 | Stufen | Legendäre |
 | --- | --- | --- | --- | --- |
-| Blitz | gesetzt | gesetzt (Ionisierung und Breitenbeschleuniger gestrichen) | Vorschlag liegt vor | separat, später |
+| Blitz | gesetzt | gesetzt (Ionisierung und Breitenbeschleuniger gestrichen) | **gesetzt, alle 15** (Übersicht 3.6) | separat, später |
 | Feuer | offen | offen | offen | separat, später |
 | Eis | offen | offen | offen | separat, später |
 | Pflanze | offen | offen | offen | separat, später |
@@ -652,7 +652,42 @@ Episch und Dauerstrom geben je Sieg feste Beträge. Der Preis in Leisten ist die
 "höchstens N Schutz je Runde" wäre ein Deckel und braucht es nicht. Sim-Wachpunkt: Ladungsserie ×
 Serienschutz, ob die Serie in realen Builds zu früh endlos wird; der Regler ist dann der Preis.
 
-**Entscheid Owner je Skill:** —
+Entscheid Owner (2026-09-05): **gesetzt wie vorgeschlagen.**
+
+**Damit sind alle 15 Blitz-Skills gesetzt.** Die Einzelentscheide stehen je Skill oben; die Zahlen sind
+Startwerte für die Sim.
+
+### 3.6 Übersicht Blitz (gesetzt, Stand 2026-09-05)
+
+**Passiv:** jeder Blitz-Skill +5 % Crit-Chance. 10 Crits füllen die Leiste, die volle Leiste ionisiert
+die nächste Karte in der Reihenfolge (+1 Stapel). Ein Stapel gibt bei Sieg mit der Karte Score in der
+Basis (heute 12, Sim-Regler). Stapel ohne Deckel, kein Selbstwachstum, Direkt-Score aus allen Skills
+entfernt. Crit-Chance über 100 % gibt einen sehr kleinen Crit-Mult-Bonus (Systemregel).
+
+| Skill | Rolle | Normal | Selten | Sehr selten | Episch |
+| --- | --- | --- | --- | --- | --- |
+| Blitzableiter | Rate | jeder 2. Crit +1 Ladung | jeder Crit +1 | jeder Crit +1, volle Leiste +1 zurück | jeder Crit +1, volle Leiste +2 zurück; Ladung über 10 bleibt |
+| Statische Aufladung | Rate ohne Crit | jeder 2. Sieg ohne Crit +1 Ladung | jeder Sieg ohne Crit +1 | dazu jede 2. Niederlage +1 | Sieg ohne Crit +2, jede 2. Niederlage +1; volle Leiste gibt der Zielkarte +1 Wert dauerhaft |
+| Reststrom | Rate | Leiste startet nach dem Leeren bei 2 | bei 3 | bei 4 | bei 6 |
+| Gewitterfront | Rampe Crit-Chance | +0,5 % je volle Leiste | +0,75 % | +1 % | +1,5 % |
+| Entladung | Rampe Crit-Mult | +0,02× je volle Leiste | +0,03× | +0,04× | +0,06×; der Crit, der die Leiste füllt, hat doppelten Mult |
+| Ladungsserie | Serie zu Crit | +1 % Crit je Serienpunkt | +1,5 % | +2 % | +2,5 %; ab Serie 8 jeder Sieg +1 Ladung |
+| Kettenblitz | Breite | jede 2. volle Leiste +1 Karte | +1 Karte je Leiste | +2 Karten | +3 Karten; Zielkarte +1 Stapel (Sim prüft) |
+| Blitzfänger | Tiefe zu Wert | Karten ab 6 Stapeln +2 Wert | ab 5 | ab 4 | ab 3 |
+| Kurzschluss | Tiefe zu Score | Sieg mit Karte ab 6 Stapeln: Stapel zählen doppelt | ab 5 | ab 4 | ab 3 |
+| Spannungsstau | Glättung | Sieg ohne Crit +3 % für den nächsten Sieg, Crit leert | +4 % | +5 % | +6 %; Crit halbiert statt leert |
+| Überschlag | Ventil nach oben | je 10 Punkte über 100 %: +0,02× Crit-Mult (Zustand) | +0,03× | +0,04× | +0,06× |
+| Überspannung | Tiefe zu Ladung | Crit mit Karte ab 6 Stapeln +2 Ladung | ab 5 | ab 4 | ab 3 |
+| Blitzschlag | Tiefen-Motor | jeder 5. Crit ionisiert die Siegkarte | jeder 4. | jeder 3. | jeder 2. |
+| Dauerstrom | Serie zu Ladung | ab Serie 5 jeder Sieg +1 Ladung | ab 4 | ab 3 | ab 2 |
+| Serienschutz | Schutz | Niederlage ab 70 % Ladung hält die Serie, kostet 70 % | 50 % | 40 % | 30 %; einmal je Runde gratis |
+
+**Sim-Wachpunkte Blitz:** Statische Aufladung im Splash-Build; Rate × Breite (Kettenblitz Episch);
+Reststrom Episch mit Blitzableiter Sehr selten und Statische Aufladung; Ladungsserie × Serienschutz
+(endlose Serie); Kettenblitz Episch × Blitzfänger; der Bonus je Stapel als Regler, wenn Stapel zu
+mächtig werden; Schwellen 6 / 5 / 4 / 3 gegen die gemessene Stapel-Tiefe.
+
+**Noch offen für Blitz:** die vier Legendären (separat), die Skilltexte für `de.js`, die Umsetzung.
 
 ---
 
@@ -685,3 +720,4 @@ Offen.
 | 2026-09-04 | Stufen gesetzt: Blitzableiter, Statische Aufladung, Reststrom, Gewitterfront und Entladung (beide ohne Deckel überarbeitet). Systemregel: Crit-Chance über 100 % gibt einen sehr kleinen Crit-Mult-Bonus. |
 | 2026-09-05 | Ladungsserie (ohne Deckel) und Kettenblitz gesetzt. Lesart A gesetzt: kein Selbstwachstum der Stapel, Stapel nur aus Leiste und Skills. Messung beider Lesarten eingetragen. |
 | 2026-09-05 | Blitzfänger zweimal überarbeitet, zuletzt auf Owner-Vorgabe: ein Effekt, Stapel-Schwelle sinkt mit der Stufe. Stapel-Tiefe in realen Builds gemessen (Passiv-Zahlen waren die untere Schranke) und als Referenz für alle Schwellen-Skills eingetragen. |
+| 2026-09-05 | Stufen gesetzt: Blitzfänger, Kurzschluss, Spannungsstau (ohne Deckel), Überschlag (Crit-Mult statt Ladung), Überspannung, Blitzschlag, Dauerstrom (nur Serie zu Ladung), Serienschutz. Blitz damit komplett, Übersicht in 3.6. Sim-Notiz: Bonus je Stapel ist ein Regler. |
