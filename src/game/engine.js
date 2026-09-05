@@ -5,7 +5,7 @@ import { weekModMag, hasWeekMod, BOOST_FACTOR } from "./weekMods.js"; // #370 Wo
 import { PERK_DEFS, buildPerkOffer, critChanceRawFor, critMultiplierFor, streakBaseMult, zinsHurdle } from "./perks.js";
 import { familySumHook, familyProdHook, familyTierParam, activeFamilyEntries, formationEnergyBonus, familyCritChanceRaw, familyCritMult, allianceGroups } from "./families.js";
 import { colorsAllied } from "./color.js"; // #289: Farb-Serie/Architekt/Farbfokus respektieren Farballianz
-import { skillSum, buildSkillOffer, rollSkillOfferTiers,
+import { skillSum, buildSkillDoors, // exp skill rework: Türen-Angebot (Stufen mit der Tür gewürfelt)
   growthRipe, greenCount, // Pflanze-Fraktion (v0): Reife/Grün
   plantPassiveActive, hasKernholz, hasWurzeltiefe, hasPfahlwurzel, hasJahresringe, hasAussaat, hasFlugsamen, hasZaeherHalm, // Pflanze: Fraktions-Passive (Mono/Schwellen-Knick) / Kernholz / Tiefe / Breite
   hasRanken, hasBluete, hasBluetezeit, hasPhotosynthese, hasBlaetterdach, hasUeberwucherung, // Pflanze: Grün/Überwucherung
@@ -1059,6 +1059,7 @@ export function resolveTrick(state, rng) {
   let newOffer = offer;
   let newSkillOffer = skillOffer;
   let newSkillOfferTiers = state.skillOfferTiers || null; // exp skill rework: tier per offered skill (rollSkillOfferTiers)
+  let newSkillDoors = state.skillDoors || null; // exp skill rework: the two doors of a skill phase (buildSkillDoors)
   let newFormationEnergy = formationEnergy;
   let newFormationSwaps = formationSwaps;
   // Architekt (#202): Meilenstein-Zähler nach diesem Stich fortschreiben (bump = Gebäude-id eines Siegs auf seiner Abdeckung).
@@ -1198,13 +1199,18 @@ export function resolveTrick(state, rng) {
       const perksOffered = perksOfferedFor(state);
       const skillP = skillOfferParams(state);
       if (decision === "skill") {
-        // exp skill rework: the offer rolls a tier per slot (and a legendary chance per slot) right after it is built,
-        // from the same addressed stream — one draw sequence per (seed, cycle, "skill", 0).
-        const rolled = state.devMode ? devSkillOffer() : rollSkillOfferTiers(buildSkillOffer(skills, activeArchetypes, rngAtOr(cycle, "skill", 0), skillP.count, 0, false, state.unlockedArchetypes, skillP.maxArchetypes, skillP.perArchCap), skills, rngAtOr(cycle, "skill", 0, "tiers")); // §4b: Archetyp-Gatung
-        const soff = rolled.offer;
-        if (soff.length > 0) {
-          phase = "levelup"; newSkillOffer = soff; newSkillOfferTiers = rolled.tiers;
-        } else { const off = buildPerkOffer(perks, familyTiers, rngAtOr(cycle, "perk", 0), perksOffered, perkLegendaryChance(shop) * legMultPerk, rareShift, architectEnabled, 0, rareCapEff, rareFloorEff); if (off.length > 0) { phase = "levelup"; newOffer = off; } } // leerer Skill-Pool → Perk · Rarität-Deckel
+        // exp skill rework: a Dev-Run shows the flat full catalog; every other run gets the two doors (docs/skill-rework.md
+        // §1) with the tiers (and the legendary chance per slot) rolled from the addressed streams (seed, cycle, "skill", 0)
+        // and (…, "tiers") — revealed only after CHOOSE_DOOR.
+        if (state.devMode) {
+          const rolled = devSkillOffer();
+          phase = "levelup"; newSkillOffer = rolled.offer; newSkillOfferTiers = rolled.tiers;
+        } else {
+          const doors = buildSkillDoors(skills, activeArchetypes, rngAtOr(cycle, "skill", 0), rngAtOr(cycle, "skill", 0, "tiers"),
+            { unlockedArchetypes: state.unlockedArchetypes, maxArchetypes: skillP.maxArchetypes, size: skillP.doorSize }); // §4b: Archetyp-Gatung
+          if (doors.length > 0) { phase = "levelup"; newSkillDoors = doors; }
+          else { const off = buildPerkOffer(perks, familyTiers, rngAtOr(cycle, "perk", 0), perksOffered, perkLegendaryChance(shop) * legMultPerk, rareShift, architectEnabled, 0, rareCapEff, rareFloorEff); if (off.length > 0) { phase = "levelup"; newOffer = off; } } // leerer Skill-Pool → Perk · Rarität-Deckel
+        }
       } else if (decision === "perk") {
         // M4/M5: In der 2. Perk-Phase garantierte Legendäre erzwingen (1 = M4, 3 = M5); sonst 0 = normaler Pfad.
         const legForce2Base = C.perkPhaseAt(state.devSchedule || C.DECISION_SCHEDULE, cycle) === C.LEG_PERK2_PHASE ? (state.treeLegForce2 || 0) : 0;
@@ -1284,7 +1290,7 @@ export function resolveTrick(state, rng) {
     zinsCapital, zinsRate, zinsPaidTotal, cycleWins, cycleLosses, cycleBestTrick, sammlerTypes, vabanquePaid, cycleOpenScore, // Legendär-Perks-Rework (#203) + Zinseszins-Bank
     richtfestBonus, cycleScoreSum, // Gebäude-Legendäres Richtfest (Struktur-Dividende auf den Durchlauf-Ertrag)
     roles, // (unverändert vom Reducer gesetzt, hier durchgereicht)
-    skillOffer: newSkillOffer, skillOfferTiers: newSkillOfferTiers, lightning, // Skill-System / Blitz-Archetyp · exp: Stufe je angebotenem Skill
+    skillOffer: newSkillOffer, skillOfferTiers: newSkillOfferTiers, skillDoors: newSkillDoors, lightning, // Skill-System / Blitz-Archetyp · exp: Stufe je angebotenem Skill · Türen
     heat, // Feuer-Archetyp (#93 F1): Hitze-Substate (null solange kein Feuer-Skill aktiv)
     iceTemp: newIceTemp, // temporärer Wertbonus je card.id (Blitzfänger)
     brandPending: newBrandPending, brandActive: newBrandActive, forged: newForged, // Feuer: Brände (nächste/aktive Runde) + Schmiedewerte

@@ -16,6 +16,17 @@ import { architectStep } from "../architect-policy.js"; // #202: Architekt-Phase
 
 const pick = (arr, rng) => arr[Math.floor(rng() * arr.length)];
 
+// exp skill rework: die Türstufe einer Skill-Phase (s.skillDoors gesetzt, s.skillOffer noch null). Jede Policy wählt
+// dort eine Tür nach den Skills DAHINTER, aber stufenblind — die Stufen sieht auch der Spieler erst nach dem Öffnen.
+export const atDoors = (s) => s.phase === "levelup" && !s.skillOffer && Array.isArray(s.skillDoors) && s.skillDoors.length > 0;
+export const doorSkills = (s, i) => (((s.skillDoors || [])[i] || {}).skills || []);
+// Tür mit dem höchsten Wert nach `score(door skills, index)`; Gleichstand → die erste (deterministisch).
+export function bestDoor(s, score) {
+  let best = 0, bestV = -Infinity;
+  for (let i = 0; i < s.skillDoors.length; i++) { const v = score(doorSkills(s, i), i); if (v > bestV) { bestV = v; best = i; } }
+  return best;
+}
+
 // Kann dieser Skill in einen freien Slot? Spiegelt die Free-Slot-Bedingungen von PICK_SKILL.
 export function canAddSkill(s, id) {
   if (s.skills.includes(id)) return false;
@@ -35,6 +46,7 @@ export function randomPolicy({ architectGreedy = false } = {}) {
     act(s, rng) {
       switch (s.phase) {
         case "levelup": {
+          if (atDoors(s)) return { type: "CHOOSE_DOOR", index: Math.floor(rng() * s.skillDoors.length) }; // Baseline: irgendeine Tür
           if (s.skillOffer) {
             const addable = s.skillOffer.filter((id) => canAddSkill(s, id));
             return addable.length

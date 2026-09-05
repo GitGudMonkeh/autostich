@@ -64,12 +64,19 @@ describe("Feuer — Roster und Stufenleitern", () => {
     expect(down(T.schmiede, "cost")).toBe(true);
     expect(up(T.glutstahl, "perPoint")).toBe(true);
   });
-  it("die Texte nennen die Normal-Stufe und die Leiter aus denselben Tabellen", () => {
+  it("ein Text je Stufe aus denselben Tabellen: `desc` ist der Normal-Text, `descTiers[t]` nennt nur SEINE Stufe", () => {
+    expect(SKILL_DEFS.SK_FIRE_01.desc).toBe(SKILL_DEFS.SK_FIRE_01.descTiers[0]);
     expect(SKILL_DEFS.SK_FIRE_01.desc).toContain(`×${String(T.glut[0].heatMult).replace(".", ",")}`);
-    expect(SKILL_DEFS.SK_FIRE_02.desc).toContain(`+${T.zunder[3].heat} %`);
+    expect(SKILL_DEFS.SK_FIRE_02.descTiers[3]).toContain(`+${T.zunder[3].heat} %`);
+    expect(SKILL_DEFS.SK_FIRE_02.descTiers[0]).not.toContain(`+${T.zunder[3].heat} %`);
     expect(SKILL_DEFS.SK_FIRE_09.desc).toContain(`ab ${T.verbrennung[0].minMargin}`);
-    expect(SKILL_DEFS.SK_FIRE_15.desc).toContain(`kostet ${T.schmiede[3].cost}`);
+    expect(SKILL_DEFS.SK_FIRE_15.descTiers[3]).toContain(`kostet die Schmiedung ${T.schmiede[3].cost}`);
+    expect(SKILL_DEFS.SK_FIRE_15.descTiers[3]).toContain(`${T.schmiede[3].cards} niedrigsten Karten`); // das Episch-Extra nur dort
+    expect(SKILL_DEFS.SK_FIRE_15.descTiers[2]).not.toContain("niedrigsten Karten");
     expect(SKILL_DEFS.SK_FIRE_L03.desc).toContain(`+${Math.round(C.SONNENZORN_MULT_PER_10 * 100)} %`);
+    expect(SKILL_DEFS.SK_FIRE_L03.descTiers).toBeUndefined(); // Legendäre haben keine Stufe
+    // Keine Leiter mehr im Text: kein Stufenname steht in einem Stufentext (die Stufe zeigt das Badge).
+    for (const id of FIRE_IDS) for (const text of SKILL_DEFS[id].descTiers || []) expect(text, id).not.toMatch(/Selten|Episch|Sehr selten/);
   });
 });
 

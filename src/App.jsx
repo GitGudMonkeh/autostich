@@ -607,6 +607,7 @@ function AutostichGame() {
     const localEntry = {
       score: finalScore, level: state.cycle, tricks: state.trickNo, cycles: state.cycle, ts: runId.current,
       bestStreak: state.bestStreak, perks: state.perks || [], skills: state.skills || [],
+      skillTiers: state.skillTiers || {}, // exp skill rework: die gehaltene Stufe je Skill → die Rückblicke zeigen den Text dieser Stufe
       maxFormations: state.maxFormations, formationScore: state.formationScore, buildingScore: state.buildingScore,
       crits: state.crits, wins: state.wins, critBonusScore: state.critBonusScore, bestTrickScore: state.bestTrickScore,
       bestGlacierTrickScore: state.bestGlacierTrickScore || 0, // bester Gletscher-Stich (nur wenn Eis gespielt) → separate KPI in Victory/Statistik
@@ -842,7 +843,8 @@ function AutostichGame() {
      Spieler ohnehin liest. Damit bleibt die Regel „nie mitten im Stichspiel" (#372) unangetastet:
      die Wärmung passiert VOR dem Pick, nicht danach. Preis: ein Archetyp, der am Ende nicht gewählt
      wird, ist umsonst gewärmt — ein Bitmap, einmal je Sitzung, gegen einen sichtbaren Hänger. */
-  const offeredArchs = (state.skillOffer || []).map(archetypeOf).filter(Boolean).join(",");
+  // exp skill rework: vor der Türwahl stehen die Fraktionen BEIDER Türen im Netz — geöffnet wird erst danach.
+  const offeredArchs = (state.skillOffer || (state.skillDoors || []).flatMap((d) => d.skills || [])).map(archetypeOf).filter(Boolean).join(",");
   useEffect(() => {
     const arch = [...new Set([...(state.activeArchetypes || []), ...(offeredArchs ? offeredArchs.split(",") : [])])];
     if (!arch.length || state.phase === "play") return undefined;   // nie mitten im Stichspiel prewarmen
@@ -1012,6 +1014,7 @@ function AutostichGame() {
   // Skill-Auswahl (zu festen Zeitpunkten laut DECISION_SCHEDULE): wählen (optional einen belegten Slot ersetzen) oder ablehnen → Perk.
   const pickSkill = (skillId, replaceId) => dispatch({ type: "PICK_SKILL", skillId, replaceId, rng: Math.random });
   const declineSkill = () => dispatch({ type: "DECLINE_SKILL", rng: Math.random });
+  const chooseDoor = (index) => dispatch({ type: "CHOOSE_DOOR", index }); // exp skill rework: eine der zwei Türen öffnen
   const rerollPerk = () => dispatch({ type: "REROLL_PERK", rng: Math.random });
   const declinePerk = () => dispatch({ type: "DECLINE_PERK" }); // #138: Perk-Angebot ablehnen → +Münze
   const rerollSkill = () => dispatch({ type: "REROLL_SKILL", rng: Math.random });
@@ -1245,7 +1248,7 @@ function AutostichGame() {
               </div>
               {/* Perks/Skills — Mobil unter den Stats (order-4), bis 1280 px links unter dem Battlefield. */}
               <div className="rn-build order-4 lg:col-start-1 lg:row-start-3">
-                <BuildPanel perks={state.perks} skills={state.skills} familyTiers={state.familyTiers} zins={zinsReadout(state)} heat={state.heat}
+                <BuildPanel perks={state.perks} skills={state.skills} skillTiers={state.skillTiers || {}} familyTiers={state.familyTiers} zins={zinsReadout(state)} heat={state.heat}
                   hideSkillArchs={wide ? shownSkillArchs : null} />
               </div>
               {/* #381 Ranked-Modifikatoren: nur im Ranked-Lauf (state.weekMods gesetzt), unter den Perks — anklickbare Chips. */}
@@ -1288,8 +1291,8 @@ function AutostichGame() {
         <PerkSelect offer={state.offer} onPick={pick} onReroll={rerollPerk} onDecline={declinePerk} perks={state.perks} deck={state.deck} state={state}
           options={options} onOption={changeOptions} currentTraj={currentTraj.current} recordTraj={recordTraj.current} best={best} />
       )}
-      {state.phase === "levelup" && state.skillOffer && (
-        <SkillSelect offer={state.skillOffer} onPick={pickSkill} onDecline={declineSkill} onReroll={rerollSkill} skills={state.skills} state={state} options={options} onOption={changeOptions}
+      {state.phase === "levelup" && (state.skillOffer || state.skillDoors) && (
+        <SkillSelect offer={state.skillOffer} doors={state.skillDoors} onChooseDoor={chooseDoor} onPick={pickSkill} onDecline={declineSkill} onReroll={rerollSkill} skills={state.skills} state={state} options={options} onOption={changeOptions}
           currentTraj={currentTraj.current} recordTraj={recordTraj.current} best={best} />
       )}
       {/* #update: „Neue Version verfügbar"-Hinweis — pollt version.json, meldet neue Deploys ohne Zwangs-Reload. */}

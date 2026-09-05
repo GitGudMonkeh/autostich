@@ -72,8 +72,8 @@ describe("#372c — der Ladebildschirm wärmt vor, nicht der Lauf", () => {
 });
 
 describe("#372b — das Angebot bleibt das Netz", () => {
-  it("die angebotenen Archetypen zählen mit, nicht nur die aktiven", () => {
-    expect(app).toContain("const offeredArchs = (state.skillOffer || []).map(archetypeOf).filter(Boolean).join(\",\");");
+  it("die angebotenen Archetypen zählen mit, nicht nur die aktiven — vor der Türwahl die Fraktionen beider Türen", () => {
+    expect(app).toContain("const offeredArchs = (state.skillOffer || (state.skillDoors || []).flatMap((d) => d.skills || [])).map(archetypeOf).filter(Boolean).join(\",\");");
     expect(app).toMatch(/const arch = \[\.\.\.new Set\(\[\.\.\.\(state\.activeArchetypes \|\| \[\]\), \.\.\./);
   });
 
@@ -83,6 +83,6 @@ describe("#372b — das Angebot bleibt das Netz", () => {
 
   it("das Skill-Angebot ist eine Nicht-Spiel-Phase, die Wärmung liegt also VOR dem Pick", () => {
     // Ohne diese Zuordnung wäre die Wärmung wieder im Stichspiel — genau das, was #372 verbietet.
-    expect(app).toContain('{state.phase === "levelup" && state.skillOffer && (');
+    expect(app).toContain('{state.phase === "levelup" && (state.skillOffer || state.skillDoors) && ('); // exp: Türen sind dieselbe Nicht-Spiel-Phase
   });
 });

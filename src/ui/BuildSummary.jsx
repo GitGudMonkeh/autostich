@@ -2,7 +2,7 @@ import { useState } from "react";
 import { CATEGORIES, rarityOf, RARITY_META } from "../game/perks.js";
 
 import { tierMeta, romanOf } from "../game/rarity.js";
-import { SKILL_DEFS, archetypeOf } from "../game/skills.js";
+import { SKILL_DEFS, archetypeOf, tierOf } from "../game/skills.js"; // exp: tierOf — der Text der gehaltenen Stufe
 import { ArchIcon, GlossaryIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { glossaryKeywords } from "../game/glossary.js";
 import { SUIT_ORDER, suitColor } from "../game/constants.js";
@@ -133,9 +133,9 @@ export function PerkList({ perks, familyTiers = {}, empty = t("build.perks.empty
 
 /* Aktive Skills (Archetypen: Blitz/Feuer/…), anklickbar → Beschreibung. Icon/Farbe je Archetyp (#93 F1).
    (Ein `heat`-Prop der Aufrufer wird ignoriert — die Ertragszeile ist weg.) */
-export function SkillList({ skills = [], empty = t("build.skills.empty") }) {
+export function SkillList({ skills = [], skillTiers = {}, empty = t("build.skills.empty") }) {
   const [openSkill, setOpenSkill] = useState(null);
-  const open = openSkill && skills.includes(openSkill) ? skillDef(openSkill) : null;
+  const open = openSkill && skills.includes(openSkill) ? skillDef(openSkill, tierOf({ skillTiers }, openSkill)) : null; // exp: Text der gehaltenen Stufe
   if (skills.length === 0) return <div className="text-body-lg-5 opacity-40">{empty}</div>;
   const om = open ? ac(open.id) : null; // Archetyp-Meta des aufgeklappten Skills
   return (

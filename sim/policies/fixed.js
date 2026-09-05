@@ -4,7 +4,7 @@
 //
 // Deterministisch: bei fehlender Priorität greift ein fester Fallback (erste zulässige Option), damit
 // zwei Läufe mit demselben Seed nur an der ablatierten Stelle divergieren.
-import { randomPolicy, canAddSkill } from "./random.js";
+import { randomPolicy, canAddSkill, atDoors, bestDoor } from "./random.js";
 import { greedyFormationStep, frontLoadFormationStep } from "../formation.js";
 import { perkOptionId, perkActionFor } from "../families-policy.js";
 import { VABANQUE_TRICKS } from "../../src/game/constants.js";
@@ -43,6 +43,13 @@ export function fixedPolicy(priority, { drop = null, solveFormations = false, fr
     act(s, rng) {
       switch (s.phase) {
         case "levelup": {
+          // exp skill rework: die Tür mit dem bestpriorisierten wählbaren Skill (kleinster Rang gewinnt); nichts priorisiert →
+          // die erste Tür mit einem wählbaren Skill, sonst Tür 0. Deterministisch, damit Ablationspaare nur an der Ablation divergieren.
+          if (atDoors(s)) return { type: "CHOOSE_DOOR", index: bestDoor(s, (ids) => {
+            const ok = ids.filter((id) => !blocked(id, s) && canAddSkill(s, id));
+            if (!ok.length) return -Infinity;
+            return -Math.min(...ok.map((id) => (rank.has(id) ? rank.get(id) : Infinity)));
+          }) };
           if (s.skillOffer) {
             const addable = s.skillOffer.filter((id) => !blocked(id, s) && canAddSkill(s, id));
             const pick = bestOf(addable, s) ?? addable[0];

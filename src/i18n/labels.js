@@ -75,10 +75,14 @@ export const formationAbbr = (type) => {
    alle übrigen Felder (archetype, enabler, trimGrowth, Hook-Funktionen …) unverändert nutzbar und
    die Aufrufstellen ändern sich minimal: `SKILL_DEFS[id]` → `skillDef(id)`.
    Unbekannte ID → null (wie der direkte Registerzugriff auch). */
-export function skillDef(id) {
+/* exp skill rework (docs/skill-rework.md §1): `tier` (0..3) wählt den Text GENAU DIESER Stufe — das Angebot zeigt die
+   gewürfelte, der Bestand die gehaltene Stufe, nie die ganze Leiter. Ohne `tier` (oder ohne Stufentexte: Legendäre,
+   Eis/Pflanze bis zu ihrer Runde) der Normal-Text `ability.<id>.desc`. Stufentexte: `ability.<id>.desc.<tier>`. */
+export function skillDef(id, tier = null) {
   const d = SKILL_DEFS[id];
   if (!d) return null;
-  return { ...d, name: t(`ability.${id}.name`), desc: t(`ability.${id}.desc`) };
+  const key = Number.isInteger(tier) && Array.isArray(d.descTiers) && d.descTiers[tier] != null ? `ability.${id}.desc.${tier}` : `ability.${id}.desc`;
+  return { ...d, name: t(`ability.${id}.name`), desc: t(key) };
 }
 // Ganze Liste, übersetzt. Funktion statt Konstante: ein Modul-Level-Array fröre die Sprache ein.
 export const skillList = () => SKILL_LIST.map((s) => skillDef(s.id));

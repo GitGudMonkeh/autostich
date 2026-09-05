@@ -8,10 +8,13 @@ import { factionPolicy } from "../sim/policies/faction.js";
 // (ionisierte Karten / gewachsenes Wachstum / verbrannte Asche / gebrandmarkte Gegnerkarten). Nur Anzeige, keine Engine-
 // Kopplung. Hier: ein Mono-Fraktions-Lauf treibt GENAU die Kennzahlen seiner Fraktion (Isolation) und nichts sonst.
 
+// exp skill rework: der Standard-Pool ist Feuer/Blitz (Eis und Pflanze warten auf ihre Runde) — diese Isolation
+// braucht alle vier Fraktionen in den Türen, also die Allowlist eines Laufs (START_RUN action.archetypes).
+const ALL4 = ["lightning", "fire", "ice", "plant"];
 function runFaction(target, seed) {
   const pol = factionPolicy(target, { architectGreedy: true });
   const rng = makeRng(seed);
-  let s = reducer(null, { type: "START_RUN", rng, architect: true });
+  let s = reducer(null, { type: "START_RUN", rng, architect: true, archetypes: ALL4 });
   let guard = 0;
   while (s.phase !== "gameover") {
     if (++guard > 100000) throw new Error(`kein Fortschritt (${target}, seed ${seed}, phase ${s.phase})`);
@@ -73,7 +76,7 @@ describe("#270 Fraktions-Panel-Kennzahlen — Ertrag-Kanäle + Motor-Zähler", (
   it("Kennzahlen wachsen monoton über den Lauf (nur steigend, Anzeige-Akkumulatoren)", () => {
     const pol = factionPolicy("ice", { architectGreedy: true });
     const rng = makeRng(2);
-    let s = reducer(null, { type: "START_RUN", rng, architect: true });
+    let s = reducer(null, { type: "START_RUN", rng, architect: true, archetypes: ALL4 });
     let prev = 0, guard = 0;
     while (s.phase !== "gameover") {
       if (++guard > 100000) break;

@@ -46,11 +46,13 @@ export function perksOfferedFor(state) {
   return hasWeekMod(state && state.weekMods, "scarcePerks") ? 1 : runRules(state).perksOffered;
 }
 
-/* Parameters of one skill offer: total `count`, archetype cap, per-archetype cap. The ranked week
-   mod "scarceSkills" returns exactly the legacy tuple (count 4 under the builder's own cap), so the
-   ranked path is unchanged; every other run derives the total from the two rule knobs. */
+/* Parameters of one skill offer: total `count`, archetype cap, per-archetype cap — and `doorSize`, the
+   skills behind one door of the door offer (docs/skill-rework.md §1), which is the "skills per archetype"
+   knob read the door way. The ranked week mod "scarceSkills" returns exactly the legacy tuple (count 4
+   under the builder's own cap) and one skill per door — the old 1-per-faction ratio; every other run
+   derives the total from the two rule knobs. */
 export function skillOfferParams(state) {
   const r = runRules(state);
-  if (hasWeekMod(state && state.weekMods, "scarceSkills")) return { count: 4, maxArchetypes: r.maxArchetypes, perArchCap: SKILL_OFFER_PER_ARCH_CAP };
-  return { count: r.skillsPerArch * r.maxArchetypes, maxArchetypes: r.maxArchetypes, perArchCap: r.skillsPerArch };
+  if (hasWeekMod(state && state.weekMods, "scarceSkills")) return { count: 4, maxArchetypes: r.maxArchetypes, perArchCap: SKILL_OFFER_PER_ARCH_CAP, doorSize: 1 };
+  return { count: r.skillsPerArch * r.maxArchetypes, maxArchetypes: r.maxArchetypes, perArchCap: r.skillsPerArch, doorSize: r.skillsPerArch };
 }

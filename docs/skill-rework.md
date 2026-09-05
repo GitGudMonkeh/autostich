@@ -1686,6 +1686,91 @@ Blitz' altes Niveau gezogen. Rest-Unterschied ist die Decke (p90 1,22×): Feuers
 Sonnenzorn, das ist Gegenstand der Auswertung in 7.6, nicht der Tarierung. Alternative, falls die Stapel nach der
 Auswertung zu mächtig sind: 45 plus Crit 0,06. Der Sim-Band-Wächter (Random, offene Welt) bleibt grün.
 
+### 7.6 Große Auswertung Feuer/Blitz (2026-09-05, gemessen vor den Türen)
+
+`npm run sim -- --mode skills --explore 1000 --runs 150 --seed 1` in der Welt „nur Feuer und Blitz", noch mit dem
+flachen Angebot (3 Feuer + 3 Blitz je Phase; die Türen aus 7.7 kamen danach). Ablauf: 1000 Erkundungsläufe mit einem
+Arm je Skill und Stufe (UCB), daraus eine Wertetabelle; 150 gierige Läufe auf frischen Seeds (Seeds 1001–1150), die
+nehmen, was sich als stark erwiesen hat; je Skill eine gepaarte Ablation (derselbe Lauf ohne diesen Skill).
+Lesehilfe: **Lift** = Mittelwert der Läufe mit dem Skill ÷ ohne (aus der Erkundung, stufenweise), **Median-Δ** = Median
+der gepaarten Differenz (gierig), **win** = Anteil der Paare, in denen der Skill besser war, **anw.** = Anteil der
+gierigen Läufe, in denen der Skill überhaupt gehalten wurde. Gierig hält Ø 10 Skills und liegt beim Median bei 16,4M
+gegen 8,0M der Erkundung; 73 % der gierigen Läufe gewinnen ihre Ablation.
+
+**Ausreißer nach oben (stark):** Sonnenkern (L, Lift 1,97, Median-Δ +106 %, in 23 % der Läufe), Glühende Klinge (1,25,
++89 %, in 73 %), Weißglut (1,15, +27 %, in 77 %), Ladungsserie (1,29, +105 %, in 86 %), Doppelentladung (L, 1,37, +50 %),
+Durchschlag (L, 1,41, +25 %). Die drei Legendären sind gewollt oben. Ladungsserie und Klinge sind die zwei Skills, die
+der gierige Spieler fast immer nimmt — sie tragen den Build, das ist eher zu viel Gewicht auf einem Skill als ein
+Fehler des Skills.
+
+**Skills, die nichts tun (tot, |Δ| < 3 %, win 42–58 %):** Feuerwalze, Schmiede, Glutstahl (Feuer); Spannungsstau,
+Blitzschlag, Überspannung, Reststrom (Blitz).
+
+**Skills, die schaden (Δ ≤ −5 % oder win ≤ 40 %):** Glut (−23 %, win 23 %), Feuersturm (−6 %), Glutbett (−3 %, win
+25 %), Damaststahl (L, −7 %), Kurzschluss (−5 %), Blitzfänger (−8 %, win 33 %), Serienschutz (−24 %). Glut ist der
+klarste Fall: ×1,25 Hitze auf Vorsprungssiege wird vom Passiv (+2 % je 10 % Hitze) kaum belohnt, der Platz kostet einen
+besseren Skill.
+
+**Selten gehalten (< 5 % der Läufe, Zahlen unsicher):** Rückzündung, Phönixfeuer, Zunder, Schmelzpunkt, Flächenbrand,
+Donnergott, Kettenblitz. Die beiden Konsumenten und Phönixfeuer waren schon in 7.4 die schwächsten; der gierige
+Spieler meidet sie ganz.
+
+**Über die Stufen (Leiter-Flag = eine höhere Stufe misst schlechter als eine tiefere, n ≥ 8):** 24 von 30 Skills.
+Klare Fälle mit Stufe, die nach unten kippt: Schmiede (N 1,10 → S 0,49), Glut (SS 0,45 bei E 1,10), Weißglut (S 0,58
+zwischen N 1,15 und SS 1,27), Entladung (S 0,60), Dauerstrom (SS 0,53), Überspannung (S 0,52). Bei Stufen mit n < 20 ist
+das meist Rauschen der Erkundung (der Explore verteilt 1000 Läufe auf 120 Arme); die Zahlen je Stufe sind Hinweise,
+kein Urteil. Kein Skill zeigt eine saubere Leiter N < S < SS < E; das Stufenmodell ist in der Sim noch nicht als
+Stärkeleiter sichtbar, weil eine höhere Stufe desselben Skills selten den Lauf entscheidet.
+
+**Vorschläge (Entscheid Owner, nichts davon umgesetzt):**
+
+1. Glut umbauen oder streichen — der Kernskill der Feuer-Rate schadet. Kandidat: Hitze-Multiplikator auf alle Siege
+   statt nur auf Vorsprungssiege, oder Glut als Passiv-Verstärker (+1 % je 10 % Hitze je Stufe).
+2. Serienschutz: −24 % — die 70 % Ladung sind zu teuer; entweder Kosten 40/30/20/10 oder Schutz ohne Verbrauch ab Episch.
+3. Die toten Sieben: Feuerwalze (+2 Wert ab 80 % Hitze kommt zu selten), Schmiede (50 Hitze für +3 Wert lohnt nicht,
+   Damaststahl gratis schadet trotzdem), Glutstahl (8 je Punkt zu wenig), Spannungsstau, Blitzschlag, Überspannung,
+   Reststrom. Erst nach der Türen-Auswertung (7.7) anfassen: die Türen ändern, wie oft ein Skill überhaupt angeboten
+   wird.
+4. Stufen: Weißglut, Entladung, Dauerstrom, Überspannung mit mehr Läufen je Stufe nachmessen (Explore 3000), bevor
+   eine Leiter umgestellt wird.
+5. Die Auswertung nach den Türen wiederholen (gleicher Aufruf) — die Türen bringen weniger Skills je Phase (3 statt 6
+   sichtbar), was Haltequoten und Marginalwerte verschiebt.
+
+### 7.7 Türen-Angebot und Stufentexte (2026-09-05, umgesetzt)
+
+Owner: auf /exp stand noch das alte Angebot aus allen vier Archetypen; gemeint sind die zwei Türen aus §1, die Sim
+testet nur Feuer und Blitz, und ein Skill zeigt nur den Text seiner angezeigten Stufe.
+
+**Türen (docs §1, `src/game/skills.js` `buildSkillDoors`):** eine Skill-Phase stellt zwei Türen; jede zeigt drei
+Fraktionssymbole in Platzreihenfolge — drei Skills aus höchstens zwei Fraktionen, Wiederholung erlaubt (Feuer·Feuer·Blitz
+oder Feuer·Feuer·Feuer). Die Stufen (und die Legendär-Chance je Platz) werden mit der Tür gewürfelt und erst nach dem
+Öffnen gezeigt (`CHOOSE_DOOR`). Danach das Drei-Karten-Angebot auf einer Seite, jede Karte in ihrer Fraktionsfarbe,
+einer wird genommen. Neuwurf baut zwei neue Türen (vor den Türen wie auf dem Angebot); Ablehnen geht an beiden Stufen
+und gibt wie bisher ein Perk-Angebot. Meisterhand öffnet dasselbe Türen-Angebot. Der Dev-Run mit Voll-Katalog bleibt
+flach. Der Entscheidungs-Log kennt die Türwahl als eigene Zeile (`k: "door"`).
+
+Technische Entscheide (Agent): die Skills beider Türen sind verschieden, solange der Pool reicht (sechs Kandidaten je
+Phase); die Fraktion je Platz wird gleichverteilt gezogen, ab der zweiten Fraktion auf der Tür nur noch aus diesen
+beiden (bei zwei Fraktionen: 25 % eine Fraktion, 75 % gemischt); die Dev-Run-Regel „Skills je Fraktion" ist jetzt die
+Türgröße, die Ranked-Verknappung ein Skill je Tür. Sim-Policies wählen die Tür stufenblind wie der Spieler (Random:
+irgendeine; Fraktion: die mit den meisten Ziel-Skills; Greedy/UCB: die mit dem stärksten bekannten Skill).
+
+**Annahme (Owner bestätigen):** der Angebots-Pool auf exp ist `SKILL_OFFER_ARCHETYPES = ["fire", "lightning"]` — Eis und
+Pflanze stehen nicht hinter den Türen, bis sie überarbeitet sind. Eine Allowlist je Lauf (Sim `--arch`, `START_RUN
+action.archetypes`) ersetzt den Pool, Eis/Pflanze bleiben so für die Sim erreichbar. Offen bleibt der Punkt „Fokus am
+Start" aus §1.
+
+**Stufentexte:** jeder Blitz- und Feuer-Skill trägt `descTiers` (vier eigenständige Sätze aus seiner Stufentabelle,
+das Episch-Extra nur im Episch-Satz); `desc` ist der Normal-Satz. Katalog `ability.<id>.desc.<t>`, Leser
+`skillDef(id, tier)`. Das Angebot zeigt die gewürfelte, der Bestand (Skill-Wahl, Perk-Wahl, Build-Übersicht, Statistik,
+Lauf-Detail) die gehaltene Stufe; die Datenbank listet alle vier. Lauf-Einträge speichern `skillTiers` mit.
+
+**Messung (Random-Policy, Feuer/Blitz):** Seeds 1–200 Median 1,23M mit Türen gegen 1,23M mit dem flachen Angebot —
+die Türen verschieben das Zufallsniveau nicht. Duell (100 Läufe, Fraktions-Policy): Feuer mono 2,61M, Blitz mono 2,32M
+(Floor 1,13×), Split 2,71M, Mix 1,64M — die Mono-Policies sehen mit Türen im Schnitt 1,5 statt 3 eigene Skills je Phase,
+Feuer verträgt das offenbar besser. Nicht nachtariert; die Wiederholung der großen Auswertung (7.6, Punkt 5) ist der
+nächste Schritt. Sim-Band-Wächter auf die Türen-Welt neu zentriert (Median 1,13M, Mean 1,34M über Seeds 1–40).
+
 ## 5. Eis
 
 Offen.
@@ -1721,3 +1806,5 @@ Offen.
 | 2026-09-05 | Phase 3 umgesetzt (7.3): Feuer-Modul mit Passiv (Hitze aus Vorsprung, Kühlung −2, Hitze-Multiplikator als Faktor), 15 Skills auf vier Stufen, 4 Legendären; Asche, Feuer-Score, Glutdividende, Überhitzung, Funkenflug, Schmelzofen, Verbraucher-Regel raus. Technische Entscheide dort festgehalten. Gates grün. |
 | 2026-09-05 | Phase 4 und 5 (7.4): veraltete Texte nachgezogen (Vorsprung, Skill-Slot, Bekenntnis, Meisterhand, Direkt-Score-Tooltip), Anzeige-Stand notiert, Deploy grün. Erste Sim-Zahlen: Feuer 2,69M und Blitz 2,36M mono gegen Eis 5,83M und Pflanze 5,15M (alter Stand), Feuer+Blitz Splash 0,96× gesund, Skill-Lifts je Fraktion. Tarier-Vorschlag an den Owner. |
 | 2026-09-05 | Owner: Eis und Pflanze ignorieren, Feuer und Blitz tarieren, dann große Auswertung (gierig, gemischt, über die Stufen). Tarierung (7.5): Sim-Welt „nur Feuer und Blitz" (Allowlist je Lauf, `--mode duel`), Stapel-Score 12 → 60 nach Sweep; Floor Feuer ÷ Blitz 0,97×, Split gesund. Auswertungs-Modus `--mode skills` gebaut. |
+| 2026-09-05 | Große Auswertung (7.6, vor den Türen): stark Sonnenkern, Klinge, Weißglut, Ladungsserie, Doppelentladung, Durchschlag; tot Feuerwalze, Schmiede, Glutstahl, Spannungsstau, Blitzschlag, Überspannung, Reststrom; schadet Glut, Serienschutz, Blitzfänger, Feuersturm, Glutbett, Kurzschluss, Damaststahl; Stufenleitern in der Sim noch nicht sichtbar. Fünf Vorschläge an den Owner, nichts umgesetzt. |
+| 2026-09-05 | Türen-Angebot umgesetzt (7.7): zwei Türen à drei Fraktionssymbole, Stufen hinter der Tür, Angebot auf einer Seite; Pool auf exp Feuer/Blitz (Annahme, Owner bestätigen); Sim-Policies wählen Türen. Stufentexte: ein Text je Stufe im Angebot und im Bestand. Sim-Band neu zentriert. |

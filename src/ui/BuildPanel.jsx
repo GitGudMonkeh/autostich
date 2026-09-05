@@ -10,7 +10,7 @@ import { archetypeOf } from "../game/skills.js"; // #skillheim: Skill -> Archety
 /* #skillheim: `hideSkillArchs` nennt die Archetypen, deren Skills ab 1280 px in ihrer eigenen Spur der
    Instrumentenbank stehen (dort erklären sie den Balken darüber). Hier fallen sie dann weg — doppelt gezeigt
    wären sie nur Rauschen. Ohne die Liste (Handy, lg) zeigt das Panel wie bisher alle. */
-export function BuildPanel({ perks, skills = [], familyTiers = {}, zins, heat = null, hideSkillArchs = null }) {
+export function BuildPanel({ perks, skills = [], skillTiers = {}, familyTiers = {}, zins, heat = null, hideSkillArchs = null }) {
   const shownSkills = hideSkillArchs && hideSkillArchs.length
     ? (skills || []).filter((id) => !hideSkillArchs.includes(archetypeOf(id)))
     : skills;
@@ -33,7 +33,7 @@ export function BuildPanel({ perks, skills = [], familyTiers = {}, zins, heat = 
             <div className="text-meta-3 uppercase tracking-wide opacity-50 mb-2">
               {t("build.skills.head", { count: shownSkills.length })}
             </div>
-            <SkillList skills={shownSkills} heat={heat} empty={t("build.skills.emptyRun", { cycle: FIRST_SKILL_CYCLE })} />
+            <SkillList skills={shownSkills} skillTiers={skillTiers} heat={heat} empty={t("build.skills.emptyRun", { cycle: FIRST_SKILL_CYCLE })} />
           </div>
         )}
       </div>

@@ -55,16 +55,19 @@ describe("Reducer", () => {
     expect(fresh.score).toBe(0);
     expect(fresh.perks).toEqual([]);
     expect(fresh.phase).toBe("levelup"); // Start-Entscheidung (Runde 1) = Skill
-    expect(Array.isArray(fresh.skillOffer)).toBe(true);
-    expect(fresh.skillOffer.length).toBeGreaterThan(0);
+    // exp skill rework: die Skill-Wahl beginnt vor zwei Türen (skillDoors); das Angebot öffnet erst CHOOSE_DOOR.
+    expect(Array.isArray(fresh.skillDoors)).toBe(true);
+    expect(fresh.skillDoors.length).toBe(2);
+    expect(fresh.skillOffer).toBeNull();
     expect(fresh.offer).toBeNull();
   });
 
   it("START_RUN startet aus dem Menü einen frischen Lauf mit Start-Pick = Skill", () => {
     const s = reducer(menuState(), { type: "START_RUN", rng });
     expect(s.phase).toBe("levelup");
-    expect(Array.isArray(s.skillOffer)).toBe(true);
-    expect(s.skillOffer.length).toBeGreaterThan(0);
+    expect(Array.isArray(s.skillDoors)).toBe(true);
+    expect(s.skillDoors.length).toBe(2);
+    expect(s.skillOffer).toBeNull();
     expect(s.offer).toBeNull();
     expect(s.trickNo).toBe(0);
     expect(s.perks).toEqual([]);

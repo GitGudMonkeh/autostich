@@ -43,14 +43,20 @@ const archEff = (fam, tier) => buildingEffect(fam, tier);
 const entries = [];
 
 // ---- Skills (Archetypen inkl. Legendäre) ----
+// exp skill rework: ein Skill mit Stufentexten (descTiers) zeigt alle vier Stufen als Zeilen (Normal … Episch);
+// Legendäre und Skills ohne Stufen die eine Effektzeile.
+const SKILL_TIER_LABEL = ["Normal", "Selten", "Sehr selten", "Episch"];
 for (const s of SKILL_LIST) {
   const meta = ARCHETYPE_META[s.archetype] || { label: s.archetype, color: "#8a8a95", icon: "" };
+  const lines = Array.isArray(s.descTiers) && s.descTiers.length
+    ? s.descTiers.map((text, i) => ({ label: SKILL_TIER_LABEL[i] || `Stufe ${i + 1}`, text: text || "" }))
+    : [{ label: s.legendary ? "★ Legendär" : "Effekt", text: s.desc || "" }];
   entries.push({
     kind: "Skill", id: s.id, name: s.name,
     group: meta.label, groupColor: meta.color, icon: meta.icon || "",
     rarity: s.legendary ? "Legendär" : "Skill",
     tags: [meta.label, s.legendary ? "Legendär" : "Skill", ...(s.keywords || [])],
-    lines: [{ label: s.legendary ? "★ Legendär" : "Effekt", text: s.desc || "" }],
+    lines,
   });
 }
 

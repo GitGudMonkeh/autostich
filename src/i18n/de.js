@@ -41,6 +41,8 @@ for (const [type, label] of Object.entries(FORMATION_LABELS)) {
 for (const sk of SKILL_LIST) {
   fromRegistries[`ability.${sk.id}.name`] = sk.name;
   fromRegistries[`ability.${sk.id}.desc`] = sk.desc;
+  // exp skill rework: ein Text je Stufe (labels.js skillDef(id, tier)); Legendäre und Eis/Pflanze haben keine.
+  (sk.descTiers || []).forEach((text, tier) => { fromRegistries[`ability.${sk.id}.desc.${tier}`] = text; });
 }
 for (const m of Object.values(ARCHETYPE_META)) fromRegistries[`archetype.${m.key}.label`] = m.label;
 for (const c of Object.values(PERK_CATS)) {
@@ -430,6 +432,11 @@ export default {
   // ein Bonus-Angebot tauscht sich nicht gegen ein Perk-Angebot ein.
   "skill.bonus.hint": "Zusatz-Slot aus deinem letzten Perk. Wähle sofort einen weiteren Skill.",
   "skill.declinePlain": "Ablehnen",
+  // exp skill rework (docs/skill-rework.md §1): die Türstufe — zwei Türen, je drei Fraktionssymbole, Stufen verdeckt.
+  "skill.door.title": "Wähle eine Tür",
+  "skill.door.hint": "Hinter jeder Tür liegen drei Skills. Ihre Stufen siehst du erst, wenn du sie öffnest.",
+  "skill.door.n": "Tür {n}",
+  "skill.door.open": "Öffnen",
   "skill.nav.prev": "vorheriger Typ",
   "skill.nav.next": "nächster Typ",
   "skill.more": "mehr",

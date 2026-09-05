@@ -72,13 +72,19 @@ function KeywordGlossary({ tokens }) {
    Seltene, regelverändernde Motoren. Ablehnen → stattdessen ein Perk (Runde nie verschwendet).
    Bei vollen Slots: neuen Skill wählen → dann den zu ersetzenden Skill antippen (übergibt replaceId).
    #201 P9: Angebot bleibt kompakt (nur Name + Kurztext). Die ausführliche Passiv-Beschreibung des
-   Archetyps (inkl. Schlüsselbegriffe) klappt per Tap/Klick auf den Archetyp-Header auf. */
-export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], state = {}, options = {}, onOption,
+   Archetyps (inkl. Schlüsselbegriffe) klappt per Tap/Klick auf den Archetyp-Header auf.
+   exp skill rework (docs/skill-rework.md §1): ZWEI STUFEN. Erst die Türen (`doors`, state.skillDoors): zwei Karten mit
+   je drei Fraktionssymbolen, ohne Namen und ohne Stufen — `onChooseDoor(i)` öffnet eine. Dann das Angebot (`offer`):
+   die drei Skills dieser Tür mit ihren Stufen auf EINER Seite, jede Karte in ihrer Fraktionsfarbe. Der Dev-Run zeigt
+   weiter den flachen Voll-Katalog, geblättert je Fraktion (der Pager unten). */
+export function SkillSelect({ offer = null, doors = null, onPick, onDecline, onReroll, onChooseDoor, skills = [], state = {}, options = {}, onOption,
                               currentTraj = [], recordTraj = [], best = 0 }) {
   const wide = useIsWide();
   const phone = useIsPhone();   // #mobil-emblem — unter 640 px, NICHT die Verneinung von `wide`
   // #lv-fluegel: ab 1280 px lebt das Formationsfeld im linken Flügel (Breite, nicht Flügel-Zustand — s. PerkSelect).
-  const held = skills.map((id) => skillDef(id)).filter(Boolean);
+  const held = skills.map((id) => skillDef(id, tierOf(state, id))).filter(Boolean); // exp: der Text der GEHALTENEN Stufe
+  const atDoors = !offer && Array.isArray(doors) && doors.length > 0; // exp: Türstufe — noch kein Angebot offen
+  const offerIds = offer || [];
   // Neuwurf (#263): eigener Skill-Reroll-Pool (2 je Lauf), kein Free-Reroll mehr.
   const rerollTokens = state.rerollsSkill || 0;
   const canReroll = !!onReroll && rerollTokens > 0;
@@ -98,7 +104,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
   // Anzeige (nur mit Limit): der Legendär bringt seinen eigenen Slot mit → „7 / 7" statt „7 / 6".
   const slotsShown = slots + legendaryHeld;
   const [pending, setPending] = useState(null); // bei vollen Slots gewählter neuer Skill — wartet auf Ersetzungsziel
-  const devMode = !!state.devMode;                  // Dev-Run: Reroll aus, „Runde überspringen"
+  const devMode = !!state.devMode;                  // Dev-Run: Reroll aus, „Runde überspringen", flacher Voll-Katalog
   // Meisterhand: diese Skill-Wahl kommt aus dem eben genommenen Perk, nicht aus dem Rundenplan (Reducer:
   // PICK_PERK). Sie braucht deshalb einen eigenen Ablehnen-Text — „Ablehnen → Perk" wäre hier eine Lüge.
   const bonusOffer = !!state.skillOfferBonus;
@@ -131,9 +137,20 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
 
   // Angebot nach Archetyp gruppieren (feste Reihenfolge). #93 F0: 2+2 …; jetzt bis zu 4 Fraktionen im Angebot.
   // #118: defensiver Guard — ein bereits gehaltener Skill erscheint NIE als Angebots-Karte (selbst bei inkonsistentem State).
-  const groups = ARCHETYPE_ORDER
-    .map((arch) => ({ arch, meta: archMeta(arch), ids: offer.filter((id) => archetypeOf(id) === arch && !skills.includes(id)) }))
+  const byArch = ARCHETYPE_ORDER
+    .map((arch) => ({ arch, meta: archMeta(arch), ids: offerIds.filter((id) => archetypeOf(id) === arch && !skills.includes(id)) }))
     .filter((g) => g.ids.length);
+  /* exp skill rework: das Angebot einer geöffneten Tür (drei Skills, bis zu zwei Fraktionen) steht auf EINER Seite —
+     man vergleicht drei Karten, man blättert nicht. Die Seite trägt die Fraktion mit den meisten Skills (Rahmen,
+     Ecken, Kopf), `archs` alle vorkommenden (Passiv-Aufklapper), und das Label nennt sie alle. Nur der Dev-Run
+     (Voll-Katalog) blättert weiter je Fraktion. */
+  const groups = (!devMode && byArch.length > 1)
+    ? [(() => {
+        const lead = [...byArch].sort((a, b) => b.ids.length - a.ids.length)[0];
+        return { arch: lead.arch, archs: byArch.map((g) => g.arch), meta: { ...lead.meta, label: byArch.map((g) => g.meta.label).join(" · ") },
+                 ids: byArch.flatMap((g) => g.ids) };
+      })()]
+    : byArch;
   const showFormations = groups.some((g) => g.arch === "ice") || (skills || []).some((id) => archetypeOf(id) === "ice"); // #161 FB-1: Formations-Panel bei Eis-Relevanz
 
   // Swipe-Pager (#12): eine Seite je angebotenem Archetyp. Endlos-Swipe (#UI): der Index läuft im Kreis (modulo),
@@ -160,7 +177,8 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
   const archAccent = curG
     ? { c: curG.meta.color, rgb: [1, 3, 5].map((i) => parseInt(curG.meta.color.slice(i, i + 2), 16)).join(",") }
     : PHASE_ACCENTS.violet;
-  const groupKws = curG ? (PASSIVE_KEYWORDS[curG.arch] || []) : [];
+  // exp: die Passiv-Blöcke der Seite — eine Tür-Seite kann zwei Fraktionen tragen, der Dev-Katalog eine je Seite.
+  const pageArchs = curG ? (curG.archs || [curG.arch]) : [];
   const go = (d) => { dir.current = d < 0 ? -1 : 1; setPageState(nPages > 0 ? (((page + d) % nPages) + nPages) % nPages : 0); };
   const goTo = (i) => { dir.current = i > page ? 1 : (i < page ? -1 : dir.current); setPageState(i); };
 
@@ -215,7 +233,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
             {unlimited ? t("skill.eyebrow.free", { cycle: (state.cycle || 0) + 1, held: skills.length })
                        : t("skill.eyebrow", { cycle: (state.cycle || 0) + 1, held: skills.length, slots: slotsShown })}
           </div>
-          <h2 className="text-title-6 font-bold mt-1">{t("skill.title")}</h2>
+          <h2 className="text-title-6 font-bold mt-1">{t(atDoors ? "skill.door.title" : "skill.title")}</h2>
           {/* Ohne diesen Satz steht mitten in einer PERK-Runde plötzlich eine Skill-Wahl — der Spieler sucht
               sonst den Fehler bei sich. */}
           {bonusOffer && (
@@ -272,7 +290,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                              background: on ? `linear-gradient(180deg,${g.meta.color}22,#12121a 72%)` : undefined,
                              boxShadow: on ? `0 0 18px -10px ${g.meta.color}` : undefined }}>
                     <div className="flex items-center gap-1.5">
-                      <ArchIcon meta={g.meta} size={14} />
+                      {(g.archs || [g.arch]).map((a) => <ArchIcon key={a} meta={archMeta(a)} size={14} />)}
                       <span className="text-body-3 font-bold uppercase tracking-wide truncate"
                             style={{ color: on ? g.meta.color : "#adadbc" }}>{g.meta.label}</span>
                       <span className="ml-auto text-meta-3 opacity-45 tabular-nums">{g.ids.length}</span>
@@ -297,7 +315,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                 ) : <span />}
                 <span className="inline-flex items-center gap-1.5 font-bold text-body-lg-5 px-3 py-1 rounded-full whitespace-nowrap"
                   style={{ color: curG.meta.color, background: `${curG.meta.color}1f`, border: `1px solid ${curG.meta.color}55` }}>
-                  <ArchIcon meta={curG.meta} size={14} /> {curG.meta.label}
+                  {pageArchs.map((a) => <ArchIcon key={a} meta={archMeta(a)} size={14} />)} {curG.meta.label}
                   {/* exp: der i-Chip zum Archetyp-Leitfaden ist mit dem Onboarding gegangen. */}
                 </span>
                 {nPages > 1 ? (
@@ -336,6 +354,36 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                 style={{ "--c": "#d4a63a" }}>{t("skill.replace")}</button>
               <button onClick={() => setPendingConsumer(null)}
                 className="as-edge-neutral as-edge-thin px-3 py-1.5 rounded transition-all hover:opacity-80">{t("skill.cancel")}</button>
+            </div>
+          </div>
+        )}
+
+        {/* exp skill rework: die TÜRSTUFE. Zwei Karten, je drei Fraktionssymbole in Platzreihenfolge — keine Namen,
+            keine Stufen (die sind gewürfelt, aber verdeckt: state.skillDoors[i].tiers). Farbe = die Fraktion mit den
+            meisten Symbolen der Tür; ein Tipp öffnet sie (CHOOSE_DOOR), danach steht das Drei-Karten-Angebot unten. */}
+        {atDoors && (
+          <div className="mt-4">
+            <div className="text-body-5 opacity-65 text-center mb-3 max-w-md mx-auto leading-snug">{t("skill.door.hint")}</div>
+            <div className="sk-doors grid sm:grid-cols-2 gap-3 items-stretch">
+              {doors.map((d, i) => {
+                const archs = (d.skills || []).map(archetypeOf).filter(Boolean);
+                const count = {};
+                for (const a of archs) count[a] = (count[a] || 0) + 1;
+                const leadArch = archs.length ? [...archs].sort((a, b) => count[b] - count[a] || archs.indexOf(a) - archs.indexOf(b))[0] : null;
+                const col = (archMeta(leadArch) || {}).color || LIGHT;
+                return (
+                  <button key={i} type="button" onClick={() => onChooseDoor?.(i)}
+                    className="sk-door as-edge-card text-left rounded-xl px-4 py-5 flex flex-col items-center gap-3 transition-all hover:-translate-y-0.5 hover:brightness-110"
+                    style={{ "--c": col }}>
+                    <div className="text-meta-3 font-bold uppercase tracking-widest opacity-60">{t("skill.door.n", { n: i + 1 })}</div>
+                    <div className="flex items-center justify-center gap-4">
+                      {archs.map((a, k) => <ArchIcon key={k} meta={archMeta(a)} size={phone ? 30 : 40} />)}
+                    </div>
+                    <div className="text-body-5 opacity-70 text-center">{archs.map((a) => (archMeta(a) || {}).label || a).join(" · ")}</div>
+                    <div className="text-body-lg-5 font-bold" style={{ color: col }}>{t("skill.door.open")}</div>
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}
@@ -425,21 +473,30 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                 <div className="flex-1 h-px" style={{ background: `${curG.meta.color}33` }} />
               </button>
               </div>
-              {detailOpen && (
-                <div className="mb-3 rounded-lg px-3 py-2 text-body-5 leading-snug"
-                  style={{ background: `${curG.meta.color}14`, border: `1px solid ${curG.meta.color}44` }}>
-                  <div className="opacity-90">{unlockLine(curG.arch)}</div>
-                  <KeywordGlossary tokens={groupKws} />
+              {detailOpen && pageArchs.map((a) => (
+                /* exp: ein Block je Fraktion der Seite — die Tür-Seite kann zwei tragen, dann steht jede mit ihrem Namen. */
+                <div key={a} className="mb-3 rounded-lg px-3 py-2 text-body-5 leading-snug"
+                  style={{ background: `${archMeta(a).color}14`, border: `1px solid ${archMeta(a).color}44` }}>
+                  {pageArchs.length > 1 && (
+                    <div className="text-meta-3 font-bold uppercase tracking-wide mb-1" style={{ color: archMeta(a).color }}><ArchIcon meta={archMeta(a)} size={12} /> {archMeta(a).label}</div>
+                  )}
+                  <div className="opacity-90">{unlockLine(a)}</div>
+                  <KeywordGlossary tokens={PASSIVE_KEYWORDS[a] || []} />
                 </div>
-              )}
+              ))}
               {/* Karten hängen an ihrer eigenen Inhaltshöhe (`items-start`, kein `gridAutoRows:1fr`/`h-full`).
                   Vorher zog `1fr` alle Karten auf die Höhe der GRÖSSTEN — kurze Skills bekamen viel Leerraum
                   darunter (Playtest-Beschwerde). Jetzt sitzt jede Karte eng an ihrem Text. */}
               <div className="sk-offers grid sm:grid-cols-2 gap-2 items-start">
                 {curG.ids.map((id) => {
-                  const s = skillDef(id);
+                  /* exp skill rework: die für DIESEN Angebotsplatz gewürfelte Stufe (state.skillOfferTiers, Reducer/Engine
+                     rollSkillOfferTiers). Legendäre haben keine (null) — sie tragen ihr Gold. Ohne Eintrag (Dev-Pfade,
+                     ältere Snapshots) Normal, wie PICK_SKILL es dann auch einträgt. Der Text ist der DIESER Stufe. */
+                  const tier = isLegendarySkill(id) ? null : ((state.skillOfferTiers || {})[id] ?? 0);
+                  const s = skillDef(id, tier);
                   const sel = pending === id;
-                  const col = curG.meta.color;
+                  const am = ac(id); // exp: die Fraktion der KARTE — eine Tür-Seite mischt bis zu zwei
+                  const col = am.color;
                   /* #skillart / #mobil-emblem: ZWEI Fassungen, ein Gate je Fassung, und dazwischen NICHTS.
                      Ab 1280 px der Kopfstreifen, unter 640 px das Eck-Emblem, im Band 640–1279 px kein
                      <img> — dort ist die Kachel zwei- oder dreispaltig und hat die freie Ecke nicht, die
@@ -448,15 +505,11 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                      Das Gate sitzt im JSX und nicht in CSS, damit im ausgelassenen Band gar kein <img>
                      im DOM steht und kein Gerät Bilder lädt, die es nicht zeigt. */
                   const art = (wide || phone) ? skillArt(id) : null;
-                  /* exp skill rework: die für DIESEN Angebotsplatz gewürfelte Stufe (state.skillOfferTiers, Reducer/Engine
-                     rollSkillOfferTiers). Legendäre haben keine (null) — sie tragen ihr Gold. Ohne Eintrag (Dev-Pfade,
-                     ältere Snapshots) Normal, wie PICK_SKILL es dann auch einträgt. */
-                  const tier = s.legendary ? null : ((state.skillOfferTiers || {})[id] ?? 0);
                   const badges = (
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="text-meta-1 px-1.5 py-0.5 rounded font-bold tracking-wide"
                         style={{ background: `${col}22`, color: col, border: `1px solid ${col}88` }}>
-                        <ArchIcon meta={curG.meta} size={12} /> {curG.meta.label.toUpperCase()}
+                        <ArchIcon meta={am} size={12} /> {am.label.toUpperCase()}
                       </span>
                       <SkillTierBadge tier={tier} />
                       {isConsumer(s) && (

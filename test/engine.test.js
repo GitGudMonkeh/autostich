@@ -544,12 +544,16 @@ describe("Blitz-Archetyp — Engine (exp skill rework: Passiv)", () => {
 
     const skillRound = resolveTrick(scenario(12, 0, { pos: 39, cycle: 3 }), rng); // → cycle 4 = skill
     expect(skillRound.phase).toBe("levelup");
-    expect(skillRound.skillOffer).toHaveLength(12); // SKILLS_OFFERED 12 (3+3+3+3 über alle 4 Archetypen)
+    // exp skill rework: zwei Türen mit je drei Skills (docs/skill-rework.md §1); das Angebot öffnet erst CHOOSE_DOOR.
+    expect(skillRound.skillDoors).toHaveLength(2);
+    for (const d of skillRound.skillDoors) expect(d.skills).toHaveLength(3);
+    expect(skillRound.skillOffer).toBeNull();
     expect(skillRound.offer).toBeNull();
 
     // Skill-Runde mit vollem Skill-Besitz → Fallback auf Perk-Angebot (Runde nicht verschwendet).
     const owned = resolveTrick(scenario(12, 0, { pos: 39, cycle: 3, skills: ALL }), rng);
     expect(owned.skillOffer).toBeNull();
+    expect(owned.skillDoors).toBeNull();
     expect(owned.offer).toHaveLength(3);
   });
 });
@@ -677,29 +681,30 @@ describe("#370 Wochen-Mods: Karten-Wert (nur im Ranked-Lauf gesetzt)", () => {
 });
 
 describe("#370 Wochen-Mods: Angebots-Umfang (Perk-/Skill-Verknappung, nur Ranked)", () => {
-  // Treibt einen frischen Lauf durch die Zyklen und fängt das ERSTE Perk- und Skill-Angebot der Engine ab.
+  // Treibt einen frischen Lauf durch die Zyklen und fängt das ERSTE Perk-Angebot und die ersten Skill-Türen der Engine ab.
   function firstOffers(weekMods) {
     let s = { ...initialState(makeRng(7)), weekMods };
-    let perkOffer = null, skillOffer = null;
-    for (let i = 0; i < 1500 && s.phase !== "gameover" && (!perkOffer || !skillOffer); i++) {
+    let perkOffer = null, skillDoors = null;
+    for (let i = 0; i < 1500 && s.phase !== "gameover" && (!perkOffer || !skillDoors); i++) {
       if (s.phase === "levelup") {
         if (s.offer && !perkOffer) perkOffer = s.offer;
-        if (s.skillOffer && !skillOffer) skillOffer = s.skillOffer;
-        s = { ...s, phase: "play", offer: null, skillOffer: null, legendaryOffer: null, statOffer: null };
+        if (s.skillDoors && !skillDoors) skillDoors = s.skillDoors;
+        s = { ...s, phase: "play", offer: null, skillOffer: null, skillDoors: null, legendaryOffer: null, statOffer: null };
         continue;
       }
       if (s.phase === "formation" || s.phase === "architect" || s.phase === "legendary") { s = { ...s, phase: "play" }; continue; }
       s = resolveTrick(s, makeRng(100 + i));
     }
-    return { perkOffer, skillOffer };
+    return { perkOffer, skillDoors };
   }
-  it("ohne Mods volles Angebot; mit Verknappung Perk=1 und Skill ≤4 (1/Fraktion)", () => {
+  it("ohne Mods volles Angebot; mit Verknappung Perk=1 und ein Skill je Tür (die alte 1-je-Fraktion-Quote)", () => {
     const base = firstOffers([]);
     expect(base.perkOffer && base.perkOffer.length).toBeGreaterThan(1);   // Default 3
-    expect(base.skillOffer && base.skillOffer.length).toBeGreaterThan(4); // Default 12 (3/Fraktion)
+    expect(base.skillDoors).toHaveLength(2);                              // exp: zwei Türen à drei Skills
+    for (const d of base.skillDoors) expect(d.skills).toHaveLength(3);
     const scarce = firstOffers([{ effect: "scarcePerks" }, { effect: "scarceSkills" }]);
     expect(scarce.perkOffer.length).toBe(1);
-    expect(scarce.skillOffer.length).toBeLessThanOrEqual(4);
+    for (const d of scarce.skillDoors) expect(d.skills).toHaveLength(1);
   });
 });
 

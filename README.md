@@ -221,11 +221,13 @@ L11 Zeitraffer (mächtig, teils mit Nachteil; kein Leben mehr → reine Wert-/Sc
 
 ## 9. Skills & Archetypen (#93/#165) — `skills.js`
 
-Auf **Skill-Runden** wählst du aus **`SKILLS_OFFERED = 12`** Skills (3+3+3+3 über alle vier Archetypen,
-`MAX_ARCHETYPES = 4`), bis zu **`SKILL_SLOTS = 6`** gleichzeitig. **Legendäre Skills kommen ausschließlich
-aus der Legendär-Phase** in Durchlauf `LEG_PHASE_CYCLE = 29` und belegen einen fixen 7. Slot (kein Tausch);
-welche Archetypen dort antreten, entscheidet der Upgrade-Baum. **Verstärker-Skills** (`enabler`) werden nur
-angeboten, wenn ihr Basis-Skill gehalten wird.
+Auf **Skill-Runden** stehst du vor **zwei Türen** (`SKILL_DOORS = 2`): jede zeigt **drei Fraktionssymbole**
+(`SKILL_DOOR_SIZE = 3` Skills aus höchstens `SKILL_DOOR_FACTIONS = 2` Fraktionen, Wiederholung erlaubt). Erst das
+Öffnen zeigt die drei Skills mit ihren gewürfelten Stufen (Normal / Selten / Sehr selten / Episch), einer wird
+genommen; gehaltene Skills sind unbegrenzt. **Legendäre Skills** sind die fünfte Seltenheit des Türwurfs
+(`SKILL_LEGENDARY_PER_SLOT` je Platz). Der Angebots-Pool auf exp ist `SKILL_OFFER_ARCHETYPES` (Feuer und Blitz,
+bis Eis und Pflanze überarbeitet sind); die Sim kann ihn je Lauf ersetzen (`--arch`). **Verstärker-Skills**
+(`enabler`) werden nur angeboten, wenn ihr Basis-Skill gehalten wird. Details: `docs/skill-rework.md`.
 
 - **⚡ Blitz** — Ladung/Ionisierung/Crit: Ladung sammeln (`LIGHTNING_MAX_CHARGE`), Karten ionisieren
   (`ION_*` → +Score je Stapel), Gewitterfront/Reaktoren, Legendäre (Donnergott u. a.). Positionsgebundene

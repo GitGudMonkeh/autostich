@@ -13,7 +13,7 @@
 //                  Unbekanntes wird nicht gewählt. Kein mem, kein Lernen → gepaarte Ablation (`drop`: ein Skill, der auf
 //                  keiner Stufe je gewählt wird) bleibt deterministisch.
 // Aufstellung und Architekt spielen greedy (wie factionPolicy) — realistische Läufe, nicht die naive Baseline.
-import { randomPolicy, canAddSkill } from "./random.js";
+import { randomPolicy, canAddSkill, atDoors, bestDoor } from "./random.js";
 import { greedyFormationStep } from "../formation.js";
 import { armKey } from "../memory.js";
 import { perkOptionId, perkActionFor } from "../families-policy.js";
@@ -55,6 +55,8 @@ export function buildValueTable(mem) {
       }
       return meanOf(byOpt.get(`${kind}|${opt}`));
     },
+    // Stufenblinder Wert eines Skills (über alle Stufen, erst je Bucket, dann gesamt) — für die Türwahl.
+    skillValue(sid, bucket) { return meanOf(bySkillBucket.get(`${sid}|${bucket}`)) ?? meanOf(bySkill.get(sid)); },
     // Für Berichte: alle exakten Arme als Zeilen.
     rows() { return [...exact.entries()].map(([key, a]) => ({ key, n: a.n, mean: a.sum / a.n })); },
   };
@@ -86,10 +88,27 @@ export function greedyPolicy({ explore = true, c = 1.4, table = null, bucket = b
     return best ? best.opt : opts[0]; // nichts bekannt → erste Option (deterministisch)
   }
 
+  /* Türwahl (stufenblind, wie der Spieler): der Wert eines Skills hinter der Tür ist im Explore der UCB seines über alle
+     Stufen zusammengefassten Arms (ungesehen → ∞), im Greedy der gelernte Skill-Mittelwert (unbekannt → nichts). Die Tür
+     mit dem besten Skill gewinnt; Gleichstand oder nichts bekannt → Tür 0. Kein mem.pulled — gezogen wird auf dem Angebot. */
+  function doorValue(id, s, mem) {
+    const bk = bucket(s);
+    if (!explore) return table.skillValue(id, bk) ?? -Infinity;
+    const N = mem.totalPicks("skill") + 1;
+    let n = 0, sum = 0;
+    const opts = isLegendarySkill(id) ? [tierKey(id, null)] : Array.from({ length: 4 }, (_, t) => tierKey(id, t));
+    for (const opt of opts) { const a = mem.peek(armKey("skill", opt, bk)); n += a.n; sum += a.sum; }
+    return n ? sum / n + c * Math.sqrt(Math.log(N) / n) : Infinity;
+  }
+
   const tag = [explore ? "explore" : "greedy", drop && `drop=${drop}`].filter(Boolean).join(",");
   return {
     name: `greedy(${tag})`,
     act(s, rng, mem) {
+      if (atDoors(s)) {
+        return { type: "CHOOSE_DOOR", index: bestDoor(s, (ids) => Math.max(-Infinity,
+          ...ids.filter((id) => id !== drop && canAddSkill(s, id)).map((id) => doorValue(id, s, mem)))) };
+      }
       if (s.phase === "levelup" && s.skillOffer) {
         const offered = s.skillOffer.filter((id) => id !== drop && canAddSkill(s, id));
         const opts = [...offered.map((id) => tierKey(id, (s.skillOfferTiers || {})[id])), DECLINE];

@@ -18,8 +18,12 @@ import { randomPolicy } from "../sim/policies/random.js";
 //
 // exp skill rework, Phase 1 (docs/skill-rework.md §7): 40 statt 50 Durchläufe, keine Legendär-Phase (Legendäre als
 // fünfte Seltenheit im Angebot), Slots unbegrenzt. Gemessen mit der Random-Policy über Seeds 1..40: Median ≈ 1,97M,
-// Mean ≈ 2,33M. Die Bänder sind PROVISORISCH darauf zentriert (≈ ±35 %) und werden nach den Blitz-/Feuer-Modulen
-// (Phase 2/3) und den Sim-Läufen (Phase 5) erneut zentriert.
+// Mean ≈ 2,33M; nach den Blitz-/Feuer-Modulen und der Tarierung (§7.5) ≈ 1,47M / 2,11M.
+//
+// exp skill rework, Türen (docs/skill-rework.md §7.7): die Welt ist Feuer + Blitz (Eis/Pflanze warten auf ihre Runde),
+// das Angebot sind zwei Türen à drei Skills. Gemessen mit der Random-Policy über Seeds 1..40: Median ≈ 1,13M,
+// Mean ≈ 1,34M (Seeds 1..200: 1,23M / 1,73M — dasselbe Niveau wie das flache Feuer/Blitz-Angebot davor, 1,23M / 1,87M).
+// Die Bänder sind darauf zentriert (≈ ±35 %); nach der Eis-/Pflanze-Runde erneut zentrieren.
 describe("sim balance guard", () => {
   const SEEDS = 40; // feste Seeds 1..40 → deterministischer Median/Mean
   const scores = Array.from({ length: SEEDS }, (_, i) => runOne(1 + i, randomPolicy()).score).sort((a, b) => a - b);
@@ -27,14 +31,14 @@ describe("sim balance guard", () => {
   const mean = scores.reduce((t, v) => t + v, 0) / SEEDS;
 
   it("Median-Score im erwarteten Band (breite Power-Verschiebung)", () => {
-    // Ist-Wert ≈ 1,97M (exp Phase 1, 40-Plan). Band toleriert normales Tuning, schlägt bei grober Verschiebung an.
-    expect(median).toBeGreaterThan(1_300_000);
-    expect(median).toBeLessThan(2_700_000);
+    // Ist-Wert ≈ 1,13M (exp Türen, Feuer/Blitz). Band toleriert normales Tuning, schlägt bei grober Verschiebung an.
+    expect(median).toBeGreaterThan(750_000);
+    expect(median).toBeLessThan(1_550_000);
   });
 
   it("Mean-Score im erwarteten Band (Tail-Runaway-Fänger)", () => {
-    // Ist-Wert ≈ 2,33M (exp Phase 1). Die Obergrenze fängt weiterhin einen ECHTEN Tail-Blowup (Mean ginge dann deutlich höher).
-    expect(mean).toBeGreaterThan(1_500_000);
-    expect(mean).toBeLessThan(3_300_000);
+    // Ist-Wert ≈ 1,34M (exp Türen). Die Obergrenze fängt weiterhin einen ECHTEN Tail-Blowup (Mean ginge dann deutlich höher).
+    expect(mean).toBeGreaterThan(870_000);
+    expect(mean).toBeLessThan(1_850_000);
   });
 });

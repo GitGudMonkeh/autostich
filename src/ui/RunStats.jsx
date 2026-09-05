@@ -17,6 +17,7 @@ import { rarityOf, RARITY_META, CATEGORIES } from "../game/perks.js";
 import { ArchIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { fmtScore, fmtScoreShort } from "./format.js";
 import { archMeta, familyDef, perkCat, perkDef, skillDef } from "../i18n/labels.js"; // #sprache: Skills/Archetypen/Familien zur Anzeigezeit
+import { tierOf } from "../game/skills.js"; // exp skill rework: die gehaltene Stufe eines Skills (Text dieser Stufe)
 import { tierMeta, romanOf } from "../game/rarity.js"; // Familien-Perks: Stufenfarbe + römische Stufe (wie PerkList)
 import { t } from "../i18n/index.js";
 
@@ -172,7 +173,8 @@ export function RunBuildChips({ entry = {}, anonymized = false }) {
                 desc: (familyDef(sel.id).tiers[famTier(sel.id)] || {}).desc || "",
                 color: (tierMeta(famTier(sel.id)) || {}).color || perkCat(familyDef(sel.id).cat)?.color || "#8a8a95" }
             : null)
-        : (skillDef(sel.id) ? { title: skillDef(sel.id).name, desc: skillDef(sel.id).desc, color: (archMeta(skillDef(sel.id).archetype) || {}).color || "#8a8a95" } : null);
+        // exp skill rework: der Text der GEHALTENEN Stufe (entry.skillTiers; Alt-Einträge ohne die Map → Normal).
+        : (skillDef(sel.id) ? { title: skillDef(sel.id).name, desc: skillDef(sel.id, tierOf({ skillTiers: entry.skillTiers || {} }, sel.id)).desc, color: (archMeta(skillDef(sel.id).archetype) || {}).color || "#8a8a95" } : null);
 
   const showPerks = !anonymized && ((perks !== null && perks.length > 0) || families.length > 0);
   const showSkills = skills !== null && skills.length > 0;

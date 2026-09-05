@@ -39,7 +39,7 @@ export function SkillTierBadge({ tier, className = "text-meta-1 px-1.5 py-0.5 ro
 }
 
 export function HeldSkills({ skills = [], state = {}, className = "mt-5", open = null, onToggle = null }) {
-  const held = skills.map((id) => skillDef(id)).filter(Boolean);
+  const held = skills.map((id) => skillDef(id, tierOf(state, id))).filter(Boolean); // exp: der Text der GEHALTENEN Stufe
   if (!held.length) return null;
   /* Dieselbe Zählung wie in der Skill-Auswahl: Der legendäre Skill bringt seinen eigenen Slot mit,
      die Anzeige nennt deshalb `slots + legendär` (sonst stünde „7 / 6"). exp: Slots sind standardmäßig

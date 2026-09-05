@@ -4,7 +4,7 @@ import { PERK_DEFS, buildPerkOffer } from "./perks.js";
 import { familyDef, applyFamilyPick } from "./families.js"; // formationEnergyBonus läuft jetzt über engine.formationEnergyFor
 import { UPGRADE_TYPES } from "./rarity.js";
 import { archetypeOf,
-  hasSetzlingsbeet, buildSkillOffer, rollSkillOfferTiers, glacierRolesOf } from "./skills.js"; // Pflanze (v0): Aktivierungs-Effekte · Eis-Neudesign: glacierRolesOf · exp: Stufenwurf
+  hasSetzlingsbeet, buildSkillDoors, glacierRolesOf } from "./skills.js"; // Pflanze (v0): Aktivierungs-Effekte · Eis-Neudesign: glacierRolesOf · exp: Türen-Angebot (Stufen im Wurf der Tür)
 import { initLightning, maxChargeFor, L as LIGHT } from "./factions/lightning.js"; // exp skill rework: Blitz-Substate (Leiste 10, Donnergott 7)
 import { initHeat, heatMaxFor, syncHeatMax } from "./factions/fire.js"; // exp skill rework: Hitze-Substate (Leiste 100, Weißglut 200)
 // (#267: import aus stats.js entfernt — die Stat-Phase ist weg.)
@@ -89,9 +89,12 @@ function startDecisionSetup(decision, s, seed, actionRng, architectEnabled, devE
     return { phase: "formation", formationEnergy: (devEnergy ?? s.formationEnergyBase ?? C.FORMATION_ENERGY), formationSwaps: [], formations };
   }
   // "skill" (Default): Skill-Angebot; leerer Skill-Pool → Perk-Fallback (Runde nicht verschwenden).
-  // exp skill rework: Stufe je Platz (und Legendär-Chance je Platz) direkt nach dem Bau des Angebots würfeln.
-  const rolled = devMode ? devSkillOffer() : rollSkillOfferTiers(buildSkillOffer([], [], rngAtOr("skill", 0), skillP.count, 0, false, s.unlockedArchetypes, skillP.maxArchetypes, skillP.perArchCap), [], rngAtOr("skill", 0, "tiers")); // §4b: Archetyp-Gatung
-  if (rolled.offer.length) return { phase: "levelup", skillOffer: rolled.offer, skillOfferTiers: rolled.tiers };
+  // exp skill rework: der Dev-Run zeigt den flachen Voll-Katalog; sonst die zwei Türen (docs/skill-rework.md §1),
+  // Stufen und Legendär-Chance je Platz mit der Tür gewürfelt, sichtbar erst nach dem Öffnen (CHOOSE_DOOR).
+  if (devMode) { const rolled = devSkillOffer(); return { phase: "levelup", skillOffer: rolled.offer, skillOfferTiers: rolled.tiers, skillDoors: null }; }
+  const doors = buildSkillDoors([], [], rngAtOr("skill", 0), rngAtOr("skill", 0, "tiers"),
+    { unlockedArchetypes: s.unlockedArchetypes, maxArchetypes: skillP.maxArchetypes, size: skillP.doorSize }); // §4b: Archetyp-Gatung
+  if (doors.length) return { phase: "levelup", skillDoors: doors, skillOffer: null, skillOfferTiers: null };
   const off = buildPerkOffer([], {}, rngAtOr("perk", 0), perksOffered, perkLegendaryChance(s.shop) * legMultPerk, mRareShift, architectEnabled, 0, rareCap, rareFloor);
   return off.length ? { phase: "levelup", offer: off } : { phase: "play" };
 }
@@ -146,6 +149,7 @@ export function initialState(rng = Math.random, seed = null) {
     familyTarget: null,
     // Skill-System / Blitz-Archetyp (docs/blitz-archetyp.md). Inert, solange kein Skill gewählt ist.
     skills: [], skillOffer: null, skillOfferTiers: null, skillTiers: {}, skillOfferBonus: false, activeArchetypes: [], lightning: initLightning(), // exp: skillTiers = Stufe je gehaltenem Skill, skillOfferTiers = Stufe je angebotenem Skill · skillOfferBonus: das Angebot stammt aus Meisterhand (PICK_PERK), nicht aus dem Rundenplan
+    skillDoors: null, // exp skill rework: die zwei Türen einer Skill-Phase [{ skills, tiers }] — offen, solange noch keine gewählt ist (dann skillOffer)
     heat: null, // Feuer-Archetyp (#93 F1): erst beim ersten Feuer-Skill via initHeat() aktiviert
     iceTemp: {}, // temporärer Wertbonus je card.id (Blitzfänger — Blitz-Archetyp, in engine.js gelesen)
     growth: {}, colonized: {}, plantLoss: {}, // Pflanze-Fraktion (v0): Wachstum je card.id (nur steigend) / kolonisierte Gegnerkarten (grün = card.green) / Niederlagen-Zähler (Wurzelschlag-Buff v0.4)
@@ -252,7 +256,7 @@ export function reducer(state, action) {
           devSchedule, maxCycles: devRounds, devEnergy, devMode: fullCatalog,
           difficulty: null,
           rerollsPerk: C.BASE_REROLLS, rerollsArch: C.BASE_REROLLS, rerollsSkill: C.BASE_REROLLS,
-          skillOffer: null, offer: null, ...patch };
+          skillOffer: null, skillDoors: null, offer: null, ...patch };
       }
       // #267: Erste Entscheidung (Runde 1) folgt dem Plan = DECISION_SCHEDULE[0] = "skill" (Blind-Commit, gewollt) —
       // NICHT mehr die entfernte Stat-Phase. startDecisionSetup baut das Erst-Angebot (Skill-Offer) deterministisch.
@@ -473,21 +477,21 @@ export function reducer(state, action) {
       // Legendär-Chance 0 — der legendäre SKILL hat seine eigene Phase und seinen eigenen Slot (#272);
       // ein Perk soll keinen zweiten nachliefern.
       const skillP = skillOfferParams(state); // exp: Regeln je Lauf (Bestand = Konstanten)
-      const bonusRolled = (def.skillSlotBonus && !goTarget)
-        ? rollSkillOfferTiers(buildSkillOffer(state.skills, state.activeArchetypes || [], rngFor(state, action, state.cycle, "meisterhand", 0),
-            skillP.count, 0, false, state.unlockedArchetypes, skillP.maxArchetypes, skillP.perArchCap), state.skills, rngFor(state, action, state.cycle, "meisterhand", 1))
-        : null;
-      const bonusSkillOffer = bonusRolled ? bonusRolled.offer : null;
+      // exp skill rework: das Bonus-Angebot ist ein normales Türen-Angebot (zwei Türen, Stufen hinter der Tür).
+      const bonusDoors = (def.skillSlotBonus && !goTarget)
+        ? buildSkillDoors(state.skills, state.activeArchetypes || [], rngFor(state, action, state.cycle, "meisterhand", 0), rngFor(state, action, state.cycle, "meisterhand", 1),
+            { unlockedArchetypes: state.unlockedArchetypes, maxArchetypes: skillP.maxArchetypes, size: skillP.doorSize })
+        : [];
       const formations = (def.redistribute || def.opfergang)
         ? computeFormations(state.playerOrder, deck, state.roles, perks, state.skills, state.shop?.anchors || [], state.familyTiers, archOf(state))
         : state.formations;
       return { ...state, perks, deck, architect, skillSlots, offer: null, formations,
                // Leeres Angebot (Skill-Pool erschöpft) → normal weiterspielen; der Slot bleibt, die nächste
                // reguläre Skill-Phase füllt ihn dann (`normalCount < skillSlots` → hinzufügen statt ersetzen).
-               ...(bonusSkillOffer && bonusSkillOffer.length
-                 ? { skillOffer: bonusSkillOffer, skillOfferTiers: bonusRolled.tiers, skillOfferBonus: true, offerRerolls: 0 }
+               ...(bonusDoors.length
+                 ? { skillDoors: bonusDoors, skillOffer: null, skillOfferTiers: null, skillOfferBonus: true, offerRerolls: 0 }
                  : {}),
-               phase: goTarget ? "target" : (bonusSkillOffer && bonusSkillOffer.length ? "levelup" : "play"),
+               phase: goTarget ? "target" : (bonusDoors.length ? "levelup" : "play"),
                targetPerk: goTarget ? perkId : null };
     }
 
@@ -600,6 +604,15 @@ export function reducer(state, action) {
 
     // (#267: PICK_STAT entfernt — es gibt keine Stat-Phase mehr.)
 
+    // exp skill rework (docs/skill-rework.md §1): eine der Türen öffnen — ihre Skills und die bis dahin verborgenen
+    // Stufen werden das Angebot, die andere Tür ist weg. Neuwurf und Ablehnen bleiben auf dem Angebot möglich.
+    case "CHOOSE_DOOR": {
+      if (state.phase !== "levelup" || !state.skillDoors || state.skillOffer) return state;
+      const door = state.skillDoors[action.index];
+      if (!door || !Array.isArray(door.skills) || !door.skills.length) return state;
+      return { ...state, skillOffer: [...door.skills], skillOfferTiers: { ...(door.tiers || {}) }, skillDoors: null };
+    }
+
     // Skill-Auswahl (zu festen Zeitpunkten laut DECISION_SCHEDULE). Hinzufügen oder — bei vollen Slots — ersetzen.
     // Der erste Skill eines Archetyps schaltet dessen System frei (lightning.active).
     case "PICK_SKILL": {
@@ -688,19 +701,21 @@ export function reducer(state, action) {
                // analog zum Perk-Ziel-Flow. Andere Archetypen gehen direkt weiter. Ist KEIN gültiges Ziel mehr frei
                // (alles gefroren bzw. gesperrt), wird die Phase übersprungen statt betreten — sonst Soft-Lock, s. o.
                phase: (arch === "ice" && hasFreeGlacierField(glacierLocked, state.challengeBlockForm, (state.playerOrder || []).length))
-                 ? "glacier-target" : "play", skillOffer: null, skillOfferBonus: false };
+                 ? "glacier-target" : "play", skillOffer: null, skillDoors: null, skillOfferBonus: false };
     }
 
     // Skill-Angebot ablehnen → stattdessen ein Perk-Angebot für diese Runde (nie „verschwendet").
+    // exp skill rework: geht an beiden Stufen — vor den Türen wie auf dem geöffneten Angebot.
     case "DECLINE_SKILL": {
-      if (state.phase !== "levelup" || !state.skillOffer) return state;
+      if (state.phase !== "levelup" || (!state.skillOffer && !state.skillDoors)) return state;
+      const cleared = { skillOffer: null, skillOfferTiers: null, skillDoors: null };
       // Meisterhand-Bonus (s. PICK_PERK): das Angebot ist ein GESCHENK des eben genommenen Perks, kein
       // Rundenplatz. Die „nie verschwendet"-Regel darunter (Skill abgelehnt → stattdessen ein Perk) darf
       // hier deshalb nicht greifen — sie machte aus einem Perk zwei. Ablehnen heißt: Slot bleibt vorerst
       // leer, die nächste reguläre Skill-Phase füllt ihn. Steht VOR dem Dev-Zweig, weil der Bonus auch im
       // Dev-Run ein Bonus ist. Der Eis-Ablehn-Gletscher unten entfällt aus demselben Grund.
-      if (state.skillOfferBonus) return { ...state, skillOffer: null, skillOfferBonus: false, phase: "play" };
-      if (state.devMode) return { ...state, skillOffer: null, phase: "play" }; // Dev-Run: „Runde überspringen" → direkt weiter, KEIN Perk-Ersatz
+      if (state.skillOfferBonus) return { ...state, ...cleared, skillOfferBonus: false, phase: "play" };
+      if (state.devMode) return { ...state, ...cleared, phase: "play" }; // Dev-Run: „Runde überspringen" → direkt weiter, KEIN Perk-Ersatz
       const off = buildPerkOffer(state.perks, state.familyTiers, rngFor(state, action, state.cycle, "perk", 0), runRules(state).perksOffered, perkLegendaryChance(state.shop) * (state.treeLegMult ?? 1), state.treeRareShift || 0, state.architectEnabled, C.perkPhaseAt(state.devSchedule || C.DECISION_SCHEDULE, state.cycle) === C.LEG_PERK2_PHASE ? (state.treeLegForce2 || 0) : 0, state.rareCap || 4, state.rareFloor || 1); // M4/M5: 2. Perk-Phase (Reroll behält Garantie) · §4c Rarität-Deckel · #370 Rarität-Boden
       // Eis-Neudesign: bei VOLLEN Eis-Slots (SKILL_SLOTS Eis-Skills) friert das Ablehnen trotzdem einen Gletscher fest —
       // Ausgleich dafür, dass kein weiterer Eis-Skill mehr in die Slots passt (analog: ein Tausch bei vollen Slots gibt
@@ -709,11 +724,11 @@ export function reducer(state, action) {
       const iceSkillCount = state.skills.filter((id) => archetypeOf(id) === "ice" && !isLegendarySkill(id)).length;
       const hasFreeField = hasFreeGlacierField(state.glacierLocked, state.challengeBlockForm, (state.playerOrder || []).length);
       if ((state.activeArchetypes || []).includes("ice") && iceSkillCount >= G_DECLINE_MIN_SKILLS && hasFreeField) {
-        return { ...state, skillOffer: null, phase: "glacier-target", pendingPerkOffer: off.length > 0 ? off : null };
+        return { ...state, ...cleared, phase: "glacier-target", pendingPerkOffer: off.length > 0 ? off : null };
       }
       return off.length > 0
-        ? { ...state, skillOffer: null, offer: off, offerRerolls: 0 } // → Perk-Auswahl (#205: frisches Angebot → Reroll-Index 0)
-        : { ...state, skillOffer: null, phase: "play" };             // Perk-Pool leer → weiterspielen
+        ? { ...state, ...cleared, offer: off, offerRerolls: 0 } // → Perk-Auswahl (#205: frisches Angebot → Reroll-Index 0)
+        : { ...state, ...cleared, phase: "play" };             // Perk-Pool leer → weiterspielen
     }
 
     // exp skill rework: Legendäre kommen als fünfte Seltenheit im normalen Skill-Angebot (PICK_SKILL); die
@@ -751,17 +766,20 @@ export function reducer(state, action) {
       return { ...state, offer, offerRerolls: idx, ...(usePerk2 ? { rerollsPerk2: perk2 - 1 } : { rerollsPerk: tokens - 1 }), rerollsUsed: (state.rerollsUsed || 0) + 1 };
     }
 
-    // #263: Skill-Angebot neu würfeln — eigener Skill-Reroll-Pool (rerollsSkill). Erfüllt weiterhin Archetyp-/Konsumenten-
-    // regeln (buildSkillOffer). Leeres neues Angebot (keine Archetypen verfügbar) → Ressource nicht verbrauchen.
+    // #263: Skill-Angebot neu würfeln — eigener Skill-Reroll-Pool (rerollsSkill). Erfüllt weiterhin die Archetyp-Regeln
+    // (buildSkillDoors). Leeres neues Angebot (keine Archetypen verfügbar) → Ressource nicht verbrauchen.
+    // exp skill rework: der Neuwurf baut zwei neue Türen — vor den Türen wie auf dem geöffneten Angebot; man steht
+    // danach wieder vor den Türen.
     case "REROLL_SKILL": {
-      if (state.phase !== "levelup" || !state.skillOffer) return state;
+      if (state.phase !== "levelup" || (!state.skillOffer && !state.skillDoors)) return state;
       const tokens = state.rerollsSkill || 0;                        // #263: eigener Skill-Pool
       if (tokens <= 0) return state;
       const idx = (state.offerRerolls || 0) + 1;                     // #205: Reroll-Index → frischer adressierter Strom (Original-Angebot = 0)
       const skillP = skillOfferParams(state);
-      const rolled = rollSkillOfferTiers(buildSkillOffer(state.skills, state.activeArchetypes, rngFor(state, action, state.cycle, "skill", idx), skillP.count, 0, false, state.unlockedArchetypes, skillP.maxArchetypes, skillP.perArchCap), state.skills, rngFor(state, action, state.cycle, "skill", idx, "tiers")); // §4b: Archetyp-Gatung · exp: Stufenwurf
-      if (rolled.offer.length === 0) return state;                  // nichts Neues verfügbar → Ressource behalten
-      return { ...state, skillOffer: rolled.offer, skillOfferTiers: rolled.tiers, offerRerolls: idx, rerollsSkill: tokens - 1, rerollsUsed: (state.rerollsUsed || 0) + 1 };
+      const doors = buildSkillDoors(state.skills, state.activeArchetypes, rngFor(state, action, state.cycle, "skill", idx), rngFor(state, action, state.cycle, "skill", idx, "tiers"),
+        { unlockedArchetypes: state.unlockedArchetypes, maxArchetypes: skillP.maxArchetypes, size: skillP.doorSize }); // §4b: Archetyp-Gatung
+      if (!doors.length) return state;                              // nichts Neues verfügbar → Ressource behalten
+      return { ...state, skillDoors: doors, skillOffer: null, skillOfferTiers: null, offerRerolls: idx, rerollsSkill: tokens - 1, rerollsUsed: (state.rerollsUsed || 0) + 1 };
     }
 
     // Formationsphase (V2 §22.8): beliebigen Tausch zweier Karten anwenden (1 Energie), Vorschau neu berechnen.

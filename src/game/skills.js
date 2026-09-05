@@ -50,7 +50,12 @@ const BLITZ = {
 };
 export const BLITZ_TIERS = BLITZ;
 const pctS = (x) => de(Math.round(x * 1000) / 10); // Anteil → Prozent mit einer Nachkommastelle (0,0075 → „0,75")
-const ladder = (rows, f) => `Selten ${f(rows[1])}, Sehr selten ${f(rows[2])}, Episch ${f(rows[3])}`;
+/* Ein Text je Stufe (docs/skill-rework.md §1): `f(row)` schreibt den Satz für EINE Stufenzeile — Angebot und Bestand
+   zeigen nur den Text der gezeigten Stufe (labels.js skillDef(id, tier)), nie die ganze Leiter. `desc` bleibt der
+   Normal-Text (Dev-Katalog, Datenbank, ältere Leser); `descTiers` trägt alle vier. Ein Episch-Extra hängt an seiner
+   Tabellenzeile (z. B. `overflow`, `chargeFromStreak`) und erscheint nur dort. */
+const tiered = (rows, f) => { const descTiers = rows.map((r) => f(r)); return { desc: descTiers[0], descTiers }; };
+const jeder = (n, w = "Jeder") => (n === 1 ? w : `${w} ${n}.`); // „Jeder 2. Crit" / „Jeder Crit"
 // Stufentabellen der 15 Feuer-Skills (§4.5) — dieselbe Form; die Schwellen sinken, die Sätze steigen mit der Stufe.
 // Das Modul factions/fire.js liest sie über `fireParam`; Legendäre haben keine Zeile.
 const FEUER = {
@@ -74,42 +79,42 @@ export const FEUER_TIERS = FEUER;
 
 export const SKILL_DEFS = {
   // ---- Blitz (exp skill rework, §3): Passiv +5 % Crit je Skill, Leiste 10 Crits → nächste Karte ionisieren.
-  //      Die Mechanik liest die Stufentabellen oben (factions/lightning.js). Texte: Normal-Stufe zuerst, dann die Leiter.
+  //      Die Mechanik liest die Stufentabellen oben (factions/lightning.js). Texte: ein Satz je Stufe (`tiered`).
   // Rate — die Leiste schneller füllen
   SK_LIGHTNING_01: { id: "SK_LIGHTNING_01", name: "Blitzableiter", archetype: "lightning", keywords: ["charge", "crit"], tiers: BLITZ.ableiter,
-    desc: `Jeder ${BLITZ.ableiter[0].critEvery}. Crit gibt +1 Ladung zusätzlich. Selten: jeder Crit. Sehr selten: dazu +${BLITZ.ableiter[2].back} Ladung nach jeder vollen Leiste. Episch: +${BLITZ.ableiter[3].back} zurück, und Ladung über der Leiste bleibt erhalten.` },
+    ...tiered(BLITZ.ableiter, (r) => `${jeder(r.critEvery)} Crit gibt +1 Ladung zusätzlich.${r.back ? ` Nach jeder vollen Leiste kommt +${r.back} Ladung zurück.` : ""}${r.overflow ? " Ladung über der Leiste bleibt erhalten." : ""}`) },
   SK_LIGHTNING_08: { id: "SK_LIGHTNING_08", name: "Statische Aufladung", archetype: "lightning", keywords: ["charge"], tiers: BLITZ.statik,
-    desc: `Jeder ${BLITZ.statik[0].winEvery}. Sieg ohne Crit gibt +${BLITZ.statik[0].charge} Ladung. Selten: jeder Sieg ohne Crit. Sehr selten: dazu jede ${BLITZ.statik[2].lossEvery}. Niederlage +1 Ladung. Episch: Sieg ohne Crit +${BLITZ.statik[3].charge} Ladung, und die volle Leiste gibt der ionisierten Karte dauerhaft +${BLITZ.statik[3].targetValue} Kartenwert.` },
+    ...tiered(BLITZ.statik, (r) => `${jeder(r.winEvery)} Sieg ohne Crit gibt +${r.charge} Ladung.${r.lossEvery ? ` Jede ${r.lossEvery}. Niederlage gibt +1 Ladung.` : ""}${r.targetValue ? ` Die volle Leiste gibt der ionisierten Karte dauerhaft +${r.targetValue} Kartenwert.` : ""}`) },
   SK_LIGHTNING_05: { id: "SK_LIGHTNING_05", name: "Reststrom", archetype: "lightning", keywords: ["charge"], tiers: BLITZ.reststrom,
-    desc: `Nach jeder vollen Leiste startet die Ladung bei ${BLITZ.reststrom[0].floor} statt 0. ${ladder(BLITZ.reststrom, (r) => r.floor)}.` },
+    ...tiered(BLITZ.reststrom, (r) => `Nach jeder vollen Leiste startet die Ladung bei ${r.floor} statt 0.`) },
   SK_LIGHTNING_16: { id: "SK_LIGHTNING_16", name: "Dauerstrom", archetype: "lightning", keywords: ["charge", "streak"], tiers: BLITZ.dauerstrom,
-    desc: `Ab Serie ${BLITZ.dauerstrom[0].minStreak} gibt jeder Sieg +1 Ladung. ${ladder(BLITZ.dauerstrom, (r) => `ab Serie ${r.minStreak}`)}.` },
+    ...tiered(BLITZ.dauerstrom, (r) => `Ab Serie ${r.minStreak} gibt jeder Sieg +1 Ladung.`) },
   // Rampen — jede volle Leiste zählt dauerhaft
   SK_LIGHTNING_06: { id: "SK_LIGHTNING_06", name: "Gewitterfront", archetype: "lightning", keywords: ["charge", "crit"], tiers: BLITZ.gewitter,
-    desc: `Jede volle Leiste gibt dauerhaft +${pctS(BLITZ.gewitter[0].critPerBar)} % Crit-Chance. ${ladder(BLITZ.gewitter, (r) => `+${pctS(r.critPerBar)} %`)}.` },
+    ...tiered(BLITZ.gewitter, (r) => `Jede volle Leiste gibt dauerhaft +${pctS(r.critPerBar)} % Crit-Chance.`) },
   SK_LIGHTNING_10: { id: "SK_LIGHTNING_10", name: "Entladung", archetype: "lightning", keywords: ["charge", "crit"], tiers: BLITZ.entladung,
-    desc: `Jede volle Leiste gibt dauerhaft +${de(BLITZ.entladung[0].multPerBar)}× Crit-Multiplikator. ${ladder(BLITZ.entladung, (r) => `+${de(r.multPerBar)}×`)} — und der Crit, der die Leiste füllt, zählt mit doppeltem Crit-Multiplikator.` },
+    ...tiered(BLITZ.entladung, (r) => `Jede volle Leiste gibt dauerhaft +${de(r.multPerBar)}× Crit-Multiplikator.${r.fillDouble ? " Der Crit, der die Leiste füllt, zählt mit doppeltem Crit-Multiplikator." : ""}`) },
   // Serie und Crit
   SK_LIGHTNING_07: { id: "SK_LIGHTNING_07", name: "Ladungsserie", archetype: "lightning", keywords: ["crit", "streak"], tiers: BLITZ.serie,
-    desc: `Jeder Serienpunkt gibt +${pctS(BLITZ.serie[0].critPerStreak)} % Crit-Chance. ${ladder(BLITZ.serie, (r) => `+${pctS(r.critPerStreak)} %`)} — und ab Serie ${BLITZ.serie[3].chargeFromStreak} gibt jeder Sieg +1 Ladung.` },
+    ...tiered(BLITZ.serie, (r) => `Jeder Serienpunkt gibt +${pctS(r.critPerStreak)} % Crit-Chance.${r.chargeFromStreak ? ` Ab Serie ${r.chargeFromStreak} gibt jeder Sieg +1 Ladung.` : ""}`) },
   SK_LIGHTNING_13: { id: "SK_LIGHTNING_13", name: "Spannungsstau", archetype: "lightning", keywords: ["crit"], tiers: BLITZ.stau,
-    desc: `Jeder Sieg ohne Crit gibt +${pctS(BLITZ.stau[0].step)} % Crit-Chance für den nächsten Sieg; ein Crit leert den Stau. ${ladder(BLITZ.stau, (r) => `+${pctS(r.step)} %`)} — und ein Crit halbiert den Stau, statt ihn zu leeren.` },
+    ...tiered(BLITZ.stau, (r) => `Jeder Sieg ohne Crit gibt +${pctS(r.step)} % Crit-Chance für den nächsten Sieg; ein Crit ${r.critKeep ? `behält ${pct(r.critKeep)} % des Staus` : "leert den Stau"}.`) },
   SK_LIGHTNING_14: { id: "SK_LIGHTNING_14", name: "Überschlag", archetype: "lightning", keywords: ["crit"], tiers: BLITZ.ueberschlag,
-    desc: `Je 10 Punkte Crit-Chance über 100 %: +${de(BLITZ.ueberschlag[0].multPer10)}× Crit-Multiplikator, solange der Überschuss besteht. ${ladder(BLITZ.ueberschlag, (r) => `+${de(r.multPer10)}×`)}.` },
+    ...tiered(BLITZ.ueberschlag, (r) => `Je 10 Punkte Crit-Chance über 100 %: +${de(r.multPer10)}× Crit-Multiplikator, solange der Überschuss besteht.`) },
   // Breite und Tiefe — Stapel erzeugen und nutzen
   SK_LIGHTNING_03: { id: "SK_LIGHTNING_03", name: "Kettenblitz", archetype: "lightning", keywords: ["ionize"], tiers: BLITZ.kette,
-    desc: `Jede ${BLITZ.kette[0].barEvery}. volle Leiste ionisiert eine weitere Karte in der Reihenfolge. Selten: jede Leiste +${BLITZ.kette[1].cards} Karte. Sehr selten: +${BLITZ.kette[2].cards} Karten. Episch: +${BLITZ.kette[3].cards} Karten, und die Zielkarte erhält einen Stapel zusätzlich.` },
+    ...tiered(BLITZ.kette, (r) => `${jeder(r.barEvery, "Jede")} volle Leiste ionisiert ${r.cards === 1 ? "eine weitere Karte" : `${r.cards} weitere Karten`} in der Reihenfolge.${r.targetExtra ? ` Die Zielkarte erhält ${r.targetExtra === 1 ? "einen Stapel" : `${r.targetExtra} Stapel`} zusätzlich.` : ""}`) },
   SK_LIGHTNING_15: { id: "SK_LIGHTNING_15", name: "Blitzschlag", archetype: "lightning", keywords: ["crit", "ionize"], tiers: BLITZ.blitzschlag,
-    desc: `Jeder ${BLITZ.blitzschlag[0].critEvery}. Crit ionisiert die Siegkarte (+1 Stapel). ${ladder(BLITZ.blitzschlag, (r) => `jeder ${r.critEvery}.`)} Crit.` },
+    ...tiered(BLITZ.blitzschlag, (r) => `${jeder(r.critEvery)} Crit ionisiert die Siegkarte (+1 Stapel).`) },
   SK_LIGHTNING_11: { id: "SK_LIGHTNING_11", name: "Blitzfänger", archetype: "lightning", keywords: ["ionize"], tiers: BLITZ.faenger,
-    desc: `Karten ab ${BLITZ.faenger[0].minStacks} Stapeln kämpfen mit +${BLITZ.faenger[0].value} Wert. ${ladder(BLITZ.faenger, (r) => `ab ${r.minStacks}`)} Stapeln.` },
+    ...tiered(BLITZ.faenger, (r) => `Karten ab ${r.minStacks} Stapeln kämpfen mit +${r.value} Wert.`) },
   SK_LIGHTNING_09: { id: "SK_LIGHTNING_09", name: "Kurzschluss", archetype: "lightning", keywords: ["ionize"], tiers: BLITZ.kurzschluss,
-    desc: `Sieg mit einer Karte ab ${BLITZ.kurzschluss[0].minStacks} Stapeln: ihre Stapel zählen doppelt. ${ladder(BLITZ.kurzschluss, (r) => `ab ${r.minStacks}`)} Stapeln.` },
+    ...tiered(BLITZ.kurzschluss, (r) => `Sieg mit einer Karte ab ${r.minStacks} Stapeln: ihre Stapel zählen ${r.factor === 2 ? "doppelt" : `×${r.factor}`}.`) },
   SK_LIGHTNING_04: { id: "SK_LIGHTNING_04", name: "Überspannung", archetype: "lightning", keywords: ["charge", "ionize", "crit"], tiers: BLITZ.ueberspannung,
-    desc: `Crit mit einer Karte ab ${BLITZ.ueberspannung[0].minStacks} Stapeln: +${BLITZ.ueberspannung[0].charge} Ladung. ${ladder(BLITZ.ueberspannung, (r) => `ab ${r.minStacks}`)} Stapeln.` },
+    ...tiered(BLITZ.ueberspannung, (r) => `Crit mit einer Karte ab ${r.minStacks} Stapeln: +${r.charge} Ladung.`) },
   // Schutz
   SK_LIGHTNING_17: { id: "SK_LIGHTNING_17", name: "Serienschutz", archetype: "lightning", keywords: ["charge", "streak"], tiers: BLITZ.serienschutz,
-    desc: `Verlierst du einen Stich mit mindestens ${pct(BLITZ.serienschutz[0].frac)} % Ladung, hält die Serie; diese ${pct(BLITZ.serienschutz[0].frac)} % werden verbraucht. ${ladder(BLITZ.serienschutz, (r) => `${pct(r.frac)} %`)} — und einmal je Runde ist der Schutz kostenlos.` },
+    ...tiered(BLITZ.serienschutz, (r) => `Verlierst du einen Stich mit mindestens ${pct(r.frac)} % Ladung, hält die Serie; diese ${pct(r.frac)} % werden verbraucht.${r.freePerRound ? " Einmal je Runde ist der Schutz kostenlos." : ""}`) },
   // Legendäre (§3.7): keine Stufe, zwei Effekte erlaubt.
   SK_LIGHTNING_L01: { id: "SK_LIGHTNING_L01", name: "Donnergott", archetype: "lightning", legendary: true, keywords: ["charge", "crit"],
     desc: `Die Ladungsleiste ist bei ${C.DONNERGOTT_MAX_CHARGE} voll. Dauerhaft +${de(C.THUNDER_CRIT_MULT)}× Crit-Multiplikator.` },
@@ -121,43 +126,43 @@ export const SKILL_DEFS = {
     desc: `Auch Niederlagen können critten: ein Crit bei einer Niederlage gewinnt den Stich.` },
 
   // ---- Feuer (exp skill rework, §4): Passiv = Siege mit Abstand geben Hitze, Niederlagen kühlen, je 10 % Hitze +2 % Score.
-  //      Die Mechanik liest die Stufentabellen oben (factions/fire.js). Texte: Normal-Stufe zuerst, dann die Leiter.
+  //      Die Mechanik liest die Stufentabellen oben (factions/fire.js). Texte: ein Satz je Stufe (`tiered`).
   // Rate — Hitze erzeugen
   SK_FIRE_01: { id: "SK_FIRE_01", name: "Glut", archetype: "fire", keywords: ["heat"], tiers: FEUER.glut,
-    desc: `Siege mit Kampfwert-Vorsprung geben ×${de(FEUER.glut[0].heatMult)} Hitze. ${ladder(FEUER.glut, (r) => `×${de(r.heatMult)}`)}.` },
+    ...tiered(FEUER.glut, (r) => `Siege mit Kampfwert-Vorsprung geben ×${de(r.heatMult)} Hitze.`) },
   SK_FIRE_02: { id: "SK_FIRE_02", name: "Zunder", archetype: "fire", keywords: ["heat"], tiers: FEUER.zunder,
-    desc: `Jeder Sieg gibt +${FEUER.zunder[0].heat} % Hitze, auch ein knapper. ${ladder(FEUER.zunder, (r) => `+${r.heat} %`)}.` },
+    ...tiered(FEUER.zunder, (r) => `Jeder Sieg gibt +${r.heat} % Hitze, auch ein knapper.`) },
   SK_FIRE_03: { id: "SK_FIRE_03", name: "Feuersturm", archetype: "fire", keywords: ["heat", "streak"], tiers: FEUER.feuersturm,
-    desc: `Jeder Sieg gibt +${de(FEUER.feuersturm[0].perStreak)} % Hitze je Serienpunkt. ${ladder(FEUER.feuersturm, (r) => `+${de(r.perStreak)} %`)}.` },
+    ...tiered(FEUER.feuersturm, (r) => `Jeder Sieg gibt +${de(r.perStreak)} % Hitze je Serienpunkt.`) },
   SK_FIRE_05: { id: "SK_FIRE_05", name: "Rückzündung", archetype: "fire", keywords: ["heat"], tiers: FEUER.rueckzuendung,
-    desc: `Ein Sieg nach einer Niederlage gibt +${de(FEUER.rueckzuendung[0].perDeficit)} % Hitze je Punkt Rückstand. ${ladder(FEUER.rueckzuendung, (r) => `+${de(r.perDeficit)} %`)} — und die Karte nach einer Niederlage hat +${FEUER.rueckzuendung[3].value} Wert.` },
+    ...tiered(FEUER.rueckzuendung, (r) => `Ein Sieg nach einer Niederlage gibt +${de(r.perDeficit)} % Hitze je Punkt Rückstand.${r.value ? ` Die Karte nach einer Niederlage hat +${r.value} Wert.` : ""}`) },
   // Schutz
   SK_FIRE_04: { id: "SK_FIRE_04", name: "Glutbett", archetype: "fire", keywords: ["heat"], tiers: FEUER.glutbett,
-    desc: `Niederlagen kühlen die Hitze nicht unter ${FEUER.glutbett[0].floor} %. Selten nicht unter ${FEUER.glutbett[1].floor} %, Sehr selten nicht unter ${FEUER.glutbett[2].floor} %, Episch: Niederlagen kühlen nicht.` },
+    ...tiered(FEUER.glutbett, (r) => (r.noCool ? "Niederlagen kühlen die Hitze nicht." : `Niederlagen kühlen die Hitze nicht unter ${r.floor} %.`)) },
   // Zustand — Hitze zu Wert und Multiplikator
   SK_FIRE_06: { id: "SK_FIRE_06", name: "Glühende Klinge", archetype: "fire", keywords: ["heat"], tiers: FEUER.klinge,
-    desc: `Alle deine Karten haben +${FEUER.klinge[0].value} Wert je ${FEUER.klinge[0].perHeat} % Hitze. ${ladder(FEUER.klinge, (r) => `je ${r.perHeat} %`)}.` },
+    ...tiered(FEUER.klinge, (r) => `Alle deine Karten haben +${r.value} Wert je ${r.perHeat} % Hitze.`) },
   SK_FIRE_07: { id: "SK_FIRE_07", name: "Weißglut", archetype: "fire", keywords: ["heat"], tiers: FEUER.weissglut,
-    desc: `Die Hitzeleiste reicht bis ${C.WEISSGLUT_HEAT_MAX} %. Über ${C.HEAT_MAX} % geben je 10 % Hitze +${pct(FEUER.weissglut[0].multPer10)} % Score. ${ladder(FEUER.weissglut, (r) => `+${pct(r.multPer10)} %`)}.` },
+    ...tiered(FEUER.weissglut, (r) => `Die Hitzeleiste reicht bis ${C.WEISSGLUT_HEAT_MAX} %. Über ${C.HEAT_MAX} % geben je 10 % Hitze +${pct(r.multPer10)} % Score.`) },
   SK_FIRE_08: { id: "SK_FIRE_08", name: "Feuerwalze", archetype: "fire", keywords: ["heat", "streak"], tiers: FEUER.feuerwalze,
-    desc: `Ab ${FEUER.feuerwalze[0].minHeat} % Hitze hat die nächste Karte nach einem Sieg +${FEUER.feuerwalze[0].value} Wert. ${ladder(FEUER.feuerwalze, (r) => `ab ${r.minHeat} %`)} — und auch nach einer Niederlage.` },
+    ...tiered(FEUER.feuerwalze, (r) => `Ab ${r.minHeat} % Hitze hat die nächste Karte nach einem Sieg${r.afterLoss ? " oder einer Niederlage" : ""} +${r.value} Wert.`) },
   SK_FIRE_09: { id: "SK_FIRE_09", name: "Verbrennung", archetype: "fire", keywords: ["heat"], tiers: FEUER.verbrennung,
-    desc: `Ein Sieg mit Kampfwert-Vorsprung ab ${FEUER.verbrennung[0].minMargin} zählt ×${de(FEUER.verbrennung[0].mult)}. ${ladder(FEUER.verbrennung, (r) => `ab ${r.minMargin}`)}.` },
+    ...tiered(FEUER.verbrennung, (r) => `Ein Sieg mit Kampfwert-Vorsprung ab ${r.minMargin} zählt ×${de(r.mult)}.`) },
   // Konsumenten — Hitze zu Score
   SK_FIRE_11: { id: "SK_FIRE_11", name: "Flächenbrand", archetype: "fire", keywords: ["heat", "consume"], tiers: FEUER.flaechenbrand,
-    desc: `Ab ${FEUER.flaechenbrand[0].minHeat} % Hitze brennt der nächste Sieg die Hitze bis ${FEUER.flaechenbrand[0].keep} herunter: +${FEUER.flaechenbrand[0].perPoint} Basis-Score je verbranntem Punkt. ${ladder(FEUER.flaechenbrand, (r) => `+${r.perPoint}`)} — und der Brand brennt bis ${FEUER.flaechenbrand[3].keep}.` },
+    ...tiered(FEUER.flaechenbrand, (r) => `Ab ${r.minHeat} % Hitze brennt der nächste Sieg die Hitze bis ${r.keep} herunter: +${r.perPoint} Basis-Score je verbranntem Punkt.`) },
   SK_FIRE_12: { id: "SK_FIRE_12", name: "Schmelzpunkt", archetype: "fire", keywords: ["heat", "consume"], tiers: FEUER.schmelzpunkt,
-    desc: `Jeder Sieg verbrennt ${FEUER.schmelzpunkt[0].burn} % Hitze: +${FEUER.schmelzpunkt[0].perPoint} Basis-Score je Punkt. ${ladder(FEUER.schmelzpunkt, (r) => `+${r.perPoint}`)} — und die Hälfte der verbrannten Hitze kommt zurück.` },
+    ...tiered(FEUER.schmelzpunkt, (r) => `Jeder Sieg verbrennt ${r.burn} % Hitze: +${r.perPoint} Basis-Score je Punkt.${r.refund ? ` ${pct(r.refund)} % der verbrannten Hitze kommen zurück.` : ""}`) },
   // Gegner — Brände
   SK_FIRE_13: { id: "SK_FIRE_13", name: "Brandmal", archetype: "fire", keywords: ["heat", "brand"], tiers: FEUER.brandmal,
-    desc: `Ab ${FEUER.brandmal[0].minHeat} % Hitze brandmarkt jeder Sieg die geschlagene Gegnerkarte: −${FEUER.brandmal[0].value} Wert in der nächsten Runde. ${ladder(FEUER.brandmal, (r) => `ab ${r.minHeat} %`)} — und auch eine Niederlage brandmarkt die Gegnerkarte, die gewonnen hat.` },
+    ...tiered(FEUER.brandmal, (r) => `Ab ${r.minHeat} % Hitze brandmarkt jeder Sieg die geschlagene Gegnerkarte: −${r.value} Wert in der nächsten Runde.${r.onLoss ? " Auch eine Niederlage brandmarkt die Gegnerkarte, die gewonnen hat." : ""}`) },
   SK_FIRE_14: { id: "SK_FIRE_14", name: "Lauffeuer", archetype: "fire", keywords: ["heat", "brand"], tiers: FEUER.lauffeuer,
-    desc: `Ab ${FEUER.lauffeuer[0].minHeat} % Hitze brandmarkt jeder Sieg beide Nachbarn der geschlagenen Gegnerkarte: −${FEUER.lauffeuer[0].value} Wert in der nächsten Runde. ${ladder(FEUER.lauffeuer, (r) => `ab ${r.minHeat} %`)} — mit Reichweite ${FEUER.lauffeuer[3].reach}, also ${2 * FEUER.lauffeuer[3].reach} Nachbarn.` },
+    ...tiered(FEUER.lauffeuer, (r) => `Ab ${r.minHeat} % Hitze brandmarkt jeder Sieg ${r.reach === 1 ? "beide Nachbarn" : `die ${2 * r.reach} Nachbarn`} der geschlagenen Gegnerkarte: −${r.value} Wert in der nächsten Runde.`) },
   // Schmiede — Hitze zu Dauerwert, Wert zu Score
   SK_FIRE_15: { id: "SK_FIRE_15", name: "Schmiede", archetype: "fire", keywords: ["heat", "forge", "consume"], tiers: FEUER.schmiede,
-    desc: `Rundenende: liegen mindestens ${FEUER.schmiede[0].cost} Hitze an, kostet die Schmiedung ${FEUER.schmiede[0].cost} und deine niedrigste Karte erhält dauerhaft +${C.FORGE_VALUE} Wert. ${ladder(FEUER.schmiede, (r) => `kostet ${r.cost}`)} — und schmiedet die ${FEUER.schmiede[3].cards} niedrigsten Karten.` },
+    ...tiered(FEUER.schmiede, (r) => `Rundenende: liegen mindestens ${r.cost} Hitze an, kostet die Schmiedung ${r.cost} und ${r.cards === 1 ? "deine niedrigste Karte erhält" : `deine ${r.cards} niedrigsten Karten erhalten`} dauerhaft +${C.FORGE_VALUE} Wert.`) },
   SK_FIRE_16: { id: "SK_FIRE_16", name: "Glutstahl", archetype: "fire", keywords: ["heat", "forge"], tiers: FEUER.glutstahl,
-    desc: `Sieg: +${FEUER.glutstahl[0].perPoint} Basis-Score je Punkt Wert über dem Grundwert der Karte, egal woher der Punkt kommt. ${ladder(FEUER.glutstahl, (r) => `+${r.perPoint}`)} — und Schmiedewert zählt doppelt.` },
+    ...tiered(FEUER.glutstahl, (r) => `Sieg: +${r.perPoint} Basis-Score je Punkt Wert über dem Grundwert der Karte, egal woher der Punkt kommt.${r.forgedDouble ? " Schmiedewert zählt doppelt." : ""}`) },
   // Legendäre (§4.7): keine Stufe, zwei Effekte, jedes läuft allein.
   SK_FIRE_L01: { id: "SK_FIRE_L01", name: "Sonnenkern", archetype: "fire", legendary: true, keywords: ["heat", "brand"],
     desc: `Jeder Sieg brandmarkt die geschlagene Gegnerkarte (−${C.SONNENKERN_BRAND} Wert), und Brände erneuern sich nicht mehr: sie stapeln sich über die Runden. Sieg gegen eine gebrandmarkte Karte: +${C.SONNENKERN_SCORE_PER_BRAND} Basis-Score je Brandpunkt auf ihr.` },
@@ -411,6 +416,13 @@ export const SKILL_OFFER_PER_ARCH_CAP = 3;
 // exp skill rework: the 5th/6th parameters (legendary chance / guarantee) are kept in the signature for the existing
 // call sites and tests but are inert — legendaries never come out of this builder. They are the fifth rarity of
 // rollSkillOfferTiers() below.
+// Offerable skills of one faction: not held, not legendary (fifth rarity of the roll), and an enabler-gated
+// booster only with its base held (Anti-Pech: an ungated booster is a dead pick). Shared by both builders.
+const offerPool = (arch, owned) => SKILL_LIST.filter((s) => s.archetype === arch && !(owned || []).includes(s.id)
+  && !s.legendary && (!s.enabler || (owned || []).includes(s.enabler))).map((s) => s.id);
+
+// Flat offer: up to `perArchCap` skills per archetype, `count` in total. The game itself draws the door offer
+// (buildSkillDoors below); this builder stays for the sim's flat measurements and the tests of the pool rules.
 export function buildSkillOffer(owned, activeArchetypes, rng, count, _legendaryChance = 0, _guaranteeOne = false, unlockedArchetypes = null, maxArchetypes = C.MAX_ARCHETYPES, perArchCap = SKILL_OFFER_PER_ARCH_CAP) {
   let available = archetypesWithSkills(owned);
   if (unlockedArchetypes) available = available.filter((a) => unlockedArchetypes.includes(a));
@@ -421,11 +433,7 @@ export function buildSkillOffer(owned, activeArchetypes, rng, count, _legendaryC
   const offer = [];
   const rest = [];
   for (const arch of chosen) {
-    // Enabler-Gating (Anti-Pech): ein Verstärker-Skill (s.enabler) wird NUR angeboten, wenn seine Basis gehalten wird —
-    // sonst ist er ein toter Pick (Variety-Befund: der schwache Tail sind fast durchweg ungegatete Verstärker).
-    // Legendäre sind nie Teil des normalen Zugs (fünfte Stufe des Wurfs, rollSkillOfferTiers).
-    const pool = shuffle(SKILL_LIST.filter((s) => s.archetype === arch && !(owned || []).includes(s.id)
-      && !s.legendary && (!s.enabler || (owned || []).includes(s.enabler))).map((s) => s.id), rng);
+    const pool = shuffle(offerPool(arch, owned), rng);
     // (v0.5: keine Pflanze-Kern-Garantie mehr — die Wert-aus-Wachstum-Mechanik ist jetzt die immer-aktive Mono-Passive.)
     for (let i = 0; i < perArch && pool.length; i++) offer.push(pool.shift());
     rest.push(...pool); // Reste des Archetyps für die Auffüllung
@@ -486,6 +494,47 @@ export function rollSkillOfferTiers(offer, owned = [], rng = Math.random, legend
     tiers[id] = rollTier(rng, weights);
   }
   return { offer: out, tiers };
+}
+
+/* The door offer (docs/skill-rework.md §1). A skill phase shows `doors` doors; every door hides `size` skills drawn
+   from at most `factions` factions of the pool, repetition allowed — a door may read Feuer·Feuer·Blitz or
+   Feuer·Feuer·Feuer. The door shows only the faction symbols (`door.skills.map(archetypeOf)` in slot order); the
+   tiers are rolled with the door (rollSkillOfferTiers, legendary chance included) and revealed when it is opened
+   (reducer CHOOSE_DOOR). Skills are distinct within a door and across the doors as long as the pool allows.
+   Pool = the run's allowlist (unlockedArchetypes: the sim's `--arch`, START_RUN action.archetypes) or, without one,
+   C.SKILL_OFFER_ARCHETYPES — the exp world of Feuer and Blitz while Eis and Pflanze wait for their rework; narrowed
+   to factions that still have an offerable skill, and once `maxArchetypes` factions are active, to those. Two rng
+   streams like the flat offer: `rng` draws factions and skills, `rngTiers` the tiers. Deterministic. Nothing left →
+   [] (perk fallback). Returns [{ skills: [id…], tiers: { [id]: 0..3 } }, …] — doors without a skill are dropped. */
+export function buildSkillDoors(owned, activeArchetypes, rng, rngTiers, { unlockedArchetypes = null, maxArchetypes = C.MAX_ARCHETYPES,
+  doors = C.SKILL_DOORS, size = C.SKILL_DOOR_SIZE, factions = C.SKILL_DOOR_FACTIONS, pool = C.SKILL_OFFER_ARCHETYPES,
+  legendaryChance = C.SKILL_LEGENDARY_PER_SLOT } = {}) {
+  const have = owned || [];
+  const active = activeArchetypes || [];
+  const world = unlockedArchetypes || pool;
+  let available = archetypesWithSkills(have).filter((a) => world.includes(a));
+  if (active.length >= maxArchetypes) available = available.filter((a) => active.includes(a));
+  const pools = {};
+  for (const a of available) pools[a] = shuffle(offerPool(a, have), rng);
+  const out = [];
+  const taken = new Set(have);
+  for (let d = 0; d < doors; d++) {
+    const skills = [];
+    for (let i = 0; i < size; i++) {
+      // Factions with a skill left; once `factions` distinct ones stand on the door, only those.
+      let cands = available.filter((a) => pools[a].length);
+      const onDoor = [...new Set(skills.map(archetypeOf))];
+      if (onDoor.length >= factions) cands = cands.filter((a) => onDoor.includes(a));
+      if (!cands.length) break;
+      const id = pools[cands[Math.floor(rng() * cands.length)]].shift();
+      skills.push(id); taken.add(id);
+    }
+    if (!skills.length) continue;
+    const rolled = rollSkillOfferTiers(skills, [...taken], rngTiers, legendaryChance); // taken keeps a legendary off both doors
+    for (const id of rolled.offer) taken.add(id);
+    out.push({ skills: rolled.offer, tiers: rolled.tiers });
+  }
+  return out;
 }
 
 /* (exp skill rework: Ionisierung, Ladung, Stapel-Score und alle Blitz-Prädikate liegen in

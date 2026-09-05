@@ -36,14 +36,15 @@ describe("rules.js — defaults are the constants", () => {
   });
   it("perksOfferedFor / skillOfferParams: constants without rules, week mods stay above the rule", () => {
     expect(perksOfferedFor(initialState(makeRng(1)))).toBe(PERKS_OFFERED);
-    expect(skillOfferParams(initialState(makeRng(1)))).toEqual({ count: SKILLS_OFFERED, maxArchetypes: MAX_ARCHETYPES, perArchCap: SKILL_OFFER_PER_ARCH_CAP });
+    // exp skill rework: `doorSize` = skills behind one door of the door offer — the "per archetype" knob read the door way.
+    expect(skillOfferParams(initialState(makeRng(1)))).toEqual({ count: SKILLS_OFFERED, maxArchetypes: MAX_ARCHETYPES, perArchCap: SKILL_OFFER_PER_ARCH_CAP, doorSize: SKILL_OFFER_PER_ARCH_CAP });
     const dev = { rules: { skillsPerArch: 2, maxArchetypes: 3, perksOffered: 5 } };
     expect(perksOfferedFor(dev)).toBe(5);
-    expect(skillOfferParams(dev)).toEqual({ count: 6, maxArchetypes: 3, perArchCap: 2 });
-    // Ranked scarcity: exactly the legacy tuple (1 perk · count 4 under the builder's own cap), rule or not.
+    expect(skillOfferParams(dev)).toEqual({ count: 6, maxArchetypes: 3, perArchCap: 2, doorSize: 2 });
+    // Ranked scarcity: exactly the legacy tuple (1 perk · count 4 under the builder's own cap) and one skill per door.
     const scarce = { ...dev, weekMods: [{ effect: "scarcePerks" }, { effect: "scarceSkills" }] };
     expect(perksOfferedFor(scarce)).toBe(1);
-    expect(skillOfferParams(scarce)).toEqual({ count: 4, maxArchetypes: 3, perArchCap: SKILL_OFFER_PER_ARCH_CAP });
+    expect(skillOfferParams(scarce)).toEqual({ count: 4, maxArchetypes: 3, perArchCap: SKILL_OFFER_PER_ARCH_CAP, doorSize: 1 });
   });
 });
 
@@ -80,10 +81,10 @@ describe("reducer — START_RUN with action.dev.rules", () => {
     expect(s.maxCycles).toBe(30);
     expect(s.devSchedule).toHaveLength(30);
     expect(s.devConfig).toEqual({ rounds: 30, schedule: buildSchedule(30), cover: 10, energy: 4, fullCatalog: false, rules: s.rules });
-    // First decision = skill: the offer already follows the rules (2 × 2).
+    // First decision = skill: the doors already follow the rules (two doors of 2, at most 2 factions each).
     expect(s.phase).toBe("levelup");
-    expect(s.skillOffer).toHaveLength(4);
-    expect(archsOf(s.skillOffer).size).toBe(2);
+    expect(s.skillDoors).toHaveLength(2);
+    for (const d of s.skillDoors) { expect(d.skills).toHaveLength(2); expect(archsOf(d.skills).size).toBeLessThanOrEqual(2); }
     // Restart with devConfig reproduces the same rules.
     const again = reducer(menuState(), { type: "START_RUN", rng: makeRng(2), dev: s.devConfig });
     expect(again.rules).toEqual(s.rules);
@@ -105,7 +106,8 @@ describe("reducer — START_RUN with action.dev.rules", () => {
     const s = reducer(menuState(), { type: "START_RUN", rng: makeRng(1) });
     expect(s.rules).toBeNull();
     expect(s.devConfig).toBeNull();
-    expect(s.skillOffer).toHaveLength(SKILLS_OFFERED);
+    expect(s.skillDoors).toHaveLength(2);
+    for (const d of s.skillDoors) expect(d.skills).toHaveLength(SKILL_OFFER_PER_ARCH_CAP); // 3 per door
   });
 });
 
@@ -143,15 +145,18 @@ describe("engine — cycle end reads the rules", () => {
     const s3 = playCycle(withSchedule("perk", null), makeRng(7));
     expect(s3.offer).toHaveLength(PERKS_OFFERED);
   });
-  it("skill decision offers skillsPerArch × maxArchetypes (1 × 4 = 4), default 12", () => {
-    const s4 = playCycle(withSchedule("skill", { skillsPerArch: 1, maxArchetypes: 4 }), makeRng(7));
-    expect(s4.phase).toBe("levelup");
-    expect(s4.skillOffer).toHaveLength(4);
-    expect(archsOf(s4.skillOffer).size).toBe(4);
-    const s12 = playCycle(withSchedule("skill", null), makeRng(7));
-    expect(s12.skillOffer).toHaveLength(SKILLS_OFFERED);
-    // exp skill rework: every offered normal skill carries a rolled tier; the offer itself may hold legendaries.
-    for (const id of s12.skillOffer) expect(SKILL_DEFS[id].legendary ? !(id in s12.skillOfferTiers) : Number.isInteger(s12.skillOfferTiers[id])).toBe(true);
+  it("skill decision offers two doors of skillsPerArch skills (1 → one per door), default 3 per door", () => {
+    const s1 = playCycle(withSchedule("skill", { skillsPerArch: 1, maxArchetypes: 4 }), makeRng(7));
+    expect(s1.phase).toBe("levelup");
+    expect(s1.skillDoors).toHaveLength(2);
+    for (const d of s1.skillDoors) expect(d.skills).toHaveLength(1);
+    const s3 = playCycle(withSchedule("skill", null), makeRng(7));
+    expect(s3.skillDoors).toHaveLength(2);
+    // exp skill rework: every normal skill behind a door carries a rolled tier; a door may hold a legendary.
+    for (const d of s3.skillDoors) {
+      expect(d.skills).toHaveLength(SKILL_OFFER_PER_ARCH_CAP);
+      for (const id of d.skills) expect(SKILL_DEFS[id].legendary ? !(id in d.tiers) : Number.isInteger(d.tiers[id])).toBe(true);
+    }
   });
   // exp skill rework: the dedicated legendary decision is gone from the plan — legendaries roll inside the skill offer.
 });

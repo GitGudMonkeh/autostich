@@ -32,6 +32,11 @@ const offerKey = (e) => {
 };
 const archKey = (familyId, tier) => `${familyId}:${tier}`;
 const keys = (arr) => (Array.isArray(arr) ? arr.map(offerKey).filter(Boolean) : []);
+// exp skill rework: eine Tür als flacher String ("SK_A+SK_B+SK_C", Platzreihenfolge) — die Stufen sind an der Tür
+// nicht sichtbar und werden hier bewusst nicht geloggt; das geöffnete Angebot loggt PICK_SKILL/DECLINE_SKILL wie zuvor.
+const doorKeys = (doors) => (Array.isArray(doors) ? doors.map((d) => (d && Array.isArray(d.skills) ? d.skills.join("+") : "")).filter(Boolean) : []);
+// Skill-Angebot einer Entscheidung: das geöffnete Angebot, sonst die (noch geschlossenen) Türen.
+const skillKeys = (prev) => (prev.skillOffer ? keys(prev.skillOffer) : doorKeys(prev.skillDoors));
 
 // Welcher Reroll-Pool wurde angefasst? (Für „wie oft rerollt wer was".)
 const REROLL_KIND = {
@@ -54,11 +59,14 @@ export function decisionEntry(prev, action, next) {
       return { ...base, k: "perk", o: keys(prev.offer), p: `fam:${action.familyId}:${action.tier}` };
     case "DECLINE_PERK":
       return { ...base, k: "perk", o: keys(prev.offer), p: null };
+    case "CHOOSE_DOOR":
+      // exp skill rework: welche Tür (Index) vor welchen beiden Türen geöffnet wurde.
+      return { ...base, k: "door", o: doorKeys(prev.skillDoors), p: String(action.index) };
     case "PICK_SKILL":
       return { ...base, k: "skill", o: keys(prev.skillOffer), p: action.skillId,
         ...(action.replaceId ? { x: action.replaceId } : {}) }; // x = ersetzter Skill (Slot war voll)
     case "DECLINE_SKILL":
-      return { ...base, k: "skill", o: keys(prev.skillOffer), p: null };
+      return { ...base, k: "skill", o: skillKeys(prev), p: null };
     case "ARCHITECT_BUILD":
       return { ...base, k: "arch", o: keys((prev.architect || {}).offers), p: archKey(action.familyId, action.tier) };
     case "ARCHITECT_UPGRADE": {
@@ -74,9 +82,9 @@ export function decisionEntry(prev, action, next) {
       // Reroll = eigener Eintrag (statt nur eines Zählers): so ist später rekonstruierbar, WELCHES Angebot
       // weggeworfen wurde — `o` ist das VERWORFENE Angebot.
       return { ...base, k: "reroll", w: REROLL_KIND[t],
-        o: keys(t === "REROLL_PERK" ? prev.offer
-              : t === "REROLL_SKILL" ? prev.skillOffer
-              : (prev.architect || {}).offers), p: null };
+        o: t === "REROLL_PERK" ? keys(prev.offer)
+              : t === "REROLL_SKILL" ? skillKeys(prev)
+              : keys((prev.architect || {}).offers), p: null };
     default:
       return null;
   }

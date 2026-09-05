@@ -13,13 +13,19 @@ const ARCH = ["fire", "lightning"];
 const opts = { archetypes: ARCH };
 
 describe("Sim — Archetyp-Allowlist je Lauf (START_RUN action.archetypes)", () => {
-  it("das Erst-Angebot enthält nur Skills der genannten Archetypen; ohne Angabe bleibt der Pool offen", () => {
+  it("die Erst-Türen enthalten nur Skills der genannten Archetypen; ohne Angabe gilt der exp-Pool (Feuer/Blitz)", () => {
     const s = reducer(null, { type: "START_RUN", rng: makeRng(1), architect: true, archetypes: ARCH });
     expect(s.unlockedArchetypes).toEqual(ARCH);
-    expect(s.skillOffer.length).toBeGreaterThan(0);
-    expect(s.skillOffer.every((id) => ARCH.includes(archetypeOf(id)))).toBe(true);
-    expect(reducer(null, { type: "START_RUN", rng: makeRng(1), architect: true }).unlockedArchetypes).toBe(null);
+    const offered = s.skillDoors.flatMap((d) => d.skills);
+    expect(offered.length).toBeGreaterThan(0);
+    expect(offered.every((id) => ARCH.includes(archetypeOf(id)))).toBe(true);
+    const open = reducer(null, { type: "START_RUN", rng: makeRng(1), architect: true });
+    expect(open.unlockedArchetypes).toBe(null);
+    expect(open.skillDoors.flatMap((d) => d.skills).every((id) => ARCH.includes(archetypeOf(id)))).toBe(true);
     expect(reducer(null, { type: "START_RUN", rng: makeRng(1), architect: true, archetypes: [] }).unlockedArchetypes).toBe(null);
+    // Eine Allowlist ÖFFNET auch: Eis/Pflanze bleiben für die Sim erreichbar, wenn ein Lauf sie nennt.
+    const ice = reducer(null, { type: "START_RUN", rng: makeRng(1), architect: true, archetypes: ["ice"] });
+    expect(ice.skillDoors.flatMap((d) => d.skills).every((id) => archetypeOf(id) === "ice")).toBe(true);
   });
   it("ein ganzer Lauf hält nur Feuer- und Blitz-Skills", () => {
     const r = runOne(7, greedyPolicy({ explore: true, solveFormations: false }), newMemory(), null, opts);
