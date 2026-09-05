@@ -779,6 +779,27 @@ entlädt sie sich trotzdem: ihr Stapel-Score zählt als Basis des verlorenen Sti
 (Niederlagen scoren), spät im Mono-Build rund +50 % Stapel-Score über die 14 Niederlagen je Runde;
 braucht einen Score-Pfad für verlorene Stiche in der Engine.
 
+Entscheid Owner (2026-09-05): **Hochspannung gesetzt wie vorgeschlagen.** Flächenionisation entfällt.
+
+**Durchschlag** — Crit. Heute: voll ionisierte Karte (5 Stapel) gewinnt mit Crit: dauerhaft +0,18×
+Crit-Multiplikator, Deckel +2×. Die Mult-Rampe gehört jetzt Entladung, die Tiefe den Schwellen-Skills;
+als Legendär wäre das nur mehr vom selben. Neu ein Regelbruch am Crit selbst: er entscheidet nicht
+mehr nur den Score, sondern den Stich.
+
+> **Auch Niederlagen können critten: ein Crit bei einer Niederlage gewinnt den Stich.**
+
+Der Durchschlag-Sieg ist ein voller Crit-Sieg: Crit-Multiplikator, Ladung, Serie, Blitzschlag, alles
+wie bei einem gewonnenen Crit. Größenordnung: 14 Niederlagen je Runde mal Crit-Chance. Bei 15 % sind
+das +2 Siege je Runde (Siegquote 65 auf 70 %), bei 30 % +4 (75 %), bei 50 % +7 (83 %), bei 100 % +14:
+kein Stich geht mehr verloren, die Serie bricht nie. Crit-Chance ist damit für den Crit-Build doppelt
+wertvoll, und 100 % ist ein Ziel mit eigener Bedeutung; darüber greifen Systemregel und Überschlag wie
+bisher. Abgrenzung: Donnergott Rate, Doppelentladung Tiefe und Doppelschlag, Hochspannung das Kit,
+Durchschlag der Stich. Wechselwirkungen: Statische Aufladung (Sieg ohne Crit) und Spannungsstau sind
+unberührt; Serienschutz wird mit steigender Crit-Chance überflüssig; Bosse mit Zählbedingungen werden
+für Crit-Builds leichter. Umsetzung: der Crit-Wurf läuft auch auf verlorenen Stichen (eigener
+Zufallsstrom), ein Treffer wandelt das Ergebnis vor der Wertung. Ein zweiter Effekt ist möglich, aber
+nicht nötig; der Vorschlag lässt den Regelbruch allein stehen.
+
 ---
 
 ## 4. Feuer
