@@ -687,7 +687,30 @@ Reststrom Episch mit Blitzableiter Sehr selten und Statische Aufladung; Ladungss
 (endlose Serie); Kettenblitz Episch × Blitzfänger; der Bonus je Stapel als Regler, wenn Stapel zu
 mächtig werden; Schwellen 6 / 5 / 4 / 3 gegen die gemessene Stapel-Tiefe.
 
-**Noch offen für Blitz:** die vier Legendären (separat), die Skilltexte für `de.js`, die Umsetzung.
+**Noch offen für Blitz:** die vier Legendären (3.7), die Skilltexte für `de.js`, die Umsetzung.
+
+### 3.7 Legendäre Blitz
+
+**Heute (Code-Stand):** vier Legendäre je Fraktion. Sie sind nie Teil des normalen Angebots, sondern
+kommen ausschließlich über eine eigene Legendär-Phase (Plan-Token `legendary`, Runde 29): Mono zeigt
+drei Legendäre der Fraktion, Duo und Trio zwei je Fraktion. Ein Legendär je Lauf. Direkt-Dividenden
+skalieren mit dem Bekenntnis (Anteil der Fraktion an den Slots). Bestand siehe 3.3.
+
+**Rahmen Legendäre (Vorschlag, Entscheid Owner):**
+
+1. **Keine Stufen.** Ein Legendär hat eine Fassung und steht über Episch.
+2. **Tor statt Bekenntnis.** Legendäre einer Fraktion erscheinen nur, wenn mindestens drei Skills dieser
+   Fraktion gehalten werden. Damit ist das Bekenntnis am Tor geprüft; eine Skalierung der Effekte mit
+   dem Bekenntnis-Anteil entfällt, die Effekte sind fest.
+3. **Kanal: die Tür.** Ein Legendär ist die fünfte Stufe im Würfelwurf nach der Türwahl, nur für
+   Fraktionen, deren Tor offen ist. Startwert für die Sim: 5 % je Skill-Platz einer offenen Fraktion,
+   im Schnitt knapp ein Legendär je Lauf; Quote und Pity zusammen mit Episch (offen). Die eigene
+   Legendär-Phase entfällt; der Zeitpunkt folgt dem Bekenntnis (drei Skills ab etwa Runde 13). Sobald
+   Bosse existieren, ist Boss-Beute der zweite mögliche Kanal.
+4. **Ein Regelbruch je Legendär**, kein Zahlenpaket: eine Regel der Fraktion wird gebrochen, ein Effekt,
+   kein Direkt-Score, keine eigenen Deckel (die Engine-Deckel bleiben). Jeder der vier gehört zu einer
+   anderen Achse des Kits: Rate (Leiste), Feld (Stapel im Deck), Tiefe (tiefe Karten), Crit.
+5. **Ersetzen erlaubt:** ein zweites Legendär derselben Fraktion ist möglich, wenn der Wurf es bringt.
 
 ---
 
