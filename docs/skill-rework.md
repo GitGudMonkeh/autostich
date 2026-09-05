@@ -73,7 +73,7 @@ Entscheid: bleibt / geändert / gestrichen — Begründung in einem Satz
 
 | Fraktion | Passiv | Die 15 | Stufen | Legendäre |
 | --- | --- | --- | --- | --- |
-| Blitz | gesetzt, ein Punkt offen | offen, Ionisierung gestrichen | offen | separat, später |
+| Blitz | gesetzt | offen, Ionisierung gestrichen | offen | separat, später |
 | Feuer | offen | offen | offen | separat, später |
 | Eis | offen | offen | offen | separat, später |
 | Pflanze | offen | offen | offen | separat, später |
@@ -118,6 +118,8 @@ Was dahinter läuft (Code-Stand, Konstanten in `src/game/constants.js`):
 - **Ionisierung entfällt als Skill.**
 - **Stapel ohne Deckel.** Eine Karte kann beliebig oft ionisiert werden, jeder Stapel zählt. Tuning
   notfalls über die Sim.
+- **Zielkarte: die nächste in der Reihenfolge.** Die volle Leiste ionisiert die Karte, die nach der
+  Karte des zehnten Crits an der Reihe ist. Damit entscheidet die Aufstellung mit, wo Stapel landen.
 
 Muster, das damit für alle Fraktionen gilt (Vorschlag): Passiv = eine Ressource freischalten plus ein
 fester Payoff. Skills ändern die Rate, den Payoff und tun etwas mit der Menge.
@@ -134,15 +136,22 @@ fester Payoff. Skills ändern die Rate, den Payoff und tun etwas mit der Menge.
 
 **Folge des offenen Deckels:** "voll ionisiert" gibt es nicht mehr als Zustand. Skills, die heute daran
 hängen (Kurzschluss, Blitzfänger, Durchschlag), brauchen entweder eine Schwelle ("ab 5 Stapeln") oder
-skalieren je Stapel. Der Score je Stapel bleibt flach und vor den Multiplikatoren, damit ein tiefer
-Stapel linear wächst und nicht mit dem Stack multipliziert.
+skalieren je Stapel.
 
-**Offener Punkt, der vor der 15er-Auswahl gesetzt sein muss (Owner):**
+**Wo der Stapel-Score in die Rechnung geht (Vorschlag, Entscheid beim Owner).** Ein gewonnener Stich
+rechnet Basis mal Multiplikatoren, also Kartenwert und Zuschläge, dann Serie, Perk-Multiplikator,
+Formation, Crit. Der Score je Stapel kann an zwei Stellen stehen:
 
-1. **Welche Karte.** Die Karte, die den zehnten Crit macht, eine zufällige Karte, oder die nächste in der
-   Reihenfolge. Die erste konzentriert Ionisierung auf starke Karten und baut tiefe Stapel, die zweite
-   verteilt, die dritte macht die Aufstellung relevant. Mit offenem Deckel ist "zufällig" jede Karte,
-   nicht nur nicht ionisierte.
+| Stelle | Heute | Verhalten bei offenem Deckel |
+| --- | --- | --- |
+| in der Basis, vor den Multiplikatoren | so läuft ION_SCORE_PER_STACK heute | jeder Stapel wird mit dem ganzen Stack multipliziert, tiefe Stapel explodieren mit dem Build |
+| Direkt-Score, nach den Multiplikatoren | so laufen heute die Legendär-Dividenden | jeder Stapel zählt fest, tiefe Stapel wachsen linear |
+
+Beispiel mit Basis 20, drei Stapeln zu 12 und Multiplikator 8: in der Basis 56 × 8 = 448, als
+Direkt-Score 20 × 8 + 36 = 196. Vorschlag ist Direkt-Score, weil die Stapel jetzt keinen Deckel haben.
+Damit ist Ionisierung ein Boden, der mit der Anzahl wächst, kein zweiter Multiplikator.
+
+Alle drei offenen Punkte sind gesetzt. Die 15er-Auswahl kann beginnen.
 
 Vorschlag am Rand: der passive Anteil von 5 % bleibt je Skill fest und skaliert nicht mit der Stufe.
 Die Stufe wirkt auf den Skill-Effekt. Das hält das Passiv einfach und die Leiter berechenbar.
@@ -274,3 +283,4 @@ Offen.
 | 2026-09-04 | Blitz-Passiv neu gesetzt (Leiste, 10 Crits, eine Karte ionisieren, nur Score). Folgen für den Bestand, Tempo-Tabelle und drei offene Punkte eingetragen. |
 | 2026-09-04 | Crit-Quelle gesetzt: +5 % je Blitz-Skill als passiver Anteil, Zahlen später in der Sim. Ionisierung als Skill gestrichen. Tempo-Tabelle auf gehaltene Skills umgestellt. |
 | 2026-09-04 | Stapel ohne Deckel gesetzt, Tuning über Sim. "Voll ionisiert" wird Schwelle oder Skalierer. Offen bleibt nur noch die Zielkarte. |
+| 2026-09-04 | Zielkarte gesetzt: die nächste in der Reihenfolge. Passiv damit komplett. Stelle des Stapel-Scores (Basis oder Direkt-Score) als Vorschlag mit Beispiel eingetragen. |
