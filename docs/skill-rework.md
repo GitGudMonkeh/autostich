@@ -1123,6 +1123,28 @@ alle 40 Karten hebt die Siegquote grob um 8 Punkte, +3 in Richtung 90 %. Das ist
 Halte-Builds: Hitze oben halten heißt starkes Deck, jeder Konsum kostet Wert. Zusammenspiel: Glutbett
 sichert die Stufen gegen Niederlagen, Feuerwalze legt Serie-Wert obendrauf.
 
+Entscheid Owner (2026-09-05): **gesetzt wie vorgeschlagen.**
+
+**Weißglut** — über die Leiste. Heute: Hitze über 100 staut sich als Überhitzung bis 150, je höher,
+desto weniger kommt an; +2 % Feuer-Score je Punkt; baut 2 je Stich ab, 5 bei Niederlage. Neu: die
+Leiste reicht bis 200, und der Passiv-Multiplikator läuft darüber weiter, steiler. Ein Regler, die
+Steigung über 100. Die Dämpfung und der eigene Abbau entfallen; über 100 kühlt nur, was auch unter 100
+kühlt (Niederlagen, Konsumenten).
+
+| Stufe | Effekt | Multiplikator bei 200 % (Passiv bis 100 gibt ×1,2) | Extra |
+| --- | --- | --- | --- |
+| Normal | Leiste bis 200 %; über 100 je 10 % Hitze +3 % Score | ×1,5 | – |
+| Selten | +4 % | ×1,6 | – |
+| Sehr selten | +5 % | ×1,7 | – |
+| Episch | +6 % | ×1,8 | – (stark) |
+
+Heute (×2 auf den Feuer-Score bei 150) liegt etwa auf Selten. Warum die Leiste ein Ende hat: ein
+offener Score-Multiplikator hätte keines; mit Glutbett Episch (Niederlagen kühlen nicht) und Zunder
+wüchse die Hitze linear über den Lauf, das wäre eine Rampe ohne Boden. Die 200 sind eine Skala wie die
+100, kein Rampen-Deckel; die Steigung ist der Regler. Weißglut ist der Payoff des Halte-Builds neben
+Glühende Klinge (Wert): beide wollen dieselbe hohe Hitze, jeder Konsum kostet beide. Sim-Wachpunkt:
+Weißglut mit Glutbett Episch und Zunder, dann steht die Leiste dauerhaft bei 200.
+
 ## 5. Eis
 
 Offen.
