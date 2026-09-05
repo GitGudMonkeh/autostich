@@ -1145,6 +1145,27 @@ wüchse die Hitze linear über den Lauf, das wäre eine Rampe ohne Boden. Die 20
 Glühende Klinge (Wert): beide wollen dieselbe hohe Hitze, jeder Konsum kostet beide. Sim-Wachpunkt:
 Weißglut mit Glutbett Episch und Zunder, dann steht die Leiste dauerhaft bei 200.
 
+Entscheid Owner (2026-09-05): **gesetzt wie vorgeschlagen.**
+
+**Feuerwalze** — Serie zu Wert. Heute: ab 40 % Hitze gibt jeder Sieg in Folge der nächsten Karte
++1 Stichwert, bis +3; Niederlage setzt zurück. Neu ohne Serien-Skalierung, dafür fest: nach einem Sieg
+hat die nächste Karte +2 Wert. Ein Effekt, die Hitze-Schwelle ist der Regler und sinkt mit der Stufe.
+
+| Stufe | Effekt | Extra |
+| --- | --- | --- |
+| Normal | ab 80 % Hitze: nach einem Sieg hat die nächste Karte +2 Wert | – |
+| Selten | ab 60 % | – |
+| Sehr selten | ab 40 % | – |
+| Episch | ab 20 % | – |
+
+Heute (ab 40, gestaffelt +1 bis +3) liegt auf Sehr selten. Warum fest statt je Serienpunkt: offen
+skaliert wäre die nächste Karte bei Serie 8 um +8 stärker und gewänne fast sicher, die Serie endete
+nie; das war der Grund für den heutigen Deckel. Der feste Bonus rollt trotzdem: nach einem Sieg gewinnt
+die nächste Karte mit +2 statt mit 65 % in etwa 80 %, die mittlere Serie steigt von 2,9 auf rund 5.
+Feuerwalze ist damit der Serien-Motor von Feuer und füttert Feuersturm (Hitze je Serienpunkt) und
+fremde Serien-Skills. Die Schwelle koppelt ihn an den Halte-Build; ein Tropf-Build kommt erst mit
+Sehr selten oder Episch heran.
+
 ## 5. Eis
 
 Offen.
