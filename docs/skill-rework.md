@@ -456,33 +456,44 @@ gemessener Anteil des Stapel-Scores an der Kartenbasis über den Lauf, mono: ohn
 Normal 0,80×, Selten 1,08×, Sehr selten 1,62×, Episch 2,69×; mit 3–4 Skills 0,40 / 0,59 / 0,81 / 1,21 /
 2,02×.
 
+**Stapel-Tiefe in realen Builds.** Die Zahlen oben (nur Passiv, keine Rate-Skills) sind die untere
+Schranke. Mit den gesetzten und den vorgeschlagenen Skills liegen die Stapel weit höher
+(`blitz-build.mjs` im Scratchpad: ein Skill je Phase, alle Skills auf derselben Stufe, 3000 Läufe).
+Mono nimmt Blitzableiter, Statische Aufladung, Kettenblitz, Reststrom, Blitzschlag, Blitzfänger,
+Überspannung, Gewitterfront, Ladungsserie, Entladung; Splash die ersten vier davon.
+
+| Build, Stufe aller Skills | Leisten | Stapel gesamt | tiefste Karte | Karten ≥3 / ≥4 / ≥5 / ≥6 / ≥8, Schnitt über den Lauf | am Ende |
+| --- | --- | --- | --- | --- | --- |
+| mono, Normal | 116 | 227 | 11 | 10,8 / 7,0 / 4,2 / 2,4 / 0,6 | 37 / 33 / 27 / 20 / 8 |
+| mono, Selten | 233 | 539 | 20 | 19,8 / 16,6 / 13,8 / 11,4 / 7,5 | 40 / 40 / 40 / 40 / 39 |
+| mono, Sehr selten | 358 | 1163 | 37 | 25,2 / 23,1 / 21,2 / 19,4 / 16,2 | alle 40 |
+| mono, Episch | 577 | 3157 | 94 | 29,2 / 28,2 / 27,3 / 26,6 / 25,3 | alle 40 |
+| Splash 4 Skills, Selten | 111 | 211 | 10 | 15,3 / 10,2 / 6,2 / 3,4 / 0,8 | 37 / 32 / 25 / 17 / 6 |
+| Splash 4 ohne Statische Aufladung, Selten | 43 | 85 | 6 | 3,7 / 1,3 / 0,4 / 0,1 / 0 | 14 / 6 / 2 / 1 / 0 |
+
+Statische Aufladung ist der größte Treiber (Sim-Notiz oben), Kettenblitz und Blitzschlag die nächsten.
+Ab Selten hat ein Mono-Build am Ende alle 40 Karten über jeder Schwelle bis 8. Eine Stapel-Schwelle
+steuert also, **wann** im Lauf ein Skill anspringt, nicht ob; sie gilt als Referenz für alle
+Schwellen-Skills (Blitzfänger, Kurzschluss).
+
 **Blitzfänger** — Tiefe zu Wert. Heute: Ionisierung trifft volle Karte (5 Stapel): +2 Stichwert beim
 nächsten Auftauchen, +1 Ladung. Vorgabe Owner (2026-09-05): einfacher, ein Effekt je Skill, Schwelle auf
-den Stapeln, weil Stapel ohne Deckel sind. Ein erster Entwurf mit Wert je Ionisierung plus Ladung je
-Leiste wurde deshalb verworfen. Neu: Zustand statt Ereignis, keine Ladung.
+den Stapeln, die mit der Stufe sinkt; eine feste Schwelle bei 2 ist zu niedrig. Zwei frühere Entwürfe
+(Wert je Ionisierung plus Ladung je Leiste; feste Schwelle 2 mit steigendem Wert) sind damit verworfen.
+Neu: Zustand statt Ereignis, keine Ladung, ein Wert für alle Stufen.
 
 | Stufe | Effekt | Extra |
 | --- | --- | --- |
-| Normal | Karten ab 2 Stapeln haben +1 Wert | – |
-| Selten | Karten ab 2 Stapeln haben +2 Wert | – |
-| Sehr selten | Karten ab 2 Stapeln haben +3 Wert | – |
-| Episch | Karten ab 2 Stapeln haben +4 Wert | – (stark) |
+| Normal | Karten ab 6 Stapeln haben +2 Wert | – |
+| Selten | Karten ab 5 Stapeln haben +2 Wert | – |
+| Sehr selten | Karten ab 4 Stapeln haben +2 Wert | – |
+| Episch | Karten ab 3 Stapeln haben +2 Wert | – |
 
-Wert wirkt doppelt, als Basis-Score und als Siegchance. Heute ist nicht vergleichbar (seltenes
-Ereignis, Wert einmalig), die Sim skaliert die Leiter. Wie viele Karten die Schwelle erreichen
-(Lesart A, `stacks.mjs`; Durchschnitt über den Lauf / am Ende):
-
-| Build | Leiste 10 Crits | Leiste 5 Crits (≈ Blitzableiter Selten) |
-| --- | --- | --- |
-| mono | 1,4 / 6 | 4,3 / 17 |
-| mono + Kettenblitz Selten | 4,1 / 16 | 10 / 32 |
-| mono + Kettenblitz Episch | 12 / 33 | 20 / 40 |
-| 3–4 Skills | 0,7 / 3 | 2,7 / 9 |
-| 3–4 Skills + Kettenblitz Selten | 2,5 / 8 | 7,4 / 21 |
-
-Schwelle 3 statt 2: mono mit Leiste 5 im Schnitt 1,1 Karten, am Ende 7; nur mit Kettenblitz Sehr selten
-oder Episch lebendig. Schwelle 2 ist im Splash-Build schwach und wird von Rate-Skills und Kettenblitz
-getragen. Nach oben begrenzt das Deck selbst (40 Karten mal Wert), ein Deckel ist nicht nötig.
+Karten mit dem Bonus im Schnitt über den Lauf, andere Skills auf Selten: mono 11 / 14 / 17 / 20, Splash
+4 Skills 3 / 6 / 10 / 15, Splash ohne Statische Aufladung 0,1 / 0,4 / 1,3 / 3,7. Am Ende hat der
+Mono-Build auf jeder Stufe alle 40 Karten über der Schwelle, der Splash-Build 17 / 25 / 32 / 37. Wert
+wirkt doppelt, als Basis-Score und als Siegchance. Die Sim skaliert die +2 und kann die Schwellen
+verschieben; nach oben begrenzt das Deck selbst (40 Karten mal Wert).
 
 **Kurzschluss** — Tiefe zu Score. Heute: Sieg mit voller Karte +250 Direkt-Score, +3 Ladung.
 Direkt-Score entfällt, Ersatz: die Stapel dieser Karte zählen in diesem Stich mehrfach.
@@ -585,3 +596,6 @@ Offen.
 | 2026-09-04 | Owner: Stapel-Score bleibt in der Basis. Regel für alle Fraktionen: Direkt-Score aus den Skills nach Möglichkeit entfernen. Betroffene Blitz-Skills markiert. |
 | 2026-09-04 | Durchgang über die 16 Blitz-Skills mit Einordnung. Streichvorschlag Breitenbeschleuniger, zweiter Kandidat Gewitterfront, Blitzschlag für den Stufen-Durchgang vorgemerkt. Entscheid offen. |
 | 2026-09-04 | Owner: Breitenbeschleuniger gestrichen, die 15 stehen. Stufen-Vorschlag für alle 15 eingetragen, heute = Selten bis Sehr selten, Direkt-Score überall ersetzt. Entscheid je Skill offen. |
+| 2026-09-04 | Stufen gesetzt: Blitzableiter, Statische Aufladung, Reststrom, Gewitterfront und Entladung (beide ohne Deckel überarbeitet). Systemregel: Crit-Chance über 100 % gibt einen sehr kleinen Crit-Mult-Bonus. |
+| 2026-09-05 | Ladungsserie (ohne Deckel) und Kettenblitz gesetzt. Lesart A gesetzt: kein Selbstwachstum der Stapel, Stapel nur aus Leiste und Skills. Messung beider Lesarten eingetragen. |
+| 2026-09-05 | Blitzfänger zweimal überarbeitet, zuletzt auf Owner-Vorgabe: ein Effekt, Stapel-Schwelle sinkt mit der Stufe. Stapel-Tiefe in realen Builds gemessen (Passiv-Zahlen waren die untere Schranke) und als Referenz für alle Schwellen-Skills eingetragen. |
