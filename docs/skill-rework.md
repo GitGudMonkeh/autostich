@@ -1924,6 +1924,46 @@ mit Zunder nach ~23, mit allen vier nach ~12. Die Hitze lebt jetzt in der Mitte 
 Multiplikator ist ein Ziel, kein Zustand. Texte (Passiv im Angebot, Glossar) interpolieren die Konstanten; der
 Sim-Band-Wächter wird auf die neue Welt zentriert.
 
+### 7.11 Große Runde mit Random-Picks (2026-09-05, nach 7.10)
+
+Owner: „nicht gierig, sondern random, um ein besseres Gefühl zu bekommen." `npm run sim -- --mode skills --policy
+random --explore 1000 --runs 150 --seed 1`: der Zufallsspieler nimmt aus jeder Tür und jedem Angebot irgendetwas
+(Aufstellung und Architekt greedy wie beim gierigen Spieler, damit nur die Picks anders sind). 1000 Läufe für die Lifts
+(mit ÷ ohne, je Stufe), 150 frische Läufe plus je Skill der Zufallsspieler, der diesen Skill nie nimmt. Achtung: die
+Ablation ist beim Zufallsspieler nur lose gepaart (seine übrigen Züge verschieben sich), fast alles landet dort bei
+„tot" — die **Lift-Spalte** ist hier das Signal, nicht das Median-Δ.
+
+Zufallsspieler: Median 2,08M (gierig 14,4M — das Siebenfache), Siegquote 57 %, Ø 10 Skills, Legendäre selten (3–7 %).
+
+**Feuer, Lift (mit ÷ ohne):** Sonnenkern 3,68 (L) · Klinge 1,27 · Sonnenzorn 1,26 (L) · Weißglut 1,11 · Lauffeuer 1,09
+· Damaststahl 1,09 (L) · Rückzündung 1,08 · Feuerwalze 1,07 · Phönixfeuer 1,07 (L) · Glutstahl 1,03 · Verbrennung 1,01 ·
+Zunder 1,00 · Feuersturm 0,99 · Brandmal 0,98 · Glut 0,97 · Glutbett 0,96 · **Schmiede 0,91 · Schmelzpunkt 0,76 ·
+Flächenbrand 0,75.**
+
+**Blitz, Lift:** Durchschlag 1,47 (L) · Ladungsserie 1,16 · Hochspannung 1,04 (L) · Überschlag 1,02 · Spannungsstau 1,01
+· Doppelentladung 1,01 (L) · Blitzschlag 1,00 · Reststrom 0,99 · Serienschutz 0,98 · Kurzschluss 0,97 · Statische
+Aufladung 0,96 · Blitzfänger 0,95 · Dauerstrom 0,94 · Überspannung 0,93 · Kettenblitz 0,93 · Entladung 0,91 ·
+Blitzableiter 0,89 · Gewitterfront 0,89 · Donnergott 0,80 (L, n ≈ 70).
+
+Das Gefühl, das sich daraus ergibt:
+
+1. **Für den Zufallsspieler sind die drei Hitze-Verbraucher die Falle.** Flächenbrand und Schmelzpunkt kosten ein Viertel
+   des Laufs, die Schmiede ein Zehntel — sie verbrennen die Hitze, die Klinge und Multiplikator brauchen, und zahlen
+   dafür flach zu wenig. Das ist in allen drei Auswertungen (gierig flach, gierig Türen, random) dasselbe Bild.
+2. **Die Verstärker sind für sich neutral (0,97–1,08).** Sie zahlen nur, wo der Build Hitze in Score wandelt (7.10:
+   im Kern-Build +10 % Glut, +23 % Zunder). Das ist die Feuer-Logik nach 7.10: Verstärker × Klinge/Weißglut, nicht
+   Verstärker allein. Glut bleibt der schwächste der vier.
+3. **Blitz ist flach.** Ohne Sonnenkern-Ausreißer liegen 15 von 19 Blitz-Skills zwischen 0,9 und 1,05 — das Passiv
+   (+5 % Crit je Skill) trägt, der Skill selbst ist beinahe egal. Nur Durchschlag (1,47) und Ladungsserie (1,16) stechen
+   heraus; Entladung, Blitzableiter, Gewitterfront und Donnergott liegen unter 1 (Rampen, die viele volle Leisten
+   brauchen — der Zufallsspieler füllt zu wenige).
+4. **Die Stufen zeigen beim Zufallsspieler mehr Spreizung als beim gierigen** (Klinge SS 2,55, Lauffeuer E 2,28,
+   Statische Aufladung E 2,04), weil im Zufalls-Build ein einzelner starker Skill den Lauf trägt. Die Zahlen je Stufe
+   bleiben aber dünn (n 30–120 je Stufe).
+
+Nächster Schritt aus Sicht der Sim: die gierige Auswertung mit den 7.10-Konstanten wiederholen, sobald der Owner über
+Konsumenten, Glut und Blitz-Träger (7.8/7.9) entschieden hat — vorher misst sie nur den heutigen Stand noch einmal.
+
 ## 5. Eis
 
 Offen.
@@ -1964,3 +2004,4 @@ Offen.
 | 2026-09-05 | Motor-Diagnose (7.8, `--mode motor`): das Feuer-Passiv hält die Hitze allein (226 % Gewinn gegen 14 % Kühlung je Runde, 62 % der Stiche ≥ 100 %), Glut ist tot, weil die Leiste voll ist, Engpass ist der Kaltstart (532 Stiche bis 100 ohne, 263 mit Zunder); Konsumenten verbrennen die Basis. Blitz: Crit trägt 48–59 % des Scores, Stapel 13 % (Stapel-Build 33 %), Ionisierung alle 30 Stiche. Vorschläge an den Owner. |
 | 2026-09-05 | Große Auswertung mit Türen (7.9): robust stark Sonnenkern, Klinge, Weißglut, Ladungsserie, Doppelentladung, Durchschlag; robust schädlich Glut, Glutbett, Feuersturm, Spannungsstau; tot Glutstahl, Schmiede, Überspannung, Reststrom, Kurzschluss; Konsumenten und Phönixfeuer ungenommen. Gierig 14,4M gegen 16,4M flach. Stufen tragen weiter nicht. Fünf Punkte für den Owner. |
 | 2026-09-05 | Owner: Pool Feuer/Blitz bestätigt; Neuwurf würfelt die drei Skills der geöffneten Tür neu (umgesetzt); Hitze schneller verbrauchen (7.10): Kühlung 2 → 6, Vorsprung-Offset 2 → 1 nach Sweep — ein Verstärker zahlt jetzt +10 % (Glut) bis +23 % (Zunder), Feuer mono gegen Blitz mono 1,00×. Danach die große Runde mit Random-Picks (7.11). |
+| 2026-09-05 | Random-Runde (7.11, `--policy random`): Zufallsspieler 2,08M gegen gierig 14,4M; Lifts statt Ablation lesen. Feuer: die drei Verbraucher kosten 9–25 %, Verstärker neutral (zahlen nur mit Klinge/Weißglut), Sonnenkern 3,68. Blitz flach (15 von 19 zwischen 0,9 und 1,05), Durchschlag 1,47, Ladungsserie 1,16. |
