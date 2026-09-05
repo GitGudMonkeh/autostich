@@ -865,8 +865,13 @@ Regel). Sollte "Siege ohne Abstand kühlen" gemeint sein, ändert das die Rechnu
 | Mindest-Vorsprung | 3 | 3 | 62 % der Siege zählen, knappe nicht |
 | Niederlage | min(Rückstand, 10) + 25 % der Hitze | −2 % flach | die proportionale Kühlung ist ein weicher Deckel |
 | Leiste | 0 bis 100 | 0 bis 100 | Skala wie die Blitz-Leiste, kein Rampen-Deckel; darüber nur per Skill (Weißglut) |
-| Passiv-Anteil je Feuer-Skill | +5 Feuer-Score je Punkt | **offen:** +1 % Hitze je Sieg mit Abstand je Feuer-Skill, oder nichts | Analog zu +5 % Crit je Blitz-Skill |
-| Direkt-Score | Hitze-Dividende 32 je % | entfällt | Regel aus dem Rahmen |
+| Passiv-Anteil je Feuer-Skill | +5 Feuer-Score je Punkt | **nichts (gesetzt)** | Owner: keine Abhängigkeit von gehaltenen Feuer-Skills |
+| Direkt-Score | Hitze-Dividende 32 je % | **entfällt (gesetzt)** | Regel aus dem Rahmen |
+
+Entscheid Owner (2026-09-05): **Lesart bestätigt (Niederlagen kühlen), Zahlen als Sim-Startwerte,
+Direkt-Score weg, und keine Abhängigkeit von der Zahl gehaltener Feuer-Skills, weder im Passiv noch in
+den Skills.** Damit entfallen im Bestand alle "+X je weiterem Feuer-Skill"-Anteile (Feuer-Score,
+Funkenflug, Flächenbrand) und das Bekenntnis.
 
 Tempo mit den Vorschlagszahlen: netto je Stich 0,65 × 1,9 − 0,35 × 2 ≈ +0,55, also rund +22 je Runde
 ohne Skills, Leiste voll nach etwa 4,5 Runden. Mit vier Feuer-Skills und +1 je Skill: 0,65 × 5,9 − 0,7
@@ -946,6 +951,44 @@ Linien wie im Code (`src/game/skills.js`), Kennwerte in Klammern die heutigen Ko
 | SK_FIRE_L02 | Phönixfeuer | Niederlagen kosten keine Hitze, sondern geben +8 % je Rückstandspunkt; auf 0 verbrauchte Hitze entzündet sich einmal je Runde auf 40 %. |
 | SK_FIRE_L03 | Sonnenzorn | Gesamter Sieg-Score mal höchster je erreichter Hitze: +1 % je Prozent bis 100 (×2), +3 % je Punkt Überhitzung (mit Weißglut ×3,5). |
 | SK_FIRE_L04 | Damaststahl | Schmiedet jede Runde die niedrigste Karte ohne Asche (+3, bis 10 Karten); geschmiedete Karten kämpfen mit +5; +14 Score je geschmiedetem Wertpunkt je Sieg. |
+
+### 4.4 Die 15
+
+**Durchgang über die 17 (Vorschlag, 2026-09-05).** Kriterien wie bei Blitz: zu ähnlich zu einem anderen
+Skill, oder durch die Passiv-Änderung nicht mehr relevant. Zwei müssen gehen. Dazu die Owner-Vorgaben:
+Skills nutzen die Hitze, keine Abhängigkeit von gehaltenen Feuer-Skills, Schmiede ohne Asche.
+
+| Skill | Unter dem neuen Passiv | Einordnung |
+| --- | --- | --- |
+| Glut | Hitze aus Vorsprung ×1,5 | bleibt, der Rate-Skill des Passivs |
+| Zunder | jeder Sieg +2 % Hitze, auch knappe | bleibt, zweite Rate-Quelle mit anderem Auslöser (die 38 % knappen Siege) |
+| Feuersturm | Serie gibt Hitze | bleibt, Serie-Schnittstelle wie Dauerstrom bei Blitz; Deckel fällt |
+| Glutbett | Niederlagen kühlen weniger | bleibt; mit der flachen −2 je Niederlage wird er zum "Niederlagen kühlen nicht", 14 × 2 = 28 Hitze je Runde, so viel wie das halbe Passiv |
+| Rückzündung | Sieg nach Niederlage gibt Hitze und Wert | bleibt, Comeback-Skill; zwei Effekte, im Stufen-Durchgang auf einen bringen |
+| Glühende Klinge | Kartenwert nach Hitzestand | bleibt, Schwellen-Skill; die Vorsprungs-Bedingungen fallen |
+| Weißglut | Hitze über 100 | bleibt, einziger Weg über die Leiste |
+| Feuerwalze | ab 40 % Hitze: Serie gibt der nächsten Karte Wert | bleibt, Wert-Motor mit Hitze-Tor |
+| Verbrennung | Feuer-Score ×1,5 / ×2 bei großem Vorsprung | bleibt mit Vorbehalt: das Passiv macht keinen Feuer-Score mehr, der Multiplikator trifft nur noch Skill-Score (Konsumenten, Schmiede); im Stufen-Durchgang prüfen, ob er auf Hitze umgestellt wird |
+| Funkenflug | Speicher aus Feuer-Score kleiner Siege, Auszahlung bei großem Sieg | **nicht mehr relevant:** rechnet mit Feuer-Score des Passivs (weg) und mit "+20 je weiterem Feuer-Skill" (weg); zweiter Vorsprungs-Payoff neben Verbrennung |
+| Flächenbrand | ab 80 % Hitze: Sieg verbrennt bis 40 %, Score je Punkt | bleibt, der Burst-Konsument; "+17 je weiterem Feuer-Skill" fällt |
+| Schmelzpunkt | jeder Sieg verbrennt 4 %, Score je Punkt und je gehaltener Hitze | bleibt, der Tropf-Konsument. Verbraucher-Regel (höchstens einer) prüfen: beide zugleich bremsen sich selbst, Schmelzpunkt hält die Hitze unter 80 |
+| Brandmal | Sieg brandmarkt Gegnerkarte, Asche | bleibt als Gegner-Debuff; Asche fällt |
+| Lauffeuer | Verstärker: Brände greifen über | bleibt vorerst; ohne Tor an den Türen ist ein Verstärker ohne Basis ein toter Pick, im Stufen-Durchgang eigenständig machen oder in Brandmal-Stufen aufgehen lassen |
+| Ascheschmiede | Rundenende: niedrigste Karte +3 dauerhaft für 20 Asche | bleibt als **Schmiede**, ohne Asche; Vorschlag: kostet Hitze, damit ein Hitze-Nutzer |
+| Glutstahl | Verstärker: geschmiedete Karten geben Score | bleibt vorerst, gleiche Verstärker-Frage wie Lauffeuer |
+| Schmelzofen | ab 50 % Hitze: Brände stärker, mehr Asche, Schmieden billiger | **nicht mehr relevant:** zwei Effekte, beide an Asche gebunden; "Schmieden billiger" ist eine Stufe der Schmiede, kein Skill |
+
+**Vorschlag zum Streichen: Funkenflug und Schmelzofen.** Funkenflug ist mit dem Passiv-Feuer-Score und
+dem Skill-Zähler doppelt entwurzelt und deckt denselben Payoff wie Verbrennung (großer Vorsprung).
+Schmelzofen hängt ganz an der Asche; was von ihm bleibt (Schmieden billiger, ab einer Hitzeschwelle),
+gehört in die Stufen der Schmiede.
+
+**Zweiter Kandidat, falls der Owner Verbrennung ohne Feuer-Score für tot hält: Verbrennung statt
+Schmelzofen.** Dann bliebe Schmelzofen als reiner "ab 50 % Hitze"-Verstärker der Schmiede.
+
+**Für den Stufen-Durchgang vorgemerkt:** Verstärker (Lauffeuer, Glutstahl) eigenständig machen oder in
+die Stufen ihrer Basis-Skills aufnehmen; Verbraucher-Regel; Rückzündung auf einen Effekt; Schmiede
+kostet Hitze.
 
 ## 5. Eis
 
