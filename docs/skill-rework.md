@@ -75,7 +75,7 @@ Entscheid: bleibt / geändert / gestrichen — Begründung in einem Satz
 
 | Fraktion | Passiv | Die 15 | Stufen | Legendäre |
 | --- | --- | --- | --- | --- |
-| Blitz | gesetzt | offen, Ionisierung gestrichen | offen | separat, später |
+| Blitz | gesetzt | gesetzt (Ionisierung und Breitenbeschleuniger gestrichen) | Vorschlag liegt vor | separat, später |
 | Feuer | offen | offen | offen | separat, später |
 | Eis | offen | offen | offen | separat, später |
 | Pflanze | offen | offen | offen | separat, später |
@@ -293,11 +293,166 @@ behalten, das wäre aber ein Redesign, kein Streichen.
 Karte, das Passiv braucht zehn Crits dafür. Der Skill macht den Takt des Passivs zur Nebensache. Im
 Stufen-Durchgang entweder als seltenster Effekt einordnen oder auf "jeder n-te Crit" umbauen.
 
-**Entscheid Owner:** —
+**Entscheid Owner (2026-09-04): Breitenbeschleuniger gestrichen.** Die 15 sind damit: Blitzableiter,
+Statische Aufladung, Reststrom, Gewitterfront, Entladung, Ladungsserie, Kettenblitz, Blitzfänger,
+Kurzschluss, Spannungsstau, Überschlag, Überspannung, Blitzschlag, Dauerstrom, Serienschutz.
 
 ### 3.5 Stufen
 
-*Je Skill eine Tabelle Normal / Selten / Sehr selten / Episch, siehe Vorlage.*
+**Vorgabe Owner:** die heutigen Werte liegen auf Selten bis Sehr selten. Normal und Selten werden etwas
+schwächer, Sehr selten und Episch stärker. Episch hat ein kleines Extra oder ist sehr stark.
+
+**Vorschlag (2026-09-04), Entscheid je Skill beim Owner.** Annahme dabei: der passive Anteil von 5 %
+Crit-Chance ist je Skill fest und nicht Teil der Stufe. Alle Zahlen sind Startwerte für die Sim.
+Direkt-Score ist überall entfernt; die Ersatz-Payoffs stehen in der Basis (Kartenwert, Stapel, Ladung).
+
+**Blitzableiter** — Rate. Heute: jeder Crit +1 Ladung extra, volle Leiste gibt +1 zurück.
+
+| Stufe | Effekt | Extra |
+| --- | --- | --- |
+| Normal | jeder 2. Crit +1 Ladung extra | – |
+| Selten | jeder Crit +1 Ladung extra | – |
+| Sehr selten | jeder Crit +1 extra, volle Leiste gibt +1 zurück | – |
+| Episch | jeder Crit +1 extra, volle Leiste gibt +2 zurück | Ladung über 10 geht nicht verloren, sie bleibt für die nächste Leiste |
+
+**Statische Aufladung** — Rate aus Siegen. Heute: Sieg ohne Crit +1 Ladung, volle Leiste +40
+Direkt-Score. Direkt-Score entfällt, Ersatz ist Kartenwert.
+
+| Stufe | Effekt | Extra |
+| --- | --- | --- |
+| Normal | jeder 2. Sieg ohne Crit +1 Ladung | – |
+| Selten | jeder Sieg ohne Crit +1 Ladung | – |
+| Sehr selten | jeder Sieg ohne Crit +1 Ladung, jede 2. Niederlage +1 Ladung | – |
+| Episch | jeder Sieg ohne Crit +2 Ladung, jede 2. Niederlage +1 Ladung | volle Leiste gibt der ionisierten Karte dauerhaft +1 Kartenwert |
+
+**Reststrom** — Rate. Heute: Leiste startet nach dem Leeren bei 4.
+
+| Stufe | Effekt | Extra |
+| --- | --- | --- |
+| Normal | startet bei 2 | – |
+| Selten | startet bei 3 | – |
+| Sehr selten | startet bei 4 | – |
+| Episch | startet bei 6 | – (stark) |
+
+**Gewitterfront** — Rampe Crit-Chance. Heute: volle Leiste +1 %, Deckel 50 %.
+
+| Stufe | Effekt | Extra |
+| --- | --- | --- |
+| Normal | +0,5 % je volle Leiste, Deckel 20 % | – |
+| Selten | +1 %, Deckel 30 % | – |
+| Sehr selten | +1,5 %, Deckel 50 % | – |
+| Episch | +2 %, Deckel 60 % | – (stark) |
+
+**Entladung** — Rampe Crit-Mult. Heute: volle Leiste +0,1×, Deckel +1×.
+
+| Stufe | Effekt | Extra |
+| --- | --- | --- |
+| Normal | +0,05× je volle Leiste, Deckel +0,5× | – |
+| Selten | +0,1×, Deckel +0,8× | – |
+| Sehr selten | +0,15×, Deckel +1,2× | – |
+| Episch | +0,2×, Deckel +1,5× | der Crit, der die Leiste füllt, hat den doppelten Crit-Multiplikator |
+
+**Ladungsserie** — Serie zu Crit. Heute: +2 % je Serienpunkt, Deckel 30 %.
+
+| Stufe | Effekt | Extra |
+| --- | --- | --- |
+| Normal | +1 % je Serienpunkt, Deckel 15 % | – |
+| Selten | +2 %, Deckel 20 % | – |
+| Sehr selten | +2 %, Deckel 40 % | – |
+| Episch | +3 %, Deckel 45 % | ab Serie 8 gibt jeder Sieg +1 Ladung |
+
+**Kettenblitz** — Breite je Leiste. Heute: +2 Karten je Ionisierung, nur mit dem Skill Ionisierung.
+Neu ohne Bindung, die zusätzlichen Karten folgen in der Reihenfolge.
+
+| Stufe | Effekt | Extra |
+| --- | --- | --- |
+| Normal | jede 2. volle Leiste ionisiert +1 Karte | – |
+| Selten | jede volle Leiste +1 Karte | – |
+| Sehr selten | jede volle Leiste +2 Karten | – |
+| Episch | jede volle Leiste +3 Karten | die Zielkarte selbst erhält +1 Stapel zusätzlich |
+
+**Blitzfänger** — Tiefe zu Wert. Heute: Ionisierung trifft volle Karte, +2 Stichwert beim nächsten
+Auftauchen, +1 Ladung. "Voll" wird Schwelle.
+
+| Stufe | Effekt | Extra |
+| --- | --- | --- |
+| Normal | ab 5 Stapeln: +1 Wert beim nächsten Auftauchen, +1 Ladung | – |
+| Selten | ab 4 Stapeln: +2 Wert beim nächsten Auftauchen, +1 Ladung | – |
+| Sehr selten | ab 3 Stapeln: +2 Wert beim nächsten Auftauchen, +2 Ladung | – |
+| Episch | ab 3 Stapeln: +3 Wert, +2 Ladung | der Wert bleibt dauerhaft statt einmalig |
+
+**Kurzschluss** — Tiefe zu Score. Heute: Sieg mit voller Karte +250 Direkt-Score, +3 Ladung.
+Direkt-Score entfällt, Ersatz: die Stapel dieser Karte zählen in diesem Stich mehrfach.
+
+| Stufe | Effekt | Extra |
+| --- | --- | --- |
+| Normal | ab 6 Stapeln: Stapel zählen 1,5×, +1 Ladung | – |
+| Selten | ab 5 Stapeln: Stapel zählen 1,5×, +2 Ladung | – |
+| Sehr selten | ab 5 Stapeln: Stapel zählen 2×, +3 Ladung | – |
+| Episch | ab 4 Stapeln: Stapel zählen 2×, +4 Ladung | die nächste Karte in der Reihenfolge erhält +1 Stapel |
+
+**Spannungsstau** — Glättung. Heute: Sieg ohne Crit +5 % für den nächsten Sieg, Deckel 50 %, Crit setzt zurück.
+
+| Stufe | Effekt | Extra |
+| --- | --- | --- |
+| Normal | +3 %, Deckel 30 % | – |
+| Selten | +5 %, Deckel 40 % | – |
+| Sehr selten | +5 %, Deckel 60 % | – |
+| Episch | +7 %, Deckel 70 % | ein Crit halbiert den Stau statt ihn zu leeren |
+
+**Überschlag** — Ventil. Heute: Crit-Chance über 100 % gibt je 10 Prozentpunkte +1 Ladung je Sieg.
+Tiefen-Klausel entfällt.
+
+| Stufe | Effekt | Extra |
+| --- | --- | --- |
+| Normal | je 20 Prozentpunkte +1 Ladung | – |
+| Selten | je 15 Prozentpunkte +1 Ladung | – |
+| Sehr selten | je 10 Prozentpunkte +1 Ladung | – |
+| Episch | je 5 Prozentpunkte +1 Ladung | zählt auch bei Niederlagen |
+
+**Überspannung** — Kaskade. Heute: Crit auf oder neben einer ionisierten Karte +3 Ladung.
+
+| Stufe | Effekt | Extra |
+| --- | --- | --- |
+| Normal | +1 Ladung, nur auf der ionisierten Karte selbst | – |
+| Selten | +2 Ladung, auf oder neben | – |
+| Sehr selten | +3 Ladung, auf oder neben | – |
+| Episch | +4 Ladung, auf oder neben | Reichweite zwei Karten |
+
+**Blitzschlag** — Ionisierung an der Leiste vorbei. Heute: jeder Crit ionisiert die Siegkarte. Das
+Passiv braucht zehn Crits je Ionisierung; die Stufen setzen den Skill in ein Verhältnis dazu.
+
+| Stufe | Effekt | Extra | Ionisierungen je 10 Crits mit Passiv |
+| --- | --- | --- | --- |
+| Normal | jeder 5. Crit ionisiert die Siegkarte | – | 3 |
+| Selten | jeder 4. Crit | – | 3,5 |
+| Sehr selten | jeder 3. Crit | – | 4,3 |
+| Episch | jeder 2. Crit | die Siegkarte erhält 2 Stapel | 6, davon 5 doppelt |
+
+**Dauerstrom** — Serie zu Ladung plus Rampe. Heute: je 3 Serienpunkte +1 Ladung je Sieg, höchstens +3,
+volle Leiste +2 % Crit-Chance, Deckel 40 %.
+
+| Stufe | Effekt | Extra |
+| --- | --- | --- |
+| Normal | je 4 Serienpunkte +1 Ladung, höchstens +2; +1 % je volle Leiste, Deckel 20 % | – |
+| Selten | je 3, höchstens +2; +2 %, Deckel 30 % | – |
+| Sehr selten | je 3, höchstens +3; +2 %, Deckel 40 % | – |
+| Episch | je 2, höchstens +4; +3 %, Deckel 50 % | – (stark) |
+
+Anmerkung: die Rampe überschneidet sich mit Gewitterfront. Ob Dauerstrom die Rampe behält oder ein
+reiner Serie-zu-Ladung-Skill wird, ist ein Entscheid des Owners; der Vorschlag lässt beides stehen.
+
+**Serienschutz** — Schutz. Heute: Niederlage mit mindestens 50 % Ladung bricht die Serie nicht, die
+Ladung wird verbraucht.
+
+| Stufe | Effekt | Extra |
+| --- | --- | --- |
+| Normal | ab 70 % Ladung, kostet die ganze Leiste | – |
+| Selten | ab 50 %, kostet 50 % | – |
+| Sehr selten | ab 40 %, kostet 40 % | – |
+| Episch | ab 30 %, kostet 30 % | einmal je Runde kostenlos |
+
+**Entscheid Owner je Skill:** —
 
 ---
 
@@ -326,3 +481,4 @@ Offen.
 | 2026-09-04 | Zielkarte gesetzt: die nächste in der Reihenfolge. Passiv damit komplett. Stelle des Stapel-Scores (Basis oder Direkt-Score) als Vorschlag mit Beispiel eingetragen. |
 | 2026-09-04 | Owner: Stapel-Score bleibt in der Basis. Regel für alle Fraktionen: Direkt-Score aus den Skills nach Möglichkeit entfernen. Betroffene Blitz-Skills markiert. |
 | 2026-09-04 | Durchgang über die 16 Blitz-Skills mit Einordnung. Streichvorschlag Breitenbeschleuniger, zweiter Kandidat Gewitterfront, Blitzschlag für den Stufen-Durchgang vorgemerkt. Entscheid offen. |
+| 2026-09-04 | Owner: Breitenbeschleuniger gestrichen, die 15 stehen. Stufen-Vorschlag für alle 15 eingetragen, heute = Selten bis Sehr selten, Direkt-Score überall ersetzt. Entscheid je Skill offen. |
