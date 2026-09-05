@@ -516,14 +516,25 @@ Rückfluss in die Leiste, also reiner Payoff ohne Rückkopplung. Warum nicht der
 einziger Effekt: mit allen 40 Karten über der Schwelle gäbe jeder Sieg Ladung, 26 Siege je Runde mal 3
 wären acht Leisten je Runde, die wieder Stapel erzeugen. Das läuft weg.
 
-**Spannungsstau** — Glättung. Heute: Sieg ohne Crit +5 % für den nächsten Sieg, Deckel 50 %, Crit setzt zurück.
+Entscheid Owner (2026-09-05): **gesetzt wie überarbeitet.**
 
-| Stufe | Effekt | Extra |
-| --- | --- | --- |
-| Normal | +3 %, Deckel 30 % | – |
-| Selten | +5 %, Deckel 40 % | – |
-| Sehr selten | +5 %, Deckel 60 % | – |
-| Episch | +7 %, Deckel 70 % | ein Crit halbiert den Stau statt ihn zu leeren |
+**Spannungsstau** — Glättung. Heute: Sieg ohne Crit +5 % Crit-Chance für den nächsten Sieg, Deckel
+50 %, ein Crit leert den Stau. Neu ohne Deckel: der Stau begrenzt sich selbst, weil jeder Aufbau die
+Chance auf den Crit erhöht, der ihn leert. Gemessen (`stau.mjs` im Scratchpad, Siegquote 65 %): bei
+Basis-Crit 15 % ist +5 % offen gleich +5 % mit Deckel 50, die typische Spitze liegt bei 53 %.
+
+| Stufe | Effekt je Sieg ohne Crit | Aufschlag bei Basis 15 % | bei 30 % | bei 50 % | Extra |
+| --- | --- | --- | --- | --- | --- |
+| Normal | +3 % | +7,8 | +4,8 | +2,5 | – |
+| Selten | +4 % | +9,3 | +5,9 | +3,2 | – |
+| Sehr selten | +5 % | +10,6 | +6,9 | +3,8 | – |
+| Episch | +6 % | +19,6 | +13,7 | +8,0 | ein Crit halbiert den Stau statt ihn zu leeren |
+
+Aufschlag = Prozentpunkte effektive Crit-Chance über der Basis. Heute (+5 %, Deckel 50) liegt auf Sehr
+selten. Ohne das Extra brächte Episch mit +7 % nur +12,8 bei Basis 15, die Leiter wäre oben flach; das
+Halbieren macht den Sprung. Wie Statische Aufladung wird der Skill mit jedem Crit-Prozent schwächer,
+Glättung statt Skalierer (Sim-Notiz). Über 100 % im Einzelfall greift die Systemregel, kleiner
+Crit-Mult-Bonus.
 
 **Überschlag** — Ventil. Heute: Crit-Chance über 100 % gibt je 10 Prozentpunkte +1 Ladung je Sieg.
 Tiefen-Klausel entfällt.
