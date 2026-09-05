@@ -5,6 +5,7 @@
 //   npm run sim -- --mode pacing   --runs 400                 Score-Verteilung über die 44 Cycles (Early/Mid/Late-Balance)
 //   npm run sim -- --mode duel     --runs 200                 exp: Feuer/Blitz-Welt (ohne Eis/Pflanze) — mono, Split, Mix
 //   npm run sim -- --mode skills   --runs 200 --explore 1200  exp: große Auswertung je Skill und Stufe (Explore → Greedy → Ablation)
+//   npm run sim -- --mode motor    --runs 100                 exp: Motor-Diagnose — Hitze im Lauf (Feuer), Ionisierung und Score-Treiber (Blitz)
 //
 // Bewusst OHNE Zeitstempel im Output → gleicher Seed-Satz erzeugt byte-gleiches JSON (Reproduzierbarkeit, §9).
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -137,4 +138,7 @@ else if (mode === "eval") {
 } else if (mode === "skills") {
   const { runSkillsEval } = await import("./skills-eval.js"); // exp skill rework: je Skill und Stufe, Greedy + Ablation
   runSkillsEval({ arg, seed0, c, f, write });
-} else { console.error(`Unbekannter --mode '${mode}' (baseline|explore|eval|pacing|balance|variety|cross|duel|skills)`); process.exit(1); }
+} else if (mode === "motor") {
+  const { runMotor } = await import("./motor.js"); // exp skill rework: Hitze im Lauf (Feuer), Ionisierung und Score-Treiber (Blitz)
+  runMotor({ arg, seed0, write });
+} else { console.error(`Unbekannter --mode '${mode}' (baseline|explore|eval|pacing|balance|variety|cross|duel|skills|motor)`); process.exit(1); }

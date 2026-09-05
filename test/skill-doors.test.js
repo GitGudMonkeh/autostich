@@ -170,6 +170,14 @@ describe("Sim — jede Policy geht durch die Türstufe", () => {
     expect(x.build.skills.length).toBeGreaterThan(0);
     expect(runOne(11, fixedPolicy(["SK_FIRE_06"])).score).toBe(runOne(11, fixedPolicy(["SK_FIRE_06"])).score); // deterministisch
   });
+  it("fixedPolicy exclude: die genannten Skills werden nie gehalten (Motor-Diagnose „ohne Verstärker“)", () => {
+    const RATE = ["SK_FIRE_01", "SK_FIRE_02", "SK_FIRE_03", "SK_FIRE_05"];
+    for (const seed of [1, 2, 3]) {
+      const r = runOne(seed, fixedPolicy(["SK_FIRE_06", "SK_FIRE_07"], { exclude: RATE }), null, null, { archetypes: ["fire"] });
+      expect(r.build.skills.length).toBeGreaterThan(3);
+      expect(r.build.skills.some((id) => RATE.includes(id))).toBe(false);
+    }
+  });
 });
 
 describe("Stufentexte — ein Text je Stufe (descTiers, ability.<id>.desc.<t>, skillDef(id, tier))", () => {
