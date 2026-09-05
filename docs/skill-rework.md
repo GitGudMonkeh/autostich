@@ -1534,6 +1534,33 @@ Kennwerte aus Stufentabellen in der Skill-Definition statt aus Einzelkonstanten;
   wird nach den Modulen erneut zentriert; die Glossartexte Skill-Slot und Legendärer Skill sowie der
   Meisterhand-Text nennen noch den alten Stand (Phase 4).
 
+### 7.2 Stand Phase 2, Blitz (2026-09-05, umgesetzt)
+
+Modul `src/game/factions/lightning.js` (reine Übergänge, keine Engine-Logik im Modul, kein React); die
+Stufentabellen der 15 Skills stehen als `tiers[0..3]` in `SKILL_DEFS`, die Texte interpolieren dieselben Zahlen.
+Passiv, 15 Skills und 4 Legendäre wie in 3.6 und 3.7. Technische Entscheide, die das Dokument offen ließ:
+
+- **Leiste:** höchstens eine Zündung je Stich, nach Sieg und Niederlage (Statische Aufladung lädt auch auf
+  Niederlagen). Ladung, die nach dem Leeren noch über der Leiste liegt, bleibt stehen und zündet beim nächsten
+  Stich; das hält die Kombination Donnergott × Reststrom Episch × Blitzableiter (Boden plus Rückgabe ≥ Leiste)
+  aus der Endlosschleife. Die Zielkarte ist die nächste Position; am Deckende wickelt sie an den Anfang.
+- **Entladung Episch:** der Leisten-Crit verdoppelt den Multiplikator vor dem 8×-Deckel (der Deckel bleibt).
+- **Serienschutz Episch:** der eine Gratisschutz je Runde verlangt keine Ladung.
+- **Durchschlag:** eigener Zufallsstrom `durchschlag`; ein Treffer wandelt die Niederlage vor der Wertung, der
+  Sieg-Zweig läuft als garantierter Crit-Sieg (Ladung, Serie, Blitzschlag, Doppelschlag inklusive).
+- **Doppelentladung:** der Doppelschlag multipliziert den gewerteten Stich nach dem Crit-Faktor
+  (`SIM_DOPPELENTLADUNG_STRIKE`, Start 2; 1,5 ist der Regler). Stapel je Ionisierung `SIM_DOPPELENTLADUNG_STACKS`.
+- **Systemregel:** `SIM_OVERCRIT_MULT_PER_PP` 0,002 je Prozentpunkt über 100 %, für alle Fraktionen (Startwert).
+- **Sim-Regler des Passivs:** `SIM_LIGHTNING_CRIT_PER_SKILL` 0,05 · `SIM_LIGHTNING_MAX_CHARGE` 10 ·
+  `SIM_DONNERGOTT_MAX_CHARGE` 7 · `SIM_THUNDER_CRIT_MULT` 0,4 · `SIM_ION_SCORE_PER_STACK` 12.
+- **Raus:** Ionisierung (Skill), Breitenbeschleuniger, Flächenionisation (ID L03 heißt jetzt Hochspannung),
+  Feld-Crit, Sturm-Sättigung, Verbraucher-Regel, Direkt-Score, Bekenntnis, Selbstwachstum, Blitzfänger-Temp,
+  alle alten Blitz-Konstanten. Die zwei Embleme der gestrichenen Skills sind gelöscht.
+- **Anzeige (vorläufig, Phase 4):** Ladungsleiste zeigt Ladung, volle Leisten und die beiden Rampen; Karten-Pips
+  zeigen weiter bis 5 Stapel; Skilltexte nennen die Normal-Stufe und dann die Leiter in einem Satz.
+- Wird Spannungsstau ersetzt, geht sein Stau mit (Reducer); die Engine fasst den Stau ohne den Skill nicht an.
+- Gates grün, Sim-Band-Wächter unverändert grün.
+
 ## 5. Eis
 
 Offen.
@@ -1565,3 +1592,4 @@ Offen.
 | 2026-09-05 | Feuer-Passiv komplett gesetzt (dazu je 10 % Hitze +2 % Score, kein Direkt-Score, keine Abhängigkeit von gehaltenen Skills). Funkenflug und Schmelzofen gestrichen. Alle 15 Feuer-Skills mit vier Stufen gesetzt, Verbraucher-Regel entfällt, Regel "Hitze-Schwellen-Leitern brauchen ein Episch-Extra". Übersicht in 4.6. |
 | 2026-09-05 | Alle vier Feuer-Legendären gesetzt: Sonnenkern (Brände stapeln), Phönixfeuer (Niederlagen heizen, Neuzündung ohne Limit), Sonnenzorn (Spitzen-Hitze, doppelter Multiplikator), Damaststahl (freie Schmiede, doppelter Schmiedewert im Kampf). Blitz und Feuer damit fertig für die Umsetzung. |
 | 2026-09-05 | Phase 1 umgesetzt (7.1): Stufenwurf je Platz mit Legendär als fünfter Stufe, 40-Runden-Plan ohne Legendär-Phase, Slots unbegrenzt, Stufe sichtbar. Gates grün; Sim-Band vorläufig neu zentriert. |
+| 2026-09-05 | Phase 2 umgesetzt (7.2): Blitz-Modul mit Passiv, 15 Skills auf vier Stufen, 4 Legendären und Systemregel; Altlasten raus. Technische Entscheide dort festgehalten. Gates grün. |

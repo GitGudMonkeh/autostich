@@ -126,9 +126,9 @@ describe("Skill-Auswahl — PICK_SKILL / DECLINE_SKILL (Stufe A)", () => {
 
   it("PICK_SKILL bei vollen Slots: ohne replaceId no-op, mit gültigem Ziel wird ersetzt (#95)", () => {
     // exp: Slots sind standardmäßig unbegrenzt — das Limit kommt hier als Dev-Run-Regel (skillSlots 6): volle Slots =
-    // 6 gehaltene Skills. Nur 02 (Ionisierung) ist Konsument.
-    const six = ["SK_LIGHTNING_01", "SK_LIGHTNING_02", "SK_LIGHTNING_03", "SK_LIGHTNING_04", "SK_LIGHTNING_05", "SK_LIGHTNING_06"];
-    const NEW = "SK_LIGHTNING_10"; // Entladung — kein Konsument, kollidiert also nicht mit dem verbleibenden 02
+    // 6 gehaltene Skills.
+    const six = ["SK_LIGHTNING_01", "SK_LIGHTNING_08", "SK_LIGHTNING_03", "SK_LIGHTNING_04", "SK_LIGHTNING_05", "SK_LIGHTNING_06"];
+    const NEW = "SK_LIGHTNING_10"; // Entladung
     const full = skillState({ skills: six, skillSlots: 6, skillOffer: [NEW], lightning: { active: true, charge: 0, maxCharge: 10 } });
     // ohne Ersetzungsziel → unverändert (das war der Bug: bei vollen Slots tat der Klick nichts)
     expect(reducer(full, { type: "PICK_SKILL", skillId: NEW, rng })).toBe(full);
@@ -136,7 +136,7 @@ describe("Skill-Auswahl — PICK_SKILL / DECLINE_SKILL (Stufe A)", () => {
     expect(reducer(full, { type: "PICK_SKILL", skillId: NEW, replaceId: "SK_LIGHTNING_09", rng })).toBe(full);
     // gültiges Ziel → ersetzt genau diesen Slot, Reihenfolge bleibt, zurück in play
     const s = reducer(full, { type: "PICK_SKILL", skillId: NEW, replaceId: "SK_LIGHTNING_04", rng });
-    expect(s.skills).toEqual(["SK_LIGHTNING_01", "SK_LIGHTNING_02", "SK_LIGHTNING_03", NEW, "SK_LIGHTNING_05", "SK_LIGHTNING_06"]);
+    expect(s.skills).toEqual(["SK_LIGHTNING_01", "SK_LIGHTNING_08", "SK_LIGHTNING_03", NEW, "SK_LIGHTNING_05", "SK_LIGHTNING_06"]);
     expect(s.phase).toBe("play");
   });
 
@@ -161,16 +161,14 @@ describe("Skill-Auswahl — PICK_SKILL / DECLINE_SKILL (Stufe A)", () => {
     expect(s.skills).toContain("SK_FIRE_12"); // beide Hitze-Konsumenten gleichzeitig gehalten
   });
 
-  it("#234-Reshape v0: Ladungsserie ist KEIN Ladungs-Konsument mehr → frei neben Ionisierung wählbar", () => {
-    // Rework v0: nur noch Ionisierung (SK_LIGHTNING_02) verbraucht Ladung; Ladungsserie (SK_LIGHTNING_07)
-    // speist die Crit-Maschine und unterliegt keiner Konsument-Exklusivität → beide zusammen haltbar.
+  it("exp skill rework: Blitz-Skills unterliegen keiner Konsument-Exklusivität — beliebig kombinierbar", () => {
     const st = skillState({
-      skills: ["SK_LIGHTNING_02"], activeArchetypes: ["lightning"],
+      skills: ["SK_LIGHTNING_01"], activeArchetypes: ["lightning"],
       skillOffer: ["SK_LIGHTNING_07"], lightning: { active: true, charge: 0, maxCharge: 10 },
     });
     const s = reducer(st, { type: "PICK_SKILL", skillId: "SK_LIGHTNING_07", rng });
     expect(s.skills).toContain("SK_LIGHTNING_07");
-    expect(s.skills).toContain("SK_LIGHTNING_02"); // keine Exklusivität — Ladungsserie verbraucht nichts
+    expect(s.skills).toContain("SK_LIGHTNING_01");
   });
 
   it("PICK_SKILL erlaubt einen dritten Archetyp (Prototyp: Cap 3 aufgehoben)", () => {

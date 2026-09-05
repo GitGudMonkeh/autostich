@@ -3,8 +3,9 @@ import { rngAt } from "./rng.js"; // #205 Challenger Mode: adressierte Sub-Strö
 import { PERK_DEFS, buildPerkOffer } from "./perks.js";
 import { familyDef, applyFamilyPick } from "./families.js"; // formationEnergyBonus läuft jetzt über engine.formationEnergyFor
 import { UPGRADE_TYPES } from "./rarity.js";
-import { archetypeOf, initLightning, initHeat, heatMaxFor, maxChargeFor, chargeConsumerCount,
+import { archetypeOf, initHeat, heatMaxFor,
   hasSetzlingsbeet, buildSkillOffer, rollSkillOfferTiers, glacierRolesOf } from "./skills.js"; // Pflanze (v0): Aktivierungs-Effekte · Eis-Neudesign: glacierRolesOf · exp: Stufenwurf
+import { initLightning, maxChargeFor, L as LIGHT } from "./factions/lightning.js"; // exp skill rework: Blitz-Substate (Leiste 10, Donnergott 7)
 // (#267: import aus stats.js entfernt — die Stat-Phase ist weg.)
 import { computeFormations, formationPotential, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
 import { initialShop, perkLegendaryChance } from "./shop.js";
@@ -622,9 +623,8 @@ export function reducer(state, action) {
       const skillTiers = { ...(state.skillTiers || {}) };
       if (replaceId && !skills.includes(replaceId)) delete skillTiers[replaceId];
       if (!isLegendarySkill(skillId)) { const tk = (state.skillOfferTiers || {})[skillId]; skillTiers[skillId] = Number.isInteger(tk) ? tk : 0; }
-      // Konsumenten-Exklusivität (#234): nur noch Blitz hält höchstens EINEN Ladungs-Konsumenten (ein zweiter ersetzt ihn).
-      // Feuer darf mehrere Hitze-Konsumenten kombinieren (Flächenbrand ≠ Schmelzpunkt) — die Engine wendet jeden einzeln an.
-      if (chargeConsumerCount(skills) > 1) return state;
+      // (exp skill rework: die Konsumenten-Exklusivität #234 ist mit dem Blitz-Verbraucher entfallen — Blitz kennt keine
+      // Konsumenten mehr, Feuer darf ohnehin mehrere halten.)
       let activeArchetypes = state.activeArchetypes || [];
       let lightning = state.lightning;
       let heat = state.heat;
@@ -634,7 +634,8 @@ export function reducer(state, action) {
       // Blitzfänger-Temp (iceTemp, Blitz-Archetyp) — beim Eis-Deaktivieren aus Alt-Verhalten geleert (#140).
       let iceTemp = state.iceTemp;
       let growth = state.growth || {}, colonized = state.colonized || {}; // Pflanze-Fraktion (v0): Wachstum / Kolonisierung
-      if (arch === "lightning") lightning = { ...lightning, active: true, maxCharge: maxChargeFor(skills) }; // Donnergott → 15 (#93 F2)
+      if (arch === "lightning") lightning = { ...lightning, active: true, maxCharge: maxChargeFor(skills) }; // exp: Leiste 10, Donnergott 7
+      if (replaceId === LIGHT.SPANNUNGSSTAU && lightning && lightning.stauBonus) lightning = { ...lightning, stauBonus: 0 }; // exp: Spannungsstau ersetzt → sein Stau geht mit
       if (arch === "fire" && !(heat && heat.active)) heat = { ...initHeat(), active: true, max: heatMaxFor(skills) };
       // Eis-Neudesign: der neue Eis-Archetyp friert KEINE Karten mehr ein — die Mechanik läuft über Masse/Gletscher
       // (glacier.js), getrieben von state.glacierRoles (unten aus den Skill-`role`s).

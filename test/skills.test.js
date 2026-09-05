@@ -1,57 +1,52 @@
 import { describe, it, expect } from "vitest";
 import { makeRng } from "../src/game/deck.js";
-import { SKILL_DEFS, skillSum, initLightning, lightningCritRaw, addCharge, buildSkillOffer,
+import { SKILL_DEFS, skillSum, buildSkillOffer, BLITZ_TIERS,
   rollTier, rollSkillOfferTiers, tierOf, SKILL_TIER_COUNT, TIER_NORMAL, TIER_EPIC,
   isLegendarySkill, archetypeOf,
-  offerArchetypes, archetypesWithSkills, decodeArchetypes,
-  ionScoreFor, ionCritChance, consumesCharge, ionizeCountFor, consumeCharge, ionizeCards,
-  hasIonize, hasSeriesCrit, hasStorm, chargeFloorFor } from "../src/game/skills.js";
-import { LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_MAX_CHARGE, MAX_ARCHETYPES,
-  ION_SCORE_PER_STACK, ION_CRIT_PP_PER_STACK, ION_CRIT_STACK_CAP, REST_CHARGE_FLOOR,
-  SKILL_TIER_WEIGHTS, SKILL_LEGENDARY_PER_SLOT } from "../src/game/constants.js";
+  offerArchetypes, archetypesWithSkills, decodeArchetypes } from "../src/game/skills.js";
+import { MAX_ARCHETYPES, SKILL_TIER_WEIGHTS, SKILL_LEGENDARY_PER_SLOT } from "../src/game/constants.js";
 
 const LR = "SK_LIGHTNING_01";
 const ALL = Object.keys(SKILL_DEFS);
-const active = (over = {}) => ({ active: true, charge: 0, maxCharge: LIGHTNING_MAX_CHARGE, ...over });
 
-describe("skills — Blitz-Registry", () => {
-  it("Blitzableiter: Hooks (critChance/chargeOnCrit) + archetype (scoreFlatOnCrit im Rework gestrippt)", () => {
-    expect(SKILL_DEFS[LR].critChance()).toBeCloseTo(LIGHTNING_CRIT_PER_SKILL);
-    expect(SKILL_DEFS[LR].chargeOnCrit()).toBe(1);
-    expect(SKILL_DEFS[LR].scoreFlatOnCrit).toBeUndefined();
+describe("skills — Blitz-Registry (exp skill rework)", () => {
+  it("19 Blitz-Skills: 15 normale mit vier Stufenzeilen + 4 Legendäre ohne Stufe, alle archetype=lightning", () => {
+    const light = Object.values(SKILL_DEFS).filter((s) => s.archetype === "lightning");
+    expect(light).toHaveLength(19);
+    const normal = light.filter((s) => !s.legendary), leg = light.filter((s) => s.legendary);
+    expect(normal).toHaveLength(15);
+    expect(leg).toHaveLength(4);
+    for (const s of normal) expect(Array.isArray(s.tiers) && s.tiers.length === SKILL_TIER_COUNT, `${s.id} ohne Stufentabelle`).toBe(true);
+    for (const s of leg) expect(s.tiers).toBeUndefined();
+    expect(SKILL_DEFS[LR].tiers).toBe(BLITZ_TIERS.ableiter);
+    expect(SKILL_DEFS.SK_LIGHTNING_L03.name).toBe("Hochspannung"); // ersetzt Flächenionisation
+    expect(SKILL_DEFS.SK_LIGHTNING_02).toBeUndefined();           // Ionisierung ist im Passiv aufgegangen
+    expect(SKILL_DEFS.SK_LIGHTNING_12).toBeUndefined();           // Breitenbeschleuniger gestrichen
     expect(archetypeOf(LR)).toBe("lightning");
   });
+  it("Stufentabellen: Schwellen fallen, Raten steigen mit der Stufe (Leiter aus docs/skill-rework.md §3.5)", () => {
+    const desc = (rows, key) => rows.every((r, i) => i === 0 || r[key] <= rows[i - 1][key]);
+    const asc = (rows, key) => rows.every((r, i) => i === 0 || r[key] >= rows[i - 1][key]);
+    for (const k of ["faenger", "kurzschluss", "ueberspannung"]) expect(desc(BLITZ_TIERS[k], "minStacks"), k).toBe(true);
+    expect(desc(BLITZ_TIERS.blitzschlag, "critEvery")).toBe(true);
+    expect(desc(BLITZ_TIERS.dauerstrom, "minStreak")).toBe(true);
+    expect(desc(BLITZ_TIERS.serienschutz, "frac")).toBe(true);
+    expect(asc(BLITZ_TIERS.reststrom, "floor")).toBe(true);
+    expect(asc(BLITZ_TIERS.gewitter, "critPerBar")).toBe(true);
+    expect(asc(BLITZ_TIERS.entladung, "multPerBar")).toBe(true);
+    expect(asc(BLITZ_TIERS.serie, "critPerStreak")).toBe(true);
+    expect(asc(BLITZ_TIERS.ueberschlag, "multPer10")).toBe(true);
+    expect(asc(BLITZ_TIERS.stau, "step")).toBe(true);
+    expect(asc(BLITZ_TIERS.kette, "cards")).toBe(true);
+  });
+  it("Beschreibungen interpolieren die Tabellen (kein Drift zwischen Regel und Text)", () => {
+    expect(SKILL_DEFS.SK_LIGHTNING_11.desc).toContain(`ab ${BLITZ_TIERS.faenger[0].minStacks} Stapeln`);
+    expect(SKILL_DEFS.SK_LIGHTNING_05.desc).toContain(`bei ${BLITZ_TIERS.reststrom[0].floor} statt 0`);
+    expect(SKILL_DEFS.SK_LIGHTNING_06.desc).toContain("+0,5");
+  });
   it("skillSum summiert einen Hook über die gehaltenen Skills (fehlender Hook → 0)", () => {
-    expect(skillSum([LR], "chargeOnCrit", {})).toBe(1);
-    expect(skillSum([], "chargeOnCrit", {})).toBe(0);
+    expect(skillSum([], "scoreFlatOnCrit", {})).toBe(0);
     expect(skillSum([LR], "healOnWin", {})).toBe(0);
-  });
-});
-
-describe("lightningCritRaw — Crit-Basis (Abschnitt 2a)", () => {
-  it("0, solange der Archetyp inaktiv ist", () => {
-    expect(lightningCritRaw(null, [])).toBe(0);
-    expect(lightningCritRaw(initLightning(), [LR])).toBe(0); // active:false
-  });
-  it("Sockel + je Skill, wenn aktiv", () => {
-    expect(lightningCritRaw(active(), [])).toBeCloseTo(LIGHTNING_CRIT_BASE);                              // nur Sockel
-    expect(lightningCritRaw(active(), [LR])).toBeCloseTo(LIGHTNING_CRIT_BASE + LIGHTNING_CRIT_PER_SKILL); // Sockel + 1× pro-Skill
-  });
-});
-
-describe("addCharge — gedeckelt & immutabel", () => {
-  it("no-op, solange inaktiv", () => {
-    expect(addCharge(initLightning(), 3).charge).toBe(0);
-    expect(addCharge(null, 3)).toBe(null);
-  });
-  it("erhöht und deckelt auf maxCharge", () => {
-    expect(addCharge(active({ charge: 5 }), 2).charge).toBe(7);
-    expect(addCharge(active({ charge: 9 }), 5).charge).toBe(LIGHTNING_MAX_CHARGE);
-  });
-  it("lässt das Original unverändert", () => {
-    const l = active({ charge: 3 });
-    addCharge(l, 2);
-    expect(l.charge).toBe(3);
   });
 });
 
@@ -230,34 +225,22 @@ describe("Stufenwurf — rollTier / rollSkillOfferTiers / tierOf (exp skill rewo
   });
 });
 
-// Konsument-Garantie: aktive Feuer-/Blitz-Builds ohne gehaltenen Konsumenten bekommen garantiert einen angeboten,
-// solange man keinen aktiv hat — sonst kann der Build nie „zünden" (Nutzer-Wunsch: sonst frustrierend).
-describe("buildSkillOffer — Konsument-Garantie (aktive Feuer/Blitz-Builds)", () => {
+// Konsument-Garantie: ein aktiver Feuer-Build ohne gehaltenen Konsumenten bekommt garantiert einen angeboten, solange
+// man keinen aktiv hat — sonst kann der Build nie „zünden". (exp skill rework: Blitz kennt keine Konsumenten mehr —
+// die Leiste ionisiert selbst; die Blitz-Hälfte dieser Garantie ist mit dem Skill Ionisierung gegangen. Feuer bis Phase 3.)
+describe("buildSkillOffer — Konsument-Garantie (aktive Feuer-Builds)", () => {
   const isFireConsumer   = (id) => !!SKILL_DEFS[id]?.heatConsumer;  // Flächenbrand/Schmelzpunkt
-  const isChargeConsumer = (id) => !!SKILL_DEFS[id]?.onFullCharge;  // Ionisierung
+  const isChargeConsumer = (id) => !!SKILL_DEFS[id]?.onFullCharge;  // (exp: nie — Blitz hat keine Verbraucher mehr)
   it("aktiver Feuer-Build ohne Hitze-Konsument → garantiert ein Hitze-Konsument im Angebot", () => {
     for (let seed = 1; seed <= 40; seed++)
       expect(buildSkillOffer(["SK_FIRE_01"], ["fire"], makeRng(seed), 6).some(isFireConsumer)).toBe(true);
   });
-  it("aktiver Blitz-Build ohne Ladungs-Konsument → garantiert ein Ladungs-Konsument im Angebot", () => {
-    for (let seed = 1; seed <= 40; seed++)
-      expect(buildSkillOffer(["SK_LIGHTNING_01"], ["lightning"], makeRng(seed), 6).some(isChargeConsumer)).toBe(true);
+  it("exp: kein Blitz-Skill ist ein Ladungs-Konsument — ein Blitz-Angebot enthält nie einen", () => {
+    expect(Object.values(SKILL_DEFS).some(isChargeConsumer)).toBe(false);
+    for (let seed = 1; seed <= 10; seed++)
+      expect(buildSkillOffer(["SK_LIGHTNING_01"], ["lightning"], makeRng(seed), 6).some(isChargeConsumer)).toBe(false);
   });
-  it("beide aktiv & ohne Konsument → beide Typen garantiert, auch bei erzwungenem Legendär-Roll", () => {
-    for (let seed = 1; seed <= 40; seed++) {
-      const off = buildSkillOffer(["SK_FIRE_01", "SK_LIGHTNING_01"], ["fire", "lightning"], makeRng(seed), 6, 1);
-      expect(off.some(isFireConsumer)).toBe(true);
-      expect(off.some(isChargeConsumer)).toBe(true);
-    }
-  });
-  it("hält man bereits einen Konsumenten, wird KEINER erzwungen (Angebot kann konsumentenfrei sein)", () => {
-    // Ionisierung (Ladungs-Konsument) gehalten → über viele Seeds gibt es mind. ein Angebot ganz OHNE Konsument.
-    const anyClean = Array.from({ length: 30 }, (_, s) =>
-      buildSkillOffer(["SK_LIGHTNING_02"], ["lightning"], makeRng(s + 1), 6)
-    ).some((off) => !off.some(isChargeConsumer));
-    expect(anyClean).toBe(true);
-  });
-  it("#223 Kontrolle Feuer: hält man einen Hitze-Konsumenten → KEINER erzwungen (symmetrisch zu Blitz)", () => {
+  it("#223 Kontrolle Feuer: hält man einen Hitze-Konsumenten → KEINER erzwungen", () => {
     // Flächenbrand (Hitze-Konsument) gehalten → über viele Seeds gibt es mind. ein Angebot ganz OHNE Hitze-Konsument.
     const anyClean = Array.from({ length: 30 }, (_, s) =>
       buildSkillOffer(["SK_FIRE_11"], ["fire"], makeRng(s + 1), 6)
@@ -267,29 +250,20 @@ describe("buildSkillOffer — Konsument-Garantie (aktive Feuer/Blitz-Builds)", (
   it("Erst-Angebot (leeres activeArchetypes) bleibt deterministisch — kein rng-Drift", () => {
     expect(buildSkillOffer([], [], makeRng(1), 6)).toEqual(buildSkillOffer([], [], makeRng(1), 6));
   });
-  // #191: schon beim ERSTEN Skill-Angebot (noch kein Archetyp aktiv) mind. EINEN Konsumenten insgesamt.
-  it("#191 Erst-Angebot ohne aktiven Archetyp → garantiert mind. EIN Konsument (Feuer ODER Blitz)", () => {
-    const isConsumer = (id) => isFireConsumer(id) || isChargeConsumer(id);
-    for (let seed = 1; seed <= 40; seed++)
-      expect(buildSkillOffer([], [], makeRng(seed), 6).some(isConsumer)).toBe(true);
-  });
-  // #223: das Erst-Angebot enthält IMMER alle 4 Archetypen → JEDER Konsumenten-Archetyp (Feuer & Blitz) muss seinen
-  // Konsumenten zeigen, nicht nur der erste in chosen-Reihenfolge — sonst „verpufft" der Blitz-Ladungsaufbau ohne
-  // sichtbaren Blitz-Konsumenten (Nutzer-Befund). Gilt bei count 6 (je 1 + Fill) wie 12 (3+3+3+3) und mit Legendär-Roll.
-  it("#223 Erst-Angebot garantiert BEIDE Konsumenten-Archetypen — Feuer UND Blitz", () => {
+  // #191/#223: schon beim ERSTEN Skill-Angebot (noch kein Archetyp aktiv) zeigt Feuer seinen Konsumenten — bei
+  // count 6 (je 1 + Fill) wie 12 (3+3+3+3) und mit dem (inerten) Legendär-Parameter.
+  it("#223 Erst-Angebot garantiert den Feuer-Konsumenten", () => {
     for (let seed = 1; seed <= 40; seed++) {
       for (const [count, chance] of [[6, 0], [12, 0], [12, 1]]) {
         const off = buildSkillOffer([], [], makeRng(seed), count, chance);
         expect(off.some(isFireConsumer)).toBe(true);
-        expect(off.some(isChargeConsumer)).toBe(true);
       }
     }
   });
-  it("#191 Erst-Angebot: Konsument-Garantie hält auch bei erzwungenem Legendär-Roll + 3+3+3+3-Balance", () => {
-    const isConsumer = (id) => isFireConsumer(id) || isChargeConsumer(id);
+  it("#191 Erst-Angebot: Konsument-Garantie hält mit dem Legendär-Parameter + 3+3+3+3-Balance", () => {
     for (let seed = 1; seed <= 40; seed++) {
-      const off = buildSkillOffer([], [], makeRng(seed), 12, 1); // Legendär erzwungen
-      expect(off.some(isConsumer)).toBe(true);
+      const off = buildSkillOffer([], [], makeRng(seed), 12, 1);
+      expect(off.some(isFireConsumer)).toBe(true);
       expect(off).toHaveLength(12);
       const byArch = {};
       for (const id of off) byArch[archetypeOf(id)] = (byArch[archetypeOf(id)] || 0) + 1;
@@ -300,75 +274,8 @@ describe("buildSkillOffer — Konsument-Garantie (aktive Feuer/Blitz-Builds)", (
   });
 });
 
-describe("Ionisierung — Helfer (Stufe B)", () => {
-  const I = "SK_LIGHTNING_02", K = "SK_LIGHTNING_03";
-  const mkDeck = (stacks) => stacks.map((s, i) => ({ id: `c${i}`, suit: "R", baseRank: 1, value: 1, ...(s ? { ionStacks: s } : {}) }));
-
-  it("ionScoreFor: +ION_SCORE_PER_STACK je Stapel (0 ohne / null)", () => {
-    expect(ionScoreFor({ ionStacks: 3 })).toBe(3 * ION_SCORE_PER_STACK);
-    expect(ionScoreFor({ ionStacks: 0 })).toBe(0);
-    expect(ionScoreFor({})).toBe(0);
-    expect(ionScoreFor(null)).toBe(0);
-  });
-  it("ionCritChance (#271): Σ Feldstapel × pp, gedeckelt; 0 ohne Stapel", () => {
-    expect(ionCritChance(mkDeck([3, 2, 0, 5]))).toBeCloseTo(10 * ION_CRIT_PP_PER_STACK, 10); // Σ 10
-    expect(ionCritChance(mkDeck([0, 0, 0]))).toBe(0);
-    expect(ionCritChance([])).toBe(0);
-    expect(ionCritChance(undefined)).toBe(0);
-    // Deckel: Σ über dem Cap zählt nur bis zum Cap.
-    const many = mkDeck(Array(30).fill(5)); // Σ 150 ≫ Cap
-    expect(ionCritChance(many)).toBeCloseTo(ION_CRIT_STACK_CAP * ION_CRIT_PP_PER_STACK, 10);
-  });
-  it("consumesCharge nur mit Ionisierung; ionizeCountFor = 2 (+2 mit Kettenblitz)", () => {
-    expect(consumesCharge([I])).toBe(true);
-    expect(consumesCharge([K])).toBe(false);   // Kettenblitz allein ist kein Verbraucher
-    expect(consumesCharge([])).toBe(false);
-    expect(ionizeCountFor([I])).toBe(2);
-    expect(ionizeCountFor([I, K])).toBe(4);
-  });
-  it("consumeCharge setzt auf den Boden (Default 0, Stufe C: Reststrom)", () => {
-    expect(consumeCharge(active({ charge: 10 })).charge).toBe(0);
-    expect(consumeCharge(active({ charge: 10 }), 3).charge).toBe(3);
-  });
-  it("ionizeCards: count distinkte ungespielte Karten je +1 (immutabel)", () => {
-    const deck = mkDeck([0, 0, 0, 0, 0]);
-    const out = ionizeCards(deck, [1, 2, 3, 4], 2, makeRng(1));
-    const bumped = out.filter((c) => (c.ionStacks || 0) > 0);
-    expect(bumped).toHaveLength(2);
-    expect(bumped.every((c) => c.ionStacks === 1)).toBe(true);
-    expect(deck.every((c) => !c.ionStacks)).toBe(true); // Original unverändert
-  });
-  it("ionizeCards Fallback: zu wenige ungespielte Karten → Rest auf bereits ionisierte", () => {
-    const deck = mkDeck([2, 0, 0]); // c0 schon ionisiert, nur c1 ungespielt
-    const out = ionizeCards(deck, [1], 3, makeRng(1));
-    const total = out.reduce((s, c) => s + (c.ionStacks || 0), 0);
-    expect(total).toBe(2 + 3); // 3 Stapel verteilt, nichts verloren
-  });
-});
-
-describe("Reaktoren + Ladungsserie — Helfer (Stufe C)", () => {
-  const R = "SK_LIGHTNING_05", G = "SK_LIGHTNING_06", S = "SK_LIGHTNING_07", I = "SK_LIGHTNING_02";
-  it("Verbraucher-Prädikate: nur Ionisierung ist Verbraucher; Ladungsserie speist die Crit-Maschine", () => {
-    expect(hasIonize([I])).toBe(true);
-    expect(hasSeriesCrit([S])).toBe(true);    // Ladungsserie: Serie → Crit-Chance
-    expect(hasSeriesCrit([I])).toBe(false);
-    expect(consumesCharge([S])).toBe(false);  // Ladungsserie verbraucht KEINE Ladung mehr (Rework v0)
-    expect(consumesCharge([I])).toBe(true);   // Ionisierung verbraucht
-    expect(consumesCharge([R])).toBe(false);  // Reststrom ist Reaktor, kein Verbraucher
-  });
-  it("chargeFloorFor: Reststrom setzt den Ladungsboden, sonst 0", () => {
-    expect(chargeFloorFor([R])).toBe(REST_CHARGE_FLOOR);
-    expect(chargeFloorFor([])).toBe(0);
-  });
-  it("hasStorm nur mit Gewitterfront", () => {
-    expect(hasStorm([G])).toBe(true);
-    expect(hasStorm([R])).toBe(false);
-  });
-  it("lightningCritRaw addiert den Gewitterfront-Bonus (stormCritBonus)", () => {
-    const l = { active: true, charge: 0, maxCharge: 10, stormCritBonus: 0.08 };
-    expect(lightningCritRaw(l, [G])).toBeCloseTo(LIGHTNING_CRIT_BASE + LIGHTNING_CRIT_PER_SKILL + 0.08); // Sockel + Skill-critChance + Storm(0,08)
-  });
-});
+// (exp skill rework: Ionisierung, Ladung und die Blitz-Prädikate leben in src/game/factions/lightning.js —
+//  getestet in test/lightning-rework.test.js.)
 
 describe("decodeArchetypes — Board-Icons (#139)", () => {
   it("leerer/undefinierter Wert → []", () => {

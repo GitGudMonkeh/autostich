@@ -3,12 +3,11 @@ import { makeRng } from "../src/game/deck.js";
 import { initialState } from "../src/game/reducer.js";
 import { resolveTrick, rollCrit } from "../src/game/engine.js";
 import { SKILL_DEFS } from "../src/game/skills.js";
-import { MAX_CYCLES, FORMATION_ENERGY, TRICKS_PER_CYCLE, DECISION_SCHEDULE, SCORE_PER_WIN, CRIT_BASE_MULT, LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_CRIT_MULT_PER_SKILL,
+import { MAX_CYCLES, FORMATION_ENERGY, TRICKS_PER_CYCLE, DECISION_SCHEDULE, SCORE_PER_WIN, CRIT_BASE_MULT, LIGHTNING_CRIT_PER_SKILL,
   HENKER_MULT, HENKER_ZONE_START, BRENNPUNKT_MULT, VABANQUE_MULT, VABANQUE_TRICKS, PATT_MARGIN, ECHO_FACTOR, SAMMLER_STEP, UNAUFHALTSAM_VALUE,
   ZINS_DEPOSIT, ZINS_RATE_START, ZINS_RATE_STEP, ZINS_RATE_MAX, ZINS_CRASH_KEEP,
-  STORM_CRIT_CAP, DAUERSTROM_CRIT_CAP, CRIT_MULT_CAP,
-  SERIESCRIT_STEP, CONSUME_SCORE, BLITZABLEITER_CONSUME_CHARGE, DAUERSTROM_CONSUME_CRIT, ION_SCORE_PER_STACK,
-  REST_CHARGE_FLOOR, STORM_CRIT_STEP, ENTLADUNG_MULT_STEP, ENTLADUNG_MULT_CAP } from "../src/game/constants.js";
+  CRIT_MULT_CAP, ION_SCORE_PER_STACK, OVERCRIT_MULT_PER_PP } from "../src/game/constants.js";
+import { initLightning } from "../src/game/factions/lightning.js"; // exp skill rework: Blitz-Substate
 import { computeFormations } from "../src/game/formations.js";
 import { streakBaseMult, isLegendary, zinsHurdle } from "../src/game/perks.js";
 import { precomputeArchitect } from "../src/game/architect.js";
@@ -36,10 +35,10 @@ const B = SCORE_PER_WIN; // Basis-relativ: erwartete Scores skalieren mit der Si
 // Wert 0, bildet aber über die Positionen KEINE Formation → isoliert Score-Mechaniken in Multi-Stich-Tests.
 // Gleiche Farbe (R), aber abwechselnde Werte → Farbserie zählt, ohne Wiederholung/Farbblock (bei ≤2 Karten).
 // #267: der entfernte Crit-Stat wird als reine Crit-CHANCE-Quelle über den Blitz-Spannungsstau ersetzt. Ein blank
-// aktiver Blitz OHNE Skills/ionisierte Karten trägt exakt 0,05 (Sockel) + stauBonus zur rawCrit bei — sonst NICHTS
-// (kein Score, kein Crit-Mult, keine Ladung). litCrit(V) hebt die rawCrit damit auf genau V → Drop-in für den alten
-// additiven statCritChance:V (der Kritwurf bleibt rng()<V; makeRng-Wert <1 ⇒ V≥1 crittet garantiert).
-const litCrit = (v = 1) => ({ active: true, charge: 0, maxCharge: 10, stauBonus: v - 0.05 });
+// aktiver Blitz OHNE Skills/ionisierte Karten trägt exakt stauBonus zur rawCrit bei (exp: kein Sockel mehr) — sonst
+// NICHTS (kein Score, kein Crit-Mult, keine Ladung). litCrit(V) hebt die rawCrit damit auf genau V → Drop-in für den
+// alten additiven statCritChance:V (der Kritwurf bleibt rng()<V; makeRng-Wert <1 ⇒ V≥1 crittet garantiert).
+const litCrit = (v = 1) => ({ active: true, charge: 0, maxCharge: 10, stauBonus: v });
 
 describe("resolveTrick — Grundausgänge (V2: ohne Leben)", () => {
   it("Sieg: +Score, +Sieg, Initiative Spieler", () => {
@@ -196,11 +195,13 @@ describe("Legendäre Perks — Engine-Integration (V2 §22.6 L)", () => {
     expect(t(24).critChance).toBeCloseTo(1);   // Serie 25 → 1,25, geklemmt auf 1
   });
   it("L6 Raserei: Gesamt-Crit-Überschuss über 100 % hebt additiv den Crit-Multiplikator (max +1,00×, total-aware) (#115)", () => {
+    // exp skill rework: derselbe Überschuss zahlt zusätzlich die Systemregel (OVERCRIT_MULT_PER_PP je Prozentpunkt, alle Fraktionen).
+    const rule = (pp) => pp * OVERCRIT_MULT_PER_PP;
     const cm = (ws, over = {}) => resolveTrick(scenario(12, 0, { perks: ["L6"], winStreak: ws, ...over }), rng).lastTrick.critMultiplier;
-    expect(cm(9)).toBeCloseTo(CRIT_BASE_MULT);               // Serie 10 → rawCrit 0,5 < 1 → nur Basis
-    expect(cm(29)).toBeCloseTo(CRIT_BASE_MULT + 0.5);        // Serie 30 → rawCrit 1,5 → +0,5
-    expect(cm(49)).toBeCloseTo(CRIT_BASE_MULT + 1.0);        // Serie 50 → rawCrit 2,5 → +1,0 (Cap)
-    expect(cm(6, { lightning: litCrit(0.7) })).toBeCloseTo(CRIT_BASE_MULT + 0.05); // total-aware: Serie 7 → 0,35 + 0,70 = 1,05 → +0,05
+    expect(cm(9)).toBeCloseTo(CRIT_BASE_MULT);                           // Serie 10 → rawCrit 0,5 < 1 → nur Basis
+    expect(cm(29)).toBeCloseTo(CRIT_BASE_MULT + 0.5 + rule(50));         // Serie 30 → rawCrit 1,5 → +0,5
+    expect(cm(49)).toBeCloseTo(CRIT_BASE_MULT + 1.0 + rule(150));        // Serie 50 → rawCrit 2,5 → +1,0 (Cap der Raserei; die Systemregel läuft weiter)
+    expect(cm(6, { lightning: litCrit(0.7) })).toBeCloseTo(CRIT_BASE_MULT + 0.05 + rule(5)); // total-aware: Serie 7 → 0,35 + 0,70 = 1,05 → +0,05
   });
   it("L4 Kritische Masse: Crit gibt der Karte dauerhaft +1 (max +4)", () => {
     const deck = [{ id: "a", suit: "R", baseRank: 5, value: 5 }];
@@ -472,23 +473,25 @@ describe("Legendär-Perks Durchlauf-Ende & Formationsvielfalt (Legendär-Perks-R
   });
 });
 
-describe("Blitz-Archetyp — Engine (Stufe A)", () => {
+describe("Blitz-Archetyp — Engine (exp skill rework: Passiv)", () => {
   const LR = "SK_LIGHTNING_01";
-  const lit = (over = {}) => ({ active: true, charge: 0, maxCharge: 10, ...over });
+  const lit = (over = {}) => ({ ...initLightning(), active: true, ...over });
 
-  it("Crit-Basis: aktiver Blitz + 1 Skill → Sockel + 1× pro-Skill-Crit", () => {
+  it("Crit-Chance: aktiver Blitz + 1 Skill → +LIGHTNING_CRIT_PER_SKILL, kein Sockel, kein Crit-Mult je Skill", () => {
     const s = resolveTrick(scenario(12, 0, { skills: [LR], lightning: lit() }), rng);
-    expect(s.lastTrick.critChance).toBeCloseTo(LIGHTNING_CRIT_BASE + LIGHTNING_CRIT_PER_SKILL);
+    expect(s.lastTrick.critChance).toBeCloseTo(LIGHTNING_CRIT_PER_SKILL);
+    expect(s.lastTrick.critMultiplier).toBeCloseTo(CRIT_BASE_MULT);
   });
 
-  it("Crit mit Blitzableiter: +2 Ladung (Basis 1 + Skill 1), kein Crit-Flat mehr (+50 im Rework gestrippt)", () => {
-    // scoreBase = Basis × streakBaseMult(1)=1,02, ×Crit-Mult. Blitzableiter gibt NUR Ladung;
-    // als 1 gehaltener Blitz-Skill hebt er den Crit-Mult um +LIGHTNING_CRIT_MULT_PER_SKILL.
-    const s = resolveTrick(scenario(12, 0, { skills: [LR], lightning: lit() }), () => 0); // Crit aus den Blitz-Skills selbst (rng 0)
+  it("Crit: +1 Ladung (Passiv); Blitzableiter Normal gibt erst jedem 2. Crit +1 extra; kein Crit-Flat", () => {
+    const s = resolveTrick(scenario(12, 0, { skills: [LR], lightning: lit() }), () => 0); // Crit aus dem Blitz-Passiv (rng 0)
     expect(s.lastTrick.isCrit).toBe(true);
-    expect(s.lightning.charge).toBe(2);
+    expect(s.lightning.charge).toBe(1);
+    expect(s.lightning.critCount).toBe(1);
     expect(s.lastTrick.scoreBeforeCrit).toBeCloseTo(B * 1.02);
-    expect(s.lastTrick.scoreGain).toBeCloseTo(B * 1.02 * (CRIT_BASE_MULT + LIGHTNING_CRIT_MULT_PER_SKILL));
+    expect(s.lastTrick.scoreGain).toBeCloseTo(B * 1.02 * CRIT_BASE_MULT);
+    const second = resolveTrick(scenario(12, 0, { skills: [LR], lightning: lit({ critCount: 1 }) }), () => 0);
+    expect(second.lightning.charge).toBe(2); // 2. Crit: Passiv +1, Blitzableiter +1
   });
 
   it("ohne Crit: keine Ladung, kein Crit-Flat", () => {
@@ -498,9 +501,19 @@ describe("Blitz-Archetyp — Engine (Stufe A)", () => {
     expect(s.lastTrick.scoreGain).toBeCloseTo(B * 1.02); // Basis × 1,02, kein +50
   });
 
-  it("Ladung deckelt bei maxCharge (10)", () => {
-    const s = resolveTrick(scenario(12, 0, { skills: [LR], lightning: lit({ charge: 9 }) }), () => 0); // Crit aus den Blitz-Skills (rng 0)
-    expect(s.lightning.charge).toBe(10);
+  it("volle Leiste (10): ionisiert die NÄCHSTE Karte in der Reihenfolge, Leiste leer, bars +1", () => {
+    const s = resolveTrick(scenario(12, 0, { skills: [LR], lightning: lit({ charge: 9 }) }), () => 0); // Crit → 10 → voll
+    expect(s.lightning.charge).toBe(0);
+    expect(s.lightning.bars).toBe(1);
+    expect(s.deck[1].ionStacks).toBe(1);          // playerOrder = Identität: Position 0 gespielt → Deck-Index 1 ist die nächste
+    expect(s.deck[0].ionStacks || 0).toBe(0);     // die Siegkarte selbst nicht (kein Selbstwachstum)
+    expect(s.ionTotal).toBe(1);
+    expect(s.lastTrick.barFilled).toBe(true);
+  });
+
+  it("volle Leiste am Deck-Ende wickelt an den Anfang der Reihenfolge", () => {
+    const s = resolveTrick(scenario(12, 0, { pos: 39, cycle: 0, skills: [LR], lightning: lit({ charge: 9 }) }), () => 0);
+    expect(s.deck[0].ionStacks).toBe(1);
   });
 
   it("inaktiver Archetyp: Crit erzeugt keine Ladung", () => {
@@ -548,8 +561,8 @@ describe("Crit-Chance/-Mult über Blitz & Präzision — Engine (#267, Stat-Ersa
   it("Crit-Chance additiv: Präzision-Schärfe UND der Blitz-Stau heben die Crit-Chance flach (Basis-Crit 0)", () => {
     // P_SHARPNESS I → +0,06 pp flat auf ALLE Karten → critChance 0,06 (rng 0,99 → kein realer Crit, nur ablesen).
     expect(resolveTrick(scenario(12, 0, { familyTiers: { P_SHARPNESS: 1 } }), () => 0.99).lastTrick.critChance).toBeCloseTo(0.06);
-    // Gleiche Anhebung über den Blitz-Spannungsstau als additiver Stat-Ersatz: Sockel 0,05 + 0,01 → 0,06.
-    expect(resolveTrick(scenario(12, 0, { lightning: { active: true, charge: 0, maxCharge: 10, stauBonus: 0.01 } }), () => 0.99).lastTrick.critChance).toBeCloseTo(0.06);
+    // Gleiche Anhebung über den Blitz-Spannungsstau als additiver Stat-Ersatz (exp: kein Sockel mehr): 0,06 → 0,06.
+    expect(resolveTrick(scenario(12, 0, { lightning: { active: true, charge: 0, maxCharge: 10, stauBonus: 0.06 } }), () => 0.99).lastTrick.critChance).toBeCloseTo(0.06);
   });
   it("Crit-Mult: Präzision-Wucht hebt den Crit-Faktor auf Basis + Bonus (P_FORCE II → Basis + 0,40)", () => {
     // P_FORCE II → +0,40× auf den Basis-Crit-Mult; Crit über den Blitz-Stau (rawCrit 1) garantiert.
@@ -601,154 +614,32 @@ describe("Formations-Engine — Integration (V2 §22.7)", () => {
   });
 });
 
-describe("Ionisierung — Engine (Stufe B)", () => {
-  const I = "SK_LIGHTNING_02", U = "SK_LIGHTNING_04";
-  const lit = (over = {}) => ({ active: true, charge: 0, maxCharge: 10, ...over });
+describe("Ionisierung — Engine (exp skill rework: Stapel-Score in der Basis, kein Selbstwachstum)", () => {
+  const lit = (over = {}) => ({ ...initLightning(), active: true, ...over });
   // constDeck mit stabilen ids; die gespielte Karte (pos 0) trägt `stacks` Ionisierungsstapel.
   const ionDeck = (v, stacks) => constDeck(v).map((c, i) => (i === 0 ? { ...c, id: "P0", ionStacks: stacks } : { ...c, id: `P${i}` }));
 
   it("ionScore der gespielten Karte fließt in die multiplizierte Basis (+ION_SCORE_PER_STACK/Stapel)", () => {
-    // 2 Stapel → +2×Flat: (Basis + 2×Flat) × streakBaseMult(1)=1,02 (kein Crit; rng 0,99 > die +2 pp Feld-Crit).
+    // 2 Stapel → +2×Flat: (Basis + 2×Flat) × streakBaseMult(1)=1,02 (kein Crit).
     const s = resolveTrick(scenario(12, 0, { deck: ionDeck(12, 2), playerOrder: identity() }), () => 0.99);
     expect(s.lastTrick.scoreGain).toBeCloseTo((B + 2 * ION_SCORE_PER_STACK) * 1.02);
   });
 
-  it("Sieg mit ionisierter Karte erhöht deren Stapel (+1, max 5 — #165 Skills-Spec §5.1)", () => {
+  it("Sieg mit ionisierter Karte lässt ihre Stapel unverändert (Lesart A) — auch über dem alten Deckel 5", () => {
     expect(resolveTrick(scenario(12, 0, { deck: ionDeck(12, 2), playerOrder: identity() }), () => 0.99)
-      .deck.find((c) => c.id === "P0").ionStacks).toBe(3);
-    expect(resolveTrick(scenario(12, 0, { deck: ionDeck(12, 5), playerOrder: identity() }), () => 0.99)
-      .deck.find((c) => c.id === "P0").ionStacks).toBe(5); // Deckel jetzt bei 5
-  });
-
-  it("Überspannung: Crit mit ionisierter Karte gibt +3 Zusatzladung (1 Basis + 1 Blitzableiter + 3)", () => {
-    const s = resolveTrick(scenario(12, 0, { deck: ionDeck(12, 1), playerOrder: identity(),
-      skills: ["SK_LIGHTNING_01", U], lightning: lit() }), () => 0); // Crit aus den Blitz-Skills (rng 0)
-    expect(s.lastTrick.isCrit).toBe(true);
-    expect(s.lightning.charge).toBe(5);
-  });
-
-  it("Volle Ladung + Ionisierung: ungespielte Karten werden ionisiert, Ladung verbraucht", () => {
-    // Nur Ionisierung (kein Blitzableiter) → sauberer Verbrauch bis auf den Boden (0).
-    const s = resolveTrick(scenario(12, 0, { skills: [I], lightning: lit({ charge: 9 }) }), () => 0); // Crit aus dem Blitz-Skill (rng 0)
-    expect(s.lastTrick.isCrit).toBe(true);
-    expect(s.lightning.charge).toBe(0);
-    expect(s.deck.filter((c) => (c.ionStacks || 0) > 0)).toHaveLength(2);
-  });
-});
-
-describe("Reaktoren + Ladungsserie + On-Consume-Passives — Engine (Rework v0)", () => {
-  const LR = "SK_LIGHTNING_01", I = "SK_LIGHTNING_02", R = "SK_LIGHTNING_05", G = "SK_LIGHTNING_06", S = "SK_LIGHTNING_07",
-        ST = "SK_LIGHTNING_08", DA = "SK_LIGHTNING_16", D10 = "SK_LIGHTNING_10", SS = "SK_LIGHTNING_17", TG = "SK_LIGHTNING_L01";
-  const lit = (over = {}) => ({ active: true, charge: 0, maxCharge: 10, stormCritBonus: 0, dauerstromCritBonus: 0, ...over });
-
-  it("Reststrom: Verbrauch lässt Ladung auf den Boden fallen (statt 0)", () => {
-    // Kein Blitzableiter → isolierter Reststrom-Boden; Blitzableiter würde +1 obendrauf geben (eigener Test).
-    const s = resolveTrick(scenario(12, 0, { skills: [I, R], lightning: lit({ charge: 9 }) }), () => 0); // Crit aus den Blitz-Skills (rng 0)
-    expect(s.lightning.charge).toBe(REST_CHARGE_FLOOR);
-  });
-
-  it("Gewitterfront: je Verbrauch +Crit-Momentum, am Deckel gestoppt (Crit-Bändigung)", () => {
-    const step = resolveTrick(scenario(12, 0, { skills: [LR, I, G], lightning: lit({ charge: 9 }) }), () => 0); // Crit aus den Blitz-Skills (rng 0)
-    expect(step.lightning.stormCritBonus).toBeCloseTo(STORM_CRIT_STEP);
-    // Am Deckel hört die Rampe auf — sie lief früher unbegrenzt weiter (Runaway-Quelle).
-    const capped = resolveTrick(scenario(12, 0, { skills: [LR, I, G], lightning: lit({ charge: 9, stormCritBonus: STORM_CRIT_CAP }) }), () => 0);
-    expect(capped.lightning.stormCritBonus).toBeCloseTo(STORM_CRIT_CAP);
-  });
-
-  it("Entladung (v0.5): je Verbrauch +Crit-Mult-Momentum, dauerhaft (weicher Cap)", () => {
-    const s = resolveTrick(scenario(12, 0, { skills: [LR, I, D10], lightning: lit({ charge: 9 }) }), () => 0);
-    expect(s.lightning.entladungMult).toBeCloseTo(ENTLADUNG_MULT_STEP);
-    const capped = resolveTrick(scenario(12, 0, { skills: [LR, I, D10], lightning: lit({ charge: 9, entladungMult: ENTLADUNG_MULT_CAP }) }), () => 0);
-    expect(capped.lightning.entladungMult).toBeCloseTo(ENTLADUNG_MULT_CAP); // Deckel hält
-  });
-
-  it("Serienschutz (v0.5): Niederlage mit ≥ halber Ladung hält die Serie und verbraucht die Ladung", () => {
-    // Niederlage (0<12), Serie 4 vorher, Ladung 8 ≥ halbe (5) → Serie hält, 5 Ladung weg.
-    const held = resolveTrick(scenario(0, 12, { skills: [SS], winStreak: 4, lightning: lit({ charge: 8 }) }), () => 0);
-    expect(held.lastTrick.result).toBe("loss");
-    expect(held.winStreak).toBe(4);                 // Serie gehalten
-    expect(held.lightning.charge).toBe(8 - Math.ceil(10 * 0.5)); // halbe Max-Ladung verbraucht → 3
-    // Zu wenig Ladung (4 < 5) → Serie bricht normal, Ladung unberührt.
-    const broke = resolveTrick(scenario(0, 12, { skills: [SS], winStreak: 4, lightning: lit({ charge: 4 }) }), () => 0);
-    expect(broke.winStreak).toBe(0);
-    expect(broke.lightning.charge).toBe(4);
-  });
-
-  it("Donnergott-Turbo (v0.5): Konsument löst schon bei 70 % Ladung aus (statt voll)", () => {
-    // maxCharge 10 → Schwelle ceil(7)=7. Ladung 6 + Blitz-Crit (+1) = 7 → Verbrauch feuert (Ionisierung), Ladung fällt auf Boden.
-    const turbo = resolveTrick(scenario(12, 0, { skills: [I, TG], lightning: lit({ charge: 6 }) }), () => 0);
-    expect(turbo.lightning.charge).toBeLessThan(6);       // Verbrauch ausgelöst → auf Boden gefallen
-    expect(turbo.deck.some((c) => (c.ionStacks || 0) > 0)).toBe(true); // ionisiert
-    // Ohne Donnergott feuert 7 < 10 nicht.
-    const noFire = resolveTrick(scenario(12, 0, { skills: [I], lightning: lit({ charge: 6 }) }), () => 0);
-    expect(noFire.lightning.charge).toBe(7);
-  });
-
-  it("Ladungsserie: ist KEIN Verbraucher — volle Ladung ohne Ionisierung parkt (kein Verbrauch)", () => {
-    const s = resolveTrick(scenario(12, 0, { skills: [LR, S], lightning: lit({ charge: 9 }) }), () => 0); // Crit aus den Blitz-Skills (rng 0)
-    expect(s.lightning.charge).toBe(10);   // voll → parkt, kein Konsument
-    expect(s.deck.filter((c) => (c.ionStacks || 0) > 0)).toHaveLength(0); // nichts ionisiert
-  });
-
-  it("Ladungsserie: eine Niederlage setzt die Serie normal zurück (kein Schutz mehr)", () => {
-    const s = resolveTrick(scenario(0, 12, { skills: [S], lightning: lit(), winStreak: 5 }), rng);
-    expect(s.losses).toBe(1);
-    expect(s.winStreak).toBe(0);            // kein Rahmen → Serie reißt
-    expect(s.lastResult).toBe("loss");
-  });
-
-  it("On-Consume: Blitzableiter gibt bei jedem vollen Verbrauch +1 Ladung zurück (über den Boden)", () => {
-    // [LR, I]: Crit → +2 Ladung (Basis +1, Blitzableiter +1) → voll (10) → Ionisierung verbraucht (Boden 0) → Blitzableiter +1.
-    const s = resolveTrick(scenario(12, 0, { skills: [LR, I], lightning: lit({ charge: 8 }) }), () => 0); // Crit aus den Blitz-Skills (rng 0)
-    expect(s.deck.filter((c) => (c.ionStacks || 0) > 0).length).toBeGreaterThan(0); // verbraucht → ionisiert
-    expect(s.lightning.charge).toBe(BLITZABLEITER_CONSUME_CHARGE);                   // 0 (Boden) + 1 zurück
-  });
-
-  it("On-Consume: Dauerstrom rampt je vollem Verbrauch die Crit-Chance dauerhaft — bis zum Deckel (Crit-Bändigung)", () => {
-    const s = resolveTrick(scenario(12, 0, { skills: [I, DA], lightning: lit({ charge: 9 }) }), () => 0); // Crit aus den Blitz-Skills (rng 0)
-    expect(s.lightning.dauerstromCritBonus).toBeCloseTo(DAUERSTROM_CONSUME_CRIT, 6);
-    // Am Deckel stoppt die Rampe. Ungedeckelt erreichte sie im Sim +1.844 pp und speiste über Überschlag den Crit-Mult.
-    const capped = resolveTrick(scenario(12, 0, { skills: [I, DA], lightning: lit({ charge: 9, dauerstromCritBonus: DAUERSTROM_CRIT_CAP }) }), () => 0);
-    expect(capped.lightning.dauerstromCritBonus).toBeCloseTo(DAUERSTROM_CRIT_CAP, 6);
-  });
-
-  it("Überschlag ist ein Ventil: Crit-Überschuss über 100 % wird zu Ladung, NICHT zu Crit-Multiplikator", () => {
-    const UE = "SK_LIGHTNING_14";
-    // +150 pp Rohchance über die (gedeckelten) Rampen → 50 pp Überschuss → 50/10 = +5 Ladung. Kein Konsument im
-    // Build (Ionisierung fehlt) → die Ladung bleibt liegen und ist direkt ablesbar.
-    const s = resolveTrick(scenario(12, 0, { skills: [LR, UE], lightning: lit({ charge: 0, stormCritBonus: STORM_CRIT_CAP, dauerstromCritBonus: DAUERSTROM_CRIT_CAP, stauBonus: 0.5 }) }), () => 0);
-    expect(s.lightning.charge).toBeGreaterThan(0);
-    // Der Crit-Mult bleibt bei den regulären (gedeckelten) Kanälen — der Überschuss fließt NICHT hinein.
-    const ohneUeberschuss = resolveTrick(scenario(12, 0, { skills: [LR, UE], lightning: lit({ charge: 0 }) }), () => 0);
-    expect(s.lastTrick.critMultiplier).toBeCloseTo(ohneUeberschuss.lastTrick.critMultiplier, 6);
+      .deck.find((c) => c.id === "P0").ionStacks).toBe(2);
+    expect(resolveTrick(scenario(12, 0, { deck: ionDeck(12, 9), playerOrder: identity(), lightning: lit() }), () => 0.99)
+      .deck.find((c) => c.id === "P0").ionStacks).toBe(9);
   });
 
   it("Backstop: der Crit-Multiplikator ist hart gedeckelt, egal welcher Kanal ihn treibt", () => {
-    // Durchschlag/Entladung weit über dem Deckel angesetzt → der fertige Mult wird auf CRIT_MULT_CAP geklemmt.
-    const s = resolveTrick(scenario(12, 0, { skills: [LR, I], lightning: lit({ charge: 9, durchschlagMult: 50, entladungMult: 50 }) }), () => 0);
+    // Entladung-Rampe weit über dem Deckel angesetzt → der fertige Mult wird auf CRIT_MULT_CAP geklemmt.
+    const s = resolveTrick(scenario(12, 0, { skills: ["SK_LIGHTNING_01"], lightning: lit({ entladungMult: 50 }) }), () => 0);
+    expect(s.lastTrick.isCrit).toBe(true);
     expect(s.lastTrick.critMultiplier).toBeCloseTo(CRIT_MULT_CAP, 6);
   });
-
-  it("On-Consume: Statische Aufladung gibt bei jedem vollen Verbrauch +CONSUME_SCORE Flat-Score", () => {
-    // Beide Builds halten 2 Blitz-Skills → identischer Crit-Mult (je +LIGHTNING_CRIT_MULT_PER_SKILL/Skill).
-    // Serienschutz (SS) ist auf einem gewonnenen Crit-Stich wirkungslos → isoliert CONSUME_SCORE sauber.
-    const withSt = resolveTrick(scenario(12, 0, { skills: [I, ST], lightning: lit({ charge: 9 }) }), () => 0); // Crit aus den Blitz-Skills (rng 0)
-    const without = resolveTrick(scenario(12, 0, { skills: [I, SS], lightning: lit({ charge: 9 }) }), () => 0);
-    expect(withSt.lastTrick.scoreGain - without.lastTrick.scoreGain).toBeCloseTo(CONSUME_SCORE, 6);
-  });
-
-  it("Ladungsserie: die Serie speist die Crit-Chance (steigt je Serienpunkt, Cap +30 pp)", () => {
-    const base = LIGHTNING_CRIT_BASE + LIGHTNING_CRIT_PER_SKILL;
-    // Sieg → serieStreak = winStreak+1; Ladungsserie addiert serieStreak·STEP (Cap) auf die Crit-Chance.
-    const lo = resolveTrick(scenario(12, 0, { skills: [S], lightning: lit(), winStreak: 0 }), rng);
-    const hi = resolveTrick(scenario(12, 0, { skills: [S], lightning: lit(), winStreak: 4 }), rng);
-    expect(lo.lastTrick.critChance).toBeCloseTo(base + 1 * SERIESCRIT_STEP, 6);
-    expect(hi.lastTrick.critChance).toBeCloseTo(base + 5 * SERIESCRIT_STEP, 6);
-    // Ohne Ladungsserie ignoriert die Engine die Serie für die Crit-Chance.
-    const noSeries = resolveTrick(scenario(12, 0, { skills: [LR], lightning: lit(), winStreak: 4 }), rng);
-    expect(noSeries.lastTrick.critChance).toBeCloseTo(base, 6);
-  });
 });
+// (Die 15 Blitz-Skills und die vier Legendären sind in test/lightning-rework.test.js gegen Modul UND Engine geprüft.)
 
 // Kartenrollen (Kat. C: Vorhut/Staffelläufer/Triumph/Leibwache/Anführer/Finisher/Überlebensvorteil) sind zu
 // Familien migriert (#167) — die Engine-Verdrahtung ist in test/families-engine.test.js („Kategorie C") geprüft.

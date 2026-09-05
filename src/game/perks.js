@@ -2,7 +2,7 @@ import * as C from "./constants.js";
 import { FAMILY_LIST, familyCritChanceRaw, familyCritMult } from "./families.js";
 import { TIERS, tierWeightsForShift, canOfferFamilyTier, familyTierOf } from "./rarity.js";
 import { SEGMENT_SIZE } from "./formations.js";
-import { lightningCritRaw, ionCritChance, lightningCritMult } from "./skills.js";
+import { lightningCritChance, lightningCritMult, overcritMult } from "./factions/lightning.js"; // exp skill rework: Blitz-Beiträge für die Live-Anzeige
 
 // Deutsche Zahlformatierung (2.5 → „2,5") — Beschreibungszahlen aus den Konstanten interpolieren (kein Text↔Code-Drift).
 const de = (x) => String(x).replace(".", ",");
@@ -294,10 +294,9 @@ export function critChanceFor(perks, ctx) {
 // konditionalen Generatoren Zielsicherheit/Brennglas/Farbfokus bleiben im Live-Preview aus = ehrlicher Crit-Boden).
 // Der positionsabhängige Kritanker (§4.2) bleibt der Engine vorbehalten.
 export function totalCritChanceRaw(state = {}) {
-  const { perks = [], winStreak = 0, wins = 0, trickNo = 0, pos = 0, lightning, skills = [], familyTiers = {}, roles = {}, deck = [] } = state;
+  const { perks = [], winStreak = 0, wins = 0, trickNo = 0, pos = 0, lightning, skills = [], skillTiers = {}, familyTiers = {}, roles = {} } = state;
   return critChanceRawFor(perks, { winValue: 0, winStreak: winStreak + 1, wins: wins + 1, trickNo, posInCycle: pos })
-       + lightningCritRaw(lightning, skills, winStreak + 1)
-       + (lightning?.active ? ionCritChance(deck) : 0) // #271: feldweiter Ionisierungs-Crit (deckt HUD/StatusRail/PerkSelect)
+       + lightningCritChance(lightning, skills, skillTiers, winStreak + 1) // exp: Passiv je Blitz-Skill + Rampen + Ladungsserie
        + familyCritChanceRaw(familyTiers, { winValue: 0, suit: null, formCount: 0, focusSuits: (roles || {}).P_COLORFOCUS || [] });
 }
 // Crit-Faktor: Basis (CRIT_BASE_MULT 1,5) + Perk-Crit-Mult-Boni (critMultBonus-Hook). #267: der Crit-Mult-Stat ist
@@ -311,16 +310,13 @@ export function critMultiplierFor(perks, ctx = {}) {
   return C.CRIT_BASE_MULT + bonus;
 }
 // Anzeige-Helfer: VOLLER Crit-Multiplikator (persistente Terme, wie die Engine) — Perk-Basis + Familien-Wucht + Blitz
-// (lightningCritMult inkl. Donnergott) + Durchschlag + Entladung-Momentum (v0.5). Ohne die situativen Terme (Frostkaskade/
-// Überschlag-Graduierung), die nur im Crit selbst zünden. Geteilt: StatusRail (Crit-Zeile) + ChargeBar (Blitzfrequenz).
+// (Entladung-Rampe, Donnergott, Überschlag als Zustand) + Systemregel (Überschuss über 100 %). Ohne die situativen Terme
+// (Entladung Episch beim Leisten-Crit), die nur im Crit selbst zünden. Geteilt: StatusRail (Crit-Zeile) + ChargeBar.
 export function totalCritMult(state) {
   const perks = state.perks || [];
-  const lightning = state.lightning;
   const critRaw = totalCritChanceRaw(state);
   return critMultiplierFor(perks, { rawCrit: critRaw }) + familyCritMult(state.familyTiers || {})
-    + (lightning && lightning.active
-        ? lightningCritMult(state.skills || []) + (lightning.durchschlagMult || 0) + (lightning.entladungMult || 0)
-        : 0);
+    + lightningCritMult(state.lightning, state.skills || [], state.skillTiers || {}, critRaw) + overcritMult(critRaw);
 }
 // Hat der Build überhaupt ein Crit-Perk? (steuert die UI-Sichtbarkeit der Crit-Anzeigen)
 // V2: Crit-Chance kommt aus Stat/Blitz; D-Perks belohnen Crits über scoreFlatOnCrit; L6 trägt Crit-Chance → alle zählen.

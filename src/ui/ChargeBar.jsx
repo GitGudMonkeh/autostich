@@ -1,67 +1,28 @@
-import { chargeConsumerOf } from "../game/skills.js";
-import { ION_MAX_STACKS, ION_SAT_BREADTH_FRAC, ION_SAT_DEPTH_FRAC, ION_SATURATION_VALUE, CRIT_BASE_MULT,
-  STORM_CRIT_CAP, UEBERSCHLAG_DEPTH_PP_PER_CHARGE } from "../game/constants.js";
+import { LIGHTNING_MAX_CHARGE, CRIT_BASE_MULT } from "../game/constants.js";
 import { FactionShell, PanelSkills } from "./indicators/panelKit.jsx";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { LIGHTNING, CASCADE_BRIGHT } from "./indicators/vocab.js";
 import { t } from "../i18n/index.js"; // #sprache
-import { skillDef, archetypeLabel } from "../i18n/labels.js";
+import { archetypeLabel } from "../i18n/labels.js";
 
-// ⚡ Blitz-Motor (Blitz-Archetyp) — eigener Block, nur sichtbar bei aktivem Blitz (lightning.active). v0.5:
-//   • Sturm-Sättigung  zwei Stufen (Sturmgröße = Breite, Sturmintensität = Tiefe) je in % gegen die Schwelle;
-//                      ⚡-Marker + Payoff, sobald die Stufe zündet (+Wert / doppelte Überschlag-Ausbeute).
-//   • Ladung           Segment-Maximum (Donnergott-Turbo löst früher aus).
-//   • Entladungen       Kern-Metrik (volle Verbräuche/Runde) + Crit-Momentum (Gewitterfront/Entladung).
-// Runde 2, R20 (Owner): Blitzfrequenz-Balken, Serienkette und Serienschutz-Badge sind raus —
-// Crit-Mult steht im Multiplikatoren-Panel, die Serie in der Statusleiste. Die Kopfzeile behält
-// den „Crit ×N"-Zustand als Überladen-Headline.
-// Rein anzeige-seitig: liest state.lightning + skills + Crit-Chance/-Mult, keine Engine-Logik.
-/* #sprache: Der Konsumenten-Name kam abgetippt — jetzt aus dem Skill-Register (übersetzt), damit er
-   nicht vom echten Skill-Namen wegdriftet. Als Getter, weil sich die Sprache ändern kann. */
-const CONSUMER_LABEL = { get ionize() { return skillDef("SK_LIGHTNING_02").name; } };
-
+/* ⚡ Blitz-Leiste (exp skill rework, docs/skill-rework.md §3.2) — eigener Block, nur sichtbar bei aktivem Blitz.
+   Zeigt die Ladung gegen die Leiste (10 Crits, Donnergott 7), die vollen Leisten des Laufs (jede ionisiert die nächste
+   Karte) und die offenen Rampen (Gewitterfront: Crit-Chance · Entladung: Crit-Multiplikator). Sturm-Sättigung und
+   Konsumenten-Badge sind mit dem Rework gegangen. Rein anzeige-seitig: liest state.lightning + Crit-Chance/-Mult,
+   keine Engine-Logik. Texte und Anzeige nimmt Phase 4 mit dem Owner ab. */
 const mlt = (x) => x.toFixed(2).replace(".", ",");
 
-// Sturm-Sättigung (v0.5): eine Stufe mit Mini-Balken, in % gegen die Schwelle; ⚡ + Payoff, sobald die Stufe zündet.
-function SatRow({ label, cur, max, on, payoff }) {
-  const pct = max > 0 ? Math.min(100, Math.round((cur / max) * 100)) : 0;
-  return (
-    <div>
-      <div className="flex justify-between text-meta-3 mb-0.5">
-        <span className="opacity-55">{label} <span className="ty-num-sm opacity-80">{pct}%</span></span>
-        {on
-          ? <span className="font-semibold inline-flex items-center gap-0.5" style={{ color: CASCADE_BRIGHT }}><FactionIcon type="lightning" size={11} /> {payoff}</span>
-          : <span className="opacity-35">{payoff}</span>}
-      </div>
-      <div className="w-full rounded-full overflow-hidden" style={{ background: "#26262e", height: 5 }}>
-        <div className="h-full rounded-full transition-all" style={{
-          width: `${pct}%`,
-          background: on ? CASCADE_BRIGHT : LIGHTNING,
-          boxShadow: on ? `0 0 6px ${CASCADE_BRIGHT}` : undefined,
-        }} />
-      </div>
-    </div>
-  );
-}
-
-export function ChargeBar({ lightning, skills = [], critChance = 0, critMult = CRIT_BASE_MULT, deck = [], options = {}, onOption, manyActive = false, showSkills = false }) {
+export function ChargeBar({ lightning, skills = [], critChance = 0, critMult = CRIT_BASE_MULT, options = {}, onOption, manyActive = false, showSkills = false }) {
   if (!lightning || !lightning.active) return null;
-  const { charge, maxCharge } = lightning;
-  // Sturm-Sättigung: Sturmgröße = Karten mit ≥1 Stapel gegen Schwelle · Sturmintensität = volle (5-Stapel-)Karten gegen Schwelle.
-  const ionN = deck.reduce((t, c) => t + ((c.ionStacks || 0) > 0 ? 1 : 0), 0);
-  const ionFull = deck.reduce((t, c) => t + ((c.ionStacks || 0) >= ION_MAX_STACKS ? 1 : 0), 0);
-  const breadthThresh = Math.ceil(deck.length * ION_SAT_BREADTH_FRAC);
-  const depthThresh = Math.ceil(deck.length * ION_SAT_DEPTH_FRAC);
-  const breadthOn = deck.length > 0 && ionN >= breadthThresh;
-  const depthOn = deck.length > 0 && ionFull >= depthThresh;
-  // Crit-Momentum + Motor-Zähler (v0.5).
-  const stormPp = Math.round((lightning.stormCritBonus || 0) * 100);
+  const maxCharge = lightning.maxCharge || LIGHTNING_MAX_CHARGE;
+  // Ladung über der Leiste (Blitzableiter Episch behält den Überschuss) zündet beim nächsten Stich — die Pips zeigen die Leiste.
+  const charge = Math.min(lightning.charge || 0, maxCharge);
+  const stormPp = Math.round((lightning.stormCritBonus || 0) * 1000) / 10;
   const entMult = lightning.entladungMult || 0;
-  const consumeCount = lightning.consumeCount || 0;
+  const bars = lightning.bars || 0;
   const full = charge >= maxCharge;
-  const consumer = CONSUMER_LABEL[chargeConsumerOf(skills)];
 
-  // Überladen (Crit-Chance ≥ 100 %) trägt nur noch die Kopfzeilen-Headline („Crit ×N").
+  // Überladen (Crit-Chance ≥ 100 %) trägt die Kopfzeilen-Headline („Crit ×N").
   const overcharge = critChance >= 1;
 
   // Phase-3-Headline: „gleich knallt's"-Zustand für die einklappbare Fraktions-Zeile.
@@ -85,18 +46,10 @@ export function ChargeBar({ lightning, skills = [], critChance = 0, critMult = C
       footer={showSkills ? <PanelSkills skills={skills} arch="lightning" color={LIGHTNING} /> : null}
       stateText={stateText} stateOn={stateOn} collapsed={collapsed} onToggle={onToggle}
       ambient={ambient} ambientPulse={ambientPulse}>
-      {/* Blitzfrequenz-Puls (v0.5): violettes Rahmen-Glühen je Entladung (wie der Battlefield-Bloom); remount je consumeCount replayt die Animation. */}
-      <div key={consumeCount} className="as-blitz-pulse pointer-events-none absolute inset-0 rounded-xl" aria-hidden="true" />
-      {/* Sturm-Sättigung (v0.5): die zwei Stufen + ihre Payoffs live — das Herzstück des Reworks. */}
-      {ionN > 0 && (
-        <div className="grid gap-1.5">
-          <div className="text-body-5 opacity-60">{t("bar.lightning.saturation")}</div>
-          <SatRow label={t("bar.lightning.breadth")} cur={ionN} max={breadthThresh} on={breadthOn} payoff={t("bar.lightning.breadth.payoff", { n: ION_SATURATION_VALUE })} />
-          <SatRow label={t("bar.lightning.depth")} cur={ionFull} max={depthThresh} on={depthOn} payoff={t("bar.lightning.depth.payoff", { n: UEBERSCHLAG_DEPTH_PP_PER_CHARGE })} />
-        </div>
-      )}
+      {/* Blitzfrequenz-Puls: violettes Rahmen-Glühen je voller Leiste (wie der Battlefield-Bloom); remount je bars replayt die Animation. */}
+      <div key={bars} className="as-blitz-pulse pointer-events-none absolute inset-0 rounded-xl" aria-hidden="true" />
 
-      {/* Ladung — Segment-Maximum (Cyan), glüht bei VOLL. */}
+      {/* Ladung — Leiste (Cyan), glüht bei VOLL. */}
       <div>
         <div className="flex justify-between text-body-5 mb-1.5">
           <span className="opacity-60">{t("bar.lightning.state.charge", { charge, max: maxCharge })}{full && <span style={{ color: LIGHTNING }}>{t("bar.lightning.fullBadge")}</span>}</span>
@@ -116,28 +69,14 @@ export function ChargeBar({ lightning, skills = [], critChance = 0, critMult = C
         </div>
       </div>
 
-      {/* Entlade-Motor (v0.5): Entladungen/Runde (Kern-Metrik) + Crit-Momentum (Gewitterfront/Entladung). */}
-      {(consumeCount > 0 || stormPp > 0 || entMult > 0) && (
+      {/* Volle Leisten des Laufs (Kern-Metrik) + die offenen Rampen (Gewitterfront/Entladung). */}
+      {(bars > 0 || stormPp > 0 || entMult > 0) && (
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-meta-3">
-          <span className="opacity-60" title={t("bar.lightning.consumes.title")}>{t("bar.lightning.consumes")} <b className="tabular-nums" style={{ color: LIGHTNING }}>{consumeCount}</b></span>
-          {stormPp > 0 && <span className="opacity-60" title={t("bar.lightning.storm.title", { cap: Math.round(STORM_CRIT_CAP * 100) })}>{t("bar.lightning.storm")} <b style={{ color: CASCADE_BRIGHT }}>+{stormPp} %</b><span className="opacity-45"> / {Math.round(STORM_CRIT_CAP * 100)}</span></span>}
+          <span className="opacity-60" title={t("bar.lightning.consumes.title")}>{t("bar.lightning.consumes")} <b className="tabular-nums" style={{ color: LIGHTNING }}>{bars}</b></span>
+          {stormPp > 0 && <span className="opacity-60" title={t("bar.lightning.storm.title")}>{t("bar.lightning.storm")} <b style={{ color: CASCADE_BRIGHT }}>+{String(stormPp).replace(".", ",")} %</b></span>}
           {entMult > 0 && <span className="opacity-60" title={t("bar.lightning.discharge.title")}>{t("bar.lightning.discharge")} <b style={{ color: CASCADE_BRIGHT }}>+{mlt(entMult)}×</b></span>}
         </div>
       )}
-
-      {consumer ? (
-        <div className="flex flex-wrap gap-1.5">
-          <span className="text-meta-1 px-1.5 py-0.5 rounded font-semibold"
-            style={{ background: `${LIGHTNING}22`, color: LIGHTNING, border: `1px solid ${LIGHTNING}66` }}>
-            {t("bar.lightning.consumer", { name: consumer })}
-          </span>
-        </div>
-      ) : full ? (
-        <div className="text-meta-3 leading-snug rounded px-2 py-1.5"
-          style={{ background: `${LIGHTNING}14`, color: LIGHTNING, border: `1px solid ${LIGHTNING}44` }}>
-          {t("bar.lightning.noConsumer", { skill: CONSUMER_LABEL.ionize })}
-        </div>
-      ) : null}
     </FactionShell>
   );
 }

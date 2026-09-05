@@ -3,7 +3,6 @@ import { summarizeFormations } from "../game/formations.js";
 import { precomputeArchitect, architectValueBonus } from "../game/architect.js";
 import { hasCritPerk, totalCritChanceRaw, totalCritMult, fundamentBonus } from "../game/perks.js";
 import { hasCritFamily, allianceGroups } from "../game/families.js";
-import { ionCritChance } from "../game/skills.js";
 import { Sparkline } from "./Sparkline.jsx";
 import { ScoreSourceBar, sourceShares } from "./RunGraphs.jsx";
 import { fmtScore, fmtScoreShort } from "./format.js"; // Gameplay-Neu-Aufbau: „Bester Score" in der Analyse-Ecke
@@ -53,10 +52,8 @@ export function StatusRail({ state, currentTraj = [], recordTraj = [], options =
   // Familie D „Überschusskrit"). Nur nach unten bei 0 begrenzen; KEIN Math.min(1, …) mehr (das war nur Anzeige;
   // der echte Wurf bleibt in der Engine bei engine.js:302 geklemmt).
   const critPct = Math.round(Math.max(0, critRaw) * 100);
-  // #271: der feldweite Ionisierungs-Anteil an der Crit-Chance (im critPct oben enthalten) — separat ausgewiesen.
-  const ionCritPct = lightning && lightning.active ? Math.round(ionCritChance(state.deck || []) * 100) : 0;
-  // Crit-Mult VOLLSTÄNDIG (geteilter Helfer): Perk-Basis + Familien-Wucht + Blitz (inkl. Donnergott) + Durchschlag
-  // + Entladung-Momentum (v0.5) — der STAND des Crit-Multiplikators inkl. der neuen Blitz-Motoren.
+  // Crit-Mult VOLLSTÄNDIG (geteilter Helfer): Perk-Basis + Familien-Wucht + Blitz (Entladung-Rampe, Donnergott,
+  // Überschlag) + Systemregel — der STAND des Crit-Multiplikators. (exp: der feldweite Ionisierungs-Crit ist weg.)
   const critMultTotal = totalCritMult(state);
   // #123/#UI: Formations-Bonus der aktuellen Aufstellung dauerhaft sichtbar (gleiche Quelle wie die
   // Formationsphase → kein Drift). Als SUMME aller Positionen in % (Σ(mult−1)·100) — nicht mehr max/aktuelle Position.
@@ -95,7 +92,7 @@ export function StatusRail({ state, currentTraj = [], recordTraj = [], options =
         <div className="grid grid-cols-2 gap-2">
           <MCell label={t("rail.formation")} tone="#5ab87a" value={formCount > 0 ? t("rail.formation.value", { n: formCount, pct: formBonusPct }) : "–"} />
           <MCell label={t("rail.buildings")} tone="#d4a63a" value={buildBonusPct > 0 ? t("rail.pct", { pct: buildBonusPct }) : "–"} />
-          {showCrit && <MCell label={t("rail.critChance")} tone="#e879f9" value={t("rail.pct.plain", { pct: critPct })} sub={ionCritPct > 0 ? t("rail.critChance.ion", { pct: ionCritPct }) : null} />}
+          {showCrit && <MCell label={t("rail.critChance")} tone="#e879f9" value={t("rail.pct.plain", { pct: critPct })} />}
           {showCrit && <MCell label={t("rail.critMult")} tone={perks.includes("L5") ? "#d4a63a" : "#e879f9"} value={`×${fmtMult(critMultTotal)}`} sub={perks.includes("L5") ? t("rail.jackpot") : null} />}
         </div>
       </div>

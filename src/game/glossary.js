@@ -98,7 +98,7 @@ export const GLOSSARY = {
     text: "Der effektive Wert einer Karte im Stich: Kartenwert plus alle Stichwert-Boni. Der höhere gewinnt.",
     match: ["Kampfwert"] },
   crit: { category: "grund", label: "Crit", icon: "↯", color: CLR.lightning,
-    text: `Kritischer Treffer: der Sieg zählt mit dem Crit-Multiplikator (Basis ×${de(C.CRIT_BASE_MULT)}). Der Basis-Crit ist 0. Crit-Chance kommt aus den Präzision-Familien und aus Blitz-Skills. Jeder Blitz-Skill hebt zudem den Crit-Multiplikator um +${de(C.LIGHTNING_CRIT_MULT_PER_SKILL)}×.`,
+    text: `Kritischer Treffer: der Sieg zählt mit dem Crit-Multiplikator (Basis ×${de(C.CRIT_BASE_MULT)}). Der Basis-Crit ist 0. Crit-Chance kommt aus den Präzision-Familien und aus Blitz-Skills (+${pct(C.LIGHTNING_CRIT_PER_SKILL)} % je gehaltenem Blitz-Skill). Crit-Chance über 100 % hebt den Crit-Multiplikator leicht an.`,
     match: ["Crit", "Crits", "kritischer Treffer", "kritischen Treffer"] },
   gleichstand: { category: "grund", label: "Gleichstand", icon: "⇌", color: CLR.grund,
     text: "Gleiche Kampfwerte im Stich, normalerweise ohne Sieg (kein Score).",
@@ -240,17 +240,18 @@ export const GLOSSARY = {
     match: ["Schmieden", "geschmiedet", "Schmiede", "Ascheschmiede"] },
 
   /* ============ 4 · Blitz ============ */
+  // exp skill rework (§3.2): Ladung, Ionisierung und Stapel neu beschrieben — Wortlaut in Phase 4 mit den Skilltexten abnehmen.
   charge: { category: "frak", group: "lightning", label: "Ladung", icon: "↯", color: CLR.lightning,
-    text: `Crits erzeugen Ladung (max ${C.LIGHTNING_MAX_CHARGE}). Bei voller Ladung lösen Blitz-Konsumenten ihren Effekt aus und verbrauchen sie.`,
+    text: `Jeder Crit gibt +1 Ladung (Leiste ${C.LIGHTNING_MAX_CHARGE}). Ist die Leiste voll, ionisiert sie die nächste Karte in der Reihenfolge und leert sich.`,
     match: ["Ladung", "Ladungen"] },
   ionize: { category: "frak", group: "lightning", label: "Ionisierung", icon: "↯", color: CLR.lightning,
-    text: `Dauerhafte Kartenmarkierung: eine ionisierte Karte gibt bei Sieg +${C.ION_SCORE_PER_STACK} Score je Stapel und erhält danach +1 Stapel (max ${C.ION_MAX_STACKS}). Zusätzlich lädt das ionisierte Feld die Luft auf: jeder Ionisierungsstapel im Deck hebt die Crit-Chance JEDER Siegkarte um +${pct(C.ION_CRIT_PP_PER_STACK)} % (feldweit, bis +${pct(C.ION_CRIT_STACK_CAP * C.ION_CRIT_PP_PER_STACK)} %). Wie viele Karten je Ladungsverbrauch ionisieren, wächst mit dem Archetyp: +${C.ION_SPEED_PER_SKILL} je Blitz-Skill über ${C.ION_SPEED_MIN_SKILLS}.`,
+    text: `Dauerhafte Kartenmarkierung: eine ionisierte Karte gibt bei Sieg +${C.ION_SCORE_PER_STACK} Score je Stapel in die Basis, vor den Multiplikatoren. Stapel entstehen nur aus der vollen Ladungsleiste und aus Blitz-Skills und sind ohne Deckel.`,
     match: ["Ionisierung", "ionisierte", "ionisierten", "ionisiert"] },
   stapel: { category: "frak", group: "lightning", label: "Stapel (Ionisierung)", icon: "▤", color: CLR.lightning,
-    text: `Eine Ionisierungs-Aufladung auf einer einzelnen Karte (höchstens ${C.ION_MAX_STACKS} je Karte). Jeder Stapel gibt bei Sieg mit der Karte +${C.ION_SCORE_PER_STACK} Score und hebt zusätzlich feldweit die Crit-Chance (siehe Ionisierung). Eine Karte mit ${C.ION_MAX_STACKS} Stapeln ist voll ionisiert und schaltet Sondereffekte frei (u. a. Kurzschluss, Durchschlag).`,
+    text: `Eine Ionisierung auf einer einzelnen Karte, ohne Deckel. Jeder Stapel gibt bei Sieg mit der Karte +${C.ION_SCORE_PER_STACK} Score; Karten mit vielen Stapeln schalten die Schwellen-Skills frei (Blitzfänger, Kurzschluss, Überspannung).`,
     match: ["Ionisierungsstapel", "Ionisierungsstapeln", "Stapel", "Stapeln"] },
   kaskade: { category: "frak", group: "gen", label: "Kaskade", icon: "⇶", color: CLR.lightning,
-    text: "Ein Ereignis zündet das nächste. Bei Blitz: ein Crit auf oder neben einer ionisierten Karte erzeugt zusätzliche Ladung. Bei Eis: ein berstender Gletscher reißt seine Nachbarn mit, sodass eine Bruchwelle durchs Cluster läuft.",
+    text: "Ein Ereignis zündet das nächste. Bei Blitz: ein Crit mit einer tief ionisierten Karte erzeugt zusätzliche Ladung (Überspannung). Bei Eis: ein berstender Gletscher reißt seine Nachbarn mit, sodass eine Bruchwelle durchs Cluster läuft.",
     match: ["Kaskade", "Kaskaden"] },
 
   /* ============ 4 · Eis ============ */

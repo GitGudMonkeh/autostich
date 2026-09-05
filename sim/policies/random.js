@@ -9,7 +9,7 @@
 //  - Shop: gierig alle bezahlbaren Items OHNE Zielauswahl kaufen, dann verlassen.
 //    (Ziel-Items bleiben in S0 außen vor; das hält die shop-target-Phase draußen.)
 import { PERK_DEFS } from "../../src/game/perks.js";
-import { archetypeOf, heatConsumerCount, chargeConsumerCount, isLegendarySkill } from "../../src/game/skills.js";
+import { archetypeOf, heatConsumerCount, isLegendarySkill } from "../../src/game/skills.js";
 import { SKILL_SLOTS, MAX_ARCHETYPES } from "../../src/game/constants.js";
 import { perkActionFor, familyTargetStep } from "../families-policy.js";
 import { architectStep } from "../architect-policy.js"; // #202: Architekt-Phase (random/greedy platzieren)
@@ -27,7 +27,7 @@ export function canAddSkill(s, id) {
   const active = s.activeArchetypes || [];
   if (a && !active.includes(a) && active.length >= MAX_ARCHETYPES) return false;
   const next = [...s.skills, id];
-  return heatConsumerCount(next) <= 1 && chargeConsumerCount(next) <= 1;
+  return heatConsumerCount(next) <= 1; // exp: Blitz kennt keine Konsumenten mehr (Feuer bis Phase 3)
 }
 
 export function randomPolicy({ architectGreedy = false } = {}) {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { suitColor, ION_MAX_STACKS, ION_SCORE_PER_STACK, ION_CRIT_PP_PER_STACK,
+import { suitColor, ION_SCORE_PER_STACK,
          PLANT_GREEN_THRESHOLD, PLANT_VALUE_CAP, WURZELSCHLAG_PER_GROWTH } from "../game/constants.js";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 
@@ -86,9 +86,8 @@ export function CardDetail({ card, pos, posForm, roles, familyTiers = {},
       {ion > 0 && (
         <div className="flex flex-wrap gap-1.5 items-center mt-1">
           <span className="opacity-45">{t("carddetail.ion")}</span>
-          <Chip c="#5ec8f0"><FactionIcon type="lightning" size={11} /> {ion}/{ION_MAX_STACKS} · +{ion * ION_SCORE_PER_STACK} Score</Chip>
-          {/* #271: jeder Stapel hebt die Crit-Chance des ganzen Decks (feldweit) — hier der Beitrag dieser Karte. */}
-          <Chip c="#8a7de0">{t("carddetail.fieldCrit", { pct: Math.round(ion * ION_CRIT_PP_PER_STACK * 100) })}</Chip>
+          {/* exp skill rework: Stapel ohne Deckel, nur noch Score in der Basis (kein feldweiter Crit mehr). */}
+          <Chip c="#5ec8f0"><FactionIcon type="lightning" size={11} /> {ion} · +{ion * ION_SCORE_PER_STACK} Score</Chip>
         </div>
       )}
       {/* Pflanze (#211): Wachstums-/Reife-Werte in der Aufstellung — Zustand, Wachstum, Wert (bis Deckel), Wurzeln-Score

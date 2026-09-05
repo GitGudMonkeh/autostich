@@ -3,7 +3,7 @@ import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Re
 import { PANEL_BG, phaseCard, PhaseHairline, PHASE_ACCENTS, ActionButton } from "./modalStyle.jsx";
 import { ARCHETYPE_ORDER, archetypeOf, marginHeatPoints, isLegendarySkill, tierOf } from "../game/skills.js";
 import { FactionIcon, ArchIcon, GlossaryIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
-import { SKILL_SLOT_LIMIT, LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_CRIT_MULT_PER_SKILL,
+import { SKILL_SLOT_LIMIT, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_MAX_CHARGE, ION_SCORE_PER_STACK,
          PLANT_GROWTH_SKILL_REF, PLANT_GREEN_THRESHOLD, WURZELSCHLAG_PER_GROWTH, PLANT_VALUE_CAP,
          WURZELSCHLAG_LOSS_MIN_SKILLS, WURZELSCHLAG_LOSS_EVERY,
          FIRE_MARGIN_OFFSET, FIRE_SCORE_BASE, FIRE_SCORE_PER_SKILL, FIRE_SCORE_SQRT_K,
@@ -20,7 +20,7 @@ import { skillArt } from "./skillArt.js";        // #skillart: Emblem je Skill (
 import { CardCorners } from "./CardCorners.jsx"; // #cornerart: Eck-Ornamente im Kartenkopf (folgen dem Reiter)
 import { skillDef, archMeta } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
 import { glossaryEntry } from "../i18n/glossaryText.js"; // #sprache: Glossartext zur Anzeigezeit
-import { t, fmtNum } from "../i18n/index.js";
+import { t } from "../i18n/index.js";
 
 // Archetyp-Meta eines Skills (Theming) — Fallback neutral (#93 F0).
 const ac = (id) => archMeta(archetypeOf(id)) || { label: t("skill.arch.none"), icon: "•", color: "#8a8a95" };
@@ -34,10 +34,7 @@ const ARCH_LOSS = {
   lightning: { key: "skill.loss.lightning", baked: false },
 };
 
-const SOCKET_PCT = Math.round(LIGHTNING_CRIT_BASE * 100);         // einmaliger Aktivierungs-Sockel (5 %)
-const PER_SKILL_PCT = Math.round(LIGHTNING_CRIT_PER_SKILL * 100); // je Blitz-Skill (8 %)
-const FIRST_CRIT_PCT = SOCKET_PCT + PER_SKILL_PCT;               // Crit-Chance nach dem ERSTEN Blitz-Skill (Sockel + 1×)
-const PER_SKILL_MULT = () => fmtNum(LIGHTNING_CRIT_MULT_PER_SKILL); // +Crit-Multiplikator je Blitz-Skill (0,1)
+const PER_SKILL_PCT = Math.round(LIGHTNING_CRIT_PER_SKILL * 100); // exp Blitz-Passiv: +Crit-Chance je Blitz-Skill (5 %)
 // Feuer-Passive: konkrete Zahlen (erster Feuer-Skill). Score = lineare Linie + √-Bonus; Hitze = marginHeatPoints (√-Schwanz).
 const fireScoreAt = (m) => Math.round((m - FIRE_MARGIN_OFFSET) * FIRE_SCORE_BASE + FIRE_SCORE_BASE * FIRE_SCORE_SQRT_K * Math.sqrt(m - FIRE_MARGIN_OFFSET));
 const fireHeatAt  = (m) => Math.round(marginHeatPoints(m) * HEAT_PER_POINT);
@@ -119,7 +116,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
   const unlockLine = (arch) => {
     switch (arch) {
       case "lightning":
-        return t("skill.passive.lightning", { first: FIRST_CRIT_PCT, each: PER_SKILL_PCT, mult: PER_SKILL_MULT() });
+        return t("skill.passive.lightning", { each: PER_SKILL_PCT, bar: LIGHTNING_MAX_CHARGE, stack: ION_SCORE_PER_STACK });
       case "fire":
         return t("skill.passive.fire", { margin: HEAT_MIN_MARGIN, heat: FIRE_MIN_HEAT, score: FIRE_MIN_SCORE,
           cool: FIRE_LOSS_PCT, coolMax: HEAT_LOSS_MAX, perSkill: FIRE_SCORE_PER_SKILL });
