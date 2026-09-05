@@ -1433,6 +1433,27 @@ braucht erst das Leerbrennen. Sim-Wachpunkt: Phönixfeuer mit Flächenbrand Epis
 bis 10 000 Basis je Runde) und mit Weißglut (Leiste 200 ohne jede Kühlung); Regler die 2 je Punkt und
 die 50 der Neuzündung.
 
+Entscheid Owner (2026-09-05): **gesetzt**, Neuzündung ohne Rundenlimit.
+
+**Sonnenzorn** — Halten. Heute: der gesamte Sieg-Score wird mit der höchsten je erreichten Hitze
+multipliziert, +1 % je Prozent bis 100 (×2), +3 % je Punkt Überhitzung (mit Weißglut ×3,5). Der
+Hitze-Multiplikator steckt jetzt im Passiv (+2 % je 10 %); Sonnenzorn wird die legendäre Fassung davon,
+zwei Regelbrüche am selben Multiplikator:
+
+> **Der Hitze-Multiplikator zählt die höchste je erreichte Hitze statt der aktuellen.**
+> **Er ist doppelt so steil: +4 % Score je 10 % statt +2 %.**
+
+Der erste Teil löst die Spannung "halten gegen verbrennen" zugunsten des Spielers: wer einmal auf 100
+war, behält ×1,4 (statt ×1,2 heute im Passiv bei voller Leiste), egal was Flächenbrand, Schmelzpunkt
+oder Schmiede danach verbrennen. Burst- und Tropf-Builds bekommen damit den Halte-Payoff geschenkt,
+Halte-Builds den doppelten Multiplikator. Der zweite Teil betrifft nur den Passiv-Anteil; die Steigung
+von Weißglut über 100 bleibt, wie sie ist, zählt aber ebenfalls die Spitze: mit Weißglut Selten und
+Spitze 200 sind das 1 + 0,4 + 0,4 = ×1,8 dauerhaft. Größenordnung: ein Feuer-Build mit Zunder steht in
+Runde 2 bis 3 erstmals auf 100 und trägt ×1,4 durch den Rest des Laufs; Weißglut-Builds ×1,8 bis
+×2,0 ab dem ersten Erreichen der 200. Kein Kreislauf, der Multiplikator speist keine Hitze. Abgrenzung:
+Sonnenkern Gegner, Phönixfeuer Rhythmus, Sonnenzorn Multiplikator, Damaststahl Schmiede. Sim-Regler:
+die 4 %.
+
 ## 5. Eis
 
 Offen.
