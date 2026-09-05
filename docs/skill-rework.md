@@ -873,6 +873,16 @@ Direkt-Score weg, und keine Abhängigkeit von der Zahl gehaltener Feuer-Skills, 
 den Skills.** Damit entfallen im Bestand alle "+X je weiterem Feuer-Skill"-Anteile (Feuer-Score,
 Funkenflug, Flächenbrand) und das Bekenntnis.
 
+**Ergänzung des Passivs (Idee Owner, 2026-09-05, Entscheid offen): je 10 % gehaltener Hitze ein kleiner
+Score-Multiplikator.** Bewertung: damit hat das Passiv wie bei Blitz Ressource plus festen Payoff, der
+erste Feuer-Skill läuft allein, und es entsteht die Spannung "halten gegen verbrennen": Konsumenten
+senken den Multiplikator, Halte-Builds pflegen ihn. Feuer wird so die Multiplikator-Fraktion, Blitz die
+Basis-Fraktion. Vorschlag zur Größe: **+2 % Score je 10 % Hitze**, also ×1,2 bei voller Leiste, als
+eigener Faktor im Multiplikator-Stack (neben Serie, Perk, Formation, Crit); obere Grenze für die Sim
++3 % (×1,3). Ein Tropf-Build pendelt bei 30 bis 60 % Hitze (×1,06 bis ×1,12), ein Halte-Build steht
+bei 80 bis 100 (×1,16 bis ×1,2). Über 100 nur mit Weißglut, dessen Rolle damit "der Multiplikator
+läuft weiter" wird; Sonnenzorn (Legendär, Score mal Spitzen-Hitze) bekommt später eine neue Fassung.
+
 Tempo mit den Vorschlagszahlen: netto je Stich 0,65 × 1,9 − 0,35 × 2 ≈ +0,55, also rund +22 je Runde
 ohne Skills, Leiste voll nach etwa 4,5 Runden. Mit vier Feuer-Skills und +1 je Skill: 0,65 × 5,9 − 0,7
 ≈ +3,1 je Stich, voll in einer Runde. Konsumenten senken sie wieder (Schmelzpunkt heute −4 je Sieg).
@@ -1032,6 +1042,8 @@ Heute liegt auf Selten. Zunder Selten macht mehr Hitze als das ganze Passiv (49 
 vom Vorsprung. Ökonomie: Passiv netto etwa +21 % je Runde (49 brutto, 28 Kühlung); Schmelzpunkt Selten
 verbrennt heute 4 % je Sieg, also 104 % je Runde, und braucht darum Zunder oder Glut, um zu laufen.
 Zunder plus Schmelzpunkt ist das Tropf-Paar, Glut plus Flächenbrand das Burst-Paar.
+
+Entscheid Owner (2026-09-05): **gesetzt wie vorgeschlagen.**
 
 ## 5. Eis
 
