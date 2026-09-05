@@ -1298,6 +1298,31 @@ durch die Deckgröße. Warum eigenständig: an den Türen gibt es kein Tor, ein 
 ein toter Pick; als Geschwister-Skill von Brandmal (Karte gegen Nachbarn) funktioniert er allein und
 stapelt mit ihm.
 
+Entscheid Owner (2026-09-05): **gesetzt wie vorgeschlagen.**
+
+**Schmiede** (ex Ascheschmiede) — Hitze zu Dauerwert. Heute: am Rundenende erhält die niedrigste Karte
+dauerhaft +3 Wert, solange 20 Asche da sind (höchstens 9 je Karte, 10 Karten); Überlauf gibt Ascheglut,
+2000 Score je 20 Asche. Owner-Vorgabe: Schmieden unabhängig von Asche. Neu kostet die Schmiedung Hitze,
+die Schmiede ist damit der dritte Konsument, mit Dauerwert statt Score als Ertrag. Deckel je Karte und
+Kartenzahl fallen; die Regel "immer die niedrigste Karte" verteilt von selbst und hebt den Boden des
+Decks. Ein Effekt, der Preis ist der Regler.
+
+| Stufe | Effekt | Extra |
+| --- | --- | --- |
+| Normal | Rundenende: liegen mindestens 50 Hitze an, kostet die Schmiedung 50 und die niedrigste Karte erhält dauerhaft +3 Wert | – |
+| Selten | kostet 40 | – |
+| Sehr selten | kostet 30 | – |
+| Episch | kostet 20 | schmiedet die zwei niedrigsten Karten |
+
+Heute (20 Asche, etwa ein halbes Runden-Einkommen) liegt auf Selten bis Sehr selten. Takt: mit Passiv
+und Glut Selten (rund 45 netto je Runde) schmiedet Selten jede Runde, Normal fast jede; über 40 Runden
+bis zu +120 Deckwert (E: +240) auf 220 Grundwert, linear, ohne Rückkopplung in die Hitze. Der Preis
+wird am Rundenende abgezogen: der Halte-Build startet die nächste Runde mit weniger Multiplikator und
+Klinge, das ist die Spannung; Flächenbrand und Schmelzpunkt konkurrieren um dieselbe Hitze. Die
+Schmiede ist der Motor des "hoch gewinnen"-Builds: höhere Karten heißen mehr Vorsprung, also mehr
+Glut-Hitze und mehr Verbrennung. Ascheglut entfällt (Direkt-Score); Damaststahl (Legendär, schmiedet
+heute ohne Asche) bekommt später eine neue Fassung.
+
 ## 5. Eis
 
 Offen.
