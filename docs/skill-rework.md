@@ -400,15 +400,24 @@ hängt an der laufenden Serie und fällt mit ihr, er begrenzt sich also selbst.
 Heute liegt bei +2 % mit Deckel 30, also zwischen Selten und Sehr selten. Wechselwirkung: Serienschutz
 hält die Serie und damit diesen Bonus, Dauerstrom zieht aus derselben Serie Ladung.
 
+Entscheid Owner (2026-09-05): **gesetzt wie überarbeitet.**
+
 **Kettenblitz** — Breite je Leiste. Heute: +2 Karten je Ionisierung, nur mit dem Skill Ionisierung.
 Neu ohne Bindung, die zusätzlichen Karten folgen in der Reihenfolge.
 
-| Stufe | Effekt | Extra |
-| --- | --- | --- |
-| Normal | jede 2. volle Leiste ionisiert +1 Karte | – |
-| Selten | jede volle Leiste +1 Karte | – |
-| Sehr selten | jede volle Leiste +2 Karten | – |
-| Episch | jede volle Leiste +3 Karten | die Zielkarte selbst erhält +1 Stapel zusätzlich |
+| Stufe | Effekt | Stapel je Leiste | mono, ~29 Leisten | 3–4 Skills, ~15 Leisten | Extra |
+| --- | --- | --- | --- | --- | --- |
+| ohne Skill | – | 1 | 29 | 15 | – |
+| Normal | jede 2. volle Leiste ionisiert +1 Karte | 1,5 | 44 | 23 | – |
+| Selten | jede volle Leiste +1 Karte | 2 | 58 | 30 | – |
+| Sehr selten | jede volle Leiste +2 Karten | 3 | 87 | 45 | – |
+| Episch | jede volle Leiste +3 Karten | 5 | 145 | 75 | die Zielkarte selbst erhält +1 Stapel zusätzlich |
+
+Leisten je Lauf aus 3.2, nur Passiv-Tempo. Heute +2 Karten (hinter Ionisierung), also Sehr selten.
+Kettenblitz ist der Breiten-Multiplikator des Passivs: jede Rate-Quelle (Blitzableiter, Reststrom,
+Statische Aufladung, Ladungsserie Episch) wird mit ihm mitvervielfacht — Rate × Breite ist der
+Sim-Wachpunkt. Fällt Episch mit 5 Stapeln je Leiste zu stark aus: +3 Karten ohne Extra (4 je Leiste),
+wie Reststrom.
 
 **Blitzfänger** — Tiefe zu Wert. Heute: Ionisierung trifft volle Karte, +2 Stichwert beim nächsten
 Auftauchen, +1 Ladung. "Voll" wird Schwelle.
