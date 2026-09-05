@@ -1849,6 +1849,47 @@ Befund:
   Zufalls-Build grob auf 25–30 %, gemessen wird das erst) oder Stapel wirken auf den Crit-Multiplikator der Siegkarte
   statt flach in die Basis — dann skalieren sie mit dem Motor, der ohnehin trägt.
 
+### 7.9 Große Auswertung mit Türen (2026-09-05)
+
+Derselbe Aufruf wie 7.6 (`--mode skills --explore 1000 --runs 150 --seed 1`), jetzt in der Türen-Welt. Gierig hält
+Ø 9,8 Skills, Median 14,4M (flach: 16,4M — mit drei sichtbaren Skills je Phase statt sechs findet der gierige Spieler
+seltener seinen Wunschskill), Erkundung 7,8M, 74 % der gierigen Läufe gewinnen ihre Ablation.
+
+**Robust in beiden Läufen (flach und Türen):**
+
+| Urteil | Feuer | Blitz |
+| --- | --- | --- |
+| stark | Sonnenkern (L, +106 % / +143 %), Glühende Klinge (+89 % / +128 %, in 73 % / 88 % der Läufe), Weißglut (+27 % / +56 %) | Ladungsserie (+105 % / +65 %, in 86 % / 83 %), Doppelentladung (L, +50 % / +43 %), Durchschlag (L, +25 % / +24 %) |
+| schadet | Glut (−23 % / −22 %, win 23 % / 14 %), Glutbett (−3 % / −32 %), Feuersturm (−6 % / −3 %) | Spannungsstau (0 % / −7 %, win 55 % / 31 %) |
+| tot | Glutstahl, Schmiede | Überspannung, Reststrom, Kurzschluss |
+| selten gehalten (< 5 %) | Flächenbrand, Schmelzpunkt (0 % mit Türen), Rückzündung, Phönixfeuer | — |
+
+**Gewandert (Rauschen oder Türen-Effekt):** Feuerwalze tot → +42 % (in 19 % der Läufe; mit Türen nimmt der gierige
+Spieler sie, wenn Klinge/Weißglut nicht hinter der Tür liegen — die Wert-Boni tragen den Kern), Damaststahl −7 % → +18 %,
+Serienschutz −24 % → −3 %, Blitzfänger −8 % → +1 %, Blitzschlag tot → +13 %, Gewitterfront +14 % → 0 (in 46 % gehalten,
+ohne Wirkung), Statische Aufladung +5 % → −2 % (in 71 % gehalten), Zunder selten → schadet (−1 %, win 38 %), Kettenblitz
+−54 % → −4 %, Überschlag +8 % → −12 %. Beide Blitz-Legendären ohne Crit-Bezug fallen ab: Donnergott tot, Hochspannung −4 %
+(eine Stufe mehr auf allen Skills ist wenig wert, wenn die Stufen selbst wenig tragen, s. u.).
+
+**Stufen:** weiter keine saubere Leiter. Klinge misst N 1,25 · S 1,27 · SS 1,26 · E 1,38 — der stärkste Feuer-Skill ist
+über die Stufen praktisch flach; Ladungsserie N 1,39 · S 0,90 · SS 1,63 · E 1,90. Die Stufen entscheiden in der Sim
+keinen Lauf, die Skills selbst tun es.
+
+**Was sich daraus ergibt (Entscheid Owner):**
+
+1. Die sechs Starken sind stabil, davon drei Legendäre (gewollt). Klinge und Ladungsserie sind in beiden Welten die
+   Skills, die den Build tragen — mit den Türen noch mehr (88 % / 83 % Haltequote). Wer die Fraktionen breiter machen
+   will, senkt eher diese beiden als dass er die Toten hebt.
+2. Glut, Glutbett, Feuersturm, Spannungsstau schaden in beiden Läufen — das sind die vier, an die zuerst Hand gehört;
+   für Glut liefert 7.8 die Erklärung (Leiste voll) und die Optionen.
+3. Die Konsumenten (Flächenbrand, Schmelzpunkt) und Phönixfeuer nimmt der gierige Spieler auch mit Türen nicht;
+   Rückzündung ebenso. Vorschlag 7.8 „Überschuss-Ventil" ist die Stelle, an der sie Sinn bekämen.
+4. Blitz hat mit Kurzschluss, Überspannung, Reststrom, Gewitterfront, Statische Aufladung, Donnergott sechs Skills ohne
+   Wirkung — die meisten hängen an Stapeln oder Ladung, die den Score nicht tragen (7.8). Die Entscheidung „Crit oder
+   Ionisierung als Träger" aus 7.8 geht vor jedem Einzel-Tuning.
+5. Die Stufen tragen nicht: entweder die Leitern spreizen (Episch deutlich über Normal, z. B. Klinge je 40/30/20/10 %
+   statt 40/30/25/20) oder akzeptieren, dass die Stufe vor allem der Angebots-Reiz ist.
+
 ## 5. Eis
 
 Offen.
@@ -1887,3 +1928,4 @@ Offen.
 | 2026-09-05 | Große Auswertung (7.6, vor den Türen): stark Sonnenkern, Klinge, Weißglut, Ladungsserie, Doppelentladung, Durchschlag; tot Feuerwalze, Schmiede, Glutstahl, Spannungsstau, Blitzschlag, Überspannung, Reststrom; schadet Glut, Serienschutz, Blitzfänger, Feuersturm, Glutbett, Kurzschluss, Damaststahl; Stufenleitern in der Sim noch nicht sichtbar. Fünf Vorschläge an den Owner, nichts umgesetzt. |
 | 2026-09-05 | Türen-Angebot umgesetzt (7.7): zwei Türen à drei Fraktionssymbole, Stufen hinter der Tür, Angebot auf einer Seite; Pool auf exp Feuer/Blitz (Annahme, Owner bestätigen); Sim-Policies wählen Türen. Stufentexte: ein Text je Stufe im Angebot und im Bestand. Sim-Band neu zentriert. |
 | 2026-09-05 | Motor-Diagnose (7.8, `--mode motor`): das Feuer-Passiv hält die Hitze allein (226 % Gewinn gegen 14 % Kühlung je Runde, 62 % der Stiche ≥ 100 %), Glut ist tot, weil die Leiste voll ist, Engpass ist der Kaltstart (532 Stiche bis 100 ohne, 263 mit Zunder); Konsumenten verbrennen die Basis. Blitz: Crit trägt 48–59 % des Scores, Stapel 13 % (Stapel-Build 33 %), Ionisierung alle 30 Stiche. Vorschläge an den Owner. |
+| 2026-09-05 | Große Auswertung mit Türen (7.9): robust stark Sonnenkern, Klinge, Weißglut, Ladungsserie, Doppelentladung, Durchschlag; robust schädlich Glut, Glutbett, Feuersturm, Spannungsstau; tot Glutstahl, Schmiede, Überspannung, Reststrom, Kurzschluss; Konsumenten und Phönixfeuer ungenommen. Gierig 14,4M gegen 16,4M flach. Stufen tragen weiter nicht. Fünf Punkte für den Owner. |
