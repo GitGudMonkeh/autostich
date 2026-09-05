@@ -1085,6 +1085,25 @@ Boden für den Passiv-Multiplikator: ab Selten sicher ×1,12, ab Sehr selten ×1
 weiter unter den Boden brennen, er gilt nur für Niederlagen. Ein Tropf-Build (30 bis 60 % Hitze) hat
 von Normal und Selten am meisten, ein Halte-Build (80 bis 100) erst von Sehr selten und Episch.
 
+Entscheid Owner (2026-09-05): **gesetzt wie vorgeschlagen.**
+
+**Rückzündung** — Comeback zu Hitze. Heute: nach einer Niederlage gibt der nächste Sieg +1 % Hitze je
+Punkt Rückstand der Niederlage, und die Siegkarte +2 Stichwert. Neu ein Effekt, die Hitze; der Wert
+wird das Episch-Extra.
+
+| Stufe | Effekt | Hitze je Runde (9 Comeback-Siege, Rückstand im Schnitt 3,7) | Extra |
+| --- | --- | --- | --- |
+| Normal | Sieg nach Niederlage: +0,5 % Hitze je Punkt Rückstand | +17 % | – |
+| Selten | +1 % je Punkt | +33 % | – |
+| Sehr selten | +1,5 % je Punkt | +50 % | – |
+| Episch | +2 % je Punkt | +67 % | die Karte nach einer Niederlage hat +2 Wert |
+
+Heute liegt auf Selten. Rechnung: bei 65 % Siegquote folgt auf 9 der 14 Niederlagen je Runde ein Sieg;
+der Rückstand einer Niederlage ist im Schnitt 3,7 Punkte, wie der Vorsprung eines Siegs. Vierte
+Rate-Quelle mit eigenem Auslöser: Glut belohnt hohe Siege, Zunder viele, Feuersturm Serien,
+Rückzündung das Wechselspiel; ein Deck, das oft knapp verliert und dann gewinnt, hat hier am meisten.
+Das Episch-Extra macht den Comeback-Sieg selbst wahrscheinlicher.
+
 ## 5. Eis
 
 Offen.
