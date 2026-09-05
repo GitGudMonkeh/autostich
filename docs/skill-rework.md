@@ -1419,17 +1419,19 @@ Rückstand; auf 0 verbrauchte Hitze entzündet sich einmal je Runde auf 40 % neu
 die Zahlen folgen dem neuen Passiv:
 
 > **Niederlagen kühlen nicht, sie heizen: +2 % Hitze je Punkt Rückstand.**
-> **Fällt die Hitze auf 0, entzündet sie sich neu auf 50 %, einmal je Runde.**
+> **Fällt die Hitze auf 0, entzündet sie sich neu auf 50 %.** (Owner: ohne "einmal je Runde".)
 
 Der Regelbruch dreht die Passiv-Regel um. Statt −28 je Runde (14 Niederlagen mal 2) kommen +104 (14 mal
 3,7 mal 2), ein Umschwung von rund 130 Hitze je Runde, so viel wie Zunder Episch plus Passiv. Ein Deck,
 das viel verliert, heizt damit am meisten; Rückzündung (Sieg nach Niederlage) legt obendrauf, Glutbett
-wird überflüssig. Der zweite Teil ist der Phönix-Moment für die Konsumenten: Flächenbrand Episch brennt
-bis 0 und zündet sofort auf 50 zurück, der Wiederaufbau bis 80 dauert dann keine halbe Runde;
-Schmelzpunkt brennt die letzten Punkte weg und läuft nach der Neuzündung auf 50 weiter. Einmal je
-Runde hält es begrenzt. Sim-Wachpunkt: Phönixfeuer mit Flächenbrand Episch (zwei Bursts je Runde) und
-mit Weißglut (Hitze steigt auch bei Niederlagen weiter, Leiste 200 ohne Kühlung); Regler die 2 je
-Punkt.
+wird überflüssig. Der zweite Teil ist der Phönix-Moment für die Konsumenten, und er zündet so oft, wie
+die Leiste auf null fällt: Flächenbrand Episch brennt bis 0 und steht sofort wieder auf 50, bis 80
+fehlen dann 30, mit den Niederlagen-Einnahmen vier Niederlagen, also drei bis vier Bursts je Runde
+statt einem je zwei Runden; Schmelzpunkt brennt die Leiste in rund zwölf Siegen leer und bekommt jedes
+Mal 50 zurück, etwa zweimal je Runde. Begrenzt bleibt es durch die Stiche je Runde, jede Neuzündung
+braucht erst das Leerbrennen. Sim-Wachpunkt: Phönixfeuer mit Flächenbrand Episch (Größenordnung 7000
+bis 10 000 Basis je Runde) und mit Weißglut (Leiste 200 ohne jede Kühlung); Regler die 2 je Punkt und
+die 50 der Neuzündung.
 
 ## 5. Eis
 
