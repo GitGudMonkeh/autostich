@@ -539,27 +539,25 @@ Crit-Mult-Bonus.
 Entscheid Owner (2026-09-05): **gesetzt wie überarbeitet.**
 
 **Überschlag** — Ventil nach oben. Heute: Crit-Chance über 100 % gibt je 10 Prozentpunkte +1 Ladung
-je Sieg, ab 85 % voller Karten je 5. Tiefen-Klausel entfällt. Neu als fester Betrag statt je
-Prozentpunkt: solange die Crit-Chance über 100 % liegt, gibt jeder Sieg Ladung.
+je Sieg, ab 85 % voller Karten je 5. Tiefen-Klausel entfällt. Vorgabe Owner (2026-09-05): der Skill
+gibt **Crit-Multiplikator**, niedrig angesetzt, die Sim tunt. Ein Entwurf mit Ladung je Sieg ist damit
+verworfen (er wäre je Prozentpunkt gerechnet ohnehin ein Kreislauf gewesen: Leisten geben Crit-Chance,
+Überschuss gibt Ladung, Ladung gibt Leisten). Neu: der Überschuss über 100 % wird zu Crit-Mult, als
+Zustand, nicht als Aufbau.
 
-| Stufe | Effekt bei Crit-Chance über 100 % | Ladung je Runde (26 Siege) | Leisten je Runde vor Rate-Skills | Extra |
+| Stufe | Effekt | bei 50 Punkten Überschuss | bei 150 Punkten | Extra |
 | --- | --- | --- | --- | --- |
-| Normal | jeder Sieg +1 Ladung | 26 | 2,6 | – |
-| Selten | jeder Sieg +2 Ladung | 52 | 5,2 | – |
-| Sehr selten | jeder Sieg +3 Ladung | 78 | 7,8 | – |
-| Episch | jeder Sieg +3 Ladung | 120 | 12 | zählt auch bei Niederlagen |
+| Normal | je 10 Punkte über 100 %: +0,02× Crit-Mult | +0,10× | +0,30× | – |
+| Selten | +0,03× | +0,15× | +0,45× | – |
+| Sehr selten | +0,04× | +0,20× | +0,60× | – |
+| Episch | +0,06× | +0,30× | +0,90× | – (stark) |
 
-Heute bei 20 bis 30 Punkten Überschuss etwa +2 bis +3 je Sieg, also Selten bis Sehr selten. Warum
-fester Betrag: die Crit-Rampen laufen offen (Gewitterfront je Leiste). Je Prozentpunkt gerechnet wäre
-Überschlag ein Kreislauf: Leisten geben Crit-Chance, Überschuss gibt Ladung, Ladung gibt Leisten; die
-Zahl der Leisten wüchse exponentiell (Gewitterfront Selten mit "je 10 Punkte": Verdopplung alle 3,6
-Runden). Der feste Betrag je Sieg begrenzt den Zufluss über die Siege je Runde, nicht über einen Deckel.
-Gegenstück zu Statische Aufladung: die füttert die Leiste bei wenig Crit, Überschlag bei Crit über
-100 %, wo Statische nichts mehr gibt.
-
-Vorschlag zur Wechselwirkung mit der Systemregel (im Rahmen offen gelassen): **beides gilt.** Der
-kleine Crit-Mult-Bonus über 100 % bleibt für alle, Überschlag legt Ladung obendrauf. Ersetzen hieße,
-der Skill nimmt dem Spieler etwas weg.
+Zustand heißt: der Bonus gilt, solange der Überschuss da ist, und fällt mit ihm. Kein Kreislauf, Mult
+speist keine Leiste. Kontext: Basis-Crit-Mult 2,25×, Entladung Selten baut +0,03× je Leiste dauerhaft
+auf; Überschlag liegt bewusst darunter. Überschuss in realen Builds: ein Mono-Build mit Gewitterfront
+Selten (0,75 % je Leiste, rund 230 Leisten) endet je nach Zeitpunkt des Skills 50 bis 150 Punkte über
+100. Wechselwirkung mit der Systemregel (Vorschlag): die Regel bleibt als kleiner Sockel für alle
+Fraktionen, Überschlag kommt obendrauf; die Sim setzt beide Zahlen zusammen.
 
 **Überspannung** — Kaskade. Heute: Crit auf oder neben einer ionisierten Karte +3 Ladung.
 
