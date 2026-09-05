@@ -1771,6 +1771,84 @@ die Türen verschieben das Zufallsniveau nicht. Duell (100 Läufe, Fraktions-Pol
 Feuer verträgt das offenbar besser. Nicht nachtariert; die Wiederholung der großen Auswertung (7.6, Punkt 5) ist der
 nächste Schritt. Sim-Band-Wächter auf die Türen-Welt neu zentriert (Median 1,13M, Mean 1,34M über Seeds 1–40).
 
+### 7.8 Motor-Diagnose: Hitze im Lauf, Ionisierung als Score-Treiber (2026-09-05)
+
+Owner-Fragen: Wenn Glut tot ist — wie wird Hitze gehalten, ist ein Verstärker nötig, klebt die Leiste dauerhaft am
+Anschlag? Wie hoch ist die Ionisierungsrate, und ist sie der Haupttreiber des Scores? Werkzeug: `npm run sim -- --mode
+motor --runs 100 --seed 1` (`sim/motor.js`), je Fraktion allein in ihrer Welt, 100 Läufe, Seeds 1–100, Aufstellung und
+Architekt greedy. Neben der Fraktions-Policy (zufällige eigene Skills) feste Builds über `fixedPolicy` mit Ausschluss-
+liste: „Kern" = Klinge, Weißglut, Verbrennung, Brandmal, Lauffeuer, Glutstahl, Feuerwalze, Glutbett, Schmiede,
+Schmelzpunkt, Flächenbrand in dieser Reihenfolge; „Verstärker" = die vier Rate-Skills Glut, Zunder, Feuersturm,
+Rückzündung.
+
+**Feuer — Hitze je Stich (nur solange die Hitze aktiv ist):**
+
+| Build | Median | Ø Hitze | Stiche ≥ 100 % | am Anschlag | erste 100 % nach | Vorsprung-Siege | Passiv +Hitze je Runde | Kühlung je Runde | Mult-Anteil am Score |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Fraktion (zufällig, Weißglut in 61 %) | 2,40M | 65 % | 22 % | 15 % | 281 Stiche (64 % der Läufe erreichen 100) | 75 % | 97 % | 23 % | 24 % |
+| Kern ohne Verstärker | 10,06M | 126 % | 62 % | 44 % | 532 Stiche | 89 % | 226 % | 14 % | 52 % |
+| Glut + Kern | 9,82M | 150 % | 75 % | 68 % | 323 Stiche | 90 % | 234 % | 11 % | 52 % |
+| Zunder + Kern | 9,77M | 150 % | 76 % | 69 % | 263 Stiche | 90 % | 235 % | 11 % | 52 % |
+| alle vier Verstärker + Kern | 6,06M | 144 % | 73 % | 66 % | 189 Stiche | 83 % | 148 % | 17 % | 47 % |
+
+„Anschlag" = Hitze auf der Leistenlänge des Builds (100, mit Weißglut 200). „Passiv +Hitze je Runde" = Hitze aus
+Vorsprung-Siegen ohne jeden Verstärker; Glut wäre ×1,25 … ×2 darauf.
+
+Befund:
+
+1. **Ein Verstärker ist nicht nötig.** Das Passiv allein produziert im Kern-Build 226 % Hitze je Runde gegen 14 %
+   Kühlung — das Sechzehnfache. Die Hitze steht in 62 % der Stiche auf ≥ 100 % und in 44 % am Ende der 200er-Leiste.
+   Glut oder Zunder heben das auf 75 %, bringen aber keinen Score (9,8M gegen 10,1M, Rauschen); alle vier Verstärker
+   kosten vier Kern-Plätze und ein Drittel des Scores.
+2. **Glut ist tot, weil die Leiste voll ist.** ×1,25 auf Hitze, die ohnehin am Anschlag klebt, ist nichts; das Ergebnis in
+   7.6 (−23 % im gierigen Lauf) ist der Preis des verlorenen Platzes, nicht ein Rechenfehler des Skills.
+3. **Der Engpass ist der Kaltstart.** Ohne Verstärker dauert es 532 Stiche (13 Runden) bis zur ersten vollen Leiste,
+   mit Zunder 263, mit allen vier 189. Frühe Siege haben kleine Vorsprünge, Klinge gibt erst mit Hitze Wert — das
+   Passiv startet langsam. Die Verstärker sind Kaltstart-Hilfen, kein Plateau.
+4. **Der zufällige Feuer-Build hält die Hitze nicht** (Ø 65 %, 22 % der Stiche ≥ 100 %, nur 64 % der Läufe erreichen 100).
+   Grund sind die Konsumenten und die Schmiede: Schmelzpunkt brennt 4 je Sieg, Flächenbrand auf 40, die Schmiede 50 je
+   Runde — sie verbrennen die Basis des Multiplikators und zahlen 15–30 Basis-Score je Punkt zurück. Das deckt sich mit
+   7.6: die drei Konsumenten sind die schwächsten Feuer-Skills.
+5. Der Hitze-Multiplikator (mit Verbrennung) trägt in starken Builds die Hälfte des Scores, im Zufalls-Build ein Viertel.
+
+**Blitz — Ionisierung (Welt nur Blitz):**
+
+| Build | Median | Crits je Lauf | Crit-Rate | volle Leisten je Lauf | Stiche je Leiste | Stapel je Lauf | Stapel je Karte (Ende) | Karten ionisiert | Stapel der Siegkarte Ø | Crit-Anteil am Score | Stapel-Anteil am Score |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Fraktion (zufällig) | 2,33M | 336 | 40 % | 53 | 30 | 127 | 3,2 | 82 % | 1,0 | 48 % | 13 % (Ø 16 %) |
+| Stapel zuerst | 2,67M | 276 | 32 % | 126 | 13 | 302 | 7,5 | 99 % | 2,5 | 37 % | 33 % (Ø 36 %) |
+| Crit zuerst | 3,24M | 394 | 47 % | 88 | 18 | 114 | 2,8 | 90 % | 0,6 | 59 % | 10 % (Ø 11 %) |
+
+„Stapel-Anteil" = Score-Verlust desselben Laufs mit Stapel-Score 0 (gepaart, gleicher Seed, gleiche Picks); „Crit-Anteil"
+= critBonusScore ÷ Score.
+
+Befund:
+
+1. **Der Crit ist der Haupttreiber, nicht die Ionisierung.** Zehn Blitz-Skills geben +50 % Crit-Chance aus dem Passiv;
+   die Crit-Rate liegt bei 40–47 %, und 48–59 % des Scores sind Crit-Bonus. Der Crit-Build schlägt den Stapel-Build
+   (3,24M gegen 2,67M).
+2. **Die Ionisierungsrate ist hoch, die Stapel zahlen wenig.** Alle 30 Stiche eine volle Leiste, 127 Stapel je Lauf,
+   82 % der Karten ionisiert — aber gleichmäßig verteilt: die Siegkarte trägt im Schnitt 1,0 Stapel, und der Stapel-Score
+   ist ein flacher Basisbetrag (60 je Stapel gegen 400 Basis je Sieg). Anteil am Score 13 %; selbst der reine
+   Stapel-Build (7,5 je Karte, 126 Leisten) kommt auf 33 %.
+3. Kettenblitz und Blitzschlag (7.6: tot) sind die Rate-Skills der Ionisierung — sie sind tot, weil die Stapel wenig
+   zahlen, nicht weil sie wenig ionisieren.
+
+**Vorschläge (Entscheid Owner, nichts umgesetzt):**
+
+- **Feuer, Glut:** entweder auf den Kaltstart drehen (Glut = Hitze schon ab Vorsprung 1 oder Offset 0, gestuft) oder auf
+  das Plateau (Glut hebt die Steigung des Passivs: +2,5/3/3,5/4 % Score je 10 % statt +2 % — dann ist es ein Multiplikator-
+  Skill und kein Hitze-Skill). Streichen ist die dritte Option; Zunder deckt die Kaltstart-Rolle heute schon (263 Stiche).
+- **Feuer, Kaltstart als Systemregel:** Starthitze mit dem ersten Feuer-Skill (z. B. 30 %) oder Vorsprung-Schwelle 3 → 2.
+  Beides verkürzt die 13 Runden, ohne das Plateau zu heben.
+- **Feuer, Überschuss:** 226 % Hitze je Runde gegen eine Leiste von 100/200 verpuffen. Ein Ventil für Hitze über der Leiste
+  (Schmiedung aus dem Überschuss statt aus der Leiste, oder Basis-Score je verpufftem Punkt) gäbe den Rate-Skills eine
+  Aufgabe — und wäre der Platz, an dem die Konsumenten wieder Sinn ergeben (nur den Überschuss verbrennen).
+- **Blitz:** Wenn der Crit die Identität sein soll, ist alles in Ordnung — dann sind Stapel Beiwerk und Kettenblitz/
+  Blitzschlag Streichkandidaten. Soll die Ionisierung tragen: Stapel-Score 60 → 100–120 (verdoppelt den Anteil im
+  Zufalls-Build grob auf 25–30 %, gemessen wird das erst) oder Stapel wirken auf den Crit-Multiplikator der Siegkarte
+  statt flach in die Basis — dann skalieren sie mit dem Motor, der ohnehin trägt.
+
 ## 5. Eis
 
 Offen.
@@ -1808,3 +1886,4 @@ Offen.
 | 2026-09-05 | Owner: Eis und Pflanze ignorieren, Feuer und Blitz tarieren, dann große Auswertung (gierig, gemischt, über die Stufen). Tarierung (7.5): Sim-Welt „nur Feuer und Blitz" (Allowlist je Lauf, `--mode duel`), Stapel-Score 12 → 60 nach Sweep; Floor Feuer ÷ Blitz 0,97×, Split gesund. Auswertungs-Modus `--mode skills` gebaut. |
 | 2026-09-05 | Große Auswertung (7.6, vor den Türen): stark Sonnenkern, Klinge, Weißglut, Ladungsserie, Doppelentladung, Durchschlag; tot Feuerwalze, Schmiede, Glutstahl, Spannungsstau, Blitzschlag, Überspannung, Reststrom; schadet Glut, Serienschutz, Blitzfänger, Feuersturm, Glutbett, Kurzschluss, Damaststahl; Stufenleitern in der Sim noch nicht sichtbar. Fünf Vorschläge an den Owner, nichts umgesetzt. |
 | 2026-09-05 | Türen-Angebot umgesetzt (7.7): zwei Türen à drei Fraktionssymbole, Stufen hinter der Tür, Angebot auf einer Seite; Pool auf exp Feuer/Blitz (Annahme, Owner bestätigen); Sim-Policies wählen Türen. Stufentexte: ein Text je Stufe im Angebot und im Bestand. Sim-Band neu zentriert. |
+| 2026-09-05 | Motor-Diagnose (7.8, `--mode motor`): das Feuer-Passiv hält die Hitze allein (226 % Gewinn gegen 14 % Kühlung je Runde, 62 % der Stiche ≥ 100 %), Glut ist tot, weil die Leiste voll ist, Engpass ist der Kaltstart (532 Stiche bis 100 ohne, 263 mit Zunder); Konsumenten verbrennen die Basis. Blitz: Crit trägt 48–59 % des Scores, Stapel 13 % (Stapel-Build 33 %), Ionisierung alle 30 Stiche. Vorschläge an den Owner. |
