@@ -85,7 +85,7 @@ Entscheid: bleibt / geändert / gestrichen — Begründung in einem Satz
 | Fraktion | Passiv | Die 15 | Stufen | Legendäre |
 | --- | --- | --- | --- | --- |
 | Blitz | gesetzt | gesetzt (Ionisierung und Breitenbeschleuniger gestrichen) | **gesetzt, alle 15** (Übersicht 3.6) | **gesetzt, alle 4** (3.7; Hochspannung ersetzt Flächenionisation) |
-| Feuer | Idee Owner gesetzt, Zahlen als Vorschlag (4.2) | offen (Bestand in 4.3) | offen | separat, später |
+| Feuer | gesetzt (4.2) | gesetzt (Funkenflug und Schmelzofen gestrichen) | **gesetzt, alle 15** (Übersicht 4.6) | offen (4.7) |
 | Eis | offen | offen | offen | separat, später |
 | Pflanze | offen | offen | offen | separat, später |
 | Fraktion 5 | – | – | – | – |
@@ -1345,6 +1345,46 @@ läuft er mit Klinge allein; mit Schmiede kommen je geschmiedeter Karte +3 (Epis
 nach zehn Runden Schmiede Selten rund +30 Deckwert, also im Schnitt +0,75 je Karte. Kein Kreislauf,
 Score speist nichts.
 
+Entscheid Owner (2026-09-05): **gesetzt wie vorgeschlagen.**
+
+**Damit sind alle 15 Feuer-Skills gesetzt.** Die Einzelentscheide stehen je Skill oben; die Zahlen sind
+Startwerte für die Sim.
+
+### 4.6 Übersicht Feuer (gesetzt, Stand 2026-09-05)
+
+**Passiv:** Siege ab Vorsprung 3 geben (Vorsprung − 2) % Hitze, linear ohne Knie. Niederlagen kühlen
+−2 %. Je 10 % gehaltener Hitze +2 % Score als eigener Multiplikator. Leiste 0 bis 100 (mit Weißglut
+200). Kein Feuer-Score, kein Direkt-Score, keine Abhängigkeit von der Zahl gehaltener Feuer-Skills;
+Asche und Verbraucher-Regel entfallen. Rechengrundlage: 26 Siege und 14 Niederlagen je Runde, Passiv
+brutto 49 % und netto 21 % Hitze je Runde.
+
+| Skill | Rolle | Normal | Selten | Sehr selten | Episch |
+| --- | --- | --- | --- | --- | --- |
+| Glut | Rate aus Vorsprung | Hitze aus Vorsprung ×1,25 | ×1,5 | ×1,75 | ×2 |
+| Zunder | Rate aus jedem Sieg | jeder Sieg +1 % Hitze | +2 % | +3 % | +4 % |
+| Feuersturm | Serie zu Hitze | +0,5 % Hitze je Serienpunkt je Sieg | +1 % | +1,5 % | +2 % |
+| Glutbett | Schutz | Niederlagen kühlen nicht unter 40 % | nicht unter 60 % | nicht unter 80 % | Niederlagen kühlen nicht |
+| Rückzündung | Comeback zu Hitze | Sieg nach Niederlage +0,5 % Hitze je Punkt Rückstand | +1 % | +1,5 % | +2 %; die Karte nach einer Niederlage hat +2 Wert |
+| Glühende Klinge | Hitze zu Wert | alle Karten +1 Wert je 40 % Hitze | je 30 % | je 25 % | je 20 % |
+| Weißglut | über die Leiste | Leiste bis 200; über 100 je 10 % +3 % Score | +4 % | +5 % | +6 % |
+| Feuerwalze | Serie zu Wert | ab 80 % Hitze: nach einem Sieg hat die nächste Karte +2 Wert | ab 60 % | ab 40 % | ab 20 %; auch nach einer Niederlage |
+| Verbrennung | Vorsprung zu Score | Sieg mit Vorsprung ab 8: Stich ×1,5 | ab 7 | ab 6 | ab 5 |
+| Flächenbrand | Burst-Konsument | ab 80 % Hitze: nächster Sieg brennt bis 40, +15 Basis je Punkt | +20 | +25 | +30; brennt bis 0 |
+| Schmelzpunkt | Tropf-Konsument | jeder Sieg verbrennt 4 % Hitze, +15 Basis je Punkt | +20 | +25 | +30; die Hälfte der Hitze kommt zurück |
+| Brandmal | Gegner-Debuff | ab 80 % Hitze: Sieg brandmarkt die Gegnerkarte, −2 nächste Runde | ab 60 % | ab 40 % | ab 20 %; auch Niederlagen brandmarken |
+| Lauffeuer | Brand in die Breite | ab 80 % Hitze: Sieg brandmarkt beide Nachbarn, −1 nächste Runde | ab 60 % | ab 40 % | ab 20 %; Reichweite zwei Karten |
+| Schmiede | Hitze zu Dauerwert | Rundenende: niedrigste Karte +3 dauerhaft, kostet 50 Hitze | kostet 40 | kostet 30 | kostet 20; zwei Karten |
+| Glutstahl | Wert zu Score | +8 Basis-Score je Punkt Wert über Grundwert bei Sieg | +12 | +16 | +20; Schmiedewert zählt doppelt |
+
+**Sim-Wachpunkte Feuer:** Einnahmen gegen die Leiste (Zunder, Feuersturm füllen schneller als die 100
+fassen; Konsumenten machen den Überschuss nutzbar); Weißglut mit Glutbett Episch und Zunder (Leiste
+dauerhaft 200); Schmelzpunkt Episch auf hoher Hitze; Flächenbrand Episch Takt (zwei Runden Aufbau);
+Feuersturm × Serienschutz (Blitz) im gemischten Build; Siegquote aus Klinge, Brandmal und Lauffeuer
+zusammen (Richtung 90 %); Schmiede offen (+120, Episch +240 Deckwert); Spürbarkeit der 25-Prozent-
+Schritte (Owner); Hitze-Schwellen-Leitern, ob 80/60/40 im Late Game noch trennen.
+
+**Noch offen für Feuer:** die vier Legendären (4.7), die Skilltexte für `de.js`, die Umsetzung.
+
 ## 5. Eis
 
 Offen.
@@ -1373,3 +1413,4 @@ Offen.
 | 2026-09-05 | Stufen gesetzt: Blitzfänger, Kurzschluss, Spannungsstau (ohne Deckel), Überschlag (Crit-Mult statt Ladung), Überspannung, Blitzschlag, Dauerstrom (nur Serie zu Ladung), Serienschutz. Blitz damit komplett, Übersicht in 3.6. Sim-Notiz: Bonus je Stapel ist ein Regler. |
 | 2026-09-05 | Legendäre: Rahmen gesetzt (keine Stufen, kein Tor, 3–4 % je Platz im Türwurf, kein Ersetzen, zwei möglich, zwei Effekte erlaubt). Alle vier Blitz-Legendären gesetzt: Donnergott, Doppelentladung, Hochspannung (neu, ersetzt Flächenionisation), Durchschlag. Übersicht in 3.7. |
 | 2026-09-05 | Feuer begonnen. Reihenfolge vom Owner: Feuer durcharbeiten, Blitz und Feuer umsetzen und über die Sim tarieren, dann die weiteren Fraktionen. Passiv heute mit Messung, Passiv neu nach Owner-Idee (Hitze aus Siegen mit Abstand, Niederlagen kühlen, Skills nutzen die Hitze, Schmiede ohne Asche), Zahlen als Vorschlag, Bestand 17 + 4 aufgenommen. |
+| 2026-09-05 | Feuer-Passiv komplett gesetzt (dazu je 10 % Hitze +2 % Score, kein Direkt-Score, keine Abhängigkeit von gehaltenen Skills). Funkenflug und Schmelzofen gestrichen. Alle 15 Feuer-Skills mit vier Stufen gesetzt, Verbraucher-Regel entfällt, Regel "Hitze-Schwellen-Leitern brauchen ein Episch-Extra". Übersicht in 4.6. |
