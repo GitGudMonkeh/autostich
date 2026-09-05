@@ -1066,6 +1066,25 @@ Siegquote statt Vorsprung und wächst mit allem, was die Serie hält (Wert-Skill
 Skills); die Leiste deckelt den Überschuss, ein Konsument macht ihn nutzbar. Sim-Wachpunkt: Feuersturm
 mit Serienschutz (Blitz) in einem gemischten Build, dann steht die Leiste dauerhaft voll.
 
+Entscheid Owner (2026-09-05): **gesetzt wie vorgeschlagen.**
+
+**Glutbett** — Schutz. Heute: Niederlagen kosten nur 50 % der Hitze, unter 30 % Hitze gar nichts. Mit
+der flachen Kühlung (−2 je Niederlage) wird der Skill zu einem Boden: unter einer Schwelle kühlen
+Niederlagen nicht mehr. Ein Effekt, die Schwelle steigt mit der Stufe.
+
+| Stufe | Effekt | Extra |
+| --- | --- | --- |
+| Normal | Niederlagen kühlen die Hitze nicht unter 40 % | – |
+| Selten | nicht unter 60 % | – |
+| Sehr selten | nicht unter 80 % | – |
+| Episch | Niederlagen kühlen nicht | – |
+
+Heute (halbe Kühlung überall plus Boden 30) liegt etwa auf Normal bis Selten. Wert: bis zu 28 Hitze je
+Runde (14 Niederlagen mal 2), wenn die Hitze im geschützten Bereich liegt. Der Boden ist zugleich ein
+Boden für den Passiv-Multiplikator: ab Selten sicher ×1,12, ab Sehr selten ×1,16. Konsumenten dürfen
+weiter unter den Boden brennen, er gilt nur für Niederlagen. Ein Tropf-Build (30 bis 60 % Hitze) hat
+von Normal und Selten am meisten, ein Halte-Build (80 bis 100) erst von Sehr selten und Episch.
+
 ## 5. Eis
 
 Offen.
