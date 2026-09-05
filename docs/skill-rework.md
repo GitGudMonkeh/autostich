@@ -883,6 +883,10 @@ eigener Faktor im Multiplikator-Stack (neben Serie, Perk, Formation, Crit); ober
 bei 80 bis 100 (×1,16 bis ×1,2). Über 100 nur mit Weißglut, dessen Rolle damit "der Multiplikator
 läuft weiter" wird; Sonnenzorn (Legendär, Score mal Spitzen-Hitze) bekommt später eine neue Fassung.
 
+Entscheid Owner (2026-09-05): **gesetzt mit +2 % je 10 % Hitze.** Das Feuer-Passiv ist damit komplett:
+Siege mit Abstand erzeugen Hitze, Niederlagen kühlen, je 10 % gehaltener Hitze +2 % Score als eigener
+Multiplikator, sonst nichts.
+
 Tempo mit den Vorschlagszahlen: netto je Stich 0,65 × 1,9 − 0,35 × 2 ≈ +0,55, also rund +22 je Runde
 ohne Skills, Leiste voll nach etwa 4,5 Runden. Mit vier Feuer-Skills und +1 je Skill: 0,65 × 5,9 − 0,7
 ≈ +3,1 je Stich, voll in einer Runde. Konsumenten senken sie wieder (Schmelzpunkt heute −4 je Sieg).
@@ -1044,6 +1048,23 @@ verbrennt heute 4 % je Sieg, also 104 % je Runde, und braucht darum Zunder oder 
 Zunder plus Schmelzpunkt ist das Tropf-Paar, Glut plus Flächenbrand das Burst-Paar.
 
 Entscheid Owner (2026-09-05): **gesetzt wie vorgeschlagen.**
+
+**Feuersturm** — Serie zu Hitze. Heute: jeder Sieg in Folge +1 % Hitze mehr, bis +5 %, Niederlage setzt
+zurück. Neu ohne Deckel, wie Ladungsserie bei Blitz: der Bonus hängt an der laufenden Serie. Die Leiste
+(100) begrenzt ihn von selbst, mehr Hitze als voll gibt es nicht.
+
+| Stufe | Effekt je Sieg | Hitze je Runde (Serie im Schnitt 2,9) | Extra |
+| --- | --- | --- | --- |
+| Normal | +0,5 % Hitze je Serienpunkt | +37 % | – |
+| Selten | +1 % | +74 % | – |
+| Sehr selten | +1,5 % | +111 % | – |
+| Episch | +2 % | +148 % | – (stark) |
+
+Heute (+1 %, Deckel 5) sind rund 66 % je Runde, also knapp unter Selten. Rechnung: bei 65 % Siegquote
+steht die Serie bei einem Sieg im Schnitt bei 2,9 Punkten (Deckel 5 heute: 2,5). Feuersturm belohnt
+Siegquote statt Vorsprung und wächst mit allem, was die Serie hält (Wert-Skills, fremde Serienschutz-
+Skills); die Leiste deckelt den Überschuss, ein Konsument macht ihn nutzbar. Sim-Wachpunkt: Feuersturm
+mit Serienschutz (Blitz) in einem gemischten Build, dann steht die Leiste dauerhaft voll.
 
 ## 5. Eis
 
