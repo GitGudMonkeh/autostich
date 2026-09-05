@@ -626,15 +626,31 @@ die Serie), und ist damit wie Statische Aufladung eine Ladungsquelle für Builds
 Ladungsserie (Crit je Serienpunkt, offen) hängt an derselben endlosen Serie; die Bremse dafür gehört zu
 Serienschutz (Skill 15).
 
-**Serienschutz** — Schutz. Heute: Niederlage mit mindestens 50 % Ladung bricht die Serie nicht, die
-Ladung wird verbraucht.
+Entscheid Owner (2026-09-05): **gesetzt wie überarbeitet.**
 
-| Stufe | Effekt | Extra |
-| --- | --- | --- |
-| Normal | ab 70 % Ladung, kostet die ganze Leiste | – |
-| Selten | ab 50 %, kostet 50 % | – |
-| Sehr selten | ab 40 %, kostet 40 % | – |
-| Episch | ab 30 %, kostet 30 % | einmal je Runde kostenlos |
+**Serienschutz** — Schutz. Heute: Niederlage mit mindestens 50 % Ladung bricht die Serie nicht, die
+50 % werden verbraucht (`SERIENSCHUTZ_COST_FRAC`). Neu: ein Regler, Schwelle gleich Preis, sinkt mit der
+Stufe. Die Leiste hat 10 Ladung, der Preis je geschützter Niederlage steht daneben.
+
+| Stufe | Effekt | Preis je Niederlage | eine ganze Runde halten (14 Niederlagen) | Extra |
+| --- | --- | --- | --- | --- |
+| Normal | Niederlage mit mindestens 70 % Ladung bricht die Serie nicht, kostet 70 % | 7 Ladung | 98 Ladung | – |
+| Selten | ab 50 %, kostet 50 % | 5 | 70 | – |
+| Sehr selten | ab 40 %, kostet 40 % | 4 | 56 | – |
+| Episch | ab 30 %, kostet 30 % | 3 | 42 | einmal je Runde kostenlos |
+
+Heute liegt auf Selten. Was der Skill tut: er kauft Serie mit Leisten. 14 geschützte Niederlagen auf
+Selten sind 7 Leisten weniger je Runde, dafür bleibt der Serien-Mult, Ladungsserie und Dauerstrom
+laufen weiter. Ab wann die Serie endlos wird, hängt am Ladungseinkommen: ein Mono-Build auf Selten hat
+über den Lauf rund 60 Ladung je Runde, spät deutlich mehr, kann sich ab der Mitte also auf Selten bis
+Episch jede Niederlage leisten.
+
+**Zur Bremse (Vorschlag: keine zusätzliche).** Eine endlose Serie läuft in den Engine-Deckeln aus,
+nicht weg: der Serien-Mult ist ab Serie 75 bei +150 % fest (`STREAK_BASE_CAP`), Crit-Chance über 100 %
+geht ins Ventil (Systemregel, Überschlag), der fertige Crit-Mult ist bei 8× gedeckelt. Ladungsserie
+Episch und Dauerstrom geben je Sieg feste Beträge. Der Preis in Leisten ist die natürliche Bremse; ein
+"höchstens N Schutz je Runde" wäre ein Deckel und braucht es nicht. Sim-Wachpunkt: Ladungsserie ×
+Serienschutz, ob die Serie in realen Builds zu früh endlos wird; der Regler ist dann der Preis.
 
 **Entscheid Owner je Skill:** —
 
