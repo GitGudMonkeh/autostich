@@ -73,7 +73,7 @@ Entscheid: bleibt / geändert / gestrichen — Begründung in einem Satz
 
 | Fraktion | Passiv | Die 15 | Stufen | Legendäre |
 | --- | --- | --- | --- | --- |
-| Blitz | in Arbeit | offen | offen | separat, später |
+| Blitz | gesetzt, drei Punkte offen | offen | offen | separat, später |
 | Feuer | offen | offen | offen | separat, später |
 | Eis | offen | offen | offen | separat, später |
 | Pflanze | offen | offen | offen | separat, später |
@@ -107,11 +107,65 @@ Was dahinter läuft (Code-Stand, Konstanten in `src/game/constants.js`):
 
 ### 3.2 Passiv neu
 
-*Idee kommt vom Owner. Hier eintragen, dann festhalten, welche heutigen Anteile ins Passiv wandern und
-welche in den Kernskill.*
+**Gesetzt (Owner, 2026-09-04).** Alle Passive werden vereinfacht. Blitz:
 
-- Gesetzt: —
-- Vorschlag: —
+- Blitz schaltet die **Ladungsleiste** frei.
+- **Alle 10 Crits** ist die Leiste voll und **ionisiert eine Karte**.
+- **Ionisierte Karten geben nur noch mehr Score.** Keine Crit-Chance aus dem Feld, keine Sättigung.
+- Einige Skills werden so geändert, dass sie **mit der Anzahl an Ionisierungen** etwas machen.
+
+Muster, das damit für alle Fraktionen gilt (Vorschlag): Passiv = eine Ressource freischalten plus ein
+fester Payoff. Skills ändern die Rate, den Payoff und tun etwas mit der Menge.
+
+**Was das Passiv aus dem Bestand übernimmt oder streicht:**
+
+| Heute | Neu |
+| --- | --- |
+| Crit-Chance je Blitz-Skill (Sockel 5 %, +8 % je Skill) und +0,1× Crit-Mult je Skill | nicht mehr im Passiv, siehe offener Punkt 1 |
+| Jeder Crit +1 Ladung, Leiste 10, Verbraucher löst aus | Leiste 10 Crits, Payoff fest: eine Karte ionisieren |
+| Skill "Ionisierung" als einziger Verbraucher, höchstens einer im Build | Verbraucher-Regel entfällt, der Skill ist im Passiv aufgegangen |
+| Stapel geben Score und feldweit Crit-Chance, Sättigung gibt Kartenwert | nur noch Score |
+| Kaskade, Bekenntnis | unberührt, bleiben Skill-Sache |
+
+**Offene Punkte, die vor der 15er-Auswahl gesetzt sein müssen (Owner):**
+
+1. **Crit-Quelle.** Ohne Crit-Chance füllt sich die Leiste nie. Entweder das Passiv behält einen festen
+   Sockel, etwa "Blitz aktiv = 10 % Crit-Chance", oder der erste Blitz-Skill muss Crit-Chance liefern
+   und ist damit der Kernskill. Das Tempo der Leiste hängt direkt daran, siehe Tabelle.
+2. **Stapeln.** Kann eine Karte mehrfach ionisiert werden (Stapel wie heute, höchstens 5) oder ist eine
+   Karte ionisiert oder nicht? Kurzschluss, Blitzfänger und Durchschlag brauchen "voll ionisiert",
+   also Stapel. Ohne Stapel werden sie zu Anzahl-Skills.
+3. **Welche Karte.** Die Karte, die den zehnten Crit macht, eine zufällige noch nicht ionisierte Karte,
+   oder die nächste in der Reihenfolge. Die erste konzentriert Ionisierung auf starke Karten, die
+   zweite verteilt, die dritte macht die Aufstellung relevant.
+
+**Tempo der Leiste bei 10 Crits je Ionisierung** (Annahme: 26 gewonnene Stiche je Runde, also 65 %):
+
+| Crit-Chance | Crits je Runde | Runden je Ionisierung | Ionisierungen je 40-Runden-Lauf |
+| --- | --- | --- | --- |
+| 10 % | 2,6 | 3,8 | ~10 |
+| 15 % | 3,9 | 2,6 | ~16 |
+| 20 % | 5,2 | 1,9 | ~21 |
+| 30 % | 7,8 | 1,3 | ~31 |
+| 50 % | 13 | 0,8 | ~52 |
+
+Bei 40 Karten heißt das: unter 20 % Crit-Chance wird ohne Rate-Skills nie das halbe Deck ionisiert, ab
+50 % ist alles ionisiert und es geht nur noch um Stapel. Die Zahl 10 und die Crit-Quelle sind zusammen
+das Tempo der Fraktion.
+
+**Was die 17 unter dem neuen Passiv sind (Vorschlag, Entscheid je Skill kommt in 3.4):**
+
+| Skill | Unter dem neuen Passiv |
+| --- | --- |
+| Ionisierung | im Passiv aufgegangen, entfällt als Skill |
+| Kettenblitz | ohne Basis-Bindung: jede volle Leiste ionisiert +2 Karten |
+| Blitzableiter, Statische Aufladung, Reststrom, Dauerstrom, Überschlag | Rate-Skills, füllen die Leiste schneller, bleiben sinnvoll |
+| Gewitterfront, Entladung | Payoff bei voller Leiste, dauerhaft Crit-Chance oder Crit-Mult, mehrere gleichzeitig möglich |
+| Spannungsstau, Ladungsserie | Crit-Quelle aus Sieg ohne Crit oder aus der Serie |
+| Überspannung, Blitzschlag, Breitenbeschleuniger | Ionisierung außerhalb der Leiste oder an Position gebunden, Kaskade |
+| Kurzschluss, Blitzfänger | brauchen Stapel, sonst Kandidaten für Anzahl-Effekte |
+| Serienschutz | Ladung ausgeben statt Serie verlieren, bleibt |
+| neu, Anzahl-Skills | z. B. Crit-Chance je ionisierter Karte, Sättigung ab N ionisierten Karten, Ladung je Crit steigt mit der Anzahl |
 
 ### 3.3 Skills heute (17 normale, 4 legendäre)
 
@@ -202,3 +256,4 @@ Offen.
 | Datum | Was |
 | --- | --- |
 | 2026-09-04 | Dokument angelegt. Rahmen aus der Planungssitzung, Blitz-Bestand aus dem Code aufgenommen. |
+| 2026-09-04 | Blitz-Passiv neu gesetzt (Leiste, 10 Crits, eine Karte ionisieren, nur Score). Folgen für den Bestand, Tempo-Tabelle und drei offene Punkte eingetragen. |
