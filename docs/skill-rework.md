@@ -73,7 +73,7 @@ Entscheid: bleibt / geändert / gestrichen — Begründung in einem Satz
 
 | Fraktion | Passiv | Die 15 | Stufen | Legendäre |
 | --- | --- | --- | --- | --- |
-| Blitz | gesetzt, drei Punkte offen | offen | offen | separat, später |
+| Blitz | gesetzt, zwei Punkte offen | offen, Ionisierung gestrichen | offen | separat, später |
 | Feuer | offen | offen | offen | separat, später |
 | Eis | offen | offen | offen | separat, später |
 | Pflanze | offen | offen | offen | separat, später |
@@ -110,9 +110,12 @@ Was dahinter läuft (Code-Stand, Konstanten in `src/game/constants.js`):
 **Gesetzt (Owner, 2026-09-04).** Alle Passive werden vereinfacht. Blitz:
 
 - Blitz schaltet die **Ladungsleiste** frei.
+- **Jeder Blitz-Skill gibt als passiven Anteil +5 % Crit-Chance.** Kein Sockel, kein Crit-Multiplikator
+  je Skill. Die Zahlenwerte aller Fraktionen werden später in der Sim getunt.
 - **Alle 10 Crits** ist die Leiste voll und **ionisiert eine Karte**.
 - **Ionisierte Karten geben nur noch mehr Score.** Keine Crit-Chance aus dem Feld, keine Sättigung.
 - Einige Skills werden so geändert, dass sie **mit der Anzahl an Ionisierungen** etwas machen.
+- **Ionisierung entfällt als Skill.**
 
 Muster, das damit für alle Fraktionen gilt (Vorschlag): Passiv = eine Ressource freischalten plus ein
 fester Payoff. Skills ändern die Rate, den Payoff und tun etwas mit der Menge.
@@ -121,7 +124,7 @@ fester Payoff. Skills ändern die Rate, den Payoff und tun etwas mit der Menge.
 
 | Heute | Neu |
 | --- | --- |
-| Crit-Chance je Blitz-Skill (Sockel 5 %, +8 % je Skill) und +0,1× Crit-Mult je Skill | nicht mehr im Passiv, siehe offener Punkt 1 |
+| Crit-Chance je Blitz-Skill (Sockel 5 %, +8 % je Skill) und +0,1× Crit-Mult je Skill | +5 % Crit-Chance je Blitz-Skill, sonst nichts. Crit-Multiplikator kommt nur noch aus Skills und Perks |
 | Jeder Crit +1 Ladung, Leiste 10, Verbraucher löst aus | Leiste 10 Crits, Payoff fest: eine Karte ionisieren |
 | Skill "Ionisierung" als einziger Verbraucher, höchstens einer im Build | Verbraucher-Regel entfällt, der Skill ist im Passiv aufgegangen |
 | Stapel geben Score und feldweit Crit-Chance, Sättigung gibt Kartenwert | nur noch Score |
@@ -129,35 +132,42 @@ fester Payoff. Skills ändern die Rate, den Payoff und tun etwas mit der Menge.
 
 **Offene Punkte, die vor der 15er-Auswahl gesetzt sein müssen (Owner):**
 
-1. **Crit-Quelle.** Ohne Crit-Chance füllt sich die Leiste nie. Entweder das Passiv behält einen festen
-   Sockel, etwa "Blitz aktiv = 10 % Crit-Chance", oder der erste Blitz-Skill muss Crit-Chance liefern
-   und ist damit der Kernskill. Das Tempo der Leiste hängt direkt daran, siehe Tabelle.
-2. **Stapeln.** Kann eine Karte mehrfach ionisiert werden (Stapel wie heute, höchstens 5) oder ist eine
+1. **Stapeln.** Kann eine Karte mehrfach ionisiert werden (Stapel wie heute, höchstens 5) oder ist eine
    Karte ionisiert oder nicht? Kurzschluss, Blitzfänger und Durchschlag brauchen "voll ionisiert",
    also Stapel. Ohne Stapel werden sie zu Anzahl-Skills.
-3. **Welche Karte.** Die Karte, die den zehnten Crit macht, eine zufällige noch nicht ionisierte Karte,
+2. **Welche Karte.** Die Karte, die den zehnten Crit macht, eine zufällige noch nicht ionisierte Karte,
    oder die nächste in der Reihenfolge. Die erste konzentriert Ionisierung auf starke Karten, die
    zweite verteilt, die dritte macht die Aufstellung relevant.
 
-**Tempo der Leiste bei 10 Crits je Ionisierung** (Annahme: 26 gewonnene Stiche je Runde, also 65 %):
+Vorschlag am Rand: der passive Anteil von 5 % bleibt je Skill fest und skaliert nicht mit der Stufe.
+Die Stufe wirkt auf den Skill-Effekt. Das hält das Passiv einfach und die Leiter berechenbar.
 
-| Crit-Chance | Crits je Runde | Runden je Ionisierung | Ionisierungen je 40-Runden-Lauf |
+**Tempo der Leiste.** Crit-Chance = 5 % × gehaltene Blitz-Skills, 10 Crits je Ionisierung, Annahme
+26 gewonnene Stiche je Runde (65 %). Ohne Rate-Skills:
+
+| Blitz-Skills gehalten | Crit-Chance | Crits je Runde | Runden je Ionisierung |
 | --- | --- | --- | --- |
-| 10 % | 2,6 | 3,8 | ~10 |
-| 15 % | 3,9 | 2,6 | ~16 |
-| 20 % | 5,2 | 1,9 | ~21 |
-| 30 % | 7,8 | 1,3 | ~31 |
-| 50 % | 13 | 0,8 | ~52 |
+| 1 | 5 % | 1,3 | 7,7 |
+| 2 | 10 % | 2,6 | 3,8 |
+| 3 | 15 % | 3,9 | 2,6 |
+| 4 | 20 % | 5,2 | 1,9 |
+| 6 | 30 % | 7,8 | 1,3 |
+| 8 | 40 % | 10,4 | 1,0 |
+| 10 | 50 % | 13 | 0,8 |
 
-Bei 40 Karten heißt das: unter 20 % Crit-Chance wird ohne Rate-Skills nie das halbe Deck ionisiert, ab
-50 % ist alles ionisiert und es geht nur noch um Stapel. Die Zahl 10 und die Crit-Quelle sind zusammen
-das Tempo der Fraktion.
+Über den Lauf gerechnet: ein reiner Blitz-Build, der in jeder Skill-Phase einen Blitz-Skill nimmt, macht
+etwa 285 Crits und damit etwa 29 Ionisierungen, die erste um Runde 7. Ein Build mit drei bis vier
+Blitz-Skills ab Runde 9 kommt auf etwa 15. Die Rate-Skills (Blitzableiter, Statische Aufladung,
+Reststrom, Dauerstrom, Überschlag) liegen obendrauf und sind damit das, was Blitz früh spielbar macht.
+Die Zehn ist der zweite Regler, die Sim tunt beides zusammen.
 
-**Was die 17 unter dem neuen Passiv sind (Vorschlag, Entscheid je Skill kommt in 3.4):**
+**Was die verbleibenden 16 unter dem neuen Passiv sind (Vorschlag, Entscheid je Skill kommt in 3.4).**
+Rechnung zur 15: 16 Bestand plus neue Anzahl-Skills, also müssen so viele Bestandsskills gehen, wie
+neue kommen, plus einer.
 
 | Skill | Unter dem neuen Passiv |
 | --- | --- |
-| Ionisierung | im Passiv aufgegangen, entfällt als Skill |
+| Ionisierung | **gestrichen (gesetzt)**, im Passiv aufgegangen |
 | Kettenblitz | ohne Basis-Bindung: jede volle Leiste ionisiert +2 Karten |
 | Blitzableiter, Statische Aufladung, Reststrom, Dauerstrom, Überschlag | Rate-Skills, füllen die Leiste schneller, bleiben sinnvoll |
 | Gewitterfront, Entladung | Payoff bei voller Leiste, dauerhaft Crit-Chance oder Crit-Mult, mehrere gleichzeitig möglich |
@@ -257,3 +267,4 @@ Offen.
 | --- | --- |
 | 2026-09-04 | Dokument angelegt. Rahmen aus der Planungssitzung, Blitz-Bestand aus dem Code aufgenommen. |
 | 2026-09-04 | Blitz-Passiv neu gesetzt (Leiste, 10 Crits, eine Karte ionisieren, nur Score). Folgen für den Bestand, Tempo-Tabelle und drei offene Punkte eingetragen. |
+| 2026-09-04 | Crit-Quelle gesetzt: +5 % je Blitz-Skill als passiver Anteil, Zahlen später in der Sim. Ionisierung als Skill gestrichen. Tempo-Tabelle auf gehaltene Skills umgestellt. |
