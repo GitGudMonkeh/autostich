@@ -1243,6 +1243,29 @@ Flächenbrand). Netto verbrennt der Tropf nur noch 2 je Sieg, 52 je Runde; bei E
 Selten) steigt die Hitze trotz Tropf, Multiplikator und Klinge kommen mit. Sim-Wachpunkt: Schmelzpunkt
 Episch mit Zunder und Glutbett, dann läuft der Tropf auf hoher Hitze.
 
+Entscheid Owner (2026-09-05): **gesetzt wie überarbeitet.** Sim-Notiz (Owner): prüfen, ob der Schritt
+Selten auf Sehr selten (20 auf 25 je Punkt) spürbar ist; gilt für alle Leitern mit 25-Prozent-Schritten.
+
+**Brandmal** — Gegner-Debuff. Heute: jeder Sieg brandmarkt die geschlagene Gegnerkarte für die nächste
+Runde (−1 Wert) und gibt +1 Asche; Brände erneuern sich je Runde und stapeln nicht. Asche entfällt. Neu
+mit Hitze-Tor, damit der Skill an der Ressource hängt, und fester Brandstärke; die Schwelle sinkt mit
+der Stufe (Leiter wie Feuerwalze).
+
+| Stufe | Effekt | Extra |
+| --- | --- | --- |
+| Normal | ab 80 % Hitze: jeder Sieg brandmarkt die geschlagene Gegnerkarte, −2 Wert in der nächsten Runde | – |
+| Selten | ab 60 % | – |
+| Sehr selten | ab 40 % | – |
+| Episch | ab 20 % | – |
+
+Heute (immer aktiv, −1, plus Asche) liegt etwa auf Sehr selten. Größe: bei aktivem Tor werden je Runde
+26 Gegnerkarten gebrandmarkt, das Gegnerdeck (Gesamtwert um 220) verliert 52 Punkte für die nächste
+Runde; das ist in der Siegquote ähnlich viel wie Glühende Klinge +1 auf alle eigenen Karten, wirkt aber
+nur gegen die Karten, die man schon geschlagen hat, und trifft nächste Runde durch die neue Aufstellung
+andere Paarungen. Brände erneuern sich wie heute je Runde und stapeln nicht; das Stapeln bleibt dem
+Legendär (Sonnenkern, später) vorbehalten. Der frühere Schmelzofen-Bonus (Brände stärker ab 50 %
+Hitze) ist in dieser Leiter aufgegangen.
+
 ## 5. Eis
 
 Offen.
