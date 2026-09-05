@@ -1658,6 +1658,34 @@ Skill-Lift (200 Läufe je Fraktion, Ø-Score mit Skill ÷ Ø gesamt; zufällige 
 Pflanze in ihren Runden an dieses Niveau; die Verteilung der Lifts (Median ≈ 1, Legendäre oben) ist die gewünschte
 Form. Phönixfeuer und die beiden Konsumenten sind die ersten Kandidaten für eine Anhebung.
 
+### 7.5 Tarierung Feuer/Blitz (2026-09-05, umgesetzt)
+
+Owner-Vorgabe: Eis und Pflanze bis zu ihrer Überarbeitung ignorieren, Feuer und Blitz gegeneinander tarieren, danach die
+große Auswertung aus realistischen Läufen (gierige Picks, gemischt, über die Stufen). Werkzeug dafür im Sim-Harness:
+
+- **Archetyp-Allowlist je Lauf** (`runOne(…, { archetypes })` → `START_RUN action.archetypes` → `unlockedArchetypes`):
+  die Welt „nur Feuer und Blitz" — jedes Angebot hat 3 Feuer- und 3 Blitz-Skills, keine Eis-/Pflanze-Plätze.
+- **`--mode duel`:** Feuer mono, Blitz mono, Feuer+Blitz Split und die Random-Baseline in dieser Welt, mit den aktiven
+  Reglern im Kopf (für Sweeps über `SIM_*`).
+- **`--mode skills`** (7.6): stufenbewusste UCB-Erkundung (Arm je Skill und Stufe) → gieriger Spieler auf frischen Seeds →
+  gepaarte Ablation je Skill; Lift je Stufe, Haltequote, Marginalwert, Flags.
+
+**Messung vor der Tarierung (200 Läufe, Seeds 1–200, Fraktions-Policy hält 10 Skills):** Feuer mono 2,40M, Blitz mono
+2,15M (Floor 1,12×, Mean 1,22×, p90 1,37×), Split 2,29M, Mix 1,66M. Diagnose Blitz: Ø 103 Ionisierungen und 50 volle
+Leisten je Lauf, am Laufende Ø 2,6 Stapel je Karte — bei 12 je Stapel trugen die Stapel nur rund 8 % der Basis, der
+Regler war praktisch tot (Stapel-Score 12 → 21 bewegte den Median nicht).
+
+**Sweep (Blitz mono):** Stapel-Score 30 → 2,18M · 45 → 2,30M · 60 → 2,37M; Crit je Blitz-Skill 0,07 → 2,43M.
+**Sweep (Feuer mono):** Hitze-Multiplikator je 10 % 0,015 → 2,10M · 0,01 → 2,04M.
+
+**Entscheid (Tarierung, technischer Regler): `SIM_ION_SCORE_PER_STACK` 12 → 60.** Damit Feuer mono 2,40M gegen Blitz
+mono 2,47M (Floor 0,97×, Mean 0,99×, p90 1,22×), Split 2,46M (≈ 1,0× des besseren Mono, gesund), Mix 1,73M. Der
+Stapel-Weg statt des Crit-Wegs, weil er die Leiste und die Stapel-Skills (Kettenblitz, Kurzschluss, Blitzfänger,
+Überspannung) spürbar macht, wo mehr Crit nur den Crit-Multiplikator weiter füttert; Feuer zu senken hätte beide auf
+Blitz' altes Niveau gezogen. Rest-Unterschied ist die Decke (p90 1,22×): Feuers Schwanz kommt aus Sonnenkern und
+Sonnenzorn, das ist Gegenstand der Auswertung in 7.6, nicht der Tarierung. Alternative, falls die Stapel nach der
+Auswertung zu mächtig sind: 45 plus Crit 0,06. Der Sim-Band-Wächter (Random, offene Welt) bleibt grün.
+
 ## 5. Eis
 
 Offen.
@@ -1692,3 +1720,4 @@ Offen.
 | 2026-09-05 | Phase 2 umgesetzt (7.2): Blitz-Modul mit Passiv, 15 Skills auf vier Stufen, 4 Legendären und Systemregel; Altlasten raus. Technische Entscheide dort festgehalten. Gates grün. |
 | 2026-09-05 | Phase 3 umgesetzt (7.3): Feuer-Modul mit Passiv (Hitze aus Vorsprung, Kühlung −2, Hitze-Multiplikator als Faktor), 15 Skills auf vier Stufen, 4 Legendären; Asche, Feuer-Score, Glutdividende, Überhitzung, Funkenflug, Schmelzofen, Verbraucher-Regel raus. Technische Entscheide dort festgehalten. Gates grün. |
 | 2026-09-05 | Phase 4 und 5 (7.4): veraltete Texte nachgezogen (Vorsprung, Skill-Slot, Bekenntnis, Meisterhand, Direkt-Score-Tooltip), Anzeige-Stand notiert, Deploy grün. Erste Sim-Zahlen: Feuer 2,69M und Blitz 2,36M mono gegen Eis 5,83M und Pflanze 5,15M (alter Stand), Feuer+Blitz Splash 0,96× gesund, Skill-Lifts je Fraktion. Tarier-Vorschlag an den Owner. |
+| 2026-09-05 | Owner: Eis und Pflanze ignorieren, Feuer und Blitz tarieren, dann große Auswertung (gierig, gemischt, über die Stufen). Tarierung (7.5): Sim-Welt „nur Feuer und Blitz" (Allowlist je Lauf, `--mode duel`), Stapel-Score 12 → 60 nach Sweep; Floor Feuer ÷ Blitz 0,97×, Split gesund. Auswertungs-Modus `--mode skills` gebaut. |

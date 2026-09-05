@@ -30,6 +30,7 @@ function finalize(s, seed, tel) {
     build: {
       perks: [...s.perks].sort(),
       skills: [...s.skills].sort(),
+      skillTiers: { ...(s.skillTiers || {}) }, // exp skill rework: gehaltene Stufe je Skill (Legendäre ohne Eintrag)
       archetypes: [...(s.activeArchetypes || [])].sort(),
       familyTiers: { ...(s.familyTiers || {}) }, // #267: Familien-Stufen (inkl. Präzision P_*) ersetzen den entfernten Stat-Vektor
     },
@@ -43,11 +44,13 @@ function finalize(s, seed, tel) {
 // und am Run-Ende mit dem Run-Score belohnt. Ohne mem verhält sich runOne wie in S0/S1 (Eval-Modus).
 // hooks (optional): { onTrick(state) } — nach jedem aufgelösten Stich aufgerufen (Pro-Cycle-Sampling,
 // Pacing-Analyse). Rein beobachtend; ändert weder rng noch State → Determinismus-Invariante bleibt.
+// opts.archetypes (optional, exp skill rework): Allowlist der Archetypen im Skill-Angebot dieses Laufs — die Welt
+// „nur Feuer und Blitz", solange Eis und Pflanze auf ihre Runde warten. Ohne Angabe der offene Pool.
 export function runOne(seed, policy, mem = null, hooks = null, opts = {}) {
   const rng = makeRng(seed);
   // #202/#229: Architekt ist jetzt der Default (der Shop ist entfernt). Nur ein expliziter opts.architect === false
   // fährt noch den (auslaufenden) Shop-Pfad. shopDisabled bleibt für Alt-A/B durchgereicht.
-  let s = reducer(null, { type: "START_RUN", rng, architect: opts.architect ?? true, shopDisabled: opts.shopDisabled }); // START_RUN ignoriert den (null-)State
+  let s = reducer(null, { type: "START_RUN", rng, architect: opts.architect ?? true, shopDisabled: opts.shopDisabled, archetypes: opts.archetypes || null }); // START_RUN ignoriert den (null-)State
   s = { ...s, trickLog: null }; // #251: Sim braucht den Durchlauf-Graph-Puffer nicht → aus (spart Array-Kopien über Tausende Läufe)
   const tel = newTelemetry();
   let guard = 0;

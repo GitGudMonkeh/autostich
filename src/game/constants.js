@@ -319,7 +319,11 @@ export const LIGHTNING_CRIT_PER_SKILL = envNum("SIM_LIGHTNING_CRIT_PER_SKILL", 0
 export const LIGHTNING_MAX_CHARGE     = envNum("SIM_LIGHTNING_MAX_CHARGE", 10);       // Leiste: so viele Ladungen (= Crits) bis zur Ionisierung
 export const DONNERGOTT_MAX_CHARGE    = envNum("SIM_DONNERGOTT_MAX_CHARGE", 7);       // Donnergott (L): die Leiste ist bei 7 voll (Sim-Wachpunkt: ~8)
 export const THUNDER_CRIT_MULT        = envNum("SIM_THUNDER_CRIT_MULT", 0.4);         // Donnergott (L): dauerhaft +Crit-Multiplikator
-export const ION_SCORE_PER_STACK      = envNum("SIM_ION_SCORE_PER_STACK", 12);        // +Score (Basis, vor den Multiplikatoren) je Stapel bei Sieg mit der Karte — der Regler, wenn Stapel zu mächtig werden
+// Tariert 2026-09-05 (docs/skill-rework.md §7.5): 12 → 60. Gemessen in der Feuer/Blitz-Welt (--mode duel, 200 Läufe):
+// Blitz mono 2,15M bei 12, 2,37M bei 60 gegen Feuer mono 2,40M; bei 12 trugen die Stapel nur ~8 % der Basis (Ø 2,6 je
+// Karte am Laufende), der Regler war praktisch tot. Crit je Skill (0,07 → 2,43M) wäre der andere Weg; der Stapel-Weg
+// macht die Leiste und die Stapel-Skills (Kettenblitz, Kurzschluss, Blitzfänger) spürbar.
+export const ION_SCORE_PER_STACK      = envNum("SIM_ION_SCORE_PER_STACK", 60);        // +Score (Basis, vor den Multiplikatoren) je Stapel bei Sieg mit der Karte — der Regler, wenn Stapel zu mächtig werden
 export const ION_MAX_STACKS           = 5;  // NUR ANZEIGE (Karten-Pips, „voll ionisiert"-Effekte): Stapel sind seit dem Rework ohne Deckel
 export const OVERCRIT_MULT_PER_PP     = envNum("SIM_OVERCRIT_MULT_PER_PP", 0.002);    // Systemregel (alle Fraktionen): Crit-Chance über 100 % → +Crit-Mult je Prozentpunkt (sehr klein; Größe in der Sim)
 export const DOPPELENTLADUNG_STACKS   = envNum("SIM_DOPPELENTLADUNG_STACKS", 2);      // Doppelentladung (L): Stapel je Ionisierung (statt 1)

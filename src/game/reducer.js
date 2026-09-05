@@ -275,9 +275,12 @@ export function reducer(state, action) {
       const effCover = wm.tightBuild ? TIGHT_BUILD_COVER : wm.noBuildLimit ? N_POS : coverBase; // Enge Aufstellung / Kein Gebäudelimit
       const weekModsState = wmActive.map((m) => ({ id: m.id, effect: m.effect, sign: m.sign, mag: m.mag, name: m.name, text: m.text }));
       // Neutral tree fields: shift 0, ×1 legendary chance, no forced legendaries, no extra rerolls, open archetype pool.
+      // exp skill rework (Sim): `action.archetypes` narrows the offer pool to the named archetypes for this run — the
+      // tuning of Feuer and Blitz measures in a world without Eis and Pflanze until those are reworked. null = open pool.
+      const archPool = Array.isArray(action.archetypes) && action.archetypes.length ? [...action.archetypes] : null;
       const sBase = { ...s, architect: { ...s.architect, maxCover: effCover }, architectEnabled, treeRareShift: 0, treeLegMult: 1, treeLegForce2: 0,
         rerollsPerk2: 0,
-        formationEnergyBase: effEnergy, unlockedArchetypes: null, rareCap: effRareCap, rareFloor: effRareFloor, skillSlots: effSkillSlots, ranked,
+        formationEnergyBase: effEnergy, unlockedArchetypes: archPool, rareCap: effRareCap, rareFloor: effRareFloor, skillSlots: effSkillSlots, ranked,
         weekMods: weekModsState,
         challengeBlockArch: [...new Set(wmBlockArch)],
         challengeBlockForm: [...new Set(wmBlockForm)] };
