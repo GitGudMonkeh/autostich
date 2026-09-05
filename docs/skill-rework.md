@@ -456,24 +456,33 @@ gemessener Anteil des Stapel-Scores an der Kartenbasis über den Lauf, mono: ohn
 Normal 0,80×, Selten 1,08×, Sehr selten 1,62×, Episch 2,69×; mit 3–4 Skills 0,40 / 0,59 / 0,81 / 1,21 /
 2,02×.
 
-**Blitzfänger** — Ionisierung zu Wert (vorher Tiefe zu Wert). Heute: Ionisierung trifft volle Karte
-(5 Stapel): +2 Stichwert beim nächsten Auftauchen, +1 Ladung. Heute sind ab Zyklus 20 fast alle Karten
-voll, der Skill feuert also spät bei fast jeder Ionisierung. Neu: jede ionisierte Karte "fängt" den
-Blitz und bekommt Wert; die Ladung kommt je Leiste, nicht je Karte. Wert wirkt doppelt, als Basis-Score
-und als Siegchance.
+**Blitzfänger** — Tiefe zu Wert. Heute: Ionisierung trifft volle Karte (5 Stapel): +2 Stichwert beim
+nächsten Auftauchen, +1 Ladung. Vorgabe Owner (2026-09-05): einfacher, ein Effekt je Skill, Schwelle auf
+den Stapeln, weil Stapel ohne Deckel sind. Ein erster Entwurf mit Wert je Ionisierung plus Ladung je
+Leiste wurde deshalb verworfen. Neu: Zustand statt Ereignis, keine Ladung.
 
-| Stufe | Wert je ionisierter Karte | Ladung je voller Leiste | Extra |
-| --- | --- | --- | --- |
-| Normal | +1 beim nächsten Auftauchen | +1 | – |
-| Selten | +2 beim nächsten Auftauchen | +1 | – |
-| Sehr selten | +1 dauerhaft | +1 | – |
-| Episch | +2 dauerhaft | +2 | – (stark) |
+| Stufe | Effekt | Extra |
+| --- | --- | --- |
+| Normal | Karten ab 2 Stapeln haben +1 Wert | – |
+| Selten | Karten ab 2 Stapeln haben +2 Wert | – |
+| Sehr selten | Karten ab 2 Stapeln haben +3 Wert | – |
+| Episch | Karten ab 2 Stapeln haben +4 Wert | – (stark) |
 
-Heute liegt auf Selten. Karten je Lauf: mono 28, 3–4 Skills 17, ab Runde 7; mit Kettenblitz jede
-erfasste Karte, also mal 1,5 bis 5. Episch mono: +56 Wert auf 220 Deckwert bis zum Ende. Warum Ladung je
-Leiste: je Karte gerechnet würde Kettenblitz Episch (5 Karten je Leiste) mit +2 je Karte 10 Ladung
-zurückgeben, die Leiste füllte sich selbst. Je Leiste multipliziert Kettenblitz nur den Wert-Teil.
-Sim-Wachpunkt: Kettenblitz Episch mal Blitzfänger Episch gibt +282 Wert dauerhaft auf 220 Deckwert.
+Wert wirkt doppelt, als Basis-Score und als Siegchance. Heute ist nicht vergleichbar (seltenes
+Ereignis, Wert einmalig), die Sim skaliert die Leiter. Wie viele Karten die Schwelle erreichen
+(Lesart A, `stacks.mjs`; Durchschnitt über den Lauf / am Ende):
+
+| Build | Leiste 10 Crits | Leiste 5 Crits (≈ Blitzableiter Selten) |
+| --- | --- | --- |
+| mono | 1,4 / 6 | 4,3 / 17 |
+| mono + Kettenblitz Selten | 4,1 / 16 | 10 / 32 |
+| mono + Kettenblitz Episch | 12 / 33 | 20 / 40 |
+| 3–4 Skills | 0,7 / 3 | 2,7 / 9 |
+| 3–4 Skills + Kettenblitz Selten | 2,5 / 8 | 7,4 / 21 |
+
+Schwelle 3 statt 2: mono mit Leiste 5 im Schnitt 1,1 Karten, am Ende 7; nur mit Kettenblitz Sehr selten
+oder Episch lebendig. Schwelle 2 ist im Splash-Build schwach und wird von Rate-Skills und Kettenblitz
+getragen. Nach oben begrenzt das Deck selbst (40 Karten mal Wert), ein Deckel ist nicht nötig.
 
 **Kurzschluss** — Tiefe zu Score. Heute: Sieg mit voller Karte +250 Direkt-Score, +3 Ladung.
 Direkt-Score entfällt, Ersatz: die Stapel dieser Karte zählen in diesem Stich mehrfach.
