@@ -40,7 +40,9 @@ export function canAddSkill(s, id) {
   return true; // exp skill rework: keine Konsumentenregel mehr — Blitz und Feuer tragen ihren Payoff im Passiv
 }
 
-export function randomPolicy({ architectGreedy = false } = {}) {
+// exclude (exp skill rework): Skills, die dieser Zufallsspieler nie nimmt — die Ablation der Random-Auswertung
+// (skills-eval --policy random). Die Zufallszüge verschieben sich dadurch; gepaart bleibt nur der Seed.
+export function randomPolicy({ architectGreedy = false, exclude = [] } = {}) {
   return {
     name: architectGreedy ? "random+arch" : "random",
     act(s, rng) {
@@ -48,7 +50,7 @@ export function randomPolicy({ architectGreedy = false } = {}) {
         case "levelup": {
           if (atDoors(s)) return { type: "CHOOSE_DOOR", index: Math.floor(rng() * s.skillDoors.length) }; // Baseline: irgendeine Tür
           if (s.skillOffer) {
-            const addable = s.skillOffer.filter((id) => canAddSkill(s, id));
+            const addable = s.skillOffer.filter((id) => canAddSkill(s, id) && !exclude.includes(id));
             return addable.length
               ? { type: "PICK_SKILL", skillId: pick(addable, rng), rng }
               : { type: "DECLINE_SKILL", rng }; // immer akzeptiert → Perk-Angebot oder weiterspielen

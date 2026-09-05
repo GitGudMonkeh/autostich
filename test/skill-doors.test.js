@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { makeRng } from "../src/game/deck.js";
 import { reducer, initialState, menuState } from "../src/game/reducer.js";
 import { resolveTrick } from "../src/game/engine.js";
-import { buildSkillDoors, archetypeOf, isLegendarySkill, SKILL_DEFS, SKILL_LIST, TIER_EPIC } from "../src/game/skills.js";
+import { buildSkillDoors, rerollDoorSkills, archetypeOf, isLegendarySkill, SKILL_DEFS, SKILL_LIST, TIER_EPIC } from "../src/game/skills.js";
 import { SKILL_DOORS, SKILL_DOOR_SIZE, SKILL_DOOR_FACTIONS, SKILL_OFFER_ARCHETYPES, TRICKS_PER_CYCLE } from "../src/game/constants.js";
 import { skillDef } from "../src/i18n/labels.js";
 import de from "../src/i18n/de.js";
@@ -110,19 +110,36 @@ describe("Reducer — Türstufe, CHOOSE_DOOR, Angebot", () => {
     const s = reducer(menuState(), { type: "START_RUN", rng: makeRng(2) });
     expect(reducer(s, { type: "PICK_SKILL", skillId: s.skillDoors[0].skills[0], rng })).toBe(s);
   });
-  it("Neuwurf baut zwei neue Türen — vor den Türen wie auf dem Angebot — und kostet ein Token", () => {
+  it("Neuwurf würfelt die drei Skills der geöffneten Tür neu — gleiche Symbole, neue Skills und Stufen — und kostet ein Token; vor den Türen ist er ein No-Op", () => {
     const s = reducer(menuState(), { type: "START_RUN", rng: makeRng(3), seed: 99 });
-    const r1 = reducer(s, { type: "REROLL_SKILL", rng });
-    expect(r1.skillDoors).toHaveLength(2);
-    expect(r1.skillOffer).toBeNull();
-    expect(r1.rerollsSkill).toBe(s.rerollsSkill - 1);
-    expect(JSON.stringify(r1.skillDoors)).not.toBe(JSON.stringify(s.skillDoors));
+    expect(reducer(s, { type: "REROLL_SKILL", rng })).toBe(s); // vor den Türen kein Neuwurf
     const opened = reducer(s, { type: "CHOOSE_DOOR", index: 0 });
-    const r2 = reducer(opened, { type: "REROLL_SKILL", rng });
-    expect(r2.skillDoors).toHaveLength(2);
-    expect(r2.skillOffer).toBeNull();
-    expect(r2.skillOfferTiers).toBeNull();
-    expect(reducer({ ...s, rerollsSkill: 0 }, { type: "REROLL_SKILL", rng })).toEqual({ ...s, rerollsSkill: 0 }); // kein Token → No-Op
+    expect(opened.skillOfferArchs).toEqual(opened.skillOffer.map(archetypeOf));
+    const r = reducer(opened, { type: "REROLL_SKILL", rng });
+    expect(r.skillDoors).toBeNull();
+    expect(r.skillOffer).toHaveLength(opened.skillOffer.length);
+    expect(r.skillOffer.map(archetypeOf)).toEqual(opened.skillOfferArchs); // dieselben Fraktionssymbole je Platz
+    expect(r.skillOffer.some((id) => opened.skillOffer.includes(id))).toBe(false); // neue Skills (Pool groß genug)
+    expect(new Set(r.skillOffer).size).toBe(r.skillOffer.length);
+    for (const id of r.skillOffer) expect(isLegendarySkill(id) ? !(id in r.skillOfferTiers) : Number.isInteger(r.skillOfferTiers[id])).toBe(true);
+    expect(r.rerollsSkill).toBe(opened.rerollsSkill - 1);
+    expect(r.offerRerolls).toBe(1);
+    // Gehaltene Skills kommen nicht zurück; ein zweiter Neuwurf würfelt wieder anders.
+    expect(r.skillOffer.some((id) => r.skills.includes(id))).toBe(false);
+    const r2 = reducer(r, { type: "REROLL_SKILL", rng });
+    expect(r2.skillOffer).not.toEqual(r.skillOffer);
+    expect(reducer({ ...opened, rerollsSkill: 0 }, { type: "REROLL_SKILL", rng })).toEqual({ ...opened, rerollsSkill: 0 }); // kein Token → No-Op
+    // Ablehnen und Pick räumen die Symbole mit auf.
+    expect(reducer(r, { type: "DECLINE_SKILL", rng }).skillOfferArchs).toBeNull();
+    expect(reducer(r, { type: "PICK_SKILL", skillId: r.skillOffer[0], rng }).skillOfferArchs).toBeNull();
+  });
+  it("rerollDoorSkills: erschöpfte Fraktion → die aktuellen Skills kommen zurück, ganz leer → kein Angebot", () => {
+    const firePool = SKILL_LIST.filter((s) => s.archetype === "fire" && !s.legendary).map((s) => s.id);
+    const current = firePool.slice(0, 3);
+    const owned = firePool.slice(3); // nur die drei aktuellen sind noch frei
+    const r = rerollDoorSkills(["fire", "fire", "fire"], owned, current, makeRng(1), makeRng(2), { legendaryChance: 0 });
+    expect([...r.offer].sort()).toEqual([...current].sort());
+    expect(rerollDoorSkills(["fire"], firePool, [], makeRng(1), makeRng(2), { legendaryChance: 0 })).toEqual({ offer: [], tiers: {} });
   });
   it("Ablehnen vor den Türen → Perk-Angebot (nie verschwendet); Türen und Angebot sind danach leer", () => {
     const s = reducer(menuState(), { type: "START_RUN", rng: makeRng(4) });

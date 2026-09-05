@@ -13,8 +13,21 @@
 import { runOne } from "./run.js";
 import { newMemory } from "./memory.js";
 import { greedyPolicy, buildValueTable } from "./policies/greedy.js";
+import { randomPolicy } from "./policies/random.js";
+import { greedyFormationStep } from "./formation.js";
 import { robustDelta } from "./eval.js";
 import { SKILL_DEFS, archetypeOf, isLegendarySkill, SKILL_TIER_COUNT } from "../src/game/skills.js";
+
+/* --policy random (Owner, 2026-09-05): dieselbe Auswertung mit ZUFÄLLIGEN Picks statt gieriger — „ein besseres Gefühl"
+   dafür, was ein Skill im gewöhnlichen Lauf tut, nicht im optimierten. Der Zufallsspieler nimmt aus jeder Tür und jedem
+   Angebot irgendetwas; Aufstellung und Architekt spielt er greedy wie der gierige Spieler (sonst vergliche man zwei
+   Dinge auf einmal). Lift je Stufe aus den Zufallsläufen (mit ÷ ohne), die Ablation = Zufallsspieler, der den Skill nie
+   nimmt, auf denselben Seeds — seine übrigen Züge verschieben sich dadurch, das Paar ist also lockerer als beim Greedy. */
+function randomPlayer({ exclude = [] } = {}) {
+  const base = randomPolicy({ architectGreedy: true, exclude });
+  return { name: exclude.length ? `random(exclude=${exclude[0]})` : "random+forms",
+    act(s, rng, mem) { return s.phase === "formation" ? greedyFormationStep(s) : base.act(s, rng, mem); } };
+}
 
 const TIER_LABEL = ["N", "S", "SS", "E"];
 const NAME = { fire: "Feuer", lightning: "Blitz", ice: "Eis", plant: "Pflanze" };
@@ -43,28 +56,29 @@ export function flagFor(row) {
   return flags.join(",");
 }
 
-export function computeSkillsEval({ seed0 = 1, exploreRuns = 1200, runs = 200, arch = ["fire", "lightning"], ablate = true, c = 1.4, solveFormations = true, log = null } = {}) {
+export function computeSkillsEval({ seed0 = 1, exploreRuns = 1200, runs = 200, arch = ["fire", "lightning"], ablate = true, c = 1.4, solveFormations = true, policy = "greedy", log = null } = {}) {
   const opts = { archetypes: arch };
   const say = (m) => { if (log) log(m); };
-  // 1) Explore — stufenbewusst, mit Gedächtnis.
+  const random = policy === "random";
+  // 1) Explore — stufenbewusst, mit Gedächtnis (random: schlichte Zufallsläufe, das Gedächtnis bleibt leer).
   const mem = newMemory();
-  const ex = greedyPolicy({ explore: true, c, solveFormations });
+  const ex = random ? randomPlayer() : greedyPolicy({ explore: true, c, solveFormations });
   const exploreRows = [];
   for (let i = 0; i < exploreRuns; i++) {
     const r = runOne(seed0 + i, ex, mem, null, opts);
     exploreRows.push({ score: r.score, skills: r.build.skills, tiers: r.build.skillTiers });
     if ((i + 1) % 200 === 0) say(`  explore ${i + 1}/${exploreRuns}`);
   }
-  const table = buildValueTable(mem);
-  // 2) Greedy — frische Seeds, eingefrorene Tabelle, kein Lernen.
+  const table = random ? null : buildValueTable(mem);
+  // 2) Greedy — frische Seeds, eingefrorene Tabelle, kein Lernen (random: weitere Zufallsläufe auf frischen Seeds).
   const evalSeed0 = seed0 + exploreRuns;
-  const greedy = greedyPolicy({ explore: false, table, solveFormations });
+  const greedy = random ? randomPlayer() : greedyPolicy({ explore: false, table, solveFormations });
   const evalRows = [];
   for (let i = 0; i < runs; i++) {
     const r = runOne(evalSeed0 + i, greedy, null, null, opts);
     evalRows.push({ score: r.score, skills: r.build.skills, tiers: r.build.skillTiers, winrate: r.wins / r.tricks });
   }
-  say(`  greedy ${runs} Läufe`);
+  say(`  ${random ? "random" : "greedy"} ${runs} Läufe`);
   // 3) Je Skill: Lift je Stufe (Explore), Haltequote (Greedy), Ablation (Greedy, gepaart).
   const ids = Object.keys(SKILL_DEFS).filter((id) => arch.includes(archetypeOf(id)));
   const overall = mean(exploreRows.map((r) => r.score));
@@ -78,7 +92,7 @@ export function computeSkillsEval({ seed0 = 1, exploreRuns = 1200, runs = 200, a
     const row = { id, name: SKILL_DEFS[id].name, arch: archetypeOf(id), legendary, tiers: tierRows,
       lift: any.lift, n: any.n, heldRate: mean(evalRows.map((r) => (holds(r, id, null) ? 1 : 0))), marginal: null };
     if (ablate) {
-      const abl = greedyPolicy({ explore: false, table, drop: id, solveFormations });
+      const abl = random ? randomPlayer({ exclude: [id] }) : greedyPolicy({ explore: false, table, drop: id, solveFormations });
       const deltas = [], ratios = [];
       for (let i = 0; i < runs; i++) {
         const d = runOne(evalSeed0 + i, abl, null, null, opts).score;
@@ -92,7 +106,7 @@ export function computeSkillsEval({ seed0 = 1, exploreRuns = 1200, runs = 200, a
     return row;
   });
   skills.sort((a, b) => (b.marginal ? b.marginal.median : b.lift) - (a.marginal ? a.marginal.median : a.lift));
-  return { arch, exploreRuns, runs, evalSeed0, c, exploreScore: stats(exploreRows.map((r) => r.score)),
+  return { arch, policy, exploreRuns, runs, evalSeed0, c, exploreScore: stats(exploreRows.map((r) => r.score)),
     greedyScore: stats(evalRows.map((r) => r.score)), greedyWinrate: mean(evalRows.map((r) => r.winrate)),
     greedySkillsHeld: mean(evalRows.map((r) => r.skills.length)), skills };
 }
@@ -105,16 +119,18 @@ export function runSkillsEval({ arg, seed0, c, f, write }) {
     arch: String(arg("--arch", "fire,lightning")).split(",").filter(Boolean),
     ablate: arg("--ablate", "1") !== "0",
     solveFormations: arg("--formations", "1") !== "0",
+    policy: arg("--policy", "greedy") === "random" ? "random" : "greedy",
     c,
     log: (m) => console.log(m),
   });
   const pct = (x) => `${(x * 100).toFixed(0)}%`;
-  console.log(`\n=== SKILLS ${res.arch.map((a) => NAME[a] || a).join(" / ")} — explore ${res.exploreRuns} (Seeds ${seed0}..${seed0 + res.exploreRuns - 1}), greedy ${res.runs} (Seeds ${res.evalSeed0}..${res.evalSeed0 + res.runs - 1}) ===`);
-  console.log(`  Explore-Score: Median ${f(res.exploreScore.median)}  Mean ${f(res.exploreScore.mean)}  p90 ${f(res.exploreScore.p90)}`);
-  console.log(`  Greedy-Score:  Median ${f(res.greedyScore.median)}  Mean ${f(res.greedyScore.mean)}  p90 ${f(res.greedyScore.p90)}  p95 ${f(res.greedyScore.p95)}  Siegquote ${pct(res.greedyWinrate)}  Ø Skills ${res.greedySkillsHeld.toFixed(1)}`);
+  const who = res.policy === "random" ? "Random" : "Greedy";
+  console.log(`\n=== SKILLS ${res.arch.map((a) => NAME[a] || a).join(" / ")} — ${res.policy === "random" ? "random" : "explore"} ${res.exploreRuns} (Seeds ${seed0}..${seed0 + res.exploreRuns - 1}), ${who.toLowerCase()} ${res.runs} (Seeds ${res.evalSeed0}..${res.evalSeed0 + res.runs - 1}) ===`);
+  console.log(`  ${res.policy === "random" ? "Random-Score (Lift-Läufe)" : "Explore-Score"}: Median ${f(res.exploreScore.median)}  Mean ${f(res.exploreScore.mean)}  p90 ${f(res.exploreScore.p90)}`);
+  console.log(`  ${who}-Score:  Median ${f(res.greedyScore.median)}  Mean ${f(res.greedyScore.mean)}  p90 ${f(res.greedyScore.p90)}  p95 ${f(res.greedyScore.p95)}  Siegquote ${pct(res.greedyWinrate)}  Ø Skills ${res.greedySkillsHeld.toFixed(1)}`);
   const tierTxt = (r) => r.tiers.map((t) => `${t.tier}${t.lift == null ? " —" : ` ${t.lift.toFixed(2)}`}${t.n < 8 ? "?" : ""}`).join(" ");
   for (const a of res.arch) {
-    console.log(`\n  ${(NAME[a] || a).toUpperCase()} — sortiert nach Median-Δ der Ablation (Greedy, gepaart); Lift je Stufe aus dem Explore (? = n<8)`);
+    console.log(`\n  ${(NAME[a] || a).toUpperCase()} — sortiert nach Median-Δ der Ablation (${who}, gepaart); Lift je Stufe aus den ${res.policy === "random" ? "Zufallsläufen" : "Explore-Läufen"} (? = n<8)`);
     console.log(`    ${"Skill".padEnd(17)} ${"Halte".padStart(5)}  ${"Lift".padStart(5)}  ${"Median-Δ".padStart(11)}  ${"typ.".padStart(6)}  ${"win".padStart(4)}  ${"anw.".padStart(4)}  Stufen (Lift)                          Flag`);
     for (const r of res.skills.filter((s) => s.arch === a)) {
       const m = r.marginal;

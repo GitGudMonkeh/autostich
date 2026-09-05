@@ -259,7 +259,8 @@ export function SkillSelect({ offer = null, doors = null, onPick, onDecline, onR
               gemessen aus dem Knopf. Eine Zeile CSS statt eines zweiten JSX-Zweigs — der Knopf bleibt
               derselbe Knopf. */}
           <div className="flex flex-wrap items-stretch gap-2">
-            {!devMode && canReroll && (
+            {/* exp: der Neuwurf würfelt die drei Skills der GEÖFFNETEN Tür neu — vor den Türen gibt es ihn nicht. */}
+            {!devMode && canReroll && !atDoors && (
               <ActionButton kind="reroll" flex className="sk-actbtn lv-actbtn lv-actbtn-reroll" onClick={onReroll}>{t("skill.reroll", { n: rerollTokens })}</ActionButton>
             )}
             <ActionButton kind="decline" flex className="sk-actbtn lv-actbtn" onClick={onDecline}>

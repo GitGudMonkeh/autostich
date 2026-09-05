@@ -1745,7 +1745,8 @@ testet nur Feuer und Blitz, und ein Skill zeigt nur den Text seiner angezeigten 
 Fraktionssymbole in Platzreihenfolge — drei Skills aus höchstens zwei Fraktionen, Wiederholung erlaubt (Feuer·Feuer·Blitz
 oder Feuer·Feuer·Feuer). Die Stufen (und die Legendär-Chance je Platz) werden mit der Tür gewürfelt und erst nach dem
 Öffnen gezeigt (`CHOOSE_DOOR`). Danach das Drei-Karten-Angebot auf einer Seite, jede Karte in ihrer Fraktionsfarbe,
-einer wird genommen. Neuwurf baut zwei neue Türen (vor den Türen wie auf dem Angebot); Ablehnen geht an beiden Stufen
+einer wird genommen. Neuwurf würfelt die drei Skills der geöffneten Tür neu, zu denselben Symbolen (Owner-Korrektur
+2026-09-05; zuerst baute er zwei neue Türen), vor den Türen gibt es keinen; Ablehnen geht an beiden Stufen
 und gibt wie bisher ein Perk-Angebot. Meisterhand öffnet dasselbe Türen-Angebot. Der Dev-Run mit Voll-Katalog bleibt
 flach. Der Entscheidungs-Log kennt die Türwahl als eigene Zeile (`k: "door"`).
 

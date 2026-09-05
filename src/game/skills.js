@@ -537,5 +537,26 @@ export function buildSkillDoors(owned, activeArchetypes, rng, rngTiers, { unlock
   return out;
 }
 
+/* Reroll of an opened door (owner, 2026-09-05): the three skills are drawn again for the SAME faction symbols — the door's
+   promise stays, the skills behind it change. Per slot an unowned skill of that slot's faction, preferring skills not in
+   the current offer (those come back only when the faction has nothing else left); tiers and the legendary chance are
+   rolled again. A slot whose faction is exhausted is dropped; nothing left → { offer: [], tiers: {} } (reducer no-op). */
+export function rerollDoorSkills(archs, owned, current, rng, rngTiers, { legendaryChance = C.SKILL_LEGENDARY_PER_SLOT } = {}) {
+  const have = owned || [];
+  const cur = current || [];
+  const pools = {};
+  const skills = [];
+  for (const a of archs || []) {
+    if (!pools[a]) {
+      const all = offerPool(a, have);
+      pools[a] = [...shuffle(all.filter((id) => !cur.includes(id)), rng), ...shuffle(all.filter((id) => cur.includes(id)), rng)];
+    }
+    const id = pools[a].shift();
+    if (id) skills.push(id);
+  }
+  if (!skills.length) return { offer: [], tiers: {} };
+  return rollSkillOfferTiers(skills, have, rngTiers, legendaryChance);
+}
+
 /* (exp skill rework: Ionisierung, Ladung, Stapel-Score und alle Blitz-Prädikate liegen in
    src/game/factions/lightning.js — Passiv und 15 Skills lesen dort ihre Stufentabellen.) */

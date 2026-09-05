@@ -43,14 +43,13 @@ describe("decisionEntry — Angebot ↔ Wahl", () => {
 
   // exp skill rework: die Türwahl ist eine eigene Entscheidung (k: "door"); Ablehnen/Neuwurf VOR den Türen loggen die
   // Türen als Angebot (je Tür ein flacher String), das geöffnete Angebot danach wie zuvor die Skill-Liste.
-  it("Türwahl: beide Türen als flache Strings, gewählt = Index; Ablehnen/Neuwurf an der Tür loggen die Türen", () => {
+  it("Türwahl: beide Türen als flache Strings, gewählt = Index; Ablehnen an der Tür loggt die Türen, der Neuwurf das geöffnete Angebot", () => {
     const doors = { ...prev, skillOffer: null, skillDoors: [{ skills: ["SK_A", "SK_B", "SK_C"], tiers: { SK_A: 2 } }, { skills: ["SK_D"], tiers: {} }] };
     const e = decisionEntry(doors, { type: "CHOOSE_DOOR", index: 1 }, { ...doors, marker: 1 });
     expect(e).toMatchObject({ c: 7, k: "door", p: "1" });
     expect(e.o).toEqual(["SK_A+SK_B+SK_C", "SK_D"]);
     expect(decisionEntry(doors, { type: "DECLINE_SKILL" }, { ...doors, marker: 1 })).toMatchObject({ k: "skill", p: null, o: ["SK_A+SK_B+SK_C", "SK_D"] });
-    expect(decisionEntry(doors, { type: "REROLL_SKILL" }, { ...doors, marker: 1 })).toMatchObject({ k: "reroll", w: "skill", o: ["SK_A+SK_B+SK_C", "SK_D"] });
-    expect(decisionEntry(prev, { type: "REROLL_SKILL" }, next).o).toEqual(["SK_A", "SK_B"]); // geöffnetes Angebot: die Skills
+    expect(decisionEntry(prev, { type: "REROLL_SKILL" }, next)).toMatchObject({ k: "reroll", w: "skill", o: ["SK_A", "SK_B"] }); // geöffnetes Angebot: die drei Skills
   });
 
   it("Reroll protokolliert das VERWORFENE Angebot samt Pool", () => {
