@@ -26,13 +26,12 @@ const pct = (x) => `${(x * 100).toFixed(1).padStart(5)} %`;
 const TPC = C.TRICKS_PER_CYCLE;
 
 // ---- Feuer ----
-const RATE = [F.GLUT, F.ZUNDER, F.RUECKZUENDUNG]; // die drei Hitze-Verstärker (Rate; Feuersturm ist seit §7.17 Serie zu Score)
-const CORE = [F.KLINGE, F.WEISSGLUT, F.VERBRENNUNG, F.BRANDMAL, F.LAUFFEUER, F.GLUTSTAHL, F.FEUERWALZE, F.GLUTBETT, F.SCHMIEDE, F.SCHMELZPUNKT, F.FEUERSTURM];
+const RATE = [F.ZUNDER, F.RUECKZUENDUNG]; // die Hitze-Verstärker (Rate; Feuersturm ist seit §7.17 Serie zu Score, Glut seit §7.23 gestrichen)
+const CORE = [F.KLINGE, F.WEISSGLUT, F.VERBRENNUNG, F.BRANDMAL, F.LAUFFEUER, F.GLUTSTAHL, F.FEUERWALZE, F.GLUTBETT, F.SCHMIEDE, F.SCHMELZPUNKT, F.FEUERSTURM, F.FEUERLINIE];
 const fixedOpts = { solveFormations: true, architectGreedy: true };
 export const FIRE_BUILDS = [
   ["Fraktion (zufällig)", () => factionPolicy("fire")],
   ["ohne Verstärker", () => fixedPolicy(CORE, { ...fixedOpts, exclude: RATE })],
-  ["Glut + Kern", () => fixedPolicy([F.GLUT, ...CORE], { ...fixedOpts, exclude: RATE.filter((id) => id !== F.GLUT) })],
   ["Zunder + Kern", () => fixedPolicy([F.ZUNDER, ...CORE], { ...fixedOpts, exclude: RATE.filter((id) => id !== F.ZUNDER) })],
   ["alle Verstärker + Kern", () => fixedPolicy([...RATE, ...CORE], fixedOpts)],
 ];

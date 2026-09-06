@@ -44,6 +44,9 @@ import { randomPolicy } from "../sim/policies/random.js";
 // §7.21 (Owner): Ewige Glut ersetzt Phönixfeuer (Rampe +0,05 je heiße Runde nach Sweep, Boden 50 % der Spitze) — Seeds
 // 1..40 Median ≈ 5,64M, Mean ≈ 9,19M, im Band. §7.22 (Owner): Rückzündung als Konter, acht Episch-Extras — Seeds 1..40
 // Median ≈ 5,48M, Mean ≈ 8,95M, im Band.
+// §7.23 (Owner, 2026-09-06): Ladungsserie ÷10 (0,1–0,25 % Crit je Serienpunkt statt 1–2,5 %) und Feuerlinie statt Glut.
+// Der Zufallsspieler fällt mit dem Serien-Crit (s. Doku): Seeds 1..40 Median ≈ 4,05M, Mean ≈ 5,91M (Seeds 1..200: 3,48M /
+// 6,71M). Bänder darauf neu zentriert (≈ ±35 %).
 describe("sim balance guard", () => {
   const SEEDS = 40; // feste Seeds 1..40 → deterministischer Median/Mean
   const scores = Array.from({ length: SEEDS }, (_, i) => runOne(1 + i, randomPolicy()).score).sort((a, b) => a - b);
@@ -51,14 +54,14 @@ describe("sim balance guard", () => {
   const mean = scores.reduce((t, v) => t + v, 0) / SEEDS;
 
   it("Median-Score im erwarteten Band (breite Power-Verschiebung)", () => {
-    // Ist-Wert ≈ 5,67M (exp §7.19, 50 Runden, Feuer/Blitz). Band toleriert normales Tuning, schlägt bei grober Verschiebung an.
-    expect(median).toBeGreaterThan(3_700_000);
-    expect(median).toBeLessThan(7_700_000);
+    // Ist-Wert ≈ 4,05M (exp §7.23, 50 Runden, Feuer/Blitz). Band toleriert normales Tuning, schlägt bei grober Verschiebung an.
+    expect(median).toBeGreaterThan(2_600_000);
+    expect(median).toBeLessThan(5_500_000);
   });
 
   it("Mean-Score im erwarteten Band (Tail-Runaway-Fänger)", () => {
-    // Ist-Wert ≈ 9,28M (exp §7.19). Die Obergrenze fängt weiterhin einen ECHTEN Tail-Blowup (Mean ginge dann deutlich höher).
-    expect(mean).toBeGreaterThan(6_000_000);
-    expect(mean).toBeLessThan(12_500_000);
+    // Ist-Wert ≈ 5,91M (exp §7.23). Die Obergrenze fängt weiterhin einen ECHTEN Tail-Blowup (Mean ginge dann deutlich höher).
+    expect(mean).toBeGreaterThan(3_800_000);
+    expect(mean).toBeLessThan(8_000_000);
   });
 });

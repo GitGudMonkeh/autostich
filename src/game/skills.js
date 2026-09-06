@@ -37,7 +37,7 @@ const BLITZ = {
   reststrom:     [{ floor: 2 }, { floor: 3 }, { floor: 4 }, { floor: 6, bar: 9 }], // §7.22 Episch-Extra: die Leiste ist bei 9 voll
   gewitter:      [{ critPerBar: 0.005 }, { critPerBar: 0.0075 }, { critPerBar: 0.01 }, { critPerBar: 0.015, multPerBar: 0.02 }], // §7.22 Episch-Extra: dazu +0,02× Crit-Multiplikator je Leiste
   entladung:     [{ multPerBar: 0.02 }, { multPerBar: 0.03 }, { multPerBar: 0.04 }, { multPerBar: 0.06, fillDouble: true }],
-  serie:         [{ critPerStreak: 0.01 }, { critPerStreak: 0.015 }, { critPerStreak: 0.02 }, { critPerStreak: 0.025, chargeFromStreak: 8 }],
+  serie:         [{ critPerStreak: 0.001 }, { critPerStreak: 0.0015 }, { critPerStreak: 0.002 }, { critPerStreak: 0.0025, chargeFromStreak: 8 }], // §7.23 (Owner): ÷10 — 1/1,5/2/2,5 % je Punkt gaben bei Serie 540 +540 % Crit (Feuer-Serien sind endlos, Median 614)
   vorentladung:  [{ minStreak: 5, multPerStreak: 0.1 }, { minStreak: 4, multPerStreak: 0.1 }, { minStreak: 3, multPerStreak: 0.1 }, { minStreak: 2, multPerStreak: 0.15 }], // §7.18 neu (SK_LIGHTNING_12): Serie zu Crit-Multiplikator; §7.22 Episch 0,15
   kette:         [{ barEvery: 1, extra: 1 }, { barEvery: 1, extra: 2 }, { barEvery: 1, extra: 3 }, { barEvery: 1, extra: 4, second: 1 }], // §7.18: Tiefe — die Karte mit den meisten Stapeln; §7.19: jede Leiste, 1/2/3/4; §7.22 Episch-Extra: die zweittiefste +1
   faenger:       [{ minStacks: 1, value: 1 }, { minStacks: 1, value: 2 }, { minStacks: 1, value: 3 }, { minStacks: 1, value: 4, perStack: 1 }], // §7.18: ohne Schwelle, der Wert steigt; §7.22 Episch-Extra: +1 je Stapel
@@ -48,7 +48,7 @@ const BLITZ = {
   serienschutz:  [{ frac: 0.7 }, { frac: 0.5 }, { frac: 0.4 }, { frac: 0.3, freePerRound: 1 }],
 };
 export const BLITZ_TIERS = BLITZ;
-const pctS = (x) => de(Math.round(x * 1000) / 10); // Anteil → Prozent mit einer Nachkommastelle (0,0075 → „0,75")
+const pctS = (x) => de(Math.round(x * 10000) / 100); // Anteil → Prozent mit bis zu zwei Nachkommastellen (0,0075 → „0,75"; eine Stelle rundete 0,75 auf „0,8")
 /* Ein Text je Stufe (docs/skill-rework.md §1): `f(row)` schreibt den Satz für EINE Stufenzeile — Angebot und Bestand
    zeigen nur den Text der gezeigten Stufe (labels.js skillDef(id, tier)), nie die ganze Leiter. `desc` bleibt der
    Normal-Text (Dev-Katalog, Datenbank, ältere Leser); `descTiers` trägt alle vier. Ein Episch-Extra hängt an seiner
@@ -58,7 +58,7 @@ const jeder = (n, w = "Jeder") => (n === 1 ? w : `${w} ${n}.`); // „Jeder 2. C
 // Stufentabellen der 15 Feuer-Skills (§4.5) — dieselbe Form; die Schwellen sinken, die Sätze steigen mit der Stufe.
 // Das Modul factions/fire.js liest sie über `fireParam`; Legendäre haben keine Zeile.
 const FEUER = {
-  glut:          [{ below: 50, mult: 2 }, { below: 60, mult: 2 }, { below: 70, mult: 2 }, { below: 90, mult: 2, halfCool: true }], // §7.12/§7.16: Kaltstart — unter der Schwelle zählt Hitze aus Siegen doppelt, Episch kühlen Niederlagen dort nur halb
+  feuerlinie:    [{ perPoint: 0.02, cost: 3 }, { perPoint: 0.03, cost: 3 }, { perPoint: 0.04, cost: 3 }, { perPoint: 0.05, cost: 3, perFormation: true }], // §7.23 (Owner): ersetzt Glut (Kaltstart, tot) auf SK_FIRE_01 — Formations-Sieg +Satz je Punkt Kampfwert, verbrennt `cost` Hitze; Episch je Formation an der Siegposition
   zunder:        [{ heat: 2 }, { heat: 3 }, { heat: 4 }, { heat: 5, lossHeat: 2 }], // §7.16: 1–4 → 2–5; §7.22 Episch-Extra: auch Niederlagen geben +2
   feuersturm:    [{ multPerStreak: 0.001 }, { multPerStreak: 0.0015 }, { multPerStreak: 0.002 }, { multPerStreak: 0.003, minHeat: 90 }], // §7.17: Serie zu Score bei voller Leiste (Episch ab 90 %, §7.18: war 80); vorher Serie zu Hitze. Satz nach Sweep (0,5 % je Punkt war ×3 Blitz)
   glutbett:      [{ floor: 40 }, { floor: 60 }, { floor: 80 }, { noCool: true }],
@@ -125,9 +125,10 @@ export const SKILL_DEFS = {
 
   // ---- Feuer (exp skill rework, §4): Passiv = Siege mit Abstand geben Hitze, Niederlagen kühlen, je 10 % Hitze +2 % Score.
   //      Die Mechanik liest die Stufentabellen oben (factions/fire.js). Texte: ein Satz je Stufe (`tiered`).
+  // Formation und Wert — Hitze zu Score (§7.23: Feuerlinie ersetzt Glut auf demselben Platz, Emblem bleibt)
+  SK_FIRE_01: { id: "SK_FIRE_01", name: "Feuerlinie", archetype: "fire", keywords: ["heat", "formation"], tiers: FEUER.feuerlinie,
+    ...tiered(FEUER.feuerlinie, (r) => `Ein Sieg in einer Formation zählt +${pct(r.perPoint)} % Score je Punkt Kampfwert der Siegkarte und verbrennt ${r.cost} % Hitze.${r.perFormation ? " Der Bonus zählt je Formation an der Siegposition." : ""}`) },
   // Rate — Hitze erzeugen
-  SK_FIRE_01: { id: "SK_FIRE_01", name: "Glut", archetype: "fire", keywords: ["heat"], tiers: FEUER.glut,
-    ...tiered(FEUER.glut, (r) => `Solange die Hitze unter ${r.below} % steht, zählt Hitze aus Siegen ×${de(r.mult)}.${r.halfCool ? " Unter der Schwelle kühlen Niederlagen nur halb." : ""}`) },
   SK_FIRE_02: { id: "SK_FIRE_02", name: "Zunder", archetype: "fire", keywords: ["heat"], tiers: FEUER.zunder,
     ...tiered(FEUER.zunder, (r) => `Jeder Sieg gibt +${r.heat} % Hitze, auch ein knapper.${r.lossHeat ? ` Auch jede Niederlage gibt +${r.lossHeat} % Hitze.` : ""}`) },
   SK_FIRE_03: { id: "SK_FIRE_03", name: "Feuersturm", archetype: "fire", keywords: ["heat", "streak"], tiers: FEUER.feuersturm,

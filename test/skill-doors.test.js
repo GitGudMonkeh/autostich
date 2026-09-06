@@ -188,7 +188,7 @@ describe("Sim — jede Policy geht durch die Türstufe", () => {
     expect(runOne(11, fixedPolicy(["SK_FIRE_06"])).score).toBe(runOne(11, fixedPolicy(["SK_FIRE_06"])).score); // deterministisch
   });
   it("fixedPolicy exclude: die genannten Skills werden nie gehalten (Motor-Diagnose „ohne Verstärker“)", () => {
-    const RATE = ["SK_FIRE_01", "SK_FIRE_02", "SK_FIRE_03", "SK_FIRE_05"];
+    const RATE = ["SK_FIRE_02", "SK_FIRE_03", "SK_FIRE_05"]; // §7.23: SK_FIRE_01 ist Feuerlinie, kein Verstärker mehr
     for (const seed of [1, 2, 3]) {
       const r = runOne(seed, fixedPolicy(["SK_FIRE_06", "SK_FIRE_07"], { exclude: RATE }), null, null, { archetypes: ["fire"] });
       expect(r.build.skills.length).toBeGreaterThan(3);

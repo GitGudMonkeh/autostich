@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import * as C from "../src/game/constants.js";
 import { SKILL_DEFS, FEUER_TIERS, buildSkillOffer, archetypeOf } from "../src/game/skills.js";
 import { F, initHeat, heatMaxFor, syncHeatMax, fireTier, fireParam, heatGainOnWin, heatMult, verbrennungMult, feuersturmMult,
-  rueckzuendungMult, fireValueBonus, damascusCombat, fireOnWin, fireOnLoss, fireCycleEnd, nextBrandActive } from "../src/game/factions/fire.js";
+  rueckzuendungMult, feuerlinieMult, fireValueBonus, damascusCombat, fireOnWin, fireOnLoss, fireCycleEnd, nextBrandActive } from "../src/game/factions/fire.js";
 import { resolveTrick } from "../src/game/engine.js";
 import { initialState, reducer } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
@@ -49,7 +49,11 @@ describe("Feuer — Roster und Stufenleitern", () => {
   it("Leitern sind monoton: Sätze steigen, Schwellen und Preise sinken mit der Stufe", () => {
     const up = (rows, k) => rows.every((r, i) => i === 0 || r[k] > rows[i - 1][k]);
     const down = (rows, k) => rows.every((r, i) => i === 0 || r[k] < rows[i - 1][k]);
-    expect(up(T.glut, "below")).toBe(true); // §7.12: Kaltstart-Schwelle steigt mit der Stufe
+    expect(T.glut).toBeUndefined(); // §7.23: Glut (Kaltstart) gestrichen — Feuerlinie auf dem Platz SK_FIRE_01
+    expect(up(T.feuerlinie, "perPoint")).toBe(true); // §7.23: der Satz je Punkt Kampfwert steigt, die Kosten sind fest
+    for (const r of T.feuerlinie) expect(r.cost).toBe(T.feuerlinie[0].cost);
+    expect(T.feuerlinie[3].perFormation).toBe(true); // Episch-Extra: je Formation an der Siegposition
+    expect(T.feuerlinie[2].perFormation).toBeUndefined();
     expect(up(T.zunder, "heat")).toBe(true);
     expect(up(T.feuersturm, "multPerStreak")).toBe(true); // §7.17: Serie zu Score
     expect(T.feuersturm[3].minHeat).toBe(90); // Episch-Extra: schon ab 90 % Hitze statt voller Leiste (§7.18: war 80)
@@ -63,7 +67,6 @@ describe("Feuer — Roster und Stufenleitern", () => {
     expect(up(T.weissglut, "multPer10")).toBe(true);
     expect(down(T.feuerwalze, "minHeat")).toBe(true);
     expect(down(T.verbrennung, "minMargin")).toBe(true);
-    expect(T.glut[3].halfCool).toBe(true); // §7.16: Episch-Extra — unter der Schwelle kühlen Niederlagen nur halb
     expect(T.flaechenbrand).toBeUndefined(); // §7.16: Flächenbrand gestrichen
     expect(up(T.schmelzpunkt, "perPoint")).toBe(true);
     for (const r of T.schmelzpunkt) { expect(r.burn).toBeUndefined(); expect(r.keep).toBeUndefined(); } // §7.16: der Wandler verbrennt nichts
@@ -76,7 +79,11 @@ describe("Feuer — Roster und Stufenleitern", () => {
   });
   it("ein Text je Stufe aus denselben Tabellen: `desc` ist der Normal-Text, `descTiers[t]` nennt nur SEINE Stufe", () => {
     expect(SKILL_DEFS.SK_FIRE_01.desc).toBe(SKILL_DEFS.SK_FIRE_01.descTiers[0]);
-    expect(SKILL_DEFS.SK_FIRE_01.desc).toContain(`unter ${T.glut[0].below} %`);
+    expect(SKILL_DEFS.SK_FIRE_01.name).toBe("Feuerlinie"); // §7.23: ersetzt Glut auf demselben Platz
+    expect(SKILL_DEFS.SK_FIRE_01.desc).toContain(`+${Math.round(T.feuerlinie[0].perPoint * 100)} % Score je Punkt Kampfwert`);
+    expect(SKILL_DEFS.SK_FIRE_01.desc).toContain(`verbrennt ${T.feuerlinie[0].cost} % Hitze`);
+    expect(SKILL_DEFS.SK_FIRE_01.descTiers[3]).toContain("je Formation"); // das Episch-Extra nur dort
+    expect(SKILL_DEFS.SK_FIRE_01.descTiers[2]).not.toContain("je Formation");
     expect(SKILL_DEFS.SK_FIRE_02.descTiers[3]).toContain(`+${T.zunder[3].heat} %`);
     expect(SKILL_DEFS.SK_FIRE_02.descTiers[0]).not.toContain(`+${T.zunder[3].heat} %`);
     expect(SKILL_DEFS.SK_FIRE_09.desc).toContain(`ab ${T.verbrennung[0].minMargin}`);
@@ -106,21 +113,18 @@ describe("Feuer — Modul (reine Übergänge)", () => {
     expect(syncHeatMax(null, [F.WEISSGLUT])).toBe(null);
   });
   it("fireTier/fireParam: gewürfelte Stufe, Normal ohne Eintrag, nichts für Legendäre und Ungehaltene", () => {
-    expect(fireTier([F.GLUT], {}, F.GLUT)).toBe(0);
-    expect(fireTier([F.GLUT], { [F.GLUT]: 2 }, F.GLUT)).toBe(2);
+    expect(fireTier([F.FEUERLINIE], {}, F.FEUERLINIE)).toBe(0);
+    expect(fireTier([F.FEUERLINIE], { [F.FEUERLINIE]: 2 }, F.FEUERLINIE)).toBe(2);
     expect(fireTier([F.SONNENKERN], {}, F.SONNENKERN)).toBe(null);
-    expect(fireParam([], {}, F.GLUT, "below")).toBeUndefined();
-    expect(fireParam([F.GLUT], { [F.GLUT]: 3 }, F.GLUT, "below")).toBe(T.glut[3].below);
+    expect(fireParam([], {}, F.FEUERLINIE, "perPoint")).toBeUndefined();
+    expect(fireParam([F.FEUERLINIE], { [F.FEUERLINIE]: 3 }, F.FEUERLINIE, "perPoint")).toBe(T.feuerlinie[3].perPoint);
   });
-  it("heatGainOnWin: Passiv ab Vorsprung 3, Glut, Zunder, Rückzündung — Feuersturm gibt keine Hitze mehr (§7.17)", () => {
+  it("heatGainOnWin: Passiv ab Vorsprung 3, Zunder, Verbrennung Episch, Sonnenzorn — Feuersturm und Rückzündung geben keine Hitze, Glut ist weg (§7.23)", () => {
     expect(heatGainOnWin([], {}, { margin: 2 })).toBe(0);
     expect(heatGainOnWin([], {}, { margin: 6 })).toBe(G(6));
     expect(G(6)).toBe(6 - C.HEAT_MARGIN_OFFSET);
-    // Glut (§7.12): unter der Schwelle der Stufe zählt der ganze Gewinn ×2 — an der Schwelle nicht mehr; auch Zunder zählt mit.
-    expect(heatGainOnWin([F.GLUT], st({ [F.GLUT]: 1 }), { margin: 6, heatValue: T.glut[1].below - 1 })).toBe(G(6) * T.glut[1].mult);
-    expect(heatGainOnWin([F.GLUT], st({ [F.GLUT]: 1 }), { margin: 6, heatValue: T.glut[1].below })).toBe(G(6));
-    expect(heatGainOnWin([F.GLUT], st({ [F.GLUT]: 3 }), { margin: 6, heatValue: 70 })).toBe(G(6) * T.glut[3].mult);
-    expect(heatGainOnWin([F.GLUT, F.ZUNDER], st({}), { margin: 1, heatValue: 0 })).toBe(T.zunder[0].heat * T.glut[0].mult);
+    expect(heatGainOnWin([F.ZUNDER], st({}), { margin: 1, heatValue: 0 })).toBe(T.zunder[0].heat);
+    expect(heatGainOnWin([F.FEUERLINIE, F.ZUNDER], st({}), { margin: 6, heatValue: 0 })).toBe(G(6) + T.zunder[0].heat); // §7.23: kein Kaltstart-Faktor mehr
     expect(heatGainOnWin([F.ZUNDER], st({ [F.ZUNDER]: 1 }), { margin: 1 })).toBe(T.zunder[1].heat);     // auch knapp
     expect(heatGainOnWin([F.FEUERSTURM], st({ [F.FEUERSTURM]: 1 }), { margin: 1, streak: 3 })).toBe(0);
     expect(heatGainOnWin([F.RUECKZUENDUNG], st({ [F.RUECKZUENDUNG]: 1 }), { margin: 1, lastResult: "loss", lastLossDeficit: 4 })).toBe(0); // §7.22: Rückzündung gibt keine Hitze mehr (Konter, rueckzuendungMult)
@@ -128,12 +132,24 @@ describe("Feuer — Modul (reine Übergänge)", () => {
     expect(heatGainOnWin([F.VERBRENNUNG], st({ [F.VERBRENNUNG]: 3 }), { margin: T.verbrennung[3].minMargin })).toBe(G(T.verbrennung[3].minMargin) * T.verbrennung[3].mult);
     expect(heatGainOnWin([F.VERBRENNUNG], st({ [F.VERBRENNUNG]: 3 }), { margin: T.verbrennung[3].minMargin - 1 })).toBe(G(T.verbrennung[3].minMargin - 1));
     expect(heatGainOnWin([F.VERBRENNUNG], st({ [F.VERBRENNUNG]: 2 }), { margin: T.verbrennung[2].minMargin })).toBe(G(T.verbrennung[2].minMargin));
-    // §7.20 Sonnenzorn: unter der Spitze zählt der ganze Gewinn ×2 (auch über Glut), an der Spitze und darüber nicht.
+    // §7.20 Sonnenzorn: unter der Spitze zählt der ganze Gewinn ×2 (auch Zunder), an der Spitze und darüber nicht.
     expect(heatGainOnWin([F.SONNENZORN], {}, { margin: 6, heatValue: 80, heatPeak: 120 })).toBe(G(6) * C.SONNENZORN_HEAT_MULT);
     expect(heatGainOnWin([F.SONNENZORN], {}, { margin: 6, heatValue: 120, heatPeak: 120 })).toBe(G(6));
     expect(heatGainOnWin([F.SONNENZORN], {}, { margin: 6, heatValue: 0, heatPeak: 0 })).toBe(G(6)); // ohne Spitze nichts zu holen
-    expect(heatGainOnWin([F.SONNENZORN, F.GLUT], st({}), { margin: 6, heatValue: 10, heatPeak: 100 })).toBe(G(6) * T.glut[0].mult * C.SONNENZORN_HEAT_MULT);
-    expect(heatGainOnWin([F.GLUT], st({}), { margin: 6, heatValue: 80, heatPeak: 120 })).toBe(G(6)); // ohne Sonnenzorn zählt die Spitze nicht
+    expect(heatGainOnWin([F.SONNENZORN, F.ZUNDER], st({}), { margin: 6, heatValue: 10, heatPeak: 100 })).toBe((G(6) + T.zunder[0].heat) * C.SONNENZORN_HEAT_MULT);
+    expect(heatGainOnWin([F.ZUNDER], st({}), { margin: 6, heatValue: 80, heatPeak: 120 })).toBe(G(6) + T.zunder[0].heat); // ohne Sonnenzorn zählt die Spitze nicht
+  });
+  it("feuerlinieMult (§7.23): je Punkt Kampfwert im Formations-Sieg, nur mit Hitze für die Kosten; Episch je Formation", () => {
+    const line = (tier, ctx) => feuerlinieMult([F.FEUERLINIE], st({ [F.FEUERLINIE]: tier }), ctx);
+    const cost = T.feuerlinie[0].cost;
+    expect(feuerlinieMult([], {}, { value: 15, formCount: 1, heldHeat: 50 })).toBe(1);
+    expect(line(0, { value: 15, formCount: 0, heldHeat: 50 })).toBe(1);                       // ohne Formation nichts
+    expect(line(0, { value: 15, formCount: 1, heldHeat: cost - 1 })).toBe(1);                 // die Hitze deckt die Kosten nicht
+    expect(line(0, { value: 15, formCount: 1, heldHeat: cost })).toBeCloseTo(1 + 15 * T.feuerlinie[0].perPoint, 9);
+    expect(line(0, { value: 25, formCount: 3, heldHeat: 100 })).toBeCloseTo(1 + 25 * T.feuerlinie[0].perPoint, 9); // Normal: Überlappung zählt nicht
+    expect(line(2, { value: 25, formCount: 3, heldHeat: 100 })).toBeCloseTo(1 + 25 * T.feuerlinie[2].perPoint, 9);
+    expect(line(3, { value: 25, formCount: 3, heldHeat: 100 })).toBeCloseTo(1 + 25 * T.feuerlinie[3].perPoint * 3, 9); // Episch: je Formation
+    expect(line(3, { value: 25, formCount: 1, heldHeat: 100 })).toBeCloseTo(1 + 25 * T.feuerlinie[3].perPoint, 9);
   });
   it("heatMult: je volle 10 % +2 %, über 100 nur mit Weißglut, Sonnenzorn mit Spitze und doppelt", () => {
     expect(heatMult([], {}, 0)).toBe(1);
@@ -225,6 +241,22 @@ describe("Feuer — Modul (reine Übergänge)", () => {
     expect(sk.flat).toBe(3 * C.SONNENKERN_SCORE_PER_BRAND);
     expect(sk.brands).toEqual([{ id: "O5", value: C.SONNENKERN_BRAND }]);
   });
+  it("fireOnWin (§7.23, Feuerlinie): der Formations-Sieg gibt den Faktor und verbrennt die Kosten nach dem Gewinn; `held` bleibt die Hitze vor den Kosten; ohne Formation oder ohne Hitze nichts", () => {
+    const cost = T.feuerlinie[0].cost;
+    const w = fireOnWin(heat({ value: 50 }), [F.FEUERLINIE], {}, { margin: 6, value: 12, formCount: 1 });
+    expect(w.lineMult).toBeCloseTo(1 + 12 * T.feuerlinie[0].perPoint, 9);
+    expect(w.held).toBe(50 + G(6)); expect(w.heat.value).toBe(50 + G(6) - cost); expect(w.heat.peak).toBe(50 + G(6));
+    const plain = fireOnWin(heat({ value: 50 }), [F.FEUERLINIE], {}, { margin: 6, value: 12, formCount: 0 });
+    expect(plain.lineMult).toBe(1); expect(plain.heat.value).toBe(50 + G(6));
+    const cold = fireOnWin(heat({ value: 0 }), [F.FEUERLINIE], {}, { margin: 1, value: 12, formCount: 1 }); // kein Gewinn, keine Hitze → kein Bonus, keine Kosten
+    expect(cold.lineMult).toBe(1); expect(cold.heat.value).toBe(0);
+    const spark = fireOnWin(heat({ value: 0 }), [F.FEUERLINIE], {}, { margin: cost + C.HEAT_MARGIN_OFFSET, value: 12, formCount: 1 }); // der Gewinn selbst deckt die Kosten
+    expect(spark.lineMult).toBeGreaterThan(1); expect(spark.heat.value).toBe(0);
+    // Volle Leiste mit Schmelzpunkt: der Überlauf zahlt, dann gehen die Kosten von der vollen Leiste ab.
+    const full = fireOnWin(heat({ value: 100 }), [F.FEUERLINIE, F.SCHMELZPUNKT], {}, { margin: 6, value: 12, formCount: 1 });
+    expect(full.melted).toBe(G(6)); expect(full.held).toBe(100); expect(full.heat.value).toBe(100 - cost);
+    expect(fireOnWin(heat({ value: 50 }), [F.ZUNDER], {}, { margin: 6, value: 12, formCount: 1 }).lineMult).toBe(1); // ohne den Skill
+  });
   it("fireOnWin: Brandmal und Lauffeuer setzen Brände ab der Hitze-Schwelle (Nachbarn im Gegnerdeck, Episch Reichweite 2)", () => {
     const oppDeck = constDeck(5);
     const ctx = { margin: 1, oppId: "X5", oppIndex: 5, oppDeck };
@@ -256,10 +288,7 @@ describe("Feuer — Modul (reine Übergänge)", () => {
     expect(fireOnLoss(heat({ value: 100 }), [F.ZUNDER, F.GLUTBETT], { [F.ZUNDER]: 3, [F.GLUTBETT]: 3 }, { deficit: 1 }).heat.value).toBe(100); // Glutbett Episch kühlt nicht, die Leiste ist voll
     expect(fireOnLoss(heat({ value: 20 }), [F.BRANDMAL], { [F.BRANDMAL]: 3 }, { deficit: 3, oppId: "O1" }).brands).toEqual([{ id: "O1", value: T.brandmal[3].value }]);
     expect(fireOnLoss(heat({ value: 20 }), [F.BRANDMAL], {}, { deficit: 3, oppId: "O1" }).brands).toEqual([]);
-    // §7.16 Glut Episch: unter der Kaltstart-Schwelle kühlen Niederlagen nur halb, darüber voll; Normal ohne Extra.
-    expect(fireOnLoss(heat({ value: 50 }), [F.GLUT], { [F.GLUT]: 3 }, { deficit: 1 }).heat.value).toBe(50 - C.HEAT_LOSS / 2);
-    expect(fireOnLoss(heat({ value: T.glut[3].below + 5 }), [F.GLUT], { [F.GLUT]: 3 }, { deficit: 1 }).heat.value).toBe(T.glut[3].below + 5 - C.HEAT_LOSS);
-    expect(fireOnLoss(heat({ value: 50 }), [F.GLUT], {}, { deficit: 1 }).heat.value).toBe(50 - C.HEAT_LOSS);
+    expect(fireOnLoss(heat({ value: 50 }), [F.FEUERLINIE], { [F.FEUERLINIE]: 3 }, { deficit: 1 }).heat.value).toBe(50 - C.HEAT_LOSS); // §7.23: Feuerlinie ändert die Kühlung nicht (Glut Episch kühlte halb)
     // §7.16 Schmelzpunkt Episch: die Kühlung bei voller Leiste ist vorgemerkt (zahlt beim nächsten Sieg); unter voll und auf Normal nicht.
     expect(fireOnLoss(heat({ value: 100 }), [F.SCHMELZPUNKT], { [F.SCHMELZPUNKT]: 3 }, { deficit: 1 }).heat.meltPending).toBe(C.HEAT_LOSS);
     expect(fireOnLoss(heat({ value: 99 }), [F.SCHMELZPUNKT], { [F.SCHMELZPUNKT]: 3 }, { deficit: 1 }).heat.meltPending).toBe(0);
@@ -308,16 +337,24 @@ describe("Feuer — Engine-Integration", () => {
     expect(warm.fireHeat).toBeGreaterThan(0);
     expect(warm.fireBase).toBe(0); // kein Feuer-Score im Passiv
   });
-  it("Stufe aus state.skillTiers: Glut Episch verdoppelt die Hitze aus Siegen unter 80 %, darüber nicht", () => {
-    const cold = resolveTrick(scen(12, 6, { skills: [F.GLUT], skillTiers: { [F.GLUT]: 3 }, heat: heat({ value: 0 }) }), noCrit);
-    expect(cold.heat.value).toBe(G(6) * T.glut[3].mult);
-    const hot = resolveTrick(scen(12, 6, { skills: [F.GLUT], skillTiers: { [F.GLUT]: 3 }, heat: heat({ value: T.glut[3].below }) }), noCrit);
-    expect(hot.heat.value).toBe(T.glut[3].below + G(6));
-    const normal = resolveTrick(scen(12, 6, { skills: [F.GLUT], heat: heat({ value: T.glut[0].below }) }), noCrit); // Normal: ab 40 nicht mehr
-    expect(normal.heat.value).toBe(T.glut[0].below + G(6));
+  it("Feuerlinie in der Engine (§7.23): der Sieg in einer Formation zählt je Punkt Kampfwert im Feuer-Faktor und verbrennt die Kosten; Episch je Formation; ohne Formation nichts", () => {
+    // Formationen an Position 1 in den State gelegt — bei pos 0 rechnet die Engine sie aus dem Deck neu, danach liest sie
+    // state.formations[pos]. Kampfwert 12, n = aktive Formationen an der Siegposition.
+    const form = (n) => [{ mult: 1, formations: [] }, { mult: 1.5, baseMult: 1.5, afterglowFactor: 1, coreFactor: 1, formations: Array.from({ length: n }, () => ({ type: "farbblock", ordinal: 2, factor: 1.5 })) }];
+    const cost = T.feuerlinie[0].cost;
+    const s = resolveTrick(scen(12, 6, { pos: 1, skills: [F.FEUERLINIE], skillTiers: { [F.FEUERLINIE]: 1 }, heat: heat({ value: 50 }), formations: form(1) }), noCrit);
+    expect(s.lastTrick.pValue).toBe(12);
+    expect(s.lastTrick.breakdown.formMult).toBeCloseTo(1.5, 9);
+    expect(s.lastTrick.breakdown.fireMult).toBeCloseTo(heatMult([], {}, 50 + G(6)) * (1 + 12 * T.feuerlinie[1].perPoint), 6);
+    expect(s.heat.value).toBe(50 + G(6) - cost);
+    const e = resolveTrick(scen(12, 6, { pos: 1, skills: [F.FEUERLINIE], skillTiers: { [F.FEUERLINIE]: 3 }, heat: heat({ value: 50 }), formations: form(2) }), noCrit);
+    expect(e.lastTrick.breakdown.fireMult).toBeCloseTo(heatMult([], {}, 50 + G(6)) * (1 + 12 * T.feuerlinie[3].perPoint * 2), 6);
+    const plain = resolveTrick(scen(12, 6, { pos: 1, skills: [F.FEUERLINIE], skillTiers: { [F.FEUERLINIE]: 1 }, heat: heat({ value: 50 }), formations: form(0) }), noCrit); // keine Formation
+    expect(plain.lastTrick.breakdown.fireMult).toBeCloseTo(heatMult([], {}, 50 + G(6)), 6);
+    expect(plain.heat.value).toBe(50 + G(6));
   });
   it("Niederlage kühlt −6 und merkt den Rückstand; die Serie reißt (kein Feuer-Serienschutz mehr)", () => {
-    const s = resolveTrick(scen(2, 9, { skills: [F.GLUT], heat: heat({ value: 50 }), winStreak: 5 }), noCrit);
+    const s = resolveTrick(scen(2, 9, { skills: [F.FEUERLINIE], heat: heat({ value: 50 }), winStreak: 5 }), noCrit);
     expect(s.lastTrick.result).toBe("loss");
     expect(s.heat.value).toBe(50 - C.HEAT_LOSS);
     expect(s.heat.lastLossDeficit).toBe(7);
@@ -418,7 +455,7 @@ describe("Feuer — Engine-Integration", () => {
     const deck = constDeck(5).map((c) => (c.id === "X0" ? { ...c, value: 8 } : c)); // X0 geschmiedet: 5 + 3
     const with_ = resolveTrick(scen(5, 10, { deck, skills: [F.DAMASTSTAHL], heat: heat({ value: 0 }), forged: { X0: 3 } }), noCrit);
     expect(with_.lastTrick.pValue).toBe(11); expect(with_.lastTrick.result).toBe("win");
-    const without = resolveTrick(scen(5, 10, { deck, skills: [F.GLUT], heat: heat({ value: 0 }), forged: { X0: 3 } }), noCrit);
+    const without = resolveTrick(scen(5, 10, { deck, skills: [F.ZUNDER], heat: heat({ value: 0 }), forged: { X0: 3 } }), noCrit);
     expect(without.lastTrick.pValue).toBe(8); expect(without.lastTrick.result).toBe("loss");
     expect(playCycle(scen(12, 6, { skills: [F.DAMASTSTAHL], heat: heat({ value: 0 }) })).forged).toEqual({ X0: C.FORGE_VALUE });
   });
@@ -427,7 +464,7 @@ describe("Feuer — Engine-Integration", () => {
     expect(s.heat.max).toBe(C.WEISSGLUT_HEAT_MAX);
     expect(s.heat.value).toBe(150 + G(6));
     expect(s.lastTrick.breakdown.fireMult).toBeCloseTo(heatMult([F.WEISSGLUT], {}, 150 + G(6)), 6);
-    const back = resolveTrick(scen(12, 6, { skills: [F.GLUT], heat: heat({ value: 150, max: 200 }) }), noCrit); // Weißglut ersetzt
+    const back = resolveTrick(scen(12, 6, { skills: [F.GLUTBETT], heat: heat({ value: 150, max: 200 }) }), noCrit); // Weißglut ersetzt
     expect(back.heat.max).toBe(C.HEAT_MAX);
     expect(back.heat.value).toBe(C.HEAT_MAX);
   });
@@ -436,8 +473,8 @@ describe("Feuer — Engine-Integration", () => {
     expect(s.lastTrick.breakdown.fireMult).toBeCloseTo(1 + 10 * C.SONNENZORN_MULT_PER_10, 6);
   });
   it("Treffer-Identität „fire“ bei voller Leiste (100 %)", () => {
-    expect(resolveTrick(scen(12, 6, { skills: [F.GLUT], heat: heat({ value: 100 }) }), noCrit).lastTrick.hitTypes).toContain("fire");
-    expect(resolveTrick(scen(12, 6, { skills: [F.GLUT], heat: heat({ value: 99 }) }), noCrit).lastTrick.hitTypes).not.toContain("fire");
+    expect(resolveTrick(scen(12, 6, { skills: [F.GLUTBETT], heat: heat({ value: 100 }) }), noCrit).lastTrick.hitTypes).toContain("fire");
+    expect(resolveTrick(scen(12, 6, { skills: [F.GLUTBETT], heat: heat({ value: 99 }) }), noCrit).lastTrick.hitTypes).not.toContain("fire");
   });
 });
 
@@ -446,9 +483,9 @@ describe("Feuer — Reducer und Angebot", () => {
   const pick = (st, id, replaceId) => reducer(st, { type: "PICK_SKILL", skillId: id, replaceId, rng });
   const base = (over) => ({ ...initialState(makeRng(1)), phase: "levelup", ...over });
   it("der erste Feuer-Skill aktiviert die Hitze (Leiste 100); Weißglut hebt sie auf 200 und ihr Ersatz senkt sie zurück", () => {
-    const s1 = pick(base({ skillOffer: [F.GLUT], skillOfferTiers: { [F.GLUT]: 2 } }), F.GLUT);
+    const s1 = pick(base({ skillOffer: [F.FEUERLINIE], skillOfferTiers: { [F.FEUERLINIE]: 2 } }), F.FEUERLINIE);
     expect(s1.heat).toMatchObject({ active: true, value: 0, max: C.HEAT_MAX });
-    expect(s1.skillTiers[F.GLUT]).toBe(2);
+    expect(s1.skillTiers[F.FEUERLINIE]).toBe(2);
     const s2 = pick({ ...s1, phase: "levelup", skillOffer: [F.WEISSGLUT], skillOfferTiers: {}, heat: { ...s1.heat, value: 90 } }, F.WEISSGLUT);
     expect(s2.heat.max).toBe(C.WEISSGLUT_HEAT_MAX);
     const s3 = pick({ ...s2, phase: "levelup", skillOffer: [F.ZUNDER], skillOfferTiers: {}, heat: { ...s2.heat, value: 180 } }, F.ZUNDER, F.WEISSGLUT);
@@ -456,17 +493,17 @@ describe("Feuer — Reducer und Angebot", () => {
     expect(s3.heat.max).toBe(C.HEAT_MAX); expect(s3.heat.value).toBe(C.HEAT_MAX);
   });
   it("fällt der letzte Feuer-Skill, gehen Hitze, Brände und der Schmiede-Zähler; der Schmiedewert bleibt in der Karte", () => {
-    const s1 = pick(base({ skillOffer: [F.GLUT], skillOfferTiers: {} }), F.GLUT);
+    const s1 = pick(base({ skillOffer: [F.FEUERLINIE], skillOfferTiers: {} }), F.FEUERLINIE);
     const forgedDeck = s1.deck.map((c, i) => (i === 0 ? { ...c, value: c.value + 3 } : c));
-    const s2 = pick({ ...s1, phase: "levelup", skillOffer: ["SK_ICE_01"], skillOfferTiers: {}, deck: forgedDeck, forged: { [forgedDeck[0].id]: 3 }, brandActive: { A: 2 }, brandPending: { B: 1 } }, "SK_ICE_01", F.GLUT);
-    expect(s2.skills).not.toContain(F.GLUT);
+    const s2 = pick({ ...s1, phase: "levelup", skillOffer: ["SK_ICE_01"], skillOfferTiers: {}, deck: forgedDeck, forged: { [forgedDeck[0].id]: 3 }, brandActive: { A: 2 }, brandPending: { B: 1 } }, "SK_ICE_01", F.FEUERLINIE);
+    expect(s2.skills).not.toContain(F.FEUERLINIE);
     expect(s2.heat).toBe(null);
     expect(s2.forged).toEqual({}); expect(s2.brandActive).toEqual({}); expect(s2.brandPending).toEqual({});
     expect(s2.deck[0].value).toBe(forgedDeck[0].value);
   });
   it("kein Konsument wird mehr im Angebot erzwungen — ein aktiver Feuer-Build sieht auch Angebote ganz ohne Konsument", () => {
     const isConsumer = (id) => !!(SKILL_DEFS[id].keywords || []).includes("consume");
-    const clean = Array.from({ length: 40 }, (_, s) => buildSkillOffer([F.GLUT], ["fire"], makeRng(s + 1), 6))
+    const clean = Array.from({ length: 40 }, (_, s) => buildSkillOffer([F.FEUERLINIE], ["fire"], makeRng(s + 1), 6))
       .filter((off) => off.some((id) => archetypeOf(id) === "fire") && !off.some(isConsumer));
     expect(clean.length).toBeGreaterThan(0);
   });

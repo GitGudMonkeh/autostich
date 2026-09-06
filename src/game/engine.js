@@ -476,19 +476,22 @@ export function resolveTrick(state, rng) {
     }
     // winStreak/wins enthalten hier bereits den gerade gewonnenen Stich — genau die Werte, mit denen wctx oben gebaut ist.
     winSuit = eSuit; winSuitStreak = suitStreak; // Farbserie fortschreiben (effektive Farbe: grün = „G")
-    // ---- Feuer (exp skill rework, §4): Hitzegewinn (Passiv, Glut, Zunder, Rückzündung), Schmelzpunkt (Überlauf-Wandler)
-    //      (Schmelzpunkt), Glutstahl, Sonnenkern-Score und die Brände für die nächste Runde —
-    //      alles im Modul. `fireHeld` = Hitze nach dem Gewinn, vor dem Verbrauch: daran hängt der Hitze-Multiplikator
-    //      dieses Siegs (unten im Stack). Feuer-Flats gehen in die multiplizierte Basis; Direkt-Score gibt es nicht.
+    // ---- Feuer (exp skill rework, §4): Hitzegewinn (Passiv, Zunder), Schmelzpunkt (Überlauf-Wandler), Glutstahl,
+    //      Sonnenkern-Score, Feuerlinie (§7.23: Faktor je Punkt Kampfwert im Formations-Sieg, verbrennt Hitze) und die
+    //      Brände für die nächste Runde — alles im Modul. `fireHeld` = Hitze nach dem Gewinn, vor dem Verbrauch: daran
+    //      hängt der Hitze-Multiplikator dieses Siegs (unten im Stack). Feuer-Flats gehen in die multiplizierte Basis;
+    //      Direkt-Score gibt es nicht.
     let fireFlat = 0;
     let fireHeld = 0;
+    let fireLineMult = 1;
     if (heat && heat.active) {
       const r = fireOnWin(heat, skills, skillTiers, {
         margin: pValue - oValue, streak: serieStreak, lastResult, card: pCard, forged, brandOnOpp,
         valueOver: pValue - damascusValue - (pCard.baseRank ?? pCard.value), // Glutstahl: Kampfwert über dem Grundwert, ohne den Damast-Kampfbonus
+        value: pValue, formCount: activeFormationCount(posForm), // Feuerlinie: ganzer Kampfwert, aktive Formationen an der Siegposition
         oppId: oCard.id, oppIndex: oppOrder[actualPos], oppDeck,
       });
-      heat = r.heat; fireFlat = r.flat; fireHeld = r.held;
+      heat = r.heat; fireFlat = r.flat; fireHeld = r.held; fireLineMult = r.lineMult || 1;
       for (const b of r.brands) { newBrandPending[b.id] = (newBrandPending[b.id] || 0) + b.value; brandTotal += 1; } // #270.2: Motor-Zähler „Brände"
     }
     // ---- Pflanze-Fraktion (v0): Wachstum (Sieg → +1), Reife-Recolor, Wurzeln (Score/Wert), Aussaat/Ranken (Breite/Grün),
@@ -738,7 +741,8 @@ export function resolveTrick(state, rng) {
     const fireMult = (heat && heat.active)
       ? heatMult(skills, skillTiers, fireHeld, heat.peak, heat.emberMult) * verbrennungMult(skills, skillTiers, pValue - oValue)
         * feuersturmMult(skills, skillTiers, fireHeld, heat.max || C.HEAT_MAX, serieStreak) // §7.17: Feuersturm, Serie zu Score bei voller Leiste
-        * rueckzuendungMult(skills, skillTiers, lastResult) : 1; // §7.22: Rückzündung, der Konter nach einer Niederlage
+        * rueckzuendungMult(skills, skillTiers, lastResult) // §7.22: Rückzündung, der Konter nach einer Niederlage
+        * fireLineMult : 1; // §7.23: Feuerlinie, je Punkt Kampfwert im Formations-Sieg (fireOnWin oben, samt Hitzekosten)
     // architectMult (#202, Architekt-Score-Gebäude: Struktur/Schatzkammer) läuft als eigener Faktor am Ende des Stacks.
     // #Pool Batch 4 (gamble/Risiko): Boden — der Architekt-Abzug (negativer Flat) darf den Stich höchstens auf 0 drücken,
     // nie ins Minus (sonst kippen die nachgelagerten Multiplikatoren). Bei Basis 400 praktisch immer ein No-op.

@@ -9,15 +9,15 @@ import { SKILL_DEFS, TIER_EPIC, isLegendarySkill } from "../skills.js";
    Faktor im Multiplikator-Stack (heatMult). Leiste 0–HEAT_MAX, mit Weißglut bis WEISSGLUT_HEAT_MAX. Kein Feuer-Score,
    kein Direkt-Score, keine Asche, keine Abhängigkeit von der Zahl gehaltener Feuer-Skills.
 
-   Die 15 Skills lesen ihre Kennwerte aus den Stufentabellen in SKILL_DEFS (`tiers[0..3]`, Normal … Episch) über
+   Die 14 Skills lesen ihre Kennwerte aus den Stufentabellen in SKILL_DEFS (`tiers[0..3]`, Normal … Episch) über
    `fireParam`; die vier Legendären haben keine Stufe und hängen an ihrer ID. Alle Übergänge sind immutabel.
-   Hitze-Tore („ab X % Hitze") lesen die Hitze NACH dem Gewinn des Siegs und VOR dem Verbrauch (Konsumenten); der
+   Hitze-Tore („ab X % Hitze") lesen die Hitze NACH dem Gewinn des Siegs und VOR dem Verbrauch (Feuerlinie-Kosten); der
    Hitze-Multiplikator eines Siegs liest dieselbe Größe. Zustands-Boni (Klinge, Feuerwalze) lesen die Hitze vor dem Stich.
    ============================================================ */
 
 // Skill-IDs der Fraktion — lesbare Namen für Modul, Engine und Tests.
-export const F = Object.freeze({
-  GLUT: "SK_FIRE_01", ZUNDER: "SK_FIRE_02", FEUERSTURM: "SK_FIRE_03", GLUTBETT: "SK_FIRE_04", RUECKZUENDUNG: "SK_FIRE_05",
+export const F = Object.freeze({ // 01: Feuerlinie ersetzt Glut (§7.23)
+  FEUERLINIE: "SK_FIRE_01", ZUNDER: "SK_FIRE_02", FEUERSTURM: "SK_FIRE_03", GLUTBETT: "SK_FIRE_04", RUECKZUENDUNG: "SK_FIRE_05",
   KLINGE: "SK_FIRE_06", WEISSGLUT: "SK_FIRE_07", FEUERWALZE: "SK_FIRE_08", VERBRENNUNG: "SK_FIRE_09",
   SCHMELZPUNKT: "SK_FIRE_12", BRANDMAL: "SK_FIRE_13", LAUFFEUER: "SK_FIRE_14", // SK_FIRE_11 Flächenbrand: gestrichen (§7.16)
   SCHMIEDE: "SK_FIRE_15", GLUTSTAHL: "SK_FIRE_16",
@@ -66,21 +66,29 @@ export function syncHeatMax(heat, skills) {
 }
 
 /* Hitzegewinn eines gewonnenen Stichs (Prozentpunkte): Passiv (Vorsprung − Offset, ab Mindest-Vorsprung), + Zunder je
-   Sieg. Verbrennung Episch (§7.22): ein Sieg ab dem Vorsprung der Stufe zählt seine Hitze ×mult. Glut (§7.12,
-   Kaltstart): steht die Hitze VOR dem Sieg unter der Schwelle der Stufe, zählt der ganze Gewinn ×mult — alle Quellen,
-   nicht nur das Passiv. Sonnenzorn (L, §7.20): liegt die Hitze vor dem Sieg unter der Spitze, zählt der Gewinn
-   ×SONNENZORN_HEAT_MULT (zusätzlich zu Glut — der Zorn holt die Spitze zurück). (Feuersturm gibt seit §7.17 keine
-   Hitze mehr — er ist Serie zu Score; Rückzündung seit §7.22 auch nicht — sie ist der Konter, rueckzuendungMult.) */
+   Sieg. Verbrennung Episch (§7.22): ein Sieg ab dem Vorsprung der Stufe zählt seine Hitze ×mult. Sonnenzorn (L,
+   §7.20): liegt die Hitze vor dem Sieg unter der Spitze, zählt der Gewinn ×SONNENZORN_HEAT_MULT (der Zorn holt die
+   Spitze zurück). (Feuersturm gibt seit §7.17 keine Hitze mehr — er ist Serie zu Score; Rückzündung seit §7.22 auch
+   nicht — sie ist der Konter, rueckzuendungMult; Glut, der Kaltstart-Verstärker, ist seit §7.23 gestrichen.) */
 export function heatGainOnWin(skills, skillTiers, { margin = 0, heatValue = 0, heatPeak = 0 } = {}) {
   let g = 0;
   if (margin >= C.HEAT_MIN_MARGIN) g += (margin - C.HEAT_MARGIN_OFFSET) * C.HEAT_PER_POINT;
   g += fireParam(skills, skillTiers, F.ZUNDER, "heat") || 0;
   const vMin = fireParam(skills, skillTiers, F.VERBRENNUNG, "minMargin");
   if (fireParam(skills, skillTiers, F.VERBRENNUNG, "heatToo") && vMin != null && margin >= vMin) g *= fireParam(skills, skillTiers, F.VERBRENNUNG, "mult") || 1;
-  const below = fireParam(skills, skillTiers, F.GLUT, "below");
-  if (below != null && (heatValue || 0) < below) g *= fireParam(skills, skillTiers, F.GLUT, "mult") || 1;
   if (hasSonnenzorn(skills) && (heatValue || 0) < (heatPeak || 0)) g *= C.SONNENZORN_HEAT_MULT;
   return g;
+}
+
+/* Feuerlinie (§7.23, Owner; Platz von Glut): ein Sieg in einer Formation zählt +perPoint je Punkt Kampfwert der
+   Siegkarte (Episch: je Formation an der Siegposition, `formCount`), ein Faktor im Feuer-Stack. Er zündet nur, wenn
+   die Hitze nach dem Gewinn des Siegs (`heldHeat`, wie alle Hitze-Tore) die Kosten der Stufe deckt; fireOnWin zieht
+   sie dann ab. 1 sonst — ohne Formation, ohne Hitze, ohne den Skill. */
+export function feuerlinieMult(skills, skillTiers, { value = 0, formCount = 0, heldHeat = 0 } = {}) {
+  const per = fireParam(skills, skillTiers, F.FEUERLINIE, "perPoint");
+  if (!per || (formCount || 0) < 1 || (heldHeat || 0) < (fireParam(skills, skillTiers, F.FEUERLINIE, "cost") || 0)) return 1;
+  const forms = fireParam(skills, skillTiers, F.FEUERLINIE, "perFormation") ? formCount : 1;
+  return 1 + Math.max(0, value || 0) * per * forms;
 }
 
 /* Hitze-Multiplikator (eigener Faktor im Score-Stack): je volle 10 % Hitze +HEAT_MULT_PER_10; über HEAT_MAX (nur mit
@@ -149,18 +157,24 @@ export function damascusCombat(skills, forged, card) {
   return (forged && card && forged[card.id]) || 0;
 }
 
-/* Sieg: Hitzegewinn, Schmelzpunkt (Überlauf-Wandler), Glutstahl, Sonnenkern-Score, Brände.
-   `held` = Hitze nach dem Gewinn — daran hängen die Hitze-Tore dieses Siegs und der Hitze-Multiplikator. `valueOver` =
-   Kampfwert der Siegkarte über ihrem Grundwert (alle Quellen, ohne den Damast-Kampfbonus). Gibt { heat, held, flat,
-   melted, brands } zurück; melted = gewandelte Hitzepunkte, brands = [{ id, value }] für die NÄCHSTE Runde. */
-export function fireOnWin(heat, skills, skillTiers, { margin = 0, lastResult = null, valueOver = 0, card = null,
-  forged = {}, brandOnOpp = 0, oppId = null, oppIndex = -1, oppDeck = null } = {}) {
+/* Sieg: Hitzegewinn, Schmelzpunkt (Überlauf-Wandler), Glutstahl, Sonnenkern-Score, Brände, Feuerlinie (Faktor und
+   Hitzekosten). `held` = Hitze nach dem Gewinn — daran hängen die Hitze-Tore dieses Siegs und der Hitze-Multiplikator.
+   `valueOver` = Kampfwert der Siegkarte über ihrem Grundwert (alle Quellen, ohne den Damast-Kampfbonus); `value` =
+   ihr ganzer Kampfwert, `formCount` = aktive Formationen an der Siegposition (beides Feuerlinie). Gibt { heat, held,
+   flat, melted, brands, lineMult } zurück; melted = gewandelte Hitzepunkte, brands = [{ id, value }] für die NÄCHSTE
+   Runde, lineMult = der Feuerlinie-Faktor dieses Siegs (1 ohne). */
+export function fireOnWin(heat, skills, skillTiers, { margin = 0, lastResult = null, valueOver = 0, value: cardValue = 0, formCount = 0,
+  card = null, forged = {}, brandOnOpp = 0, oppId = null, oppIndex = -1, oppDeck = null } = {}) {
   const gain = heatGainOnWin(skills, skillTiers, { margin, lastResult, lastLossDeficit: heat.lastLossDeficit || 0, heatValue: heat.value || 0, heatPeak: heat.peak || 0 });
   const max = heat.max || C.HEAT_MAX;
   const raw = (heat.value || 0) + gain;
   let value = Math.min(max, raw);
   const heldHeat = value;
   let flat = 0, melted = 0;
+  // Feuerlinie (§7.23): der Faktor liest die Hitze nach dem Gewinn; zündet er, verbrennt der Sieg die Kosten der Stufe
+  // (nach dem Schmelzpunkt-Überlauf oben — die Leiste bleibt voll, der nächste Gewinn füllt die Lücke wieder auf).
+  const lineMult = feuerlinieMult(skills, skillTiers, { value: cardValue, formCount, heldHeat });
+  if (lineMult > 1) value = Math.max(0, value - (fireParam(skills, skillTiers, F.FEUERLINIE, "cost") || 0));
   // Schmelzpunkt (§7.16, Owner): der Überlauf-Wandler — die Hitze, die ein Sieg nicht mehr auf die Leiste bringt (100,
   // mit Weißglut 200), wird Basis-Score je Punkt; die Leiste bleibt voll, verbrannt wird nichts (der Brand kostete Klinge,
   // Siegquote und Serie, 7.13). Episch: die Kühlung einer Niederlage bei voller Leiste ist vorgemerkt (meltPending) und
@@ -195,23 +209,20 @@ export function fireOnWin(heat, skills, skillTiers, { margin = 0, lastResult = n
   }
   if (hasSonnenkern(skills) && oppId != null) brands.push({ id: oppId, value: C.SONNENKERN_BRAND });
   const peak = Math.max(heat.peak || 0, heldHeat, value);
-  return { heat: { ...heat, value, peak, meltPending }, held: heldHeat, flat: Math.round(flat), melted, brands };
+  return { heat: { ...heat, value, peak, meltPending }, held: heldHeat, flat: Math.round(flat), melted, brands, lineMult };
 }
 
-/* Niederlage: kühlt HEAT_LOSS flach (Glut Episch: unter der Kaltstart-Schwelle nur halb), Glutbett hält einen Boden
-   (Episch: keine Kühlung); Ewige Glut (L, §7.21) lässt die Hitze nie unter EWIGE_GLUT_FLOOR_FRAC der Spitze fallen —
-   ein Boden, der nur hält, nie hebt. Schmelzpunkt Episch merkt die Kühlung bei voller Leiste vor (meltPending, zahlt
-   beim nächsten Sieg). Brandmal Episch brandmarkt die Gegnerkarte, die gewonnen hat (Tor auf der Hitze vor der
-   Niederlage). Gibt { heat, brands } zurück. */
+/* Niederlage: kühlt HEAT_LOSS flach, Glutbett hält einen Boden (Episch: keine Kühlung); Ewige Glut (L, §7.21) lässt
+   die Hitze nie unter EWIGE_GLUT_FLOOR_FRAC der Spitze fallen — ein Boden, der nur hält, nie hebt. Schmelzpunkt Episch
+   merkt die Kühlung bei voller Leiste vor (meltPending, zahlt beim nächsten Sieg). Brandmal Episch brandmarkt die
+   Gegnerkarte, die gewonnen hat (Tor auf der Hitze vor der Niederlage). Gibt { heat, brands } zurück. */
 export function fireOnLoss(heat, skills, skillTiers, { deficit = 0, oppId = null } = {}) {
   const max = heat.max || C.HEAT_MAX;
   const before = heat.value || 0;
   let value = before;
   if (!fireParam(skills, skillTiers, F.GLUTBETT, "noCool")) {
     const floor = fireParam(skills, skillTiers, F.GLUTBETT, "floor") ?? 0;
-    const below = fireParam(skills, skillTiers, F.GLUT, "below");
-    const half = fireParam(skills, skillTiers, F.GLUT, "halfCool") && below != null && before < below; // §7.16: Glut Episch
-    value = before <= floor ? before : Math.max(floor, before - (half ? C.HEAT_LOSS / 2 : C.HEAT_LOSS));
+    value = before <= floor ? before : Math.max(floor, before - C.HEAT_LOSS);
   }
   if (hasEwigeGlut(skills)) value = Math.max(value, Math.min(before, (heat.peak || 0) * C.EWIGE_GLUT_FLOOR_FRAC));
   const lossHeat = fireParam(skills, skillTiers, F.ZUNDER, "lossHeat"); // §7.22 Zunder Episch-Extra: auch Niederlagen heizen
