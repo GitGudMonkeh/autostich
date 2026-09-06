@@ -636,8 +636,8 @@ export function resolveTrick(state, rng) {
     critChance = Math.min(1, Math.max(0, rawCrit));             // Anzeige/normaler Wurf (geklemmt)
     // Crit-Ctx trägt rawCrit — von D-Crit-Flats (D19 Überschusskrit) UND L6 „Raserei" (critMultBonus, #115) gebraucht.
     const critCtx = { ...wctx, rawCrit };
-    // Basis 2,25 + Präzision „Wucht" (familyCritMult) + L6-Überschuss + Blitz (Entladung-Rampe, Donnergott, Spannungsstau,
-    // Vorentladung) + Stapel der Siegkarte (§7.12: +ION_CRIT_MULT_PER_STACK je wirksamem Stapel) + Systemregel (§1: Überschuss
+    // Basis 2,25 + Präzision „Wucht" (familyCritMult) + L6-Überschuss + Blitz (Entladung-Rampe, Spannungsstau,
+    // Vorentladung) + Stapel der Siegkarte (§7.12: +ION_CRIT_MULT_PER_STACK je wirksamem Stapel, Donnergott mehr) + Systemregel (§1: Überschuss
     // über 100 % → sehr kleiner Crit-Mult-Bonus, alle Fraktionen).
     critMultiplier = critMultiplierFor(perks, critCtx) + familyCritMult(familyTiers)
                    + lightningCritMult(lightning, skills, skillTiers, serieStreak) + lightIonCritMult(pCard, skills, skillTiers) + overcritMult(rawCrit);

@@ -28,7 +28,7 @@ export const SCORE_PER_WIN    = envNum("SIM_SCORE_PER_WIN", 400);    // Basispun
 // kommt. Die legitime Summe aller gedeckelten Quellen liegt bei ~7,4× (Basis 2,25 + Wucht IV 0,90 + 6 Blitz-Skills 0,60
 // + Donnergott 0,40 + Durchschlag 2,00 + Entladung 1,00 + Raserei 1,00) → der Deckel bindet einen ehrlichen Build NICHT,
 // fängt aber jede künftige Kombi ab, die wieder eine unbegrenzte Größe in den Multiplikator kippt.
-export const CRIT_MULT_CAP    = envNum("SIM_CRIT_MULT_CAP", 12); // exp §7.19 (Owner): 8 → 12 — Stapel (0,15× je Stapel), Vorentladung und Donnergott stehen im gierigen Blitz-Build bei 4–6×, die Rampen (Entladung) verpufften am Deckel
+export const CRIT_MULT_CAP    = envNum("SIM_CRIT_MULT_CAP", 8); // exp §7.20 (Owner): zurück auf 8 — der Deckel 12 (§7.19) gab die Luft den Stapeln, nicht den Rampen (Duell: ein Viertel des Blitz-Schwanzes, gierig ein Fünftel des Medians)
 // D_OVERCRIT IV (Überschusskrit): höchstens so viele Prozentpunkte Crit-Überschuss zahlen den Zuschlag je Punkt aus.
 export const OVERCRIT_EXCESS_PP_CAP = envNum("SIM_OVERCRIT_EXCESS_PP_CAP", 100);
 export const CRIT_BASE_MULT   = envNum("SIM_CRIT_BASE_MULT", 2.25);  // Basis-Crit-Multiplikator. #268: 1,5→2,25 — jetzt wo Crit aus der Stat-Phase raus ist, hilft der höhere Basis-Mult differenziell dem Crit-Archetyp Blitz (Sim: Blitz-Floor 1,47×→1,93× Mix), Nicht-Blitz nur schwach (RNG-gegateter Präzision-Crit) [TUNING · Sim-übersteuerbar]
@@ -323,7 +323,7 @@ export const LIGHTNING_CRIT_PER_SKILL = envNum("SIM_LIGHTNING_CRIT_PER_SKILL", 0
 export const ION_CRIT_MULT_PER_STACK  = envNum("SIM_ION_CRIT_MULT_PER_STACK", 0.15);  // +Crit-Multiplikator je Stapel auf der Siegkarte (Kurzschluss zählt die Stapel ab der Schwelle doppelt)
 export const LIGHTNING_MAX_CHARGE     = envNum("SIM_LIGHTNING_MAX_CHARGE", 10);       // Leiste: so viele Ladungen (= Crits) bis zur Ionisierung
 export const DONNERGOTT_MAX_CHARGE    = envNum("SIM_DONNERGOTT_MAX_CHARGE", 7);       // Donnergott (L): die Leiste ist bei 7 voll (Sim-Wachpunkt: ~8)
-export const THUNDER_CRIT_MULT        = envNum("SIM_THUNDER_CRIT_MULT", 0.4);         // Donnergott (L): dauerhaft +Crit-Multiplikator
+export const DONNERGOTT_ION_CRIT_MULT_PER_STACK = envNum("SIM_DONNERGOTT_ION_CRIT_MULT_PER_STACK", 0.25); // Donnergott (L, §7.20): Stapel der Siegkarte zählen so viel Crit-Multiplikator statt ION_CRIT_MULT_PER_STACK (vorher flach +0,4×)
 // Tariert 2026-09-05 (docs/skill-rework.md §7.5): 12 → 60. Gemessen in der Feuer/Blitz-Welt (--mode duel, 200 Läufe):
 // Blitz mono 2,15M bei 12, 2,37M bei 60 gegen Feuer mono 2,40M; bei 12 trugen die Stapel nur ~8 % der Basis (Ø 2,6 je
 // Karte am Laufende), der Regler war praktisch tot. Crit je Skill (0,07 → 2,43M) wäre der andere Weg; der Stapel-Weg
@@ -356,7 +356,9 @@ export const SONNENKERN_BRAND           = 1;                                    
 export const SONNENKERN_SCORE_PER_BRAND = envNum("SIM_SONNENKERN_SCORE_PER_BRAND", 20);        // Sonnenkern: Basis-Score je Brandpunkt auf der geschlagenen Karte
 export const PHOENIX_LOSS_HEAT          = envNum("SIM_PHOENIX_LOSS_HEAT", 3);                  // Phönixfeuer: +% Hitze je Punkt Rückstand statt Kühlung (§7.19: 2 → 3)
 export const PHOENIX_REIGNITE           = envNum("SIM_PHOENIX_REIGNITE", 50);                  // Phönixfeuer: Hitze nach der Neuzündung (auf 0 gefallen), ohne Rundenlimit
-export const SONNENZORN_MULT_PER_10     = envNum("SIM_SONNENZORN_MULT_PER_10", 0.04);          // Sonnenzorn: Hitze-Multiplikator je 10 % Spitzen-Hitze (statt HEAT_MULT_PER_10)
+export const PHOENIX_OVERFLOW_SCORE     = envNum("SIM_PHOENIX_OVERFLOW_SCORE", 30);            // Phönixfeuer (§7.20): Basis-Score je Hitzepunkt aus Niederlagen über der Leiste, zahlt beim nächsten Sieg
+export const SONNENZORN_MULT_PER_10     = envNum("SIM_SONNENZORN_MULT_PER_10", 0.05);          // Sonnenzorn: Hitze-Multiplikator je 10 % Spitzen-Hitze (statt HEAT_MULT_PER_10; §7.20: 0,04 → 0,05)
+export const SONNENZORN_HEAT_MULT       = envNum("SIM_SONNENZORN_HEAT_MULT", 2);               // Sonnenzorn (§7.20): unter der Spitze zählt die Hitze aus Siegen ×
 
 /* ============================================================
    EIS-REWORK v0 — „Was du richtig stellst, erstarrt für immer und wächst." Gletscher: Architektur × Permanenz.

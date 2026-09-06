@@ -75,13 +75,14 @@ export function lightningCritChance(lightning, skills, skillTiers, streak = 0) {
   return c;
 }
 
-/* Crit-Multiplikator-Beitrag des Blitz-Archetyps (additiv auf die Basis): Entladung-Rampe + Donnergott + Spannungsstau
-   (§7.18: der Stau aus Siegen ohne Crit, für den nächsten Crit) + Vorentladung (§7.18: ab der Serie der Stufe je
-   Serienpunkt; `streak` = Serie NACH diesem Sieg, wie bei der Crit-Chance). Der Überschuss über 100 % zahlt nur noch
-   über die Systemregel (overcritMult) — Überschlag ist gestrichen (§7.19). 0, solange inaktiv. */
+/* Crit-Multiplikator-Beitrag des Blitz-Archetyps (additiv auf die Basis): Entladung-Rampe + Spannungsstau (§7.18: der
+   Stau aus Siegen ohne Crit, für den nächsten Crit) + Vorentladung (§7.18: ab der Serie der Stufe je Serienpunkt;
+   `streak` = Serie NACH diesem Sieg, wie bei der Crit-Chance). Der Überschuss über 100 % zahlt nur noch über die
+   Systemregel (overcritMult) — Überschlag ist gestrichen (§7.19). Donnergott zahlt seit §7.20 über die Stapel der
+   Siegkarte (ionCritMultFor), nicht mehr flach. 0, solange inaktiv. */
 export function lightningCritMult(lightning, skills, skillTiers, streak = 0) {
   if (!lightning || !lightning.active) return 0;
-  let m = (lightning.entladungMult || 0) + (lightning.stauBonus || 0) + (hasDonnergott(skills) ? C.THUNDER_CRIT_MULT : 0);
+  let m = (lightning.entladungMult || 0) + (lightning.stauBonus || 0);
   const vMin = lightParam(skills, skillTiers, L.VORENTLADUNG, "minStreak");
   if (vMin != null && streak >= vMin) m += Math.max(0, streak) * (lightParam(skills, skillTiers, L.VORENTLADUNG, "multPerStreak") || 0);
   return m;
@@ -121,9 +122,11 @@ export function ionScoreFor(card, skills = [], skillTiers = {}) {
 }
 
 // Stapel auf dem Crit-Multiplikator der Siegkarte (§7.12: die Ionisierung trägt über den Motor, der ohnehin trägt):
-// wirksame Stapel × ION_CRIT_MULT_PER_STACK, additiv auf den Crit-Multiplikator dieses Stichs.
+// wirksame Stapel × ION_CRIT_MULT_PER_STACK, additiv auf den Crit-Multiplikator dieses Stichs. Donnergott (L, §7.20):
+// je Stapel DONNERGOTT_ION_CRIT_MULT_PER_STACK statt des Passiv-Satzes.
 export function ionCritMultFor(card, skills = [], skillTiers = {}) {
-  return effectiveStacks(card, skills, skillTiers) * C.ION_CRIT_MULT_PER_STACK;
+  const per = hasDonnergott(skills) ? C.DONNERGOTT_ION_CRIT_MULT_PER_STACK : C.ION_CRIT_MULT_PER_STACK;
+  return effectiveStacks(card, skills, skillTiers) * per;
 }
 
 /* Ladungsgewinn eines gewonnenen Stichs und die fortgeschriebenen Zähler. `streak` = Serie NACH diesem Sieg.

@@ -39,7 +39,8 @@ import { randomPolicy } from "../sim/policies/random.js";
 // §7.19 (Owner, 2026-09-06): Ionenfeld 3/3/4/5, Kettenblitz jede Leiste +1/2/3/4, Überspannung als Dauerwert je Leiste,
 // Crit-Deckel 8 → 12, Überschlag gestrichen, Phönixfeuer und Sonnenzorn gehoben. Der Zufallsspieler steigt (Ionenfeld und
 // der Dauerwert tragen, s. Doku): Seeds 1..40 Median ≈ 5,67M, Mean ≈ 9,28M (Seeds 1..200: 4,51M / 10,65M). Bänder darauf
-// zentriert (≈ ±35 %); nach dem Paritäts-Entscheid der Runde erneut zentrieren.
+// zentriert (≈ ±35 %). §7.20 (Owner): Ionenfeld 2/3/4/5, Überspannung 1/2/3/4, Deckel zurück auf 8, Donnergott über die
+// Stapel, Phönixfeuer-Überlauf, Sonnenzorn 0,05 und ×2 unter der Spitze — Seeds 1..40 Median ≈ 5,64M, Mean ≈ 8,89M, im Band.
 describe("sim balance guard", () => {
   const SEEDS = 40; // feste Seeds 1..40 → deterministischer Median/Mean
   const scores = Array.from({ length: SEEDS }, (_, i) => runOne(1 + i, randomPolicy()).score).sort((a, b) => a - b);

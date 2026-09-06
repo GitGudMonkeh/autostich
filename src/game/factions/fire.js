@@ -68,8 +68,10 @@ export function syncHeatMax(heat, skills) {
 /* Hitzegewinn eines gewonnenen Stichs (Prozentpunkte): Passiv (Vorsprung − Offset, ab Mindest-Vorsprung), + Zunder je
    Sieg, + Rückzündung je Punkt Rückstand der letzten Niederlage, wenn der Vorstich verloren war. Glut (§7.12,
    Kaltstart): steht die Hitze VOR dem Sieg unter der Schwelle der Stufe, zählt der ganze Gewinn ×mult — alle Quellen,
-   nicht nur das Passiv. (Feuersturm gibt seit §7.17 keine Hitze mehr — er ist Serie zu Score, feuersturmMult.) */
-export function heatGainOnWin(skills, skillTiers, { margin = 0, lastResult = null, lastLossDeficit = 0, heatValue = 0 } = {}) {
+   nicht nur das Passiv. Sonnenzorn (L, §7.20): liegt die Hitze vor dem Sieg unter der Spitze, zählt der Gewinn
+   ×SONNENZORN_HEAT_MULT (zusätzlich zu Glut — der Zorn holt die Spitze zurück). (Feuersturm gibt seit §7.17 keine
+   Hitze mehr — er ist Serie zu Score, feuersturmMult.) */
+export function heatGainOnWin(skills, skillTiers, { margin = 0, lastResult = null, lastLossDeficit = 0, heatValue = 0, heatPeak = 0 } = {}) {
   let g = 0;
   if (margin >= C.HEAT_MIN_MARGIN) g += (margin - C.HEAT_MARGIN_OFFSET) * C.HEAT_PER_POINT;
   g += fireParam(skills, skillTiers, F.ZUNDER, "heat") || 0;
@@ -77,6 +79,7 @@ export function heatGainOnWin(skills, skillTiers, { margin = 0, lastResult = nul
   if (pd && lastResult === "loss") g += pd * Math.max(0, lastLossDeficit);
   const below = fireParam(skills, skillTiers, F.GLUT, "below");
   if (below != null && (heatValue || 0) < below) g *= fireParam(skills, skillTiers, F.GLUT, "mult") || 1;
+  if (hasSonnenzorn(skills) && (heatValue || 0) < (heatPeak || 0)) g *= C.SONNENZORN_HEAT_MULT;
   return g;
 }
 
@@ -143,12 +146,16 @@ export function damascusCombat(skills, forged, card) {
    melted, brands } zurück; melted = gewandelte Hitzepunkte, brands = [{ id, value }] für die NÄCHSTE Runde. */
 export function fireOnWin(heat, skills, skillTiers, { margin = 0, lastResult = null, valueOver = 0, card = null,
   forged = {}, brandOnOpp = 0, oppId = null, oppIndex = -1, oppDeck = null } = {}) {
-  const gain = heatGainOnWin(skills, skillTiers, { margin, lastResult, lastLossDeficit: heat.lastLossDeficit || 0, heatValue: heat.value || 0 });
+  const gain = heatGainOnWin(skills, skillTiers, { margin, lastResult, lastLossDeficit: heat.lastLossDeficit || 0, heatValue: heat.value || 0, heatPeak: heat.peak || 0 });
   const max = heat.max || C.HEAT_MAX;
   const raw = (heat.value || 0) + gain;
   let value = Math.min(max, raw);
   const heldHeat = value;
   let flat = 0, melted = 0;
+  // Phönixfeuer (§7.20): die Hitze, die Niederlagen über die Leiste hinaus geheizt haben (phoenixPending, fireOnLoss),
+  // zahlt mit diesem Sieg Basis-Score je Punkt — der Überlauf-Wandler der Niederlagen. Ohne den Skill verfällt sie.
+  const phoenixPaid = hasPhoenixfeuer(skills) ? (heat.phoenixPending || 0) : 0;
+  flat += phoenixPaid * C.PHOENIX_OVERFLOW_SCORE;
   // Schmelzpunkt (§7.16, Owner): der Überlauf-Wandler — die Hitze, die ein Sieg nicht mehr auf die Leiste bringt (100,
   // mit Weißglut 200), wird Basis-Score je Punkt; die Leiste bleibt voll, verbrannt wird nichts (der Brand kostete Klinge,
   // Siegquote und Serie, 7.13). Episch: die Kühlung einer Niederlage bei voller Leiste ist vorgemerkt (meltPending) und
@@ -185,23 +192,27 @@ export function fireOnWin(heat, skills, skillTiers, { margin = 0, lastResult = n
   }
   if (hasSonnenkern(skills) && oppId != null) brands.push({ id: oppId, value: C.SONNENKERN_BRAND });
   const peak = Math.max(heat.peak || 0, heldHeat, value);
-  return { heat: { ...heat, value, peak, meltPending }, held: heldHeat, flat: Math.round(flat), melted, brands };
+  return { heat: { ...heat, value, peak, meltPending, phoenixPending: 0 }, held: heldHeat, flat: Math.round(flat), melted, phoenixPaid, brands };
 }
 
 /* Niederlage: Phönixfeuer heizt je Punkt Rückstand (§7.19: und bei voller Leiste hält die erste Niederlage jeder Runde
-   die Serie — `streakHeld`, einmal je Runde über heat.phoenixUsed, fireCycleEnd setzt zurück); sonst kühlt die
-   Niederlage HEAT_LOSS flach (Glut Episch: unter der Kaltstart-Schwelle nur halb), Glutbett hält einen Boden (Episch:
-   keine Kühlung). Schmelzpunkt Episch merkt die Kühlung bei voller Leiste vor (meltPending, zahlt beim nächsten Sieg).
-   Brandmal Episch brandmarkt die Gegnerkarte, die gewonnen hat (Tor auf der Hitze vor der Niederlage).
+   die Serie — `streakHeld`, einmal je Runde über heat.phoenixUsed, fireCycleEnd setzt zurück; §7.20: was über die
+   Leiste hinausgeht, ist vorgemerkt — heat.phoenixPending — und zahlt beim nächsten Sieg Basis-Score je Punkt); sonst
+   kühlt die Niederlage HEAT_LOSS flach (Glut Episch: unter der Kaltstart-Schwelle nur halb), Glutbett hält einen Boden
+   (Episch: keine Kühlung). Schmelzpunkt Episch merkt die Kühlung bei voller Leiste vor (meltPending, zahlt beim
+   nächsten Sieg). Brandmal Episch brandmarkt die Gegnerkarte, die gewonnen hat (Tor auf der Hitze vor der Niederlage).
    Gibt { heat, brands, streakHeld } zurück. */
 export function fireOnLoss(heat, skills, skillTiers, { deficit = 0, oppId = null } = {}) {
   const max = heat.max || C.HEAT_MAX;
   const before = heat.value || 0;
   let value = before;
-  let phoenixUsed = !!heat.phoenixUsed, streakHeld = false;
+  let phoenixUsed = !!heat.phoenixUsed, streakHeld = false, phoenixPending = heat.phoenixPending || 0;
   if (hasPhoenixfeuer(skills) && before >= max && !phoenixUsed) { phoenixUsed = true; streakHeld = true; }
-  if (hasPhoenixfeuer(skills)) value = Math.min(max, before + Math.max(0, deficit) * C.PHOENIX_LOSS_HEAT);
-  else if (!fireParam(skills, skillTiers, F.GLUTBETT, "noCool")) {
+  if (hasPhoenixfeuer(skills)) {
+    const raw = before + Math.max(0, deficit) * C.PHOENIX_LOSS_HEAT;
+    value = Math.min(max, raw);
+    phoenixPending += Math.max(0, raw - max);
+  } else if (!fireParam(skills, skillTiers, F.GLUTBETT, "noCool")) {
     const floor = fireParam(skills, skillTiers, F.GLUTBETT, "floor") ?? 0;
     const below = fireParam(skills, skillTiers, F.GLUT, "below");
     const half = fireParam(skills, skillTiers, F.GLUT, "halfCool") && below != null && before < below; // §7.16: Glut Episch
@@ -213,7 +224,7 @@ export function fireOnLoss(heat, skills, skillTiers, { deficit = 0, oppId = null
   const bm = fireParam(skills, skillTiers, F.BRANDMAL, "minHeat");
   if (fireParam(skills, skillTiers, F.BRANDMAL, "onLoss") && bm != null && before >= bm && oppId != null)
     brands.push({ id: oppId, value: fireParam(skills, skillTiers, F.BRANDMAL, "value") || 0 });
-  return { heat: { ...heat, value, peak: Math.max(heat.peak || 0, value), lastLossDeficit: Math.max(0, deficit), meltPending, phoenixUsed }, brands, streakHeld };
+  return { heat: { ...heat, value, peak: Math.max(heat.peak || 0, value), lastLossDeficit: Math.max(0, deficit), meltPending, phoenixUsed, phoenixPending }, brands, streakHeld };
 }
 
 /* Rundenende: Schmiede (§7.14: ohne Preis, die Hitze ist nur die Schwelle der Stufe — liegt sie an, erhält die niedrigste

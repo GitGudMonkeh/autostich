@@ -24,10 +24,10 @@ und gilt erst, wenn es nach Gesetzt wandert.
   Fraktions-Score geht in die Basis, vor die Multiplikatoren.
 - **Raritäten unterscheiden sich immer.** Zwei Stufen desselben Skills dürfen nie dieselben Werte haben
   (Owner, 2026-09-06); eine Leiter wie +1 / 1 / 2 / 3 ist keine. Prüfung: `BLITZ_TIERS` / `FEUER_TIERS`
-  Zeile für Zeile — Stand 7.19 verletzt es nur Überspannung (Normal = Selten), Vorschlag in 7.19.
+  Zeile für Zeile — 7.19 verletzte es nur Überspannung (Normal = Selten), seit 7.20 behoben (1 / 2 / 3 / 4).
 - **Keine Deckel auf Skill-Rampen, lieber niedrigere Werte.** Rampen laufen offen; die Zahl je Schritt
-  ist der Regler. Der harte Deckel des fertigen Crit-Multiplikators in der Engine (12× seit 7.19, vorher
-  8×) ist davon nicht berührt, er bleibt, bis der Owner anderes sagt.
+  ist der Regler. Der harte Deckel des fertigen Crit-Multiplikators in der Engine (8×; 7.19 versuchsweise
+  12×, 7.20 zurück) ist davon nicht berührt, er bleibt, bis der Owner anderes sagt.
 - **Crit-Chance über 100 % gibt einen sehr kleinen Crit-Multiplikator-Bonus.** Systemregel, Größe in
   der Sim. Überschlag, der denselben Überschuss in mehr Crit-Mult wandelte, ist seit 7.19 gestrichen; die
   Regel bleibt der Sockel für alle Fraktionen.
@@ -683,11 +683,11 @@ entfernt. Crit-Chance über 100 % gibt einen sehr kleinen Crit-Mult-Bonus (Syste
 | Spannungsstau | Glättung (seit 7.18 auf den Crit-Multiplikator) | Sieg ohne Crit +0,05× Crit-Multiplikator für den nächsten Crit, der Crit leert | +0,075× | +0,1× | +0,15×; Crit halbiert statt leert |
 | Vorentladung (neu, 7.18) | Serie zu Crit | ab Serie 5 gibt jeder Serienpunkt +0,1× Crit-Multiplikator auf den Stich | ab 4 | ab 3 | ab 2 |
 | ~~Überschlag~~ | gestrichen (7.19; die Systemregel „Überschuss über 100 %" in groß, im gierigen Build −15 %) | – | – | – | – |
-| Überspannung | Dauerwert je Leiste (seit 7.19; vorher Ionisierung zu Ladung) | jede volle Leiste gibt der Karte, die sie ionisiert, dauerhaft +1 Wert | +1 | +2 | +3 |
+| Überspannung | Dauerwert je Leiste (seit 7.19; vorher Ionisierung zu Ladung; Leiter 7.20) | jede volle Leiste gibt der Karte, die sie ionisiert, dauerhaft +1 Wert | +2 | +3 | +4 |
 | Blitzschlag | Tiefen-Motor (Leiter seit 7.18) | jeder 4. Crit ionisiert die Siegkarte | jeder 3. | jeder 2. | jeder 2., zwei Stapel |
 | ~~Dauerstrom~~ | gestrichen (7.18, in Blitzableiter aufgegangen) | – | – | – | – |
 | Serienschutz | Schutz | Niederlage ab 70 % Ladung hält die Serie, kostet 70 % | 50 % | 40 % | 30 %; einmal je Runde gratis |
-| Ionenfeld | Feld nach jeder Leiste (neu 7.18, Werte 7.19; Platz der alten Ionisierung) | jede volle Leiste: die nächsten 5 Stiche kämpfen alle Karten mit +3 Wert | 7 Stiche | 10 Stiche, +4 | 15 Stiche, +5 |
+| Ionenfeld | Feld nach jeder Leiste (neu 7.18, Werte 7.20; Platz der alten Ionisierung) | jede volle Leiste: die nächsten 5 Stiche kämpfen alle Karten mit +2 Wert | 7 Stiche, +3 | 10 Stiche, +4 | 15 Stiche, +5 |
 | Vorentladung | Serie zu Crit-Multiplikator (neu 7.18; Platz des Breitenbeschleunigers) | ab Serie 5 gibt jeder Serienpunkt +0,1× Crit-Mult auf den Stich | ab 4 | ab 3 | ab 2 |
 
 **Sim-Wachpunkte Blitz:** Statische Aufladung im Splash-Build; Rate × Breite (Kettenblitz Episch);
@@ -815,7 +815,7 @@ Türwurf mit 3 bis 4 % je Skill-Platz, kein Ersetzen, zwei gleichzeitig möglich
 
 | Legendär | Achse | Effekte |
 | --- | --- | --- |
-| Donnergott | Rate | Die Ladungsleiste ist bei 7 voll. Dauerhaft +0,4× Crit-Multiplikator. |
+| Donnergott | Rate + Tiefe | Die Ladungsleiste ist bei 7 voll. Jeder Stapel auf der Siegkarte zählt +0,25× statt +0,15× Crit-Multiplikator (7.20; vorher flach +0,4×). |
 | Doppelentladung | Tiefe | Jede Ionisierung gibt 2 Stapel statt 1. Crit mit einer ionisierten Karte: der Stich zählt doppelt. |
 | Hochspannung (neu, ersetzt Flächenionisation) | Kit | Alle gehaltenen Blitz-Skills wirken eine Stufe höher, Episch bleibt Episch. |
 | Durchschlag | Crit | Auch Niederlagen können critten: ein Crit bei einer Niederlage gewinnt den Stich. |
@@ -1499,8 +1499,8 @@ Entscheid Owner (2026-09-05): **gesetzt wie vorgeschlagen.**
 | Legendär | Achse | Effekte |
 | --- | --- | --- |
 | Sonnenkern | Gegner | Jeder Sieg brandmarkt die Gegnerkarte (−1), Brände stapeln sich über die Runden statt sich zu erneuern. Sieg gegen gebrandmarkte Karte +20 Basis-Score je Brand. |
-| Phönixfeuer | Rhythmus | Niederlagen heizen statt zu kühlen, +3 % je Punkt Rückstand (7.19: war +2 %). Bei voller Hitzeleiste hält die erste Niederlage jeder Runde die Serie (7.19). Fällt die Hitze auf 0, zündet sie auf 50 % neu, ohne Rundenlimit. |
-| Sonnenzorn | Multiplikator | Der Hitze-Multiplikator rechnet mit der höchsten je erreichten Hitze — bis 200 %, auch ohne Weißglut (7.19: vorher bis 100 %). Er zählt doppelt: je 10 % +4 % Score statt +2 %. |
+| Phönixfeuer | Rhythmus | Niederlagen heizen statt zu kühlen, +3 % je Punkt Rückstand (7.19: war +2 %). Was über die Leiste hinausgeht, zahlt beim nächsten Sieg +30 Basis-Score je Punkt (7.20). Bei voller Hitzeleiste hält die erste Niederlage jeder Runde die Serie (7.19). Fällt die Hitze auf 0, zündet sie auf 50 % neu, ohne Rundenlimit. |
+| Sonnenzorn | Multiplikator | Der Hitze-Multiplikator rechnet mit der höchsten je erreichten Hitze — bis 200 %, auch ohne Weißglut (7.19) — und zählt je 10 % +5 % Score statt +2 % (7.20: war +4 %). Solange die Hitze unter der Spitze liegt, zählt die Hitze aus Siegen ×2 (7.20). |
 | Damaststahl | Schmiede | Jede Runde wird die niedrigste Karte ohne Preis geschmiedet (+3). Geschmiedete Karten kämpfen mit doppeltem Schmiedewert. |
 
 Sim-Wachpunkte: Sonnenkern mit Brandmal und Lauffeuer (Gegnerdeck nach wenigen Runden bei null);
@@ -2595,6 +2595,71 @@ oben):
 Dazu aus 7.18 weiter offen: Glutbett (−45 %), die vier Legendären, die im gierigen Build nicht ankommen (Donnergott,
 Phönixfeuer, Sonnenzorn — ohne Feuer-Kern nichts zu lesen —, Hochspannung), Kurzschluss als Pick, der in 89 % gehalten
 wird und −10 % kostet, und die Stufenleitern.
+
+### 7.20 Parität zurück, Donnergott, Phönixfeuer, Sonnenzorn (2026-09-06, umgesetzt)
+
+Owner: „ja zu allem" — die Paritäts-Zeile aus 7.19 und drei der vier Legendären-Vorschläge; Hochspannung bleibt (es
+trägt, was die Stufenleitern tragen), Glutbett bleibt. Dazu die Regel in §1: Raritäten unterscheiden sich immer.
+
+**Parität.** Ionenfeld 2 / 3 / 4 / 5 (Normal 3 → 2 — der Normal-Wert entscheidet den Median), Überspannung 1 / 2 / 3 / 4
+(Normal = Selten war die einzige Verletzung der Regel), Crit-Deckel 12 → 8 (die eigene Empfehlung aus 7.18 zurück-
+genommen, 7.19). Kettenblitz bleibt +1 / 2 / 3 / 4.
+
+**Donnergott** (Blitz, L): die Leiste bleibt bei 7 voll; statt flach +0,4× Crit-Multiplikator zählt jeder Stapel auf
+der Siegkarte +0,25× statt +0,15× (`DONNERGOTT_ION_CRIT_MULT_PER_STACK`, Regler; Kurzschluss zählt weiter doppelt).
+Zwei Dinge, Rate und Tiefe — der Motor, den der gierige Build wirklich spielt.
+
+**Phönixfeuer** (Feuer, L): Niederlagen heizen +3 je Punkt Rückstand und halten bei voller Leiste einmal je Runde die
+Serie (7.19); neu zahlt die Hitze, die über die Leiste hinausgeht, beim nächsten Sieg +30 Basis-Score je Punkt
+(`PHOENIX_OVERFLOW_SCORE`; vorgemerkt in `heat.phoenixPending`, der Überlauf-Wandler der Niederlagen — in die Basis,
+kein Direkt-Score; ohne den Skill verfällt die Vormerkung).
+
+**Sonnenzorn** (Feuer, L): je 10 % Spitze +5 % statt +4 % (`SONNENZORN_MULT_PER_10`), und solange die Hitze unter der
+Spitze liegt, zählt die Hitze aus Siegen ×2 (`SONNENZORN_HEAT_MULT`; zusätzlich zu Glut — unter beiden Schwellen ×4,
+Sim-Wachpunkt). Der Zorn holt die Spitze zurück, im Kaltstart, wo Feuer verliert.
+
+**Technisch:** `ionCritMultFor` liest den Satz je Build, `lightningCritMult` ohne flachen Term (`THUNDER_CRIT_MULT`
+weg); `heatGainOnWin` bekommt `heatPeak`; `fireOnWin` gibt `phoenixPaid` zurück, `fireOnLoss` merkt `phoenixPending`.
+Sim-Band unverändert (Zufallsspieler, Seeds 1..40: 5,64M / 8,89M — die Runde hebt und senkt sich für ihn auf).
+
+**Messung (100 Läufe, 50 Runden, Stapel-Score 75):**
+
+| | 7.19 | jetzt |
+| --- | --- | --- |
+| Feuer mono / Blitz mono (Duell, Median) | 13,6M / 17,9M | 13,6M / 11,1M |
+| Floor Feuer ÷ Blitz (Mean, p90) | 0,76× (0,49×, 0,43×) | **1,23× (0,80×, 0,61×)** — 7.18: 1,22× (0,89×, 0,79×) |
+| Motor Blitz: Fraktion / Stapel zuerst / Crit zuerst | 16,0M / 28,7M / 23,8M | 12,7M / 22,5M / 21,5M |
+| Crit-Mult Ø (Fraktion / Stapel / Crit) | 4,4× / 5,4× / 5,5× | 4,0× / 4,6× / 4,9× |
+| Crits am Deckel (Fraktion / Stapel / Crit) | 6 % / 15 % / 7 % (12×) | 11 % / 23 % / 17 % (8×) |
+| Motor Feuer: Fraktion / Glut + Kern | 13,4M / 22,8M | 13,5M / 22,8M |
+
+Die Parität steht wieder auf dem Stand von 7.18: Median 1,23×, der Schwanz bleibt bei Blitz (p90 0,61×, 7.18 0,79×) —
+der Stapel-Build streut, der Halte-Build nicht. Der Deckel 8× bindet den Stapel-Build in einem Viertel seiner Crits.
+
+**Legendäre zur Laufmitte** (`--mode legendaries`, 150 gepaarte Läufe; Basis gierig 81,0M — 7.19 mit Deckel 8×: 88,0M):
+
+| Legendär | 7.19 (Deckel 12×) | 7.19 (Deckel 8×) | jetzt |
+| --- | --- | --- | --- |
+| Sonnenkern | +132 % | +59 % | +104 % |
+| Doppelentladung | +41 % | +74 % | +38 % |
+| Sonnenzorn | −25 % | −21 % | **+12 %** |
+| Durchschlag | +48 % | +18 % | +3 % |
+| Hochspannung | +10 % | +4 % | +11 % |
+| Damaststahl | +26 % | −4 % | −4 % |
+| Phönixfeuer | −8 % | −16 % | −15 % |
+| Donnergott | −5 % | −12 % | −19 % |
+
+Die Reihe streut zwischen zwei Läufen derselben Einstellung um ±20 Punkte (Sonnenkern 132 → 59 → 104 bei fast gleicher
+Basis) — sie zeigt Vorzeichen und Größenordnung, keine Zehntel. Sonnenzorn ist mit den zwei neuen Dingen zum ersten
+Mal positiv (+12 %, besser in 55 % der Seeds). Phönixfeuer und Donnergott bleiben unten; für beide ist die Reihe der
+falsche Blick (die Basis ist ein gemischter Build ohne Feuer-Kern bzw. ohne Tiefe zur Laufmitte), der reine
+Fraktions-Build unten ist der fairere.
+
+**Lifts im reinen Feuer-Build** (400 Läufe, Median mit ÷ ohne; 7.19 → jetzt): Feuer mono 14,1M → 14,2M. Sonnenzorn
+0,94 → **1,05** (Mean 1,04 → 1,17), Phönixfeuer 0,87 → 0,86 (Mean 0,77 → 0,77) — der Überlauf-Wandler mit 30 je
+Punkt ist im reinen Build nicht sichtbar: der Rückstand einer Niederlage ist klein (zwei bis vier Punkte), der Überlauf
+fällt nur bei voller Leiste an, und der Pick kostet den Verstärker, den er verdrängt. Regler-Sweep 30 / 60 / 100 je
+Punkt und der Blitz-Lift des Donnergotts (0,25 / 0,35 / 0,5 je Stapel) unten.
 
 ## 5. Eis
 

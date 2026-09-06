@@ -120,6 +120,12 @@ describe("Feuer — Modul (reine Übergänge)", () => {
     expect(heatGainOnWin([F.FEUERSTURM], st({ [F.FEUERSTURM]: 1 }), { margin: 1, streak: 3 })).toBe(0);
     expect(heatGainOnWin([F.RUECKZUENDUNG], st({ [F.RUECKZUENDUNG]: 1 }), { margin: 1, lastResult: "loss", lastLossDeficit: 4 })).toBe(4 * T.rueckzuendung[1].perDeficit);
     expect(heatGainOnWin([F.RUECKZUENDUNG], st({ [F.RUECKZUENDUNG]: 1 }), { margin: 1, lastResult: "win", lastLossDeficit: 4 })).toBe(0);
+    // §7.20 Sonnenzorn: unter der Spitze zählt der ganze Gewinn ×2 (auch über Glut), an der Spitze und darüber nicht.
+    expect(heatGainOnWin([F.SONNENZORN], {}, { margin: 6, heatValue: 80, heatPeak: 120 })).toBe(G(6) * C.SONNENZORN_HEAT_MULT);
+    expect(heatGainOnWin([F.SONNENZORN], {}, { margin: 6, heatValue: 120, heatPeak: 120 })).toBe(G(6));
+    expect(heatGainOnWin([F.SONNENZORN], {}, { margin: 6, heatValue: 0, heatPeak: 0 })).toBe(G(6)); // ohne Spitze nichts zu holen
+    expect(heatGainOnWin([F.SONNENZORN, F.GLUT], st({}), { margin: 6, heatValue: 10, heatPeak: 100 })).toBe(G(6) * T.glut[0].mult * C.SONNENZORN_HEAT_MULT);
+    expect(heatGainOnWin([F.GLUT], st({}), { margin: 6, heatValue: 80, heatPeak: 120 })).toBe(G(6)); // ohne Sonnenzorn zählt die Spitze nicht
   });
   it("heatMult: je volle 10 % +2 %, über 100 nur mit Weißglut, Sonnenzorn mit Spitze und doppelt", () => {
     expect(heatMult([], {}, 0)).toBe(1);
@@ -193,6 +199,14 @@ describe("Feuer — Modul (reine Übergänge)", () => {
     // Phönix: Hitze auf 0 zündet mit dem Sieg neu.
     const ph = fireOnWin(heat({ value: 0 }), [F.PHOENIXFEUER], {}, { margin: 1 });
     expect(ph.heat.value).toBe(C.PHOENIX_REIGNITE);
+    // §7.20 Phönix: die vorgemerkte Hitze aus Niederlagen über der Leiste zahlt mit dem Sieg je Punkt in die Basis und ist danach verbraucht.
+    const paid = fireOnWin(heat({ value: 100, phoenixPending: 21 }), [F.PHOENIXFEUER], {}, { margin: 1 });
+    expect(paid.phoenixPaid).toBe(21); expect(paid.flat).toBe(21 * C.PHOENIX_OVERFLOW_SCORE); expect(paid.heat.phoenixPending).toBe(0);
+    const dropped = fireOnWin(heat({ value: 100, phoenixPending: 21 }), [F.KLINGE], {}, { margin: 1 }); // ohne den Skill verfällt sie
+    expect(dropped.flat).toBe(0); expect(dropped.heat.phoenixPending).toBe(0);
+    // Sonnenzorn (§7.20): der Sieg unter der Spitze heizt doppelt — über fireOnWin, mit der Spitze aus dem Substate.
+    expect(fireOnWin(heat({ value: 50, peak: 100 }), [F.SONNENZORN], {}, { margin: 6 }).heat.value).toBe(50 + G(6) * C.SONNENZORN_HEAT_MULT);
+    expect(fireOnWin(heat({ value: 50, peak: 50 }), [F.SONNENZORN], {}, { margin: 6 }).heat.value).toBe(50 + G(6));
     expect(fireOnWin(heat({ value: 10 }), [F.GLUTSTAHL], {}, { margin: 1, valueOver: 3, card: { id: "X0" } }).flat).toBe(3 * T.glutstahl[0].perPoint);
     expect(fireOnWin(heat({ value: 10 }), [F.GLUTSTAHL], { [F.GLUTSTAHL]: 3 }, { margin: 1, valueOver: 3, card: { id: "X0" }, forged: { X0: 3 } }).flat).toBe(6 * T.glutstahl[3].perPoint);
     const sk = fireOnWin(heat({ value: 10 }), [F.SONNENKERN], {}, { margin: 1, brandOnOpp: 3, oppId: "O5" });
@@ -217,6 +231,13 @@ describe("Feuer — Modul (reine Übergänge)", () => {
     expect(fireOnLoss(heat({ value: 30 }), [F.GLUTBETT], {}, { deficit: 1 }).heat.value).toBe(30);   // unter dem Boden: nichts
     expect(fireOnLoss(heat({ value: 95 }), [F.GLUTBETT], { [F.GLUTBETT]: 3 }, { deficit: 9 }).heat.value).toBe(95);
     expect(fireOnLoss(heat({ value: 10 }), [F.PHOENIXFEUER], {}, { deficit: 3 }).heat.value).toBe(10 + 3 * C.PHOENIX_LOSS_HEAT);
+    // §7.20 Phönix: was über die Leiste hinausgeht, ist vorgemerkt (phoenixPending) und stapelt sich über mehrere Niederlagen.
+    expect(fireOnLoss(heat({ value: 10 }), [F.PHOENIXFEUER], {}, { deficit: 3 }).heat.phoenixPending).toBe(0);
+    const over = fireOnLoss(heat({ value: 100 }), [F.PHOENIXFEUER], {}, { deficit: 3 });
+    expect(over.heat.value).toBe(100); expect(over.heat.phoenixPending).toBe(3 * C.PHOENIX_LOSS_HEAT);
+    expect(fireOnLoss(over.heat, [F.PHOENIXFEUER], {}, { deficit: 2 }).heat.phoenixPending).toBe(5 * C.PHOENIX_LOSS_HEAT);
+    expect(fireOnLoss(heat({ value: 98 }), [F.PHOENIXFEUER], {}, { deficit: 2 }).heat.phoenixPending).toBe(98 + 2 * C.PHOENIX_LOSS_HEAT - 100); // nur der Teil über der Leiste
+    expect(fireOnLoss(heat({ value: 200, max: 200 }), [F.PHOENIXFEUER, F.WEISSGLUT], {}, { deficit: 3 }).heat.phoenixPending).toBe(3 * C.PHOENIX_LOSS_HEAT); // mit Weißglut ab 200
     // §7.19 Phönixfeuer: bei voller Leiste hält die erste Niederlage jeder Runde die Serie, die zweite nicht; unter voll nicht; ohne den Skill nicht.
     const ph1 = fireOnLoss(heat({ value: 100 }), [F.PHOENIXFEUER], {}, { deficit: 3 });
     expect(ph1.streakHeld).toBe(true); expect(ph1.heat.phoenixUsed).toBe(true); expect(ph1.heat.value).toBe(100);
@@ -297,6 +318,14 @@ describe("Feuer — Engine-Integration", () => {
     expect(warm.winStreak).toBe(0); expect(warm.heat.phoenixUsed).toBe(false);
     const endOfRound = resolveTrick(scen(2, 9, { pos: 39, skills: [F.PHOENIXFEUER], heat: heat({ value: C.HEAT_MAX }), winStreak: 5 }), noCrit);
     expect(endOfRound.winStreak).toBe(5); expect(endOfRound.heat.phoenixUsed).toBe(false);
+  });
+  it("Phönixfeuer (§7.20): die Hitze aus Niederlagen über der Leiste zahlt beim nächsten Sieg in die Basis, +30 je Punkt", () => {
+    const loss = resolveTrick(scen(2, 9, { skills: [F.PHOENIXFEUER], heat: heat({ value: C.HEAT_MAX }) }), noCrit); // Rückstand 7 bei voller Leiste
+    expect(loss.heat.phoenixPending).toBe(7 * C.PHOENIX_LOSS_HEAT);
+    const plain = resolveTrick(scen(12, 6, { skills: [F.PHOENIXFEUER], heat: heat({ value: 50 }) }), noCrit);
+    const paid = resolveTrick(scen(12, 6, { skills: [F.PHOENIXFEUER], heat: heat({ value: 50, phoenixPending: 21 }) }), noCrit);
+    expect(paid.lastTrick.scoreGain / plain.lastTrick.scoreGain).toBeCloseTo((B + 21 * C.PHOENIX_OVERFLOW_SCORE) / B, 6); // in der Basis, vor den Multiplikatoren
+    expect(paid.heat.phoenixPending).toBe(0);
   });
   it("Verbrennung: ein Sieg ab dem Vorsprung der Stufe zählt ×1,5 — im selben Faktor wie der Hitze-Multiplikator", () => {
     const big = resolveTrick(scen(14, 6, { skills: [F.VERBRENNUNG], heat: heat({ value: 0 }) }), noCrit);   // Vorsprung 8

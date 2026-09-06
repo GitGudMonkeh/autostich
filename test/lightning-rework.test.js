@@ -67,9 +67,9 @@ describe("Blitz-Modul — Stufen und Kennwerte", () => {
     expect(lightningCritChance(light(), [L.LADUNGSSERIE], { [L.LADUNGSSERIE]: 3 }, 20)).toBeCloseTo(C.LIGHTNING_CRIT_PER_SKILL + 20 * T.serie[3].critPerStreak, 9);
     expect(lightningCritChance(light(), [L.LADUNGSSERIE], {}, 0)).toBeCloseTo(C.LIGHTNING_CRIT_PER_SKILL, 9); // ohne Serie kein Bonus
   });
-  it("lightningCritMult: Entladung-Rampe + Donnergott + Spannungsstau + Vorentladung ab der Serie (§7.19: Überschlag ist gestrichen, kein rawCrit-Term mehr)", () => {
+  it("lightningCritMult: Entladung-Rampe + Spannungsstau + Vorentladung ab der Serie (§7.19: Überschlag gestrichen; §7.20: Donnergott zahlt über die Stapel, nicht flach)", () => {
     expect(lightningCritMult(initLightning(), [L.DONNERGOTT], {})).toBe(0);
-    expect(lightningCritMult(light({ entladungMult: 0.3 }), [L.DONNERGOTT], {})).toBeCloseTo(0.3 + C.THUNDER_CRIT_MULT, 9);
+    expect(lightningCritMult(light({ entladungMult: 0.3 }), [L.DONNERGOTT], {})).toBeCloseTo(0.3, 9);
     expect(lightningCritMult(light({ stauBonus: 0.25 }), [], {})).toBeCloseTo(0.25, 9); // §7.18: der Spannungsstau zahlt hier
     const vMin = T.vorentladung[0].minStreak;
     expect(lightningCritMult(light(), [L.VORENTLADUNG], {}, vMin)).toBeCloseTo(vMin * T.vorentladung[0].multPerStreak, 9);
@@ -339,13 +339,16 @@ describe("Blitz — Engine-Integration (resolveTrick)", () => {
     expect(s.lightning.bars).toBe(1);
     expect(s.deck[1].ionStacks).toBe(1);
   });
-  it("Donnergott: Leiste bei 7 voll, dauerhaft +0,4× Crit-Multiplikator; maxCharge folgt dem Build", () => {
+  it("Donnergott (§7.20): Leiste bei 7 voll, maxCharge folgt dem Build; Stapel der Siegkarte zählen +0,25× statt +0,15×, kein flacher Term", () => {
     const s = resolveTrick(scen(12, 0, { skills: [L.DONNERGOTT], lightning: light({ charge: 6 }) }), zero);
     expect(s.lightning.maxCharge).toBe(C.DONNERGOTT_MAX_CHARGE);
     expect(s.lightning.bars).toBe(1);
     expect(s.lightning.charge).toBe(0);
     expect(s.deck[1].ionStacks).toBe(1);
-    expect(s.lastTrick.critMultiplier).toBeCloseTo(M + C.THUNDER_CRIT_MULT, 6);
+    expect(s.lastTrick.critMultiplier).toBeCloseTo(M, 6); // ohne Stapel auf der Siegkarte nichts extra
+    const deep = resolveTrick(scen(12, 0, { deck: withStacks(12, 0, 3), skills: [L.DONNERGOTT], lightning: light() }), zero);
+    expect(deep.lastTrick.critMultiplier).toBeCloseTo(M + 3 * C.DONNERGOTT_ION_CRIT_MULT_PER_STACK, 6);
+    expect(C.DONNERGOTT_ION_CRIT_MULT_PER_STACK).toBeGreaterThan(C.ION_CRIT_MULT_PER_STACK);
   });
   it("Doppelentladung: 2 Stapel je Ionisierung; Crit mit ionisierter Karte zählt den Stich doppelt", () => {
     const s = resolveTrick(scen(12, 0, { deck: withStacks(12, 0, 1), skills: [L.DOPPELENTLADUNG], lightning: light({ charge: 9 }) }), zero);
@@ -366,6 +369,7 @@ describe("Blitz — Engine-Integration (resolveTrick)", () => {
     const none = resolveTrick(scen(12, 0, { skills: [L.ABLEITER], lightning: light() }), zero);
     expect(none.lastTrick.critMultiplier).toBeCloseTo(M, 6);
     expect(ionCritMultFor({ ionStacks: 3 })).toBeCloseTo(3 * C.ION_CRIT_MULT_PER_STACK, 9);
+    expect(ionCritMultFor({ ionStacks: 3 }, [L.DONNERGOTT], {})).toBeCloseTo(3 * C.DONNERGOTT_ION_CRIT_MULT_PER_STACK, 9); // §7.20
     expect(ionCritMultFor({ ionStacks: 0 })).toBe(0);
     const min = T.kurzschluss[0].minStacks;
     expect(ionCritMultFor({ ionStacks: min }, [L.KURZSCHLUSS], {})).toBeCloseTo(min * T.kurzschluss[0].factor * C.ION_CRIT_MULT_PER_STACK, 9);
