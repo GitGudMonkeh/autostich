@@ -323,7 +323,10 @@ export const PLANT_PASSIVE_MIN_SKILLS = envNum("SIM_PLANT_PASSIVE_MIN_SKILLS", 0
    der 15 Skills liegen in ihren Stufentabellen (skills.js SKILL_DEFS[…].tiers, gelesen von factions/lightning.js).
    Startwerte für die Sim (Phase 5). [TUNING]
    ============================================================ */
-export const LIGHTNING_CRIT_PER_SKILL = envNum("SIM_LIGHTNING_CRIT_PER_SKILL", 0.05); // Passiv: +Crit-Chance je gehaltenem Blitz-Skill (nicht gestuft)
+// docs/skill-rework.md §7.12 (owner: ionisation carries, via the crit multiplier): crit per skill 0.05 → 0.04 so the
+// single skill matters again, and every stack on the winning card adds ION_CRIT_MULT_PER_STACK to the crit multiplier.
+export const LIGHTNING_CRIT_PER_SKILL = envNum("SIM_LIGHTNING_CRIT_PER_SKILL", 0.04); // Passiv: +Crit-Chance je gehaltenem Blitz-Skill (nicht gestuft)
+export const ION_CRIT_MULT_PER_STACK  = envNum("SIM_ION_CRIT_MULT_PER_STACK", 0.1);   // +Crit-Multiplikator je Stapel auf der Siegkarte (Kurzschluss zählt die Stapel ab der Schwelle doppelt)
 export const LIGHTNING_MAX_CHARGE     = envNum("SIM_LIGHTNING_MAX_CHARGE", 10);       // Leiste: so viele Ladungen (= Crits) bis zur Ionisierung
 export const DONNERGOTT_MAX_CHARGE    = envNum("SIM_DONNERGOTT_MAX_CHARGE", 7);       // Donnergott (L): die Leiste ist bei 7 voll (Sim-Wachpunkt: ~8)
 export const THUNDER_CRIT_MULT        = envNum("SIM_THUNDER_CRIT_MULT", 0.4);         // Donnergott (L): dauerhaft +Crit-Multiplikator

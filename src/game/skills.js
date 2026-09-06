@@ -59,7 +59,7 @@ const jeder = (n, w = "Jeder") => (n === 1 ? w : `${w} ${n}.`); // „Jeder 2. C
 // Stufentabellen der 15 Feuer-Skills (§4.5) — dieselbe Form; die Schwellen sinken, die Sätze steigen mit der Stufe.
 // Das Modul factions/fire.js liest sie über `fireParam`; Legendäre haben keine Zeile.
 const FEUER = {
-  glut:          [{ heatMult: 1.25 }, { heatMult: 1.5 }, { heatMult: 1.75 }, { heatMult: 2 }],
+  glut:          [{ below: 40, mult: 2 }, { below: 50, mult: 2 }, { below: 60, mult: 2 }, { below: 80, mult: 2 }], // §7.12: Kaltstart — unter der Schwelle zählt Hitze aus Siegen doppelt
   zunder:        [{ heat: 1 }, { heat: 2 }, { heat: 3 }, { heat: 4 }],
   feuersturm:    [{ perStreak: 0.5 }, { perStreak: 1 }, { perStreak: 1.5 }, { perStreak: 2 }],
   glutbett:      [{ floor: 40 }, { floor: 60 }, { floor: 80 }, { noCool: true }],
@@ -129,7 +129,7 @@ export const SKILL_DEFS = {
   //      Die Mechanik liest die Stufentabellen oben (factions/fire.js). Texte: ein Satz je Stufe (`tiered`).
   // Rate — Hitze erzeugen
   SK_FIRE_01: { id: "SK_FIRE_01", name: "Glut", archetype: "fire", keywords: ["heat"], tiers: FEUER.glut,
-    ...tiered(FEUER.glut, (r) => `Siege mit Kampfwert-Vorsprung geben ×${de(r.heatMult)} Hitze.`) },
+    ...tiered(FEUER.glut, (r) => `Solange die Hitze unter ${r.below} % steht, zählt Hitze aus Siegen ×${de(r.mult)}.`) },
   SK_FIRE_02: { id: "SK_FIRE_02", name: "Zunder", archetype: "fire", keywords: ["heat"], tiers: FEUER.zunder,
     ...tiered(FEUER.zunder, (r) => `Jeder Sieg gibt +${r.heat} % Hitze, auch ein knapper.`) },
   SK_FIRE_03: { id: "SK_FIRE_03", name: "Feuersturm", archetype: "fire", keywords: ["heat", "streak"], tiers: FEUER.feuersturm,

@@ -48,7 +48,7 @@ describe("Feuer — Roster und Stufenleitern", () => {
   it("Leitern sind monoton: Sätze steigen, Schwellen und Preise sinken mit der Stufe", () => {
     const up = (rows, k) => rows.every((r, i) => i === 0 || r[k] > rows[i - 1][k]);
     const down = (rows, k) => rows.every((r, i) => i === 0 || r[k] < rows[i - 1][k]);
-    expect(up(T.glut, "heatMult")).toBe(true);
+    expect(up(T.glut, "below")).toBe(true); // §7.12: Kaltstart-Schwelle steigt mit der Stufe
     expect(up(T.zunder, "heat")).toBe(true);
     expect(up(T.feuersturm, "perStreak")).toBe(true);
     expect(up(T.glutbett.slice(0, 3), "floor")).toBe(true);
@@ -68,7 +68,7 @@ describe("Feuer — Roster und Stufenleitern", () => {
   });
   it("ein Text je Stufe aus denselben Tabellen: `desc` ist der Normal-Text, `descTiers[t]` nennt nur SEINE Stufe", () => {
     expect(SKILL_DEFS.SK_FIRE_01.desc).toBe(SKILL_DEFS.SK_FIRE_01.descTiers[0]);
-    expect(SKILL_DEFS.SK_FIRE_01.desc).toContain(`×${String(T.glut[0].heatMult).replace(".", ",")}`);
+    expect(SKILL_DEFS.SK_FIRE_01.desc).toContain(`unter ${T.glut[0].below} %`);
     expect(SKILL_DEFS.SK_FIRE_02.descTiers[3]).toContain(`+${T.zunder[3].heat} %`);
     expect(SKILL_DEFS.SK_FIRE_02.descTiers[0]).not.toContain(`+${T.zunder[3].heat} %`);
     expect(SKILL_DEFS.SK_FIRE_09.desc).toContain(`ab ${T.verbrennung[0].minMargin}`);
@@ -97,15 +97,18 @@ describe("Feuer — Modul (reine Übergänge)", () => {
     expect(fireTier([F.GLUT], {}, F.GLUT)).toBe(0);
     expect(fireTier([F.GLUT], { [F.GLUT]: 2 }, F.GLUT)).toBe(2);
     expect(fireTier([F.SONNENKERN], {}, F.SONNENKERN)).toBe(null);
-    expect(fireParam([], {}, F.GLUT, "heatMult")).toBeUndefined();
-    expect(fireParam([F.GLUT], { [F.GLUT]: 3 }, F.GLUT, "heatMult")).toBe(T.glut[3].heatMult);
+    expect(fireParam([], {}, F.GLUT, "below")).toBeUndefined();
+    expect(fireParam([F.GLUT], { [F.GLUT]: 3 }, F.GLUT, "below")).toBe(T.glut[3].below);
   });
   it("heatGainOnWin: Passiv ab Vorsprung 3, Glut, Zunder, Feuersturm, Rückzündung", () => {
     expect(heatGainOnWin([], {}, { margin: 2 })).toBe(0);
     expect(heatGainOnWin([], {}, { margin: 6 })).toBe(G(6));
     expect(G(6)).toBe(6 - C.HEAT_MARGIN_OFFSET);
-    expect(heatGainOnWin([F.GLUT], st({ [F.GLUT]: 1 }), { margin: 6 })).toBe(G(6) * T.glut[1].heatMult);
-    expect(heatGainOnWin([F.GLUT], st({ [F.GLUT]: 3 }), { margin: 6 })).toBe(G(6) * T.glut[3].heatMult);
+    // Glut (§7.12): unter der Schwelle der Stufe zählt der ganze Gewinn ×2 — an der Schwelle nicht mehr; auch Zunder zählt mit.
+    expect(heatGainOnWin([F.GLUT], st({ [F.GLUT]: 1 }), { margin: 6, heatValue: T.glut[1].below - 1 })).toBe(G(6) * T.glut[1].mult);
+    expect(heatGainOnWin([F.GLUT], st({ [F.GLUT]: 1 }), { margin: 6, heatValue: T.glut[1].below })).toBe(G(6));
+    expect(heatGainOnWin([F.GLUT], st({ [F.GLUT]: 3 }), { margin: 6, heatValue: 70 })).toBe(G(6) * T.glut[3].mult);
+    expect(heatGainOnWin([F.GLUT, F.ZUNDER], st({}), { margin: 1, heatValue: 0 })).toBe(T.zunder[0].heat * T.glut[0].mult);
     expect(heatGainOnWin([F.ZUNDER], st({ [F.ZUNDER]: 1 }), { margin: 1 })).toBe(T.zunder[1].heat);     // auch knapp
     expect(heatGainOnWin([F.FEUERSTURM], st({ [F.FEUERSTURM]: 1 }), { margin: 1, streak: 3 })).toBe(3 * T.feuersturm[1].perStreak);
     expect(heatGainOnWin([F.RUECKZUENDUNG], st({ [F.RUECKZUENDUNG]: 1 }), { margin: 1, lastResult: "loss", lastLossDeficit: 4 })).toBe(4 * T.rueckzuendung[1].perDeficit);
@@ -222,9 +225,13 @@ describe("Feuer — Engine-Integration", () => {
     expect(warm.fireHeat).toBeGreaterThan(0);
     expect(warm.fireBase).toBe(0); // kein Feuer-Score im Passiv
   });
-  it("Stufe aus state.skillTiers: Glut Episch verdoppelt die Passiv-Hitze", () => {
-    const s = resolveTrick(scen(12, 6, { skills: [F.GLUT], skillTiers: { [F.GLUT]: 3 }, heat: heat({ value: 0 }) }), noCrit);
-    expect(s.heat.value).toBe(G(6) * T.glut[3].heatMult);
+  it("Stufe aus state.skillTiers: Glut Episch verdoppelt die Hitze aus Siegen unter 80 %, darüber nicht", () => {
+    const cold = resolveTrick(scen(12, 6, { skills: [F.GLUT], skillTiers: { [F.GLUT]: 3 }, heat: heat({ value: 0 }) }), noCrit);
+    expect(cold.heat.value).toBe(G(6) * T.glut[3].mult);
+    const hot = resolveTrick(scen(12, 6, { skills: [F.GLUT], skillTiers: { [F.GLUT]: 3 }, heat: heat({ value: T.glut[3].below }) }), noCrit);
+    expect(hot.heat.value).toBe(T.glut[3].below + G(6));
+    const normal = resolveTrick(scen(12, 6, { skills: [F.GLUT], heat: heat({ value: T.glut[0].below }) }), noCrit); // Normal: ab 40 nicht mehr
+    expect(normal.heat.value).toBe(T.glut[0].below + G(6));
   });
   it("Niederlage kühlt −2 und merkt den Rückstand; Phönixfeuer heizt stattdessen", () => {
     const s = resolveTrick(scen(2, 9, { skills: [F.GLUT], heat: heat({ value: 50 }) }), noCrit);

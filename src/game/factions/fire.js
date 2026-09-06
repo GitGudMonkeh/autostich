@@ -65,22 +65,20 @@ export function syncHeatMax(heat, skills) {
   return { ...heat, max, value: Math.min(max, heat.value || 0) };
 }
 
-/* Hitzegewinn eines gewonnenen Stichs (Prozentpunkte): Passiv (Vorsprung − Offset, ab Mindest-Vorsprung) × Glut,
-   + Zunder je Sieg, + Feuersturm je Serienpunkt (Serie NACH diesem Sieg), + Rückzündung je Punkt Rückstand der
-   letzten Niederlage, wenn der Vorstich verloren war. */
-export function heatGainOnWin(skills, skillTiers, { margin = 0, streak = 0, lastResult = null, lastLossDeficit = 0 } = {}) {
+/* Hitzegewinn eines gewonnenen Stichs (Prozentpunkte): Passiv (Vorsprung − Offset, ab Mindest-Vorsprung), + Zunder je
+   Sieg, + Feuersturm je Serienpunkt (Serie NACH diesem Sieg), + Rückzündung je Punkt Rückstand der letzten Niederlage,
+   wenn der Vorstich verloren war. Glut (§7.12, Kaltstart): steht die Hitze VOR dem Sieg unter der Schwelle der Stufe,
+   zählt der ganze Gewinn ×mult — alle Quellen, nicht nur das Passiv. */
+export function heatGainOnWin(skills, skillTiers, { margin = 0, streak = 0, lastResult = null, lastLossDeficit = 0, heatValue = 0 } = {}) {
   let g = 0;
-  if (margin >= C.HEAT_MIN_MARGIN) {
-    let base = (margin - C.HEAT_MARGIN_OFFSET) * C.HEAT_PER_POINT;
-    const gm = fireParam(skills, skillTiers, F.GLUT, "heatMult");
-    if (gm) base *= gm;
-    g += base;
-  }
+  if (margin >= C.HEAT_MIN_MARGIN) g += (margin - C.HEAT_MARGIN_OFFSET) * C.HEAT_PER_POINT;
   g += fireParam(skills, skillTiers, F.ZUNDER, "heat") || 0;
   const ps = fireParam(skills, skillTiers, F.FEUERSTURM, "perStreak");
   if (ps) g += ps * Math.max(0, streak);
   const pd = fireParam(skills, skillTiers, F.RUECKZUENDUNG, "perDeficit");
   if (pd && lastResult === "loss") g += pd * Math.max(0, lastLossDeficit);
+  const below = fireParam(skills, skillTiers, F.GLUT, "below");
+  if (below != null && (heatValue || 0) < below) g *= fireParam(skills, skillTiers, F.GLUT, "mult") || 1;
   return g;
 }
 
@@ -135,7 +133,7 @@ export function damascusCombat(skills, forged, card) {
    Kampfbonus). Gibt { heat, held, flat, burned, brands } zurück; brands = [{ id, value }] für die NÄCHSTE Runde. */
 export function fireOnWin(heat, skills, skillTiers, { margin = 0, streak = 0, lastResult = null, valueOver = 0, card = null,
   forged = {}, brandOnOpp = 0, oppId = null, oppIndex = -1, oppDeck = null } = {}) {
-  const gain = heatGainOnWin(skills, skillTiers, { margin, streak, lastResult, lastLossDeficit: heat.lastLossDeficit || 0 });
+  const gain = heatGainOnWin(skills, skillTiers, { margin, streak, lastResult, lastLossDeficit: heat.lastLossDeficit || 0, heatValue: heat.value || 0 });
   const max = heat.max || C.HEAT_MAX;
   let value = Math.min(max, (heat.value || 0) + gain);
   const heldHeat = value;

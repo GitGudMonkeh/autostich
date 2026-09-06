@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import * as C from "../src/game/constants.js";
 import { SKILL_DEFS, BLITZ_TIERS } from "../src/game/skills.js";
 import { initLightning, L, maxChargeFor, effectiveTier, lightParam, lightningCritChance, lightningCritMult, overcritMult,
-  blitzfaengerValue, ionScoreFor, chargeGainOnWin, critFillsBar, blitzschlagStacks, stauAfterWin, lightningOnLoss, fillBar,
+  blitzfaengerValue, ionScoreFor, ionCritMultFor, chargeGainOnWin, critFillsBar, blitzschlagStacks, stauAfterWin, lightningOnLoss, fillBar,
   lightningCycleEnd } from "../src/game/factions/lightning.js";
 import { resolveTrick } from "../src/game/engine.js";
 import { initialState } from "../src/game/reducer.js";
@@ -276,8 +276,9 @@ describe("Blitz — Engine-Integration (resolveTrick)", () => {
     const rule = resolveTrick(scen(12, 0, { lightning: light({ stauBonus: 1.5 }) }), zero); // rawCrit 1,5 → 50 Punkte
     expect(rule.lastTrick.isCrit).toBe(true);
     expect(rule.lastTrick.critMultiplier).toBeCloseTo(M + 50 * C.OVERCRIT_MULT_PER_PP, 6);
-    const arc = resolveTrick(scen(12, 0, { skills: [L.UEBERSCHLAG], lightning: light({ stauBonus: 1.5 }) }), zero); // 0,05 + 1,5 → 55 Punkte
-    expect(arc.lastTrick.critMultiplier).toBeCloseTo(M + 55 * C.OVERCRIT_MULT_PER_PP + 5 * T.ueberschlag[0].multPer10, 6);
+    const pp = Math.round((C.LIGHTNING_CRIT_PER_SKILL + 1.5 - 1) * 100); // ein Blitz-Skill + 1,5 → Punkte über 100 (§7.12: 4 % je Skill → 54)
+    const arc = resolveTrick(scen(12, 0, { skills: [L.UEBERSCHLAG], lightning: light({ stauBonus: 1.5 }) }), zero);
+    expect(arc.lastTrick.critMultiplier).toBeCloseTo(M + pp * C.OVERCRIT_MULT_PER_PP + Math.floor(pp / 10) * T.ueberschlag[0].multPer10, 6);
   });
   it("Serienschutz: Niederlage ab 70 % Ladung hält die Serie und kostet sie; Episch einmal je Runde gratis, Rundenende gibt es frei", () => {
     const cost = Math.ceil(C.LIGHTNING_MAX_CHARGE * T.serienschutz[0].frac);
@@ -314,10 +315,25 @@ describe("Blitz — Engine-Integration (resolveTrick)", () => {
     const s = resolveTrick(scen(12, 0, { deck: withStacks(12, 0, 1), skills: [L.DOPPELENTLADUNG], lightning: light({ charge: 9 }) }), zero);
     expect(s.lastTrick.isCrit).toBe(true);
     expect(s.lastTrick.breakdown.strikeMult).toBe(C.DOPPELENTLADUNG_STRIKE);
-    expect(s.lastTrick.scoreGain).toBeCloseTo((B + C.ION_SCORE_PER_STACK) * 1.02 * M * C.DOPPELENTLADUNG_STRIKE, 6);
+    // §7.12: der eine Stapel der Siegkarte hebt auch den Crit-Multiplikator (+ION_CRIT_MULT_PER_STACK).
+    expect(s.lastTrick.scoreGain).toBeCloseTo((B + C.ION_SCORE_PER_STACK) * 1.02 * (M + C.ION_CRIT_MULT_PER_STACK) * C.DOPPELENTLADUNG_STRIKE, 6);
     expect(s.deck[1].ionStacks).toBe(C.DOPPELENTLADUNG_STACKS);
     const plain = resolveTrick(scen(12, 0, { skills: [L.DOPPELENTLADUNG], lightning: light() }), zero); // nicht ionisiert → kein Doppelschlag
     expect(plain.lastTrick.breakdown.strikeMult).toBe(1);
+  });
+  it("Stapel der Siegkarte heben den Crit-Multiplikator (§7.12): +ION_CRIT_MULT_PER_STACK je Stapel, Kurzschluss zählt ab der Schwelle doppelt", () => {
+    // Ein Blitz-Skill, damit die Crit-Chance > 0 ist (rng 0 → Crit); Blitzableiter selbst rührt den Multiplikator nicht an.
+    const three = resolveTrick(scen(12, 0, { deck: withStacks(12, 0, 3), skills: [L.ABLEITER], lightning: light() }), zero);
+    expect(three.lastTrick.isCrit).toBe(true);
+    expect(three.lastTrick.critMultiplier).toBeCloseTo(M + 3 * C.ION_CRIT_MULT_PER_STACK, 6);
+    expect(three.lastTrick.scoreGain).toBeCloseTo((B + 3 * C.ION_SCORE_PER_STACK) * 1.02 * (M + 3 * C.ION_CRIT_MULT_PER_STACK), 6);
+    const none = resolveTrick(scen(12, 0, { skills: [L.ABLEITER], lightning: light() }), zero);
+    expect(none.lastTrick.critMultiplier).toBeCloseTo(M, 6);
+    expect(ionCritMultFor({ ionStacks: 3 })).toBeCloseTo(3 * C.ION_CRIT_MULT_PER_STACK, 9);
+    expect(ionCritMultFor({ ionStacks: 0 })).toBe(0);
+    const min = T.kurzschluss[0].minStacks;
+    expect(ionCritMultFor({ ionStacks: min }, [L.KURZSCHLUSS], {})).toBeCloseTo(min * T.kurzschluss[0].factor * C.ION_CRIT_MULT_PER_STACK, 9);
+    expect(ionScoreFor({ ionStacks: min }, [L.KURZSCHLUSS], {})).toBe(min * T.kurzschluss[0].factor * C.ION_SCORE_PER_STACK); // dieselbe Zählung
   });
   it("Hochspannung: gehaltene Blitz-Skills wirken eine Stufe höher (Blitzfänger Normal greift ab der Selten-Schwelle)", () => {
     const min = T.faenger[1].minStacks;

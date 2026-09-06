@@ -88,14 +88,25 @@ export function blitzfaengerValue(skills, skillTiers, card) {
   return lightParam(skills, skillTiers, L.BLITZFAENGER, "value") || 0;
 }
 
-// Stapel-Score der gespielten Karte (in die Basis): Stapel × ION_SCORE_PER_STACK; Kurzschluss zählt sie ab der
-// Schwelle der Stufe doppelt.
-export function ionScoreFor(card, skills = [], skillTiers = {}) {
+// Wirksame Stapel der gespielten Karte: Kurzschluss zählt sie ab der Schwelle der Stufe doppelt — dieselbe Zählung für
+// den Stapel-Score und den Crit-Multiplikator.
+export function effectiveStacks(card, skills = [], skillTiers = {}) {
   const st = card?.ionStacks || 0;
   if (!st) return 0;
   const min = lightParam(skills, skillTiers, L.KURZSCHLUSS, "minStacks");
   const factor = (min != null && st >= min) ? (lightParam(skills, skillTiers, L.KURZSCHLUSS, "factor") || 1) : 1;
-  return st * C.ION_SCORE_PER_STACK * factor;
+  return st * factor;
+}
+
+// Stapel-Score der gespielten Karte (in die Basis): wirksame Stapel × ION_SCORE_PER_STACK.
+export function ionScoreFor(card, skills = [], skillTiers = {}) {
+  return effectiveStacks(card, skills, skillTiers) * C.ION_SCORE_PER_STACK;
+}
+
+// Stapel auf dem Crit-Multiplikator der Siegkarte (§7.12: die Ionisierung trägt über den Motor, der ohnehin trägt):
+// wirksame Stapel × ION_CRIT_MULT_PER_STACK, additiv auf den Crit-Multiplikator dieses Stichs.
+export function ionCritMultFor(card, skills = [], skillTiers = {}) {
+  return effectiveStacks(card, skills, skillTiers) * C.ION_CRIT_MULT_PER_STACK;
 }
 
 /* Ladungsgewinn eines gewonnenen Stichs und die fortgeschriebenen Zähler. `streak` = Serie NACH diesem Sieg.

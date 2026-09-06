@@ -1016,7 +1016,9 @@ oder stark; kein Direkt-Score; keine Abhängigkeit von gehaltenen Feuer-Skills. 
 gibt (Vorsprung − 2) % Hitze ab Vorsprung 3, im Schnitt 1,9 % je Sieg und 49 % je Runde brutto;
 Niederlage −2 %; 26 Siege und 14 Niederlagen je Runde.
 
-**Glut** — Rate aus Vorsprung. Heute: Hitze aus Vorsprung ×1,5. Neu dieselbe Form, gestuft.
+**Glut** — Rate aus Vorsprung. Heute: Hitze aus Vorsprung ×1,5. Neu dieselbe Form, gestuft. *(Überholt durch 7.12:
+Glut ist der Kaltstart-Skill — unter 40/50/60/80 % Hitze zählt Hitze aus Siegen doppelt. Die Tabelle darunter ist
+der Stand vor der Auswertung.)*
 
 | Stufe | Effekt | Hitze je Runde zusätzlich | Extra |
 | --- | --- | --- | --- |
@@ -1360,7 +1362,7 @@ brutto 49 % und netto 21 % Hitze je Runde.
 
 | Skill | Rolle | Normal | Selten | Sehr selten | Episch |
 | --- | --- | --- | --- | --- | --- |
-| Glut | Rate aus Vorsprung | Hitze aus Vorsprung ×1,25 | ×1,5 | ×1,75 | ×2 |
+| Glut | Kaltstart (seit 7.12; vorher Rate aus Vorsprung ×1,25 … ×2) | unter 40 % Hitze zählt Hitze aus Siegen ×2 | unter 50 % | unter 60 % | unter 80 % |
 | Zunder | Rate aus jedem Sieg | jeder Sieg +1 % Hitze | +2 % | +3 % | +4 % |
 | Feuersturm | Serie zu Hitze | +0,5 % Hitze je Serienpunkt je Sieg | +1 % | +1,5 % | +2 % |
 | Glutbett | Schutz | Niederlagen kühlen nicht unter 40 % | nicht unter 60 % | nicht unter 80 % | Niederlagen kühlen nicht |
