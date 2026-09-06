@@ -2502,8 +2502,13 @@ je eine Änderung der Runde zurückgedreht (Feuer mono bleibt 13,6M):
 | Kettenblitz wie 7.18 (jede 2. / 1 / 1 / 1 Leiste, +1 / 1 / 2 / 3) | 15,1M | 0,90× | 0,58× | 0,49× |
 | Kettenblitz jede Leiste, +1 / 1 / 2 / 3 | 16,4M | 0,83× | 0,56× | 0,47× |
 | Stapel-Score 60 (Regler) | 16,2M | 0,84× | 0,56× | 0,49× |
-| Ionenfeld 2 / 3 / 4 / 5 | 13,5M | 1,01× | 0,57× | 0,49× |
+| Ionenfeld 2 / 3 / 4 / 5 | 13,5M | **1,01×** | 0,57× | 0,49× |
 | Ionenfeld 2 / 3 / 3 / 4 | 13,5M | 1,01× | 0,55× | 0,51× |
+| Ionenfeld 2 / 3 / 4 / 5 + Kettenblitz wie 7.18 | 12,1M | 1,13× | 0,67× | 0,53× |
+| Ionenfeld 2 / 3 / 4 / 5 + Kettenblitz jede Leiste +1 / 1 / 2 / 3 | 13,3M | 1,02× | 0,65× | 0,53× |
+| Ionenfeld 2 / 3 / 4 / 5 + 0,1× Crit-Mult je Stapel (statt 0,15×) | 12,7M | 1,07× | 0,58× | 0,54× |
+| Ionenfeld 2 / 3 / 4 / 5 + Crit-Deckel 8× | 12,5M | 1,09× | 0,72× | 0,68× |
+| Ionenfeld 2 / 3 / 4 / 5 + Überspannung 0 / 1 / 1 / 2 | 12,3M | 1,11× | 0,64× | 0,57× |
 
 Der Dauerwert der Überspannung trägt den ganzen Median-Sprung (ohne ihn steht Blitz mono wieder bei 11,0M — die
 Schmiede des Blitzes ist so stark wie die des Feuers, nur ohne Schwelle: 84 Leisten je Lauf sind 84 Schmiedungen),
@@ -2536,6 +2541,23 @@ damit noch Kosten, aber keine Fallen mehr: Sonnenzorn liest jetzt eine Spitze, d
 87 % der Builds), und trägt im Mittel; Phönixfeuer heizt auf Niederlagen, doch bei 59 % Stichen ≥ 100 % (Motor) ist
 die Leiste meist schon voll — die Hitze aus Niederlagen verfällt am Anschlag, und der Serienschutz gilt einmal je
 Runde. Sonst unverändert: Sonnenkern 2,69, Klinge 1,80, Weißglut 1,41, Feuersturm 1,10 (Episch 2,02), Glutbett 0,74.
+
+**Gierig mit diesem Stand** (1000 Explore, 150 Läufe): Median **155,9M** (7.18: 71,6M — mehr als verdoppelt), Siegquote
+72 %, Ø 13,0 Skills. Der gierige Spieler baut wieder gemischt: Ladungsserie 95 %, Kurzschluss 89 %, Feuerwalze 89 %,
+Blitzschlag 83 %, Klinge 81 %, Brandmal 72 %, Feuersturm 68 %, Vorentladung 68 %, Blitzableiter 59 %, Verbrennung
+55 %, Blitzfänger 54 %. Träger: Damaststahl (+81 %, in 5 %), Sonnenkern (+128 %), Doppelentladung (+104 %), Ladungs-
+serie (+181 % typisch), Vorentladung (+54 %), Blitzschlag (+32 %); Serienschutz, wenn genommen, +41 %. **Die zwei
+geschärften Füller sind im gierigen Build nicht angekommen:** Ionenfeld wird noch zu 25 % gehalten (7.18: 83 %) und ist
+neutral (+1 %), Überspannung zu 33 % und schadet (−11 %) — der gierige Spieler hat Besseres im Angebot, das Duell zeigt
+dagegen, was die beiden im reinen Blitz-Build tragen (oben). Kettenblitz neutral (+1 %, in 42 %). Schadet weiter:
+Glutbett (−45 %), Glut (−13 %), Spannungsstau (−9 %), Kurzschluss (−10 %, obwohl in 89 % gehalten — die Schwelle zählt
+die tiefe Karte doppelt, der Pick kostet aber die Alternative), Gewitterfront, Entladung, Rückzündung. Sonnenzorn (in
+3 %, −9 %) und Phönixfeuer (in 1 %) bleiben selten: der gierige Spieler nimmt kein Feuer-Legendäres ohne Feuer-Kern.
+
+Die Verdopplung des gierigen Medians kommt nicht aus den Füllern, sondern aus dem Deckel und der Tiefe: die Stapel der
+tiefsten Karte sind Basis und Crit-Multiplikator zugleich (0,15× je Stapel, Kurzschluss doppelt), und der Deckel bindet
+sie erst bei 12× — im Duell hebt der Deckel allein den Blitz-Schwanz um ein Viertel (p90 0,68× → 0,49× bei Ionenfeld
+2 / 3 / 4 / 5). Der Anteil des Deckels am gierigen Median steht unten (Legendären-Reihe mit Deckel 8×).
 
 ## 5. Eis
 
