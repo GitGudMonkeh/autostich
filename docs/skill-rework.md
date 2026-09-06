@@ -1371,11 +1371,11 @@ brutto 49 % und netto 21 % Hitze je Runde.
 | Weißglut | über die Leiste | Leiste bis 200; über 100 je 10 % +3 % Score | +4 % | +5 % | +6 % |
 | Feuerwalze | Serie zu Wert | ab 80 % Hitze: nach einem Sieg hat die nächste Karte +2 Wert | ab 60 % | ab 40 % | ab 20 %; auch nach einer Niederlage |
 | Verbrennung | Vorsprung zu Score | Sieg mit Vorsprung ab 8: Stich ×1,5 | ab 7 | ab 6 | ab 5 |
-| Flächenbrand | Burst-Konsument | ab 80 % Hitze: nächster Sieg brennt bis 40, +15 Basis je Punkt | +20 | +25 | +30; brennt bis 0 |
-| Schmelzpunkt | Tropf-Konsument | jeder Sieg verbrennt 4 % Hitze, +15 Basis je Punkt | +20 | +25 | +30; die Hälfte der Hitze kommt zurück |
+| Flächenbrand | Burst-Konsument (seit 7.13: nur bei voller Leiste) | bei voller Leiste: nächster Sieg brennt bis 40, +15 Basis je Punkt | +20 | +25 | +30; brennt bis 0 |
+| Schmelzpunkt | Tropf-Konsument (seit 7.13: nur bei voller Leiste) | bei voller Leiste verbrennt jeder Sieg 4 % Hitze, +15 Basis je Punkt | +20 | +25 | +30; die Hälfte der Hitze kommt zurück |
 | Brandmal | Gegner-Debuff | ab 80 % Hitze: Sieg brandmarkt die Gegnerkarte, −2 nächste Runde | ab 60 % | ab 40 % | ab 20 %; auch Niederlagen brandmarken |
 | Lauffeuer | Brand in die Breite | ab 80 % Hitze: Sieg brandmarkt beide Nachbarn, −1 nächste Runde | ab 60 % | ab 40 % | ab 20 %; Reichweite zwei Karten |
-| Schmiede | Hitze zu Dauerwert | Rundenende: niedrigste Karte +3 dauerhaft, kostet 50 Hitze | kostet 40 | kostet 30 | kostet 20; zwei Karten |
+| Schmiede | Hitze zu Dauerwert (seit 7.13: nur bei voller Leiste) | Rundenende bei voller Leiste: niedrigste Karte +3 dauerhaft, kostet 50 Hitze | kostet 40 | kostet 30 | kostet 20; zwei Karten |
 | Glutstahl | Wert zu Score | +8 Basis-Score je Punkt Wert über Grundwert bei Sieg | +12 | +16 | +20; Schmiedewert zählt doppelt |
 
 **Sim-Wachpunkte Feuer:** Einnahmen gegen die Leiste (Zunder, Feuersturm füllen schneller als die 100

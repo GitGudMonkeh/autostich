@@ -137,10 +137,13 @@ export function fireOnWin(heat, skills, skillTiers, { margin = 0, streak = 0, la
   const max = heat.max || C.HEAT_MAX;
   let value = Math.min(max, (heat.value || 0) + gain);
   const heldHeat = value;
+  // §7.13 (Owner): die Konsumenten zünden nur bei VOLLER Leiste — die Hitze nach dem Gewinn steht am Ende der Leiste
+  // des Builds (100, mit Weißglut 200). Darunter rühren sie die Hitze nicht an, die das Passiv noch braucht.
+  const full = heldHeat >= max;
   let flat = 0, burned = 0;
-  // Schmelzpunkt (Tropf): jeder Sieg verbrennt `burn` Punkte (höchstens was da ist), Episch gibt einen Teil zurück.
+  // Schmelzpunkt (Tropf): bei voller Leiste verbrennt der Sieg `burn` Punkte, Episch gibt einen Teil zurück.
   const burn = fireParam(skills, skillTiers, F.SCHMELZPUNKT, "burn");
-  if (burn) {
+  if (burn && full) {
     const b = Math.min(value, burn);
     if (b > 0) {
       flat += b * (fireParam(skills, skillTiers, F.SCHMELZPUNKT, "perPoint") || 0);
@@ -149,10 +152,9 @@ export function fireOnWin(heat, skills, skillTiers, { margin = 0, streak = 0, la
       if (refund) value = Math.min(max, value + b * refund);
     }
   }
-  // Flächenbrand (Burst): ab der Schwelle brennt dieser Sieg bis auf den Boden herunter (Episch bis 0).
-  const fbMin = fireParam(skills, skillTiers, F.FLAECHENBRAND, "minHeat");
-  if (fbMin != null && heldHeat >= fbMin) {
-    const keep = fireParam(skills, skillTiers, F.FLAECHENBRAND, "keep") ?? 0;
+  // Flächenbrand (Burst): bei voller Leiste brennt dieser Sieg bis auf den Boden herunter (Episch bis 0).
+  const keep = fireParam(skills, skillTiers, F.FLAECHENBRAND, "keep");
+  if (keep != null && full) {
     const b = Math.max(0, value - keep);
     if (b > 0) { flat += b * (fireParam(skills, skillTiers, F.FLAECHENBRAND, "perPoint") || 0); burned += b; value = keep; }
   }
@@ -203,7 +205,7 @@ export function fireOnLoss(heat, skills, skillTiers, { deficit = 0, oppId = null
   return { heat: { ...heat, value, peak: Math.max(heat.peak || 0, value), lastLossDeficit: Math.max(0, deficit) }, brands };
 }
 
-/* Rundenende: Schmiede (liegt mindestens der Preis der Stufe an, kostet die Schmiedung ihn und die niedrigste Karte
+/* Rundenende: Schmiede (§7.13: nur bei VOLLER Leiste; die Schmiedung kostet den Preis der Stufe und die niedrigste Karte
    erhält dauerhaft +FORGE_VALUE; Episch schmiedet die zwei niedrigsten für denselben Preis), Damaststahl (die niedrigste
    Karte ohne Preis), danach Phönix-Neuzündung. Niedrigste Karte deterministisch: kleinster Wert, dann kleinste id.
    Gibt { heat, deck, forged, forgedIds } zurück. */
@@ -226,7 +228,7 @@ export function fireCycleEnd(heat, skills, skillTiers, deck, forged = {}) {
     forgedIds.push(low.id);
   };
   const cost = fireParam(skills, skillTiers, F.SCHMIEDE, "cost");
-  if (cost != null && value >= cost) {
+  if (cost != null && value >= max) {
     value -= cost;
     const n = fireParam(skills, skillTiers, F.SCHMIEDE, "cards") || 1;
     const done = [];

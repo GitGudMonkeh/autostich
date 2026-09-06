@@ -189,7 +189,7 @@ export default {
   "bar.fire.badge.verbrennung": "Verbrennung ab {n}",
   "bar.fire.badge.verbrennung.title": "Verbrennung: ein Sieg mit Kampfwert-Vorsprung ab {n} zählt ×{m}.",
   "bar.fire.badge.schmiede": "Schmiede {cost}",
-  "bar.fire.badge.schmiede.title": "Schmiede: am Rundenende kostet die Schmiedung {cost} Hitze, deine niedrigste Karte erhält dauerhaft +{v} Wert.",
+  "bar.fire.badge.schmiede.title": "Schmiede: am Rundenende bei voller Hitzeleiste kostet die Schmiedung {cost} Hitze, deine niedrigste Karte erhält dauerhaft +{v} Wert.",
   "bar.fire.badge.peak": "Spitze {n} %",
   "bar.fire.badge.peak.title": "Sonnenzorn: der Hitze-Multiplikator rechnet mit der höchsten je erreichten Hitze.",
   "bar.fire.badge.glow": "Glühende Klinge",

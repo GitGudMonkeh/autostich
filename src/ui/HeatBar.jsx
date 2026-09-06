@@ -40,10 +40,10 @@ export function HeatBar({ heat, skills = [], skillTiers = {}, forged = {}, lastR
   // Hitze-Multiplikator des Passivs, wie ihn der nächste Sieg (vor seinem Gewinn) trüge — dieselbe Quelle wie die Engine.
   const mult = heatMult(skills, skillTiers, value, heat.peak || 0);
   const multPct = Math.round((mult - 1) * 100);
-  // Flächenbrand: der nächste Sieg brennt ab der Schwelle.
-  const fbMin = param(F.FLAECHENBRAND, "minHeat");
-  const conflagReady = fbMin != null && value >= fbMin;
-  // Schmiede: Preis der Stufe und ob er am Rundenende anliegt; Zähler = Summe der Schmiedewerte im Deck.
+  // §7.13: die Konsumenten zünden nur bei voller Leiste — Flächenbrand brennt mit dem nächsten Sieg, sobald sie voll steht.
+  const full = value >= scale;
+  const conflagReady = param(F.FLAECHENBRAND, "keep") != null && full;
+  // Schmiede: Preis der Stufe (fällt am Rundenende bei voller Leiste); Zähler = Summe der Schmiedewerte im Deck.
   const forgeCost = param(F.SCHMIEDE, "cost");
   const totalForged = Object.values(forged).reduce((a, b) => a + b, 0);
   const showForge = forgeCost != null || skills.includes(F.DAMASTSTAHL) || totalForged > 0;
@@ -70,9 +70,9 @@ export function HeatBar({ heat, skills = [], skillTiers = {}, forged = {}, lastR
     badges.push({ k: "vb", t: t("bar.fire.badge.verbrennung", { n: vbMin }), c: WHITE_HEAT, dim: false,
       title: t("bar.fire.badge.verbrennung.title", { n: vbMin, m: fmtNum(param(F.VERBRENNUNG, "mult") || 1) }) });
   }
-  // Schmiede: Preis der Stufe; hell, sobald die Hitze ihn hergibt (die Schmiedung fällt am Rundenende).
+  // Schmiede: Preis der Stufe; hell, sobald die Leiste voll steht (die Schmiedung fällt am Rundenende).
   if (forgeCost != null) {
-    badges.push({ k: "sm", t: t("bar.fire.badge.schmiede", { cost: forgeCost }), c: FORGE, dim: value < forgeCost,
+    badges.push({ k: "sm", t: t("bar.fire.badge.schmiede", { cost: forgeCost }), c: FORGE, dim: !full,
       title: t("bar.fire.badge.schmiede.title", { cost: forgeCost, v: FORGE_VALUE }) });
   }
   // Sonnenzorn: die Spitze, mit der der Multiplikator rechnet.

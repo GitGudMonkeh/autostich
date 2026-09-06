@@ -60,6 +60,7 @@ describe("Feuer — Roster und Stufenleitern", () => {
     expect(down(T.verbrennung, "minMargin")).toBe(true);
     expect(up(T.flaechenbrand, "perPoint")).toBe(true);
     expect(T.flaechenbrand[3].keep).toBe(0);
+    for (const r of T.flaechenbrand) expect(r.minHeat).toBeUndefined(); // §7.13: der Auslöser ist die volle Leiste, keine Schwelle
     expect(up(T.schmelzpunkt, "perPoint")).toBe(true);
     expect(down(T.brandmal, "minHeat")).toBe(true);
     expect(down(T.lauffeuer, "minHeat")).toBe(true);
@@ -72,7 +73,7 @@ describe("Feuer — Roster und Stufenleitern", () => {
     expect(SKILL_DEFS.SK_FIRE_02.descTiers[3]).toContain(`+${T.zunder[3].heat} %`);
     expect(SKILL_DEFS.SK_FIRE_02.descTiers[0]).not.toContain(`+${T.zunder[3].heat} %`);
     expect(SKILL_DEFS.SK_FIRE_09.desc).toContain(`ab ${T.verbrennung[0].minMargin}`);
-    expect(SKILL_DEFS.SK_FIRE_15.descTiers[3]).toContain(`kostet die Schmiedung ${T.schmiede[3].cost}`);
+    expect(SKILL_DEFS.SK_FIRE_15.descTiers[3]).toContain(`die Schmiedung kostet ${T.schmiede[3].cost} Hitze`);
     expect(SKILL_DEFS.SK_FIRE_15.descTiers[3]).toContain(`${T.schmiede[3].cards} niedrigsten Karten`); // das Episch-Extra nur dort
     expect(SKILL_DEFS.SK_FIRE_15.descTiers[2]).not.toContain("niedrigsten Karten");
     expect(SKILL_DEFS.SK_FIRE_L03.desc).toContain(`+${Math.round(C.SONNENZORN_MULT_PER_10 * 100)} %`);
@@ -147,24 +148,32 @@ describe("Feuer — Modul (reine Übergänge)", () => {
     expect(damascusCombat([], { X0: 6 }, { id: "X0" })).toBe(0);
     expect(damascusCombat([F.DAMASTSTAHL], {}, { id: "X0" })).toBe(0);
   });
-  it("fireOnWin: Schmelzpunkt-Tropf (Episch mit Rückfluss), Flächenbrand-Burst (Episch bis 0), Tor auf der Hitze nach dem Gewinn", () => {
-    const melt = fireOnWin(heat({ value: 50 }), [F.SCHMELZPUNKT], { [F.SCHMELZPUNKT]: 1 }, { margin: 1 });
-    expect(melt.held).toBe(50); expect(melt.heat.value).toBe(46); expect(melt.flat).toBe(4 * T.schmelzpunkt[1].perPoint); expect(melt.burned).toBe(4);
-    const meltE = fireOnWin(heat({ value: 50 }), [F.SCHMELZPUNKT], { [F.SCHMELZPUNKT]: 3 }, { margin: 1 });
-    expect(meltE.heat.value).toBe(48); expect(meltE.flat).toBe(4 * T.schmelzpunkt[3].perPoint);
-    const burst = fireOnWin(heat({ value: 90 }), [F.FLAECHENBRAND], {}, { margin: 1 });
-    expect(burst.heat.value).toBe(T.flaechenbrand[0].keep); expect(burst.flat).toBe(50 * T.flaechenbrand[0].perPoint);
-    const burstE = fireOnWin(heat({ value: 90 }), [F.FLAECHENBRAND], { [F.FLAECHENBRAND]: 3 }, { margin: 1 });
-    expect(burstE.heat.value).toBe(0); expect(burstE.flat).toBe(90 * T.flaechenbrand[3].perPoint);
-    // Tor: 78 + Gewinn (Vorsprung 5) ≥ 80 → brennt; die Hitze für den Multiplikator ist die vor dem Verbrauch.
-    const gate = fireOnWin(heat({ value: 78 }), [F.FLAECHENBRAND], {}, { margin: 5 });
-    expect(78 + G(5)).toBeGreaterThanOrEqual(80);
-    expect(gate.held).toBe(78 + G(5)); expect(gate.heat.value).toBe(40); expect(gate.heat.peak).toBe(78 + G(5));
-    expect(fireOnWin(heat({ value: 60 }), [F.FLAECHENBRAND], {}, { margin: 1 }).heat.value).toBe(60);
+  it("fireOnWin (§7.13, volle Leiste): Schmelzpunkt-Tropf (Episch mit Rückfluss), Flächenbrand-Burst (Episch bis 0), unter voll kein Verbrauch", () => {
+    // Nicht voll: die Konsumenten rühren die Hitze nicht an.
+    expect(fireOnWin(heat({ value: 50 }), [F.SCHMELZPUNKT], { [F.SCHMELZPUNKT]: 1 }, { margin: 1 }).heat.value).toBe(50);
+    expect(fireOnWin(heat({ value: 90 }), [F.FLAECHENBRAND], {}, { margin: 1 }).heat.value).toBe(90);
+    // Voll (100 der 100er-Leiste): Schmelzpunkt verbrennt 4, Episch gibt die Hälfte zurück.
+    const melt = fireOnWin(heat({ value: 100 }), [F.SCHMELZPUNKT], { [F.SCHMELZPUNKT]: 1 }, { margin: 1 });
+    expect(melt.held).toBe(100); expect(melt.heat.value).toBe(96); expect(melt.flat).toBe(4 * T.schmelzpunkt[1].perPoint); expect(melt.burned).toBe(4);
+    const meltE = fireOnWin(heat({ value: 100 }), [F.SCHMELZPUNKT], { [F.SCHMELZPUNKT]: 3 }, { margin: 1 });
+    expect(meltE.heat.value).toBe(98); expect(meltE.flat).toBe(4 * T.schmelzpunkt[3].perPoint);
+    // Flächenbrand brennt von voll bis auf den Boden (Episch bis 0); die Hitze für den Multiplikator ist die vor dem Verbrauch.
+    const burst = fireOnWin(heat({ value: 100 }), [F.FLAECHENBRAND], {}, { margin: 1 });
+    expect(burst.held).toBe(100); expect(burst.heat.value).toBe(T.flaechenbrand[0].keep); expect(burst.flat).toBe((100 - T.flaechenbrand[0].keep) * T.flaechenbrand[0].perPoint); expect(burst.heat.peak).toBe(100);
+    const burstE = fireOnWin(heat({ value: 100 }), [F.FLAECHENBRAND], { [F.FLAECHENBRAND]: 3 }, { margin: 1 });
+    expect(burstE.heat.value).toBe(0); expect(burstE.flat).toBe(100 * T.flaechenbrand[3].perPoint);
+    // Der Gewinn dieses Siegs füllt die Leiste erst: 96 + Gewinn (Vorsprung 6) ≥ 100 → voll → brennt.
+    const gate = fireOnWin(heat({ value: 96 }), [F.FLAECHENBRAND], {}, { margin: 6 });
+    expect(96 + G(6)).toBeGreaterThanOrEqual(100);
+    expect(gate.held).toBe(100); expect(gate.heat.value).toBe(40);
+    // Mit Weißglut ist die Leiste erst bei 200 voll.
+    expect(fireOnWin(heat({ value: 100, max: 200 }), [F.FLAECHENBRAND, F.WEISSGLUT], {}, { margin: 1 }).heat.value).toBe(100);
+    expect(fireOnWin(heat({ value: 200, max: 200 }), [F.FLAECHENBRAND, F.WEISSGLUT], {}, { margin: 1 }).heat.value).toBe(T.flaechenbrand[0].keep);
   });
   it("fireOnWin: Phönix zündet neu, Glutstahl je Punkt über dem Grundwert (Episch Schmiedewert doppelt), Sonnenkern je Brandpunkt", () => {
-    const ph = fireOnWin(heat({ value: 3 }), [F.SCHMELZPUNKT, F.PHOENIXFEUER], {}, { margin: 1 });
-    expect(ph.burned).toBe(3); expect(ph.heat.value).toBe(C.PHOENIX_REIGNITE);
+    // Phönix: der Flächenbrand Episch brennt die volle Leiste auf 0 — und sie zündet neu.
+    const ph = fireOnWin(heat({ value: 100 }), [F.FLAECHENBRAND, F.PHOENIXFEUER], { [F.FLAECHENBRAND]: 3 }, { margin: 1 });
+    expect(ph.burned).toBe(100); expect(ph.heat.value).toBe(C.PHOENIX_REIGNITE);
     expect(fireOnWin(heat({ value: 10 }), [F.GLUTSTAHL], {}, { margin: 1, valueOver: 3, card: { id: "X0" } }).flat).toBe(3 * T.glutstahl[0].perPoint);
     expect(fireOnWin(heat({ value: 10 }), [F.GLUTSTAHL], { [F.GLUTSTAHL]: 3 }, { margin: 1, valueOver: 3, card: { id: "X0" }, forged: { X0: 3 } }).flat).toBe(6 * T.glutstahl[3].perPoint);
     const sk = fireOnWin(heat({ value: 10 }), [F.SONNENKERN], {}, { margin: 1, brandOnOpp: 3, oppId: "O5" });
@@ -192,17 +201,18 @@ describe("Feuer — Modul (reine Übergänge)", () => {
     expect(fireOnLoss(heat({ value: 20 }), [F.BRANDMAL], { [F.BRANDMAL]: 3 }, { deficit: 3, oppId: "O1" }).brands).toEqual([{ id: "O1", value: T.brandmal[3].value }]);
     expect(fireOnLoss(heat({ value: 20 }), [F.BRANDMAL], {}, { deficit: 3, oppId: "O1" }).brands).toEqual([]);
   });
-  it("fireCycleEnd: Schmiede kostet Hitze und hebt die niedrigste Karte (Episch zwei), Damaststahl gratis, Phönix danach", () => {
+  it("fireCycleEnd (§7.13, volle Leiste): Schmiede kostet ihren Preis und hebt die niedrigste Karte (Episch zwei), Damaststahl gratis, Phönix danach", () => {
     const deck = constDeck(5).map((c, i) => (i === 3 ? { ...c, value: 2 } : i === 7 ? { ...c, value: 3 } : c));
-    const r = fireCycleEnd(heat({ value: 50 }), [F.SCHMIEDE], {}, deck, {});
-    expect(r.heat.value).toBe(0); expect(r.forgedIds).toEqual(["X3"]); expect(r.forged).toEqual({ X3: C.FORGE_VALUE });
+    const r = fireCycleEnd(heat({ value: 100 }), [F.SCHMIEDE], {}, deck, {});
+    expect(r.heat.value).toBe(100 - T.schmiede[0].cost); expect(r.forgedIds).toEqual(["X3"]); expect(r.forged).toEqual({ X3: C.FORGE_VALUE });
     expect(r.deck.find((c) => c.id === "X3").value).toBe(2 + C.FORGE_VALUE);
-    expect(fireCycleEnd(heat({ value: 49 }), [F.SCHMIEDE], {}, deck, {}).forgedIds).toEqual([]);
-    const e = fireCycleEnd(heat({ value: 20 }), [F.SCHMIEDE], { [F.SCHMIEDE]: 3 }, deck, {});
-    expect(e.heat.value).toBe(0); expect(e.forgedIds).toEqual(["X3", "X7"]);                 // die zwei niedrigsten, verschieden
+    expect(fireCycleEnd(heat({ value: 99 }), [F.SCHMIEDE], {}, deck, {}).forgedIds).toEqual([]); // nicht voll → keine Schmiedung
+    expect(fireCycleEnd(heat({ value: 100, max: 200 }), [F.SCHMIEDE, F.WEISSGLUT], {}, deck, {}).forgedIds).toEqual([]); // mit Weißglut erst bei 200
+    const e = fireCycleEnd(heat({ value: 100 }), [F.SCHMIEDE], { [F.SCHMIEDE]: 3 }, deck, {});
+    expect(e.heat.value).toBe(100 - T.schmiede[3].cost); expect(e.forgedIds).toEqual(["X3", "X7"]); // die zwei niedrigsten, verschieden
     const d = fireCycleEnd(heat({ value: 0 }), [F.DAMASTSTAHL], {}, deck, { X3: 3 });
     expect(d.forgedIds).toEqual(["X3"]); expect(d.forged).toEqual({ X3: 6 });
-    expect(fireCycleEnd(heat({ value: 50 }), [F.SCHMIEDE, F.PHOENIXFEUER], {}, deck, {}).heat.value).toBe(C.PHOENIX_REIGNITE);
+    expect(fireCycleEnd(heat({ value: 0 }), [F.PHOENIXFEUER], {}, deck, {}).heat.value).toBe(C.PHOENIX_REIGNITE);
     expect(fireCycleEnd(null, [F.SCHMIEDE], {}, deck, {}).deck).toBe(deck);
   });
   it("nextBrandActive: Brände erneuern sich je Runde, mit Sonnenkern stapeln sie", () => {
@@ -247,20 +257,24 @@ describe("Feuer — Engine-Integration", () => {
     expect(big.lastTrick.breakdown.fireMult).toBeCloseTo(T.verbrennung[0].mult * heatMult([], {}, 6), 6);
     expect(small.lastTrick.breakdown.fireMult).toBeCloseTo(heatMult([], {}, 5), 6);
   });
-  it("Flächenbrand: ab 80 % brennt der Sieg bis 40, der Burst steht in der multiplizierten Basis", () => {
-    const s = resolveTrick(scen(12, 6, { skills: [F.FLAECHENBRAND], heat: heat({ value: 90 }) }), noCrit);
+  it("Flächenbrand: bei voller Leiste brennt der Sieg bis 40, der Burst steht in der multiplizierten Basis; unter voll nichts", () => {
+    const s = resolveTrick(scen(12, 6, { skills: [F.FLAECHENBRAND], heat: heat({ value: 100 }) }), noCrit);
     expect(s.heat.value).toBe(T.flaechenbrand[0].keep);
-    const burst = (90 + G(6) - T.flaechenbrand[0].keep) * T.flaechenbrand[0].perPoint;
+    const burst = (100 - T.flaechenbrand[0].keep) * T.flaechenbrand[0].perPoint;
     expect(s.lastTrick.breakdown.flats).toBe(burst);
     expect(s.fireBase).toBe(burst);
-    expect(s.lastTrick.scoreGain).toBeCloseTo((B + burst) * s.lastTrick.breakdown.streakMult * heatMult([], {}, 90 + G(6)), 4);
+    expect(s.lastTrick.scoreGain).toBeCloseTo((B + burst) * s.lastTrick.breakdown.streakMult * heatMult([], {}, 100), 4);
+    const cold = resolveTrick(scen(12, 6, { skills: [F.FLAECHENBRAND], heat: heat({ value: 90 }) }), noCrit);
+    expect(cold.heat.value).toBe(90 + G(6)); expect(cold.fireBase).toBe(0);
   });
-  it("Schmelzpunkt: jeder Sieg verbrennt 4 und zahlt je Punkt; eine Niederlage verbrennt nichts", () => {
-    const s = resolveTrick(scen(12, 6, { skills: [F.SCHMELZPUNKT], heat: heat({ value: 50 }) }), noCrit);
-    expect(s.heat.value).toBe(50 + G(6) - T.schmelzpunkt[0].burn);
+  it("Schmelzpunkt: bei voller Leiste verbrennt jeder Sieg 4 und zahlt je Punkt; unter voll und bei Niederlage nichts", () => {
+    const s = resolveTrick(scen(12, 6, { skills: [F.SCHMELZPUNKT], heat: heat({ value: 100 }) }), noCrit);
+    expect(s.heat.value).toBe(100 - T.schmelzpunkt[0].burn);
     expect(s.lastTrick.breakdown.flats).toBe(T.schmelzpunkt[0].burn * T.schmelzpunkt[0].perPoint);
-    const lost = resolveTrick(scen(2, 9, { skills: [F.SCHMELZPUNKT], heat: heat({ value: 50 }) }), noCrit);
-    expect(lost.heat.value).toBe(50 - C.HEAT_LOSS);
+    const warm = resolveTrick(scen(12, 6, { skills: [F.SCHMELZPUNKT], heat: heat({ value: 50 }) }), noCrit);
+    expect(warm.heat.value).toBe(50 + G(6)); expect(warm.fireBase).toBe(0);
+    const lost = resolveTrick(scen(2, 9, { skills: [F.SCHMELZPUNKT], heat: heat({ value: 100 }) }), noCrit);
+    expect(lost.heat.value).toBe(100 - C.HEAT_LOSS);
   });
   it("Glühende Klinge und Feuerwalze heben den Kampfwert; Rückzündung Episch nach einer Niederlage", () => {
     const k = resolveTrick(scen(5, 6, { skills: [F.KLINGE], skillTiers: { [F.KLINGE]: 1 }, heat: heat({ value: 60 }) }), noCrit);
@@ -294,9 +308,9 @@ describe("Feuer — Engine-Integration", () => {
     expect(s.lastTrick.oValue).toBe(3);
     expect(s.lastTrick.breakdown.flats).toBe(3 * C.SONNENKERN_SCORE_PER_BRAND);
   });
-  it("Schmiede am Rundenende: kostet Hitze, die niedrigste Karte wird dauerhaft stärker", () => {
+  it("Schmiede am Rundenende bei voller Leiste: kostet Hitze, die niedrigste Karte wird dauerhaft stärker", () => {
     const done = playCycle(scen(12, 6, { skills: [F.SCHMIEDE, F.GLUTBETT], skillTiers: { [F.GLUTBETT]: 3 }, heat: heat({ value: 40 }) }));
-    // 40 Siege × 4 Hitze → voll (100); die Schmiedung kostet 50 → 50 bleiben, X0 (die niedrigste, kleinste id) +3.
+    // 40 Siege mit Vorsprung 6 → voll (100); die Schmiedung kostet 50 → 50 bleiben, X0 (die niedrigste, kleinste id) +3.
     expect(done.heat.value).toBe(100 - T.schmiede[0].cost);
     expect(done.forged).toEqual({ X0: C.FORGE_VALUE });
     expect(done.deck.find((c) => c.id === "X0").value).toBe(12 + C.FORGE_VALUE);
