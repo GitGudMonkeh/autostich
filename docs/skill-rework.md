@@ -2723,6 +2723,23 @@ Wachpunkt: Weißglut und Sonnenzorn liegen im selben Faktor, additiv — kein Pr
 `phoenixPending`, `fireOnLoss` gibt kein `streakHeld` mehr; die Engine hat keinen Feuer-Serienschutz). Der Emblem-
 Master bleibt als `docs/art/skills/fire/SK_FIRE_L02_phoenixfeuer`, das Spiel-Asset heißt `SK_FIRE_L02_ewige-glut`.
 
+**Sonde und Sweep** (`ember-probe.mjs`: reiner Feuer-Build, das Legendäre per Hook eingesetzt, gepaart gegen denselben
+Seed ohne; 40–60 Seeds — die Paare streuen stark, p25 ≈ 0,8, weil sich die Builds nach der geänderten Tür trennen):
+
+| Satz je heiße Runde | ab Runde 25 (Median, Mean) | ab Runde 1 (Median, Mean) | Rampe am Laufende | Feuer-Faktor später Siege |
+| --- | --- | --- | --- | --- |
+| 0,03 (Vorschlag) | 1,02 / 1,15 | 1,30 / 2,36 | 0,75 / 0,90 | 2,9 / 3,4 gegen 2,6 |
+| **0,05 (gesetzt)** | **1,14 / 1,31** | **1,57 / 2,79** | 1,25 / 1,50 | 3,4 / 4,0 gegen 2,6 |
+| 0,08 | 1,32 / 1,53 | — | 2,00 | 4,0 gegen 2,8 |
+
+Die Rampe wächst wie gedacht (28 von 49 Rundenenden heiß, die Hitze steht am Rundenende im Median auf der Leiste),
+aber 0,03 war zur Laufmitte nur der Preis des Picks wert. 0,05 trägt zur Laufmitte wie Sonnenzorn und Hochspannung
+(+10 %) und ab Runde 1 wie ein Legendäres (1,57, Mean 2,79 — Sonnenkern liegt im reinen Build bei 2,6). 0,08 wäre ab
+Runde 1 ein Runaway-Kandidat (Rampe 3 und mehr), nicht gemessen, nicht gesetzt.
+
+**Lifts im reinen Feuer-Build** (400 Läufe, Median mit ÷ ohne): Ewige Glut **1,13** (Mean 1,05) — bei 0,03 noch 1,01;
+Sonnenkern 2,55, Damaststahl 1,02, Sonnenzorn 1,01. Feuer mono 14,8M. Phönixfeuer stand hier bei 0,86.
+
 ## 5. Eis
 
 Offen.
