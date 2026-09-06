@@ -3312,6 +3312,54 @@ gemessen, alle auf Achsen, die heute kein normaler Skill berührt:
 Ladungsserie, Ionenfeld, Klinge, Weißglut, Feuerlinie und alle acht Legendären außer Damaststahl (vorgemerkt) und den
 Texten von Sonnenzorn und Sonnenkern.
 
+### 7.27 Feuerwalze raus, Brandschneise rein: der Auslöser muss knapp bleiben (2026-09-06, Vorschlag)
+
+Owner: Punkt 2 der Liste in 7.26 F, Konzept **Brandschneise** — „aber bedenke das später in der Runde mit hohen
+Werten alle Positionen gewonnen werden."
+
+**Der Einwand ist gemessen richtig, und zwar schärfer als erwartet** (`sim/probes/positions-won.mjs`, Feuer mono,
+100 Läufe, Ø über die Läufe; wie viele der 40 Positionen im Lauf bis dahin mindestens einmal gewonnen wurden):
+
+| nach Durchlauf | 1 | 3 | 5 | 10 | 22 | 41 |
+| --- | --- | --- | --- | --- | --- | --- |
+| je schon gewonnen | 17,7 | 28,8 | 32,7 | 36,4 | 39,0 | **40,0 / 40** |
+
+Die Bedingung „an dieser Position schon einmal gewonnen" siebt **drei Durchläufe lang**, danach ist sie eine
+Formalität, und ab Durchlauf 41 ist sie in jedem Lauf immer wahr. Der Skill wäre in der zweiten Laufhälfte ein
+bedingungsloser „+X % Score auf jeden Sieg" — genau die Falle, die 7.24 auf der anderen Seite (Niederlage-Bedingung)
+schon zweimal geräumt hat. Ein Auslöser, der mit der Stärke des Decks verschwindet, taugt hier nicht; die
+knappe Menge muss **strukturell** knapp sein, nicht „ist es schon passiert".
+
+Drei Bauformen, alle mit dem Namen und dem Bild des Owners (eine Schneise, die durch das Deck gebrannt ist und der
+man im nächsten Durchlauf folgt). Werte sind Platzhalter für den Sweep nach dem Ja.
+
+**(a) Feste Breite, jeden Durchlauf neu geschlagen — Empfehlung.**
+„Deine N größten Siege eines Durchlaufs schlagen eine Schneise. Im nächsten Durchlauf zählt ein Sieg auf diesen
+Positionen ×1,5 Score." Stufen über die Breite: N = 3 / 4 / 5 / 6; Episch dazu ein Extra (z. B. die Schneise hält
+zwei Durchläufe). Die Menge ist per Konstruktion knapp — egal wie stark das Deck wird, es sind N von 40 Positionen,
+also 8–15 % der Stiche. Sie wandert jeden Durchlauf, und die **Aufstellungsphase wird zur Entscheidung** (starke
+Karten auf die Schneise legen) — die Achse „eigene Reihenfolge", die heute kein normaler Skill berührt. Aufwand:
+Positionsliste über die Durchlaufgrenze tragen (wie die Brände es schon tun) und am Durchlaufende die N größten
+Vorsprünge nehmen — beides liegt in `fireCycleEnd`.
+
+**(b) Zusammenhängendes Band.** „Der Sieg mit dem größten Vorsprung eines Durchlaufs schlägt eine Schneise: seine
+Position und ihre N Nachbarn zählen im nächsten Durchlauf ×1,5 Score." Thematisch am nächsten am Bild (eine Bahn,
+kein Streuselmuster) und ebenso knapp, aber die Nachbar-Sprache steht schon bei Lauffeuer — dort auf dem Gegnerdeck,
+hier auf den eigenen Positionen.
+
+**(c) Kette je Position.** „Ein Sieg zählt +0,5 % Score je Durchlauf in Folge, den du an dieser Position gewonnen
+hast." Sättigt nicht als Bedingung, wird aber spät zur unbegrenzten Rampe: 40 Positionen mit 40er-Ketten. Auf den
+offenen Schwanz-Wachpunkt (7.25, gierig p95 803M) würde das obendrauf kommen. Nur mit sehr kleinem Satz, und ich
+würde es nicht empfehlen.
+
+**Empfehlung (a)**, weil die Knappheit nicht von der Deckstärke abhängt und die Aufstellungsphase etwas zu
+entscheiden bekommt. Nach dem Ja: bauen, Satz und Breite im Sweep, gierig messen (zwei Läufe, weil die Haltequote
+eines neuen Skills anfangs niedrig ist), Parität im Duell prüfen.
+
+**Feuerwalze** (SK_FIRE_08) geht dafür raus: vier Stufen mit viermal +2 Wert, gemessen tot in 7.6, 7.9 und 7.13, und
+die Glühende Klinge deckt dieselbe Achse bei 100 % Hitze mit +2 / 3 / 4 / 5 ab. Die ID bleibt, das Emblem wird mit
+`git mv` umbenannt, Feuer bleibt bei 14.
+
 ## 5. Eis
 
 Offen.
@@ -3370,3 +3418,4 @@ Offen.
 | 2026-09-06 | Pass über alle Feuer- und Blitz-Skills (7.26, Befund, nichts umgesetzt): Auslöser- und Ertrags-Raster je Fraktion (Blitz hängt fünffach an der vollen Leiste, Feuer vierfach an einer Hitze-Schwelle; unberührt bei Blitz sind Formation, Gegnerdeck, Durchlaufende), acht Dubletten nach Schärfe, der gemessene stille Konflikt (Weißglut schaltet Feuersturm Normal bis Sehr selten und Schmelzpunkt ab, weil beide Tore die Build-Leiste lesen — die Feuersturm-Leiter dreht sich dabei um), die Stufenleitern (Feuer 6 von 14 mit festem Ertrag, vier teilen die Leiter 80/60/40/20; Feuerwalze viermal +2), sieben Textpunkte (Runde statt Durchlauf an 7 Stellen, ein Gedankenstrich, fehlende Prozentpunkte, Blitzableiter Episch mit drei Effekten). Dreizehn Vorschläge je Skill plus sechs Konzepte für zwei mögliche freie Plätze. Entscheid Owner, einzeln. |
 | 2026-09-06 | Owner setzt die Reihenfolge (1 → Feuerwalze → Gewitterfront/Entladung → Textpaket). Punkt 1 vor der Umsetzung nachgemessen und **den eigenen Befund korrigiert** (7.26 C, neue Sonde `sim/probes/weissglut-gate.mjs`): Weißglut schaltet Feuersturm und Schmelzpunkt **nicht** ab. Isoliert bei 100 % Hitze stimmt es (×1,10 → ×1,00, +135 → 0), im Lauf nicht — der Weißglut-Build läuft bei Ø 141 % statt 52 % Hitze und steht in 40 % der Stiche auf 200, häufiger als ein Build ohne Weißglut die 100 erreicht (24 %). Kein Regelfehler, sondern eine versteckte Kopplung: ein Pick schreibt die Schwelle zweier anderer Skills um, ohne dass ein Text es sagt. Drei Lesarten an den Owner (so lassen / Text nennt die Zahl des Builds / Tore auf 100 % festnageln — Letzteres ist ein Buff, weil dieselbe Hitze dann über Weißglut und Schmelzpunkt zweimal zahlt), keine Empfehlung. Nichts umgesetzt. |
 | 2026-09-06 | **Owner: Lesart 1 — so lassen.** Die Tore lesen weiter die Leiste des Builds, Weißglut verschiebt sie mit, Texte bleiben. Punkt 1 der Liste in 7.26 F ist damit zu, ohne Code- oder Textänderung; die Kopplung ist gewollt und wird nicht wieder aufgemacht. Nächster Punkt: Feuerwalze (7.26 F.2) — braucht ein Konzept vom Owner für den frei werdenden Platz SK_FIRE_08. |
+| 2026-09-06 | Owner zu Punkt 2: Konzept **Brandschneise**, mit dem Einwand, dass später im Lauf alle Positionen gewonnen werden (7.27). Gemessen (neue Sonde `sim/probes/positions-won.mjs`, Feuer mono, 100 Läufe): der Einwand stimmt und ist schärfer als erwartet — nach 3 Durchläufen sind 28,8 von 40 Positionen schon einmal gewonnen, nach 10 sind es 36,4, ab Durchlauf 41 alle 40. Die Bedingung siebt drei Durchläufe und ist danach eine Formalität, in der zweiten Laufhälfte wäre der Skill ein bedingungsloser Score-Faktor. Drei Bauformen mit struktureller statt historischer Knappheit an den Owner (feste Breite, jeden Durchlauf neu geschlagen / zusammenhängendes Band / Kette je Position), Empfehlung (a). Feuerwalze geht dafür raus (vier Stufen mit viermal +2, tot in 7.6, 7.9, 7.13). Nichts umgesetzt. |
