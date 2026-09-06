@@ -2804,12 +2804,16 @@ Glut 0,91, Rückzündung 0,87, Zunder 0,84, Glutbett 0,73, Schmiede 0,72. Aber a
 Stufenvergleiche; der Schiedsrichter für „schadet" ist die gepaarte Ablation des gierigen Spielers.** Frühere
 Lift-Urteile über Füller (7.16 ff.) sind entsprechend zu lesen.
 
-Die Episch-Extras in den ungefilterten Lifts (Episch gegen Normal derselben Reihe): Feuer — Zunder 1,10 gegen 0,85,
-Verbrennung 1,10 gegen 0,94, Rückzündung 0,89 gegen 0,86; Blitz — Reststrom 3,22 gegen 0,99, Gewitterfront 2,01 gegen
-1,32, Kettenblitz 1,22 gegen 0,88, Blitzfänger 0,92 gegen 0,41, Vorentladung 0,57 gegen 0,59, Kurzschluss 0,41 gegen
-0,57. Reststrom Episch (Leiste 9) ist damit das stärkste Episch im Blitz-Build; Vorentladung und Kurzschluss zeigen
-auf Episch nichts — beide hängen am 8×-Deckel (Vorentladung 0,15 je Serienpunkt ist bei Serie 20 +3×, der Deckel
-bindet den Stapel-Build in einem Viertel seiner Crits).
+Mit Filter (255 Blitz-Läufe ohne Legendäres) die Blitz-Reihe: Gewitterfront 2,18, Überspannung 1,42, Reststrom 1,42,
+Ladungsserie 1,35, Blitzfänger 1,25, Ionenfeld 1,14, Kettenblitz 0,95, Blitzschlag 0,80, Vorentladung 0,80,
+Kurzschluss 0,73, Spannungsstau 0,67, Entladung 0,48, Serienschutz 0,36 — im reinen Blitz-Build tragen die Rampen und
+die Wert-Skills, die Crit-Multiplikator-Skills nicht (der 8×-Deckel). **Die Episch-Extras** (Episch gegen Normal
+derselben Reihe, gefiltert, je Stufe 30–60 Läufe): Reststrom 4,36 gegen 1,32 (die Leiste bei 9 ist das stärkste
+Episch im Blitz-Build), Kettenblitz 3,88 gegen 0,92, Gewitterfront 3,47 gegen 2,17, Blitzfänger 2,35 gegen 0,95,
+Kurzschluss 0,89 gegen 0,72, Vorentladung 0,94 gegen 0,92; Feuer (ungefiltert): Zunder 1,10 gegen 0,85, Verbrennung
+1,10 gegen 0,94, Rückzündung 0,89 gegen 0,86. Sechs der acht Extras zeigen sich in der Leiter; Vorentladung und
+Kurzschluss hängen am Deckel (0,15 je Serienpunkt ist bei Serie 20 +3×, der Stapel-Build steht in einem Viertel seiner
+Crits am Deckel) — dort trägt kein Extra, bis der Deckel fällt oder die Werte sinken.
 
 ## 5. Eis
 
