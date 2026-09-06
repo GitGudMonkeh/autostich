@@ -36,6 +36,10 @@ import { randomPolicy } from "../sim/policies/random.js";
 // und der Blitz-Runde erneut zentrieren.
 // §7.17 (Feuersturm = Serie zu Score bei voller Leiste, 0,1–0,3 % je Serienpunkt): Seeds 1..40 Median ≈ 3,60M, Mean ≈ 6,14M —
 // im Band, nicht neu zentriert. §7.18 (Blitz-Runde): Median ≈ 3,53M, Mean ≈ 6,52M — im Band.
+// §7.19 (Owner, 2026-09-06): Ionenfeld 3/3/4/5, Kettenblitz jede Leiste +1/2/3/4, Überspannung als Dauerwert je Leiste,
+// Crit-Deckel 8 → 12, Überschlag gestrichen, Phönixfeuer und Sonnenzorn gehoben. Der Zufallsspieler steigt (Ionenfeld und
+// der Dauerwert tragen, s. Doku): Seeds 1..40 Median ≈ 5,67M, Mean ≈ 9,28M (Seeds 1..200: 4,51M / 10,65M). Bänder darauf
+// zentriert (≈ ±35 %); nach dem Paritäts-Entscheid der Runde erneut zentrieren.
 describe("sim balance guard", () => {
   const SEEDS = 40; // feste Seeds 1..40 → deterministischer Median/Mean
   const scores = Array.from({ length: SEEDS }, (_, i) => runOne(1 + i, randomPolicy()).score).sort((a, b) => a - b);
@@ -43,14 +47,14 @@ describe("sim balance guard", () => {
   const mean = scores.reduce((t, v) => t + v, 0) / SEEDS;
 
   it("Median-Score im erwarteten Band (breite Power-Verschiebung)", () => {
-    // Ist-Wert ≈ 2,34M (exp §7.14, 50 Runden, Feuer/Blitz). Band toleriert normales Tuning, schlägt bei grober Verschiebung an.
-    expect(median).toBeGreaterThan(2_200_000);
-    expect(median).toBeLessThan(4_600_000);
+    // Ist-Wert ≈ 5,67M (exp §7.19, 50 Runden, Feuer/Blitz). Band toleriert normales Tuning, schlägt bei grober Verschiebung an.
+    expect(median).toBeGreaterThan(3_700_000);
+    expect(median).toBeLessThan(7_700_000);
   });
 
   it("Mean-Score im erwarteten Band (Tail-Runaway-Fänger)", () => {
-    // Ist-Wert ≈ 4,45M (exp §7.14). Die Obergrenze fängt weiterhin einen ECHTEN Tail-Blowup (Mean ginge dann deutlich höher).
-    expect(mean).toBeGreaterThan(3_900_000);
-    expect(mean).toBeLessThan(8_000_000);
+    // Ist-Wert ≈ 9,28M (exp §7.19). Die Obergrenze fängt weiterhin einen ECHTEN Tail-Blowup (Mean ginge dann deutlich höher).
+    expect(mean).toBeGreaterThan(6_000_000);
+    expect(mean).toBeLessThan(12_500_000);
   });
 });

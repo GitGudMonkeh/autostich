@@ -135,7 +135,7 @@ score       = scoreVorCrit × (Crit ? critMultiplier : 1)
 
 **Crit:** nur bei Sieg. Der **Basis-Crit ist 0** — Crit-Chance kommt aus den **Präzision-Familien**
 (`families.js` Kat. P) und aus **Blitz-Skills**, auf 100 % gedeckelt; Überschuss > 100 % speist
-Sonderregeln (Überschusskrit, Überschlag, Raserei). Crit-Faktor = `CRIT_BASE_MULT (2,25)` +
+Sonderregeln (Überschusskrit, Raserei). Crit-Faktor = `CRIT_BASE_MULT (2,25)` +
 Präzision-Wucht + Blitz (+`LIGHTNING_CRIT_MULT_PER_SKILL` je Skill) + Legendär-Boni.
 Über den injizierten `rng` gewürfelt → deterministisch.
 

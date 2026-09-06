@@ -70,8 +70,8 @@ export function fireRun(seed, policy) {
 }
 
 // ---- Blitz ----
-const STACK_BUILD = [L.KETTENBLITZ, L.BLITZSCHLAG, L.ABLEITER, L.IONENFELD, L.RESTSTROM, L.KURZSCHLUSS, L.BLITZFAENGER, L.UEBERSPANNUNG, L.LADUNGSSERIE, L.VORENTLADUNG, L.GEWITTERFRONT, L.ENTLADUNG, L.UEBERSCHLAG, L.SPANNUNGSSTAU, L.SERIENSCHUTZ];
-const CRIT_BUILD = [L.LADUNGSSERIE, L.VORENTLADUNG, L.GEWITTERFRONT, L.ENTLADUNG, L.UEBERSCHLAG, L.SPANNUNGSSTAU, L.ABLEITER, L.RESTSTROM, L.IONENFELD, L.BLITZSCHLAG, L.KETTENBLITZ, L.KURZSCHLUSS, L.BLITZFAENGER, L.UEBERSPANNUNG, L.SERIENSCHUTZ];
+const STACK_BUILD = [L.KETTENBLITZ, L.BLITZSCHLAG, L.ABLEITER, L.IONENFELD, L.RESTSTROM, L.KURZSCHLUSS, L.BLITZFAENGER, L.UEBERSPANNUNG, L.LADUNGSSERIE, L.VORENTLADUNG, L.GEWITTERFRONT, L.ENTLADUNG, L.SPANNUNGSSTAU, L.SERIENSCHUTZ];
+const CRIT_BUILD = [L.LADUNGSSERIE, L.VORENTLADUNG, L.GEWITTERFRONT, L.ENTLADUNG, L.SPANNUNGSSTAU, L.ABLEITER, L.RESTSTROM, L.IONENFELD, L.BLITZSCHLAG, L.KETTENBLITZ, L.KURZSCHLUSS, L.BLITZFAENGER, L.UEBERSPANNUNG, L.SERIENSCHUTZ];
 export const LIGHTNING_BUILDS = [
   ["Fraktion (zufällig)", () => factionPolicy("lightning")],
   ["Stapel zuerst", () => fixedPolicy(STACK_BUILD, fixedOpts)],
@@ -84,7 +84,7 @@ export function lightningRun(seed, policy) {
     a.last = s;
     const t = s.lastTrick; if (!t || !(t.result === "win" || t.result === "win_tie")) return;
     a.wins += 1; const st = (t.pCard && t.pCard.ionStacks) || 0; a.winStacks += st; if (st > 0) a.winWithStack += 1;
-    // §7.18: Crit-Multiplikator am 8×-Deckel? (Rampen Gewitterfront/Entladung/Überschlag können dann nichts mehr zeigen.)
+    // §7.18: Crit-Multiplikator am Deckel? (Rampen Gewitterfront/Entladung können dann nichts mehr zeigen; §7.19: Deckel 12×.)
     if (t.isCrit) { a.critN += 1; a.critMultSum += t.critMultiplier || 0; if ((t.critMultiplier || 0) >= C.CRIT_MULT_CAP - 1e-9) a.capHits += 1; }
   } }, { archetypes: ["lightning"] });
   const s = a.last, li = s.lightning || {};
@@ -170,7 +170,7 @@ export function runMotor({ arg, seed0, write } = {}) {
       console.log(`  ${name.padEnd(22)} ${fmt(row.median).padStart(10)}   ${row.crits.toFixed(0).padStart(6)}     ${pct(row.critRate)}   ${row.bars.toFixed(1).padStart(8)}     ${row.tricksPerBar.toFixed(1).padStart(8)}     ${row.ionTotal.toFixed(0).padStart(6)}      ${row.stacksPerCard.toFixed(1).padStart(6)}     ${pct(row.ionizedShare)}    ${row.winStacksMean.toFixed(1).padStart(6)}     ${pct(row.critShare)}   ${paired ? `${pct(row.stackShareMedian)} (Ø ${pct(row.stackShareMean).trim()})` : "n/a"}   ${row.critMultMean.toFixed(2).padStart(8)}×  ${pct(row.capShare)}`);
     }
     console.log(`  Lesart: „Stapel-Anteil" = Score-Verlust desselben Laufs ohne jede Stapel-Wirkung (Stapel-Score 0 und Crit-Mult je Stapel 0; gepaart, Median und Ø je Lauf); „Crit-Anteil" = critBonusScore ÷ Score.`);
-    console.log(`  „am Deckel" = Anteil der Crits, deren fertiger Crit-Multiplikator am Deckel ${C.CRIT_MULT_CAP}× stand (§7.18: dort zeigen Gewitterfront, Entladung und Überschlag nichts mehr).`);
+    console.log(`  „am Deckel" = Anteil der Crits, deren fertiger Crit-Multiplikator am Deckel ${C.CRIT_MULT_CAP}× stand (dort zeigen Gewitterfront und Entladung nichts mehr).`);
     console.log(`  „Siegkarte Ø" = Stapel auf der gespielten Karte bei einem Sieg; „ionisiert" = Anteil der Karten mit ≥ 1 Stapel am Laufende.`);
   }
   if (write) write(payload);

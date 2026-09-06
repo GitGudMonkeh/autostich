@@ -28,7 +28,7 @@ export const SCORE_PER_WIN    = envNum("SIM_SCORE_PER_WIN", 400);    // Basispun
 // kommt. Die legitime Summe aller gedeckelten Quellen liegt bei ~7,4× (Basis 2,25 + Wucht IV 0,90 + 6 Blitz-Skills 0,60
 // + Donnergott 0,40 + Durchschlag 2,00 + Entladung 1,00 + Raserei 1,00) → der Deckel bindet einen ehrlichen Build NICHT,
 // fängt aber jede künftige Kombi ab, die wieder eine unbegrenzte Größe in den Multiplikator kippt.
-export const CRIT_MULT_CAP    = envNum("SIM_CRIT_MULT_CAP", 8);
+export const CRIT_MULT_CAP    = envNum("SIM_CRIT_MULT_CAP", 12); // exp §7.19 (Owner): 8 → 12 — Stapel (0,15× je Stapel), Vorentladung und Donnergott stehen im gierigen Blitz-Build bei 4–6×, die Rampen (Entladung) verpufften am Deckel
 // D_OVERCRIT IV (Überschusskrit): höchstens so viele Prozentpunkte Crit-Überschuss zahlen den Zuschlag je Punkt aus.
 export const OVERCRIT_EXCESS_PP_CAP = envNum("SIM_OVERCRIT_EXCESS_PP_CAP", 100);
 export const CRIT_BASE_MULT   = envNum("SIM_CRIT_BASE_MULT", 2.25);  // Basis-Crit-Multiplikator. #268: 1,5→2,25 — jetzt wo Crit aus der Stat-Phase raus ist, hilft der höhere Basis-Mult differenziell dem Crit-Archetyp Blitz (Sim: Blitz-Floor 1,47×→1,93× Mix), Nicht-Blitz nur schwach (RNG-gegateter Präzision-Crit) [TUNING · Sim-übersteuerbar]
@@ -354,7 +354,7 @@ export const FORGE_VALUE         = envNum("SIM_FORGE_VALUE", 3);                
 // Legendäre (§4.7): keine Stufe, zwei Effekte, jedes läuft allein.
 export const SONNENKERN_BRAND           = 1;                                                   // Sonnenkern: jeder Sieg brandmarkt −1 (stapelt über die Runden)
 export const SONNENKERN_SCORE_PER_BRAND = envNum("SIM_SONNENKERN_SCORE_PER_BRAND", 20);        // Sonnenkern: Basis-Score je Brandpunkt auf der geschlagenen Karte
-export const PHOENIX_LOSS_HEAT          = envNum("SIM_PHOENIX_LOSS_HEAT", 2);                  // Phönixfeuer: +% Hitze je Punkt Rückstand statt Kühlung
+export const PHOENIX_LOSS_HEAT          = envNum("SIM_PHOENIX_LOSS_HEAT", 3);                  // Phönixfeuer: +% Hitze je Punkt Rückstand statt Kühlung (§7.19: 2 → 3)
 export const PHOENIX_REIGNITE           = envNum("SIM_PHOENIX_REIGNITE", 50);                  // Phönixfeuer: Hitze nach der Neuzündung (auf 0 gefallen), ohne Rundenlimit
 export const SONNENZORN_MULT_PER_10     = envNum("SIM_SONNENZORN_MULT_PER_10", 0.04);          // Sonnenzorn: Hitze-Multiplikator je 10 % Spitzen-Hitze (statt HEAT_MULT_PER_10)
 

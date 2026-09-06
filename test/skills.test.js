@@ -12,9 +12,10 @@ const ALL = Object.keys(SKILL_DEFS);
 describe("skills — Blitz-Registry (exp skill rework)", () => {
   it("19 Blitz-Skills: 15 normale mit vier Stufenzeilen + 4 Legendäre ohne Stufe, alle archetype=lightning", () => {
     const light = Object.values(SKILL_DEFS).filter((s) => s.archetype === "lightning");
-    expect(light).toHaveLength(19);
+    expect(light).toHaveLength(18); // §7.19: 14 normale (Überschlag gestrichen, Owner-Untergrenze 14) + 4 Legendäre
     const normal = light.filter((s) => !s.legendary), leg = light.filter((s) => s.legendary);
-    expect(normal).toHaveLength(15);
+    expect(normal).toHaveLength(14);
+    expect(SKILL_DEFS.SK_LIGHTNING_14).toBeUndefined();           // §7.19: Überschlag gestrichen
     expect(leg).toHaveLength(4);
     for (const s of normal) expect(Array.isArray(s.tiers) && s.tiers.length === SKILL_TIER_COUNT, `${s.id} ohne Stufentabelle`).toBe(true);
     for (const s of leg) expect(s.tiers).toBeUndefined();
@@ -29,18 +30,18 @@ describe("skills — Blitz-Registry (exp skill rework)", () => {
   it("Stufentabellen: Schwellen fallen, Raten steigen mit der Stufe (Leiter aus docs/skill-rework.md §3.5)", () => {
     const desc = (rows, key) => rows.every((r, i) => i === 0 || r[key] <= rows[i - 1][key]);
     const asc = (rows, key) => rows.every((r, i) => i === 0 || r[key] >= rows[i - 1][key]);
-    for (const k of ["faenger", "kurzschluss", "ueberspannung"]) expect(desc(BLITZ_TIERS[k], "minStacks"), k).toBe(true);
+    for (const k of ["faenger", "kurzschluss"]) expect(desc(BLITZ_TIERS[k], "minStacks"), k).toBe(true);
     expect(desc(BLITZ_TIERS.blitzschlag, "critEvery")).toBe(true);
     expect(desc(BLITZ_TIERS.vorentladung, "minStreak")).toBe(true); // §7.18
     expect(asc(BLITZ_TIERS.faenger, "value")).toBe(true);           // §7.18: ohne Schwelle, der Wert steigt
-    expect(asc(BLITZ_TIERS.ueberspannung, "charge")).toBe(true);    // §7.18: ohne Schwelle, die Ladung steigt
+    expect(asc(BLITZ_TIERS.ueberspannung, "value")).toBe(true);     // §7.19: Dauerwert je Leiste, der Wert steigt
+    expect(asc(BLITZ_TIERS.ionenfeld, "value")).toBe(true);         // §7.19
     expect(asc(BLITZ_TIERS.ionenfeld, "tricks")).toBe(true);        // §7.18
     expect(desc(BLITZ_TIERS.serienschutz, "frac")).toBe(true);
     expect(asc(BLITZ_TIERS.reststrom, "floor")).toBe(true);
     expect(asc(BLITZ_TIERS.gewitter, "critPerBar")).toBe(true);
     expect(asc(BLITZ_TIERS.entladung, "multPerBar")).toBe(true);
     expect(asc(BLITZ_TIERS.serie, "critPerStreak")).toBe(true);
-    expect(asc(BLITZ_TIERS.ueberschlag, "multPer10")).toBe(true);
     expect(asc(BLITZ_TIERS.stau, "step")).toBe(true);
     expect(asc(BLITZ_TIERS.kette, "extra")).toBe(true); // §7.18: Tiefe
   });

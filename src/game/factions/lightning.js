@@ -9,12 +9,13 @@ import { SKILL_DEFS, TIER_EPIC, activeLightningCount, isLegendarySkill } from ".
    Reihenfolge (+1 Stapel) und leert sich auf den Reststrom-Boden. Ein Stapel gibt bei Sieg mit der Karte
    ION_SCORE_PER_STACK Score in die Basis. Stapel sind ohne Deckel und wachsen nie von selbst (Lesart A).
 
-   Die 15 Skills lesen ihre Kennwerte aus den Stufentabellen in SKILL_DEFS (`tiers[0..3]`, Normal … Episch) über
+   Die 14 Skills lesen ihre Kennwerte aus den Stufentabellen in SKILL_DEFS (`tiers[0..3]`, Normal … Episch) über
    `lightParam`; Hochspannung (Legendär) hebt jede gehaltene Stufe um eins, Episch bleibt Episch. Legendäre haben keine
    Stufe. Alle Funktionen sind immutabel: sie geben neue Objekte zurück und fassen ihre Eingaben nicht an.
    §7.18 (Blitz-Runde): Statische Aufladung und Dauerstrom sind in Blitzableiter aufgegangen, Ionenfeld (SK_LIGHTNING_02)
-   und Vorentladung (SK_LIGHTNING_12) sind neu, Kettenblitz vertieft statt verbreitert, Blitzfänger und Überspannung
-   haben keine Stapel-Schwelle mehr, der Spannungsstau geht in den Crit-Multiplikator.
+   und Vorentladung (SK_LIGHTNING_12) sind neu, Kettenblitz vertieft statt verbreitert, Blitzfänger hat keine Stapel-
+   Schwelle mehr, der Spannungsstau geht in den Crit-Multiplikator. §7.19: Überspannung ist Dauerwert je Leiste (die
+   Schmiede des Blitzes), Überschlag ist gestrichen (14 Skills).
    ============================================================ */
 
 // Skill-IDs der Fraktion — lesbare Namen für Modul und Engine. (SK_LIGHTNING_08 Statische Aufladung und SK_LIGHTNING_16
@@ -23,7 +24,7 @@ export const L = Object.freeze({
   ABLEITER: "SK_LIGHTNING_01", IONENFELD: "SK_LIGHTNING_02", KETTENBLITZ: "SK_LIGHTNING_03", UEBERSPANNUNG: "SK_LIGHTNING_04",
   RESTSTROM: "SK_LIGHTNING_05", GEWITTERFRONT: "SK_LIGHTNING_06", LADUNGSSERIE: "SK_LIGHTNING_07", KURZSCHLUSS: "SK_LIGHTNING_09",
   ENTLADUNG: "SK_LIGHTNING_10", BLITZFAENGER: "SK_LIGHTNING_11", VORENTLADUNG: "SK_LIGHTNING_12", SPANNUNGSSTAU: "SK_LIGHTNING_13",
-  UEBERSCHLAG: "SK_LIGHTNING_14", BLITZSCHLAG: "SK_LIGHTNING_15", SERIENSCHUTZ: "SK_LIGHTNING_17",
+  BLITZSCHLAG: "SK_LIGHTNING_15", SERIENSCHUTZ: "SK_LIGHTNING_17", // SK_LIGHTNING_14 Überschlag: gestrichen (§7.19)
   DONNERGOTT: "SK_LIGHTNING_L01", DOPPELENTLADUNG: "SK_LIGHTNING_L02", HOCHSPANNUNG: "SK_LIGHTNING_L03", DURCHSCHLAG: "SK_LIGHTNING_L04",
 });
 
@@ -75,14 +76,12 @@ export function lightningCritChance(lightning, skills, skillTiers, streak = 0) {
 }
 
 /* Crit-Multiplikator-Beitrag des Blitz-Archetyps (additiv auf die Basis): Entladung-Rampe + Donnergott + Spannungsstau
-   (§7.18: der Stau aus Siegen ohne Crit, für den nächsten Crit) + Überschlag (Zustand: je 10 Punkte Crit-Chance über
-   100 %, solange der Überschuss besteht) + Vorentladung (§7.18: ab der Serie der Stufe je Serienpunkt; `streak` = Serie
-   NACH diesem Sieg, wie bei der Crit-Chance). 0, solange inaktiv. */
-export function lightningCritMult(lightning, skills, skillTiers, rawCrit = 0, streak = 0) {
+   (§7.18: der Stau aus Siegen ohne Crit, für den nächsten Crit) + Vorentladung (§7.18: ab der Serie der Stufe je
+   Serienpunkt; `streak` = Serie NACH diesem Sieg, wie bei der Crit-Chance). Der Überschuss über 100 % zahlt nur noch
+   über die Systemregel (overcritMult) — Überschlag ist gestrichen (§7.19). 0, solange inaktiv. */
+export function lightningCritMult(lightning, skills, skillTiers, streak = 0) {
   if (!lightning || !lightning.active) return 0;
   let m = (lightning.entladungMult || 0) + (lightning.stauBonus || 0) + (hasDonnergott(skills) ? C.THUNDER_CRIT_MULT : 0);
-  const per10 = lightParam(skills, skillTiers, L.UEBERSCHLAG, "multPer10");
-  if (per10 && rawCrit > 1) m += Math.floor(((rawCrit - 1) * 100 + 1e-9) / 10) * per10;
   const vMin = lightParam(skills, skillTiers, L.VORENTLADUNG, "minStreak");
   if (vMin != null && streak >= vMin) m += Math.max(0, streak) * (lightParam(skills, skillTiers, L.VORENTLADUNG, "multPerStreak") || 0);
   return m;
@@ -128,11 +127,11 @@ export function ionCritMultFor(card, skills = [], skillTiers = {}) {
 }
 
 /* Ladungsgewinn eines gewonnenen Stichs und die fortgeschriebenen Zähler. `streak` = Serie NACH diesem Sieg.
-   Crit: +1 Passiv, Blitzableiter (jeder N. Crit +1), Überspannung (ionisierte Karte +Ladung). Sieg ohne Crit:
-   Blitzableiter Episch (+1). Immer: Ladungsserie Episch (ab Serie 8 +1).
+   Crit: +1 Passiv, Blitzableiter (jeder N. Crit +1). Sieg ohne Crit: Blitzableiter Episch (+1). Immer: Ladungsserie
+   Episch (ab Serie 8 +1). (Überspannung gibt seit §7.19 keine Ladung mehr — sie ist Dauerwert je Leiste, fillBar.)
    Deterministisch und ohne Nebenwirkung — die Engine ruft es für die Vorschau (füllt ein Crit die Leiste?) und dann
    für den echten Stich mit denselben Eingaben. */
-export function chargeGainOnWin(lightning, skills, skillTiers, { isCrit, streak = 0, card = null } = {}) {
+export function chargeGainOnWin(lightning, skills, skillTiers, { isCrit, streak = 0 } = {}) {
   let gain = 0;
   const next = { ...lightning };
   if (isCrit) {
@@ -140,8 +139,6 @@ export function chargeGainOnWin(lightning, skills, skillTiers, { isCrit, streak 
     gain += 1;
     const every = lightParam(skills, skillTiers, L.ABLEITER, "critEvery");
     if (every && next.critCount % every === 0) gain += 1;
-    const min = lightParam(skills, skillTiers, L.UEBERSPANNUNG, "minStacks");
-    if (min != null && (card?.ionStacks || 0) >= min) gain += lightParam(skills, skillTiers, L.UEBERSPANNUNG, "charge") || 0;
   } else {
     gain += lightParam(skills, skillTiers, L.ABLEITER, "noCritCharge") || 0;
   }
@@ -151,9 +148,9 @@ export function chargeGainOnWin(lightning, skills, skillTiers, { isCrit, streak 
 }
 
 // Vorschau für Entladung Episch: füllt ein Crit auf dieser Karte die Leiste in diesem Stich?
-export function critFillsBar(lightning, skills, skillTiers, { streak = 0, card = null } = {}) {
+export function critFillsBar(lightning, skills, skillTiers, { streak = 0 } = {}) {
   if (!lightning || !lightning.active) return false;
-  const { gain } = chargeGainOnWin(lightning, skills, skillTiers, { isCrit: true, streak, card });
+  const { gain } = chargeGainOnWin(lightning, skills, skillTiers, { isCrit: true, streak });
   return (lightning.charge || 0) + gain >= maxChargeFor(skills);
 }
 
@@ -217,7 +214,9 @@ export function fillBar(lightning, skills, skillTiers, deck, playerOrder, actual
   let newDeck = deck;
   if (n > 0) {
     const di = playerOrder[(actualPos + 1) % n];
-    newDeck = newDeck.map((c, i) => (i === di ? { ...c, ionStacks: (c.ionStacks || 0) + per } : c));
+    // Überspannung (§7.19): die Karte, die die Leiste ionisiert, erhält dauerhaft +Wert der Stufe (gebacken wie die Schmiede).
+    const uv = lightParam(skills, skillTiers, L.UEBERSPANNUNG, "value") || 0;
+    newDeck = newDeck.map((c, i) => (i === di ? { ...c, ionStacks: (c.ionStacks || 0) + per, value: c.value + uv } : c));
     stacks += per; targets.push(di);
   }
   const kbEvery = lightParam(skills, skillTiers, L.KETTENBLITZ, "barEvery");

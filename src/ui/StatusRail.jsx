@@ -53,7 +53,7 @@ export function StatusRail({ state, currentTraj = [], recordTraj = [], options =
   // der echte Wurf bleibt in der Engine bei engine.js:302 geklemmt).
   const critPct = Math.round(Math.max(0, critRaw) * 100);
   // Crit-Mult VOLLSTÄNDIG (geteilter Helfer): Perk-Basis + Familien-Wucht + Blitz (Entladung-Rampe, Donnergott,
-  // Überschlag) + Systemregel — der STAND des Crit-Multiplikators. (exp: der feldweite Ionisierungs-Crit ist weg.)
+  // Spannungsstau) + Systemregel — der STAND des Crit-Multiplikators. (exp: der feldweite Ionisierungs-Crit ist weg.)
   const critMultTotal = totalCritMult(state);
   // #123/#UI: Formations-Bonus der aktuellen Aufstellung dauerhaft sichtbar (gleiche Quelle wie die
   // Formationsphase → kein Drift). Als SUMME aller Positionen in % (Σ(mult−1)·100) — nicht mehr max/aktuelle Position.

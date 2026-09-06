@@ -636,15 +636,15 @@ export function resolveTrick(state, rng) {
     critChance = Math.min(1, Math.max(0, rawCrit));             // Anzeige/normaler Wurf (geklemmt)
     // Crit-Ctx trägt rawCrit — von D-Crit-Flats (D19 Überschusskrit) UND L6 „Raserei" (critMultBonus, #115) gebraucht.
     const critCtx = { ...wctx, rawCrit };
-    // Basis 2,25 + Präzision „Wucht" (familyCritMult) + L6-Überschuss + Blitz (Entladung-Rampe, Donnergott, Überschlag als
-    // Zustand) + Stapel der Siegkarte (§7.12: +ION_CRIT_MULT_PER_STACK je wirksamem Stapel) + Systemregel (§1: Überschuss
+    // Basis 2,25 + Präzision „Wucht" (familyCritMult) + L6-Überschuss + Blitz (Entladung-Rampe, Donnergott, Spannungsstau,
+    // Vorentladung) + Stapel der Siegkarte (§7.12: +ION_CRIT_MULT_PER_STACK je wirksamem Stapel) + Systemregel (§1: Überschuss
     // über 100 % → sehr kleiner Crit-Mult-Bonus, alle Fraktionen).
     critMultiplier = critMultiplierFor(perks, critCtx) + familyCritMult(familyTiers)
-                   + lightningCritMult(lightning, skills, skillTiers, rawCrit, serieStreak) + lightIonCritMult(pCard, skills, skillTiers) + overcritMult(rawCrit);
+                   + lightningCritMult(lightning, skills, skillTiers, serieStreak) + lightIonCritMult(pCard, skills, skillTiers) + overcritMult(rawCrit);
     // Entladung Episch: der Crit, der die Leiste füllt, zählt mit doppeltem Crit-Multiplikator. Vorschau auf denselben
     // Ladungsgewinn, den ein Crit unten wirklich bringt — der Multiplikator wird nur bei einem Crit gelesen.
     if (lightning && lightning.active && lightParam(skills, skillTiers, LIGHT.ENTLADUNG, "fillDouble")
-        && critFillsBar(lightning, skills, skillTiers, { streak: serieStreak, card: pCard })) critMultiplier *= 2;
+        && critFillsBar(lightning, skills, skillTiers, { streak: serieStreak })) critMultiplier *= 2;
     // BACKSTOP (Crit-Bändigung): der fertige Crit-Multiplikator wird hart gedeckelt — bewusst NACH allen Additionen,
     // damit keine Quelle (auch keine offene Rampe) ihn umgehen kann. Der Owner hält den Deckel (docs/skill-rework.md §1).
     critMultiplier = Math.min(critMultiplier, C.CRIT_MULT_CAP);
@@ -890,11 +890,21 @@ export function resolveTrick(state, rng) {
     losses += 1; cycleLosses += 1; // cycleLosses: Durchlauf-Bilanz für Zinseszins (#203)
     // Serienanker IV (§4.2): eine Niederlage auf dieser Position setzt die Serie NICHT zurück.
     const anchorNoReset = anchorType === "streak" && !!aParam("noReset");
+    // ---- Feuer (exp skill rework, §4): Kühlung (Passiv, Glutbett-Boden, Phönixfeuer heizt), Rückstand für Rückzündung
+    //      merken, Brandmal Episch brandmarkt die Gegnerkarte, die gewonnen hat — alles im Modul. Phönixfeuer (§7.19):
+    //      bei voller Leiste hält die erste Niederlage jeder Runde die Serie — deshalb VOR dem Serienschutz, der dann
+    //      keine Ladung ausgibt.
+    let phoenixHeld = false;
+    if (heat && heat.active) {
+      const r = fireOnLoss(heat, skills, skillTiers, { deficit: oValue - pValue, oppId: oCard.id });
+      heat = r.heat; phoenixHeld = !!r.streakHeld;
+      for (const b of r.brands) { newBrandPending[b.id] = (newBrandPending[b.id] || 0) + b.value; brandTotal += 1; }
+    }
     // Blitz (exp skill rework): Serienschutz (Ladung ab dem Anteil der Stufe hält die Serie und wird verbraucht; Episch
-    // einmal je Runde gratis) und Statische Aufladung (jede 2. Niederlage +1 Ladung ab Sehr selten) — im Modul.
+    // einmal je Runde gratis) — im Modul.
     let serienschutzHeld = false;
     if (lightning && lightning.active) {
-      const r = lightningOnLoss(lightning, skills, skillTiers, { alreadyHeld: anchorNoReset });
+      const r = lightningOnLoss(lightning, skills, skillTiers, { alreadyHeld: anchorNoReset || phoenixHeld });
       lightning = r.lightning; serienschutzHeld = r.streakHeld;
     }
     // Eis-Neudesign (docs §4 Frostgriff — Eispanzer): eine Niederlage NEBEN einem Gletscher ist folgenlos (Serie hält)
@@ -903,7 +913,7 @@ export function resolveTrick(state, rng) {
     const glacierShield = glacierActive && glacierRoles.includes(GLACIER_ROLES.EISPANZER)
       && glacierNeighbors4(actualPos).some((p) => glacierLocked[p]);
     if (glacierShield) for (const nb of glacierNeighbors4(actualPos)) if (glacierLocked[nb]) newGlacierMass[nb] = (newGlacierMass[nb] || 0) + GLACIER_EISPANZER_MASS;
-    const streakNoReset = anchorNoReset || serienschutzHeld || glacierShield;
+    const streakNoReset = anchorNoReset || serienschutzHeld || glacierShield || phoenixHeld;
     winStreak = streakNoReset ? winStreak : 0;
     initiative = "opp";
     sinceWin += 1; // #71 Durchbruch: kein Sieg → Zähler hoch
@@ -920,13 +930,6 @@ export function resolveTrick(state, rng) {
     if (interplayStoreOnLoss) interplayStored += interplayStoreOnLoss; // D_INTERPLAY IV: Niederlage bankt Score für den nächsten Sieg
     winSuit = null; winSuitStreak = 0; // #71 Farbserie: Niederlage beendet die Farbserie
     serieStreak = streakNoReset ? winStreak : 0; // Serienschutz/Serienanker: effektive Serie hält
-    // ---- Feuer (exp skill rework, §4): Kühlung (Passiv −2, Glutbett-Boden, Phönixfeuer heizt), Rückstand für Rückzündung
-    //      merken, Brandmal Episch brandmarkt die Gegnerkarte, die gewonnen hat — alles im Modul.
-    if (heat && heat.active) {
-      const r = fireOnLoss(heat, skills, skillTiers, { deficit: oValue - pValue, oppId: oCard.id });
-      heat = r.heat;
-      for (const b of r.brands) { newBrandPending[b.id] = (newBrandPending[b.id] || 0) + b.value; brandTotal += 1; }
-    }
     // Zäher Halm (Pflanze v0): unreife (graue) Karten wachsen auch bei Niederlage +1 — bis sie grün sind.
     if (hasZaeherHalm(skills) && !pCard.green) {
       const g = (newGrowth[pCard.id] || 0) + C.ZAEHER_HALM_GROWTH;

@@ -8,7 +8,7 @@ import { resolveTrick } from "../src/game/engine.js";
 import { initialState } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
 
-/* Blitz — exp skill rework (docs/skill-rework.md §3): Passiv, 15 Skills mit vier Stufen, 4 Legendäre. Erst die reinen
+/* Blitz — exp skill rework (docs/skill-rework.md §3): Passiv, 14 Skills mit vier Stufen (§7.19), 4 Legendäre. Erst die reinen
    Übergänge des Moduls, dann jeder Skill einmal durch resolveTrick. Konstante Decks (Spieler 12 gegen 0 = Sieg,
    0 gegen 12 = Niederlage), rng 0 = Crit sobald Chance > 0, rng 0,99 = nie. playerOrder = Identität: Position 0 spielt
    Deck-Index 0, die „nächste Karte in der Reihenfolge" ist Deck-Index 1. */
@@ -23,17 +23,17 @@ const T = BLITZ_TIERS;
 const M = C.CRIT_BASE_MULT;
 
 /* Roster mit LITERALEN IDs — das Coverage-Gate in registry-guards.test.js sucht jede Skill-ID als Text in den Tests. */
-const LIGHTNING_IDS = [ // §7.18: 08 (Statische Aufladung) und 16 (Dauerstrom) in Blitzableiter aufgegangen; 02 Ionenfeld und 12 Vorentladung neu
+const LIGHTNING_IDS = [ // §7.18: 08 (Statische Aufladung) und 16 (Dauerstrom) in Blitzableiter aufgegangen; 02 Ionenfeld und 12 Vorentladung neu; §7.19: 14 (Überschlag) gestrichen
   "SK_LIGHTNING_01", "SK_LIGHTNING_02", "SK_LIGHTNING_03", "SK_LIGHTNING_04", "SK_LIGHTNING_05", "SK_LIGHTNING_06", "SK_LIGHTNING_07",
-  "SK_LIGHTNING_09", "SK_LIGHTNING_10", "SK_LIGHTNING_11", "SK_LIGHTNING_12", "SK_LIGHTNING_13", "SK_LIGHTNING_14",
+  "SK_LIGHTNING_09", "SK_LIGHTNING_10", "SK_LIGHTNING_11", "SK_LIGHTNING_12", "SK_LIGHTNING_13",
   "SK_LIGHTNING_15", "SK_LIGHTNING_17",
   "SK_LIGHTNING_L01", "SK_LIGHTNING_L02", "SK_LIGHTNING_L03", "SK_LIGHTNING_L04",
 ];
 
 describe("Blitz-Modul — Stufen und Kennwerte", () => {
-  it("L nennt genau die 19 registrierten Blitz-Skills (15 + 4 Legendäre)", () => {
+  it("L nennt genau die 18 registrierten Blitz-Skills (14 + 4 Legendäre)", () => {
     const ids = Object.values(L);
-    expect(ids).toHaveLength(19);
+    expect(ids).toHaveLength(18);
     expect([...ids].sort()).toEqual([...LIGHTNING_IDS].sort());
     for (const id of ids) expect(SKILL_DEFS[id]?.archetype, id).toBe("lightning");
     expect(Object.values(SKILL_DEFS).filter((s) => s.archetype === "lightning").map((s) => s.id).sort()).toEqual([...LIGHTNING_IDS].sort());
@@ -67,18 +67,16 @@ describe("Blitz-Modul — Stufen und Kennwerte", () => {
     expect(lightningCritChance(light(), [L.LADUNGSSERIE], { [L.LADUNGSSERIE]: 3 }, 20)).toBeCloseTo(C.LIGHTNING_CRIT_PER_SKILL + 20 * T.serie[3].critPerStreak, 9);
     expect(lightningCritChance(light(), [L.LADUNGSSERIE], {}, 0)).toBeCloseTo(C.LIGHTNING_CRIT_PER_SKILL, 9); // ohne Serie kein Bonus
   });
-  it("lightningCritMult: Entladung-Rampe + Donnergott + Spannungsstau + Überschlag als Zustand je 10 Punkte über 100 % + Vorentladung ab der Serie", () => {
+  it("lightningCritMult: Entladung-Rampe + Donnergott + Spannungsstau + Vorentladung ab der Serie (§7.19: Überschlag ist gestrichen, kein rawCrit-Term mehr)", () => {
     expect(lightningCritMult(initLightning(), [L.DONNERGOTT], {})).toBe(0);
     expect(lightningCritMult(light({ entladungMult: 0.3 }), [L.DONNERGOTT], {})).toBeCloseTo(0.3 + C.THUNDER_CRIT_MULT, 9);
     expect(lightningCritMult(light({ stauBonus: 0.25 }), [], {})).toBeCloseTo(0.25, 9); // §7.18: der Spannungsstau zahlt hier
     const vMin = T.vorentladung[0].minStreak;
-    expect(lightningCritMult(light(), [L.VORENTLADUNG], {}, 0, vMin)).toBeCloseTo(vMin * T.vorentladung[0].multPerStreak, 9);
-    expect(lightningCritMult(light(), [L.VORENTLADUNG], {}, 0, vMin - 1)).toBe(0);
-    expect(lightningCritMult(light(), [L.VORENTLADUNG], { [L.VORENTLADUNG]: 3 }, 0, 10)).toBeCloseTo(10 * T.vorentladung[3].multPerStreak, 9);
-    expect(lightningCritMult(light(), [L.UEBERSCHLAG], {}, 1.55)).toBeCloseTo(5 * T.ueberschlag[0].multPer10, 9);   // 55 Punkte → 5 Schritte
-    expect(lightningCritMult(light(), [L.UEBERSCHLAG], { [L.UEBERSCHLAG]: 3 }, 2.5)).toBeCloseTo(15 * T.ueberschlag[3].multPer10, 9);
-    expect(lightningCritMult(light(), [L.UEBERSCHLAG], {}, 1.0)).toBe(0);                                          // kein Überschuss
-    expect(lightningCritMult(light(), [], {}, 1.55)).toBe(0);                                                       // ohne Überschlag nichts
+    expect(lightningCritMult(light(), [L.VORENTLADUNG], {}, vMin)).toBeCloseTo(vMin * T.vorentladung[0].multPerStreak, 9);
+    expect(lightningCritMult(light(), [L.VORENTLADUNG], {}, vMin - 1)).toBe(0);
+    expect(lightningCritMult(light(), [L.VORENTLADUNG], { [L.VORENTLADUNG]: 3 }, 10)).toBeCloseTo(10 * T.vorentladung[3].multPerStreak, 9);
+    expect(lightningCritMult(light(), [], {}, 10)).toBe(0); // ohne Vorentladung zählt die Serie hier nicht
+    expect(L.UEBERSCHLAG).toBeUndefined(); expect(T.ueberschlag).toBeUndefined(); // §7.19
   });
   it("Systemregel overcritMult: je Prozentpunkt über 100 % OVERCRIT_MULT_PER_PP, darunter 0", () => {
     expect(overcritMult(0.8)).toBe(0);
@@ -115,19 +113,15 @@ describe("Blitz-Modul — Stufen und Kennwerte", () => {
 });
 
 describe("Blitz-Modul — Ladung, Leiste, Niederlage (reine Übergänge)", () => {
-  it("chargeGainOnWin: Crit +1 Passiv; Blitzableiter Normal jeder 2. Crit, Sehr selten jeder; Überspannung mit ionisierter Karte (§7.18 ohne Schwelle); immutabel", () => {
+  it("chargeGainOnWin: Crit +1 Passiv; Blitzableiter Normal jeder 2. Crit, Sehr selten jeder; Überspannung gibt keine Ladung mehr (§7.19); immutabel", () => {
     const l = light();
     const a = chargeGainOnWin(l, [], {}, { isCrit: true });
     expect(a.gain).toBe(1); expect(a.next.critCount).toBe(1); expect(l.critCount).toBe(0);
     expect(chargeGainOnWin(light(), [L.ABLEITER], {}, { isCrit: true }).gain).toBe(1);                          // 1. Crit: noch nichts extra
     expect(chargeGainOnWin(light({ critCount: 1 }), [L.ABLEITER], {}, { isCrit: true }).gain).toBe(2);          // 2. Crit: +1
     expect(chargeGainOnWin(light(), [L.ABLEITER], { [L.ABLEITER]: 2 }, { isCrit: true }).gain).toBe(2);        // Sehr selten: jeder Crit
-    const min = T.ueberspannung[0].minStacks;
-    expect(min).toBe(1);
-    expect(chargeGainOnWin(light(), [L.UEBERSPANNUNG], {}, { isCrit: true, card: { ionStacks: min } }).gain).toBe(1 + T.ueberspannung[0].charge);
-    expect(chargeGainOnWin(light(), [L.UEBERSPANNUNG], { [L.UEBERSPANNUNG]: 3 }, { isCrit: true, card: { ionStacks: 1 } }).gain).toBe(1 + T.ueberspannung[3].charge);
-    expect(chargeGainOnWin(light(), [L.UEBERSPANNUNG], {}, { isCrit: true, card: { ionStacks: 0 } }).gain).toBe(1);
-    expect(chargeGainOnWin(light(), [L.UEBERSPANNUNG], {}, { isCrit: false, card: { ionStacks: 99 } }).gain).toBe(0); // nur bei Crit
+    expect(chargeGainOnWin(light(), [L.UEBERSPANNUNG], { [L.UEBERSPANNUNG]: 3 }, { isCrit: true }).gain).toBe(1); // §7.19: Dauerwert je Leiste, keine Ladung
+    expect(T.ueberspannung.every((r) => r.charge == null && r.value > 0)).toBe(true);
   });
   it("chargeGainOnWin ohne Crit (§7.18): Blitzableiter Episch +1 je Sieg ohne Crit, darunter nichts; Ladungsserie Episch ab Serie 8", () => {
     expect(chargeGainOnWin(light(), [L.ABLEITER], {}, { isCrit: false }).gain).toBe(0);
@@ -194,16 +188,21 @@ describe("Blitz-Modul — Ladung, Leiste, Niederlage (reine Übergänge)", () =>
     expect(ramps.stormCritBonus).toBeCloseTo(0.5 + T.gewitter[0].critPerBar, 9);
     expect(ramps.entladungMult).toBeCloseTo(2 + T.entladung[0].multPerBar, 9);
   });
-  it("fillBar: Kettenblitz vertieft (§7.18: Normal jede 2. Leiste, die Karte mit den meisten Stapeln +Stapel der Stufe), Doppelentladung 2 Stapel, Ionenfeld lädt das Feld", () => {
+  it("fillBar: Kettenblitz vertieft (§7.18 Tiefe, §7.19 jede Leiste: die Karte mit den meisten Stapeln +Stapel der Stufe), Überspannung backt den Dauerwert, Doppelentladung 2 Stapel, Ionenfeld lädt das Feld", () => {
     const deck = constDeck(5), order = identity();
-    expect(fillBar(light({ charge: 10, bars: 0 }), [L.KETTENBLITZ], {}, deck, order, 0).stacks).toBe(1); // 1. Leiste: nichts extra
-    const second = fillBar(light({ charge: 10, bars: 1 }), [L.KETTENBLITZ], {}, deck, order, 0);      // 2. Leiste: +1 auf die tiefste (die eben ionisierte)
-    expect(second.stacks).toBe(1 + T.kette[0].extra); expect(second.deck[1].ionStacks).toBe(1 + T.kette[0].extra); expect(second.targets).toEqual([1]);
+    expect(T.kette.every((r) => r.barEvery === 1)).toBe(true); // §7.19: jede Leiste, auch Normal
+    const first = fillBar(light({ charge: 10, bars: 0 }), [L.KETTENBLITZ], {}, deck, order, 0); // schon die 1. Leiste: +Stapel auf die tiefste (die eben ionisierte)
+    expect(first.stacks).toBe(1 + T.kette[0].extra); expect(first.deck[1].ionStacks).toBe(1 + T.kette[0].extra); expect(first.targets).toEqual([1]);
     const deepDeck = withStacks(5, 7, 3); // Karte 7 ist die tiefste → sie bekommt die Stapel der Stufe, die nächste Karte nur ihren einen
     const deep = fillBar(light({ charge: 10 }), [L.KETTENBLITZ], { [L.KETTENBLITZ]: 3 }, deepDeck, order, 0);
     expect(deep.deck[1].ionStacks).toBe(1); expect(deep.deck[7].ionStacks).toBe(3 + T.kette[3].extra); expect(deep.stacks).toBe(1 + T.kette[3].extra);
     expect(deep.targets).toEqual([1, 7]);
     expect(deepDeck[7].ionStacks).toBe(3); // Original unverändert
+    const uv = fillBar(light({ charge: 10 }), [L.UEBERSPANNUNG], {}, deck, order, 0); // §7.19: die Karte, die die Leiste ionisiert, trägt den Wert dauerhaft
+    expect(uv.deck[1].value).toBe(5 + T.ueberspannung[0].value); expect(uv.deck[1].ionStacks).toBe(1); expect(uv.deck[0].value).toBe(5);
+    expect(fillBar(light({ charge: 10 }), [L.UEBERSPANNUNG], { [L.UEBERSPANNUNG]: 3 }, deck, order, 0).deck[1].value).toBe(5 + T.ueberspannung[3].value);
+    expect(fillBar(light({ charge: 10 }), [], {}, deck, order, 0).deck[1].value).toBe(5); // ohne Überspannung nur der Stapel
+    expect(deck[1].value).toBe(5); // Original unverändert
     const dbl = fillBar(light({ charge: 10 }), [L.DOPPELENTLADUNG], {}, deck, order, 0);
     expect(dbl.deck[1].ionStacks).toBe(C.DOPPELENTLADUNG_STACKS);
     expect(fillBar(light({ charge: 10 }), [L.IONENFELD], {}, deck, order, 0).lightning.fieldLeft).toBe(T.ionenfeld[0].tricks);
@@ -232,11 +231,16 @@ describe("Blitz — Engine-Integration (resolveTrick)", () => {
     expect(s.lastTrick.scoreGain).toBeCloseTo((B + min * C.ION_SCORE_PER_STACK * 2) * 1.02, 6);
     expect(s.lightYield).toBeCloseTo(min * C.ION_SCORE_PER_STACK * 2, 6);
   });
-  it("Überspannung: Crit mit Karte ab Schwelle +2 Ladung (plus 1 Passiv)", () => {
-    const min = T.ueberspannung[0].minStacks;
-    const s = resolveTrick(scen(12, 0, { deck: withStacks(12, 0, min), skills: [L.UEBERSPANNUNG], lightning: light() }), zero);
+  it("Überspannung (§7.19): die volle Leiste gibt der Karte, die sie ionisiert, dauerhaft +Kartenwert — und keine Ladung mehr", () => {
+    const s = resolveTrick(scen(12, 0, { skills: [L.UEBERSPANNUNG], lightning: light({ charge: 9 }) }), zero);
     expect(s.lastTrick.isCrit).toBe(true);
-    expect(s.lightning.charge).toBe(1 + T.ueberspannung[0].charge);
+    expect(s.lightning.bars).toBe(1); expect(s.lightning.charge).toBe(0);
+    expect(s.deck[1].ionStacks).toBe(1); expect(s.deck[1].value).toBe(12 + T.ueberspannung[0].value);
+    expect(s.deck[0].value).toBe(12); // die Siegkarte selbst bleibt
+    const epic = resolveTrick(scen(12, 0, { skills: [L.UEBERSPANNUNG], skillTiers: { [L.UEBERSPANNUNG]: 3 }, lightning: light({ charge: 9 }) }), zero);
+    expect(epic.deck[1].value).toBe(12 + T.ueberspannung[3].value);
+    const noBar = resolveTrick(scen(12, 0, { deck: withStacks(12, 0, 3), skills: [L.UEBERSPANNUNG], lightning: light() }), zero); // Crit mit ionisierter Karte: nur das Passiv
+    expect(noBar.lightning.charge).toBe(1); expect(noBar.deck[1].value).toBe(12);
   });
   it("Reststrom Selten + Blitzableiter Sehr selten: volle Leiste → Boden 3 + 1 zurück", () => {
     const s = resolveTrick(scen(12, 0, { skills: [L.ABLEITER, L.RESTSTROM], skillTiers: { [L.ABLEITER]: 2, [L.RESTSTROM]: 1 }, lightning: light({ charge: 8 }) }), zero);
@@ -303,13 +307,13 @@ describe("Blitz — Engine-Integration (resolveTrick)", () => {
     expect(paid.lightning.stauBonus).toBe(0);
     expect(resolveTrick(scen(12, 0, { skills: [L.SPANNUNGSSTAU], skillTiers: { [L.SPANNUNGSSTAU]: 3 }, lightning: light({ stauBonus: 0.3 }) }), zero).lightning.stauBonus).toBeCloseTo(0.15, 9);
   });
-  it("Überschuss über 100 %: Systemregel (klein) plus Überschlag (Zustand) heben den Crit-Multiplikator", () => {
+  it("Überschuss über 100 %: nur noch die Systemregel (klein) hebt den Crit-Multiplikator — Überschlag ist gestrichen (§7.19)", () => {
     const rule = resolveTrick(scen(12, 0, { lightning: light({ stormCritBonus: 1.5 }) }), zero); // rawCrit 1,5 → 50 Punkte (Gewitterfront-Rampe als synthetische Quelle)
     expect(rule.lastTrick.isCrit).toBe(true);
     expect(rule.lastTrick.critMultiplier).toBeCloseTo(M + 50 * C.OVERCRIT_MULT_PER_PP, 6);
     const pp = Math.round((C.LIGHTNING_CRIT_PER_SKILL + 1.5 - 1) * 100); // ein Blitz-Skill + 1,5 → Punkte über 100 (§7.12: 4 % je Skill → 54)
-    const arc = resolveTrick(scen(12, 0, { skills: [L.UEBERSCHLAG], lightning: light({ stormCritBonus: 1.5 }) }), zero);
-    expect(arc.lastTrick.critMultiplier).toBeCloseTo(M + pp * C.OVERCRIT_MULT_PER_PP + Math.floor(pp / 10) * T.ueberschlag[0].multPer10, 6);
+    const withSkill = resolveTrick(scen(12, 0, { skills: [L.ABLEITER], lightning: light({ stormCritBonus: 1.5 }) }), zero);
+    expect(withSkill.lastTrick.critMultiplier).toBeCloseTo(M + pp * C.OVERCRIT_MULT_PER_PP, 6); // kein Skill-Term mehr auf dem Überschuss
   });
   it("Serienschutz: Niederlage ab 70 % Ladung hält die Serie und kostet sie; Episch einmal je Runde gratis, Rundenende gibt es frei", () => {
     const cost = Math.ceil(C.LIGHTNING_MAX_CHARGE * T.serienschutz[0].frac);

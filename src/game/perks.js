@@ -302,15 +302,15 @@ export function totalCritChanceRaw(state = {}) {
 // Crit-Faktor: Basis (CRIT_BASE_MULT 1,5) + Perk-Crit-Mult-Boni (critMultBonus-Hook). #267: der Crit-Mult-Stat ist
 // weg → die Präzision-Familie „Wucht" (familyCritMult) UND Blitz addiert die Engine SEPARAT (nicht hier). Signatur
 // (perks, ctx) bleibt für die Aufrufer stabil. #115: L6 „Raserei" hebt aus dem Crit-Überschuss >100 % den Crit-
-// MULTIPLIKATOR (erwartet `rawCrit` im ctx), gedeckelt auf +1,00× — der zweite Verwerter desselben Überschusses
-// neben Überschlag (der ihn in Ladung wandelt). Beide sind gedeckelt bzw. selbstlimitierend (Crit-Bändigung).
+// MULTIPLIKATOR (erwartet `rawCrit` im ctx), gedeckelt auf +1,00× — neben der Systemregel (overcritMult) der zweite
+// Verwerter desselben Überschusses (exp §7.19: Überschlag ist gestrichen). Beide gedeckelt bzw. klein (Crit-Bändigung).
 export function critMultiplierFor(perks, ctx = {}) {
   let bonus = 0;
   for (const id of perks) { const f = PERK_DEFS[id].critMultBonus; if (f) bonus += f(ctx); }
   return C.CRIT_BASE_MULT + bonus;
 }
 // Anzeige-Helfer: VOLLER Crit-Multiplikator (persistente Terme, wie die Engine) — Perk-Basis + Familien-Wucht + Blitz
-// (Entladung-Rampe, Donnergott, Überschlag als Zustand) + Systemregel (Überschuss über 100 %). Ohne die situativen Terme
+// (Entladung-Rampe, Donnergott, Spannungsstau) + Systemregel (Überschuss über 100 %). Ohne die situativen Terme
 // (Entladung Episch beim Leisten-Crit), die nur im Crit selbst zünden. Geteilt: StatusRail (Crit-Zeile) + ChargeBar.
 export function totalCritMult(state) {
   const perks = state.perks || [];
