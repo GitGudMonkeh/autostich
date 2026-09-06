@@ -2832,9 +2832,30 @@ Ertrag der Runde ist der Messfehler: Lift-Urteile über zu 90 % gehaltene Fülle
 „ohne"-Gruppe nach unten verzerrt; die gepaarte Ablation des gierigen Spielers ist der Schiedsrichter, und die streut
 bei selten gehaltenen Skills um ±30 Punkte — Urteile brauchen zwei Läufe.
 
-**Was offen bleibt:** Glutbett (Owner: lassen) und Schmiede als „schadet" im gierigen Build; der 8×-Deckel als Grenze
-für Vorentladung und Kurzschluss auf Episch (Owner-Regler, 7.19/7.20 gemessen); die Streuung der Auswertung selbst
+**Was offen bleibt:** Glutbett und Schmiede als „schadet" im gierigen Build (Owner: beide bleiben vorerst); der
+8×-Deckel als Grenze für Vorentladung und Kurzschluss auf Episch (unten gemessen); die Streuung der Auswertung selbst
 (mehr Läufe je Ablation, wenn Urteile fallen sollen).
+
+**Die Deckel-Frage, gemessen** (Owner: „kein Freund von Deckel — was sind die Konsequenzen?"; `SIM_CRIT_MULT_CAP=1000`):
+
+| | Deckel 8 | ohne Deckel |
+| --- | --- | --- |
+| Gierig (Legendären-Reihe, Basis): Median / p90 | 75–125M / 322–365M | 544M / 2,7 Mrd |
+| Blitz mono (Duell): Median / Mean / p90 | 11,7M / 22M / 58M | 15,5M / 68M / 161M |
+| Floor / Mean / p90 Feuer ÷ Blitz | 1,16× / 0,82× / 0,63× | 0,88× / 0,26× / 0,23× |
+| Motor Blitz Fraktion / Stapel / Crit | 12,7M / 22,5M / 21,5M | 18,3M / 53,1M / 36,0M |
+| Crit-Mult Ø (Fraktion / Stapel / Crit) | 4,0× / 4,6× / 4,9× | 5,8× / 9,2× / 6,3× |
+
+Der Schwanz läuft ohne Deckel um das Drei- bis Achtfache weg, der Median um ein Drittel. „Lieber Werte niedriger" statt
+Deckel, im Duell durchprobiert: ohne Deckel mit Stapel-Crit 0, Entladung ×¼, Vorentladung ×½, Spannungsstau ×½ und
+ohne Doppel-Crit beim Leistenfüllen fällt der Blitz-Median auf 8,0M (Floor 1,69×), der Schwanz bleibt bei Mean 0,53×,
+p90 0,54×. Jede Quelle einzeln zurückgedreht (Stapel 0,10 / 0,05 / 0,02 / 0: Mean 0,29 / 0,33 / 0,36 / 0,38×;
+Entladung ×¼ 0,28×; Vorentladung ×½ 0,31×) ändert am Schwanz fast nichts: er ist das Produkt der offenen Rampen mit
+einer Crit-Chance, die 100 % erreicht — niedrige Sätze treffen den Median zuerst und den Schwanz zuletzt. Optionen an
+den Owner: (1) Deckel 8 bleibt (Status quo); (2) Deckel weg und Werte runter — nach dieser Messung nicht zu haben;
+(3) Bremse statt Anschlag: über 8× zählt jeder weitere Punkt zu einem Viertel — ein Deckel, der bremst, die Rampen und
+die zwei Episch-Extras behalten oben Wirkung; eine Zeile in der Engine, nicht gemessen; (4) Deckel 12 — 7.19: Parität
+gekippt, gierig verdoppelt. Empfehlung: (3) messen, sonst (1). Nichts geändert.
 
 ## 5. Eis
 
