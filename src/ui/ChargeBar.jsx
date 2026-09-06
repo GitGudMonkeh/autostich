@@ -1,4 +1,4 @@
-import { LIGHTNING_MAX_CHARGE, CRIT_BASE_MULT } from "../game/constants.js";
+import { LIGHTNING_MAX_CHARGE, CRIT_BASE_MULT, ION_VALUE_PER_BAR } from "../game/constants.js";
 import { FactionShell, PanelSkills } from "./indicators/panelKit.jsx";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { LIGHTNING, CASCADE_BRIGHT } from "./indicators/vocab.js";
@@ -72,7 +72,7 @@ export function ChargeBar({ lightning, skills = [], critChance = 0, critMult = C
       {/* Volle Leisten des Laufs (Kern-Metrik) + die offenen Rampen (Gewitterfront/Entladung). */}
       {(bars > 0 || stormPp > 0 || entMult > 0) && (
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-meta-3">
-          <span className="opacity-60" title={t("bar.lightning.consumes.title")}>{t("bar.lightning.consumes")} <b className="tabular-nums" style={{ color: LIGHTNING }}>{bars}</b></span>
+          <span className="opacity-60" title={t("bar.lightning.consumes.title", { value: ION_VALUE_PER_BAR })}>{t("bar.lightning.consumes")} <b className="tabular-nums" style={{ color: LIGHTNING }}>{bars}</b></span>
           {stormPp > 0 && <span className="opacity-60" title={t("bar.lightning.storm.title")}>{t("bar.lightning.storm")} <b style={{ color: CASCADE_BRIGHT }}>+{String(stormPp).replace(".", ",")} %</b></span>}
           {entMult > 0 && <span className="opacity-60" title={t("bar.lightning.discharge.title")}>{t("bar.lightning.discharge")} <b style={{ color: CASCADE_BRIGHT }}>+{mlt(entMult)}×</b></span>}
         </div>

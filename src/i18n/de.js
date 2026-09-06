@@ -210,7 +210,7 @@ export default {
   "bar.lightning.state.charge": "Ladung {charge}/{max}",
   "bar.lightning.fullBadge": " · LEISTE VOLL",
   "bar.lightning.consumes": "Volle Leisten",
-  "bar.lightning.consumes.title": "Volle Leisten diesen Lauf: jede ionisiert die nächste Karte in der Reihenfolge.",
+  "bar.lightning.consumes.title": "Volle Leisten diesen Lauf: jede ionisiert die nächste Karte in der Reihenfolge und gibt ihr dauerhaft +{value} Wert.",
   "bar.lightning.storm": "Gewitterfront",
   "bar.lightning.storm.title": "Gewitterfront: dauerhafte Crit-Chance je volle Leiste.",
   "bar.lightning.discharge": "Entladung",
@@ -478,7 +478,7 @@ export default {
   "skill.passive.collapse": "{arch}: Passiv einklappen",
   // Die Zahlen stehen als Platzhalter: sie kommen zur Anzeigezeit aus constants.js/glacier.js,
   // damit ein Balancing-Dreh nicht am Text vorbeigeht.
-  "skill.passive.lightning": "Jeder Blitz-Skill gibt +{each} % Crit-Chance. Alle {bar} Crits ist die Ladungsleiste voll und ionisiert die nächste Karte in der Reihenfolge; jeder Stapel gibt bei Sieg mit der Karte +{stack} Score in die Basis und +{critPer}× Crit-Multiplikator.",
+  "skill.passive.lightning": "Jeder Blitz-Skill gibt +{each} % Crit-Chance. Alle {bar} Crits ist die Ladungsleiste voll und ionisiert die nächste Karte in der Reihenfolge, die dauerhaft +{value} Wert erhält; jeder Stapel gibt bei Sieg mit der Karte +{stack} Score in die Basis und +{critPer}× Crit-Multiplikator.",
   "skill.passive.fire": "Siege ab {margin} Kampfwert-Vorsprung geben Hitze: +{per} % je Punkt Vorsprung über {offset}, ohne Deckel. Niederlagen kühlen −{cool} %. Je 10 % gehaltener Hitze zählt jeder Sieg +{mult} % Score, als eigener Multiplikator. Die Feuer-Skills nutzen die Hitze.",
   "skill.passive.ice": "Jeder Eis-Skill friert eine deiner Karten als Gletscher fest, auch wenn du bei vollen Skill-Slots tauschst. Sie lässt sich dann in keiner Aufstellung mehr verschieben, sammelt dafür jeden Durchlauf Masse und bricht schließlich über ihre Nachbarn. Ab {declineFrom} gehaltenen Eis-Skills friert sogar das Ablehnen eines Angebots einen Gletscher ein, du kannst also mehr Gletscher haben als Skill-Slots.",
   "skill.passive.plant": "Jeder Sieg gibt der Karte bis zu +1 Wachstum, volles Tempo ab {ref} Pflanzen-Skills. Ab {green} Wachstum wird sie grün. Hältst du nur Pflanzen-Skills, gibt je {perValue} Wachstum +1 Kartenwert, bis {cap}; dann ist sie voll ausgewachsen. Ab {minSkills} Pflanzen-Skills wächst sie dabei auch bei jeder {everyLoss}. Niederlage.",

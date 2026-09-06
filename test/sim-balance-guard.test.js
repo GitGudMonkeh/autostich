@@ -47,6 +47,9 @@ import { randomPolicy } from "../sim/policies/random.js";
 // §7.23 (Owner, 2026-09-06): Ladungsserie ÷10 (0,1–0,25 % Crit je Serienpunkt statt 1–2,5 %) und Feuerlinie statt Glut.
 // Der Zufallsspieler fällt mit dem Serien-Crit (s. Doku): Seeds 1..40 Median ≈ 4,05M, Mean ≈ 5,91M (Seeds 1..200: 3,48M /
 // 6,71M). Bänder darauf neu zentriert (≈ ±35 %).
+// §7.24 (Owner, 2026-09-06): Überspannung verwertet den Deckel-Überschuss, Rückzündung im Takt, und der Dauerwert je Leiste
+// ist Blitz-Passiv (+1 auf die ionisierte Karte, ION_VALUE_PER_BAR) — jeder Blitz-Build bekommt ihn, der Zufallsspieler
+// steigt: Seeds 1..40 Median ≈ 4,72M, Mean ≈ 7,90M. Bänder darauf neu zentriert (≈ ±35 %).
 describe("sim balance guard", () => {
   const SEEDS = 40; // feste Seeds 1..40 → deterministischer Median/Mean
   const scores = Array.from({ length: SEEDS }, (_, i) => runOne(1 + i, randomPolicy()).score).sort((a, b) => a - b);
@@ -54,14 +57,14 @@ describe("sim balance guard", () => {
   const mean = scores.reduce((t, v) => t + v, 0) / SEEDS;
 
   it("Median-Score im erwarteten Band (breite Power-Verschiebung)", () => {
-    // Ist-Wert ≈ 4,05M (exp §7.23, 50 Runden, Feuer/Blitz). Band toleriert normales Tuning, schlägt bei grober Verschiebung an.
-    expect(median).toBeGreaterThan(2_600_000);
-    expect(median).toBeLessThan(5_500_000);
+    // Ist-Wert ≈ 4,72M (exp §7.24, 50 Runden, Feuer/Blitz). Band toleriert normales Tuning, schlägt bei grober Verschiebung an.
+    expect(median).toBeGreaterThan(3_100_000);
+    expect(median).toBeLessThan(6_400_000);
   });
 
   it("Mean-Score im erwarteten Band (Tail-Runaway-Fänger)", () => {
-    // Ist-Wert ≈ 5,91M (exp §7.23). Die Obergrenze fängt weiterhin einen ECHTEN Tail-Blowup (Mean ginge dann deutlich höher).
-    expect(mean).toBeGreaterThan(3_800_000);
-    expect(mean).toBeLessThan(8_000_000);
+    // Ist-Wert ≈ 7,90M (exp §7.24). Die Obergrenze fängt weiterhin einen ECHTEN Tail-Blowup (Mean ginge dann deutlich höher).
+    expect(mean).toBeGreaterThan(5_100_000);
+    expect(mean).toBeLessThan(10_700_000);
   });
 });

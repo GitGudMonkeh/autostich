@@ -329,7 +329,7 @@ export const DONNERGOTT_ION_CRIT_MULT_PER_STACK = envNum("SIM_DONNERGOTT_ION_CRI
 // Karte am Laufende), der Regler war praktisch tot. Crit je Skill (0,07 → 2,43M) wäre der andere Weg; der Stapel-Weg
 // macht die Leiste und die Stapel-Skills (Kettenblitz, Kurzschluss, Blitzfänger) spürbar.
 export const ION_SCORE_PER_STACK      = envNum("SIM_ION_SCORE_PER_STACK", 75);        // +Score (Basis, vor den Multiplikatoren) je Stapel bei Sieg mit der Karte — der Paritäts-Regler Feuer/Blitz (§7.14: 60 → 75 bei 50 Runden; Duell-Sweep 60/75/80/90/120: Floor 1,16/1,07/1,03/0,99/0,88×, Mean 1,04/0,95/0,92/0,87/0,75×)
-export const ION_VALUE_PER_BAR        = envNum("SIM_ION_VALUE_PER_BAR", 0);         // SIM-SONDE (§7.24, Default 0 = aus): Dauerwert je volle Leiste auf die ionisierte Karte als Blitz-Passiv — der Dauerwert war bis §7.23 Überspannung und trug Blitz mono; Duell-Sweep 1/2 in der Doku
+export const ION_VALUE_PER_BAR        = envNum("SIM_ION_VALUE_PER_BAR", 1);         // Blitz-Passiv (§7.24, Owner): jede volle Leiste gibt der ionisierten Karte dauerhaft +so viel Wert — bis §7.23 war das Überspannung (1–4 je Stufe) und trug Blitz mono; Duell-Sweep 0/1/2: Blitz mono 7,3 / 13,0 / 13,6M, Floor 1,93 / 1,09 / 1,04×
 export const ION_MAX_STACKS           = 5;  // NUR ANZEIGE (Karten-Pips, „voll ionisiert"-Effekte): Stapel sind seit dem Rework ohne Deckel
 export const OVERCRIT_MULT_PER_PP     = envNum("SIM_OVERCRIT_MULT_PER_PP", 0.002);    // Systemregel (alle Fraktionen): Crit-Chance über 100 % → +Crit-Mult je Prozentpunkt (sehr klein; Größe in der Sim)
 export const DOPPELENTLADUNG_STACKS   = envNum("SIM_DOPPELENTLADUNG_STACKS", 2);      // Doppelentladung (L): Stapel je Ionisierung (statt 1)

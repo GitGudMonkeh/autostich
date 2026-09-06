@@ -231,7 +231,7 @@ export const GLOSSARY = {
   /* ============ 4 · Blitz ============ */
   // exp skill rework (§3.2): Ladung, Ionisierung und Stapel neu beschrieben — Wortlaut in Phase 4 mit den Skilltexten abnehmen.
   charge: { category: "frak", group: "lightning", label: "Ladung", icon: "↯", color: CLR.lightning,
-    text: `Jeder Crit gibt +1 Ladung (Leiste ${C.LIGHTNING_MAX_CHARGE}). Ist die Leiste voll, ionisiert sie die nächste Karte in der Reihenfolge und leert sich.`,
+    text: `Jeder Crit gibt +1 Ladung (Leiste ${C.LIGHTNING_MAX_CHARGE}). Ist die Leiste voll, ionisiert sie die nächste Karte in der Reihenfolge (dauerhaft +${C.ION_VALUE_PER_BAR} Wert) und leert sich.`,
     match: ["Ladung", "Ladungen"] },
   ionize: { category: "frak", group: "lightning", label: "Ionisierung", icon: "↯", color: CLR.lightning,
     text: `Dauerhafte Kartenmarkierung: eine ionisierte Karte gibt bei Sieg +${C.ION_SCORE_PER_STACK} Score je Stapel in die Basis, vor den Multiplikatoren, und +${de(C.ION_CRIT_MULT_PER_STACK)}× Crit-Multiplikator je Stapel. Stapel entstehen nur aus der vollen Ladungsleiste und aus Blitz-Skills und sind ohne Deckel.`,

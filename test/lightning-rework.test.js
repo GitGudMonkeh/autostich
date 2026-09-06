@@ -228,8 +228,11 @@ describe("Blitz-Modul — Ladung, Leiste, Niederlage (reine Übergänge)", () =>
     const deepX = fillBar(light({ charge: 10 }), [L.KETTENBLITZ], { [L.KETTENBLITZ]: 2 }, deepDeck, order, 0); // Sehr selten: kein zweiter Empfänger
     expect(deepX.deck[1].ionStacks).toBe(1); expect(deepX.stacks).toBe(1 + T.kette[2].extra);
     expect(deepDeck[7].ionStacks).toBe(3); // Original unverändert
-    const uv = fillBar(light({ charge: 10 }), [L.UEBERSPANNUNG], { [L.UEBERSPANNUNG]: 3 }, deck, order, 0); // §7.24: kein Dauerwert mehr, nur der Stapel
-    expect(uv.deck[1].value).toBe(5); expect(uv.deck[1].ionStacks).toBe(1); expect(uv.deck[0].value).toBe(5);
+    // §7.24 (Owner): der Dauerwert je Leiste ist Passiv (ION_VALUE_PER_BAR), nicht mehr Überspannung — die ionisierte Karte trägt ihn, egal welche Skills.
+    const uv = fillBar(light({ charge: 10 }), [L.UEBERSPANNUNG], { [L.UEBERSPANNUNG]: 3 }, deck, order, 0);
+    expect(uv.deck[1].value).toBe(5 + C.ION_VALUE_PER_BAR); expect(uv.deck[1].ionStacks).toBe(1); expect(uv.deck[0].value).toBe(5);
+    expect(fillBar(light({ charge: 10 }), [], {}, deck, order, 0).deck[1].value).toBe(5 + C.ION_VALUE_PER_BAR); // auch ohne Skill
+    expect(C.ION_VALUE_PER_BAR).toBeGreaterThan(0);
     expect(deck[1].value).toBe(5); // Original unverändert
     const dbl = fillBar(light({ charge: 10 }), [L.DOPPELENTLADUNG], {}, deck, order, 0);
     expect(dbl.deck[1].ionStacks).toBe(C.DOPPELENTLADUNG_STACKS);
@@ -285,7 +288,7 @@ describe("Blitz — Engine-Integration (resolveTrick)", () => {
     const under = resolveTrick(scen(12, 0, { skills: [L.UEBERSPANNUNG], lightning: light() }), zero); // Crit unter dem Deckel: nur das Passiv
     expect(under.lastTrick.isCrit).toBe(true); expect(under.lightning.charge).toBe(1);
     const bar = resolveTrick(scen(12, 0, { skills: [L.UEBERSPANNUNG], lightning: light({ charge: 9 }) }), zero);
-    expect(bar.lightning.bars).toBe(1); expect(bar.deck[1].ionStacks).toBe(1); expect(bar.deck[1].value).toBe(12); // kein Dauerwert mehr
+    expect(bar.lightning.bars).toBe(1); expect(bar.deck[1].ionStacks).toBe(1); expect(bar.deck[1].value).toBe(12 + C.ION_VALUE_PER_BAR); // der Dauerwert ist jetzt Passiv, nicht Überspannung
   });
   it("Reststrom Selten + Blitzableiter Sehr selten: volle Leiste → Boden 3 + 1 zurück", () => {
     const s = resolveTrick(scen(12, 0, { skills: [L.ABLEITER, L.RESTSTROM], skillTiers: { [L.ABLEITER]: 2, [L.RESTSTROM]: 1 }, lightning: light({ charge: 8 }) }), zero);

@@ -3011,8 +3011,40 @@ situativ; heute: im reinen Blitz-Build Lift 4,46, im Mix −14 %, tot):
 
 Empfehlung: Lichtbogen. Emblem bleibt (SK_LIGHTNING_L04), Name folgt der Wahl.
 
-**Was offen bleibt:** die Parität (oben, Owner-Entscheid); Feuerlinie-Chip an der Hitzeleiste (Anzeige); Glutbett
-und Schmiede (Owner: bleiben); die Streuung der gierigen Auswertung (Haltequoten springen — zwei Läufe je Urteil).
+**Entscheid Owner (2026-09-06): Parität nach Empfehlung (a) — der Dauerwert +1 je Leiste ist Blitz-Passiv
+(umgesetzt).** `ION_VALUE_PER_BAR` 1 (Sim-Regler), `fillBar` backt ihn auf die ionisierte Karte, egal welche Skills;
+Passiv-Text, Leisten-Tooltip und Glossar „Ladung" nennen ihn. Gemessen: Duell Blitz mono 13,0M (7.24: 7,3M; 7.23:
+10,2M), Floor 1,09×, Mean 0,71×, p90 0,55× — der Schwanz liegt jetzt beim Blitz. Motor Blitz Fraktion 11,3M (zurück
+auf 7.23), Stapel zuerst 17,9M, **Crit zuerst 31,3M (7.23: 18,1M)** — Dauerwert × Vorentladung × Überspannung
+Episch ist ein Kreislauf: mehr Wert, längere Serien, Crits über dem Deckel, daraus Ladung (168 Leisten je Lauf statt
+127), Rampen, wieder Crits über dem Deckel (29 % der Crits am Deckel) — Wachpunkt, wenn der Blitz-Schwanz zu weit
+läuft. Legendäre zur Laufmitte: Sonnenkern +132 %, Doppelentladung +70 % (wieder da), Ewige Glut +13 %, Sonnenzorn
++8 %, Donnergott +6 %, Damaststahl +1 %, Hochspannung −2 %, Durchschlag −9 %. Lifts gefiltert (Blitz): Überspannung
+1,13 (N 0,98 · S 1,75 · E 2,02), Ladungsserie 1,22, Vorentladung 1,22, Reststrom 1,07; Durchschlag 2,97, Doppelentladung
+1,73. Gierig: Median 81,5M (Ø 13,0 Skills), Doppelentladung +49 %, Vorentladung +43 %, Ladungsserie +28 %, Durchschlag
++11 % (in 22 %), Feuerlinie +9 % (in 10 %); Überspannung (18 %) und Rückzündung (5 %) neutral, „tot". Band 4,72M /
+7,90M, neu zentriert.
+
+**Owner: „alle Vorschläge für Durchschlag sind zu langweilig — was fehlt uns an coolen legendären Mechaniken?"**
+Achsen, die heute kein Legendäres berührt: Formationen (keines!), das Gegnerdeck für Blitz (Feuer hat Sonnenkern),
+die Reihenfolge und Nachbarn im eigenen Deck, Zeitfenster nach Ereignissen, die Brücke zwischen den Fraktionen (die
+gierigen Bestbuilds sind gemischt), die Gegner-Reihenfolge (wird je Runde neu gemischt). Fünf Konzepte für den Platz
+SK_LIGHTNING_L04 (Emblem bleibt), keines umgesetzt:
+
+| Konzept | Einzeiler | Achse | Risiko / Aufwand |
+| --- | --- | --- | --- |
+| **Resonanz** | Ionisierte Karten in einer Formation teilen ihre Stapel: jede Karte der Formation kämpft mit der Summe der Stapel ihrer Formation. | Formation × Ionisierung — Formationsphase wird eine Blitz-Entscheidung, Kettenblitz vertieft die ganze Formation | stark, begrenzt durch Formationsgröße und Deckel; `formations.js` muss die Mitglieder je Formation liefern |
+| **Durchschlag** (neu) | Jeder Crit schlägt durch: die geschlagene Gegnerkarte wird ionisiert. Ionisierte Gegnerkarten kämpfen mit −1 Wert je Stapel und zahlen ihren Stapel-Score dem, der sie schlägt. | Gegnerdeck für Blitz, dauerhaft über die Runden (Spiegel zu Sonnenkern) | Skalierung (500 Crits je Lauf) — Satz „jeder 2. Crit" oder halber Stapel-Score als Regler; Gegner-Stapel wie Brände speichern |
+| **Gewitter** | Jede volle Leiste entfesselt ein Gewitter: die nächsten 5 Stiche critten sicher, und jeder Crit im Gewitter ionisiert die Siegkarte. | Zeitfenster nach der Leiste (Rhythmus, wie Ionenfeld) | spät nahe 100 % Crit; einfach zu bauen (`stormLeft` wie Henkers forceCrit) |
+| **Plasma** | Crits heizen: jeder Crit gibt +2 % Hitze, die Hitze ist auch ohne Feuer-Skill aktiv. Jede Runde, die mit voller Hitzeleiste endet, füllt die Ladungsleiste. | Brücke Blitz ↔ Feuer — das erste Legendäre für gemischte Builds | Reducer aktiviert die Hitze für den Halter; Blitz mono bekommt den Hitze-Multiplikator (+20 %) dazu |
+| **Blitzlenker** | Nach jedem Crit rückt die schwächste verbleibende Gegnerkarte an die nächste Position. | Gegner-Reihenfolge — der Blitz sucht sich das Ziel | Ertrag ist Vorsprung (Hitze, Verbrennung), spät im Überfluss |
+
+Empfehlung: **Resonanz** (verändert das Spiel am meisten — Formationen bauen wird für Blitz zur Entscheidung), sonst
+der neue Durchschlag (thematisch, behält den Namen). Beide werden nach der Wahl gebaut und gierig gemessen.
+
+**Was offen bleibt:** der Blitz-Schwanz (Crit zuerst 31M, Duell p90 0,55× — Wachpunkt); Feuerlinie-Chip an der
+Hitzeleiste (Anzeige); Glutbett und Schmiede (Owner: bleiben); die Streuung der gierigen Auswertung (Haltequoten
+springen — zwei Läufe je Urteil).
 
 ## 5. Eis
 
@@ -3066,4 +3098,4 @@ Offen.
 | 2026-09-06 | Owner: Phönixfeuer streichen, neues Legendäres bauen — Wahl „Ewige Glut" (7.21, umgesetzt, Platz SK_FIRE_L02, Emblem bleibt): jede Runde mit voller Leiste am Ende +0,05 auf den Hitze-Multiplikator dauerhaft (Vorschlag 0,03, Sweep 0,03/0,05/0,08 zur Laufmitte 1,02/1,14/1,32 gepaart), die Hitze fällt nie unter 50 % der Spitze. Gemessen: Lift im reinen Feuer-Build 1,13 (Phönixfeuer 0,86), ab Runde 1 gepaart 1,57 (Mean 2,79), zur Laufmitte 1,14; Legendäre-Reihe +6 %; Duell Floor 1,25×, Mean 0,87×, p90 0,70×; gierig 125,0M, Ewige Glut neutral; Band im Rahmen. |
 | 2026-09-06 | Owner: „die offenen abarbeiten", „alle ja" (7.22, umgesetzt): Rückzündung als Konter (nach einer Niederlage zählt der nächste Sieg ×1,15/1,25/1,35/1,5, Episch +2 Wert; keine Hitze mehr); acht Episch-Extras (Reststrom Leiste 9, Gewitterfront +0,02× Crit-Mult je Leiste, Vorentladung 0,15, Kettenblitz zweittiefste +1, Blitzfänger +1 je Stapel, Kurzschluss Stapel-Score bei Niederlage → nächster Sieg, Zunder Niederlage +2 Hitze, Verbrennung ×1,5 auch auf Hitze); Durchschlag und Kurzschluss-Pick bleiben (Rauschen). Gemessen: Rückzündung von −31 % auf neutral, Verbrennung und Gewitterfront erstmals „stark"; Duell Floor 1,16×, Mean 0,82×, p90 0,63×; gierig 99,5M (Streuung ±20 % zwischen Läufen); Band im Rahmen. Messfehler gefunden: Lifts zu 90 % gehaltener Füller waren durch Legendär-Halter in der „ohne"-Gruppe verzerrt — Filter `NOLEG=1`, Schiedsrichter ist die gepaarte Ablation. |
 | 2026-09-06 | Owner aus dem Spiel: „Ladungsserie ist zu krass" (Serie 540, Crit 549 %), „Glut muss weg, dafür etwas mit hohen Kartenwerten und Formation" (7.23, umgesetzt): Ladungsserie ÷10 (0,1 / 0,15 / 0,2 / 0,25 % je Serienpunkt; gemessen ÷2, ÷4, ÷10 — ÷4 ließ sie Träger, +138 %; Serien in der Sim: Feuer mono Median 614), Feuerlinie ersetzt Glut auf SK_FIRE_01 (Formations-Sieg +2 / 3 / 4 / 5 % Score je Punkt Kampfwert, verbrennt 3 % Hitze, Episch je Formation; Vorschläge Brennglas und Flammenherd verworfen). Gemessen: Duell Floor 1,29×, Mean 0,86×, p90 0,71×; Motor Feuer vom Anschlag geholt (54 % → 31 % der Stiche); gierig 53,2M, Feuerlinie +15 % (zweitbester Feuer-Pick), Ladungsserie +28 % (Träger war +204 %); Band neu zentriert (4,05M / 5,91M). `pctS` auf zwei Nachkommastellen (0,15 stand als 0,2). Owner: Durchschlag und Rückzündung unterperformen — Vorschläge in 7.23 (Nachzündung; Durchschlag mit doppelter Chance und Ladung je Niederlage ohne Crit), nichts davon umgesetzt. |
-| 2026-09-06 | Owner: „die Niederlage-Bedingung umgehen" (7.24, umgesetzt): Überspannung verwertet den Überschuss über dem Crit-Deckel (je 4 / 3 / 2 / 1× über 8× +1 Ladung, Episch je 25 % Crit-Chance über 100 % +1 — gemessen: Crit über 100 % gibt es seit ÷10 fast nur in den Runden 41–50, der Deckel-Überschuss ist ein Vielfaches davon); Rückzündung im Takt (jeder 5. / 4. / 3. / 2. Sieg in Folge ×1,5, Episch kämpft die zündende Karte mit +2). Durchschlag-Vorschlag (Viertel über dem Deckel) „zu situativ" — drei neue Vorschläge (Lichtbogen, Kettenreaktion, Erdung), nichts umgesetzt. Gemessen: Feuer mono 14,2M, **Blitz mono 7,3M (−28 %)** — der Dauerwert je Leiste war die einzige Dauerwert-Quelle des Blitzes; Floor 1,93× (Mean 1,44×, p90 1,17×); Stapel-Score 125 nur 1,54×; Sonde Dauerwert als Passiv `SIM_ION_VALUE_PER_BAR` +1 → 13,0M, Floor 1,09× (Mean 0,71×, p90 0,55×) — Owner-Entscheid offen. Gierig 47,7M (Ø 10,5 Skills), Band im Rahmen. |
+| 2026-09-06 | Owner: „die Niederlage-Bedingung umgehen" (7.24, umgesetzt): Überspannung verwertet den Überschuss über dem Crit-Deckel (je 4 / 3 / 2 / 1× über 8× +1 Ladung, Episch je 25 % Crit-Chance über 100 % +1 — gemessen: Crit über 100 % gibt es seit ÷10 fast nur in den Runden 41–50, der Deckel-Überschuss ist ein Vielfaches davon); Rückzündung im Takt (jeder 5. / 4. / 3. / 2. Sieg in Folge ×1,5, Episch kämpft die zündende Karte mit +2). Durchschlag-Vorschlag (Viertel über dem Deckel) „zu situativ" — drei neue Vorschläge (Lichtbogen, Kettenreaktion, Erdung), nichts umgesetzt. Gemessen: Feuer mono 14,2M, **Blitz mono 7,3M (−28 %)** — der Dauerwert je Leiste war die einzige Dauerwert-Quelle des Blitzes; Floor 1,93× (Mean 1,44×, p90 1,17×); Stapel-Score 125 nur 1,54×; Sonde Dauerwert als Passiv `SIM_ION_VALUE_PER_BAR` +1 → 13,0M, Floor 1,09× (Mean 0,71×, p90 0,55×). Gierig 47,7M (Ø 10,5 Skills), Band im Rahmen. **Owner: Parität nach Empfehlung (a)** — der Dauerwert +1 je Leiste ist Blitz-Passiv (umgesetzt, `ION_VALUE_PER_BAR` 1, Passiv-Text/Tooltip/Glossar): Blitz mono 13,0M, Floor 1,09×; Motor Crit zuerst 31,3M (Kreislauf Dauerwert × Vorentladung × Überspannung Episch, Wachpunkt); gierig 81,5M (Ø 13,0 Skills); Legendäre Doppelentladung +70 %, Durchschlag −9 %; Band neu zentriert (4,72M / 7,90M). Owner: die drei Durchschlag-Vorschläge sind zu langweilig — fünf Konzepte auf offenen Achsen (Resonanz, Durchschlag neu, Gewitter, Plasma, Blitzlenker) in 7.24, Empfehlung Resonanz, nichts umgesetzt. |

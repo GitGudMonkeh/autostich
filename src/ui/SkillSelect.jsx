@@ -6,7 +6,7 @@ import { FactionIcon, ArchIcon, GlossaryIcon } from "./FactionIcon.jsx"; // #308
 import { SKILL_SLOT_LIMIT, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_MAX_CHARGE, ION_SCORE_PER_STACK, ION_CRIT_MULT_PER_STACK,
          PLANT_GROWTH_SKILL_REF, PLANT_GREEN_THRESHOLD, WURZELSCHLAG_PER_GROWTH, PLANT_VALUE_CAP,
          WURZELSCHLAG_LOSS_MIN_SKILLS, WURZELSCHLAG_LOSS_EVERY,
-         HEAT_MIN_MARGIN, HEAT_MARGIN_OFFSET, HEAT_PER_POINT, HEAT_LOSS, HEAT_MULT_PER_10 } from "../game/constants.js";
+         HEAT_MIN_MARGIN, HEAT_MARGIN_OFFSET, HEAT_PER_POINT, HEAT_LOSS, HEAT_MULT_PER_10, ION_VALUE_PER_BAR } from "../game/constants.js";
 import { DECLINE_MIN_SKILLS as G_DECLINE_MIN_SKILLS } from "../game/glacier.js"; // Eis-Neudesign: Ablehn-Gletscher-Schwelle für den Passiv-Text
 
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
@@ -120,7 +120,7 @@ export function SkillSelect({ offer = null, doors = null, onPick, onDecline, onR
   const unlockLine = (arch) => {
     switch (arch) {
       case "lightning":
-        return t("skill.passive.lightning", { each: PER_SKILL_PCT, bar: LIGHTNING_MAX_CHARGE, stack: ION_SCORE_PER_STACK, critPer: String(ION_CRIT_MULT_PER_STACK).replace(".", ",") });
+        return t("skill.passive.lightning", { each: PER_SKILL_PCT, bar: LIGHTNING_MAX_CHARGE, value: ION_VALUE_PER_BAR, stack: ION_SCORE_PER_STACK, critPer: String(ION_CRIT_MULT_PER_STACK).replace(".", ",") });
       case "fire":
         return t("skill.passive.fire", { margin: HEAT_MIN_MARGIN, offset: HEAT_MARGIN_OFFSET, per: HEAT_PER_POINT,
           cool: HEAT_LOSS, mult: FIRE_MULT_PCT });

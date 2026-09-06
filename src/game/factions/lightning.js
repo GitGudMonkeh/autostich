@@ -233,8 +233,8 @@ export function fillBar(lightning, skills, skillTiers, deck, playerOrder, actual
   let newDeck = deck;
   if (n > 0) {
     const di = playerOrder[(actualPos + 1) % n];
-    // (§7.24: Überspannung backt keinen Dauerwert mehr — sie ist Überschuss zu Ladung, chargeGainOnWin. ION_VALUE_PER_BAR
-    // ist die Sim-Sonde für den Dauerwert als Passiv, Default 0.)
+    // §7.24 (Owner): der Dauerwert je Leiste ist Blitz-Passiv — die ionisierte Karte erhält dauerhaft +ION_VALUE_PER_BAR
+    // (gebacken wie die Schmiede; bis §7.23 war das Überspannung, die jetzt den Überschuss über dem Deckel zu Ladung macht).
     newDeck = newDeck.map((c, i) => (i === di ? { ...c, ionStacks: (c.ionStacks || 0) + per, value: c.value + C.ION_VALUE_PER_BAR } : c));
     stacks += per; targets.push(di);
   }
