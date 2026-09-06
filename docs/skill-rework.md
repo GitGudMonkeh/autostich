@@ -2661,6 +2661,42 @@ Punkt ist im reinen Build nicht sichtbar: der Rückstand einer Niederlage ist kl
 fällt nur bei voller Leiste an, und der Pick kostet den Verstärker, den er verdrängt. Regler-Sweep 30 / 60 / 100 je
 Punkt und der Blitz-Lift des Donnergotts (0,25 / 0,35 / 0,5 je Stapel) unten.
 
+**Phönix-Sonde** (reiner Feuer-Build, das Legendäre per Hook zur mittleren Skill-Phase eingesetzt, 60 Seeds gepaart,
+`phoenix-probe.mjs`): gepaart 1,00, besser in 45 %. Der Überlauf-Wandler bekommt ab dem Pick **397 Hitzepunkte je
+Lauf** — 61 Niederlagen, alle bei voller Leiste, aber der Rückstand einer Niederlage ist im reifen Feuer-Deck gut zwei
+Punkte (×3 = 6,5 Hitze). Bei 30 je Punkt sind das 11.900 Basis-Score auf 25 Runden, bei 100 je Punkt 39.700 — gegen
+rund 12.000 Basis je Runde. Der Regler kann das nicht heben (30 / 60 / 100: 13,3 / 13,5 / 13,6M mit, 15,6M ohne, gepaart
+jedes Mal 1,00); die Ressource ist zu klein, nicht der Satz. `PHOENIX_OVERFLOW_SCORE` bleibt bei 30. Was Phönixfeuer
+tragen könnte, ist eine Owner-Frage (unten).
+
+**Donnergott im reinen Blitz-Build** (`blitz-lifts.mjs`, 400 Läufe, Median mit ÷ ohne): 2,57 — wie die anderen
+Blitz-Legendären (Durchschlag 3,45, Hochspannung 2,71, Doppelentladung 2,03); der Satz je Stapel ist dort kein
+Regler (0,25 / 0,35 / 0,5: 2,57 / 2,60 / 2,64), die Leiste bei 7 trägt. `DONNERGOTT_ION_CRIT_MULT_PER_STACK` bleibt
+bei 0,25. Nebenbefund derselben Reihe: Blitzableiter 1,75 (Episch 4,64), Gewitterfront 1,16, Überspannung 1,07 (Normal
+0,92, Sehr selten 1,95, Episch 1,97), Ionenfeld 0,51 (Normal 0,44, Sehr selten 1,33, Episch 1,67) — bei diesen beiden
+trägt die Leiter, Normal nicht.
+
+**Gierig mit diesem Stand** (1000 Explore, 150 Läufe): Median **107,3M** (7.19: 155,9M, 7.18: 71,6M), Siegquote 74 %,
+Ø 13,0 Skills. Träger: Ladungsserie (+176 % typisch, in 93 %), Sonnenkern (+58 %), Doppelentladung (+56 %), Klinge
+(+48 %); dahinter Feuerwalze, Damaststahl, Feuersturm, Vorentladung. **Die drei umgebauten Legendären werden jetzt
+genommen:** Donnergott in 25 % (7.19: 3 %, neutral −1 %), Sonnenzorn in 19 % (3 %, +5 %), Phönixfeuer in 5 % (1 %,
+−9 %). Ionenfeld in 64 % (neutral), Überspannung in 43 % (−4 %), Kettenblitz in 55 % (+4 %). Schadet: Rückzündung
+(−31 %), Glutbett (−47 %, in 1 %), Durchschlag (−11 %, in 24 % — der Crit auf der Niederlage wird mit Deckel 8×
+wieder zur Falle), Spannungsstau (−10 %), Gewitterfront (−7 %), Serienschutz.
+
+**Was offen bleibt (Owner):**
+
+1. **Phönixfeuer** trägt nicht, weil Niederlagen im reifen Deck fast keinen Rückstand haben — die Hitze aus
+   Niederlagen ist die kleine Ressource, egal wie sie gewandelt wird. Vorschlag zur Wahl: (a) der Überlauf zahlt je
+   *Niederlage* einen festen Betrag statt je Punkt (etwa +150 Basis, unabhängig vom Rückstand); (b) Phönixfeuer
+   liest den Rückstand nicht in Punkten, sondern hält bei voller Leiste *jede* Niederlage der Runde die Serie (der
+   Serienschutz des Feuers — Sim-Wachpunkt Feuersturm × Ladungsserie, die Serie reißt dann fast nie); (c) so lassen,
+   als Kaltstart-Legendäres für schwache Decks.
+2. **Durchschlag** (−11 %) ist mit dem Deckel 8× wieder die Falle aus 7.15; **Rückzündung** (−31 %) und **Glutbett**
+   (−47 %) bleiben die Feuer-Fallen — Glutbett auf Wunsch des Owners unverändert.
+3. Aus 7.18/7.19 weiter: Kurzschluss als Pick (in 87 %, −1 %, jetzt neutral), die Stufenleitern (bei Ionenfeld und
+   Überspannung tragen sie, bei den meisten nicht), Hochspannung danach.
+
 ## 5. Eis
 
 Offen.
@@ -2709,3 +2745,4 @@ Offen.
 | 2026-09-06 | Owner: ja zum Feuersturm-Umbau (7.17, umgesetzt): bei voller Leiste zählt jeder Serienpunkt +Satz Score, Episch ab 80 %, keine Hitze mehr. Satz nach Sweep 0,1/0,15/0,2/0,3 % statt 0,5–1,5 % (der Vorschlag war ×3 Blitz): Feuer mono 13,3M, Floor 1,86×, Mean 1,12×, p90 0,96×; Feuersturm-Lift 1,10 (Episch 2,06 — Tor-Frage offen). Blitz-Plan als Vorschlag: Rate zusammenlegen, zwei freie Emblem-Plätze (Ionenfeld, Vorentladung) neu belegen, fünf Skills in ihrem Platz umbauen, Rampen gegen den Crit-Deckel messen. |
 | 2026-09-06 | Owner: ja zu Feuersturm-Tor 90 % und zum Blitz-Plan (7.18, umgesetzt): Blitzableiter nimmt Statische Aufladung und Dauerstrom auf (beide gestrichen); Ionenfeld (02, Feld nach jeder Leiste) und Vorentladung (12, Serie zu Crit-Multiplikator) neu auf den alten Emblem-Plätzen; Kettenblitz vertieft, Blitzfänger und Überspannung ohne Schwelle, Blitzschlag schneller, Spannungsstau auf den Crit-Multiplikator. Blitz mono 7,2M → 11,0M, Floor 1,86× → 1,22× (Mean 0,89×, p90 0,79×); der 8×-Deckel bindet bei einem Zehntel der Crits. Stapel-Score bleibt 75 (Sweep 60/75/90: Median gegen Schwanz). Gierig 71,6M, Blitz-lastig; die umgebauten Skills sind Füller (gehalten, neutral), Träger unverändert. Offene Liste in 7.18. |
 | 2026-09-06 | Owner: „passt, alles" zu den 7.18-Empfehlungen (7.19, umgesetzt): Ionenfeld 3/3/4/5, Kettenblitz jede Leiste +1/2/3/4, Überspannung als Dauerwert je Leiste (+1/1/2/3, keine Ladung), Überschlag gestrichen (Blitz 14), Crit-Deckel 8 → 12; Sonnenzorn liest die Spitze bis 200, Phönixfeuer +3 je Punkt und hält bei voller Leiste die erste Niederlage je Runde. Gemessen: die Parität kippt — Blitz mono 11,0M → 17,9M, Floor 0,76× (Mean 0,49×, p90 0,43×); der Dauerwert trägt den Median-Sprung, Ionenfeld den zweiten Teil, Deckel und Kettenblitz-Tiefe den Schwanz. Gierig 155,9M (verdoppelt; der Deckel trägt davon ein Fünftel, der Rest hängt am gemischten Build, nicht an einem Skill; die Füller bleiben Füller); Legendäre zur Laufmitte messen die Fraktionswahl; Lifts im Feuer-Build Sonnenzorn 0,83 → 0,94, Phönixfeuer 0,84 → 0,87. Sim-Band neu zentriert. Vorschlag: Ionenfeld 2/3/4/5, Deckel zurück auf 8, Kettenblitz +1/1/2/3 (Floor 1,09×, Mean 0,81×, p90 0,70×). Nichts davon umgesetzt. |
+| 2026-09-06 | Owner: Raritäten unterscheiden sich immer (§1); „ja zu allem" (7.20, umgesetzt): Ionenfeld 2/3/4/5, Überspannung 1/2/3/4, Deckel zurück auf 8; Donnergott zahlt je Stapel +0,25× statt flach +0,4×; Phönixfeuer wandelt den Überlauf aus Niederlagen (+30 je Punkt beim nächsten Sieg); Sonnenzorn +5 % je 10 % Spitze und Siege heizen ×2 unter der Spitze; Hochspannung und Glutbett bleiben. Gemessen: Parität zurück (Floor 1,23×, Mean 0,80×, p90 0,61× — Stand 7.18), Motor Blitz 12,7M / 22,5M / 21,5M, Band im Rahmen. Legendäre zur Laufmitte: Sonnenzorn erstmals positiv (+12 %), Phönixfeuer −15 %, Donnergott −19 % (Pick-Kosten im gemischten Build; im reinen Blitz-Build 2,57). Gierig 107,3M; Donnergott (25 %) und Sonnenzorn (19 %) werden jetzt genommen und sind neutral. Phönix-Sonde: der Überlauf trägt ~400 Hitzepunkte je Lauf, der Satz ändert nichts (bleibt 30) — Owner-Frage in 7.20. |
