@@ -3178,21 +3178,47 @@ Nicht doppelt, obwohl sie nebeneinander stehen: Blitzschlag (Breite, je Crit) ge
 Kurzschluss (Schwelle auf einer Karte) gegen Resonanz (Summe über eine Formation); Glutstahl (Basis-Score über
 Grundwert) gegen Feuerlinie (Faktor auf den ganzen Kampfwert).
 
-#### C. Der stille Konflikt: Weißglut schaltet Feuersturm und Schmelzpunkt ab (gemessen)
+#### C. Weißglut verschiebt still die Tore von Feuersturm und Schmelzpunkt
+
+> **KORRIGIERT (2026-09-06, noch in derselben Sitzung).** Die erste Fassung dieses Abschnitts behauptete, Weißglut
+> schalte Feuersturm und Schmelzpunkt **ab**, und nannte das einen Regelfehler. Das war aus den Modulfunktionen bei
+> genau 100 % Hitze geschlossen und ist **im Lauf nicht haltbar** — die Sonde unten misst das Gegenteil. Der Befund
+> ist kleiner und anderer Art: eine versteckte Kopplung, kein Fehler. Was unten steht, ist der gemessene Stand.
 
 Beide Skills lesen „volle Leiste" als **die Leiste des Builds**, nicht als 100 %. Mit Weißglut ist die Leiste 200,
-also steigt ihr Tor still um das Doppelte. Gemessen an den Modulfunktionen:
+ihr Tor steigt also still mit. Isoliert sieht das drastisch aus (Modulfunktionen, bei genau 100 % Hitze):
+Feuersturm Sehr selten ×1,10 → ×1,00, Schmelzpunkt Normal +135 Basis → 0.
 
-| Fall | ohne Weißglut | mit Weißglut |
-| --- | --- | --- |
-| Feuersturm Sehr selten bei 100 % Hitze | ×1,100 | **×1,000 (aus)** |
-| Feuersturm Episch bei 100 % Hitze (Tor 90, absolut) | ×1,150 | ×1,150 |
-| Schmelzpunkt Normal, Sieg bei voller Leiste | +135 Basis | **0** |
+**Im Lauf gemessen** (`sim/probes/weissglut-gate.mjs`, Feuer mono, 150 Läufe, 128 ziehen Weißglut; Anteil der Stiche,
+in denen das jeweilige Tor offen steht):
 
-Zwei Folgen. Erstens schaltet ein Pick drei Skills ab, ohne dass ein Text es sagt. Zweitens **dreht sich die Leiter
-um**: Feuersturm Episch (Tor 90, absolut) läuft im Weißglut-Build, Sehr selten (Tor „voll" = 200) nicht — die
-seltenere Stufe ist die schwächere. Das erklärt auch, warum Feuersturm und Schmelzpunkt seit 7.23 „tot" messen,
-während Weißglut „stark" ist: der gierige Spieler nimmt Weißglut zuerst und die beiden danach nie wieder.
+| Stiche … | Ø Hitze | Tor 90 (Feuersturm Episch) | Tor 100 | Tor „volle Leiste des Builds" (heute) |
+| --- | --- | --- | --- | --- |
+| **mit** Weißglut im Bestand (124.480) | 141 % | 70 % | 69 % | **40 %** (Leiste 200) |
+| **ohne** Weißglut im Bestand (175.520) | 52 % | 42 % | 24 % | **24 %** (Leiste 100) |
+
+Weißglut schaltet also nichts ab: Der Build wird mit der längeren Leiste so viel heißer (Ø 141 % gegen 52 %), dass
+die 200 in **40 %** der Stiche stehen — häufiger, als ein Build ohne Weißglut die 100 erreicht. Schmelzpunkt und
+Feuersturm N/S/SS zünden im Weißglut-Build mehr, nicht weniger. (Der Vergleich ist nicht sauber A/B: Weißglut wird
+meist zur Laufmitte gezogen, die „ohne"-Gruppe ist überwiegend die kalte erste Laufhälfte. Er reicht aber, um
+„abgeschaltet" auszuschließen.)
+
+Was bleibt, ist eine **versteckte Kopplung**: ein Pick schreibt die Schwelle zweier anderer Skills um, und kein Text
+sagt es. Dazu kommt, dass Feuersturm Normal, Selten und Sehr selten sich **dasselbe Tor teilen** (alle drei „voll") —
+die Leiter dieser drei Stufen ist eine reine Ertragsleiter, erst Episch senkt zusätzlich das Tor auf absolute 90.
+
+Das ist damit **keine Regelfrage, sondern eine Designfrage — Entscheid Owner.** Drei Lesarten:
+
+1. **So lassen.** Weißglut ist die längere Leiste, und wer sie nimmt, verschiebt bewusst alles, was an „voll" hängt.
+   Kostet nichts, der Spieler sieht es aber nur, wenn er rechnet.
+2. **Text sagt es.** Tore bleiben, die Sätze nennen die Zahl des Builds („bei voller Leiste, mit Weißglut ab 200 %").
+   Ehrlich, macht die Sätze länger; Schmelzpunkt ist schon der längste normale Text.
+3. **Tore auf 100 % festnageln** (`C.HEAT_MAX` statt `max`). Dann sind sie von Weißglut unabhängig. **Achtung, das
+   ist ein Buff, kein Fix:** Schmelzpunkt würde im Weißglut-Build Hitze wandeln, die zugleich auf der Leiste liegt
+   und dort schon über Weißglut Score zahlt — dieselbe Hitze zweimal. Feuersturm N/S/SS gingen von 40 % auf 69 %
+   offene Stiche. Müsste gemessen und wahrscheinlich im Satz gesenkt werden.
+
+Ohne Empfehlung — Lesart 1 und 2 sind Geschmack, Lesart 3 ist eine Balance-Entscheidung.
 
 #### D. Die Stufenleitern: Feuer schiebt Schwellen, Blitz hebt Erträge
 
@@ -3245,9 +3271,14 @@ Runde rot (englische Gebäudetexte, Zahlen-Drift) und taugt darum nicht als Tor 
 Reihenfolge nach Wirkung. Kein Vorschlag fällt unter 14 Skills je Fraktion, keiner fasst Glutbett oder Schmiede an,
 keiner setzt einen Deckel oder Direkt-Score.
 
+**Owner, 2026-09-06:** „1 (Regelfehler) → 2 Feuerwalze → 3 Gewitterfront/Entladung → dann Textpaket am Stück."
+Damit steht die Reihenfolge. Punkt 1 ist nach der Messung in C aber kein Fehler mehr, den man wegmacht, sondern eine
+Designfrage mit drei Lesarten — das Ja galt einer falschen Prämisse und wird neu eingeholt. Die Plätze bei 2 und 5
+brauchen außerdem je ein Konzept vom Owner (Liste unten), bevor gebaut werden kann.
+
 | # | Skill | Vorschlag | Empfehlung |
 | --- | --- | --- | --- |
-| 1 | Feuersturm, Schmelzpunkt | Beide Tore lesen **100 %** statt der Build-Leiste (`C.HEAT_MAX` statt `max`): Feuersturm zündet ab voller Grundleiste, Schmelzpunkt wandelt alles über 100 %. Weißglut legt dann obendrauf, statt zwei Skills abzuschalten; die umgedrehte Leiter verschwindet mit. | **ja** — Regelfehler, keine Balance-Frage |
+| 1 | Feuersturm, Schmelzpunkt | **Zurückgezogen als „Regelfehler"** (siehe Korrektur in C): Weißglut schaltet die beiden nicht ab, sie zünden im Weißglut-Build häufiger. Übrig bleibt die versteckte Kopplung mit drei Lesarten (so lassen / Text nennt die Zahl / Tore auf 100 % festnageln, was ein Buff wäre). | **keine** — Designfrage, Entscheid Owner |
 | 2 | Feuerwalze | Streichen und den Platz (SK_FIRE_08) neu belegen. Die Achse „Hitze zu Kampfwert" hat mit der Klinge schon ihren Skill; vier Stufen mit viermal +2 sind keine Leiter. Drei Konzepte in der Liste unten. | **ja**, Konzept vom Owner |
 | 3 | Gewitterfront, Entladung | (a) Zusammenlegen zu einer Rampe je Leiste (Chance **und** Multiplikator, beides wächst mit der Stufe), der freie Platz bekommt einen Blitz-Skill auf einer unberührten Achse. (b) Nur das Episch-Extra der Gewitterfront tauschen, damit es nicht Entladung Normal ist. | (a); (b) ist der billige Notausgang |
 | 4 | Serienschutz | Auslöser wechseln. Er ist der letzte Skill an der Niederlage-Bedingung, die der Owner in 7.24 zweimal abgeschafft hat, und misst seit 7.6 nie besser als „schadet". Vorschlag: Ladung schützt die Serie nicht mehr, sondern **verlängert** sie („Ab Serie N zählt jeder Sieg doppelt für die Serie" o. Ä.) — Vorschläge nach dem Ja. | **ja**, Richtung offen |
@@ -3333,3 +3364,4 @@ Offen.
 | 2026-09-06 | Owner: „Resonanz ist stark, nehmen wir" (7.25, umgesetzt): SK_LIGHTNING_L04 Resonanz ersetzt Durchschlag (Emblem bleibt) — ionisierte Karten in einer Formation teilen ihre Stapel, die gespielte Karte kämpft mit der Summe (Stapel-Score, Crit-Mult je Stapel, Blitzfänger, Kurzschluss, Doppelentladung); `computeFormations` liefert die Mitglieder je Lauf (`members`), Engine-Lesesicht `pCardR`, Regler `SIM_RESONANZ_SHARE` 1; Durchschlag samt Zufallsstrom gestrichen. Gemessen: Legendäre zur Laufmitte Resonanz +48 % (Sonnenkern +121 %, Doppelentladung +50 %; Durchschlag war −9 %), reiner Blitz-Build Lift 4,25, gierig in 29 % gehalten, +64 % typisch, Lift 2,22 (Kettenblitz dadurch erstmals stark), Median 77,8M, p95 803M (Schwanz-Wachpunkt); Duell unverändert (Floor 1,09×). Gates grün. |
 | 2026-09-06 | Übergabe an die nächste Sitzung: `docs/workstreams/skill-rework/HANDOFF-2026-09-06.md` (Stand, Owner-Regeln, Rundenablauf, Code-Karte, Messwerkzeuge und Leseregeln, Wachpunkte, Methode für den Skill-Pass mit Überschneidungs-Kandidaten, Einstieg Pflanze, Startprompt). Die Messskripte der Runden 7.22–7.25 liegen jetzt unter `sim/probes/` (README dort). Nächste Aufgabe (Owner): Pass über alle Feuer- und Blitz-Skills — unterschiedlich genug, genug Varianz, Beschreibungen gut — danach Pflanze. Nichts am Spiel geändert. |
 | 2026-09-06 | Pass über alle Feuer- und Blitz-Skills (7.26, Befund, nichts umgesetzt): Auslöser- und Ertrags-Raster je Fraktion (Blitz hängt fünffach an der vollen Leiste, Feuer vierfach an einer Hitze-Schwelle; unberührt bei Blitz sind Formation, Gegnerdeck, Durchlaufende), acht Dubletten nach Schärfe, der gemessene stille Konflikt (Weißglut schaltet Feuersturm Normal bis Sehr selten und Schmelzpunkt ab, weil beide Tore die Build-Leiste lesen — die Feuersturm-Leiter dreht sich dabei um), die Stufenleitern (Feuer 6 von 14 mit festem Ertrag, vier teilen die Leiter 80/60/40/20; Feuerwalze viermal +2), sieben Textpunkte (Runde statt Durchlauf an 7 Stellen, ein Gedankenstrich, fehlende Prozentpunkte, Blitzableiter Episch mit drei Effekten). Dreizehn Vorschläge je Skill plus sechs Konzepte für zwei mögliche freie Plätze. Entscheid Owner, einzeln. |
+| 2026-09-06 | Owner setzt die Reihenfolge (1 → Feuerwalze → Gewitterfront/Entladung → Textpaket). Punkt 1 vor der Umsetzung nachgemessen und **den eigenen Befund korrigiert** (7.26 C, neue Sonde `sim/probes/weissglut-gate.mjs`): Weißglut schaltet Feuersturm und Schmelzpunkt **nicht** ab. Isoliert bei 100 % Hitze stimmt es (×1,10 → ×1,00, +135 → 0), im Lauf nicht — der Weißglut-Build läuft bei Ø 141 % statt 52 % Hitze und steht in 40 % der Stiche auf 200, häufiger als ein Build ohne Weißglut die 100 erreicht (24 %). Kein Regelfehler, sondern eine versteckte Kopplung: ein Pick schreibt die Schwelle zweier anderer Skills um, ohne dass ein Text es sagt. Drei Lesarten an den Owner (so lassen / Text nennt die Zahl des Builds / Tore auf 100 % festnageln — Letzteres ist ein Buff, weil dieselbe Hitze dann über Weißglut und Schmelzpunkt zweimal zahlt), keine Empfehlung. Nichts umgesetzt. |

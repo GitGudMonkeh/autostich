@@ -11,6 +11,7 @@ node sim/probes/streak-probe.mjs                         # longest streak per ru
 node sim/probes/overcrit-probe.mjs                       # crit chance above 100 % across the run
 SIM_CRIT_MULT_CAP=1000 node sim/probes/capexcess-probe.mjs   # crit multiplier above the 8x cap
 VARIANT=quarter node sim/probes/variant-duel.mjs         # duel with a tier table mutated in-process
+N=150 node sim/probes/weissglut-gate.mjs                 # how often the Feuersturm/Schmelzpunkt gates stand open, with and without Weissglut
 node sim/probes/print-skill-texts.mjs                    # every Feuer/Blitz skill with its four tier texts
 GDOC_LOGDIR=/path/to/logs GDOC_TAG=725 node sim/probes/gdoc.mjs   # owner document (HTML for Google Docs)
 ```
