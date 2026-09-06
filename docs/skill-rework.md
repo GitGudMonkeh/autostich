@@ -818,7 +818,7 @@ Türwurf mit 3 bis 4 % je Skill-Platz, kein Ersetzen, zwei gleichzeitig möglich
 | Donnergott | Rate + Tiefe | Die Ladungsleiste ist bei 7 voll. Jeder Stapel auf der Siegkarte zählt +0,25× statt +0,15× Crit-Multiplikator (7.20; vorher flach +0,4×). |
 | Doppelentladung | Tiefe | Jede Ionisierung gibt 2 Stapel statt 1. Crit mit einer ionisierten Karte: der Stich zählt doppelt. |
 | Hochspannung (neu, ersetzt Flächenionisation) | Kit | Alle gehaltenen Blitz-Skills wirken eine Stufe höher, Episch bleibt Episch. |
-| Durchschlag | Crit | Auch Niederlagen können critten: ein Crit bei einer Niederlage gewinnt den Stich. |
+| Resonanz (7.25, ersetzt Durchschlag) | Formation × Ionisierung | Ionisierte Karten in einer Formation teilen ihre Stapel: jede Karte der Formation kämpft mit der Summe der Stapel ihrer Formation. |
 
 Sim-Wachpunkte: Donnergott mit Reststrom Episch und Blitzableiter; Doppelentladung mit Kettenblitz
 Episch (Stapel je Leiste ×2); Hochspannung im Mono-Build mit acht und mehr Skills; Durchschlag bei
@@ -3046,6 +3046,49 @@ der neue Durchschlag (thematisch, behält den Namen). Beide werden nach der Wahl
 Hitzeleiste (Anzeige); Glutbett und Schmiede (Owner: bleiben); die Streuung der gierigen Auswertung (Haltequoten
 springen — zwei Läufe je Urteil).
 
+### 7.25 Resonanz ersetzt Durchschlag (2026-09-06, umgesetzt)
+
+Owner: „Resonanz ist stark, nehmen wir." Platz SK_LIGHTNING_L04, das Emblem bleibt (`SK_LIGHTNING_L04_resonanz.webp`).
+
+**Resonanz** (Blitz, L, Achse Formation × Ionisierung — das erste Legendäre, das Formationen berührt): „Ionisierte
+Karten in einer Formation teilen ihre Stapel: jede Karte der Formation kämpft mit der Summe der Stapel ihrer
+Formation." Die gespielte Karte kämpft mit ihren eigenen Stapeln plus `RESONANZ_SHARE` (1, Sim-Regler) × den Stapeln
+aller anderen Mitglieder ihrer Formationen — Vereinigung über alle Läufe an der Position; Anker, Grenzbonus, Nachhall
+und Kern sind keine Formationen mit Mitgliedern. Die Summe zählt überall, wo die Siegkarte ihre Stapel liest:
+Stapel-Score in der Basis, Crit-Multiplikator je Stapel, Blitzfänger, Kurzschluss (Schwelle und Vormerkung bei
+Niederlage), Doppelentladung, Anzeige „voll ionisiert". Stapel-Änderungen (Blitzschlag) gehen weiter an die echte
+Karte. Code: `computeFormations` legt je Lauf die Mitglieder auf jeden Eintrag (`members`, Positionen — bei zwei
+Treppen je Segment, E_RPM, bekommt der zweite Eintrag den zweiten Lauf); `resonantStacks(card, posForm, slot,
+cardAt)` in lightning.js; die Engine bildet `pCardR` als Lesesicht der gespielten Karte. Durchschlag (Niederlage
+crittet) ist samt eigenem Zufallsstrom und `lastTrick.durchschlag` gestrichen; die anderen Zufallsströme sind
+unberührt. Spielerisch: Kettenblitz vertieft die tiefste Karte — mit Resonanz die ganze Formation, in der sie steht;
+die Formationsphase wird für Blitz eine Entscheidung (ionisierte Karten zusammenlegen, Läufe über die Segmentgrenze
+öffnen).
+
+**Messung.** Duell (100 Läufe): Feuer mono 14,2M, Blitz mono 13,0M (Median unverändert — die Fraktions-Policy zieht
+ein Legendäres in ~12 % der Läufe), Mean 26,4M (26,0M), p90 76M (72M); Floor 1,09×, Mean 0,70×, p90 0,52×.
+Legendäre zur Laufmitte (Basis 97,2M): Sonnenkern +121 %, Doppelentladung +50 %, **Resonanz +48 % (besser in 61 %,
+Lift 1,37)**, Ewige Glut +4 %, Hochspannung +6 %, Donnergott −6 %, Damaststahl −5 %, Sonnenzorn −6 % — Durchschlag
+stand hier zuletzt bei −9 %. Lifts gefiltert (reiner Blitz-Build, 400 Läufe): Resonanz 4,25 (in 12 %; Durchschlag
+2,97 … 4,46), Hochspannung 3,10, Donnergott 2,40, Doppelentladung 1,77; die Stapel-Skills ziehen mit: Blitzfänger 1,47,
+Kurzschluss 1,37, Überspannung 1,13, Kettenblitz 1,08.
+
+**Gierig** (1000 Explore, 150 Läufe): Median 77,8M (7.24: 81,5M — Streuung), Mean 176M, p90 398M, p95 803M (der
+Schwanz wächst: Resonanz × Doppelentladung × Kettenblitz), Siegquote 73 %, Ø 12,7 Skills. **Resonanz in 29 %
+gehalten, +64 % typisch, besser in 84 % der Paare, Lift 2,22 — „stark"**, nach Sonnenkern (+79 %) der zweitbeste Pick,
+vor Doppelentladung (+61 %). Kettenblitz wird mit ihr erstmals „stark" (+36 %, in 12 % — die Tiefe zahlt jetzt in die
+ganze Formation), Kurzschluss in 85 % (+4 %, Episch-Lift 3,63), Überspannung in 39 % (+4 %, Episch 2,62). Donnergott
+−19 % (in 8 %, Rauschen), Blitzfänger tot. Feuer unverändert: Klinge, Weißglut stark; Feuerlinie (8 %) und Rückzündung
+(13 %, +7 %) Füller. Band im Rahmen (der Vollauf hält es).
+
+**Fazit.** Resonanz ist das erste Legendäre mit Formationsbezug und misst sich auf Anhieb als Träger des gemischten
+Builds (+48 % zur Laufmitte, +64 % gierig), ohne den Median zu verschieben; der Schwanz (p95 803M) ist der Wachpunkt.
+`SIM_RESONANZ_SHARE` (Anteil der fremden Stapel, 1) ist der Regler, falls er zu weit läuft.
+
+**Was offen bleibt:** der Blitz-Schwanz (7.24 Crit zuerst 31M, jetzt p95 803M gierig — Wachpunkt, Regler Resonanz-
+Anteil und Stapel-Score); Feuerlinie-Chip an der Hitzeleiste (Anzeige); Glutbett und Schmiede (Owner: bleiben);
+Anzeige der Resonanz-Summe im Stich (heute zeigt der Stich die eigenen Stapel — Owner-Frage).
+
 ## 5. Eis
 
 Offen.
@@ -3099,3 +3142,4 @@ Offen.
 | 2026-09-06 | Owner: „die offenen abarbeiten", „alle ja" (7.22, umgesetzt): Rückzündung als Konter (nach einer Niederlage zählt der nächste Sieg ×1,15/1,25/1,35/1,5, Episch +2 Wert; keine Hitze mehr); acht Episch-Extras (Reststrom Leiste 9, Gewitterfront +0,02× Crit-Mult je Leiste, Vorentladung 0,15, Kettenblitz zweittiefste +1, Blitzfänger +1 je Stapel, Kurzschluss Stapel-Score bei Niederlage → nächster Sieg, Zunder Niederlage +2 Hitze, Verbrennung ×1,5 auch auf Hitze); Durchschlag und Kurzschluss-Pick bleiben (Rauschen). Gemessen: Rückzündung von −31 % auf neutral, Verbrennung und Gewitterfront erstmals „stark"; Duell Floor 1,16×, Mean 0,82×, p90 0,63×; gierig 99,5M (Streuung ±20 % zwischen Läufen); Band im Rahmen. Messfehler gefunden: Lifts zu 90 % gehaltener Füller waren durch Legendär-Halter in der „ohne"-Gruppe verzerrt — Filter `NOLEG=1`, Schiedsrichter ist die gepaarte Ablation. |
 | 2026-09-06 | Owner aus dem Spiel: „Ladungsserie ist zu krass" (Serie 540, Crit 549 %), „Glut muss weg, dafür etwas mit hohen Kartenwerten und Formation" (7.23, umgesetzt): Ladungsserie ÷10 (0,1 / 0,15 / 0,2 / 0,25 % je Serienpunkt; gemessen ÷2, ÷4, ÷10 — ÷4 ließ sie Träger, +138 %; Serien in der Sim: Feuer mono Median 614), Feuerlinie ersetzt Glut auf SK_FIRE_01 (Formations-Sieg +2 / 3 / 4 / 5 % Score je Punkt Kampfwert, verbrennt 3 % Hitze, Episch je Formation; Vorschläge Brennglas und Flammenherd verworfen). Gemessen: Duell Floor 1,29×, Mean 0,86×, p90 0,71×; Motor Feuer vom Anschlag geholt (54 % → 31 % der Stiche); gierig 53,2M, Feuerlinie +15 % (zweitbester Feuer-Pick), Ladungsserie +28 % (Träger war +204 %); Band neu zentriert (4,05M / 5,91M). `pctS` auf zwei Nachkommastellen (0,15 stand als 0,2). Owner: Durchschlag und Rückzündung unterperformen — Vorschläge in 7.23 (Nachzündung; Durchschlag mit doppelter Chance und Ladung je Niederlage ohne Crit), nichts davon umgesetzt. |
 | 2026-09-06 | Owner: „die Niederlage-Bedingung umgehen" (7.24, umgesetzt): Überspannung verwertet den Überschuss über dem Crit-Deckel (je 4 / 3 / 2 / 1× über 8× +1 Ladung, Episch je 25 % Crit-Chance über 100 % +1 — gemessen: Crit über 100 % gibt es seit ÷10 fast nur in den Runden 41–50, der Deckel-Überschuss ist ein Vielfaches davon); Rückzündung im Takt (jeder 5. / 4. / 3. / 2. Sieg in Folge ×1,5, Episch kämpft die zündende Karte mit +2). Durchschlag-Vorschlag (Viertel über dem Deckel) „zu situativ" — drei neue Vorschläge (Lichtbogen, Kettenreaktion, Erdung), nichts umgesetzt. Gemessen: Feuer mono 14,2M, **Blitz mono 7,3M (−28 %)** — der Dauerwert je Leiste war die einzige Dauerwert-Quelle des Blitzes; Floor 1,93× (Mean 1,44×, p90 1,17×); Stapel-Score 125 nur 1,54×; Sonde Dauerwert als Passiv `SIM_ION_VALUE_PER_BAR` +1 → 13,0M, Floor 1,09× (Mean 0,71×, p90 0,55×). Gierig 47,7M (Ø 10,5 Skills), Band im Rahmen. **Owner: Parität nach Empfehlung (a)** — der Dauerwert +1 je Leiste ist Blitz-Passiv (umgesetzt, `ION_VALUE_PER_BAR` 1, Passiv-Text/Tooltip/Glossar): Blitz mono 13,0M, Floor 1,09×; Motor Crit zuerst 31,3M (Kreislauf Dauerwert × Vorentladung × Überspannung Episch, Wachpunkt); gierig 81,5M (Ø 13,0 Skills); Legendäre Doppelentladung +70 %, Durchschlag −9 %; Band neu zentriert (4,72M / 7,90M). Owner: die drei Durchschlag-Vorschläge sind zu langweilig — fünf Konzepte auf offenen Achsen (Resonanz, Durchschlag neu, Gewitter, Plasma, Blitzlenker) in 7.24, Empfehlung Resonanz, nichts umgesetzt. |
+| 2026-09-06 | Owner: „Resonanz ist stark, nehmen wir" (7.25, umgesetzt): SK_LIGHTNING_L04 Resonanz ersetzt Durchschlag (Emblem bleibt) — ionisierte Karten in einer Formation teilen ihre Stapel, die gespielte Karte kämpft mit der Summe (Stapel-Score, Crit-Mult je Stapel, Blitzfänger, Kurzschluss, Doppelentladung); `computeFormations` liefert die Mitglieder je Lauf (`members`), Engine-Lesesicht `pCardR`, Regler `SIM_RESONANZ_SHARE` 1; Durchschlag samt Zufallsstrom gestrichen. Gemessen: Legendäre zur Laufmitte Resonanz +48 % (Sonnenkern +121 %, Doppelentladung +50 %; Durchschlag war −9 %), reiner Blitz-Build Lift 4,25, gierig in 29 % gehalten, +64 % typisch, Lift 2,22 (Kettenblitz dadurch erstmals stark), Median 77,8M, p95 803M (Schwanz-Wachpunkt); Duell unverändert (Floor 1,09×). Gates grün. |

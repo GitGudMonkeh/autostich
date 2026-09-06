@@ -14,7 +14,7 @@ import { skillSum, buildSkillDoors, // exp skill rework: Türen-Angebot (Stufen 
 // ihre reinen Übergänge (Crit-Beiträge, Ladungsgewinn, volle Leiste, Niederlage, Rundenende).
 import { lightningCritChance, lightningCritMult, overcritMult, blitzfaengerValue, ionenfeldValue, fieldTick, ionScoreFor as lightIonScore, ionCritMultFor as lightIonCritMult, chargeGainOnWin,
   critFillsBar, blitzschlagStacks, stauAfterWin, lightningOnLoss, fillBar as lightFillBar, lightningCycleEnd, maxChargeFor,
-  lightParam, L as LIGHT, hasDoppelentladung, hasDurchschlag } from "./factions/lightning.js";
+  lightParam, L as LIGHT, hasDoppelentladung, hasResonanz, resonantStacks } from "./factions/lightning.js";
 // exp skill rework: die Feuer-Mechanik (Passiv, 15 Skills, 4 Legendäre) lebt ebenso im Fraktionsmodul — die Engine
 // ruft ihre Übergänge (Kampfwert-Bonus, Sieg, Niederlage, Hitze-Multiplikator, Rundenende, Brand-Wechsel).
 import { syncHeatMax, fireValueBonus, damascusCombat, fireOnWin, fireOnLoss, heatMult, verbrennungMult, feuersturmMult,
@@ -281,6 +281,11 @@ export function resolveTrick(state, rng) {
   const posForm = formations[actualPos] || { mult: 1, formations: [] };
   const formationMult = posForm.mult || 1;
   const hasFormation = positionHasFormation(posForm);
+  // Resonanz (Blitz-Legendär, §7.25): die Karten einer Formation teilen ihre Stapel — die gespielte Karte kämpft mit der
+  // Summe. `pCardR` ist die Lesesicht dafür (Blitzfänger, Stapel-Score, Crit-Multiplikator je Stapel, Kurzschluss,
+  // Doppelentladung, Anzeige); Stapel-ÄNDERUNGEN (Blitzschlag) gehen weiter an die echte Karte `pCard`.
+  const pCardR = (state.lightning && state.lightning.active && hasResonanz(skills))
+    ? { ...pCard, ionStacks: resonantStacks(pCard, posForm, actualPos, (k) => deck[playerOrder[k]]) } : pCard;
   // Shop-Anker-Familie auf DIESER Position (#164, max 1 je Position) → Kraft/Punkte/Krit/Serie. Stärke = Stufe.
   const anchor = anchorAt(anchors, actualPos);
   const anchorType = anchor ? anchor.type : null;
@@ -346,7 +351,7 @@ export function resolveTrick(state, rng) {
   const fireValue = fireValueBonus(heat, skills, skillTiers, { lastResult, winStreak }); // §7.24: Rückzündung Episch liest die Serie (die zündende Karte)
   // Blitzfänger (exp skill rework): ionisierte Karten kämpfen mit +Wert; Ionenfeld (§7.18): solange das Feld trägt, alle
   // Karten. Beides Zustand vor dem Stich, kein Ereignis.
-  const blitzValueBonus = blitzfaengerValue(skills, skillTiers, pCard) + ionenfeldValue(state.lightning, skills, skillTiers);
+  const blitzValueBonus = blitzfaengerValue(skills, skillTiers, pCardR) + ionenfeldValue(state.lightning, skills, skillTiers);
   const anchorPowerBonus = anchorType === "power" ? (aParam("power") || 0) : 0; // Kraftanker (§4.2, Stärke = Stufe)
   // E_QUICKSHOT IV (Rarität #167 Kat. E, Spec §3.2 E8 IV): jede Anker-Position (jede fünfte) erhält zusätzlich +2 Wert.
   // Der Anker-FAKTOR selbst läuft über computeFormations; hier nur der Stufe-IV-Wertbonus (anchor.value auf Anker-Positionen).
@@ -407,7 +412,7 @@ export function resolveTrick(state, rng) {
   if (lost && ownsFlag(perks, "patt") && (oValue - pValue) <= C.PATT_MARGIN) { lost = false; won = true; }
 
   // Sieg-Kontext VOR der Verzweigung — mit den Werten, die ein Sieg hätte (Serie +1, Siege +1). Der Sieg-Zweig
-  // übernimmt ihn unverändert; Durchschlag (unten) braucht ihn schon für den Crit-Wurf auf einer Niederlage.
+  // übernimmt ihn unverändert.
   // #71 Farbserie: Länge der Serie gewonnener Stiche gleicher Farbe INKL. eines Siegs hier. D_SUIT_STREAK IV:
   // ein Farbwechsel HALBIERT die laufende Länge (min 1) statt sie auf 1 zurückzusetzen (suitHalveOnSwitch).
   // Effektive Farbe: pflanzen-grüne Karten (card.green) zählen als „Grün" („G"). #289: verbündete Farben zählen als
@@ -430,13 +435,7 @@ export function resolveTrick(state, rng) {
   const rawCrit = critChanceRawFor(perks, wctx) + familyCritChanceRaw(familyTiers, critFamCtx)
                   + lightningCritChance(lightning, skills, skillTiers, winStreak + 1) // exp: Passiv je Blitz-Skill + Rampen + Ladungsserie
                   + (anchorType === "crit" ? (aParam("crit") || 0) : 0); // Kritanker (§4.2, Stärke = Stufe)
-  // Durchschlag (Blitz-Legendär, §3.7): auch eine Niederlage würfelt den Crit (eigener Zufallsstrom); ein Treffer gewinnt
-  // den Stich — der Sieg-Zweig läuft dann als garantierter Crit-Sieg (Crit-Mult, Ladung, Serie, Blitzschlag, alles).
-  let durchschlag = false;
-  if (lost && lightning && lightning.active && hasDurchschlag(skills)
-      && rollCrit(Math.min(1, Math.max(0, rawCrit)), false, rngAtOr(cycle, "durchschlag", pos))) {
-    lost = false; won = true; durchschlag = true;
-  }
+  // (§7.25: Durchschlag — der Crit auf einer Niederlage — ist gestrichen; auf dem Platz steht Resonanz, oben bei pCardR.)
 
   let gained = 0;
   let isCrit = false, critChance = 0, critMultiplier = C.CRIT_BASE_MULT, critMultRaw = C.CRIT_BASE_MULT, scoreBeforeCrit = 0, critBonus = 0;
@@ -635,7 +634,7 @@ export function resolveTrick(state, rng) {
     }
     // Crit ZUERST bestimmen — die Crit-Flats (scoreFlatOnCrit) müssen in die multiplizierte Basis. Der Crit-Wurf
     // verbraucht rng nur, wenn wirklich gewürfelt wird → rng-Reihenfolge unverändert (kein Drift). rawCrit steht oben
-    // (vor der Verzweigung, für Durchschlag) — Perk-Basis + Präzision + Blitz-Passiv/Rampen + Kritanker, ungeklemmt.
+    // (vor der Verzweigung) — Perk-Basis + Präzision + Blitz-Passiv/Rampen + Kritanker, ungeklemmt.
     critChance = Math.min(1, Math.max(0, rawCrit));             // Anzeige/normaler Wurf (geklemmt)
     // Crit-Ctx trägt rawCrit — von D-Crit-Flats (D19 Überschusskrit) UND L6 „Raserei" (critMultBonus, #115) gebraucht.
     const critCtx = { ...wctx, rawCrit };
@@ -643,7 +642,7 @@ export function resolveTrick(state, rng) {
     // Vorentladung) + Stapel der Siegkarte (§7.12: +ION_CRIT_MULT_PER_STACK je wirksamem Stapel, Donnergott mehr) + Systemregel (§1: Überschuss
     // über 100 % → sehr kleiner Crit-Mult-Bonus, alle Fraktionen).
     critMultiplier = critMultiplierFor(perks, critCtx) + familyCritMult(familyTiers)
-                   + lightningCritMult(lightning, skills, skillTiers, serieStreak) + lightIonCritMult(pCard, skills, skillTiers) + overcritMult(rawCrit);
+                   + lightningCritMult(lightning, skills, skillTiers, serieStreak) + lightIonCritMult(pCardR, skills, skillTiers) + overcritMult(rawCrit); // pCardR: Resonanz-Stapel (§7.25)
     // Entladung Episch: der Crit, der die Leiste füllt, zählt mit doppeltem Crit-Multiplikator. Vorschau auf denselben
     // Ladungsgewinn, den ein Crit unten wirklich bringt — der Multiplikator wird nur bei einem Crit gelesen.
     if (lightning && lightning.active && lightParam(skills, skillTiers, LIGHT.ENTLADUNG, "fillDouble")
@@ -653,7 +652,7 @@ export function resolveTrick(state, rng) {
     // §7.24 Überspannung liest den ungedeckelten Wert: der Überschuss über dem Deckel wird Ladung (chargeGainOnWin unten).
     critMultRaw = critMultiplier;
     critMultiplier = Math.min(critMultiplier, C.CRIT_MULT_CAP);
-    isCrit = rollCrit(critChance, forceCrit || durchschlag, rngAtOr(cycle, "crit", pos)) && !reducedRepeat; // #205 Glückslandschaft: fester Wurf je (cycle,pos); forceCrit = Henker; durchschlag = gewonnene Niederlage (Blitz-L); reducedRepeat = Zeitsegment III
+    isCrit = rollCrit(critChance, forceCrit, rngAtOr(cycle, "crit", pos)) && !reducedRepeat; // #205 Glückslandschaft: fester Wurf je (cycle,pos); forceCrit = Henker; reducedRepeat = Zeitsegment III
     // Score (globale Formel): additive Boni — inkl. Crit-only-Flats (Blitzableiter +50) — fließen in die BASIS
     // und werden mitmultipliziert: (SCORE_PER_WIN + Σ scoreFlat [+ Σ scoreFlatOnCrit bei Crit])
     // × Basis-Serien-Mult (#39, immer) × Perk-scoreMult, DANN Crit-Faktor.
@@ -684,14 +683,14 @@ export function resolveTrick(state, rng) {
                                   + familySumHook(familyTiers, "scoreFlatOnCrit", critCtx)
                                   + (critFollowArmed ? critFollowCritBonus : 0) // D_CRIT_FOLLOW IV: Crit-Folgesieg, der selbst Crit ist
                                   + (anchorType === "crit" ? (aParam("critScore") || 0) : 0) : 0) // Kritanker IV: Crit dort +250 Score
-                      + lightIonScore(pCard, skills, skillTiers) + ((lightning && lightning.stackBank) || 0) + fireFlat + plantFlat // exp: Stapel-Score der Siegkarte (Kurzschluss zählt ab Schwelle doppelt; §7.22 Episch: dazu der vorgemerkte Stapel-Score verlorener Karten)
+                      + lightIonScore(pCardR, skills, skillTiers) + ((lightning && lightning.stackBank) || 0) + fireFlat + plantFlat // exp: Stapel-Score der Siegkarte (Kurzschluss zählt ab Schwelle doppelt; §7.22 Episch: dazu der vorgemerkte Stapel-Score verlorener Karten; §7.25 Resonanz: pCardR trägt die Stapel der Formation)
                       + (anchorType === "score" ? (aParam("score") || 0) : 0) // Punkteanker (§4.2, Stärke = Stufe)
                       + (anchorType === "power" ? (aParam("winScore") || 0) : 0) // Kraftanker IV: Sieg dort +100 Score
                       + architectScoreRes.flat // Architekt Handelsbauten (#202): Flat-Score, s. o.
                       + interplayStored; // D_INTERPLAY IV: der in Niederlagen gebankte Score wird mit diesem Sieg als Flat ausgezahlt
     // #270: Fraktions-Flat-Anteile zum Ertrag (Roh-Score VOR dem Multiplikator-Stack). Blitz EIN Kanal; Feuer in
     // Grund/Weißglut gespalten (Pflanze-Kanäle Wurzel/Blüte/Ernte wurden schon an ihren Quellen oben akkumuliert).
-    lightYield += lightIonScore(pCard, skills, skillTiers) + ((lightning && lightning.stackBank) || 0);
+    lightYield += lightIonScore(pCardR, skills, skillTiers) + ((lightning && lightning.stackBank) || 0);
     if (lightning && lightning.stackBank) lightning = { ...lightning, stackBank: 0 }; // §7.22: die Vormerkung ist mit diesem Sieg bezahlt
     fireBase += fireFlat;
     // Score-Stapelung (§15/§22.7): Basis × Serie(#39) × Perk-scoreMult × Serien-Stat × Formations-Multiplikator
@@ -755,7 +754,7 @@ export function resolveTrick(state, rng) {
     gained = scoreBeforeCrit * (isCrit ? critMultiplier : 1);
     // Doppelentladung (Blitz-Legendär, §3.7): Crit mit einer ionisierten Karte — der Blitz schlägt zweimal ein, der ganze
     // gewertete Stich (Basis mal Multiplikatoren) zählt DOPPELENTLADUNG_STRIKE-fach. Kein Kreislauf: speist keine Leiste.
-    const strikeMult = (isCrit && (pCard.ionStacks || 0) > 0 && hasDoppelentladung(skills)) ? C.DOPPELENTLADUNG_STRIKE : 1;
+    const strikeMult = (isCrit && (pCardR.ionStacks || 0) > 0 && hasDoppelentladung(skills)) ? C.DOPPELENTLADUNG_STRIKE : 1; // pCardR: mit Resonanz zählt die Formation (§7.25)
     gained *= strikeMult;
     // Eis: derselbe multiplikative Stack (ohne additive Flats) skaliert auch den Gletscher-Bruch dieses Stichs (unten).
     glacierWinMult = streakMult * perkMult * formMult * afterglowMult * coreMult * fireMult * architectMult * (isCrit ? critMultiplier : 1);
@@ -909,7 +908,7 @@ export function resolveTrick(state, rng) {
     // einmal je Runde gratis) — im Modul.
     let serienschutzHeld = false;
     if (lightning && lightning.active) {
-      const r = lightningOnLoss(lightning, skills, skillTiers, { alreadyHeld: anchorNoReset, card: pCard }); // §7.22: Kurzschluss Episch merkt den Stapel-Score der verlorenen Karte vor
+      const r = lightningOnLoss(lightning, skills, skillTiers, { alreadyHeld: anchorNoReset, card: pCardR }); // §7.22: Kurzschluss Episch merkt den Stapel-Score der verlorenen Karte vor (pCardR: Resonanz-Stapel)
       lightning = r.lightning; serienschutzHeld = r.streakHeld;
     }
     // Eis-Neudesign (docs §4 Frostgriff — Eispanzer): eine Niederlage NEBEN einem Gletscher ist folgenlos (Serie hält)
@@ -1040,7 +1039,7 @@ export function resolveTrick(state, rng) {
     ? [
         heatFull && "fire",
         (pCard.green && pCard.value >= C.PLANT_VALUE_CAP) && "plant",
-        ((pCard.ionStacks || 0) >= C.ION_MAX_STACKS) && "lightning",
+        ((pCardR.ionStacks || 0) >= C.ION_MAX_STACKS) && "lightning",
         (glacierActive && !!glacierLocked[actualPos]) && "ice",
       ].filter(Boolean)
     : [];
@@ -1055,7 +1054,7 @@ export function resolveTrick(state, rng) {
     // Große Lawine: brach dieser Gletscher als Teil des Finishers? → HUD zeigt „Lawine" statt der Score-Stufe („Gottgleich").
     grosseLawine: !!(glacierPreNow && glacierPreNow.grosseLawine && glacierPreNow.breaks.some((b) => b.pos === actualPos)),
     winStreak, // aktuelle Siegesserie NACH diesem Stich (0 bei Niederlage) — Battlefield feiert Meilensteine (Serie 200 → „Gönn dir")
-    durchschlag, barFilled, barStacks, // exp Blitz: gewonnene Niederlage (Durchschlag) · volle Leiste in diesem Stich + ionisierte Stapel (Anzeige)
+    barFilled, barStacks, // exp Blitz: volle Leiste in diesem Stich + ionisierte Stapel (Anzeige)
     isRepeatedSegmentTrick: isRepeat, originalPosition: actualPos, segmentIndex: timeSeg, // Zeitsegment (§8 A-L1 / §13)
     breakdown, // Ergebnis-Aufschlüsselung (§17): { base, flats, streakMult, perkMult, formMult, critMult, total } bei Sieg, sonst null
     // #eis PER-KARTE: Frost-Anzeige gehört NUR auf die tatsächlich gefrorene Gletscher-Karte dieses Stichs (NICHT als

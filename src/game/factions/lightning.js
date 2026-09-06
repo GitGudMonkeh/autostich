@@ -25,7 +25,7 @@ export const L = Object.freeze({
   RESTSTROM: "SK_LIGHTNING_05", GEWITTERFRONT: "SK_LIGHTNING_06", LADUNGSSERIE: "SK_LIGHTNING_07", KURZSCHLUSS: "SK_LIGHTNING_09",
   ENTLADUNG: "SK_LIGHTNING_10", BLITZFAENGER: "SK_LIGHTNING_11", VORENTLADUNG: "SK_LIGHTNING_12", SPANNUNGSSTAU: "SK_LIGHTNING_13",
   BLITZSCHLAG: "SK_LIGHTNING_15", SERIENSCHUTZ: "SK_LIGHTNING_17", // SK_LIGHTNING_14 Überschlag: gestrichen (§7.19)
-  DONNERGOTT: "SK_LIGHTNING_L01", DOPPELENTLADUNG: "SK_LIGHTNING_L02", HOCHSPANNUNG: "SK_LIGHTNING_L03", DURCHSCHLAG: "SK_LIGHTNING_L04",
+  DONNERGOTT: "SK_LIGHTNING_L01", DOPPELENTLADUNG: "SK_LIGHTNING_L02", HOCHSPANNUNG: "SK_LIGHTNING_L03", RESONANZ: "SK_LIGHTNING_L04", // L04: Resonanz ersetzt Durchschlag (§7.25)
 });
 
 /* Frischer Blitz-Substate — inaktiv; der erste Blitz-Skill aktiviert ihn (Reducer). Zähler sind Lauf-kumulativ:
@@ -42,7 +42,23 @@ const held = (skills, id) => (skills || []).includes(id);
 export const hasDonnergott      = (skills) => held(skills, L.DONNERGOTT);
 export const hasDoppelentladung = (skills) => held(skills, L.DOPPELENTLADUNG);
 export const hasHochspannung    = (skills) => held(skills, L.HOCHSPANNUNG);
-export const hasDurchschlag     = (skills) => held(skills, L.DURCHSCHLAG);
+export const hasResonanz        = (skills) => held(skills, L.RESONANZ);
+
+/* Resonanz (L, §7.25): die Karten einer Formation teilen ihre Stapel — die gespielte Karte kämpft mit ihren eigenen
+   Stapeln plus RESONANZ_SHARE × den Stapeln aller anderen Mitglieder ihrer Formationen (Vereinigung über alle Läufe an
+   der Position; Meta-Faktoren wie Anker oder Nachhall haben keine Mitglieder). `cardAt(slot)` liefert die Karte auf
+   einer Position der Reihenfolge, `posForm` den Formations-Eintrag der gespielten Position. Ohne Formation die eigenen. */
+export function resonantStacks(card, posForm, slot, cardAt) {
+  const own = card?.ionStacks || 0;
+  const seen = new Set([slot]);
+  let partner = 0;
+  for (const f of posForm?.formations || []) for (const p of f.members || []) {
+    if (seen.has(p)) continue;
+    seen.add(p);
+    partner += cardAt(p)?.ionStacks || 0;
+  }
+  return own + Math.floor(partner * C.RESONANZ_SHARE + 1e-9);
+}
 
 // Leistenlänge des Builds: Donnergott (L) macht die Leiste bei 7 voll, Reststrom Episch (§7.22) bei `bar` (9).
 export function maxChargeFor(skills, skillTiers = {}) {

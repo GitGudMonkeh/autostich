@@ -120,8 +120,8 @@ export const SKILL_DEFS = {
     desc: `Jede Ionisierung gibt ${C.DOPPELENTLADUNG_STACKS} Stapel statt 1. Crit mit einer ionisierten Karte: der Blitz schlägt zweimal ein, der Stich zählt doppelt.` },
   SK_LIGHTNING_L03: { id: "SK_LIGHTNING_L03", name: "Hochspannung", archetype: "lightning", legendary: true, keywords: ["crit"],
     desc: `Alle gehaltenen Blitz-Skills wirken eine Stufe höher: Normal wie Selten, Selten wie Sehr selten, Sehr selten wie Episch. Episch bleibt Episch.` },
-  SK_LIGHTNING_L04: { id: "SK_LIGHTNING_L04", name: "Durchschlag", archetype: "lightning", legendary: true, keywords: ["crit"],
-    desc: `Auch Niederlagen können critten: ein Crit bei einer Niederlage gewinnt den Stich.` },
+  SK_LIGHTNING_L04: { id: "SK_LIGHTNING_L04", name: "Resonanz", archetype: "lightning", legendary: true, keywords: ["ionize", "formation"], // §7.25: ersetzt Durchschlag (Emblem bleibt)
+    desc: `Ionisierte Karten in einer Formation teilen ihre Stapel: jede Karte der Formation kämpft mit der Summe der Stapel ihrer Formation.` },
 
   // ---- Feuer (exp skill rework, §4): Passiv = Siege mit Abstand geben Hitze, Niederlagen kühlen, je 10 % Hitze +2 % Score.
   //      Die Mechanik liest die Stufentabellen oben (factions/fire.js). Texte: ein Satz je Stufe (`tiered`).

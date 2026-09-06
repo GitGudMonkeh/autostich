@@ -192,7 +192,8 @@ function markWechsel(val, valSets, n, minLen, canExtendSeg, assign, minDiff = WE
   }
 }
 
-/* Berechnet für jede Position { mult, formations: [{ type, ordinal, factor }] }.
+/* Berechnet für jede Position { mult, formations: [{ type, ordinal, factor, members? }] } — `members` = die Positionen des
+   Laufs (nur echte Formationen: Wiederholung, Farbblock, Treppe, Wechsel; Anker, Grenzbonus, Nachhall, Kern haben keine).
    `order` = Ziehreihenfolge, `deck` = Karten, `roles` = Kartenrollen (Familien C_JOKER/C_BRIDGE unter familyId,
    plus L-Rollen; #179 zusätzlich E_COLOR_ALLIANCE = gewählte Farben, E_CORE = [gewählter Formationstyp]),
    `familyTiers` = Familienrang je Familie (#167, u. a. E-Formationswerkzeuge). `perks` wird nicht mehr gelesen
@@ -278,7 +279,10 @@ export function computeFormations(order, deck, roles = {}, _perks = [], skills =
     if (factor > 1) out[pos].mult *= factor;
     out[pos].formations.push({ type, ordinal, factor });
   };
-  const onRunJoker = () => (mem) => { if (noteCross) noteCross(mem); };
+  // Mitglieder je Lauf auf jedem Eintrag ablegen (Resonanz, Blitz-Legendär §7.25: die Karten einer Formation teilen ihre
+  // Stapel). Ein Eintrag je Typ und Lauf — bei zwei Treppen (E_RPM) bekommt der zweite Eintrag den zweiten Lauf.
+  const noteMembers = (type, mem) => { for (const p of mem) { const fe = out[p].formations.find((f) => f.type === type && !f.members); if (fe) fe.members = mem; } };
+  const onRunJoker = (type) => (mem) => { if (noteCross) noteCross(mem); noteMembers(type, mem); };
   // F6 Nachhall: bester (höchster) Endfaktor je Endposition eines Basislaufs (Wiederholung/Farbblock/Treppe/Wechsel).
   // Der Empfänger ist die direkt folgende Karte; Anker zählen NICHT als Ursprung.
   const endBest = {}; // pos(letztes Mitglied) → { factor, type }
@@ -312,7 +316,7 @@ export function computeFormations(order, deck, roles = {}, _perks = [], skills =
   markRuns(n, farbMin, matchSuit, suitGap, canExtendSeg,
     (pos, ord) => add(pos, "farbblock", ord, farbFactor(pos, ord)), farbSkip,
     (last, ord) => recordEnd(last, "farbblock", farbFactor(last, ord)), isJF,
-    (mem) => { if (noteCross) noteCross(mem); for (const p of mem) { const fe = out[p].formations.find((f) => f.type === "farbblock"); if (fe) fe.len = mem.length; } });
+    (mem) => { if (noteCross) noteCross(mem); noteMembers("farbblock", mem); for (const p of mem) { const fe = out[p].formations.find((f) => f.type === "farbblock"); if (fe) fe.len = mem.length; } });
 
   const treppeAssign = (pos, ord) => add(pos, "treppe", ord, escalatingFactor(ord, TREPPE_BASE));
   const treppeEnd = (last, ord) => recordEnd(last, "treppe", escalatingFactor(ord, TREPPE_BASE));

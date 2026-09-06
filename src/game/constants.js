@@ -332,6 +332,7 @@ export const ION_SCORE_PER_STACK      = envNum("SIM_ION_SCORE_PER_STACK", 75);  
 export const ION_VALUE_PER_BAR        = envNum("SIM_ION_VALUE_PER_BAR", 1);         // Blitz-Passiv (§7.24, Owner): jede volle Leiste gibt der ionisierten Karte dauerhaft +so viel Wert — bis §7.23 war das Überspannung (1–4 je Stufe) und trug Blitz mono; Duell-Sweep 0/1/2: Blitz mono 7,3 / 13,0 / 13,6M, Floor 1,93 / 1,09 / 1,04×
 export const ION_MAX_STACKS           = 5;  // NUR ANZEIGE (Karten-Pips, „voll ionisiert"-Effekte): Stapel sind seit dem Rework ohne Deckel
 export const OVERCRIT_MULT_PER_PP     = envNum("SIM_OVERCRIT_MULT_PER_PP", 0.002);    // Systemregel (alle Fraktionen): Crit-Chance über 100 % → +Crit-Mult je Prozentpunkt (sehr klein; Größe in der Sim)
+export const RESONANZ_SHARE           = envNum("SIM_RESONANZ_SHARE", 1);              // Resonanz (L, §7.25, ersetzt Durchschlag): Anteil der Stapel der ANDEREN Karten ihrer Formation, mit dem die gespielte Karte kämpft (1 = die ganze Summe; Sim-Regler)
 export const DOPPELENTLADUNG_STACKS   = envNum("SIM_DOPPELENTLADUNG_STACKS", 2);      // Doppelentladung (L): Stapel je Ionisierung (statt 1)
 export const DOPPELENTLADUNG_STRIKE   = envNum("SIM_DOPPELENTLADUNG_STRIKE", 2);      // Doppelentladung (L): Crit mit ionisierter Karte → der Stich zählt so oft (Sim-Regler, ggf. 1,5)
 

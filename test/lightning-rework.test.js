@@ -5,6 +5,7 @@ import { initLightning, L, maxChargeFor, effectiveTier, lightParam, lightningCri
   blitzfaengerValue, ionenfeldValue, fieldTick, ionScoreFor, ionCritMultFor, chargeGainOnWin, critFillsBar, blitzschlagStacks, stauAfterWin,
   lightningOnLoss, fillBar, lightningCycleEnd } from "../src/game/factions/lightning.js";
 import { resolveTrick } from "../src/game/engine.js";
+import { computeFormations } from "../src/game/formations.js";
 import { initialState } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
 
@@ -431,17 +432,36 @@ describe("Blitz — Engine-Integration (resolveTrick)", () => {
     expect(plain.lastTrick.pValue).toBe(10 + T.faenger[0].value);
     expect(plain.lastTrick.result).not.toBe("win");
   });
-  it("Durchschlag: ein Crit auf einer Niederlage gewinnt den Stich als voller Crit-Sieg", () => {
-    const s = resolveTrick(scen(0, 12, { skills: [L.DURCHSCHLAG], lightning: light(), winStreak: 3 }), zero);
-    expect(s.lastTrick.result).toBe("win");
-    expect(s.lastTrick.durchschlag).toBe(true);
-    expect(s.lastTrick.isCrit).toBe(true);
-    expect(s.wins).toBe(1); expect(s.losses).toBe(0); expect(s.winStreak).toBe(4);
-    expect(s.lightning.charge).toBe(1); // Passiv-Ladung wie bei jedem Crit
-    expect(s.lastTrick.scoreGain).toBeGreaterThan(0);
-    const miss = resolveTrick(scen(0, 12, { skills: [L.DURCHSCHLAG], lightning: light(), winStreak: 3 }), noCrit);
-    expect(miss.lastTrick.result).toBe("loss");
-    expect(miss.winStreak).toBe(0);
+  it("Resonanz (§7.25, ersetzt Durchschlag): die Karten einer Formation teilen ihre Stapel — die Siegkarte kämpft mit der Summe (Stapel-Score, Crit-Multiplikator je Stapel, Blitzfänger); ohne Formation nur die eigenen", () => {
+    expect(SKILL_DEFS.SK_LIGHTNING_L04.name).toBe("Resonanz");
+    // constDeck: gleiche Werte → Wiederholungs-Läufe je Segment (Positionen 0–4, 5–9, …); computeFormations liefert die Mitglieder.
+    const forms = computeFormations(identity(), constDeck(12));
+    expect(forms[1].formations.find((f) => f.type === "wiederholung").members).toEqual([0, 1, 2, 3, 4]);
+    expect(forms[7].formations.find((f) => f.type === "wiederholung").members).toEqual([5, 6, 7, 8, 9]);
+    // Stapel auf den Nachbarn im Segment (0: 2, 2: 3, 4: 1) und auf einer Karte außerhalb (7: 5); gespielt wird Position 1 (eigene 1).
+    const deck = constDeck(12).map((c, i) => ({ ...c, ionStacks: { 0: 2, 1: 1, 2: 3, 4: 1, 7: 5 }[i] || 0 }));
+    const pooled = 1 + 2 + 3 + 1;
+    const at1 = (over) => scen(12, 0, { pos: 1, deck, formations: forms, lightning: light(), ...over }); // pos 1: die Engine liest state.formations
+    const r = resolveTrick(at1({ skills: [L.RESONANZ] }), noCrit);
+    expect(r.lastTrick.result).toBe("win");
+    expect(r.lightYield).toBe(pooled * C.ION_SCORE_PER_STACK);
+    expect(r.deck[1].ionStacks).toBe(1); // die echte Karte behält ihre Stapel
+    expect(resolveTrick(at1({ skills: [L.KETTENBLITZ] }), noCrit).lightYield).toBe(1 * C.ION_SCORE_PER_STACK); // ohne Resonanz nur die eigenen
+    const crit = resolveTrick(at1({ skills: [L.RESONANZ] }), zero);
+    expect(crit.lastTrick.isCrit).toBe(true);
+    expect(crit.lastTrick.critMultiplier).toBeCloseTo(C.CRIT_BASE_MULT + pooled * C.ION_CRIT_MULT_PER_STACK, 9);
+    const bf = resolveTrick(at1({ skills: [L.RESONANZ, L.BLITZFAENGER], skillTiers: { [L.BLITZFAENGER]: 3 } }), noCrit); // Episch: +1 je Stapel — mit der Summe
+    expect(bf.lastTrick.pValue).toBe(12 + T.faenger[3].value + T.faenger[3].perStack * pooled);
+    // Ohne Formation nur die eigenen Stapel: Werte 5/7 im Wechsel bilden keinen Lauf (Wechsel braucht Abstand 4).
+    const loose = constDeck(12).map((c, i) => ({ ...c, value: i % 2 ? 7 : 5, baseRank: i % 2 ? 7 : 5, ionStacks: i === 1 ? 1 : 2 }));
+    const looseForms = computeFormations(identity(), loose);
+    expect(looseForms[1].formations).toEqual([]);
+    const l = resolveTrick(scen(7, 0, { pos: 1, deck: loose, formations: looseForms, skills: [L.RESONANZ], lightning: light() }), noCrit);
+    expect(l.lastTrick.result).toBe("win");
+    expect(l.lightYield).toBe(1 * C.ION_SCORE_PER_STACK);
+    // Durchschlag gibt es nicht mehr: eine Niederlage bleibt eine Niederlage, auch mit Crit-Wurf 0.
+    const loss = resolveTrick(scen(0, 12, { skills: [L.RESONANZ], lightning: light(), winStreak: 3 }), zero);
+    expect(loss.lastTrick.result).toBe("loss"); expect(loss.winStreak).toBe(0); expect(loss.lastTrick.durchschlag).toBeUndefined();
   });
   it("kein Direkt-Score aus Blitz: lightDirect bleibt 0", () => {
     const s = resolveTrick(scen(12, 0, { deck: withStacks(12, 0, 9), skills: [L.KURZSCHLUSS, L.DOPPELENTLADUNG], lightning: light() }), zero);
