@@ -2536,7 +2536,9 @@ der Dauerwert (−13 %) den Median, Kettenblitz nichts, der Deckel −5 %.
 Die Basis ist jetzt ein Blitz-Build (7.18: der gierige Spieler baut Blitz-lastig); ein Feuer-Legendäres, das nur die
 Hitze liest, hat dort nichts zu lesen und kostet den Pick — Sonnenzorn und Phönixfeuer messen in dieser Reihe die
 Fraktionswahl, nicht den Skill. Damaststahl (+26 %) zahlt fraktionsfrei. Der faire Blick auf die zwei gehobenen
-Legendären ist der reine Feuer-Build (Lifts, unten).
+Legendären ist der reine Feuer-Build (Lifts, unten). Dieselbe Reihe mit Deckel 8× (Basis 88,0M): Doppelentladung
++74 %, Sonnenkern +59 %, Durchschlag +18 %, Hochspannung +4 %, Damaststahl −4 %, Donnergott −12 %, Phönixfeuer −16 %,
+Sonnenzorn −21 % — die Reihenfolge bleibt, die Legendären hängen nicht am Deckel.
 
 **Lifts im reinen Feuer-Build** (Fraktions-Policy, 400 Läufe, Median mit ÷ ohne; 7.17b → jetzt): Feuer mono 13,6M →
 14,1M. Sonnenzorn 0,83 → **0,94** (Mean 0,91 → 1,04), Phönixfeuer 0,84 → **0,87** (Mean 0,73 → 0,77). Beide sind
@@ -2557,10 +2559,14 @@ Glutbett (−45 %), Glut (−13 %), Spannungsstau (−9 %), Kurzschluss (−10 %
 die tiefe Karte doppelt, der Pick kostet aber die Alternative), Gewitterfront, Entladung, Rückzündung. Sonnenzorn (in
 3 %, −9 %) und Phönixfeuer (in 1 %) bleiben selten: der gierige Spieler nimmt kein Feuer-Legendäres ohne Feuer-Kern.
 
-Die Verdopplung des gierigen Medians kommt nicht aus den Füllern, sondern aus dem Deckel und der Tiefe: die Stapel der
-tiefsten Karte sind Basis und Crit-Multiplikator zugleich (0,15× je Stapel, Kurzschluss doppelt), und der Deckel bindet
-sie erst bei 12× — im Duell hebt der Deckel allein den Blitz-Schwanz um ein Viertel (p90 0,68× → 0,49× bei Ionenfeld
-2 / 3 / 4 / 5). Der Anteil des Deckels am gierigen Median steht unten (Legendären-Reihe mit Deckel 8×).
+Die Verdopplung des gierigen Medians kommt nicht aus den Füllern und nur zum Teil aus dem Deckel: dieselbe Reihe
+(`--mode legendaries`, Basis gierig, 600 Explore / 150 Läufe) mit Deckel 8× statt 12× gibt 88,0M statt 106,1M — der
+Deckel trägt rund ein Fünftel des Medians und ein Drittel des p90 (257M gegen 353M). Der Rest hängt an keinem
+einzelnen Skill (die Träger der Ablation sind dieselben wie in 7.18, dazu Damaststahl), sondern am Build: der gierige
+Spieler hält jetzt Feuerwalze, Klinge, Brandmal und Feuersturm zu 68–89 % (7.18: 57–69 %) neben Ladungsserie 95 % und
+Vorentladung — Feuers Multiplikator auf Blitz' Crit, die Serie als gemeinsamer Motor. Das ist gemessen, nicht
+zugeordnet; die Tiefe (Stapel der tiefsten Karte als Basis und Crit-Multiplikator zugleich, 0,15× je Stapel,
+Kurzschluss doppelt) ist der Verdacht — im Duell hebt sie zusammen mit dem Deckel den Blitz-Schwanz (oben).
 
 **Was offen bleibt (Owner): die Parität.** Nichts davon umgesetzt; Vorschlag in zwei Schritten, beide gemessen (Tabelle
 oben):
@@ -2571,7 +2577,8 @@ oben):
    — Floor 1,09×, Mean 0,81×, p90 0,70×, das ist der Stand von 7.18 (0,89× / 0,79×) bis auf ein Zehntel. Das nimmt die
    eigene Empfehlung aus 7.18 zurück: der Deckel 12× sollte den Rampen Luft geben, die Rampen zahlen aber weiter nicht
    (Entladung, Gewitterfront „schadet"), und die Luft ging an die Stapel der tiefsten Karte — im Duell ein Viertel des
-   Blitz-Schwanzes, im gierigen Build der Sprung auf das Doppelte. Ohne den Deckel anzufassen („lieber Werte niedriger"):
+   Blitz-Schwanzes, im gierigen Build ein Fünftel des Medians und ein Drittel des p90. Ohne den Deckel anzufassen („lieber
+   Werte niedriger"):
    Kettenblitz +1 / 1 / 2 / 3 und 0,1× je Stapel statt 0,15× — 1,10× / 0,68× / 0,57×, der Schwanz bleibt dann bei
    Blitz. Überspannung bleibt in beiden Fällen, wie sie ist: sie ist die Schmiede des Blitzes und trägt den reinen Build,
    im gierigen Build ein Füller wie Ionenfeld.
@@ -2627,4 +2634,4 @@ Offen.
 | 2026-09-06 | Owner: Punkte 1–3 aus 7.15 (7.16, umgesetzt): Schmelzpunkt als Überlauf-Wandler (15/20/25/30 je Punkt, Episch zahlt die Kühlung bei voller Leiste nach), Flächenbrand gestrichen (Feuer 14 = Untergrenze, Emblem-Master bleibt), Glut 50/60/70/90 mit halber Kühlung (E), Zunder 2–5. Schmiede bleibt. Gemessen: Feuersturm × Schmelzpunkt ist ein Runaway (Feuer mono 30M, 4,2× Blitz; ohne Feuersturm 1,7×). Feuersturm wartet wegen der Untergrenze auf seinen Ersatz — Vorschlag: Umbau in seinem Platz (Serie zu Score bei voller Leiste). Parität erst nach Feuersturm und der Blitz-Runde. Sim-Band neu zentriert. |
 | 2026-09-06 | Owner: ja zum Feuersturm-Umbau (7.17, umgesetzt): bei voller Leiste zählt jeder Serienpunkt +Satz Score, Episch ab 80 %, keine Hitze mehr. Satz nach Sweep 0,1/0,15/0,2/0,3 % statt 0,5–1,5 % (der Vorschlag war ×3 Blitz): Feuer mono 13,3M, Floor 1,86×, Mean 1,12×, p90 0,96×; Feuersturm-Lift 1,10 (Episch 2,06 — Tor-Frage offen). Blitz-Plan als Vorschlag: Rate zusammenlegen, zwei freie Emblem-Plätze (Ionenfeld, Vorentladung) neu belegen, fünf Skills in ihrem Platz umbauen, Rampen gegen den Crit-Deckel messen. |
 | 2026-09-06 | Owner: ja zu Feuersturm-Tor 90 % und zum Blitz-Plan (7.18, umgesetzt): Blitzableiter nimmt Statische Aufladung und Dauerstrom auf (beide gestrichen); Ionenfeld (02, Feld nach jeder Leiste) und Vorentladung (12, Serie zu Crit-Multiplikator) neu auf den alten Emblem-Plätzen; Kettenblitz vertieft, Blitzfänger und Überspannung ohne Schwelle, Blitzschlag schneller, Spannungsstau auf den Crit-Multiplikator. Blitz mono 7,2M → 11,0M, Floor 1,86× → 1,22× (Mean 0,89×, p90 0,79×); der 8×-Deckel bindet bei einem Zehntel der Crits. Stapel-Score bleibt 75 (Sweep 60/75/90: Median gegen Schwanz). Gierig 71,6M, Blitz-lastig; die umgebauten Skills sind Füller (gehalten, neutral), Träger unverändert. Offene Liste in 7.18. |
-| 2026-09-06 | Owner: „passt, alles" zu den 7.18-Empfehlungen (7.19, umgesetzt): Ionenfeld 3/3/4/5, Kettenblitz jede Leiste +1/2/3/4, Überspannung als Dauerwert je Leiste (+1/1/2/3, keine Ladung), Überschlag gestrichen (Blitz 14), Crit-Deckel 8 → 12; Sonnenzorn liest die Spitze bis 200, Phönixfeuer +3 je Punkt und hält bei voller Leiste die erste Niederlage je Runde. Gemessen: die Parität kippt — Blitz mono 11,0M → 17,9M, Floor 0,76× (Mean 0,49×, p90 0,43×); der Dauerwert trägt den Median-Sprung, Ionenfeld den zweiten Teil, Deckel und Kettenblitz-Tiefe den Schwanz. Gierig 155,9M (verdoppelt, aus Deckel und Tiefe, die Füller bleiben Füller); Legendäre zur Laufmitte messen die Fraktionswahl; Lifts im Feuer-Build Sonnenzorn 0,83 → 0,94, Phönixfeuer 0,84 → 0,87. Sim-Band neu zentriert. Vorschlag: Ionenfeld 2/3/4/5, Deckel zurück auf 8, Kettenblitz +1/1/2/3 (Floor 1,09×, Mean 0,81×, p90 0,70×). Nichts davon umgesetzt. |
+| 2026-09-06 | Owner: „passt, alles" zu den 7.18-Empfehlungen (7.19, umgesetzt): Ionenfeld 3/3/4/5, Kettenblitz jede Leiste +1/2/3/4, Überspannung als Dauerwert je Leiste (+1/1/2/3, keine Ladung), Überschlag gestrichen (Blitz 14), Crit-Deckel 8 → 12; Sonnenzorn liest die Spitze bis 200, Phönixfeuer +3 je Punkt und hält bei voller Leiste die erste Niederlage je Runde. Gemessen: die Parität kippt — Blitz mono 11,0M → 17,9M, Floor 0,76× (Mean 0,49×, p90 0,43×); der Dauerwert trägt den Median-Sprung, Ionenfeld den zweiten Teil, Deckel und Kettenblitz-Tiefe den Schwanz. Gierig 155,9M (verdoppelt; der Deckel trägt davon ein Fünftel, der Rest hängt am gemischten Build, nicht an einem Skill; die Füller bleiben Füller); Legendäre zur Laufmitte messen die Fraktionswahl; Lifts im Feuer-Build Sonnenzorn 0,83 → 0,94, Phönixfeuer 0,84 → 0,87. Sim-Band neu zentriert. Vorschlag: Ionenfeld 2/3/4/5, Deckel zurück auf 8, Kettenblitz +1/1/2/3 (Floor 1,09×, Mean 0,81×, p90 0,70×). Nichts davon umgesetzt. |
