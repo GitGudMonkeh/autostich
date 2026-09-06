@@ -2194,6 +2194,73 @@ kippt jetzt zu Blitz. **Entscheid (Regler, Agent): Stapel-Score 60 → 75** — 
 kleinste Summe der Abweichungen über die drei Maße (90 trifft nur den Floor, der Schwanz gehört dann Blitz). Feuer mono
 gegen Blitz mono ist damit im Band von 7.10/7.12.
 
+**Motor Feuer bei 50 Runden** (100 Läufe): Fraktion (zufällig) 8,0M, Kern ohne Verstärker 13,2M, Glut + Kern 15,6M
+(+17 %), Zunder + Kern 14,3M (+8 %), alle vier + Kern 13,1M (−1 %). Mit der Schmiede ohne Preis liegt die Hitze im
+Zufallsbuild bei 78 % (7.13: 71 %), der Multiplikator trägt 37 % des Scores. Die Verstärker zahlen weniger als bei 40
+Runden (Glut +49 % → +17 %): der Kaltstart wiegt bei längerem Lauf weniger.
+
+### 7.15 Legendäre zur Laufmitte, gierige Auswertung, was offen ist (2026-09-06)
+
+**Legendäre im Vergleich** (`--mode legendaries`, neu): der gierige Spieler (Wertetabelle aus 600 Explore-Läufen) spielt
+150 Seeds einmal ohne Eingriff und einmal so, dass ihm in der 7. von 13 Skill-Phasen (Runde 25) das Legendäre hinter
+Tür 1 liegt und er es nimmt — anstelle des normalen Picks, den er dort sonst getan hätte. Gepaart je Seed. Das misst
+also „Legendäres statt eines guten normalen Skills zur Laufmitte", nicht „Legendäres geschenkt". Basis: Median 54,5M.
+
+| Legendär | Median-Δ | typ. | besser in | Lesart |
+| --- | --- | --- | --- | --- |
+| Doppelentladung (Bl) | +49,6M | **+106 %** | 78 % | zwei Stapel je Ionisierung und der doppelte Stich: der Stapel-Build verdoppelt sich |
+| Sonnenkern (Fe) | +47,0M | **+133 %** | 78 % | stapelnde Brände, in jeder Auswertung der stärkste Feuer-Skill |
+| Durchschlag (Bl) | +9,4M | +25 % | 58 % | Niederlagen critten — mit 4 % Crit je Skill seltener als früher (7.12: tot im gierigen Lauf) |
+| Hochspannung (Bl) | +5,8M | +17 % | 54 % | eine Stufe höher für alle Blitz-Skills; zur Mitte hält der Build höchstens sechs Skills, nur ein Teil davon Blitz |
+| Damaststahl (Fe) | +2,8M | +3 % | 51 % | freie Schmiedung + doppelter Schmiedewert; neben der Schmiede ohne Preis (7.14) fast dasselbe |
+| Donnergott (Bl) | +0,7M | +6 % | 52 % | Leiste bei 7, +0,4× Crit-Mult — so viel wie ein normaler Pick |
+| Phönixfeuer (Fe) | −3,7M | −17 % | 43 % | Niederlagen heizen, Neuzündung: im Halte-Build zur Mitte ist die Leiste schon voll |
+| Sonnenzorn (Fe) | −6,3M | −17 % | 44 % | Spitzen-Hitze ×0,04 je 10 %: auf voller Leiste nur +0,2 auf einen Multiplikator von 1,5–2,2 |
+
+Drei Klassen: zwei Träger (Doppelentladung, Sonnenkern — verdoppeln den Lauf), zwei gute Picks (Durchschlag,
+Hochspannung), vier, die zur Laufmitte einen normalen Pick nicht schlagen (Damaststahl, Donnergott, Phönixfeuer,
+Sonnenzorn). Mit 3,5 % je Platz sieht ein Lauf im Schnitt 1,4 Legendäre; wer Doppelentladung oder Sonnenkern zieht,
+spielt einen anderen Lauf als wer Sonnenzorn zieht — das ist die Spreizung, die der Owner sehen wollte. Vorschlag
+(Owner-Entscheid): die vier Schwachen anheben, nicht die zwei Starken kappen — Sonnenzorn liest die Spitze auch über
+100 (mit Weißglut bis 200: ×0,04 je 10 %), Phönixfeuer zündet auf 80 statt 50 neu, Donnergott Leiste 6 statt 7,
+Damaststahl schmiedet die zwei niedrigsten. Nichts davon umgesetzt.
+
+**Gierige Auswertung mit dem Endstand 7.14** (`--mode skills`, 1000 Explore, 150 Läufe; ab jetzt nur noch gierig):
+Median 48,6M (40 Runden, 7.13: 13,5M — der Score wächst mit den Runden überlinear), Siegquote 74 %, Ø 11,7 Skills.
+
+- Stark: Sonnenkern (+115 %, in 31 %), Ladungsserie (+87 %, in 90 %), Doppelentladung (+50 %, in 31 %), Klinge (+51 %,
+  in 70 %), **Reststrom (+33 %** — zum ersten Mal nicht tot: bei 13 Skill-Phasen und mehr Leisten je Lauf zählt der
+  Ladungs-Boden), Weißglut (+20 %, in 68 %), Feuerwalze (+21 %), Glutstahl (+21 %, selten), Verbrennung (+10 %).
+- **Schmiede ohne Preis: der gierige Spieler nimmt sie jetzt (49 % statt 1 %), sie ist aber neutral** (−2 %, win 43 %):
+  +3 Wert je Runde auf die niedrigste Karte reicht im Halte-Build nicht für einen Ausschlag, schadet aber auch nicht
+  mehr. Damaststahl (in 32 %) ebenso neutral — beide schmieden dasselbe.
+- Bleiben die Falle: Flächenbrand (1 %, −67 %), Schmelzpunkt (11 %, −27 %). Schadet: Zunder (−22 %, in 6 %),
+  Feuersturm (win 40 %), Phönixfeuer (−3 %, win 30 %), Serienschutz (−4 %).
+- Tot (in ≥ 40 % gehalten, ohne Wirkung): Blitzableiter (81 %), Kettenblitz (67 %), Entladung (63 %), Statische
+  Aufladung (59 %), Blitzfänger (47 %), Blitzschlag (44 %), Schmiede (49 %) — der Blitz-Build hängt an Ladungsserie,
+  Doppelentladung und Reststrom, die übrigen Blitz-Skills füllt der Spieler, weil die Tür sie zeigt.
+- Sonnenzorn und Donnergott nimmt der gierige Spieler nie (0 %), Phönixfeuer selten (7 %) — dasselbe Bild wie der
+  Legendären-Vergleich oben.
+
+**Was offen ist (Stand 7.15, alles Owner-Entscheid; Vorschläge des Agenten dahinter):**
+
+1. **Flächenbrand und Schmelzpunkt** (7.13): verbrannte Hitze kostet Klinge, Siegquote und Serie, keine Auszahlung
+   heilt das. Vorschlag: Überlauf-Wandler (bei voller Leiste wird der Überschuss eines Siegs zu Basis-Score, Flächenbrand
+   macht den nächsten Sieg ×1,5, nichts wird verbrannt) — oder beide streichen und die Plätze neu belegen.
+2. **Glut** (7.12): nur die Episch-Schwelle (80 %) trägt sichtbar. Vorschlag: Schwellen 50 / 60 / 70 / 90 statt 40 / 50 /
+   60 / 80; Episch-Extra „unter der Schwelle kühlen Niederlagen nur halb".
+3. **Feuersturm** schadet im gierigen Lauf (7.12/7.13: −10 %, in 33–48 % gehalten). Vorschlag: Hitze je Serienpunkt
+   halbieren und dafür ab Serie 5 verdoppeln, damit er nicht die frühen, kleinen Serien belohnt, die die Leiste vor der
+   Klinge füllen — oder als Verstärker streichen, es gibt vier.
+4. **Tote Blitz-Skills** (7.9–7.13): Kettenblitz, Blitzfänger, Überspannung, Reststrom, Dauerstrom, Entladung — die
+   Stapel liegen breit statt tief, Schwellen-Skills auf der Siegkarte greifen selten. Vorschlag: Kettenblitz ionisiert
+   die ZULETZT ionisierte Karte noch einmal (Tiefe statt Breite), Blitzfänger-Schwelle 2 / 2 / 1 / 1, Überspannung ohne
+   Schwelle (+Ladung je Crit mit ionisierter Karte), Reststrom und Dauerstrom zusammenlegen.
+5. **Stufenleitern**: die Sim sieht die Stufen nicht (Lift je Stufe schwankt, „Leiter"-Flags bei jedem zweiten
+   Skill). Gesetzt: warten, bis die Skills stehen (Owner, 7.12).
+6. **Die vier schwachen Legendären** (oben): Sonnenzorn, Phönixfeuer, Donnergott, Damaststahl.
+7. Aus 1: Fokus am Start, Episch-Quote und Pity, Bosse.
+
 ## 5. Eis
 
 Offen.
@@ -2237,3 +2304,4 @@ Offen.
 | 2026-09-05 | Random-Runde (7.11, `--policy random`): Zufallsspieler 2,08M gegen gierig 14,4M; Lifts statt Ablation lesen. Feuer: die drei Verbraucher kosten 9–25 %, Verstärker neutral (zahlen nur mit Klinge/Weißglut), Sonnenkern 3,68. Blitz flach (15 von 19 zwischen 0,9 und 1,05), Durchschlag 1,47, Ladungsserie 1,16. |
 | 2026-09-06 | Owner zu den Empfehlungen: Glut als Kaltstart und Stapel auf den Crit-Multiplikator umsetzen (7.12), Stufen und übrige Tote warten, Verbraucher offen (keine neue Leiste). Umgesetzt: Glut ×2 Hitze unter 40/50/60/80 %; +0,15× Crit-Mult je Stapel der Siegkarte (Sweep: 0,1× / 0,15× / 0,2×), Crit je Skill 5 → 4 %. Glut + Kern +49 % im Motor, im gierigen Lauf neutral; Stapel-Build auf Augenhöhe mit dem Crit-Build, Kurzschluss zahlt, Phönixfeuer stark; Duell Floor 0,98×. Auswertungen gierig (13,0M) und random (2,0M) neu gefahren. |
 | 2026-09-06 | Owner: die volle Leiste ist der Auslöser der Verbraucher (7.13, umgesetzt): Flächenbrand, Schmelzpunkt und Schmiede zünden nur bei voller Leiste, Flächenbrands 80-%-Schwelle entfällt; Texte, Glossar, Hitzeleiste nachgezogen. Feuer mono +21 % (2,86M), Floor Feuer ÷ Blitz 1,18×; gierig 13,5M, random 2,15M. Die Verbraucher bleiben die Falle (0,77 / 0,83 / 0,93): gemessen, dass verbrannte Hitze über Klinge und Siegquote die Serien kostet (Flächenbrand + Kern ×0,45), dreifache Auszahlung hilft nicht. Vorschläge: Überlauf-Wandler oder streichen; Parität über Stapel-Score 120 (Sweep). Nichts davon umgesetzt. |
+| 2026-09-06 | Owner: Schmiede ohne Preis, nur Schwelle (7.14: ab 80/60/40/20 % Hitze, Episch zwei Karten, die Hitze bleibt); 50 Runden bei gleicher Phasenfolge (13 Skill-Phasen, `buildSchedule` = der Block für jede Länge); Parität: Stapel-Score 60 → 75 nach Sweep bei 50 Runden (Floor 1,07×, Mean 0,95×, p90 0,93×); Sim-Band neu zentriert. Neu `--mode legendaries` (7.15): jedes Legendäre zur Laufmitte, gepaart — Doppelentladung +106 %, Sonnenkern +133 %, Durchschlag +25 %, Hochspannung +17 %, Damaststahl/Donnergott neutral, Phönixfeuer/Sonnenzorn −17 %. Gierig (nur noch gierig): 48,6M, Schmiede jetzt genommen aber neutral, Reststrom erstmals stark, Verbraucher bleiben die Falle. Offene Liste mit Vorschlägen in 7.15. |
