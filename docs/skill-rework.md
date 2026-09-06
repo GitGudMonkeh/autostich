@@ -1999,8 +1999,10 @@ Schwelle tut er nichts, was ihn vom Plateau fernhält.
 | Stapel zuerst | 2,67M | 2,76M | 32 % → 26 % | 37 % → 43 % |
 | Crit zuerst | 3,24M | 2,91M | 47 % → 41 % | 59 % → 57 % |
 
-Der Stapel-Build holt auf (2,76M gegen 2,91M Crit-Build; vorher 2,67M gegen 3,24M). Der Stapel-Anteil wird mit beiden
-Stapel-Wirkungen ablatiert (Basis-Score und Crit-Multiplikator) — Zahlen unten, sobald der Motor-Lauf durch ist.
+Der Stapel-Build holt auf (2,76M gegen 2,91M Crit-Build; vorher 2,67M gegen 3,24M). Stapel-Anteil am Score, jetzt mit
+beiden Stapel-Wirkungen ablatiert (Basis-Score und Crit-Multiplikator auf 0, gepaart): Fraktion 16 % (vorher 13 %),
+Stapel-Build 39 % (vorher 33 %), Crit-Build 12 %. Die Ionisierung trägt mehr, im Zufalls-Build bleibt der Crit aus dem
+Passiv (47 % Crit-Anteil) aber der größere Posten. Ein Sweep der zwei Regler (0,15× / 4 % und 0,2× / 3 %) steht unten.
 
 **Duell (100 Läufe):** Feuer mono 2,36M, Blitz mono 2,34M — Floor 1,01×, Mean 0,97×, p90 0,95×. Split 2,32M, Mix 1,45M.
 Die Startwerte 0,1× je Stapel und 4 % je Skill bleiben, nichts nachtariert.
