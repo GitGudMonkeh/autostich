@@ -2815,6 +2815,27 @@ Kurzschluss 0,89 gegen 0,72, Vorentladung 0,94 gegen 0,92; Feuer (ungefiltert): 
 Kurzschluss hängen am Deckel (0,15 je Serienpunkt ist bei Serie 20 +3×, der Stapel-Build steht in einem Viertel seiner
 Crits am Deckel) — dort trägt kein Extra, bis der Deckel fällt oder die Werte sinken.
 
+**Gierig mit diesem Stand** (1000 Explore, 150 Läufe): Median 99,5M (7.21: 125,0M, 7.20: 107,3M — die Wertetabelle
+des Explore streut von Lauf zu Lauf um ±20 %, die Reihe 71,6 → 155,9 → 107,3 → 125,0 → 99,5M ist mehr Streuung als
+Trend), Siegquote 72 %, Ø 12,8 Skills. **Rückzündung** ist von „schadet −31 %" auf neutral (±0, in 15 %, Lift 0,75)
+— der Konter kostet nichts mehr, trägt aber im gemischten Build auch nichts: der erste Sieg nach einer Niederlage ist
+spät im Lauf ein seltener Stich. Verbrennung wird mit dem Extra erstmals „stark" (+40 %, in 12 %), Gewitterfront
+ebenso (+37 %, in 17 % — 7.21: „schadet"), Vorentladung +11 %, Kurzschluss +5 %, Blitzfänger +4 %, Ewige Glut +5 %
+(in 23 %); Zunder, Reststrom, Kettenblitz neutral. Schadet: Glutbett (−5 %), Überspannung, Serienschutz, Schmiede,
+Damaststahl (−5 %; 7.21: +166 % — bei 13–19 % Haltequote ist die Ablation ±30 Punkte Rauschen), Glut (−70 % in 3 %:
+vier Läufe, kein Befund).
+
+**Fazit der Runde.** Rückzündung ist keine Falle mehr, aber auch kein Träger — ein Füller mit Thema. Sechs der acht
+Extras zeigen sich in der Leiter des reinen Builds (Reststrom, Kettenblitz, Gewitterfront, Blitzfänger deutlich;
+Zunder, Verbrennung sichtbar); Vorentladung und Kurzschluss auf Episch bleiben vom Deckel gebunden. Der wichtigste
+Ertrag der Runde ist der Messfehler: Lift-Urteile über zu 90 % gehaltene Füller waren durch die Legendär-Halter in der
+„ohne"-Gruppe nach unten verzerrt; die gepaarte Ablation des gierigen Spielers ist der Schiedsrichter, und die streut
+bei selten gehaltenen Skills um ±30 Punkte — Urteile brauchen zwei Läufe.
+
+**Was offen bleibt:** Glutbett (Owner: lassen) und Schmiede als „schadet" im gierigen Build; der 8×-Deckel als Grenze
+für Vorentladung und Kurzschluss auf Episch (Owner-Regler, 7.19/7.20 gemessen); die Streuung der Auswertung selbst
+(mehr Läufe je Ablation, wenn Urteile fallen sollen).
+
 ## 5. Eis
 
 Offen.
@@ -2865,3 +2886,4 @@ Offen.
 | 2026-09-06 | Owner: „passt, alles" zu den 7.18-Empfehlungen (7.19, umgesetzt): Ionenfeld 3/3/4/5, Kettenblitz jede Leiste +1/2/3/4, Überspannung als Dauerwert je Leiste (+1/1/2/3, keine Ladung), Überschlag gestrichen (Blitz 14), Crit-Deckel 8 → 12; Sonnenzorn liest die Spitze bis 200, Phönixfeuer +3 je Punkt und hält bei voller Leiste die erste Niederlage je Runde. Gemessen: die Parität kippt — Blitz mono 11,0M → 17,9M, Floor 0,76× (Mean 0,49×, p90 0,43×); der Dauerwert trägt den Median-Sprung, Ionenfeld den zweiten Teil, Deckel und Kettenblitz-Tiefe den Schwanz. Gierig 155,9M (verdoppelt; der Deckel trägt davon ein Fünftel, der Rest hängt am gemischten Build, nicht an einem Skill; die Füller bleiben Füller); Legendäre zur Laufmitte messen die Fraktionswahl; Lifts im Feuer-Build Sonnenzorn 0,83 → 0,94, Phönixfeuer 0,84 → 0,87. Sim-Band neu zentriert. Vorschlag: Ionenfeld 2/3/4/5, Deckel zurück auf 8, Kettenblitz +1/1/2/3 (Floor 1,09×, Mean 0,81×, p90 0,70×). Nichts davon umgesetzt. |
 | 2026-09-06 | Owner: Raritäten unterscheiden sich immer (§1); „ja zu allem" (7.20, umgesetzt): Ionenfeld 2/3/4/5, Überspannung 1/2/3/4, Deckel zurück auf 8; Donnergott zahlt je Stapel +0,25× statt flach +0,4×; Phönixfeuer wandelt den Überlauf aus Niederlagen (+30 je Punkt beim nächsten Sieg); Sonnenzorn +5 % je 10 % Spitze und Siege heizen ×2 unter der Spitze; Hochspannung und Glutbett bleiben. Gemessen: Parität zurück (Floor 1,23×, Mean 0,80×, p90 0,61× — Stand 7.18), Motor Blitz 12,7M / 22,5M / 21,5M, Band im Rahmen. Legendäre zur Laufmitte: Sonnenzorn erstmals positiv (+12 %), Phönixfeuer −15 %, Donnergott −19 % (Pick-Kosten im gemischten Build; im reinen Blitz-Build 2,57). Gierig 107,3M; Donnergott (25 %) und Sonnenzorn (19 %) werden jetzt genommen und sind neutral. Phönix-Sonde: der Überlauf trägt ~400 Hitzepunkte je Lauf, der Satz ändert nichts (bleibt 30) — Owner-Frage in 7.20. |
 | 2026-09-06 | Owner: Phönixfeuer streichen, neues Legendäres bauen — Wahl „Ewige Glut" (7.21, umgesetzt, Platz SK_FIRE_L02, Emblem bleibt): jede Runde mit voller Leiste am Ende +0,05 auf den Hitze-Multiplikator dauerhaft (Vorschlag 0,03, Sweep 0,03/0,05/0,08 zur Laufmitte 1,02/1,14/1,32 gepaart), die Hitze fällt nie unter 50 % der Spitze. Gemessen: Lift im reinen Feuer-Build 1,13 (Phönixfeuer 0,86), ab Runde 1 gepaart 1,57 (Mean 2,79), zur Laufmitte 1,14; Legendäre-Reihe +6 %; Duell Floor 1,25×, Mean 0,87×, p90 0,70×; gierig 125,0M, Ewige Glut neutral; Band im Rahmen. |
+| 2026-09-06 | Owner: „die offenen abarbeiten", „alle ja" (7.22, umgesetzt): Rückzündung als Konter (nach einer Niederlage zählt der nächste Sieg ×1,15/1,25/1,35/1,5, Episch +2 Wert; keine Hitze mehr); acht Episch-Extras (Reststrom Leiste 9, Gewitterfront +0,02× Crit-Mult je Leiste, Vorentladung 0,15, Kettenblitz zweittiefste +1, Blitzfänger +1 je Stapel, Kurzschluss Stapel-Score bei Niederlage → nächster Sieg, Zunder Niederlage +2 Hitze, Verbrennung ×1,5 auch auf Hitze); Durchschlag und Kurzschluss-Pick bleiben (Rauschen). Gemessen: Rückzündung von −31 % auf neutral, Verbrennung und Gewitterfront erstmals „stark"; Duell Floor 1,16×, Mean 0,82×, p90 0,63×; gierig 99,5M (Streuung ±20 % zwischen Läufen); Band im Rahmen. Messfehler gefunden: Lifts zu 90 % gehaltener Füller waren durch Legendär-Halter in der „ohne"-Gruppe verzerrt — Filter `NOLEG=1`, Schiedsrichter ist die gepaarte Ablation. |
