@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import * as C from "../src/game/constants.js";
 import { SKILL_DEFS, FEUER_TIERS, buildSkillOffer, archetypeOf } from "../src/game/skills.js";
 import { F, initHeat, heatMaxFor, syncHeatMax, fireTier, fireParam, heatGainOnWin, heatMult, verbrennungMult, feuersturmMult,
-  fireValueBonus, damascusCombat, fireOnWin, fireOnLoss, fireCycleEnd, nextBrandActive } from "../src/game/factions/fire.js";
+  rueckzuendungMult, fireValueBonus, damascusCombat, fireOnWin, fireOnLoss, fireCycleEnd, nextBrandActive } from "../src/game/factions/fire.js";
 import { resolveTrick } from "../src/game/engine.js";
 import { initialState, reducer } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
@@ -56,7 +56,9 @@ describe("Feuer — Roster und Stufenleitern", () => {
     for (const r of T.feuersturm) expect(r.perStreak).toBeUndefined(); // keine Hitze mehr
     expect(up(T.glutbett.slice(0, 3), "floor")).toBe(true);
     expect(T.glutbett[3].noCool).toBe(true);
-    expect(up(T.rueckzuendung, "perDeficit")).toBe(true);
+    expect(up(T.rueckzuendung, "mult")).toBe(true); // §7.22: Konter — der Faktor steigt, keine Hitze mehr
+    for (const r of T.rueckzuendung) expect(r.perDeficit).toBeUndefined();
+    expect(T.rueckzuendung[3].value).toBe(2); // Episch-Extra: die Karte nach einer Niederlage +2
     expect(down(T.klinge, "perHeat")).toBe(true);
     expect(up(T.weissglut, "multPer10")).toBe(true);
     expect(down(T.feuerwalze, "minHeat")).toBe(true);
@@ -121,8 +123,11 @@ describe("Feuer — Modul (reine Übergänge)", () => {
     expect(heatGainOnWin([F.GLUT, F.ZUNDER], st({}), { margin: 1, heatValue: 0 })).toBe(T.zunder[0].heat * T.glut[0].mult);
     expect(heatGainOnWin([F.ZUNDER], st({ [F.ZUNDER]: 1 }), { margin: 1 })).toBe(T.zunder[1].heat);     // auch knapp
     expect(heatGainOnWin([F.FEUERSTURM], st({ [F.FEUERSTURM]: 1 }), { margin: 1, streak: 3 })).toBe(0);
-    expect(heatGainOnWin([F.RUECKZUENDUNG], st({ [F.RUECKZUENDUNG]: 1 }), { margin: 1, lastResult: "loss", lastLossDeficit: 4 })).toBe(4 * T.rueckzuendung[1].perDeficit);
-    expect(heatGainOnWin([F.RUECKZUENDUNG], st({ [F.RUECKZUENDUNG]: 1 }), { margin: 1, lastResult: "win", lastLossDeficit: 4 })).toBe(0);
+    expect(heatGainOnWin([F.RUECKZUENDUNG], st({ [F.RUECKZUENDUNG]: 1 }), { margin: 1, lastResult: "loss", lastLossDeficit: 4 })).toBe(0); // §7.22: Rückzündung gibt keine Hitze mehr (Konter, rueckzuendungMult)
+    // §7.22 Verbrennung Episch-Extra: ab dem Vorsprung der Stufe zählt auch die Hitze ×mult; darunter und auf Sehr selten nur der Score-Faktor.
+    expect(heatGainOnWin([F.VERBRENNUNG], st({ [F.VERBRENNUNG]: 3 }), { margin: T.verbrennung[3].minMargin })).toBe(G(T.verbrennung[3].minMargin) * T.verbrennung[3].mult);
+    expect(heatGainOnWin([F.VERBRENNUNG], st({ [F.VERBRENNUNG]: 3 }), { margin: T.verbrennung[3].minMargin - 1 })).toBe(G(T.verbrennung[3].minMargin - 1));
+    expect(heatGainOnWin([F.VERBRENNUNG], st({ [F.VERBRENNUNG]: 2 }), { margin: T.verbrennung[2].minMargin })).toBe(G(T.verbrennung[2].minMargin));
     // §7.20 Sonnenzorn: unter der Spitze zählt der ganze Gewinn ×2 (auch über Glut), an der Spitze und darüber nicht.
     expect(heatGainOnWin([F.SONNENZORN], {}, { margin: 6, heatValue: 80, heatPeak: 120 })).toBe(G(6) * C.SONNENZORN_HEAT_MULT);
     expect(heatGainOnWin([F.SONNENZORN], {}, { margin: 6, heatValue: 120, heatPeak: 120 })).toBe(G(6));
@@ -162,6 +167,14 @@ describe("Feuer — Modul (reine Übergänge)", () => {
     expect(verbrennungMult([F.VERBRENNUNG], {}, T.verbrennung[0].minMargin - 1)).toBe(1);
     expect(verbrennungMult([F.VERBRENNUNG], {}, T.verbrennung[0].minMargin)).toBe(T.verbrennung[0].mult);
     expect(verbrennungMult([F.VERBRENNUNG], { [F.VERBRENNUNG]: 3 }, T.verbrennung[3].minMargin)).toBe(T.verbrennung[3].mult);
+  });
+  it("rueckzuendungMult (§7.22, Konter): der erste Sieg nach einer Niederlage zählt ×mult der Stufe, sonst 1", () => {
+    expect(rueckzuendungMult([], {}, "loss")).toBe(1);
+    expect(rueckzuendungMult([F.RUECKZUENDUNG], {}, "loss")).toBe(T.rueckzuendung[0].mult);
+    expect(rueckzuendungMult([F.RUECKZUENDUNG], { [F.RUECKZUENDUNG]: 3 }, "loss")).toBe(T.rueckzuendung[3].mult);
+    expect(rueckzuendungMult([F.RUECKZUENDUNG], {}, "win")).toBe(1);
+    expect(rueckzuendungMult([F.RUECKZUENDUNG], {}, null)).toBe(1);
+    expect(T.rueckzuendung.map((r) => r.mult)).toEqual([...T.rueckzuendung.map((r) => r.mult)].sort((a, b) => a - b)); // die Leiter steigt
   });
   it("fireValueBonus: Klinge je Schritt, Feuerwalze nach Sieg (Episch auch nach Niederlage), Rückzündung Episch", () => {
     expect(fireValueBonus(heat({ value: 80 }), [F.KLINGE], {}, {})).toBe(2);
@@ -237,6 +250,10 @@ describe("Feuer — Modul (reine Übergänge)", () => {
     expect(fireOnLoss(heat({ value: 70, peak: 100 }), [F.EWIGE_GLUT], {}, { deficit: 1 }).heat.value).toBe(70 - C.HEAT_LOSS);    // über dem Boden normal
     expect(fireOnLoss(heat({ value: 61, peak: 100 }), [F.EWIGE_GLUT, F.GLUTBETT], { [F.GLUTBETT]: 1 }, { deficit: 1 }).heat.value).toBe(T.glutbett[1].floor);
     expect(fireOnLoss(heat({ value: 102, max: 200, peak: 200 }), [F.EWIGE_GLUT, F.WEISSGLUT], {}, { deficit: 1 }).heat.value).toBe(200 * frac); // Spitze 200 → Boden 100
+    // §7.22 Zunder Episch-Extra: auch Niederlagen heizen — nach der Kühlung, auf Normal nicht, nie über die Leiste.
+    expect(fireOnLoss(heat({ value: 50 }), [F.ZUNDER], { [F.ZUNDER]: 3 }, { deficit: 1 }).heat.value).toBe(50 - C.HEAT_LOSS + T.zunder[3].lossHeat);
+    expect(fireOnLoss(heat({ value: 50 }), [F.ZUNDER], {}, { deficit: 1 }).heat.value).toBe(50 - C.HEAT_LOSS);
+    expect(fireOnLoss(heat({ value: 100 }), [F.ZUNDER, F.GLUTBETT], { [F.ZUNDER]: 3, [F.GLUTBETT]: 3 }, { deficit: 1 }).heat.value).toBe(100); // Glutbett Episch kühlt nicht, die Leiste ist voll
     expect(fireOnLoss(heat({ value: 20 }), [F.BRANDMAL], { [F.BRANDMAL]: 3 }, { deficit: 3, oppId: "O1" }).brands).toEqual([{ id: "O1", value: T.brandmal[3].value }]);
     expect(fireOnLoss(heat({ value: 20 }), [F.BRANDMAL], {}, { deficit: 3, oppId: "O1" }).brands).toEqual([]);
     // §7.16 Glut Episch: unter der Kaltstart-Schwelle kühlen Niederlagen nur halb, darüber voll; Normal ohne Extra.
@@ -324,6 +341,13 @@ describe("Feuer — Engine-Integration", () => {
     const small = resolveTrick(scen(13, 6, { skills: [F.VERBRENNUNG], heat: heat({ value: 0 }) }), noCrit); // Vorsprung 7
     expect(big.lastTrick.breakdown.fireMult).toBeCloseTo(T.verbrennung[0].mult * heatMult([], {}, 6), 6);
     expect(small.lastTrick.breakdown.fireMult).toBeCloseTo(heatMult([], {}, 5), 6);
+  });
+  it("Rückzündung in der Engine (§7.22): der erste Sieg nach einer Niederlage zählt ×mult im Feuer-Faktor, nach einem Sieg nicht", () => {
+    const after = resolveTrick(scen(12, 6, { skills: [F.RUECKZUENDUNG], skillTiers: { [F.RUECKZUENDUNG]: 1 }, heat: heat({ value: 50 }), lastResult: "loss" }), noCrit);
+    expect(after.lastTrick.breakdown.fireMult).toBeCloseTo(heatMult([], {}, 50 + G(6)) * T.rueckzuendung[1].mult, 6);
+    expect(after.heat.value).toBe(50 + G(6)); // keine Hitze aus der Rückzündung mehr
+    const plain = resolveTrick(scen(12, 6, { skills: [F.RUECKZUENDUNG], skillTiers: { [F.RUECKZUENDUNG]: 1 }, heat: heat({ value: 50 }), lastResult: "win" }), noCrit);
+    expect(plain.lastTrick.breakdown.fireMult).toBeCloseTo(heatMult([], {}, 50 + G(6)), 6);
   });
   it("Feuersturm in der Engine (§7.17): bei voller Leiste steht die Serie nach dem Sieg im Feuer-Faktor, darunter nicht", () => {
     // winStreak 5 vor dem Stich → Serie 6 nach dem Sieg (die Engine liest die effektive Serie NACH dem Sieg, wie der Serien-Mult).

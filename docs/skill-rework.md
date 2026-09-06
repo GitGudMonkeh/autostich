@@ -673,13 +673,13 @@ entfernt. Crit-Chance über 100 % gibt einen sehr kleinen Crit-Mult-Bonus (Syste
 | Blitzableiter | Rate (seit 7.18 mit Statische Aufladung und Dauerstrom zusammengelegt) | jeder 2. Crit +1 Ladung | jeder 2. Crit +1, volle Leiste +1 zurück | jeder Crit +1, volle Leiste +1 zurück | jeder Crit +1, volle Leiste +2 zurück; jeder Sieg ohne Crit +1 Ladung |
 | ~~Statische Aufladung~~ | gestrichen (7.18, in Blitzableiter aufgegangen) | – | – | – | – |
 | Ionenfeld (neu, 7.18) | Leiste zu Wert | jede volle Leiste lädt das Feld: die nächsten 5 Stiche kämpfen alle Karten mit +2 Wert | 7 Stiche | 10 Stiche | 15 Stiche, +3 Wert |
-| Reststrom | Rate | Leiste startet nach dem Leeren bei 2 | bei 3 | bei 4 | bei 6 |
-| Gewitterfront | Rampe Crit-Chance | +0,5 % je volle Leiste | +0,75 % | +1 % | +1,5 % |
+| Reststrom | Rate | Leiste startet nach dem Leeren bei 2 | bei 3 | bei 4 | bei 6; die Leiste ist bei 9 voll (Extra 7.22) |
+| Gewitterfront | Rampe Crit-Chance | +0,5 % je volle Leiste | +0,75 % | +1 % | +1,5 %; dazu +0,02× Crit-Multiplikator je Leiste (Extra 7.22) |
 | Entladung | Rampe Crit-Mult | +0,02× je volle Leiste | +0,03× | +0,04× | +0,06×; der Crit, der die Leiste füllt, hat doppelten Mult |
 | Ladungsserie | Serie zu Crit | +1 % Crit je Serienpunkt | +1,5 % | +2 % | +2,5 %; ab Serie 8 jeder Sieg +1 Ladung |
-| Kettenblitz | Tiefe (seit 7.18; vorher Breite; Leiter seit 7.19) | jede volle Leiste gibt der Karte mit den meisten Stapeln +1 Stapel | +2 | +3 | +4 |
-| Blitzfänger | Ionisierung zu Wert (seit 7.18 ohne Schwelle) | ionisierte Karten kämpfen mit +1 Wert | +2 | +3 | +4 |
-| Kurzschluss | Tiefe zu Score | Sieg mit Karte ab 6 Stapeln: Stapel zählen doppelt | ab 5 | ab 4 | ab 3 |
+| Kettenblitz | Tiefe (seit 7.18; vorher Breite; Leiter seit 7.19) | jede volle Leiste gibt der Karte mit den meisten Stapeln +1 Stapel | +2 | +3 | +4; die zweittiefste Karte +1 (Extra 7.22) |
+| Blitzfänger | Ionisierung zu Wert (seit 7.18 ohne Schwelle) | ionisierte Karten kämpfen mit +1 Wert | +2 | +3 | +4 und +1 je Stapel (Extra 7.22) |
+| Kurzschluss | Tiefe zu Score | Sieg mit Karte ab 6 Stapeln: Stapel zählen doppelt | ab 5 | ab 4 | ab 3; verliert so eine Karte, zahlt ihr doppelter Stapel-Score beim nächsten Sieg (Extra 7.22) |
 | Spannungsstau | Glättung (seit 7.18 auf den Crit-Multiplikator) | Sieg ohne Crit +0,05× Crit-Multiplikator für den nächsten Crit, der Crit leert | +0,075× | +0,1× | +0,15×; Crit halbiert statt leert |
 | Vorentladung (neu, 7.18) | Serie zu Crit | ab Serie 5 gibt jeder Serienpunkt +0,1× Crit-Multiplikator auf den Stich | ab 4 | ab 3 | ab 2 |
 | ~~Überschlag~~ | gestrichen (7.19; die Systemregel „Überschuss über 100 %" in groß, im gierigen Build −15 %) | – | – | – | – |
@@ -688,7 +688,7 @@ entfernt. Crit-Chance über 100 % gibt einen sehr kleinen Crit-Mult-Bonus (Syste
 | ~~Dauerstrom~~ | gestrichen (7.18, in Blitzableiter aufgegangen) | – | – | – | – |
 | Serienschutz | Schutz | Niederlage ab 70 % Ladung hält die Serie, kostet 70 % | 50 % | 40 % | 30 %; einmal je Runde gratis |
 | Ionenfeld | Feld nach jeder Leiste (neu 7.18, Werte 7.20; Platz der alten Ionisierung) | jede volle Leiste: die nächsten 5 Stiche kämpfen alle Karten mit +2 Wert | 7 Stiche, +3 | 10 Stiche, +4 | 15 Stiche, +5 |
-| Vorentladung | Serie zu Crit-Multiplikator (neu 7.18; Platz des Breitenbeschleunigers) | ab Serie 5 gibt jeder Serienpunkt +0,1× Crit-Mult auf den Stich | ab 4 | ab 3 | ab 2 |
+| Vorentladung | Serie zu Crit-Multiplikator (neu 7.18; Platz des Breitenbeschleunigers) | ab Serie 5 gibt jeder Serienpunkt +0,1× Crit-Mult auf den Stich | ab 4 | ab 3 | ab 2, +0,15× je Punkt (Extra 7.22) |
 
 **Sim-Wachpunkte Blitz:** Statische Aufladung im Splash-Build; Rate × Breite (Kettenblitz Episch);
 Reststrom Episch mit Blitzableiter Sehr selten und Statische Aufladung; Ladungsserie × Serienschutz
@@ -1376,14 +1376,14 @@ brutto 49 % und netto 21 % Hitze je Runde.
 | Skill | Rolle | Normal | Selten | Sehr selten | Episch |
 | --- | --- | --- | --- | --- | --- |
 | Glut | Kaltstart (seit 7.12; vorher Rate aus Vorsprung ×1,25 … ×2; Schwellen seit 7.16) | unter 50 % Hitze zählt Hitze aus Siegen ×2 | unter 60 % | unter 70 % | unter 90 %; darunter kühlen Niederlagen nur halb |
-| Zunder | Rate aus jedem Sieg (Sätze seit 7.16) | jeder Sieg +2 % Hitze | +3 % | +4 % | +5 % |
+| Zunder | Rate aus jedem Sieg (Sätze seit 7.16) | jeder Sieg +2 % Hitze | +3 % | +4 % | +5 %; auch jede Niederlage +2 % (Extra 7.22) |
 | Feuersturm | Serie zu Score (seit 7.17; vorher Serie zu Hitze) | bei voller Leiste zählt jeder Serienpunkt +0,1 % Score | +0,15 % | +0,2 % | +0,3 %; schon ab 90 % Hitze (7.18; war 80) |
 | Glutbett | Schutz | Niederlagen kühlen nicht unter 40 % | nicht unter 60 % | nicht unter 80 % | Niederlagen kühlen nicht |
-| Rückzündung | Comeback zu Hitze | Sieg nach Niederlage +0,5 % Hitze je Punkt Rückstand | +1 % | +1,5 % | +2 %; die Karte nach einer Niederlage hat +2 Wert |
+| Rückzündung | Konter (seit 7.22; vorher Comeback zu Hitze, tot) | nach einer Niederlage zählt der nächste Sieg ×1,15 | ×1,25 | ×1,35 | ×1,5; die Karte nach einer Niederlage kämpft mit +2 Wert |
 | Glühende Klinge | Hitze zu Wert | alle Karten +1 Wert je 40 % Hitze | je 30 % | je 25 % | je 20 % |
 | Weißglut | über die Leiste | Leiste bis 200; über 100 je 10 % +3 % Score | +4 % | +5 % | +6 % |
 | Feuerwalze | Serie zu Wert | ab 80 % Hitze: nach einem Sieg hat die nächste Karte +2 Wert | ab 60 % | ab 40 % | ab 20 %; auch nach einer Niederlage |
-| Verbrennung | Vorsprung zu Score | Sieg mit Vorsprung ab 8: Stich ×1,5 | ab 7 | ab 6 | ab 5 |
+| Verbrennung | Vorsprung zu Score | Sieg mit Vorsprung ab 8: Stich ×1,5 | ab 7 | ab 6 | ab 5; seine Hitze zählt ebenfalls ×1,5 (Extra 7.22) |
 | ~~Flächenbrand~~ | gestrichen (7.16; der Brand kostete Klinge, Siegquote und Serie) | – | – | – | – |
 | Schmelzpunkt | Überlauf-Wandler (seit 7.16; vorher Tropf-Konsument) | bei voller Leiste wird die Hitze, die ein Sieg nicht mehr auf die Leiste bringt, zu +15 Basis je Punkt; nichts wird verbrannt | +20 | +25 | +30; die Kühlung einer Niederlage bei voller Leiste zahlt beim nächsten Sieg |
 | Brandmal | Gegner-Debuff | ab 80 % Hitze: Sieg brandmarkt die Gegnerkarte, −2 nächste Runde | ab 60 % | ab 40 % | ab 20 %; auch Niederlagen brandmarken |
@@ -2760,6 +2760,32 @@ Blick.
 **Fazit:** Ewige Glut trägt dort, wo ein Feuer-Legendäres tragen kann — im Feuer-Build (Lift 1,13, ab Runde 1 1,57)
 — und kostet nirgends. Das war mit Phönixfeuer in keiner Fassung zu haben. Offen aus 7.20 bleiben Durchschlag am
 8×-Deckel, Rückzündung, Glutbett (Owner: lassen), Kurzschluss als Pick und die Stufenleitern.
+
+### 7.22 Die offene Liste: Rückzündung als Konter, acht Episch-Extras (2026-09-06, umgesetzt)
+
+Owner: „die offenen abarbeiten" — „alle ja" zu den vier Vorschlägen. Durchschlag und Kurzschluss bleiben (die
+„Falle" war ein Ausreißer: −11 % in einer Auswertung, +4 % und zur Laufmitte +14 % in der nächsten; im reinen
+Blitz-Build Lift 3,45 — Kurzschluss neutral, seine verdoppelten Stapel verpuffen am 8×-Deckel, nicht am Skill).
+
+**Rückzündung** (Feuer, im Platz umgebaut): war Hitze je Punkt Rückstand der letzten Niederlage — Lift 0,87, gierig
+−31 %, wie Glut und Zunder: Hitze ist nie knapp, der Pick verdrängt einen Multiplikator. Jetzt der Konter: nach einer
+Niederlage zählt der nächste Sieg ×1,15 / 1,25 / 1,35 / 1,5 (`rueckzuendungMult`, ein Faktor im Feuer-Stack neben
+Hitze-Multiplikator, Verbrennung und Feuersturm); Episch dazu kämpft die Karte nach einer Niederlage mit +2 (blieb).
+Kein Hitze-Anteil mehr; `lastLossDeficit` bleibt im Substate, ungenutzt.
+
+**Acht Episch-Extras** (Owner-Regel: Episch braucht ein Extra oder ist sehr stark; Ionenfeld, Überspannung, Klinge
+und Weißglut sind auf Episch schon stark und bleiben):
+
+| Skill | Episch-Extra | Code |
+| --- | --- | --- |
+| Reststrom | die Leiste ist bei 9 voll | `bar: 9`, `maxChargeFor(skills, skillTiers)` — Donnergott (7) gewinnt |
+| Gewitterfront | dazu +0,02× Crit-Multiplikator je Leiste | `multPerBar`, in `fillBar` auf `entladungMult` |
+| Vorentladung | +0,15× je Serienpunkt statt +0,1× | `multPerStreak: 0.15` |
+| Kettenblitz | auch die zweittiefste Karte +1 Stapel | `second: 1`, `deepestIndex(deck, exclude)` |
+| Blitzfänger | dazu +1 Kampfwert je Stapel | `perStack: 1` |
+| Kurzschluss | verliert eine Karte ab der Schwelle, zahlt ihr doppelter Stapel-Score beim nächsten Sieg | `onLoss`, `lightning.stackBank` → Basis des nächsten Siegs (kein Direkt-Score) |
+| Zunder | auch jede Niederlage +2 % Hitze | `lossHeat: 2`, nach Kühlung und Böden |
+| Verbrennung | der Faktor ×1,5 zählt auch auf den Hitzegewinn | `heatToo`, in `heatGainOnWin` |
 
 ## 5. Eis
 

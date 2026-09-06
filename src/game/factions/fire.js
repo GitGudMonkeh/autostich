@@ -66,17 +66,17 @@ export function syncHeatMax(heat, skills) {
 }
 
 /* Hitzegewinn eines gewonnenen Stichs (Prozentpunkte): Passiv (Vorsprung − Offset, ab Mindest-Vorsprung), + Zunder je
-   Sieg, + Rückzündung je Punkt Rückstand der letzten Niederlage, wenn der Vorstich verloren war. Glut (§7.12,
+   Sieg. Verbrennung Episch (§7.22): ein Sieg ab dem Vorsprung der Stufe zählt seine Hitze ×mult. Glut (§7.12,
    Kaltstart): steht die Hitze VOR dem Sieg unter der Schwelle der Stufe, zählt der ganze Gewinn ×mult — alle Quellen,
    nicht nur das Passiv. Sonnenzorn (L, §7.20): liegt die Hitze vor dem Sieg unter der Spitze, zählt der Gewinn
    ×SONNENZORN_HEAT_MULT (zusätzlich zu Glut — der Zorn holt die Spitze zurück). (Feuersturm gibt seit §7.17 keine
-   Hitze mehr — er ist Serie zu Score, feuersturmMult.) */
-export function heatGainOnWin(skills, skillTiers, { margin = 0, lastResult = null, lastLossDeficit = 0, heatValue = 0, heatPeak = 0 } = {}) {
+   Hitze mehr — er ist Serie zu Score; Rückzündung seit §7.22 auch nicht — sie ist der Konter, rueckzuendungMult.) */
+export function heatGainOnWin(skills, skillTiers, { margin = 0, heatValue = 0, heatPeak = 0 } = {}) {
   let g = 0;
   if (margin >= C.HEAT_MIN_MARGIN) g += (margin - C.HEAT_MARGIN_OFFSET) * C.HEAT_PER_POINT;
   g += fireParam(skills, skillTiers, F.ZUNDER, "heat") || 0;
-  const pd = fireParam(skills, skillTiers, F.RUECKZUENDUNG, "perDeficit");
-  if (pd && lastResult === "loss") g += pd * Math.max(0, lastLossDeficit);
+  const vMin = fireParam(skills, skillTiers, F.VERBRENNUNG, "minMargin");
+  if (fireParam(skills, skillTiers, F.VERBRENNUNG, "heatToo") && vMin != null && margin >= vMin) g *= fireParam(skills, skillTiers, F.VERBRENNUNG, "mult") || 1;
   const below = fireParam(skills, skillTiers, F.GLUT, "below");
   if (below != null && (heatValue || 0) < below) g *= fireParam(skills, skillTiers, F.GLUT, "mult") || 1;
   if (hasSonnenzorn(skills) && (heatValue || 0) < (heatPeak || 0)) g *= C.SONNENZORN_HEAT_MULT;
@@ -104,6 +104,13 @@ export function verbrennungMult(skills, skillTiers, margin = 0) {
   const min = fireParam(skills, skillTiers, F.VERBRENNUNG, "minMargin");
   if (min == null || margin < min) return 1;
   return fireParam(skills, skillTiers, F.VERBRENNUNG, "mult") || 1;
+}
+
+// Rückzündung (§7.22, Konter): der erste Sieg nach einer Niederlage zählt ×mult (Faktor im Score-Stack neben Hitze-
+// Multiplikator, Verbrennung und Feuersturm). `lastResult` = Ergebnis des Vorstichs. 1 sonst.
+export function rueckzuendungMult(skills, skillTiers, lastResult = null) {
+  const m = fireParam(skills, skillTiers, F.RUECKZUENDUNG, "mult");
+  return (m && lastResult === "loss") ? m : 1;
 }
 
 /* Feuersturm (§7.17, Owner): Serie zu Score — bei voller Leiste (Episch schon ab `minHeat`) zählt jeder Serienpunkt
@@ -207,6 +214,8 @@ export function fireOnLoss(heat, skills, skillTiers, { deficit = 0, oppId = null
     value = before <= floor ? before : Math.max(floor, before - (half ? C.HEAT_LOSS / 2 : C.HEAT_LOSS));
   }
   if (hasEwigeGlut(skills)) value = Math.max(value, Math.min(before, (heat.peak || 0) * C.EWIGE_GLUT_FLOOR_FRAC));
+  const lossHeat = fireParam(skills, skillTiers, F.ZUNDER, "lossHeat"); // §7.22 Zunder Episch-Extra: auch Niederlagen heizen
+  if (lossHeat) value = Math.min(max, value + lossHeat);
   let meltPending = heat.meltPending || 0;
   if (fireParam(skills, skillTiers, F.SCHMELZPUNKT, "lossPays") && before >= max && value < before) meltPending += before - value;
   const brands = [];

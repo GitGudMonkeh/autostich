@@ -18,7 +18,7 @@ import { lightningCritChance, lightningCritMult, overcritMult, blitzfaengerValue
 // exp skill rework: die Feuer-Mechanik (Passiv, 15 Skills, 4 Legendäre) lebt ebenso im Fraktionsmodul — die Engine
 // ruft ihre Übergänge (Kampfwert-Bonus, Sieg, Niederlage, Hitze-Multiplikator, Rundenende, Brand-Wechsel).
 import { syncHeatMax, fireValueBonus, damascusCombat, fireOnWin, fireOnLoss, heatMult, verbrennungMult, feuersturmMult,
-  fireCycleEnd, nextBrandActive } from "./factions/fire.js";
+  rueckzuendungMult, fireCycleEnd, nextBrandActive } from "./factions/fire.js";
 // (#267: import aus stats.js entfernt — die Stat-Phase/Faktoren sind weg.)
 import { computeFormations, positionHasFormation, activeFormationCount, summarizeFormations, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
 import { perkLegendaryChance, anchorAt } from "./shop.js";
@@ -679,14 +679,15 @@ export function resolveTrick(state, rng) {
                                   + familySumHook(familyTiers, "scoreFlatOnCrit", critCtx)
                                   + (critFollowArmed ? critFollowCritBonus : 0) // D_CRIT_FOLLOW IV: Crit-Folgesieg, der selbst Crit ist
                                   + (anchorType === "crit" ? (aParam("critScore") || 0) : 0) : 0) // Kritanker IV: Crit dort +250 Score
-                      + lightIonScore(pCard, skills, skillTiers) + fireFlat + plantFlat // exp: Stapel-Score der Siegkarte (Kurzschluss zählt ab Schwelle doppelt)
+                      + lightIonScore(pCard, skills, skillTiers) + ((lightning && lightning.stackBank) || 0) + fireFlat + plantFlat // exp: Stapel-Score der Siegkarte (Kurzschluss zählt ab Schwelle doppelt; §7.22 Episch: dazu der vorgemerkte Stapel-Score verlorener Karten)
                       + (anchorType === "score" ? (aParam("score") || 0) : 0) // Punkteanker (§4.2, Stärke = Stufe)
                       + (anchorType === "power" ? (aParam("winScore") || 0) : 0) // Kraftanker IV: Sieg dort +100 Score
                       + architectScoreRes.flat // Architekt Handelsbauten (#202): Flat-Score, s. o.
                       + interplayStored; // D_INTERPLAY IV: der in Niederlagen gebankte Score wird mit diesem Sieg als Flat ausgezahlt
     // #270: Fraktions-Flat-Anteile zum Ertrag (Roh-Score VOR dem Multiplikator-Stack). Blitz EIN Kanal; Feuer in
     // Grund/Weißglut gespalten (Pflanze-Kanäle Wurzel/Blüte/Ernte wurden schon an ihren Quellen oben akkumuliert).
-    lightYield += lightIonScore(pCard, skills, skillTiers);
+    lightYield += lightIonScore(pCard, skills, skillTiers) + ((lightning && lightning.stackBank) || 0);
+    if (lightning && lightning.stackBank) lightning = { ...lightning, stackBank: 0 }; // §7.22: die Vormerkung ist mit diesem Sieg bezahlt
     fireBase += fireFlat;
     // Score-Stapelung (§15/§22.7): Basis × Serie(#39) × Perk-scoreMult × Serien-Stat × Formations-Multiplikator
     // × Formations-Stat, DANN Crit. Zu benannten Faktoren gruppiert (identisches Produkt) → eine Quelle für
@@ -736,7 +737,8 @@ export function resolveTrick(state, rng) {
     // Gewinn dieses Siegs und vor dem Verbrauch (fireHeld).
     const fireMult = (heat && heat.active)
       ? heatMult(skills, skillTiers, fireHeld, heat.peak, heat.emberMult) * verbrennungMult(skills, skillTiers, pValue - oValue)
-        * feuersturmMult(skills, skillTiers, fireHeld, heat.max || C.HEAT_MAX, serieStreak) : 1; // §7.17: Feuersturm, Serie zu Score bei voller Leiste
+        * feuersturmMult(skills, skillTiers, fireHeld, heat.max || C.HEAT_MAX, serieStreak) // §7.17: Feuersturm, Serie zu Score bei voller Leiste
+        * rueckzuendungMult(skills, skillTiers, lastResult) : 1; // §7.22: Rückzündung, der Konter nach einer Niederlage
     // architectMult (#202, Architekt-Score-Gebäude: Struktur/Schatzkammer) läuft als eigener Faktor am Ende des Stacks.
     // #Pool Batch 4 (gamble/Risiko): Boden — der Architekt-Abzug (negativer Flat) darf den Stich höchstens auf 0 drücken,
     // nie ins Minus (sonst kippen die nachgelagerten Multiplikatoren). Bei Basis 400 praktisch immer ein No-op.
@@ -901,7 +903,7 @@ export function resolveTrick(state, rng) {
     // einmal je Runde gratis) — im Modul.
     let serienschutzHeld = false;
     if (lightning && lightning.active) {
-      const r = lightningOnLoss(lightning, skills, skillTiers, { alreadyHeld: anchorNoReset });
+      const r = lightningOnLoss(lightning, skills, skillTiers, { alreadyHeld: anchorNoReset, card: pCard }); // §7.22: Kurzschluss Episch merkt den Stapel-Score der verlorenen Karte vor
       lightning = r.lightning; serienschutzHeld = r.streakHeld;
     }
     // Eis-Neudesign (docs §4 Frostgriff — Eispanzer): eine Niederlage NEBEN einem Gletscher ist folgenlos (Serie hält)
@@ -968,7 +970,7 @@ export function resolveTrick(state, rng) {
   // herunter: der Stich, der es lädt, zählt nicht mit — die nächsten n Stiche tragen es.
   let barFilled = false, barStacks = 0;
   if (lightning && lightning.active) {
-    const lMax = maxChargeFor(skills);
+    const lMax = maxChargeFor(skills, skillTiers);
     if (lightning.maxCharge !== lMax) lightning = { ...lightning, maxCharge: lMax };
     lightning = fieldTick(lightning);
     const f = lightFillBar(lightning, skills, skillTiers, deck, playerOrder, actualPos);

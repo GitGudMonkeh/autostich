@@ -35,7 +35,7 @@ export const L = Object.freeze({
    serienschutzFree = Episch-Gratisschutz dieser Runde verbraucht. */
 export function initLightning() {
   return { active: false, charge: 0, maxCharge: C.LIGHTNING_MAX_CHARGE, bars: 0, critCount: 0,
-    stormCritBonus: 0, entladungMult: 0, stauBonus: 0, fieldLeft: 0, serienschutzCount: 0, serienschutzFree: false };
+    stormCritBonus: 0, entladungMult: 0, stauBonus: 0, fieldLeft: 0, stackBank: 0, serienschutzCount: 0, serienschutzFree: false };
 }
 
 const held = (skills, id) => (skills || []).includes(id);
@@ -44,8 +44,11 @@ export const hasDoppelentladung = (skills) => held(skills, L.DOPPELENTLADUNG);
 export const hasHochspannung    = (skills) => held(skills, L.HOCHSPANNUNG);
 export const hasDurchschlag     = (skills) => held(skills, L.DURCHSCHLAG);
 
-// Leistenlänge des Builds: Donnergott (L) macht die Leiste bei 7 voll.
-export const maxChargeFor = (skills) => (hasDonnergott(skills) ? C.DONNERGOTT_MAX_CHARGE : C.LIGHTNING_MAX_CHARGE);
+// Leistenlänge des Builds: Donnergott (L) macht die Leiste bei 7 voll, Reststrom Episch (§7.22) bei `bar` (9).
+export function maxChargeFor(skills, skillTiers = {}) {
+  if (hasDonnergott(skills)) return C.DONNERGOTT_MAX_CHARGE;
+  return lightParam(skills, skillTiers, L.RESTSTROM, "bar") || C.LIGHTNING_MAX_CHARGE;
+}
 
 // Wirksame Stufe eines gehaltenen Blitz-Skills: gewürfelte Stufe (skillTiers, Normal ohne Eintrag) plus Hochspannung,
 // bei Episch durch die Leiter selbst gedeckelt. null für Legendäre und nicht gehaltene Skills.
@@ -91,11 +94,13 @@ export function lightningCritMult(lightning, skills, skillTiers, streak = 0) {
 // Systemregel (alle Fraktionen, §1): Crit-Chance über 100 % gibt einen sehr kleinen Crit-Mult-Bonus je Prozentpunkt.
 export const overcritMult = (rawCrit) => Math.max(0, (rawCrit || 0) - 1) * 100 * C.OVERCRIT_MULT_PER_PP;
 
-// Blitzfänger: Kampfwert-Bonus einer ionisierten Karte (§7.18: ab einem Stapel, der Wert steigt mit der Stufe). Zustand.
+// Blitzfänger: Kampfwert-Bonus einer ionisierten Karte (§7.18: ab einem Stapel, der Wert steigt mit der Stufe; §7.22
+// Episch-Extra: dazu +perStack je Stapel). Zustand.
 export function blitzfaengerValue(skills, skillTiers, card) {
   const min = lightParam(skills, skillTiers, L.BLITZFAENGER, "minStacks");
-  if (min == null || (card?.ionStacks || 0) < min) return 0;
-  return lightParam(skills, skillTiers, L.BLITZFAENGER, "value") || 0;
+  const st = card?.ionStacks || 0;
+  if (min == null || st < min) return 0;
+  return (lightParam(skills, skillTiers, L.BLITZFAENGER, "value") || 0) + (lightParam(skills, skillTiers, L.BLITZFAENGER, "perStack") || 0) * st;
 }
 
 // Ionenfeld (§7.18): solange das Feld trägt (fieldLeft > 0, gesetzt von jeder vollen Leiste), kämpfen ALLE Karten mit
@@ -154,7 +159,7 @@ export function chargeGainOnWin(lightning, skills, skillTiers, { isCrit, streak 
 export function critFillsBar(lightning, skills, skillTiers, { streak = 0 } = {}) {
   if (!lightning || !lightning.active) return false;
   const { gain } = chargeGainOnWin(lightning, skills, skillTiers, { isCrit: true, streak });
-  return (lightning.charge || 0) + gain >= maxChargeFor(skills);
+  return (lightning.charge || 0) + gain >= maxChargeFor(skills, skillTiers);
 }
 
 // Blitzschlag: jeder N. Crit ionisiert die Siegkarte (+Stapel der Stufe; Doppelentladung verdoppelt). Liest den Zähler
@@ -176,27 +181,32 @@ export function stauAfterWin(lightning, skills, skillTiers, isCrit) {
 }
 
 /* Niederlage: Serienschutz (Ladung ab dem Anteil der Stufe hält die Serie und wird verbraucht; Episch einmal je Runde
-   gratis). Gibt den neuen Substate und ob die Serie gehalten wurde. `alreadyHeld` = ein anderer Schutz (Serienanker,
-   Eispanzer) hält die Serie schon — dann wird keine Ladung ausgegeben. */
-export function lightningOnLoss(lightning, skills, skillTiers, { alreadyHeld = false } = {}) {
+   gratis). Kurzschluss Episch (§7.22): verliert eine Karte ab der Schwelle, wird ihr doppelter Stapel-Score vorgemerkt
+   (stackBank) und zahlt mit dem nächsten Sieg in die Basis. Gibt den neuen Substate und ob die Serie gehalten wurde.
+   `alreadyHeld` = ein anderer Schutz (Serienanker, Eispanzer) hält die Serie schon — dann wird keine Ladung ausgegeben. */
+export function lightningOnLoss(lightning, skills, skillTiers, { alreadyHeld = false, card = null } = {}) {
   if (!lightning || !lightning.active) return { lightning, streakHeld: false };
   let next = { ...lightning };
   let streakHeld = false;
   const frac = lightParam(skills, skillTiers, L.SERIENSCHUTZ, "frac");
   if (frac != null && !alreadyHeld) {
     const free = (lightParam(skills, skillTiers, L.SERIENSCHUTZ, "freePerRound") || 0) > 0 && !lightning.serienschutzFree;
-    const cost = Math.ceil(maxChargeFor(skills) * frac);
+    const cost = Math.ceil(maxChargeFor(skills, skillTiers) * frac);
     if (free) { next.serienschutzFree = true; streakHeld = true; }
     else if ((lightning.charge || 0) >= cost) { next.charge = lightning.charge - cost; streakHeld = true; }
     if (streakHeld) next.serienschutzCount = (lightning.serienschutzCount || 0) + 1;
   }
+  const ksMin = lightParam(skills, skillTiers, L.KURZSCHLUSS, "minStacks");
+  if (lightParam(skills, skillTiers, L.KURZSCHLUSS, "onLoss") && ksMin != null && (card?.ionStacks || 0) >= ksMin)
+    next.stackBank = (lightning.stackBank || 0) + ionScoreFor(card, skills, skillTiers);
   return { lightning: next, streakHeld };
 }
 
-// Karte mit den meisten Stapeln (Gleichstand: der kleinste Deck-Index); −1 ohne ionisierte Karte.
-function deepestIndex(deck) {
+// Karte mit den meisten Stapeln (Gleichstand: der kleinste Deck-Index); −1 ohne ionisierte Karte. `exclude` = ein
+// Index, der nicht zählt (Kettenblitz Episch: die zweittiefste Karte).
+function deepestIndex(deck, exclude = -1) {
   let best = -1, bestSt = 0;
-  deck.forEach((c, i) => { const st = c.ionStacks || 0; if (st > bestSt) { bestSt = st; best = i; } });
+  deck.forEach((c, i) => { if (i === exclude) return; const st = c.ionStacks || 0; if (st > bestSt) { bestSt = st; best = i; } });
   return best;
 }
 
@@ -207,7 +217,7 @@ function deepestIndex(deck) {
    etwa Donnergott × Reststrom Episch × Blitzableiter), zündet beim nächsten Stich — nie in einer Endlosschleife.
    Gibt { lightning, deck, filled, stacks, targets } zurück; ohne volle Leiste unverändert. */
 export function fillBar(lightning, skills, skillTiers, deck, playerOrder, actualPos) {
-  const max = maxChargeFor(skills);
+  const max = maxChargeFor(skills, skillTiers);
   if (!lightning || !lightning.active || (lightning.charge || 0) < max) return { lightning, deck, filled: false, stacks: 0, targets: [] };
   const bars = (lightning.bars || 0) + 1;
   const n = (playerOrder || []).length;
@@ -230,9 +240,17 @@ export function fillBar(lightning, skills, skillTiers, deck, playerOrder, actual
       newDeck = newDeck.map((c, i) => (i === deep ? { ...c, ionStacks: (c.ionStacks || 0) + extra } : c));
       stacks += extra; if (!targets.includes(deep)) targets.push(deep);
     }
+    // §7.22 Episch-Extra: auch die Karte mit den zweitmeisten Stapeln (ohne die tiefste) bekommt Stapel.
+    const second = (lightParam(skills, skillTiers, L.KETTENBLITZ, "second") || 0) * per;
+    const deep2 = second > 0 ? deepestIndex(newDeck, deep) : -1;
+    if (deep2 >= 0) {
+      newDeck = newDeck.map((c, i) => (i === deep2 ? { ...c, ionStacks: (c.ionStacks || 0) + second } : c));
+      stacks += second; if (!targets.includes(deep2)) targets.push(deep2);
+    }
   }
   const storm = lightParam(skills, skillTiers, L.GEWITTERFRONT, "critPerBar") || 0;
-  const ent = lightParam(skills, skillTiers, L.ENTLADUNG, "multPerBar") || 0;
+  // §7.22 Gewitterfront Episch-Extra: die Rampe zahlt zusätzlich auf den Crit-Multiplikator (wie Entladung).
+  const ent = (lightParam(skills, skillTiers, L.ENTLADUNG, "multPerBar") || 0) + (lightParam(skills, skillTiers, L.GEWITTERFRONT, "multPerBar") || 0);
   const floor = lightParam(skills, skillTiers, L.RESTSTROM, "floor") || 0;
   const back = lightParam(skills, skillTiers, L.ABLEITER, "back") || 0;
   const field = lightParam(skills, skillTiers, L.IONENFELD, "tricks") || 0;

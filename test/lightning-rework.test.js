@@ -53,10 +53,15 @@ describe("Blitz-Modul — Stufen und Kennwerte", () => {
     expect(lightParam([L.RESTSTROM], {}, L.RESTSTROM, "nope")).toBeUndefined();
     expect(lightParam([], {}, L.RESTSTROM, "floor")).toBeUndefined();
   });
-  it("maxChargeFor: Leiste 10, mit Donnergott 7", () => {
+  it("maxChargeFor: Leiste 10, mit Donnergott 7, mit Reststrom Episch 9 (§7.22 Extra; Donnergott gewinnt)", () => {
     expect(maxChargeFor([])).toBe(C.LIGHTNING_MAX_CHARGE);
     expect(maxChargeFor([L.DONNERGOTT])).toBe(C.DONNERGOTT_MAX_CHARGE);
     expect(C.DONNERGOTT_MAX_CHARGE).toBeLessThan(C.LIGHTNING_MAX_CHARGE);
+    expect(maxChargeFor([L.RESTSTROM], { [L.RESTSTROM]: 3 })).toBe(T.reststrom[3].bar);
+    expect(T.reststrom[3].bar).toBeLessThan(C.LIGHTNING_MAX_CHARGE);
+    expect(maxChargeFor([L.RESTSTROM], { [L.RESTSTROM]: 2 })).toBe(C.LIGHTNING_MAX_CHARGE);
+    expect(maxChargeFor([L.RESTSTROM, L.HOCHSPANNUNG], { [L.RESTSTROM]: 2 })).toBe(T.reststrom[3].bar); // Hochspannung hebt auf Episch
+    expect(maxChargeFor([L.RESTSTROM, L.DONNERGOTT], { [L.RESTSTROM]: 3 })).toBe(C.DONNERGOTT_MAX_CHARGE);
   });
   it("lightningCritChance: +Crit je Blitz-Skill (auch Legendäre), Gewitterfront-Rampe additiv, Ladungsserie je Serienpunkt; der Stau zählt nicht mehr hier (§7.18)", () => {
     expect(lightningCritChance(initLightning(), [L.ABLEITER], {})).toBe(0); // inaktiv
@@ -88,9 +93,11 @@ describe("Blitz-Modul — Stufen und Kennwerte", () => {
   it("blitzfaengerValue / ionScoreFor: Schwellen fallen mit der Stufe, Kurzschluss zählt Stapel ab Schwelle doppelt", () => {
     for (let t = 0; t < 4; t++) {
       const min = T.faenger[t].minStacks;
-      expect(blitzfaengerValue([L.BLITZFAENGER], { [L.BLITZFAENGER]: t }, { ionStacks: min })).toBe(T.faenger[t].value);
+      expect(blitzfaengerValue([L.BLITZFAENGER], { [L.BLITZFAENGER]: t }, { ionStacks: min })).toBe(T.faenger[t].value + (T.faenger[t].perStack || 0) * min);
       expect(blitzfaengerValue([L.BLITZFAENGER], { [L.BLITZFAENGER]: t }, { ionStacks: min - 1 })).toBe(0);
     }
+    expect(blitzfaengerValue([L.BLITZFAENGER], { [L.BLITZFAENGER]: 3 }, { ionStacks: 5 })).toBe(T.faenger[3].value + 5 * T.faenger[3].perStack); // §7.22 Episch-Extra: +1 je Stapel
+    expect(blitzfaengerValue([L.BLITZFAENGER], { [L.BLITZFAENGER]: 2 }, { ionStacks: 5 })).toBe(T.faenger[2].value);
     expect(blitzfaengerValue([], {}, { ionStacks: 99 })).toBe(0);
     expect(T.faenger.every((r) => r.minStacks === 1)).toBe(true); // §7.18: ohne Schwelle — jede ionisierte Karte
     expect(ionScoreFor({ ionStacks: 3 })).toBe(3 * C.ION_SCORE_PER_STACK);
@@ -165,6 +172,13 @@ describe("Blitz-Modul — Ladung, Leiste, Niederlage (reine Übergänge)", () =>
     expect(lightningOnLoss(light({ charge: 9 }), [L.SERIENSCHUTZ], {}, { alreadyHeld: true }).lightning.charge).toBe(9); // Serienanker hält schon → keine Kosten
     expect(lightningOnLoss(light({ charge: 4 }), [L.ABLEITER], { [L.ABLEITER]: 3 }).lightning.charge).toBe(4); // §7.18: keine Niederlagen-Ladung mehr
     expect(lightningOnLoss(initLightning(), [L.SERIENSCHUTZ], {}).streakHeld).toBe(false);
+    // §7.22 Kurzschluss Episch-Extra: verliert eine Karte ab der Schwelle, ist ihr doppelter Stapel-Score vorgemerkt; darunter und auf Normal nicht.
+    const ksMin = T.kurzschluss[3].minStacks;
+    const bank = lightningOnLoss(light(), [L.KURZSCHLUSS], { [L.KURZSCHLUSS]: 3 }, { card: { ionStacks: ksMin } }).lightning.stackBank;
+    expect(bank).toBe(ksMin * C.ION_SCORE_PER_STACK * T.kurzschluss[3].factor);
+    expect(lightningOnLoss(light({ stackBank: bank }), [L.KURZSCHLUSS], { [L.KURZSCHLUSS]: 3 }, { card: { ionStacks: ksMin } }).lightning.stackBank).toBe(2 * bank); // stapelt sich
+    expect(lightningOnLoss(light(), [L.KURZSCHLUSS], { [L.KURZSCHLUSS]: 3 }, { card: { ionStacks: ksMin - 1 } }).lightning.stackBank || 0).toBe(0);
+    expect(lightningOnLoss(light(), [L.KURZSCHLUSS], {}, { card: { ionStacks: 9 } }).lightning.stackBank || 0).toBe(0);
   });
   it("fillBar: nur bei voller Leiste; nächste Karte +1 Stapel, Leiste auf Boden, bars +1, immutabel; Wrap ans Deck-Ende", () => {
     const deck = constDeck(5), order = identity();
@@ -187,6 +201,11 @@ describe("Blitz-Modul — Ladung, Leiste, Niederlage (reine Übergänge)", () =>
     const ramps = fillBar(light({ charge: 10, stormCritBonus: 0.5, entladungMult: 2 }), [L.GEWITTERFRONT, L.ENTLADUNG], {}, deck, order, 0).lightning;
     expect(ramps.stormCritBonus).toBeCloseTo(0.5 + T.gewitter[0].critPerBar, 9);
     expect(ramps.entladungMult).toBeCloseTo(2 + T.entladung[0].multPerBar, 9);
+    // §7.22 Episch-Extras: Gewitterfront Episch rampt auch den Crit-Multiplikator; Reststrom Episch macht die Leiste bei 9 voll.
+    expect(fillBar(light({ charge: 10 }), [L.GEWITTERFRONT], { [L.GEWITTERFRONT]: 3 }, deck, order, 0).lightning.entladungMult).toBeCloseTo(T.gewitter[3].multPerBar, 9);
+    expect(fillBar(light({ charge: 10 }), [L.GEWITTERFRONT], { [L.GEWITTERFRONT]: 2 }, deck, order, 0).lightning.entladungMult).toBe(0);
+    expect(fillBar(light({ charge: T.reststrom[3].bar }), [L.RESTSTROM], { [L.RESTSTROM]: 3 }, deck, order, 0).filled).toBe(true);
+    expect(fillBar(light({ charge: T.reststrom[3].bar }), [L.RESTSTROM], { [L.RESTSTROM]: 2 }, deck, order, 0).filled).toBe(false);
   });
   it("fillBar: Kettenblitz vertieft (§7.18 Tiefe, §7.19 jede Leiste: die Karte mit den meisten Stapeln +Stapel der Stufe), Überspannung backt den Dauerwert, Doppelentladung 2 Stapel, Ionenfeld lädt das Feld", () => {
     const deck = constDeck(5), order = identity();
@@ -194,9 +213,11 @@ describe("Blitz-Modul — Ladung, Leiste, Niederlage (reine Übergänge)", () =>
     const first = fillBar(light({ charge: 10, bars: 0 }), [L.KETTENBLITZ], {}, deck, order, 0); // schon die 1. Leiste: +Stapel auf die tiefste (die eben ionisierte)
     expect(first.stacks).toBe(1 + T.kette[0].extra); expect(first.deck[1].ionStacks).toBe(1 + T.kette[0].extra); expect(first.targets).toEqual([1]);
     const deepDeck = withStacks(5, 7, 3); // Karte 7 ist die tiefste → sie bekommt die Stapel der Stufe, die nächste Karte nur ihren einen
-    const deep = fillBar(light({ charge: 10 }), [L.KETTENBLITZ], { [L.KETTENBLITZ]: 3 }, deepDeck, order, 0);
-    expect(deep.deck[1].ionStacks).toBe(1); expect(deep.deck[7].ionStacks).toBe(3 + T.kette[3].extra); expect(deep.stacks).toBe(1 + T.kette[3].extra);
+    const deep = fillBar(light({ charge: 10 }), [L.KETTENBLITZ], { [L.KETTENBLITZ]: 3 }, deepDeck, order, 0); // Episch (§7.22): die zweittiefste — hier die eben ionisierte — bekommt +1
+    expect(deep.deck[1].ionStacks).toBe(1 + T.kette[3].second); expect(deep.deck[7].ionStacks).toBe(3 + T.kette[3].extra); expect(deep.stacks).toBe(1 + T.kette[3].extra + T.kette[3].second);
     expect(deep.targets).toEqual([1, 7]);
+    const deepX = fillBar(light({ charge: 10 }), [L.KETTENBLITZ], { [L.KETTENBLITZ]: 2 }, deepDeck, order, 0); // Sehr selten: kein zweiter Empfänger
+    expect(deepX.deck[1].ionStacks).toBe(1); expect(deepX.stacks).toBe(1 + T.kette[2].extra);
     expect(deepDeck[7].ionStacks).toBe(3); // Original unverändert
     const uv = fillBar(light({ charge: 10 }), [L.UEBERSPANNUNG], {}, deck, order, 0); // §7.19: die Karte, die die Leiste ionisiert, trägt den Wert dauerhaft
     expect(uv.deck[1].value).toBe(5 + T.ueberspannung[0].value); expect(uv.deck[1].ionStacks).toBe(1); expect(uv.deck[0].value).toBe(5);
@@ -230,6 +251,17 @@ describe("Blitz — Engine-Integration (resolveTrick)", () => {
     const s = resolveTrick(scen(12, 0, { deck: withStacks(12, 0, min), skills: [L.KURZSCHLUSS], lightning: light() }), noCrit);
     expect(s.lastTrick.scoreGain).toBeCloseTo((B + min * C.ION_SCORE_PER_STACK * 2) * 1.02, 6);
     expect(s.lightYield).toBeCloseTo(min * C.ION_SCORE_PER_STACK * 2, 6);
+  });
+  it("Kurzschluss Episch (§7.22): die verlorene Karte ab Schwelle merkt ihren doppelten Stapel-Score vor, der nächste Sieg zahlt ihn in die Basis", () => {
+    const tiers = { [L.KURZSCHLUSS]: 3 }, min = T.kurzschluss[3].minStacks;
+    const loss = resolveTrick(scen(0, 12, { deck: withStacks(0, 0, min), skills: [L.KURZSCHLUSS], skillTiers: tiers, lightning: light() }), noCrit);
+    expect(loss.lastTrick.result).toBe("loss");
+    const bank = min * C.ION_SCORE_PER_STACK * T.kurzschluss[3].factor;
+    expect(loss.lightning.stackBank).toBe(bank);
+    const win = resolveTrick(scen(12, 0, { skills: [L.KURZSCHLUSS], skillTiers: tiers, lightning: light({ stackBank: bank }) }), noCrit);
+    expect(win.lastTrick.scoreGain).toBeCloseTo((B + bank) * 1.02, 6);
+    expect(win.lightning.stackBank).toBe(0);
+    expect(win.lightYield).toBeCloseTo(bank, 6);
   });
   it("Überspannung (§7.19): die volle Leiste gibt der Karte, die sie ionisiert, dauerhaft +Kartenwert — und keine Ladung mehr", () => {
     const s = resolveTrick(scen(12, 0, { skills: [L.UEBERSPANNUNG], lightning: light({ charge: 9 }) }), zero);
