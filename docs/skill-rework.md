@@ -2050,6 +2050,110 @@ Blitzfänger, Überspannung, Reststrom bleiben ohne Wirkung — die Stapel liege
 Rolle, aber nur die Episch-Schwelle trägt sie sichtbar; Vorschlag: Schwellen 50/60/70/90 statt 40/50/60/80. Die Verbraucher
 sind die letzte offene Feuer-Baustelle (Punkt 1).
 
+### 7.13 Verbraucher zünden bei voller Leiste (2026-09-06, umgesetzt)
+
+Owner-Entscheid zu Punkt 1 (7.11/7.12): keine weitere Leiste — **die volle Hitzeleiste ist der Auslöser.** Flächenbrand
+brennt den nächsten Sieg bis 40 (Episch bis 0) nur bei voller Leiste, Schmelzpunkt verbrennt 4 % je Sieg nur bei voller
+Leiste, die Schmiede schmiedet am Rundenende nur bei voller Leiste (mit Weißglut heißt voll 200). Darunter rühren die
+drei die Hitze nicht an, sie bleibt dem Passiv und der Klinge. Flächenbrands Schwelle „ab 80 %" entfällt (Stufentabelle
+ohne `minHeat`); Stufentexte, Glossar (Konsument) und Hitzeleiste (Flächenbrand-Bereitschaft und Schmiede-Abzeichen
+leuchten bei voller Leiste) folgen. Reihenfolge im Sieg unverändert: Hitzegewinn → Tor „voll" auf der Hitze nach dem
+Gewinn → Schmelzpunkt → Flächenbrand → Phönix-Neuzündung.
+
+**Messung (100 Läufe, Seeds 1–100, Duell und Motor Feuer):**
+
+| | vorher (7.12) | jetzt |
+| --- | --- | --- |
+| Feuer mono (Duell, Median) | 2,36M | **2,86M (+21 %)** |
+| Blitz mono | 2,34M | 2,42M |
+| Floor Feuer ÷ Blitz | 1,01× | **1,18×** (Mean 1,19×, p90 1,17×) |
+| Split / Mix | 2,32M / 1,45M | 2,65M / 1,50M |
+| Motor: Fraktion (zufällig) | 2,42M | 2,97M (+23 %) |
+| Ø Hitze / Stiche ≥ 100 % / Mult-Anteil | 52 % / 15 % / 22 % | 71 % / 26 % / 29 % |
+| Motor: Kern ohne Verstärker | 6,27M | 6,73M (+7 %) |
+| Glut + Kern / Zunder + Kern / alle vier | 9,37M / 8,28M / 5,86M | unverändert (die Kern-Builds halten keinen Konsumenten) |
+
+Der Zufalls-Feuerbuild legt ein Fünftel zu, weil Schmelzpunkt und Schmiede die Hitze nicht mehr früh abtragen: die
+Hitze liegt im Schnitt bei 71 statt 52 %, der Multiplikator trägt 29 statt 22 % des Scores. Das kostet die Parität aus
+7.10/7.12: Feuer mono steht 18 % über Blitz mono.
+
+**Auswertungen (1000 Explore, 150 Läufe, Seeds 1..):**
+
+*Gierig:* Median 13,5M (7.12: 13,0M), Siegquote 70 %, Ø 8,8 Skills. Die Konsumenten nimmt der gierige Spieler weiter
+nicht (Flächenbrand 1 %, Schmelzpunkt 7 %, Schmiede 1 % gehalten), und wo er sie hat, kosten sie: Lift 0,60 / 0,85 /
+0,73. Das übrige Bild wie 7.12 — stark Sonnenkern (2,06), Damaststahl (1,26), Klinge (1,20, in 78 %), Ladungsserie
+(1,33), Doppelentladung (1,42), Durchschlag (1,24); tot Feuersturm, Feuerwalze, Glut, Zunder, Kettenblitz, Reststrom,
+Dauerstrom, Entladung; schadet Blitzfänger, Spannungsstau, Gewitterfront, Blitzableiter, Sonnenzorn. Kurzschluss kippt
+von +21 % (7.12) auf „schadet" — in 7 % gehalten, die Ablation ist dort dünn; beobachten.
+
+*Random:* Median 2,15M (7.12: 2,00M), Lift-Läufe 2,28M. **Die drei Verbraucher bleiben die Falle, nur etwas milder:
+Flächenbrand 0,77 (vorher 0,75), Schmelzpunkt 0,83 (0,76), Schmiede 0,93 (0,91).** Klinge 1,33, Weißglut 1,16,
+Lauffeuer 1,12, Rückzündung 1,09, Brandmal 1,08; Blitz flach wie gehabt (Durchschlag 1,42, Ladungsserie 1,19, der Rest
+0,87–1,01).
+
+**Warum die Verbraucher trotzdem schaden — drei Messungen, alle mit dem 7.13-Stand:**
+
+*Auszahlung hochdrehen hilft nicht* (Random-Lifts, 1000 Läufe, Seeds 1–1000, nur die Stufentabellen skaliert):
+
+| Variante | Flächenbrand | Schmelzpunkt | Schmiede |
+| --- | --- | --- | --- |
+| heute (15 / 20 / 25 / 30 je Punkt) | 0,77 | 0,83 | 0,93 |
+| Auszahlung ×2 | 0,81 | 0,84 | 0,93 |
+| Auszahlung ×3 | 0,84 | 0,86 | 0,93 |
+| Auszahlung ×2, Schmiede +5 statt +3 Wert | 0,81 | 0,84 | 0,95 |
+| Flächenbrand brennt nur bis 70 statt 40 | 0,79 | 0,83 | 0,92 |
+
+*Der Schaden sitzt oben* (dieselben 1000 Läufe, Lift mit ÷ ohne als Mittelwert wie in der Auswertung und als Median):
+Flächenbrand 0,70 im Mittel, 0,85 im Median; Schmelzpunkt 0,76 / 0,88; Schmiede 0,90 / 0,96. Das p90 der Läufe mit
+Flächenbrand liegt bei 4,1M, ohne bei 6,1M. Auch ohne Klinge und ohne Weißglut im Build: 0,71 / 0,87 und 0,83 / 0,87 —
+die Weißglut-Leiste (voll = 200, der Brand nimmt 160) verschärft es, ist aber nicht die Ursache.
+
+*Gepaart im Kern-Build* (feste Builds, Welt nur Feuer, Seeds 1–100, „Konsument zuerst + Kern" gegen „Kern ohne
+Konsumenten", Kern = Klinge, Weißglut, Verbrennung, Brandmal, Lauffeuer, Glutstahl, Feuerwalze, Glutbett):
+
+| Build | Median | Ø Hitze | Siegquote | typ. ÷ Kern | besser in |
+| --- | --- | --- | --- | --- | --- |
+| Kern ohne Konsumenten | 7,94M | 73 | 66,4 % | — | — |
+| Schmelzpunkt + Kern | 6,42M | 60 | 63,4 % | ×0,82 | 37 % der Seeds |
+| Flächenbrand + Kern | 3,19M | 34 | 61,2 % | **×0,45** | 6 % |
+| Schmiede + Kern | 5,60M | 57 | 62,8 % | ×0,80 | 19 % |
+| Kern ohne Weißglut | 5,23M | 49 | 69,5 % | — | — |
+| Flächenbrand + Kern ohne Weißglut | 2,32M | 28 | 60,6 % | ×0,46 | 6 % |
+
+**Lesart.** Der Auslöser „volle Leiste" nimmt den Verbrauchern den frühen Schaden (bis zur vollen Leiste bleibt die Hitze
+dem Passiv), nicht den späten, und der späte ist der große: verbrannte Hitze ist bei Feuer Kartenwert (Klinge) und
+Multiplikator, also Siegquote, also Serie — Flächenbrand + Kern verliert fünf Punkte Siegquote und damit die Serien, die
+den Score tragen. Der Ertrag (Basis-Score je Punkt, +3 Wert) hängt nicht an der Serie und kann das nicht aufwiegen: die
+dreifache Auszahlung hebt Flächenbrand von 0,77 auf 0,84. Ein „halten gegen verbrennen" gibt es damit nicht — halten
+gewinnt immer, weil die Leiste beim Halten weiterzahlt und beim Verbrennen einmal.
+
+**Vorschläge dazu (Owner-Entscheid, Design; nichts umgesetzt):**
+
+1. **Verbraucher als Überlauf-Wandler statt Brenner.** Bei voller Leiste verbrennen sie nichts, sondern wandeln, was über
+   die Leiste hinausginge: Schmelzpunkt — der Hitze-Überschuss jedes Siegs wird Basis-Score je Punkt; Schmiede — am
+   Rundenende bei voller Leiste ohne Preis eine Schmiedung; Flächenbrand — bei voller Leiste zählt der nächste Sieg
+   ×1,5 (die Leiste bleibt). Kein Verlust, klein und einfach, konkurriert nicht mit Klinge. Größenordnung aus dem
+   Motor: der Kern-Build verschenkt rund 60 Hitze je Runde am Anschlag, bei 15–30 je Punkt sind das +2–4 % Score.
+2. **Oder streichen und die drei Plätze neu belegen** — die Fraktion hat mit Klinge, Weißglut, Verbrennung, Brandmal,
+   Lauffeuer und den vier Verstärkern genug Träger; drei Skills, die der gierige Spieler nie und der Zufallsspieler zu
+   seinem Schaden nimmt, sind schlechter als drei weniger.
+
+**Paritäts-Sweep (Duell, 100 Läufe je Zeile; gemessen, nichts umgesetzt):**
+
+| Regler | Blitz mono | Floor Feuer ÷ Blitz | Mean | p90 |
+| --- | --- | --- | --- | --- |
+| heute (Stapel-Score 60, 4 % je Skill, 0,15× je Stapel) | 2,42M | 1,18× | 1,19× | 1,17× |
+| Hitze-Mult 0,015 statt 0,02 je 10 % (Feuer mono 2,77M) | 2,42M | 1,15× | 1,16× | 1,14× |
+| Stapel-Score 90 | 2,57M | 1,11× | 1,08× | 1,10× |
+| Crit je Skill 5 % | 2,55M | 1,12× | 1,04× | 1,01× |
+| 0,2× je Stapel | 2,48M | 1,15× | 1,15× | 1,15× |
+| Stapel-Score 90 + Crit 5 % | 2,70M | 1,06× | 0,93× | 0,91× |
+| **Stapel-Score 120** | 2,70M | **1,06×** | **0,99×** | **0,98×** |
+
+Der Hitze-Multiplikator ist kein Hebel (29 % des Feuer-Scores; ein Viertel weniger bringt drei Punkte). Ein einziger
+Regler holt die Parität zurück: Stapel-Score 60 → 120 — alle drei Maße nahe 1, und die Richtung stimmt mit „die
+Ionisierung soll tragen" überein. Das ist Balancing, also Owner-Entscheid; nicht umgesetzt.
+
 ## 5. Eis
 
 Offen.
@@ -2092,3 +2196,4 @@ Offen.
 | 2026-09-05 | Owner: Pool Feuer/Blitz bestätigt; Neuwurf würfelt die drei Skills der geöffneten Tür neu (umgesetzt); Hitze schneller verbrauchen (7.10): Kühlung 2 → 6, Vorsprung-Offset 2 → 1 nach Sweep — ein Verstärker zahlt jetzt +10 % (Glut) bis +23 % (Zunder), Feuer mono gegen Blitz mono 1,00×. Danach die große Runde mit Random-Picks (7.11). |
 | 2026-09-05 | Random-Runde (7.11, `--policy random`): Zufallsspieler 2,08M gegen gierig 14,4M; Lifts statt Ablation lesen. Feuer: die drei Verbraucher kosten 9–25 %, Verstärker neutral (zahlen nur mit Klinge/Weißglut), Sonnenkern 3,68. Blitz flach (15 von 19 zwischen 0,9 und 1,05), Durchschlag 1,47, Ladungsserie 1,16. |
 | 2026-09-06 | Owner zu den Empfehlungen: Glut als Kaltstart und Stapel auf den Crit-Multiplikator umsetzen (7.12), Stufen und übrige Tote warten, Verbraucher offen (keine neue Leiste). Umgesetzt: Glut ×2 Hitze unter 40/50/60/80 %; +0,15× Crit-Mult je Stapel der Siegkarte (Sweep: 0,1× / 0,15× / 0,2×), Crit je Skill 5 → 4 %. Glut + Kern +49 % im Motor, im gierigen Lauf neutral; Stapel-Build auf Augenhöhe mit dem Crit-Build, Kurzschluss zahlt, Phönixfeuer stark; Duell Floor 0,98×. Auswertungen gierig (13,0M) und random (2,0M) neu gefahren. |
+| 2026-09-06 | Owner: die volle Leiste ist der Auslöser der Verbraucher (7.13, umgesetzt): Flächenbrand, Schmelzpunkt und Schmiede zünden nur bei voller Leiste, Flächenbrands 80-%-Schwelle entfällt; Texte, Glossar, Hitzeleiste nachgezogen. Feuer mono +21 % (2,86M), Floor Feuer ÷ Blitz 1,18×; gierig 13,5M, random 2,15M. Die Verbraucher bleiben die Falle (0,77 / 0,83 / 0,93): gemessen, dass verbrannte Hitze über Klinge und Siegquote die Serien kostet (Flächenbrand + Kern ×0,45), dreifache Auszahlung hilft nicht. Vorschläge: Überlauf-Wandler oder streichen; Parität über Stapel-Score 120 (Sweep). Nichts davon umgesetzt. |
