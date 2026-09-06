@@ -21,19 +21,19 @@ export const F = Object.freeze({
   KLINGE: "SK_FIRE_06", WEISSGLUT: "SK_FIRE_07", FEUERWALZE: "SK_FIRE_08", VERBRENNUNG: "SK_FIRE_09",
   SCHMELZPUNKT: "SK_FIRE_12", BRANDMAL: "SK_FIRE_13", LAUFFEUER: "SK_FIRE_14", // SK_FIRE_11 Flächenbrand: gestrichen (§7.16)
   SCHMIEDE: "SK_FIRE_15", GLUTSTAHL: "SK_FIRE_16",
-  SONNENKERN: "SK_FIRE_L01", PHOENIXFEUER: "SK_FIRE_L02", SONNENZORN: "SK_FIRE_L03", DAMASTSTAHL: "SK_FIRE_L04",
+  SONNENKERN: "SK_FIRE_L01", EWIGE_GLUT: "SK_FIRE_L02", SONNENZORN: "SK_FIRE_L03", DAMASTSTAHL: "SK_FIRE_L04", // L02: Ewige Glut ersetzt Phönixfeuer (§7.21)
 });
 
 /* Frischer Hitze-Substate — inaktiv; der erste Feuer-Skill aktiviert ihn (Reducer). value = Hitze (0..max, auch mit
-   Nachkommastellen), peak = höchste je erreichte Hitze (Sonnenzorn), lastLossDeficit = Rückstand der letzten Niederlage
-   (Rückzündung). */
+   Nachkommastellen), peak = höchste je erreichte Hitze (Sonnenzorn, Ewige Glut), lastLossDeficit = Rückstand der letzten
+   Niederlage (Rückzündung), emberMult = dauerhafte Rampe der Ewigen Glut auf den Hitze-Multiplikator. */
 export function initHeat() {
-  return { active: false, value: 0, max: C.HEAT_MAX, peak: 0, lastLossDeficit: 0 };
+  return { active: false, value: 0, max: C.HEAT_MAX, peak: 0, lastLossDeficit: 0, emberMult: 0 };
 }
 
 const held = (skills, id) => (skills || []).includes(id);
 export const hasSonnenkern   = (skills) => held(skills, F.SONNENKERN);
-export const hasPhoenixfeuer = (skills) => held(skills, F.PHOENIXFEUER);
+export const hasEwigeGlut    = (skills) => held(skills, F.EWIGE_GLUT);
 export const hasSonnenzorn   = (skills) => held(skills, F.SONNENZORN);
 export const hasDamaststahl  = (skills) => held(skills, F.DAMASTSTAHL);
 
@@ -86,14 +86,16 @@ export function heatGainOnWin(skills, skillTiers, { margin = 0, lastResult = nul
 /* Hitze-Multiplikator (eigener Faktor im Score-Stack): je volle 10 % Hitze +HEAT_MULT_PER_10; über HEAT_MAX (nur mit
    Weißglut) je 10 % die Steigung der Stufe. Sonnenzorn rechnet mit der Spitze statt der aktuellen Hitze und zählt
    den Passiv-Anteil doppelt (SONNENZORN_MULT_PER_10) — §7.19: über die ganze Spitze bis WEISSGLUT_HEAT_MAX, nicht nur
-   bis 100 (die Weißglut-Steigung kommt weiter obendrauf). 1 ohne Hitze. */
-export function heatMult(skills, skillTiers, value = 0, peak = 0) {
+   bis 100 (die Weißglut-Steigung kommt weiter obendrauf). Ewige Glut (L, §7.21): `ember` = die dauerhafte Rampe aus
+   heißen Rundenenden (heat.emberMult), additiv im selben Faktor, nur solange der Skill gehalten wird. 1 ohne Hitze. */
+export function heatMult(skills, skillTiers, value = 0, peak = 0, ember = 0) {
   const zorn = hasSonnenzorn(skills);
   const h = Math.max(0, zorn ? Math.max(peak || 0, value || 0) : (value || 0));
   const per10 = zorn ? C.SONNENZORN_MULT_PER_10 : C.HEAT_MULT_PER_10;
   let m = 1 + Math.floor(Math.min(h, zorn ? C.WEISSGLUT_HEAT_MAX : C.HEAT_MAX) / 10 + 1e-9) * per10;
   const over = fireParam(skills, skillTiers, F.WEISSGLUT, "multPer10");
   if (over && h > C.HEAT_MAX) m += Math.floor((Math.min(h, C.WEISSGLUT_HEAT_MAX) - C.HEAT_MAX) / 10 + 1e-9) * over;
+  if (hasEwigeGlut(skills)) m += Math.max(0, ember || 0);
   return m;
 }
 
@@ -140,7 +142,7 @@ export function damascusCombat(skills, forged, card) {
   return (forged && card && forged[card.id]) || 0;
 }
 
-/* Sieg: Hitzegewinn, Schmelzpunkt (Überlauf-Wandler), Phönix-Neuzündung, Glutstahl, Sonnenkern-Score, Brände.
+/* Sieg: Hitzegewinn, Schmelzpunkt (Überlauf-Wandler), Glutstahl, Sonnenkern-Score, Brände.
    `held` = Hitze nach dem Gewinn — daran hängen die Hitze-Tore dieses Siegs und der Hitze-Multiplikator. `valueOver` =
    Kampfwert der Siegkarte über ihrem Grundwert (alle Quellen, ohne den Damast-Kampfbonus). Gibt { heat, held, flat,
    melted, brands } zurück; melted = gewandelte Hitzepunkte, brands = [{ id, value }] für die NÄCHSTE Runde. */
@@ -152,10 +154,6 @@ export function fireOnWin(heat, skills, skillTiers, { margin = 0, lastResult = n
   let value = Math.min(max, raw);
   const heldHeat = value;
   let flat = 0, melted = 0;
-  // Phönixfeuer (§7.20): die Hitze, die Niederlagen über die Leiste hinaus geheizt haben (phoenixPending, fireOnLoss),
-  // zahlt mit diesem Sieg Basis-Score je Punkt — der Überlauf-Wandler der Niederlagen. Ohne den Skill verfällt sie.
-  const phoenixPaid = hasPhoenixfeuer(skills) ? (heat.phoenixPending || 0) : 0;
-  flat += phoenixPaid * C.PHOENIX_OVERFLOW_SCORE;
   // Schmelzpunkt (§7.16, Owner): der Überlauf-Wandler — die Hitze, die ein Sieg nicht mehr auf die Leiste bringt (100,
   // mit Weißglut 200), wird Basis-Score je Punkt; die Leiste bleibt voll, verbrannt wird nichts (der Brand kostete Klinge,
   // Siegquote und Serie, 7.13). Episch: die Kühlung einer Niederlage bei voller Leiste ist vorgemerkt (meltPending) und
@@ -167,8 +165,6 @@ export function fireOnWin(heat, skills, skillTiers, { margin = 0, lastResult = n
     flat += melted * spp;
     meltPending = 0;
   }
-  // Phönixfeuer: auf 0 gefallene Hitze zündet neu — ohne Rundenlimit.
-  if (hasPhoenixfeuer(skills) && value <= 0) value = Math.min(max, C.PHOENIX_REIGNITE);
   // Glutstahl: Basis-Score je Punkt Kampfwert über dem Grundwert der Siegkarte (Episch: Schmiedewert doppelt).
   const gp = fireParam(skills, skillTiers, F.GLUTSTAHL, "perPoint");
   if (gp) {
@@ -192,44 +188,38 @@ export function fireOnWin(heat, skills, skillTiers, { margin = 0, lastResult = n
   }
   if (hasSonnenkern(skills) && oppId != null) brands.push({ id: oppId, value: C.SONNENKERN_BRAND });
   const peak = Math.max(heat.peak || 0, heldHeat, value);
-  return { heat: { ...heat, value, peak, meltPending, phoenixPending: 0 }, held: heldHeat, flat: Math.round(flat), melted, phoenixPaid, brands };
+  return { heat: { ...heat, value, peak, meltPending }, held: heldHeat, flat: Math.round(flat), melted, brands };
 }
 
-/* Niederlage: Phönixfeuer heizt je Punkt Rückstand (§7.19: und bei voller Leiste hält die erste Niederlage jeder Runde
-   die Serie — `streakHeld`, einmal je Runde über heat.phoenixUsed, fireCycleEnd setzt zurück; §7.20: was über die
-   Leiste hinausgeht, ist vorgemerkt — heat.phoenixPending — und zahlt beim nächsten Sieg Basis-Score je Punkt); sonst
-   kühlt die Niederlage HEAT_LOSS flach (Glut Episch: unter der Kaltstart-Schwelle nur halb), Glutbett hält einen Boden
-   (Episch: keine Kühlung). Schmelzpunkt Episch merkt die Kühlung bei voller Leiste vor (meltPending, zahlt beim
-   nächsten Sieg). Brandmal Episch brandmarkt die Gegnerkarte, die gewonnen hat (Tor auf der Hitze vor der Niederlage).
-   Gibt { heat, brands, streakHeld } zurück. */
+/* Niederlage: kühlt HEAT_LOSS flach (Glut Episch: unter der Kaltstart-Schwelle nur halb), Glutbett hält einen Boden
+   (Episch: keine Kühlung); Ewige Glut (L, §7.21) lässt die Hitze nie unter EWIGE_GLUT_FLOOR_FRAC der Spitze fallen —
+   ein Boden, der nur hält, nie hebt. Schmelzpunkt Episch merkt die Kühlung bei voller Leiste vor (meltPending, zahlt
+   beim nächsten Sieg). Brandmal Episch brandmarkt die Gegnerkarte, die gewonnen hat (Tor auf der Hitze vor der
+   Niederlage). Gibt { heat, brands } zurück. */
 export function fireOnLoss(heat, skills, skillTiers, { deficit = 0, oppId = null } = {}) {
   const max = heat.max || C.HEAT_MAX;
   const before = heat.value || 0;
   let value = before;
-  let phoenixUsed = !!heat.phoenixUsed, streakHeld = false, phoenixPending = heat.phoenixPending || 0;
-  if (hasPhoenixfeuer(skills) && before >= max && !phoenixUsed) { phoenixUsed = true; streakHeld = true; }
-  if (hasPhoenixfeuer(skills)) {
-    const raw = before + Math.max(0, deficit) * C.PHOENIX_LOSS_HEAT;
-    value = Math.min(max, raw);
-    phoenixPending += Math.max(0, raw - max);
-  } else if (!fireParam(skills, skillTiers, F.GLUTBETT, "noCool")) {
+  if (!fireParam(skills, skillTiers, F.GLUTBETT, "noCool")) {
     const floor = fireParam(skills, skillTiers, F.GLUTBETT, "floor") ?? 0;
     const below = fireParam(skills, skillTiers, F.GLUT, "below");
     const half = fireParam(skills, skillTiers, F.GLUT, "halfCool") && below != null && before < below; // §7.16: Glut Episch
     value = before <= floor ? before : Math.max(floor, before - (half ? C.HEAT_LOSS / 2 : C.HEAT_LOSS));
   }
+  if (hasEwigeGlut(skills)) value = Math.max(value, Math.min(before, (heat.peak || 0) * C.EWIGE_GLUT_FLOOR_FRAC));
   let meltPending = heat.meltPending || 0;
   if (fireParam(skills, skillTiers, F.SCHMELZPUNKT, "lossPays") && before >= max && value < before) meltPending += before - value;
   const brands = [];
   const bm = fireParam(skills, skillTiers, F.BRANDMAL, "minHeat");
   if (fireParam(skills, skillTiers, F.BRANDMAL, "onLoss") && bm != null && before >= bm && oppId != null)
     brands.push({ id: oppId, value: fireParam(skills, skillTiers, F.BRANDMAL, "value") || 0 });
-  return { heat: { ...heat, value, peak: Math.max(heat.peak || 0, value), lastLossDeficit: Math.max(0, deficit), meltPending, phoenixUsed, phoenixPending }, brands, streakHeld };
+  return { heat: { ...heat, value, peak: Math.max(heat.peak || 0, value), lastLossDeficit: Math.max(0, deficit), meltPending }, brands };
 }
 
 /* Rundenende: Schmiede (§7.14: ohne Preis, die Hitze ist nur die Schwelle der Stufe — liegt sie an, erhält die niedrigste
-   Karte dauerhaft +FORGE_VALUE, Episch die zwei niedrigsten), Damaststahl (die niedrigste Karte ohne Schwelle), danach
-   Phönix-Neuzündung. Niedrigste Karte deterministisch: kleinster Wert, dann kleinste id.
+   Karte dauerhaft +FORGE_VALUE, Episch die zwei niedrigsten), Damaststahl (die niedrigste Karte ohne Schwelle), Ewige
+   Glut (L, §7.21: endet die Runde mit voller Leiste, wächst die Rampe emberMult um EWIGE_GLUT_MULT_PER_ROUND, ohne
+   Deckel). Niedrigste Karte deterministisch: kleinster Wert, dann kleinste id.
    Gibt { heat, deck, forged, forgedIds } zurück. */
 export function fireCycleEnd(heat, skills, skillTiers, deck, forged = {}) {
   if (!heat || !heat.active) return { heat, deck, forged, forgedIds: [] };
@@ -256,8 +246,9 @@ export function fireCycleEnd(heat, skills, skillTiers, deck, forged = {}) {
     for (let k = 0; k < n; k++) { forgeLowest(done); if (forgedIds.length > done.length) done.push(forgedIds[forgedIds.length - 1]); }
   }
   if (hasDamaststahl(skills)) forgeLowest([]);
-  if (hasPhoenixfeuer(skills) && value <= 0) value = Math.min(max, C.PHOENIX_REIGNITE);
-  return { heat: { ...heat, value, phoenixUsed: false }, deck: d, forged: f, forgedIds }; // §7.19: der Phönix-Serienschutz steht je Runde einmal
+  let emberMult = heat.emberMult || 0;
+  if (hasEwigeGlut(skills) && value >= max) emberMult += C.EWIGE_GLUT_MULT_PER_ROUND;
+  return { heat: { ...heat, value, emberMult }, deck: d, forged: f, forgedIds };
 }
 
 // Brand-Wechsel am Rundenende: normal ersetzen die neuen Brände die alten; mit Sonnenkern stapeln sie sich darauf.

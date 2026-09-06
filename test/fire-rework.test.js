@@ -83,6 +83,9 @@ describe("Feuer — Roster und Stufenleitern", () => {
     expect(SKILL_DEFS.SK_FIRE_15.descTiers[3]).toContain(`${T.schmiede[3].cards} niedrigsten Karten`); // das Episch-Extra nur dort
     expect(SKILL_DEFS.SK_FIRE_15.descTiers[2]).not.toContain("niedrigsten Karten");
     expect(SKILL_DEFS.SK_FIRE_L03.desc).toContain(`+${Math.round(C.SONNENZORN_MULT_PER_10 * 100)} %`);
+    expect(SKILL_DEFS.SK_FIRE_L02.name).toBe("Ewige Glut"); // §7.21: ersetzt Phönixfeuer auf demselben Platz
+    expect(SKILL_DEFS.SK_FIRE_L02.desc).toContain(`+${Math.round(C.EWIGE_GLUT_MULT_PER_ROUND * 100)} %`);
+    expect(SKILL_DEFS.SK_FIRE_L02.desc).toContain(`${Math.round(C.EWIGE_GLUT_FLOOR_FRAC * 100)} %`);
     expect(SKILL_DEFS.SK_FIRE_L03.descTiers).toBeUndefined(); // Legendäre haben keine Stufe
     // Keine Leiter mehr im Text: kein Stufenname steht in einem Stufentext (die Stufe zeigt das Badge).
     for (const id of FIRE_IDS) for (const text of SKILL_DEFS[id].descTiers || []) expect(text, id).not.toMatch(/Selten|Episch|Sehr selten/);
@@ -138,6 +141,10 @@ describe("Feuer — Modul (reine Übergänge)", () => {
     expect(heatMult([F.SONNENZORN, F.WEISSGLUT], { [F.WEISSGLUT]: 1 }, 0, 200)).toBeCloseTo(1 + 20 * C.SONNENZORN_MULT_PER_10 + 10 * T.weissglut[1].multPer10); // §7.19: die Spitze zählt bis 200
     expect(heatMult([F.SONNENZORN], {}, 0, 200)).toBeCloseTo(1 + 20 * C.SONNENZORN_MULT_PER_10);
     expect(heatMult([F.WEISSGLUT], { [F.WEISSGLUT]: 1 }, 200)).toBeCloseTo(1 + 10 * C.HEAT_MULT_PER_10 + 10 * T.weissglut[1].multPer10); // ohne Sonnenzorn bleibt das Passiv bei 100 stehen
+    // §7.21 Ewige Glut: die Rampe liegt additiv im selben Faktor, nur solange der Skill gehalten wird.
+    expect(heatMult([F.EWIGE_GLUT], {}, 100, 100, 0.3)).toBeCloseTo(1 + 10 * C.HEAT_MULT_PER_10 + 0.3);
+    expect(heatMult([F.EWIGE_GLUT, F.SONNENZORN], {}, 100, 100, 0.3)).toBeCloseTo(1 + 10 * C.SONNENZORN_MULT_PER_10 + 0.3);
+    expect(heatMult([], {}, 100, 100, 0.3)).toBeCloseTo(1 + 10 * C.HEAT_MULT_PER_10);
   });
   it("feuersturmMult (§7.17): bei voller Leiste +Satz je Serienpunkt, Episch schon ab 80 % Hitze; unter dem Tor und ohne Serie 1", () => {
     expect(feuersturmMult([], {}, 100, 100, 10)).toBe(1);
@@ -195,15 +202,7 @@ describe("Feuer — Modul (reine Übergänge)", () => {
     // Ohne Schmelzpunkt bleibt eine Vormerkung liegen und zahlt nichts.
     expect(fireOnWin(heat({ value: 94, meltPending: 6 }), [F.KLINGE], {}, { margin: 1 }).flat).toBe(0);
   });
-  it("fireOnWin: Phönix zündet neu, Glutstahl je Punkt über dem Grundwert (Episch Schmiedewert doppelt), Sonnenkern je Brandpunkt", () => {
-    // Phönix: Hitze auf 0 zündet mit dem Sieg neu.
-    const ph = fireOnWin(heat({ value: 0 }), [F.PHOENIXFEUER], {}, { margin: 1 });
-    expect(ph.heat.value).toBe(C.PHOENIX_REIGNITE);
-    // §7.20 Phönix: die vorgemerkte Hitze aus Niederlagen über der Leiste zahlt mit dem Sieg je Punkt in die Basis und ist danach verbraucht.
-    const paid = fireOnWin(heat({ value: 100, phoenixPending: 21 }), [F.PHOENIXFEUER], {}, { margin: 1 });
-    expect(paid.phoenixPaid).toBe(21); expect(paid.flat).toBe(21 * C.PHOENIX_OVERFLOW_SCORE); expect(paid.heat.phoenixPending).toBe(0);
-    const dropped = fireOnWin(heat({ value: 100, phoenixPending: 21 }), [F.KLINGE], {}, { margin: 1 }); // ohne den Skill verfällt sie
-    expect(dropped.flat).toBe(0); expect(dropped.heat.phoenixPending).toBe(0);
+  it("fireOnWin: Glutstahl je Punkt über dem Grundwert (Episch Schmiedewert doppelt), Sonnenkern je Brandpunkt, Sonnenzorn heizt unter der Spitze doppelt", () => {
     // Sonnenzorn (§7.20): der Sieg unter der Spitze heizt doppelt — über fireOnWin, mit der Spitze aus dem Substate.
     expect(fireOnWin(heat({ value: 50, peak: 100 }), [F.SONNENZORN], {}, { margin: 6 }).heat.value).toBe(50 + G(6) * C.SONNENZORN_HEAT_MULT);
     expect(fireOnWin(heat({ value: 50, peak: 50 }), [F.SONNENZORN], {}, { margin: 6 }).heat.value).toBe(50 + G(6));
@@ -224,27 +223,20 @@ describe("Feuer — Modul (reine Übergänge)", () => {
     // Brandmal + Lauffeuer + Sonnenkern: drei Quellen, die Engine summiert je Karte.
     expect(fireOnWin(heat({ value: 80 }), [F.BRANDMAL, F.LAUFFEUER, F.SONNENKERN], {}, ctx).brands).toHaveLength(4);
   });
-  it("fireOnLoss: −2 flach, Glutbett-Boden (Episch keine Kühlung), Phönix heizt, Brandmal Episch brandmarkt den Sieger", () => {
+  it("fireOnLoss: −6 flach, Glutbett-Boden (Episch keine Kühlung), Ewige Glut hält den Anteil der Spitze, Brandmal Episch brandmarkt den Sieger", () => {
     expect(fireOnLoss(heat({ value: 50 }), [], {}, { deficit: 7 }).heat).toMatchObject({ value: 50 - C.HEAT_LOSS, lastLossDeficit: 7 });
     expect(fireOnLoss(heat({ value: 1 }), [], {}, { deficit: 1 }).heat.value).toBe(0);
     expect(fireOnLoss(heat({ value: 41 }), [F.GLUTBETT], {}, { deficit: 1 }).heat.value).toBe(T.glutbett[0].floor);
     expect(fireOnLoss(heat({ value: 30 }), [F.GLUTBETT], {}, { deficit: 1 }).heat.value).toBe(30);   // unter dem Boden: nichts
     expect(fireOnLoss(heat({ value: 95 }), [F.GLUTBETT], { [F.GLUTBETT]: 3 }, { deficit: 9 }).heat.value).toBe(95);
-    expect(fireOnLoss(heat({ value: 10 }), [F.PHOENIXFEUER], {}, { deficit: 3 }).heat.value).toBe(10 + 3 * C.PHOENIX_LOSS_HEAT);
-    // §7.20 Phönix: was über die Leiste hinausgeht, ist vorgemerkt (phoenixPending) und stapelt sich über mehrere Niederlagen.
-    expect(fireOnLoss(heat({ value: 10 }), [F.PHOENIXFEUER], {}, { deficit: 3 }).heat.phoenixPending).toBe(0);
-    const over = fireOnLoss(heat({ value: 100 }), [F.PHOENIXFEUER], {}, { deficit: 3 });
-    expect(over.heat.value).toBe(100); expect(over.heat.phoenixPending).toBe(3 * C.PHOENIX_LOSS_HEAT);
-    expect(fireOnLoss(over.heat, [F.PHOENIXFEUER], {}, { deficit: 2 }).heat.phoenixPending).toBe(5 * C.PHOENIX_LOSS_HEAT);
-    expect(fireOnLoss(heat({ value: 98 }), [F.PHOENIXFEUER], {}, { deficit: 2 }).heat.phoenixPending).toBe(98 + 2 * C.PHOENIX_LOSS_HEAT - 100); // nur der Teil über der Leiste
-    expect(fireOnLoss(heat({ value: 200, max: 200 }), [F.PHOENIXFEUER, F.WEISSGLUT], {}, { deficit: 3 }).heat.phoenixPending).toBe(3 * C.PHOENIX_LOSS_HEAT); // mit Weißglut ab 200
-    // §7.19 Phönixfeuer: bei voller Leiste hält die erste Niederlage jeder Runde die Serie, die zweite nicht; unter voll nicht; ohne den Skill nicht.
-    const ph1 = fireOnLoss(heat({ value: 100 }), [F.PHOENIXFEUER], {}, { deficit: 3 });
-    expect(ph1.streakHeld).toBe(true); expect(ph1.heat.phoenixUsed).toBe(true); expect(ph1.heat.value).toBe(100);
-    expect(fireOnLoss(ph1.heat, [F.PHOENIXFEUER], {}, { deficit: 3 }).streakHeld).toBe(false);
-    expect(fireOnLoss(heat({ value: 99 }), [F.PHOENIXFEUER], {}, { deficit: 3 }).streakHeld).toBe(false);
-    expect(fireOnLoss(heat({ value: 100 }), [F.GLUTBETT], {}, { deficit: 3 }).streakHeld).toBe(false);
-    expect(fireCycleEnd(heat({ value: 100, phoenixUsed: true }), [F.PHOENIXFEUER], {}, constDeck(5), {}).heat.phoenixUsed).toBe(false); // je Runde einmal
+    // §7.21 Ewige Glut: die Hitze fällt nie unter den Anteil der Spitze — der Boden hält, hebt aber nie; Glutbett-Boden darüber gewinnt.
+    const frac = C.EWIGE_GLUT_FLOOR_FRAC;
+    expect(fireOnLoss(heat({ value: 52, peak: 100 }), [F.EWIGE_GLUT], {}, { deficit: 1 }).heat.value).toBe(100 * frac);
+    expect(fireOnLoss(heat({ value: 40, peak: 100 }), [F.EWIGE_GLUT], {}, { deficit: 1 }).heat.value).toBe(40);                 // schon darunter: bleibt, steigt nicht
+    expect(fireOnLoss(heat({ value: 52, peak: 100 }), [], {}, { deficit: 1 }).heat.value).toBe(52 - C.HEAT_LOSS);                // ohne den Skill kühlt es durch
+    expect(fireOnLoss(heat({ value: 70, peak: 100 }), [F.EWIGE_GLUT], {}, { deficit: 1 }).heat.value).toBe(70 - C.HEAT_LOSS);    // über dem Boden normal
+    expect(fireOnLoss(heat({ value: 61, peak: 100 }), [F.EWIGE_GLUT, F.GLUTBETT], { [F.GLUTBETT]: 1 }, { deficit: 1 }).heat.value).toBe(T.glutbett[1].floor);
+    expect(fireOnLoss(heat({ value: 102, max: 200, peak: 200 }), [F.EWIGE_GLUT, F.WEISSGLUT], {}, { deficit: 1 }).heat.value).toBe(200 * frac); // Spitze 200 → Boden 100
     expect(fireOnLoss(heat({ value: 20 }), [F.BRANDMAL], { [F.BRANDMAL]: 3 }, { deficit: 3, oppId: "O1" }).brands).toEqual([{ id: "O1", value: T.brandmal[3].value }]);
     expect(fireOnLoss(heat({ value: 20 }), [F.BRANDMAL], {}, { deficit: 3, oppId: "O1" }).brands).toEqual([]);
     // §7.16 Glut Episch: unter der Kaltstart-Schwelle kühlen Niederlagen nur halb, darüber voll; Normal ohne Extra.
@@ -256,7 +248,7 @@ describe("Feuer — Modul (reine Übergänge)", () => {
     expect(fireOnLoss(heat({ value: 99 }), [F.SCHMELZPUNKT], { [F.SCHMELZPUNKT]: 3 }, { deficit: 1 }).heat.meltPending).toBe(0);
     expect(fireOnLoss(heat({ value: 100 }), [F.SCHMELZPUNKT], {}, { deficit: 1 }).heat.meltPending).toBe(0);
   });
-  it("fireCycleEnd (§7.14, Schwelle ohne Preis): Schmiede hebt die niedrigste Karte ab der Schwelle der Stufe (Episch zwei), die Hitze bleibt, Damaststahl ohne Schwelle, Phönix danach", () => {
+  it("fireCycleEnd (§7.14, Schwelle ohne Preis): Schmiede hebt die niedrigste Karte ab der Schwelle der Stufe (Episch zwei), die Hitze bleibt, Damaststahl ohne Schwelle, Ewige Glut rampt bei voller Leiste", () => {
     const deck = constDeck(5).map((c, i) => (i === 3 ? { ...c, value: 2 } : i === 7 ? { ...c, value: 3 } : c));
     const min = T.schmiede[0].minHeat;
     const r = fireCycleEnd(heat({ value: min }), [F.SCHMIEDE], {}, deck, {});
@@ -269,7 +261,14 @@ describe("Feuer — Modul (reine Übergänge)", () => {
     expect(fireCycleEnd(heat({ value: T.schmiede[3].minHeat - 1 }), [F.SCHMIEDE], { [F.SCHMIEDE]: 3 }, deck, {}).forgedIds).toEqual([]);
     const d = fireCycleEnd(heat({ value: 0 }), [F.DAMASTSTAHL], {}, deck, { X3: 3 });
     expect(d.forgedIds).toEqual(["X3"]); expect(d.forged).toEqual({ X3: 6 });
-    expect(fireCycleEnd(heat({ value: 0 }), [F.PHOENIXFEUER], {}, deck, {}).heat.value).toBe(C.PHOENIX_REIGNITE);
+    // §7.21 Ewige Glut: endet die Runde mit voller Leiste, wächst die Rampe um den Satz — darunter nicht, ohne Deckel, mit Weißglut erst bei 200.
+    const step = C.EWIGE_GLUT_MULT_PER_ROUND;
+    expect(fireCycleEnd(heat({ value: 100 }), [F.EWIGE_GLUT], {}, deck, {}).heat.emberMult).toBeCloseTo(step, 9);
+    expect(fireCycleEnd(heat({ value: 99 }), [F.EWIGE_GLUT], {}, deck, {}).heat.emberMult).toBe(0);
+    expect(fireCycleEnd(heat({ value: 100, emberMult: 40 * step }), [F.EWIGE_GLUT], {}, deck, {}).heat.emberMult).toBeCloseTo(41 * step, 9);
+    expect(fireCycleEnd(heat({ value: 100, max: 200 }), [F.EWIGE_GLUT, F.WEISSGLUT], {}, deck, {}).heat.emberMult).toBe(0);
+    expect(fireCycleEnd(heat({ value: 200, max: 200 }), [F.EWIGE_GLUT, F.WEISSGLUT], {}, deck, {}).heat.emberMult).toBeCloseTo(step, 9);
+    expect(fireCycleEnd(heat({ value: 100 }), [F.KLINGE], {}, deck, {}).heat.emberMult).toBe(0); // ohne den Skill nichts
     expect(fireCycleEnd(null, [F.SCHMIEDE], {}, deck, {}).deck).toBe(deck);
   });
   it("nextBrandActive: Brände erneuern sich je Runde, mit Sonnenkern stapeln sie", () => {
@@ -300,32 +299,25 @@ describe("Feuer — Engine-Integration", () => {
     const normal = resolveTrick(scen(12, 6, { skills: [F.GLUT], heat: heat({ value: T.glut[0].below }) }), noCrit); // Normal: ab 40 nicht mehr
     expect(normal.heat.value).toBe(T.glut[0].below + G(6));
   });
-  it("Niederlage kühlt −2 und merkt den Rückstand; Phönixfeuer heizt stattdessen", () => {
-    const s = resolveTrick(scen(2, 9, { skills: [F.GLUT], heat: heat({ value: 50 }) }), noCrit);
+  it("Niederlage kühlt −6 und merkt den Rückstand; die Serie reißt (kein Feuer-Serienschutz mehr)", () => {
+    const s = resolveTrick(scen(2, 9, { skills: [F.GLUT], heat: heat({ value: 50 }), winStreak: 5 }), noCrit);
     expect(s.lastTrick.result).toBe("loss");
     expect(s.heat.value).toBe(50 - C.HEAT_LOSS);
     expect(s.heat.lastLossDeficit).toBe(7);
-    const ph = resolveTrick(scen(2, 9, { skills: [F.PHOENIXFEUER], heat: heat({ value: 50 }) }), noCrit);
-    expect(ph.heat.value).toBe(50 + 7 * C.PHOENIX_LOSS_HEAT);
+    expect(s.winStreak).toBe(0);
   });
-  it("Phönixfeuer (§7.19): bei voller Leiste hält die erste Niederlage der Runde die Serie, die zweite nicht; das Rundenende gibt den Schutz frei", () => {
-    const held = resolveTrick(scen(2, 9, { skills: [F.PHOENIXFEUER], heat: heat({ value: C.HEAT_MAX }), winStreak: 5 }), noCrit);
-    expect(held.lastTrick.result).toBe("loss");
-    expect(held.winStreak).toBe(5); expect(held.heat.phoenixUsed).toBe(true); expect(held.heat.value).toBe(C.HEAT_MAX);
-    const second = resolveTrick({ ...held, phase: "play" }, noCrit);
-    expect(second.winStreak).toBe(0);
-    const warm = resolveTrick(scen(2, 9, { skills: [F.PHOENIXFEUER], heat: heat({ value: C.HEAT_MAX - 1 }), winStreak: 5 }), noCrit); // unter der Leiste: nur heizen
-    expect(warm.winStreak).toBe(0); expect(warm.heat.phoenixUsed).toBe(false);
-    const endOfRound = resolveTrick(scen(2, 9, { pos: 39, skills: [F.PHOENIXFEUER], heat: heat({ value: C.HEAT_MAX }), winStreak: 5 }), noCrit);
-    expect(endOfRound.winStreak).toBe(5); expect(endOfRound.heat.phoenixUsed).toBe(false);
-  });
-  it("Phönixfeuer (§7.20): die Hitze aus Niederlagen über der Leiste zahlt beim nächsten Sieg in die Basis, +30 je Punkt", () => {
-    const loss = resolveTrick(scen(2, 9, { skills: [F.PHOENIXFEUER], heat: heat({ value: C.HEAT_MAX }) }), noCrit); // Rückstand 7 bei voller Leiste
-    expect(loss.heat.phoenixPending).toBe(7 * C.PHOENIX_LOSS_HEAT);
-    const plain = resolveTrick(scen(12, 6, { skills: [F.PHOENIXFEUER], heat: heat({ value: 50 }) }), noCrit);
-    const paid = resolveTrick(scen(12, 6, { skills: [F.PHOENIXFEUER], heat: heat({ value: 50, phoenixPending: 21 }) }), noCrit);
-    expect(paid.lastTrick.scoreGain / plain.lastTrick.scoreGain).toBeCloseTo((B + 21 * C.PHOENIX_OVERFLOW_SCORE) / B, 6); // in der Basis, vor den Multiplikatoren
-    expect(paid.heat.phoenixPending).toBe(0);
+  it("Ewige Glut (§7.21): das Rundenende mit voller Leiste hebt den Hitze-Multiplikator dauerhaft, die Rampe steht im Feuer-Faktor; Niederlagen fallen nie unter den Anteil der Spitze", () => {
+    const step = C.EWIGE_GLUT_MULT_PER_ROUND;
+    const hot = resolveTrick(scen(12, 6, { pos: 39, skills: [F.EWIGE_GLUT], heat: heat({ value: C.HEAT_MAX, peak: C.HEAT_MAX }) }), noCrit); // letzter Stich der Runde, Leiste voll
+    expect(hot.heat.emberMult).toBeCloseTo(step, 9);
+    const warm = resolveTrick(scen(12, 6, { pos: 39, skills: [F.EWIGE_GLUT], heat: heat({ value: 80 }) }), noCrit); // 80 + Gewinn < 100: keine Rampe
+    expect(warm.heat.emberMult).toBe(0);
+    const ramped = resolveTrick(scen(12, 6, { skills: [F.EWIGE_GLUT], heat: heat({ value: C.HEAT_MAX, peak: C.HEAT_MAX, emberMult: 10 * step }) }), noCrit);
+    expect(ramped.lastTrick.breakdown.fireMult).toBeCloseTo(heatMult([], {}, C.HEAT_MAX) + 10 * step, 6);
+    const dropped = resolveTrick(scen(12, 6, { skills: [F.KLINGE], heat: heat({ value: C.HEAT_MAX, emberMult: 10 * step }) }), noCrit); // ohne den Skill zählt die Rampe nicht
+    expect(dropped.lastTrick.breakdown.fireMult).toBeCloseTo(heatMult([], {}, C.HEAT_MAX), 6);
+    const loss = resolveTrick(scen(2, 9, { skills: [F.EWIGE_GLUT], heat: heat({ value: 52, peak: 100 }) }), noCrit);
+    expect(loss.heat.value).toBe(100 * C.EWIGE_GLUT_FLOOR_FRAC);
   });
   it("Verbrennung: ein Sieg ab dem Vorsprung der Stufe zählt ×1,5 — im selben Faktor wie der Hitze-Multiplikator", () => {
     const big = resolveTrick(scen(14, 6, { skills: [F.VERBRENNUNG], heat: heat({ value: 0 }) }), noCrit);   // Vorsprung 8

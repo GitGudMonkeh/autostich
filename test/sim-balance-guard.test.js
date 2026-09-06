@@ -41,6 +41,8 @@ import { randomPolicy } from "../sim/policies/random.js";
 // der Dauerwert tragen, s. Doku): Seeds 1..40 Median ≈ 5,67M, Mean ≈ 9,28M (Seeds 1..200: 4,51M / 10,65M). Bänder darauf
 // zentriert (≈ ±35 %). §7.20 (Owner): Ionenfeld 2/3/4/5, Überspannung 1/2/3/4, Deckel zurück auf 8, Donnergott über die
 // Stapel, Phönixfeuer-Überlauf, Sonnenzorn 0,05 und ×2 unter der Spitze — Seeds 1..40 Median ≈ 5,64M, Mean ≈ 8,89M, im Band.
+// §7.21 (Owner): Ewige Glut ersetzt Phönixfeuer (Rampe +0,05 je heiße Runde nach Sweep, Boden 50 % der Spitze) — Seeds
+// 1..40 Median ≈ 5,64M, Mean ≈ 9,19M, im Band.
 describe("sim balance guard", () => {
   const SEEDS = 40; // feste Seeds 1..40 → deterministischer Median/Mean
   const scores = Array.from({ length: SEEDS }, (_, i) => runOne(1 + i, randomPolicy()).score).sort((a, b) => a - b);

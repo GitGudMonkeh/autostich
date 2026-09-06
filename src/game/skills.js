@@ -163,8 +163,8 @@ export const SKILL_DEFS = {
   // Legendäre (§4.7): keine Stufe, zwei Effekte, jedes läuft allein.
   SK_FIRE_L01: { id: "SK_FIRE_L01", name: "Sonnenkern", archetype: "fire", legendary: true, keywords: ["heat", "brand"],
     desc: `Jeder Sieg brandmarkt die geschlagene Gegnerkarte (−${C.SONNENKERN_BRAND} Wert), und Brände erneuern sich nicht mehr: sie stapeln sich über die Runden. Sieg gegen eine gebrandmarkte Karte: +${C.SONNENKERN_SCORE_PER_BRAND} Basis-Score je Brandpunkt auf ihr.` },
-  SK_FIRE_L02: { id: "SK_FIRE_L02", name: "Phönixfeuer", archetype: "fire", legendary: true, keywords: ["heat"],
-    desc: `Niederlagen kühlen nicht, sie heizen: +${C.PHOENIX_LOSS_HEAT} % Hitze je Punkt Rückstand. Was über die Leiste hinausgeht, zahlt beim nächsten Sieg +${C.PHOENIX_OVERFLOW_SCORE} Basis-Score je Punkt. Bei voller Hitzeleiste hält die erste Niederlage jeder Runde die Serie. Fällt die Hitze auf 0, entzündet sie sich neu auf ${C.PHOENIX_REIGNITE} %.` },
+  SK_FIRE_L02: { id: "SK_FIRE_L02", name: "Ewige Glut", archetype: "fire", legendary: true, keywords: ["heat"], // §7.21: ersetzt Phönixfeuer (Emblem bleibt)
+    desc: `Jede Runde, die mit voller Hitzeleiste endet, hebt den Hitze-Multiplikator dauerhaft um +${pct(C.EWIGE_GLUT_MULT_PER_ROUND)} %. Die Hitze fällt nie unter ${pct(C.EWIGE_GLUT_FLOOR_FRAC)} % der höchsten je erreichten Hitze.` },
   SK_FIRE_L03: { id: "SK_FIRE_L03", name: "Sonnenzorn", archetype: "fire", legendary: true, keywords: ["heat"],
     desc: `Der Hitze-Multiplikator rechnet mit der höchsten je erreichten Hitze, nicht mit der aktuellen — bis ${C.WEISSGLUT_HEAT_MAX} %, und je 10 % Hitze +${pct(C.SONNENZORN_MULT_PER_10)} % Score statt +${pct(C.HEAT_MULT_PER_10)} %. Solange die Hitze unter der Spitze liegt, zählt die Hitze aus Siegen ×${de(C.SONNENZORN_HEAT_MULT)}.` },
   SK_FIRE_L04: { id: "SK_FIRE_L04", name: "Damaststahl", archetype: "fire", legendary: true, keywords: ["heat", "forge"],

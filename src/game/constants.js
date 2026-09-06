@@ -354,9 +354,8 @@ export const FORGE_VALUE         = envNum("SIM_FORGE_VALUE", 3);                
 // Legendäre (§4.7): keine Stufe, zwei Effekte, jedes läuft allein.
 export const SONNENKERN_BRAND           = 1;                                                   // Sonnenkern: jeder Sieg brandmarkt −1 (stapelt über die Runden)
 export const SONNENKERN_SCORE_PER_BRAND = envNum("SIM_SONNENKERN_SCORE_PER_BRAND", 20);        // Sonnenkern: Basis-Score je Brandpunkt auf der geschlagenen Karte
-export const PHOENIX_LOSS_HEAT          = envNum("SIM_PHOENIX_LOSS_HEAT", 3);                  // Phönixfeuer: +% Hitze je Punkt Rückstand statt Kühlung (§7.19: 2 → 3)
-export const PHOENIX_REIGNITE           = envNum("SIM_PHOENIX_REIGNITE", 50);                  // Phönixfeuer: Hitze nach der Neuzündung (auf 0 gefallen), ohne Rundenlimit
-export const PHOENIX_OVERFLOW_SCORE     = envNum("SIM_PHOENIX_OVERFLOW_SCORE", 30);            // Phönixfeuer (§7.20): Basis-Score je Hitzepunkt aus Niederlagen über der Leiste, zahlt beim nächsten Sieg
+export const EWIGE_GLUT_MULT_PER_ROUND  = envNum("SIM_EWIGE_GLUT_MULT_PER_ROUND", 0.05);       // Ewige Glut (L, §7.21, ersetzt Phönixfeuer): jede Runde, die mit voller Leiste endet, +so viel auf den Hitze-Multiplikator, dauerhaft (Rampe ohne Deckel). Sweep 0,03/0,05/0,08 zur Laufmitte: 1,02/1,14/1,32 gepaart
+export const EWIGE_GLUT_FLOOR_FRAC      = envNum("SIM_EWIGE_GLUT_FLOOR_FRAC", 0.5);            // Ewige Glut (L): die Hitze fällt nie unter diesen Anteil der Spitze (Kaltstart nur einmal)
 export const SONNENZORN_MULT_PER_10     = envNum("SIM_SONNENZORN_MULT_PER_10", 0.05);          // Sonnenzorn: Hitze-Multiplikator je 10 % Spitzen-Hitze (statt HEAT_MULT_PER_10; §7.20: 0,04 → 0,05)
 export const SONNENZORN_HEAT_MULT       = envNum("SIM_SONNENZORN_HEAT_MULT", 2);               // Sonnenzorn (§7.20): unter der Spitze zählt die Hitze aus Siegen ×
 

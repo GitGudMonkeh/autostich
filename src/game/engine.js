@@ -477,7 +477,7 @@ export function resolveTrick(state, rng) {
     // winStreak/wins enthalten hier bereits den gerade gewonnenen Stich — genau die Werte, mit denen wctx oben gebaut ist.
     winSuit = eSuit; winSuitStreak = suitStreak; // Farbserie fortschreiben (effektive Farbe: grün = „G")
     // ---- Feuer (exp skill rework, §4): Hitzegewinn (Passiv, Glut, Zunder, Rückzündung), Schmelzpunkt (Überlauf-Wandler)
-    //      (Schmelzpunkt, Flächenbrand), Phönix, Glutstahl, Sonnenkern-Score und die Brände für die nächste Runde —
+    //      (Schmelzpunkt), Glutstahl, Sonnenkern-Score und die Brände für die nächste Runde —
     //      alles im Modul. `fireHeld` = Hitze nach dem Gewinn, vor dem Verbrauch: daran hängt der Hitze-Multiplikator
     //      dieses Siegs (unten im Stack). Feuer-Flats gehen in die multiplizierte Basis; Direkt-Score gibt es nicht.
     let fireFlat = 0;
@@ -735,7 +735,7 @@ export function resolveTrick(state, rng) {
     // ein Halte-Build gewinnt über Wert und Formationen, nicht über Feuer-Flats. Gelesen wird die Hitze nach dem
     // Gewinn dieses Siegs und vor dem Verbrauch (fireHeld).
     const fireMult = (heat && heat.active)
-      ? heatMult(skills, skillTiers, fireHeld, heat.peak) * verbrennungMult(skills, skillTiers, pValue - oValue)
+      ? heatMult(skills, skillTiers, fireHeld, heat.peak, heat.emberMult) * verbrennungMult(skills, skillTiers, pValue - oValue)
         * feuersturmMult(skills, skillTiers, fireHeld, heat.max || C.HEAT_MAX, serieStreak) : 1; // §7.17: Feuersturm, Serie zu Score bei voller Leiste
     // architectMult (#202, Architekt-Score-Gebäude: Struktur/Schatzkammer) läuft als eigener Faktor am Ende des Stacks.
     // #Pool Batch 4 (gamble/Risiko): Boden — der Architekt-Abzug (negativer Flat) darf den Stich höchstens auf 0 drücken,
@@ -890,21 +890,18 @@ export function resolveTrick(state, rng) {
     losses += 1; cycleLosses += 1; // cycleLosses: Durchlauf-Bilanz für Zinseszins (#203)
     // Serienanker IV (§4.2): eine Niederlage auf dieser Position setzt die Serie NICHT zurück.
     const anchorNoReset = anchorType === "streak" && !!aParam("noReset");
-    // ---- Feuer (exp skill rework, §4): Kühlung (Passiv, Glutbett-Boden, Phönixfeuer heizt), Rückstand für Rückzündung
-    //      merken, Brandmal Episch brandmarkt die Gegnerkarte, die gewonnen hat — alles im Modul. Phönixfeuer (§7.19):
-    //      bei voller Leiste hält die erste Niederlage jeder Runde die Serie — deshalb VOR dem Serienschutz, der dann
-    //      keine Ladung ausgibt.
-    let phoenixHeld = false;
+    // ---- Feuer (exp skill rework, §4): Kühlung (Passiv, Glutbett-Boden, Ewige Glut hält den Anteil der Spitze), Rückstand
+    //      für Rückzündung merken, Brandmal Episch brandmarkt die Gegnerkarte, die gewonnen hat — alles im Modul.
     if (heat && heat.active) {
       const r = fireOnLoss(heat, skills, skillTiers, { deficit: oValue - pValue, oppId: oCard.id });
-      heat = r.heat; phoenixHeld = !!r.streakHeld;
+      heat = r.heat;
       for (const b of r.brands) { newBrandPending[b.id] = (newBrandPending[b.id] || 0) + b.value; brandTotal += 1; }
     }
     // Blitz (exp skill rework): Serienschutz (Ladung ab dem Anteil der Stufe hält die Serie und wird verbraucht; Episch
     // einmal je Runde gratis) — im Modul.
     let serienschutzHeld = false;
     if (lightning && lightning.active) {
-      const r = lightningOnLoss(lightning, skills, skillTiers, { alreadyHeld: anchorNoReset || phoenixHeld });
+      const r = lightningOnLoss(lightning, skills, skillTiers, { alreadyHeld: anchorNoReset });
       lightning = r.lightning; serienschutzHeld = r.streakHeld;
     }
     // Eis-Neudesign (docs §4 Frostgriff — Eispanzer): eine Niederlage NEBEN einem Gletscher ist folgenlos (Serie hält)
@@ -913,7 +910,7 @@ export function resolveTrick(state, rng) {
     const glacierShield = glacierActive && glacierRoles.includes(GLACIER_ROLES.EISPANZER)
       && glacierNeighbors4(actualPos).some((p) => glacierLocked[p]);
     if (glacierShield) for (const nb of glacierNeighbors4(actualPos)) if (glacierLocked[nb]) newGlacierMass[nb] = (newGlacierMass[nb] || 0) + GLACIER_EISPANZER_MASS;
-    const streakNoReset = anchorNoReset || serienschutzHeld || glacierShield || phoenixHeld;
+    const streakNoReset = anchorNoReset || serienschutzHeld || glacierShield;
     winStreak = streakNoReset ? winStreak : 0;
     initiative = "opp";
     sinceWin += 1; // #71 Durchbruch: kein Sieg → Zähler hoch
@@ -1147,7 +1144,7 @@ export function resolveTrick(state, rng) {
     // Relay (C4/C5) auf Position 1 des nächsten (persistenten) Durchlaufs durchsickern.
     successorQueue = [];
     // ---- Feuer (exp skill rework, §4.5/§4.7): Rundenende — Schmiede (kostet Hitze, niedrigste Karte +3 dauerhaft,
-    //      Episch zwei Karten), Damaststahl (niedrigste Karte ohne Preis), Phönix-Neuzündung. Alles im Modul; die
+    //      Episch zwei Karten), Damaststahl (niedrigste Karte ohne Preis), Ewige Glut (Rampe, §7.21). Alles im Modul; die
     //      Schmiedewerte bleiben in den Karten gebacken.
     if (heat && heat.active) {
       const r = fireCycleEnd(heat, skills, skillTiers, deck, newForged);

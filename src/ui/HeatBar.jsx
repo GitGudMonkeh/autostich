@@ -38,7 +38,7 @@ export function HeatBar({ heat, skills = [], skillTiers = {}, forged = {}, lastR
   const param = (id, key) => fireParam(skills, skillTiers, id, key);
   const zorn = skills.includes(F.SONNENZORN);
   // Hitze-Multiplikator des Passivs, wie ihn der nächste Sieg (vor seinem Gewinn) trüge — dieselbe Quelle wie die Engine.
-  const mult = heatMult(skills, skillTiers, value, heat.peak || 0);
+  const mult = heatMult(skills, skillTiers, value, heat.peak || 0, heat.emberMult || 0);
   const multPct = Math.round((mult - 1) * 100);
   // Schmiede (§7.14): Schwelle der Stufe, ohne Preis — die Schmiedung fällt am Rundenende, sobald die Hitze anliegt;
   // Zähler = Summe der Schmiedewerte im Deck.

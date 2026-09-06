@@ -1499,7 +1499,8 @@ Entscheid Owner (2026-09-05): **gesetzt wie vorgeschlagen.**
 | Legendär | Achse | Effekte |
 | --- | --- | --- |
 | Sonnenkern | Gegner | Jeder Sieg brandmarkt die Gegnerkarte (−1), Brände stapeln sich über die Runden statt sich zu erneuern. Sieg gegen gebrandmarkte Karte +20 Basis-Score je Brand. |
-| Phönixfeuer | Rhythmus | Niederlagen heizen statt zu kühlen, +3 % je Punkt Rückstand (7.19: war +2 %). Was über die Leiste hinausgeht, zahlt beim nächsten Sieg +30 Basis-Score je Punkt (7.20). Bei voller Hitzeleiste hält die erste Niederlage jeder Runde die Serie (7.19). Fällt die Hitze auf 0, zündet sie auf 50 % neu, ohne Rundenlimit. |
+| Ewige Glut (7.21, ersetzt Phönixfeuer) | Rampe | Jede Runde, die mit voller Hitzeleiste endet, hebt den Hitze-Multiplikator dauerhaft um +5 %, ohne Deckel. Die Hitze fällt nie unter 50 % der höchsten je erreichten Hitze. |
+| ~~Phönixfeuer~~ | Rhythmus | gestrichen (7.21): Niederlagen heizen, Serienschutz je Runde, Überlauf-Wandler — der Rückstand einer Niederlage war im reifen Deck zu klein, um irgendetwas daraus zu machen (7.20). |
 | Sonnenzorn | Multiplikator | Der Hitze-Multiplikator rechnet mit der höchsten je erreichten Hitze — bis 200 %, auch ohne Weißglut (7.19) — und zählt je 10 % +5 % Score statt +2 % (7.20: war +4 %). Solange die Hitze unter der Spitze liegt, zählt die Hitze aus Siegen ×2 (7.20). |
 | Damaststahl | Schmiede | Jede Runde wird die niedrigste Karte ohne Preis geschmiedet (+3). Geschmiedete Karten kämpfen mit doppeltem Schmiedewert. |
 
@@ -2696,6 +2697,31 @@ wieder zur Falle), Spannungsstau (−10 %), Gewitterfront (−7 %), Serienschutz
    (−47 %) bleiben die Feuer-Fallen — Glutbett auf Wunsch des Owners unverändert.
 3. Aus 7.18/7.19 weiter: Kurzschluss als Pick (in 87 %, −1 %, jetzt neutral), die Stufenleitern (bei Ionenfeld und
    Überspannung tragen sie, bei den meisten nicht), Hochspannung danach.
+
+### 7.21 Ewige Glut ersetzt Phönixfeuer (2026-09-06, umgesetzt)
+
+Owner: Phönixfeuer ist „vollgestopft mit Versuchen, ihn nutzbar zu machen" — streichen und ein neues Legendäres bauen,
+das trägt. Aus drei Vorschlägen (Ewige Glut: Rampe; Schmelzkern: Überlauf zu Dauerwert; Flammenkrone: Serie) die
+Wahl: **Ewige Glut**, auf dem Platz SK_FIRE_L02, das Phönix-Emblem bleibt (Wiedergeburt aus der Glut).
+
+**Ewige Glut** (Feuer, L, Achse Rampe) — zwei Dinge:
+
+1. Jede Runde, die mit voller Hitzeleiste endet, hebt den Hitze-Multiplikator dauerhaft um +0,05
+   (`EWIGE_GLUT_MULT_PER_ROUND`, Regler — Vorschlag 0,03, nach Sweep 0,05, unten; `heat.emberMult`, additiv im
+   selben Faktor wie Passiv, Weißglut und Sonnenzorn, ohne Deckel). Im reinen Feuer-Build enden 28 von 49 Runden
+   heiß: ab Runde 1 wächst die Rampe auf +1,5, der Feuer-Faktor später Siege steigt von 2,6 auf 4,0. Die Messlatte war
+   Entladung Normal: +0,02× je Leiste bei 84 Leisten. Die Rampe zählt nur, solange der Skill gehalten wird.
+2. Die Hitze fällt nie unter 50 % der Spitze (`EWIGE_GLUT_FLOOR_FRAC`) — ein Boden, der nur hält, nie hebt (wer
+   den Skill unter der Spitze bekommt, wird nicht hochgezogen). Nach der ersten heißen Runde gibt es keinen Kaltstart
+   mehr (Motor: 600 Stiche bis 100).
+
+Warum es tragen sollte: Feuer hatte keine einzige dauerhafte Rampe, Blitz hat vier (Gewitterfront, Entladung, die
+Kettenblitz-Tiefe, den Überspannungs-Dauerwert); Feuers Schwanz war deshalb flach (p90 Feuer ÷ Blitz 0,61×).
+Wachpunkt: Weißglut und Sonnenzorn liegen im selben Faktor, additiv — kein Produkt.
+
+**Gestrichen:** Phönixfeuer samt Serienschutz je Runde, Überlauf-Wandler und Neuzündung (`PHOENIX_*`, `phoenixUsed`,
+`phoenixPending`, `fireOnLoss` gibt kein `streakHeld` mehr; die Engine hat keinen Feuer-Serienschutz). Der Emblem-
+Master bleibt als `docs/art/skills/fire/SK_FIRE_L02_phoenixfeuer`, das Spiel-Asset heißt `SK_FIRE_L02_ewige-glut`.
 
 ## 5. Eis
 
