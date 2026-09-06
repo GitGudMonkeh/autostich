@@ -3089,6 +3089,194 @@ Builds (+48 % zur Laufmitte, +64 % gierig), ohne den Median zu verschieben; der 
 Anteil und Stapel-Score); Feuerlinie-Chip an der Hitzeleiste (Anzeige); Glutbett und Schmiede (Owner: bleiben);
 Anzeige der Resonanz-Summe im Stich (heute zeigt der Stich die eigenen Stapel — Owner-Frage).
 
+### 7.26 Pass über alle Feuer- und Blitz-Skills (2026-09-06, Befund und Vorschläge, nichts umgesetzt)
+
+Owner: „ein pass über alle skills. ob alle unterschiedlich genug, genügend Varianz, alle Beschreibungen gut sind."
+Drei Fragen, vier Befunde (A–D), danach die Vorschläge je Skill (E). **Nichts umgesetzt** — jeder Punkt wartet auf
+das Ja des Owners, Skill für Skill.
+
+#### A. Auslöser und Erträge
+
+Je Skill der Auslöser (woran er hängt) und der Ertrag (was herauskommt); die letzte Spalte ist der gierige Stand
+(7.23–7.25, mit dem zweiten Lauf aus dieser Runde).
+
+**Blitz.** Die Kette ist Crit → Ladung → volle Leiste → Stapel (+ Dauerwert seit 7.24).
+
+| Skill | Auslöser | Ertrag | Gierig |
+| --- | --- | --- | --- |
+| Blitzableiter | jeder N. Crit; volle Leiste; Sieg ohne Crit (E) | Ladung | Füller |
+| Reststrom | volle Leiste | Ladung (Startwert); Leistenlänge (E) | schwankt, 7.24 „schadet" |
+| Ionenfeld | volle Leiste | Stichwert auf alle Karten, N Stiche | tot (7.23) |
+| Gewitterfront | volle Leiste | Crit-Chance dauerhaft; Crit-Mult (E) | „schadet" (7.24) |
+| Entladung | volle Leiste | Crit-Mult dauerhaft | tot (7.23) |
+| Kettenblitz | volle Leiste | Stapel auf die tiefste Karte | stark seit Resonanz (7.25) |
+| Ladungsserie | jeder Serienpunkt | Crit-Chance; Ladung ab Serie 8 (E) | stark |
+| Vorentladung | Serienpunkt ab Serie N | Crit-Mult auf diesen Stich | Träger |
+| Spannungsstau | Sieg ohne Crit | Crit-Mult bis zum nächsten Crit | „schadet" (7.23) |
+| Blitzschlag | jeder N. Crit | Stapel auf die Siegkarte | Füller, Lift 1,55 |
+| Blitzfänger | ionisierte Karte im Stich | Kampfwert | tot (7.23, 7.25) |
+| Kurzschluss | Sieg ab N Stapeln | Stapel zählen doppelt | Füller, in 85 % |
+| Überspannung | Crit über dem Deckel | Ladung | Füller (7.25) |
+| Serienschutz | Niederlage mit Ladung | Serie hält | „schadet" (7.6), nie Träger |
+
+Auslöser: **volle Leiste 5** (Reststrom, Ionenfeld, Gewitterfront, Entladung, Kettenblitz, dazu Blitzableiter zur
+Hälfte) · Crit-Zähler 2 · Serie 2 · Sieg ohne Crit 1 (+ Blitzableiter E) · Stapel-Zustand 2 · Deckel-Überschuss 1 ·
+Niederlage 1. Erträge: Ladung 3 · Crit-Mult 3 · Crit-Chance 2 · Stapel 2 · Wert 2 · Verdopplung 1 · Schutz 1.
+**Unberührt bei Blitz:** Formation (nur Resonanz, L), das Gegnerdeck, das Durchlaufende, der Kampfwert-Vorsprung, die
+eigene Reihenfolge.
+
+**Feuer.** Die Kette ist Sieg mit Vorsprung → Hitze → Hitze-Multiplikator und Tore.
+
+| Skill | Auslöser | Ertrag | Gierig |
+| --- | --- | --- | --- |
+| Feuerlinie | Sieg in einer Formation | Score-Faktor je Punkt Kampfwert; kostet 3 % Hitze | Füller (8–19 %) |
+| Zunder | jeder Sieg (E: auch Niederlage) | Hitze | „schadet" (7.24) |
+| Feuersturm | volle Leiste, dann je Serienpunkt | Score-Faktor | tot (7.23) |
+| Rückzündung | jeder N. Sieg in Folge | Score-Faktor ×1,5; Kampfwert (E) | Füller |
+| Glutbett | Niederlage | Hitze-Boden | „schadet" (Owner: bleibt) |
+| Glühende Klinge | Hitze-Zustand | Kampfwert auf alle Karten | Träger |
+| Weißglut | Hitze über 100 | Score-Faktor; Leistenlänge | stark |
+| Feuerwalze | Hitze-Schwelle nach einem Sieg | Kampfwert der nächsten Karte | tot (7.6, 7.9, 7.13) |
+| Verbrennung | Sieg ab Vorsprung N | Score-Faktor ×1,5; Hitze ×1,5 (E) | Füller |
+| Schmelzpunkt | Überlauf bei voller Leiste | Basis-Score | tot (7.23) |
+| Brandmal | Hitze-Schwelle, jeder Sieg | Gegnerkarte −2 Wert | stark (7.24) |
+| Lauffeuer | Hitze-Schwelle, jeder Sieg | Nachbarn der Gegnerkarte −1 Wert | stark (7.24) |
+| Schmiede | Durchlaufende ab Hitze-Schwelle | Dauerwert | tot (Owner: bleibt) |
+| Glutstahl | jeder Sieg | Basis-Score je Punkt über dem Grundwert | −62 % (7.24) |
+
+Auslöser: **Hitze-Schwelle 4** (Feuerwalze, Brandmal, Lauffeuer, Schmiede) · Sieg ohne Bedingung 2 · Sieg mit
+Bedingung 3 · Hitze-Zustand 2 · Serie 1 · Überlauf 1 · Niederlage 1. Erträge: **Score-Faktor 5** (Feuerlinie,
+Feuersturm, Rückzündung, Verbrennung, Weißglut) · Basis-Score 2 · Kampfwert 2 · Gegner-Debuff 2 · Hitze 1 ·
+Dauerwert 1 · Schutz 1. **Unberührt bei Feuer:** die eigene Reihenfolge, Zeitfenster nach einem Ereignis, Ladung
+oder Crit (die Brücke zum Blitz).
+
+#### B. Was sich doppelt, nach Schärfe
+
+1. **Gewitterfront × Entladung.** Gleicher Auslöser (volle Leiste), gleicher Satzbau („gibt dauerhaft +X"), nur das
+   Ziel unterscheidet sich (Chance gegen Multiplikator). Und das Episch-Extra der Gewitterfront (+0,02× Crit-Mult je
+   Leiste) **ist Entladung Normal, Zahl für Zahl**. Die schärfste Dublette im Spiel.
+2. **Brandmal × Lauffeuer.** Gleicher Auslöser, **dieselbe Leiter 80/60/40/20**, gleicher Ertragstyp (Brand auf dem
+   Gegnerdeck); der Unterschied ist „die geschlagene Karte −2" gegen „ihre Nachbarn −1". Sonnenkern (L) ist der
+   dritte Brand und tut beides.
+3. **Feuerwalze × Glühende Klinge.** Beide wandeln Hitze in Kampfwert. Gemessen (Stufe für Stufe, alle Hitzestände):
+   Klinge erreicht oder schlägt Feuerwalze überall außer bei 40 % Hitze auf Sehr selten und Episch, braucht keinen
+   Sieg davor und wächst mit der Hitze weiter — Feuerwalze bleibt auf jeder Stufe bei +2.
+4. **Blitzableiter × Reststrom.** Blitzableiters Zusatz ab Selten („nach jeder vollen Leiste kommt +1 Ladung zurück")
+   ist Reststrom, nur kleiner — auf Episch (+2 zurück) ist er **Reststrom Normal, Zahl für Zahl**. Dazu ist
+   Blitzableiter Episch der einzige Skill mit **drei Sätzen und drei Effekten**
+   (§1: ein Effekt je normalem Skill), und sein dritter Satz besetzt Spannungsstaus Auslöser.
+5. **Verbrennung × Rückzündung.** Beide zahlen **×1,5** auf einen Sieg, beide lassen den Faktor fest und schieben nur
+   die Bedingung (Vorsprung 8→5, Takt 5→2). Zwei Skills, eine Zahl.
+6. **Reststrom Episch × Donnergott (L).** „Die Leiste ist schon bei 9 voll" ist die Kopfzeile eines Legendären
+   („Die Ladungsleiste ist bei 7 voll") auf einer normalen Stufe.
+7. **Blitzfänger × Ionenfeld × Passiv.** Drei Wertquellen beim Blitz. Der Dauerwert je Leiste (7.24) macht die dritte
+   überflüssig; Blitzfänger ist seit 7.23 in jeder gierigen Auswertung tot.
+8. **Schmiede × Damaststahl (L).** Seit 7.14 (Schmiede ohne Preis) fast deckungsgleich; Damaststahl misst −5 %.
+   Schmiede bleibt (Owner) — die Unterscheidung muss also vom Legendären kommen.
+
+Nicht doppelt, obwohl sie nebeneinander stehen: Blitzschlag (Breite, je Crit) gegen Kettenblitz (Tiefe, je Leiste);
+Kurzschluss (Schwelle auf einer Karte) gegen Resonanz (Summe über eine Formation); Glutstahl (Basis-Score über
+Grundwert) gegen Feuerlinie (Faktor auf den ganzen Kampfwert).
+
+#### C. Der stille Konflikt: Weißglut schaltet Feuersturm und Schmelzpunkt ab (gemessen)
+
+Beide Skills lesen „volle Leiste" als **die Leiste des Builds**, nicht als 100 %. Mit Weißglut ist die Leiste 200,
+also steigt ihr Tor still um das Doppelte. Gemessen an den Modulfunktionen:
+
+| Fall | ohne Weißglut | mit Weißglut |
+| --- | --- | --- |
+| Feuersturm Sehr selten bei 100 % Hitze | ×1,100 | **×1,000 (aus)** |
+| Feuersturm Episch bei 100 % Hitze (Tor 90, absolut) | ×1,150 | ×1,150 |
+| Schmelzpunkt Normal, Sieg bei voller Leiste | +135 Basis | **0** |
+
+Zwei Folgen. Erstens schaltet ein Pick drei Skills ab, ohne dass ein Text es sagt. Zweitens **dreht sich die Leiter
+um**: Feuersturm Episch (Tor 90, absolut) läuft im Weißglut-Build, Sehr selten (Tor „voll" = 200) nicht — die
+seltenere Stufe ist die schwächere. Das erklärt auch, warum Feuersturm und Schmelzpunkt seit 7.23 „tot" messen,
+während Weißglut „stark" ist: der gierige Spieler nimmt Weißglut zuerst und die beiden danach nie wieder.
+
+#### D. Die Stufenleitern: Feuer schiebt Schwellen, Blitz hebt Erträge
+
+Es gibt zwei Arten von Leiter. Eine **Ertragsleiter** hebt, was der Skill je Auslösung zahlt (Ionenfeld +2/3/4/5,
+Entladung +0,02…0,06×, Weißglut +3…6 %). Eine **Häufigkeitsleiter** lässt den Ertrag fest und senkt nur die
+Schwelle oder den Takt, sodass derselbe Ertrag öfter oder früher kommt. Ausgelesen aus `FEUER_TIERS` / `BLITZ_TIERS`:
+
+- **Feuer: 6 von 14 sind Häufigkeitsleitern** — Feuerwalze (+2 Wert), Brandmal (−2 Wert), Lauffeuer (−1 Wert),
+  Schmiede (+3 Wert), Verbrennung (×1,5), Rückzündung (×1,5). Die ersten vier teilen sich sogar **dieselbe Leiter
+  80/60/40/20**: dieselbe Entscheidung, viermal.
+- **Blitz: 3 von 14** — Kurzschluss (×2), Blitzschlag (+1 Stapel bis Episch), Vorentladung (+0,1× bis Episch).
+
+Die Buchstabenregel „Raritäten dürfen nicht mit den genau gleichen Werten" ist überall eingehalten — kein Skill hat
+zwei identische Zeilen. Eine Häufigkeitsleiter ist trotzdem ab der Laufmitte nicht mehr spürbar, wenn die Ressource
+dauerhaft über der Schwelle liegt: gemessen sitzen **43 % der Stiche bei 100 % Hitze oder darüber** (Motor Feuer,
+7.23), und für die sind 80, 60, 40 und 20 dieselbe Schwelle. Feuerwalze ist der Extremfall, weil ihr Ertrag auch bei
+niedriger Hitze fest bleibt: vier Stufen, viermal +2. Zum Vergleich läuft die Glühende Klinge über eine
+Nenner-Leiter (+1 Wert je 40 / 30 / 25 / 20 % Hitze) und zahlt bei 100 % Hitze +2 / 3 / 4 / 5 — dieselbe Achse,
+spürbare Stufen.
+
+#### E. Textbefund (`docs/text-style-guide.md`)
+
+Keine Selbstbezüge, keine Pfeilnotation, keine Dev-Sprache, Zahlenformat mit Komma durchgehend richtig. Offen:
+
+1. **„Runde" statt „Durchlauf"** (§1a: „Runde" steht in der Spalte *NICHT verwenden*) in sieben Texten: Serienschutz
+   Episch („einmal je Runde"), Brandmal und Lauffeuer (alle vier Stufen, „in der nächsten Runde"), Schmiede (alle
+   vier, „Rundenende"), Sonnenkern („über die Runden"), Ewige Glut und Damaststahl („jede Runde"). Der Rest des
+   Registers ist gemischt (engine.js und glossary.js sagen beides) — der Sweep gehört in eine eigene Runde, die
+   Skilltexte sind hier aber die neuesten und sollten stimmen.
+2. **Gedankenstrich** in Sonnenzorn („nicht mit der aktuellen — bis 200 %"). §3 verbietet ihn im Spielertext ohne
+   gebuchte Ausnahme; er ist der einzige in allen 28 Feuer- und Blitz-Skills.
+3. **„Prozentpunkte" fehlt** dort, wo gegen die 100-%-Schwelle gerechnet wird (§2, Ausnahme): Überspannung Episch
+   („je 25 % Crit-Chance über 100 %"), Weißglut (alle vier, „über 100 % geben je 10 % Hitze") und Sonnenzorn.
+4. **Überspannung sagt dasselbe zweimal**: „Ein Crit über dem Deckel entlädt den Überschuss: je 4× Crit-Multiplikator
+   über 8× …" — „über dem Deckel" und „über 8×" sind dieselbe Bedingung. Der längste Blitz-Text (161 Zeichen).
+5. **Drei Sätze / drei Effekte** in Blitzableiter Episch (siehe B.4). Alle anderen 27 Skills bleiben bei zwei Sätzen.
+6. **Drei Satzanfänge für denselben Auslöser** bei Feuer: „Ein Sieg mit …" (Verbrennung), „Jeder Sieg gibt …"
+   (Zunder), „Sieg: +8 Basis-Score …" (Glutstahl), „Sieg mit einer Karte ab …" (Kurzschluss, Blitz). Glutstahls
+   Telegrammstil und sein Nachsatz „egal woher der Punkt kommt" fallen aus dem Register.
+7. **Längste Texte** (Zeichen): Sonnenzorn 220, Sonnenkern 207, Schmelzpunkt Episch 193, Brandmal Episch 162,
+   Überspannung Episch 161. Die Legendären dürfen lang sein; Schmelzpunkt Episch ist der längste normale Text.
+
+Nicht als Befund gezählt: das geschützte Leerzeichen vor „%" (§2) fehlt in **allen** Registern gleichermaßen
+(`skills.js`, `perks.js`, `families.js`, `glossary.js` haben null U+00A0) — das ist eine Repo-weite Konvention, die
+`fmtPct` erst in der Oberfläche setzt, kein Skill-Befund. `node scripts/text-voice-check.mjs` ist schon vor dieser
+Runde rot (englische Gebäudetexte, Zahlen-Drift) und taugt darum nicht als Tor für den Pass.
+
+#### F. Vorschläge je Skill (Entscheid Owner, einzeln)
+
+Reihenfolge nach Wirkung. Kein Vorschlag fällt unter 14 Skills je Fraktion, keiner fasst Glutbett oder Schmiede an,
+keiner setzt einen Deckel oder Direkt-Score.
+
+| # | Skill | Vorschlag | Empfehlung |
+| --- | --- | --- | --- |
+| 1 | Feuersturm, Schmelzpunkt | Beide Tore lesen **100 %** statt der Build-Leiste (`C.HEAT_MAX` statt `max`): Feuersturm zündet ab voller Grundleiste, Schmelzpunkt wandelt alles über 100 %. Weißglut legt dann obendrauf, statt zwei Skills abzuschalten; die umgedrehte Leiter verschwindet mit. | **ja** — Regelfehler, keine Balance-Frage |
+| 2 | Feuerwalze | Streichen und den Platz (SK_FIRE_08) neu belegen. Die Achse „Hitze zu Kampfwert" hat mit der Klinge schon ihren Skill; vier Stufen mit viermal +2 sind keine Leiter. Drei Konzepte in der Liste unten. | **ja**, Konzept vom Owner |
+| 3 | Gewitterfront, Entladung | (a) Zusammenlegen zu einer Rampe je Leiste (Chance **und** Multiplikator, beides wächst mit der Stufe), der freie Platz bekommt einen Blitz-Skill auf einer unberührten Achse. (b) Nur das Episch-Extra der Gewitterfront tauschen, damit es nicht Entladung Normal ist. | (a); (b) ist der billige Notausgang |
+| 4 | Serienschutz | Auslöser wechseln. Er ist der letzte Skill an der Niederlage-Bedingung, die der Owner in 7.24 zweimal abgeschafft hat, und misst seit 7.6 nie besser als „schadet". Vorschlag: Ladung schützt die Serie nicht mehr, sondern **verlängert** sie („Ab Serie N zählt jeder Sieg doppelt für die Serie" o. Ä.) — Vorschläge nach dem Ja. | **ja**, Richtung offen |
+| 5 | Blitzfänger | Streichen und den Platz (SK_LIGHTNING_11) neu belegen; der Dauerwert je Leiste (Passiv, 7.24) und Ionenfeld decken die Wertachse. Der Platz ist der beste Kandidat für Blitz' erste Formation-, Gegnerdeck- oder Durchlaufende-Mechanik. | **ja**, Konzept vom Owner |
+| 6 | Brandmal, Lauffeuer | Leitern trennen statt zusammenlegen: Brandmal behält die Schwellenleiter (80/60/40/20, Ertrag fest), Lauffeuer bekommt eine feste Schwelle und laddert **Reichweite und Wert**. Dann ist eines der Schwellen-Skill, das andere der Breiten-Skill. | ja, kleiner Eingriff |
+| 7 | Blitzableiter | Auf einen Effekt zurückbauen: nur „Crit zu Ladung", Leiter über die Rate und die Menge (z. B. jeder 3. / jeder 2. / jeder / jeder Crit +2). Der Leisten-Rückfluss geht an Reststrom, der Satz „Sieg ohne Crit" an Spannungsstau. | ja |
+| 8 | Reststrom | Episch ohne Leistenlänge (das ist Donnergotts Kopfzeile): stattdessen ein sehr starker Startwert (§1 erlaubt „oder ist sehr stark"). Nimmt Vorschlag 7 den Rückfluss auf, wächst Reststrom ohnehin. | ja |
+| 9 | Verbrennung, Rückzündung | Eine der beiden bekommt eine **Ertragsleiter** statt der Bedingungsleiter — Vorschlag: Rückzündung feste Takt-Schwelle, Faktor 1,3 / 1,4 / 1,5 / 1,6. Dann teilen sie nicht mehr die Zahl ×1,5. | ja |
+| 10 | Glutstahl | Kein Mechanikwechsel vorgeschlagen (Basis-Score ist eine gebrauchte Rolle), aber der Satz gehört ins Register: „Ein Sieg zählt +8 Basis-Score je Punkt Kampfwert über dem Grundwert der Siegkarte." Wert offen, misst −62 %. | Text ja, Wert später |
+| 11 | Zunder | Kein Vorschlag. Einziger Hitze-Erzeuger neben dem Passiv, strukturell nötig; die Messung leidet daran, dass die Leiste ohnehin voll ist (7.8). Wachpunkt. | — |
+| 12 | Damaststahl (L) | Unterscheidung vom (bleibenden) Schmiede-Skill ist eine eigene Runde, kein Text-Pass. Vorgemerkt. | später |
+| 13 | Texte | Sammelpaket: „Runde" → „Durchlauf" (7 Stellen), Gedankenstrich in Sonnenzorn, „Prozentpunkte" in Überspannung / Weißglut / Sonnenzorn, Überspannung kürzen, Glutstahl ins Register. Reine Textänderung, `npm run loc:export` und die Textwächter in `test/skills.test.js`. | **ja**, in einem Rutsch |
+
+**Konzepte für die zwei freien Plätze** (SK_FIRE_08, SK_LIGHTNING_11), falls 2 und 5 ein Ja bekommen — keines
+gemessen, alle auf Achsen, die heute kein normaler Skill berührt:
+
+| Platz | Konzept | Einzeiler | Achse |
+| --- | --- | --- | --- |
+| Feuer | **Brandschneise** | Ein Sieg an einer Position, an der du schon einmal gewonnen hast, zählt +N % Score. | eigene Reihenfolge / Position |
+| Feuer | **Nachglut** | Die ersten N Stiche nach dem Durchlaufwechsel geben doppelte Hitze. | Zeitfenster nach einem Ereignis |
+| Feuer | **Aschenregen** | Am Durchlaufende brandmarkt die Hitze über 50 % das ganze Gegnerdeck mit −1 Wert je 25 %. | Durchlaufende (heute nur Schmiede) |
+| Blitz | **Erdung** | Jeder N. Crit senkt die geschlagene Gegnerkarte dauerhaft um 1 Wert. | Gegnerdeck (Blitz hat dort nichts) |
+| Blitz | **Sammelschiene** | Nachbarn einer ionisierten Karte in derselben Formation erhalten bei jeder vollen Leiste +1 Stapel. | Formation (heute nur Resonanz, L) |
+| Blitz | **Nachtladung** | Am Durchlaufende wird die angebrochene Leiste nicht geleert, sondern verdoppelt. | Durchlaufende |
+
+**Was der Pass nicht anfasst:** Glutbett, Schmiede (Owner), Kettenblitz, Blitzschlag, Kurzschluss, Vorentladung,
+Ladungsserie, Ionenfeld, Klinge, Weißglut, Feuerlinie und alle acht Legendären außer Damaststahl (vorgemerkt) und den
+Texten von Sonnenzorn und Sonnenkern.
+
 ## 5. Eis
 
 Offen.
@@ -3144,3 +3332,4 @@ Offen.
 | 2026-09-06 | Owner: „die Niederlage-Bedingung umgehen" (7.24, umgesetzt): Überspannung verwertet den Überschuss über dem Crit-Deckel (je 4 / 3 / 2 / 1× über 8× +1 Ladung, Episch je 25 % Crit-Chance über 100 % +1 — gemessen: Crit über 100 % gibt es seit ÷10 fast nur in den Runden 41–50, der Deckel-Überschuss ist ein Vielfaches davon); Rückzündung im Takt (jeder 5. / 4. / 3. / 2. Sieg in Folge ×1,5, Episch kämpft die zündende Karte mit +2). Durchschlag-Vorschlag (Viertel über dem Deckel) „zu situativ" — drei neue Vorschläge (Lichtbogen, Kettenreaktion, Erdung), nichts umgesetzt. Gemessen: Feuer mono 14,2M, **Blitz mono 7,3M (−28 %)** — der Dauerwert je Leiste war die einzige Dauerwert-Quelle des Blitzes; Floor 1,93× (Mean 1,44×, p90 1,17×); Stapel-Score 125 nur 1,54×; Sonde Dauerwert als Passiv `SIM_ION_VALUE_PER_BAR` +1 → 13,0M, Floor 1,09× (Mean 0,71×, p90 0,55×). Gierig 47,7M (Ø 10,5 Skills), Band im Rahmen. **Owner: Parität nach Empfehlung (a)** — der Dauerwert +1 je Leiste ist Blitz-Passiv (umgesetzt, `ION_VALUE_PER_BAR` 1, Passiv-Text/Tooltip/Glossar): Blitz mono 13,0M, Floor 1,09×; Motor Crit zuerst 31,3M (Kreislauf Dauerwert × Vorentladung × Überspannung Episch, Wachpunkt); gierig 81,5M (Ø 13,0 Skills); Legendäre Doppelentladung +70 %, Durchschlag −9 %; Band neu zentriert (4,72M / 7,90M). Owner: die drei Durchschlag-Vorschläge sind zu langweilig — fünf Konzepte auf offenen Achsen (Resonanz, Durchschlag neu, Gewitter, Plasma, Blitzlenker) in 7.24, Empfehlung Resonanz, nichts umgesetzt. |
 | 2026-09-06 | Owner: „Resonanz ist stark, nehmen wir" (7.25, umgesetzt): SK_LIGHTNING_L04 Resonanz ersetzt Durchschlag (Emblem bleibt) — ionisierte Karten in einer Formation teilen ihre Stapel, die gespielte Karte kämpft mit der Summe (Stapel-Score, Crit-Mult je Stapel, Blitzfänger, Kurzschluss, Doppelentladung); `computeFormations` liefert die Mitglieder je Lauf (`members`), Engine-Lesesicht `pCardR`, Regler `SIM_RESONANZ_SHARE` 1; Durchschlag samt Zufallsstrom gestrichen. Gemessen: Legendäre zur Laufmitte Resonanz +48 % (Sonnenkern +121 %, Doppelentladung +50 %; Durchschlag war −9 %), reiner Blitz-Build Lift 4,25, gierig in 29 % gehalten, +64 % typisch, Lift 2,22 (Kettenblitz dadurch erstmals stark), Median 77,8M, p95 803M (Schwanz-Wachpunkt); Duell unverändert (Floor 1,09×). Gates grün. |
 | 2026-09-06 | Übergabe an die nächste Sitzung: `docs/workstreams/skill-rework/HANDOFF-2026-09-06.md` (Stand, Owner-Regeln, Rundenablauf, Code-Karte, Messwerkzeuge und Leseregeln, Wachpunkte, Methode für den Skill-Pass mit Überschneidungs-Kandidaten, Einstieg Pflanze, Startprompt). Die Messskripte der Runden 7.22–7.25 liegen jetzt unter `sim/probes/` (README dort). Nächste Aufgabe (Owner): Pass über alle Feuer- und Blitz-Skills — unterschiedlich genug, genug Varianz, Beschreibungen gut — danach Pflanze. Nichts am Spiel geändert. |
+| 2026-09-06 | Pass über alle Feuer- und Blitz-Skills (7.26, Befund, nichts umgesetzt): Auslöser- und Ertrags-Raster je Fraktion (Blitz hängt fünffach an der vollen Leiste, Feuer vierfach an einer Hitze-Schwelle; unberührt bei Blitz sind Formation, Gegnerdeck, Durchlaufende), acht Dubletten nach Schärfe, der gemessene stille Konflikt (Weißglut schaltet Feuersturm Normal bis Sehr selten und Schmelzpunkt ab, weil beide Tore die Build-Leiste lesen — die Feuersturm-Leiter dreht sich dabei um), die Stufenleitern (Feuer 6 von 14 mit festem Ertrag, vier teilen die Leiter 80/60/40/20; Feuerwalze viermal +2), sieben Textpunkte (Runde statt Durchlauf an 7 Stellen, ein Gedankenstrich, fehlende Prozentpunkte, Blitzableiter Episch mit drei Effekten). Dreizehn Vorschläge je Skill plus sechs Konzepte für zwei mögliche freie Plätze. Entscheid Owner, einzeln. |
