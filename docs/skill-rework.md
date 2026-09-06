@@ -2298,6 +2298,13 @@ bleibt, Feuer bleibt bei 14 ohne neues Bild): *Feuersturm — bei voller Hitzele
 +0,5 / 0,75 / 1 / 1,5 % Score; Episch schon ab 80 % Hitze.* Serie zu Score statt Serie zu Hitze — keine Hitze mehr, die
 in den Wandler läuft, die Serien-Identität bleibt. Alternativ streichen und einen neuen Skill mit neuem Emblem setzen.
 
+**Gierig mit diesem Stand** (1000 Explore, 150 Läufe): Median **125M** (7.15: 48,6M), Siegquote 77 %. Der gierige
+Spieler baut den Runaway in fast jedem Lauf: Schmelzpunkt in 91 % (+141 % typisch), Klinge 95 % (+290 %), Weißglut
+87 %, Feuersturm 65 % (+85 %; Episch-Lift 1,73). Blitz schrumpft auf Ladungsserie (88 %) und Doppelentladung als
+Zubringer, alles andere von Blitz liegt bei „tot" oder „selten"; Zunder (77 % gehalten) und Phönixfeuer schaden. Die
+Zahlen sind kein Stand, den man tarieren sollte — erst der Feuersturm-Entscheid, dann die Blitz-Runde, dann die
+Parität.
+
 ## 5. Eis
 
 Offen.
