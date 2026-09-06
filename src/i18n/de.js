@@ -179,8 +179,6 @@ export default {
 
   /* ---- Feuer-Leiste (HeatBar) ---- */
   "bar.fire.heat": "Hitze",
-  "bar.fire.conflagReady": " · FLÄCHENBRAND BEREIT",
-  "bar.fire.state.conflag": "Flächenbrand bereit",
   "bar.fire.state.mult": "Hitze {value}/{max} · +{mult} % Score",
   "bar.fire.mult.title": "Hitze-Multiplikator: je 10 % gehaltener Hitze +{per} % Score, als eigener Faktor im Multiplikator. Sonnenzorn rechnet mit der Spitze und zählt +{zorn} %.",
   "bar.fire.badge.fireRoll": "Feuerwalze",

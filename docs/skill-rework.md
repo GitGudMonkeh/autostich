@@ -1368,8 +1368,8 @@ brutto 49 % und netto 21 % Hitze je Runde.
 
 | Skill | Rolle | Normal | Selten | Sehr selten | Episch |
 | --- | --- | --- | --- | --- | --- |
-| Glut | Kaltstart (seit 7.12; vorher Rate aus Vorsprung ×1,25 … ×2) | unter 40 % Hitze zählt Hitze aus Siegen ×2 | unter 50 % | unter 60 % | unter 80 % |
-| Zunder | Rate aus jedem Sieg | jeder Sieg +1 % Hitze | +2 % | +3 % | +4 % |
+| Glut | Kaltstart (seit 7.12; vorher Rate aus Vorsprung ×1,25 … ×2; Schwellen seit 7.16) | unter 50 % Hitze zählt Hitze aus Siegen ×2 | unter 60 % | unter 70 % | unter 90 %; darunter kühlen Niederlagen nur halb |
+| Zunder | Rate aus jedem Sieg (Sätze seit 7.16) | jeder Sieg +2 % Hitze | +3 % | +4 % | +5 % |
 | Feuersturm | Serie zu Hitze | +0,5 % Hitze je Serienpunkt je Sieg | +1 % | +1,5 % | +2 % |
 | Glutbett | Schutz | Niederlagen kühlen nicht unter 40 % | nicht unter 60 % | nicht unter 80 % | Niederlagen kühlen nicht |
 | Rückzündung | Comeback zu Hitze | Sieg nach Niederlage +0,5 % Hitze je Punkt Rückstand | +1 % | +1,5 % | +2 %; die Karte nach einer Niederlage hat +2 Wert |
@@ -1377,8 +1377,8 @@ brutto 49 % und netto 21 % Hitze je Runde.
 | Weißglut | über die Leiste | Leiste bis 200; über 100 je 10 % +3 % Score | +4 % | +5 % | +6 % |
 | Feuerwalze | Serie zu Wert | ab 80 % Hitze: nach einem Sieg hat die nächste Karte +2 Wert | ab 60 % | ab 40 % | ab 20 %; auch nach einer Niederlage |
 | Verbrennung | Vorsprung zu Score | Sieg mit Vorsprung ab 8: Stich ×1,5 | ab 7 | ab 6 | ab 5 |
-| Flächenbrand | Burst-Konsument (seit 7.13: nur bei voller Leiste) | bei voller Leiste: nächster Sieg brennt bis 40, +15 Basis je Punkt | +20 | +25 | +30; brennt bis 0 |
-| Schmelzpunkt | Tropf-Konsument (seit 7.13: nur bei voller Leiste) | bei voller Leiste verbrennt jeder Sieg 4 % Hitze, +15 Basis je Punkt | +20 | +25 | +30; die Hälfte der Hitze kommt zurück |
+| ~~Flächenbrand~~ | gestrichen (7.16; der Brand kostete Klinge, Siegquote und Serie) | – | – | – | – |
+| Schmelzpunkt | Überlauf-Wandler (seit 7.16; vorher Tropf-Konsument) | bei voller Leiste wird die Hitze, die ein Sieg nicht mehr auf die Leiste bringt, zu +15 Basis je Punkt; nichts wird verbrannt | +20 | +25 | +30; die Kühlung einer Niederlage bei voller Leiste zahlt beim nächsten Sieg |
 | Brandmal | Gegner-Debuff | ab 80 % Hitze: Sieg brandmarkt die Gegnerkarte, −2 nächste Runde | ab 60 % | ab 40 % | ab 20 %; auch Niederlagen brandmarken |
 | Lauffeuer | Brand in die Breite | ab 80 % Hitze: Sieg brandmarkt beide Nachbarn, −1 nächste Runde | ab 60 % | ab 40 % | ab 20 %; Reichweite zwei Karten |
 | Schmiede | Hitze zu Dauerwert (seit 7.14: ohne Preis, nur Schwelle) | Rundenende ab 80 % Hitze: niedrigste Karte +3 dauerhaft, die Hitze bleibt | ab 60 % | ab 40 % | ab 20 %; zwei Karten |
@@ -2261,6 +2261,43 @@ Median 48,6M (40 Runden, 7.13: 13,5M — der Score wächst mit den Runden überl
 6. **Die vier schwachen Legendären** (oben): Sonnenzorn, Phönixfeuer, Donnergott, Damaststahl.
 7. Aus 1: Fokus am Start, Episch-Quote und Pity, Bosse.
 
+### 7.16 Schritt 1–3 Feuer: Überlauf-Wandler, Flächenbrand gestrichen, Glut, Zunder (2026-09-06, umgesetzt)
+
+Owner-Entscheide auf die Liste in 7.15: Punkte 1, 2, 3 umsetzen; die Schmiede bleibt, wie sie in 7.14 steht; **keine
+Fraktion fällt unter 14 Skills** — wo zusammengelegt wird, kommen neue Skills dazu; Schritt für Schritt.
+
+- **Schmelzpunkt = Überlauf-Wandler.** Bei voller Leiste wird die Hitze, die ein Sieg nicht mehr auf die Leiste bringt,
+  zu +15 / 20 / 25 / 30 Basis-Score je Punkt; die Leiste bleibt voll, verbrannt wird nichts. Episch-Extra: die Kühlung
+  einer Niederlage bei voller Leiste ist vorgemerkt (`heat.meltPending`) und zahlt beim nächsten Sieg.
+- **Flächenbrand gestrichen** (SK_FIRE_11; das Emblem liegt weiter als Master in `docs/art/skills/fire/`). Feuer hat 14
+  normale Skills — die Untergrenze; Feuersturm (Punkt 3, streichen) wartet deshalb auf seinen Ersatz, siehe unten.
+- **Glut** 50 / 60 / 70 / 90 statt 40 / 50 / 60 / 80; Episch-Extra: unter der Schwelle kühlen Niederlagen nur halb (3
+  statt 6).
+- **Zunder** 2 / 3 / 4 / 5 % je Sieg statt 1 / 2 / 3 / 4.
+
+**Messung (100 Läufe, 50 Runden, Stapel-Score 75):** Feuer mono 7,48M → **30,1M**, Blitz mono 7,17M — Floor 4,20×,
+Mean 3,21×, p90 3,74×. Motor: Fraktion (zufällig) 8,0M → 25,6M, Kern ohne Verstärker 13,2M → 16,5M, alle vier
+Verstärker + Kern 13,1M → 11,9M.
+
+**Ursache, gemessen im reinen Feuer-Build (Zufallsspieler, Welt nur Feuer):** Ausschluss-Ablation — ohne Schmelzpunkt
+×0,31, ohne Feuersturm ×0,38, ohne Klinge ×0,41; jeder andere Skill ohne ×1,2–1,4 (der freie Pick geht dann eher an
+die zwei Träger). Lifts mit ÷ ohne (Median): Schmelzpunkt 3,15, Klinge 3,36, Feuersturm 2,57 (Episch 8,27), Weißglut
+1,60. **Feuersturm × Schmelzpunkt ist ein Runaway:** Feuersturm gibt je Serienpunkt Hitze (bei Serie 30 und Episch +60
+je Sieg), bei voller Leiste wird das alles zu Score — 60 × 30 = 1800 Basis je Sieg auf 400 Grundbasis, mit allen
+Multiplikatoren. Vor dem Wandler war Feuersturms Hitze über der Leiste wertlos, jetzt ist sie der Score-Motor.
+
+Sweep des Wandler-Satzes (Duell, 100 Läufe): 3 / 4 / 5 / 6 → Feuer mono 13,6M (Floor 1,90×); 5 / 7 / 8 / 10 → 15,8M
+(2,20×); 8 / 10 / 13 / 15 → 19,7M (2,75×); 15 / 20 / 25 / 30 → 30,1M (4,20×). Ohne Feuersturm (Ausschluss) 12,5M —
+selbst ohne den Runaway steht Feuer mono rund 1,7× über Blitz mono: die beiden Fallen sind weg, und Blitz trägt
+weiter elf tote Skills (7.15). **Die Parität ist damit keine Regler-Frage mehr, sondern die Reihenfolge:** Feuersturm
+entscheiden, Blitz-Runde, dann Stapel-Score neu setzen. Der Wandler-Satz bleibt vorerst bei 15 / 20 / 25 / 30 (Owner-
+Entscheid); nichts daran gedreht.
+
+**Vorschlag Feuersturm (Owner-Entscheid):** nicht streichen, sondern in seinem Platz umbauen (SK_FIRE_03, das Emblem
+bleibt, Feuer bleibt bei 14 ohne neues Bild): *Feuersturm — bei voller Hitzeleiste zählt jeder Serienpunkt
++0,5 / 0,75 / 1 / 1,5 % Score; Episch schon ab 80 % Hitze.* Serie zu Score statt Serie zu Hitze — keine Hitze mehr, die
+in den Wandler läuft, die Serien-Identität bleibt. Alternativ streichen und einen neuen Skill mit neuem Emblem setzen.
+
 ## 5. Eis
 
 Offen.
@@ -2305,3 +2342,4 @@ Offen.
 | 2026-09-06 | Owner zu den Empfehlungen: Glut als Kaltstart und Stapel auf den Crit-Multiplikator umsetzen (7.12), Stufen und übrige Tote warten, Verbraucher offen (keine neue Leiste). Umgesetzt: Glut ×2 Hitze unter 40/50/60/80 %; +0,15× Crit-Mult je Stapel der Siegkarte (Sweep: 0,1× / 0,15× / 0,2×), Crit je Skill 5 → 4 %. Glut + Kern +49 % im Motor, im gierigen Lauf neutral; Stapel-Build auf Augenhöhe mit dem Crit-Build, Kurzschluss zahlt, Phönixfeuer stark; Duell Floor 0,98×. Auswertungen gierig (13,0M) und random (2,0M) neu gefahren. |
 | 2026-09-06 | Owner: die volle Leiste ist der Auslöser der Verbraucher (7.13, umgesetzt): Flächenbrand, Schmelzpunkt und Schmiede zünden nur bei voller Leiste, Flächenbrands 80-%-Schwelle entfällt; Texte, Glossar, Hitzeleiste nachgezogen. Feuer mono +21 % (2,86M), Floor Feuer ÷ Blitz 1,18×; gierig 13,5M, random 2,15M. Die Verbraucher bleiben die Falle (0,77 / 0,83 / 0,93): gemessen, dass verbrannte Hitze über Klinge und Siegquote die Serien kostet (Flächenbrand + Kern ×0,45), dreifache Auszahlung hilft nicht. Vorschläge: Überlauf-Wandler oder streichen; Parität über Stapel-Score 120 (Sweep). Nichts davon umgesetzt. |
 | 2026-09-06 | Owner: Schmiede ohne Preis, nur Schwelle (7.14: ab 80/60/40/20 % Hitze, Episch zwei Karten, die Hitze bleibt); 50 Runden bei gleicher Phasenfolge (13 Skill-Phasen, `buildSchedule` = der Block für jede Länge); Parität: Stapel-Score 60 → 75 nach Sweep bei 50 Runden (Floor 1,07×, Mean 0,95×, p90 0,93×); Sim-Band neu zentriert. Neu `--mode legendaries` (7.15): jedes Legendäre zur Laufmitte, gepaart — Doppelentladung +106 %, Sonnenkern +133 %, Durchschlag +25 %, Hochspannung +17 %, Damaststahl/Donnergott neutral, Phönixfeuer/Sonnenzorn −17 %. Gierig (nur noch gierig): 48,6M, Schmiede jetzt genommen aber neutral, Reststrom erstmals stark, Verbraucher bleiben die Falle. Offene Liste mit Vorschlägen in 7.15. |
+| 2026-09-06 | Owner: Punkte 1–3 aus 7.15 (7.16, umgesetzt): Schmelzpunkt als Überlauf-Wandler (15/20/25/30 je Punkt, Episch zahlt die Kühlung bei voller Leiste nach), Flächenbrand gestrichen (Feuer 14 = Untergrenze, Emblem-Master bleibt), Glut 50/60/70/90 mit halber Kühlung (E), Zunder 2–5. Schmiede bleibt. Gemessen: Feuersturm × Schmelzpunkt ist ein Runaway (Feuer mono 30M, 4,2× Blitz; ohne Feuersturm 1,7×). Feuersturm wartet wegen der Untergrenze auf seinen Ersatz — Vorschlag: Umbau in seinem Platz (Serie zu Score bei voller Leiste). Parität erst nach Feuersturm und der Blitz-Runde. Sim-Band neu zentriert. |

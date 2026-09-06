@@ -59,8 +59,8 @@ const jeder = (n, w = "Jeder") => (n === 1 ? w : `${w} ${n}.`); // „Jeder 2. C
 // Stufentabellen der 15 Feuer-Skills (§4.5) — dieselbe Form; die Schwellen sinken, die Sätze steigen mit der Stufe.
 // Das Modul factions/fire.js liest sie über `fireParam`; Legendäre haben keine Zeile.
 const FEUER = {
-  glut:          [{ below: 40, mult: 2 }, { below: 50, mult: 2 }, { below: 60, mult: 2 }, { below: 80, mult: 2 }], // §7.12: Kaltstart — unter der Schwelle zählt Hitze aus Siegen doppelt
-  zunder:        [{ heat: 1 }, { heat: 2 }, { heat: 3 }, { heat: 4 }],
+  glut:          [{ below: 50, mult: 2 }, { below: 60, mult: 2 }, { below: 70, mult: 2 }, { below: 90, mult: 2, halfCool: true }], // §7.12/§7.16: Kaltstart — unter der Schwelle zählt Hitze aus Siegen doppelt, Episch kühlen Niederlagen dort nur halb
+  zunder:        [{ heat: 2 }, { heat: 3 }, { heat: 4 }, { heat: 5 }], // §7.16: 1–4 → 2–5
   feuersturm:    [{ perStreak: 0.5 }, { perStreak: 1 }, { perStreak: 1.5 }, { perStreak: 2 }],
   glutbett:      [{ floor: 40 }, { floor: 60 }, { floor: 80 }, { noCool: true }],
   rueckzuendung: [{ perDeficit: 0.5 }, { perDeficit: 1 }, { perDeficit: 1.5 }, { perDeficit: 2, value: 2 }],
@@ -68,8 +68,7 @@ const FEUER = {
   weissglut:     [{ multPer10: 0.03 }, { multPer10: 0.04 }, { multPer10: 0.05 }, { multPer10: 0.06 }],
   feuerwalze:    [{ minHeat: 80, value: 2 }, { minHeat: 60, value: 2 }, { minHeat: 40, value: 2 }, { minHeat: 20, value: 2, afterLoss: true }],
   verbrennung:   [{ minMargin: 8, mult: 1.5 }, { minMargin: 7, mult: 1.5 }, { minMargin: 6, mult: 1.5 }, { minMargin: 5, mult: 1.5 }],
-  flaechenbrand: [{ keep: 40, perPoint: 15 }, { keep: 40, perPoint: 20 }, { keep: 40, perPoint: 25 }, { keep: 0, perPoint: 30 }], // §7.13: Auslöser ist die volle Leiste
-  schmelzpunkt:  [{ burn: 4, perPoint: 15 }, { burn: 4, perPoint: 20 }, { burn: 4, perPoint: 25 }, { burn: 4, perPoint: 30, refund: 0.5 }],
+  schmelzpunkt:  [{ perPoint: 15 }, { perPoint: 20 }, { perPoint: 25 }, { perPoint: 30, lossPays: true }], // §7.16: Überlauf-Wandler — verbrennt nichts mehr; Flächenbrand (SK_FIRE_11) ist gestrichen
   brandmal:      [{ minHeat: 80, value: 2 }, { minHeat: 60, value: 2 }, { minHeat: 40, value: 2 }, { minHeat: 20, value: 2, onLoss: true }],
   lauffeuer:     [{ minHeat: 80, value: 1, reach: 1 }, { minHeat: 60, value: 1, reach: 1 }, { minHeat: 40, value: 1, reach: 1 }, { minHeat: 20, value: 1, reach: 2 }],
   schmiede:      [{ minHeat: 80, cards: 1 }, { minHeat: 60, cards: 1 }, { minHeat: 40, cards: 1 }, { minHeat: 20, cards: 2 }], // §7.14: ohne Preis, nur Schwelle
@@ -129,7 +128,7 @@ export const SKILL_DEFS = {
   //      Die Mechanik liest die Stufentabellen oben (factions/fire.js). Texte: ein Satz je Stufe (`tiered`).
   // Rate — Hitze erzeugen
   SK_FIRE_01: { id: "SK_FIRE_01", name: "Glut", archetype: "fire", keywords: ["heat"], tiers: FEUER.glut,
-    ...tiered(FEUER.glut, (r) => `Solange die Hitze unter ${r.below} % steht, zählt Hitze aus Siegen ×${de(r.mult)}.`) },
+    ...tiered(FEUER.glut, (r) => `Solange die Hitze unter ${r.below} % steht, zählt Hitze aus Siegen ×${de(r.mult)}.${r.halfCool ? " Unter der Schwelle kühlen Niederlagen nur halb." : ""}`) },
   SK_FIRE_02: { id: "SK_FIRE_02", name: "Zunder", archetype: "fire", keywords: ["heat"], tiers: FEUER.zunder,
     ...tiered(FEUER.zunder, (r) => `Jeder Sieg gibt +${r.heat} % Hitze, auch ein knapper.`) },
   SK_FIRE_03: { id: "SK_FIRE_03", name: "Feuersturm", archetype: "fire", keywords: ["heat", "streak"], tiers: FEUER.feuersturm,
@@ -148,11 +147,10 @@ export const SKILL_DEFS = {
     ...tiered(FEUER.feuerwalze, (r) => `Ab ${r.minHeat} % Hitze hat die nächste Karte nach einem Sieg${r.afterLoss ? " oder einer Niederlage" : ""} +${r.value} Wert.`) },
   SK_FIRE_09: { id: "SK_FIRE_09", name: "Verbrennung", archetype: "fire", keywords: ["heat"], tiers: FEUER.verbrennung,
     ...tiered(FEUER.verbrennung, (r) => `Ein Sieg mit Kampfwert-Vorsprung ab ${r.minMargin} zählt ×${de(r.mult)}.`) },
-  // Konsumenten — Hitze zu Score (§7.13: sie zünden nur bei voller Leiste)
-  SK_FIRE_11: { id: "SK_FIRE_11", name: "Flächenbrand", archetype: "fire", keywords: ["heat", "consume"], tiers: FEUER.flaechenbrand,
-    ...tiered(FEUER.flaechenbrand, (r) => `Bei voller Hitzeleiste brennt der nächste Sieg die Hitze bis ${r.keep} herunter: +${r.perPoint} Basis-Score je verbranntem Punkt.`) },
+  // Konsument — Hitze zu Score (§7.16: der Überlauf-Wandler; Flächenbrand SK_FIRE_11 ist gestrichen, der Brand kostete
+  // Klinge, Siegquote und Serie, keine Auszahlung glich das aus)
   SK_FIRE_12: { id: "SK_FIRE_12", name: "Schmelzpunkt", archetype: "fire", keywords: ["heat", "consume"], tiers: FEUER.schmelzpunkt,
-    ...tiered(FEUER.schmelzpunkt, (r) => `Bei voller Hitzeleiste verbrennt jeder Sieg ${r.burn} % Hitze: +${r.perPoint} Basis-Score je Punkt.${r.refund ? ` ${pct(r.refund)} % der verbrannten Hitze kommen zurück.` : ""}`) },
+    ...tiered(FEUER.schmelzpunkt, (r) => `Bei voller Hitzeleiste wird die Hitze, die ein Sieg nicht mehr auf die Leiste bringt, zu +${r.perPoint} Basis-Score je Punkt.${r.lossPays ? " Bei voller Leiste zahlt auch die Kühlung einer Niederlage, beim nächsten Sieg." : ""}`) },
   // Gegner — Brände
   SK_FIRE_13: { id: "SK_FIRE_13", name: "Brandmal", archetype: "fire", keywords: ["heat", "brand"], tiers: FEUER.brandmal,
     ...tiered(FEUER.brandmal, (r) => `Ab ${r.minHeat} % Hitze brandmarkt jeder Sieg die geschlagene Gegnerkarte: −${r.value} Wert in der nächsten Runde.${r.onLoss ? " Auch eine Niederlage brandmarkt die Gegnerkarte, die gewonnen hat." : ""}`) },

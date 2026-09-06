@@ -87,7 +87,7 @@ describe("#skillart — Vollständigkeit", () => {
       const report = analyzeLot(files, skillIds);
 
       it("retains the established registry baseline so the check cannot pass vacuously", () => {
-        expect(skillIds.length).toBeGreaterThanOrEqual(19); // exp skill rework: 15 Skills + 4 Legendäre je Fraktion (Blitz zuerst)
+        expect(skillIds.length).toBeGreaterThanOrEqual(18); // exp skill rework: mindestens 14 Skills (Owner-Untergrenze, §7.16) + 4 Legendäre je Fraktion
       });
 
       it("has one delivery emblem for every registered skill", () => {

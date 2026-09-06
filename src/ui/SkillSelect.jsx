@@ -24,8 +24,7 @@ import { t } from "../i18n/index.js";
 // Archetyp-Meta eines Skills (Theming) — Fallback neutral (#93 F0).
 const ac = (id) => archMeta(archetypeOf(id)) || { label: t("skill.arch.none"), icon: "•", color: "#8a8a95" };
 // Konsument-Abzeichen (exp skill rework): am Glossar-Schlüsselwort „consume" der Skill-Definition, nicht mehr an
-// einem Effekt-Marker — die Verbraucher-Regel ist weg, das Abzeichen ist reine Lesehilfe (Feuer: Flächenbrand,
-// Schmelzpunkt, Schmiede).
+// einem Effekt-Marker — die Verbraucher-Regel ist weg, das Abzeichen ist reine Lesehilfe (Feuer: Schmelzpunkt).
 const isConsumer = (s) => !!(s && s.keywords && s.keywords.includes("consume"));
 
 // #238b: Was verschwindet, wenn der LETZTE Skill eines Archetyps abgelegt wird (Wahrheit: reducer.js stillActive-Pfad).

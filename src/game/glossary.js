@@ -198,7 +198,7 @@ export const GLOSSARY = {
     text: `Zu festen Zeitpunkten im Lauf (erstmals Durchlauf ${C.FIRST_SKILL_CYCLE}) wählst du Skills statt eines Perks: ${C.SKILLS_OFFERED} Skills zur Auswahl, alle 4 Archetypen dabei.`,
     match: ["Skill-Durchlauf", "Skill-Durchläufe"] },
   consume: { category: "frak", group: "gen", label: "Konsument", icon: "⊗", color: CLR.lightning,
-    text: "Ein Skill, der eine angesammelte Ressource für einen starken Effekt verbraucht: bei Feuer verbrennen Flächenbrand und Schmelzpunkt Hitze — nur bei voller Hitzeleiste, darunter bleibt die Hitze dem Passiv. Beide wirken zugleich; die Schmiede verbraucht nichts mehr, sie braucht Hitze nur als Schwelle. Blitz kennt keine Konsumenten mehr, die Leiste ionisiert selbst.",
+    text: "Ein Skill, der eine angesammelte Ressource in Ertrag wandelt: bei Feuer wandelt Schmelzpunkt bei voller Hitzeleiste die Hitze, die nicht mehr auf die Leiste passt, in Basis-Score — die Leiste bleibt voll, verbrannt wird nichts. Die Schmiede braucht Hitze nur als Schwelle. Blitz kennt keine Konsumenten mehr, die Leiste ionisiert selbst.",
     match: ["Konsument", "Konsumenten", "Hitze-Konsument"] },
   // exp skill rework (docs/skill-rework.md §1): Legendäre sind die fünfte Seltenheit des Skill-Angebots — kein Tor,
   // keine eigene Phase, kein Ersetzen. (Wortlaut in Phase 4 mit den übrigen Texten abzunehmen.)

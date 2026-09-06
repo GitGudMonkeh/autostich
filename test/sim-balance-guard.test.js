@@ -29,6 +29,11 @@ import { randomPolicy } from "../sim/policies/random.js";
 // §7.14 (Owner, 2026-09-06): 50 statt 40 Durchläufe (gleiche Phasenfolge, 13 Skill-Phasen), Schmiede ohne Preis, Stapel-Score
 // 60 → 75 für die Parität. Der Score wächst überlinear mit den Runden: Seeds 1..40 Median ≈ 2,34M, Mean ≈ 4,45M (Seeds
 // 1..200: 2,49M / 5,69M — der Mean hängt am schweren Schwanz). Die Bänder sind auf die 40 Seeds neu zentriert (≈ ±35 %).
+//
+// §7.16 (Owner, 2026-09-06): Schmelzpunkt als Überlauf-Wandler, Flächenbrand gestrichen, Glut 50/60/70/90, Zunder 2–5.
+// Ohne die beiden Fallen und mit dem Wandler (Feuersturm × Schmelzpunkt, s. Doku) steigt der Zufallsspieler: Seeds 1..40
+// Median ≈ 3,40M, Mean ≈ 5,94M (Seeds 1..200: 3,39M / 8,18M). Bänder darauf zentriert; nach dem Feuersturm-Entscheid
+// und der Blitz-Runde erneut zentrieren.
 describe("sim balance guard", () => {
   const SEEDS = 40; // feste Seeds 1..40 → deterministischer Median/Mean
   const scores = Array.from({ length: SEEDS }, (_, i) => runOne(1 + i, randomPolicy()).score).sort((a, b) => a - b);
@@ -37,13 +42,13 @@ describe("sim balance guard", () => {
 
   it("Median-Score im erwarteten Band (breite Power-Verschiebung)", () => {
     // Ist-Wert ≈ 2,34M (exp §7.14, 50 Runden, Feuer/Blitz). Band toleriert normales Tuning, schlägt bei grober Verschiebung an.
-    expect(median).toBeGreaterThan(1_500_000);
-    expect(median).toBeLessThan(3_200_000);
+    expect(median).toBeGreaterThan(2_200_000);
+    expect(median).toBeLessThan(4_600_000);
   });
 
   it("Mean-Score im erwarteten Band (Tail-Runaway-Fänger)", () => {
     // Ist-Wert ≈ 4,45M (exp §7.14). Die Obergrenze fängt weiterhin einen ECHTEN Tail-Blowup (Mean ginge dann deutlich höher).
-    expect(mean).toBeGreaterThan(2_900_000);
-    expect(mean).toBeLessThan(6_000_000);
+    expect(mean).toBeGreaterThan(3_900_000);
+    expect(mean).toBeLessThan(8_000_000);
   });
 });

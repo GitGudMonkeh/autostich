@@ -153,15 +153,16 @@ describe("Skill-Auswahl — PICK_SKILL / DECLINE_SKILL (Stufe A)", () => {
     expect(reducer(base, { type: "PICK_SKILL", skillId: NEW, replaceId: "SK_PLANT_02", rng }).trimCount || 0).toBe(0);
   });
 
-  it("#234 PICK_SKILL erlaubt einen ZWEITEN Hitze-Konsumenten (Feuer nicht mehr exklusiv)", () => {
-    // Flächenbrand (SK_FIRE_11, conflagration) schon gehalten; Schmelzpunkt (SK_FIRE_12, melt) im Angebot.
+  it("#234 PICK_SKILL kennt keine Konsumenten-Exklusivität mehr (Feuer: Brandmal gehalten, Schmelzpunkt dazu)", () => {
+    // Brandmal (SK_FIRE_13) schon gehalten; Schmelzpunkt (SK_FIRE_12, der Überlauf-Wandler) im Angebot. (Flächenbrand
+    // SK_FIRE_11 ist seit §7.16 gestrichen.)
     const st = skillState({
-      skills: ["SK_FIRE_11"], activeArchetypes: ["fire"],
+      skills: ["SK_FIRE_13"], activeArchetypes: ["fire"],
       skillOffer: ["SK_FIRE_12"], heat: { active: true, value: 0, max: 100 },
     });
     const s = reducer(st, { type: "PICK_SKILL", skillId: "SK_FIRE_12", rng });
-    expect(s.skills).toContain("SK_FIRE_11");
-    expect(s.skills).toContain("SK_FIRE_12"); // beide Hitze-Konsumenten gleichzeitig gehalten
+    expect(s.skills).toContain("SK_FIRE_13");
+    expect(s.skills).toContain("SK_FIRE_12"); // beide gleichzeitig gehalten
   });
 
   it("exp skill rework: Blitz-Skills unterliegen keiner Konsument-Exklusivität — beliebig kombinierbar", () => {

@@ -27,7 +27,7 @@ const TPC = C.TRICKS_PER_CYCLE;
 
 // ---- Feuer ----
 const RATE = [F.GLUT, F.ZUNDER, F.FEUERSTURM, F.RUECKZUENDUNG]; // die vier Hitze-Verstärker (Rate)
-const CORE = [F.KLINGE, F.WEISSGLUT, F.VERBRENNUNG, F.BRANDMAL, F.LAUFFEUER, F.GLUTSTAHL, F.FEUERWALZE, F.GLUTBETT, F.SCHMIEDE, F.SCHMELZPUNKT, F.FLAECHENBRAND];
+const CORE = [F.KLINGE, F.WEISSGLUT, F.VERBRENNUNG, F.BRANDMAL, F.LAUFFEUER, F.GLUTSTAHL, F.FEUERWALZE, F.GLUTBETT, F.SCHMIEDE, F.SCHMELZPUNKT];
 const fixedOpts = { solveFormations: true, architectGreedy: true };
 export const FIRE_BUILDS = [
   ["Fraktion (zufällig)", () => factionPolicy("fire")],

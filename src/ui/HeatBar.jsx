@@ -40,9 +40,6 @@ export function HeatBar({ heat, skills = [], skillTiers = {}, forged = {}, lastR
   // Hitze-Multiplikator des Passivs, wie ihn der nächste Sieg (vor seinem Gewinn) trüge — dieselbe Quelle wie die Engine.
   const mult = heatMult(skills, skillTiers, value, heat.peak || 0);
   const multPct = Math.round((mult - 1) * 100);
-  // §7.13: die Konsumenten zünden nur bei voller Leiste — Flächenbrand brennt mit dem nächsten Sieg, sobald sie voll steht.
-  const full = value >= scale;
-  const conflagReady = param(F.FLAECHENBRAND, "keep") != null && full;
   // Schmiede (§7.14): Schwelle der Stufe, ohne Preis — die Schmiedung fällt am Rundenende, sobald die Hitze anliegt;
   // Zähler = Summe der Schmiedewerte im Deck.
   const forgeMin = param(F.SCHMIEDE, "minHeat");
@@ -85,9 +82,8 @@ export function HeatBar({ heat, skills = [], skillTiers = {}, forged = {}, lastR
   // Phase-3-Headline: „gleich knallt's"-Zustand für die einklappbare Fraktions-Zeile.
   const collapsed = options.collapseFacFire ?? manyActive;
   const onToggle = () => onOption && onOption({ collapseFacFire: !collapsed });
-  const stateText = conflagReady ? t("bar.fire.state.conflag")
-    : t("bar.fire.state.mult", { value: Math.round(value), max: scale, mult: multPct });
-  const stateOn = conflagReady || overFull || hot;
+  const stateText = t("bar.fire.state.mult", { value: Math.round(value), max: scale, mult: multPct });
+  const stateOn = overFull || hot;
 
   // #deckshop: Feuer-Glut wandert vom Battlefield ins eigene Panel — warme Innen-Aura, Deckkraft = Hitze; Puls nahe voll.
   const heatRatio = Math.max(0, Math.min(1, value / HEAT_MAX));
@@ -116,9 +112,7 @@ export function HeatBar({ heat, skills = [], skillTiers = {}, forged = {}, lastR
         {/* Hitzeleiste (Hauptelement) */}
         <div className="flex-1 min-w-0">
           <div className="flex justify-between text-body-5 mb-1.5">
-            <span className="opacity-60">{t("bar.fire.heat")}
-              {conflagReady && <span style={{ color: HOT }}>{t("bar.fire.conflagReady")}</span>}
-            </span>
+            <span className="opacity-60">{t("bar.fire.heat")}</span>
             <span className="font-bold" style={{ color: overFull ? WHITE_HEAT : hot ? HOT : FIRE }}
               title={t("bar.fire.mult.title", { per: Math.round(HEAT_MULT_PER_10 * 100), zorn: Math.round(SONNENZORN_MULT_PER_10 * 100) })}>
               {Math.round(value)} / {scale} · ×{fmtNum(Math.round(mult * 100) / 100)}
@@ -128,7 +122,7 @@ export function HeatBar({ heat, skills = [], skillTiers = {}, forged = {}, lastR
             <div className="absolute inset-y-0 left-0 transition-all"
               style={{ width: `${pct}%`,
                        background: overFull ? `linear-gradient(90deg, ${FIRE}, ${HOT}, ${WHITE_HEAT})` : hot ? `linear-gradient(90deg, ${FIRE}, ${HOT})` : FIRE,
-                       boxShadow: conflagReady ? `0 0 8px ${HOT}` : hot ? `0 0 6px ${FIRE}88` : undefined }} />
+                       boxShadow: hot ? `0 0 6px ${FIRE}88` : undefined }} />
             {ticks.map((h) => (
               <div key={h} className="absolute inset-y-0" style={{ left: `${(h / scale) * 100}%`, width: 2, background: "#ffffff55" }}
                 title={t("bar.fire.tick.glow", { n: h })} />
