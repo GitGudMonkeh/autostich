@@ -1966,6 +1966,45 @@ Das Gefühl, das sich daraus ergibt:
 Nächster Schritt aus Sicht der Sim: die gierige Auswertung mit den 7.10-Konstanten wiederholen, sobald der Owner über
 Konsumenten, Glut und Blitz-Träger (7.8/7.9) entschieden hat — vorher misst sie nur den heutigen Stand noch einmal.
 
+### 7.12 Glut als Kaltstart, Stapel auf den Crit-Multiplikator (2026-09-06, umgesetzt)
+
+Owner-Entscheid auf die Empfehlungen aus 7.11: Punkt 2 (Glut) und 3 (Blitz) umsetzen, Stufen (4) und die übrigen
+Toten (5) warten. Die Verbraucher (Punkt 1) sind offen — der Owner will keine weitere Leiste; Vorschläge dazu am Ende.
+
+**Glut (Kaltstart):** solange die Hitze vor dem Sieg unter 40 / 50 / 60 / 80 % steht, zählt die ganze Hitze aus dem Sieg
+×2 — alle Quellen (Passiv, Zunder, Feuersturm, Rückzündung), kein Effekt über der Schwelle. Kein Episch-Extra über die
+Schwelle 80 hinaus (Regel aus 4.2 „Schwellen-Leitern brauchen ein Episch-Extra" — offen, Vorschlag: „unter der Schwelle
+kühlen Niederlagen nur halb"; nicht umgesetzt, Owner-Entscheid).
+
+**Blitz:** jeder wirksame Stapel auf der Siegkarte gibt +0,1× Crit-Multiplikator auf diesen Stich (Kurzschluss zählt die
+Stapel ab seiner Schwelle doppelt, wie beim Stapel-Score); Stapel-Score 60 in der Basis bleibt; Crit je Blitz-Skill 5 →
+4 %. Beides `SIM_`-Regler (`ION_CRIT_MULT_PER_STACK`, `LIGHTNING_CRIT_PER_SKILL`).
+
+**Messung (100 Läufe, Seeds 1–100):**
+
+| Feuer-Build (Motor) | vorher (7.10) | jetzt | erste 100 % nach |
+| --- | --- | --- | --- |
+| Kern ohne Verstärker | 6,12M | 6,27M | 1100 Stiche |
+| Glut + Kern | 6,71M (+10 %) | **9,37M (+49 %)** | 609 Stiche |
+| Zunder + Kern | 7,54M (+23 %) | 8,28M (+32 %) | 737 Stiche |
+| alle vier + Kern | 5,87M (−4 %) | 5,86M (−7 %) | 441 Stiche |
+| Fraktion (zufällig) | 2,32M | 2,42M | 548 Stiche |
+
+Glut ist damit der stärkste einzelne Verstärker und halbiert den Kaltstart des Kern-Builds (1100 → 609 Stiche); über der
+Schwelle tut er nichts, was ihn vom Plateau fernhält.
+
+| Blitz-Build (Motor) | vorher | jetzt | Crit-Rate | Crit-Anteil |
+| --- | --- | --- | --- | --- |
+| Fraktion (zufällig) | 2,33M | 2,21M | 40 % → 35 % | 48 % → 47 % |
+| Stapel zuerst | 2,67M | 2,76M | 32 % → 26 % | 37 % → 43 % |
+| Crit zuerst | 3,24M | 2,91M | 47 % → 41 % | 59 % → 57 % |
+
+Der Stapel-Build holt auf (2,76M gegen 2,91M Crit-Build; vorher 2,67M gegen 3,24M). Der Stapel-Anteil wird mit beiden
+Stapel-Wirkungen ablatiert (Basis-Score und Crit-Multiplikator) — Zahlen unten, sobald der Motor-Lauf durch ist.
+
+**Duell (100 Läufe):** Feuer mono 2,36M, Blitz mono 2,34M — Floor 1,01×, Mean 0,97×, p90 0,95×. Split 2,32M, Mix 1,45M.
+Die Startwerte 0,1× je Stapel und 4 % je Skill bleiben, nichts nachtariert.
+
 ## 5. Eis
 
 Offen.
@@ -2007,3 +2046,4 @@ Offen.
 | 2026-09-05 | Große Auswertung mit Türen (7.9): robust stark Sonnenkern, Klinge, Weißglut, Ladungsserie, Doppelentladung, Durchschlag; robust schädlich Glut, Glutbett, Feuersturm, Spannungsstau; tot Glutstahl, Schmiede, Überspannung, Reststrom, Kurzschluss; Konsumenten und Phönixfeuer ungenommen. Gierig 14,4M gegen 16,4M flach. Stufen tragen weiter nicht. Fünf Punkte für den Owner. |
 | 2026-09-05 | Owner: Pool Feuer/Blitz bestätigt; Neuwurf würfelt die drei Skills der geöffneten Tür neu (umgesetzt); Hitze schneller verbrauchen (7.10): Kühlung 2 → 6, Vorsprung-Offset 2 → 1 nach Sweep — ein Verstärker zahlt jetzt +10 % (Glut) bis +23 % (Zunder), Feuer mono gegen Blitz mono 1,00×. Danach die große Runde mit Random-Picks (7.11). |
 | 2026-09-05 | Random-Runde (7.11, `--policy random`): Zufallsspieler 2,08M gegen gierig 14,4M; Lifts statt Ablation lesen. Feuer: die drei Verbraucher kosten 9–25 %, Verstärker neutral (zahlen nur mit Klinge/Weißglut), Sonnenkern 3,68. Blitz flach (15 von 19 zwischen 0,9 und 1,05), Durchschlag 1,47, Ladungsserie 1,16. |
+| 2026-09-06 | Owner zu den Empfehlungen: Glut als Kaltstart und Stapel auf den Crit-Multiplikator umsetzen (7.12), Stufen und übrige Tote warten, Verbraucher offen (keine neue Leiste). Umgesetzt: Glut ×2 Hitze unter 40/50/60/80 %; +0,1× Crit-Mult je Stapel der Siegkarte, Crit je Skill 5 → 4 %. Glut + Kern +49 % (vorher +10 %), Kaltstart 1100 → 609 Stiche; Duell Floor 1,01×. Auswertungen gierig und random neu gefahren. |

@@ -137,12 +137,13 @@ export function runMotor({ arg, seed0, write } = {}) {
 
   if (only.includes("lightning")) {
     console.log(`\n=== MOTOR Blitz — Ionisierung im Lauf (${runs} Läufe, Seeds ${seed0}..${seed0 + runs - 1}, Welt nur Blitz) ===`);
-    console.log(`  Passiv: +${Math.round(C.LIGHTNING_CRIT_PER_SKILL * 100)} % Crit je Skill · Leiste ${C.LIGHTNING_MAX_CHARGE} · Stapel-Score ${C.ION_SCORE_PER_STACK} in die Basis`);
+    console.log(`  Passiv: +${Math.round(C.LIGHTNING_CRIT_PER_SKILL * 100)} % Crit je Skill · Leiste ${C.LIGHTNING_MAX_CHARGE} · Stapel-Score ${C.ION_SCORE_PER_STACK} in die Basis · +${C.ION_CRIT_MULT_PER_STACK}× Crit-Mult je Stapel`);
     // Gepaarte Stapel-Ablation im Unterprozess (Stapel-Score 0, sonst identisch).
     let ablated = null;
     try {
+      // Beide Stapel-Wirkungen aus (§7.12: Basis-Score UND Crit-Multiplikator), sonst identischer Lauf.
       const raw = execFileSync(process.execPath, ["sim/batch.js", "--mode", "motor", "--part", "lightning-scores", "--runs", String(runs), "--seed", String(seed0)],
-        { env: { ...process.env, SIM_ION_SCORE_PER_STACK: "0" }, stdio: ["ignore", "pipe", "inherit"], maxBuffer: 64 * 1024 * 1024 }).toString();
+        { env: { ...process.env, SIM_ION_SCORE_PER_STACK: "0", SIM_ION_CRIT_MULT_PER_STACK: "0" }, stdio: ["ignore", "pipe", "inherit"], maxBuffer: 64 * 1024 * 1024 }).toString();
       ablated = JSON.parse(raw);
     } catch (e) { console.log(`  (Stapel-Ablation im Unterprozess fehlgeschlagen: ${e.message})`); }
     console.log(`  Build                  Median      Crits/Lauf  Crit-Rate  Leisten/Lauf  Stiche/Leiste  Stapel/Lauf  Stapel/Karte  ionisiert  Siegkarte Ø  Crit-Anteil  Stapel-Anteil`);
@@ -164,7 +165,7 @@ export function runMotor({ arg, seed0, write } = {}) {
       payload.lightning[name] = row;
       console.log(`  ${name.padEnd(22)} ${fmt(row.median).padStart(10)}   ${row.crits.toFixed(0).padStart(6)}     ${pct(row.critRate)}   ${row.bars.toFixed(1).padStart(8)}     ${row.tricksPerBar.toFixed(1).padStart(8)}     ${row.ionTotal.toFixed(0).padStart(6)}      ${row.stacksPerCard.toFixed(1).padStart(6)}     ${pct(row.ionizedShare)}    ${row.winStacksMean.toFixed(1).padStart(6)}     ${pct(row.critShare)}   ${paired ? `${pct(row.stackShareMedian)} (Ø ${pct(row.stackShareMean).trim()})` : "n/a"}`);
     }
-    console.log(`  Lesart: „Stapel-Anteil" = Score-Verlust desselben Laufs mit Stapel-Score 0 (gepaart, Median und Ø je Lauf); „Crit-Anteil" = critBonusScore ÷ Score.`);
+    console.log(`  Lesart: „Stapel-Anteil" = Score-Verlust desselben Laufs ohne jede Stapel-Wirkung (Stapel-Score 0 und Crit-Mult je Stapel 0; gepaart, Median und Ø je Lauf); „Crit-Anteil" = critBonusScore ÷ Score.`);
     console.log(`  „Siegkarte Ø" = Stapel auf der gespielten Karte bei einem Sieg; „ionisiert" = Anteil der Karten mit ≥ 1 Stapel am Laufende.`);
   }
   if (write) write(payload);
