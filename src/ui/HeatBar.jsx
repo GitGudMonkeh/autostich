@@ -1,4 +1,4 @@
-import { F, fireParam, heatMult, heatMaxFor } from "../game/factions/fire.js";
+import { F, fireParam, heatMult, heatMaxFor, schneiseLane } from "../game/factions/fire.js";
 import { HEAT_MAX, HEAT_MULT_PER_10, SONNENZORN_MULT_PER_10, FORGE_VALUE } from "../game/constants.js";
 import { FactionShell, PanelSkills, CounterCell, YieldMeter } from "./indicators/panelKit.jsx";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
@@ -11,7 +11,7 @@ const BRAND = "#e0605a"; // Brandmal am Gegner (Debuff, App-Rotton)
 /* 🔥 Hitze (Feuer-Archetyp) — eigener Block zwischen Battlefield und Build-Panel, analog zur ⚡ Ladung.
    exp skill rework (docs/skill-rework.md §4, Anzeige vorläufig bis Phase 4): Leiste 0–100, mit Weißglut 0–200; daneben
    der Hitze-Multiplikator des Passivs (je 10 % Hitze +2 % Score, Sonnenzorn: Spitze und doppelt), die Schwellen-Skills
-   als Abzeichen (Glühende Klinge, Feuerwalze, Verbrennung, Schmiede) und der Schmiede-Zähler. Asche, Funkenflug und
+   als Abzeichen (Glühende Klinge, Brandschneise, Verbrennung, Schmiede) und der Schmiede-Zähler. Asche, Funkenflug und
    Überhitzung gibt es nicht mehr. Nur sichtbar, sobald ein Feuer-Skill aktiv ist. */
 const HOT = FIRE_HOT; // heißes Ende des Verlaufs (ab ~50 %)
 
@@ -27,7 +27,7 @@ function AnvilIcon() {
 
 const grp = (n) => fmtNum(Math.round(n));
 
-export function HeatBar({ heat, skills = [], skillTiers = {}, forged = {}, lastResult = null, brandTotal = 0, fireBase = 0, fireHeat = 0, options = {}, onOption, manyActive = false, showSkills = false }) {
+export function HeatBar({ heat, skills = [], skillTiers = {}, forged = {}, brandTotal = 0, fireBase = 0, fireHeat = 0, options = {}, onOption, manyActive = false, showSkills = false }) {
   if (!heat || !heat.active) return null;
   const value = heat.value || 0;
   const scale = heat.max || heatMaxFor(skills);   // Bezugsgröße ALLER Leisten-Geometrie (Füllung, Schwellenstriche): 100, mit Weißglut 200
@@ -54,13 +54,13 @@ export function HeatBar({ heat, skills = [], skillTiers = {}, forged = {}, lastR
     badges.push({ k: "gk", t: gv > 0 ? t("bar.fire.badge.glow.n", { n: gv }) : t("bar.fire.badge.glow"), c: HOT, dim: gv === 0,
       title: t("bar.fire.badge.glow.title", { step }) });
   }
-  // Feuerwalze: dauerhaft sichtbar, sobald gehalten; die +n nur, wenn die nächste Karte den Bonus wirklich trägt.
-  const fwMin = param(F.FEUERWALZE, "minHeat");
-  if (fwMin != null) {
-    const on = value >= fwMin && (lastResult === "win" || (param(F.FEUERWALZE, "afterLoss") && lastResult === "loss"));
-    const fv = param(F.FEUERWALZE, "value") || 0;
-    badges.push({ k: "fw", t: on ? t("bar.fire.badge.fireRoll.n", { n: fv }) : t("bar.fire.badge.fireRoll"), c: HOT, dim: !on,
-      title: t("bar.fire.badge.fireRoll.title", { n: fwMin, v: fv }) });
+  // Brandschneise (§7.27): dauerhaft sichtbar, sobald gehalten; die Zahl ist die Breite der liegenden Schneise — der
+  // erste Schnitt fällt am Ende des laufenden Durchlaufs, bis dahin steht das Abzeichen gedimmt.
+  const laneWidth = param(F.BRANDSCHNEISE, "width");
+  if (laneWidth != null) {
+    const lane = schneiseLane(skills, skillTiers, heat);
+    badges.push({ k: "bs", t: lane.length ? t("bar.fire.badge.schneise.n", { n: lane.length }) : t("bar.fire.badge.schneise"), c: HOT, dim: lane.length === 0,
+      title: t("bar.fire.badge.schneise.title", { n: laneWidth, m: fmtNum(param(F.BRANDSCHNEISE, "mult") || 1) }) });
   }
   // Verbrennung: die Vorsprungs-Schwelle der Stufe (Zustand des Builds, kein Hitze-Tor).
   const vbMin = param(F.VERBRENNUNG, "minMargin");

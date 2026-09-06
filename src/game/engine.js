@@ -18,7 +18,7 @@ import { lightningCritChance, lightningCritMult, overcritMult, blitzfaengerValue
 // exp skill rework: die Feuer-Mechanik (Passiv, 15 Skills, 4 Legendäre) lebt ebenso im Fraktionsmodul — die Engine
 // ruft ihre Übergänge (Kampfwert-Bonus, Sieg, Niederlage, Hitze-Multiplikator, Rundenende, Brand-Wechsel).
 import { syncHeatMax, fireValueBonus, damascusCombat, fireOnWin, fireOnLoss, heatMult, verbrennungMult, feuersturmMult,
-  rueckzuendungMult, fireCycleEnd, nextBrandActive } from "./factions/fire.js";
+  rueckzuendungMult, schneiseMult, fireCycleEnd, nextBrandActive } from "./factions/fire.js";
 // (#267: import aus stats.js entfernt — die Stat-Phase/Faktoren sind weg.)
 import { computeFormations, positionHasFormation, activeFormationCount, summarizeFormations, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
 import { perkLegendaryChance, anchorAt } from "./shop.js";
@@ -345,10 +345,10 @@ export function resolveTrick(state, rng) {
   const relayBonus = successorQueue[0] || 0;
   successorQueue = successorQueue.slice(1);
   // ---- Feuer (exp skill rework, §4): Leiste an den Build angleichen (Weißglut 200), dann der Zustands-Bonus der
-  //      gespielten Karte — Glühende Klinge (je Hitze-Schritt), Feuerwalze (ab der Schwelle nach einem Sieg, Episch auch
-  //      nach einer Niederlage), Rückzündung Episch (nach einer Niederlage). Alles im Modul.
+  //      gespielten Karte — Glühende Klinge (je Hitze-Schritt) und Rückzündung Episch (die zündende Karte). Alles im
+  //      Modul. (Feuerwalze ist seit §7.27 gestrichen, ihr Platz trägt die Brandschneise.)
   let heat = syncHeatMax(state.heat || null, skills);
-  const fireValue = fireValueBonus(heat, skills, skillTiers, { lastResult, winStreak }); // §7.24: Rückzündung Episch liest die Serie (die zündende Karte)
+  const fireValue = fireValueBonus(heat, skills, skillTiers, { winStreak }); // §7.24: Rückzündung Episch liest die Serie (die zündende Karte)
   // Blitzfänger (exp skill rework): ionisierte Karten kämpfen mit +Wert; Ionenfeld (§7.18): solange das Feld trägt, alle
   // Karten. Beides Zustand vor dem Stich, kein Ereignis.
   const blitzValueBonus = blitzfaengerValue(skills, skillTiers, pCardR) + ionenfeldValue(state.lightning, skills, skillTiers);
@@ -488,6 +488,7 @@ export function resolveTrick(state, rng) {
         margin: pValue - oValue, streak: serieStreak, lastResult, card: pCard, forged, brandOnOpp,
         valueOver: pValue - damascusValue - (pCard.baseRank ?? pCard.value), // Glutstahl: Kampfwert über dem Grundwert, ohne den Damast-Kampfbonus
         value: pValue, formCount: activeFormationCount(posForm), // Feuerlinie: ganzer Kampfwert, aktive Formationen an der Siegposition
+        pos: actualPos, // Brandschneise (§7.27): der Sieg wird mit seinem Vorsprung gemerkt, der Schnitt fällt am Durchlaufende
         oppId: oCard.id, oppIndex: oppOrder[actualPos], oppDeck,
       });
       heat = r.heat; fireFlat = r.flat; fireHeld = r.held; fireLineMult = r.lineMult || 1;
@@ -743,6 +744,7 @@ export function resolveTrick(state, rng) {
       ? heatMult(skills, skillTiers, fireHeld, heat.peak, heat.emberMult) * verbrennungMult(skills, skillTiers, pValue - oValue)
         * feuersturmMult(skills, skillTiers, fireHeld, heat.max || C.HEAT_MAX, serieStreak) // §7.17: Feuersturm, Serie zu Score bei voller Leiste
         * rueckzuendungMult(skills, skillTiers, serieStreak) // §7.24: Rückzündung, der Takt — jeder N. Sieg in Folge (Serie nach dem Sieg)
+        * schneiseMult(skills, skillTiers, heat, actualPos) // §7.27: Brandschneise, ein Sieg auf dem Schnitt des letzten Durchlaufs (die Schnitte liegen im Hitze-Substate)
         * fireLineMult : 1; // §7.23: Feuerlinie, je Punkt Kampfwert im Formations-Sieg (fireOnWin oben, samt Hitzekosten)
     // architectMult (#202, Architekt-Score-Gebäude: Struktur/Schatzkammer) läuft als eigener Faktor am Ende des Stacks.
     // #Pool Batch 4 (gamble/Risiko): Boden — der Architekt-Abzug (negativer Flat) darf den Stich höchstens auf 0 drücken,

@@ -8,6 +8,12 @@ const V = {
   serieHalf:     () => { [0.5, 0.75, 1, 1.25].forEach((v, i) => { B.serie[i].critPerStreak = v / 100; }); },
   serieQuarter:  () => { [0.25, 0.5, 0.75, 1].forEach((v, i) => { B.serie[i].critPerStreak = v / 100; }); },
   feuerlinieKost5: () => { F.feuerlinie.forEach((r) => { r.cost = 5; }); },
+  // §7.27 Brandschneise: Satz und Breite sind die zwei Regler der Bauform a (Default 3/4/5/6 Positionen, ×1,5).
+  schneise2:     () => { F.schneise.forEach((r) => { r.mult = 2; }); },
+  schneise25:    () => { F.schneise.forEach((r) => { r.mult = 2.5; }); },
+  schneise3:     () => { F.schneise.forEach((r) => { r.mult = 3; }); },
+  schneiseBreit: () => { [5, 6, 7, 8].forEach((v, i) => { F.schneise[i].width = v; }); },
+  schneiseBreit2: () => { [5, 6, 7, 8].forEach((v, i) => { F.schneise[i].width = v; }); F.schneise.forEach((r) => { r.mult = 2; }); },
 };
 const names = (process.env.VARIANT || "aktuell").split(",").map((s) => s.trim()).filter(Boolean);
 for (const n of names) { if (!V[n]) { console.error(`unbekannte Variante ${n} — bekannt: ${Object.keys(V).join(", ")}`); process.exit(1); } V[n](); }

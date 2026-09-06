@@ -18,7 +18,7 @@ import { SKILL_DEFS, TIER_EPIC, isLegendarySkill } from "../skills.js";
 // Skill-IDs der Fraktion — lesbare Namen für Modul, Engine und Tests.
 export const F = Object.freeze({ // 01: Feuerlinie ersetzt Glut (§7.23)
   FEUERLINIE: "SK_FIRE_01", ZUNDER: "SK_FIRE_02", FEUERSTURM: "SK_FIRE_03", GLUTBETT: "SK_FIRE_04", RUECKZUENDUNG: "SK_FIRE_05",
-  KLINGE: "SK_FIRE_06", WEISSGLUT: "SK_FIRE_07", FEUERWALZE: "SK_FIRE_08", VERBRENNUNG: "SK_FIRE_09",
+  KLINGE: "SK_FIRE_06", WEISSGLUT: "SK_FIRE_07", BRANDSCHNEISE: "SK_FIRE_08", VERBRENNUNG: "SK_FIRE_09", // 08: Brandschneise ersetzt Feuerwalze (§7.27)
   SCHMELZPUNKT: "SK_FIRE_12", BRANDMAL: "SK_FIRE_13", LAUFFEUER: "SK_FIRE_14", // SK_FIRE_11 Flächenbrand: gestrichen (§7.16)
   SCHMIEDE: "SK_FIRE_15", GLUTSTAHL: "SK_FIRE_16",
   SONNENKERN: "SK_FIRE_L01", EWIGE_GLUT: "SK_FIRE_L02", SONNENZORN: "SK_FIRE_L03", DAMASTSTAHL: "SK_FIRE_L04", // L02: Ewige Glut ersetzt Phönixfeuer (§7.21)
@@ -26,9 +26,10 @@ export const F = Object.freeze({ // 01: Feuerlinie ersetzt Glut (§7.23)
 
 /* Frischer Hitze-Substate — inaktiv; der erste Feuer-Skill aktiviert ihn (Reducer). value = Hitze (0..max, auch mit
    Nachkommastellen), peak = höchste je erreichte Hitze (Sonnenzorn, Ewige Glut), lastLossDeficit = Rückstand der letzten
-   Niederlage (Rückzündung), emberMult = dauerhafte Rampe der Ewigen Glut auf den Hitze-Multiplikator. */
+   Niederlage (Rückzündung), emberMult = dauerhafte Rampe der Ewigen Glut auf den Hitze-Multiplikator, lanes/laneWins =
+   Brandschneise (§7.27: die Schnitte der letzten Durchläufe, neuester zuerst / die Siege des laufenden Durchlaufs). */
 export function initHeat() {
-  return { active: false, value: 0, max: C.HEAT_MAX, peak: 0, lastLossDeficit: 0, emberMult: 0 };
+  return { active: false, value: 0, max: C.HEAT_MAX, peak: 0, lastLossDeficit: 0, emberMult: 0, lanes: [], laneWins: [] };
 }
 
 const held = (skills, id) => (skills || []).includes(id);
@@ -134,19 +135,35 @@ export function feuersturmMult(skills, skillTiers, value = 0, max = C.HEAT_MAX, 
   return 1 + Math.max(0, streak) * per;
 }
 
+/* Brandschneise (§7.27, Owner, Bauform a; Platz der Feuerwalze): die `width` Siege mit dem größten Vorsprung eines
+   Durchlaufs schlagen eine Schneise — im nächsten Durchlauf zählt ein Sieg auf diesen Positionen ×mult. Die Menge ist
+   strukturell knapp (N von 40 Positionen, 8–15 % der Stiche) statt historisch („schon einmal gewonnen" ist ab
+   Durchlauf 41 immer wahr, gemessen in §7.27) und wandert jeden Durchlauf. `heat.lanes` hält die Schnitte, neuester
+   zuerst; nur Episch liest zwei (`hold`). Gibt die Positionen der laufenden Schneise zurück, [] ohne den Skill. */
+export function schneiseLane(skills, skillTiers, heat) {
+  if (!fireParam(skills, skillTiers, F.BRANDSCHNEISE, "mult") || !heat || !Array.isArray(heat.lanes)) return [];
+  const hold = fireParam(skills, skillTiers, F.BRANDSCHNEISE, "hold") || 1;
+  const out = [];
+  for (const cut of heat.lanes.slice(0, hold)) for (const p of cut) if (!out.includes(p)) out.push(p);
+  return out;
+}
+
+// Faktor der Brandschneise auf diesen Stich (Faktor im Feuer-Stack): mult auf einer Position der Schneise, sonst 1.
+export function schneiseMult(skills, skillTiers, heat, pos = -1) {
+  const mult = fireParam(skills, skillTiers, F.BRANDSCHNEISE, "mult");
+  if (!mult || pos < 0) return 1;
+  return schneiseLane(skills, skillTiers, heat).includes(pos) ? mult : 1;
+}
+
 /* Kampfwert-Bonus der gespielten Karte (Zustand vor dem Stich): Glühende Klinge (+Wert je Hitze-Schritt, ohne Deckel),
-   Feuerwalze (ab der Hitze-Schwelle nach einem Sieg, Episch auch nach einer Niederlage), Rückzündung Episch (§7.24: die
-   zündende Karte — wäre dieser Stich der N. Sieg in Folge, kämpft sie mit +Wert; `winStreak` = Serie VOR dem Stich). */
-export function fireValueBonus(heat, skills, skillTiers, { lastResult = null, winStreak = 0 } = {}) {
+   Rückzündung Episch (§7.24: die zündende Karte — wäre dieser Stich der N. Sieg in Folge, kämpft sie mit +Wert;
+   `winStreak` = Serie VOR dem Stich). (Feuerwalze ist seit §7.27 gestrichen — dieselbe Achse wie die Klinge.) */
+export function fireValueBonus(heat, skills, skillTiers, { winStreak = 0 } = {}) {
   if (!heat || !heat.active) return 0;
   const value = heat.value || 0;
   let v = 0;
   const step = fireParam(skills, skillTiers, F.KLINGE, "perHeat");
   if (step) v += Math.floor(value / step + 1e-9) * (fireParam(skills, skillTiers, F.KLINGE, "value") || 1);
-  const fwMin = fireParam(skills, skillTiers, F.FEUERWALZE, "minHeat");
-  if (fwMin != null && value >= fwMin
-      && (lastResult === "win" || (fireParam(skills, skillTiers, F.FEUERWALZE, "afterLoss") && lastResult === "loss")))
-    v += fireParam(skills, skillTiers, F.FEUERWALZE, "value") || 0;
   const rz = fireParam(skills, skillTiers, F.RUECKZUENDUNG, "value");
   const every = fireParam(skills, skillTiers, F.RUECKZUENDUNG, "every");
   if (rz && every && ((winStreak || 0) + 1) % every === 0) v += rz;
@@ -163,11 +180,12 @@ export function damascusCombat(skills, forged, card) {
 /* Sieg: Hitzegewinn, Schmelzpunkt (Überlauf-Wandler), Glutstahl, Sonnenkern-Score, Brände, Feuerlinie (Faktor und
    Hitzekosten). `held` = Hitze nach dem Gewinn — daran hängen die Hitze-Tore dieses Siegs und der Hitze-Multiplikator.
    `valueOver` = Kampfwert der Siegkarte über ihrem Grundwert (alle Quellen, ohne den Damast-Kampfbonus); `value` =
-   ihr ganzer Kampfwert, `formCount` = aktive Formationen an der Siegposition (beides Feuerlinie). Gibt { heat, held,
-   flat, melted, brands, lineMult } zurück; melted = gewandelte Hitzepunkte, brands = [{ id, value }] für die NÄCHSTE
-   Runde, lineMult = der Feuerlinie-Faktor dieses Siegs (1 ohne). */
+   ihr ganzer Kampfwert, `formCount` = aktive Formationen an der Siegposition (beides Feuerlinie), `pos` = die Position
+   des Siegs (Brandschneise, §7.27 — nur mit dem Skill gemerkt). Gibt { heat, held, flat, melted, brands, lineMult }
+   zurück; melted = gewandelte Hitzepunkte, brands = [{ id, value }] für die NÄCHSTE Runde, lineMult = der
+   Feuerlinie-Faktor dieses Siegs (1 ohne). */
 export function fireOnWin(heat, skills, skillTiers, { margin = 0, lastResult = null, valueOver = 0, value: cardValue = 0, formCount = 0,
-  card = null, forged = {}, brandOnOpp = 0, oppId = null, oppIndex = -1, oppDeck = null } = {}) {
+  pos = -1, card = null, forged = {}, brandOnOpp = 0, oppId = null, oppIndex = -1, oppDeck = null } = {}) {
   const gain = heatGainOnWin(skills, skillTiers, { margin, lastResult, lastLossDeficit: heat.lastLossDeficit || 0, heatValue: heat.value || 0, heatPeak: heat.peak || 0 });
   const max = heat.max || C.HEAT_MAX;
   const raw = (heat.value || 0) + gain;
@@ -211,8 +229,12 @@ export function fireOnWin(heat, skills, skillTiers, { margin = 0, lastResult = n
       if (nb >= 0 && nb < oppDeck.length) brands.push({ id: oppDeck[nb].id, value: v });
   }
   if (hasSonnenkern(skills) && oppId != null) brands.push({ id: oppId, value: C.SONNENKERN_BRAND });
+  // Brandschneise: der Sieg wird mit seinem Vorsprung gemerkt; welche daraus die Schneise werden, entscheidet erst das
+  // Durchlaufende (fireCycleEnd). Ohne den Skill bleibt die Liste leer — kein Zustand, den niemand liest.
+  let laneWins = heat.laneWins || [];
+  if (fireParam(skills, skillTiers, F.BRANDSCHNEISE, "width") != null && pos >= 0) laneWins = [...laneWins, { p: pos, m: margin }];
   const peak = Math.max(heat.peak || 0, heldHeat, value);
-  return { heat: { ...heat, value, peak, meltPending }, held: heldHeat, flat: Math.round(flat), melted, brands, lineMult };
+  return { heat: { ...heat, value, peak, meltPending, laneWins }, held: heldHeat, flat: Math.round(flat), melted, brands, lineMult };
 }
 
 /* Niederlage: kühlt HEAT_LOSS flach, Glutbett hält einen Boden (Episch: keine Kühlung); Ewige Glut (L, §7.21) lässt
@@ -242,7 +264,8 @@ export function fireOnLoss(heat, skills, skillTiers, { deficit = 0, oppId = null
 /* Rundenende: Schmiede (§7.14: ohne Preis, die Hitze ist nur die Schwelle der Stufe — liegt sie an, erhält die niedrigste
    Karte dauerhaft +FORGE_VALUE, Episch die zwei niedrigsten), Damaststahl (die niedrigste Karte ohne Schwelle), Ewige
    Glut (L, §7.21: endet die Runde mit voller Leiste, wächst die Rampe emberMult um EWIGE_GLUT_MULT_PER_ROUND, ohne
-   Deckel). Niedrigste Karte deterministisch: kleinster Wert, dann kleinste id.
+   Deckel), Brandschneise (§7.27: der neue Schnitt aus den größten Vorsprüngen des Durchlaufs).
+   Niedrigste Karte deterministisch: kleinster Wert, dann kleinste id.
    Gibt { heat, deck, forged, forgedIds } zurück. */
 export function fireCycleEnd(heat, skills, skillTiers, deck, forged = {}) {
   if (!heat || !heat.active) return { heat, deck, forged, forgedIds: [] };
@@ -271,7 +294,17 @@ export function fireCycleEnd(heat, skills, skillTiers, deck, forged = {}) {
   if (hasDamaststahl(skills)) forgeLowest([]);
   let emberMult = heat.emberMult || 0;
   if (hasEwigeGlut(skills) && value >= max) emberMult += C.EWIGE_GLUT_MULT_PER_ROUND;
-  return { heat: { ...heat, value, emberMult }, deck: d, forged: f, forgedIds };
+  /* Brandschneise (§7.27): der Schnitt dieses Durchlaufs sind die `width` Siege mit dem größten Vorsprung — bei
+     gleichem Vorsprung die kleinere Position (Determinismus §9). `lanes` hält die zwei jüngsten Schnitte, mehr liest
+     keine Stufe; ohne den Skill bleibt nichts liegen (ein Wiedererwerb fängt bei leerer Schneise an). */
+  const wins = heat.laneWins || [];
+  let lanes = heat.lanes || [];
+  const width = fireParam(skills, skillTiers, F.BRANDSCHNEISE, "width");
+  if (width != null) {
+    const cut = [...wins].sort((a, b) => (b.m - a.m) || (a.p - b.p)).slice(0, width).map((w) => w.p).sort((a, b) => a - b);
+    lanes = [cut, ...lanes].slice(0, 2);
+  } else if (lanes.length) lanes = [];
+  return { heat: { ...heat, value, emberMult, lanes, laneWins: wins.length ? [] : wins }, deck: d, forged: f, forgedIds };
 }
 
 // Brand-Wechsel am Rundenende: normal ersetzen die neuen Brände die alten; mit Sonnenkern stapeln sie sich darauf.

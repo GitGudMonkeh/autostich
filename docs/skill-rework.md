@@ -1383,7 +1383,8 @@ brutto 49 % und netto 21 % Hitze je Runde.
 | Rückzündung | Takt (seit 7.24; 7.22 Konter nach Niederlage, tot ab der Laufmitte; davor Comeback zu Hitze, tot) | jeder 5. Sieg in Folge zündet: er zählt ×1,5 | jeder 4. | jeder 3. | jeder 2.; die zündende Karte kämpft mit +2 Wert |
 | Glühende Klinge | Hitze zu Wert | alle Karten +1 Wert je 40 % Hitze | je 30 % | je 25 % | je 20 % |
 | Weißglut | über die Leiste | Leiste bis 200; über 100 je 10 % +3 % Score | +4 % | +5 % | +6 % |
-| Feuerwalze | Serie zu Wert | ab 80 % Hitze: nach einem Sieg hat die nächste Karte +2 Wert | ab 60 % | ab 40 % | ab 20 %; auch nach einer Niederlage |
+| Brandschneise (7.27, Platz der Feuerwalze) | Position zu Score, ohne Hitze-Tor | die 3 Siege mit dem größten Vorsprung eines Durchlaufs schlagen die Schneise; im nächsten Durchlauf zählt ein Sieg dort ×2,5 | 4 Positionen | 5 | 6; die Schneise hält zwei Durchläufe |
+| ~~Feuerwalze~~ | gestrichen (7.27; +2 Wert ab einer Hitze-Schwelle — dieselbe Achse wie die Klinge, vier Stufen mit viermal +2, tot in 7.6, 7.9 und 7.13) | – | – | – | – |
 | Verbrennung | Vorsprung zu Score | Sieg mit Vorsprung ab 8: Stich ×1,5 | ab 7 | ab 6 | ab 5; seine Hitze zählt ebenfalls ×1,5 (Extra 7.22) |
 | ~~Flächenbrand~~ | gestrichen (7.16; der Brand kostete Klinge, Siegquote und Serie) | – | – | – | – |
 | Schmelzpunkt | Überlauf-Wandler (seit 7.16; vorher Tropf-Konsument) | bei voller Leiste wird die Hitze, die ein Sieg nicht mehr auf die Leiste bringt, zu +15 Basis je Punkt; nichts wird verbrannt | +20 | +25 | +30; die Kühlung einer Niederlage bei voller Leiste zahlt beim nächsten Sieg |
@@ -3312,7 +3313,7 @@ gemessen, alle auf Achsen, die heute kein normaler Skill berührt:
 Ladungsserie, Ionenfeld, Klinge, Weißglut, Feuerlinie und alle acht Legendären außer Damaststahl (vorgemerkt) und den
 Texten von Sonnenzorn und Sonnenkern.
 
-### 7.27 Feuerwalze raus, Brandschneise rein: der Auslöser muss knapp bleiben (2026-09-06, Vorschlag)
+### 7.27 Feuerwalze raus, Brandschneise rein: der Auslöser muss knapp bleiben (2026-09-06, umgesetzt)
 
 Owner: Punkt 2 der Liste in 7.26 F, Konzept **Brandschneise** — „aber bedenke das später in der Runde mit hohen
 Werten alle Positionen gewonnen werden."
@@ -3359,6 +3360,41 @@ eines neuen Skills anfangs niedrig ist), Parität im Duell prüfen.
 **Feuerwalze** (SK_FIRE_08) geht dafür raus: vier Stufen mit viermal +2 Wert, gemessen tot in 7.6, 7.9 und 7.13, und
 die Glühende Klinge deckt dieselbe Achse bei 100 % Hitze mit +2 / 3 / 4 / 5 ab. Die ID bleibt, das Emblem wird mit
 `git mv` umbenannt, Feuer bleibt bei 14.
+
+#### Entscheid und Umsetzung (Owner, 2026-09-06: „feste Breite, Variante a")
+
+**Brandschneise** auf SK_FIRE_08, Feuerwalze gestrichen, Emblem umbenannt (`SK_FIRE_08_brandschneise.webp`).
+Stufen über die Breite: **3 / 4 / 5 / 6 Positionen**, Faktor **×2,5** (Sweep unten), Episch hält die Schneise zwei
+Durchläufe. Text: „Deine 3 Siege mit dem größten Vorsprung eines Durchlaufs schlagen eine Schneise: im nächsten
+Durchlauf zählt ein Sieg auf diesen Positionen ×2,5." Schlüsselbegriffe `position` und `wertvorsprung` — der erste
+Feuer-Skill ohne Hitze-Tor und der erste normale Skill auf der Achse „eigene Reihenfolge".
+
+**Technische Entscheide.** Der Zustand liegt im Hitze-Substate: `laneWins` sammelt je Durchlauf `{ p, m }` (Position,
+Vorsprung) — nur wenn der Skill gehalten wird, sonst bleibt die Liste leer; `lanes` hält die Schnitte, neuester
+zuerst, höchstens zwei (mehr liest keine Stufe). Der Schnitt fällt in `fireCycleEnd`: die `width` größten Vorsprünge,
+bei Gleichstand die kleinere Position (Determinismus §9). `schneiseMult` ist ein Faktor im Feuer-Stack neben Hitze-
+Multiplikator, Verbrennung, Feuersturm, Rückzündung und Feuerlinie; die Engine reicht `pos` in `fireOnWin`. Ohne den
+Skill verfällt eine liegende Schneise — ein Wiedererwerb fängt leer an. `fireValueBonus` verliert damit seinen
+`lastResult`-Zweig (das war die Feuerwalze), die Hitzeleiste tauscht ihr Abzeichen.
+
+**Sweep (Duell, 100 Läufe, Feuer mono / Floor Feuer ÷ Blitz).** Blitz mono steht unverändert bei 13,0M.
+
+| Satz / Breite | ×1,5 · 3–6 | ×2 · 3–6 | **×2,5 · 3–6** | ×3 · 3–6 | ×1,5 · 5–8 | ×2 · 5–8 |
+| --- | --- | --- | --- | --- | --- | --- |
+| Feuer mono | 11,82M | 12,42M | **12,97M** | 13,41M | 12,09M | 12,91M |
+| Floor | 0,91× | 0,96× | **1,00×** | 1,03× | 0,93× | 1,00× |
+
+Gesetzt ist **×2,5 bei 3–6 Positionen**: die Breite ist die vom Owner entschiedene Leiter, der Faktor der freie
+Regler, und die Parität steht damit bei 1,00× (7.25: 1,09×). Die Breite zu heben zahlt schlechter als der Faktor
+(5–8 Positionen bei ×1,5 bringen nur 0,93×) und verwässert die Knappheit, die der Sinn der Bauform ist.
+
+**Was der Tausch kostet.** Die Feuerwalze war im Fraktions-Build kein toter Skill, sondern ein Dauerbonus: „+2 Wert
+für die nächste Karte nach einem Sieg" liegt bei 70 % Siegquote fast immer an, hebt die Siegquote weiter und zahlt
+darüber in Hitze und Serien. Ohne Ersatz fiel Feuer mono von 14,2M auf 11,8M (−17 %); der Zufallsspieler von 4,08M
+auf 3,27M (200 Seeds). Ein Score-Faktor auf 3 von 40 Positionen ist linear und holt das nicht eins zu eins zurück —
+×2,5 stellt die Parität her, das absolute Niveau bleibt unter 7.25. **Das ist die gemessene Folge der
+Owner-Entscheidung, kein Nebeneffekt:** ein Skill, der immer an ist, wurde gegen einen getauscht, der 8–15 % der
+Stiche trifft. Das Sim-Band ist darauf neu zentriert.
 
 ## 5. Eis
 

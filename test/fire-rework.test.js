@@ -2,7 +2,8 @@ import { describe, it, expect } from "vitest";
 import * as C from "../src/game/constants.js";
 import { SKILL_DEFS, FEUER_TIERS, buildSkillOffer, archetypeOf } from "../src/game/skills.js";
 import { F, initHeat, heatMaxFor, syncHeatMax, fireTier, fireParam, heatGainOnWin, heatMult, verbrennungMult, feuersturmMult,
-  rueckzuendungMult, feuerlinieMult, fireValueBonus, damascusCombat, fireOnWin, fireOnLoss, fireCycleEnd, nextBrandActive } from "../src/game/factions/fire.js";
+  rueckzuendungMult, feuerlinieMult, schneiseLane, schneiseMult, fireValueBonus, damascusCombat, fireOnWin, fireOnLoss,
+  fireCycleEnd, nextBrandActive } from "../src/game/factions/fire.js";
 import { resolveTrick } from "../src/game/engine.js";
 import { initialState, reducer } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
@@ -65,7 +66,10 @@ describe("Feuer — Roster und Stufenleitern", () => {
     expect(T.rueckzuendung[3].value).toBe(2); // Episch-Extra: die zündende Karte +2
     expect(down(T.klinge, "perHeat")).toBe(true);
     expect(up(T.weissglut, "multPer10")).toBe(true);
-    expect(down(T.feuerwalze, "minHeat")).toBe(true);
+    expect(up(T.schneise, "width")).toBe(true); // §7.27: die Leiter ist die Breite der Schneise, der Faktor bleibt
+    expect(T.feuerwalze).toBeUndefined();       // §7.27: Feuerwalze gestrichen, ihr Platz trägt die Brandschneise
+    for (const r of T.schneise) expect(r.mult).toBe(T.schneise[0].mult);
+    expect(T.schneise[3].hold).toBe(2);         // Episch-Extra: die Schneise hält zwei Durchläufe
     expect(down(T.verbrennung, "minMargin")).toBe(true);
     expect(T.flaechenbrand).toBeUndefined(); // §7.16: Flächenbrand gestrichen
     expect(up(T.schmelzpunkt, "perPoint")).toBe(true);
@@ -195,14 +199,12 @@ describe("Feuer — Modul (reine Übergänge)", () => {
     expect(rueckzuendungMult([F.RUECKZUENDUNG], { [F.RUECKZUENDUNG]: 3 }, T.rueckzuendung[3].every)).toBe(T.rueckzuendung[3].mult);
     expect(rueckzuendungMult([F.RUECKZUENDUNG], { [F.RUECKZUENDUNG]: 3 }, 1)).toBe(1);
   });
-  it("fireValueBonus: Klinge je Schritt, Feuerwalze nach Sieg (Episch auch nach Niederlage), Rückzündung Episch", () => {
+  it("fireValueBonus: Klinge je Schritt, Rückzündung Episch", () => {
     expect(fireValueBonus(heat({ value: 80 }), [F.KLINGE], {}, {})).toBe(2);
     expect(fireValueBonus(heat({ value: 100 }), [F.KLINGE], { [F.KLINGE]: 3 }, {})).toBe(5);
     expect(fireValueBonus(heat({ value: 200 }), [F.KLINGE], { [F.KLINGE]: 3 }, {})).toBe(10);              // ohne Deckel
-    expect(fireValueBonus(heat({ value: 80 }), [F.FEUERWALZE], {}, { lastResult: "win" })).toBe(T.feuerwalze[0].value);
-    expect(fireValueBonus(heat({ value: 79 }), [F.FEUERWALZE], {}, { lastResult: "win" })).toBe(0);
-    expect(fireValueBonus(heat({ value: 80 }), [F.FEUERWALZE], {}, { lastResult: "loss" })).toBe(0);
-    expect(fireValueBonus(heat({ value: 20 }), [F.FEUERWALZE], { [F.FEUERWALZE]: 3 }, { lastResult: "loss" })).toBe(T.feuerwalze[3].value);
+    // §7.27: die Brandschneise hebt keinen Kampfwert (Feuerwalze ist gestrichen) — sie ist ein Faktor auf den Stich.
+    expect(fireValueBonus(heat({ value: 100, lanes: [[0]] }), [F.BRANDSCHNEISE], {}, {})).toBe(0);
     // §7.24 Rückzündung Episch: die zündende Karte — wäre dieser Stich der N. Sieg in Folge, kämpft sie mit +2; nur Episch.
     expect(fireValueBonus(heat({ value: 0 }), [F.RUECKZUENDUNG], { [F.RUECKZUENDUNG]: 3 }, { winStreak: T.rueckzuendung[3].every - 1 })).toBe(T.rueckzuendung[3].value);
     expect(fireValueBonus(heat({ value: 0 }), [F.RUECKZUENDUNG], { [F.RUECKZUENDUNG]: 3 }, { winStreak: T.rueckzuendung[3].every })).toBe(0);
@@ -322,6 +324,27 @@ describe("Feuer — Modul (reine Übergänge)", () => {
     expect(fireCycleEnd(heat({ value: 100 }), [F.KLINGE], {}, deck, {}).heat.emberMult).toBe(0); // ohne den Skill nichts
     expect(fireCycleEnd(null, [F.SCHMIEDE], {}, deck, {}).deck).toBe(deck);
   });
+  it("Brandschneise (§7.27): der Schnitt sind die größten Vorsprünge des Durchlaufs, Episch hält zwei", () => {
+    const deck = constDeck(5);
+    const wins = [{ p: 5, m: 2 }, { p: 9, m: 9 }, { p: 1, m: 4 }, { p: 7, m: 4 }, { p: 3, m: 1 }];
+    const r = fireCycleEnd(heat({ value: 0, laneWins: wins }), [F.BRANDSCHNEISE], {}, deck, {});
+    expect(r.heat.lanes[0]).toEqual([1, 7, 9]); // die drei größten Vorsprünge, bei Gleichstand die kleinere Position
+    expect(r.heat.laneWins).toEqual([]);        // der neue Durchlauf beginnt ohne gemerkte Siege
+    expect(schneiseLane([F.BRANDSCHNEISE], {}, r.heat)).toEqual([1, 7, 9]);
+    expect(schneiseMult([F.BRANDSCHNEISE], {}, r.heat, 7)).toBe(T.schneise[0].mult);
+    expect(schneiseMult([F.BRANDSCHNEISE], {}, r.heat, 8)).toBe(1);
+    expect(schneiseMult([], {}, r.heat, 7)).toBe(1);   // ohne den Skill kein Faktor
+    expect(schneiseMult([F.BRANDSCHNEISE], {}, r.heat, -1)).toBe(1);
+    // Episch liest zwei Schnitte, Normal nur den jüngsten; mehr als zwei hebt der Zustand nicht auf.
+    const two = fireCycleEnd(heat({ value: 0, laneWins: [{ p: 2, m: 5 }], lanes: [[1, 7, 9]] }), [F.BRANDSCHNEISE], { [F.BRANDSCHNEISE]: 3 }, deck, {});
+    expect(two.heat.lanes.length).toBe(2);
+    expect([...schneiseLane([F.BRANDSCHNEISE], { [F.BRANDSCHNEISE]: 3 }, two.heat)].sort((a, b) => a - b)).toEqual([1, 2, 7, 9]);
+    expect(schneiseLane([F.BRANDSCHNEISE], {}, two.heat)).toEqual([2]);
+    // Ohne den Skill wird nichts geschnitten, nichts gemerkt, und eine liegende Schneise verfällt.
+    expect(fireCycleEnd(heat({ value: 0, lanes: [[1]] }), [F.KLINGE], {}, deck, {}).heat.lanes).toEqual([]);
+    expect(fireOnWin(heat({ value: 0 }), [F.KLINGE], {}, { margin: 5, pos: 3 }).heat.laneWins).toEqual([]);
+    expect(fireOnWin(heat({ value: 0 }), [F.BRANDSCHNEISE], {}, { margin: 5, pos: 3 }).heat.laneWins).toEqual([{ p: 3, m: 5 }]);
+  });
   it("nextBrandActive: Brände erneuern sich je Runde, mit Sonnenkern stapeln sie", () => {
     expect(nextBrandActive([], { A: 2, B: 1 }, { A: 2 })).toEqual({ A: 2 });
     expect(nextBrandActive([F.SONNENKERN], { A: 2, B: 1 }, { A: 2, C: 1 })).toEqual({ A: 4, B: 1, C: 1 });
@@ -419,15 +442,23 @@ describe("Feuer — Engine-Integration", () => {
     const paid = resolveTrick(scen(12, 6, { skills: [F.SCHMELZPUNKT], skillTiers: { [F.SCHMELZPUNKT]: 3 }, heat: heat({ value: 100 - C.HEAT_LOSS, meltPending: C.HEAT_LOSS }) }), noCrit);
     expect(paid.lastTrick.breakdown.flats).toBe(C.HEAT_LOSS * T.schmelzpunkt[3].perPoint); expect(paid.heat.meltPending).toBe(0);
   });
-  it("Glühende Klinge und Feuerwalze heben den Kampfwert; Rückzündung Episch auf dem zündenden Stich", () => {
+  it("Glühende Klinge hebt den Kampfwert; Rückzündung Episch auf dem zündenden Stich", () => {
     const k = resolveTrick(scen(5, 6, { skills: [F.KLINGE], skillTiers: { [F.KLINGE]: 1 }, heat: heat({ value: 60 }) }), noCrit);
     expect(k.lastTrick.pValue).toBe(5 + 2);
     expect(k.lastTrick.result).toBe("win");
-    const fw = resolveTrick(scen(5, 6, { skills: [F.FEUERWALZE], heat: heat({ value: 80 }), lastResult: "win" }), noCrit);
-    expect(fw.lastTrick.pValue).toBe(5 + T.feuerwalze[0].value);
     const rz = resolveTrick(scen(5, 6, { skills: [F.RUECKZUENDUNG], skillTiers: { [F.RUECKZUENDUNG]: 3 }, heat: heat({ value: 0 }), winStreak: T.rueckzuendung[3].every - 1 }), noCrit); // §7.24: die zündende Karte
     expect(rz.lastTrick.pValue).toBe(5 + T.rueckzuendung[3].value);
     expect(resolveTrick(scen(5, 6, { skills: [F.RUECKZUENDUNG], skillTiers: { [F.RUECKZUENDUNG]: 3 }, heat: heat({ value: 0 }), winStreak: T.rueckzuendung[3].every }), noCrit).lastTrick.pValue).toBe(5);
+  });
+  it("Brandschneise (§7.27): ein Sieg auf der Schneise zählt ×Satz, daneben nicht; der Schnitt fällt am Durchlaufende", () => {
+    const on = resolveTrick(scen(12, 6, { skills: [F.BRANDSCHNEISE], heat: heat({ value: 0, lanes: [[0]] }) }), noCrit);
+    expect(on.lastTrick.breakdown.fireMult).toBeCloseTo(T.schneise[0].mult, 9);
+    expect(resolveTrick(scen(12, 6, { skills: [F.BRANDSCHNEISE], heat: heat({ value: 0, lanes: [[1]] }) }), noCrit).lastTrick.breakdown.fireMult).toBe(1);
+    expect(on.heat.laneWins).toEqual([{ p: 0, m: 6 }]); // gemerkt wird der Sieg, geschnitten wird am Durchlaufende
+    // Voller Durchlauf: alle 40 Positionen gewinnen mit demselben Vorsprung → die drei kleinsten Positionen sind der Schnitt.
+    const done = playCycle(scen(12, 6, { skills: [F.BRANDSCHNEISE], heat: heat({ value: 0 }) }));
+    expect(done.heat.lanes[0]).toEqual([0, 1, 2]);
+    expect(done.heat.laneWins).toEqual([]);
   });
   it("Glutstahl zahlt je Punkt Kampfwert über dem Grundwert, egal woher (hier: Klinge)", () => {
     const s = resolveTrick(scen(12, 6, { skills: [F.GLUTSTAHL, F.KLINGE], heat: heat({ value: 80 }) }), noCrit);

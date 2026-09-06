@@ -65,7 +65,7 @@ const FEUER = {
   rueckzuendung: [{ every: 5, mult: 1.5 }, { every: 4, mult: 1.5 }, { every: 3, mult: 1.5 }, { every: 2, mult: 1.5, value: 2 }], // §7.24 (Owner): Takt — jeder N. Sieg in Folge zündet und zählt ×mult, Episch kämpft die zündende Karte mit +2 (vorher Konter nach einer Niederlage, §7.22 — ab der Laufmitte gibt es keine Niederlagen mehr)
   klinge:        [{ perHeat: 40, value: 1 }, { perHeat: 30, value: 1 }, { perHeat: 25, value: 1 }, { perHeat: 20, value: 1 }],
   weissglut:     [{ multPer10: 0.03 }, { multPer10: 0.04 }, { multPer10: 0.05 }, { multPer10: 0.06 }],
-  feuerwalze:    [{ minHeat: 80, value: 2 }, { minHeat: 60, value: 2 }, { minHeat: 40, value: 2 }, { minHeat: 20, value: 2, afterLoss: true }],
+  schneise:      [{ width: 3, mult: 2.5 }, { width: 4, mult: 2.5 }, { width: 5, mult: 2.5 }, { width: 6, mult: 2.5, hold: 2 }], // Satz nach Sweep (×1,5 / 2 / 2,5 / 3 im Duell → Floor 0,91 / 0,96 / 1,00 / 1,03×); §7.27 (Owner, Bauform a): ersetzt Feuerwalze auf SK_FIRE_08 — die `width` Siege mit dem größten Vorsprung eines Durchlaufs schlagen die Schneise, im nächsten zählt ein Sieg dort ×mult; Episch hält sie zwei Durchläufe. Die Knappheit ist strukturell (N von 40 Positionen), nicht historisch
   verbrennung:   [{ minMargin: 8, mult: 1.5 }, { minMargin: 7, mult: 1.5 }, { minMargin: 6, mult: 1.5 }, { minMargin: 5, mult: 1.5, heatToo: true }], // §7.22 Episch-Extra: der Faktor zählt auch auf den Hitzegewinn
   schmelzpunkt:  [{ perPoint: 15 }, { perPoint: 20 }, { perPoint: 25 }, { perPoint: 30, lossPays: true }], // §7.16: Überlauf-Wandler — verbrennt nichts mehr; Flächenbrand (SK_FIRE_11) ist gestrichen
   brandmal:      [{ minHeat: 80, value: 2 }, { minHeat: 60, value: 2 }, { minHeat: 40, value: 2 }, { minHeat: 20, value: 2, onLoss: true }],
@@ -143,8 +143,10 @@ export const SKILL_DEFS = {
     ...tiered(FEUER.klinge, (r) => `Alle deine Karten haben +${r.value} Wert je ${r.perHeat} % Hitze.`) },
   SK_FIRE_07: { id: "SK_FIRE_07", name: "Weißglut", archetype: "fire", keywords: ["heat"], tiers: FEUER.weissglut,
     ...tiered(FEUER.weissglut, (r) => `Die Hitzeleiste reicht bis ${C.WEISSGLUT_HEAT_MAX} %. Über ${C.HEAT_MAX} % geben je 10 % Hitze +${pct(r.multPer10)} % Score.`) },
-  SK_FIRE_08: { id: "SK_FIRE_08", name: "Feuerwalze", archetype: "fire", keywords: ["heat", "streak"], tiers: FEUER.feuerwalze,
-    ...tiered(FEUER.feuerwalze, (r) => `Ab ${r.minHeat} % Hitze hat die nächste Karte nach einem Sieg${r.afterLoss ? " oder einer Niederlage" : ""} +${r.value} Wert.`) },
+  // Position — die Schneise durch das eigene Deck (§7.27: ersetzt Feuerwalze, deren Achse „Hitze zu Kampfwert" schon
+  // der Klinge gehört; die Aufstellung entscheidet mit, welche Karte im nächsten Durchlauf auf der Schneise liegt)
+  SK_FIRE_08: { id: "SK_FIRE_08", name: "Brandschneise", archetype: "fire", keywords: ["position", "wertvorsprung"], tiers: FEUER.schneise,
+    ...tiered(FEUER.schneise, (r) => `Deine ${r.width} Siege mit dem größten Vorsprung eines Durchlaufs schlagen eine Schneise: im nächsten Durchlauf zählt ein Sieg auf diesen Positionen ×${de(r.mult)}.${r.hold ? ` Die Schneise hält ${r.hold} Durchläufe.` : ""}`) },
   SK_FIRE_09: { id: "SK_FIRE_09", name: "Verbrennung", archetype: "fire", keywords: ["heat"], tiers: FEUER.verbrennung,
     ...tiered(FEUER.verbrennung, (r) => `Ein Sieg mit Kampfwert-Vorsprung ab ${r.minMargin} zählt ×${de(r.mult)}.${r.heatToo ? ` Seine Hitze zählt ebenfalls ×${de(r.mult)}.` : ""}`) },
   // Konsument — Hitze zu Score (§7.16: der Überlauf-Wandler; Flächenbrand SK_FIRE_11 ist gestrichen, der Brand kostete
