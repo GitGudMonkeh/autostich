@@ -34,6 +34,8 @@ import { randomPolicy } from "../sim/policies/random.js";
 // Ohne die beiden Fallen und mit dem Wandler (Feuersturm × Schmelzpunkt, s. Doku) steigt der Zufallsspieler: Seeds 1..40
 // Median ≈ 3,40M, Mean ≈ 5,94M (Seeds 1..200: 3,39M / 8,18M). Bänder darauf zentriert; nach dem Feuersturm-Entscheid
 // und der Blitz-Runde erneut zentrieren.
+// §7.17 (Feuersturm = Serie zu Score bei voller Leiste, 0,1–0,3 % je Serienpunkt): Seeds 1..40 Median ≈ 3,60M, Mean ≈ 6,14M —
+// im Band, nicht neu zentriert.
 describe("sim balance guard", () => {
   const SEEDS = 40; // feste Seeds 1..40 → deterministischer Median/Mean
   const scores = Array.from({ length: SEEDS }, (_, i) => runOne(1 + i, randomPolicy()).score).sort((a, b) => a - b);

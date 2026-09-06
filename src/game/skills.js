@@ -61,7 +61,7 @@ const jeder = (n, w = "Jeder") => (n === 1 ? w : `${w} ${n}.`); // „Jeder 2. C
 const FEUER = {
   glut:          [{ below: 50, mult: 2 }, { below: 60, mult: 2 }, { below: 70, mult: 2 }, { below: 90, mult: 2, halfCool: true }], // §7.12/§7.16: Kaltstart — unter der Schwelle zählt Hitze aus Siegen doppelt, Episch kühlen Niederlagen dort nur halb
   zunder:        [{ heat: 2 }, { heat: 3 }, { heat: 4 }, { heat: 5 }], // §7.16: 1–4 → 2–5
-  feuersturm:    [{ perStreak: 0.5 }, { perStreak: 1 }, { perStreak: 1.5 }, { perStreak: 2 }],
+  feuersturm:    [{ multPerStreak: 0.001 }, { multPerStreak: 0.0015 }, { multPerStreak: 0.002 }, { multPerStreak: 0.003, minHeat: 80 }], // §7.17: Serie zu Score bei voller Leiste (Episch ab 80 %); vorher Serie zu Hitze. Satz nach Sweep (0,5 % je Punkt war ×3 Blitz)
   glutbett:      [{ floor: 40 }, { floor: 60 }, { floor: 80 }, { noCool: true }],
   rueckzuendung: [{ perDeficit: 0.5 }, { perDeficit: 1 }, { perDeficit: 1.5 }, { perDeficit: 2, value: 2 }],
   klinge:        [{ perHeat: 40, value: 1 }, { perHeat: 30, value: 1 }, { perHeat: 25, value: 1 }, { perHeat: 20, value: 1 }],
@@ -132,7 +132,7 @@ export const SKILL_DEFS = {
   SK_FIRE_02: { id: "SK_FIRE_02", name: "Zunder", archetype: "fire", keywords: ["heat"], tiers: FEUER.zunder,
     ...tiered(FEUER.zunder, (r) => `Jeder Sieg gibt +${r.heat} % Hitze, auch ein knapper.`) },
   SK_FIRE_03: { id: "SK_FIRE_03", name: "Feuersturm", archetype: "fire", keywords: ["heat", "streak"], tiers: FEUER.feuersturm,
-    ...tiered(FEUER.feuersturm, (r) => `Jeder Sieg gibt +${de(r.perStreak)} % Hitze je Serienpunkt.`) },
+    ...tiered(FEUER.feuersturm, (r) => `${r.minHeat ? `Ab ${r.minHeat} % Hitze` : "Bei voller Hitzeleiste"} zählt jeder Serienpunkt +${de(Math.round(r.multPerStreak * 10000) / 100)} % Score.`) },
   SK_FIRE_05: { id: "SK_FIRE_05", name: "Rückzündung", archetype: "fire", keywords: ["heat"], tiers: FEUER.rueckzuendung,
     ...tiered(FEUER.rueckzuendung, (r) => `Ein Sieg nach einer Niederlage gibt +${de(r.perDeficit)} % Hitze je Punkt Rückstand.${r.value ? ` Die Karte nach einer Niederlage hat +${r.value} Wert.` : ""}`) },
   // Schutz

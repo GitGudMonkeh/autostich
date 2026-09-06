@@ -1370,7 +1370,7 @@ brutto 49 % und netto 21 % Hitze je Runde.
 | --- | --- | --- | --- | --- | --- |
 | Glut | Kaltstart (seit 7.12; vorher Rate aus Vorsprung ×1,25 … ×2; Schwellen seit 7.16) | unter 50 % Hitze zählt Hitze aus Siegen ×2 | unter 60 % | unter 70 % | unter 90 %; darunter kühlen Niederlagen nur halb |
 | Zunder | Rate aus jedem Sieg (Sätze seit 7.16) | jeder Sieg +2 % Hitze | +3 % | +4 % | +5 % |
-| Feuersturm | Serie zu Hitze | +0,5 % Hitze je Serienpunkt je Sieg | +1 % | +1,5 % | +2 % |
+| Feuersturm | Serie zu Score (seit 7.17; vorher Serie zu Hitze) | bei voller Leiste zählt jeder Serienpunkt +0,1 % Score | +0,15 % | +0,2 % | +0,3 %; schon ab 80 % Hitze |
 | Glutbett | Schutz | Niederlagen kühlen nicht unter 40 % | nicht unter 60 % | nicht unter 80 % | Niederlagen kühlen nicht |
 | Rückzündung | Comeback zu Hitze | Sieg nach Niederlage +0,5 % Hitze je Punkt Rückstand | +1 % | +1,5 % | +2 %; die Karte nach einer Niederlage hat +2 Wert |
 | Glühende Klinge | Hitze zu Wert | alle Karten +1 Wert je 40 % Hitze | je 30 % | je 25 % | je 20 % |
@@ -2305,6 +2305,58 @@ Zubringer, alles andere von Blitz liegt bei „tot" oder „selten"; Zunder (77 
 Zahlen sind kein Stand, den man tarieren sollte — erst der Feuersturm-Entscheid, dann die Blitz-Runde, dann die
 Parität.
 
+### 7.17 Feuersturm: Serie zu Score (2026-09-06, umgesetzt)
+
+Owner: ja zum Vorschlag aus 7.16 — Feuersturm bleibt in seinem Platz (SK_FIRE_03, Emblem bleibt, Feuer bei 14) und
+wird umgebaut: **bei voller Hitzeleiste zählt jeder Serienpunkt +Satz Score, Episch schon ab 80 % Hitze; Hitze gibt er
+keine mehr.** Technisch ein Faktor im Feuer-Score-Stack neben Hitze-Multiplikator und Verbrennung (`feuersturmMult`),
+liest die Hitze nach dem Gewinn wie die anderen Hitze-Tore und die effektive Serie nach dem Sieg wie der Serien-Mult;
+der Hitze-Motor (`--mode motor`) zählt ihn nicht mehr zu den Verstärkern.
+
+**Der Satz ist der Regler — Sweep (Duell, 100 Läufe, 50 Runden):**
+
+| je Serienpunkt (N / S / SS / E) | Feuer mono | Floor Feuer ÷ Blitz | Mean | p90 |
+| --- | --- | --- | --- | --- |
+| 0,5 / 0,75 / 1 / 1,5 % (Vorschlag 7.16) | 22,8M | 3,18× | 2,35× | 2,41× |
+| 0,25 / 0,375 / 0,5 / 0,75 % | 17,3M | 2,41× | 1,58× | 1,48× |
+| 0,125 / 0,19 / 0,25 / 0,375 % | 14,1M | 1,97× | 1,19× | 1,04× |
+| **0,1 / 0,15 / 0,2 / 0,3 %** | **13,3M** | **1,86×** | **1,12×** | **0,96×** |
+| 0,05 / 0,075 / 0,1 / 0,15 % | 11,7M | 1,63× | 0,96× | 0,83× |
+
+Mit dem vorgeschlagenen Satz war Feuersturm der nächste Motor (Lift 2,10 im Feuer-Build, Episch 6,86; der Kern-Build
+51,9M statt 16,5M): ein Faktor je Serienpunkt ohne Deckel auf einem Build, dessen Serien in die Hunderte gehen, ist
+selbst bei 0,5 % zu viel. **Entscheid (Regler, Agent): 0,1 / 0,15 / 0,2 / 0,3 %.** Ohne Feuersturm läge Feuer mono bei
+rund 12,5M (Ausschluss, 7.16); mit ihm 13,3M — ein Skill, der zahlt, ohne den Lauf zu tragen. Lifts im Feuer-Build
+(Zufallsspieler, Welt nur Feuer, 400 Läufe, Median): Sonnenkern 2,78 · Klinge 2,02 · Weißglut 1,49 · Glutstahl 1,12 ·
+**Feuersturm 1,10 (Episch 2,06)** · Feuerwalze 1,08 · Schmelzpunkt 0,96 (ohne die Serienhitze wandelt er nur den
+Passiv-Überschuss, neutral) · Brandmal 0,95 · Verbrennung 0,92 · Glut 0,91 · Schmiede 0,90 · Zunder 0,79 · Glutbett 0,73.
+Motor: Kern (jetzt mit Feuersturm) 23,2M, Fraktion 13,1M.
+
+Offen daran: das Episch-Extra „ab 80 %" ist ein weites Tor — Episch 2,06 gegen Normal 1,07, weil 80 fast immer anliegt,
+die volle Leiste (mit Weißglut 200) selten. Vorschlag: Episch ab 90 % statt 80 %, oder so lassen (Episch darf sehr
+stark sein). Owner-Entscheid.
+
+**Parität, Stand danach:** Floor 1,86×, Mean 1,12×, p90 0,96× — der Median ist Feuers, der Schwanz gehört Blitz. Wie in
+7.16 festgehalten: erst die Blitz-Runde, dann der Stapel-Score.
+
+**Blitz-Plan, Vorschlag für den Owner (mindestens 14 je Fraktion; nur mit vorhandenen Emblemen):** Zwei Plätze mit
+Emblem sind frei — SK_LIGHTNING_02 (ex Ionisierung, wurde Passiv) und SK_LIGHTNING_12 (ex Breitenbeschleuniger,
+gestrichen). Damit geht die Runde ohne neues Bild auf 15:
+
+1. **Rate zusammenlegen:** Blitzableiter bleibt und nimmt Statische Aufladung und Dauerstrom auf — jeder 2. / 2. / 1. / 1.
+   Crit +1 Ladung; Episch dazu jeder Sieg ohne Crit +1 Ladung. Statische Aufladung und Dauerstrom werden gestrichen (−2).
+2. **Zwei Plätze neu belegen (Emblem vorhanden):** SK_LIGHTNING_02 „Ionenfeld" — bei voller Ladungsleiste tragen ALLE
+   ionisierten Karten +1 Wert (S +2, SS +3, E +4) bis zur nächsten Ionisierung; SK_LIGHTNING_12 „Vorentladung" — ab
+   Serie 5 / 4 / 3 / 2 zählt der Crit-Multiplikator +0,1× je Serienpunkt auf diesen Stich, Episch auch ohne Crit
+   +0,05×. Beides Tiefe statt Breite und Serie zu Crit, die Rollen, die dem Blitz-Build fehlen (+2).
+3. **In ihrem Platz umbauen (Emblem bleibt):** Kettenblitz ionisiert die zuletzt ionisierte Karte noch einmal (Tiefe);
+   Blitzfänger ohne Schwelle (+1 / +2 / +3 / +4 Wert je ionisierter Karte); Überspannung ohne Stapel-Schwelle;
+   Blitzschlag: jeder 3. / 3. / 2. / 2. Crit ionisiert die Siegkarte, Episch zwei Stapel; Spannungsstau: der Stau geht
+   in den Crit-Multiplikator statt in die Crit-Chance (+0,05× je Sieg ohne Crit, ein Crit leert ihn).
+4. **Rampen messen:** Gewitterfront, Entladung, Überschlag gegen den 8×-Crit-Deckel prüfen, bevor an ihnen gedreht wird.
+
+Nichts davon umgesetzt; Zahlen und Namen sind Vorschlag.
+
 ## 5. Eis
 
 Offen.
@@ -2350,3 +2402,4 @@ Offen.
 | 2026-09-06 | Owner: die volle Leiste ist der Auslöser der Verbraucher (7.13, umgesetzt): Flächenbrand, Schmelzpunkt und Schmiede zünden nur bei voller Leiste, Flächenbrands 80-%-Schwelle entfällt; Texte, Glossar, Hitzeleiste nachgezogen. Feuer mono +21 % (2,86M), Floor Feuer ÷ Blitz 1,18×; gierig 13,5M, random 2,15M. Die Verbraucher bleiben die Falle (0,77 / 0,83 / 0,93): gemessen, dass verbrannte Hitze über Klinge und Siegquote die Serien kostet (Flächenbrand + Kern ×0,45), dreifache Auszahlung hilft nicht. Vorschläge: Überlauf-Wandler oder streichen; Parität über Stapel-Score 120 (Sweep). Nichts davon umgesetzt. |
 | 2026-09-06 | Owner: Schmiede ohne Preis, nur Schwelle (7.14: ab 80/60/40/20 % Hitze, Episch zwei Karten, die Hitze bleibt); 50 Runden bei gleicher Phasenfolge (13 Skill-Phasen, `buildSchedule` = der Block für jede Länge); Parität: Stapel-Score 60 → 75 nach Sweep bei 50 Runden (Floor 1,07×, Mean 0,95×, p90 0,93×); Sim-Band neu zentriert. Neu `--mode legendaries` (7.15): jedes Legendäre zur Laufmitte, gepaart — Doppelentladung +106 %, Sonnenkern +133 %, Durchschlag +25 %, Hochspannung +17 %, Damaststahl/Donnergott neutral, Phönixfeuer/Sonnenzorn −17 %. Gierig (nur noch gierig): 48,6M, Schmiede jetzt genommen aber neutral, Reststrom erstmals stark, Verbraucher bleiben die Falle. Offene Liste mit Vorschlägen in 7.15. |
 | 2026-09-06 | Owner: Punkte 1–3 aus 7.15 (7.16, umgesetzt): Schmelzpunkt als Überlauf-Wandler (15/20/25/30 je Punkt, Episch zahlt die Kühlung bei voller Leiste nach), Flächenbrand gestrichen (Feuer 14 = Untergrenze, Emblem-Master bleibt), Glut 50/60/70/90 mit halber Kühlung (E), Zunder 2–5. Schmiede bleibt. Gemessen: Feuersturm × Schmelzpunkt ist ein Runaway (Feuer mono 30M, 4,2× Blitz; ohne Feuersturm 1,7×). Feuersturm wartet wegen der Untergrenze auf seinen Ersatz — Vorschlag: Umbau in seinem Platz (Serie zu Score bei voller Leiste). Parität erst nach Feuersturm und der Blitz-Runde. Sim-Band neu zentriert. |
+| 2026-09-06 | Owner: ja zum Feuersturm-Umbau (7.17, umgesetzt): bei voller Leiste zählt jeder Serienpunkt +Satz Score, Episch ab 80 %, keine Hitze mehr. Satz nach Sweep 0,1/0,15/0,2/0,3 % statt 0,5–1,5 % (der Vorschlag war ×3 Blitz): Feuer mono 13,3M, Floor 1,86×, Mean 1,12×, p90 0,96×; Feuersturm-Lift 1,10 (Episch 2,06 — Tor-Frage offen). Blitz-Plan als Vorschlag: Rate zusammenlegen, zwei freie Emblem-Plätze (Ionenfeld, Vorentladung) neu belegen, fünf Skills in ihrem Platz umbauen, Rampen gegen den Crit-Deckel messen. |

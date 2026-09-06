@@ -66,15 +66,13 @@ export function syncHeatMax(heat, skills) {
 }
 
 /* Hitzegewinn eines gewonnenen Stichs (Prozentpunkte): Passiv (Vorsprung − Offset, ab Mindest-Vorsprung), + Zunder je
-   Sieg, + Feuersturm je Serienpunkt (Serie NACH diesem Sieg), + Rückzündung je Punkt Rückstand der letzten Niederlage,
-   wenn der Vorstich verloren war. Glut (§7.12, Kaltstart): steht die Hitze VOR dem Sieg unter der Schwelle der Stufe,
-   zählt der ganze Gewinn ×mult — alle Quellen, nicht nur das Passiv. */
-export function heatGainOnWin(skills, skillTiers, { margin = 0, streak = 0, lastResult = null, lastLossDeficit = 0, heatValue = 0 } = {}) {
+   Sieg, + Rückzündung je Punkt Rückstand der letzten Niederlage, wenn der Vorstich verloren war. Glut (§7.12,
+   Kaltstart): steht die Hitze VOR dem Sieg unter der Schwelle der Stufe, zählt der ganze Gewinn ×mult — alle Quellen,
+   nicht nur das Passiv. (Feuersturm gibt seit §7.17 keine Hitze mehr — er ist Serie zu Score, feuersturmMult.) */
+export function heatGainOnWin(skills, skillTiers, { margin = 0, lastResult = null, lastLossDeficit = 0, heatValue = 0 } = {}) {
   let g = 0;
   if (margin >= C.HEAT_MIN_MARGIN) g += (margin - C.HEAT_MARGIN_OFFSET) * C.HEAT_PER_POINT;
   g += fireParam(skills, skillTiers, F.ZUNDER, "heat") || 0;
-  const ps = fireParam(skills, skillTiers, F.FEUERSTURM, "perStreak");
-  if (ps) g += ps * Math.max(0, streak);
   const pd = fireParam(skills, skillTiers, F.RUECKZUENDUNG, "perDeficit");
   if (pd && lastResult === "loss") g += pd * Math.max(0, lastLossDeficit);
   const below = fireParam(skills, skillTiers, F.GLUT, "below");
@@ -100,6 +98,17 @@ export function verbrennungMult(skills, skillTiers, margin = 0) {
   const min = fireParam(skills, skillTiers, F.VERBRENNUNG, "minMargin");
   if (min == null || margin < min) return 1;
   return fireParam(skills, skillTiers, F.VERBRENNUNG, "mult") || 1;
+}
+
+/* Feuersturm (§7.17, Owner): Serie zu Score — bei voller Leiste (Episch schon ab `minHeat`) zählt jeder Serienpunkt
+   +multPerStreak auf den Stich, ein Faktor im Score-Stack neben Hitze-Multiplikator und Verbrennung. Liest die Hitze
+   nach dem Gewinn wie die anderen Hitze-Tore; `max` ist die Leistenlänge des Builds (100, mit Weißglut 200). 1 sonst. */
+export function feuersturmMult(skills, skillTiers, value = 0, max = C.HEAT_MAX, streak = 0) {
+  const per = fireParam(skills, skillTiers, F.FEUERSTURM, "multPerStreak");
+  if (!per) return 1;
+  const gate = fireParam(skills, skillTiers, F.FEUERSTURM, "minHeat") ?? max;
+  if ((value || 0) < gate) return 1;
+  return 1 + Math.max(0, streak) * per;
 }
 
 /* Kampfwert-Bonus der gespielten Karte (Zustand vor dem Stich): Glühende Klinge (+Wert je Hitze-Schritt, ohne Deckel),
@@ -131,9 +140,9 @@ export function damascusCombat(skills, forged, card) {
    `held` = Hitze nach dem Gewinn — daran hängen die Hitze-Tore dieses Siegs und der Hitze-Multiplikator. `valueOver` =
    Kampfwert der Siegkarte über ihrem Grundwert (alle Quellen, ohne den Damast-Kampfbonus). Gibt { heat, held, flat,
    melted, brands } zurück; melted = gewandelte Hitzepunkte, brands = [{ id, value }] für die NÄCHSTE Runde. */
-export function fireOnWin(heat, skills, skillTiers, { margin = 0, streak = 0, lastResult = null, valueOver = 0, card = null,
+export function fireOnWin(heat, skills, skillTiers, { margin = 0, lastResult = null, valueOver = 0, card = null,
   forged = {}, brandOnOpp = 0, oppId = null, oppIndex = -1, oppDeck = null } = {}) {
-  const gain = heatGainOnWin(skills, skillTiers, { margin, streak, lastResult, lastLossDeficit: heat.lastLossDeficit || 0, heatValue: heat.value || 0 });
+  const gain = heatGainOnWin(skills, skillTiers, { margin, lastResult, lastLossDeficit: heat.lastLossDeficit || 0, heatValue: heat.value || 0 });
   const max = heat.max || C.HEAT_MAX;
   const raw = (heat.value || 0) + gain;
   let value = Math.min(max, raw);

@@ -26,8 +26,8 @@ const pct = (x) => `${(x * 100).toFixed(1).padStart(5)} %`;
 const TPC = C.TRICKS_PER_CYCLE;
 
 // ---- Feuer ----
-const RATE = [F.GLUT, F.ZUNDER, F.FEUERSTURM, F.RUECKZUENDUNG]; // die vier Hitze-Verstärker (Rate)
-const CORE = [F.KLINGE, F.WEISSGLUT, F.VERBRENNUNG, F.BRANDMAL, F.LAUFFEUER, F.GLUTSTAHL, F.FEUERWALZE, F.GLUTBETT, F.SCHMIEDE, F.SCHMELZPUNKT];
+const RATE = [F.GLUT, F.ZUNDER, F.RUECKZUENDUNG]; // die drei Hitze-Verstärker (Rate; Feuersturm ist seit §7.17 Serie zu Score)
+const CORE = [F.KLINGE, F.WEISSGLUT, F.VERBRENNUNG, F.BRANDMAL, F.LAUFFEUER, F.GLUTSTAHL, F.FEUERWALZE, F.GLUTBETT, F.SCHMIEDE, F.SCHMELZPUNKT, F.FEUERSTURM];
 const fixedOpts = { solveFormations: true, architectGreedy: true };
 export const FIRE_BUILDS = [
   ["Fraktion (zufällig)", () => factionPolicy("fire")],

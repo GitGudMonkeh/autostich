@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import * as C from "../src/game/constants.js";
 import { SKILL_DEFS, FEUER_TIERS, buildSkillOffer, archetypeOf } from "../src/game/skills.js";
-import { F, initHeat, heatMaxFor, syncHeatMax, fireTier, fireParam, heatGainOnWin, heatMult, verbrennungMult,
+import { F, initHeat, heatMaxFor, syncHeatMax, fireTier, fireParam, heatGainOnWin, heatMult, verbrennungMult, feuersturmMult,
   fireValueBonus, damascusCombat, fireOnWin, fireOnLoss, fireCycleEnd, nextBrandActive } from "../src/game/factions/fire.js";
 import { resolveTrick } from "../src/game/engine.js";
 import { initialState, reducer } from "../src/game/reducer.js";
@@ -51,7 +51,9 @@ describe("Feuer — Roster und Stufenleitern", () => {
     const down = (rows, k) => rows.every((r, i) => i === 0 || r[k] < rows[i - 1][k]);
     expect(up(T.glut, "below")).toBe(true); // §7.12: Kaltstart-Schwelle steigt mit der Stufe
     expect(up(T.zunder, "heat")).toBe(true);
-    expect(up(T.feuersturm, "perStreak")).toBe(true);
+    expect(up(T.feuersturm, "multPerStreak")).toBe(true); // §7.17: Serie zu Score
+    expect(T.feuersturm[3].minHeat).toBe(80); // Episch-Extra: schon ab 80 % Hitze statt voller Leiste
+    for (const r of T.feuersturm) expect(r.perStreak).toBeUndefined(); // keine Hitze mehr
     expect(up(T.glutbett.slice(0, 3), "floor")).toBe(true);
     expect(T.glutbett[3].noCool).toBe(true);
     expect(up(T.rueckzuendung, "perDeficit")).toBe(true);
@@ -105,7 +107,7 @@ describe("Feuer — Modul (reine Übergänge)", () => {
     expect(fireParam([], {}, F.GLUT, "below")).toBeUndefined();
     expect(fireParam([F.GLUT], { [F.GLUT]: 3 }, F.GLUT, "below")).toBe(T.glut[3].below);
   });
-  it("heatGainOnWin: Passiv ab Vorsprung 3, Glut, Zunder, Feuersturm, Rückzündung", () => {
+  it("heatGainOnWin: Passiv ab Vorsprung 3, Glut, Zunder, Rückzündung — Feuersturm gibt keine Hitze mehr (§7.17)", () => {
     expect(heatGainOnWin([], {}, { margin: 2 })).toBe(0);
     expect(heatGainOnWin([], {}, { margin: 6 })).toBe(G(6));
     expect(G(6)).toBe(6 - C.HEAT_MARGIN_OFFSET);
@@ -115,7 +117,7 @@ describe("Feuer — Modul (reine Übergänge)", () => {
     expect(heatGainOnWin([F.GLUT], st({ [F.GLUT]: 3 }), { margin: 6, heatValue: 70 })).toBe(G(6) * T.glut[3].mult);
     expect(heatGainOnWin([F.GLUT, F.ZUNDER], st({}), { margin: 1, heatValue: 0 })).toBe(T.zunder[0].heat * T.glut[0].mult);
     expect(heatGainOnWin([F.ZUNDER], st({ [F.ZUNDER]: 1 }), { margin: 1 })).toBe(T.zunder[1].heat);     // auch knapp
-    expect(heatGainOnWin([F.FEUERSTURM], st({ [F.FEUERSTURM]: 1 }), { margin: 1, streak: 3 })).toBe(3 * T.feuersturm[1].perStreak);
+    expect(heatGainOnWin([F.FEUERSTURM], st({ [F.FEUERSTURM]: 1 }), { margin: 1, streak: 3 })).toBe(0);
     expect(heatGainOnWin([F.RUECKZUENDUNG], st({ [F.RUECKZUENDUNG]: 1 }), { margin: 1, lastResult: "loss", lastLossDeficit: 4 })).toBe(4 * T.rueckzuendung[1].perDeficit);
     expect(heatGainOnWin([F.RUECKZUENDUNG], st({ [F.RUECKZUENDUNG]: 1 }), { margin: 1, lastResult: "win", lastLossDeficit: 4 })).toBe(0);
   });
@@ -128,6 +130,17 @@ describe("Feuer — Modul (reine Übergänge)", () => {
     expect(heatMult([F.WEISSGLUT], { [F.WEISSGLUT]: 3 }, 200)).toBeCloseTo(1 + 10 * C.HEAT_MULT_PER_10 + 10 * T.weissglut[3].multPer10);
     expect(heatMult([F.SONNENZORN], {}, 30, 100)).toBeCloseTo(1 + 10 * C.SONNENZORN_MULT_PER_10);    // Spitze statt aktuell
     expect(heatMult([F.SONNENZORN, F.WEISSGLUT], { [F.WEISSGLUT]: 1 }, 0, 200)).toBeCloseTo(1 + 10 * C.SONNENZORN_MULT_PER_10 + 10 * T.weissglut[1].multPer10);
+  });
+  it("feuersturmMult (§7.17): bei voller Leiste +Satz je Serienpunkt, Episch schon ab 80 % Hitze; unter dem Tor und ohne Serie 1", () => {
+    expect(feuersturmMult([], {}, 100, 100, 10)).toBe(1);
+    expect(feuersturmMult([F.FEUERSTURM], {}, 99, 100, 10)).toBe(1);
+    expect(feuersturmMult([F.FEUERSTURM], {}, 100, 100, 10)).toBeCloseTo(1 + 10 * T.feuersturm[0].multPerStreak);
+    expect(feuersturmMult([F.FEUERSTURM], { [F.FEUERSTURM]: 2 }, 100, 100, 30)).toBeCloseTo(1 + 30 * T.feuersturm[2].multPerStreak);
+    expect(feuersturmMult([F.FEUERSTURM], {}, 100, 200, 10)).toBe(1); // mit Weißglut ist voll erst 200
+    expect(feuersturmMult([F.FEUERSTURM], {}, 200, 200, 10)).toBeCloseTo(1 + 10 * T.feuersturm[0].multPerStreak);
+    expect(feuersturmMult([F.FEUERSTURM], { [F.FEUERSTURM]: 3 }, 80, 200, 10)).toBeCloseTo(1 + 10 * T.feuersturm[3].multPerStreak); // Episch ab 80
+    expect(feuersturmMult([F.FEUERSTURM], { [F.FEUERSTURM]: 3 }, 79, 200, 10)).toBe(1);
+    expect(feuersturmMult([F.FEUERSTURM], {}, 100, 100, 0)).toBe(1);
   });
   it("verbrennungMult: ×1,5 ab dem Vorsprung der Stufe", () => {
     expect(verbrennungMult([], {}, 20)).toBe(1);
@@ -270,6 +283,15 @@ describe("Feuer — Engine-Integration", () => {
     const small = resolveTrick(scen(13, 6, { skills: [F.VERBRENNUNG], heat: heat({ value: 0 }) }), noCrit); // Vorsprung 7
     expect(big.lastTrick.breakdown.fireMult).toBeCloseTo(T.verbrennung[0].mult * heatMult([], {}, 6), 6);
     expect(small.lastTrick.breakdown.fireMult).toBeCloseTo(heatMult([], {}, 5), 6);
+  });
+  it("Feuersturm in der Engine (§7.17): bei voller Leiste steht die Serie nach dem Sieg im Feuer-Faktor, darunter nicht", () => {
+    // winStreak 5 vor dem Stich → Serie 6 nach dem Sieg (die Engine liest die effektive Serie NACH dem Sieg, wie der Serien-Mult).
+    const full = resolveTrick(scen(12, 6, { skills: [F.FEUERSTURM], heat: heat({ value: 100 }), winStreak: 5 }), noCrit);
+    expect(full.lastTrick.breakdown.fireMult).toBeCloseTo(heatMult([], {}, 100) * (1 + 6 * T.feuersturm[0].multPerStreak), 6);
+    expect(full.heat.value).toBe(100); // Feuersturm gibt keine Hitze mehr
+    const warm = resolveTrick(scen(12, 6, { skills: [F.FEUERSTURM], heat: heat({ value: 90 }), winStreak: 5 }), noCrit);
+    expect(warm.lastTrick.breakdown.fireMult).toBeCloseTo(heatMult([], {}, 90 + G(6)), 6);
+    expect(warm.heat.value).toBe(90 + G(6));
   });
   it("Schmelzpunkt in der Engine (§7.16): bei voller Leiste steht der Überschuss in der multiplizierten Basis, die Leiste bleibt voll; unter voll nichts; die Niederlage kühlt", () => {
     const s = resolveTrick(scen(12, 6, { skills: [F.SCHMELZPUNKT], heat: heat({ value: 100 }) }), noCrit);

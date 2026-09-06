@@ -17,7 +17,7 @@ import { lightningCritChance, lightningCritMult, overcritMult, blitzfaengerValue
   lightParam, L as LIGHT, hasDoppelentladung, hasDurchschlag } from "./factions/lightning.js";
 // exp skill rework: die Feuer-Mechanik (Passiv, 15 Skills, 4 Legendäre) lebt ebenso im Fraktionsmodul — die Engine
 // ruft ihre Übergänge (Kampfwert-Bonus, Sieg, Niederlage, Hitze-Multiplikator, Rundenende, Brand-Wechsel).
-import { syncHeatMax, fireValueBonus, damascusCombat, fireOnWin, fireOnLoss, heatMult, verbrennungMult,
+import { syncHeatMax, fireValueBonus, damascusCombat, fireOnWin, fireOnLoss, heatMult, verbrennungMult, feuersturmMult,
   fireCycleEnd, nextBrandActive } from "./factions/fire.js";
 // (#267: import aus stats.js entfernt — die Stat-Phase/Faktoren sind weg.)
 import { computeFormations, positionHasFormation, activeFormationCount, summarizeFormations, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
@@ -475,7 +475,7 @@ export function resolveTrick(state, rng) {
     }
     // winStreak/wins enthalten hier bereits den gerade gewonnenen Stich — genau die Werte, mit denen wctx oben gebaut ist.
     winSuit = eSuit; winSuitStreak = suitStreak; // Farbserie fortschreiben (effektive Farbe: grün = „G")
-    // ---- Feuer (exp skill rework, §4): Hitzegewinn (Passiv, Glut, Zunder, Feuersturm, Rückzündung), Konsumenten
+    // ---- Feuer (exp skill rework, §4): Hitzegewinn (Passiv, Glut, Zunder, Rückzündung), Schmelzpunkt (Überlauf-Wandler)
     //      (Schmelzpunkt, Flächenbrand), Phönix, Glutstahl, Sonnenkern-Score und die Brände für die nächste Runde —
     //      alles im Modul. `fireHeld` = Hitze nach dem Gewinn, vor dem Verbrauch: daran hängt der Hitze-Multiplikator
     //      dieses Siegs (unten im Stack). Feuer-Flats gehen in die multiplizierte Basis; Direkt-Score gibt es nicht.
@@ -734,7 +734,8 @@ export function resolveTrick(state, rng) {
     // ein Halte-Build gewinnt über Wert und Formationen, nicht über Feuer-Flats. Gelesen wird die Hitze nach dem
     // Gewinn dieses Siegs und vor dem Verbrauch (fireHeld).
     const fireMult = (heat && heat.active)
-      ? heatMult(skills, skillTiers, fireHeld, heat.peak) * verbrennungMult(skills, skillTiers, pValue - oValue) : 1;
+      ? heatMult(skills, skillTiers, fireHeld, heat.peak) * verbrennungMult(skills, skillTiers, pValue - oValue)
+        * feuersturmMult(skills, skillTiers, fireHeld, heat.max || C.HEAT_MAX, serieStreak) : 1; // §7.17: Feuersturm, Serie zu Score bei voller Leiste
     // architectMult (#202, Architekt-Score-Gebäude: Struktur/Schatzkammer) läuft als eigener Faktor am Ende des Stacks.
     // #Pool Batch 4 (gamble/Risiko): Boden — der Architekt-Abzug (negativer Flat) darf den Stich höchstens auf 0 drücken,
     // nie ins Minus (sonst kippen die nachgelagerten Multiplikatoren). Bei Basis 400 praktisch immer ein No-op.
