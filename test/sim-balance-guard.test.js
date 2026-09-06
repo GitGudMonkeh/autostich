@@ -35,7 +35,7 @@ import { randomPolicy } from "../sim/policies/random.js";
 // Median ≈ 3,40M, Mean ≈ 5,94M (Seeds 1..200: 3,39M / 8,18M). Bänder darauf zentriert; nach dem Feuersturm-Entscheid
 // und der Blitz-Runde erneut zentrieren.
 // §7.17 (Feuersturm = Serie zu Score bei voller Leiste, 0,1–0,3 % je Serienpunkt): Seeds 1..40 Median ≈ 3,60M, Mean ≈ 6,14M —
-// im Band, nicht neu zentriert.
+// im Band, nicht neu zentriert. §7.18 (Blitz-Runde): Median ≈ 3,53M, Mean ≈ 6,52M — im Band.
 describe("sim balance guard", () => {
   const SEEDS = 40; // feste Seeds 1..40 → deterministischer Median/Mean
   const scores = Array.from({ length: SEEDS }, (_, i) => runOne(1 + i, randomPolicy()).score).sort((a, b) => a - b);

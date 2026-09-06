@@ -667,20 +667,22 @@ entfernt. Crit-Chance über 100 % gibt einen sehr kleinen Crit-Mult-Bonus (Syste
 
 | Skill | Rolle | Normal | Selten | Sehr selten | Episch |
 | --- | --- | --- | --- | --- | --- |
-| Blitzableiter | Rate | jeder 2. Crit +1 Ladung | jeder Crit +1 | jeder Crit +1, volle Leiste +1 zurück | jeder Crit +1, volle Leiste +2 zurück; Ladung über 10 bleibt |
-| Statische Aufladung | Rate ohne Crit | jeder 2. Sieg ohne Crit +1 Ladung | jeder Sieg ohne Crit +1 | dazu jede 2. Niederlage +1 | Sieg ohne Crit +2, jede 2. Niederlage +1; volle Leiste gibt der Zielkarte +1 Wert dauerhaft |
+| Blitzableiter | Rate (seit 7.18 mit Statische Aufladung und Dauerstrom zusammengelegt) | jeder 2. Crit +1 Ladung | jeder 2. Crit +1, volle Leiste +1 zurück | jeder Crit +1, volle Leiste +1 zurück | jeder Crit +1, volle Leiste +2 zurück; jeder Sieg ohne Crit +1 Ladung |
+| ~~Statische Aufladung~~ | gestrichen (7.18, in Blitzableiter aufgegangen) | – | – | – | – |
+| Ionenfeld (neu, 7.18) | Leiste zu Wert | jede volle Leiste lädt das Feld: die nächsten 5 Stiche kämpfen alle Karten mit +2 Wert | 7 Stiche | 10 Stiche | 15 Stiche, +3 Wert |
 | Reststrom | Rate | Leiste startet nach dem Leeren bei 2 | bei 3 | bei 4 | bei 6 |
 | Gewitterfront | Rampe Crit-Chance | +0,5 % je volle Leiste | +0,75 % | +1 % | +1,5 % |
 | Entladung | Rampe Crit-Mult | +0,02× je volle Leiste | +0,03× | +0,04× | +0,06×; der Crit, der die Leiste füllt, hat doppelten Mult |
 | Ladungsserie | Serie zu Crit | +1 % Crit je Serienpunkt | +1,5 % | +2 % | +2,5 %; ab Serie 8 jeder Sieg +1 Ladung |
-| Kettenblitz | Breite | jede 2. volle Leiste +1 Karte | +1 Karte je Leiste | +2 Karten | +3 Karten; Zielkarte +1 Stapel (Sim prüft) |
-| Blitzfänger | Tiefe zu Wert | Karten ab 6 Stapeln +2 Wert | ab 5 | ab 4 | ab 3 |
+| Kettenblitz | Tiefe (seit 7.18; vorher Breite) | jede 2. volle Leiste gibt der Karte mit den meisten Stapeln +1 Stapel | jede Leiste +1 | +2 | +3 |
+| Blitzfänger | Ionisierung zu Wert (seit 7.18 ohne Schwelle) | ionisierte Karten kämpfen mit +1 Wert | +2 | +3 | +4 |
 | Kurzschluss | Tiefe zu Score | Sieg mit Karte ab 6 Stapeln: Stapel zählen doppelt | ab 5 | ab 4 | ab 3 |
-| Spannungsstau | Glättung | Sieg ohne Crit +3 % für den nächsten Sieg, Crit leert | +4 % | +5 % | +6 %; Crit halbiert statt leert |
+| Spannungsstau | Glättung (seit 7.18 auf den Crit-Multiplikator) | Sieg ohne Crit +0,05× Crit-Multiplikator für den nächsten Crit, der Crit leert | +0,075× | +0,1× | +0,15×; Crit halbiert statt leert |
+| Vorentladung (neu, 7.18) | Serie zu Crit | ab Serie 5 gibt jeder Serienpunkt +0,1× Crit-Multiplikator auf den Stich | ab 4 | ab 3 | ab 2 |
 | Überschlag | Ventil nach oben | je 10 Punkte über 100 %: +0,02× Crit-Mult (Zustand) | +0,03× | +0,04× | +0,06× |
-| Überspannung | Tiefe zu Ladung | Crit mit Karte ab 6 Stapeln +2 Ladung | ab 5 | ab 4 | ab 3 |
-| Blitzschlag | Tiefen-Motor | jeder 5. Crit ionisiert die Siegkarte | jeder 4. | jeder 3. | jeder 2. |
-| Dauerstrom | Serie zu Ladung | ab Serie 5 jeder Sieg +1 Ladung | ab 4 | ab 3 | ab 2 |
+| Überspannung | Ionisierung zu Ladung (seit 7.18 ohne Schwelle) | Crit mit einer ionisierten Karte +1 Ladung | +2 | +3 | +4 |
+| Blitzschlag | Tiefen-Motor (Leiter seit 7.18) | jeder 4. Crit ionisiert die Siegkarte | jeder 3. | jeder 2. | jeder 2., zwei Stapel |
+| ~~Dauerstrom~~ | gestrichen (7.18, in Blitzableiter aufgegangen) | – | – | – | – |
 | Serienschutz | Schutz | Niederlage ab 70 % Ladung hält die Serie, kostet 70 % | 50 % | 40 % | 30 %; einmal je Runde gratis |
 
 **Sim-Wachpunkte Blitz:** Statische Aufladung im Splash-Build; Rate × Breite (Kettenblitz Episch);
@@ -2366,6 +2368,87 @@ gestrichen). Damit geht die Runde ohne neues Bild auf 15:
 
 Nichts davon umgesetzt; Zahlen und Namen sind Vorschlag.
 
+### 7.18 Blitz-Runde und Feuersturm-Tor (2026-09-06, umgesetzt)
+
+Owner: ja zu beidem — Feuersturms Episch-Tor 80 → 90 % Hitze, und der Blitz-Plan aus 7.17. Blitz bleibt bei 15
+normalen Skills, ohne neues Bild: die zwei Embleme der früher gestrichenen Plätze (SK_LIGHTNING_02 Ionisierung,
+SK_LIGHTNING_12 Breitenbeschleuniger) tragen die zwei neuen Skills.
+
+**Rate zusammengelegt.** Blitzableiter nimmt Statische Aufladung und Dauerstrom auf: jeder 2. / 2. / 1. / 1. Crit +1
+Ladung, ab Selten nach jeder vollen Leiste +1 (Episch +2) zurück, Episch dazu jeder Sieg ohne Crit +1 Ladung. Das alte
+Episch-Extra „Ladung über der Leiste bleibt" entfällt (der Überschuss verfällt auf jeder Stufe), die Niederlagen-Ladung
+und der Dauerwert der Statischen Aufladung ebenso. Statische Aufladung (08) und Dauerstrom (16) sind gestrichen; die
+Embleme bleiben als Master in `docs/art/skills/lightning/`.
+
+**Zwei neue Skills.** *Ionenfeld* (02): jede volle Leiste lädt das Feld — für die nächsten 5 / 7 / 10 / 15 Stiche
+kämpfen alle Karten mit +2 Wert (Episch +3). Das ist nicht der 7.17-Text („ionisierte Karten +1 … +4 bis zur nächsten
+Ionisierung"): der wäre wortgleich mit dem neuen Blitzfänger gewesen. Als Feld nach jeder Leiste ist er der Blitz-
+Gegenpart zur Klinge, an die Leiste gebunden statt an die Hitze, und die Rate-Skills bekommen einen Abnehmer. *Vor-
+entladung* (12): ab Serie 5 / 4 / 3 / 2 gibt jeder Serienpunkt +0,1× Crit-Multiplikator auf den Stich (die Serie nach
+dem Sieg, wie die Ladungsserie). Das „auch ohne Crit +0,05×" aus 7.17 ist weggelassen — ein Faktor je Serienpunkt
+ohne Crit wäre Feuersturm noch einmal (7.17: Runaway). Episch trägt über die Schwelle 2.
+
+**In ihrem Platz umgebaut.** Kettenblitz: jede (Normal jede 2.) volle Leiste gibt der Karte mit den meisten Stapeln
++1 / +1 / +2 / +3 Stapel — Tiefe statt Breite („die zuletzt ionisierte Karte" aus 7.17 wäre bei „nächste in der
+Reihenfolge" jedes Mal eine andere; die tiefste Karte vertieft sich wirklich). Blitzfänger: ionisierte Karten kämpfen
+mit +1 / +2 / +3 / +4 Wert, keine Schwelle. Überspannung: Crit mit einer ionisierten Karte +1 / +2 / +3 / +4 Ladung,
+keine Schwelle. Blitzschlag: jeder 4. / 3. / 2. / 2. Crit ionisiert die Siegkarte, Episch mit zwei Stapeln. Spannungs-
+stau: jeder Sieg ohne Crit +0,05 / 0,075 / 0,1 / 0,15× Crit-Multiplikator für den nächsten Crit, der Crit leert ihn
+(Episch behält die Hälfte) — nicht mehr Crit-Chance, die das Passiv ohnehin sättigt.
+
+**Technisch:** `lightning.fieldLeft` (Ionenfeld, zählt vor der Leiste je Stich herunter, der ladende Stich zählt nicht
+mit), `lightningCritMult` liest die Serie nach dem Sieg (Vorentladung) und den Stau; `nonCritWins`/`lossCount` sind aus
+dem Substate gefallen. Die Engine-Tests nutzten den Stau als künstliche Crit-Quelle — jetzt die Gewitterfront-Rampe.
+Der Blitz-Motor (`--mode motor`) zeigt neu den Anteil der Crits am 8×-Deckel.
+
+**Messung (100 Läufe, 50 Runden, Stapel-Score 75):**
+
+| | vor der Runde (7.17) | jetzt |
+| --- | --- | --- |
+| Blitz mono (Duell, Median) | 7,17M | **10,95M (+53 %)** |
+| Feuer mono | 13,3M | 13,3M |
+| Floor Feuer ÷ Blitz | 1,86× | **1,22×** (Mean 0,89×, p90 0,79×) |
+| Motor Blitz: Fraktion / Stapel zuerst / Crit zuerst | — | 9,4M / 18,0M / 11,2M |
+| Stapel-Anteil (Fraktion / Stapel-Build) | 18 % / 43 % (7.12) | 45 % / 68 % |
+| Stapel je Karte am Ende (Stapel-Build) | 6,7 | 12,6 |
+| Crits am 8×-Deckel (Fraktion / Stapel / Crit) | — | 10,6 % / 9,8 % / 5,9 % |
+
+Die Ionisierung trägt jetzt auch im Zufallsbuild fast die Hälfte, der Stapel-Build verdoppelt sich gegen den Crit-
+Build. **Der 8×-Deckel bindet bei einem Zehntel der Crits** (Crit-Mult Ø 3,9–4,2×): Gewitterfront, Entladung und
+Überschlag zeigen also in neun von zehn Crits, was sie können — der Deckel erklärt ihre „tot"-Flags nicht; das klärt
+die gierige Auswertung unten.
+
+**Parität, Sweep des Stapel-Scores (Duell, 100 Läufe):**
+
+| Stapel-Score | Blitz mono | Floor | Mean | p90 |
+| --- | --- | --- | --- | --- |
+| 60 | 9,84M | 1,36× | 0,98× | 0,87× |
+| **75** | **10,95M** | **1,22×** | **0,89×** | **0,79×** |
+| 90 | 11,99M | 1,11× | 0,81× | 0,70× |
+
+Kein Wert trifft Median und Schwanz zugleich: Blitz' Median liegt unter Feuers, sein Schwanz darüber — der Stapel-
+Build streut, der Halte-Build nicht. Das ist die Varianz der Fraktion, kein Regler-Fehler; die Summe der Abweichungen
+ist bei 60 und 75 gleich (0,51 / 0,54). **Entscheid (Regler, Agent): 75 bleibt.** Wer den Median gleichziehen will,
+zahlt mit einem noch schwereren Blitz-Schwanz (90: p90 0,70×); Owner-Entscheid, falls gewünscht.
+
+**Gierig mit diesem Stand** (1000 Explore, 150 Läufe): Median 71,6M (7.17: 71,5M), Siegquote 73 %, Ø 11,9 Skills. Der
+gierige Spieler baut jetzt Blitz-lastig: Vorentladung in 93 % (+21 % typisch), Ladungsserie 87 % (+113 %), Ionenfeld
+83 %, Reststrom 79 %, Kettenblitz 78 %, Überspannung 75 %, Blitzableiter 56 %; Feuer nur noch Klinge 69 %, Feuerwalze
+62 %, Weißglut 57 %. Träger bleiben Ladungsserie, Doppelentladung (+50 %), Sonnenkern (+38 %) — dazu neu Vorentladung
+und Blitzschlag (+8 %, Episch-Lift 2,05). Spannungsstau (in 4 %, +84 %) und Donnergott (3 %, +77 %) sind stark, wenn
+genommen. **„Tot" heißt jetzt etwas anderes:** Ionenfeld, Kettenblitz, Überspannung, Blitzableiter, Gewitterfront und
+Reststrom werden zu 50–83 % gehalten und bewegen den Lauf um weniger als 3 % — Füller, die die Tür anbietet und die
+nicht schaden, statt wie vor der Runde Skills, die niemand nimmt. Schadet: Entladung (−2 %, win 33 %), Überschlag
+(−15 %), Zunder, Lauffeuer, Glutbett (−45 %, in 7 %), Serienschutz. Der Median bleibt, weil sich die Träger nicht
+geändert haben — die Runde hat die Breite des Blitz-Builds gehoben (Duell +53 %), nicht seine Spitze.
+
+**Was offen bleibt (Owner):** die Füller schärfen (Ionenfeld als Feld ist im gierigen Build neutral — Vorschlag: Wert 3 /
+3 / 4 / 5 statt 2 / 2 / 2 / 3; Kettenblitz Normal jede Leiste statt jede 2.; Überspannung als Ladung ist bei 16 Stichen je
+Leiste kein Engpass — Vorschlag: streichen oder zu „Crit mit ionisierter Karte: +1 Stapel" machen), Entladung und
+Überschlag (die Rampen zahlen im gierigen Build nicht, obwohl der Deckel nur ein Zehntel der Crits bindet — Vorschlag:
+Entladung +0,04 / 0,06 / 0,08 / 0,12× je Leiste, Überschlag streichen), Glutbett (−45 %), die Parität als Median-gegen-
+Schwanz-Frage, und aus 7.15 die vier schwachen Legendären und die Stufenleitern.
+
 ## 5. Eis
 
 Offen.
@@ -2412,3 +2495,4 @@ Offen.
 | 2026-09-06 | Owner: Schmiede ohne Preis, nur Schwelle (7.14: ab 80/60/40/20 % Hitze, Episch zwei Karten, die Hitze bleibt); 50 Runden bei gleicher Phasenfolge (13 Skill-Phasen, `buildSchedule` = der Block für jede Länge); Parität: Stapel-Score 60 → 75 nach Sweep bei 50 Runden (Floor 1,07×, Mean 0,95×, p90 0,93×); Sim-Band neu zentriert. Neu `--mode legendaries` (7.15): jedes Legendäre zur Laufmitte, gepaart — Doppelentladung +106 %, Sonnenkern +133 %, Durchschlag +25 %, Hochspannung +17 %, Damaststahl/Donnergott neutral, Phönixfeuer/Sonnenzorn −17 %. Gierig (nur noch gierig): 48,6M, Schmiede jetzt genommen aber neutral, Reststrom erstmals stark, Verbraucher bleiben die Falle. Offene Liste mit Vorschlägen in 7.15. |
 | 2026-09-06 | Owner: Punkte 1–3 aus 7.15 (7.16, umgesetzt): Schmelzpunkt als Überlauf-Wandler (15/20/25/30 je Punkt, Episch zahlt die Kühlung bei voller Leiste nach), Flächenbrand gestrichen (Feuer 14 = Untergrenze, Emblem-Master bleibt), Glut 50/60/70/90 mit halber Kühlung (E), Zunder 2–5. Schmiede bleibt. Gemessen: Feuersturm × Schmelzpunkt ist ein Runaway (Feuer mono 30M, 4,2× Blitz; ohne Feuersturm 1,7×). Feuersturm wartet wegen der Untergrenze auf seinen Ersatz — Vorschlag: Umbau in seinem Platz (Serie zu Score bei voller Leiste). Parität erst nach Feuersturm und der Blitz-Runde. Sim-Band neu zentriert. |
 | 2026-09-06 | Owner: ja zum Feuersturm-Umbau (7.17, umgesetzt): bei voller Leiste zählt jeder Serienpunkt +Satz Score, Episch ab 80 %, keine Hitze mehr. Satz nach Sweep 0,1/0,15/0,2/0,3 % statt 0,5–1,5 % (der Vorschlag war ×3 Blitz): Feuer mono 13,3M, Floor 1,86×, Mean 1,12×, p90 0,96×; Feuersturm-Lift 1,10 (Episch 2,06 — Tor-Frage offen). Blitz-Plan als Vorschlag: Rate zusammenlegen, zwei freie Emblem-Plätze (Ionenfeld, Vorentladung) neu belegen, fünf Skills in ihrem Platz umbauen, Rampen gegen den Crit-Deckel messen. |
+| 2026-09-06 | Owner: ja zu Feuersturm-Tor 90 % und zum Blitz-Plan (7.18, umgesetzt): Blitzableiter nimmt Statische Aufladung und Dauerstrom auf (beide gestrichen); Ionenfeld (02, Feld nach jeder Leiste) und Vorentladung (12, Serie zu Crit-Multiplikator) neu auf den alten Emblem-Plätzen; Kettenblitz vertieft, Blitzfänger und Überspannung ohne Schwelle, Blitzschlag schneller, Spannungsstau auf den Crit-Multiplikator. Blitz mono 7,2M → 11,0M, Floor 1,86× → 1,22× (Mean 0,89×, p90 0,79×); der 8×-Deckel bindet bei einem Zehntel der Crits. Stapel-Score bleibt 75 (Sweep 60/75/90: Median gegen Schwanz). Gierig 71,6M, Blitz-lastig; die umgebauten Skills sind Füller (gehalten, neutral), Träger unverändert. Offene Liste in 7.18. |
