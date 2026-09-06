@@ -2501,6 +2501,9 @@ je eine Änderung der Runde zurückgedreht (Feuer mono bleibt 13,6M):
 | Crit-Deckel 8× | 15,0M | 0,91× | 0,63× | 0,58× |
 | Kettenblitz wie 7.18 (jede 2. / 1 / 1 / 1 Leiste, +1 / 1 / 2 / 3) | 15,1M | 0,90× | 0,58× | 0,49× |
 | Kettenblitz jede Leiste, +1 / 1 / 2 / 3 | 16,4M | 0,83× | 0,56× | 0,47× |
+| Stapel-Score 60 (Regler) | 16,2M | 0,84× | 0,56× | 0,49× |
+| Ionenfeld 2 / 3 / 4 / 5 | 13,5M | 1,01× | 0,57× | 0,49× |
+| Ionenfeld 2 / 3 / 3 / 4 | 13,5M | 1,01× | 0,55× | 0,51× |
 
 Der Dauerwert der Überspannung trägt den ganzen Median-Sprung (ohne ihn steht Blitz mono wieder bei 11,0M — die
 Schmiede des Blitzes ist so stark wie die des Feuers, nur ohne Schwelle: 84 Leisten je Lauf sind 84 Schmiedungen),
@@ -2526,6 +2529,13 @@ Die Basis ist jetzt ein Blitz-Build (7.18: der gierige Spieler baut Blitz-lastig
 Hitze liest, hat dort nichts zu lesen und kostet den Pick — Sonnenzorn und Phönixfeuer messen in dieser Reihe die
 Fraktionswahl, nicht den Skill. Damaststahl (+26 %) zahlt fraktionsfrei. Der faire Blick auf die zwei gehobenen
 Legendären ist der reine Feuer-Build (Lifts, unten).
+
+**Lifts im reinen Feuer-Build** (Fraktions-Policy, 400 Läufe, Median mit ÷ ohne; 7.17b → jetzt): Feuer mono 13,6M →
+14,1M. Sonnenzorn 0,83 → **0,94** (Mean 0,91 → 1,04), Phönixfeuer 0,84 → **0,87** (Mean 0,73 → 0,77). Beide sind
+damit noch Kosten, aber keine Fallen mehr: Sonnenzorn liest jetzt eine Spitze, die über der Leiste liegt (Weißglut in
+87 % der Builds), und trägt im Mittel; Phönixfeuer heizt auf Niederlagen, doch bei 59 % Stichen ≥ 100 % (Motor) ist
+die Leiste meist schon voll — die Hitze aus Niederlagen verfällt am Anschlag, und der Serienschutz gilt einmal je
+Runde. Sonst unverändert: Sonnenkern 2,69, Klinge 1,80, Weißglut 1,41, Feuersturm 1,10 (Episch 2,02), Glutbett 0,74.
 
 ## 5. Eis
 
