@@ -2004,8 +2004,22 @@ beiden Stapel-Wirkungen ablatiert (Basis-Score und Crit-Multiplikator auf 0, gep
 Stapel-Build 39 % (vorher 33 %), Crit-Build 12 %. Die Ionisierung trägt mehr, im Zufalls-Build bleibt der Crit aus dem
 Passiv (47 % Crit-Anteil) aber der größere Posten. Ein Sweep der zwei Regler (0,15× / 4 % und 0,2× / 3 %) steht unten.
 
-**Duell (100 Läufe):** Feuer mono 2,36M, Blitz mono 2,34M — Floor 1,01×, Mean 0,97×, p90 0,95×. Split 2,32M, Mix 1,45M.
-Die Startwerte 0,1× je Stapel und 4 % je Skill bleiben, nichts nachtariert.
+**Duell (100 Läufe, 0,1× / 4 %):** Feuer mono 2,36M, Blitz mono 2,34M — Floor 1,01×, Mean 0,97×, p90 0,95×. Split 2,32M,
+Mix 1,45M.
+
+**Sweep der zwei Regler (100 Läufe je Zeile):**
+
+| Crit-Mult je Stapel / Crit je Skill | Blitz mono | Floor Feuer ÷ Blitz | Stapel-Build | Crit-Build | Stapel-Anteil Fraktion / Stapel-Build |
+| --- | --- | --- | --- | --- | --- |
+| 0,1× / 4 % | 2,34M | 1,01× | 2,76M | 2,91M | 16 % / 39 % |
+| **0,15× / 4 %** | 2,42M | 0,98× | **2,97M** | 2,95M | 18 % / 43 % |
+| 0,2× / 3 % | 2,12M | 1,11× | 2,53M | 2,65M | 15 % / 37 % |
+
+**Entscheid (technischer Regler, Agent): 0,15× je Stapel, 4 % je Skill.** Erst dort steht der Stapel-Build auf Augenhöhe
+mit dem Crit-Build (2,97M gegen 2,95M), der Floor bleibt bei Parität (0,98×). 3 % je Skill kippt: weniger Crits füllen
+weniger Leisten, die Ionisierung sinkt mit — der Crit ist der Motor der Leiste, nicht ihr Konkurrent. Der Stapel-Anteil
+im Zufalls-Build bleibt bei 18 % gegen 49 % Crit-Anteil; „Ionisierung trägt" gilt im Stapel-Build (43 %), nicht im
+zufälligen — wer mehr will, hebt den Stapel-Score 60 mit, das kostet dann die Parität.
 
 ## 5. Eis
 
