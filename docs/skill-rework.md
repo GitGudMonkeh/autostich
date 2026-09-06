@@ -3388,6 +3388,22 @@ Gesetzt ist **×2,5 bei 3–6 Positionen**: die Breite ist die vom Owner entschi
 Regler, und die Parität steht damit bei 1,00× (7.25: 1,09×). Die Breite zu heben zahlt schlechter als der Faktor
 (5–8 Positionen bei ×1,5 bringen nur 0,93×) und verwässert die Knappheit, die der Sinn der Bauform ist.
 
+**Gierig, zwei Läufe** (150 Läufe nach 1000 Explore, einmal Seeds 1..1150, einmal 5000..6149 — zwei Läufe, weil die
+Haltequote eines neuen Skills anfangs niedrig ist und die Explore-Tabelle zwischen den Läufen ±20 % schwankt):
+
+| | Lauf A | Lauf B |
+| --- | --- | --- |
+| Median gierig | 105,2M (Ø 12,8 Skills) | 109,6M (Ø 13,0 Skills) |
+| Brandschneise gehalten | 11 % | 15 % |
+| Ablation (Median-Δ) | −3,8M, typ. −5 %, win 50 % | +0,04M, typ. 0 %, win 52 % |
+
+**Brandschneise ist ein Füller** — sie wird genommen, trägt nicht und schadet nicht; die Stufenlifts (N 0,98 · S 0,66
+· SS 0,43 · E 0,53 bzw. N 0,59 · S 1,02 · SS 0,76 · E 0,70) sind bei dieser Haltequote Rauschen. Das ist der übliche
+Startpunkt eines neuen Skills. Dass die Zahlen zwischen den Läufen springen, zeigt derselbe Lauf an der Feuerlinie:
+in A „tot" (−2 %, in 11 %), in B „stark" (+88 %, in 8 %) — Wertetabelle, nicht Skill. Träger sind in beiden Läufen
+Sonnenkern, Klinge, Doppelentladung und Resonanz. Der gierige Median liegt über 7.25 (77,8M), aber Mediane
+verschiedener Explore-Läufe sind nicht vergleichbar; die Niveau-Aussage macht das Duell.
+
 **Was der Tausch kostet.** Die Feuerwalze war im Fraktions-Build kein toter Skill, sondern ein Dauerbonus: „+2 Wert
 für die nächste Karte nach einem Sieg" liegt bei 70 % Siegquote fast immer an, hebt die Siegquote weiter und zahlt
 darüber in Hitze und Serien. Ohne Ersatz fiel Feuer mono von 14,2M auf 11,8M (−17 %); der Zufallsspieler von 4,08M
@@ -3455,3 +3471,4 @@ Offen.
 | 2026-09-06 | Owner setzt die Reihenfolge (1 → Feuerwalze → Gewitterfront/Entladung → Textpaket). Punkt 1 vor der Umsetzung nachgemessen und **den eigenen Befund korrigiert** (7.26 C, neue Sonde `sim/probes/weissglut-gate.mjs`): Weißglut schaltet Feuersturm und Schmelzpunkt **nicht** ab. Isoliert bei 100 % Hitze stimmt es (×1,10 → ×1,00, +135 → 0), im Lauf nicht — der Weißglut-Build läuft bei Ø 141 % statt 52 % Hitze und steht in 40 % der Stiche auf 200, häufiger als ein Build ohne Weißglut die 100 erreicht (24 %). Kein Regelfehler, sondern eine versteckte Kopplung: ein Pick schreibt die Schwelle zweier anderer Skills um, ohne dass ein Text es sagt. Drei Lesarten an den Owner (so lassen / Text nennt die Zahl des Builds / Tore auf 100 % festnageln — Letzteres ist ein Buff, weil dieselbe Hitze dann über Weißglut und Schmelzpunkt zweimal zahlt), keine Empfehlung. Nichts umgesetzt. |
 | 2026-09-06 | **Owner: Lesart 1 — so lassen.** Die Tore lesen weiter die Leiste des Builds, Weißglut verschiebt sie mit, Texte bleiben. Punkt 1 der Liste in 7.26 F ist damit zu, ohne Code- oder Textänderung; die Kopplung ist gewollt und wird nicht wieder aufgemacht. Nächster Punkt: Feuerwalze (7.26 F.2) — braucht ein Konzept vom Owner für den frei werdenden Platz SK_FIRE_08. |
 | 2026-09-06 | Owner zu Punkt 2: Konzept **Brandschneise**, mit dem Einwand, dass später im Lauf alle Positionen gewonnen werden (7.27). Gemessen (neue Sonde `sim/probes/positions-won.mjs`, Feuer mono, 100 Läufe): der Einwand stimmt und ist schärfer als erwartet — nach 3 Durchläufen sind 28,8 von 40 Positionen schon einmal gewonnen, nach 10 sind es 36,4, ab Durchlauf 41 alle 40. Die Bedingung siebt drei Durchläufe und ist danach eine Formalität, in der zweiten Laufhälfte wäre der Skill ein bedingungsloser Score-Faktor. Drei Bauformen mit struktureller statt historischer Knappheit an den Owner (feste Breite, jeden Durchlauf neu geschlagen / zusammenhängendes Band / Kette je Position), Empfehlung (a). Feuerwalze geht dafür raus (vier Stufen mit viermal +2, tot in 7.6, 7.9, 7.13). Nichts umgesetzt. |
+| 2026-09-06 | **Owner: „feste Breite, Variante a"** (7.27, umgesetzt): Brandschneise ersetzt Feuerwalze auf SK_FIRE_08 (Emblem umbenannt, Feuer bleibt bei 14) — die 3 / 4 / 5 / 6 Siege mit dem größten Vorsprung eines Durchlaufs schlagen die Schneise, im nächsten Durchlauf zählt ein Sieg auf diesen Positionen ×2,5; Episch hält sie zwei Durchläufe. Erster normaler Skill auf der Achse „eigene Reihenfolge" und der erste Feuer-Skill ohne Hitze-Tor. Zustand im Hitze-Substate (`laneWins` je Durchlauf, `lanes` = die zwei jüngsten Schnitte), Schnitt in `fireCycleEnd` (größte Vorsprünge, bei Gleichstand die kleinere Position), `schneiseMult` als Faktor im Feuer-Stack; `fireValueBonus` verliert den Feuerwalze-Zweig, die Hitzeleiste ihr Abzeichen. Satz nach Sweep im Duell: ×1,5 / 2 / 2,5 / 3 → Floor 0,91 / 0,96 / **1,00** / 1,03× (Breite 5–8 statt Faktor zahlt schlechter), gesetzt ×2,5 — Feuer mono 12,97M, Blitz mono 13,0M. Gemessen und offen benannt: die Feuerwalze war im Fraktions-Build kein toter Skill (Dauerbonus bei 70 % Siegquote), Feuer mono fiel ohne sie von 14,2M auf 11,8M; das Niveau bleibt unter 7.25, das Band ist neu zentriert (2,64M / 5,90M). Gierig zweimal: Brandschneise in 11 % / 15 % gehalten, Ablation −5 % / 0 % — Füller, wie ein neuer Skill startet. Gates grün. |
