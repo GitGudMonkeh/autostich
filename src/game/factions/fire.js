@@ -69,7 +69,7 @@ export function syncHeatMax(heat, skills) {
    Sieg. Verbrennung Episch (§7.22): ein Sieg ab dem Vorsprung der Stufe zählt seine Hitze ×mult. Sonnenzorn (L,
    §7.20): liegt die Hitze vor dem Sieg unter der Spitze, zählt der Gewinn ×SONNENZORN_HEAT_MULT (der Zorn holt die
    Spitze zurück). (Feuersturm gibt seit §7.17 keine Hitze mehr — er ist Serie zu Score; Rückzündung seit §7.22 auch
-   nicht — sie ist der Konter, rueckzuendungMult; Glut, der Kaltstart-Verstärker, ist seit §7.23 gestrichen.) */
+   nicht — sie ist der Takt, rueckzuendungMult; Glut, der Kaltstart-Verstärker, ist seit §7.23 gestrichen.) */
 export function heatGainOnWin(skills, skillTiers, { margin = 0, heatValue = 0, heatPeak = 0 } = {}) {
   let g = 0;
   if (margin >= C.HEAT_MIN_MARGIN) g += (margin - C.HEAT_MARGIN_OFFSET) * C.HEAT_PER_POINT;
@@ -114,11 +114,13 @@ export function verbrennungMult(skills, skillTiers, margin = 0) {
   return fireParam(skills, skillTiers, F.VERBRENNUNG, "mult") || 1;
 }
 
-// Rückzündung (§7.22, Konter): der erste Sieg nach einer Niederlage zählt ×mult (Faktor im Score-Stack neben Hitze-
-// Multiplikator, Verbrennung und Feuersturm). `lastResult` = Ergebnis des Vorstichs. 1 sonst.
-export function rueckzuendungMult(skills, skillTiers, lastResult = null) {
-  const m = fireParam(skills, skillTiers, F.RUECKZUENDUNG, "mult");
-  return (m && lastResult === "loss") ? m : 1;
+// Rückzündung (§7.24, Takt): jeder N. Sieg in Folge zündet und zählt ×mult (Faktor im Score-Stack neben Hitze-
+// Multiplikator, Verbrennung, Feuersturm und Feuerlinie). `streak` = Serie NACH diesem Sieg, wie bei Feuersturm. 1 sonst.
+// (§7.22 war der Konter nach einer Niederlage — ab der Laufmitte gibt es keine Niederlagen mehr, der Skill war tot.)
+export function rueckzuendungMult(skills, skillTiers, streak = 0) {
+  const every = fireParam(skills, skillTiers, F.RUECKZUENDUNG, "every");
+  if (!every || streak < every || streak % every !== 0) return 1;
+  return fireParam(skills, skillTiers, F.RUECKZUENDUNG, "mult") || 1;
 }
 
 /* Feuersturm (§7.17, Owner): Serie zu Score — bei voller Leiste (Episch schon ab `minHeat`) zählt jeder Serienpunkt
@@ -133,9 +135,9 @@ export function feuersturmMult(skills, skillTiers, value = 0, max = C.HEAT_MAX, 
 }
 
 /* Kampfwert-Bonus der gespielten Karte (Zustand vor dem Stich): Glühende Klinge (+Wert je Hitze-Schritt, ohne Deckel),
-   Feuerwalze (ab der Hitze-Schwelle nach einem Sieg, Episch auch nach einer Niederlage), Rückzündung Episch (+Wert nach
-   einer Niederlage). */
-export function fireValueBonus(heat, skills, skillTiers, { lastResult = null } = {}) {
+   Feuerwalze (ab der Hitze-Schwelle nach einem Sieg, Episch auch nach einer Niederlage), Rückzündung Episch (§7.24: die
+   zündende Karte — wäre dieser Stich der N. Sieg in Folge, kämpft sie mit +Wert; `winStreak` = Serie VOR dem Stich). */
+export function fireValueBonus(heat, skills, skillTiers, { lastResult = null, winStreak = 0 } = {}) {
   if (!heat || !heat.active) return 0;
   const value = heat.value || 0;
   let v = 0;
@@ -146,7 +148,8 @@ export function fireValueBonus(heat, skills, skillTiers, { lastResult = null } =
       && (lastResult === "win" || (fireParam(skills, skillTiers, F.FEUERWALZE, "afterLoss") && lastResult === "loss")))
     v += fireParam(skills, skillTiers, F.FEUERWALZE, "value") || 0;
   const rz = fireParam(skills, skillTiers, F.RUECKZUENDUNG, "value");
-  if (rz && lastResult === "loss") v += rz;
+  const every = fireParam(skills, skillTiers, F.RUECKZUENDUNG, "every");
+  if (rz && every && ((winStreak || 0) + 1) % every === 0) v += rz;
   return v;
 }
 

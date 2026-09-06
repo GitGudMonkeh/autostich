@@ -43,7 +43,7 @@ const BLITZ = {
   faenger:       [{ minStacks: 1, value: 1 }, { minStacks: 1, value: 2 }, { minStacks: 1, value: 3 }, { minStacks: 1, value: 4, perStack: 1 }], // §7.18: ohne Schwelle, der Wert steigt; §7.22 Episch-Extra: +1 je Stapel
   kurzschluss:   [{ minStacks: 6, factor: 2 }, { minStacks: 5, factor: 2 }, { minStacks: 4, factor: 2 }, { minStacks: 3, factor: 2, onLoss: true }], // §7.22 Episch-Extra: der doppelte Stapel-Score zählt auch bei Niederlage (zahlt beim nächsten Sieg)
   stau:          [{ step: 0.05, critKeep: 0 }, { step: 0.075, critKeep: 0 }, { step: 0.1, critKeep: 0 }, { step: 0.15, critKeep: 0.5 }], // §7.18: Crit-Multiplikator statt Crit-Chance
-  ueberspannung: [{ value: 1 }, { value: 2 }, { value: 3 }, { value: 4 }], // §7.19: Dauerwert je Leiste (Blitz' Schmiede) — vorher Ladung je Crit mit ionisierter Karte; §7.20: 1/2/3/4 (Raritäten unterscheiden sich immer, §1). Überschlag (SK_LIGHTNING_14) ist gestrichen.
+  ueberspannung: [{ perOver: 4 }, { perOver: 3 }, { perOver: 2 }, { perOver: 1, chancePer: 0.25 }], // §7.24 (Owner): der Überschuss eines Crits über dem Deckel wird Ladung (je perOver× +1); Episch dazu je 25 % Crit-Chance über 100 % +1. Vorher Dauerwert je Leiste (§7.19, „schadet" — Wert ist im Überfluss da). Überschlag (SK_LIGHTNING_14) ist gestrichen.
   blitzschlag:   [{ critEvery: 4, stacks: 1 }, { critEvery: 3, stacks: 1 }, { critEvery: 2, stacks: 1 }, { critEvery: 2, stacks: 2 }], // §7.18: einen Schritt schneller, Episch zwei Stapel
   serienschutz:  [{ frac: 0.7 }, { frac: 0.5 }, { frac: 0.4 }, { frac: 0.3, freePerRound: 1 }],
 };
@@ -62,7 +62,7 @@ const FEUER = {
   zunder:        [{ heat: 2 }, { heat: 3 }, { heat: 4 }, { heat: 5, lossHeat: 2 }], // §7.16: 1–4 → 2–5; §7.22 Episch-Extra: auch Niederlagen geben +2
   feuersturm:    [{ multPerStreak: 0.001 }, { multPerStreak: 0.0015 }, { multPerStreak: 0.002 }, { multPerStreak: 0.003, minHeat: 90 }], // §7.17: Serie zu Score bei voller Leiste (Episch ab 90 %, §7.18: war 80); vorher Serie zu Hitze. Satz nach Sweep (0,5 % je Punkt war ×3 Blitz)
   glutbett:      [{ floor: 40 }, { floor: 60 }, { floor: 80 }, { noCool: true }],
-  rueckzuendung: [{ mult: 1.15 }, { mult: 1.25 }, { mult: 1.35 }, { mult: 1.5, value: 2 }], // §7.22: Konter — nach einer Niederlage zählt der nächste Sieg ×mult (vorher Hitze je Punkt Rückstand, tot)
+  rueckzuendung: [{ every: 5, mult: 1.5 }, { every: 4, mult: 1.5 }, { every: 3, mult: 1.5 }, { every: 2, mult: 1.5, value: 2 }], // §7.24 (Owner): Takt — jeder N. Sieg in Folge zündet und zählt ×mult, Episch kämpft die zündende Karte mit +2 (vorher Konter nach einer Niederlage, §7.22 — ab der Laufmitte gibt es keine Niederlagen mehr)
   klinge:        [{ perHeat: 40, value: 1 }, { perHeat: 30, value: 1 }, { perHeat: 25, value: 1 }, { perHeat: 20, value: 1 }],
   weissglut:     [{ multPer10: 0.03 }, { multPer10: 0.04 }, { multPer10: 0.05 }, { multPer10: 0.06 }],
   feuerwalze:    [{ minHeat: 80, value: 2 }, { minHeat: 60, value: 2 }, { minHeat: 40, value: 2 }, { minHeat: 20, value: 2, afterLoss: true }],
@@ -108,8 +108,8 @@ export const SKILL_DEFS = {
     ...tiered(BLITZ.faenger, (r) => `Ionisierte Karten kämpfen mit +${r.value} Wert${r.perStack ? ` und +${r.perStack} je Stapel` : ""}.`) },
   SK_LIGHTNING_09: { id: "SK_LIGHTNING_09", name: "Kurzschluss", archetype: "lightning", keywords: ["ionize"], tiers: BLITZ.kurzschluss,
     ...tiered(BLITZ.kurzschluss, (r) => `Sieg mit einer Karte ab ${r.minStacks} Stapeln: ihre Stapel zählen ${r.factor === 2 ? "doppelt" : `×${r.factor}`}.${r.onLoss ? " Verlierst du mit so einer Karte, zahlt ihr doppelter Stapel-Score beim nächsten Sieg." : ""}`) },
-  SK_LIGHTNING_04: { id: "SK_LIGHTNING_04", name: "Überspannung", archetype: "lightning", keywords: ["charge", "ionize"], tiers: BLITZ.ueberspannung,
-    ...tiered(BLITZ.ueberspannung, (r) => `Jede volle Leiste gibt der Karte, die sie ionisiert, dauerhaft +${r.value} Kartenwert.`) },
+  SK_LIGHTNING_04: { id: "SK_LIGHTNING_04", name: "Überspannung", archetype: "lightning", keywords: ["crit", "charge"], tiers: BLITZ.ueberspannung, // §7.24: Überschuss über dem Deckel zu Ladung
+    ...tiered(BLITZ.ueberspannung, (r) => `Ein Crit über dem Deckel entlädt den Überschuss: je ${de(r.perOver)}× Crit-Multiplikator über ${C.CRIT_MULT_CAP}× gibt er +1 Ladung.${r.chancePer ? ` Auch je ${pct(r.chancePer)} % Crit-Chance über 100 % gibt ein Crit +1 Ladung.` : ""}`) },
   // Schutz
   SK_LIGHTNING_17: { id: "SK_LIGHTNING_17", name: "Serienschutz", archetype: "lightning", keywords: ["charge", "streak"], tiers: BLITZ.serienschutz,
     ...tiered(BLITZ.serienschutz, (r) => `Verlierst du einen Stich mit mindestens ${pct(r.frac)} % Ladung, hält die Serie; diese ${pct(r.frac)} % werden verbraucht.${r.freePerRound ? " Einmal je Runde ist der Schutz kostenlos." : ""}`) },
@@ -133,8 +133,8 @@ export const SKILL_DEFS = {
     ...tiered(FEUER.zunder, (r) => `Jeder Sieg gibt +${r.heat} % Hitze, auch ein knapper.${r.lossHeat ? ` Auch jede Niederlage gibt +${r.lossHeat} % Hitze.` : ""}`) },
   SK_FIRE_03: { id: "SK_FIRE_03", name: "Feuersturm", archetype: "fire", keywords: ["heat", "streak"], tiers: FEUER.feuersturm,
     ...tiered(FEUER.feuersturm, (r) => `${r.minHeat ? `Ab ${r.minHeat} % Hitze` : "Bei voller Hitzeleiste"} zählt jeder Serienpunkt +${de(Math.round(r.multPerStreak * 10000) / 100)} % Score.`) },
-  SK_FIRE_05: { id: "SK_FIRE_05", name: "Rückzündung", archetype: "fire", keywords: ["heat", "streak"], tiers: FEUER.rueckzuendung, // §7.22: Konter statt Hitze je Rückstand
-    ...tiered(FEUER.rueckzuendung, (r) => `Nach einer Niederlage zählt dein nächster Sieg ×${de(r.mult)}.${r.value ? ` Die Karte nach einer Niederlage kämpft mit +${r.value} Wert.` : ""}`) },
+  SK_FIRE_05: { id: "SK_FIRE_05", name: "Rückzündung", archetype: "fire", keywords: ["streak"], tiers: FEUER.rueckzuendung, // §7.24: Takt statt Konter (§7.22)
+    ...tiered(FEUER.rueckzuendung, (r) => `${jeder(r.every)} Sieg in Folge zündet: er zählt ×${de(r.mult)}.${r.value ? ` Die zündende Karte kämpft mit +${r.value} Wert.` : ""}`) },
   // Schutz
   SK_FIRE_04: { id: "SK_FIRE_04", name: "Glutbett", archetype: "fire", keywords: ["heat"], tiers: FEUER.glutbett,
     ...tiered(FEUER.glutbett, (r) => (r.noCool ? "Niederlagen kühlen die Hitze nicht." : `Niederlagen kühlen die Hitze nicht unter ${r.floor} %.`)) },

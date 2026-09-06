@@ -683,7 +683,7 @@ entfernt. Crit-Chance über 100 % gibt einen sehr kleinen Crit-Mult-Bonus (Syste
 | Spannungsstau | Glättung (seit 7.18 auf den Crit-Multiplikator) | Sieg ohne Crit +0,05× Crit-Multiplikator für den nächsten Crit, der Crit leert | +0,075× | +0,1× | +0,15×; Crit halbiert statt leert |
 | Vorentladung (neu, 7.18) | Serie zu Crit | ab Serie 5 gibt jeder Serienpunkt +0,1× Crit-Multiplikator auf den Stich | ab 4 | ab 3 | ab 2 |
 | ~~Überschlag~~ | gestrichen (7.19; die Systemregel „Überschuss über 100 %" in groß, im gierigen Build −15 %) | – | – | – | – |
-| Überspannung | Dauerwert je Leiste (seit 7.19; vorher Ionisierung zu Ladung; Leiter 7.20) | jede volle Leiste gibt der Karte, die sie ionisiert, dauerhaft +1 Wert | +2 | +3 | +4 |
+| Überspannung | Überschuss zu Ladung (seit 7.24; 7.19–7.23 Dauerwert je Leiste, „schadet"; davor Ionisierung zu Ladung) | ein Crit über dem Deckel entlädt den Überschuss: je 4× Crit-Multiplikator über 8× +1 Ladung | je 3× | je 2× | je 1×; dazu je 25 % Crit-Chance über 100 % +1 Ladung |
 | Blitzschlag | Tiefen-Motor (Leiter seit 7.18) | jeder 4. Crit ionisiert die Siegkarte | jeder 3. | jeder 2. | jeder 2., zwei Stapel |
 | ~~Dauerstrom~~ | gestrichen (7.18, in Blitzableiter aufgegangen) | – | – | – | – |
 | Serienschutz | Schutz | Niederlage ab 70 % Ladung hält die Serie, kostet 70 % | 50 % | 40 % | 30 %; einmal je Runde gratis |
@@ -1380,7 +1380,7 @@ brutto 49 % und netto 21 % Hitze je Runde.
 | Zunder | Rate aus jedem Sieg (Sätze seit 7.16) | jeder Sieg +2 % Hitze | +3 % | +4 % | +5 %; auch jede Niederlage +2 % (Extra 7.22) |
 | Feuersturm | Serie zu Score (seit 7.17; vorher Serie zu Hitze) | bei voller Leiste zählt jeder Serienpunkt +0,1 % Score | +0,15 % | +0,2 % | +0,3 %; schon ab 90 % Hitze (7.18; war 80) |
 | Glutbett | Schutz | Niederlagen kühlen nicht unter 40 % | nicht unter 60 % | nicht unter 80 % | Niederlagen kühlen nicht |
-| Rückzündung | Konter (seit 7.22; vorher Comeback zu Hitze, tot) | nach einer Niederlage zählt der nächste Sieg ×1,15 | ×1,25 | ×1,35 | ×1,5; die Karte nach einer Niederlage kämpft mit +2 Wert |
+| Rückzündung | Takt (seit 7.24; 7.22 Konter nach Niederlage, tot ab der Laufmitte; davor Comeback zu Hitze, tot) | jeder 5. Sieg in Folge zündet: er zählt ×1,5 | jeder 4. | jeder 3. | jeder 2.; die zündende Karte kämpft mit +2 Wert |
 | Glühende Klinge | Hitze zu Wert | alle Karten +1 Wert je 40 % Hitze | je 30 % | je 25 % | je 20 % |
 | Weißglut | über die Leiste | Leiste bis 200; über 100 je 10 % +3 % Score | +4 % | +5 % | +6 % |
 | Feuerwalze | Serie zu Wert | ab 80 % Hitze: nach einem Sieg hat die nächste Karte +2 Wert | ab 60 % | ab 40 % | ab 20 %; auch nach einer Niederlage |
@@ -2941,6 +2941,79 @@ verdrängen einen Multiplikator?); Glutbett und Schmiede (Owner: bleiben); ein C
 Feuerlinie wie bei Verbrennung (Anzeige, Owner-Frage); die Episch-Stufe der Feuerlinie ist in der Sim noch nicht
 sichtbar (wenige Läufe).
 
+### 7.24 Ohne Niederlage-Bedingung: Überspannung verwertet den Überschuss, Rückzündung im Takt (2026-09-06, umgesetzt)
+
+Owner: „Beide sind tot, da ab Mitte des Spiels kaum noch Niederlagen passieren. Wir müssen die Niederlage-Bedingung
+umgehen." Zu Überspannung: „vielleicht ein Skill daraus, der Crit über 100 % verwertet." Entscheide: **Überspannung
+verwertet den Überschuss über dem Deckel**, **Rückzündung im Takt**; der Durchschlag-Vorschlag (Viertel über dem
+Deckel) ist „zu situativ" — neue Vorschläge unten, nichts davon umgesetzt.
+
+**Befund vorab, gemessen.** Crit-Chance über 100 % gibt es seit ÷10 kaum noch: Blitz mono in den Runden 41–50 in
+12 % der Stiche (Ø +46 pp), Mix 4 %, davor 0 % (`overcrit-probe.mjs`, ohne Perk-Crit). Was wirklich da ist, liegt
+über dem 8×-Deckel des Crit-Multiplikators (`capexcess-probe.mjs`, `SIM_CRIT_MULT_CAP=1000`): Blitz mono Runden 41–50
+29 % der Crits, Ø +14×; Mix Runden 31–50 5–11 % der Crits, Ø +31 … 39× (Vorentladung auf den Feuer-Serien). Beides
+ist Spätspiel — genau die Lücke „ab Mitte des Spiels".
+
+**Überspannung** (SK_LIGHTNING_04, im Platz): „Ein Crit über dem Deckel entlädt den Überschuss: je 4 / 3 / 2 / 1×
+Crit-Multiplikator über 8× gibt er +1 Ladung." Episch dazu: je 25 % Crit-Chance über 100 % +1 Ladung. Code: die
+Engine hält den ungedeckelten Multiplikator (`critMultRaw`, vor dem Backstop) und gibt ihn mit `rawCrit` an
+`chargeGainOnWin`; die Vorschau für Entladung Episch (`critFillsBar`) rechnet ohne Überspannung, der Multiplikator
+steht dort noch nicht fest. Der Dauerwert je Leiste (7.19) ist weg (`fillBar` backt nichts mehr). Glossar „Kaskade"
+nachgezogen. Warum der alte Skill „schadete": Wert ist im Überfluss da (Schmiede, Klinge, Ionenfeld, Blitzfänger,
+Perks), das Deck gewinnt 73 %, ein Punkt auf einer zufälligen Karte bringt dem Multiplikator-Stack nichts — der Pick
+verdrängt einen Multiplikator.
+
+**Rückzündung** (SK_FIRE_05, im Platz): „Jeder 5. / 4. / 3. / 2. Sieg in Folge zündet: er zählt ×1,5." Episch dazu:
+die zündende Karte kämpft mit +2 Wert (`fireValueBonus` liest die Serie vor dem Stich — wäre dieser Stich der N.
+Sieg in Folge, kommt der Wert). `rueckzuendungMult(skills, skillTiers, streak)` liest die Serie nach dem Sieg wie
+Feuersturm; ein Faktor im Feuer-Stack. Kein Niederlage-Bezug mehr; `lastLossDeficit` bleibt ungenutzt im Substate.
+Motor-Sim: der letzte Verstärker ist Zunder, Rückzündung liegt im Kern. Verworfen: „unter voller Hitzeleiste zählt
+jeder Sieg ×1,1 … 1,3".
+
+**Messung.** Duell (100 Läufe): Feuer mono 14,2M (7.23: 13,1M — der Takt zahlt), **Blitz mono 7,3M (10,2M)**; Floor
+**1,93×**, Mean 1,44×, p90 1,17× (7.23: 1,29× / 0,86× / 0,71×). Blitz mono ändert sich nur durch Überspannung
+(dieselben Seeds, dieselben Picks) — der Dauerwert je Leiste war **die einzige Dauerwert-Quelle des Blitzes** und
+trug den reinen Build: Motor Blitz Fraktion 11,3M → 9,3M, Stapel zuerst 17,3M → 12,6M, Crit zuerst 18,1M → 17,9M;
+die neue Überspannung bringt +3 … 7 Leisten je Lauf (77 / 121 / 134 statt 74 / 119 / 127), weil der Überschuss spät
+kommt und Normal 4× je Ladung braucht. Die „ionisierte Karte gewinnt"-Synergien hängen mit dran: Legendäre zur
+Laufmitte (Basis 37,6M) Doppelentladung +9 % (7.23: +66 %), Durchschlag −14 % (+12 %), Donnergott −5 %; Sonnenkern
++171 %, Damaststahl +52 %, Sonnenzorn +16 %, Ewige Glut +12 %, Hochspannung +11 %. Lifts gefiltert: Feuer Klinge 2,34,
+Feuerlinie 0,91, Rückzündung 0,81 (N 0,83 · E 1,36); Blitz Überspannung 0,69 (N 0,67 · E 0,85), Ladungsserie 0,66,
+Vorentladung 1,15, Durchschlag 4,46 (L, in 13 %). Band: 3,71M / 6,07M, im Band. Motor Feuer unverändert (Fraktion
+15,4M, Anschlag 30,6 %).
+
+**Gierig** (1000 Explore, 150 Läufe): Median 47,7M (7.23: 53,2M), Siegquote 74 %, **Ø 10,5 Skills** (12,7 — der
+gierige Spieler lehnt mehr Picks ab). Überspannung in 5 % gehalten, +21 % typisch, besser in 75 % (acht Läufe —
+Rauschen); Rückzündung in 9 %, −9 % (13 Läufe); Feuerlinie in 9 %, +2 % (7.23: 19 %, +15 %). Stark: Sonnenkern
++65 %, Vorentladung +66 %, Klinge +67 %, Brandmal, Weißglut, Lauffeuer, Ladungsserie +27 %. Schadet: Reststrom −42 %
+(in 7 %; 7.23: neutral in 71 %), Glutstahl −62 % (in 10 %), Zunder, Schmiede, Gewitterfront. Die Haltequoten springen
+zwischen den Läufen (Reststrom 71 → 7 %, Überspannung 85 → 5 %) — das ist die Wertetabelle des Explore, nicht der
+Skill; Urteile über Skills unter 15 % Haltequote brauchen zwei Läufe (7.22).
+
+**Parität, Sweep.** Stapel-Score (der bisherige Regler) 75 → 100 → 125: Blitz mono 7,3M → 8,3M → 9,2M, Floor 1,93×
+→ 1,71× → 1,54× — der Median folgt dem Regler nur schwach, den Dauerwert ersetzt er nicht. Sonde **Dauerwert als
+Blitz-Passiv** (`SIM_ION_VALUE_PER_BAR`, Default 0 = aus; jede volle Leiste gibt der ionisierten Karte dauerhaft
++N): +1 → Blitz mono 13,0M, Floor 1,09×, Mean 0,71×, p90 0,55×; +2 → 13,6M, 1,04× / 0,57× / 0,51×. Ein Punkt als
+Passiv holt mehr zurück als der alte Skill (den hielt nur, wer ihn zog), am Schwanz zu viel gegen 7.23 (0,86× /
+0,71×). Optionen an den Owner: (a) Dauerwert +1 je Leiste als Blitz-Passiv (Passiv-Text ändert sich), (b) Dauerwert
+je Ionisierung auf Blitzfänger (statt des Kampfbonus, Episch-Extra +1 je Stapel bleibt — nur Halter), (c) nichts,
+Parität über Stapel-Score 125 (1,54×). Empfehlung (a), notfalls „jede zweite Leiste" als Zwischenschritt.
+
+**Durchschlag (SK_LIGHTNING_L04) — Vorschläge ohne Situationsbindung** (Owner: der Deckel-Viertel-Vorschlag ist zu
+situativ; heute: im reinen Blitz-Build Lift 4,46, im Mix −14 %, tot):
+
+1. **Lichtbogen** — „Jeder Sieg ohne Crit zählt mit dem halben Crit-Multiplikator." Immer an, ab Stich 1, wächst mit
+   den Rampen, vom Deckel begrenzt; in Crit-Builds rund +40 %. Eine Zeile in der Engine (`gained`).
+2. **Kettenreaktion** — „Jeder Crit ionisiert die Siegkarte (+1 Stapel); jede volle Leiste ionisiert zwei Karten."
+   Immer an, der Stapel-Motor; Rückkopplung Stapel → Crit-Multiplikator → Deckel, zu messen.
+3. **Erdung** — „Jeder Sieg senkt die geschlagene Gegnerkarte dauerhaft um 1 Wert." Immer an, wächst über den Lauf,
+   trägt das frühe Spiel; spät nur noch Vorsprung (Verbrennung, Hitze).
+
+Empfehlung: Lichtbogen. Emblem bleibt (SK_LIGHTNING_L04), Name folgt der Wahl.
+
+**Was offen bleibt:** die Parität (oben, Owner-Entscheid); Feuerlinie-Chip an der Hitzeleiste (Anzeige); Glutbett
+und Schmiede (Owner: bleiben); die Streuung der gierigen Auswertung (Haltequoten springen — zwei Läufe je Urteil).
+
 ## 5. Eis
 
 Offen.
@@ -2993,3 +3066,4 @@ Offen.
 | 2026-09-06 | Owner: Phönixfeuer streichen, neues Legendäres bauen — Wahl „Ewige Glut" (7.21, umgesetzt, Platz SK_FIRE_L02, Emblem bleibt): jede Runde mit voller Leiste am Ende +0,05 auf den Hitze-Multiplikator dauerhaft (Vorschlag 0,03, Sweep 0,03/0,05/0,08 zur Laufmitte 1,02/1,14/1,32 gepaart), die Hitze fällt nie unter 50 % der Spitze. Gemessen: Lift im reinen Feuer-Build 1,13 (Phönixfeuer 0,86), ab Runde 1 gepaart 1,57 (Mean 2,79), zur Laufmitte 1,14; Legendäre-Reihe +6 %; Duell Floor 1,25×, Mean 0,87×, p90 0,70×; gierig 125,0M, Ewige Glut neutral; Band im Rahmen. |
 | 2026-09-06 | Owner: „die offenen abarbeiten", „alle ja" (7.22, umgesetzt): Rückzündung als Konter (nach einer Niederlage zählt der nächste Sieg ×1,15/1,25/1,35/1,5, Episch +2 Wert; keine Hitze mehr); acht Episch-Extras (Reststrom Leiste 9, Gewitterfront +0,02× Crit-Mult je Leiste, Vorentladung 0,15, Kettenblitz zweittiefste +1, Blitzfänger +1 je Stapel, Kurzschluss Stapel-Score bei Niederlage → nächster Sieg, Zunder Niederlage +2 Hitze, Verbrennung ×1,5 auch auf Hitze); Durchschlag und Kurzschluss-Pick bleiben (Rauschen). Gemessen: Rückzündung von −31 % auf neutral, Verbrennung und Gewitterfront erstmals „stark"; Duell Floor 1,16×, Mean 0,82×, p90 0,63×; gierig 99,5M (Streuung ±20 % zwischen Läufen); Band im Rahmen. Messfehler gefunden: Lifts zu 90 % gehaltener Füller waren durch Legendär-Halter in der „ohne"-Gruppe verzerrt — Filter `NOLEG=1`, Schiedsrichter ist die gepaarte Ablation. |
 | 2026-09-06 | Owner aus dem Spiel: „Ladungsserie ist zu krass" (Serie 540, Crit 549 %), „Glut muss weg, dafür etwas mit hohen Kartenwerten und Formation" (7.23, umgesetzt): Ladungsserie ÷10 (0,1 / 0,15 / 0,2 / 0,25 % je Serienpunkt; gemessen ÷2, ÷4, ÷10 — ÷4 ließ sie Träger, +138 %; Serien in der Sim: Feuer mono Median 614), Feuerlinie ersetzt Glut auf SK_FIRE_01 (Formations-Sieg +2 / 3 / 4 / 5 % Score je Punkt Kampfwert, verbrennt 3 % Hitze, Episch je Formation; Vorschläge Brennglas und Flammenherd verworfen). Gemessen: Duell Floor 1,29×, Mean 0,86×, p90 0,71×; Motor Feuer vom Anschlag geholt (54 % → 31 % der Stiche); gierig 53,2M, Feuerlinie +15 % (zweitbester Feuer-Pick), Ladungsserie +28 % (Träger war +204 %); Band neu zentriert (4,05M / 5,91M). `pctS` auf zwei Nachkommastellen (0,15 stand als 0,2). Owner: Durchschlag und Rückzündung unterperformen — Vorschläge in 7.23 (Nachzündung; Durchschlag mit doppelter Chance und Ladung je Niederlage ohne Crit), nichts davon umgesetzt. |
+| 2026-09-06 | Owner: „die Niederlage-Bedingung umgehen" (7.24, umgesetzt): Überspannung verwertet den Überschuss über dem Crit-Deckel (je 4 / 3 / 2 / 1× über 8× +1 Ladung, Episch je 25 % Crit-Chance über 100 % +1 — gemessen: Crit über 100 % gibt es seit ÷10 fast nur in den Runden 41–50, der Deckel-Überschuss ist ein Vielfaches davon); Rückzündung im Takt (jeder 5. / 4. / 3. / 2. Sieg in Folge ×1,5, Episch kämpft die zündende Karte mit +2). Durchschlag-Vorschlag (Viertel über dem Deckel) „zu situativ" — drei neue Vorschläge (Lichtbogen, Kettenreaktion, Erdung), nichts umgesetzt. Gemessen: Feuer mono 14,2M, **Blitz mono 7,3M (−28 %)** — der Dauerwert je Leiste war die einzige Dauerwert-Quelle des Blitzes; Floor 1,93× (Mean 1,44×, p90 1,17×); Stapel-Score 125 nur 1,54×; Sonde Dauerwert als Passiv `SIM_ION_VALUE_PER_BAR` +1 → 13,0M, Floor 1,09× (Mean 0,71×, p90 0,55×) — Owner-Entscheid offen. Gierig 47,7M (Ø 10,5 Skills), Band im Rahmen. |

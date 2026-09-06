@@ -60,9 +60,9 @@ describe("Feuer — Roster und Stufenleitern", () => {
     for (const r of T.feuersturm) expect(r.perStreak).toBeUndefined(); // keine Hitze mehr
     expect(up(T.glutbett.slice(0, 3), "floor")).toBe(true);
     expect(T.glutbett[3].noCool).toBe(true);
-    expect(up(T.rueckzuendung, "mult")).toBe(true); // §7.22: Konter — der Faktor steigt, keine Hitze mehr
-    for (const r of T.rueckzuendung) expect(r.perDeficit).toBeUndefined();
-    expect(T.rueckzuendung[3].value).toBe(2); // Episch-Extra: die Karte nach einer Niederlage +2
+    expect(down(T.rueckzuendung, "every")).toBe(true); // §7.24: Takt — jeder N. Sieg in Folge, N sinkt mit der Stufe, der Faktor bleibt
+    for (const r of T.rueckzuendung) { expect(r.perDeficit).toBeUndefined(); expect(r.mult).toBe(T.rueckzuendung[0].mult); }
+    expect(T.rueckzuendung[3].value).toBe(2); // Episch-Extra: die zündende Karte +2
     expect(down(T.klinge, "perHeat")).toBe(true);
     expect(up(T.weissglut, "multPer10")).toBe(true);
     expect(down(T.feuerwalze, "minHeat")).toBe(true);
@@ -184,13 +184,16 @@ describe("Feuer — Modul (reine Übergänge)", () => {
     expect(verbrennungMult([F.VERBRENNUNG], {}, T.verbrennung[0].minMargin)).toBe(T.verbrennung[0].mult);
     expect(verbrennungMult([F.VERBRENNUNG], { [F.VERBRENNUNG]: 3 }, T.verbrennung[3].minMargin)).toBe(T.verbrennung[3].mult);
   });
-  it("rueckzuendungMult (§7.22, Konter): der erste Sieg nach einer Niederlage zählt ×mult der Stufe, sonst 1", () => {
-    expect(rueckzuendungMult([], {}, "loss")).toBe(1);
-    expect(rueckzuendungMult([F.RUECKZUENDUNG], {}, "loss")).toBe(T.rueckzuendung[0].mult);
-    expect(rueckzuendungMult([F.RUECKZUENDUNG], { [F.RUECKZUENDUNG]: 3 }, "loss")).toBe(T.rueckzuendung[3].mult);
-    expect(rueckzuendungMult([F.RUECKZUENDUNG], {}, "win")).toBe(1);
-    expect(rueckzuendungMult([F.RUECKZUENDUNG], {}, null)).toBe(1);
-    expect(T.rueckzuendung.map((r) => r.mult)).toEqual([...T.rueckzuendung.map((r) => r.mult)].sort((a, b) => a - b)); // die Leiter steigt
+  it("rueckzuendungMult (§7.24, Takt): jeder N. Sieg in Folge zählt ×mult der Stufe — Serie nach dem Sieg, sonst 1", () => {
+    const n = T.rueckzuendung[0].every;
+    expect(rueckzuendungMult([], {}, n)).toBe(1);
+    expect(rueckzuendungMult([F.RUECKZUENDUNG], {}, n)).toBe(T.rueckzuendung[0].mult);
+    expect(rueckzuendungMult([F.RUECKZUENDUNG], {}, 2 * n)).toBe(T.rueckzuendung[0].mult);
+    expect(rueckzuendungMult([F.RUECKZUENDUNG], {}, n - 1)).toBe(1);
+    expect(rueckzuendungMult([F.RUECKZUENDUNG], {}, n + 1)).toBe(1);
+    expect(rueckzuendungMult([F.RUECKZUENDUNG], {}, 0)).toBe(1);
+    expect(rueckzuendungMult([F.RUECKZUENDUNG], { [F.RUECKZUENDUNG]: 3 }, T.rueckzuendung[3].every)).toBe(T.rueckzuendung[3].mult);
+    expect(rueckzuendungMult([F.RUECKZUENDUNG], { [F.RUECKZUENDUNG]: 3 }, 1)).toBe(1);
   });
   it("fireValueBonus: Klinge je Schritt, Feuerwalze nach Sieg (Episch auch nach Niederlage), Rückzündung Episch", () => {
     expect(fireValueBonus(heat({ value: 80 }), [F.KLINGE], {}, {})).toBe(2);
@@ -200,8 +203,10 @@ describe("Feuer — Modul (reine Übergänge)", () => {
     expect(fireValueBonus(heat({ value: 79 }), [F.FEUERWALZE], {}, { lastResult: "win" })).toBe(0);
     expect(fireValueBonus(heat({ value: 80 }), [F.FEUERWALZE], {}, { lastResult: "loss" })).toBe(0);
     expect(fireValueBonus(heat({ value: 20 }), [F.FEUERWALZE], { [F.FEUERWALZE]: 3 }, { lastResult: "loss" })).toBe(T.feuerwalze[3].value);
-    expect(fireValueBonus(heat({ value: 0 }), [F.RUECKZUENDUNG], { [F.RUECKZUENDUNG]: 3 }, { lastResult: "loss" })).toBe(T.rueckzuendung[3].value);
-    expect(fireValueBonus(heat({ value: 0 }), [F.RUECKZUENDUNG], {}, { lastResult: "loss" })).toBe(0);
+    // §7.24 Rückzündung Episch: die zündende Karte — wäre dieser Stich der N. Sieg in Folge, kämpft sie mit +2; nur Episch.
+    expect(fireValueBonus(heat({ value: 0 }), [F.RUECKZUENDUNG], { [F.RUECKZUENDUNG]: 3 }, { winStreak: T.rueckzuendung[3].every - 1 })).toBe(T.rueckzuendung[3].value);
+    expect(fireValueBonus(heat({ value: 0 }), [F.RUECKZUENDUNG], { [F.RUECKZUENDUNG]: 3 }, { winStreak: T.rueckzuendung[3].every })).toBe(0);
+    expect(fireValueBonus(heat({ value: 0 }), [F.RUECKZUENDUNG], {}, { winStreak: T.rueckzuendung[0].every - 1 })).toBe(0);
     expect(fireValueBonus(null, [F.KLINGE], {}, {})).toBe(0);
   });
   it("damascusCombat: Schmiedewert zählt im Kampf doppelt, nur mit Damaststahl", () => {
@@ -379,12 +384,14 @@ describe("Feuer — Engine-Integration", () => {
     expect(big.lastTrick.breakdown.fireMult).toBeCloseTo(T.verbrennung[0].mult * heatMult([], {}, 6), 6);
     expect(small.lastTrick.breakdown.fireMult).toBeCloseTo(heatMult([], {}, 5), 6);
   });
-  it("Rückzündung in der Engine (§7.22): der erste Sieg nach einer Niederlage zählt ×mult im Feuer-Faktor, nach einem Sieg nicht", () => {
-    const after = resolveTrick(scen(12, 6, { skills: [F.RUECKZUENDUNG], skillTiers: { [F.RUECKZUENDUNG]: 1 }, heat: heat({ value: 50 }), lastResult: "loss" }), noCrit);
-    expect(after.lastTrick.breakdown.fireMult).toBeCloseTo(heatMult([], {}, 50 + G(6)) * T.rueckzuendung[1].mult, 6);
-    expect(after.heat.value).toBe(50 + G(6)); // keine Hitze aus der Rückzündung mehr
-    const plain = resolveTrick(scen(12, 6, { skills: [F.RUECKZUENDUNG], skillTiers: { [F.RUECKZUENDUNG]: 1 }, heat: heat({ value: 50 }), lastResult: "win" }), noCrit);
-    expect(plain.lastTrick.breakdown.fireMult).toBeCloseTo(heatMult([], {}, 50 + G(6)), 6);
+  it("Rückzündung in der Engine (§7.24, Takt): der N. Sieg in Folge zählt ×mult im Feuer-Faktor, die anderen nicht", () => {
+    const n = T.rueckzuendung[1].every;
+    const hit = resolveTrick(scen(12, 6, { skills: [F.RUECKZUENDUNG], skillTiers: { [F.RUECKZUENDUNG]: 1 }, heat: heat({ value: 50 }), winStreak: n - 1 }), noCrit);
+    expect(hit.winStreak).toBe(n);
+    expect(hit.lastTrick.breakdown.fireMult).toBeCloseTo(heatMult([], {}, 50 + G(6)) * T.rueckzuendung[1].mult, 6);
+    expect(hit.heat.value).toBe(50 + G(6)); // keine Hitze aus der Rückzündung
+    const miss = resolveTrick(scen(12, 6, { skills: [F.RUECKZUENDUNG], skillTiers: { [F.RUECKZUENDUNG]: 1 }, heat: heat({ value: 50 }), winStreak: n }), noCrit);
+    expect(miss.lastTrick.breakdown.fireMult).toBeCloseTo(heatMult([], {}, 50 + G(6)), 6);
   });
   it("Feuersturm in der Engine (§7.17): bei voller Leiste steht die Serie nach dem Sieg im Feuer-Faktor, darunter nicht", () => {
     // winStreak 5 vor dem Stich → Serie 6 nach dem Sieg (die Engine liest die effektive Serie NACH dem Sieg, wie der Serien-Mult).
@@ -412,14 +419,15 @@ describe("Feuer — Engine-Integration", () => {
     const paid = resolveTrick(scen(12, 6, { skills: [F.SCHMELZPUNKT], skillTiers: { [F.SCHMELZPUNKT]: 3 }, heat: heat({ value: 100 - C.HEAT_LOSS, meltPending: C.HEAT_LOSS }) }), noCrit);
     expect(paid.lastTrick.breakdown.flats).toBe(C.HEAT_LOSS * T.schmelzpunkt[3].perPoint); expect(paid.heat.meltPending).toBe(0);
   });
-  it("Glühende Klinge und Feuerwalze heben den Kampfwert; Rückzündung Episch nach einer Niederlage", () => {
+  it("Glühende Klinge und Feuerwalze heben den Kampfwert; Rückzündung Episch auf dem zündenden Stich", () => {
     const k = resolveTrick(scen(5, 6, { skills: [F.KLINGE], skillTiers: { [F.KLINGE]: 1 }, heat: heat({ value: 60 }) }), noCrit);
     expect(k.lastTrick.pValue).toBe(5 + 2);
     expect(k.lastTrick.result).toBe("win");
     const fw = resolveTrick(scen(5, 6, { skills: [F.FEUERWALZE], heat: heat({ value: 80 }), lastResult: "win" }), noCrit);
     expect(fw.lastTrick.pValue).toBe(5 + T.feuerwalze[0].value);
-    const rz = resolveTrick(scen(5, 6, { skills: [F.RUECKZUENDUNG], skillTiers: { [F.RUECKZUENDUNG]: 3 }, heat: heat({ value: 0 }), lastResult: "loss" }), noCrit);
+    const rz = resolveTrick(scen(5, 6, { skills: [F.RUECKZUENDUNG], skillTiers: { [F.RUECKZUENDUNG]: 3 }, heat: heat({ value: 0 }), winStreak: T.rueckzuendung[3].every - 1 }), noCrit); // §7.24: die zündende Karte
     expect(rz.lastTrick.pValue).toBe(5 + T.rueckzuendung[3].value);
+    expect(resolveTrick(scen(5, 6, { skills: [F.RUECKZUENDUNG], skillTiers: { [F.RUECKZUENDUNG]: 3 }, heat: heat({ value: 0 }), winStreak: T.rueckzuendung[3].every }), noCrit).lastTrick.pValue).toBe(5);
   });
   it("Glutstahl zahlt je Punkt Kampfwert über dem Grundwert, egal woher (hier: Klinge)", () => {
     const s = resolveTrick(scen(12, 6, { skills: [F.GLUTSTAHL, F.KLINGE], heat: heat({ value: 80 }) }), noCrit);

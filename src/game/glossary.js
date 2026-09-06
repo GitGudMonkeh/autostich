@@ -240,7 +240,7 @@ export const GLOSSARY = {
     text: `Eine Ionisierung auf einer einzelnen Karte, ohne Deckel. Jeder Stapel gibt bei Sieg mit der Karte +${C.ION_SCORE_PER_STACK} Score und +${de(C.ION_CRIT_MULT_PER_STACK)}× Crit-Multiplikator; Jede ionisierte Karte kämpft mit Blitzfänger stärker, Kurzschluss zählt tiefe Stapel doppelt, Kettenblitz vertieft die tiefste Karte.`,
     match: ["Ionisierungsstapel", "Ionisierungsstapeln", "Stapel", "Stapeln"] },
   kaskade: { category: "frak", group: "gen", label: "Kaskade", icon: "⇶", color: CLR.lightning,
-    text: "Ein Ereignis zündet das nächste. Bei Blitz: ein Crit mit einer ionisierten Karte erzeugt zusätzliche Ladung (Überspannung). Bei Eis: ein berstender Gletscher reißt seine Nachbarn mit, sodass eine Bruchwelle durchs Cluster läuft.",
+    text: `Ein Ereignis zündet das nächste. Bei Blitz: was ein Crit über dem ${C.CRIT_MULT_CAP}×-Deckel hat, wird Ladung (Überspannung). Bei Eis: ein berstender Gletscher reißt seine Nachbarn mit, sodass eine Bruchwelle durchs Cluster läuft.`,
     match: ["Kaskade", "Kaskaden"] },
 
   /* ============ 4 · Eis ============ */

@@ -343,7 +343,7 @@ export function resolveTrick(state, rng) {
   //      gespielten Karte — Glühende Klinge (je Hitze-Schritt), Feuerwalze (ab der Schwelle nach einem Sieg, Episch auch
   //      nach einer Niederlage), Rückzündung Episch (nach einer Niederlage). Alles im Modul.
   let heat = syncHeatMax(state.heat || null, skills);
-  const fireValue = fireValueBonus(heat, skills, skillTiers, { lastResult });
+  const fireValue = fireValueBonus(heat, skills, skillTiers, { lastResult, winStreak }); // §7.24: Rückzündung Episch liest die Serie (die zündende Karte)
   // Blitzfänger (exp skill rework): ionisierte Karten kämpfen mit +Wert; Ionenfeld (§7.18): solange das Feld trägt, alle
   // Karten. Beides Zustand vor dem Stich, kein Ereignis.
   const blitzValueBonus = blitzfaengerValue(skills, skillTiers, pCard) + ionenfeldValue(state.lightning, skills, skillTiers);
@@ -439,7 +439,7 @@ export function resolveTrick(state, rng) {
   }
 
   let gained = 0;
-  let isCrit = false, critChance = 0, critMultiplier = C.CRIT_BASE_MULT, scoreBeforeCrit = 0, critBonus = 0;
+  let isCrit = false, critChance = 0, critMultiplier = C.CRIT_BASE_MULT, critMultRaw = C.CRIT_BASE_MULT, scoreBeforeCrit = 0, critBonus = 0;
   // Eis-Neudesign: der Gletscher-Bruch profitiert vom VOLLEN Sieg-Stack, WENN die Gletscher-Karte ihren Stich gewinnt
   // (Serie × Perk/Familie × Formation × Nachhall × Kern × Sonnenzorn × Architekt × Crit). Bei Niederlage bleibt es ×1
   // (Basis-Burst). So hat der Rest des Spiels Hebel auf den Gletscher-Score, statt dass nur Gletscher-Skills zählen.
@@ -650,6 +650,8 @@ export function resolveTrick(state, rng) {
         && critFillsBar(lightning, skills, skillTiers, { streak: serieStreak })) critMultiplier *= 2;
     // BACKSTOP (Crit-Bändigung): der fertige Crit-Multiplikator wird hart gedeckelt — bewusst NACH allen Additionen,
     // damit keine Quelle (auch keine offene Rampe) ihn umgehen kann. Der Owner hält den Deckel (docs/skill-rework.md §1).
+    // §7.24 Überspannung liest den ungedeckelten Wert: der Überschuss über dem Deckel wird Ladung (chargeGainOnWin unten).
+    critMultRaw = critMultiplier;
     critMultiplier = Math.min(critMultiplier, C.CRIT_MULT_CAP);
     isCrit = rollCrit(critChance, forceCrit || durchschlag, rngAtOr(cycle, "crit", pos)) && !reducedRepeat; // #205 Glückslandschaft: fester Wurf je (cycle,pos); forceCrit = Henker; durchschlag = gewonnene Niederlage (Blitz-L); reducedRepeat = Zeitsegment III
     // Score (globale Formel): additive Boni — inkl. Crit-only-Flats (Blitzableiter +50) — fließen in die BASIS
@@ -741,7 +743,7 @@ export function resolveTrick(state, rng) {
     const fireMult = (heat && heat.active)
       ? heatMult(skills, skillTiers, fireHeld, heat.peak, heat.emberMult) * verbrennungMult(skills, skillTiers, pValue - oValue)
         * feuersturmMult(skills, skillTiers, fireHeld, heat.max || C.HEAT_MAX, serieStreak) // §7.17: Feuersturm, Serie zu Score bei voller Leiste
-        * rueckzuendungMult(skills, skillTiers, lastResult) // §7.22: Rückzündung, der Konter nach einer Niederlage
+        * rueckzuendungMult(skills, skillTiers, serieStreak) // §7.24: Rückzündung, der Takt — jeder N. Sieg in Folge (Serie nach dem Sieg)
         * fireLineMult : 1; // §7.23: Feuerlinie, je Punkt Kampfwert im Formations-Sieg (fireOnWin oben, samt Hitzekosten)
     // architectMult (#202, Architekt-Score-Gebäude: Struktur/Schatzkammer) läuft als eigener Faktor am Ende des Stacks.
     // #Pool Batch 4 (gamble/Risiko): Boden — der Architekt-Abzug (negativer Flat) darf den Stich höchstens auf 0 drücken,
@@ -828,11 +830,11 @@ export function resolveTrick(state, rng) {
     // + Direkt-Anteile = total. Ohne diese beiden blieb ein unerklärter Rest stehen. Reine Anzeige-Daten.
     breakdown = { base: C.SCORE_PER_WIN, flats, streakFlat: architectStreakFlat, streakMult, perkMult, fireMult, formMult, formBase: formBaseEff, afterglowMult, coreMult, architectMult, critMult: isCrit ? critMultiplier : 1, strikeMult, fireDirect: fireDirectApplied, lightDirect, plantDirect, perkDirect, total: gained };
     // Blitz (exp skill rework, §3): Ladungsgewinn dieses Siegs — Passiv (+1 je Crit), Blitzableiter (§7.18: auch je Sieg
-    // ohne Crit auf Episch), Überspannung, Ladungsserie Episch — mit fortgeschriebenen Zählern; Blitzschlag (jeder N. Crit
-    // ionisiert die Siegkarte); Spannungsstau. Die volle Leiste zündet NACH der Verzweigung (unten), einmal je Stich.
-    // Kein Selbstwachstum ionisierter Siegkarten mehr (Lesart A).
+    // ohne Crit auf Episch), Überspannung (§7.24: der Überschuss über dem Crit-Deckel und über 100 % Chance), Ladungsserie
+    // Episch — mit fortgeschriebenen Zählern; Blitzschlag (jeder N. Crit ionisiert die Siegkarte); Spannungsstau. Die volle
+    // Leiste zündet NACH der Verzweigung (unten), einmal je Stich. Kein Selbstwachstum ionisierter Siegkarten mehr (Lesart A).
     if (lightning && lightning.active) {
-      const { gain, next } = chargeGainOnWin(lightning, skills, skillTiers, { isCrit, streak: serieStreak, card: pCard });
+      const { gain, next } = chargeGainOnWin(lightning, skills, skillTiers, { isCrit, streak: serieStreak, card: pCard, critMultRaw, rawCrit });
       lightning = { ...next, charge: (next.charge || 0) + gain };
       if (isCrit) {
         const bs = blitzschlagStacks(lightning, skills, skillTiers);

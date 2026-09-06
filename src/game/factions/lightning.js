@@ -14,8 +14,8 @@ import { SKILL_DEFS, TIER_EPIC, activeLightningCount, isLegendarySkill } from ".
    Stufe. Alle Funktionen sind immutabel: sie geben neue Objekte zurück und fassen ihre Eingaben nicht an.
    §7.18 (Blitz-Runde): Statische Aufladung und Dauerstrom sind in Blitzableiter aufgegangen, Ionenfeld (SK_LIGHTNING_02)
    und Vorentladung (SK_LIGHTNING_12) sind neu, Kettenblitz vertieft statt verbreitert, Blitzfänger hat keine Stapel-
-   Schwelle mehr, der Spannungsstau geht in den Crit-Multiplikator. §7.19: Überspannung ist Dauerwert je Leiste (die
-   Schmiede des Blitzes), Überschlag ist gestrichen (14 Skills).
+   Schwelle mehr, der Spannungsstau geht in den Crit-Multiplikator. §7.19: Überschlag ist gestrichen (14 Skills). §7.24:
+   Überspannung macht den Überschuss eines Crits über dem Deckel zu Ladung (vorher Dauerwert je Leiste).
    ============================================================ */
 
 // Skill-IDs der Fraktion — lesbare Namen für Modul und Engine. (SK_LIGHTNING_08 Statische Aufladung und SK_LIGHTNING_16
@@ -135,11 +135,13 @@ export function ionCritMultFor(card, skills = [], skillTiers = {}) {
 }
 
 /* Ladungsgewinn eines gewonnenen Stichs und die fortgeschriebenen Zähler. `streak` = Serie NACH diesem Sieg.
-   Crit: +1 Passiv, Blitzableiter (jeder N. Crit +1). Sieg ohne Crit: Blitzableiter Episch (+1). Immer: Ladungsserie
-   Episch (ab Serie 8 +1). (Überspannung gibt seit §7.19 keine Ladung mehr — sie ist Dauerwert je Leiste, fillBar.)
-   Deterministisch und ohne Nebenwirkung — die Engine ruft es für die Vorschau (füllt ein Crit die Leiste?) und dann
-   für den echten Stich mit denselben Eingaben. */
-export function chargeGainOnWin(lightning, skills, skillTiers, { isCrit, streak = 0 } = {}) {
+   Crit: +1 Passiv, Blitzableiter (jeder N. Crit +1), Überspannung (§7.24: der Überschuss des Crits über dem Deckel
+   wird Ladung — je perOver× über CRIT_MULT_CAP +1; Episch dazu je chancePer Crit-Chance über 100 % +1; liest den
+   UNGEDECKELTEN Multiplikator `critMultRaw` und die rohe Crit-Chance `rawCrit`). Sieg ohne Crit: Blitzableiter Episch
+   (+1). Immer: Ladungsserie Episch (ab Serie 8 +1). Deterministisch und ohne Nebenwirkung — die Engine ruft es für die
+   Vorschau (füllt ein Crit die Leiste? critFillsBar, dort ohne Überspannung: der Multiplikator steht erst danach fest)
+   und dann für den echten Stich. */
+export function chargeGainOnWin(lightning, skills, skillTiers, { isCrit, streak = 0, critMultRaw = 0, rawCrit = 0 } = {}) {
   let gain = 0;
   const next = { ...lightning };
   if (isCrit) {
@@ -147,6 +149,10 @@ export function chargeGainOnWin(lightning, skills, skillTiers, { isCrit, streak 
     gain += 1;
     const every = lightParam(skills, skillTiers, L.ABLEITER, "critEvery");
     if (every && next.critCount % every === 0) gain += 1;
+    const perOver = lightParam(skills, skillTiers, L.UEBERSPANNUNG, "perOver");
+    if (perOver) gain += Math.floor(Math.max(0, (critMultRaw || 0) - C.CRIT_MULT_CAP) / perOver + 1e-9);
+    const chancePer = lightParam(skills, skillTiers, L.UEBERSPANNUNG, "chancePer");
+    if (chancePer) gain += Math.floor(Math.max(0, (rawCrit || 0) - 1) / chancePer + 1e-9);
   } else {
     gain += lightParam(skills, skillTiers, L.ABLEITER, "noCritCharge") || 0;
   }
@@ -227,9 +233,9 @@ export function fillBar(lightning, skills, skillTiers, deck, playerOrder, actual
   let newDeck = deck;
   if (n > 0) {
     const di = playerOrder[(actualPos + 1) % n];
-    // Überspannung (§7.19): die Karte, die die Leiste ionisiert, erhält dauerhaft +Wert der Stufe (gebacken wie die Schmiede).
-    const uv = lightParam(skills, skillTiers, L.UEBERSPANNUNG, "value") || 0;
-    newDeck = newDeck.map((c, i) => (i === di ? { ...c, ionStacks: (c.ionStacks || 0) + per, value: c.value + uv } : c));
+    // (§7.24: Überspannung backt keinen Dauerwert mehr — sie ist Überschuss zu Ladung, chargeGainOnWin. ION_VALUE_PER_BAR
+    // ist die Sim-Sonde für den Dauerwert als Passiv, Default 0.)
+    newDeck = newDeck.map((c, i) => (i === di ? { ...c, ionStacks: (c.ionStacks || 0) + per, value: c.value + C.ION_VALUE_PER_BAR } : c));
     stacks += per; targets.push(di);
   }
   const kbEvery = lightParam(skills, skillTiers, L.KETTENBLITZ, "barEvery");
