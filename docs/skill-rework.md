@@ -2749,6 +2749,18 @@ Band unverändert (Zufallsspieler 5,64M / 9,19M).
 Donnergott −16 %. In dieser Reihe zahlt ein Feuer-Legendäres höchstens den Pick zurück (der Build ist Blitz-lastig);
 Phönixfeuer stand hier bei −15 %.
 
+**Gierig mit diesem Stand** (1000 Explore, 150 Läufe): Median **125,0M** (7.20: 107,3M), Siegquote 72 %, Ø 12,5
+Skills. Ewige Glut in 12 % gehalten, Lift 1,10, Ablation ±0 — im gemischten Build ein neutraler Pick, kein Schaden
+(Phönixfeuer: in 5 %, −9 %). Träger: Ladungsserie (+242 % typisch), Damaststahl (+166 %, in 13 %), Sonnenkern
+(+121 %), Klinge (+101 %), Hochspannung (+43 %), Doppelentladung (+44 %), Feuersturm (+33 %), Weißglut (+24 %).
+Schadet: Glut, Spannungsstau, Überspannung (−2 %), Glutbett, Gewitterfront. Sonnenzorn diesmal in 1 % (7.20: 19 %)
+— die Wertetabelle des Explore streut bei Legendären von Lauf zu Lauf, die Lifts im reinen Build sind der stabilere
+Blick.
+
+**Fazit:** Ewige Glut trägt dort, wo ein Feuer-Legendäres tragen kann — im Feuer-Build (Lift 1,13, ab Runde 1 1,57)
+— und kostet nirgends. Das war mit Phönixfeuer in keiner Fassung zu haben. Offen aus 7.20 bleiben Durchschlag am
+8×-Deckel, Rückzündung, Glutbett (Owner: lassen), Kurzschluss als Pick und die Stufenleitern.
+
 ## 5. Eis
 
 Offen.
@@ -2798,3 +2810,4 @@ Offen.
 | 2026-09-06 | Owner: ja zu Feuersturm-Tor 90 % und zum Blitz-Plan (7.18, umgesetzt): Blitzableiter nimmt Statische Aufladung und Dauerstrom auf (beide gestrichen); Ionenfeld (02, Feld nach jeder Leiste) und Vorentladung (12, Serie zu Crit-Multiplikator) neu auf den alten Emblem-Plätzen; Kettenblitz vertieft, Blitzfänger und Überspannung ohne Schwelle, Blitzschlag schneller, Spannungsstau auf den Crit-Multiplikator. Blitz mono 7,2M → 11,0M, Floor 1,86× → 1,22× (Mean 0,89×, p90 0,79×); der 8×-Deckel bindet bei einem Zehntel der Crits. Stapel-Score bleibt 75 (Sweep 60/75/90: Median gegen Schwanz). Gierig 71,6M, Blitz-lastig; die umgebauten Skills sind Füller (gehalten, neutral), Träger unverändert. Offene Liste in 7.18. |
 | 2026-09-06 | Owner: „passt, alles" zu den 7.18-Empfehlungen (7.19, umgesetzt): Ionenfeld 3/3/4/5, Kettenblitz jede Leiste +1/2/3/4, Überspannung als Dauerwert je Leiste (+1/1/2/3, keine Ladung), Überschlag gestrichen (Blitz 14), Crit-Deckel 8 → 12; Sonnenzorn liest die Spitze bis 200, Phönixfeuer +3 je Punkt und hält bei voller Leiste die erste Niederlage je Runde. Gemessen: die Parität kippt — Blitz mono 11,0M → 17,9M, Floor 0,76× (Mean 0,49×, p90 0,43×); der Dauerwert trägt den Median-Sprung, Ionenfeld den zweiten Teil, Deckel und Kettenblitz-Tiefe den Schwanz. Gierig 155,9M (verdoppelt; der Deckel trägt davon ein Fünftel, der Rest hängt am gemischten Build, nicht an einem Skill; die Füller bleiben Füller); Legendäre zur Laufmitte messen die Fraktionswahl; Lifts im Feuer-Build Sonnenzorn 0,83 → 0,94, Phönixfeuer 0,84 → 0,87. Sim-Band neu zentriert. Vorschlag: Ionenfeld 2/3/4/5, Deckel zurück auf 8, Kettenblitz +1/1/2/3 (Floor 1,09×, Mean 0,81×, p90 0,70×). Nichts davon umgesetzt. |
 | 2026-09-06 | Owner: Raritäten unterscheiden sich immer (§1); „ja zu allem" (7.20, umgesetzt): Ionenfeld 2/3/4/5, Überspannung 1/2/3/4, Deckel zurück auf 8; Donnergott zahlt je Stapel +0,25× statt flach +0,4×; Phönixfeuer wandelt den Überlauf aus Niederlagen (+30 je Punkt beim nächsten Sieg); Sonnenzorn +5 % je 10 % Spitze und Siege heizen ×2 unter der Spitze; Hochspannung und Glutbett bleiben. Gemessen: Parität zurück (Floor 1,23×, Mean 0,80×, p90 0,61× — Stand 7.18), Motor Blitz 12,7M / 22,5M / 21,5M, Band im Rahmen. Legendäre zur Laufmitte: Sonnenzorn erstmals positiv (+12 %), Phönixfeuer −15 %, Donnergott −19 % (Pick-Kosten im gemischten Build; im reinen Blitz-Build 2,57). Gierig 107,3M; Donnergott (25 %) und Sonnenzorn (19 %) werden jetzt genommen und sind neutral. Phönix-Sonde: der Überlauf trägt ~400 Hitzepunkte je Lauf, der Satz ändert nichts (bleibt 30) — Owner-Frage in 7.20. |
+| 2026-09-06 | Owner: Phönixfeuer streichen, neues Legendäres bauen — Wahl „Ewige Glut" (7.21, umgesetzt, Platz SK_FIRE_L02, Emblem bleibt): jede Runde mit voller Leiste am Ende +0,05 auf den Hitze-Multiplikator dauerhaft (Vorschlag 0,03, Sweep 0,03/0,05/0,08 zur Laufmitte 1,02/1,14/1,32 gepaart), die Hitze fällt nie unter 50 % der Spitze. Gemessen: Lift im reinen Feuer-Build 1,13 (Phönixfeuer 0,86), ab Runde 1 gepaart 1,57 (Mean 2,79), zur Laufmitte 1,14; Legendäre-Reihe +6 %; Duell Floor 1,25×, Mean 0,87×, p90 0,70×; gierig 125,0M, Ewige Glut neutral; Band im Rahmen. |
