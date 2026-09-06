@@ -22,6 +22,9 @@ und gilt erst, wenn es nach Gesetzt wandert.
 - **Passive werden überarbeitet**, je Fraktion vor den Skills.
 - **Direkt-Score wird aus den Skills nach Möglichkeit entfernt.** Er ist im Late Game bedeutungslos.
   Fraktions-Score geht in die Basis, vor die Multiplikatoren.
+- **Raritäten unterscheiden sich immer.** Zwei Stufen desselben Skills dürfen nie dieselben Werte haben
+  (Owner, 2026-09-06); eine Leiter wie +1 / 1 / 2 / 3 ist keine. Prüfung: `BLITZ_TIERS` / `FEUER_TIERS`
+  Zeile für Zeile — Stand 7.19 verletzt es nur Überspannung (Normal = Selten), Vorschlag in 7.19.
 - **Keine Deckel auf Skill-Rampen, lieber niedrigere Werte.** Rampen laufen offen; die Zahl je Schritt
   ist der Regler. Der harte Deckel des fertigen Crit-Multiplikators in der Engine (12× seit 7.19, vorher
   8×) ist davon nicht berührt, er bleibt, bis der Owner anderes sagt.
@@ -2510,8 +2513,14 @@ je eine Änderung der Runde zurückgedreht (Feuer mono bleibt 13,6M):
 | Ionenfeld 2 / 3 / 4 / 5 + Crit-Deckel 8× | 12,5M | 1,09× | 0,72× | 0,68× |
 | Ionenfeld 2 / 3 / 4 / 5 + Überspannung 0 / 1 / 1 / 2 | 12,3M | 1,11× | 0,64× | 0,57× |
 | Ionenfeld 2 / 3 / 4 / 5 + Kettenblitz +1 / 1 / 2 / 3 + 0,1× je Stapel | 12,4M | 1,10× | 0,68× | 0,57× |
-| **Ionenfeld 2 / 3 / 4 / 5 + Kettenblitz +1 / 1 / 2 / 3 + Crit-Deckel 8×** | 12,5M | **1,09×** | **0,81×** | **0,70×** |
+| Ionenfeld 2 / 3 / 4 / 5 + Kettenblitz +1 / 1 / 2 / 3 + Crit-Deckel 8× | 12,5M | 1,09× | 0,81× | 0,70× |
+| Ionenfeld 2 / 3 / 4 / 5 + Kettenblitz wie 7.18 + Crit-Deckel 8× | 11,9M | 1,14× | 0,83× | 0,72× |
+| **Ionenfeld 2 / 3 / 4 / 5 + Überspannung 1 / 2 / 3 / 4 + Crit-Deckel 8×** (Kettenblitz bleibt +1 / 2 / 3 / 4) | 11,1M | **1,23×** | **0,79×** | **0,63×** |
 | zum Vergleich 7.18 | 10,95M | 1,22× | 0,89× | 0,79× |
+
+Owner-Regel dazu (2026-09-06, §1): Raritäten dürfen nie dieselben Werte haben — Kettenblitz +1 / 1 / 2 / 3 fällt damit
+weg, und Überspannung 1 / 1 / 2 / 3 (Normal = Selten) muss ohnehin auf 1 / 2 / 3 / 4. Der Vorschlag ist deshalb die
+letzte fette Zeile: Ionenfeld 2 / 3 / 4 / 5, Überspannung 1 / 2 / 3 / 4, Deckel 8×, Kettenblitz unverändert.
 
 Der Dauerwert der Überspannung trägt den ganzen Median-Sprung (ohne ihn steht Blitz mono wieder bei 11,0M — die
 Schmiede des Blitzes ist so stark wie die des Feuers, nur ohne Schwelle: 84 Leisten je Lauf sind 84 Schmiedungen),
