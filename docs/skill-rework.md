@@ -2336,6 +2336,15 @@ Offen daran: das Episch-Extra „ab 80 %" ist ein weites Tor — Episch 2,06 geg
 die volle Leiste (mit Weißglut 200) selten. Vorschlag: Episch ab 90 % statt 80 %, oder so lassen (Episch darf sehr
 stark sein). Owner-Entscheid.
 
+**Gierig mit diesem Stand** (1000 Explore, 150 Läufe): Median 71,5M (7.15: 48,6M; der Runaway in 7.16: 125M),
+Siegquote 73 %, Ø 12,5 Skills. Feuersturm ist ein normaler Pick (in 24 %, +6 %; Episch-Lift 1,65), Schmelzpunkt
+ebenso (17 %, +12 %). Träger: Ladungsserie (91 %, +138 %), Sonnenkern (29 %, +100 %), Doppelentladung (30 %, +89 %),
+Klinge (75 %, +32 %), neu Donnergott (12 %, +116 %) und Damaststahl (19 %, +27 %). Tot: Entladung, Dauerstrom, Brandmal,
+Statische Aufladung, Reststrom, Lauffeuer, Blitzschlag, Feuerwalze; schadet: Spannungsstau, Überschlag, Überspannung,
+Zunder, Glut, Glutstahl, Glutbett, Rückzündung, Schmiede, Serienschutz. Die Feuer-Verstärker (Glut, Zunder,
+Rückzündung) und Glutbett kosten den gierigen Spieler weiter — mit 50 Runden ist der Kaltstart kurz, danach tun sie
+nichts.
+
 **Parität, Stand danach:** Floor 1,86×, Mean 1,12×, p90 0,96× — der Median ist Feuers, der Schwanz gehört Blitz. Wie in
 7.16 festgehalten: erst die Blitz-Runde, dann der Stapel-Score.
 
