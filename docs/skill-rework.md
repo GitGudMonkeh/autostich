@@ -2787,6 +2787,30 @@ und Weißglut sind auf Episch schon stark und bleiben):
 | Zunder | auch jede Niederlage +2 % Hitze | `lossHeat: 2`, nach Kühlung und Böden |
 | Verbrennung | der Faktor ×1,5 zählt auch auf den Hitzegewinn | `heatToo`, in `heatGainOnWin` |
 
+**Messung.** Duell (100 Läufe): Feuer mono 13,6M, Blitz mono 11,7M (7.21: 11,1M — Reststrom Episch mit Leiste 9 und
+die Extras heben den Blitz-Median leicht); Floor 1,16×, Mean 0,82×, p90 0,63× (7.21: 1,25× / 0,87× / 0,70×). Band
+unverändert (Zufallsspieler 5,48M / 8,95M). Legendäre zur Laufmitte (Basis 74,8M): Sonnenkern +172 %, Doppelentladung
++54 %, Damaststahl +29 %, Ewige Glut +18 %, Durchschlag +13 %, Sonnenzorn −9 %, Hochspannung −12 %, Donnergott −11 %
+— dieselbe Streuung von ±15 Punkten zwischen zwei Läufen wie zuvor.
+
+**Ein Messfehler in den Lift-Reihen.** Die Lifts (mit ÷ ohne, Fraktions-Policy) hatten bis hier eine „ohne"-Gruppe,
+die mit Legendär-Haltern angereichert war: wer ein Legendäres nahm, hielt einen normalen Skill weniger, und Sonnenkern
+allein verdoppelt den Lauf — deshalb maß jeder Füller 0,85 bis 0,95, ohne zu schaden, und daraus wurden „Fallen". Mit
+Filter (`NOLEG=1`, nur Läufe ohne Legendäres, 240 von 400) lesen sich die Feuer-Lifts so: Klinge 2,80, Weißglut 1,71,
+Feuersturm 1,25, Lauffeuer 1,16, Schmelzpunkt 1,00, Feuerwalze 0,98, Brandmal 0,98, Glutstahl 0,94, Verbrennung 0,92,
+Glut 0,91, Rückzündung 0,87, Zunder 0,84, Glutbett 0,73, Schmiede 0,72. Aber auch das trägt nicht weit: die
+„ohne"-Gruppe eines zu 90 % gehaltenen Skills sind dann 20 bis 40 Läufe — Schmiede 0,72 ist Rauschen, kein Befund
+(Dauerwert kann nicht schaden). **Die Lifts taugen für Legendäre (in 8–15 % gehalten) und mit Vorsicht für
+Stufenvergleiche; der Schiedsrichter für „schadet" ist die gepaarte Ablation des gierigen Spielers.** Frühere
+Lift-Urteile über Füller (7.16 ff.) sind entsprechend zu lesen.
+
+Die Episch-Extras in den ungefilterten Lifts (Episch gegen Normal derselben Reihe): Feuer — Zunder 1,10 gegen 0,85,
+Verbrennung 1,10 gegen 0,94, Rückzündung 0,89 gegen 0,86; Blitz — Reststrom 3,22 gegen 0,99, Gewitterfront 2,01 gegen
+1,32, Kettenblitz 1,22 gegen 0,88, Blitzfänger 0,92 gegen 0,41, Vorentladung 0,57 gegen 0,59, Kurzschluss 0,41 gegen
+0,57. Reststrom Episch (Leiste 9) ist damit das stärkste Episch im Blitz-Build; Vorentladung und Kurzschluss zeigen
+auf Episch nichts — beide hängen am 8×-Deckel (Vorentladung 0,15 je Serienpunkt ist bei Serie 20 +3×, der Deckel
+bindet den Stapel-Build in einem Viertel seiner Crits).
+
 ## 5. Eis
 
 Offen.
