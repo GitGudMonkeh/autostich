@@ -25,6 +25,10 @@ import { randomPolicy } from "../sim/policies/random.js";
 // Mean ≈ 1,34M (Seeds 1..200: 1,23M / 1,73M — dasselbe Niveau wie das flache Feuer/Blitz-Angebot davor, 1,23M / 1,87M).
 // Die Bänder sind darauf zentriert (≈ ±35 %); nach der Eis-/Pflanze-Runde erneut zentrieren.
 // §7.10 (Kühlung 2 → 6, Vorsprung-Offset 2 → 1): Seeds 1..40 Median ≈ 1,04M, Mean ≈ 1,23M — im Band, nicht neu zentriert.
+//
+// §7.14 (Owner, 2026-09-06): 50 statt 40 Durchläufe (gleiche Phasenfolge, 13 Skill-Phasen), Schmiede ohne Preis, Stapel-Score
+// 60 → 75 für die Parität. Der Score wächst überlinear mit den Runden: Seeds 1..40 Median ≈ 2,34M, Mean ≈ 4,45M (Seeds
+// 1..200: 2,49M / 5,69M — der Mean hängt am schweren Schwanz). Die Bänder sind auf die 40 Seeds neu zentriert (≈ ±35 %).
 describe("sim balance guard", () => {
   const SEEDS = 40; // feste Seeds 1..40 → deterministischer Median/Mean
   const scores = Array.from({ length: SEEDS }, (_, i) => runOne(1 + i, randomPolicy()).score).sort((a, b) => a - b);
@@ -32,14 +36,14 @@ describe("sim balance guard", () => {
   const mean = scores.reduce((t, v) => t + v, 0) / SEEDS;
 
   it("Median-Score im erwarteten Band (breite Power-Verschiebung)", () => {
-    // Ist-Wert ≈ 1,13M (exp Türen, Feuer/Blitz). Band toleriert normales Tuning, schlägt bei grober Verschiebung an.
-    expect(median).toBeGreaterThan(750_000);
-    expect(median).toBeLessThan(1_550_000);
+    // Ist-Wert ≈ 2,34M (exp §7.14, 50 Runden, Feuer/Blitz). Band toleriert normales Tuning, schlägt bei grober Verschiebung an.
+    expect(median).toBeGreaterThan(1_500_000);
+    expect(median).toBeLessThan(3_200_000);
   });
 
   it("Mean-Score im erwarteten Band (Tail-Runaway-Fänger)", () => {
-    // Ist-Wert ≈ 1,34M (exp Türen). Die Obergrenze fängt weiterhin einen ECHTEN Tail-Blowup (Mean ginge dann deutlich höher).
-    expect(mean).toBeGreaterThan(870_000);
-    expect(mean).toBeLessThan(1_850_000);
+    // Ist-Wert ≈ 4,45M (exp §7.14). Die Obergrenze fängt weiterhin einen ECHTEN Tail-Blowup (Mean ginge dann deutlich höher).
+    expect(mean).toBeGreaterThan(2_900_000);
+    expect(mean).toBeLessThan(6_000_000);
   });
 });

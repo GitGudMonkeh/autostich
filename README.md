@@ -85,16 +85,16 @@ der feste **Entscheidungsplan** `DECISION_SCHEDULE` (50 Einträge) vorgibt.
 |---|---|
 | `menu` | Startbildschirm (`StartScreen`): „Neuer Run", lokale + globale Bestenliste. |
 | `play` | Der Autobattler läuft: Stich für Stich, auto-getaktet. |
-| `levelup` | Auswahl-Overlay — je nach Plan **Perk** (`PerkSelect`) oder **Skill** (`SkillSelect`); pausiert. In Durchlauf 29 die **Legendär-Phase** (`LegendarySelect`, fixer 7. Slot). |
+| `levelup` | Auswahl-Overlay — je nach Plan **Perk** (`PerkSelect`) oder **Skill** (`SkillSelect`, Türen); pausiert. Legendäre sind die fünfte Seltenheit des Skill-Angebots, es gibt keine eigene Phase mehr. |
 | `glacier-target` | Eis: nach jedem Eis-Skill-Pick genau eine Karte als **Gletscher** festfrieren (Pflicht). |
 | `formation` | **Formationsphase** (`FormationPhase`, §22.8): Karten der Aufstellung tauschen. |
 | `shop` | **Architekt** (`ArchitectScreen`, #202 · Shop-Ersatz): Gebäude auf dem 8×5-Baufeld platzieren/aufwerten (keine Münzen). Der Aktionsschlüssel heißt intern noch `shop`. |
 | `gameover` | Nach `MAX_CYCLES` Durchläufen: Endbildschirm (`GameOver`) mit Score, Statistik, Bestenliste. |
 
-**Entscheidungsplan** (`DECISION_SCHEDULE`): fester 50-Einträge-Plan statt eines Zyklus —
-Verteilung **10 Skill · 13 Perk · 13 Formation · 13 Architekt (`shop`) · 1 Legendär**. Die erste
-Entscheidung (Durchlauf 1) ist bewusst ein Skill-Blind-Commit; die Legendär-Phase liegt in Durchlauf 29
-(`LEG_PHASE_CYCLE`, aus dem Plan abgeleitet). Ziel-Flows (Karten/Positionen/Farben wählen) laufen als
+**Entscheidungsplan** (`DECISION_SCHEDULE`, `buildSchedule`): der Block **Skill → Perk → Formation →
+Architekt (`shop`)** wiederholt sich über die `MAX_CYCLES` Durchläufe (50) — Skills in Durchlauf 1, 5, 9 … 49
+(13 Skill-Phasen), jede Formationsphase wird direkt vom Architekten gefangen. Die erste Entscheidung
+(Durchlauf 1) ist bewusst ein Skill-Blind-Commit. Ziel-Flows (Karten/Positionen/Farben wählen) laufen als
 Unter-Overlays der Perk-Auswahl (`CONFIRM_TARGET`, `FAMILY_TARGET_*`).
 
 **Actions (Auszug):** `START_RUN`/`RESET`, `TO_MENU`, `END_RUN`, `RESOLVE_TRICK` (ein Stich; `action.rng`

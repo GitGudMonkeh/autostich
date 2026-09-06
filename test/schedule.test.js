@@ -1,74 +1,63 @@
 import { describe, it, expect } from "vitest";
 import { buildSchedule, DECISION_SCHEDULE, MAX_CYCLES, FIRST_SKILL_CYCLE } from "../src/game/constants.js";
 
-// exp skill rework (docs/skill-rework.md §1, §7): buildSchedule(n) erzeugt den Entscheidungsplan variabler Länge.
-// Live-Ziel = 40 Durchläufe in zehn Blöcken Skill→Perk→Aufstellen→Architekt (war 50 mit einmaliger Legendär-Phase
-// in Runde 29 — Legendäre sind jetzt die fünfte Seltenheit des Skill-Angebots, skills.js rollSkillOfferTiers).
-// Für n < 40 wird ein exaktes Prefix gespielt, für n > 40 wächst der Schwanz aus TAIL_BLOCK (nur SIM_MAX_CYCLES-Sweeps).
+// exp skill rework (docs/skill-rework.md §1, §7.14): buildSchedule(n) erzeugt den Entscheidungsplan variabler Länge —
+// der Block Skill→Perk→Aufstellen→Architekt wiederholt sich über den ganzen Lauf. Live-Ziel = 50 Durchläufe (Owner,
+// 2026-09-06; davor 40), die Reihenfolge der Phasen bleibt für jede Länge dieselbe (auch SIM_MAX_CYCLES-Sweeps).
+// Legendäre sind die fünfte Seltenheit des Skill-Angebots (skills.js rollSkillOfferTiers), es gibt keine eigene Phase.
 // Design-Invariante: jede Formationsphase (Aufstellen) wird direkt von einer Architekt-Phase (shop) gefangen.
 const TYPES = ["skill", "perk", "formation", "shop"];
 const count = (arr, t) => arr.filter((d) => d === t).length;
 
 describe("buildSchedule", () => {
-  it("Default (kein Arg) == DECISION_SCHEDULE und respektiert MAX_CYCLES (= 40)", () => {
+  it("Default (kein Arg) == DECISION_SCHEDULE und respektiert MAX_CYCLES (= 50)", () => {
     expect(buildSchedule()).toEqual(DECISION_SCHEDULE);
     expect(DECISION_SCHEDULE).toHaveLength(MAX_CYCLES);
-    expect(MAX_CYCLES).toBe(40);
+    expect(MAX_CYCLES).toBe(50);
   });
 
-  it("40-Plan-Verteilung = 10 Skill · 10 Perk · 10 Formation · 10 Shop (kein Legendär, keine Stats)", () => {
-    const s = buildSchedule(40);
-    expect(s).toHaveLength(40);
+  it("50-Plan-Verteilung = 13 Skill · 13 Perk · 12 Formation · 12 Shop (kein Legendär, keine Stats)", () => {
+    const s = buildSchedule(50);
+    expect(s).toHaveLength(50);
     expect(s[0]).toBe("skill"); // Start-Entscheid = Skill (Runde 1, Blind-Commit)
-    expect([count(s, "skill"), count(s, "perk"), count(s, "formation"), count(s, "shop")]).toEqual([10, 10, 10, 10]);
+    expect([count(s, "skill"), count(s, "perk"), count(s, "formation"), count(s, "shop")]).toEqual([13, 13, 12, 12]);
     expect(count(s, "legendary")).toBe(0); // die Legendär-Phase ist entfernt
     expect(count(s, "stat")).toBe(0);      // die Stat-Phase ist entfernt
     expect(s.every((d) => TYPES.includes(d))).toBe(true);
   });
 
-  it("Skill-Runden: zehn Skill-Phasen bei 1, 5, 9 … 37 — alle vier Runden", () => {
-    const s = buildSchedule(40);
+  it("Skill-Runden: dreizehn Skill-Phasen bei 1, 5, 9 … 49 — alle vier Runden", () => {
+    const s = buildSchedule(50);
     const skillRounds = s.map((d, i) => (d === "skill" ? i + 1 : null)).filter(Boolean);
-    expect(skillRounds).toEqual([1, 5, 9, 13, 17, 21, 25, 29, 33, 37]);
+    expect(skillRounds).toEqual([1, 5, 9, 13, 17, 21, 25, 29, 33, 37, 41, 45, 49]);
     expect(FIRST_SKILL_CYCLE).toBe(1);
   });
 
   it("Design-Invariante: jede Formationsphase wird direkt vom Architekten (shop) gefangen", () => {
-    const s = buildSchedule(40);
+    const s = buildSchedule(50);
     s.forEach((d, i) => {
       if (d === "formation" && i + 1 < s.length) expect(s[i + 1]).toBe("shop"); // F→A: erst Brett, dann Gebäude
     });
   });
 
-  it("n < 40: exaktes Prefix des 40-Plans", () => {
-    const base = buildSchedule(40);
+  it("Reihenfolge der Phasen bleibt für jede Länge gleich: der 40-Plan ist ein Prefix des 50-Plans, kürzere Pläne ein Prefix davon", () => {
+    const base = buildSchedule(50);
+    expect(buildSchedule(40)).toEqual(base.slice(0, 40)); // der alte 40-Plan (zehn Skill-Phasen) liegt unverändert vorne
+    expect(count(buildSchedule(40), "skill")).toBe(10);
     expect(buildSchedule(30)).toEqual(base.slice(0, 30));
     expect(buildSchedule(20)).toEqual(base.slice(0, 20));
+    expect(buildSchedule(0)).toEqual([]);
   });
 
-  it("n > 40: Prefix stabil, Länge exakt, nur bekannte Entscheidungstypen", () => {
-    const base40 = buildSchedule(40);
-    for (const n of [41, 60, 80, 120]) {
+  it("n > 50: Prefix stabil, Länge exakt, derselbe Block, nur bekannte Entscheidungstypen", () => {
+    const base50 = buildSchedule(50);
+    for (const n of [51, 60, 80, 120]) {
       const sched = buildSchedule(n);
       expect(sched).toHaveLength(n);
-      expect(sched.slice(0, 40)).toEqual(base40); // 40-Plan unangetastet
+      expect(sched.slice(0, 50)).toEqual(base50); // 50-Plan unangetastet
       expect(sched.every((d) => TYPES.includes(d))).toBe(true);
+      sched.forEach((d, i) => expect(d).toBe(TYPES[i % 4])); // Skill, Perk, Aufstellen, Architekt — immer in dieser Reihenfolge
     }
-  });
-
-  it("Schwanz (> 40) hält grob das Mix-Verhältnis (kein Stat, kein Legendär im Schwanz)", () => {
-    const tail = buildSchedule(100).slice(40); // 60 erzeugte Cycles
-    const share = (t) => count(tail, t) / tail.length;
-    expect(count(tail, "stat")).toBe(0);
-    expect(count(tail, "legendary")).toBe(0);
-    expect(share("perk")).toBeGreaterThanOrEqual(0.15);
-    expect(share("perk")).toBeLessThanOrEqual(0.30);
-    expect(share("skill")).toBeGreaterThanOrEqual(0.10);
-    expect(share("skill")).toBeLessThanOrEqual(0.22);
-    expect(share("shop")).toBeGreaterThanOrEqual(0.15);
-    expect(share("shop")).toBeLessThanOrEqual(0.30);
-    expect(share("formation")).toBeGreaterThanOrEqual(0.20);
-    expect(share("formation")).toBeLessThanOrEqual(0.40);
   });
 
   it("kein Cluster: nie zwei Shop- oder Skill-Entscheidungen hintereinander (auch über Blockgrenzen)", () => {

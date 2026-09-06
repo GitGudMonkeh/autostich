@@ -3,6 +3,7 @@ import { reducer } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
 import { randomPolicy } from "../sim/policies/random.js";
 import { greedyFormationStep } from "../sim/formation.js";
+import { DECISION_SCHEDULE } from "../src/game/constants.js";
 
 const formScore = (s) => (s.formations || []).reduce((t, f) => t + (f?.mult || 1), 0);
 
@@ -28,6 +29,7 @@ describe("sim formation solver (S4)", () => {
       s = reducer(s, base.act(s, rng));
     }
     expect(s.phase).toBe("gameover");
-    expect(phasesChecked).toBe(10); // exp skill rework: 10 Formationsentscheidungen je Run (40-Plan, DECISION_SCHEDULE; war 13 im 50-Plan #272)
+    // exp skill rework: eine Formationsentscheidung je Formationsphase des Plans (50-Plan §7.14: 12; der 40-Plan hatte 10).
+    expect(phasesChecked).toBe(DECISION_SCHEDULE.filter((d) => d === "formation").length);
   });
 });

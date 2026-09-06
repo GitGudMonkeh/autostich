@@ -6,6 +6,7 @@
 //   npm run sim -- --mode duel     --runs 200                 exp: Feuer/Blitz-Welt (ohne Eis/Pflanze) — mono, Split, Mix
 //   npm run sim -- --mode skills   --runs 200 --explore 1200  exp: große Auswertung je Skill und Stufe (Explore → Greedy → Ablation)
 //   npm run sim -- --mode motor    --runs 100                 exp: Motor-Diagnose — Hitze im Lauf (Feuer), Ionisierung und Score-Treiber (Blitz)
+//   npm run sim -- --mode legendaries --runs 150 --explore 600 --at 7   exp: jedes Legendäre in Skill-Phase `at` (Default: die mittlere) bekommen, gepaart gegen den Lauf ohne
 //
 // Bewusst OHNE Zeitstempel im Output → gleicher Seed-Satz erzeugt byte-gleiches JSON (Reproduzierbarkeit, §9).
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -141,4 +142,7 @@ else if (mode === "eval") {
 } else if (mode === "motor") {
   const { runMotor } = await import("./motor.js"); // exp skill rework: Hitze im Lauf (Feuer), Ionisierung und Score-Treiber (Blitz)
   runMotor({ arg, seed0, write });
-} else { console.error(`Unbekannter --mode '${mode}' (baseline|explore|eval|pacing|balance|variety|cross|duel|skills|motor)`); process.exit(1); }
+} else if (mode === "legendaries") {
+  const { runLegendaries } = await import("./legendaries.js"); // exp skill rework: jedes Legendäre zur selben Skill-Phase bekommen, gepaart
+  runLegendaries({ arg, seed0, c, f, write });
+} else { console.error(`Unbekannter --mode '${mode}' (baseline|explore|eval|pacing|balance|variety|cross|duel|skills|motor|legendaries)`); process.exit(1); }

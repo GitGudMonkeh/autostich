@@ -14,7 +14,8 @@ und gilt erst, wenn es nach Gesetzt wandert.
 
 ### Gesetzt (Owner, 2026-09-04)
 
-- 40 Runden, 10 Skill-Phasen, 40 Karten. Vier Fraktionen jetzt, sechs als Ziel.
+- 40 Runden, 10 Skill-Phasen, 40 Karten. Vier Fraktionen jetzt, sechs als Ziel. *(Owner, 2026-09-06: 50 Runden,
+  die Reihenfolge der Phasen bleibt — der Block Skill→Perk→Aufstellen→Architekt läuft weiter, 13 Skill-Phasen; 7.14.)*
 - **15 Skills je Fraktion**, ohne Legendäre. Legendäre werden separat behandelt.
 - **Jeder Skill hat vier Stufen:** Normal, Selten, Sehr selten, Episch. Stufen sind bessere Versionen
   desselben Skills. Episch hat ein kleines Extra oder ist sehr stark.
@@ -1327,6 +1328,11 @@ heute ohne Asche) bekommt später eine neue Fassung.
 
 Entscheid Owner (2026-09-05): **gesetzt wie vorgeschlagen.**
 
+Entscheid Owner (2026-09-06, nach 7.13): **die Schmiede schmiedet ohne Preis, sie braucht nur eine Schwelle.** Die
+Leiter folgt den anderen Hitze-Schwellen der Fraktion (Feuerwalze, Brandmal, Lauffeuer): Rundenende ab 80 / 60 / 40 /
+20 % Hitze, Episch die zwei niedrigsten Karten; die Hitze bleibt liegen. Die Schwellenzahlen sind Vorschlag (Agent,
+7.14), der Preis-Wegfall ist gesetzt.
+
 **Glutstahl** — Wert zu Score. Heute: Verstärker (braucht Ascheschmiede): geschmiedete Karten geben bei
 Sieg +12 Basis-Score je geschmiedetem Wertpunkt. Neu eigenständig: jeder Punkt, den eine Siegkarte über
 ihrem Grundwert hat, gibt Basis-Score, egal woher der Punkt kommt: Schmiede (dauerhaft), Glühende
@@ -1375,7 +1381,7 @@ brutto 49 % und netto 21 % Hitze je Runde.
 | Schmelzpunkt | Tropf-Konsument (seit 7.13: nur bei voller Leiste) | bei voller Leiste verbrennt jeder Sieg 4 % Hitze, +15 Basis je Punkt | +20 | +25 | +30; die Hälfte der Hitze kommt zurück |
 | Brandmal | Gegner-Debuff | ab 80 % Hitze: Sieg brandmarkt die Gegnerkarte, −2 nächste Runde | ab 60 % | ab 40 % | ab 20 %; auch Niederlagen brandmarken |
 | Lauffeuer | Brand in die Breite | ab 80 % Hitze: Sieg brandmarkt beide Nachbarn, −1 nächste Runde | ab 60 % | ab 40 % | ab 20 %; Reichweite zwei Karten |
-| Schmiede | Hitze zu Dauerwert (seit 7.13: nur bei voller Leiste) | Rundenende bei voller Leiste: niedrigste Karte +3 dauerhaft, kostet 50 Hitze | kostet 40 | kostet 30 | kostet 20; zwei Karten |
+| Schmiede | Hitze zu Dauerwert (seit 7.14: ohne Preis, nur Schwelle) | Rundenende ab 80 % Hitze: niedrigste Karte +3 dauerhaft, die Hitze bleibt | ab 60 % | ab 40 % | ab 20 %; zwei Karten |
 | Glutstahl | Wert zu Score | +8 Basis-Score je Punkt Wert über Grundwert bei Sieg | +12 | +16 | +20; Schmiedewert zählt doppelt |
 
 **Sim-Wachpunkte Feuer:** Einnahmen gegen die Leiste (Zunder, Feuersturm füllen schneller als die 100
@@ -2153,6 +2159,40 @@ gewinnt immer, weil die Leiste beim Halten weiterzahlt und beim Verbrennen einma
 Der Hitze-Multiplikator ist kein Hebel (29 % des Feuer-Scores; ein Viertel weniger bringt drei Punkte). Ein einziger
 Regler holt die Parität zurück: Stapel-Score 60 → 120 — alle drei Maße nahe 1, und die Richtung stimmt mit „die
 Ionisierung soll tragen" überein. Das ist Balancing, also Owner-Entscheid; nicht umgesetzt.
+
+### 7.14 Schmiede ohne Preis, 50 Runden, Parität (2026-09-06, umgesetzt)
+
+Owner-Entscheide auf 7.13: **die Schmiede schmiedet ohne Preis und braucht nur eine Schwelle**; **50 Runden, die
+Reihenfolge der Phasen bleibt gleich**; **Parität** herstellen; ab jetzt **nur gierig messen**. Flächenbrand und
+Schmelzpunkt bleiben, wie sie in 7.13 stehen (offen, siehe 7.15).
+
+**Schmiede.** Rundenende ab 80 / 60 / 40 / 20 % Hitze: die niedrigste Karte erhält dauerhaft +3 Wert, Episch die zwei
+niedrigsten; die Hitze bleibt liegen. Die Schwellenzahlen folgen den anderen Hitze-Schwellen der Fraktion (Feuerwalze,
+Brandmal, Lauffeuer) und sind Vorschlag (Agent), der Preis-Wegfall ist gesetzt. Damaststahl (Legendär) schmiedet weiter
+ohne Schwelle und zählt Schmiedewert im Kampf doppelt — die beiden unterscheiden sich jetzt nur noch dort. Die Schmiede
+ist damit kein Konsument mehr (Glossar, Stichwort `consume` entfernt); Abzeichen an der Leiste: „Schmiede ab 80".
+
+**50 Runden.** `MAX_CYCLES` 40 → 50; der Plan ist der Block Skill→Perk→Aufstellen→Architekt, wiederholt bis zur
+Laufänge — 13 Skill-Phasen in den Runden 1, 5, 9 … 49, jede Aufstellphase vom Architekten gefangen, keine zwei Skill-
+oder Architektphasen hintereinander. Der alte 40-Plan liegt unverändert vorne (Prefix); der Sim-Schwanzblock für
+Sweeps über 40 hinaus ist entfallen, `buildSchedule(n)` ist für jede Länge derselbe Block. Der Score wächst überlinear
+mit den Runden: Zufallsspieler (Sim-Band, Seeds 1–40) 1,04M → 2,34M Median, 1,23M → 4,45M Mean; das Band ist neu
+zentriert.
+
+**Parität (Duell, 100 Läufe, 50 Runden, Schmiede ohne Preis):**
+
+| Stapel-Score | Feuer mono | Blitz mono | Floor | Mean | p90 |
+| --- | --- | --- | --- | --- | --- |
+| 60 (vorher) | 7,48M | 6,46M | 1,16× | 1,04× | 1,04× |
+| **75** | 7,48M | 7,02M | **1,07×** | **0,95×** | **0,93×** |
+| 80 | 7,48M | 7,22M | 1,03× | 0,92× | 0,90× |
+| 90 | 7,48M | 7,59M | 0,99× | 0,87× | 0,84× |
+| 120 (Vorschlag aus 7.13, bei 40 Runden) | 7,48M | 8,53M | 0,88× | 0,75× | 0,70× |
+
+Bei 50 Runden zinst der Stapel-Score stärker auf als bei 40 (mehr Ionisierungen je Lauf, mehr Stapel je Siegkarte): 120
+kippt jetzt zu Blitz. **Entscheid (Regler, Agent): Stapel-Score 60 → 75** — Floor 1,07×, Mean 0,95×, p90 0,93×, die
+kleinste Summe der Abweichungen über die drei Maße (90 trifft nur den Floor, der Schwanz gehört dann Blitz). Feuer mono
+gegen Blitz mono ist damit im Band von 7.10/7.12.
 
 ## 5. Eis
 

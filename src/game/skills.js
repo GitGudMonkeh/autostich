@@ -72,7 +72,7 @@ const FEUER = {
   schmelzpunkt:  [{ burn: 4, perPoint: 15 }, { burn: 4, perPoint: 20 }, { burn: 4, perPoint: 25 }, { burn: 4, perPoint: 30, refund: 0.5 }],
   brandmal:      [{ minHeat: 80, value: 2 }, { minHeat: 60, value: 2 }, { minHeat: 40, value: 2 }, { minHeat: 20, value: 2, onLoss: true }],
   lauffeuer:     [{ minHeat: 80, value: 1, reach: 1 }, { minHeat: 60, value: 1, reach: 1 }, { minHeat: 40, value: 1, reach: 1 }, { minHeat: 20, value: 1, reach: 2 }],
-  schmiede:      [{ cost: 50, cards: 1 }, { cost: 40, cards: 1 }, { cost: 30, cards: 1 }, { cost: 20, cards: 2 }],
+  schmiede:      [{ minHeat: 80, cards: 1 }, { minHeat: 60, cards: 1 }, { minHeat: 40, cards: 1 }, { minHeat: 20, cards: 2 }], // §7.14: ohne Preis, nur Schwelle
   glutstahl:     [{ perPoint: 8 }, { perPoint: 12 }, { perPoint: 16 }, { perPoint: 20, forgedDouble: true }],
 };
 export const FEUER_TIERS = FEUER;
@@ -158,9 +158,9 @@ export const SKILL_DEFS = {
     ...tiered(FEUER.brandmal, (r) => `Ab ${r.minHeat} % Hitze brandmarkt jeder Sieg die geschlagene Gegnerkarte: −${r.value} Wert in der nächsten Runde.${r.onLoss ? " Auch eine Niederlage brandmarkt die Gegnerkarte, die gewonnen hat." : ""}`) },
   SK_FIRE_14: { id: "SK_FIRE_14", name: "Lauffeuer", archetype: "fire", keywords: ["heat", "brand"], tiers: FEUER.lauffeuer,
     ...tiered(FEUER.lauffeuer, (r) => `Ab ${r.minHeat} % Hitze brandmarkt jeder Sieg ${r.reach === 1 ? "beide Nachbarn" : `die ${2 * r.reach} Nachbarn`} der geschlagenen Gegnerkarte: −${r.value} Wert in der nächsten Runde.`) },
-  // Schmiede — Hitze zu Dauerwert, Wert zu Score
-  SK_FIRE_15: { id: "SK_FIRE_15", name: "Schmiede", archetype: "fire", keywords: ["heat", "forge", "consume"], tiers: FEUER.schmiede,
-    ...tiered(FEUER.schmiede, (r) => `Rundenende bei voller Hitzeleiste: die Schmiedung kostet ${r.cost} Hitze und ${r.cards === 1 ? "deine niedrigste Karte erhält" : `deine ${r.cards} niedrigsten Karten erhalten`} dauerhaft +${C.FORGE_VALUE} Wert.`) },
+  // Schmiede — Hitze zu Dauerwert (§7.14: ohne Preis, die Hitze ist nur die Schwelle), Wert zu Score
+  SK_FIRE_15: { id: "SK_FIRE_15", name: "Schmiede", archetype: "fire", keywords: ["heat", "forge"], tiers: FEUER.schmiede,
+    ...tiered(FEUER.schmiede, (r) => `Rundenende ab ${r.minHeat} % Hitze: ${r.cards === 1 ? "deine niedrigste Karte erhält" : `deine ${r.cards} niedrigsten Karten erhalten`} dauerhaft +${C.FORGE_VALUE} Wert.`) },
   SK_FIRE_16: { id: "SK_FIRE_16", name: "Glutstahl", archetype: "fire", keywords: ["heat", "forge"], tiers: FEUER.glutstahl,
     ...tiered(FEUER.glutstahl, (r) => `Sieg: +${r.perPoint} Basis-Score je Punkt Wert über dem Grundwert der Karte, egal woher der Punkt kommt.${r.forgedDouble ? " Schmiedewert zählt doppelt." : ""}`) },
   // Legendäre (§4.7): keine Stufe, zwei Effekte, jedes läuft allein.

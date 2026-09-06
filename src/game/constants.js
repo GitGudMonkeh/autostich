@@ -15,7 +15,7 @@ const envNum = (name, def) => {
 // SIM-Sweep-Haken: per ENV übersteuerbar (im Browser existiert `process` nicht → immer 45). `SIM_MAX_CYCLES=50
 // node sim/batch.js …` verlängert/verkürzt für Diagnose; für n ≤ 45 wird ein Prefix des 45-Plans gespielt, darüber
 // hinaus wächst DECISION_SCHEDULE über buildSchedule() via TAIL_BLOCK weiter.
-export const MAX_CYCLES       = envNum("SIM_MAX_CYCLES", 40);     // exp skill rework: 40 rounds, 10 skill phases (docs/skill-rework.md §1) [TUNING · Sim-übersteuerbar]
+export const MAX_CYCLES       = envNum("SIM_MAX_CYCLES", 50);     // exp skill rework: 50 rounds (owner, §7.14; was 40), 13 skill phases (docs/skill-rework.md §1) [TUNING · Sim-übersteuerbar]
 // Architekt (#202, Shop-Ersatz): Modul-Default-Schalter. Das Spiel startet den Lauf mit architect:true (START_RUN, App.jsx);
 // dieser Default greift nur, wenn keine Action-Flag gesetzt ist (Sim ohne A/B). Im Browser existiert `process` nicht → false.
 export const ARCHITECT_ENABLED = (typeof process !== "undefined" && process.env && (process.env.ARCHITECT === "1" || process.env.ARCHITECT === "true")) || false;
@@ -49,26 +49,18 @@ export const WIN_SOFTCAP_SLOPE = envNum("SIM_WIN_SOFTCAP_SLOPE", 0.25); // Rest-
 //  sind damit obsolet und entfernt.)
 
 // Entscheidungsplan (#272): Typ der Entscheidung VOR Durchlauf n (1-indexiert) = DECISION_SCHEDULE[n-1].
-// exp skill rework (docs/skill-rework.md §1, §7): fixed 40-entry plan, ten blocks of Skill→Perk→Aufstellen→Architekt.
-// Skills sit at rounds 1, 5, 9 … 37 (ten skill phases), every formation phase is caught by an architect phase,
-// no two shop/skill decisions in a row. The engine reads DECISION_SCHEDULE[cycle] (after cycle += 1); the start
-// decision (index 0 = "skill", round 1) runs through START_RUN. The dedicated legendary phase (old round 29) is
-// gone: legendaries are the fifth rarity of the skill offer roll (skills.js, rollSkillOfferTiers).
+// exp skill rework (docs/skill-rework.md §1, §7.14): the block Skill→Perk→Aufstellen→Architekt repeats for the
+// whole run — 50 rounds by default, so skills sit at rounds 1, 5, 9 … 49 (13 skill phases); every formation phase
+// is caught by an architect phase, no two shop/skill decisions in a row. The same block order holds for any
+// length (SIM_MAX_CYCLES sweeps included; the owner set 50 with the order unchanged, 2026-09-06). The engine reads
+// DECISION_SCHEDULE[cycle] (after cycle += 1); the start decision (index 0 = "skill", round 1) runs through START_RUN.
+// The dedicated legendary phase (old round 29) is gone: legendaries are the fifth rarity of the skill offer roll
+// (skills.js, rollSkillOfferTiers).
 const BLOCK = ["skill", "perk", "formation", "shop"];
-const BASE_SCHEDULE = Array.from({ length: 40 }, (_, i) => BLOCK[i % BLOCK.length]);
-// Tail block for runs BEYOND the base plan (only SIM_MAX_CYCLES > 40, sweep diagnostics). Keeps roughly the
-// base mix, never clusters (no two shop/skill in a row) and does not double at the boundary (cycle 40 = shop →
-// block start = formation).
-const TAIL_BLOCK = [
-  "formation", "shop", "skill", "perk", "formation", "shop", "perk", "skill", "formation", "shop", "perk", "formation",
-];
-// Decision plan of length n: for n ≤ 40 an exact prefix of the base plan; beyond that TAIL_BLOCK repeats (only
-// for SIM_MAX_CYCLES sweeps > 40). Pure and testable; the engine reads only the DECISION_SCHEDULE built from it.
+// Decision plan of length n: the block repeated, cut to n. Pure and testable; the engine reads only the
+// DECISION_SCHEDULE built from it.
 export function buildSchedule(n = MAX_CYCLES) {
-  if (n <= BASE_SCHEDULE.length) return BASE_SCHEDULE.slice(0, n);
-  const out = BASE_SCHEDULE.slice();
-  for (let i = 0; out.length < n; i++) out.push(TAIL_BLOCK[i % TAIL_BLOCK.length]);
-  return out;
+  return Array.from({ length: Math.max(0, n) }, (_, i) => BLOCK[i % BLOCK.length]);
 }
 export const DECISION_SCHEDULE = buildSchedule(MAX_CYCLES);
 // Welche Perk-Phase (1-basiert) ist der 0-indexierte Cycle `c` im Plan? 0 = keine Perk-Entscheidung.
@@ -336,7 +328,7 @@ export const THUNDER_CRIT_MULT        = envNum("SIM_THUNDER_CRIT_MULT", 0.4);   
 // Blitz mono 2,15M bei 12, 2,37M bei 60 gegen Feuer mono 2,40M; bei 12 trugen die Stapel nur ~8 % der Basis (Ø 2,6 je
 // Karte am Laufende), der Regler war praktisch tot. Crit je Skill (0,07 → 2,43M) wäre der andere Weg; der Stapel-Weg
 // macht die Leiste und die Stapel-Skills (Kettenblitz, Kurzschluss, Blitzfänger) spürbar.
-export const ION_SCORE_PER_STACK      = envNum("SIM_ION_SCORE_PER_STACK", 60);        // +Score (Basis, vor den Multiplikatoren) je Stapel bei Sieg mit der Karte — der Regler, wenn Stapel zu mächtig werden
+export const ION_SCORE_PER_STACK      = envNum("SIM_ION_SCORE_PER_STACK", 75);        // +Score (Basis, vor den Multiplikatoren) je Stapel bei Sieg mit der Karte — der Paritäts-Regler Feuer/Blitz (§7.14: 60 → 75 bei 50 Runden; Duell-Sweep 60/75/80/90/120: Floor 1,16/1,07/1,03/0,99/0,88×, Mean 1,04/0,95/0,92/0,87/0,75×)
 export const ION_MAX_STACKS           = 5;  // NUR ANZEIGE (Karten-Pips, „voll ionisiert"-Effekte): Stapel sind seit dem Rework ohne Deckel
 export const OVERCRIT_MULT_PER_PP     = envNum("SIM_OVERCRIT_MULT_PER_PP", 0.002);    // Systemregel (alle Fraktionen): Crit-Chance über 100 % → +Crit-Mult je Prozentpunkt (sehr klein; Größe in der Sim)
 export const DOPPELENTLADUNG_STACKS   = envNum("SIM_DOPPELENTLADUNG_STACKS", 2);      // Doppelentladung (L): Stapel je Ionisierung (statt 1)

@@ -43,10 +43,11 @@ export function HeatBar({ heat, skills = [], skillTiers = {}, forged = {}, lastR
   // §7.13: die Konsumenten zünden nur bei voller Leiste — Flächenbrand brennt mit dem nächsten Sieg, sobald sie voll steht.
   const full = value >= scale;
   const conflagReady = param(F.FLAECHENBRAND, "keep") != null && full;
-  // Schmiede: Preis der Stufe (fällt am Rundenende bei voller Leiste); Zähler = Summe der Schmiedewerte im Deck.
-  const forgeCost = param(F.SCHMIEDE, "cost");
+  // Schmiede (§7.14): Schwelle der Stufe, ohne Preis — die Schmiedung fällt am Rundenende, sobald die Hitze anliegt;
+  // Zähler = Summe der Schmiedewerte im Deck.
+  const forgeMin = param(F.SCHMIEDE, "minHeat");
   const totalForged = Object.values(forged).reduce((a, b) => a + b, 0);
-  const showForge = forgeCost != null || skills.includes(F.DAMASTSTAHL) || totalForged > 0;
+  const showForge = forgeMin != null || skills.includes(F.DAMASTSTAHL) || totalForged > 0;
 
   const badges = [];
   // Glühende Klinge: fixes Readout (+n nach Hitze), dazu die Schrittweite der Stufe im Tooltip.
@@ -70,10 +71,10 @@ export function HeatBar({ heat, skills = [], skillTiers = {}, forged = {}, lastR
     badges.push({ k: "vb", t: t("bar.fire.badge.verbrennung", { n: vbMin }), c: WHITE_HEAT, dim: false,
       title: t("bar.fire.badge.verbrennung.title", { n: vbMin, m: fmtNum(param(F.VERBRENNUNG, "mult") || 1) }) });
   }
-  // Schmiede: Preis der Stufe; hell, sobald die Leiste voll steht (die Schmiedung fällt am Rundenende).
-  if (forgeCost != null) {
-    badges.push({ k: "sm", t: t("bar.fire.badge.schmiede", { cost: forgeCost }), c: FORGE, dim: !full,
-      title: t("bar.fire.badge.schmiede.title", { cost: forgeCost, v: FORGE_VALUE }) });
+  // Schmiede: Schwelle der Stufe; hell, sobald die Hitze sie hergibt (die Schmiedung fällt am Rundenende).
+  if (forgeMin != null) {
+    badges.push({ k: "sm", t: t("bar.fire.badge.schmiede", { n: forgeMin }), c: FORGE, dim: value < forgeMin,
+      title: t("bar.fire.badge.schmiede.title", { n: forgeMin, v: FORGE_VALUE }) });
   }
   // Sonnenzorn: die Spitze, mit der der Multiplikator rechnet.
   if (zorn) {

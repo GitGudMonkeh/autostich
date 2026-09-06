@@ -205,9 +205,9 @@ export function fireOnLoss(heat, skills, skillTiers, { deficit = 0, oppId = null
   return { heat: { ...heat, value, peak: Math.max(heat.peak || 0, value), lastLossDeficit: Math.max(0, deficit) }, brands };
 }
 
-/* Rundenende: Schmiede (§7.13: nur bei VOLLER Leiste; die Schmiedung kostet den Preis der Stufe und die niedrigste Karte
-   erhält dauerhaft +FORGE_VALUE; Episch schmiedet die zwei niedrigsten für denselben Preis), Damaststahl (die niedrigste
-   Karte ohne Preis), danach Phönix-Neuzündung. Niedrigste Karte deterministisch: kleinster Wert, dann kleinste id.
+/* Rundenende: Schmiede (§7.14: ohne Preis, die Hitze ist nur die Schwelle der Stufe — liegt sie an, erhält die niedrigste
+   Karte dauerhaft +FORGE_VALUE, Episch die zwei niedrigsten), Damaststahl (die niedrigste Karte ohne Schwelle), danach
+   Phönix-Neuzündung. Niedrigste Karte deterministisch: kleinster Wert, dann kleinste id.
    Gibt { heat, deck, forged, forgedIds } zurück. */
 export function fireCycleEnd(heat, skills, skillTiers, deck, forged = {}) {
   if (!heat || !heat.active) return { heat, deck, forged, forgedIds: [] };
@@ -227,9 +227,8 @@ export function fireCycleEnd(heat, skills, skillTiers, deck, forged = {}) {
     f[low.id] = (f[low.id] || 0) + C.FORGE_VALUE;
     forgedIds.push(low.id);
   };
-  const cost = fireParam(skills, skillTiers, F.SCHMIEDE, "cost");
-  if (cost != null && value >= max) {
-    value -= cost;
+  const minHeat = fireParam(skills, skillTiers, F.SCHMIEDE, "minHeat");
+  if (minHeat != null && value >= minHeat) {
     const n = fireParam(skills, skillTiers, F.SCHMIEDE, "cards") || 1;
     const done = [];
     for (let k = 0; k < n; k++) { forgeLowest(done); if (forgedIds.length > done.length) done.push(forgedIds[forgedIds.length - 1]); }

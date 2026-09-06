@@ -44,6 +44,8 @@ function finalize(s, seed, tel) {
 // und am Run-Ende mit dem Run-Score belohnt. Ohne mem verhält sich runOne wie in S0/S1 (Eval-Modus).
 // hooks (optional): { onTrick(state) } — nach jedem aufgelösten Stich aufgerufen (Pro-Cycle-Sampling,
 // Pacing-Analyse). Rein beobachtend; ändert weder rng noch State → Determinismus-Invariante bleibt.
+// hooks.beforeAct(state) → state (optional, exp skill rework, sim/legendaries.js): darf den State VOR einer
+// Entscheidung ersetzen (z. B. ein Legendäres hinter eine Tür legen). Deterministisch, ohne rng → Seeds pairen weiter.
 // opts.archetypes (optional, exp skill rework): Allowlist der Archetypen im Skill-Angebot dieses Laufs — die Welt
 // „nur Feuer und Blitz", solange Eis und Pflanze auf ihre Runde warten. Ohne Angabe der offene Pool.
 export function runOne(seed, policy, mem = null, hooks = null, opts = {}) {
@@ -61,6 +63,7 @@ export function runOne(seed, policy, mem = null, hooks = null, opts = {}) {
       observe(tel, s.lastTrick); // S1: jeden aufgelösten Stich ins Per-Karte-Ledger aufnehmen
       if (hooks && hooks.onTrick) hooks.onTrick(s); // S6: Pro-Stich-Beobachter (Pacing-Kurve)
     } else {
+      if (hooks && hooks.beforeAct) s = hooks.beforeAct(s) || s;
       const action = policy.act(s, rng, mem);
       if (!action) throw new Error(`Policy '${policy.name}' lieferte keine Action für Phase '${s.phase}' (seed ${seed})`);
       const next = reducer(s, action);

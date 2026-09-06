@@ -30,6 +30,8 @@ function agg(target, keys, seeds = [1, 2, 3, 4]) {
   return out;
 }
 
+// Vier volle Läufe je Test: mit 50 Runden (§7.14) reicht das Vitest-Default von 5 s unter Last nicht mehr sicher.
+const RUN_TIMEOUT = 30_000;
 const YIELD = ["glacierYield", "lightYield", "plantRoot", "plantBloom", "plantHarvest", "fireBase", "fireHeat"]; // exp: fireHeat = Hitze-Multiplikator-Anteil (ehemals fireWhite)
 const MOTOR = ["ionTotal", "growthTotal", "brandTotal"]; // exp: Asche entfällt
 const ALL = [...YIELD, ...MOTOR];
@@ -47,7 +49,7 @@ describe("#270 Fraktions-Panel-Kennzahlen — Ertrag-Kanäle + Motor-Zähler", (
     expect(a.lightYield).toBeGreaterThan(0);
     expect(plantYield(a) + a.fireBase + a.fireHeat + a.glacierYield).toBe(0); // Isolation
     expect(a.growthTotal + a.brandTotal).toBe(0);
-  });
+  }, RUN_TIMEOUT);
 
   it("Pflanze-Lauf treibt Gewachsen + Wurzel-Score (mind. Wurzel-Kanal); keine Fremd-Fraktions-Kennzahl", () => {
     const a = agg("plant", ALL);
@@ -56,7 +58,7 @@ describe("#270 Fraktions-Panel-Kennzahlen — Ertrag-Kanäle + Motor-Zähler", (
     expect(plantYield(a)).toBeGreaterThan(0);
     expect(a.lightYield + a.fireBase + a.fireHeat + a.glacierYield).toBe(0);
     expect(a.ionTotal + a.brandTotal).toBe(0);
-  });
+  }, RUN_TIMEOUT);
 
   it("Feuer-Lauf treibt den Feuer-Ertrag (Hitze-Multiplikator-Anteil, Feuers Kern); keine Fremd-Fraktions-Kennzahl", () => {
     const a = agg("fire", ALL);
@@ -64,14 +66,14 @@ describe("#270 Fraktions-Panel-Kennzahlen — Ertrag-Kanäle + Motor-Zähler", (
     expect(a.fireBase).toBeGreaterThanOrEqual(0);
     expect(a.lightYield + plantYield(a) + a.glacierYield).toBe(0);
     expect(a.ionTotal + a.growthTotal).toBe(0);
-  });
+  }, RUN_TIMEOUT);
 
   it("Eis-Lauf treibt den Gletscher-Ertrag (Masse→Bruch→Score); keine Fremd-Fraktions-Kennzahl", () => {
     const a = agg("ice", ALL);
     expect(a.glacierYield).toBeGreaterThan(0);
     expect(a.lightYield + plantYield(a) + a.fireBase + a.fireHeat).toBe(0);
     expect(a.ionTotal + a.growthTotal + a.brandTotal).toBe(0);
-  });
+  }, RUN_TIMEOUT);
 
   it("Kennzahlen wachsen monoton über den Lauf (nur steigend, Anzeige-Akkumulatoren)", () => {
     const pol = factionPolicy("ice", { architectGreedy: true });

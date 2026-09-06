@@ -64,7 +64,8 @@ describe("Feuer — Roster und Stufenleitern", () => {
     expect(up(T.schmelzpunkt, "perPoint")).toBe(true);
     expect(down(T.brandmal, "minHeat")).toBe(true);
     expect(down(T.lauffeuer, "minHeat")).toBe(true);
-    expect(down(T.schmiede, "cost")).toBe(true);
+    expect(down(T.schmiede, "minHeat")).toBe(true); // §7.14: die Schwelle sinkt mit der Stufe, ein Preis fällt nicht mehr an
+    for (const r of T.schmiede) expect(r.cost).toBeUndefined();
     expect(up(T.glutstahl, "perPoint")).toBe(true);
   });
   it("ein Text je Stufe aus denselben Tabellen: `desc` ist der Normal-Text, `descTiers[t]` nennt nur SEINE Stufe", () => {
@@ -73,7 +74,8 @@ describe("Feuer — Roster und Stufenleitern", () => {
     expect(SKILL_DEFS.SK_FIRE_02.descTiers[3]).toContain(`+${T.zunder[3].heat} %`);
     expect(SKILL_DEFS.SK_FIRE_02.descTiers[0]).not.toContain(`+${T.zunder[3].heat} %`);
     expect(SKILL_DEFS.SK_FIRE_09.desc).toContain(`ab ${T.verbrennung[0].minMargin}`);
-    expect(SKILL_DEFS.SK_FIRE_15.descTiers[3]).toContain(`die Schmiedung kostet ${T.schmiede[3].cost} Hitze`);
+    expect(SKILL_DEFS.SK_FIRE_15.descTiers[3]).toContain(`ab ${T.schmiede[3].minHeat} % Hitze`);
+    expect(SKILL_DEFS.SK_FIRE_15.descTiers[0]).not.toContain("kostet"); // §7.14: ohne Preis
     expect(SKILL_DEFS.SK_FIRE_15.descTiers[3]).toContain(`${T.schmiede[3].cards} niedrigsten Karten`); // das Episch-Extra nur dort
     expect(SKILL_DEFS.SK_FIRE_15.descTiers[2]).not.toContain("niedrigsten Karten");
     expect(SKILL_DEFS.SK_FIRE_L03.desc).toContain(`+${Math.round(C.SONNENZORN_MULT_PER_10 * 100)} %`);
@@ -201,15 +203,17 @@ describe("Feuer — Modul (reine Übergänge)", () => {
     expect(fireOnLoss(heat({ value: 20 }), [F.BRANDMAL], { [F.BRANDMAL]: 3 }, { deficit: 3, oppId: "O1" }).brands).toEqual([{ id: "O1", value: T.brandmal[3].value }]);
     expect(fireOnLoss(heat({ value: 20 }), [F.BRANDMAL], {}, { deficit: 3, oppId: "O1" }).brands).toEqual([]);
   });
-  it("fireCycleEnd (§7.13, volle Leiste): Schmiede kostet ihren Preis und hebt die niedrigste Karte (Episch zwei), Damaststahl gratis, Phönix danach", () => {
+  it("fireCycleEnd (§7.14, Schwelle ohne Preis): Schmiede hebt die niedrigste Karte ab der Schwelle der Stufe (Episch zwei), die Hitze bleibt, Damaststahl ohne Schwelle, Phönix danach", () => {
     const deck = constDeck(5).map((c, i) => (i === 3 ? { ...c, value: 2 } : i === 7 ? { ...c, value: 3 } : c));
-    const r = fireCycleEnd(heat({ value: 100 }), [F.SCHMIEDE], {}, deck, {});
-    expect(r.heat.value).toBe(100 - T.schmiede[0].cost); expect(r.forgedIds).toEqual(["X3"]); expect(r.forged).toEqual({ X3: C.FORGE_VALUE });
+    const min = T.schmiede[0].minHeat;
+    const r = fireCycleEnd(heat({ value: min }), [F.SCHMIEDE], {}, deck, {});
+    expect(r.heat.value).toBe(min); expect(r.forgedIds).toEqual(["X3"]); expect(r.forged).toEqual({ X3: C.FORGE_VALUE }); // kein Preis
     expect(r.deck.find((c) => c.id === "X3").value).toBe(2 + C.FORGE_VALUE);
-    expect(fireCycleEnd(heat({ value: 99 }), [F.SCHMIEDE], {}, deck, {}).forgedIds).toEqual([]); // nicht voll → keine Schmiedung
-    expect(fireCycleEnd(heat({ value: 100, max: 200 }), [F.SCHMIEDE, F.WEISSGLUT], {}, deck, {}).forgedIds).toEqual([]); // mit Weißglut erst bei 200
-    const e = fireCycleEnd(heat({ value: 100 }), [F.SCHMIEDE], { [F.SCHMIEDE]: 3 }, deck, {});
-    expect(e.heat.value).toBe(100 - T.schmiede[3].cost); expect(e.forgedIds).toEqual(["X3", "X7"]); // die zwei niedrigsten, verschieden
+    expect(fireCycleEnd(heat({ value: min - 1 }), [F.SCHMIEDE], {}, deck, {}).forgedIds).toEqual([]); // unter der Schwelle → keine Schmiedung
+    expect(fireCycleEnd(heat({ value: min, max: 200 }), [F.SCHMIEDE, F.WEISSGLUT], {}, deck, {}).forgedIds).toEqual(["X3"]); // die Schwelle liest die Hitze, nicht die Leistenlänge
+    const e = fireCycleEnd(heat({ value: T.schmiede[3].minHeat }), [F.SCHMIEDE], { [F.SCHMIEDE]: 3 }, deck, {});
+    expect(e.heat.value).toBe(T.schmiede[3].minHeat); expect(e.forgedIds).toEqual(["X3", "X7"]); // die zwei niedrigsten, verschieden
+    expect(fireCycleEnd(heat({ value: T.schmiede[3].minHeat - 1 }), [F.SCHMIEDE], { [F.SCHMIEDE]: 3 }, deck, {}).forgedIds).toEqual([]);
     const d = fireCycleEnd(heat({ value: 0 }), [F.DAMASTSTAHL], {}, deck, { X3: 3 });
     expect(d.forgedIds).toEqual(["X3"]); expect(d.forged).toEqual({ X3: 6 });
     expect(fireCycleEnd(heat({ value: 0 }), [F.PHOENIXFEUER], {}, deck, {}).heat.value).toBe(C.PHOENIX_REIGNITE);
@@ -308,10 +312,10 @@ describe("Feuer — Engine-Integration", () => {
     expect(s.lastTrick.oValue).toBe(3);
     expect(s.lastTrick.breakdown.flats).toBe(3 * C.SONNENKERN_SCORE_PER_BRAND);
   });
-  it("Schmiede am Rundenende bei voller Leiste: kostet Hitze, die niedrigste Karte wird dauerhaft stärker", () => {
+  it("Schmiede am Rundenende ab der Schwelle: die Hitze bleibt, die niedrigste Karte wird dauerhaft stärker", () => {
     const done = playCycle(scen(12, 6, { skills: [F.SCHMIEDE, F.GLUTBETT], skillTiers: { [F.GLUTBETT]: 3 }, heat: heat({ value: 40 }) }));
-    // 40 Siege mit Vorsprung 6 → voll (100); die Schmiedung kostet 50 → 50 bleiben, X0 (die niedrigste, kleinste id) +3.
-    expect(done.heat.value).toBe(100 - T.schmiede[0].cost);
+    // 40 Siege mit Vorsprung 6 → voll (100), über der Schwelle 80; die Schmiedung kostet nichts → 100 bleiben, X0 (die niedrigste, kleinste id) +3.
+    expect(done.heat.value).toBe(100);
     expect(done.forged).toEqual({ X0: C.FORGE_VALUE });
     expect(done.deck.find((c) => c.id === "X0").value).toBe(12 + C.FORGE_VALUE);
   });
