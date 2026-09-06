@@ -2021,6 +2021,35 @@ weniger Leisten, die Ionisierung sinkt mit — der Crit ist der Motor der Leiste
 im Zufalls-Build bleibt bei 18 % gegen 49 % Crit-Anteil; „Ionisierung trägt" gilt im Stapel-Build (43 %), nicht im
 zufälligen — wer mehr will, hebt den Stapel-Score 60 mit, das kostet dann die Parität.
 
+**Auswertungen mit dem Endstand (Kühlung 6, Offset 1, Glut-Kaltstart, 0,15× je Stapel, 4 % je Skill):**
+
+*Gierig* (`--mode skills`, 1000 Explore, 150 Läufe): Median 13,0M (Türen vor 7.10: 14,4M — Kühlung und Crit-Kürzung
+senken die Decke), Siegquote 70 %, Ø 9,8 Skills.
+
+- Stark, wie in allen Läufen: Sonnenkern (+85 %), Klinge (+112 %, in 85 %), Weißglut (+23 %), Ladungsserie (+91 %, in 84 %),
+  Doppelentladung (+70 %). Neu dazu: **Phönixfeuer** (+27 %, in 12 % — mit Kühlung 6 ist „Niederlagen heizen" etwas
+  wert), Verbrennung (+16 %), **Kurzschluss** (+21 %; die doppelten Stapel zählen jetzt zweimal), Blitzableiter (+43 %),
+  Entladung (+22 %), Überschlag (+16 %).
+- **Glut im gierigen Lauf: neutral** (in 13 % gehalten, −3 %, win 42 %). Das widerspricht dem Motor nicht: dort schlägt
+  Glut + Kern den Kern OHNE jeden Verstärker um 49 %; die Ablation misst Glut gegen die nächstbeste Alternative des
+  gierigen Spielers, und die ist so gut wie Glut. Lift je Stufe N 0,83 · S 0,77 · SS 0,72 · E 1,03 — die Schwelle 40 %
+  (Normal, 62 % der Würfe) ist zu früh erreicht, um viel zu verdoppeln; erst Episch (80 %) trägt.
+- Schadet: Feuersturm (−10 %, in 48 % gehalten — der gierige Spieler nimmt ihn und verliert damit), Sonnenzorn (−19 %),
+  Glutstahl (−8 %), Rückzündung (−27 %, selten), die Konsumenten (Flächenbrand −17 %, Schmelzpunkt −54 %, beide fast nie
+  genommen); Blitz: Überspannung (−27 %), Statische Aufladung (−11 %), Blitzfänger (−5 %).
+- Tot: Feuerwalze, Zunder, Kettenblitz (in 47 % gehalten, ohne Wirkung — mehr ionisierte Karten heben die Stapel der
+  Siegkarte kaum), Reststrom, Spannungsstau (60 %), Dauerstrom, Serienschutz, Donnergott, Durchschlag (0 % — mit 4 % Crit
+  je Skill critten Niederlagen seltener).
+
+*Random* (`--policy random`): Median 2,00M, dasselbe Bild wie 7.11 — Verbraucher 0,75 / 0,79 / 0,91, Verstärker 0,97–1,10,
+Blitz flach (Durchschlag 1,30, Ladungsserie 1,19, Donnergott 0,73). Der Zufallsspieler baut keine Synergie, deshalb
+bewegen ihn die Änderungen an Glut und Stapeln nicht.
+
+**Stand nach 7.12, für den Owner:** Die Ionisierung trägt jetzt im Stapel-Build (43 %) und Kurzschluss zahlt; Kettenblitz,
+Blitzfänger, Überspannung, Reststrom bleiben ohne Wirkung — die Stapel liegen weiter breit statt tief. Glut hat eine
+Rolle, aber nur die Episch-Schwelle trägt sie sichtbar; Vorschlag: Schwellen 50/60/70/90 statt 40/50/60/80. Die Verbraucher
+sind die letzte offene Feuer-Baustelle (Punkt 1).
+
 ## 5. Eis
 
 Offen.
@@ -2062,4 +2091,4 @@ Offen.
 | 2026-09-05 | Große Auswertung mit Türen (7.9): robust stark Sonnenkern, Klinge, Weißglut, Ladungsserie, Doppelentladung, Durchschlag; robust schädlich Glut, Glutbett, Feuersturm, Spannungsstau; tot Glutstahl, Schmiede, Überspannung, Reststrom, Kurzschluss; Konsumenten und Phönixfeuer ungenommen. Gierig 14,4M gegen 16,4M flach. Stufen tragen weiter nicht. Fünf Punkte für den Owner. |
 | 2026-09-05 | Owner: Pool Feuer/Blitz bestätigt; Neuwurf würfelt die drei Skills der geöffneten Tür neu (umgesetzt); Hitze schneller verbrauchen (7.10): Kühlung 2 → 6, Vorsprung-Offset 2 → 1 nach Sweep — ein Verstärker zahlt jetzt +10 % (Glut) bis +23 % (Zunder), Feuer mono gegen Blitz mono 1,00×. Danach die große Runde mit Random-Picks (7.11). |
 | 2026-09-05 | Random-Runde (7.11, `--policy random`): Zufallsspieler 2,08M gegen gierig 14,4M; Lifts statt Ablation lesen. Feuer: die drei Verbraucher kosten 9–25 %, Verstärker neutral (zahlen nur mit Klinge/Weißglut), Sonnenkern 3,68. Blitz flach (15 von 19 zwischen 0,9 und 1,05), Durchschlag 1,47, Ladungsserie 1,16. |
-| 2026-09-06 | Owner zu den Empfehlungen: Glut als Kaltstart und Stapel auf den Crit-Multiplikator umsetzen (7.12), Stufen und übrige Tote warten, Verbraucher offen (keine neue Leiste). Umgesetzt: Glut ×2 Hitze unter 40/50/60/80 %; +0,1× Crit-Mult je Stapel der Siegkarte, Crit je Skill 5 → 4 %. Glut + Kern +49 % (vorher +10 %), Kaltstart 1100 → 609 Stiche; Duell Floor 1,01×. Auswertungen gierig und random neu gefahren. |
+| 2026-09-06 | Owner zu den Empfehlungen: Glut als Kaltstart und Stapel auf den Crit-Multiplikator umsetzen (7.12), Stufen und übrige Tote warten, Verbraucher offen (keine neue Leiste). Umgesetzt: Glut ×2 Hitze unter 40/50/60/80 %; +0,15× Crit-Mult je Stapel der Siegkarte (Sweep: 0,1× / 0,15× / 0,2×), Crit je Skill 5 → 4 %. Glut + Kern +49 % im Motor, im gierigen Lauf neutral; Stapel-Build auf Augenhöhe mit dem Crit-Build, Kurzschluss zahlt, Phönixfeuer stark; Duell Floor 0,98×. Auswertungen gierig (13,0M) und random (2,0M) neu gefahren. |
