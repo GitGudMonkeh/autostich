@@ -2740,6 +2740,15 @@ Runde 1 ein Runaway-Kandidat (Rampe 3 und mehr), nicht gemessen, nicht gesetzt.
 **Lifts im reinen Feuer-Build** (400 Läufe, Median mit ÷ ohne): Ewige Glut **1,13** (Mean 1,05) — bei 0,03 noch 1,01;
 Sonnenkern 2,55, Damaststahl 1,02, Sonnenzorn 1,01. Feuer mono 14,8M. Phönixfeuer stand hier bei 0,86.
 
+**Duell** (100 Läufe): Feuer mono 13,9M (7.20: 13,6M — die Fraktions-Policy hält ein Legendäres in 12 % der Läufe),
+Blitz mono 11,1M; Floor 1,25×, Mean 0,87×, p90 0,70× (7.20: 1,23× / 0,80× / 0,61×) — der Feuer-Schwanz zieht nach.
+Band unverändert (Zufallsspieler 5,64M / 9,19M).
+
+**Legendäre zur Laufmitte** (gierig gemischt, Basis 104,9M): Sonnenkern +96 %, Doppelentladung +54 %, Durchschlag
++14 %, Damaststahl +7 %, **Ewige Glut +6 %** (Lift 1,19, besser in 52 %), Hochspannung 0 %, Sonnenzorn −1 %,
+Donnergott −16 %. In dieser Reihe zahlt ein Feuer-Legendäres höchstens den Pick zurück (der Build ist Blitz-lastig);
+Phönixfeuer stand hier bei −15 %.
+
 ## 5. Eis
 
 Offen.
