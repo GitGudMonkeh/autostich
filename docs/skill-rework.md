@@ -1370,7 +1370,7 @@ brutto 49 % und netto 21 % Hitze je Runde.
 | --- | --- | --- | --- | --- | --- |
 | Glut | Kaltstart (seit 7.12; vorher Rate aus Vorsprung ×1,25 … ×2; Schwellen seit 7.16) | unter 50 % Hitze zählt Hitze aus Siegen ×2 | unter 60 % | unter 70 % | unter 90 %; darunter kühlen Niederlagen nur halb |
 | Zunder | Rate aus jedem Sieg (Sätze seit 7.16) | jeder Sieg +2 % Hitze | +3 % | +4 % | +5 % |
-| Feuersturm | Serie zu Score (seit 7.17; vorher Serie zu Hitze) | bei voller Leiste zählt jeder Serienpunkt +0,1 % Score | +0,15 % | +0,2 % | +0,3 %; schon ab 80 % Hitze |
+| Feuersturm | Serie zu Score (seit 7.17; vorher Serie zu Hitze) | bei voller Leiste zählt jeder Serienpunkt +0,1 % Score | +0,15 % | +0,2 % | +0,3 %; schon ab 90 % Hitze (7.18; war 80) |
 | Glutbett | Schutz | Niederlagen kühlen nicht unter 40 % | nicht unter 60 % | nicht unter 80 % | Niederlagen kühlen nicht |
 | Rückzündung | Comeback zu Hitze | Sieg nach Niederlage +0,5 % Hitze je Punkt Rückstand | +1 % | +1,5 % | +2 %; die Karte nach einer Niederlage hat +2 Wert |
 | Glühende Klinge | Hitze zu Wert | alle Karten +1 Wert je 40 % Hitze | je 30 % | je 25 % | je 20 % |

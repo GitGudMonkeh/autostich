@@ -70,8 +70,8 @@ export function fireRun(seed, policy) {
 }
 
 // ---- Blitz ----
-const STACK_BUILD = [L.KETTENBLITZ, L.BLITZSCHLAG, L.ABLEITER, L.STATIK, L.RESTSTROM, L.DAUERSTROM, L.KURZSCHLUSS, L.BLITZFAENGER, L.UEBERSPANNUNG, L.LADUNGSSERIE, L.GEWITTERFRONT, L.ENTLADUNG, L.UEBERSCHLAG, L.SPANNUNGSSTAU, L.SERIENSCHUTZ];
-const CRIT_BUILD = [L.LADUNGSSERIE, L.GEWITTERFRONT, L.ENTLADUNG, L.UEBERSCHLAG, L.SPANNUNGSSTAU, L.ABLEITER, L.DAUERSTROM, L.STATIK, L.RESTSTROM, L.BLITZSCHLAG, L.KETTENBLITZ, L.KURZSCHLUSS, L.BLITZFAENGER, L.UEBERSPANNUNG, L.SERIENSCHUTZ];
+const STACK_BUILD = [L.KETTENBLITZ, L.BLITZSCHLAG, L.ABLEITER, L.IONENFELD, L.RESTSTROM, L.KURZSCHLUSS, L.BLITZFAENGER, L.UEBERSPANNUNG, L.LADUNGSSERIE, L.VORENTLADUNG, L.GEWITTERFRONT, L.ENTLADUNG, L.UEBERSCHLAG, L.SPANNUNGSSTAU, L.SERIENSCHUTZ];
+const CRIT_BUILD = [L.LADUNGSSERIE, L.VORENTLADUNG, L.GEWITTERFRONT, L.ENTLADUNG, L.UEBERSCHLAG, L.SPANNUNGSSTAU, L.ABLEITER, L.RESTSTROM, L.IONENFELD, L.BLITZSCHLAG, L.KETTENBLITZ, L.KURZSCHLUSS, L.BLITZFAENGER, L.UEBERSPANNUNG, L.SERIENSCHUTZ];
 export const LIGHTNING_BUILDS = [
   ["Fraktion (zufällig)", () => factionPolicy("lightning")],
   ["Stapel zuerst", () => fixedPolicy(STACK_BUILD, fixedOpts)],
@@ -79,11 +79,13 @@ export const LIGHTNING_BUILDS = [
 ];
 
 export function lightningRun(seed, policy) {
-  const a = { wins: 0, winStacks: 0, winWithStack: 0, last: null };
+  const a = { wins: 0, winStacks: 0, winWithStack: 0, capHits: 0, critMultSum: 0, critN: 0, last: null };
   runOne(seed, policy, null, { onTrick: (s) => {
     a.last = s;
     const t = s.lastTrick; if (!t || !(t.result === "win" || t.result === "win_tie")) return;
     a.wins += 1; const st = (t.pCard && t.pCard.ionStacks) || 0; a.winStacks += st; if (st > 0) a.winWithStack += 1;
+    // §7.18: Crit-Multiplikator am 8×-Deckel? (Rampen Gewitterfront/Entladung/Überschlag können dann nichts mehr zeigen.)
+    if (t.isCrit) { a.critN += 1; a.critMultSum += t.critMultiplier || 0; if ((t.critMultiplier || 0) >= C.CRIT_MULT_CAP - 1e-9) a.capHits += 1; }
   } }, { archetypes: ["lightning"] });
   const s = a.last, li = s.lightning || {};
   const stacks = (s.deck || []).map((c) => c.ionStacks || 0);
@@ -93,6 +95,7 @@ export function lightningRun(seed, policy) {
     stacksPerCard: mean(stacks), ionizedShare: stacks.filter((n) => n > 0).length / (stacks.length || 1), maxStacks: Math.max(0, ...stacks),
     winStacksMean: a.wins ? a.winStacks / a.wins : 0, winWithStackShare: a.wins ? a.winWithStack / a.wins : 0,
     critShare: s.score ? (s.critBonusScore || 0) / s.score : 0, ionFlatShare: s.score ? (s.lightYield || 0) / s.score : 0,
+    capShare: a.critN ? a.capHits / a.critN : 0, critMultMean: a.critN ? a.critMultSum / a.critN : 0,
     held: s.skills.length,
   };
 }
@@ -146,7 +149,7 @@ export function runMotor({ arg, seed0, write } = {}) {
         { env: { ...process.env, SIM_ION_SCORE_PER_STACK: "0", SIM_ION_CRIT_MULT_PER_STACK: "0" }, stdio: ["ignore", "pipe", "inherit"], maxBuffer: 64 * 1024 * 1024 }).toString();
       ablated = JSON.parse(raw);
     } catch (e) { console.log(`  (Stapel-Ablation im Unterprozess fehlgeschlagen: ${e.message})`); }
-    console.log(`  Build                  Median      Crits/Lauf  Crit-Rate  Leisten/Lauf  Stiche/Leiste  Stapel/Lauf  Stapel/Karte  ionisiert  Siegkarte Ø  Crit-Anteil  Stapel-Anteil`);
+    console.log(`  Build                  Median      Crits/Lauf  Crit-Rate  Leisten/Lauf  Stiche/Leiste  Stapel/Lauf  Stapel/Karte  ionisiert  Siegkarte Ø  Crit-Anteil  Stapel-Anteil   Crit-Mult Ø  am Deckel`);
     payload.lightning = {};
     for (const [name, make] of LIGHTNING_BUILDS) {
       const rs = Array.from({ length: runs }, (_, i) => lightningRun(seed0 + i, make()));
@@ -160,12 +163,14 @@ export function runMotor({ arg, seed0, write } = {}) {
         maxStacks: mean(rs.map((r) => r.maxStacks)), winStacksMean: mean(rs.map((r) => r.winStacksMean)), winWithStackShare: mean(rs.map((r) => r.winWithStackShare)),
         critShare: mean(rs.map((r) => r.critShare)), ionFlatShare: mean(rs.map((r) => r.ionFlatShare)),
         stackShareMean: paired ? mean(paired) : null, stackShareMedian: paired ? median(paired) : null, ablatedMedian: abl ? median(abl) : null,
+        capShare: mean(rs.map((r) => r.capShare)), critMultMean: mean(rs.map((r) => r.critMultMean)),
         held: mean(rs.map((r) => r.held)),
       };
       payload.lightning[name] = row;
-      console.log(`  ${name.padEnd(22)} ${fmt(row.median).padStart(10)}   ${row.crits.toFixed(0).padStart(6)}     ${pct(row.critRate)}   ${row.bars.toFixed(1).padStart(8)}     ${row.tricksPerBar.toFixed(1).padStart(8)}     ${row.ionTotal.toFixed(0).padStart(6)}      ${row.stacksPerCard.toFixed(1).padStart(6)}     ${pct(row.ionizedShare)}    ${row.winStacksMean.toFixed(1).padStart(6)}     ${pct(row.critShare)}   ${paired ? `${pct(row.stackShareMedian)} (Ø ${pct(row.stackShareMean).trim()})` : "n/a"}`);
+      console.log(`  ${name.padEnd(22)} ${fmt(row.median).padStart(10)}   ${row.crits.toFixed(0).padStart(6)}     ${pct(row.critRate)}   ${row.bars.toFixed(1).padStart(8)}     ${row.tricksPerBar.toFixed(1).padStart(8)}     ${row.ionTotal.toFixed(0).padStart(6)}      ${row.stacksPerCard.toFixed(1).padStart(6)}     ${pct(row.ionizedShare)}    ${row.winStacksMean.toFixed(1).padStart(6)}     ${pct(row.critShare)}   ${paired ? `${pct(row.stackShareMedian)} (Ø ${pct(row.stackShareMean).trim()})` : "n/a"}   ${row.critMultMean.toFixed(2).padStart(8)}×  ${pct(row.capShare)}`);
     }
     console.log(`  Lesart: „Stapel-Anteil" = Score-Verlust desselben Laufs ohne jede Stapel-Wirkung (Stapel-Score 0 und Crit-Mult je Stapel 0; gepaart, Median und Ø je Lauf); „Crit-Anteil" = critBonusScore ÷ Score.`);
+    console.log(`  „am Deckel" = Anteil der Crits, deren fertiger Crit-Multiplikator am Deckel ${C.CRIT_MULT_CAP}× stand (§7.18: dort zeigen Gewitterfront, Entladung und Überschlag nichts mehr).`);
     console.log(`  „Siegkarte Ø" = Stapel auf der gespielten Karte bei einem Sieg; „ionisiert" = Anteil der Karten mit ≥ 1 Stapel am Laufende.`);
   }
   if (write) write(payload);

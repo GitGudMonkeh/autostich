@@ -35,10 +35,10 @@ const B = SCORE_PER_WIN; // Basis-relativ: erwartete Scores skalieren mit der Si
 // Wert 0, bildet aber über die Positionen KEINE Formation → isoliert Score-Mechaniken in Multi-Stich-Tests.
 // Gleiche Farbe (R), aber abwechselnde Werte → Farbserie zählt, ohne Wiederholung/Farbblock (bei ≤2 Karten).
 // #267: der entfernte Crit-Stat wird als reine Crit-CHANCE-Quelle über den Blitz-Spannungsstau ersetzt. Ein blank
-// aktiver Blitz OHNE Skills/ionisierte Karten trägt exakt stauBonus zur rawCrit bei (exp: kein Sockel mehr) — sonst
+// aktiver Blitz OHNE Skills/ionisierte Karten trägt exakt stormCritBonus zur rawCrit bei (exp: kein Sockel mehr) — sonst
 // NICHTS (kein Score, kein Crit-Mult, keine Ladung). litCrit(V) hebt die rawCrit damit auf genau V → Drop-in für den
 // alten additiven statCritChance:V (der Kritwurf bleibt rng()<V; makeRng-Wert <1 ⇒ V≥1 crittet garantiert).
-const litCrit = (v = 1) => ({ active: true, charge: 0, maxCharge: 10, stauBonus: v });
+const litCrit = (v = 1) => ({ active: true, charge: 0, maxCharge: 10, stormCritBonus: v }); // §7.18: die Gewitterfront-Rampe (der Stau zahlt jetzt auf den Multiplikator)
 
 describe("resolveTrick — Grundausgänge (V2: ohne Leben)", () => {
   it("Sieg: +Score, +Sieg, Initiative Spieler", () => {
@@ -566,7 +566,7 @@ describe("Crit-Chance/-Mult über Blitz & Präzision — Engine (#267, Stat-Ersa
     // P_SHARPNESS I → +0,06 pp flat auf ALLE Karten → critChance 0,06 (rng 0,99 → kein realer Crit, nur ablesen).
     expect(resolveTrick(scenario(12, 0, { familyTiers: { P_SHARPNESS: 1 } }), () => 0.99).lastTrick.critChance).toBeCloseTo(0.06);
     // Gleiche Anhebung über den Blitz-Spannungsstau als additiver Stat-Ersatz (exp: kein Sockel mehr): 0,06 → 0,06.
-    expect(resolveTrick(scenario(12, 0, { lightning: { active: true, charge: 0, maxCharge: 10, stauBonus: 0.06 } }), () => 0.99).lastTrick.critChance).toBeCloseTo(0.06);
+    expect(resolveTrick(scenario(12, 0, { lightning: { active: true, charge: 0, maxCharge: 10, stormCritBonus: 0.06 } }), () => 0.99).lastTrick.critChance).toBeCloseTo(0.06);
   });
   it("Crit-Mult: Präzision-Wucht hebt den Crit-Faktor auf Basis + Bonus (P_FORCE II → Basis + 0,40)", () => {
     // P_FORCE II → +0,40× auf den Basis-Crit-Mult; Crit über den Blitz-Stau (rawCrit 1) garantiert.

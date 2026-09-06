@@ -32,20 +32,20 @@ const TRIMMEN = `Trimmen: beim Ersetzen des Skills dauerhaft +${pct(C.TRIM_STEP)
 // Stufentabellen der 15 Blitz-Skills (§3.5) — Zeile 0 Normal · 1 Selten · 2 Sehr selten · 3 Episch. Die Texte darunter
 // interpolieren dieselben Zahlen (kein Drift zwischen Regel und Beschreibung). Startwerte für die Sim.
 const BLITZ = {
-  ableiter:      [{ critEvery: 2, back: 0 }, { critEvery: 1, back: 0 }, { critEvery: 1, back: 1 }, { critEvery: 1, back: 2, overflow: true }],
-  statik:        [{ winEvery: 2, charge: 1, lossEvery: 0 }, { winEvery: 1, charge: 1, lossEvery: 0 }, { winEvery: 1, charge: 1, lossEvery: 2 }, { winEvery: 1, charge: 2, lossEvery: 2, targetValue: 1 }],
+  ableiter:      [{ critEvery: 2, back: 0 }, { critEvery: 2, back: 1 }, { critEvery: 1, back: 1 }, { critEvery: 1, back: 2, noCritCharge: 1 }], // §7.18: nimmt Statische Aufladung und Dauerstrom auf (beide gestrichen)
+  ionenfeld:     [{ tricks: 5, value: 2 }, { tricks: 7, value: 2 }, { tricks: 10, value: 2 }, { tricks: 15, value: 3 }], // §7.18 neu (SK_LIGHTNING_02): jede volle Leiste lädt das Feld
   reststrom:     [{ floor: 2 }, { floor: 3 }, { floor: 4 }, { floor: 6 }],
   gewitter:      [{ critPerBar: 0.005 }, { critPerBar: 0.0075 }, { critPerBar: 0.01 }, { critPerBar: 0.015 }],
   entladung:     [{ multPerBar: 0.02 }, { multPerBar: 0.03 }, { multPerBar: 0.04 }, { multPerBar: 0.06, fillDouble: true }],
   serie:         [{ critPerStreak: 0.01 }, { critPerStreak: 0.015 }, { critPerStreak: 0.02 }, { critPerStreak: 0.025, chargeFromStreak: 8 }],
-  kette:         [{ barEvery: 2, cards: 1 }, { barEvery: 1, cards: 1 }, { barEvery: 1, cards: 2 }, { barEvery: 1, cards: 3, targetExtra: 1 }],
-  faenger:       [{ minStacks: 6, value: 2 }, { minStacks: 5, value: 2 }, { minStacks: 4, value: 2 }, { minStacks: 3, value: 2 }],
+  vorentladung:  [{ minStreak: 5, multPerStreak: 0.1 }, { minStreak: 4, multPerStreak: 0.1 }, { minStreak: 3, multPerStreak: 0.1 }, { minStreak: 2, multPerStreak: 0.1 }], // §7.18 neu (SK_LIGHTNING_12): Serie zu Crit-Multiplikator
+  kette:         [{ barEvery: 2, extra: 1 }, { barEvery: 1, extra: 1 }, { barEvery: 1, extra: 2 }, { barEvery: 1, extra: 3 }], // §7.18: Tiefe — die Karte mit den meisten Stapeln
+  faenger:       [{ minStacks: 1, value: 1 }, { minStacks: 1, value: 2 }, { minStacks: 1, value: 3 }, { minStacks: 1, value: 4 }], // §7.18: ohne Schwelle, der Wert steigt
   kurzschluss:   [{ minStacks: 6, factor: 2 }, { minStacks: 5, factor: 2 }, { minStacks: 4, factor: 2 }, { minStacks: 3, factor: 2 }],
-  stau:          [{ step: 0.03, critKeep: 0 }, { step: 0.04, critKeep: 0 }, { step: 0.05, critKeep: 0 }, { step: 0.06, critKeep: 0.5 }],
+  stau:          [{ step: 0.05, critKeep: 0 }, { step: 0.075, critKeep: 0 }, { step: 0.1, critKeep: 0 }, { step: 0.15, critKeep: 0.5 }], // §7.18: Crit-Multiplikator statt Crit-Chance
   ueberschlag:   [{ multPer10: 0.02 }, { multPer10: 0.03 }, { multPer10: 0.04 }, { multPer10: 0.06 }],
-  ueberspannung: [{ minStacks: 6, charge: 2 }, { minStacks: 5, charge: 2 }, { minStacks: 4, charge: 2 }, { minStacks: 3, charge: 2 }],
-  blitzschlag:   [{ critEvery: 5 }, { critEvery: 4 }, { critEvery: 3 }, { critEvery: 2 }],
-  dauerstrom:    [{ minStreak: 5 }, { minStreak: 4 }, { minStreak: 3 }, { minStreak: 2 }],
+  ueberspannung: [{ minStacks: 1, charge: 1 }, { minStacks: 1, charge: 2 }, { minStacks: 1, charge: 3 }, { minStacks: 1, charge: 4 }], // §7.18: ohne Stapel-Schwelle, die Ladung steigt
+  blitzschlag:   [{ critEvery: 4, stacks: 1 }, { critEvery: 3, stacks: 1 }, { critEvery: 2, stacks: 1 }, { critEvery: 2, stacks: 2 }], // §7.18: einen Schritt schneller, Episch zwei Stapel
   serienschutz:  [{ frac: 0.7 }, { frac: 0.5 }, { frac: 0.4 }, { frac: 0.3, freePerRound: 1 }],
 };
 export const BLITZ_TIERS = BLITZ;
@@ -61,7 +61,7 @@ const jeder = (n, w = "Jeder") => (n === 1 ? w : `${w} ${n}.`); // „Jeder 2. C
 const FEUER = {
   glut:          [{ below: 50, mult: 2 }, { below: 60, mult: 2 }, { below: 70, mult: 2 }, { below: 90, mult: 2, halfCool: true }], // §7.12/§7.16: Kaltstart — unter der Schwelle zählt Hitze aus Siegen doppelt, Episch kühlen Niederlagen dort nur halb
   zunder:        [{ heat: 2 }, { heat: 3 }, { heat: 4 }, { heat: 5 }], // §7.16: 1–4 → 2–5
-  feuersturm:    [{ multPerStreak: 0.001 }, { multPerStreak: 0.0015 }, { multPerStreak: 0.002 }, { multPerStreak: 0.003, minHeat: 80 }], // §7.17: Serie zu Score bei voller Leiste (Episch ab 80 %); vorher Serie zu Hitze. Satz nach Sweep (0,5 % je Punkt war ×3 Blitz)
+  feuersturm:    [{ multPerStreak: 0.001 }, { multPerStreak: 0.0015 }, { multPerStreak: 0.002 }, { multPerStreak: 0.003, minHeat: 90 }], // §7.17: Serie zu Score bei voller Leiste (Episch ab 90 %, §7.18: war 80); vorher Serie zu Hitze. Satz nach Sweep (0,5 % je Punkt war ×3 Blitz)
   glutbett:      [{ floor: 40 }, { floor: 60 }, { floor: 80 }, { noCool: true }],
   rueckzuendung: [{ perDeficit: 0.5 }, { perDeficit: 1 }, { perDeficit: 1.5 }, { perDeficit: 2, value: 2 }],
   klinge:        [{ perHeat: 40, value: 1 }, { perHeat: 30, value: 1 }, { perHeat: 25, value: 1 }, { perHeat: 20, value: 1 }],
@@ -80,14 +80,13 @@ export const SKILL_DEFS = {
   // ---- Blitz (exp skill rework, §3): Passiv +5 % Crit je Skill, Leiste 10 Crits → nächste Karte ionisieren.
   //      Die Mechanik liest die Stufentabellen oben (factions/lightning.js). Texte: ein Satz je Stufe (`tiered`).
   // Rate — die Leiste schneller füllen
+  // (§7.18: Statische Aufladung SK_LIGHTNING_08 und Dauerstrom SK_LIGHTNING_16 sind in Blitzableiter aufgegangen.)
   SK_LIGHTNING_01: { id: "SK_LIGHTNING_01", name: "Blitzableiter", archetype: "lightning", keywords: ["charge", "crit"], tiers: BLITZ.ableiter,
-    ...tiered(BLITZ.ableiter, (r) => `${jeder(r.critEvery)} Crit gibt +1 Ladung zusätzlich.${r.back ? ` Nach jeder vollen Leiste kommt +${r.back} Ladung zurück.` : ""}${r.overflow ? " Ladung über der Leiste bleibt erhalten." : ""}`) },
-  SK_LIGHTNING_08: { id: "SK_LIGHTNING_08", name: "Statische Aufladung", archetype: "lightning", keywords: ["charge"], tiers: BLITZ.statik,
-    ...tiered(BLITZ.statik, (r) => `${jeder(r.winEvery)} Sieg ohne Crit gibt +${r.charge} Ladung.${r.lossEvery ? ` Jede ${r.lossEvery}. Niederlage gibt +1 Ladung.` : ""}${r.targetValue ? ` Die volle Leiste gibt der ionisierten Karte dauerhaft +${r.targetValue} Kartenwert.` : ""}`) },
+    ...tiered(BLITZ.ableiter, (r) => `${jeder(r.critEvery)} Crit gibt +1 Ladung zusätzlich.${r.back ? ` Nach jeder vollen Leiste kommt +${r.back} Ladung zurück.` : ""}${r.noCritCharge ? ` Jeder Sieg ohne Crit gibt +${r.noCritCharge} Ladung.` : ""}`) },
   SK_LIGHTNING_05: { id: "SK_LIGHTNING_05", name: "Reststrom", archetype: "lightning", keywords: ["charge"], tiers: BLITZ.reststrom,
     ...tiered(BLITZ.reststrom, (r) => `Nach jeder vollen Leiste startet die Ladung bei ${r.floor} statt 0.`) },
-  SK_LIGHTNING_16: { id: "SK_LIGHTNING_16", name: "Dauerstrom", archetype: "lightning", keywords: ["charge", "streak"], tiers: BLITZ.dauerstrom,
-    ...tiered(BLITZ.dauerstrom, (r) => `Ab Serie ${r.minStreak} gibt jeder Sieg +1 Ladung.`) },
+  SK_LIGHTNING_02: { id: "SK_LIGHTNING_02", name: "Ionenfeld", archetype: "lightning", keywords: ["charge", "ionize"], tiers: BLITZ.ionenfeld,
+    ...tiered(BLITZ.ionenfeld, (r) => `Jede volle Leiste lädt das Feld: für die nächsten ${r.tricks} Stiche haben alle deine Karten +${r.value} Wert.`) },
   // Rampen — jede volle Leiste zählt dauerhaft
   SK_LIGHTNING_06: { id: "SK_LIGHTNING_06", name: "Gewitterfront", archetype: "lightning", keywords: ["charge", "crit"], tiers: BLITZ.gewitter,
     ...tiered(BLITZ.gewitter, (r) => `Jede volle Leiste gibt dauerhaft +${pctS(r.critPerBar)} % Crit-Chance.`) },
@@ -97,20 +96,22 @@ export const SKILL_DEFS = {
   SK_LIGHTNING_07: { id: "SK_LIGHTNING_07", name: "Ladungsserie", archetype: "lightning", keywords: ["crit", "streak"], tiers: BLITZ.serie,
     ...tiered(BLITZ.serie, (r) => `Jeder Serienpunkt gibt +${pctS(r.critPerStreak)} % Crit-Chance.${r.chargeFromStreak ? ` Ab Serie ${r.chargeFromStreak} gibt jeder Sieg +1 Ladung.` : ""}`) },
   SK_LIGHTNING_13: { id: "SK_LIGHTNING_13", name: "Spannungsstau", archetype: "lightning", keywords: ["crit"], tiers: BLITZ.stau,
-    ...tiered(BLITZ.stau, (r) => `Jeder Sieg ohne Crit gibt +${pctS(r.step)} % Crit-Chance für den nächsten Sieg; ein Crit ${r.critKeep ? `behält ${pct(r.critKeep)} % des Staus` : "leert den Stau"}.`) },
+    ...tiered(BLITZ.stau, (r) => `Jeder Sieg ohne Crit gibt +${de(r.step)}× Crit-Multiplikator für den nächsten Crit; ein Crit ${r.critKeep ? `behält ${pct(r.critKeep)} % des Staus` : "leert den Stau"}.`) },
+  SK_LIGHTNING_12: { id: "SK_LIGHTNING_12", name: "Vorentladung", archetype: "lightning", keywords: ["crit", "streak"], tiers: BLITZ.vorentladung,
+    ...tiered(BLITZ.vorentladung, (r) => `Ab Serie ${r.minStreak} gibt jeder Serienpunkt +${de(r.multPerStreak)}× Crit-Multiplikator auf diesen Stich.`) },
   SK_LIGHTNING_14: { id: "SK_LIGHTNING_14", name: "Überschlag", archetype: "lightning", keywords: ["crit"], tiers: BLITZ.ueberschlag,
     ...tiered(BLITZ.ueberschlag, (r) => `Je 10 Punkte Crit-Chance über 100 %: +${de(r.multPer10)}× Crit-Multiplikator, solange der Überschuss besteht.`) },
   // Breite und Tiefe — Stapel erzeugen und nutzen
   SK_LIGHTNING_03: { id: "SK_LIGHTNING_03", name: "Kettenblitz", archetype: "lightning", keywords: ["ionize"], tiers: BLITZ.kette,
-    ...tiered(BLITZ.kette, (r) => `${jeder(r.barEvery, "Jede")} volle Leiste ionisiert ${r.cards === 1 ? "eine weitere Karte" : `${r.cards} weitere Karten`} in der Reihenfolge.${r.targetExtra ? ` Die Zielkarte erhält ${r.targetExtra === 1 ? "einen Stapel" : `${r.targetExtra} Stapel`} zusätzlich.` : ""}`) },
+    ...tiered(BLITZ.kette, (r) => `${jeder(r.barEvery, "Jede")} volle Leiste gibt deiner Karte mit den meisten Stapeln +${r.extra} Stapel.`) },
   SK_LIGHTNING_15: { id: "SK_LIGHTNING_15", name: "Blitzschlag", archetype: "lightning", keywords: ["crit", "ionize"], tiers: BLITZ.blitzschlag,
-    ...tiered(BLITZ.blitzschlag, (r) => `${jeder(r.critEvery)} Crit ionisiert die Siegkarte (+1 Stapel).`) },
+    ...tiered(BLITZ.blitzschlag, (r) => `${jeder(r.critEvery)} Crit ionisiert die Siegkarte (+${r.stacks} Stapel).`) },
   SK_LIGHTNING_11: { id: "SK_LIGHTNING_11", name: "Blitzfänger", archetype: "lightning", keywords: ["ionize"], tiers: BLITZ.faenger,
-    ...tiered(BLITZ.faenger, (r) => `Karten ab ${r.minStacks} Stapeln kämpfen mit +${r.value} Wert.`) },
+    ...tiered(BLITZ.faenger, (r) => `Ionisierte Karten kämpfen mit +${r.value} Wert.`) },
   SK_LIGHTNING_09: { id: "SK_LIGHTNING_09", name: "Kurzschluss", archetype: "lightning", keywords: ["ionize"], tiers: BLITZ.kurzschluss,
     ...tiered(BLITZ.kurzschluss, (r) => `Sieg mit einer Karte ab ${r.minStacks} Stapeln: ihre Stapel zählen ${r.factor === 2 ? "doppelt" : `×${r.factor}`}.`) },
   SK_LIGHTNING_04: { id: "SK_LIGHTNING_04", name: "Überspannung", archetype: "lightning", keywords: ["charge", "ionize", "crit"], tiers: BLITZ.ueberspannung,
-    ...tiered(BLITZ.ueberspannung, (r) => `Crit mit einer Karte ab ${r.minStacks} Stapeln: +${r.charge} Ladung.`) },
+    ...tiered(BLITZ.ueberspannung, (r) => `Crit mit einer ionisierten Karte: +${r.charge} Ladung.`) },
   // Schutz
   SK_LIGHTNING_17: { id: "SK_LIGHTNING_17", name: "Serienschutz", archetype: "lightning", keywords: ["charge", "streak"], tiers: BLITZ.serienschutz,
     ...tiered(BLITZ.serienschutz, (r) => `Verlierst du einen Stich mit mindestens ${pct(r.frac)} % Ladung, hält die Serie; diese ${pct(r.frac)} % werden verbraucht.${r.freePerRound ? " Einmal je Runde ist der Schutz kostenlos." : ""}`) },

@@ -12,7 +12,7 @@ import { skillSum, buildSkillDoors, // exp skill rework: Türen-Angebot (Stufen 
   hasAuslaeufer, hasRhizom, hasErntedank, hasWeltenbaum, hasMutterbaum, hasBaumreihe, hasEwigerFruehling, plantSkillCount } from "./skills.js"; // Pflanze: Gegnerdeck/Legendäre + Bekenntnis-Skalierung
 // exp skill rework: die Blitz-Mechanik (Passiv, 15 Skills, 4 Legendäre) lebt im Fraktionsmodul; die Engine ruft nur
 // ihre reinen Übergänge (Crit-Beiträge, Ladungsgewinn, volle Leiste, Niederlage, Rundenende).
-import { lightningCritChance, lightningCritMult, overcritMult, blitzfaengerValue, ionScoreFor as lightIonScore, ionCritMultFor as lightIonCritMult, chargeGainOnWin,
+import { lightningCritChance, lightningCritMult, overcritMult, blitzfaengerValue, ionenfeldValue, fieldTick, ionScoreFor as lightIonScore, ionCritMultFor as lightIonCritMult, chargeGainOnWin,
   critFillsBar, blitzschlagStacks, stauAfterWin, lightningOnLoss, fillBar as lightFillBar, lightningCycleEnd, maxChargeFor,
   lightParam, L as LIGHT, hasDoppelentladung, hasDurchschlag } from "./factions/lightning.js";
 // exp skill rework: die Feuer-Mechanik (Passiv, 15 Skills, 4 Legendäre) lebt ebenso im Fraktionsmodul — die Engine
@@ -344,8 +344,9 @@ export function resolveTrick(state, rng) {
   //      nach einer Niederlage), Rückzündung Episch (nach einer Niederlage). Alles im Modul.
   let heat = syncHeatMax(state.heat || null, skills);
   const fireValue = fireValueBonus(heat, skills, skillTiers, { lastResult });
-  // Blitzfänger (exp skill rework): Karten ab der Stapel-Schwelle der Stufe kämpfen mit +Wert (Zustand, kein Ereignis).
-  const blitzValueBonus = blitzfaengerValue(skills, skillTiers, pCard);
+  // Blitzfänger (exp skill rework): ionisierte Karten kämpfen mit +Wert; Ionenfeld (§7.18): solange das Feld trägt, alle
+  // Karten. Beides Zustand vor dem Stich, kein Ereignis.
+  const blitzValueBonus = blitzfaengerValue(skills, skillTiers, pCard) + ionenfeldValue(state.lightning, skills, skillTiers);
   const anchorPowerBonus = anchorType === "power" ? (aParam("power") || 0) : 0; // Kraftanker (§4.2, Stärke = Stufe)
   // E_QUICKSHOT IV (Rarität #167 Kat. E, Spec §3.2 E8 IV): jede Anker-Position (jede fünfte) erhält zusätzlich +2 Wert.
   // Der Anker-FAKTOR selbst läuft über computeFormations; hier nur der Stufe-IV-Wertbonus (anchor.value auf Anker-Positionen).
@@ -639,7 +640,7 @@ export function resolveTrick(state, rng) {
     // Zustand) + Stapel der Siegkarte (§7.12: +ION_CRIT_MULT_PER_STACK je wirksamem Stapel) + Systemregel (§1: Überschuss
     // über 100 % → sehr kleiner Crit-Mult-Bonus, alle Fraktionen).
     critMultiplier = critMultiplierFor(perks, critCtx) + familyCritMult(familyTiers)
-                   + lightningCritMult(lightning, skills, skillTiers, rawCrit) + lightIonCritMult(pCard, skills, skillTiers) + overcritMult(rawCrit);
+                   + lightningCritMult(lightning, skills, skillTiers, rawCrit, serieStreak) + lightIonCritMult(pCard, skills, skillTiers) + overcritMult(rawCrit);
     // Entladung Episch: der Crit, der die Leiste füllt, zählt mit doppeltem Crit-Multiplikator. Vorschau auf denselben
     // Ladungsgewinn, den ein Crit unten wirklich bringt — der Multiplikator wird nur bei einem Crit gelesen.
     if (lightning && lightning.active && lightParam(skills, skillTiers, LIGHT.ENTLADUNG, "fillDouble")
@@ -820,8 +821,8 @@ export function resolveTrick(state, rng) {
     // nachrechnen kann: (Basis×Serie + streakFlat) × (Perks×Feuer×Architekt) × (Form×Nachhall×Kern) × Crit
     // + Direkt-Anteile = total. Ohne diese beiden blieb ein unerklärter Rest stehen. Reine Anzeige-Daten.
     breakdown = { base: C.SCORE_PER_WIN, flats, streakFlat: architectStreakFlat, streakMult, perkMult, fireMult, formMult, formBase: formBaseEff, afterglowMult, coreMult, architectMult, critMult: isCrit ? critMultiplier : 1, strikeMult, fireDirect: fireDirectApplied, lightDirect, plantDirect, perkDirect, total: gained };
-    // Blitz (exp skill rework, §3): Ladungsgewinn dieses Siegs — Passiv (+1 je Crit), Blitzableiter, Überspannung,
-    // Statische Aufladung, Dauerstrom, Ladungsserie Episch — mit fortgeschriebenen Zählern; Blitzschlag (jeder N. Crit
+    // Blitz (exp skill rework, §3): Ladungsgewinn dieses Siegs — Passiv (+1 je Crit), Blitzableiter (§7.18: auch je Sieg
+    // ohne Crit auf Episch), Überspannung, Ladungsserie Episch — mit fortgeschriebenen Zählern; Blitzschlag (jeder N. Crit
     // ionisiert die Siegkarte); Spannungsstau. Die volle Leiste zündet NACH der Verzweigung (unten), einmal je Stich.
     // Kein Selbstwachstum ionisierter Siegkarten mehr (Lesart A).
     if (lightning && lightning.active) {
@@ -961,13 +962,15 @@ export function resolveTrick(state, rng) {
   }
 
   // Blitz (exp skill rework, §3.2): volle Leiste → +1 Leiste, die NÄCHSTE Karte in der Reihenfolge wird ionisiert
-  // (Kettenblitz: die folgenden dazu), Gewitterfront/Entladung rampen, die Ladung fällt auf den Reststrom-Boden.
-  // Höchstens einmal je Stich, nach Sieg UND Niederlage (Statische Aufladung lädt auch auf Niederlagen); Ladung,
-  // die danach noch über der Leiste liegt, zündet beim nächsten Stich. `maxCharge` folgt dem Build (Donnergott 7).
+  // (Kettenblitz §7.18: die tiefste Karte dazu), Gewitterfront/Entladung rampen, Ionenfeld lädt das Feld, die Ladung fällt
+  // auf den Reststrom-Boden. Höchstens einmal je Stich, nach Sieg UND Niederlage (Ladung über der Leiste, die ein Stich
+  // hinterlässt, zündet beim nächsten). `maxCharge` folgt dem Build (Donnergott 7). Das Ionenfeld zählt VOR der Leiste
+  // herunter: der Stich, der es lädt, zählt nicht mit — die nächsten n Stiche tragen es.
   let barFilled = false, barStacks = 0;
   if (lightning && lightning.active) {
     const lMax = maxChargeFor(skills);
     if (lightning.maxCharge !== lMax) lightning = { ...lightning, maxCharge: lMax };
+    lightning = fieldTick(lightning);
     const f = lightFillBar(lightning, skills, skillTiers, deck, playerOrder, actualPos);
     if (f.filled) { lightning = f.lightning; deck = f.deck; ionTotal += f.stacks; barFilled = true; barStacks = f.stacks; }
   }

@@ -130,7 +130,7 @@ describe("Skill-Auswahl — PICK_SKILL / DECLINE_SKILL (Stufe A)", () => {
   it("PICK_SKILL bei vollen Slots: ohne replaceId no-op, mit gültigem Ziel wird ersetzt (#95)", () => {
     // exp: Slots sind standardmäßig unbegrenzt — das Limit kommt hier als Dev-Run-Regel (skillSlots 6): volle Slots =
     // 6 gehaltene Skills.
-    const six = ["SK_LIGHTNING_01", "SK_LIGHTNING_08", "SK_LIGHTNING_03", "SK_LIGHTNING_04", "SK_LIGHTNING_05", "SK_LIGHTNING_06"];
+    const six = ["SK_LIGHTNING_01", "SK_LIGHTNING_07", "SK_LIGHTNING_03", "SK_LIGHTNING_04", "SK_LIGHTNING_05", "SK_LIGHTNING_06"];
     const NEW = "SK_LIGHTNING_10"; // Entladung
     const full = skillState({ skills: six, skillSlots: 6, skillOffer: [NEW], lightning: { active: true, charge: 0, maxCharge: 10 } });
     // ohne Ersetzungsziel → unverändert (das war der Bug: bei vollen Slots tat der Klick nichts)
@@ -139,7 +139,7 @@ describe("Skill-Auswahl — PICK_SKILL / DECLINE_SKILL (Stufe A)", () => {
     expect(reducer(full, { type: "PICK_SKILL", skillId: NEW, replaceId: "SK_LIGHTNING_09", rng })).toBe(full);
     // gültiges Ziel → ersetzt genau diesen Slot, Reihenfolge bleibt, zurück in play
     const s = reducer(full, { type: "PICK_SKILL", skillId: NEW, replaceId: "SK_LIGHTNING_04", rng });
-    expect(s.skills).toEqual(["SK_LIGHTNING_01", "SK_LIGHTNING_08", "SK_LIGHTNING_03", NEW, "SK_LIGHTNING_05", "SK_LIGHTNING_06"]);
+    expect(s.skills).toEqual(["SK_LIGHTNING_01", "SK_LIGHTNING_07", "SK_LIGHTNING_03", NEW, "SK_LIGHTNING_05", "SK_LIGHTNING_06"]);
     expect(s.phase).toBe("play");
   });
 

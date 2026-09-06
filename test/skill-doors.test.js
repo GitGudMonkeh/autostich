@@ -211,8 +211,8 @@ describe("Stufentexte — ein Text je Stufe (descTiers, ability.<id>.desc.<t>, s
     for (const s of SKILL_LIST.filter((x) => x.legendary)) expect(s.descTiers).toBeUndefined();
   });
   it("Episch-Extras stehen nur im Episch-Text", () => {
-    expect(SKILL_DEFS.SK_LIGHTNING_01.descTiers[3]).toContain("Ladung über der Leiste bleibt erhalten");
-    expect(SKILL_DEFS.SK_LIGHTNING_01.descTiers[2]).not.toContain("bleibt erhalten");
+    expect(SKILL_DEFS.SK_LIGHTNING_01.descTiers[3]).toContain("Jeder Sieg ohne Crit gibt +1 Ladung"); // §7.18: das Episch-Extra aus Statische Aufladung
+    expect(SKILL_DEFS.SK_LIGHTNING_01.descTiers[2]).not.toContain("ohne Crit");
     expect(SKILL_DEFS.SK_LIGHTNING_07.descTiers[3]).toContain("Ab Serie 8 gibt jeder Sieg +1 Ladung");
     expect(SKILL_DEFS.SK_LIGHTNING_07.descTiers[0]).not.toContain("Ab Serie");
     expect(SKILL_DEFS.SK_FIRE_04.descTiers[3]).toBe("Niederlagen kühlen die Hitze nicht.");

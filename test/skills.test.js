@@ -20,8 +20,10 @@ describe("skills — Blitz-Registry (exp skill rework)", () => {
     for (const s of leg) expect(s.tiers).toBeUndefined();
     expect(SKILL_DEFS[LR].tiers).toBe(BLITZ_TIERS.ableiter);
     expect(SKILL_DEFS.SK_LIGHTNING_L03.name).toBe("Hochspannung"); // ersetzt Flächenionisation
-    expect(SKILL_DEFS.SK_LIGHTNING_02).toBeUndefined();           // Ionisierung ist im Passiv aufgegangen
-    expect(SKILL_DEFS.SK_LIGHTNING_12).toBeUndefined();           // Breitenbeschleuniger gestrichen
+    expect(SKILL_DEFS.SK_LIGHTNING_02.name).toBe("Ionenfeld");    // §7.18: neu auf dem Platz der alten Ionisierung (die ist das Passiv)
+    expect(SKILL_DEFS.SK_LIGHTNING_12.name).toBe("Vorentladung"); // §7.18: neu auf dem Platz des gestrichenen Breitenbeschleunigers
+    expect(SKILL_DEFS.SK_LIGHTNING_08).toBeUndefined();           // §7.18: Statische Aufladung in Blitzableiter aufgegangen
+    expect(SKILL_DEFS.SK_LIGHTNING_16).toBeUndefined();           // §7.18: Dauerstrom in Blitzableiter aufgegangen
     expect(archetypeOf(LR)).toBe("lightning");
   });
   it("Stufentabellen: Schwellen fallen, Raten steigen mit der Stufe (Leiter aus docs/skill-rework.md §3.5)", () => {
@@ -29,7 +31,10 @@ describe("skills — Blitz-Registry (exp skill rework)", () => {
     const asc = (rows, key) => rows.every((r, i) => i === 0 || r[key] >= rows[i - 1][key]);
     for (const k of ["faenger", "kurzschluss", "ueberspannung"]) expect(desc(BLITZ_TIERS[k], "minStacks"), k).toBe(true);
     expect(desc(BLITZ_TIERS.blitzschlag, "critEvery")).toBe(true);
-    expect(desc(BLITZ_TIERS.dauerstrom, "minStreak")).toBe(true);
+    expect(desc(BLITZ_TIERS.vorentladung, "minStreak")).toBe(true); // §7.18
+    expect(asc(BLITZ_TIERS.faenger, "value")).toBe(true);           // §7.18: ohne Schwelle, der Wert steigt
+    expect(asc(BLITZ_TIERS.ueberspannung, "charge")).toBe(true);    // §7.18: ohne Schwelle, die Ladung steigt
+    expect(asc(BLITZ_TIERS.ionenfeld, "tricks")).toBe(true);        // §7.18
     expect(desc(BLITZ_TIERS.serienschutz, "frac")).toBe(true);
     expect(asc(BLITZ_TIERS.reststrom, "floor")).toBe(true);
     expect(asc(BLITZ_TIERS.gewitter, "critPerBar")).toBe(true);
@@ -37,10 +42,12 @@ describe("skills — Blitz-Registry (exp skill rework)", () => {
     expect(asc(BLITZ_TIERS.serie, "critPerStreak")).toBe(true);
     expect(asc(BLITZ_TIERS.ueberschlag, "multPer10")).toBe(true);
     expect(asc(BLITZ_TIERS.stau, "step")).toBe(true);
-    expect(asc(BLITZ_TIERS.kette, "cards")).toBe(true);
+    expect(asc(BLITZ_TIERS.kette, "extra")).toBe(true); // §7.18: Tiefe
   });
   it("Beschreibungen interpolieren die Tabellen (kein Drift zwischen Regel und Text)", () => {
-    expect(SKILL_DEFS.SK_LIGHTNING_11.desc).toContain(`ab ${BLITZ_TIERS.faenger[0].minStacks} Stapeln`);
+    expect(SKILL_DEFS.SK_LIGHTNING_11.desc).toContain(`+${BLITZ_TIERS.faenger[0].value} Wert`);
+    expect(SKILL_DEFS.SK_LIGHTNING_02.descTiers[3]).toContain(`${BLITZ_TIERS.ionenfeld[3].tricks} Stiche`);
+    expect(SKILL_DEFS.SK_LIGHTNING_12.desc).toContain(`Ab Serie ${BLITZ_TIERS.vorentladung[0].minStreak}`);
     expect(SKILL_DEFS.SK_LIGHTNING_05.desc).toContain(`bei ${BLITZ_TIERS.reststrom[0].floor} statt 0`);
     expect(SKILL_DEFS.SK_LIGHTNING_06.desc).toContain("+0,5");
   });

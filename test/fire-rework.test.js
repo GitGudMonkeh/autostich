@@ -52,7 +52,7 @@ describe("Feuer — Roster und Stufenleitern", () => {
     expect(up(T.glut, "below")).toBe(true); // §7.12: Kaltstart-Schwelle steigt mit der Stufe
     expect(up(T.zunder, "heat")).toBe(true);
     expect(up(T.feuersturm, "multPerStreak")).toBe(true); // §7.17: Serie zu Score
-    expect(T.feuersturm[3].minHeat).toBe(80); // Episch-Extra: schon ab 80 % Hitze statt voller Leiste
+    expect(T.feuersturm[3].minHeat).toBe(90); // Episch-Extra: schon ab 90 % Hitze statt voller Leiste (§7.18: war 80)
     for (const r of T.feuersturm) expect(r.perStreak).toBeUndefined(); // keine Hitze mehr
     expect(up(T.glutbett.slice(0, 3), "floor")).toBe(true);
     expect(T.glutbett[3].noCool).toBe(true);
@@ -138,8 +138,8 @@ describe("Feuer — Modul (reine Übergänge)", () => {
     expect(feuersturmMult([F.FEUERSTURM], { [F.FEUERSTURM]: 2 }, 100, 100, 30)).toBeCloseTo(1 + 30 * T.feuersturm[2].multPerStreak);
     expect(feuersturmMult([F.FEUERSTURM], {}, 100, 200, 10)).toBe(1); // mit Weißglut ist voll erst 200
     expect(feuersturmMult([F.FEUERSTURM], {}, 200, 200, 10)).toBeCloseTo(1 + 10 * T.feuersturm[0].multPerStreak);
-    expect(feuersturmMult([F.FEUERSTURM], { [F.FEUERSTURM]: 3 }, 80, 200, 10)).toBeCloseTo(1 + 10 * T.feuersturm[3].multPerStreak); // Episch ab 80
-    expect(feuersturmMult([F.FEUERSTURM], { [F.FEUERSTURM]: 3 }, 79, 200, 10)).toBe(1);
+    expect(feuersturmMult([F.FEUERSTURM], { [F.FEUERSTURM]: 3 }, T.feuersturm[3].minHeat, 200, 10)).toBeCloseTo(1 + 10 * T.feuersturm[3].multPerStreak); // Episch ab der Schwelle
+    expect(feuersturmMult([F.FEUERSTURM], { [F.FEUERSTURM]: 3 }, T.feuersturm[3].minHeat - 1, 200, 10)).toBe(1);
     expect(feuersturmMult([F.FEUERSTURM], {}, 100, 100, 0)).toBe(1);
   });
   it("verbrennungMult: ×1,5 ab dem Vorsprung der Stufe", () => {

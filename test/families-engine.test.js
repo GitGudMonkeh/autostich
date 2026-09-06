@@ -31,9 +31,9 @@ const rng = makeRng(9);
 // Kritwurf ist rng()<chance: 0,999… crittet nie bei realer Chance, aber immer bei erzwungener Chance 1 (litCrit(1)).
 const never = () => 0.999999;
 // #267: der entfernte Crit-Stat wird als reine Crit-CHANCE-Quelle über den Blitz-Spannungsstau ersetzt. Ein blank
-// aktiver Blitz OHNE Skills trägt exakt stauBonus zur rawCrit bei (exp: kein Sockel mehr) — sonst nichts (kein Score/
+// aktiver Blitz OHNE Skills trägt exakt stormCritBonus zur rawCrit bei (exp: kein Sockel mehr) — sonst nichts (kein Score/
 // Mult/Ladung). litCrit(V) hebt die rawCrit auf genau V → Drop-in für den alten statCritChance:V (Kritwurf bleibt rng()<V).
-const litCrit = (v = 1) => ({ active: true, charge: 0, maxCharge: 10, stauBonus: v });
+const litCrit = (v = 1) => ({ active: true, charge: 0, maxCharge: 10, stormCritBonus: v }); // §7.18: die Gewitterfront-Rampe (der Stau zahlt jetzt auf den Multiplikator)
 
 describe("Familien-Engine-Verdrahtung — Kategorie D über resolveTrick (Schritt 1)", () => {
   it("D_HIGH IV: Stufe zahlt scoreFlat in die multiplizierte Basis (Wert ≥6)", () => {
