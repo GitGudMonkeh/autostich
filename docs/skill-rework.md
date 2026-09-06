@@ -27,7 +27,7 @@ und gilt erst, wenn es nach Gesetzt wandert.
   Zeile für Zeile — 7.19 verletzte es nur Überspannung (Normal = Selten), seit 7.20 behoben (1 / 2 / 3 / 4).
 - **Keine Deckel auf Skill-Rampen, lieber niedrigere Werte.** Rampen laufen offen; die Zahl je Schritt
   ist der Regler. Der harte Deckel des fertigen Crit-Multiplikators in der Engine (8×; 7.19 versuchsweise
-  12×, 7.20 zurück) ist davon nicht berührt, er bleibt, bis der Owner anderes sagt.
+  12×, 7.20 zurück) ist davon nicht berührt — Entscheid Owner 2026-09-06 nach der Messung in 7.22: er bleibt bei 8.
 - **Crit-Chance über 100 % gibt einen sehr kleinen Crit-Multiplikator-Bonus.** Systemregel, Größe in
   der Sim. Überschlag, der denselben Überschuss in mehr Crit-Mult wandelte, ist seit 7.19 gestrichen; die
   Regel bleibt der Sockel für alle Fraktionen.
@@ -2855,7 +2855,10 @@ einer Crit-Chance, die 100 % erreicht — niedrige Sätze treffen den Median zue
 den Owner: (1) Deckel 8 bleibt (Status quo); (2) Deckel weg und Werte runter — nach dieser Messung nicht zu haben;
 (3) Bremse statt Anschlag: über 8× zählt jeder weitere Punkt zu einem Viertel — ein Deckel, der bremst, die Rampen und
 die zwei Episch-Extras behalten oben Wirkung; eine Zeile in der Engine, nicht gemessen; (4) Deckel 12 — 7.19: Parität
-gekippt, gierig verdoppelt. Empfehlung: (3) messen, sonst (1). Nichts geändert.
+gekippt, gierig verdoppelt. Empfehlung: (3) messen, sonst (1).
+
+Entscheid Owner (2026-09-06): **der Deckel bleibt bei 8.** Damit ist die offene Liste aus 7.20 geschlossen; Glutbett
+und Schmiede bleiben vorerst, wie sie sind.
 
 ## 5. Eis
 
