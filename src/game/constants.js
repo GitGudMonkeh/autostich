@@ -395,7 +395,8 @@ export const WURZELGEFLECHT_FACTOR_SCALE = envNum("SIM_WURZELGEFLECHT_FACTOR_SCA
 export const EWIGER_FRUEHLING_GREEN_FRAC = envNum("SIM_EWIGER_FRUEHLING_GREEN_FRAC", 1); // Ewiger Frühling (L): Anteil grüner Karten, ab dem alle Karten blühen (1 = vollständig grün)
 // (§6.12: der Regler bleibt auf 1. Gemessen 1/0,85/0,6/0,35/0,25 → +4/+10/+17/+37/+34 % — er sättigt unter dem Band
 //  und kostet dafür das Zielbild. Der Auslöser war nie das Problem, die Auszahlung war es — §6.13, Owner.)
-export const EWIGER_FRUEHLING_BLOOM_VALUE = envNum("SIM_EWIGER_FRUEHLING_BLOOM_VALUE", 8); // Ewiger Frühling (L, §6.13, Owner): blühende Karten kämpfen mit so viel mehr Wert. Der EINZIGE Wert-Hebel der Fraktion — die 15 Skills sind Wachstum, Basis-Score und Erkennung. Startwert ungemessen (Kartenwerte 1..10; Schmiede/Glutstahl geben +3 dauerhaft)
+export const EWIGER_FRUEHLING_BLOOM_VALUE = envNum("SIM_EWIGER_FRUEHLING_BLOOM_VALUE", 8);
+export const EWIGER_FRUEHLING_FORM_MULT   = envNum("SIM_EWIGER_FRUEHLING_FORM_MULT", 0.15);  // Ewiger Frühling (L, §6.15, Owner): ein Sieg mit einer blühenden Karte zählt +so viel je aktiver Formation an ihrer Position. Der EINZIGE Multiplikator der Fraktion — der Wert-Bonus allein sättigte bei +73 % (§6.14) // Ewiger Frühling (L, §6.13, Owner): blühende Karten kämpfen mit so viel mehr Wert. Der EINZIGE Wert-Hebel der Fraktion — die 15 Skills sind Wachstum, Basis-Score und Erkennung. Startwert ungemessen (Kartenwerte 1..10; Schmiede/Glutstahl geben +3 dauerhaft)
 
 // Geist (Rekord-Vergleich): Score-Stützstelle alle N Stiche [TUNING]
 export const GHOST_STEP = 13;

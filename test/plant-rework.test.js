@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import * as C from "../src/game/constants.js";
 import { SKILL_DEFS, PFLANZE_TIERS as PT, ARCHETYPE_ORDER, SKILL_TIER_COUNT } from "../src/game/skills.js";
-import { P, plantStage, greenCount, applyGrowth, growthOnWin, setzlingsbeetGains, plantValueBonus } from "../src/game/factions/plant.js";
+import { P, plantStage, greenCount, applyGrowth, growthOnWin, setzlingsbeetGains, plantValueBonus, plantFormMult } from "../src/game/factions/plant.js";
 import { resolveTrick } from "../src/game/engine.js";
 import { initialState, reducer } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
@@ -358,6 +358,26 @@ describe("Pflanze — die vier Legendären (§6.5)", () => {
     const without = resolveTrick(scen({ ...over, skills: [P.BAUMREIHE] }), noCrit);
     expect(without.lastTrick.pValue).toBe(5);
     expect(without.lastTrick.result).not.toBe("win");
+  });
+  it("Ewiger Frühling (§6.15): ein Sieg mit blühender Karte zählt je Formation mehr — der einzige Multiplikator der Fraktion", () => {
+    const m = C.EWIGER_FRUEHLING_FORM_MULT;
+    const two = { mult: 1, baseMult: 1, formations: [
+      { type: "farbblock", ordinal: 2, factor: 1.35, members: [0, 1] },
+      { type: "treppe", ordinal: 2, factor: 1.35, members: [1, 2] },
+      { type: "anker", ordinal: 1, factor: 1.25 }, // Meta-Faktor ohne Mitglieder: zählt für die Pflanze nicht
+    ] };
+    const bloomCard = { id: "X1", bloom: true };
+    expect(plantFormMult([P.EWIGER_FRUEHLING], bloomCard, two)).toBeCloseTo(1 + 2 * m, 9);
+    expect(plantFormMult([P.EWIGER_FRUEHLING], bloomCard, noForm()[0])).toBe(1);       // ohne Formation
+    expect(plantFormMult([P.EWIGER_FRUEHLING], { id: "X1", green: true }, two)).toBe(1); // grün reicht nicht
+    expect(plantFormMult([P.BAUMREIHE], bloomCard, two)).toBe(1);                      // ohne den Skill
+    // In der Engine: derselbe Faktor steht im Sieg-Stack.
+    const deck = deckOf((i) => (i === 1 ? { bloom: true, green: true } : {}));
+    const f = withRun([0, 1, 2]);
+    const over = { deck, formations: f, growth: { X1: B } };
+    const on = resolveTrick(scen({ ...over, skills: [P.EWIGER_FRUEHLING] }), noCrit);
+    expect(on.lastTrick.breakdown.plantMult).toBeCloseTo(1 + m, 9); // ein Lauf an der Position
+    expect(resolveTrick(scen({ ...over, skills: [P.BAUMREIHE] }), noCrit).lastTrick.breakdown.plantMult).toBe(1);
   });
 });
 

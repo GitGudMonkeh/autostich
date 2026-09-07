@@ -226,6 +226,14 @@ function bluetenlese(skills, skillTiers, { posForm, cardAt }) {
 export const plantValueBonus = (skills, card) =>
   (hasEwigerFruehling(skills) && card && card.bloom ? C.EWIGER_FRUEHLING_BLOOM_VALUE : 0);
 
+/* Ewiger Frühling, zweite Hälfte (L, §6.15, Owner): gewinnt eine blühende Karte, zählt der Stich +FORM_MULT je
+   aktiver Formation an ihrer Position — der einzige MULTIPLIKATOR der Fraktion (Wachstum, Basis-Score und Erkennung
+   sind die anderen drei Achsen). Ohne Formation, ohne Blüte oder ohne den Skill: 1. */
+export function plantFormMult(skills, card, posForm) {
+  if (!hasEwigerFruehling(skills) || !card || !card.bloom) return 1;
+  return 1 + plantFormCount(posForm) * C.EWIGER_FRUEHLING_FORM_MULT;
+}
+
 /* Sieg: Wachstum (Passiv, Aussaat, Ranken, Blütenlese), die Zustandswechsel und der Basis-Score (Passiv-Blüte,
    Score-Skills). `pos` = Position der Siegkarte in der Ziehreihenfolge, `order` = playerOrder, `posForm` = ihr
    Formations-Eintrag. Reihenfolge: erst wachsen, dann werten — der Sieg, der eine Karte über eine Schwelle hebt,

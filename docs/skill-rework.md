@@ -4306,6 +4306,51 @@ Balance-Guard: Median 4,38M, Mean 9,39M — im Band von §6.12, nicht neu zentri
 
 ---
 
+### 6.15 Ewiger Frühling bekommt den Multiplikator (2026-09-07, Owner) — umgesetzt und gemessen
+
+**Owner:** „bei ewiger Frühling müssen wir dann neben Kartenwert noch einen anderen Boni geben, wie blühende Karten
+gebe x % mehr Score in Formationen" · „Hochspannung passt so."
+
+**Ein Sieg mit einer blühenden Karte zählt +15 % je aktiver Formation an ihrer Position.** Eigener Faktor im
+Sieg-Stack (`breakdown.plantMult`), neben Serie, Perk, Formation, Nachhall, Kern, Feuer und Architekt.
+
+> „Blühende Karten kämpfen mit +8 Wert, und ein Sieg mit einer blühenden Karte zählt +15 % je Formation an ihrer
+> Position. Ist das Feld vollständig grün, sind alle deine Karten blühend."
+
+**Das ist der erste Multiplikator der Fraktion.** Die Pflanze hatte drei Achsen — Wachstum, Basis-Score,
+Formationserkennung — und keine multiplikative. Genau deshalb sättigte der Wert-Bonus in §6.14 bei +73 %: Wert kauft
+Siege, und Siege sind endlich. Ein Faktor auf den Sieg-Score hat diese Grenze nicht.
+
+**Gemessen** (ein Regler, geteilte Wertetabelle):
+
+| +Satz je Formation | 8 % | **15 %** | 25 % | 40 % |
+| --- | --- | --- | --- | --- |
+| typ. Effekt | +83 % | **+108 %** | +139 % | +187 % |
+
+Linear, keine Sättigung — im Gegensatz zum Wert-Bonus. Gesetzt: **0,15**.
+
+#### Stand der neun (alle Werte gesetzt, geteilte Tabelle, gepaart)
+
+| Legendär | Fraktion | typ. |
+| --- | --- | --- |
+| Baumreihe | Pflanze | +160 % |
+| Doppelentladung | Blitz | +134 % |
+| Wurzelgeflecht | Pflanze | +130 % |
+| Sonnenkern | Feuer | +127 % |
+| Resonanz | Blitz | +123 % |
+| Sonnenzorn | Feuer | +117 % |
+| **Ewiger Frühling** | Pflanze | **+108 %** |
+| Ewige Glut | Feuer | +101 % |
+| Hochspannung | Blitz | +59 % (Owner: „passt so") |
+
+Acht von neun liegen in **+101 … +160 %**. Ausgangspunkt der Runde war +4 … +418 %.
+
+**Balance-Guard unverändert** (4,38M / 9,39M): der Zufallsspieler kann die Pflanze gar nicht ziehen —
+`SKILL_OFFER_ARCHETYPES` ist weiter `["fire", "lightning"]`. Dass der Faktor greift, sichert stattdessen ein
+Engine-Test auf `breakdown.plantMult`. **Sobald die Pflanze ins Angebot kommt, ist der Guard neu zu zentrieren.**
+
+---
+
 ## Änderungsprotokoll
 
 
@@ -4382,3 +4427,4 @@ Balance-Guard: Median 4,38M, Mean 9,39M — im Band von §6.12, nicht neu zentri
 | 2026-09-07 | Owner: Sonnenzorn statt Damaststahl, und die neun Legendären auf ein Band. Messfehler in `--mode legendaries` gefunden und behoben (geteilte Wertetabelle, `--table`), vier reglerlose Legendäre bekamen je einen Regler auf der bestehenden Mechanik. Acht von neun liegen jetzt in +58 … +127 % statt +4 … +418 %. Ewiger Frühling erreicht das Band mit seinem Regler nicht und braucht eine Design-Entscheidung. §6.12. |
 | 2026-09-07 | Owner: Ewiger Frühling bekommt einen Bonus auf blühende Karten. Umgesetzt als +3 Kampfwert je blühender Karte — der einzige Wert-Hebel der Fraktion, ab der ersten blühenden Karte wirksam; das Zielbild bleibt der zweite Effekt. Startwert ungemessen. §6.13. |
 | 2026-09-07 | Owner: keine Kommazahlen auf Karten (Brandmarke zeigt nur ganze Punkte), und alle unter 100 % auf ~100 % heben. Fünf Legendäre über ihre Werte auf +100 … +108 % gebracht; sieben der neun liegen jetzt in +101 … +149 %. Hochspannung (Regler arithmetisch am Ende) und Ewiger Frühling (Wert-Bonus sättigt bei +73 %) erreichen das Band nicht. §6.14. |
+| 2026-09-07 | Owner: Ewiger Frühling bekommt neben dem Kartenwert einen Score-Bonus in Formationen; Hochspannung bleibt wie er ist. Umgesetzt als +15 % je aktiver Formation beim Sieg mit einer blühenden Karte — der erste Multiplikator der Fraktion, gemessen +108 % und ohne Sättigung. Acht der neun Legendären liegen jetzt in +101 … +160 %. §6.15. |
