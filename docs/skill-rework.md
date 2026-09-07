@@ -3717,6 +3717,53 @@ Deck (6.1). Drei Bauformen, die das Bild behalten und den Sprung ersetzen; Werte
 
 Alle drei ersetzen **nur** den Auslöser; Name, Platz und Emblem bleiben.
 
+### 6.5 Die 15 (Vorschlag, Entscheid Owner je Zeile)
+
+Owner hat Ranken-Bauform 1 gewählt (Ansteckung im Reifemoment). Damit steht der Bestand, und die 15 Plätze lassen
+sich füllen. **Einzeiler, noch keine Stufen und keine Werte** — die kommen nach dem Ja, Skill für Skill.
+
+Zwei technische Haken der Formations-Engine, die den neuen Kern tragen und heute ungenutzt sind: **`isJoker`**
+(eine Position passt bei der Erkennung auf jeden Wert und jede Farbe) und **`segInfo.isOpen`** (eine Segmentgrenze
+ist offen, ein Lauf darf über 5 Karten hinaus). Beides existiert für Anker und Architekt — Pflanze kann es benutzen,
+ohne dass ein neuer Begriff ins Regelwerk kommt.
+
+| # | Skill | Rolle | Einzeiler | Herkunft |
+| --- | --- | --- | --- | --- |
+| 1 | **Aussaat** | Breite | Gewinnt eine grüne Karte, wachsen beide Nachbarn. | bleibt (05) |
+| 2 | **Ranken** | Ansteckung | Wird eine Karte grün, wachsen ihre grauen Nachbarn kräftig. | umgebaut (09, Owner) |
+| 3 | **Setzlingsbeet** | Kaltstart | Die niedrigste Karte je Segment startet mit Wachstumsvorsprung. | bleibt (07) |
+| 4 | **Zäher Halm** | Bestand | Graue Karten wachsen auch bei Niederlage. | bleibt (08) |
+| 5 | **Blätterdach** | Ertrag | Ein grüner Farbblock ab N Karten gibt Basis-Score je Karte im Block. | bleibt (13) |
+| 6 | **Jahresringe** | Ertrag (Tiefe) | Ein Sieg gibt Basis-Score je 10 eigenes Wachstum der Siegkarte. | Konzept aus 04 |
+| 7 | **Überwucherung** | Schwelle (Feld) | Ist das Feld zu N % grün, sinken die Schwellen für alle Karten. | umgebaut (14) — der feldweite Multiplikator entfällt |
+| 8 | **Spalier** | **Formationsdichte** | Grüne Karten öffnen die Segmentgrenze an ihrer Position: Läufe wachsen über das Segment hinaus. | neu (`segInfo.isOpen`) |
+| 9 | **Wildwuchs** | **Formationsdichte** | Blühende Karten zählen bei der Formationserkennung als Joker. | neu (`isJoker`) |
+| 10 | **Lichtung** | Tempo | Ein Sieg in einer Formation gibt doppeltes Formations-Wachstum. | neu — verdoppelt den zweiten Summanden des Passivs |
+| 11 | **Wurzelnetz** | Ausgleich | Am Durchlaufende gibt die am weitesten gewachsene Karte einen Teil ihres Zuwachses an die schwächste ab. | neu |
+| 12 | **Verpflanzen** | Aufstellung | Ein Tausch mehr je Aufstellungsphase. | neu (`formationSwaps`) |
+| 13 | **Frühblüher** | Schwelle | Die Schwelle zu *blühend* sinkt. | neu |
+| 14 | **Unterholz** | Bestand | Eine Karte, die einen ganzen Durchlauf nicht gewinnt, wächst am Durchlaufende. | neu — Aufholen ohne Niederlage-Bedingung |
+| 15 | **Aussamen** | Breite (Ereignis) | Wird eine Karte blühend, wachsen alle grauen Karten. | neu |
+
+**Legendäre (4):**
+
+| Platz | Skill | Einzeiler |
+| --- | --- | --- |
+| L03 | **Baumreihe** (Idee bleibt) | Blühende Karten bilden eine positionsfreie Wiederholung, egal wo sie liegen — Auslöser ist jetzt *blühend* statt Wert 11. |
+| L01 | **Weltenbaum** (neu) | Am Ende jedes Durchlaufs wächst jede grüne Karte, je mehr grüne Karten im Feld stehen. |
+| L02 | **Mutterbaum** (neu) | Deine am weitesten gewachsene Karte zählt in jeder Formation ihres Segments mit. |
+| L04 | **Ewiger Frühling** (neu) | Ist das Feld vollständig grün, sind alle Karten blühend. |
+
+**Warum diese Verteilung.** Der stärkste Hebel des Passivs ist die Zahl der Formationen je Karte — dafür stehen jetzt
+zwei Skills (8, 9) und ein Legendäres (L02), die alle die **Erkennung** verändern statt Score zu addieren. Der Ertrag
+läuft über zwei Skills (5, 6) plus das Passiv (blühend), also drei Quellen in der Basis und keinen einzigen
+Multiplikator. Die Schwelle bekommt zwei Regler (7, 13), das Tempo einen (10), die Breite drei (1, 2, 15), der
+Bestand zwei (4, 14), dazu Kaltstart (3), Ausgleich (11) und Aufstellung (12).
+
+**Was bewusst fehlt:** kein Skill zahlt Direkt-Score, keiner hängt an einem anderen (kein `enabler`), keiner rührt
+das Gegnerdeck an, keiner leitet Kartenwert ab, und **Ewiger Frühling belohnt das Zielbild ohne Multiplikator** —
+vollgrün macht das Deck zu lauter Score-Trägern, statt einen Faktor obendrauf zu legen.
+
 ---
 
 ## Änderungsprotokoll
@@ -3779,3 +3826,4 @@ Alle drei ersetzen **nur** den Auslöser; Name, Platz und Emblem bleiben.
 | 2026-09-06 | **Pflanze, Richtung gesetzt (6.1) und Passiv-Entwurf (6.2).** Owner: Grün bleibt eine Farbe (Variante b), vollgrünes Deck ist das Ziel eines gezielten Builds, Wachstum je Karte, drei Zustände grau/grün/blühend, kein Direkt-Score, Trimmen entfällt (keine Skill-Ersetzung mehr), kein Skill-Tor. Passiv: **+1 Wachstum je Sieg, dazu +1 je aktiver Formation an der Siegposition** (Owner-Idee — die Aufstellung wird zur Wachstumsentscheidung, nicht der Sieg allein); Schwellen als Startwerte grün 30 / blühend 75, blühend trägt den Basis-Score je grüner Karte in seiner Formation. Deckel-Frage auf grüne Farbblöcke bis zu den Sim-Daten vertagt; notiert, dass im vollgrünen Deck der Wechsel stirbt und der Farbblock trivial wird. Nichts umgesetzt, nichts gemessen. |
 | 2026-09-06 | **Pflanze, Bestandsaufnahme der 17 + 4 Skills (6.3, Befund, nichts umgesetzt).** Strukturell durchgefallen: 6 Verstärker mit `enabler`, 5 Direkt-Score-Quellen, 3 eigene Multiplikatoren, die Trimm-Klausel an 6 Skills, die Wertachse (Kernholz, Baumreihe-Auslöser, Auto-Sieg bei 11), die Gegnerdeck-Achse (Ausläufer, Rhizom, Erntedank) und die fehlenden Stufen bei allen 17. Je Skill ein Vorschlag: vier bleiben in ihrer Idee (Aussaat, Setzlingsbeet, Zäher Halm, Blätterdach), Jahresringe liefert ein Konzept, Ranken und Überwucherung sind Umbauten, zehn fallen weg; von den Legendären trägt nur Baumreihe ihre Idee weiter (Auslöser Wert 11 → blühend), drei werden neu gebaut. Rollen-Raster für den Entwurf: **Formationsdichte — Karten in mehr Formationen bringen — ist im neuen Passiv der stärkste Hebel und hat heute keinen einzigen Skill.** Entscheid je Zeile beim Owner. |
 | 2026-09-06 | **Owner: „ich geh so mit"** — die Streichliste aus 6.3 ist angenommen (zehn normale Skills und drei Legendäre fallen weg, vier bleiben in ihrer Idee, Baumreihe trägt ihre Idee weiter). **Ausnahme Ranken:** Spielerfavorit, bleibt auf SK_PLANT_09 und wird auf das neue Passiv gezogen — nur das sofortige Grünfärben muss weg. Drei Bauformen dafür an den Owner (6.4), nichts umgesetzt. |
+| 2026-09-06 | **Owner: Ranken-Bauform 1** (Ansteckung im Reifemoment — wird eine Karte grün, wachsen ihre grauen Nachbarn). Daraufhin der Vorschlag für **die 15** (6.5): vier bleiben (Aussaat, Setzlingsbeet, Zäher Halm, Blätterdach), zwei sind Umbauten (Ranken, Überwucherung — deren feldweiter Multiplikator wird zur Schwellensenkung), Jahresringe kommt als Konzept zurück, acht sind neu. Kern der Fraktion sind zwei neue Skills auf der Formationsdichte (Spalier öffnet Segmentgrenzen über `segInfo.isOpen`, Wildwuchs macht blühende Karten zu Jokern über `isJoker`) — beide Haken existieren in der Formations-Engine und sind bisher ungenutzt. Legendäre: Baumreihe behält die Idee (Auslöser Wert 11 → blühend), Weltenbaum/Mutterbaum/Ewiger Frühling neu und ohne Direkt-Score. Keine Stufen, keine Werte — Entscheid je Zeile beim Owner. |
