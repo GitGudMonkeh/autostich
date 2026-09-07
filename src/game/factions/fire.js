@@ -26,10 +26,20 @@ export const F = Object.freeze({ // 01: Feuerlinie ersetzt Glut (§7.23)
 
 /* Frischer Hitze-Substate — inaktiv; der erste Feuer-Skill aktiviert ihn (Reducer). value = Hitze (0..max, auch mit
    Nachkommastellen), peak = höchste je erreichte Hitze (Sonnenzorn, Ewige Glut), lastLossDeficit = Rückstand der letzten
-   Niederlage (Rückzündung), emberMult = dauerhafte Rampe der Ewigen Glut auf den Hitze-Multiplikator, lanes/laneWins =
+   Niederlage (Rückzündung), emberMult = dauerhafte Rampe der Ewigen Glut auf den Hitze-Multiplikator, bedFloor =
+   wie weit Glutbetts Boden über seiner Stufe liegt (§6.24, wächst über den Lauf), lanes/laneWins =
    Brandschneise (§7.27: die Schnitte der letzten Durchläufe, neuester zuerst / die Siege des laufenden Durchlaufs). */
 export function initHeat() {
-  return { active: false, value: 0, max: C.HEAT_MAX, peak: 0, lastLossDeficit: 0, emberMult: 0, lanes: [], laneWins: [] };
+  return { active: false, value: 0, max: C.HEAT_MAX, peak: 0, lastLossDeficit: 0, emberMult: 0, bedFloor: 0, lanes: [], laneWins: [] };
+}
+
+/* Glutbetts wirksamer Boden: die Schwelle der Stufe plus das, was der Boden über den Lauf gewachsen ist (§6.24).
+   0 ohne den Skill und auf Episch (dort kühlt nichts, ein Boden wäre bedeutungslos). Nie über die Leiste hinaus. */
+export function glutbettFloor(heat, skills, skillTiers) {
+  if (fireParam(skills, skillTiers, F.GLUTBETT, "noCool")) return 0;
+  const base = fireParam(skills, skillTiers, F.GLUTBETT, "floor");
+  if (base == null) return 0;
+  return Math.min(heat?.max || C.HEAT_MAX, base + (heat?.bedFloor || 0));
 }
 
 const held = (skills, id) => (skills || []).includes(id);
@@ -237,9 +247,16 @@ export function fireOnLoss(heat, skills, skillTiers, { deficit = 0, oppId = null
   const max = heat.max || C.HEAT_MAX;
   const before = heat.value || 0;
   let value = before;
+  /* Glutbett (§6.24, Owner): der Boden hält die Kühlung — und er STEIGT, wenn er einen Sturz wirklich abfängt.
+     „Abfangen" heißt: die Hitze lag darüber und die Kühlung hätte sie darunter gedrückt. Liegt sie schon unten,
+     passiert nichts; der Spieler muss erst wieder hochheizen. So kann der Boden nicht davonlaufen, und der Skill
+     belohnt genau seinen Rhythmus: hochkommen, runtergeschlagen werden, das Bett wird dicker. */
+  let bedFloor = heat.bedFloor || 0;
   if (!fireParam(skills, skillTiers, F.GLUTBETT, "noCool")) {
-    const floor = fireParam(skills, skillTiers, F.GLUTBETT, "floor") ?? 0;
+    const floor = glutbettFloor(heat, skills, skillTiers);
+    const caught = before > floor && before - C.HEAT_LOSS < floor;
     value = before <= floor ? before : Math.max(floor, before - C.HEAT_LOSS);
+    if (caught) bedFloor += fireParam(skills, skillTiers, F.GLUTBETT, "rise") || 0;
   }
   if (hasEwigeGlut(skills)) value = Math.max(value, Math.min(before, (heat.peak || 0) * C.EWIGE_GLUT_FLOOR_FRAC));
   const lossHeat = fireParam(skills, skillTiers, F.ZUNDER, "lossHeat"); // §7.22 Zunder Episch-Extra: auch Niederlagen heizen
@@ -250,7 +267,7 @@ export function fireOnLoss(heat, skills, skillTiers, { deficit = 0, oppId = null
   const bm = fireParam(skills, skillTiers, F.BRANDMAL, "minHeat");
   if (fireParam(skills, skillTiers, F.BRANDMAL, "onLoss") && bm != null && before >= bm && oppId != null)
     brands.push({ id: oppId, value: fireParam(skills, skillTiers, F.BRANDMAL, "value") || 0 });
-  return { heat: { ...heat, value, peak: Math.max(heat.peak || 0, value), lastLossDeficit: Math.max(0, deficit), meltPending }, brands };
+  return { heat: { ...heat, value, peak: Math.max(heat.peak || 0, value), lastLossDeficit: Math.max(0, deficit), meltPending, bedFloor }, brands };
 }
 
 /* Rundenende: Schmiede (§7.14: ohne Preis, die Hitze ist nur die Schwelle der Stufe — liegt sie an, erhält die niedrigste

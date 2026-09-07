@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import * as C from "../src/game/constants.js";
 import { SKILL_DEFS, FEUER_TIERS, buildSkillOffer, archetypeOf } from "../src/game/skills.js";
 import { F, initHeat, heatMaxFor, syncHeatMax, fireTier, fireParam, heatGainOnWin, heatMult, verbrennungMult, feuersturmMult,
-  rueckzuendungMult, feuerlinieMult, schneiseLane, schneiseMult, fireValueBonus, fireOnWin, fireOnLoss,
+  rueckzuendungMult, feuerlinieMult, schneiseLane, schneiseMult, fireValueBonus, fireOnWin, fireOnLoss, glutbettFloor,
   fireCycleEnd, nextBrandActive } from "../src/game/factions/fire.js";
 import { resolveTrick } from "../src/game/engine.js";
 import { initialState, reducer } from "../src/game/reducer.js";
@@ -276,6 +276,23 @@ describe("Feuer — Modul (reine Übergänge)", () => {
     expect(fireOnLoss(heat({ value: 1 }), [], {}, { deficit: 1 }).heat.value).toBe(0);
     expect(fireOnLoss(heat({ value: 41 }), [F.GLUTBETT], {}, { deficit: 1 }).heat.value).toBe(T.glutbett[0].floor);
     expect(fireOnLoss(heat({ value: 30 }), [F.GLUTBETT], {}, { deficit: 1 }).heat.value).toBe(30);   // unter dem Boden: nichts
+    // §6.24 Glutbett-Anstieg: der Boden steigt NUR, wenn er einen echten Sturz abfängt.
+    const gb = (over, tier = 0) => fireOnLoss(heat(over), [F.GLUTBETT], { [F.GLUTBETT]: tier }, { deficit: 1 }).heat;
+    const F0 = T.glutbett[0].floor, R0 = T.glutbett[0].rise;
+    expect(gb({ value: F0 + 1 }).bedFloor).toBe(R0);                 // abgefangen → der Boden wächst
+    expect(gb({ value: F0 + C.HEAT_LOSS }).bedFloor).toBe(0);        // genau bis auf den Boden: kein Sturz darunter
+    expect(gb({ value: F0 }).bedFloor).toBe(0);                      // schon unten: nichts, sonst liefe er davon
+    expect(gb({ value: 20 }).bedFloor).toBe(0);
+    // Der gewachsene Boden hält beim nächsten Mal — und wächst weiter.
+    const grown = gb({ value: F0 + 1 });
+    expect(fireOnLoss({ ...grown, value: F0 + R0 + 1 }, [F.GLUTBETT], {}, { deficit: 1 }).heat.value).toBe(F0 + R0);
+    expect(fireOnLoss({ ...grown, value: F0 + R0 + 1 }, [F.GLUTBETT], {}, { deficit: 1 }).heat.bedFloor).toBe(2 * R0);
+    // Episch kühlt gar nicht — dort gibt es keinen Boden und nichts zu heben.
+    expect(gb({ value: 90 }, 3).value).toBe(90);
+    expect(gb({ value: 90 }, 3).bedFloor).toBe(0);
+    expect(glutbettFloor(heat({ value: 50 }), [F.GLUTBETT], { [F.GLUTBETT]: 3 })).toBe(0);
+    expect(glutbettFloor({ ...grown, max: 100 }, [F.GLUTBETT], {})).toBe(F0 + R0);
+    expect(glutbettFloor(heat({ value: 50 }), [], {})).toBe(0);      // ohne den Skill kein Boden
     expect(fireOnLoss(heat({ value: 95 }), [F.GLUTBETT], { [F.GLUTBETT]: 3 }, { deficit: 9 }).heat.value).toBe(95);
     // §7.21 Ewige Glut: die Hitze fällt nie unter den Anteil der Spitze — der Boden hält, hebt aber nie; Glutbett-Boden darüber gewinnt.
     const frac = C.EWIGE_GLUT_FLOOR_FRAC;

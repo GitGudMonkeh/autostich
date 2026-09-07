@@ -61,7 +61,7 @@ const FEUER = {
   feuerlinie:    [{ perPoint: 0.02, cost: 3 }, { perPoint: 0.03, cost: 3 }, { perPoint: 0.04, cost: 3 }, { perPoint: 0.05, cost: 3, perFormation: true }], // §7.23 (Owner): ersetzt Glut (Kaltstart, tot) auf SK_FIRE_01 — Formations-Sieg +Satz je Punkt Kampfwert, verbrennt `cost` Hitze; Episch je Formation an der Siegposition
   zunder:        [{ heat: 2 }, { heat: 3 }, { heat: 4 }, { heat: 5, lossHeat: 2 }], // §7.16: 1–4 → 2–5; §7.22 Episch-Extra: auch Niederlagen geben +2
   feuersturm:    [{ multPerStreak: 0.001 }, { multPerStreak: 0.0015 }, { multPerStreak: 0.002 }, { multPerStreak: 0.003, minHeat: 90 }], // §7.17: Serie zu Score bei voller Leiste (Episch ab 90 %, §7.18: war 80); vorher Serie zu Hitze. Satz nach Sweep (0,5 % je Punkt war ×3 Blitz)
-  glutbett:      [{ floor: 40 }, { floor: 60 }, { floor: 80 }, { noCool: true }],
+  glutbett:      [{ floor: 40, rise: 1 }, { floor: 60, rise: 2 }, { floor: 80, rise: 3 }, { noCool: true }], // §6.24: der Boden steigt, wenn er einen Sturz abfängt
   rueckzuendung: [{ every: 5, mult: 1.5 }, { every: 4, mult: 1.5 }, { every: 3, mult: 1.5 }, { every: 2, mult: 1.5, value: 2 }], // §7.24 (Owner): Takt — jeder N. Sieg in Folge zündet und zählt ×mult, Episch kämpft die zündende Karte mit +2 (vorher Konter nach einer Niederlage, §7.22 — ab der Laufmitte gibt es keine Niederlagen mehr)
   klinge:        [{ perHeat: 40, value: 1 }, { perHeat: 30, value: 1 }, { perHeat: 25, value: 1 }, { perHeat: 20, value: 1 }],
   weissglut:     [{ multPer10: 0.03 }, { multPer10: 0.04 }, { multPer10: 0.05 }, { multPer10: 0.06 }],
@@ -165,7 +165,9 @@ export const SKILL_DEFS = {
     ...tiered(FEUER.rueckzuendung, (r) => `${jeder(r.every)} Sieg in Folge zündet: er zählt ×${de(r.mult)}.${r.value ? ` Die zündende Karte kämpft mit +${r.value} Wert.` : ""}`) },
   // Schutz
   SK_FIRE_04: { id: "SK_FIRE_04", name: "Glutbett", archetype: "fire", keywords: ["heat"], tiers: FEUER.glutbett,
-    ...tiered(FEUER.glutbett, (r) => (r.noCool ? "Niederlagen kühlen die Hitze nicht." : `Niederlagen kühlen die Hitze nicht unter ${r.floor} %.`)) },
+    ...tiered(FEUER.glutbett, (r) => (r.noCool
+      ? "Niederlagen kühlen die Hitze nicht."
+      : `Niederlagen kühlen die Hitze nicht unter ${r.floor} %. Fängt der Boden eine Niederlage ab, steigt er um ${r.rise} %.`)) },
   // Zustand — Hitze zu Wert und Multiplikator
   SK_FIRE_06: { id: "SK_FIRE_06", name: "Glühende Klinge", archetype: "fire", keywords: ["heat"], tiers: FEUER.klinge,
     ...tiered(FEUER.klinge, (r) => `Alle deine Karten haben +${r.value} Wert je ${r.perHeat} % Hitze.`) },
