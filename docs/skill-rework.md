@@ -3528,6 +3528,45 @@ dritte Lesart derselben Größe. Mit Überspannung fällt der letzte Leser des u
 Kurzschluss × Kettenblitz (Tiefe zahlt jetzt dreifach: Score, Multiplikator, Chance), und ob der Blitz-Schwanz
 dadurch weiter läuft (7.25: gierig p95 803M).
 
+#### F. Messung des Lichtbogens (2026-09-06, auf Ansage des Owners)
+
+**Der Duell-Median taugt für eine Crit-CHANCE-Änderung nicht — das ist der erste Befund.** Sweep über den Satz
+(je 100 Läufe, Feuer mono steht in allen dreien bei 12,97M):
+
+| Satz je Stapel | halb (0,25–1 %) | **Startwert (0,5–2 %)** | doppelt (1–4 %) |
+| --- | --- | --- | --- |
+| Blitz mono, Median | 13,36M | **10,31M** | 15,31M |
+| Floor Feuer ÷ Blitz | 0,97× | **1,26×** | 0,85× |
+| p90 / p95 | 78,0 / 92,9M | 83,0 / 117,5M | 83,1 / 116,8M |
+
+Die Reihe ist **nicht monoton** — mehr Crit-Chance müsste den Median heben, nicht senken und dann wieder heben.
+Kontrolllauf mit anderem Seed-Satz (500..599), unveränderter Stand: Blitz mono **12,96M statt 10,31M**, Feuer mono
+14,23M statt 12,97M. Der Median wandert zwischen Seed-Sätzen also genauso weit wie zwischen den Sweep-Punkten.
+Grund: der Crit-Wurf steht je (Runde, Position) fest, aber eine andere Chance **kippt andere Stiche zu Crits** —
+damit läuft der ganze Rest des Laufs anders (Ladung, Stapel, Serien). Das trifft nur Chance-Änderungen; der Sweep
+in C (0,002 → 0,02 auf den **Multiplikator**) war stabil, weil er keinen einzigen Stich umkippt. **Regel für
+später: Crit-Chance-Regler über die gepaarte gierige Ablation messen, nicht über den Duell-Median.**
+
+**Gierig (der Schiedsrichter), Startwerte, 150 Läufe nach 1000 Explore.** Median 69,8M, Ø 11,0 Skills.
+
+| Skill | gehalten | Ablation | Lesart |
+| --- | --- | --- | --- |
+| **Lichtbogen** | **84 %** | +2,6M, typ. **+3 %**, win 53 % | **Füller** — fast jeder nimmt ihn, tragen tut er nicht |
+| Blitzschlag | 94 % | +17,7M, +31 % | stark (war Füller) |
+| Kurzschluss | 95 % | +7,3M, +25 % | stark (war „schadet") |
+| Kettenblitz | 89 % | +6,7M, +22 % | stark |
+| Resonanz (L) | 33 % | +131,8M, +238 % | Träger |
+| Doppelentladung (L) | 23 % | +42,7M, +90 % | Träger |
+
+**Lesart.** Der Lichtbogen selbst ist ein Füller, aber er hebt das ganze Tiefen-Bündel: Tiefe zahlt jetzt dreifach
+(Stapel-Score, Crit-Multiplikator, Crit-Chance), und genau die Skills, die Tiefe erzeugen, sind mit ihm nach oben
+gegangen — Blitzschlag, Kurzschluss und Kettenblitz stehen erstmals gemeinsam auf „stark", Resonanz zieht davon.
+Der Schwanz bleibt der Blitz-Schwanz, aber nicht schlimmer als vorher (gierig p95 798M gegen 803M in 7.25).
+
+**Empfehlung: Startwerte lassen (0,5 / 1 / 1,5 / 2 % je Stapel).** Er wird genommen, ohne zu tragen, und die
+Rückkopplung liegt bei den Tiefen-Skills, nicht bei ihm — das ist die Rolle, die der Platz haben sollte. Wenn er
+sich zu blass anfühlt, ist der doppelte Satz der Regler; dann aber gierig neu messen, nicht im Duell.
+
 ## 5. Eis
 
 Offen.
@@ -3591,3 +3630,4 @@ Offen.
 | 2026-09-06 | Owner: „wir müssen mit Crit über 100 % umgehen — eventuell 0,01 Crit-Multiplikator je Prozentpunkt" und „Überspannung mag ich vom Design nicht, eher etwas auf den Ionisierungen der Karten" (7.28, Befund und Vorschläge, **nichts umgesetzt**). Antwort auf die Frage: kartenabhängig Crit aus Ionisierung gibt es nur als Systemregel (+0,15× Crit-Multiplikator je Stapel der Siegkarte), als Donnergott (0,25×) und indirekt über Kurzschluss (doppelte Stapel ab Schwelle) — die Richtung **Stapel → Crit-Chance** ist frei. Gemessen (neue Sonde `sim/probes/overcrit-engine.mjs`): Crit-Chance ≥ 100 % gibt es erst spät (Blitz mono 0 % der Stiche bis Runde 30, 3 % in 31–40, 15 % in 41–50), dort mit Ø 70 pp Überschuss, aber 27 % der Crits stehen dann schon am 8×-Deckel. Sweep der Regel im Duell (0,002 / 0,005 / 0,01 / 0,02): Blitz mono 12,97 / 12,97 / 12,98 / 13,02M, Floor überall 1,00× — **der fünffache Satz bewegt den Median um 0,1 %**, weil der Deckel abschneidet, was die Regel drauflegt. Eigene Erwartung damit korrigiert: „Überschuss → Multiplikator" ist keine Rückkopplung, sondern eine Sackgasse, solange der Deckel bei 8 steht. Fünf Vorschläge für SK_LIGHTNING_04 (Zündschnur, Tiefenschlag, Überladung, Ladungsbogen, Ionenlast), Empfehlung Zündschnur plus Satz 0,01; die Frage „soll der Überschuss eine eigene Währung bekommen (Stapel/Ladung)?" liegt beim Owner. |
 | 2026-09-06 | **Owner-Entscheide (7.28):** (1) die Crit-Chance ist bei 100 % gedeckelt, jeder Prozentpunkt darüber wird **+0,01× Crit-Multiplikator** — `OVERCRIT_MULT_PER_PP` 0,002 → 0,01, Systemregel in §1 und Glossar nachgezogen, Wächter in `lightning-rework.test.js` auf die neue Invariante umgeschrieben (der Überschuss aus 100 Prozentpunkten bleibt unter einem Achtel des Deckels). (2) **Zündschnur ersetzt Überspannung** auf SK_LIGHTNING_04, aber unter anderem Namen — „Zündschnur" klingt nach Feuer; Namenswahl beim Owner, Mechanik und Startwerte stehen (jeder Stapel der gespielten Karte +0,5 / 1 / 1,5 / 2 % Crit-Chance auf den Stich). (3) Owner zum Vorgehen: **erst Design, dann Startwert, dann messen — und nur auf Ansage.** Die Runden 7.23–7.28 haben zu viel Sim-Zeit verbraucht. |
 | 2026-09-06 | **Lichtbogen ersetzt Überspannung** auf SK_LIGHTNING_04 (7.28 E, umgesetzt; Emblem umbenannt, Blitz bleibt bei 14): jeder Stapel der gespielten Karte gibt +0,5 / 1 / 1,5 / 2 % Crit-Chance auf den Stich — die Richtung „Ionisierung → Crit-Chance", die vorher weder Regel noch Skill bediente. Name vom Owner gewählt (Arbeitsname „Zündschnur" klang nach Feuer). `lightningCritChance` liest die gespielte Karte (mit Resonanz-Summe, Zählung über `effectiveStacks` — Kurzschluss verdoppelt hier wie überall); mit Überspannung fällt der letzte Leser des ungedeckelten Crit-Multiplikators weg (`critMultRaw` raus, Überschuss über dem Deckel verfällt). Startwerte **nicht gemessen** — Owner: erst Design, dann Startwert, gemessen wird auf Ansage. Gates grün. |
+| 2026-09-06 | Lichtbogen gemessen (7.28 F, auf Ansage): **Duell-Median taugt für Crit-Chance nicht** — Sweep halb/Start/doppelt gibt 13,36 / 10,31 / 15,31M (nicht monoton), Kontrolllauf mit anderem Seed-Satz 12,96M statt 10,31M bei unverändertem Stand; eine andere Chance kippt andere Stiche zu Crits und schreibt den Rest des Laufs um. Der Multiplikator-Sweep in C war davon nicht betroffen. Gierig (Schiedsrichter): Lichtbogen in **84 %** gehalten, Ablation **+3 %** — Füller, aber er hebt das Tiefen-Bündel (Blitzschlag +31 %, Kurzschluss +25 %, Kettenblitz +22 %, Resonanz +238 %), weil Tiefe jetzt dreifach zahlt. Schwanz unverändert (gierig p95 798M gegen 803M in 7.25). Empfehlung: Startwerte lassen; Regler ist der doppelte Satz, dann gierig neu messen. Nichts geändert. |
