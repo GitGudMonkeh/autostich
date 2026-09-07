@@ -4838,9 +4838,18 @@ Nicht angefasst, weil dort ein anderer Begriff steht: die temporären Kampfwert-
 Glutklinge, Takt, Ewiger Frühling — „kämpfen mit +n Wert") und die Brandmal-Abzüge. Die sind nicht dauerhaft
 und nicht der gebackene Kartenwert; das Register trennt beides über „Stichwert / temporärer Wert".
 
-**Offen, Entscheid Owner:** Zwei Reste des Textpakets aus §7.26 („Runde" → „Durchlauf") stehen noch —
-der Schmiede-Tooltip sagt „am Rundenende", wo der Skilltext „Am Ende eines Durchlaufs" sagt, und der
-Glossar-Eintrag „Brandmal" rechnet dreimal in Runden. Beides in einem Rutsch, wenn gewünscht.
+#### Nachtrag 2: die Reste des Textpakets aus §7.26 (Owner)
+
+Das Textpaket hatte „Runde" → „Durchlauf" in `skills.js` gezogen, nicht aber im Register und im Glossar. Drei
+Stellen nachgeholt: der Schmiede-Tooltip und der Glossar-Eintrag „Schmieden" (beide „am Rundenende" → „am Ende
+eines Durchlaufs", wie der Skilltext daneben), und „Brandmal", das dreimal in Runden rechnete.
+
+**Gegengeprüft, nicht nur umbenannt:** der Brand hält wirklich einen Durchlauf. `newBrandActive` wird im
+Durchlauf-Ende-Block von `engine.js` aus `brandPending` getauscht, nicht je Runde; die Kommentare dort sagen
+weiter „Runde" und sind Altbestand (`AGENTS.md`: historische Kommentare bleiben).
+
+Stehen gelassen: der Dev-Run-Knopf „Runde überspringen" (`skill.skipCycle`) — Dev-Werkzeug, kein Spielertext —
+und die Ranked-Texte, die eine andere Runde meinen.
 
 ---
 
@@ -4934,3 +4943,4 @@ Glossar-Eintrag „Brandmal" rechnet dreimal in Runden. Beides in einem Rutsch, 
 | 2026-09-07 | Owner: Glutbett war zu schwach (−4 %, Flag „schadet") und bekommt einen zweiten Hook. Der erste freigegebene Vorschlag (Niederlagen am Boden geben Hitze) wurde zurückgezogen — er hebt sich selbst auf und dupliziert Zunder Episch. Umgesetzt: der BODEN steigt um 1/2/3 %, wenn er einen Sturz wirklich abfängt; Episch bleibt „keine Kühlung". Hitzeleiste zeigt Strich und Abzeichen. Ungemessen. §6.24. |
 | 2026-09-07 | Owner-Frage: heißt „+1 Wert" im Blitz-Passiv ein Stapel oder Kartenwert? Antwort: Kartenwert, dauerhaft eingebacken; der Stapel ist der zweite, davon unabhängige Effekt derselben vollen Leiste (Doppelentladung gibt fünf Stapel und trotzdem nur +1 Wert, Kettenblitz Stapel ganz ohne Wert). Passiv, Leisten-Tooltip und Glossar „Ladung" benennen jetzt beides getrennt und benutzen den Begriff, den das Register schon führt: Kartenwert. Reine Textänderung, keine Mechanik, keine Messung. Offen: die Schmiede sagt an zwei Stellen weiter „+Wert". §6.25. |
 | 2026-09-07 | Owner: die Schmiede auch angleichen. Vier Stellen (Skilltext, Leisten-Tooltip, Karten-Abzeichen, Glossar „Schmieden") sagen jetzt Kartenwert; der Glossar-Eintrag begann bereits mit „Hitze wird zu dauerhaftem Kartenwert" und sagte zwei Sätze später „+3 Wert". Die temporären Kampfwert-Boni (Ionenfeld, Blitzfänger, Glutklinge, Takt, Ewiger Frühling) und die Brandmal-Abzüge bleiben „Wert" — sie sind nicht der gebackene Kartenwert. Offen: zwei Reste des Textpakets aus §7.26, der Schmiede-Tooltip sagt „am Rundenende", Brandmal rechnet in Runden. §6.25. |
+| 2026-09-07 | Owner: auch die Reste des Textpakets aus §7.26 angleichen. Drei Stellen im Register und im Glossar sagen jetzt Durchlauf statt Runde (Schmiede-Tooltip, Glossar „Schmieden", Glossar „Brandmal"). Gegengeprüft statt nur umbenannt: `newBrandActive` wird im Durchlauf-Ende-Block der Engine getauscht, der Brand hält also wirklich einen Durchlauf; die Kommentare dort bleiben als Altbestand. Der Dev-Knopf „Runde überspringen" und die Ranked-Texte bleiben. §6.25. |

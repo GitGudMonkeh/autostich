@@ -218,13 +218,13 @@ export const GLOSSARY = {
     text: `Siege ab ${C.HEAT_MIN_MARGIN} Kampfwert-Vorsprung heizen die Hitzeleiste (0–${C.HEAT_MAX} %): +${C.HEAT_PER_POINT} % je Punkt Vorsprung über ${C.HEAT_MARGIN_OFFSET}, ohne Deckel. Niederlagen kühlen −${C.HEAT_LOSS} %. Je 10 % gehaltener Hitze zählt jeder Sieg +${pct(C.HEAT_MULT_PER_10)} % Score, als eigener Multiplikator. Die Feuer-Skills nutzen die Hitze.`,
     match: ["Hitze", "Hitzeleiste"] },
   brand: { category: "frak", group: "fire", label: "Brandmal", icon: "🜂", color: CLR.fire,
-    text: "Eine gebrandmarkte Gegnerkarte verliert in der nächsten Runde ihre Brandpunkte an Wert (nie unter 0). Brände verschiedener Quellen addieren sich; sie erneuern sich je Runde und stapeln sich nur mit Sonnenkern über die Runden.",
+    text: "Eine gebrandmarkte Gegnerkarte verliert im nächsten Durchlauf ihre Brandpunkte an Wert (nie unter 0). Brände verschiedener Quellen addieren sich; sie erneuern sich je Durchlauf und stapeln sich nur mit Sonnenkern über die Durchläufe.",
     match: ["Brandmal", "Brand", "Brände", "gebrandmarkte", "Brandpunkt", "Brandpunkte"] },
   whiteheat: { category: "frak", group: "fire", label: "Weißglut", icon: "🜂", color: CLR.fire,
     text: `Mit dem Skill Weißglut reicht die Hitzeleiste bis ${C.WEISSGLUT_HEAT_MAX} %, und über ${C.HEAT_MAX} % läuft der Hitze-Multiplikator steiler weiter. Es gibt keinen eigenen Abbau: über ${C.HEAT_MAX} % kühlt nur, was auch darunter kühlt (Niederlagen, Konsumenten).`,
     match: ["Weißglut"] },
   forge: { category: "frak", group: "fire", label: "Schmieden", icon: "⚒", color: CLR.fire,
-    text: `Hitze wird zu dauerhaftem Kartenwert: die Schmiede gibt am Rundenende deiner niedrigsten Karte +${C.FORGE_VALUE} Kartenwert, sobald die Hitze ihre Schwelle deckt. Der Schmiedewert bleibt in der Karte, auch nach einem Skill-Wechsel.`,
+    text: `Hitze wird zu dauerhaftem Kartenwert: die Schmiede gibt am Ende eines Durchlaufs deiner niedrigsten Karte +${C.FORGE_VALUE} Kartenwert, sobald die Hitze ihre Schwelle deckt. Der Schmiedewert bleibt in der Karte, auch nach einem Skill-Wechsel.`,
     match: ["Schmieden", "geschmiedet", "Geschmiedete", "Schmiede", "Schmiedewert", "Schmiedung"] },
 
   /* ============ 4 · Blitz ============ */
