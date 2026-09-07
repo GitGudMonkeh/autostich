@@ -4255,6 +4255,57 @@ Kartenwerte laufen 1..10, Schmiede und Glutstahl geben +3 dauerhaften Wert, Blit
 
 ---
 
+### 6.14 Alle auf ~100 % (2026-09-07, Owner) — gemessen, sieben von neun
+
+**Owner:** „keine Kommazahlen auf den Karten. einfach nicht anzeigen und nach 4 Niederlagen hat sie dann −1" /
+„schaffen wir alle die aktuell unter 100 % liegen nur mit ihren werten so anzupassen das sie um die 100 % liegen"
+
+#### Anzeige: nur ganze Brandpunkte
+
+Die Karte zeigt `Math.floor(brand)` und bleibt darunter leer — gerechnet wird weiter der volle Viertelwert. Nach vier
+Niederlagen steht −1 auf der Karte, der Glutsaum erscheint mit ihr. Keine Kommazahl im Spiel.
+
+#### Gemessen, ein Regler je Lauf, geteilte Wertetabelle
+
+| Legendär | Regler | vorher | **nachher** |
+| --- | --- | --- | --- |
+| Ewige Glut | Boden 0,8 → **0,85** · Rampe 0,12 → **0,15** | +71 % | **+101 %** |
+| Sonnenzorn | +8 → **+13 %** je 10 % Spitze | +58 % | **+101 %** |
+| Wurzelgeflecht | Faktor-Anteil 0,7 → **1** (Regler wieder aus) | +63 % | **+100 %** |
+| Doppelentladung | Stapel je Ionisierung 4 → **5** | +82 % | **+100 %** |
+| Resonanz | Stapel-Anteil 2 → **2,25** | +83 % | **+108 %** |
+
+Zusammen gemessen (alle Werte gesetzt, geteilte Tabelle) liegen sieben der neun in **+101 … +149 %**:
+Baumreihe +149 · Doppelentladung +141 · Sonnenkern +126 · Resonanz +123 · Wurzelgeflecht +118 · Ewige Glut +101 ·
+Sonnenzorn +101. Die Zeilen liegen über den Einzelmessungen, weil im Verbund auch die Basisläufe steigen (Kopplung
+über die natürlichen Picks, §6.12).
+
+#### Zwei erreichen 100 % nicht — und das ist keine Frage der Zahl
+
+**Hochspannung (+59 %): der Regler ist arithmetisch am Ende.** `effectiveTier` rechnet `min(EPISCH, Stufe + Hub)`.
+Bei Hub 3 ist jeder gehaltene Blitz-Skill bereits episch; 4 und mehr ändern nichts. Das ist keine Messung, das ist
+die Formel. Mehr geht nur über eine andere Mechanik.
+
+**Ewiger Frühling (+54 %): der Wert-Bonus sättigt.**
+
+| +Wert auf blühende Karten | 3 | 6 | 8 | 12 | 20 |
+| --- | --- | --- | --- | --- | --- |
+| typ. Effekt | +23 % | +43 % | +51 % | +71 % | **+73 %** |
+
+Zwischen 12 und 20 passiert nichts mehr: eine blühende Karte, die mit +12 schon fast jeden Stich gewinnt, gewinnt
+mit +20 keinen weiteren. Der Deckel ist die Siegquote selbst, nicht der Regler. Gesetzt ist **+8** — darüber wandert
+das Legendäre in den Auto-Sieg, den §6 der alten Pflanze-Ökonomie gerade ausgebaut hat (Wert-Achse mit Auto-Sieg
+bei 11), und kauft dafür 20 Prozentpunkte.
+
+#### Nicht angefasst
+
+Sonnenkern (+126 %) und Baumreihe (+149 %) lagen schon über 100 % — der Auftrag galt den Zeilen darunter. Gemessen
+läge Baumreihe mit Faktor-Anteil 0,12 statt 0,15 bei +112 %, falls die Oberkante enger soll.
+
+Balance-Guard: Median 4,38M, Mean 9,39M — im Band von §6.12, nicht neu zentriert.
+
+---
+
 ## Änderungsprotokoll
 
 
@@ -4330,3 +4381,4 @@ Kartenwerte laufen 1..10, Schmiede und Glutstahl geben +3 dauerhaften Wert, Blit
 | 2026-09-07 | **Legendäre auf drei je Fraktion (6.11, Owner: „3 reichen, wir behalten die stärksten").** Gemessen (150 Läufe, gepaart, mittlere Skill-Phase): Resonanz +106 % · Doppelentladung +85 % · Sonnenkern +76 % · Hochspannung +40 % · **Donnergott +30 %** · Damaststahl +8 % · Ewige Glut −8 % · **Sonnenzorn −14 %**. Gestrichen sind damit Donnergott (Blitz) und Sonnenzorn (Feuer) samt ihren vier Konstanten, der Spitzen-Lesart des Hitze-Multiplikators und ihren Emblemen. Die Pflanze bekommt drei neue: **Wurzelgeflecht** (jede blühende Karte zählt in jeder Formation ihres Segments mit — Dichte), **Baumreihe** (blühende Karten als positionsfreie Wiederholung — Multiplikator) und **Ewiger Frühling** (vollgrün → alles blüht — Zielbild); Weltenbaum ist gestrichen (Rampe ohne Auszahlung), Mutterbaum in Wurzelgeflecht aufgegangen. Gemessen in der Pflanze-Welt: Wurzelgeflecht **+152 %**, Baumreihe **+614 %**, Ewiger Frühling +10 % — zwei davon stärker als alles bei Feuer und Blitz. Der Median der Pflanze-Welt steht damit bei 210M statt 9,1M: **die Paritätsfrage aus §6.10 ist neu zu stellen**, die nächste Runde misst das Duell mit Legendären für alle drei. Offen benannt: Feuers verbleibende drei sind dünn (Damaststahl +8 %, Ewige Glut −8 %). Gates grün (2318 Tests). |
 | 2026-09-07 | Owner: Sonnenzorn statt Damaststahl, und die neun Legendären auf ein Band. Messfehler in `--mode legendaries` gefunden und behoben (geteilte Wertetabelle, `--table`), vier reglerlose Legendäre bekamen je einen Regler auf der bestehenden Mechanik. Acht von neun liegen jetzt in +58 … +127 % statt +4 … +418 %. Ewiger Frühling erreicht das Band mit seinem Regler nicht und braucht eine Design-Entscheidung. §6.12. |
 | 2026-09-07 | Owner: Ewiger Frühling bekommt einen Bonus auf blühende Karten. Umgesetzt als +3 Kampfwert je blühender Karte — der einzige Wert-Hebel der Fraktion, ab der ersten blühenden Karte wirksam; das Zielbild bleibt der zweite Effekt. Startwert ungemessen. §6.13. |
+| 2026-09-07 | Owner: keine Kommazahlen auf Karten (Brandmarke zeigt nur ganze Punkte), und alle unter 100 % auf ~100 % heben. Fünf Legendäre über ihre Werte auf +100 … +108 % gebracht; sieben der neun liegen jetzt in +101 … +149 %. Hochspannung (Regler arithmetisch am Ende) und Ewiger Frühling (Wert-Bonus sättigt bei +73 %) erreichen das Band nicht. §6.14. |

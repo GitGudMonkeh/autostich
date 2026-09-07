@@ -424,7 +424,7 @@ describe("Blitz — Engine-Integration (resolveTrick)", () => {
     expect(forms[7].formations.find((f) => f.type === "wiederholung").members).toEqual([5, 6, 7, 8, 9]);
     // Stapel auf den Nachbarn im Segment (0: 2, 2: 3, 4: 1) und auf einer Karte außerhalb (7: 5); gespielt wird Position 1 (eigene 1).
     const deck = constDeck(12).map((c, i) => ({ ...c, ionStacks: { 0: 2, 1: 1, 2: 3, 4: 1, 7: 5 }[i] || 0 }));
-    const pooled = 1 + (2 + 3 + 1) * C.RESONANZ_SHARE; // eigene Stapel plus der Anteil der anderen Mitglieder (§6.12: Anteil 2)
+    const pooled = 1 + Math.floor((2 + 3 + 1) * C.RESONANZ_SHARE); // eigene Stapel plus der Anteil der anderen Mitglieder, abgerundet (Stapel sind ganz)
     const at1 = (over) => scen(12, 0, { pos: 1, deck, formations: forms, lightning: light(), ...over }); // pos 1: die Engine liest state.formations
     const r = resolveTrick(at1({ skills: [L.RESONANZ] }), noCrit);
     expect(r.lastTrick.result).toBe("win");

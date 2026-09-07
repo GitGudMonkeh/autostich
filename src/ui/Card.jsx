@@ -56,7 +56,10 @@ function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, g
   // Feuer (#206): geschmiedete EIGENE Karte glüht von INNEN (Inset-Bloom) — KEIN Ring, KEIN äußerer Halo (der 2px-Ring ist der Ionisierung vorbehalten).
   const forgedGlow = forged > 0 ? "inset 0 0 18px #f0a83a5e, inset 0 0 7px #f0b74a4a" : null;
   // Feuer (#206): gebrandmarkte GEGNERkarte „verkohlt von unten" — warmer, GERICHTETER Char-Saum (Inset von unten), klar vom kalten Frostbiss abgesetzt.
-  const brandGlow = branded > 0 ? "inset 0 -17px 16px -8px #e0714a88, inset 0 -3px 6px -2px #f0a83a66" : null;
+  // §6.13 (Owner): die Karte zeigt NUR GANZE Brandpunkte. Sonnenkern brandmarkt in Vierteln — gerechnet wird der volle
+  // Wert, sichtbar wird er erst, wenn ein ganzer Punkt zusammen ist (nach vier Niederlagen −1). Keine Kommazahl.
+  const brandShown = Math.floor((branded || 0) + 1e-9);
+  const brandGlow = brandShown > 0 ? "inset 0 -17px 16px -8px #e0714a88, inset 0 -3px 6px -2px #f0a83a66" : null;
   // Pflanze (#211): Kartenzahl ergrünt mit dem Wachstum (Suit-Farbe → Grün) und leuchtet intensiv grün ab Reife; voll
   // ausgewachsen am hellsten. `pt` = null → keine Pflanzen-Wirkung (normale Suit-Farbe). Wachstumsring (unten-rechts) nur
   // solange die Karte wächst und NICHT reif ist (bei Reife übernimmt die grüne Zahl + 🌿 das Signal).
@@ -122,19 +125,15 @@ function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, g
         <div className="absolute top-1 left-1 leading-none" title={t("card.green.title")}><FactionIcon type="plant" size={15} /></div>
       )}
       {/* Feuer (#206): Brandmarke auf der GEGNERkarte — warmes −N oben links (versetzt zu 🌿) + Flamme unten rechts. Warm/orange → „Feuer, nicht Eis". */}
-      {branded > 0 && (() => {
-        // §6.12: Sonnenkern brandmarkt in Vierteln — die Marke wird gerundet ANGEZEIGT, gerechnet wird der volle Wert.
-        const bn = fmtNum(Math.round(branded * 100) / 100);
-        return (
-          <>
-            <div className="absolute top-1 text-meta-1 font-bold px-1 rounded leading-none"
-              style={{ left: green ? 22 : 4, color: "#f7c48a", background: "#e0714a33", textShadow: "0 0 5px #e0714a" }}
-              title={t("card.branded.title", { n: bn })}>−{bn}</div>
-            <div className="absolute bottom-1 leading-none" style={{ right: 4 }}
-              title={t("card.branded.title", { n: bn })}><FactionIcon type="fire" size={15} /></div>
-          </>
-        );
-      })()}
+      {brandShown > 0 && (
+        <>
+          <div className="absolute top-1 text-meta-1 font-bold px-1 rounded leading-none"
+            style={{ left: green ? 22 : 4, color: "#f7c48a", background: "#e0714a33", textShadow: "0 0 5px #e0714a" }}
+            title={t("card.branded.title", { n: brandShown })}>−{brandShown}</div>
+          <div className="absolute bottom-1 leading-none" style={{ right: 4 }}
+            title={t("card.branded.title", { n: brandShown })}><FactionIcon type="fire" size={15} /></div>
+        </>
+      )}
       {/* Ionisierung (#208): Pip-Track MITTIG auf der oberen Rahmenkante (gefüllt = Stapel, max ION_MAX_STACKS). Der
           2px-Ionisierungs-Ring (oben) glüht bei VOLL zusätzlich auf. Damit ist die frühere untere linke Ecke geräumt
           (für Eis/Pflanze reserviert, vocab.CORNER). Mittig platziert → kollisionsfrei mit 🌿/−N (links) und +X/⚒ (rechts). */}

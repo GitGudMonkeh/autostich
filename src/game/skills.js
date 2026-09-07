@@ -146,7 +146,7 @@ export const SKILL_DEFS = {
   SK_LIGHTNING_L03: { id: "SK_LIGHTNING_L03", name: "Hochspannung", archetype: "lightning", legendary: true, keywords: ["crit"],
     desc: `Alle gehaltenen Blitz-Skills wirken ${de1(C.HOCHSPANNUNG_STEPS)} Stufen höher. Episch ist das Ende der Leiter.` },
   SK_LIGHTNING_L04: { id: "SK_LIGHTNING_L04", name: "Resonanz", archetype: "lightning", legendary: true, keywords: ["ionize", "formation"], // §7.25: ersetzt Durchschlag (Emblem bleibt)
-    desc: `Ionisierte Karten in einer Formation teilen ihre Stapel: jede Karte kämpft mit ihren eigenen Stapeln plus ${de(C.RESONANZ_SHARE)}× den Stapeln der anderen Mitglieder ihrer Formation.` },
+    desc: `Ionisierte Karten in einer Formation teilen ihre Stapel: jede Karte kämpft mit ihren eigenen Stapeln plus ${de(C.RESONANZ_SHARE)}× den Stapeln der anderen Mitglieder ihrer Formation, abgerundet.` },
 
   // ---- Feuer (exp skill rework, §4): Passiv = Siege mit Abstand geben Hitze, Niederlagen kühlen, je 10 % Hitze +2 % Score.
   //      Die Mechanik liest die Stufentabellen oben (factions/fire.js). Texte: ein Satz je Stufe (`tiered`).
@@ -290,7 +290,7 @@ export const SKILL_DEFS = {
   // Legendäre (§6.11, Owner: drei je Fraktion, die stärksten): keine Stufe, kein Direkt-Score. Drei Achsen —
   // Wurzelgeflecht die Dichte, Baumreihe der Multiplikator, Ewiger Frühling das Zielbild.
   SK_PLANT_L02: { id: "SK_PLANT_L02", name: "Wurzelgeflecht", archetype: "plant", legendary: true, keywords: ["bloom", "formation"],
-    desc: `Jede blühende Karte zählt in jeder Formation ihres Segments mit; sie selbst bekommt ${pct(C.WURZELGEFLECHT_FACTOR_SCALE)} % des Formations-Bonus.` },
+    desc: `Jede blühende Karte zählt in jeder Formation ihres Segments mit.${C.WURZELGEFLECHT_FACTOR_SCALE < 1 ? ` Sie selbst bekommt ${pct(C.WURZELGEFLECHT_FACTOR_SCALE)} % des Formations-Bonus.` : ""}` },
   SK_PLANT_L03: { id: "SK_PLANT_L03", name: "Baumreihe", archetype: "plant", legendary: true, keywords: ["bloom", "formation"],
     desc: `Blühende Karten bilden eine positionsfreie Wiederholung, egal wo sie liegen; sie zahlt ${pct(C.BAUMREIHE_FACTOR_SCALE)} % des Wiederholungs-Bonus. Jede darf zugleich in einer anderen Formation zählen.` },
   SK_PLANT_L04: { id: "SK_PLANT_L04", name: "Ewiger Frühling", archetype: "plant", legendary: true, keywords: ["green", "bloom"],

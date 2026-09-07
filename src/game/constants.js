@@ -329,8 +329,8 @@ export const ION_SCORE_PER_STACK      = envNum("SIM_ION_SCORE_PER_STACK", 75);  
 export const ION_VALUE_PER_BAR        = envNum("SIM_ION_VALUE_PER_BAR", 1);         // Blitz-Passiv (§7.24, Owner): jede volle Leiste gibt der ionisierten Karte dauerhaft +so viel Wert — bis §7.23 war das Überspannung (1–4 je Stufe) und trug Blitz mono; Duell-Sweep 0/1/2: Blitz mono 7,3 / 13,0 / 13,6M, Floor 1,93 / 1,09 / 1,04×
 export const ION_MAX_STACKS           = 5;  // NUR ANZEIGE (Karten-Pips, „voll ionisiert"-Effekte): Stapel sind seit dem Rework ohne Deckel
 export const OVERCRIT_MULT_PER_PP     = envNum("SIM_OVERCRIT_MULT_PER_PP", 0.01);     // Systemregel (alle Fraktionen): die Crit-Chance ist bei 100 % gedeckelt, jeder Prozentpunkt darüber wird +Crit-Mult (§7.28, Owner: 0,002 → 0,01)
-export const RESONANZ_SHARE           = envNum("SIM_RESONANZ_SHARE", 2);              // Resonanz (L, §7.25, ersetzt Durchschlag): Anteil der Stapel der ANDEREN Karten ihrer Formation, mit dem die gespielte Karte kämpft (1 = die ganze Summe; Sim-Regler)
-export const DOPPELENTLADUNG_STACKS   = envNum("SIM_DOPPELENTLADUNG_STACKS", 4);      // Doppelentladung (L): Stapel je Ionisierung (statt 1); §6.12: 2 → 4
+export const RESONANZ_SHARE           = envNum("SIM_RESONANZ_SHARE", 2.25);              // Resonanz (L, §7.25, ersetzt Durchschlag): Anteil der Stapel der ANDEREN Karten ihrer Formation, mit dem die gespielte Karte kämpft (1 = die ganze Summe; Sim-Regler)
+export const DOPPELENTLADUNG_STACKS   = envNum("SIM_DOPPELENTLADUNG_STACKS", 5);      // Doppelentladung (L): Stapel je Ionisierung (statt 1); §6.12: 2 → 4, §6.14: → 5
 export const DOPPELENTLADUNG_STRIKE   = envNum("SIM_DOPPELENTLADUNG_STRIKE", 2);      // Doppelentladung (L): Crit mit ionisierter Karte → der Stich zählt so oft (Sim-Regler, ggf. 1,5)
 export const HOCHSPANNUNG_STEPS       = envNum("SIM_HOCHSPANNUNG_STEPS", 3);          // Hochspannung (L, §6.12): um so viele Stufen wirken gehaltene Blitz-Skills höher (Episch bleibt das Ende der Leiter); 1 → 3, bei 1 war es mit +8 % weniger wert als ein normaler Pick
 
@@ -354,10 +354,10 @@ export const FORGE_VALUE         = envNum("SIM_FORGE_VALUE", 3);                
 // Legendäre (§4.7): keine Stufe, zwei Effekte, jedes läuft allein.
 export const SONNENKERN_BRAND           = envNum("SIM_SONNENKERN_BRAND", 0.25);                // Sonnenkern: jeder Sieg brandmarkt so viel Wert weg (stapelt über die Runden) — der eigentliche Motor des Legendären; §6.12: 1 → 0,25 (bei 1 lag Sonnenkern auch ohne Brand-Score bei +296 %). Viertel sind binär exakt, die Anzeige bleibt sauber
 export const SONNENKERN_SCORE_PER_BRAND = envNum("SIM_SONNENKERN_SCORE_PER_BRAND", 4);         // Sonnenkern: Basis-Score je Brandpunkt auf der geschlagenen Karte (§6.12: 20 → 4)
-export const SONNENZORN_MULT_PER_10     = envNum("SIM_SONNENZORN_MULT_PER_10", 0.08);          // Sonnenzorn: Hitze-Multiplikator je 10 % Spitzen-Hitze (statt HEAT_MULT_PER_10; §7.20: 0,04 → 0,05)
+export const SONNENZORN_MULT_PER_10     = envNum("SIM_SONNENZORN_MULT_PER_10", 0.13);          // Sonnenzorn: Hitze-Multiplikator je 10 % Spitzen-Hitze (statt HEAT_MULT_PER_10; §7.20: 0,04 → 0,05)
 export const SONNENZORN_HEAT_MULT       = envNum("SIM_SONNENZORN_HEAT_MULT", 3);               // Sonnenzorn (§7.20): unter der Spitze zählt die Hitze aus Siegen × (§6.12: 2 → 3)
-export const EWIGE_GLUT_MULT_PER_ROUND  = envNum("SIM_EWIGE_GLUT_MULT_PER_ROUND", 0.12);       // Ewige Glut (L, §7.21, ersetzt Phönixfeuer): jede Runde, die mit voller Leiste endet, +so viel auf den Hitze-Multiplikator, dauerhaft (Rampe ohne Deckel). Sweep 0,03/0,05/0,08 zur Laufmitte: 1,02/1,14/1,32 gepaart
-export const EWIGE_GLUT_FLOOR_FRAC      = envNum("SIM_EWIGE_GLUT_FLOOR_FRAC", 0.8);            // Ewige Glut (L): die Hitze fällt nie unter diesen Anteil der Spitze (Kaltstart nur einmal); §6.12: 0,5 → 0,8 — der Boden trägt das Legendäre, die Rampe kaum (Sweep 0,05/0,075/0,10/0,15 lag flach bei +23 %)
+export const EWIGE_GLUT_MULT_PER_ROUND  = envNum("SIM_EWIGE_GLUT_MULT_PER_ROUND", 0.15);       // Ewige Glut (L, §7.21, ersetzt Phönixfeuer): jede Runde, die mit voller Leiste endet, +so viel auf den Hitze-Multiplikator, dauerhaft (Rampe ohne Deckel). Sweep 0,03/0,05/0,08 zur Laufmitte: 1,02/1,14/1,32 gepaart
+export const EWIGE_GLUT_FLOOR_FRAC      = envNum("SIM_EWIGE_GLUT_FLOOR_FRAC", 0.85);            // Ewige Glut (L): die Hitze fällt nie unter diesen Anteil der Spitze (Kaltstart nur einmal); §6.12: 0,5 → 0,8 — der Boden trägt das Legendäre, die Rampe kaum (Sweep 0,05/0,075/0,10/0,15 lag flach bei +23 %)
 
 /* ============================================================
    EIS-REWORK v0 — „Was du richtig stellst, erstarrt für immer und wächst." Gletscher: Architektur × Permanenz.
@@ -389,13 +389,13 @@ export const PLANT_GREEN_FARBBLOCK_CAP = 3;
 // Legendäre der Pflanze (§6.12): je ein Regler auf der bestehenden Mechanik, damit die neun Legendären in ein Band
 // gebracht werden können. Die Voreinstellungen sind exakt das Verhalten vor §6.12.
 export const BAUMREIHE_FACTOR_SCALE   = envNum("SIM_BAUMREIHE_FACTOR_SCALE", 0.15); // Baumreihe (L): Anteil des Wiederholungs-Bonus, den die positionsfreie Reihe zahlt (1 = wie eine echte Wiederholung); §6.12: 1 → 0,15 — ohne Positionsbindung eskaliert die Reihe über den ganzen Lauf
-export const WURZELGEFLECHT_FACTOR_SCALE = envNum("SIM_WURZELGEFLECHT_FACTOR_SCALE", 0.7); // Wurzelgeflecht (L): Anteil des Lauf-Bonus, den die beitretende blühende Karte bekommt (1 = der volle Faktor; Mitgliedschaft und Formationszahl bleiben immer ganz); §6.12: 1 → 0,7
+export const WURZELGEFLECHT_FACTOR_SCALE = envNum("SIM_WURZELGEFLECHT_FACTOR_SCALE", 1); // Wurzelgeflecht (L): Anteil des Lauf-Bonus, den die beitretende blühende Karte bekommt (1 = der volle Faktor; Mitgliedschaft und Formationszahl bleiben immer ganz); §6.12: 1 → 0,7
 // (Verworfen: eine Mindest-Lauflänge als Regler — gemessen kippte Wurzelgeflecht damit von +164 % auf −4 %, die
 //  kurzen Läufe sind der Großteil seiner Wirkung. Der Faktor-Anteil greift weicher.)
 export const EWIGER_FRUEHLING_GREEN_FRAC = envNum("SIM_EWIGER_FRUEHLING_GREEN_FRAC", 1); // Ewiger Frühling (L): Anteil grüner Karten, ab dem alle Karten blühen (1 = vollständig grün)
 // (§6.12: der Regler bleibt auf 1. Gemessen 1/0,85/0,6/0,35/0,25 → +4/+10/+17/+37/+34 % — er sättigt unter dem Band
 //  und kostet dafür das Zielbild. Der Auslöser war nie das Problem, die Auszahlung war es — §6.13, Owner.)
-export const EWIGER_FRUEHLING_BLOOM_VALUE = envNum("SIM_EWIGER_FRUEHLING_BLOOM_VALUE", 3); // Ewiger Frühling (L, §6.13, Owner): blühende Karten kämpfen mit so viel mehr Wert. Der EINZIGE Wert-Hebel der Fraktion — die 15 Skills sind Wachstum, Basis-Score und Erkennung. Startwert ungemessen (Kartenwerte 1..10; Schmiede/Glutstahl geben +3 dauerhaft)
+export const EWIGER_FRUEHLING_BLOOM_VALUE = envNum("SIM_EWIGER_FRUEHLING_BLOOM_VALUE", 8); // Ewiger Frühling (L, §6.13, Owner): blühende Karten kämpfen mit so viel mehr Wert. Der EINZIGE Wert-Hebel der Fraktion — die 15 Skills sind Wachstum, Basis-Score und Erkennung. Startwert ungemessen (Kartenwerte 1..10; Schmiede/Glutstahl geben +3 dauerhaft)
 
 // Geist (Rekord-Vergleich): Score-Stützstelle alle N Stiche [TUNING]
 export const GHOST_STEP = 13;
