@@ -89,18 +89,29 @@ export function bloomAllIfFullGreen(skills, deck) {
 export const plantFormations = (posForm) => (posForm?.formations || []).filter((f) => Array.isArray(f.members));
 export const plantFormCount = (posForm) => plantFormations(posForm).length;
 
-/* Grüne Karten in den Formationen einer Position — jede Karte höchstens einmal, auch wenn sie in mehreren Läufen der
-   Position liegt. `cardAt(pos)` liefert die Karte an einer Position der Ziehreihenfolge (Engine: deck[playerOrder[p]]).
-   Die Mitglieder stammen aus der Formations-Berechnung des Durchlaufbeginns, die Farben aus dem aktuellen Deck:
-   eine Karte, die mitten im Durchlauf grün wird, zählt sofort mit, die Läufe selbst wandern erst zum nächsten Durchlauf. */
-export function formationGreenCount(posForm, cardAt) {
+/* Blühgewicht einer Karte (§6.20, Owner-Variante B): WIE VIELE grüne Karten sie in einer Formation zählt.
+   Grau 0 · grün 1 · blühend PLANT_BLOOM_WEIGHT, +1 je PLANT_BLOOM_WEIGHT_PER_GROWTH Wachstum über der Blüh-Schwelle.
+   Das Gewicht gehört der KARTE — jeder Zähler grüner Karten liest es, die Score-Skills bleiben deshalb einzeilig. */
+export function greenWeight(card, growth = 0) {
+  if (!card || !card.green) return 0;
+  if (!card.bloom) return 1;
+  const over = Math.max(0, growth - C.PLANT_BLOOM_THRESHOLD);
+  return C.PLANT_BLOOM_WEIGHT + Math.floor(over / C.PLANT_BLOOM_WEIGHT_PER_GROWTH);
+}
+
+/* Grüne Karten in den Formationen einer Position, gewichtet — jede Karte höchstens einmal, auch wenn sie in mehreren
+   Läufen der Position liegt. `cardAt(pos)` liefert die Karte an einer Position der Ziehreihenfolge (Engine:
+   deck[playerOrder[p]]), `growthOf(id)` ihr Wachstum. Die Mitglieder stammen aus der Formations-Berechnung des
+   Durchlaufbeginns, die Zustände aus dem aktuellen Deck: eine Karte, die mitten im Durchlauf grün wird, zählt sofort
+   mit, die Läufe selbst wandern erst zum nächsten Durchlauf. */
+export function formationGreenCount(posForm, cardAt, growthOf = () => 0) {
   const seen = new Set();
   let n = 0;
   for (const f of plantFormations(posForm)) for (const p of f.members) {
     if (seen.has(p)) continue;
     seen.add(p);
     const c = cardAt(p);
-    if (c && c.green) n += 1;
+    if (c) n += greenWeight(c, growthOf(c.id));
   }
   return n;
 }
@@ -181,18 +192,16 @@ function rankenChain(growth, deck, skills, skillTiers, order, seeds) {
    der Siegposition (Episch: blühende Karten zählen doppelt). Voraussetzung ist eine grüne Siegkarte — „ein Sieg in
    einem grünen Farbblock" ist der Sieg einer grünen Karte in einem Lauf dieses Typs. Dazu Jahresringe (Tiefe der
    Siegkarte, kein Formationsbezug). Gibt den Basis-Score zurück. */
-function formationScore(skills, skillTiers, { card, posForm, cardAt, growth = 0 }) {
+function formationScore(skills, skillTiers, { card, posForm, cardAt, growth = 0, growthOf = () => 0 }) {
   let flat = 0;
   if (card && card.green) {
     for (const f of plantFormations(posForm)) {
       const id = SCORE_BY_TYPE[f.type];
       const rate = id ? plantParam(skills, skillTiers, id, "score") : undefined;
       if (!rate) continue;
-      // §6.19 (Owner, Route 1): eine blühende Karte zählt wie `bloom` grüne — auf jeder Stufe, nicht nur Episch.
-      // Das ist der Payoff für Wachstum ÜBER der Grün-Schwelle: die Wachstums-Skills zahlen durch jeden Score-Skill.
-      const bl = plantParam(skills, skillTiers, id, "bloom") || 1;
+      // §6.20: gezählt wird das Blühgewicht der Karten — die Regel steht im Passiv, nicht im Skill.
       let n = 0;
-      for (const p of f.members) { const c = cardAt(p); if (c && c.green) n += c.bloom ? bl : 1; }
+      for (const p of f.members) { const c = cardAt(p); n += greenWeight(c, c ? growthOf(c.id) : 0); }
       flat += n * rate;
     }
   }
@@ -270,8 +279,9 @@ export function plantOnWin(growth, deck, skills, skillTiers, { pos = -1, order =
   const card = cardId != null ? d.find((c) => c.id === cardId) : null;
   const cardAt = cardAtOf(d, order);
   let flat = lese.flat;
-  if (card && card.bloom) flat += formationGreenCount(posForm, cardAt) * C.PLANT_BLOOM_SCORE_PER_GREEN;
-  flat += formationScore(skills, skillTiers, { card, posForm, cardAt, growth: g[cardId] || 0 });
+  const growthOf = (id) => g[id] || 0;
+  if (card && card.bloom) flat += formationGreenCount(posForm, cardAt, growthOf) * C.PLANT_BLOOM_SCORE_PER_GREEN;
+  flat += formationScore(skills, skillTiers, { card, posForm, cardAt, growth: g[cardId] || 0, growthOf });
   return { growth: g, deck: d, flat: Math.round(flat), grown };
 }
 

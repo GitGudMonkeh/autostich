@@ -4545,6 +4545,47 @@ selten in Formationen stehen, deshalb der kleine Sprung).
 
 ---
 
+### 6.20 Das Blühgewicht gehört der Karte (2026-09-07, Owner-Variante B) — umgesetzt, UNGEMESSEN
+
+**Owner:** „wie kompliziert klingen dann die skills. es soll nicht zu kompliziert werden." → Variante B.
+**Prozessregel, ab jetzt verbindlich: erst Planung, gemessen wird nur auf ausdrückliches Go.** (§6.19 wurde gebaut
+UND gemessen, nachdem der Owner nur die Route freigegeben hatte — das war zu weit gegriffen.)
+
+#### Was sich ändert
+
+Das Vielfache, mit dem eine blühende Karte in einer Formation zählt, ist keine Eigenschaft des Skills mehr, sondern
+**der Karte** — und es wächst mit ihrem Wachstum:
+
+> **Eine blühende Karte zählt wie 5 grüne — und je 40 Wachstum darüber wie eine mehr.**
+
+Die Regel steht **einmal** im Passiv-Text und im Glossar. Die vier Score-Skills verlieren dafür ihre Blüh-Klausel und
+sind wieder einzeilig:
+
+| | vor §6.19 | §6.19 (Route 1) | **§6.20 (jetzt)** |
+| --- | --- | --- | --- |
+| Blätterdach, Normal | „…je grüner Karte darin." | „…je grüner Karte darin; blühende zählen fünffach." | „…je grüner Karte darin." |
+| Stufenleiter | score 10/15/20/25 | score + bloom 5/5/6/7 | score 10/15/20/25 |
+
+**Damit ist der Skilltext einfacher als der Stand vor dieser Runde** — die Komplexität sitzt dort, wo der Spieler
+ohnehin grau → grün → blühend lernt, und sie gilt überall gleich: `greenWeight(card, growth)` ist die eine Quelle,
+die sowohl der Passiv-Kanal (`PLANT_BLOOM_SCORE_PER_GREEN`) als auch die vier Score-Skills lesen.
+
+#### Warum das der fehlende Halbsatz ist
+
+§6.19 hängte am **Zustand** blühend und ließ die vier Wachstums-Skills tot, weil das Passiv die Schwelle ohnehin
+erreicht und ein fester Faktor alle Skills gleich hebt. Das Gewicht hängt an der **Zahl**: Wachstum zahlt über der
+Blüh-Schwelle weiter, den ganzen Lauf, durch jeden Zähler grüner Karten. Genau das ist die Kopplung aus §6.18 —
+Aussaat, Ranken, Setzlingsbeet und Zäher Halm haben jetzt einen Payoff, der mit jedem weiteren Pflanzen-Skill wächst.
+
+#### Startwerte — Vorschlag, ungemessen
+
+`PLANT_BLOOM_WEIGHT` 5 · `PLANT_BLOOM_WEIGHT_PER_GROWTH` 40. Eine Karte liegt am Laufende bei rund 205 Wachstum
+(Sonde §6.10 B) → Gewicht 8. Die Parität aus §6.19 stand bei festem Gewicht 5–7; das wachsende Gewicht liegt am
+Anfang darunter und am Ende darüber, die Kurve ist also flacher UND steiler zugleich. **Wohin das die Fraktion
+trägt, ist offen — die Messung kommt auf Ansage.**
+
+---
+
 ## Änderungsprotokoll
 
 
@@ -4627,3 +4668,4 @@ selten in Formationen stehen, deshalb der kleine Sprung).
 | 2026-09-07 | Auf Ansage gemessen: Duell aller drei ohne Legendäre (zahlengleich mit §6.10 — §6.11–§6.16 haben nur Legendäre und den Angebotstopf bewegt) und beide Ablationen der Pflanze. Sieben der 15 Pflanze-Skills sind in gemischter UND reiner Welt tot, vier davon die Wachstums-Skills. Parität (×1,55) ist mit den vorhandenen Reglern nicht erreichbar. Vier Routen vorgeschlagen, nichts umgesetzt. §6.17. |
 | 2026-09-07 | Owner verwirft den Umbau der Wachstums-Skills: Wachstum ist die Kernmechanik, der Payoff muss aus dem Zusammenspiel kommen. Befund dazu: Wachstum hat nur zwei Ausgänge (die Schwellen 30 und 75), die das Passiv ohnehin erreicht — oberhalb von 75 ist jeder Punkt wertlos, und genau der eine Skill, der die Zahl liest (Jahresringe), ist der beste der Fraktion. Prinzip und drei Routen aufgeschrieben. §6.18. |
 | 2026-09-07 | Route 1 gebaut: blühende Karten zählen in den vier Formations-Score-Skills wie 5/5/6/7 grüne, auf jeder Stufe. Parität erreicht (Pflanze mono 7,48M gegen Feuer 7,75M / Blitz 7,43M) und die Erkennungs-Achse deutlich gestärkt (Spalier +12 % → +36 %). Die vier Wachstums-Skills bleiben aber tot — ein flacher Blüh-Faktor hebt alle Skills gleich und hängt am Zustand, nicht an der Zahl. Balance-Guard neu zentriert. §6.19. |
+| 2026-09-07 | Owner-Variante B: das Blühgewicht gehört der Karte, nicht dem Skill — „eine blühende Karte zählt wie 5 grüne, je 40 Wachstum darüber wie eine mehr", einmal im Passiv. Die vier Score-Skills sind wieder einzeilig, einfacher als vor der Runde. Wachstum zahlt damit über der Blüh-Schwelle weiter. Startwerte ungemessen. Prozessregel festgehalten: erst Planung, Messen nur auf ausdrückliches Go. §6.20. |

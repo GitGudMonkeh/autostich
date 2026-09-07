@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import * as C from "../src/game/constants.js";
 import { SKILL_DEFS, PFLANZE_TIERS as PT, ARCHETYPE_ORDER, SKILL_TIER_COUNT } from "../src/game/skills.js";
-import { P, plantStage, greenCount, applyGrowth, growthOnWin, setzlingsbeetGains, plantValueBonus, plantFormMult } from "../src/game/factions/plant.js";
+import { P, plantStage, greenCount, applyGrowth, growthOnWin, setzlingsbeetGains, plantValueBonus, plantFormMult, greenWeight } from "../src/game/factions/plant.js";
 import { resolveTrick } from "../src/game/engine.js";
 import { initialState, reducer } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
@@ -90,9 +90,9 @@ describe("Pflanze — Register und Stufenleitern (§6.7, §6.8)", () => {
   });
   it("die Texte interpolieren die Tabellen (kein Drift zwischen Regel und Beschreibung)", () => {
     expect(SKILL_DEFS[P.AUSSAAT].desc).toContain(`+${PT.aussaat[0].growth}`);
-    // §6.19: der Blüh-Faktor steht auf JEDER Stufe (nicht mehr nur als Episch-Extra) und wächst mit ihr.
-    const WORT = { 2: "zwei", 3: "drei", 4: "vier", 5: "fünf", 6: "sechs", 7: "sieben" };
-    for (const t of [0, 1, 2, 3]) expect(SKILL_DEFS[P.BLAETTERDACH].descTiers[t]).toContain(`${WORT[PT.blaetterdach[t].bloom]}fach`);
+    // §6.20: das Blühgewicht gehört der Karte, nicht dem Skill — die Score-Skills nennen es NICHT.
+    for (const t of [0, 1, 2, 3]) expect(SKILL_DEFS[P.BLAETTERDACH].descTiers[t]).not.toContain("blühende");
+    for (const rows of [PT.blaetterdach, PT.rankgeruest, PT.hecke, PT.windung]) for (const r of rows) expect(r.bloom).toBeUndefined();
     expect(SKILL_DEFS[P.UEBERWUCHERUNG].desc).toContain(`Ab ${Math.round(PT.ueberwucherung[0].field * 100)} %`);
     expect(SKILL_DEFS[P.JAHRESRINGE].descTiers[3]).toContain(`über ${B}`);
   });
@@ -126,7 +126,10 @@ describe("Pflanze — Passiv: Wachstum, Zustände, Blüten-Score (§6.2)", () =>
   it("eine blühende Siegkarte zahlt Basis-Score je grüner Karte in ihren Formationen", () => {
     const deck = deckOf((i) => (i <= 2 ? { green: true, bloom: i === 1 } : {}));
     const s = resolveTrick(scen({ deck, growth: { X1: B }, formations: withRun([0, 1, 2]) }), noCrit);
-    expect(s.plantBase).toBe(3 * C.PLANT_BLOOM_SCORE_PER_GREEN);
+    // §6.20: gezählt wird das Blühgewicht — zwei grüne à 1 plus die blühende mit ihrem Gewicht.
+    const w = s.deck.slice(0, 3).reduce((t, c) => t + greenWeight(c, s.growth[c.id] || 0), 0);
+    expect(s.plantBase).toBe(w * C.PLANT_BLOOM_SCORE_PER_GREEN);
+    expect(w).toBe(2 + C.PLANT_BLOOM_WEIGHT);
     // ohne Formation zahlt sie nichts — die Fraktion zahlt für die Aufstellung, nicht für den Sieg
     expect(resolveTrick(scen({ deck, growth: { X1: B } }), noCrit).plantBase).toBe(0);
   });
@@ -208,14 +211,27 @@ describe("Pflanze — die Wachstums-Skills (§6.8)", () => {
 describe("Pflanze — Score aus grünen Formationen (§6.8)", () => {
   const tier = (id, t) => ({ skills: [id], skillTiers: { [id]: t } });
   const greenRun = () => deckOf((i) => (i <= 2 ? { green: true } : {}));
-  it("Blätterdach zahlt je grüner Karte im Farbblock; blühende zählen auf JEDER Stufe mehrfach (§6.19)", () => {
+  it("Blätterdach zahlt je grüner Karte im Farbblock — gezählt wird das Blühgewicht (§6.20)", () => {
     const s = resolveTrick(scen({ deck: greenRun(), growth: { X1: G }, formations: withRun([0, 1, 2]), ...tier(P.BLAETTERDACH, 0) }), noCrit);
     expect(s.plantBase).toBe(3 * PT.blaetterdach[0].score); // drei grüne, keine blühend
-    // Eine der drei blüht: sie zählt wie `bloom` grüne — schon auf Normal, nicht erst Episch.
+    // Eine der drei blüht: sie zählt wie ihr Gewicht — auf jeder Stufe gleich, denn das Gewicht gehört der Karte.
     const bloomDeck = deckOf((i) => (i <= 2 ? { green: true, bloom: i === 0 } : {}));
-    const at = (t) => resolveTrick(scen({ deck: bloomDeck, growth: { X1: G }, formations: withRun([0, 1, 2]), ...tier(P.BLAETTERDACH, t) }), noCrit).plantBase;
-    for (const t of [0, 1, 2, 3]) expect(at(t), `Stufe ${t}`).toBe((2 + PT.blaetterdach[t].bloom) * PT.blaetterdach[t].score);
-    expect(PT.blaetterdach[0].bloom).toBeGreaterThan(1); // der Payoff für Wachstum über der Grün-Schwelle steht ab Normal
+    const at = (t, g0) => resolveTrick(scen({ deck: bloomDeck, growth: { X0: g0, X1: G }, formations: withRun([0, 1, 2]), ...tier(P.BLAETTERDACH, t) }), noCrit).plantBase;
+    for (const t of [0, 1, 2, 3]) expect(at(t, B), `Stufe ${t}`).toBe((2 + C.PLANT_BLOOM_WEIGHT) * PT.blaetterdach[t].score);
+    // Und es WÄCHST: je PLANT_BLOOM_WEIGHT_PER_GROWTH Wachstum über der Schwelle zählt die Karte eine grüne mehr.
+    const W = C.PLANT_BLOOM_WEIGHT_PER_GROWTH;
+    expect(at(0, B + W)).toBe((2 + C.PLANT_BLOOM_WEIGHT + 1) * PT.blaetterdach[0].score);
+    expect(at(0, B + 3 * W)).toBe((2 + C.PLANT_BLOOM_WEIGHT + 3) * PT.blaetterdach[0].score);
+    expect(at(0, B + W - 1)).toBe((2 + C.PLANT_BLOOM_WEIGHT) * PT.blaetterdach[0].score); // knapp darunter: noch nicht
+  });
+  it("greenWeight (§6.20): grau 0, grün 1, blühend das Grundgewicht plus eins je Schritt darüber", () => {
+    const W = C.PLANT_BLOOM_WEIGHT_PER_GROWTH, BW = C.PLANT_BLOOM_WEIGHT;
+    expect(greenWeight(null, 0)).toBe(0);
+    expect(greenWeight({ id: "X", }, 999)).toBe(0);                       // grau zählt nie mit
+    expect(greenWeight({ id: "X", green: true }, 999)).toBe(1);           // grün ohne Blüte: genau eine
+    expect(greenWeight({ id: "X", green: true, bloom: true }, B)).toBe(BW);
+    expect(greenWeight({ id: "X", green: true, bloom: true }, B + W)).toBe(BW + 1);
+    expect(greenWeight({ id: "X", green: true, bloom: true }, B + 2 * W + 5)).toBe(BW + 2);
   });
   it("je Formationstyp liest genau ein Skill — eine Treppe zahlt Rankgerüst, nicht Blätterdach", () => {
     const treppe = withRun([0, 1, 2], "treppe");

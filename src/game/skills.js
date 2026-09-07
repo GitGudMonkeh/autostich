@@ -90,10 +90,10 @@ const PFLANZE = {
   luecke:        [{ gaps: 1 }, { gaps: 2 }, { gaps: 3 }, { gaps: 3, growth: 2 }],
   ueberwucherung:[{ field: 0.8, less: 1 }, { field: 0.65, less: 1 }, { field: 0.5, less: 1 }, { field: 0.35, less: 2 }],
   // Score aus grünen Formationen — je Formationstyp einer, dazu die Tiefe der einzelnen Karte
-  blaetterdach:  [{ score: 10, bloom: 5 }, { score: 15, bloom: 5 }, { score: 20, bloom: 6 }, { score: 25, bloom: 7 }],
-  rankgeruest:   [{ score: 30, bloom: 5 }, { score: 45, bloom: 5 }, { score: 60, bloom: 6 }, { score: 80, bloom: 7 }],
-  hecke:         [{ score: 30, bloom: 5 }, { score: 45, bloom: 5 }, { score: 60, bloom: 6 }, { score: 80, bloom: 7 }],
-  windung:       [{ score: 35, bloom: 5 }, { score: 50, bloom: 5 }, { score: 70, bloom: 6 }, { score: 90, bloom: 7 }],
+  blaetterdach:  [{ score: 10 }, { score: 15 }, { score: 20 }, { score: 25 }],
+  rankgeruest:   [{ score: 30 }, { score: 45 }, { score: 60 }, { score: 80 }],
+  hecke:         [{ score: 30 }, { score: 45 }, { score: 60 }, { score: 80 }],
+  windung:       [{ score: 35 }, { score: 50 }, { score: 70 }, { score: 90 }],
   jahresringe:   [{ per: 10, score: 20 }, { per: 10, score: 30 }, { per: 10, score: 40 }, { per: 10, score: 50, overDouble: true }],
   // Kombination
   bluetenlese:   [{ score: 40, growth: 1 }, { score: 60, growth: 1 }, { score: 80, growth: 1 }, { score: 100, growth: 2 }],
@@ -275,13 +275,13 @@ export const SKILL_DEFS = {
     ...tiered(PFLANZE.ueberwucherung, (r) => `Ab ${pct(r.field)} % grünem Feld entstehen grüne Formationen mit ${r.less === 1 ? "einer Karte" : `${de1(r.less)} Karten`} weniger, mindestens aber ab zwei Karten.`) },
   // Score aus grünen Formationen — je Formationstyp einer, dazu die Tiefe der einzelnen Karte
   SK_PLANT_13: { id: "SK_PLANT_13", name: "Blätterdach", archetype: "plant", keywords: ["green", "formation", "score"], tiers: PFLANZE.blaetterdach,
-    ...tiered(PFLANZE.blaetterdach, (r) => `Ein Sieg in einem grünen Farbblock gibt +${r.score} Basis-Score je grüner Karte darin; blühende zählen ${de1(r.bloom)}fach.`) },
+    ...tiered(PFLANZE.blaetterdach, (r) => `Ein Sieg in einem grünen Farbblock gibt +${r.score} Basis-Score je grüner Karte darin.`) },
   SK_PLANT_16: { id: "SK_PLANT_16", name: "Rankgerüst", archetype: "plant", keywords: ["green", "formation", "score"], tiers: PFLANZE.rankgeruest,
-    ...tiered(PFLANZE.rankgeruest, (r) => `Ein Sieg in einer grünen Treppe gibt +${r.score} Basis-Score je grüner Karte darin; blühende zählen ${de1(r.bloom)}fach.`) },
+    ...tiered(PFLANZE.rankgeruest, (r) => `Ein Sieg in einer grünen Treppe gibt +${r.score} Basis-Score je grüner Karte darin.`) },
   SK_PLANT_10: { id: "SK_PLANT_10", name: "Hecke", archetype: "plant", keywords: ["green", "formation", "score"], tiers: PFLANZE.hecke,
-    ...tiered(PFLANZE.hecke, (r) => `Ein Sieg in einer grünen Wiederholung gibt +${r.score} Basis-Score je grüner Karte darin; blühende zählen ${de1(r.bloom)}fach.`) },
+    ...tiered(PFLANZE.hecke, (r) => `Ein Sieg in einer grünen Wiederholung gibt +${r.score} Basis-Score je grüner Karte darin.`) },
   SK_PLANT_11: { id: "SK_PLANT_11", name: "Windung", archetype: "plant", keywords: ["green", "formation", "score"], tiers: PFLANZE.windung,
-    ...tiered(PFLANZE.windung, (r) => `Ein Sieg in einem grünen Wechsel gibt +${r.score} Basis-Score je grüner Karte darin; blühende zählen ${de1(r.bloom)}fach.`) },
+    ...tiered(PFLANZE.windung, (r) => `Ein Sieg in einem grünen Wechsel gibt +${r.score} Basis-Score je grüner Karte darin.`) },
   SK_PLANT_04: { id: "SK_PLANT_04", name: "Jahresringe", archetype: "plant", keywords: ["growth", "score"], tiers: PFLANZE.jahresringe,
     ...tiered(PFLANZE.jahresringe, (r) => `Ein Sieg gibt +${r.score} Basis-Score je ${r.per} Wachstum der Siegkarte.${r.overDouble ? ` Wachstum über ${C.PLANT_BLOOM_THRESHOLD} zählt doppelt.` : ""}`) },
   // Kombination — Score und Wachstum in einem

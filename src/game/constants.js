@@ -383,6 +383,12 @@ export const PLANT_BLOOM_THRESHOLD = envNum("SIM_PLANT_BLOOM_THRESHOLD", 75); //
 export const PLANT_GROWTH_WIN = envNum("SIM_PLANT_GROWTH_WIN", 1);            // Wachstum je Sieg
 export const PLANT_GROWTH_PER_FORMATION = envNum("SIM_PLANT_GROWTH_PER_FORMATION", 1); // … zusätzlich je aktiver Formation an der Siegposition (Owner-Idee: der eigentliche Regler)
 export const PLANT_BLOOM_SCORE_PER_GREEN = envNum("SIM_PLANT_BLOOM_SCORE_PER_GREEN", 20); // Basis-Score je grüner Karte in den Formationen der blühenden Siegkarte
+// Blühgewicht (§6.20, Owner-Variante B): WIE VIELE grüne Karten eine blühende in einer Formation zählt. Das Gewicht
+// gehört der KARTE, nicht dem Skill — deshalb steht die Regel einmal im Passiv und die Score-Skills bleiben einzeilig.
+// Der zweite Summand ist der eigentliche Punkt: Wachstum ÜBER der Blüh-Schwelle zahlt weiter, also lohnen sich die
+// Wachstums-Skills den ganzen Lauf (§6.19: mit festem Gewicht blieben sie tot).
+export const PLANT_BLOOM_WEIGHT = envNum("SIM_PLANT_BLOOM_WEIGHT", 5);                    // Grundgewicht einer blühenden Karte
+export const PLANT_BLOOM_WEIGHT_PER_GROWTH = envNum("SIM_PLANT_BLOOM_WEIGHT_PER_GROWTH", 40); // … +1 je so viel Wachstum über der Blüh-Schwelle (Laufende ≈ 205 Wachstum → Gewicht 8)
 // Grün-Farbblock-Deckel (v0.3): der eskalierende Farbblock-Faktor grüner Karten wird bei dieser Ordinalzahl gedeckelt.
 // §6.2 lässt ihn bewusst stehen, bis die Messung sagt, ob er hoch, weg oder umgebaut wird (Owner: warten).
 export const PLANT_GREEN_FARBBLOCK_CAP = 3;
