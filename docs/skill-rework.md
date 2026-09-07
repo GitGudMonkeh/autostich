@@ -4345,6 +4345,11 @@ Linear, keine Sättigung — im Gegensatz zum Wert-Bonus. Gesetzt: **0,15**.
 
 Acht von neun liegen in **+101 … +160 %**. Ausgangspunkt der Runde war +4 … +418 %.
 
+**Nachtrag Owner (2026-09-07):** der Wert-Bonus geht von +8 auf **+6** — „+8 ist zu krass". Bewusst NICHT neu
+gemessen (Owner-Ansage). Nach der Kurve aus §6.14 (+6 → +43 %, +8 → +51 % ohne den Multiplikator) kostet das grob
+zehn Prozentpunkte; Ewiger Frühling landet damit knapp unter +100 % statt knapp darüber. Der Multiplikator bleibt
+bei 15 %.
+
 **Balance-Guard unverändert** (4,38M / 9,39M): der Zufallsspieler kann die Pflanze gar nicht ziehen —
 `SKILL_OFFER_ARCHETYPES` ist weiter `["fire", "lightning"]`. Dass der Faktor greift, sichert stattdessen ein
 Engine-Test auf `breakdown.plantMult`. **Sobald die Pflanze ins Angebot kommt, ist der Guard neu zu zentrieren.**
@@ -4428,3 +4433,4 @@ Engine-Test auf `breakdown.plantMult`. **Sobald die Pflanze ins Angebot kommt, i
 | 2026-09-07 | Owner: Ewiger Frühling bekommt einen Bonus auf blühende Karten. Umgesetzt als +3 Kampfwert je blühender Karte — der einzige Wert-Hebel der Fraktion, ab der ersten blühenden Karte wirksam; das Zielbild bleibt der zweite Effekt. Startwert ungemessen. §6.13. |
 | 2026-09-07 | Owner: keine Kommazahlen auf Karten (Brandmarke zeigt nur ganze Punkte), und alle unter 100 % auf ~100 % heben. Fünf Legendäre über ihre Werte auf +100 … +108 % gebracht; sieben der neun liegen jetzt in +101 … +149 %. Hochspannung (Regler arithmetisch am Ende) und Ewiger Frühling (Wert-Bonus sättigt bei +73 %) erreichen das Band nicht. §6.14. |
 | 2026-09-07 | Owner: Ewiger Frühling bekommt neben dem Kartenwert einen Score-Bonus in Formationen; Hochspannung bleibt wie er ist. Umgesetzt als +15 % je aktiver Formation beim Sieg mit einer blühenden Karte — der erste Multiplikator der Fraktion, gemessen +108 % und ohne Sättigung. Acht der neun Legendären liegen jetzt in +101 … +160 %. §6.15. |
+| 2026-09-07 | Owner: Wert-Bonus des Ewigen Frühlings +8 → +6, ohne Neumessung. §6.15. |
