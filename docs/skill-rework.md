@@ -4499,6 +4499,52 @@ nicht, ist die Erkennungs-Achse der einzige gemessene Ort, an dem die Fraktion w
 
 ---
 
+### 6.19 Route 1 gebaut: blühende Karten zählen mehrfach (2026-09-07, Owner) — Parität erreicht, ein Ziel verfehlt
+
+**Owner:** „ja, route 1 macht Sinn."
+
+In den vier Formations-Score-Skills (Blätterdach, Rankgerüst, Hecke, Windung) zählt eine blühende Karte jetzt wie
+**5/5/6/7 grüne** — auf jeder Stufe, nicht mehr nur als Episch-Extra (`bloomDouble` ist durch die Leiter `bloom`
+ersetzt). Jahresringe und Blütenlese sind unberührt: der eine liest ohnehin die Wachstumszahl, der andere zahlt
+pauschal für eine rein grüne Formation.
+
+#### Gemessen (Duell ohne Legendäre, 200 Läufe, Türen aus allen drei)
+
+| Blüh-Faktor | Pflanze mono | ÷ Feuer | Split |
+| --- | --- | --- | --- |
+| 1 (vorher) | 4,90M | 0,63× | 6,19M |
+| 2/2/2/3 | 5,40M | 0,70× | 6,49M |
+| 4/4/5/6 | 6,81M | 0,88× | 7,02M |
+| **5/5/6/7** | **7,48M** | **0,97×** | 7,26M |
+
+**Parität ist erreicht:** 7,48M gegen Feuer 7,75M und Blitz 7,43M. Die Siegquote bleibt bei 53,3 % — sie sollte auch,
+grün gibt bewusst keinen Kartenwert (§6.1).
+
+#### Was die Route bewirkt hat — und was nicht
+
+**Bewirkt:** die Erkennungs-Achse ist explodiert. In der reinen Pflanze-Welt sprang Spalier von +0,80M (+12 %) auf
++2,71M (+36 %) und Wildwuchs von +0,57M auf +2,01M (+21 %), der gierige Median von 9,15M auf 12,75M. Das ist die
+Kopplung, die der Owner wollte: mehr Mitglieder je Lauf heißt jetzt mehr blühende Karten, die mehrfach zählen.
+
+**Nicht bewirkt: die vier Wachstums-Skills sind weiter tot.** Bei 5/5/6/7 messen sie Aussaat ±0, Ranken −0,27M,
+Setzlingsbeet −0,83M, Zäher Halm −1,26M — Zäher Halm ist sogar SCHLECHTER geworden als vor der Runde (−0,21M).
+
+**Der Grund, sauber:** Route 1 hängt am **Zustand** blühend, nicht an der **Zahl** Wachstum. Blühend erreicht das
+Passiv allein bis Durchlauf ~31 (Sonde §6.10 B); die Wachstums-Skills kaufen also weiterhin nur ein paar Runden
+Vorsprung. Und weil ein größerer Blüh-Faktor **alle** Skills hebt, steigen die Opportunitätskosten eines Slots
+mit — deshalb wird Zäher Halm relativ schlechter, nicht besser.
+
+**Ein flacher Blüh-Faktor kann die Wachstums-Skills grundsätzlich nicht retten.** Was sie bräuchten, ist der
+Halbsatz aus §6.18, den Route 1 nicht enthält: Wachstum muss **über** der Blüh-Schwelle weiterzahlen. Der kleinste
+Schritt dorthin, in derselben Form: der Blüh-Faktor einer Karte wächst mit ihrem Wachstum, statt fest zu sein
+(z. B. `bloom + floor((Wachstum − 75) / X)`). Dann zahlen Aussaat, Ranken, Setzlingsbeet und Zäher Halm den ganzen
+Lauf über, durch jeden Score-Skill.
+
+**Balance-Guard neu zentriert:** Median 2,98M → 3,29M, Mean 4,82M → 5,30M (Zufallsspieler; er hat blühende Karten
+selten in Formationen stehen, deshalb der kleine Sprung).
+
+---
+
 ## Änderungsprotokoll
 
 
@@ -4580,3 +4626,4 @@ nicht, ist die Erkennungs-Achse der einzige gemessene Ort, an dem die Fraktion w
 | 2026-09-07 | Owner: die Pflanze kommt ins Türangebot (SKILL_OFFER_ARCHETYPES um "plant" erweitert). Balance-Guard neu zentriert (Median 2,98M, Mean 4,82M) — der Zufallsspieler fällt, weil die Pflanze als einzige Fraktion einen gebauten Motor braucht. §6.16. |
 | 2026-09-07 | Auf Ansage gemessen: Duell aller drei ohne Legendäre (zahlengleich mit §6.10 — §6.11–§6.16 haben nur Legendäre und den Angebotstopf bewegt) und beide Ablationen der Pflanze. Sieben der 15 Pflanze-Skills sind in gemischter UND reiner Welt tot, vier davon die Wachstums-Skills. Parität (×1,55) ist mit den vorhandenen Reglern nicht erreichbar. Vier Routen vorgeschlagen, nichts umgesetzt. §6.17. |
 | 2026-09-07 | Owner verwirft den Umbau der Wachstums-Skills: Wachstum ist die Kernmechanik, der Payoff muss aus dem Zusammenspiel kommen. Befund dazu: Wachstum hat nur zwei Ausgänge (die Schwellen 30 und 75), die das Passiv ohnehin erreicht — oberhalb von 75 ist jeder Punkt wertlos, und genau der eine Skill, der die Zahl liest (Jahresringe), ist der beste der Fraktion. Prinzip und drei Routen aufgeschrieben. §6.18. |
+| 2026-09-07 | Route 1 gebaut: blühende Karten zählen in den vier Formations-Score-Skills wie 5/5/6/7 grüne, auf jeder Stufe. Parität erreicht (Pflanze mono 7,48M gegen Feuer 7,75M / Blitz 7,43M) und die Erkennungs-Achse deutlich gestärkt (Spalier +12 % → +36 %). Die vier Wachstums-Skills bleiben aber tot — ein flacher Blüh-Faktor hebt alle Skills gleich und hängt am Zustand, nicht an der Zahl. Balance-Guard neu zentriert. §6.19. |

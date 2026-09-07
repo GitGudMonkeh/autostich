@@ -188,9 +188,11 @@ function formationScore(skills, skillTiers, { card, posForm, cardAt, growth = 0 
       const id = SCORE_BY_TYPE[f.type];
       const rate = id ? plantParam(skills, skillTiers, id, "score") : undefined;
       if (!rate) continue;
-      const dbl = !!plantParam(skills, skillTiers, id, "bloomDouble");
+      // §6.19 (Owner, Route 1): eine blühende Karte zählt wie `bloom` grüne — auf jeder Stufe, nicht nur Episch.
+      // Das ist der Payoff für Wachstum ÜBER der Grün-Schwelle: die Wachstums-Skills zahlen durch jeden Score-Skill.
+      const bl = plantParam(skills, skillTiers, id, "bloom") || 1;
       let n = 0;
-      for (const p of f.members) { const c = cardAt(p); if (c && c.green) n += dbl && c.bloom ? 2 : 1; }
+      for (const p of f.members) { const c = cardAt(p); if (c && c.green) n += c.bloom ? bl : 1; }
       flat += n * rate;
     }
   }
