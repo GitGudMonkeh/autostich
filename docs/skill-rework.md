@@ -4744,6 +4744,61 @@ Ein Test hält beides zusammen: `spalierOpenBorders` meldet dieselbe Grenze, die
 
 ---
 
+### 6.24 Glutbett bekommt einen zweiten Hook (2026-09-07, Owner) — umgesetzt, UNGEMESSEN
+
+**Owner:** „glutbett überarbeiten. skill ist zu schwach. ersten Teil behalten, braucht aber noch einen anderen hook."
+
+#### Warum er zu schwach war
+
+Gemessen im gemischten Lauf: **−0,78M / −4 %**, Flag „schadet", trotzdem in 32 % der gierigen Builds. Drei Gründe:
+
+1. **Rein defensiv.** Der Skill verhindert einen Verlust und gewinnt nie etwas. Und was er schützt, ist billig:
+   Hitze zahlt +2 % Score je 10 %, ein Boden bei 40 % ist also höchstens +8 % Score wert — und nur in den Läufen,
+   die sonst darunter gefallen wären.
+2. **Er dupliziert ein Legendäres.** Ewige Glut hält die Hitze bei 85 % der Spitze, mit einem Boden, der mitwandert.
+3. **Er hat keinen Moment.** Man merkt nie, dass er wirkt.
+
+#### Der Hook — und die verworfene erste Fassung
+
+Der erste Vorschlag war „liegt die Hitze auf dem Boden, geben Niederlagen +N % Hitze". **Vom Owner freigegeben, dann
+von mir zurückgezogen** — er funktioniert nicht:
+
+- **Er hebt sich selbst auf.** Die Kühlung ist `value = before <= floor ? before : max(floor, before - HEAT_LOSS)`.
+  Auf dem Boden gibt die Niederlage +1, die nächste kühlt sofort auf den Boden zurück. Über zwei Niederlagen: null.
+- **Den Begriff gibt es schon.** Zunder Episch trägt `lossHeat` („auch Niederlagen heizen") — ein zweiter Skill mit
+  derselben Aussage bricht „ein Begriff je Sache".
+
+**Umgesetzt ist stattdessen: nicht die Hitze steigt, sondern der Boden.**
+
+> „Niederlagen kühlen die Hitze nicht unter 40 %. Fängt der Boden eine Niederlage ab, steigt er um 1 %."
+
+Das kann die nächste Niederlage nicht zurücknehmen — der Boden ist ja das, was hält. **„Abfangen" heißt: die Hitze
+lag darüber und die Kühlung hätte sie darunter gedrückt.** Liegt sie schon unten, passiert nichts; der Spieler muss
+erst wieder hochheizen. Damit läuft der Boden nicht davon (sonst hätte jede Niederlage am Boden ihn gehoben, in
+einem Lauf hunderte Male), und der Skill belohnt genau seinen Rhythmus: hochkommen, runtergeschlagen werden, das
+Bett wird dicker.
+
+Leiter: Boden 40/60/80 mit Anstieg +1/+2/+3. **Episch bleibt „keine Kühlung"** — dort fängt nie etwas ab, ein
+steigender Boden wäre toter Text.
+
+#### Sichtbar
+
+Ein wachsender Boden, den man nicht sieht, wäre derselbe Fehler wie bei Spalier (§6.23). Die Hitzeleiste trägt
+deshalb einen Strich an der Bodenhöhe und ein Abzeichen „Glutbett n %"; sobald der Boden über seiner Stufe liegt,
+sagt der Tooltip, wie viele Punkte aus abgefangenen Stürzen erarbeitet sind. Der Zustand hängt als `bedFloor` am
+Hitze-Substate, `glutbettFloor(heat, skills, skillTiers)` ist die eine Quelle für Motor und Anzeige.
+
+**Startwerte sind Vorschlag und ungemessen** — Messung auf Ansage.
+
+#### Nebenbefund: die Quelltext-Ratsche
+
+Der Kleiner-Vergleich `bedFloor ... scale` und ein Kommentar, der die beiden Vergleichszeichen erklärte, wurden von
+der i18n-Ratsche als fest verdrahteter Anzeigetext gemeldet: sie greift alles zwischen einem Größer- und einem
+Kleiner-Zeichen. Behoben durch `bedFloor !== scale` (gleichwertig, weil `glutbettFloor` bereits auf die
+Leistenlänge klemmt) — **nicht** durch Aufweichen des Wächters (AGENTS.md).
+
+---
+
 ## Änderungsprotokoll
 
 
@@ -4831,3 +4886,4 @@ Ein Test hält beides zusammen: `spalierOpenBorders` meldet dieselbe Grenze, die
 | 2026-09-07 | Grundgewicht 3 gemessen: Pflanze mono 8,36M gegen Feuer 7,75M und Blitz 7,43M — Parität (1,08×). Zielkonflikt sichtbar: bei Gewicht 5 zahlte Aussaat in beiden Welten, bei 3 nur noch in der reinen. Die Überlappungs-Konzentration ist vom Gewicht unabhängig (8 % der Siege tragen 45 %, wie bei 5) — sie sitzt im Formations-Multiplikator, nicht im Gewicht. §6.22. |
 | 2026-09-07 | Owner: Grundgewicht 3 bleibt, Kompromiss 4 wird nicht gemessen. Damit ist gesetzt, dass die Wachstums-Skills Mono-Skills sind — im gemischten Build kosten sie den Platz, und das ist gewollt. §6.22. |
 | 2026-09-07 | Owner: Spalier zeigt seine offenen Segmentgrenzen jetzt in Aufstellphase und Chronik. Die Rechnung lag inline im Motor und ist als `spalierOpenBorders` plus `openBorderInfo` herausgezogen — eine Quelle für Engine und UI, wie bei `openSegmentInfo`. Die Anzeige rechnet bei jedem Tausch neu, weil Spalier am Grün-Stand der Nachbarkarten hängt. §6.23. |
+| 2026-09-07 | Owner: Glutbett war zu schwach (−4 %, Flag „schadet") und bekommt einen zweiten Hook. Der erste freigegebene Vorschlag (Niederlagen am Boden geben Hitze) wurde zurückgezogen — er hebt sich selbst auf und dupliziert Zunder Episch. Umgesetzt: der BODEN steigt um 1/2/3 %, wenn er einen Sturz wirklich abfängt; Episch bleibt „keine Kühlung". Hitzeleiste zeigt Strich und Abzeichen. Ungemessen. §6.24. |
