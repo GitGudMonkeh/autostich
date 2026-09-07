@@ -4828,8 +4828,19 @@ verkürzt hatte.
 
 Keine Mechanik, keine Kennwerte, keine Messung. Gates grün, `loc:export` neu.
 
-**Offen, Entscheid Owner:** Die Schmiede sagt an zwei Stellen weiter „dauerhaft +{v} Wert" (Skilltext und
-Leisten-Tooltip) und meint dasselbe. Eine Zeile Arbeit, wenn es angeglichen werden soll.
+#### Nachtrag: die Schmiede angeglichen (Owner)
+
+Dieselbe Verkürzung stand an vier Stellen um die Schmiede — Skilltext, Leisten-Tooltip, das Abzeichen auf der
+Karte und der Glossar-Eintrag „Schmieden", der ausgerechnet mit „Hitze wird zu dauerhaftem Kartenwert" beginnt
+und zwei Sätze später „+3 Wert" sagt. Alle vier sagen jetzt **Kartenwert**.
+
+Nicht angefasst, weil dort ein anderer Begriff steht: die temporären Kampfwert-Boni (Ionenfeld, Blitzfänger,
+Glutklinge, Takt, Ewiger Frühling — „kämpfen mit +n Wert") und die Brandmal-Abzüge. Die sind nicht dauerhaft
+und nicht der gebackene Kartenwert; das Register trennt beides über „Stichwert / temporärer Wert".
+
+**Offen, Entscheid Owner:** Zwei Reste des Textpakets aus §7.26 („Runde" → „Durchlauf") stehen noch —
+der Schmiede-Tooltip sagt „am Rundenende", wo der Skilltext „Am Ende eines Durchlaufs" sagt, und der
+Glossar-Eintrag „Brandmal" rechnet dreimal in Runden. Beides in einem Rutsch, wenn gewünscht.
 
 ---
 
@@ -4922,3 +4933,4 @@ Leisten-Tooltip) und meint dasselbe. Eine Zeile Arbeit, wenn es angeglichen werd
 | 2026-09-07 | Owner: Spalier zeigt seine offenen Segmentgrenzen jetzt in Aufstellphase und Chronik. Die Rechnung lag inline im Motor und ist als `spalierOpenBorders` plus `openBorderInfo` herausgezogen — eine Quelle für Engine und UI, wie bei `openSegmentInfo`. Die Anzeige rechnet bei jedem Tausch neu, weil Spalier am Grün-Stand der Nachbarkarten hängt. §6.23. |
 | 2026-09-07 | Owner: Glutbett war zu schwach (−4 %, Flag „schadet") und bekommt einen zweiten Hook. Der erste freigegebene Vorschlag (Niederlagen am Boden geben Hitze) wurde zurückgezogen — er hebt sich selbst auf und dupliziert Zunder Episch. Umgesetzt: der BODEN steigt um 1/2/3 %, wenn er einen Sturz wirklich abfängt; Episch bleibt „keine Kühlung". Hitzeleiste zeigt Strich und Abzeichen. Ungemessen. §6.24. |
 | 2026-09-07 | Owner-Frage: heißt „+1 Wert" im Blitz-Passiv ein Stapel oder Kartenwert? Antwort: Kartenwert, dauerhaft eingebacken; der Stapel ist der zweite, davon unabhängige Effekt derselben vollen Leiste (Doppelentladung gibt fünf Stapel und trotzdem nur +1 Wert, Kettenblitz Stapel ganz ohne Wert). Passiv, Leisten-Tooltip und Glossar „Ladung" benennen jetzt beides getrennt und benutzen den Begriff, den das Register schon führt: Kartenwert. Reine Textänderung, keine Mechanik, keine Messung. Offen: die Schmiede sagt an zwei Stellen weiter „+Wert". §6.25. |
+| 2026-09-07 | Owner: die Schmiede auch angleichen. Vier Stellen (Skilltext, Leisten-Tooltip, Karten-Abzeichen, Glossar „Schmieden") sagen jetzt Kartenwert; der Glossar-Eintrag begann bereits mit „Hitze wird zu dauerhaftem Kartenwert" und sagte zwei Sätze später „+3 Wert". Die temporären Kampfwert-Boni (Ionenfeld, Blitzfänger, Glutklinge, Takt, Ewiger Frühling) und die Brandmal-Abzüge bleiben „Wert" — sie sind nicht der gebackene Kartenwert. Offen: zwei Reste des Textpakets aus §7.26, der Schmiede-Tooltip sagt „am Rundenende", Brandmal rechnet in Runden. §6.25. |

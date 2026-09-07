@@ -193,7 +193,7 @@ export default {
   "bar.fire.badge.verbrennung": "Verbrennung ab {n}",
   "bar.fire.badge.verbrennung.title": "Verbrennung: ein Sieg mit Kampfwert-Vorsprung ab {n} zählt ×{m}.",
   "bar.fire.badge.schmiede": "Schmiede ab {n}",
-  "bar.fire.badge.schmiede.title": "Schmiede: liegen am Rundenende mindestens {n} Hitze an, erhält deine niedrigste Karte dauerhaft +{v} Wert. Die Hitze bleibt.",
+  "bar.fire.badge.schmiede.title": "Schmiede: liegen am Rundenende mindestens {n} Hitze an, erhält deine niedrigste Karte dauerhaft +{v} Kartenwert. Die Hitze bleibt.",
   "bar.fire.badge.glow": "Glühende Klinge",
   "bar.fire.badge.glow.n": "Glühende Klinge +{n}",
   "bar.fire.badge.glow.title": "Glühende Klinge: +1 Wert auf alle Karten je {step} % Hitze, ohne Deckel.",
@@ -580,7 +580,7 @@ export default {
 
   /* ---- Karte & Streu-Texte (#health-check F1: bisher hartkodierte Anzeige-Texte) ---- */
   "card.perm.title": "Dauerhaft +{n} (Basis {base})",
-  "card.forged.title": "Geschmiedet +{n} Wert (dauerhaft)",
+  "card.forged.title": "Geschmiedet +{n} Kartenwert (dauerhaft)",
   "card.ring.grown": "Wachstum {growth} / {cap} → blühend",
   "card.ring.ripening": "Wachstum {growth} / {cap} → grün",
   "card.green.title": "Grün (reif) — Teil des Farbblocks",
