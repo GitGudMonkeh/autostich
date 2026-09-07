@@ -4375,6 +4375,78 @@ bis §6.15 haben die Legendären seither zweimal bewegt.
 
 ---
 
+### 6.17 Parität und tote Skills (2026-09-07, auf Ansage) — gemessen, nichts umgesetzt
+
+**Owner:** „können wir alle 3 noch einmal gegeneinander ohne legendäre messen und pflanze auf Parität zu den anderen
+beiden bringen. gibt es bei pflanze tote skills?"
+
+#### A · Duell ohne Legendäre (200 Läufe, Seeds 1–200, Türen aus allen drei)
+
+| Build | Median | Mean | p90 | Siegquote |
+| --- | --- | --- | --- | --- |
+| Feuer mono | 7,75M | 10,12M | 18,77M | 65,3 % |
+| Blitz mono | 7,43M | 14,84M | 37,35M | 59,4 % |
+| **Pflanze mono** | **4,90M** | **6,27M** | **9,72M** | **53,3 %** |
+| Split über alle drei | 6,19M | 8,49M | 13,77M | 57,8 % |
+| Mix (Zufall) | 3,58M | 4,96M | 9,02M | 58,4 % |
+
+**Zahlengleich mit §6.10.** Das ist kein Zufall, sondern der Beweis, dass §6.11–§6.16 ausschließlich die Legendären
+und den Angebotstopf angefasst haben — am normalen Spiel der Fraktionen hat sich nichts bewegt. Die Pflanze liegt
+weiter bei **0,63× Feuer / 0,66× Blitz** im Median und zwölf Prozentpunkte unter Feuers Siegquote.
+
+#### B · Tote Skills — zwei Sichten, und nur der Schnitt zählt
+
+Ein Skill, der im gemischten Build nichts bringt, kann in der Mono-Fraktion tragen (Bekenntnis). Deshalb beide
+Ablationen nebeneinander: gemischt (explore 900 / gierig 120, Skill konkurriert um den Platz) und Pflanze pur
+(explore 500 / gierig 100, der Gierige hält 13 der 15 — gemessen wird der Grenznutzen im vollen Build).
+
+| Skill | gemischt | Pflanze pur | Urteil |
+| --- | --- | --- | --- |
+| Blütenlese | **+6,00M (+74 %)** | +0,08M | trägt (pur gesättigt: 96 % halten ihn) |
+| Jahresringe | +1,67M | **+1,19M (+17 %)** | trägt in beiden |
+| Wildwuchs | +0,81M | +0,57M | trägt in beiden, Episch-Lift 4,1–6,4 |
+| Spalier | −2,95M | **+0,80M (+12 %)** | reiner Bekenntnis-Skill |
+| Windung | −0,20M | +0,53M | Bekenntnis |
+| Blätterdach | −0,50M | +0,23M | Bekenntnis |
+| Rankgerüst | +0,12M | +0,05M | flach |
+| **Lichtung** | +0,71M | −0,00M | flach |
+| **Aussaat** | −0,16M | −0,01M | **tot** |
+| **Überwucherung** | −0,23M | −0,05M | **tot** |
+| **Hecke** | −0,75M | −0,40M | **tot** |
+| **Lücke** | −2,02M | −0,19M | **tot** (und nur 4 % gehalten) |
+| **Ranken** | −3,00M | −0,62M | **tot** |
+| **Setzlingsbeet** | −3,80M | −0,74M | **tot** |
+| **Zäher Halm** | −4,81M | −0,21M | **tot** |
+
+**Sieben der fünfzehn sind in BEIDEN Welten tot oder schädlich** — und vier davon sind die Wachstums-Skills
+(Aussaat, Ranken, Setzlingsbeet, Zäher Halm). Das ist der Kern des Befunds: Wachstum füttert einen Zustand, und der
+Zustand zahlt nur über Formationen, die man ohnehin baut. Wer Wachstum kauft, kauft Vorlauf ohne eigene Auszahlung.
+
+Ein Nebenbefund: **Hecke und Rankgerüst haben dieselbe Leiter** (30/45/60/80) — Rankgerüst liegt bei +0,05M, Hecke
+bei −0,40M. Der Unterschied ist allein, wie oft eine grüne Treppe gegen eine grüne Wiederholung entsteht.
+
+#### C · Parität lässt sich mit den vorhandenen Reglern NICHT erreichen
+
+Nötig sind ×1,55 auf den Median. Was die Regler hergeben, steht gemessen in §6.10 E: der Passiv-Satz bringt beim
+**Vierfachen** +24 %, „+2 Wachstum je Formation" +10 %. Beides zusammen deckt keine Hälfte der Lücke, und keiner der
+beiden hebt die Siegquote — die Pflanze gibt bewusst keinen Kartenwert.
+
+**Der Grund ist strukturell und seit §6.10 unverändert:** Feuer hat einen Multiplikator (Hitze), Blitz hat Crit,
+die Pflanze hat nur Basis-Score in einem Stack, den alle drei teilen. §6.15 hat der Fraktion beides gegeben —
+Kampfwert und einen Formations-Multiplikator — aber **nur im Legendären**. Auf der Ebene der 15 Skills fehlt es
+weiter.
+
+#### Vorschläge (Entscheid Owner, nichts umgesetzt)
+
+| # | Route | Was sie kostet / bringt |
+| --- | --- | --- |
+| 1 | **Die vier toten Wachstums-Skills umbauen**, sodass grün/blühend im Kampf oder im Multiplikator zahlt statt nur Wachstum zu füttern. | Trifft Parität und tote Skills mit einem Schnitt — die vier schlechtesten Picks des ganzen Feldes werden zur Achse, die der Fraktion fehlt. **Empfehlung.** Umfang: eine Runde wie der Blitz-Durchgang (§7.18). |
+| 2 | Den Passiv-Kanal multiplikativ machen (z. B. blühende Karten heben den Formations-Faktor ihrer Läufe). | Ein Eingriff, große Wirkung, trifft aber jeden Build gleich — die toten Skills bleiben tot. |
+| 3 | Nur Werte drehen (Score-Leitern der sechs Score-Skills hoch). | Gemessen aussichtslos für Parität; die Score-Achse ist der schwache Kanal (§6.10 E). Als Feinschliff NACH 1 oder 2 sinnvoll. |
+| 4 | Parität nicht herstellen — die Pflanze bleibt die schwächere Bekenntnis-Fraktion. | Legitim, wenn gewollt: der Split mit ihr (6,19M) schlägt zufälliges Mischen deutlich, und ihr Schwanz (p95 265M pur) ist der höchste der drei. |
+
+---
+
 ## Änderungsprotokoll
 
 
@@ -4454,3 +4526,4 @@ bis §6.15 haben die Legendären seither zweimal bewegt.
 | 2026-09-07 | Owner: Ewiger Frühling bekommt neben dem Kartenwert einen Score-Bonus in Formationen; Hochspannung bleibt wie er ist. Umgesetzt als +15 % je aktiver Formation beim Sieg mit einer blühenden Karte — der erste Multiplikator der Fraktion, gemessen +108 % und ohne Sättigung. Acht der neun Legendären liegen jetzt in +101 … +160 %. §6.15. |
 | 2026-09-07 | Owner: Wert-Bonus des Ewigen Frühlings +8 → +6, ohne Neumessung. §6.15. |
 | 2026-09-07 | Owner: die Pflanze kommt ins Türangebot (SKILL_OFFER_ARCHETYPES um "plant" erweitert). Balance-Guard neu zentriert (Median 2,98M, Mean 4,82M) — der Zufallsspieler fällt, weil die Pflanze als einzige Fraktion einen gebauten Motor braucht. §6.16. |
+| 2026-09-07 | Auf Ansage gemessen: Duell aller drei ohne Legendäre (zahlengleich mit §6.10 — §6.11–§6.16 haben nur Legendäre und den Angebotstopf bewegt) und beide Ablationen der Pflanze. Sieben der 15 Pflanze-Skills sind in gemischter UND reiner Welt tot, vier davon die Wachstums-Skills. Parität (×1,55) ist mit den vorhandenen Reglern nicht erreichbar. Vier Routen vorgeschlagen, nichts umgesetzt. §6.17. |
