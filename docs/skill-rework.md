@@ -3629,8 +3629,11 @@ Damit hat Pflanze genau eine Score-Quelle mit einem Regler — das Gegenstück z
 
 **Offen, bis die Sim-Daten da sind (Owner: warten):** ein vollgrünes Deck ist ein 40er-Farbblock. Der heutige Deckel
 (`PLANT_GREEN_FARBBLOCK_CAP` 3) bleibt vorerst stehen; ob er hoch, weg oder umgebaut wird, entscheidet die Messung.
-Zwei Nebenwirkungen von Variante b stehen dabei fest und gehören auf den Zettel: im vollgrünen Deck **stirbt der
-Wechsel** (er braucht Farbwechsel) und **der Farbblock wird trivial** — tragfähig bleiben Wiederholung und Treppe.
+Eine Nebenwirkung von Variante b steht fest: im vollgrünen Deck **wird der Farbblock trivial** — alle 40 Karten sind
+ein Block. **Korrektur (Owner, 2026-09-06):** hier stand zuerst, im vollgrünen Deck sterbe auch der Wechsel. Das ist
+falsch — `markWechsel` erkennt den Zick-Zack über den **Kartenwert** (Richtungswechsel plus Mindestdifferenz 4), die
+Farbe kommt darin nicht vor. Wiederholung, Treppe und Wechsel sind vom Ergrünen unberührt; nur der Farbblock ist es
+nicht.
 
 ### 6.3 Bestandsaufnahme der 17 + 4 Skills (2026-09-06, Befund und Vorschläge, nichts umgesetzt)
 
@@ -3808,9 +3811,8 @@ Gestrichen gegenüber 6.5: Unterholz, Wurzelnetz, Aussamen, Frühblüher (alle v
 | 12 | **Hecke** (Wiederholung) | Eine Wiederholung aus grünen Karten gibt Basis-Score je Mitglied. |
 | 13 | **Jahresringe** (Tiefe) | Ein Sieg gibt Basis-Score je 10 eigenes Wachstum der Siegkarte. |
 
-Warum je Typ einer: im vollgrünen Deck wird der **Farbblock trivial** und der **Wechsel stirbt** (6.2) — tragfähig
-bleiben Treppe und Wiederholung. Drei Typen bekommen daher ihren eigenen Score-Skill, der vierte (Wechsel) keinen;
-ein Skill, der spät garantiert tot ist, wäre die Falle aus 7.22/7.24.
+**Korrigiert in 6.7:** hier stand, der Wechsel bekomme keinen Score-Skill, weil er im vollgrünen Deck stirbt. Er
+stirbt nicht — er liest den Kartenwert, nicht die Farbe. In 6.7 hat jeder der vier Formationstypen seinen Skill.
 
 #### Kombination (2) — Score und Wachstum in einem
 
@@ -3823,6 +3825,44 @@ ein Skill, der spät garantiert tot ist, wäre die Falle aus 7.22/7.24.
 
 **Zur Sim vorgemerkt** (Owner): wie viele blühende Karten ein Lauf tatsächlich hat — davon hängt ab, ob Wildwuchs
 Episch (alle blühenden als Joker) zu stark ist. Die Messung geht erst, wenn das Passiv steht.
+
+### 6.7 Endstand der 15 (Vorschlag 3, nach zwei Owner-Korrekturen)
+
+Drei Eingriffe des Owners an 6.6:
+
+1. **Wandertrieb raus** — kein Skill greift in die Aufstellungsordnung ein. Die Ziehreihenfolge gehört dem Spieler;
+   sie wird in der Aufstellungsphase gesetzt und nicht vom Spiel verschoben. Die Kategorie „Aufstellung" entfällt
+   damit ganz.
+2. **Der Wechsel stirbt nicht** — er liest den Kartenwert, nicht die Farbe (Beleg oben in 6.2). Damit bekommt
+   **jeder der vier Formationstypen seinen Score-Skill**, und der frei gewordene Platz ist gefüllt.
+3. **„Ein Mitglied mehr" war unpräzise.** Gemeint war eine Score-Erhöhung, formuliert war es wie eine
+   Erkennungsänderung. Neu und eindeutig: **Überwucherung senkt die Mindestlänge grüner Formationen** — ein grüner
+   Farbblock, eine grüne Treppe, eine grüne Wiederholung entstehen mit einer Karte weniger. Das ist ein
+   Erkennungs-Hebel (`minMembers` / `minLen`), kein Score-Zuschlag, und passt damit in die Hebel-Kategorie.
+
+| Kategorie | # | Skill | Einzeiler |
+| --- | --- | --- | --- |
+| **Wachstum** | 1 | Aussaat | Gewinnt eine grüne Karte, wachsen beide Nachbarn. |
+| | 2 | Ranken | Wird eine Karte grün, wachsen ihre grauen Nachbarn kräftig. |
+| | 3 | Setzlingsbeet | Die niedrigste Karte je Segment startet mit Wachstumsvorsprung. |
+| | 4 | Lichtung | Ein Sieg in einer Formation gibt doppeltes Formations-Wachstum. |
+| | 5 | Zäher Halm | Graue Karten wachsen auch bei Niederlage. |
+| **Hebel** | 6 | Spalier | Segmentgrenzen neben grünen Karten sind offen. Leiter: 1 / 2 / 3 / alle 7 Grenzen. |
+| | 7 | Wildwuchs | Blühende Karten zählen als Joker. Leiter: 1 / 2 / 3 / alle blühenden. |
+| | 8 | Lücke | Ein grüner Lauf darf eine fremde Karte überspringen. Leiter über `gap.run` / `gap.seg`. |
+| | 9 | Überwucherung | Ab N % grünem Feld entstehen grüne Formationen mit einer Karte weniger. Leiter über die Feldschwelle. |
+| **Score** | 10 | Blätterdach | Ein grüner **Farbblock** gibt Basis-Score je Karte im Block. |
+| | 11 | Rankgerüst | Eine grüne **Treppe** gibt Basis-Score je Stufe. |
+| | 12 | Hecke | Eine grüne **Wiederholung** gibt Basis-Score je Mitglied. |
+| | 13 | **Windung** | Ein grüner **Wechsel** gibt Basis-Score je Mitglied — der Zick-Zack über die Kartenwerte. |
+| | 14 | Jahresringe | Ein Sieg gibt Basis-Score je 10 eigenes Wachstum der Siegkarte. |
+| **Kombination** | 15 | Blütenlese | Ein Sieg in einer rein grünen Formation gibt Basis-Score **und** lässt alle Mitglieder wachsen. |
+
+**Verteilung:** Wachstum 5 · Hebel 4 · Score 5 · Kombination 1. Die vier Hebel ändern die **Erkennung**
+(Segmentgrenze, Joker, Lücke, Mindestlänge) und fassen die Ordnung nicht an; die fünf Score-Skills decken die vier
+Formationstypen plus die Tiefe der einzelnen Karte ab.
+
+**Legendäre unverändert** (6.5): Baumreihe mit Auslöser *blühend*, Weltenbaum, Mutterbaum, Ewiger Frühling.
 
 ---
 
@@ -3888,3 +3928,4 @@ Episch (alle blühenden als Joker) zu stark ist. Die Messung geht erst, wenn das
 | 2026-09-06 | **Owner: „ich geh so mit"** — die Streichliste aus 6.3 ist angenommen (zehn normale Skills und drei Legendäre fallen weg, vier bleiben in ihrer Idee, Baumreihe trägt ihre Idee weiter). **Ausnahme Ranken:** Spielerfavorit, bleibt auf SK_PLANT_09 und wird auf das neue Passiv gezogen — nur das sofortige Grünfärben muss weg. Drei Bauformen dafür an den Owner (6.4), nichts umgesetzt. |
 | 2026-09-06 | **Owner: Ranken-Bauform 1** (Ansteckung im Reifemoment — wird eine Karte grün, wachsen ihre grauen Nachbarn). Daraufhin der Vorschlag für **die 15** (6.5): vier bleiben (Aussaat, Setzlingsbeet, Zäher Halm, Blätterdach), zwei sind Umbauten (Ranken, Überwucherung — deren feldweiter Multiplikator wird zur Schwellensenkung), Jahresringe kommt als Konzept zurück, acht sind neu. Kern der Fraktion sind zwei neue Skills auf der Formationsdichte (Spalier öffnet Segmentgrenzen über `segInfo.isOpen`, Wildwuchs macht blühende Karten zu Jokern über `isJoker`) — beide Haken existieren in der Formations-Engine und sind bisher ungenutzt. Legendäre: Baumreihe behält die Idee (Auslöser Wert 11 → blühend), Weltenbaum/Mutterbaum/Ewiger Frühling neu und ohne Direkt-Score. Keine Stufen, keine Werte — Entscheid je Zeile beim Owner. |
 | 2026-09-06 | **Owner an 6.5: zu viele Wachstums-Skills** (10 von 15), Verpflanzen raus, Raritäten-Leitern für Spalier und Wildwuchs gefragt, Idee „grüne Treppen haben einen Bonus". Neue Aufteilung in 6.6: Wachstum 5, **Formationshebel 4**, **Score aus grünen Formationen 4** (je Formationstyp einer — Farbblock, Treppe, Wiederholung, dazu Tiefe; Wechsel bekommt keinen, weil er im vollgrünen Deck stirbt), **Kombination 2** (zahlen Score und Wachstum). Gestrichen: Unterholz, Wurzelnetz, Aussamen, Frühblüher, Verpflanzen. Neu: Rankgerüst (Treppe), Hecke (Wiederholung), Lücke (grüne Läufe dürfen eine fremde Karte überspringen — `gap.run`/`gap.seg`), Wandertrieb (blühende Karten rücken am Durchlaufende zusammen, ersetzt Verpflanzen), Blütenlese, Überwucherung als Formationsgrößen-Bonus. Leitern: **Spalier** über die Zahl offener Segmentgrenzen (1/2/3/alle von 7), **Wildwuchs** über die Zahl der Joker (1/2/3/alle blühenden) — die Menge ist der Regler. Zur Sim vorgemerkt: wie viele blühende Karten ein Lauf hat. Entscheid beim Owner. |
+| 2026-09-06 | **Zwei Owner-Korrekturen und der Endstand der 15 (6.7).** (1) Wandertrieb gestrichen: kein Skill greift in die Aufstellungsordnung ein, die Kategorie „Aufstellung" entfällt. (2) **Faktenfehler von mir korrigiert:** der Wechsel stirbt im vollgrünen Deck nicht — `markWechsel` liest den Zick-Zack über den **Kartenwert** (Richtungswechsel, Mindestdifferenz 4), nicht über die Farbe; die falsche Behauptung stand in 6.2 und 6.6 und ist an beiden Stellen berichtigt. Trivial wird allein der Farbblock. Damit bekommt jeder der vier Formationstypen seinen Score-Skill (neu: **Windung** für den Wechsel). (3) „Ein Mitglied mehr" war unpräzise formuliert — **Überwucherung senkt jetzt die Mindestlänge grüner Formationen** (`minMembers`/`minLen`) und ist damit ein Erkennungs-Hebel statt eines Score-Zuschlags. Endverteilung: Wachstum 5 · Hebel 4 · Score 5 · Kombination 1. |
