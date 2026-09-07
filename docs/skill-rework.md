@@ -3632,6 +3632,71 @@ Damit hat Pflanze genau eine Score-Quelle mit einem Regler — das Gegenstück z
 Zwei Nebenwirkungen von Variante b stehen dabei fest und gehören auf den Zettel: im vollgrünen Deck **stirbt der
 Wechsel** (er braucht Farbwechsel) und **der Farbblock wird trivial** — tragfähig bleiben Wiederholung und Treppe.
 
+### 6.3 Bestandsaufnahme der 17 + 4 Skills (2026-09-06, Befund und Vorschläge, nichts umgesetzt)
+
+Jeder Skill gegen den Rahmen aus 6.1/6.2 gelesen. **Entscheid je Zeile beim Owner.**
+
+#### Was strukturell durchfällt, unabhängig vom einzelnen Skill
+
+| Befund | Betroffen | Warum |
+| --- | --- | --- |
+| **Verstärker mit `enabler`** — der Skill wirkt nur, wenn ein bestimmter anderer gehalten wird | Pfahlwurzel, Jahresringe, Flugsamen, Blütezeit, Rhizom, Erntedank (**6 von 17**) | Diese Bauform gibt es bei Feuer und Blitz nicht mehr: ein Skill muss allein laufen, sonst ist er im Türen-Angebot ein toter Pick |
+| **Direkt-Score** (post-stack, gedeckelt, bekenntnis-skaliert) | Wurzeltiefe (Tiefenterm), Blüte (Feldterm), Weltenbaum, Mutterbaum, Ewiger Frühling (**5 Quellen**) | 6.1: kein Direkt-Score. Der Score gehört in die Basis |
+| **Eigener Multiplikator-Stapel** | Photosynthese (×1,08), Baumreihe (bis ×2), Überwucherung (+0,20 auf alle Farbblöcke) | 6.1: Pflanze bekommt keinen eigenen Multiplikator neben Formation und Serie |
+| **Trimm-Klausel** | Aussaat, Flugsamen, Setzlingsbeet, Zäher Halm, Ausläufer, Rhizom (**6**) | Mit dem Türen-Angebot werden Skills nicht ersetzt — die Klausel ist tot |
+| **Wertachse** (Wachstum → Kartenwert → Auto-Sieg bei 11) | Kernholz, Baumreihe (Auslöser), `PLANT_VALUE_CAP`, Wurzelschlag-Passiv | 6.1: hohe Werte gehören Feuer; das neue Passiv leitet keinen Wert mehr ab |
+| **Gegnerdeck** | Ausläufer, Rhizom, Erntedank (**3**) | 6.1: keine Kolonisierung — das Gegnerdeck ist Feuers Achse (Brand) |
+| **Keine Stufen** | alle 17 | Jeder Skill braucht vier Stufen mit unterschiedlichen Werten (§1) |
+
+#### Je Skill
+
+| Skill | Heute | Verhältnis zum neuen Rahmen | Vorschlag |
+| --- | --- | --- | --- |
+| **Wurzeltiefe** (02) | +15 Basis je grünem Sieg, dazu ein Feldterm bis +120 (direkt) | Direkt-Score; der flache Satz je grünem Sieg ist genau das, was im neuen Passiv „blühend" leistet | **streichen** — die Rolle hat das Passiv |
+| **Pfahlwurzel** (03) | Verstärker: Wurzel-Basis ×2 in Formation | Verstärker-Bauform | **streichen** |
+| **Jahresringe** (04) | Verstärker: +35 je 10 eigenes Wachstum | Verstärker-Bauform — aber „eigenes Wachstum zahlt" ist die neue Achse | **Idee behalten**, als eigenständiger Skill neu bauen |
+| **Aussaat** (05) | grüner Sieg sät beide Nachbarn +1 Wachstum | passt ohne Umbau; Trimm-Klausel raus | **bleibt**, Stufen über Menge/Reichweite |
+| **Flugsamen** (06) | Verstärker: Aussaat überspringt Grünes | Verstärker-Bauform | **in Aussaat aufgehen** (Episch-Extra) |
+| **Setzlingsbeet** (07) | niedrigste Karte je Segment startet +3 Wachstum | passt, löst den Kaltstart | **bleibt** |
+| **Zäher Halm** (08) | graue Karten wachsen auch bei Niederlage | passt und wirkt genau früh, wo Niederlagen noch vorkommen | **bleibt** — mit Warnung: Niederlage-Bedingungen sind bei Feuer/Blitz zweimal gestorben (7.22, 7.24) |
+| **Ranken** (09) | grüner Sieg färbt einen grauen Nachbarn **sofort** grün | **direkter Widerspruch zu 6.1** — genau das „ein Skill, und das Deck ist grün" | **umbauen** (Wachstum statt Farbe) oder streichen |
+| **Blüte** (10) | +15 je grüner Karte im Segment, wenn die Nachbarn grün sind | doppelt die Auszahlung des neuen Zustands „blühend", und der **Name kollidiert** | **streichen**, Name für den Zustand frei |
+| **Blütezeit** (11) | Verstärker: Blüte ×2 in Formation | Verstärker-Bauform | **streichen** |
+| **Photosynthese** (12) | grün in Formation ×1,08 | eigener Multiplikator, dazu winzig | **streichen** oder als Basis-Score neu |
+| **Blätterdach** (13) | grüner Farbblock ab 4: +8 Basis je Karte im Block (Deckel 10) | **passt am besten von allen** — Basis-Score, formationsförmig | **bleibt**, Deckelfrage mit den Sim-Daten |
+| **Überwucherung** (14) | ab 66 % grünem Feld: alle Farbblöcke +0,20, Blüte doppelt | feldweiter Multiplikator — und mit „vollgrün ist das Ziel" dauerhaft an statt Belohnung | **umbauen** |
+| **Kernholz** (18) | +15 Basis je Wertpunkt über dem Startwert | Wertachse stirbt mit dem Passiv | **streichen** |
+| **Ausläufer** (15) | koloniert die niedrigste Gegnerkarte, Ernte +2 Wachstum | Gegnerdeck-Achse | **streichen** |
+| **Rhizom** (16) | Verstärker: Nachbar mitgeerntet | Gegnerdeck + Verstärker | **streichen** |
+| **Erntedank** (17) | Verstärker: Ernte mit reifer Karte +70 Basis | Gegnerdeck + Verstärker | **streichen** |
+| **Weltenbaum** (L01) | Wald wächst am Durchlaufende; direkt +6,5 je Überlauf-Wachstum (Deckel 600) | Direkt-Score; „Überlauf" setzt den Wert-Deckel voraus, den es nicht mehr gibt | **neu bauen** |
+| **Mutterbaum** (L02) | tiefster Baum verdoppelt Wurzel-Score; direkt +68 je Überlauf (Deckel 60) | Direkt-Score, hängt an Wurzeltiefe (Enabler-Logik) | **neu bauen** |
+| **Baumreihe** (L03) | voll ausgewachsene Karten (Wert 11) bilden eine **positionsfreie Wiederholung**, ×1,3 bis ×2 | Auslöser stirbt mit der Wertachse — **die Idee ist die beste im Bestand** und trifft die neue Achse | **behalten**, Auslöser auf **blühend** umstellen |
+| **Ewiger Frühling** (L04) | direkt +80 je grüner Karte (Deckel 40), bei vollgrünem Feld doppelt | Direkt-Score, und die Vollgrün-Verdoppelung belohnt jetzt den Normalfall | **neu bauen** |
+
+#### Fazit
+
+**Das ist kein Pass, das ist ein Neubau.** Von 17 normalen Skills überleben vier in ihrer Idee (Aussaat,
+Setzlingsbeet, Zäher Halm, Blätterdach), einer liefert ein Konzept (Jahresringe), zwei sind Umbauten (Ranken,
+Überwucherung), zehn fallen weg. Von den vier Legendären trägt eine ihre Idee weiter (Baumreihe), drei werden neu
+gebaut. Für die 15 Plätze fehlen also rund zehn neue Skills.
+
+**Die Rollen, die der neue Rahmen verlangt** (Raster für den Entwurf, keine Vorschläge):
+
+| Rolle | Was sie tut | Bestand |
+| --- | --- | --- |
+| Tempo | Wachstum je Sieg erhöhen | fehlt |
+| Breite | Wachstum auf andere Karten verteilen | Aussaat |
+| Kaltstart | die ersten grünen Karten früher | Setzlingsbeet |
+| Bestand | Wachstum auch ohne Sieg | Zäher Halm |
+| **Formationsdichte** | Karten in **mehr** Formationen bringen — im neuen Passiv der stärkste Hebel überhaupt | **fehlt komplett** |
+| Blüte-Ertrag | was blühende Karten auszahlen | Blätterdach (teilweise) |
+| Schwelle | die Zustände früher erreichen | fehlt |
+| Aufstellung | die Ordnung im Lauf ändern | fehlt |
+
+Auffällig: **die Achse, die das neue Passiv am stärksten belohnt — mehr Formationen je Karte — hat heute keinen
+einzigen Skill.** Dort liegt der freie Platz für den Kern der Fraktion.
+
 ---
 
 ## Änderungsprotokoll
@@ -3692,3 +3757,4 @@ Wechsel** (er braucht Farbwechsel) und **der Farbblock wird trivial** — tragf�
 | 2026-09-06 | **Textpaket (7.26 E, Owner: „in einem Rutsch", umgesetzt).** Zehn Stellen in `skills.js`: „Runde" → „Durchlauf" an sieben (Serienschutz Episch, Brandmal, Lauffeuer, Schmiede — „Rundenende" wird „Am Ende eines Durchlaufs" —, Sonnenkern, Ewige Glut, Damaststahl); der einzige Gedankenstrich im Register (Sonnenzorn) aufgelöst; Prozentpunkte dort, wo gegen die 100er-Schwelle gerechnet wird (Weißglut und Sonnenzorn: die Schwelle bleibt ein Niveau „100 % Hitze", der Schritt sind „10 Prozentpunkte"); Glutstahl aus dem Telegrammstil ins Register („Ein Sieg zählt +8 Basis-Score je Punkt Kampfwert über dem Grundwert der Siegkarte"). Überspannung kürzen entfällt — der Skill ist seit 7.28 gestrichen. Blitzableiter Episch behält seine drei Sätze: das wäre ein Mechanikumbau (7.26 F.7), kein Text. Reine Textänderung, keine Kennwerte; `loc:export` neu, Gates grün. Punkt 3 der Reihenfolge (Gewitterfront/Entladung) hat der Owner vertagt — **als Nächstes Pflanze**. |
 | 2026-09-06 | **Owner: auf der Skill-Karte nur Fraktion und Rarität.** Das KONSUMENT-Abzeichen ist aus dem Angebot und aus der Ersetzen-Liste entfernt (`SkillSelect.jsx`, Helfer `isConsumer` und Registerzeile `skill.badge.consumer` mit), die Karte trägt jetzt Fraktions-Badge + Stufe (Legendär bleibt die fünfte Stufe, „Ausgewählt" ist ein Zustand, kein Chip). Das Schlüsselwort `consume` bleibt auf Schmelzpunkt: es erklärt den Begriff weiter in der Build-Detailansicht und im Glossar — dort steht „Konsument" also noch, ebenso in der Aufklapp-Liste des Feuer-Passivs. Owner-Frage, falls das auch weg soll. Reine Anzeige, keine Mechanik; Gates grün. |
 | 2026-09-06 | **Pflanze, Richtung gesetzt (6.1) und Passiv-Entwurf (6.2).** Owner: Grün bleibt eine Farbe (Variante b), vollgrünes Deck ist das Ziel eines gezielten Builds, Wachstum je Karte, drei Zustände grau/grün/blühend, kein Direkt-Score, Trimmen entfällt (keine Skill-Ersetzung mehr), kein Skill-Tor. Passiv: **+1 Wachstum je Sieg, dazu +1 je aktiver Formation an der Siegposition** (Owner-Idee — die Aufstellung wird zur Wachstumsentscheidung, nicht der Sieg allein); Schwellen als Startwerte grün 30 / blühend 75, blühend trägt den Basis-Score je grüner Karte in seiner Formation. Deckel-Frage auf grüne Farbblöcke bis zu den Sim-Daten vertagt; notiert, dass im vollgrünen Deck der Wechsel stirbt und der Farbblock trivial wird. Nichts umgesetzt, nichts gemessen. |
+| 2026-09-06 | **Pflanze, Bestandsaufnahme der 17 + 4 Skills (6.3, Befund, nichts umgesetzt).** Strukturell durchgefallen: 6 Verstärker mit `enabler`, 5 Direkt-Score-Quellen, 3 eigene Multiplikatoren, die Trimm-Klausel an 6 Skills, die Wertachse (Kernholz, Baumreihe-Auslöser, Auto-Sieg bei 11), die Gegnerdeck-Achse (Ausläufer, Rhizom, Erntedank) und die fehlenden Stufen bei allen 17. Je Skill ein Vorschlag: vier bleiben in ihrer Idee (Aussaat, Setzlingsbeet, Zäher Halm, Blätterdach), Jahresringe liefert ein Konzept, Ranken und Überwucherung sind Umbauten, zehn fallen weg; von den Legendären trägt nur Baumreihe ihre Idee weiter (Auslöser Wert 11 → blühend), drei werden neu gebaut. Rollen-Raster für den Entwurf: **Formationsdichte — Karten in mehr Formationen bringen — ist im neuen Passiv der stärkste Hebel und hat heute keinen einzigen Skill.** Entscheid je Zeile beim Owner. |
