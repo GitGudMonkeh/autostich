@@ -4447,6 +4447,58 @@ weiter.
 
 ---
 
+### 6.18 Wachstum muss über den Schwellen weiterzahlen (2026-09-07, Owner-Richtung) — Vorschlag, nichts umgesetzt
+
+**Owner, zu §6.17:** „nein. das ist die Kern-Mechanik von Pflanze. der Hebel muss sein, dass diese in Kombination
+mit den anderen Pflanzenskills dann einen Payoff haben."
+
+Damit ist Route 1 aus §6.17 (Wachstums-Skills umbauen) **verworfen**. Wachstum bleibt die Kernmechanik; der Payoff
+muss aus dem Zusammenspiel kommen.
+
+#### Warum Wachstum heute nicht zahlt
+
+Wachstum hat genau **zwei Ausgänge**: die Schwelle 30 (grün) und die Schwelle 75 (blühend). Alles, was die vier
+Wachstums-Skills liefern, verpufft in dem Moment, in dem die Schwelle ohnehin fällt — und sie fällt ohnehin: das
+Passiv allein bringt eine Position über 50 Runden auf grob 30 Wachstum, mit Formationen auf ein Vielfaches (Sonde
+§6.10 B: 22 grüne Karten in Durchlauf 21, 34,6 in 31, 38,5 in 41).
+
+**Die Wachstums-Skills verkaufen also Tempo, nicht Höhe** — und Tempo auf etwas, das der Spieler geschenkt bekommt.
+Oberhalb von 75 ist jeder weitere Wachstumspunkt **wertlos**; genau ein Skill im Register liest die Zahl selbst.
+
+**Und dieser eine Skill ist der beste der Fraktion.** Jahresringe („+20 Basis-Score je 10 Wachstum der Siegkarte")
+ist in der Pflanze-Welt die Nummer 1 (+1,19M / +17 %) und im gemischten Build die Nummer 2 (+1,67M). Er ist der
+einzige, der Wachstum in Score übersetzt — und er funktioniert. Das ist der Beweis für die Richtung, die der Owner
+vorgibt.
+
+#### Das Prinzip
+
+> **Wachstum muss eine fortlaufende Währung sein, die die anderen Pflanzen-Skills lesen — keine Stoppuhr auf zwei
+> Schwellen.**
+
+Dann, und nur dann, haben Aussaat, Ranken, Setzlingsbeet und Zäher Halm einen Payoff, der mit jedem weiteren
+Pflanzen-Skill wächst. Kein Verstärker-Skill, kein Skill-Zähler, kein Tor — die Kopplung entsteht strukturell, weil
+mehrere Skills dieselbe Zahl lesen.
+
+#### Drei Routen (Entscheid Owner)
+
+| # | Route | Wie es aussieht | Einschätzung |
+| --- | --- | --- | --- |
+| **1** | **Blühend zählt mehrfach.** In allen sechs Score-Skills zählt eine blühende Karte wie N grüne (N je Stufe, z. B. 2/2/3/3). | Blätterdach: „+10 Basis-Score je grüner Karte im Farbblock, blühende zählen dreifach". | Kleinster Eingriff, hält die Sprache der drei Zustände. Heute gibt es das nur als Episch-Extra (`bloomDouble`) — die Leiter wird nur ausgezogen. **Macht die zweite Schwelle zum Ziel aller Score-Skills.** |
+| **2** | **Score liest Wachstum statt Karten.** Die Score-Skills zahlen je 10 Wachstum der grünen Karten ihrer Formation statt je Karte. | Blätterdach: „+10 Basis-Score je 10 Wachstum der grünen Karten im Farbblock". | Volle, stufenlose Kopplung — jeder Wachstumspunkt zahlt überall. Dafür wird Grün zur reinen Eintrittskarte, und Jahresringe verliert seine Sonderstellung („ein Begriff je Sache"). |
+| **3** | **Wachstum kauft Erkennung.** Die Erkennungs-Skills lesen Wachstum statt Feldanteile — z. B. Überwucherung nicht „ab 80 % grünem Feld", sondern ab einer Wachstumssumme. | Überwucherung: „ab X Wachstum im Segment entstehen grüne Formationen mit einer Karte weniger". | Trifft die einzige Achse, die messbar den Schwanz bewegt (§6.10 Befund 3: die Episch-Spitzen und p95 265M sitzen in der Erkennung). Der größte Umbau der drei. |
+
+#### Eine Warnung zur Erwartung
+
+Routen 1 und 2 vergrößern den **Basis-Score-Kanal**. Der ist gemessen der schwache Kanal der Fraktion: §6.10 E hat
+den Passiv-Satz auf das **Vierfache** gedreht und dabei +24 % Median geholt. Wer aus 4,90M die 7,5M der anderen
+beiden machen will, braucht ×1,55 — das schafft eine Kanalvergrößerung allein wahrscheinlich nicht.
+
+**Empfehlung: Route 1 als Mechanik, plus die Erkenntnis aus Route 3 als zweiten Schritt.** Route 1 stellt das
+Zusammenspiel her, das der Owner will, und ist billig; ob sie für Parität reicht, sagt die Messung. Reicht sie
+nicht, ist die Erkennungs-Achse der einzige gemessene Ort, an dem die Fraktion wirklich Boden gutmacht.
+
+---
+
 ## Änderungsprotokoll
 
 
@@ -4527,3 +4579,4 @@ weiter.
 | 2026-09-07 | Owner: Wert-Bonus des Ewigen Frühlings +8 → +6, ohne Neumessung. §6.15. |
 | 2026-09-07 | Owner: die Pflanze kommt ins Türangebot (SKILL_OFFER_ARCHETYPES um "plant" erweitert). Balance-Guard neu zentriert (Median 2,98M, Mean 4,82M) — der Zufallsspieler fällt, weil die Pflanze als einzige Fraktion einen gebauten Motor braucht. §6.16. |
 | 2026-09-07 | Auf Ansage gemessen: Duell aller drei ohne Legendäre (zahlengleich mit §6.10 — §6.11–§6.16 haben nur Legendäre und den Angebotstopf bewegt) und beide Ablationen der Pflanze. Sieben der 15 Pflanze-Skills sind in gemischter UND reiner Welt tot, vier davon die Wachstums-Skills. Parität (×1,55) ist mit den vorhandenen Reglern nicht erreichbar. Vier Routen vorgeschlagen, nichts umgesetzt. §6.17. |
+| 2026-09-07 | Owner verwirft den Umbau der Wachstums-Skills: Wachstum ist die Kernmechanik, der Payoff muss aus dem Zusammenspiel kommen. Befund dazu: Wachstum hat nur zwei Ausgänge (die Schwellen 30 und 75), die das Passiv ohnehin erreicht — oberhalb von 75 ist jeder Punkt wertlos, und genau der eine Skill, der die Zahl liest (Jahresringe), ist der beste der Fraktion. Prinzip und drei Routen aufgeschrieben. §6.18. |
