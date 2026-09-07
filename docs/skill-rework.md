@@ -3764,6 +3764,66 @@ Bestand zwei (4, 14), dazu Kaltstart (3), Ausgleich (11) und Aufstellung (12).
 das Gegnerdeck an, keiner leitet Kartenwert ab, und **Ewiger Frühling belohnt das Zielbild ohne Multiplikator** —
 vollgrün macht das Deck zu lauter Score-Trägern, statt einen Faktor obendrauf zu legen.
 
+### 6.6 Die 15, nach Kategorien ausbalanciert (Vorschlag 2, Entscheid Owner)
+
+Owner an 6.5: „viel zu viele Skills, die Wachstum fördern — man nimmt davon vielleicht 2–3. Wir brauchen etwas für
+Score und Formationshebel oder eine Kombination." Der Einwand stimmt, gezählt: **10 von 15 waren Wachstum**, je zwei
+Score und Hebel, einer Aufstellung. Neue Verteilung:
+
+| Kategorie | 6.5 | **6.6** | Was die Kategorie tut |
+| --- | --- | --- | --- |
+| Wachstum | 10 | **5** | schneller und breiter grün werden |
+| Formationshebel | 2 | **4** | ändern, **was als Formation erkannt wird** |
+| Score aus grünen Formationen | 2 | **4** | Basis-Score, je Formationstyp getrennt |
+| Kombination | 0 | **2** | zahlen Score **und** Wachstum |
+| Aufstellung | 1 | – | Verpflanzen gestrichen (Owner); die Ordnung ändert jetzt ein Hebel-Skill (Nr. 8) |
+
+#### Wachstum (5)
+
+| # | Skill | Einzeiler |
+| --- | --- | --- |
+| 1 | **Aussaat** | Gewinnt eine grüne Karte, wachsen beide Nachbarn. |
+| 2 | **Ranken** | Wird eine Karte grün, wachsen ihre grauen Nachbarn kräftig. |
+| 3 | **Setzlingsbeet** | Die niedrigste Karte je Segment startet mit Wachstumsvorsprung. |
+| 4 | **Lichtung** | Ein Sieg in einer Formation gibt doppeltes Formations-Wachstum. |
+| 5 | **Zäher Halm** | Graue Karten wachsen auch bei Niederlage. |
+
+Gestrichen gegenüber 6.5: Unterholz, Wurzelnetz, Aussamen, Frühblüher (alle vier waren nur weitere Wachstumsraten).
+
+#### Formationshebel (4) — der Kern der Fraktion
+
+| # | Skill | Einzeiler | Stufenleiter |
+| --- | --- | --- | --- |
+| 6 | **Spalier** | Segmentgrenzen neben grünen Karten sind offen — Läufe wachsen über das Segment hinaus. | **die Leiter ist die Zahl der Grenzen:** 1 / 2 / 3 / alle. Genommen werden die Grenzen mit den meisten grünen Karten daneben (deterministisch, kleinste Segmentnummer bei Gleichstand). Bei 40 Karten gibt es 7 Grenzen — Episch macht das Deck zu einer durchgehenden Reihe |
+| 7 | **Wildwuchs** | Blühende Karten zählen bei der Formationserkennung als Joker. | **die Leiter ist die Zahl der Joker:** 1 / 2 / 3 / alle blühenden. Normal wirkt nur die am weitesten gewachsene Karte. Der Regler ist damit die Menge, nicht die Stärke — genau der Punkt des Owners („in der Sim schauen, wie viele blühende man hat") |
+| 8 | **Wandertrieb** | Am Ende jedes Durchlaufs rückt eine blühende Karte einen Platz auf ihren nächsten blühenden Nachbarn zu. | Leiter über die Zahl der Karten, die rücken: 1 / 1 / 2 / 2 und zwei Plätze. **Ersetzt Verpflanzen als Aufstellungs-Skill** — die Ordnung ändert sich im Lauf, nicht in der Phase, und das Deck klumpt sichtbar zusammen |
+| 9 | **Lücke** | Ein Lauf aus grünen Karten darf eine fremde Karte überspringen. | Leiter über die erlaubten Lücken je Lauf und Segment (`gap.run` / `gap.seg` — der Haken existiert schon für E_PACE und E_COLORBRIDGE) |
+
+#### Score aus grünen Formationen (4) — je Formationstyp einer
+
+| # | Skill | Einzeiler |
+| --- | --- | --- |
+| 10 | **Blätterdach** (Farbblock) | Ein grüner Farbblock ab N Karten gibt Basis-Score je Karte im Block. |
+| 11 | **Rankgerüst** (Treppe) | Eine Treppe aus grünen Karten gibt Basis-Score je Stufe — Owner-Idee „grüne Treppen haben einen Bonus". |
+| 12 | **Hecke** (Wiederholung) | Eine Wiederholung aus grünen Karten gibt Basis-Score je Mitglied. |
+| 13 | **Jahresringe** (Tiefe) | Ein Sieg gibt Basis-Score je 10 eigenes Wachstum der Siegkarte. |
+
+Warum je Typ einer: im vollgrünen Deck wird der **Farbblock trivial** und der **Wechsel stirbt** (6.2) — tragfähig
+bleiben Treppe und Wiederholung. Drei Typen bekommen daher ihren eigenen Score-Skill, der vierte (Wechsel) keinen;
+ein Skill, der spät garantiert tot ist, wäre die Falle aus 7.22/7.24.
+
+#### Kombination (2) — Score und Wachstum in einem
+
+| # | Skill | Einzeiler |
+| --- | --- | --- |
+| 14 | **Blütenlese** | Ein Sieg in einer rein grünen Formation gibt Basis-Score **und** lässt alle ihre Mitglieder wachsen. |
+| 15 | **Überwucherung** | Ist das Feld zu N % grün, zählt jede grüne Formation ein Mitglied mehr — mehr Score aus den Skills oben **und** mehr Formationsplätze. |
+
+**Legendäre bleiben wie in 6.5** (Baumreihe mit Auslöser *blühend*, Weltenbaum, Mutterbaum, Ewiger Frühling).
+
+**Zur Sim vorgemerkt** (Owner): wie viele blühende Karten ein Lauf tatsächlich hat — davon hängt ab, ob Wildwuchs
+Episch (alle blühenden als Joker) zu stark ist. Die Messung geht erst, wenn das Passiv steht.
+
 ---
 
 ## Änderungsprotokoll
@@ -3827,3 +3887,4 @@ vollgrün macht das Deck zu lauter Score-Trägern, statt einen Faktor obendrauf 
 | 2026-09-06 | **Pflanze, Bestandsaufnahme der 17 + 4 Skills (6.3, Befund, nichts umgesetzt).** Strukturell durchgefallen: 6 Verstärker mit `enabler`, 5 Direkt-Score-Quellen, 3 eigene Multiplikatoren, die Trimm-Klausel an 6 Skills, die Wertachse (Kernholz, Baumreihe-Auslöser, Auto-Sieg bei 11), die Gegnerdeck-Achse (Ausläufer, Rhizom, Erntedank) und die fehlenden Stufen bei allen 17. Je Skill ein Vorschlag: vier bleiben in ihrer Idee (Aussaat, Setzlingsbeet, Zäher Halm, Blätterdach), Jahresringe liefert ein Konzept, Ranken und Überwucherung sind Umbauten, zehn fallen weg; von den Legendären trägt nur Baumreihe ihre Idee weiter (Auslöser Wert 11 → blühend), drei werden neu gebaut. Rollen-Raster für den Entwurf: **Formationsdichte — Karten in mehr Formationen bringen — ist im neuen Passiv der stärkste Hebel und hat heute keinen einzigen Skill.** Entscheid je Zeile beim Owner. |
 | 2026-09-06 | **Owner: „ich geh so mit"** — die Streichliste aus 6.3 ist angenommen (zehn normale Skills und drei Legendäre fallen weg, vier bleiben in ihrer Idee, Baumreihe trägt ihre Idee weiter). **Ausnahme Ranken:** Spielerfavorit, bleibt auf SK_PLANT_09 und wird auf das neue Passiv gezogen — nur das sofortige Grünfärben muss weg. Drei Bauformen dafür an den Owner (6.4), nichts umgesetzt. |
 | 2026-09-06 | **Owner: Ranken-Bauform 1** (Ansteckung im Reifemoment — wird eine Karte grün, wachsen ihre grauen Nachbarn). Daraufhin der Vorschlag für **die 15** (6.5): vier bleiben (Aussaat, Setzlingsbeet, Zäher Halm, Blätterdach), zwei sind Umbauten (Ranken, Überwucherung — deren feldweiter Multiplikator wird zur Schwellensenkung), Jahresringe kommt als Konzept zurück, acht sind neu. Kern der Fraktion sind zwei neue Skills auf der Formationsdichte (Spalier öffnet Segmentgrenzen über `segInfo.isOpen`, Wildwuchs macht blühende Karten zu Jokern über `isJoker`) — beide Haken existieren in der Formations-Engine und sind bisher ungenutzt. Legendäre: Baumreihe behält die Idee (Auslöser Wert 11 → blühend), Weltenbaum/Mutterbaum/Ewiger Frühling neu und ohne Direkt-Score. Keine Stufen, keine Werte — Entscheid je Zeile beim Owner. |
+| 2026-09-06 | **Owner an 6.5: zu viele Wachstums-Skills** (10 von 15), Verpflanzen raus, Raritäten-Leitern für Spalier und Wildwuchs gefragt, Idee „grüne Treppen haben einen Bonus". Neue Aufteilung in 6.6: Wachstum 5, **Formationshebel 4**, **Score aus grünen Formationen 4** (je Formationstyp einer — Farbblock, Treppe, Wiederholung, dazu Tiefe; Wechsel bekommt keinen, weil er im vollgrünen Deck stirbt), **Kombination 2** (zahlen Score und Wachstum). Gestrichen: Unterholz, Wurzelnetz, Aussamen, Frühblüher, Verpflanzen. Neu: Rankgerüst (Treppe), Hecke (Wiederholung), Lücke (grüne Läufe dürfen eine fremde Karte überspringen — `gap.run`/`gap.seg`), Wandertrieb (blühende Karten rücken am Durchlaufende zusammen, ersetzt Verpflanzen), Blütenlese, Überwucherung als Formationsgrößen-Bonus. Leitern: **Spalier** über die Zahl offener Segmentgrenzen (1/2/3/alle von 7), **Wildwuchs** über die Zahl der Joker (1/2/3/alle blühenden) — die Menge ist der Regler. Zur Sim vorgemerkt: wie viele blühende Karten ein Lauf hat. Entscheid beim Owner. |
