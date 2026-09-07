@@ -3674,6 +3674,12 @@ Jeder Skill gegen den Rahmen aus 6.1/6.2 gelesen. **Entscheid je Zeile beim Owne
 | **Baumreihe** (L03) | voll ausgewachsene Karten (Wert 11) bilden eine **positionsfreie Wiederholung**, ×1,3 bis ×2 | Auslöser stirbt mit der Wertachse — **die Idee ist die beste im Bestand** und trifft die neue Achse | **behalten**, Auslöser auf **blühend** umstellen |
 | **Ewiger Frühling** (L04) | direkt +80 je grüner Karte (Deckel 40), bei vollgrünem Feld doppelt | Direkt-Score, und die Vollgrün-Verdoppelung belohnt jetzt den Normalfall | **neu bauen** |
 
+#### Entscheid Owner (2026-09-06)
+
+**Die Streichliste oben ist angenommen, mit einer Ausnahme: Ranken bleibt.** Owner: „Ranken war ein Spielerfavorit,
+also auf das neue Passiv anpassen." Der Skill behält Namen und Platz (SK_PLANT_09); zu ersetzen ist nur der Auslöser
+„färbt sofort grün", der gegen 6.1 steht. Entwurf dazu in 6.4.
+
 #### Fazit
 
 **Das ist kein Pass, das ist ein Neubau.** Von 17 normalen Skills überleben vier in ihrer Idee (Aussaat,
@@ -3696,6 +3702,20 @@ gebaut. Für die 15 Plätze fehlen also rund zehn neue Skills.
 
 Auffällig: **die Achse, die das neue Passiv am stärksten belohnt — mehr Formationen je Karte — hat heute keinen
 einzigen Skill.** Dort liegt der freie Platz für den Kern der Fraktion.
+
+### 6.4 Ranken auf dem neuen Passiv (Vorschlag, Entscheid Owner)
+
+Was am alten Ranken gefiel, ist die **kriechende Ausbreitung**: eine grüne Karte zieht ihre Nachbarn nach, und das
+wandert sichtbar durchs Deck. Was weg muss, ist allein das **sofortige Färben** — es macht aus einem Pick ein grünes
+Deck (6.1). Drei Bauformen, die das Bild behalten und den Sprung ersetzen; Werte sind Startwerte, ungemessen.
+
+| # | Bauform | Text (Normal) | Rolle und Risiko |
+| --- | --- | --- | --- |
+| 1 | **Ansteckung im Reifemoment** | „Wird eine deiner Karten grün, wachsen ihre grauen Nachbarn +8." Leiter 5 / 8 / 12 / 16. | **Empfehlung** — am nächsten am alten Gefühl: ein sichtbarer Moment, der eine Kette auslösen kann (die Nachbarn reifen früher und schieben ihrerseits). Die Kette ist gebremst, weil der Schub deutlich unter der Schwelle 30 liegt. Nähe zu Aussaat: dieselbe Richtung (Breite), aber anderer Auslöser — Aussaat ist der Dauertropf je Sieg, Ranken der Ruck im Reifemoment. |
+| 2 | **Schwellensenkung am Nachbarn** | „Graue Karten neben einer grünen brauchen 6 weniger Wachstum bis Grün." Leiter 4 / 6 / 8 / 12. | Besetzt die Rolle *Schwelle*, die im Raster fehlt, und lässt den grünen Fleck stetig nach außen wachsen. Ruhiger, aber ohne Moment — es passiert nichts Sichtbares. |
+| 3 | **Ausläufer entlang der Reihenfolge** | „Wird eine Karte grün, wächst die nächste graue Karte in der Ziehreihenfolge +12 — auch über grüne Karten hinweg." Leiter 8 / 12 / 16 / 20. | Die Ranke kriecht die Reihe entlang statt nur zum Nachbarn; nimmt die Idee des gestrichenen Flugsamen auf. Risiko: sie springt weit und wird schwer lesbar. |
+
+Alle drei ersetzen **nur** den Auslöser; Name, Platz und Emblem bleiben.
 
 ---
 
@@ -3758,3 +3778,4 @@ einzigen Skill.** Dort liegt der freie Platz für den Kern der Fraktion.
 | 2026-09-06 | **Owner: auf der Skill-Karte nur Fraktion und Rarität.** Das KONSUMENT-Abzeichen ist aus dem Angebot und aus der Ersetzen-Liste entfernt (`SkillSelect.jsx`, Helfer `isConsumer` und Registerzeile `skill.badge.consumer` mit), die Karte trägt jetzt Fraktions-Badge + Stufe (Legendär bleibt die fünfte Stufe, „Ausgewählt" ist ein Zustand, kein Chip). Das Schlüsselwort `consume` bleibt auf Schmelzpunkt: es erklärt den Begriff weiter in der Build-Detailansicht und im Glossar — dort steht „Konsument" also noch, ebenso in der Aufklapp-Liste des Feuer-Passivs. Owner-Frage, falls das auch weg soll. Reine Anzeige, keine Mechanik; Gates grün. |
 | 2026-09-06 | **Pflanze, Richtung gesetzt (6.1) und Passiv-Entwurf (6.2).** Owner: Grün bleibt eine Farbe (Variante b), vollgrünes Deck ist das Ziel eines gezielten Builds, Wachstum je Karte, drei Zustände grau/grün/blühend, kein Direkt-Score, Trimmen entfällt (keine Skill-Ersetzung mehr), kein Skill-Tor. Passiv: **+1 Wachstum je Sieg, dazu +1 je aktiver Formation an der Siegposition** (Owner-Idee — die Aufstellung wird zur Wachstumsentscheidung, nicht der Sieg allein); Schwellen als Startwerte grün 30 / blühend 75, blühend trägt den Basis-Score je grüner Karte in seiner Formation. Deckel-Frage auf grüne Farbblöcke bis zu den Sim-Daten vertagt; notiert, dass im vollgrünen Deck der Wechsel stirbt und der Farbblock trivial wird. Nichts umgesetzt, nichts gemessen. |
 | 2026-09-06 | **Pflanze, Bestandsaufnahme der 17 + 4 Skills (6.3, Befund, nichts umgesetzt).** Strukturell durchgefallen: 6 Verstärker mit `enabler`, 5 Direkt-Score-Quellen, 3 eigene Multiplikatoren, die Trimm-Klausel an 6 Skills, die Wertachse (Kernholz, Baumreihe-Auslöser, Auto-Sieg bei 11), die Gegnerdeck-Achse (Ausläufer, Rhizom, Erntedank) und die fehlenden Stufen bei allen 17. Je Skill ein Vorschlag: vier bleiben in ihrer Idee (Aussaat, Setzlingsbeet, Zäher Halm, Blätterdach), Jahresringe liefert ein Konzept, Ranken und Überwucherung sind Umbauten, zehn fallen weg; von den Legendären trägt nur Baumreihe ihre Idee weiter (Auslöser Wert 11 → blühend), drei werden neu gebaut. Rollen-Raster für den Entwurf: **Formationsdichte — Karten in mehr Formationen bringen — ist im neuen Passiv der stärkste Hebel und hat heute keinen einzigen Skill.** Entscheid je Zeile beim Owner. |
+| 2026-09-06 | **Owner: „ich geh so mit"** — die Streichliste aus 6.3 ist angenommen (zehn normale Skills und drei Legendäre fallen weg, vier bleiben in ihrer Idee, Baumreihe trägt ihre Idee weiter). **Ausnahme Ranken:** Spielerfavorit, bleibt auf SK_PLANT_09 und wird auf das neue Passiv gezogen — nur das sofortige Grünfärben muss weg. Drei Bauformen dafür an den Owner (6.4), nichts umgesetzt. |
