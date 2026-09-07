@@ -27,7 +27,7 @@ const scen = (offer, over = {}) => ({
 
 describe("#372b — warum der Pick zu spät kommt", () => {
   it("ein Pflanzen-Pick landet SOFORT in der Spielphase — dort wärmt der Effekt bewusst nichts", () => {
-    const id = "SK_PLANT_02";
+    const id = "SK_PLANT_05"; // Aussaat (SK_PLANT_02 Wurzeltiefe ist mit der Wertachse gestrichen, §6.3)
     expect(archetypeOf(id)).toBe("plant");
     const next = reducer(scen([id]), { type: "PICK_SKILL", skillId: id, rng: () => 0.5 });
     expect(next.activeArchetypes, "der Archetyp ist ab jetzt aktiv").toContain("plant");

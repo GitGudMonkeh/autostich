@@ -2,13 +2,14 @@ import { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react"
 import { Card, CardBack } from "./Card.jsx";
 import { tintImage } from "./deckTint.js"; // #gegnerdeck-farbe: Phasendecks in der Deckfarbe (einmal gebacken)
 import { clamp } from "../game/deck.js";
-import { TRICKS_PER_CYCLE, suitColor, AUSLAEUFER_HARVEST, ION_MAX_STACKS, HEAT_MAX, BASE_FLIP_MS, PLANT_GREEN_THRESHOLD } from "../game/constants.js";
+import { TRICKS_PER_CYCLE, suitColor, ION_MAX_STACKS, HEAT_MAX, BASE_FLIP_MS } from "../game/constants.js";
 import { linkedPartnersOf } from "../game/shop.js";
 import { formationBorder } from "./formationStyle.js";
 import { holeSound } from "./blackholeSnd.js"; // Bett-Pegel des Schwarzen Lochs: EINE Quelle mit der Werkstatt-Vorschau
 import { supernovaSwellDelay } from "./fx/supernovaTiming.js"; // Swell-Vorlauf: EINE Quelle mit dem Showcase (Pixi-frei)
 import { gottSpeedFor } from "./fx/gottTiming.js"; // #prunk-laenge: In-Game-Spieldauer je Prunk (Pixi-frei)
 import { formationLabel } from "./formationLabels.js";
+import { mossStage } from "./indicators/vocab.js"; // Pflanze: Zustand → Moos-Stufe (eine Quelle mit MossGrow)
 import { audio } from "./audio.js";
 import { useFxLevel } from "./useReducedFx.js";
 import { battlefieldDim } from "./cosmeticAssets.js"; // #bf-desktop: gemessene Bild-Daempfung im Lauf
@@ -647,7 +648,7 @@ function SlashGhostLayer({ ghosts }) {
         const cardEl = (
           <Card suit={g.suit} value={g.value} baseRank={g.baseRank} stichBonus={g.stichBonus}
             ionStacks={g.ionStacks} green={g.green}
-            forged={g.forged || 0} branded={g.branded || 0} growth={g.growth || 0} colonized={g.colonized || 0}
+            forged={g.forged || 0} branded={g.branded || 0} growth={g.growth || 0} bloom={!!g.bloom}
             allyColors={g.allyColors} frontImage={g.frontImage} />
         );
         // Reihenfolge (Wunsch): Karte liegt (rest) → Klingenschnitt IN PLACE (delay = g.rest) → DANACH floatet der
@@ -684,7 +685,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // Feuer-Rework (#206): geschmiedete Dauerwerte (eigene Karten) + aktive Brandmarken (Gegnerkarten) für die Karten-Indikatoren.
   forged = {}, brandActive = {},
   // Pflanze-Rework (#211): Wachstum je eigener Karte-id (Wachstumsring + grüne Zahl) + kolonisierte Gegnerkarten (Ausläufer-Marker).
-  growth = {}, colonized = {},
+  growth = {},
   // #190 Kosmetik: gewähltes Spieler-Deck (front=Rahmen, back=Cover) + Battlefield-Skin ({desktop,mobile}|null).
   // Defaults = bestehende Karten → ohne Auswahl identisches Verhalten (Gegner-Deck bleibt OPP_DECK_SKINS).
   // #bf-desktop: `bfId` dient allein der gemessenen Helligkeits-Dämpfung (battlefieldDim) — das
@@ -1001,7 +1002,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   // #pflanze/#flip: Das Neon-Moos hängt jetzt ALS KIND in der Kartenvorderseite (relativer Wrapper) → es flippt/dealt/
   //   fliegt mit der Karte mit (CSS-Transform-Vererbung), statt als flache Panel-Overlay den 3D-Flip zu verdecken.
   //   „grün" (reif/ausgewachsen) = volle Reifestufe, auch ohne growth-Zähler (Start-Anker/Ranken/Blüte). ?moss=<0..8> (Dev).
-  const pGrowth = t ? (MOSS_FORCE != null ? MOSS_FORCE : (t.pCard.green ? PLANT_GREEN_THRESHOLD : (growth[t.pCard.id] || 0))) : 0;
+  const pGrowth = t ? (MOSS_FORCE != null ? MOSS_FORCE : mossStage(growth[t.pCard.id] || 0, !!t.pCard.green, !!t.pCard.bloom)) : 0;
   // #eis/#flip: Wie das Moos hängt jetzt auch der Eis-Frost ALS KIND in der Kartenvorderseite → flippt mit der Karte.
   //   Liegt UNTER dem Moos (Eis z-1, Moos z-2, früher im DOM → darunter). Masse aus ICE_FORCE (?ice=<0..12>, Dev; echte
   //   per-Karte-Bindung noch offen). #flip: Der Blitz-Rahmen (CardIonStorm) liegt jetzt auf der EdgeGlow-Ebene (z-0)
@@ -1044,7 +1045,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
   const oCardEl = t && (
     <div className="relative" style={{ display: "inline-block", lineHeight: 0 }}>
       <Card suit={t.oCard.suit} value={t.oValue} baseRank={t.oCard.baseRank} glow={lost ? "#e0605a" : null}
-            green={!!t.oCard.green} branded={brandActive[t.oCard.id] || 0} colonized={colonized[t.oCard.id] ? AUSLAEUFER_HARVEST : 0} frontImage={oppFrontImg} />
+            green={!!t.oCard.green} bloom={!!t.oCard.bloom} branded={brandActive[t.oCard.id] || 0} frontImage={oppFrontImg} />
       {edgeGlowEl}
     </div>
   );
@@ -1396,7 +1397,7 @@ export function Battlefield({ lastTrick, remaining = TRICKS_PER_CYCLE, deckLen =
         color: suitColor(t.oCard.suit), bladeColor: klingeDeck ? (deckA1 || deckA2 || null) : null, seed: t.trickNo * 3 + 1, // #klinge-deck: Deckfarbe → Deck-Glühen · sonst null → kühles Stahlweiß (bladeTint)
         suit: t.oCard.suit, value: t.oValue, baseRank: t.oCard.baseRank, stichBonus: 0,
         ionStacks: 0, green: !!t.oCard.green,
-        branded: brandActive[t.oCard.id] || 0, colonized: colonized[t.oCard.id] ? AUSLAEUFER_HARVEST : 0, frontImage: oppFrontImg });
+        branded: brandActive[t.oCard.id] || 0, bloom: !!t.oCard.bloom, frontImage: oppFrontImg });
     }
     if (!spawned.length) return;
     setSlashGhosts((cur) => [...cur, ...spawned].slice(-ghostCap)); // Pool gedeckelt (turbo-abhängig, #200 A)

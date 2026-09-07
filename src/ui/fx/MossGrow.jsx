@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { dprCap } from "./mobileTier.js"; // #perf-mobile: Auflösungs-/Zeichenrate-Deckel (eine Wahrheit)
 import { mixRGB, clampRGB, satBoost, mulberry32, roundRectPath, fbm, clamp, clamp01 } from "./fxMath.js"; // #fx-helfer: geteilte Mathe-/Canvas-Helfer
 import { createStageBlend } from "./stageBlend.js"; // #382 akkretives Stufen-Blenden (eine Wahrheit mit dem Eis)
+import { MOSS_STAGE_MAX } from "../indicators/vocab.js"; // Stufenzahl: eine Quelle mit der Stufen-Berechnung der Battlefield
 
 /* Archetyp-Karteneffekt „Pflanze" als Neon-Moos — realistisches Moos überwächst die eigene Karte mit dem Wachstum.
    Von OBEN & den beiden SEITEN wächst es nach innen/unten zu (Akkretion: bestehendes Moos bleibt, neues kommt dazu).
@@ -36,7 +37,7 @@ const TUNE = {
 };
 
 const TAU = Math.PI * 2;
-const STAGE_MAX = 8;          // PLANT_GREEN_THRESHOLD (constants.js) — Wachstum bis „reif" (grün)
+const STAGE_MAX = MOSS_STAGE_MAX; // Stufen des Mooses — eine Quelle mit der Battlefield (indicators/vocab.js)
 // #382: Blenddauer/Kurve wohnen in stageBlend.js (geteilt mit dem Eis) — hier gibt es keinen zweiten Wert mehr.
 const REF_W = 282, REF_H = 390;  // Referenz-Kartenbox (Prototyp box() @ zoom 1.3: 300*1.3=390, 390*104/144≈282)
 const CARD_R = 12;            // Karten-Eckenradius (rounded-xl) — für den Composite-Clip

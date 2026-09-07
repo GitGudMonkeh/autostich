@@ -2,7 +2,7 @@
 // EINZIGE Quelle für Fraktions-Farben + Karten-Ecken-Belegung. #208/#210/#211 (Blitz/Eis/
 // Pflanze) docken hier an, damit die Marker in gemischten Builds kollisionsfrei lesbar bleiben.
 
-import { PLANT_GREEN_THRESHOLD, PLANT_VALUE_CAP } from "../../game/constants.js";
+import { PLANT_GREEN_THRESHOLD, PLANT_BLOOM_THRESHOLD } from "../../game/constants.js";
 
 // ---- Fraktions-Grundfarben (aus dem bestehenden Code-Vokabular) ----
 export const FIRE = "#e0714a"; // Feuer
@@ -30,10 +30,22 @@ export const GLACIER = "#bfe9f7"; // Architekt-Pfeiler / „Masse-Schwelle errei
 
 // ---- Pflanze-Unterfarben (#211) ----
 // Das Grün (PLANT) ist der Reife-Kern. Die reife Zahl leuchtet heller (PLANT_RIPE = bestehender 🌿-Ton), die
-// voll ausgewachsene (Wert = PLANT_VALUE_CAP) am hellsten (PLANT_FULL). Während des Wachstums blendet die Zahl von
+// blühende am hellsten (PLANT_FULL). Während des Wachstums blendet die Zahl von
 // ihrer Suit-Farbe ZUM Grün (plantNumberColor) — die Original-Farbe tritt bei Reife zugunsten des Grüns zurück.
 export const PLANT_RIPE = "#86e0a0"; // reife (grüne) Zahl — leuchtet intensiv grün
-export const PLANT_FULL = "#c8ffdc"; // voll ausgewachsen (Wert-Deckel) — hellster Grün-Ton (+ 🌿)
+export const PLANT_FULL = "#c8ffdc"; // blühend — hellster Grün-Ton (+ 🌿)
+
+// ---- Neon-Moos (MossGrow) ----
+// Wie viele Moos-Stufen es gibt UND welcher Zustand welche Stufe zeigt. Steht hier statt in MossGrow.jsx, weil die
+// Battlefield die Stufe berechnet, das Moos selbst aber lazy geladen wird (§6.2: grau → grün → blühend, nicht linear
+// im Wachstum: grün liegt schon bei 5 von 8, blühend ist voll).
+export const MOSS_STAGE_MAX = 8;
+export const MOSS_GREEN_STAGE = 5;
+export function mossStage(growth = 0, green = false, bloom = false) {
+  if (bloom) return MOSS_STAGE_MAX;
+  if (green) return MOSS_GREEN_STAGE + Math.round(Math.min(1, Math.max(0, (growth - PLANT_GREEN_THRESHOLD)) / Math.max(1, PLANT_BLOOM_THRESHOLD - PLANT_GREEN_THRESHOLD)) * (MOSS_STAGE_MAX - MOSS_GREEN_STAGE));
+  return Math.round(Math.min(1, (growth || 0) / PLANT_GREEN_THRESHOLD) * MOSS_GREEN_STAGE);
+}
 
 // ---- Architekt-Kategorien (#202) ----
 // Rahmen/Icon-Vokabular fürs Brett-Overlay. Bewusst NICHT als Vollflächen-Füllung genutzt (kollidiert sonst mit den
@@ -60,9 +72,6 @@ export const CORNER = {
   growthRing: "bottom-right", //  🌱 Pflanze-Wachstumsring (#211): füllender Kreis auf der EIGENEN, noch wachsenden Karte (< Reife),
   //                    bei Reife ausgeblendet. Teilt sich die Ecke mit ❄ (frozen, eigene Karte) → bei beidem wird das ❄ nach
   //                    LINKS versetzt (wie 🔥 bei Frostbiss). Kollisionsfrei mit den GEGNER-Ecken (bottom-right dort ❄/🔥).
-  colonized: "left-edge", //  🌿 Pflanze-Ausläufer (#211) auf der GEGNERkarte: grüne Ranke am linken Rand + „Ernte +N"-Tag. Grün/
-  //                    organisch, klar abgesetzt von Brand (warm, von unten) und Frostbiss (kalt, ❄). Eigene left-edge-Spur →
-  //                    kollidiert nicht mit 🌿-reif (top-left), ❖-Schichten (bottom-left) oder der zentrierten Zahl.
 };
 
 // ---- Reserviertes Vokabular (Kollisionsverbote) ----
@@ -88,15 +97,14 @@ function lerpHex(a, b, t) {
   return "#" + ((1 << 24) | (m(ar, br) << 16) | (m(ag, bg) << 8) | m(ab, bb)).toString(16).slice(1);
 }
 
-// Pflanze (#211): Farbe/Glühen der Kartenzahl aus dem Wachstums-/Reife-Zustand.
-//   • grün (reif): intensiv grün — voll ausgewachsen (Wert ≥ Deckel) am hellsten (PLANT_FULL).
-//   • wachsend (Wachstum > 0, noch nicht reif): blendet von der Suit-Farbe zum Grün (max 0,85 → nie „voll grün" vor Reife).
+// Pflanze (§6.2): Farbe/Glühen der Kartenzahl aus dem Zustand grau → grün → blühend.
+//   • grün: intensiv grün — blühend am hellsten (PLANT_FULL).
+//   • grau mit Wachstum: blendet von der Suit-Farbe zum Grün (max 0,85 → nie „voll grün" vor der Schwelle).
 //   • sonst (kein Pflanzen-Einfluss): null → Aufrufer nutzt die normale Suit-Farbe.
 // `glow` ∈ 0..1 = Stärke des Grün-Scheins (der Aufrufer skaliert daraus Blur/Alpha des textShadow).
-export function plantNumberColor(suitCol, growth = 0, green = false, value = 0) {
+export function plantNumberColor(suitCol, growth = 0, green = false, bloom = false) {
   if (green) {
-    const full = value >= PLANT_VALUE_CAP;
-    return { color: full ? PLANT_FULL : PLANT_RIPE, glow: full ? 1 : 0.6, full, ripe: true };
+    return { color: bloom ? PLANT_FULL : PLANT_RIPE, glow: bloom ? 1 : 0.6, full: bloom, ripe: true };
   }
   const g = growth || 0;
   if (g <= 0) return null;

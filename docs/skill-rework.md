@@ -3925,9 +3925,54 @@ Spalier („alle 7 Grenzen" macht das Deck zu einer Reihe) und Wildwuchs („all
 Episch und die vier Episch-Extras hängen daran), wie lang grüne Farbblöcke wirklich werden (Blätterdach-Satz und die
 offene Deckel-Frage aus 6.2), und wie oft Spalier Episch das Deck zu einer durchgehenden Reihe macht.
 
+### 6.9 Umgesetzt (2026-09-07) — die Fraktion steht im Code
+
+Die Pflanze ist gebaut: Passiv, 15 Skills mit vier Stufen, vier Formationshebel, vier Legendäre, Texte, Glossar,
+Anzeige. **Nicht gemessen** (Owner: erst Design, dann Startwert, dann messen auf Ansage) und **noch nicht im
+Türen-Angebot** — `SKILL_OFFER_ARCHETYPES` steht weiter auf Feuer/Blitz.
+
+**Warum in einem Stück statt in Etappen.** Der Plan sah Passiv, dann die 15 Skills, dann die Hebel vor. Die Registry-
+Wächter lassen das nicht zu: `skill-art.test.js` verlangt **mindestens 18 Skills je Fraktion** mit Emblem, und
+`archetypesWithSkills` erwartet vier Fraktionen mit Skills. Eine Fraktion ohne Skills — und sei es für einen Commit —
+macht die Suite rot. Also derselbe Schnitt wie bei Feuer und Blitz (Phase 2/3): eine Fraktion, ein Umbau.
+
+**Der Abriss.** Raus sind: Wertableitung aus Wachstum und Auto-Sieg bei 11, der Alte Anker (die Aktivierung startete
+eine grüne Karte mit Wert 11), `plantDirect` samt aller fünf Direkt-Score-Quellen, `plantFormMult`, Trimmen
+(`TRIM_STEP`/`TRIM_CAP`/`trimCount`), die Bekenntnis-Skalierung `commitScale` (die Pflanze war ihr letzter Leser —
+**keine Fraktion skaliert ihren Ertrag mehr an der Zahl gehaltener Skills**), die Kolonisierung des Gegnerdecks samt
+Anzeige, die sechs `enabler`-Verstärker und die Niederlage-Klausel des Wurzelschlags. Zwei Emblem-Plätze sind
+zurückgegeben (SK_PLANT_02 Wurzeltiefe, SK_PLANT_18 Kernholz), zehn Embleme tragen jetzt den Namen ihres neuen Skills.
+
+**Technische Entscheide, die im Entwurf offen waren** (getroffen, wie §Entscheidungsbefugnis es vorsieht — Werte sind
+Vorschläge, die Mechanik ist gesetzt):
+
+| Frage | Entscheid | Warum |
+| --- | --- | --- |
+| Was heißt „Formation" für die Pflanze? | **Der echte Lauf** — Wiederholung, Farbblock, Treppe, Wechsel (die Einträge mit `members`). Anker, Nachhall, Formationskern und Grenzbonus zählen nicht. | Ein Begriff je Sache: dieselbe Definition trägt das Wachstum (+1 je Formation) und den Score (grüne Karten darin). Das Glossar nennt eine Formation „Muster benachbarter Karten" — Meta-Faktoren sind das nicht. |
+| Satz des Passiv-Scores | **+20 Basis-Score je grüner Karte** (`PLANT_BLOOM_SCORE_PER_GREEN`) | Startwert. Bezug: ein grünes Segment fasst 5 Karten → 100 Basis-Score je Blüh-Sieg, gegen 400 Grund-Score je Sieg und 75 je Stapel beim Blitz. Der Regler der Fraktion. |
+| „Ein Sieg in einem grünen Farbblock" | **Die Siegkarte muss grün sein**, gezahlt wird je grüner Karte in ihrem Lauf dieses Typs — der Lauf muss nicht rein grün sein. | Sonst hätte die Fraktion vier harte Tore statt einer Rampe. Blütenlese sagt bewusst „**rein** grün" und ist der einzige Skill mit dieser Bedingung. |
+| Überwucherung, „zwei Karten weniger" | **Mindestens zwei Karten** bleiben nötig (Farbblock 3 → 2, nicht 1). | Ein Lauf aus einer Karte ist keine Formation. Der Text nennt die Klemme; Episch unterscheidet sich weiter über die Feldschwelle (35 % statt 50 %). |
+| Lücke: welcher Lauf? | **Der Farbblock**, und nur wenn er grün beginnt. | „Ein Lauf aus grünen Karten" ist der grüne Farbblock; das Budget kommt auf E_COLORBRIDGE obendrauf, statt es zu ersetzen. Die übersprungenen Positionen liegen als `gapped` am Eintrag — daraus zahlt Lücke Episch. |
+| Spalier: was heißt „daneben"? | **Die zwei Karten links und rechts der Grenze**; ohne grünen Nachbarn öffnet keine Grenze. Bei Gleichstand die kleinere Grenznummer. | Wörtlich der Text, deterministisch (§9), und im vollgrünen Deck öffnen mit Episch alle sieben. |
+| Weltenbaum-Satz | **+1 Wachstum je 5 grüne Karten**, am Durchlaufende, für jede grüne Karte. | Der alte Satz (`WELTENBAUM_PER_GREEN`) übernommen — die einzige Zahl der Legendären, die weiterlebt. |
+| Mutterbaum | Die am weitesten gewachsene Karte **tritt jedem Lauf ihres Segments als Mitglied bei** (und bekommt dessen Faktor auf der nächsten Ordinalzahl). | „Zählt mit" heißt Mitglied: so wirkt sie auf Score, Wachstum und Überlappung gleich, ohne neuen Faktor-Kanal. |
+| Baumreihe | Ein echter **Wiederholungs-Eintrag** über alle blühenden Karten, mit den normalen Wiederholungs-Faktoren. | Kein eigener Multiplikator (§6.1) — die positionsfreie Wiederholung ist eine Formation wie jede andere und speist damit auch das Passiv. |
+
+**Was der Code jetzt hält.** `src/game/factions/plant.js` (Passiv, Zustände, alle Skill-Effekte, Legendäre),
+`PFLANZE_TIERS` in `skills.js` (15 Stufentabellen), die vier Hebel und zwei Legendären in `formations.js` (die
+Erkennung liest ein Bündel `{ skillTiers, growth }` als neunten Parameter), ein Score-Kanal `plantBase` statt drei,
+`test/plant-rework.test.js` mit 36 Wächtern — darunter die **Gegenprobe**, dass die Formations-Engine ohne gehaltenen
+Pflanzen-Skill Byte für Byte dasselbe liefert wie vorher.
+
+**Offen und beim Owner:** (1) die Messrunde — wie viele blühende Karten ein Lauf hat, wie lang grüne Farbblöcke
+werden, ob der Grün-Farbblock-Deckel (`PLANT_GREEN_FARBBLOCK_CAP` 3) bleibt, und die Parität gegen Feuer und Blitz;
+(2) ob die Pflanze ins Türen-Angebot kommt (`SKILL_OFFER_ARCHETYPES`) — das ändert jedes Angebot im Lauf und ist
+darum keine technische Entscheidung; (3) das Sim-Band wird erst nach (1) und (2) neu zentriert.
+
 ---
 
 ## Änderungsprotokoll
+
 
 | Datum | Was |
 | --- | --- |
@@ -3994,3 +4039,4 @@ offene Deckel-Frage aus 6.2), und wie oft Spalier Episch das Deck zu einer durch
 | 2026-09-06 | **Owner: drei Formulierungen für dieselbe Sache.** Die vier Score-Skills sagten „je grüner Karte im Block", „je Stufe" und „je Mitglied", Wildwuchs benutzte „blühende" substantiviert, Blütenlese sagte „Mitglieder". Vereinheitlicht auf den Begriff, den das Register kennt — **Karte** (Glossar: eine Formation ist ein „Muster benachbarter Karten"; „Mitglied" steht im Register nur als UI-Zusatz in der Kartendetail-Ansicht): alle vier Score-Skills zahlen „je grüner Karte darin", das gemeinsame Episch-Extra heißt überall „blühende Karten zählen doppelt", Wildwuchs zählt „blühende Karten", Blütenlese lässt „alle Karten darin" wachsen. Reine Formulierung, keine Werte. |
 | 2026-09-06 | **Owner: ja zu beiden Episch-Nachschärfungen.** Ranken Episch kettet jetzt (wird eine Karte durch den Ruck grün, wachsen ihre grauen Nachbarn ebenfalls +16 — der einzige Dominoeffekt der Fraktion, ohne Selbstbezug im Text), Überwucherung Episch senkt die Mindestlänge um zwei statt um eine. Damit haben 13 der 15 Episch-Stufen ein Extra oder einen qualitativen Sprung — dasselbe Verhältnis wie bei Feuer und Blitz; reine Zahlen bleiben nur bei Spalier (alle 7 Grenzen) und Wildwuchs (alle blühenden Karten), wo der Sprung selbst qualitativ ist. **Damit ist Pflanze auf dem Papier vollständig:** Richtung (6.1), Passiv (6.2), Bestandsaufnahme (6.3), Ranken-Umbau (6.4), die 15 nach Kategorien (6.6/6.7), Stufen (6.8). Offen: die Umsetzung und die Messliste. |
 | 2026-09-06 | **Übergabe für den Pflanze-Bau:** `docs/workstreams/skill-rework/HANDOFF-pflanze-build.md`. Owner will den Bau mit frischem Kontext. Enthält Stand (HEAD, Feuer/Blitz fertig, Pflanze nur auf dem Papier), die Owner-Regeln wörtlich (samt der neuen: erst Design, dann Startwert, gemessen nur auf Ansage), den Vertrag §6.1–§6.8 in einer Seite, die Abrissliste der alten Ökonomie mit Fundstellen (Wertachse, `plantDirect`, `plantFormMult`, Trimmen, `plantCommit`, Kolonisierung, `enabler`), die vier Formations-Haken (`segInfo.isOpen`, `isJoker`, `gap.run`/`gap.seg`, `minMembers`/`minLen`), fünf Etappen, die Messliste für später, die Fallen (Ratchets, ecke-Timeout, Formationen nur an Position 0, loc:export, Band erst nach der Messung neu zentrieren) und einen deutschen Startprompt. |
+| 2026-09-07 | **Pflanze gebaut (6.9, umgesetzt).** Neues Modul `src/game/factions/plant.js` mit dem Passiv (Wachstum je Karte: +1 je Sieg, +1 je Formation an der Siegposition; grün ab 30, blühend ab 75; eine blühende Siegkarte gibt +20 Basis-Score je grüner Karte in ihren Formationen), den 15 Skills auf vier Stufen (`PFLANZE_TIERS`) und den vier Legendären. Die vier Hebel (Spalier, Wildwuchs, Lücke, Überwucherung) und zwei Legendäre (Baumreihe, Mutterbaum) ändern die Erkennung in `formations.js`, das dafür ein Bündel `{ skillTiers, growth }` bekommt. Alte Ökonomie raus: Wertachse mit Auto-Sieg bei 11, Alter Anker, `plantDirect`, `plantFormMult`, Trimmen, Bekenntnis-Skalierung (`commitScale` — die Pflanze war ihr letzter Leser), Kolonisierung des Gegnerdecks, die sechs `enabler`; zwei Emblem-Plätze zurückgegeben, zehn umbenannt. Ein Score-Kanal `plantBase` statt drei; PlantBar, Karten-Ring, Kartendetail, Glossar und Passiv-Text auf die drei Zustände umgestellt. Neuer Wächtersatz `test/plant-rework.test.js` (36 Fälle, inklusive Gegenprobe: ohne Pflanzen-Skill rechnet die Formations-Engine unverändert). In EINEM Stück statt in Etappen, weil die Registry-Wächter mindestens 18 Skills je Fraktion verlangen. Gates grün (2321 Tests). **Nicht gemessen, nicht im Türen-Angebot** — beides wartet auf die Ansage des Owners. |

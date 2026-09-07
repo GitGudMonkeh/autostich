@@ -4,8 +4,7 @@ import { PANEL_BG, phaseCard, PhaseHairline, PHASE_ACCENTS, ActionButton } from 
 import { ARCHETYPE_ORDER, archetypeOf, isLegendarySkill, tierOf } from "../game/skills.js";
 import { FactionIcon, ArchIcon, GlossaryIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { SKILL_SLOT_LIMIT, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_MAX_CHARGE, ION_SCORE_PER_STACK, ION_CRIT_MULT_PER_STACK,
-         PLANT_GROWTH_SKILL_REF, PLANT_GREEN_THRESHOLD, WURZELSCHLAG_PER_GROWTH, PLANT_VALUE_CAP,
-         WURZELSCHLAG_LOSS_MIN_SKILLS, WURZELSCHLAG_LOSS_EVERY,
+         PLANT_GREEN_THRESHOLD, PLANT_BLOOM_THRESHOLD, PLANT_GROWTH_WIN, PLANT_GROWTH_PER_FORMATION, PLANT_BLOOM_SCORE_PER_GREEN,
          HEAT_MIN_MARGIN, HEAT_MARGIN_OFFSET, HEAT_PER_POINT, HEAT_LOSS, HEAT_MULT_PER_10, ION_VALUE_PER_BAR } from "../game/constants.js";
 import { DECLINE_MIN_SKILLS as G_DECLINE_MIN_SKILLS } from "../game/glacier.js"; // Eis-Neudesign: Ablehn-Gletscher-Schwelle für den Passiv-Text
 
@@ -123,9 +122,8 @@ export function SkillSelect({ offer = null, doors = null, onPick, onDecline, onR
       case "ice":
         return t("skill.passive.ice", { declineFrom: G_DECLINE_MIN_SKILLS });
       case "plant":
-        return t("skill.passive.plant", { ref: PLANT_GROWTH_SKILL_REF, green: PLANT_GREEN_THRESHOLD,
-          perValue: WURZELSCHLAG_PER_GROWTH, cap: PLANT_VALUE_CAP, minSkills: WURZELSCHLAG_LOSS_MIN_SKILLS,
-          everyLoss: WURZELSCHLAG_LOSS_EVERY });
+        return t("skill.passive.plant", { win: PLANT_GROWTH_WIN, perForm: PLANT_GROWTH_PER_FORMATION,
+          green: PLANT_GREEN_THRESHOLD, bloom: PLANT_BLOOM_THRESHOLD, score: PLANT_BLOOM_SCORE_PER_GREEN });
       default: return "";
     }
   };

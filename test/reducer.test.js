@@ -143,15 +143,8 @@ describe("Skill-Auswahl — PICK_SKILL / DECLINE_SKILL (Stufe A)", () => {
     expect(s.phase).toBe("play");
   });
 
-  it("#288 Trimmen: Ersetzen eines Wachstums-Skills erhöht trimCount; ein anderer Skill nicht", () => {
-    const six = ["SK_PLANT_09", "SK_PLANT_02", "SK_PLANT_05", "SK_PLANT_10", "SK_PLANT_12", "SK_PLANT_13"]; // SK_PLANT_05 = Aussaat (trimmbar)
-    const NEW = "SK_PLANT_14"; // Überwucherung — nicht gehalten, kein Enabler
-    const base = skillState({ skills: six, skillOffer: [NEW], activeArchetypes: ["plant"] });
-    // Wachstums-Skill (Aussaat) ersetzt → Trimmung
-    expect(reducer(base, { type: "PICK_SKILL", skillId: NEW, replaceId: "SK_PLANT_05", rng }).trimCount).toBe(1);
-    // Nicht-Wachstums-Skill (Wurzeltiefe) ersetzt → keine Trimmung
-    expect(reducer(base, { type: "PICK_SKILL", skillId: NEW, replaceId: "SK_PLANT_02", rng }).trimCount || 0).toBe(0);
-  });
+  // (#288 Trimmen: der Wächter ist mit der Mechanik gegangen — mit dem Türen-Angebot werden Skills nicht mehr
+  //  ersetzt, die Klausel hatte keinen Auslöser mehr, §6.1.)
 
   it("#234 PICK_SKILL kennt keine Konsumenten-Exklusivität mehr (Feuer: Brandmal gehalten, Schmelzpunkt dazu)", () => {
     // Brandmal (SK_FIRE_13) schon gehalten; Schmelzpunkt (SK_FIRE_12, der Überlauf-Wandler) im Angebot. (Flächenbrand

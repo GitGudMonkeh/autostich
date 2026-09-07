@@ -11,7 +11,6 @@ import { archFamily, formationName, archCatDef, anchorLabel } from "../i18n/labe
 import { t } from "../i18n/index.js";
 import { useEscape } from "./useEscape.js";
 // #218: Elementar-Zustände je Karte (wie FormationPhase) + globale Zusatz-Sektionen (Verteilung/Formationen/Architekt).
-import { plantRootScore, hasPfahlwurzel } from "../game/skills.js";
 import { DeckStrength, PerkList } from "./BuildSummary.jsx";
 import { zinsReadout } from "../game/perks.js"; // Zinseszins-Readout für die Perk-Liste (wie im Build-Panel)
 import { occupiedCells as archOccupied } from "../game/architect.js";
@@ -100,8 +99,6 @@ export function ChronikOverview({ state, onClose, options = {}, onOption }) {
             <CardDetail card={selCard} pos={selPos} posForm={selPos != null ? formations[selPos] : null} roles={state.roles} familyTiers={state.familyTiers}
               arch={selPos != null && architectCover ? architectCover[selPos] : null}
               plantReadout plantGrowth={selCard ? (state.growth?.[selCard.id] || 0) : 0}
-              plantRoots={selCard ? plantRootScore(state.skills || [], state.growth?.[selCard.id] || 0) : 0}
-              plantPfahl={hasPfahlwurzel(state.skills || [])}
               forgedValue={selCard ? (state.forged?.[selCard.id] || 0) : 0} />
             {/* #UI: geteilte Gebäude-Liste (ArchPanels) — identisch in Aufstellphase & Chronik. */}
             {hasArch && (

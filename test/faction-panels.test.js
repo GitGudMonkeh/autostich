@@ -32,10 +32,10 @@ function agg(target, keys, seeds = [1, 2, 3, 4]) {
 
 // Vier volle Läufe je Test: mit 50 Runden (§7.14) reicht das Vitest-Default von 5 s unter Last nicht mehr sicher.
 const RUN_TIMEOUT = 30_000;
-const YIELD = ["glacierYield", "lightYield", "plantRoot", "plantBloom", "plantHarvest", "fireBase", "fireHeat"]; // exp: fireHeat = Hitze-Multiplikator-Anteil (ehemals fireWhite)
+const YIELD = ["glacierYield", "lightYield", "plantBase", "fireBase", "fireHeat"]; // exp: fireHeat = Hitze-Multiplikator-Anteil (ehemals fireWhite) · Pflanze hat seit §6 EINEN Kanal (kein Direkt-Score, keine Ernte)
 const MOTOR = ["ionTotal", "growthTotal", "brandTotal"]; // exp: Asche entfällt
 const ALL = [...YIELD, ...MOTOR];
-const plantYield = (a) => a.plantRoot + a.plantBloom + a.plantHarvest;
+const plantYield = (a) => a.plantBase;
 
 describe("#270 Fraktions-Panel-Kennzahlen — Ertrag-Kanäle + Motor-Zähler", () => {
   it("initialState startet alle Kennzahlen bei 0", () => {
@@ -51,11 +51,10 @@ describe("#270 Fraktions-Panel-Kennzahlen — Ertrag-Kanäle + Motor-Zähler", (
     expect(a.growthTotal + a.brandTotal).toBe(0);
   }, RUN_TIMEOUT);
 
-  it("Pflanze-Lauf treibt Gewachsen + Wurzel-Score (mind. Wurzel-Kanal); keine Fremd-Fraktions-Kennzahl", () => {
+  it("Pflanze-Lauf treibt Gewachsen und den Basis-Score; keine Fremd-Fraktions-Kennzahl", () => {
     const a = agg("plant", ALL);
     expect(a.growthTotal).toBeGreaterThan(0);
-    expect(a.plantRoot).toBeGreaterThan(0);      // Wurzeltiefe ist der verlässliche Grund-Kanal
-    expect(plantYield(a)).toBeGreaterThan(0);
+    expect(plantYield(a)).toBeGreaterThan(0);    // Blüte + die Score-Skills — ein Kanal (§6.1: kein Direkt-Score)
     expect(a.lightYield + a.fireBase + a.fireHeat + a.glacierYield).toBe(0);
     expect(a.ionTotal + a.brandTotal).toBe(0);
   }, RUN_TIMEOUT);

@@ -157,7 +157,7 @@ export const SKILL_DOOR_SIZE           = 3;
 export const SKILL_DOOR_FACTIONS       = 2;
 export const SKILL_OFFER_ARCHETYPES    = ["fire", "lightning"];
 // Held skills are unlimited on exp (owner decision). The reducer and the screens treat a limit at or above this
-// value as "no limit"; SKILL_SLOTS below stays the reference count for the plant commitment scaler and legacy texts.
+// value as "no limit". (§6.1: the plant commitment scaler that used SKILL_SLOTS as its denominator is gone.)
 export const SKILL_SLOT_LIMIT          = envNum("SIM_SKILL_SLOT_LIMIT", 99);
 export const MAX_LEGENDARY_CHANCE_BONUS = 0.15; // Cap des additiven Bonus (P5/P6): max +15 pp
 
@@ -306,9 +306,8 @@ export const MAX_ARCHETYPES     = envNum("SIM_MAX_ARCHETYPES", 4);    // gleichz
 // ERKUNDUNG (Cross-Balance): Hebel 7 — Exponent auf die Commitment-Scaler (plant/fire/lightCommit = min(1, count/SKILL_SLOTS)^EXP).
 // 1 = linear (aktuell, neutral); >1 = konvex → Verdünnung kostet superlinear (naives Mischen ≤ Mono deutlicher). [ENV-Sweep-Haken]
 export const COMMIT_EXP        = envNum("SIM_COMMIT_EXP", 1);
-// ERKUNDUNG: Hebel 3c — Pflanze-Wert-Passive-Gate. 0 = Mono-Gate (aktuell, neutral: nur reine Pflanze); >0 = Schwellen-Knick:
-// Passive aktiv ab dieser Pflanzen-Skill-Zahl, UNABHÄNGIG von Fremd-Skills (belohnt Deep-Split statt Reinheit). [ENV-Sweep-Haken]
-export const PLANT_PASSIVE_MIN_SKILLS = envNum("SIM_PLANT_PASSIVE_MIN_SKILLS", 0);
+// (§6.1: das Pflanze-Passiv hat kein Skill-Tor mehr — es läuft, sobald ein Pflanzen-Skill liegt. Der alte Mono-Gate-
+//  Regler SIM_PLANT_PASSIVE_MIN_SKILLS ist mit der Wert-aus-Wachstum-Passive gestrichen.)
 // (vestigial entfernt: SKILL_EVERY_CYCLES — Skill-Runden kommen nicht mehr „jede 3.", sondern aus dem festen DECISION_SCHEDULE; siehe FIRST_SKILL_CYCLE)
 /* ============================================================
    BLITZ — exp skill rework (docs/skill-rework.md §3). Hier stehen NUR die Passiv-Größen und die Sim-Regler; die Zahlen
@@ -370,86 +369,26 @@ export const SONNENZORN_HEAT_MULT       = envNum("SIM_SONNENZORN_HEAT_MULT", 2);
 // läuft jetzt vollständig über glacier.js (Masse/Rollen). Keine Alt-Eis-Konstanten mehr nötig.
 
 /* ============================================================
-   PFLANZE-FRAKTION v0 — „Der Garten, der sich selbst überwuchert." NEU (4. Fraktion). Wachstum (nur steigend) →
-   Reife (grün — Farbe, nicht Kraft) → Farbblock → Score. Wert-Deckel 11 (kein Runaway). Werte v0. [v0 · tunebar]
+   PFLANZE — exp skill rework (docs/skill-rework.md §6). Hier stehen NUR die Passiv-Größen; die Zahlen der Skills liegen
+   in ihren Stufentabellen (skills.js SKILL_DEFS[…].tiers, gelesen von factions/plant.js).
+
+   Passiv „Wachstum" (§6.2): ein Sieg gibt der Siegkarte PLANT_GROWTH_WIN Wachstum, dazu PLANT_GROWTH_PER_FORMATION je
+   AKTIVER Formation an ihrer Position — die Aufstellung ist damit die Wachstumsentscheidung. Niederlagen geben nichts,
+   Wachstum fällt nie. Ab PLANT_GREEN_THRESHOLD ist die Karte grün (eine Farbe „G" für alles, was Farbe liest), ab
+   PLANT_BLOOM_THRESHOLD blühend: ein Sieg mit ihr gibt PLANT_BLOOM_SCORE_PER_GREEN Basis-Score je grüner Karte in
+   ihren Formationen — die eine Score-Quelle der Fraktion, das Gegenstück zum Stapel-Score des Blitzes.
+   Startwerte, NICHT gemessen (Owner: erst Design, dann Startwert, dann messen — auf Ansage). [tunebar]
    ============================================================ */
-export const PLANT_GREEN_THRESHOLD = envNum("SIM_PLANT_GREEN_THRESHOLD", 8);   // Wachstum-Schwelle für Reife (grün) [Sim-tunebar: höher = Feld ergrünt langsamer → Winrate sättigt weniger] // v0 — tunebar
-// Skill-Gate fürs Win-Wachstum (v0.3, Anti-Splash): pro Sieg wächst eine Karte um min(1, PflanzenSkills / REF). Bei REF=3
-// volle +1/Sieg ab 3 Pflanzen-Skills; 1 Splash-Skill = 1/3 Speed. Hohes Wachstum ist so an Pflanzen-Deck-COMMITMENT
-// (Skill-Anzahl) gegatet, statt 1 Skill zur Pflicht für alle Decks zu machen. [Sim-tunebar]
-export const PLANT_GROWTH_SKILL_REF = envNum("SIM_PLANT_GROWTH_SKILL_REF", 3);
-export const PLANT_VALUE_CAP       = envNum("SIM_PLANT_VALUE_CAP", 11);  // Wert-Deckel grüner Karten (Auto-Sieg; Tiefe zahlt dann in Score) [Sim-tunebar: 10 = kein Auto-Sieg mehr] // v0
-export const PLANT_ANCHOR_VALUE    = 11;  // Alter Anker: Aktivierung startet 1 Karte reif (grün, Wert 11)      // v0
-export const PLANT_GREEN_FARBBLOCK_CAP = 3;// Grün-Farbblock-Cap: der eskalierende Farbblock-Faktor grüner Karten wird bei dieser Ordinalzahl gedeckelt (v0.3: ganzes Feld grün → 40er-Block ×8+ war der Runaway) // tunebar
-// Pflanze-Fraktions-Passive „Wurzelschlag" (v0.5: vom Skill zur MONO-gegateten Archetyp-Passive — nur aktiv, solange
-// ausschließlich Pflanzen-Skills gehalten werden). Wert wird aus Wachstum ABGELEITET (nicht verbraucht): +1 je N-Schwelle.
-export const WURZELSCHLAG_PER_GROWTH = envNum("SIM_WURZELSCHLAG_PER_GROWTH", 4); // Passive: +1 Dauerwert je N abgeleitetem Wachstum (grüne Karte, bis Deckel) [Sim-tunebar: höher = Wert wächst langsamer → Auto-Sieg später]
-export const WURZELSCHLAG_LOSS_EVERY = envNum("SIM_WURZELSCHLAG_LOSS_EVERY", 2); // Passive: je N Niederlagen einer Karte wächst sie trotzdem +1 Zuwachs (Zähler je card.id) [Sim-tunebar: höher = seltener Trostwachstum]
-export const WURZELSCHLAG_LOSS_MIN_SKILLS = envNum("SIM_WURZELSCHLAG_LOSS_MIN_SKILLS", 4); // Niederlage-Klausel erst ab N gehaltenen Pflanzen-Skills [Sim-tunebar]
-// Linie 4 — „Kernholz" (Mono-Grün-Payoff): grüner Sieg → +Score je Kartenwert-Punkt ÜBER dem Startwert (baseRank).
-// Schließt den Loop Wachstum→Wert→Score (die Passive baut Wert, Kernholz erntet ihn). [Sim-tunebar]
-export const KERNHOLZ_SCORE_PER_VALUE = envNum("SIM_KERNHOLZ_SCORE_PER_VALUE", 15);
-export const WURZELTIEFE_SCORE     = envNum("SIM_WURZELTIEFE_SCORE", 15);  // Wurzeltiefe: Flat-Score je Sieg einer grünen Karte (Wurzeln-Score) [Pflanze-Buff: 12→15]
-// Wurzeltiefe-Feldtiefe (Buff): Bonus je grünem Sieg, der mit dem GESAMTWACHSTUM des Feldes skaliert — aber mit
-// √-Kennlinie (abnehmender Ertrag) und Deckel, damit tiefe Wälder nicht durchdrehen (Anti-Runaway). Bonus = K·√(ΣWachstum), gedeckelt.
-export const WURZELTIEFE_FIELD_K   = envNum("SIM_WURZELTIEFE_FIELD_K", 1.05);  // Skalar auf √(Gesamtwachstum) [gespreizt: Deckel erst am Top-Peak ~Σ13k statt früh]
-export const WURZELTIEFE_FIELD_CAP = envNum("SIM_WURZELTIEFE_FIELD_CAP", 120); // Deckel des Feldtiefe-Terms je Sieg
-export const PFAHLWURZEL_MULT      = 2;   // Pfahlwurzel: Wurzeln-Score ×2 bei Formations-Sieg                  // v0
-export const JAHRESRINGE_PER_GROWTH = 10; // Jahresringe: je 10 Wachstum der Karte +Wurzeln-Score              // v0
-export const JAHRESRINGE_SCORE     = envNum("SIM_JAHRESRINGE_SCORE", 35);  // … so viel je 10er-Stufe [Pflanze-Buff: 30→35]
-// #Ceiling-Buff (Pflanze): der strukturelle Grund fürs niedrige Ceiling ist, dass die generischen Payoffs LINEAR/flach
-// sind (anders als Eis' dreieckiger Schicht-Score). Beide Achsen bekommen daher einen SUPERLINEAREN (dreieckigen) High-
-// End-Anteil — additiv oben drauf, nur am oberen Rand → reines Ceiling, Floor unberührt, beide Skills bleiben Picks.
-// Wurzel/TIEFE: dreieckig in der Wachstums-Tiefe der Siegkarte (Wachstum über dem Wert-Deckel). Nur mit Wurzeltiefe.
-export const PLANT_ROOT_DEEP_K     = envNum("SIM_PLANT_ROOT_DEEP_K", 5);   // Score je Dreiecks-Einheit m(m+1)/2 der Siegkarten-Tiefe [Sim-tunebar]
-export const PLANT_ROOT_DEEP_CAP   = envNum("SIM_PLANT_ROOT_DEEP_CAP", 25); // gedeckelte gezählte Tiefe (Plateau, kein Runaway)
-// Blüte/BREITE: dreieckig im vollen grünen Feld (greenCount). Nur mit Blüte UND wenn das Feld überwuchert ist (Gating wie Überwucherung).
-export const PLANT_BLOOM_FIELD_K   = envNum("SIM_PLANT_BLOOM_FIELD_K", 5);   // Score je Dreiecks-Einheit m(m+1)/2 der Feldgröße [Sim-tunebar]
-export const PLANT_BLOOM_FIELD_CAP = envNum("SIM_PLANT_BLOOM_FIELD_CAP", 25); // gedeckelte gezählte Feldgröße (Plateau)
-// #288 „Trimmen": der Grow→Ernte-Pivot. Wird ein WACHSTUMS-stützender Skill (Aussaat/Flugsamen/Setzlingsbeet/Zäher Halm)
-// ERSETZT, zählt das global als Trimmung → dauerhafter Multiplikator auf Wurzel- & Blüten-Score, je mehr Trimmungen desto
-// höher (gedeckelt). Wachstums-Skills sterben so nicht, sie veredeln die Payoff-Phase. [Sim-tunebar]
-export const TRIM_STEP = envNum("SIM_TRIM_STEP", 0.20); // +Anteil Wurzel-/Blüten-Score je Trimmung [Pflanze-Tune: zurück auf 20 %/Trimmung (25→20) im v0.5-Rework]
-export const TRIM_CAP  = envNum("SIM_TRIM_CAP", 1.5);   // Deckel des Trimm-Multiplikator-Bonus [Pflanze-Buff: 1,0→1,5 = max +150 % → ×2,5]
-// Linie 2 — Aussaat (Breite: Wachstum verbreiten)
-export const AUSSAAT_GROWTH        = 1;   // Aussaat: +Wachstum je Nachbar bei Sieg einer grünen Karte          // v0
-export const SETZLINGSBEET_GROWTH  = 3;   // Setzlingsbeet: niedrigste Karte je Segment startet +3 Wachstum     // v0
-export const ZAEHER_HALM_GROWTH    = 1;   // Zäher Halm: graue Karten wachsen +1 auch bei Niederlage            // v0
-// Linie 3 — Ranken/Blüte (Grün verbreiten)
-export const BLUETE_SCORE          = 15;  // Blüte: +Score je grüner Karte im Segment (wenn Nachbarn grün)      // v0 — tunebar
-export const BLUETEZEIT_MULT       = 2;   // Blütezeit: Blüte-Score ×2 bei Formations-Sieg                      // v0
-// Linie 4 — Überwucherung (Mono-Grün-Payoff)
-export const PHOTOSYNTHESE_MULT    = 1.08;// Photosynthese: grüne Karte in Formation → ×1,08 Score              // v0 — tunebar
-export const BLAETTERDACH_MIN      = 4;   // Blätterdach: ab 4er-Grün-Farbblock …                               // v0
-export const BLAETTERDACH_SCORE    = envNum("SIM_BLAETTERDACH_SCORE", 8);  // … +Score je Karte im Block [Pflanze-Buff: 4→8]
-export const BLAETTERDACH_CARD_CAP = 10;  // Blätterdach: max so viele Karten im Block zählen (Deckel gegen Riesenblock) // v0
-export const UEBERWUCHERUNG_FIELD  = 0.66;// Überwucherung: ab 66 % Feld grün …                                 // v0 — tunebar
-export const UEBERWUCHERUNG_FACTOR = envNum("SIM_UEBERWUCHERUNG_FACTOR", 0.20);// … alle Farbblöcke +0,20 Faktor [Sim-tunebar: der feldweite multiplikative Compounder] // v0
-// Linie 5 — Ausläufer (Gegnerdeck: kolonisieren & ernten)
-export const AUSLAEUFER_HARVEST    = 2;   // Ausläufer: Ernte einer kolonisierten Gegnerkarte → +Wachstum       // v0 — tunebar
-export const ERNTEDANK_SCORE       = 70; // Erntedank: Ernte mit reifer Karte → +großer Flat-Score             // v0 — tunebar
-// Legendäre (Verstärker, meist mit Nachteil)
-export const WELTENBAUM_PER_GREEN  = envNum("SIM_WELTENBAUM_PER_GREEN", 5);  // Weltenbaum (L): +1 Wachstum je N grüne Karten im Feld (Durchlauf-Ende) [Legendär-Buff v1: 10→5]
-export const EWIGER_FRUEHLING_FARBBLOCK = 2; // Ewiger Frühling: Farbblock zählt Grün ab 2 Karten               // v0
-export const EWIGER_FRUEHLING_FIELD = envNum("SIM_EWIGER_FRUEHLING_FIELD", 0.25);  // Ewiger Frühling (L): Überwucherung ab diesem Feld-Anteil [Legendär-Buff v1: 0,33→0,25]
-// Pflanze-Legendär-Reshape (2026-07-30): Pflanze hat DREI flutende Währungen (plant-economy.mjs: Grün→100% ab Cy28,
-// Wachstum weit über den Wert-Deckel = „alter Wald" Σ-Überlauf 1441-4061 verschwendet, Kolonie→40) → alle 4 „mach-mehr"-
-// Legendären tot (0,86-1,00×). Sie lesen jetzt den verschwendeten BESTAND und zahlen je GRÜNEM Sieg DIREKT (post-stack,
-// floor-clean/ceiling-safe, hart gedeckelt = Plateau, bekenntnis-skaliert plantSkillCount/SKILL_SLOTS). Nur Legendär-Halter
-// → generisches Pflanze (die eben bestätigte Balance) unberührt. Analog Eis-Überlauf-Dividende (Permafrost/Gletscher/…).
-export const WELTENBAUM_DIRECT       = envNum("SIM_WELTENBAUM_DIRECT", 6.5);  // Weltenbaum (BREITE): DIREKT je grünem Sieg × Σ Überlauf-Wachstum (der ganze alte Wald) [Legendär-Angleich: 2,6→6,5]
-export const WELTENBAUM_OVERFLOW_CAP = envNum("SIM_WELTENBAUM_OVERFLOW_CAP", 600); // … gedeckelte Waldgröße
-export const MUTTERBAUM_DIRECT       = envNum("SIM_MUTTERBAUM_DIRECT", 68);   // Mutterbaum (TIEFE): DIREKT je grünem Sieg × Überlauf-Wachstum des TIEFSTEN Baums (Konzentration) [sim-gelockt ins Band: 55→68 nach Floor-Buff]
-export const MUTTERBAUM_OVERFLOW_CAP = envNum("SIM_MUTTERBAUM_OVERFLOW_CAP", 60); // … gedeckelte Tiefe des einen Mutterbaums
-// Baumreihe (Dornenkönig umgewidmet — 4-Lane-Redesign): voll ausgewachsene grüne Karten (Wert PLANT_VALUE_CAP) bilden eine
-// POSITIONSFREIE Wiederholung — je 11er auf dem Brett ein Faktor auf die Stiche DIESER Karten (Position egal → Doppelnutzung
-// mit lokalen Formationen). Gedeckelt, weil positionsfrei + doppelt wirkend stark ist (anders als die ungedeckelte Normal-Wiederholung).
-export const BAUMREIHE_BASE = envNum("SIM_BAUMREIHE_BASE", 1.3);  // Faktor ab 2 voll ausgewachsenen grünen Karten [sim-gelockt ins +45 %-Band]
-export const BAUMREIHE_STEP = envNum("SIM_BAUMREIHE_STEP", 0.15); // + je weiterer voll ausgewachsener grüner Karte
-export const BAUMREIHE_CAP  = envNum("SIM_BAUMREIHE_CAP", 2.0);   // Deckel des Baumreihen-Faktors
-export const EWIGER_FRUEHLING_DIRECT = envNum("SIM_EWIGER_FRUEHLING_DIRECT", 80); // Ewiger Frühling (GRÜN-FELD): DIREKT je grünem Sieg × #grüne Karten (das ewige Feld) [Rework sim-gelockt: 150→80 wegen Full-Green-Double]
-export const EWIGER_FRUEHLING_FIELD_CAP = envNum("SIM_EWIGER_FRUEHLING_FIELD_CAP", 40); // … gedeckelte Feldgröße
-export const EWIGER_FRUEHLING_FULLGREEN_MULT = envNum("SIM_EWIGER_FRUEHLING_FULLGREEN_MULT", 1.5); // Rework: bei VOLL grünem Feld zählt der Feld-Bonus ×1,5 (der Schwellen-Rider war bei grünem Feld tot) [sim-gelockt]
+export const PLANT_GREEN_THRESHOLD = envNum("SIM_PLANT_GREEN_THRESHOLD", 30); // Wachstum bis grün (§6.2: eine Position gewinnt über einen Lauf grob 30-mal — Mitläufer stehen am Laufende genau hier)
+export const PLANT_BLOOM_THRESHOLD = envNum("SIM_PLANT_BLOOM_THRESHOLD", 75); // … bis blühend (nur mit Formationen erreichbar)
+export const PLANT_GROWTH_WIN = envNum("SIM_PLANT_GROWTH_WIN", 1);            // Wachstum je Sieg
+export const PLANT_GROWTH_PER_FORMATION = envNum("SIM_PLANT_GROWTH_PER_FORMATION", 1); // … zusätzlich je aktiver Formation an der Siegposition (Owner-Idee: der eigentliche Regler)
+export const PLANT_BLOOM_SCORE_PER_GREEN = envNum("SIM_PLANT_BLOOM_SCORE_PER_GREEN", 20); // Basis-Score je grüner Karte in den Formationen der blühenden Siegkarte
+// Grün-Farbblock-Deckel (v0.3): der eskalierende Farbblock-Faktor grüner Karten wird bei dieser Ordinalzahl gedeckelt.
+// §6.2 lässt ihn bewusst stehen, bis die Messung sagt, ob er hoch, weg oder umgebaut wird (Owner: warten).
+export const PLANT_GREEN_FARBBLOCK_CAP = 3;
+// Weltenbaum (L, §6.5): am Durchlaufende wächst jede grüne Karte +1 je so viele grüne Karten im Feld.
+export const WELTENBAUM_PER_GREEN = envNum("SIM_WELTENBAUM_PER_GREEN", 5);
 
 // Geist (Rekord-Vergleich): Score-Stützstelle alle N Stiche [TUNING]
 export const GHOST_STEP = 13;

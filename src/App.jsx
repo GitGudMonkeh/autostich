@@ -615,7 +615,7 @@ function AutostichGame() {
       // Blitz/Feuer + Serie) steht ab jetzt auch in der Statistik (Bestes Build). Alt-Läufe ohne die Felder degradieren
       // sauber aufs grobe Modell (factionShares klemmt fehlende Kanäle auf 0 → „Sonstige").
       glacierYield: state.glacierYield || 0, streakScore: state.streakScore || 0, lightYield: state.lightYield || 0,
-      plantRoot: state.plantRoot || 0, plantBloom: state.plantBloom || 0, plantHarvest: state.plantHarvest || 0,
+      plantBase: state.plantBase || 0,
       fireBase: state.fireBase || 0, fireWhite: state.fireWhite || 0,
       // #205: Lauf-Seed lokal mitspeichern (roh + teilbarer Code) → Nachspielen/Kopieren im Challenge-Reiter. Alt-Läufe
       // ohne Seed degradieren sauber (kein Challenge-Knopf). Global (gEntry) folgt mit dem Board-Umzug (Schicht B, #197).
@@ -1201,7 +1201,7 @@ function AutostichGame() {
               <Battlefield lastTrick={state.lastTrick} remaining={cycleLenFor(state.shop) - state.pos} deckLen={cycleLenFor(state.shop)} flipMs={flipMs} pe={bfPe}
                 heat={state.heat} lightning={state.lightning} score={state.score || 0}
                 forged={state.forged || {}} brandActive={state.brandActive || {}}
-                growth={state.growth || {}} colonized={state.colonized || {}}
+                growth={state.growth || {}}
                 deckFront={deckSkin.front} deckBack={deckSkin.back} battlefield={bfSkin} bfId={activeBfId}
                 deckA1={deckFx.deckA1} deckA2={deckFx.deckA2} bgFx={deckFx.bgFx} bgFinisher={deckFx.bgFinisher} auroraDeck={deckFx.auroraDeck} neonsurfDeck={deckFx.neonsurfDeck}
                 starfieldDeck={deckFx.starfieldDeck} cubematrixDeck={deckFx.cubematrixDeck} cubematrixSun={deckFx.cubematrixSun} cubematrixWire={deckFx.cubematrixWire} finisher={deckFx.finisher} scorchDeck={deckFx.scorchDeck} blackholeDeck={deckFx.blackholeDeck} klingeDeck={deckFx.klingeDeck} hologridDeck={deckFx.hologridDeck} cardAnims={deckFx.cardAnims}
@@ -1226,11 +1226,9 @@ function AutostichGame() {
               <PlantBar active={(state.activeArchetypes || []).includes("plant")}
                 deck={state.deck || []}
                 growth={state.growth || {}}
-                colonized={state.colonized || {}}
                 skills={state.skills || []}
                 growthTotal={state.growthTotal || 0}
-                rootScore={state.plantRoot || 0} bloomScore={state.plantBloom || 0} harvestScore={state.plantHarvest || 0}
-                trimCount={state.trimCount || 0}
+                baseScore={state.plantBase || 0}
                 options={options} onOption={changeOptions} manyActive={wide ? false : manyFac} showSkills={wide} />
               <GlacierBar active={(state.activeArchetypes || []).includes("ice")}
                 glacierLocked={state.glacierLocked || []} glacierMass={state.glacierMass || []} firnStack={state.firnStack || []}

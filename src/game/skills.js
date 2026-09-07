@@ -12,13 +12,10 @@ import { ANFRIEREN_WIN as G_ANFRIEREN_WIN, ANFRIEREN_FORM as G_ANFRIEREN_FORM, S
 // Deutsche Zahlformatierung (1.08 → „1,08") — driftgefährdete Beschreibungszahlen aus den Konstanten interpolieren.
 const de = (x) => String(x).replace(".", ",");
 const pct = (x) => Math.round(x * 100);                                 // Anteil → Prozent (0,25 → 25)
-const grp = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ".");     // Tausendertrenner (2000 → „2.000")
+const de1 = (n) => ({ 1: "eine", 2: "zwei", 3: "drei" })[n] || String(n); // kleine Anzahl als Wort (Register: „zwei fremde Karten")
 
-// Die Trimm-Klausel steht wortgleich an SECHS Pflanze-Skills — hier EINMAL gebaut (§4 „Einen Text an EINER
-// Stelle bauen"). `enSkills.js` hält seit jeher dasselbe als `PRUNE`; die deutsche Seite zog nach.
-// Sie hängt an einem eigenen `\n`: „Trimmen" ist ein Glossarbegriff und wird von <GlossaryText> ohnehin
-// fett gesetzt — auf eigener Zeile sieht man das auch.
-const TRIMMEN = `Trimmen: beim Ersetzen des Skills dauerhaft +${pct(C.TRIM_STEP)} % Wurzel-/Blüten-Score (bis +${pct(C.TRIM_CAP)} %).`;
+// (§6.1: „Trimmen" ist mit dem Türen-Angebot gestorben — Skills werden nicht mehr ersetzt, die Klausel an sechs
+//  Pflanze-Skills hatte keinen Auslöser mehr. Die Konstanten TRIM_STEP/TRIM_CAP sind mit ihr gegangen.)
 
 /* ============================================================
    SKILL-REGISTRY — seltene, regelverändernde Build-Motoren NEBEN den Perks. Reine Logik — kein Math.random/Date.
@@ -74,6 +71,34 @@ const FEUER = {
   glutstahl:     [{ perPoint: 8 }, { perPoint: 12 }, { perPoint: 16 }, { perPoint: 20, forgedDouble: true }],
 };
 export const FEUER_TIERS = FEUER;
+/* Stufentabellen der 15 Pflanze-Skills (§6.8) — dieselbe Form. Bezugsgrößen: Wachstum +1 je Sieg und +1 je Formation
+   an der Siegposition, grün ab PLANT_GREEN_THRESHOLD, blühend ab PLANT_BLOOM_THRESHOLD; eine Position gewinnt über
+   einen Lauf grob 30-mal. Die Sätze der Score-Skills sind nach der LÄNGE ihres Formationstyps gestaffelt: ein grüner
+   Farbblock kann im Zielbild das ganze Segment füllen, Treppe und Wiederholung bleiben kurz, der Wechsel ist am
+   seltensten. Startwerte, NICHT gemessen (Owner: erst Design, dann Startwert, dann messen — auf Ansage).
+   Das Modul factions/plant.js liest sie über `plantParam`; die vier Hebel liest zusätzlich formations.js. */
+const PFLANZE = {
+  // Wachstum
+  aussaat:       [{ growth: 1 }, { growth: 2 }, { growth: 3 }, { growth: 4, second: 1 }],
+  ranken:        [{ growth: 5 }, { growth: 8 }, { growth: 12 }, { growth: 16, chain: true }], // Episch: der einzige Dominoeffekt der Fraktion
+  setzlingsbeet: [{ growth: 8, cards: 1 }, { growth: 12, cards: 1 }, { growth: 16, cards: 1 }, { growth: 16, cards: 2 }],
+  lichtung:      [{ extra: 1 }, { extra: 2 }, { extra: 3 }, { extra: 3, perFormation: true }],
+  halm:          [{ growth: 1 }, { growth: 2 }, { growth: 3 }, { growth: 3, greenToo: 1 }],
+  // Hebel — sie ändern, was als Formation erkannt wird (formations.js), und addieren keinen Score
+  spalier:       [{ borders: 1 }, { borders: 2 }, { borders: 3 }, { borders: 7 }],
+  wildwuchs:     [{ jokers: 1 }, { jokers: 2 }, { jokers: 3 }, { jokers: Infinity }],
+  luecke:        [{ gaps: 1 }, { gaps: 2 }, { gaps: 3 }, { gaps: 3, growth: 2 }],
+  ueberwucherung:[{ field: 0.8, less: 1 }, { field: 0.65, less: 1 }, { field: 0.5, less: 1 }, { field: 0.35, less: 2 }],
+  // Score aus grünen Formationen — je Formationstyp einer, dazu die Tiefe der einzelnen Karte
+  blaetterdach:  [{ score: 10 }, { score: 15 }, { score: 20 }, { score: 25, bloomDouble: true }],
+  rankgeruest:   [{ score: 30 }, { score: 45 }, { score: 60 }, { score: 80, bloomDouble: true }],
+  hecke:         [{ score: 30 }, { score: 45 }, { score: 60 }, { score: 80, bloomDouble: true }],
+  windung:       [{ score: 35 }, { score: 50 }, { score: 70 }, { score: 90, bloomDouble: true }],
+  jahresringe:   [{ per: 10, score: 20 }, { per: 10, score: 30 }, { per: 10, score: 40 }, { per: 10, score: 50, overDouble: true }],
+  // Kombination
+  bluetenlese:   [{ score: 40, growth: 1 }, { score: 60, growth: 1 }, { score: 80, growth: 1 }, { score: 100, growth: 2 }],
+};
+export const PFLANZE_TIERS = PFLANZE;
 
 export const SKILL_DEFS = {
   // ---- Blitz (exp skill rework, §3): Passiv +5 % Crit je Skill, Leiste 10 Crits → nächste Karte ionisieren.
@@ -224,68 +249,60 @@ export const SKILL_DEFS = {
   SK_ICE_L04: { id: "SK_ICE_L04", name: "Erstarrung", archetype: "ice", legendary: true, keywords: ["glacier"], role: "G_L_ERSTARRUNG",
     desc: `Jede vom Bruch getroffene Gegnerkarte verliert ihren Stich, und der Bruch greift über die vier Nachbarn hinaus ins Gegnerfeld. Jeder Bruch zählt ×${de(1 + G_ERSTARRUNG_FRAC)} Score.` },
 
-  // ---- Pflanze-Fraktion (v0) — „Der Garten, der sich selbst überwuchert." NEU (4. Fraktion). Wachstum (nur steigend)
-  //      → Reife (grün) → Farbblock → Score. Grün = Farbe, nicht Kraft; Wert nur über Wurzeln (Deckel 11).
-  //      Grundmechanik: Alter Anker (Aktivierung startet 1 reife Karte). Flags in engine/formations/reducer gelesen. ----
-  // Linie 1 — Wurzeln (Tiefe: Wert & Wurzeln-Score) — die Wert-aus-Wachstum-Mechanik ist jetzt die MONO-Fraktions-Passive (s. u.), kein Skill mehr.
-  SK_PLANT_02: { id: "SK_PLANT_02", name: "Wurzeltiefe", archetype: "plant", keywords: ["growth", "score"],
-    desc: `Jeder Sieg einer grünen Karte gibt +${C.WURZELTIEFE_SCORE} Wurzel-Score, dazu einen Bonus, der mit dem Gesamtwachstum des Feldes steigt (max. +${C.WURZELTIEFE_FIELD_CAP} bei ~${grp(Math.round((C.WURZELTIEFE_FIELD_CAP / C.WURZELTIEFE_FIELD_K) ** 2 / 1000) * 1000)} Wachstum).`, wurzeltiefe: true },
-  SK_PLANT_03: { id: "SK_PLANT_03", name: "Pfahlwurzel", archetype: "plant", keywords: ["growth", "score", "formation"],
-    desc: `Verstärker: Die Wurzel-Basis (${C.WURZELTIEFE_SCORE}) ×${C.PFAHLWURZEL_MULT}, wenn die grüne Karte in einer Formation gewinnt.`, enabler: "SK_PLANT_02", pfahlwurzel: true },
-  SK_PLANT_04: { id: "SK_PLANT_04", name: "Jahresringe", archetype: "plant", keywords: ["growth", "score"],
-    desc: `Verstärker: Je volle ${C.JAHRESRINGE_PER_GROWTH} eigenes Wachstum gibt eine grüne Karte bei ihrem Sieg +${C.JAHRESRINGE_SCORE} Wurzel-Score extra.`, enabler: "SK_PLANT_02", jahresringe: true },
-  // Linie 2 — Aussaat (Breite: Wachstum verbreiten)
-  SK_PLANT_05: { id: "SK_PLANT_05", name: "Aussaat", archetype: "plant", keywords: ["growth"],
-    desc: `Gewinnt eine grüne Karte, sät sie beide Nachbarn: +${C.AUSSAAT_GROWTH} Wachstum je Seite.\n${TRIMMEN}`, aussaat: true, trimGrowth: true },
-  SK_PLANT_06: { id: "SK_PLANT_06", name: "Flugsamen", archetype: "plant", keywords: ["growth"],
-    desc: `Verstärker: Aussaat überspringt schon grüne Karten und sät die nächste noch-graue dahinter.\n${TRIMMEN}`, enabler: "SK_PLANT_05", flugsamen: true, trimGrowth: true },
-  SK_PLANT_07: { id: "SK_PLANT_07", name: "Setzlingsbeet", archetype: "plant", keywords: ["growth"],
-    desc: `Die niedrigste Karte je Segment startet den Lauf mit +${C.SETZLINGSBEET_GROWTH} Wachstum Vorsprung.\n${TRIMMEN}`, setzlingsbeet: true, trimGrowth: true },
-  SK_PLANT_08: { id: "SK_PLANT_08", name: "Zäher Halm", archetype: "plant", keywords: ["growth"],
-    desc: `Unreife (graue) Karten wachsen auch bei Niederlage +1, bis sie grün sind.\n${TRIMMEN}`, zaeherHalm: true, trimGrowth: true },
-  // Linie 3 — Ranken/Blüte (Grün verbreiten)
-  SK_PLANT_09: { id: "SK_PLANT_09", name: "Ranken", archetype: "plant", keywords: ["green"],
-    desc: "Gewinnt eine grüne Karte, färbt sie einen noch-grauen Nachbarn sofort grün.", ranken: true },
-  SK_PLANT_10: { id: "SK_PLANT_10", name: "Blüte", archetype: "plant", keywords: ["green", "score"],
-    desc: `Gewinnt eine grüne Karte, deren Nachbarn schon grün sind, blüht sie: +${C.BLUETE_SCORE} Blüte-Score je grüner Karte im Segment.`, bluete: true },
-  SK_PLANT_11: { id: "SK_PLANT_11", name: "Blütezeit", archetype: "plant", keywords: ["green", "score", "formation"],
-    desc: `Verstärker: Blüte-Score ×${C.BLUETEZEIT_MULT}, wenn die Karte in einer Formation gewinnt.`, enabler: "SK_PLANT_10", bluetezeit: true },
-  // Linie 4 — Überwucherung (Mono-Grün-Payoff)
-  SK_PLANT_12: { id: "SK_PLANT_12", name: "Photosynthese", archetype: "plant", keywords: ["green", "formation"],
-    desc: `Grüne Karten in einer Formation geben zusätzlich ×${de(C.PHOTOSYNTHESE_MULT)} Score.`, photosynthese: true },
-  SK_PLANT_13: { id: "SK_PLANT_13", name: "Blätterdach", archetype: "plant", keywords: ["green", "formation", "score"],
-    desc: `In einem grünen Farbblock ab ${C.BLAETTERDACH_MIN} Karten gibt jede grüne Karte bei Sieg +${C.BLAETTERDACH_SCORE} Score je Karte im Block (bis ${C.BLAETTERDACH_CARD_CAP}).`, blaetterdach: true },
-  SK_PLANT_14: { id: "SK_PLANT_14", name: "Überwucherung", archetype: "plant", keywords: ["green", "formation", "overgrowth"],
-    desc: `Ist das Feld ≥${pct(C.UEBERWUCHERUNG_FIELD)} % grün, geben alle Farbblöcke +${de(C.UEBERWUCHERUNG_FACTOR)} Faktor und Blüte zählt doppelt.`, ueberwucherung: true },
-  SK_PLANT_18: { id: "SK_PLANT_18", name: "Kernholz", archetype: "plant", keywords: ["value", "score"],
-    desc: `Jeder Sieg einer grünen Karte gibt +${C.KERNHOLZ_SCORE_PER_VALUE} Score je Kartenwert-Punkt über ihrem Startwert (max. +${(C.PLANT_VALUE_CAP - 1) * C.KERNHOLZ_SCORE_PER_VALUE} von Wert 1 auf ${C.PLANT_VALUE_CAP}). Karten gewinnen Wert nur, solange du nur Pflanzen-Skills hältst.`, kernholz: true },
-  // Linie 5 — Ausläufer (Gegnerdeck: kolonisieren & ernten)
-  SK_PLANT_15: { id: "SK_PLANT_15", name: "Ausläufer", archetype: "plant", keywords: ["green", "colonize"],
-    desc: `Gewinnt eine grüne Karte, kolonisiert sie die niedrigste Gegnerkarte. Besiegst du eine kolonisierte Karte, erntest du +${C.AUSLAEUFER_HARVEST} Wachstum.\n${TRIMMEN}`, auslaeufer: true, trimGrowth: true },
-  SK_PLANT_16: { id: "SK_PLANT_16", name: "Rhizom", archetype: "plant", keywords: ["colonize"],
-    desc: `Verstärker: Beim Ernten wird ein ebenfalls kolonisierter Gegner-Nachbar mitgeerntet: +${C.AUSLAEUFER_HARVEST} Wachstum extra.\n${TRIMMEN}`, enabler: "SK_PLANT_15", rhizom: true, trimGrowth: true },
-  SK_PLANT_17: { id: "SK_PLANT_17", name: "Erntedank", archetype: "plant", keywords: ["colonize", "score"],
-    desc: `Verstärker: Erntest du mit einer reifen Karte, gibt es zusätzlich +${C.ERNTEDANK_SCORE} Score.`, enabler: "SK_PLANT_15", erntedank: true },
-  // Legendäre (Reshape 2026-07-30: lesen die verschwendeten Fluten — Überlauf-Wachstum/Grün-Feld/Kolonie — und zahlen je grünem Sieg DIREKT)
-  SK_PLANT_L01: { id: "SK_PLANT_L01", name: "Weltenbaum", archetype: "plant", legendary: true, keywords: ["growth"],
-    desc: `Am Ende jedes Durchlaufs wächst der ganze Wald: +1 Wachstum je ${C.WELTENBAUM_PER_GREEN} grüne Karten im Feld. Jeder grüne Sieg gibt +${de(C.WELTENBAUM_DIRECT)} Score je Wachstum über dem Wert-Deckel, summiert über alle grünen Karten (bis ${C.WELTENBAUM_OVERFLOW_CAP}).`, weltenbaum: true },
-  SK_PLANT_L02: { id: "SK_PLANT_L02", name: "Mutterbaum", archetype: "plant", legendary: true, keywords: ["growth", "score"],
-    desc: `Mit Wurzeltiefe: Ist deine höchstgewachsene Karte am Zug, verdoppelt sie ihren Wurzel-Score. Jeder grüne Sieg gibt +${C.MUTTERBAUM_DIRECT} Score je Wachstum deines tiefsten Baums über dem Wert-Deckel (bis ${C.MUTTERBAUM_OVERFLOW_CAP}), auch ohne Wurzeltiefe.`, mutterbaum: true },
-  SK_PLANT_L03: { id: "SK_PLANT_L03", name: "Baumreihe", archetype: "plant", legendary: true, keywords: ["growth", "formation"],
-    desc: `Voll ausgewachsene grüne Karten (Wert ${C.PLANT_VALUE_CAP}) bilden eine positionsfreie Wiederholung, egal wo sie liegen: ab 2 solchen Karten ×${de(C.BAUMREIHE_BASE)} auf ihre Stiche, je weitere +${de(C.BAUMREIHE_STEP)}, bis ×${de(C.BAUMREIHE_CAP)}. Jede darf zugleich in einer anderen Formation zählen.`, baumreihe: true },
-  SK_PLANT_L04: { id: "SK_PLANT_L04", name: "Ewiger Frühling", archetype: "plant", legendary: true, keywords: ["green", "overgrowth", "eternalSpring"],
-    desc: `Jeder grüne Sieg gibt +${C.EWIGER_FRUEHLING_DIRECT} Score je grüner Karte im Feld (bis ${C.EWIGER_FRUEHLING_FIELD_CAP}). Bei voll grünem Feld zählt jede grüne Karte ${de(C.EWIGER_FRUEHLING_FULLGREEN_MULT)}× (effektiv bis ${C.EWIGER_FRUEHLING_FIELD_CAP * C.EWIGER_FRUEHLING_FULLGREEN_MULT}).`, ewigerFruehling: true },
+  // ---- Pflanze (exp skill rework, §6): Passiv = Wachstum je Karte (+1 je Sieg, +1 je Formation an der Siegposition),
+  //      grün ab der Grün-Schwelle, blühend ab der Blüh-Schwelle; eine blühende Siegkarte zahlt Basis-Score je grüner
+  //      Karte in ihren Formationen. Die Mechanik liest die Stufentabellen oben (factions/plant.js); die vier Hebel
+  //      (Spalier, Wildwuchs, Lücke, Überwucherung) ändern die Erkennung in formations.js. Texte: ein Satz je Stufe.
+  // Wachstum — schneller und breiter grün werden
+  SK_PLANT_05: { id: "SK_PLANT_05", name: "Aussaat", archetype: "plant", keywords: ["growth", "green"], tiers: PFLANZE.aussaat,
+    ...tiered(PFLANZE.aussaat, (r) => `Gewinnt eine grüne Karte, wachsen beide Nachbarn +${r.growth}.${r.second ? ` Auch die zweiten Nachbarn wachsen +${r.second}.` : ""}`) },
+  SK_PLANT_09: { id: "SK_PLANT_09", name: "Ranken", archetype: "plant", keywords: ["growth", "green"], tiers: PFLANZE.ranken,
+    ...tiered(PFLANZE.ranken, (r) => `Wird eine Karte grün, wachsen ihre grauen Nachbarn +${r.growth}.${r.chain ? ` Wird eine Karte dadurch grün, wachsen ihre grauen Nachbarn ebenfalls +${r.growth}.` : ""}`) },
+  SK_PLANT_07: { id: "SK_PLANT_07", name: "Setzlingsbeet", archetype: "plant", keywords: ["growth"], tiers: PFLANZE.setzlingsbeet,
+    ...tiered(PFLANZE.setzlingsbeet, (r) => `${r.cards === 1 ? "Die niedrigste Karte je Segment startet" : `Die ${r.cards} niedrigsten Karten je Segment starten`} mit +${r.growth} Wachstum.`) },
+  SK_PLANT_12: { id: "SK_PLANT_12", name: "Lichtung", archetype: "plant", keywords: ["growth", "formation"], tiers: PFLANZE.lichtung,
+    ...tiered(PFLANZE.lichtung, (r) => `Ein Sieg in einer Formation gibt +${r.extra} Wachstum zusätzlich${r.perFormation ? ", je Formation an der Siegposition" : ""}.`) },
+  SK_PLANT_08: { id: "SK_PLANT_08", name: "Zäher Halm", archetype: "plant", keywords: ["growth"], tiers: PFLANZE.halm,
+    ...tiered(PFLANZE.halm, (r) => `Graue Karten wachsen bei einer Niederlage +${r.growth}.${r.greenToo ? ` Auch grüne Karten wachsen +${r.greenToo}.` : ""}`) },
+  // Hebel — sie ändern, was als Formation erkannt wird, und addieren keinen Score
+  SK_PLANT_03: { id: "SK_PLANT_03", name: "Spalier", archetype: "plant", keywords: ["green", "formation"], tiers: PFLANZE.spalier,
+    ...tiered(PFLANZE.spalier, (r) => `${r.borders === 1 ? "Die Segmentgrenze mit den meisten grünen Karten daneben ist offen" : r.borders >= 7 ? "Alle Segmentgrenzen mit grünen Karten daneben sind offen" : `Die ${r.borders} Segmentgrenzen mit den meisten grünen Karten daneben sind offen`}: Formationen laufen dort über das Segment hinaus.`) },
+  SK_PLANT_06: { id: "SK_PLANT_06", name: "Wildwuchs", archetype: "plant", keywords: ["bloom", "formation"], tiers: PFLANZE.wildwuchs,
+    ...tiered(PFLANZE.wildwuchs, (r) => `${r.jokers === 1 ? "Deine am weitesten gewachsene blühende Karte zählt" : Number.isFinite(r.jokers) ? `Deine ${r.jokers} am weitesten gewachsenen blühenden Karten zählen` : "Alle blühenden Karten zählen"} bei der Formationserkennung als Joker.`) },
+  SK_PLANT_15: { id: "SK_PLANT_15", name: "Lücke", archetype: "plant", keywords: ["green", "formation"], tiers: PFLANZE.luecke,
+    ...tiered(PFLANZE.luecke, (r) => `Ein Lauf aus grünen Karten darf ${r.gaps === 1 ? "eine fremde Karte" : `${de1(r.gaps)} fremde Karten`} überspringen.${r.growth ? ` Die übersprungenen Karten wachsen +${r.growth}.` : ""}`) },
+  SK_PLANT_14: { id: "SK_PLANT_14", name: "Überwucherung", archetype: "plant", keywords: ["green", "formation"], tiers: PFLANZE.ueberwucherung,
+    ...tiered(PFLANZE.ueberwucherung, (r) => `Ab ${pct(r.field)} % grünem Feld entstehen grüne Formationen mit ${r.less === 1 ? "einer Karte" : `${de1(r.less)} Karten`} weniger, mindestens aber ab zwei Karten.`) },
+  // Score aus grünen Formationen — je Formationstyp einer, dazu die Tiefe der einzelnen Karte
+  SK_PLANT_13: { id: "SK_PLANT_13", name: "Blätterdach", archetype: "plant", keywords: ["green", "formation", "score"], tiers: PFLANZE.blaetterdach,
+    ...tiered(PFLANZE.blaetterdach, (r) => `Ein Sieg in einem grünen Farbblock gibt +${r.score} Basis-Score je grüner Karte darin.${r.bloomDouble ? " Blühende Karten zählen doppelt." : ""}`) },
+  SK_PLANT_16: { id: "SK_PLANT_16", name: "Rankgerüst", archetype: "plant", keywords: ["green", "formation", "score"], tiers: PFLANZE.rankgeruest,
+    ...tiered(PFLANZE.rankgeruest, (r) => `Ein Sieg in einer grünen Treppe gibt +${r.score} Basis-Score je grüner Karte darin.${r.bloomDouble ? " Blühende Karten zählen doppelt." : ""}`) },
+  SK_PLANT_10: { id: "SK_PLANT_10", name: "Hecke", archetype: "plant", keywords: ["green", "formation", "score"], tiers: PFLANZE.hecke,
+    ...tiered(PFLANZE.hecke, (r) => `Ein Sieg in einer grünen Wiederholung gibt +${r.score} Basis-Score je grüner Karte darin.${r.bloomDouble ? " Blühende Karten zählen doppelt." : ""}`) },
+  SK_PLANT_11: { id: "SK_PLANT_11", name: "Windung", archetype: "plant", keywords: ["green", "formation", "score"], tiers: PFLANZE.windung,
+    ...tiered(PFLANZE.windung, (r) => `Ein Sieg in einem grünen Wechsel gibt +${r.score} Basis-Score je grüner Karte darin.${r.bloomDouble ? " Blühende Karten zählen doppelt." : ""}`) },
+  SK_PLANT_04: { id: "SK_PLANT_04", name: "Jahresringe", archetype: "plant", keywords: ["growth", "score"], tiers: PFLANZE.jahresringe,
+    ...tiered(PFLANZE.jahresringe, (r) => `Ein Sieg gibt +${r.score} Basis-Score je ${r.per} Wachstum der Siegkarte.${r.overDouble ? ` Wachstum über ${C.PLANT_BLOOM_THRESHOLD} zählt doppelt.` : ""}`) },
+  // Kombination — Score und Wachstum in einem
+  SK_PLANT_17: { id: "SK_PLANT_17", name: "Blütenlese", archetype: "plant", keywords: ["green", "formation", "growth"], tiers: PFLANZE.bluetenlese,
+    ...tiered(PFLANZE.bluetenlese, (r) => `Ein Sieg in einer rein grünen Formation gibt +${r.score} Basis-Score und lässt alle Karten darin +${r.growth} wachsen.`) },
+  // Legendäre (§6.5): keine Stufe, keine Direkt-Scores — zwei lesen den Zustand, zwei ändern die Erkennung.
+  SK_PLANT_L01: { id: "SK_PLANT_L01", name: "Weltenbaum", archetype: "plant", legendary: true, keywords: ["growth", "green"],
+    desc: `Am Ende jedes Durchlaufs wächst jede grüne Karte +1 je ${C.WELTENBAUM_PER_GREEN} grüne Karten im Feld.` },
+  SK_PLANT_L02: { id: "SK_PLANT_L02", name: "Mutterbaum", archetype: "plant", legendary: true, keywords: ["growth", "formation"],
+    desc: "Deine am weitesten gewachsene Karte zählt in jeder Formation ihres Segments mit." },
+  SK_PLANT_L03: { id: "SK_PLANT_L03", name: "Baumreihe", archetype: "plant", legendary: true, keywords: ["bloom", "formation"],
+    desc: "Blühende Karten bilden eine positionsfreie Wiederholung, egal wo sie liegen. Jede darf zugleich in einer anderen Formation zählen." },
+  SK_PLANT_L04: { id: "SK_PLANT_L04", name: "Ewiger Frühling", archetype: "plant", legendary: true, keywords: ["green", "bloom"],
+    desc: "Ist das Feld vollständig grün, sind alle deine Karten blühend." },
+
 };
 
 export const SKILL_LIST = Object.values(SKILL_DEFS);
 export const archetypeOf = (id) => SKILL_DEFS[id]?.archetype || null;
 // Eis-Neudesign: aktive Gletscher-Rollen (glacier.js ROLES) aus den gehaltenen Skill-`role`-Feldern.
 export const glacierRolesOf = (skills = []) => (skills || []).map((id) => SKILL_DEFS[id]?.role).filter(Boolean);
-// #288 „Trimmen": ist der Skill wachstums-stützend? (Aussaat/Flugsamen/Setzlingsbeet/Zäher Halm + Ausläufer/Rhizom) — Ersetzen zählt als Trimmung.
-export const isTrimmableSkill = (id) => !!SKILL_DEFS[id]?.trimGrowth;
-// Die Namen der trimmbaren Skills als Aufzählung — EINE Quelle für alle Spielertexte, die sie auflisten
-// (Glossar „Trimmen", PlantBar-Tooltip). Vorher zweimal von Hand gepflegt und beide Male unvollständig.
-export const trimmableSkillNames = (sep = ", ") => SKILL_LIST.filter((s) => s.trimGrowth).map((s) => s.name).join(sep);
 
 /* Skill-Archetypen (#93). Metadaten (Theming/Label) — geteilte Quelle für SkillSelect & HUD.
    Alle drei Archetypen (Blitz/Feuer/Eis) sind vollständig ausgespielt (F0/F1/F3 abgeschlossen). */
@@ -347,54 +364,10 @@ export const activeLightningCount = (skills) => (skills || []).filter((id) => SK
 // (exp skill rework: der Hitze-Substate und die Feuer-Mechanik leben in src/game/factions/fire.js — Passiv, 15 Skills
 //  und 4 Legendäre lesen dort die Stufentabellen FEUER_TIERS.)
 
-/* ---- Pflanze-Fraktion (v0) — Wachstum (nur steigend) → Reife (grün) → Farbblock → Score. Reine Helfer. ---- */
-const plantFlag = (skills, flag) => (skills || []).some((id) => SKILL_DEFS[id]?.[flag]);
-export const plantSkillCount = (skills) => (skills || []).filter((id) => SKILL_DEFS[id]?.archetype === "plant").length;
-// Reife: grün ist ein KARTEN-Flag (card.green) — gebacken bei Erreichen der Wachstums-Schwelle
-// ODER per Recolor (Alter Anker/Ranken). So liest die Formations-Erkennung Grün direkt von der Karte (Farbblock).
-export const isGreen = (card) => !!card?.green;
-export const greenCount = (deck) => (deck || []).filter((c) => c.green).length;
-// Soll diese Karte (nach Wachstums-Update) reif/grün sein? (Schwelle erreicht.)
-export const growthRipe = (growth) => (growth || 0) >= C.PLANT_GREEN_THRESHOLD;
-// Wurzeln-Score je Sieg einer grünen Karte (Anzeige-Helfer für CardDetail #211): BASIS-Flat aus Wurzeltiefe +
-// Jahresringe (je 10 Wachstum). Spiegelt engine.js (Wurzeltiefe/Jahresringe); der Pfahlwurzel-Faktor (×2 in Formation)
-// wird in der UI separat vermerkt, damit die Basiszahl stabil bleibt. Der feldweite Feldtiefe-Bonus (√Gesamtwachstum)
-// hängt NICHT an einer Einzelkarte und ist hier bewusst nicht enthalten (er fließt nur in den echten Score der Engine).
-export const plantRootScore = (skills, growth) => {
-  if (!hasWurzeltiefe(skills)) return 0;
-  let r = C.WURZELTIEFE_SCORE;
-  if (hasJahresringe(skills)) r += Math.floor((growth || 0) / C.JAHRESRINGE_PER_GROWTH) * C.JAHRESRINGE_SCORE;
-  return r;
-};
-// Flag-Prädikate (in engine/formations/reducer gelesen).
-// Pflanze-Fraktions-Passive „Wurzelschlag" (v0.5): MONO-Gate — nur aktiv, solange AUSSCHLIESSLICH Pflanzen-Skills
-// gehalten werden (mind. 1). Steuert die Wert-aus-Wachstum-Ableitung (Sieg) + die Niederlage-Klausel.
-export const isMonoPlant      = (skills) => (skills || []).length > 0 && plantSkillCount(skills) === (skills || []).length;
-// ERKUNDUNG Hebel 3c: Gate der Wert-Passive. Default (PLANT_PASSIVE_MIN_SKILLS=0) = hartes Mono-Gate (isMonoPlant, neutral).
-// >0 = Schwellen-Knick: aktiv ab N Pflanzen-Skills, egal ob Fremd-Skills dabei (Commitment-Tiefe statt Reinheit).
-export const plantPassiveActive = (skills) =>
-  isMonoPlant(skills) || (C.PLANT_PASSIVE_MIN_SKILLS > 0 && plantSkillCount(skills) >= C.PLANT_PASSIVE_MIN_SKILLS);
-export const hasKernholz      = (skills) => plantFlag(skills, "kernholz");
-export const hasWurzeltiefe   = (skills) => plantFlag(skills, "wurzeltiefe");
-export const hasPfahlwurzel   = (skills) => plantFlag(skills, "pfahlwurzel");
-export const hasJahresringe   = (skills) => plantFlag(skills, "jahresringe");
-export const hasAussaat       = (skills) => plantFlag(skills, "aussaat");
-export const hasFlugsamen     = (skills) => plantFlag(skills, "flugsamen");
-export const hasSetzlingsbeet = (skills) => plantFlag(skills, "setzlingsbeet");
-export const hasZaeherHalm    = (skills) => plantFlag(skills, "zaeherHalm");
-export const hasRanken        = (skills) => plantFlag(skills, "ranken");
-export const hasBluete        = (skills) => plantFlag(skills, "bluete");
-export const hasBluetezeit    = (skills) => plantFlag(skills, "bluetezeit");
-export const hasPhotosynthese = (skills) => plantFlag(skills, "photosynthese");
-export const hasBlaetterdach  = (skills) => plantFlag(skills, "blaetterdach");
-export const hasUeberwucherung = (skills) => plantFlag(skills, "ueberwucherung");
-export const hasAuslaeufer    = (skills) => plantFlag(skills, "auslaeufer");
-export const hasRhizom        = (skills) => plantFlag(skills, "rhizom");
-export const hasErntedank     = (skills) => plantFlag(skills, "erntedank");
-export const hasWeltenbaum    = (skills) => plantFlag(skills, "weltenbaum");
-export const hasMutterbaum    = (skills) => plantFlag(skills, "mutterbaum");
-export const hasBaumreihe     = (skills) => plantFlag(skills, "baumreihe");
-export const hasEwigerFruehling = (skills) => plantFlag(skills, "ewigerFruehling");
+// (exp skill rework §6: der Pflanze-Zustand — Wachstum je Karte, die drei Zustände und die Mechanik der 15 Skills und
+//  4 Legendären — lebt in src/game/factions/plant.js und liest dort die Stufentabellen PFLANZE_TIERS. Grün und blühend
+//  sind in der Karte gebacken (card.green / card.bloom), damit Formations-Engine und Anzeige dieselbe Quelle lesen.)
+
 
 // (exp skill rework: die Konsument-Garantie des Angebots ist mit der Verbraucher-Regel entfallen — Blitz und Feuer
 //  tragen ihren Payoff im Passiv, ein Angebotsplatz wird nicht mehr erzwungen.)

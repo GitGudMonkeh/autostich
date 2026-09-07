@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { suitColor, ION_MAX_STACKS, ION_SCORE_PER_STACK, PLANT_GREEN_THRESHOLD, PLANT_VALUE_CAP } from "../game/constants.js";
+import { suitColor, ION_MAX_STACKS, ION_SCORE_PER_STACK, PLANT_GREEN_THRESHOLD, PLANT_BLOOM_THRESHOLD } from "../game/constants.js";
 import { plantNumberColor, PLANT, PLANT_RIPE } from "./indicators/vocab.js";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { t, fmtNum } from "../i18n/index.js"; // #health-check F1: Badges/Tooltips über den Katalog
@@ -11,7 +11,7 @@ import { t, fmtNum } from "../i18n/index.js"; // #health-check F1: Badges/Toolti
      stichBonus = temporärer Bonus dieses Stichs (Kat.-B-Perks, weiß — rot war auf der Karte schwer lesbar, Review-Runde 2026-08-28) */
 // #259: reiner Präsentations-Leaf mit teuren Bild-Layern → React.memo überspringt Re-Render bei unveränderten
 // (primitiven) Props. Beim Auto-Play/Timer-Takt rendern nur die tatsächlich wechselnden Karten neu, nicht alle.
-function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, glow = null, ionStacks = 0, green = false, forged = 0, branded = 0, growth = 0, colonized = 0, allyColors = null, frontImage = null }) {
+function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, glow = null, ionStacks = 0, green = false, bloom = false, forged = 0, branded = 0, growth = 0, allyColors = null, frontImage = null }) {
   const color = suitColor(suit);
   // Holo-Front (#178): rahmenlose „Hologramm"-Oberfläche in Kartenfarbe — Punktraster + diagonaler
   // Energiestrahl + farbiger Kern-Schein, statt des früheren harten 2px-Rahmens. Zahl bleibt groß & mittig.
@@ -57,13 +57,10 @@ function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, g
   const forgedGlow = forged > 0 ? "inset 0 0 18px #f0a83a5e, inset 0 0 7px #f0b74a4a" : null;
   // Feuer (#206): gebrandmarkte GEGNERkarte „verkohlt von unten" — warmer, GERICHTETER Char-Saum (Inset von unten), klar vom kalten Frostbiss abgesetzt.
   const brandGlow = branded > 0 ? "inset 0 -17px 16px -8px #e0714a88, inset 0 -3px 6px -2px #f0a83a66" : null;
-  // Pflanze (#211): kolonisierte GEGNERkarte (Ausläufer) — grüne Ranke wächst vom LINKEN Rand herein (gerichteter Inset von
-  // links), organisch/grün → klar von Brand (warm, von unten) und Frostbiss (kalt, ❄) abgesetzt. Marker + Ernte-Tag folgen unten.
-  const colonizedGlow = colonized > 0 ? "inset 15px 0 16px -8px #5ab87a99, inset 3px 0 6px -2px #86e0a066" : null;
   // Pflanze (#211): Kartenzahl ergrünt mit dem Wachstum (Suit-Farbe → Grün) und leuchtet intensiv grün ab Reife; voll
   // ausgewachsen am hellsten. `pt` = null → keine Pflanzen-Wirkung (normale Suit-Farbe). Wachstumsring (unten-rechts) nur
   // solange die Karte wächst und NICHT reif ist (bei Reife übernimmt die grüne Zahl + 🌿 das Signal).
-  const pt = plantNumberColor(color, growth, green, value);
+  const pt = plantNumberColor(color, growth, green, bloom);
   const numColor = pt ? pt.color : color;
   // Neon-Tube-Zahl (#UI): mehrschichtiger Neon-Glow in Suit-/Pflanzenfarbe. Die Ziffer selbst ist hohl (transparente
   // Füllung + farbige Kontur, siehe render), der Glow gibt die Leucht-Röhren-Optik. Pflanze moduliert die Stärke über pt.glow.
@@ -73,19 +70,15 @@ function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, g
   const numGlow = pt
     ? { "--num-glow-c": pt.color, "--num-glow-c2": `${pt.color}${pt.ripe ? "aa" : "66"}`, "--num-glow-s": 1 + 0.6 * pt.glow }
     : { "--num-glow-c": color, "--num-glow-c2": `${color}99`, "--num-glow-s": 1 };
-  // Pflanze (#277): ZWEISTUFIGER Wachstumsring — Stufe 1 Setzling→Grün (grau→grün, growth/Schwelle), Stufe 2 Grün→
-  // Ausgewachsen (heller, value/Deckel). Bleibt sichtbar, bis die Karte ausgewachsen ist (dann trägt die hellste
-  // grüne Zahl das „fertig"-Signal). So sieht man je Karte, wie weit sie ist UND wann sie voll auswächst.
-  const fullyGrown = green && value >= PLANT_VALUE_CAP;
-  const growingStage2 = green && !fullyGrown;                        // grün, aber noch nicht am Wert-Deckel
+  // Pflanze (§6.2): ZWEISTUFIGER Wachstumsring — Stufe 1 grau→grün (growth/Grün-Schwelle), Stufe 2 grün→blühend
+  // (heller, growth/Blüh-Schwelle). Ausgeblendet erst, wenn die Karte blüht (dann trägt die hellste grüne Zahl das
+  // „fertig"-Signal). So sieht man je Karte, wie weit sie ist UND wann sie aufblüht.
+  const growingStage2 = green && !bloom;                             // grün, aber noch nicht blühend
   const showGrowthRing = (!green && (growth || 0) > 0) || growingStage2;
-  const ringPct = growingStage2
-    ? Math.min(100, (value / PLANT_VALUE_CAP) * 100)
-    : Math.min(100, ((growth || 0) / PLANT_GREEN_THRESHOLD) * 100);
+  const ringCap = growingStage2 ? PLANT_BLOOM_THRESHOLD : PLANT_GREEN_THRESHOLD;
+  const ringPct = Math.min(100, ((growth || 0) / ringCap) * 100);
   const ringColor = growingStage2 ? PLANT_RIPE : PLANT;             // Stufe 2 heller abgesetzt
-  const ringTitle = growingStage2
-    ? t("card.ring.grown", { value, cap: PLANT_VALUE_CAP })
-    : t("card.ring.ripening", { growth: fmtNum(Math.round((growth || 0) * 10) / 10), cap: PLANT_GREEN_THRESHOLD });
+  const ringTitle = t(growingStage2 ? "card.ring.grown" : "card.ring.ripening", { growth: fmtNum(Math.round((growth || 0) * 10) / 10), cap: ringCap });
   return (
     <div
       className="as-card as-card-holo relative rounded-xl overflow-hidden flex flex-col items-center justify-center select-none transition-all"
@@ -95,7 +88,7 @@ function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, g
         opacity: dim ? 0.35 : 1,
         // Ion-Rahmen (blau) zuerst → liegt oben; Gewinn-/Verlust-Glow (#135) darunter; Holo-Saum zuletzt.
         // Glow REIN blur-basiert (kein 0-Blur-Ring mehr) → weicher, kantenloser Rand statt harter Kontur am Kartenrand.
-        boxShadow: [ionRing, glow ? `0 0 11px 1px ${glow}88, 0 0 34px ${glow}55` : null, greenGlow, forgedGlow, brandGlow, colonizedGlow, ambientEdge].filter(Boolean).join(", "),
+        boxShadow: [ionRing, glow ? `0 0 11px 1px ${glow}88, 0 0 34px ${glow}55` : null, greenGlow, forgedGlow, brandGlow, ambientEdge].filter(Boolean).join(", "),
       }}
     >
       {permBoost > 0 && (
@@ -122,16 +115,6 @@ function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, g
           style={{ width: 16, height: 16, background: `conic-gradient(${ringColor} ${ringPct}%, #ffffff1f ${ringPct}%)`,
                    border: `1px solid ${ringColor}66`, boxShadow: `0 0 4px ${ringColor}55` }}>
           <div className="absolute rounded-full" style={{ inset: 3, background: HOLO_BASE }} />
-        </div>
-      )}
-      {/* Pflanze (#211): Ausläufer-Marker auf der kolonisierten GEGNERkarte — grüne Ranke am linken Rand + „Ernte +N".
-          Grün/organisch, klar abgesetzt von Brand (warm) und Frostbiss (❄). Vertikal zentriert → kollidiert weder mit
-          🌿-reif (top-left) noch mit ❖-Schichten (bottom-left) noch mit der zentrierten Zahl. */}
-      {colonized > 0 && (
-        <div className="absolute left-0.5 top-1/2 -translate-y-1/2 flex flex-col items-center leading-none"
-          title={t("card.colonized.title", { n: colonized })}>
-          <FactionIcon type="plant" size={15} />
-          <span className="text-micro-3 font-bold mt-0.5" style={{ color: "#86e0a0" }}>+{colonized}</span>
         </div>
       )}
       {/* Pflanze (v0): grünes Blatt oben links markiert eine reife/grüne Karte (Teil des Farbblocks, dauerhaft). */}

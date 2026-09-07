@@ -45,9 +45,10 @@ describe("Glossar-Datenmodell", () => {
 
 describe("Backcompat: glossaryKeywords / GLOSSARY[token]", () => {
   it("die Fraktions-Tokens bleiben als Keys erhalten (exp: ash ist mit der Asche gegangen)", () => {
+    // exp: „ash" ging mit der Asche, „colonize" und „eternalSpring" mit der Kolonisierung und dem Direkt-Score der
+    // Pflanze (§6.1); „bloom" ist der dritte Zustand der neuen Pflanze und dafür dazugekommen.
     for (const tok of ["crit", "charge", "ionize", "streak", "heat", "consume",
-      "brand", "forge", "freeze", "formation", "growth", "green",
-      "colonize", "overgrowth", "eternalSpring"]) {
+      "brand", "forge", "freeze", "formation", "growth", "green", "bloom", "overgrowth"]) {
       expect(isGlossaryTerm(tok), tok).toBe(true);
       expect(GLOSSARY[tok].label).toBeTruthy();
     }

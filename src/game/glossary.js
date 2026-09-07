@@ -1,6 +1,5 @@
 import * as C from "./constants.js";
 import { TIER_META } from "./rarity.js";                 // Raritäts-Namen: EINE Quelle (kein „Ungewöhnlich" mehr)
-import { trimmableSkillNames } from "./skills.js";       // trimmbare Skills: aus dem Register, nicht im Text gepflegt
 // Eis-Neudesign: die Gletscher-Tuning-Zahlen leben in glacier.js (Single Source, Sim-tunebar) — direkt ziehen, damit
 // die Eis-Glossartexte driftfrei mitlaufen. Kein Import-Zyklus (glacier.js → architect.js, keins importiert glossary.js).
 import { WIN_MASS as G_WIN_MASS, EWIGER_FROST as G_EWIGER_FROST, THRESHOLDS as G_THRESHOLDS,
@@ -32,7 +31,6 @@ const de = (x) => String(x).replace(".", ",");
 // Prozent(punkte) als ganze Zahl (0,07 → 7).
 const pct = (x) => Math.round(x * 100);
 // Aus den Registern gezogene Aufzählungen (kein Text↔Code-Drift).
-const TRIMMABLE_NAMES = trimmableSkillNames();
 const RARITY_NAMES = Object.values(TIER_META).map((t) => t.label).join(" · ");
 
 // Akzentfarben (hartkodiert, damit das Glossar NICHT von skills.js/ARCHETYPE_META abhängt — das gäbe einen Import-Zyklus).
@@ -206,10 +204,10 @@ export const GLOSSARY = {
     text: "Eine seltene, besonders mächtige Skill-Stufe (mit ★ markiert). Legendäre Skills tauchen als fünfte Seltenheit im normalen Skill-Angebot auf – ohne Vorbedingung, immer aus der Fraktion des Platzes, den sie ersetzen. Mit Glück hält man zwei.",
     match: ["Legendärer Skill", "legendäre Skills"] },
   ueberlauf: { category: "frak", group: "gen", label: "Überlauf", icon: "≈", color: CLR.gold,
-    text: `Sammelt eine Karte mehr an, als ihr normaler Nutzen verwertet (Wachstum über dem Wert-Deckel ${C.PLANT_VALUE_CAP}, Hitze über ${C.HEAT_MAX} %), sonst wäre er verschwendet. Feuer (Weißglut) verlängert die Leiste bis ${C.WEISSGLUT_HEAT_MAX} %; die Legendären (Weltenbaum/Mutterbaum) verwandeln den großen Rest.`,
+    text: `Hitze, die ein Sieg nicht mehr auf die Leiste bringt (über ${C.HEAT_MAX} %), wäre verschwendet. Weißglut verlängert die Leiste bis ${C.WEISSGLUT_HEAT_MAX} %, der Schmelzpunkt macht Basis-Score daraus.`,
     match: ["Überlauf", "Überlauf-Wachstum"] },
   bekenntnis: { category: "frak", group: "gen", label: "Bekenntnis", icon: "◉", color: CLR.lightning,
-    text: "Wie stark du dich der Pflanze verschrieben hast: der Anteil der Pflanzen-Skills an den Referenz-Slots. Die Direkt-Dividenden der Pflanzen-Legendären zahlen anteilig danach, voll erst bei reinem Deck. Blitz und Feuer kennen kein Bekenntnis mehr.",
+    text: "Wie stark du dich einer Fraktion verschrieben hast. Seit dem Skill-Rework skaliert keine Fraktion ihren Ertrag mehr daran: jeder Skill wirkt für sich, und die Tiefe zahlt über die Mechanik statt über einen Zähler.",
     match: ["Bekenntnis", "Pflanzen-Bekenntnis"] },
 
   /* ============ 4 · Feuer ============ */
@@ -264,34 +262,20 @@ export const GLOSSARY = {
     text: `Schnee liegt als Reserve auf dem Brettfeld, getrennt von der Gletschermasse. Frierst du einen Gletscher auf ein aufgeladenes Feld, wird der angesammelte Schnee zu seiner Boden-Reserve; der Gletscher startet leer und zieht daraus jeden Durchlauf wieder auf volle ${G_THRESHOLDS[G_THRESHOLDS.length - 1]} Masse nach (nur die Differenz, nie darüber), bis die Reserve leer ist. Offenen Boden laden Dauerfrost, Schneetreiben und Eiszeit auf, nie unter einen Gletscher.`,
     match: ["Schnee"] },
 
-  /* ============ 4 · Pflanze ============ */
+  /* ============ 4 · Pflanze (exp skill rework, §6) ============ */
   growth: { category: "frak", group: "plant", label: "Wachstum", icon: "⚘", color: CLR.plant,
-    text: `Eigene Karten wachsen bei Siegen (nur steigend), und zwar umso schneller, je mehr Pflanze-Skills du hältst (volles Tempo ab ${C.PLANT_GROWTH_SKILL_REF} Skills, darunter anteilig). Ab ${C.PLANT_GREEN_THRESHOLD} Wachstum wird eine Karte dauerhaft grün (reif); darunter ist sie ein Setzling.`,
-    match: ["Wachstum"] },
-  setzling: { category: "frak", group: "plant", label: "Setzling", icon: "❦", color: CLR.plant,
-    text: `Eine Karte, die schon wächst, aber noch nicht reif ist (Wachstum unter ${C.PLANT_GREEN_THRESHOLD}). Ein Setzling zählt noch NICHT zum grünen Farbblock; erst ab ${C.PLANT_GREEN_THRESHOLD} Wachstum wird er grün (reif). Setzlingsbeet gibt der niedrigsten Karte je Segment +${C.SETZLINGSBEET_GROWTH} Wachstum Vorsprung.`,
-    match: ["Setzling", "Setzlinge", "Setzlingen"] },
-  green: { category: "frak", group: "plant", label: "Grün (reif)", icon: "⚘", color: CLR.plant,
-    text: `Grüne Karten sind dauerhaft und bilden einen gemeinsamen Farbblock: je größer der Block, desto mehr Score. Der Farbblock-Multiplikator für grüne Karten wird auf max. ×1,35 gedeckelt.`,
-    match: ["Grün", "grüne", "grünen", "grüner", "Reife", "reif"] },
-  wurzeln: { category: "frak", group: "plant", label: "Wurzeln", icon: "⚘", color: CLR.plant,
-    text: `Solange du nur Pflanzen-Skills hältst, machen grüne Siege die Karte wertvoller: je ${C.WURZELSCHLAG_PER_GROWTH} Wachstum +1 Kartenwert (bis ${C.PLANT_VALUE_CAP}), ab ${C.WURZELSCHLAG_LOSS_MIN_SKILLS} Skills auch bei jeder ${C.WURZELSCHLAG_LOSS_EVERY}. Niederlage. Das Wachstum bleibt dabei erhalten und zählt weiter für Wurzel-Score und die Legendären.`,
-    match: ["Wurzeln", "Wurzel-Score", "Wurzeln-Score"] },
-  bluete: { category: "frak", group: "plant", label: "Blüte", icon: "❀", color: CLR.plant,
-    text: `Ein Grün-Payoff: Siegt eine grüne Karte mit grünen Nachbarn, gibt sie +${C.BLUETE_SCORE} Blüte-Score je grüner Karte im Segment (Blütezeit ×${C.BLUETEZEIT_MULT} in Formation, Überwucherung nochmals ×2).`,
-    match: ["Blüte", "Blüte-Score", "Blütezeit"] },
-  trimmen: { category: "frak", group: "plant", label: "Trimmen", icon: "✂", color: CLR.plant,
-    text: `Der Wendepunkt vom Wachsen zum Ernten: ersetzt du einen Wachstums-Skill (${TRIMMABLE_NAMES}), zählt das als Trimmung → dauerhaft +${pct(C.TRIM_STEP)} % Wurzel- & Blüten-Score, je mehr Trimmungen desto höher (bis +${pct(C.TRIM_CAP)} %). Die Wachstums-Skills sterben so nicht, sie veredeln die Ernte.`,
-    match: ["Trimmen", "Trimmung", "Trimmungen", "getrimmt"] },
-  colonize: { category: "frak", group: "plant", label: "Kolonisieren / Ausläufer", icon: "⚘", color: CLR.plant,
-    text: "Markiert gegnerische Karten grün (Ausläufer/Rhizom). Besiegst du eine kolonisierte Karte, erntest du Wachstum.",
-    match: ["Kolonisieren", "kolonisierte", "Ausläufer"] },
+    text: `Wachstum liegt je Karte und fällt nie. Ein Sieg gibt der Siegkarte +${C.PLANT_GROWTH_WIN} Wachstum, dazu +${C.PLANT_GROWTH_PER_FORMATION} je Formation an ihrer Position — wie gut eine Karte steht, entscheidet also mehr als der Sieg selbst. Ab ${C.PLANT_GREEN_THRESHOLD} Wachstum ist sie grün, ab ${C.PLANT_BLOOM_THRESHOLD} blühend. Niederlagen geben nichts.`,
+    match: ["Wachstum", "wächst", "wachsen"] },
+  green: { category: "frak", group: "plant", label: "Grün", icon: "⚘", color: CLR.plant,
+    text: `Eine grüne Karte hat eine neue Farbe: grüne Karten bilden miteinander Farbblöcke, egal welche Farbe sie vorher hatten. Grün ist Farbe, keine Kraft — Kartenwert gibt es dafür nicht, der Score kommt aus den Formationen.`,
+    match: ["Grün", "grüne", "grünen", "grüner", "grünem"] },
+  bloom: { category: "frak", group: "plant", label: "Blühend", icon: "❀", color: CLR.plant,
+    text: `Die dritte Stufe einer Karte (ab ${C.PLANT_BLOOM_THRESHOLD} Wachstum). Ein Sieg mit einer blühenden Karte gibt +${C.PLANT_BLOOM_SCORE_PER_GREEN} Basis-Score je grüner Karte in ihren Formationen — die Score-Quelle der Fraktion. Blühende Karten sind auch grün.`,
+    match: ["blühend", "blühende", "blühenden", "Blüte"] },
   overgrowth: { category: "frak", group: "plant", label: "Überwucherung", icon: "⚘", color: CLR.plant,
-    text: `Ist das Feld ≥${Math.round(C.UEBERWUCHERUNG_FIELD * 100)} % grün, werden alle Farbblöcke stärker (+${de(C.UEBERWUCHERUNG_FACTOR)} Faktor) und Blüte zählt doppelt.`,
+    text: `Ein Hebel der Pflanze: ist genug vom Feld grün, entstehen rein grüne Formationen mit einer Karte weniger. Die Hebel ändern, was als Formation zählt, statt Score zu addieren.`,
     match: ["Überwucherung"] },
-  eternalSpring: { category: "frak", group: "plant", label: "Ewiger Frühling", icon: "⚘", color: CLR.plant,
-    text: `Farbblock zählt Grün schon ab ${C.EWIGER_FRUEHLING_FARBBLOCK} Karten und Überwucherung schon ab ${Math.round(C.EWIGER_FRUEHLING_FIELD * 100)} % Feld. Je größer dein ewig-grünes Feld, desto mehr Score zahlt jeder grüne Sieg direkt.`,
-    match: ["Ewiger Frühling"] },
+
 
   /* ============ 5 · Präzision · Crit (#267) ============ */
   praez_intro: { category: "praez", label: "Präzision", icon: "◎", color: CLR.lightning,

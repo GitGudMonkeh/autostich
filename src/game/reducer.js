@@ -3,17 +3,20 @@ import { rngAt } from "./rng.js"; // #205 Challenger Mode: adressierte Sub-Strö
 import { PERK_DEFS, buildPerkOffer } from "./perks.js";
 import { familyDef, applyFamilyPick } from "./families.js"; // formationEnergyBonus läuft jetzt über engine.formationEnergyFor
 import { UPGRADE_TYPES } from "./rarity.js";
-import { archetypeOf,
-  hasSetzlingsbeet, buildSkillDoors, rerollDoorSkills, glacierRolesOf } from "./skills.js"; // Pflanze (v0): Aktivierungs-Effekte · Eis-Neudesign: glacierRolesOf · exp: Türen-Angebot (Stufen im Wurf der Tür), Neuwurf der drei Skills
+import { archetypeOf, buildSkillDoors, rerollDoorSkills, glacierRolesOf } from "./skills.js"; // Eis-Neudesign: glacierRolesOf · exp: Türen-Angebot (Stufen im Wurf der Tür), Neuwurf der drei Skills
 import { initLightning, maxChargeFor, L as LIGHT } from "./factions/lightning.js"; // exp skill rework: Blitz-Substate (Leiste 10, Donnergott 7)
 import { initHeat, heatMaxFor, syncHeatMax } from "./factions/fire.js"; // exp skill rework: Hitze-Substate (Leiste 100, Weißglut 200)
+import { setzlingsbeetGains, applyGrowth } from "./factions/plant.js"; // exp skill rework: Pflanze-Aktivierung (Kaltstart Setzlingsbeet)
+// Pflanze-Bündel für die Formations-Engine (§6.7): Stufe je Skill + Wachstum je Karte — die vier Hebel und zwei
+// Legendären brauchen beides, um die Erkennung zu biegen.
+const plantBag = (s) => ({ skillTiers: s.skillTiers || {}, growth: s.growth || {} });
 // (#267: import aus stats.js entfernt — die Stat-Phase ist weg.)
 import { computeFormations, formationPotential, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
 import { initialShop, perkLegendaryChance } from "./shop.js";
 import { resolveTrick, formationEnergyFor } from "./engine.js"; // formationEnergyFor: eine Quelle für Phasen-Eintritt + RESET_FORMATION
 import * as C from "./constants.js";
 import { runRules, perksOfferedFor, skillOfferParams, sanitizeRules } from "./rules.js"; // exp: Regeln je Lauf (state.rules; null → Konstanten)
-import { isLegendarySkill, isTrimmableSkill } from "./skills.js"; // #217: Garantie-Erkennung (Legendär im Skill-Reroll-Angebot) · #288 Trimmen
+import { isLegendarySkill } from "./skills.js"; // #217: Garantie-Erkennung (Legendär im Skill-Reroll-Angebot)
 import { DECLINE_MIN_SKILLS as G_DECLINE_MIN_SKILLS } from "./glacier.js"; // Eis-Neudesign: Ablehn-Gletscher-Schwelle (gehaltene Eis-Skills)
 import { pickWeekMods, weekModMag, TIGHT_BUILD_COVER } from "./weekMods.js"; // #370 Ranked-Rework Phase 3: Wochen-Modifikatoren (seed-deterministisch) · exp: hasWeekMod ging mit PICK_LEGENDARY (doubleLeg)
 
@@ -153,12 +156,11 @@ export function initialState(rng = Math.random, seed = null) {
     skillOfferArchs: null, // exp skill rework: die Fraktionssymbole der geöffneten Tür je Platz — der Neuwurf würfelt die Skills dazu neu
     heat: null, // Feuer-Archetyp (#93 F1): erst beim ersten Feuer-Skill via initHeat() aktiviert
     iceTemp: {}, // temporärer Wertbonus je card.id (Blitzfänger — Blitz-Archetyp, in engine.js gelesen)
-    growth: {}, colonized: {}, plantLoss: {}, // Pflanze-Fraktion (v0): Wachstum je card.id (nur steigend) / kolonisierte Gegnerkarten (grün = card.green) / Niederlagen-Zähler (Wurzelschlag-Buff v0.4)
+    growth: {}, // Pflanze (§6.2): Wachstum je card.id (nur steigend) — grün und blühend liegen als Flag auf der Karte
     brandPending: {}, brandActive: {}, forged: {}, // Feuer: Brand-Marker (Gegner, je card.id, Wertabzug nächste Runde) / geschmiedete Dauerwerte
     // #270 Fraktions-Panels: kumulative Lauf-Kennzahlen (nur Anzeige) — Eigen-Score-Kanäle + Motor-Zähler.
-    lightYield: 0, plantRoot: 0, plantBloom: 0, plantHarvest: 0, fireBase: 0, fireHeat: 0, // #270 Eigen-Score-Kanäle (Feuer: Flats / Hitze-Multiplikator-Anteil)
+    lightYield: 0, plantBase: 0, fireBase: 0, fireHeat: 0, // #270 Eigen-Score-Kanäle (Feuer: Flats / Hitze-Multiplikator-Anteil)
     ionTotal: 0, growthTotal: 0, brandTotal: 0, // #270 Motor-Zähler
-    trimCount: 0, // #288 Trimmen: Anzahl ersetzter Wachstums-Skills → Wurzel-/Blüten-Multiplikator
     tieArmed: false,
     shop: initialShop(), // hält nur noch die (inerten) Positionsanker — der Shop ist entfernt (#229)
     architectEnabled: false,       // Architekt (#202): Flag — bei true öffnet sich die Architekt-Phase (im Spiel via START_RUN true; false = Sim-Baseline ohne Architekt)
@@ -484,7 +486,7 @@ export function reducer(state, action) {
             { unlockedArchetypes: state.unlockedArchetypes, maxArchetypes: skillP.maxArchetypes, size: skillP.doorSize })
         : [];
       const formations = (def.redistribute || def.opfergang)
-        ? computeFormations(state.playerOrder, deck, state.roles, perks, state.skills, state.shop?.anchors || [], state.familyTiers, archOf(state))
+        ? computeFormations(state.playerOrder, deck, state.roles, perks, state.skills, state.shop?.anchors || [], state.familyTiers, archOf(state), plantBag(state))
         : state.formations;
       return { ...state, perks, deck, architect, skillSlots, offer: null, formations,
                // Leeres Angebot (Skill-Pool erschöpft) → normal weiterspielen; der Slot bleibt, die nächste
@@ -512,7 +514,7 @@ export function reducer(state, action) {
           familyId, tier, { familyTiers: state.familyTiers, deck: state.deck, roles: state.roles }, rngFor(state, action, state.cycle, "pick"));
         // [#229 N3] Formationen sofort neu berechnen (analog CONFIRM_TARGET) — sonst bis zum nächsten RESOLVE_TRICK stale.
         return { ...state, familyTiers, deck, roles,
-          formations: computeFormations(state.playerOrder, deck, roles, state.perks, state.skills, state.shop?.anchors || [], familyTiers, archOf(state)),
+          formations: computeFormations(state.playerOrder, deck, roles, state.perks, state.skills, state.shop?.anchors || [], familyTiers, archOf(state), plantBag(state)),
           offer: null, phase: "play" };
       };
       const pt = fam.tiers[tier] && fam.tiers[tier].pickTarget;
@@ -527,7 +529,7 @@ export function reducer(state, action) {
           const { familyTiers, deck, roles } = applyFamilyPick(
             familyId, tier, { familyTiers: state.familyTiers, deck: state.deck, roles: state.roles, target }, rngFor(state, action, state.cycle, "target"));
           return { ...state, familyTiers, deck, roles,
-            formations: computeFormations(state.playerOrder, deck, roles, state.perks, state.skills, state.shop?.anchors || [], familyTiers, archOf(state)),
+            formations: computeFormations(state.playerOrder, deck, roles, state.perks, state.skills, state.shop?.anchors || [], familyTiers, archOf(state), plantBag(state)),
             offer: null, phase: "play" };
         }
         return { ...state, offer: null, phase: "family-target", familyTarget: { familyId, tier, kind: "suits", need: pt.suits, suits: [], cards: [], formationType: null } };
@@ -583,7 +585,7 @@ export function reducer(state, action) {
       const { familyTiers, deck, roles } = applyFamilyPick(
         ft.familyId, ft.tier, { familyTiers: state.familyTiers, deck: state.deck, roles: state.roles, target }, rngFor(state, action, state.cycle, "target"));
       // Rollen/Deck können die Formationserkennung ändern (C_JOKER/C_BRIDGE, C_SACRIFICE-Deckmod) → neu berechnen (wie CONFIRM_TARGET).
-      const formations = computeFormations(state.playerOrder, deck, roles, state.perks, state.skills, state.shop?.anchors || [], familyTiers, archOf(state)); // #health-check G1: archOf ergänzt — diese Stelle war älter als der Architekt (#202) und liess Gebäude-Effekte bis zur nächsten Engine-Neuberechnung fallen
+      const formations = computeFormations(state.playerOrder, deck, roles, state.perks, state.skills, state.shop?.anchors || [], familyTiers, archOf(state), plantBag(state)); // #health-check G1: archOf ergänzt — diese Stelle war älter als der Architekt (#202) und liess Gebäude-Effekte bis zur nächsten Engine-Neuberechnung fallen
       return { ...state, familyTiers, deck, roles, formations, phase: "play", familyTarget: null };
     }
 
@@ -600,7 +602,7 @@ export function reducer(state, action) {
         deck = def.permMod(state.deck, state.playerOrder, ids);
       }
       const roles = { ...(state.roles || {}), [state.targetPerk]: ids };
-      return { ...state, deck, roles, formations: computeFormations(state.playerOrder, deck, roles, state.perks, state.skills, state.shop?.anchors || [], state.familyTiers, archOf(state)), phase: "play", targetPerk: null };
+      return { ...state, deck, roles, formations: computeFormations(state.playerOrder, deck, roles, state.perks, state.skills, state.shop?.anchors || [], state.familyTiers, archOf(state), plantBag(state)), phase: "play", targetPerk: null };
     }
 
     // (#267: PICK_STAT entfernt — es gibt keine Stat-Phase mehr.)
@@ -626,13 +628,11 @@ export function reducer(state, action) {
       const active0 = state.activeArchetypes || [];
       if (arch && !active0.includes(arch) && active0.length >= runRules(state).maxArchetypes) return state; // exp: Deckel je Lauf (Bestand = C.MAX_ARCHETYPES)
       let skills;
-      let trimmed = false; // #288: wurde ein wachstums-stützender Skill ersetzt? → Trimmung
       // Legendäre zählen nicht gegen das Slot-Limit und werden nie ersetzt (exp: kein Ersetzen von Legendären).
       const normalCount = state.skills.filter((id) => !isLegendarySkill(id)).length;
       if (replaceId && state.skills.includes(replaceId) && !isLegendarySkill(replaceId)) {
         // Gezieltes Ersetzen (volle Slots ODER Konsumenten-Ersatzdialog #93): tauscht genau diesen (normalen) Slot.
         skills = state.skills.map((id) => (id === replaceId ? skillId : id));
-        if (isTrimmableSkill(replaceId)) trimmed = true; // #288 Trimmen: Wachstums-Skill rausgetauscht
       } else if (normalCount < (state.skillSlots || C.SKILL_SLOT_LIMIT)) { // exp: Slots unbegrenzt (Dev-Run-Regel kann begrenzen)
         skills = [...state.skills, skillId];                       // freier Slot → hinzufügen
       } else {
@@ -652,30 +652,23 @@ export function reducer(state, action) {
       let brandPending = state.brandPending || {}, brandActive = state.brandActive || {}, forged = state.forged || {};
       // Blitzfänger-Temp (iceTemp, Blitz-Archetyp) — beim Eis-Deaktivieren aus Alt-Verhalten geleert (#140).
       let iceTemp = state.iceTemp;
-      let growth = state.growth || {}, colonized = state.colonized || {}; // Pflanze-Fraktion (v0): Wachstum / Kolonisierung
+      let growth = state.growth || {}; // Pflanze (§6.2): Wachstum je Karte
       if (arch === "lightning") lightning = { ...lightning, active: true, maxCharge: maxChargeFor(skills, skillTiers) }; // exp: Leiste 10, Donnergott 7, Reststrom Episch 9 (§7.22)
       if (replaceId === LIGHT.SPANNUNGSSTAU && lightning && lightning.stauBonus) lightning = { ...lightning, stauBonus: 0 }; // exp: Spannungsstau ersetzt → sein Stau geht mit
       if (arch === "fire" && !(heat && heat.active)) heat = { ...initHeat(), active: true, max: heatMaxFor(skills) };
       heat = syncHeatMax(heat, skills); // exp: Weißglut gewählt oder ersetzt → Leiste 200 bzw. 100 (Hitze geklemmt)
       // Eis-Neudesign: der neue Eis-Archetyp friert KEINE Karten mehr ein — die Mechanik läuft über Masse/Gletscher
       // (glacier.js), getrieben von state.glacierRoles (unten aus den Skill-`role`s).
-      // Pflanze (v0): erster Pflanze-Skill → Alter Anker (1 Karte reif: grün, Wert 11) + Setzlingsbeet/Dornenkönig.
-      if (arch === "plant" && !(state.activeArchetypes || []).includes("plant")) {
-        deck = deck.map((c, i) => (i === 0 ? { ...c, green: true, value: C.PLANT_ANCHOR_VALUE } : c)); // Alter Anker (Zündfunke ab Durchlauf 1)
-        if (hasSetzlingsbeet(skills)) { // niedrigste Karte je Segment +3 Wachstum
-          const g = { ...growth };
-          for (let seg = 0; seg * SEGMENT_SIZE < state.playerOrder.length; seg++) {
-            let lowId = null, lowV = Infinity;
-            for (let p = seg * SEGMENT_SIZE; p < (seg + 1) * SEGMENT_SIZE && p < state.playerOrder.length; p++) {
-              const c = deck[state.playerOrder[p]];
-              if (c.value < lowV) { lowV = c.value; lowId = c.id; }
-            }
-            if (lowId != null) g[lowId] = (g[lowId] || 0) + C.SETZLINGSBEET_GROWTH;
-          }
-          growth = g;
-        }
+      // Pflanze (§6.2): das Wachstum läuft, sobald ein Pflanzen-Skill liegt — kein Anker, kein Skill-Tor, kein
+      // Startgrün. Nur Setzlingsbeet legt den Kaltstart: die niedrigste Karte je Segment (Episch die zwei niedrigsten)
+      // startet mit Wachstumsvorsprung. Der Kaltstart läuft auch, wenn Setzlingsbeet später dazukommt.
+      if (arch === "plant") {
+        const gains = setzlingsbeetGains(skills, skillTiers, { order: state.playerOrder, deck, segmentSize: SEGMENT_SIZE })
+          .filter((g) => !(state.growth || {})[g.id]); // nur einmal je Karte — ein zweiter Pflanzen-Pick sät nicht nach
+        if (gains.length) { const r = applyGrowth(growth, deck, gains); growth = r.growth; deck = r.deck; }
       }
       if (arch && !activeArchetypes.includes(arch)) activeArchetypes = [...activeArchetypes, arch];
+
       // #140: Verliert man durch Ersetzen den LETZTEN Skill eines Archetyps (0 Skills übrig), wird er deaktiviert
       // und seine Ressourcen/Marker verschwinden — sonst bleiben „Geister"-Leisten/eingefrorene Karten ohne Skill.
       const stillActive = new Set(skills.map(archetypeOf).filter(Boolean));
@@ -683,8 +676,8 @@ export function reducer(state, action) {
       if (!stillActive.has("lightning")) lightning = initLightning();               // Ladungsleiste weg
       if (!stillActive.has("fire")) { heat = null; brandPending = {}; brandActive = {}; forged = {}; } // Hitze/Brand/Schmiede-Zähler weg (geschmiedete Dauerwerte bleiben gebacken)
       if (!stillActive.has("ice")) iceTemp = {};                                     // Blitzfänger-Temp beim Eis-Deaktivieren leeren (Alt-Verhalten)
-      let plantLoss = state.plantLoss || {}; // Wurzelschlag-Buff (v0.4): Niederlagen-Zähler je card.id
-      if (!stillActive.has("plant")) { deck = deck.map((c) => (c.green ? { ...c, green: false } : c)); growth = {}; colonized = {}; plantLoss = {}; } // Pflanze weg (Anker-Wert bleibt gebacken)
+      // Pflanze weg (letzter Pflanzen-Skill ersetzt): Wachstum und beide Zustände fallen mit ihr.
+      if (!stillActive.has("plant")) { deck = deck.map((c) => (c.green || c.bloom ? { ...c, green: false, bloom: false } : c)); growth = {}; }
       // Eis-Neudesign: aktive Gletscher-Rollen aus den gehaltenen Skill-`role`s; bei Deaktivierung Gletscher-State leeren.
       let glacierRoles = glacierRolesOf(skills);
       let glacierMass = state.glacierMass, firnStack = state.firnStack, glacierLocked = state.glacierLocked, glacierYield = state.glacierYield,
@@ -695,10 +688,9 @@ export function reducer(state, action) {
         frozenOppPending = {}; frozenOppActive = {}; glacierBuffPending = {}; glacierBuffActive = {}; grosseLawineFired = false;
       }
       // Formationen neu berechnen (Anker/Familien/Architekt beeinflussen die Erkennung).
-      const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, skills, state.shop?.anchors || [], state.familyTiers, archOf(state));
-      return { ...state, skills, skillTiers, skillOfferTiers: null, activeArchetypes, lightning, heat, deck, iceTemp, growth, colonized, plantLoss, brandPending, brandActive, forged, formations,
+      const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, skills, state.shop?.anchors || [], state.familyTiers, archOf(state), { skillTiers, growth });
+      return { ...state, skills, skillTiers, skillOfferTiers: null, activeArchetypes, lightning, heat, deck, iceTemp, growth, brandPending, brandActive, forged, formations,
                glacierRoles, glacierMass, firnStack, glacierLocked, glacierYield, frozenOppPending, frozenOppActive, glacierBuffPending, glacierBuffActive, grosseLawineFired, // Eis-Neudesign (#386 Firn-Reserve mitgeführt)
-               trimCount: (state.trimCount || 0) + (trimmed ? 1 : 0), // #288 Trimmen
                // Eis-Neudesign: jeder Eis-Skill-Pick öffnet SOFORT die Gletscher-Wahl (genau 1 Karte festfrieren, Pflicht) —
                // analog zum Perk-Ziel-Flow. Andere Archetypen gehen direkt weiter. Ist KEIN gültiges Ziel mehr frei
                // (alles gefroren bzw. gesperrt), wird die Phase übersprungen statt betreten — sonst Soft-Lock, s. o.
@@ -797,7 +789,7 @@ export function reducer(state, action) {
       const cardA = state.deck[state.playerOrder[i]], cardB = state.deck[state.playerOrder[j]];
       const order = state.playerOrder.slice();
       [order[i], order[j]] = [order[j], order[i]];
-      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.familyTiers, archOf(state)),
+      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.familyTiers, archOf(state), plantBag(state)),
                formationEnergy: state.formationEnergy - 1,
                formationSwaps: [...(state.formationSwaps || []), { i, j, idA: cardA.id, idB: cardB.id }] };
     }
@@ -831,7 +823,7 @@ export function reducer(state, action) {
       const last = swaps.pop();
       const order = state.playerOrder.slice();
       [order[last.i], order[last.j]] = [order[last.j], order[last.i]];
-      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.familyTiers, archOf(state)),
+      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.familyTiers, archOf(state), plantBag(state)),
                formationEnergy: state.formationEnergy + 1, formationSwaps: swaps };
     }
     // Alle Tausche der Phase zurücknehmen → Ausgangsreihenfolge + volle Energie.
@@ -840,7 +832,7 @@ export function reducer(state, action) {
       const order = state.playerOrder.slice();
       const swaps = state.formationSwaps || [];
       for (let k = swaps.length - 1; k >= 0; k--) { const { i, j } = swaps[k]; [order[i], order[j]] = [order[j], order[i]]; }
-      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.familyTiers, archOf(state)),
+      return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.familyTiers, archOf(state), plantBag(state)),
                // Gemeinsamer Helfer mit dem Phasen-Eintritt in der Engine (#179 E_TUNING · #369 Energie-Boden aus dem
                // Baum · Dev-Run-Energie) — vorher stand die Formel hier dupliziert und ohne `devEnergy`.
                formationEnergy: formationEnergyFor(state),

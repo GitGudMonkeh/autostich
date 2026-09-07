@@ -5,11 +5,7 @@ import { weekModMag, hasWeekMod, BOOST_FACTOR } from "./weekMods.js"; // #370 Wo
 import { PERK_DEFS, buildPerkOffer, critChanceRawFor, critMultiplierFor, streakBaseMult, zinsHurdle } from "./perks.js";
 import { familySumHook, familyProdHook, familyTierParam, activeFamilyEntries, formationEnergyBonus, familyCritChanceRaw, familyCritMult, allianceGroups } from "./families.js";
 import { colorsAllied } from "./color.js"; // #289: Farb-Serie/Architekt/Farbfokus respektieren Farballianz
-import { skillSum, buildSkillDoors, // exp skill rework: Türen-Angebot (Stufen mit der Tür gewürfelt)
-  growthRipe, greenCount, // Pflanze-Fraktion (v0): Reife/Grün
-  plantPassiveActive, hasKernholz, hasWurzeltiefe, hasPfahlwurzel, hasJahresringe, hasAussaat, hasFlugsamen, hasZaeherHalm, // Pflanze: Fraktions-Passive (Mono/Schwellen-Knick) / Kernholz / Tiefe / Breite
-  hasRanken, hasBluete, hasBluetezeit, hasPhotosynthese, hasBlaetterdach, hasUeberwucherung, // Pflanze: Grün/Überwucherung
-  hasAuslaeufer, hasRhizom, hasErntedank, hasWeltenbaum, hasMutterbaum, hasBaumreihe, hasEwigerFruehling, plantSkillCount } from "./skills.js"; // Pflanze: Gegnerdeck/Legendäre + Bekenntnis-Skalierung
+import { skillSum, buildSkillDoors } from "./skills.js"; // exp skill rework: Türen-Angebot (Stufen mit der Tür gewürfelt)
 // exp skill rework: die Blitz-Mechanik (Passiv, 15 Skills, 4 Legendäre) lebt im Fraktionsmodul; die Engine ruft nur
 // ihre reinen Übergänge (Crit-Beiträge, Ladungsgewinn, volle Leiste, Niederlage, Rundenende).
 import { lightningCritChance, lightningCritMult, overcritMult, blitzfaengerValue, ionenfeldValue, fieldTick, ionScoreFor as lightIonScore, ionCritMultFor as lightIonCritMult, chargeGainOnWin,
@@ -19,6 +15,10 @@ import { lightningCritChance, lightningCritMult, overcritMult, blitzfaengerValue
 // ruft ihre Übergänge (Kampfwert-Bonus, Sieg, Niederlage, Hitze-Multiplikator, Rundenende, Brand-Wechsel).
 import { syncHeatMax, fireValueBonus, damascusCombat, fireOnWin, fireOnLoss, heatMult, verbrennungMult, feuersturmMult,
   rueckzuendungMult, schneiseMult, fireCycleEnd, nextBrandActive } from "./factions/fire.js";
+// exp skill rework: die Pflanze-Mechanik (Passiv „Wachstum", 15 Skills, 4 Legendäre) lebt im Fraktionsmodul; die
+// Engine ruft ihre Übergänge (Sieg, Niederlage, Durchlaufende) und reicht das Bündel { skillTiers, growth } an die
+// Formations-Engine weiter, deren Erkennung vier Pflanze-Hebel und zwei Legendäre ändern.
+import { plantOnWin, plantOnLoss, plantOnGap, plantCycleEnd, plantParam, P as PLANT } from "./factions/plant.js";
 // (#267: import aus stats.js entfernt — die Stat-Phase/Faktoren sind weg.)
 import { computeFormations, positionHasFormation, activeFormationCount, summarizeFormations, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
 import { perkLegendaryChance, anchorAt } from "./shop.js";
@@ -44,11 +44,8 @@ export function formationEnergyFor(state) {
   return base + perkSwaps + formationEnergyBonus(state.familyTiers, state.cycle); // #179 E_TUNING „Feinjustierung"
 }
 
-// ERKUNDUNG Hebel 7: Commitment-Scaler mit Konvexitäts-Exponent. commitScale(count) = min(1, count/SKILL_SLOTS)^COMMIT_EXP.
-// COMMIT_EXP=1 (Default) → linear = bisheriges Verhalten (neutral). >1 → konvex (Verdünnung kostet superlinear).
-// exp: `slots` = the run's BASE slot count (rules.skillSlots). Bonus slots (Meisterhand, week mod) still do not
-// dilute the commitment (#370 decision) — only the base the run was configured with moves the denominator.
-const commitScale = (count, slots = C.SKILL_SLOTS) => Math.pow(Math.min(1, count / slots), C.COMMIT_EXP);
+// (§6.1: der Bekenntnis-Skalierer commitScale war der letzte Leser des Pflanze-Direkt-Scores und ist mit ihm
+//  gegangen — keine Fraktion skaliert ihren Ertrag mehr an der Zahl gehaltener Skills.)
 
 function sumHook(perks, name, ctx) {
   let t = 0;
@@ -113,11 +110,6 @@ export function applyBuildBoost(res, factor) {
 export function resolveTrick(state, rng) {
   if (state.phase !== "play") return state; // Nicht-Play → No-op, braucht keine rng
   requireRng(rng, "resolveTrick"); // #229 N8: rng ist Pflicht (kein Math.random-Default mehr); Zufall kommt primär aus state.seed via rngAtOr
-  // exp: base slot count of THIS run for the commitment scalers below. Read once per trick, and only when a run
-  // carries rules at all — the Sim's millions of tricks never touch the rules path.
-  // exp skill rework: the default slot rule is "unlimited" (SKILL_SLOT_LIMIT); the scalers keep SKILL_SLOTS as
-  // their reference denominator and only follow a rule that actually limits below it.
-  const commitSlots = state.rules ? Math.min(runRules(state).skillSlots, C.SKILL_SLOTS) : C.SKILL_SLOTS;
 
   let {
     deck, oppDeck, playerOrder, oppOrder, pos, cycle, trickNo,
@@ -149,16 +141,14 @@ export function resolveTrick(state, rng) {
     // Getrennte Sub-Kanäle je namentlicher Fantasie (#270.2): Pflanze Wurzel/Blüte/Ernte · Feuer Grund/Weißglut. Eis/Blitz
     // bleiben je EIN kohärenter Kanal (Eis = „Schichten zahlen", Blitz = Ionisierung; Blitz-Crit steht global in der Rail).
     lightYield = 0, // Blitz-Eigen-Score (Kanal)
-    plantRoot = 0, plantBloom = 0, plantHarvest = 0, // Pflanze: Wurzel- / Blüten- / Ernte-Score
+    plantBase = 0, // Pflanze: Basis-Score aus Blüte und den Score-Skills (§6: ein Kanal, kein Direkt-Score)
     fireBase = 0, fireHeat = 0, // Feuer: Feuer-Score (Konsumenten, Glutstahl, Sonnenkern) / Anteil des Hitze-Multiplikators und der Verbrennung
     ionTotal = 0, growthTotal = 0, brandTotal = 0, // Motor-Zähler: ionisierte Karten / Wachstum / gebrandmarkte Gegnerkarten
-    trimCount = 0, // #288 Trimmen: ersetzte Wachstums-Skills → Wurzel-/Blüten-Multiplikator
     skills = [], skillOffer = null, lightning = null, activeArchetypes = [], // Skill-System / Archetypen (#93)
     skillTiers = {}, // exp skill rework: Stufe je gehaltenem Skill (0 Normal … 3 Episch) — die Fraktionsmodule lesen ihre Tabellen damit
     iceTemp = {}, // (exp: ehemals Blitzfänger-Temp; wird nur noch durchgereicht)
     brandPending = {}, brandActive = {}, forged = {}, // Feuer: Brand-Marker (Gegner, je card.id, Wertabzug nächste Runde) / geschmiedete Dauerwerte
-    growth = {}, colonized = {}, // Pflanze-Fraktion (v0): Wachstum je card.id (nur steigend) / kolonisierte Gegnerkarten (grün = card.green auf der Karte)
-    plantLoss = {}, // Wurzelschlag-Buff (v0.4): Niederlagen-Zähler je card.id — je WURZELSCHLAG_LOSS_EVERY wächst die Karte trotzdem
+    growth = {}, // Pflanze (§6.2): Wachstum je card.id (nur steigend) — grün und blühend liegen als Flag auf der Karte
 
     shop = null, // hält nur noch die (inerten) Positionsanker []; der Shop selbst ist entfernt (#229)
     familyTiers = {}, // Raritätssystem (Epic #167): Familienrang je Familie — Engine löst aktive Stufen-Hooks auf
@@ -221,7 +211,7 @@ export function resolveTrick(state, rng) {
   // Architekt-Precompute je Durchlauf (stabil): value-/score-Effekte + Struktur-Faktor je Position (target einmal bestimmt).
   let archPreNow = architectPre;
   if (pos === 0) {
-    formations = computeFormations(playerOrder, deck, roles, perks, skills, anchors, familyTiers, archState);
+    formations = computeFormations(playerOrder, deck, roles, perks, skills, anchors, familyTiers, archState, { skillTiers, growth });
     // Fundament (L_FUND, v0.3): additiver Bonus auf JEDEN Strukturfaktor. Wird in den Precompute gereicht, damit
     // Engine UND UI-Anzeige dieselbe Quelle behalten (boardFactorMap-Kommentar: gezeigte und verrechnete Faktoren
     // dürfen nicht driften). Default 0 ⇒ alle Bestands-Aufrufer/Tests byte-identisch.
@@ -392,10 +382,9 @@ export function resolveTrick(state, rng) {
   let newBrandPending = { ...brandPending };
   let newBrandActive = brandActive;
   let newForged = forged;
-  // Pflanze-Fraktion (v0): Wachstum (immutabel fortgeschrieben) / kolonisierte Gegnerkarten. Grün = card.green (im deck gebacken).
+  // Pflanze (§6.2): Wachstum je Karte, immutabel fortgeschrieben. Die Zustände grün/blühend liegen als Flag auf der
+  // Karte (card.green / card.bloom) und werden vom Modul mitgezogen.
   let newGrowth = growth;
-  let newColonized = { ...colonized };
-  let newPlantLoss = plantLoss; // Wurzelschlag-Buff (v0.4): Niederlagen-Zähler je card.id (immutabel fortgeschrieben)
   let architectBump = null; // Architekt Meilenstein (#202): Gebäude-id, dessen Sieg-Zähler nach diesem Stich hochzählt
 
   let won = false, lost = false, tieConverted = false;
@@ -494,142 +483,22 @@ export function resolveTrick(state, rng) {
       heat = r.heat; fireFlat = r.flat; fireHeld = r.held; fireLineMult = r.lineMult || 1;
       for (const b of r.brands) { newBrandPending[b.id] = (newBrandPending[b.id] || 0) + b.value; brandTotal += 1; } // #270.2: Motor-Zähler „Brände"
     }
-    // ---- Pflanze-Fraktion (v0): Wachstum (Sieg → +1), Reife-Recolor, Wurzeln (Score/Wert), Aussaat/Ranken (Breite/Grün),
-    //      Blüte/Photosynthese/Blätterdach (Grün-Payoff), Ausläufer (Kolonisieren/Ernten). Grün = card.green.
+    // ---- Pflanze (exp skill rework, §6): Wachstum (Passiv + Aussaat/Ranken/Blütenlese), die Zustandswechsel
+    //      grau → grün → blühend und der Basis-Score (blühende Siegkarte, die vier Formations-Skills, Jahresringe) —
+    //      alles im Modul. Kein Direkt-Score, kein eigener Multiplikator: `plantFlat` geht in die multiplizierte Basis.
     let plantFlat = 0;
-    let plantFormMult = 1;
-    let plantDirect = 0; // Pflanze-Legendär-Reshape: DIREKTe, post-stack, gedeckelte Dividende aus den Fluten (unten zu `gained`)
     if ((activeArchetypes || []).includes("plant")) {
-      const inFormation = positionHasFormation(posForm);
-      const plantCommit = commitScale(plantSkillCount(skills), commitSlots); // Bekenntnis-Skalierung (cross-health) für die post-stack Direkt-Dividenden (#270.2 + #Ceiling)
-      // #288 „Trimmen": dauerhafter Multiplikator auf Wurzel- & Blüten-Score, je ersetztem Wachstums-Skill höher (gedeckelt).
-      const trimMult = 1 + Math.min((trimCount || 0) * C.TRIM_STEP, C.TRIM_CAP);
-      // Wachstum: je Sieg +Zuwachs, GEGATET an die Pflanzen-Skill-Anzahl (Anti-Splash, v0.3): min(1, PflanzenSkills / SKILL_REF).
-      // 1 Splash-Skill = 1/3 Speed, volle +1/Sieg erst ab SKILL_REF Skills → hohes Wachstum verlangt echtes Deck-Commitment.
-      const prevG = newGrowth[pCard.id] || 0;
-      const growInc = Math.min(1, C.PLANT_GROWTH_SKILL_REF > 0 ? plantSkillCount(skills) / C.PLANT_GROWTH_SKILL_REF : 1);
-      const g = prevG + growInc;
-      newGrowth = { ...newGrowth, [pCard.id]: g };
-      growthTotal += growInc; // #270: Motor-Zähler „Gewachsen" — Lauf-Summe des zugewachsenen Wachstums
-      const cardGreen = pCard.green || growthRipe(g);
-      if (growthRipe(g) && !pCard.green) deck = deck.map((c) => (c.id === pCard.id ? { ...c, green: true } : c));
-      // Ernte: geschlagene Gegnerkarte kolonisiert? → +Wachstum; Erntedank (reif), Rhizom (Nachbar).
-      if (newColonized[oCard.id]) {
-        newGrowth = { ...newGrowth, [pCard.id]: (newGrowth[pCard.id] || 0) + C.AUSLAEUFER_HARVEST }; growthTotal += C.AUSLAEUFER_HARVEST; // #270
-        if (hasErntedank(skills) && cardGreen) { plantFlat += C.ERNTEDANK_SCORE; plantHarvest += C.ERNTEDANK_SCORE; } // #270.2: Ernte-Score-Kanal
-        if (hasRhizom(skills)) { const oi = oppOrder[actualPos], nb = oi + 1 < oppDeck.length ? oi + 1 : oi - 1;
-          if (nb >= 0 && newColonized[oppDeck[nb].id]) { newGrowth = { ...newGrowth, [pCard.id]: (newGrowth[pCard.id] || 0) + C.AUSLAEUFER_HARVEST }; growthTotal += C.AUSLAEUFER_HARVEST; } } // #270
-      }
-      if (cardGreen) {
-        // Wurzeltiefe: Flat-Score je Sieg (Pfahlwurzel ×2 in Formation) + Jahresringe (je 10 Wachstum). Mutterbaum streut aufs Segment.
-        if (hasWurzeltiefe(skills)) {
-          let root = C.WURZELTIEFE_SCORE * (hasPfahlwurzel(skills) && inFormation ? C.PFAHLWURZEL_MULT : 1);
-          if (hasJahresringe(skills)) root += Math.floor(g / C.JAHRESRINGE_PER_GROWTH) * C.JAHRESRINGE_SCORE;
-          // Feldtiefe (Buff): Bonus je grünem Sieg ∝ √(GESAMTWACHSTUM des Feldes) — abnehmender Ertrag + Deckel gegen Runaway.
-          let fieldGrowth = 0; for (const gid in newGrowth) fieldGrowth += newGrowth[gid];
-          if (fieldGrowth > 0) root += Math.min(C.WURZELTIEFE_FIELD_CAP, Math.round(C.WURZELTIEFE_FIELD_K * Math.sqrt(fieldGrowth)));
-          root = Math.round(root * trimMult); // #288 Trimmen: Wurzel-Score-Multiplikator
-          plantFlat += root; plantRoot += root; // #270.2: Wurzel-Score-Kanal
-          // #Ceiling Wurzel/TIEFE: superlinear (dreieckig) in der Wachstums-Tiefe der Siegkarte ÜBER dem Wert-Deckel —
-          // post-stack (plantDirect), gedeckelt, bekenntnis-skaliert (+ Trimm-Multiplikator #288). Zündet nur bei tiefen Bäumen → reines Ceiling.
-          const needRoot = Math.max(0, C.PLANT_VALUE_CAP - pCard.value) * C.WURZELSCHLAG_PER_GROWTH;
-          const depth = Math.min(Math.floor(g - needRoot), C.PLANT_ROOT_DEEP_CAP);
-          if (depth > 0) { const d = (depth * (depth + 1) / 2) * C.PLANT_ROOT_DEEP_K * plantCommit * trimMult; plantDirect += d; plantRoot += d; }
-          if (hasMutterbaum(skills) && g >= Math.max(1, ...Object.values(newGrowth))) { plantFlat += root; plantRoot += root; } // Mutterbaum (v0-Näherung): Segment-Streuung
-        }
-        // Fraktions-Passive (Mono): grüne Karte leitet permanenten Wert aus Wachstum ab (+1 je N Wachstum, bis Deckel).
-        // Wachstum wird NICHT verbraucht (speist parallel Jahresringe/Feldtiefe/Legendäre). Nur solange Mono-Pflanze.
-        if (plantPassiveActive(skills) && Math.floor(g / C.WURZELSCHLAG_PER_GROWTH) > Math.floor(prevG / C.WURZELSCHLAG_PER_GROWTH) && pCard.value < C.PLANT_VALUE_CAP)
-          deck = deck.map((c) => (c.id === pCard.id ? { ...c, value: Math.min(C.PLANT_VALUE_CAP, c.value + 1) } : c));
-        // Kernholz (L4): erntet den aufgebauten Wert — +Score je Kartenwert-Punkt über dem Startwert (baseRank). Nur grün.
-        if (hasKernholz(skills) && cardGreen) {
-          const over = Math.max(0, pCard.value - (pCard.baseRank || 0));
-          if (over > 0) { const kh = over * C.KERNHOLZ_SCORE_PER_VALUE; plantFlat += kh; plantRoot += kh; }
-        }
-        // Aussaat: beide Nachbarn +1 Wachstum (Flugsamen: grüne überspringen, nächste graue säen).
-        if (hasAussaat(skills)) {
-          for (const dir of [-1, 1]) {
-            let nb = actualPos + dir;
-            if (hasFlugsamen(skills)) while (nb >= 0 && nb < playerOrder.length && deck[playerOrder[nb]].green) nb += dir;
-            if (nb >= 0 && nb < playerOrder.length) { const nid = deck[playerOrder[nb]].id; newGrowth = { ...newGrowth, [nid]: (newGrowth[nid] || 0) + C.AUSSAAT_GROWTH }; growthTotal += C.AUSSAAT_GROWTH; } // #270
-          }
-        }
-        // Ranken: einen noch-grauen Nachbarn sofort grün färben.
-        if (hasRanken(skills)) {
-          for (const dir of [-1, 1]) { const nb = actualPos + dir; if (nb < 0 || nb >= playerOrder.length) continue;
-            if (!deck[playerOrder[nb]].green) { const nid = deck[playerOrder[nb]].id; deck = deck.map((c) => (c.id === nid ? { ...c, green: true } : c)); break; } }
-        }
-        // Blüte: grüne Nachbarn → +Score je grüner Karte im Segment (Blütezeit ×2 in Formation, Überwucherung ×2).
-        if (hasBluete(skills)) {
-          const nbGreen = [-1, 1].every((dir) => { const nb = actualPos + dir; return nb < 0 || nb >= playerOrder.length || deck[playerOrder[nb]].green; });
-          if (nbGreen) {
-            const segStart = Math.floor(actualPos / SEGMENT_SIZE) * SEGMENT_SIZE;
-            let gs = 0; for (let p = segStart; p < segStart + SEGMENT_SIZE && p < playerOrder.length; p++) if (deck[playerOrder[p]].green) gs += 1;
-            let b = C.BLUETE_SCORE * gs * (hasBluetezeit(skills) && inFormation ? C.BLUETEZEIT_MULT : 1);
-            // Überwucherung verdoppelt die Blüte NUR, wenn das Feld genug grün ist (≥66 %, mit Ewiger Frühling ≥25 %) —
-            // gleich gegatet wie der Farbblock-+0,20-Teil in formations.js (Text/Glossar SK_PLANT_14). [#228 C1]
-            const greenFieldRatio = deck.length > 0 ? greenCount(deck) / deck.length : 0;
-            const uebThresh = hasEwigerFruehling(skills) ? C.EWIGER_FRUEHLING_FIELD : C.UEBERWUCHERUNG_FIELD;
-            if (hasUeberwucherung(skills) && greenFieldRatio >= uebThresh) b *= 2;
-            b = Math.round(b * trimMult); // #288 Trimmen: Blüten-Score-Multiplikator
-            plantFlat += b; plantBloom += b; // #270.2: Blüten-Score-Kanal
-          }
-        }
-        // #Ceiling Blüte/BREITE: superlinear (dreieckig) im VOLLEN grünen Feld — nur wenn das Feld überwuchert ist (≥ Schwelle
-        // grün; Ewiger Frühling senkt sie). Post-stack (plantDirect), gedeckelt, bekenntnis-skaliert → reines Ceiling für das
-        // committed all-green Board, Floor unberührt.
-        if (hasBluete(skills) && deck.length > 0) {
-          const thr = hasEwigerFruehling(skills) ? C.EWIGER_FRUEHLING_FIELD : C.UEBERWUCHERUNG_FIELD;
-          const gc = greenCount(deck);
-          if (gc / deck.length >= thr) {
-            const m = Math.min(gc, C.PLANT_BLOOM_FIELD_CAP);
-            const d = (m * (m + 1) / 2) * C.PLANT_BLOOM_FIELD_K * plantCommit * trimMult; plantDirect += d; plantBloom += d;
-          }
-        }
-        // Photosynthese: grüne Karte in Formation → ×PHOTOSYNTHESE_MULT (Formations-Faktor). [#230 N9: war „×1,15", ist 1,08]
-        if (hasPhotosynthese(skills) && inFormation) plantFormMult *= C.PHOTOSYNTHESE_MULT;
-        // Baumreihe (Legendär): voll ausgewachsene grüne Karten (Wert ≥ Deckel) zählen POSITIONSFREI als EINE gemeinsame
-        // Wiederholung — je solcher Karte auf dem Brett ein Faktor auf die Stiche DIESER Karte (gedeckelt; Position egal).
-        if (hasBaumreihe(skills) && pCard.green && pCard.value >= C.PLANT_VALUE_CAP) {
-          let n = 0; for (const c of deck) if (c.green && c.value >= C.PLANT_VALUE_CAP) n++;
-          if (n >= 2) plantFormMult *= Math.min(C.BAUMREIHE_CAP, C.BAUMREIHE_BASE + (n - 2) * C.BAUMREIHE_STEP);
-        }
-        // Blätterdach: grüner Farbblock ab BLAETTERDACH_MIN Karten → +Score je Karte IM BLOCK (echte Lauflänge des
-        // Farbblocks an der Siegposition, nicht die deckweite Grünzahl). Grün = eine gemeinsame Farbe „G" → der Lauf an
-        // einer grünen Position besteht aus grünen Karten. Analog zur Blüte, die nur das Segment zählt. [#228 C2]
-        const fbEntry = (posForm.formations || []).find((f) => f.type === "farbblock");
-        const fbLen = fbEntry ? (fbEntry.len || 0) : 0;
-        if (hasBlaetterdach(skills) && fbLen >= C.BLAETTERDACH_MIN) { const bd = Math.round(C.BLAETTERDACH_SCORE * Math.min(fbLen, C.BLAETTERDACH_CARD_CAP) * trimMult); plantFlat += bd; plantRoot += bd; } // #270.2: Blätterdach → Wurzel-Kanal (Feld-Score) · #288 Trimm-Mult
-        // Ausläufer: die niedrigste noch nicht kolonisierte Gegnerkarte kolonisieren.
-        if (hasAuslaeufer(skills)) {
-          let lowId = null, lowV = Infinity;
-          for (const c of oppDeck) if (!newColonized[c.id] && c.value < lowV) { lowV = c.value; lowId = c.id; }
-          if (lowId != null) newColonized = { ...newColonized, [lowId]: true };
-        }
-        // ---- Pflanze-Legendär-Reshape (2026-07-30): DIREKTE Dividende aus den verschwendeten FLUTEN je GRÜNEM Sieg —
-        //      am Multiplikator-Stack VORBEI (unten zu `gained`), hart gedeckelt (Plateau, kein Runaway), bekenntnis-
-        //      skaliert (plantSkillCount/SKILL_SLOTS = cross-health). Nur Legendär-Halter → generisches Pflanze unberührt.
-        if (hasWeltenbaum(skills) || hasMutterbaum(skills) || hasEwigerFruehling(skills)) {
-          // plantCommit ist oben (Plant-Section-Start) gehoben.
-          // Überlauf-Wachstum = Wachstum ÜBER dem, was Wurzelschlag zum Wert-Deckel braucht (verschwendet, „alter Wald").
-          if (hasWeltenbaum(skills) || hasMutterbaum(skills)) {
-            let sumOv = 0, maxOv = 0;
-            for (const c of deck) if (c.green) {
-              const need = Math.max(0, C.PLANT_VALUE_CAP - c.value) * C.WURZELSCHLAG_PER_GROWTH;
-              const ov = (newGrowth[c.id] || 0) - need;
-              if (ov > 0) { sumOv += ov; if (ov > maxOv) maxOv = ov; }
-            }
-            // Weltenbaum (BREITE): die SUMME des Überlauf-Wachstums über den ganzen Wald zahlt je grünem Sieg.
-            if (hasWeltenbaum(skills)) { const d = Math.min(sumOv, C.WELTENBAUM_OVERFLOW_CAP) * C.WELTENBAUM_DIRECT * plantCommit; plantDirect += d; plantRoot += d; } // #270.2: alter Wald → Wurzel-Kanal
-            // Mutterbaum (TIEFE): der EINE tiefste Baum (max Überlauf) zahlt je grünem Sieg (Konzentration).
-            if (hasMutterbaum(skills)) { const d = Math.min(maxOv, C.MUTTERBAUM_OVERFLOW_CAP) * C.MUTTERBAUM_DIRECT * plantCommit; plantDirect += d; plantRoot += d; } // #270.2: Wurzel-Kanal
-          }
-          // Ewiger Frühling (GRÜN-FELD): das ewige grüne Feld zahlt je grünem Sieg ∝ #grüne Karten; bei VOLL grünem Feld doppelt.
-          if (hasEwigerFruehling(skills)) {
-            const gc = greenCount(deck);
-            const fullMult = (deck.length > 0 && gc === deck.length) ? C.EWIGER_FRUEHLING_FULLGREEN_MULT : 1;
-            const d = Math.min(gc, C.EWIGER_FRUEHLING_FIELD_CAP) * C.EWIGER_FRUEHLING_DIRECT * fullMult * plantCommit; plantDirect += d; plantRoot += d; // #270.2: Grün-Feld → Wurzel-Kanal
-          }
+      const r = plantOnWin(newGrowth, deck, skills, skillTiers, { pos: actualPos, order: playerOrder, posForm, cardId: pCard.id });
+      newGrowth = r.growth; deck = r.deck; plantFlat = r.flat; growthTotal += r.grown; // #270 Motor-Zähler „Gewachsen"
+      plantBase += r.flat;
+      // Lücke Episch (§6.8): die vom grünen Lauf übersprungenen Karten wachsen mit. Die Positionen liegen auf dem
+      // Farbblock-Eintrag der Siegposition (`gapped`, formations.js).
+      const gapGrowth = plantParam(skills, skillTiers, PLANT.LUECKE, "growth");
+      if (gapGrowth) {
+        const gapped = (posForm.formations || []).find((f) => f.type === "farbblock" && f.gapped)?.gapped || [];
+        if (gapped.length) {
+          const g2 = plantOnGap(newGrowth, deck, skills, gapped.map((p) => deck[playerOrder[p]].id), gapGrowth);
+          newGrowth = g2.growth; deck = g2.deck; growthTotal += g2.grown;
         }
       }
     }
@@ -732,7 +601,7 @@ export function resolveTrick(state, rng) {
     // Formationsenergie je Aufstellphase) hängt als negativer extraSwap am Perk und läuft über die bestehende
     // Energie-Summe (reducer.js CONFIRM_FORMATION / engine.js Aufstell-Phase) — kein eigener Hook nötig.
     const ballastMult = ownsFlag(perks, "ballast") ? C.BALLAST_FORM_MULT : 1;
-    let formMult = formBaseEff * plantFormMult * brennpunktMult * sammlerMult * ballastMult; // + Photosynthese (plantFormMult) + Brennpunkt/Sammler (#203) + Ballast (v0.3)
+    let formMult = formBaseEff * brennpunktMult * sammlerMult * ballastMult; // + Brennpunkt/Sammler (#203) + Ballast (v0.3) — die Pflanze hat keinen eigenen Multiplikator mehr (§6.1)
     // #370 Formations-Boost (Wochen-Mod, nur Ranked): den Formations-BONUS (Überschuss über 1) verdoppeln — neutraler
     // Sieg (formMult==1) bleibt unberührt, Formations-Builds skalieren stärker. Wirkt auch auf glacierWinMult (nutzt formMult).
     if (hasWeekMod(state.weekMods, "formBoost")) formMult = 1 + (formMult - 1) * BOOST_FACTOR;
@@ -769,7 +638,7 @@ export function resolveTrick(state, rng) {
     // #161 FB-2: additiver Score-Anteil der Formations-Faktoren (echte Formationen + Formations-Stat + Nachhall + Kern).
     // Auf dem MULTIPLIZIERTEN Score, VOR der Glutdividende (die läuft am Stack vorbei und zählt nicht als Formations-Score).
     // [#229 T4] Bekannte Attributions-Ungenauigkeit (nur Anzeige, kein Gameplay): formMult bündelt auch
-    // plantFormMult/brennpunktMult/sammlerMult → dieser Anteil wird hier der Formation zugeschlagen statt seinen echten Quellen.
+    // brennpunktMult/sammlerMult → dieser Anteil wird hier der Formation zugeschlagen statt seinen echten Quellen.
     const formFactorTotal = formMult * afterglowMult * coreMult;
     if (formFactorTotal > 1) formationScore += gained * (1 - 1 / formFactorTotal);
     // #251: Serien-Anteil — der Serien-Multiplikator als Faktor-Anteil an `gained` (analog formationScore; Näherung, da die Faktoren multiplikativ ineinandergreifen).
@@ -791,7 +660,7 @@ export function resolveTrick(state, rng) {
     const lightDirect = 0;
     const fireDirectApplied = 0;
     // Voller Stich-Ertrag OHNE die Vabanque-Auszahlung — Bezugsgröße der Wette (s. u.) und Basis für `gained`.
-    const gainedPreBet = gained + fireDirectApplied + lightDirect + plantDirect;
+    const gainedPreBet = gained + fireDirectApplied + lightDirect;
     // Vabanque (#203, Eröffnungs-Wette): die ersten VABANQUE_TRICKS Stiche eines DURCHLAUFS in Folge gewonnen →
     // Auszahlung DIREKT (post-stack). pos = Stich-Index im Durchlauf (VOR pos+=1); cycleWins zählt die Siege inkl.
     // dieses → am TRICKS-ten Stich (pos = TRICKS−1) sind alle Eröffnungsstiche gewonnen ⟺ cycleWins === TRICKS.
@@ -829,7 +698,7 @@ export function resolveTrick(state, rng) {
     // streakFlat/fireMult stehen mit im Breakdown, damit die Stich-Aufschlüsselung (UI) die Kette EXAKT
     // nachrechnen kann: (Basis×Serie + streakFlat) × (Perks×Feuer×Architekt) × (Form×Nachhall×Kern) × Crit
     // + Direkt-Anteile = total. Ohne diese beiden blieb ein unerklärter Rest stehen. Reine Anzeige-Daten.
-    breakdown = { base: C.SCORE_PER_WIN, flats, streakFlat: architectStreakFlat, streakMult, perkMult, fireMult, formMult, formBase: formBaseEff, afterglowMult, coreMult, architectMult, critMult: isCrit ? critMultiplier : 1, strikeMult, fireDirect: fireDirectApplied, lightDirect, plantDirect, perkDirect, total: gained };
+    breakdown = { base: C.SCORE_PER_WIN, flats, streakFlat: architectStreakFlat, streakMult, perkMult, fireMult, formMult, formBase: formBaseEff, afterglowMult, coreMult, architectMult, critMult: isCrit ? critMultiplier : 1, strikeMult, fireDirect: fireDirectApplied, lightDirect, perkDirect, total: gained };
     // Blitz (exp skill rework, §3): Ladungsgewinn dieses Siegs — Passiv (+1 je Crit), Blitzableiter (§7.18: auch je Sieg
     // ohne Crit auf Episch), Überspannung (§7.24: der Überschuss über dem Crit-Deckel und über 100 % Chance), Ladungsserie
     // Episch — mit fortgeschriebenen Zählern; Blitzschlag (jeder N. Crit ionisiert die Siegkarte); Spannungsstau. Die volle
@@ -936,31 +805,14 @@ export function resolveTrick(state, rng) {
     if (interplayStoreOnLoss) interplayStored += interplayStoreOnLoss; // D_INTERPLAY IV: Niederlage bankt Score für den nächsten Sieg
     winSuit = null; winSuitStreak = 0; // #71 Farbserie: Niederlage beendet die Farbserie
     serieStreak = streakNoReset ? winStreak : 0; // Serienschutz/Serienanker: effektive Serie hält
-    // Zäher Halm (Pflanze v0): unreife (graue) Karten wachsen auch bei Niederlage +1 — bis sie grün sind.
-    if (hasZaeherHalm(skills) && !pCard.green) {
-      const g = (newGrowth[pCard.id] || 0) + C.ZAEHER_HALM_GROWTH;
-      newGrowth = { ...newGrowth, [pCard.id]: g }; growthTotal += C.ZAEHER_HALM_GROWTH; // #270
-      if (growthRipe(g)) deck = deck.map((c) => (c.id === pCard.id ? { ...c, green: true } : c)); // reif geworden → grün backen
-    }
-    // Fraktions-Passive — Niederlage-Klausel: nur Mono-Pflanze UND ab N Pflanzen-Skills wächst eine Karte auch nach je M
-    // Niederlagen trotzdem. Zähler je card.id; bei Erreichen der Schwelle → +Zuwachs (gleiche Skill-Gate-Rate wie ein Sieg)
-    // und Zähler zurück. Grün backen + Wert-Schwelle wie im Sieg.
-    if (plantPassiveActive(skills) && plantSkillCount(skills) >= C.WURZELSCHLAG_LOSS_MIN_SKILLS) {
-      const losses = (newPlantLoss[pCard.id] || 0) + 1;
-      if (losses >= C.WURZELSCHLAG_LOSS_EVERY) {
-        newPlantLoss = { ...newPlantLoss, [pCard.id]: 0 };
-        const growInc = Math.min(1, C.PLANT_GROWTH_SKILL_REF > 0 ? plantSkillCount(skills) / C.PLANT_GROWTH_SKILL_REF : 1);
-        const prevG = newGrowth[pCard.id] || 0, g = prevG + growInc;
-        newGrowth = { ...newGrowth, [pCard.id]: g }; growthTotal += growInc; // #270 Motor-Zähler
-        const nowGreen = pCard.green || growthRipe(g); // grau creept Richtung Grün; grün klettert im Wert
-        if (growthRipe(g) && !pCard.green) deck = deck.map((c) => (c.id === pCard.id ? { ...c, green: true } : c)); // reif → grün
-        if (nowGreen && Math.floor(g / C.WURZELSCHLAG_PER_GROWTH) > Math.floor(prevG / C.WURZELSCHLAG_PER_GROWTH) && pCard.value < C.PLANT_VALUE_CAP)
-          deck = deck.map((c) => (c.id === pCard.id ? { ...c, value: Math.min(C.PLANT_VALUE_CAP, c.value + 1) } : c)); // Wurzelschlag-Wert (nur grün, wie im Sieg)
-      } else {
-        newPlantLoss = { ...newPlantLoss, [pCard.id]: losses };
-      }
+    // Pflanze (§6.8): eine Niederlage gibt nichts — außer mit Zähem Halm, der graue (Episch auch grüne) Karten
+    // trotzdem wachsen lässt. Alles im Modul.
+    if ((activeArchetypes || []).includes("plant")) {
+      const r = plantOnLoss(newGrowth, deck, skills, skillTiers, { cardId: pCard.id });
+      newGrowth = r.growth; deck = r.deck; growthTotal += r.grown;
     }
     lastResult = "loss";
+
   } else {
     ties += 1;
     sinceWin += 1; // #71 Durchbruch: Gleichstand zählt als „kein Sieg" weiter
@@ -1040,7 +892,7 @@ export function resolveTrick(state, rng) {
   const hitTypes = won
     ? [
         heatFull && "fire",
-        (pCard.green && pCard.value >= C.PLANT_VALUE_CAP) && "plant",
+        (deck.find((c) => c.id === pCard.id)?.bloom) && "plant", // §6.2: Sieg mit einer blühenden Karte (Stand nach dem Wachstum dieses Stichs)
         ((pCardR.ionStacks || 0) >= C.ION_MAX_STACKS) && "lightning",
         (glacierActive && !!glacierLocked[actualPos]) && "ice",
       ].filter(Boolean)
@@ -1159,15 +1011,10 @@ export function resolveTrick(state, rng) {
       const r = fireCycleEnd(heat, skills, skillTiers, deck, newForged);
       heat = r.heat; deck = r.deck; newForged = r.forged;
     }
-    // ---- Pflanze-Fraktion (v0): Weltenbaum — am Durchlauf-Ende wächst der ganze Wald (+1 Wachstum je 10 grüne im Feld); Nachzügler reifen.
-    if (hasWeltenbaum(skills)) {
-      const per = Math.floor(greenCount(deck) / C.WELTENBAUM_PER_GREEN);
-      if (per > 0) {
-        const ng = { ...newGrowth };
-        for (const c of deck) ng[c.id] = (ng[c.id] || 0) + per;
-        newGrowth = ng;
-        deck = deck.map((c) => (!c.green && growthRipe(newGrowth[c.id] || 0) ? { ...c, green: true } : c));
-      }
+    // ---- Pflanze (§6.5): Weltenbaum — am Durchlaufende wächst jede grüne Karte, je mehr grüne Karten im Feld stehen.
+    if ((activeArchetypes || []).includes("plant")) {
+      const r = plantCycleEnd(newGrowth, deck, skills);
+      newGrowth = r.growth; deck = r.deck; growthTotal += r.grown;
     }
 
     // #226 Großmeister: kürzerer Lauf als Schwierigkeits-Hebel (maxCycles override, sonst C.MAX_CYCLES → byte-identisch).
@@ -1262,7 +1109,7 @@ export function resolveTrick(state, rng) {
         newFormationSwaps = [];
         // #137: anchors + familyTiers mitgeben (wie bei pos-0/Tausch/Kauf), sonst zeigt die Formationsphase beim
         // Eintritt einen veralteten Stand (ohne regeländernde Familien-Effekte) — erst der erste Tausch korrigierte.
-        formations = computeFormations(playerOrder, deck, roles, perks, skills, anchors, familyTiers, archState);
+        formations = computeFormations(playerOrder, deck, roles, perks, skills, anchors, familyTiers, archState, { skillTiers, growth: newGrowth });
       }
     }
   }
@@ -1285,7 +1132,7 @@ export function resolveTrick(state, rng) {
     scoreAtCycleStart, lastCycleScore, prevCycleScore, // #131 Rundenscore-Tracking
 
     crits, critBonusScore, bestTrickScore, bestGlacierTrickScore, maxFormations, formationScore, buildingScore, streakScore, // #161 FB-2 / #UI / #251: Run-Rückblick (+ bester Gletscher-Stich / Gebäude-/Serien-Score)
-    lightYield, plantRoot, plantBloom, plantHarvest, fireBase, fireHeat, // #270: Fraktions-Eigen-Score (Kanäle je Fantasie)
+    lightYield, plantBase, fireBase, fireHeat, // #270: Fraktions-Eigen-Score (Kanäle je Fantasie)
     ionTotal, growthTotal, brandTotal, // #270: Motor-Zähler
     trickLog: nextTrickLog, // #251: Score je Stich (+ Sieg/Niederlage), nach Durchlauf gebucket → Durchlauf-Graph
     initiative, lastResult, perks, offer: newOffer, tieArmed, sinceWin, lossStreak, lastWinValue,
@@ -1308,7 +1155,7 @@ export function resolveTrick(state, rng) {
     heat, // Feuer-Archetyp (#93 F1): Hitze-Substate (null solange kein Feuer-Skill aktiv)
     iceTemp: newIceTemp, // temporärer Wertbonus je card.id (Blitzfänger)
     brandPending: newBrandPending, brandActive: newBrandActive, forged: newForged, // Feuer: Brände (nächste/aktive Runde) + Schmiedewerte
-    growth: newGrowth, colonized: newColonized, plantLoss: newPlantLoss, // Pflanze-Fraktion (v0): Wachstum + Kolonisierung + Niederlagen-Zähler (Wurzelschlag-Buff v0.4)
+    growth: newGrowth, // Pflanze (§6.2): Wachstum je Karte (grün/blühend liegen als Flag auf der Karte)
     shop, // hält nur noch die (inerten) Positionsanker (#229: Shop entfernt)
     lastTrick, phase,
   };

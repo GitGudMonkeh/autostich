@@ -3,7 +3,6 @@ import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Re
 import { PANEL_BG, phaseCard, phasePanel, PhaseHairline, PHASE_ACCENTS } from "./modalStyle.jsx";
 import { summarizeFormations, SEGMENT_SIZE, openSegmentInfo } from "../game/formations.js";
 import { allianceGroups } from "../game/families.js";
-import { hasPfahlwurzel, plantRootScore, plantSkillCount } from "../game/skills.js";
 import { architectCoverFor, structLitPosOf, distrLitPosOf } from "./architectCover.js";
 import { CardGrid } from "./CardGrid.jsx";
 import { CardDetail } from "./CardDetail.jsx";
@@ -105,7 +104,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
   const structLitPos = useMemo(() => structLitPosOf(state), [hasArch, archBuildings]); // eslint-disable-line react-hooks/exhaustive-deps -- wie oben: gekeyt, Werte wechseln synchron
   const distrLitPos = useMemo(() => distrLitPosOf(state), [hasArch, archBuildings]); // eslint-disable-line react-hooks/exhaustive-deps -- wie oben: gekeyt, Werte wechseln synchron
   // Pflanze (#211): Klick-Detail-Readout nur, wenn ein Pflanzen-Skill gehalten wird (sonst irrelevant).
-  const plantHeld = plantSkillCount(state.skills || []) > 0;
+  const plantHeld = (state.activeArchetypes || []).includes("plant");
 
   const clickPos = (pos) => {
     if (chLockFormSet.has(pos)) { audio.play("denied"); haptics.denied(); return; } // #301 C3: fixierte Zelle — nicht wählbar/tauschbar
@@ -263,9 +262,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
             <CardDetail card={sel != null ? cards[sel] : null} pos={sel} posForm={sel != null ? formations[sel] : null} roles={state.roles} familyTiers={state.familyTiers}
               arch={sel != null && architectCover ? architectCover[sel] : null}
               plantReadout={plantHeld}
-              plantGrowth={sel != null && cards[sel] ? (state.growth?.[cards[sel].id] || 0) : 0}
-              plantRoots={sel != null && cards[sel] ? plantRootScore(state.skills || [], state.growth?.[cards[sel].id] || 0) : 0}
-              plantPfahl={hasPfahlwurzel(state.skills || [])} />
+              plantGrowth={sel != null && cards[sel] ? (state.growth?.[cards[sel].id] || 0) : 0} />
             {/* #UI-Redesign: Referenz-Legende (Formationen & Rahmenfarben) einklappbar — default zu, damit die
                 Aufstellung nicht von der 7-zeiligen Textwand zugestellt wird. Wer's kennt, sieht sie nie. */}
             {/* Wrapper trägt den Tutorial-Anker: FormCollapse reicht keine Fremd-Props durch. */}

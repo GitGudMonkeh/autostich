@@ -1,5 +1,5 @@
 import { memo, useRef, useState, useLayoutEffect, createContext, useContext } from "react";
-import { suitColor, PLANT_VALUE_CAP } from "../game/constants.js";
+import { suitColor } from "../game/constants.js";
 
 import { SEGMENT_SIZE } from "../game/formations.js";
 import { anchorTypeAt, linkedPartnersOf } from "../game/shop.js";
@@ -85,7 +85,7 @@ const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], sele
   // Farbblock-Planungssignal in der Aufstellung; heller als die Grün-Suit (#5ab87a) + 🌿 im Status-Cluster
   // machen eine reife Grün-Karte trotz gleicher Grundfarbe erkennbar.
   const ripe = !!card.green;
-  const numCol = ripe ? (card.value >= PLANT_VALUE_CAP ? PLANT_FULL : PLANT_RIPE) : col;
+  const numCol = ripe ? (card.bloom ? PLANT_FULL : PLANT_RIPE) : col;
   const labels = [...new Set((pf.formations || []).map((f) => formationAbbr(f.type)))].join("");
   const fb = formationBorder(pf);
   // Eis-Neudesign: Firn-Boden = ungefrorenes Feld mit angesammelter Boden-Reserve (#386 firnStack, noch kein Gletscher).

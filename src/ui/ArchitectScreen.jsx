@@ -10,7 +10,7 @@ import { archFamily as familyDef } from "../i18n/labels.js"; // #sprache: Gebäu
 import { computeFormations, summarizeFormations } from "../game/formations.js";
 import { fundamentBonus } from "../game/perks.js"; // v0.3 „Fundament": Strukturfaktor-Bonus des Builds
 import { allianceGroups } from "../game/families.js"; // #289: Farballianz für Wert-Boost-Anzeige
-import { SUIT_ORDER, PLANT_VALUE_CAP } from "../game/constants.js";
+import { SUIT_ORDER } from "../game/constants.js";
 import { ARCH_CAT as CAT, PLANT_RIPE, PLANT_FULL } from "./indicators/vocab.js";
 import { tierColor } from "../game/rarity.js";
 import FormIcon from "./FormIcon.jsx";
@@ -724,7 +724,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                 const ev = effValueAt(pos);
                 const boost = ev - card.value;
                 // Pflanze (#211): reife (grüne) Karte → Zahl leuchtet grün (voll ausgewachsen am hellsten), wie am Aufstellungs-Brett.
-                const numCol = card.green ? (card.value >= PLANT_VALUE_CAP ? PLANT_FULL : PLANT_RIPE) : SUIT_COLOR[card.suit];
+                const numCol = card.green ? (card.bloom ? PLANT_FULL : PLANT_RIPE) : SUIT_COLOR[card.suit];
                 const isGlacier = glacierPos ? glacierPos.has(pos) : false;                       // festgefrorener Gletscher
                 const gMass = glacierMassByPos ? Math.round(glacierMassByPos[pos] || 0) : 0;       // Gletscher-Eigenmasse
                 const fMass = firnStackByPos ? Math.round(firnStackByPos[pos] || 0) : 0;           // #386 Boden-Reserve (firnStack)
