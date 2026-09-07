@@ -3745,6 +3745,104 @@ Die 20 vorhandenen Gletscher-Testdateien lesen ihre Erwartungen jetzt aus der St
 **Offen, bis der Owner es sagt:** gemessen ist nichts. Die Zahlen sind Startwerte aus dem Design, nicht aus der Sim.
 Ebenfalls offen bleiben E1 bis E3 aus §5.1 (Aufstellungs-Lock, Score-Pfad, die beiden Deckel) und das Angebot.
 
+### 5.4 Eis kommt ins Angebot und wird gemessen (2026-09-07, auf Ansage) — gemessen, nichts tariert
+
+Owner: „jetzt messen." Vorher musste Eis ins Angebot: `SKILL_OFFER_ARCHETYPES` führt jetzt alle vier Fraktionen.
+Ohne das misst `--arch ice` einen Zufallsbuild (§5.1). Balance-Guard neu zentriert.
+
+#### Parität — Duell, 200 Läufe, ohne Legendäre
+
+`SIM_SKILL_LEGENDARY_PER_SLOT=0 npm run sim -- --mode duel --arch fire,lightning,plant,ice --runs 200`
+
+| Build | Median | Mean | p90 | Siegquote |
+| --- | --- | --- | --- | --- |
+| Feuer mono | 6,42M | 8,62M | 16,49M | 66,2 % |
+| Blitz mono | 5,68M | 9,43M | 17,24M | 59,3 % |
+| Pflanze mono | 7,93M | 11,94M | 22,12M | 54,8 % |
+| **Eis mono** | **8,95M** | **9,55M** | **14,88M** | 55,8 % |
+| Split über alle vier | 5,31M | 6,83M | 11,46M | 56,7 % |
+| Mix (Random) | 3,47M | 4,67M | 7,37M | 57,3 % |
+
+**Die drei bekannten Fraktionen sind gefallen** (Feuer 7,75 → 6,42M, Blitz 7,43 → 5,68M, Pflanze 8,36 → 7,93M), weil
+das Angebot breiter geworden ist: an derselben Tür steht jetzt auch Eis, ein Mono-Build bekommt also weniger eigene
+Skills. Verglichen wird deshalb **innerhalb dieses Laufs**, nicht gegen die alten Zahlen.
+
+**Eis überschießt: 1,39× gegen Feuer, 1,58× gegen Blitz, 1,13× gegen Pflanze.** Zugleich hat es den **kürzesten
+Schwanz** von allen — p90 14,9M gegen Pflanzes 22,1M, Mean 9,55M gegen 11,94M. Hoher Boden, kaum Decke: der
+Gletscher zahlt in jedem Lauf ungefähr dasselbe.
+
+#### Was die Skills tragen — Ablation, mono, zweimal
+
+`npm run sim -- --mode skills --arch ice --explore 900 --runs 120`, einmal mit Legendären, einmal ohne.
+
+**Ohne Legendäre ist die Fraktion flach.** Kein einziger Skill kommt über +14 %; acht liegen bei oder unter null:
+
+| trägt | Median-Δ | | tot oder schadet |
+| --- | --- | --- | --- |
+| Packeis | +14 % | | Abbruchkante +1 %, Kettenbruch +1 % |
+| Verzahnung | +12 % | | Schneetreiben −0 %, Rissbildung −1 % |
+| Eispanzer | +9 % | | Frostbund −2 %, Eiswall −3 % |
+| Einfrieren | +7 % | | Dauerfrost −3 %, Verdichtung −4 % |
+| Gletschersturz | +4 %, Anfrieren +4 %, Eisbrücke +2 % | | |
+
+Zum Vergleich: bei Feuer, Blitz und Pflanze liegen die tragenden Skills bei +30 bis +100 %.
+
+**Mit Legendären kippt das Bild ins Gegenteil:** die drei Legendären sind alles (Eiszeit ×1,49, Ewiges Schild ×1,44,
+Große Lawine ×1,43, typisch +318 bis +968 %), und neun der 15 normalen Skills werden tot oder schädlich — Eiszeit
+flutet die Boden-Reserve, die jeden Gletscher zum Durchlauf-Beginn ohnehin auf volle Masse zieht, und macht damit
+die ganze Firn-Linie überflüssig.
+
+#### Die Legendären im gemischten Feld
+
+`npm run sim -- --mode legendaries --arch fire,lightning,plant,ice --runs 150 --explore 600 --table sim/out/legtable-l9.json`
+
+| Legendär | Fraktion | typischer Effekt |
+| --- | --- | --- |
+| Baumreihe / Wurzelgeflecht | Pflanze | +196 % / +181 % |
+| Sonnenzorn / Sonnenkern / Ewige Glut | Feuer | +76 % / +75 % / +66 % |
+| Doppelentladung / Hochspannung / Resonanz | Blitz | +72 % / +57 % / +49 % |
+| **Eiszeit** | Eis | **+106 %** — mitten im Band |
+| **Ewiges Schild** | Eis | **−13 %** |
+| **Große Lawine** | Eis | **−13 %** |
+
+Ewiges Schild und Große Lawine sind im gemischten Build tot (besser in 46 bzw. 47 % der Seeds — ein Münzwurf), im
+reinen Eis-Build dagegen die stärksten Picks. Bekenntnis-Legendäre, wie die Wachstums-Skills der Pflanze (§6.22) —
+nur eben auf der Legendär-Ebene, wo es teurer wiegt.
+
+#### Der Grund: der weiche Deckel frisst genau die Achse, auf der Eis gebaut ist
+
+Nachgerechnet durch die echte `precomputeGlacier`, ohne Sim-Lauf (`scratchpad/burst-cap.mjs`):
+
+| Feld | Bruch ungedeckelt | Bruch im Spiel | durchgelassen |
+| --- | --- | --- | --- |
+| einzelner Gletscher | 8 976 | 8 976 | 100 % |
+| Block 2×2 | 19 355 | 19 355 | 100 % |
+| Kreuz | 15 778 | 15 778 | 100 % |
+| **Große Fläche 3×3** | **88 307** | **42 898** | **49 %** |
+
+`BURST_SOFTCAP` liegt bei 40 000, darüber zählt nur noch `BURST_SOFTSLOPE` = 6 % des Überschusses. Der Deckel greift
+also **nicht** beim einzelnen Gletscher, sondern genau ab der Form, auf die die ganze Fraktion hinspielt. Und er
+frisst nicht nur Score, sondern die **Wirkung jedes Verstärkers**: Abbruchkante hebt die Wucht nominal um 18 %; in
+der Großen Fläche kommen davon **+2,2 %** an. Die Ablation misst +1 %. Dasselbe trifft Kaskade, Kollision,
+Gletschersturz, Eiswall und Kettenbruch — jeden multiplikativen Hebel der Fraktion.
+
+Das erklärt beide Befunde auf einmal: warum Eis einen hohen, aber flachen Median hat (der Deckel schneidet die
+Spitzen ab und lässt den Boden stehen), und warum kein Skill über +14 % kommt.
+
+#### Vorschlag (Entscheid Owner, nichts umgesetzt)
+
+**E3 aus §5.1 umsetzen — der Deckel raus, dafür die Grundzahl runter.** Konkret: `BURST_SOFTCAP` und
+`BURST_SOFTSLOPE` streichen, `EISZEIT_MAX_GLACIERS` streichen, und `BURST_SCALE` (heute 340) so weit senken, dass
+Eis im Duell auf Feuer-Niveau landet. Startwert-Vorschlag rund 200, dann ein Sweep — Eis muss von 8,95M auf etwa
+6,4M, und ohne Deckel steigen die großen Brüche zusätzlich.
+
+Was das ändert: die Verstärker wirken wieder in voller Höhe, die Große Fläche wird wieder das Ziel, das sie sein
+soll, und Ewiges Schild verliert seinen stillen Preis (es hebt heute alle Gletscher auf das Maximum, und was über
+12 liegt, verfällt fast wertlos als Überlauf).
+
+**Offen bleibt danach:** ob Ewiges Schild und Große Lawine als Bekenntnis-Legendäre bleiben dürfen, und ob die
+Firn-Linie neben Eiszeit noch eine Rolle hat.
+
 ## 6. Pflanze
 
 ### 6.1 Richtung und Abgrenzung (gesetzt, Owner 2026-09-06)
@@ -5119,3 +5217,4 @@ und die Ranked-Texte, die eine andere Runde meinen.
 | 2026-09-07 | Owner: auch die Reste des Textpakets aus §7.26 angleichen. Drei Stellen im Register und im Glossar sagen jetzt Durchlauf statt Runde (Schmiede-Tooltip, Glossar „Schmieden", Glossar „Brandmal"). Gegengeprüft statt nur umbenannt: `newBrandActive` wird im Durchlauf-Ende-Block der Engine getauscht, der Brand hält also wirklich einen Durchlauf; die Kommentare dort bleiben als Altbestand. Der Dev-Knopf „Runde überspringen" und die Ranked-Texte bleiben. §6.25. |
 | 2026-09-07 | Eis aufgenommen, nichts geändert. Befund: die Fraktion ist vollständig gebaut, verdrahtet, sichtbar und mit 111 Tests belegt — aber ohne exp-Struktur und heute unerreichbar, weil `SKILL_OFFER_ARCHETYPES` sie nicht führt (ein `--arch ice`-Lauf misst also einen Zufalls-Build). Acht strukturelle Punkte, der größte: kein Eis-Skill hat Stufen, die Mechanik liest Konstanten über `role`. Drei Owner-Entscheidungen isoliert (Aufstellungs-Lock, Score-Pfad neben der Basis, zwei Deckel) mit Empfehlung. Vorschlag für die 15 + 3: Verschmelzen, Zermalmen und Erstarrung streichen, Eisbrücke, Kettenbruch und Einfrieren bekommen einen Regler, der Rest bleibt. §5.1 und §5.2. |
 | 2026-09-07 | Owner nimmt §5.2 an und lässt die Raritäten bauen. Drei Skills gestrichen (Verschmelzen, Zermalmen, Erstarrung), dann die vier Stufen je Skill. Der eigentliche Umbau lag darunter: die Eis-Mechanik las globale Konstanten über die Rolle, eine gewürfelte Stufe änderte nichts. Neu `state.glacierRoleTiers` und `src/game/factions/ice.js` (wie fire/lightning/plant); `glacier.js` hält nur noch, was ohne Skill gilt, 14 Rollen-Konstanten sind dort weg. Eisbrücke, Kettenbruch und Einfrieren haben ihren Regler bekommen; zwei stumme Regeln (Schneetreibens 0-Masse-Sonderfall, Anfrierens Formations-Zuschlag auf jeder Stufe) sind gefallen. Neuer Wächter `test/ice-rework.test.js`. Startwerte, UNGEMESSEN. §5.3. |
+| 2026-09-07 | Auf Ansage gemessen. Eis ist ins Angebot gekommen (alle vier Fraktionen an den Türen), Balance-Guard neu zentriert (Median 2,87M / Mean 5,92M). Duell: Eis mono 8,95M gegen Feuer 6,42M, Blitz 5,68M, Pflanze 7,93M — 1,39× über Feuer, dabei der kürzeste Schwanz von allen. Ablation ohne Legendäre: die Fraktion ist flach, kein Skill über +14 %, acht bei oder unter null. Mit Legendären kippt es: die drei Legendären tragen alles, im gemischten Feld sind Ewiges Schild und Große Lawine mit −13 % aber tot. Ursache nachgerechnet: der weiche Deckel lässt in der Großen Fläche 49 % des Bruchs durch und macht aus Abbruchkantes nominalen +18 % ganze +2,2 %. Vorschlag: E3 umsetzen, Deckel raus, BURST_SCALE runter. Nichts tariert. §5.4. |\n

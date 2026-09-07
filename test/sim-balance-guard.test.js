@@ -64,6 +64,10 @@ import { randomPolicy } from "../sim/policies/random.js";
 // §6.19 (Owner, 2026-09-07): blühende Karten zählen in den vier Formations-Score-Skills wie 5/5/6/7 grüne (Parität
 // der Pflanze). Seeds 1..40 Median ≈ 3,29M, Mean ≈ 5,30M — der Zufallsspieler steigt nur leicht, weil er blühende
 // Karten selten in Formationen stehen hat. Bänder darauf neu zentriert (≈ ±35 %).
+// §5.4 (Owner, 2026-09-07): Eis kommt ins Angebot — alle vier Fraktionen stehen jetzt an den Türen. Der Zufallsspieler
+// FÄLLT im Median und STEIGT im Mean: Eis-Gletscher zahlen unabhängig vom Rest des Builds (der Bruch hängt an der
+// Masse, nicht am Stich), verdünnen aber die Feuer-/Blitz-Linien, die er sonst zusammenbekäme. Seeds 1..40
+// Median ≈ 2,87M, Mean ≈ 5,92M (Seeds 1..200: 2,68M / 4,55M). Bänder darauf neu zentriert (≈ ±35 %).
 describe("sim balance guard", () => {
   const SEEDS = 40; // feste Seeds 1..40 → deterministischer Median/Mean
   const scores = Array.from({ length: SEEDS }, (_, i) => runOne(1 + i, randomPolicy()).score).sort((a, b) => a - b);
@@ -71,14 +75,14 @@ describe("sim balance guard", () => {
   const mean = scores.reduce((t, v) => t + v, 0) / SEEDS;
 
   it("Median-Score im erwarteten Band (breite Power-Verschiebung)", () => {
-    // Ist-Wert ≈ 3,29M (exp §6.19, 50 Runden, Angebot Feuer/Blitz/Pflanze). Band toleriert normales Tuning, schlägt bei grober Verschiebung an.
-    expect(median).toBeGreaterThan(2_100_000);
-    expect(median).toBeLessThan(4_400_000);
+    // Ist-Wert ≈ 2,87M (exp §5.4, 50 Runden, Angebot Feuer/Blitz/Pflanze/Eis). Band toleriert normales Tuning, schlägt bei grober Verschiebung an.
+    expect(median).toBeGreaterThan(1_850_000);
+    expect(median).toBeLessThan(3_900_000);
   });
 
   it("Mean-Score im erwarteten Band (Tail-Runaway-Fänger)", () => {
-    // Ist-Wert ≈ 5,30M (exp §6.19). Die Obergrenze fängt weiterhin einen ECHTEN Tail-Blowup (Mean ginge dann deutlich höher).
-    expect(mean).toBeGreaterThan(3_400_000);
-    expect(mean).toBeLessThan(7_200_000);
+    // Ist-Wert ≈ 5,92M (exp §5.4). Die Obergrenze fängt weiterhin einen ECHTEN Tail-Blowup (Mean ginge dann deutlich höher).
+    expect(mean).toBeGreaterThan(3_800_000);
+    expect(mean).toBeLessThan(8_000_000);
   });
 });
