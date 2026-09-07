@@ -3876,7 +3876,7 @@ Sieg und +1 je aktiver Formation; eine Position gewinnt über einen Lauf grob 30
 | Skill | Normal | Selten | Sehr selten | Episch |
 | --- | --- | --- | --- | --- |
 | **Aussaat** | Gewinnt eine grüne Karte, wachsen beide Nachbarn +1 | +2 | +3 | +4; auch die zweiten Nachbarn wachsen +1 |
-| **Ranken** | Wird eine Karte grün, wachsen ihre grauen Nachbarn +5 | +8 | +12 | +16 |
+| **Ranken** | Wird eine Karte grün, wachsen ihre grauen Nachbarn +5 | +8 | +12 | +16; wird eine Karte dadurch grün, wachsen ihre grauen Nachbarn ebenfalls +16 |
 | **Setzlingsbeet** | Die niedrigste Karte je Segment startet mit +8 Wachstum | +12 | +16 | +16, die zwei niedrigsten |
 | **Lichtung** | Ein Sieg in einer Formation gibt +1 Wachstum zusätzlich | +2 | +3 | +3 je Formation an der Siegposition |
 | **Zäher Halm** | Graue Karten wachsen bei einer Niederlage +1 | +2 | +3 | +3; auch grüne Karten wachsen +1 |
@@ -3888,7 +3888,7 @@ Sieg und +1 je aktiver Formation; eine Position gewinnt über einen Lauf grob 30
 | **Spalier** | Die Segmentgrenze mit den meisten grünen Karten daneben ist offen | 2 Grenzen | 3 Grenzen | alle 7 Grenzen |
 | **Wildwuchs** | Deine am weitesten gewachsene blühende Karte zählt als Joker | 2 blühende Karten | 3 blühende Karten | alle blühenden Karten |
 | **Lücke** | Ein Lauf aus grünen Karten darf eine fremde Karte überspringen | zwei | drei | drei; die übersprungenen Karten wachsen +2 |
-| **Überwucherung** | Ab 80 % grünem Feld entstehen grüne Formationen mit einer Karte weniger | ab 65 % | ab 50 % | ab 35 % |
+| **Überwucherung** | Ab 80 % grünem Feld entstehen grüne Formationen mit einer Karte weniger | ab 65 % | ab 50 % | ab 35 %; mit zwei Karten weniger |
 
 #### Score aus grünen Formationen
 
@@ -3913,6 +3913,13 @@ seltensten. Deshalb zahlt der Farbblock je Karte am wenigsten und der Wechsel am
 **Das gemeinsame Episch-Motiv der Score-Skills** ist Absicht: „blühende Karten zählen doppelt" macht den dritten
 Zustand zum Verstärker aller vier Formationstypen, statt ihm einen eigenen Skill zu geben. Damit hängt die Spitze
 des Builds an derselben Größe wie das Passiv.
+
+**Abhebung der Episch-Stufen** (Owner-Frage): 13 der 15 haben einen zweiten Satz oder einen qualitativen
+Sprung — dasselbe Verhältnis wie bei Feuer und Blitz, wo rund zwei Drittel der Episch-Stufen ein Extra tragen. Die
+beiden reinen Zahlen von zuvor sind nach Owner-Entscheid gefüllt: **Ranken Episch** kettet (eine Karte, die dadurch
+grün wird, steckt ihre eigenen Nachbarn an — der einzige Dominoeffekt der Fraktion), **Überwucherung Episch** senkt
+die Mindestlänge um zwei statt um eine. Reine Zahlen bleiben nur dort, wo der Sprung selbst qualitativ ist:
+Spalier („alle 7 Grenzen" macht das Deck zu einer Reihe) und Wildwuchs („alle blühenden Karten").
 
 **Was zu messen ist, sobald das Passiv steht** (nicht vorher): wie viele blühende Karten ein Lauf hat (Wildwuchs
 Episch und die vier Episch-Extras hängen daran), wie lang grüne Farbblöcke wirklich werden (Blätterdach-Satz und die
@@ -3985,3 +3992,4 @@ offene Deckel-Frage aus 6.2), und wie oft Spalier Episch das Deck zu einer durch
 | 2026-09-06 | **Zwei Owner-Korrekturen und der Endstand der 15 (6.7).** (1) Wandertrieb gestrichen: kein Skill greift in die Aufstellungsordnung ein, die Kategorie „Aufstellung" entfällt. (2) **Faktenfehler von mir korrigiert:** der Wechsel stirbt im vollgrünen Deck nicht — `markWechsel` liest den Zick-Zack über den **Kartenwert** (Richtungswechsel, Mindestdifferenz 4), nicht über die Farbe; die falsche Behauptung stand in 6.2 und 6.6 und ist an beiden Stellen berichtigt. Trivial wird allein der Farbblock. Damit bekommt jeder der vier Formationstypen seinen Score-Skill (neu: **Windung** für den Wechsel). (3) „Ein Mitglied mehr" war unpräzise formuliert — **Überwucherung senkt jetzt die Mindestlänge grüner Formationen** (`minMembers`/`minLen`) und ist damit ein Erkennungs-Hebel statt eines Score-Zuschlags. Endverteilung: Wachstum 5 · Hebel 4 · Score 5 · Kombination 1. |
 | 2026-09-06 | **Owner: die 15 stehen.** Vier Stufen je Skill ausgeschrieben (6.8, Startwerte ungemessen): Wachstum über Mengen (Aussaat 1–4, Ranken 5–16, Setzlingsbeet 8–16, Lichtung 1–3, Zäher Halm 1–3), Hebel über Anzahl und Schwelle (Spalier 1/2/3/alle 7 Grenzen, Wildwuchs 1/2/3/alle blühenden, Lücke 1–3 Sprünge, Überwucherung ab 80/65/50/35 % grünem Feld), Score je Formationstyp mit **nach Formationslänge gestaffelten Sätzen** (Farbblock 10–25 je Karte, Treppe und Wiederholung 30–80, Wechsel 35–90, Tiefe 20–50 je 10 Wachstum), Kombination Blütenlese 40–100 plus Wachstum. Gemeinsames Episch-Motiv der Score-Skills: blühende Mitglieder zählen doppelt — der dritte Zustand ist der Verstärker statt eines eigenen Skills. Messliste für die Bauphase notiert (Zahl blühender Karten, Länge grüner Farbblöcke, Wirkung von Spalier Episch). |
 | 2026-09-06 | **Owner: drei Formulierungen für dieselbe Sache.** Die vier Score-Skills sagten „je grüner Karte im Block", „je Stufe" und „je Mitglied", Wildwuchs benutzte „blühende" substantiviert, Blütenlese sagte „Mitglieder". Vereinheitlicht auf den Begriff, den das Register kennt — **Karte** (Glossar: eine Formation ist ein „Muster benachbarter Karten"; „Mitglied" steht im Register nur als UI-Zusatz in der Kartendetail-Ansicht): alle vier Score-Skills zahlen „je grüner Karte darin", das gemeinsame Episch-Extra heißt überall „blühende Karten zählen doppelt", Wildwuchs zählt „blühende Karten", Blütenlese lässt „alle Karten darin" wachsen. Reine Formulierung, keine Werte. |
+| 2026-09-06 | **Owner: ja zu beiden Episch-Nachschärfungen.** Ranken Episch kettet jetzt (wird eine Karte durch den Ruck grün, wachsen ihre grauen Nachbarn ebenfalls +16 — der einzige Dominoeffekt der Fraktion, ohne Selbstbezug im Text), Überwucherung Episch senkt die Mindestlänge um zwei statt um eine. Damit haben 13 der 15 Episch-Stufen ein Extra oder einen qualitativen Sprung — dasselbe Verhältnis wie bei Feuer und Blitz; reine Zahlen bleiben nur bei Spalier (alle 7 Grenzen) und Wildwuchs (alle blühenden Karten), wo der Sprung selbst qualitativ ist. **Damit ist Pflanze auf dem Papier vollständig:** Richtung (6.1), Passiv (6.2), Bestandsaufnahme (6.3), Ranken-Umbau (6.4), die 15 nach Kategorien (6.6/6.7), Stufen (6.8). Offen: die Umsetzung und die Messliste. |
