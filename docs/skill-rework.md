@@ -4588,6 +4588,74 @@ trägt, ist offen — die Messung kommt auf Ansage.**
 
 ---
 
+### 6.21 Variante B gemessen: überschossen, ein Wachstums-Skill lebt, die Überlappung ist der Motor (2026-09-07)
+
+Alles ohne Legendäre (`SIM_SKILL_LEGENDARY_PER_SLOT=0`), Blühgewicht 5 plus 1 je 40 Wachstum über der Schwelle.
+
+#### A · Duell (200 Läufe, Türen aus allen drei)
+
+| Build | Median | Mean | p90 | Siegquote |
+| --- | --- | --- | --- | --- |
+| Feuer mono | 7,75M | 10,12M | 18,77M | 65,3 % |
+| Blitz mono | 7,43M | 14,84M | 37,35M | 59,4 % |
+| **Pflanze mono** | **10,49M** | 16,80M | 28,09M | 53,3 % |
+| Split über alle drei | 8,84M | 13,93M | 23,11M | 57,8 % |
+
+**Überschossen: 1,35× Feuer.** Der Weg dahin: 4,90M (festes Gewicht 1) → 7,48M (fest 5/5/6/7, §6.19) → **10,49M**
+(5 plus Wachstum). Der Wachstumsterm allein trägt also rund +40 %.
+
+Gierig, Pflanze pur: Median 25,79M (§6.19: 12,75M), p95 294M. Gemischt: Median 31,60M (vorher 21,81M), Siegquote 66 %.
+
+#### B · Die Wachstums-Skills: einer von vier lebt
+
+| Skill | Pflanze pur | gemischt | vorher (§6.17) |
+| --- | --- | --- | --- |
+| **Aussaat** | **+0,77M (+6 %)** | **+0,98M (+7 %)** | −0,01M / −0,16M |
+| Ranken | −0,47M | −1,26M | −0,62M / −3,00M |
+| Zäher Halm | −0,76M | −0,87M | −0,21M / −4,81M |
+| Setzlingsbeet | −2,40M | −8,78M | −0,74M / −3,80M |
+
+**Aussaat ist erstmals in BEIDEN Welten positiv** — der Mechanismus greift. Die anderen drei nicht: sie geben
+Wachstum an Karten, die nicht gewinnen (Ranken an Nachbarn, Zäher Halm bei Niederlagen, Setzlingsbeet als Vorschuss),
+und das Blühgewicht zahlt nur auf der Siegkarte und ihren Mitläufern. Aussaat trifft die Nachbarn der SIEGKARTE, also
+genau die, die mit ihr in einer Formation stehen.
+
+#### C · Sonde `plant-overlap` — überlappende Formationen (100 Läufe, Pflanze mono)
+
+| Formationen an der Siegposition | Anteil Siege | Ø Pflanzen-Flat | Ø Formations-Mult | Ø Score | **Anteil am Gesamtscore** | blühend |
+| --- | --- | --- | --- | --- | --- | --- |
+| 0 | 6,8 % | 22 | 1,00 | 581 | 0,3 % | 5,5 % |
+| 1 | 23,8 % | 82 | 1,26 | 885 | 1,4 % | 3,4 % |
+| 2 | 38,4 % | 1.070 | 2,35 | 7.371 | 18,4 % | 42,9 % |
+| 3 | 23,1 % | 2.066 | 3,90 | 22.456 | **33,8 %** | 67,7 % |
+| **4+** | **8,0 %** | 3.460 | 9,04 | 89.218 | **46,2 %** | 85,3 % |
+
+**8 % der Siege tragen 46 % des Scores, 31 % tragen 80 %.** Vom Ein- zum Vier-Formations-Sieg wächst der Flat ×42,
+der Formations-Multiplikator ×7,2 und der Score ×101. Die Kopplung ist bestätigt: dieselbe Überlappung erzeugt die
+Flats (einer je Formation) und multipliziert sie danach (Formationsfaktoren mal `OVERLAP_BONUS[4] = ×3`).
+
+**Aber es ist keine Lotterie.** Der größte Stich eines Laufs macht im Median nur **2,7 %** des Lauf-Scores aus
+(p90 4,3 %, max 10,0 %). Die Eskalation ist breit, nicht ein Jackpot: viele große Stiche, kein einzelner.
+
+Der größte Stich eines Laufs hat in **73 %** der Läufe vier Formationen, in 25 % drei. Und 85 % der
+Vier-Formations-Siege laufen über eine blühende Karte — **das Blühgewicht verstärkt genau die Siege, die ohnehin
+die stärksten sind.** Das ist der Grund für den Überschuss aus A.
+
+#### Vorschlag (Entscheid Owner, nichts umgesetzt)
+
+Für Parität muss ×0,73 herunter. Der Wachstumsterm ist das, was Aussaat lebendig gemacht hat — der sollte bleiben,
+gekürzt gehört das Grundgewicht:
+
+| Variante | Frisch blühend | Laufende (≈205 Wachstum) | Erwartung |
+| --- | --- | --- | --- |
+| heute | 5 | 8 | 10,49M (1,35× Feuer) |
+| **Grundgewicht 3, Schritt 40** | **3** | **6** | Parität, Wachstumsanteil steigt von ⅜ auf ½ |
+| Grundgewicht 2, Schritt 30 | 2 | 6 | noch stärker wachstumsgetrieben, unsicherer |
+
+**Empfehlung: Grundgewicht 3, Schritt 40.**
+
+---
+
 ## Änderungsprotokoll
 
 
@@ -4671,3 +4739,4 @@ trägt, ist offen — die Messung kommt auf Ansage.**
 | 2026-09-07 | Owner verwirft den Umbau der Wachstums-Skills: Wachstum ist die Kernmechanik, der Payoff muss aus dem Zusammenspiel kommen. Befund dazu: Wachstum hat nur zwei Ausgänge (die Schwellen 30 und 75), die das Passiv ohnehin erreicht — oberhalb von 75 ist jeder Punkt wertlos, und genau der eine Skill, der die Zahl liest (Jahresringe), ist der beste der Fraktion. Prinzip und drei Routen aufgeschrieben. §6.18. |
 | 2026-09-07 | Route 1 gebaut: blühende Karten zählen in den vier Formations-Score-Skills wie 5/5/6/7 grüne, auf jeder Stufe. Parität erreicht (Pflanze mono 7,48M gegen Feuer 7,75M / Blitz 7,43M) und die Erkennungs-Achse deutlich gestärkt (Spalier +12 % → +36 %). Die vier Wachstums-Skills bleiben aber tot — ein flacher Blüh-Faktor hebt alle Skills gleich und hängt am Zustand, nicht an der Zahl. Balance-Guard neu zentriert. §6.19. |
 | 2026-09-07 | Owner-Variante B: das Blühgewicht gehört der Karte, nicht dem Skill — „eine blühende Karte zählt wie 5 grüne, je 40 Wachstum darüber wie eine mehr", einmal im Passiv. Die vier Score-Skills sind wieder einzeilig, einfacher als vor der Runde. Wachstum zahlt damit über der Blüh-Schwelle weiter. Startwerte ungemessen. Prozessregel festgehalten: erst Planung, Messen nur auf ausdrückliches Go. §6.20. |
+| 2026-09-07 | Variante B gemessen: Pflanze mono 10,49M gegen Feuer 7,75M — überschossen (1,35×). Aussaat ist erstmals in beiden Welten positiv, die anderen drei Wachstums-Skills nicht (sie füttern Karten, die nicht gewinnen). Neue Sonde `plant-overlap`: 8 % der Siege (vier überlappende Formationen) tragen 46 % des Scores, aber der größte Stich eines Laufs macht im Median nur 2,7 % aus — steile Eskalation, keine Lotterie. Vorschlag Grundgewicht 3. §6.21. |
