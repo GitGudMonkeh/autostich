@@ -3412,6 +3412,102 @@ auf 3,27M (200 Seeds). Ein Score-Faktor auf 3 von 40 Positionen ist linear und h
 Owner-Entscheidung, kein Nebeneffekt:** ein Skill, der immer an ist, wurde gegen einen getauscht, der 8–15 % der
 Stiche trifft. Das Sim-Band ist darauf neu zentriert.
 
+### 7.28 Crit über 100 % und ein Skill auf der Ionisierung (2026-09-06, Befund und Vorschläge)
+
+Owner, zwei Punkte: „wir müssen irgendwie mit Crit über 100 % umgehen — eventuell, dass jeder Prozentpunkt über
+100 % stattdessen 0,01 Crit-Multiplikator gibt" und „Überspannung mag ich vom Design nicht, da brauchen wir was
+anderes; eventuell etwas, das mit den Ionisierungen auf den Karten wirkt. Haben wir etwas, was kartenabhängig aus
+ihrer Ionisierung Crit macht?"
+
+#### A. Was es heute gibt (Antwort auf die Frage)
+
+**Kartenabhängig Crit aus Ionisierung gibt es — aber nur als Systemregel und nur auf den Multiplikator, nicht als
+Crit-Chance und nicht als normaler Skill:**
+
+| Quelle | Was sie tut | Art |
+| --- | --- | --- |
+| Systemregel (`ION_CRIT_MULT_PER_STACK`) | jeder Stapel auf der Siegkarte gibt **+0,15× Crit-Multiplikator** | Passiv, immer an |
+| Donnergott (L) | dieselben Stapel zählen **+0,25×** statt 0,15× | Legendär |
+| Kurzschluss | ab N Stapeln zählen die Stapel der Karte **doppelt** — das verdoppelt auch ihren Crit-Multiplikator-Anteil | Skill, Schwelle |
+| Kettenblitz, Blitzschlag | erzeugen Stapel (Tiefe), zahlen selbst keinen Crit | Skill |
+| Blitzfänger | Stapel zu Kampfwert | Skill |
+
+**Frei ist die Richtung „Stapel → Crit-Chance".** Kein Skill und keine Regel macht das heute; die Chance kommt aus
+dem Passiv (4 % je Blitz-Skill), Gewitterfront und Ladungsserie. Der Platz SK_LIGHTNING_04 ist genau dafür der
+richtige.
+
+#### B. Wie viel Crit über 100 % es überhaupt gibt (gemessen)
+
+Zwei Sonden, je 100 Läufe: `overcrit-engine.mjs` (neu — zählt im echten Lauf die Stiche, deren Crit-Chance am
+Anschlag steht, plus Multiplikator und Deckel-Anteil) und `overcrit-probe.mjs` (Blitz-Anteil der Rohchance, also der
+Überschuss selbst; Untergrenze, ohne Perk-Crit).
+
+| Blitz mono | R 1–10 | 11–20 | 21–30 | 31–40 | 41–50 |
+| --- | --- | --- | --- | --- | --- |
+| Stiche mit Crit-Chance ≥ 100 % | 0 % | 0 % | 0 % | 3 % | **15 %** |
+| Ø Crit-Multiplikator | 2,37× | 2,48× | 2,72× | 3,59× | 5,41× |
+| Crits am Deckel (8×) | 0 % | 0 % | 0 % | 4 % | **27 %** |
+| Ø Überschuss, wo über 100 % | – | – | – | 38 pp | **70 pp** |
+
+Im Zufallsmix dasselbe Bild, schwächer: 1 % / 6 % der Stiche, dort aber Ø 102 pp Überschuss.
+
+**Lesart.** Der Überschuss ist ein reines Spätspiel-Ereignis, dann aber groß. Bei **0,002** je Prozentpunkt sind
+70 pp **+0,14×** auf einen Multiplikator von 5,4× — rund 2,5 %, praktisch nichts; die Regel steht heute nur auf dem
+Papier. Bei **0,01** (Owner-Vorschlag) sind es **+0,7×**, im Mix +1,0×. Ein Teil davon frisst der Deckel: in den
+Runden 41–50 stehen schon 27 % der Crits bei 8×.
+
+#### C. Sweep der Systemregel (Duell, 100 Läufe): sie kann unter dem Deckel kaum etwas bewirken
+
+`SIM_OVERCRIT_MULT_PER_PP` 0,002 (Ist) / 0,005 / 0,01 (Vorschlag) / 0,02. Feuer mono steht in allen vier Läufen
+unverändert bei 12,97M — die Regel betrifft nur Builds mit Crit über 100 %.
+
+| Satz je Prozentpunkt | 0,002 | 0,005 | **0,01** | 0,02 |
+| --- | --- | --- | --- | --- |
+| Blitz mono, Median | 12,97M | 12,97M | **12,98M** | 13,02M |
+| Floor Feuer ÷ Blitz | 1,00× | 1,00× | **1,00×** | 1,00× |
+| Mean | 0,65× | 0,65× | 0,66× | 0,67× |
+
+**Der Fünffache des Satzes bewegt den Median um 0,1 %, der Zehnfache um 0,4 %.** Der Grund steht in B: der
+Überschuss entsteht genau dort, wo der Multiplikator ohnehin am Deckel steht — in den Runden 41–50 sitzen 27 % der
+Crits auf 8×, und was die Regel oben drauflegt, schneidet der Deckel wieder ab. **Das korrigiert die Erwartung,
+mit der ich in diese Messung gegangen bin:** „Überschuss → Multiplikator" ist kein Kreislauf, sondern eine Sackgasse,
+solange der Deckel bei 8 steht (Owner-Entscheid 7.22: er bleibt).
+
+**Was daraus folgt.** 0,01 ist unbedenklich und darf gesetzt werden — es kostet nichts und macht die Regel in den
+Builds sichtbar, die noch unter dem Deckel sind. Es löst das Gefühl „Crit über 100 % ist verschenkt" aber nicht. Wer
+den Überschuss wirklich spüren will, muss ihn in eine Währung geben, die der Deckel nicht abschneidet: **Stapel**
+(Vorschlag 3 unten) oder **Ladung** (das tut Überspannung heute, Episch). Das ist die eigentliche Entscheidung —
+Satz oder Währung.
+
+#### D. Vorschläge für SK_LIGHTNING_04 (Entscheid Owner, nichts umgesetzt)
+
+Überspannung (Überschuss über dem Deckel → Ladung) geht raus, die ID und das Emblem bleiben, Blitz bleibt bei 14.
+Werte sind Platzhalter für den Sweep nach dem Ja; die gemessene Stapel-Tiefe ist die Bezugsgröße (Stapel-Build am
+Laufende Ø 12,6 je Karte, §7.18; tiefste Karte 11 bis 94 je nach Stufe, §3.5).
+
+| # | Name | Einzeiler | Warum / Risiko |
+| --- | --- | --- | --- |
+| 1 | **Zündschnur** | „Jeder Stapel auf der gespielten Karte gibt +1 % Crit-Chance auf diesen Stich." Leiter 0,5 / 1 / 1,5 / 2 % je Stapel. | **Empfehlung.** Die einzige freie Richtung (Stapel → Chance) und die direkte Antwort auf die Frage; wirkt ab dem ersten Stapel, nicht erst ab Runde 40. Macht die Ziehreihenfolge wichtig: die tiefen Karten crittet man, die flachen nicht. Risiko: tiefe Karten stehen spät über 100 % — und nach C verpufft dieser Überschuss am Deckel, wenn nicht 3 daneben steht. Regler: Satz je Stapel. |
+| 2 | **Tiefenschlag** | „Deine tiefste Karte crittet immer." Leiter: die tiefste / die zwei / drei / vier tiefsten. | Dramatisch und sofort lesbar, koppelt an Kettenblitz. Risiko: garantierte Crits sind spät sehr stark, und es trifft nur N von 40 Positionen — schwankt stark mit der Ziehreihenfolge. |
+| 3 | **Überladung** | „Crit-Chance über 100 % ionisiert: je 40 Prozentpunkte darüber erhält die Siegkarte +1 Stapel." Leiter 50 / 40 / 30 / 20 pp. | Verwertet denselben Überschuss wie C, aber in Tiefe statt Multiplikator — der Überschuss wird dauerhaft. Risiko: hängt wie Überspannung am Spätspiel, also wieder ein Skill, der 30 Runden nichts tut. |
+| 4 | **Ladungsbogen** | „Crittet eine ionisierte Karte, crittet die nächste Karte ebenfalls." | Kette statt Rampe, sichtbarer Moment. Aber: Crit → Crit, nicht Ionisierung → Crit; beantwortet die Frage nur halb. |
+| 5 | ~~Ionenlast~~ | „Jeder Stapel gibt zusätzlich +0,05× Crit-Multiplikator." | **Nicht empfohlen** — das ist die Systemregel in groß und Donnergotts Kopfzeile; genau die Dublette, die 7.26 B als Befund führt. |
+
+**Empfehlung: 1 (Zündschnur) für den Platz, und C auf 0,01** — der Satz ist gratis, aber er ist nicht die Antwort auf
+„Crit über 100 % umgehen"; das sagt C.
+
+**Die eine Frage, die dabei offen bleibt und beim Owner liegt:** soll der Überschuss über 100 % *überhaupt* eine
+eigene Auszahlung haben? Drei Wege, sich schließen gegenseitig nicht aus:
+
+- **nur der Satz (C, 0,01)** — billig, ehrlich klein, das Thema bleibt kosmetisch;
+- **Vorschlag 3 auf dem Platz** — der Überschuss wird Tiefe, also dauerhaft, aber der Skill schläft 30 Runden;
+- **Vorschlag 1 auf dem Platz und der Überschuss bleibt am Deckel** — dafür hat Blitz endlich einen Skill, der
+  Ionisierung in Crit übersetzt, und die Deckel-Frage wird eigenständig entschieden (Owner 7.22: der Deckel bleibt
+  bei 8 — solange das gilt, ist die Sackgasse gewollt).
+
+Nach dem Ja wird gebaut, der Satz gesweept, gierig zweimal gemessen (neue Skills starten mit niedriger Haltequote)
+und die Parität im Duell geprüft. Wachpunkt bleibt der Blitz-Schwanz (7.25: gierig p95 803M).
+
 ## 5. Eis
 
 Offen.
@@ -3472,3 +3568,4 @@ Offen.
 | 2026-09-06 | **Owner: Lesart 1 — so lassen.** Die Tore lesen weiter die Leiste des Builds, Weißglut verschiebt sie mit, Texte bleiben. Punkt 1 der Liste in 7.26 F ist damit zu, ohne Code- oder Textänderung; die Kopplung ist gewollt und wird nicht wieder aufgemacht. Nächster Punkt: Feuerwalze (7.26 F.2) — braucht ein Konzept vom Owner für den frei werdenden Platz SK_FIRE_08. |
 | 2026-09-06 | Owner zu Punkt 2: Konzept **Brandschneise**, mit dem Einwand, dass später im Lauf alle Positionen gewonnen werden (7.27). Gemessen (neue Sonde `sim/probes/positions-won.mjs`, Feuer mono, 100 Läufe): der Einwand stimmt und ist schärfer als erwartet — nach 3 Durchläufen sind 28,8 von 40 Positionen schon einmal gewonnen, nach 10 sind es 36,4, ab Durchlauf 41 alle 40. Die Bedingung siebt drei Durchläufe und ist danach eine Formalität, in der zweiten Laufhälfte wäre der Skill ein bedingungsloser Score-Faktor. Drei Bauformen mit struktureller statt historischer Knappheit an den Owner (feste Breite, jeden Durchlauf neu geschlagen / zusammenhängendes Band / Kette je Position), Empfehlung (a). Feuerwalze geht dafür raus (vier Stufen mit viermal +2, tot in 7.6, 7.9, 7.13). Nichts umgesetzt. |
 | 2026-09-06 | **Owner: „feste Breite, Variante a"** (7.27, umgesetzt): Brandschneise ersetzt Feuerwalze auf SK_FIRE_08 (Emblem umbenannt, Feuer bleibt bei 14) — die 3 / 4 / 5 / 6 Siege mit dem größten Vorsprung eines Durchlaufs schlagen die Schneise, im nächsten Durchlauf zählt ein Sieg auf diesen Positionen ×2,5; Episch hält sie zwei Durchläufe. Erster normaler Skill auf der Achse „eigene Reihenfolge" und der erste Feuer-Skill ohne Hitze-Tor. Zustand im Hitze-Substate (`laneWins` je Durchlauf, `lanes` = die zwei jüngsten Schnitte), Schnitt in `fireCycleEnd` (größte Vorsprünge, bei Gleichstand die kleinere Position), `schneiseMult` als Faktor im Feuer-Stack; `fireValueBonus` verliert den Feuerwalze-Zweig, die Hitzeleiste ihr Abzeichen. Satz nach Sweep im Duell: ×1,5 / 2 / 2,5 / 3 → Floor 0,91 / 0,96 / **1,00** / 1,03× (Breite 5–8 statt Faktor zahlt schlechter), gesetzt ×2,5 — Feuer mono 12,97M, Blitz mono 13,0M. Gemessen und offen benannt: die Feuerwalze war im Fraktions-Build kein toter Skill (Dauerbonus bei 70 % Siegquote), Feuer mono fiel ohne sie von 14,2M auf 11,8M; das Niveau bleibt unter 7.25, das Band ist neu zentriert (2,64M / 5,90M). Gierig zweimal: Brandschneise in 11 % / 15 % gehalten, Ablation −5 % / 0 % — Füller, wie ein neuer Skill startet. Gates grün. |
+| 2026-09-06 | Owner: „wir müssen mit Crit über 100 % umgehen — eventuell 0,01 Crit-Multiplikator je Prozentpunkt" und „Überspannung mag ich vom Design nicht, eher etwas auf den Ionisierungen der Karten" (7.28, Befund und Vorschläge, **nichts umgesetzt**). Antwort auf die Frage: kartenabhängig Crit aus Ionisierung gibt es nur als Systemregel (+0,15× Crit-Multiplikator je Stapel der Siegkarte), als Donnergott (0,25×) und indirekt über Kurzschluss (doppelte Stapel ab Schwelle) — die Richtung **Stapel → Crit-Chance** ist frei. Gemessen (neue Sonde `sim/probes/overcrit-engine.mjs`): Crit-Chance ≥ 100 % gibt es erst spät (Blitz mono 0 % der Stiche bis Runde 30, 3 % in 31–40, 15 % in 41–50), dort mit Ø 70 pp Überschuss, aber 27 % der Crits stehen dann schon am 8×-Deckel. Sweep der Regel im Duell (0,002 / 0,005 / 0,01 / 0,02): Blitz mono 12,97 / 12,97 / 12,98 / 13,02M, Floor überall 1,00× — **der fünffache Satz bewegt den Median um 0,1 %**, weil der Deckel abschneidet, was die Regel drauflegt. Eigene Erwartung damit korrigiert: „Überschuss → Multiplikator" ist keine Rückkopplung, sondern eine Sackgasse, solange der Deckel bei 8 steht. Fünf Vorschläge für SK_LIGHTNING_04 (Zündschnur, Tiefenschlag, Überladung, Ladungsbogen, Ionenlast), Empfehlung Zündschnur plus Satz 0,01; die Frage „soll der Überschuss eine eigene Währung bekommen (Stapel/Ladung)?" liegt beim Owner. |
