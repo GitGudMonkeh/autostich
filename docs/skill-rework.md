@@ -4799,6 +4799,40 @@ Leistenlänge klemmt) — **nicht** durch Aufweichen des Wächters (AGENTS.md).
 
 ---
 
+### 6.25 Ionisierung: „+1 Wert" heißt Kartenwert (2026-09-07, Owner) — umgesetzt, reine Textänderung
+
+Owner-Frage zum Blitz-Passiv: *„bei ionsierung steht +1 wert. ist damit +1 Stapel gemeint oder +1 kartenwert"*.
+
+#### Befund
+
+Die volle Leiste tut an derselben Karte zwei Dinge, und der Text hatte sie in einen Relativsatz gefaltet
+(„… ionisiert die nächste Karte, die dauerhaft +1 Wert erhält"). Gemeint ist der **Kampfwert der Karte**,
+dauerhaft eingebacken wie bei der Schmiede — `fillBar` in `factions/lightning.js` schreibt
+`value: c.value + ION_VALUE_PER_BAR`.
+
+Die beiden Effekte hängen nicht aneinander, deshalb trägt die Verwechslung weiter als der Satz:
+Doppelentladung gibt fünf Stapel, aber trotzdem nur +1 Kartenwert, und Kettenblitz gibt Stapel ganz ohne Wert.
+Der Wert kommt ausschließlich aus der vollen Leiste.
+
+#### Umgesetzt
+
+Drei Register-Stellen benennen jetzt beides getrennt: das Passiv (`skill.passive.lightning`), der Leisten-Tooltip
+(`bar.lightning.consumes.title`) und der Glossar-Eintrag „Ladung". Wortlaut des Passivs:
+
+> „… ionisiert die nächste Karte in der Reihenfolge: Sie bekommt einen Stapel und dauerhaft +1 Kartenwert;
+> jeder Stapel gibt bei Sieg mit ihr +75 Score in die Basis und +0,15× Crit-Multiplikator."
+
+**Kartenwert** ist dabei der Begriff, den das Register schon führt (Perk-Familien und Schmiede-Perk sagen
+durchgehend „dauerhaft +1 Kartenwert") — kein neuer Begriff, sondern der vorhandene an einer Stelle, die ihn
+verkürzt hatte.
+
+Keine Mechanik, keine Kennwerte, keine Messung. Gates grün, `loc:export` neu.
+
+**Offen, Entscheid Owner:** Die Schmiede sagt an zwei Stellen weiter „dauerhaft +{v} Wert" (Skilltext und
+Leisten-Tooltip) und meint dasselbe. Eine Zeile Arbeit, wenn es angeglichen werden soll.
+
+---
+
 ## Änderungsprotokoll
 
 
@@ -4887,3 +4921,4 @@ Leistenlänge klemmt) — **nicht** durch Aufweichen des Wächters (AGENTS.md).
 | 2026-09-07 | Owner: Grundgewicht 3 bleibt, Kompromiss 4 wird nicht gemessen. Damit ist gesetzt, dass die Wachstums-Skills Mono-Skills sind — im gemischten Build kosten sie den Platz, und das ist gewollt. §6.22. |
 | 2026-09-07 | Owner: Spalier zeigt seine offenen Segmentgrenzen jetzt in Aufstellphase und Chronik. Die Rechnung lag inline im Motor und ist als `spalierOpenBorders` plus `openBorderInfo` herausgezogen — eine Quelle für Engine und UI, wie bei `openSegmentInfo`. Die Anzeige rechnet bei jedem Tausch neu, weil Spalier am Grün-Stand der Nachbarkarten hängt. §6.23. |
 | 2026-09-07 | Owner: Glutbett war zu schwach (−4 %, Flag „schadet") und bekommt einen zweiten Hook. Der erste freigegebene Vorschlag (Niederlagen am Boden geben Hitze) wurde zurückgezogen — er hebt sich selbst auf und dupliziert Zunder Episch. Umgesetzt: der BODEN steigt um 1/2/3 %, wenn er einen Sturz wirklich abfängt; Episch bleibt „keine Kühlung". Hitzeleiste zeigt Strich und Abzeichen. Ungemessen. §6.24. |
+| 2026-09-07 | Owner-Frage: heißt „+1 Wert" im Blitz-Passiv ein Stapel oder Kartenwert? Antwort: Kartenwert, dauerhaft eingebacken; der Stapel ist der zweite, davon unabhängige Effekt derselben vollen Leiste (Doppelentladung gibt fünf Stapel und trotzdem nur +1 Wert, Kettenblitz Stapel ganz ohne Wert). Passiv, Leisten-Tooltip und Glossar „Ladung" benennen jetzt beides getrennt und benutzen den Begriff, den das Register schon führt: Kartenwert. Reine Textänderung, keine Mechanik, keine Messung. Offen: die Schmiede sagt an zwei Stellen weiter „+Wert". §6.25. |
