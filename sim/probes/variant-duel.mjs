@@ -14,6 +14,9 @@ const V = {
   schneise3:     () => { F.schneise.forEach((r) => { r.mult = 3; }); },
   schneiseBreit: () => { [5, 6, 7, 8].forEach((v, i) => { F.schneise[i].width = v; }); },
   schneiseBreit2: () => { [5, 6, 7, 8].forEach((v, i) => { F.schneise[i].width = v; }); F.schneise.forEach((r) => { r.mult = 2; }); },
+  // §7.28 Lichtbogen: der Satz je Stapel ist der einzige Regler (Startwert 0,5 / 1 / 1,5 / 2 % je Stapel).
+  bogenHalb:     () => { [0.0025, 0.005, 0.0075, 0.01].forEach((v, i) => { B.lichtbogen[i].critPerStack = v; }); },
+  bogenDoppelt:  () => { [0.01, 0.02, 0.03, 0.04].forEach((v, i) => { B.lichtbogen[i].critPerStack = v; }); },
 };
 const names = (process.env.VARIANT || "aktuell").split(",").map((s) => s.trim()).filter(Boolean);
 for (const n of names) { if (!V[n]) { console.error(`unbekannte Variante ${n} — bekannt: ${Object.keys(V).join(", ")}`); process.exit(1); } V[n](); }
