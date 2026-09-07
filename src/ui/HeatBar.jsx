@@ -1,5 +1,5 @@
 import { F, fireParam, heatMult, heatMaxFor, schneiseLane } from "../game/factions/fire.js";
-import { HEAT_MAX, HEAT_MULT_PER_10, SONNENZORN_MULT_PER_10, FORGE_VALUE } from "../game/constants.js";
+import { HEAT_MAX, HEAT_MULT_PER_10, FORGE_VALUE } from "../game/constants.js";
 import { FactionShell, PanelSkills, CounterCell, YieldMeter } from "./indicators/panelKit.jsx";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { FIRE, FIRE_HOT, FORGE, WHITE_HEAT } from "./indicators/vocab.js";
@@ -10,7 +10,7 @@ const BRAND = "#e0605a"; // Brandmal am Gegner (Debuff, App-Rotton)
 
 /* 🔥 Hitze (Feuer-Archetyp) — eigener Block zwischen Battlefield und Build-Panel, analog zur ⚡ Ladung.
    exp skill rework (docs/skill-rework.md §4, Anzeige vorläufig bis Phase 4): Leiste 0–100, mit Weißglut 0–200; daneben
-   der Hitze-Multiplikator des Passivs (je 10 % Hitze +2 % Score, Sonnenzorn: Spitze und doppelt), die Schwellen-Skills
+   der Hitze-Multiplikator des Passivs (je 10 % Hitze +2 % Score), die Schwellen-Skills
    als Abzeichen (Glühende Klinge, Brandschneise, Verbrennung, Schmiede) und der Schmiede-Zähler. Asche, Funkenflug und
    Überhitzung gibt es nicht mehr. Nur sichtbar, sobald ein Feuer-Skill aktiv ist. */
 const HOT = FIRE_HOT; // heißes Ende des Verlaufs (ab ~50 %)
@@ -36,9 +36,8 @@ export function HeatBar({ heat, skills = [], skillTiers = {}, forged = {}, brand
   const white = scale > HEAT_MAX;
   const overFull = white && value > HEAT_MAX;      // über der 100er-Marke (nur mit Weißglut)
   const param = (id, key) => fireParam(skills, skillTiers, id, key);
-  const zorn = skills.includes(F.SONNENZORN);
   // Hitze-Multiplikator des Passivs, wie ihn der nächste Sieg (vor seinem Gewinn) trüge — dieselbe Quelle wie die Engine.
-  const mult = heatMult(skills, skillTiers, value, heat.peak || 0, heat.emberMult || 0);
+  const mult = heatMult(skills, skillTiers, value, heat.emberMult || 0);
   const multPct = Math.round((mult - 1) * 100);
   // Schmiede (§7.14): Schwelle der Stufe, ohne Preis — die Schmiedung fällt am Rundenende, sobald die Hitze anliegt;
   // Zähler = Summe der Schmiedewerte im Deck.
@@ -72,11 +71,6 @@ export function HeatBar({ heat, skills = [], skillTiers = {}, forged = {}, brand
   if (forgeMin != null) {
     badges.push({ k: "sm", t: t("bar.fire.badge.schmiede", { n: forgeMin }), c: FORGE, dim: value < forgeMin,
       title: t("bar.fire.badge.schmiede.title", { n: forgeMin, v: FORGE_VALUE }) });
-  }
-  // Sonnenzorn: die Spitze, mit der der Multiplikator rechnet.
-  if (zorn) {
-    badges.push({ k: "sz", t: t("bar.fire.badge.peak", { n: Math.round(heat.peak || 0) }), c: WHITE_HEAT, dim: false,
-      title: t("bar.fire.badge.peak.title") });
   }
 
   // Phase-3-Headline: „gleich knallt's"-Zustand für die einklappbare Fraktions-Zeile.
@@ -114,7 +108,7 @@ export function HeatBar({ heat, skills = [], skillTiers = {}, forged = {}, brand
           <div className="flex justify-between text-body-5 mb-1.5">
             <span className="opacity-60">{t("bar.fire.heat")}</span>
             <span className="font-bold" style={{ color: overFull ? WHITE_HEAT : hot ? HOT : FIRE }}
-              title={t("bar.fire.mult.title", { per: Math.round(HEAT_MULT_PER_10 * 100), zorn: Math.round(SONNENZORN_MULT_PER_10 * 100) })}>
+              title={t("bar.fire.mult.title", { per: Math.round(HEAT_MULT_PER_10 * 100) })}>
               {Math.round(value)} / {scale} · ×{fmtNum(Math.round(mult * 100) / 100)}
             </span>
           </div>

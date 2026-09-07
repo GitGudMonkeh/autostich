@@ -17,8 +17,8 @@ import { SKILL_DEFS, TIER_EPIC, isLegendarySkill } from "../skills.js";
    Formationskern und Grenzbonus sind Meta-Faktoren und zählen hier nicht mit; nur benachbarte Karten in einem Muster.
 
    Die 15 Skills lesen ihre Kennwerte aus den Stufentabellen in SKILL_DEFS (`tiers[0..3]`, Normal … Episch) über
-   `plantParam`; die vier Legendären haben keine Stufe und hängen an ihrer ID. Vier Skills (Spalier, Wildwuchs, Lücke,
-   Überwucherung) und zwei Legendäre (Baumreihe, Mutterbaum) ändern die ERKENNUNG statt Score zu addieren — ihre
+   `plantParam`; die drei Legendären haben keine Stufe und hängen an ihrer ID. Vier Skills (Spalier, Wildwuchs, Lücke,
+   Überwucherung) und zwei Legendäre (Baumreihe, Wurzelgeflecht) ändern die ERKENNUNG statt Score zu addieren — ihre
    Mechanik steht in formations.js und liest von hier nur die Kennwerte. Alle Übergänge sind immutabel.
    ============================================================ */
 
@@ -33,8 +33,8 @@ export const P = Object.freeze({
   BLAETTERDACH: "SK_PLANT_13", RANKGERUEST: "SK_PLANT_16", HECKE: "SK_PLANT_10", WINDUNG: "SK_PLANT_11", JAHRESRINGE: "SK_PLANT_04",
   // Kombination
   BLUETENLESE: "SK_PLANT_17",
-  // Legendäre
-  WELTENBAUM: "SK_PLANT_L01", MUTTERBAUM: "SK_PLANT_L02", BAUMREIHE: "SK_PLANT_L03", EWIGER_FRUEHLING: "SK_PLANT_L04",
+  // Legendäre (§6.11, Owner: drei je Fraktion — je eine Achse: Multiplikator, Dichte, Zielbild)
+  WURZELGEFLECHT: "SK_PLANT_L02", BAUMREIHE: "SK_PLANT_L03", EWIGER_FRUEHLING: "SK_PLANT_L04",
 });
 
 // Welcher Score-Skill liest welchen Formationstyp (§6.7: je Formationstyp einer).
@@ -44,8 +44,7 @@ export const SCORE_BY_TYPE = Object.freeze({
 
 const held = (skills, id) => (skills || []).includes(id);
 export const hasBaumreihe       = (skills) => held(skills, P.BAUMREIHE);
-export const hasMutterbaum      = (skills) => held(skills, P.MUTTERBAUM);
-export const hasWeltenbaum      = (skills) => held(skills, P.WELTENBAUM);
+export const hasWurzelgeflecht   = (skills) => held(skills, P.WURZELGEFLECHT);
 export const hasEwigerFruehling = (skills) => held(skills, P.EWIGER_FRUEHLING);
 
 // Wirksame Stufe eines gehaltenen Pflanzen-Skills (gewürfelte Stufe, Normal ohne Eintrag); null für Legendäre und
@@ -278,15 +277,8 @@ export function plantOnLoss(growth, deck, skills, skillTiers, { cardId = null } 
   return { growth: r.growth, deck: bloomAllIfFullGreen(skills, r.deck), grown: r.total };
 }
 
-/* Durchlaufende: Weltenbaum (L, §6.5) — jede grüne Karte wächst, je mehr grüne Karten im Feld stehen
-   (+1 je WELTENBAUM_PER_GREEN grüne Karten). Ohne den Skill passiert nichts. */
-export function plantCycleEnd(growth, deck, skills) {
-  if (!hasWeltenbaum(skills)) return { growth, deck, grown: 0 };
-  const per = Math.floor(greenCount(deck) / C.WELTENBAUM_PER_GREEN);
-  if (per <= 0) return { growth, deck, grown: 0 };
-  const r = applyGrowth(growth, deck, deck.filter((c) => c.green).map((c) => ({ id: c.id, amount: per })));
-  return { growth: r.growth, deck: bloomAllIfFullGreen(skills, r.deck), grown: r.total };
-}
+// (§6.11: der Weltenbaum ist gestrichen — eine reine Wachstums-Rampe am Durchlaufende ohne eigene Auszahlung. Damit
+//  hat die Fraktion keinen Durchlaufende-Haken mehr.)
 
 /* Setzlingsbeet (§6.8): der Kaltstart — die niedrigste Karte je Segment (Episch die zwei niedrigsten) startet mit
    Wachstumsvorsprung. Läuft einmal, wenn der erste Pflanzen-Skill liegt (Reducer). Niedrigste Karte deterministisch:

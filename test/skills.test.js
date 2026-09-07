@@ -10,13 +10,14 @@ const LR = "SK_LIGHTNING_01";
 const ALL = Object.keys(SKILL_DEFS);
 
 describe("skills — Blitz-Registry (exp skill rework)", () => {
-  it("19 Blitz-Skills: 15 normale mit vier Stufenzeilen + 4 Legendäre ohne Stufe, alle archetype=lightning", () => {
+  it("17 Blitz-Skills: 14 normale mit vier Stufenzeilen + 3 Legendäre ohne Stufe, alle archetype=lightning", () => {
     const light = Object.values(SKILL_DEFS).filter((s) => s.archetype === "lightning");
-    expect(light).toHaveLength(18); // §7.19: 14 normale (Überschlag gestrichen, Owner-Untergrenze 14) + 4 Legendäre
+    expect(light).toHaveLength(17); // §7.19: 14 normale (Überschlag gestrichen, Owner-Untergrenze 14) + 3 Legendäre (§6.11, Owner)
     const normal = light.filter((s) => !s.legendary), leg = light.filter((s) => s.legendary);
     expect(normal).toHaveLength(14);
     expect(SKILL_DEFS.SK_LIGHTNING_14).toBeUndefined();           // §7.19: Überschlag gestrichen
-    expect(leg).toHaveLength(4);
+    expect(leg).toHaveLength(3);
+    expect(SKILL_DEFS.SK_LIGHTNING_L01, "Donnergott gestrichen (gemessen +30 %, das schwächste der vier)").toBeUndefined();
     for (const s of normal) expect(Array.isArray(s.tiers) && s.tiers.length === SKILL_TIER_COUNT, `${s.id} ohne Stufentabelle`).toBe(true);
     for (const s of leg) expect(s.tiers).toBeUndefined();
     expect(SKILL_DEFS[LR].tiers).toBe(BLITZ_TIERS.ableiter);
@@ -198,12 +199,12 @@ describe("Stufenwurf — rollTier / rollSkillOfferTiers / tierOf (exp skill rewo
   });
   it("Legendär-Pool erschöpft (gehaltene + schon im Angebot) → der Platz bleibt normal und bekommt eine Stufe", () => {
     const five = ["SK_LIGHTNING_01", "SK_LIGHTNING_03", "SK_LIGHTNING_04", "SK_LIGHTNING_05", "SK_LIGHTNING_06"];
-    const r = rollSkillOfferTiers(five, ["SK_LIGHTNING_L01"], makeRng(4), 1); // 3 Legendäre frei, 5 Plätze
+    const r = rollSkillOfferTiers(five, ["SK_LIGHTNING_L02"], makeRng(4), 1); // 2 Legendäre frei, 5 Plätze
     expect(r.offer).toHaveLength(5);
     expect(new Set(r.offer).size).toBe(5);
-    expect(r.offer).not.toContain("SK_LIGHTNING_L01");            // gehalten → nie erneut
-    expect(r.offer.filter(isLegendarySkill)).toHaveLength(3);     // Pool leer nach dem dritten Treffer
-    expect(Object.keys(r.tiers)).toHaveLength(2);                 // die zwei normal gebliebenen Plätze
+    expect(r.offer).not.toContain("SK_LIGHTNING_L02");            // gehalten → nie erneut
+    expect(r.offer.filter(isLegendarySkill)).toHaveLength(2);     // Pool leer nach dem zweiten Treffer (§6.11: drei je Fraktion)
+    expect(Object.keys(r.tiers)).toHaveLength(3);                 // die drei normal gebliebenen Plätze
     for (const id of Object.keys(r.tiers)) expect(isLegendarySkill(id)).toBe(false);
   });
   it("ein schon legendärer Eintrag (Dev-Katalog) wird nicht angefasst und blockiert seinen Legendär für den Rest", () => {

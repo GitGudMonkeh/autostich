@@ -139,8 +139,8 @@ export const SKILL_DEFS = {
   SK_LIGHTNING_17: { id: "SK_LIGHTNING_17", name: "Serienschutz", archetype: "lightning", keywords: ["charge", "streak"], tiers: BLITZ.serienschutz,
     ...tiered(BLITZ.serienschutz, (r) => `Verlierst du einen Stich mit mindestens ${pct(r.frac)} % Ladung, hält die Serie; diese ${pct(r.frac)} % werden verbraucht.${r.freePerRound ? " Einmal je Durchlauf ist der Schutz kostenlos." : ""}`) },
   // Legendäre (§3.7): keine Stufe, zwei Effekte erlaubt.
-  SK_LIGHTNING_L01: { id: "SK_LIGHTNING_L01", name: "Donnergott", archetype: "lightning", legendary: true, keywords: ["charge", "crit"],
-    desc: `Die Ladungsleiste ist bei ${C.DONNERGOTT_MAX_CHARGE} voll. Jeder Stapel auf deiner Siegkarte zählt +${de(C.DONNERGOTT_ION_CRIT_MULT_PER_STACK)}× statt +${de(C.ION_CRIT_MULT_PER_STACK)}× Crit-Multiplikator.` },
+  // (§6.11, Owner: drei Legendäre je Fraktion, die stärksten — SK_LIGHTNING_L01 Donnergott ist gestrichen, gemessen
+  //  als schwächstes der vier: +30 % gegen Resonanz +106 %, Doppelentladung +85 %, Hochspannung +40 %.)
   SK_LIGHTNING_L02: { id: "SK_LIGHTNING_L02", name: "Doppelentladung", archetype: "lightning", legendary: true, keywords: ["ionize", "crit"],
     desc: `Jede Ionisierung gibt ${C.DOPPELENTLADUNG_STACKS} Stapel statt 1. Crit mit einer ionisierten Karte: der Blitz schlägt zweimal ein, der Stich zählt doppelt.` },
   SK_LIGHTNING_L03: { id: "SK_LIGHTNING_L03", name: "Hochspannung", archetype: "lightning", legendary: true, keywords: ["crit"],
@@ -193,8 +193,8 @@ export const SKILL_DEFS = {
     desc: `Jeder Sieg brandmarkt die geschlagene Gegnerkarte (−${C.SONNENKERN_BRAND} Wert), und Brände erneuern sich nicht mehr: sie stapeln sich über die Durchläufe. Sieg gegen eine gebrandmarkte Karte: +${C.SONNENKERN_SCORE_PER_BRAND} Basis-Score je Brandpunkt auf ihr.` },
   SK_FIRE_L02: { id: "SK_FIRE_L02", name: "Ewige Glut", archetype: "fire", legendary: true, keywords: ["heat"], // §7.21: ersetzt Phönixfeuer (Emblem bleibt)
     desc: `Jeder Durchlauf, der mit voller Hitzeleiste endet, hebt den Hitze-Multiplikator dauerhaft um +${pct(C.EWIGE_GLUT_MULT_PER_ROUND)} %. Die Hitze fällt nie unter ${pct(C.EWIGE_GLUT_FLOOR_FRAC)} % der höchsten je erreichten Hitze.` },
-  SK_FIRE_L03: { id: "SK_FIRE_L03", name: "Sonnenzorn", archetype: "fire", legendary: true, keywords: ["heat"],
-    desc: `Der Hitze-Multiplikator rechnet mit der höchsten je erreichten Hitze, nicht mit der aktuellen, und zwar bis ${C.WEISSGLUT_HEAT_MAX} %; je 10 Prozentpunkte Hitze +${pct(C.SONNENZORN_MULT_PER_10)} % Score statt +${pct(C.HEAT_MULT_PER_10)} %. Solange die Hitze unter der Spitze liegt, zählt die Hitze aus Siegen ×${de(C.SONNENZORN_HEAT_MULT)}.` },
+  // (§6.11, Owner: drei Legendäre je Fraktion, die stärksten — SK_FIRE_L03 Sonnenzorn ist gestrichen, gemessen als
+  //  schwächstes der vier: −14 % gegen Sonnenkern +76 %, Damaststahl +8 %, Ewige Glut −8 %.)
   SK_FIRE_L04: { id: "SK_FIRE_L04", name: "Damaststahl", archetype: "fire", legendary: true, keywords: ["heat", "forge"],
     desc: `In jedem Durchlauf wird deine niedrigste Karte geschmiedet, +${C.FORGE_VALUE} Wert dauerhaft, ohne Preis. Geschmiedete Karten kämpfen mit doppeltem Schmiedewert.` },
 
@@ -287,11 +287,10 @@ export const SKILL_DEFS = {
   // Kombination — Score und Wachstum in einem
   SK_PLANT_17: { id: "SK_PLANT_17", name: "Blütenlese", archetype: "plant", keywords: ["green", "formation", "growth"], tiers: PFLANZE.bluetenlese,
     ...tiered(PFLANZE.bluetenlese, (r) => `Ein Sieg in einer rein grünen Formation gibt +${r.score} Basis-Score und lässt alle Karten darin +${r.growth} wachsen.`) },
-  // Legendäre (§6.5): keine Stufe, keine Direkt-Scores — zwei lesen den Zustand, zwei ändern die Erkennung.
-  SK_PLANT_L01: { id: "SK_PLANT_L01", name: "Weltenbaum", archetype: "plant", legendary: true, keywords: ["growth", "green"],
-    desc: `Am Ende jedes Durchlaufs wächst jede grüne Karte +1 je ${C.WELTENBAUM_PER_GREEN} grüne Karten im Feld.` },
-  SK_PLANT_L02: { id: "SK_PLANT_L02", name: "Mutterbaum", archetype: "plant", legendary: true, keywords: ["growth", "formation"],
-    desc: "Deine am weitesten gewachsene Karte zählt in jeder Formation ihres Segments mit." },
+  // Legendäre (§6.11, Owner: drei je Fraktion, die stärksten): keine Stufe, kein Direkt-Score. Drei Achsen —
+  // Wurzelgeflecht die Dichte, Baumreihe der Multiplikator, Ewiger Frühling das Zielbild.
+  SK_PLANT_L02: { id: "SK_PLANT_L02", name: "Wurzelgeflecht", archetype: "plant", legendary: true, keywords: ["bloom", "formation"],
+    desc: "Jede blühende Karte zählt in jeder Formation ihres Segments mit." },
   SK_PLANT_L03: { id: "SK_PLANT_L03", name: "Baumreihe", archetype: "plant", legendary: true, keywords: ["bloom", "formation"],
     desc: "Blühende Karten bilden eine positionsfreie Wiederholung, egal wo sie liegen. Jede darf zugleich in einer anderen Formation zählen." },
   SK_PLANT_L04: { id: "SK_PLANT_L04", name: "Ewiger Frühling", archetype: "plant", legendary: true, keywords: ["green", "bloom"],

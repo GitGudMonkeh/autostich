@@ -19,7 +19,7 @@
    E6 Karte in zwei Treppen · E7/E8 Anker · E9 Formationen über Segmentgrenzen.
    ============================================================ */
 import { ANCHOR_FORM_FACTOR, FORMATION_CORE_FACTOR, PLANT_GREEN_FARBBLOCK_CAP } from "./constants.js";
-import { P, plantParam, greenCount, hasBaumreihe, hasMutterbaum } from "./factions/plant.js";
+import { P, plantParam, greenCount, hasBaumreihe, hasWurzelgeflecht } from "./factions/plant.js";
 import { activeFamilyEntries, familyTierParam, allianceGroups } from "./families.js";
 import { architectFormSpec } from "./architect.js";
 
@@ -209,7 +209,7 @@ export function computeFormations(order, deck, roles = {}, _perks = [], skills =
   const n = order.length;
   const cards = order.map((di) => deck[di]);
   // Pflanze (§6.7): die vier Hebel und zwei Legendäre ändern die ERKENNUNG. `plant` = { skillTiers, growth } — die
-  // Stufe je Skill und das Wachstum je Karte (Wildwuchs/Mutterbaum brauchen die Rangfolge). Ohne das Bündel
+  // Stufe je Skill und das Wachstum je Karte (Wildwuchs braucht die Rangfolge). Ohne das Bündel
   // (Aufrufer ohne Pflanze, Tests) rechnet alles wie vorher.
   const pTiers = plant?.skillTiers || {};
   const pGrowth = plant?.growth || {};
@@ -404,32 +404,33 @@ export function computeFormations(order, deck, roles = {}, _perks = [], skills =
       out[pos].formations.push({ type: "wiederholung", ordinal: idx + 1, factor, members: blooms });
     });
   }
-  /* Mutterbaum (Pflanze-Legendär, §6.5): die am weitesten gewachsene Karte zählt in JEDER Formation ihres Segments
-     mit — sie tritt den Läufen als weiteres Mitglied bei (und bekommt deren Faktor auf der nächsten Ordinalzahl).
-     Bei gleichem Wachstum die kleinere Position (Determinismus §9). */
-  if (hasMutterbaum(skills) && n > 0) {
-    let best = -1, bestG = 0;
-    for (let k = 0; k < n; k++) { const g = pGrowth[cards[k].id] || 0; if (g > bestG) { bestG = g; best = k; } }
-    if (best >= 0) {
-      const seg = Math.floor(best / SEGMENT_SIZE);
-      const factorFor = { wiederholung: (ord) => wiedFactor(ord), farbblock: (ord) => farbFactor(best, ord),
-        treppe: (ord) => escalatingFactor(ord, TREPPE_BASE), wechsel: (ord) => wechselFactor(ord) };
+  /* Wurzelgeflecht (Pflanze-Legendär, §6.11): JEDE blühende Karte zählt in jeder Formation ihres Segments mit — sie
+     tritt den Läufen als weiteres Mitglied bei und bekommt deren Faktor auf der nächsten Ordinalzahl. Das ist die
+     Dichte-Achse der Fraktion: mehr Mitglieder je Lauf (Passiv-Score und die vier Score-Skills lesen die Mitglieder)
+     und eine Formation mehr je blühender Karte (Wachstum und Überlappungsbonus). */
+  if (hasWurzelgeflecht(skills) && n > 0) {
+    const factorFor = { wiederholung: (ord) => wiedFactor(ord), farbblock: (pos, ord) => farbFactor(pos, ord),
+      treppe: (ord) => escalatingFactor(ord, TREPPE_BASE), wechsel: (ord) => wechselFactor(ord) };
+    for (let k = 0; k < n; k++) {
+      if (!cards[k].bloom) continue;
+      const seg = Math.floor(k / SEGMENT_SIZE);
       const seen = new Set();
-      for (let k = 0; k < n; k++) {
-        if (Math.floor(k / SEGMENT_SIZE) !== seg) continue;
-        for (const f of out[k].formations) {
-          if (!Array.isArray(f.members) || seen.has(f.members) || f.members.includes(best)) continue;
+      for (let j = seg * SEGMENT_SIZE; j < Math.min(n, (seg + 1) * SEGMENT_SIZE); j++) {
+        for (const f of [...out[j].formations]) {
+          if (!Array.isArray(f.members) || seen.has(f.members) || f.members.includes(k)) continue;
           seen.add(f.members);
-          f.members.push(best);
-          const factor = (factorFor[f.type] || (() => 1))(f.members.length);
-          if (factor > 1) out[best].mult *= factor;
-          out[best].formations.push({ type: f.type, ordinal: f.members.length, factor, members: f.members });
+          f.members.push(k);
+          const fn = factorFor[f.type];
+          const factor = fn ? (f.type === "farbblock" ? fn(k, f.members.length) : fn(f.members.length)) : 1;
+          if (factor > 1) out[k].mult *= factor;
+          out[k].formations.push({ type: f.type, ordinal: f.members.length, factor, members: f.members });
         }
       }
     }
   }
 
   // Überlappungsbonus (#95): steckt eine Karte in mehreren Formationen, multipliziert der
+
   // Bonus das Faktor-Produkt zusätzlich (2 Formationen ×1,5 · 3 ×2 · 4 ×3). Gezählt werden ALLE
   // Mitgliedschaften (auch Faktor-1-Läufe) → deckt sich mit der Rahmen-Anzahl im UI.
   for (const p of out) {

@@ -28,20 +28,20 @@ const LIGHTNING_IDS = [ // §7.18: 08 (Statische Aufladung) und 16 (Dauerstrom) 
   "SK_LIGHTNING_01", "SK_LIGHTNING_02", "SK_LIGHTNING_03", "SK_LIGHTNING_04", "SK_LIGHTNING_05", "SK_LIGHTNING_06", "SK_LIGHTNING_07",
   "SK_LIGHTNING_09", "SK_LIGHTNING_10", "SK_LIGHTNING_11", "SK_LIGHTNING_12", "SK_LIGHTNING_13",
   "SK_LIGHTNING_15", "SK_LIGHTNING_17",
-  "SK_LIGHTNING_L01", "SK_LIGHTNING_L02", "SK_LIGHTNING_L03", "SK_LIGHTNING_L04",
+  "SK_LIGHTNING_L02", "SK_LIGHTNING_L03", "SK_LIGHTNING_L04",
 ];
 
 describe("Blitz-Modul — Stufen und Kennwerte", () => {
   it("L nennt genau die 18 registrierten Blitz-Skills (14 + 4 Legendäre)", () => {
     const ids = Object.values(L);
-    expect(ids).toHaveLength(18);
+    expect(ids).toHaveLength(17); // §6.11 (Owner): drei Legendäre je Fraktion — Donnergott (L01) ist als schwächstes gestrichen
     expect([...ids].sort()).toEqual([...LIGHTNING_IDS].sort());
     for (const id of ids) expect(SKILL_DEFS[id]?.archetype, id).toBe("lightning");
     expect(Object.values(SKILL_DEFS).filter((s) => s.archetype === "lightning").map((s) => s.id).sort()).toEqual([...LIGHTNING_IDS].sort());
   });
   it("effectiveTier: nicht gehalten/Legendär → null; ohne Eintrag Normal; Hochspannung hebt um eins, Episch bleibt", () => {
     expect(effectiveTier([], {}, L.ABLEITER)).toBeNull();
-    expect(effectiveTier([L.DONNERGOTT], {}, L.DONNERGOTT)).toBeNull();
+    expect(effectiveTier([L.RESONANZ], {}, L.RESONANZ)).toBeNull();
     expect(effectiveTier([L.ABLEITER], {}, L.ABLEITER)).toBe(0);
     expect(effectiveTier([L.ABLEITER], { [L.ABLEITER]: 2 }, L.ABLEITER)).toBe(2);
     expect(effectiveTier([L.ABLEITER, L.HOCHSPANNUNG], { [L.ABLEITER]: 2 }, L.ABLEITER)).toBe(3);
@@ -54,28 +54,25 @@ describe("Blitz-Modul — Stufen und Kennwerte", () => {
     expect(lightParam([L.RESTSTROM], {}, L.RESTSTROM, "nope")).toBeUndefined();
     expect(lightParam([], {}, L.RESTSTROM, "floor")).toBeUndefined();
   });
-  it("maxChargeFor: Leiste 10, mit Donnergott 7, mit Reststrom Episch 9 (§7.22 Extra; Donnergott gewinnt)", () => {
+  it("maxChargeFor: Leiste 10, mit Reststrom Episch 9 (§7.22 Extra)", () => {
     expect(maxChargeFor([])).toBe(C.LIGHTNING_MAX_CHARGE);
-    expect(maxChargeFor([L.DONNERGOTT])).toBe(C.DONNERGOTT_MAX_CHARGE);
-    expect(C.DONNERGOTT_MAX_CHARGE).toBeLessThan(C.LIGHTNING_MAX_CHARGE);
     expect(maxChargeFor([L.RESTSTROM], { [L.RESTSTROM]: 3 })).toBe(T.reststrom[3].bar);
     expect(T.reststrom[3].bar).toBeLessThan(C.LIGHTNING_MAX_CHARGE);
     expect(maxChargeFor([L.RESTSTROM], { [L.RESTSTROM]: 2 })).toBe(C.LIGHTNING_MAX_CHARGE);
     expect(maxChargeFor([L.RESTSTROM, L.HOCHSPANNUNG], { [L.RESTSTROM]: 2 })).toBe(T.reststrom[3].bar); // Hochspannung hebt auf Episch
-    expect(maxChargeFor([L.RESTSTROM, L.DONNERGOTT], { [L.RESTSTROM]: 3 })).toBe(C.DONNERGOTT_MAX_CHARGE);
   });
   it("lightningCritChance: +Crit je Blitz-Skill (auch Legendäre), Gewitterfront-Rampe additiv, Ladungsserie je Serienpunkt; der Stau zählt nicht mehr hier (§7.18)", () => {
     expect(lightningCritChance(initLightning(), [L.ABLEITER], {})).toBe(0); // inaktiv
     expect(lightningCritChance(light(), [L.ABLEITER, L.RESTSTROM], {})).toBeCloseTo(2 * C.LIGHTNING_CRIT_PER_SKILL, 9);
-    expect(lightningCritChance(light(), [L.DONNERGOTT], {})).toBeCloseTo(C.LIGHTNING_CRIT_PER_SKILL, 9);
+    expect(lightningCritChance(light(), [L.RESONANZ], {})).toBeCloseTo(C.LIGHTNING_CRIT_PER_SKILL, 9);
     expect(lightningCritChance(light({ stormCritBonus: 0.2, stauBonus: 0.1 }), [], {})).toBeCloseTo(0.2, 9);
     expect(lightningCritChance(light(), [L.LADUNGSSERIE], {}, 10)).toBeCloseTo(C.LIGHTNING_CRIT_PER_SKILL + 10 * T.serie[0].critPerStreak, 9);
     expect(lightningCritChance(light(), [L.LADUNGSSERIE], { [L.LADUNGSSERIE]: 3 }, 20)).toBeCloseTo(C.LIGHTNING_CRIT_PER_SKILL + 20 * T.serie[3].critPerStreak, 9);
     expect(lightningCritChance(light(), [L.LADUNGSSERIE], {}, 0)).toBeCloseTo(C.LIGHTNING_CRIT_PER_SKILL, 9); // ohne Serie kein Bonus
   });
-  it("lightningCritMult: Entladung-Rampe + Spannungsstau + Vorentladung ab der Serie (§7.19: Überschlag gestrichen; §7.20: Donnergott zahlt über die Stapel, nicht flach)", () => {
-    expect(lightningCritMult(initLightning(), [L.DONNERGOTT], {})).toBe(0);
-    expect(lightningCritMult(light({ entladungMult: 0.3 }), [L.DONNERGOTT], {})).toBeCloseTo(0.3, 9);
+  it("lightningCritMult: Entladung-Rampe + Spannungsstau + Vorentladung ab der Serie (§7.19: Überschlag gestrichen)", () => {
+    expect(lightningCritMult(initLightning(), [L.RESONANZ], {})).toBe(0);
+    expect(lightningCritMult(light({ entladungMult: 0.3 }), [L.RESONANZ], {})).toBeCloseTo(0.3, 9);
     expect(lightningCritMult(light({ stauBonus: 0.25 }), [], {})).toBeCloseTo(0.25, 9); // §7.18: der Spannungsstau zahlt hier
     const vMin = T.vorentladung[0].minStreak;
     expect(lightningCritMult(light(), [L.VORENTLADUNG], {}, vMin)).toBeCloseTo(vMin * T.vorentladung[0].multPerStreak, 9);
@@ -149,7 +146,6 @@ describe("Blitz-Modul — Ladung, Leiste, Niederlage (reine Übergänge)", () =>
     expect(critFillsBar(light({ charge: 9 }), [], {})).toBe(true);
     expect(critFillsBar(light({ charge: 8 }), [], {})).toBe(false);
     expect(critFillsBar(light({ charge: 8 }), [L.ABLEITER], { [L.ABLEITER]: 2 })).toBe(true); // +1 Passiv +1 Blitzableiter (Sehr selten: jeder Crit)
-    expect(critFillsBar(light({ charge: 6 }), [L.DONNERGOTT], {})).toBe(true);                // Leiste 7
     expect(critFillsBar(initLightning(), [], {})).toBe(false);
   });
   it("blitzschlagStacks: jeder N. Crit (Zähler nach dem Crit), Doppelentladung 2 Stapel", () => {
@@ -387,17 +383,6 @@ describe("Blitz — Engine-Integration (resolveTrick)", () => {
     expect(s.lightning.bars).toBe(1);
     expect(s.deck[1].ionStacks).toBe(1);
   });
-  it("Donnergott (§7.20): Leiste bei 7 voll, maxCharge folgt dem Build; Stapel der Siegkarte zählen +0,25× statt +0,15×, kein flacher Term", () => {
-    const s = resolveTrick(scen(12, 0, { skills: [L.DONNERGOTT], lightning: light({ charge: 6 }) }), zero);
-    expect(s.lightning.maxCharge).toBe(C.DONNERGOTT_MAX_CHARGE);
-    expect(s.lightning.bars).toBe(1);
-    expect(s.lightning.charge).toBe(0);
-    expect(s.deck[1].ionStacks).toBe(1);
-    expect(s.lastTrick.critMultiplier).toBeCloseTo(M, 6); // ohne Stapel auf der Siegkarte nichts extra
-    const deep = resolveTrick(scen(12, 0, { deck: withStacks(12, 0, 3), skills: [L.DONNERGOTT], lightning: light() }), zero);
-    expect(deep.lastTrick.critMultiplier).toBeCloseTo(M + 3 * C.DONNERGOTT_ION_CRIT_MULT_PER_STACK, 6);
-    expect(C.DONNERGOTT_ION_CRIT_MULT_PER_STACK).toBeGreaterThan(C.ION_CRIT_MULT_PER_STACK);
-  });
   it("Doppelentladung: 2 Stapel je Ionisierung; Crit mit ionisierter Karte zählt den Stich doppelt", () => {
     const s = resolveTrick(scen(12, 0, { deck: withStacks(12, 0, 1), skills: [L.DOPPELENTLADUNG], lightning: light({ charge: 9 }) }), zero);
     expect(s.lastTrick.isCrit).toBe(true);
@@ -417,7 +402,6 @@ describe("Blitz — Engine-Integration (resolveTrick)", () => {
     const none = resolveTrick(scen(12, 0, { skills: [L.ABLEITER], lightning: light() }), zero);
     expect(none.lastTrick.critMultiplier).toBeCloseTo(M, 6);
     expect(ionCritMultFor({ ionStacks: 3 })).toBeCloseTo(3 * C.ION_CRIT_MULT_PER_STACK, 9);
-    expect(ionCritMultFor({ ionStacks: 3 }, [L.DONNERGOTT], {})).toBeCloseTo(3 * C.DONNERGOTT_ION_CRIT_MULT_PER_STACK, 9); // §7.20
     expect(ionCritMultFor({ ionStacks: 0 })).toBe(0);
     const min = T.kurzschluss[0].minStacks;
     expect(ionCritMultFor({ ionStacks: min }, [L.KURZSCHLUSS], {})).toBeCloseTo(min * T.kurzschluss[0].factor * C.ION_CRIT_MULT_PER_STACK, 9);

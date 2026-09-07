@@ -4065,9 +4065,66 @@ Formation" bewegt mehr als der Score-Satz — er wirkt über die Zeit (früher g
 | 4 | Den Wachstums-Skills einen Grund im gemischten Build geben (kleiner Sofort-Ertrag) **oder** sie bewusst als Mono-Skills stehen lassen. | Heute sind sie die vier schlechtesten Picks des Feldes. Beides ist vertretbar — „Bekenntnis-Fraktion" ist eine legitime Bauform, nur muss sie gewollt sein. |
 | 5 | Der Grün-Farbblock-Deckel (`PLANT_GREEN_FARBBLOCK_CAP` 3) **kann bleiben**. | Gemessen: der längste grüne Block endet bei 12 Karten, das Deck wird nur in 13 % der Läufe zu einer Reihe. Die offene Frage aus §6.2 ist damit beantwortet: der Deckel bindet kaum. |
 
+### 6.11 Legendäre: drei je Fraktion (2026-09-07, Owner) — gemessen, gekürzt, neu gebaut
+
+**Owner:** „lass die legendäre bauen, 3 reichen. lass auch bei den anderen auf 3 reduzieren. wir behalten die stärksten."
+
+#### Gemessen: welche vier waren die schwächsten (Feuer/Blitz, 150 Läufe, gepaart, Legendäres in der mittleren Skill-Phase)
+
+| Legendär | Fraktion | Median-Δ | typisch | besser in |
+| --- | --- | --- | --- | --- |
+| Resonanz | Blitz | +32,1M | +106 % | 80 % |
+| Doppelentladung | Blitz | +29,5M | +85 % | 74 % |
+| Sonnenkern | Feuer | +24,6M | +76 % | 66 % |
+| Hochspannung | Blitz | +9,0M | +40 % | 64 % |
+| **Donnergott** | **Blitz** | **+7,7M** | **+30 %** | 60 % |
+| Damaststahl | Feuer | +2,5M | +8 % | 54 % |
+| Ewige Glut | Feuer | −1,0M | −8 % | 47 % |
+| **Sonnenzorn** | **Feuer** | **−3,6M** | **−14 %** | 46 % |
+
+**Gestrichen: Donnergott (Blitz) und Sonnenzorn (Feuer)** — je das schwächste ihrer Fraktion. Mit ihnen gehen die
+Konstanten `DONNERGOTT_MAX_CHARGE`, `DONNERGOTT_ION_CRIT_MULT_PER_STACK`, `SONNENZORN_MULT_PER_10`,
+`SONNENZORN_HEAT_MULT`, die Spitzen-Lesart des Hitze-Multiplikators (`heatMult` rechnet wieder nur mit der aktuellen
+Hitze; `heat.peak` trägt jetzt nur noch den Boden der Ewigen Glut) und ihre zwei Embleme.
+
+**Offen benannt:** Feuers verbleibende drei sind nach dieser Messung dünn (Sonnenkern +76 %, Damaststahl +8 %, Ewige
+Glut −8 %), während Blitz drei starke behält. Wenn Feuer eine Runde bekommt, sind Damaststahl und Ewige Glut die
+Kandidaten — nicht in dieser Runde entschieden.
+
+#### Die drei Legendären der Pflanze (neu; die vier aus §6.5 waren nie gebaut worden)
+
+Drei Achsen statt vier Ideen — jede liest den eigenen Zustand, keine zahlt Direkt-Score, keine hat einen eigenen
+Multiplikator-Stapel:
+
+| Platz | Name | Text | Achse |
+| --- | --- | --- | --- |
+| L02 | **Wurzelgeflecht** (ersetzt Mutterbaum) | „Jede blühende Karte zählt in jeder Formation ihres Segments mit." | **Dichte** — mehr Mitglieder je Lauf (Passiv-Score und alle vier Score-Skills lesen die Mitglieder) und eine Formation mehr je blühender Karte (Wachstum, Überlappungsbonus) |
+| L03 | **Baumreihe** (bleibt) | „Blühende Karten bilden eine positionsfreie Wiederholung, egal wo sie liegen." | **Multiplikator** — die Wiederholungsleiter ist ungedeckelt (2 → ×1,25 · 3 → ×1,50 · 4 → ×1,80, danach je +0,40) |
+| L04 | **Ewiger Frühling** (bleibt) | „Ist das Feld vollständig grün, sind alle deine Karten blühend." | **Zielbild** — die Belohnung für §6.1 Punkt 2 |
+
+**Gestrichen: Weltenbaum** (L01) — eine reine Wachstums-Rampe am Durchlaufende ohne eigene Auszahlung; die Fraktion
+hat damit gar keinen Durchlaufende-Haken mehr. Mutterbaum ist in Wurzelgeflecht aufgegangen (aus „die am weitesten
+gewachsene Karte" wurde „jede blühende Karte" — dieselbe Mechanik, an der Währung der Fraktion statt an einer
+Einzelkarte).
+
+#### Gemessen (Pflanze-Welt, 100 Läufe, gepaart, mittlere Skill-Phase)
+
+| Legendär | Median-Δ | typisch | besser in | Lift im Build |
+| --- | --- | --- | --- | --- |
+| **Wurzelgeflecht** | +148,4M | **+152 %** | 74 % | 1,33 |
+| **Baumreihe** | +104,8M | **+614 %** | 75 % | 1,45 |
+| Ewiger Frühling | +7,8M | +10 % | 58 % | 0,98 |
+
+**Das ändert die Lage der Fraktion.** In §6.10 lag die Pflanze OHNE Legendäre bei ⅔ von Feuer und Blitz; mit den
+neuen Legendären steht der Median der Pflanze-Welt bei 210M statt 9,1M. Zwei der drei sind stärker als alles, was
+Feuer und Blitz haben (Resonanz +106 % ist dort die Spitze). Die Paritätsfrage aus §6.10 ist damit **neu zu stellen,
+nicht mehr aus den Zahlen von dort zu beantworten** — die nächste Runde misst das Duell mit Legendären für alle drei.
+Ewiger Frühling ist der schwache der drei (+10 %) und wäre der nächste Kandidat für einen Umbau.
+
 ---
 
 ## Änderungsprotokoll
+
 
 
 
@@ -4138,3 +4195,4 @@ Formation" bewegt mehr als der Score-Satz — er wirkt über die Zeit (früher g
 | 2026-09-06 | **Übergabe für den Pflanze-Bau:** `docs/workstreams/skill-rework/HANDOFF-pflanze-build.md`. Owner will den Bau mit frischem Kontext. Enthält Stand (HEAD, Feuer/Blitz fertig, Pflanze nur auf dem Papier), die Owner-Regeln wörtlich (samt der neuen: erst Design, dann Startwert, gemessen nur auf Ansage), den Vertrag §6.1–§6.8 in einer Seite, die Abrissliste der alten Ökonomie mit Fundstellen (Wertachse, `plantDirect`, `plantFormMult`, Trimmen, `plantCommit`, Kolonisierung, `enabler`), die vier Formations-Haken (`segInfo.isOpen`, `isJoker`, `gap.run`/`gap.seg`, `minMembers`/`minLen`), fünf Etappen, die Messliste für später, die Fallen (Ratchets, ecke-Timeout, Formationen nur an Position 0, loc:export, Band erst nach der Messung neu zentrieren) und einen deutschen Startprompt. |
 | 2026-09-07 | **Pflanze gebaut (6.9, umgesetzt).** Neues Modul `src/game/factions/plant.js` mit dem Passiv (Wachstum je Karte: +1 je Sieg, +1 je Formation an der Siegposition; grün ab 30, blühend ab 75; eine blühende Siegkarte gibt +20 Basis-Score je grüner Karte in ihren Formationen), den 15 Skills auf vier Stufen (`PFLANZE_TIERS`) und den vier Legendären. Die vier Hebel (Spalier, Wildwuchs, Lücke, Überwucherung) und zwei Legendäre (Baumreihe, Mutterbaum) ändern die Erkennung in `formations.js`, das dafür ein Bündel `{ skillTiers, growth }` bekommt. Alte Ökonomie raus: Wertachse mit Auto-Sieg bei 11, Alter Anker, `plantDirect`, `plantFormMult`, Trimmen, Bekenntnis-Skalierung (`commitScale` — die Pflanze war ihr letzter Leser), Kolonisierung des Gegnerdecks, die sechs `enabler`; zwei Emblem-Plätze zurückgegeben, zehn umbenannt. Ein Score-Kanal `plantBase` statt drei; PlantBar, Karten-Ring, Kartendetail, Glossar und Passiv-Text auf die drei Zustände umgestellt. Neuer Wächtersatz `test/plant-rework.test.js` (36 Fälle, inklusive Gegenprobe: ohne Pflanzen-Skill rechnet die Formations-Engine unverändert). In EINEM Stück statt in Etappen, weil die Registry-Wächter mindestens 18 Skills je Fraktion verlangen. Gates grün (2321 Tests). **Nicht gemessen, nicht im Türen-Angebot** — beides wartet auf die Ansage des Owners. |
 | 2026-09-07 | **Pflanze gemessen (6.10, auf Ansage; Legendäre außen vor — sie bekommen ein Redesign).** Duell mit allen drei Fraktionen (200 Läufe): Feuer 7,75M · Blitz 7,43M · **Pflanze 4,90M** (0,63× / 0,66×), p90 9,72M gegen 18,8M/37,4M, Siegquote 53,3 % gegen 65,3 %; Split aller drei 6,19M über dem Mix 3,58M. Neue Sonde `sim/probes/plant-field.mjs`: das Feld ergrünt ab Durchlauf 11, blühend ab 16–21, am Ende Median 38 von 40 blühenden Karten, längster grüner Farbblock 12, Deck-als-Reihe nur in 13 % der Läufe (**der Grün-Farbblock-Deckel bindet kaum — die offene Frage aus §6.2 ist beantwortet**). Gierig mit allen drei in den Türen (explore 900, gierig 120, Median 21,8M): nur Blütenlese ist „stark" (+6,0M), die vier schlechtesten Picks des ganzen Feldes sind Pflanze-Wachstums-Skills (Zäher Halm −4,8M, Setzlingsbeet −3,8M, Ranken −3,0M, Spalier −2,9M) — die Signatur einer Bekenntnis-Fraktion. Gierig in der Pflanze-Welt: Jahresringe +17 %, Spalier +12 %, Wildwuchs +8 %, Episch-Spitzen Wildwuchs 4,13 / Rankgerüst 3,35 / Spalier 2,18, p95 265M. Regler-Sweep: **der Passiv-Satz ist kein Regler** (Vierfaches = +24 %), „+2 Wachstum je Formation" bewegt mehr (+10 %). Befund: der Pflanze fehlen Multiplikator und Siegquote, ihre einzige multiplikative Achse ist die Erkennung — dort sitzen Spitzen und Schwanz. Fünf Vorschläge in 6.10, Empfehlung: erst die Legendären, dann tarieren. Nichts geändert. |
+| 2026-09-07 | **Legendäre auf drei je Fraktion (6.11, Owner: „3 reichen, wir behalten die stärksten").** Gemessen (150 Läufe, gepaart, mittlere Skill-Phase): Resonanz +106 % · Doppelentladung +85 % · Sonnenkern +76 % · Hochspannung +40 % · **Donnergott +30 %** · Damaststahl +8 % · Ewige Glut −8 % · **Sonnenzorn −14 %**. Gestrichen sind damit Donnergott (Blitz) und Sonnenzorn (Feuer) samt ihren vier Konstanten, der Spitzen-Lesart des Hitze-Multiplikators und ihren Emblemen. Die Pflanze bekommt drei neue: **Wurzelgeflecht** (jede blühende Karte zählt in jeder Formation ihres Segments mit — Dichte), **Baumreihe** (blühende Karten als positionsfreie Wiederholung — Multiplikator) und **Ewiger Frühling** (vollgrün → alles blüht — Zielbild); Weltenbaum ist gestrichen (Rampe ohne Auszahlung), Mutterbaum in Wurzelgeflecht aufgegangen. Gemessen in der Pflanze-Welt: Wurzelgeflecht **+152 %**, Baumreihe **+614 %**, Ewiger Frühling +10 % — zwei davon stärker als alles bei Feuer und Blitz. Der Median der Pflanze-Welt steht damit bei 210M statt 9,1M: **die Paritätsfrage aus §6.10 ist neu zu stellen**, die nächste Runde misst das Duell mit Legendären für alle drei. Offen benannt: Feuers verbleibende drei sind dünn (Damaststahl +8 %, Ewige Glut −8 %). Gates grün (2318 Tests). |

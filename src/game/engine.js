@@ -18,7 +18,7 @@ import { syncHeatMax, fireValueBonus, damascusCombat, fireOnWin, fireOnLoss, hea
 // exp skill rework: die Pflanze-Mechanik (Passiv „Wachstum", 15 Skills, 4 Legendäre) lebt im Fraktionsmodul; die
 // Engine ruft ihre Übergänge (Sieg, Niederlage, Durchlaufende) und reicht das Bündel { skillTiers, growth } an die
 // Formations-Engine weiter, deren Erkennung vier Pflanze-Hebel und zwei Legendäre ändern.
-import { plantOnWin, plantOnLoss, plantOnGap, plantCycleEnd, plantParam, P as PLANT } from "./factions/plant.js";
+import { plantOnWin, plantOnLoss, plantOnGap, plantParam, P as PLANT } from "./factions/plant.js";
 // (#267: import aus stats.js entfernt — die Stat-Phase/Faktoren sind weg.)
 import { computeFormations, positionHasFormation, activeFormationCount, summarizeFormations, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
 import { perkLegendaryChance, anchorAt } from "./shop.js";
@@ -429,7 +429,7 @@ export function resolveTrick(state, rng) {
   let gained = 0;
   let isCrit = false, critChance = 0, critMultiplier = C.CRIT_BASE_MULT, scoreBeforeCrit = 0, critBonus = 0;
   // Eis-Neudesign: der Gletscher-Bruch profitiert vom VOLLEN Sieg-Stack, WENN die Gletscher-Karte ihren Stich gewinnt
-  // (Serie × Perk/Familie × Formation × Nachhall × Kern × Sonnenzorn × Architekt × Crit). Bei Niederlage bleibt es ×1
+  // (Serie × Perk/Familie × Formation × Nachhall × Kern × Architekt × Crit). Bei Niederlage bleibt es ×1
   // (Basis-Burst). So hat der Rest des Spiels Hebel auf den Gletscher-Score, statt dass nur Gletscher-Skills zählen.
   let glacierWinMult = 1;
   let breakdown = null; // Ergebnis-Aufschlüsselung eines Siegs (§17): exakt die Faktoren der Score-Formel
@@ -474,7 +474,7 @@ export function resolveTrick(state, rng) {
     let fireLineMult = 1;
     if (heat && heat.active) {
       const r = fireOnWin(heat, skills, skillTiers, {
-        margin: pValue - oValue, streak: serieStreak, lastResult, card: pCard, forged, brandOnOpp,
+        margin: pValue - oValue, streak: serieStreak, card: pCard, forged, brandOnOpp,
         valueOver: pValue - damascusValue - (pCard.baseRank ?? pCard.value), // Glutstahl: Kampfwert über dem Grundwert, ohne den Damast-Kampfbonus
         value: pValue, formCount: activeFormationCount(posForm), // Feuerlinie: ganzer Kampfwert, aktive Formationen an der Siegposition
         pos: actualPos, // Brandschneise (§7.27): der Sieg wird mit seinem Vorsprung gemerkt, der Schnitt fällt am Durchlaufende
@@ -509,7 +509,7 @@ export function resolveTrick(state, rng) {
     // Crit-Ctx trägt rawCrit — von D-Crit-Flats (D19 Überschusskrit) UND L6 „Raserei" (critMultBonus, #115) gebraucht.
     const critCtx = { ...wctx, rawCrit };
     // Basis 2,25 + Präzision „Wucht" (familyCritMult) + L6-Überschuss + Blitz (Entladung-Rampe, Spannungsstau,
-    // Vorentladung) + Stapel der Siegkarte (§7.12: +ION_CRIT_MULT_PER_STACK je wirksamem Stapel, Donnergott mehr) + Systemregel (§1: Überschuss
+    // Vorentladung) + Stapel der Siegkarte (§7.12: +ION_CRIT_MULT_PER_STACK je wirksamem Stapel) + Systemregel (§1: Überschuss
     // über 100 % → sehr kleiner Crit-Mult-Bonus, alle Fraktionen).
     critMultiplier = critMultiplierFor(perks, critCtx) + familyCritMult(familyTiers)
                    + lightningCritMult(lightning, skills, skillTiers, serieStreak) + lightIonCritMult(pCardR, skills, skillTiers) + overcritMult(rawCrit); // pCardR: Resonanz-Stapel (§7.25)
@@ -605,12 +605,12 @@ export function resolveTrick(state, rng) {
     // #370 Formations-Boost (Wochen-Mod, nur Ranked): den Formations-BONUS (Überschuss über 1) verdoppeln — neutraler
     // Sieg (formMult==1) bleibt unberührt, Formations-Builds skalieren stärker. Wirkt auch auf glacierWinMult (nutzt formMult).
     if (hasWeekMod(state.weekMods, "formBoost")) formMult = 1 + (formMult - 1) * BOOST_FACTOR;
-    // Feuer (§4.2/§4.5): der Hitze-Multiplikator (je 10 % gehaltener Hitze; Sonnenzorn: Spitze, doppelt; Weißglut über
+    // Feuer (§4.2/§4.5): der Hitze-Multiplikator (je 10 % gehaltener Hitze; Weißglut über
     // 100) und Verbrennung (Sieg ab dem Vorsprung der Stufe ×1,5) sind EIN eigener Faktor auf den ganzen Sieg-Score —
     // ein Halte-Build gewinnt über Wert und Formationen, nicht über Feuer-Flats. Gelesen wird die Hitze nach dem
     // Gewinn dieses Siegs und vor dem Verbrauch (fireHeld).
     const fireMult = (heat && heat.active)
-      ? heatMult(skills, skillTiers, fireHeld, heat.peak, heat.emberMult) * verbrennungMult(skills, skillTiers, pValue - oValue)
+      ? heatMult(skills, skillTiers, fireHeld, heat.emberMult) * verbrennungMult(skills, skillTiers, pValue - oValue)
         * feuersturmMult(skills, skillTiers, fireHeld, heat.max || C.HEAT_MAX, serieStreak) // §7.17: Feuersturm, Serie zu Score bei voller Leiste
         * rueckzuendungMult(skills, skillTiers, serieStreak) // §7.24: Rückzündung, der Takt — jeder N. Sieg in Folge (Serie nach dem Sieg)
         * schneiseMult(skills, skillTiers, heat, actualPos) // §7.27: Brandschneise, ein Sieg auf dem Schnitt des letzten Durchlaufs (die Schnitte liegen im Hitze-Substate)
@@ -825,7 +825,7 @@ export function resolveTrick(state, rng) {
   // Blitz (exp skill rework, §3.2): volle Leiste → +1 Leiste, die NÄCHSTE Karte in der Reihenfolge wird ionisiert
   // (Kettenblitz §7.18: die tiefste Karte dazu), Gewitterfront/Entladung rampen, Ionenfeld lädt das Feld, die Ladung fällt
   // auf den Reststrom-Boden. Höchstens einmal je Stich, nach Sieg UND Niederlage (Ladung über der Leiste, die ein Stich
-  // hinterlässt, zündet beim nächsten). `maxCharge` folgt dem Build (Donnergott 7). Das Ionenfeld zählt VOR der Leiste
+  // hinterlässt, zündet beim nächsten). `maxCharge` folgt dem Build (Reststrom Episch 9). Das Ionenfeld zählt VOR der Leiste
   // herunter: der Stich, der es lädt, zählt nicht mit — die nächsten n Stiche tragen es.
   let barFilled = false, barStacks = 0;
   if (lightning && lightning.active) {
@@ -1011,11 +1011,8 @@ export function resolveTrick(state, rng) {
       const r = fireCycleEnd(heat, skills, skillTiers, deck, newForged);
       heat = r.heat; deck = r.deck; newForged = r.forged;
     }
-    // ---- Pflanze (§6.5): Weltenbaum — am Durchlaufende wächst jede grüne Karte, je mehr grüne Karten im Feld stehen.
-    if ((activeArchetypes || []).includes("plant")) {
-      const r = plantCycleEnd(newGrowth, deck, skills);
-      newGrowth = r.growth; deck = r.deck; growthTotal += r.grown;
-    }
+    // (§6.11: die Pflanze hat am Durchlaufende nichts mehr zu tun — der Weltenbaum ist mit den Legendären auf drei
+    //  gestrichen; ihr Zustand wandert ausschließlich über Siege.)
 
     // #226 Großmeister: kürzerer Lauf als Schwierigkeits-Hebel (maxCycles override, sonst C.MAX_CYCLES → byte-identisch).
     // Dev-Run (Test-Layout): state.maxCycles setzt die Rundenzahl eines einzelnen Laufs frei (20..100); null → Bestand.

@@ -13,7 +13,7 @@ import { makeRng } from "../src/game/deck.js";
 const FIRE_IDS = [
   "SK_FIRE_01", "SK_FIRE_02", "SK_FIRE_03", "SK_FIRE_04", "SK_FIRE_05", "SK_FIRE_06", "SK_FIRE_07", "SK_FIRE_08",
   "SK_FIRE_09", "SK_FIRE_12", "SK_FIRE_13", "SK_FIRE_14", "SK_FIRE_15", "SK_FIRE_16",
-  "SK_FIRE_L01", "SK_FIRE_L02", "SK_FIRE_L03", "SK_FIRE_L04",
+  "SK_FIRE_L01", "SK_FIRE_L02", "SK_FIRE_L04",
 ];
 const T = FEUER_TIERS;
 
@@ -31,9 +31,10 @@ const G = (m) => (m >= C.HEAT_MIN_MARGIN ? (m - C.HEAT_MARGIN_OFFSET) * C.HEAT_P
 describe("Feuer — Roster und Stufenleitern", () => {
   it("18 Feuer-Skills: 14 normale mit vier Stufen + 4 Legendäre ohne Stufe; Funkenflug, Schmelzofen und Flächenbrand sind weg", () => {
     const fire = Object.values(SKILL_DEFS).filter((s) => s.archetype === "fire");
-    expect(fire).toHaveLength(18);
+    expect(fire).toHaveLength(17); // §6.11 (Owner): drei Legendäre je Fraktion — Sonnenzorn (L03) ist als schwächstes gestrichen
     expect(SKILL_DEFS.SK_FIRE_11).toBeUndefined(); // §7.16: Flächenbrand gestrichen (Owner-Untergrenze: 14 je Fraktion)
-    expect(fire.filter((s) => s.legendary)).toHaveLength(4);
+    expect(fire.filter((s) => s.legendary)).toHaveLength(3);
+    expect(SKILL_DEFS.SK_FIRE_L03, "Sonnenzorn gestrichen (gemessen −14 %)").toBeUndefined();
     for (const id of FIRE_IDS) {
       expect(SKILL_DEFS[id], `${id} fehlt`).toBeTruthy();
       expect(SKILL_DEFS[id].archetype).toBe("fire");
@@ -95,11 +96,10 @@ describe("Feuer — Roster und Stufenleitern", () => {
     expect(SKILL_DEFS.SK_FIRE_15.descTiers[0]).not.toContain("kostet"); // §7.14: ohne Preis
     expect(SKILL_DEFS.SK_FIRE_15.descTiers[3]).toContain(`${T.schmiede[3].cards} niedrigsten Karten`); // das Episch-Extra nur dort
     expect(SKILL_DEFS.SK_FIRE_15.descTiers[2]).not.toContain("niedrigsten Karten");
-    expect(SKILL_DEFS.SK_FIRE_L03.desc).toContain(`+${Math.round(C.SONNENZORN_MULT_PER_10 * 100)} %`);
     expect(SKILL_DEFS.SK_FIRE_L02.name).toBe("Ewige Glut"); // §7.21: ersetzt Phönixfeuer auf demselben Platz
     expect(SKILL_DEFS.SK_FIRE_L02.desc).toContain(`+${Math.round(C.EWIGE_GLUT_MULT_PER_ROUND * 100)} %`);
     expect(SKILL_DEFS.SK_FIRE_L02.desc).toContain(`${Math.round(C.EWIGE_GLUT_FLOOR_FRAC * 100)} %`);
-    expect(SKILL_DEFS.SK_FIRE_L03.descTiers).toBeUndefined(); // Legendäre haben keine Stufe
+    expect(SKILL_DEFS.SK_FIRE_L04.descTiers).toBeUndefined(); // Legendäre haben keine Stufe
     // Keine Leiter mehr im Text: kein Stufenname steht in einem Stufentext (die Stufe zeigt das Badge).
     for (const id of FIRE_IDS) for (const text of SKILL_DEFS[id].descTiers || []) expect(text, id).not.toMatch(/Selten|Episch|Sehr selten/);
   });
@@ -123,7 +123,7 @@ describe("Feuer — Modul (reine Übergänge)", () => {
     expect(fireParam([], {}, F.FEUERLINIE, "perPoint")).toBeUndefined();
     expect(fireParam([F.FEUERLINIE], { [F.FEUERLINIE]: 3 }, F.FEUERLINIE, "perPoint")).toBe(T.feuerlinie[3].perPoint);
   });
-  it("heatGainOnWin: Passiv ab Vorsprung 3, Zunder, Verbrennung Episch, Sonnenzorn — Feuersturm und Rückzündung geben keine Hitze, Glut ist weg (§7.23)", () => {
+  it("heatGainOnWin: Passiv ab Vorsprung 3, Zunder, Verbrennung Episch — Feuersturm und Rückzündung geben keine Hitze, Glut ist weg (§7.23)", () => {
     expect(heatGainOnWin([], {}, { margin: 2 })).toBe(0);
     expect(heatGainOnWin([], {}, { margin: 6 })).toBe(G(6));
     expect(G(6)).toBe(6 - C.HEAT_MARGIN_OFFSET);
@@ -136,12 +136,6 @@ describe("Feuer — Modul (reine Übergänge)", () => {
     expect(heatGainOnWin([F.VERBRENNUNG], st({ [F.VERBRENNUNG]: 3 }), { margin: T.verbrennung[3].minMargin })).toBe(G(T.verbrennung[3].minMargin) * T.verbrennung[3].mult);
     expect(heatGainOnWin([F.VERBRENNUNG], st({ [F.VERBRENNUNG]: 3 }), { margin: T.verbrennung[3].minMargin - 1 })).toBe(G(T.verbrennung[3].minMargin - 1));
     expect(heatGainOnWin([F.VERBRENNUNG], st({ [F.VERBRENNUNG]: 2 }), { margin: T.verbrennung[2].minMargin })).toBe(G(T.verbrennung[2].minMargin));
-    // §7.20 Sonnenzorn: unter der Spitze zählt der ganze Gewinn ×2 (auch Zunder), an der Spitze und darüber nicht.
-    expect(heatGainOnWin([F.SONNENZORN], {}, { margin: 6, heatValue: 80, heatPeak: 120 })).toBe(G(6) * C.SONNENZORN_HEAT_MULT);
-    expect(heatGainOnWin([F.SONNENZORN], {}, { margin: 6, heatValue: 120, heatPeak: 120 })).toBe(G(6));
-    expect(heatGainOnWin([F.SONNENZORN], {}, { margin: 6, heatValue: 0, heatPeak: 0 })).toBe(G(6)); // ohne Spitze nichts zu holen
-    expect(heatGainOnWin([F.SONNENZORN, F.ZUNDER], st({}), { margin: 6, heatValue: 10, heatPeak: 100 })).toBe((G(6) + T.zunder[0].heat) * C.SONNENZORN_HEAT_MULT);
-    expect(heatGainOnWin([F.ZUNDER], st({}), { margin: 6, heatValue: 80, heatPeak: 120 })).toBe(G(6) + T.zunder[0].heat); // ohne Sonnenzorn zählt die Spitze nicht
   });
   it("feuerlinieMult (§7.23): je Punkt Kampfwert im Formations-Sieg, nur mit Hitze für die Kosten; Episch je Formation", () => {
     const line = (tier, ctx) => feuerlinieMult([F.FEUERLINIE], st({ [F.FEUERLINIE]: tier }), ctx);
@@ -155,21 +149,17 @@ describe("Feuer — Modul (reine Übergänge)", () => {
     expect(line(3, { value: 25, formCount: 3, heldHeat: 100 })).toBeCloseTo(1 + 25 * T.feuerlinie[3].perPoint * 3, 9); // Episch: je Formation
     expect(line(3, { value: 25, formCount: 1, heldHeat: 100 })).toBeCloseTo(1 + 25 * T.feuerlinie[3].perPoint, 9);
   });
-  it("heatMult: je volle 10 % +2 %, über 100 nur mit Weißglut, Sonnenzorn mit Spitze und doppelt", () => {
+  it("heatMult: je volle 10 % +2 %, über 100 nur mit Weißglut", () => {
     expect(heatMult([], {}, 0)).toBe(1);
     expect(heatMult([], {}, 55)).toBeCloseTo(1 + 5 * C.HEAT_MULT_PER_10);
     expect(heatMult([], {}, 100)).toBeCloseTo(1 + 10 * C.HEAT_MULT_PER_10);
     expect(heatMult([], {}, 150)).toBeCloseTo(1 + 10 * C.HEAT_MULT_PER_10);                         // ohne Weißglut gedeckelt
     expect(heatMult([F.WEISSGLUT], {}, 150)).toBeCloseTo(1 + 10 * C.HEAT_MULT_PER_10 + 5 * T.weissglut[0].multPer10);
     expect(heatMult([F.WEISSGLUT], { [F.WEISSGLUT]: 3 }, 200)).toBeCloseTo(1 + 10 * C.HEAT_MULT_PER_10 + 10 * T.weissglut[3].multPer10);
-    expect(heatMult([F.SONNENZORN], {}, 30, 100)).toBeCloseTo(1 + 10 * C.SONNENZORN_MULT_PER_10);    // Spitze statt aktuell
-    expect(heatMult([F.SONNENZORN, F.WEISSGLUT], { [F.WEISSGLUT]: 1 }, 0, 200)).toBeCloseTo(1 + 20 * C.SONNENZORN_MULT_PER_10 + 10 * T.weissglut[1].multPer10); // §7.19: die Spitze zählt bis 200
-    expect(heatMult([F.SONNENZORN], {}, 0, 200)).toBeCloseTo(1 + 20 * C.SONNENZORN_MULT_PER_10);
-    expect(heatMult([F.WEISSGLUT], { [F.WEISSGLUT]: 1 }, 200)).toBeCloseTo(1 + 10 * C.HEAT_MULT_PER_10 + 10 * T.weissglut[1].multPer10); // ohne Sonnenzorn bleibt das Passiv bei 100 stehen
+    expect(heatMult([F.WEISSGLUT], { [F.WEISSGLUT]: 1 }, 200)).toBeCloseTo(1 + 10 * C.HEAT_MULT_PER_10 + 10 * T.weissglut[1].multPer10); // der Passiv-Anteil bleibt bei 100 stehen
     // §7.21 Ewige Glut: die Rampe liegt additiv im selben Faktor, nur solange der Skill gehalten wird.
-    expect(heatMult([F.EWIGE_GLUT], {}, 100, 100, 0.3)).toBeCloseTo(1 + 10 * C.HEAT_MULT_PER_10 + 0.3);
-    expect(heatMult([F.EWIGE_GLUT, F.SONNENZORN], {}, 100, 100, 0.3)).toBeCloseTo(1 + 10 * C.SONNENZORN_MULT_PER_10 + 0.3);
-    expect(heatMult([], {}, 100, 100, 0.3)).toBeCloseTo(1 + 10 * C.HEAT_MULT_PER_10);
+    expect(heatMult([F.EWIGE_GLUT], {}, 100, 0.3)).toBeCloseTo(1 + 10 * C.HEAT_MULT_PER_10 + 0.3);
+    expect(heatMult([], {}, 100, 0.3)).toBeCloseTo(1 + 10 * C.HEAT_MULT_PER_10); // ohne Ewige Glut zählt die Rampe nicht
   });
   it("feuersturmMult (§7.17): bei voller Leiste +Satz je Serienpunkt, Episch schon ab 80 % Hitze; unter dem Tor und ohne Serie 1", () => {
     expect(feuersturmMult([], {}, 100, 100, 10)).toBe(1);
@@ -238,10 +228,8 @@ describe("Feuer — Modul (reine Übergänge)", () => {
     // Ohne Schmelzpunkt bleibt eine Vormerkung liegen und zahlt nichts.
     expect(fireOnWin(heat({ value: 94, meltPending: 6 }), [F.KLINGE], {}, { margin: 1 }).flat).toBe(0);
   });
-  it("fireOnWin: Glutstahl je Punkt über dem Grundwert (Episch Schmiedewert doppelt), Sonnenkern je Brandpunkt, Sonnenzorn heizt unter der Spitze doppelt", () => {
-    // Sonnenzorn (§7.20): der Sieg unter der Spitze heizt doppelt — über fireOnWin, mit der Spitze aus dem Substate.
-    expect(fireOnWin(heat({ value: 50, peak: 100 }), [F.SONNENZORN], {}, { margin: 6 }).heat.value).toBe(50 + G(6) * C.SONNENZORN_HEAT_MULT);
-    expect(fireOnWin(heat({ value: 50, peak: 50 }), [F.SONNENZORN], {}, { margin: 6 }).heat.value).toBe(50 + G(6));
+  it("fireOnWin: Glutstahl je Punkt über dem Grundwert (Episch Schmiedewert doppelt), Sonnenkern je Brandpunkt", () => {
+    expect(fireOnWin(heat({ value: 50, peak: 50 }), [], {}, { margin: 6 }).heat.value).toBe(50 + G(6));
     expect(fireOnWin(heat({ value: 10 }), [F.GLUTSTAHL], {}, { margin: 1, valueOver: 3, card: { id: "X0" } }).flat).toBe(3 * T.glutstahl[0].perPoint);
     expect(fireOnWin(heat({ value: 10 }), [F.GLUTSTAHL], { [F.GLUTSTAHL]: 3 }, { margin: 1, valueOver: 3, card: { id: "X0" }, forged: { X0: 3 } }).flat).toBe(6 * T.glutstahl[3].perPoint);
     const sk = fireOnWin(heat({ value: 10 }), [F.SONNENKERN], {}, { margin: 1, brandOnOpp: 3, oppId: "O5" });
@@ -506,10 +494,6 @@ describe("Feuer — Engine-Integration", () => {
     const back = resolveTrick(scen(12, 6, { skills: [F.GLUTBETT], heat: heat({ value: 150, max: 200 }) }), noCrit); // Weißglut ersetzt
     expect(back.heat.max).toBe(C.HEAT_MAX);
     expect(back.heat.value).toBe(C.HEAT_MAX);
-  });
-  it("Sonnenzorn rechnet mit der Spitze: nach dem Verbrauch bleibt der Multiplikator stehen", () => {
-    const s = resolveTrick(scen(12, 6, { skills: [F.SONNENZORN], heat: heat({ value: 20, peak: 100 }) }), noCrit);
-    expect(s.lastTrick.breakdown.fireMult).toBeCloseTo(1 + 10 * C.SONNENZORN_MULT_PER_10, 6);
   });
   it("Treffer-Identität „fire“ bei voller Leiste (100 %)", () => {
     expect(resolveTrick(scen(12, 6, { skills: [F.GLUTBETT], heat: heat({ value: 100 }) }), noCrit).lastTrick.hitTypes).toContain("fire");

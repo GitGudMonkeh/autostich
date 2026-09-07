@@ -5,7 +5,7 @@ import { SKILL_DEFS, TIER_EPIC, activeLightningCount, isLegendarySkill } from ".
    BLITZ — Fraktionsmodul (exp skill rework, docs/skill-rework.md §3). Reine Logik: kein React, kein Math.random.
 
    Passiv (§3.2): jeder gehaltene Blitz-Skill gibt +LIGHTNING_CRIT_PER_SKILL Crit-Chance. Jeder Crit gibt +1 Ladung;
-   ist die Leiste voll (LIGHTNING_MAX_CHARGE, Donnergott DONNERGOTT_MAX_CHARGE), ionisiert sie die NÄCHSTE Karte in der
+   ist die Leiste voll (LIGHTNING_MAX_CHARGE, Reststrom Episch früher), ionisiert sie die NÄCHSTE Karte in der
    Reihenfolge (+1 Stapel) und leert sich auf den Reststrom-Boden. Ein Stapel gibt bei Sieg mit der Karte
    ION_SCORE_PER_STACK Score in die Basis. Stapel sind ohne Deckel und wachsen nie von selbst (Lesart A).
 
@@ -25,7 +25,7 @@ export const L = Object.freeze({
   RESTSTROM: "SK_LIGHTNING_05", GEWITTERFRONT: "SK_LIGHTNING_06", LADUNGSSERIE: "SK_LIGHTNING_07", KURZSCHLUSS: "SK_LIGHTNING_09",
   ENTLADUNG: "SK_LIGHTNING_10", BLITZFAENGER: "SK_LIGHTNING_11", VORENTLADUNG: "SK_LIGHTNING_12", SPANNUNGSSTAU: "SK_LIGHTNING_13",
   BLITZSCHLAG: "SK_LIGHTNING_15", SERIENSCHUTZ: "SK_LIGHTNING_17", // SK_LIGHTNING_14 Überschlag: gestrichen (§7.19)
-  DONNERGOTT: "SK_LIGHTNING_L01", DOPPELENTLADUNG: "SK_LIGHTNING_L02", HOCHSPANNUNG: "SK_LIGHTNING_L03", RESONANZ: "SK_LIGHTNING_L04", // L04: Resonanz ersetzt Durchschlag (§7.25)
+  DOPPELENTLADUNG: "SK_LIGHTNING_L02", HOCHSPANNUNG: "SK_LIGHTNING_L03", RESONANZ: "SK_LIGHTNING_L04", // L04: Resonanz ersetzt Durchschlag (§7.25); L01 Donnergott gestrichen (§6.11, Owner: drei je Fraktion, die stärksten)
 });
 
 /* Frischer Blitz-Substate — inaktiv; der erste Blitz-Skill aktiviert ihn (Reducer). Zähler sind Lauf-kumulativ:
@@ -39,7 +39,6 @@ export function initLightning() {
 }
 
 const held = (skills, id) => (skills || []).includes(id);
-export const hasDonnergott      = (skills) => held(skills, L.DONNERGOTT);
 export const hasDoppelentladung = (skills) => held(skills, L.DOPPELENTLADUNG);
 export const hasHochspannung    = (skills) => held(skills, L.HOCHSPANNUNG);
 export const hasResonanz        = (skills) => held(skills, L.RESONANZ);
@@ -60,9 +59,8 @@ export function resonantStacks(card, posForm, slot, cardAt) {
   return own + Math.floor(partner * C.RESONANZ_SHARE + 1e-9);
 }
 
-// Leistenlänge des Builds: Donnergott (L) macht die Leiste bei 7 voll, Reststrom Episch (§7.22) bei `bar` (9).
+// Leistenlänge des Builds: Reststrom Episch (§7.22) macht sie schon bei `bar` (9) voll.
 export function maxChargeFor(skills, skillTiers = {}) {
-  if (hasDonnergott(skills)) return C.DONNERGOTT_MAX_CHARGE;
   return lightParam(skills, skillTiers, L.RESTSTROM, "bar") || C.LIGHTNING_MAX_CHARGE;
 }
 
@@ -102,7 +100,7 @@ export function lightningCritChance(lightning, skills, skillTiers, streak = 0, c
 /* Crit-Multiplikator-Beitrag des Blitz-Archetyps (additiv auf die Basis): Entladung-Rampe + Spannungsstau (§7.18: der
    Stau aus Siegen ohne Crit, für den nächsten Crit) + Vorentladung (§7.18: ab der Serie der Stufe je Serienpunkt;
    `streak` = Serie NACH diesem Sieg, wie bei der Crit-Chance). Der Überschuss über 100 % zahlt nur noch über die
-   Systemregel (overcritMult) — Überschlag ist gestrichen (§7.19). Donnergott zahlt seit §7.20 über die Stapel der
+   Systemregel (overcritMult) — Überschlag ist gestrichen (§7.19). (Der Stapel-Anteil zahlt über die Stapel der
    Siegkarte (ionCritMultFor), nicht mehr flach. 0, solange inaktiv. */
 export function lightningCritMult(lightning, skills, skillTiers, streak = 0) {
   if (!lightning || !lightning.active) return 0;
@@ -148,10 +146,9 @@ export function ionScoreFor(card, skills = [], skillTiers = {}) {
 }
 
 // Stapel auf dem Crit-Multiplikator der Siegkarte (§7.12: die Ionisierung trägt über den Motor, der ohnehin trägt):
-// wirksame Stapel × ION_CRIT_MULT_PER_STACK, additiv auf den Crit-Multiplikator dieses Stichs. Donnergott (L, §7.20):
-// je Stapel DONNERGOTT_ION_CRIT_MULT_PER_STACK statt des Passiv-Satzes.
+// wirksame Stapel × ION_CRIT_MULT_PER_STACK, additiv auf den Crit-Multiplikator dieses Stichs.
 export function ionCritMultFor(card, skills = [], skillTiers = {}) {
-  const per = hasDonnergott(skills) ? C.DONNERGOTT_ION_CRIT_MULT_PER_STACK : C.ION_CRIT_MULT_PER_STACK;
+  const per = C.ION_CRIT_MULT_PER_STACK;
   return effectiveStacks(card, skills, skillTiers) * per;
 }
 
@@ -236,7 +233,7 @@ function deepestIndex(deck, exclude = -1) {
    wird ionisiert; Kettenblitz (§7.18, Tiefe) gibt danach der Karte mit den meisten Stapeln die Stapel seiner Stufe dazu;
    Ionenfeld lädt das Feld für die Stiche seiner Stufe; Gewitterfront/Entladung rampen; die Ladung fällt auf den
    Reststrom-Boden plus Blitzableiter-Rückgabe. Ladung, die danach über der Leiste liegt (Boden + Rückgabe ≥ Leiste,
-   etwa Donnergott × Reststrom Episch × Blitzableiter), zündet beim nächsten Stich — nie in einer Endlosschleife.
+   etwa Reststrom Episch × Blitzableiter), zündet beim nächsten Stich — nie in einer Endlosschleife.
    Gibt { lightning, deck, filled, stacks, targets } zurück; ohne volle Leiste unverändert. */
 export function fillBar(lightning, skills, skillTiers, deck, playerOrder, actualPos) {
   const max = maxChargeFor(skills, skillTiers);

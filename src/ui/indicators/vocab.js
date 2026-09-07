@@ -23,7 +23,7 @@ export const WHITE_HEAT = "#fff2d8"; // Weißglut-Kappe am heißen Ende
 // nährt") ist bewusst violett-elektrisch abgesetzt vom Ladungs-Cyan → die beiden Ströme bleiben unterscheidbar.
 export const CASCADE = "#9b8cff"; // Kaskade-Kettenglied (gefüllt) — violett-elektrisch
 export const CASCADE_BRIGHT = "#e7e0ff"; // helles Ende der Kette (voll/aktiv aufglühend)
-export const THUNDER = "#8a7de0"; // Donnergott (Legendär) — der bestehende Blitz-Violett-Akzent
+export const THUNDER = "#8a7de0"; // Blitz-Violett-Akzent (Legendäre)
 
 // ---- Eis-Unterfarben (#210) ----
 export const GLACIER = "#bfe9f7"; // Architekt-Pfeiler / „Masse-Schwelle erreicht" — heller Eis-Akzent

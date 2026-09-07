@@ -475,7 +475,7 @@ describe("RESTORE_RUN (Resume)", () => {
 // Seltenheit im normalen Skill-Angebot und laufen über PICK_SKILL. Die gewürfelte Stufe eines Angebotsplatzes
 // (skillOfferTiers) wandert beim Pick in skillTiers; Legendäre haben keine Stufe.
 describe("PICK_SKILL — Stufen und Legendäre im normalen Angebot (exp skill rework)", () => {
-  const LR = "SK_LIGHTNING_01", LEG = "SK_LIGHTNING_L01";
+  const LR = "SK_LIGHTNING_01", LEG = "SK_LIGHTNING_L02";
   const base = (over = {}) => ({ ...initialState(makeRng(1)), phase: "levelup", skillOffer: [LR, LEG], skillOfferTiers: { [LR]: 2 }, ...over });
   it("die gewürfelte Stufe des Angebotsplatzes wandert mit dem Skill; das Angebot samt Stufen wird geleert", () => {
     const s = reducer(base(), { type: "PICK_SKILL", skillId: LR, rng: makeRng(1) });

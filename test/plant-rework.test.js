@@ -39,11 +39,12 @@ const G = C.PLANT_GREEN_THRESHOLD, B = C.PLANT_BLOOM_THRESHOLD;
 
 describe("Pflanze — Register und Stufenleitern (§6.7, §6.8)", () => {
   const plant = Object.values(SKILL_DEFS).filter((s) => s.archetype === "plant");
-  it("19 Pflanze-Skills: 15 normale mit vier Stufenzeilen + 4 Legendäre ohne Stufe", () => {
-    expect(plant).toHaveLength(19);
+  it("18 Pflanze-Skills: 15 normale mit vier Stufenzeilen + 3 Legendäre ohne Stufe", () => {
+    expect(plant).toHaveLength(18);
     const normal = plant.filter((s) => !s.legendary), leg = plant.filter((s) => s.legendary);
     expect(normal).toHaveLength(15);
-    expect(leg).toHaveLength(4);
+    expect(leg, "§6.11 (Owner): drei Legendäre je Fraktion").toHaveLength(3);
+    expect(SKILL_DEFS.SK_PLANT_L01, "Weltenbaum gestrichen — eine Rampe ohne eigene Auszahlung").toBeUndefined();
     for (const s of normal) expect(Array.isArray(s.tiers) && s.tiers.length === SKILL_TIER_COUNT, `${s.id} ohne Stufentabelle`).toBe(true);
     for (const s of leg) expect(s.tiers).toBeUndefined();
     expect(SKILL_DEFS.SK_PLANT_02, "Wurzeltiefe gestrichen (§6.3)").toBeUndefined();
@@ -57,7 +58,7 @@ describe("Pflanze — Register und Stufenleitern (§6.7, §6.8)", () => {
       SK_PLANT_07: "Setzlingsbeet", SK_PLANT_08: "Zäher Halm", SK_PLANT_09: "Ranken", SK_PLANT_10: "Hecke",
       SK_PLANT_11: "Windung", SK_PLANT_12: "Lichtung", SK_PLANT_13: "Blätterdach", SK_PLANT_14: "Überwucherung",
       SK_PLANT_15: "Lücke", SK_PLANT_16: "Rankgerüst", SK_PLANT_17: "Blütenlese",
-      SK_PLANT_L01: "Weltenbaum", SK_PLANT_L02: "Mutterbaum", SK_PLANT_L03: "Baumreihe", SK_PLANT_L04: "Ewiger Frühling",
+      SK_PLANT_L02: "Wurzelgeflecht", SK_PLANT_L03: "Baumreihe", SK_PLANT_L04: "Ewiger Frühling",
     });
   });
   it("jeder Skill trägt genau einen Effekt und keine Verstärker-Bindung (§6.1)", () => {
@@ -313,25 +314,26 @@ describe("Pflanze — die vier Legendären (§6.5)", () => {
     expect(w.members).toEqual([0, 4]);
     expect(f[4].mult).toBeGreaterThan(1); // die zweite blühende Karte trägt den Wiederholungs-Faktor
   });
-  it("Mutterbaum: die am weitesten gewachsene Karte zählt in jeder Formation ihres Segments mit", () => {
-    const deck = [
-      { id: "A", suit: "R", value: 5, green: true },
+  it("Wurzelgeflecht: JEDE blühende Karte zählt in jeder Formation ihres Segments mit", () => {
+    // Treppe 3-5-7 aus grünen Karten; die blühende Karte auf Platz 3 bricht sie (7 → 7) und ist NICHT ihr Mitglied.
+    const seg0 = [
+      { id: "A", suit: "R", value: 3, green: true },
       { id: "B", suit: "R", value: 5, green: true },
-      { id: "C", suit: "R", value: 5, green: true },
-      { id: "M", suit: "Y", value: 9 },
+      { id: "C", suit: "R", value: 7, green: true },
+      { id: "M", suit: "R", value: 7, green: true, bloom: true },
+      { id: "X", suit: "Y", value: 1 },
     ];
-    const plain = forms(deck, []);
-    expect(plain[3].formations.some((f) => f.type === "farbblock")).toBe(false);
-    const f = forms(deck, [P.MUTTERBAUM], { skillTiers: {}, growth: { M: 99 } });
-    expect(f[3].formations.some((x) => x.type === "farbblock")).toBe(true);
-    expect(f[0].formations.find((x) => x.type === "farbblock").members).toContain(3);
-  });
-  it("Weltenbaum: am Durchlaufende wächst jede grüne Karte je N grüne Karten im Feld", () => {
-    const deck = deckOf((i) => (i < 10 ? { green: true } : {}));
-    const s = resolveTrick(scen({ deck, skills: [P.WELTENBAUM], pos: N - 1, growth: {} }), noCrit);
-    const per = Math.floor(10 / C.WELTENBAUM_PER_GREEN);
-    expect(s.growth.X0).toBe(per);
-    expect(s.growth.X39 || 0, "graue Karten wachsen nicht mit").toBe(C.PLANT_GROWTH_WIN);
+    const plain = forms(seg0, []);
+    expect(plain[3].formations.some((f) => f.type === "treppe")).toBe(false);
+    const f = forms(seg0, [P.WURZELGEFLECHT]);
+    expect(f[3].formations.some((x) => x.type === "treppe")).toBe(true);
+    expect(f[0].formations.find((x) => x.type === "treppe").members).toContain(3);
+    // Das NÄCHSTE Segment bleibt unberührt: die Treppe dort kennt die blühende Karte aus Segment 0 nicht.
+    const wide = [...seg0.map((c) => ({ ...c })),
+      { id: "D", suit: "Y", value: 2 }, { id: "E", suit: "Y", value: 4 }, { id: "F", suit: "Y", value: 6 }];
+    const f2 = forms(wide, [P.WURZELGEFLECHT]);
+    expect(f2[5].formations.some((x) => x.type === "treppe")).toBe(true);
+    expect(f2[5].formations.every((x) => !x.members.includes(3))).toBe(true);
   });
   it("Ewiger Frühling: ist das Feld vollständig grün, blüht alles", () => {
     const deck = deckOf((i) => (i === 1 ? {} : { green: true }));

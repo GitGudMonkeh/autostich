@@ -6,7 +6,7 @@ import { t } from "../i18n/index.js"; // #sprache
 import { archetypeLabel } from "../i18n/labels.js";
 
 /* ⚡ Blitz-Leiste (exp skill rework, docs/skill-rework.md §3.2) — eigener Block, nur sichtbar bei aktivem Blitz.
-   Zeigt die Ladung gegen die Leiste (10 Crits, Donnergott 7), die vollen Leisten des Laufs (jede ionisiert die nächste
+   Zeigt die Ladung gegen die Leiste (10 Crits, Reststrom Episch 9), die vollen Leisten des Laufs (jede ionisiert die nächste
    Karte) und die offenen Rampen (Gewitterfront: Crit-Chance · Entladung: Crit-Multiplikator). Sturm-Sättigung und
    Konsumenten-Badge sind mit dem Rework gegangen. Rein anzeige-seitig: liest state.lightning + Crit-Chance/-Mult,
    keine Engine-Logik. Texte und Anzeige nimmt Phase 4 mit dem Owner ab. */

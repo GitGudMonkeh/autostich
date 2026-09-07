@@ -26,7 +26,7 @@ export const BASE_REROLLS      = envNum("SIM_BASE_REROLLS", 2);
 export const SCORE_PER_WIN    = envNum("SIM_SCORE_PER_WIN", 400);    // Basispunkte je Sieg (Perks/Formationen skalieren darauf) [TUNING · Default = Live-Balance 400]
 // BACKSTOP (Crit-Bändigung 2026-08-15): harter Deckel auf den fertigen Crit-Multiplikator, egal aus welchen Kanälen er
 // kommt. Die legitime Summe aller gedeckelten Quellen liegt bei ~7,4× (Basis 2,25 + Wucht IV 0,90 + 6 Blitz-Skills 0,60
-// + Donnergott 0,40 + Durchschlag 2,00 + Entladung 1,00 + Raserei 1,00) → der Deckel bindet einen ehrlichen Build NICHT,
+// + Entladung 1,00 + Raserei 1,00) → der Deckel bindet einen ehrlichen Build NICHT,
 // fängt aber jede künftige Kombi ab, die wieder eine unbegrenzte Größe in den Multiplikator kippt.
 export const CRIT_MULT_CAP    = envNum("SIM_CRIT_MULT_CAP", 8); // exp §7.20 (Owner): zurück auf 8 — der Deckel 12 (§7.19) gab die Luft den Stapeln, nicht den Rampen (Duell: ein Viertel des Blitz-Schwanzes, gierig ein Fünftel des Medians)
 // D_OVERCRIT IV (Überschusskrit): höchstens so viele Prozentpunkte Crit-Überschuss zahlen den Zuschlag je Punkt aus.
@@ -321,8 +321,6 @@ export const COMMIT_EXP        = envNum("SIM_COMMIT_EXP", 1);
 export const LIGHTNING_CRIT_PER_SKILL = envNum("SIM_LIGHTNING_CRIT_PER_SKILL", 0.04); // Passiv: +Crit-Chance je gehaltenem Blitz-Skill (nicht gestuft)
 export const ION_CRIT_MULT_PER_STACK  = envNum("SIM_ION_CRIT_MULT_PER_STACK", 0.15);  // +Crit-Multiplikator je Stapel auf der Siegkarte (Kurzschluss zählt die Stapel ab der Schwelle doppelt)
 export const LIGHTNING_MAX_CHARGE     = envNum("SIM_LIGHTNING_MAX_CHARGE", 10);       // Leiste: so viele Ladungen (= Crits) bis zur Ionisierung
-export const DONNERGOTT_MAX_CHARGE    = envNum("SIM_DONNERGOTT_MAX_CHARGE", 7);       // Donnergott (L): die Leiste ist bei 7 voll (Sim-Wachpunkt: ~8)
-export const DONNERGOTT_ION_CRIT_MULT_PER_STACK = envNum("SIM_DONNERGOTT_ION_CRIT_MULT_PER_STACK", 0.25); // Donnergott (L, §7.20): Stapel der Siegkarte zählen so viel Crit-Multiplikator statt ION_CRIT_MULT_PER_STACK (vorher flach +0,4×)
 // Tariert 2026-09-05 (docs/skill-rework.md §7.5): 12 → 60. Gemessen in der Feuer/Blitz-Welt (--mode duel, 200 Läufe):
 // Blitz mono 2,15M bei 12, 2,37M bei 60 gegen Feuer mono 2,40M; bei 12 trugen die Stapel nur ~8 % der Basis (Ø 2,6 je
 // Karte am Laufende), der Regler war praktisch tot. Crit je Skill (0,07 → 2,43M) wäre der andere Weg; der Stapel-Weg
@@ -357,8 +355,6 @@ export const SONNENKERN_BRAND           = 1;                                    
 export const SONNENKERN_SCORE_PER_BRAND = envNum("SIM_SONNENKERN_SCORE_PER_BRAND", 20);        // Sonnenkern: Basis-Score je Brandpunkt auf der geschlagenen Karte
 export const EWIGE_GLUT_MULT_PER_ROUND  = envNum("SIM_EWIGE_GLUT_MULT_PER_ROUND", 0.05);       // Ewige Glut (L, §7.21, ersetzt Phönixfeuer): jede Runde, die mit voller Leiste endet, +so viel auf den Hitze-Multiplikator, dauerhaft (Rampe ohne Deckel). Sweep 0,03/0,05/0,08 zur Laufmitte: 1,02/1,14/1,32 gepaart
 export const EWIGE_GLUT_FLOOR_FRAC      = envNum("SIM_EWIGE_GLUT_FLOOR_FRAC", 0.5);            // Ewige Glut (L): die Hitze fällt nie unter diesen Anteil der Spitze (Kaltstart nur einmal)
-export const SONNENZORN_MULT_PER_10     = envNum("SIM_SONNENZORN_MULT_PER_10", 0.05);          // Sonnenzorn: Hitze-Multiplikator je 10 % Spitzen-Hitze (statt HEAT_MULT_PER_10; §7.20: 0,04 → 0,05)
-export const SONNENZORN_HEAT_MULT       = envNum("SIM_SONNENZORN_HEAT_MULT", 2);               // Sonnenzorn (§7.20): unter der Spitze zählt die Hitze aus Siegen ×
 
 /* ============================================================
    EIS-REWORK v0 — „Was du richtig stellst, erstarrt für immer und wächst." Gletscher: Architektur × Permanenz.
@@ -387,8 +383,6 @@ export const PLANT_BLOOM_SCORE_PER_GREEN = envNum("SIM_PLANT_BLOOM_SCORE_PER_GRE
 // Grün-Farbblock-Deckel (v0.3): der eskalierende Farbblock-Faktor grüner Karten wird bei dieser Ordinalzahl gedeckelt.
 // §6.2 lässt ihn bewusst stehen, bis die Messung sagt, ob er hoch, weg oder umgebaut wird (Owner: warten).
 export const PLANT_GREEN_FARBBLOCK_CAP = 3;
-// Weltenbaum (L, §6.5): am Durchlaufende wächst jede grüne Karte +1 je so viele grüne Karten im Feld.
-export const WELTENBAUM_PER_GREEN = envNum("SIM_WELTENBAUM_PER_GREEN", 5);
 
 // Geist (Rekord-Vergleich): Score-Stützstelle alle N Stiche [TUNING]
 export const GHOST_STEP = 13;
