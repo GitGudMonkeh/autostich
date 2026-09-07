@@ -4556,9 +4556,11 @@ UND gemessen, nachdem der Owner nur die Route freigegeben hatte — das war zu w
 Das Vielfache, mit dem eine blühende Karte in einer Formation zählt, ist keine Eigenschaft des Skills mehr, sondern
 **der Karte** — und es wächst mit ihrem Wachstum:
 
-> **Eine blühende Karte zählt wie 5 grüne — und je 40 Wachstum darüber wie eine mehr.**
+> **Beim Zählen wiegt eine blühende Karte 5 grüne, je 40 weitere Wachstumspunkte eine mehr.**
 
-Die Regel steht **einmal** im Passiv-Text und im Glossar. Die vier Score-Skills verlieren dafür ihre Blüh-Klausel und
+Die Regel steht **einmal** im Passiv-Text und im Glossar. Der Passiv-Text ist bei der Gelegenheit ganz neu
+geschrieben (Owner: kompakt, ohne Gedankenstriche, klar): vier Aussagen in der Reihenfolge, in der der Spieler sie
+braucht — wachsen, ergrünen, blühen, wiegen. Die vier Score-Skills verlieren dafür ihre Blüh-Klausel und
 sind wieder einzeilig:
 
 | | vor §6.19 | §6.19 (Route 1) | **§6.20 (jetzt)** |

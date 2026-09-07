@@ -270,7 +270,7 @@ export const GLOSSARY = {
     text: `Eine grüne Karte hat eine neue Farbe: grüne Karten bilden miteinander Farbblöcke, egal welche Farbe sie vorher hatten. Grün ist Farbe, keine Kraft — Kartenwert gibt es dafür nicht, der Score kommt aus den Formationen.`,
     match: ["Grün", "grüne", "grünen", "grüner", "grünem"] },
   bloom: { category: "frak", group: "plant", label: "Blühend", icon: "❀", color: CLR.plant,
-    text: `Die dritte Stufe einer Karte (ab ${C.PLANT_BLOOM_THRESHOLD} Wachstum). Ein Sieg mit einer blühenden Karte gibt +${C.PLANT_BLOOM_SCORE_PER_GREEN} Basis-Score je grüner Karte in ihren Formationen — die Score-Quelle der Fraktion. Blühende Karten sind auch grün, und sie zählen überall wie ${C.PLANT_BLOOM_WEIGHT} grüne Karten, je ${C.PLANT_BLOOM_WEIGHT_PER_GROWTH} Wachstum über der Schwelle wie eine mehr.`,
+    text: `Die dritte Stufe einer Karte (ab ${C.PLANT_BLOOM_THRESHOLD} Wachstum). Ein Sieg mit einer blühenden Karte gibt +${C.PLANT_BLOOM_SCORE_PER_GREEN} Basis-Score je grüner Karte in ihren Formationen — die Score-Quelle der Fraktion. Blühende Karten sind auch grün. Wo grüne Karten gezählt werden, wiegt eine blühende ${C.PLANT_BLOOM_WEIGHT} davon, je ${C.PLANT_BLOOM_WEIGHT_PER_GROWTH} weitere Wachstumspunkte eine mehr.`,
     match: ["blühend", "blühende", "blühenden", "Blüte"] },
   overgrowth: { category: "frak", group: "plant", label: "Überwucherung", icon: "⚘", color: CLR.plant,
     text: `Ein Hebel der Pflanze: ist genug vom Feld grün, entstehen rein grüne Formationen mit einer Karte weniger. Die Hebel ändern, was als Formation zählt, statt Score zu addieren.`,
