@@ -3570,7 +3570,124 @@ sich zu blass anfühlt, ist der doppelte Satz der Regler; dann aber gierig neu m
 
 ## 5. Eis
 
-Offen.
+### 5.1 Bestandsaufnahme (2026-09-07, Befund, nichts umgesetzt)
+
+**Ausgangslage.** Eis ist keine unangetastete Altfraktion. Sie trägt einen vollständigen, jungen Umbau —
+`docs/eis-rework.md`, „Gletscher, Brechen & Kaskade" — der nie durch die exp-Struktur gelaufen ist. Jenes Dokument
+nennt `balancing` als Ziel-Branch und stammt aus einem anderen Workstream; die Aussagen unten sind deshalb **am Code
+geprüft**, nicht von dort übernommen.
+
+#### Was wirklich im Code steht
+
+| Baustein | Wo | Stand |
+| --- | --- | --- |
+| Fundament: Masse je Brettfeld, Schwellen 4/8/12, Bruch, Überlauf, Abkalben auf 0 | `glacier.js` `precomputeGlacier` | steht |
+| Der Pick friert eine Karte auf ihrer Zelle fest | `reducer.js` `GLACIER_LOCK`; `SWAP_CARDS` verweigert den Tausch | steht |
+| Schnee-Boden-Reserve je Feld, füllt einen Gletscher zum Durchlauf-Beginn nach | `engine.js` + `glacier.js` | steht |
+| Fraktions-Passiv „Ewiger Frost": +1 Masse je Durchlauf, bedingungslos | `ewigerFrostTick` | steht |
+| 17 Rollen + 4 Legendäre, je Skill ein `role: G_…` | `SKILL_DEFS`, `glacierOpts` | steht |
+| 2D-Geometrien Block / Kreuz / Linie / Fläche | `glacierFormations` | steht |
+| Leiste, Passiv-Text, sechs Glossar-Einträge, 21 Embleme | `de.js` `bar.ice.*`, `glossary.js` group `ice`, `assets/skills/ice` | steht |
+| Sim kennt „ice" (Duell, Kreuz, Balance, Fraktions-Policy) | `sim/` | steht |
+| Tests | 20 Dateien `test/glacier-*.test.js`, zusammen 111 Tests | steht |
+
+**Es gibt keinen toten Code.** Die Mechanik ist gebaut, verdrahtet, sichtbar und getestet. Der Satz aus
+`eis-rework.md` §8, das Surfacing sei offen, ist überholt.
+
+**Aber: Eis ist heute unerreichbar.** `SKILL_OFFER_ARCHETYPES` = Feuer / Blitz / Pflanze, `buildSkillDoors` nimmt
+diese Liste als Vorgabe, und der Reducer reicht keine andere herein. Kein Eis-Skill kann also an einer Tür
+erscheinen. Ein Sim-Lauf mit `--arch ice` misst deshalb **keinen Eis-Build, sondern einen Zufalls-Build** — was
+immer frühere Notizen an Eis-Zahlen nennen, ist damit nicht vergleichbar. *(Aus dem Code gelesen, nicht gemessen.)*
+
+#### Was gegen den exp-Rahmen steht
+
+| Befund | Betroffen | Warum |
+| --- | --- | --- |
+| **Keine Stufen** | alle 21 | §1 verlangt vier Stufen mit unterschiedlichen Werten. Kein Eis-Skill trägt `tiers`; die Mechanik liest globale Konstanten über `role`, nicht die Stufe. Käme Eis heute ins Angebot, würfelte die Tür eine Stufe, die **nichts** ändert — vier identische Skills mit vier Preisschildern. Das ist der größte Posten. |
+| **21 statt 18 Skills** | 17 + 4 | Ziel ist 15 + 3. `test/skill-art.test.js` fordert ≥ 17 registrierte Skills je Fraktion und ein Emblem je Skill — 18 geht, drei Embleme müssten mit. |
+| **Vier Legendäre** | L01–L04 | §6.11: drei je Fraktion, gemeinsames Band +101 … +160 %. |
+| **Deckel** | `BURST_SOFTCAP` 40 000 / `BURST_SOFTSLOPE` 0,06 · `EISZEIT_MAX_GLACIERS` 16 | §1: keine Deckel auf Rampen, lieber niedrigere Werte. Beide sind ausdrücklich als Runaway-Bremse eingebaut. |
+| **Score-Pfad neben der Basis** | der ganze Berst-Score | §1: kein Direkt-Score. Der Burst wird in `engine.js` **nach** den Multiplikatoren addiert (`score += glacierDirect`), dafür selbst mit dem vollen Sieg-Stack multipliziert (`glacierWinMult`). Bei einer Niederlage bleibt er ×1. Er ist damit nicht der tote Flach-Score, den die Regel meint — aber Eis ist die einzige Fraktion mit einem zweiten Score-Pfad. **Entscheid Owner, siehe unten.** |
+| **Eingriff in die Aufstellungsordnung** | die Kernmechanik selbst | Ein gefrorener Gletscher ist in keiner künftigen Aufstellung mehr verschiebbar. Das ist der härteste Widerspruch zur Hausregel — und zugleich der Kern der Fraktion. **Entscheid Owner, siehe unten.** |
+| **Mehrere Begriffe je Sache** | Masse / Schnee / Boden-Reserve (im Code: Firn) · Formation / Gletscher-Formation · Bersten / brechen / Bruch / Berst-Score | „ein Begriff je Sache". Am schwersten wiegt Formation: die 1D-Formationen des Spiels und die 2D-Gletscherformen heißen gleich und rechnen verschieden. |
+| **Das Passiv beschreibt die Kaufregel, nicht den Motor** | `skill.passive.ice` | Blitz, Feuer und Pflanze beschreiben im Passiv ihren Motor (Ladung, Hitze, Wachstum). Eis beschreibt, was ein Skill-Pick auslöst. Der eigentliche Motor — Ewiger Frost, +1 Masse je Durchlauf — kommt darin nicht vor. |
+
+**Was der Rahmen nicht bemängelt.** §1 verlangt, dass der erste Skill einer Fraktion sie allein zum Laufen bringt.
+Bei Eis erfüllt das **jeder** Skill, weil der Pick selbst den Gletscher setzt und das Fundament ohne Skills läuft.
+Die Kehrseite: es gibt keinen Kernskill, alle 17 sind Modifikatoren auf einer Baseline. Das ist eine Eigenart, kein
+Fehler — es macht jede Tür-Kombination spielbar.
+
+**Ein Beobachtungspunkt am Fundament, keine Regelverletzung:** die Berst-Schwelle ist die höchste Stufe (12). Ein
+Gletscher bricht deshalb praktisch immer auf Stufe 3; die Stufen 1 und 2 der Wucht-Tabelle erreicht nur, wen
+Kettenbruch oder Große Lawine mitreißt. Abbruchkante dreht damit real an einer Zahl, nicht an dreien.
+
+**Der Eispanzer-Hinweis aus dem Handoff gilt:** er hängt an einer Niederlage-Bedingung. Bei Feuer und Blitz sind
+solche Skills zweimal gestorben (§7.22, §7.24). Er schützt allerdings vor der Niederlage, statt sie zu belohnen —
+Risiko notiert, kein Streichgrund.
+
+#### Drei Entscheidungen, die der Owner treffen muss
+
+Sie entscheiden, wie groß der Umbau wird. Alles Weitere in §5.2 hängt an ihnen.
+
+| # | Frage | Optionen | Empfehlung |
+| --- | --- | --- | --- |
+| **E1** | Darf Eis die Aufstellungsordnung anfassen? | (a) Ausnahme: der Lock bleibt. (b) Der Lock fällt, Masse liegt auf der Karte statt auf dem Feld. | **(a).** Die Regel richtet sich gegen Skills, die das Deck hinter dem Rücken des Spielers umsortieren. Der Lock sortiert nichts um: der Spieler wählt selbst, welche Karte er festlegt, und bezahlt mit Aufstellungsfreiheit. (b) kostet die 2D-Geometrien, die Nachbarschaft und damit die ganze räumliche Identität — das wäre ein Neubau, kein Rework. |
+| **E2** | Bleibt der Berst-Score neben der Basis? | (a) bleibt wie heute. (b) geht in die Basis wie Stapel- und Blüh-Score. | **(a), mit Protokollsatz.** Der Zweck der Regel ist erfüllt: der Burst ist nicht flach, er skaliert mit Masse, Geometrie, Kaskade **und** dem vollen Sieg-Stack. (b) hätte eine Nebenwirkung, die dem Design widerspricht: in der Basis gäbe es bei einer **Niederlage** keinen Burst mehr, und „Bersten ist unabhängig von Sieg und Niederlage" ist das Fundament (§2.4 des Eis-Designs). |
+| **E3** | Kommen die Deckel raus? | (a) beide raus, dafür `BURST_SCALE` und die Eiszeit-Flutrate niedriger. (b) bleiben. | **(a).** §1 ist eindeutig, und beide Deckel sind Notbremsen für Zahlen, die nie tariert wurden. Der Preis: die neuen Werte müssen gemessen werden — auf Ansage, nicht nebenbei. |
+
+### 5.2 Vorschlag: die 15 + 3 (2026-09-07, Entscheid Owner je Zeile)
+
+**Gestrichen werden drei: Verschmelzen, Zermalmen, Erstarrung.** Damit stehen die Linien symmetrisch auf
+Firn 4 · Eisschild 4 · Lawine 4 · Frostgriff 3 = 15, plus drei Legendäre.
+
+Die Spalte **Regler** ist die Zahl, über die die vier Stufen laufen. Wo heute keine steht, ist der Skill binär und
+braucht dafür einen Umbau — das sind die drei „umgebaut"-Zeilen. Werte sind noch keine genannt; die kommen nach
+dem Ja, Skill für Skill, wie bei der Pflanze.
+
+| # | Skill | Heute | Regler für die Stufen | Vorschlag |
+| --- | --- | --- | --- | --- |
+| 1 | **Anfrieren** (01) | Sieg +1 Masse, Formations-Sieg +2 extra | Masse je Sieg | **bleibt** — der Grundmotor; der Formations-Teil wandert auf die oberen Stufen |
+| 2 | **Schneetreiben** (02) | Sieg sät +2 Schnee ins angrenzende offene Feld | Menge, Episch zwei Felder | **bleibt** — die nahe Boden-Quelle. Der 0-Masse-Sonderfall im Text ist eine Regel, die der Spieler nicht braucht: raus aus dem Text |
+| 3 | **Dauerfrost** (03) | offene Felder sammeln +1 / +2 nach Abstand | die beiden Raten | **bleibt** — die ferne Boden-Quelle, mechanischer Gegenpol zu Schneetreiben |
+| 4 | **Verdichtung** (04) | Gebäude-Wertbonus auf einem Gletscher wird Masse (0,25/Punkt) | die Rate | **bleibt** — einzige siegunabhängige Quelle und die einzige Architekt-Kopplung der Fraktion |
+| — | **Verschmelzen** (05) | Cluster hebt alle auf den Durchschnitt | — | **gestrichen** — binär, im Spiel unsichtbar, und die Achse „Cluster gibt Masse" haben Packeis und Verzahnung schon zweimal. Dieselbe Operation in groß ist das Legendäre Ewiges Schild |
+| 5 | **Packeis** (06) | +0,5 Masse je Gletscher-Nachbar | die Rate | **bleibt** — belohnt die Mitte des Feldes |
+| 6 | **Eisbrücke** (07) | Diagonalen zählen als angrenzend | **fehlt** (binär) | **umgebaut** — die Diagonale bekommt ein Gewicht: ein diagonaler Gletscher zählt als Bruchteil eines Nachbarn. Eine Zahl, eine Leiter, dieselbe Fantasie |
+| 7 | **Eiswall** (08) | volle Reihe/Spalte ×1,6 statt ×1,3 | der Faktor | **bleibt** — der einzige Skill, der eine der 2D-Formen ausdrücklich bedient |
+| 8 | **Verzahnung** (09) | +0,25 Masse je Gletscher im Cluster, für jeden | die Rate | **bleibt**, aber niedrig anfangen: der Ertrag wächst quadratisch mit der Clustergröße. Der Runaway-Kandidat der Fraktion |
+| 9 | **Abbruchkante** (10) | höhere Schwellen bersten steiler | die Wucht-Tabelle | **bleibt** — Gegenpol zu Rissbildung. Siehe Beobachtungspunkt in §5.1: real dreht sie an der Wucht der 3. Stufe |
+| 10 | **Kettenbruch** (11) | Bruch reißt angrenzende Gletscher mit | **fehlt** (binär) | **umgebaut** — Regler ist die Wucht, mit der ein Mitgerissener bricht; Episch springt zusätzlich über eine Lücke |
+| — | **Zermalmen** (12) | Kollision ×2 statt ×1,5 | — | **gestrichen** — dieselbe Achse wie die Kaskade, nur ein zweites Mal und kleiner: beide zahlen für Gletscher-Nachbarn. Von den fünf Lawine-Skills der schwächste Beitrag zur Fantasie |
+| 11 | **Rissbildung** (13) | bricht schon ab 6 Masse statt 12 | die Schwelle | **bleibt** — das Tempo-Gegenstück, viele kleine statt weniger großer Brüche |
+| 12 | **Gletschersturz** (14) | +5 % je gleichzeitig brechendem Gletscher | der Satz | **bleibt** — der brettweite Kaskaden-Verstärker |
+| 13 | **Einfrieren** (15) | getroffene Gegnerkarte verliert ihren nächsten Stich | **fehlt** (binär) | **umgebaut** — Regler ist die Reichweite: wie viele Gegnerkarten der Bruch einfriert. Erbt damit die Achse des gestrichenen Legendären |
+| 14 | **Frostbund** (16) | Nicht-Gletscher-Nachbarn +3 Stichwert | der Buff | **bleibt** — der Duo-Skill der Fraktion, stößt nach außen |
+| 15 | **Eispanzer** (17) | Niederlage neben Gletscher hält die Serie und gibt +1 Masse | die Masse | **bleibt** — zieht nach innen, Gegenrichtung zu Frostbund. Der Serienschutz ist der Skill, die Masse die Leiter |
+| L1 | **Eiszeit** (L01) | flutet das Brett, friert je Durchlauf das reservestärkste Feld ein, bis 16 Gletscher | Flutrate | **bleibt** — pluralisiert. Der Deckel 16 fällt mit E3 |
+| L2 | **Ewiges Schild** (L02) | alle Gletscher aufs Maximum + 3, jeder gilt als Nachbar jedes anderen | der Zuschlag | **bleibt** — vereint |
+| L3 | **Große Lawine** (L03) | im letzten Durchlauf bricht alles auf voller Stufe, ×6, ohne Soft-Cap | der Multiplikator | **bleibt** — detoniert. Mit E3 fällt die Soft-Cap-Ausnahme weg, weil es keinen Soft-Cap mehr gibt |
+| — | **Erstarrung** (L04) | friert die getroffenen Gegnerkarten ein, Reichweite +1, jeder Bruch ×3 Score | — | **gestrichen** — die Kontrolle ist Einfrieren (15) in groß, und der Score-Teil ist ein nackter Faktor auf den Bruch, den der Kommentar im Code selbst als Notlösung ausweist („hebt Erstarrung im Mono vom toten Wert auf einen Muss-Pick"). Übrig bleiben drei Legendäre, die drei verschiedene Operationen auf demselben Feld sind |
+
+#### Was das technisch bedeutet
+
+Eine Entscheidung des Agenten, hier notiert statt in einem eigenen Dokument: **die Stufe muss bis in die Mechanik
+reichen.** Heute ist `state.glacierRoles` eine Liste von Rollen-Strings, und an zwei Dutzend Stellen fragt der Code
+`roles.includes(…)`. Der Umbau lässt diese Liste stehen und legt eine zweite Struktur daneben — Stufe je Rolle —,
+aus der eine Funktion die Zahlen baut, so wie heute `glacierOpts` die Snapshot-Optionen baut. Die Alternative,
+jede `includes`-Prüfung umzuschreiben, ist mehr Diff für dasselbe Ergebnis.
+
+Damit fällt auch der Rest an seinen Platz: eine Stufentabelle `EIS` in `skills.js` neben `BLITZ`, `FEUER` und
+`PFLANZE`, Texte über `tiered(rows, fn)` wie bei den anderen drei, und `glacier.js` liest Parameter statt
+Konstanten.
+
+#### Etappen (erst nach dem Ja)
+
+1. **Stufen-Infrastruktur** — `EIS`-Tabelle, Stufe je Rolle, `glacier.js` auf Parameter, ein Text je Stufe.
+2. **Die drei Streichungen** — Skills, Rollen, Embleme, Texte, Tests.
+3. **Die drei Umbauten** — Eisbrücke, Kettenbruch, Einfrieren bekommen ihren Regler.
+4. **Rahmen** — E1 bis E3 umsetzen, Passiv-Text auf den Motor, ein Begriff je Sache im Glossar.
+5. **Angebot und Parität** — Eis in `SKILL_OFFER_ARCHETYPES`, Balance-Guard neu zentrieren, Parität gegen
+   Feuer 7,75M / Blitz 7,43M / Pflanze 8,36M. Gemessen wird nur auf Ansage.
 
 ## 6. Pflanze
 
@@ -4944,3 +5061,4 @@ und die Ranked-Texte, die eine andere Runde meinen.
 | 2026-09-07 | Owner-Frage: heißt „+1 Wert" im Blitz-Passiv ein Stapel oder Kartenwert? Antwort: Kartenwert, dauerhaft eingebacken; der Stapel ist der zweite, davon unabhängige Effekt derselben vollen Leiste (Doppelentladung gibt fünf Stapel und trotzdem nur +1 Wert, Kettenblitz Stapel ganz ohne Wert). Passiv, Leisten-Tooltip und Glossar „Ladung" benennen jetzt beides getrennt und benutzen den Begriff, den das Register schon führt: Kartenwert. Reine Textänderung, keine Mechanik, keine Messung. Offen: die Schmiede sagt an zwei Stellen weiter „+Wert". §6.25. |
 | 2026-09-07 | Owner: die Schmiede auch angleichen. Vier Stellen (Skilltext, Leisten-Tooltip, Karten-Abzeichen, Glossar „Schmieden") sagen jetzt Kartenwert; der Glossar-Eintrag begann bereits mit „Hitze wird zu dauerhaftem Kartenwert" und sagte zwei Sätze später „+3 Wert". Die temporären Kampfwert-Boni (Ionenfeld, Blitzfänger, Glutklinge, Takt, Ewiger Frühling) und die Brandmal-Abzüge bleiben „Wert" — sie sind nicht der gebackene Kartenwert. Offen: zwei Reste des Textpakets aus §7.26, der Schmiede-Tooltip sagt „am Rundenende", Brandmal rechnet in Runden. §6.25. |
 | 2026-09-07 | Owner: auch die Reste des Textpakets aus §7.26 angleichen. Drei Stellen im Register und im Glossar sagen jetzt Durchlauf statt Runde (Schmiede-Tooltip, Glossar „Schmieden", Glossar „Brandmal"). Gegengeprüft statt nur umbenannt: `newBrandActive` wird im Durchlauf-Ende-Block der Engine getauscht, der Brand hält also wirklich einen Durchlauf; die Kommentare dort bleiben als Altbestand. Der Dev-Knopf „Runde überspringen" und die Ranked-Texte bleiben. §6.25. |
+| 2026-09-07 | Eis aufgenommen, nichts geändert. Befund: die Fraktion ist vollständig gebaut, verdrahtet, sichtbar und mit 111 Tests belegt — aber ohne exp-Struktur und heute unerreichbar, weil `SKILL_OFFER_ARCHETYPES` sie nicht führt (ein `--arch ice`-Lauf misst also einen Zufalls-Build). Acht strukturelle Punkte, der größte: kein Eis-Skill hat Stufen, die Mechanik liest Konstanten über `role`. Drei Owner-Entscheidungen isoliert (Aufstellungs-Lock, Score-Pfad neben der Basis, zwei Deckel) mit Empfehlung. Vorschlag für die 15 + 3: Verschmelzen, Zermalmen und Erstarrung streichen, Eisbrücke, Kettenbruch und Einfrieren bekommen einen Regler, der Rest bleibt. §5.1 und §5.2. |
