@@ -2211,7 +2211,6 @@ Pruning: replacing the skill permanently grants +20% root/bloom score (up to +15
 "shop.turnOn","i18n","Einschalten","Switch on","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "shop.unlock","i18n","🔒 Freischalten: {cond}","🔒 Unlock: {cond}","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "skill.arch.none","i18n","Skill","Skill","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
-"skill.badge.consumer","i18n","KONSUMENT","CONSUMER","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "skill.badge.legendary","i18n","★ LEGENDÄR","★ LEGENDARY","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "skill.bonus.hint","i18n","Zusatz-Slot aus deinem letzten Perk. Wähle sofort einen weiteren Skill.","Extra slot from your last perk. Pick one more skill right away.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "skill.cancel","i18n","Abbrechen","Cancel","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""

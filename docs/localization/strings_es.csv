@@ -2217,7 +2217,6 @@ Pruning: replacing the skill permanently grants +20% root/bloom score (up to +15
 "shop.turnOn","i18n","Einschalten","Encender","Switch on","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "shop.unlock","i18n","🔒 Freischalten: {cond}","🔒 Desbloquear: {cond}","🔒 Unlock: {cond}","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "skill.arch.none","i18n","Skill","Habilidad","Skill","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
-"skill.badge.consumer","i18n","KONSUMENT","CONSUMIDOR","CONSUMER","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "skill.badge.legendary","i18n","★ LEGENDÄR","★ LEGENDARIA","★ LEGENDARY","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "skill.bonus.hint","i18n","Zusatz-Slot aus deinem letzten Perk. Wähle sofort einen weiteren Skill.","Ranura extra de tu última ventaja. Elige otra habilidad ahora mismo.","Extra slot from your last perk. Pick one more skill right away.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "skill.cancel","i18n","Abbrechen","Cancelar","Cancel","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""

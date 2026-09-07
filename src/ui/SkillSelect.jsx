@@ -23,10 +23,6 @@ import { t } from "../i18n/index.js";
 
 // Archetyp-Meta eines Skills (Theming) — Fallback neutral (#93 F0).
 const ac = (id) => archMeta(archetypeOf(id)) || { label: t("skill.arch.none"), icon: "•", color: "#8a8a95" };
-// Konsument-Abzeichen (exp skill rework): am Glossar-Schlüsselwort „consume" der Skill-Definition, nicht mehr an
-// einem Effekt-Marker — die Verbraucher-Regel ist weg, das Abzeichen ist reine Lesehilfe (Feuer: Schmelzpunkt).
-const isConsumer = (s) => !!(s && s.keywords && s.keywords.includes("consume"));
-
 // #238b: Was verschwindet, wenn der LETZTE Skill eines Archetyps abgelegt wird (Wahrheit: reducer.js stillActive-Pfad).
 // Bereits in die Karten gebackener Wert (geschmiedet/gewachsen) bleibt erhalten → Zusatz nur bei Feuer/Pflanze.
 const ARCH_LOSS = {
@@ -425,7 +421,6 @@ export function SkillSelect({ offer = null, doors = null, onPick, onDecline, onR
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="text-meta-1 px-1.5 py-0.5 rounded font-bold tracking-wide" style={{ background: `${ac(s.id).color}22`, color: ac(s.id).color, border: `1px solid ${ac(s.id).color}88` }}><ArchIcon meta={ac(s.id)} size={11} /> {ac(s.id).label.toUpperCase()}</span>
                       <SkillTierBadge tier={tierOf(state, s.id)} />{/* exp: gehaltene Stufe */}
-                      {isConsumer(s) && <span className="text-meta-1 px-1.5 py-0.5 rounded font-bold tracking-wide" style={{ background: "#d4a63a22", color: "#d4a63a", border: "1px solid #d4a63a88" }}>{t("skill.badge.consumer")}</span>}
                       {s.legendary && <span className="text-meta-1 px-1.5 py-0.5 rounded font-bold tracking-wide" style={{ background: "#e0b84522", color: "#e0b845", border: "1px solid #e0b84588" }}>{t("skill.badge.legendary")}</span>}
                     </div>
                     <div className="font-bold text-body-lg-5" style={{ color: ac(s.id).color }}>{s.name}</div>
@@ -512,12 +507,6 @@ export function SkillSelect({ offer = null, doors = null, onPick, onDecline, onR
                         <ArchIcon meta={am} size={12} /> {am.label.toUpperCase()}
                       </span>
                       <SkillTierBadge tier={tier} />
-                      {isConsumer(s) && (
-                        <span className="text-meta-1 px-1.5 py-0.5 rounded font-bold tracking-wide"
-                          style={{ background: "#d4a63a22", color: "#d4a63a", border: "1px solid #d4a63a88" }}>
-                          {t("skill.badge.consumer")}
-                        </span>
-                      )}
                       {s.legendary && (
                         <span className="text-meta-1 px-1.5 py-0.5 rounded font-bold tracking-wide"
                           style={{ background: "#e0b84522", color: "#e0b845", border: "1px solid #e0b84588" }}>

@@ -452,7 +452,6 @@ export default {
   "skill.replace.new": "Neu:",
   "skill.replace.tap": "Tippe den Skill, der weichen soll.",
   "skill.replace.this": "↔ diesen ersetzen",
-  "skill.badge.consumer": "KONSUMENT",
   "skill.badge.legendary": "★ LEGENDÄR",
   // exp skill rework (docs/skill-rework.md §1): die vier Stufen eines Skills — Badge im Angebot und im Bestand.
   "skill.tier.0": "Normal",
