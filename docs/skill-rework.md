@@ -4702,10 +4702,16 @@ exakt gleich: 8 % der Siege tragen 45 %, 31 % tragen 79 %. Die Konzentration sit
 (×9,04 bei vier Formationen, inklusive `OVERLAP_BONUS[4] = ×3`) und in der Tatsache, dass es je Formation einen Flat
 gibt — nicht darin, wie schwer eine blühende Karte wiegt. Wer die Konzentration ändern will, muss dort ansetzen.
 
-#### Offen (Entscheid Owner)
+#### Entschieden (Owner, 2026-09-07): Grundgewicht 3 bleibt
 
-Grundgewicht **4** wäre der Kompromisskandidat: Parität grob ×1,2 und Aussaat vermutlich in beiden Welten knapp
-positiv. Eine Messung. Alternativ bleibt 3 stehen und die Wachstums-Skills sind bewusst Mono-Skills.
+Der Kompromisskandidat 4 (Parität grob ×1,2, Aussaat vermutlich in beiden Welten knapp positiv) wird **nicht**
+gemessen. Damit ist gesetzt: **die Wachstums-Skills sind Mono-Skills.** Sie zahlen in einem Pflanze-Build, im
+gemischten Build kosten sie den Platz — das ist die Signatur einer Bekenntnis-Fraktion und ab jetzt gewollt, kein
+offener Befund. Die Parität steht bei 1,08× Feuer.
+
+**Was damit offen bleibt** (kein Auftrag, nur festgehalten): die Überlappungs-Konzentration aus C. Sie ist vom
+Blühgewicht unabhängig; wer sie je angehen will, muss an den Formations-Multiplikator oder an „ein Flat je
+Formation" heran.
 
 ---
 
@@ -4794,3 +4800,4 @@ positiv. Eine Messung. Alternativ bleibt 3 stehen und die Wachstums-Skills sind 
 | 2026-09-07 | Owner-Variante B: das Blühgewicht gehört der Karte, nicht dem Skill — „eine blühende Karte zählt wie 5 grüne, je 40 Wachstum darüber wie eine mehr", einmal im Passiv. Die vier Score-Skills sind wieder einzeilig, einfacher als vor der Runde. Wachstum zahlt damit über der Blüh-Schwelle weiter. Startwerte ungemessen. Prozessregel festgehalten: erst Planung, Messen nur auf ausdrückliches Go. §6.20. |
 | 2026-09-07 | Variante B gemessen: Pflanze mono 10,49M gegen Feuer 7,75M — überschossen (1,35×). Aussaat ist erstmals in beiden Welten positiv, die anderen drei Wachstums-Skills nicht (sie füttern Karten, die nicht gewinnen). Neue Sonde `plant-overlap`: 8 % der Siege (vier überlappende Formationen) tragen 46 % des Scores, aber der größte Stich eines Laufs macht im Median nur 2,7 % aus — steile Eskalation, keine Lotterie. Vorschlag Grundgewicht 3. §6.21. |
 | 2026-09-07 | Grundgewicht 3 gemessen: Pflanze mono 8,36M gegen Feuer 7,75M und Blitz 7,43M — Parität (1,08×). Zielkonflikt sichtbar: bei Gewicht 5 zahlte Aussaat in beiden Welten, bei 3 nur noch in der reinen. Die Überlappungs-Konzentration ist vom Gewicht unabhängig (8 % der Siege tragen 45 %, wie bei 5) — sie sitzt im Formations-Multiplikator, nicht im Gewicht. §6.22. |
+| 2026-09-07 | Owner: Grundgewicht 3 bleibt, Kompromiss 4 wird nicht gemessen. Damit ist gesetzt, dass die Wachstums-Skills Mono-Skills sind — im gemischten Build kosten sie den Platz, und das ist gewollt. §6.22. |
