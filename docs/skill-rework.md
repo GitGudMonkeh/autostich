@@ -4656,6 +4656,59 @@ gekürzt gehört das Grundgewicht:
 
 ---
 
+### 6.22 Grundgewicht 3: Parität erreicht, ein Zielkonflikt sichtbar (2026-09-07, Owner) — gemessen
+
+Blühgewicht **3** plus 1 je 40 Wachstum, alles ohne Legendäre.
+
+#### A · Duell (200 Läufe, Türen aus allen drei) — Parität
+
+| Build | Median | Mean | p90 | Siegquote | ÷ Feuer |
+| --- | --- | --- | --- | --- | --- |
+| Feuer mono | 7,75M | 10,12M | 18,77M | 65,3 % | — |
+| Blitz mono | 7,43M | 14,84M | 37,35M | 59,4 % | 0,96× |
+| **Pflanze mono** | **8,36M** | 13,57M | 22,61M | 53,3 % | **1,08×** |
+| Split über alle drei | 7,81M | 11,94M | 20,09M | 57,8 % | 1,01× |
+
+Die ganze Leiter des Blühgewichts: 1 → 4,90M · fest 5/5/6/7 → 7,48M · **5 plus Wachstum → 10,49M** · **3 plus
+Wachstum → 8,36M**. Die Fraktion liegt jetzt zwischen Feuer und Blitz, knapp darüber. Die Siegquote bleibt bei
+53,3 %, wie vorgesehen.
+
+#### B · Der Zielkonflikt: Aussaat
+
+| | Grundgewicht 5 | **Grundgewicht 3** |
+| --- | --- | --- |
+| Aussaat, Pflanze pur | +0,77M (+6 %) | **+0,71M (+4 %)** |
+| Aussaat, gemischt | +0,98M (+7 %) | **−1,11M (−4 %)** |
+| Pflanze mono im Duell | 10,49M (1,35× Feuer) | **8,36M (1,08×)** |
+
+**Das halbe Gewicht halbiert auch den Payoff fürs Wachstum.** Bei 5 zahlte Aussaat in beiden Welten, bei 3 nur noch
+in der reinen. Der Rest der Wachstums-Skills bleibt in beiden Fällen negativ (Ranken −1,73M pur, Setzlingsbeet und
+Zäher Halm nahe null bis leicht negativ).
+
+*Vorsicht bei der gemischten Zahl:* der gierige Modus würfelt je Lauf seine eigene Wertetabelle, das kostet laut
+§6.12 bis zu Faktor 2 Streuung. Die Duell-Zeilen sind fest verdrahtet und damit belastbar, die eine gemischte
+Aussaat-Zeile ist es weniger.
+
+#### C · Überlappung: die Konzentration ist unverändert
+
+| Formationen | Anteil Siege | Ø Flat (3) | Ø Flat (5) | Anteil am Gesamtscore (3) | (5) |
+| --- | --- | --- | --- | --- | --- |
+| 2 | 38,4 % | 816 | 1.070 | 19,0 % | 18,4 % |
+| 3 | 23,1 % | 1.567 | 2.066 | 33,8 % | 33,8 % |
+| 4+ | 8,0 % | 2.632 | 3.460 | **45,2 %** | 46,2 % |
+
+**Das Blühgewicht ist nicht der Hebel für die Konzentration.** Die Flats sinken um ein Viertel, die Verteilung bleibt
+exakt gleich: 8 % der Siege tragen 45 %, 31 % tragen 79 %. Die Konzentration sitzt im Formations-Multiplikator
+(×9,04 bei vier Formationen, inklusive `OVERLAP_BONUS[4] = ×3`) und in der Tatsache, dass es je Formation einen Flat
+gibt — nicht darin, wie schwer eine blühende Karte wiegt. Wer die Konzentration ändern will, muss dort ansetzen.
+
+#### Offen (Entscheid Owner)
+
+Grundgewicht **4** wäre der Kompromisskandidat: Parität grob ×1,2 und Aussaat vermutlich in beiden Welten knapp
+positiv. Eine Messung. Alternativ bleibt 3 stehen und die Wachstums-Skills sind bewusst Mono-Skills.
+
+---
+
 ## Änderungsprotokoll
 
 
@@ -4740,3 +4793,4 @@ gekürzt gehört das Grundgewicht:
 | 2026-09-07 | Route 1 gebaut: blühende Karten zählen in den vier Formations-Score-Skills wie 5/5/6/7 grüne, auf jeder Stufe. Parität erreicht (Pflanze mono 7,48M gegen Feuer 7,75M / Blitz 7,43M) und die Erkennungs-Achse deutlich gestärkt (Spalier +12 % → +36 %). Die vier Wachstums-Skills bleiben aber tot — ein flacher Blüh-Faktor hebt alle Skills gleich und hängt am Zustand, nicht an der Zahl. Balance-Guard neu zentriert. §6.19. |
 | 2026-09-07 | Owner-Variante B: das Blühgewicht gehört der Karte, nicht dem Skill — „eine blühende Karte zählt wie 5 grüne, je 40 Wachstum darüber wie eine mehr", einmal im Passiv. Die vier Score-Skills sind wieder einzeilig, einfacher als vor der Runde. Wachstum zahlt damit über der Blüh-Schwelle weiter. Startwerte ungemessen. Prozessregel festgehalten: erst Planung, Messen nur auf ausdrückliches Go. §6.20. |
 | 2026-09-07 | Variante B gemessen: Pflanze mono 10,49M gegen Feuer 7,75M — überschossen (1,35×). Aussaat ist erstmals in beiden Welten positiv, die anderen drei Wachstums-Skills nicht (sie füttern Karten, die nicht gewinnen). Neue Sonde `plant-overlap`: 8 % der Siege (vier überlappende Formationen) tragen 46 % des Scores, aber der größte Stich eines Laufs macht im Median nur 2,7 % aus — steile Eskalation, keine Lotterie. Vorschlag Grundgewicht 3. §6.21. |
+| 2026-09-07 | Grundgewicht 3 gemessen: Pflanze mono 8,36M gegen Feuer 7,75M und Blitz 7,43M — Parität (1,08×). Zielkonflikt sichtbar: bei Gewicht 5 zahlte Aussaat in beiden Welten, bei 3 nur noch in der reinen. Die Überlappungs-Konzentration ist vom Gewicht unabhängig (8 % der Siege tragen 45 %, wie bei 5) — sie sitzt im Formations-Multiplikator, nicht im Gewicht. §6.22. |
