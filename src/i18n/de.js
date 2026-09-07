@@ -180,7 +180,9 @@ export default {
   /* ---- Feuer-Leiste (HeatBar) ---- */
   "bar.fire.heat": "Hitze",
   "bar.fire.state.mult": "Hitze {value}/{max} · +{mult} % Score",
-  "bar.fire.mult.title": "Hitze-Multiplikator: je 10 % gehaltener Hitze +{per} % Score, als eigener Faktor im Multiplikator.",
+  "bar.fire.mult.title": "Hitze-Multiplikator: je 10 % gehaltener Hitze +{per} % Score, als eigener Faktor im Multiplikator. Sonnenzorn rechnet mit der Spitze und zählt +{zorn} %.",
+  "bar.fire.badge.peak": "Spitze {n} %",
+  "bar.fire.badge.peak.title": "Sonnenzorn: der Hitze-Multiplikator rechnet mit der höchsten je erreichten Hitze.",
   "bar.fire.badge.schneise": "Schneise",
   "bar.fire.badge.schneise.n": "Schneise {n}",
   "bar.fire.badge.schneise.title": "Brandschneise: deine {n} Siege mit dem größten Vorsprung eines Durchlaufs schlagen die Schneise; im nächsten Durchlauf zählt ein Sieg auf diesen Positionen ×{m}.",

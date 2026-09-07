@@ -21,11 +21,11 @@ export const F = Object.freeze({ // 01: Feuerlinie ersetzt Glut (§7.23)
   KLINGE: "SK_FIRE_06", WEISSGLUT: "SK_FIRE_07", BRANDSCHNEISE: "SK_FIRE_08", VERBRENNUNG: "SK_FIRE_09", // 08: Brandschneise ersetzt Feuerwalze (§7.27)
   SCHMELZPUNKT: "SK_FIRE_12", BRANDMAL: "SK_FIRE_13", LAUFFEUER: "SK_FIRE_14", // SK_FIRE_11 Flächenbrand: gestrichen (§7.16)
   SCHMIEDE: "SK_FIRE_15", GLUTSTAHL: "SK_FIRE_16",
-  SONNENKERN: "SK_FIRE_L01", EWIGE_GLUT: "SK_FIRE_L02", DAMASTSTAHL: "SK_FIRE_L04", // L02: Ewige Glut ersetzt Phönixfeuer (§7.21); L03 Sonnenzorn gestrichen (§6.11, Owner: drei je Fraktion, die stärksten)
+  SONNENKERN: "SK_FIRE_L01", EWIGE_GLUT: "SK_FIRE_L02", SONNENZORN: "SK_FIRE_L03", // L02: Ewige Glut ersetzt Phönixfeuer (§7.21); L04 Damaststahl gestrichen (§6.11, Owner: drei je Fraktion)
 });
 
 /* Frischer Hitze-Substate — inaktiv; der erste Feuer-Skill aktiviert ihn (Reducer). value = Hitze (0..max, auch mit
-   Nachkommastellen), peak = höchste je erreichte Hitze (Ewige Glut), lastLossDeficit = Rückstand der letzten
+   Nachkommastellen), peak = höchste je erreichte Hitze (Sonnenzorn, Ewige Glut), lastLossDeficit = Rückstand der letzten
    Niederlage (Rückzündung), emberMult = dauerhafte Rampe der Ewigen Glut auf den Hitze-Multiplikator, lanes/laneWins =
    Brandschneise (§7.27: die Schnitte der letzten Durchläufe, neuester zuerst / die Siege des laufenden Durchlaufs). */
 export function initHeat() {
@@ -35,7 +35,7 @@ export function initHeat() {
 const held = (skills, id) => (skills || []).includes(id);
 export const hasSonnenkern   = (skills) => held(skills, F.SONNENKERN);
 export const hasEwigeGlut    = (skills) => held(skills, F.EWIGE_GLUT);
-export const hasDamaststahl  = (skills) => held(skills, F.DAMASTSTAHL);
+export const hasSonnenzorn   = (skills) => held(skills, F.SONNENZORN);
 
 // Leistenlänge des Builds: Weißglut verlängert die Leiste auf WEISSGLUT_HEAT_MAX.
 export const heatMaxFor = (skills) => (held(skills, F.WEISSGLUT) ? C.WEISSGLUT_HEAT_MAX : C.HEAT_MAX);
@@ -66,15 +66,17 @@ export function syncHeatMax(heat, skills) {
 }
 
 /* Hitzegewinn eines gewonnenen Stichs (Prozentpunkte): Passiv (Vorsprung − Offset, ab Mindest-Vorsprung), + Zunder je
-   Sieg. Verbrennung Episch (§7.22): ein Sieg ab dem Vorsprung der Stufe zählt seine Hitze ×mult.
-   (Feuersturm gibt seit §7.17 keine Hitze mehr — er ist Serie zu Score; Rückzündung seit §7.22 auch
+   Sieg. Verbrennung Episch (§7.22): ein Sieg ab dem Vorsprung der Stufe zählt seine Hitze ×mult. Sonnenzorn (L,
+   §7.20): liegt die Hitze vor dem Sieg unter der Spitze, zählt der Gewinn ×SONNENZORN_HEAT_MULT (der Zorn holt die
+   Spitze zurück). (Feuersturm gibt seit §7.17 keine Hitze mehr — er ist Serie zu Score; Rückzündung seit §7.22 auch
    nicht — sie ist der Takt, rueckzuendungMult; Glut, der Kaltstart-Verstärker, ist seit §7.23 gestrichen.) */
-export function heatGainOnWin(skills, skillTiers, { margin = 0 } = {}) {
+export function heatGainOnWin(skills, skillTiers, { margin = 0, heatValue = 0, heatPeak = 0 } = {}) {
   let g = 0;
   if (margin >= C.HEAT_MIN_MARGIN) g += (margin - C.HEAT_MARGIN_OFFSET) * C.HEAT_PER_POINT;
   g += fireParam(skills, skillTiers, F.ZUNDER, "heat") || 0;
   const vMin = fireParam(skills, skillTiers, F.VERBRENNUNG, "minMargin");
   if (fireParam(skills, skillTiers, F.VERBRENNUNG, "heatToo") && vMin != null && margin >= vMin) g *= fireParam(skills, skillTiers, F.VERBRENNUNG, "mult") || 1;
+  if (hasSonnenzorn(skills) && (heatValue || 0) < (heatPeak || 0)) g *= C.SONNENZORN_HEAT_MULT;
   return g;
 }
 
@@ -90,11 +92,15 @@ export function feuerlinieMult(skills, skillTiers, { value = 0, formCount = 0, h
 }
 
 /* Hitze-Multiplikator (eigener Faktor im Score-Stack): je volle 10 % Hitze +HEAT_MULT_PER_10; über HEAT_MAX (nur mit
-   Weißglut) je 10 % die Steigung der Stufe. Ewige Glut (L, §7.21): `ember` = die dauerhafte Rampe aus
+   Weißglut) je 10 % die Steigung der Stufe. Sonnenzorn rechnet mit der Spitze statt der aktuellen Hitze und zählt
+   den Passiv-Anteil doppelt (SONNENZORN_MULT_PER_10) — §7.19: über die ganze Spitze bis WEISSGLUT_HEAT_MAX, nicht nur
+   bis 100 (die Weißglut-Steigung kommt weiter obendrauf). Ewige Glut (L, §7.21): `ember` = die dauerhafte Rampe aus
    heißen Rundenenden (heat.emberMult), additiv im selben Faktor, nur solange der Skill gehalten wird. 1 ohne Hitze. */
-export function heatMult(skills, skillTiers, value = 0, ember = 0) {
-  const h = Math.max(0, value || 0);
-  let m = 1 + Math.floor(Math.min(h, C.HEAT_MAX) / 10 + 1e-9) * C.HEAT_MULT_PER_10;
+export function heatMult(skills, skillTiers, value = 0, peak = 0, ember = 0) {
+  const zorn = hasSonnenzorn(skills);
+  const h = Math.max(0, zorn ? Math.max(peak || 0, value || 0) : (value || 0));
+  const per10 = zorn ? C.SONNENZORN_MULT_PER_10 : C.HEAT_MULT_PER_10;
+  let m = 1 + Math.floor(Math.min(h, zorn ? C.WEISSGLUT_HEAT_MAX : C.HEAT_MAX) / 10 + 1e-9) * per10;
   const over = fireParam(skills, skillTiers, F.WEISSGLUT, "multPer10");
   if (over && h > C.HEAT_MAX) m += Math.floor((Math.min(h, C.WEISSGLUT_HEAT_MAX) - C.HEAT_MAX) / 10 + 1e-9) * over;
   if (hasEwigeGlut(skills)) m += Math.max(0, ember || 0);
@@ -163,23 +169,16 @@ export function fireValueBonus(heat, skills, skillTiers, { winStreak = 0 } = {})
   return v;
 }
 
-// Damaststahl: geschmiedete Karten kämpfen mit doppeltem Schmiedewert — der Schmiedewert liegt schon im Kartenwert,
-// hier kommt er ein zweites Mal auf den Kampfwert (nur der Vergleich, nicht die Basis).
-export function damascusCombat(skills, forged, card) {
-  if (!hasDamaststahl(skills)) return 0;
-  return (forged && card && forged[card.id]) || 0;
-}
-
 /* Sieg: Hitzegewinn, Schmelzpunkt (Überlauf-Wandler), Glutstahl, Sonnenkern-Score, Brände, Feuerlinie (Faktor und
    Hitzekosten). `held` = Hitze nach dem Gewinn — daran hängen die Hitze-Tore dieses Siegs und der Hitze-Multiplikator.
-   `valueOver` = Kampfwert der Siegkarte über ihrem Grundwert (alle Quellen, ohne den Damast-Kampfbonus); `value` =
+   `valueOver` = Kampfwert der Siegkarte über ihrem Grundwert (alle Quellen); `value` =
    ihr ganzer Kampfwert, `formCount` = aktive Formationen an der Siegposition (beides Feuerlinie), `pos` = die Position
    des Siegs (Brandschneise, §7.27 — nur mit dem Skill gemerkt). Gibt { heat, held, flat, melted, brands, lineMult }
    zurück; melted = gewandelte Hitzepunkte, brands = [{ id, value }] für die NÄCHSTE Runde, lineMult = der
    Feuerlinie-Faktor dieses Siegs (1 ohne). */
 export function fireOnWin(heat, skills, skillTiers, { margin = 0, valueOver = 0, value: cardValue = 0, formCount = 0,
   pos = -1, card = null, forged = {}, brandOnOpp = 0, oppId = null, oppIndex = -1, oppDeck = null } = {}) {
-  const gain = heatGainOnWin(skills, skillTiers, { margin });
+  const gain = heatGainOnWin(skills, skillTiers, { margin, heatValue: heat.value || 0, heatPeak: heat.peak || 0 });
   const max = heat.max || C.HEAT_MAX;
   const raw = (heat.value || 0) + gain;
   let value = Math.min(max, raw);
@@ -255,7 +254,7 @@ export function fireOnLoss(heat, skills, skillTiers, { deficit = 0, oppId = null
 }
 
 /* Rundenende: Schmiede (§7.14: ohne Preis, die Hitze ist nur die Schwelle der Stufe — liegt sie an, erhält die niedrigste
-   Karte dauerhaft +FORGE_VALUE, Episch die zwei niedrigsten), Damaststahl (die niedrigste Karte ohne Schwelle), Ewige
+   Karte dauerhaft +FORGE_VALUE, Episch die zwei niedrigsten), Ewige
    Glut (L, §7.21: endet die Runde mit voller Leiste, wächst die Rampe emberMult um EWIGE_GLUT_MULT_PER_ROUND, ohne
    Deckel), Brandschneise (§7.27: der neue Schnitt aus den größten Vorsprüngen des Durchlaufs).
    Niedrigste Karte deterministisch: kleinster Wert, dann kleinste id.
@@ -284,7 +283,6 @@ export function fireCycleEnd(heat, skills, skillTiers, deck, forged = {}) {
     const done = [];
     for (let k = 0; k < n; k++) { forgeLowest(done); if (forgedIds.length > done.length) done.push(forgedIds[forgedIds.length - 1]); }
   }
-  if (hasDamaststahl(skills)) forgeLowest([]);
   let emberMult = heat.emberMult || 0;
   if (hasEwigeGlut(skills) && value >= max) emberMult += C.EWIGE_GLUT_MULT_PER_ROUND;
   /* Brandschneise (§7.27): der Schnitt dieses Durchlaufs sind die `width` Siege mit dem größten Vorsprung — bei

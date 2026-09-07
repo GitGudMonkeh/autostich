@@ -54,6 +54,10 @@ import { randomPolicy } from "../sim/policies/random.js";
 // Dauerbonus „+2 Wert nach jedem Sieg" fällt weg, dafür ×2,5 auf 3–6 von 40 Positionen (Satz nach Sweep, Parität im
 // Duell 1,00×). Der Zufallsspieler fällt: Seeds 1..40 Median ≈ 2,64M, Mean ≈ 5,90M (Seeds 1..200: 3,50M / 7,01M).
 // Bänder darauf neu zentriert (≈ ±35 %).
+// §6.12 (Owner, 2026-09-07): Sonnenzorn zurück statt Damaststahl, und die neun Legendären auf ein Band gebracht. Für den
+// Zufallsspieler zählt vor allem die gehobene Unterkante (Hochspannung, Doppelentladung, Ewige Glut, Sonnenzorn,
+// Resonanz) — die gesenkte Oberkante (Sonnenkern, Baumreihe) trifft ihn kaum, weil er den Formations-Motor selten baut.
+// Seeds 1..40 Median ≈ 4,01M, Mean ≈ 8,76M. Bänder darauf neu zentriert (≈ ±35 %).
 describe("sim balance guard", () => {
   const SEEDS = 40; // feste Seeds 1..40 → deterministischer Median/Mean
   const scores = Array.from({ length: SEEDS }, (_, i) => runOne(1 + i, randomPolicy()).score).sort((a, b) => a - b);
@@ -61,14 +65,14 @@ describe("sim balance guard", () => {
   const mean = scores.reduce((t, v) => t + v, 0) / SEEDS;
 
   it("Median-Score im erwarteten Band (breite Power-Verschiebung)", () => {
-    // Ist-Wert ≈ 2,64M (exp §7.27, 50 Runden, Feuer/Blitz). Band toleriert normales Tuning, schlägt bei grober Verschiebung an.
-    expect(median).toBeGreaterThan(1_700_000);
-    expect(median).toBeLessThan(3_600_000);
+    // Ist-Wert ≈ 4,01M (exp §6.12, 50 Runden, Feuer/Blitz/Pflanze). Band toleriert normales Tuning, schlägt bei grober Verschiebung an.
+    expect(median).toBeGreaterThan(2_600_000);
+    expect(median).toBeLessThan(5_400_000);
   });
 
   it("Mean-Score im erwarteten Band (Tail-Runaway-Fänger)", () => {
-    // Ist-Wert ≈ 5,90M (exp §7.27). Die Obergrenze fängt weiterhin einen ECHTEN Tail-Blowup (Mean ginge dann deutlich höher).
-    expect(mean).toBeGreaterThan(3_800_000);
-    expect(mean).toBeLessThan(8_000_000);
+    // Ist-Wert ≈ 8,76M (exp §6.12). Die Obergrenze fängt weiterhin einen ECHTEN Tail-Blowup (Mean ginge dann deutlich höher).
+    expect(mean).toBeGreaterThan(5_700_000);
+    expect(mean).toBeLessThan(11_800_000);
   });
 });

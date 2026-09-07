@@ -69,7 +69,7 @@ export function maxChargeFor(skills, skillTiers = {}) {
 export function effectiveTier(skills, skillTiers, id) {
   if (!held(skills, id) || isLegendarySkill(id)) return null;
   const base = Number.isInteger(skillTiers?.[id]) ? skillTiers[id] : 0;
-  return Math.min(TIER_EPIC, base + (hasHochspannung(skills) ? 1 : 0));
+  return Math.min(TIER_EPIC, base + (hasHochspannung(skills) ? C.HOCHSPANNUNG_STEPS : 0));
 }
 
 // Kennwert eines gehaltenen Skills auf seiner wirksamen Stufe; undefined, wenn der Skill nicht gehalten wird oder die

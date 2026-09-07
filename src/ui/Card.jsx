@@ -122,15 +122,19 @@ function CardView({ suit, value, baseRank = null, stichBonus = 0, dim = false, g
         <div className="absolute top-1 left-1 leading-none" title={t("card.green.title")}><FactionIcon type="plant" size={15} /></div>
       )}
       {/* Feuer (#206): Brandmarke auf der GEGNERkarte — warmes −N oben links (versetzt zu 🌿) + Flamme unten rechts. Warm/orange → „Feuer, nicht Eis". */}
-      {branded > 0 && (
-        <>
-          <div className="absolute top-1 text-meta-1 font-bold px-1 rounded leading-none"
-            style={{ left: green ? 22 : 4, color: "#f7c48a", background: "#e0714a33", textShadow: "0 0 5px #e0714a" }}
-            title={t("card.branded.title", { n: branded })}>−{branded}</div>
-          <div className="absolute bottom-1 leading-none" style={{ right: 4 }}
-            title={t("card.branded.title", { n: branded })}><FactionIcon type="fire" size={15} /></div>
-        </>
-      )}
+      {branded > 0 && (() => {
+        // §6.12: Sonnenkern brandmarkt in Vierteln — die Marke wird gerundet ANGEZEIGT, gerechnet wird der volle Wert.
+        const bn = fmtNum(Math.round(branded * 100) / 100);
+        return (
+          <>
+            <div className="absolute top-1 text-meta-1 font-bold px-1 rounded leading-none"
+              style={{ left: green ? 22 : 4, color: "#f7c48a", background: "#e0714a33", textShadow: "0 0 5px #e0714a" }}
+              title={t("card.branded.title", { n: bn })}>−{bn}</div>
+            <div className="absolute bottom-1 leading-none" style={{ right: 4 }}
+              title={t("card.branded.title", { n: bn })}><FactionIcon type="fire" size={15} /></div>
+          </>
+        );
+      })()}
       {/* Ionisierung (#208): Pip-Track MITTIG auf der oberen Rahmenkante (gefüllt = Stapel, max ION_MAX_STACKS). Der
           2px-Ionisierungs-Ring (oben) glüht bei VOLL zusätzlich auf. Damit ist die frühere untere linke Ecke geräumt
           (für Eis/Pflanze reserviert, vocab.CORNER). Mittig platziert → kollisionsfrei mit 🌿/−N (links) und +X/⚒ (rechts). */}

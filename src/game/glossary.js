@@ -223,7 +223,7 @@ export const GLOSSARY = {
     text: `Mit dem Skill Weißglut reicht die Hitzeleiste bis ${C.WEISSGLUT_HEAT_MAX} %, und über ${C.HEAT_MAX} % läuft der Hitze-Multiplikator steiler weiter. Es gibt keinen eigenen Abbau: über ${C.HEAT_MAX} % kühlt nur, was auch darunter kühlt (Niederlagen, Konsumenten).`,
     match: ["Weißglut"] },
   forge: { category: "frak", group: "fire", label: "Schmieden", icon: "⚒", color: CLR.fire,
-    text: `Hitze wird zu dauerhaftem Kartenwert: die Schmiede gibt am Rundenende deiner niedrigsten Karte +${C.FORGE_VALUE} Wert und kostet dafür Hitze; Damaststahl schmiedet ohne Preis. Der Schmiedewert bleibt in der Karte, auch nach einem Skill-Wechsel.`,
+    text: `Hitze wird zu dauerhaftem Kartenwert: die Schmiede gibt am Rundenende deiner niedrigsten Karte +${C.FORGE_VALUE} Wert, sobald die Hitze ihre Schwelle deckt. Der Schmiedewert bleibt in der Karte, auch nach einem Skill-Wechsel.`,
     match: ["Schmieden", "geschmiedet", "Geschmiedete", "Schmiede", "Schmiedewert", "Schmiedung"] },
 
   /* ============ 4 · Blitz ============ */

@@ -13,7 +13,7 @@ import { lightningCritChance, lightningCritMult, overcritMult, blitzfaengerValue
   lightParam, L as LIGHT, hasDoppelentladung, hasResonanz, resonantStacks } from "./factions/lightning.js";
 // exp skill rework: die Feuer-Mechanik (Passiv, 15 Skills, 4 Legendäre) lebt ebenso im Fraktionsmodul — die Engine
 // ruft ihre Übergänge (Kampfwert-Bonus, Sieg, Niederlage, Hitze-Multiplikator, Rundenende, Brand-Wechsel).
-import { syncHeatMax, fireValueBonus, damascusCombat, fireOnWin, fireOnLoss, heatMult, verbrennungMult, feuersturmMult,
+import { syncHeatMax, fireValueBonus, fireOnWin, fireOnLoss, heatMult, verbrennungMult, feuersturmMult,
   rueckzuendungMult, schneiseMult, fireCycleEnd, nextBrandActive } from "./factions/fire.js";
 // exp skill rework: die Pflanze-Mechanik (Passiv „Wachstum", 15 Skills, 4 Legendäre) lebt im Fraktionsmodul; die
 // Engine ruft ihre Übergänge (Sieg, Niederlage, Durchlaufende) und reicht das Bündel { skillTiers, growth } an die
@@ -350,8 +350,6 @@ export function resolveTrick(state, rng) {
   // Familien-Wertboni (Kategorie B, Rarität #167) laufen ADDITIV neben den flachen Perk-cardBonus-Hooks —
   // gleicher Kontext (inkl. pValueBase = Dauerwert der Karte), nur die aktive Familien-Stufe zählt.
   const familyValueBonus = familySumHook(familyTiers, "cardBonus", { ...ctx, pValueBase: pCard.value });
-  // Damaststahl (Feuer-Legendär): geschmiedete Karten kämpfen mit doppeltem Schmiedewert (nur der Vergleich, nicht die Basis).
-  const damascusValue = damascusCombat(skills, forged, pCard);
   // #289: Farballianz-Gruppen einmal je Stich — an ALLE Farb-Verbraucher (Architekt/Farbserie/Farbfokus) gereicht.
   const alliance = allianceGroups(familyTiers, roles);
   // Architekt value-Gebäude (#202, Tragwerk): +temp Wert VOR dem Vergleich (an dieser Position, Bedingung je Familie).
@@ -364,7 +362,7 @@ export function resolveTrick(state, rng) {
   // #370 Wochen-Mods (nur Ranked): „Starke Karten" hebt jede Spielerkarte, „Stärkere Gegner" jede Gegnerkarte um +mag.
   const wmCardBonus = weekModMag(state.weekMods, "cardValue");
   const wmEnemyBonus = weekModMag(state.weekMods, "enemyValue");
-  const pValue = effectivePlayerValue(pCard.value, perks, ctx) + familyValueBonus + relayBonus + fireValue + blitzValueBonus + anchorPowerBonus + eQuickshotValue + architectValueEff + damascusValue + glacierBuff + wmCardBonus;
+  const pValue = effectivePlayerValue(pCard.value, perks, ctx) + familyValueBonus + relayBonus + fireValue + blitzValueBonus + anchorPowerBonus + eQuickshotValue + architectValueEff + glacierBuff + wmCardBonus;
   // #226 Großmeister: Gegner-Aufschlag = flacher oppValue + mitwachsender Ramp (+1 Wert alle oppRampEvery Durchläufe),
   // additiv VOR den Debuffs (Frostbiss/Brand kontern ihn → gewollt). Meister/Basis (difficulty=null) → 0, byte-identisch.
   const rampMod = (difficulty && difficulty.oppRampEvery) ? Math.floor(cycle / difficulty.oppRampEvery) : 0;
@@ -429,7 +427,7 @@ export function resolveTrick(state, rng) {
   let gained = 0;
   let isCrit = false, critChance = 0, critMultiplier = C.CRIT_BASE_MULT, scoreBeforeCrit = 0, critBonus = 0;
   // Eis-Neudesign: der Gletscher-Bruch profitiert vom VOLLEN Sieg-Stack, WENN die Gletscher-Karte ihren Stich gewinnt
-  // (Serie × Perk/Familie × Formation × Nachhall × Kern × Architekt × Crit). Bei Niederlage bleibt es ×1
+  // (Serie × Perk/Familie × Formation × Nachhall × Kern × Sonnenzorn × Architekt × Crit). Bei Niederlage bleibt es ×1
   // (Basis-Burst). So hat der Rest des Spiels Hebel auf den Gletscher-Score, statt dass nur Gletscher-Skills zählen.
   let glacierWinMult = 1;
   let breakdown = null; // Ergebnis-Aufschlüsselung eines Siegs (§17): exakt die Faktoren der Score-Formel
@@ -475,7 +473,7 @@ export function resolveTrick(state, rng) {
     if (heat && heat.active) {
       const r = fireOnWin(heat, skills, skillTiers, {
         margin: pValue - oValue, streak: serieStreak, card: pCard, forged, brandOnOpp,
-        valueOver: pValue - damascusValue - (pCard.baseRank ?? pCard.value), // Glutstahl: Kampfwert über dem Grundwert, ohne den Damast-Kampfbonus
+        valueOver: pValue - (pCard.baseRank ?? pCard.value), // Glutstahl: Kampfwert der Siegkarte über ihrem Grundwert
         value: pValue, formCount: activeFormationCount(posForm), // Feuerlinie: ganzer Kampfwert, aktive Formationen an der Siegposition
         pos: actualPos, // Brandschneise (§7.27): der Sieg wird mit seinem Vorsprung gemerkt, der Schnitt fällt am Durchlaufende
         oppId: oCard.id, oppIndex: oppOrder[actualPos], oppDeck,
@@ -605,12 +603,12 @@ export function resolveTrick(state, rng) {
     // #370 Formations-Boost (Wochen-Mod, nur Ranked): den Formations-BONUS (Überschuss über 1) verdoppeln — neutraler
     // Sieg (formMult==1) bleibt unberührt, Formations-Builds skalieren stärker. Wirkt auch auf glacierWinMult (nutzt formMult).
     if (hasWeekMod(state.weekMods, "formBoost")) formMult = 1 + (formMult - 1) * BOOST_FACTOR;
-    // Feuer (§4.2/§4.5): der Hitze-Multiplikator (je 10 % gehaltener Hitze; Weißglut über
+    // Feuer (§4.2/§4.5): der Hitze-Multiplikator (je 10 % gehaltener Hitze; Sonnenzorn: Spitze, doppelt; Weißglut über
     // 100) und Verbrennung (Sieg ab dem Vorsprung der Stufe ×1,5) sind EIN eigener Faktor auf den ganzen Sieg-Score —
     // ein Halte-Build gewinnt über Wert und Formationen, nicht über Feuer-Flats. Gelesen wird die Hitze nach dem
     // Gewinn dieses Siegs und vor dem Verbrauch (fireHeld).
     const fireMult = (heat && heat.active)
-      ? heatMult(skills, skillTiers, fireHeld, heat.emberMult) * verbrennungMult(skills, skillTiers, pValue - oValue)
+      ? heatMult(skills, skillTiers, fireHeld, heat.peak, heat.emberMult) * verbrennungMult(skills, skillTiers, pValue - oValue)
         * feuersturmMult(skills, skillTiers, fireHeld, heat.max || C.HEAT_MAX, serieStreak) // §7.17: Feuersturm, Serie zu Score bei voller Leiste
         * rueckzuendungMult(skills, skillTiers, serieStreak) // §7.24: Rückzündung, der Takt — jeder N. Sieg in Folge (Serie nach dem Sieg)
         * schneiseMult(skills, skillTiers, heat, actualPos) // §7.27: Brandschneise, ein Sieg auf dem Schnitt des letzten Durchlaufs (die Schnitte liegen im Hitze-Substate)
@@ -1005,7 +1003,7 @@ export function resolveTrick(state, rng) {
     // Relay (C4/C5) auf Position 1 des nächsten (persistenten) Durchlaufs durchsickern.
     successorQueue = [];
     // ---- Feuer (exp skill rework, §4.5/§4.7): Rundenende — Schmiede (kostet Hitze, niedrigste Karte +3 dauerhaft,
-    //      Episch zwei Karten), Damaststahl (niedrigste Karte ohne Preis), Ewige Glut (Rampe, §7.21). Alles im Modul; die
+    //      Episch zwei Karten) und Ewige Glut (Rampe, §7.21). Alles im Modul; die
     //      Schmiedewerte bleiben in den Karten gebacken.
     if (heat && heat.active) {
       const r = fireCycleEnd(heat, skills, skillTiers, deck, newForged);

@@ -27,13 +27,27 @@ export const tierKey = (id, tier) => (isLegendarySkill(id) ? `${id}@L` : `${id}@
 export const skillOfOption = (opt) => opt.split("@")[0];
 export const tierOfOption = (opt) => { const t = opt.split("@")[1]; return t === "L" ? "L" : Number(t); };
 
+/* Die rohen Arme eines Explore-Gedächtnisses als reine Daten — serialisierbar, damit mehrere Sim-Läufe DIESELBE
+   Wertetabelle benutzen können (--table). Ohne das würfelt jeder Lauf seine eigene Tabelle und die Vergleiche
+   verschieben sich (§6.12: eine geänderte Konstante änderte auch die Zeilen der unberührten Legendären). */
+export function valueTableRows(mem) {
+  const out = {};
+  for (const kind of ["skill", "perk"]) out[kind] = mem.ranking(kind).filter((r) => r.n).map((r) => ({ id: r.id, bucket: r.bucket, n: r.n, mean: r.mean }));
+  return out;
+}
+
 /* Eingefrorene Wertetabelle aus einem Explore-Gedächtnis: mean je (kind, option, bucket) plus die Rückfall-Ebenen
    (Skill über alle Stufen je Bucket · Option über alle Buckets · Skill über alles). Die Ebenen sind n-gewichtet. */
 export function buildValueTable(mem) {
+  return valueTableFromRows(valueTableRows(mem));
+}
+
+// Dieselbe Tabelle aus den rohen Armen (aus `valueTableRows`, ggf. durch eine Datei gereicht).
+export function valueTableFromRows(rows) {
   const exact = new Map(), bySkillBucket = new Map(), byOpt = new Map(), bySkill = new Map();
   const acc = (map, key, r) => { const a = map.get(key) || { n: 0, sum: 0 }; a.n += r.n; a.sum += r.mean * r.n; map.set(key, a); };
   for (const kind of ["skill", "perk"]) {
-    for (const r of mem.ranking(kind)) {
+    for (const r of rows[kind] || []) {
       if (!r.n) continue;
       acc(exact, armKey(kind, r.id, r.bucket), r);
       acc(byOpt, `${kind}|${r.id}`, r);

@@ -71,9 +71,12 @@ export const isBloom = (growth) => (growth || 0) >= C.PLANT_BLOOM_THRESHOLD;
 export const plantStage = (growth) => (isBloom(growth) ? "bloom" : isGreen(growth) ? "green" : "grey");
 export const greenCount = (deck) => (deck || []).filter((c) => c.green).length;
 export const bloomCount = (deck) => (deck || []).filter((c) => c.bloom).length;
-export const fullGreen = (deck) => (deck || []).length > 0 && deck.every((c) => c.green);
+/* Das Zielbild des Ewigen Frühlings: der Anteil grüner Karten im Feld deckt EWIGER_FRUEHLING_GREEN_FRAC (1 = jede
+   Karte grün). Der Regler (§6.12) ist die Größe des Legendären, nicht seine Mechanik. */
+export const fullGreen = (deck) => (deck || []).length > 0
+  && greenCount(deck) >= Math.ceil(deck.length * C.EWIGER_FRUEHLING_GREEN_FRAC - 1e-9);
 
-/* Ewiger Frühling (L, §6.5): ist das Feld vollständig grün, sind ALLE Karten blühend — der Zustand wird gebacken wie
+/* Ewiger Frühling (L, §6.5): deckt das Feld das Zielbild, sind ALLE Karten blühend — der Zustand wird gebacken wie
    jeder andere (er kann nicht wieder verschwinden, Grün fällt nie). Gibt das Deck unverändert zurück, wenn nichts
    zu tun ist. */
 export function bloomAllIfFullGreen(skills, deck) {

@@ -39,14 +39,14 @@ describe("Blitz-Modul — Stufen und Kennwerte", () => {
     for (const id of ids) expect(SKILL_DEFS[id]?.archetype, id).toBe("lightning");
     expect(Object.values(SKILL_DEFS).filter((s) => s.archetype === "lightning").map((s) => s.id).sort()).toEqual([...LIGHTNING_IDS].sort());
   });
-  it("effectiveTier: nicht gehalten/Legendär → null; ohne Eintrag Normal; Hochspannung hebt um eins, Episch bleibt", () => {
+  it("effectiveTier: nicht gehalten/Legendär → null; ohne Eintrag Normal; Hochspannung hebt um HOCHSPANNUNG_STEPS, Episch ist das Ende", () => {
     expect(effectiveTier([], {}, L.ABLEITER)).toBeNull();
     expect(effectiveTier([L.RESONANZ], {}, L.RESONANZ)).toBeNull();
     expect(effectiveTier([L.ABLEITER], {}, L.ABLEITER)).toBe(0);
     expect(effectiveTier([L.ABLEITER], { [L.ABLEITER]: 2 }, L.ABLEITER)).toBe(2);
-    expect(effectiveTier([L.ABLEITER, L.HOCHSPANNUNG], { [L.ABLEITER]: 2 }, L.ABLEITER)).toBe(3);
-    expect(effectiveTier([L.ABLEITER, L.HOCHSPANNUNG], { [L.ABLEITER]: 3 }, L.ABLEITER)).toBe(3);
-    expect(effectiveTier([L.ABLEITER, L.HOCHSPANNUNG], {}, L.ABLEITER)).toBe(1);
+    expect(effectiveTier([L.ABLEITER, L.HOCHSPANNUNG], { [L.ABLEITER]: 2 }, L.ABLEITER)).toBe(Math.min(3, 2 + C.HOCHSPANNUNG_STEPS));
+    expect(effectiveTier([L.ABLEITER, L.HOCHSPANNUNG], { [L.ABLEITER]: 3 }, L.ABLEITER)).toBe(3); // Episch bleibt Episch
+    expect(effectiveTier([L.ABLEITER, L.HOCHSPANNUNG], {}, L.ABLEITER)).toBe(Math.min(3, C.HOCHSPANNUNG_STEPS));
   });
   it("lightParam liest die Zeile der wirksamen Stufe; unbekannter Schlüssel / nicht gehalten → undefined", () => {
     expect(lightParam([L.RESTSTROM], {}, L.RESTSTROM, "floor")).toBe(T.reststrom[0].floor);
@@ -407,10 +407,11 @@ describe("Blitz — Engine-Integration (resolveTrick)", () => {
     expect(ionCritMultFor({ ionStacks: min }, [L.KURZSCHLUSS], {})).toBeCloseTo(min * T.kurzschluss[0].factor * C.ION_CRIT_MULT_PER_STACK, 9);
     expect(ionScoreFor({ ionStacks: min }, [L.KURZSCHLUSS], {})).toBe(min * T.kurzschluss[0].factor * C.ION_SCORE_PER_STACK); // dieselbe Zählung
   });
-  it("Hochspannung: gehaltene Blitz-Skills wirken eine Stufe höher (Blitzfänger Normal kämpft mit dem Selten-Wert)", () => {
+  it("Hochspannung: gehaltene Blitz-Skills wirken um HOCHSPANNUNG_STEPS höher (Blitzfänger Normal kämpft mit dem Wert der gehobenen Stufe)", () => {
     const win = resolveTrick(scen(10, 11, { deck: withStacks(10, 0, 1), skills: [L.BLITZFAENGER, L.HOCHSPANNUNG], lightning: light() }), noCrit);
     expect(win.lastTrick.result).toBe("win");
-    expect(win.lastTrick.pValue).toBe(10 + T.faenger[1].value);
+    const lifted = T.faenger[Math.min(3, C.HOCHSPANNUNG_STEPS)];
+    expect(win.lastTrick.pValue).toBe(10 + lifted.value + (lifted.perStack || 0) * 1); // eine Ionisierung auf der Karte
     const plain = resolveTrick(scen(10, 11, { deck: withStacks(10, 0, 1), skills: [L.BLITZFAENGER], lightning: light() }), noCrit);
     expect(plain.lastTrick.pValue).toBe(10 + T.faenger[0].value);
     expect(plain.lastTrick.result).not.toBe("win");
@@ -423,7 +424,7 @@ describe("Blitz — Engine-Integration (resolveTrick)", () => {
     expect(forms[7].formations.find((f) => f.type === "wiederholung").members).toEqual([5, 6, 7, 8, 9]);
     // Stapel auf den Nachbarn im Segment (0: 2, 2: 3, 4: 1) und auf einer Karte außerhalb (7: 5); gespielt wird Position 1 (eigene 1).
     const deck = constDeck(12).map((c, i) => ({ ...c, ionStacks: { 0: 2, 1: 1, 2: 3, 4: 1, 7: 5 }[i] || 0 }));
-    const pooled = 1 + 2 + 3 + 1;
+    const pooled = 1 + (2 + 3 + 1) * C.RESONANZ_SHARE; // eigene Stapel plus der Anteil der anderen Mitglieder (§6.12: Anteil 2)
     const at1 = (over) => scen(12, 0, { pos: 1, deck, formations: forms, lightning: light(), ...over }); // pos 1: die Engine liest state.formations
     const r = resolveTrick(at1({ skills: [L.RESONANZ] }), noCrit);
     expect(r.lastTrick.result).toBe("win");

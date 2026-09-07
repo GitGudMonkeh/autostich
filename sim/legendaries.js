@@ -10,9 +10,11 @@
 //   Gepaart je Seed (robustDelta): Median-Δ, typischer multiplikativer Effekt, Vorzeichen-Quote; dazu die Quote, in der
 //   das Legendäre am Laufende gehalten wird, und wie oft der Basislauf es ohnehin hatte.
 // Bewusst OHNE Zeitstempel im JSON (gleicher Seed-Satz → byte-gleiche Datei).
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname } from "node:path";
 import { runOne } from "./run.js";
 import { newMemory } from "./memory.js";
-import { greedyPolicy, buildValueTable } from "./policies/greedy.js";
+import { greedyPolicy, buildValueTable, valueTableRows, valueTableFromRows } from "./policies/greedy.js";
 import { atDoors } from "./policies/random.js";
 import { robustDelta } from "./eval.js";
 import { SKILL_LIST, SKILL_DEFS, archetypeOf } from "../src/game/skills.js";
@@ -62,17 +64,30 @@ export function legendaryInjection(id, at, policy) {
   return { hooks, policy: wrapped, result: () => ({ injected, alreadyHeld }) };
 }
 
-export function computeLegendaries({ seed0 = 1, exploreRuns = 600, runs = 150, arch = ["fire", "lightning"], at = null, c = 1.4, solveFormations = true, log = null } = {}) {
+export function computeLegendaries({ seed0 = 1, exploreRuns = 600, runs = 150, arch = ["fire", "lightning"], at = null, c = 1.4, solveFormations = true, tableFile = null, log = null } = {}) {
   const opts = { archetypes: arch };
   const say = (m) => { if (log) log(m); };
-  // 1) Explore → Wertetabelle (dieselbe Mechanik wie --mode skills).
-  const mem = newMemory();
-  const ex = greedyPolicy({ explore: true, c, solveFormations });
-  for (let i = 0; i < exploreRuns; i++) {
-    runOne(seed0 + i, ex, mem, null, opts);
-    if ((i + 1) % 200 === 0) say(`  explore ${i + 1}/${exploreRuns}`);
+  /* 1) Explore → Wertetabelle (dieselbe Mechanik wie --mode skills). Mit `tableFile` wird sie einmal erkundet und
+        danach wiederverwendet: eine geänderte Konstante soll die Zeile IHRES Legendären verschieben, nicht die Welt
+        (§6.12 — ohne die geteilte Tabelle schwankten unberührte Zeilen um den Faktor 2). */
+  let table;
+  if (tableFile && existsSync(tableFile)) {
+    table = valueTableFromRows(JSON.parse(readFileSync(tableFile, "utf8")));
+    say(`  Wertetabelle aus ${tableFile}`);
+  } else {
+    const mem = newMemory();
+    const ex = greedyPolicy({ explore: true, c, solveFormations });
+    for (let i = 0; i < exploreRuns; i++) {
+      runOne(seed0 + i, ex, mem, null, opts);
+      if ((i + 1) % 200 === 0) say(`  explore ${i + 1}/${exploreRuns}`);
+    }
+    table = buildValueTable(mem);
+    if (tableFile) {
+      mkdirSync(dirname(tableFile), { recursive: true });
+      writeFileSync(tableFile, JSON.stringify(valueTableRows(mem)));
+      say(`  Wertetabelle → ${tableFile}`);
+    }
   }
-  const table = buildValueTable(mem);
   const greedy = () => greedyPolicy({ explore: false, table, solveFormations });
   // 2) Basis auf frischen Seeds.
   const evalSeed0 = seed0 + exploreRuns;
@@ -106,7 +121,7 @@ export function computeLegendaries({ seed0 = 1, exploreRuns = 600, runs = 150, a
     };
   });
   rows.sort((a, b) => b.marginal.median - a.marginal.median);
-  return { arch, exploreRuns, runs, evalSeed0, c, at: phase, round: rounds[phase - 1] || null, skillPhases: rounds.length, baseScore: stats(baseScores), rows };
+  return { arch, exploreRuns, runs, evalSeed0, c, tableFile, at: phase, round: rounds[phase - 1] || null, skillPhases: rounds.length, baseScore: stats(baseScores), rows };
 }
 
 export function runLegendaries({ arg, seed0, c, f, write }) {
@@ -117,6 +132,7 @@ export function runLegendaries({ arg, seed0, c, f, write }) {
     runs: Number(arg("--runs", 150)),
     arch: String(arg("--arch", "fire,lightning")).split(",").filter(Boolean),
     at: arg("--at", "") ? Number(arg("--at", "")) : null,
+    tableFile: arg("--table", "") || null,
     c,
     log: (m) => console.log(m),
   });

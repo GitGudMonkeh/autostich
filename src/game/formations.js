@@ -18,7 +18,8 @@
    E3 Treppe darf 1× gleich · E4 Treppe darf 1× Rückschritt · E5 Wechsel schon ab 2 Karten ·
    E6 Karte in zwei Treppen · E7/E8 Anker · E9 Formationen über Segmentgrenzen.
    ============================================================ */
-import { ANCHOR_FORM_FACTOR, FORMATION_CORE_FACTOR, PLANT_GREEN_FARBBLOCK_CAP } from "./constants.js";
+import { ANCHOR_FORM_FACTOR, FORMATION_CORE_FACTOR, PLANT_GREEN_FARBBLOCK_CAP,
+  BAUMREIHE_FACTOR_SCALE, WURZELGEFLECHT_FACTOR_SCALE } from "./constants.js";
 import { P, plantParam, greenCount, hasBaumreihe, hasWurzelgeflecht } from "./factions/plant.js";
 import { activeFamilyEntries, familyTierParam, allianceGroups } from "./families.js";
 import { architectFormSpec } from "./architect.js";
@@ -399,7 +400,8 @@ export function computeFormations(order, deck, roles = {}, _perks = [], skills =
     const blooms = [];
     for (let k = 0; k < n; k++) if (cards[k].bloom) blooms.push(k);
     if (blooms.length >= 2) blooms.forEach((pos, idx) => {
-      const factor = wiedFactor(idx + 1);
+      // §6.12: die Reihe zahlt den Wiederholungs-Bonus zum Anteil BAUMREIHE_FACTOR_SCALE (1 = wie ein echter Lauf).
+      const factor = 1 + (wiedFactor(idx + 1) - 1) * BAUMREIHE_FACTOR_SCALE;
       if (factor > 1) out[pos].mult *= factor;
       out[pos].formations.push({ type: "wiederholung", ordinal: idx + 1, factor, members: blooms });
     });
@@ -421,7 +423,9 @@ export function computeFormations(order, deck, roles = {}, _perks = [], skills =
           seen.add(f.members);
           f.members.push(k);
           const fn = factorFor[f.type];
-          const factor = fn ? (f.type === "farbblock" ? fn(k, f.members.length) : fn(f.members.length)) : 1;
+          // §6.12: die beitretende Karte bekommt den Lauf-Bonus zum Anteil WURZELGEFLECHT_FACTOR_SCALE (1 = ganz).
+          const raw = fn ? (f.type === "farbblock" ? fn(k, f.members.length) : fn(f.members.length)) : 1;
+          const factor = 1 + (raw - 1) * WURZELGEFLECHT_FACTOR_SCALE;
           if (factor > 1) out[k].mult *= factor;
           out[k].formations.push({ type: f.type, ordinal: f.members.length, factor, members: f.members });
         }

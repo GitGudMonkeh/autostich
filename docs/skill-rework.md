@@ -4123,6 +4123,112 @@ Ewiger Frühling ist der schwache der drei (+10 %) und wäre der nächste Kandid
 
 ---
 
+### 6.12 Sonnenzorn zurück, und die neun Legendären auf ein Band (2026-09-07, Owner) — umgesetzt
+
+**Owner:** „lass uns sonnenzorn statt damaststahl behalten und alle 9 legendäre auf ähnliche bander bringen, ähnlich
+nicht komplett gleich"
+
+#### 1. Der Tausch bei Feuer
+
+**Damaststahl (L04) ist gestrichen, Sonnenzorn (L03) ist zurück.** In §6.11 war umgekehrt gekürzt worden — nach der
+Messung, nicht nach dem Geschmack. Der Owner behält Sonnenzorn. Damit fallen `damascusCombat`, der Damast-Kampfbonus
+in der Engine und die schwellenlose Schmiedung; zurück kommen `SONNENZORN_MULT_PER_10`, `SONNENZORN_HEAT_MULT`, der
+Spitzen-Zweig in `heatGainOnWin`/`heatMult` und das Spitzen-Abzeichen der Hitzeleiste.
+
+#### 2. Der Messfehler, der die Runde erst möglich gemacht hat
+
+Die erste Bandmessung war **nicht vergleichbar**: `--mode legendaries` würfelt für jeden Lauf eine eigene
+Explore-Wertetabelle. Eine geänderte Konstante änderte damit auch die Zeilen der *unberührten* Legendären — Sonnenkern
+schwankte über vier Läufe zwischen +181 % und +418 %, Baumreihe zwischen +273 % und +426 %. Bei einem Zielband von
+Faktor 2 ist das Rauschen so groß wie das Signal.
+
+**Behoben mit `--table <datei>`** (sim/legendaries.js, sim/policies/greedy.js): die Wertetabelle wird einmal erkundet,
+als reine Daten geschrieben und von allen Varianten wiederverwendet. Danach bleiben unberührte Zeilen innerhalb von
+±10 Prozentpunkten, und ein Lauf kostet 6 statt 8,5 Minuten. Ein Kontrolllauf mit den Vorgabewerten reproduzierte die
+Ausgangsmessung **byte-gleich**.
+
+Ohne diesen Umbau wäre jede Zahl unten Zufall gewesen. Alle folgenden Messungen laufen über die geteilte Tabelle,
+je Runde **eine** Konstante bewegt.
+
+#### 3. Vier Legendäre hatten überhaupt keinen Regler
+
+Hochspannung, Wurzelgeflecht, Baumreihe und Ewiger Frühling waren reine Mechanik ohne Zahl. Jedes hat jetzt genau
+einen Regler auf der **bestehenden** Mechanik — die Voreinstellungen waren exakt das alte Verhalten (der
+Kontrolllauf oben beweist es):
+
+| Legendär | Regler | Bedeutung |
+| --- | --- | --- |
+| Hochspannung | `HOCHSPANNUNG_STEPS` | um wie viele Stufen gehaltene Blitz-Skills höher wirken |
+| Baumreihe | `BAUMREIHE_FACTOR_SCALE` | welchen Anteil des Wiederholungs-Bonus die positionsfreie Reihe zahlt |
+| Wurzelgeflecht | `WURZELGEFLECHT_FACTOR_SCALE` | welchen Anteil des Lauf-Bonus die beitretende blühende Karte bekommt |
+| Ewiger Frühling | `EWIGER_FRUEHLING_GREEN_FRAC` | ab welchem Anteil grüner Karten alles blüht |
+
+**Verworfen:** eine Mindest-Lauflänge als Wurzelgeflecht-Regler. Gemessen kippte das Legendäre damit von +164 % auf
+−4 % (Länge 3) und −22 % (Länge 4) — die kurzen Läufe sind der Großteil seiner Wirkung. Der Faktor-Anteil greift weich.
+
+**Nebenbefund zum Nullpunkt:** der Eingriff ERSETZT einen normalen Pick. Ein Legendäres bei +4 % ist deshalb nicht
+„schwach", sondern **weniger wert als ein gewöhnlicher Skill** — daher die negativen Zeilen. Der Boden des Bandes ist
+nicht 0 %.
+
+#### 4. Ergebnis: acht von neun in +58 … +127 %
+
+Gemessen über die geteilte Tabelle, Welt Feuer/Blitz/Pflanze, 600 Explore + 150 gierige Läufe, gepaart, Legendäres in
+der mittleren Skill-Phase (Runde 25). „typ." = typischer multiplikativer Effekt.
+
+| Legendär | Fraktion | vorher | **nachher** | Regler |
+| --- | --- | --- | --- | --- |
+| Sonnenkern | Feuer | +418 % | **+127 %** | Brand 1 → 0,25 · Score je Brandpunkt 20 → 4 |
+| Baumreihe | Pflanze | +411 % | **+125 %** | Faktor-Anteil 1 → 0,15 |
+| Resonanz | Blitz | +40 % | **+90 %** | Stapel-Anteil 1 → 2 |
+| Doppelentladung | Blitz | +37 % | **+82 %** | Stapel je Ionisierung 2 → 4 |
+| Wurzelgeflecht | Pflanze | +164 % | **+75 %** | Faktor-Anteil 1 → 0,7 |
+| Ewige Glut | Feuer | +23 % | **+66 %** | Boden 50 → 80 % der Spitze · Rampe 0,05 → 0,12 |
+| Hochspannung | Blitz | +8 % | **+60 %** | Stufenhub 1 → 3 |
+| Sonnenzorn | Feuer | +32 % | **+58 %** | +5 → +8 % je 10 % Spitze · Hitze ×2 → ×3 |
+| **Ewiger Frühling** | Pflanze | +4 % | **−7 %** | unverändert — siehe unten |
+
+Aus Faktor 100 (+4 … +418 %) ist Faktor 2,2 geworden. In einer Welt mit *eigener* Wertetabelle („wie im Spiel") liegt
+dieselbe Aufstellung bei +21 … +213 % — das ist das Restrauschen der Tabelle, nicht ein anderes Band.
+
+**Zwei Regler waren tot und mussten getauscht werden:**
+
+- *Ewige Glut:* die Rampe je heißer Runde ist wirkungslos — Sweep 0,05 / 0,075 / 0,10 / 0,15 lag flach bei +23 %. Was
+  das Legendäre trägt, ist der **Hitze-Boden**. Also 0,5 → 0,8.
+- *Sonnenkern:* der Brand-Score ist zweitrangig. Bei Brandmarke 1 lag Sonnenkern selbst mit Score 4 noch bei +296 % —
+  der Motor ist der **stapelnde Wert-Debuff**. Also 1 → 0,25 (Viertel sind binär exakt, die Kartenanzeige bleibt
+  sauber; sie rundet jetzt zusätzlich auf zwei Stellen).
+
+#### 5. Was nicht geht: Ewiger Frühling
+
+Sein Regler ist ausgereizt und trifft das Band nicht:
+
+| Anteil grün, ab dem alles blüht | 1 (heute) | 0,85 | 0,6 | 0,35 | 0,25 |
+| --- | --- | --- | --- | --- | --- |
+| typ. Effekt | +4 % | +10 % | +17 % | +37 % | +34 % |
+
+Der Wert sättigt bei rund einem Drittel des Bandbodens — und bezahlt wird er mit dem Zielbild („vollständig grün"),
+also genau der Identität aus §6.1. Deshalb **bleibt der Regler auf 1** und das Legendäre außerhalb des Bandes:
+für +10 % gibt man das Zielbild nicht her.
+
+**Ewiger Frühling braucht eine Design-Entscheidung, keine Zahl — Owner.** Der Befund dahinter: „alles blüht" allein
+zahlt zu wenig, weil Blühen in dieser Fraktion nur ein *Zustand* ist; die Auszahlung hängt an den Formationen, die
+eine blühende Karte betritt. Vorschlag, wenn gewünscht: das Zielbild behalten und ihm eine eigene Auszahlung geben
+(z. B. das vollgrüne Feld hebt dauerhaft das Wachstum je Formation), statt den Auslöser weiter zu verbilligen.
+
+#### 6. Was noch angefasst wurde
+
+- **Skilltexte** tragen jetzt die Zahlen, die wirken: Resonanz nennt den Stapel-Anteil, Hochspannung den Stufenhub,
+  Baumreihe und Wurzelgeflecht den Anteil des Formations-Bonus, Sonnenkern die gebrochene Brandmarke. Die zwei
+  Anteils-Texte („zahlt 15 % des Wiederholungs-Bonus") sind korrekt, aber sperrig — **Wortlaut Owner**, wenn er das
+  anders gesagt haben will.
+- **Balance-Guard neu zentriert** (Zufallsspieler, Seeds 1..40): Median 4,01M, Mean 8,76M. Der Zufallsspieler steigt,
+  weil ihn die gehobene Unterkante trifft und die gesenkte Oberkante kaum — den Formations-Motor der Pflanze baut er
+  selten.
+- Offen aus §6.10/§6.11: ob die Pflanze ins Angebot (`SKILL_OFFER_ARCHETYPES`) kommt, und die Paritätsrunde der drei
+  Fraktionen mit Legendären.
+
+---
+
 ## Änderungsprotokoll
 
 
@@ -4196,3 +4302,4 @@ Ewiger Frühling ist der schwache der drei (+10 %) und wäre der nächste Kandid
 | 2026-09-07 | **Pflanze gebaut (6.9, umgesetzt).** Neues Modul `src/game/factions/plant.js` mit dem Passiv (Wachstum je Karte: +1 je Sieg, +1 je Formation an der Siegposition; grün ab 30, blühend ab 75; eine blühende Siegkarte gibt +20 Basis-Score je grüner Karte in ihren Formationen), den 15 Skills auf vier Stufen (`PFLANZE_TIERS`) und den vier Legendären. Die vier Hebel (Spalier, Wildwuchs, Lücke, Überwucherung) und zwei Legendäre (Baumreihe, Mutterbaum) ändern die Erkennung in `formations.js`, das dafür ein Bündel `{ skillTiers, growth }` bekommt. Alte Ökonomie raus: Wertachse mit Auto-Sieg bei 11, Alter Anker, `plantDirect`, `plantFormMult`, Trimmen, Bekenntnis-Skalierung (`commitScale` — die Pflanze war ihr letzter Leser), Kolonisierung des Gegnerdecks, die sechs `enabler`; zwei Emblem-Plätze zurückgegeben, zehn umbenannt. Ein Score-Kanal `plantBase` statt drei; PlantBar, Karten-Ring, Kartendetail, Glossar und Passiv-Text auf die drei Zustände umgestellt. Neuer Wächtersatz `test/plant-rework.test.js` (36 Fälle, inklusive Gegenprobe: ohne Pflanzen-Skill rechnet die Formations-Engine unverändert). In EINEM Stück statt in Etappen, weil die Registry-Wächter mindestens 18 Skills je Fraktion verlangen. Gates grün (2321 Tests). **Nicht gemessen, nicht im Türen-Angebot** — beides wartet auf die Ansage des Owners. |
 | 2026-09-07 | **Pflanze gemessen (6.10, auf Ansage; Legendäre außen vor — sie bekommen ein Redesign).** Duell mit allen drei Fraktionen (200 Läufe): Feuer 7,75M · Blitz 7,43M · **Pflanze 4,90M** (0,63× / 0,66×), p90 9,72M gegen 18,8M/37,4M, Siegquote 53,3 % gegen 65,3 %; Split aller drei 6,19M über dem Mix 3,58M. Neue Sonde `sim/probes/plant-field.mjs`: das Feld ergrünt ab Durchlauf 11, blühend ab 16–21, am Ende Median 38 von 40 blühenden Karten, längster grüner Farbblock 12, Deck-als-Reihe nur in 13 % der Läufe (**der Grün-Farbblock-Deckel bindet kaum — die offene Frage aus §6.2 ist beantwortet**). Gierig mit allen drei in den Türen (explore 900, gierig 120, Median 21,8M): nur Blütenlese ist „stark" (+6,0M), die vier schlechtesten Picks des ganzen Feldes sind Pflanze-Wachstums-Skills (Zäher Halm −4,8M, Setzlingsbeet −3,8M, Ranken −3,0M, Spalier −2,9M) — die Signatur einer Bekenntnis-Fraktion. Gierig in der Pflanze-Welt: Jahresringe +17 %, Spalier +12 %, Wildwuchs +8 %, Episch-Spitzen Wildwuchs 4,13 / Rankgerüst 3,35 / Spalier 2,18, p95 265M. Regler-Sweep: **der Passiv-Satz ist kein Regler** (Vierfaches = +24 %), „+2 Wachstum je Formation" bewegt mehr (+10 %). Befund: der Pflanze fehlen Multiplikator und Siegquote, ihre einzige multiplikative Achse ist die Erkennung — dort sitzen Spitzen und Schwanz. Fünf Vorschläge in 6.10, Empfehlung: erst die Legendären, dann tarieren. Nichts geändert. |
 | 2026-09-07 | **Legendäre auf drei je Fraktion (6.11, Owner: „3 reichen, wir behalten die stärksten").** Gemessen (150 Läufe, gepaart, mittlere Skill-Phase): Resonanz +106 % · Doppelentladung +85 % · Sonnenkern +76 % · Hochspannung +40 % · **Donnergott +30 %** · Damaststahl +8 % · Ewige Glut −8 % · **Sonnenzorn −14 %**. Gestrichen sind damit Donnergott (Blitz) und Sonnenzorn (Feuer) samt ihren vier Konstanten, der Spitzen-Lesart des Hitze-Multiplikators und ihren Emblemen. Die Pflanze bekommt drei neue: **Wurzelgeflecht** (jede blühende Karte zählt in jeder Formation ihres Segments mit — Dichte), **Baumreihe** (blühende Karten als positionsfreie Wiederholung — Multiplikator) und **Ewiger Frühling** (vollgrün → alles blüht — Zielbild); Weltenbaum ist gestrichen (Rampe ohne Auszahlung), Mutterbaum in Wurzelgeflecht aufgegangen. Gemessen in der Pflanze-Welt: Wurzelgeflecht **+152 %**, Baumreihe **+614 %**, Ewiger Frühling +10 % — zwei davon stärker als alles bei Feuer und Blitz. Der Median der Pflanze-Welt steht damit bei 210M statt 9,1M: **die Paritätsfrage aus §6.10 ist neu zu stellen**, die nächste Runde misst das Duell mit Legendären für alle drei. Offen benannt: Feuers verbleibende drei sind dünn (Damaststahl +8 %, Ewige Glut −8 %). Gates grün (2318 Tests). |
+| 2026-09-07 | Owner: Sonnenzorn statt Damaststahl, und die neun Legendären auf ein Band. Messfehler in `--mode legendaries` gefunden und behoben (geteilte Wertetabelle, `--table`), vier reglerlose Legendäre bekamen je einen Regler auf der bestehenden Mechanik. Acht von neun liegen jetzt in +58 … +127 % statt +4 … +418 %. Ewiger Frühling erreicht das Band mit seinem Regler nicht und braucht eine Design-Entscheidung. §6.12. |
