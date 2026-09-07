@@ -3574,7 +3574,63 @@ Offen.
 
 ## 6. Pflanze
 
-Offen.
+### 6.1 Richtung und Abgrenzung (gesetzt, Owner 2026-09-06)
+
+**Der Satz der Fraktion:** „Wie sieht mein Deck am Ende aus — und in welcher Ordnung?" Feuer und Blitz lesen den
+Stich, Pflanze liest das Feld.
+
+| | Frage an den Spieler | Wo der Score entsteht |
+| --- | --- | --- |
+| Blitz | Welche eine Karte mache ich tief? | Stapel auf der Siegkarte → Crit und Basis-Score |
+| Feuer | Halte ich die Leiste heiß oder verbrenne ich sie? | Hitze → Multiplikatoren, Schwellen, hohe Kampfwerte |
+| **Pflanze** | **Welche Karten sind grün, und wie stehen sie?** | **grüne Karten in Formationen** |
+
+**Gesetzt:**
+
+1. **Grün bleibt eine Farbe** (Owner: Variante b). Grüne Karten bilden Farbblöcke miteinander, unabhängig von ihrer
+   Ursprungsfarbe. Die Alternative — Grün als Zustand neben der Farbe — ist verworfen.
+2. **Ein vollständig grünes Deck ist das Ziel**, wenn man gezielt darauf spielt, kein Unfall und kein Selbstläufer.
+3. **Wachstum liegt je Karte**, nicht als Deck-Vorrat.
+4. **Drei Zustände:** grau → grün → blühend.
+5. **Kein Direkt-Score.** Pflanzen-Score geht in die Basis, wie der Stapel-Score beim Blitz.
+6. **Trimmen entfällt.** Mit dem Türen-Angebot werden Skills nicht mehr ersetzt; die Klausel an sechs Skills ist tot.
+7. **Kein Skill-Tor.** Das Wachstum läuft, sobald ein Pflanzen-Skill liegt — kein Mono-Gate, kein Skill-Zähler im
+   Tempo. Owner: „es darf nicht sein, dass ich einen grünen Skill nehme und mein Deck ist grün, aber es darf auch
+   nicht vom Glück abhängen oder unzählige grüne Skills verlangen."
+
+**Was die Fraktion bewusst nicht bekommt:** keinen Kartenwert aus Wachstum (der Auto-Sieg bei Wert 11 entfällt —
+hohe Werte gehören Feuer), keine eigene Fraktionsleiste (Hitze und Ladung haben sie), keinen eigenen
+Multiplikator-Stapel, keine Kolonisierung des Gegnerdecks.
+
+### 6.2 Passiv „Wachstum" (Entwurf, Startwerte ungemessen)
+
+**Wachstum je Karte, nur aufwärts. Ein Sieg gibt der Siegkarte +1 Wachstum, dazu +1 je aktiver Formation an ihrer
+Position.** Niederlagen geben nichts.
+
+Der zweite Summand ist der eigentliche Regler (Owner): er misst nicht, *ob* die Karte gewonnen hat, sondern **wie gut
+sie steht**. Eine Karte in zwei Formationen wächst dreimal so schnell wie eine, die allein gewinnt — die
+Aufstellungsphase wird damit zur Wachstumsentscheidung, und die Fraktion hängt ab dem ersten Stich an Formationen,
+ohne dass ein Skill dafür nötig wäre.
+
+| Zustand | Schwelle (Startwert) | Was er bedeutet |
+| --- | --- | --- |
+| grau | – | nichts |
+| **grün** | **30 Wachstum** | die Karte ist grün — Farbe für alle Formationen, die Farbe lesen |
+| **blühend** | **75 Wachstum** | Träger des Scores: ein Sieg mit ihr gibt Basis-Score je grüner Karte in ihrer Formation |
+
+**Warum diese Schwellen.** Über 50 Runden gewinnt eine Position grob 30-mal. Wer nur mitläuft, steht am Laufende
+also gerade an der Grün-Schwelle — vollgrün wird das Deck so nie. Wer seine Karten in Formationen stellt, verdoppelt
+bis verdreifacht das Tempo: grün in der ersten Laufhälfte, blühend im letzten Drittel, und das ganze Deck grün, wenn
+man darauf spielt. Das ist die Rechnung hinter dem Entwurf, **nicht gemessen** — der Regler ist die Schwelle, nicht
+die Rate.
+
+**Grün zahlt über die Formationen, die es schon gibt** (Farbblock, Wiederholung, Treppe), blühend zahlt in die Basis.
+Damit hat Pflanze genau eine Score-Quelle mit einem Regler — das Gegenstück zum Stapel-Score des Blitzes.
+
+**Offen, bis die Sim-Daten da sind (Owner: warten):** ein vollgrünes Deck ist ein 40er-Farbblock. Der heutige Deckel
+(`PLANT_GREEN_FARBBLOCK_CAP` 3) bleibt vorerst stehen; ob er hoch, weg oder umgebaut wird, entscheidet die Messung.
+Zwei Nebenwirkungen von Variante b stehen dabei fest und gehören auf den Zettel: im vollgrünen Deck **stirbt der
+Wechsel** (er braucht Farbwechsel) und **der Farbblock wird trivial** — tragfähig bleiben Wiederholung und Treppe.
 
 ---
 
@@ -3635,3 +3691,4 @@ Offen.
 | 2026-09-06 | **Owner: „so lassen, ist fein"** — die Startwerte des Lichtbogens (0,5 / 1 / 1,5 / 2 % Crit-Chance je Stapel) sind damit gesetzt, kein Regler gedreht. Der Blitz-Platz SK_LIGHTNING_04 ist zu; offen aus der Reihenfolge in 7.26 F bleiben Punkt 3 (Gewitterfront/Entladung zusammenlegen, dann ein freier Blitz-Platz) und das Textpaket. |
 | 2026-09-06 | **Textpaket (7.26 E, Owner: „in einem Rutsch", umgesetzt).** Zehn Stellen in `skills.js`: „Runde" → „Durchlauf" an sieben (Serienschutz Episch, Brandmal, Lauffeuer, Schmiede — „Rundenende" wird „Am Ende eines Durchlaufs" —, Sonnenkern, Ewige Glut, Damaststahl); der einzige Gedankenstrich im Register (Sonnenzorn) aufgelöst; Prozentpunkte dort, wo gegen die 100er-Schwelle gerechnet wird (Weißglut und Sonnenzorn: die Schwelle bleibt ein Niveau „100 % Hitze", der Schritt sind „10 Prozentpunkte"); Glutstahl aus dem Telegrammstil ins Register („Ein Sieg zählt +8 Basis-Score je Punkt Kampfwert über dem Grundwert der Siegkarte"). Überspannung kürzen entfällt — der Skill ist seit 7.28 gestrichen. Blitzableiter Episch behält seine drei Sätze: das wäre ein Mechanikumbau (7.26 F.7), kein Text. Reine Textänderung, keine Kennwerte; `loc:export` neu, Gates grün. Punkt 3 der Reihenfolge (Gewitterfront/Entladung) hat der Owner vertagt — **als Nächstes Pflanze**. |
 | 2026-09-06 | **Owner: auf der Skill-Karte nur Fraktion und Rarität.** Das KONSUMENT-Abzeichen ist aus dem Angebot und aus der Ersetzen-Liste entfernt (`SkillSelect.jsx`, Helfer `isConsumer` und Registerzeile `skill.badge.consumer` mit), die Karte trägt jetzt Fraktions-Badge + Stufe (Legendär bleibt die fünfte Stufe, „Ausgewählt" ist ein Zustand, kein Chip). Das Schlüsselwort `consume` bleibt auf Schmelzpunkt: es erklärt den Begriff weiter in der Build-Detailansicht und im Glossar — dort steht „Konsument" also noch, ebenso in der Aufklapp-Liste des Feuer-Passivs. Owner-Frage, falls das auch weg soll. Reine Anzeige, keine Mechanik; Gates grün. |
+| 2026-09-06 | **Pflanze, Richtung gesetzt (6.1) und Passiv-Entwurf (6.2).** Owner: Grün bleibt eine Farbe (Variante b), vollgrünes Deck ist das Ziel eines gezielten Builds, Wachstum je Karte, drei Zustände grau/grün/blühend, kein Direkt-Score, Trimmen entfällt (keine Skill-Ersetzung mehr), kein Skill-Tor. Passiv: **+1 Wachstum je Sieg, dazu +1 je aktiver Formation an der Siegposition** (Owner-Idee — die Aufstellung wird zur Wachstumsentscheidung, nicht der Sieg allein); Schwellen als Startwerte grün 30 / blühend 75, blühend trägt den Basis-Score je grüner Karte in seiner Formation. Deckel-Frage auf grüne Farbblöcke bis zu den Sim-Daten vertagt; notiert, dass im vollgrünen Deck der Wechsel stirbt und der Farbblock trivial wird. Nichts umgesetzt, nichts gemessen. |
