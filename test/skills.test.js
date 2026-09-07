@@ -34,7 +34,8 @@ describe("skills — Blitz-Registry (exp skill rework)", () => {
     expect(desc(BLITZ_TIERS.blitzschlag, "critEvery")).toBe(true);
     expect(desc(BLITZ_TIERS.vorentladung, "minStreak")).toBe(true); // §7.18
     expect(asc(BLITZ_TIERS.faenger, "value")).toBe(true);           // §7.18: ohne Schwelle, der Wert steigt
-    expect(desc(BLITZ_TIERS.ueberspannung, "perOver")).toBe(true);  // §7.24: Überschuss zu Ladung, der Schritt je Ladung sinkt
+    expect(asc(BLITZ_TIERS.lichtbogen, "critPerStack")).toBe(true); // §7.28: Ionisierung zu Crit-Chance, der Satz je Stapel steigt
+    expect(BLITZ_TIERS.ueberspannung).toBeUndefined();               // §7.28: Überspannung gestrichen
     expect(asc(BLITZ_TIERS.ionenfeld, "value")).toBe(true);         // §7.19
     expect(asc(BLITZ_TIERS.ionenfeld, "tricks")).toBe(true);        // §7.18
     expect(desc(BLITZ_TIERS.serienschutz, "frac")).toBe(true);

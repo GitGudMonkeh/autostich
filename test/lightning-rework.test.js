@@ -131,17 +131,11 @@ describe("Blitz-Modul — Ladung, Leiste, Niederlage (reine Übergänge)", () =>
     expect(chargeGainOnWin(light(), [L.ABLEITER], {}, { isCrit: true }).gain).toBe(1);                          // 1. Crit: noch nichts extra
     expect(chargeGainOnWin(light({ critCount: 1 }), [L.ABLEITER], {}, { isCrit: true }).gain).toBe(2);          // 2. Crit: +1
     expect(chargeGainOnWin(light(), [L.ABLEITER], { [L.ABLEITER]: 2 }, { isCrit: true }).gain).toBe(2);        // Sehr selten: jeder Crit
-    // §7.24 Überspannung: je perOver× über dem Deckel +1 Ladung, darunter nichts; Episch dazu je chancePer Crit-Chance über 100 %.
-    const cap = C.CRIT_MULT_CAP, uv = [L.UEBERSPANNUNG];
-    expect(chargeGainOnWin(light(), uv, {}, { isCrit: true, critMultRaw: cap + 2 * T.ueberspannung[0].perOver }).gain).toBe(3);
-    expect(chargeGainOnWin(light(), uv, {}, { isCrit: true, critMultRaw: cap + T.ueberspannung[0].perOver - 0.5 }).gain).toBe(1);
-    expect(chargeGainOnWin(light(), uv, {}, { isCrit: true, critMultRaw: cap - 1 }).gain).toBe(1);
-    expect(chargeGainOnWin(light(), uv, {}, { isCrit: true }).gain).toBe(1); // Vorschau ohne Multiplikator: nur das Passiv
-    expect(chargeGainOnWin(light(), uv, { [L.UEBERSPANNUNG]: 3 }, { isCrit: true, critMultRaw: cap + 3, rawCrit: 1.6 }).gain).toBe(1 + 3 + 2);
-    expect(chargeGainOnWin(light(), uv, { [L.UEBERSPANNUNG]: 2 }, { isCrit: true, critMultRaw: cap + 3, rawCrit: 1.6 }).gain).toBe(1 + 1); // Sehr selten: je 2×, kein Chance-Extra
-    expect(chargeGainOnWin(light(), uv, { [L.UEBERSPANNUNG]: 3 }, { isCrit: false, critMultRaw: cap + 3, rawCrit: 1.6 }).gain).toBe(0); // ohne Crit nichts
-    expect(T.ueberspannung.every((r) => r.value == null && r.perOver > 0)).toBe(true);
-    expect(T.ueberspannung[3].chancePer).toBe(0.25);
+    // §7.28: der Überschuss über dem Deckel gibt KEINE Ladung mehr (Überspannung gestrichen) — die Ladung kennt nur
+    // noch Crit, Blitzableiter und Ladungsserie Episch. Der Lichtbogen auf ihrem Platz zahlt auf die Crit-Chance.
+    expect(T.ueberspannung).toBeUndefined(); expect(L.UEBERSPANNUNG).toBeUndefined();
+    expect(chargeGainOnWin(light(), [L.LICHTBOGEN], {}, { isCrit: true }).gain).toBe(1);
+    expect(chargeGainOnWin(light(), [L.LICHTBOGEN], { [L.LICHTBOGEN]: 3 }, { isCrit: false }).gain).toBe(0);
   });
   it("chargeGainOnWin ohne Crit (§7.18): Blitzableiter Episch +1 je Sieg ohne Crit, darunter nichts; Ladungsserie Episch ab Serie 8", () => {
     expect(chargeGainOnWin(light(), [L.ABLEITER], {}, { isCrit: false }).gain).toBe(0);
@@ -277,22 +271,24 @@ describe("Blitz — Engine-Integration (resolveTrick)", () => {
     expect(win.lightning.stackBank).toBe(0);
     expect(win.lightYield).toBeCloseTo(bank, 6);
   });
-  it("Überspannung (§7.24): der Überschuss des Crits über dem Deckel wird Ladung, Episch auch die Crit-Chance über 100 %; kein Dauerwert mehr", () => {
-    // Vorentladung Normal ab Serie 5 +0,1× je Serienpunkt: Serie 100 nach dem Sieg → 2,25 + 10 = 12,25× roh, gedeckelt 8 → Überschuss 4,25.
-    const excess = C.CRIT_BASE_MULT + 100 * T.vorentladung[0].multPerStreak - C.CRIT_MULT_CAP;
-    expect(excess).toBeGreaterThan(T.ueberspannung[0].perOver);
-    const over = resolveTrick(scen(12, 0, { skills: [L.UEBERSPANNUNG, L.VORENTLADUNG], winStreak: 99, lightning: light() }), zero);
-    expect(over.lastTrick.isCrit).toBe(true); expect(over.lastTrick.critMultiplier).toBe(C.CRIT_MULT_CAP);
-    expect(over.lightning.charge).toBe(1 + Math.floor(excess / T.ueberspannung[0].perOver));
-    // Episch: je 1× über dem Deckel und je 25 % Crit-Chance über 100 % (Gewitterfront-Rampe 1,5 im Substate → roh 0,08 + 1,5).
-    const epic = resolveTrick(scen(12, 0, { skills: [L.UEBERSPANNUNG, L.VORENTLADUNG], skillTiers: { [L.UEBERSPANNUNG]: 3 }, winStreak: 99, lightning: light({ stormCritBonus: 1.5 }) }), zero);
-    const rawCrit = 2 * C.LIGHTNING_CRIT_PER_SKILL + 1.5;
-    const excessE = excess + (rawCrit - 1) * 100 * C.OVERCRIT_MULT_PER_PP; // die Systemregel hebt den rohen Multiplikator noch leicht
-    expect(epic.lightning.charge).toBe(1 + Math.floor(excessE / T.ueberspannung[3].perOver) + Math.floor((rawCrit - 1) / T.ueberspannung[3].chancePer));
-    const under = resolveTrick(scen(12, 0, { skills: [L.UEBERSPANNUNG], lightning: light() }), zero); // Crit unter dem Deckel: nur das Passiv
-    expect(under.lastTrick.isCrit).toBe(true); expect(under.lightning.charge).toBe(1);
-    const bar = resolveTrick(scen(12, 0, { skills: [L.UEBERSPANNUNG], lightning: light({ charge: 9 }) }), zero);
-    expect(bar.lightning.bars).toBe(1); expect(bar.deck[1].ionStacks).toBe(1); expect(bar.deck[1].value).toBe(12 + C.ION_VALUE_PER_BAR); // der Dauerwert ist jetzt Passiv, nicht Überspannung
+  it("Lichtbogen (§7.28): die Stapel der gespielten Karte geben Crit-Chance auf diesen Stich, im Modul und in der Engine", () => {
+    const card = { id: "X0", ionStacks: 4 };
+    const base = C.LIGHTNING_CRIT_PER_SKILL; // ein gehaltener Blitz-Skill
+    expect(lightningCritChance(light(), [L.LICHTBOGEN], {}, 0, card)).toBeCloseTo(base + 4 * T.lichtbogen[0].critPerStack, 9);
+    expect(lightningCritChance(light(), [L.LICHTBOGEN], { [L.LICHTBOGEN]: 3 }, 0, card)).toBeCloseTo(base + 4 * T.lichtbogen[3].critPerStack, 9);
+    expect(lightningCritChance(light(), [L.LICHTBOGEN], {}, 0, null)).toBeCloseTo(base, 9);   // ohne Karte nur das Passiv
+    expect(lightningCritChance(light(), [L.KETTENBLITZ], {}, 0, card)).toBeCloseTo(base, 9);  // ohne den Skill nichts
+    expect(lightningCritChance(light(), [L.LICHTBOGEN], {}, 0, { id: "X1" })).toBeCloseTo(base, 9); // Karte ohne Stapel
+    // Kurzschluss zählt die Stapel ab seiner Schwelle doppelt — hier dieselbe Zählung wie beim Stapel-Score.
+    const deep = { id: "X0", ionStacks: T.kurzschluss[0].minStacks };
+    expect(lightningCritChance(light(), [L.LICHTBOGEN, L.KURZSCHLUSS], {}, 0, deep))
+      .toBeCloseTo(2 * base + 2 * deep.ionStacks * T.lichtbogen[0].critPerStack, 9);
+    // Engine: die Chance des Stichs trägt die Stapel der gespielten Karte (Position 0).
+    const deck = constDeck(12).map((c, i) => (i === 0 ? { ...c, ionStacks: 10 } : c));
+    const s = resolveTrick(scen(12, 0, { skills: [L.LICHTBOGEN], deck, lightning: light() }), noCrit);
+    expect(s.lastTrick.critChance).toBeCloseTo(base + 10 * T.lichtbogen[0].critPerStack, 6);
+    const ohne = resolveTrick(scen(12, 0, { skills: [L.LICHTBOGEN], lightning: light() }), noCrit); // Karte ohne Stapel
+    expect(ohne.lastTrick.critChance).toBeCloseTo(base, 6);
   });
   it("Reststrom Selten + Blitzableiter Sehr selten: volle Leiste → Boden 3 + 1 zurück", () => {
     const s = resolveTrick(scen(12, 0, { skills: [L.ABLEITER, L.RESTSTROM], skillTiers: { [L.ABLEITER]: 2, [L.RESTSTROM]: 1 }, lightning: light({ charge: 8 }) }), zero);

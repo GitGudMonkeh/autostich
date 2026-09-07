@@ -684,7 +684,8 @@ entfernt. Crit-Chance über 100 % gibt einen sehr kleinen Crit-Mult-Bonus (Syste
 | Spannungsstau | Glättung (seit 7.18 auf den Crit-Multiplikator) | Sieg ohne Crit +0,05× Crit-Multiplikator für den nächsten Crit, der Crit leert | +0,075× | +0,1× | +0,15×; Crit halbiert statt leert |
 | Vorentladung (neu, 7.18) | Serie zu Crit | ab Serie 5 gibt jeder Serienpunkt +0,1× Crit-Multiplikator auf den Stich | ab 4 | ab 3 | ab 2 |
 | ~~Überschlag~~ | gestrichen (7.19; die Systemregel „Überschuss über 100 %" in groß, im gierigen Build −15 %) | – | – | – | – |
-| Überspannung | Überschuss zu Ladung (seit 7.24; 7.19–7.23 Dauerwert je Leiste, „schadet"; davor Ionisierung zu Ladung) | ein Crit über dem Deckel entlädt den Überschuss: je 4× Crit-Multiplikator über 8× +1 Ladung | je 3× | je 2× | je 1×; dazu je 25 % Crit-Chance über 100 % +1 Ladung |
+| Lichtbogen (7.28, Platz der Überspannung) | Ionisierung zu Crit-Chance — die Richtung, die vorher niemand bediente | jeder Stapel der gespielten Karte gibt +0,5 % Crit-Chance auf den Stich | +1 % | +1,5 % | +2 % |
+| ~~Überspannung~~ | gestrichen (7.28, Owner: „vom Design nicht"; 7.24–7.27 Überschuss über dem Deckel zu Ladung, davor Dauerwert je Leiste und Ionisierung zu Ladung) | – | – | – | – |
 | Blitzschlag | Tiefen-Motor (Leiter seit 7.18) | jeder 4. Crit ionisiert die Siegkarte | jeder 3. | jeder 2. | jeder 2., zwei Stapel |
 | ~~Dauerstrom~~ | gestrichen (7.18, in Blitzableiter aufgegangen) | – | – | – | – |
 | Serienschutz | Schutz | Niederlage ab 70 % Ladung hält die Serie, kostet 70 % | 50 % | 40 % | 30 %; einmal je Runde gratis |
@@ -3509,6 +3510,24 @@ eigene Auszahlung haben? Drei Wege, sich schließen gegenseitig nicht aus:
 Nach dem Ja wird gebaut, der Satz gesweept, gierig zweimal gemessen (neue Skills starten mit niedriger Haltequote)
 und die Parität im Duell geprüft. Wachpunkt bleibt der Blitz-Schwanz (7.25: gierig p95 803M).
 
+#### E. Entscheid und Umsetzung (Owner, 2026-09-06)
+
+**Lichtbogen** ersetzt Überspannung auf SK_LIGHTNING_04 (Emblem umbenannt, Blitz bleibt bei 14). Der Owner hat aus
+der Liste Vorschlag 1 gewählt, aber den Arbeitsnamen verworfen: „Zündschnur klingt zu sehr nach Feuer-Skill."
+Gesetzt: **„Jeder Stapel auf der gespielten Karte gibt +X % Crit-Chance auf diesen Stich"**, Leiter
+**0,5 / 1 / 1,5 / 2 %** je Stapel — Startwerte, **nicht gemessen**.
+
+**Technische Entscheide.** `lightningCritChance` bekommt die gespielte Karte als fünftes Argument; die Engine
+reicht `pCardR` hinein, also die Lesesicht **mit** Resonanz-Summe. Gezählt wird über `effectiveStacks` — Kurzschluss
+verdoppelt die Stapel hier genauso wie beim Stapel-Score und beim Crit-Multiplikator; eine eigene Zählung wäre die
+dritte Lesart derselben Größe. Mit Überspannung fällt der letzte Leser des ungedeckelten Multiplikators weg:
+`critMultRaw` ist aus der Engine raus, `chargeGainOnWin` verliert `critMultRaw`/`rawCrit`, und was über dem
+8×-Deckel liegt, verfällt wieder. Glossar „Kaskade" nennt jetzt den Lichtbogen statt der Überspannung.
+
+**Offen für die Messrunde** (auf Ansage des Owners, nicht vorher): Satz je Stapel, Wechselwirkung Lichtbogen ×
+Kurzschluss × Kettenblitz (Tiefe zahlt jetzt dreifach: Score, Multiplikator, Chance), und ob der Blitz-Schwanz
+dadurch weiter läuft (7.25: gierig p95 803M).
+
 ## 5. Eis
 
 Offen.
@@ -3571,3 +3590,4 @@ Offen.
 | 2026-09-06 | **Owner: „feste Breite, Variante a"** (7.27, umgesetzt): Brandschneise ersetzt Feuerwalze auf SK_FIRE_08 (Emblem umbenannt, Feuer bleibt bei 14) — die 3 / 4 / 5 / 6 Siege mit dem größten Vorsprung eines Durchlaufs schlagen die Schneise, im nächsten Durchlauf zählt ein Sieg auf diesen Positionen ×2,5; Episch hält sie zwei Durchläufe. Erster normaler Skill auf der Achse „eigene Reihenfolge" und der erste Feuer-Skill ohne Hitze-Tor. Zustand im Hitze-Substate (`laneWins` je Durchlauf, `lanes` = die zwei jüngsten Schnitte), Schnitt in `fireCycleEnd` (größte Vorsprünge, bei Gleichstand die kleinere Position), `schneiseMult` als Faktor im Feuer-Stack; `fireValueBonus` verliert den Feuerwalze-Zweig, die Hitzeleiste ihr Abzeichen. Satz nach Sweep im Duell: ×1,5 / 2 / 2,5 / 3 → Floor 0,91 / 0,96 / **1,00** / 1,03× (Breite 5–8 statt Faktor zahlt schlechter), gesetzt ×2,5 — Feuer mono 12,97M, Blitz mono 13,0M. Gemessen und offen benannt: die Feuerwalze war im Fraktions-Build kein toter Skill (Dauerbonus bei 70 % Siegquote), Feuer mono fiel ohne sie von 14,2M auf 11,8M; das Niveau bleibt unter 7.25, das Band ist neu zentriert (2,64M / 5,90M). Gierig zweimal: Brandschneise in 11 % / 15 % gehalten, Ablation −5 % / 0 % — Füller, wie ein neuer Skill startet. Gates grün. |
 | 2026-09-06 | Owner: „wir müssen mit Crit über 100 % umgehen — eventuell 0,01 Crit-Multiplikator je Prozentpunkt" und „Überspannung mag ich vom Design nicht, eher etwas auf den Ionisierungen der Karten" (7.28, Befund und Vorschläge, **nichts umgesetzt**). Antwort auf die Frage: kartenabhängig Crit aus Ionisierung gibt es nur als Systemregel (+0,15× Crit-Multiplikator je Stapel der Siegkarte), als Donnergott (0,25×) und indirekt über Kurzschluss (doppelte Stapel ab Schwelle) — die Richtung **Stapel → Crit-Chance** ist frei. Gemessen (neue Sonde `sim/probes/overcrit-engine.mjs`): Crit-Chance ≥ 100 % gibt es erst spät (Blitz mono 0 % der Stiche bis Runde 30, 3 % in 31–40, 15 % in 41–50), dort mit Ø 70 pp Überschuss, aber 27 % der Crits stehen dann schon am 8×-Deckel. Sweep der Regel im Duell (0,002 / 0,005 / 0,01 / 0,02): Blitz mono 12,97 / 12,97 / 12,98 / 13,02M, Floor überall 1,00× — **der fünffache Satz bewegt den Median um 0,1 %**, weil der Deckel abschneidet, was die Regel drauflegt. Eigene Erwartung damit korrigiert: „Überschuss → Multiplikator" ist keine Rückkopplung, sondern eine Sackgasse, solange der Deckel bei 8 steht. Fünf Vorschläge für SK_LIGHTNING_04 (Zündschnur, Tiefenschlag, Überladung, Ladungsbogen, Ionenlast), Empfehlung Zündschnur plus Satz 0,01; die Frage „soll der Überschuss eine eigene Währung bekommen (Stapel/Ladung)?" liegt beim Owner. |
 | 2026-09-06 | **Owner-Entscheide (7.28):** (1) die Crit-Chance ist bei 100 % gedeckelt, jeder Prozentpunkt darüber wird **+0,01× Crit-Multiplikator** — `OVERCRIT_MULT_PER_PP` 0,002 → 0,01, Systemregel in §1 und Glossar nachgezogen, Wächter in `lightning-rework.test.js` auf die neue Invariante umgeschrieben (der Überschuss aus 100 Prozentpunkten bleibt unter einem Achtel des Deckels). (2) **Zündschnur ersetzt Überspannung** auf SK_LIGHTNING_04, aber unter anderem Namen — „Zündschnur" klingt nach Feuer; Namenswahl beim Owner, Mechanik und Startwerte stehen (jeder Stapel der gespielten Karte +0,5 / 1 / 1,5 / 2 % Crit-Chance auf den Stich). (3) Owner zum Vorgehen: **erst Design, dann Startwert, dann messen — und nur auf Ansage.** Die Runden 7.23–7.28 haben zu viel Sim-Zeit verbraucht. |
+| 2026-09-06 | **Lichtbogen ersetzt Überspannung** auf SK_LIGHTNING_04 (7.28 E, umgesetzt; Emblem umbenannt, Blitz bleibt bei 14): jeder Stapel der gespielten Karte gibt +0,5 / 1 / 1,5 / 2 % Crit-Chance auf den Stich — die Richtung „Ionisierung → Crit-Chance", die vorher weder Regel noch Skill bediente. Name vom Owner gewählt (Arbeitsname „Zündschnur" klang nach Feuer). `lightningCritChance` liest die gespielte Karte (mit Resonanz-Summe, Zählung über `effectiveStacks` — Kurzschluss verdoppelt hier wie überall); mit Überspannung fällt der letzte Leser des ungedeckelten Crit-Multiplikators weg (`critMultRaw` raus, Überschuss über dem Deckel verfällt). Startwerte **nicht gemessen** — Owner: erst Design, dann Startwert, gemessen wird auf Ansage. Gates grün. |

@@ -433,12 +433,12 @@ export function resolveTrick(state, rng) {
   // Karten-Kontext für die konditionalen Generatoren: Kartenwert / Kartenfarbe / #aktive Formationen / Farbfokus (roles).
   const critFamCtx = { winValue: pValue, suit: eSuit, formCount: activeFormationCount(posForm), focusSuits: (roles && roles.P_COLORFOCUS) || [], alliance }; // #289: grün-bewusste Suit + Farballianz für Farbfokus
   const rawCrit = critChanceRawFor(perks, wctx) + familyCritChanceRaw(familyTiers, critFamCtx)
-                  + lightningCritChance(lightning, skills, skillTiers, winStreak + 1) // exp: Passiv je Blitz-Skill + Rampen + Ladungsserie
+                  + lightningCritChance(lightning, skills, skillTiers, winStreak + 1, pCardR) // exp: Passiv je Blitz-Skill + Rampen + Ladungsserie + Lichtbogen (§7.28: je Stapel der gespielten Karte, pCardR = mit Resonanz-Summe)
                   + (anchorType === "crit" ? (aParam("crit") || 0) : 0); // Kritanker (§4.2, Stärke = Stufe)
   // (§7.25: Durchschlag — der Crit auf einer Niederlage — ist gestrichen; auf dem Platz steht Resonanz, oben bei pCardR.)
 
   let gained = 0;
-  let isCrit = false, critChance = 0, critMultiplier = C.CRIT_BASE_MULT, critMultRaw = C.CRIT_BASE_MULT, scoreBeforeCrit = 0, critBonus = 0;
+  let isCrit = false, critChance = 0, critMultiplier = C.CRIT_BASE_MULT, scoreBeforeCrit = 0, critBonus = 0;
   // Eis-Neudesign: der Gletscher-Bruch profitiert vom VOLLEN Sieg-Stack, WENN die Gletscher-Karte ihren Stich gewinnt
   // (Serie × Perk/Familie × Formation × Nachhall × Kern × Sonnenzorn × Architekt × Crit). Bei Niederlage bleibt es ×1
   // (Basis-Burst). So hat der Rest des Spiels Hebel auf den Gletscher-Score, statt dass nur Gletscher-Skills zählen.
@@ -650,8 +650,8 @@ export function resolveTrick(state, rng) {
         && critFillsBar(lightning, skills, skillTiers, { streak: serieStreak })) critMultiplier *= 2;
     // BACKSTOP (Crit-Bändigung): der fertige Crit-Multiplikator wird hart gedeckelt — bewusst NACH allen Additionen,
     // damit keine Quelle (auch keine offene Rampe) ihn umgehen kann. Der Owner hält den Deckel (docs/skill-rework.md §1).
-    // §7.24 Überspannung liest den ungedeckelten Wert: der Überschuss über dem Deckel wird Ladung (chargeGainOnWin unten).
-    critMultRaw = critMultiplier;
+    // (§7.28: den ungedeckelten Wert liest niemand mehr — Überspannung, die den Überschuss über dem Deckel in Ladung
+    // wandelte, ist gestrichen; was über dem Deckel liegt, verfällt wieder.)
     critMultiplier = Math.min(critMultiplier, C.CRIT_MULT_CAP);
     isCrit = rollCrit(critChance, forceCrit, rngAtOr(cycle, "crit", pos)) && !reducedRepeat; // #205 Glückslandschaft: fester Wurf je (cycle,pos); forceCrit = Henker; reducedRepeat = Zeitsegment III
     // Score (globale Formel): additive Boni — inkl. Crit-only-Flats (Blitzableiter +50) — fließen in die BASIS
@@ -835,7 +835,7 @@ export function resolveTrick(state, rng) {
     // Episch — mit fortgeschriebenen Zählern; Blitzschlag (jeder N. Crit ionisiert die Siegkarte); Spannungsstau. Die volle
     // Leiste zündet NACH der Verzweigung (unten), einmal je Stich. Kein Selbstwachstum ionisierter Siegkarten mehr (Lesart A).
     if (lightning && lightning.active) {
-      const { gain, next } = chargeGainOnWin(lightning, skills, skillTiers, { isCrit, streak: serieStreak, card: pCard, critMultRaw, rawCrit });
+      const { gain, next } = chargeGainOnWin(lightning, skills, skillTiers, { isCrit, streak: serieStreak });
       lightning = { ...next, charge: (next.charge || 0) + gain };
       if (isCrit) {
         const bs = blitzschlagStacks(lightning, skills, skillTiers);

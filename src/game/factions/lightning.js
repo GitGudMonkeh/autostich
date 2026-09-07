@@ -21,7 +21,7 @@ import { SKILL_DEFS, TIER_EPIC, activeLightningCount, isLegendarySkill } from ".
 // Skill-IDs der Fraktion — lesbare Namen für Modul und Engine. (SK_LIGHTNING_08 Statische Aufladung und SK_LIGHTNING_16
 // Dauerstrom: gestrichen, §7.18.)
 export const L = Object.freeze({
-  ABLEITER: "SK_LIGHTNING_01", IONENFELD: "SK_LIGHTNING_02", KETTENBLITZ: "SK_LIGHTNING_03", UEBERSPANNUNG: "SK_LIGHTNING_04",
+  ABLEITER: "SK_LIGHTNING_01", IONENFELD: "SK_LIGHTNING_02", KETTENBLITZ: "SK_LIGHTNING_03", LICHTBOGEN: "SK_LIGHTNING_04", // 04: Lichtbogen ersetzt Überspannung (§7.28)
   RESTSTROM: "SK_LIGHTNING_05", GEWITTERFRONT: "SK_LIGHTNING_06", LADUNGSSERIE: "SK_LIGHTNING_07", KURZSCHLUSS: "SK_LIGHTNING_09",
   ENTLADUNG: "SK_LIGHTNING_10", BLITZFAENGER: "SK_LIGHTNING_11", VORENTLADUNG: "SK_LIGHTNING_12", SPANNUNGSSTAU: "SK_LIGHTNING_13",
   BLITZSCHLAG: "SK_LIGHTNING_15", SERIENSCHUTZ: "SK_LIGHTNING_17", // SK_LIGHTNING_14 Überschlag: gestrichen (§7.19)
@@ -83,14 +83,19 @@ export function lightParam(skills, skillTiers, id, key) {
   return row ? row[key] : undefined;
 }
 
-// Crit-Chance-Beitrag des Blitz-Archetyps (ungeklemmt): Passiv je Skill + Gewitterfront-Rampe + Ladungsserie (je
-// Serienpunkt der Serie NACH diesem Sieg). 0, solange der Archetyp inaktiv ist. (Der Spannungsstau zahlt seit §7.18 auf
-// den Crit-Multiplikator, nicht mehr auf die Chance.)
-export function lightningCritChance(lightning, skills, skillTiers, streak = 0) {
+/* Crit-Chance-Beitrag des Blitz-Archetyps (ungeklemmt): Passiv je Skill + Gewitterfront-Rampe + Ladungsserie (je
+   Serienpunkt der Serie NACH diesem Sieg) + Lichtbogen (§7.28: je wirksamem Stapel der gespielten Karte — die
+   Richtung „Ionisierung → Crit-Chance", die es vorher nicht gab; `card` ist die Lesesicht der Karte, also mit
+   Resonanz-Summe, und `effectiveStacks` heißt: Kurzschluss verdoppelt hier genauso wie beim Stapel-Score).
+   0, solange der Archetyp inaktiv ist. (Der Spannungsstau zahlt seit §7.18 auf den Crit-Multiplikator, nicht auf die
+   Chance.) */
+export function lightningCritChance(lightning, skills, skillTiers, streak = 0, card = null) {
   if (!lightning || !lightning.active) return 0;
   let c = activeLightningCount(skills) * C.LIGHTNING_CRIT_PER_SKILL + (lightning.stormCritBonus || 0);
   const perStreak = lightParam(skills, skillTiers, L.LADUNGSSERIE, "critPerStreak");
   if (perStreak) c += perStreak * Math.max(0, streak || 0);
+  const perStack = lightParam(skills, skillTiers, L.LICHTBOGEN, "critPerStack");
+  if (perStack && card) c += perStack * effectiveStacks(card, skills, skillTiers);
   return c;
 }
 
@@ -151,13 +156,12 @@ export function ionCritMultFor(card, skills = [], skillTiers = {}) {
 }
 
 /* Ladungsgewinn eines gewonnenen Stichs und die fortgeschriebenen Zähler. `streak` = Serie NACH diesem Sieg.
-   Crit: +1 Passiv, Blitzableiter (jeder N. Crit +1), Überspannung (§7.24: der Überschuss des Crits über dem Deckel
-   wird Ladung — je perOver× über CRIT_MULT_CAP +1; Episch dazu je chancePer Crit-Chance über 100 % +1; liest den
-   UNGEDECKELTEN Multiplikator `critMultRaw` und die rohe Crit-Chance `rawCrit`). Sieg ohne Crit: Blitzableiter Episch
-   (+1). Immer: Ladungsserie Episch (ab Serie 8 +1). Deterministisch und ohne Nebenwirkung — die Engine ruft es für die
-   Vorschau (füllt ein Crit die Leiste? critFillsBar, dort ohne Überspannung: der Multiplikator steht erst danach fest)
-   und dann für den echten Stich. */
-export function chargeGainOnWin(lightning, skills, skillTiers, { isCrit, streak = 0, critMultRaw = 0, rawCrit = 0 } = {}) {
+   Crit: +1 Passiv, Blitzableiter (jeder N. Crit +1). Sieg ohne Crit: Blitzableiter Episch (+1). Immer: Ladungsserie
+   Episch (ab Serie 8 +1). Deterministisch und ohne Nebenwirkung — die Engine ruft es für die Vorschau (füllt ein Crit
+   die Leiste? critFillsBar) und dann für den echten Stich. (§7.28: Überspannung, die den Überschuss über dem Deckel
+   und über 100 % Crit-Chance in Ladung wandelte, ist gestrichen — der Überschuss der Chance zahlt jetzt allein über
+   die Systemregel auf den Multiplikator, ihr Platz trägt den Lichtbogen.) */
+export function chargeGainOnWin(lightning, skills, skillTiers, { isCrit, streak = 0 } = {}) {
   let gain = 0;
   const next = { ...lightning };
   if (isCrit) {
@@ -165,10 +169,6 @@ export function chargeGainOnWin(lightning, skills, skillTiers, { isCrit, streak 
     gain += 1;
     const every = lightParam(skills, skillTiers, L.ABLEITER, "critEvery");
     if (every && next.critCount % every === 0) gain += 1;
-    const perOver = lightParam(skills, skillTiers, L.UEBERSPANNUNG, "perOver");
-    if (perOver) gain += Math.floor(Math.max(0, (critMultRaw || 0) - C.CRIT_MULT_CAP) / perOver + 1e-9);
-    const chancePer = lightParam(skills, skillTiers, L.UEBERSPANNUNG, "chancePer");
-    if (chancePer) gain += Math.floor(Math.max(0, (rawCrit || 0) - 1) / chancePer + 1e-9);
   } else {
     gain += lightParam(skills, skillTiers, L.ABLEITER, "noCritCharge") || 0;
   }
