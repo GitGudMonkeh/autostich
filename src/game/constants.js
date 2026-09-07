@@ -394,7 +394,8 @@ export const WURZELGEFLECHT_FACTOR_SCALE = envNum("SIM_WURZELGEFLECHT_FACTOR_SCA
 //  kurzen Läufe sind der Großteil seiner Wirkung. Der Faktor-Anteil greift weicher.)
 export const EWIGER_FRUEHLING_GREEN_FRAC = envNum("SIM_EWIGER_FRUEHLING_GREEN_FRAC", 1); // Ewiger Frühling (L): Anteil grüner Karten, ab dem alle Karten blühen (1 = vollständig grün)
 // (§6.12: der Regler bleibt auf 1. Gemessen 1/0,85/0,6/0,35/0,25 → +4/+10/+17/+37/+34 % — er sättigt unter dem Band
-//  und kostet dafür das Zielbild. Ewiger Frühling braucht eine Design-Entscheidung, keine Zahl — Owner.)
+//  und kostet dafür das Zielbild. Der Auslöser war nie das Problem, die Auszahlung war es — §6.13, Owner.)
+export const EWIGER_FRUEHLING_BLOOM_VALUE = envNum("SIM_EWIGER_FRUEHLING_BLOOM_VALUE", 3); // Ewiger Frühling (L, §6.13, Owner): blühende Karten kämpfen mit so viel mehr Wert. Der EINZIGE Wert-Hebel der Fraktion — die 15 Skills sind Wachstum, Basis-Score und Erkennung. Startwert ungemessen (Kartenwerte 1..10; Schmiede/Glutstahl geben +3 dauerhaft)
 
 // Geist (Rekord-Vergleich): Score-Stützstelle alle N Stiche [TUNING]
 export const GHOST_STEP = 13;

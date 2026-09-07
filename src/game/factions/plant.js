@@ -220,6 +220,12 @@ function bluetenlese(skills, skillTiers, { posForm, cardAt }) {
   return { flat: score, gains: step ? [...seen].map((id) => ({ id, amount: step })) : [] };
 }
 
+/* Ewiger Frühling (L, §6.13, Owner): blühende Karten kämpfen mit +EWIGER_FRUEHLING_BLOOM_VALUE Wert. Der einzige
+   Wert-Hebel der Fraktion — ihre 15 Skills sind Wachstum, Basis-Score und Erkennung, keiner macht eine Karte stärker.
+   Er hängt am Zustand, nicht am vollgrünen Feld: er zahlt ab der ersten blühenden Karte. 0 ohne den Skill. */
+export const plantValueBonus = (skills, card) =>
+  (hasEwigerFruehling(skills) && card && card.bloom ? C.EWIGER_FRUEHLING_BLOOM_VALUE : 0);
+
 /* Sieg: Wachstum (Passiv, Aussaat, Ranken, Blütenlese), die Zustandswechsel und der Basis-Score (Passiv-Blüte,
    Score-Skills). `pos` = Position der Siegkarte in der Ziehreihenfolge, `order` = playerOrder, `posForm` = ihr
    Formations-Eintrag. Reihenfolge: erst wachsen, dann werten — der Sieg, der eine Karte über eine Schwelle hebt,

@@ -18,7 +18,7 @@ import { syncHeatMax, fireValueBonus, fireOnWin, fireOnLoss, heatMult, verbrennu
 // exp skill rework: die Pflanze-Mechanik (Passiv „Wachstum", 15 Skills, 4 Legendäre) lebt im Fraktionsmodul; die
 // Engine ruft ihre Übergänge (Sieg, Niederlage, Durchlaufende) und reicht das Bündel { skillTiers, growth } an die
 // Formations-Engine weiter, deren Erkennung vier Pflanze-Hebel und zwei Legendäre ändern.
-import { plantOnWin, plantOnLoss, plantOnGap, plantParam, P as PLANT } from "./factions/plant.js";
+import { plantOnWin, plantOnLoss, plantOnGap, plantParam, plantValueBonus, P as PLANT } from "./factions/plant.js";
 // (#267: import aus stats.js entfernt — die Stat-Phase/Faktoren sind weg.)
 import { computeFormations, positionHasFormation, activeFormationCount, summarizeFormations, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
 import { perkLegendaryChance, anchorAt } from "./shop.js";
@@ -361,8 +361,10 @@ export function resolveTrick(state, rng) {
   const architectValueEff = verdichtung ? 0 : architectValue;
   // #370 Wochen-Mods (nur Ranked): „Starke Karten" hebt jede Spielerkarte, „Stärkere Gegner" jede Gegnerkarte um +mag.
   const wmCardBonus = weekModMag(state.weekMods, "cardValue");
+  // Pflanze (§6.13, Ewiger Frühling): blühende Karten kämpfen stärker — der einzige Wert-Hebel der Fraktion.
+  const plantValue = plantValueBonus(skills, pCard);
   const wmEnemyBonus = weekModMag(state.weekMods, "enemyValue");
-  const pValue = effectivePlayerValue(pCard.value, perks, ctx) + familyValueBonus + relayBonus + fireValue + blitzValueBonus + anchorPowerBonus + eQuickshotValue + architectValueEff + glacierBuff + wmCardBonus;
+  const pValue = effectivePlayerValue(pCard.value, perks, ctx) + familyValueBonus + relayBonus + fireValue + blitzValueBonus + anchorPowerBonus + eQuickshotValue + architectValueEff + glacierBuff + wmCardBonus + plantValue;
   // #226 Großmeister: Gegner-Aufschlag = flacher oppValue + mitwachsender Ramp (+1 Wert alle oppRampEvery Durchläufe),
   // additiv VOR den Debuffs (Frostbiss/Brand kontern ihn → gewollt). Meister/Basis (difficulty=null) → 0, byte-identisch.
   const rampMod = (difficulty && difficulty.oppRampEvery) ? Math.floor(cycle / difficulty.oppRampEvery) : 0;

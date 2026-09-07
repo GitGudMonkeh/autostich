@@ -294,7 +294,7 @@ export const SKILL_DEFS = {
   SK_PLANT_L03: { id: "SK_PLANT_L03", name: "Baumreihe", archetype: "plant", legendary: true, keywords: ["bloom", "formation"],
     desc: `Blühende Karten bilden eine positionsfreie Wiederholung, egal wo sie liegen; sie zahlt ${pct(C.BAUMREIHE_FACTOR_SCALE)} % des Wiederholungs-Bonus. Jede darf zugleich in einer anderen Formation zählen.` },
   SK_PLANT_L04: { id: "SK_PLANT_L04", name: "Ewiger Frühling", archetype: "plant", legendary: true, keywords: ["green", "bloom"],
-    desc: "Ist das Feld vollständig grün, sind alle deine Karten blühend." },
+    desc: `Blühende Karten kämpfen mit +${C.EWIGER_FRUEHLING_BLOOM_VALUE} Wert. Ist das Feld vollständig grün, sind alle deine Karten blühend.` },
 
 };
 

@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import * as C from "../src/game/constants.js";
 import { SKILL_DEFS, PFLANZE_TIERS as PT, ARCHETYPE_ORDER, SKILL_TIER_COUNT } from "../src/game/skills.js";
-import { P, plantStage, greenCount, applyGrowth, growthOnWin, setzlingsbeetGains } from "../src/game/factions/plant.js";
+import { P, plantStage, greenCount, applyGrowth, growthOnWin, setzlingsbeetGains, plantValueBonus } from "../src/game/factions/plant.js";
 import { resolveTrick } from "../src/game/engine.js";
 import { initialState, reducer } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
@@ -340,6 +340,24 @@ describe("Pflanze — die vier Legendären (§6.5)", () => {
     const s = resolveTrick(scen({ deck, skills: [P.EWIGER_FRUEHLING], growth: { X1: G - 1 } }), noCrit);
     expect(greenCount(s.deck)).toBe(N);
     expect(s.deck.every((c) => c.bloom)).toBe(true);
+  });
+  it("Ewiger Frühling (§6.13): blühende Karten kämpfen stärker — der einzige Wert-Hebel der Fraktion", () => {
+    // Reiner Helfer: nur blühend und nur mit dem Skill.
+    const bloomCard = { id: "X1", bloom: true }, greenCard = { id: "X1", green: true };
+    expect(plantValueBonus([P.EWIGER_FRUEHLING], bloomCard)).toBe(C.EWIGER_FRUEHLING_BLOOM_VALUE);
+    expect(plantValueBonus([P.EWIGER_FRUEHLING], greenCard)).toBe(0);   // grün reicht nicht
+    expect(plantValueBonus([P.BAUMREIHE], bloomCard)).toBe(0);          // ohne den Skill nichts
+    expect(plantValueBonus([], null)).toBe(0);
+    // In der Engine: dieselbe blühende Karte gewinnt den Stich, den sie ohne den Skill verliert.
+    const deck = deckOf((i) => (i === 1 ? { bloom: true, green: true } : {}));
+    const bonus = C.EWIGER_FRUEHLING_BLOOM_VALUE;
+    const over = { deck, oppDeck: constDeck(5 + bonus - 1), growth: { X1: B } };
+    const with_ = resolveTrick(scen({ ...over, skills: [P.EWIGER_FRUEHLING] }), noCrit);
+    expect(with_.lastTrick.pValue).toBe(5 + bonus);
+    expect(with_.lastTrick.result).toBe("win");
+    const without = resolveTrick(scen({ ...over, skills: [P.BAUMREIHE] }), noCrit);
+    expect(without.lastTrick.pValue).toBe(5);
+    expect(without.lastTrick.result).not.toBe("win");
   });
 });
 

@@ -4229,6 +4229,32 @@ eine blühende Karte betritt. Vorschlag, wenn gewünscht: das Zielbild behalten 
 
 ---
 
+### 6.13 Ewiger Frühling bekommt eine Auszahlung (2026-09-07, Owner) — umgesetzt, ungemessen
+
+**Owner:** „ewiger Frühling noch einen bonus auf blühende Karten."
+
+**Blühende Karten kämpfen mit +3 Wert.** Der zweite Effekt hängt am Zustand, nicht am vollgrünen Feld — er zahlt ab
+der ersten blühenden Karte, das Zielbild bleibt der zweite Effekt und unverändert.
+
+> „Blühende Karten kämpfen mit +3 Wert. Ist das Feld vollständig grün, sind alle deine Karten blühend."
+
+**Warum Wert und nicht Score.** Die Fraktion hat **keinen einzigen Wert-Hebel**: alle 15 Skills sind Wachstum,
+Basis-Score oder Formationserkennung, keiner macht eine Karte stärker. Deshalb war Ewiger Frühling in §6.12 nicht
+zu retten — sein Auslöser war nie das Problem, seine Auszahlung war es: „alles blüht" ist ein Zustand, und die
+Auszahlung des Zustands hing komplett an den Formationen, die eine blühende Karte betritt. Der Wert-Bonus gibt der
+Pflanze über ihr Spitzen-Legendäres die Achse, die ihr fehlt — Siegquote statt noch eines Score-Kanals. Er verstößt
+gegen keine der Regeln aus §6.1: kein Direkt-Score, kein Deckel, kein Verstärker, kein Eingriff in die
+Aufstellungsordnung.
+
+**Verworfen:** Basis-Score je blühender Karte (doppelt den Passiv-Kanal `PLANT_BLOOM_SCORE_PER_GREEN` — zwei Begriffe
+für dieselbe Sache); mehr Wachstum für blühende Karten (über Blühend gibt es keinen Zustand mehr, der Bonus wäre tot).
+
+**Startwert +3 ist ungemessen** (Owner-Regel: erst Design, dann Startwert, gemessen wird auf Ansage). Die Einordnung:
+Kartenwerte laufen 1..10, Schmiede und Glutstahl geben +3 dauerhaften Wert, Blitzfänger +1..+4 auf ionisierte Karten.
+`SIM_EWIGER_FRUEHLING_BLOOM_VALUE` ist der Sweep-Haken.
+
+---
+
 ## Änderungsprotokoll
 
 
@@ -4303,3 +4329,4 @@ eine blühende Karte betritt. Vorschlag, wenn gewünscht: das Zielbild behalten 
 | 2026-09-07 | **Pflanze gemessen (6.10, auf Ansage; Legendäre außen vor — sie bekommen ein Redesign).** Duell mit allen drei Fraktionen (200 Läufe): Feuer 7,75M · Blitz 7,43M · **Pflanze 4,90M** (0,63× / 0,66×), p90 9,72M gegen 18,8M/37,4M, Siegquote 53,3 % gegen 65,3 %; Split aller drei 6,19M über dem Mix 3,58M. Neue Sonde `sim/probes/plant-field.mjs`: das Feld ergrünt ab Durchlauf 11, blühend ab 16–21, am Ende Median 38 von 40 blühenden Karten, längster grüner Farbblock 12, Deck-als-Reihe nur in 13 % der Läufe (**der Grün-Farbblock-Deckel bindet kaum — die offene Frage aus §6.2 ist beantwortet**). Gierig mit allen drei in den Türen (explore 900, gierig 120, Median 21,8M): nur Blütenlese ist „stark" (+6,0M), die vier schlechtesten Picks des ganzen Feldes sind Pflanze-Wachstums-Skills (Zäher Halm −4,8M, Setzlingsbeet −3,8M, Ranken −3,0M, Spalier −2,9M) — die Signatur einer Bekenntnis-Fraktion. Gierig in der Pflanze-Welt: Jahresringe +17 %, Spalier +12 %, Wildwuchs +8 %, Episch-Spitzen Wildwuchs 4,13 / Rankgerüst 3,35 / Spalier 2,18, p95 265M. Regler-Sweep: **der Passiv-Satz ist kein Regler** (Vierfaches = +24 %), „+2 Wachstum je Formation" bewegt mehr (+10 %). Befund: der Pflanze fehlen Multiplikator und Siegquote, ihre einzige multiplikative Achse ist die Erkennung — dort sitzen Spitzen und Schwanz. Fünf Vorschläge in 6.10, Empfehlung: erst die Legendären, dann tarieren. Nichts geändert. |
 | 2026-09-07 | **Legendäre auf drei je Fraktion (6.11, Owner: „3 reichen, wir behalten die stärksten").** Gemessen (150 Läufe, gepaart, mittlere Skill-Phase): Resonanz +106 % · Doppelentladung +85 % · Sonnenkern +76 % · Hochspannung +40 % · **Donnergott +30 %** · Damaststahl +8 % · Ewige Glut −8 % · **Sonnenzorn −14 %**. Gestrichen sind damit Donnergott (Blitz) und Sonnenzorn (Feuer) samt ihren vier Konstanten, der Spitzen-Lesart des Hitze-Multiplikators und ihren Emblemen. Die Pflanze bekommt drei neue: **Wurzelgeflecht** (jede blühende Karte zählt in jeder Formation ihres Segments mit — Dichte), **Baumreihe** (blühende Karten als positionsfreie Wiederholung — Multiplikator) und **Ewiger Frühling** (vollgrün → alles blüht — Zielbild); Weltenbaum ist gestrichen (Rampe ohne Auszahlung), Mutterbaum in Wurzelgeflecht aufgegangen. Gemessen in der Pflanze-Welt: Wurzelgeflecht **+152 %**, Baumreihe **+614 %**, Ewiger Frühling +10 % — zwei davon stärker als alles bei Feuer und Blitz. Der Median der Pflanze-Welt steht damit bei 210M statt 9,1M: **die Paritätsfrage aus §6.10 ist neu zu stellen**, die nächste Runde misst das Duell mit Legendären für alle drei. Offen benannt: Feuers verbleibende drei sind dünn (Damaststahl +8 %, Ewige Glut −8 %). Gates grün (2318 Tests). |
 | 2026-09-07 | Owner: Sonnenzorn statt Damaststahl, und die neun Legendären auf ein Band. Messfehler in `--mode legendaries` gefunden und behoben (geteilte Wertetabelle, `--table`), vier reglerlose Legendäre bekamen je einen Regler auf der bestehenden Mechanik. Acht von neun liegen jetzt in +58 … +127 % statt +4 … +418 %. Ewiger Frühling erreicht das Band mit seinem Regler nicht und braucht eine Design-Entscheidung. §6.12. |
+| 2026-09-07 | Owner: Ewiger Frühling bekommt einen Bonus auf blühende Karten. Umgesetzt als +3 Kampfwert je blühender Karte — der einzige Wert-Hebel der Fraktion, ab der ersten blühenden Karte wirksam; das Zielbild bleibt der zweite Effekt. Startwert ungemessen. §6.13. |
