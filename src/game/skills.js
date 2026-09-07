@@ -12,7 +12,10 @@ import { ANFRIEREN_WIN as G_ANFRIEREN_WIN, ANFRIEREN_FORM as G_ANFRIEREN_FORM, S
 // Deutsche Zahlformatierung (1.08 → „1,08") — driftgefährdete Beschreibungszahlen aus den Konstanten interpolieren.
 const de = (x) => String(x).replace(".", ",");
 const pct = (x) => Math.round(x * 100);                                 // Anteil → Prozent (0,25 → 25)
-const de1 = (n) => ({ 1: "eine", 2: "zwei", 3: "drei", 4: "vier", 5: "fünf", 6: "sechs", 7: "sieben" })[n] || String(n); // kleine Anzahl als Wort (Register: „zwei fremde Karten", „fünffach")
+// Kleine Anzahl als Wort (Register: „zwei fremde Karten", „fünffach"). Exportiert, weil auch die Passiv-Texte in der
+// UI sie brauchen — eine Quelle für die Zahlwörter, sonst driften Skilltext und Passiv auseinander.
+export const numWord = (n) => ({ 1: "eine", 2: "zwei", 3: "drei", 4: "vier", 5: "fünf", 6: "sechs", 7: "sieben" })[n] || String(n);
+const de1 = numWord;
 
 // (§6.1: „Trimmen" ist mit dem Türen-Angebot gestorben — Skills werden nicht mehr ersetzt, die Klausel an sechs
 //  Pflanze-Skills hatte keinen Auslöser mehr. Die Konstanten TRIM_STEP/TRIM_CAP sind mit ihr gegangen.)

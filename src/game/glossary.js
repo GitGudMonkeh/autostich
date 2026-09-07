@@ -1,5 +1,6 @@
 import * as C from "./constants.js";
 import { TIER_META } from "./rarity.js";                 // Raritäts-Namen: EINE Quelle (kein „Ungewöhnlich" mehr)
+import { numWord } from "./skills.js";                   // Zahlwörter aus derselben Quelle wie die Skilltexte
 // Eis-Neudesign: die Gletscher-Tuning-Zahlen leben in glacier.js (Single Source, Sim-tunebar) — direkt ziehen, damit
 // die Eis-Glossartexte driftfrei mitlaufen. Kein Import-Zyklus (glacier.js → architect.js, keins importiert glossary.js).
 import { WIN_MASS as G_WIN_MASS, EWIGER_FROST as G_EWIGER_FROST, THRESHOLDS as G_THRESHOLDS,
@@ -270,7 +271,7 @@ export const GLOSSARY = {
     text: `Eine grüne Karte hat eine neue Farbe: grüne Karten bilden miteinander Farbblöcke, egal welche Farbe sie vorher hatten. Grün ist Farbe, keine Kraft — Kartenwert gibt es dafür nicht, der Score kommt aus den Formationen.`,
     match: ["Grün", "grüne", "grünen", "grüner", "grünem"] },
   bloom: { category: "frak", group: "plant", label: "Blühend", icon: "❀", color: CLR.plant,
-    text: `Die dritte Stufe einer Karte (ab ${C.PLANT_BLOOM_THRESHOLD} Wachstum). Ein Sieg mit einer blühenden Karte gibt +${C.PLANT_BLOOM_SCORE_PER_GREEN} Basis-Score je grüner Karte in ihren Formationen — die Score-Quelle der Fraktion. Blühende Karten sind auch grün. Wo grüne Karten gezählt werden, wiegt eine blühende ${C.PLANT_BLOOM_WEIGHT} davon, je ${C.PLANT_BLOOM_WEIGHT_PER_GROWTH} weitere Wachstumspunkte eine mehr.`,
+    text: `Die dritte Stufe einer Karte (ab ${C.PLANT_BLOOM_THRESHOLD} Wachstum). Ein Sieg mit einer blühenden Karte gibt +${C.PLANT_BLOOM_SCORE_PER_GREEN} Basis-Score je grüner Karte in ihren Formationen — die Score-Quelle der Fraktion. Blühende Karten sind auch grün. Wo grüne Karten gezählt werden, zahlt eine blühende ${numWord(C.PLANT_BLOOM_WEIGHT)}fach; je ${C.PLANT_BLOOM_WEIGHT_PER_GROWTH} weitere Wachstumspunkte zahlt sie einmal mehr.`,
     match: ["blühend", "blühende", "blühenden", "Blüte"] },
   overgrowth: { category: "frak", group: "plant", label: "Überwucherung", icon: "⚘", color: CLR.plant,
     text: `Ein Hebel der Pflanze: ist genug vom Feld grün, entstehen rein grüne Formationen mit einer Karte weniger. Die Hebel ändern, was als Formation zählt, statt Score zu addieren.`,
