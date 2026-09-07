@@ -2,7 +2,12 @@
 
 **Status: beschlossen** (Owner, 2026-09-07). Dieses Dokument ist die Vorgabe für die Umsetzung, nicht
 eine Ideensammlung. Alle Zahlen sind **Startwerte für die erste Fassung** und über die Sim tunebar —
-sie sind gesetzt genug zum Bauen, nicht gesetzt genug zum Verteidigen.
+gesetzt genug zum Bauen, nicht gesetzt genug zum Verteidigen.
+
+**Umgesetzt wird auf `exp`** (Owner, 2026-09-07). Zwei der fünf Flächen brauchen die Türen und die
+Skill-Stufen aus dem Skill-Rework; auf `dev` gibt es beides nicht. §6 sagt, was wovon abhängt.
+
+Mockups der Screens: <https://claude.ai/code/artifact/b34fd2b7-9f7d-4f40-bf6d-a45187fe9c10>
 
 Sprache Deutsch, weil Ökonomie-Gefühl und Spielertexte Produktsprache sind und der Owner hier
 mitschreibt — bewusste Abweichung von der Engineering-Sprache (`AGENTS.md`), wie bei
@@ -12,16 +17,17 @@ mitschreibt — bewusste Abweichung von der Engineering-Sprache (`AGENTS.md`), w
 
 ## 1. Was gebaut wird
 
-Eine **laufinterne Währung**. Der Spieler verdient Münzen dadurch, dass er Stiche gewinnt, und gibt
-sie in fünf Situationen aus — immer dann, wenn in der laufenden Phase **knapp etwas fehlt**: ein
-passendes Angebot, ein Tausch, ein Bauplatz, eine Fraktion, eine Stufe.
+Eine **laufinterne Währung**. Der Spieler verdient Münzen dadurch, dass er Stiche gewinnt, und gibt sie
+in fünf Situationen aus — immer dann, wenn in der laufenden Phase **knapp etwas fehlt**: ein passendes
+Angebot, ein Tausch, ein Bauplatz, eine Fraktion, eine Stufe.
 
-Zwei Eigenschaften halten das zusammen:
+Drei Eigenschaften halten das zusammen:
 
 - **Die Einnahme wächst mit der Siegzahl, nicht mit dem Score.** Der Score wächst über den Lauf um
   Faktor hundert, die Siegzahl ist bei 40 je Durchlauf hart gedeckelt. Die Ökonomie kann deshalb nicht
   explodieren.
-- **Die Deckel sitzen je Phase, nicht je Lauf.** Sparen bringt Reichweite, nicht Höhe.
+- **Die Preistreppen laufen je Phase.** Sparen bringt Reichweite, nicht Höhe.
+- **Kein Kauf kostet einen Spielzug.** Man zahlt Münzen, nie die Skill- oder Perk-Wahl.
 
 Der Shop kommt **nicht** zurück (#229). Es gibt keinen Ort, den man besucht — jeder Kauf sitzt an der
 Stelle, an der die Entscheidung ohnehin fällt.
@@ -42,14 +48,15 @@ Stelle, an der die Entscheidung ohnehin fällt.
 | 40 | 5 |
 
 - Ausgezahlt **am Ende jedes Durchlaufs**.
-- Über einen Lauf ergibt das grob **130 Münzen** (Annahme: ~24 Siege früh, ~32 in der Mitte, ~40 spät).
-  Das ist die Größenordnung, gegen die alle Preise in §3 gesetzt sind. **Ändert sich die Formel, müssen
-  die Preise mitwandern.**
-- **Kein Perfektionsbonus.** 40 von 40 zahlt 5, wie die Formel sagt.
+- Über einen Lauf grob **130 Münzen** (Annahme: ~24 Siege früh, ~32 in der Mitte, ~40 spät). Das ist
+  die Größenordnung, gegen die alle Preise in §3 gesetzt sind. **Ändert sich die Formel, müssen die
+  Preise mitwandern.**
+- **Kein Perfektionsbonus** (Owner): 40 von 40 zahlt 5, wie die Formel sagt.
+- **Kein Startbetrag** (Owner): der erste Durchlauf zahlt nichts, die erste Skill-Phase hat leere Kasse.
 
-**Warum Schwelle 20:** Sie erzeugt die Spreizung. Die Siegzahl selbst steigt über den Lauf nur um
-Faktor ~1,7 (24 → 40); durch die Schwelle wird daraus Faktor 5 bei den Münzen. Damit ist früh knapp
-und spät reichlich, ohne dass die Kopplung an den Score zurückkommt.
+**Warum Schwelle 20:** Sie erzeugt die Spreizung. Die Siegzahl steigt über den Lauf nur um Faktor ~1,7
+(24 → 40); durch die Schwelle wird daraus Faktor 5 bei den Münzen. Früh knapp, spät reichlich, ohne
+dass die Kopplung an den Score zurückkommt.
 
 **Naht:** `cycleWins` existiert bereits in `engine.js` (Durchlauf-Sieg-Bilanz, eingeführt für
 Zinseszins #203) und wird je Durchlauf zurückgesetzt. Die Auszahlung hängt an derselben Stelle, an der
@@ -61,73 +68,91 @@ der Durchlauf abgerechnet wird.
 
 Gemeinsame Regeln:
 
-- Jeder Kauf sitzt **an einem Bildschirm, den es schon gibt** — kein eigener Kaufbildschirm, kein
-  Platz im Entscheidungsplan.
-- Preistreppen laufen **je Phase** und werden **in der nächsten Phase auf den Basispreis
+- Jeder Kauf sitzt **an einem Bildschirm, den es schon gibt** — kein eigener Kaufbildschirm, kein Platz
+  im Entscheidungsplan.
+- Preistreppen laufen **je Phase** und werden **in der nächsten Phase auf den Grundpreis
   zurückgesetzt**.
+- **Der Preis steht am Knopf, nicht in einem Tooltip.** Auf dem Handy gibt es keine Tooltips, und ein
+  Kauf, dessen Preis man erst durch Antippen erfährt, ist ein Fehlkauf.
 - Wer die Münzen nicht hat, sieht den Kauf, kann ihn aber nicht auslösen.
 
 ---
 
-### 3.1 Neuwurf kaufen
+### 3.1 Neuwurf
 
 **Wirkung:** ein zusätzlicher Neuwurf des aktuellen Angebots.
-**Wo:** am Angebot, neben dem vorhandenen Neuwurf-Knopf — Skill-, Perk- und Architekt-Angebot.
-**Regel:** beliebig oft je Phase, aber jeder weitere kostet mehr. Reset in der nächsten Phase.
+**Wo:** derselbe Neuwurf-Knopf, der schon da ist — Skill-, Perk- und Architekt-Angebot. Solange gratis
+Neuwürfe übrig sind, zeigt er die Anzahl; danach den Preis. Kein zweiter Knopf.
+**Regel:** beliebig oft je Phase, jeder weitere teurer. Reset in der nächsten Phase.
 **Preis [TUNING]:** 3 → 6 → 12 → … (Verdopplung).
 
-**Legendär-Neuwurf.** Enthält das Angebot ein Legendäres (Skill oder Perk), ist der Neuwurf teurer und
-garantiert **wieder ein Legendäres** im neuen Angebot.
+#### Legendär-Neuwurf
 
-- Das neue Legendäre ist **nicht dasselbe wie das gerade angezeigte**. Der Ausschluss gilt nur gegen
-  das aktuelle Angebot — beim zweiten Neuwurf kann das aus dem ersten wiederkommen.
-- **Kein Deckel.** Wer genug Münzen hat und so oft würfeln will, bis das passende Legendäre kommt,
-  darf das; die Kosten sind der Regler.
-- **Preis [TUNING]:** offen, siehe §7.
+Enthält das Angebot ein Legendäres (Skill oder Perk):
+
+- **Grundpreis 15** [TUNING], Treppe ebenso verdoppelnd: 15 → 30 → 60 → …
+- Der neue Wurf enthält **garantiert wieder ein Legendäres**.
+- Das neue ist **nicht dasselbe wie das gerade angezeigte**. Der Ausschluss gilt **nur gegen das
+  aktuelle Angebot** — beim zweiten Neuwurf kann das aus dem ersten wiederkommen. Kein Gedächtnis über
+  die Kette.
+- **Kein Deckel.** Wer genug Münzen hat und so oft würfeln will, bis das passende Legendäre kommt, darf
+  das; die Kosten sind der Regler.
+- **Ein Zähler, zwei Grundpreise:** die Treppe zählt die Neuwürfe *der Phase*, der Grundpreis kommt aus
+  der Art. Wer erst normal (3) und dann legendär würfelt, zahlt beim zweiten Kauf 30, nicht 15 — sonst
+  wäre Mischen billiger als Durchhalten.
+- **Optik:** derselbe Knopf, aber **voller goldener Rahmen** statt des halbtransparenten der normalen
+  Neuwurf-Sorte, plus Glow. Voll-Gold ist im Screen noch frei — es führt keine neue Farbe ein und liest
+  sich sofort als Sonderfall.
 
 **Naht:** die drei Pools `rerollsPerk` / `rerollsArch` / `rerollsSkill` im Reducer (je Lauf, kein
 Nachschub). Der Kauf legt zusätzliche Neuwürfe auf denselben Weg, ohne die vorhandenen Pools
-anzufassen. Das Legendär-Angebot läuft über `buildSkillOffer` (`skills.js`) bzw. den Perk-Zug.
+anzufassen. Angebot über `buildSkillOffer` (`skills.js`) bzw. den Perk-Zug.
 
 ---
 
 ### 3.2 Energie in der Aufstellphase
 
 **Wirkung:** ein zusätzlicher Tausch in der laufenden Aufstellphase.
-**Wo:** in der Aufstellphase, neben der Energie-Anzeige.
-**Regel:** mehrfach kaufbar, jeder weitere teurer. Gekaufte Energie **verfällt mit der Phase** — sie
-wird nicht angespart. Reset in der nächsten Aufstellphase.
-**Preis [TUNING]:** 3 → 6 → 12 → …
+**Wo:** an der Energie-Anzeige, die schon in der Phase steht — ein **+** daran, mit dem Preis daneben.
+**Regel:** höchstens **+2 je Aufstellphase**, jeder weitere teurer, gekaufte Energie **verfällt mit der
+Phase**. Reset in der nächsten Aufstellphase.
+**Preis [TUNING]:** 3 → 6.
 
-**Naht:** `formationEnergy` im Reducer, Basis aus `formationEnergyBase` / `C.FORMATION_ENERGY`. Der
-Kauf erhöht die laufende Energie, nicht die Basis.
+**Naht:** `formationEnergy` im Reducer, Basis aus `formationEnergyBase` / `C.FORMATION_ENERGY`. Der Kauf
+erhöht die laufende Energie, nicht die Basis.
 
 ---
 
-### 3.3 Eine Fraktion an die Tür rufen
+### 3.3 Fokus rufen
 
-**Wirkung:** das **nächste** Skill-Angebot zeigt garantiert mindestens ein Symbol der gewählten
-Fraktion.
-**Wo:** an der Tür, vor der Wahl.
-**Regel:** einmal je Skill-Phase. Wirkt nur auf das nächste Angebot, ruft **ein Symbol, keine ganze
-Tür** — die übrigen Symbole bleiben gewürfelt.
+**Wirkung:** Zur **nächsten Skill-Phase** kommt eine **dritte Tür** mit **drei Skills der gewählten
+Fraktion**. Die zwei gewürfelten Türen bleiben — die gerufene ist eine zusätzliche Wahl, keine
+Ersetzung.
+**Wo:** **unter den Türen**, auf der Türstufe. Vier Fraktions-Chips; ein Tap wählt und bezahlt.
+**Regel:** einmal je Skill-Phase. **Der Ruf wartet auf die nächste Skill-Phase und verfällt nicht** —
+egal wie viele Perk-, Aufstell- und Architekt-Runden dazwischen liegen (Owner, 2026-09-07).
 **Preis [TUNING]:** 5, fest.
 
-> **Abhängigkeit:** Diese Fläche setzt die Zwei-Türen-Auswahl mit Fraktionssymbolen voraus. Die gibt
-> es auf `dev` **nicht** — sie kommt mit dem Skill-Rework (`docs/skill-rework.md`, Branch `exp`). Heute
-> liefert `buildSkillOffer` eine flache Skill-Liste ohne Türen. **Vor dem Skill-Rework nicht baubar.**
+Die einzige Ausgabe, die erst später wirkt. Deshalb muss die Beschriftung „nächste **Skill-Phase**"
+sagen, nicht „nächste Runde": im Vier-Block-Plan liegen vier Durchläufe dazwischen.
+
+**Offen:** Zusammenspiel mit dem Startfokus (`docs/skill-rework.md` §1) — naheliegend wäre, dass der
+Ruf auf die Fokus-Fraktion weniger kostet. Entscheidbar erst, wenn der Fokus steht.
+
+> **Abhängigkeit:** setzt die Zwei-Türen-Auswahl mit Fraktionssymbolen voraus (`state.skillDoors`,
+> `onChooseDoor`, `atDoors` in `SkillSelect.jsx` auf `exp`). Auf `dev` gibt es das nicht.
 
 ---
 
 ### 3.4 Baufeld-Zellen
 
 **Wirkung:** hebt den Baufeld-Deckel um 2 Zellen, dauerhaft für den restlichen Lauf.
-**Wo:** in der Architekt-Phase.
+**Wo:** in der Architekt-Phase, an der Deckel-Anzeige.
 **Regel:** **genau zweimal je Lauf**, danach nicht mehr kaufbar.
 **Preis [TUNING]:** 20 für den ersten Kauf, 40 für den zweiten.
 
-Bewusst schmerzhaft: der zweite Kauf kostet rund ein Drittel des Laufeinkommens. Es ist die einzige
-Fläche mit dauerhafter Wirkung, deshalb der harte Deckel.
+Die einzige Ausgabe mit dauerhafter Wirkung und die einzige mit einem Vorrat, der sich leert — deshalb
+zeigt sie zwei Punkte, wie viel vom Lauf noch übrig ist. Die anderen Käufe brauchen so etwas nicht.
 
 **Naht:** `architect.maxCover` im Reducer (Basis `ARCH_MAX_COVER`, heute 24). Der Kauf hebt `maxCover`,
 wie es der Bauhütten-Pick heute schon tut.
@@ -137,18 +162,26 @@ wie es der Bauhütten-Pick heute schon tut.
 ### 3.5 Skill aufwerten
 
 **Wirkung:** hebt einen gehaltenen Skill um **eine** Stufe.
-**Wo:** in der Skill-Phase, als **eigene Wahl neben der Skill-Auswahl** — nicht an der Tür.
-**Kosten:** nur Münzen. **Kein Verzicht auf die Skill-Wahl** — man kann aufwerten *und* einen neuen
-Skill nehmen.
+**Wo:** in der Skill-Phase, **im Angebots-Screen** (dort, wo man die drei Skills der geöffneten Tür
+sieht) — als eigene Aktion neben Neuwurf und Ablehnen, in **eigener Zeile**: auf 390 px passen drei
+Knöpfe nicht nebeneinander, und der Kauf ist eine andere Art Handlung als die Phasen-Aktionen. Der Knopf
+trägt „ab 12", damit man vorher weiß, ob es sich lohnt hineinzugehen. **Nicht an der Tür.**
+**Kosten:** nur Münzen. **Kein Verzicht auf die Skill-Wahl** (Owner, 2026-09-07 — ersetzt die frühere
+Verzicht-plus-Preis-Regel).
 
 **Ablauf:**
 
-1. Der Spieler wählt „Aufwerten".
-2. Er sieht **seine gehaltenen Skills**, je Skill die **nächste Stufe** und **was sie bringt**.
+1. Der Spieler wählt „Skill aufwerten".
+2. Er sieht **seine gehaltenen Skills**, je Skill die **nächste Stufe** und **was sie bringt** — mit dem
+   alten Wert durchgestrichen und dem neuen hervorgehoben. Skills auf der höchsten Stufe stehen
+   ausgegraut mit „Höchste Stufe".
 3. Er wählt einen aus — oder **bricht ab**, wenn ihm keine Stufe gefällt. Der Abbruch ist folgenlos.
+4. Nach einer Aufwertung bleibt er im selben Bildschirm: der Skill steht sofort wieder da, mit dem
+   Preis seiner *nächsten* Stufe.
 
-**Regel:** mehrfach möglich, auch mehrfach auf demselben Skill (Normal → Selten → Sehr selten →
-Episch). Jeder Schritt kostet den Preis seiner **Zielstufe**.
+**Regel:** **mehrere Aufwertungen je Phase**, so lange die Münzen reichen (Owner, 2026-09-07). Auch
+mehrfach auf demselben Skill (Normal → Selten → Sehr selten → Episch). Jeder Schritt kostet den Preis
+seiner **Zielstufe**, nicht der Reihenfolge.
 
 **Preis [TUNING], gestaffelt nach Zielrarität:**
 
@@ -158,74 +191,84 @@ Episch). Jeder Schritt kostet den Preis seiner **Zielstufe**.
 | Sehr selten | 25 |
 | Episch | 40 |
 
-Ein Skill von Normal ganz auf Episch kostet damit 12 + 25 + 40 = **77**, also über die Hälfte des
+Ein Skill von Normal ganz auf Episch kostet 12 + 25 + 40 = **77**, also über die Hälfte des
 Laufeinkommens. Die beabsichtigte Wahl: **mehrere Skills auf Selten/Sehr selten heben, oder wenige auf
-Episch, wenn man spart.**
+Episch, wenn man spart.** Ein natürlicher Deckel wirkt ohne eigene Regel: man kann nicht mehr Skills
+aufwerten, als man hält.
 
-Ein natürlicher Deckel wirkt ohne eigene Regel: **man kann nicht mehr Skills aufwerten, als man hält.**
-
-> **Abhängigkeit:** Diese Fläche setzt die vierstufigen Skills voraus (Normal / Selten / Sehr selten /
-> Episch). Die gibt es auf `dev` **nicht** — Skills tragen dort keine Stufe. Sie kommen mit dem
-> Skill-Rework (`docs/skill-rework.md`, Branch `exp`). **Vor dem Skill-Rework nicht baubar.**
+> **Abhängigkeit:** setzt die vierstufigen Skills voraus (Normal / Selten / Sehr selten / Episch). Auf
+> `dev` tragen Skills keine Stufe. Kommt mit dem Skill-Rework.
 
 ---
 
 ## 4. Anzeige
 
-- **Kontostand immer sichtbar**, klein, in der Statusleiste (`StatusBar.jsx`).
+- **Kontostand immer sichtbar**, in der Statusleiste (`StatusBar.jsx`), ganz rechts als eigene Zelle:
+  Münzsymbol plus Zahl, kein Label. **Feste Breite für drei Stellen** — der Kontostand kann dreistellig
+  werden (Owner), und die Leiste darf beim Hochzählen nicht springen. Mobil sind Labels dort ohnehin
+  über `hidden sm:inline` weg.
 - Jeder Kaufknopf zeigt **seinen aktuellen Preis** — bei den Treppen also den nächsten, nicht den
-  Basispreis.
-- Die Auszahlung am Ende eines Durchlaufs soll sichtbar sein (Anzahl Siege → Münzen).
+  Grundpreis.
+- Die Auszahlung am Ende eines Durchlaufs soll sichtbar sein (Siege → Münzen).
 - Alle Texte über die i18n-Kataloge (`src/i18n/de.js`, `src/i18n/en.js`), keine hart kodierten Strings.
+  Nach Textänderungen `npm run loc:export` — sonst schlagen die Katalog-Tests fehl.
 
 ---
 
-## 5. Was heute baubar ist
+## 5. Die Screens
 
-| Fläche | Baubar auf `dev`? | Warum |
-| --- | --- | --- |
-| Einnahme (§2) | **ja** | `cycleWins` existiert |
-| Neuwurf (§3.1) | **ja** | Reroll-Pools existieren |
-| Energie (§3.2) | **ja** | `formationEnergy` existiert |
-| Baufeld (§3.4) | **ja** | `maxCover` existiert |
-| Fraktion rufen (§3.3) | **nein** | braucht die Türen aus dem Skill-Rework |
-| Skill aufwerten (§3.5) | **nein** | braucht die Skill-Stufen aus dem Skill-Rework |
-| Legendär-Neuwurf (§3.1) | teilweise | legendäre Perks gibt es; legendäre Skills im Angebot hängen am Rework-Stand |
+Vier Bildschirme sind betroffen; die Mockups zeigen sie in dieser Reihenfolge (Link oben).
 
-**Empfohlene Reihenfolge:** Einnahme + Anzeige zuerst, dann Neuwurf, Energie, Baufeld. Die beiden
-Rework-abhängigen Flächen folgen, wenn der Skill-Rework integriert ist.
+| Screen | Was dazukommt |
+| --- | --- |
+| **Türstufe** | Unter den zwei Türen der Block „Fokus rufen · 5" mit vier Fraktions-Chips und einer Zeile, was er bewirkt. |
+| **Türstufe mit gerufener Tür** | Die gerufene Tür steht **unter** den zwei gewürfelten, über volle Breite, im Fraktionsglow, mit „Gerufen"-Marke. Über die Breite statt als dritte Spalte: bei drei Karten nebeneinander wären es je ~115 px, und die gerufene sähe aus wie eine von dreien statt wie die, für die bezahlt wurde. |
+| **Angebot der Tür** | Aufwerten-Knopf in eigener Zeile unter Neuwurf/Ablehnen. Die drei Skills stehen auf **einer** Seite (keine Fraktions-Navi, kein Pager — das ist der exp-Stand). |
+| **Aufwertphase** | Neuer Bildschirm. Je Skill: Fraktion, Name, Preis rechts; darunter der Stufenwechsel als Chip-Paar; darunter der Effekt mit altem Wert durchgestrichen. Fuß: „Zurück zur Skill-Wahl". |
 
 ---
 
-## 6. Nicht in diesem Umfang
+## 6. Was wovon abhängt
+
+| Fläche | Voraussetzung |
+| --- | --- |
+| Einnahme (§2) | `cycleWins` — vorhanden |
+| Neuwurf (§3.1) | Reroll-Pools — vorhanden |
+| Legendär-Neuwurf | legendäre Perks vorhanden; legendäre Skills im Angebot je nach Rework-Stand |
+| Energie (§3.2) | `formationEnergy` — vorhanden |
+| Baufeld (§3.4) | `maxCover` — vorhanden |
+| Fokus rufen (§3.3) | **Türen aus dem Skill-Rework** |
+| Skill aufwerten (§3.5) | **Skill-Stufen aus dem Skill-Rework** |
+
+**Empfohlene Reihenfolge:** Einnahme und Anzeige zuerst — ohne sie ist keine andere Fläche prüfbar.
+Dann Neuwurf, Energie, Baufeld. Fokus-Ruf und Aufwerten zuletzt, wenn ihre Voraussetzungen stehen.
+
+---
+
+## 7. Nicht in diesem Umfang
 
 | Thema | Status |
 | --- | --- |
-| Zwischenaufgaben bei Durchlauf 15/30 | später. Sie sind ein **kleiner Bonus** obendrauf, nicht die Hauptquelle — die Hauptquelle sind die Siege aus §2. |
+| Zwischenaufgaben bei Durchlauf 15/30 | später. Sie sind ein **kleiner Bonus** obendrauf, nicht die Hauptquelle — die ist §2. |
 | Bosse | später, im Rahmen der Progression |
 | Score mit Par | später |
 | Der Progression-Baum, SP und DP | fallen mit dem neuen Progress weg — nicht Gegenstand dieses Plans |
 
 ---
 
-## 7. Offene Punkte für die Umsetzung
+## 8. Offene Punkte
 
-1. **Preis des Legendär-Neuwurfs.** Nicht festgelegt. Er muss deutlich über dem normalen liegen; der
-   Bezugspunkt ist die erwartete Anzahl Würfe bis zum gewünschten Legendären (bei ~6 Kandidaten aus
-   zwei aktiven Fraktionen im Schnitt fünf).
-2. **Eigene Preistreppe für den Legendär-Neuwurf, oder dieselbe wie der normale?** Bei einer
-   gemeinsamen Treppe treibt ein Legendär-Neuwurf den nächsten normalen Neuwurf derselben Phase mit
-   hoch. Eigene Treppe ist sauberer, aber eine mehr zu erklären.
-3. **Verfallen Münzen am Laufende?** Vom Owner noch nicht entschieden. Der Plan geht von **Verfall**
-   aus — sonst wird Sparen immer richtig. Falls Mitnahme gewollt ist, ändert das nur diese eine Regel,
-   nicht die Struktur.
-4. **Der erste Durchlauf zahlt nichts** (Auszahlung am Ende). In der ersten Skill-Phase gibt es also
-   noch keine Münzen. Falls das stört, wäre ein kleiner Startbetrag die Lösung — nicht entschieden.
-5. **Ranked.** Wochen-Läufe sind seed-deterministisch. Die Ökonomie ist es von selbst (die Formel hängt
-   an gespielten Siegen, nicht am Zufall) — zu prüfen ist nur, ob die Wochen-Modifikatoren, die
-   Neuwürfe oder Energie beschneiden, mit gekauften kollidieren (z. B. „Kein Reroll", „Energie-Ebbe").
-6. **Namensgleichheit beachten:** der legendäre Perk „Zinseszins" arbeitet mit `zinsCapital` /
+1. **Braucht ein Kauf eine Bestätigung?** Auf dem Handy ist ein Fehltipper leicht, ein zweiter Tap aber
+   zäh, wenn man ihn dreimal je Phase macht. Mittelweg: nur die teuren Käufe bestätigen lassen —
+   Baufeld, Episch-Aufwertung, Legendär-Neuwurf. **Nicht entschieden.**
+2. **Verfallen Münzen am Laufende?** Der Plan geht von **Verfall** aus — sonst wird Sparen immer
+   richtig. Falls Mitnahme gewollt ist, ändert das nur diese eine Regel, nicht die Struktur.
+   **Nicht entschieden.**
+3. **Ranked.** Die Ökonomie ist von selbst seed-unabhängig (sie hängt an gespielten Siegen). Zu prüfen
+   ist nur, ob Wochen-Modifikatoren, die Neuwürfe oder Energie beschneiden („Kein Reroll",
+   „Energie-Ebbe"), mit gekauften kollidieren.
+4. **Namensgleichheit beachten:** der legendäre Perk „Zinseszins" arbeitet mit `zinsCapital` /
    `zinsRate` auf Score-Kapital, nicht mit Münzen. Kein Zusammenhang, aber verwechselbar.
-7. **Tote Preisleiter im Code:** `TIER_META` in `rarity.js` trägt noch `price: 8 / 12 / 18 / 30` aus der
+5. **Tote Preisleiter im Code:** `TIER_META` in `rarity.js` trägt noch `price: 8 / 12 / 18 / 30` aus der
    Shop-Zeit; `priceOfTier` wird nirgends mehr aufgerufen. Entweder für §3.5 wiederverwenden oder
    entfernen — nicht danebenlegen.
