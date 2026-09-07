@@ -3864,6 +3864,60 @@ Formationstypen plus die Tiefe der einzelnen Karte ab.
 
 **Legendäre unverändert** (6.5): Baumreihe mit Auslöser *blühend*, Weltenbaum, Mutterbaum, Ewiger Frühling.
 
+### 6.8 Die vier Stufen je Skill (Vorschlag, Startwerte ungemessen)
+
+Regeln, nach denen die Leitern gebaut sind (§1): **keine zwei Stufen mit denselben Werten**, Episch hat ein kleines
+Extra **oder** ist sehr stark, **keine Deckel** auf den Rampen, ein Effekt je Skill, **kein Direkt-Score** — alle
+Score-Zahlen unten gehen in die Basis. Bezugsgrößen: Passiv-Schwellen grün **30** / blühend **75**, Wachstum +1 je
+Sieg und +1 je aktiver Formation; eine Position gewinnt über einen Lauf grob 30-mal.
+
+#### Wachstum
+
+| Skill | Normal | Selten | Sehr selten | Episch |
+| --- | --- | --- | --- | --- |
+| **Aussaat** | Gewinnt eine grüne Karte, wachsen beide Nachbarn +1 | +2 | +3 | +4; auch die zweiten Nachbarn wachsen +1 |
+| **Ranken** | Wird eine Karte grün, wachsen ihre grauen Nachbarn +5 | +8 | +12 | +16 |
+| **Setzlingsbeet** | Die niedrigste Karte je Segment startet mit +8 Wachstum | +12 | +16 | +16, die zwei niedrigsten |
+| **Lichtung** | Ein Sieg in einer Formation gibt +1 Wachstum zusätzlich | +2 | +3 | +3 je Formation an der Siegposition |
+| **Zäher Halm** | Graue Karten wachsen bei einer Niederlage +1 | +2 | +3 | +3; auch grüne Karten wachsen +1 |
+
+#### Hebel
+
+| Skill | Normal | Selten | Sehr selten | Episch |
+| --- | --- | --- | --- | --- |
+| **Spalier** | Die Segmentgrenze mit den meisten grünen Karten daneben ist offen | 2 Grenzen | 3 Grenzen | alle 7 Grenzen |
+| **Wildwuchs** | Deine am weitesten gewachsene blühende Karte zählt als Joker | 2 blühende | 3 blühende | alle blühenden |
+| **Lücke** | Ein Lauf aus grünen Karten darf eine fremde Karte überspringen | zwei | drei | drei; die übersprungenen Karten wachsen +2 |
+| **Überwucherung** | Ab 80 % grünem Feld entstehen grüne Formationen mit einer Karte weniger | ab 65 % | ab 50 % | ab 35 % |
+
+#### Score aus grünen Formationen
+
+Die Sätze unterscheiden sich **nach der Länge der Formation**, nicht willkürlich: ein grüner Farbblock kann im
+Zielbild 40 Karten lang werden, eine Treppe oder Wiederholung bleibt bei drei bis fünf, ein Wechsel ist am
+seltensten. Deshalb zahlt der Farbblock je Karte am wenigsten und der Wechsel am meisten.
+
+| Skill | Normal | Selten | Sehr selten | Episch |
+| --- | --- | --- | --- | --- |
+| **Blätterdach** (Farbblock) | Ein Sieg in einem grünen Farbblock gibt +10 Basis-Score je grüner Karte im Block | +15 | +20 | +25; blühende Karten im Block zählen doppelt |
+| **Rankgerüst** (Treppe) | Ein Sieg in einer grünen Treppe gibt +30 Basis-Score je Stufe | +45 | +60 | +80; blühende Stufen zählen doppelt |
+| **Hecke** (Wiederholung) | Ein Sieg in einer grünen Wiederholung gibt +30 Basis-Score je Mitglied | +45 | +60 | +80; blühende Mitglieder zählen doppelt |
+| **Windung** (Wechsel) | Ein Sieg in einem grünen Wechsel gibt +35 Basis-Score je Mitglied | +50 | +70 | +90; blühende Mitglieder zählen doppelt |
+| **Jahresringe** (Tiefe) | Ein Sieg gibt +20 Basis-Score je 10 Wachstum der Siegkarte | +30 | +40 | +50; Wachstum über der Blüh-Schwelle zählt doppelt |
+
+#### Kombination
+
+| Skill | Normal | Selten | Sehr selten | Episch |
+| --- | --- | --- | --- | --- |
+| **Blütenlese** | Ein Sieg in einer rein grünen Formation gibt +40 Basis-Score und lässt alle ihre Mitglieder +1 wachsen | +60 | +80 | +100, Mitglieder +2 |
+
+**Das gemeinsame Episch-Motiv der Score-Skills** ist Absicht: „blühende Mitglieder zählen doppelt" macht den dritten
+Zustand zum Verstärker aller vier Formationstypen, statt ihm einen eigenen Skill zu geben. Damit hängt die Spitze
+des Builds an derselben Größe wie das Passiv.
+
+**Was zu messen ist, sobald das Passiv steht** (nicht vorher): wie viele blühende Karten ein Lauf hat (Wildwuchs
+Episch und die vier Episch-Extras hängen daran), wie lang grüne Farbblöcke wirklich werden (Blätterdach-Satz und die
+offene Deckel-Frage aus 6.2), und wie oft Spalier Episch das Deck zu einer durchgehenden Reihe macht.
+
 ---
 
 ## Änderungsprotokoll
@@ -3929,3 +3983,4 @@ Formationstypen plus die Tiefe der einzelnen Karte ab.
 | 2026-09-06 | **Owner: Ranken-Bauform 1** (Ansteckung im Reifemoment — wird eine Karte grün, wachsen ihre grauen Nachbarn). Daraufhin der Vorschlag für **die 15** (6.5): vier bleiben (Aussaat, Setzlingsbeet, Zäher Halm, Blätterdach), zwei sind Umbauten (Ranken, Überwucherung — deren feldweiter Multiplikator wird zur Schwellensenkung), Jahresringe kommt als Konzept zurück, acht sind neu. Kern der Fraktion sind zwei neue Skills auf der Formationsdichte (Spalier öffnet Segmentgrenzen über `segInfo.isOpen`, Wildwuchs macht blühende Karten zu Jokern über `isJoker`) — beide Haken existieren in der Formations-Engine und sind bisher ungenutzt. Legendäre: Baumreihe behält die Idee (Auslöser Wert 11 → blühend), Weltenbaum/Mutterbaum/Ewiger Frühling neu und ohne Direkt-Score. Keine Stufen, keine Werte — Entscheid je Zeile beim Owner. |
 | 2026-09-06 | **Owner an 6.5: zu viele Wachstums-Skills** (10 von 15), Verpflanzen raus, Raritäten-Leitern für Spalier und Wildwuchs gefragt, Idee „grüne Treppen haben einen Bonus". Neue Aufteilung in 6.6: Wachstum 5, **Formationshebel 4**, **Score aus grünen Formationen 4** (je Formationstyp einer — Farbblock, Treppe, Wiederholung, dazu Tiefe; Wechsel bekommt keinen, weil er im vollgrünen Deck stirbt), **Kombination 2** (zahlen Score und Wachstum). Gestrichen: Unterholz, Wurzelnetz, Aussamen, Frühblüher, Verpflanzen. Neu: Rankgerüst (Treppe), Hecke (Wiederholung), Lücke (grüne Läufe dürfen eine fremde Karte überspringen — `gap.run`/`gap.seg`), Wandertrieb (blühende Karten rücken am Durchlaufende zusammen, ersetzt Verpflanzen), Blütenlese, Überwucherung als Formationsgrößen-Bonus. Leitern: **Spalier** über die Zahl offener Segmentgrenzen (1/2/3/alle von 7), **Wildwuchs** über die Zahl der Joker (1/2/3/alle blühenden) — die Menge ist der Regler. Zur Sim vorgemerkt: wie viele blühende Karten ein Lauf hat. Entscheid beim Owner. |
 | 2026-09-06 | **Zwei Owner-Korrekturen und der Endstand der 15 (6.7).** (1) Wandertrieb gestrichen: kein Skill greift in die Aufstellungsordnung ein, die Kategorie „Aufstellung" entfällt. (2) **Faktenfehler von mir korrigiert:** der Wechsel stirbt im vollgrünen Deck nicht — `markWechsel` liest den Zick-Zack über den **Kartenwert** (Richtungswechsel, Mindestdifferenz 4), nicht über die Farbe; die falsche Behauptung stand in 6.2 und 6.6 und ist an beiden Stellen berichtigt. Trivial wird allein der Farbblock. Damit bekommt jeder der vier Formationstypen seinen Score-Skill (neu: **Windung** für den Wechsel). (3) „Ein Mitglied mehr" war unpräzise formuliert — **Überwucherung senkt jetzt die Mindestlänge grüner Formationen** (`minMembers`/`minLen`) und ist damit ein Erkennungs-Hebel statt eines Score-Zuschlags. Endverteilung: Wachstum 5 · Hebel 4 · Score 5 · Kombination 1. |
+| 2026-09-06 | **Owner: die 15 stehen.** Vier Stufen je Skill ausgeschrieben (6.8, Startwerte ungemessen): Wachstum über Mengen (Aussaat 1–4, Ranken 5–16, Setzlingsbeet 8–16, Lichtung 1–3, Zäher Halm 1–3), Hebel über Anzahl und Schwelle (Spalier 1/2/3/alle 7 Grenzen, Wildwuchs 1/2/3/alle blühenden, Lücke 1–3 Sprünge, Überwucherung ab 80/65/50/35 % grünem Feld), Score je Formationstyp mit **nach Formationslänge gestaffelten Sätzen** (Farbblock 10–25 je Karte, Treppe und Wiederholung 30–80, Wechsel 35–90, Tiefe 20–50 je 10 Wachstum), Kombination Blütenlese 40–100 plus Wachstum. Gemeinsames Episch-Motiv der Score-Skills: blühende Mitglieder zählen doppelt — der dritte Zustand ist der Verstärker statt eines eigenen Skills. Messliste für die Bauphase notiert (Zahl blühender Karten, Länge grüner Farbblöcke, Wirkung von Spalier Episch). |
