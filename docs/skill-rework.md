@@ -3969,9 +3969,106 @@ werden, ob der Grün-Farbblock-Deckel (`PLANT_GREEN_FARBBLOCK_CAP` 3) bleibt, un
 (2) ob die Pflanze ins Türen-Angebot kommt (`SKILL_OFFER_ARCHETYPES`) — das ändert jedes Angebot im Lauf und ist
 darum keine technische Entscheidung; (3) das Sim-Band wird erst nach (1) und (2) neu zentriert.
 
+### 6.10 Gemessen (2026-09-07, auf Ansage) — Duell, Feld, gierig mit allen drei Fraktionen
+
+**Aufbau.** Alle Zahlen ohne Legendäre (`SIM_SKILL_LEGENDARY_PER_SLOT=0`, Owner: „legendäre erst mal außen vor, die
+bekommen ein Redesign") — für alle drei Fraktionen gleich, die Vergleiche sind also fair. Die Sim-Welt kommt aus der
+Allowlist je Lauf, `SKILL_OFFER_ARCHETYPES` bleibt unangetastet.
+
+#### A · Duell (200 Läufe, Seeds 1–200, Türen aus Feuer/Blitz/Pflanze)
+
+| Build | Median | Mean | p90 | Siegquote | Ø Skills |
+| --- | --- | --- | --- | --- | --- |
+| Feuer mono | 7,75M | 10,12M | 18,77M | 65,3 % | 11,1 |
+| Blitz mono | 7,43M | 14,84M | 37,35M | 59,4 % | 11,3 |
+| **Pflanze mono** | **4,90M** | **6,27M** | **9,72M** | **53,3 %** | 11,3 |
+| Feuer+Blitz+Pflanze Split | 6,19M | 8,49M | 13,77M | 57,8 % | je 4,3 |
+| Mix (Random) | 3,58M | 4,96M | 9,02M | 58,4 % | je 4,3 |
+
+**Pflanze ÷ Feuer 0,63× · ÷ Blitz 0,66× (Median), 0,52× / 0,26× am p90.** Die Parität Feuer ÷ Blitz hält (1,04×).
+
+#### B · Das Feld im Lauf (Sonde `sim/probes/plant-field.mjs`, 60 Läufe, Pflanze mono)
+
+| Durchlauf | grün | blühend | Ø Wachstum | längster grüner Farbblock | Siege mit blühender Karte |
+| --- | --- | --- | --- | --- | --- |
+| 11 | 2,0 | 0,0 | 13 | 1,5 | 0 % |
+| 21 | 22,2 | 1,8 | 35 | 5,5 | 5 % |
+| 31 | 34,6 | 17,5 | 75 | 8,9 | 52 % |
+| 41 | 38,5 | 31,3 | 135 | 10,8 | 89 % |
+| 50 | 39,6 | 37,0 | 205 | 12,1 | 97 % |
+
+Blühende Karten am Laufende: **Median 38 von 40** (p10 31, p90 40). Das Zielbild aus §6.1 wird erreicht — aber spät:
+vor Durchlauf 11 passiert nichts, die erste blühende Karte kommt um 16–21, die Fraktion zahlt ab etwa 26. Der längste
+grüne Farbblock endet bei 12 Karten (ohne Spalier wären es 5, das Segment); **das Deck wird nur in 13 % der Läufe zu
+einer Reihe** (Block ≥ 20) — Spalier Episch ist selten, der Deckel `PLANT_GREEN_FARBBLOCK_CAP` bindet also kaum.
+
+#### C · Gierig mit allen drei Fraktionen in den Türen (explore 900, gierig 120) — „wie im Spiel"
+
+Median 21,8M, Ø 12,8 Skills, Siegquote 69 %. Die Pflanze-Zeilen (Ablation, gepaart):
+
+| Skill | gehalten | Ablation | Lesart |
+| --- | --- | --- | --- |
+| Blütenlese | 13 % | **+6,00M (typ. +74 %)** | der einzige „starke" Pflanze-Skill im gemischten Build |
+| Jahresringe | 10 % | +1,67M | zahlt aus der eigenen Tiefe, ohne Feld |
+| Wildwuchs | 38 % | +0,81M | Episch-Lift 6,39 — der Ausreißer der Fraktion |
+| Blätterdach | 51 % | −0,50M | wird oft genommen und zahlt nicht |
+| Spalier / Ranken / Setzlingsbeet / Zäher Halm | 20/13/12/10 % | −2,9M / −3,0M / −3,8M / −4,8M | **Ballast** |
+
+Die vier schlechtesten Picks des ganzen Feldes sind Pflanze-Wachstums-Skills. Das ist kein Defekt, sondern die
+Signatur einer Bekenntnis-Fraktion: Anlauf ohne Auszahlung kostet im gemischten Build den Platz.
+
+#### D · Gierig NUR in der Pflanze-Welt (explore 500, gierig 100)
+
+Der gierige Spieler hält 13 der 15 Skills; die Ablation misst also „was kostet es, genau diesen wegzulassen":
+Jahresringe **+1,19M (17 %)**, Spalier **+0,80M (12 %)**, Wildwuchs +0,57M, Windung +0,53M, Blätterdach +0,23M —
+danach nichts mehr; Setzlingsbeet (−0,74M), Ranken (−0,62M) und Hecke (−0,40M) kosten. Die Episch-Stufen tragen die
+Spitzen: **Wildwuchs 4,13 · Rankgerüst 3,35 · Spalier 2,18**. Median 9,1M, aber **p95 265M** — die Fraktion hat einen
+Schwanz, und er sitzt in der Erkennungs-Achse, nicht im Passiv.
+
+#### E · Sweep der Regler (Pflanze-Welt, 100 Läufe, Seeds 1–100)
+
+| # | Variante | Median | Mean | p90 | Δ Median |
+| --- | --- | --- | --- | --- | --- |
+| A | Ist: Satz 20, Schwellen 30/75, +1 je Formation | 5,52M | 6,45M | 9,84M | — |
+| B | Satz 30 | 5,70M | 6,75M | 10,23M | +3 % |
+| C | Satz 40 | 5,93M | 7,04M | 10,62M | +7 % |
+| D | Schwellen 25/60 | 5,66M | 6,04M | 8,47M | +3 % |
+| E | 25/60 + Satz 30 | 5,98M | 6,33M | 8,95M | +8 % |
+| F | **+2 Wachstum je Formation** | 6,06M | 6,63M | 8,98M | **+10 %** |
+| G | +2 je Formation und Satz 40 | 6,62M | 7,23M | 9,69M | +20 % |
+| H | Satz 80 (Vierfaches) | 6,82M | 8,23M | 13,41M | +24 % |
+
+**Der Passiv-Satz ist kein Regler.** Vom Vierfachen bleiben +24 % übrig; der Satz je grüner Karte ist zu klein gegen
+das, was der geteilte Multiplikator-Stack (Formation × Serie × Crit) aus der Basis macht. Der Owner-Regler „+1 je
+Formation" bewegt mehr als der Score-Satz — er wirkt über die Zeit (früher grün, früher blühend), nicht über die Zahl.
+
+#### Befund
+
+1. **Die Pflanze liegt bei ⅔ der zwei tarierten Fraktionen, und ihr Schwanz ist der dünnste.** Sie ist nicht tot: 4,9M
+   gegen 3,6M eines Zufallsspielers, und der Split mit ihr (6,19M) liegt über dem Mix.
+2. **Sie hat als einzige Fraktion weder Multiplikator noch Siegquote.** Feuer multipliziert (Hitze-Multiplikator),
+   Blitz kritet (bis ×8), die Pflanze addiert nur Basis-Score — und die Basis multipliziert derselbe Stack, den alle
+   haben. Siegquote 53,3 % gegen 65,3 % (Feuer): grün gibt bewusst keinen Kartenwert, also gewinnt sie auch keine
+   Stiche dazu.
+3. **Die einzige multiplikative Achse, die sie hat, ist die Erkennung** — mehr und längere Formationen. Genau dort
+   sitzen die Episch-Spitzen (Wildwuchs 4,13, Spalier 2,18) und der ganze Schwanz (p95 265M in der Pflanze-Welt).
+4. **Die Rampe ist spät** (nichts vor Durchlauf 11, Auszahlung ab 26) — und im gemischten Build ist der Anlauf reiner
+   Ballast (die vier schlechtesten Picks des Feldes).
+
+#### Vorschläge (Entscheid Owner, nichts davon umgesetzt)
+
+| # | Vorschlag | Was es kostet / bringt |
+| --- | --- | --- |
+| 1 | **Erst die Legendären neu bauen, dann tarieren.** | Bei Feuer und Blitz tragen die Legendären einen großen Teil (Sonnenkern +133 %, Doppelentladung +106 %, Resonanz +48 %); die vier der Pflanze sind bewusst leise. Die halbe Lücke kann dort liegen. Empfehlung. |
+| 2 | Wenn jetzt tariert wird: **an der Erkennungs-Achse drehen, nicht am Passiv-Satz.** Z. B. Spalier Normal 2 statt 1 Grenze, Wildwuchs Normal 2 statt 1 Joker. | Das ist der multiplikative Kanal und der einzige, der auch den Schwanz hebt. Ungemessen — ein Sweep ist eine Runde. |
+| 3 | **+2 Wachstum je Formation** (statt +1). | +10 % Median, gemessen (F). Macht die Aufstellung noch stärker zur Wachstumsentscheidung — dein eigener Regler aus §6.2. |
+| 4 | Den Wachstums-Skills einen Grund im gemischten Build geben (kleiner Sofort-Ertrag) **oder** sie bewusst als Mono-Skills stehen lassen. | Heute sind sie die vier schlechtesten Picks des Feldes. Beides ist vertretbar — „Bekenntnis-Fraktion" ist eine legitime Bauform, nur muss sie gewollt sein. |
+| 5 | Der Grün-Farbblock-Deckel (`PLANT_GREEN_FARBBLOCK_CAP` 3) **kann bleiben**. | Gemessen: der längste grüne Block endet bei 12 Karten, das Deck wird nur in 13 % der Läufe zu einer Reihe. Die offene Frage aus §6.2 ist damit beantwortet: der Deckel bindet kaum. |
+
 ---
 
 ## Änderungsprotokoll
+
 
 
 | Datum | Was |
@@ -4040,3 +4137,4 @@ darum keine technische Entscheidung; (3) das Sim-Band wird erst nach (1) und (2)
 | 2026-09-06 | **Owner: ja zu beiden Episch-Nachschärfungen.** Ranken Episch kettet jetzt (wird eine Karte durch den Ruck grün, wachsen ihre grauen Nachbarn ebenfalls +16 — der einzige Dominoeffekt der Fraktion, ohne Selbstbezug im Text), Überwucherung Episch senkt die Mindestlänge um zwei statt um eine. Damit haben 13 der 15 Episch-Stufen ein Extra oder einen qualitativen Sprung — dasselbe Verhältnis wie bei Feuer und Blitz; reine Zahlen bleiben nur bei Spalier (alle 7 Grenzen) und Wildwuchs (alle blühenden Karten), wo der Sprung selbst qualitativ ist. **Damit ist Pflanze auf dem Papier vollständig:** Richtung (6.1), Passiv (6.2), Bestandsaufnahme (6.3), Ranken-Umbau (6.4), die 15 nach Kategorien (6.6/6.7), Stufen (6.8). Offen: die Umsetzung und die Messliste. |
 | 2026-09-06 | **Übergabe für den Pflanze-Bau:** `docs/workstreams/skill-rework/HANDOFF-pflanze-build.md`. Owner will den Bau mit frischem Kontext. Enthält Stand (HEAD, Feuer/Blitz fertig, Pflanze nur auf dem Papier), die Owner-Regeln wörtlich (samt der neuen: erst Design, dann Startwert, gemessen nur auf Ansage), den Vertrag §6.1–§6.8 in einer Seite, die Abrissliste der alten Ökonomie mit Fundstellen (Wertachse, `plantDirect`, `plantFormMult`, Trimmen, `plantCommit`, Kolonisierung, `enabler`), die vier Formations-Haken (`segInfo.isOpen`, `isJoker`, `gap.run`/`gap.seg`, `minMembers`/`minLen`), fünf Etappen, die Messliste für später, die Fallen (Ratchets, ecke-Timeout, Formationen nur an Position 0, loc:export, Band erst nach der Messung neu zentrieren) und einen deutschen Startprompt. |
 | 2026-09-07 | **Pflanze gebaut (6.9, umgesetzt).** Neues Modul `src/game/factions/plant.js` mit dem Passiv (Wachstum je Karte: +1 je Sieg, +1 je Formation an der Siegposition; grün ab 30, blühend ab 75; eine blühende Siegkarte gibt +20 Basis-Score je grüner Karte in ihren Formationen), den 15 Skills auf vier Stufen (`PFLANZE_TIERS`) und den vier Legendären. Die vier Hebel (Spalier, Wildwuchs, Lücke, Überwucherung) und zwei Legendäre (Baumreihe, Mutterbaum) ändern die Erkennung in `formations.js`, das dafür ein Bündel `{ skillTiers, growth }` bekommt. Alte Ökonomie raus: Wertachse mit Auto-Sieg bei 11, Alter Anker, `plantDirect`, `plantFormMult`, Trimmen, Bekenntnis-Skalierung (`commitScale` — die Pflanze war ihr letzter Leser), Kolonisierung des Gegnerdecks, die sechs `enabler`; zwei Emblem-Plätze zurückgegeben, zehn umbenannt. Ein Score-Kanal `plantBase` statt drei; PlantBar, Karten-Ring, Kartendetail, Glossar und Passiv-Text auf die drei Zustände umgestellt. Neuer Wächtersatz `test/plant-rework.test.js` (36 Fälle, inklusive Gegenprobe: ohne Pflanzen-Skill rechnet die Formations-Engine unverändert). In EINEM Stück statt in Etappen, weil die Registry-Wächter mindestens 18 Skills je Fraktion verlangen. Gates grün (2321 Tests). **Nicht gemessen, nicht im Türen-Angebot** — beides wartet auf die Ansage des Owners. |
+| 2026-09-07 | **Pflanze gemessen (6.10, auf Ansage; Legendäre außen vor — sie bekommen ein Redesign).** Duell mit allen drei Fraktionen (200 Läufe): Feuer 7,75M · Blitz 7,43M · **Pflanze 4,90M** (0,63× / 0,66×), p90 9,72M gegen 18,8M/37,4M, Siegquote 53,3 % gegen 65,3 %; Split aller drei 6,19M über dem Mix 3,58M. Neue Sonde `sim/probes/plant-field.mjs`: das Feld ergrünt ab Durchlauf 11, blühend ab 16–21, am Ende Median 38 von 40 blühenden Karten, längster grüner Farbblock 12, Deck-als-Reihe nur in 13 % der Läufe (**der Grün-Farbblock-Deckel bindet kaum — die offene Frage aus §6.2 ist beantwortet**). Gierig mit allen drei in den Türen (explore 900, gierig 120, Median 21,8M): nur Blütenlese ist „stark" (+6,0M), die vier schlechtesten Picks des ganzen Feldes sind Pflanze-Wachstums-Skills (Zäher Halm −4,8M, Setzlingsbeet −3,8M, Ranken −3,0M, Spalier −2,9M) — die Signatur einer Bekenntnis-Fraktion. Gierig in der Pflanze-Welt: Jahresringe +17 %, Spalier +12 %, Wildwuchs +8 %, Episch-Spitzen Wildwuchs 4,13 / Rankgerüst 3,35 / Spalier 2,18, p95 265M. Regler-Sweep: **der Passiv-Satz ist kein Regler** (Vierfaches = +24 %), „+2 Wachstum je Formation" bewegt mehr (+10 %). Befund: der Pflanze fehlen Multiplikator und Siegquote, ihre einzige multiplikative Achse ist die Erkennung — dort sitzen Spitzen und Schwanz. Fünf Vorschläge in 6.10, Empfehlung: erst die Legendären, dann tarieren. Nichts geändert. |
