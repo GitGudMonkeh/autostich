@@ -89,7 +89,10 @@ describe("Blitz-Modul — Stufen und Kennwerte", () => {
     expect(overcritMult(1)).toBe(0);
     expect(overcritMult(1.5)).toBeCloseTo(50 * C.OVERCRIT_MULT_PER_PP, 9);
     expect(C.OVERCRIT_MULT_PER_PP).toBeGreaterThan(0);
-    expect(C.OVERCRIT_MULT_PER_PP).toBeLessThan(0.01); // „sehr klein"
+    // §7.28 (Owner): der Satz ist 0,01 — die alte Schranke hieß „sehr klein" (< 0,01) und ist damit überholt. Die
+    // Invariante ist jetzt: der Überschuss bleibt klein gegen den Deckel — 100 Prozentpunkte darüber dürfen den
+    // Multiplikator um höchstens ein Achtel des Deckels heben, sonst wird die Regel selbst zur Crit-Quelle.
+    expect(100 * C.OVERCRIT_MULT_PER_PP).toBeLessThanOrEqual(C.CRIT_MULT_CAP / 8);
   });
   it("blitzfaengerValue / ionScoreFor: Schwellen fallen mit der Stufe, Kurzschluss zählt Stapel ab Schwelle doppelt", () => {
     for (let t = 0; t < 4; t++) {
