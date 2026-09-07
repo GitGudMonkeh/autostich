@@ -6,7 +6,7 @@ import { glacierGridProps } from "./glacierBoard.js";
 import { CardDetail } from "./CardDetail.jsx";
 import { LayoutPerks } from "./LayoutPerks.jsx";
 import { allianceGroups } from "../game/families.js";
-import { openSegmentInfo, summarizeFormations } from "../game/formations.js";
+import { openBorderInfo, summarizeFormations } from "../game/formations.js";
 import { archFamily, formationName, archCatDef, anchorLabel } from "../i18n/labels.js"; // #sprache: Formations-/Ankername zur Anzeigezeit
 import { t } from "../i18n/index.js";
 import { useEscape } from "./useEscape.js";
@@ -84,7 +84,7 @@ export function ChronikOverview({ state, onClose, options = {}, onOption }) {
             {hasArch && <ArchToggle on={showArch} onToggle={() => setShowArch((v) => !v)} />}
             <CardGrid cards={cards} formations={formations} roles={state.roles} {...glacierGridProps(state)} anchors={anchors} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
               highlightPos={highlightPos} highlightTitle="⏱ Zeitraffer · gekoppelte Position (20 & 40)"
-              openSegments={openSegmentInfo(state.familyTiers)}
+              openSegments={openBorderInfo(state.playerOrder, state.deck, state.skills, state.skillTiers, state.familyTiers)}
               architectCover={hasArch && showArch ? architectCover : null}
               structPos={hasArch && showArch ? structLitPos : null}
               distrPos={hasArch && showArch ? distrLitPos : null}

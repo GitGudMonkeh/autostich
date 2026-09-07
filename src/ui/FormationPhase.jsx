@@ -1,7 +1,7 @@
 import { useState, useRef, useMemo, useEffect } from "react";
 import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import { PANEL_BG, phaseCard, phasePanel, PhaseHairline, PHASE_ACCENTS } from "./modalStyle.jsx";
-import { summarizeFormations, SEGMENT_SIZE, openSegmentInfo } from "../game/formations.js";
+import { summarizeFormations, SEGMENT_SIZE, openBorderInfo } from "../game/formations.js";
 import { allianceGroups } from "../game/families.js";
 import { architectCoverFor, structLitPosOf, distrLitPosOf } from "./architectCover.js";
 import { CardGrid } from "./CardGrid.jsx";
@@ -121,8 +121,10 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
   // #201.4: Karten, die in einem Tausch dieser Phase beteiligt waren, dezent ausgrauen (folgt der KARTE via id,
   // nicht dem Slot → übersteht Weg-und-zurück-Tausch; Undo/Reset ziehen die ids automatisch mit).
   const swappedIds = new Set((state.formationSwaps || []).flatMap((s) => [s.idA, s.idB]).filter(Boolean));
-  // #FB Segmentarbeit (E_SEGMENT): welche Segmentgrenzen sind offen? Speist den Verbinder im CardGrid + den Intro-Text.
-  const segInfo = openSegmentInfo(state.familyTiers);
+  // #FB Segmentarbeit (E_SEGMENT) UND Spalier (Pflanze): welche Segmentgrenzen sind offen? Speist den Verbinder im
+  // CardGrid + den Intro-Text. Dieselbe Quelle, die computeFormations benutzt — die Anzeige kann nicht davonlaufen.
+  // Spalier hängt am Grün-Stand der Nachbarkarten, wandert also mit jedem Tausch mit.
+  const segInfo = openBorderInfo(playerOrder, deck, state.skills, state.skillTiers, state.familyTiers);
 
   /* Aufleuchten nach einem GEWINNBRINGENDEN Tausch: Positionen, deren Formations-Faktor gegenüber dem
      Zustand VOR dem Tausch gestiegen ist, blitzen einmal in ihrer Formationsfarbe auf.
@@ -245,7 +247,9 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
             : <span key={i}>{part}</span>))}
           {segInfo.active && (segInfo.all
             ? <> — <span style={{ color: "#8be0a8" }}><b>{t("form.segwork")}</b> {t("form.segwork.all")}</span></>
-            : <> — <span style={{ color: "#8be0a8" }}><b>{t("form.segwork")}</b> {t("form.segwork.marked")}</span></>)}.
+            : <> — <span style={{ color: "#8be0a8" }}><b>{t("form.segwork")}</b> {t("form.segwork.marked")}</span></>)}
+          {segInfo.spalier.size > 0 && (
+            <> — <span style={{ color: "#8be0a8" }}><b>{t("form.spalier")}</b> {t("form.spalier.open", { count: segInfo.spalier.size })}</span></>)}.
         </p>
 
         <div className="md:flex md:gap-4 md:items-start">

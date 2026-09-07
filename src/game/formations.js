@@ -38,6 +38,41 @@ export function openSegmentInfo(familyTiers) {
   const all = count === Infinity;
   return { active: count > 0, all, count, isOpen: (g) => all || (g >= 0 && g < count) };
 }
+/* Spalier (Pflanze-Hebel, §6.8): die `borders` Segmentgrenzen mit den meisten grünen Karten daneben sind offen —
+   Läufe wachsen dort über das Segment hinaus. „Daneben" sind die zwei Karten links und rechts der Grenze; eine
+   Grenze ohne grünen Nachbarn öffnet nie. Bei Gleichstand die kleinere Grenznummer (Determinismus §9).
+   `cards` = die Karten in Ziehreihenfolge. Wie openSegmentInfo EINE Quelle für Engine und UI: die Aufstellphase
+   und die Chronik zeigen dieselben Grenzen, die computeFormations öffnet. Leeres Set ohne den Skill. */
+export function spalierOpenBorders(cards = [], skills = [], skillTiers = {}) {
+  const out = new Set();
+  const need = plantParam(skills, skillTiers, P.SPALIER, "borders");
+  if (!need) return out;
+  const cand = [];
+  for (let g = 0; (g + 1) * SEGMENT_SIZE < cards.length; g++) {
+    const a = (g + 1) * SEGMENT_SIZE - 1;
+    const greens = (cards[a]?.green ? 1 : 0) + (cards[a + 1]?.green ? 1 : 0);
+    if (greens > 0) cand.push({ g, greens });
+  }
+  cand.sort((x, y) => (y.greens - x.greens) || (x.g - y.g));
+  for (const e of cand.slice(0, need)) out.add(e.g);
+  return out;
+}
+
+/* Alle offenen Segmentgrenzen einer Aufstellung, für die Anzeige: E_SEGMENT (Werkzeug) plus Spalier (Pflanze).
+   Gleiche Form wie openSegmentInfo, damit CardGrid unverändert bleibt; `spalier` bleibt daneben stehen, damit die
+   UI sagen kann, WOHER eine Grenze offen ist. */
+export function openBorderInfo(order = [], deck = [], skills = [], skillTiers = {}, familyTiers = {}) {
+  const seg = openSegmentInfo(familyTiers);
+  const spalier = spalierOpenBorders(order.map((di) => deck[di]), skills, skillTiers);
+  return {
+    active: seg.active || spalier.size > 0,
+    all: seg.all,
+    count: seg.all ? Infinity : seg.count + spalier.size,
+    isOpen: (g) => seg.isOpen(g) || spalier.has(g),
+    spalier,
+  };
+}
+
 export const WECHSEL_MIN_DIFF = 4;   // [Balance: 5→4 — Wechsel eine Stufe leichter, kleinerer Nachbarabstand reicht] — natürlicher Default (Shop „Enger Wechsel" senkt ihn)
 export const MAX_TREPPE_STEP = 4;   // [Balance: 3→4 — Treppe eine Stufe leichter, größerer Schritt je Nachbarpaar erlaubt]
 // Die vier Basis-Formationstypen (ohne Anker) — Zielauswahl F-L1 Formationskern + Anzeige-Labels.
@@ -267,21 +302,7 @@ export function computeFormations(order, deck, roles = {}, _perks = [], skills =
   // ersten 1/2 Grenzen deterministisch von vorne, III/IV alle. EINE Quelle mit der UI: openSegmentInfo (s. o.).
   // Grenze NACH Position k existiert nur, wenn (k+1)%SEGMENT_SIZE===0; ihr 0-basierter Grenz-Index ist (k+1)/SIZE−1.
   const segInfo = openSegmentInfo(familyTiers);
-  /* Spalier (Pflanze-Hebel, §6.8): die `borders` Segmentgrenzen mit den meisten grünen Karten daneben sind offen —
-     Läufe wachsen dort über das Segment hinaus. „Daneben" sind die zwei Karten links und rechts der Grenze; eine
-     Grenze ohne grünen Nachbarn öffnet nie. Bei Gleichstand die kleinere Grenznummer (Determinismus §9). */
-  const spalierBorders = new Set();
-  const spalierN = plantParam(skills, pTiers, P.SPALIER, "borders");
-  if (spalierN) {
-    const cand = [];
-    for (let g = 0; (g + 1) * SEGMENT_SIZE < n; g++) {
-      const a = (g + 1) * SEGMENT_SIZE - 1;
-      const greens = (cards[a]?.green ? 1 : 0) + (cards[a + 1]?.green ? 1 : 0);
-      if (greens > 0) cand.push({ g, greens });
-    }
-    cand.sort((x, y) => (y.greens - x.greens) || (x.g - y.g));
-    for (const e of cand.slice(0, spalierN)) spalierBorders.add(e.g);
-  }
+  const spalierBorders = spalierOpenBorders(cards, skills, pTiers);
   const canExtendSeg = (k) => ((k + 1) % SEGMENT_SIZE !== 0) || segInfo.isOpen((k + 1) / SEGMENT_SIZE - 1)
     || spalierBorders.has((k + 1) / SEGMENT_SIZE - 1) // Pflanze Spalier: grün gesäumte Grenze offen
     || (af && af.crossSeg.has(Math.floor(k / SEGMENT_SIZE))); // Architekt Pfeiler: Segmentgrenze der berührten Zeile offen

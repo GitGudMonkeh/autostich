@@ -5,7 +5,7 @@ import { P, plantStage, greenCount, applyGrowth, growthOnWin, setzlingsbeetGains
 import { resolveTrick } from "../src/game/engine.js";
 import { initialState, reducer } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
-import { computeFormations, SEGMENT_SIZE } from "../src/game/formations.js";
+import { computeFormations, SEGMENT_SIZE, spalierOpenBorders, openBorderInfo } from "../src/game/formations.js";
 
 /* ============================================================
    PFLANZE (exp skill rework, docs/skill-rework.md §6) — Passiv, die 15 Skills, die vier Formationshebel und die vier
@@ -281,6 +281,24 @@ describe("Pflanze — die vier Formationshebel (§6.7, formations.js)", () => {
     expect(fb(before, 4).len).toBe(5);
     const after = forms(deck, [P.SPALIER], bag(P.SPALIER, 0));
     expect(fb(after, 4).len).toBe(10);
+  });
+  it("die Anzeige liest dieselbe Quelle wie die Engine: spalierOpenBorders und openBorderInfo", () => {
+    // Zehn Karten, zwei Segmente, eine innere Grenze (0) — beide Nachbarn grün, also offen.
+    const deck = Array.from({ length: 10 }, (_, i) => ({ id: `C${i}`, suit: "R", value: 5, green: true }));
+    const order = ord(10);
+    const cards = order.map((di) => deck[di]);
+    expect([...spalierOpenBorders(cards, [P.SPALIER], { [P.SPALIER]: 0 })]).toEqual([0]);
+    expect(spalierOpenBorders(cards, [], {}).size).toBe(0);                       // ohne den Skill nichts
+    expect(spalierOpenBorders(cards.map((c) => ({ ...c, green: false })), [P.SPALIER], { [P.SPALIER]: 0 }).size).toBe(0); // ohne grüne Nachbarn nie
+    // Genau die Grenze, die die Engine öffnet, meldet die Anzeige — Gegenprobe über den Lauf, der sie kreuzt.
+    const info = openBorderInfo(order, deck, [P.SPALIER], { [P.SPALIER]: 0 }, {});
+    expect(info.active).toBe(true);
+    expect(info.isOpen(0)).toBe(true);
+    expect([...info.spalier]).toEqual([0]);
+    const fb = (f, p) => (f[p].formations || []).find((x) => x.type === "farbblock");
+    expect(fb(forms(deck, [P.SPALIER], bag(P.SPALIER, 0)), 4).len).toBe(10);
+    // Ohne Spalier und ohne Werkzeug ist die Leiste inaktiv — die UI zeichnet dann keine Brücke.
+    expect(openBorderInfo(order, deck, [], {}, {}).active).toBe(false);
   });
   it("Wildwuchs macht die am weitesten gewachsene blühende Karte zum Joker", () => {
     // Zwei gleiche Werte mit einer Fremdkarte dazwischen: erst der Joker verbindet sie zur Wiederholung.

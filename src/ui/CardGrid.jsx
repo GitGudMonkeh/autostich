@@ -233,10 +233,12 @@ const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], sele
 // die geteilten Nutzungen (Chronik/Shop-/Perk-Zielauswahl) lassen den Klick-Sound per Default unangetastet.
 // #FB Segmentarbeit: Verbinder ZWISCHEN zwei Segment-Zeilen — signalisiert, dass Formationen diese Grenze
 // überschreiten dürfen (welche Segmente ist durch die Lage zwischen ihren Bereichs-Labels ersichtlich).
-function SegmentBridge({ segA, segB }) {
+// `viaSpalier` = die Grenze ist durch den Pflanzen-Skill offen, nicht durch das Werkzeug Segmentarbeit. Die Brücke
+// sieht gleich aus (offen ist offen), nur der Tooltip nennt die Quelle.
+function SegmentBridge({ segA, segB, viaSpalier = false }) {
   const line = { background: "linear-gradient(90deg, #5ab87a00, #5ab87a99, #5ab87a00)" };
   return (
-    <div className="flex items-center gap-2" title={t("cardgrid.segbridge.title", { a: segA, b: segB })}>
+    <div className="flex items-center gap-2" title={t(viaSpalier ? "cardgrid.segbridge.title.spalier" : "cardgrid.segbridge.title", { a: segA, b: segB })}>
       <div className="w-9 shrink-0" />
       <div className="flex-1 flex items-center gap-1.5">
         <div className="h-px flex-1" style={line} />
@@ -383,7 +385,7 @@ export function CardGrid({ cards = [], formations = [], roles = {}, anchors = []
         );
         // Grenze NACH Segment s offen (und es folgt eine weitere Zeile) → Verbinder einschieben.
         return segOpen && s < nSeg - 1 && segOpen.isOpen(s)
-          ? [row, <SegmentBridge key={`bridge${s}`} segA={s + 1} segB={s + 2} />]
+          ? [row, <SegmentBridge key={`bridge${s}`} segA={s + 1} segB={s + 2} viaSpalier={!!segOpen.spalier?.has(s)} />]
           : [row];
       })}
     </div>

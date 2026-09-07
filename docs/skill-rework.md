@@ -4715,6 +4715,35 @@ Formation" heran.
 
 ---
 
+### 6.23 Spalier wird sichtbar (2026-09-07, Owner) — umgesetzt
+
+**Owner:** „Spalier muss in der Chronik und Aufstellphase zeigen, welche Segmentgrenzen offen sind."
+
+Spalier öffnete seine Grenzen bisher nur im Motor: die Rechnung lag **inline in `computeFormations`**, die UI kannte
+sie nicht. Die Aufstellphase und die Chronik zeigten die ⇕-Brücke nur für das Werkzeug Segmentarbeit (E_SEGMENT),
+das über `openSegmentInfo` schon die Regel „eine Quelle für Engine und UI" befolgt.
+
+**Jetzt folgt Spalier derselben Regel.** Zwei neue reine Funktionen in `formations.js`, direkt neben
+`openSegmentInfo`:
+
+- `spalierOpenBorders(cards, skills, skillTiers)` — die Grenzen mit den meisten grünen Nachbarn, als Set. Der Motor
+  ruft sie auf, statt die Rechnung selbst zu tragen.
+- `openBorderInfo(order, deck, skills, skillTiers, familyTiers)` — Werkzeug plus Spalier in einem Objekt, in der
+  Form, die `CardGrid` schon erwartet. Das Feld `spalier` bleibt daneben stehen, damit die Anzeige sagen kann,
+  **woher** eine Grenze offen ist.
+
+Damit zeichnen Aufstellphase und Chronik die Brücke an genau den Grenzen, die der Motor öffnet — sie kann nicht mehr
+davonlaufen. Die Brücke sieht gleich aus (offen ist offen, und ihr Grün ist ohnehin der Pflanzen-Ton); der Tooltip
+nennt die Quelle, und die Kopfzeile der Aufstellphase ergänzt „Spalier: n grün gesäumte Grenzen offen".
+
+**Ein Detail, das in der Aufstellphase zählt:** Spalier hängt am Grün-Stand der beiden Nachbarkarten einer Grenze.
+Die Anzeige rechnet deshalb bei jedem Tausch neu — der Spieler sieht die Grenze wandern, während er stellt. Genau
+dafür ist der Skill da.
+
+Ein Test hält beides zusammen: `spalierOpenBorders` meldet dieselbe Grenze, die der Lauf im Motor überschreitet.
+
+---
+
 ## Änderungsprotokoll
 
 
@@ -4801,3 +4830,4 @@ Formation" heran.
 | 2026-09-07 | Variante B gemessen: Pflanze mono 10,49M gegen Feuer 7,75M — überschossen (1,35×). Aussaat ist erstmals in beiden Welten positiv, die anderen drei Wachstums-Skills nicht (sie füttern Karten, die nicht gewinnen). Neue Sonde `plant-overlap`: 8 % der Siege (vier überlappende Formationen) tragen 46 % des Scores, aber der größte Stich eines Laufs macht im Median nur 2,7 % aus — steile Eskalation, keine Lotterie. Vorschlag Grundgewicht 3. §6.21. |
 | 2026-09-07 | Grundgewicht 3 gemessen: Pflanze mono 8,36M gegen Feuer 7,75M und Blitz 7,43M — Parität (1,08×). Zielkonflikt sichtbar: bei Gewicht 5 zahlte Aussaat in beiden Welten, bei 3 nur noch in der reinen. Die Überlappungs-Konzentration ist vom Gewicht unabhängig (8 % der Siege tragen 45 %, wie bei 5) — sie sitzt im Formations-Multiplikator, nicht im Gewicht. §6.22. |
 | 2026-09-07 | Owner: Grundgewicht 3 bleibt, Kompromiss 4 wird nicht gemessen. Damit ist gesetzt, dass die Wachstums-Skills Mono-Skills sind — im gemischten Build kosten sie den Platz, und das ist gewollt. §6.22. |
+| 2026-09-07 | Owner: Spalier zeigt seine offenen Segmentgrenzen jetzt in Aufstellphase und Chronik. Die Rechnung lag inline im Motor und ist als `spalierOpenBorders` plus `openBorderInfo` herausgezogen — eine Quelle für Engine und UI, wie bei `openSegmentInfo`. Die Anzeige rechnet bei jedem Tausch neu, weil Spalier am Grün-Stand der Nachbarkarten hängt. §6.23. |
