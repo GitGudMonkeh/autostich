@@ -150,12 +150,12 @@ export const SKILL_TIER_WEIGHTS        = [62, 25, 10, 3];
 export const SKILL_LEGENDARY_PER_SLOT  = envNum("SIM_SKILL_LEGENDARY_PER_SLOT", 0.035);
 // Door offer (docs/skill-rework.md §1): a skill phase shows SKILL_DOORS doors, each hiding SKILL_DOOR_SIZE skills
 // drawn from at most SKILL_DOOR_FACTIONS factions (repetition allowed). The door shows only the faction symbols;
-// the tiers are rolled with the door and revealed after it is opened. The pool is SKILL_OFFER_ARCHETYPES while
-// Eis and Pflanze wait for their rework — widen the list when a faction joins (skills.js buildSkillDoors).
+// the tiers are rolled with the door and revealed after it is opened. The pool is SKILL_OFFER_ARCHETYPES; Eis is
+// still waiting for its rework — widen the list when a faction joins (skills.js buildSkillDoors).
 export const SKILL_DOORS               = 2;
 export const SKILL_DOOR_SIZE           = 3;
 export const SKILL_DOOR_FACTIONS       = 2;
-export const SKILL_OFFER_ARCHETYPES    = ["fire", "lightning"];
+export const SKILL_OFFER_ARCHETYPES    = ["fire", "lightning", "plant"]; // §6.16 (Owner): die Pflanze ist fertig und kommt ins Angebot
 // Held skills are unlimited on exp (owner decision). The reducer and the screens treat a limit at or above this
 // value as "no limit". (§6.1: the plant commitment scaler that used SKILL_SLOTS as its denominator is gone.)
 export const SKILL_SLOT_LIMIT          = envNum("SIM_SKILL_SLOT_LIMIT", 99);

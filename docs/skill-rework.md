@@ -4356,6 +4356,25 @@ Engine-Test auf `breakdown.plantMult`. **Sobald die Pflanze ins Angebot kommt, i
 
 ---
 
+### 6.16 Die Pflanze kommt ins Angebot (2026-09-07, Owner) — umgesetzt
+
+**Owner:** „danach kann auch pflanze gelockt werden auf exp. wir sind erstmal fertig"
+
+`SKILL_OFFER_ARCHETYPES` ist jetzt `["fire", "lightning", "plant"]`. Damit stehen die 18 Pflanze-Skills im
+Türangebot; Eis wartet weiter auf seine Runde. Der Türwurf selbst ändert sich nicht (2 Türen à 3 Skills aus
+höchstens 2 Fraktionen) — nur der Topf, aus dem er zieht, ist um ein Drittel größer.
+
+**Balance-Guard neu zentriert:** Median 4,01M → **2,98M**, Mean 8,76M → **4,82M**. Der Zufallsspieler *fällt*, und
+das ist erklärbar: die Pflanze ist die einzige Fraktion, deren Motor ein GEBAUTER Build ist (Wachstum entsteht aus
+Formationen, Formationen aus der Aufstellung). Wer zufällig pickt, zieht Pflanze-Skills, die nichts tun, und
+verdünnt damit seine Feuer-/Blitz-Linien. Für den gierigen Spieler gilt das nicht — er wählt die Fraktion, die
+sein Lauf trägt.
+
+**Offen (nächste Runde):** die Paritätsrunde der drei Fraktionen mit Legendären — §6.10 verglich sie ohne, §6.12
+bis §6.15 haben die Legendären seither zweimal bewegt.
+
+---
+
 ## Änderungsprotokoll
 
 
@@ -4434,3 +4453,4 @@ Engine-Test auf `breakdown.plantMult`. **Sobald die Pflanze ins Angebot kommt, i
 | 2026-09-07 | Owner: keine Kommazahlen auf Karten (Brandmarke zeigt nur ganze Punkte), und alle unter 100 % auf ~100 % heben. Fünf Legendäre über ihre Werte auf +100 … +108 % gebracht; sieben der neun liegen jetzt in +101 … +149 %. Hochspannung (Regler arithmetisch am Ende) und Ewiger Frühling (Wert-Bonus sättigt bei +73 %) erreichen das Band nicht. §6.14. |
 | 2026-09-07 | Owner: Ewiger Frühling bekommt neben dem Kartenwert einen Score-Bonus in Formationen; Hochspannung bleibt wie er ist. Umgesetzt als +15 % je aktiver Formation beim Sieg mit einer blühenden Karte — der erste Multiplikator der Fraktion, gemessen +108 % und ohne Sättigung. Acht der neun Legendären liegen jetzt in +101 … +160 %. §6.15. |
 | 2026-09-07 | Owner: Wert-Bonus des Ewigen Frühlings +8 → +6, ohne Neumessung. §6.15. |
+| 2026-09-07 | Owner: die Pflanze kommt ins Türangebot (SKILL_OFFER_ARCHETYPES um "plant" erweitert). Balance-Guard neu zentriert (Median 2,98M, Mean 4,82M) — der Zufallsspieler fällt, weil die Pflanze als einzige Fraktion einen gebauten Motor braucht. §6.16. |

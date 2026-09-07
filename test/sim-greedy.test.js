@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { reducer } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
 import { archetypeOf } from "../src/game/skills.js";
+import { SKILL_OFFER_ARCHETYPES } from "../src/game/constants.js";
 import { runOne } from "../sim/run.js";
 import { newMemory } from "../sim/memory.js";
 import { greedyPolicy, buildValueTable, tierKey, skillOfOption, tierOfOption, DECLINE } from "../sim/policies/greedy.js";
@@ -13,7 +14,7 @@ const ARCH = ["fire", "lightning"];
 const opts = { archetypes: ARCH };
 
 describe("Sim — Archetyp-Allowlist je Lauf (START_RUN action.archetypes)", () => {
-  it("die Erst-Türen enthalten nur Skills der genannten Archetypen; ohne Angabe gilt der exp-Pool (Feuer/Blitz)", () => {
+  it("die Erst-Türen enthalten nur Skills der genannten Archetypen; ohne Angabe gilt der exp-Pool", () => {
     const s = reducer(null, { type: "START_RUN", rng: makeRng(1), architect: true, archetypes: ARCH });
     expect(s.unlockedArchetypes).toEqual(ARCH);
     const offered = s.skillDoors.flatMap((d) => d.skills);
@@ -21,7 +22,7 @@ describe("Sim — Archetyp-Allowlist je Lauf (START_RUN action.archetypes)", () 
     expect(offered.every((id) => ARCH.includes(archetypeOf(id)))).toBe(true);
     const open = reducer(null, { type: "START_RUN", rng: makeRng(1), architect: true });
     expect(open.unlockedArchetypes).toBe(null);
-    expect(open.skillDoors.flatMap((d) => d.skills).every((id) => ARCH.includes(archetypeOf(id)))).toBe(true);
+    expect(open.skillDoors.flatMap((d) => d.skills).every((id) => SKILL_OFFER_ARCHETYPES.includes(archetypeOf(id)))).toBe(true); // §6.16: der Pool ist die Konstante, nicht die Allowlist dieses Tests
     expect(reducer(null, { type: "START_RUN", rng: makeRng(1), architect: true, archetypes: [] }).unlockedArchetypes).toBe(null);
     // Eine Allowlist ÖFFNET auch: Eis/Pflanze bleiben für die Sim erreichbar, wenn ein Lauf sie nennt.
     const ice = reducer(null, { type: "START_RUN", rng: makeRng(1), architect: true, archetypes: ["ice"] });

@@ -19,11 +19,11 @@ const archsOf = (ids) => new Set(ids.map(archetypeOf));
 const doorsAt = (seed, owned = [], active = [], opts = {}) => buildSkillDoors(owned, active, makeRng(seed), makeRng(seed + 1000), opts);
 
 describe("buildSkillDoors — zwei Türen, drei Skills, höchstens zwei Fraktionen", () => {
-  it("Konstanten: 2 Türen à 3 Skills aus ≤ 2 Fraktionen; der exp-Pool ist Feuer und Blitz", () => {
+  it("Konstanten: 2 Türen à 3 Skills aus ≤ 2 Fraktionen; der exp-Pool ist Feuer, Blitz und Pflanze", () => {
     expect(SKILL_DOORS).toBe(2);
     expect(SKILL_DOOR_SIZE).toBe(3);
     expect(SKILL_DOOR_FACTIONS).toBe(2);
-    expect([...SKILL_OFFER_ARCHETYPES].sort()).toEqual(["fire", "lightning"]);
+    expect([...SKILL_OFFER_ARCHETYPES].sort()).toEqual(["fire", "lightning", "plant"]); // §6.16: Eis wartet noch auf seine Runde
   });
   it("Form: je Tür `skills` (distinkt, ungehalten, aus dem Pool) und `tiers` (0..3 je normalem Skill); Türen sind disjunkt", () => {
     for (let seed = 1; seed <= 60; seed++) {
