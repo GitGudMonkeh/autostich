@@ -2,7 +2,8 @@ import { describe, it, expect } from "vitest";
 import { resolveTrick } from "../src/game/engine.js";
 import { initialState } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
-import { precomputeGlacier, glacierOpts, uebergletscherPool, ROLES, SCHILD_BONUS } from "../src/game/glacier.js";
+import { precomputeGlacier, uebergletscherPool, ROLES, SCHILD_BONUS } from "../src/game/glacier.js";
+import { iceSnapshotOpts } from "../src/game/factions/ice.js";
 import { N_POS, posOf } from "../src/game/architect.js";
 
 // Eis-Neudesign Phase 5 (L1) — Legendäre: Große Lawine (alles bricht) + Ewiges Schild (Übergletscher).
@@ -19,8 +20,8 @@ describe("Große Lawine — alles bricht auf einen Schlag (One-Shot)", () => {
     expect(lawine.breaks).toHaveLength(3);
     for (const p of [0, 1, 2]) expect(lawine.payout[p]).toBeGreaterThan(0);
   });
-  it("glacierOpts setzt grosseLawine NICHT als Dauer-Flag (One-Shot läuft über die Engine)", () => {
-    expect(glacierOpts([ROLES.L_LAWINE]).grosseLawine).toBeUndefined();
+  it("die Snapshot-Optionen setzen grosseLawine NICHT als Dauer-Flag (One-Shot läuft über die Engine)", () => {
+    expect(iceSnapshotOpts([ROLES.L_LAWINE]).grosseLawine).toBeUndefined();
   });
 });
 
@@ -35,7 +36,7 @@ describe("Ewiges Schild — das ganze Feld als ein Übergletscher", () => {
     const mass = withMass([[0, 12], [posOf(7, 4), 12]]);
     const locked = set(0, posOf(7, 4));
     const base = precomputeGlacier(mass, locked);
-    const schild = precomputeGlacier(mass, locked, glacierOpts([ROLES.L_SCHILD]));
+    const schild = precomputeGlacier(mass, locked, iceSnapshotOpts([ROLES.L_SCHILD]));
     expect(schild.payout[0]).toBeGreaterThan(base.payout[0]);
   });
 });

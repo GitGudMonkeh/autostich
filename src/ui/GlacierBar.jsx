@@ -8,7 +8,8 @@
 // Rein informativ, keine Engine-Kopplung (spiegelt state.glacier*).
 import { useRef, useEffect, useState } from "react";
 import { FactionShell, PanelSkills } from "./indicators/panelKit.jsx";
-import { glacierClusters, glacierNeighborFn, glacierFormations, THRESHOLDS, ROLES } from "../game/glacier.js";
+import { glacierClusters, glacierFormations, THRESHOLDS, ROLES } from "../game/glacier.js";
+import { iceNeighborFn } from "../game/factions/ice.js"; // Eisbrücke → 8-Nachbarschaft (eine Quelle mit der Engine)
 import { fmtScore, fmtScoreShort } from "./format.js"; // #253: kompakte Abkürzung (Mio./Mrd.) für enge Kacheln + voller Wert im Tooltip
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon (Header/Marker = Eis-Icon)
 import glacierIcon from "./assets/glacier.webp"; // #308b: das detaillierte Gletscher-Bild NUR für das wachsende Panel-Hero-Visual behalten
@@ -87,7 +88,7 @@ export function GlacierBar({ active, glacierLocked = [], glacierMass = [], firnS
   glaciers.sort((a, b) => a.pos - b.pos); // Deck-/Spielreihenfolge statt Masse
 
   const cascade = glacierPre?.breaks?.length || 0;                        // Brüche in diesem Durchlauf
-  const clusters = glacierClusters(glacierLocked, glacierNeighborFn(glacierRoles));
+  const clusters = glacierClusters(glacierLocked, iceNeighborFn(glacierRoles));
   const biggest = clusters.reduce((m, c) => Math.max(m, c.length), 0);    // größtes zusammenhängendes Cluster
   // #386 Firn-Boden-Reserve: offener Boden mit Reserve (firnStack) = „lädt"; gefrorene Gletscher halten ihre Restreserve
   // (füllt sie zum Rundenstart wieder auf 12 nach). Getrennt von glacierMass (Gletscher-Eigenmasse).

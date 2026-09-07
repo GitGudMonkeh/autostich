@@ -3689,6 +3689,62 @@ Konstanten.
 5. **Angebot und Parität** — Eis in `SKILL_OFFER_ARCHETYPES`, Balance-Guard neu zentrieren, Parität gegen
    Feuer 7,75M / Blitz 7,43M / Pflanze 8,36M. Gemessen wird nur auf Ansage.
 
+### 5.3 Die vier Stufen je Skill (2026-09-07, Owner) — umgesetzt, UNGEMESSEN
+
+Owner: „bau die Raritäten und zeige sie mir." Die 15 Skills haben jetzt vier Stufen, und die Stufe erreicht die
+Mechanik. **Startwerte, nicht gemessen.**
+
+**Warum das mehr war als eine Tabelle.** Bis hierher las die Eis-Mechanik globale Konstanten über die Rolle `G_…`.
+Eine an der Tür gewürfelte Stufe änderte deshalb nichts. Umgestellt in drei Schritten, technische Entscheidung des
+Agenten: `state.glacierRoles` bleibt (zwei Dutzend `includes`-Prüfungen und alle Testszenarien hängen daran), daneben
+steht neu `state.glacierRoleTiers` (Stufe je Rolle, vom Reducer beim Pick gesetzt), und das neue Modul
+`src/game/factions/ice.js` macht aus beidem die Zahlen — wie `fire.js`, `lightning.js` und `plant.js` es für ihre
+Fraktionen tun. `glacier.js` hält seitdem nur noch, was **ohne** Skill gilt: Schwellen, Wucht je Stufe, Kaskade,
+Kollision, Passiv, Geometrie-Faktoren, die drei Legendären. 14 Rollen-Konstanten sind dort verschwunden; ihre Zahlen
+stehen nur noch in der Stufentabelle `EIS`.
+
+**Die Leiter.** Ein Regler je Skill, Normal bis Episch.
+
+| Skill | Regler | Normal | Selten | Sehr selten | Episch |
+| --- | --- | --- | --- | --- | --- |
+| **Anfrieren** | Masse je Gletscher-Sieg | 1 | 2 | 3 | 4, in einer Formation +4 |
+| **Schneetreiben** | Schnee ins Nachbarfeld | 2 | 3 | 4 | 5, in zwei Felder |
+| **Dauerfrost** | Schnee je Durchlauf, Abstand 2 / ab 3 | 1 / 2 | 2 / 3 | 2 / 4 | 3 / 6 |
+| **Verdichtung** | Masse je Punkt Gebäudewert | 0,25 | 0,4 | 0,6 | 1 |
+| **Packeis** | Masse je Gletscher-Nachbar | 0,5 | 0,75 | 1 | 1,5 |
+| **Eisbrücke** | Gewicht einer Diagonale | 50 % | 75 % | 100 % | 125 % |
+| **Eiswall** | Berst-Faktor der vollen Linie | ×1,45 | ×1,6 | ×1,8 | ×2,1 |
+| **Verzahnung** | Masse je Gletscher im Cluster | 0,15 | 0,25 | 0,4 | 0,6 |
+| **Abbruchkante** | Wucht 2. / 3. Schwelle (statt 1,5 / 2,2) | 1,6 / 2,6 | 1,8 / 3 | 2,1 / 3,6 | 2,5 / 4,4 |
+| **Kettenbruch** | Reichweite der Kette | 1 Schritt | 2 | 3 | ganzes Cluster |
+| **Rissbildung** | Berst-Schwelle (statt 12) | 9 | 8 | 7 | 6 |
+| **Gletschersturz** | je gleichzeitig brechendem Gletscher | +3 % | +5 % | +7 % | +10 % |
+| **Einfrieren** | eingefrorene Gegnerkarten je Bruch | 1 | 2 | 3 | 5 |
+| **Frostbund** | Stichwert für Nicht-Gletscher-Nachbarn | +2 | +3 | +4 | +6 |
+| **Eispanzer** | Masse je angrenzendem Gletscher | 1 | 2 | 3 | 4 |
+
+**Die drei Umbauten aus §5.2 sind damit gebaut.** Eisbrücke zählt die Diagonale anteilig statt als Schalter (die
+Nachbarschaft selbst ist weiter die 8er, nur die Kaskade rechnet mit dem Gewicht). Kettenbruch flutete bisher ohne
+Grenze durch das Cluster; jetzt ist die Reichweite die Leiter, und die alte Wirkung ist die Episch-Stufe. Einfrieren
+erbt die Reichweite des gestrichenen Legendären Erstarrung: die getroffene Karte plus bis zu vier Nachbarn im
+Gegnerfeld, begrenzt durch die Nachbarn, die es am Rand gibt.
+
+**Zwei kleine Regeln sind mit der Leiter gefallen**, beide, weil der Text sie sonst verschweigt:
+
+- Schneetreiben hatte einen Sonderfall für den leeren Gletscher (er gab seine Sieg-Masse ab, statt zusätzlich zu
+  säen). Er stand in keinem Skilltext und ist jetzt weg: gesät wird immer additiv.
+- Anfrieren gab den Formations-Zuschlag auf jeder Stufe. Jetzt ist er das Episch-Extra (§1: ein Effekt je normalem
+  Skill).
+
+**Wächter.** Neu `test/ice-rework.test.js`: die Tabelle hat je Skill vier verschiedene Zeilen und vier verschiedene
+Sätze, jeder Skill hat einen Regler, der von Normal bis Episch wirklich anders steht, und — der eigentliche Punkt —
+die Stufe schlägt bis in die Engine durch: Anfrieren friert mehr an, Schneetreiben sät in zwei Felder, Rissbildung
+bricht früher, Kettenbruch läuft weiter, Eisbrücke wiegt schwerer, Einfrieren greift weiter, Eiswall zahlt mehr.
+Die 20 vorhandenen Gletscher-Testdateien lesen ihre Erwartungen jetzt aus der Stufenzeile statt aus einer Konstante.
+
+**Offen, bis der Owner es sagt:** gemessen ist nichts. Die Zahlen sind Startwerte aus dem Design, nicht aus der Sim.
+Ebenfalls offen bleiben E1 bis E3 aus §5.1 (Aufstellungs-Lock, Score-Pfad, die beiden Deckel) und das Angebot.
+
 ## 6. Pflanze
 
 ### 6.1 Richtung und Abgrenzung (gesetzt, Owner 2026-09-06)
@@ -5062,3 +5118,4 @@ und die Ranked-Texte, die eine andere Runde meinen.
 | 2026-09-07 | Owner: die Schmiede auch angleichen. Vier Stellen (Skilltext, Leisten-Tooltip, Karten-Abzeichen, Glossar „Schmieden") sagen jetzt Kartenwert; der Glossar-Eintrag begann bereits mit „Hitze wird zu dauerhaftem Kartenwert" und sagte zwei Sätze später „+3 Wert". Die temporären Kampfwert-Boni (Ionenfeld, Blitzfänger, Glutklinge, Takt, Ewiger Frühling) und die Brandmal-Abzüge bleiben „Wert" — sie sind nicht der gebackene Kartenwert. Offen: zwei Reste des Textpakets aus §7.26, der Schmiede-Tooltip sagt „am Rundenende", Brandmal rechnet in Runden. §6.25. |
 | 2026-09-07 | Owner: auch die Reste des Textpakets aus §7.26 angleichen. Drei Stellen im Register und im Glossar sagen jetzt Durchlauf statt Runde (Schmiede-Tooltip, Glossar „Schmieden", Glossar „Brandmal"). Gegengeprüft statt nur umbenannt: `newBrandActive` wird im Durchlauf-Ende-Block der Engine getauscht, der Brand hält also wirklich einen Durchlauf; die Kommentare dort bleiben als Altbestand. Der Dev-Knopf „Runde überspringen" und die Ranked-Texte bleiben. §6.25. |
 | 2026-09-07 | Eis aufgenommen, nichts geändert. Befund: die Fraktion ist vollständig gebaut, verdrahtet, sichtbar und mit 111 Tests belegt — aber ohne exp-Struktur und heute unerreichbar, weil `SKILL_OFFER_ARCHETYPES` sie nicht führt (ein `--arch ice`-Lauf misst also einen Zufalls-Build). Acht strukturelle Punkte, der größte: kein Eis-Skill hat Stufen, die Mechanik liest Konstanten über `role`. Drei Owner-Entscheidungen isoliert (Aufstellungs-Lock, Score-Pfad neben der Basis, zwei Deckel) mit Empfehlung. Vorschlag für die 15 + 3: Verschmelzen, Zermalmen und Erstarrung streichen, Eisbrücke, Kettenbruch und Einfrieren bekommen einen Regler, der Rest bleibt. §5.1 und §5.2. |
+| 2026-09-07 | Owner nimmt §5.2 an und lässt die Raritäten bauen. Drei Skills gestrichen (Verschmelzen, Zermalmen, Erstarrung), dann die vier Stufen je Skill. Der eigentliche Umbau lag darunter: die Eis-Mechanik las globale Konstanten über die Rolle, eine gewürfelte Stufe änderte nichts. Neu `state.glacierRoleTiers` und `src/game/factions/ice.js` (wie fire/lightning/plant); `glacier.js` hält nur noch, was ohne Skill gilt, 14 Rollen-Konstanten sind dort weg. Eisbrücke, Kettenbruch und Einfrieren haben ihren Regler bekommen; zwei stumme Regeln (Schneetreibens 0-Masse-Sonderfall, Anfrierens Formations-Zuschlag auf jeder Stufe) sind gefallen. Neuer Wächter `test/ice-rework.test.js`. Startwerte, UNGEMESSEN. §5.3. |

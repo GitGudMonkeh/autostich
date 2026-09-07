@@ -6,8 +6,9 @@
    festgefrorenes Feld. Zum Durchlauf-Anfang wird der ganze Bruch auf dem statischen Brett vorab gerechnet
    (Snapshot, analog precomputeArchitect) und dann pro Stich ausgezahlt.
 
-   ⚠ ZAHLEN SIND PLATZHALTER — die endgültigen Werte fallen am Sim/Playtest (docs §2.3, §8). Struktur & Relationen
-   stehen, die Konstanten sind bewusst zentral & leicht editierbar. */
+   Hier stehen nur die Zahlen, die OHNE Skill gelten (Schwellen, Kaskade, Kollision, Passiv, Legendäre). Alles, was ein
+   Skill verstellt, kommt als Parameter herein — seine Stufenleiter steht in skills.js (EIS), gelesen von factions/ice.js.
+   ⚠ ZAHLEN SIND PLATZHALTER — die endgültigen Werte fallen am Sim/Playtest (docs §2.3, §8). */
 
 import { N_POS, rowOf, colOf, posOf } from "./architect.js"; // Brett-Geometrie 8×5, Single Source
 
@@ -34,13 +35,11 @@ export const KASKADE_PER_NEIGHBOR = 0.25;      // Berst-Faktor = 1 + 0,25 × Gle
 export const KOLLISION_MULT = 1.5;             // Treffer auf Gletscher-Nachbarn (anteilig, docs §2.3)
 export const EWIGER_FROST = 1;                 // Fraktions-Passiv: bedingungsloser Masse-Tick je Durchlauf (docs §2.6)
 export const WIN_MASS = 1;                     // Baseline: Sieg eines Gletschers → +Masse (docs §2.2)
-export const GLETSCHERSTURZ_PER = 0.05;        // Gletschersturz: +5 % je gleichzeitig brechendem Gletscher (Amp)
 export const TOP = THRESHOLDS[THRESHOLDS.length - 1]; // höchste Stufe (Überlauf-Grenze)
 // Berst-Kadenz (docs §2.3, „einzelne massive Hits"): ein Gletscher HÄLT & wächst, bis er die höchste Schwelle erreicht,
 // dann bricht er gewaltig (volle Stufe) und kalbt zurück. Selten + eskalierend statt häufig+klein.
 export const BURST_AT = TOP;                    // natürliche Berst-Schwelle = höchste Stufe (12)
 export const RESET_TO = 0;                      // nach dem Bruch abgekalbt → baut wieder von unten auf
-export const RISSBILDUNG_BURST = 6;            // Rissbildung: bricht schon bei niedriger Masse (Tempo-Gegenpol, kleine häufige Brüche)
 // #386 Firn-Boden-Reserve: der auf offenem Boden angesammelte Firn (firnStack) ist die RESERVE eines Feldes. Wird ein Feld
 // gefroren, startet der Gletscher LEER (Masse 0) und zieht zum Rundenstart aus seiner Reserve wieder auf FIRN_REFILL_TARGET
 // (=TOP, volle Masse) auf — nur die Differenz zur selbst-erzeugten Masse. Die Reserve ist ungedeckelt und leert sich Runde
@@ -72,8 +71,12 @@ export function precomputeGlacier(mass, locked, opts = {}) {
   const kaskade = opts.kaskadePerNeighbor ?? KASKADE_PER_NEIGHBOR;
   const kollision = opts.kollisionMult ?? KOLLISION_MULT;
   const neighborFn = opts.neighborFn || neighbors4;     // Eisbrücke → 8-Nachbarschaft (Kaskade/Kollision/Kette)
-  const kettenbruch = !!opts.kettenbruch;               // Bruch zwingt Nachbar-Gletscher mitzubrechen
-  const gletschersturzPer = opts.gletschersturz ? (opts.gletschersturzPer ?? GLETSCHERSTURZ_PER) : 0; // Amp ∝ Bruch-Zahl
+  // Eisbrücke (§5.2): die Diagonale zählt nur ANTEILIG als Nachbar — das Gewicht ist die Stufenleiter des Skills.
+  // Ohne Eisbrücke ist neighborFn die 4er-Liste, dort ist nie eine Diagonale dabei und das Gewicht bleibt wirkungslos.
+  const diagWeight = opts.diagWeight ?? 1;
+  const wOf = (p, n) => (rowOf(p) !== rowOf(n) && colOf(p) !== colOf(n) ? diagWeight : 1);
+  const kettenbruchDepth = opts.kettenbruchDepth || 0;  // Kettenbruch: wie viele Schritte die Kette weiterläuft (0 = aus)
+  const gletschersturzPer = opts.gletschersturzPer || 0; // Amp ∝ Bruch-Zahl
   const formFactor = opts.formFactor || null;           // 2D-Geometrie-Formationen: Burst-Faktor je Feld (docs §9)
   const grosseLawine = !!opts.grosseLawine;             // Legendär: ALLES bricht (Schwellen ignoriert)
   const ewigesSchild = !!opts.ewigesSchild;             // Legendär: das ganze Feld gilt als EIN Übergletscher (Kaskade = volle Feldgröße)
@@ -104,10 +107,13 @@ export function precomputeGlacier(mass, locked, opts = {}) {
     if (mCap[p] >= burstAt) { isBreaker[p] = true; queue.push(p); }
     else if (grosseLawine) { isBreaker[p] = true; forced[p] = true; } // Große Lawine: auch unreife brechen
   }
-  if (kettenbruch) {
-    while (queue.length) {
-      const q = queue.pop();
-      for (const n of neighborFn(q)) if (isG(n) && !isBreaker[n]) { isBreaker[n] = true; forced[n] = true; queue.push(n); }
+  if (kettenbruchDepth > 0) {
+    // Breitensuche statt Flut: die Kette läuft nur `kettenbruchDepth` Schritte weit (Stufenleiter §5.2).
+    let front = queue.slice();
+    for (let step = 0; step < kettenbruchDepth && front.length; step++) {
+      const next = [];
+      for (const q of front) for (const n of neighborFn(q)) if (isG(n) && !isBreaker[n]) { isBreaker[n] = true; forced[n] = true; next.push(n); }
+      front = next;
     }
   }
   let breakCount = 0;
@@ -122,7 +128,7 @@ export function precomputeGlacier(mass, locked, opts = {}) {
     // Große Lawine bricht ALLES auf voller Stufe (echter Finisher); Kettenbruch-erzwungene mind. Stufe 1; sonst natürliche Stufe.
     const effTier = grosseLawine ? (tierMult.length - 1) : (forced[p] ? Math.max(1, natTier[p]) : natTier[p]);
     const nb = neighborFn(p);
-    const gN = ewigesSchild ? Math.max(0, totalG - 1) : nb.filter(isG).length; // Ewiges Schild: ganzes Feld gilt als angrenzend
+    const gN = ewigesSchild ? Math.max(0, totalG - 1) : nb.reduce((t, n) => t + (isG(n) ? wOf(p, n) : 0), 0); // Ewiges Schild: ganzes Feld gilt als angrenzend
     const berstFaktor = 1 + kaskade * gN;               // Kaskade (Dichte)
     const kollFrac = ewigesSchild ? 1 : (nb.length ? gN / nb.length : 0);
     const kollFaktor = 1 + (kollision - 1) * kollFrac;  // Kollision (anteilig)
@@ -137,10 +143,7 @@ export function precomputeGlacier(mass, locked, opts = {}) {
   return { payout, resetMass, breaks, grosseLawine }; // grosseLawine: dieser Durchlauf ist der Große-Lawine-Finisher (HUD zeigt „Lawine")
 }
 
-/* ---- Rollen-Gruppe C: Cluster/Dichte — Nachbar-/Cluster-Infrastruktur (docs §4 Eisschild) --------- */
-export const PACKEIS_PER_NEIGHBOR = 0.5;   // Packeis: +Masse/Durchlauf je Gletscher-Nachbar
-export const VERZAHNUNG_PER = 0.25;        // Verzahnung: +Masse/Durchlauf je Gletscher im verbundenen Cluster (skaliert mit Größe)
-
+/* ---- Cluster/Dichte — Nachbar-/Cluster-Infrastruktur (docs §4 Eisschild) ------------------------- */
 // 8-Nachbarschaft (Eisbrücke): 4 orthogonal + 4 diagonal.
 export function neighbors8(p) {
   const r = rowOf(p), c = colOf(p), out = [];
@@ -151,8 +154,6 @@ export function neighbors8(p) {
   }
   return out;
 }
-// Aktive Nachbarschaftsfunktion: mit Eisbrücke die 8er, sonst die 4er.
-export const glacierNeighborFn = (roles = []) => (roles.includes(ROLES.EISBRUECKE) ? neighbors8 : neighbors4);
 
 // Cluster-Erkennung (Flood-Fill über verbundene Gletscher via aktiver Nachbarschaft) → Array von Clustern (je Array von pos).
 export function glacierClusters(locked, neighborFn = neighbors4) {
@@ -210,7 +211,7 @@ export function eiszeitTick(mass, locked, base = EISZEIT_FLOOD, maxGlaciers = EI
 }
 
 // Packeis (docs §4): am Durchlauf-Ende +Masse je Gletscher-Nachbar — belohnt die Mitte des Feldes.
-export function packeisTick(mass, locked, neighborFn = neighbors4, per = PACKEIS_PER_NEIGHBOR) {
+export function packeisTick(mass, locked, neighborFn = neighbors4, per = 0) {
   const isG = (p) => (locked instanceof Set ? locked.has(p) : !!(locked && locked[p]));
   const out = Array.isArray(mass) ? mass.slice() : new Array(N_POS).fill(0);
   for (let p = 0; p < N_POS; p++) if (isG(p)) {
@@ -222,7 +223,7 @@ export function packeisTick(mass, locked, neighborFn = neighbors4, per = PACKEIS
 
 // Verzahnung (docs §4): am Durchlauf-Ende gewinnt jeder Gletscher Masse ∝ seiner Cluster-Größe — großes Cluster füttert sich
 // schneller (Runaway-Kandidat, später deckeln).
-export function verzahnungTick(mass, locked, neighborFn = neighbors4, per = VERZAHNUNG_PER) {
+export function verzahnungTick(mass, locked, neighborFn = neighbors4, per = 0) {
   const out = Array.isArray(mass) ? mass.slice() : new Array(N_POS).fill(0);
   for (const cl of glacierClusters(locked, neighborFn)) {
     const gain = per * cl.length;
@@ -238,7 +239,6 @@ export const GEO_BLOCK = 1.15;    // 2×2-Quadrat (Dichte-Sockel)
 export const GEO_KREUZ = 1.25;    // Zentrum + 4 orthogonale (Kollisions-Knoten)
 export const GEO_LINIE = 1.30;    // volle Reihe (5) oder Spalte (8)
 export const GEO_FLAECHE = 1.50;  // gefülltes 3×3 (Endgame-Mega-Cluster)
-export const EISWALL_LINIE = 1.60; // Eiswall hebt die Linie an
 
 // Detail-Variante (für UI: Karten-Badge, Formationsbeschreibung, HUD-Multiplikator): liefert
 //   { factor:[40] (wie glacierGeometry), forms:[{type,factor,positions}] (aktive benannte Formen), formPos:Set<pos> }.
@@ -247,7 +247,7 @@ export function glacierFormations(locked, opts = {}) {
   const f = new Array(N_POS).fill(1);
   const forms = [], formPos = new Set();
   const addForm = (type, factor, positions) => { forms.push({ type, factor, positions }); for (const p of positions) { f[p] *= factor; formPos.add(p); } };
-  const linieFactor = opts.eiswall ? EISWALL_LINIE : GEO_LINIE;
+  const linieFactor = opts.eiswallLinie || GEO_LINIE;
   // Linie: volle Reihe (5 Spalten)
   for (let r = 0; r < 8; r++) { let full = true; for (let c = 0; c < 5; c++) if (!isG(posOf(r, c))) { full = false; break; } if (full) addForm("linie", linieFactor, Array.from({ length: 5 }, (_, c) => posOf(r, c))); }
   // Linie: volle Spalte (8 Zeilen)
@@ -275,9 +275,7 @@ export const glacierGeometry = (locked, opts = {}) => glacierFormations(locked, 
 // Anzeigenamen der 2D-Gletscher-Formen (UI).
 export const GLACIER_FORM_LABEL = { block: "Block", kreuz: "Kreuz", linie: "Linie", flaeche: "Große Fläche" };
 
-/* ---- Rollen → Snapshot-opts (Gruppe A, docs §4 Lawine) -------------------------------------------
-   Rollen als Skills sind noch nicht im Angebots-Pool (kein 5.-Archetyp-Leak); getrieben über state.glacierRoles.
-   ⚠ Werte Platzhalter. */
+/* ---- Rollen-Schlüssel (docs §4) — die Engine gattert über sie, die ZAHLEN je Stufe liefert factions/ice.js. */
 export const ROLES = {
   RISSBILDUNG: "G_RISSBILDUNG",   // instabiles Eis: erste Schwelle runter → bricht früh & oft
   ABBRUCHKANTE: "G_ABBRUCHKANTE", // belohnt hohe Stufen noch steiler (Riesen)
@@ -299,24 +297,7 @@ export const ROLES = {
   L_SCHILD: "G_L_SCHILD",         // Ewiges Schild: das ganze zusammenhängende Feld zählt als EIN Übergletscher
   L_EISZEIT: "G_L_EISZEIT",       // Eiszeit: Dauerfrost im Overdrive — das Brett flutet, Karten frieren nach und nach ein
 };
-export const FROSTBUND_BUFF = 3;  // Frostbund: Wert-Buff auf die getroffene Nicht-Eis-Nachbarkarte (nächster Durchlauf)
-export const VERDICHTUNG_RATE = 0.25; // Verdichtung: je 4 Gebäude-Bonuswert → +1 Masse (docs §4 Firn)
-export const ABBRUCHKANTE_TIER_MULT = [0, 1, 1.8, 3.0]; // steiler als Baseline [0,1,1.5,2.2]
 
-// Baut das opts-Objekt für precomputeGlacier aus den aktiven Rollen (Gruppe A). Mehrere Rollen komponieren additiv.
-export function glacierOpts(roles = []) {
-  const has = (r) => roles.includes(r);
-  const opts = {};
-  if (has(ROLES.RISSBILDUNG)) opts.burstAt = RISSBILDUNG_BURST;   // bricht schon bei niedriger Masse (Tempo)
-  if (has(ROLES.ABBRUCHKANTE)) opts.tierMult = ABBRUCHKANTE_TIER_MULT;
-  if (has(ROLES.EISBRUECKE)) opts.neighborFn = neighbors8;   // Kaskade/Kollision/Kette über 8-Nachbarschaft
-  if (has(ROLES.KETTENBRUCH)) opts.kettenbruch = true;
-  if (has(ROLES.GLETSCHERSTURZ)) opts.gletschersturz = true;
-  // L_LAWINE (Große Lawine) wird NICHT hier als Dauer-Flag gesetzt — sie ist ein EINMALIGER Finisher (One-Shot),
-  // die Engine setzt opts.grosseLawine nur im ersten aktiven Durchlauf (sonst würde sie das Horten verhindern).
-  if (has(ROLES.L_SCHILD)) opts.ewigesSchild = true;         // Legendär: Übergletscher (Dauer-Zustand)
-  return opts;
-}
 
 /* ---- Ewiger Frost: bedingungsloser Masse-Tick je Durchlauf (Fraktions-Passiv, docs §2.6) ----------
    Am Durchlauf-ENDE anzuwenden (nach Auszahlung), auf jeden Gletscher. Klein gehalten (Sockel, nicht Motor). */
@@ -327,28 +308,20 @@ export function ewigerFrostTick(mass, locked, amount = EWIGER_FROST) {
   return out;
 }
 
-/* ---- Rollen-Gruppe B: Masse-Quellen (docs §4 Firn) ----------------------------------------------- */
-export const ANFRIEREN_WIN = 1;        // Sieg → +Masse extra (zusätzlich zur Baseline WIN_MASS)
-export const ANFRIEREN_FORM = 2;       // Formations-Sieg → doppelt anfrieren (extra oben drauf)
-export const SCHNEETREIBEN_SEED = 2;   // Verwehung: ADDITIV +Masse aufs Nachbarfeld (Gletscher behält seine Sieg-Masse); nur bei 0 eigener Masse gibt er stattdessen die Sieg-Masse ab
-export const DAUERFROST_NEAR = 1;      // Dauerfrost: Feld mit Abstand 2 zum nächsten Gletscher → +Masse/Durchlauf
-export const DAUERFROST_FAR = 2;       // Dauerfrost: Feld mit Abstand ≥3 (oder kein Gletscher) → +Masse/Durchlauf
-export const EISPANZER_MASS = 1;       // Eispanzer: abgeschirmte Nachbar-Niederlage → +Masse je angrenzendem Gletscher
-
+/* ---- Masse-Quellen (docs §4 Firn) ---------------------------------------------------------------- */
 // Schneetreiben (Verwehung, docs §4): Zielfeld für die Verwehung — ein NICHT-Gletscher-Nachbarfeld (offener Boden, wo Firn
 // als Reserve gesät wird). Deterministisch (niedrigster Index in der neighbors4-Reihenfolge). null, wenn keine Nachbarn ODER
 // alle Nachbarn Gletscher sind. #386: Firn wird NIE unter einen Gletscher gesät → kein Gletscher-Fallback mehr.
-export function driftTarget(pos, locked) {
+export function driftTargets(pos, locked, count = 1) {
   const isG = (p) => (locked instanceof Set ? locked.has(p) : !!(locked && locked[p]));
-  const open = neighbors4(pos).filter((p) => !isG(p));
-  return open.length ? open[0] : null;
+  return neighbors4(pos).filter((p) => !isG(p)).slice(0, Math.max(0, count));
 }
 
 // Dauerfrost (docs §4 Firn): am Durchlauf-ENDE frosten UNGEFRORENE Felder nach ABSTAND zum nächsten Gletscher
 // (King-Move/Chebyshev, weil „die 8 direkt um einen Gletscher"): Abstand 1 (der 8er-Ring) → 0, Abstand 2 → NEAR,
 // Abstand ≥3 (oder gar kein Gletscher) → FAR. Bewusst einfache Bänder statt Bruch-Skalierung. #386: schreibt in die
 // Firn-Boden-RESERVE (firnStack), nie unter einen Gletscher — die Engine reicht das firnStack-Array herein.
-export function dauerfrostTick(mass, locked) {
+export function dauerfrostTick(mass, locked, near = 0, far = 0) {
   const isG = (p) => (locked instanceof Set ? locked.has(p) : !!(locked && locked[p]));
   const glaciers = [];
   for (let p = 0; p < N_POS; p++) if (isG(p)) glaciers.push(p);
@@ -360,7 +333,7 @@ export function dauerfrostTick(mass, locked) {
       const cd = Math.max(Math.abs(rowOf(p) - rowOf(g)), Math.abs(colOf(p) - colOf(g)));
       if (cd < dist) { dist = cd; if (dist <= 1) break; }
     }
-    const add = dist <= 1 ? 0 : (dist === 2 ? DAUERFROST_NEAR : DAUERFROST_FAR);
+    const add = dist <= 1 ? 0 : (dist === 2 ? near : far);
     if (add > 0) out[p] = (out[p] || 0) + add;
   }
   return out;

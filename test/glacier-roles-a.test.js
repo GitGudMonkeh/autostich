@@ -2,7 +2,10 @@ import { describe, it, expect } from "vitest";
 import { resolveTrick } from "../src/game/engine.js";
 import { initialState } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
-import { precomputeGlacier, glacierOpts, ROLES, RESET_TO } from "../src/game/glacier.js";
+import { precomputeGlacier, ROLES, RESET_TO } from "../src/game/glacier.js";
+import { iceSnapshotOpts } from "../src/game/factions/ice.js";
+import { EIS_TIERS as EIS } from "../src/game/skills.js"; // §5.3: die Zahlen stehen in der Stufenleiter (Normal = Zeile 0)
+
 
 // Eis-Neudesign Phase 3.2 Gruppe A — Snapshot-Modifikatoren (Rissbildung/Abbruchkante). §5.2: Zermalmen gestrichen.
 // Getrieben über state.glacierRoles (noch nicht im Skill-Angebots-Pool → kein 5.-Archetyp-Leak). Werte Platzhalter.
@@ -18,23 +21,23 @@ const scen = (over = {}) => ({
   activeArchetypes: ["ice"], glacierMass: zeros(), glacierLocked: falses(), glacierRoles: [], ...over,
 });
 
-describe("glacierOpts — Rollen → Snapshot-opts", () => {
+describe("iceSnapshotOpts — Rollen und Stufe → Snapshot-opts", () => {
   it("baut opts nur für aktive Rollen, komponiert additiv", () => {
-    expect(glacierOpts([])).toEqual({});
-    expect(glacierOpts([ROLES.RISSBILDUNG])).toHaveProperty("burstAt");
-    const all = glacierOpts([ROLES.RISSBILDUNG, ROLES.ABBRUCHKANTE]);
+    expect(iceSnapshotOpts([])).toEqual({});
+    expect(iceSnapshotOpts([ROLES.RISSBILDUNG]).burstAt).toBe(EIS.rissbildung[0].burstAt);
+    const all = iceSnapshotOpts([ROLES.RISSBILDUNG, ROLES.ABBRUCHKANTE]);
     expect(all).toHaveProperty("burstAt");
     expect(all).toHaveProperty("tierMult");
   });
 });
 
 describe("Rissbildung — senkt die Berst-Schwelle (Tempo)", () => {
-  it("bricht schon bei Masse 6 (statt erst ab 12)", () => {
+  it("bricht schon an seiner gesenkten Schwelle, wo ein normaler Gletscher noch hält", () => {
     const glacierLocked = falses(); glacierLocked[0] = true;
-    const glacierMass = zeros(); glacierMass[0] = 6;
+    const glacierMass = zeros(); glacierMass[0] = EIS.rissbildung[0].burstAt;
     const base = resolveTrick(scen({ glacierLocked, glacierMass }), noCrit);
     const riss = resolveTrick(scen({ glacierLocked, glacierMass, glacierRoles: [ROLES.RISSBILDUNG] }), noCrit);
-    expect(base.lastTrick.breakdown?.glacierDirect ?? 0).toBe(0); // Masse 6 < 12: hält
+    expect(base.lastTrick.breakdown?.glacierDirect ?? 0).toBe(0); // unter der normalen Schwelle 12: hält
     expect(riss.lastTrick.breakdown.glacierDirect).toBeGreaterThan(0);
   });
 });
@@ -50,9 +53,9 @@ describe("Abbruchkante — steilere Stufen", () => {
 });
 
 describe("Rissbildung — Abkalben nach frühem Bruch", () => {
-  it("bricht bei Masse 6 und kalbt auf RESET_TO zurück", () => {
+  it("bricht an seiner gesenkten Schwelle und kalbt auf RESET_TO zurück", () => {
     const { resetMass, breaks } = precomputeGlacier(
-      (() => { const m = zeros(); m[0] = 6; return m; })(), new Set([0]), glacierOpts([ROLES.RISSBILDUNG]));
+      (() => { const m = zeros(); m[0] = EIS.rissbildung[0].burstAt; return m; })(), new Set([0]), iceSnapshotOpts([ROLES.RISSBILDUNG]));
     expect(breaks).toHaveLength(1);
     expect(resetMass[0]).toBe(RESET_TO);
   });

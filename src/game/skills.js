@@ -1,13 +1,9 @@
 import * as C from "./constants.js";
 import { shuffle } from "./deck.js";
-// Eis-Neudesign: Gletscher-Tuning-Zahlen (Single Source glacier.js, Sim-tunebar) für driftfreie Eis-Skill-Descs.
-import { ANFRIEREN_WIN as G_ANFRIEREN_WIN, ANFRIEREN_FORM as G_ANFRIEREN_FORM, SCHNEETREIBEN_SEED as G_SCHNEETREIBEN_SEED,
-  DAUERFROST_NEAR as G_DAUERFROST_NEAR, DAUERFROST_FAR as G_DAUERFROST_FAR, VERDICHTUNG_RATE as G_VERDICHTUNG_RATE,
-  PACKEIS_PER_NEIGHBOR as G_PACKEIS_PER, VERZAHNUNG_PER as G_VERZAHNUNG_PER, GEO_LINIE as G_GEO_LINIE, EISWALL_LINIE as G_EISWALL_LINIE,
-  TIER_MULT as G_TIER_MULT, ABBRUCHKANTE_TIER_MULT as G_ABBRUCH_TIER,
-  RISSBILDUNG_BURST as G_RISSBILDUNG_BURST, THRESHOLDS as G_THRESHOLDS, GLETSCHERSTURZ_PER as G_GLETSCHERSTURZ_PER,
-  FROSTBUND_BUFF as G_FROSTBUND_BUFF, EISPANZER_MASS as G_EISPANZER_MASS, EISZEIT_FLOOD as G_EISZEIT_FLOOD,
-  EISZEIT_MAX_GLACIERS as G_EISZEIT_MAX, SCHILD_BONUS as G_SCHILD_BONUS } from "./glacier.js";
+// Eis: die Zahlen der SKILLS stehen in der Stufentabelle EIS unten. Aus glacier.js kommt nur, was ohne Skill gilt —
+// die Schwellen, die Wucht je Stufe, der Linien-Faktor der Geometrie und die Werte der drei Legendären.
+import { GEO_LINIE as G_GEO_LINIE, TIER_MULT as G_TIER_MULT, THRESHOLDS as G_THRESHOLDS,
+  EISZEIT_FLOOD as G_EISZEIT_FLOOD, EISZEIT_MAX_GLACIERS as G_EISZEIT_MAX, SCHILD_BONUS as G_SCHILD_BONUS } from "./glacier.js";
 
 // Deutsche Zahlformatierung (1.08 → „1,08") — driftgefährdete Beschreibungszahlen aus den Konstanten interpolieren.
 const de = (x) => String(x).replace(".", ",");
@@ -102,6 +98,35 @@ const PFLANZE = {
   bluetenlese:   [{ score: 40, growth: 1 }, { score: 60, growth: 1 }, { score: 80, growth: 1 }, { score: 100, growth: 2 }],
 };
 export const PFLANZE_TIERS = PFLANZE;
+/* Stufentabellen der 15 Eis-Skills (§5.3) — dieselbe Form. Eis ist die letzte Fraktion, die Stufen bekommt; bis dahin
+   las die Mechanik globale Konstanten über die Rolle `G_…`, und eine gewürfelte Stufe änderte nichts. Diese Tabelle ist
+   ab jetzt die EINZIGE Quelle der Zahlen: glacier.js hält nur noch, was ohne Skill gilt (Schwellen, Kaskade, Passiv).
+   Das Modul factions/ice.js liest sie über `iceTuning(roles, roleTiers)`; die drei Legendären haben keine Stufe.
+   Startwerte, NICHT gemessen (Owner: erst Design, dann Startwert, dann messen — auf Ansage). */
+const EIS = {
+  // Firn — die Masse-Motoren
+  anfrieren:      [{ mass: 1 }, { mass: 2 }, { mass: 3 }, { mass: 4, form: 4 }], // Episch-Extra: der Formations-Sieg legt noch einmal nach
+  schneetreiben:  [{ seed: 2, fields: 1 }, { seed: 3, fields: 1 }, { seed: 4, fields: 1 }, { seed: 5, fields: 2 }],
+  dauerfrost:     [{ near: 1, far: 2 }, { near: 2, far: 3 }, { near: 2, far: 4 }, { near: 3, far: 6 }],
+  verdichtung:    [{ rate: 0.25 }, { rate: 0.4 }, { rate: 0.6 }, { rate: 1 }],
+  // Eisschild — Cluster und Dichte
+  packeis:        [{ per: 0.5 }, { per: 0.75 }, { per: 1 }, { per: 1.5 }],
+  eisbruecke:     [{ weight: 0.5 }, { weight: 0.75 }, { weight: 1 }, { weight: 1.25 }], // §5.2: die Diagonale bekommt ein Gewicht statt eines Schalters
+  eiswall:        [{ linie: 1.45 }, { linie: 1.6 }, { linie: 1.8 }, { linie: 2.1 }],
+  verzahnung:     [{ per: 0.15 }, { per: 0.25 }, { per: 0.4 }, { per: 0.6 }], // niedrig angesetzt: der Ertrag wächst quadratisch mit der Clustergröße
+  // Lawine — der Payoff
+  abbruchkante:   [{ t2: 1.6, t3: 2.6 }, { t2: 1.8, t3: 3 }, { t2: 2.1, t3: 3.6 }, { t2: 2.5, t3: 4.4 }],
+  kettenbruch:    [{ depth: 1 }, { depth: 2 }, { depth: 3 }, { depth: C.BOARD_POSITIONS, whole: true }], // §5.2: Regler ist die Reichweite der Kette
+  rissbildung:    [{ burstAt: 9 }, { burstAt: 8 }, { burstAt: 7 }, { burstAt: 6 }],
+  gletschersturz: [{ per: 0.03 }, { per: 0.05 }, { per: 0.07 }, { per: 0.1 }],
+  // Frostgriff — Kontrolle und Duo
+  einfrieren:     [{ cards: 1 }, { cards: 2 }, { cards: 3 }, { cards: 5 }], // §5.2: erbt die Reichweite des gestrichenen Legendären Erstarrung
+  frostbund:      [{ buff: 2 }, { buff: 3 }, { buff: 4 }, { buff: 6 }],
+  eispanzer:      [{ mass: 1 }, { mass: 2 }, { mass: 3 }, { mass: 4 }],
+};
+export const EIS_TIERS = EIS;
+// Einfrieren: der Nachsatz je Reichweite — ausgeschrieben, weil Singular und Plural sonst am Zahlwort auseinanderfallen.
+const EINFRIEREN_NACHBARN = { 2: " Eine ihrer Nachbarkarten verliert ihn ebenfalls.", 3: " Zwei ihrer Nachbarkarten verlieren ihn ebenfalls.", 5: " Ihre vier Nachbarkarten verlieren ihn ebenfalls." };
 
 export const SKILL_DEFS = {
   // ---- Blitz (exp skill rework, §3): Passiv +5 % Crit je Skill, Leiste 10 Crits → nächste Karte ionisieren.
@@ -207,41 +232,41 @@ export const SKILL_DEFS = {
   //      Gletscher halten & brechen gewaltig. Jeder Skill trägt ein `role: G_…` (Mechanik in glacier.js). Gate = archetype
   //      "ice" → activeArchetypes "ice" aktiviert den Gletscher-Block; PICK_SKILL seedet state.glacierRoles aus den `role`s.
   // Linie 1 — Firn (Masse-Motor)
-  SK_ICE_01: { id: "SK_ICE_01", name: "Anfrieren", archetype: "ice", keywords: ["glacier"], role: "G_ANFRIEREN",
-    desc: `Ein Gletscher-Sieg gibt +${de(G_ANFRIEREN_WIN)} Masse extra, in einer Formation zusätzlich +${de(G_ANFRIEREN_FORM)}.` },
-  SK_ICE_02: { id: "SK_ICE_02", name: "Schneetreiben", archetype: "ice", keywords: ["glacier", "freeze"], role: "G_SCHNEETREIBEN",
-    desc: `Gewinnt ein Gletscher, sät er +${de(G_SCHNEETREIBEN_SEED)} Schnee in die Boden-Reserve eines der 4 angrenzenden offenen Felder, ohne eigene Masse abzugeben. Nur bei 0 eigener Masse gibt er stattdessen seine Sieg-Masse ab. Eisbrücke erweitert das nicht.` },
-  SK_ICE_03: { id: "SK_ICE_03", name: "Dauerfrost", archetype: "ice", keywords: ["glacier", "freeze"], role: "G_DAUERFROST",
-    desc: `Jeden Durchlauf sammeln ungefrorene Felder Schnee in ihrer Boden-Reserve: +${de(G_DAUERFROST_NEAR)} bei 2 Feldern Abstand zum nächsten Gletscher, +${de(G_DAUERFROST_FAR)} ab 3. Die 8 Felder direkt um einen Gletscher bleiben leer. Friert hier später ein Gletscher ein, füllt die Reserve ihn zum Durchlauf-Beginn auf.` },
-  SK_ICE_04: { id: "SK_ICE_04", name: "Verdichtung", archetype: "ice", keywords: ["glacier", "bauphase"], role: "G_VERDICHTUNG",
-    desc: `Erhöht ein Gebäude den Kampfwert einer Gletscher-Karte, wird dieser Bonus nicht ausgespielt, sondern in Masse umgewandelt: +${de(G_VERDICHTUNG_RATE)} Masse je Punkt. Score-Gebäude bleiben unberührt.` },
+  SK_ICE_01: { id: "SK_ICE_01", name: "Anfrieren", archetype: "ice", keywords: ["glacier"], role: "G_ANFRIEREN", tiers: EIS.anfrieren,
+    ...tiered(EIS.anfrieren, (r) => `Ein Gletscher-Sieg gibt +${de(r.mass)} Masse extra${r.form ? `, in einer Formation zusätzlich +${de(r.form)}` : ""}.`) },
+  SK_ICE_02: { id: "SK_ICE_02", name: "Schneetreiben", archetype: "ice", keywords: ["glacier", "freeze"], role: "G_SCHNEETREIBEN", tiers: EIS.schneetreiben,
+    ...tiered(EIS.schneetreiben, (r) => `Gewinnt ein Gletscher, sät er +${de(r.seed)} Schnee in die Boden-Reserve ${r.fields === 1 ? "eines angrenzenden offenen Felds" : `von ${de1(r.fields)} angrenzenden offenen Feldern`}.`) },
+  SK_ICE_03: { id: "SK_ICE_03", name: "Dauerfrost", archetype: "ice", keywords: ["glacier", "freeze"], role: "G_DAUERFROST", tiers: EIS.dauerfrost,
+    ...tiered(EIS.dauerfrost, (r) => `Jeden Durchlauf sammeln ungefrorene Felder Schnee in ihrer Boden-Reserve: +${de(r.near)} bei 2 Feldern Abstand zum nächsten Gletscher, +${de(r.far)} ab 3. Die 8 Felder direkt um einen Gletscher bleiben leer.`) },
+  SK_ICE_04: { id: "SK_ICE_04", name: "Verdichtung", archetype: "ice", keywords: ["glacier", "bauphase"], role: "G_VERDICHTUNG", tiers: EIS.verdichtung,
+    ...tiered(EIS.verdichtung, (r) => `Erhöht ein Gebäude den Kampfwert einer Gletscher-Karte, wird dieser Bonus nicht ausgespielt, sondern in Masse umgewandelt: +${de(r.rate)} Masse je Punkt. Score-Gebäude bleiben unberührt.`) },
   // Linie 2 — Eisschild (Cluster/Dichte). (§5.2: Verschmelzen SK_ICE_05 gestrichen — binär, im Spiel unsichtbar, und
   // dieselbe Achse wie Packeis/Verzahnung; in groß ist es das Legendäre Ewiges Schild.)
-  SK_ICE_06: { id: "SK_ICE_06", name: "Packeis", archetype: "ice", keywords: ["glacier"], role: "G_PACKEIS",
-    desc: `Jeden Durchlauf gewinnt ein Gletscher +${de(G_PACKEIS_PER)} Masse je Gletscher-Nachbar.` },
-  SK_ICE_07: { id: "SK_ICE_07", name: "Eisbrücke", archetype: "ice", keywords: ["glacier"], role: "G_EISBRUECKE",
-    desc: `Zählt auch die vier Diagonalen als angrenzend: zersplitterte Felder werden zu einem Cluster, für Bruch, Kollision und Cluster-Größe.` },
-  SK_ICE_08: { id: "SK_ICE_08", name: "Eiswall", archetype: "ice", keywords: ["glacier", "formation"], role: "G_EISWALL",
-    desc: `Eine komplett gefrorene Reihe oder Spalte verstärkt das Bersten aller ihrer Gletscher: ×${de(G_EISWALL_LINIE)} statt ×${de(G_GEO_LINIE)}.` },
-  SK_ICE_09: { id: "SK_ICE_09", name: "Verzahnung", archetype: "ice", keywords: ["glacier"], role: "G_VERZAHNUNG",
-    desc: `Jeden Durchlauf gewinnt jeder Gletscher +${de(G_VERZAHNUNG_PER)} Masse je Gletscher im verbundenen Cluster.` },
+  SK_ICE_06: { id: "SK_ICE_06", name: "Packeis", archetype: "ice", keywords: ["glacier"], role: "G_PACKEIS", tiers: EIS.packeis,
+    ...tiered(EIS.packeis, (r) => `Jeden Durchlauf gewinnt ein Gletscher +${de(r.per)} Masse je Gletscher-Nachbar.`) },
+  SK_ICE_07: { id: "SK_ICE_07", name: "Eisbrücke", archetype: "ice", keywords: ["glacier"], role: "G_EISBRUECKE", tiers: EIS.eisbruecke,
+    ...tiered(EIS.eisbruecke, (r) => `Zählt auch die vier Diagonalen als angrenzend: zersplitterte Felder werden zu einem Cluster. Für Kaskade und Kollision zählt ein diagonaler Gletscher zu ${pct(r.weight)} %.`) },
+  SK_ICE_08: { id: "SK_ICE_08", name: "Eiswall", archetype: "ice", keywords: ["glacier", "formation"], role: "G_EISWALL", tiers: EIS.eiswall,
+    ...tiered(EIS.eiswall, (r) => `Eine komplett gefrorene Reihe oder Spalte verstärkt das Bersten aller ihrer Gletscher: ×${de(r.linie)} statt ×${de(G_GEO_LINIE)}.`) },
+  SK_ICE_09: { id: "SK_ICE_09", name: "Verzahnung", archetype: "ice", keywords: ["glacier"], role: "G_VERZAHNUNG", tiers: EIS.verzahnung,
+    ...tiered(EIS.verzahnung, (r) => `Jeden Durchlauf gewinnt jeder Gletscher +${de(r.per)} Masse je Gletscher im verbundenen Cluster.`) },
   // Linie 3 — Lawine (Brechen/Kaskade)
-  SK_ICE_10: { id: "SK_ICE_10", name: "Abbruchkante", archetype: "ice", keywords: ["glacier"], role: "G_ABBRUCHKANTE",
-    desc: `Höhere Masse-Schwellen bersten steiler: Wucht ×${de(G_ABBRUCH_TIER[2])} statt ×${de(G_TIER_MULT[2])} an der 2. Schwelle, ×${de(G_ABBRUCH_TIER[3])} statt ×${de(G_TIER_MULT[3])} an der 3.` },
-  SK_ICE_11: { id: "SK_ICE_11", name: "Kettenbruch", archetype: "ice", keywords: ["glacier"], role: "G_KETTENBRUCH",
-    desc: `Bricht ein Gletscher, brechen angrenzende Gletscher sofort mit, auch ohne ihre Schwelle erreicht zu haben.` },
+  SK_ICE_10: { id: "SK_ICE_10", name: "Abbruchkante", archetype: "ice", keywords: ["glacier"], role: "G_ABBRUCHKANTE", tiers: EIS.abbruchkante,
+    ...tiered(EIS.abbruchkante, (r) => `Höhere Masse-Schwellen bersten steiler: Wucht ×${de(r.t2)} statt ×${de(G_TIER_MULT[2])} an der 2. Schwelle, ×${de(r.t3)} statt ×${de(G_TIER_MULT[3])} an der 3.`) },
+  SK_ICE_11: { id: "SK_ICE_11", name: "Kettenbruch", archetype: "ice", keywords: ["glacier"], role: "G_KETTENBRUCH", tiers: EIS.kettenbruch,
+    ...tiered(EIS.kettenbruch, (r) => `Bricht ein Gletscher, brechen angrenzende Gletscher sofort mit, auch ohne ihre Schwelle erreicht zu haben. Die Kette läuft ${r.whole ? "durch das ganze Cluster" : r.depth === 1 ? "einen Schritt weit" : `${de1(r.depth)} Schritte weit`}.`) },
   // (§5.2: Zermalmen SK_ICE_12 gestrichen — dieselbe Achse wie die Kaskade, beide zahlen für Gletscher-Nachbarn.)
-  SK_ICE_13: { id: "SK_ICE_13", name: "Rissbildung", archetype: "ice", keywords: ["glacier"], role: "G_RISSBILDUNG",
-    desc: `Ein Gletscher bricht schon ab ${de(G_RISSBILDUNG_BURST)} Masse statt ${de(G_THRESHOLDS[G_THRESHOLDS.length - 1])}.` },
-  SK_ICE_14: { id: "SK_ICE_14", name: "Gletschersturz", archetype: "ice", keywords: ["glacier"], role: "G_GLETSCHERSTURZ",
-    desc: `Jeder Bruch wird +${pct(G_GLETSCHERSTURZ_PER)} % stärker je Gletscher, der im selben Durchlauf bricht.` },
+  SK_ICE_13: { id: "SK_ICE_13", name: "Rissbildung", archetype: "ice", keywords: ["glacier"], role: "G_RISSBILDUNG", tiers: EIS.rissbildung,
+    ...tiered(EIS.rissbildung, (r) => `Ein Gletscher bricht schon ab ${de(r.burstAt)} Masse statt ${de(G_THRESHOLDS[G_THRESHOLDS.length - 1])}.`) },
+  SK_ICE_14: { id: "SK_ICE_14", name: "Gletschersturz", archetype: "ice", keywords: ["glacier"], role: "G_GLETSCHERSTURZ", tiers: EIS.gletschersturz,
+    ...tiered(EIS.gletschersturz, (r) => `Jeder Bruch wird +${pct(r.per)} % stärker je Gletscher, der im selben Durchlauf bricht.`) },
   // Linie 4 — Frostgriff (Kontrolle/Duo)
-  SK_ICE_15: { id: "SK_ICE_15", name: "Einfrieren", archetype: "ice", keywords: ["glacier"], role: "G_EINFRIEREN",
-    desc: "Bricht ein Gletscher auf eine Gegnerkarte, verliert diese ihren Stich im nächsten Durchlauf." },
-  SK_ICE_16: { id: "SK_ICE_16", name: "Frostbund", archetype: "ice", keywords: ["glacier"], role: "G_FROSTBUND",
-    desc: `Bricht ein Gletscher, bekommen seine Nicht-Gletscher-Nachbarn +${de(G_FROSTBUND_BUFF)} Stichwert im nächsten Durchlauf. Mit Eisbrücke gilt das für die 8er-Nachbarschaft.` },
-  SK_ICE_17: { id: "SK_ICE_17", name: "Eispanzer", archetype: "ice", keywords: ["glacier"], role: "G_EISPANZER",
-    desc: `Eine Niederlage neben einem Gletscher bricht deine Serie nicht und gibt +${de(G_EISPANZER_MASS)} Masse je angrenzendem Gletscher.` },
+  SK_ICE_15: { id: "SK_ICE_15", name: "Einfrieren", archetype: "ice", keywords: ["glacier"], role: "G_EINFRIEREN", tiers: EIS.einfrieren,
+    ...tiered(EIS.einfrieren, (r) => `Bricht ein Gletscher auf das Gegnerfeld, verliert die getroffene Karte ihren Stich im nächsten Durchlauf.${EINFRIEREN_NACHBARN[r.cards] || ""}`) },
+  SK_ICE_16: { id: "SK_ICE_16", name: "Frostbund", archetype: "ice", keywords: ["glacier"], role: "G_FROSTBUND", tiers: EIS.frostbund,
+    ...tiered(EIS.frostbund, (r) => `Bricht ein Gletscher, bekommen seine Nicht-Gletscher-Nachbarn +${de(r.buff)} Stichwert im nächsten Durchlauf. Mit Eisbrücke gilt das für die acht Nachbarn.`) },
+  SK_ICE_17: { id: "SK_ICE_17", name: "Eispanzer", archetype: "ice", keywords: ["glacier"], role: "G_EISPANZER", tiers: EIS.eispanzer,
+    ...tiered(EIS.eispanzer, (r) => `Eine Niederlage neben einem Gletscher bricht deine Serie nicht und gibt +${de(r.mass)} Masse je angrenzendem Gletscher.`) },
   // Legendäre (je Linie eine Capstone)
   SK_ICE_L01: { id: "SK_ICE_L01", name: "Eiszeit", archetype: "ice", legendary: true, keywords: ["glacier", "freeze"], role: "G_L_EISZEIT",
     desc: `Jeden Durchlauf +${de(G_EISZEIT_FLOOD)} Schnee in die Boden-Reserve jedes ungefrorenen Felds. Das reservestärkste friert dann zum Gletscher ein und füllt sich aus seiner Reserve. Bis zu ${G_EISZEIT_MAX} Gletscher.` },

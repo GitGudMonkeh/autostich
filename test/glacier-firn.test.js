@@ -2,7 +2,9 @@ import { describe, it, expect } from "vitest";
 import { resolveTrick } from "../src/game/engine.js";
 import { reducer, initialState } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
-import { ROLES, DAUERFROST_FAR, TOP } from "../src/game/glacier.js";
+import { ROLES, TOP } from "../src/game/glacier.js";
+import { EIS_TIERS as EIS } from "../src/game/skills.js"; // §5.3: die Zahlen stehen in der Stufenleiter (Normal = Zeile 0)
+
 
 // #386 Firn-Boden-Reserve — glacierMass (Gletscher-Eigenmasse) und firnStack (Boden-Reserve) sind getrennt: ein gefrorener
 // Gletscher zieht zum Rundenstart aus seiner Reserve wieder auf die volle Masse (TOP=12) auf, nur die Differenz. Die Reserve
@@ -67,7 +69,7 @@ describe("#386 Firn wird nie unter einen Gletscher gesät", () => {
     const glacierLocked = falses(); glacierLocked[0] = true;
     const s = runCycle(scen({ oppDeck: oppOf(99), glacierLocked, glacierRoles: [ROLES.DAUERFROST] }));
     expect(s.firnStack[0]).toBe(0);              // Gletscher-Feld bekommt keinen Firn
-    expect(s.firnStack[39]).toBe(DAUERFROST_FAR); // fernes offenes Feld schon
+    expect(s.firnStack[39]).toBe(EIS.dauerfrost[0].far); // fernes offenes Feld schon
   });
 
   it("Schneetreiben sät nichts, wenn alle Nachbarn Gletscher sind (kein Firn unter Eis)", () => {

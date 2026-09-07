@@ -2,7 +2,8 @@ import { describe, it, expect } from "vitest";
 import { resolveTrick } from "../src/game/engine.js";
 import { initialState } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
-import { glacierGeometry, ROLES, GEO_BLOCK, GEO_KREUZ, GEO_LINIE, GEO_FLAECHE, EISWALL_LINIE } from "../src/game/glacier.js";
+import { glacierGeometry, ROLES, GEO_BLOCK, GEO_KREUZ, GEO_LINIE, GEO_FLAECHE } from "../src/game/glacier.js";
+import { EIS_TIERS as EIS } from "../src/game/skills.js";
 import { posOf } from "../src/game/architect.js";
 
 // Eis-Neudesign Phase 4 — 2D-Geometrie-Formationen (unique Deck-Passiv, docs §2.7/§9) + Eiswall.
@@ -23,10 +24,11 @@ describe("glacierGeometry — Formen erkennen", () => {
     const f = glacierGeometry(lockAt(c, posOf(0, 1), posOf(2, 1), posOf(1, 0), posOf(1, 2)));
     expect(f[c]).toBeCloseTo(GEO_KREUZ);
   });
-  it("Linie: volle Reihe → GEO_LINIE; Eiswall hebt sie auf EISWALL_LINIE", () => {
+  it("Linie: volle Reihe → GEO_LINIE; Eiswall hebt sie auf den Faktor seiner Stufe", () => {
     const row = lockAt(0, 1, 2, 3, 4);
     expect(glacierGeometry(row)[0]).toBeCloseTo(GEO_LINIE);
-    expect(glacierGeometry(row, { eiswall: true })[0]).toBeCloseTo(EISWALL_LINIE);
+    expect(glacierGeometry(row, { eiswallLinie: EIS.eiswall[0].linie })[0]).toBeCloseTo(EIS.eiswall[0].linie);
+    expect(glacierGeometry(row, { eiswallLinie: EIS.eiswall[3].linie })[0]).toBeCloseTo(EIS.eiswall[3].linie); // Episch höher
   });
   it("Linie: volle Spalte (8 Zeilen) → GEO_LINIE", () => {
     const col = lockAt(0, 5, 10, 15, 20, 25, 30, 35); // col 0, alle 8 Zeilen

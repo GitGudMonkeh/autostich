@@ -3,7 +3,8 @@ import { rngAt } from "./rng.js"; // #205 Challenger Mode: adressierte Sub-Strö
 import { PERK_DEFS, buildPerkOffer } from "./perks.js";
 import { familyDef, applyFamilyPick } from "./families.js"; // formationEnergyBonus läuft jetzt über engine.formationEnergyFor
 import { UPGRADE_TYPES } from "./rarity.js";
-import { archetypeOf, buildSkillDoors, rerollDoorSkills, glacierRolesOf } from "./skills.js"; // Eis-Neudesign: glacierRolesOf · exp: Türen-Angebot (Stufen im Wurf der Tür), Neuwurf der drei Skills
+import { archetypeOf, buildSkillDoors, rerollDoorSkills, glacierRolesOf } from "./skills.js";
+import { iceRoleTiers } from "./factions/ice.js"; // §5.3: Stufe je Gletscher-Rolle (die Zahlen der Eis-Skills) // Eis-Neudesign: glacierRolesOf · exp: Türen-Angebot (Stufen im Wurf der Tür), Neuwurf der drei Skills
 import { initLightning, maxChargeFor, L as LIGHT } from "./factions/lightning.js"; // exp skill rework: Blitz-Substate (Leiste 10)
 import { initHeat, heatMaxFor, syncHeatMax } from "./factions/fire.js"; // exp skill rework: Hitze-Substate (Leiste 100, Weißglut 200)
 import { setzlingsbeetGains, applyGrowth } from "./factions/plant.js"; // exp skill rework: Pflanze-Aktivierung (Kaltstart Setzlingsbeet)
@@ -166,7 +167,7 @@ export function initialState(rng = Math.random, seed = null) {
     architectEnabled: false,       // Architekt (#202): Flag — bei true öffnet sich die Architekt-Phase (im Spiel via START_RUN true; false = Sim-Baseline ohne Architekt)
     architect: { ...initialArchitect(), maxCover: ARCH_MAX_COVER }, // Gebäude-Overlay (8×5) + Angebot + Meilenstein-Zähler; maxCover als #217-Seam (Rang-Bonus: base + Grad×N) run-geseedet
     architectPre: null,            // Precompute je Durchlauf (von der Engine gefüllt)
-    glacierMass: new Array(C.BOARD_POSITIONS).fill(0), firnStack: new Array(C.BOARD_POSITIONS).fill(0), glacierLocked: new Array(C.BOARD_POSITIONS).fill(false), glacierPre: null, glacierYield: 0, glacierRoles: [], // Eis-Neudesign (glacier.js): Gletscher-Eigenmasse / #386 Firn-Boden-Reserve / Gletscher-Lock / Durchlauf-Snapshot / Eigen-Score / aktive Rollen
+    glacierMass: new Array(C.BOARD_POSITIONS).fill(0), firnStack: new Array(C.BOARD_POSITIONS).fill(0), glacierLocked: new Array(C.BOARD_POSITIONS).fill(false), glacierPre: null, glacierYield: 0, glacierRoles: [], glacierRoleTiers: {}, // Eis-Neudesign (glacier.js): Gletscher-Eigenmasse / #386 Firn-Boden-Reserve / Gletscher-Lock / Durchlauf-Snapshot / Eigen-Score / aktive Rollen
     frozenOppPending: {}, frozenOppActive: {}, // Eis-Neudesign (Einfrieren): Gegner-Marken (Gegnerkarte verliert nächsten Stich)
     glacierBuffPending: {}, glacierBuffActive: {}, // Eis-Neudesign (Frostbund): Wert-Buff auf Nicht-Eis-Nachbarkarten
     grosseLawineFired: false, // Eis-Neudesign (Große Lawine): One-Shot-Finisher-Flag
@@ -679,18 +680,18 @@ export function reducer(state, action) {
       // Pflanze weg (letzter Pflanzen-Skill ersetzt): Wachstum und beide Zustände fallen mit ihr.
       if (!stillActive.has("plant")) { deck = deck.map((c) => (c.green || c.bloom ? { ...c, green: false, bloom: false } : c)); growth = {}; }
       // Eis-Neudesign: aktive Gletscher-Rollen aus den gehaltenen Skill-`role`s; bei Deaktivierung Gletscher-State leeren.
-      let glacierRoles = glacierRolesOf(skills);
+      let glacierRoles = glacierRolesOf(skills), glacierRoleTiers = iceRoleTiers(skills, skillTiers);
       let glacierMass = state.glacierMass, firnStack = state.firnStack, glacierLocked = state.glacierLocked, glacierYield = state.glacierYield,
         frozenOppPending = state.frozenOppPending, frozenOppActive = state.frozenOppActive,
         glacierBuffPending = state.glacierBuffPending, glacierBuffActive = state.glacierBuffActive, grosseLawineFired = state.grosseLawineFired;
       if (!stillActive.has("ice")) {
-        glacierRoles = []; glacierMass = new Array(C.BOARD_POSITIONS).fill(0); firnStack = new Array(C.BOARD_POSITIONS).fill(0); glacierLocked = new Array(C.BOARD_POSITIONS).fill(false); glacierYield = 0; // #386 Firn-Reserve mit leeren
+        glacierRoles = []; glacierRoleTiers = {}; glacierMass = new Array(C.BOARD_POSITIONS).fill(0); firnStack = new Array(C.BOARD_POSITIONS).fill(0); glacierLocked = new Array(C.BOARD_POSITIONS).fill(false); glacierYield = 0; // #386 Firn-Reserve mit leeren
         frozenOppPending = {}; frozenOppActive = {}; glacierBuffPending = {}; glacierBuffActive = {}; grosseLawineFired = false;
       }
       // Formationen neu berechnen (Anker/Familien/Architekt beeinflussen die Erkennung).
       const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, skills, state.shop?.anchors || [], state.familyTiers, archOf(state), { skillTiers, growth });
       return { ...state, skills, skillTiers, skillOfferTiers: null, activeArchetypes, lightning, heat, deck, iceTemp, growth, brandPending, brandActive, forged, formations,
-               glacierRoles, glacierMass, firnStack, glacierLocked, glacierYield, frozenOppPending, frozenOppActive, glacierBuffPending, glacierBuffActive, grosseLawineFired, // Eis-Neudesign (#386 Firn-Reserve mitgeführt)
+               glacierRoles, glacierRoleTiers, glacierMass, firnStack, glacierLocked, glacierYield, frozenOppPending, frozenOppActive, glacierBuffPending, glacierBuffActive, grosseLawineFired, // Eis-Neudesign (#386 Firn-Reserve mitgeführt)
                // Eis-Neudesign: jeder Eis-Skill-Pick öffnet SOFORT die Gletscher-Wahl (genau 1 Karte festfrieren, Pflicht) —
                // analog zum Perk-Ziel-Flow. Andere Archetypen gehen direkt weiter. Ist KEIN gültiges Ziel mehr frei
                // (alles gefroren bzw. gesperrt), wird die Phase übersprungen statt betreten — sonst Soft-Lock, s. o.

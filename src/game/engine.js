@@ -23,13 +23,11 @@ import { plantOnWin, plantOnLoss, plantOnGap, plantParam, plantValueBonus, plant
 import { computeFormations, positionHasFormation, activeFormationCount, summarizeFormations, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
 import { perkLegendaryChance, anchorAt } from "./shop.js";
 import { precomputeArchitect, architectValueBonus, architectScore, buildArchitectOffer } from "./architect.js";
-import { precomputeGlacier, ewigerFrostTick, dauerfrostTick, glacierOpts, driftTarget as glacierDriftTarget,
-  neighbors4 as glacierNeighbors4, glacierNeighborFn, uebergletscherPool, packeisTick, verzahnungTick, eiszeitTick, glacierGeometry,
-  ROLES as GLACIER_ROLES, WIN_MASS as GLACIER_WIN_MASS, ANFRIEREN_WIN as GLACIER_ANFRIEREN_WIN,
-  ANFRIEREN_FORM as GLACIER_ANFRIEREN_FORM, SCHNEETREIBEN_SEED as GLACIER_SCHNEETREIBEN_SEED,
-  EISPANZER_MASS as GLACIER_EISPANZER_MASS, FROSTBUND_BUFF as GLACIER_FROSTBUND_BUFF,
-  VERDICHTUNG_RATE as GLACIER_VERDICHTUNG_RATE,
+import { precomputeGlacier, ewigerFrostTick, dauerfrostTick, driftTargets as glacierDriftTargets,
+  neighbors4 as glacierNeighbors4, uebergletscherPool, packeisTick, verzahnungTick, eiszeitTick, glacierGeometry,
+  ROLES as GLACIER_ROLES, WIN_MASS as GLACIER_WIN_MASS,
   FIRN_REFILL_TARGET as GLACIER_FIRN_REFILL_TARGET } from "./glacier.js"; // Eis-Neudesign (isoliert, activeArchetypes "ice") · #386 Firn-Reserve-Nachschub
+import { iceTuning, iceSnapshotOpts, iceNeighborFn } from "./factions/ice.js"; // §5.3: die Zahlen der Eis-Skills kommen aus ihrer Stufe
 import { fullPerkOffer, devSkillOffer, fullArchitectOffer } from "./devCatalog.js"; // Dev-Run: Voll-Katalog statt Zufallsangebot (nur state.devMode)
 import { runRules, perksOfferedFor, skillOfferParams } from "./rules.js"; // exp: Regeln je Lauf (state.rules; null → Konstanten, byte-identisch)
 
@@ -153,7 +151,7 @@ export function resolveTrick(state, rng) {
     shop = null, // hält nur noch die (inerten) Positionsanker []; der Shop selbst ist entfernt (#229)
     familyTiers = {}, // Raritätssystem (Epic #167): Familienrang je Familie — Engine löst aktive Stufen-Hooks auf
     architect = null, architectEnabled = false, architectPre = null, // Architekt (#202, Shop-Ersatz): Gebäude-Overlay (8×5) + Durchlauf-Precompute
-    glacierMass = [], glacierLocked = [], glacierPre = null, glacierYield = 0, glacierRoles = [], // Eis-Neudesign (glacier.js): Gletscher-Eigenmasse / Lock / Snapshot / Eigen-Score / aktive Rollen (Fundament-Modifikatoren)
+    glacierMass = [], glacierLocked = [], glacierPre = null, glacierYield = 0, glacierRoles = [], glacierRoleTiers = {}, // Eis-Neudesign (glacier.js): Gletscher-Eigenmasse / Lock / Snapshot / Eigen-Score / aktive Rollen (Fundament-Modifikatoren)
     firnStack = [], // #386 Firn-Boden-Reserve: pro Feld die Boden-Reserve (getrennt von glacierMass) — füllt Gletscher zum Rundenstart auf 12 nach
 
     challengeBlockForm = [], // #301 C3: gesperrte Aufstell-Zellen (nie als Gletscher einfrierbar, auch nicht per Eiszeit-Auto-Freeze)
@@ -221,7 +219,9 @@ export function resolveTrick(state, rng) {
   // (analog precomputeArchitect), pro Stich ausgezahlt. Der Teil-Reset (−1 Stufe) greift SOFORT auf die Arbeits-Masse;
   // Siege dieses Durchlaufs addieren darauf, Ewiger Frost am Durchlauf-Ende. Isoliert über activeArchetypes "ice".
   const glacierActive = activeArchetypes.includes("ice"); // Eis-Neudesign: der Eis-Archetyp IST der Gletscher
-  const glacierNF = glacierActive ? glacierNeighborFn(glacierRoles) : null; // Eisbrücke → 8-Nachbarschaft, sonst 4
+  const glacierNF = glacierActive ? iceNeighborFn(glacierRoles) : null; // Eisbrücke → 8-Nachbarschaft, sonst 4
+  // §5.3: alle Zahlen der gehaltenen Eis-Skills, einmal je Stich aus ihrer Stufe gelesen (factions/ice.js).
+  const ice = glacierActive ? iceTuning(glacierRoles, glacierRoleTiers) : null;
   let glacierPreNow = glacierPre;
   let newGlacierMass = Array.isArray(glacierMass) ? glacierMass.slice() : [];
   let newFirnStack = Array.isArray(firnStack) ? firnStack.slice() : []; // #386 Firn-Boden-Reserve: Arbeitskopie (nur ice-gegated beschrieben → Nicht-Eis-Läufe byte-identisch)
@@ -243,8 +243,8 @@ export function resolveTrick(state, rng) {
     const snapMass = glacierRoles.includes(GLACIER_ROLES.L_SCHILD) ? uebergletscherPool(refilledMass, glacierLocked)
       : refilledMass;
     // 2D-Geometrie-Formationen (unique Deck-Passiv, docs §2.7/§9): Block/Kreuz/Linie/Fläche → Burst-Faktor je Feld; Eiswall hebt die Linie.
-    const glacierGeo = glacierGeometry(glacierLocked, { eiswall: glacierRoles.includes(GLACIER_ROLES.EISWALL) });
-    const glacierO = glacierOpts(glacierRoles);
+    const glacierGeo = glacierGeometry(glacierLocked, { eiswallLinie: glacierRoles.includes(GLACIER_ROLES.EISWALL) ? ice.eiswallLinie : 0 });
+    const glacierO = iceSnapshotOpts(glacierRoles, ice);
     // Große Lawine (Legendär): einmaliger Finisher — feuert erst im LETZTEN Durchlauf (Masse maximal angesammelt, kein
     // vorzeitiges Abkalben). Bricht dann alles auf voller Stufe, ungedeckelt & ×GROSSE_LAWINE_MULT (glacier.js).
     const effMaxCycles = state.maxCycles || (difficulty && difficulty.maxCycles) || C.MAX_CYCLES;
@@ -440,24 +440,17 @@ export function resolveTrick(state, rng) {
     serieStreak = winStreak; // effektive Serie NACH diesem Sieg
     // Eis-Neudesign (docs §2.2 / §4 Firn): Sieg eines Gletschers → +Masse auf seinem Feld (Baseline + Rollen).
     if (glacierActive && glacierLocked[actualPos]) {
-      const preMass = newGlacierMass[actualPos] || 0;   // Masse VOR dem Sieg (Schneetreibens 0-Sonderfall)
       let add = GLACIER_WIN_MASS;
       // Anfrieren: Sieg extra, Formations-Sieg zusätzlich obendrauf.
-      if (glacierRoles.includes(GLACIER_ROLES.ANFRIEREN)) add += GLACIER_ANFRIEREN_WIN + (hasFormation ? GLACIER_ANFRIEREN_FORM : 0);
-      newGlacierMass[actualPos] = preMass + add;
-      // Schneetreiben (Verwehung): ADDITIV +SEED in die Boden-RESERVE (firnStack) des Nachbarfelds (der Gletscher behält
-      // seine volle Sieg-Masse). Hatte er vor dem Sieg 0 Masse, gibt er stattdessen seine Sieg-Masse in die Reserve ab
-      // (Transfer). Deterministisch, offener Boden, 4-Nb. #386: Firn nur auf offenen Boden säen, NIE unter einen Gletscher
-      // (driftTarget liefert nur offene Felder; zusätzlich `!glacierLocked[tgt]`-Guard).
+      if (glacierRoles.includes(GLACIER_ROLES.ANFRIEREN)) add += ice.anfrierenMass + (hasFormation ? ice.anfrierenForm : 0);
+      newGlacierMass[actualPos] = (newGlacierMass[actualPos] || 0) + add;
+      // Schneetreiben (Verwehung): ADDITIV +Schnee in die Boden-RESERVE (firnStack) der Nachbarfelder — der Gletscher
+      // behält seine volle Sieg-Masse. Deterministisch, offener Boden, 4-Nb; Episch sät in zwei Felder. #386: Schnee
+      // kommt nie unter einen Gletscher (driftTargets liefert nur offene Felder). (§5.3: der frühere 0-Masse-Sonderfall
+      // — Transfer statt Zugabe — ist mit der Stufenleiter gefallen: eine Regel, die im Text nicht vorkam.)
       if (glacierRoles.includes(GLACIER_ROLES.SCHNEETREIBEN)) {
-        const tgt = glacierDriftTarget(actualPos, glacierLocked);
-        if (tgt != null && !glacierLocked[tgt]) {
-          if (preMass > 0) {
-            newFirnStack[tgt] = (newFirnStack[tgt] || 0) + GLACIER_SCHNEETREIBEN_SEED;
-          } else {
-            const give = Math.min(GLACIER_WIN_MASS, newGlacierMass[actualPos] || 0);
-            newGlacierMass[actualPos] -= give; newFirnStack[tgt] = (newFirnStack[tgt] || 0) + give;
-          }
+        for (const tgt of glacierDriftTargets(actualPos, glacierLocked, ice.schneetreibenFields)) {
+          newFirnStack[tgt] = (newFirnStack[tgt] || 0) + ice.schneetreibenSeed;
         }
       }
     }
@@ -789,7 +782,7 @@ export function resolveTrick(state, rng) {
     // verliert weiter (kostet den Stich), nur die Folgen (Serienbruch) sind abgeschirmt.
     const glacierShield = glacierActive && glacierRoles.includes(GLACIER_ROLES.EISPANZER)
       && glacierNeighbors4(actualPos).some((p) => glacierLocked[p]);
-    if (glacierShield) for (const nb of glacierNeighbors4(actualPos)) if (glacierLocked[nb]) newGlacierMass[nb] = (newGlacierMass[nb] || 0) + GLACIER_EISPANZER_MASS;
+    if (glacierShield) for (const nb of glacierNeighbors4(actualPos)) if (glacierLocked[nb]) newGlacierMass[nb] = (newGlacierMass[nb] || 0) + ice.eispanzerMass;
     const streakNoReset = anchorNoReset || serienschutzHeld || glacierShield;
     winStreak = streakNoReset ? winStreak : 0;
     initiative = "opp";
@@ -847,18 +840,23 @@ export function resolveTrick(state, rng) {
     score += glacierDirect; gained += glacierDirect; glacierYield += glacierDirect;
     if (breakdown) { breakdown.glacierDirect = glacierDirect; breakdown.total += glacierDirect; }
   }
-  // Einfrieren (docs §4 Frostgriff): bricht dieser Gletscher, verliert die hier getroffene Gegnerkarte ihren NÄCHSTEN Stich.
-  if (glacierActive && glacierRoles.includes(GLACIER_ROLES.EINFRIEREN) && glacierPreNow && glacierPreNow.breaks.some((b) => b.pos === actualPos))
+  // Einfrieren (docs §4 Frostgriff): bricht dieser Gletscher, verliert die hier getroffene Gegnerkarte ihren NÄCHSTEN
+  // Stich. Die Stufe entscheidet, wie weit der Griff reicht (§5.2): die getroffene Karte plus so viele ihrer Nachbarn
+  // im Gegnerfeld, bis `einfrierenCards` voll ist.
+  if (glacierActive && glacierRoles.includes(GLACIER_ROLES.EINFRIEREN) && glacierPreNow && glacierPreNow.breaks.some((b) => b.pos === actualPos)) {
     newFrozenOppPending[oCard.id] = true;
+    for (const nb of glacierNeighbors4(actualPos).slice(0, Math.max(0, ice.einfrierenCards - 1)))
+      newFrozenOppPending[oppDeck[oppOrder[nb]].id] = true;
+  }
   // (§5.2: Erstarrung ist gestrichen — die Kontrolle liegt bei Einfrieren, dessen Reichweite mit der Stufe steigt.)
   // Frostbund (docs §4 Frostgriff): bricht dieser Gletscher, bufft er seine NICHT-Gletscher-Nachbarn (2. Archetyp) → +Stichwert.
   if (glacierActive && glacierRoles.includes(GLACIER_ROLES.FROSTBUND) && glacierNF && glacierPreNow && glacierPreNow.breaks.some((b) => b.pos === actualPos))
     for (const nb of glacierNF(actualPos)) if (!glacierLocked[nb]) {
       const id = deck[playerOrder[nb]].id;
-      newGlacierBuffPending[id] = Math.max(newGlacierBuffPending[id] || 0, GLACIER_FROSTBUND_BUFF);
+      newGlacierBuffPending[id] = Math.max(newGlacierBuffPending[id] || 0, ice.frostbundBuff);
     }
   // Verdichtung (docs §4 Firn): der auf diesem Gletscher unterdrückte Gebäude-Wertbonus wird in Masse getankt.
-  if (verdichtung && architectValue > 0) newGlacierMass[actualPos] = (newGlacierMass[actualPos] || 0) + architectValue * GLACIER_VERDICHTUNG_RATE;
+  if (verdichtung && architectValue > 0) newGlacierMass[actualPos] = (newGlacierMass[actualPos] || 0) + architectValue * ice.verdichtungRate;
 
   // #UI: bester GLETSCHER-Stich separat erfassen — der volle Stich-Score (inkl. Bruch), sobald dieser Stich
   // einen Gletscher-Bruch trug. `bestTrickScore` (oben) wird VOR dem Bruch-Score gebucht und zeigt ihn daher nicht; der
@@ -931,10 +929,10 @@ export function resolveTrick(state, rng) {
     // Eis-Neudesign (docs §2.6): Ewiger Frost — bedingungsloser Masse-Tick je Durchlauf auf jeden Gletscher (nach Auszahlung).
     if (glacierActive) newGlacierMass = ewigerFrostTick(newGlacierMass, glacierLocked);
     // Dauerfrost (docs §4 Firn): offener Boden friert am tiefsten — passiver Frost in die Boden-Reserve (#386 firnStack).
-    if (glacierActive && glacierRoles.includes(GLACIER_ROLES.DAUERFROST)) newFirnStack = dauerfrostTick(newFirnStack, glacierLocked);
+    if (glacierActive && glacierRoles.includes(GLACIER_ROLES.DAUERFROST)) newFirnStack = dauerfrostTick(newFirnStack, glacierLocked, ice.dauerfrostNear, ice.dauerfrostFar);
     // Packeis / Verzahnung (docs §4 Eisschild): Dichte-Bonus je Gletscher-Nachbar / Cluster-Größe (Eisbrücke-adjazenz-aware).
-    if (glacierActive && glacierRoles.includes(GLACIER_ROLES.PACKEIS)) newGlacierMass = packeisTick(newGlacierMass, glacierLocked, glacierNF);
-    if (glacierActive && glacierRoles.includes(GLACIER_ROLES.VERZAHNUNG)) newGlacierMass = verzahnungTick(newGlacierMass, glacierLocked, glacierNF);
+    if (glacierActive && glacierRoles.includes(GLACIER_ROLES.PACKEIS)) newGlacierMass = packeisTick(newGlacierMass, glacierLocked, glacierNF, ice.packeisPer);
+    if (glacierActive && glacierRoles.includes(GLACIER_ROLES.VERZAHNUNG)) newGlacierMass = verzahnungTick(newGlacierMass, glacierLocked, glacierNF, ice.verzahnungPer);
     // Eiszeit (Legendär): brettweite Flut in die Boden-RESERVE (#386 firnStack) + das höchste ungefrorene Feld (nach Reserve)
     // friert zum Gletscher ein (Karten frieren nach und nach). Der neu gefrorene Gletscher startet mit Masse 0 (glacierMass
     // bleibt unberührt) und zieht ab dem nächsten Rundenstart aus seiner Reserve auf.
@@ -1129,7 +1127,7 @@ export function resolveTrick(state, rng) {
     winSuit, winSuitStreak, recentResults, segmentWins, // #189 Volles Haus: segment-genauer Sieg-Zähler
     formations, // Formations-Engine (V2 §22.7): pro-Position-Multiplikatoren, zu Durchlauf-Beginn berechnet
     architect: newArchitect, architectEnabled, architectPre: newArchitectPre, // Architekt (#202, ersetzt den Shop)
-    glacierMass: newGlacierMass, firnStack: newFirnStack, glacierLocked: newGlacierLocked, glacierPre: glacierPreNow, glacierYield, glacierRoles, grosseLawineFired: newGrosseLawineFired, // Eis-Neudesign (glacier.js): Gletscher-Eigenmasse / #386 Firn-Boden-Reserve / Lock / Snapshot / Eigen-Score / Rollen / Große-Lawine-One-Shot
+    glacierMass: newGlacierMass, firnStack: newFirnStack, glacierLocked: newGlacierLocked, glacierPre: glacierPreNow, glacierYield, glacierRoles, glacierRoleTiers, grosseLawineFired: newGrosseLawineFired, // Eis-Neudesign (glacier.js): Gletscher-Eigenmasse / #386 Firn-Boden-Reserve / Lock / Snapshot / Eigen-Score / Rollen / Große-Lawine-One-Shot
     frozenOppPending: newFrozenOppPending, frozenOppActive: newFrozenOppActive, // Eis-Neudesign (Einfrieren): Gegner-Marken (verlieren nächsten Stich)
     glacierBuffPending: newGlacierBuffPending, glacierBuffActive: newGlacierBuffActive, // Eis-Neudesign (Frostbund): Nachbar-Wert-Buffs
 

@@ -2,7 +2,9 @@ import { describe, it, expect } from "vitest";
 import { resolveTrick } from "../src/game/engine.js";
 import { initialState } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
-import { ROLES, WIN_MASS, EISPANZER_MASS } from "../src/game/glacier.js";
+import { ROLES, WIN_MASS } from "../src/game/glacier.js";
+import { EIS_TIERS as EIS } from "../src/game/skills.js"; // §5.3: die Zahlen stehen in der Stufenleiter (Normal = Zeile 0)
+const EISPANZER_MASS = EIS.eispanzer[0].mass;
 
 // Eis-Neudesign Phase 3.2b2 — Eispanzer (Frostgriff): Niederlage NEBEN einem Gletscher ist folgenlos (Serie hält)
 // und füttert Masse in die angrenzenden Gletscher. Loss-Branch.

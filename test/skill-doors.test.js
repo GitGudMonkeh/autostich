@@ -230,6 +230,8 @@ describe("Stufentexte — ein Text je Stufe (descTiers, ability.<id>.desc.<t>, s
     }
     expect(de["ability.SK_FIRE_L01.desc.0"]).toBeUndefined();
     expect(skillDef("SK_FIRE_L01", 2).desc).toBe(SKILL_DEFS.SK_FIRE_L01.desc); // Legendär: immer der eine Text
-    expect(skillDef("SK_ICE_01", 3).desc).toBe(SKILL_DEFS.SK_ICE_01.desc);     // Eis: noch ohne Stufen → Normal-Text
+    // §5.3: Eis hat jetzt ebenfalls vier Stufen — die Episch-Zeile ist ein anderer Text als Normal.
+    expect(skillDef("SK_ICE_01", 3).desc).toBe(SKILL_DEFS.SK_ICE_01.descTiers[3]);
+    expect(skillDef("SK_ICE_01", 3).desc).not.toBe(SKILL_DEFS.SK_ICE_01.desc);
   });
 });
