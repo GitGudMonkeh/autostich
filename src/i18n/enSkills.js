@@ -17,10 +17,10 @@ import * as C from "../game/constants.js";
 import { ANFRIEREN_WIN as G_ANFRIEREN_WIN, ANFRIEREN_FORM as G_ANFRIEREN_FORM, SCHNEETREIBEN_SEED as G_SCHNEETREIBEN_SEED,
   DAUERFROST_NEAR as G_DAUERFROST_NEAR, DAUERFROST_FAR as G_DAUERFROST_FAR, VERDICHTUNG_RATE as G_VERDICHTUNG_RATE,
   PACKEIS_PER_NEIGHBOR as G_PACKEIS_PER, VERZAHNUNG_PER as G_VERZAHNUNG_PER, GEO_LINIE as G_GEO_LINIE, EISWALL_LINIE as G_EISWALL_LINIE,
-  TIER_MULT as G_TIER_MULT, ABBRUCHKANTE_TIER_MULT as G_ABBRUCH_TIER, ZERMALMEN_KOLLISION as G_ZERMALMEN_KOLL, KOLLISION_MULT as G_KOLLISION,
+  TIER_MULT as G_TIER_MULT, ABBRUCHKANTE_TIER_MULT as G_ABBRUCH_TIER,
   RISSBILDUNG_BURST as G_RISSBILDUNG_BURST, THRESHOLDS as G_THRESHOLDS, GLETSCHERSTURZ_PER as G_GLETSCHERSTURZ_PER,
   FROSTBUND_BUFF as G_FROSTBUND_BUFF, EISPANZER_MASS as G_EISPANZER_MASS, EISZEIT_FLOOD as G_EISZEIT_FLOOD,
-  EISZEIT_MAX_GLACIERS as G_EISZEIT_MAX, SCHILD_BONUS as G_SCHILD_BONUS, ERSTARRUNG_FRAC as G_ERSTARRUNG_FRAC } from "../game/glacier.js";
+  EISZEIT_MAX_GLACIERS as G_EISZEIT_MAX, SCHILD_BONUS as G_SCHILD_BONUS } from "../game/glacier.js";
 
 const num = (x) => String(x);                                            // English keeps the decimal point
 const pct = (x) => Math.round(x * 100);                                  // share → percent (0.25 → 25)
@@ -126,8 +126,6 @@ export default {
   "ability.SK_ICE_03.desc": `Every cycle, unfrozen cells collect snow in their ground reserve: +${num(G_DAUERFROST_NEAR)} at 2 cells' distance from the nearest glacier, +${num(G_DAUERFROST_FAR)} from 3. The 8 cells directly around a glacier stay empty. If a glacier later freezes here, the reserve refills it at the start of the cycle.`,
   "ability.SK_ICE_04.name": "Compaction",
   "ability.SK_ICE_04.desc": `If a building raises the combat value of a glacier card, that bonus is not played out but converted into mass instead: +${num(G_VERDICHTUNG_RATE)} mass per point. Score buildings are untouched.`,
-  "ability.SK_ICE_05.name": "Fusion",
-  "ability.SK_ICE_05.desc": `At the start of a cycle, adjacent glaciers lift each other to the average mass of their cluster, never dropping.`,
   "ability.SK_ICE_06.name": "Pack Ice",
   "ability.SK_ICE_06.desc": `Every cycle, a glacier gains +${num(G_PACKEIS_PER)} mass per glacier neighbour.`,
   "ability.SK_ICE_07.name": "Ice Bridge",
@@ -140,8 +138,6 @@ export default {
   "ability.SK_ICE_10.desc": `Higher mass thresholds burst more steeply: force ×${num(G_ABBRUCH_TIER[2])} instead of ×${num(G_TIER_MULT[2])} at the 2nd threshold, ×${num(G_ABBRUCH_TIER[3])} instead of ×${num(G_TIER_MULT[3])} at the 3rd.`,
   "ability.SK_ICE_11.name": "Chain Burst",
   "ability.SK_ICE_11.desc": `When a glacier bursts, adjacent glaciers burst with it immediately, even without reaching their threshold.`,
-  "ability.SK_ICE_12.name": "Crush",
-  "ability.SK_ICE_12.desc": `When a burst hits a glacier neighbour, the collision counts for more: factor ×${num(G_ZERMALMEN_KOLL)} instead of ×${num(G_KOLLISION)}.`,
   "ability.SK_ICE_13.name": "Fracturing",
   "ability.SK_ICE_13.desc": `A glacier bursts at ${num(G_RISSBILDUNG_BURST)} mass already, instead of ${num(G_THRESHOLDS[G_THRESHOLDS.length - 1])}.`,
   "ability.SK_ICE_14.name": "Glacier Collapse",
@@ -158,8 +154,6 @@ export default {
   "ability.SK_ICE_L02.desc": `Every cycle, all your glaciers rise to the mass of the strongest, never dropping, and gain +${G_SCHILD_BONUS} mass on top. On a burst, every glacier counts as a neighbour of every other: full cascade and collision, wherever they sit.`,
   "ability.SK_ICE_L03.name": "Great Avalanche",
   "ability.SK_ICE_L03.desc": `In the final cycle, ALL your glaciers burst at once, including those not yet full, each with the force of the highest threshold and massively amplified.`,
-  "ability.SK_ICE_L04.name": "Rigor",
-  "ability.SK_ICE_L04.desc": `Every opponent card hit by the burst loses its trick, and the burst reaches beyond the four neighbours into the opponent's field. Every burst counts ×${num(1 + G_ERSTARRUNG_FRAC)} score.`,
 
   /* ---- 🌿 Plant ---- */
   "ability.SK_PLANT_02.name": "Root Depth",

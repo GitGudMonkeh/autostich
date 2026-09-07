@@ -27,13 +27,6 @@ const BURST_SOFTSLOPE = 0.06;
 export const GROSSE_LAWINE_MULT = 6;
 // Ewiges Schild: additiver Feld-Bonus je Durchlauf (echter Netto-Massegewinn fürs ganze verbundene Feld, zusätzlich zum Max-Pool).
 export const SCHILD_BONUS = 3;
-// Erstarrung (Legendär): Bonus-Score je Bruch = ANTEIL des Burst-Scores dieses Bruchs (statt fester Zahl). Skaliert damit
-// automatisch mit Masse/Geometrie/Kaskade UND dem Sieg-Stack (glacierDirect ist bereits multipliziert) und erbt dessen
-// Soft-Cap → kann nicht am Burst vorbei ausreißen. Auf 2,0 getunt: hebt Erstarrung im Mono vom toten Wert (Lift 0,58) auf
-// einen Muss-Pick (~1,10) — zusammen mit dem (in der Mono-Sim unsichtbaren) Duo-Kontrollwert der „heimliche Best-Pick".
-// Höher würde v. a. die ganze Eis-Fraktion aufblähen (Balance-Guard: Eis-Median 11,0 → 12,2 M bei 2,0), ohne Erstarrung
-// sauber an die Spitze zu bringen (Lift-Confound: sie bläht ihren eigenen Nenner). (Sim-tunebar.)
-export const ERSTARRUNG_FRAC = 2.0;
 // Ablehn-Gletscher (Sim-tunebar): ab so vielen gehaltenen Eis-Skills friert auch das Ablehnen eines Skill-Angebots einen
 // Gletscher (statt nur der Skill-Pick/Tausch). Entkoppelt „mehr Gletscher" vom Tauschen guter Skills.
 export const DECLINE_MIN_SKILLS = 4;
@@ -177,17 +170,6 @@ export function glacierClusters(locked, neighborFn = neighbors4) {
   return clusters;
 }
 
-// Verschmelzen (docs §4): zu Durchlauf-Beginn heben angrenzende Gletscher einander auf den Cluster-Durchschnitt — NIE fallend.
-export function verschmelzenPool(mass, locked, neighborFn = neighbors4) {
-  const out = Array.isArray(mass) ? mass.slice() : new Array(N_POS).fill(0);
-  for (const cl of glacierClusters(locked, neighborFn)) {
-    if (cl.length < 2) continue;
-    const avg = cl.reduce((s, p) => s + (out[p] || 0), 0) / cl.length;
-    for (const p of cl) if ((out[p] || 0) < avg) out[p] = avg; // nur anheben
-  }
-  return out;
-}
-
 // Ewiges Schild (Legendär, docs §7): das GESAMTE Feld poolt als ein Übergletscher — alle Gletscher aufs MAXIMUM heben
 // (nie fallend), unabhängig von Nachbarschaft. Echter Netto-Gewinn (das ganze Feld auf voller Stärke des Stärksten),
 // statt netto-neutralem Durchschnitt → macht die Capstone zum echten Feld-Verstärker (Sim: Durchschnitt war zu schwach).
@@ -298,14 +280,12 @@ export const GLACIER_FORM_LABEL = { block: "Block", kreuz: "Kreuz", linie: "Lini
    ⚠ Werte Platzhalter. */
 export const ROLES = {
   RISSBILDUNG: "G_RISSBILDUNG",   // instabiles Eis: erste Schwelle runter → bricht früh & oft
-  ZERMALMEN: "G_ZERMALMEN",       // Kollision (Treffer auf Gletscher-Nachbarn) → Krit
   ABBRUCHKANTE: "G_ABBRUCHKANTE", // belohnt hohe Stufen noch steiler (Riesen)
   ANFRIEREN: "G_ANFRIEREN",       // Firn: Sieg → +Masse extra; Formations-Sieg → doppelt
   SCHNEETREIBEN: "G_SCHNEETREIBEN", // Firn: Verwehung — Sieg verweht Firn in die Boden-Reserve des Nachbarfelds (#386: nur offener Boden, nie unter einen Gletscher)
   DAUERFROST: "G_DAUERFROST",     // Firn: offener Boden friert am tiefsten — passiver Frost in die Boden-Reserve (fern; #386 firnStack)
   EISPANZER: "G_EISPANZER",       // Frostgriff: Niederlage neben Gletscher folgenlos + füttert Masse (der Gletscher frisst, was zerbricht)
   PACKEIS: "G_PACKEIS",           // Eisschild: Gletscher mit vielen Gletscher-Nachbarn → Bonus-Masse (belohnt die Mitte)
-  VERSCHMELZEN: "G_VERSCHMELZEN", // Eisschild: angrenzende Gletscher poolen → jeder auf den Cluster-Durchschnitt (nie fallend)
   VERZAHNUNG: "G_VERZAHNUNG",     // Eisschild: je größer das Cluster, desto schneller wächst jeder Gletscher (Runaway-Kandidat)
   EISBRUECKE: "G_EISBRUECKE",     // Eisschild: erweitert „angrenzend" um die 4 Diagonalen (8-Nachbarschaft)
   KETTENBRUCH: "G_KETTENBRUCH",   // Lawine: Bruch zwingt angrenzende Gletscher mitzubrechen (die echte Kaskade)
@@ -318,11 +298,9 @@ export const ROLES = {
   L_LAWINE: "G_L_LAWINE",         // Große Lawine: ein Snapshot, in dem ALLES bricht (Schwellen ignoriert, volle Stufe)
   L_SCHILD: "G_L_SCHILD",         // Ewiges Schild: das ganze zusammenhängende Feld zählt als EIN Übergletscher
   L_EISZEIT: "G_L_EISZEIT",       // Eiszeit: Dauerfrost im Overdrive — das Brett flutet, Karten frieren nach und nach ein
-  L_ERSTARRUNG: "G_L_ERSTARRUNG", // Erstarrung: jede vom Bruch getroffene Gegnerkarte verliert ihren Stich; Reichweite +1 ins Gegnerfeld
 };
 export const FROSTBUND_BUFF = 3;  // Frostbund: Wert-Buff auf die getroffene Nicht-Eis-Nachbarkarte (nächster Durchlauf)
 export const VERDICHTUNG_RATE = 0.25; // Verdichtung: je 4 Gebäude-Bonuswert → +1 Masse (docs §4 Firn)
-export const ZERMALMEN_KOLLISION = 2;                   // Kollision 1,5→2
 export const ABBRUCHKANTE_TIER_MULT = [0, 1, 1.8, 3.0]; // steiler als Baseline [0,1,1.5,2.2]
 
 // Baut das opts-Objekt für precomputeGlacier aus den aktiven Rollen (Gruppe A). Mehrere Rollen komponieren additiv.
@@ -331,7 +309,6 @@ export function glacierOpts(roles = []) {
   const opts = {};
   if (has(ROLES.RISSBILDUNG)) opts.burstAt = RISSBILDUNG_BURST;   // bricht schon bei niedriger Masse (Tempo)
   if (has(ROLES.ABBRUCHKANTE)) opts.tierMult = ABBRUCHKANTE_TIER_MULT;
-  if (has(ROLES.ZERMALMEN)) opts.kollisionMult = ZERMALMEN_KOLLISION;
   if (has(ROLES.EISBRUECKE)) opts.neighborFn = neighbors8;   // Kaskade/Kollision/Kette über 8-Nachbarschaft
   if (has(ROLES.KETTENBRUCH)) opts.kettenbruch = true;
   if (has(ROLES.GLETSCHERSTURZ)) opts.gletschersturz = true;

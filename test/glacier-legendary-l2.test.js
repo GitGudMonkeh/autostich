@@ -5,14 +5,14 @@ import { makeRng } from "../src/game/deck.js";
 import { eiszeitTick, ROLES, EISZEIT_FLOOD } from "../src/game/glacier.js";
 import { N_POS } from "../src/game/architect.js";
 
-// Eis-Neudesign Phase 5 (L2) — Legendäre: Eiszeit (Flut + Auto-Lock) + Erstarrung (Gegner-Reichweite).
+// Eis-Neudesign Phase 5 (L2) — Legendär Eiszeit (Flut + Auto-Lock). §5.2: Erstarrung gestrichen; die
+// Gegner-Reichweite lebt als Stufenleiter von Einfrieren weiter (test/glacier-einfrieren.test.js).
 const identity = () => Array.from({ length: 40 }, (_, i) => i);
 const flat = () => Array.from({ length: 40 }, (_, i) => ({ id: `F${i}`, suit: i % 2 ? "B" : "R", baseRank: i % 2 ? 11 : 12, value: i % 2 ? 11 : 12 }));
 const oppOf = (v) => Array.from({ length: 40 }, (_, i) => ({ id: `O${i}`, suit: "R", baseRank: v, value: v }));
 const zeros = () => new Array(N_POS).fill(0);
 const falses = () => new Array(40).fill(false);
 const lockAt = (...ps) => { const l = falses(); for (const p of ps) l[p] = true; return l; };
-const withMass = (pairs) => { const m = zeros(); for (const [p, v] of pairs) m[p] = v; return m; };
 const noCrit = () => 0.99;
 const scen = (over = {}) => ({
   ...initialState(makeRng(1)),
@@ -38,11 +38,3 @@ describe("Eiszeit — Engine", () => {
   });
 });
 
-describe("Erstarrung — Gegner einfrieren mit Reichweite", () => {
-  it("ein brechender Gletscher friert die getroffene Gegnerkarte UND die Nachbar-Gegnerkarten ein", () => {
-    const s = resolveTrick(scen({ glacierLocked: lockAt(0), glacierMass: withMass([[0, 12]]), glacierRoles: [ROLES.L_ERSTARRUNG] }), noCrit);
-    expect(s.frozenOppPending["O0"]).toBe(true); // die an pos0 getroffene Karte
-    expect(s.frozenOppPending["O1"]).toBe(true); // Nachbar pos1 (Reichweite +1)
-    expect(s.frozenOppPending["O5"]).toBe(true); // Nachbar pos5 (Reichweite +1)
-  });
-});

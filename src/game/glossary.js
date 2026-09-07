@@ -253,7 +253,7 @@ export const GLOSSARY = {
     text: `Erreicht ein Gletscher ${G_THRESHOLDS[G_THRESHOLDS.length - 1]} Masse, bricht er: Berst-Score aus Masse × Wucht der erreichten Schwelle (Schwellen ${G_THRESHOLDS.join(" / ")}), verstärkt um +${pct(G_KASKADE)} % je angrenzendem Gletscher und Kollision, wenn der Bruch einen Gletscher-Nachbarn trifft. Danach fällt er auf 0 ab und füllt sich zum Durchlauf-Beginn aus seiner Boden-Reserve wieder auf.`,
     match: ["Bersten", "bricht", "brechen", "Bruch", "Brüche", "Bruchs", "brechendem", "Berst-Score", "Berst-Schwelle"] },
   cluster: { category: "frak", group: "ice", label: "Cluster", icon: "⧉", color: CLR.ice,
-    text: "Eine Gruppe direkt aneinandergrenzender Gletscher. Viele Eis-Skills messen die Cluster-Größe (z. B. Verschmelzen, Verzahnung); Eisbrücke zählt auch die Diagonalen dazu.",
+    text: "Eine Gruppe direkt aneinandergrenzender Gletscher. Mehrere Eis-Skills messen die Cluster-Größe (Packeis, Verzahnung, Kettenbruch); Eisbrücke zählt auch die Diagonalen dazu.",
     match: ["Cluster", "Clusters", "Clustern"] },
   eisformation: { category: "frak", group: "ice", label: "Gletscher-Formationen", icon: "❄", color: CLR.ice,
     text: `Eis ist das einzige Deck mit Gletscher-Formationen: geometrische Formen aus festgefrorenen Gletschern verstärken deren Bersten: Block = 2×2 (4 Gletscher, ×${de(G_BLOCK)}), Kreuz = Zentrum + 4 Nachbarn (5, ×${de(G_KREUZ)}), Linie = volle Reihe (5) oder Spalte (8) (×${de(G_LINIE)}), Große Fläche = 3×3 (9, ×${de(G_FLAECHE)}). Überlappende Formen stapeln.`,

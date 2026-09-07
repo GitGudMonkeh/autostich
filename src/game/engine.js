@@ -24,11 +24,11 @@ import { computeFormations, positionHasFormation, activeFormationCount, summariz
 import { perkLegendaryChance, anchorAt } from "./shop.js";
 import { precomputeArchitect, architectValueBonus, architectScore, buildArchitectOffer } from "./architect.js";
 import { precomputeGlacier, ewigerFrostTick, dauerfrostTick, glacierOpts, driftTarget as glacierDriftTarget,
-  neighbors4 as glacierNeighbors4, glacierNeighborFn, verschmelzenPool, uebergletscherPool, packeisTick, verzahnungTick, eiszeitTick, glacierGeometry,
+  neighbors4 as glacierNeighbors4, glacierNeighborFn, uebergletscherPool, packeisTick, verzahnungTick, eiszeitTick, glacierGeometry,
   ROLES as GLACIER_ROLES, WIN_MASS as GLACIER_WIN_MASS, ANFRIEREN_WIN as GLACIER_ANFRIEREN_WIN,
   ANFRIEREN_FORM as GLACIER_ANFRIEREN_FORM, SCHNEETREIBEN_SEED as GLACIER_SCHNEETREIBEN_SEED,
   EISPANZER_MASS as GLACIER_EISPANZER_MASS, FROSTBUND_BUFF as GLACIER_FROSTBUND_BUFF,
-  VERDICHTUNG_RATE as GLACIER_VERDICHTUNG_RATE, ERSTARRUNG_FRAC as GLACIER_ERSTARRUNG_FRAC,
+  VERDICHTUNG_RATE as GLACIER_VERDICHTUNG_RATE,
   FIRN_REFILL_TARGET as GLACIER_FIRN_REFILL_TARGET } from "./glacier.js"; // Eis-Neudesign (isoliert, activeArchetypes "ice") · #386 Firn-Reserve-Nachschub
 import { fullPerkOffer, devSkillOffer, fullArchitectOffer } from "./devCatalog.js"; // Dev-Run: Voll-Katalog statt Zufallsangebot (nur state.devMode)
 import { runRules, perksOfferedFor, skillOfferParams } from "./rules.js"; // exp: Regeln je Lauf (state.rules; null → Konstanten, byte-identisch)
@@ -237,11 +237,10 @@ export function resolveTrick(state, rng) {
       const draw = Math.max(0, Math.min(GLACIER_FIRN_REFILL_TARGET - (newGlacierMass[p] || 0), newFirnStack[p] || 0));
       if (draw > 0) { newGlacierMass[p] = (newGlacierMass[p] || 0) + draw; newFirnStack[p] = (newFirnStack[p] || 0) - draw; }
     }
-    // Pooling vor dem Bruch: Ewiges Schild (Legendär) poolt das GANZE Feld, sonst Verschmelzen den Cluster (nie fallend).
+    // Pooling vor dem Bruch: Ewiges Schild (Legendär) hebt das GANZE Feld aufs Maximum (nie fallend).
     // Basis ist die BEREITS nachgefüllte Masse (newGlacierMass), nicht das rohe glacierMass.
     const refilledMass = newGlacierMass;
     const snapMass = glacierRoles.includes(GLACIER_ROLES.L_SCHILD) ? uebergletscherPool(refilledMass, glacierLocked)
-      : glacierRoles.includes(GLACIER_ROLES.VERSCHMELZEN) ? verschmelzenPool(refilledMass, glacierLocked, glacierNF)
       : refilledMass;
     // 2D-Geometrie-Formationen (unique Deck-Passiv, docs §2.7/§9): Block/Kreuz/Linie/Fläche → Burst-Faktor je Feld; Eiswall hebt die Linie.
     const glacierGeo = glacierGeometry(glacierLocked, { eiswall: glacierRoles.includes(GLACIER_ROLES.EISWALL) });
@@ -253,7 +252,7 @@ export function resolveTrick(state, rng) {
       glacierO.grosseLawine = true; newGrosseLawineFired = true;
     }
     glacierPreNow = precomputeGlacier(snapMass, glacierLocked, { ...glacierO, formFactor: glacierGeo });
-    // Anzeige-Basis dieses Durchlaufs ist snapMass — das POOLING (Verschmelzen → Cluster-Ø, Ewiges Schild → Feld-Max
+    // Anzeige-Basis dieses Durchlaufs ist snapMass — das POOLING (Ewiges Schild → Feld-Max
     // +Bonus) ist ein Durchlauf-BEGINN-Buff und soll SOFORT sichtbar sein (alle Gletscher gleich hochgezogen), nicht
     // erst Stich für Stich. Nur der Bruch-ABFALL wird pro Stich verbraucht: `burn` = snapMass − resetMass (immer ≥ 0),
     // je Feld genau EINMAL abgezogen (consumed-Guard). Der Netto-Akkumulator/Score bleibt identisch — nur das Timing/HUD ändert sich.
@@ -851,17 +850,7 @@ export function resolveTrick(state, rng) {
   // Einfrieren (docs §4 Frostgriff): bricht dieser Gletscher, verliert die hier getroffene Gegnerkarte ihren NÄCHSTEN Stich.
   if (glacierActive && glacierRoles.includes(GLACIER_ROLES.EINFRIEREN) && glacierPreNow && glacierPreNow.breaks.some((b) => b.pos === actualPos))
     newFrozenOppPending[oCard.id] = true;
-  // Erstarrung (Legendär): jeder brechende Gletscher friert die getroffene Gegnerkarte ein — plus Reichweite +1 ins Gegnerfeld.
-  // Dazu ein Bonus-Score je Bruch = ANTEIL des Burst-Scores dieses Bruchs (glacierDirect, bereits × Sieg-Stack). Skaliert so
-  // automatisch mit Masse/Geometrie/Kaskade und der Build-Qualität und erbt den Burst-Soft-Cap — Erstarrung ist damit der
-  // „heimliche Best-Pick" (etwas über den anderen Legendären), ohne am Burst vorbei auszureißen. Kern bleibt die Duo-Kontrolle.
-  if (glacierActive && glacierRoles.includes(GLACIER_ROLES.L_ERSTARRUNG) && glacierPreNow && glacierPreNow.breaks.some((b) => b.pos === actualPos)) {
-    newFrozenOppPending[oCard.id] = true;
-    for (const nb of glacierNeighbors4(actualPos)) newFrozenOppPending[oppDeck[oppOrder[nb]].id] = true;
-    const erstarrungScore = glacierDirect * GLACIER_ERSTARRUNG_FRAC;
-    score += erstarrungScore; gained += erstarrungScore; glacierYield += erstarrungScore;
-    if (breakdown) { breakdown.glacierDirect = (breakdown.glacierDirect || 0) + erstarrungScore; breakdown.total += erstarrungScore; }
-  }
+  // (§5.2: Erstarrung ist gestrichen — die Kontrolle liegt bei Einfrieren, dessen Reichweite mit der Stufe steigt.)
   // Frostbund (docs §4 Frostgriff): bricht dieser Gletscher, bufft er seine NICHT-Gletscher-Nachbarn (2. Archetyp) → +Stichwert.
   if (glacierActive && glacierRoles.includes(GLACIER_ROLES.FROSTBUND) && glacierNF && glacierPreNow && glacierPreNow.breaks.some((b) => b.pos === actualPos))
     for (const nb of glacierNF(actualPos)) if (!glacierLocked[nb]) {
@@ -871,13 +860,13 @@ export function resolveTrick(state, rng) {
   // Verdichtung (docs §4 Firn): der auf diesem Gletscher unterdrückte Gebäude-Wertbonus wird in Masse getankt.
   if (verdichtung && architectValue > 0) newGlacierMass[actualPos] = (newGlacierMass[actualPos] || 0) + architectValue * GLACIER_VERDICHTUNG_RATE;
 
-  // #UI: bester GLETSCHER-Stich separat erfassen — der volle Stich-Score (inkl. Bruch/Erstarrung), sobald dieser Stich
+  // #UI: bester GLETSCHER-Stich separat erfassen — der volle Stich-Score (inkl. Bruch), sobald dieser Stich
   // einen Gletscher-Bruch trug. `bestTrickScore` (oben) wird VOR dem Bruch-Score gebucht und zeigt ihn daher nicht; der
   // Gletscher-Stich braucht darum seine eigene Bestmarke — hier, wo `gained` bereits den Bruch enthält.
   if (glacierDirect > 0) bestGlacierTrickScore = Math.max(bestGlacierTrickScore, gained);
 
   // Zinseszins-Bank: EINLAGE. Jeder gewonnene Stich legt einen Anteil seines Scores aufs Kapital. Bewusst HIER, ganz
-  // am Ende der Stich-Wertung — `gained` trägt an dieser Stelle alle Nachträge (Konsum, Gletscher-Bruch/Erstarrung).
+  // am Ende der Stich-Wertung — `gained` trägt an dieser Stelle alle Nachträge (Konsum, Gletscher-Bruch).
   // Das Kapital ist KEIN Score; es zahlt erst am Durchlauf-Ende über den Zinssatz aus (s. u.).
   if (won && ownsFlag(perks, "zinseszins")) zinsCapital += gained * C.ZINS_DEPOSIT;
 

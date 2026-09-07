@@ -21,10 +21,10 @@ import * as C from "../game/constants.js";
 import { ANFRIEREN_WIN as G_ANFRIEREN_WIN, ANFRIEREN_FORM as G_ANFRIEREN_FORM, SCHNEETREIBEN_SEED as G_SCHNEETREIBEN_SEED,
   DAUERFROST_NEAR as G_DAUERFROST_NEAR, DAUERFROST_FAR as G_DAUERFROST_FAR, VERDICHTUNG_RATE as G_VERDICHTUNG_RATE,
   PACKEIS_PER_NEIGHBOR as G_PACKEIS_PER, VERZAHNUNG_PER as G_VERZAHNUNG_PER, GEO_LINIE as G_GEO_LINIE, EISWALL_LINIE as G_EISWALL_LINIE,
-  TIER_MULT as G_TIER_MULT, ABBRUCHKANTE_TIER_MULT as G_ABBRUCH_TIER, ZERMALMEN_KOLLISION as G_ZERMALMEN_KOLL, KOLLISION_MULT as G_KOLLISION,
+  TIER_MULT as G_TIER_MULT, ABBRUCHKANTE_TIER_MULT as G_ABBRUCH_TIER,
   RISSBILDUNG_BURST as G_RISSBILDUNG_BURST, THRESHOLDS as G_THRESHOLDS, GLETSCHERSTURZ_PER as G_GLETSCHERSTURZ_PER,
   FROSTBUND_BUFF as G_FROSTBUND_BUFF, EISPANZER_MASS as G_EISPANZER_MASS, EISZEIT_FLOOD as G_EISZEIT_FLOOD,
-  EISZEIT_MAX_GLACIERS as G_EISZEIT_MAX, SCHILD_BONUS as G_SCHILD_BONUS, ERSTARRUNG_FRAC as G_ERSTARRUNG_FRAC } from "../game/glacier.js";
+  EISZEIT_MAX_GLACIERS as G_EISZEIT_MAX, SCHILD_BONUS as G_SCHILD_BONUS } from "../game/glacier.js";
 
 const num = (x) => String(x).replace(".", ",");                          // Spanish keeps the decimal comma
 const pct = (x) => Math.round(x * 100);                                  // share → percent (0.25 → 25)
@@ -131,8 +131,6 @@ export default {
   "ability.SK_ICE_03.desc": `En cada ciclo, las celdas sin congelar acumulan nieve en su reserva del suelo: +${num(G_DAUERFROST_NEAR)} a 2 celdas de distancia del glaciar más cercano, +${num(G_DAUERFROST_FAR)} a partir de 3. Las 8 celdas que rodean directamente un glaciar quedan vacías. Si más tarde se congela aquí un glaciar, la reserva lo rellena al inicio del ciclo.`,
   "ability.SK_ICE_04.name": "Compactación",
   "ability.SK_ICE_04.desc": `Si un edificio sube el valor de combate de una carta de glaciar, esa bonificación no se juega, sino que se convierte en masa: +${num(G_VERDICHTUNG_RATE)} de masa por punto. Los edificios de puntuación no se ven afectados.`,
-  "ability.SK_ICE_05.name": "Fusión",
-  "ability.SK_ICE_05.desc": `Al inicio de un ciclo, los glaciares contiguos se elevan mutuamente hasta la masa media de su agrupación, sin bajar nunca.`,
   "ability.SK_ICE_06.name": "Banquisa",
   "ability.SK_ICE_06.desc": `En cada ciclo, un glaciar gana +${num(G_PACKEIS_PER)} de masa por cada glaciar vecino.`,
   "ability.SK_ICE_07.name": "Puente de Hielo",
@@ -145,8 +143,6 @@ export default {
   "ability.SK_ICE_10.desc": `Los umbrales de masa más altos estallan con más fuerza: potencia ×${num(G_ABBRUCH_TIER[2])} en vez de ×${num(G_TIER_MULT[2])} en el umbral 2, ×${num(G_ABBRUCH_TIER[3])} en vez de ×${num(G_TIER_MULT[3])} en el 3.`,
   "ability.SK_ICE_11.name": "Estallido en Cadena",
   "ability.SK_ICE_11.desc": `Cuando un glaciar estalla, los glaciares contiguos estallan con él de inmediato, aunque no hayan alcanzado su umbral.`,
-  "ability.SK_ICE_12.name": "Trituración",
-  "ability.SK_ICE_12.desc": `Cuando un estallido alcanza a un glaciar vecino, la colisión cuenta más: factor ×${num(G_ZERMALMEN_KOLL)} en vez de ×${num(G_KOLLISION)}.`,
   "ability.SK_ICE_13.name": "Agrietamiento",
   "ability.SK_ICE_13.desc": `Un glaciar estalla ya con ${num(G_RISSBILDUNG_BURST)} de masa, en vez de ${num(G_THRESHOLDS[G_THRESHOLDS.length - 1])}.`,
   "ability.SK_ICE_14.name": "Derrumbe de Glaciar",
@@ -163,8 +159,6 @@ export default {
   "ability.SK_ICE_L02.desc": `En cada ciclo, todos tus glaciares suben hasta la masa del más fuerte, sin bajar nunca, y ganan +${G_SCHILD_BONUS} de masa encima. Al estallar, cada glaciar cuenta como vecino de todos los demás: cascada y colisión completas, estén donde estén.`,
   "ability.SK_ICE_L03.name": "Gran Avalancha",
   "ability.SK_ICE_L03.desc": `En el último ciclo estallan TODOS tus glaciares de golpe, incluidos los que aún no están llenos, cada uno con la fuerza del umbral más alto y enormemente amplificado.`,
-  "ability.SK_ICE_L04.name": "Rigidez",
-  "ability.SK_ICE_L04.desc": `Cada carta rival alcanzada por el estallido pierde su baza, y el estallido llega más allá de las cuatro vecinas, hasta el campo rival. Cada estallido cuenta ×${num(1 + G_ERSTARRUNG_FRAC)} de puntuación.`,
 
   /* ---- 🌿 Planta ---- */
   "ability.SK_PLANT_02.name": "Profundidad de Raíz",

@@ -4,7 +4,7 @@ import { initialState } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
 import { precomputeGlacier, glacierOpts, ROLES, RESET_TO } from "../src/game/glacier.js";
 
-// Eis-Neudesign Phase 3.2 Gruppe A — Snapshot-Modifikatoren (Rissbildung/Zermalmen/Abbruchkante).
+// Eis-Neudesign Phase 3.2 Gruppe A — Snapshot-Modifikatoren (Rissbildung/Abbruchkante). §5.2: Zermalmen gestrichen.
 // Getrieben über state.glacierRoles (noch nicht im Skill-Angebots-Pool → kein 5.-Archetyp-Leak). Werte Platzhalter.
 const identity = () => Array.from({ length: 40 }, (_, i) => i);
 const flat = () => Array.from({ length: 40 }, (_, i) => ({ id: `F${i}`, suit: i % 2 ? "B" : "R", baseRank: i % 2 ? 11 : 12, value: i % 2 ? 11 : 12 }));
@@ -22,9 +22,8 @@ describe("glacierOpts — Rollen → Snapshot-opts", () => {
   it("baut opts nur für aktive Rollen, komponiert additiv", () => {
     expect(glacierOpts([])).toEqual({});
     expect(glacierOpts([ROLES.RISSBILDUNG])).toHaveProperty("burstAt");
-    const all = glacierOpts([ROLES.RISSBILDUNG, ROLES.ZERMALMEN, ROLES.ABBRUCHKANTE]);
+    const all = glacierOpts([ROLES.RISSBILDUNG, ROLES.ABBRUCHKANTE]);
     expect(all).toHaveProperty("burstAt");
-    expect(all).toHaveProperty("kollisionMult");
     expect(all).toHaveProperty("tierMult");
   });
 });
@@ -37,16 +36,6 @@ describe("Rissbildung — senkt die Berst-Schwelle (Tempo)", () => {
     const riss = resolveTrick(scen({ glacierLocked, glacierMass, glacierRoles: [ROLES.RISSBILDUNG] }), noCrit);
     expect(base.lastTrick.breakdown?.glacierDirect ?? 0).toBe(0); // Masse 6 < 12: hält
     expect(riss.lastTrick.breakdown.glacierDirect).toBeGreaterThan(0);
-  });
-});
-
-describe("Zermalmen — Kollision stärker", () => {
-  it("mit Gletscher-Nachbar größerer Burst als ohne Zermalmen", () => {
-    const glacierLocked = falses(); glacierLocked[0] = true; glacierLocked[1] = true; // Nachbarn (pos 0,1 = Zeile 0)
-    const glacierMass = zeros(); glacierMass[0] = 12; glacierMass[1] = 12;
-    const base = resolveTrick(scen({ glacierLocked, glacierMass }), noCrit);
-    const zerm = resolveTrick(scen({ glacierLocked, glacierMass, glacierRoles: [ROLES.ZERMALMEN] }), noCrit);
-    expect(zerm.lastTrick.breakdown.glacierDirect).toBeGreaterThan(base.lastTrick.breakdown.glacierDirect);
   });
 });
 
