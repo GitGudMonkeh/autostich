@@ -387,7 +387,7 @@ export const PLANT_BLOOM_SCORE_PER_GREEN = envNum("SIM_PLANT_BLOOM_SCORE_PER_GRE
 // gehört der KARTE, nicht dem Skill — deshalb steht die Regel einmal im Passiv und die Score-Skills bleiben einzeilig.
 // Der zweite Summand ist der eigentliche Punkt: Wachstum ÜBER der Blüh-Schwelle zahlt weiter, also lohnen sich die
 // Wachstums-Skills den ganzen Lauf (§6.19: mit festem Gewicht blieben sie tot).
-export const PLANT_BLOOM_WEIGHT = envNum("SIM_PLANT_BLOOM_WEIGHT", 5);                    // Grundgewicht einer blühenden Karte
+export const PLANT_BLOOM_WEIGHT = envNum("SIM_PLANT_BLOOM_WEIGHT", 3);                    // Grundgewicht einer blühenden Karte (§6.22: 5 → 3, bei 5 lag die Fraktion 1,35× über Feuer)
 export const PLANT_BLOOM_WEIGHT_PER_GROWTH = envNum("SIM_PLANT_BLOOM_WEIGHT_PER_GROWTH", 40); // … +1 je so viel Wachstum über der Blüh-Schwelle (Laufende ≈ 205 Wachstum → Gewicht 8)
 // Grün-Farbblock-Deckel (v0.3): der eskalierende Farbblock-Faktor grüner Karten wird bei dieser Ordinalzahl gedeckelt.
 // §6.2 lässt ihn bewusst stehen, bis die Messung sagt, ob er hoch, weg oder umgebaut wird (Owner: warten).
