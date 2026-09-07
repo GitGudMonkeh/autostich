@@ -27,34 +27,76 @@ und nur für dieses Dokument.
 - **Münzen werden nicht an den Score gekoppelt.** Sie kommen aus **gezielten
   Spielmechanik-Aufgaben** — zufällig oder fest, offen welches von beiden. (2026-09-07.)
 - **Zwei Zwischenbosse, gedanklich in Durchlauf 15 und 30.** Reine Platzhalter, mit der Idee, dass sie
-  Belohnung oder Münzen geben. **Kein Endboss vorerst.** (2026-09-07.)
+  Belohnung oder Münzen geben. (2026-09-07.)
 - **Diese Runde erkundet nur.** Ausgaben und Verdienen werden ausgelegt, nicht entschieden.
   (2026-09-07.)
 
-> **Eine Lesart zum Bestätigen:** „lass Boss am Ende des Laufs erstmal weg" ist so gelesen, dass der
-> **Endboss** entfällt und die beiden Zwischenbosse bleiben. Falls anders gemeint, ist §5 die einzige
-> Stelle, die sich ändert.
+### Frühe Idee, ausdrücklich nicht beschlossen: die neue Progression
+
+Der Owner hat am 2026-09-07 seinen aktuellen Denkstand geteilt — **eine frühe Idee, nichts
+Beschlossenes und nichts Ausgereiftes.** Sie steht hier nicht, um entworfen zu werden — das
+Progression-Design gehört ihr eigenes Vorhaben —, sondern weil die Münz-Erkundung **dagegen geprüft
+werden muss.** Sie verändert an mehreren Stellen, was in diesem Dokument sinnvoll ist.
+
+Der Denkstand, so wie er geteilt wurde:
+
+- **Ausgangspunkt: Inhalt für etwa 15 bis 20 Stunden**, also grob **30 bis 40 Läufe**.
+- **Drei Ebenen. Eine Ebene sind fünf aufeinanderfolgende Läufe.**
+- **Jeder Lauf hat zwei Zwischenbosse und einen Endboss an seinem Ende** — also drei Bosse je Lauf,
+  fünfzehn Bosse je Ebene. Entweder fünfzehn eigene, oder ein kleinerer Pool, aus dem gezogen wird,
+  plus ein fester finaler Boss.
+- **Jeder Boss hat eine Mechanik, die auf den ganzen Lauf wirkt**, und **eine Score-Schwelle**. Wer
+  die Schwelle nicht schafft, verliert die Ebene.
+- **Fortschritt läuft über XP und passiert automatisch** — je weiter man kommt, desto mehr Raritäten,
+  Decks, Legendäre werden freigeschaltet. Keine Kaufentscheidung, kein Baum.
+- **Ebene geschafft heißt Ebene übersprungen:** wer Ebene 1 bestanden hat, startet künftig in Ebene 2;
+  wer Ebene 2 bestanden hat, ist in der finalen Ebene und muss alle fünf Läufe plus den Endboss
+  schaffen. Das ist das finale Ziel.
+- **Offen im Denkstand selbst:** ob man zwischen den Läufen einer Ebene etwas mitnimmt, und ob es
+  innerhalb einer Ebene schwerer wird — außer über die steigende Score-Schwelle je Boss.
+
+Was das für dieses Dokument bedeutet, steht an vier Stellen: der Endboss ist damit **kein separates
+Thema mehr, sondern Teil derselben Struktur** (§5); Par und Boss-Schwelle sind **dasselbe Objekt**
+(§6); die Zielgröße 30–40 Läufe **rechnet sich in eine Erfolgsquote um** (§7); und die offene
+Mitnahme-Frage hat in den Münzen **einen naheliegenden Kandidaten** (§3.5).
+
+### Sprachregelung
+
+Der Denkstand nennt einen Durchgang „Runde"; dieses Dokument und der Code nennen so den einzelnen
+Deck-Durchlauf. Damit man nicht aneinander vorbeiredet, ab hier durchgehend:
+
+| Begriff | Was es ist | Größe |
+| --- | --- | --- |
+| **Stich** | eine Karte gegen eine Karte | — |
+| **Durchlauf** | ein Deck-Durchgang | 40 Stiche |
+| **Lauf** | ein Spiel von Anfang bis Ende, mit drei Bossen | 50 Durchläufe |
+| **Ebene** | fünf Läufe | 250 Durchläufe |
+
+„Runde" wird ab hier nicht mehr benutzt. Wo `docs/skill-rework.md` von „50 Runden" spricht, sind
+Durchläufe gemeint — das bleibt gültig.
 
 ### Nicht in diesem Dokument
 
 | Thema | Wo es hingehört |
 | --- | --- |
 | Skill-Inhalte, Stufen, Fraktionen, Legendäre | `docs/skill-rework.md` (läuft parallel auf `exp`) |
-| Der neue Progress, der Baum, SP und DP ersetzt | eigenes Vorhaben — hier nur als Abhängigkeit (§2, F1) |
-| Boss-Mechaniken und Boss-Beute | später, im Rahmen der Progression |
+| Das Progression-Design selbst — Ebenen, XP, Freischaltungen | eigenes Vorhaben; hier nur als Rahmen festgehalten |
+| Boss-Mechaniken und Boss-Beute im Einzelnen | später, im Rahmen der Progression |
 | Zwillingstür, Brett- und Deck-Änderungen | geparkt (`docs/skill-rework.md` §1) |
 | Code, Konstanten, Tests | eine spätere Runde |
 
-### Offen — die drei Fragen, die alles andere sortieren
+### Offen — die Fragen, die alles andere sortieren
 
-- **F1 — Wer setzt künftig den Boden?** Rerolls, Formations-Energie und Baufeld-Größe kommen heute
+- **F1 — Wer setzt künftig den Boden?** Neuwürfe, Formations-Energie und Baufeld-Größe kommen heute
   aus dem Progression-Baum. Fällt der weg, braucht jede der drei einen neuen Startwert, bevor eine
-  Münze etwas dazukaufen kann. Das ist keine Münz-Frage, aber die Münz-Flächen A, D und E hängen
-  daran (§3.2).
-- **F2 — Aufgaben zufällig oder fest?** Die Achse, die der Owner benannt hat. §4.3 legt drei Modelle
-  nebeneinander.
-- **F3 — Ist die Münze knapp oder reichlich?** Eine Ökonomie, in der man sich fast alles leisten kann,
-  ist eine Verzögerung; eine, in der man fast nichts kann, ist Dekoration. §3.4.
+  Münze etwas dazukaufen kann. Keine Münz-Frage, aber die Flächen A, D und E hängen daran (§3.2).
+- **F2 — Aufgaben zufällig oder fest?** Die Achse, die der Owner benannt hat. Drei Modelle in §4.3.
+- **F3 — Ist die Münze knapp oder reichlich?** §3.4.
+- **F4 — Was heißt „die Ebene verloren"?** Fünf Läufe **in Folge**, oder fünf bestandene Läufe
+  **gesammelt**? Der Unterschied entscheidet, wie hart die Boss-Schwellen sein dürfen — und zwar
+  gegen die Intuition. §7 rechnet es aus.
+- **F5 — Nimmt man zwischen den Läufen einer Ebene etwas mit?** Offen im Denkstand selbst. §3.5 legt
+  dar, warum die Münze der naheliegende, aber nicht der harmlose Kandidat ist.
 
 ---
 
@@ -80,10 +122,15 @@ Drei Folgen, die diesen Entwurf gegenüber der ersten Fassung verändern:
    zu entwerten. Der Grund ist weg — der Bedarf nicht. Was bleibt, ist der Grund, den der Owner selbst
    genannt hat: **damit es nicht überpowert wird.** §3.3 formuliert das aus, und es führt zu anderen,
    engeren Limits als die Baum-Begründung es getan hätte.
-3. **Der Score hat keine Auszahlung mehr.** Score-Meilensteine speisen heute SP und DP; fallen beide,
-   ist der Score eine Zahl, die nur noch sich selbst bedeutet. Das ist kein Problem dieses Dokuments,
-   aber es macht **Par** wichtiger als vorher: wenn Score nichts mehr einbringt, ist die Rückmeldung
-   „stehst du gut da?" das Einzige, was er noch leisten kann (§6).
+3. **Der Score verliert seine alte Auszahlung und bekommt eine neue.** Score-Meilensteine speisen
+   heute SP und DP; fallen beide, bedeutet der Score zunächst nur noch sich selbst. Genau diese Lücke
+   füllt der geteilte Denkstand: **die Score-Schwelle je Boss.** Damit ist hoher Score kein
+   Selbstzweck mehr, sondern die Bedingung, um weiterzukommen — der Incentive, der bisher gefehlt hat,
+   sitzt dann nicht in einer Belohnung, sondern in einer Hürde. §6 zieht die Folgen für Par.
+4. **Die Münze muss keine Progression tragen.** Freischaltungen laufen im Denkstand über XP und
+   passieren automatisch. Das entlastet die Münze von der Frage „womit belohne ich Fortschritt?" — sie
+   darf ganz das bleiben, was sie am besten kann: eine kleine, schnelle Entscheidung innerhalb eines
+   Laufs.
 
 ### Ein Befund, der §4 trägt
 
@@ -309,6 +356,35 @@ gerade geht. Beides ist ein legitimes Spiel — nur muss man wissen, welches.
 Eine Größenordnung, an der sich Zahlen später ausrichten können: die Münze soll **zählbar** bleiben —
 zweistellig, im Kopf zu behalten, nicht im Zahlenraum des Scores.
 
+### 3.5 Nimmt man Münzen in den nächsten Lauf mit? — F5
+
+Der Denkstand lässt offen, ob man zwischen den Läufen einer Ebene etwas mitnimmt. Die Münze ist dafür
+der naheliegende Kandidat — sie ist schon eine Währung, sie hat schon einen Bogen, und eine Ebene ist
+genau der größere Bogen, über den sie stattdessen laufen könnte.
+
+**Sie ist aber nicht der harmlose Kandidat.** Drei Varianten, mit ihrem jeweiligen Preis:
+
+| | Regel | Was es mit dem Spiel macht |
+| --- | --- | --- |
+| **V1 Verfall je Lauf** | Münzen enden mit dem Lauf | die Spar-Frage bleibt scharf: „jetzt ausgeben oder auf Durchlauf 40 warten?" Am Laufende gibt man alles aus, weil Sparen wertlos wird — ein sauberer, lesbarer Schlusspunkt |
+| **V2 Rest wandert in die Ebene** | was übrig ist, startet den nächsten Lauf | die Ebene bekommt einen Bogen, und Lauf 1 zahlt auf Lauf 5 ein. Aber **Sparen wird immer richtig** — die Frage aus V1 verschwindet, und mit ihr die interessanteste Eigenschaft der Münze |
+| **V3 Nur Boss-Beute wandert** | laufende Aufgaben verfallen, Boss-Münzen bleiben | beides zugleich: die kleine Ökonomie bleibt scharf, die große bekommt einen Bogen. Dafür zwei Töpfe, die der Spieler auseinanderhalten muss |
+
+**Der Kernkonflikt in einem Satz:** Verfall macht die Münze zu einer Entscheidung, Mitnahme macht sie zu
+einem Vermögen. Ein Vermögen wird immer gespart, bis es gebraucht wird — das ist kein Fehler, aber es
+ist ein anderes Spiel.
+
+**Was gegen V2 spricht, über das Gefühl hinaus:** die Ebene ist ohnehin schon die Stelle, an der sich
+Vorteile stapeln — XP, Freischaltungen, gelernte Bosse. Ein mitgenommenes Vermögen legt eine weitere
+Schicht darauf, und zwar für den Spieler, dem die Läufe ohnehin gelingen. In einer Struktur, in der
+das Scheitern eines Laufs die Ebene kosten kann (§7), ist das die Richtung, in die man am wenigsten
+zusätzlich verstärken will.
+
+Wenn der Denkstand eine Mitnahme *will* — und das Argument dafür ist stark, weil eine Ebene sonst nur
+fünf unverbundene Läufe sind —, ist **V3 der Weg, der beides behält.** Aber das ist Erkundung: die
+Frage gehört zur Progression, nicht zur Ökonomie, und dieses Dokument liefert dazu nur die
+Nebenwirkung.
+
 ---
 
 ## 4. Wie man Münzen verdient
@@ -340,12 +416,12 @@ Vier Anforderungen, aus denen der Rest folgt:
 
 ### 4.2 Der Katalog — was das Spiel hergibt
 
-Nach Ebene sortiert. Die Spalte „hängt an" nennt die Größe, die die Engine **bereits** je Stich oder je
+Nach Gruppen sortiert. Die Spalte „hängt an" nennt die Größe, die die Engine **bereits** je Stich oder je
 Durchlauf führt — eine Aufgabe, die dort andockt, kostet fast nichts.
 
 ---
 
-**Ebene 1 — Der einzelne Stich.** Die reichste Ebene, weil die Engine hier am meisten weiß.
+**Gruppe 1 — Der einzelne Stich.** Die reichste Ebene, weil die Engine hier am meisten weiß.
 
 | Aufgabe | Hängt an | Was sie am Spiel ändert |
 | --- | --- | --- |
@@ -357,7 +433,7 @@ Durchlauf führt — eine Aufgabe, die dort andockt, kostet fast nichts.
 
 ---
 
-**Ebene 2 — Serie und Verlauf.** Über den Durchlauf hinweg, nicht je Stich.
+**Gruppe 2 — Serie und Verlauf.** Über den Durchlauf hinweg, nicht je Stich.
 
 | Aufgabe | Hängt an | Was sie ändert |
 | --- | --- | --- |
@@ -368,7 +444,7 @@ Durchlauf führt — eine Aufgabe, die dort andockt, kostet fast nichts.
 
 ---
 
-**Ebene 3 — Aufstellung und Formationen.** Die Ebene, auf der der Spieler am meisten Kontrolle hat —
+**Gruppe 3 — Aufstellung und Formationen.** Die Ebene, auf der der Spieler am meisten Kontrolle hat —
 und damit die für Aufgaben tragfähigste.
 
 | Aufgabe | Hängt an | Was sie ändert |
@@ -385,7 +461,7 @@ entscheidet sie direkt.
 
 ---
 
-**Ebene 4 — Architekt und Baufeld.**
+**Gruppe 4 — Architekt und Baufeld.**
 
 | Aufgabe | Hängt an | Was sie ändert |
 | --- | --- | --- |
@@ -399,7 +475,7 @@ beschränkt bleiben oder über mehrere Durchläufe laufen.
 
 ---
 
-**Ebene 5 — Fraktionen.** Jede Fraktion führt eigene Motor-Zähler, an denen eine Aufgabe direkt hängen
+**Gruppe 5 — Fraktionen.** Jede Fraktion führt eigene Motor-Zähler, an denen eine Aufgabe direkt hängen
 kann.
 
 | Fraktion | Zähler | Beispielaufgabe |
@@ -416,7 +492,7 @@ nicht an heutigen Zahlen — sonst veralten sie mit dem nächsten Balance-Pass.
 
 ---
 
-**Ebene 6 — Verzicht.** Die interessanteste Art, weil die Aufgabe kostet, was sie zahlt.
+**Gruppe 6 — Verzicht.** Die interessanteste Art, weil die Aufgabe kostet, was sie zahlt.
 
 | Aufgabe | Was sie ändert |
 | --- | --- |
@@ -431,7 +507,7 @@ Ein Anteil, kein Prinzip.
 
 ---
 
-**Ebene 7 — Der ganze Durchlauf.**
+**Gruppe 7 — Der ganze Durchlauf.**
 
 | Aufgabe | Was sie ändert |
 | --- | --- |
@@ -465,20 +541,20 @@ Die Achse, die der Owner benannt hat. Drei Modelle:
 ---
 
 **Modell 3 — Gemischt.** Ein fester Rahmen, zufällig gefüllt: jeder Durchlauf hat eine Aufgabe, ihre
-**Ebene** steht fest (etwa: jeder vierte Durchlauf eine Formations-Aufgabe), die konkrete Aufgabe wird
-aus dieser Ebene gewürfelt.
+**Gruppe** steht fest (etwa: jeder vierte Durchlauf eine Formations-Aufgabe), die konkrete Aufgabe wird
+aus dieser Gruppe gewürfelt.
 
 - **Dafür:** der Spieler weiß, *welche Art* Aufgabe kommt, aber nicht welche. Das ist genug Struktur
-  zum Planen und genug Zufall gegen die Checkliste. Und es löst das Ebene-4-Problem von selbst:
+  zum Planen und genug Zufall gegen die Checkliste. Und es löst das Gruppe-4-Problem von selbst:
   Architekt-Aufgaben werden nur in Architekt-Runden gezogen.
-- **Dagegen:** braucht einen Katalog mit ausreichend Einträgen **je Ebene**, nicht nur insgesamt.
+- **Dagegen:** braucht einen Katalog mit ausreichend Einträgen **je Gruppe**, nicht nur insgesamt.
   Mehr Vorarbeit als Modell 1 oder 2.
 
 ---
 
 **Wenn eine Richtung gefragt ist: Modell 3.** Es ist das einzige, das mit dem Entscheidungsplan
 zusammenarbeitet statt gegen ihn — der Plan sagt ohnehin schon, was in dieser Runde entschieden wird,
-und die Aufgabenebene kann daran hängen. Aber das ist eine Erkundungs-Aussage, keine Empfehlung zum
+und die Aufgabengruppe kann daran hängen. Aber das ist eine Erkundungs-Aussage, keine Empfehlung zum
 Bauen: alle drei sind spielbar, und welches sich richtig anfühlt, weiß man erst, wenn man eines davon
 gespielt hat.
 
@@ -514,82 +590,208 @@ lesbarer, Letzteres ist billiger.
 
 ---
 
-## 5. Bosse — Platzhalter
+## 5. Bosse
 
-**Gesetzt:** zwei Zwischenbosse, gedanklich in **Durchlauf 15 und 30**. Sie geben **Belohnung oder
-Münzen**. **Kein Endboss vorerst.** Mechaniken und Beute später, im Rahmen der Progression.
+**Gesetzt:** zwei Zwischenbosse, gedanklich in **Durchlauf 15 und 30**, mit Belohnung oder Münzen.
+Alles Weitere gehört dem Denkstand aus §1 und der Progression — hier steht nur, was die Ökonomie davon
+berührt.
 
-Mehr steht hier bewusst nicht. Was für dieses Dokument zählt, ist nur die Naht:
+### 5.1 Ein Boss ist eine Aufgabe mit Schwelle
 
-- Ein Boss ist eine **Aufgabe, die mehr zahlt als eine gewöhnliche.** Damit ist er im Sinne von §4
-  nichts Neues, sondern der große Bruder — und die Ökonomie muss für ihn nicht umgebaut werden.
-- Die Abstände 15 und 30 teilen den Lauf in **15 / 15 / 20**. Das ist als Rhythmus brauchbar und wird
-  hier nur festgehalten, nicht bewertet: der letzte Abschnitt ist der längste und hätte, sobald es
-  einen Endboss gibt, den natürlichen Platz dafür.
-- **Zwei Hälften existieren schon:** ein stärkerer Gegner ist über `difficulty` (im Normallauf ein
-  reiner No-op) gelöst, und eine Regel, die einen Abschnitt lang gilt, hat mit den Wochen-Modifikatoren
-  ein fertiges Muster — seed-deterministisch, positiv/negativ geteilt, mit Ausschlusspaaren, Text am
-  Objekt. Wenn Boss-Regeln denselben Zuschnitt bekommen, teilen sie sich später eine Darstellung.
+Im Sinne von §4 ist ein Boss nichts Neues, sondern der **große Bruder einer Aufgabe** — mit zwei
+Unterschieden, die aus dem Denkstand kommen:
+
+| | Gewöhnliche Aufgabe | Boss |
+| --- | --- | --- |
+| Bedingung | eine Spielmechanik | eine **Score-Schwelle** |
+| Verfehlen | kostet nichts | kostet die Ebene |
+| Wirkung | keine | eine **Mechanik auf den ganzen Lauf** |
+| Zahlt | wenige Münzen | viele, plus Fortschritt |
+
+Die Ökonomie muss dafür nicht umgebaut werden: der Boss zahlt in denselben Topf, nur mehr. Was sich
+ändert, ist das Gewicht — wenn ein Boss ein Vielfaches einer Aufgabe zahlt, dann taktet die Ökonomie
+nach den Bossen und nicht nach den Aufgaben. Das ist eine Verhältnisfrage (§3.4), keine Strukturfrage.
+
+### 5.2 Die Mechanik wirkt auf den ganzen Lauf — und dafür gibt es ein fertiges Muster
+
+Der wichtigste technische Befund dieser Runde. „Eine Mechanik, die auf den ganzen Lauf wirkt" ist
+**exakt** das, was die Wochen-Modifikatoren heute schon sind:
+
+- neunzehn Regeln, die einen **ganzen Lauf lang** gelten,
+- in **positive und negative** geteilt, mit **Ausschlusspaaren**, damit sich Gegensätze nicht treffen,
+- **seed-deterministisch** gezogen — dieselbe Auswahl für alle, bei Neustart reproduzierbar,
+- ihren **Anzeigetext tragen sie selbst**, mit gerollter Stärke im Text,
+- und sie hängen an **benannten Wirkungsstellen** in Reducer und Engine: gesperrte Aufstell-Felder,
+  gesperrte Baufeld-Zellen, stärkere Gegner, Deck-Shuffle, Energie, Bau-Limit, Skill- und
+  Perk-Verknappung, Neuwurf-Sperre, Raritätsdeckel, doppelte Legendäre, verstärkte Boni.
+
+Eine Boss-Mechanik ist strukturell dasselbe Objekt. **Der Bauaufwand liegt damit nicht in der Mechanik,
+sondern in der Auswahl** — wann sie greift, wie sie angekündigt wird, wie viele gleichzeitig laufen.
+Wenn Boss-Mechaniken denselben Zuschnitt bekommen, teilen sich beide Systeme später Auswahl,
+Darstellung und Prüfung.
+
+Dazu kommt die zweite fertige Hälfte: ein stärkerer Gegner ist über `difficulty` gelöst — ein flacher
+Aufschlag plus ein mitwachsender Ramp, im Normallauf ein reiner No-op.
+
+**Drei Dinge, die das Muster mitbringt und die im Boss-Entwurf beantwortet werden müssen:**
+
+1. **Stapeln sich die Mechaniken?** Wer Durchlauf 15 und 30 hinter sich hat, trägt ab 30 zwei Regeln
+   gleichzeitig, bis 50 dann drei. Bei negativen Mechaniken addieren sich die Nachteile genau dann, wenn
+   die Schwelle am höchsten ist. Die Wochen-Modifikatoren lösen das mit Ausschlusspaaren — das Werkzeug
+   liegt bereit, aber die Regel muss gewollt sein.
+2. **Sind Boss-Mechaniken nur Nachteile?** Der Wochen-Pool ist bewusst gemischt. Ein Boss, der eine
+   Mechanik *schenkt* statt auferlegt, ist genauso denkbar und macht die Begegnung zu einer Weggabelung
+   statt zu einer Wand.
+3. **Wie viele braucht der Pool?** Fünfzehn eigene Bosse je Ebene sind fünfzehn Lauf-Mechaniken — das
+   ist viel Inhalt. Die vom Owner selbst genannte Alternative (kleiner Pool, gezogen, plus fester
+   finaler Boss) ist genau das, was die Wochen-Modifikatoren tun: neunzehn Regeln reichen dort für
+   beliebig viele Wochen, weil die Kombination die Abwechslung trägt, nicht die Anzahl.
+
+### 5.3 Ankündigung
+
+Unabhängig von allem anderen: **die Boss-Mechanik sollte vor dem Boss sichtbar sein**, nicht erst mit
+ihm. Der Spieler sieht in Durchlauf 14, was ab 15 gilt, und geht mit dieser Kenntnis in die
+Entscheidung davor. Das kostet keinen Platz im Entscheidungsplan und verwandelt den Boss von einer
+Überraschung in eine Vorbereitung — bei einer Mechanik, die dann 35 Durchläufe lang wirkt, ist das
+kein Komfort, sondern die Voraussetzung dafür, dass die Entscheidung überhaupt eine ist.
 
 ---
 
-## 6. Score mit Par
+## 6. Score mit Par — jetzt eine Schwelle
 
-Gesetzt vom Owner, hier auf das Nötige reduziert — mit einer Klarstellung, die aus dieser Runde folgt.
+Der geteilte Denkstand ändert diesen Abschnitt am stärksten. Bisher war Par eine Anzeige. Mit einer
+Score-Schwelle je Boss wird er **die Schwelle selbst.**
 
-**Das Problem.** Der Score wächst geometrisch. 400.000 Punkte in Durchlauf 12 sind ein ausgezeichneter
-Lauf, dieselben 400.000 in Durchlauf 44 ein gescheiterter. Der Spieler kann das nicht sehen, weil ihm
-der Vergleichspunkt fehlt. Mit dem Wegfall von SP und DP wird das dringender: der Score bringt dann
-nichts mehr ein, also ist die Rückmeldung alles, was er noch leisten kann.
+### 6.1 Par und Boss-Schwelle sind dasselbe Objekt
 
-**Was Par wäre.** Der Score, den ein durchschnittlicher Lauf bis zu diesem Durchlauf erreicht hat —
-kumulativ, nicht je Durchlauf; eine feste Kurve aus der Sim, nicht am eigenen Lauf mitwachsend; als
-Differenz neben dem eigenen Score.
+Beides ist eine Antwort auf dieselbe Frage: *wie viel Score ist in Durchlauf n normal?*
 
-**Die Form der Kurve steht schon fest, bevor eine Zahl gemessen ist: exponentiell.** Ein linearer Par
-wäre in Durchlauf 5 unerreichbar und in Durchlauf 45 belanglos. Aus den bekannten Konstanten
-überschlagen liegt das Wachstum grob bei 10 bis 20 Prozent je Durchlauf, mit dem größten Teil des
-Gesamtscores in den letzten zehn.
+- **Par** beantwortet sie als Auskunft: „ein durchschnittlicher Lauf steht hier bei X."
+- **Die Boss-Schwelle** beantwortet sie als Bedingung: „unter X ist hier Schluss."
+
+Das ist **eine Kurve mit zwei Gebrauchsweisen**, nicht zwei Systeme. Wer die Par-Kurve gemessen hat,
+liest die drei Boss-Schwellen bei Durchlauf 15, 30 und 50 direkt daran ab — als Prozentsatz des Par an
+dieser Stelle. Und der Spieler, der Par laufend sieht, sieht damit zugleich, wie er zur nächsten
+Schwelle steht. Eine Anzeige, zwei Zwecke, keine doppelte Zahlenpflege.
+
+Damit beantwortet sich auch, was ein Par „soll": er ist nicht Dekoration, sondern **die Skala, auf der
+die ganze Progression ihre Schwierigkeit einstellt.**
+
+### 6.2 Was das über die Kurve verlangt
+
+Die Form steht fest, bevor eine Zahl gemessen ist: **exponentiell**, weil der Score geometrisch wächst.
+Ein linearer Par wäre in Durchlauf 5 unerreichbar und in Durchlauf 45 belanglos. Aus den bekannten
+Konstanten überschlagen liegt das Wachstum grob bei 10 bis 20 Prozent je Durchlauf, mit dem größten
+Teil des Gesamtscores in den letzten zehn.
 
 > **Kennzeichnung nach Hausregel:** diese Spanne ist **inferiert, nicht gemessen** — eine
-> Überschlagsrechnung über Konstanten, kein Sim-Lauf. Jede konkrete Par-Zahl ist bis dahin Platzhalter.
-> Die Messung liefert `sim/` auf Ansage.
+> Überschlagsrechnung über Konstanten, kein Sim-Lauf. Jede konkrete Par- oder Schwellenzahl ist bis
+> dahin Platzhalter. Die Messung liefert `sim/` auf Ansage, und sie ist jetzt nicht mehr nur nützlich,
+> sondern **Voraussetzung**: ohne sie sind die Boss-Schwellen geraten.
 
-**Die Klarstellung aus dieser Runde:** *Par zahlt nicht aus.* Der Owner hat gesetzt, dass Münzen nicht
-am Score hängen — und Par ist eine Score-Größe. Ein Par, der Münzen zahlt, wäre die Score-Kopplung
-durch die Hintertür, samt der Aufwärtsspirale aus §3.3.
+Drei Fragen, die die Messung mitbringen muss — die erste ist neu und die wichtigste:
 
-Par kann damit zwei Dinge sein, und beide sind mit der Setzung verträglich:
+1. **Welcher Lauf ist der Durchschnitt?** Solange Par nur anzeigt, ist das Geschmackssache. Sobald er
+   die Schwelle setzt, entscheidet er, wer weiterkommt. Eine Kurve aus *allen* Läufen und eine aus den
+   *guten* Läufen liegen weit auseinander.
+2. **Ein Par für alle Fraktionen, oder je Fraktion einer?** Ein reiner Blitz- und ein reiner
+   Pflanze-Build haben vermutlich verschiedene Kurvenformen. Als Anzeige wäre ein gemeinsamer Par
+   ungenau; als Schwelle wäre er unfair.
+3. **Wie verändern die Boss-Mechaniken die Kurve?** Wer ab Durchlauf 15 eine Regel trägt, spielt nicht
+   mehr den gemessenen Durchschnittslauf. Die Schwelle in Durchlauf 30 muss gegen einen Lauf *mit*
+   Mechanik gesetzt sein, nicht gegen den unbelasteten — sonst wird der zweite Boss härter als geplant,
+   ohne dass jemand es beschlossen hat.
 
-- **Anzeige.** Eine Zahl neben dem Score. Kostet fast nichts, kann nichts kaputt machen.
-- **Maßstab.** Die Kurve sagt, wo ein Durchschnittslauf in Durchlauf 15 und 30 steht — und damit, wie
-  schwer ein Boss dort sein darf. Das ist der stillste und vielleicht nützlichste Gebrauch von Par:
-  er macht Boss-Schwierigkeit zu einer Messung statt zu einer Schätzung.
+### 6.3 Par zahlt weiterhin nicht aus
 
-Zwei Fragen, die die Messung mitbringen muss: **welcher** Lauf der Durchschnitt ist (alle? nur
-abgeschlossene? nur geübte?), und ob der Par **je Fraktion** verschieden sein muss — ein reiner
-Blitz-Build und ein reiner Pflanze-Build haben vermutlich verschiedene Kurvenformen.
+Die Klarstellung bleibt, und sie wird mit der Schwelle sogar wichtiger: **Par zahlt keine Münzen.**
+Der Owner hat gesetzt, dass Münzen nicht am Score hängen. Ein Par, der Münzen zahlt, wäre die
+Score-Kopplung durch die Hintertür — und in einer Struktur, in der ein verfehlter Boss eine Ebene
+kostet, wäre die dadurch entstehende Aufwärtsspirale besonders teuer: wer gut läuft, verdient mehr,
+kauft mehr, reißt die Schwelle leichter.
+
+Der Boss zahlt fürs **Bestehen**, nicht für die Höhe. Das hält die Ökonomie flach und die Schwelle
+scharf.
 
 ---
 
-## 7. Risiken
+## 7. Was die Zielgröße verlangt — F4
+
+Der Denkstand nennt eine Zielgröße: **15 bis 20 Stunden, also 30 bis 40 Läufe.** Daraus lässt sich
+etwas ableiten, das sonst geraten werden müsste — nämlich, **wie oft ein Lauf gelingen muss.** Und das
+Ergebnis hängt vollständig daran, was „die Ebene verloren" bedeutet.
+
+Drei Ebenen zu fünf Läufen sind **15 Läufe für den perfekten Durchmarsch**. Bei 30 bis 40 Läufen
+insgesamt heißt das: **10 bis 13 Läufe je Ebene**, also ungefähr das Doppelte des Minimums.
+
+Zwei Lesarten, gerechnet:
+
+| Erfolgsquote je Lauf | **A:** fünf **in Folge** nötig | **B:** fünf bestandene **gesammelt** |
+| --- | --- | --- |
+| 50 % | 62 Läufe | 10 Läufe |
+| 60 % | 30 | 8,3 |
+| 70 % | 16,5 | 7,1 |
+| 75 % | **12,9** | 6,7 |
+| 80 % | **10,3** | 6,3 |
+| 90 % | 6,9 | 5,6 |
+
+*(Erwartungswerte, Läufe je Ebene. A: eine Serie von fünf Erfolgen; ein Fehlschlag setzt zurück.
+B: fünf Erfolge sammeln; ein Fehlschlag kostet nur diesen Lauf. Reine Wahrscheinlichkeitsrechnung
+über die Zielgröße — **kein Sim-Ergebnis** und keine Aussage darüber, wie schwer das Spiel heute ist.)*
+
+**Das Ergebnis ist kontraintuitiv, und es ist der nützlichste Satz in diesem Abschnitt:**
+
+> **Lesart A — fünf in Folge — verlangt die *milderen* Schwellen.** Drei von vier Läufen müssen
+> durchgehen (75–80 %), sonst sprengt die Wiederholung die Zielgröße. Lesart B — sammeln — verträgt
+> harte Schwellen: dort reicht **jeder zweite Lauf** (40–50 %).
+
+Der Grund ist die Serie. Bei A kostet ein einzelner Fehlschlag alles bereits Erreichte, und diese
+Kosten wachsen exponentiell mit der geforderten Länge. Bei B kostet ein Fehlschlag genau einen Lauf.
+
+**Was daraus folgt, ohne dass etwas entschieden werden muss:**
+
+- Wer **harte, spürbare Boss-Schwellen** will — den Balatro-Moment, in dem es wirklich knapp wird —,
+  braucht Lesart B oder etwas dazwischen (ein Puffer: „ein Fehlschlag je Ebene ist erlaubt").
+- Wer **die Serie** will — die Spannung, dass fünf Läufe am Stück halten müssen —, muss die Schwellen
+  großzügiger setzen, als es sich anfühlt: bei 75 % Erfolgsquote scheitert nur jeder vierte Lauf.
+- **Beides zugleich — harte Schwellen und Serienzwang — ergibt 30 bis 60 Läufe je Ebene**, also das
+  Drei- bis Sechsfache der Zielgröße. Das ist die eine Kombination, die die Rechnung ausschließt.
+
+Ein dritter Weg, der beides teilweise behält und die Rechnung entschärft: **die Ebene bricht nicht ab,
+sondern verliert.** Ein verfehlter Boss beendet den Lauf, aber die XP für das Erreichte bleiben — was
+der Denkstand ohnehin vorsieht („abhängig davon, wie weit man kommt"). Dann ist ein gescheiterter Lauf
+kein verlorener Abend, sondern ein kürzerer, und die Zielgröße verträgt deutlich härtere Schwellen.
+
+---
+
+## 8. Risiken
 
 | # | Risiko | Wo | Gegenmittel |
 | --- | --- | --- | --- |
 | 1 | Kaufbare Skill-Stufen verschieben den Erwartungswert der Stufenleiter | §3.2 B | Fläche B erst nach dem Skill-Rework; höchste Stufe nicht kaufbar |
 | 2 | Die Ökonomie koppelt doch an den Score und erzeugt eine Aufwärtsspirale | §3.3, §6 | feste Auszahlung je Aufgabe; Par zahlt nicht aus |
 | 3 | Gewürfelte Aufgaben brechen die Seed-Zusage der Wochen-Rangliste | §4.5 | aus dem Wochen-Seed würfeln oder in Ranked abschalten — vor dem Bau zu klären |
-| 4 | Aufgaben, die der Build nicht bedienen kann, sind tote Anzeige | §4.2 Ebene 5 | nur aus dem aktuellen Zustand würfeln — gehaltene Fraktionen, passende Rundentypen |
-| 5 | Fraktionsaufgaben veralten mit dem nächsten Balance-Pass | §4.2 Ebene 5 | an Konzepten aufhängen, nicht an heutigen Zahlenwerten |
+| 4 | Aufgaben, die der Build nicht bedienen kann, sind tote Anzeige | §4.2 Gruppe 5 | nur aus dem aktuellen Zustand würfeln — gehaltene Fraktionen, passende Rundentypen |
+| 5 | Fraktionsaufgaben veralten mit dem nächsten Balance-Pass | §4.2 Gruppe 5 | an Konzepten aufhängen, nicht an heutigen Zahlenwerten |
 | 6 | Ohne Baum fehlt der Startwert für Rerolls, Energie, Baufeld | §3.2 A, D, E | F1 — hängt am neuen Progress, nicht an diesem Dokument |
-| 7 | Verzichtsaufgaben häufen sich, und das Spiel besteht aus Nicht-Spielen | §4.2 Ebene 6 | Anteil begrenzen |
+| 7 | Verzichtsaufgaben häufen sich, und das Spiel besteht aus Nicht-Spielen | §4.2 Gruppe 6 | Anteil begrenzen |
 
 Risiko 1 und 6 lösen sich von selbst, wenn die betroffenen Flächen auf ihr anderes Vorhaben warten.
 Die übrigen sind Entwurfsentscheidungen.
 
+**Vier weitere, die erst mit dem Denkstand aus §1 entstehen** — sie gehören der Progression, nicht der
+Ökonomie, stehen aber hier, weil sie an dieselben Zahlen rühren:
+
+| # | Risiko | Wo | Gegenmittel |
+| --- | --- | --- | --- |
+| 8 | Harte Schwellen **und** Serienzwang zugleich sprengen die Zielgröße um das Drei- bis Sechsfache | §7 | eines von beidem wählen, oder ein Puffer je Ebene |
+| 9 | Boss-Schwellen werden gegen eine Par-Kurve gesetzt, die ohne Boss-Mechaniken gemessen wurde — der zweite und dritte Boss werden dadurch unbeabsichtigt härter | §6.2 | die Kurve **mit** aktiven Mechaniken messen, oder die Schwelle je Boss dagegen korrigieren |
+| 10 | Negative Boss-Mechaniken stapeln sich: ab Durchlauf 30 zwei, ab 50 drei — genau dort, wo die Schwelle am höchsten ist | §5.2 | Ausschlusspaare wie bei den Wochen-Modifikatoren; oder ein gemischter Pool, in dem auch Vorteile liegen |
+| 11 | Mitgenommene Münzen verstärken den, dem die Läufe ohnehin gelingen | §3.5 | V1 oder V3 statt V2 |
+
 ---
 
-## 8. Was zu entscheiden wäre
+## 9. Was zu entscheiden wäre
 
 Kein Entscheidungsdruck — diese Runde erkundet. Die Liste hält fest, **worüber** entschieden werden
 muss, sobald es soweit ist, und in welcher Reihenfolge es Sinn ergibt.
@@ -601,6 +803,8 @@ muss, sobald es soweit ist, und in welcher Reihenfolge es Sinn ergibt.
 | F1 | Wer setzt nach dem Wegfall des Baums den Boden für Neuwürfe, Energie und Baufeld? | hängt am neuen Progress |
 | F2 | Aufgaben fest, zufällig oder gemischt? | drei Modelle in §4.3 |
 | F3 | Ist die Münze knapp oder reichlich? | zwei Charaktere in §3.4 |
+| F4 | Heißt „Ebene verloren" fünf **in Folge** oder fünf **gesammelt**? | entscheidet die Härte der Schwellen — §7 rechnet es |
+| F5 | Nimmt man Münzen in den nächsten Lauf mit? | V1 / V2 / V3 in §3.5 |
 
 ### Ausgaben
 
@@ -619,7 +823,7 @@ muss, sobald es soweit ist, und in welcher Reihenfolge es Sinn ergibt.
 
 | # | Frage | Erkundungsstand |
 | --- | --- | --- |
-| A1 | Welche Ebenen kommen in den Katalog? | sieben in §4.2 |
+| A1 | Welche Gruppen kommen in den Katalog? | sieben in §4.2 |
 | A2 | Takt — eine Aufgabe je Durchlauf oder je Abschnitt? | §4.4 |
 | A3 | Wie hoch soll die Erfolgsquote liegen? | die Mitte: Verfehlen muss normal sein (§4.4) |
 | A4 | Wird die Schwierigkeit mitgezogen? | schwererer Katalogteil je Abschnitt, oder mitwachsende Schwelle |
@@ -633,28 +837,39 @@ muss, sobald es soweit ist, und in welcher Reihenfolge es Sinn ergibt.
 | # | Frage | Stand |
 | --- | --- | --- |
 | B1 | Zwischenbosse in 15 und 30 | gesetzt, Platzhalter |
-| B2 | Endboss | vorerst weggelassen (gesetzt) |
-| B3 | Mechaniken und Beute | später, Progression |
+| B2 | Stapeln sich Boss-Mechaniken über den Lauf? | Werkzeug da (Ausschlusspaare), Regel offen — §5.2 |
+| B3 | Nur Nachteile, oder auch geschenkte Mechaniken? | der Wochen-Pool ist bewusst gemischt — §5.2 |
+| B4 | Fünfzehn eigene Bosse, oder ein Pool mit Ziehung? | die Kombination trägt die Abwechslung, nicht die Anzahl — §5.2 |
+| B5 | Wird die Boss-Mechanik vorher angekündigt? | sie wirkt 35 Durchläufe lang — ohne Ankündigung ist sie keine Entscheidung (§5.3) |
+| B6 | Mechaniken und Beute im Einzelnen | später, Progression |
 | P1 | Par kumulativ und fest? | ja (§6) |
 | P2 | Zahlt Par aus? | nein — wäre Score-Kopplung durch die Hintertür |
-| P3 | Ein Par für alle Fraktionen oder je Fraktion einer? | Messfrage |
-| P4 | Wird die Par-Kurve gemessen? | auf Ansage |
+| P3 | Sind Par-Kurve und Boss-Schwelle dasselbe Objekt? | ja, eine Kurve mit zwei Gebrauchsweisen (§6.1) |
+| P4 | Welcher Lauf ist der Durchschnitt? | als Anzeige Geschmackssache, als Schwelle entscheidend (§6.2) |
+| P5 | Ein Par für alle Fraktionen oder je Fraktion einer? | als Anzeige ungenau, als Schwelle unfair (§6.2) |
+| P6 | Wird die Kurve **mit** aktiven Boss-Mechaniken gemessen? | sonst wird Boss 2 und 3 unbeabsichtigt härter (§6.2, Risiko 9) |
 
 ---
 
-## 9. Wenn es weitergeht
+## 10. Wenn es weitergeht
 
 Die Reihenfolge, die am wenigsten kostet — nicht als Plan, sondern als Beobachtung, was auf was wartet:
 
-1. **F1, F2, F3.** Ohne diese drei ist jede Zahl geraten.
-2. **Ein Aufgabenkatalog auf Papier**, ein bis zwei Dutzend Einträge über die Ebenen verteilt. Erst an
-   einem gefüllten Katalog sieht man, ob Modell 1, 2 oder 3 trägt — und ob es je Ebene genug Ideen
+1. **F1 bis F5.** Ohne sie ist jede Zahl geraten. F4 zuerst: sie entscheidet, ob die Boss-Schwellen
+   mild oder hart sein dürfen, und das steht vor jeder Messung.
+2. **Die Par-Kurve messen.** Sie ist jetzt keine Nebensache mehr, sondern die Skala, auf der die
+   Boss-Schwellen sitzen — und damit die Voraussetzung dafür, dass die Progression überhaupt
+   eingestellt werden kann. `sim/` liefert sie auf Ansage.
+3. **Ein Aufgabenkatalog auf Papier**, ein bis zwei Dutzend Einträge über die Gruppen verteilt. Erst an
+   einem gefüllten Katalog sieht man, ob Modell 1, 2 oder 3 trägt — und ob es je Gruppe genug Ideen
    gibt.
-3. **Die Reichweiten-Flächen** (A, C, H). Die Ökonomie in ihrer kleinsten vollständigen Form: sie
+4. **Die Reichweiten-Flächen** (A, C, H). Die Ökonomie in ihrer kleinsten vollständigen Form: sie
    verdient, sie gibt aus, sie verfällt — und sie kann nichts kaputt machen.
-4. **Par als Anzeige**, sobald die Kurve gemessen ist. Danach ist sie auch der Maßstab für die
-   Boss-Schwierigkeit.
 5. **Stärke-Flächen und Bosse**, wenn die kleine Form sich als tragfähig erwiesen hat.
 
-Schritt 2 und 3 hängen an keinem anderen Vorhaben. Die Skill-Aufwertung wartet auf den Skill-Rework,
+Schritt 3 und 4 hängen an keinem anderen Vorhaben. Die Skill-Aufwertung wartet auf den Skill-Rework,
 die Bosse auf die Progression — das ist der Grund, warum dieser Entwurf beide nach hinten legt.
+
+Was sich gegenüber der letzten Fassung verschoben hat: **die Messung ist nach vorn gerückt.** Solange
+Par nur anzeigte, war sie ein Komfort. Als Skala für die Boss-Schwellen ist sie die Zahl, ohne die die
+Progression nicht eingestellt werden kann.
