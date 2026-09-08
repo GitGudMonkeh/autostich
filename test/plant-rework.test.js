@@ -199,12 +199,30 @@ describe("Pflanze — die Wachstums-Skills (§6.8)", () => {
     expect(gains[0]).toEqual({ id: "X3", amount: PT.setzlingsbeet[0].growth });
     expect(setzlingsbeetGains([P.SETZLINGSBEET], { [P.SETZLINGSBEET]: 3 }, { order: identity(), deck, segmentSize: SEGMENT_SIZE })).toHaveLength(2 * N / SEGMENT_SIZE);
   });
-  it("der erste Pflanzen-Pick legt den Kaltstart an (Reducer)", () => {
+  /* Owner 2026-09-08: der erste Pflanzen-Pick legt jetzt ZWEI Kaltstarts übereinander — erst den der
+     Fraktion (die zehn grünen Karten des Decks sind grün), dann den des Setzlingsbeets. Der Test prüft
+     beide und vor allem ihre Reihenfolge: das Beet zählt OBENDRAUF, der Fraktions-Kaltstart hebt nur an. */
+  it("der erste Pflanzen-Pick legt beide Kaltstarts an — grüne Farbe, dann Setzlingsbeet (Reducer)", () => {
     const base = { ...initialState(makeRng(1)), phase: "levelup", skillOffer: [P.SETZLINGSBEET], skillOfferTiers: { [P.SETZLINGSBEET]: 0 } };
     const s = reducer(base, { type: "PICK_SKILL", skillId: P.SETZLINGSBEET, rng: makeRng(2) });
     expect(s.activeArchetypes).toContain("plant");
-    expect(Object.keys(s.growth)).toHaveLength(N / SEGMENT_SIZE);
-    expect(Object.values(s.growth).every((g) => g === PT.setzlingsbeet[0].growth)).toBe(true);
+    const greens = base.deck.filter((c) => c.suit === "G");
+    expect(greens).toHaveLength(N / 4); // zehn im 40er-Deck
+    const beet = setzlingsbeetGains([P.SETZLINGSBEET], { [P.SETZLINGSBEET]: 0 }, { order: base.playerOrder, deck: base.deck, segmentSize: SEGMENT_SIZE });
+    expect(beet).toHaveLength(N / SEGMENT_SIZE);
+    // Gewachsen ist genau die Vereinigung der beiden Mengen, sonst nichts.
+    expect(new Set(Object.keys(s.growth))).toEqual(new Set([...greens.map((c) => c.id), ...beet.map((g) => g.id)]));
+    // Grün ist grün: über der Schwelle UND mit dem Flag auf der Karte (der Weg über applyGrowth).
+    const inDeck = (id) => s.deck.find((c) => c.id === id);
+    for (const c of greens) {
+      expect(s.growth[c.id]).toBeGreaterThanOrEqual(C.PLANT_GREEN_THRESHOLD);
+      expect(inDeck(c.id).green).toBe(true);
+    }
+    // Das Beet addiert auf den Boden, den der Fraktions-Kaltstart gelegt hat — auf einer grünen Karte zählt beides.
+    for (const g of beet) {
+      const floor = inDeck(g.id).suit === "G" ? C.PLANT_GREEN_THRESHOLD : 0;
+      expect(s.growth[g.id]).toBe(floor + PT.setzlingsbeet[0].growth);
+    }
   });
 });
 

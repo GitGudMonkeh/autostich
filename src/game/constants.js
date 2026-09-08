@@ -21,7 +21,11 @@ export const MAX_CYCLES       = envNum("SIM_MAX_CYCLES", 50);     // exp skill r
 export const ARCHITECT_ENABLED = (typeof process !== "undefined" && process.env && (process.env.ARCHITECT === "1" || process.env.ARCHITECT === "true")) || false;
 // #202/#214: Baseline des geteilten Reroll-Pools (Perk+Skill) je Lauf. Fix, kein Nachschub — Rerolls sind die Belohnungs-
 // Fläche für die Meistergrade (#217). Rang-Bonus fädelt später über einen erhöhten Startwert ein.
-export const BASE_REROLLS      = envNum("SIM_BASE_REROLLS", 2);
+// Owner 2026-09-08: KEINE Gratis-Neuwürfe mehr. Der Neuwurf ist eine Ausgabe der Münz-Ökonomie
+// (docs/muenz-oekonomie.md §3.1) und kostet ab dem ersten. Die drei Pools bleiben als Naht stehen —
+// der Wochen-Mod „Kein Reroll" und ein künftiger Perk können sie weiterhin füllen —, nur ausgeteilt
+// wird nichts mehr. Der Kauf lief ohnehin schon über denselben Knopf und denselben Weg.
+export const BASE_REROLLS      = envNum("SIM_BASE_REROLLS", 0);
 // Merge test/sim←main: ENV-Sweep-Haken bleibt, Default = main's Live-Balance (SPW 100→400, Pacing-Pass Sim-validiert).
 export const SCORE_PER_WIN    = envNum("SIM_SCORE_PER_WIN", 400);    // Basispunkte je Sieg (Perks/Formationen skalieren darauf) [TUNING · Default = Live-Balance 400]
 // BACKSTOP (Crit-Bändigung 2026-08-15): harter Deckel auf den fertigen Crit-Multiplikator, egal aus welchen Kanälen er

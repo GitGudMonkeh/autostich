@@ -312,6 +312,30 @@ export function plantOnLoss(growth, deck, skills, skillTiers, { cardId = null } 
 /* Setzlingsbeet (§6.8): der Kaltstart — die niedrigste Karte je Segment (Episch die zwei niedrigsten) startet mit
    Wachstumsvorsprung. Läuft einmal, wenn der erste Pflanzen-Skill liegt (Reducer). Niedrigste Karte deterministisch:
    kleinster Wert, dann kleinste id. `segmentSize` kommt vom Aufrufer (formations.js SEGMENT_SIZE). */
+/* Kaltstart der FRAKTION (Owner 2026-09-08): sobald die Pflanze steht, sind die zehn GRÜNEN Karten des
+   Decks grün — mit genau dem Wachstum, das dafür nötig ist, keines mehr. Die eigene Farbe ist gewachsen,
+   der Rest muss es sich verdienen.
+
+   Warum es das braucht: Grün beginnt bei PLANT_GREEN_THRESHOLD Wachstum, und das dauert. Gemessen über
+   zwölf Läufe erschien die erste grüne Karte erst in Durchlauf 10–16 von 50 — bis dahin lagen alle Hebel,
+   die auf Grün lesen (Spalier, Blütenlese, Blätterdach, Rankgerüst, der Blüte-Score), tot im Build. Ein
+   Skill, der die erste Hälfte des Laufs nichts tut, ist kein Skill, sondern eine Wette.
+
+   Nur ANHEBEN, nie senken: eine Karte, die schon über der Schwelle steht, bleibt, wo sie ist — der
+   Kaltstart gibt einen Boden, er setzt keinen Wert. Läuft über `applyGrowth` wie jeder andere Zuwachs,
+   damit die Karten ihr `green`-Flag auf demselben Weg bekommen. */
+export const GREEN_SUIT = "G";
+
+export function greenSuitGains(deck = [], growth = {}) {
+  const out = [];
+  for (const c of deck || []) {
+    if (!c || c.suit !== GREEN_SUIT) continue;
+    const have = (growth || {})[c.id] || 0;
+    if (have < C.PLANT_GREEN_THRESHOLD) out.push({ id: c.id, amount: C.PLANT_GREEN_THRESHOLD - have });
+  }
+  return out;
+}
+
 export function setzlingsbeetGains(skills, skillTiers, { order = [], deck = [], segmentSize = 5 } = {}) {
   const step = plantParam(skills, skillTiers, P.SETZLINGSBEET, "growth");
   if (!step) return [];

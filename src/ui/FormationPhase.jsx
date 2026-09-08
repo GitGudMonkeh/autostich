@@ -16,6 +16,7 @@ import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Ico
 import { skillDef } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
 import { t } from "../i18n/index.js";
 import { energyBuy } from "../game/coins.js";  // Münz-Ökonomie §3.2: Preis und Vorrat — dieselbe Quelle wie der Reducer
+import { P as PLANT_S } from "../game/factions/plant.js"; // Skill-ids der Pflanze (Spalier-Zeile)
 import { CoinAmount } from "./CoinMark.jsx";
 
 const GOLD = "#d4a63a"; // #201.2: einheitliche Bestätigen-/Aktionsfarbe
@@ -129,6 +130,9 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, onBu
   // CardGrid + den Intro-Text. Dieselbe Quelle, die computeFormations benutzt — die Anzeige kann nicht davonlaufen.
   // Spalier hängt am Grün-Stand der Nachbarkarten, wandert also mit jedem Tausch mit.
   const segInfo = openBorderInfo(playerOrder, deck, state.skills, state.skillTiers, state.familyTiers);
+  // Wer Spalier hält, bekommt auch dann eine Zeile, wenn gerade KEINE Grenze offen ist. Ohne sie sieht ein
+  // Spalier, das mangels grüner Nachbarn nichts öffnet, aus wie ein Spalier, das nicht funktioniert.
+  const hasSpalier = (state.skills || []).includes(PLANT_S.SPALIER);
 
   /* Aufleuchten nach einem GEWINNBRINGENDEN Tausch: Positionen, deren Formations-Faktor gegenüber dem
      Zustand VOR dem Tausch gestiegen ist, blitzen einmal in ihrer Formationsfarbe auf.
@@ -237,7 +241,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, onBu
                 title={t("form.energy.buy.title", { n: energy.left })}
                 style={energy.can ? { "--c": GOLD, borderLeft: `3px solid ${GOLD}`, border: "1px solid #ffffff29", color: GOLD }
                                   : { background: "var(--btn-off-bg)", border: "1px solid transparent", color: "var(--btn-off-fg)" }}>
-                <span>{t("form.energy.buy")}</span><CoinAmount n={energy.price} dim={!energy.can} />
+                <span>{t("form.energy.buy")}</span><CoinAmount n={energy.price} dim={!energy.can} have={state.coins || 0} />
               </button>
             )}
           </div>
@@ -270,8 +274,9 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, onBu
           {segInfo.active && (segInfo.all
             ? <> — <span style={{ color: "#8be0a8" }}><b>{t("form.segwork")}</b> {t("form.segwork.all")}</span></>
             : <> — <span style={{ color: "#8be0a8" }}><b>{t("form.segwork")}</b> {t("form.segwork.marked")}</span></>)}
-          {segInfo.spalier.size > 0 && (
-            <> — <span style={{ color: "#8be0a8" }}><b>{t("form.spalier")}</b> {t("form.spalier.open", { count: segInfo.spalier.size })}</span></>)}.
+          {hasSpalier && (segInfo.spalier.size > 0
+            ? <> — <span style={{ color: "#8be0a8" }}><b>{t("form.spalier")}</b> {t("form.spalier.open", { count: segInfo.spalier.size })}</span></>
+            : <> — <span style={{ opacity: 0.7 }}><b>{t("form.spalier")}</b> {t("form.spalier.none")}</span></>)}.
         </p>
 
         <div className="md:flex md:gap-4 md:items-start">

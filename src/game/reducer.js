@@ -8,7 +8,7 @@ import { archetypeOf, buildSkillDoors, rerollDoorSkills, glacierRolesOf, ARCHETY
 import { iceRoleTiers } from "./factions/ice.js"; // §5.3: Stufe je Gletscher-Rolle (die Zahlen der Eis-Skills) // Eis-Neudesign: glacierRolesOf · exp: Türen-Angebot (Stufen im Wurf der Tür), Neuwurf der drei Skills
 import { initLightning, maxChargeFor, L as LIGHT } from "./factions/lightning.js"; // exp skill rework: Blitz-Substate (Leiste 10)
 import { initHeat, heatMaxFor, syncHeatMax } from "./factions/fire.js"; // exp skill rework: Hitze-Substate (Leiste 100, Weißglut 200)
-import { setzlingsbeetGains, applyGrowth } from "./factions/plant.js"; // exp skill rework: Pflanze-Aktivierung (Kaltstart Setzlingsbeet)
+import { setzlingsbeetGains, applyGrowth, greenSuitGains } from "./factions/plant.js"; // exp skill rework: Pflanze-Aktivierung (Fraktions-Kaltstart grüne Farbe + Setzlingsbeet)
 // Pflanze-Bündel für die Formations-Engine (§6.7): Stufe je Skill + Wachstum je Karte — die vier Hebel und zwei
 // Legendären brauchen beides, um die Erkennung zu biegen.
 const plantBag = (s) => ({ skillTiers: s.skillTiers || {}, growth: s.growth || {} });
@@ -712,6 +712,10 @@ export function reducer(state, action) {
       // Startgrün. Nur Setzlingsbeet legt den Kaltstart: die niedrigste Karte je Segment (Episch die zwei niedrigsten)
       // startet mit Wachstumsvorsprung. Der Kaltstart läuft auch, wenn Setzlingsbeet später dazukommt.
       if (arch === "plant") {
+        // Fraktions-Kaltstart zuerst: die zehn grünen Karten sind grün, sobald die Pflanze steht. Er hebt nur
+        // an, senkt nie — ein zweiter Pflanzen-Pick findet sie folglich schon oben und tut nichts mehr.
+        const cold = greenSuitGains(deck, growth);
+        if (cold.length) { const r0 = applyGrowth(growth, deck, cold); growth = r0.growth; deck = r0.deck; }
         const gains = setzlingsbeetGains(skills, skillTiers, { order: state.playerOrder, deck, segmentSize: SEGMENT_SIZE })
           .filter((g) => !(state.growth || {})[g.id]); // nur einmal je Karte — ein zweiter Pflanzen-Pick sät nicht nach
         if (gains.length) { const r = applyGrowth(growth, deck, gains); growth = r.growth; deck = r.deck; }

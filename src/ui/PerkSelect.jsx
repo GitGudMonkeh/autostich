@@ -105,7 +105,7 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
             {canReroll && (
               <ActionButton kind={rerollBuy.legendary ? "rerollLeg" : "reroll"} flex disabled={!rerollBuy.can}
                 className="lv-actbtn lv-actbtn-reroll" onClick={onReroll}>
-                <RerollLabel r={rerollBuy} freeKey="perk.reroll" buyKey="perk.reroll.buy" />
+                <RerollLabel r={rerollBuy} freeKey="perk.reroll" buyKey="perk.reroll.buy" have={state.coins || 0} />
               </ActionButton>
             )}
             {onDecline && <ActionButton kind="decline" flex className="lv-actbtn" onClick={onDecline}>{tr("perk.declineAll")}</ActionButton>}

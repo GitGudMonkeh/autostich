@@ -643,7 +643,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                 style={coverSale.can ? { background: "#16232f", border: `1px solid ${GOLD}66`, color: GOLD }
                                      : { background: "var(--btn-off-bg)", border: "1px solid transparent", color: "var(--btn-off-fg)" }}>
                 <span>{t("arch.plot.buy", { cells: COVER_CELLS })}</span>
-                <CoinAmount n={coverSale.price} size={11} dim={!coverSale.can} />
+                <CoinAmount n={coverSale.price} size={11} dim={!coverSale.can} have={state.coins || 0} />
                 <span className="inline-flex gap-0.5" aria-hidden="true">
                   {Array.from({ length: coverSale.max }, (_, i) => (
                     <span key={i} className="rounded-full" style={{ width: 4, height: 4, background: i < coverSale.left ? GOLD : "#ffffff2e" }} />
@@ -1053,7 +1053,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                         ? { background: "#16232f", border: `1px solid ${CAT.value.color}66`, color: CAT.value.color }
                         : { background: "var(--btn-off-bg)", border: "1px solid transparent", color: "var(--btn-off-fg)" }}>
                       <span className="inline-flex items-center justify-center gap-1.5">
-                        <RerollLabel r={archReroll} freeKey="arch.reroll" buyKey="arch.reroll.buy" />
+                        <RerollLabel r={archReroll} freeKey="arch.reroll" buyKey="arch.reroll.buy" have={state.coins || 0} />
                       </span>
                     </button>
                   )}

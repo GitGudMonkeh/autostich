@@ -25,10 +25,16 @@ import { envNum } from "./constants.js";
       Mitnahme kommen, ist das eine Regel mehr (im Profil sichern, beim Start laden), keine Umbauten. */
 
 /* ---- Einnahme (§2) ------------------------------------------------------------------------------- */
-// Schwelle und Schrittweite: floor((Siege − THRESHOLD) / PER). Die Schwelle erzeugt die Spreizung — die
-// Siegzahl steigt über den Lauf nur um Faktor ~1,7 (24 → 40), durch die Schwelle werden daraus Faktor 5
-// bei den Münzen. Früh knapp, spät reichlich, ohne die Kopplung an den Score.
-export const COIN_WIN_THRESHOLD = envNum("SIM_COIN_THRESHOLD", 20);
+/* Schwelle und Schrittweite: floor((Siege − THRESHOLD) / PER). Die Schwelle erzeugt die Spreizung — sie
+   frisst die Siege, die jeder Durchlauf ohnehin macht, und lässt nur den Überschuss zahlen.
+
+   Schwelle 20 (Owner-Entscheid 2026-09-08 → 12): der Plan rechnete mit „~24 Siege früh, ~32 in der Mitte,
+   ~40 spät" und ~130 Münzen je Lauf. Gemessen über 24 Läufe / 1200 Durchläufe stimmt das nicht: Median 21
+   Siege je Durchlauf (p25 19, p75 25). Bei Schwelle 20 zahlten nur 34 % der Durchläufe überhaupt etwas,
+   Median-Einnahme 25 Münzen je LAUF statt 130 — die Ökonomie hungerte.
+   Bei 12 zahlen 98 % der Durchläufe, Median 114 Münzen je Lauf (min 62, max 188). Das trifft die
+   Größenordnung, gegen die alle Preise in §3 gesetzt sind. */
+export const COIN_WIN_THRESHOLD = envNum("SIM_COIN_THRESHOLD", 12);
 export const COIN_WIN_PER = envNum("SIM_COIN_PER_WINS", 4);
 
 export const coinsForWins = (wins) => Math.max(0, Math.floor(((wins || 0) - COIN_WIN_THRESHOLD) / COIN_WIN_PER));

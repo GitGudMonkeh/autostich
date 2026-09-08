@@ -113,9 +113,12 @@ describe("Reducer — Türstufe, CHOOSE_DOOR, Angebot", () => {
   /* Owner 2026-09-08: der Neuwurf gilt jetzt auf BEIDEN Stufen. Auf der Türstufe würfelt er die Türen, nach
      dem Öffnen die drei Skills dahinter — dieselbe Ressource, dieselbe Preistreppe. Vorher war er vor den
      Türen ein No-Op; diese Zusicherung ist mit der Regel gefallen und steht jetzt als eigener Test darunter. */
-  it("Neuwurf würfelt die drei Skills der geöffneten Tür neu — gleiche Symbole, neue Skills und Stufen — und kostet ein Token", () => {
+  it("Neuwurf würfelt die drei Skills der geöffneten Tür neu — gleiche Symbole, neue Skills und Stufen — und kostet Münzen", () => {
     const s = reducer(menuState(), { type: "START_RUN", rng: makeRng(3), seed: 99 });
-    const opened = reducer(s, { type: "CHOOSE_DOOR", index: 0 });
+    /* Gratis-Neuwürfe gibt es seit dem Owner-Entscheid 2026-09-08 nicht mehr (BASE_REROLLS 0): der Neuwurf ist
+       eine Ausgabe der Münz-Ökonomie. Ein Lauf startet also ohne Token UND ohne Münzen — das Konto wird hier
+       gesetzt, sonst wäre jeder Aufruf ein No-Op und der Test prüfte nichts. */
+    const opened = { ...reducer(s, { type: "CHOOSE_DOOR", index: 0 }), coins: 30 };
     expect(opened.skillOfferArchs).toEqual(opened.skillOffer.map(archetypeOf));
     const r = reducer(opened, { type: "REROLL_SKILL", rng });
     expect(r.skillDoors).toBeNull();
@@ -124,36 +127,40 @@ describe("Reducer — Türstufe, CHOOSE_DOOR, Angebot", () => {
     expect(r.skillOffer.some((id) => opened.skillOffer.includes(id))).toBe(false); // neue Skills (Pool groß genug)
     expect(new Set(r.skillOffer).size).toBe(r.skillOffer.length);
     for (const id of r.skillOffer) expect(isLegendarySkill(id) ? !(id in r.skillOfferTiers) : Number.isInteger(r.skillOfferTiers[id])).toBe(true);
-    expect(r.rerollsSkill).toBe(opened.rerollsSkill - 1);
+    expect(r.coins).toBe(27);        // Grundpreis 3 …
+    expect(r.coinRerolls).toBe(1);
     expect(r.offerRerolls).toBe(1);
-    // Gehaltene Skills kommen nicht zurück; ein zweiter Neuwurf würfelt wieder anders.
+    // Gehaltene Skills kommen nicht zurück; ein zweiter Neuwurf würfelt wieder anders — und kostet mehr.
     expect(r.skillOffer.some((id) => r.skills.includes(id))).toBe(false);
     const r2 = reducer(r, { type: "REROLL_SKILL", rng });
     expect(r2.skillOffer).not.toEqual(r.skillOffer);
-    expect(reducer({ ...opened, rerollsSkill: 0 }, { type: "REROLL_SKILL", rng })).toEqual({ ...opened, rerollsSkill: 0 }); // kein Token → No-Op
+    expect(r2.coins).toBe(21);       // … dann 6: die Preistreppe verdoppelt je Kauf in derselben Phase
+    const broke = { ...opened, rerollsSkill: 0, coins: 0 };
+    expect(reducer(broke, { type: "REROLL_SKILL", rng })).toEqual(broke); // weder Token noch Münzen → No-Op
     // Ablehnen und Pick räumen die Symbole mit auf.
     expect(reducer(r, { type: "DECLINE_SKILL", rng }).skillOfferArchs).toBeNull();
     expect(reducer(r, { type: "PICK_SKILL", skillId: r.skillOffer[0], rng }).skillOfferArchs).toBeNull();
   });
   it("auf der TÜRSTUFE würfelt derselbe Neuwurf die Türen — gleiche Ressource, gerufene Tür bleibt", () => {
-    const s = reducer(menuState(), { type: "START_RUN", rng: makeRng(3), seed: 99 });
-    expect(s.skillDoors).toHaveLength(2);
+    const s0 = reducer(menuState(), { type: "START_RUN", rng: makeRng(3), seed: 99 });
+    expect(s0.skillDoors).toHaveLength(2);
+    const s = { ...s0, coins: 30 };                               // ein Lauf startet ohne Token und ohne Münzen
     const r = reducer(s, { type: "REROLL_SKILL", rng });
     expect(r.skillOffer).toBeNull();                              // immer noch die Türstufe
     expect(r.skillDoors).toHaveLength(2);
     expect(r.skillDoors.map((d) => d.skills)).not.toEqual(s.skillDoors.map((d) => d.skills));
-    expect(r.rerollsSkill).toBe(s.rerollsSkill - 1);              // derselbe Pool wie das Angebot
+    expect(r.coins).toBe(27);                                     // dieselbe Preistreppe wie im Angebot
+    expect(r.coinRerolls).toBe(1);
     expect(r.offerRerolls).toBe(1);
     // Ohne Token UND ohne Münzen bleibt er wirkungslos.
-    const broke = { ...s, rerollsSkill: 0, coins: 0 };
+    const broke = { ...s0, rerollsSkill: 0, coins: 0 };
     expect(reducer(broke, { type: "REROLL_SKILL", rng })).toBe(broke);
-    // Mit Münzen greift dieselbe Treppe wie überall (Grundpreis 3) — und NIE der Legendär-Preis: was hinter
-    // einer Tür liegt, ist verdeckt.
-    const paid = reducer({ ...s, rerollsSkill: 0, coins: 10 }, { type: "REROLL_SKILL", rng });
+    // Der Grundpreis ist 3 — und NIE der Legendär-Preis: was hinter einer Tür liegt, ist verdeckt.
+    const paid = reducer({ ...s0, rerollsSkill: 0, coins: 10 }, { type: "REROLL_SKILL", rng });
     expect(paid.coins).toBe(7);
     expect(paid.coinRerolls).toBe(1);
     // Eine gerufene Tür ist einzeln bezahlt und überlebt den Neuwurf.
-    const called = reducer({ ...s, coins: 20 }, { type: "CALL_FOCUS", arch: "ice" });
+    const called = reducer({ ...s0, coins: 20 }, { type: "CALL_FOCUS", arch: "ice" });
     expect(called.skillDoors).toHaveLength(3);
     const afterR = reducer(called, { type: "REROLL_SKILL", rng });
     expect(afterR.skillDoors).toHaveLength(3);

@@ -123,7 +123,7 @@ function FocusCall({ state, onCallFocus }) {
       <div className="flex items-center gap-2">
         <FocusIcon />
         <span className="text-body-lg-5 font-bold" style={{ color: "#cdbcf5" }}>{t("focus.title")}</span>
-        <span className="ml-auto"><CoinAmount n={FOCUS_PRICE} size={12} dim={!can} /></span>
+        <span className="ml-auto"><CoinAmount n={FOCUS_PRICE} size={12} dim={!can} have={coins} /></span>
       </div>
       <div className="text-body-5 leading-snug mt-1.5" style={{ color: "#9a93b5" }}>{t("focus.hint")}</div>
       <div className="grid grid-cols-4 gap-1.5 mt-3">
@@ -206,6 +206,9 @@ export function SkillSelect({ offer = null, doors = null, onPick, onDecline, onR
   // §3.5: „ab 12" am Knopf — der billigste Schritt, den es gibt. Der genaue Preis hängt an der
   // Auswahl und steht drinnen; der Knopf sagt nur, ob es sich lohnt hineinzugehen.
   const canUpgrade = !!onUpgradeSkill && !atDoors && skills.some((id) => !isLegendarySkill(id));
+  // Owner 2026-09-08: unter dem billigsten Schritt ist der Knopf aus. Er blieb hell, während drinnen jede
+  // Zeile unbezahlbar war — ein Knopf, der nur in eine Sackgasse führt, ist schlechter als ein grauer.
+  const canAffordUpgrade = (state.coins || 0) >= UPGRADE_FROM;
 
   // Passiv-Beschreibung je Archetyp — EIN Text, unabhängig davon, ob es der freischaltende oder ein weiterer Pick ist.
   // Beschreibt NUR die Passive (Deck-Mechanik lebt in der Deck-Erklärung). Ergänzt im Aufklapper durch die Glossar-Einträge.
@@ -358,7 +361,7 @@ export function SkillSelect({ offer = null, doors = null, onPick, onDecline, onR
             {!devMode && canReroll && (
               <ActionButton kind={rerollBuy.legendary ? "rerollLeg" : "reroll"} flex disabled={!rerollBuy.can}
                 className="sk-actbtn lv-actbtn lv-actbtn-reroll" onClick={onReroll}>
-                <RerollLabel r={rerollBuy}
+                <RerollLabel r={rerollBuy} have={state.coins || 0}
                   freeKey={atDoors ? "skill.reroll.doors" : "skill.reroll"}
                   buyKey={atDoors ? "skill.reroll.doors.buy" : "skill.reroll.buy"} />
               </ActionButton>
@@ -374,13 +377,15 @@ export function SkillSelect({ offer = null, doors = null, onPick, onDecline, onR
               damit man vorher weiß, ob es sich lohnt hineinzugehen; der genaue Preis hängt an der Auswahl
               und steht drinnen. Nicht an der Tür: dort hält man noch kein Angebot in der Hand. */}
           {canUpgrade && (
-            <button type="button" onClick={() => setUpgradeOpen(true)}
-              className="sk-upgradebtn w-full mt-2 rounded-lg px-4 py-2 text-body-lg-5 font-bold inline-flex items-center justify-center gap-2 transition-all hover:brightness-110"
-              style={{ background: "linear-gradient(180deg,#241f2e,#191722)", border: "1px solid #6a5a9e", color: "#cdbcf5" }}>
+            <button type="button" onClick={canAffordUpgrade ? () => setUpgradeOpen(true) : undefined} disabled={!canAffordUpgrade}
+              className="sk-upgradebtn w-full mt-2 rounded-lg px-4 py-2 text-body-lg-5 font-bold inline-flex items-center justify-center gap-2 transition-all disabled:cursor-not-allowed"
+              style={canAffordUpgrade
+                ? { background: "linear-gradient(180deg,#241f2e,#191722)", border: "1px solid #6a5a9e", color: "#cdbcf5" }
+                : { background: "var(--btn-off-bg)", border: "1px solid transparent", color: "var(--btn-off-fg)" }}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
                 strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 19V5" /><path d="M6 11l6-6 6 6" /></svg>
               <span>{t("upgrade.open")}</span>
-              <span className="inline-flex items-center gap-1"><span className="opacity-70">{t("upgrade.from")}</span><CoinAmount n={UPGRADE_FROM} size={12} /></span>
+              <span className="inline-flex items-center gap-1"><span className="opacity-70">{t("upgrade.from")}</span><CoinAmount n={UPGRADE_FROM} size={12} have={state.coins || 0} dim={!canAffordUpgrade} /></span>
             </button>
           )}
 

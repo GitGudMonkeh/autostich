@@ -78,7 +78,7 @@ function UpgradeRow({ id, state, coins, onUpgrade, justRaised }) {
             ? <span className="text-meta-1" style={{ color: "#71717c" }}>{t("upgrade.maxTier")}</span>
             : <span className="inline-flex items-center rounded-lg px-2.5 py-1"
                 style={{ background: "linear-gradient(180deg,#2a2410,#1d1a12)", border: "1px solid #d4a63a66" }}>
-                <CoinAmount n={buy.price} size={11} dim={!buy.can} />
+                <CoinAmount n={buy.price} size={11} dim={!buy.can} have={coins} />
               </span>}
         </span>
       </div>

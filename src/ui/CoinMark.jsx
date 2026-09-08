@@ -30,7 +30,7 @@ export function CoinIcon({ size = 13, className = "" }) {
 /* Betrag = Zeichen + Zahl. `minDigits` hält die Breite fest, damit eine Leiste oder ein Knopf beim
    Hochzählen nicht springt (§4: der Kontostand kann dreistellig werden). `ch` ist hier das richtige
    Maß, weil `tabular-nums` alle Ziffern gleich breit macht. */
-export function CoinAmount({ n = 0, size = 13, minDigits = 0, dim = false, className = "", style = null }) {
+export function CoinAmount({ n = 0, size = 13, minDigits = 0, dim = false, have = null, className = "", style = null }) {
   return (
     <span className={`inline-flex items-center gap-1 whitespace-nowrap ${className}`}
       style={{ color: COIN_GOLD, opacity: dim ? 0.45 : 1, ...style }}>
@@ -38,6 +38,15 @@ export function CoinAmount({ n = 0, size = 13, minDigits = 0, dim = false, class
       <span className="ty-num" style={{ fontVariantNumeric: "tabular-nums", textAlign: "right", minWidth: minDigits ? `${minDigits}ch` : undefined }}>
         {fmtNum(n)}
       </span>
+      {/* Owner 2026-09-08: neben dem PREIS steht in Klammern, was man hat. Sonst muss man für jede
+          Kaufentscheidung nach oben in die Leiste schauen und die Differenz im Kopf bilden — genau der
+          Blickwechsel, den ein Preis am Knopf vermeiden soll. Grün, wenn es reicht, rot, wenn nicht.
+          `have === null` heißt „ich bin selbst ein Kontostand" — dann gibt es nichts zu vergleichen. */}
+      {have != null && (
+        <span className="ty-num opacity-80" style={{ fontVariantNumeric: "tabular-nums", color: have >= n ? "#5ab87a" : "#e0605a" }}>
+          ({fmtNum(have)})
+        </span>
+      )}
     </span>
   );
 }
@@ -53,14 +62,14 @@ export function CoinAmount({ n = 0, size = 13, minDigits = 0, dim = false, class
    erst durch Antippen erfährt, ist ein Fehlkauf. `r` kommt aus `rerollOffer` (coins.js), damit Knopf und
    Reducer dieselbe Rechnung benutzen. Fehlen die Münzen, steht der Preis blass da: den Kauf sieht man,
    auslösen lässt er sich nicht. */
-export function RerollLabel({ r, freeKey, buyKey }) {
+export function RerollLabel({ r, freeKey, buyKey, have = null }) {
   return (
     <span className="inline-flex flex-col items-center leading-tight">
       <span>{t(r.free ? freeKey : buyKey)}</span>
       <span className="text-meta-1 inline-flex items-center gap-1 mt-0.5 opacity-85">
         {r.free
-          ? <>{t("reroll.free", { n: r.tokens })}<span className="opacity-50">·</span>{t("reroll.then")}<CoinAmount n={r.nextPrice} size={11} /></>
-          : <CoinAmount n={r.price} size={12} dim={!r.can} />}
+          ? <>{t("reroll.free", { n: r.tokens })}<span className="opacity-50">·</span>{t("reroll.then")}<CoinAmount n={r.nextPrice} size={11} have={have} /></>
+          : <CoinAmount n={r.price} size={12} dim={!r.can} have={have} />}
       </span>
     </span>
   );

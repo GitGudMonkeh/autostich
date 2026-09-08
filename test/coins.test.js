@@ -28,8 +28,9 @@ const rng = makeRng(9);
 
 describe("Münz-Einnahme (§2)", () => {
   it("die Tabelle aus §2 — unter der Schwelle nichts, danach je vier Siege eine Münze", () => {
-    // Genau die Zeilen des Plans. Ändert jemand Schwelle oder Schritt, fällt DIESER Test, nicht erst der Playtest.
-    expect([0, 12, 20, 24, 28, 32, 36, 40].map(coinsForWins)).toEqual([0, 0, 0, 1, 2, 3, 4, 5]);
+    // Genau die Zeilen des Plans, Schwelle 12 (Owner 2026-09-08, nach Messung — coins.js §2 erklärt warum).
+    // Ändert jemand Schwelle oder Schritt, fällt DIESER Test, nicht erst der Playtest.
+    expect([0, 12, 16, 20, 24, 28, 32, 36, 40].map(coinsForWins)).toEqual([0, 0, 1, 2, 3, 4, 5, 6, 7]);
   });
 
   it("nie negativ, und die Schwelle selbst zahlt noch nichts", () => {
@@ -46,22 +47,22 @@ describe("Auszahlung am Durchlaufende (§2, Naht)", () => {
     resolveTrick(scenario(12, 0, { pos: TRICKS_PER_CYCLE - 1, cycleWins: winsBefore, ...over }), rng);
 
   it("zahlt aus den Siegen DIESES Durchlaufs, vor dem Reset", () => {
-    const s = endOfCycle(31); // +1 durch den Schlussstich = 32 Siege → 3 Münzen
-    expect(s.lastCycleWins).toBe(32);
-    expect(s.lastCycleCoins).toBe(3);
-    expect(s.coins).toBe(3);
+    const s = endOfCycle(20); // +1 durch den Schlussstich = 21 Siege (der gemessene Median) → 2 Münzen
+    expect(s.lastCycleWins).toBe(21);
+    expect(s.lastCycleCoins).toBe(2);
+    expect(s.coins).toBe(2);
     expect(s.cycleWins).toBe(0); // Bilanz für den nächsten Durchlauf zurückgesetzt
   });
 
   it("der Kontostand summiert über die Durchläufe", () => {
-    const first = endOfCycle(31);
+    const first = endOfCycle(20);
     const second = resolveTrick(scenario(12, 0, { pos: TRICKS_PER_CYCLE - 1, cycleWins: 39, coins: first.coins }), rng);
-    expect(second.lastCycleCoins).toBe(5); // 40 Siege
-    expect(second.coins).toBe(8);          // 3 aus dem ersten Durchlauf + 5
+    expect(second.lastCycleCoins).toBe(7); // 40 Siege — der Deckel, alle Stiche gewonnen
+    expect(second.coins).toBe(9);          // 2 aus dem ersten Durchlauf + 7
   });
 
   it("ein schwacher Durchlauf zahlt null, ohne den Kontostand anzutasten", () => {
-    const s = endOfCycle(11, { coins: 7 }); // 12 Siege → unter der Schwelle
+    const s = endOfCycle(10, { coins: 7 }); // 11 Siege → unter der Schwelle
     expect(s.lastCycleCoins).toBe(0);
     expect(s.coins).toBe(7);
   });
