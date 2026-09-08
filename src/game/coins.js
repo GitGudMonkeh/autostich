@@ -11,6 +11,19 @@
 
 import { envNum } from "./constants.js";
 
+/* ---- NICHT ENTSCHIEDEN (docs/muenz-oekonomie.md §8) ----------------------------------------------
+   Zwei Punkte des Plans sind ausdrücklich offen. Umgesetzt ist jeweils der EINFACHSTE Weg, damit die
+   Ökonomie läuft — beide sind so gebaut, dass die Entscheidung sie an einer Stelle umdreht:
+
+   1. KAUF-BESTÄTIGUNG (§8.1). Kein Kauf fragt nach. Ein Fehltipper kostet Münzen, ein zweiter Tap kostet
+      Zeit — dreimal je Phase. Der Mittelweg des Plans wäre, nur die teuren Käufe bestätigen zu lassen
+      (Baufeld, Episch-Aufwertung, Legendär-Neuwurf). Nichts hier verhindert das: alle Käufe laufen über
+      eine Reducer-Aktion und einen Knopf, ein Bestätigungsschritt sitzt dazwischen.
+
+   2. MÜNZVERFALL AM LAUFENDE (§8.2). Münzen verfallen: `coins` liegt im Lauf-State und geht mit ihm.
+      Umgesetzt durch Nichtstun — es gibt keinen Weg, auf dem sie den Lauf verlassen könnten. Soll die
+      Mitnahme kommen, ist das eine Regel mehr (im Profil sichern, beim Start laden), keine Umbauten. */
+
 /* ---- Einnahme (§2) ------------------------------------------------------------------------------- */
 // Schwelle und Schrittweite: floor((Siege − THRESHOLD) / PER). Die Schwelle erzeugt die Spreizung — die
 // Siegzahl steigt über den Lauf nur um Faktor ~1,7 (24 → 40), durch die Schwelle werden daraus Faktor 5
