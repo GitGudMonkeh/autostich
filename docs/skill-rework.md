@@ -4254,6 +4254,64 @@ gelesen hat — nicht nur die, die der Anlass war.
 
 **Offen:** Ewiges Schild bei −12 % ist das einzige negative Legendäre im Feld. Ursache zuerst, Wert danach.
 
+### 5.12 Ewiges Schild: Befund, warum es negativ misst (2026-09-08) — Befund, nichts geändert
+
+Schritt 2 der Reihenfolge. Owner-Vorgabe war ausdrücklich Ursache vor Wert: „woran es liegt, statt noch einen Buff
+zu raten." Es liegt nicht an seinen Zahlen.
+
+**Was das Schild tut.** Drei Wirkungen, alle drei hängen an der **Zahl** der Gletscher:
+
+| Wirkung | bei 1 Gletscher | bei 2 | bei 8 |
+| --- | --- | --- | --- |
+| Pool aufs Maximum (`uebergletscherPool`) | wirkungslos (`gs.length < 2` → return) | fast nichts | voll |
+| Kaskade „jeder ist Nachbar aller" (`gN = totalG − 1`) | ×1,0 | ×1,25 | ×2,75 |
+| stärkste Formation des Bretts erben | nichts zu erben | wenig | voll |
+
+Es gibt keine Wirkung, die bei einem einzelnen Gletscher etwas tut. Das Schild ist eine **reine Auszahlungskarte
+ohne eigene Rampe.**
+
+**Was das Brett hergibt.** Sonde über dieselben 150 Seeds wie die Legendär-Messung, gepaart, Basis gegen Eingriff:
+
+| | gemischtes Angebot (Feuer/Blitz/Pflanze/Eis) | nur Eis |
+| --- | --- | --- |
+| Ø Gletscher im Lauf | **1,83** | 5,18 |
+| Stiche mit ≥ 2 Gletschern | 47 % | 71 % |
+| Median-Δ | **−1,2M (besser in 43 %)** | **+15,9M (besser in 77 %)** |
+
+Und segmentiert nach der Gletscherzahl — dieselbe Karte, dieselbe Messung:
+
+| Ø Gletscher im Lauf | n (gemischt) | Median-Δ | n (Eis) | Median-Δ |
+| --- | --- | --- | --- | --- |
+| 1–3 | 106 | −1,2M (41 %) | 35 | −0,4M (49 %) |
+| 3–6 | 6 | +12,9M (67 %) | 25 | **+31,4M (96 %)** |
+| ≥ 6 | 6 | +1,0M (67 %) | 40 | **+30,8M (90 %)** |
+
+**Der Befund.** Die Schwelle liegt scharf bei **drei Gletschern**. Darunter tut das Schild nichts und kostet einen
+Pick — das sind die −1,2M, das ist der verlorene Platz und sonst nichts. Darüber ist es mit Abstand das stärkste
+Eis-Legendäre, in 90–96 % der Läufe besser. Im gemischten Angebot erreichen **12 von 150 Läufen** diese Schwelle.
+
+**Warum die anderen beiden nicht betroffen sind:** Eiszeit bringt ihre Gletscher selbst mit, Große Lawine
+multipliziert jeden einzelnen Bruch (×10) und wirkt schon bei einem. Nur das Schild braucht ein Brett, das es
+nicht selbst herstellt — und `GLACIER_PER_PICK = 1` (Owner, §5.6) gibt einen Gletscher je Eis-Pick, bei
+durchschnittlich 2,9 Eis-Skills im gemischten Build.
+
+**Kein Bug.** Der Mechanismus arbeitet wie gebaut. Was fehlt, ist die Bedingung.
+
+**Vorschläge (Mechanik → Owner-Entscheid, nichts umgesetzt):**
+
+- **a) Das Schild bringt sein Feld selbst mit** — solange es gehalten wird, friert jeder Eis-Pick **zwei** Gletscher
+  statt einem. Es wird die „geh in die Breite"-Karte statt einer Karte, die auf Breite wartet. Rührt den globalen
+  Ein-Pick-Entscheid nicht an, gibt dem Schild ein eigenes Profil neben der Eiszeit. **Empfehlung.**
+- **b) Boden für kleine Bretter** — die Kaskade zählt nicht mehr `Gletscher − 1`, sondern mindestens einen vollen
+  Nachbarring (Boden `gN = 4`). Die tote Zone verschwindet, die Decke bleibt. Billigste Änderung, aber das Schild
+  bleibt eine Karte ohne eigenes Zutun.
+- **c) So lassen und ehrlich beschriften** — das Schild *ist* die Mono-Eis-Auszahlung. Dann sind die −12 % im
+  gemischten Feld richtig und kein Fehler; der Text muss die Bedingung nur nennen, damit sie vor dem Pick sichtbar
+  ist statt danach.
+
+Nicht vorgeschlagen, aber der Vollständigkeit halber: `GLACIER_PER_PICK` global auf 2 hebt die ganze Fraktion, nicht
+nur diese Karte — das ist der §5.6-Entscheid des Owners und wird hier nicht wieder aufgemacht.
+
 ## 6. Pflanze
 
 ### 6.1 Richtung und Abgrenzung (gesetzt, Owner 2026-09-06)
@@ -5636,3 +5694,4 @@ und die Ranked-Texte, die eine andere Runde meinen.
 | 2026-09-07 | Auf Ansage gemessen — und ein Messfehler gefunden: `--mode legendaries` lädt die Werte-Tabelle aus der `--table`-Datei, wenn sie existiert, und `legtable-l9.json` stammt aus der Zeit vor dem Eis-Angebot (null Eis-Einträge). Die drei Eis-Legendären wurden dort in einem Build OHNE Gletscherfeld gemessen; der §5.4-Befund „Ewiges Schild und Große Lawine sind tot" ist damit nicht belegt und ist korrigiert. Mit frischer Tabelle: Eiszeit +281 % (doppelt so hoch wie das nächstbeste von zwölf, das eigentliche Ungleichgewicht), Ewiges Schild −7 %, Große Lawine −8 %. Sweep der Lawine: alt −1 %, Takt ×2 −8 %, ×6 +13 %, ×10 +29 % — der Takt aus §5.8 war richtig, die Senkung des Verstärkers auf ×2 war der Denkfehler (der erzwungene Bruch ersetzt einen ohnehin kommenden, der Verstärker ist die Entschädigung für die niedrigere Masse, keine Prämie je Auslösung). ×10 gesetzt. Nebenbefund auf Owner-Frage: legendäre Skills erscheinen 3,5× so oft wie legendäre Perks, weil der Skill je PLATZ würfelt und der Perk nur einmal je Angebot. §5.9. |
 | 2026-09-07 | Owner: die Legendär-Chance im Perk-Angebot von 3 auf 7 % je Phase. `PERK_LEGENDARY_BASE` 0,03 → 0,07 — erwartet je Lauf 0,39 → 0,91, mindestens einer im Lauf 32,7 → 61,1 % (legendärer Skill zum Vergleich: 1,37 und 75,1 %). Der strukturelle Unterschied bleibt: der Skill würfelt je Platz, der Perk einmal je Angebot; ein Wurf je Platz gäbe 8,7 % je Phase und bleibt als Option offen. Balance-Guard 2,72M / 6,42M — im Band, nicht neu zentriert. §5.10. |
 | 2026-09-08 | Eiszeit ignorierte den Brett-Deckel: `eiszeitTick` wurde im Motor ohne `maxGlaciers` aufgerufen, seit §5.5 `EISZEIT_MAX_GLACIERS` strich und den neuen `GLACIER_MAX` nur an die Skill-Wahl hängte. Die eigenen Picks standen bei 12, die Eiszeit fror bis zum vollen Brett weiter. Deckel durchgereicht, keine Zahl der Eiszeit geändert. Gemessen +281 % → +37 %, damit 8. von 12 Legendären. Skilltext und Glossar-Eintrag *Gletscher* nachgezogen. Der Sweep über die Flutrate entfällt. §5.11. |
+| 2026-09-08 | Befund Ewiges Schild (nichts geändert): alle drei Wirkungen hängen an der Gletscherzahl, der Pool wirkt erst ab zwei, die Kaskade lohnt erst ab drei. Gemessen gepaart, dieselben 150 Seeds: gemischtes Angebot Ø 1,83 Gletscher → −1,2M (besser in 43 %); nur Eis Ø 5,18 → +15,9M (77 %), ab drei Gletschern +31M in 90–96 %. 12 von 150 gemischten Läufen erreichen die Schwelle. Kein Bug — eine Auszahlungskarte ohne eigene Rampe. Drei Vorschläge zur Owner-Entscheidung: a) je Eis-Pick zwei Gletscher, solange es gehalten wird (Empfehlung), b) Kaskaden-Boden von vier Nachbarn, c) so lassen und die Bedingung im Text nennen. §5.12. |
