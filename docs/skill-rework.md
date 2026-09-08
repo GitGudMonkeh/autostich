@@ -4510,6 +4510,61 @@ Eiszeit lebt. Auf vollem Brett ist ihr Faktor exakt 1,00 — der Guard prüft ge
 der Zug nimmt nur aus dem angrenzenden Ring. Für die Berstkraft ist das folgenlos — sie zählt Nachbarn, nicht
 Reserve. Wenn die Firn-Skills als Familie zusammenspielen sollen, ist das ein eigener kleiner Schritt.
 
+### 5.17 Die Firn-Familie bekommt eine gemeinsame Währung (2026-09-08, Owner: „eigener kleiner Schritt")
+
+Die offene Naht aus §5.15/§5.16 war, dass Dauerfrost die Eiszeit nicht speist. Vor dem Bauen die Prüfung, ob eine
+Kopplung überhaupt etwas bringen kann — und dabei stand die eigentliche Ursache im Weg.
+
+**Der Befund: totes Kapital.** Eine Feld-Reserve kann höchstens `FIRN_REFILL_TARGET` (12) abrufen; darüber liegt
+sie brach, bis das Feld einfriert. Sonde über 60 Läufe, nur ungefrorene Felder:
+
+| | |
+| --- | --- |
+| Reserve über der Verwertungsgrenze | **69,0 %** |
+| höchster je gesehener Stand auf einem Feld | **136** |
+
+Dauerfrost füllt jeden Durchlauf weiter in einen Eimer, der 12 fasst, auf Feldern, die meist nie einfrieren. §5.7
+hatte ihn schon vor allen Eiszeit-Änderungen bei −7 % gemessen; das passt zusammen. Die fehlende Kopplung war das
+Symptom, nicht die Ursache.
+
+**Der Schritt.** Der Zug endete am Ring, Dauerfrost füllt gezielt Felder mit Abstand ≥ 2 — seine Reserve kam nie an.
+Jetzt gibt **jedes offene Feld bis zu `EISZEIT_DRAW` an den nächstgelegenen Gletscher ab**, einmal, nicht an jeden.
+Ein Satz, kein Radius, kein neuer Begriff; `neighborFn` fällt aus der Signatur, weil der Zug keine Nachbarschaft
+mehr braucht. Schneetreiben (nahe Quelle), Dauerfrost (ferne Quelle) und Eiszeit (Abnehmer) teilen sich damit eine
+Währung.
+
+**Gemessen** (gepaart, Seeds 601..750):
+
+| Eiszeit | Median-Δ | typ. | besser in |
+| --- | --- | --- | --- |
+| §5.16 (Zug nur am Ring) | 2.047.935 | +30 % | 56 % |
+| **jetzt** | **5.278.281** | **+42 %** | **63 %** |
+
+Sie ist damit die stärkste der drei Eis-Karten (Große Lawine +34 %, Ewiges Schild +25 %) und liegt im Band
+(+25…+134 %).
+
+**Korrektur an §5.15.** Dort steht „Masse füttern trägt nicht" — das galt, **solange der Berstfaktor 1 war**. Mit
+dem Faktor aus §5.16 (bis 9× bei vier offenen Nachbarn) wandelt zusätzliche Masse sich in Berst-*Häufigkeit*, und
+jeder dieser Brüche ist neunfach wert. Die beiden Änderungen wirken nur zusammen: §5.16 allein hätte einen seltenen
+Bruch stark gemacht, §5.17 allein einen häufigen Bruch schwach. Der Satz aus §5.15 bleibt richtig für die Welt, in
+der er gemessen wurde, und ist außerhalb davon zu eng.
+
+**Was der Schritt NICHT löst, ehrlich gemessen.** Der Zug ist eine Eiszeit-Mechanik. Ohne sie ändert sich nichts:
+in der Dauerfrost-Kohorte liegen vorher wie nachher **65,2 %** der Reserve über der Grenze, gleiche Seeds, gleiche
+17 Läufe. Die Familie hängt jetzt über das Legendäre zusammen, nicht aus sich heraus. Wer Dauerfrost ohne Eiszeit
+spielt, füllt weiter einen Eimer, der 12 fasst. Das ist der nächste Schritt, wenn er gewünscht ist — und er gehört
+zu Dauerfrost, nicht zur Eiszeit.
+
+**Verbund gegengeprüft**, weil die Eiszeit stärker wurde:
+
+| Läufe mit beiden Eis-Legendären | zusammen | nur eines | Faktor |
+| --- | --- | --- | --- |
+| §5.14 (beide füllten das Brett) | +305,1M | +2,9M | **106** |
+| jetzt | +38,0M | +3,3M | **11** |
+
+Die Trennung hält, und diesmal auf gesunder Basis: die Eiszeit allein ist +3,3M wert, nicht mehr nahe null wie in
+§5.16.
+
 ## 6. Pflanze
 
 ### 6.1 Richtung und Abgrenzung (gesetzt, Owner 2026-09-06)
@@ -5897,3 +5952,4 @@ und die Ranked-Texte, die eine andere Runde meinen.
 | 2026-09-08 | Owner: „nimm 3 und hebe für Schild das Limit auf." `SCHILD_PER_PICK` 4 → 3; solange das Schild liegt, entfällt `GLACIER_MAX` — an allen vier Stellen (Eis-Pick, Folge-Picks, Ablehn-Gletscher, Eiszeit im Motor), nicht nur am eigenen Pick. Für das Schild allein ein Nullsummenspiel: +25 % wie zuvor. Nebenbefund: Eiszeit stieg unangetastet von +35 auf +44 %, weil sie sich die aufgehobene Decke teilt — Läufe mit beiden Legendären messen +305M gegen +2,9M ohne, Faktor 106. Zweite Nebenwirkung: ein volles Brett hat keine Formations-Entscheidung mehr. §5.14. |
 | 2026-09-08 | Owner: „lass mal a testen." Eiszeit friert nichts mehr ein, sondern flutet die Boden-Reserve, und jeder Gletscher zieht je Durchlauf bis zu `EISZEIT_DRAW` aus jedem angrenzenden offenen Feld in seine Masse. Die Trennung von Schild und Eiszeit gelingt strukturell — ohne eigene Gletscher kann die Eiszeit den aufgehobenen Deckel nicht mehr füllen, der Faktor-106-Verbund aus §5.14 ist unmöglich statt wegtariert. Die Auszahlung trägt aber nicht: Flut/Zug 3/2 → −10 %, 3/4 → −11 %, 8/8 → −5 %, 15/15 → −3 %, asymptotisch gegen null. Ursache: `mCap` deckelt die Bruchmasse auf 12 und je Durchlauf birst ein Gletscher höchstens einmal — Masse füttern ist linear und gedeckelt, Gletscher hinzufügen war überlinear. Vorschlag: die Eiszeit über die Berstkraft zahlen lassen (`1 + x × offene Nachbarn`, Spiegel der Dichte-Kaskade) statt über die Masse. Nicht umgesetzt. §5.15. |
 | 2026-09-08 | Owner: „bau und messe." Die Eiszeit zahlt jetzt in Berstkraft statt in Masse — `1 + 2 × offene Nachbarn` im Bruch, der Spiegel der Dichte-Kaskade (`1 + 0,25 × gefrorene Nachbarn`), mit derselben `wOf`-Gewichtung, damit die Eisbrücke nicht doppelt zahlt. Sweep 0,25 → −4 %, 0,5 → −1 %, 1 → +13 %, 2 → +30 %; 2 gesetzt. Damit sind wieder alle zwölf Legendären positiv (+24 bis +137 %), die drei Eis-Karten liegen bei +25/+30/+33 %. Der Verbund aus §5.14 fällt von +305M auf +30M und ist selbstbegrenzend: auf vollem Brett ist der Eiszeit-Faktor exakt 1,00. Der Zug bleibt bei 2, Texte de/en/es und Guards nachgezogen. §5.16. |
+| 2026-09-08 | Owner: „eigener kleiner Schritt" für die Firn-Familie. Vor dem Bauen gemessen, warum Dauerfrost schwach ist: 69 % aller Boden-Reserve auf ungefrorenen Feldern liegt über `FIRN_REFILL_TARGET` (12), höchster Stand 136 — totes Kapital, die fehlende Kopplung war nur das Symptom. Jetzt gibt jedes offene Feld bis zu `EISZEIT_DRAW` an den nächstgelegenen Gletscher ab statt nur an einen angrenzenden; damit erreicht auch Dauerfrosts ferne Reserve einen Abnehmer. Eiszeit +30 → +42 % (besser in 56 → 63 %), stärkste der drei Eis-Karten und im Band. Korrigiert §5.15: „Masse füttern trägt nicht" galt nur bei Berstfaktor 1 — mit dem Faktor aus §5.16 wandelt Masse sich in Berst-Häufigkeit, die beiden Änderungen wirken nur zusammen. Nicht gelöst: ohne Eiszeit bleibt die Dauerfrost-Kohorte bei 65,2 % totem Kapital. Verbund beider Legendären Faktor 106 → 11. §5.17. |
