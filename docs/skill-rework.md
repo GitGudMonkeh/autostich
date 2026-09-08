@@ -3918,6 +3918,72 @@ fängt: ohne Gletscher-Deckel lag der Mean bei 352M, mit Deckel 16 bei 330M.
 3. Ewiges Schild und Große Lawine (§5.4) sind im gemischten Build weiter tot; die Ablation ist seit der Tarierung
    nicht wiederholt.
 
+### 5.6 Die Geometrie stapelt nicht mehr (2026-09-07, Owner) — gemessen
+
+Owner: Ja zum Vorschlag aus §5.5. Überlappende Gletscher-Formen multiplizieren sich nicht mehr; überlappt ein
+Gletscher mehrere Formen, zählt die stärkste. Eine Zeile in `glacierFormations` (`f[p] = max(f[p], factor)` statt
+`f[p] *= factor`) — und der Runaway der Fraktion ist weg.
+
+#### Was sich an der Kurve ändert
+
+Kompakte Blöcke, alle Gletscher auf voller Masse (`scratchpad/cluster-scaling.mjs`):
+
+| Gletscher | Feld-Bruch vorher | jetzt | je Gletscher vorher | jetzt | Ø Geo vorher | jetzt |
+| --- | --- | --- | --- | --- | --- | --- |
+| 4 | 64 328 | 32 164 | 16 082 | 8 041 | 1,00 | 1,00 |
+| 8 | 241 996 | 99 578 | 30 249 | 12 447 | 1,44 | 1,21 |
+| 12 | 904 892 | 196 701 | 75 408 | 16 392 | 3,25 | 1,50 |
+| 16 | 1 490 079 | 261 520 | 93 130 | 16 345 | 3,92 | 1,47 |
+| 20 | 2 193 109 | 333 879 | 109 655 | 16 694 | 4,54 | 1,47 |
+
+**Das Wachstum von 4 auf 16 Gletscher fällt von 23,2× auf 8,1×**, und der Bruch **je** Gletscher flacht bei rund
+16 000 ab, statt bis 110 000 weiterzuklettern. Genau das war gesucht: ein größeres Feld bleibt besser, aber es ist
+nicht mehr überproportional besser als die Summe seiner Teile.
+
+#### Neu tariert
+
+`BURST_SCALE` 170 → **250**. Die Kurve ist flacher, also darf die Grundzahl wieder höher stehen.
+
+| Build | Median | Mean | p90 |
+| --- | --- | --- | --- |
+| Feuer mono | 6,42M | 8,62M | 16,49M |
+| Blitz mono | 5,68M | 9,43M | 17,24M |
+| Pflanze mono | 7,93M | 11,94M | 22,12M |
+| **Eis mono** | **6,58M** | 7,21M | 11,87M |
+| Split über alle vier | 5,21M | 6,70M | 11,17M |
+| Mix (Random) | 3,32M | 4,54M | 7,01M |
+
+Parität 1,02× gegen Feuer, wie in §5.5 — aber auf einer gesünderen Kurve.
+
+**Balance-Guard:** Seeds 1..40 Median ≈ 2,78M, Mean ≈ 6,24M (Seeds 1..200: 2,55M / 4,47M). Der Schwanz kommt damit
+fast auf den Stand vor dem ganzen Eingriff zurück (§5.4: 2,87M / 5,92M) — vorher, nach dem Streichen der Deckel,
+stand er bei 10,20M. Die Deckel waren also nicht die Ursache, sondern das Pflaster.
+
+#### Was die zwei Regler jetzt tun
+
+Beide noch einmal gemessen, Skala 250, volles Duell über 200 Seeds:
+
+| | Eis mono | gegen Feuer |
+| --- | --- | --- |
+| Deckel 12, 1 je Pick (Stand) | 6,58M | 1,02× |
+| **Deckel aus**, 1 je Pick | 6,58M | 1,02× |
+| Deckel 12, **2 je Pick** | 9,05M | 1,41× |
+
+**Der Gletscher-Deckel ist für den normalen Build inert geworden.** Ein Eis-Mono-Build hält rund zehn Eis-Skills und
+friert damit ohnehin unter zwölf Gletscher ein; der Median ist mit und ohne Deckel identisch. Er bleibt trotzdem
+stehen, aber als Leitplanke für die Ausnahmen (mehrere Gletscher je Pick, Ablehn-Gletscher), nicht als Balance-Regler.
+
+**Zwei Gletscher je Pick sind jetzt ein echter Hebel: +38 %** (unter der alten Geometrie waren es +17 %, und der
+Deckel musste die Katastrophe abfangen). Der Mix-Lauf steigt mit (3,32M → 4,32M), das trifft also nicht nur Mono.
+Wer das will, tariert die Grundzahl dafür neu — Startwert grob 170 statt 250. **Entscheid Owner, nichts umgesetzt.**
+
+#### Offen
+
+1. **Zwei Gletscher je Pick** — jetzt eine echte Wahl: das Feld steht in der Laufmitte statt am Laufende, Preis ist
+   eine neue Tarierung.
+2. Ewiges Schild und Große Lawine (§5.4) sind im gemischten Build weiter tot; Ablation und Legendär-Band sind seit
+   §5.4 nicht wiederholt und stehen auf der alten Kurve.
+
 ## 6. Pflanze
 
 ### 6.1 Richtung und Abgrenzung (gesetzt, Owner 2026-09-06)
@@ -5294,3 +5360,4 @@ und die Ranked-Texte, die eine andere Runde meinen.
 | 2026-09-07 | Owner nimmt §5.2 an und lässt die Raritäten bauen. Drei Skills gestrichen (Verschmelzen, Zermalmen, Erstarrung), dann die vier Stufen je Skill. Der eigentliche Umbau lag darunter: die Eis-Mechanik las globale Konstanten über die Rolle, eine gewürfelte Stufe änderte nichts. Neu `state.glacierRoleTiers` und `src/game/factions/ice.js` (wie fire/lightning/plant); `glacier.js` hält nur noch, was ohne Skill gilt, 14 Rollen-Konstanten sind dort weg. Eisbrücke, Kettenbruch und Einfrieren haben ihren Regler bekommen; zwei stumme Regeln (Schneetreibens 0-Masse-Sonderfall, Anfrierens Formations-Zuschlag auf jeder Stufe) sind gefallen. Neuer Wächter `test/ice-rework.test.js`. Startwerte, UNGEMESSEN. §5.3. |
 | 2026-09-07 | Auf Ansage gemessen. Eis ist ins Angebot gekommen (alle vier Fraktionen an den Türen), Balance-Guard neu zentriert (Median 2,87M / Mean 5,92M). Duell: Eis mono 8,95M gegen Feuer 6,42M, Blitz 5,68M, Pflanze 7,93M — 1,39× über Feuer, dabei der kürzeste Schwanz von allen. Ablation ohne Legendäre: die Fraktion ist flach, kein Skill über +14 %, acht bei oder unter null. Mit Legendären kippt es: die drei Legendären tragen alles, im gemischten Feld sind Ewiges Schild und Große Lawine mit −13 % aber tot. Ursache nachgerechnet: der weiche Deckel lässt in der Großen Fläche 49 % des Bruchs durch und macht aus Abbruchkantes nominalen +18 % ganze +2,2 %. Vorschlag: E3 umsetzen, Deckel raus, BURST_SCALE runter. Nichts tariert. §5.4. |
 | 2026-09-07 | Owner-Ja zu E3, plus die Frage nach mehreren Gletschern je Pick. Beide Deckel gestrichen (weicher Bruch-Deckel, Eiszeit-Gletscherzahl), zwei neue Regler gebaut: Gletscher je Pick und Gesamtzahl. Befund: ohne Gesamt-Deckel ist die Zahl je Pick eine Katastrophe (2 je Pick → 966M, 3 → 10,7 Mrd gegen Feuer 6,4M), mit Deckel ein kleiner Hebel (+17 % von 1 auf 2). Ursache nachgerechnet: überlappende Geometrie-Formen multiplizieren sich, der Feld-Bruch wächst von 4 auf 16 Gletscher um das 23-fache. Tariert: BURST_SCALE 340 → 170, Gletscher-Deckel 12 → Eis mono 6,55M gegen Feuer 6,42M (1,02×). Balance-Guard neu zentriert (2,52M / 10,20M). Offen bleibt die Geometrie-Multiplikation. §5.5. |
+| 2026-09-07 | Owner-Ja: überlappende Gletscher-Formen stapeln nicht mehr, die stärkste zählt (eine Zeile in `glacierFormations`). Das Wachstum von 4 auf 16 Gletschern fällt von 23,2× auf 8,1×, der Bruch je Gletscher flacht bei ~16k ab statt bis 110k zu klettern. Neu tariert: BURST_SCALE 170 → 250, Parität unverändert 1,02× (Eis 6,58M gegen Feuer 6,42M). Balance-Guard neu zentriert (2,78M / 6,24M) — der Schwanz ist fast auf dem Stand vor dem Eingriff, die Deckel waren also das Pflaster, nicht die Ursache. Nachgemessen: der Gletscher-Deckel ist für den normalen Build inert (Median mit und ohne identisch) und bleibt nur als Leitplanke; zwei Gletscher je Pick sind jetzt +38 % statt +17 % und brauchen eine eigene Tarierung. §5.6. |

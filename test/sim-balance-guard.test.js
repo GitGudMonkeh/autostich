@@ -74,6 +74,10 @@ import { randomPolicy } from "../sim/policies/random.js";
 // hat ein dichtes Gletscherfeld wieder eine offene Decke, und der Zufallsspieler trifft es in wenigen Seeds. Die
 // Obergrenze des Mean-Bandes wandert damit mit; sie fängt weiterhin einen ECHTEN Blowup (ohne Gletscher-Deckel lag der
 // Mean bei 352M, mit Deckel 16 bei 330M — beides schlägt hier weiter an).
+// §5.6 (Owner, 2026-09-07): überlappende Gletscher-Formen stapeln nicht mehr, die stärkste zählt. Das war der
+// eigentliche Runaway: der Schwanz kommt fast auf den Stand vor dem Eingriff zurück, während die Grundzahl wieder
+// höher stehen darf (170 → 250, Parität unverändert). Seeds 1..40 Median ≈ 2,78M, Mean ≈ 6,24M (Seeds 1..200:
+// 2,55M / 4,47M). Bänder darauf neu zentriert (≈ ±35 %).
 describe("sim balance guard", () => {
   const SEEDS = 40; // feste Seeds 1..40 → deterministischer Median/Mean
   const scores = Array.from({ length: SEEDS }, (_, i) => runOne(1 + i, randomPolicy()).score).sort((a, b) => a - b);
@@ -81,14 +85,15 @@ describe("sim balance guard", () => {
   const mean = scores.reduce((t, v) => t + v, 0) / SEEDS;
 
   it("Median-Score im erwarteten Band (breite Power-Verschiebung)", () => {
-    // Ist-Wert ≈ 2,52M (exp §5.5, 50 Runden, Angebot Feuer/Blitz/Pflanze/Eis). Band toleriert normales Tuning, schlägt bei grober Verschiebung an.
-    expect(median).toBeGreaterThan(1_600_000);
-    expect(median).toBeLessThan(3_400_000);
+    // Ist-Wert ≈ 2,78M (exp §5.6, 50 Runden, Angebot Feuer/Blitz/Pflanze/Eis). Band toleriert normales Tuning, schlägt bei grober Verschiebung an.
+    expect(median).toBeGreaterThan(1_800_000);
+    expect(median).toBeLessThan(3_750_000);
   });
 
   it("Mean-Score im erwarteten Band (Tail-Runaway-Fänger)", () => {
-    // Ist-Wert ≈ 10,20M (exp §5.5). Die Obergrenze fängt weiterhin einen ECHTEN Tail-Blowup (ohne Gletscher-Deckel 352M).
-    expect(mean).toBeGreaterThan(6_600_000);
-    expect(mean).toBeLessThan(13_800_000);
+    // Ist-Wert ≈ 6,24M (exp §5.6). Die Obergrenze fängt weiterhin einen ECHTEN Tail-Blowup (mit stapelnder Geometrie
+    // und ohne Gletscher-Deckel lag der Mean bei 352M).
+    expect(mean).toBeGreaterThan(4_000_000);
+    expect(mean).toBeLessThan(8_500_000);
   });
 });

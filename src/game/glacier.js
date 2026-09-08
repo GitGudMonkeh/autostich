@@ -20,7 +20,8 @@ export const TIER_MULT = [0, 1, 1.5, 2.2];     // überlineare Wucht je Stufe (S
 // (kein schnelleres Bersten), nur die Wucht je Bruch. §5.5: der weiche Deckel je Einzelbruch ist gestrichen (§1 der
 // Doku: keine Deckel, lieber niedrigere Werte). Er hatte die ganze Fraktion flach gemacht — in der Großen Fläche kamen
 // 49 % des Bruchs an, und ein Verstärker mit nominal +18 % brachte +2,2 %. Statt seiner steht die Grundzahl tiefer.
-export const BURST_SCALE = envNum("SIM_GLACIER_BURST_SCALE", 170); // §5.5 tariert: 340 → 170 (Sweep im Duell: Eis 6,55M gegen Feuer 6,42M)
+// §5.6: seit die Geo-Formen nicht mehr stapeln, ist die Kurve flacher und die Grundzahl darf wieder höher stehen.
+export const BURST_SCALE = envNum("SIM_GLACIER_BURST_SCALE", 250); // §5.6 neu tariert: 170 → 250, weil die Geometrie nicht mehr stapelt (Eis 6,58M gegen Feuer 6,42M)
 // Legendär-Verstärker (Sim-tunebar): Große Lawine feuert erst am LAUFENDE (nichts wird vorzeitig verschwendet), bricht
 // alles auf voller Stufe und ×GROSSE_LAWINE_MULT → der eine echte Riesen-Score-Moment.
 export const GROSSE_LAWINE_MULT = 6;
@@ -237,8 +238,10 @@ export function verzahnungTick(mass, locked, neighborFn = neighbors4, per = 0) {
 }
 
 /* ---- 2D-Geometrie-Formationen (unique Deck-Passiv, docs §2.7 & §9) --------------------------------
-   Erkennt geometrische Formen aus GEFRORENEN Gletschern und gibt einen Burst-Faktor je Feld zurück (überlappende
-   Formen stapeln multiplikativ). Immer an, wenn Gletscher aktiv. Eiswall verstärkt die „Linie". ⚠ Werte Platzhalter. */
+   Erkennt geometrische Formen aus GEFRORENEN Gletschern und gibt einen Burst-Faktor je Feld zurück. Überlappende
+   Formen stapeln NICHT: die stärkste zählt (§5.6). Vorher multiplizierten sie sich, und weil ein dichtes Feld viele
+   Formen zugleich erfüllt, wuchs der Feld-Bruch von 4 auf 16 Gletscher um das 23-fache statt um das 8-fache — der
+   Runaway der Fraktion saß hier, nicht in der Grundzahl. Immer an, wenn Gletscher aktiv. Eiswall hebt die „Linie". */
 export const GEO_BLOCK = 1.15;    // 2×2-Quadrat (Dichte-Sockel)
 export const GEO_KREUZ = 1.25;    // Zentrum + 4 orthogonale (Kollisions-Knoten)
 export const GEO_LINIE = 1.30;    // volle Reihe (5) oder Spalte (8)
@@ -250,7 +253,7 @@ export function glacierFormations(locked, opts = {}) {
   const isG = (p) => (locked instanceof Set ? locked.has(p) : !!(locked && locked[p]));
   const f = new Array(N_POS).fill(1);
   const forms = [], formPos = new Set();
-  const addForm = (type, factor, positions) => { forms.push({ type, factor, positions }); for (const p of positions) { f[p] *= factor; formPos.add(p); } };
+  const addForm = (type, factor, positions) => { forms.push({ type, factor, positions }); for (const p of positions) { f[p] = Math.max(f[p], factor); formPos.add(p); } };
   const linieFactor = opts.eiswallLinie || GEO_LINIE;
   // Linie: volle Reihe (5 Spalten)
   for (let r = 0; r < 8; r++) { let full = true; for (let c = 0; c < 5; c++) if (!isG(posOf(r, c))) { full = false; break; } if (full) addForm("linie", linieFactor, Array.from({ length: 5 }, (_, c) => posOf(r, c))); }

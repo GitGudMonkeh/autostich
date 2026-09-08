@@ -34,10 +34,15 @@ describe("glacierGeometry — Formen erkennen", () => {
     const col = lockAt(0, 5, 10, 15, 20, 25, 30, 35); // col 0, alle 8 Zeilen
     expect(glacierGeometry(col)[0]).toBeCloseTo(GEO_LINIE);
   });
-  it("Große Fläche (3×3) → mind. GEO_FLAECHE, Zentrum durch Stapelung höher", () => {
-    const f = glacierGeometry(lockAt(0, 1, 2, 5, 6, 7, 10, 11, 12));
-    for (const p of [0, 1, 2, 5, 6, 7, 10, 11, 12]) expect(f[p]).toBeGreaterThan(1);
-    expect(f[posOf(1, 1)]).toBeGreaterThan(GEO_FLAECHE); // Zentrum: Fläche × Kreuz × Blöcke
+  it("Große Fläche (3×3) → GEO_FLAECHE; überlappende Formen stapeln NICHT (§5.6: die stärkste zählt)", () => {
+    const cells = [0, 1, 2, 5, 6, 7, 10, 11, 12];
+    const f = glacierGeometry(lockAt(...cells));
+    for (const p of cells) expect(f[p]).toBeGreaterThan(1);
+    // Das Zentrum liegt in Fläche, Kreuz und vier Blöcken zugleich. Früher multiplizierte sich das; jetzt zählt die
+    // stärkste Form — und keine Zelle kommt über den größten Einzelfaktor hinaus.
+    expect(f[posOf(1, 1)]).toBeCloseTo(GEO_FLAECHE);
+    const strongest = Math.max(GEO_BLOCK, GEO_KREUZ, GEO_LINIE, GEO_FLAECHE);
+    for (const p of cells) expect(f[p]).toBeLessThanOrEqual(strongest);
   });
 });
 
