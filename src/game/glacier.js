@@ -150,8 +150,11 @@ export function precomputeGlacier(mass, locked, opts = {}) {
     const kollFrac = ewigesSchild ? 1 : (nb.length ? gN / nb.length : 0);
     const kollFaktor = 1 + (kollision - 1) * kollFrac;  // Kollision (anteilig)
     const geoFactor = formFactor ? (formFactor[p] || 1) : 1; // 2D-Geometrie (Block/Kreuz/Linie/Fläche)
-    // Eiszeit (§5.16): je offenem Nachbarfeld mehr Wucht — genau gegenläufig zur Kaskade, die gefrorene Nachbarn zählt.
-    const eisFaktor = eiszeitPer ? 1 + eiszeitPer * (nb.length - nb.filter(isG).length) : 1;
+    // Eiszeit (§5.16): je offenem Nachbarfeld mehr Wucht — gegenläufig zur Kaskade, die gefrorene Nachbarn zählt.
+    // Dieselbe Gewichtung wie dort (`wOf`), damit gN und oN exakte Komplemente sind: eine Diagonale, die der Dichte
+    // nur anteilig zählt, zählt der Eiszeit auch nur anteilig. Sonst zahlte die Eisbrücke der Eiszeit doppelt.
+    const oN = nb.reduce((t, n) => t + (isG(n) ? 0 : wOf(p, n)), 0);
+    const eisFaktor = eiszeitPer ? 1 + eiszeitPer * oN : 1;
     let burst = mCap[p] * tierMult[effTier] * berstFaktor * kollFaktor * sturzFactor * geoFactor * eisFaktor * BURST_SCALE;
     if (grosseLawine) burst *= GROSSE_LAWINE_MULT;        // Lawinen-Takt: Verstärker je erzwungenem Bruch
     payout[p] += burst;
@@ -216,7 +219,8 @@ export const EISZEIT_DRAW = envNum("SIM_GLACIER_EISZEIT_DRAW", 2); // Zug je off
 // den Bruch mit den GEFRORENEN Nachbarn (KASKADE_PER_NEIGHBOR), die Eiszeit mit den OFFENEN. §5.15 hat gemessen,
 // dass Masse zu füttern nicht trägt: mCap deckelt die Bruchmasse auf TOP und ein Gletscher birst höchstens einmal
 // je Durchlauf, also verfällt jede Flut über die Decke hinaus. Die Berstkraft kennt diese Decke nicht.
-export const EISZEIT_BURST_PER = envNum("SIM_GLACIER_EISZEIT_BURST", 0.25);
+// Sweep §5.16: 0,25 → −4 %, 0,5 → −1 %, 1 → +13 %, 2 → +30 %. Bei 2 sitzt die Eiszeit im Band der übrigen elf.
+export const EISZEIT_BURST_PER = envNum("SIM_GLACIER_EISZEIT_BURST", 2);
 export function eiszeitTick(firn, mass, locked, base = EISZEIT_FLOOD, draw = EISZEIT_DRAW, neighborFn = neighbors4) {
   const isG = (p) => (locked instanceof Set ? locked.has(p) : !!(locked && locked[p]));
   const f = Array.isArray(firn) ? firn.slice() : new Array(N_POS).fill(0);

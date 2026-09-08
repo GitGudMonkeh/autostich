@@ -4459,6 +4459,57 @@ entfernt.
 ≥ 2 zum Gletscher (der Ring bekommt 0), der Zug nimmt aber nur aus dem angrenzenden Ring. Schneetreiben speist sie,
 Dauerfrost nicht.
 
+### 5.16 Die Eiszeit zahlt in Berstkraft (2026-09-08, Owner: „bau und messe") — umgesetzt
+
+§5.15 hatte gemessen, dass die Masse-Variante nicht trägt, und die Ursache benannt: `mCap` deckelt die Bruchmasse
+auf die höchste Schwelle, und ein Gletscher birst höchstens einmal je Durchlauf — jede Flut darüber hinaus verfällt.
+Die Berstkraft kennt diese Decke nicht.
+
+**Gebaut.** Ein Faktor im Bruch, direkt neben der Dichte-Kaskade, als deren Spiegel:
+
+| | zählt | Faktor |
+| --- | --- | --- |
+| Kaskade (Dichte, im Code seit §2.3) | **gefrorene** Nachbarn | `1 + 0,25 × gN` |
+| **Eiszeit (neu)** | **offene** Nachbarn | `1 + 2 × oN` |
+
+Beide Seiten benutzen dieselbe Gewichtung `wOf`, sind also exakte Komplemente: eine Diagonale, die der Dichte unter
+der Eisbrücke nur anteilig zählt, zählt der Eiszeit auch nur anteilig. Ohne das hätte die Eisbrücke der Eiszeit
+doppelt gezahlt (bis 17× statt 9×) — ein Fehler in meinem ersten Wurf, vor der Endmessung korrigiert.
+
+Der Zug aus §5.15 bleibt bei `EISZEIT_DRAW = 2`. Die beiden arbeiten zusammen, nicht nebeneinander: der Zug bringt
+den Gletscher überhaupt erst auf die Schwelle, die Berstkraft zahlt den Bruch aus.
+
+**Sweep** (gepaart, Seeds 601..750, Tabelle `legtable-l12.json`):
+
+| je offenem Nachbarn | Eiszeit | besser in |
+| --- | --- | --- |
+| 0,25 | −4 % | 47 % |
+| 0,5 | −1 % | 50 % |
+| 1 | +13 % | 52 % |
+| **2 (gesetzt)** | **+30 %** | **56 %** |
+
+**Das Feld** (Median-Δ, gepaart): Baumreihe +137 %, Wurzelgeflecht +129 %, Sonnenzorn +102 %, Ewiger Frühling
++55 %, Ewige Glut +54 %, Sonnenkern +52 %, Resonanz +48 %, Große Lawine +33 %, Doppelentladung +31 %, **Eiszeit
++30 %**, Ewiges Schild +25 %, Hochspannung +24 %.
+
+Alle zwölf positiv, +24 bis +137 %. Die drei Eis-Karten liegen mit +25 / +30 / +33 % eng beieinander.
+
+**Die Trennung, nachgemessen.** Sonde über dieselben 150 Seeds, Eiszeit eingegriffen:
+
+| Läufe mit beiden Eis-Legendären | Median-Δ |
+| --- | --- |
+| §5.14 (beide füllten das Brett) | +305.079.292 |
+| **jetzt** | **+30.283.622** |
+
+**Faktor 10 weniger**, und die Art der Kopplung ist eine andere: sie füllen nicht mehr gemeinsam das Brett (Ø 2,4
+Gletscher statt 7,4), sondern das Schild erhöht die Berst-*Häufigkeit* und die Eiszeit die Berst-*Wucht*. Das ist
+**selbstbegrenzend**: wer das Schild wirklich in die Breite spielt, friert die offenen Felder weg, von denen die
+Eiszeit lebt. Auf vollem Brett ist ihr Faktor exakt 1,00 — der Guard prüft genau diesen Punkt.
+
+**Offen, unverändert seit §5.15:** Dauerfrost speist die Eiszeit nicht. Er füllt gezielt Felder mit Abstand ≥ 2,
+der Zug nimmt nur aus dem angrenzenden Ring. Für die Berstkraft ist das folgenlos — sie zählt Nachbarn, nicht
+Reserve. Wenn die Firn-Skills als Familie zusammenspielen sollen, ist das ein eigener kleiner Schritt.
+
 ## 6. Pflanze
 
 ### 6.1 Richtung und Abgrenzung (gesetzt, Owner 2026-09-06)
@@ -5845,3 +5896,4 @@ und die Ranked-Texte, die eine andere Runde meinen.
 | 2026-09-08 | Owner: Variante a aus §5.12. Ewiges Schild friert je Eis-Pick vier Felder statt einem (`SCHILD_PER_PICK`, neuer Regler); der globale Ein-Pick-Entscheid, der Brett-Deckel und der Ablehn-Gletscher bleiben unberührt. Sweep 2 → +2 %, 3 → +17 %, 4 → +25 %, 5 → +42 %; 4 gesetzt, weil drei Eis-Picks das Brett damit auf genau `GLACIER_MAX` füllen und Eiszeit/Lawine vorn bleiben. Gemessen −12 % → +25 %, besser in 43 → 63 %; Ø Gletscher im Lauf 1,83 → 2,50. Damit sind alle zwölf Legendären positiv (+25 bis +145 %). Skilltext und Guard nachgezogen. §5.13. |
 | 2026-09-08 | Owner: „nimm 3 und hebe für Schild das Limit auf." `SCHILD_PER_PICK` 4 → 3; solange das Schild liegt, entfällt `GLACIER_MAX` — an allen vier Stellen (Eis-Pick, Folge-Picks, Ablehn-Gletscher, Eiszeit im Motor), nicht nur am eigenen Pick. Für das Schild allein ein Nullsummenspiel: +25 % wie zuvor. Nebenbefund: Eiszeit stieg unangetastet von +35 auf +44 %, weil sie sich die aufgehobene Decke teilt — Läufe mit beiden Legendären messen +305M gegen +2,9M ohne, Faktor 106. Zweite Nebenwirkung: ein volles Brett hat keine Formations-Entscheidung mehr. §5.14. |
 | 2026-09-08 | Owner: „lass mal a testen." Eiszeit friert nichts mehr ein, sondern flutet die Boden-Reserve, und jeder Gletscher zieht je Durchlauf bis zu `EISZEIT_DRAW` aus jedem angrenzenden offenen Feld in seine Masse. Die Trennung von Schild und Eiszeit gelingt strukturell — ohne eigene Gletscher kann die Eiszeit den aufgehobenen Deckel nicht mehr füllen, der Faktor-106-Verbund aus §5.14 ist unmöglich statt wegtariert. Die Auszahlung trägt aber nicht: Flut/Zug 3/2 → −10 %, 3/4 → −11 %, 8/8 → −5 %, 15/15 → −3 %, asymptotisch gegen null. Ursache: `mCap` deckelt die Bruchmasse auf 12 und je Durchlauf birst ein Gletscher höchstens einmal — Masse füttern ist linear und gedeckelt, Gletscher hinzufügen war überlinear. Vorschlag: die Eiszeit über die Berstkraft zahlen lassen (`1 + x × offene Nachbarn`, Spiegel der Dichte-Kaskade) statt über die Masse. Nicht umgesetzt. §5.15. |
+| 2026-09-08 | Owner: „bau und messe." Die Eiszeit zahlt jetzt in Berstkraft statt in Masse — `1 + 2 × offene Nachbarn` im Bruch, der Spiegel der Dichte-Kaskade (`1 + 0,25 × gefrorene Nachbarn`), mit derselben `wOf`-Gewichtung, damit die Eisbrücke nicht doppelt zahlt. Sweep 0,25 → −4 %, 0,5 → −1 %, 1 → +13 %, 2 → +30 %; 2 gesetzt. Damit sind wieder alle zwölf Legendären positiv (+24 bis +137 %), die drei Eis-Karten liegen bei +25/+30/+33 %. Der Verbund aus §5.14 fällt von +305M auf +30M und ist selbstbegrenzend: auf vollem Brett ist der Eiszeit-Faktor exakt 1,00. Der Zug bleibt bei 2, Texte de/en/es und Guards nachgezogen. §5.16. |
