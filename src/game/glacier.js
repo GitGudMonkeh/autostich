@@ -11,26 +11,30 @@
    ⚠ ZAHLEN SIND PLATZHALTER — die endgültigen Werte fallen am Sim/Playtest (docs §2.3, §8). */
 
 import { N_POS, rowOf, colOf, posOf } from "./architect.js"; // Brett-Geometrie 8×5, Single Source
+import { envNum } from "./constants.js";                     // Sim-übersteuerbare Grundzahl (Sweep ohne Code-Änderung)
 
 /* ---- TUNING-Block (Platzhalter, Sim-tunebar) ------------------------------------------------------ */
 export const THRESHOLDS = [4, 8, 12];          // Schwellen-Stufen; Stufe = #Schwellen ≤ Masse (0..3)
 export const TIER_MULT = [0, 1, 1.5, 2.2];     // überlineare Wucht je Stufe (Stufe 0 bricht nicht)
 // Globaler Burst-Skalierer: die Gletscher SIND der Hauptscore (nicht das Deck) — einzelne, massive Hits. Frequenz bleibt
-// (kein schnelleres Bersten), nur die Wucht je Bruch. Am Sim kalibriert, damit der Gletscher-Ertrag das Deck dominiert.
-const BURST_SCALE = 340;
-// Weicher Deckel je EINZELBRUCH (Sim-Balance): der Burst-Stack ist voll multiplikativ (Masse×Stufe×Kaskade×Kollision×
-// Sturz×Geo) → große Cluster/Fläche/Eiszeit detonieren unbegrenzt. Über BURST_SOFTCAP zählt nur noch BURST_SOFTSLOPE
-// des Überschusses → komprimiert das Ceiling, lässt Median-Bursts (unter dem Deckel) unberührt. (Platzhalter, Sim-tunebar.)
-const BURST_SOFTCAP = 40000;
-const BURST_SOFTSLOPE = 0.06;
+// (kein schnelleres Bersten), nur die Wucht je Bruch. §5.5: der weiche Deckel je Einzelbruch ist gestrichen (§1 der
+// Doku: keine Deckel, lieber niedrigere Werte). Er hatte die ganze Fraktion flach gemacht — in der Großen Fläche kamen
+// 49 % des Bruchs an, und ein Verstärker mit nominal +18 % brachte +2,2 %. Statt seiner steht die Grundzahl tiefer.
+export const BURST_SCALE = envNum("SIM_GLACIER_BURST_SCALE", 170); // §5.5 tariert: 340 → 170 (Sweep im Duell: Eis 6,55M gegen Feuer 6,42M)
 // Legendär-Verstärker (Sim-tunebar): Große Lawine feuert erst am LAUFENDE (nichts wird vorzeitig verschwendet), bricht
-// alles auf voller Stufe, ist vom Soft-Cap ausgenommen und ×GROSSE_LAWINE_MULT → der eine echte Riesen-Score-Moment.
+// alles auf voller Stufe und ×GROSSE_LAWINE_MULT → der eine echte Riesen-Score-Moment.
 export const GROSSE_LAWINE_MULT = 6;
 // Ewiges Schild: additiver Feld-Bonus je Durchlauf (echter Netto-Massegewinn fürs ganze verbundene Feld, zusätzlich zum Max-Pool).
 export const SCHILD_BONUS = 3;
 // Ablehn-Gletscher (Sim-tunebar): ab so vielen gehaltenen Eis-Skills friert auch das Ablehnen eines Skill-Angebots einen
 // Gletscher (statt nur der Skill-Pick/Tausch). Entkoppelt „mehr Gletscher" vom Tauschen guter Skills.
 export const DECLINE_MIN_SKILLS = 4;
+// §5.5 (Owner-Frage): Wie viele Karten friert EIN Eis-Skill-Pick fest? Bisher genau eine — der Verdacht ist, dass die
+// Fraktion daran hängt, weil ein Cluster über 7 Picks nie dicht wird. Regler, damit 1–3 messbar sind.
+export const GLACIER_PER_PICK = envNum("SIM_GLACIER_PER_PICK", 1);
+// Optionaler Deckel auf die GESAMTZAHL der Gletscher (0 = keiner). Nicht der gestrichene Score-Deckel aus §5.5, sondern
+// eine Grenze für das Brett: ein Voll-Mono-Eis-Build soll nicht die ganze Aufstellung einfrieren können.
+export const GLACIER_MAX = envNum("SIM_GLACIER_MAX", 12); // §5.5: 12 lässt die Große Fläche (3×3, neun Gletscher) zu und hält drei Felder Luft
 export const KASKADE_PER_NEIGHBOR = 0.25;      // Berst-Faktor = 1 + 0,25 × Gletscher-Nachbarn (Dichte)
 export const KOLLISION_MULT = 1.5;             // Treffer auf Gletscher-Nachbarn (anteilig, docs §2.3)
 export const EWIGER_FROST = 1;                 // Fraktions-Passiv: bedingungsloser Masse-Tick je Durchlauf (docs §2.6)
@@ -135,7 +139,6 @@ export function precomputeGlacier(mass, locked, opts = {}) {
     const geoFactor = formFactor ? (formFactor[p] || 1) : 1; // 2D-Geometrie (Block/Kreuz/Linie/Fläche)
     let burst = mCap[p] * tierMult[effTier] * berstFaktor * kollFaktor * sturzFactor * geoFactor * BURST_SCALE;
     if (grosseLawine) burst *= GROSSE_LAWINE_MULT;        // Finisher-Verstärker (One-Shot am Laufende)
-    else if (burst > BURST_SOFTCAP) burst = BURST_SOFTCAP + (burst - BURST_SOFTCAP) * BURST_SOFTSLOPE; // weicher Deckel (Große Lawine ausgenommen)
     payout[p] += burst;
     resetMass[p] = RESET_TO;                             // abgekalbt: baut wieder von unten auf (selten + gewaltig)
     breaks.push({ pos: p, tier: effTier, burst, glacierNeighbors: gN, forced: forced[p] });
@@ -190,9 +193,10 @@ export function uebergletscherPool(mass, locked) {
 // #386: `mass` ist die Firn-Boden-RESERVE (firnStack) — die Flut füllt die Reserve offener Felder, die Auto-Freeze-Wahl
 // liest die höchste Reserve. Der neu gefrorene Gletscher startet mit Masse 0 (in glacierMass, hier nicht berührt) und
 // zieht ab dem nächsten Rundenstart aus seiner Reserve auf.
-export const EISZEIT_FLOOD = 3;
-export const EISZEIT_MAX_GLACIERS = 16; // Runaway-Deckel: Eiszeit friert nur bis zu dieser Gesamt-Gletscherzahl ein (sonst füllte sie das Brett → 2×-Ausreißer). Die Flut läuft weiter.
-export function eiszeitTick(mass, locked, base = EISZEIT_FLOOD, maxGlaciers = EISZEIT_MAX_GLACIERS, blocked = []) {
+export const EISZEIT_FLOOD = envNum("SIM_GLACIER_EISZEIT_FLOOD", 3);
+// §5.5: der Runaway-Deckel auf die Gletscherzahl ist gestrichen (§1: keine Deckel). Die Eiszeit kriecht jetzt bis ans
+// Brettende weiter; der Regler ist die Flutrate, nicht eine Obergrenze.
+export function eiszeitTick(mass, locked, base = EISZEIT_FLOOD, maxGlaciers = Infinity, blocked = []) {
   const isG = (p) => (locked instanceof Set ? locked.has(p) : !!(locked && locked[p]));
   const isBlocked = (p) => (blocked instanceof Set ? blocked.has(p) : Array.isArray(blocked) && blocked.includes(p)); // #301 C3: nie einfrierbar
   const m = Array.isArray(mass) ? mass.slice() : new Array(N_POS).fill(0);

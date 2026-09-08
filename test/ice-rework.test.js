@@ -3,7 +3,7 @@ import { resolveTrick } from "../src/game/engine.js";
 import { initialState, reducer } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
 import { SKILL_DEFS, EIS_TIERS as EIS } from "../src/game/skills.js";
-import { ROLES, precomputeGlacier } from "../src/game/glacier.js";
+import { ROLES, precomputeGlacier, GLACIER_MAX } from "../src/game/glacier.js";
 import { I, iceTuning, iceRoleTiers, iceSnapshotOpts } from "../src/game/factions/ice.js";
 import { posOf } from "../src/game/architect.js";
 
@@ -172,6 +172,26 @@ describe("Eis-Stufen — vom Pick bis in den State", () => {
 
   it("ohne Eintrag gilt Normal — ein Szenario, das nur Rollen setzt, liest die unterste Stufe", () => {
     expect(iceTuning([ROLES.ANFRIEREN], {}).anfrierenMass).toBe(EIS.anfrieren[0].mass);
+  });
+
+  it("ein Pick vergibt mehrere Gletscher: die Phase bleibt offen, bis sie aufgebraucht sind (§5.5)", () => {
+    // GLACIER_PER_PICK steht per Default auf 1; der Zähler im State ist der Regler, deshalb hier direkt gesetzt.
+    let s = { ...initialState(makeRng(1)), phase: "glacier-target", glacierPicksLeft: 3, activeArchetypes: ["ice"] };
+    s = reducer(s, { type: "GLACIER_LOCK", pos: 0 });
+    expect(s.phase).toBe("glacier-target");
+    expect(s.glacierPicksLeft).toBe(2);
+    s = reducer(s, { type: "GLACIER_LOCK", pos: 1 });
+    s = reducer(s, { type: "GLACIER_LOCK", pos: 2 });
+    expect(s.phase).toBe("play");
+    expect(s.glacierLocked.filter(Boolean)).toHaveLength(3);
+  });
+
+  it("der Gesamt-Deckel begrenzt die Gletscherzahl (§5.5)", () => {
+    const locked = new Array(40).fill(false);
+    for (let i = 0; i < GLACIER_MAX; i++) locked[i] = true;
+    const s = reducer({ ...initialState(makeRng(1)), phase: "glacier-target", glacierPicksLeft: 1, activeArchetypes: ["ice"], glacierLocked: locked },
+      { type: "GLACIER_LOCK", pos: GLACIER_MAX + 1 });
+    expect(s.glacierLocked.filter(Boolean)).toHaveLength(GLACIER_MAX); // abgelehnt, kein Gletscher mehr
   });
 
   it("PICK_SKILL legt die gewürfelte Stufe als Rollen-Stufe ab", () => {

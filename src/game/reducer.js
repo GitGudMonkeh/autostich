@@ -18,7 +18,7 @@ import { resolveTrick, formationEnergyFor } from "./engine.js"; // formationEner
 import * as C from "./constants.js";
 import { runRules, perksOfferedFor, skillOfferParams, sanitizeRules } from "./rules.js"; // exp: Regeln je Lauf (state.rules; null → Konstanten)
 import { isLegendarySkill } from "./skills.js"; // #217: Garantie-Erkennung (Legendär im Skill-Reroll-Angebot)
-import { DECLINE_MIN_SKILLS as G_DECLINE_MIN_SKILLS } from "./glacier.js"; // Eis-Neudesign: Ablehn-Gletscher-Schwelle (gehaltene Eis-Skills)
+import { DECLINE_MIN_SKILLS as G_DECLINE_MIN_SKILLS, GLACIER_PER_PICK as G_PER_PICK, GLACIER_MAX as G_MAX } from "./glacier.js"; // Eis-Neudesign: Ablehn-Gletscher-Schwelle (gehaltene Eis-Skills)
 import { pickWeekMods, weekModMag, TIGHT_BUILD_COVER } from "./weekMods.js"; // #370 Ranked-Rework Phase 3: Wochen-Modifikatoren (seed-deterministisch) · exp: hasWeekMod ging mit PICK_LEGENDARY (doubleLeg)
 
 import { initialArchitect, familyDef as archFamily, isValidFootprint, occupiedCells as archOccupied, buildArchitectOffer, MAX_TIER as ARCH_MAX_TIER, MAX_COVER as ARCH_MAX_COVER, N_POS } from "./architect.js";
@@ -167,7 +167,7 @@ export function initialState(rng = Math.random, seed = null) {
     architectEnabled: false,       // Architekt (#202): Flag — bei true öffnet sich die Architekt-Phase (im Spiel via START_RUN true; false = Sim-Baseline ohne Architekt)
     architect: { ...initialArchitect(), maxCover: ARCH_MAX_COVER }, // Gebäude-Overlay (8×5) + Angebot + Meilenstein-Zähler; maxCover als #217-Seam (Rang-Bonus: base + Grad×N) run-geseedet
     architectPre: null,            // Precompute je Durchlauf (von der Engine gefüllt)
-    glacierMass: new Array(C.BOARD_POSITIONS).fill(0), firnStack: new Array(C.BOARD_POSITIONS).fill(0), glacierLocked: new Array(C.BOARD_POSITIONS).fill(false), glacierPre: null, glacierYield: 0, glacierRoles: [], glacierRoleTiers: {}, // Eis-Neudesign (glacier.js): Gletscher-Eigenmasse / #386 Firn-Boden-Reserve / Gletscher-Lock / Durchlauf-Snapshot / Eigen-Score / aktive Rollen
+    glacierMass: new Array(C.BOARD_POSITIONS).fill(0), firnStack: new Array(C.BOARD_POSITIONS).fill(0), glacierLocked: new Array(C.BOARD_POSITIONS).fill(false), glacierPre: null, glacierYield: 0, glacierRoles: [], glacierRoleTiers: {}, glacierPicksLeft: 0, // Eis-Neudesign (glacier.js): Gletscher-Eigenmasse / #386 Firn-Boden-Reserve / Gletscher-Lock / Durchlauf-Snapshot / Eigen-Score / aktive Rollen
     frozenOppPending: {}, frozenOppActive: {}, // Eis-Neudesign (Einfrieren): Gegner-Marken (Gegnerkarte verliert nächsten Stich)
     glacierBuffPending: {}, glacierBuffActive: {}, // Eis-Neudesign (Frostbund): Wert-Buff auf Nicht-Eis-Nachbarkarten
     grosseLawineFired: false, // Eis-Neudesign (Große Lawine): One-Shot-Finisher-Flag
@@ -193,13 +193,22 @@ export function initialState(rng = Math.random, seed = null) {
    sitzt fest, weil GLACIER_LOCK jede Eingabe zurückweist. Die Prüfung muss deshalb DIESELBEN Bedingungen
    spiegeln wie GLACIER_LOCK: weder bereits gefroren NOCH über challengeBlockForm gesperrt. (Vorher prüfte nur
    DECLINE_SKILL, und dort auch nur auf `glacierLocked` — der Eis-Pick in PICK_SKILL prüfte gar nicht.) */
-function hasFreeGlacierField(locked, blockForm, n) {
+function freeGlacierFields(locked, blockForm, n) {
+  let free = 0;
   for (let i = 0; i < n; i++) {
     if (locked && locked[i]) continue;
     if (blockForm && blockForm.includes(i)) continue;
-    return true;
+    free++;
   }
-  return false;
+  return free;
+}
+/* §5.5: wie viele Gletscher dieser Pick noch vergeben darf — begrenzt durch die freien Felder und, falls gesetzt,
+   durch den Gesamt-Deckel GLACIER_MAX (0 = keiner). */
+function glacierGrant(locked, blockForm, n, want) {
+  const free = freeGlacierFields(locked, blockForm, n);
+  const held = (locked || []).filter(Boolean).length;
+  const room = G_MAX > 0 ? Math.max(0, G_MAX - held) : Infinity;
+  return Math.max(0, Math.min(want, free, room));
 }
 
 // #301 K verschiedene Positionen aus [0..n) deterministisch ziehen (Fisher-Yates mit einem rng-Strom).
@@ -688,15 +697,17 @@ export function reducer(state, action) {
         glacierRoles = []; glacierRoleTiers = {}; glacierMass = new Array(C.BOARD_POSITIONS).fill(0); firnStack = new Array(C.BOARD_POSITIONS).fill(0); glacierLocked = new Array(C.BOARD_POSITIONS).fill(false); glacierYield = 0; // #386 Firn-Reserve mit leeren
         frozenOppPending = {}; frozenOppActive = {}; glacierBuffPending = {}; glacierBuffActive = {}; grosseLawineFired = false;
       }
+      const icePicks = arch === "ice" ? glacierGrant(glacierLocked, state.challengeBlockForm, (state.playerOrder || []).length, G_PER_PICK) : 0;
       // Formationen neu berechnen (Anker/Familien/Architekt beeinflussen die Erkennung).
       const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, skills, state.shop?.anchors || [], state.familyTiers, archOf(state), { skillTiers, growth });
       return { ...state, skills, skillTiers, skillOfferTiers: null, activeArchetypes, lightning, heat, deck, iceTemp, growth, brandPending, brandActive, forged, formations,
                glacierRoles, glacierRoleTiers, glacierMass, firnStack, glacierLocked, glacierYield, frozenOppPending, frozenOppActive, glacierBuffPending, glacierBuffActive, grosseLawineFired, // Eis-Neudesign (#386 Firn-Reserve mitgeführt)
-               // Eis-Neudesign: jeder Eis-Skill-Pick öffnet SOFORT die Gletscher-Wahl (genau 1 Karte festfrieren, Pflicht) —
-               // analog zum Perk-Ziel-Flow. Andere Archetypen gehen direkt weiter. Ist KEIN gültiges Ziel mehr frei
-               // (alles gefroren bzw. gesperrt), wird die Phase übersprungen statt betreten — sonst Soft-Lock, s. o.
-               phase: (arch === "ice" && hasFreeGlacierField(glacierLocked, state.challengeBlockForm, (state.playerOrder || []).length))
-                 ? "glacier-target" : "play", skillOffer: null, skillDoors: null, skillOfferArchs: null, skillOfferBonus: false };
+               // Eis-Neudesign: jeder Eis-Skill-Pick öffnet SOFORT die Gletscher-Wahl (Pflicht) — analog zum Perk-Ziel-Flow.
+               // §5.5: der Pick vergibt GLACIER_PER_PICK Gletscher nacheinander, begrenzt durch freie Felder und den
+               // optionalen Gesamt-Deckel. Bleibt nichts übrig, wird die Phase übersprungen statt betreten (Soft-Lock, s. o.).
+               glacierPicksLeft: icePicks,
+               phase: icePicks > 0 ? "glacier-target" : "play",
+               skillOffer: null, skillDoors: null, skillOfferArchs: null, skillOfferBonus: false };
     }
 
     // Skill-Angebot ablehnen → stattdessen ein Perk-Angebot für diese Runde (nie „verschwendet").
@@ -717,9 +728,9 @@ export function reducer(state, action) {
       // ebenfalls einen). Der Perk bleibt: das Perk-Angebot wird geparkt (pendingPerkOffer) und nach der Gletscher-Wahl
       // (GLACIER_LOCK) wieder aufgemacht. Nur, wenn überhaupt ein freies Feld zum Einfrieren da ist.
       const iceSkillCount = state.skills.filter((id) => archetypeOf(id) === "ice" && !isLegendarySkill(id)).length;
-      const hasFreeField = hasFreeGlacierField(state.glacierLocked, state.challengeBlockForm, (state.playerOrder || []).length);
-      if ((state.activeArchetypes || []).includes("ice") && iceSkillCount >= G_DECLINE_MIN_SKILLS && hasFreeField) {
-        return { ...state, ...cleared, phase: "glacier-target", pendingPerkOffer: off.length > 0 ? off : null };
+      const declineGrant = glacierGrant(state.glacierLocked, state.challengeBlockForm, (state.playerOrder || []).length, 1);
+      if ((state.activeArchetypes || []).includes("ice") && iceSkillCount >= G_DECLINE_MIN_SKILLS && declineGrant > 0) {
+        return { ...state, ...cleared, phase: "glacier-target", glacierPicksLeft: declineGrant, pendingPerkOffer: off.length > 0 ? off : null };
       }
       return off.length > 0
         ? { ...state, ...cleared, offer: off, offerRerolls: 0 } // → Perk-Auswahl (#205: frisches Angebot → Reroll-Index 0)
@@ -804,6 +815,7 @@ export function reducer(state, action) {
       if (p == null || p < 0 || p >= state.playerOrder.length) return state;
       if (state.glacierLocked && state.glacierLocked[p]) return state; // schon gefroren → ungültige Wahl
       if (state.challengeBlockForm && state.challengeBlockForm.includes(p)) return state; // #301 C3: gesperrte Zelle nicht einfrierbar
+      if (G_MAX > 0 && (state.glacierLocked || []).filter(Boolean).length >= G_MAX) return state; // §5.5: Gesamt-Deckel erreicht
       const glacierLocked = (state.glacierLocked || new Array(state.playerOrder.length).fill(false)).slice();
       glacierLocked[p] = true;
       // #386 Firn-Boden-Reserve: der neu gefrorene Gletscher startet LEER (Masse 0) — der auf diesem Feld angesammelte Firn
@@ -811,11 +823,15 @@ export function reducer(state, action) {
       // (Auf offenem Boden war glacierMass[p] ohnehin 0 — hier explizit gesetzt, firnStack unverändert durchgereicht.)
       const glacierMass = (state.glacierMass || new Array(state.playerOrder.length).fill(0)).slice();
       glacierMass[p] = 0;
+      // §5.5: hat dieser Pick noch Gletscher übrig und ist noch ein Feld frei, bleibt die Phase offen.
+      const left = Math.max(0, (state.glacierPicksLeft || 1) - 1);
+      if (left > 0 && glacierGrant(glacierLocked, state.challengeBlockForm, state.playerOrder.length, left) > 0)
+        return { ...state, glacierLocked, glacierMass, glacierPicksLeft: left };
       // Kam die Gletscher-Wahl aus dem Ablehnen bei vollen Eis-Slots, wartet noch ein geparktes Perk-Angebot → jetzt
       // aufmachen (Perk bleibt erhalten). Sonst wie gehabt zurück ins Spiel.
       if (state.pendingPerkOffer && state.pendingPerkOffer.length > 0)
-        return { ...state, glacierLocked, glacierMass, phase: "levelup", offer: state.pendingPerkOffer, offerRerolls: 0, pendingPerkOffer: null };
-      return { ...state, glacierLocked, glacierMass, phase: "play", pendingPerkOffer: null }; // Pick bestätigt → zurück ins Spiel
+        return { ...state, glacierLocked, glacierMass, glacierPicksLeft: 0, phase: "levelup", offer: state.pendingPerkOffer, offerRerolls: 0, pendingPerkOffer: null };
+      return { ...state, glacierLocked, glacierMass, glacierPicksLeft: 0, phase: "play", pendingPerkOffer: null }; // Pick bestätigt → zurück ins Spiel
     }
     // Letzten Tausch rückgängig machen → Energie erstatten.
     case "UNDO_SWAP": {

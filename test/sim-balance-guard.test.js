@@ -68,6 +68,12 @@ import { randomPolicy } from "../sim/policies/random.js";
 // FÄLLT im Median und STEIGT im Mean: Eis-Gletscher zahlen unabhängig vom Rest des Builds (der Bruch hängt an der
 // Masse, nicht am Stich), verdünnen aber die Feuer-/Blitz-Linien, die er sonst zusammenbekäme. Seeds 1..40
 // Median ≈ 2,87M, Mean ≈ 5,92M (Seeds 1..200: 2,68M / 4,55M). Bänder darauf neu zentriert (≈ ±35 %).
+// §5.5 (Owner, 2026-09-07): der weiche Deckel auf den Einzelbruch ist gestrichen (§1: keine Deckel), dafür steht die
+// Grundzahl bei 170 statt 340 und die Gletscherzahl bei höchstens 12. Der Median fällt leicht, der MEAN steigt deutlich:
+// Seeds 1..40 Median ≈ 2,52M, Mean ≈ 10,20M (Seeds 1..200: 2,31M / 10,72M). Das ist die gewollte Folge — ohne Deckel
+// hat ein dichtes Gletscherfeld wieder eine offene Decke, und der Zufallsspieler trifft es in wenigen Seeds. Die
+// Obergrenze des Mean-Bandes wandert damit mit; sie fängt weiterhin einen ECHTEN Blowup (ohne Gletscher-Deckel lag der
+// Mean bei 352M, mit Deckel 16 bei 330M — beides schlägt hier weiter an).
 describe("sim balance guard", () => {
   const SEEDS = 40; // feste Seeds 1..40 → deterministischer Median/Mean
   const scores = Array.from({ length: SEEDS }, (_, i) => runOne(1 + i, randomPolicy()).score).sort((a, b) => a - b);
@@ -75,14 +81,14 @@ describe("sim balance guard", () => {
   const mean = scores.reduce((t, v) => t + v, 0) / SEEDS;
 
   it("Median-Score im erwarteten Band (breite Power-Verschiebung)", () => {
-    // Ist-Wert ≈ 2,87M (exp §5.4, 50 Runden, Angebot Feuer/Blitz/Pflanze/Eis). Band toleriert normales Tuning, schlägt bei grober Verschiebung an.
-    expect(median).toBeGreaterThan(1_850_000);
-    expect(median).toBeLessThan(3_900_000);
+    // Ist-Wert ≈ 2,52M (exp §5.5, 50 Runden, Angebot Feuer/Blitz/Pflanze/Eis). Band toleriert normales Tuning, schlägt bei grober Verschiebung an.
+    expect(median).toBeGreaterThan(1_600_000);
+    expect(median).toBeLessThan(3_400_000);
   });
 
   it("Mean-Score im erwarteten Band (Tail-Runaway-Fänger)", () => {
-    // Ist-Wert ≈ 5,92M (exp §5.4). Die Obergrenze fängt weiterhin einen ECHTEN Tail-Blowup (Mean ginge dann deutlich höher).
-    expect(mean).toBeGreaterThan(3_800_000);
-    expect(mean).toBeLessThan(8_000_000);
+    // Ist-Wert ≈ 10,20M (exp §5.5). Die Obergrenze fängt weiterhin einen ECHTEN Tail-Blowup (ohne Gletscher-Deckel 352M).
+    expect(mean).toBeGreaterThan(6_600_000);
+    expect(mean).toBeLessThan(13_800_000);
   });
 });

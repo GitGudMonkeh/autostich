@@ -15,7 +15,7 @@
    ============================================================ */
 import * as C from "../game/constants.js";
 import { THRESHOLDS as G_THRESHOLDS, EISZEIT_FLOOD as G_EISZEIT_FLOOD,
-  EISZEIT_MAX_GLACIERS as G_EISZEIT_MAX, SCHILD_BONUS as G_SCHILD_BONUS } from "../game/glacier.js";
+  SCHILD_BONUS as G_SCHILD_BONUS } from "../game/glacier.js";
 
 const num = (x) => String(x);                                            // English keeps the decimal point
 const pct = (x) => Math.round(x * 100);                                  // share → percent (0.25 → 25)
@@ -144,7 +144,7 @@ export default {
   "ability.SK_ICE_17.name": "Ice Armour",
   "ability.SK_ICE_17.desc": `A loss next to a glacier does not break your streak and gives +1 mass per adjacent glacier.`,
   "ability.SK_ICE_L01.name": "Ice Age",
-  "ability.SK_ICE_L01.desc": `Every cycle, +${num(G_EISZEIT_FLOOD)} snow into the ground reserve of every unfrozen cell. The one with the largest reserve then freezes into a glacier and refills from its reserve. Up to ${G_EISZEIT_MAX} glaciers.`,
+  "ability.SK_ICE_L01.desc": `Every cycle, +${num(G_EISZEIT_FLOOD)} snow into the ground reserve of every unfrozen cell. The one with the largest reserve then freezes into a glacier and refills from its reserve. The ice age keeps creeping to the edge of the board.`,
   "ability.SK_ICE_L02.name": "Eternal Shield",
   "ability.SK_ICE_L02.desc": `Every cycle, all your glaciers rise to the mass of the strongest, never dropping, and gain +${G_SCHILD_BONUS} mass on top. On a burst, every glacier counts as a neighbour of every other: full cascade and collision, wherever they sit.`,
   "ability.SK_ICE_L03.name": "Great Avalanche",

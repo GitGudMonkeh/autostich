@@ -19,7 +19,7 @@
    ============================================================ */
 import * as C from "../game/constants.js";
 import { THRESHOLDS as G_THRESHOLDS, EISZEIT_FLOOD as G_EISZEIT_FLOOD,
-  EISZEIT_MAX_GLACIERS as G_EISZEIT_MAX, SCHILD_BONUS as G_SCHILD_BONUS } from "../game/glacier.js";
+  SCHILD_BONUS as G_SCHILD_BONUS } from "../game/glacier.js";
 
 const num = (x) => String(x).replace(".", ",");                          // Spanish keeps the decimal comma
 const pct = (x) => Math.round(x * 100);                                  // share → percent (0.25 → 25)
@@ -149,7 +149,7 @@ export default {
   "ability.SK_ICE_17.name": "Coraza de Hielo",
   "ability.SK_ICE_17.desc": `Una derrota junto a un glaciar no rompe tu racha y da +1 de masa por cada glaciar contiguo.`,
   "ability.SK_ICE_L01.name": "Edad de Hielo",
-  "ability.SK_ICE_L01.desc": `En cada ciclo, +${num(G_EISZEIT_FLOOD)} de nieve en la reserva del suelo de cada celda sin congelar. La de mayor reserva se congela entonces en glaciar y se rellena desde su reserva. Hasta ${G_EISZEIT_MAX} glaciares.`,
+  "ability.SK_ICE_L01.desc": `En cada ciclo, +${num(G_EISZEIT_FLOOD)} de nieve en la reserva del suelo de cada celda sin congelar. La de mayor reserva se congela entonces en glaciar y se rellena desde su reserva. La edad de hielo sigue avanzando hasta el borde del tablero.`,
   "ability.SK_ICE_L02.name": "Escudo Eterno",
   "ability.SK_ICE_L02.desc": `En cada ciclo, todos tus glaciares suben hasta la masa del más fuerte, sin bajar nunca, y ganan +${G_SCHILD_BONUS} de masa encima. Al estallar, cada glaciar cuenta como vecino de todos los demás: cascada y colisión completas, estén donde estén.`,
   "ability.SK_ICE_L03.name": "Gran Avalancha",

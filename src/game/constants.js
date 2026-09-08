@@ -5,7 +5,7 @@
 // überschreiben (Default = aktueller Wert → in der App ohne gesetzte ENV KEINE Auswirkung, `process`
 // existiert im Browser gar nicht). So kann der Sim-Sweep Werte reproduzierbar durchprobieren, ohne den
 // Code zu editieren: z. B. `SIM_STREAK_STAT_CAP=1 node sim/batch.js --mode pacing`. Siehe docs/sim-harness-plan.md.
-const envNum = (name, def) => {
+export const envNum = (name, def) => {
   const v = (typeof process !== "undefined" && process.env) ? process.env[name] : undefined;
   const n = v == null || v === "" ? NaN : Number(v);
   return Number.isFinite(n) ? n : def;
