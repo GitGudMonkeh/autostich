@@ -18,6 +18,8 @@ import { formationBorder } from "./formationStyle.js";
 import { formationAbbr, formationLabel } from "./formationLabels.js";
 import { archFrameLines } from "./CardGrid.jsx"; // #UI: durchgezogene Gebäude-Kontur wie in der Aufstellungsphase
 import { fmtScore } from "./format.js";
+import { rerollOffer } from "../game/coins.js";  // Münz-Ökonomie §3.1: Preis des nächsten Neuwurfs — dieselbe Quelle wie der Reducer
+import { RerollLabel } from "./CoinMark.jsx";    // Beschriftung: Anzahl solange gratis, danach der Preis
 import { GlossaryPanel } from "./Glossary.jsx";
 import { glacierGridProps } from "./glacierBoard.js"; // Eis: Gletscher-/Firn-Marker auch am Architekt-Brett
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon (Eis ersetzt glacier.webp)
@@ -102,6 +104,8 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
   // #361: „↶ Rückgängig"/„Zurücksetzen" — aktiv, sobald in DIESER Phase etwas geschah (Undo-Stapel nicht leer),
   // analog `hasSwaps` in der Aufstellungsphase. Gleiche Beschriftung/Look wie dort.
   const canArchUndo = (architect.phaseHistory || []).length > 0;
+  // §3.1: Baupläne neu würfeln — erst der Pool, danach käuflich (kein Legendär-Grundpreis, s. Knopf unten).
+  const archReroll = rerollOffer(state, state.rerollsArch || 0, false);
   const round = (state.cycle || 0) + 1;
   // #301 C2: gesperrte Bau-Zellen (Challenge) — als „belegt" für alle Platzierungs-Enumerationen und interaktions-/render-seitig geblockt.
   const chLockArch = state.challengeBlockArch || [];
@@ -1018,11 +1022,18 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                     </button>
                   </div>
                   )}
-                  {/* #263: Bauplan-Angebot neu würfeln — eigener Gebäude-Reroll-Pool (rerollsArch). Im Dev-Modus entfällt Reroll (Voll-Katalog). */}
-                  {!state.devMode && onReroll && (state.rerollsArch || 0) > 0 && (
-                    <button onClick={onReroll} className="w-full mt-2 rounded-lg py-2 text-body-5 font-bold transition-all hover:brightness-110"
-                      style={{ background: "#16232f", border: `1px solid ${CAT.value.color}66`, color: CAT.value.color }}>
-                      {t("arch.reroll", { n: state.rerollsArch })}
+                  {/* #263: Bauplan-Angebot neu würfeln — eigener Gebäude-Reroll-Pool (rerollsArch). Im Dev-Modus entfällt Reroll (Voll-Katalog).
+                      §3.1: ist der Pool leer, ist derselbe Knopf käuflich; ohne Münzen bleibt er sichtbar, aber aus.
+                      Den Legendär-Grundpreis gibt es hier nicht — der Plan bindet ihn an Skill- und Perk-Angebote. */}
+                  {!state.devMode && onReroll && (
+                    <button onClick={archReroll.can ? onReroll : undefined} disabled={!archReroll.can}
+                      className="w-full mt-2 rounded-lg py-2 text-body-5 font-bold transition-all disabled:cursor-not-allowed"
+                      style={archReroll.can
+                        ? { background: "#16232f", border: `1px solid ${CAT.value.color}66`, color: CAT.value.color }
+                        : { background: "var(--btn-off-bg)", border: "1px solid transparent", color: "var(--btn-off-fg)" }}>
+                      <span className="inline-flex items-center justify-center gap-1.5">
+                        <RerollLabel r={archReroll} freeKey="arch.reroll" buyKey="arch.reroll.buy" />
+                      </span>
                     </button>
                   )}
                 </div>

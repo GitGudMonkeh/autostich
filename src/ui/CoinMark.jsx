@@ -9,7 +9,7 @@
    ⚠ Das Zeichen selbst ist NICHT vom Owner abgenommen — der Plan sagt „Münzsymbol", nicht welches.
    Es liegt deshalb hier allein: ein anderes Zeichen ist ein Pfad, kein Umbau. */
 
-import { fmtNum } from "../i18n/index.js";
+import { fmtNum, t } from "../i18n/index.js";
 
 export const COIN_GOLD = "#d4a63a"; // dasselbe Gold wie Score und Neuwurf — die Währung führt keine neue Farbe ein
 
@@ -40,4 +40,14 @@ export function CoinAmount({ n = 0, size = 13, minDigits = 0, dim = false, class
       </span>
     </span>
   );
+}
+
+/* Beschriftung des Neuwurf-Knopfs (§3.1). Solange Gratis-Neuwürfe übrig sind, zeigt er ihre ANZAHL;
+   danach den PREIS — am Knopf, nicht im Tooltip: auf dem Handy gibt es keine Tooltips, und ein Kauf,
+   dessen Preis man erst durch Antippen erfährt, ist ein Fehlkauf. `r` kommt aus `rerollOffer` (coins.js),
+   damit Knopf und Reducer dieselbe Rechnung benutzen. Fehlen die Münzen, steht der Preis blass da:
+   den Kauf sieht man, auslösen lässt er sich nicht. */
+export function RerollLabel({ r, freeKey, buyKey }) {
+  if (r.free) return <>{t(freeKey, { n: r.tokens })}</>;
+  return <>{t(buyKey)} <CoinAmount n={r.price} dim={!r.can} /></>;
 }

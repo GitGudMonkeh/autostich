@@ -7,6 +7,8 @@ import { SKILL_SLOT_LIMIT, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_MAX_CHARGE, ION_S
          PLANT_GREEN_THRESHOLD, PLANT_BLOOM_THRESHOLD, PLANT_GROWTH_WIN, PLANT_GROWTH_PER_FORMATION, PLANT_BLOOM_SCORE_PER_GREEN,
          HEAT_MIN_MARGIN, HEAT_MARGIN_OFFSET, HEAT_PER_POINT, HEAT_LOSS, HEAT_MULT_PER_10, ION_VALUE_PER_BAR, PLANT_BLOOM_WEIGHT, PLANT_BLOOM_WEIGHT_PER_GROWTH } from "../game/constants.js";
 import { DECLINE_MIN_SKILLS as G_DECLINE_MIN_SKILLS } from "../game/glacier.js"; // Eis-Neudesign: Ablehn-Gletscher-Schwelle für den Passiv-Text
+import { rerollOffer } from "../game/coins.js";   // Münz-Ökonomie §3.1: Preis des nächsten Neuwurfs — dieselbe Quelle wie der Reducer
+import { RerollLabel } from "./CoinMark.jsx";     // Beschriftung: Anzahl solange gratis, danach der Preis
 
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 import { GlossaryPanel, GlossaryText } from "./Glossary.jsx";
@@ -80,8 +82,11 @@ export function SkillSelect({ offer = null, doors = null, onPick, onDecline, onR
   const atDoors = !offer && Array.isArray(doors) && doors.length > 0; // exp: Türstufe — noch kein Angebot offen
   const offerIds = offer || [];
   // Neuwurf (#263): eigener Skill-Reroll-Pool (2 je Lauf), kein Free-Reroll mehr.
+  // Münz-Ökonomie §3.1: ist der Pool leer, ist derselbe Knopf käuflich — kein zweiter Knopf. Trägt das
+  // Angebot ein Legendäres, gilt der höhere Grundpreis und der neue Wurf enthält garantiert wieder eins.
   const rerollTokens = state.rerollsSkill || 0;
-  const canReroll = !!onReroll && rerollTokens > 0;
+  const rerollBuy = rerollOffer(state, rerollTokens, offerIds.some(isLegendarySkill));
+  const canReroll = !!onReroll && !atDoors;
   /* exp skill rework: Slots sind standardmäßig unbegrenzt (SKILL_SLOT_LIMIT heißt „kein Limit"); nur eine Dev-Run-
      Regel darunter begrenzt. Unbegrenzt rechnet `slots` als Infinity, damit `full` und das Ersetzen-Fenster
      unverändert bleiben (nie voll) und der Reducer (PICK_SKILL: `state.skillSlots || C.SKILL_SLOT_LIMIT`) dasselbe sieht. */
@@ -255,9 +260,14 @@ export function SkillSelect({ offer = null, doors = null, onPick, onDecline, onR
               gemessen aus dem Knopf. Eine Zeile CSS statt eines zweiten JSX-Zweigs — der Knopf bleibt
               derselbe Knopf. */}
           <div className="flex flex-wrap items-stretch gap-2">
-            {/* exp: der Neuwurf würfelt die drei Skills der GEÖFFNETEN Tür neu — vor den Türen gibt es ihn nicht. */}
-            {!devMode && canReroll && !atDoors && (
-              <ActionButton kind="reroll" flex className="sk-actbtn lv-actbtn lv-actbtn-reroll" onClick={onReroll}>{t("skill.reroll", { n: rerollTokens })}</ActionButton>
+            {/* exp: der Neuwurf würfelt die drei Skills der GEÖFFNETEN Tür neu — vor den Türen gibt es ihn nicht.
+                §3.1: nach dem Pool steht am selben Knopf der Preis. Er bleibt sichtbar, wenn die Münzen nicht
+                reichen — nur eben ausgegraut; wer den Kauf nicht sieht, kann nicht darauf sparen. */}
+            {!devMode && canReroll && (
+              <ActionButton kind={rerollBuy.legendary ? "rerollLeg" : "reroll"} flex disabled={!rerollBuy.can}
+                className="sk-actbtn lv-actbtn lv-actbtn-reroll" onClick={onReroll}>
+                <RerollLabel r={rerollBuy} freeKey="skill.reroll" buyKey="skill.reroll.buy" />
+              </ActionButton>
             )}
             <ActionButton kind="decline" flex className="sk-actbtn lv-actbtn" onClick={onDecline}>
               {t(devMode ? "skill.skipCycle" : bonusOffer ? "skill.declinePlain" : "skill.decline")}

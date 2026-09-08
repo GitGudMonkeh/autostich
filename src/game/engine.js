@@ -1127,6 +1127,7 @@ export function resolveTrick(state, rng) {
   return {
     ...state, deck, oppDeck, playerOrder, oppOrder, pos, cycle, trickNo,
     offerRerolls: 0, // #205: neues (Zyklus-Ende-)Angebot → Reroll-Index zurück auf 0 (Rerolls im Reducer zählen hoch)
+    coinRerolls: 0, // Münz-Ökonomie §3.1: neue Phase → die Neuwurf-Preistreppe beginnt wieder beim Grundpreis
     score, winStreak, bestStreak, wins, losses, ties,
     scoreAtCycleStart, lastCycleScore, prevCycleScore, // #131 Rundenscore-Tracking
 

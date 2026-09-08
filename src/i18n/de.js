@@ -408,6 +408,7 @@ export default {
   "skill.title": "Wähle einen Skill",
   "skill.arch.none": "Skill",
   "skill.reroll": "🎲 Neu würfeln · {n}",
+  "skill.reroll.buy": "🎲 Neu würfeln",
   "skill.decline": "Ablehnen → Perk",
   "skill.skipCycle": "Runde überspringen",
   // Meisterhand-Bonus (PICK_PERK): die Skill-Wahl kommt hier NICHT aus dem Rundenplan, sondern aus dem eben
@@ -476,6 +477,7 @@ export default {
   "perk.cycle": "Durchlauf {cycle}",
   "perk.title": "Wähle einen Perk",
   "perk.reroll": "🎲 Neu würfeln · {n}",
+  "perk.reroll.buy": "🎲 Neu würfeln",
   "perk.declineAll": "Alle ablehnen",
   "perk.stat.crit": "Crit",
   "perk.stat.scoreMult": "Score-Mult",
@@ -717,6 +719,7 @@ export default {
   "arch.upgrade.reason.generic": "nicht aufwertbar",
   "arch.upgraded": "aufgewertet:",
   "arch.reroll": "🎲 Baupläne neu würfeln · {n} übrig",
+  "arch.reroll.buy": "🎲 Baupläne neu würfeln",
   "arch.now": "Jetzt:",
   "arch.after": "Danach:",
   "arch.place.head": "Platzieren & Verschieben",

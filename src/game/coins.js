@@ -19,3 +19,25 @@ export const COIN_WIN_THRESHOLD = envNum("SIM_COIN_THRESHOLD", 20);
 export const COIN_WIN_PER = envNum("SIM_COIN_PER_WINS", 4);
 
 export const coinsForWins = (wins) => Math.max(0, Math.floor(((wins || 0) - COIN_WIN_THRESHOLD) / COIN_WIN_PER));
+
+/* ---- Neuwurf (§3.1) ------------------------------------------------------------------------------ */
+// Zwei Grundpreise, EIN Zähler. Der Zähler sind die GEKAUFTEN Neuwürfe dieser Phase (state.coinRerolls) —
+// Gratis-Neuwürfe aus den Pools zählen nicht mit, sonst wäre der erste Kauf nach zwei Freiwürfen schon
+// bei 12. Der Grundpreis kommt aus der Art des Angebots: wer erst normal und dann legendär würfelt,
+// zahlt beim zweiten Kauf 30 und nicht 15 — sonst wäre Mischen billiger als Durchhalten.
+export const REROLL_BASE = envNum("SIM_COIN_REROLL", 3);
+export const REROLL_LEG_BASE = envNum("SIM_COIN_REROLL_LEG", 15);
+export const REROLL_FACTOR = envNum("SIM_COIN_REROLL_FACTOR", 2); // Verdopplung je weiterem Kauf der Phase
+
+export const rerollPrice = (bought = 0, legendary = false) =>
+  Math.round((legendary ? REROLL_LEG_BASE : REROLL_BASE) * REROLL_FACTOR ** Math.max(0, bought || 0));
+
+/* Was der NÄCHSTE Neuwurf kostet — die eine Quelle für Knopf und Reducer. Läuft der Knopf auf einer
+   anderen Rechnung als der Reducer, zeigt er einen Preis an, den der Kauf nicht nimmt.
+   Solange Gratis-Neuwürfe übrig sind, ist der Neuwurf gratis und NICHT der Legendär-Wurf: die
+   Legendär-Garantie hängt am Kauf, nicht am Angebot (§3.1). */
+export function rerollOffer(state = {}, freeTokens = 0, legendary = false) {
+  if (freeTokens > 0) return { free: true, tokens: freeTokens, price: 0, legendary: false, can: true };
+  const price = rerollPrice(state.coinRerolls || 0, legendary);
+  return { free: false, tokens: 0, price, legendary: !!legendary, can: (state.coins || 0) >= price };
+}

@@ -6,9 +6,10 @@
    unbemerkt kaputtgehen: eine Zeile zu tief und jeder Durchlauf zahlt null, ohne dass sonst etwas auffällt. */
 import { describe, it, expect } from "vitest";
 import { makeRng } from "../src/game/deck.js";
-import { initialState } from "../src/game/reducer.js";
+import { initialState, reducer } from "../src/game/reducer.js";
 import { resolveTrick } from "../src/game/engine.js";
-import { coinsForWins, COIN_WIN_THRESHOLD, COIN_WIN_PER } from "../src/game/coins.js";
+import { coinsForWins, COIN_WIN_THRESHOLD, COIN_WIN_PER, rerollPrice, rerollOffer } from "../src/game/coins.js";
+import { isLegendarySkill } from "../src/game/skills.js";
 import { TRICKS_PER_CYCLE } from "../src/game/constants.js";
 
 const constDeck = (v) => Array.from({ length: 40 }, (_, i) => ({ id: `X${i}`, suit: ["R", "B", "G", "Y"][i % 4], baseRank: v, value: v }));
@@ -69,5 +70,82 @@ describe("Auszahlung am Durchlaufende (§2, Naht)", () => {
 
   it("kein Startbetrag (§2): ein frischer Lauf beginnt bei null", () => {
     expect(initialState(makeRng(1)).coins).toBe(0);
+  });
+});
+
+/* ---- Neuwurf kaufen (§3.1) --------------------------------------------------------------------- */
+describe("Neuwurf-Preistreppe (§3.1)", () => {
+  it("zwei Grundpreise, EIN Zähler — Verdopplung je Kauf der Phase", () => {
+    expect([0, 1, 2, 3].map((n) => rerollPrice(n, false))).toEqual([3, 6, 12, 24]);
+    expect([0, 1, 2, 3].map((n) => rerollPrice(n, true))).toEqual([15, 30, 60, 120]);
+  });
+
+  it("Mischen ist nicht billiger als Durchhalten: nach einem normalen Kauf kostet der legendäre 30", () => {
+    // Der Zähler ist gemeinsam, der Grundpreis kommt aus der Art. Wer erst normal (3) würfelt und dann
+    // legendär, zahlt beim zweiten Kauf 30 — nicht wieder den Grundpreis 15.
+    expect(rerollPrice(1, true)).toBe(30);
+    expect(rerollPrice(1, true)).toBeGreaterThan(rerollPrice(0, true));
+  });
+
+  it("solange Gratis-Neuwürfe da sind, ist der Neuwurf gratis und NICHT der Legendär-Wurf", () => {
+    // Die Legendär-Garantie hängt am Kauf, nicht am Angebot — sonst zöge der Gratis-Pool sie mit.
+    const r = rerollOffer({ coins: 0, coinRerolls: 0 }, 2, true);
+    expect(r).toMatchObject({ free: true, tokens: 2, price: 0, legendary: false, can: true });
+  });
+
+  it("ohne Münzen ist der Kauf sichtbar, aber nicht auslösbar", () => {
+    expect(rerollOffer({ coins: 2, coinRerolls: 0 }, 0, false)).toMatchObject({ free: false, price: 3, can: false });
+    expect(rerollOffer({ coins: 3, coinRerolls: 0 }, 0, false)).toMatchObject({ free: false, price: 3, can: true });
+  });
+});
+
+describe("Neuwurf-Kauf im Reducer (§3.1)", () => {
+  // Skill-Phase mit geöffneter Tür und leerem Gratis-Pool: der Neuwurf ist jetzt käuflich.
+  const atOffer = (over = {}) => ({
+    ...initialState(makeRng(1), 7),
+    phase: "levelup", rerollsSkill: 0,
+    skillOffer: ["SK_FIRE_01", "SK_LIGHTNING_01", "SK_FIRE_02"],
+    skillOfferTiers: { SK_FIRE_01: 0, SK_LIGHTNING_01: 0, SK_FIRE_02: 0 },
+    skillOfferArchs: ["fire", "lightning", "fire"],
+    ...over,
+  });
+
+  it("der Kauf zieht den Preis ab und schiebt die Treppe eine Stufe hoch", () => {
+    const s1 = reducer(atOffer({ coins: 30 }), { type: "REROLL_SKILL" });
+    expect(s1.coins).toBe(27);          // 30 − 3
+    expect(s1.coinRerolls).toBe(1);
+    const s2 = reducer(s1, { type: "REROLL_SKILL" });
+    expect(s2.coins).toBe(21);          // 27 − 6
+    expect(s2.coinRerolls).toBe(2);
+  });
+
+  it("die Gratis-Pools bleiben unberührt — der Kauf legt seinen Neuwurf auf denselben Weg", () => {
+    const s = reducer(atOffer({ coins: 30 }), { type: "REROLL_SKILL" });
+    expect(s.rerollsSkill).toBe(0);
+    const free = reducer(atOffer({ coins: 30, rerollsSkill: 2 }), { type: "REROLL_SKILL" });
+    expect(free.rerollsSkill).toBe(1);  // erst der Pool …
+    expect(free.coins).toBe(30);        // … und der kostet nichts
+    expect(free.coinRerolls).toBe(0);
+  });
+
+  it("ohne genug Münzen passiert nichts", () => {
+    const before = atOffer({ coins: 2 });
+    expect(reducer(before, { type: "REROLL_SKILL" })).toBe(before);
+  });
+
+  it("der gekaufte Legendär-Neuwurf kostet 15 und bringt wieder ein Legendäres — ein anderes", () => {
+    const withLeg = atOffer({ coins: 40, skillOffer: ["SK_FIRE_L01", "SK_LIGHTNING_01", "SK_FIRE_02"],
+      skillOfferTiers: { SK_LIGHTNING_01: 0, SK_FIRE_02: 0 } });
+    const s = reducer(withLeg, { type: "REROLL_SKILL" });
+    expect(s.coins).toBe(25);                                        // 40 − 15, nicht − 3
+    expect(s.skillOffer.some(isLegendarySkill)).toBe(true);          // Garantie
+    expect(s.skillOffer).not.toContain("SK_FIRE_L01");               // nicht dasselbe wie das gezeigte
+  });
+
+  it("die Treppe läuft je Phase — ein neuer Durchlauf setzt sie zurück", () => {
+    const spent = reducer(atOffer({ coins: 30 }), { type: "REROLL_SKILL" });
+    expect(spent.coinRerolls).toBe(1);
+    const nextPhase = resolveTrick({ ...scenario(12, 0, { pos: TRICKS_PER_CYCLE - 1, coinRerolls: spent.coinRerolls }) }, rng);
+    expect(nextPhase.coinRerolls).toBe(0);
   });
 });

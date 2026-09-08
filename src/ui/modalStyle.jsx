@@ -232,6 +232,10 @@ const ACTIONBTN_BASE = "as-actbtn as-actbtn-pad font-bold text-body-lg-5 whitesp
 const ACTIONBTN_KIND = {
   primary: { cls: "as-edge-strong", c: "var(--ac-gold)" },
   reroll:  { cls: "as-edge-strong", c: "var(--ac-gold)" },
+  // Münz-Ökonomie §3.1: der gekaufte LEGENDÄR-Neuwurf. Derselbe Knopf, nur mit vollem goldenem Rahmen
+  // statt der halbtransparenten Kontur — Voll-Gold ist auf diesen Bildschirmen sonst frei und liest sich
+  // sofort als Sonderfall, ohne eine neue Farbe einzuführen.
+  rerollLeg: { cls: "as-edge-strong as-edge-gold", c: "var(--ac-gold)" },
   danger:  { cls: "as-edge",        c: "var(--ac-danger)" },
   decline: { cls: "as-edge-neutral" },
 };

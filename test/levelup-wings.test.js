@@ -337,8 +337,15 @@ describe("#sk-ablehnen — Reroll/Ablehnen sehen aus wie in der Perk-Wahl", () =
   it("beide Knöpfe sind derselbe ActionButton wie in der Perk-Wahl, nicht nachgebaut", () => {
     /* `sk-actbtn` ist seit #lv-ruhe nicht mehr die einzige Klasse am Knopf (die flache Desktop-Optik
        kommt über `lv-actbtn` dazu) — deshalb auf den ANFANG des Klassenstrings prüfen, nicht auf ihn ganz. */
-    expect(skill).toMatch(/<ActionButton kind="reroll" flex className="sk-actbtn\b/);
+    /* Der Neuwurf trägt seit der Münz-Ökonomie (§3.1) ZWEI Sorten: die normale und die goldene des
+       gekauften Legendär-Wurfs. Beide kommen aus dem geteilten Vokabular (`ACTIONBTN_KIND`) — dass die
+       Sonderoptik eine SORTE ist und keine handgemalte Kante am Knopf, ist hier die Invariante. */
+    expect(skill).toMatch(/<ActionButton kind=\{rerollBuy\.legendary \? "rerollLeg" : "reroll"\}[\s\S]{0,160}?className="sk-actbtn\b/);
     expect(skill).toMatch(/<ActionButton kind="decline" flex className="sk-actbtn\b/);
+    const modal = read("src/ui/modalStyle.jsx");
+    for (const kind of ["reroll", "rerollLeg", "decline"]) {
+      expect(modal, `Sorte ${kind} fehlt im geteilten Knopf-Vokabular`).toMatch(new RegExp(`\\b${kind}:\\s*\\{`));
+    }
     // Gegenprobe: keine handgeschriebene Kopie der Kanten-Optik mehr in der Aktionszeile.
     expect(skill, "as-edge-* von Hand — genau das war der sichtbare Unterschied")
       .not.toMatch(/className="as-edge-(strong|neutral) flex-1/);

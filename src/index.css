@@ -1923,6 +1923,14 @@ b, strong { font-weight: 600; }
 }
 /* Kleine Elemente (Fuß-Chips): dieselbe Kante, nur schmaler — 4 px wirken an einem 14-px-Chip wie ein Balken. */
 .as-edge-thin { border-left-width: 3px; }
+/* Muenz-Oekonomie §3.1 — der gekaufte LEGENDAER-Neuwurf. Nimmt `as-edge-strong` als Grundlage und tauscht
+   nur die halbtransparente Kontur gegen einen vollen goldenen Rahmen samt Schein. Der Schein ist derselbe,
+   den die legendaere Karte fuehrt (`.as-legendary`), nur ohne Puls: der Knopf steht in einer Reihe mit dem
+   Ablehnen-Knopf, ein pulsierender Nachbar waere Unruhe statt Signal. */
+.as-edge-gold {
+  border-color: var(--ac-gold);
+  box-shadow: 0 0 12px -2px color-mix(in srgb, var(--ac-gold) 55%, transparent);
+}
 /* Auswahlkarte: ruhiger als jeder Knopf — der Text ist hier die Hauptsache, die Kante nur
    die Sortierhilfe. Gewählt: kräftigere Kante, etwas mehr Anlauf, ein Hauch Innenschein.
 

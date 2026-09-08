@@ -451,6 +451,7 @@ export default {
   "skill.title": "Choose a skill",
   "skill.arch.none": "Skill",
   "skill.reroll": "🎲 Reroll · {n}",
+  "skill.reroll.buy": "🎲 Reroll",
   "skill.decline": "Decline → perk",
   "skill.skipCycle": "Skip cycle",
   // Meisterhand bonus (PICK_PERK) — see the German catalogue for why this needs its own decline label.
@@ -502,6 +503,7 @@ export default {
   "perk.cycle": "Cycle {cycle}",
   "perk.title": "Choose a perk",
   "perk.reroll": "🎲 Reroll · {n}",
+  "perk.reroll.buy": "🎲 Reroll",
   "perk.declineAll": "Decline all",
   "perk.stat.crit": "Crit",
   "perk.stat.scoreMult": "Score mult",
@@ -756,6 +758,7 @@ export default {
   "arch.upgrade.reason.generic": "not upgradable",
   "arch.upgraded": "upgraded:",
   "arch.reroll": "🎲 Reroll blueprints · {n} left",
+  "arch.reroll.buy": "🎲 Reroll blueprints",
   "arch.now": "Now:",
   "arch.after": "After:",
   "arch.place.head": "Place & move",

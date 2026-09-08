@@ -152,6 +152,10 @@ export const fundamentBonus = (perks = []) => perks.reduce((t, id) => t + (PERK_
 
 export const rarityOf    = (id) => PERK_DEFS[id]?.rarity || "common";
 export const isLegendary = (id) => rarityOf(id) === "legendary";
+// Münz-Ökonomie §3.1: trägt DIESES Angebot ein Legendäres? Entscheidet über den Grundpreis des gekauften
+// Neuwurfs. Eine Quelle für Reducer und Knopf — `rarityOf` versteht beide Angebots-Formen (flache id und
+// { familyId, tier }), eine handgeschriebene Prüfung im UI wäre die zweite Wahrheit.
+export const offerHasLegendary = (offer) => (offer || []).some((e) => rarityOf(e) === "legendary");
 // #370 Perk-Segen: flache Perk-Rarität → grobe Stufe (I..IV) für den Rarität-Boden. Flache Nicht-Legendäre sind
 // „common" (I); die 4-Stufen-Namen decken potenzielle künftige flache Perks mit ab. Legendär wird separat behandelt.
 const RARITY_TIER_APPROX = { common: 1, normal: 1, uncommon: 2, rare: 3, epic: 4 };

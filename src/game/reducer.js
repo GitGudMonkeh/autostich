@@ -1,6 +1,7 @@
 import { buildDeck, shuffledOrder } from "./deck.js";
 import { rngAt } from "./rng.js"; // #205 Challenger Mode: adressierte Sub-Ströme (build-unabhängige Slots)
-import { PERK_DEFS, buildPerkOffer } from "./perks.js";
+import { PERK_DEFS, buildPerkOffer, offerHasLegendary, isLegendary } from "./perks.js";
+import { rerollPrice } from "./coins.js"; // Münz-Ökonomie §3.1: die Neuwurf-Treppe (dieselbe Rechnung wie der Knopf)
 import { familyDef, applyFamilyPick } from "./families.js"; // formationEnergyBonus läuft jetzt über engine.formationEnergyFor
 import { UPGRADE_TYPES } from "./rarity.js";
 import { archetypeOf, buildSkillDoors, rerollDoorSkills, glacierRolesOf } from "./skills.js";
@@ -148,6 +149,7 @@ export function initialState(rng = Math.random, seed = null) {
     // Anzeige (§4) — reine Schau, der Kontostand selbst ist `coins`. Nicht verwechseln mit dem Perk „Zinseszins"
     // (zinsCapital/zinsRate): der arbeitet auf Score-Kapital, nicht auf Münzen (§8.4).
     coins: 0, lastCycleCoins: null, lastCycleWins: null,
+    coinRerolls: 0, // §3.1: gekaufte Neuwürfe DIESER Phase — die Preistreppe; Reset überall dort, wo auch offerRerolls auf 0 geht
     perks: [], offer: null,
     // Raritätssystem (Epic #167, Spec §2.1): Familienrang je Familie { [familyId]: 1|2|3|4 }. Läuft ADDITIV
     // neben `perks` (flache Legendäre) — die Engine löst aktive Familien-Stufen über activeTierDefs auf.
@@ -234,6 +236,17 @@ function pickCells(rng, n, k) {
 export function menuState() {
   return { phase: "menu" };
 }
+
+/* Münz-Kauf eines Neuwurfs (docs/muenz-oekonomie.md §3.1). Greift NUR, wenn kein Gratis-Neuwurf mehr da ist —
+   die Pools bleiben unangetastet, der Kauf legt seinen Neuwurf auf denselben Weg. Rückgabe null = zu wenig
+   Münzen (der Knopf zeigt den Kauf trotzdem, er lässt sich nur nicht auslösen). Der Zähler `coinRerolls` läuft
+   je Phase; den Grundpreis bestimmt die Art des Angebots, nicht die Stelle in der Treppe. */
+const buyReroll = (state, legendary) => {
+  const price = rerollPrice(state.coinRerolls || 0, legendary);
+  if ((state.coins || 0) < price) return null;
+  // `patch` ist genau das, was in den State geht; `legendary` steuert die Garantie und bleibt draußen.
+  return { legendary: !!legendary, price, patch: { coins: (state.coins || 0) - price, coinRerolls: (state.coinRerolls || 0) + 1 } };
+};
 
 export function reducer(state, action) {
   switch (action.type) {
@@ -418,10 +431,13 @@ export function reducer(state, action) {
       const a = state.architect;
       if (a.actedMain) return state;                                  // schon gebaut/aufgewertet → Angebot verbraucht
       const tokens = state.rerollsArch || 0;
-      if (tokens <= 0) return state;
+      // §3.1: leerer Pool → käuflich. Der Legendär-Grundpreis gilt hier nicht: der Plan bindet ihn an
+      // Legendäre in einem SKILL- oder PERK-Angebot; Baupläne haben ihre eigene Seltenheitsleiter.
+      const paid = tokens > 0 ? null : buyReroll(state, false);
+      if (tokens <= 0 && !paid) return state;
       const idx = (state.offerRerolls || 0) + 1;                      // #205: frischer adressierter Strom (seed,cycle,"arch",idx)
       const offers = buildArchitectOffer(a, rngFor(state, action, state.cycle, "arch", idx), state.treeRareShift || 0, state.treeLegMult ?? 1, state.rareCap || 4);
-      return { ...state, architect: { ...a, offers }, offerRerolls: idx, rerollsArch: tokens - 1, rerollsUsed: (state.rerollsUsed || 0) + 1 };
+      return { ...state, architect: { ...a, offers }, offerRerolls: idx, ...(paid ? paid.patch : { rerollsArch: tokens - 1 }), rerollsUsed: (state.rerollsUsed || 0) + 1 };
     }
     // #361 (+ Folge) „↶ Rückgängig" — NUR die letzte Verschiebung zurücknehmen (Fußabdrücke vom Stapel). Gebaute
     // Gebäude bleiben unberührt (verbindlich) — es werden ausschließlich Fußabdrücke bestehender Gebäude restauriert.
@@ -510,7 +526,7 @@ export function reducer(state, action) {
                // Leeres Angebot (Skill-Pool erschöpft) → normal weiterspielen; der Slot bleibt, die nächste
                // reguläre Skill-Phase füllt ihn dann (`normalCount < skillSlots` → hinzufügen statt ersetzen).
                ...(bonusDoors.length
-                 ? { skillDoors: bonusDoors, skillOffer: null, skillOfferTiers: null, skillOfferBonus: true, offerRerolls: 0 }
+                 ? { skillDoors: bonusDoors, skillOffer: null, skillOfferTiers: null, skillOfferBonus: true, offerRerolls: 0, coinRerolls: 0 }
                  : {}),
                phase: goTarget ? "target" : (bonusDoors.length ? "levelup" : "play"),
                targetPerk: goTarget ? perkId : null };
@@ -745,7 +761,7 @@ export function reducer(state, action) {
         return { ...state, ...cleared, phase: "glacier-target", glacierPicksLeft: declineGrant, pendingPerkOffer: off.length > 0 ? off : null };
       }
       return off.length > 0
-        ? { ...state, ...cleared, offer: off, offerRerolls: 0 } // → Perk-Auswahl (#205: frisches Angebot → Reroll-Index 0)
+        ? { ...state, ...cleared, offer: off, offerRerolls: 0, coinRerolls: 0 } // → Perk-Auswahl (#205: frisches Angebot → Reroll-Index 0; §3.1: frische Entscheidung → Preistreppe von vorn)
         : { ...state, ...cleared, phase: "play" };             // Perk-Pool leer → weiterspielen
     }
 
@@ -772,16 +788,25 @@ export function reducer(state, action) {
       // gibt es dort also 0 Rerolls, mit Upgrade genau 1 (statt fälschlich bis zu 3 aus rerollsPerk).
       const usePerk2 = inLegPerkPhase;
       const tokens = usePerk2 ? perk2 : (state.rerollsPerk || 0);     // #263: eigener Perk-Pool (+ #369 Phasen-Token)
-      if (tokens <= 0) return state;                                 // keine Ressource → wirkungslos
+      // §3.1: leerer Pool → der Neuwurf ist käuflich. Trägt das Angebot ein Legendäres, gilt der höhere Grundpreis.
+      const paid = tokens > 0 ? null : buyReroll(state, offerHasLegendary(state.offer));
+      if (tokens <= 0 && !paid) return state;                        // weder Token noch Münzen → wirkungslos
       const idx = (state.offerRerolls || 0) + 1;                     // #205: Reroll-Index → frischer adressierter Strom (Original-Angebot = 0)
       // #381 Legendär-Takt: ist diese Perk-Phase eine Takt-Phase (jede mag-te), behält der Reroll die 3-Legendär-Garantie.
       const legTaktMag = weekModMag(state.weekMods, "legTakt");
       const legTaktPP = C.perkPhaseAt(state.devSchedule || C.DECISION_SCHEDULE, state.cycle);
       const onLegTakt = legTaktMag > 0 && legTaktPP > 0 && legTaktPP % legTaktMag === 0;
       const perksOffered = runRules(state).perksOffered; // exp: Regel je Lauf (Bestand = C.PERKS_OFFERED, auch unter „Perk-Verknappung" — wie bisher)
-      const legForce = onLegTakt ? perksOffered : (inLegPerkPhase ? (state.treeLegForce2 || 0) : 0);
-      const offer = buildPerkOffer(state.perks, state.familyTiers, rngFor(state, action, state.cycle, "perk", idx), perksOffered, perkLegendaryChance(state.shop) * (state.treeLegMult ?? 1), state.treeRareShift || 0, state.architectEnabled, legForce, state.rareCap || 4, state.rareFloor || 1); // #369: 2. Perk-Phase = generelle Legendär-Phase (Reroll behält den Legendär-Satz) · Rarität-Deckel · #370 Rarität-Boden · Legendär-Takt
-      return { ...state, offer, offerRerolls: idx, ...(usePerk2 ? { rerollsPerk2: perk2 - 1 } : { rerollsPerk: tokens - 1 }), rerollsUsed: (state.rerollsUsed || 0) + 1 };
+      const legBuy = !!(paid && paid.legendary);
+      const legForce = Math.max(onLegTakt ? perksOffered : (inLegPerkPhase ? (state.treeLegForce2 || 0) : 0),
+        legBuy ? 1 : 0); // §3.1: der gekaufte Legendär-Neuwurf garantiert wieder eins
+      // §3.1: die AKTUELL gezeigten Legendären fallen für diesen Wurf aus dem Pool — man kauft einen anderen
+      // Wurf, nicht denselben. Nur gegen das aktuelle Angebot: die Kette hat kein Gedächtnis.
+      const blocked = legBuy
+        ? [...state.perks, ...(state.offer || []).filter((e) => typeof e === "string" && isLegendary(e))]
+        : state.perks;
+      const offer = buildPerkOffer(blocked, state.familyTiers, rngFor(state, action, state.cycle, "perk", idx), perksOffered, perkLegendaryChance(state.shop) * (state.treeLegMult ?? 1), state.treeRareShift || 0, state.architectEnabled, legForce, state.rareCap || 4, state.rareFloor || 1); // #369: 2. Perk-Phase = generelle Legendär-Phase (Reroll behält den Legendär-Satz) · Rarität-Deckel · #370 Rarität-Boden · Legendär-Takt
+      return { ...state, offer, offerRerolls: idx, ...(paid ? paid.patch : (usePerk2 ? { rerollsPerk2: perk2 - 1 } : { rerollsPerk: tokens - 1 })), rerollsUsed: (state.rerollsUsed || 0) + 1 };
     }
 
     // #263: Skill-Angebot neu würfeln — eigener Skill-Reroll-Pool (rerollsSkill). Leeres neues Angebot → Ressource nicht
@@ -791,12 +816,18 @@ export function reducer(state, action) {
     case "REROLL_SKILL": {
       if (state.phase !== "levelup" || !state.skillOffer) return state;
       const tokens = state.rerollsSkill || 0;                        // #263: eigener Skill-Pool
-      if (tokens <= 0) return state;
+      // §3.1: leerer Pool → der Neuwurf ist käuflich; ein Legendäres im Angebot hebt den Grundpreis und
+      // garantiert im neuen Wurf wieder eins (ein anderes als das gerade gezeigte).
+      const paid = tokens > 0 ? null : buyReroll(state, state.skillOffer.some(isLegendarySkill));
+      if (tokens <= 0 && !paid) return state;                        // weder Token noch Münzen → wirkungslos
+      const legBuy = !!(paid && paid.legendary);
       const idx = (state.offerRerolls || 0) + 1;                     // #205: Reroll-Index → frischer adressierter Strom (Original-Angebot = 0)
       const archs = Array.isArray(state.skillOfferArchs) && state.skillOfferArchs.length ? state.skillOfferArchs : state.skillOffer.map(archetypeOf);
-      const rolled = rerollDoorSkills(archs, state.skills, state.skillOffer, rngFor(state, action, state.cycle, "skill", idx), rngFor(state, action, state.cycle, "skill", idx, "tiers"));
+      const rolled = rerollDoorSkills(archs, state.skills, state.skillOffer, rngFor(state, action, state.cycle, "skill", idx), rngFor(state, action, state.cycle, "skill", idx, "tiers"), legBuy ? { forceLegendary: 1 } : undefined);
       if (!rolled.offer.length) return state;                       // nichts Neues verfügbar → Ressource behalten
-      return { ...state, skillOffer: rolled.offer, skillOfferTiers: rolled.tiers, skillOfferArchs: archs, offerRerolls: idx, rerollsSkill: tokens - 1, rerollsUsed: (state.rerollsUsed || 0) + 1 };
+      // Garantie nicht einlösbar (kein freies Legendäres in den Fraktionen der Tür) → nicht kassieren.
+      if (legBuy && !rolled.offer.some(isLegendarySkill)) return state;
+      return { ...state, skillOffer: rolled.offer, skillOfferTiers: rolled.tiers, skillOfferArchs: archs, offerRerolls: idx, ...(paid ? paid.patch : { rerollsSkill: tokens - 1 }), rerollsUsed: (state.rerollsUsed || 0) + 1 };
     }
 
     // Formationsphase (V2 §22.8): beliebigen Tausch zweier Karten anwenden (1 Energie), Vorschau neu berechnen.
@@ -842,7 +873,7 @@ export function reducer(state, action) {
       // Kam die Gletscher-Wahl aus dem Ablehnen bei vollen Eis-Slots, wartet noch ein geparktes Perk-Angebot → jetzt
       // aufmachen (Perk bleibt erhalten). Sonst wie gehabt zurück ins Spiel.
       if (state.pendingPerkOffer && state.pendingPerkOffer.length > 0)
-        return { ...state, glacierLocked, glacierMass, glacierPicksLeft: 0, phase: "levelup", offer: state.pendingPerkOffer, offerRerolls: 0, pendingPerkOffer: null };
+        return { ...state, glacierLocked, glacierMass, glacierPicksLeft: 0, phase: "levelup", offer: state.pendingPerkOffer, offerRerolls: 0, coinRerolls: 0, pendingPerkOffer: null };
       return { ...state, glacierLocked, glacierMass, glacierPicksLeft: 0, phase: "play", pendingPerkOffer: null }; // Pick bestätigt → zurück ins Spiel
     }
     // Letzten Tausch rückgängig machen → Energie erstatten.

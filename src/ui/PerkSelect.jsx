@@ -1,4 +1,6 @@
-import { rarityOf, RARITY_META, totalCritChanceRaw, hasCritPerk, baseScoreMultFor, zinsReadout } from "../game/perks.js";
+import { rarityOf, RARITY_META, totalCritChanceRaw, hasCritPerk, baseScoreMultFor, zinsReadout, offerHasLegendary } from "../game/perks.js";
+import { rerollOffer } from "../game/coins.js";  // Münz-Ökonomie §3.1: Preis des nächsten Neuwurfs — dieselbe Quelle wie der Reducer
+import { RerollLabel } from "./CoinMark.jsx";    // Beschriftung: Anzahl solange gratis, danach der Preis
 import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import { phaseCard, phasePanel, PhaseHairline, PHASE_ACCENTS, ActionBar, ActionButton } from "./modalStyle.jsx";
 import { hasCritFamily } from "../game/families.js";
@@ -63,7 +65,10 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
   const onPhone = useIsPhone();   // #mobil-emblem — unter 640 px, NICHT die Verneinung von `inWings`
   const inLegPerkPhase = perkPhaseAt(state.devSchedule || DECISION_SCHEDULE, state.cycle) === LEG_PERK2_PHASE;
   const rerollTokens = inLegPerkPhase ? (state.rerollsPerk2 || 0) : (state.rerollsPerk || 0);
-  const canReroll = !!onReroll && rerollTokens > 0;
+  // Münz-Ökonomie §3.1: leerer Pool → derselbe Knopf ist käuflich. Ein Legendäres im Angebot hebt den
+  // Grundpreis und garantiert im neuen Wurf wieder eins (ein anderes als das gerade gezeigte).
+  const rerollBuy = rerollOffer(state, rerollTokens, offerHasLegendary(offer));
+  const canReroll = !!onReroll;
   // Kern-Stats — dieselben Helfer/Kontexte wie die StatusRail → kein Drift (#40).
   const { winStreak = 0, wins = 0, trickNo = 0, pos = 0, crits = 0, lightning } = state;
   // Crit inkl. Blitz-Basis (lightning) + Präzision-Familien — dieselbe geteilte Quelle wie Engine/StatusRail (kein Drift).
@@ -96,7 +101,13 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
 
         {!state.devMode && (onDecline || canReroll) && (
           <ActionBar pad={6}>
-            {canReroll && <ActionButton kind="reroll" flex className="lv-actbtn lv-actbtn-reroll" onClick={onReroll}>{tr("perk.reroll", { n: rerollTokens })}</ActionButton>}
+            {/* §3.1: nach dem Pool steht der Preis am selben Knopf; ohne Münzen bleibt er sichtbar, aber aus. */}
+            {canReroll && (
+              <ActionButton kind={rerollBuy.legendary ? "rerollLeg" : "reroll"} flex disabled={!rerollBuy.can}
+                className="lv-actbtn lv-actbtn-reroll" onClick={onReroll}>
+                <RerollLabel r={rerollBuy} freeKey="perk.reroll" buyKey="perk.reroll.buy" />
+              </ActionButton>
+            )}
             {onDecline && <ActionButton kind="decline" flex className="lv-actbtn" onClick={onDecline}>{tr("perk.declineAll")}</ActionButton>}
           </ActionBar>
         )}
