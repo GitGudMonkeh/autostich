@@ -3785,7 +3785,8 @@ Gletscher zahlt in jedem Lauf ungefähr dasselbe.
 | Einfrieren | +7 % | | Dauerfrost −3 %, Verdichtung −4 % |
 | Gletschersturz | +4 %, Anfrieren +4 %, Eisbrücke +2 % | | |
 
-Zum Vergleich: bei Feuer, Blitz und Pflanze liegen die tragenden Skills bei +30 bis +100 %.
+**KORRIGIERT (§5.7):** dieser Vergleich stammt aus alten Protokollen. Nachgemessen liegt die Spitze bei Feuer bei
++227 %, bei Blitz bei +68 %, bei der Pflanze bei +26 % — und überall stehen 8 bis 10 von 15 bei oder unter null.
 
 **Mit Legendären kippt das Bild ins Gegenteil:** die drei Legendären sind alles (Eiszeit ×1,49, Ewiges Schild ×1,44,
 Große Lawine ×1,43, typisch +318 bis +968 %), und neun der 15 normalen Skills werden tot oder schädlich — Eiszeit
@@ -3983,6 +3984,63 @@ Wer das will, tariert die Grundzahl dafür neu — Startwert grob 170 statt 250.
    eine neue Tarierung.
 2. Ewiges Schild und Große Lawine (§5.4) sind im gemischten Build weiter tot; Ablation und Legendär-Band sind seit
    §5.4 nicht wiederholt und stehen auf der alten Kurve.
+
+### 5.7 Viabilität aller Skills — und eine Korrektur (2026-09-07, auf Ansage) — gemessen, nichts umgesetzt
+
+Owner: ein Gletscher je Pick bleibt; vor den Legendären erst die Viabilität. Gemessen wurde die Ablation zweimal:
+mono je Fraktion und einmal gemischt, jeweils `--explore 900 --runs 120`, ohne Legendäre in den Mono-Läufen.
+
+#### Korrektur
+
+**In §5.4 und §5.6 steht, bei Feuer, Blitz und Pflanze trügen die guten Skills +30 bis +100 %. Das war aus den
+alten Protokollen zitiert und stimmt auf der heutigen Kurve nicht.** Nachgemessen, Mono, ohne Legendäre:
+
+| Fraktion | die drei besten | Spitze | bei oder unter null |
+| --- | --- | --- | --- |
+| Feuer | Glühende Klinge +227 %, Weißglut +61 %, Feuersturm +21 % | **+227 %** | 8 von 15 |
+| Blitz | Blitzableiter +68 %, Ionenfeld +26 %, Kurzschluss +26 % | +68 % | 8 von 15 |
+| **Eis** | **Packeis +19 %, Gletschersturz +19 %, Verzahnung +18 %** | **+19 %** | **8 von 15** |
+| Pflanze | Spalier +26 %, Blütenlese +16 %, Rankgerüst +8 % | +26 % | 10 von 15 |
+
+**Eis ist nicht flacher als die anderen — es ist normal.** Die Pflanze, die der Owner tariert und angenommen hat,
+hat oben weniger Spielraum als Eis und unten mehr tote Zeilen. Was Eis fehlt, ist der eine Ausreißer, den Feuer mit
+der Glühenden Klinge hat; die Form der Verteilung ist bei allen vier dieselbe.
+
+#### Was in jeder Fraktion aktiv schadet
+
+Im Mono-Build hält der gierige Spieler fast alles seiner Fraktion (Haltequote 82–100 %). Eine negative Zeile heißt
+dort nicht „der Platz wäre besser vergeben" — es gibt kaum Alternativen —, sondern: **der Skill kostet Score.**
+
+| Fraktion | schadet klar (≤ −7 %) |
+| --- | --- |
+| Blitz | Serienschutz −29 %, Spannungsstau −10 %, Entladung −9 %, Ladungsserie −7 % |
+| Feuer | Rückzündung −14 %, Schmiede −14 %, Glutbett −13 %, Glutstahl −7 % |
+| Pflanze | Lücke −10 %, Setzlingsbeet −8 % |
+| Eis | Dauerfrost −7 %, Verdichtung −7 %, Rissbildung −7 % |
+
+Zeilen zwischen −5 % und +5 % sind in diesem Instrument nicht von Rauschen zu trennen und werden hier nicht als
+Befund geführt. Das ist ein **fraktionsübergreifender** Befund, kein Eis-Problem: Schmiede und Glutbett wurden in
+§7.14 und §6.24 eigens tariert und stehen heute im Minus.
+
+#### Der gemischte Lauf sagt vor allem etwas über das Instrument
+
+Gemischt (`--arch fire,lightning,plant,ice`) sieht **jede** Fraktion halb tot aus — Pflanze mit vier schädlichen
+Zeilen, Blitz mit sechs toten, Feuer mit fünf. Der Grund steht in der Halte-Spalte: dort hält der gierige Spieler
+je Skill nur 4–30 %, und die gepaarte Differenz ist überwiegend Rauschen (Doppelentladung steht mit +1741 % bei
+1 % Haltequote — ein Seed, keine Messung). **Für Aussagen über einzelne Skills taugt nur der Mono-Lauf.**
+
+Eine Aussage trägt der gemischte Lauf doch: **Eis ist eine Bekenntnis-Fraktion.** Nach Eiszeit (+71 %) und
+Anfrieren (+33 %) ist dort alles andere Ballast, bis hinunter zu Eispanzer −20 % und Große Lawine −54 %. Wer Eis
+beimischt, bekommt fast nichts; wer sich festlegt, bekommt eine Fraktion auf Parität.
+
+#### Was daraus folgt (Vorschlag, Entscheid Owner)
+
+1. **Eis braucht keine Sonderbehandlung mehr.** Es steht auf Parität und in der Verteilung dort, wo die anderen
+   auch stehen. Die Runde kann geschlossen werden.
+2. **Die zwölf klar schädlichen Skills über alle vier Fraktionen sind die eigentliche offene Baustelle** — und
+   die größten davon stehen bei Blitz und Feuer, nicht bei Eis.
+3. Erst danach die Legendären: sie stehen seit §5.4 auf der alten Kurve, und Ewiges Schild wie Große Lawine sind
+   im gemischten Feld weiter tot.
 
 ## 6. Pflanze
 
@@ -5361,3 +5419,4 @@ und die Ranked-Texte, die eine andere Runde meinen.
 | 2026-09-07 | Auf Ansage gemessen. Eis ist ins Angebot gekommen (alle vier Fraktionen an den Türen), Balance-Guard neu zentriert (Median 2,87M / Mean 5,92M). Duell: Eis mono 8,95M gegen Feuer 6,42M, Blitz 5,68M, Pflanze 7,93M — 1,39× über Feuer, dabei der kürzeste Schwanz von allen. Ablation ohne Legendäre: die Fraktion ist flach, kein Skill über +14 %, acht bei oder unter null. Mit Legendären kippt es: die drei Legendären tragen alles, im gemischten Feld sind Ewiges Schild und Große Lawine mit −13 % aber tot. Ursache nachgerechnet: der weiche Deckel lässt in der Großen Fläche 49 % des Bruchs durch und macht aus Abbruchkantes nominalen +18 % ganze +2,2 %. Vorschlag: E3 umsetzen, Deckel raus, BURST_SCALE runter. Nichts tariert. §5.4. |
 | 2026-09-07 | Owner-Ja zu E3, plus die Frage nach mehreren Gletschern je Pick. Beide Deckel gestrichen (weicher Bruch-Deckel, Eiszeit-Gletscherzahl), zwei neue Regler gebaut: Gletscher je Pick und Gesamtzahl. Befund: ohne Gesamt-Deckel ist die Zahl je Pick eine Katastrophe (2 je Pick → 966M, 3 → 10,7 Mrd gegen Feuer 6,4M), mit Deckel ein kleiner Hebel (+17 % von 1 auf 2). Ursache nachgerechnet: überlappende Geometrie-Formen multiplizieren sich, der Feld-Bruch wächst von 4 auf 16 Gletscher um das 23-fache. Tariert: BURST_SCALE 340 → 170, Gletscher-Deckel 12 → Eis mono 6,55M gegen Feuer 6,42M (1,02×). Balance-Guard neu zentriert (2,52M / 10,20M). Offen bleibt die Geometrie-Multiplikation. §5.5. |
 | 2026-09-07 | Owner-Ja: überlappende Gletscher-Formen stapeln nicht mehr, die stärkste zählt (eine Zeile in `glacierFormations`). Das Wachstum von 4 auf 16 Gletschern fällt von 23,2× auf 8,1×, der Bruch je Gletscher flacht bei ~16k ab statt bis 110k zu klettern. Neu tariert: BURST_SCALE 170 → 250, Parität unverändert 1,02× (Eis 6,58M gegen Feuer 6,42M). Balance-Guard neu zentriert (2,78M / 6,24M) — der Schwanz ist fast auf dem Stand vor dem Eingriff, die Deckel waren also das Pflaster, nicht die Ursache. Nachgemessen: der Gletscher-Deckel ist für den normalen Build inert (Median mit und ohne identisch) und bleibt nur als Leitplanke; zwei Gletscher je Pick sind jetzt +38 % statt +17 % und brauchen eine eigene Tarierung. §5.6. |
+| 2026-09-07 | Auf Ansage: Viabilität aller Skills, Ablation mono je Fraktion und einmal gemischt. KORREKTUR zu §5.4/§5.6 — die dort zitierten „+30 bis +100 % bei Feuer/Blitz/Pflanze" stammen aus alten Protokollen und stimmen heute nicht. Gemessen: Feuer +227 % (Glühende Klinge) / Blitz +68 % / Pflanze +26 % / Eis +19 % an der Spitze, und bei oder unter null stehen 8 von 15 bei Feuer, Blitz und Eis, 10 von 15 bei der Pflanze. Eis ist damit nicht flacher als die anderen, ihm fehlt nur der eine Ausreißer. Klar schädlich (≤ −7 %) sind zwölf Skills über alle vier Fraktionen, die größten bei Blitz (Serienschutz −29 %) und Feuer (Rückzündung/Schmiede −14 %). Der gemischte Lauf taugt für Einzelskills nicht (Haltequoten 4–30 %), sagt aber: Eis ist eine Bekenntnis-Fraktion. §5.7. |
