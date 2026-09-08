@@ -15,7 +15,7 @@
    ============================================================ */
 import * as C from "../game/constants.js";
 import { THRESHOLDS as G_THRESHOLDS, EISZEIT_FLOOD as G_EISZEIT_FLOOD,
-  SCHILD_BONUS as G_SCHILD_BONUS } from "../game/glacier.js";
+  GROSSE_LAWINE_EVERY as G_LAWINE_EVERY } from "../game/glacier.js";
 
 const num = (x) => String(x);                                            // English keeps the decimal point
 const pct = (x) => Math.round(x * 100);                                  // share → percent (0.25 → 25)
@@ -146,9 +146,9 @@ export default {
   "ability.SK_ICE_L01.name": "Ice Age",
   "ability.SK_ICE_L01.desc": `Every cycle, +${num(G_EISZEIT_FLOOD)} snow into the ground reserve of every unfrozen cell. The one with the largest reserve then freezes into a glacier and refills from its reserve. The ice age keeps creeping to the edge of the board.`,
   "ability.SK_ICE_L02.name": "Eternal Shield",
-  "ability.SK_ICE_L02.desc": `Every cycle, all your glaciers rise to the mass of the strongest, never dropping, and gain +${G_SCHILD_BONUS} mass on top. On a burst, every glacier counts as a neighbour of every other: full cascade and collision, wherever they sit.`,
+  "ability.SK_ICE_L02.desc": `Your whole field counts as a single glacier. Every cycle, all your glaciers rise to the mass of the strongest, never dropping. On a burst, each counts as a neighbour of every other, wherever they sit, and each takes the strongest glacier formation on the board.`,
   "ability.SK_ICE_L03.name": "Great Avalanche",
-  "ability.SK_ICE_L03.desc": `In the final cycle, ALL your glaciers burst at once, including those not yet full, each with the force of the highest threshold and massively amplified.`,
+  "ability.SK_ICE_L03.desc": `Every ${G_LAWINE_EVERY}th cycle, ALL your glaciers burst at once, including those not yet full, each with the force of the highest threshold and amplified.`,
 
   /* ---- 🌿 Plant ---- */
   "ability.SK_PLANT_02.name": "Root Depth",

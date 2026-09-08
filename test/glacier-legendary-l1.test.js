@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { resolveTrick } from "../src/game/engine.js";
 import { initialState } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
-import { precomputeGlacier, uebergletscherPool, ROLES, SCHILD_BONUS } from "../src/game/glacier.js";
+import { precomputeGlacier, uebergletscherPool, ROLES, GROSSE_LAWINE_EVERY } from "../src/game/glacier.js";
 import { iceSnapshotOpts } from "../src/game/factions/ice.js";
 import { N_POS, posOf } from "../src/game/architect.js";
 
@@ -26,10 +26,10 @@ describe("Große Lawine — alles bricht auf einen Schlag (One-Shot)", () => {
 });
 
 describe("Ewiges Schild — das ganze Feld als ein Übergletscher", () => {
-  it("uebergletscherPool hebt alle Gletscher aufs MAXIMUM + Feld-Bonus (nie fallend)", () => {
+  it("uebergletscherPool hebt alle Gletscher aufs MAXIMUM (nie fallend, §5.8 ohne Zuschlag)", () => {
     const out = uebergletscherPool(withMass([[0, 0], [posOf(4, 4), 12]]), set(0, posOf(4, 4)));
-    expect(out[0]).toBe(12 + SCHILD_BONUS);              // aufs Max (12) gehoben + additiver Feld-Bonus, obwohl NICHT benachbart
-    expect(out[posOf(4, 4)]).toBe(12 + SCHILD_BONUS);    // war Max, bekommt den Bonus (nie fallend)
+    expect(out[0]).toBe(12);              // aufs Max gehoben, obwohl NICHT benachbart
+    expect(out[posOf(4, 4)]).toBe(12);    // war Max und bleibt (nie fallend); der alte +Bonus verfiel am Masse-Deckel
   });
   it("Kaskade rechnet mit der vollen Feldgröße (auch bei nicht benachbarten Gletschern)", () => {
     // zwei WEIT getrennte Gletscher, gleiche Masse — ohne Schild kein Kaskade-Bonus, mit Schild schon.
@@ -59,15 +59,15 @@ describe("Engine-Verdrahtung (L1)", () => {
     expect(base.lastTrick.breakdown?.glacierDirect ?? 0).toBe(0);        // pos0 leer → kein Bruch
     expect(schild.lastTrick.breakdown.glacierDirect).toBeGreaterThan(0); // auf 6 gepoolt → bricht
   });
-  it("Große Lawine feuert erst im LETZTEN Durchlauf (nicht früher), One-Shot", () => {
+  it("Große Lawine feuert im TAKT (§5.8): nur im Lawinen-Durchlauf bricht das Feld", () => {
     const cycle = (s0) => { let s = s0; for (let i = 0; i < 40; i++) s = resolveTrick(s, noCrit); return s; };
-    // maxCycles=2 → letzter Durchlauf = cycle 1. Unter-Schwelle-Masse, alle verlieren (nur Ewiger Frost) → ohne Lawine bräche nichts.
-    const opts = { maxCycles: 2, glacierLocked: lockAt(0, 1, 2), glacierMass: withMass([[0, 5], [1, 5], [2, 5]]), glacierRoles: [ROLES.L_LAWINE], oppDeck: oppOf(99) };
-    const early = cycle(scen({ ...opts, cycle: 0 }));  // NICHT letzter Durchlauf → feuert nicht
-    expect(early.grosseLawineFired).toBe(false);
-    expect(early.glacierYield).toBe(0);
-    const last = cycle(scen({ ...opts, cycle: 1 }));   // letzter Durchlauf → Große Lawine feuert, alles bricht
-    expect(last.glacierYield).toBeGreaterThan(0);
-    expect(last.grosseLawineFired).toBe(true);
+    // Unter-Schwelle-Masse, alle Stiche verloren (nur Ewiger Frost) → ohne Lawine bräche nichts.
+    const opts = { glacierLocked: lockAt(0, 1, 2), glacierMass: withMass([[0, 5], [1, 5], [2, 5]]), glacierRoles: [ROLES.L_LAWINE], oppDeck: oppOf(99) };
+    const quiet = cycle(scen({ ...opts, cycle: 0 }));                            // cycle 0: kein Lawinen-Durchlauf
+    expect(quiet.glacierYield).toBe(0);
+    const beat = cycle(scen({ ...opts, cycle: GROSSE_LAWINE_EVERY - 1 }));        // der Takt-Durchlauf
+    expect(beat.glacierYield).toBeGreaterThan(0);
+    const next = cycle(scen({ ...opts, cycle: 2 * GROSSE_LAWINE_EVERY - 1 }));    // und er wiederholt sich
+    expect(next.glacierYield).toBeGreaterThan(0);
   });
 });

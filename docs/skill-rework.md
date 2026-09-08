@@ -4042,6 +4042,58 @@ beimischt, bekommt fast nichts; wer sich festlegt, bekommt eine Fraktion auf Par
 3. Erst danach die Legendären: sie stehen seit §5.4 auf der alten Kurve, und Ewiges Schild wie Große Lawine sind
    im gemischten Feld weiter tot.
 
+### 5.8 Große Lawine im Takt, Ewiges Schild als ein Gletscher (2026-09-07, Owner) — umgesetzt, UNGEMESSEN
+
+Owner: „mach die große lawine so, dass sie nicht erst am ende feuert, eventuell in einer gewissen frequenz oder
+jede runde. und ewiges schild scheint auch einen buff zu brauchen."
+
+#### Große Lawine — Takt statt Finisher
+
+**Neu:** jeden 5. Durchlauf brechen alle Gletscher auf einen Schlag, jeder mit der Wucht der höchsten Schwelle und
+×2. Vorher: einmal im letzten Durchlauf, ×6.
+
+**Warum der Takt und nicht „jede Runde".** Jede Runde hieße: nichts wächst mehr über die erste Schwelle hinaus, weil
+der Bruch die Masse jedes Mal auf 0 setzt. Damit stürbe der Kern der Fraktion — halten, wachsen, gewaltig brechen.
+Ein Takt von 5 liegt knapp unter dem natürlichen Rhythmus (ein Gletscher füllt sich aus Passiv und Siegen in rund
+sechs Durchläufen) und ersetzt ihn deshalb nicht, sondern **synchronisiert** ihn: alle brechen gleichzeitig, und
+genau darauf zahlen Kaskade, Kollision und Gletschersturz ein.
+
+**Der Preis, offen benannt:** wer im Takt bricht, wächst nie bis 12. Die Masse je Bruch ist kleiner, dafür ist der
+Bruch dichter und die Verstärker greifen zusammen. Ob das aufgeht, ist ungemessen.
+
+`GROSSE_LAWINE_MULT` fällt von 6 auf **2**, weil sie jetzt rund fünfmal je Lauf feuert statt einmal. Beide Zahlen
+sind über `SIM_GLACIER_LAWINE_EVERY` und `SIM_GLACIER_LAWINE_MULT` sweepbar.
+
+Der One-Shot-Zustand `grosseLawineFired` ist damit gegenstandslos und aus State, Engine, Reducer und UI entfernt.
+Die Gletscherleiste zeigt statt „bereit/verbraucht" jetzt einen Countdown auf den nächsten Schlag.
+
+#### Ewiges Schild — der Zuschlag, der verfiel, gegen einen, der zählt
+
+Das Legendäre hob bisher alle Gletscher auf das Maximum **und legte +3 Masse obendrauf**. Der Zuschlag war fast
+wertlos: die Masse ist beim Bruch auf die höchste Schwelle gedeckelt, alles darüber verfiel als Überlauf (drei
+Punkte gegen einen Bruch in Zehntausenden). Genau das erklärt, warum es in §5.4 bei −13 % stand.
+
+**Neu:** der Zuschlag ist gestrichen; stattdessen **erbt jeder Gletscher die stärkste Gletscher-Formation des
+Bretts**. Das ist dieselbe Idee wie der Rest des Skills, nur zu Ende gedacht — wenn das ganze Feld ein Gletscher
+ist, dann teilt es auch seine Form. Seit §5.6 zählt bei überlappenden Formen ohnehin die stärkste, der Skill
+verteilt also genau eine Zahl über das Feld.
+
+Beispiel: ein einzelner 2×2-Block irgendwo auf dem Brett hebt jeden Gletscher auf ×1,15; eine Große Fläche auf
+×1,5. Vorher zahlte die Form nur den neun Feldern, die sie bilden.
+
+#### Texte
+
+- **Ewiges Schild:** „Dein ganzes Feld zählt als ein einziger Gletscher. Jeden Durchlauf ziehen alle deine
+  Gletscher auf die Masse des stärksten hoch, nie fallend. Beim Bersten gilt jeder als Nachbar aller anderen, egal
+  wo sie liegen, und jeder bekommt die stärkste Gletscher-Formation des Bretts."
+- **Große Lawine:** „Jeden 5. Durchlauf brechen ALLE deine Gletscher auf einen Schlag, auch die noch nicht vollen,
+  jeder mit der Wucht der höchsten Schwelle und verstärkt."
+
+#### Offen
+
+Gemessen ist nichts — weder die Parität nach diesen beiden Änderungen noch das Legendär-Band. Der Takt 5 und der
+Verstärker 2 sind Startwerte aus der Rechnung oben, keine Sim-Ergebnisse.
+
 ## 6. Pflanze
 
 ### 6.1 Richtung und Abgrenzung (gesetzt, Owner 2026-09-06)
@@ -5420,3 +5472,4 @@ und die Ranked-Texte, die eine andere Runde meinen.
 | 2026-09-07 | Owner-Ja zu E3, plus die Frage nach mehreren Gletschern je Pick. Beide Deckel gestrichen (weicher Bruch-Deckel, Eiszeit-Gletscherzahl), zwei neue Regler gebaut: Gletscher je Pick und Gesamtzahl. Befund: ohne Gesamt-Deckel ist die Zahl je Pick eine Katastrophe (2 je Pick → 966M, 3 → 10,7 Mrd gegen Feuer 6,4M), mit Deckel ein kleiner Hebel (+17 % von 1 auf 2). Ursache nachgerechnet: überlappende Geometrie-Formen multiplizieren sich, der Feld-Bruch wächst von 4 auf 16 Gletscher um das 23-fache. Tariert: BURST_SCALE 340 → 170, Gletscher-Deckel 12 → Eis mono 6,55M gegen Feuer 6,42M (1,02×). Balance-Guard neu zentriert (2,52M / 10,20M). Offen bleibt die Geometrie-Multiplikation. §5.5. |
 | 2026-09-07 | Owner-Ja: überlappende Gletscher-Formen stapeln nicht mehr, die stärkste zählt (eine Zeile in `glacierFormations`). Das Wachstum von 4 auf 16 Gletschern fällt von 23,2× auf 8,1×, der Bruch je Gletscher flacht bei ~16k ab statt bis 110k zu klettern. Neu tariert: BURST_SCALE 170 → 250, Parität unverändert 1,02× (Eis 6,58M gegen Feuer 6,42M). Balance-Guard neu zentriert (2,78M / 6,24M) — der Schwanz ist fast auf dem Stand vor dem Eingriff, die Deckel waren also das Pflaster, nicht die Ursache. Nachgemessen: der Gletscher-Deckel ist für den normalen Build inert (Median mit und ohne identisch) und bleibt nur als Leitplanke; zwei Gletscher je Pick sind jetzt +38 % statt +17 % und brauchen eine eigene Tarierung. §5.6. |
 | 2026-09-07 | Auf Ansage: Viabilität aller Skills, Ablation mono je Fraktion und einmal gemischt. KORREKTUR zu §5.4/§5.6 — die dort zitierten „+30 bis +100 % bei Feuer/Blitz/Pflanze" stammen aus alten Protokollen und stimmen heute nicht. Gemessen: Feuer +227 % (Glühende Klinge) / Blitz +68 % / Pflanze +26 % / Eis +19 % an der Spitze, und bei oder unter null stehen 8 von 15 bei Feuer, Blitz und Eis, 10 von 15 bei der Pflanze. Eis ist damit nicht flacher als die anderen, ihm fehlt nur der eine Ausreißer. Klar schädlich (≤ −7 %) sind zwölf Skills über alle vier Fraktionen, die größten bei Blitz (Serienschutz −29 %) und Feuer (Rückzündung/Schmiede −14 %). Der gemischte Lauf taugt für Einzelskills nicht (Haltequoten 4–30 %), sagt aber: Eis ist eine Bekenntnis-Fraktion. §5.7. |
+| 2026-09-07 | Owner: die Große Lawine soll nicht erst am Ende feuern, und Ewiges Schild braucht einen Buff. Umgesetzt: die Lawine feuert jeden 5. Durchlauf statt einmal am Laufende, Verstärker 6 → 2 (sie feuert jetzt rund fünfmal je Lauf); „jede Runde" wurde verworfen, weil dann nichts mehr über die erste Schwelle wächst und der Kern der Fraktion stirbt. Der One-Shot-Zustand ist aus State, Engine, Reducer und UI raus, die Leiste zählt zum nächsten Schlag herunter. Ewiges Schild: der additive Masse-Zuschlag verfiel am Masse-Deckel und ist gestrichen; stattdessen erbt jeder Gletscher die stärkste Gletscher-Formation des Bretts. Beide Texte neu. UNGEMESSEN, Startwerte. §5.8. |

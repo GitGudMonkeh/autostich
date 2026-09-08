@@ -1489,8 +1489,6 @@ export default {
   "bar.ice.firnReserve": "地面储量",
   "bar.ice.frozenOpp": "对手已冻结",
   "bar.ice.duoBuff": "双子增益",
-  "bar.ice.avalanche.ready": "大雪崩 · 就绪",
-  "bar.ice.avalanche.used": "大雪崩 · 已用",
   "bar.plant.yield": "花园产出",
   "bar.plant.root": "根系",
   "bar.plant.bloom": "花朵",

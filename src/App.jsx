@@ -1236,7 +1236,7 @@ function AutostichGame() {
                 glacierPre={state.glacierPre} deck={state.deck || []} playerOrder={state.playerOrder || []}
                 frozenOppPending={state.frozenOppPending || {}} frozenOppActive={state.frozenOppActive || {}}
                 glacierBuffPending={state.glacierBuffPending || {}} glacierBuffActive={state.glacierBuffActive || {}}
-                grosseLawineFired={state.grosseLawineFired} options={options} onOption={changeOptions} manyActive={wide ? false : manyFac}
+                cycle={state.cycle || 0} options={options} onOption={changeOptions} manyActive={wide ? false : manyFac}
                 skills={state.skills || []} showSkills={wide} />
               </div>
               {/* Stats — Mobil nach den Fraktions-Leisten (order-3), bis 1280 px rechte Sidebar, darüber die

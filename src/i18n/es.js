@@ -355,8 +355,8 @@ export default {
   "bar.ice.firnReserve": "Reserva del suelo",
   "bar.ice.frozenOpp": "Rivales congelados",
   "bar.ice.duoBuff": "Bonificación de dúo",
-  "bar.ice.avalanche.ready": "Gran avalancha · lista",
-  "bar.ice.avalanche.used": "Gran avalancha · gastada",
+  "bar.ice.avalanche.now": "Gran avalancha · estalla",
+  "bar.ice.avalanche.in": "Gran avalancha · en {n} ciclos",
 
   /* Plant */
   "bar.plant.yield": "Rendimiento del jardín",

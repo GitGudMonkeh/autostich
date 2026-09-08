@@ -3,7 +3,7 @@ import { shuffle } from "./deck.js";
 // Eis: die Zahlen der SKILLS stehen in der Stufentabelle EIS unten. Aus glacier.js kommt nur, was ohne Skill gilt —
 // die Schwellen, die Wucht je Stufe, der Linien-Faktor der Geometrie und die Werte der drei Legendären.
 import { GEO_LINIE as G_GEO_LINIE, TIER_MULT as G_TIER_MULT, THRESHOLDS as G_THRESHOLDS,
-  EISZEIT_FLOOD as G_EISZEIT_FLOOD, SCHILD_BONUS as G_SCHILD_BONUS } from "./glacier.js";
+  EISZEIT_FLOOD as G_EISZEIT_FLOOD, GROSSE_LAWINE_EVERY as G_LAWINE_EVERY } from "./glacier.js";
 
 // Deutsche Zahlformatierung (1.08 → „1,08") — driftgefährdete Beschreibungszahlen aus den Konstanten interpolieren.
 const de = (x) => String(x).replace(".", ",");
@@ -271,9 +271,9 @@ export const SKILL_DEFS = {
   SK_ICE_L01: { id: "SK_ICE_L01", name: "Eiszeit", archetype: "ice", legendary: true, keywords: ["glacier", "freeze"], role: "G_L_EISZEIT",
     desc: `Jeden Durchlauf +${de(G_EISZEIT_FLOOD)} Schnee in die Boden-Reserve jedes ungefrorenen Felds. Das reservestärkste friert dann zum Gletscher ein und füllt sich aus seiner Reserve. Die Eiszeit kriecht bis ans Brettende weiter.` },
   SK_ICE_L02: { id: "SK_ICE_L02", name: "Ewiges Schild", archetype: "ice", legendary: true, keywords: ["glacier"], role: "G_L_SCHILD",
-    desc: `Jeden Durchlauf ziehen alle deine Gletscher auf die Masse des stärksten hoch, nie fallend, und bekommen +${G_SCHILD_BONUS} Masse obendrauf. Beim Bruch gilt jeder Gletscher als Nachbar aller anderen: volle Kaskade und Kollision, egal wo sie liegen.` },
+    desc: `Dein ganzes Feld zählt als ein einziger Gletscher. Jeden Durchlauf ziehen alle deine Gletscher auf die Masse des stärksten hoch, nie fallend. Beim Bersten gilt jeder als Nachbar aller anderen, egal wo sie liegen, und jeder bekommt die stärkste Gletscher-Formation des Bretts.` },
   SK_ICE_L03: { id: "SK_ICE_L03", name: "Große Lawine", archetype: "ice", legendary: true, keywords: ["glacier"], role: "G_L_LAWINE",
-    desc: `Im letzten Durchlauf brechen ALLE deine Gletscher auf einen Schlag, auch die noch nicht vollen, jeder mit der Wucht der höchsten Schwelle und massiv verstärkt.` },
+    desc: `${jeder(G_LAWINE_EVERY, "Jeden")} Durchlauf brechen ALLE deine Gletscher auf einen Schlag, auch die noch nicht vollen, jeder mit der Wucht der höchsten Schwelle und verstärkt.` },
   // (§5.2: Erstarrung SK_ICE_L04 gestrichen — die Kontrolle ist Einfrieren in groß, und der Score-Teil war ein nackter
   //  Faktor auf den Bruch. Drei Legendäre je Fraktion, §6.11.)
 

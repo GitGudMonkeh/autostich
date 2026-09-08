@@ -8,7 +8,7 @@
 // Rein informativ, keine Engine-Kopplung (spiegelt state.glacier*).
 import { useRef, useEffect, useState } from "react";
 import { FactionShell, PanelSkills } from "./indicators/panelKit.jsx";
-import { glacierClusters, glacierFormations, THRESHOLDS, ROLES } from "../game/glacier.js";
+import { glacierClusters, glacierFormations, THRESHOLDS, ROLES, GROSSE_LAWINE_EVERY } from "../game/glacier.js";
 import { iceNeighborFn } from "../game/factions/ice.js"; // Eisbrücke → 8-Nachbarschaft (eine Quelle mit der Engine)
 import { fmtScore, fmtScoreShort } from "./format.js"; // #253: kompakte Abkürzung (Mio./Mrd.) für enge Kacheln + voller Wert im Tooltip
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon (Header/Marker = Eis-Icon)
@@ -75,7 +75,7 @@ function Glacier({ mass, order = null, value = null }) {
 
 export function GlacierBar({ active, glacierLocked = [], glacierMass = [], firnStack = [], glacierYield = 0, glacierRoles = [], glacierPre = null,
                             deck = [], playerOrder = [],
-                            frozenOppPending = {}, frozenOppActive = {}, glacierBuffPending = {}, glacierBuffActive = {}, grosseLawineFired = false,
+                            frozenOppPending = {}, frozenOppActive = {}, glacierBuffPending = {}, glacierBuffActive = {}, cycle = 0,
                             options = {}, onOption, manyActive = false, skills = [], showSkills = false }) {
   // Hinweis: KEIN early-return vor den Hooks (React rules-of-hooks) — der `!active`-Ausstieg steht unten vor dem JSX.
   // #384: je Gletscher Position (i, = Spielreihenfolge i+1) + Kartenwert (deck[playerOrder[i]].value); nach POSITION sortiert
@@ -193,7 +193,10 @@ export function GlacierBar({ active, glacierLocked = [], glacierMass = [], firnS
           {reserve > 0 && chip(t("bar.ice.firnReserve"), reserve, FROST)}
           {frozenOpp > 0 && chip(t("bar.ice.frozenOpp"), frozenOpp, "#7ea6ff")}
           {duo > 0 && chip(t("bar.ice.duoBuff"), duo, "#d4a63a")}
-          {hasLawine && chip(t(grosseLawineFired ? "bar.ice.avalanche.used" : "bar.ice.avalanche.ready"), null, "#d4a63a", grosseLawineFired)}
+          {/* §5.8: die Lawine feuert im Takt, der Chip zählt zum nächsten Schlag herunter statt „bereit/verbraucht" zu zeigen. */}
+          {hasLawine && (((cycle + 1) % GROSSE_LAWINE_EVERY === 0)
+            ? chip(t("bar.ice.avalanche.now"), null, "#d4a63a")
+            : chip(t("bar.ice.avalanche.in", { n: GROSSE_LAWINE_EVERY - ((cycle + 1) % GROSSE_LAWINE_EVERY) }), null, "#d4a63a", true))}
         </div>
       )}
     </FactionShell>

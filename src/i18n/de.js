@@ -238,8 +238,8 @@ export default {
   "bar.ice.firnReserve": "Boden-Reserve",
   "bar.ice.frozenOpp": "Gegner eingefroren",
   "bar.ice.duoBuff": "Duo-Buff",
-  "bar.ice.avalanche.ready": "Große Lawine · bereit",
-  "bar.ice.avalanche.used": "Große Lawine · verbraucht",
+  "bar.ice.avalanche.now": "Große Lawine · bricht",
+  "bar.ice.avalanche.in": "Große Lawine · in {n} Durchläufen",
 
   /* ---- Pflanze-Leiste (PlantBar) ---- */
   "bar.plant.yield": "Garten-Ertrag",

@@ -267,8 +267,8 @@ export default {
   "bar.ice.firnReserve": "Ground reserve",
   "bar.ice.frozenOpp": "Opponents frozen",
   "bar.ice.duoBuff": "Duo buff",
-  "bar.ice.avalanche.ready": "Great Avalanche · ready",
-  "bar.ice.avalanche.used": "Great Avalanche · spent",
+  "bar.ice.avalanche.now": "Great Avalanche · breaking",
+  "bar.ice.avalanche.in": "Great Avalanche · in {n} cycles",
 
   /* ---- Plant bar (PlantBar) ---- */
   "bar.plant.yield": "Garden Yield",

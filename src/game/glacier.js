@@ -22,11 +22,13 @@ export const TIER_MULT = [0, 1, 1.5, 2.2];     // überlineare Wucht je Stufe (S
 // 49 % des Bruchs an, und ein Verstärker mit nominal +18 % brachte +2,2 %. Statt seiner steht die Grundzahl tiefer.
 // §5.6: seit die Geo-Formen nicht mehr stapeln, ist die Kurve flacher und die Grundzahl darf wieder höher stehen.
 export const BURST_SCALE = envNum("SIM_GLACIER_BURST_SCALE", 250); // §5.6 neu tariert: 170 → 250, weil die Geometrie nicht mehr stapelt (Eis 6,58M gegen Feuer 6,42M)
-// Legendär-Verstärker (Sim-tunebar): Große Lawine feuert erst am LAUFENDE (nichts wird vorzeitig verschwendet), bricht
-// alles auf voller Stufe und ×GROSSE_LAWINE_MULT → der eine echte Riesen-Score-Moment.
-export const GROSSE_LAWINE_MULT = 6;
-// Ewiges Schild: additiver Feld-Bonus je Durchlauf (echter Netto-Massegewinn fürs ganze verbundene Feld, zusätzlich zum Max-Pool).
-export const SCHILD_BONUS = 3;
+// Große Lawine (§5.8, Owner): feuert nicht mehr einmal am Laufende, sondern im TAKT — jeden GROSSE_LAWINE_EVERY-ten
+// Durchlauf bricht das ganze Feld auf einen Schlag, jeder Gletscher mit der Wucht der höchsten Schwelle. Damit ist sie
+// den ganzen Lauf über sichtbar, und sie synchronisiert das Feld: Kaskade, Kollision und Gletschersturz greifen
+// gleichzeitig. Der Preis ist die niedrigere Masse je Bruch, weil niemand mehr bis 12 wächst.
+export const GROSSE_LAWINE_EVERY = envNum("SIM_GLACIER_LAWINE_EVERY", 5);
+// Verstärker je Lawinen-Bruch. War ×6, als sie EINMAL feuerte; im Takt ist das ein anderer Preis. Startwert, ungemessen.
+export const GROSSE_LAWINE_MULT = envNum("SIM_GLACIER_LAWINE_MULT", 2);
 // Ablehn-Gletscher (Sim-tunebar): ab so vielen gehaltenen Eis-Skills friert auch das Ablehnen eines Skill-Angebots einen
 // Gletscher (statt nur der Skill-Pick/Tausch). Entkoppelt „mehr Gletscher" vom Tauschen guter Skills.
 export const DECLINE_MIN_SKILLS = 4;
@@ -139,7 +141,7 @@ export function precomputeGlacier(mass, locked, opts = {}) {
     const kollFaktor = 1 + (kollision - 1) * kollFrac;  // Kollision (anteilig)
     const geoFactor = formFactor ? (formFactor[p] || 1) : 1; // 2D-Geometrie (Block/Kreuz/Linie/Fläche)
     let burst = mCap[p] * tierMult[effTier] * berstFaktor * kollFaktor * sturzFactor * geoFactor * BURST_SCALE;
-    if (grosseLawine) burst *= GROSSE_LAWINE_MULT;        // Finisher-Verstärker (One-Shot am Laufende)
+    if (grosseLawine) burst *= GROSSE_LAWINE_MULT;        // Lawinen-Takt: Verstärker je erzwungenem Bruch
     payout[p] += burst;
     resetMass[p] = RESET_TO;                             // abgekalbt: baut wieder von unten auf (selten + gewaltig)
     breaks.push({ pos: p, tier: effTier, burst, glacierNeighbors: gN, forced: forced[p] });
@@ -176,15 +178,16 @@ export function glacierClusters(locked, neighborFn = neighbors4) {
 }
 
 // Ewiges Schild (Legendär, docs §7): das GESAMTE Feld poolt als ein Übergletscher — alle Gletscher aufs MAXIMUM heben
-// (nie fallend), unabhängig von Nachbarschaft. Echter Netto-Gewinn (das ganze Feld auf voller Stärke des Stärksten),
-// statt netto-neutralem Durchschnitt → macht die Capstone zum echten Feld-Verstärker (Sim: Durchschnitt war zu schwach).
+// (nie fallend), unabhängig von Nachbarschaft. (§5.8: der frühere additive Feld-Bonus obendrauf ist gestrichen — die
+// Masse ist beim Bruch auf die höchste Schwelle gedeckelt, alles darüber verfiel als Überlauf zu fast nichts. An seine
+// Stelle tritt der Formations-Anteil in der Engine: das ganze Feld erbt die stärkste Gletscher-Formation des Bretts.)
 export function uebergletscherPool(mass, locked) {
   const isG = (p) => (locked instanceof Set ? locked.has(p) : !!(locked && locked[p]));
   const out = Array.isArray(mass) ? mass.slice() : new Array(N_POS).fill(0);
   const gs = []; for (let p = 0; p < N_POS; p++) if (isG(p)) gs.push(p);
   if (gs.length < 2) return out;
   const mx = gs.reduce((m, p) => Math.max(m, out[p] || 0), 0);
-  for (const p of gs) out[p] = Math.max(out[p] || 0, mx) + SCHILD_BONUS; // aufs Max heben + additiver Feld-Bonus (Netto-Gewinn)
+  for (const p of gs) out[p] = Math.max(out[p] || 0, mx); // aufs Max heben, nie fallend
   return out;
 }
 

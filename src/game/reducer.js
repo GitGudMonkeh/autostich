@@ -170,7 +170,6 @@ export function initialState(rng = Math.random, seed = null) {
     glacierMass: new Array(C.BOARD_POSITIONS).fill(0), firnStack: new Array(C.BOARD_POSITIONS).fill(0), glacierLocked: new Array(C.BOARD_POSITIONS).fill(false), glacierPre: null, glacierYield: 0, glacierRoles: [], glacierRoleTiers: {}, glacierPicksLeft: 0, // Eis-Neudesign (glacier.js): Gletscher-Eigenmasse / #386 Firn-Boden-Reserve / Gletscher-Lock / Durchlauf-Snapshot / Eigen-Score / aktive Rollen
     frozenOppPending: {}, frozenOppActive: {}, // Eis-Neudesign (Einfrieren): Gegner-Marken (Gegnerkarte verliert nächsten Stich)
     glacierBuffPending: {}, glacierBuffActive: {}, // Eis-Neudesign (Frostbund): Wert-Buff auf Nicht-Eis-Nachbarkarten
-    grosseLawineFired: false, // Eis-Neudesign (Große Lawine): One-Shot-Finisher-Flag
     pendingPerkOffer: null, // Eis-Neudesign: geparktes Perk-Angebot, wenn das Ablehnen bei vollen Eis-Slots zuerst eine Gletscher-Wahl öffnet
     // Dev-Run (nur Preview): pro-Lauf-Overrides. null/false → Bestandsverhalten (globaler Plan, C.MAX_CYCLES,
     // C.FORMATION_ENERGY, Zufallsangebote). Von START_RUN mit action.dev gesetzt; die Engine liest sie im Übergang.
@@ -692,16 +691,16 @@ export function reducer(state, action) {
       let glacierRoles = glacierRolesOf(skills), glacierRoleTiers = iceRoleTiers(skills, skillTiers);
       let glacierMass = state.glacierMass, firnStack = state.firnStack, glacierLocked = state.glacierLocked, glacierYield = state.glacierYield,
         frozenOppPending = state.frozenOppPending, frozenOppActive = state.frozenOppActive,
-        glacierBuffPending = state.glacierBuffPending, glacierBuffActive = state.glacierBuffActive, grosseLawineFired = state.grosseLawineFired;
+        glacierBuffPending = state.glacierBuffPending, glacierBuffActive = state.glacierBuffActive;
       if (!stillActive.has("ice")) {
         glacierRoles = []; glacierRoleTiers = {}; glacierMass = new Array(C.BOARD_POSITIONS).fill(0); firnStack = new Array(C.BOARD_POSITIONS).fill(0); glacierLocked = new Array(C.BOARD_POSITIONS).fill(false); glacierYield = 0; // #386 Firn-Reserve mit leeren
-        frozenOppPending = {}; frozenOppActive = {}; glacierBuffPending = {}; glacierBuffActive = {}; grosseLawineFired = false;
+        frozenOppPending = {}; frozenOppActive = {}; glacierBuffPending = {}; glacierBuffActive = {};
       }
       const icePicks = arch === "ice" ? glacierGrant(glacierLocked, state.challengeBlockForm, (state.playerOrder || []).length, G_PER_PICK) : 0;
       // Formationen neu berechnen (Anker/Familien/Architekt beeinflussen die Erkennung).
       const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, skills, state.shop?.anchors || [], state.familyTiers, archOf(state), { skillTiers, growth });
       return { ...state, skills, skillTiers, skillOfferTiers: null, activeArchetypes, lightning, heat, deck, iceTemp, growth, brandPending, brandActive, forged, formations,
-               glacierRoles, glacierRoleTiers, glacierMass, firnStack, glacierLocked, glacierYield, frozenOppPending, frozenOppActive, glacierBuffPending, glacierBuffActive, grosseLawineFired, // Eis-Neudesign (#386 Firn-Reserve mitgeführt)
+               glacierRoles, glacierRoleTiers, glacierMass, firnStack, glacierLocked, glacierYield, frozenOppPending, frozenOppActive, glacierBuffPending, glacierBuffActive, // Eis-Neudesign (#386 Firn-Reserve mitgeführt)
                // Eis-Neudesign: jeder Eis-Skill-Pick öffnet SOFORT die Gletscher-Wahl (Pflicht) — analog zum Perk-Ziel-Flow.
                // §5.5: der Pick vergibt GLACIER_PER_PICK Gletscher nacheinander, begrenzt durch freie Felder und den
                // optionalen Gesamt-Deckel. Bleibt nichts übrig, wird die Phase übersprungen statt betreten (Soft-Lock, s. o.).

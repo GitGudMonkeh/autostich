@@ -25,7 +25,7 @@ import { perkLegendaryChance, anchorAt } from "./shop.js";
 import { precomputeArchitect, architectValueBonus, architectScore, buildArchitectOffer } from "./architect.js";
 import { precomputeGlacier, ewigerFrostTick, dauerfrostTick, driftTargets as glacierDriftTargets,
   neighbors4 as glacierNeighbors4, uebergletscherPool, packeisTick, verzahnungTick, eiszeitTick, glacierGeometry,
-  ROLES as GLACIER_ROLES, WIN_MASS as GLACIER_WIN_MASS,
+  ROLES as GLACIER_ROLES, WIN_MASS as GLACIER_WIN_MASS, GROSSE_LAWINE_EVERY as GLACIER_LAWINE_EVERY,
   FIRN_REFILL_TARGET as GLACIER_FIRN_REFILL_TARGET } from "./glacier.js"; // Eis-Neudesign (isoliert, activeArchetypes "ice") · #386 Firn-Reserve-Nachschub
 import { iceTuning, iceSnapshotOpts, iceNeighborFn } from "./factions/ice.js"; // §5.3: die Zahlen der Eis-Skills kommen aus ihrer Stufe
 import { fullPerkOffer, devSkillOffer, fullArchitectOffer } from "./devCatalog.js"; // Dev-Run: Voll-Katalog statt Zufallsangebot (nur state.devMode)
@@ -155,7 +155,6 @@ export function resolveTrick(state, rng) {
     firnStack = [], // #386 Firn-Boden-Reserve: pro Feld die Boden-Reserve (getrennt von glacierMass) — füllt Gletscher zum Rundenstart auf 12 nach
 
     challengeBlockForm = [], // #301 C3: gesperrte Aufstell-Zellen (nie als Gletscher einfrierbar, auch nicht per Eiszeit-Auto-Freeze)
-    grosseLawineFired = false, // Eis-Neudesign (Große Lawine): One-Shot-Finisher — feuert genau einmal, danach inert
     frozenOppPending = {}, frozenOppActive = {}, // Eis-Neudesign (Einfrieren): Gegnerkarten, die im nächsten Durchlauf ihren Stich garantiert verlieren (je oppCard.id)
     glacierBuffPending = {}, glacierBuffActive = {}, // Eis-Neudesign (Frostbund): Wert-Buff auf eigene Nicht-Eis-Nachbarkarten (je card.id, nächster Durchlauf)
     seed = null, // #205 Challenger Mode: Lauf-Seed (null = unseeded/Sim) + Reroll-Index des akt. Angebots
@@ -226,7 +225,6 @@ export function resolveTrick(state, rng) {
   let newGlacierMass = Array.isArray(glacierMass) ? glacierMass.slice() : [];
   let newFirnStack = Array.isArray(firnStack) ? firnStack.slice() : []; // #386 Firn-Boden-Reserve: Arbeitskopie (nur ice-gegated beschrieben → Nicht-Eis-Läufe byte-identisch)
   let newGlacierLocked = glacierLocked; // wird nur von Eiszeit (Auto-Lock) verändert; sonst durchgereicht
-  let newGrosseLawineFired = grosseLawineFired; // Große Lawine: nach dem ersten aktiven Durchlauf verbraucht
   if (glacierActive && pos === 0) {
     // #386 Firn-Boden-Reserve: Runden-Start-Nachschub — VOR dem Bruch-Snapshot zieht jeder gefrorene Gletscher aus seiner
     // Boden-Reserve (firnStack) wieder auf die volle Masse (FIRN_REFILL_TARGET=12) auf. Selbst-erzeugte Masse aus der Vorrunde
@@ -244,13 +242,18 @@ export function resolveTrick(state, rng) {
       : refilledMass;
     // 2D-Geometrie-Formationen (unique Deck-Passiv, docs §2.7/§9): Block/Kreuz/Linie/Fläche → Burst-Faktor je Feld; Eiswall hebt die Linie.
     const glacierGeo = glacierGeometry(glacierLocked, { eiswallLinie: glacierRoles.includes(GLACIER_ROLES.EISWALL) ? ice.eiswallLinie : 0 });
-    const glacierO = iceSnapshotOpts(glacierRoles, ice);
-    // Große Lawine (Legendär): einmaliger Finisher — feuert erst im LETZTEN Durchlauf (Masse maximal angesammelt, kein
-    // vorzeitiges Abkalben). Bricht dann alles auf voller Stufe, ungedeckelt & ×GROSSE_LAWINE_MULT (glacier.js).
-    const effMaxCycles = state.maxCycles || (difficulty && difficulty.maxCycles) || C.MAX_CYCLES;
-    if (glacierRoles.includes(GLACIER_ROLES.L_LAWINE) && !grosseLawineFired && cycle >= effMaxCycles - 1) {
-      glacierO.grosseLawine = true; newGrosseLawineFired = true;
+    // Ewiges Schild (§5.8): das ganze Feld IST ein Gletscher — also erbt jeder Gletscher die stärkste Form des Bretts.
+    // Das ersetzt den alten additiven Masse-Bonus, der am Masse-Deckel verfiel.
+    if (glacierRoles.includes(GLACIER_ROLES.L_SCHILD)) {
+      let best = 1;
+      for (let p = 0; p < glacierGeo.length; p++) if (glacierLocked[p] && glacierGeo[p] > best) best = glacierGeo[p];
+      if (best > 1) for (let p = 0; p < glacierGeo.length; p++) if (glacierLocked[p]) glacierGeo[p] = best;
     }
+    const glacierO = iceSnapshotOpts(glacierRoles, ice);
+    // Große Lawine (Legendär, §5.8): im TAKT statt einmal am Laufende — jeden GLACIER_LAWINE_EVERY-ten Durchlauf bricht
+    // das ganze Feld auf einen Schlag, jeder Gletscher auf voller Stufe und ×GROSSE_LAWINE_MULT (glacier.js). Sie ist
+    // damit den ganzen Lauf über sichtbar und synchronisiert das Feld (Kaskade/Kollision/Sturz greifen gleichzeitig).
+    if (glacierRoles.includes(GLACIER_ROLES.L_LAWINE) && (cycle + 1) % GLACIER_LAWINE_EVERY === 0) glacierO.grosseLawine = true;
     glacierPreNow = precomputeGlacier(snapMass, glacierLocked, { ...glacierO, formFactor: glacierGeo });
     // Anzeige-Basis dieses Durchlaufs ist snapMass — das POOLING (Ewiges Schild → Feld-Max
     // +Bonus) ist ein Durchlauf-BEGINN-Buff und soll SOFORT sichtbar sein (alle Gletscher gleich hochgezogen), nicht
@@ -1127,7 +1130,7 @@ export function resolveTrick(state, rng) {
     winSuit, winSuitStreak, recentResults, segmentWins, // #189 Volles Haus: segment-genauer Sieg-Zähler
     formations, // Formations-Engine (V2 §22.7): pro-Position-Multiplikatoren, zu Durchlauf-Beginn berechnet
     architect: newArchitect, architectEnabled, architectPre: newArchitectPre, // Architekt (#202, ersetzt den Shop)
-    glacierMass: newGlacierMass, firnStack: newFirnStack, glacierLocked: newGlacierLocked, glacierPre: glacierPreNow, glacierYield, glacierRoles, glacierRoleTiers, grosseLawineFired: newGrosseLawineFired, // Eis-Neudesign (glacier.js): Gletscher-Eigenmasse / #386 Firn-Boden-Reserve / Lock / Snapshot / Eigen-Score / Rollen / Große-Lawine-One-Shot
+    glacierMass: newGlacierMass, firnStack: newFirnStack, glacierLocked: newGlacierLocked, glacierPre: glacierPreNow, glacierYield, glacierRoles, glacierRoleTiers, // Eis-Neudesign (glacier.js): Gletscher-Eigenmasse / #386 Firn-Boden-Reserve / Lock / Snapshot / Eigen-Score / Rollen
     frozenOppPending: newFrozenOppPending, frozenOppActive: newFrozenOppActive, // Eis-Neudesign (Einfrieren): Gegner-Marken (verlieren nächsten Stich)
     glacierBuffPending: newGlacierBuffPending, glacierBuffActive: newGlacierBuffActive, // Eis-Neudesign (Frostbund): Nachbar-Wert-Buffs
 

@@ -19,7 +19,7 @@
    ============================================================ */
 import * as C from "../game/constants.js";
 import { THRESHOLDS as G_THRESHOLDS, EISZEIT_FLOOD as G_EISZEIT_FLOOD,
-  SCHILD_BONUS as G_SCHILD_BONUS } from "../game/glacier.js";
+  GROSSE_LAWINE_EVERY as G_LAWINE_EVERY } from "../game/glacier.js";
 
 const num = (x) => String(x).replace(".", ",");                          // Spanish keeps the decimal comma
 const pct = (x) => Math.round(x * 100);                                  // share → percent (0.25 → 25)
@@ -151,9 +151,9 @@ export default {
   "ability.SK_ICE_L01.name": "Edad de Hielo",
   "ability.SK_ICE_L01.desc": `En cada ciclo, +${num(G_EISZEIT_FLOOD)} de nieve en la reserva del suelo de cada celda sin congelar. La de mayor reserva se congela entonces en glaciar y se rellena desde su reserva. La edad de hielo sigue avanzando hasta el borde del tablero.`,
   "ability.SK_ICE_L02.name": "Escudo Eterno",
-  "ability.SK_ICE_L02.desc": `En cada ciclo, todos tus glaciares suben hasta la masa del más fuerte, sin bajar nunca, y ganan +${G_SCHILD_BONUS} de masa encima. Al estallar, cada glaciar cuenta como vecino de todos los demás: cascada y colisión completas, estén donde estén.`,
+  "ability.SK_ICE_L02.desc": `Todo tu campo cuenta como un solo glaciar. En cada ciclo, todos tus glaciares suben hasta la masa del más fuerte, sin bajar nunca. Al estallar, cada uno cuenta como vecino de todos los demás, estén donde estén, y cada uno recibe la formación glaciar más fuerte del tablero.`,
   "ability.SK_ICE_L03.name": "Gran Avalancha",
-  "ability.SK_ICE_L03.desc": `En el último ciclo estallan TODOS tus glaciares de golpe, incluidos los que aún no están llenos, cada uno con la fuerza del umbral más alto y enormemente amplificado.`,
+  "ability.SK_ICE_L03.desc": `Cada ${G_LAWINE_EVERY}.º ciclo estallan TODOS tus glaciares de golpe, incluidos los que aún no están llenos, cada uno con la fuerza del umbral más alto y enormemente amplificado.`,
 
   /* ---- 🌿 Planta ---- */
   "ability.SK_PLANT_02.name": "Profundidad de Raíz",
