@@ -143,6 +143,11 @@ export function initialState(rng = Math.random, seed = null) {
     roles: {}, targetPerk: null, successorQueue: [], triumphArmed: [], // Kartenrollen (V2 §22.6 C): Rollen-ids, aktive Zielauswahl, Nachfolger-/Triumph-State
     l4Boost: {}, // Legendär-Perk L4 Kritische Masse (Crit-Wert-Gewinn je Karte)
     zinsCapital: 0, zinsRate: C.ZINS_RATE_START, zinsPaidTotal: 0, cycleWins: 0, cycleLosses: 0, cycleBestTrick: 0, sammlerTypes: [], vabanquePaid: 0, cycleOpenScore: 0, cycleScoreSum: 0, // Legendär-Perks-Rework (#203) + Zinseszins-Bank
+    // Münz-Ökonomie (docs/muenz-oekonomie.md §2): Kontostand des Laufs. Kein Startbetrag — der erste Durchlauf zahlt
+    // nichts, die erste Skill-Phase hat leere Kasse. lastCycleCoins/lastCycleWins tragen die letzte Auszahlung für die
+    // Anzeige (§4) — reine Schau, der Kontostand selbst ist `coins`. Nicht verwechseln mit dem Perk „Zinseszins"
+    // (zinsCapital/zinsRate): der arbeitet auf Score-Kapital, nicht auf Münzen (§8.4).
+    coins: 0, lastCycleCoins: null, lastCycleWins: null,
     perks: [], offer: null,
     // Raritätssystem (Epic #167, Spec §2.1): Familienrang je Familie { [familyId]: 1|2|3|4 }. Läuft ADDITIV
     // neben `perks` (flache Legendäre) — die Engine löst aktive Familien-Stufen über activeTierDefs auf.

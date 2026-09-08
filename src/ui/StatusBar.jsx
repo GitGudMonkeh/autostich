@@ -2,6 +2,7 @@ import { fmtScore } from "./format.js";
 import { t, fmtNum } from "../i18n/index.js"; // #sprache
 import { RunTimer } from "./RunTimer.jsx";
 import { DECK_BORDER } from "./modalStyle.jsx"; // #356: deck-getönter neutraler Struktur-Rahmen
+import { CoinAmount } from "./CoinMark.jsx"; // Münz-Ökonomie (§4): Kontostand, immer sichtbar
 
 /* Gameplay-Neu-Aufbau (docs/gameplay-redesign.md, Phase 1): die schwebende Kompakt-Leiste — die „Vitalwerte" des Laufs
    in einer oben klebenden Karte, samt Ablauf-Steuerung (Pause/Tempo/Karten). Ersetzt die früheren Kopf-Stat-Zellen.
@@ -46,7 +47,7 @@ function Cell({ label, children, className = "", style = null }) {
 
 export function StatusBar({
   score, ghost = {}, mult, timeStr, getElapsed = null, timerTicking = false, paused, winStreak = 0, bestStreak = 0,
-  cycle = 0, totalCycles = 1,
+  cycle = 0, totalCycles = 1, coins = 0,
   onTogglePause, speedMult = 1, onSpeed, onChronik, deckBack, className = "",
   // #buehne: Ab 1280 px ziehen Musik und Meilensteinbalken IN die Leiste — sie sind dort, wo man sie
   // sucht, und der Lauf spart zwei eigene Reihen. Der Umzug ist DOM (App.jsx entscheidet per useIsWide),
@@ -125,7 +126,7 @@ export function StatusBar({
             <span style={{ color: winStreak >= 3 ? "#e0605a" : "#e8e8ea" }}>{winStreak > 0 ? `${winStreak}×` : "–"}</span>
             <span className="text-micro-3 opacity-45 ml-1">{t("hud.streak.best", { n: bestStreak })}</span>
           </Cell>
-          {/* Mult — ganz rechts. */}
+          {/* Mult. */}
           <Cell label={t("hud.mult")} className="sb-mult border-l border-[color:var(--deck-border)]">
             <span className={mult?.shakeClass || ""}>
               <span key={mult?.pulseKey} className="inline-block rounded px-1.5 py-0.5 ty-num"
@@ -137,6 +138,15 @@ export function StatusBar({
               </span>
             </span>
           </Cell>
+          {/* Münz-Kontostand (docs/muenz-oekonomie.md §4) — ganz rechts, Zeichen plus Zahl OHNE Label: die Münze
+              sagt schon, was die Zahl ist, und die Zelle bleibt so schmal wie die Leiste es verträgt. Deshalb
+              auch keine `Cell`: deren zwei Zeilen brauchen ein Label, das es hier nicht gibt.
+              `minDigits={3}` hält die Breite fest — der Kontostand wird dreistellig, und die Leiste darf beim
+              Hochzählen nicht springen. */}
+          <div className="sb-coins flex items-center px-2.5 py-2 border-l border-[color:var(--deck-border)]"
+            title={t("hud.coins.title")}>
+            <CoinAmount n={coins} size={15} minDigits={3} style={{ fontSize: 18 }} />
+          </div>
         </div>
         {milestone}
       </div>

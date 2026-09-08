@@ -204,18 +204,20 @@ export function SkillSelect({ offer = null, doors = null, onPick, onDecline, onR
       <LevelupRig accent={archAccent.c} state={state} deck={state.deck || []} options={options} onOption={onOption}
                   currentTraj={currentTraj} recordTraj={recordTraj} best={best}>
         {/* FESTE Höhe (wie Bestenliste/Werkstatt) statt max-height: sonst sprang die zentrierte Karte beim
-            Archetyp-Wechsel in Position UND Größe, weil jede Archetyp-Seite unterschiedlich hoch ist. Jetzt
-            bleibt die Karte konstant, nur der Inhalt darunter scrollt.
+            Archetyp-Wechsel in Position UND Größe, weil jede Archetyp-Seite unterschiedlich hoch ist. Der Grund
+            gilt aber nur, WO geblättert wird — und das tut heute allein der Dev-Voll-Katalog. Das Tür-Angebot
+            steht auf einer Seite: dort hielt die feste Höhe nichts konstant, sie ließ nur unter der letzten
+            Skill-Karte einen halben Bildschirm Leere stehen (Owner-Meldung 2026-09-07). Deshalb hängt sie an
+            `nPages > 1` statt an der Breite.
 
-            AB 1280 px gilt das nicht mehr: dort ist die Karte kein zentriertes Modal, sondern die Mittelspur
-            eines Rasters, dessen Höhe die (deutlich höheren) Flügel bestimmen — der Kopf steht also fest,
-            egal wie hoch die Karte ist. Der Rahmen darf deshalb am Inhalt enden und erst mitwachsen, wenn
-            gehaltene Skills dazukommen. Bleibt die feste Höhe, steht unter dem Angebot in der ersten
-            Skill-Runde ein halber Bildschirm Leere. `max-height` bleibt als Deckel, der Inhalt scrollt. */}
+            AB 1280 px war das ohnehin schon so: dort ist die Karte kein zentriertes Modal, sondern die
+            Mittelspur eines Rasters, dessen Höhe die (deutlich höheren) Flügel bestimmen — der Kopf steht
+            fest, egal wie hoch die Karte ist. `max-height` bleibt in beiden Fällen der Deckel, der Inhalt
+            scrollt darin. */}
         <div className="relative w-full rounded-2xl px-4 pb-6 overflow-y-auto overlay-card"
           style={{ ...phaseCard(archAccent, undefined, { quiet: wide }),
-                   height: wide ? undefined : "min(92dvh, 760px)",
-                   maxHeight: wide ? "min(92dvh, 760px)" : undefined }}>
+                   height: (!wide && nPages > 1) ? "min(92dvh, 760px)" : undefined,
+                   maxHeight: "min(92dvh, 760px)" }}>
         <PhaseHairline accent={archAccent} />
         {/* #cornerart: die Ecken folgen dem AKTIVEN REITER (`curG.arch`), nicht dem Kartenakzent —
             der Kopf sagt damit dasselbe wie die Reiterzeile darunter. Gate wie beim Emblem im JSX,
@@ -270,8 +272,12 @@ export function SkillSelect({ offer = null, doors = null, onPick, onDecline, onR
               `repeat(n,1fr)` statt fester Vier — `groups` filtert leere Fraktionen weg, es können 1–4 sein.
               Die Reiter zeigten anfangs die drei Skillnamen als Vorschau — bewusst wieder entfernt: der
               längste Fall (Blitz) braucht 58 Zeichen DE / 60 EN auf ~181 px Textbreite, wäre also zweizeilig,
-              und die Zeile war vor allem Unruhe. Wer wissen will, was drin liegt, klickt den Reiter an. */}
-          {wide && nPages > 0 && curG && (
+              und die Zeile war vor allem Unruhe. Wer wissen will, was drin liegt, klickt den Reiter an.
+              `nPages > 1`, nicht `> 0` (Owner-Meldung 2026-09-07): das Tür-Angebot steht auf EINER Seite, dort
+              war die Reiterzeile ein einzelner Reiter über die volle Breite, der nichts umschaltet — ein Banner
+              der führenden Fraktion, das die Fraktions-Badges der Karten ohnehin schon sagen. Nur der
+              Dev-Voll-Katalog blättert noch, und nur dort ist eine Navigation etwas wert. */}
+          {wide && nPages > 1 && curG && (
             <div className="sk-tabs mt-2 grid gap-2"
                  style={{ gridTemplateColumns: `repeat(${nPages}, minmax(0,1fr))` }}>
               {groups.map((g, i) => {
@@ -296,9 +302,10 @@ export function SkillSelect({ offer = null, doors = null, onPick, onDecline, onR
             </div>
           )}
 
-          {/* Archetyp-Navi (Indikator): aktueller Typ mittig (mit i-Chip → passender Leitfaden), Nachbarn links/rechts
-              im Endlos-Ring, Punkte für die Position (#12/#UI). */}
-          {!wide && nPages > 0 && curG && (
+          {/* Archetyp-Navi (Indikator): aktueller Typ mittig, Nachbarn links/rechts im Endlos-Ring, Punkte für die
+              Position (#12/#UI). Wie die Reiterzeile darüber erst ab ZWEI Seiten: bei einer Seite blieb nur der
+              mittige Fraktions-Chip stehen, ohne Nachbarn und ohne Punkte — ein Banner ohne Navigation. */}
+          {!wide && nPages > 1 && curG && (
             <div className="mt-2">
               <div className="grid items-center gap-2" style={{ gridTemplateColumns: "1fr auto 1fr" }}>
                 {nPages > 1 ? (

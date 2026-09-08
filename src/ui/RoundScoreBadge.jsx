@@ -4,6 +4,24 @@
    Rendert nichts, solange noch kein Durchlauf abgeschlossen ist (Start-Panel → lastCycleScore == null). */
 import { fmtScore } from "./format.js";
 import { t } from "../i18n/index.js"; // #sprache
+import { CoinAmount } from "./CoinMark.jsx"; // Münz-Ökonomie (§4): die Auszahlung des Durchlaufs sichtbar machen
+
+/* Münz-Auszahlung des eben beendeten Durchlaufs (docs/muenz-oekonomie.md §4): „N Siege → +M". Sie steht
+   NEBEN dem Rundenscore, weil beide dasselbe beantworten — was der Durchlauf gebracht hat — und weil der
+   Chip damit ohne eigene Verdrahtung auf allen Entscheidungs-Panels erscheint.
+   Auch die Null wird gezeigt: dass unter 20 Siegen nichts gezahlt wird, ist die Regel, die man am
+   schnellsten dadurch lernt, dass die Zeile es sagt. */
+function CoinPayoutChip({ state }) {
+  const paid = state.lastCycleCoins;
+  if (paid == null) return null;
+  return (
+    <span className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-body-5"
+      style={{ background: "#20202a", border: "1px solid #33333e" }} title={t("coins.payout.title")}>
+      <span className="opacity-55 uppercase tracking-wide text-meta-1">{t("coins.payout.label", { n: state.lastCycleWins ?? 0 })}</span>
+      <CoinAmount n={paid} dim={paid === 0} className="font-bold" />
+    </span>
+  );
+}
 
 export function RoundScoreBadge({ state = {}, className = "" }) {
   const last = state.lastCycleScore;
@@ -18,13 +36,19 @@ export function RoundScoreBadge({ state = {}, className = "" }) {
   const diffSign = pct === 0 ? "±" : (pct > 0 ? "+" : "−");
   const diffStr = t("roundscore.diff", { sign: diffSign, pct: Math.abs(pct) });
   return (
-    <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-body-5 ${className}`}
-      style={{ background: "#20202a", border: "1px solid #33333e" }}>
-      <span className="opacity-55 uppercase tracking-wide text-meta-1">{t("roundscore.label")}</span>
-      <span className="font-bold ty-num" style={{ color: "#d4a63a" }}>{scoreStr}</span>
-      {hasDiff
-        ? <span className="font-bold" title={t("roundscore.diff.title")} style={{ color: diffColor }}>{diffStr}</span>
-        : <span className="opacity-45" title={t("roundscore.noPrev.title")}>{prev == null ? t("roundscore.firstCycle") : "—"}</span>}
+    /* Zwei Chips in einer Zeile, umbrechend: auf 390 px stehen Rundenscore und Auszahlung untereinander,
+       ab da nebeneinander. `className` bleibt am ÄUSSEREN Element — die Aufrufer setzen darüber ihre
+       Randabstände (lv-score), und die Chips selbst sollen davon nichts merken. */
+    <span className={`inline-flex flex-wrap items-center justify-center gap-2 ${className}`}>
+      <span className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-body-5"
+        style={{ background: "#20202a", border: "1px solid #33333e" }}>
+        <span className="opacity-55 uppercase tracking-wide text-meta-1">{t("roundscore.label")}</span>
+        <span className="font-bold ty-num" style={{ color: "#d4a63a" }}>{scoreStr}</span>
+        {hasDiff
+          ? <span className="font-bold" title={t("roundscore.diff.title")} style={{ color: diffColor }}>{diffStr}</span>
+          : <span className="opacity-45" title={t("roundscore.noPrev.title")}>{prev == null ? t("roundscore.firstCycle") : "—"}</span>}
+      </span>
+      <CoinPayoutChip state={state} />
     </span>
   );
 }

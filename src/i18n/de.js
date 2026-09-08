@@ -531,6 +531,11 @@ export default {
   "roundscore.noPrev.title": "keine Vorrunde zum Vergleich",
   "roundscore.firstCycle": "erster Durchlauf",
 
+  /* ---- Münz-Ökonomie (docs/muenz-oekonomie.md) ---- */
+  "hud.coins.title": "Deine Münzen",
+  "coins.payout.label": "{n} Siege",
+  "coins.payout.title": "Münzen aus den Siegen dieses Durchlaufs",
+
   /* ---- Formations-Panel (FormationPanel) ---- */
   "formpanel.title": "Deine aktiven Formationen",
   "formpanel.count": "{n} · max ×{max}",

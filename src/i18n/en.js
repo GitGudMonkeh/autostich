@@ -564,6 +564,11 @@ export default {
   "roundscore.noPrev.title": "no previous cycle to compare against",
   "roundscore.firstCycle": "first cycle",
 
+  /* ---- Coin economy (docs/muenz-oekonomie.md) ---- */
+  "hud.coins.title": "Your coins",
+  "coins.payout.label": "{n} wins",
+  "coins.payout.title": "Coins from this cycle's wins",
+
   /* ---- Formation panel (FormationPanel) ---- */
   "formpanel.title": "Your active formations",
   "formpanel.count": "{n} · max ×{max}",
