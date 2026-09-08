@@ -59,6 +59,7 @@ function UpgradeRow({ familyId, state, coins, onUpgrade, justRaised }) {
   const buy = familyUpgradeBuy({ coins }, tier);
   const fam = familyDef(familyId);
   if (!fam) return null;
+  const cat = perkCat(fam.cat);
   const cur = fam.tiers[tier] || {};
   const next = buy.maxed ? null : (fam.tiers[buy.next] || {});
   const d = next ? tierTextDiff(cur.desc || "", next.desc || "") : null;
@@ -73,7 +74,9 @@ function UpgradeRow({ familyId, state, coins, onUpgrade, justRaised }) {
       style={{ "--c": buy.maxed ? "#3a3850" : tm.color, opacity: buy.maxed ? 0.42 : (buy.can ? 1 : 0.62) }}>
       <div className="flex items-center gap-2 flex-wrap">
         <span className="font-bold text-body-lg-5">{fam.name}</span>
-        <span className="text-meta-1 opacity-60">{perkCat(fam.cat)}</span>
+        {/* `perkCat` liefert das ganze Kategorie-Objekt (Name, Beschreibung, Farbe) — hier zählt der Name.
+            Wer es direkt in den Baum schreibt, bekommt keinen Fehler beim Bauen, sondern eine leere Seite. */}
+        {cat && <span className="text-meta-1 px-1.5 py-0.5 rounded" style={{ background: `${cat.color}22`, color: cat.color }}>{cat.name}</span>}
         {justRaised === familyId && (
           <span className="text-meta-1 font-bold inline-flex items-center gap-1" style={{ color: "#4ade80" }}>✓ {t("upgrade.justRaised")}</span>
         )}
