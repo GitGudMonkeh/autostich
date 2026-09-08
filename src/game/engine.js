@@ -943,7 +943,9 @@ export function resolveTrick(state, rng) {
       // §5.11: der Brett-Deckel gilt für JEDE Gletscher-Quelle, auch für die Eiszeit. Bis §5.10 fror sie ohne Grenze
       // ein, während die eigenen Picks bei GLACIER_MAX standen — sie allein füllte das Brett und stand deshalb bei
       // +281 %, doppelt so hoch wie das nächstbeste Legendäre.
-      const ez = eiszeitTick(newFirnStack, newGlacierLocked, undefined, GLACIER_MAX > 0 ? GLACIER_MAX : Infinity, challengeBlockForm);
+      // §5.14: hebt das Ewige Schild den Deckel auf, gilt das ebenfalls für jede Quelle — auch für die Eiszeit.
+      const ezCap = GLACIER_MAX > 0 && !glacierRoles.includes(GLACIER_ROLES.L_SCHILD) ? GLACIER_MAX : Infinity;
+      const ez = eiszeitTick(newFirnStack, newGlacierLocked, undefined, ezCap, challengeBlockForm);
       newFirnStack = ez.mass; newGlacierLocked = ez.locked;
     }
     // ---- Legendär-Perks-Rework (#203): Durchlauf-Ende-Payoffs, VOR dem Rundenscore-Tracking (dem beendeten Durchlauf

@@ -4368,6 +4368,47 @@ liegen darf.
 **Guard:** `test/ice-rework.test.js` prüft, dass der Schild-Pick selbst schon doppelt zählt, dass jeder weitere
 Eis-Pick danach ebenfalls, und dass `SCHILD_PER_PICK > GLACIER_PER_PICK` bleibt.
 
+### 5.14 Schild: 3 je Pick, Deckel aufgehoben — und der Befund, der daraus folgt (2026-09-08, Owner)
+
+Owner: „nimm 3 und hebe für schild das limit auf." Umgesetzt: `SCHILD_PER_PICK` 4 → **3**, und solange das Schild
+gehalten wird, entfällt `GLACIER_MAX` — die Grenze sind dann nur noch die freien Felder.
+
+**An allen vier Stellen, nicht an einer.** Die Lehre aus §5.11 gilt in beide Richtungen: eine Grenze, die nur an
+einer von mehreren Quellen hängt, ist keine Grenze — und eine *aufgehobene* Grenze, die nur an einer Quelle hängt,
+ist eine Inkonsistenz. Der Deckel fällt daher für den Eis-Pick, für die Nachfolge-Picks in `GLACIER_LOCK`, für den
+Ablehn-Gletscher und für die Eiszeit im Motor.
+
+**Gemessen** (gepaart, Seeds 601..750, Tabelle `legtable-l12.json`):
+
+| Ewiges Schild | Median-Δ | typ. | besser in |
+| --- | --- | --- | --- |
+| 4 je Pick, Deckel bei 12 (§5.13) | +3,12M | +25 % | 63 % |
+| **3 je Pick, ohne Deckel** | +2,32M | **+25 %** | 58 % |
+
+Der aufgehobene Deckel kauft genau zurück, was der Schritt von 4 auf 3 gekostet hat. Für das Schild allein ist die
+Änderung ein Nullsummenspiel.
+
+**Der Befund, der es nicht ist: Eiszeit stieg von +35 % auf +44 %, ohne angefasst zu werden.** Ursache ist die
+gemeinsame Decke. Sonde über dieselben 150 Seeds, Eiszeit eingegriffen:
+
+| | n | Median-Δ | besser in | Ø Gletscher |
+| --- | --- | --- | --- | --- |
+| hält **auch** das Schild | 14 | **+305.079.292** | 86 % | 7,4 |
+| hält nur die Eiszeit | 136 | +2.871.957 | 63 % | 5,5 |
+
+**Faktor 106.** Die beiden Legendären konkurrieren nicht mehr um einen Platz, sie verstärken sich: das Schild nimmt
+die Decke weg, die Eiszeit ist der Motor, der den freigewordenen Platz von selbst füllt. Zusammen frieren sie das
+ganze Brett ein.
+
+**Zweite Nebenwirkung, unabhängig davon:** ist das Brett voll, gibt es nichts mehr zu platzieren. Die
+2D-Formationen aus §5.6 (Block, Kreuz, Linie, Fläche) bedeuten nur etwas, solange Felder knapp sind — wer alles
+einfriert, hat die stärkste Form immer. Der aufgehobene Deckel nimmt der Fraktion ihre einzige
+Aufstellungsentscheidung.
+
+**Damit steht die Frage des Owners im Raum** („Eiszeit und Ewiges Schild sind durch die Änderungen zu ähnlich"):
+beide beantworten jetzt dieselbe Frage — *wie wird mein Brett breit?* Die eine über Zeit, die andere über Picks,
+mit demselben Endzustand. Vorschläge dazu in §5.15; hier steht nur der gemessene Stand.
+
 ## 6. Pflanze
 
 ### 6.1 Richtung und Abgrenzung (gesetzt, Owner 2026-09-06)
@@ -5752,3 +5793,4 @@ und die Ranked-Texte, die eine andere Runde meinen.
 | 2026-09-08 | Eiszeit ignorierte den Brett-Deckel: `eiszeitTick` wurde im Motor ohne `maxGlaciers` aufgerufen, seit §5.5 `EISZEIT_MAX_GLACIERS` strich und den neuen `GLACIER_MAX` nur an die Skill-Wahl hängte. Die eigenen Picks standen bei 12, die Eiszeit fror bis zum vollen Brett weiter. Deckel durchgereicht, keine Zahl der Eiszeit geändert. Gemessen +281 % → +37 %, damit 8. von 12 Legendären. Skilltext und Glossar-Eintrag *Gletscher* nachgezogen. Der Sweep über die Flutrate entfällt. §5.11. |
 | 2026-09-08 | Befund Ewiges Schild (nichts geändert): alle drei Wirkungen hängen an der Gletscherzahl, der Pool wirkt erst ab zwei, die Kaskade lohnt erst ab drei. Gemessen gepaart, dieselben 150 Seeds: gemischtes Angebot Ø 1,83 Gletscher → −1,2M (besser in 43 %); nur Eis Ø 5,18 → +15,9M (77 %), ab drei Gletschern +31M in 90–96 %. 12 von 150 gemischten Läufen erreichen die Schwelle. Kein Bug — eine Auszahlungskarte ohne eigene Rampe. Drei Vorschläge zur Owner-Entscheidung: a) je Eis-Pick zwei Gletscher, solange es gehalten wird (Empfehlung), b) Kaskaden-Boden von vier Nachbarn, c) so lassen und die Bedingung im Text nennen. §5.12. |
 | 2026-09-08 | Owner: Variante a aus §5.12. Ewiges Schild friert je Eis-Pick vier Felder statt einem (`SCHILD_PER_PICK`, neuer Regler); der globale Ein-Pick-Entscheid, der Brett-Deckel und der Ablehn-Gletscher bleiben unberührt. Sweep 2 → +2 %, 3 → +17 %, 4 → +25 %, 5 → +42 %; 4 gesetzt, weil drei Eis-Picks das Brett damit auf genau `GLACIER_MAX` füllen und Eiszeit/Lawine vorn bleiben. Gemessen −12 % → +25 %, besser in 43 → 63 %; Ø Gletscher im Lauf 1,83 → 2,50. Damit sind alle zwölf Legendären positiv (+25 bis +145 %). Skilltext und Guard nachgezogen. §5.13. |
+| 2026-09-08 | Owner: „nimm 3 und hebe für Schild das Limit auf." `SCHILD_PER_PICK` 4 → 3; solange das Schild liegt, entfällt `GLACIER_MAX` — an allen vier Stellen (Eis-Pick, Folge-Picks, Ablehn-Gletscher, Eiszeit im Motor), nicht nur am eigenen Pick. Für das Schild allein ein Nullsummenspiel: +25 % wie zuvor. Nebenbefund: Eiszeit stieg unangetastet von +35 auf +44 %, weil sie sich die aufgehobene Decke teilt — Läufe mit beiden Legendären messen +305M gegen +2,9M ohne, Faktor 106. Zweite Nebenwirkung: ein volles Brett hat keine Formations-Entscheidung mehr. §5.14. |

@@ -244,7 +244,7 @@ export const GLOSSARY = {
 
   /* ============ 4 · Eis ============ */
   glacier: { category: "frak", group: "ice", label: "Gletscher", icon: "❄", img: "glacier", color: CLR.ice,
-    text: `Eis ist der Gletscher-Archetyp: du frierst eine Karte auf ihrem Brettfeld fest. Ab dann ist sie starr (in keiner künftigen Aufstellung mehr verschiebbar), sammelt dafür aber Masse an. Genug Masse, und der Gletscher bricht über seine Nachbarn. Auf dem Brett haben höchstens ${G_MAX} Gletscher Platz, egal woher sie kommen.`,
+    text: `Eis ist der Gletscher-Archetyp: du frierst eine Karte auf ihrem Brettfeld fest. Ab dann ist sie starr (in keiner künftigen Aufstellung mehr verschiebbar), sammelt dafür aber Masse an. Genug Masse, und der Gletscher bricht über seine Nachbarn. Auf dem Brett haben höchstens ${G_MAX} Gletscher Platz, egal woher sie kommen — nur das Ewige Schild hebt diese Grenze auf.`,
     match: ["Gletscher", "Gletschern"] },
   masse: { category: "frak", group: "ice", label: "Masse", icon: "❄", color: CLR.ice,
     text: `Die Eis-Ressource: Masse liegt auf dem Brettfeld. Jeder Gletscher gewinnt jeden Durchlauf +${de(G_EWIGER_FROST)} Masse, bedingungslos bei Sieg wie Niederlage; ein Sieg bringt +${de(G_WIN_MASS)} Masse zusätzlich.`,

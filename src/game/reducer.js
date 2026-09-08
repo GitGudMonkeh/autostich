@@ -202,13 +202,17 @@ function freeGlacierFields(locked, blockForm, n) {
   return free;
 }
 /* §5.5: wie viele Gletscher dieser Pick noch vergeben darf — begrenzt durch die freien Felder und, falls gesetzt,
-   durch den Gesamt-Deckel GLACIER_MAX (0 = keiner). */
-function glacierGrant(locked, blockForm, n, want) {
+   durch den Gesamt-Deckel GLACIER_MAX (0 = keiner). §5.14: mit Ewigem Schild fällt der Deckel, nur die freien
+   Felder bleiben die Grenze. */
+function glacierGrant(locked, blockForm, n, want, uncapped = false) {
   const free = freeGlacierFields(locked, blockForm, n);
   const held = (locked || []).filter(Boolean).length;
-  const room = G_MAX > 0 ? Math.max(0, G_MAX - held) : Infinity;
+  const room = G_MAX > 0 && !uncapped ? Math.max(0, G_MAX - held) : Infinity;
   return Math.max(0, Math.min(want, free, room));
 }
+// §5.14: das Schild hebt den Brett-Deckel auf — für JEDE Gletscher-Quelle, nicht nur für den eigenen Pick.
+// (Die Lehre aus §5.11: eine Grenze, die nur an einer von zwei Quellen hängt, ist keine Grenze.)
+const schildHeld = (s) => (s.glacierRoles || []).includes(G_ROLES.L_SCHILD);
 
 // #301 K verschiedene Positionen aus [0..n) deterministisch ziehen (Fisher-Yates mit einem rng-Strom).
 function pickCells(rng, n, k) {
@@ -696,10 +700,11 @@ export function reducer(state, action) {
         glacierRoles = []; glacierRoleTiers = {}; glacierMass = new Array(C.BOARD_POSITIONS).fill(0); firnStack = new Array(C.BOARD_POSITIONS).fill(0); glacierLocked = new Array(C.BOARD_POSITIONS).fill(false); glacierYield = 0; // #386 Firn-Reserve mit leeren
         frozenOppPending = {}; frozenOppActive = {}; glacierBuffPending = {}; glacierBuffActive = {};
       }
-      // §5.13: mit Ewigem Schild friert ein Eis-Pick zwei Felder statt einem. `glacierRoles` ist schon der Stand NACH
-      // dem Pick — das Schild selbst zählt also ab seinem eigenen Pick, nicht erst ab dem nächsten.
-      const perPick = glacierRoles.includes(G_ROLES.L_SCHILD) ? G_SCHILD_PER_PICK : G_PER_PICK;
-      const icePicks = arch === "ice" ? glacierGrant(glacierLocked, state.challengeBlockForm, (state.playerOrder || []).length, perPick) : 0;
+      // §5.13/§5.14: mit Ewigem Schild friert ein Eis-Pick mehrere Felder und der Brett-Deckel entfällt.
+      // `glacierRoles` ist schon der Stand NACH dem Pick — das Schild zählt ab seinem eigenen Pick, nicht erst danach.
+      const schild = glacierRoles.includes(G_ROLES.L_SCHILD);
+      const perPick = schild ? G_SCHILD_PER_PICK : G_PER_PICK;
+      const icePicks = arch === "ice" ? glacierGrant(glacierLocked, state.challengeBlockForm, (state.playerOrder || []).length, perPick, schild) : 0;
       // Formationen neu berechnen (Anker/Familien/Architekt beeinflussen die Erkennung).
       const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, skills, state.shop?.anchors || [], state.familyTiers, archOf(state), { skillTiers, growth });
       return { ...state, skills, skillTiers, skillOfferTiers: null, activeArchetypes, lightning, heat, deck, iceTemp, growth, brandPending, brandActive, forged, formations,
@@ -730,7 +735,7 @@ export function reducer(state, action) {
       // ebenfalls einen). Der Perk bleibt: das Perk-Angebot wird geparkt (pendingPerkOffer) und nach der Gletscher-Wahl
       // (GLACIER_LOCK) wieder aufgemacht. Nur, wenn überhaupt ein freies Feld zum Einfrieren da ist.
       const iceSkillCount = state.skills.filter((id) => archetypeOf(id) === "ice" && !isLegendarySkill(id)).length;
-      const declineGrant = glacierGrant(state.glacierLocked, state.challengeBlockForm, (state.playerOrder || []).length, 1);
+      const declineGrant = glacierGrant(state.glacierLocked, state.challengeBlockForm, (state.playerOrder || []).length, 1, schildHeld(state));
       if ((state.activeArchetypes || []).includes("ice") && iceSkillCount >= G_DECLINE_MIN_SKILLS && declineGrant > 0) {
         return { ...state, ...cleared, phase: "glacier-target", glacierPicksLeft: declineGrant, pendingPerkOffer: off.length > 0 ? off : null };
       }
@@ -817,7 +822,7 @@ export function reducer(state, action) {
       if (p == null || p < 0 || p >= state.playerOrder.length) return state;
       if (state.glacierLocked && state.glacierLocked[p]) return state; // schon gefroren → ungültige Wahl
       if (state.challengeBlockForm && state.challengeBlockForm.includes(p)) return state; // #301 C3: gesperrte Zelle nicht einfrierbar
-      if (G_MAX > 0 && (state.glacierLocked || []).filter(Boolean).length >= G_MAX) return state; // §5.5: Gesamt-Deckel erreicht
+      if (G_MAX > 0 && !schildHeld(state) && (state.glacierLocked || []).filter(Boolean).length >= G_MAX) return state; // §5.5: Gesamt-Deckel erreicht (§5.14: nicht mit Schild)
       const glacierLocked = (state.glacierLocked || new Array(state.playerOrder.length).fill(false)).slice();
       glacierLocked[p] = true;
       // #386 Firn-Boden-Reserve: der neu gefrorene Gletscher startet LEER (Masse 0) — der auf diesem Feld angesammelte Firn
@@ -827,7 +832,7 @@ export function reducer(state, action) {
       glacierMass[p] = 0;
       // §5.5: hat dieser Pick noch Gletscher übrig und ist noch ein Feld frei, bleibt die Phase offen.
       const left = Math.max(0, (state.glacierPicksLeft || 1) - 1);
-      if (left > 0 && glacierGrant(glacierLocked, state.challengeBlockForm, state.playerOrder.length, left) > 0)
+      if (left > 0 && glacierGrant(glacierLocked, state.challengeBlockForm, state.playerOrder.length, left, schildHeld(state)) > 0)
         return { ...state, glacierLocked, glacierMass, glacierPicksLeft: left };
       // Kam die Gletscher-Wahl aus dem Ablehnen bei vollen Eis-Slots, wartet noch ein geparktes Perk-Angebot → jetzt
       // aufmachen (Perk bleibt erhalten). Sonst wie gehabt zurück ins Spiel.

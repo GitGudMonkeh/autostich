@@ -3,7 +3,7 @@ import { resolveTrick } from "../src/game/engine.js";
 import { initialState, reducer } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
 import { SKILL_DEFS, EIS_TIERS as EIS } from "../src/game/skills.js";
-import { ROLES, precomputeGlacier, GLACIER_MAX, GLACIER_PER_PICK, SCHILD_PER_PICK } from "../src/game/glacier.js";
+import { ROLES, precomputeGlacier, eiszeitTick, GLACIER_MAX, GLACIER_PER_PICK, SCHILD_PER_PICK } from "../src/game/glacier.js";
 import { I, iceTuning, iceRoleTiers, iceSnapshotOpts } from "../src/game/factions/ice.js";
 import { posOf } from "../src/game/architect.js";
 
@@ -194,7 +194,21 @@ describe("Eis-Stufen — vom Pick bis in den State", () => {
     expect(s.glacierLocked.filter(Boolean)).toHaveLength(GLACIER_MAX); // abgelehnt, kein Gletscher mehr
   });
 
-  it("Ewiges Schild friert je Eis-Pick zwei Felder statt einem — ab dem eigenen Pick (§5.13)", () => {
+  it("Ewiges Schild hebt den Gesamt-Deckel auf — für jede Quelle, nicht nur für den eigenen Pick (§5.14)", () => {
+    const locked = new Array(40).fill(false);
+    for (let i = 0; i < GLACIER_MAX; i++) locked[i] = true;
+    const voll = { ...initialState(makeRng(1)), phase: "glacier-target", glacierPicksLeft: 1, activeArchetypes: ["ice"], glacierLocked: locked };
+    // Ohne Schild bleibt es beim Deckel (der Fall darüber), mit Schild friert dasselbe Feld ein.
+    const s = reducer({ ...voll, glacierRoles: [ROLES.L_SCHILD] }, { type: "GLACIER_LOCK", pos: GLACIER_MAX + 1 });
+    expect(s.glacierLocked.filter(Boolean)).toHaveLength(GLACIER_MAX + 1);
+    // Die zweite Quelle: die Eiszeit hält den Deckel ein (§5.11) und friert ohne ihn weiter — der Motor reicht mit
+    // Schild Infinity durch, ohne ihn GLACIER_MAX.
+    const firn = new Array(40).fill(0).map((_, i) => (i < GLACIER_MAX + 2 ? 5 : 0));
+    expect(eiszeitTick(firn, locked, undefined, GLACIER_MAX).locked.filter(Boolean)).toHaveLength(GLACIER_MAX);
+    expect(eiszeitTick(firn, locked, undefined, Infinity).locked.filter(Boolean)).toHaveLength(GLACIER_MAX + 1);
+  });
+
+  it("Ewiges Schild friert je Eis-Pick mehrere Felder statt einem — ab dem eigenen Pick (§5.13)", () => {
     const base = { ...initialState(makeRng(1)), phase: "levelup", skills: [], activeArchetypes: [] };
     const ohne = reducer({ ...base, skillOffer: [I.PACKEIS], skillOfferTiers: { [I.PACKEIS]: 0 } }, { type: "PICK_SKILL", skillId: I.PACKEIS });
     expect(ohne.glacierPicksLeft).toBe(GLACIER_PER_PICK);
