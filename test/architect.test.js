@@ -471,6 +471,68 @@ describe("Architekt — Reducer-Aktionen", () => {
     expect(reset.architect.phaseHistory.length).toBe(0);
   });
 
+  /* Owner-Meldung 2026-09-08: „Drehen, dann Zurücksetzen — das Gebäude steht nicht richtig zurück."
+
+     Die Gruppe darüber schiebt ein Gebäude nur HERUM ([0,1] → [20,21]) — dieselbe Form an einer anderen
+     Stelle. Ein Drehen ist aber eine Verschiebung mit ANDERER FORM, und keine Zusicherung fasste das an.
+     Geprüft wird deshalb nicht der Fußabdruck allein, sondern die LAGE (`currentRotationIndex`): sie ist,
+     was der Spieler sieht, und sie kann falsch sein, während die Zellenzahl stimmt.
+
+     Beide Herkünfte, weil sie ihren Anker aus verschiedenen Quellen holen: ein in DIESER Phase gebautes
+     Gebäude bekommt ihn beim Bauen, ein schon stehendes beim Phasen-Eintritt. `inArchitectPhase()` legt
+     keinen Anker an — für den zweiten Fall wird er hier gesetzt, wie es der Eintritt tut. */
+  describe("Drehen ist eine Verschiebung mit anderer Form — Rückgängig UND Zurücksetzen holen die Lage zurück", () => {
+    const fam = Object.values(ARCHITECT_FAMILIES).find((f) => shapeRotations(f.form).length > 1 && !f.legendary && !f.colorLocked);
+    const rotOf = (fp) => currentRotationIndex(fam.form, fp);
+
+    it("bei einem Gebäude, das in DIESER Phase gebaut wurde", () => {
+      const s = { ...inArchitectPhase(), architect: { ...inArchitectPhase().architect, offers: [{ familyId: fam.id, tier: 1, used: false }] } };
+      const fp0 = [...enumeratePlacements(fam.form, [], [])[0]].sort((a, b) => a - b);
+      const built = reducer(s, { type: "ARCHITECT_BUILD", familyId: fam.id, tier: 1, footprint: fp0 });
+      const b = built.architect.buildings[0];
+      const turnedFp = nextRotationFootprint(fam.form, b.footprint, []);
+      expect(turnedFp, "die Familie hat keine zweite Lage — Probe untauglich").toBeTruthy();
+      const turned = reducer(built, { type: "ARCHITECT_MOVE", buildingId: b.id, footprint: turnedFp });
+      expect(rotOf(turned.architect.buildings[0].footprint)).not.toBe(rotOf(fp0)); // wirklich gedreht
+      for (const act of ["ARCHITECT_UNDO", "ARCHITECT_RESET"]) {
+        const back = reducer(turned, { type: act });
+        expect(back.architect.buildings[0].footprint, `${act} bringt die Zellen nicht zurück`).toEqual(fp0);
+        expect(rotOf(back.architect.buildings[0].footprint), `${act} bringt die LAGE nicht zurück`).toBe(rotOf(fp0));
+      }
+    });
+
+    it("bei einem Gebäude, das schon zu Phasenbeginn stand", () => {
+      const base = inArchitectPhase();
+      const fp0 = [...enumeratePlacements(fam.form, [], [])[0]].sort((a, b) => a - b);
+      const b = { id: 1, familyId: fam.id, tier: 1, footprint: fp0, colorChoice: null };
+      // Phasen-Eintritt nachgebildet: der Anker hält die Lage ALLER stehenden Gebäude (reducer.js, „shop").
+      const s = { ...base, architect: { ...base.architect, buildings: [b], nextId: 2,
+                                        phaseAnchor: { [b.id]: [...fp0] }, phaseHistory: [] } };
+      const turnedFp = nextRotationFootprint(fam.form, fp0, []);
+      const turned = reducer(s, { type: "ARCHITECT_MOVE", buildingId: b.id, footprint: turnedFp });
+      expect(rotOf(turned.architect.buildings[0].footprint)).not.toBe(rotOf(fp0));
+      for (const act of ["ARCHITECT_UNDO", "ARCHITECT_RESET"]) {
+        const back = reducer(turned, { type: act });
+        expect(back.architect.buildings[0].footprint, `${act} bringt die Zellen nicht zurück`).toEqual(fp0);
+        expect(rotOf(back.architect.buildings[0].footprint), `${act} bringt die LAGE nicht zurück`).toBe(rotOf(fp0));
+      }
+    });
+
+    it("auch nach ZWEI Drehungen holt Zurücksetzen die Ausgangslage, nicht die vorletzte", () => {
+      /* Der Unterschied zwischen den zwei Knöpfen: Rückgängig geht EINEN Schritt, Zurücksetzen ganz an den
+         Anfang. Bei einer Familie mit vier Lagen führen beide sonst leicht auf dieselbe Zelle zurück. */
+      const base = inArchitectPhase();
+      const fp0 = [...enumeratePlacements(fam.form, [], [])[0]].sort((a, b) => a - b);
+      const b = { id: 1, familyId: fam.id, tier: 1, footprint: fp0, colorChoice: null };
+      const s = { ...base, architect: { ...base.architect, buildings: [b], nextId: 2, phaseAnchor: { [b.id]: [...fp0] }, phaseHistory: [] } };
+      const t1 = reducer(s, { type: "ARCHITECT_MOVE", buildingId: 1, footprint: nextRotationFootprint(fam.form, fp0, []) });
+      const fp1 = t1.architect.buildings[0].footprint;
+      const t2 = reducer(t1, { type: "ARCHITECT_MOVE", buildingId: 1, footprint: nextRotationFootprint(fam.form, fp1, []) });
+      expect(reducer(t2, { type: "ARCHITECT_UNDO" }).architect.buildings[0].footprint).toEqual(fp1);   // einen Schritt
+      expect(reducer(t2, { type: "ARCHITECT_RESET" }).architect.buildings[0].footprint).toEqual(fp0);  // ganz zurück
+    });
+  });
+
   it("Eine Verschiebung legt einen Undo-Schritt an; DONE verwirft die transienten Undo-Daten", () => {
     const s = inArchitectPhase();
     const built = reducer(s, { type: "ARCHITECT_BUILD", familyId: "A_STUETZE", tier: 2, footprint: [0, 1] });
