@@ -42,12 +42,26 @@ export function CoinAmount({ n = 0, size = 13, minDigits = 0, dim = false, class
   );
 }
 
-/* Beschriftung des Neuwurf-Knopfs (§3.1). Solange Gratis-Neuwürfe übrig sind, zeigt er ihre ANZAHL;
-   danach den PREIS — am Knopf, nicht im Tooltip: auf dem Handy gibt es keine Tooltips, und ein Kauf,
-   dessen Preis man erst durch Antippen erfährt, ist ein Fehlkauf. `r` kommt aus `rerollOffer` (coins.js),
-   damit Knopf und Reducer dieselbe Rechnung benutzen. Fehlen die Münzen, steht der Preis blass da:
-   den Kauf sieht man, auslösen lässt er sich nicht. */
+/* Beschriftung des Neuwurf-Knopfs (§3.1) — zwei Zeilen: oben die Handlung, unten was sie kostet.
+
+   Der PREIS steht IMMER da (Owner 2026-09-08). Vorher zeigte der Knopf nur die Anzahl, solange Gratis-
+   Neuwürfe übrig waren; mit zwei Gratis-Würfen je Lauf und Pool war die Währung damit auf Tür, Skill-
+   und Perk-Angebot die ersten zwei Male gar nicht zu sehen. Wer den Preis nicht sieht, plant nicht mit
+   ihm — und die Treppe (jeder weitere teurer) lernt man nur, wenn man sie liest.
+
+   Am Knopf und nicht im Tooltip: auf dem Handy gibt es keine Tooltips, und ein Kauf, dessen Preis man
+   erst durch Antippen erfährt, ist ein Fehlkauf. `r` kommt aus `rerollOffer` (coins.js), damit Knopf und
+   Reducer dieselbe Rechnung benutzen. Fehlen die Münzen, steht der Preis blass da: den Kauf sieht man,
+   auslösen lässt er sich nicht. */
 export function RerollLabel({ r, freeKey, buyKey }) {
-  if (r.free) return <>{t(freeKey, { n: r.tokens })}</>;
-  return <>{t(buyKey)} <CoinAmount n={r.price} dim={!r.can} /></>;
+  return (
+    <span className="inline-flex flex-col items-center leading-tight">
+      <span>{t(r.free ? freeKey : buyKey)}</span>
+      <span className="text-meta-1 inline-flex items-center gap-1 mt-0.5 opacity-85">
+        {r.free
+          ? <>{t("reroll.free", { n: r.tokens })}<span className="opacity-50">·</span>{t("reroll.then")}<CoinAmount n={r.nextPrice} size={11} /></>
+          : <CoinAmount n={r.price} size={12} dim={!r.can} />}
+      </span>
+    </span>
+  );
 }

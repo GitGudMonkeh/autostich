@@ -97,6 +97,22 @@ describe("Neuwurf-Preistreppe (§3.1)", () => {
     expect(r).toMatchObject({ free: true, tokens: 2, price: 0, legendary: false, can: true });
   });
 
+  /* Owner-Playtest 2026-09-08: die Preise waren gebaut, aber unsichtbar — mit zwei Gratis-Würfen je Lauf
+     und Pool zeigte der Knopf die ersten beiden Male nur die Anzahl. Deshalb trägt `rerollOffer` jetzt
+     IMMER den Preis des nächsten BEZAHLTEN Wurfs, auch solange gratis gewürfelt wird. */
+  it("der Preis des nächsten bezahlten Wurfs steht auch dann fest, wenn noch gratis gewürfelt wird", () => {
+    const free = rerollOffer({ coins: 0, coinRerolls: 0 }, 2, false);
+    expect(free.price).toBe(0);        // DIESER Klick kostet nichts …
+    expect(free.nextPrice).toBe(3);    // … der nächste bezahlte kostet 3
+  });
+
+  it("die Vorschau rechnet mit der Legendär-Basis, wenn ein Legendäres im Angebot liegt", () => {
+    // Sonst verspräche der Knopf 3, wo beim ersten Kauf 15 fällig werden.
+    expect(rerollOffer({ coins: 0, coinRerolls: 0 }, 2, true).nextPrice).toBe(15);
+    // Die Treppe steckt auch in der Vorschau: nach einem Kauf zeigt sie den nächsten Schritt.
+    expect(rerollOffer({ coins: 0, coinRerolls: 1 }, 1, false).nextPrice).toBe(6);
+  });
+
   it("ohne Münzen ist der Kauf sichtbar, aber nicht auslösbar", () => {
     expect(rerollOffer({ coins: 2, coinRerolls: 0 }, 0, false)).toMatchObject({ free: false, price: 3, can: false });
     expect(rerollOffer({ coins: 3, coinRerolls: 0 }, 0, false)).toMatchObject({ free: false, price: 3, can: true });

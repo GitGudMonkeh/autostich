@@ -50,12 +50,20 @@ export const rerollPrice = (bought = 0, legendary = false) => step(legendary ? R
 
 /* Was der NÄCHSTE Neuwurf kostet — die eine Quelle für Knopf und Reducer. Läuft der Knopf auf einer
    anderen Rechnung als der Reducer, zeigt er einen Preis an, den der Kauf nicht nimmt.
-   Solange Gratis-Neuwürfe übrig sind, ist der Neuwurf gratis und NICHT der Legendär-Wurf: die
-   Legendär-Garantie hängt am Kauf, nicht am Angebot (§3.1). */
+
+   ZWEI Preise, und der Unterschied ist wichtig:
+   `price` ist, was DIESER Klick kostet — null, solange Gratis-Neuwürfe übrig sind.
+   `nextPrice` ist, was der nächste BEZAHLTE kostet. Der Knopf zeigt ihn IMMER (Owner 2026-09-08): mit zwei
+   Gratis-Würfen je Lauf und Pool blieb die Währung sonst die ersten zwei Neuwürfe unsichtbar, und wer den
+   Preis nicht sieht, plant nicht mit ihm. Er rechnet mit der Legendär-Basis, wenn das Angebot ein
+   Legendäres trägt — sonst verspräche die Vorschau 3, wo gleich 15 fällig werden.
+
+   `legendary` bleibt währenddessen falsch: die Legendär-GARANTIE hängt am Kauf, nicht am Angebot (§3.1) —
+   ein Gratis-Wurf verspricht kein Legendäres und trägt deshalb auch nicht den goldenen Rahmen. */
 export function rerollOffer(state = {}, freeTokens = 0, legendary = false) {
-  if (freeTokens > 0) return { free: true, tokens: freeTokens, price: 0, legendary: false, can: true };
-  const price = rerollPrice(state.coinRerolls || 0, legendary);
-  return { free: false, tokens: 0, price, legendary: !!legendary, can: (state.coins || 0) >= price };
+  const nextPrice = rerollPrice(state.coinRerolls || 0, legendary);
+  if (freeTokens > 0) return { free: true, tokens: freeTokens, price: 0, nextPrice, legendary: false, can: true };
+  return { free: false, tokens: 0, price: nextPrice, nextPrice, legendary: !!legendary, can: (state.coins || 0) >= nextPrice };
 }
 
 /* ---- Energie in der Aufstellphase (§3.2) ---------------------------------------------------------- */
