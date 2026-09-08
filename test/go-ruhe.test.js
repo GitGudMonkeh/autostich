@@ -574,8 +574,14 @@ describe("#karten-skala — die Kartenbeschriftung misst sich an der Kachel", ()
 
   it("am Handy greift nichts davon", () => {
     /* Dort ist die Kachel ~64 px breit und trägt seit jeher die kleinen Tailwind-Werte — die
-       Container-Rechnung würde daran nichts verbessern und wäre nur ein zweiter Weg zum selben Ziel. */
+       Container-Rechnung würde daran nichts verbessern und wäre nur ein zweiter Weg zum selben Ziel.
+
+       Geprüft wird die KACHEL-Skala, nicht die Technik: bis 2026-09-08 stand hier das nackte
+       `container-type: inline-size`, und damit gehörte dem CardGrid jede Container-Rechnung im ganzen
+       Stylesheet. Das Bau-Brett des Architekten (`.arch-board`, ab 768 px) rechnet seine Zahlengröße
+       genauso an seiner eigenen Breite und fiel darüber, obwohl es weder `.cg-root` noch eine Kachel
+       anfasst. Jetzt steht die Kachel-Deklaration selbst im Muster — für DIESE Skala unverändert scharf. */
     expect(cssBare.replace(desk, ""), "die Skala steht auch außerhalb des Desktop-Blocks")
-      .not.toMatch(/container-type: inline-size|\.cg-val|\.cg-mult|\.cg-lab/);
+      .not.toMatch(/\.cg-root \.as-tile \{ container-type: inline-size|\.cg-val|\.cg-mult|\.cg-lab/);
   });
 });

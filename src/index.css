@@ -1089,6 +1089,44 @@ b, strong { font-weight: 600; }
 }
 .arch-district-flash { animation: arch-place-flash 0.85s ease-out forwards; }
 
+/* #baufeld-desktop (Owner 2026-09-08): das Bau-Brett stand auf JEDER Breite bei festen 300 px und ließ auf
+   dem Desktop die halbe Spalte leer — bei `max-w-5xl` ist die linke Spalte dort rund 576 px breit. Die Zahl
+   stand inline im JSX und ist deshalb hierher umgezogen; ein Inline-Stil schlägt jede Regel, und
+   `!important` ist laut Architektur nicht die Antwort darauf (#menu-rework M3/M7).
+
+   Ab 768 px — dort beginnt das zweispaltige Raster des Architekten — wächst das Brett in seine Spalte,
+   gedeckelt durch drei Werte, dieselbe Technik wie `--bf-w` an der Rundenbühne:
+     1. die Spalte selbst (100 %),
+     2. was die HÖHE übrig lässt: 5 Spalten × 8 Reihen quadratischer Zellen, das Brett ist also 1,6-mal so
+        hoch wie breit → Breite = übrige Höhe × 0,625,
+     3. nach unten die bisherigen 300 px, damit ein flaches Fenster das Brett nicht KLEINER macht als vorher.
+   Handy bleibt bei 300 px: dort ist die Breite die knappe Größe, nicht die Höhe.
+
+   `--ab-chrome` ist bewusst KLEINER als das gemessene Beiwerk (bei 1512 × 900 sind es 364 px: 278 über dem
+   Brett, 86 für die Zeichenerklärung darunter). Mit dem ehrlichen Wert bliebe auf einem flachen Fenster ein
+   Brett von 331 px — 10 % mehr als vorher, also keine Antwort auf „nutzt das Feld nicht". Das Panel scrollt
+   ohnehin (`max-h-[96dvh] overflow-y-auto`), und die Aktionsleiste bleibt beim Scrollen stehen; ein Stück
+   Rollweg ist der Preis für ein lesbares Brett. Gemessen: 1512 × 900 → 387 px (statt 300, Zelle 74 statt 57)
+   mit rund 100 px Rollweg, 1512 × 1080 → 500 px ohne, ab ~1250 px Fensterhöhe deckelt die Spalte. */
+.arch-board { max-width: 300px; margin-inline: auto; }
+
+@media (min-width: 768px) {
+  .arch-board {
+    --ab-chrome: 280px;
+    max-width: min(100%, max(300px, calc((100dvh - var(--ab-chrome)) * 0.625)));
+    /* Nur `inline-size` — das enthält Layout und Größe in der Breitenachse, NICHT das Malen. Der Drag-Ghost
+       (absolut, z-30) darf beim Ziehen weiter über den Brettrand hinausragen; `contain: paint` würde ihn
+       abschneiden und wäre genau der Fehler, den man erst beim Verschieben sieht. */
+    container-type: inline-size;
+  }
+  /* Die Zahl wächst MIT der Zelle, sonst wird das Brett nur luftiger statt lesbarer. Eine Zelle ist ein
+     Fünftel der Brettbreite (abzüglich der vier Lücken), die Zahl davon gut ein Viertel — dieselbe
+     Proportion, die sie bei 300 px hatte (15 px in 57 px). Gedeckelt, damit sie auf einem sehr hohen
+     Fenster nicht die Ecken-Marken (Bonus, Kürzel, Stufe, Gletschermasse) erdrückt: die bleiben bei ihrer
+     Pixelgröße und bekommen durch die größere Zelle ohnehin die Luft, die ihnen bei 300 px fehlte. */
+  .arch-board .ab-num { font-size: clamp(15px, 5.05cqw, 26px); }
+}
+
 /* Aufstellungsphase: eine Karte, deren Formations-Faktor durch den letzten Tausch GESTIEGEN ist,
    blitzt kurz in ihrer Formationsfarbe auf (Farbe kommt per --form-flash aus der Kachel). Bewusst je
    Karte, nicht als Rahmen um die Gruppe: die Formation ist eine Eigenschaft jeder beteiligten Karte,

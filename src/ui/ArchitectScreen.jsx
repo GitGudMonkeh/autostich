@@ -709,7 +709,9 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                 {/* #248: „⟳ Drehen" wandert in die schwebende Aktionsleiste (unten) — dort beim Ziehen ohne Scrollen erreichbar. */}
               </div>
             </div>
-            <div ref={boardRef} className="relative grid grid-cols-5 gap-1" style={{ maxWidth: 300, margin: "0 auto" }}>
+            {/* Breite/Zentrierung stehen als `.arch-board` im Stylesheet, nicht inline: ab 768 px wächst das Brett
+                in die Spalte, und ein Inline-Stil ließe sich von dort nur mit `!important` überschreiben. */}
+            <div ref={boardRef} className="arch-board relative grid grid-cols-5 gap-1">
               {/* #UI: durchgezogene Gebäude-Kontur (SVG) über dem Brett — eine Linie je Gebäude in seiner Form (wie Aufstellung).
                   Während eines Drags ausgeblendet (das Gebäude schwebt frei) → snappt beim Loslassen wieder an seine neue Form. */}
               {archFrame && archFrame.lines.length > 0 && !dragPrev && (
@@ -863,7 +865,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                       <span className="absolute top-[1px] right-[2px] inline-flex items-center gap-[1px] text-micro-2 ty-num leading-none z-10" style={{ color: "#7fbfe0", opacity: 0.85 }} title={t("arch.firn.title", { n: fMass })}><FactionIcon type="ice" size={8} glow={false} />{fMass}</span>
                     )}
                     {/* #UI: keine Suit-Farbpunkte mehr — die Kartennummer selbst trägt die Farbe der Karte. */}
-                    <span className="text-body-3 sm:text-body-lg-3 leading-none relative" style={{ color: inDragPrev ? "#fff" : numCol, textShadow: card.green ? `0 0 5px ${numCol}88` : ((b && !isDragOrig) ? "0 1px 2px #000a" : undefined) }}>{ev}</span>
+                    <span className="ab-num text-body-3 sm:text-body-lg-3 leading-none relative" style={{ color: inDragPrev ? "#fff" : numCol, textShadow: card.green ? `0 0 5px ${numCol}88` : ((b && !isDragOrig) ? "0 1px 2px #000a" : undefined) }}>{ev}</span>
                     {b && !isDragOrig && pos === anchorCell && (
                       <span className="absolute bottom-[1px] left-[3px] text-micro-1 font-bold leading-none" style={{ color: "rgba(255,255,255,0.92)" }}>
                         {fam.name.slice(0, 3).toUpperCase()}
