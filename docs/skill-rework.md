@@ -4312,6 +4312,62 @@ durchschnittlich 2,9 Eis-Skills im gemischten Build.
 Nicht vorgeschlagen, aber der Vollständigkeit halber: `GLACIER_PER_PICK` global auf 2 hebt die ganze Fraktion, nicht
 nur diese Karte — das ist der §5.6-Entscheid des Owners und wird hier nicht wieder aufgemacht.
 
+### 5.13 Ewiges Schild bringt sein Brett selbst mit (2026-09-08, Owner: Variante a) — umgesetzt
+
+Owner auf die drei Vorschläge aus §5.12: „a". Solange das Schild gehalten wird, friert **jeder Eis-Pick vier Felder
+statt einem** (`SCHILD_PER_PICK`). Aus der Karte, die auf ein breites Brett wartet, wird die Karte, die es baut.
+
+**Umsetzung.** Eine Zeile im Reducer, die den Regler wählt:
+
+```js
+const perPick = glacierRoles.includes(G_ROLES.L_SCHILD) ? G_SCHILD_PER_PICK : G_PER_PICK;
+```
+
+`glacierRoles` ist der Stand **nach** dem Pick — das Schild zählt also schon für seinen eigenen Pick, nicht erst ab
+dem nächsten. Der globale `GLACIER_PER_PICK = 1` (Owner, §5.6) bleibt unangetastet, ebenso der Brett-Deckel
+`GLACIER_MAX = 12` und der Ablehn-Gletscher: das Ablehnen bei vollen Slots gibt weiter genau einen. Das ist kein
+Pick, und die Karte verspricht im Text den Pick.
+
+**Sweep** (gepaart, dieselben 150 Seeds, Tabelle `legtable-l12.json`):
+
+| Felder je Eis-Pick | Median-Δ | typ. | besser in |
+| --- | --- | --- | --- |
+| 1 (vorher) | −1,21M | −12 % | 43 % |
+| 2 | +0,29M | +2 % | 52 % |
+| 3 | +1,55M | +17 % | 56 % |
+| **4 (gesetzt)** | **+3,12M** | **+25 %** | **63 %** |
+| 5 | +5,98M | +42 % | 66 % |
+
+Monoton, ohne Sättigung bis 5 — der Brett-Deckel bindet in diesem Bereich noch nicht.
+
+**Warum 4 und nicht 5.** Bei 4 füllen **drei Eis-Picks das Brett auf genau `GLACIER_MAX`**; der Satz „deine Eis-Picks
+füllen das Brett" ist damit wörtlich wahr und für den Spieler nachrechenbar. Bei 5 ist der dritte Pick größtenteils
+gegen den Deckel verschwendet, und das Schild wäre mit +42 % das stärkste Eis-Legendäre vor Eiszeit (+35 %) und
+Großer Lawine (+36 %) — für die Karte mit der Bedingung die falsche Reihenfolge. 5 bleibt als Regler offen
+(`SIM_GLACIER_SCHILD_PER_PICK`), falls Eis insgesamt angehoben werden soll.
+
+**Wirkung im Brett** (Sonde, gemischtes Angebot, 150 Seeds): Ø Gletscher im Lauf **1,83 → 2,50** schon bei 2 je Pick;
+Läufe über der Drei-Gletscher-Schwelle aus §5.12 **12 → 29 von 150**. Die tote Zone, in der die Karte nichts tat, ist
+weg — bei 4 ist sie in 63 % der Seeds besser statt in 43 %.
+
+**Das Feld danach** (gepaart, Seeds 601..750, Median-Δ):
+
+| | | | |
+| --- | --- | --- | --- |
+| Baumreihe +145 % | Wurzelgeflecht +109 % | Sonnenzorn +97 % | Ewiger Frühling +61 % |
+| Ewige Glut +55 % | Sonnenkern +55 % | Resonanz +46 % | Große Lawine +36 % |
+| Eiszeit +35 % | Doppelentladung +28 % | Hochspannung +26 % | **Ewiges Schild +25 %** |
+
+**Alle zwölf sind positiv.** Das Feld spannt +25 bis +145 %; das negative Legendäre gibt es nicht mehr. Das Schild
+sitzt am unteren Rand, zusammen mit den beiden Blitz-Karten — und liegt damit dort, wo eine Karte mit Bedingung
+liegen darf.
+
+**Text.** Die Beschreibung führt jetzt mit dem, was der Spieler entscheidet: „Jeder Eis-Skill friert von jetzt an
+4 Felder ein statt einem." Die Zahl kommt aus `SCHILD_PER_PICK`, nicht aus dem Text.
+
+**Guard:** `test/ice-rework.test.js` prüft, dass der Schild-Pick selbst schon doppelt zählt, dass jeder weitere
+Eis-Pick danach ebenfalls, und dass `SCHILD_PER_PICK > GLACIER_PER_PICK` bleibt.
+
 ## 6. Pflanze
 
 ### 6.1 Richtung und Abgrenzung (gesetzt, Owner 2026-09-06)
@@ -5695,3 +5751,4 @@ und die Ranked-Texte, die eine andere Runde meinen.
 | 2026-09-07 | Owner: die Legendär-Chance im Perk-Angebot von 3 auf 7 % je Phase. `PERK_LEGENDARY_BASE` 0,03 → 0,07 — erwartet je Lauf 0,39 → 0,91, mindestens einer im Lauf 32,7 → 61,1 % (legendärer Skill zum Vergleich: 1,37 und 75,1 %). Der strukturelle Unterschied bleibt: der Skill würfelt je Platz, der Perk einmal je Angebot; ein Wurf je Platz gäbe 8,7 % je Phase und bleibt als Option offen. Balance-Guard 2,72M / 6,42M — im Band, nicht neu zentriert. §5.10. |
 | 2026-09-08 | Eiszeit ignorierte den Brett-Deckel: `eiszeitTick` wurde im Motor ohne `maxGlaciers` aufgerufen, seit §5.5 `EISZEIT_MAX_GLACIERS` strich und den neuen `GLACIER_MAX` nur an die Skill-Wahl hängte. Die eigenen Picks standen bei 12, die Eiszeit fror bis zum vollen Brett weiter. Deckel durchgereicht, keine Zahl der Eiszeit geändert. Gemessen +281 % → +37 %, damit 8. von 12 Legendären. Skilltext und Glossar-Eintrag *Gletscher* nachgezogen. Der Sweep über die Flutrate entfällt. §5.11. |
 | 2026-09-08 | Befund Ewiges Schild (nichts geändert): alle drei Wirkungen hängen an der Gletscherzahl, der Pool wirkt erst ab zwei, die Kaskade lohnt erst ab drei. Gemessen gepaart, dieselben 150 Seeds: gemischtes Angebot Ø 1,83 Gletscher → −1,2M (besser in 43 %); nur Eis Ø 5,18 → +15,9M (77 %), ab drei Gletschern +31M in 90–96 %. 12 von 150 gemischten Läufen erreichen die Schwelle. Kein Bug — eine Auszahlungskarte ohne eigene Rampe. Drei Vorschläge zur Owner-Entscheidung: a) je Eis-Pick zwei Gletscher, solange es gehalten wird (Empfehlung), b) Kaskaden-Boden von vier Nachbarn, c) so lassen und die Bedingung im Text nennen. §5.12. |
+| 2026-09-08 | Owner: Variante a aus §5.12. Ewiges Schild friert je Eis-Pick vier Felder statt einem (`SCHILD_PER_PICK`, neuer Regler); der globale Ein-Pick-Entscheid, der Brett-Deckel und der Ablehn-Gletscher bleiben unberührt. Sweep 2 → +2 %, 3 → +17 %, 4 → +25 %, 5 → +42 %; 4 gesetzt, weil drei Eis-Picks das Brett damit auf genau `GLACIER_MAX` füllen und Eiszeit/Lawine vorn bleiben. Gemessen −12 % → +25 %, besser in 43 → 63 %; Ø Gletscher im Lauf 1,83 → 2,50. Damit sind alle zwölf Legendären positiv (+25 bis +145 %). Skilltext und Guard nachgezogen. §5.13. |

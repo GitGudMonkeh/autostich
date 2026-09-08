@@ -38,6 +38,11 @@ export const DECLINE_MIN_SKILLS = 4;
 // §5.5 (Owner-Frage): Wie viele Karten friert EIN Eis-Skill-Pick fest? Bisher genau eine — der Verdacht ist, dass die
 // Fraktion daran hängt, weil ein Cluster über 7 Picks nie dicht wird. Regler, damit 1–3 messbar sind.
 export const GLACIER_PER_PICK = envNum("SIM_GLACIER_PER_PICK", 1);
+// §5.13 (Owner-Entscheid a): Ewiges Schild friert je Eis-Pick SO VIELE Felder — es bringt das breite Brett mit, auf
+// das seine drei Wirkungen warten. §5.12 hat gemessen, dass alle drei erst ab drei Gletschern zahlen, das gemischte
+// Angebot aber im Schnitt 1,83 stellt. Sweep: 2 → +2 %, 3 → +17 %, 4 → +25 %, 5 → +42 %. Bei 4 füllen drei Eis-Picks
+// das Brett auf genau GLACIER_MAX. Gilt nur für den Pick, nicht für den Ablehn-Gletscher.
+export const SCHILD_PER_PICK = envNum("SIM_GLACIER_SCHILD_PER_PICK", 4);
 // Optionaler Deckel auf die GESAMTZAHL der Gletscher (0 = keiner). Nicht der gestrichene Score-Deckel aus §5.5, sondern
 // eine Grenze für das Brett: ein Voll-Mono-Eis-Build soll nicht die ganze Aufstellung einfrieren können.
 export const GLACIER_MAX = envNum("SIM_GLACIER_MAX", 12); // §5.5: 12 lässt die Große Fläche (3×3, neun Gletscher) zu und hält drei Felder Luft

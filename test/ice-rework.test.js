@@ -3,7 +3,7 @@ import { resolveTrick } from "../src/game/engine.js";
 import { initialState, reducer } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
 import { SKILL_DEFS, EIS_TIERS as EIS } from "../src/game/skills.js";
-import { ROLES, precomputeGlacier, GLACIER_MAX } from "../src/game/glacier.js";
+import { ROLES, precomputeGlacier, GLACIER_MAX, GLACIER_PER_PICK, SCHILD_PER_PICK } from "../src/game/glacier.js";
 import { I, iceTuning, iceRoleTiers, iceSnapshotOpts } from "../src/game/factions/ice.js";
 import { posOf } from "../src/game/architect.js";
 
@@ -192,6 +192,20 @@ describe("Eis-Stufen — vom Pick bis in den State", () => {
     const s = reducer({ ...initialState(makeRng(1)), phase: "glacier-target", glacierPicksLeft: 1, activeArchetypes: ["ice"], glacierLocked: locked },
       { type: "GLACIER_LOCK", pos: GLACIER_MAX + 1 });
     expect(s.glacierLocked.filter(Boolean)).toHaveLength(GLACIER_MAX); // abgelehnt, kein Gletscher mehr
+  });
+
+  it("Ewiges Schild friert je Eis-Pick zwei Felder statt einem — ab dem eigenen Pick (§5.13)", () => {
+    const base = { ...initialState(makeRng(1)), phase: "levelup", skills: [], activeArchetypes: [] };
+    const ohne = reducer({ ...base, skillOffer: [I.PACKEIS], skillOfferTiers: { [I.PACKEIS]: 0 } }, { type: "PICK_SKILL", skillId: I.PACKEIS });
+    expect(ohne.glacierPicksLeft).toBe(GLACIER_PER_PICK);
+    // Der Schild-Pick selbst zählt schon doppelt: glacierRoles ist der Stand NACH dem Pick.
+    const mit = reducer({ ...base, skillOffer: [I.EWIGES_SCHILD] }, { type: "PICK_SKILL", skillId: I.EWIGES_SCHILD });
+    expect(mit.glacierRoles).toContain(ROLES.L_SCHILD);
+    expect(mit.glacierPicksLeft).toBe(SCHILD_PER_PICK);
+    expect(SCHILD_PER_PICK).toBeGreaterThan(GLACIER_PER_PICK);
+    // …und jeder weitere Eis-Pick danach ebenfalls.
+    const danach = reducer({ ...mit, phase: "levelup", skillOffer: [I.PACKEIS], skillOfferTiers: { [I.PACKEIS]: 0 }, glacierPicksLeft: 0 }, { type: "PICK_SKILL", skillId: I.PACKEIS });
+    expect(danach.glacierPicksLeft).toBe(SCHILD_PER_PICK);
   });
 
   it("PICK_SKILL legt die gewürfelte Stufe als Rollen-Stufe ab", () => {

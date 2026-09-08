@@ -18,7 +18,7 @@ import { resolveTrick, formationEnergyFor } from "./engine.js"; // formationEner
 import * as C from "./constants.js";
 import { runRules, perksOfferedFor, skillOfferParams, sanitizeRules } from "./rules.js"; // exp: Regeln je Lauf (state.rules; null → Konstanten)
 import { isLegendarySkill } from "./skills.js"; // #217: Garantie-Erkennung (Legendär im Skill-Reroll-Angebot)
-import { DECLINE_MIN_SKILLS as G_DECLINE_MIN_SKILLS, GLACIER_PER_PICK as G_PER_PICK, GLACIER_MAX as G_MAX } from "./glacier.js"; // Eis-Neudesign: Ablehn-Gletscher-Schwelle (gehaltene Eis-Skills)
+import { DECLINE_MIN_SKILLS as G_DECLINE_MIN_SKILLS, GLACIER_PER_PICK as G_PER_PICK, GLACIER_MAX as G_MAX, SCHILD_PER_PICK as G_SCHILD_PER_PICK, ROLES as G_ROLES } from "./glacier.js"; // Eis-Neudesign: Ablehn-Gletscher-Schwelle (gehaltene Eis-Skills) · §5.13 Schild-Pick
 import { pickWeekMods, weekModMag, TIGHT_BUILD_COVER } from "./weekMods.js"; // #370 Ranked-Rework Phase 3: Wochen-Modifikatoren (seed-deterministisch) · exp: hasWeekMod ging mit PICK_LEGENDARY (doubleLeg)
 
 import { initialArchitect, familyDef as archFamily, isValidFootprint, occupiedCells as archOccupied, buildArchitectOffer, MAX_TIER as ARCH_MAX_TIER, MAX_COVER as ARCH_MAX_COVER, N_POS } from "./architect.js";
@@ -696,7 +696,10 @@ export function reducer(state, action) {
         glacierRoles = []; glacierRoleTiers = {}; glacierMass = new Array(C.BOARD_POSITIONS).fill(0); firnStack = new Array(C.BOARD_POSITIONS).fill(0); glacierLocked = new Array(C.BOARD_POSITIONS).fill(false); glacierYield = 0; // #386 Firn-Reserve mit leeren
         frozenOppPending = {}; frozenOppActive = {}; glacierBuffPending = {}; glacierBuffActive = {};
       }
-      const icePicks = arch === "ice" ? glacierGrant(glacierLocked, state.challengeBlockForm, (state.playerOrder || []).length, G_PER_PICK) : 0;
+      // §5.13: mit Ewigem Schild friert ein Eis-Pick zwei Felder statt einem. `glacierRoles` ist schon der Stand NACH
+      // dem Pick — das Schild selbst zählt also ab seinem eigenen Pick, nicht erst ab dem nächsten.
+      const perPick = glacierRoles.includes(G_ROLES.L_SCHILD) ? G_SCHILD_PER_PICK : G_PER_PICK;
+      const icePicks = arch === "ice" ? glacierGrant(glacierLocked, state.challengeBlockForm, (state.playerOrder || []).length, perPick) : 0;
       // Formationen neu berechnen (Anker/Familien/Architekt beeinflussen die Erkennung).
       const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, skills, state.shop?.anchors || [], state.familyTiers, archOf(state), { skillTiers, growth });
       return { ...state, skills, skillTiers, skillOfferTiers: null, activeArchetypes, lightning, heat, deck, iceTemp, growth, brandPending, brandActive, forged, formations,
