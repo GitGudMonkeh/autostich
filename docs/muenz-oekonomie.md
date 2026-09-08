@@ -125,16 +125,15 @@ erhöht die laufende Energie, nicht die Basis.
 
 ### 3.3 Fokus rufen
 
-**Wirkung:** Zur **nächsten Skill-Phase** kommt eine **dritte Tür** mit **drei Skills der gewählten
-Fraktion**. Die zwei gewürfelten Türen bleiben — die gerufene ist eine zusätzliche Wahl, keine
-Ersetzung.
+**Wirkung:** öffnet **sofort, in derselben Phase**, eine **dritte Tür** mit **drei Skills der gewählten
+Fraktion** (Owner, 2026-09-07). Die zwei gewürfelten Türen bleiben — die gerufene ist eine zusätzliche
+Wahl, keine Ersetzung.
 **Wo:** **unter den Türen**, auf der Türstufe. Vier Fraktions-Chips; ein Tap wählt und bezahlt.
-**Regel:** einmal je Skill-Phase. **Der Ruf wartet auf die nächste Skill-Phase und verfällt nicht** —
-egal wie viele Perk-, Aufstell- und Architekt-Runden dazwischen liegen (Owner, 2026-09-07).
+**Regel:** einmal je Skill-Phase. Nichts wird aufgehoben, nichts verfällt — der Ruf ist gekaufte
+Auswahl, keine Vormerkung.
 **Preis [TUNING]:** 5, fest.
 
-Die einzige Ausgabe, die erst später wirkt. Deshalb muss die Beschriftung „nächste **Skill-Phase**"
-sagen, nicht „nächste Runde": im Vier-Block-Plan liegen vier Durchläufe dazwischen.
+Die Stufen der drei Skills werden wie überall gewürfelt; gerufen wird die Fraktion, nicht die Qualität.
 
 **Offen:** Zusammenspiel mit dem Startfokus (`docs/skill-rework.md` §1) — naheliegend wäre, dass der
 Ruf auf die Fokus-Fraktion weniger kostet. Entscheidbar erst, wenn der Fokus steht.
@@ -222,7 +221,7 @@ Vier Bildschirme sind betroffen; die Mockups zeigen sie in dieser Reihenfolge (L
 | Screen | Was dazukommt |
 | --- | --- |
 | **Türstufe** | Unter den zwei Türen der Block „Fokus rufen · 5" mit vier Fraktions-Chips und einer Zeile, was er bewirkt. |
-| **Türstufe mit gerufener Tür** | Die gerufene Tür steht **unter** den zwei gewürfelten, über volle Breite, im Fraktionsglow, mit „Gerufen"-Marke. Über die Breite statt als dritte Spalte: bei drei Karten nebeneinander wären es je ~115 px, und die gerufene sähe aus wie eine von dreien statt wie die, für die bezahlt wurde. |
+| **Türstufe nach dem Ruf** | Dieselbe Phase, dieselbe Ansicht: die gerufene Tür erscheint **unter** den zwei gewürfelten, über volle Breite, im Fraktionsglow, mit „Gerufen"-Marke. Über die Breite statt als dritte Spalte: bei drei Karten nebeneinander wären es je ~115 px, und die gerufene sähe aus wie eine von dreien statt wie die, für die bezahlt wurde. |
 | **Angebot der Tür** | Aufwerten-Knopf in eigener Zeile unter Neuwurf/Ablehnen. Die drei Skills stehen auf **einer** Seite (keine Fraktions-Navi, kein Pager — das ist der exp-Stand). |
 | **Aufwertphase** | Neuer Bildschirm. Je Skill: Fraktion, Name, Preis rechts; darunter der Stufenwechsel als Chip-Paar; darunter der Effekt mit altem Wert durchgestrichen. Fuß: „Zurück zur Skill-Wahl". |
 
