@@ -880,8 +880,12 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                         {fam.legendary ? "★" : ROMAN[b.tier]}
                       </span>
                     )}
+                    {/* Formations-Marke (Owner 2026-09-08: „etwas höher und etwas größer"). Sie klebte mit 7 px
+                        am unteren Kachelrand und war auf dem Brett kaum zu lesen. Jetzt 9 px und 4 px Abstand
+                        nach unten — die Zahl der Karte sitzt mittig im Flex und bleibt mehrere Pixel entfernt,
+                        auch auf der schmalsten Kachel (Handy, 300 px Brett → 57 px Zelle). */}
                     {showForms && inForm && (
-                      <span className="absolute bottom-[1px] left-1/2 -translate-x-1/2 text-micro-1 font-bold leading-none whitespace-nowrap" style={{ color: fb.color, textShadow: "0 1px 2px #000a" }}>
+                      <span className="absolute bottom-[4px] left-1/2 -translate-x-1/2 text-micro-3 font-bold leading-none whitespace-nowrap" style={{ color: fb.color, textShadow: "0 1px 2px #000a" }}>
                         {formLabels}×{fmt(pf.mult)}
                       </span>
                     )}

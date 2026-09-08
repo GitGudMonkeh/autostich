@@ -284,13 +284,9 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, onBu
           <div className="md:w-1/2 md:shrink-0">
             {/* Architekt-Overlay-Steuerung (#202): welche Karten liegen unter welchem Gebäude? Toggle + Kategorie-Legende. */}
             {hasArch && <ArchToggle on={showArch} onToggle={() => setShowArch((v) => !v)} />}
-            {/* #aufstell-ruhe (Owner 2026-09-08): KEIN Deck-Skin auf den Kacheln dieser Phase. Das Artwork ist
-                das Bild EINER Karte, vierzigmal nebeneinander — als Fläche ist es Unruhe, und genau darüber
-                liegen hier die Signale, auf die es ankommt: Formationsrahmen, Segmentgrenzen, Wash und Ring
-                des Architekten, Gletscher, Reife. Ohne Skin trägt die Kachel wieder die Farbe ihrer KARTE
-                (Zahl voll, Rahmen als Farbe der Suit) — der Zustand vor #180. `frontImage={null}` gewinnt
-                gegen den Context; die Rundenbühne und die anderen Grids behalten den Skin. */}
-            <CardGrid frontImage={null} cards={cards} formations={formations} roles={state.roles} anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }} selectedPos={sel} onTilePick={clickPos} quietTiles openSegments={segInfo} swappedIds={swappedIds} disabledPos={chLockFormSet} lockedPos={chLockFormSet} segStrength={segStrength} segDelta={segDelta} flashPos={flash.pos} flashKey={flash.key} architectCover={hasArch && showArch ? architectCover : null} structPos={hasArch && showArch ? structLitPos : null} distrPos={hasArch && showArch ? distrLitPos : null} glowBid={hasArch && showArch ? inspectBid : null}
+            {/* #aufstell-ruhe: der Deck-Skin ist inzwischen aus dem Kartengitter selbst raus (CardGrid) —
+                hier steht deshalb keine Abbestellung mehr, sondern nichts. */}
+            <CardGrid cards={cards} formations={formations} roles={state.roles} anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }} selectedPos={sel} onTilePick={clickPos} quietTiles openSegments={segInfo} swappedIds={swappedIds} disabledPos={chLockFormSet} lockedPos={chLockFormSet} segStrength={segStrength} segDelta={segDelta} flashPos={flash.pos} flashKey={flash.key} architectCover={hasArch && showArch ? architectCover : null} structPos={hasArch && showArch ? structLitPos : null} distrPos={hasArch && showArch ? distrLitPos : null} glowBid={hasArch && showArch ? inspectBid : null}
               glacierPos={iceActive ? glacierPos : null} glacierMassByPos={iceActive ? glacierMass : null} firnStackByPos={iceActive ? firnStack : null} />
           </div>
 
