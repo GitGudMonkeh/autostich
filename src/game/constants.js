@@ -142,7 +142,7 @@ export const MAX_LEGENDARIES_PER_OFFER = 1;    // höchstens so viele Legendarie
 
 // Legendär-Roll (Shop-Spec §10 P5/P6): expliziter Wurf vor jedem Perk-/Skill-Angebot. Bei Erfolg wird genau
 // EIN Legendäres erzwungen, sonst enthält das Angebot keins. Chance = Basis + Bonus (P5/P6, je +5 pp), Bonus-Cap. [TUNING]
-export const PERK_LEGENDARY_BASE       = envNum("SIM_PERK_LEGENDARY_BASE", 0.03); // Basis-Legendär-Chance Perk-Angebot [0,08→0,03; Sim-tunebar für Legendär-Perk-Messung]
+export const PERK_LEGENDARY_BASE       = envNum("SIM_PERK_LEGENDARY_BASE", 0.07); // Basis-Legendär-Chance Perk-Angebot [0,08→0,03→0,07; §5.10 Owner: legendäre Skills erschienen 3,5× so oft, weil sie JE PLATZ würfeln und der Perk nur einmal je Angebot]
 // exp skill rework (docs/skill-rework.md §1, §3.7): every offered skill rolls a rarity tier — Normal / Selten /
 // Sehr selten / Episch with these weights — and, before that, a legendary chance PER SLOT: a hit replaces the slot
 // with an unowned legendary of the same faction (fifth rarity, no gate, no replacing). Owner start value 3–4 %.

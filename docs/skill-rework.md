@@ -4185,6 +4185,28 @@ Baum-Multiplikator, garantierte Legendäre der zweiten Perk-Phase) — sie hinge
 entfernt. Naheliegendster Hebel, falls gewünscht: den Perk-Wurf ebenfalls je Platz führen — das allein bringt 3,0 %
 auf 8,7 % je Phase und 0,39 auf 1,17 je Lauf, ohne eine Zahl zu ändern. **Nichts umgesetzt.**
 
+### 5.10 Legendäre Perks: Chance je Phase 3 → 7 % (2026-09-07, Owner) — umgesetzt
+
+Owner nach dem Nebenbefund aus §5.9: „können wir die Chance je Phase von 3 auf 7 erhöhen". `PERK_LEGENDARY_BASE`
+steht jetzt bei 0,07.
+
+| | vorher | jetzt | legendärer Skill zum Vergleich |
+| --- | --- | --- | --- |
+| Chance je Phase | 3,0 % | **7,0 %** | 10,1 % (geöffnete Tür, drei Plätze) |
+| erwartet je Lauf | 0,39 | **0,91** | 1,37 |
+| mindestens einer im Lauf | 32,7 % | **61,1 %** | 75,1 % |
+
+Damit liegt der Perk bei rund zwei Dritteln der Skill-Rate statt bei einem Drittel. Der strukturelle Unterschied
+bleibt bestehen: **der Skill würfelt je Platz, der Perk einmal je Angebot.** Wer beide gleichziehen will, führt den
+Perk-Wurf ebenfalls je Platz — das gäbe 8,7 % je Phase ohne eine geänderte Zahl. Der Owner hat den einfacheren Weg
+gewählt; der andere bleibt offen.
+
+Zu bedenken, falls später doch umgestellt wird: der Perk zieht aus 21 Legendären, der Skill aus 12. Ein *bestimmter*
+legendärer Perk bleibt also auch bei gleicher Angebotsrate deutlich seltener als ein bestimmter legendärer Skill.
+
+**Balance-Guard:** Seeds 1..40 Median 2,78 → **2,72M**, Mean 6,24 → **6,42M**. Beides im Band (§5.6), nicht neu
+zentriert — der Zufallsspieler bekommt zwar öfter ein legendäres Perk-Angebot, nimmt es aber nicht gezielt.
+
 ## 6. Pflanze
 
 ### 6.1 Richtung und Abgrenzung (gesetzt, Owner 2026-09-06)
@@ -5565,3 +5587,4 @@ und die Ranked-Texte, die eine andere Runde meinen.
 | 2026-09-07 | Auf Ansage: Viabilität aller Skills, Ablation mono je Fraktion und einmal gemischt. KORREKTUR zu §5.4/§5.6 — die dort zitierten „+30 bis +100 % bei Feuer/Blitz/Pflanze" stammen aus alten Protokollen und stimmen heute nicht. Gemessen: Feuer +227 % (Glühende Klinge) / Blitz +68 % / Pflanze +26 % / Eis +19 % an der Spitze, und bei oder unter null stehen 8 von 15 bei Feuer, Blitz und Eis, 10 von 15 bei der Pflanze. Eis ist damit nicht flacher als die anderen, ihm fehlt nur der eine Ausreißer. Klar schädlich (≤ −7 %) sind zwölf Skills über alle vier Fraktionen, die größten bei Blitz (Serienschutz −29 %) und Feuer (Rückzündung/Schmiede −14 %). Der gemischte Lauf taugt für Einzelskills nicht (Haltequoten 4–30 %), sagt aber: Eis ist eine Bekenntnis-Fraktion. §5.7. |
 | 2026-09-07 | Owner: die Große Lawine soll nicht erst am Ende feuern, und Ewiges Schild braucht einen Buff. Umgesetzt: die Lawine feuert jeden 5. Durchlauf statt einmal am Laufende, Verstärker 6 → 2 (sie feuert jetzt rund fünfmal je Lauf); „jede Runde" wurde verworfen, weil dann nichts mehr über die erste Schwelle wächst und der Kern der Fraktion stirbt. Der One-Shot-Zustand ist aus State, Engine, Reducer und UI raus, die Leiste zählt zum nächsten Schlag herunter. Ewiges Schild: der additive Masse-Zuschlag verfiel am Masse-Deckel und ist gestrichen; stattdessen erbt jeder Gletscher die stärkste Gletscher-Formation des Bretts. Beide Texte neu. UNGEMESSEN, Startwerte. §5.8. |
 | 2026-09-07 | Auf Ansage gemessen — und ein Messfehler gefunden: `--mode legendaries` lädt die Werte-Tabelle aus der `--table`-Datei, wenn sie existiert, und `legtable-l9.json` stammt aus der Zeit vor dem Eis-Angebot (null Eis-Einträge). Die drei Eis-Legendären wurden dort in einem Build OHNE Gletscherfeld gemessen; der §5.4-Befund „Ewiges Schild und Große Lawine sind tot" ist damit nicht belegt und ist korrigiert. Mit frischer Tabelle: Eiszeit +281 % (doppelt so hoch wie das nächstbeste von zwölf, das eigentliche Ungleichgewicht), Ewiges Schild −7 %, Große Lawine −8 %. Sweep der Lawine: alt −1 %, Takt ×2 −8 %, ×6 +13 %, ×10 +29 % — der Takt aus §5.8 war richtig, die Senkung des Verstärkers auf ×2 war der Denkfehler (der erzwungene Bruch ersetzt einen ohnehin kommenden, der Verstärker ist die Entschädigung für die niedrigere Masse, keine Prämie je Auslösung). ×10 gesetzt. Nebenbefund auf Owner-Frage: legendäre Skills erscheinen 3,5× so oft wie legendäre Perks, weil der Skill je PLATZ würfelt und der Perk nur einmal je Angebot. §5.9. |
+| 2026-09-07 | Owner: die Legendär-Chance im Perk-Angebot von 3 auf 7 % je Phase. `PERK_LEGENDARY_BASE` 0,03 → 0,07 — erwartet je Lauf 0,39 → 0,91, mindestens einer im Lauf 32,7 → 61,1 % (legendärer Skill zum Vergleich: 1,37 und 75,1 %). Der strukturelle Unterschied bleibt: der Skill würfelt je Platz, der Perk einmal je Angebot; ein Wurf je Platz gäbe 8,7 % je Phase und bleibt als Option offen. Balance-Guard 2,72M / 6,42M — im Band, nicht neu zentriert. §5.10. |
