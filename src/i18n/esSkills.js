@@ -20,7 +20,8 @@
 import * as C from "../game/constants.js";
 import { THRESHOLDS as G_THRESHOLDS, EISZEIT_FLOOD as G_EISZEIT_FLOOD, EISZEIT_DRAW as G_EISZEIT_DRAW,
   EISZEIT_BURST_PER as G_EISZEIT_BURST,
-  GROSSE_LAWINE_EVERY as G_LAWINE_EVERY } from "../game/glacier.js";
+  GROSSE_LAWINE_EVERY as G_LAWINE_EVERY, GROSSE_LAWINE_MULT as G_LAWINE_MULT,
+  SCHILD_PER_PICK as G_SCHILD_PER_PICK } from "../game/glacier.js";
 
 const num = (x) => String(x).replace(".", ",");                          // Spanish keeps the decimal comma
 const pct = (x) => Math.round(x * 100);                                  // share → percent (0.25 → 25)
@@ -150,11 +151,11 @@ export default {
   "ability.SK_ICE_17.name": "Coraza de Hielo",
   "ability.SK_ICE_17.desc": `Una derrota junto a un glaciar no rompe tu racha y da +1 de masa por cada glaciar contiguo.`,
   "ability.SK_ICE_L01.name": "Edad de Hielo",
-  "ability.SK_ICE_L01.desc": `En cada ciclo, +${num(G_EISZEIT_FLOOD)} de nieve en la reserva del suelo de cada celda sin congelar. Después cada celda abierta entrega hasta ${num(G_EISZEIT_DRAW)} de su reserva al glaciar más cercano. Y cada glaciar revienta con +${num(G_EISZEIT_BURST * 100)} % de fuerza por cada celda abierta adyacente: el suelo libre es tu fuerza, no tu pérdida.`,
+  "ability.SK_ICE_L01.desc": `En cada ciclo, +${num(G_EISZEIT_FLOOD)} de nieve en la reserva del suelo de cada celda sin congelar. Cada celda abierta entrega hasta ${num(G_EISZEIT_DRAW)} de ella al glaciar más cercano. Cada glaciar revienta con +${num(G_EISZEIT_BURST * 100)} % de fuerza por cada celda abierta adyacente.`,
   "ability.SK_ICE_L02.name": "Escudo Eterno",
-  "ability.SK_ICE_L02.desc": `Todo tu campo cuenta como un solo glaciar. En cada ciclo, todos tus glaciares suben hasta la masa del más fuerte, sin bajar nunca. Al estallar, cada uno cuenta como vecino de todos los demás, estén donde estén, y cada uno recibe la formación glaciar más fuerte del tablero.`,
+  "ability.SK_ICE_L02.desc": `Cada habilidad de hielo congela ${num(G_SCHILD_PER_PICK)} celdas en vez de una, sin límite máximo. Tu campo cuenta como un glaciar: en cada ciclo, todos suben hasta la masa del más fuerte, sin bajar nunca. Al estallar, cada uno cuenta como vecino de todos los demás y recibe la formación glaciar más fuerte del tablero.`,
   "ability.SK_ICE_L03.name": "Gran Avalancha",
-  "ability.SK_ICE_L03.desc": `Cada ${G_LAWINE_EVERY}.º ciclo estallan TODOS tus glaciares de golpe, incluidos los que aún no están llenos, cada uno con la fuerza del umbral más alto y enormemente amplificado.`,
+  "ability.SK_ICE_L03.desc": `Cada ${G_LAWINE_EVERY}.º ciclo estallan todos tus glaciares, incluidos los que no están llenos. Cada estallido cuenta con la fuerza del umbral más alto y ×${num(G_LAWINE_MULT)}.`,
 
   /* ---- 🌿 Planta ---- */
   "ability.SK_PLANT_02.name": "Profundidad de Raíz",

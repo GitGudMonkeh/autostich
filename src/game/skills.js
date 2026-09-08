@@ -5,7 +5,7 @@ import { shuffle } from "./deck.js";
 import { GEO_LINIE as G_GEO_LINIE, TIER_MULT as G_TIER_MULT, THRESHOLDS as G_THRESHOLDS,
   EISZEIT_FLOOD as G_EISZEIT_FLOOD, EISZEIT_DRAW as G_EISZEIT_DRAW, EISZEIT_BURST_PER as G_EISZEIT_BURST,
   GROSSE_LAWINE_EVERY as G_LAWINE_EVERY,
-  SCHILD_PER_PICK as G_SCHILD_PER_PICK } from "./glacier.js";
+  SCHILD_PER_PICK as G_SCHILD_PER_PICK, GROSSE_LAWINE_MULT as G_LAWINE_MULT } from "./glacier.js";
 
 // Deutsche Zahlformatierung (1.08 → „1,08") — driftgefährdete Beschreibungszahlen aus den Konstanten interpolieren.
 const de = (x) => String(x).replace(".", ",");
@@ -271,11 +271,11 @@ export const SKILL_DEFS = {
     ...tiered(EIS.eispanzer, (r) => `Eine Niederlage neben einem Gletscher bricht deine Serie nicht und gibt +${de(r.mass)} Masse je angrenzendem Gletscher.`) },
   // Legendäre (je Linie eine Capstone)
   SK_ICE_L01: { id: "SK_ICE_L01", name: "Eiszeit", archetype: "ice", legendary: true, keywords: ["glacier", "freeze"], role: "G_L_EISZEIT",
-    desc: `Jeden Durchlauf +${de(G_EISZEIT_FLOOD)} Schnee in die Boden-Reserve jedes ungefrorenen Felds. Danach gibt jedes offene Feld bis zu ${de(G_EISZEIT_DRAW)} seiner Reserve an den nächstgelegenen Gletscher ab. Und jeder Gletscher birst mit +${de(G_EISZEIT_BURST * 100)} % Wucht je angrenzendem offenen Feld — freier Boden ist deine Wucht, nicht dein Verlust.` },
+    desc: `Jeden Durchlauf +${de(G_EISZEIT_FLOOD)} Schnee in die Boden-Reserve jedes ungefrorenen Felds. Jedes offene Feld gibt bis zu ${de(G_EISZEIT_DRAW)} davon an den nächsten Gletscher. Jeder Gletscher birst mit +${de(G_EISZEIT_BURST * 100)} % Wucht je angrenzendem offenen Feld.` },
   SK_ICE_L02: { id: "SK_ICE_L02", name: "Ewiges Schild", archetype: "ice", legendary: true, keywords: ["glacier"], role: "G_L_SCHILD",
-    desc: `Jeder Eis-Skill friert von jetzt an ${de(G_SCHILD_PER_PICK)} Felder ein statt einem, und die Höchstzahl an Gletschern entfällt — du kannst das ganze Brett einfrieren. Dein ganzes Feld zählt als ein einziger Gletscher: jeden Durchlauf ziehen alle deine Gletscher auf die Masse des stärksten hoch, nie fallend. Beim Bersten gilt jeder als Nachbar aller anderen, egal wo sie liegen, und jeder bekommt die stärkste Gletscher-Formation des Bretts.` },
+    desc: `Jeder Eis-Skill friert ${de(G_SCHILD_PER_PICK)} Felder ein statt einem, ohne Höchstzahl. Dein Feld zählt als ein Gletscher: jeden Durchlauf ziehen alle auf die Masse des stärksten hoch, nie fallend. Beim Bersten gilt jeder als Nachbar aller anderen und bekommt die stärkste Gletscher-Formation des Bretts.` },
   SK_ICE_L03: { id: "SK_ICE_L03", name: "Große Lawine", archetype: "ice", legendary: true, keywords: ["glacier"], role: "G_L_LAWINE",
-    desc: `${jeder(G_LAWINE_EVERY, "Jeden")} Durchlauf brechen ALLE deine Gletscher auf einen Schlag, auch die noch nicht vollen, jeder mit der Wucht der höchsten Schwelle und verstärkt.` },
+    desc: `${jeder(G_LAWINE_EVERY, "Jeden")} Durchlauf brechen alle deine Gletscher, auch die nicht vollen. Jeder Bruch zählt mit der Wucht der höchsten Schwelle und ×${de(G_LAWINE_MULT)}.` },
   // (§5.2: Erstarrung SK_ICE_L04 gestrichen — die Kontrolle ist Einfrieren in groß, und der Score-Teil war ein nackter
   //  Faktor auf den Bruch. Drei Legendäre je Fraktion, §6.11.)
 

@@ -16,7 +16,8 @@
 import * as C from "../game/constants.js";
 import { THRESHOLDS as G_THRESHOLDS, EISZEIT_FLOOD as G_EISZEIT_FLOOD, EISZEIT_DRAW as G_EISZEIT_DRAW,
   EISZEIT_BURST_PER as G_EISZEIT_BURST,
-  GROSSE_LAWINE_EVERY as G_LAWINE_EVERY } from "../game/glacier.js";
+  GROSSE_LAWINE_EVERY as G_LAWINE_EVERY, GROSSE_LAWINE_MULT as G_LAWINE_MULT,
+  SCHILD_PER_PICK as G_SCHILD_PER_PICK } from "../game/glacier.js";
 
 const num = (x) => String(x);                                            // English keeps the decimal point
 const pct = (x) => Math.round(x * 100);                                  // share → percent (0.25 → 25)
@@ -145,11 +146,11 @@ export default {
   "ability.SK_ICE_17.name": "Ice Armour",
   "ability.SK_ICE_17.desc": `A loss next to a glacier does not break your streak and gives +1 mass per adjacent glacier.`,
   "ability.SK_ICE_L01.name": "Ice Age",
-  "ability.SK_ICE_L01.desc": `Every cycle, +${num(G_EISZEIT_FLOOD)} snow into the ground reserve of every unfrozen cell. Then every open cell hands up to ${num(G_EISZEIT_DRAW)} of its reserve to the nearest glacier. And every glacier bursts with +${num(G_EISZEIT_BURST * 100)} % force per adjacent open cell — open ground is your force, not your loss.`,
+  "ability.SK_ICE_L01.desc": `Every cycle, +${num(G_EISZEIT_FLOOD)} snow into the ground reserve of every unfrozen cell. Every open cell hands up to ${num(G_EISZEIT_DRAW)} of it to the nearest glacier. Every glacier bursts with +${num(G_EISZEIT_BURST * 100)} % force per adjacent open cell.`,
   "ability.SK_ICE_L02.name": "Eternal Shield",
-  "ability.SK_ICE_L02.desc": `Your whole field counts as a single glacier. Every cycle, all your glaciers rise to the mass of the strongest, never dropping. On a burst, each counts as a neighbour of every other, wherever they sit, and each takes the strongest glacier formation on the board.`,
+  "ability.SK_ICE_L02.desc": `Every ice skill freezes ${num(G_SCHILD_PER_PICK)} cells instead of one, with no upper limit. Your field counts as one glacier: every cycle, all rise to the mass of the strongest, never dropping. On a burst, each counts as a neighbour of every other and takes the strongest glacier formation on the board.`,
   "ability.SK_ICE_L03.name": "Great Avalanche",
-  "ability.SK_ICE_L03.desc": `Every ${G_LAWINE_EVERY}th cycle, ALL your glaciers burst at once, including those not yet full, each with the force of the highest threshold and amplified.`,
+  "ability.SK_ICE_L03.desc": `Every ${G_LAWINE_EVERY}th cycle, all your glaciers burst, including those not full. Each burst counts with the force of the highest threshold and ×${num(G_LAWINE_MULT)}.`,
 
   /* ---- 🌿 Plant ---- */
   "ability.SK_PLANT_02.name": "Root Depth",
