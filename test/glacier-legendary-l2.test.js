@@ -27,27 +27,32 @@ describe("eiszeitTick — Flut + Zug aus dem offenen Boden (§5.15)", () => {
   it("flutet jedes ungefrorene Feld und friert dabei nichts ein", () => {
     const locked = lockAt(0);
     const { firn, mass } = eiszeitTick(zeros(), zeros(), locked);
-    expect(firn[39]).toBe(EISZEIT_FLOOD);   // fernes offenes Feld: geflutet, unangetastet
+    expect(firn[39]).toBe(EISZEIT_FLOOD - EISZEIT_DRAW); // erst geflutet, dann vom Gletscher angezapft (§5.17)
     expect(firn[0]).toBe(0);                // unter dem Gletscher wird nicht geflutet
     expect(mass.some((v, i) => i !== 0 && v > 0)).toBe(false); // kein zweiter Gletscher entstanden
   });
 
-  it("der Gletscher zieht seine offenen Nachbarn leer — je mehr offener Boden, desto mehr Masse", () => {
-    // pos0 (Ecke) hat zwei offene Nachbarn, das Innenfeld vier. Reserve reicht überall für den vollen Zug.
+  it("jedes offene Feld gibt an den nächsten Gletscher ab — auch fernes (§5.17)", () => {
+    // Ein einzelner Gletscher zieht vom GANZEN Brett: 39 offene Felder, je EISZEIT_DRAW.
     const reserve = new Array(40).fill(EISZEIT_DRAW);
-    const ecke = eiszeitTick(reserve, zeros(), lockAt(0));
-    const innen = eiszeitTick(reserve, zeros(), lockAt(mid));
-    expect(ecke.mass[0]).toBe(2 * EISZEIT_DRAW);
-    expect(innen.mass[mid]).toBe(4 * EISZEIT_DRAW);
-    // Was der Gletscher zieht, fehlt danach im Boden — die Reserve ist ein Vorrat, keine Quelle.
-    expect(ecke.firn[1]).toBe(EISZEIT_DRAW + EISZEIT_FLOOD - EISZEIT_DRAW);
+    const { mass } = eiszeitTick(reserve, zeros(), lockAt(0), 0); // ohne Flut, damit nur der Vorrat zählt
+    expect(mass[0]).toBe(39 * EISZEIT_DRAW);
+    // Das ist der Punkt des Schritts: vorher endete der Zug am Ring und Dauerfrost (Abstand ≥ 2) kam nie an.
+    const fern = new Array(40).fill(0);
+    fern[39] = EISZEIT_DRAW;                                       // maximal weit von pos0 entfernt
+    expect(eiszeitTick(fern, zeros(), lockAt(0), 0).mass[0]).toBe(EISZEIT_DRAW);
   });
 
-  it("ein Feld gibt nur her, was es hat — zwei Gletscher teilen sich denselben Nachbarn", () => {
+  it("ein Feld gibt nur EINMAL ab, an den nächsten — nicht an jeden", () => {
     const reserve = new Array(40).fill(0);
-    reserve[1] = EISZEIT_DRAW;              // pos1 liegt zwischen pos0 und pos2
-    const { mass } = eiszeitTick(reserve, zeros(), lockAt(0, 2), 0); // ohne Flut, damit nur der Vorrat zählt
+    reserve[1] = EISZEIT_DRAW;              // pos1 liegt zwischen pos0 und pos2, gleich weit
+    const { mass } = eiszeitTick(reserve, zeros(), lockAt(0, 2), 0);
     expect(mass[0] + mass[2]).toBe(EISZEIT_DRAW);
+    // und näher gewinnt: pos1 liegt direkt an pos0, pos30 ist weit weg
+    const r2 = new Array(40).fill(0); r2[1] = EISZEIT_DRAW;
+    const m2 = eiszeitTick(r2, zeros(), lockAt(0, 30), 0).mass;
+    expect(m2[0]).toBe(EISZEIT_DRAW);
+    expect(m2[30]).toBe(0);
   });
 });
 

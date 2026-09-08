@@ -145,7 +145,7 @@ export default {
   "ability.SK_ICE_17.name": "Ice Armour",
   "ability.SK_ICE_17.desc": `A loss next to a glacier does not break your streak and gives +1 mass per adjacent glacier.`,
   "ability.SK_ICE_L01.name": "Ice Age",
-  "ability.SK_ICE_L01.desc": `Every cycle, +${num(G_EISZEIT_FLOOD)} snow into the ground reserve of every unfrozen cell. Then every glacier drinks up to ${num(G_EISZEIT_DRAW)} reserve from each adjacent open cell into its own mass. And every glacier bursts with +${num(G_EISZEIT_BURST * 100)} % force per adjacent open cell — open ground is your force, not your loss.`,
+  "ability.SK_ICE_L01.desc": `Every cycle, +${num(G_EISZEIT_FLOOD)} snow into the ground reserve of every unfrozen cell. Then every open cell hands up to ${num(G_EISZEIT_DRAW)} of its reserve to the nearest glacier. And every glacier bursts with +${num(G_EISZEIT_BURST * 100)} % force per adjacent open cell — open ground is your force, not your loss.`,
   "ability.SK_ICE_L02.name": "Eternal Shield",
   "ability.SK_ICE_L02.desc": `Your whole field counts as a single glacier. Every cycle, all your glaciers rise to the mass of the strongest, never dropping. On a burst, each counts as a neighbour of every other, wherever they sit, and each takes the strongest glacier formation on the board.`,
   "ability.SK_ICE_L03.name": "Great Avalanche",

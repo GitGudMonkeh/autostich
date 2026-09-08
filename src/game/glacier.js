@@ -221,20 +221,25 @@ export const EISZEIT_DRAW = envNum("SIM_GLACIER_EISZEIT_DRAW", 2); // Zug je off
 // je Durchlauf, also verfällt jede Flut über die Decke hinaus. Die Berstkraft kennt diese Decke nicht.
 // Sweep §5.16: 0,25 → −4 %, 0,5 → −1 %, 1 → +13 %, 2 → +30 %. Bei 2 sitzt die Eiszeit im Band der übrigen elf.
 export const EISZEIT_BURST_PER = envNum("SIM_GLACIER_EISZEIT_BURST", 2);
-export function eiszeitTick(firn, mass, locked, base = EISZEIT_FLOOD, draw = EISZEIT_DRAW, neighborFn = neighbors4) {
+export function eiszeitTick(firn, mass, locked, base = EISZEIT_FLOOD, draw = EISZEIT_DRAW) {
   const isG = (p) => (locked instanceof Set ? locked.has(p) : !!(locked && locked[p]));
   const f = Array.isArray(firn) ? firn.slice() : new Array(N_POS).fill(0);
   const m = Array.isArray(mass) ? mass.slice() : new Array(N_POS).fill(0);
   for (let p = 0; p < N_POS; p++) if (!isG(p)) f[p] = (f[p] || 0) + base;   // brettweite Flut in die Reserve
-  // Zug: Positionsreihenfolge, jedes offene Feld gibt nur her, was es hat — zwei Gletscher an demselben Feld teilen
-  // sich also dessen Reserve, statt sie doppelt zu bekommen.
-  for (let p = 0; p < N_POS; p++) {
-    if (!isG(p)) continue;
-    for (const n of neighborFn(p)) {
-      if (isG(n)) continue;
-      const take = Math.min(draw, f[n] || 0);
-      if (take > 0) { f[n] -= take; m[p] = (m[p] || 0) + take; }
+  // Zug (§5.17): JEDES offene Feld gibt an den NÄCHSTEN Gletscher ab, nicht nur an einen angrenzenden. Vorher endete
+  // der Zug am Ring, und Dauerfrost füllt gezielt Felder mit Abstand ≥ 2 — seine Reserve erreichte nie einen
+  // Gletscher. Gemessen lagen 69 % aller Reserve über dem, was ein Feld je abrufen kann. Jedes Feld gibt nur einmal
+  // ab (an den nächsten), also wird nichts doppelt gezahlt; bei gleichem Abstand entscheidet die Position.
+  const gs = []; for (let p = 0; p < N_POS; p++) if (isG(p)) gs.push(p);
+  if (gs.length) for (let p = 0; p < N_POS; p++) {
+    if (isG(p) || !(f[p] > 0)) continue;
+    let best = gs[0], bestD = Infinity;
+    for (const g of gs) {
+      const d = Math.max(Math.abs(rowOf(p) - rowOf(g)), Math.abs(colOf(p) - colOf(g)));
+      if (d < bestD) { bestD = d; best = g; }
     }
+    const take = Math.min(draw, f[p]);
+    f[p] -= take; m[best] = (m[best] || 0) + take;
   }
   return { firn: f, mass: m };
 }

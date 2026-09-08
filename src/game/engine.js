@@ -941,7 +941,7 @@ export function resolveTrick(state, rng) {
     if (glacierActive && glacierRoles.includes(GLACIER_ROLES.L_EISZEIT)) {
       // §5.15: die Eiszeit friert nicht mehr ein — sie flutet die Reserve und die Gletscher trinken den angrenzenden
       // offenen Boden leer. Damit entfällt hier jede Deckel-Frage (§5.11/§5.14): sie erzeugt keinen Gletscher mehr.
-      const ez = eiszeitTick(newFirnStack, newGlacierMass, glacierLocked, undefined, undefined, glacierNF);
+      const ez = eiszeitTick(newFirnStack, newGlacierMass, glacierLocked);
       newFirnStack = ez.firn; newGlacierMass = ez.mass;
     }
     // ---- Legendär-Perks-Rework (#203): Durchlauf-Ende-Payoffs, VOR dem Rundenscore-Tracking (dem beendeten Durchlauf

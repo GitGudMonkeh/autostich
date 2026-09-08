@@ -150,7 +150,7 @@ export default {
   "ability.SK_ICE_17.name": "Coraza de Hielo",
   "ability.SK_ICE_17.desc": `Una derrota junto a un glaciar no rompe tu racha y da +1 de masa por cada glaciar contiguo.`,
   "ability.SK_ICE_L01.name": "Edad de Hielo",
-  "ability.SK_ICE_L01.desc": `En cada ciclo, +${num(G_EISZEIT_FLOOD)} de nieve en la reserva del suelo de cada celda sin congelar. Después cada glaciar bebe hasta ${num(G_EISZEIT_DRAW)} de reserva de cada celda abierta adyacente y la suma a su masa. Y cada glaciar revienta con +${num(G_EISZEIT_BURST * 100)} % de fuerza por cada celda abierta adyacente: el suelo libre es tu fuerza, no tu pérdida.`,
+  "ability.SK_ICE_L01.desc": `En cada ciclo, +${num(G_EISZEIT_FLOOD)} de nieve en la reserva del suelo de cada celda sin congelar. Después cada celda abierta entrega hasta ${num(G_EISZEIT_DRAW)} de su reserva al glaciar más cercano. Y cada glaciar revienta con +${num(G_EISZEIT_BURST * 100)} % de fuerza por cada celda abierta adyacente: el suelo libre es tu fuerza, no tu pérdida.`,
   "ability.SK_ICE_L02.name": "Escudo Eterno",
   "ability.SK_ICE_L02.desc": `Todo tu campo cuenta como un solo glaciar. En cada ciclo, todos tus glaciares suben hasta la masa del más fuerte, sin bajar nunca. Al estallar, cada uno cuenta como vecino de todos los demás, estén donde estén, y cada uno recibe la formación glaciar más fuerte del tablero.`,
   "ability.SK_ICE_L03.name": "Gran Avalancha",
