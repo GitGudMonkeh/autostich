@@ -25,7 +25,7 @@ import { perkLegendaryChance, anchorAt } from "./shop.js";
 import { precomputeArchitect, architectValueBonus, architectScore, buildArchitectOffer } from "./architect.js";
 import { precomputeGlacier, ewigerFrostTick, dauerfrostTick, driftTargets as glacierDriftTargets,
   neighbors4 as glacierNeighbors4, uebergletscherPool, packeisTick, verzahnungTick, eiszeitTick, glacierGeometry,
-  ROLES as GLACIER_ROLES, WIN_MASS as GLACIER_WIN_MASS, GROSSE_LAWINE_EVERY as GLACIER_LAWINE_EVERY, GLACIER_MAX,
+  ROLES as GLACIER_ROLES, WIN_MASS as GLACIER_WIN_MASS, GROSSE_LAWINE_EVERY as GLACIER_LAWINE_EVERY,
   FIRN_REFILL_TARGET as GLACIER_FIRN_REFILL_TARGET } from "./glacier.js"; // Eis-Neudesign (isoliert, activeArchetypes "ice") · #386 Firn-Reserve-Nachschub
 import { iceTuning, iceSnapshotOpts, iceNeighborFn } from "./factions/ice.js"; // §5.3: die Zahlen der Eis-Skills kommen aus ihrer Stufe
 import { fullPerkOffer, devSkillOffer, fullArchitectOffer } from "./devCatalog.js"; // Dev-Run: Voll-Katalog statt Zufallsangebot (nur state.devMode)
@@ -224,7 +224,7 @@ export function resolveTrick(state, rng) {
   let glacierPreNow = glacierPre;
   let newGlacierMass = Array.isArray(glacierMass) ? glacierMass.slice() : [];
   let newFirnStack = Array.isArray(firnStack) ? firnStack.slice() : []; // #386 Firn-Boden-Reserve: Arbeitskopie (nur ice-gegated beschrieben → Nicht-Eis-Läufe byte-identisch)
-  let newGlacierLocked = glacierLocked; // wird nur von Eiszeit (Auto-Lock) verändert; sonst durchgereicht
+  const newGlacierLocked = glacierLocked; // §5.15: keine Quelle im Motor friert mehr ein — nur noch durchgereicht
   if (glacierActive && pos === 0) {
     // #386 Firn-Boden-Reserve: Runden-Start-Nachschub — VOR dem Bruch-Snapshot zieht jeder gefrorene Gletscher aus seiner
     // Boden-Reserve (firnStack) wieder auf die volle Masse (FIRN_REFILL_TARGET=12) auf. Selbst-erzeugte Masse aus der Vorrunde
@@ -936,17 +936,13 @@ export function resolveTrick(state, rng) {
     // Packeis / Verzahnung (docs §4 Eisschild): Dichte-Bonus je Gletscher-Nachbar / Cluster-Größe (Eisbrücke-adjazenz-aware).
     if (glacierActive && glacierRoles.includes(GLACIER_ROLES.PACKEIS)) newGlacierMass = packeisTick(newGlacierMass, glacierLocked, glacierNF, ice.packeisPer);
     if (glacierActive && glacierRoles.includes(GLACIER_ROLES.VERZAHNUNG)) newGlacierMass = verzahnungTick(newGlacierMass, glacierLocked, glacierNF, ice.verzahnungPer);
-    // Eiszeit (Legendär): brettweite Flut in die Boden-RESERVE (#386 firnStack) + das höchste ungefrorene Feld (nach Reserve)
-    // friert zum Gletscher ein (Karten frieren nach und nach). Der neu gefrorene Gletscher startet mit Masse 0 (glacierMass
-    // bleibt unberührt) und zieht ab dem nächsten Rundenstart aus seiner Reserve auf.
+    // Eiszeit (Legendär): brettweite Flut in die Boden-RESERVE (#386 firnStack), dann trinken die Gletscher den
+    // angrenzenden offenen Boden leer — die Reserve wird zu Gletscher-Masse.
     if (glacierActive && glacierRoles.includes(GLACIER_ROLES.L_EISZEIT)) {
-      // §5.11: der Brett-Deckel gilt für JEDE Gletscher-Quelle, auch für die Eiszeit. Bis §5.10 fror sie ohne Grenze
-      // ein, während die eigenen Picks bei GLACIER_MAX standen — sie allein füllte das Brett und stand deshalb bei
-      // +281 %, doppelt so hoch wie das nächstbeste Legendäre.
-      // §5.14: hebt das Ewige Schild den Deckel auf, gilt das ebenfalls für jede Quelle — auch für die Eiszeit.
-      const ezCap = GLACIER_MAX > 0 && !glacierRoles.includes(GLACIER_ROLES.L_SCHILD) ? GLACIER_MAX : Infinity;
-      const ez = eiszeitTick(newFirnStack, newGlacierLocked, undefined, ezCap, challengeBlockForm);
-      newFirnStack = ez.mass; newGlacierLocked = ez.locked;
+      // §5.15: die Eiszeit friert nicht mehr ein — sie flutet die Reserve und die Gletscher trinken den angrenzenden
+      // offenen Boden leer. Damit entfällt hier jede Deckel-Frage (§5.11/§5.14): sie erzeugt keinen Gletscher mehr.
+      const ez = eiszeitTick(newFirnStack, newGlacierMass, glacierLocked, undefined, undefined, glacierNF);
+      newFirnStack = ez.firn; newGlacierMass = ez.mass;
     }
     // ---- Legendär-Perks-Rework (#203): Durchlauf-Ende-Payoffs, VOR dem Rundenscore-Tracking (dem beendeten Durchlauf
     //      attribuiert). Zinseszins — ABRECHNUNG der Bank (s. u.). Echo — der beste Stich dieses Durchlaufs wird ein

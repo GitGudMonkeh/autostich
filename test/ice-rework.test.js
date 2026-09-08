@@ -201,11 +201,11 @@ describe("Eis-Stufen — vom Pick bis in den State", () => {
     // Ohne Schild bleibt es beim Deckel (der Fall darüber), mit Schild friert dasselbe Feld ein.
     const s = reducer({ ...voll, glacierRoles: [ROLES.L_SCHILD] }, { type: "GLACIER_LOCK", pos: GLACIER_MAX + 1 });
     expect(s.glacierLocked.filter(Boolean)).toHaveLength(GLACIER_MAX + 1);
-    // Die zweite Quelle: die Eiszeit hält den Deckel ein (§5.11) und friert ohne ihn weiter — der Motor reicht mit
-    // Schild Infinity durch, ohne ihn GLACIER_MAX.
-    const firn = new Array(40).fill(0).map((_, i) => (i < GLACIER_MAX + 2 ? 5 : 0));
-    expect(eiszeitTick(firn, locked, undefined, GLACIER_MAX).locked.filter(Boolean)).toHaveLength(GLACIER_MAX);
-    expect(eiszeitTick(firn, locked, undefined, Infinity).locked.filter(Boolean)).toHaveLength(GLACIER_MAX + 1);
+    // §5.15: die zweite Quelle gibt es nicht mehr — die Eiszeit friert nichts ein, also kann sie den aufgehobenen
+    // Deckel auch nicht mehr füllen. Genau das nimmt dem Paar den Faktor-106-Verbund aus §5.14.
+    const firn = new Array(40).fill(9);
+    expect(eiszeitTick(firn, new Array(40).fill(0), locked).firn).toHaveLength(40);
+    expect(locked.filter(Boolean)).toHaveLength(GLACIER_MAX); // eiszeitTick fasst `locked` nicht mehr an
   });
 
   it("Ewiges Schild friert je Eis-Pick mehrere Felder statt einem — ab dem eigenen Pick (§5.13)", () => {

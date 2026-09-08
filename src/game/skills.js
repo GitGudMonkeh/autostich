@@ -3,7 +3,7 @@ import { shuffle } from "./deck.js";
 // Eis: die Zahlen der SKILLS stehen in der Stufentabelle EIS unten. Aus glacier.js kommt nur, was ohne Skill gilt —
 // die Schwellen, die Wucht je Stufe, der Linien-Faktor der Geometrie und die Werte der drei Legendären.
 import { GEO_LINIE as G_GEO_LINIE, TIER_MULT as G_TIER_MULT, THRESHOLDS as G_THRESHOLDS,
-  EISZEIT_FLOOD as G_EISZEIT_FLOOD, GROSSE_LAWINE_EVERY as G_LAWINE_EVERY,
+  EISZEIT_FLOOD as G_EISZEIT_FLOOD, EISZEIT_DRAW as G_EISZEIT_DRAW, GROSSE_LAWINE_EVERY as G_LAWINE_EVERY,
   SCHILD_PER_PICK as G_SCHILD_PER_PICK } from "./glacier.js";
 
 // Deutsche Zahlformatierung (1.08 → „1,08") — driftgefährdete Beschreibungszahlen aus den Konstanten interpolieren.
@@ -270,7 +270,7 @@ export const SKILL_DEFS = {
     ...tiered(EIS.eispanzer, (r) => `Eine Niederlage neben einem Gletscher bricht deine Serie nicht und gibt +${de(r.mass)} Masse je angrenzendem Gletscher.`) },
   // Legendäre (je Linie eine Capstone)
   SK_ICE_L01: { id: "SK_ICE_L01", name: "Eiszeit", archetype: "ice", legendary: true, keywords: ["glacier", "freeze"], role: "G_L_EISZEIT",
-    desc: `Jeden Durchlauf +${de(G_EISZEIT_FLOOD)} Schnee in die Boden-Reserve jedes ungefrorenen Felds. Das reservestärkste friert dann zum Gletscher ein und füllt sich aus seiner Reserve. Die Eiszeit friert weiter ein, solange auf dem Brett noch Platz für Gletscher ist.` },
+    desc: `Jeden Durchlauf +${de(G_EISZEIT_FLOOD)} Schnee in die Boden-Reserve jedes ungefrorenen Felds. Danach trinkt jeder Gletscher aus jedem angrenzenden offenen Feld bis zu ${de(G_EISZEIT_DRAW)} Reserve in seine Masse. Je mehr offener Boden neben deinen Gletschern liegt, desto schneller wachsen sie.` },
   SK_ICE_L02: { id: "SK_ICE_L02", name: "Ewiges Schild", archetype: "ice", legendary: true, keywords: ["glacier"], role: "G_L_SCHILD",
     desc: `Jeder Eis-Skill friert von jetzt an ${de(G_SCHILD_PER_PICK)} Felder ein statt einem, und die Höchstzahl an Gletschern entfällt — du kannst das ganze Brett einfrieren. Dein ganzes Feld zählt als ein einziger Gletscher: jeden Durchlauf ziehen alle deine Gletscher auf die Masse des stärksten hoch, nie fallend. Beim Bersten gilt jeder als Nachbar aller anderen, egal wo sie liegen, und jeder bekommt die stärkste Gletscher-Formation des Bretts.` },
   SK_ICE_L03: { id: "SK_ICE_L03", name: "Große Lawine", archetype: "ice", legendary: true, keywords: ["glacier"], role: "G_L_LAWINE",

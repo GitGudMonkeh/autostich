@@ -200,31 +200,31 @@ export function uebergletscherPool(mass, locked) {
   return out;
 }
 
-// Eiszeit (Legendär, docs §7): Dauerfrost im Overdrive — am Durchlauf-Ende flutet das GANZE Brett (alle ungefrorenen
-// Felder, flach, ohne Nachbar-Dämpfung), und das höchste ungefrorene Feld friert zum Gletscher ein (Karten frieren nach
-// und nach über die Restrunden). Gibt { mass, locked } zurück. ⚠ Flutrate Platzhalter.
-// #386: `mass` ist die Firn-Boden-RESERVE (firnStack) — die Flut füllt die Reserve offener Felder, die Auto-Freeze-Wahl
-// liest die höchste Reserve. Der neu gefrorene Gletscher startet mit Masse 0 (in glacierMass, hier nicht berührt) und
-// zieht ab dem nächsten Rundenstart aus seiner Reserve auf.
+// Eiszeit (Legendär, docs §7) — §5.15, Owner-Variante a: die Eiszeit friert NICHTS mehr ein. Sie flutet die
+// Boden-Reserve jedes ungefrorenen Felds und lässt die Gletscher den angrenzenden OFFENEN Boden leertrinken:
+// je Durchlauf zieht jeder Gletscher aus jedem offenen Nachbarfeld bis zu EISZEIT_DRAW Reserve in seine Masse.
+// Damit will die Eiszeit freie Felder, wo das Ewige Schild gefrorene will — die beiden können sich nicht mehr
+// verstärken (§5.14: gemeinsam frieren sie sonst das ganze Brett ein, Faktor 106).
+// Bis §5.14 fror sie das reservestärkste Feld ein; das war der einzige Ausgang, den die Reserve überhaupt hatte.
+// `firn` ist die Boden-RESERVE (firnStack), `mass` die Gletscher-Eigenmasse — beide kommen aus der Engine.
 export const EISZEIT_FLOOD = envNum("SIM_GLACIER_EISZEIT_FLOOD", 3);
-// §5.5: der Runaway-Deckel auf die Gletscherzahl ist gestrichen (§1: keine Deckel). Die Eiszeit kriecht jetzt bis ans
-// Brettende weiter; der Regler ist die Flutrate, nicht eine Obergrenze.
-export function eiszeitTick(mass, locked, base = EISZEIT_FLOOD, maxGlaciers = Infinity, blocked = []) {
+export const EISZEIT_DRAW = envNum("SIM_GLACIER_EISZEIT_DRAW", 2); // Zug je offenem Nachbarfeld und Durchlauf
+export function eiszeitTick(firn, mass, locked, base = EISZEIT_FLOOD, draw = EISZEIT_DRAW, neighborFn = neighbors4) {
   const isG = (p) => (locked instanceof Set ? locked.has(p) : !!(locked && locked[p]));
-  const isBlocked = (p) => (blocked instanceof Set ? blocked.has(p) : Array.isArray(blocked) && blocked.includes(p)); // #301 C3: nie einfrierbar
+  const f = Array.isArray(firn) ? firn.slice() : new Array(N_POS).fill(0);
   const m = Array.isArray(mass) ? mass.slice() : new Array(N_POS).fill(0);
-  let count = 0;
-  for (let p = 0; p < N_POS; p++) { if (isG(p)) count++; else m[p] = (m[p] || 0) + base; } // brettweite Flut + Gletscher zählen
-  let newLocked = locked;
-  if (count < maxGlaciers) { // Auto-Freeze nur unter dem Deckel: das höchste offene Feld friert ein
-    let best = -1, bestV = -Infinity;
-    for (let p = 0; p < N_POS; p++) if (!isG(p) && !isBlocked(p) && (m[p] || 0) > bestV) { bestV = m[p] || 0; best = p; } // #301: gesperrte Zellen überspringen
-    if (best >= 0) {
-      if (locked instanceof Set) { newLocked = new Set(locked); newLocked.add(best); }
-      else { newLocked = (locked ? locked.slice() : new Array(N_POS).fill(false)); newLocked[best] = true; }
+  for (let p = 0; p < N_POS; p++) if (!isG(p)) f[p] = (f[p] || 0) + base;   // brettweite Flut in die Reserve
+  // Zug: Positionsreihenfolge, jedes offene Feld gibt nur her, was es hat — zwei Gletscher an demselben Feld teilen
+  // sich also dessen Reserve, statt sie doppelt zu bekommen.
+  for (let p = 0; p < N_POS; p++) {
+    if (!isG(p)) continue;
+    for (const n of neighborFn(p)) {
+      if (isG(n)) continue;
+      const take = Math.min(draw, f[n] || 0);
+      if (take > 0) { f[n] -= take; m[p] = (m[p] || 0) + take; }
     }
   }
-  return { mass: m, locked: newLocked };
+  return { firn: f, mass: m };
 }
 
 // Packeis (docs §4): am Durchlauf-Ende +Masse je Gletscher-Nachbar — belohnt die Mitte des Feldes.
