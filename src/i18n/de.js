@@ -561,6 +561,14 @@ export default {
   "upgrade.justRaised": "gerade erhöht",
   "upgrade.empty": "Du hältst noch keinen Skill, der eine Stufe hat.",
   "upgrade.back": "Zurück zur Skill-Wahl",
+  // Zwilling für die Perks. Eigene Zeilen statt geteilter: „Skill" und „Perk" stehen sichtbar im Text,
+  // und ein Platzhalter dafür läse sich in beiden Fällen schlechter als zwei ehrliche Sätze.
+  "upgrade.perk.open": "Perk aufwerten",
+  "upgrade.perk.eyebrow": "Deine Perks",
+  "upgrade.perk.title": "Aufwerten",
+  "upgrade.perk.empty": "Du hältst noch kein Perk, das eine Stufe hat.",
+  "upgrade.perk.back": "Zurück zur Perk-Wahl",
+  "upgrade.perk.picksTarget": "fragt nach einem Ziel",
 
   /* ---- Formations-Panel (FormationPanel) ---- */
   "formpanel.title": "Deine aktiven Formationen",

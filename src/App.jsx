@@ -1006,6 +1006,7 @@ function AutostichGame() {
   const buyEnergy = () => dispatch({ type: "BUY_ENERGY" });        // Münz-Ökonomie §3.2
   const callFocus = (arch) => dispatch({ type: "CALL_FOCUS", arch, rng: Math.random });   // Münz-Ökonomie §3.3
   const upgradeSkill = (skillId) => dispatch({ type: "UPGRADE_SKILL", skillId });          // Münz-Ökonomie §3.5
+  const upgradeFamily = (familyId) => dispatch({ type: "UPGRADE_FAMILY", familyId });      // dieselbe Leiter für Perks
   const confirmFormation = () => dispatch({ type: "CONFIRM_FORMATION" });
   const lockGlacier = (pos) => dispatch({ type: "GLACIER_LOCK", pos }); // Eis-Neudesign: Karte als Gletscher festfrieren (starr)
   const confirmTarget = (cardIds) => dispatch({ type: "CONFIRM_TARGET", cardIds });
@@ -1290,7 +1291,7 @@ function AutostichGame() {
       )}
       {showChronik && <Suspense fallback={<OverlayFallback />}><ChronikOverview state={state} onClose={() => setShowChronik(false)} options={options} onOption={changeOptions} /></Suspense>}
       {state.phase === "levelup" && state.offer && (
-        <PerkSelect offer={state.offer} onPick={pick} onReroll={rerollPerk} onDecline={declinePerk} perks={state.perks} deck={state.deck} state={state}
+        <PerkSelect offer={state.offer} onPick={pick} onReroll={rerollPerk} onDecline={declinePerk} onUpgradeFamily={upgradeFamily} perks={state.perks} deck={state.deck} state={state}
           options={options} onOption={changeOptions} currentTraj={currentTraj.current} recordTraj={recordTraj.current} best={best} />
       )}
       {state.phase === "levelup" && (state.skillOffer || state.skillDoors) && (

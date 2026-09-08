@@ -1,7 +1,7 @@
 import { buildDeck, shuffledOrder } from "./deck.js";
 import { rngAt } from "./rng.js"; // #205 Challenger Mode: adressierte Sub-Ströme (build-unabhängige Slots)
 import { PERK_DEFS, buildPerkOffer, offerHasLegendary, isLegendary } from "./perks.js";
-import { rerollPrice, energyBuy, coverBuy, COVER_CELLS, FOCUS_PRICE, upgradeBuy } from "./coins.js"; // Münz-Ökonomie: dieselben Rechnungen wie die Knöpfe (§3.1 Neuwurf · §3.2 Energie · §3.3 Fokus · §3.4 Baufeld · §3.5 Aufwerten)
+import { rerollPrice, energyBuy, coverBuy, COVER_CELLS, FOCUS_PRICE, upgradeBuy, familyUpgradeBuy } from "./coins.js"; // Münz-Ökonomie: dieselben Rechnungen wie die Knöpfe (§3.1 Neuwurf · §3.2 Energie · §3.3 Fokus · §3.4 Baufeld · §3.5 Aufwerten Skill+Perk)
 import { familyDef, applyFamilyPick } from "./families.js"; // formationEnergyBonus läuft jetzt über engine.formationEnergyFor
 import { UPGRADE_TYPES } from "./rarity.js";
 import { archetypeOf, buildSkillDoors, rerollDoorSkills, glacierRolesOf, ARCHETYPE_ORDER } from "./skills.js";
@@ -635,6 +635,11 @@ export function reducer(state, action) {
         ft.familyId, ft.tier, { familyTiers: state.familyTiers, deck: state.deck, roles: state.roles, target }, rngFor(state, action, state.cycle, "target"));
       // Rollen/Deck können die Formationserkennung ändern (C_JOKER/C_BRIDGE, C_SACRIFICE-Deckmod) → neu berechnen (wie CONFIRM_TARGET).
       const formations = computeFormations(state.playerOrder, deck, roles, state.perks, state.skills, state.shop?.anchors || [], familyTiers, archOf(state), plantBag(state)); // #health-check G1: archOf ergänzt — diese Stelle war älter als der Architekt (#202) und liess Gebäude-Effekte bis zur nächsten Engine-Neuberechnung fallen
+      // Aufwertung (UPGRADE_FAMILY): zurück, wo der Kauf ausgelöst wurde, und ERST HIER bezahlen. Ein Pick
+      // dagegen hat seinen Rundenplatz verbraucht und geht ins Spiel — daher die Adresse am familyTarget.
+      if (ft.from === "upgrade")
+        return { ...state, familyTiers, deck, roles, formations, coins: (state.coins || 0) - (ft.pendingPrice || 0),
+                 phase: ft.backPhase || "levelup", familyTarget: null };
       return { ...state, familyTiers, deck, roles, formations, phase: "play", familyTarget: null };
     }
 
@@ -809,6 +814,54 @@ export function reducer(state, action) {
       const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, skills, state.shop?.anchors || [], state.familyTiers, archOf(state), { skillTiers, growth });
       return { ...state, coins: (state.coins || 0) - buy.price, skillTiers, lightning, deck, growth, formations,
                glacierRoleTiers: iceRoleTiers(skills, skillTiers) };
+    }
+
+    /* Perk aufwerten (Owner 2026-09-08) — dieselbe Leiter, derselbe Preis, dasselbe Layout wie UPGRADE_SKILL.
+
+       Die Stufen gab es schon: eine Familie trägt Rang 1–4 in `familyTiers`, und `applyFamilyPick` ist genau
+       der Schritt, den bisher nur das ANGEBOT auslösen konnte (Stufen echt über dem Rang, canOfferFamilyTier).
+       Neu ist nur der zweite Weg dorthin — gegen Münzen statt gegen Glück.
+
+       Der Unterschied zum Skill ist die ZIEL-Auswahl: 16 der 73 Familien fragen auf mindestens einer Stufe
+       nach Farben, Karten oder einem Formationstyp. Diese Stufen gehen durch den vorhandenen
+       `family-target`-Picker — mit einer Rückkehr-Adresse, damit er zum Angebot zurückkommt statt ins Spiel
+       zu fallen wie beim Pick. Bezahlt wird dort erst beim Bestätigen (`pendingPrice`): der Picker kennt
+       keinen Abbruch, aber ein Neuladen mitten darin soll nicht Münzen ohne Aufwertung hinterlassen. */
+    case "UPGRADE_FAMILY": {
+      if (state.phase !== "levelup") return state;
+      const familyId = action.familyId;
+      const fam = familyDef(familyId);
+      const cur = (state.familyTiers || {})[familyId] || 0;
+      if (!fam || cur < 1) return state;                      // nur GEHALTENE Familien; 0 = nicht besessen
+      const buy = familyUpgradeBuy(state, cur);
+      if (buy.maxed || !buy.can) return state;
+      const tier = buy.next;
+      const applyNow = () => {
+        const { familyTiers, deck, roles } = applyFamilyPick(
+          familyId, tier, { familyTiers: state.familyTiers, deck: state.deck, roles: state.roles }, rngFor(state, action, state.cycle, "upgrade"));
+        return { ...state, coins: (state.coins || 0) - buy.price, familyTiers, deck, roles,
+          formations: computeFormations(state.playerOrder, deck, roles, state.perks, state.skills, state.shop?.anchors || [], familyTiers, archOf(state), plantBag(state)) };
+      };
+      const pt = fam.tiers[tier] && fam.tiers[tier].pickTarget;
+      if (!pt) return applyNow();
+      // Zurück-Adresse und Preis reisen im familyTarget mit; `offer` bleibt stehen, anders als beim Pick.
+      const back = { from: "upgrade", backPhase: state.phase, pendingPrice: buy.price };
+      // Volle Farbwahl ist erzwungen und damit keine Wahl — wie beim Pick direkt anwenden statt „4 von 4 antippen".
+      if (pt.suits) {
+        if (pt.suits >= C.SUIT_ORDER.length) {
+          const target = { suits: C.SUIT_ORDER.slice(), cards: [], formationType: null, order: state.playerOrder };
+          const { familyTiers, deck, roles } = applyFamilyPick(
+            familyId, tier, { familyTiers: state.familyTiers, deck: state.deck, roles: state.roles, target }, rngFor(state, action, state.cycle, "upgrade"));
+          return { ...state, coins: (state.coins || 0) - buy.price, familyTiers, deck, roles,
+            formations: computeFormations(state.playerOrder, deck, roles, state.perks, state.skills, state.shop?.anchors || [], familyTiers, archOf(state), plantBag(state)) };
+        }
+        return { ...state, phase: "family-target", familyTarget: { familyId, tier, kind: "suits", need: pt.suits, suits: [], cards: [], formationType: null, ...back } };
+      }
+      if (pt.formationType) return { ...state, phase: "family-target", familyTarget: { familyId, tier, kind: "formationType", need: 1, suits: [], cards: [], formationType: null, ...back } };
+      const held = fam.upgradeType === UPGRADE_TYPES.ROLE ? ((state.roles || {})[familyId] || []).length : 0;
+      const need = Math.max(0, pt.cards - held);
+      if (need === 0) return applyNow();                       // Stufe braucht keine NEUEN Ziele
+      return { ...state, phase: "family-target", familyTarget: { familyId, tier, kind: "cards", need, suits: [], cards: [], ...back } };
     }
 
     // Skill-Angebot ablehnen → stattdessen ein Perk-Angebot für diese Runde (nie „verschwendet").

@@ -125,3 +125,18 @@ export function upgradeBuy(state = {}, tier = 0) {
   const price = upgradePrice(next);
   return { maxed: false, next, price, can: (state.coins || 0) >= price };
 }
+
+/* Dieselbe Leiter für PERKS (Owner 2026-09-08: „genauso wie Skills, gleiche Kosten").
+
+   Nur die Zählung geht auseinander, und das ist der ganze Unterschied: ein Skill zählt seine Stufen ab 0
+   (0 = die erste gehaltene), eine Familie ab 1 — dort ist 0 reserviert für „nicht besessen" (rarity.js).
+   Rang 1 ist also dasselbe wie Skill-Stufe 0, und die Umrechnung ist ein Versatz um eins.
+
+   BEWUSST über `upgradeBuy` statt mit eigenen Preisen: es gibt eine Preisleiter, nicht zwei nebeneinander.
+   Wer UPGRADE_PRICES anfasst, verschiebt beide. */
+export function familyUpgradeBuy(state = {}, tier = 0) {
+  const buy = upgradeBuy(state, (tier || 0) - 1);
+  return buy.maxed ? buy : { ...buy, next: buy.next + 1 };
+}
+
+export const MAX_FAMILY_TIER = MAX_SKILL_TIER + 1;

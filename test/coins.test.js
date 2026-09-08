@@ -10,7 +10,8 @@ import { initialState, reducer } from "../src/game/reducer.js";
 import { resolveTrick } from "../src/game/engine.js";
 import { coinsForWins, COIN_WIN_THRESHOLD, COIN_WIN_PER, rerollPrice, rerollOffer,
          energyPrice, energyBuy, ENERGY_MAX_BUYS, coverPrice, coverBuy, COVER_CELLS,
-         upgradePrice, MAX_SKILL_TIER } from "../src/game/coins.js";
+         upgradePrice, MAX_SKILL_TIER, familyUpgradeBuy, MAX_FAMILY_TIER } from "../src/game/coins.js";
+import { FAMILY_DEFS } from "../src/game/families.js";
 import { isLegendarySkill, archetypeOf } from "../src/game/skills.js";
 import { maxChargeFor } from "../src/game/factions/lightning.js";
 import { tierTextDiff } from "../src/ui/SkillUpgrade.jsx";
@@ -349,6 +350,86 @@ describe("Skill aufwerten (§3.5)", () => {
     expect(reducer(leg, { type: "UPGRADE_SKILL", skillId: "SK_LIGHTNING_L02" })).toBe(leg);
     const poor = holding({ coins: 11 });
     expect(reducer(poor, { type: "UPGRADE_SKILL", skillId: "SK_LIGHTNING_01" })).toBe(poor);
+  });
+});
+
+/* Perk aufwerten (Owner 2026-09-08: „genauso wie Skills, gleiche Kosten, gleiches Layout").
+
+   Die Stufen gab es schon — neu ist der zweite Weg auf die Leiter: gegen Münzen statt gegen ein Angebot.
+   Diese Gruppe hält die zwei Dinge fest, die dabei schiefgehen können: der Stufen-VERSATZ (Familien zählen
+   ab 1, Skills ab 0 — ein Fehler dort verschiebt die ganze Preisleiter um eine Stufe) und die RÜCKKEHR aus
+   der Ziel-Auswahl, die beim Pick ins Spiel führt und hier zum Angebot zurückführen muss. */
+describe("Perk aufwerten — dieselbe Leiter, ab Rang 1 gezählt", () => {
+  // Eine Familie ohne jede Ziel-Auswahl und eine mit Karten-Ziel, aus den echten Definitionen gegriffen:
+  // hart notierte ids wären genau die Sorte Wissen, die beim nächsten Familien-Umbau still falsch wird.
+  const plain = Object.values(FAMILY_DEFS).find((f) => Object.values(f.tiers).every((t) => !t.pickTarget));
+  const withTarget = Object.values(FAMILY_DEFS).find((f) => f.tiers[2] && f.tiers[2].pickTarget && f.tiers[2].pickTarget.cards);
+  const holdingFam = (id, tier, over = {}) => ({ ...initialState(makeRng(1), 7), phase: "levelup", familyTiers: { [id]: tier }, ...over });
+
+  it("Rang 1 ist Skill-Stufe 0: 12 / 25 / 40, und Rang 4 ist Schluss", () => {
+    expect([1, 2, 3].map((r) => familyUpgradeBuy({ coins: 999 }, r).price)).toEqual([12, 25, 40]);
+    expect([1, 2, 3].map((r) => familyUpgradeBuy({ coins: 999 }, r).next)).toEqual([2, 3, 4]);
+    expect(familyUpgradeBuy({ coins: 999 }, MAX_FAMILY_TIER).maxed).toBe(true);
+    // Dieselbe Leiter wie beim Skill, nur um eins versetzt — nicht zwei Leitern nebeneinander.
+    expect([1, 2, 3].map((r) => familyUpgradeBuy({ coins: 999 }, r).price)).toEqual([1, 2, 3].map(upgradePrice));
+  });
+
+  it("hebt genau eine Stufe, zieht den Preis ab und lässt das Perk-Angebot stehen", () => {
+    const before = holdingFam(plain.id, 1, { coins: 100, offer: [{ familyId: plain.id, tier: 3 }] });
+    const s = reducer(before, { type: "UPGRADE_FAMILY", familyId: plain.id });
+    expect(s.familyTiers[plain.id]).toBe(2);
+    expect(s.coins).toBe(88);
+    expect(s.offer).toEqual(before.offer);   // der Perk-Zug der Phase bleibt unberührt
+    expect(s.phase).toBe("levelup");
+  });
+
+  it("mehrfach je Phase bis Rang 4, dann ist Schluss", () => {
+    let s = holdingFam(plain.id, 1, { coins: 100 });
+    for (let i = 0; i < 3; i++) s = reducer(s, { type: "UPGRADE_FAMILY", familyId: plain.id });
+    expect(s.familyTiers[plain.id]).toBe(MAX_FAMILY_TIER);
+    expect(s.coins).toBe(100 - 77);
+    expect(reducer(s, { type: "UPGRADE_FAMILY", familyId: plain.id })).toBe(s);
+  });
+
+  it("nur GEHALTENE Familien, und ohne Münzen passiert nichts", () => {
+    const notHeld = holdingFam(plain.id, 0, { coins: 100 });
+    expect(reducer(notHeld, { type: "UPGRADE_FAMILY", familyId: plain.id })).toBe(notHeld); // Rang 0 = nicht besessen
+    const poor = holdingFam(plain.id, 1, { coins: 11 });
+    expect(reducer(poor, { type: "UPGRADE_FAMILY", familyId: plain.id })).toBe(poor);
+    const bogus = holdingFam(plain.id, 1, { coins: 100 });
+    expect(reducer(bogus, { type: "UPGRADE_FAMILY", familyId: "GIBT_ES_NICHT" })).toBe(bogus);
+  });
+
+  it("eine Stufe mit Ziel führt in die Auswahl und KOMMT ZURÜCK — bezahlt wird erst dort", () => {
+    const before = holdingFam(withTarget.id, 1, { coins: 100, offer: [{ familyId: plain.id, tier: 1 }] });
+    const picking = reducer(before, { type: "UPGRADE_FAMILY", familyId: withTarget.id });
+    expect(picking.phase).toBe("family-target");
+    expect(picking.familyTarget.need).toBeGreaterThan(0);
+    expect(picking.coins).toBe(100);                       // noch nichts abgebucht
+    expect(picking.offer).toEqual(before.offer);           // das Angebot wartet, anders als beim Pick
+    let s = picking;
+    for (const c of s.deck.slice(0, picking.familyTarget.need)) s = reducer(s, { type: "FAMILY_TARGET_CARD", cardId: c.id });
+    const done = reducer(s, { type: "FAMILY_TARGET_CONFIRM" });
+    expect(done.phase).toBe("levelup");                    // zurück zum Angebot, NICHT ins Spiel
+    expect(done.familyTiers[withTarget.id]).toBe(2);
+    expect(done.coins).toBe(88);                           // erst jetzt bezahlt
+    expect(done.familyTarget).toBeNull();
+  });
+
+  it("der PICK geht weiterhin ins Spiel — die Rückkehr gilt nur der Aufwertung", () => {
+    /* Gegenprobe zur Zeile darüber: ohne sie könnte die Rückkehr-Adresse versehentlich für jeden
+       Ziel-Flow gelten, und ein normaler Perk-Pick bliebe im Angebot hängen. */
+    const s0 = { ...initialState(makeRng(1), 7), phase: "levelup", offer: [{ familyId: withTarget.id, tier: 1 }] };
+    const t1 = withTarget.tiers[1].pickTarget
+      ? reducer(s0, { type: "PICK_FAMILY", familyId: withTarget.id, tier: 1 })
+      : null;
+    if (t1 && t1.phase === "family-target") {
+      let s = t1;
+      for (const c of s.deck.slice(0, t1.familyTarget.need)) s = reducer(s, { type: "FAMILY_TARGET_CARD", cardId: c.id });
+      expect(reducer(s, { type: "FAMILY_TARGET_CONFIRM" }).phase).toBe("play");
+    } else {
+      expect(reducer(s0, { type: "PICK_FAMILY", familyId: withTarget.id, tier: 1 }).phase).toBe("play");
+    }
   });
 });
 
