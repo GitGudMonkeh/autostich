@@ -27,8 +27,11 @@ export const BURST_SCALE = envNum("SIM_GLACIER_BURST_SCALE", 250); // §5.6 neu 
 // den ganzen Lauf über sichtbar, und sie synchronisiert das Feld: Kaskade, Kollision und Gletschersturz greifen
 // gleichzeitig. Der Preis ist die niedrigere Masse je Bruch, weil niemand mehr bis 12 wächst.
 export const GROSSE_LAWINE_EVERY = envNum("SIM_GLACIER_LAWINE_EVERY", 5);
-// Verstärker je Lawinen-Bruch. War ×6, als sie EINMAL feuerte; im Takt ist das ein anderer Preis. Startwert, ungemessen.
-export const GROSSE_LAWINE_MULT = envNum("SIM_GLACIER_LAWINE_MULT", 2);
+// Verstärker je Lawinen-Bruch. §5.9 gemessen und korrigiert: die Senkung auf ×2 („sie feuert fünfmal statt einmal")
+// war ein Denkfehler — der erzwungene Bruch ERSETZT einen Bruch, der ohnehin gekommen wäre, der Verstärker ist also
+// keine Prämie je Auslösung, sondern die Entschädigung für die niedrigere Masse. Sweep: ×2 → −8 %, ×6 → +13 %,
+// ×10 → +29 %. ×10 ist der beste gemessene Wert; das Band der übrigen elf beginnt bei +34 %.
+export const GROSSE_LAWINE_MULT = envNum("SIM_GLACIER_LAWINE_MULT", 10);
 // Ablehn-Gletscher (Sim-tunebar): ab so vielen gehaltenen Eis-Skills friert auch das Ablehnen eines Skill-Angebots einen
 // Gletscher (statt nur der Skill-Pick/Tausch). Entkoppelt „mehr Gletscher" vom Tauschen guter Skills.
 export const DECLINE_MIN_SKILLS = 4;

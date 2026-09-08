@@ -3806,6 +3806,9 @@ die ganze Firn-Linie überflüssig.
 | **Ewiges Schild** | Eis | **−13 %** |
 | **Große Lawine** | Eis | **−13 %** |
 
+> **KORRIGIERT (§5.9):** dieser Lauf lief mit einer Werte-Tabelle ohne Eis-Einträge — die drei Eis-Zeilen wurden in
+> einem Build ohne Gletscherfeld gemessen und sagen nicht, was hier behauptet wird. Zahlen mit frischer Tabelle in §5.9.
+
 Ewiges Schild und Große Lawine sind im gemischten Build tot (besser in 46 bzw. 47 % der Seeds — ein Münzwurf), im
 reinen Eis-Build dagegen die stärksten Picks. Bekenntnis-Legendäre, wie die Wachstums-Skills der Pflanze (§6.22) —
 nur eben auf der Legendär-Ebene, wo es teurer wiegt.
@@ -4093,6 +4096,94 @@ Beispiel: ein einzelner 2×2-Block irgendwo auf dem Brett hebt jeden Gletscher a
 
 Gemessen ist nichts — weder die Parität nach diesen beiden Änderungen noch das Legendär-Band. Der Takt 5 und der
 Verstärker 2 sind Startwerte aus der Rechnung oben, keine Sim-Ergebnisse.
+
+### 5.9 Legendäre gemessen — und ein Messfehler, der §5.4 entwertet (2026-09-07, auf Ansage)
+
+#### Der Fehler zuerst
+
+`--mode legendaries` lädt seine gierige Werte-Tabelle aus der Datei hinter `--table`, **wenn die Datei existiert**;
+nur sonst erkundet es neu. `sim/out/legtable-l9.json` stammt aus der Zeit vor dem Eis-Angebot und enthält
+418 Feuer-, 423 Blitz-, 436 Pflanze-Einträge und **null Eis**. Der gierige Spieler bewertet Eis-Skills darin mit
+nichts und nimmt nie einen.
+
+**Die drei Eis-Legendären wurden damit in einem Build ohne jede Eis-Unterstützung gemessen** — ohne Gletscherfeld.
+Der Beweis steht in den übrigen neun Zeilen: sie waren auf die Ziffer identisch mit §5.4, obwohl sich die Eis-Kurve
+seit §5.4 dreimal geändert hat (E3, Geometrie, Grundzahl). Das geht nur, wenn in diesen Läufen kein Eis vorkommt.
+
+**KORREKTUR zu §5.4:** der dortige Befund „Ewiges Schild und Große Lawine sind im gemischten Build tot (−13 %)" ist
+nicht belegt. Er zeigte in die richtige Richtung, aber die Zahl maß etwas anderes als behauptet. Der Umbau in §5.8
+steht damit auf einer Diagnose, die so nicht gemessen war — die beiden Gründe dafür (der am Deckel verfallende
+Masse-Zuschlag, die den ganzen Lauf unsichtbare Finisher-Lawine) bleiben davon unberührt, sie waren aus dem Code
+gelesen, nicht aus der Sim.
+
+**Merksatz für die nächste Runde:** eine `--table`-Datei ist an die Welt gebunden, in der sie entstanden ist. Kommt
+eine Fraktion ins Angebot, braucht sie einen neuen Dateinamen.
+
+#### Das Band, mit einer Tabelle, die Eis kennt
+
+`--table sim/out/legtable-l12.json` (frisch erkundet, 715 Eis-Einträge), Skill-Phase 7 von 13, gepaart, 150 Läufe:
+
+| Legendär | Fraktion | typ. Effekt | besser in |
+| --- | --- | --- | --- |
+| **Eiszeit** | Eis | **+281 %** | 89 % |
+| Baumreihe | Pflanze | +138 % | 85 % |
+| Sonnenzorn | Feuer | +114 % | 75 % |
+| Wurzelgeflecht | Pflanze | +111 % | 76 % |
+| Resonanz | Blitz | +90 % | 71 % |
+| Ewige Glut | Feuer | +61 % | 68 % |
+| Sonnenkern | Feuer | +56 % | 70 % |
+| Ewiger Frühling | Pflanze | +53 % | 72 % |
+| Doppelentladung | Blitz | +49 % | 69 % |
+| Hochspannung | Blitz | +34 % | 65 % |
+| Große Lawine | Eis | −8 % | 46 % |
+| Ewiges Schild | Eis | −7 % | 46 % |
+
+**Prozente aus verschiedenen Läufen sind nicht vergleichbar** — eine andere Werte-Tabelle ergibt einen anderen
+gierigen Spieler und eine andere Basis. Vergleichbar ist die Reihenfolge innerhalb eines Laufs.
+
+**Eiszeit ist das eigentliche Ungleichgewicht:** doppelt so hoch wie das nächstbeste von zwölf. Das deckt sich mit
+§5.4, wo sie im Mono-Build die ganze Firn-Linie überflüssig machte — sie friert sich ihre Gletscher selbst ein und
+braucht die Fraktion nicht.
+
+#### Große Lawine: die Form stimmte, der Preis nicht
+
+Vier Messungen, gleiche Kurve, gleiche Tabelle, nur das Verhalten getauscht:
+
+| Große Lawine | typ. Effekt | besser in |
+| --- | --- | --- |
+| alt: einmal im letzten Durchlauf, ×6 | −1 % | 50 % |
+| Takt 5, ×2 (§5.8) | −8 % | 46 % |
+| Takt 5, ×6 | +13 % | 57 % |
+| **Takt 5, ×10 (gesetzt)** | **+29 %** | **60 %** |
+
+**Der Denkfehler in §5.8 war die Senkung von ×6 auf ×2.** Begründung dort: „sie feuert jetzt fünfmal statt einmal,
+also ein Fünftel des Preises." Falsch — der erzwungene Bruch **ersetzt** einen Bruch, der ohnehin gekommen wäre. Der
+Verstärker ist keine Prämie je Auslösung, sondern die Entschädigung dafür, dass bei niedrigerer Masse gebrochen
+wird. Wer ihn senkt, nimmt genau diese Entschädigung weg.
+
+Der Takt selbst war richtig: er hebt die Lawine von −1 % (alte Form) auf +29 %. Gesetzt ist ×10, der beste
+**gemessene** Wert; +34 % (Hochspannung) ist die Unterkante des Bandes, ×12 bis ×14 läge mitten drin, ist aber
+interpoliert und nicht gemessen.
+
+**Ewiges Schild bleibt bei −7 %.** Ob der Buff aus §5.8 geholfen hat, ist offen: das Vorher wurde mit der kaputten
+Tabelle gemessen, und für die alte Schild-Mechanik gibt es keinen Schalter, also kein sauberes A/B.
+
+#### Nebenbefund: Legendär-Chance Skill gegen Perk (Owner-Frage)
+
+| | legendärer Skill | legendärer Perk |
+| --- | --- | --- |
+| Wurf | **je Platz** (3,5 %) | **je Angebot** (3,0 %) |
+| je Phase | 10,1 % (geöffnete Tür) · 19,2 % (beide Türen) | 3,0 % |
+| erwartet je Lauf | 1,37 | 0,39 |
+| mindestens einer im Lauf | 75,1 % | 32,7 % |
+| Pool | 12 | 21 |
+
+Der Unterschied liegt nicht im Satz, sondern darin, **wo** gewürfelt wird: der Skill würfelt je Platz, der Perk
+einmal je Angebot. Bei 13 Phasen und fast gleichem Satz ergibt das das 3,5-fache. Dazu zieht der seltenere Wurf aus
+dem größeren Topf (21 gegen 12), und auf `exp` fehlen alle früheren Perk-Zuschläge (Shop-Bonus bis +15 Prozentpunkte,
+Baum-Multiplikator, garantierte Legendäre der zweiten Perk-Phase) — sie hingen an Shop und Meta-Progression, beide
+entfernt. Naheliegendster Hebel, falls gewünscht: den Perk-Wurf ebenfalls je Platz führen — das allein bringt 3,0 %
+auf 8,7 % je Phase und 0,39 auf 1,17 je Lauf, ohne eine Zahl zu ändern. **Nichts umgesetzt.**
 
 ## 6. Pflanze
 
@@ -5473,3 +5564,4 @@ und die Ranked-Texte, die eine andere Runde meinen.
 | 2026-09-07 | Owner-Ja: überlappende Gletscher-Formen stapeln nicht mehr, die stärkste zählt (eine Zeile in `glacierFormations`). Das Wachstum von 4 auf 16 Gletschern fällt von 23,2× auf 8,1×, der Bruch je Gletscher flacht bei ~16k ab statt bis 110k zu klettern. Neu tariert: BURST_SCALE 170 → 250, Parität unverändert 1,02× (Eis 6,58M gegen Feuer 6,42M). Balance-Guard neu zentriert (2,78M / 6,24M) — der Schwanz ist fast auf dem Stand vor dem Eingriff, die Deckel waren also das Pflaster, nicht die Ursache. Nachgemessen: der Gletscher-Deckel ist für den normalen Build inert (Median mit und ohne identisch) und bleibt nur als Leitplanke; zwei Gletscher je Pick sind jetzt +38 % statt +17 % und brauchen eine eigene Tarierung. §5.6. |
 | 2026-09-07 | Auf Ansage: Viabilität aller Skills, Ablation mono je Fraktion und einmal gemischt. KORREKTUR zu §5.4/§5.6 — die dort zitierten „+30 bis +100 % bei Feuer/Blitz/Pflanze" stammen aus alten Protokollen und stimmen heute nicht. Gemessen: Feuer +227 % (Glühende Klinge) / Blitz +68 % / Pflanze +26 % / Eis +19 % an der Spitze, und bei oder unter null stehen 8 von 15 bei Feuer, Blitz und Eis, 10 von 15 bei der Pflanze. Eis ist damit nicht flacher als die anderen, ihm fehlt nur der eine Ausreißer. Klar schädlich (≤ −7 %) sind zwölf Skills über alle vier Fraktionen, die größten bei Blitz (Serienschutz −29 %) und Feuer (Rückzündung/Schmiede −14 %). Der gemischte Lauf taugt für Einzelskills nicht (Haltequoten 4–30 %), sagt aber: Eis ist eine Bekenntnis-Fraktion. §5.7. |
 | 2026-09-07 | Owner: die Große Lawine soll nicht erst am Ende feuern, und Ewiges Schild braucht einen Buff. Umgesetzt: die Lawine feuert jeden 5. Durchlauf statt einmal am Laufende, Verstärker 6 → 2 (sie feuert jetzt rund fünfmal je Lauf); „jede Runde" wurde verworfen, weil dann nichts mehr über die erste Schwelle wächst und der Kern der Fraktion stirbt. Der One-Shot-Zustand ist aus State, Engine, Reducer und UI raus, die Leiste zählt zum nächsten Schlag herunter. Ewiges Schild: der additive Masse-Zuschlag verfiel am Masse-Deckel und ist gestrichen; stattdessen erbt jeder Gletscher die stärkste Gletscher-Formation des Bretts. Beide Texte neu. UNGEMESSEN, Startwerte. §5.8. |
+| 2026-09-07 | Auf Ansage gemessen — und ein Messfehler gefunden: `--mode legendaries` lädt die Werte-Tabelle aus der `--table`-Datei, wenn sie existiert, und `legtable-l9.json` stammt aus der Zeit vor dem Eis-Angebot (null Eis-Einträge). Die drei Eis-Legendären wurden dort in einem Build OHNE Gletscherfeld gemessen; der §5.4-Befund „Ewiges Schild und Große Lawine sind tot" ist damit nicht belegt und ist korrigiert. Mit frischer Tabelle: Eiszeit +281 % (doppelt so hoch wie das nächstbeste von zwölf, das eigentliche Ungleichgewicht), Ewiges Schild −7 %, Große Lawine −8 %. Sweep der Lawine: alt −1 %, Takt ×2 −8 %, ×6 +13 %, ×10 +29 % — der Takt aus §5.8 war richtig, die Senkung des Verstärkers auf ×2 war der Denkfehler (der erzwungene Bruch ersetzt einen ohnehin kommenden, der Verstärker ist die Entschädigung für die niedrigere Masse, keine Prämie je Auslösung). ×10 gesetzt. Nebenbefund auf Owner-Frage: legendäre Skills erscheinen 3,5× so oft wie legendäre Perks, weil der Skill je PLATZ würfelt und der Perk nur einmal je Angebot. §5.9. |
