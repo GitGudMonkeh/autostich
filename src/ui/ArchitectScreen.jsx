@@ -18,8 +18,8 @@ import { formationBorder } from "./formationStyle.js";
 import { formationAbbr, formationLabel } from "./formationLabels.js";
 import { archFrameLines } from "./CardGrid.jsx"; // #UI: durchgezogene Gebäude-Kontur wie in der Aufstellungsphase
 import { fmtScore } from "./format.js";
-import { rerollOffer } from "../game/coins.js";  // Münz-Ökonomie §3.1: Preis des nächsten Neuwurfs — dieselbe Quelle wie der Reducer
-import { RerollLabel } from "./CoinMark.jsx";    // Beschriftung: Anzahl solange gratis, danach der Preis
+import { rerollOffer, coverBuy, COVER_CELLS } from "../game/coins.js"; // Münz-Ökonomie §3.1 Neuwurf · §3.4 Baufeld — dieselben Rechnungen wie der Reducer
+import { RerollLabel, CoinAmount } from "./CoinMark.jsx";              // Beschriftung: Anzahl solange gratis, danach der Preis
 import { GlossaryPanel } from "./Glossary.jsx";
 import { glacierGridProps } from "./glacierBoard.js"; // Eis: Gletscher-/Firn-Marker auch am Architekt-Brett
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon (Eis ersetzt glacier.webp)
@@ -93,7 +93,7 @@ function MiniShape({ form, color, rotIdx = 0 }) {
   );
 }
 
-export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, onUpgrade, onMove, onMoveMulti, onDemolish, onRecolor, onReroll, onDone, onUndo, onReset }) {
+export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, onUpgrade, onMove, onMoveMulti, onDemolish, onRecolor, onReroll, onBuyCover, onDone, onUndo, onReset }) {
   useEscape(onDone);
   // eslint-disable-next-line react-hooks/exhaustive-deps -- Perf-Hinweis (Dep-Ausdruck je Render neu), kein Stale-Closure — #292 geprüft
   const architect = state.architect || { buildings: [], offers: [] };
@@ -106,6 +106,8 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
   const canArchUndo = (architect.phaseHistory || []).length > 0;
   // §3.1: Baupläne neu würfeln — erst der Pool, danach käuflich (kein Legendär-Grundpreis, s. Knopf unten).
   const archReroll = rerollOffer(state, state.rerollsArch || 0, false);
+  // §3.4: Baufeld-Kauf — Preis, Restvorrat des Laufs, Auslösbarkeit.
+  const coverSale = coverBuy(state);
   const round = (state.cycle || 0) + 1;
   // #301 C2: gesperrte Bau-Zellen (Challenge) — als „belegt" für alle Platzierungs-Enumerationen und interaktions-/render-seitig geblockt.
   const chLockArch = state.challengeBlockArch || [];
@@ -630,6 +632,25 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
             <span className="text-meta-1 uppercase tracking-wide font-bold" style={{ color: "#6d7f8e" }}>{t("arch.plot")}</span>
             <span className="ty-num leading-none" style={{ fontVariantNumeric: "tabular-nums", fontSize: 19, color: GOLD }}>{Math.max(0, maxCover - coverCount)}<span className="text-body-5 opacity-60"> / {maxCover}</span></span>
             <span className="text-micro-3 ty-num-sm opacity-45">{t("arch.plot.used", { n: coverCount, pct: Math.round(coverCount / maxCover * 100) })}</span>
+            {/* Baufeld kaufen (docs/muenz-oekonomie.md §3.4) — an der Deckel-Anzeige, weil hier die Frage
+                entsteht, ob der Platz reicht. Die Punkte sagen, wie viel vom LAUF noch übrig ist: als
+                einzige Ausgabe wirkt sie dauerhaft und hat einen Vorrat, der sich leert. Ausverkauft
+                verschwindet der Knopf — ein toter Knopf ist schlechter als keiner. */}
+            {!coverSale.soldOut && (
+              <button onClick={coverSale.can ? onBuyCover : undefined} disabled={!coverSale.can}
+                title={t("arch.plot.buy.title", { cells: COVER_CELLS, n: coverSale.left })}
+                className="mt-1 rounded-lg px-2 py-1 text-meta-1 font-bold inline-flex items-center justify-end gap-1.5 transition-all disabled:cursor-not-allowed"
+                style={coverSale.can ? { background: "#16232f", border: `1px solid ${GOLD}66`, color: GOLD }
+                                     : { background: "var(--btn-off-bg)", border: "1px solid transparent", color: "var(--btn-off-fg)" }}>
+                <span>{t("arch.plot.buy", { cells: COVER_CELLS })}</span>
+                <CoinAmount n={coverSale.price} size={11} dim={!coverSale.can} />
+                <span className="inline-flex gap-0.5" aria-hidden="true">
+                  {Array.from({ length: coverSale.max }, (_, i) => (
+                    <span key={i} className="rounded-full" style={{ width: 4, height: 4, background: i < coverSale.left ? GOLD : "#ffffff2e" }} />
+                  ))}
+                </span>
+              </button>
+            )}
           </div>
           {state.lastCycleScore != null && (
             <div className="flex flex-col justify-center gap-1 px-3.5 py-2.5 text-right border-l" style={{ borderColor: "rgba(59,125,190,.32)" }}>

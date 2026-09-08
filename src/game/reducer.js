@@ -1,7 +1,7 @@
 import { buildDeck, shuffledOrder } from "./deck.js";
 import { rngAt } from "./rng.js"; // #205 Challenger Mode: adressierte Sub-Ströme (build-unabhängige Slots)
 import { PERK_DEFS, buildPerkOffer, offerHasLegendary, isLegendary } from "./perks.js";
-import { rerollPrice } from "./coins.js"; // Münz-Ökonomie §3.1: die Neuwurf-Treppe (dieselbe Rechnung wie der Knopf)
+import { rerollPrice, energyBuy, coverBuy, COVER_CELLS } from "./coins.js"; // Münz-Ökonomie: dieselben Rechnungen wie die Knöpfe (§3.1 Neuwurf · §3.2 Energie · §3.4 Baufeld)
 import { familyDef, applyFamilyPick } from "./families.js"; // formationEnergyBonus läuft jetzt über engine.formationEnergyFor
 import { UPGRADE_TYPES } from "./rarity.js";
 import { archetypeOf, buildSkillDoors, rerollDoorSkills, glacierRolesOf } from "./skills.js";
@@ -150,6 +150,8 @@ export function initialState(rng = Math.random, seed = null) {
     // (zinsCapital/zinsRate): der arbeitet auf Score-Kapital, nicht auf Münzen (§8.4).
     coins: 0, lastCycleCoins: null, lastCycleWins: null,
     coinRerolls: 0, // §3.1: gekaufte Neuwürfe DIESER Phase — die Preistreppe; Reset überall dort, wo auch offerRerolls auf 0 geht
+    coinEnergy: 0,  // §3.2: gekaufte Energie DIESER Aufstellphase (verfällt mit ihr)
+    coverBuys: 0,   // §3.4: gekaufte Baufeld-Erweiterungen — je LAUF, dauerhaft, Vorrat leert sich
     perks: [], offer: null,
     // Raritätssystem (Epic #167, Spec §2.1): Familienrang je Familie { [familyId]: 1|2|3|4 }. Läuft ADDITIV
     // neben `perks` (flache Legendäre) — die Engine löst aktive Familien-Stufen über activeTierDefs auf.
@@ -426,6 +428,18 @@ export function reducer(state, action) {
       const winCounters = { ...a.winCounters }; delete winCounters[action.buildingId];
       return { ...state, architect: { ...a, buildings, winCounters } }; // #361-Folge: Abriss ist keine Verschiebung → kein Undo-Schritt
     }
+    /* Münz-Ökonomie §3.4: Baufeld-Zellen kaufen. Die einzige Ausgabe mit DAUERHAFTER Wirkung — sie hebt
+       `architect.maxCover` für den Rest des Laufs, genau wie es der Bauhütten-Pick tut, und genau zweimal
+       je Lauf. Kein Phasen-Reset: `coverBuys` zählt den Lauf, nicht die Phase. */
+    case "BUY_COVER": {
+      if (state.phase !== "architect") return state;
+      const buy = coverBuy(state);
+      if (!buy.can) return state;                                     // Vorrat leer oder zu wenig Münzen
+      const a = state.architect;
+      return { ...state, coins: (state.coins || 0) - buy.price, coverBuys: (state.coverBuys || 0) + 1,
+               architect: { ...a, maxCover: (a.maxCover ?? ARCH_MAX_COVER) + COVER_CELLS } };
+    }
+
     case "REROLL_ARCHITECT": { // #263: Architekt-Bauplan-Angebot neu würfeln — eigener Gebäude-Reroll-Pool (rerollsArch).
       if (state.phase !== "architect") return state;
       const a = state.architect;
@@ -886,6 +900,18 @@ export function reducer(state, action) {
       return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.familyTiers, archOf(state), plantBag(state)),
                formationEnergy: state.formationEnergy + 1, formationSwaps: swaps };
     }
+    /* Münz-Ökonomie §3.2: einen zusätzlichen Tausch für DIESE Aufstellphase kaufen. Hebt die LAUFENDE
+       Energie, nicht die Basis (`formationEnergyBase`) — gekaufte Energie verfällt mit der Phase, und
+       ein Kauf in Durchlauf 3 darf Durchlauf 4 nicht mitfinanzieren. */
+    case "BUY_ENERGY": {
+      if (state.phase !== "formation") return state;
+      const buy = energyBuy(state);
+      if (!buy.can) return state;                                     // ausverkauft oder zu wenig Münzen
+      return { ...state, coins: (state.coins || 0) - buy.price,
+               coinEnergy: (state.coinEnergy || 0) + 1,
+               formationEnergy: (state.formationEnergy || 0) + 1 };
+    }
+
     // Alle Tausche der Phase zurücknehmen → Ausgangsreihenfolge + volle Energie.
     case "RESET_FORMATION": {
       if (state.phase !== "formation") return state;
@@ -895,7 +921,9 @@ export function reducer(state, action) {
       return { ...state, playerOrder: order, formations: computeFormations(order, state.deck, state.roles, state.perks, state.skills, state.shop?.anchors || [], state.familyTiers, archOf(state), plantBag(state)),
                // Gemeinsamer Helfer mit dem Phasen-Eintritt in der Engine (#179 E_TUNING · #369 Energie-Boden aus dem
                // Baum · Dev-Run-Energie) — vorher stand die Formel hier dupliziert und ohne `devEnergy`.
-               formationEnergy: formationEnergyFor(state),
+               // §3.2: gekaufte Energie überlebt das Zurücksetzen — sie ist bezahlt, das Zurücksetzen
+               // nimmt Tausche zurück, keine Käufe.
+               formationEnergy: formationEnergyFor(state) + (state.coinEnergy || 0),
                formationSwaps: [] };
     }
     // Bestätigen → Reihenfolge bleibt persistent, Übergang in die Kampfphase.

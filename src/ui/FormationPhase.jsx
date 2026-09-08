@@ -15,6 +15,8 @@ import { haptics } from "./haptics.js";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { skillDef } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
 import { t } from "../i18n/index.js";
+import { energyBuy } from "../game/coins.js";  // Münz-Ökonomie §3.2: Preis und Vorrat — dieselbe Quelle wie der Reducer
+import { CoinAmount } from "./CoinMark.jsx";
 
 const GOLD = "#d4a63a"; // #201.2: einheitliche Bestätigen-/Aktionsfarbe
 // Summe aller Formations-Stärken (Σ mult−1 über alle Positionen) — Basis für das reaktive Delta (#95.6).
@@ -61,9 +63,11 @@ export function gainedPositions(prev, cur, eps = 0.001) {
    Zwei Karten antippen = Tausch (1 Energie). Formationen werden nach jedem Tausch live neu berechnet
    (kommt aus state.formations, vom Reducer gefüllt). Undo/Zurücksetzen erstatten Energie.
    Desktop (#101): zweispaltig — Karten-Grid links, Info-Panel rechts; Mobil gestapelt. */
-export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, options = {}, onOption }) {
+export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, onBuyEnergy, options = {}, onOption }) {
   const { playerOrder = [], deck = [], formations = [], formationEnergy = 0, formationSwaps = [] } = state;
   const [sel, setSel] = useState(null);
+  // §3.2: der Energie-Kauf dieser Phase (Preis, Restvorrat, Auslösbarkeit) — eine Rechnung mit dem Reducer.
+  const energy = energyBuy(state);
   // Eis-Neudesign: der Gletscher-Build friert Karten als Gletscher fest (starr). Marker/Masse am Brett + Freeze-Button.
   const iceActive = (state.activeArchetypes || []).includes("ice");
   // eslint-disable-next-line react-hooks/exhaustive-deps -- Perf-Hinweis (Dep-Ausdruck je Render neu), kein Stale-Closure — #292 geprüft
@@ -218,6 +222,25 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
             stehen oben in der Leiste). */}
         <div className="sticky top-0 z-20 -mx-5 px-5 py-2.5 mt-3 mb-3 flex flex-col gap-2"
              style={{ background: PANEL_BG, borderBottom: "1px solid #2a2a34" }}>
+          {/* Energie (docs/muenz-oekonomie.md §3.2) — die Anzeige der Phase, jetzt mit dem Kauf daran. Sie sitzt
+              in der STICKY-Leiste und nicht in der Kennzahlenzeile darüber: die Energie ist der Wert, den man
+              beim Tauschen dauernd liest, und die Leiste ist der Teil, der beim Scrollen mitgeht (deshalb stand
+              der Rest bisher am Fortfahren-Knopf — dort ging kein zweiter Knopf hinein, verschachtelte
+              <button> sind ungültiges HTML). Höchstens ENERGY_MAX_BUYS je Phase, jeder weitere teurer,
+              gekaufte Energie verfällt mit der Phase. */}
+          <div className="flex items-center gap-2">
+            <span className="text-meta-1 uppercase tracking-wide font-bold" style={{ color: "#6d7288" }}>{t("form.energy")}</span>
+            <span className="ty-num font-bold" style={{ fontVariantNumeric: "tabular-nums", fontSize: 18, color: formationEnergy > 0 ? "#5ab87a" : "#6d7288" }}>{formationEnergy}</span>
+            {!energy.soldOut && (
+              <button onClick={energy.can ? onBuyEnergy : undefined} disabled={!energy.can}
+                className="ml-auto as-edge-thin px-2.5 py-1.5 rounded-lg text-body-5 font-bold inline-flex items-center gap-1.5 transition-all disabled:cursor-not-allowed"
+                title={t("form.energy.buy.title", { n: energy.left })}
+                style={energy.can ? { "--c": GOLD, borderLeft: `3px solid ${GOLD}`, border: "1px solid #ffffff29", color: GOLD }
+                                  : { background: "var(--btn-off-bg)", border: "1px solid transparent", color: "var(--btn-off-fg)" }}>
+                <span>{t("form.energy.buy")}</span><CoinAmount n={energy.price} dim={!energy.can} />
+              </button>
+            )}
+          </div>
           {/* Rückgängig + Zurücksetzen teilen sich die volle Breite. */}
           <div className="flex gap-2">
             {/* #kante: Beides sind Auswege — neutral, ohne Farbsignal. */}
@@ -234,7 +257,6 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
             <span className="text-body-lg-5">{t("form.confirm")}</span>
             <span className="text-meta-3 mt-0.5" title={t("form.confirm.title")}>
               <span className="font-bold" style={{ color: deltaOnGold }}>Δ {deltaStr}</span>
-              <span style={{ opacity: 0.55 }}>{t("form.energyLeft", { n: formationEnergy })}</span>
             </span>
           </button>
         </div>

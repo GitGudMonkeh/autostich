@@ -1003,6 +1003,7 @@ function AutostichGame() {
   const swapCards = (i, j) => dispatch({ type: "SWAP_CARDS", i, j });
   const undoSwap = () => dispatch({ type: "UNDO_SWAP" });
   const resetFormation = () => dispatch({ type: "RESET_FORMATION" });
+  const buyEnergy = () => dispatch({ type: "BUY_ENERGY" });        // Münz-Ökonomie §3.2
   const confirmFormation = () => dispatch({ type: "CONFIRM_FORMATION" });
   const lockGlacier = (pos) => dispatch({ type: "GLACIER_LOCK", pos }); // Eis-Neudesign: Karte als Gletscher festfrieren (starr)
   const confirmTarget = (cardIds) => dispatch({ type: "CONFIRM_TARGET", cardIds });
@@ -1029,6 +1030,7 @@ function AutostichGame() {
   const architectUndo = () => dispatch({ type: "ARCHITECT_UNDO" });   // #361: letzten Schritt dieser Phase zurück
   const architectReset = () => dispatch({ type: "ARCHITECT_RESET" }); // #361: auf Phasen-Beginn zurück
   const rerollArchitect = () => dispatch({ type: "REROLL_ARCHITECT", rng: Math.random }); // #263: Gebäude-Reroll-Pool
+  const buyCover = () => dispatch({ type: "BUY_COVER" });          // Münz-Ökonomie §3.4
 
   // Geist-Vergleich „hier"
   const gIdx = Math.floor(state.trickNo / GHOST_STEP);
@@ -1267,7 +1269,7 @@ function AutostichGame() {
       </div>
 
       {state.phase === "formation" && (
-        <FormationPhase state={state} onSwap={swapCards} onUndo={undoSwap} onReset={resetFormation} onConfirm={confirmFormation} options={options} onOption={changeOptions} />
+        <FormationPhase state={state} onSwap={swapCards} onUndo={undoSwap} onReset={resetFormation} onConfirm={confirmFormation} onBuyEnergy={buyEnergy} options={options} onOption={changeOptions} />
       )}
       {state.phase === "glacier-target" && (
         <GlacierPick state={state} onConfirm={lockGlacier} />
@@ -1275,7 +1277,7 @@ function AutostichGame() {
       {state.phase === "architect" && (
         <Suspense fallback={<OverlayFallback />}>
           <ArchitectScreen state={state} options={options} onOption={changeOptions} onBuild={architectBuild} onUpgrade={architectUpgrade}
-            onMove={architectMove} onMoveMulti={architectMoveMulti} onDemolish={architectDemolish} onRecolor={architectRecolor} onReroll={rerollArchitect} onDone={architectDone}
+            onMove={architectMove} onMoveMulti={architectMoveMulti} onDemolish={architectDemolish} onRecolor={architectRecolor} onReroll={rerollArchitect} onBuyCover={buyCover} onDone={architectDone}
             onUndo={architectUndo} onReset={architectReset} />
         </Suspense>
       )}

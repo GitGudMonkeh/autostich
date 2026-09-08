@@ -8,7 +8,8 @@ import { describe, it, expect } from "vitest";
 import { makeRng } from "../src/game/deck.js";
 import { initialState, reducer } from "../src/game/reducer.js";
 import { resolveTrick } from "../src/game/engine.js";
-import { coinsForWins, COIN_WIN_THRESHOLD, COIN_WIN_PER, rerollPrice, rerollOffer } from "../src/game/coins.js";
+import { coinsForWins, COIN_WIN_THRESHOLD, COIN_WIN_PER, rerollPrice, rerollOffer,
+         energyPrice, energyBuy, ENERGY_MAX_BUYS, coverPrice, coverBuy, COVER_CELLS } from "../src/game/coins.js";
 import { isLegendarySkill } from "../src/game/skills.js";
 import { TRICKS_PER_CYCLE } from "../src/game/constants.js";
 
@@ -147,5 +148,79 @@ describe("Neuwurf-Kauf im Reducer (§3.1)", () => {
     expect(spent.coinRerolls).toBe(1);
     const nextPhase = resolveTrick({ ...scenario(12, 0, { pos: TRICKS_PER_CYCLE - 1, coinRerolls: spent.coinRerolls }) }, rng);
     expect(nextPhase.coinRerolls).toBe(0);
+  });
+});
+
+/* ---- Energie (§3.2) und Baufeld (§3.4) ---------------------------------------------------------- */
+describe("Energie in der Aufstellphase (§3.2)", () => {
+  const inFormation = (over = {}) => ({ ...initialState(makeRng(1), 7), phase: "formation", formationEnergy: 4, ...over });
+
+  it("Preis 3 dann 6, höchstens zwei Käufe je Phase", () => {
+    expect([0, 1].map(energyPrice)).toEqual([3, 6]);
+    expect(ENERGY_MAX_BUYS).toBe(2);
+    expect(energyBuy({ coins: 99, coinEnergy: 2 }).soldOut).toBe(true);
+  });
+
+  it("der Kauf hebt die LAUFENDE Energie, nicht die Basis", () => {
+    const s = reducer(inFormation({ coins: 20 }), { type: "BUY_ENERGY" });
+    expect(s.formationEnergy).toBe(5);
+    expect(s.coins).toBe(17);
+    expect(s.coinEnergy).toBe(1);
+    // Die Basis bleibt unberührt — ein Kauf hier darf die nächste Aufstellphase nicht mitfinanzieren.
+    expect(s.formationEnergyBase).toBe(inFormation().formationEnergyBase);
+  });
+
+  it("nach zwei Käufen ist Schluss, auch mit vollem Konto", () => {
+    let s = reducer(inFormation({ coins: 99 }), { type: "BUY_ENERGY" });
+    s = reducer(s, { type: "BUY_ENERGY" });
+    expect(s.formationEnergy).toBe(6);
+    expect(s.coins).toBe(90);                    // 99 − 3 − 6
+    expect(reducer(s, { type: "BUY_ENERGY" })).toBe(s);
+  });
+
+  it("gekaufte Energie überlebt das Zurücksetzen — bezahlt ist bezahlt", () => {
+    const bought = reducer(inFormation({ coins: 20 }), { type: "BUY_ENERGY" });
+    const reset = reducer({ ...bought, formationSwaps: [] }, { type: "RESET_FORMATION" });
+    expect(reset.formationEnergy).toBe(5);       // volle Basis 4 + der gekaufte Tausch
+  });
+
+  it("sie verfällt aber mit der Phase", () => {
+    const next = resolveTrick(scenario(12, 0, { pos: 3, coinEnergy: 2 }), rng);
+    expect(next.coinEnergy).toBe(0);
+  });
+});
+
+describe("Baufeld-Zellen (§3.4)", () => {
+  const inArchitect = (over = {}) => {
+    const s = initialState(makeRng(1), 7);
+    return { ...s, phase: "architect", ...over };
+  };
+
+  it("Preis 20 dann 40, genau zweimal je Lauf", () => {
+    expect([0, 1].map(coverPrice)).toEqual([20, 40]);
+    expect(coverBuy({ coins: 999, coverBuys: 2 }).soldOut).toBe(true);
+  });
+
+  it("der Kauf hebt maxCover dauerhaft und leert den Vorrat", () => {
+    const start = inArchitect({ coins: 100 });
+    const base = start.architect.maxCover;
+    const s1 = reducer(start, { type: "BUY_COVER" });
+    expect(s1.architect.maxCover).toBe(base + COVER_CELLS);
+    expect(s1.coins).toBe(80);
+    expect(coverBuy(s1).left).toBe(1);
+    const s2 = reducer(s1, { type: "BUY_COVER" });
+    expect(s2.architect.maxCover).toBe(base + 2 * COVER_CELLS);
+    expect(s2.coins).toBe(40);                   // 80 − 40
+    expect(reducer(s2, { type: "BUY_COVER" })).toBe(s2); // ausverkauft
+  });
+
+  it("der Vorrat zählt den LAUF, nicht die Phase — ein Durchlauf setzt ihn nicht zurück", () => {
+    const after = resolveTrick(scenario(12, 0, { pos: TRICKS_PER_CYCLE - 1, coverBuys: 1 }), rng);
+    expect(after.coverBuys).toBe(1);
+  });
+
+  it("ohne genug Münzen passiert nichts", () => {
+    const poor = inArchitect({ coins: 19 });
+    expect(reducer(poor, { type: "BUY_COVER" })).toBe(poor);
   });
 });
