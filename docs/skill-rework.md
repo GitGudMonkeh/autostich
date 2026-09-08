@@ -4409,6 +4409,56 @@ Aufstellungsentscheidung.
 beide beantworten jetzt dieselbe Frage — *wie wird mein Brett breit?* Die eine über Zeit, die andere über Picks,
 mit demselben Endzustand. Vorschläge dazu in §5.15; hier steht nur der gemessene Stand.
 
+### 5.15 Variante a getestet: die Trennung gelingt, die Auszahlung nicht (2026-09-08, Owner: „lass mal a testen")
+
+**Gebaut.** Die Eiszeit friert nichts mehr ein. Sie flutet weiter die Boden-Reserve jedes ungefrorenen Felds, und
+danach zieht jeder Gletscher je Durchlauf bis zu `EISZEIT_DRAW` Reserve aus jedem angrenzenden **offenen** Feld in
+seine Masse. Ein Feld gibt nur her, was es hat — zwei Gletscher an demselben Nachbarn teilen sich dessen Vorrat.
+
+**Die Trennung funktioniert, und zwar strukturell.** Die Eiszeit will freie Felder, das Ewige Schild gefrorene. Den
+Verbund aus §5.14 (Faktor 106) kann es nicht mehr geben: die Eiszeit erzeugt keinen Gletscher mehr, also füllt sie
+den vom Schild aufgehobenen Deckel nicht mehr. Die ganze Deckel-Frage aus §5.11/§5.14 fällt im Motor mit ihr weg.
+Das ist kein tarierter Abstand, sondern einer, der sich nicht wieder schließen kann.
+
+**Die Auszahlung trägt nicht.** Sweep, gepaart, dieselben 150 Seeds:
+
+| Flut / Zug | Eiszeit | besser in |
+| --- | --- | --- |
+| 3 / 2 (Start) | −10 % | 44 % |
+| 3 / 4 | −11 % | 44 % |
+| 8 / 8 | −5 % | 48 % |
+| 15 / 15 | −3 % | 49 % |
+
+Der Zug ist nicht die Bremse: 2 → 4 ändert nichts, weil ein gezogenes Feld sich nur mit der Flutrate nachfüllt.
+Aber auch die Flut läuft asymptotisch gegen null und erreicht das Band der übrigen elf (+21…+145 %) nie.
+
+**Warum — nachgerechnet, nicht geraten.** Beim Bruch deckelt `mCap` die Masse auf die höchste Schwelle (12); alles
+darüber verfällt als Überlauf zu fast nichts. Und ein Gletscher birst höchstens **einmal je Durchlauf**. Bei Flut 8
+und vier offenen Nachbarn zieht er 32 und kassiert 12 — der Rest ist weg. Sobald jeder Gletscher jeden Durchlauf
+birst, ist jede weitere Flut vollständig verschenkt; genau da liegt die Decke, und sie ist bei Flut 8 schon
+erreicht.
+
+**Der eigentliche Fehler war meiner, nicht der des Reglers.** Die alte Eiszeit fügte **Gletscher** hinzu, und die
+Gletscherzahl wirkt überlinear (§5.5: 12 → 26M, 16 → 108M), weil Kaskade, Kollision und Geometrie alle an der
+Nachbarschaft hängen. Die neue füttert **Masse**, und Masse ist linear und gedeckelt. Ich habe einen überlinearen
+Effekt gegen einen begrenzten getauscht — das repariert keine Zahl.
+
+**Vorschlag, der Variante a behält und die Form korrigiert** (Mechanik → Owner-Entscheid, nicht umgesetzt): die
+Eiszeit zahlt nicht in Masse, sondern in **Berstkraft**, spiegelbildlich zur vorhandenen Dichte-Kaskade.
+
+| | heute im Code | Eiszeit-Spiegel |
+| --- | --- | --- |
+| Berstfaktor | `1 + 0,25 × Gletscher-Nachbarn` | `1 + x × offene Nachbarn` |
+
+Ein einzelner Gletscher auf leerem Brett birst dann gewaltig, ein volles Brett gibt der Eiszeit nichts — dieselbe
+Umkehrung wie jetzt, aber auf der Achse, die die Zahlen der Fraktion ohnehin treibt, und ohne neuen Begriff und
+ohne Direkt-Score. Die Masse-Variante bleibt über `EISZEIT_DRAW` erhalten und ist eine Konstante von der Rückkehr
+entfernt.
+
+**Offene Naht, unabhängig davon:** Dauerfrost speist die neue Eiszeit nicht. Er füllt gezielt Felder mit Abstand
+≥ 2 zum Gletscher (der Ring bekommt 0), der Zug nimmt aber nur aus dem angrenzenden Ring. Schneetreiben speist sie,
+Dauerfrost nicht.
+
 ## 6. Pflanze
 
 ### 6.1 Richtung und Abgrenzung (gesetzt, Owner 2026-09-06)
@@ -5794,3 +5844,4 @@ und die Ranked-Texte, die eine andere Runde meinen.
 | 2026-09-08 | Befund Ewiges Schild (nichts geändert): alle drei Wirkungen hängen an der Gletscherzahl, der Pool wirkt erst ab zwei, die Kaskade lohnt erst ab drei. Gemessen gepaart, dieselben 150 Seeds: gemischtes Angebot Ø 1,83 Gletscher → −1,2M (besser in 43 %); nur Eis Ø 5,18 → +15,9M (77 %), ab drei Gletschern +31M in 90–96 %. 12 von 150 gemischten Läufen erreichen die Schwelle. Kein Bug — eine Auszahlungskarte ohne eigene Rampe. Drei Vorschläge zur Owner-Entscheidung: a) je Eis-Pick zwei Gletscher, solange es gehalten wird (Empfehlung), b) Kaskaden-Boden von vier Nachbarn, c) so lassen und die Bedingung im Text nennen. §5.12. |
 | 2026-09-08 | Owner: Variante a aus §5.12. Ewiges Schild friert je Eis-Pick vier Felder statt einem (`SCHILD_PER_PICK`, neuer Regler); der globale Ein-Pick-Entscheid, der Brett-Deckel und der Ablehn-Gletscher bleiben unberührt. Sweep 2 → +2 %, 3 → +17 %, 4 → +25 %, 5 → +42 %; 4 gesetzt, weil drei Eis-Picks das Brett damit auf genau `GLACIER_MAX` füllen und Eiszeit/Lawine vorn bleiben. Gemessen −12 % → +25 %, besser in 43 → 63 %; Ø Gletscher im Lauf 1,83 → 2,50. Damit sind alle zwölf Legendären positiv (+25 bis +145 %). Skilltext und Guard nachgezogen. §5.13. |
 | 2026-09-08 | Owner: „nimm 3 und hebe für Schild das Limit auf." `SCHILD_PER_PICK` 4 → 3; solange das Schild liegt, entfällt `GLACIER_MAX` — an allen vier Stellen (Eis-Pick, Folge-Picks, Ablehn-Gletscher, Eiszeit im Motor), nicht nur am eigenen Pick. Für das Schild allein ein Nullsummenspiel: +25 % wie zuvor. Nebenbefund: Eiszeit stieg unangetastet von +35 auf +44 %, weil sie sich die aufgehobene Decke teilt — Läufe mit beiden Legendären messen +305M gegen +2,9M ohne, Faktor 106. Zweite Nebenwirkung: ein volles Brett hat keine Formations-Entscheidung mehr. §5.14. |
+| 2026-09-08 | Owner: „lass mal a testen." Eiszeit friert nichts mehr ein, sondern flutet die Boden-Reserve, und jeder Gletscher zieht je Durchlauf bis zu `EISZEIT_DRAW` aus jedem angrenzenden offenen Feld in seine Masse. Die Trennung von Schild und Eiszeit gelingt strukturell — ohne eigene Gletscher kann die Eiszeit den aufgehobenen Deckel nicht mehr füllen, der Faktor-106-Verbund aus §5.14 ist unmöglich statt wegtariert. Die Auszahlung trägt aber nicht: Flut/Zug 3/2 → −10 %, 3/4 → −11 %, 8/8 → −5 %, 15/15 → −3 %, asymptotisch gegen null. Ursache: `mCap` deckelt die Bruchmasse auf 12 und je Durchlauf birst ein Gletscher höchstens einmal — Masse füttern ist linear und gedeckelt, Gletscher hinzufügen war überlinear. Vorschlag: die Eiszeit über die Berstkraft zahlen lassen (`1 + x × offene Nachbarn`, Spiegel der Dichte-Kaskade) statt über die Masse. Nicht umgesetzt. §5.15. |
