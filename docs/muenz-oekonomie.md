@@ -225,6 +225,19 @@ Vier Bildschirme sind betroffen; die Mockups zeigen sie in dieser Reihenfolge (L
 | **Angebot der Tür** | Aufwerten-Knopf in eigener Zeile unter Neuwurf/Ablehnen. Die drei Skills stehen auf **einer** Seite (keine Fraktions-Navi, kein Pager — das ist der exp-Stand). |
 | **Aufwertphase** | Neuer Bildschirm. Je Skill: Fraktion, Name, Preis rechts; darunter der Stufenwechsel als Chip-Paar; darunter der Effekt mit altem Wert durchgestrichen. Fuß: „Zurück zur Skill-Wahl". |
 
+### 5.1 Zwei Altlasten am Skill-Screen, die mit erledigt werden
+
+Vom Owner am laufenden Spiel gemeldet (2026-09-07). Sie gehören nicht zur Ökonomie, sitzen aber auf
+demselben Bildschirm — wer den Aufwerten-Knopf einbaut, fasst diese Stellen ohnehin an:
+
+1. **Die Banner der häufigsten Skills raus.** Nach der Türwahl stehen oben im Angebot noch Banner der
+   häufigsten Skills. Die sollen weg.
+2. **Das Panel darf keinen Leerraum unten haben.** Es ist heute höher als die Auswahl, die es umschließt.
+   Es soll **mit dem Inhalt mitwachsen und mitschrumpfen** — so groß wie die Auswahl, nicht größer.
+
+> Beides ist **nicht gegengeprüft**: die Türstufe existiert nur auf `exp`, und diese Stellen ließen sich
+> von `dev` aus nicht ansehen. Vor dem Umbau am laufenden Spiel nachsehen, was genau gemeint ist.
+
 ---
 
 ## 6. Was wovon abhängt
