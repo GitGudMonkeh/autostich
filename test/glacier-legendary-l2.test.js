@@ -2,7 +2,8 @@ import { describe, it, expect } from "vitest";
 import { resolveTrick } from "../src/game/engine.js";
 import { initialState } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
-import { eiszeitTick, ROLES, EISZEIT_FLOOD, EISZEIT_DRAW } from "../src/game/glacier.js";
+import { eiszeitTick, precomputeGlacier, ROLES, EISZEIT_FLOOD, EISZEIT_DRAW, EISZEIT_BURST_PER } from "../src/game/glacier.js";
+import { iceSnapshotOpts } from "../src/game/factions/ice.js";
 import { N_POS, posOf } from "../src/game/architect.js";
 
 // Eis-Neudesign Phase 5 (L2) — Legendär Eiszeit (Flut + Auto-Lock). §5.2: Erstarrung gestrichen; die
@@ -47,6 +48,28 @@ describe("eiszeitTick — Flut + Zug aus dem offenen Boden (§5.15)", () => {
     reserve[1] = EISZEIT_DRAW;              // pos1 liegt zwischen pos0 und pos2
     const { mass } = eiszeitTick(reserve, zeros(), lockAt(0, 2), 0); // ohne Flut, damit nur der Vorrat zählt
     expect(mass[0] + mass[2]).toBe(EISZEIT_DRAW);
+  });
+});
+
+describe("Eiszeit — Berstkraft aus offenem Boden (§5.16)", () => {
+  it("der Bruch skaliert mit den OFFENEN Nachbarn — der Spiegel der Dichte-Kaskade", () => {
+    const mass = new Array(40).fill(0); mass[mid] = 12;
+    const opts = iceSnapshotOpts([ROLES.L_EISZEIT]);
+    const frei = precomputeGlacier(mass, new Set([mid]), opts).payout[mid];       // vier offene Nachbarn
+    const plain = precomputeGlacier(mass, new Set([mid]), {}).payout[mid];
+    expect(frei / plain).toBeCloseTo(1 + 4 * EISZEIT_BURST_PER, 5);
+    // Ecke pos0: nur zwei Nachbarn, also nur zwei Viertel Wucht.
+    const eckMass = new Array(40).fill(0); eckMass[0] = 12;
+    const ecke = precomputeGlacier(eckMass, new Set([0]), opts).payout[0];
+    expect(ecke / precomputeGlacier(eckMass, new Set([0]), {}).payout[0]).toBeCloseTo(1 + 2 * EISZEIT_BURST_PER, 5);
+  });
+
+  it("auf vollem Brett gibt die Eiszeit nichts — die exakte Umkehrung des Ewigen Schilds", () => {
+    const all = new Set(); for (let p = 0; p < 40; p++) all.add(p);
+    const mass = new Array(40).fill(12);
+    const mit = precomputeGlacier(mass, all, iceSnapshotOpts([ROLES.L_EISZEIT])).payout[mid];
+    const ohne = precomputeGlacier(mass, all, {}).payout[mid];
+    expect(mit).toBe(ohne);
   });
 });
 

@@ -1,5 +1,5 @@
 import { SKILL_DEFS, isLegendarySkill } from "../skills.js";
-import { ROLES, TIER_MULT, GEO_LINIE, neighbors4, neighbors8 } from "../glacier.js";
+import { ROLES, TIER_MULT, GEO_LINIE, neighbors4, neighbors8, EISZEIT_BURST_PER } from "../glacier.js";
 
 /* ============================================================
    EIS — Fraktionsmodul (exp skill rework, docs/skill-rework.md §5). Reine Logik: kein React, kein Math.random.
@@ -80,6 +80,7 @@ export function iceSnapshotOpts(roles = [], tune = null) {
   // L_LAWINE (Große Lawine) wird NICHT hier gesetzt — sie ist ein EINMALIGER Finisher, die Engine schaltet sie nur im
   // letzten Durchlauf ein (sonst verhinderte sie das Horten).
   if (roles.includes(ROLES.L_SCHILD)) opts.ewigesSchild = true;                 // Legendär: Übergletscher (Dauer-Zustand)
+  if (roles.includes(ROLES.L_EISZEIT)) opts.eiszeitBurstPer = EISZEIT_BURST_PER; // Legendär: Bruch × offene Nachbarn (§5.16)
   return opts;
 }
 

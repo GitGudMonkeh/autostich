@@ -96,6 +96,7 @@ export function precomputeGlacier(mass, locked, opts = {}) {
   const formFactor = opts.formFactor || null;           // 2D-Geometrie-Formationen: Burst-Faktor je Feld (docs §9)
   const grosseLawine = !!opts.grosseLawine;             // Legendär: ALLES bricht (Schwellen ignoriert)
   const ewigesSchild = !!opts.ewigesSchild;             // Legendär: das ganze Feld gilt als EIN Übergletscher (Kaskade = volle Feldgröße)
+  const eiszeitPer = opts.eiszeitBurstPer || 0;         // Legendär Eiszeit: Bruch × offene Nachbarn (Spiegel der Kaskade)
   const burstAt = opts.burstAt ?? BURST_AT;             // natürliche Berst-Schwelle (Rissbildung senkt sie)
   const tOf = (m) => { let t = 0; for (const th of thresholds) if (m >= th) t++; return t; };
   const top = thresholds[thresholds.length - 1];
@@ -149,7 +150,9 @@ export function precomputeGlacier(mass, locked, opts = {}) {
     const kollFrac = ewigesSchild ? 1 : (nb.length ? gN / nb.length : 0);
     const kollFaktor = 1 + (kollision - 1) * kollFrac;  // Kollision (anteilig)
     const geoFactor = formFactor ? (formFactor[p] || 1) : 1; // 2D-Geometrie (Block/Kreuz/Linie/Fläche)
-    let burst = mCap[p] * tierMult[effTier] * berstFaktor * kollFaktor * sturzFactor * geoFactor * BURST_SCALE;
+    // Eiszeit (§5.16): je offenem Nachbarfeld mehr Wucht — genau gegenläufig zur Kaskade, die gefrorene Nachbarn zählt.
+    const eisFaktor = eiszeitPer ? 1 + eiszeitPer * (nb.length - nb.filter(isG).length) : 1;
+    let burst = mCap[p] * tierMult[effTier] * berstFaktor * kollFaktor * sturzFactor * geoFactor * eisFaktor * BURST_SCALE;
     if (grosseLawine) burst *= GROSSE_LAWINE_MULT;        // Lawinen-Takt: Verstärker je erzwungenem Bruch
     payout[p] += burst;
     resetMass[p] = RESET_TO;                             // abgekalbt: baut wieder von unten auf (selten + gewaltig)
@@ -209,6 +212,11 @@ export function uebergletscherPool(mass, locked) {
 // `firn` ist die Boden-RESERVE (firnStack), `mass` die Gletscher-Eigenmasse — beide kommen aus der Engine.
 export const EISZEIT_FLOOD = envNum("SIM_GLACIER_EISZEIT_FLOOD", 3);
 export const EISZEIT_DRAW = envNum("SIM_GLACIER_EISZEIT_DRAW", 2); // Zug je offenem Nachbarfeld und Durchlauf
+// §5.16: die zweite, eigentliche Auszahlung der Eiszeit — der SPIEGEL der Dichte-Kaskade. Die Kaskade multipliziert
+// den Bruch mit den GEFRORENEN Nachbarn (KASKADE_PER_NEIGHBOR), die Eiszeit mit den OFFENEN. §5.15 hat gemessen,
+// dass Masse zu füttern nicht trägt: mCap deckelt die Bruchmasse auf TOP und ein Gletscher birst höchstens einmal
+// je Durchlauf, also verfällt jede Flut über die Decke hinaus. Die Berstkraft kennt diese Decke nicht.
+export const EISZEIT_BURST_PER = envNum("SIM_GLACIER_EISZEIT_BURST", 0.25);
 export function eiszeitTick(firn, mass, locked, base = EISZEIT_FLOOD, draw = EISZEIT_DRAW, neighborFn = neighbors4) {
   const isG = (p) => (locked instanceof Set ? locked.has(p) : !!(locked && locked[p]));
   const f = Array.isArray(firn) ? firn.slice() : new Array(N_POS).fill(0);
