@@ -1004,6 +1004,8 @@ function AutostichGame() {
   const undoSwap = () => dispatch({ type: "UNDO_SWAP" });
   const resetFormation = () => dispatch({ type: "RESET_FORMATION" });
   const buyEnergy = () => dispatch({ type: "BUY_ENERGY" });        // Münz-Ökonomie §3.2
+  const callFocus = (arch) => dispatch({ type: "CALL_FOCUS", arch, rng: Math.random });   // Münz-Ökonomie §3.3
+  const upgradeSkill = (skillId) => dispatch({ type: "UPGRADE_SKILL", skillId });          // Münz-Ökonomie §3.5
   const confirmFormation = () => dispatch({ type: "CONFIRM_FORMATION" });
   const lockGlacier = (pos) => dispatch({ type: "GLACIER_LOCK", pos }); // Eis-Neudesign: Karte als Gletscher festfrieren (starr)
   const confirmTarget = (cardIds) => dispatch({ type: "CONFIRM_TARGET", cardIds });
@@ -1293,7 +1295,7 @@ function AutostichGame() {
           options={options} onOption={changeOptions} currentTraj={currentTraj.current} recordTraj={recordTraj.current} best={best} />
       )}
       {state.phase === "levelup" && (state.skillOffer || state.skillDoors) && (
-        <SkillSelect offer={state.skillOffer} doors={state.skillDoors} onChooseDoor={chooseDoor} onPick={pickSkill} onDecline={declineSkill} onReroll={rerollSkill} skills={state.skills} state={state} options={options} onOption={changeOptions}
+        <SkillSelect offer={state.skillOffer} doors={state.skillDoors} onChooseDoor={chooseDoor} onCallFocus={callFocus} onUpgradeSkill={upgradeSkill} onPick={pickSkill} onDecline={declineSkill} onReroll={rerollSkill} skills={state.skills} state={state} options={options} onOption={changeOptions}
           currentTraj={currentTraj.current} recordTraj={recordTraj.current} best={best} />
       )}
       {/* #update: „Neue Version verfügbar"-Hinweis — pollt version.json, meldet neue Deploys ohne Zwangs-Reload. */}

@@ -7,8 +7,9 @@ import { SKILL_SLOT_LIMIT, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_MAX_CHARGE, ION_S
          PLANT_GREEN_THRESHOLD, PLANT_BLOOM_THRESHOLD, PLANT_GROWTH_WIN, PLANT_GROWTH_PER_FORMATION, PLANT_BLOOM_SCORE_PER_GREEN,
          HEAT_MIN_MARGIN, HEAT_MARGIN_OFFSET, HEAT_PER_POINT, HEAT_LOSS, HEAT_MULT_PER_10, ION_VALUE_PER_BAR, PLANT_BLOOM_WEIGHT, PLANT_BLOOM_WEIGHT_PER_GROWTH } from "../game/constants.js";
 import { DECLINE_MIN_SKILLS as G_DECLINE_MIN_SKILLS } from "../game/glacier.js"; // Eis-Neudesign: Ablehn-Gletscher-Schwelle für den Passiv-Text
-import { rerollOffer } from "../game/coins.js";   // Münz-Ökonomie §3.1: Preis des nächsten Neuwurfs — dieselbe Quelle wie der Reducer
-import { RerollLabel } from "./CoinMark.jsx";     // Beschriftung: Anzahl solange gratis, danach der Preis
+import { rerollOffer, FOCUS_PRICE, UPGRADE_FROM } from "../game/coins.js"; // Münz-Ökonomie §3.1 Neuwurf · §3.3 Fokus · §3.5 Aufwerten — dieselben Zahlen wie der Reducer
+import { RerollLabel, CoinAmount } from "./CoinMark.jsx";                  // Beschriftung: Anzahl solange gratis, danach der Preis
+import { SkillUpgrade } from "./SkillUpgrade.jsx";                        // §3.5: die Aufwertphase (eigener Bildschirm)
 
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 import { GlossaryPanel, GlossaryText } from "./Glossary.jsx";
@@ -64,6 +65,90 @@ function KeywordGlossary({ tokens }) {
   );
 }
 
+/* Eine Tür — gewürfelt oder gerufen. Beide zeigen dasselbe (Fraktionssymbole in Platzreihenfolge, keine
+   Namen, keine Stufen) und öffnen über denselben Weg; die gerufene trägt zusätzlich ihre Marke, den
+   violetten Rahmen mit Schein und steht über die volle Breite. EINE Komponente, damit die bezahlte Tür
+   nicht auseinanderdriftet von der, die man umsonst bekommt. */
+function DoorCard({ door, label = null, called = false, phone = false, onOpen }) {
+  const archs = (door.skills || []).map(archetypeOf).filter(Boolean);
+  const count = {};
+  for (const a of archs) count[a] = (count[a] || 0) + 1;
+  const leadArch = archs.length ? [...archs].sort((a, b) => count[b] - count[a] || archs.indexOf(a) - archs.indexOf(b))[0] : null;
+  const col = (archMeta(leadArch) || {}).color || LIGHT;
+  return (
+    <button type="button" onClick={onOpen}
+      className={`sk-door as-edge-card text-left rounded-xl px-4 py-5 flex flex-col items-center gap-3 transition-all hover:-translate-y-0.5 hover:brightness-110${called ? " sk-door-called mt-3" : ""}`}
+      style={{ "--c": col, ...(called ? { boxShadow: `0 0 26px -12px ${col}` } : null) }}>
+      {called
+        ? <div className="w-full flex items-center gap-2">
+            <FocusIcon />
+            <span className="text-meta-3 font-bold uppercase tracking-widest" style={{ color: "#cdbcf5" }}>{t("focus.called")}</span>
+            <span className="ml-auto text-meta-1 inline-flex items-center gap-1 opacity-70"><CoinAmount n={FOCUS_PRICE} size={11} />{t("focus.paid")}</span>
+          </div>
+        : <div className="text-meta-3 font-bold uppercase tracking-widest opacity-60">{label}</div>}
+      <div className="flex items-center justify-center gap-4">
+        {archs.map((a, k) => <ArchIcon key={k} meta={archMeta(a)} size={phone ? 30 : 40} />)}
+      </div>
+      <div className="text-body-5 opacity-70 text-center">{archs.map((a) => (archMeta(a) || {}).label || a).join(" · ")}</div>
+      <div className="text-body-lg-5 font-bold" style={{ color: col }}>{t("skill.door.open")}</div>
+    </button>
+  );
+}
+
+// Das Ziel-/Fokus-Zeichen: zwei Ringe. Es steht am Ruf-Block und an der gerufenen Tür — beide Male
+// dasselbe, damit man den Kauf und sein Ergebnis als dieselbe Sache liest.
+function FocusIcon({ size = 15 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+      strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ color: "#cdbcf5", flex: "none" }}>
+      <circle cx="12" cy="12" r="3" /><circle cx="12" cy="12" r="8" opacity=".45" />
+    </svg>
+  );
+}
+
+/* Fokus rufen (docs/muenz-oekonomie.md §3.3) — unter den Türen, vier Fraktions-Chips, ein Tap wählt UND
+   bezahlt. Einmal je Skill-Phase; danach ist der Block weg, weil die gerufene Tür darüber schon dasteht.
+   Die Fraktion, von der man am meisten hält, ist hervorgehoben — das ist die, die man am ehesten sucht,
+   und der Chip sagt es, ohne dass man zählen muss. */
+function FocusCall({ state, onCallFocus }) {
+  if (!onCallFocus || state.focusCalled) return null;
+  const coins = state.coins || 0;
+  const can = coins >= FOCUS_PRICE;
+  const held = {};
+  for (const id of state.skills || []) { const a = archetypeOf(id); if (a) held[a] = (held[a] || 0) + 1; }
+  const lead = Object.keys(held).sort((a, b) => held[b] - held[a])[0] || null;
+  return (
+    <div className="sk-focus mt-4 rounded-xl p-3.5"
+      style={{ background: "linear-gradient(180deg,#241f2e,#17151f)", border: "1px solid #6a5a9e" }}>
+      <div className="flex items-center gap-2">
+        <FocusIcon />
+        <span className="text-body-lg-5 font-bold" style={{ color: "#cdbcf5" }}>{t("focus.title")}</span>
+        <span className="ml-auto"><CoinAmount n={FOCUS_PRICE} size={12} dim={!can} /></span>
+      </div>
+      <div className="text-body-5 leading-snug mt-1.5" style={{ color: "#9a93b5" }}>{t("focus.hint")}</div>
+      <div className="grid grid-cols-4 gap-1.5 mt-3">
+        {ARCHETYPE_ORDER.map((a) => {
+          const m = archMeta(a) || { color: "#8a8a95", label: a };
+          const on = a === lead;
+          return (
+            <button key={a} type="button" disabled={!can} onClick={can ? () => onCallFocus(a) : undefined}
+              className="sk-focuschip rounded-lg px-1 py-2.5 flex flex-col items-center gap-1.5 transition-all hover:brightness-125 disabled:cursor-not-allowed"
+              style={{ background: can ? `${m.color}${on ? "1f" : "12"}` : "#ffffff08",
+                       border: `1px solid ${can ? `${m.color}${on ? "66" : "3d"}` : "#ffffff14"}`,
+                       opacity: can ? 1 : 0.45 }}>
+              <ArchIcon meta={m} size={18} />
+              <span className="text-meta-1 font-bold" style={{ color: m.color }}>{m.label}</span>
+            </button>
+          );
+        })}
+      </div>
+      <div className="text-meta-1 text-center mt-2" style={{ color: "#5c5c68" }}>
+        {can ? t("focus.tap") : t("focus.broke")}
+      </div>
+    </div>
+  );
+}
+
 /* Skill-Auswahl (docs/blitz-archetyp.md, Abschnitt 7): erscheint zu festen Zeitpunkten (DECISION_SCHEDULE, erstmals Runde 7) STATT eines Perks.
    Seltene, regelverändernde Motoren. Ablehnen → stattdessen ein Perk (Runde nie verschwendet).
    Bei vollen Slots: neuen Skill wählen → dann den zu ersetzenden Skill antippen (übergibt replaceId).
@@ -73,7 +158,8 @@ function KeywordGlossary({ tokens }) {
    je drei Fraktionssymbolen, ohne Namen und ohne Stufen — `onChooseDoor(i)` öffnet eine. Dann das Angebot (`offer`):
    die drei Skills dieser Tür mit ihren Stufen auf EINER Seite, jede Karte in ihrer Fraktionsfarbe. Der Dev-Run zeigt
    weiter den flachen Voll-Katalog, geblättert je Fraktion (der Pager unten). */
-export function SkillSelect({ offer = null, doors = null, onPick, onDecline, onReroll, onChooseDoor, skills = [], state = {}, options = {}, onOption,
+export function SkillSelect({ offer = null, doors = null, onPick, onDecline, onReroll, onChooseDoor, onCallFocus, onUpgradeSkill,
+                              skills = [], state = {}, options = {}, onOption,
                               currentTraj = [], recordTraj = [], best = 0 }) {
   const wide = useIsWide();
   const phone = useIsPhone();   // #mobil-emblem — unter 640 px, NICHT die Verneinung von `wide`
@@ -114,6 +200,10 @@ export function SkillSelect({ offer = null, doors = null, onPick, onDecline, onR
   const tx = useRef(0);
   const dir = useRef(1); // Richtung des letzten Seitenwechsels (−1 zurück / +1 vor) → steuert die Slide-in-Animation
   const [openForms, setOpenForms] = useState(false); // Aufstellfeld (Formations-Panel) unten — einklappbar, default zu (#UI)
+  const [upgradeOpen, setUpgradeOpen] = useState(false); // §3.5: die Aufwertphase liegt über dem Angebot
+  // §3.5: „ab 12" am Knopf — der billigste Schritt, den es gibt. Der genaue Preis hängt an der
+  // Auswahl und steht drinnen; der Knopf sagt nur, ob es sich lohnt hineinzugehen.
+  const canUpgrade = !!onUpgradeSkill && !atDoors && skills.some((id) => !isLegendarySkill(id));
 
   // Passiv-Beschreibung je Archetyp — EIN Text, unabhängig davon, ob es der freischaltende oder ein weiterer Pick ist.
   // Beschreibt NUR die Passive (Deck-Mechanik lebt in der Deck-Erklärung). Ergänzt im Aufklapper durch die Glossar-Einträge.
@@ -274,6 +364,22 @@ export function SkillSelect({ offer = null, doors = null, onPick, onDecline, onR
             </ActionButton>
           </div>
 
+          {/* §3.5 „Skill aufwerten" — EIGENE Zeile unter den Phasen-Aktionen. Zwei Gründe, beide aus dem Plan:
+              auf 390 px passen drei Knöpfe nicht nebeneinander, und der Kauf ist eine andere Art Handlung als
+              Neuwurf und Ablehnen — er kostet Währung, nicht die Phase. Der Knopf trägt „ab {UPGRADE_FROM}",
+              damit man vorher weiß, ob es sich lohnt hineinzugehen; der genaue Preis hängt an der Auswahl
+              und steht drinnen. Nicht an der Tür: dort hält man noch kein Angebot in der Hand. */}
+          {canUpgrade && (
+            <button type="button" onClick={() => setUpgradeOpen(true)}
+              className="sk-upgradebtn w-full mt-2 rounded-lg px-4 py-2 text-body-lg-5 font-bold inline-flex items-center justify-center gap-2 transition-all hover:brightness-110"
+              style={{ background: "linear-gradient(180deg,#241f2e,#191722)", border: "1px solid #6a5a9e", color: "#cdbcf5" }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 19V5" /><path d="M6 11l6-6 6 6" /></svg>
+              <span>{t("upgrade.open")}</span>
+              <span className="inline-flex items-center gap-1"><span className="opacity-70">{t("upgrade.from")}</span><CoinAmount n={UPGRADE_FROM} size={12} /></span>
+            </button>
+          )}
+
           {/* #sk-reiter — ab 1280 px steht statt des Pagers eine REITERZEILE: alle angebotenen Fraktionen
               nebeneinander. Der Zustand ist derselbe (`page`/`goTo`),
               es ist nur eine zweite Darstellung desselben Pagers — kein neuer State, keine zweite Wahrheit.
@@ -350,6 +456,13 @@ export function SkillSelect({ offer = null, doors = null, onPick, onDecline, onR
           )}
         </div>
 
+        {/* §3.5: die Aufwertphase liegt ÜBER dem Angebot (eigenes Overlay, wie das Ersetzen-Fenster), damit
+            man nach dem „Zurück zur Skill-Wahl" genau dort weitermacht, wo man war — der Skill-Zug der Phase
+            ist unangetastet, es wurde nur Währung ausgegeben. */}
+        {upgradeOpen && (
+          <SkillUpgrade state={state} onUpgrade={onUpgradeSkill} onClose={() => setUpgradeOpen(false)} />
+        )}
+
         {/* Konsumenten-Ersatzdialog (#93): zweiter Konsument desselben Typs ersetzt den bestehenden. */}
         {pendingConsumer && (
           <div className="mt-3 rounded-lg px-3 py-3 text-body-5 leading-snug" style={{ background: "#d4a63a1a", border: "1px solid #d4a63a66", color: "#e8dcb8" }}>
@@ -377,26 +490,17 @@ export function SkillSelect({ offer = null, doors = null, onPick, onDecline, onR
           <div className="mt-4">
             <div className="text-body-5 opacity-65 text-center mb-3 max-w-md mx-auto leading-snug">{t("skill.door.hint")}</div>
             <div className="sk-doors grid sm:grid-cols-2 gap-3 items-stretch">
-              {doors.map((d, i) => {
-                const archs = (d.skills || []).map(archetypeOf).filter(Boolean);
-                const count = {};
-                for (const a of archs) count[a] = (count[a] || 0) + 1;
-                const leadArch = archs.length ? [...archs].sort((a, b) => count[b] - count[a] || archs.indexOf(a) - archs.indexOf(b))[0] : null;
-                const col = (archMeta(leadArch) || {}).color || LIGHT;
-                return (
-                  <button key={i} type="button" onClick={() => onChooseDoor?.(i)}
-                    className="sk-door as-edge-card text-left rounded-xl px-4 py-5 flex flex-col items-center gap-3 transition-all hover:-translate-y-0.5 hover:brightness-110"
-                    style={{ "--c": col }}>
-                    <div className="text-meta-3 font-bold uppercase tracking-widest opacity-60">{t("skill.door.n", { n: i + 1 })}</div>
-                    <div className="flex items-center justify-center gap-4">
-                      {archs.map((a, k) => <ArchIcon key={k} meta={archMeta(a)} size={phone ? 30 : 40} />)}
-                    </div>
-                    <div className="text-body-5 opacity-70 text-center">{archs.map((a) => (archMeta(a) || {}).label || a).join(" · ")}</div>
-                    <div className="text-body-lg-5 font-bold" style={{ color: col }}>{t("skill.door.open")}</div>
-                  </button>
-                );
-              })}
+              {doors.map((d, i) => (d.called ? null : (
+                <DoorCard key={i} door={d} label={t("skill.door.n", { n: i + 1 })} phone={phone} onOpen={() => onChooseDoor?.(i)} />
+              )))}
             </div>
+            {/* §3.3: die GERUFENE Tür steht UNTER den zwei gewürfelten und über die volle Breite — als dritte
+                Spalte wären es je ~115 px, und die gerufene sähe aus wie eine von dreien statt wie die, für
+                die bezahlt wurde. Sie ersetzt nichts: die zwei gewürfelten bleiben offen. */}
+            {doors.map((d, i) => (d.called ? (
+              <DoorCard key={`c${i}`} door={d} called phone={phone} onOpen={() => onChooseDoor?.(i)} />
+            ) : null))}
+            <FocusCall state={state} onCallFocus={onCallFocus} />
           </div>
         )}
 

@@ -70,3 +70,31 @@ export const energyBuy = (state = {}) =>
   stepBuy(state, state.coinEnergy || 0, ENERGY_MAX_BUYS, energyPrice(state.coinEnergy || 0));
 export const coverBuy = (state = {}) =>
   stepBuy(state, state.coverBuys || 0, COVER_MAX_BUYS, coverPrice(state.coverBuys || 0));
+
+/* ---- Fokus rufen (§3.3) --------------------------------------------------------------------------- */
+// Fester Preis, einmal je Skill-Phase: der Ruf ist gekaufte AUSWAHL, keine Vormerkung — nichts wird
+// aufgehoben, nichts verfällt, also braucht er auch keine Treppe.
+export const FOCUS_PRICE = envNum("SIM_COIN_FOCUS", 5);
+
+/* ---- Skill aufwerten (§3.5) ----------------------------------------------------------------------- */
+/* Preis nach ZIELSTUFE, nicht nach Reihenfolge: jeder Schritt kostet, was seine Stufe wert ist. Wer von
+   Normal auf Episch geht, zahlt 12 + 25 + 40 = 77 — über die Hälfte des Laufeinkommens. Das ist die
+   beabsichtigte Wahl: mehrere Skills auf Selten/Sehr selten, oder wenige auf Episch, wenn man spart.
+   Ein natürlicher Deckel wirkt ohne eigene Regel: man kann nicht mehr Skills aufwerten, als man hält.
+   Index = die interne Stufe (skillTiers 0..3 = Normal … Episch); Stufe 0 ist der Boden, sie kostet nichts.
+   §8.5: das ist die EINE Preisleiter der Ökonomie — die alte in `rarity.js` (price 8/12/18/30 aus der
+   Shop-Zeit) ist mit ihr gestrichen worden, statt danebenzuliegen. */
+export const UPGRADE_PRICES = [0, envNum("SIM_COIN_UP_SELTEN", 12), envNum("SIM_COIN_UP_RAR", 25), envNum("SIM_COIN_UP_EPISCH", 40)];
+export const MAX_SKILL_TIER = UPGRADE_PRICES.length - 1;
+export const upgradePrice = (targetTier) => UPGRADE_PRICES[targetTier] || 0;
+// „ab 12" am Knopf: der billigste Schritt, den es überhaupt gibt — man soll vorher wissen, ob es sich
+// lohnt hineinzugehen, ohne dass der Knopf einen Preis nennt, der von der Auswahl abhängt.
+export const UPGRADE_FROM = Math.min(...UPGRADE_PRICES.filter((p) => p > 0));
+
+/* Was kostet die nächste Stufe, und ist sie zu haben? Eine Quelle für Liste und Reducer. */
+export function upgradeBuy(state = {}, tier = 0) {
+  const next = (tier || 0) + 1;
+  if (next > MAX_SKILL_TIER) return { maxed: true, next: null, price: 0, can: false };
+  const price = upgradePrice(next);
+  return { maxed: false, next, price, can: (state.coins || 0) >= price };
+}

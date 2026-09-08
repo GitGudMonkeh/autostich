@@ -20,14 +20,16 @@
 export const TIERS = [1, 2, 3, 4];
 
 // Stufen-Metadaten (Spec §1 + §8). `rarity` = interner Schlüssel, `label` = sichtbarer deutscher Name,
-// `color` = UI-Farbe (I Grau · II Grün · III Blau · IV Lila), `price` = Shoppreis der Zielstufe.
+// `color` = UI-Farbe (I Grau · II Grün · III Blau · IV Lila). Der frühere `price` (Shop-Zeit, 8/12/18/30)
+// ist entfallen: die Aufwert-Preise der Münz-Ökonomie stehen in coins.js (UPGRADE_PRICES, §3.5/§8.5) —
+// eine Preisleiter, nicht zwei nebeneinander, von denen eine niemand mehr las.
 // #369 §3 Umbenennung: die 5er-Leiter Normal · Selten · Sehr selten · Rar · Legendär mappt auf die vier regulären
 // Stufen + Legendär-Layer. Tier II heißt jetzt „Selten" (grün), Tier III „Sehr selten" (blau).
 export const TIER_META = {
-  1: { tier: 1, rarity: "normal",   label: "Normal",      color: "#8a8a95", price: 8 },
-  2: { tier: 2, rarity: "uncommon", label: "Selten",      color: "#4ade80", price: 12 },
-  3: { tier: 3, rarity: "rare",     label: "Sehr selten", color: "#5a8ade", price: 18 },
-  4: { tier: 4, rarity: "epic",     label: "Episch",      color: "#a855f7", price: 30 },
+  1: { tier: 1, rarity: "normal",   label: "Normal",      color: "#8a8a95" },
+  2: { tier: 2, rarity: "uncommon", label: "Selten",      color: "#4ade80" },
+  3: { tier: 3, rarity: "rare",     label: "Sehr selten", color: "#5a8ade" },
+  4: { tier: 4, rarity: "epic",     label: "Episch",      color: "#a855f7" },
 };
 
 // Römische Stufe direkt hinter dem Familiennamen (Spec §8: „Momentum III").
@@ -62,7 +64,6 @@ export const tierWeightsForShift = (shift, maxTier = 4, minTier = 1) => {
 export const TIER_WEIGHTS = TIER_WEIGHTS_BY_SHIFT[0]; // Basis (shift 0) — unveränderte Bestandssemantik
 
 export const tierMeta   = (tier) => TIER_META[tier] || null;
-export const priceOfTier = (tier) => TIER_META[tier]?.price ?? 0;
 export const romanOf    = (tier) => ROMAN[tier] || String(tier);
 export const tierColor  = (tier) => TIER_META[tier]?.color || "#8a8a95";
 // Sichtbares Etikett „Name III" (Spec §8). Leere/0-Stufe → nur der Name.

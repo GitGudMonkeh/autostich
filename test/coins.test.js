@@ -9,8 +9,11 @@ import { makeRng } from "../src/game/deck.js";
 import { initialState, reducer } from "../src/game/reducer.js";
 import { resolveTrick } from "../src/game/engine.js";
 import { coinsForWins, COIN_WIN_THRESHOLD, COIN_WIN_PER, rerollPrice, rerollOffer,
-         energyPrice, energyBuy, ENERGY_MAX_BUYS, coverPrice, coverBuy, COVER_CELLS } from "../src/game/coins.js";
-import { isLegendarySkill } from "../src/game/skills.js";
+         energyPrice, energyBuy, ENERGY_MAX_BUYS, coverPrice, coverBuy, COVER_CELLS,
+         upgradePrice, MAX_SKILL_TIER } from "../src/game/coins.js";
+import { isLegendarySkill, archetypeOf } from "../src/game/skills.js";
+import { maxChargeFor } from "../src/game/factions/lightning.js";
+import { tierTextDiff } from "../src/ui/SkillUpgrade.jsx";
 import { TRICKS_PER_CYCLE } from "../src/game/constants.js";
 
 const constDeck = (v) => Array.from({ length: 40 }, (_, i) => ({ id: `X${i}`, suit: ["R", "B", "G", "Y"][i % 4], baseRank: v, value: v }));
@@ -222,5 +225,144 @@ describe("Baufeld-Zellen (§3.4)", () => {
   it("ohne genug Münzen passiert nichts", () => {
     const poor = inArchitect({ coins: 19 });
     expect(reducer(poor, { type: "BUY_COVER" })).toBe(poor);
+  });
+});
+
+/* ---- Fokus rufen (§3.3) und Skill aufwerten (§3.5) ---------------------------------------------- */
+describe("Fokus rufen (§3.3)", () => {
+  const atDoors = (over = {}) => {
+    const s = initialState(makeRng(1), 7);
+    return { ...s, phase: "levelup", skillOffer: null,
+      skillDoors: [{ skills: ["SK_FIRE_01", "SK_FIRE_02", "SK_LIGHTNING_01"], tiers: {} },
+                   { skills: ["SK_LIGHTNING_02", "SK_FIRE_03", "SK_LIGHTNING_03"], tiers: {} }],
+      ...over };
+  };
+
+  it("öffnet eine DRITTE Tür — die zwei gewürfelten bleiben", () => {
+    const s = reducer(atDoors({ coins: 20 }), { type: "CALL_FOCUS", arch: "ice" });
+    expect(s.skillDoors).toHaveLength(3);
+    expect(s.skillDoors[0]).toEqual(atDoors().skillDoors[0]);   // unverändert
+    expect(s.skillDoors[1]).toEqual(atDoors().skillDoors[1]);
+    expect(s.coins).toBe(15);                                   // fester Preis 5
+    expect(s.focusCalled).toBe(true);
+  });
+
+  it("die gerufene Tür trägt drei Skills der GERUFENEN Fraktion, mit gewürfelten Stufen", () => {
+    const s = reducer(atDoors({ coins: 20 }), { type: "CALL_FOCUS", arch: "ice" });
+    const called = s.skillDoors[2];
+    expect(called.called).toBe(true);
+    expect(called.skills.length).toBeGreaterThan(0);
+    for (const id of called.skills) expect(archetypeOf(id)).toBe("ice");
+    // Gerufen wird die Fraktion, nicht die Qualität: jeder nicht-legendäre Platz trägt eine Stufe.
+    for (const id of called.skills) if (!isLegendarySkill(id)) expect(Number.isInteger(called.tiers[id])).toBe(true);
+  });
+
+  it("einmal je Phase, und ohne Münzen gar nicht", () => {
+    const once = reducer(atDoors({ coins: 20 }), { type: "CALL_FOCUS", arch: "ice" });
+    expect(reducer(once, { type: "CALL_FOCUS", arch: "fire" })).toBe(once);
+    const poor = atDoors({ coins: 4 });
+    expect(reducer(poor, { type: "CALL_FOCUS", arch: "ice" })).toBe(poor);
+  });
+
+  it("nach dem Öffnen einer Tür gibt es keinen Ruf mehr (die Türstufe ist vorbei)", () => {
+    const called = reducer(atDoors({ coins: 20 }), { type: "CALL_FOCUS", arch: "ice" });
+    const opened = reducer(called, { type: "CHOOSE_DOOR", index: 2 });
+    expect(opened.skillOffer).toEqual(called.skillDoors[2].skills);
+    expect(reducer(opened, { type: "CALL_FOCUS", arch: "fire" })).toBe(opened);
+  });
+
+  it("der Ruf gilt je Phase — ein neuer Durchlauf gibt ihn zurück", () => {
+    const next = resolveTrick(scenario(12, 0, { pos: 3, focusCalled: true }), rng);
+    expect(next.focusCalled).toBe(false);
+  });
+});
+
+describe("Skill aufwerten (§3.5)", () => {
+  const holding = (over = {}) => {
+    const s = initialState(makeRng(1), 7);
+    return { ...s, phase: "levelup", skills: ["SK_LIGHTNING_01"], skillTiers: { SK_LIGHTNING_01: 0 },
+      activeArchetypes: ["lightning"], lightning: { ...s.lightning, active: true }, ...over };
+  };
+
+  it("Preis nach ZIELSTUFE: 12 / 25 / 40, egal in welcher Reihenfolge man geht", () => {
+    expect([1, 2, 3].map(upgradePrice)).toEqual([12, 25, 40]);
+    // Normal ganz auf Episch kostet die Summe — über die Hälfte des Laufeinkommens (~130).
+    expect(12 + 25 + 40).toBe(77);
+  });
+
+  it("hebt genau eine Stufe und zieht den Preis der Zielstufe ab", () => {
+    const s = reducer(holding({ coins: 100 }), { type: "UPGRADE_SKILL", skillId: "SK_LIGHTNING_01" });
+    expect(s.skillTiers.SK_LIGHTNING_01).toBe(1);
+    expect(s.coins).toBe(88);
+  });
+
+  it("mehrfach je Phase, auch mehrfach auf demselben Skill", () => {
+    let s = holding({ coins: 100 });
+    for (let i = 0; i < 3; i++) s = reducer(s, { type: "UPGRADE_SKILL", skillId: "SK_LIGHTNING_01" });
+    expect(s.skillTiers.SK_LIGHTNING_01).toBe(MAX_SKILL_TIER);
+    expect(s.coins).toBe(100 - 77);
+    expect(reducer(s, { type: "UPGRADE_SKILL", skillId: "SK_LIGHTNING_01" })).toBe(s); // höchste Stufe
+  });
+
+  it("kostet KEINEN Skill-Zug — das Angebot bleibt stehen", () => {
+    const before = holding({ coins: 100, skillOffer: ["SK_FIRE_01"], skillOfferTiers: { SK_FIRE_01: 0 } });
+    const s = reducer(before, { type: "UPGRADE_SKILL", skillId: "SK_LIGHTNING_01" });
+    expect(s.skillOffer).toEqual(["SK_FIRE_01"]);
+    expect(s.phase).toBe("levelup");
+  });
+
+  it("die abgeleiteten Werte wandern mit — sonst wertet man die Anzeige auf, nicht das Spiel", () => {
+    /* Reststrom (SK_LIGHTNING_05) senkt auf Episch die Ladungsleiste von 10 auf 9 — der einzige Skill, dessen
+       STUFE `maxChargeFor` verstellt, und damit die schärfste Probe: wer im Reducer nur skillTiers schreibt und
+       lightning.maxCharge stehen lässt, kommt hier nicht durch. */
+    let s = holding({ coins: 100, skills: ["SK_LIGHTNING_05"], skillTiers: { SK_LIGHTNING_05: 0 } });
+    expect(s.lightning.maxCharge ?? maxChargeFor(s.skills, s.skillTiers)).toBe(10);
+    for (let i = 0; i < 3; i++) s = reducer(s, { type: "UPGRADE_SKILL", skillId: "SK_LIGHTNING_05" });
+    expect(s.skillTiers.SK_LIGHTNING_05).toBe(MAX_SKILL_TIER);
+    expect(s.lightning.maxCharge).toBe(9);
+    expect(s.lightning.maxCharge).toBe(maxChargeFor(s.skills, s.skillTiers));
+  });
+
+  it("nur gehaltene, nicht-legendäre Skills; ohne Münzen passiert nichts", () => {
+    const notHeld = holding({ coins: 100 });
+    expect(reducer(notHeld, { type: "UPGRADE_SKILL", skillId: "SK_FIRE_01" })).toBe(notHeld);
+    // Legendäre stehen auf keiner Stufenleiter — sie sind nicht aufwertbar, auch nicht mit vollem Konto.
+    const leg = holding({ coins: 100, skills: ["SK_LIGHTNING_L02"], skillTiers: {} });
+    expect(isLegendarySkill("SK_LIGHTNING_L02")).toBe(true); // Gegenprobe: die id ist wirklich legendär
+    expect(reducer(leg, { type: "UPGRADE_SKILL", skillId: "SK_LIGHTNING_L02" })).toBe(leg);
+    const poor = holding({ coins: 11 });
+    expect(reducer(poor, { type: "UPGRADE_SKILL", skillId: "SK_LIGHTNING_01" })).toBe(poor);
+  });
+});
+
+describe("Stufen-Textvergleich (§3.5, Anzeige)", () => {
+  it("hebt genau das geänderte Stück heraus, Rahmen bleibt stehen", () => {
+    const d = tierTextDiff("Jeder Sieg gibt +2 % Hitze, auch ein knapper.",
+                           "Jeder Sieg gibt +3 % Hitze, auch ein knapper.");
+    expect(d.before).toBe("Jeder Sieg gibt");
+    expect(d.removed).toBe("+2");
+    expect(d.added).toBe("+3");
+    expect(d.after).toBe("% Hitze, auch ein knapper.");
+  });
+
+  it("ein angehängter Satz ist reiner Zuwachs — nichts wird durchgestrichen", () => {
+    const d = tierTextDiff("Jeder Sieg gibt +5 % Hitze.",
+                           "Jeder Sieg gibt +5 % Hitze. Auch jede Niederlage gibt +2 % Hitze.");
+    expect(d.removed).toBe("");
+    expect(d.added).toBe("Auch jede Niederlage gibt +2 % Hitze.");
+  });
+
+  it("ohne Gemeinsamkeiten stehen schlicht beide Fassungen da", () => {
+    const d = tierTextDiff("Alt und anders", "Voellig neu geschrieben");
+    expect(d.before).toBe("");
+    expect(d.after).toBe("");
+    expect(d.removed).toBe("Alt und anders");
+    expect(d.added).toBe("Voellig neu geschrieben");
+  });
+
+  it("gleiche Texte ergeben keine Änderung", () => {
+    const d = tierTextDiff("Gleich", "Gleich");
+    expect(d.removed).toBe("");
+    expect(d.added).toBe("");
   });
 });

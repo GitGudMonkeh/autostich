@@ -1129,6 +1129,7 @@ export function resolveTrick(state, rng) {
     offerRerolls: 0, // #205: neues (Zyklus-Ende-)Angebot → Reroll-Index zurück auf 0 (Rerolls im Reducer zählen hoch)
     coinRerolls: 0, // Münz-Ökonomie §3.1: neue Phase → die Neuwurf-Preistreppe beginnt wieder beim Grundpreis
     coinEnergy: 0,  // §3.2: gekaufte Energie verfällt mit ihrer Aufstellphase (der Zähler läuft nur, solange kein Stich löst)
+    focusCalled: false, // §3.3: der Fokus-Ruf gilt einmal je Skill-Phase
     score, winStreak, bestStreak, wins, losses, ties,
     scoreAtCycleStart, lastCycleScore, prevCycleScore, // #131 Rundenscore-Tracking
 

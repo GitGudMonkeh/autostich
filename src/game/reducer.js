@@ -1,10 +1,10 @@
 import { buildDeck, shuffledOrder } from "./deck.js";
 import { rngAt } from "./rng.js"; // #205 Challenger Mode: adressierte Sub-Ströme (build-unabhängige Slots)
 import { PERK_DEFS, buildPerkOffer, offerHasLegendary, isLegendary } from "./perks.js";
-import { rerollPrice, energyBuy, coverBuy, COVER_CELLS } from "./coins.js"; // Münz-Ökonomie: dieselben Rechnungen wie die Knöpfe (§3.1 Neuwurf · §3.2 Energie · §3.4 Baufeld)
+import { rerollPrice, energyBuy, coverBuy, COVER_CELLS, FOCUS_PRICE, upgradeBuy } from "./coins.js"; // Münz-Ökonomie: dieselben Rechnungen wie die Knöpfe (§3.1 Neuwurf · §3.2 Energie · §3.3 Fokus · §3.4 Baufeld · §3.5 Aufwerten)
 import { familyDef, applyFamilyPick } from "./families.js"; // formationEnergyBonus läuft jetzt über engine.formationEnergyFor
 import { UPGRADE_TYPES } from "./rarity.js";
-import { archetypeOf, buildSkillDoors, rerollDoorSkills, glacierRolesOf } from "./skills.js";
+import { archetypeOf, buildSkillDoors, rerollDoorSkills, glacierRolesOf, ARCHETYPE_ORDER } from "./skills.js";
 import { iceRoleTiers } from "./factions/ice.js"; // §5.3: Stufe je Gletscher-Rolle (die Zahlen der Eis-Skills) // Eis-Neudesign: glacierRolesOf · exp: Türen-Angebot (Stufen im Wurf der Tür), Neuwurf der drei Skills
 import { initLightning, maxChargeFor, L as LIGHT } from "./factions/lightning.js"; // exp skill rework: Blitz-Substate (Leiste 10)
 import { initHeat, heatMaxFor, syncHeatMax } from "./factions/fire.js"; // exp skill rework: Hitze-Substate (Leiste 100, Weißglut 200)
@@ -151,6 +151,7 @@ export function initialState(rng = Math.random, seed = null) {
     coins: 0, lastCycleCoins: null, lastCycleWins: null,
     coinRerolls: 0, // §3.1: gekaufte Neuwürfe DIESER Phase — die Preistreppe; Reset überall dort, wo auch offerRerolls auf 0 geht
     coinEnergy: 0,  // §3.2: gekaufte Energie DIESER Aufstellphase (verfällt mit ihr)
+    focusCalled: false, // §3.3: in DIESER Skill-Phase wurde schon ein Fokus gerufen (einmal je Phase)
     coverBuys: 0,   // §3.4: gekaufte Baufeld-Erweiterungen — je LAUF, dauerhaft, Vorrat leert sich
     perks: [], offer: null,
     // Raritätssystem (Epic #167, Spec §2.1): Familienrang je Familie { [familyId]: 1|2|3|4 }. Läuft ADDITIV
@@ -540,7 +541,7 @@ export function reducer(state, action) {
                // Leeres Angebot (Skill-Pool erschöpft) → normal weiterspielen; der Slot bleibt, die nächste
                // reguläre Skill-Phase füllt ihn dann (`normalCount < skillSlots` → hinzufügen statt ersetzen).
                ...(bonusDoors.length
-                 ? { skillDoors: bonusDoors, skillOffer: null, skillOfferTiers: null, skillOfferBonus: true, offerRerolls: 0, coinRerolls: 0 }
+                 ? { skillDoors: bonusDoors, skillOffer: null, skillOfferTiers: null, skillOfferBonus: true, offerRerolls: 0, coinRerolls: 0, focusCalled: false }
                  : {}),
                phase: goTarget ? "target" : (bonusDoors.length ? "levelup" : "play"),
                targetPerk: goTarget ? perkId : null };
@@ -752,6 +753,60 @@ export function reducer(state, action) {
                skillOffer: null, skillDoors: null, skillOfferArchs: null, skillOfferBonus: false };
     }
 
+    /* Münz-Ökonomie §3.3 „Fokus rufen": öffnet SOFORT, in derselben Phase, eine dritte Tür mit drei Skills der
+       gerufenen Fraktion. Die zwei gewürfelten bleiben — die gerufene ist eine zusätzliche Wahl, keine
+       Ersetzung. Einmal je Skill-Phase, fester Preis. Gerufen wird die FRAKTION, nicht die Qualität: die
+       Stufen werden wie überall gewürfelt (buildSkillDoors mit dem üblichen Stufen-Strom).
+       Der eigene rng-Adressraum "focus" hält den Ruf aus den Strömen der gewürfelten Türen und der Neuwürfe
+       heraus — sonst verschöbe ein Ruf die Folge-Würfe dieser Phase. */
+    case "CALL_FOCUS": {
+      if (state.phase !== "levelup" || !state.skillDoors || state.skillOffer) return state;
+      if (state.focusCalled) return state;                            // einmal je Phase
+      const arch = action.arch;
+      if (!arch || !ARCHETYPE_ORDER.includes(arch)) return state;
+      if ((state.coins || 0) < FOCUS_PRICE) return state;
+      const held = (state.skillDoors || []).flatMap((d) => d.skills || []); // die gewürfelten Türen doppeln sich nicht in die gerufene
+      const built = buildSkillDoors([...state.skills, ...held], state.activeArchetypes || [],
+        rngFor(state, action, state.cycle, "focus", 0), rngFor(state, action, state.cycle, "focus", 0, "tiers"),
+        { unlockedArchetypes: [arch], maxArchetypes: C.MAX_ARCHETYPES, doors: 1, factions: 1,
+          size: skillOfferParams(state).doorSize });
+      if (!built.length || !(built[0].skills || []).length) return state; // Fraktion hat nichts mehr → nicht kassieren
+      return { ...state, coins: (state.coins || 0) - FOCUS_PRICE, focusCalled: true,
+               skillDoors: [...state.skillDoors, { ...built[0], called: true, arch }] };
+    }
+
+    /* Münz-Ökonomie §3.5 „Skill aufwerten": hebt einen GEHALTENEN Skill um eine Stufe. Kostet nur Münzen —
+       die Skill-Wahl der Phase bleibt unangetastet. Mehrfach je Phase, auch mehrfach auf demselben Skill;
+       der Preis richtet sich nach der ZIELSTUFE, nicht nach der Reihenfolge.
+       Die Stufe steckt in `skillTiers`, und daran hängen abgeleitete Werte — dieselben, die PICK_SKILL neu
+       rechnet: die Ladungsleiste (maxChargeFor), die Gletscher-Rollenstufen (iceRoleTiers), der Kaltstart
+       des Setzlingsbeets und die Formationen. Wer sie hier vergisst, wertet die ANZEIGE auf und nicht das
+       Spiel. Gletscher vergibt eine Aufwertung nicht: das tut nur ein Eis-PICK. */
+    case "UPGRADE_SKILL": {
+      if (state.phase !== "levelup") return state;
+      const id = action.skillId;
+      const skills = state.skills || [];
+      if (!skills.includes(id) || isLegendarySkill(id)) return state; // Legendäre tragen keine Stufe
+      const cur = (state.skillTiers || {})[id] ?? 0;
+      const buy = upgradeBuy(state, cur);
+      if (buy.maxed || !buy.can) return state;
+      const skillTiers = { ...(state.skillTiers || {}), [id]: buy.next };
+      const arch = archetypeOf(id);
+      let deck = state.deck, growth = state.growth || {};
+      // Pflanze: ein aufgewertetes Setzlingsbeet sät die zusätzliche Karte nach — wie beim Pick, und wie dort
+      // nur einmal je Karte (bereits gewachsene bleiben unberührt).
+      if (arch === "plant") {
+        const gains = setzlingsbeetGains(skills, skillTiers, { order: state.playerOrder, deck, segmentSize: SEGMENT_SIZE })
+          .filter((g) => !(state.growth || {})[g.id]);
+        if (gains.length) { const r = applyGrowth(growth, deck, gains); growth = r.growth; deck = r.deck; }
+      }
+      const lightning = (state.lightning && state.lightning.active)
+        ? { ...state.lightning, maxCharge: maxChargeFor(skills, skillTiers) } : state.lightning;
+      const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, skills, state.shop?.anchors || [], state.familyTiers, archOf(state), { skillTiers, growth });
+      return { ...state, coins: (state.coins || 0) - buy.price, skillTiers, lightning, deck, growth, formations,
+               glacierRoleTiers: iceRoleTiers(skills, skillTiers) };
+    }
+
     // Skill-Angebot ablehnen → stattdessen ein Perk-Angebot für diese Runde (nie „verschwendet").
     // exp skill rework: geht an beiden Stufen — vor den Türen wie auf dem geöffneten Angebot.
     case "DECLINE_SKILL": {
@@ -775,7 +830,7 @@ export function reducer(state, action) {
         return { ...state, ...cleared, phase: "glacier-target", glacierPicksLeft: declineGrant, pendingPerkOffer: off.length > 0 ? off : null };
       }
       return off.length > 0
-        ? { ...state, ...cleared, offer: off, offerRerolls: 0, coinRerolls: 0 } // → Perk-Auswahl (#205: frisches Angebot → Reroll-Index 0; §3.1: frische Entscheidung → Preistreppe von vorn)
+        ? { ...state, ...cleared, offer: off, offerRerolls: 0, coinRerolls: 0, focusCalled: false } // → Perk-Auswahl (#205: frisches Angebot → Reroll-Index 0; §3.1: frische Entscheidung → Preistreppe von vorn)
         : { ...state, ...cleared, phase: "play" };             // Perk-Pool leer → weiterspielen
     }
 
@@ -887,7 +942,7 @@ export function reducer(state, action) {
       // Kam die Gletscher-Wahl aus dem Ablehnen bei vollen Eis-Slots, wartet noch ein geparktes Perk-Angebot → jetzt
       // aufmachen (Perk bleibt erhalten). Sonst wie gehabt zurück ins Spiel.
       if (state.pendingPerkOffer && state.pendingPerkOffer.length > 0)
-        return { ...state, glacierLocked, glacierMass, glacierPicksLeft: 0, phase: "levelup", offer: state.pendingPerkOffer, offerRerolls: 0, coinRerolls: 0, pendingPerkOffer: null };
+        return { ...state, glacierLocked, glacierMass, glacierPicksLeft: 0, phase: "levelup", offer: state.pendingPerkOffer, offerRerolls: 0, coinRerolls: 0, focusCalled: false, pendingPerkOffer: null };
       return { ...state, glacierLocked, glacierMass, glacierPicksLeft: 0, phase: "play", pendingPerkOffer: null }; // Pick bestätigt → zurück ins Spiel
     }
     // Letzten Tausch rückgängig machen → Energie erstatten.
