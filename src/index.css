@@ -7830,7 +7830,7 @@ b, strong { font-weight: 600; }
   .sb-row1, .sb-row2 { display: contents; }
   /* Die Trennlinie lag zwischen den zwei Zeilen; in einer Reihe traegt sie jede
      Zelle links von sich selbst (die erste bleibt ohne). */
-  .sb-music, .sb-score, .sb-chronik, .sb-ms, .sb-streak, .sb-mult, .sb-coins, .sb-mini {
+  .sb-music, .sb-score, .sb-chronik, .sb-ms, .sb-streak, .sb-mult, .sb-mini {
     border-left: 1px solid var(--deck-border);
   }
   .sb-ctl     { order: 0; padding: 0 12px; align-self: center; }
@@ -7841,9 +7841,7 @@ b, strong { font-weight: 600; }
   .sb-ms      { order: 4; width: 250px; display: flex; align-items: center; padding: 0 14px; }
   .sb-streak  { order: 5; }
   .sb-mult    { order: 6; }
-  /* Der Kontostand steht auch in der einreihigen Leiste rechts vom Mult (Muenz-Oekonomie §4). */
-  .sb-coins   { order: 7; }
-  .sb-mini    { order: 8; margin-left: 0; }
+  .sb-mini    { order: 7; margin-left: 0; }
   /* Musik- und Meilenstein-Panel geben ihre eigene Schale ab: in der Leiste sind
      sie Zellen, keine Karten. Der animierte Deck-Rahmen des CRT-Skins muss dafuer
      ausdruecklich mit weg (dieselbe Naht wie bei `.up-card`, s. #rahmen) — sonst

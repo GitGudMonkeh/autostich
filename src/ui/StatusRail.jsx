@@ -3,6 +3,7 @@ import { summarizeFormations } from "../game/formations.js";
 import { precomputeArchitect, architectValueBonus } from "../game/architect.js";
 import { hasCritPerk, totalCritChanceRaw, totalCritMult, fundamentBonus } from "../game/perks.js";
 import { hasCritFamily, allianceGroups } from "../game/families.js";
+import { CoinAmount } from "./CoinMark.jsx"; // Münz-Ökonomie (§4): Kontostand — steht in der Bilanz-Zeile
 import { Sparkline } from "./Sparkline.jsx";
 import { ScoreSourceBar, sourceShares } from "./RunGraphs.jsx";
 import { fmtScore, fmtScoreShort } from "./format.js"; // Gameplay-Neu-Aufbau: „Bester Score" in der Analyse-Ecke
@@ -97,13 +98,18 @@ export function StatusRail({ state, currentTraj = [], recordTraj = [], options =
         </div>
       </div>
 
-      {/* Bilanz — Siege/Verluste/Siegquote/Stiche (+ Crits, wenn relevant). Siegquote steht seit dem StatusBar-Umbau hier. */}
+      {/* Bilanz — Siege/Verluste/Siegquote/Stiche (+ Crits, wenn relevant). Siegquote steht seit dem StatusBar-Umbau hier.
+          Der Münz-Kontostand steht seit dem Owner-Playtest ebenfalls hier statt in der oberen Leiste: dort war er
+          eine sechste Zelle neben Score, Serie und Mult und nahm der wichtigsten Zeile des Laufs die Breite.
+          In dieser Zeile ist er das, was er ist — ein Lauf-Zähler wie Siege und Stiche —, und die Zeile bricht
+          um, statt zu drängen. */}
       <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-body-5 pt-2 border-t" style={{ borderColor: DECK_BORDER }}>
         <span><span className="opacity-50">{t("rail.wins")} </span><b style={{ color: "#5ab87a" }}>{wins}</b></span>
         <span><span className="opacity-50">{t("rail.losses")} </span><b style={{ color: "#e0605a" }}>{losses}</b></span>
         <span><span className="opacity-50">{t("rail.rate")} </span><b style={{ color: winPct == null ? "#e8e8ea" : winPct >= 50 ? "#5ab87a" : "#e0605a" }}>{winPct == null ? "–" : `${winPct}%`}</b></span>
         <span><span className="opacity-50">{t("rail.tricks")} </span><b>{trickNo}</b></span>
         {showCrit && <span><span className="opacity-50">{t("rail.crits")} </span><b style={{ color: "#e879f9" }}>{crits || 0}</b></span>}
+        <span title={t("hud.coins.title")}><span className="opacity-50">{t("rail.coins")} </span><CoinAmount n={state.coins || 0} size={12} className="font-bold" /></span>
       </div>
 
       {/* Analyse — Bester Score + einklappbare Score-Herkunft/Verlauf (default eingeklappt, Zustand über Runs gemerkt). */}

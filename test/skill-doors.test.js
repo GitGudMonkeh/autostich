@@ -110,9 +110,11 @@ describe("Reducer — Türstufe, CHOOSE_DOOR, Angebot", () => {
     const s = reducer(menuState(), { type: "START_RUN", rng: makeRng(2) });
     expect(reducer(s, { type: "PICK_SKILL", skillId: s.skillDoors[0].skills[0], rng })).toBe(s);
   });
-  it("Neuwurf würfelt die drei Skills der geöffneten Tür neu — gleiche Symbole, neue Skills und Stufen — und kostet ein Token; vor den Türen ist er ein No-Op", () => {
+  /* Owner 2026-09-08: der Neuwurf gilt jetzt auf BEIDEN Stufen. Auf der Türstufe würfelt er die Türen, nach
+     dem Öffnen die drei Skills dahinter — dieselbe Ressource, dieselbe Preistreppe. Vorher war er vor den
+     Türen ein No-Op; diese Zusicherung ist mit der Regel gefallen und steht jetzt als eigener Test darunter. */
+  it("Neuwurf würfelt die drei Skills der geöffneten Tür neu — gleiche Symbole, neue Skills und Stufen — und kostet ein Token", () => {
     const s = reducer(menuState(), { type: "START_RUN", rng: makeRng(3), seed: 99 });
-    expect(reducer(s, { type: "REROLL_SKILL", rng })).toBe(s); // vor den Türen kein Neuwurf
     const opened = reducer(s, { type: "CHOOSE_DOOR", index: 0 });
     expect(opened.skillOfferArchs).toEqual(opened.skillOffer.map(archetypeOf));
     const r = reducer(opened, { type: "REROLL_SKILL", rng });
@@ -133,6 +135,31 @@ describe("Reducer — Türstufe, CHOOSE_DOOR, Angebot", () => {
     expect(reducer(r, { type: "DECLINE_SKILL", rng }).skillOfferArchs).toBeNull();
     expect(reducer(r, { type: "PICK_SKILL", skillId: r.skillOffer[0], rng }).skillOfferArchs).toBeNull();
   });
+  it("auf der TÜRSTUFE würfelt derselbe Neuwurf die Türen — gleiche Ressource, gerufene Tür bleibt", () => {
+    const s = reducer(menuState(), { type: "START_RUN", rng: makeRng(3), seed: 99 });
+    expect(s.skillDoors).toHaveLength(2);
+    const r = reducer(s, { type: "REROLL_SKILL", rng });
+    expect(r.skillOffer).toBeNull();                              // immer noch die Türstufe
+    expect(r.skillDoors).toHaveLength(2);
+    expect(r.skillDoors.map((d) => d.skills)).not.toEqual(s.skillDoors.map((d) => d.skills));
+    expect(r.rerollsSkill).toBe(s.rerollsSkill - 1);              // derselbe Pool wie das Angebot
+    expect(r.offerRerolls).toBe(1);
+    // Ohne Token UND ohne Münzen bleibt er wirkungslos.
+    const broke = { ...s, rerollsSkill: 0, coins: 0 };
+    expect(reducer(broke, { type: "REROLL_SKILL", rng })).toBe(broke);
+    // Mit Münzen greift dieselbe Treppe wie überall (Grundpreis 3) — und NIE der Legendär-Preis: was hinter
+    // einer Tür liegt, ist verdeckt.
+    const paid = reducer({ ...s, rerollsSkill: 0, coins: 10 }, { type: "REROLL_SKILL", rng });
+    expect(paid.coins).toBe(7);
+    expect(paid.coinRerolls).toBe(1);
+    // Eine gerufene Tür ist einzeln bezahlt und überlebt den Neuwurf.
+    const called = reducer({ ...s, coins: 20 }, { type: "CALL_FOCUS", arch: "ice" });
+    expect(called.skillDoors).toHaveLength(3);
+    const afterR = reducer(called, { type: "REROLL_SKILL", rng });
+    expect(afterR.skillDoors).toHaveLength(3);
+    expect(afterR.skillDoors.filter((d) => d.called)).toEqual(called.skillDoors.filter((d) => d.called));
+  });
+
   it("rerollDoorSkills: erschöpfte Fraktion → die aktuellen Skills kommen zurück, ganz leer → kein Angebot", () => {
     const firePool = SKILL_LIST.filter((s) => s.archetype === "fire" && !s.legendary).map((s) => s.id);
     const current = firePool.slice(0, 3);

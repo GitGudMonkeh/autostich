@@ -883,7 +883,28 @@ export function reducer(state, action) {
     // denselben Fraktionssymbolen (skillOfferArchs), mit neuen Stufen —, nicht die Türen. Vor den Türen gibt es keinen
     // Neuwurf. Ein geöffnetes Angebot ohne gemerkte Symbole (ältere Snapshots) nimmt die Fraktionen seiner Skills.
     case "REROLL_SKILL": {
-      if (state.phase !== "levelup" || !state.skillOffer) return state;
+      if (state.phase !== "levelup") return state;
+      /* Owner 2026-09-08: der Neuwurf gilt AUCH auf der Türstufe — dieselbe Ressource, dieselbe Preistreppe
+         wie beim Skill- und Perk-Angebot, nur würfelt er dort die TÜREN statt der drei Skills dahinter.
+         Er zahlt immer den normalen Grundpreis: was hinter einer Tür liegt, ist verdeckt, ein Legendär-Preis
+         wäre also ein Preis für etwas, das man nicht sehen kann.
+         Eine GERUFENE Tür (§3.3) bleibt stehen — sie ist einzeln bezahlt, und der Ruf gilt einmal je Phase;
+         sie mit dem Neuwurf wegzuwerfen hieße, den Fokus-Kauf mit zu verlieren. */
+      if (!state.skillOffer && (state.skillDoors || []).length) {
+        const tokensD = state.rerollsSkill || 0;
+        const paidD = tokensD > 0 ? null : buyReroll(state, false);
+        if (tokensD <= 0 && !paidD) return state;
+        const idxD = (state.offerRerolls || 0) + 1;
+        const kept = state.skillDoors.filter((d) => d.called);
+        const skillP = skillOfferParams(state);
+        const rolled = buildSkillDoors(state.skills, state.activeArchetypes || [],
+          rngFor(state, action, state.cycle, "skill", idxD), rngFor(state, action, state.cycle, "skill", idxD, "tiers"),
+          { unlockedArchetypes: state.unlockedArchetypes, maxArchetypes: skillP.maxArchetypes, size: skillP.doorSize });
+        if (!rolled.length) return state;                            // nichts Neues verfügbar → Ressource behalten
+        return { ...state, skillDoors: [...rolled, ...kept], offerRerolls: idxD,
+                 ...(paidD ? paidD.patch : { rerollsSkill: tokensD - 1 }), rerollsUsed: (state.rerollsUsed || 0) + 1 };
+      }
+      if (!state.skillOffer) return state;
       const tokens = state.rerollsSkill || 0;                        // #263: eigener Skill-Pool
       // §3.1: leerer Pool → der Neuwurf ist käuflich; ein Legendäres im Angebot hebt den Grundpreis und
       // garantiert im neuen Wurf wieder eins (ein anderes als das gerade gezeigte).

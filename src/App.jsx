@@ -1185,7 +1185,6 @@ function AutostichGame() {
             getElapsed={getElapsed} timerTicking={active && visible} paused={paused}
             winStreak={state.winStreak || 0} bestStreak={state.bestStreak || 0}
             cycle={state.cycle} totalCycles={totalCycles} pos={state.pos} cycleLen={cycleLenFor(state.shop)}
-            coins={state.coins || 0}
             onTogglePause={() => setPaused((p) => !p)}
             speedMult={speedMult} onSpeed={(m) => setSpeedMult((cur) => (cur === m ? 1 : m))}
             onChronik={() => setShowChronik(true)} deckBack={deckSkin.back}

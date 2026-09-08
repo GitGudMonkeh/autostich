@@ -348,6 +348,7 @@ export default {
   "rail.rate": "Rate",
   "rail.tricks": "Tricks",
   "rail.crits": "Crits",
+  "rail.coins": "Coins",
   "rail.analysis": "Analysis",
   "rail.best": "Best",
   "rail.scoreSource": "Score sources",
@@ -455,6 +456,8 @@ export default {
   "skill.arch.none": "Skill",
   "skill.reroll": "🎲 Reroll · {n}",
   "skill.reroll.buy": "🎲 Reroll",
+  "skill.reroll.doors": "🎲 Reroll the doors · {n}",
+  "skill.reroll.doors.buy": "🎲 Reroll the doors",
   "skill.decline": "Decline → perk",
   "skill.skipCycle": "Skip cycle",
   // Meisterhand bonus (PICK_PERK) — see the German catalogue for why this needs its own decline label.

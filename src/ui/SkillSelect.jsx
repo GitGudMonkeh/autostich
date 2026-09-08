@@ -170,9 +170,11 @@ export function SkillSelect({ offer = null, doors = null, onPick, onDecline, onR
   // Neuwurf (#263): eigener Skill-Reroll-Pool (2 je Lauf), kein Free-Reroll mehr.
   // Münz-Ökonomie §3.1: ist der Pool leer, ist derselbe Knopf käuflich — kein zweiter Knopf. Trägt das
   // Angebot ein Legendäres, gilt der höhere Grundpreis und der neue Wurf enthält garantiert wieder eins.
+  // Owner 2026-09-08: der Neuwurf gilt auch auf der TÜRSTUFE — dieselbe Ressource, dieselbe Treppe, nur
+  // würfelt er dort die Türen. Dort nie der Legendär-Preis: was hinter einer Tür liegt, ist verdeckt.
   const rerollTokens = state.rerollsSkill || 0;
-  const rerollBuy = rerollOffer(state, rerollTokens, offerIds.some(isLegendarySkill));
-  const canReroll = !!onReroll && !atDoors;
+  const rerollBuy = rerollOffer(state, rerollTokens, !atDoors && offerIds.some(isLegendarySkill));
+  const canReroll = !!onReroll && (atDoors || !!offer);
   /* exp skill rework: Slots sind standardmäßig unbegrenzt (SKILL_SLOT_LIMIT heißt „kein Limit"); nur eine Dev-Run-
      Regel darunter begrenzt. Unbegrenzt rechnet `slots` als Infinity, damit `full` und das Ersetzen-Fenster
      unverändert bleiben (nie voll) und der Reducer (PICK_SKILL: `state.skillSlots || C.SKILL_SLOT_LIMIT`) dasselbe sieht. */
@@ -350,13 +352,15 @@ export function SkillSelect({ offer = null, doors = null, onPick, onDecline, onR
               gemessen aus dem Knopf. Eine Zeile CSS statt eines zweiten JSX-Zweigs — der Knopf bleibt
               derselbe Knopf. */}
           <div className="flex flex-wrap items-stretch gap-2">
-            {/* exp: der Neuwurf würfelt die drei Skills der GEÖFFNETEN Tür neu — vor den Türen gibt es ihn nicht.
-                §3.1: nach dem Pool steht am selben Knopf der Preis. Er bleibt sichtbar, wenn die Münzen nicht
-                reichen — nur eben ausgegraut; wer den Kauf nicht sieht, kann nicht darauf sparen. */}
+            {/* Ein Knopf, zwei Stufen: auf der Türstufe würfelt er die TÜREN, danach die drei Skills der
+                geöffneten Tür. §3.1: nach dem Pool steht am selben Knopf der Preis. Er bleibt sichtbar, wenn
+                die Münzen nicht reichen — nur eben ausgegraut; wer den Kauf nicht sieht, kann nicht darauf sparen. */}
             {!devMode && canReroll && (
               <ActionButton kind={rerollBuy.legendary ? "rerollLeg" : "reroll"} flex disabled={!rerollBuy.can}
                 className="sk-actbtn lv-actbtn lv-actbtn-reroll" onClick={onReroll}>
-                <RerollLabel r={rerollBuy} freeKey="skill.reroll" buyKey="skill.reroll.buy" />
+                <RerollLabel r={rerollBuy}
+                  freeKey={atDoors ? "skill.reroll.doors" : "skill.reroll"}
+                  buyKey={atDoors ? "skill.reroll.doors.buy" : "skill.reroll.buy"} />
               </ActionButton>
             )}
             <ActionButton kind="decline" flex className="sk-actbtn lv-actbtn" onClick={onDecline}>

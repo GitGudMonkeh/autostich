@@ -297,6 +297,7 @@ export default {
   "rail.rate": "Quote",
   "rail.tricks": "Stiche",
   "rail.crits": "Crits",
+  "rail.coins": "Münzen",
   "rail.analysis": "Analyse",
   "rail.best": "Bester",
   "rail.scoreSource": "Score-Herkunft",
@@ -412,6 +413,8 @@ export default {
   "skill.arch.none": "Skill",
   "skill.reroll": "🎲 Neu würfeln · {n}",
   "skill.reroll.buy": "🎲 Neu würfeln",
+  "skill.reroll.doors": "🎲 Türen neu würfeln · {n}",
+  "skill.reroll.doors.buy": "🎲 Türen neu würfeln",
   "skill.decline": "Ablehnen → Perk",
   "skill.skipCycle": "Runde überspringen",
   // Meisterhand-Bonus (PICK_PERK): die Skill-Wahl kommt hier NICHT aus dem Rundenplan, sondern aus dem eben
