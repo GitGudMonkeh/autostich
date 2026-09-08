@@ -25,7 +25,7 @@ import { perkLegendaryChance, anchorAt } from "./shop.js";
 import { precomputeArchitect, architectValueBonus, architectScore, buildArchitectOffer } from "./architect.js";
 import { precomputeGlacier, ewigerFrostTick, dauerfrostTick, driftTargets as glacierDriftTargets,
   neighbors4 as glacierNeighbors4, uebergletscherPool, packeisTick, verzahnungTick, eiszeitTick, glacierGeometry,
-  ROLES as GLACIER_ROLES, WIN_MASS as GLACIER_WIN_MASS, GROSSE_LAWINE_EVERY as GLACIER_LAWINE_EVERY,
+  ROLES as GLACIER_ROLES, WIN_MASS as GLACIER_WIN_MASS, GROSSE_LAWINE_EVERY as GLACIER_LAWINE_EVERY, GLACIER_MAX,
   FIRN_REFILL_TARGET as GLACIER_FIRN_REFILL_TARGET } from "./glacier.js"; // Eis-Neudesign (isoliert, activeArchetypes "ice") · #386 Firn-Reserve-Nachschub
 import { iceTuning, iceSnapshotOpts, iceNeighborFn } from "./factions/ice.js"; // §5.3: die Zahlen der Eis-Skills kommen aus ihrer Stufe
 import { fullPerkOffer, devSkillOffer, fullArchitectOffer } from "./devCatalog.js"; // Dev-Run: Voll-Katalog statt Zufallsangebot (nur state.devMode)
@@ -940,7 +940,10 @@ export function resolveTrick(state, rng) {
     // friert zum Gletscher ein (Karten frieren nach und nach). Der neu gefrorene Gletscher startet mit Masse 0 (glacierMass
     // bleibt unberührt) und zieht ab dem nächsten Rundenstart aus seiner Reserve auf.
     if (glacierActive && glacierRoles.includes(GLACIER_ROLES.L_EISZEIT)) {
-      const ez = eiszeitTick(newFirnStack, newGlacierLocked, undefined, undefined, challengeBlockForm);
+      // §5.11: der Brett-Deckel gilt für JEDE Gletscher-Quelle, auch für die Eiszeit. Bis §5.10 fror sie ohne Grenze
+      // ein, während die eigenen Picks bei GLACIER_MAX standen — sie allein füllte das Brett und stand deshalb bei
+      // +281 %, doppelt so hoch wie das nächstbeste Legendäre.
+      const ez = eiszeitTick(newFirnStack, newGlacierLocked, undefined, GLACIER_MAX > 0 ? GLACIER_MAX : Infinity, challengeBlockForm);
       newFirnStack = ez.mass; newGlacierLocked = ez.locked;
     }
     // ---- Legendär-Perks-Rework (#203): Durchlauf-Ende-Payoffs, VOR dem Rundenscore-Tracking (dem beendeten Durchlauf

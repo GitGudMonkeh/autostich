@@ -4207,6 +4207,53 @@ legendärer Perk bleibt also auch bei gleicher Angebotsrate deutlich seltener al
 **Balance-Guard:** Seeds 1..40 Median 2,78 → **2,72M**, Mean 6,24 → **6,42M**. Beides im Band (§5.6), nicht neu
 zentriert — der Zufallsspieler bekommt zwar öfter ein legendäres Perk-Angebot, nimmt es aber nicht gezielt.
 
+### 5.11 Eiszeit: der Brett-Deckel gilt auch für sie (2026-09-08) — umgesetzt
+
+Owner: „ok. deine Reihenfolge" — erst Eiszeit runter, dann Ewiges Schild. Vor dem ersten Wert stand die Frage,
+**woran** der Abstand hängt. Er hing nicht an der Flutrate.
+
+**Der Befund.** §5.5 hat den Brett-Deckel `GLACIER_MAX = 12` eingeführt und dabei `EISZEIT_MAX_GLACIERS`
+gestrichen. Der neue Deckel wurde aber nur an die eigene Skill-Wahl gehängt, nicht an `eiszeitTick` — der Aufruf
+im Motor ließ `maxGlaciers` auf seinem Vorgabewert `Infinity`. Ergebnis: **die Picks des Spielers waren bei 12
+gedeckelt, die Eiszeit nicht.** Sie fror weiter ein, bis das Brett voll war, und §5.5 hatte selbst gemessen, dass
+die Gletscherzahl der stärkste Treiber überhaupt ist (12 → 26M, 16 → 108M). Kein Tarif-Problem, ein Leck.
+
+**Die Korrektur.** Ein Argument im Motor:
+
+```js
+const ez = eiszeitTick(newFirnStack, newGlacierLocked, undefined, GLACIER_MAX > 0 ? GLACIER_MAX : Infinity, challengeBlockForm);
+```
+
+Keine Zahl der Eiszeit selbst wurde angefasst — `EISZEIT_FLOOD` steht unverändert bei 3.
+
+**Gemessen** (gepaart, Seeds 601..750, explore 600, frische Wertetabelle `legtable-l12.json` nach §5.9):
+
+| | vorher | jetzt |
+| --- | --- | --- |
+| Eiszeit | +281 % | **+37 %** |
+| Rang im Feld (12 Legendäre) | 1. | 8. |
+
+Das Feld dahinter: Baumreihe +139 %, Wurzelgeflecht +109 %, Sonnenzorn +91 %, Ewige Glut +60 %, Sonnenkern
++50 %, Ewiger Frühling +49 %, Resonanz +46 %, **Eiszeit +37 %**, Doppelentladung +31 %, Große Lawine +29 %,
+Hochspannung +26 %, Ewiges Schild −12 %. Die Eiszeit sitzt damit im Feld, ohne dass ein Wert geraten werden
+musste. Der geplante Sweep über `SIM_GLACIER_EISZEIT_FLOOD` entfällt.
+
+**Nebenwirkung, erwünscht:** solange die Eiszeit das Brett allein füllte, waren die Firn-Skills (Schneetreiben,
+Dauerfrost, Verdichtung) neben ihr bedeutungslos. Unter dem Deckel konkurriert sie wieder um Felder.
+
+**Text.** Zwei Stellen sagten das Gegenteil der Regel und wurden nachgezogen:
+
+- Eiszeit endet jetzt mit „Die Eiszeit friert weiter ein, solange auf dem Brett noch Platz für Gletscher ist."
+  (vorher „kriecht bis ans Brettende weiter").
+- Der Glossar-Eintrag *Gletscher* nennt die Grenze: „Auf dem Brett haben höchstens 12 Gletscher Platz, egal woher
+  sie kommen." Die Zahl kommt aus `GLACIER_MAX`, nicht aus dem Text.
+
+**Lehre, zum zweiten Mal in dieser Runde nach §5.9:** eine Grenze, die nur an einer von zwei Quellen hängt, ist
+keine Grenze. Wer eine alte Schranke streicht und eine neue einführt, muss jede Stelle nachziehen, die die alte
+gelesen hat — nicht nur die, die der Anlass war.
+
+**Offen:** Ewiges Schild bei −12 % ist das einzige negative Legendäre im Feld. Ursache zuerst, Wert danach.
+
 ## 6. Pflanze
 
 ### 6.1 Richtung und Abgrenzung (gesetzt, Owner 2026-09-06)
@@ -5588,3 +5635,4 @@ und die Ranked-Texte, die eine andere Runde meinen.
 | 2026-09-07 | Owner: die Große Lawine soll nicht erst am Ende feuern, und Ewiges Schild braucht einen Buff. Umgesetzt: die Lawine feuert jeden 5. Durchlauf statt einmal am Laufende, Verstärker 6 → 2 (sie feuert jetzt rund fünfmal je Lauf); „jede Runde" wurde verworfen, weil dann nichts mehr über die erste Schwelle wächst und der Kern der Fraktion stirbt. Der One-Shot-Zustand ist aus State, Engine, Reducer und UI raus, die Leiste zählt zum nächsten Schlag herunter. Ewiges Schild: der additive Masse-Zuschlag verfiel am Masse-Deckel und ist gestrichen; stattdessen erbt jeder Gletscher die stärkste Gletscher-Formation des Bretts. Beide Texte neu. UNGEMESSEN, Startwerte. §5.8. |
 | 2026-09-07 | Auf Ansage gemessen — und ein Messfehler gefunden: `--mode legendaries` lädt die Werte-Tabelle aus der `--table`-Datei, wenn sie existiert, und `legtable-l9.json` stammt aus der Zeit vor dem Eis-Angebot (null Eis-Einträge). Die drei Eis-Legendären wurden dort in einem Build OHNE Gletscherfeld gemessen; der §5.4-Befund „Ewiges Schild und Große Lawine sind tot" ist damit nicht belegt und ist korrigiert. Mit frischer Tabelle: Eiszeit +281 % (doppelt so hoch wie das nächstbeste von zwölf, das eigentliche Ungleichgewicht), Ewiges Schild −7 %, Große Lawine −8 %. Sweep der Lawine: alt −1 %, Takt ×2 −8 %, ×6 +13 %, ×10 +29 % — der Takt aus §5.8 war richtig, die Senkung des Verstärkers auf ×2 war der Denkfehler (der erzwungene Bruch ersetzt einen ohnehin kommenden, der Verstärker ist die Entschädigung für die niedrigere Masse, keine Prämie je Auslösung). ×10 gesetzt. Nebenbefund auf Owner-Frage: legendäre Skills erscheinen 3,5× so oft wie legendäre Perks, weil der Skill je PLATZ würfelt und der Perk nur einmal je Angebot. §5.9. |
 | 2026-09-07 | Owner: die Legendär-Chance im Perk-Angebot von 3 auf 7 % je Phase. `PERK_LEGENDARY_BASE` 0,03 → 0,07 — erwartet je Lauf 0,39 → 0,91, mindestens einer im Lauf 32,7 → 61,1 % (legendärer Skill zum Vergleich: 1,37 und 75,1 %). Der strukturelle Unterschied bleibt: der Skill würfelt je Platz, der Perk einmal je Angebot; ein Wurf je Platz gäbe 8,7 % je Phase und bleibt als Option offen. Balance-Guard 2,72M / 6,42M — im Band, nicht neu zentriert. §5.10. |
+| 2026-09-08 | Eiszeit ignorierte den Brett-Deckel: `eiszeitTick` wurde im Motor ohne `maxGlaciers` aufgerufen, seit §5.5 `EISZEIT_MAX_GLACIERS` strich und den neuen `GLACIER_MAX` nur an die Skill-Wahl hängte. Die eigenen Picks standen bei 12, die Eiszeit fror bis zum vollen Brett weiter. Deckel durchgereicht, keine Zahl der Eiszeit geändert. Gemessen +281 % → +37 %, damit 8. von 12 Legendären. Skilltext und Glossar-Eintrag *Gletscher* nachgezogen. Der Sweep über die Flutrate entfällt. §5.11. |

@@ -5,7 +5,7 @@ import { numWord } from "./skills.js";                   // Zahlwörter aus ders
 // die Eis-Glossartexte driftfrei mitlaufen. Kein Import-Zyklus (glacier.js → architect.js, keins importiert glossary.js).
 import { WIN_MASS as G_WIN_MASS, EWIGER_FROST as G_EWIGER_FROST, THRESHOLDS as G_THRESHOLDS,
   KASKADE_PER_NEIGHBOR as G_KASKADE, GEO_BLOCK as G_BLOCK, GEO_KREUZ as G_KREUZ, GEO_LINIE as G_LINIE,
-  GEO_FLAECHE as G_FLAECHE } from "./glacier.js";
+  GEO_FLAECHE as G_FLAECHE, GLACIER_MAX as G_MAX } from "./glacier.js";
 
 /* ============================================================
    GLOSSAR — die EINZIGE Quelle für die Erklärungen der Spielbegriffe (#212 / #201 P1+P9 / Glossar-Rework).
@@ -244,7 +244,7 @@ export const GLOSSARY = {
 
   /* ============ 4 · Eis ============ */
   glacier: { category: "frak", group: "ice", label: "Gletscher", icon: "❄", img: "glacier", color: CLR.ice,
-    text: `Eis ist der Gletscher-Archetyp: du frierst eine Karte auf ihrem Brettfeld fest. Ab dann ist sie starr (in keiner künftigen Aufstellung mehr verschiebbar), sammelt dafür aber Masse an. Genug Masse, und der Gletscher bricht über seine Nachbarn.`,
+    text: `Eis ist der Gletscher-Archetyp: du frierst eine Karte auf ihrem Brettfeld fest. Ab dann ist sie starr (in keiner künftigen Aufstellung mehr verschiebbar), sammelt dafür aber Masse an. Genug Masse, und der Gletscher bricht über seine Nachbarn. Auf dem Brett haben höchstens ${G_MAX} Gletscher Platz, egal woher sie kommen.`,
     match: ["Gletscher", "Gletschern"] },
   masse: { category: "frak", group: "ice", label: "Masse", icon: "❄", color: CLR.ice,
     text: `Die Eis-Ressource: Masse liegt auf dem Brettfeld. Jeder Gletscher gewinnt jeden Durchlauf +${de(G_EWIGER_FROST)} Masse, bedingungslos bei Sieg wie Niederlage; ein Sieg bringt +${de(G_WIN_MASS)} Masse zusätzlich.`,
