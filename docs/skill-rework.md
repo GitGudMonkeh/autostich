@@ -4656,6 +4656,59 @@ sind deshalb unverändert geblieben.
    und es war schon vor §5.18 die stärkste der drei.
 3. **Dauerfrost bleibt bei −2 %**, obwohl F1 genau seine Naht war. Der Zug allein trägt ihn nicht.
 
+### 5.19 Ewiges Schild: der Deckel auf der Kaskade und das Ende der Gelddruckmaschine (2026-09-09, Owner) — umgesetzt und gemessen
+
+§5.18 hatte das Schild bei **+2999 %** gemessen und als nächste Baustelle benannt. Owner: „ewigen Schild als
+nächstes". Der Befund vor dem Bauen — das Schild tut drei Dinge, und zwei davon hatten keine Bremse.
+
+**Die Kaskade war eine Zahl, die für vier gebaut wurde.** `KASKADE_PER_NEIGHBOR` gibt +25 % Wucht je angrenzendem
+Gletscher; ein Gletscher hat höchstens 4 Nachbarn (mit Eisbrücke 8), also höchstens ×2. Das Schild setzte
+`gN = totalG − 1` — bei 40 Gletschern also 39, mithin **×10,75**. Und weil jeder Gletscher das bekommt, wuchs der
+Feld-Score **im Quadrat der Feldgröße**. Zusammen mit „3 Felder je Pick, ohne Deckel" (§5.14) waren zwei
+unbegrenzte Größen miteinander multipliziert.
+
+**Das Pooling erschuf Masse.** `uebergletscherPool` hob jede Runde alle Gletscher auf das MAXIMUM. 30 Gletscher,
+einer auf 18, der Rest auf 2 → danach alle auf 18: **480 Masse je Durchlauf aus dem Nichts**. Nebenwirkung war die
+eigentliche Frequenz-Explosion: danach brachen ALLE jede Runde statt nur der eine.
+
+#### Der Schritt (Owner: „deine Empfehlung")
+
+| | |
+| --- | --- |
+| **A · Kaskade gedeckelt** | Das Schild zählt einem Gletscher höchstens `SCHILD_NEIGHBORS` (8) Nachbarn zu — der voll umschlossene Gletscher, die Obergrenze, die auf dem Brett überhaupt erreichbar ist. ×3 statt ×10,75, und die Feldgröße multipliziert sich nicht mehr selbst. |
+| **B · Pooling auf den Durchschnitt** | Statt aufs Maximum. Die Masse wird **verteilt statt gedruckt**, die Summe bleibt erhalten. |
+
+Zu B gehört eine Textänderung: „nie fallend" ist weg, es heißt jetzt „jeden Durchlauf teilen sich alle dieselbe
+Masse". Das war die eine Frage an den Owner, weil es ein Versprechen auf der Karte betrifft. Begründung für die
+Empfehlung: die halbe Strecke (Maximum, aber nur halb aufrücken) hätte es nur verzögert — über 40 Durchläufe stehen
+trotzdem alle oben. Und der Durchschnitt trifft die Fantasie besser: EIN Gletscher hat EINE Masse, das Maximum sind
+30 Kopien des besten.
+
+„3 Felder je Pick, ohne Deckel" bleibt unangetastet (Owner-Entscheid §5.13/§5.14) — ohne A und B lohnt sich das
+große Brett nicht mehr überproportional.
+
+#### Gemessen
+
+Duell Eis/Feuer (Seeds 401..470), Eis ÷ Feuer:
+
+| | Median | Mean | p90 |
+| --- | --- | --- | --- |
+| §5.18 (nach BURST_SCALE 150) | 1,04× | 2,79× | 1,85× |
+| **jetzt** | **1,04×** | **1,30×** | **1,51×** |
+
+Der Median steht still, der Schwanz fällt — genau die beabsichtigte Operation. Ablation Eis mono (explore 500,
+greedy 90, Seeds 701..): **Ewiges Schild +2999 % → +446 %**; die drei Legendären liegen damit in einem Band
+(446 / 244 / 91 %) statt in getrennten Universen. Balance-Guard Seeds 1..40 unverändert bei 3,36M / 7,70M — der
+Zufallsspieler hält das Schild in diesen Seeds nie auf einem großen Feld, ihn berührt der Schritt nicht.
+
+#### Offen
+
+**Gletscherzunge (−10 %) und Sprödbruch (−9 %) messen im gierigen Mono-Eis negativ.** Beide liegen knapp außerhalb
+des Rauschbandes, das §5.7 mit ±5 % beziffert hat, und die Zahlen sind mit der Runde davor nicht direkt
+vergleichbar (dazwischen liegt BURST_SCALE 250 → 150). Der strukturelle Grund bleibt der aus §5.18: dort steht die
+Siegquote schon bei 63 %, der Hebel „gewinne den Stich, der den Bruch trägt" greift also selten, und der Sim misst
+nicht, wofür die beiden gebaut wurden. Das entscheidet der Playtest, nicht dieses Instrument.
+
 ## 6. Pflanze
 
 ### 6.1 Richtung und Abgrenzung (gesetzt, Owner 2026-09-06)

@@ -153,7 +153,7 @@ export default {
   "ability.SK_ICE_L01.name": "Edad de Hielo",
   "ability.SK_ICE_L01.desc": `En cada ciclo, +${num(G_EISZEIT_FLOOD)} de nieve en la reserva del suelo de cada celda sin congelar. Cada glaciar revienta con +${num(G_EISZEIT_BURST * 100)} % de fuerza por cada celda abierta adyacente.`,
   "ability.SK_ICE_L02.name": "Escudo Eterno",
-  "ability.SK_ICE_L02.desc": `Cada habilidad de hielo congela ${num(G_SCHILD_PER_PICK)} celdas en vez de una, sin límite máximo. Tu campo cuenta como un glaciar: en cada ciclo, todos suben hasta la masa del más fuerte, sin bajar nunca. Al estallar, cada uno cuenta como vecino de todos los demás y recibe la formación glaciar más fuerte del tablero.`,
+  "ability.SK_ICE_L02.desc": `Cada habilidad de hielo congela ${num(G_SCHILD_PER_PICK)} celdas en vez de una, sin límite máximo. Tu campo cuenta como un glaciar: en cada ciclo, todos comparten la misma masa. Al estallar, cada uno cuenta como un glaciar completamente rodeado y recibe la formación glaciar más fuerte del tablero.`,
   "ability.SK_ICE_L03.name": "Gran Avalancha",
   "ability.SK_ICE_L03.desc": `Cada ${G_LAWINE_EVERY}.º ciclo estallan todos tus glaciares, incluidos los que no están llenos. Cada estallido cuenta con la fuerza del umbral más alto y ×${num(G_LAWINE_MULT)}.`,
 

@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { resolveTrick } from "../src/game/engine.js";
 import { initialState } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
-import { precomputeGlacier, uebergletscherPool, ROLES, GROSSE_LAWINE_EVERY } from "../src/game/glacier.js";
+import { precomputeGlacier, uebergletscherPool, ROLES, GROSSE_LAWINE_EVERY, SCHILD_NEIGHBORS } from "../src/game/glacier.js";
 import { iceSnapshotOpts } from "../src/game/factions/ice.js";
 import { N_POS, posOf } from "../src/game/architect.js";
 
@@ -26,18 +26,39 @@ describe("Große Lawine — alles bricht auf einen Schlag (One-Shot)", () => {
 });
 
 describe("Ewiges Schild — das ganze Feld als ein Übergletscher", () => {
-  it("uebergletscherPool hebt alle Gletscher aufs MAXIMUM (nie fallend, §5.8 ohne Zuschlag)", () => {
+  /* §5.19: DURCHSCHNITT statt Maximum. Das Maximum erschuf Masse — 30 Gletscher, einer auf 18, der Rest auf 2, danach
+     alle auf 18: 480 Masse je Durchlauf aus dem Nichts, und danach brachen ALLE jede Runde statt nur der eine. */
+  it("uebergletscherPool teilt EINE Masse aufs Feld — die Summe bleibt erhalten", () => {
     const out = uebergletscherPool(withMass([[0, 0], [posOf(4, 4), 12]]), set(0, posOf(4, 4)));
-    expect(out[0]).toBe(12);              // aufs Max gehoben, obwohl NICHT benachbart
-    expect(out[posOf(4, 4)]).toBe(12);    // war Max und bleibt (nie fallend); der alte +Bonus verfiel am Masse-Deckel
+    expect(out[0]).toBe(6);               // hochgezogen, obwohl NICHT benachbart
+    expect(out[posOf(4, 4)]).toBe(6);     // der Stärkste gibt an sein Feld ab
   });
-  it("Kaskade rechnet mit der vollen Feldgröße (auch bei nicht benachbarten Gletschern)", () => {
+  it("das Pooling erschafft keine Masse — auch nicht auf einem großen Feld", () => {
+    const ps = Array.from({ length: 20 }, (_, i) => i);
+    const mass = withMass([[0, 18], ...ps.slice(1).map((p) => [p, 2])]);
+    const vorher = ps.reduce((t, p) => t + mass[p], 0);
+    const out = uebergletscherPool(mass, set(...ps));
+    expect(ps.reduce((t, p) => t + out[p], 0)).toBeCloseTo(vorher, 6);
+  });
+  it("Kaskade rechnet mit der Feldgröße (auch bei nicht benachbarten Gletschern)", () => {
     // zwei WEIT getrennte Gletscher, gleiche Masse — ohne Schild kein Kaskade-Bonus, mit Schild schon.
     const mass = withMass([[0, 12], [posOf(7, 4), 12]]);
     const locked = set(0, posOf(7, 4));
     const base = precomputeGlacier(mass, locked);
     const schild = precomputeGlacier(mass, locked, iceSnapshotOpts([ROLES.L_SCHILD]));
     expect(schild.payout[0]).toBeGreaterThan(base.payout[0]);
+  });
+
+  /* §5.19: … aber GEDECKELT. Die Kaskade gibt +25 % je Nachbar und war für höchstens 4 (mit Eisbrücke 8) gebaut;
+     „alle anderen" fütterte sie bei 40 Gletschern mit 39. Der Feld-Score wuchs damit im QUADRAT der Feldgröße. */
+  it("die Kaskade wächst nicht mehr mit dem ganzen Feld — ab dem Deckel steht sie still", () => {
+    const feld = (n) => {
+      const ps = Array.from({ length: n }, (_, i) => i);
+      const mass = withMass(ps.map((p) => [p, 12]));
+      return precomputeGlacier(mass, set(...ps), iceSnapshotOpts([ROLES.L_SCHILD])).payout[0];
+    };
+    expect(feld(SCHILD_NEIGHBORS + 1)).toBeGreaterThan(feld(4));   // bis zum Deckel wächst sie
+    expect(feld(30)).toBe(feld(SCHILD_NEIGHBORS + 1));             // darüber nicht mehr
   });
 });
 

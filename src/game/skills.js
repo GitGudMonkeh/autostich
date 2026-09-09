@@ -279,7 +279,7 @@ export const SKILL_DEFS = {
   SK_ICE_L01: { id: "SK_ICE_L01", name: "Eiszeit", archetype: "ice", legendary: true, keywords: ["glacier", "freeze"], role: "G_L_EISZEIT",
     desc: `Jeden Durchlauf +${de(G_EISZEIT_FLOOD)} Schnee in die Boden-Reserve jedes ungefrorenen Felds. Jeder Gletscher birst mit +${de(G_EISZEIT_BURST * 100)} % Wucht je angrenzendem offenen Feld.` },
   SK_ICE_L02: { id: "SK_ICE_L02", name: "Ewiges Schild", archetype: "ice", legendary: true, keywords: ["glacier"], role: "G_L_SCHILD",
-    desc: `Jeder Eis-Skill friert ${de(G_SCHILD_PER_PICK)} Felder ein statt einem, ohne Höchstzahl. Dein Feld zählt als ein Gletscher: jeden Durchlauf ziehen alle auf die Masse des stärksten hoch, nie fallend. Beim Bersten gilt jeder als Nachbar aller anderen und bekommt die stärkste Gletscher-Formation des Bretts.` },
+    desc: `Jeder Eis-Skill friert ${de(G_SCHILD_PER_PICK)} Felder ein statt einem, ohne Höchstzahl. Dein Feld zählt als ein Gletscher: jeden Durchlauf teilen sich alle dieselbe Masse. Beim Bersten zählt jeder wie ein voll umschlossener Gletscher und bekommt die stärkste Gletscher-Formation des Bretts.` },
   SK_ICE_L03: { id: "SK_ICE_L03", name: "Große Lawine", archetype: "ice", legendary: true, keywords: ["glacier"], role: "G_L_LAWINE",
     desc: `${jeder(G_LAWINE_EVERY, "Jeden")} Durchlauf brechen alle deine Gletscher, auch die nicht vollen. Jeder Bruch zählt mit der Wucht der höchsten Schwelle und ×${de(G_LAWINE_MULT)}.` },
   // (§5.2: Erstarrung SK_ICE_L04 gestrichen — die Kontrolle ist Einfrieren in groß, und der Score-Teil war ein nackter

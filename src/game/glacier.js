@@ -49,6 +49,10 @@ export const GLACIER_PER_PICK = envNum("SIM_GLACIER_PER_PICK", 1);
 // §5.14 (Owner): 3 je Pick, dafür hebt das Schild GLACIER_MAX auf — die Grenze sind dann die freien Felder.
 // Gilt für den Pick; der Ablehn-Gletscher bleibt bei einem, ist aber ebenfalls ungedeckelt.
 export const SCHILD_PER_PICK = envNum("SIM_GLACIER_SCHILD_PER_PICK", 3);
+// §5.19: wie viele Nachbarn das Schild einem Gletscher höchstens zurechnet. 8 = voll umschlossen, die Obergrenze, die
+// ein Gletscher auf dem Brett überhaupt erreichen kann (Eisbrücke-Nachbarschaft). Ohne Deckel war die Kaskade
+// quadratisch in der Feldgröße — s. precomputeGlacier.
+export const SCHILD_NEIGHBORS = envNum("SIM_GLACIER_SCHILD_NEIGHBORS", 8);
 // Optionaler Deckel auf die GESAMTZAHL der Gletscher (0 = keiner). Nicht der gestrichene Score-Deckel aus §5.5, sondern
 // eine Grenze für das Brett: ein Voll-Mono-Eis-Build soll nicht die ganze Aufstellung einfrieren können.
 export const GLACIER_MAX = envNum("SIM_GLACIER_MAX", 12); // §5.5: 12 lässt die Große Fläche (3×3, neun Gletscher) zu und hält drei Felder Luft
@@ -158,7 +162,10 @@ export function precomputeGlacier(mass, locked, opts = {}) {
     // Große Lawine bricht ALLES auf voller Stufe (echter Finisher); Kettenbruch-erzwungene mind. Stufe 1; sonst natürliche Stufe.
     const effTier = grosseLawine ? (tierMult.length - 1) : (forced[p] ? Math.max(1, natTier[p]) : natTier[p]);
     const nb = neighborFn(p);
-    const gN = ewigesSchild ? Math.max(0, totalG - 1) : nb.reduce((t, n) => t + (isG(n) ? wOf(p, n) : 0), 0); // Ewiges Schild: ganzes Feld gilt als angrenzend
+    // Ewiges Schild: das ganze Feld gilt als angrenzend — aber GEDECKELT (§5.19). Die Kaskade gibt +25 % je Nachbar
+    // und war für höchstens 4 (mit Eisbrücke 8) gebaut; „alle anderen" fütterte sie bei 40 Gletschern mit 39, also
+    // ×10,75, und der Feld-Score wuchs im QUADRAT der Feldgröße. Der Deckel ist der voll umschlossene Gletscher.
+    const gN = ewigesSchild ? Math.min(SCHILD_NEIGHBORS, Math.max(0, totalG - 1)) : nb.reduce((t, n) => t + (isG(n) ? wOf(p, n) : 0), 0);
     const berstFaktor = 1 + kaskade * gN;               // Kaskade (Dichte)
     const kollFrac = ewigesSchild ? 1 : (nb.length ? gN / nb.length : 0);
     const kollFaktor = 1 + (kollision - 1) * kollFrac;  // Kollision (anteilig)
@@ -208,17 +215,20 @@ export function glacierClusters(locked, neighborFn = neighbors4) {
   return clusters;
 }
 
-// Ewiges Schild (Legendär, docs §7): das GESAMTE Feld poolt als ein Übergletscher — alle Gletscher aufs MAXIMUM heben
-// (nie fallend), unabhängig von Nachbarschaft. (§5.8: der frühere additive Feld-Bonus obendrauf ist gestrichen — die
-// Masse ist beim Bruch auf die höchste Schwelle gedeckelt, alles darüber verfiel als Überlauf zu fast nichts. An seine
-// Stelle tritt der Formations-Anteil in der Engine: das ganze Feld erbt die stärkste Gletscher-Formation des Bretts.)
+/* Ewiges Schild (Legendär, docs §7): das GESAMTE Feld poolt als ein Übergletscher — alle Gletscher teilen sich
+   dieselbe Masse, unabhängig von Nachbarschaft.
+
+   §5.19: DURCHSCHNITT statt Maximum. Das Maximum hob jede Runde alle auf den Stand des stärksten Feldes und ERSCHUF
+   dabei Masse: 30 Gletscher, einer auf 18, der Rest auf 2 → alle auf 18, also 480 Masse je Durchlauf aus dem Nichts.
+   Nebenwirkung war, dass danach ALLE jede Runde brachen statt nur der eine. Der Durchschnitt verteilt dieselbe Masse,
+   statt sie zu drucken — und trifft die Fantasie besser: EIN Gletscher hat EINE Masse, nicht 30 Kopien des besten. */
 export function uebergletscherPool(mass, locked) {
   const isG = (p) => (locked instanceof Set ? locked.has(p) : !!(locked && locked[p]));
   const out = Array.isArray(mass) ? mass.slice() : new Array(N_POS).fill(0);
   const gs = []; for (let p = 0; p < N_POS; p++) if (isG(p)) gs.push(p);
   if (gs.length < 2) return out;
-  const mx = gs.reduce((m, p) => Math.max(m, out[p] || 0), 0);
-  for (const p of gs) out[p] = Math.max(out[p] || 0, mx); // aufs Max heben, nie fallend
+  const avg = gs.reduce((t, p) => t + (out[p] || 0), 0) / gs.length;
+  for (const p of gs) out[p] = avg;                      // eine Masse für das ganze Feld (Summe bleibt erhalten)
   return out;
 }
 
