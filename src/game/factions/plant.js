@@ -27,8 +27,9 @@ import { SKILL_DEFS, TIER_EPIC, isLegendarySkill } from "../skills.js";
 export const P = Object.freeze({
   // Wachstum
   AUSSAAT: "SK_PLANT_05", RANKEN: "SK_PLANT_09", SETZLINGSBEET: "SK_PLANT_07", LICHTUNG: "SK_PLANT_12", ZAEHER_HALM: "SK_PLANT_08",
-  // Hebel (Mechanik in formations.js)
-  SPALIER: "SK_PLANT_03", WILDWUCHS: "SK_PLANT_06", LUECKE: "SK_PLANT_15", UEBERWUCHERUNG: "SK_PLANT_14",
+  // Erkennung und Formations-Faktor (Mechanik in formations.js) — §6.26: Dickicht und Verwachsung greifen den
+  // Faktor selbst an, Spalier und Wildwuchs bleiben Erkennungshebel.
+  SPALIER: "SK_PLANT_03", WILDWUCHS: "SK_PLANT_06", DICKICHT: "SK_PLANT_15", VERWACHSUNG: "SK_PLANT_14",
   // Score aus grünen Formationen
   BLAETTERDACH: "SK_PLANT_13", RANKGERUEST: "SK_PLANT_16", HECKE: "SK_PLANT_10", WINDUNG: "SK_PLANT_11", JAHRESRINGE: "SK_PLANT_04",
   // Kombination
@@ -153,39 +154,34 @@ export function applyGrowth(growth, deck, gains) {
   return { growth: next, deck: d, total, becameGreen };
 }
 
-// Position → Karte / Karten-ID → Position für die Nachbarschafts-Skills (Aussaat, Ranken).
+// Position → Karte, für die Nachbarschaft der Aussaat und die Formations-Mitglieder.
+// (§6.26: die ID→Position-Karte ist mit der alten Ranken-Kette weggefallen.)
 const cardAtOf = (deck, order) => (p) => (p >= 0 && p < order.length ? deck[order[p]] : null);
-const posOfId = (deck, order) => {
-  const m = new Map();
-  for (let p = 0; p < order.length; p++) m.set(deck[order[p]].id, p);
-  return m;
-};
 
-/* Ranken (§6.8): wird eine Karte grün, wachsen ihre GRAUEN Nachbarn um `growth`. Episch kettet — eine Karte, die
-   dadurch grün wird, steckt ihre eigenen Nachbarn ebenso an (der einzige Dominoeffekt der Fraktion). Die Kette läuft
-   höchstens so viele Runden, wie es Karten gibt; sie kann nicht kreisen, weil Grün nie zurückfällt. */
-function rankenChain(growth, deck, skills, skillTiers, order, seeds) {
+/* Ranken (§6.26, Vorlage: der gestrichene Ausläufer SK_PLANT_15 alt): ein Sieg mit einer GRÜNEN Karte rankt in die
+   geschlagene Gegnerkarte — liegen dort schon Ranken, wird sie stattdessen GEERNTET: die Siegkarte wächst um `growth`,
+   und die Ranken sind verbraucht. Episch berankt beim Ernten die Nachbarn der geernteten Gegnerkarte.
+
+   Zwei Entscheidungen, die der Skill trägt: die Ernte geht an die SIEGKARTE (Wachstum auf Karten, die nicht gewinnen,
+   zahlt nicht — der Grund, aus dem Ranken vorher tot war), und die Ernte VERBRAUCHT die Ranken. Ohne den Verbrauch
+   wiederholte sich der Fehler der Feuerwalze (§7.27): ab der Laufmitte ist jede Gegnerkarte einmal geschlagen, und
+   der Skill wäre ein bedingungsloses „+N Wachstum je Sieg". So bleibt die Knappheit strukturell.
+
+   `tendrils` ist der Lauf-Zustand je Gegnerkarten-id (wie brandActive). Rein und immutabel. */
+export function plantOnTendril(growth, deck, skills, skillTiers,
+  { tendrils = {}, cardId = null, oppCardId = null, oppNeighborIds = [] } = {}) {
   const step = plantParam(skills, skillTiers, P.RANKEN, "growth");
-  let g = growth, d = deck, total = 0;
-  if (!step || !seeds.length) return { growth: g, deck: d, total };
-  const chain = !!plantParam(skills, skillTiers, P.RANKEN, "chain");
-  let wave = seeds;
-  for (let round = 0; round < order.length && wave.length; round++) {
-    const at = cardAtOf(d, order), posOf = posOfId(d, order);
-    const gains = [];
-    for (const id of wave) {
-      const p = posOf.get(id);
-      if (p == null) continue;
-      for (const nb of [p - 1, p + 1]) {
-        const c = at(nb);
-        if (c && !c.green) gains.push({ id: c.id, amount: step });
-      }
-    }
-    const r = applyGrowth(g, d, gains);
-    g = r.growth; d = r.deck; total += r.total;
-    wave = chain ? r.becameGreen : [];
+  if (!step || cardId == null || oppCardId == null) return { growth, deck, tendrils, grown: 0 };
+  if (tendrils[oppCardId]) {
+    const next = { ...tendrils };
+    delete next[oppCardId];
+    if (plantParam(skills, skillTiers, P.RANKEN, "neighbors")) for (const id of oppNeighborIds) if (id != null) next[id] = true;
+    const r = applyGrowth(growth, deck, [{ id: cardId, amount: step }]);
+    return { growth: r.growth, deck: bloomAllIfFullGreen(skills, r.deck), tendrils: next, grown: r.total };
   }
-  return { growth: g, deck: d, total };
+  const card = deck.find((c) => c.id === cardId);
+  if (!card || !card.green) return { growth, deck, tendrils, grown: 0 };
+  return { growth, deck, tendrils: { ...tendrils, [oppCardId]: true }, grown: 0 };
 }
 
 /* Score aus grünen Formationen (§6.8): je Formationstyp ein Skill, der Satz gilt je grüner Karte in der Formation an
@@ -268,12 +264,11 @@ export function plantOnWin(growth, deck, skills, skillTiers, { pos = -1, order =
       if (second && n2) gains.push({ id: n2.id, amount: second });
     }
   }
-  let seeds = gain(gains);
+  gain(gains);
   // 2. Blütenlese: Score und Wachstum aus einer rein grünen Formation.
   const lese = bluetenlese(skills, skillTiers, { posForm, cardAt: at() });
-  if (lese.gains.length) seeds = [...seeds, ...gain(lese.gains)];
-  // 3. Ranken: die Ansteckung im Reifemoment, danach die Kette (Episch).
-  if (seeds.length) { const r = rankenChain(g, d, skills, skillTiers, order, seeds); g = r.growth; d = r.deck; grown += r.total; }
+  if (lese.gains.length) gain(lese.gains);
+  // (§6.26: Ranken hängt nicht mehr am Reifemoment — es greift ins Gegnerdeck, plantOnTendril, von der Engine gerufen.)
   d = bloomAllIfFullGreen(skills, d);
   // 4. Score: Passiv-Blüte + Score-Skills, beides auf dem Stand NACH dem Wachstum.
   const card = cardId != null ? d.find((c) => c.id === cardId) : null;
@@ -285,23 +280,20 @@ export function plantOnWin(growth, deck, skills, skillTiers, { pos = -1, order =
   return { growth: g, deck: d, flat: Math.round(flat), grown };
 }
 
-/* Lücke Episch (§6.8): die Karten, die ein grüner Lauf übersprungen hat, wachsen mit. Welche das sind, weiß nur die
-   Formations-Engine (Eintrag `gapped`) — die Engine reicht die IDs herein. */
-export function plantOnGap(growth, deck, skills, ids, amount) {
-  const r = applyGrowth(growth, deck, (ids || []).map((id) => ({ id, amount })));
-  return { growth: r.growth, deck: bloomAllIfFullGreen(skills, r.deck), grown: r.total };
-}
+/* (§6.26: Lücke ist mit dem Dickicht gestrichen — mit ihr der `gapped`-Weg, über den ihr Episch die übersprungenen
+   Karten wachsen ließ. Das Dickicht fasst kein Wachstum an, es hebt den Faktor des grünen Farbblocks.) */
 
-/* Niederlage: nur Zäher Halm (§6.8) — graue Karten wachsen trotzdem, Episch auch grüne (blühende zählen als grün).
+/* Niederlage: nur Zäher Halm (§6.26) — die verlierende Karte wächst trotzdem, unabhängig von ihrem Zustand
+   (die Grau-Schranke ist mit §6.26 gefallen). Episch legt das Formations-Wachstum drauf, das ein Sieg an dieser
+   Position gegeben hätte — die einzige Achse, über die Wachstum auf einer nicht-siegenden Karte zahlt.
    Sonst gibt eine Niederlage nichts. */
-export function plantOnLoss(growth, deck, skills, skillTiers, { cardId = null } = {}) {
+export function plantOnLoss(growth, deck, skills, skillTiers, { cardId = null, posForm = null } = {}) {
   if (cardId == null) return { growth, deck, grown: 0 };
   const card = deck.find((c) => c.id === cardId);
   if (!card) return { growth, deck, grown: 0 };
-  const amount = card.green
-    ? (plantParam(skills, skillTiers, P.ZAEHER_HALM, "greenToo") || 0)
-    : (plantParam(skills, skillTiers, P.ZAEHER_HALM, "growth") || 0);
+  let amount = plantParam(skills, skillTiers, P.ZAEHER_HALM, "growth") || 0;
   if (!amount) return { growth, deck, grown: 0 };
+  if (plantParam(skills, skillTiers, P.ZAEHER_HALM, "perFormation")) amount += plantFormCount(posForm) * C.PLANT_GROWTH_PER_FORMATION;
   const r = applyGrowth(growth, deck, [{ id: cardId, amount }]);
   return { growth: r.growth, deck: bloomAllIfFullGreen(skills, r.deck), grown: r.total };
 }
@@ -309,9 +301,8 @@ export function plantOnLoss(growth, deck, skills, skillTiers, { cardId = null } 
 // (§6.11: der Weltenbaum ist gestrichen — eine reine Wachstums-Rampe am Durchlaufende ohne eigene Auszahlung. Damit
 //  hat die Fraktion keinen Durchlaufende-Haken mehr.)
 
-/* Setzlingsbeet (§6.8): der Kaltstart — die niedrigste Karte je Segment (Episch die zwei niedrigsten) startet mit
-   Wachstumsvorsprung. Läuft einmal, wenn der erste Pflanzen-Skill liegt (Reducer). Niedrigste Karte deterministisch:
-   kleinster Wert, dann kleinste id. `segmentSize` kommt vom Aufrufer (formations.js SEGMENT_SIZE). */
+/* Der Fraktions-Kaltstart (unten, greenSuitGains) hat mit §6.26 die Kaltstart-Rolle des Setzlingsbeets übernommen —
+   und stärker, weil er die zehn grünen Karten gleich über die Grün-Schwelle hebt. */
 /* Kaltstart der FRAKTION (Owner 2026-09-08): sobald die Pflanze steht, sind die zehn GRÜNEN Karten des
    Decks grün — mit genau dem Wachstum, das dafür nötig ist, keines mehr. Die eigene Farbe ist gewachsen,
    der Rest muss es sich verdienen.
@@ -336,16 +327,22 @@ export function greenSuitGains(deck = [], growth = {}) {
   return out;
 }
 
-export function setzlingsbeetGains(skills, skillTiers, { order = [], deck = [], segmentSize = 5 } = {}) {
+/* Setzlingsbeet (§6.26): das Beet ist das Segment mit den meisten grünen Karten; seine Karten wachsen am Ende jedes
+   Durchlaufs, Episch wächst jedes Segment. Ein Segment ist die Einheit, in der Formationen entstehen — die Karten
+   wachsen also als Gruppe, die zusammen in einer Formation steht und als Mitläufer zählt. Das ist der einzige
+   Ausgang, über den Wachstum auf einer nicht-siegenden Karte zahlt (§6.26). Gleichstand: das vordere Segment. */
+export function beetGains(skills, skillTiers, { order = [], deck = [], segmentSize = 5 } = {}) {
   const step = plantParam(skills, skillTiers, P.SETZLINGSBEET, "growth");
   if (!step) return [];
-  const n = plantParam(skills, skillTiers, P.SETZLINGSBEET, "cards") || 1;
-  const gains = [];
+  const segs = [];
   for (let s = 0; s * segmentSize < order.length; s++) {
     const seg = [];
-    for (let p = s * segmentSize; p < (s + 1) * segmentSize && p < order.length; p++) seg.push(deck[order[p]]);
-    seg.sort((a, b) => (a.value - b.value) || (a.id < b.id ? -1 : 1));
-    for (const c of seg.slice(0, n)) gains.push({ id: c.id, amount: step });
+    for (let p = s * segmentSize; p < (s + 1) * segmentSize && p < order.length; p++) if (deck[order[p]]) seg.push(deck[order[p]]);
+    if (seg.length) segs.push(seg);
   }
-  return gains;
+  if (!segs.length) return [];
+  const chosen = plantParam(skills, skillTiers, P.SETZLINGSBEET, "allSegments")
+    ? segs
+    : [segs.reduce((best, cur) => (greenCount(cur) > greenCount(best) ? cur : best), segs[0])];
+  return chosen.flatMap((seg) => seg.map((c) => ({ id: c.id, amount: step })));
 }

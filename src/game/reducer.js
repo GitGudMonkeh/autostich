@@ -10,12 +10,12 @@ import { archetypeOf, buildSkillDoors, rerollDoorSkills, glacierRolesOf, ARCHETY
 import { iceRoleTiers } from "./factions/ice.js"; // §5.3: Stufe je Gletscher-Rolle (die Zahlen der Eis-Skills) // Eis-Neudesign: glacierRolesOf · exp: Türen-Angebot (Stufen im Wurf der Tür), Neuwurf der drei Skills
 import { initLightning, maxChargeFor, L as LIGHT } from "./factions/lightning.js"; // exp skill rework: Blitz-Substate (Leiste 10)
 import { initHeat, heatMaxFor, syncHeatMax } from "./factions/fire.js"; // exp skill rework: Hitze-Substate (Leiste 100, Weißglut 200)
-import { setzlingsbeetGains, applyGrowth, greenSuitGains } from "./factions/plant.js"; // exp skill rework: Pflanze-Aktivierung (Fraktions-Kaltstart grüne Farbe + Setzlingsbeet)
+import { applyGrowth, greenSuitGains } from "./factions/plant.js"; // exp skill rework: Pflanze-Aktivierung (Fraktions-Kaltstart auf die grüne Farbe)
 // Pflanze-Bündel für die Formations-Engine (§6.7): Stufe je Skill + Wachstum je Karte — die vier Hebel und zwei
 // Legendären brauchen beides, um die Erkennung zu biegen.
 const plantBag = (s) => ({ skillTiers: s.skillTiers || {}, growth: s.growth || {} });
 // (#267: import aus stats.js entfernt — die Stat-Phase ist weg.)
-import { computeFormations, formationPotential, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
+import { computeFormations, formationPotential, FORMATION_TYPES } from "./formations.js";
 import { initialShop, perkLegendaryChance } from "./shop.js";
 import { resolveTrick, formationEnergyFor } from "./engine.js"; // formationEnergyFor: eine Quelle für Phasen-Eintritt + RESET_FORMATION
 import * as C from "./constants.js";
@@ -175,6 +175,7 @@ export function initialState(rng = Math.random, seed = null) {
     iceTemp: {}, // temporärer Wertbonus je card.id (Blitzfänger — Blitz-Archetyp, in engine.js gelesen)
     growth: {}, // Pflanze (§6.2): Wachstum je card.id (nur steigend) — grün und blühend liegen als Flag auf der Karte
     brandPending: {}, brandActive: {}, forged: {}, // Feuer: Brand-Marker (Gegner, je card.id, Wertabzug nächste Runde) / geschmiedete Dauerwerte
+    tendrils: {}, // Pflanze (§6.26 Ranken): berankte Gegnerkarten je oppCard.id
     // #270 Fraktions-Panels: kumulative Lauf-Kennzahlen (nur Anzeige) — Eigen-Score-Kanäle + Motor-Zähler.
     lightYield: 0, plantBase: 0, fireBase: 0, fireHeat: 0, // #270 Eigen-Score-Kanäle (Feuer: Flats / Hitze-Multiplikator-Anteil)
     ionTotal: 0, growthTotal: 0, brandTotal: 0, // #270 Motor-Zähler
@@ -754,6 +755,7 @@ export function reducer(state, action) {
       let deck = state.deck;
       // Feuer: Brand-Marker / geschmiedete Werte (beim Deaktivieren des Feuer-Archetyps zurückgesetzt).
       let brandPending = state.brandPending || {}, brandActive = state.brandActive || {}, forged = state.forged || {};
+      let tendrils = state.tendrils || {};
       // Blitzfänger-Temp (iceTemp, Blitz-Archetyp) — beim Eis-Deaktivieren aus Alt-Verhalten geleert (#140).
       let iceTemp = state.iceTemp;
       let growth = state.growth || {}; // Pflanze (§6.2): Wachstum je Karte
@@ -763,17 +765,13 @@ export function reducer(state, action) {
       heat = syncHeatMax(heat, skills); // exp: Weißglut gewählt oder ersetzt → Leiste 200 bzw. 100 (Hitze geklemmt)
       // Eis-Neudesign: der neue Eis-Archetyp friert KEINE Karten mehr ein — die Mechanik läuft über Masse/Gletscher
       // (glacier.js), getrieben von state.glacierRoles (unten aus den Skill-`role`s).
-      // Pflanze (§6.2): das Wachstum läuft, sobald ein Pflanzen-Skill liegt — kein Anker, kein Skill-Tor, kein
-      // Startgrün. Nur Setzlingsbeet legt den Kaltstart: die niedrigste Karte je Segment (Episch die zwei niedrigsten)
-      // startet mit Wachstumsvorsprung. Der Kaltstart läuft auch, wenn Setzlingsbeet später dazukommt.
+      // Pflanze (§6.2): das Wachstum läuft, sobald ein Pflanzen-Skill liegt — kein Anker, kein Skill-Tor. Der einzige
+      // Kaltstart ist der der FRAKTION (§6.26: das Setzlingsbeet legt keinen mehr, es wächst am Durchlaufende).
       if (arch === "plant") {
         // Fraktions-Kaltstart zuerst: die zehn grünen Karten sind grün, sobald die Pflanze steht. Er hebt nur
         // an, senkt nie — ein zweiter Pflanzen-Pick findet sie folglich schon oben und tut nichts mehr.
         const cold = greenSuitGains(deck, growth);
         if (cold.length) { const r0 = applyGrowth(growth, deck, cold); growth = r0.growth; deck = r0.deck; }
-        const gains = setzlingsbeetGains(skills, skillTiers, { order: state.playerOrder, deck, segmentSize: SEGMENT_SIZE })
-          .filter((g) => !(state.growth || {})[g.id]); // nur einmal je Karte — ein zweiter Pflanzen-Pick sät nicht nach
-        if (gains.length) { const r = applyGrowth(growth, deck, gains); growth = r.growth; deck = r.deck; }
       }
       if (arch && !activeArchetypes.includes(arch)) activeArchetypes = [...activeArchetypes, arch];
 
@@ -783,6 +781,7 @@ export function reducer(state, action) {
       activeArchetypes = activeArchetypes.filter((a) => stillActive.has(a));
       if (!stillActive.has("lightning")) lightning = initLightning();               // Ladungsleiste weg
       if (!stillActive.has("fire")) { heat = null; brandPending = {}; brandActive = {}; forged = {}; } // Hitze/Brand/Schmiede-Zähler weg (geschmiedete Dauerwerte bleiben gebacken)
+      if (!stillActive.has("plant")) tendrils = {}; // §6.26: ohne Pflanzen-Skill verschwinden die Ranken auf dem Gegnerdeck
       if (!stillActive.has("ice")) iceTemp = {};                                     // Blitzfänger-Temp beim Eis-Deaktivieren leeren (Alt-Verhalten)
       // Pflanze weg (letzter Pflanzen-Skill ersetzt): Wachstum und beide Zustände fallen mit ihr.
       if (!stillActive.has("plant")) { deck = deck.map((c) => (c.green || c.bloom ? { ...c, green: false, bloom: false } : c)); growth = {}; }
@@ -802,7 +801,7 @@ export function reducer(state, action) {
       const icePicks = arch === "ice" ? glacierGrant(glacierLocked, state.challengeBlockForm, (state.playerOrder || []).length, perPick, schild) : 0;
       // Formationen neu berechnen (Anker/Familien/Architekt beeinflussen die Erkennung).
       const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, skills, state.shop?.anchors || [], state.familyTiers, archOf(state), { skillTiers, growth });
-      return { ...state, skills, skillTiers, skillOfferTiers: null, activeArchetypes, lightning, heat, deck, iceTemp, growth, brandPending, brandActive, forged, formations,
+      return { ...state, skills, skillTiers, skillOfferTiers: null, activeArchetypes, lightning, heat, deck, iceTemp, growth, brandPending, brandActive, forged, tendrils, formations,
                /* §3.6: kam dieser Skill aus dem Meisterhand-Bonus, merkt sich der Lauf, welcher es war —
                   der Verkauf des Perks nimmt ihn mit, und ohne Gedächtnis wäre er nicht wiederzufinden.
                   Wird er später ERSETZT, folgt die Marke dem Nachfolger: der Slot ist der von Meisterhand,
@@ -856,15 +855,9 @@ export function reducer(state, action) {
       const buy = upgradeBuy(state, cur);
       if (buy.maxed || !buy.can) return state;
       const skillTiers = { ...(state.skillTiers || {}), [id]: buy.next };
-      const arch = archetypeOf(id);
-      let deck = state.deck, growth = state.growth || {};
-      // Pflanze: ein aufgewertetes Setzlingsbeet sät die zusätzliche Karte nach — wie beim Pick, und wie dort
-      // nur einmal je Karte (bereits gewachsene bleiben unberührt).
-      if (arch === "plant") {
-        const gains = setzlingsbeetGains(skills, skillTiers, { order: state.playerOrder, deck, segmentSize: SEGMENT_SIZE })
-          .filter((g) => !(state.growth || {})[g.id]);
-        if (gains.length) { const r = applyGrowth(growth, deck, gains); growth = r.growth; deck = r.deck; }
-      }
+      // §6.26: das Setzlingsbeet sät nicht mehr beim Pick oder beim Aufwerten — es wächst am Ende jedes Durchlaufs
+      // (engine.js). Eine Aufwertung wirkt damit ab dem nächsten Durchlaufende, ohne Sonderweg im Reducer.
+      const deck = state.deck, growth = state.growth || {};
       const lightning = (state.lightning && state.lightning.active)
         ? { ...state.lightning, maxCharge: maxChargeFor(skills, skillTiers) } : state.lightning;
       const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, skills, state.shop?.anchors || [], state.familyTiers, archOf(state), { skillTiers, growth });

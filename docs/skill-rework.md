@@ -6348,6 +6348,383 @@ und die Ranked-Texte, die eine andere Runde meinen.
 
 ---
 
+### 6.26 Durchgang durch die Wachstums-Skills (2026-09-09, Owner) — Entwürfe, NICHTS UMGESETZT
+
+**Owner:** „nix Dritter Ausgang. ich entscheide die skills und wir designen die Änderungen." Und zum Vorgehen:
+„nur Entwurf, wir machen erst alle skills durch bevor weiter gemeinsam bauen." Dieser Abschnitt sammelt die
+Entwürfe je Skill; gebaut wird nichts, bevor der Durchgang steht.
+
+**Der Ausgangsbefund** (§6.21 B, §6.22 B, Blühgewicht 3): von den fünf Wachstums-Skills lebt einer. Aussaat
++0,71M (+4 %) in der reinen Pflanze-Welt, Ranken −1,73M, Setzlingsbeet und Zäher Halm nahe null bis negativ,
+Lichtung flach. Der Grund ist bei allen derselbe: **sie geben Wachstum an Karten, die in dem Moment nicht
+gewinnen.** Das Blühgewicht zahlt nur auf der Siegkarte und ihren Formations-Mitläufern. Aussaat trifft die
+Nachbarn der Siegkarte, also genau die, die mit ihr in einer Formation stehen — deshalb lebt genau der eine.
+
+§6.18 bleibt in Kraft: Wachstum ist die Kernmechanik, ein dritter Ausgang neben Grün-Schwelle und Blühgewicht
+wird **nicht** gebaut (Owner: „nix Dritter Ausgang"). Die Entwürfe drehen den Empfänger, nicht die Währung.
+
+#### Ranken (SK_PLANT_09) — die Gegnerdeck-Achse kommt zurück
+
+**Owner:** „ich hätte gerne die Mechanik vom alten pflanzen system wieder aufgelebt. grüne siege ranken in die
+Gegnerkarten. Sieg auf einer gegnerkarte beeinflusst von ranken geben zusätzliches Wachstum."
+
+Vorlage ist der gestrichene **Ausläufer** (SK_PLANT_15 alt): „Gewinnt eine grüne Karte, kolonisiert sie die
+niedrigste Gegnerkarte. Besiegst du eine kolonisierte Karte, erntest du +2 Wachstum." Die Ernte ging an die
+**Siegkarte** — das ist der Teil, der Ranken heilt, aus demselben Grund, aus dem Aussaat als einziger lebt.
+
+Damit ist §6.1 in einem Punkt aufgehoben: das Gegnerdeck war dort Feuers Achse. **Abgrenzung:** Brand senkt
+Gegnerwert, Ranken senkt nichts und erntet Wachstum. Gleiche Achse, verschiedene Erträge.
+
+**Bauform (Owner: „a").** Der Sieg rankt in die Karte, die er gerade geschlagen hat — nicht in die niedrigste
+freie wie beim alten Ausläufer. Dieselbe Gegnerkarte alterniert damit zwischen ranken und ernten, und der
+Kreislauf ist an dem Stich sichtbar, der ihn auslöst.
+
+> Gewinnt eine grüne Karte, rankt sie in die geschlagene Gegnerkarte — oder erntet sie, wenn dort schon Ranken
+> liegen: +N Wachstum für die Siegkarte.
+
+**Die Ernte verbraucht die Ranken.** Sonst wiederholt sich der gemessene Fehler der Feuerwalze (§7.27): nach
+zehn Durchläufen sind 36 von 40 Positionen schon einmal gewonnen, die Bedingung wird zur Formalität, und der
+Skill ist ab der Laufmitte ein bedingungsloses „+N Wachstum je Sieg". Mit Verbrauch bleibt die Knappheit
+strukturell statt historisch — und „ernten" heißt sprachlich ohnehin, dass danach nichts mehr da ist.
+
+**Leiter — Vorschlag, UNGEMESSEN** (Startwerte erst auf Ansage, §6.20-Prozessregel):
+
+| Normal | Selten | Sehr selten | Episch |
+| --- | --- | --- | --- |
+| +2 Wachstum | +3 | +4 | +6, und beim Ernten ranken die Nachbarn der geernteten Karte mit |
+
+Das Episch-Extra ist das alte **Rhizom** (SK_PLANT_16) als halbe Zeile, statt als Verstärker-Skill mit `enabler`.
+
+**Nebenbefund:** der Fraktions-Kaltstart (die zehn grünen Karten sind grün, sobald die Pflanze steht) lässt den
+neuen Ranken ab Durchlauf 1 zünden. Der alte Auslöser „wird eine Karte grün" hätte umgekehrt gelitten — der
+Kaltstart-Pfad im Reducer läuft an der Ranken-Kette vorbei, die zehn Karten hätten sie nicht ausgelöst.
+
+**Umfang, wenn gebaut wird:** ein Lauf-Zustand für die Marker auf Gegnerkarten (analog `brandActive`, über
+`card.id`) in `engine.js`/`reducer.js`, die Logik in `factions/plant.js`, Tabelle und Text in `skills.js`, dazu
+Glossar, `de.js`, `loc:export`. Das neue Schlüsselwort braucht einen Glossareintrag.
+
+**Offen (Owner):** ob die Ranken auf der Gegnerkarte sichtbar sind. Der Brand hat dafür eine Anzeige; ohne sie
+ist der Kreislauf für den Spieler unsichtbar.
+
+#### Setzlingsbeet (SK_PLANT_07) — das Beet ist ein Ort, kein Zeitpunkt
+
+**Owner: „a"** — Mechanik ersetzen, Name und Platz bleiben.
+
+Zwei Befunde, nicht einer. **Die Rolle ist doppelt besetzt:** Setzlingsbeet war laut §6.3 der Kaltstart-Skill;
+seit dem 2026-09-08 hat die Fraktion einen eingebauten Kaltstart, und der ist stärker — er hebt zehn Karten auf
+die Grün-Schwelle, während der Skill acht Karten auf 8–16 von 30 hebt, also keine davon grün macht. **Und der
+Empfänger ist systematisch der falsche:** die niedrigste Karte je Segment ist die, die am seltensten gewinnt.
+Das erklärt, warum er mit −2,40M pur / −8,78M gemischt (§6.21) tiefer liegt als Ranken und Zäher Halm.
+
+> **Dein Beet ist das Segment mit den meisten grünen Karten. Seine Karten wachsen jeden Durchlauf +N.**
+
+Ein Segment ist die Einheit, in der Formationen entstehen (`SEGMENT_SIZE` 5) — die fünf Karten wachsen also als
+Gruppe, die zusammen in Formationen steht und als Mitläufer zählt. Das ist der einzige Ausgang, den Wachstum auf
+einer Nicht-Siegkarte hat. Das Beet zieht dorthin, wo schon grün ist, und koppelt damit an Spalier, Blütenlese
+und die Score-Skills. Der Skill lebt den ganzen Lauf statt nur im Moment des Picks.
+
+**Leiter — Vorschlag, UNGEMESSEN** (Owner: „vllt einen kleinen buff", darum eine Stufe über dem Erstentwurf
+1/2/3/3; Episch nach Owner-Ansage „es wirkt schon auf jedes segment", Werte unverändert):
+
+| Normal | Selten | Sehr selten | Episch |
+| --- | --- | --- | --- |
+| +2 | +3 | +4 | +4, auf **jedem** Segment |
+
+Das Episch folgt damit dem Muster der Fraktion — Spalier öffnet auf Episch alle sieben Grenzen, Wildwuchs zählt
+alle blühenden Karten. **Wachpunkt:** dort sitzt der Sprung auf der Erkennung, hier auf einer Wachstumsrate, und
+die Breite springt von 5 auf 40 Karten. Übersteuert nach dem Umbau etwas, ist der Episch-Satz der erste Regler —
+nicht die Breite, die ist die Entscheidung.
+
+#### Lichtung (SK_PLANT_12) — bleibt, kleiner Buff
+
+**Owner: „setzlingsbeet und Lichtung ist gut, vllt einen kleinen buff."**
+
+Lichtung ist der einzige Wachstums-Skill, der direkt auf die Siegkarte zahlt und an Formationen hängt — er ist
+mechanisch richtig gebaut und misst deshalb flach statt tot (+0,71M gemischt / −0,00M pur, §6.17; die Zahl ist
+von vor dem Blühgewicht und damit veraltet). Kein Umbau, nur die Leiter.
+
+| | Normal | Selten | Sehr selten | Episch |
+| --- | --- | --- | --- | --- |
+| heute | +1 | +2 | +3 | +3 je Formation an der Siegposition |
+| **Vorschlag** | **+2** | **+3** | **+4** | **+4 je Formation** |
+
+#### Zäher Halm (SK_PLANT_08) — Richtung gesetzt, Episch offen
+
+**Owner: „zäher Halm die limitation von grau aufheben, episch was anderes designen, erst vorlegen."**
+
+Die Beschränkung auf graue Karten fällt: **jede** Karte wächst bei einer Niederlage. Damit ist das heutige
+Episch-Extra („auch grüne Karten wachsen +1") verbraucht und wird ersetzt; die Leiter wird 1/2/3/4 statt
+1/2/3/3.
+
+**Episch (Owner: „1a"):**
+
+> Verliert eine Karte, wächst sie zusätzlich **+1 je Formation an ihrer Position**.
+
+Das nimmt die Größe, die das Passiv beim Sieg schon benutzt (`PLANT_GROWTH_PER_FORMATION`), und trifft die
+Formationsachse — laut §6.3 der stärkste Hebel der Fraktion und der einzige Ausgang, über den Wachstum auf einer
+nicht-siegenden Karte überhaupt zahlt. Kein neuer Begriff, keine neue Zahl. Verworfen: „blühende Karten wachsen
+doppelt" (zu nah an Jahresringe Episch, §7.26 B) und „zweimal in Folge verloren" (bester Charakter, aber ein
+neuer Zähler je Karte und die Fraktion hat sonst keine Serien-Achse).
+
+**Zum Auslöser, gegen die naheliegende Sorge:** Niederlage-Bedingungen sind bei Feuer und Blitz zweimal
+gestorben (§7.22, §7.24), weil dort die Siegquote über den Lauf steigt und die Niederlage verschwindet. Die
+Pflanze gibt bewusst keinen Kartenwert (§6.1) und liegt über alle Balance-Runden hinweg unverändert bei
+**53,3 % Siegquote** — fast jeder zweite Stich ist eine Niederlage. Ob die Quote *innerhalb* eines Laufs steigt,
+ist nicht gemessen; der Lauf-Durchschnitt spricht dagegen, dass der Auslöser wegbricht.
+
+#### Aussaat (SK_PLANT_05) — bleibt, kleinster Buff
+
+**Owner: „Aussaat passt, eventuell kleiner buff."**
+
+Der einzige Wachstums-Skill, der schon zahlt (+0,71M / +4 % in der reinen Pflanze-Welt, §6.22), weil er als
+einziger die Nachbarn der **Siegkarte** trifft — also die Karten, die mit ihr in einer Formation stehen. Er ist
+die Blaupause für den ganzen Durchgang und braucht deshalb den kleinsten Schub. Der Satz zählt zudem doppelt: er
+geht an beide Nachbarn.
+
+| | Normal | Selten | Sehr selten | Episch |
+| --- | --- | --- | --- | --- |
+| heute | +1 | +2 | +3 | +4, zweite Nachbarn +1 |
+| **Vorschlag** | **+2** | **+3** | **+4** | **+5**, zweite Nachbarn +1 (unverändert) |
+
+#### Nicht angefasst (Owner: „alle so lassen")
+
+Drei Skills geben oder lesen Wachstum nebenbei und bleiben **unverändert**: Lücke (Episch +2 auf die
+übersprungenen Karten), Blütenlese (+1, Episch +2 auf alle Karten der rein grünen Formation) und Jahresringe,
+der als einziger Wachstum *liest* statt gibt — und der beste Skill der Fraktion ist (§6.18).
+
+#### Die übrigen zehn: zwei Reworks, ein Buff, ein Nerf
+
+**Owner, nach dem Blick auf die Liste:** „Lücke und überwucherung rework, hecke buffen und Jahresringe etwas
+nerfen (vor allem da wir Wachstums Optionen gerade buffen)." Spalier, Wildwuchs, Blätterdach, Rankgerüst, Windung
+und Blütenlese bleiben unangetastet, ebenso die drei Legendären (seit §6.15 auf einem Band).
+
+**Zwei Befunde steuern die Reworks.**
+
+*Die Pflanze kann strukturell nur einen der vier Formationstypen selbst erzeugen.* Grün ist eine Farbe, also baut
+sie Farbblöcke; Treppe, Wiederholung und Wechsel brauchen Wertmuster, und Kartenwerte fasst die Fraktion bewusst
+nicht an (§6.1). Rankgerüst, Hecke und Windung warten deshalb darauf, dass die Aufstellung zufällig passt — der
+einzige Gegenhebel ist Wildwuchs.
+
+*Und ausgerechnet auf dem Farbblock ist der Faktor für Grün eingefroren.* `escalatingFactor` gibt jedem Lauf
+`FARBBLOCK_BASE 1,35 + ESKALATION_STEP 0,20` je Karte über der Mindestlänge; für grüne Karten deckelt
+`PLANT_GREEN_FARBBLOCK_CAP` die Ordinalzahl bei 3. Ein grüner Farbblock steht damit **immer bei ×1,35**, ob er
+drei Karten lang ist oder vierzig (ohne Deckel wären es ×2,75 bei zehn, ×8,75 bei vierzig). Der Deckel kam in v0.3
+gegen den Runaway; §6.2 hat die Frage ausdrücklich offen gelassen („Owner: warten").
+
+##### Dickicht ersetzt Lücke (SK_PLANT_15)
+
+Lücke wurde nicht einmal genommen (4 % gehalten, −0,19M / −2,02M). Der Grund ist ein enges Fenster: bei wenig Grün
+gibt es keine Läufe zu retten, bei viel Grün sind die Lücken schon grün. Sie repariert Löcher, statt Raum zu
+schaffen — der Unterschied zu Spalier (+36 %). Der Platz behält seine Achse: Lücke arbeitete auf dem Farbblock
+(`suitGapFor`), Dickicht tut es auch.
+
+> **Grüne Farbblöcke zählen bis ×1,55 statt ×1,35.**
+
+| Normal | Selten | Sehr selten | Episch |
+| --- | --- | --- | --- |
+| bis ×1,55 | bis ×1,75 | bis ×1,95 | bis ×2,35 |
+
+Der Text nennt nur die Zahl, die sich ändert (Hausmuster wie Eiswall) — dass ein längerer Lauf mehr Faktor gibt,
+erklärt die Formations-Legende dem Spieler ohnehin. **Wachpunkt:** das war der Runaway-Schutz; der Deckel wird
+gehoben, nicht aufgehoben. „Unbegrenzt" auf Episch ist der Kandidat zum Sprengen und wartet auf die Messung.
+
+##### Verwachsung ersetzt Überwucherung (SK_PLANT_14)
+
+Bei Überwucherung liegt das Tor hinter dem Ziel: „ab 80 % grünem Feld" sind 32 von 40 Karten — wer so weit ist,
+bekommt Formationen ohnehin geschenkt. Der Skill schaltet ein, wenn man ihn nicht mehr braucht (−0,05M / −0,23M).
+
+An seine Stelle tritt der Griff auf `OVERLAP_BONUS` (`2 ×1,5 · 3 ×2 · 4 ×3`) — den gemessenen Motor der Fraktion
+(§6.21 C: 8 % der Siege tragen 45 % des Scores). Kein neuer Multiplikator, sondern der Formations-Faktor, den
+§6.1 erlaubt.
+
+> **Mehrere Formationen an deiner Siegposition: ihr Überlappungsbonus ist um 0,25 höher.**
+
+| Normal | Selten | Sehr selten | Episch |
+| --- | --- | --- | --- |
+| +0,25 | +0,5 | +0,75 | +1 |
+
+**Bewusst absolut statt prozentual:** der Zwei-Formations-Sieg gewinnt am meisten (×1,5 → ×1,75 ist +17 %, ×3 →
+×3,25 nur +8 %), und dort liegen 38 % der Siege. §6.22 hat die Konzentration genau im Überlappungs-Multiplikator
+verortet; ein prozentualer Aufschlag würde die Spitze weiter aufblasen, der absolute verbreitert die Basis.
+
+##### Hecke +33 %, Jahresringe −33 %
+
+**Hecke** (SK_PLANT_10) teilt sich die Leiter mit Rankgerüst (30/45/60/80), weil §6.8 nach Formationslänge
+staffelt — Treppe und Wiederholung sind beide drei bis fünf Karten lang. Gemessen entstehen grüne Wiederholungen
+aber seltener als Treppen, und der Unterschied ging voll auf die Hecke (−0,40M gegen +0,05M). Neue Leiter
+**40 / 60 / 80 / 105** (≈ 1,33× Rankgerüst). Die saubere Zahl käme aus einer Sonde, die zählt, wie oft eine grüne
+Wiederholung gegen eine grüne Treppe entsteht; bis dahin ist 1,33× ein bewusst konservativer Schritt.
+
+**Jahresringe** (SK_PLANT_04) liest Wachstum direkt und wird deshalb von jedem der fünf Wachstums-Buffs
+mitgehoben, ohne angefasst zu werden — er ist schon heute der beste Skill der Fraktion (+17 %). Der Teiler wird
+gröber, die Sätze bleiben: **je 15 Wachstum** statt je 10 (−33 %). Das trifft genau die Kopplung, die dieser
+Durchgang verstärkt, und lässt das Episch („über der Blüh-Schwelle zählt doppelt") unberührt.
+
+##### Was sich strukturell verschiebt
+
+Die Kategorie „Formationshebel (4)" aus §6.6 gibt es so nicht mehr: Spalier und Wildwuchs bleiben Erkennungs-
+hebel, Dickicht und Verwachsung sind **Formations-Faktor-Skills**. Damit bekommt die Fraktion erstmals eine
+Multiplikator-Achse auf der Ebene der 15 — genau der Mangel, den §6.17 C gemessen und benannt hat („Feuer hat
+einen Multiplikator, Blitz hat Crit … §6.15 hat der Fraktion beides gegeben, aber nur im Legendären").
+
+**Emblem-Umbenennung** (`git mv`, der ID-Präfix ist, was `skillArt.js` liest):
+`SK_PLANT_15_luecke.webp` → `…_dickicht.webp`, `SK_PLANT_14_ueberwucherung.webp` → `…_verwachsung.webp`.
+
+**Anzeige-Notiz:** die Formations-Legende (`formlegend.overlap`) zeigt die Zahlen aus `OVERLAP_BONUS`. Ändert
+Verwachsung sie, muss die Legende mitrechnen — sonst läuft die Anzeige dem Motor davon, genau der Fehler, den
+§6.23 bei Spalier behoben hat.
+
+#### Der Durchgang auf einer Seite
+
+Alle 15 Skills sind durchgesprochen. **Nichts davon ist gebaut, alle Werte sind ungemessen.**
+
+| Skill | Was passiert | Leiter |
+| --- | --- | --- |
+| **Ranken** (09) | Rework: rankt in die geschlagene Gegnerkarte, Ernte gibt der Siegkarte Wachstum und verbraucht die Ranken | 2 / 3 / 4 / 6 + Nachbarn beim Ernten |
+| **Setzlingsbeet** (07) | Rework: das grünste Segment wächst jeden Durchlauf | 2 / 3 / 4 / 4 auf jedem Segment |
+| **Aussaat** (05) | Leiter | 2 / 3 / 4 / 5 |
+| **Lichtung** (12) | Leiter | 2 / 3 / 4 / 4 je Formation |
+| **Zäher Halm** (08) | Grau-Limit raus, neues Episch | 1 / 2 / 3 / 4 + je Formation |
+| **Dickicht** (15) | ersetzt Lücke: hebt den Grün-Farbblock-Deckel | ×1,55 / 1,75 / 1,95 / 2,35 |
+| **Verwachsung** (14) | ersetzt Überwucherung: hebt den Überlappungsbonus | +0,25 / 0,5 / 0,75 / 1 |
+| **Hecke** (10) | Buff gegen die seltenere Formation | 40 / 60 / 80 / 105 |
+| **Jahresringe** (04) | Nerf: gröberer Teiler | je 15 Wachstum statt je 10 |
+| Spalier · Wildwuchs · Blätterdach · Rankgerüst · Windung · Blütenlese | unverändert | — |
+| Wurzelgeflecht · Baumreihe · Ewiger Frühling | unverändert (§6.15) | — |
+
+#### Wachpunkt für den Schluss des Durchgangs
+
+Die Parität steht bei **1,08× Feuer** (§6.22). Dieser Durchgang bufft mehrere Skills gleichzeitig; die Summe ist
+nicht die Summe der Einzelmessungen. Nach dem Umbau gehört eine Duell-Runde gefahren — **auf Ansage des Owners**,
+nicht nebenbei.
+
+---
+
+### 6.27 Baseline vor dem Umbau: der Kaltstart war ein +12-%-Buff (2026-09-09, auf Ansage) — gemessen, nichts geändert
+
+**Owner: „jetzt messen wir."** Gemessen wurde der **heutige Stand** — aus §6.26 ist keine Zeile gebaut. Der Zweck
+ist das fehlende Vorher: die letzte gültige Referenz (§6.22, 1,08× Feuer) stammt vom 2026-09-07 und liegt damit
+**vor** dem Fraktions-Kaltstart (2026-09-08) und vor dem Eis-Umbau (§5.18–§5.23).
+
+Beides ohne Legendäre, 200 Läufe, Seeds 1–200:
+`SIM_SKILL_LEGENDARY_PER_SLOT=0 npm run sim -- --mode duel --arch … --runs 200`
+
+#### A · Gleicher Topf wie §6.22 (Feuer/Blitz/Pflanze) — der saubere Vergleich
+
+| Build | §6.22 (07.09.) | jetzt (09.09.) | Δ |
+| --- | --- | --- | --- |
+| Feuer mono | 7,75M | 7,87M | +1,6 % |
+| Blitz mono | 7,43M | 7,34M | −1,2 % |
+| **Pflanze mono** | **8,36M** | **9,39M** | **+12,3 %** |
+| Split über alle drei | 7,81M | 8,66M | +10,9 % |
+| Siegquote Pflanze | 53,3 % | 52,9 % | unverändert |
+
+**Feuer und Blitz reproduzieren auf ±1,6 %** — die Messung ist belastbar, und der Sprung der Pflanze ist echt.
+Er kommt vom **Kaltstart**: die zehn grünen Karten sind ab dem ersten Pflanzen-Pick grün, also zünden Spalier,
+Blütenlese, die Score-Skills und das Blühgewicht ab Durchlauf 1 statt ab Durchlauf 10–16. Die Siegquote bleibt
+unbewegt — grün gibt weiter keinen Kartenwert (§6.1), der Gewinn sitzt ganz im Score.
+
+**Pflanze ÷ Feuer: 1,08× → 1,19×.** Der Kaltstart wurde am 08.09. ohne Messung eingebaut; das ist hiermit
+nachgeholt.
+
+#### B · Die echte Welt (alle vier Fraktionen im Angebotstopf)
+
+`SKILL_OFFER_ARCHETYPES` enthält seit §5.4 alle vier — das ist der Topf, in dem wirklich gespielt wird:
+
+| Build | Median | Siegquote | Ø eigene Skills |
+| --- | --- | --- | --- |
+| Feuer mono | 7,15M | 66,6 % | 9,4 |
+| Blitz mono | 5,65M | 59,2 % | 9,6 |
+| **Pflanze mono** | **9,01M** | 55,1 % | 9,5 |
+| Eis mono | 7,37M | 57,7 % | 9,8 |
+| Split über alle vier | 5,69M | 57,2 % | je ~3,3 |
+
+**Pflanze ÷ Feuer: 1,26×.** Ein Nebenbefund, der für jede künftige Messung gilt: im Vier-Fraktionen-Topf bekommt
+ein Mono-Build rund **zwei Skills weniger** (9,5 statt 11,3), weil die Türen breiter streuen. Das trifft die
+Fraktionen ungleich — Blitz verliert 23 %, die Pflanze nur 4 %. Wer §6.22-Zahlen gegen Vier-Fraktionen-Zahlen
+hält, vergleicht zwei Welten.
+
+#### Was daraus für §6.26 folgt
+
+Der Durchgang bufft an sieben Stellen und nerft an einer — und die Fraktion liegt **vor** dem ersten Handgriff
+schon 19 bis 26 % über Feuer. Gebaut wie entworfen, steuert sie deutlich über.
+
+**Empfehlung: trotzdem bauen wie entworfen, danach mit dem Blühgewicht tarieren.** Der Grund steht in §6.21/§6.22:
+`PLANT_BLOOM_WEIGHT` ist der eine Regler, der die ganze Fraktion skaliert (5 → 3 brachte 10,49M → 8,36M, also
+×0,80). Die Einzelentwürfe sind auf ihre **Rolle** designt, nicht auf ihre Größe; sie nachträglich einzeln zu
+drücken, verwässert das Design und ist nicht messbar. Ein Regler ist es.
+
+---
+
+### 6.28 Der Durchgang ist gebaut und gemessen: +21 %, und der Regler reicht nicht (2026-09-09, Owner) — gemessen
+
+**Owner: „ja Bau, und eventuell über blühend etwas runter tarieren."** Alle fünf Etappen aus §6.26 stehen im Code,
+jede mit grünen Gates gepusht. Danach dieselbe Messung wie §6.27 (Duell, 200 Läufe, ohne Legendäre, alle vier
+Fraktionen im Topf).
+
+#### A · Was der Durchgang bringt
+
+| Build | vor §6.26 (§6.27 B) | nach §6.26 | Δ |
+| --- | --- | --- | --- |
+| Feuer mono | 7.149.056 | 7.149.056 | **bit-identisch** |
+| Blitz mono | 5.646.630 | 5.646.630 | **bit-identisch** |
+| Eis mono | 7.371.566 | 7.371.566 | **bit-identisch** |
+| **Pflanze mono** | 9,01M | **10,88M** | **+21 %** |
+| Siegquote Pflanze | 55,1 % | 55,3 % | unverändert |
+
+Die drei anderen Fraktionen reproduzieren auf die Stelle genau — der Umbau ist sauber isoliert, und der Zuwachs
+der Pflanze ist echt. Die Siegquote bleibt liegen, wie vorgesehen: die Fraktion gibt weiter keinen Kartenwert.
+
+**Pflanze ÷ Feuer: 1,26× → 1,52×.**
+
+#### B · Der Sweep über das Blühgewicht — er reicht nicht
+
+| Grundgewicht | je … Wachstum +1 | Median | ÷ Feuer |
+| --- | --- | --- | --- |
+| 3 (heute) | 40 (heute) | 10,88M | 1,52× |
+| 2 | 40 | 9,72M | 1,36× |
+| 1 | 40 | 8,59M | 1,20× |
+| 3 | 80 | 9,22M | 1,29× |
+| 2 | 80 | 8,01M | 1,12× |
+| 2 | 120 | 7,58M | 1,06× |
+
+**Das Grundgewicht allein kommt nicht hin:** selbst bei 1 — eine frisch blühende Karte zählt dann wie eine grüne,
+der Blüh-Bonus ist weg — steht die Fraktion bei 1,20×. Parität verlangt zusätzlich einen Schritt von 40 auf grob
+120–150, und **genau das entkernt den Wachstumsterm**, der in §6.20/§6.21 gebaut wurde, um die Wachstums-Skills
+überhaupt zu bezahlen: bei 205 Wachstum am Laufende fällt das Gewicht von 6 auf 3.
+
+#### C · Eine Vermutung, gemessen und widerlegt
+
+Die naheliegende Erklärung war, dass die zwei neuen Faktor-Skills den Überschuss tragen — Verwachsung Episch hebt
+`OVERLAP_BONUS[2]` von ×1,5 auf ×2,5, also **+67 %** und nicht die +17 %, die §6.26 für die Normalstufe nennt.
+Gemessen stimmt das nicht:
+
+| Lauf | Median | Anteil |
+| --- | --- | --- |
+| voll | 10,88M | — |
+| Verwachsung neutralisiert | 10,49M | −3,6 % |
+| Dickicht neutralisiert | 10,40M | −4,4 % |
+
+**Zusammen tragen die beiden neuen Skills rund 8 %.** Der Überschuss sitzt breit im Rest des Durchgangs — den vier
+gehobenen Leitern, dem Setzlingsbeet als Dauerquelle, dem Ranken-Kreislauf und dem Zähen Halm. Damit ist das
+Blühgewicht tatsächlich der richtige Regler (er skaliert alles gleichmäßig), nur eben kein hinreichender.
+
+#### Offen (Entscheid Owner)
+
+Zwei Wege, und sie schließen einander nicht aus:
+
+1. **Über das Blühgewicht tarieren** (Gewicht 2, Schritt 120–150). Trifft Parität, kostet aber die Steigung, die
+   das Wachstum über der Blüh-Schwelle überhaupt bezahlt — also die Kopplung aus §6.18, für die dieser Durchgang
+   gebaut wurde.
+2. **Den Durchgang selbst kleiner machen** — die vier gehobenen Leitern (Aussaat, Lichtung, Hecke, Setzlingsbeet)
+   ganz oder teilweise zurücknehmen. Trifft die Ursache, lässt das Passiv in Ruhe, macht aber die Buffs rückgängig,
+   die diese Runde beschlossen hat.
+
+Ob Parität überhaupt das Ziel ist, ist ebenfalls offen: §6.22 hat die Pflanze bewusst als Bekenntnis-Fraktion
+gesetzt, ihre Siegquote liegt zwölf Punkte unter Feuer, und im gemischten Split trägt sie sich mit 6,03M.
+
+---
+
 ## Änderungsprotokoll
 
 

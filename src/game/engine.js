@@ -19,7 +19,8 @@ import { syncHeatMax, fireValueBonus, fireOnWin, fireOnLoss, heatMult, verbrennu
 // exp skill rework: die Pflanze-Mechanik (Passiv „Wachstum", 15 Skills, 4 Legendäre) lebt im Fraktionsmodul; die
 // Engine ruft ihre Übergänge (Sieg, Niederlage, Durchlaufende) und reicht das Bündel { skillTiers, growth } an die
 // Formations-Engine weiter, deren Erkennung vier Pflanze-Hebel und zwei Legendäre ändern.
-import { plantOnWin, plantOnLoss, plantOnGap, plantParam, plantValueBonus, plantFormMult, P as PLANT } from "./factions/plant.js";
+import { plantOnWin, plantOnLoss, plantOnTendril, plantValueBonus, plantFormMult, beetGains, applyGrowth,
+  bloomAllIfFullGreen } from "./factions/plant.js";
 // (#267: import aus stats.js entfernt — die Stat-Phase/Faktoren sind weg.)
 import { computeFormations, positionHasFormation, activeFormationCount, summarizeFormations, countBuiltFormations, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
 import { perkLegendaryChance, anchorAt } from "./shop.js";
@@ -148,6 +149,7 @@ export function resolveTrick(state, rng) {
     skillTiers = {}, // exp skill rework: Stufe je gehaltenem Skill (0 Normal … 3 Episch) — die Fraktionsmodule lesen ihre Tabellen damit
     iceTemp = {}, // (exp: ehemals Blitzfänger-Temp; wird nur noch durchgereicht)
     brandPending = {}, brandActive = {}, forged = {}, // Feuer: Brand-Marker (Gegner, je card.id, Wertabzug nächste Runde) / geschmiedete Dauerwerte
+    tendrils = {}, // Pflanze (§6.26 Ranken): berankte Gegnerkarten je oppCard.id — ein grüner Sieg rankt, ein Sieg darauf erntet
     growth = {}, // Pflanze (§6.2): Wachstum je card.id (nur steigend) — grün und blühend liegen als Flag auf der Karte
 
     shop = null, // hält nur noch die (inerten) Positionsanker []; der Shop selbst ist entfernt (#229)
@@ -404,6 +406,7 @@ export function resolveTrick(state, rng) {
   // Feuer: Brand-Marker für die NÄCHSTE Runde (brandActive wird am Rundenende getauscht; Quellen summieren sich je Karte).
   let newBrandPending = { ...brandPending };
   let newBrandActive = brandActive;
+  let newTendrils = tendrils; // §6.26: Arbeitskopie der Ranken (nur im plant-Zweig ersetzt → Nicht-Pflanze-Läufe byte-identisch)
   let newForged = forged;
   // Pflanze (§6.2): Wachstum je Karte, immutabel fortgeschrieben. Die Zustände grün/blühend liegen als Flag auf der
   // Karte (card.green / card.bloom) und werden vom Modul mitgezogen.
@@ -512,16 +515,17 @@ export function resolveTrick(state, rng) {
       const r = plantOnWin(newGrowth, deck, skills, skillTiers, { pos: actualPos, order: playerOrder, posForm, cardId: pCard.id });
       newGrowth = r.growth; deck = r.deck; plantFlat = r.flat; growthTotal += r.grown; // #270 Motor-Zähler „Gewachsen"
       plantBase += r.flat;
-      // Lücke Episch (§6.8): die vom grünen Lauf übersprungenen Karten wachsen mit. Die Positionen liegen auf dem
-      // Farbblock-Eintrag der Siegposition (`gapped`, formations.js).
-      const gapGrowth = plantParam(skills, skillTiers, PLANT.LUECKE, "growth");
-      if (gapGrowth) {
-        const gapped = (posForm.formations || []).find((f) => f.type === "farbblock" && f.gapped)?.gapped || [];
-        if (gapped.length) {
-          const g2 = plantOnGap(newGrowth, deck, skills, gapped.map((p) => deck[playerOrder[p]].id), gapGrowth);
-          newGrowth = g2.growth; deck = g2.deck; growthTotal += g2.grown;
-        }
-      }
+      /* Ranken (§6.26): ein grüner Sieg rankt in die geschlagene Gegnerkarte, ein Sieg auf einer BERANKTEN erntet sie.
+         Läuft NACH plantOnWin — die Siegkarte kann durch ihren eigenen Sieg grün geworden sein und rankt dann sofort.
+         Die Nachbarn sind die der Gegnerkarte in der GEGNER-Reihenfolge (Episch berankt sie beim Ernten mit). */
+      const oi = oppOrder[actualPos];
+      const t = plantOnTendril(newGrowth, deck, skills, skillTiers, {
+        tendrils: newTendrils, cardId: pCard.id, oppCardId: oCard.id,
+        oppNeighborIds: [oi - 1, oi + 1].map((k) => (k >= 0 && k < oppDeck.length ? oppDeck[k].id : null)),
+      });
+      newGrowth = t.growth; deck = t.deck; newTendrils = t.tendrils; growthTotal += t.grown;
+      // (§6.26: Lücke ist gestrichen — mit ihr der `gapped`-Weg. Dickicht und Verwachsung fassen kein Wachstum an,
+      //  sie heben Faktoren und leben ganz in formations.js.)
     }
     // Crit ZUERST bestimmen — die Crit-Flats (scoreFlatOnCrit) müssen in die multiplizierte Basis. Der Crit-Wurf
     // verbraucht rng nur, wenn wirklich gewürfelt wird → rng-Reihenfolge unverändert (kein Drift). rawCrit steht oben
@@ -829,10 +833,10 @@ export function resolveTrick(state, rng) {
     if (interplayStoreOnLoss) interplayStored += interplayStoreOnLoss; // D_INTERPLAY IV: Niederlage bankt Score für den nächsten Sieg
     winSuit = null; winSuitStreak = 0; // #71 Farbserie: Niederlage beendet die Farbserie
     serieStreak = streakNoReset ? winStreak : 0; // Serienschutz/Serienanker: effektive Serie hält
-    // Pflanze (§6.8): eine Niederlage gibt nichts — außer mit Zähem Halm, der graue (Episch auch grüne) Karten
-    // trotzdem wachsen lässt. Alles im Modul.
+    // Pflanze (§6.26): eine Niederlage gibt nichts — außer mit Zähem Halm, der jede Karte trotzdem wachsen lässt
+    // (Episch zusätzlich je Formation an ihrer Position). Alles im Modul.
     if ((activeArchetypes || []).includes("plant")) {
-      const r = plantOnLoss(newGrowth, deck, skills, skillTiers, { cardId: pCard.id });
+      const r = plantOnLoss(newGrowth, deck, skills, skillTiers, { cardId: pCard.id, posForm });
       newGrowth = r.growth; deck = r.deck; growthTotal += r.grown;
     }
     lastResult = "loss";
@@ -1041,8 +1045,15 @@ export function resolveTrick(state, rng) {
       const r = fireCycleEnd(heat, skills, skillTiers, deck, newForged);
       heat = r.heat; deck = r.deck; newForged = r.forged;
     }
-    // (§6.11: die Pflanze hat am Durchlaufende nichts mehr zu tun — der Weltenbaum ist mit den Legendären auf drei
-    //  gestrichen; ihr Zustand wandert ausschließlich über Siege.)
+    // Pflanze (§6.26): das Setzlingsbeet ist der einzige Durchlaufende-Haken der Fraktion — die Karten des grünsten
+    // Segments (Episch: jedes Segment) wachsen. Der nächste Durchlauf rechnet seine Formationen auf diesem Stand.
+    if ((activeArchetypes || []).includes("plant")) {
+      const gains = beetGains(skills, skillTiers, { order: playerOrder, deck, segmentSize: SEGMENT_SIZE });
+      if (gains.length) {
+        const r = applyGrowth(newGrowth, deck, gains);
+        newGrowth = r.growth; deck = bloomAllIfFullGreen(skills, r.deck); growthTotal += r.total;
+      }
+    }
 
     // #226 Großmeister: kürzerer Lauf als Schwierigkeits-Hebel (maxCycles override, sonst C.MAX_CYCLES → byte-identisch).
     // Dev-Run (Test-Layout): state.maxCycles setzt die Rundenzahl eines einzelnen Laufs frei (20..100); null → Bestand.
@@ -1186,6 +1197,7 @@ export function resolveTrick(state, rng) {
     heat, // Feuer-Archetyp (#93 F1): Hitze-Substate (null solange kein Feuer-Skill aktiv)
     iceTemp: newIceTemp, // temporärer Wertbonus je card.id (Blitzfänger)
     brandPending: newBrandPending, brandActive: newBrandActive, forged: newForged, // Feuer: Brände (nächste/aktive Runde) + Schmiedewerte
+    tendrils: newTendrils, // Pflanze (§6.26): die berankten Gegnerkarten
     growth: newGrowth, // Pflanze (§6.2): Wachstum je Karte (grün/blühend liegen als Flag auf der Karte)
     shop, // hält nur noch die (inerten) Positionsanker (#229: Shop entfernt)
     lastTrick, phase,
