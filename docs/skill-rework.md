@@ -6253,7 +6253,17 @@ von vor dem Blühgewicht und damit veraltet). Kein Umbau, nur die Leiter.
 
 Die Beschränkung auf graue Karten fällt: **jede** Karte wächst bei einer Niederlage. Damit ist das heutige
 Episch-Extra („auch grüne Karten wachsen +1") verbraucht und wird ersetzt; die Leiter wird 1/2/3/4 statt
-1/2/3/3. Das Episch-Extra ist noch nicht entschieden — Entwürfe liegen dem Owner vor.
+1/2/3/3.
+
+**Episch (Owner: „1a"):**
+
+> Verliert eine Karte, wächst sie zusätzlich **+1 je Formation an ihrer Position**.
+
+Das nimmt die Größe, die das Passiv beim Sieg schon benutzt (`PLANT_GROWTH_PER_FORMATION`), und trifft die
+Formationsachse — laut §6.3 der stärkste Hebel der Fraktion und der einzige Ausgang, über den Wachstum auf einer
+nicht-siegenden Karte überhaupt zahlt. Kein neuer Begriff, keine neue Zahl. Verworfen: „blühende Karten wachsen
+doppelt" (zu nah an Jahresringe Episch, §7.26 B) und „zweimal in Folge verloren" (bester Charakter, aber ein
+neuer Zähler je Karte und die Fraktion hat sonst keine Serien-Achse).
 
 **Zum Auslöser, gegen die naheliegende Sorge:** Niederlage-Bedingungen sind bei Feuer und Blitz zweimal
 gestorben (§7.22, §7.24), weil dort die Siegquote über den Lauf steigt und die Niederlage verschwindet. Die
@@ -6274,6 +6284,12 @@ geht an beide Nachbarn.
 | --- | --- | --- | --- | --- |
 | heute | +1 | +2 | +3 | +4, zweite Nachbarn +1 |
 | **Vorschlag** | **+2** | **+3** | **+4** | **+5**, zweite Nachbarn +1 (unverändert) |
+
+#### Nicht angefasst (Owner: „alle so lassen")
+
+Drei Skills geben oder lesen Wachstum nebenbei und bleiben **unverändert**: Lücke (Episch +2 auf die
+übersprungenen Karten), Blütenlese (+1, Episch +2 auf alle Karten der rein grünen Formation) und Jahresringe,
+der als einziger Wachstum *liest* statt gibt — und der beste Skill der Fraktion ist (§6.18).
 
 #### Wachpunkt für den Schluss des Durchgangs
 
