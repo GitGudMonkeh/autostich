@@ -6399,6 +6399,62 @@ nicht nebenbei.
 
 ---
 
+### 6.27 Baseline vor dem Umbau: der Kaltstart war ein +12-%-Buff (2026-09-09, auf Ansage) — gemessen, nichts geändert
+
+**Owner: „jetzt messen wir."** Gemessen wurde der **heutige Stand** — aus §6.26 ist keine Zeile gebaut. Der Zweck
+ist das fehlende Vorher: die letzte gültige Referenz (§6.22, 1,08× Feuer) stammt vom 2026-09-07 und liegt damit
+**vor** dem Fraktions-Kaltstart (2026-09-08) und vor dem Eis-Umbau (§5.18–§5.23).
+
+Beides ohne Legendäre, 200 Läufe, Seeds 1–200:
+`SIM_SKILL_LEGENDARY_PER_SLOT=0 npm run sim -- --mode duel --arch … --runs 200`
+
+#### A · Gleicher Topf wie §6.22 (Feuer/Blitz/Pflanze) — der saubere Vergleich
+
+| Build | §6.22 (07.09.) | jetzt (09.09.) | Δ |
+| --- | --- | --- | --- |
+| Feuer mono | 7,75M | 7,87M | +1,6 % |
+| Blitz mono | 7,43M | 7,34M | −1,2 % |
+| **Pflanze mono** | **8,36M** | **9,39M** | **+12,3 %** |
+| Split über alle drei | 7,81M | 8,66M | +10,9 % |
+| Siegquote Pflanze | 53,3 % | 52,9 % | unverändert |
+
+**Feuer und Blitz reproduzieren auf ±1,6 %** — die Messung ist belastbar, und der Sprung der Pflanze ist echt.
+Er kommt vom **Kaltstart**: die zehn grünen Karten sind ab dem ersten Pflanzen-Pick grün, also zünden Spalier,
+Blütenlese, die Score-Skills und das Blühgewicht ab Durchlauf 1 statt ab Durchlauf 10–16. Die Siegquote bleibt
+unbewegt — grün gibt weiter keinen Kartenwert (§6.1), der Gewinn sitzt ganz im Score.
+
+**Pflanze ÷ Feuer: 1,08× → 1,19×.** Der Kaltstart wurde am 08.09. ohne Messung eingebaut; das ist hiermit
+nachgeholt.
+
+#### B · Die echte Welt (alle vier Fraktionen im Angebotstopf)
+
+`SKILL_OFFER_ARCHETYPES` enthält seit §5.4 alle vier — das ist der Topf, in dem wirklich gespielt wird:
+
+| Build | Median | Siegquote | Ø eigene Skills |
+| --- | --- | --- | --- |
+| Feuer mono | 7,15M | 66,6 % | 9,4 |
+| Blitz mono | 5,65M | 59,2 % | 9,6 |
+| **Pflanze mono** | **9,01M** | 55,1 % | 9,5 |
+| Eis mono | 7,37M | 57,7 % | 9,8 |
+| Split über alle vier | 5,69M | 57,2 % | je ~3,3 |
+
+**Pflanze ÷ Feuer: 1,26×.** Ein Nebenbefund, der für jede künftige Messung gilt: im Vier-Fraktionen-Topf bekommt
+ein Mono-Build rund **zwei Skills weniger** (9,5 statt 11,3), weil die Türen breiter streuen. Das trifft die
+Fraktionen ungleich — Blitz verliert 23 %, die Pflanze nur 4 %. Wer §6.22-Zahlen gegen Vier-Fraktionen-Zahlen
+hält, vergleicht zwei Welten.
+
+#### Was daraus für §6.26 folgt
+
+Der Durchgang bufft an sieben Stellen und nerft an einer — und die Fraktion liegt **vor** dem ersten Handgriff
+schon 19 bis 26 % über Feuer. Gebaut wie entworfen, steuert sie deutlich über.
+
+**Empfehlung: trotzdem bauen wie entworfen, danach mit dem Blühgewicht tarieren.** Der Grund steht in §6.21/§6.22:
+`PLANT_BLOOM_WEIGHT` ist der eine Regler, der die ganze Fraktion skaliert (5 → 3 brachte 10,49M → 8,36M, also
+×0,80). Die Einzelentwürfe sind auf ihre **Rolle** designt, nicht auf ihre Größe; sie nachträglich einzeln zu
+drücken, verwässert das Design und ist nicht messbar. Ein Regler ist es.
+
+---
+
 ## Änderungsprotokoll
 
 
