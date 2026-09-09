@@ -20,7 +20,7 @@
    ============================================================ */
 import { ANCHOR_FORM_FACTOR, FORMATION_CORE_FACTOR, PLANT_GREEN_FARBBLOCK_CAP,
   BAUMREIHE_FACTOR_SCALE, WURZELGEFLECHT_FACTOR_SCALE } from "./constants.js";
-import { P, plantParam, greenCount, hasBaumreihe, hasWurzelgeflecht } from "./factions/plant.js";
+import { P, plantParam, hasBaumreihe, hasWurzelgeflecht } from "./factions/plant.js";
 import { activeFamilyEntries, familyTierParam, allianceGroups } from "./families.js";
 import { architectFormSpec } from "./architect.js";
 
@@ -333,18 +333,10 @@ export function computeFormations(order, deck, roles = {}, _perks = [], skills =
         isJT = (k) => jokerTreppe.has(k) || wildJokers.has(k) || !!(af && af.jokerT.has(k)),
         isJF = (k) => jokerFarbblock.has(k) || wildJokers.has(k) || !!(af && af.jokerF.has(k)),
         isJX = (k) => jokerWechsel.has(k) || wildJokers.has(k) || !!(af && af.jokerX.has(k));
-  /* Überwucherung (Pflanze-Hebel, §6.8): ab `field` grünem Feld entstehen REIN GRÜNE Formationen mit `less` Karten
-     weniger — mindestens aber ab zwei Karten (ein Lauf aus einer Karte ist keine Formation). Gemischte Läufe bleiben
-     bei ihrer Mindestlänge. `minFor(base)` ist die Funktion, die markRuns/markTreppe/markWechsel am Ende prüfen. */
-  const uebLess = (() => {
-    const less = plantParam(skills, pTiers, P.UEBERWUCHERUNG, "less");
-    const field = plantParam(skills, pTiers, P.UEBERWUCHERUNG, "field");
-    if (!less || field == null || n === 0) return 0;
-    return greenCount(cards) / n >= field ? less : 0;
-  })();
-  const minFor = (base) => (uebLess
-    ? (members) => (members.every((p) => cards[p].green) ? Math.max(2, base - uebLess) : base)
-    : base);
+  /* (§6.26: Überwucherung ist mit der Verwachsung gestrichen — ihr Tor „ab `field` grünem Feld" lag hinter dem Ziel:
+     wer 80 % grün hat, bekommt Formationen ohnehin. Die Mindestlängen sind damit wieder für alle gleich; die
+     Verwachsung greift stattdessen den Überlappungsbonus an, unten am Faktor-Produkt.) */
+  const minFor = (base) => base;
 
   const out = Array.from({ length: n }, () => ({ mult: 1, baseMult: 1, afterglowFactor: 1, coreFactor: 1, formations: [] }));
   const add = (pos, type, ordinal, factor) => {
@@ -376,15 +368,12 @@ export function computeFormations(order, deck, roles = {}, _perks = [], skills =
   const farbSkip = (k) => !!(af && af.transparentFarb.has(k)); // Architekt Arkade: abgedeckte Karte unterbricht den Farbblock nicht (transparent)
   // #292: Farballianz IV hebt den Farbblock-Startfaktor (farbblockBonus, +0,20).
   const farbBase = FARBBLOCK_BASE + (eP("E_COLOR_ALLIANCE", "farbblockBonus", 0) || 0);
-  // Grün-Farbblock-Cap (v0.3): grüne (card.green) Karten deckeln ihre Ordinalzahl → ein voll-grünes Feld gibt keinen ×8-Riesenblock mehr.
-  const farbFactor = (pos, ord) => escalatingFactor(cards[pos].green ? Math.min(ord, PLANT_GREEN_FARBBLOCK_CAP) : ord, farbBase);
-  /* Lücke (Pflanze-Hebel, §6.8): ein Lauf aus GRÜNEN Karten darf `gaps` fremde Karten überspringen — der Haken ist
-     derselbe wie bei E_COLORBRIDGE, das Budget kommt oben drauf und nur, wenn der Lauf grün beginnt. Die
-     übersprungenen Positionen liegen als `gapped` auf dem Farbblock-Eintrag (Lücke Episch lässt sie wachsen). */
-  const lueckeGaps = plantParam(skills, pTiers, P.LUECKE, "gaps") || 0;
-  const suitGapFor = lueckeGaps
-    ? (start) => (cards[start].green ? { run: suitGap.run + lueckeGaps, seg: suitGap.seg + lueckeGaps } : suitGap)
-    : suitGap;
+  /* Grün-Farbblock-Cap (v0.3): grüne (card.green) Karten deckeln ihre Ordinalzahl → ein voll-grünes Feld gibt keinen
+     ×8-Riesenblock mehr. Dickicht (Pflanze, §6.26) HEBT diesen Deckel auf seine Stufe — nie darunter, damit ein
+     gehaltener Skill den Faktor niemals senkt. Aufgehoben wird er nicht: der Runaway-Schutz bleibt. */
+  const greenCap = Math.max(PLANT_GREEN_FARBBLOCK_CAP, plantParam(skills, pTiers, P.DICKICHT, "cap") || 0);
+  const farbFactor = (pos, ord) => escalatingFactor(cards[pos].green ? Math.min(ord, greenCap) : ord, farbBase);
+  const suitGapFor = suitGap;
   // onRun: Grenz-Bonus melden (noteCross) UND die echte Lauflänge auf jedem Farbblock-Eintrag ablegen
   // (Blätterdach #228 C2 zahlt „je Karte im Block" — braucht die Blockgröße, nicht nur das Ordinal an der Siegposition).
   markRuns(n, minFor(3), matchSuit, suitGapFor, canExtendSeg,
@@ -458,9 +447,13 @@ export function computeFormations(order, deck, roles = {}, _perks = [], skills =
 
   // Bonus das Faktor-Produkt zusätzlich (2 Formationen ×1,5 · 3 ×2 · 4 ×3). Gezählt werden ALLE
   // Mitgliedschaften (auch Faktor-1-Läufe) → deckt sich mit der Rahmen-Anzahl im UI.
+  // Verwachsung (Pflanze, §6.26): hebt den Überlappungsbonus um einen ABSOLUTEN Betrag — der Zwei-Formations-Sieg
+  // gewinnt damit relativ am meisten (×1,5 → ×1,75 sind +17 %, ×3 → ×3,25 nur +8 %), und dort liegen 38 % der Siege.
+  // Prozentual würde die Spitze aufgeblasen, in der die Konzentration der Fraktion ohnehin sitzt (§6.22 C).
+  const overlapPlus = plantParam(skills, pTiers, P.VERWACHSUNG, "bonus") || 0;
   for (const p of out) {
     const c = Math.min(p.formations.length, 4);
-    if (c >= 2) p.mult *= OVERLAP_BONUS[c];
+    if (c >= 2) p.mult *= OVERLAP_BONUS[c] + overlapPlus;
   }
 
   // #179 E_SEGMENT IV Grenz-Bonus: Karten, die zu ≥1 segmentüberschreitenden Formation gehören, erhalten zusätzlich
@@ -555,4 +548,20 @@ export function summarizeFormations(perPosition) {
     if (p.mult > maxMult) maxMult = p.mult;
   }
   return { count, maxMult };
+}
+
+/* GEBAUTE Formationen einer Aufstellung — die Bemessungsgrundlage der Münz-Einnahme
+   (docs/muenz-oekonomie.md §2.2). Zwei Unterschiede zu summarizeFormations, beide notwendig:
+
+   1. Nur die VIER echten Typen. Im selben Array liegen `formationskern` (Architekt-Gebäude) und
+      `anker` (Positionsanker) — die sind keine gebaute Formation. Ungefiltert zählt die Einnahme
+      Architektur mit und liegt gemessen rund ein Drittel zu hoch (Ø 61 Paare gegen Ø 18 echte).
+   2. `ordinal === 1` zählt jede Formation EINMAL, nicht je Position. Gemessen tragen 3 Formationen
+      auf einer Position den Median — ohne diese Regel wären es 40×3 statt 18. */
+export function countBuiltFormations(perPosition) {
+  let n = 0;
+  for (const p of perPosition || []) {
+    for (const f of p.formations || []) if (f.ordinal === 1 && FORMATION_TYPES.includes(f.type)) n += 1;
+  }
+  return n;
 }

@@ -1,7 +1,7 @@
 import { useState, useRef, useMemo, useEffect } from "react";
 import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import { PANEL_BG, phaseCard, phasePanel, PhaseHairline, PHASE_ACCENTS } from "./modalStyle.jsx";
-import { summarizeFormations, SEGMENT_SIZE, openBorderInfo } from "../game/formations.js";
+import { summarizeFormations, countBuiltFormations, SEGMENT_SIZE, openBorderInfo } from "../game/formations.js";
 import { allianceGroups } from "../game/families.js";
 import { architectCoverFor, structLitPosOf, distrLitPosOf } from "./architectCover.js";
 import { CardGrid } from "./CardGrid.jsx";
@@ -15,9 +15,9 @@ import { haptics } from "./haptics.js";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { skillDef } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
 import { t } from "../i18n/index.js";
-import { energyBuy } from "../game/coins.js";  // Münz-Ökonomie §3.2: Preis und Vorrat — dieselbe Quelle wie der Reducer
+import { energyBuy, unspentEnergyCoins, coinsForFormations } from "../game/coins.js";  // Münz-Ökonomie §3.2 Preis und Vorrat · §2.3 was übrige Energie einbringt · §2.2 was die Aufstellung zahlt — dieselbe Quelle wie der Reducer
 import { P as PLANT_S } from "../game/factions/plant.js"; // Skill-ids der Pflanze (Spalier-Zeile)
-import { CoinAmount } from "./CoinMark.jsx";
+import { CoinAmount, CoinReward } from "./CoinMark.jsx"; // §2.3: was die übrige Energie einbringt
 
 const GOLD = "#d4a63a"; // #201.2: einheitliche Bestätigen-/Aktionsfarbe
 // Summe aller Formations-Stärken (Σ mult−1 über alle Positionen) — Basis für das reaktive Delta (#95.6).
@@ -122,6 +122,12 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, onBu
   };
 
   const { count } = summarizeFormations(formations);
+  /* §2.2: was diese Aufstellung am Durchlaufende auszahlt — live, mit jedem Tausch. Bewusst über
+     countBuiltFormations und nicht über `count` daneben: der zählt auch Formationskerne und Anker mit,
+     die keine gebaute Formation sind und nicht zahlen. Gemessen gehen die beiden Zahlen in einem Drittel
+     der Aufstellungen auseinander (Ø 22,2 angezeigt gegen Ø 18,8 bezahlt) — die Münzen müssen der
+     Rechnung des Reducers folgen, nicht der Zahl, neben der sie stehen. */
+  const placementCoins = coinsForFormations(countBuiltFormations(formations));
   const hasSwaps = (formationSwaps || []).length > 0;
   // #201.4: Karten, die in einem Tausch dieser Phase beteiligt waren, dezent ausgrauen (folgt der KARTE via id,
   // nicht dem Slot → übersteht Weg-und-zurück-Tausch; Undo/Reset ziehen die ids automatisch mit).
@@ -218,7 +224,11 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, onBu
           </div>
           <div className="flex flex-col justify-center gap-1 px-4 py-2.5 text-right border-l" style={{ borderColor: "rgba(90,184,122,.30)" }}>
             <span className="text-meta-1 uppercase tracking-wide font-bold" style={{ color: "#6d7288" }}>{t("form.count")}</span>
-            <span className="ty-num leading-none" style={{ fontVariantNumeric: "tabular-nums", fontSize: 19 }}>{count}</span>
+            <span className="inline-flex items-center justify-end gap-1.5">
+              <span className="ty-num leading-none" style={{ fontVariantNumeric: "tabular-nums", fontSize: 19 }}>{count}</span>
+              {/* §2.2: was die Aufstellung zahlt, neben der Zahl, die man beim Tauschen ohnehin liest. */}
+              <CoinReward n={placementCoins} />
+            </span>
           </div>
         </div>
         {/* Sticky-Aktionsleiste (#161 FB-4): Aktionen bleiben oben erreichbar — bei 8 Segmenten kein Scrollen nötig.
@@ -235,6 +245,11 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, onBu
           <div className="flex items-center gap-2">
             <span className="text-meta-1 uppercase tracking-wide font-bold" style={{ color: "#6d7288" }}>{t("form.energy")}</span>
             <span className="ty-num font-bold" style={{ fontVariantNumeric: "tabular-nums", fontSize: 18, color: formationEnergy > 0 ? "#5ab87a" : "#6d7288" }}>{formationEnergy}</span>
+            {/* §2.3: was die ÜBRIGE Energie beim Bestätigen einbringt — sie zählt mit jedem Tausch herunter,
+                und der Spieler sieht den Preis eines Tauschs, während er ihn erwägt. GEKAUFTE Energie ist
+                herausgerechnet (unspentEnergyCoins): ein Kauf hebt die Zahl nicht, sonst wäre er ein Rabatt
+                auf die eigene Erstattung. */}
+            <CoinReward n={unspentEnergyCoins(formationEnergy, state.coinEnergy)} />
             {!energy.soldOut && (
               <button onClick={energy.can ? onBuyEnergy : undefined} disabled={!energy.can}
                 className="ml-auto as-edge-thin px-2.5 py-1.5 rounded-lg text-body-5 font-bold inline-flex items-center gap-1.5 transition-all disabled:cursor-not-allowed"

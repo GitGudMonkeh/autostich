@@ -17,6 +17,7 @@ import { useState } from "react";
 import { overlayPortal } from "./overlayPortal.jsx";
 import { phaseCard, PhaseHairline, PHASE_ACCENTS } from "./modalStyle.jsx";
 import { CoinAmount } from "./CoinMark.jsx";
+import { BuyConfirm } from "./BuyConfirm.jsx"; // §3.5/§3.6: Aufwerten fragt IMMER nach — die Regel gilt je Bildschirm, nicht je Preis
 import { tierTextDiff } from "./SkillUpgrade.jsx";   // eine Fassung des Stufen-Diffs, nicht zwei
 import { GlossaryText } from "./Glossary.jsx";
 import { tierMeta, romanOf, familyTierOf } from "../game/rarity.js";
@@ -67,7 +68,7 @@ function UpgradeRow({ familyId, state, coins, onUpgrade, justRaised }) {
   const asks = !buy.maxed && needsTarget(fam, state.roles, familyId, buy.next);
   return (
     <button type="button" disabled={buy.maxed || !buy.can}
-      onClick={buy.maxed || !buy.can ? undefined : () => onUpgrade(familyId)}
+      onClick={buy.maxed || !buy.can ? undefined : () => onUpgrade({ id: familyId, name: fam.name, price: buy.price })}
       className="pu-row as-edge-card text-left rounded-xl p-3 flex flex-col gap-2 transition-all disabled:cursor-not-allowed"
       /* Drei Zustände, drei Helligkeiten — wie beim Skill: bezahlbar (voll), zu teuer (gedämpft, der Kauf
          ist zu sehen aber nicht auszulösen), höchste Stufe (am blassesten). */
@@ -109,11 +110,14 @@ function UpgradeRow({ familyId, state, coins, onUpgrade, justRaised }) {
 
 export function PerkUpgrade({ state = {}, onUpgrade, onClose }) {
   const [justRaised, setJustRaised] = useState(null);
+  // Der Kauf fragt IMMER nach (BuyConfirm) — dieselbe Regel wie beim Skill-Zwilling: je Bildschirm,
+  // nicht je Preis. `ask` ist die Zeile, für die gerade gefragt wird.
+  const [ask, setAsk] = useState(null);
   const coins = state.coins || 0;
   // Nur GEHALTENE Familien (Rang ≥ 1). Flache Perks (PERK_DEFS) tragen keine Stufe und stehen deshalb gar
   // nicht erst in der Liste — ein ausgegrauter Eintrag wäre eine Auskunft über eine Leiter, auf der sie nie standen.
   const ids = Object.keys(state.familyTiers || {}).filter((id) => (state.familyTiers[id] || 0) >= 1 && familyDef(id));
-  const raise = (id) => { setJustRaised(id); onUpgrade?.(id); };
+  const raise = () => { setJustRaised(ask.id); onUpgrade?.(ask.id); setAsk(null); };
   return overlayPortal((
     <div className="fixed inset-0 overlay-root z-30 flex items-center justify-center p-4"
       style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}>
@@ -129,13 +133,17 @@ export function PerkUpgrade({ state = {}, onUpgrade, onClose }) {
           ? <div className="text-body-5 opacity-60 text-center py-6">{t("upgrade.perk.empty")}</div>
           : <div className="grid gap-2">
               {ids.map((id) => (
-                <UpgradeRow key={id} familyId={id} state={state} coins={coins} onUpgrade={raise} justRaised={justRaised} />
+                <UpgradeRow key={id} familyId={id} state={state} coins={coins} onUpgrade={setAsk} justRaised={justRaised} />
               ))}
             </div>}
         <button onClick={onClose} className="as-edge-neutral w-full mt-4 rounded-lg py-2 text-body-lg-5 font-bold">
           {t("upgrade.perk.back")}
         </button>
       </div>
+      {ask && (
+        <BuyConfirm title={t("upgrade.confirm.title")} name={ask.name} sub={t("upgrade.confirm.sub")}
+          amount={ask.price} have={coins} onConfirm={raise} onCancel={() => setAsk(null)} />
+      )}
     </div>
   ));
 }

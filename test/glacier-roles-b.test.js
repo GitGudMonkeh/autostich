@@ -80,7 +80,9 @@ describe("Dauerfrost — Boden-Reserve nach Abstand zum Gletscher (#386 firnStac
   it("im Durchlauf zieht der Gletscher die frisch gefrostete Reserve zu sich — Dauerfrost speist ihn ohne Eiszeit", () => {
     const glacierLocked = falses(); glacierLocked[0] = true;
     const s = runCycle(scen({ oppDeck: oppOf(99), glacierLocked, glacierRoles: [ROLES.DAUERFROST] })); // alles verlieren → nur Boden-Frost
-    expect(s.firnStack[39]).toBe(EIS.dauerfrost[NORMAL].far - FIRN_DRAW); // geladen und sofort angezapft
+    // §5.27: der Zug-Deckel ist gefallen — das Feld wird geladen und im selben Durchlauf KOMPLETT leergezogen.
+    const far = EIS.dauerfrost[NORMAL].far;
+    expect(s.firnStack[39]).toBe(Number.isFinite(FIRN_DRAW) ? Math.max(0, far - FIRN_DRAW) : 0);
     expect(s.glacierMass[0]).toBeGreaterThan(EWIGER_FROST);               // mehr als der Passiv-Tick: der Zug ist angekommen
   });
   it("ohne Dauerfrost bleiben ungefrorene Felder (Reserve) leer", () => {

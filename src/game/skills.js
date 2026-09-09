@@ -82,22 +82,34 @@ export const FEUER_TIERS = FEUER;
    Das Modul factions/plant.js liest sie über `plantParam`; die vier Hebel liest zusätzlich formations.js. */
 const PFLANZE = {
   // Wachstum
-  aussaat:       [{ growth: 1 }, { growth: 2 }, { growth: 3 }, { growth: 4, second: 1 }],
-  ranken:        [{ growth: 5 }, { growth: 8 }, { growth: 12 }, { growth: 16, chain: true }], // Episch: der einzige Dominoeffekt der Fraktion
-  setzlingsbeet: [{ growth: 8, cards: 1 }, { growth: 12, cards: 1 }, { growth: 16, cards: 1 }, { growth: 16, cards: 2 }],
-  lichtung:      [{ extra: 1 }, { extra: 2 }, { extra: 3 }, { extra: 3, perFormation: true }],
-  halm:          [{ growth: 1 }, { growth: 2 }, { growth: 3 }, { growth: 3, greenToo: 1 }],
+  aussaat:       [{ growth: 2 }, { growth: 3 }, { growth: 4 }, { growth: 5, second: 1 }], // §6.26: eine Stufe hoch — der einzige Wachstums-Skill, der schon zahlte, bekommt den kleinsten Schub
+  // §6.26: Ranken greift ins Gegnerdeck (Vorlage: der gestrichene Ausläufer). Die Ernte geht an die SIEGKARTE — der
+  // Grund, aus dem der Skill vorher tot war: Wachstum auf Karten, die nicht gewinnen, zahlt nicht.
+  ranken:        [{ growth: 2 }, { growth: 3 }, { growth: 4 }, { growth: 6, neighbors: true }],
+  setzlingsbeet: [{ growth: 2 }, { growth: 3 }, { growth: 4 }, { growth: 4, allSegments: true }], // §6.26: aus dem einmaligen Kaltstart wird ein Ort, der jeden Durchlauf wächst
+
+  lichtung:      [{ extra: 2 }, { extra: 3 }, { extra: 4 }, { extra: 4, perFormation: true }], // §6.26: eine Stufe hoch (mechanisch richtig gebaut, maß nur flach)
+  halm:          [{ growth: 1 }, { growth: 2 }, { growth: 3 }, { growth: 4, perFormation: true }], // §6.26: ohne Grau-Schranke — jede Karte wächst; Episch nimmt das Formations-Wachstum eines Siegs mit
   // Hebel — sie ändern, was als Formation erkannt wird (formations.js), und addieren keinen Score
   spalier:       [{ borders: 1 }, { borders: 2 }, { borders: 3 }, { borders: 7 }],
   wildwuchs:     [{ jokers: 1 }, { jokers: 2 }, { jokers: 3 }, { jokers: Infinity }],
-  luecke:        [{ gaps: 1 }, { gaps: 2 }, { gaps: 3 }, { gaps: 3, growth: 2 }],
-  ueberwucherung:[{ field: 0.8, less: 1 }, { field: 0.65, less: 1 }, { field: 0.5, less: 1 }, { field: 0.35, less: 2 }],
+  // §6.26: Dickicht ersetzt Lücke auf SK_PLANT_15. Der grüne Farbblock ist der einzige Formationstyp, den die Pflanze
+  // selbst erzeugt (grün IST eine Farbe) — und ausgerechnet sein Faktor ist für Grün bei PLANT_GREEN_FARBBLOCK_CAP
+  // eingefroren. `mult` ist der Faktor, den `cap` ergibt; ein Guard hält beide gegen escalatingFactor (kein Drift).
+  dickicht:      [{ cap: 4, mult: 1.55 }, { cap: 5, mult: 1.75 }, { cap: 6, mult: 1.95 }, { cap: 8, mult: 2.35 }],
+  // §6.26: Verwachsung ersetzt Überwucherung auf SK_PLANT_14 — deren Tor („ab 80 % grünem Feld") lag hinter dem Ziel.
+  // Der Zuschlag ist ABSOLUT: der Zwei-Formations-Sieg gewinnt am meisten, und dort liegen 38 % der Siege (§6.21 C).
+  verwachsung:   [{ bonus: 0.25 }, { bonus: 0.5 }, { bonus: 0.75 }, { bonus: 1 }],
   // Score aus grünen Formationen — je Formationstyp einer, dazu die Tiefe der einzelnen Karte
   blaetterdach:  [{ score: 10 }, { score: 15 }, { score: 20 }, { score: 25 }],
   rankgeruest:   [{ score: 30 }, { score: 45 }, { score: 60 }, { score: 80 }],
-  hecke:         [{ score: 30 }, { score: 45 }, { score: 60 }, { score: 80 }],
+  // §6.26: +33 % gegen Rankgerüst — beide Leitern waren nach Formationslänge gleich, aber eine grüne Wiederholung
+  // entsteht seltener als eine grüne Treppe, und der Unterschied ging voll auf die Hecke (§6.17 B).
+  hecke:         [{ score: 40 }, { score: 60 }, { score: 80 }, { score: 105 }],
   windung:       [{ score: 35 }, { score: 50 }, { score: 70 }, { score: 90 }],
-  jahresringe:   [{ per: 10, score: 20 }, { per: 10, score: 30 }, { per: 10, score: 40 }, { per: 10, score: 50, overDouble: true }],
+  // §6.26: Teiler 10 → 15 (−33 %). Er liest Wachstum direkt, also hebt ihn jeder Wachstums-Buff dieser Runde
+  // kostenlos mit; die Skala wird gröber, weil Wachstum reichlicher wird. Die Sätze bleiben.
+  jahresringe:   [{ per: 15, score: 20 }, { per: 15, score: 30 }, { per: 15, score: 40 }, { per: 15, score: 50, overDouble: true }],
   // Kombination
   bluetenlese:   [{ score: 40, growth: 1 }, { score: 60, growth: 1 }, { score: 80, growth: 1 }, { score: 100, growth: 2 }],
 };
@@ -305,22 +317,22 @@ export const SKILL_DEFS = {
   SK_PLANT_05: { id: "SK_PLANT_05", name: "Aussaat", archetype: "plant", keywords: ["growth", "green"], tiers: PFLANZE.aussaat,
     ...tiered(PFLANZE.aussaat, (r) => `Gewinnt eine grüne Karte, wachsen beide Nachbarn +${r.growth}.${r.second ? ` Auch die zweiten Nachbarn wachsen +${r.second}.` : ""}`) },
   SK_PLANT_09: { id: "SK_PLANT_09", name: "Ranken", archetype: "plant", keywords: ["growth", "green"], tiers: PFLANZE.ranken,
-    ...tiered(PFLANZE.ranken, (r) => `Wird eine Karte grün, wachsen ihre grauen Nachbarn +${r.growth}.${r.chain ? ` Wird eine Karte dadurch grün, wachsen ihre grauen Nachbarn ebenfalls +${r.growth}.` : ""}`) },
+    ...tiered(PFLANZE.ranken, (r) => `Gewinnt eine grüne Karte, rankt sie in die geschlagene Gegnerkarte. Besiegst du eine berankte Gegnerkarte, erntest du sie: +${r.growth} Wachstum für deine Siegkarte.${r.neighbors ? " Beim Ernten ranken ihre Nachbarn mit." : ""}`) },
   SK_PLANT_07: { id: "SK_PLANT_07", name: "Setzlingsbeet", archetype: "plant", keywords: ["growth"], tiers: PFLANZE.setzlingsbeet,
-    ...tiered(PFLANZE.setzlingsbeet, (r) => `${r.cards === 1 ? "Die niedrigste Karte je Segment startet" : `Die ${r.cards} niedrigsten Karten je Segment starten`} mit +${r.growth} Wachstum.`) },
+    ...tiered(PFLANZE.setzlingsbeet, (r) => `Die Karten ${r.allSegments ? "jedes Segments" : "deines grünsten Segments"} wachsen am Ende eines Durchlaufs +${r.growth}.`) },
   SK_PLANT_12: { id: "SK_PLANT_12", name: "Lichtung", archetype: "plant", keywords: ["growth", "formation"], tiers: PFLANZE.lichtung,
     ...tiered(PFLANZE.lichtung, (r) => `Ein Sieg in einer Formation gibt +${r.extra} Wachstum zusätzlich${r.perFormation ? ", je Formation an der Siegposition" : ""}.`) },
   SK_PLANT_08: { id: "SK_PLANT_08", name: "Zäher Halm", archetype: "plant", keywords: ["growth"], tiers: PFLANZE.halm,
-    ...tiered(PFLANZE.halm, (r) => `Graue Karten wachsen bei einer Niederlage +${r.growth}.${r.greenToo ? ` Auch grüne Karten wachsen +${r.greenToo}.` : ""}`) },
+    ...tiered(PFLANZE.halm, (r) => `Verliert eine Karte, wächst sie +${r.growth}.${r.perFormation ? ` Zusätzlich +${C.PLANT_GROWTH_PER_FORMATION} je Formation an ihrer Position.` : ""}`) },
   // Hebel — sie ändern, was als Formation erkannt wird, und addieren keinen Score
   SK_PLANT_03: { id: "SK_PLANT_03", name: "Spalier", archetype: "plant", keywords: ["green", "formation"], tiers: PFLANZE.spalier,
     ...tiered(PFLANZE.spalier, (r) => `${r.borders === 1 ? "Die Segmentgrenze mit den meisten grünen Karten daneben ist offen" : r.borders >= 7 ? "Alle Segmentgrenzen mit grünen Karten daneben sind offen" : `Die ${r.borders} Segmentgrenzen mit den meisten grünen Karten daneben sind offen`}: Formationen laufen dort über das Segment hinaus.`) },
   SK_PLANT_06: { id: "SK_PLANT_06", name: "Wildwuchs", archetype: "plant", keywords: ["bloom", "formation"], tiers: PFLANZE.wildwuchs,
     ...tiered(PFLANZE.wildwuchs, (r) => `${r.jokers === 1 ? "Deine am weitesten gewachsene blühende Karte zählt" : Number.isFinite(r.jokers) ? `Deine ${r.jokers} am weitesten gewachsenen blühenden Karten zählen` : "Alle blühenden Karten zählen"} bei der Formationserkennung als Joker.`) },
-  SK_PLANT_15: { id: "SK_PLANT_15", name: "Lücke", archetype: "plant", keywords: ["green", "formation"], tiers: PFLANZE.luecke,
-    ...tiered(PFLANZE.luecke, (r) => `Ein Lauf aus grünen Karten darf ${r.gaps === 1 ? "eine fremde Karte" : `${de1(r.gaps)} fremde Karten`} überspringen.${r.growth ? ` Die übersprungenen Karten wachsen +${r.growth}.` : ""}`) },
-  SK_PLANT_14: { id: "SK_PLANT_14", name: "Überwucherung", archetype: "plant", keywords: ["green", "formation"], tiers: PFLANZE.ueberwucherung,
-    ...tiered(PFLANZE.ueberwucherung, (r) => `Ab ${pct(r.field)} % grünem Feld entstehen grüne Formationen mit ${r.less === 1 ? "einer Karte" : `${de1(r.less)} Karten`} weniger, mindestens aber ab zwei Karten.`) },
+  SK_PLANT_15: { id: "SK_PLANT_15", name: "Dickicht", archetype: "plant", keywords: ["green", "formation"], tiers: PFLANZE.dickicht,
+    ...tiered(PFLANZE.dickicht, (r) => `Grüne Farbblöcke zählen bis ×${de(r.mult)}.`) },
+  SK_PLANT_14: { id: "SK_PLANT_14", name: "Verwachsung", archetype: "plant", keywords: ["formation"], tiers: PFLANZE.verwachsung,
+    ...tiered(PFLANZE.verwachsung, (r) => `Mehrere Formationen an deiner Siegposition: ihr Überlappungsbonus ist um ${de(r.bonus)} höher.`) },
   // Score aus grünen Formationen — je Formationstyp einer, dazu die Tiefe der einzelnen Karte
   SK_PLANT_13: { id: "SK_PLANT_13", name: "Blätterdach", archetype: "plant", keywords: ["green", "formation", "score"], tiers: PFLANZE.blaetterdach,
     ...tiered(PFLANZE.blaetterdach, (r) => `Ein Sieg in einem grünen Farbblock gibt +${r.score} Basis-Score je grüner Karte darin.`) },

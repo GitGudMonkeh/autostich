@@ -31,7 +31,10 @@ export const TIER_MULT = [0, 1, 1.5, 2.2, 3.2]; // überlineare Wucht je Stufe (
 // Reihen-Bau, das hebt den Boden der Fraktion (1,00× → 1,16×). Gemessen 64 → Median-Parität 1,00×.
 // §5.25 nachtariert: 64 → 60. Das Einfrieren nimmt jetzt die höchsten Gegnerkarten; die Stichquote steigt 59,6 → 62 %,
 // und ein gewonnener Gletscher-Stich zahlt den vollen Sieg-Stack (glacierWinMult). Gemessen 60 → Parität 1,01×.
-export const BURST_SCALE = envNum("SIM_GLACIER_BURST_SCALE", 60);
+// §5.27 nachtariert: 60 → 30. Der offene Zug (s. FIRN_DRAW) verdoppelt das Masse-Einkommen der Fraktion — jeder Punkt
+// Schnee kommt jetzt an, statt mit 1 je Durchlauf zu tröpfeln. Ohne Nachtarierung stand Eis bei 1,97× Feuer.
+// (Gemessen 28 → 0,97×; der Owner nimmt die rundere 30, die im Band bleibt.)
+export const BURST_SCALE = envNum("SIM_GLACIER_BURST_SCALE", 30);
 // Große Lawine (§5.8, Owner): feuert nicht mehr einmal am Laufende, sondern im TAKT — jeden GROSSE_LAWINE_EVERY-ten
 // Durchlauf bricht das ganze Feld auf einen Schlag, jeder Gletscher mit der Wucht der höchsten Schwelle. Damit ist sie
 // den ganzen Lauf über sichtbar, und sie synchronisiert das Feld: Kaskade, Kollision und Gletschersturz greifen
@@ -81,7 +84,14 @@ export const BURST_AT = THRESHOLDS[2];          // natürliche Berst-Schwelle (1
 export const FIRN_REFILL_TARGET = BURST_AT;     // Runden-Start-Nachschub-Ziel: volle Masse (12)
 // §5.18: der Zug ist FUNDAMENT, nicht mehr Eiszeit-Mechanik — jedes offene Feld gibt so viel Reserve an den nächsten
 // Gletscher ab. Ohne ihn zahlte Schnee nur, wenn genau dieses Feld später einfriert (gemessen 65 % totes Kapital, §5.17).
-export const FIRN_DRAW = envNum("SIM_GLACIER_FIRN_DRAW", 1);
+// §5.26 gemessen (Sweep 1 / 2 / 4 / alles): die 1 bremst NICHT die Firn-Skills — Schneetreiben blieb auf jeder Stufe
+// negativ, Dauerfrost erreichte bestenfalls null. Was der offene Zug hebt, ist die EISZEIT (+59 % → +153 %), die jedes
+// freie Feld flutet und dann leersaugt.
+// §5.27 (Owner): der Deckel FÄLLT trotzdem — „es ist scheiße, dass wir mehr generieren als nutzen können". Jedes Feld
+// gibt seine ganze Reserve ab; nichts liegt mehr ungenutzt herum. Dass die Eiszeit dadurch aus dem Band läuft, ist
+// nach dem Grundsatz des Owners IHR Problem: Skills haben Vorrang, Legendäre werden um sie herum tariert.
+// Der Regler bleibt für Diagnose-Sweeps (endlicher Wert = Deckel je Feld und Durchlauf, 0 = Zug ganz aus).
+export const FIRN_DRAW = envNum("SIM_GLACIER_FIRN_DRAW", Infinity);
 // Deckel auf den LIEGENBLEIBENDEN Überschuss (nicht auf die Bruchmasse — der Deckel je Einzelbruch bleibt gestrichen,
 // §5.5). Ohne ihn hat die Masse gar keine Decke mehr: ein ausgebautes Cluster gewinnt je Durchlauf mehr als der Bruch
 // abzieht, und die Masse steigt unbegrenzt. 0 = kein Deckel.
@@ -274,7 +284,10 @@ export function firnDrawTick(firn, mass, locked, draw = FIRN_DRAW) {
 // Eiszeit (Legendär, docs §7) — §5.15, Owner-Variante a: sie friert NICHTS mehr ein, sondern flutet die Boden-Reserve
 // jedes ungefrorenen Felds. Damit will sie freie Felder, wo das Ewige Schild gefrorene will (§5.14: gemeinsam froren
 // sie sonst das ganze Brett ein, Faktor 106). §5.18: der Zug oben ist nicht mehr ihrer — sie füttert ihn nur am stärksten.
-export const EISZEIT_FLOOD = envNum("SIM_GLACIER_EISZEIT_FLOOD", 3);
+// §5.27 (Owner-Grundsatz „Skills haben Vorrang vor Legendären"): 3 → 1. Die Eiszeit flutet JEDES freie Feld und war
+// damit der größte Gewinner des offenen Zugs — gemessen trug sie den Schwanz, nicht den Median (Mean 4,08× → 2,76×
+// Feuer allein durch diese Zahl, Median unverändert 1,9×). Sie zieht nach, damit die Skills den offenen Zug behalten.
+export const EISZEIT_FLOOD = envNum("SIM_GLACIER_EISZEIT_FLOOD", 1);
 // §5.16: ihre zweite Auszahlung — der SPIEGEL der Dichte-Kaskade. Die Kaskade multipliziert den Bruch mit den
 // GEFRORENEN Nachbarn (KASKADE_PER_NEIGHBOR), die Eiszeit mit den OFFENEN.
 // Sweep §5.16: 0,25 → −4 %, 0,5 → −1 %, 1 → +13 %, 2 → +30 %. Bei 2 sitzt die Eiszeit im Band der übrigen elf.

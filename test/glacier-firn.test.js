@@ -69,10 +69,14 @@ describe("#386 Firn wird nie unter einen Gletscher gesät", () => {
     const glacierLocked = falses(); glacierLocked[0] = true;
     const s = runCycle(scen({ oppDeck: oppOf(99), glacierLocked, glacierRoles: [ROLES.DAUERFROST] }));
     expect(s.firnStack[0]).toBe(0);              // Gletscher-Feld bekommt keinen Firn
-    // §5.18: im selben Durchlauf gibt jedes offene Feld FIRN_DRAW an den nächsten Gletscher ab — das ferne Feld
-    // wird also geladen UND sofort angezapft. Beides zusammen ist genau der Punkt der Kopplung.
-    expect(s.firnStack[39]).toBe(EIS.dauerfrost[0].far - FIRN_DRAW);
-    expect(s.glacierMass[0]).toBeGreaterThan(0); // und die Reserve kommt beim Gletscher an
+    /* §5.18: im selben Durchlauf gibt jedes offene Feld an den nächsten Gletscher ab — das ferne Feld wird also
+       geladen UND sofort angezapft. Beides zusammen ist genau der Punkt der Kopplung.
+       §5.27 (Owner): der Zug-Deckel ist gefallen, das Feld gibt seine GANZE Reserve ab und bleibt leer zurück —
+       „es ist scheiße, dass wir mehr generieren als nutzen können". Der Wächter hält beide Seiten fest: das Feld
+       ist leer, und exakt die gesäte Menge ist beim Gletscher angekommen. */
+    const far = EIS.dauerfrost[0].far;
+    expect(s.firnStack[39]).toBe(Number.isFinite(FIRN_DRAW) ? Math.max(0, far - FIRN_DRAW) : 0);
+    expect(s.glacierMass[0]).toBeGreaterThanOrEqual(far); // die ganze ferne Reserve kommt beim Gletscher an
   });
 
   it("Schneetreiben sät nichts, wenn alle Nachbarn Gletscher sind (kein Firn unter Eis)", () => {
