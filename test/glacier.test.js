@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   neighbors4, precomputeGlacier, ewigerFrostTick,
-  TOP, EWIGER_FROST, RESET_TO,
+  TOP, EWIGER_FROST, BURST_AT,
 } from "../src/game/glacier.js";
 import { N_POS, posOf } from "../src/game/architect.js";
 
@@ -35,11 +35,11 @@ describe("precomputeGlacier — Snapshot", () => {
     expect(resetMass[10]).toBe(3);
   });
 
-  it("ab Berst-Schwelle: bricht, zahlt aus, kalbt zurück auf RESET_TO", () => {
-    const { payout, resetMass, breaks } = precomputeGlacier(withMass([[10, 12]]), lockedSet(10));
+  it("ab Berst-Schwelle: bricht, zahlt aus, kalbt genau die Schwelle ab", () => {
+    const { payout, resetMass, breaks } = precomputeGlacier(withMass([[10, BURST_AT]]), lockedSet(10));
     expect(breaks).toHaveLength(1);
     expect(payout[10]).toBeGreaterThan(0);
-    expect(resetMass[10]).toBe(RESET_TO); // abgekalbt (baut wieder von unten auf)
+    expect(resetMass[10]).toBe(0); // genau auf der Schwelle: Masse − BURST_AT = 0
   });
 
   it("nicht-gefrorene Felder brechen nie, auch mit Masse", () => {
@@ -65,10 +65,20 @@ describe("precomputeGlacier — Snapshot", () => {
     expect(at.payout[10]).toBeGreaterThan(0);
   });
 
-  it("Überlauf: Masse über der höchsten Stufe fließt als Payout, danach abgekalbt", () => {
-    const { payout, resetMass } = precomputeGlacier(withMass([[10, TOP + 6]]), lockedSet(10));
-    expect(payout[10]).toBeGreaterThanOrEqual(6);        // mind. der Überlauf
-    expect(resetMass[10]).toBe(RESET_TO);                // abgekalbt, nicht 18
+  /* §5.18: der Überlauf-Score ist gestorben, der ÜBERSCHUSS bleibt liegen. Beide Hälften der Regel stehen hier —
+     die Masse über der Berst-Schwelle geht in die Wucht UND trägt in den nächsten Durchlauf. */
+  it("Überschuss: Masse über der Berst-Schwelle bleibt liegen und zählt in der Wucht mit", () => {
+    const knapp = precomputeGlacier(withMass([[10, BURST_AT]]), lockedSet(10));
+    const drueber = precomputeGlacier(withMass([[10, BURST_AT + 6]]), lockedSet(10));
+    expect(drueber.resetMass[10]).toBe(6);                                  // genau der Überschuss bleibt
+    expect(drueber.payout[10]).toBeGreaterThan(knapp.payout[10]);           // und er hat mitgeschlagen
+  });
+
+  it("die vierte Schwelle greift: ab TOP birst derselbe Gletscher auf einer höheren Stufe", () => {
+    const dritte = precomputeGlacier(withMass([[10, TOP - 1]]), lockedSet(10));
+    const vierte = precomputeGlacier(withMass([[10, TOP]]), lockedSet(10));
+    expect(dritte.breaks[0].tier).toBe(3);
+    expect(vierte.breaks[0].tier).toBe(4);
   });
 
   it("Immutabilität: Eingabe-Array wird nicht mutiert", () => {

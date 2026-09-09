@@ -4565,6 +4565,481 @@ zu Dauerfrost, nicht zur Eiszeit.
 Die Trennung hält, und diesmal auf gesunder Basis: die Eiszeit allein ist +3,3M wert, nicht mehr nahe null wie in
 §5.16.
 
+### 5.18 Der Eis-Umbau: eine Achse, ein Ventil, ein Kampfwert-Hebel (2026-09-09, Owner) — umgesetzt und gemessen
+
+Owner-Befund: „Eis is not hitting the mark. im Vergleich zu den anderen etwas zu schwer gut an score zu kommen. eis hat
+aktuell von seinen skills keinen Fokus auf serie und verliert dadurch viele Stiche. die skill Auswahl ist zu breit
+ausgelegt auf eng und breit bauen … Schnee ist zu situativ … wir brauchen die skills so das sich jeder gut anfühlt für
+Eis zu locken, vllt nicht in jedem misch build aber zumindest für jedes Eis build."
+
+#### Der Befund vor dem Bauen
+
+1. **Warum die Stiche fehlen.** `glacierDirect = payout × glacierWinMult` — und `glacierWinMult` wird nur im
+   Sieg-Zweig gesetzt (engine.js). Der Bruch bekommt Serie, Perks, Formation und Crit also **nur, wenn die
+   Gletscherkarte ihren Stich gewinnt**, sonst zahlt er ×1. Die Fraktion, deren ganzer Score daran hängt, hatte
+   **keinen einzigen Skill, der einen Gletscher stärker kämpfen lässt** — Frostbund buffte die *Nicht*-Gletscher, und
+   Verdichtung nahm der Karte den Gebäude-Wertbonus sogar weg. Feuer hat die Glühende Klinge, Blitz den Blitzfänger,
+   Pflanze den Ewigen Frühling.
+2. **Der eng/breit-Riss ist einseitig.** Dichte wollen Packeis, Verzahnung, Eiswall, Kettenbruch — dazu Kaskade,
+   Kollision und alle vier 2D-Formen. Offenen Boden wollten nur Schneetreiben, Dauerfrost und Frostbund. Kein
+   Gegenpol also, sondern drei Ausreißer gegen das eigene Fundament, bei einer Brett-Entscheidung, die unumkehrbar
+   und früh fällt.
+3. **Schnee war eine Wette** auf „dieses Feld friert später ein" — bei Deckel 12 auf 40 Feldern selten. §5.17 hatte
+   65 % der Reserve als totes Kapital gemessen und den Schritt ausdrücklich offen gelassen.
+
+#### Was gebaut wurde
+
+| | |
+| --- | --- |
+| **F1 · Der Zug ins Fundament** | Jedes offene Feld gibt je Durchlauf bis zu `FIRN_DRAW` (1) an den nächstgelegenen Gletscher ab. Die Mechanik steckte seit §5.17 in der Eiszeit; jetzt zahlen Schneetreiben und Dauerfrost ab Runde eins, in jeder Geometrie, ohne Wette. Dauerfrosts Null-Ring fällt. |
+| **F2 · Vierte Schwelle** | Schwellen 4 / 8 / 12 / **18**, Wucht ×1 / ×1,5 / ×2,2 / **×3,2**. `BURST_AT` ist von `TOP` entkoppelt und bleibt 12. |
+| **F3 · Überschuss bleibt liegen** | Der Bruch rechnet mit der vollen Masse statt mit gedeckelten 12; danach bleibt `Masse − BURST_AT` liegen. Der alte Überlauf-Score (1 Punkt je Masse neben ×250) entfällt — ein Ventil statt zwei. |
+| **Gletscherzunge** (SK_ICE_13) | Ersetzt Rissbildung. „+1 Wert je 6/4/3/2 Masse"; Episch reicht die Hälfte an die Nachbarkarten weiter (stärkster Anspruch, nicht Summe). |
+| **Sprödbruch** (SK_ICE_17) | Ersetzt Eispanzer. „+0,5/0,75/1/1,5 % Crit-Chance je Punkt Masse"; Episch gibt ein Crit +3 Masse zurück. Crit ist der größte Hebel auf den Bruch, und kein Eis-Skill bediente ihn. |
+| **Verdichtung** | Neu gebaut: Masse je Punkt Kampfwert **über dem Grundwert**, ohne etwas zu unterdrücken, aus jeder Quelle. |
+| **Frostbund** | Bufft **alle** Nachbarn statt nur der fremden. |
+| **Eiszeit** | Behält Flut und Berstkraft; der Zug gehört ihr nicht mehr allein. |
+
+**Ein Fehler beim Bauen, den ein Test gefangen hat.** Der Bruch-Abfall wird dem Feld **vor** der Wertberechnung
+abgezogen (engine.js, `burn`/`consumed`). Wer den laufenden Akkumulator liest, lässt den Gletscher ausgerechnet in
+seiner Bruchrunde mit +0 kämpfen — der Runde, in der ein Sieg am meisten wert ist. Zunge und Sprödbruch lesen deshalb
+`glacierPreNow.snapMass`, dieselbe Masse, aus der der Bruch gerechnet wird.
+
+**Die Rückkopplung, die zugemacht wurde.** Masse gibt Kampfwert (Zunge), Kampfwert gibt Masse (Verdichtung) — als
+Kreis wüchse die Masse je Durchlauf um einen Bruchteil ihrer selbst und liefe ab ~24 geometrisch weg. Verdichtung
+zählt den Zungen-Bonus deshalb nicht mit. (Die erste Einschätzung „gedämpft, darf stehen bleiben" war falsch: sie
+rechnete einen Durchgang statt der Wiederholung.)
+
+#### Gemessen — und zwei Eingriffe, die daraus folgten
+
+**(a) F3 nahm der Masse die einzige Decke.** Ohne Deckel auf den liegenbleibenden Überschuss lag der Zufallsspieler
+(Seeds 1..40) bei **Mean 48,25M**, ein Seed auf 959M. Ein ausgebautes Cluster gewinnt je Durchlauf mehr, als der Bruch
+abzieht. Sweep über `KEEP_MAX`:
+
+| KEEP_MAX | Median | Mean | Max |
+| --- | --- | --- | --- |
+| 0 (kein Deckel) | 3,95M | **48,25M** | 959,3M |
+| 12 | 3,95M | 10,19M | 130,6M |
+| **6** | **3,94M** | **9,47M** | 124,2M |
+| 3 | 3,86M | 9,20M | 119,5M |
+
+Der Deckel **kostet den Median nichts** (3,95 → 3,94M) und schneidet nur den Schwanz. 6 gesetzt — der Abstand zwischen
+dritter und vierter Schwelle. Es ist kein Deckel je Einzelbruch (der bleibt gestrichen, §5.5), sondern eine Grenze für
+das, was liegen bleibt.
+
+**(b) Eis war danach zu stark.** Duell Eis/Feuer (Seeds 401..470), Median Eis ÷ Feuer:
+250 → **1,65×**, 150 → **1,04×**, 110 → 0,80×. `BURST_SCALE` 250 → **150** gesetzt.
+
+**Woher die Kraft kam — nicht von den neuen Skills.** Ablation Eis mono (explore 500, greedy 90):
+
+| | Median-Δ | |
+| --- | --- | --- |
+| Ewiges Schild | +2999 % | die drei Legendären tragen |
+| Große Lawine | +218 % | F2/F3 haben sie mitmultipliziert |
+| Eiszeit | +199 % | |
+| Gletschersturz | +83 % | |
+| **Sprödbruch** | **+19 %** | die neuen Skills sind Mittelfeld |
+| **Gletscherzunge** | **−1 %** | im gierigen Mono tot (s. u.) |
+| Dauerfrost | −2 % | trotz F1 weiter unten |
+
+**Endstand** Seeds 1..40: Median ≈ 3,36M, Mean ≈ 7,70M — **beide im bestehenden Band des Balance-Guards**, die Grenzen
+sind deshalb unverändert geblieben.
+
+#### Offen (Entscheid Owner)
+
+1. **Die Gletscherzunge misst im gierigen Mono-Eis als tot (−1 %).** Der Grund ist erklärbar: dort liegt die
+   Siegquote schon bei 63 %, der Hebel „gewinne den Stich, der den Bruch trägt" greift also selten. Ihr eigentliches
+   Ziel — dass sich ein Eis-Build *nicht mehr wie Stiche-Verlieren anfühlt* — misst dieses Instrument nicht. Ob das
+   reicht oder ob sie einen zweiten Hook braucht, ist eine Playtest-Frage, keine Sim-Frage.
+2. **Der Schwanz gehört den Legendären**, nicht dem Fundament: Mean/p90 stehen im Duell weiter bei 2,79× / 1,85×
+   gegen Feuer, während der Median auf 1,04× sitzt. Ewiges Schild mit +2999 % ist die eigentliche offene Baustelle —
+   und es war schon vor §5.18 die stärkste der drei.
+3. **Dauerfrost bleibt bei −2 %**, obwohl F1 genau seine Naht war. Der Zug allein trägt ihn nicht.
+
+### 5.19 Ewiges Schild: der Deckel auf der Kaskade und das Ende der Gelddruckmaschine (2026-09-09, Owner) — umgesetzt und gemessen
+
+§5.18 hatte das Schild bei **+2999 %** gemessen und als nächste Baustelle benannt. Owner: „ewigen Schild als
+nächstes". Der Befund vor dem Bauen — das Schild tut drei Dinge, und zwei davon hatten keine Bremse.
+
+**Die Kaskade war eine Zahl, die für vier gebaut wurde.** `KASKADE_PER_NEIGHBOR` gibt +25 % Wucht je angrenzendem
+Gletscher; ein Gletscher hat höchstens 4 Nachbarn (mit Eisbrücke 8), also höchstens ×2. Das Schild setzte
+`gN = totalG − 1` — bei 40 Gletschern also 39, mithin **×10,75**. Und weil jeder Gletscher das bekommt, wuchs der
+Feld-Score **im Quadrat der Feldgröße**. Zusammen mit „3 Felder je Pick, ohne Deckel" (§5.14) waren zwei
+unbegrenzte Größen miteinander multipliziert.
+
+**Das Pooling erschuf Masse.** `uebergletscherPool` hob jede Runde alle Gletscher auf das MAXIMUM. 30 Gletscher,
+einer auf 18, der Rest auf 2 → danach alle auf 18: **480 Masse je Durchlauf aus dem Nichts**. Nebenwirkung war die
+eigentliche Frequenz-Explosion: danach brachen ALLE jede Runde statt nur der eine.
+
+#### Der Schritt (Owner: „deine Empfehlung")
+
+| | |
+| --- | --- |
+| **A · Kaskade gedeckelt** | Das Schild zählt einem Gletscher höchstens `SCHILD_NEIGHBORS` (8) Nachbarn zu — der voll umschlossene Gletscher, die Obergrenze, die auf dem Brett überhaupt erreichbar ist. ×3 statt ×10,75, und die Feldgröße multipliziert sich nicht mehr selbst. |
+| **B · Pooling auf den Durchschnitt** | Statt aufs Maximum. Die Masse wird **verteilt statt gedruckt**, die Summe bleibt erhalten. |
+
+Zu B gehört eine Textänderung: „nie fallend" ist weg, es heißt jetzt „jeden Durchlauf teilen sich alle dieselbe
+Masse". Das war die eine Frage an den Owner, weil es ein Versprechen auf der Karte betrifft. Begründung für die
+Empfehlung: die halbe Strecke (Maximum, aber nur halb aufrücken) hätte es nur verzögert — über 40 Durchläufe stehen
+trotzdem alle oben. Und der Durchschnitt trifft die Fantasie besser: EIN Gletscher hat EINE Masse, das Maximum sind
+30 Kopien des besten.
+
+„3 Felder je Pick, ohne Deckel" bleibt unangetastet (Owner-Entscheid §5.13/§5.14) — ohne A und B lohnt sich das
+große Brett nicht mehr überproportional.
+
+#### Gemessen
+
+Duell Eis/Feuer (Seeds 401..470), Eis ÷ Feuer:
+
+| | Median | Mean | p90 |
+| --- | --- | --- | --- |
+| §5.18 (nach BURST_SCALE 150) | 1,04× | 2,79× | 1,85× |
+| **jetzt** | **1,04×** | **1,30×** | **1,51×** |
+
+Der Median steht still, der Schwanz fällt — genau die beabsichtigte Operation. Ablation Eis mono (explore 500,
+greedy 90, Seeds 701..): **Ewiges Schild +2999 % → +446 %**; die drei Legendären liegen damit in einem Band
+(446 / 244 / 91 %) statt in getrennten Universen. Balance-Guard Seeds 1..40 unverändert bei 3,36M / 7,70M — der
+Zufallsspieler hält das Schild in diesen Seeds nie auf einem großen Feld, ihn berührt der Schritt nicht.
+
+#### Offen
+
+**Gletscherzunge (−10 %) und Sprödbruch (−9 %) messen im gierigen Mono-Eis negativ.** Beide liegen knapp außerhalb
+des Rauschbandes, das §5.7 mit ±5 % beziffert hat, und die Zahlen sind mit der Runde davor nicht direkt
+vergleichbar (dazwischen liegt BURST_SCALE 250 → 150). Der strukturelle Grund bleibt der aus §5.18: dort steht die
+Siegquote schon bei 63 %, der Hebel „gewinne den Stich, der den Bruch trägt" greift also selten, und der Sim misst
+nicht, wofür die beiden gebaut wurden. Das entscheidet der Playtest, nicht dieses Instrument.
+
+### 5.20 Sprödbruch verdoppelt — und Kettenbruch ist der neue Anti-Skill (2026-09-09, Owner)
+
+Owner: „sprödbruch werte verdoppeln, und wie steht kettenbruch aktuell da".
+
+**Sprödbruch** 0,5/0,75/1/1,5 → **1/1,5/2/3 %** Crit-Chance je Punkt Masse (bei Masse 12 also 12/18/24/36 %). Der
+Startwert war in §5.18 bewusst niedrig gesetzt, weil Crit multiplikativ auf den Bruch wirkt. Ablation (gleiche Seeds
+701.., explore 500 / greedy 90): **−9 % → +51 %**, damit Platz 4 direkt hinter den drei Legendären. Die
+**Gletscherzunge** ist mitgestiegen (**−10 % → +11 %**) — sie hängt am selben Sieg-Stack, den der Crit multipliziert.
+
+Nebenbei: der Wächter in `glacier-roles-b2.test.js` tippte die Prozente ab und ist an der Verdopplung zerbrochen. Er
+leitet seine Würfe jetzt aus `EIS.sproedbruch` ab — eine Neutarierung darf einen Wächter nicht mehr rot machen.
+
+#### Kettenbruch: −18 %, der schlechteste Skill der Fraktion
+
+Er war in §5.18 bei −8 % und ist jetzt bei **−18 %** (Haltequote 59 %, Siegquote der Ablation 34 %, Leiter invertiert:
+N 0,66 · S 0,73 · SS 0,56 · E 1,01). Die Ursache ist strukturell, nicht numerisch — **er verbrennt Masse**. Sonde,
+ein reifer Gletscher (12) neben drei jungen (5):
+
+| | Brüche | Score | Masse danach |
+| --- | --- | --- | --- |
+| ohne Kettenbruch | 1 | 6.188 | 0 / 5 / 5 / 5 |
+| mit Kettenbruch | 2 | 7.688 | 0 / **0** / 5 / 5 |
+
+Er kassiert 5 Masse sofort auf Stufe 1 für +1.500 — und wirft damit den Weg zu einem Bruch auf Stufe 3 oder 4 weg,
+der ein Vielfaches wert gewesen wäre. Ein erzwungener Bruch rechnet mit `Math.max(1, natTier)`, und seit §5.18 fällt
+das Feld dabei auf `max(0, Masse − 12)`, also auf null. **§5.18 hat ihn also verschlimmert:** mit der vierten Schwelle
+lohnt sich Warten mehr denn je, und er ist die Regel, die das Warten unterbricht.
+
+Das ist exakt die Form, in der Rissbildung als Anti-Skill erkannt und in §5.18 ersetzt wurde („halten & wachsen, dann
+gewaltig brechen" — und Kettenbruch bricht früh). Der Entscheid, ob er umgebaut oder ersetzt wird, liegt beim Owner.
+
+### 5.21 Kettenbruch sammelt Masse, statt sie zu verbrennen (2026-09-09, Owner) — umgesetzt und gemessen
+
+§5.20 hatte ihn bei −18 % vermessen und die Ursache benannt: der erzwungene Bruch eines unreifen Gletschers zahlt auf
+Stufe 1 und lässt das Feld auf null fallen. Owner: „lege erstmal ein Design vor" — und zum Vorschlag der zutreffende
+Einwand: „ich verliere wiederum den bruch von einem anderen Gletscher der kompensiert werden muss".
+
+#### Die Regel
+
+> Bricht ein Gletscher, reißt er die **Masse** angrenzender Gletscher mit in seinen Bruch: ihre Felder fallen auf
+> null, ihre Masse zählt zu seiner. Die Kette läuft 1 · 2 · 3 Schritte · Episch durch das ganze Cluster.
+
+Aus dem Skill, der die vierte Schwelle sabotiert, wird der Skill, der sie **erreicht** — 27 Masse bringt kein
+Gletscher allein zusammen. Die Leiter dreht sich damit richtig herum: Episch war die schlechteste Stufe (je weiter
+die Kette, desto mehr verbrannte sie), jetzt ist es die stärkste.
+
+**Die Kompensation, ohne die der Owner nicht zugestimmt hätte.** Der Einwand traf, aber nur zur Hälfte — und das
+ist messbar. Score je Punkt Masse, einzelner Gletscher: **330 bei Masse 12–17, 480 ab 18.** Die Masse ist also
+kompensiert (+45 %), aber **erst wenn die Kette wirklich über 18 kommt**; darunter ist der Satz derselbe. Was gar
+nicht kompensiert war, sind die Bruch-*Ereignisse*: Einfrieren, Frostbund und Gletschersturz zahlen je brechendem
+Gletscher, nicht je Masse. **Deshalb gilt ein absorbiertes Feld weiter als gebrochen** — es steht in `breaks`, zahlt
+aber `burst: 0`. Damit ist die Bilanz nie schlechter als vorher.
+
+Sonde (reifer Gletscher 12, drei junge auf 5):
+
+| | Brüche | Score |
+| --- | --- | --- |
+| ohne Skill | 1 | 6.188 |
+| alt (verbrennt) | 2 | 7.688 |
+| **neu, ein Schritt** | 2 | 8.766 |
+| **neu, ganzes Cluster** | 4 | **20.250** (27 Masse, Stufe 4) |
+
+#### Gemessen
+
+**Kettenbruch −18 % → −5 %**, damit im Rauschband, das §5.7 mit ±5 % beziffert. Er schadet nicht mehr.
+
+Die Parität ist dabei weggelaufen: Duell Eis/Feuer (Seeds 401..470) stand der Median auf **1,47×**. `BURST_SCALE`
+150 → **105** bringt ihn auf 1,07× (Sweep: 150 → 1,47×, 120 → 1,21×, 105 → 1,07×). Balance-Guard Seeds 1..40
+danach 3,17M / 7,02M — beide im bestehenden Band, die Grenzen bleiben unverändert.
+
+#### Offen
+
+1. **Die Haltequote des Kettenbruchs ist auf 17 % gefallen** (vorher 59 %). Der gierige Spieler nimmt ihn kaum noch
+   — und bei 17 % ist die −5 % auf dünner Stichprobe gemessen. Ob er zu selten *angeboten* oder zu schwach *gewertet*
+   wird, trennt dieses Instrument nicht.
+2. **Eis behält einen fetteren Schwanz als Feuer**: Median 1,07×, aber Mean 1,46× und p90 1,52×. Das zieht sich
+   durch §5.19 bis hier und liegt an den Legendären, nicht am Fundament.
+3. **Eiswall ist jetzt die unterste Zeile** (−6 % bei 100 % Haltequote) — die nächste Kandidatin, wenn eine Runde
+   gewünscht ist.
+
+### 5.22 Kettenbruch: zwei Buffs gebaut, beide gemessen, beide zurückgenommen (2026-09-09, Owner)
+
+Owner: „Kettenbruch erstmal noch weiter buffen". §5.21 hatte ihn von −18 % auf −5 % gebracht, aber die Haltequote
+fiel dabei von 59 % auf 17 %. **Beide Versuche haben ihn nicht verbessert; der Code steht wieder auf dem Stand von
+§5.21.** Der Eintrag existiert, damit niemand sie ein zweites Mal baut.
+
+**Versuch 1 — die Kette sammelt auch REIFE Nachbarn ein.** Bis dahin übersprang sie jeden, der selbst bricht; in
+einem gut gebauten Cluster also fast alle, was die niedrige Haltequote erklärte. Die Rechnung sah gut aus (480 statt
+330 Score je Punkt Masse auf der vierten Schwelle, also +45 %). Gemessen wurde Eis dadurch **schwächer**: Median im
+Duell 1,07× → **0,86×** Feuer, Haltequote 17 % → **0 %**. Ein reifer Gletscher hätte selbst gebrochen und dabei
+seinen eigenen vollen Sieg-Stack bekommen — eingesammelt fällt der weg, und +45 % auf die Masse decken das nicht.
+
+**Versuch 2 — die eingesammelte Masse zählt im Bruch doppelt.** Das sollte bezahlen, was das Absaugen kostet.
+Gemessen: Lift **0,68**, Median-Δ **−7 %**, Haltequote 33 %. Die Parität lief auf 1,20× weg, ohne dass der Skill
+selbst besser dastand — der Buff hob die Fraktion, nicht ihn.
+
+#### Warum kein Zahlen-Buff greift
+
+Vier Messungen, vier Lifts unter 1 (0,72 · 0,49 · 0,35 · 0,68), Siegquote der Ablation durchweg 27–34 %. Das ist
+kein Rauschen, und die Ursache liegt nicht im Auszahlungssatz:
+
+**Die Kette feuert JEDE Runde, in der ihr Auslöser bricht — und nullt dabei jedes Mal dieselben Nachbarn.** Die
+reifen deshalb nie. Ein Feld, das jede Runde auf 0 gesetzt wird, sammelt nie mehr als den Ewigen Frost an; die
+eingesammelte Masse bleibt also dauerhaft winzig, und ein Faktor auf eine winzige Zahl bleibt winzig. Gleichzeitig
+kostet das Absaugen den Nachbarn dauerhaft seinen eigenen Bruch. Der Skill ist damit **eine dauerhafte Steuer auf
+seine eigene Nachbarschaft**, kein einmaliger Handel — und das lässt sich nicht wegtarieren.
+
+#### Vorschlag (Entscheid Owner)
+
+**Die Kette muss ein EREIGNIS werden, kein Dauerzustand.** Empfehlung: sie feuert nur, wenn der Auslöser auf der
+**vierten Schwelle** bricht (ab 18 Masse) statt bei jedem Bruch. Dann haben die Nachbarn zwischen zwei Ketten Runden
+Zeit zu reifen, die eingesammelte Masse ist beim Auslösen groß statt winzig — und der Skill hängt an genau der
+Schwelle, die §5.18 geschaffen hat. Alternativen wären ein Takt wie bei der Großen Lawine oder ein Absaugen, das
+nur die halbe Masse nimmt und dem Feld seinen Vorlauf lässt.
+
+### 5.23 Eisbeben ersetzt den Kettenbruch (2026-09-09, Owner) — umgesetzt und gemessen
+
+Owner: „ne, ich mag die fixes nicht. skill ändern. neue Designrunde." — und aus der Runde: „eisbeben".
+
+**Die Mechanik.** Bricht ein Gletscher über der Berst-Schwelle, bebt das Eis nach: je Punkt Masse **über** der
+Schwelle zählt der Bruch zusätzlich. Episch dazu: das Nachbeben zählt dem Gletschersturz als eigener Bruch.
+
+Der Gegensatz zum Kettenbruch ist der ganze Punkt: **kein fremdes Feld wird angefasst.** §5.22 hatte gezeigt, dass
+genau das die Ursache war — eine Kette, die jede Runde dieselben Nachbarn nullt, lässt sie nie reifen. Das Eisbeben
+liegt vollständig auf dem Stich, der ohnehin auszahlt, und belohnt die vierte Schwelle aus §5.18. Stetig statt mit
+hartem Tor: bei genau der Schwelle ist es null und wächst mit jedem Punkt darüber. Ein Tor hätte den Skill früh tot
+gemacht (die Abbruchkante misst auf Normal Lift 0,04).
+
+#### Die Leiter steht doppelt so hoch wie entworfen
+
+Mit der entworfenen Leiter (3 · 4 · 6 · 9 %) misst der Skill **tot**: Lift 0,97, Median-Δ +1 %, Haltequote 48 %.
+Statt das als „Mechanik funktioniert nicht" zu buchen, wurde die Leiter probeweise verzehnfacht — die Sonde, die
+§5.22 gefehlt hat. Ergebnis: **Haltequote 100 %, Median-Δ +243 %, Flag „stark"**. Die Mechanik hat also eine
+Angriffsfläche, sie war nur eine Größenordnung zu klein dosiert. Grund: `KEEP_MAX` deckelt, was nach einem Bruch
+liegen bleibt, der Überschuss beim nächsten Bruch ist deshalb typisch klein.
+
+| Leiter (Normal) | Ablation Median-Δ | Haltequote | Duell Eis ÷ Feuer |
+| --- | --- | --- | --- |
+| 3 % (Entwurf) | +1 % | 48 % | 1,15× |
+| 6 % (**gesetzt**) | +14 % | 68 % | 1,38× → 1,01× nach Tarierung |
+| 9 % | +28 % | 81 % | 1,62× |
+| 30 % (Sonde) | +243 % | 100 % | — |
+
+9 % wurde verworfen, obwohl der Skill dort am besten dasteht: die Parität wäre nur mit `BURST_SCALE` ≈ 61 zu halten
+gewesen, und das hätte **jeden anderen Eis-Skill für diesen einen bezahlt**.
+
+#### Tarierung
+
+`BURST_SCALE` 105 → **75**. Zwei Posten, nicht einer: der gestrichene Kettenbruch war ein Fallen-Skill (Lift 0,68),
+und **ohne ihn stand die Fraktion schon bei 1,15×** — das Eisbeben legt darauf. Gemessen bei 75: Eis mono 17,95M
+gegen Feuer 17,80M, **Median-Parität 1,01×** (Mean 1,29×, p90 1,09×). Der Balance-Guard blieb unangetastet im Band.
+
+Nachgezogen: Emblem `SK_ICE_11_eisbeben.webp`, en/es-Katalog, Glossar. Zwei Glossar-Einträge beschrieben noch die
+Kette — *Kaskade* („ein berstender Gletscher reißt seine Nachbarn mit") und *Cluster* (nannte den Kettenbruch als
+Cluster-Leser). Beide sagen jetzt, was wirklich passiert; nachgeprüft statt umbenannt: `glacierClusters` hat genau
+einen Leser, die Verzahnung.
+
+### 5.24 Eiswall zahlt ab drei statt ab der vollen Reihe (2026-09-09, Owner-Route A) — umgesetzt und gemessen
+
+Der Eiswall hob den Linien-Faktor einer **komplett** gefrorenen Reihe oder Spalte (1,45 … 2,1 statt 1,30) und maß
+**−8 % bei 38 % Haltequote**, alle vier Stufen unter Lift 1 — der schwächste Skill der Fraktion.
+
+#### Zwei Ursachen, nicht eine
+
+**Alles oder nichts.** Bis die Reihe voll ist, zahlt er exakt null. Eine Reihe kostet 5 der 12 Gletscher, eine Spalte 8.
+
+**Anti-Synergie — der eigentliche Befund.** Die halbe Fraktion bezahlt **Dichte**: Kaskade (+25 % je Nachbar),
+Kollision, Packeis, Verzahnung, Frostbund. Die Reihe ist die **dünnste** Form überhaupt, jeder Gletscher hat
+höchstens zwei Nachbarn. Gerechnet (nicht gemessen), Wucht je Gletscher:
+
+| Bau | Gletscher | Kaskade | Kollision | Form | Wucht je Gletscher |
+| --- | --- | --- | --- | --- | --- |
+| Volle Reihe + Eiswall Episch | 5 | ×1,40 | ×1,22 | ×2,10 | **×3,59** |
+| 3×3-Fläche, ohne jeden Skill | 9 | ×1,67 | ×1,33 | ×1,50 | **×3,33** |
+
+Der Skill auf seiner höchsten Stufe erreicht knapp, was ein dichter Klotz gratis kann — mit weniger Gletschern und
+schlechter für jeden anderen Eis-Skill. Kein Zahlenproblem.
+
+#### Route A (Owner)
+
+Der Eiswall liest jetzt die **Länge der geraden Kette**, in der ein Gletscher steht (Reihe oder Spalte, die längere
+von beiden). Ab `EISWALL_MIN` = 3 zahlt sie, jeder weitere Gletscher zahlt mehr: `×(1 + per × (Länge − 2))`, Leiter
+15 · 20 · 25 · 30 %. Eine volle Reihe ist auf Normal +45 % — ungefähr dort, wo der alte Hebel stand.
+
+Zwei Entscheidungen dabei:
+
+- **Eigener Skill-Faktor, keine fünfte Geometrie-Form.** Als Form hätte die „stärkste Form zählt"-Regel (§5.6) ihn
+  im dichten Bau wieder verschluckt: eine Drei-Kette (1,15) verliert gegen die Fläche (1,50). Der Eiswall fasst
+  `glacierFormations` seit dieser Runde gar nicht mehr an, die Linie steht wieder auf ihrer Konstanten.
+- **Der dichte Bau enthält Ketten.** Ein 3×3-Klotz liefert in jeder Zeile und Spalte eine Drei — genau das macht den
+  Skill in **jedem** Eis-Bau brauchbar statt nur im Reihen-Bau, was die Vorgabe des Owners war.
+
+#### Gemessen
+
+| | Haltequote | Lift | Median-Δ | Siegquote |
+| --- | --- | --- | --- | --- |
+| alt (voller Linien-Hebel) | 38 % | 0,64 | −8 % | 38 % |
+| neu (Kettenlänge) | **99 %** | 1,02 | **+27 %** | **70 %** |
+
+Vom letzten Platz auf den besten Nicht-Legendären nach Verzahnung und Gletschersturz.
+
+`BURST_SCALE` 75 → **64**: der Eiswall zahlt jetzt in jedem Eis-Bau statt nur im Reihen-Bau, das hebt den Boden der
+Fraktion (1,00× → 1,16× Feuer). Gemessen bei 64: Eis mono 17,86M gegen Feuer 17,80M, **Parität 1,00×** (Mean 1,29×,
+p90 1,14×). Balance-Guard im Band, nicht neu zentriert.
+
+Die Wächter sind gegengeprüft: ohne den Faktor in der Bruchformel fallen vier der neuen Fälle um.
+
+**Offen, nicht angefasst:** der Boden der Fraktion hat sich verschoben. Schneetreiben steht bei −16 % (Siegquote
+14 %), Einfrieren bei −4 % mit 16 % Haltequote, und drei Skills sind „tot" (Anfrieren, Frostbund, Gletscherzunge).
+Das ist die nächste Runde, nicht diese.
+
+### 5.25 Einfrieren greift die höchsten Gegnerkarten (2026-09-09, Owner) — umgesetzt und gemessen
+
+Owner: „einfrieren, so umstellen das nicht die getroffene sondern die höchsten Gegnerkarten eingefroren werden."
+
+Der Griff hing bis dahin daran, **wo der Gletscher zufällig lag**: er markierte die an dieser Position getroffene
+Gegnerkarte plus so viele Nachbarfelder, bis die Stufenzahl voll war. Zwei Folgen, beide schlecht:
+
+- Getroffen wurde meist eine Karte, die der brechende Gletscher **ohnehin geschlagen hatte** — der Griff verbrauchte
+  sich an einem Sieg, den es schon gab.
+- Am Rand kam die Stufe nie an: die Ecke hat zwei Nachbarn, die Episch-Reichweite fünf.
+
+Gemessen stand er bei **−4 %, Haltequote 16 %, Siegquote 29 %** — auf der „schadet"-Liste.
+
+**Jetzt** markiert jeder Bruch die höchsten Karten des Gegnerdecks, unabhängig von der Lage des Gletschers. Schon
+markierte Karten werden übersprungen, damit mehrere Brüche im selben Durchlauf **verschiedene** Karten treffen statt
+derselben — sonst wäre die Stufe für einen Mehrfach-Bruch wertlos. Sortiert wird stabil, bei gleichem Wert
+entscheidet die Deck-Reihenfolge; kein Zufall im Griff.
+
+| | Haltequote | Median-Δ | Siegquote |
+| --- | --- | --- | --- |
+| alt (getroffene Karte + Nachbarn) | 16 % | −4 % | 29 % |
+| neu (höchste Karten) | **62 %** | **+17 %** | **62 %** |
+
+`BURST_SCALE` 64 → **60**: die Stichquote des Mono-Eis-Builds steigt 59,6 → 62 %, und ein **gewonnener**
+Gletscher-Stich zahlt den vollen Sieg-Stack (`glacierWinMult`) — der Griff hebt also auch den Bruch, nicht nur die
+Kontrolle. Gemessen bei 60: **Parität 1,01×** gegen Feuer.
+
+#### Nebenbefund zum Schneetreiben (nichts geändert)
+
+Owner-Frage: „wieso geben sie nicht ihren vollen Schnee ab, ansonsten ist ja egal wie viel Schnee man aussäht wenn
+immer nur 1 ankommt." — Der Befund stützt das. `FIRN_DRAW` steht auf **1**: jedes offene Feld gibt je Durchlauf
+höchstens einen Punkt seiner Reserve an den nächsten Gletscher ab. Das Schneetreiben sät 2 · 3 · 4 · 5, der Abfluss
+bleibt 1 — die Leiter verschiebt also nur, **wie lange** ein Feld nachliefert, nicht wie viel je Durchlauf ankommt.
+Solange das Feld schneller gefüllt als geleert wird, ist die Stufe fast wirkungslos.
+
+Der Deckel stammt aus §5.15, wo ein höherer Zug gemessen **nichts** brachte (Flut/Zug 3/2 → −10 %, 8/8 → −5 %,
+15/15 → −3 %). Die dortige Begründung war `mCap`: die Bruchmasse war auf 12 gedeckelt, mehr Masse zu füttern war
+linear und lief ins Leere. **§5.18 hat `mCap` gestrichen** — die Masse über der Schwelle bleibt seither liegen und
+trägt in den nächsten Durchlauf. Damit war die Begründung für `FIRN_DRAW` = 1 hinfällig und der Deckel ungeprüft.
+**Nachgemessen in §5.26 — die Vermutung war falsch, der Deckel bleibt.**
+
+### 5.26 Der Zug-Deckel ist nicht der Engpass (2026-09-09, auf Ansage) — gemessen, nichts geändert
+
+Sweep über `SIM_GLACIER_FIRN_DRAW` (Ablation Eis, je 90 gierige Läufe, Seed 701):
+
+| Zug | Schneetreiben | Dauerfrost | Eiszeit | Greedy-Median |
+| --- | --- | --- | --- | --- |
+| **1** (gesetzt) | −20 % | −18 % | +59 % | 427M |
+| 2 | −8 % | −7 % | +55 % | 633M |
+| 4 | −25 % | −13 % | +131 % | 610M |
+| alles | −3 % | 0 % | **+153 %** | 668M |
+
+**Die These aus §5.25 ist widerlegt.** Selbst wenn jedes Feld seine ganze Reserve abgibt, erreichen die beiden
+Firn-Skills bestenfalls null — sie sind auf keiner Zug-Stufe positiv. Was der offene Zug hebt, ist die **Eiszeit**:
+sie flutet jedes freie Feld und saugt es dann leer, also skaliert sie mit dem Zug, während die Skills es nicht tun.
+Der Deckel bremst nicht die Skills, er hält die Legendäre im Band — er bleibt, jetzt aus einem belegten Grund.
+
+**Die Ursache liegt in der Währung, nicht im Durchfluss.** Bei Eis zahlt Masse nur, wenn sie viele Gletscher auf
+einmal trifft: Verzahnung (Masse je Gletscher im Cluster, quadratisch in der Clustergröße) misst +42 % und ist
+„stark"; **Anfrieren** legt seine Masse ohne jeden Umweg direkt auf den siegreichen Gletscher und ist trotzdem
+**tot**. „Ein Sieg → etwas Masse für einen Gletscher" trägt strukturell nicht, mit Röhre wie ohne. *(Aus der
+Ablation geschlossen, nicht einzeln gemessen.)*
+
+Zweiter Befund im Code, unabhängig vom Durchfluss: `driftTargets` filtert auf **Nicht-Gletscher**-Nachbarn. Ein
+Gletscher, dessen Nachbarn alle gefroren sind, sät gar nichts — der Skill hat im dichten Bau kein Ziel, während die
+halbe Fraktion Dichte bezahlt. Dieselbe Anti-Dichte-Falle wie beim alten Eiswall (§5.24), und wörtlich die
+Eröffnungsbeschwerde des Owners: „viele sähen nur auf unbelegten Boden und dadurch ist der skill tot für einen
+Gletscher der dort gebaut wird".
+
+Offen zur Owner-Entscheidung: drei Design-Routen für Schneetreiben (Cluster-Aussaat · selbstgefrierender Boden ·
+Aussaat gegen den Gegner). **Dauerfrost hängt an derselben Diagnose** und steht bei −18 %.
+
+### 5.27 Der Zug-Deckel fällt, die Eiszeit zieht nach (2026-09-09, Owner) — umgesetzt und gemessen
+
+#### Der Grundsatz (Owner, wörtlich)
+
+> „skills haben Vorrang vor legendären, die müssen sich gut anfühlen, legendäre bauen wir danach um sie herum, nicht
+> unsere skills um zu starke legendäre"
+
+**Das ist ab hier die Kollisionsregel.** Wo ein Fundament-Eingriff einem Skill hilft und eine Legendäre aus dem Band
+trägt, wird die Legendäre nachtariert — nicht der Eingriff zurückgenommen. §5.26 hatte noch andersherum
+argumentiert („der Deckel hält die Legendäre im Band, er bleibt"); diese Begründung ist damit **überholt**.
+
+#### Was geändert wurde
+
+Der Owner verwirft die drei Design-Routen aus §5.26 und entscheidet stattdessen: **„lass uns nochmal zug Deckel
+öffnen, es ist scheiße dass wir mehr generieren als nutzen können."** Schneetreiben und Dauerfrost bleiben
+mechanisch **unverändert**.
+
+- `FIRN_DRAW` 1 → **ganze Reserve**. Jedes offene Feld gibt seinen kompletten Schnee an den nächsten Gletscher ab;
+  nichts bleibt ungenutzt liegen. Der Regler bleibt für Diagnose-Sweeps (endlich = Deckel je Feld, 0 = Zug aus).
+- `EISZEIT_FLOOD` 3 → **1**. Die Eiszeit flutet jedes freie Feld und war der größte Gewinner des offenen Zugs.
+- `BURST_SCALE` 60 → **28**. Der offene Zug verdoppelt das Masse-Einkommen der Fraktion.
+
+#### Gemessen
+
+Die Eiszeit trug den **Schwanz**, nicht den Median — die Flut-Zahl allein bewegt bei gleichem `BURST_SCALE`:
+
+| | Median Eis ÷ Feuer | Mean | p90 |
+| --- | --- | --- | --- |
+| Flut 3 | 1,97× | 4,08× | 2,99× |
+| Flut 1 | 1,91× | **2,76×** | 2,58× |
+
+Danach `BURST_SCALE` 28 → **Parität 0,97×** (Mean 1,34×, p90 1,23×). Balance-Guard im Band, nicht neu zentriert.
+
+#### D1 ist beantwortet: der offene Zug rettet die beiden Skills NICHT
+
+Ablation mit offenem Zug: **Schneetreiben −3 % bei 13 % Haltequote**, **Dauerfrost 0 %, Flag „tot"** bei 83 %.
+Beide sind von „schadet" auf „wirkungslos" gestiegen — mehr nicht. Das deckt sich mit dem Sweep aus §5.26 und
+bestätigt dessen Kern: die Ursache liegt in der Währung, nicht im Durchfluss. **Dauerfrost braucht damit doch eine
+eigene Designrunde** (D1 war „erst messen, dann entscheiden" — gemessen ist).
+
+Nebenbefund derselben Ablation, unberührt gelassen: **Packeis −12 %** und **Abbruchkante −13 %** stehen jetzt auf
+„schadet", Gletscherzunge · Anfrieren · Eisbrücke · Verdichtung auf „tot". Der Boden der Fraktion ist breiter
+geworden, nicht schmaler.
+
+**Nicht nachgemessen:** ob die Eiszeit mit Flut 1 im **fraktionsübergreifenden** Legendär-Band der übrigen elf
+liegt. Innerhalb Eis sind die drei stimmig (Lift 1,34 / 1,36 / 1,35); der Quervergleich (`--mode legendaries`)
+steht aus.
+
 ## 6. Pflanze
 
 ### 6.1 Richtung und Abgrenzung (gesetzt, Owner 2026-09-06)

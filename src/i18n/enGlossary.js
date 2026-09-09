@@ -19,7 +19,7 @@
 import * as C from "../game/constants.js";
 import { WIN_MASS as G_WIN_MASS, EWIGER_FROST as G_EWIGER_FROST, THRESHOLDS as G_THRESHOLDS,
   KASKADE_PER_NEIGHBOR as G_KASKADE, GEO_BLOCK as G_BLOCK, GEO_KREUZ as G_KREUZ, GEO_LINIE as G_LINIE,
-  GEO_FLAECHE as G_FLAECHE } from "../game/glacier.js";
+  GEO_FLAECHE as G_FLAECHE, BURST_AT as G_BURST_AT, FIRN_REFILL_TARGET as G_REFILL, FIRN_DRAW as G_DRAW } from "../game/glacier.js";
 import { SKILL_LIST } from "../game/skills.js";
 import enSkills from "./enSkills.js";
 import { RARITY_EN, RARE, EPIC } from "./enTerms.js";
@@ -30,7 +30,7 @@ const pct = (x) => Math.round(x * 100);
 // Trimmbare Skills mit ihren ENGLISCHEN Namen — aus dem Register gefiltert, aus dem EN-Katalog benannt.
 const TRIMMABLE_EN = SKILL_LIST.filter((s) => s.trimGrowth).map((s) => enSkills[`ability.${s.id}.name`]).join(", ");
 const RARITY_NAMES_EN = RARITY_EN.join(" · ");
-const BURST_AT = G_THRESHOLDS[G_THRESHOLDS.length - 1];
+const BURST_AT = G_BURST_AT; // §5.18: the burst threshold is no longer the highest tier — the ladder runs past it to 18.
 
 /* Kurzschreibweise: [id, label, text, [match…]] — kompakter als vier Schlüssel je Eintrag und
    damit leichter gegen die deutsche Quelle gegenzulesen. Wird unten aufgefaltet. */
@@ -94,13 +94,13 @@ const E = [
   ["charge", "Charge", `Every crit gives +1 charge (bar of ${C.LIGHTNING_MAX_CHARGE}). Once the bar is full it ionizes the next card in order and empties.`, ["charge", "charges"]],
   ["ionize", "Ionization", `A permanent card marking: an ionized card gives +${C.ION_SCORE_PER_STACK} score per stack into the base on a win, before the multipliers. Stacks come only from the full charge bar and from lightning skills, and they have no cap.`, ["ionization", "ionized", "ionize"]],
   ["stapel", "Stack (ionization)", `One ionization on a single card, uncapped. Every stack gives +${C.ION_SCORE_PER_STACK} score when that card wins; cards with many stacks unlock the threshold skills (Lightning Catcher, Short Circuit, Overvoltage).`, ["ionization stack", "ionization stacks", "stack", "stacks"]],
-  ["kaskade", "Cascade", "One event sets off the next. With lightning: a crit with a deeply ionized card generates extra charge (Overvoltage). With ice: a bursting glacier drags its neighbours along, so a wave of bursts runs through the cluster.", ["cascade", "cascades"]],
+  ["kaskade", "Cascade", "One event sets off the next. With lightning: a crit with a deeply ionized card generates extra charge (Overvoltage). With ice: every adjacent glacier makes a burst more forceful, so a dense cluster amplifies itself.", ["cascade", "cascades"]],
   ["glacier", "Glacier", "Ice is the glacier archetype: you freeze a card onto its board cell. From then on it is rigid (no longer movable in any future order phase), but in exchange it accumulates mass. Enough mass, and the glacier bursts over its neighbours.", ["glacier", "glaciers"]],
   ["masse", "Mass", `The ice resource: mass sits on the board cell. Every glacier gains +${num(G_EWIGER_FROST)} mass every cycle, unconditionally on a win or a loss; a win brings +${num(G_WIN_MASS)} mass on top.`, ["mass"]],
-  ["bersten", "Burst", `When a glacier reaches ${BURST_AT} mass, it bursts: burst score from mass × the force of the threshold reached (thresholds ${G_THRESHOLDS.join(" / ")}), amplified by +${pct(G_KASKADE)}% per adjacent glacier, plus a collision when the burst hits a glacier neighbour. Afterwards it drops to 0 and refills from its ground reserve at the start of the cycle.`, ["burst", "bursts", "bursting", "burst score", "burst threshold"]],
+  ["bersten", "Burst", `When a glacier reaches ${BURST_AT} mass, it bursts: burst score from mass × the force of the threshold reached (thresholds ${G_THRESHOLDS.join(" / ")}), amplified by +${pct(G_KASKADE)}% per adjacent glacier, plus a collision when the burst hits a glacier neighbour. Afterwards it drops by ${BURST_AT} mass — anything above that stays — and refills from its ground reserve at the start of the cycle.`, ["burst", "bursts", "bursting", "burst score", "burst threshold"]],
   ["cluster", "Cluster", "A group of directly adjacent glaciers. Many ice skills measure the cluster size (Fusion and Interlock for instance); Ice Bridge counts the diagonals too.", ["cluster", "clusters"]],
   ["eisformation", "Ice formations", `Ice is the only deck with ice formations: geometric shapes of frozen glaciers strengthen their bursts: block = 2×2 (4 glaciers, ×${num(G_BLOCK)}), cross = centre + 4 neighbours (5, ×${num(G_KREUZ)}), line = full row (5) or column (8) (×${num(G_LINIE)}), great field = 3×3 (9, ×${num(G_FLAECHE)}). Overlapping shapes stack.`, ["ice formations", "ice formation"]],
-  ["freeze", "Snow", `Snow sits as a reserve on the board cell, separate from the glacier's mass. Freeze a glacier onto a charged cell and the accumulated snow becomes its ground reserve; the glacier starts empty and draws from it every cycle back up to a full ${BURST_AT} mass (only the difference, never beyond), until the reserve is empty. Open ground is charged by Permafrost, Snowdrift and Ice Age, never under a glacier.`, ["snow"]],
+  ["freeze", "Snow", `Snow sits as a reserve on the board cell, separate from the glacier's mass. Every cycle, each open cell hands up to ${G_DRAW} snow to the nearest glacier. Freeze a glacier onto a charged cell and the accumulated snow becomes its ground reserve; it starts empty and draws from that every cycle back up to a full ${G_REFILL} mass (only the difference, never beyond), until the reserve is empty. Open ground is charged by Permafrost, Snowdrift and Ice Age, never under a glacier.`, ["snow"]],
   ["growth", "Growth", `Your own cards grow on wins (rising only), and the faster the more plant skills you hold (full pace from ${C.PLANT_GROWTH_SKILL_REF} skills, proportional below that). From ${C.PLANT_GREEN_THRESHOLD} growth a card turns permanently green (ripe); below that it is a seedling.`, ["growth"]],
   ["setzling", "Seedling", `A card that is already growing but not yet ripe (growth below ${C.PLANT_GREEN_THRESHOLD}). A seedling does NOT yet count towards the green suit block; only from ${C.PLANT_GREEN_THRESHOLD} growth does it turn green (ripe). Seedbed gives the lowest card of each segment a +${C.SETZLINGSBEET_GROWTH} growth head start.`, ["seedling", "seedlings"]],
   ["green", "Green (ripe)", "Green cards are permanent and form one shared suit block: the bigger the block, the more score. The suit-block multiplier for green cards is capped at ×1.35.", ["green", "ripe"]],

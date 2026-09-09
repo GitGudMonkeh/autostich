@@ -25,7 +25,7 @@ import { computeFormations, positionHasFormation, activeFormationCount, summariz
 import { perkLegendaryChance, anchorAt } from "./shop.js";
 import { precomputeArchitect, architectValueBonus, architectScore, buildArchitectOffer } from "./architect.js";
 import { precomputeGlacier, ewigerFrostTick, dauerfrostTick, driftTargets as glacierDriftTargets,
-  neighbors4 as glacierNeighbors4, uebergletscherPool, packeisTick, verzahnungTick, eiszeitTick, glacierGeometry,
+  uebergletscherPool, packeisTick, verzahnungTick, eiszeitFlood, firnDrawTick, glacierGeometry,
   ROLES as GLACIER_ROLES, WIN_MASS as GLACIER_WIN_MASS, GROSSE_LAWINE_EVERY as GLACIER_LAWINE_EVERY,
   FIRN_REFILL_TARGET as GLACIER_FIRN_REFILL_TARGET } from "./glacier.js"; // Eis-Neudesign (isoliert, activeArchetypes "ice") · #386 Firn-Reserve-Nachschub
 import { iceTuning, iceSnapshotOpts, iceNeighborFn } from "./factions/ice.js"; // §5.3: die Zahlen der Eis-Skills kommen aus ihrer Stufe
@@ -242,8 +242,9 @@ export function resolveTrick(state, rng) {
     const refilledMass = newGlacierMass;
     const snapMass = glacierRoles.includes(GLACIER_ROLES.L_SCHILD) ? uebergletscherPool(refilledMass, glacierLocked)
       : refilledMass;
-    // 2D-Geometrie-Formationen (unique Deck-Passiv, docs §2.7/§9): Block/Kreuz/Linie/Fläche → Burst-Faktor je Feld; Eiswall hebt die Linie.
-    const glacierGeo = glacierGeometry(glacierLocked, { eiswallLinie: glacierRoles.includes(GLACIER_ROLES.EISWALL) ? ice.eiswallLinie : 0 });
+    // 2D-Geometrie-Formationen (unique Deck-Passiv, docs §2.7/§9): Block/Kreuz/Linie/Fläche → Burst-Faktor je Feld.
+    // §5.24: der Eiswall fasst diese Tabelle nicht mehr an, er ist ein eigener Faktor im Snapshot (`eiswallPer`).
+    const glacierGeo = glacierGeometry(glacierLocked);
     // Ewiges Schild (§5.8): das ganze Feld IST ein Gletscher — also erbt jeder Gletscher die stärkste Form des Bretts.
     // Das ersetzt den alten additiven Masse-Bonus, der am Masse-Deckel verfiel.
     if (glacierRoles.includes(GLACIER_ROLES.L_SCHILD)) {
@@ -263,7 +264,10 @@ export function resolveTrick(state, rng) {
     // je Feld genau EINMAL abgezogen (consumed-Guard). Der Netto-Akkumulator/Score bleibt identisch — nur das Timing/HUD ändert sich.
     newGlacierMass = snapMass.slice();
     const burn = glacierPreNow.resetMass.map((rm, p) => glacierLocked[p] ? ((snapMass[p] || 0) - (rm || 0)) : 0);
-    glacierPreNow = { ...glacierPreNow, burn, consumed: {} };
+    // snapMass mitführen: die Masse, mit der dieser Durchlauf rechnet. Gletscherzunge und Sprödbruch lesen sie, NICHT
+    // den laufenden Akkumulator — der ist beim eigenen Stich schon um den Bruch-Abfall erleichtert, und dann stünde der
+    // Gletscher ausgerechnet in seiner Bruchrunde auf 0. Genau dort zählt der Sieg am meisten (glacierWinMult).
+    glacierPreNow = { ...glacierPreNow, burn, consumed: {}, snapMass: snapMass.slice() };
   }
   // Verbrauch für das Feld DIESES Stichs: genau einmal je Feld/Durchlauf den Bruch-Abfall abziehen (Rest-Gewinne bleiben).
   if (glacierActive && glacierPreNow && glacierPreNow.burn && glacierLocked[actualPos] && !(glacierPreNow.consumed && glacierPreNow.consumed[actualPos])) {
@@ -358,17 +362,32 @@ export function resolveTrick(state, rng) {
   const alliance = allianceGroups(familyTiers, roles);
   // Architekt value-Gebäude (#202, Tragwerk): +temp Wert VOR dem Vergleich (an dieser Position, Bedingung je Familie).
   const architectValue = archPreNow ? architectValueBonus(archPreNow, actualPos, pCard, alliance) : 0;
-  const glacierBuff = glacierActive ? (glacierBuffActive[pCard.id] || 0) : 0; // Frostbund: Wert-Buff auf gebuffte Nicht-Eis-Nachbarkarte
-  // Verdichtung (docs §4 Firn): auf einem Gletscher wird der Gebäude-Wertbonus NICHT ausgespielt, sondern in Masse getankt
-  // (unten im Auszahlungs-Block). Hier: im Kampf unterdrücken, damit er nicht doppelt (Wert + Masse) zählt.
-  const verdichtung = glacierActive && glacierRoles.includes(GLACIER_ROLES.VERDICHTUNG) && !!glacierLocked[actualPos];
-  const architectValueEff = verdichtung ? 0 : architectValue;
+  const glacierBuff = glacierActive ? (glacierBuffActive[pCard.id] || 0) : 0; // Frostbund: Wert-Buff auf die gebuffte Nachbarkarte
+  // Gletscherzunge (§5.18): Masse wird Kampfwert — der Hebel, mit dem der Gletscher seinen Stich GEWINNT und damit den
+  // vollen Sieg-Stack auf seinen Bruch holt (glacierWinMult). Episch reicht die HÄLFTE an die Nachbarkarten weiter; eine
+  // Karte nimmt immer nur den STÄRKSTEN Anspruch, nie die Summe mehrerer Gletscher.
+  // Die Masse DIESES Durchlaufs (s. snapMass oben) — dieselbe, aus der der Bruch gerechnet wird.
+  const glacierMassNow = (p) => ((glacierPreNow && glacierPreNow.snapMass ? glacierPreNow.snapMass[p] : newGlacierMass[p]) || 0);
+  const tongueOf = (p) => (glacierLocked[p] ? Math.floor(glacierMassNow(p) / ice.gletscherzungePer) : 0);
+  let glacierTongue = 0;
+  if (glacierActive && ice.gletscherzungePer > 0 && glacierRoles.includes(GLACIER_ROLES.GLETSCHERZUNGE)) {
+    glacierTongue = tongueOf(actualPos);
+    if (ice.gletscherzungeNeighbors)
+      for (const nb of glacierNF(actualPos)) glacierTongue = Math.max(glacierTongue, Math.floor(tongueOf(nb) / 2));
+  }
   // #370 Wochen-Mods (nur Ranked): „Starke Karten" hebt jede Spielerkarte, „Stärkere Gegner" jede Gegnerkarte um +mag.
   const wmCardBonus = weekModMag(state.weekMods, "cardValue");
   // Pflanze (§6.13, Ewiger Frühling): blühende Karten kämpfen stärker — der einzige Wert-Hebel der Fraktion.
   const plantValue = plantValueBonus(skills, pCard);
   const wmEnemyBonus = weekModMag(state.weekMods, "enemyValue");
-  const pValue = effectivePlayerValue(pCard.value, perks, ctx) + familyValueBonus + relayBonus + fireValue + blitzValueBonus + anchorPowerBonus + eQuickshotValue + architectValueEff + glacierBuff + wmCardBonus + plantValue;
+  const pValue = effectivePlayerValue(pCard.value, perks, ctx) + familyValueBonus + relayBonus + fireValue + blitzValueBonus + anchorPowerBonus + eQuickshotValue + architectValue + glacierBuff + glacierTongue + wmCardBonus + plantValue;
+  // Verdichtung (§5.18): Kampfwert ÜBER dem Grundwert wird zusätzlich Masse. Sie unterdrückt nichts mehr — der Wert wird
+  // normal ausgespielt, und es zählt jede Quelle (Gebäude, Perks, Familien, Frostbund), nicht nur der Architekt. Der
+  // Zungen-Bonus ist ausgenommen: sonst schlösse sich Masse → Wert → Masse zu einem Kreis, der geometrisch wegläuft.
+  if (glacierActive && glacierLocked[actualPos] && glacierRoles.includes(GLACIER_ROLES.VERDICHTUNG)) {
+    const over = Math.max(0, pValue - glacierTongue - (pCard.baseRank ?? pCard.value));
+    if (over > 0) newGlacierMass[actualPos] = (newGlacierMass[actualPos] || 0) + over * ice.verdichtungPer;
+  }
   // #226 Großmeister: Gegner-Aufschlag = flacher oppValue + mitwachsender Ramp (+1 Wert alle oppRampEvery Durchläufe),
   // additiv VOR den Debuffs (Frostbiss/Brand kontern ihn → gewollt). Meister/Basis (difficulty=null) → 0, byte-identisch.
   const rampMod = (difficulty && difficulty.oppRampEvery) ? Math.floor(cycle / difficulty.oppRampEvery) : 0;
@@ -425,8 +444,13 @@ export function resolveTrick(state, rng) {
   // Roh-Crit-Chance (ungeklemmt) eines Siegs mit dieser Karte: Perk-Basis + Präzision-Familien + Blitz + Kritanker.
   // Karten-Kontext für die konditionalen Generatoren: Kartenwert / Kartenfarbe / #aktive Formationen / Farbfokus (roles).
   const critFamCtx = { winValue: pValue, suit: eSuit, formCount: activeFormationCount(posForm), focusSuits: (roles && roles.P_COLORFOCUS) || [], alliance }; // #289: grün-bewusste Suit + Farballianz für Farbfokus
+  // Sprödbruch (§5.18): Masse wird Crit-Chance. Der größte Hebel, den Eis auf seinen Bruch hat — der Crit-Multiplikator
+  // steckt in glacierWinMult, ein Crit auf der Gletscherkarte vervielfacht also auch ihren Bruch.
+  const glacierCrit = glacierActive && glacierLocked[actualPos] && glacierRoles.includes(GLACIER_ROLES.SPROEDBRUCH)
+    ? glacierMassNow(actualPos) * ice.sproedbruchCrit : 0;
   const rawCrit = critChanceRawFor(perks, wctx) + familyCritChanceRaw(familyTiers, critFamCtx)
                   + lightningCritChance(lightning, skills, skillTiers, winStreak + 1, pCardR) // exp: Passiv je Blitz-Skill + Rampen + Ladungsserie + Lichtbogen (§7.28: je Stapel der gespielten Karte, pCardR = mit Resonanz-Summe)
+                  + glacierCrit                                                              // §5.18 Sprödbruch: je Punkt Masse
                   + (anchorType === "crit" ? (aParam("crit") || 0) : 0); // Kritanker (§4.2, Stärke = Stufe)
   // (§7.25: Durchschlag — der Crit auf einer Niederlage — ist gestrichen; auf dem Platz steht Resonanz, oben bei pCardR.)
 
@@ -520,6 +544,10 @@ export function resolveTrick(state, rng) {
     // wandelte, ist gestrichen; was über dem Deckel liegt, verfällt wieder.)
     critMultiplier = Math.min(critMultiplier, C.CRIT_MULT_CAP);
     isCrit = rollCrit(critChance, forceCrit, rngAtOr(cycle, "crit", pos)) && !reducedRepeat; // #205 Glückslandschaft: fester Wurf je (cycle,pos); forceCrit = Henker; reducedRepeat = Zeitsegment III
+    // Sprödbruch Episch (§5.18): ein Crit mit einer Gletscherkarte friert wieder an. Der Kreis Masse → Crit → Masse ist
+    // gedämpft (bei Masse 12 und 1,5 % je Punkt kommen ~0,5 Masse je Durchlauf zurück), nicht selbsttragend.
+    if (isCrit && glacierActive && ice.sproedbruchCritMass && glacierLocked[actualPos])
+      newGlacierMass[actualPos] = (newGlacierMass[actualPos] || 0) + ice.sproedbruchCritMass;
     // Score (globale Formel): additive Boni — inkl. Crit-only-Flats (Blitzableiter +50) — fließen in die BASIS
     // und werden mitmultipliziert: (SCORE_PER_WIN + Σ scoreFlat [+ Σ scoreFlatOnCrit bei Crit])
     // × Basis-Serien-Mult (#39, immer) × Perk-scoreMult, DANN Crit-Faktor.
@@ -782,13 +810,9 @@ export function resolveTrick(state, rng) {
       const r = lightningOnLoss(lightning, skills, skillTiers, { alreadyHeld: anchorNoReset, card: pCardR }); // §7.22: Kurzschluss Episch merkt den Stapel-Score der verlorenen Karte vor (pCardR: Resonanz-Stapel)
       lightning = r.lightning; serienschutzHeld = r.streakHeld;
     }
-    // Eis-Neudesign (docs §4 Frostgriff — Eispanzer): eine Niederlage NEBEN einem Gletscher ist folgenlos (Serie hält)
-    // UND füttert Masse in die angrenzenden Gletscher — der Gletscher frisst, was an ihm zerbricht. Prinzip heil: die Karte
-    // verliert weiter (kostet den Stich), nur die Folgen (Serienbruch) sind abgeschirmt.
-    const glacierShield = glacierActive && glacierRoles.includes(GLACIER_ROLES.EISPANZER)
-      && glacierNeighbors4(actualPos).some((p) => glacierLocked[p]);
-    if (glacierShield) for (const nb of glacierNeighbors4(actualPos)) if (glacierLocked[nb]) newGlacierMass[nb] = (newGlacierMass[nb] || 0) + ice.eispanzerMass;
-    const streakNoReset = anchorNoReset || serienschutzHeld || glacierShield;
+    // (§5.18: der Eispanzer — Niederlage neben einem Gletscher folgenlos + Masse — ist mit dem Sprödbruch gegangen. Er
+    //  war ein Pflaster auf dem Symptom; die Gletscherzunge behebt die Ursache, indem der Gletscher seinen Stich gewinnt.)
+    const streakNoReset = anchorNoReset || serienschutzHeld;
     winStreak = streakNoReset ? winStreak : 0;
     initiative = "opp";
     sinceWin += 1; // #71 Durchbruch: kein Sieg → Zähler hoch
@@ -845,23 +869,26 @@ export function resolveTrick(state, rng) {
     score += glacierDirect; gained += glacierDirect; glacierYield += glacierDirect;
     if (breakdown) { breakdown.glacierDirect = glacierDirect; breakdown.total += glacierDirect; }
   }
-  // Einfrieren (docs §4 Frostgriff): bricht dieser Gletscher, verliert die hier getroffene Gegnerkarte ihren NÄCHSTEN
-  // Stich. Die Stufe entscheidet, wie weit der Griff reicht (§5.2): die getroffene Karte plus so viele ihrer Nachbarn
-  // im Gegnerfeld, bis `einfrierenCards` voll ist.
+  /* Einfrieren (docs §4 Frostgriff): bricht dieser Gletscher, verlieren Gegnerkarten ihren NÄCHSTEN Stich.
+     §5.25 (Owner): NICHT mehr die zufällig hier getroffene Karte und ihre Nachbarn, sondern die HÖCHSTEN Karten des
+     Gegnerdecks. Der alte Griff hing daran, wo der Gletscher zufällig lag — meist auf einer Karte, die der Spieler
+     ohnehin geschlagen hätte (gemessen −4 % bei 16 % Haltequote). Schon markierte Karten werden übersprungen, damit
+     mehrere Brüche im selben Durchlauf verschiedene Karten treffen statt derselben. */
   if (glacierActive && glacierRoles.includes(GLACIER_ROLES.EINFRIEREN) && glacierPreNow && glacierPreNow.breaks.some((b) => b.pos === actualPos)) {
-    newFrozenOppPending[oCard.id] = true;
-    for (const nb of glacierNeighbors4(actualPos).slice(0, Math.max(0, ice.einfrierenCards - 1)))
-      newFrozenOppPending[oppDeck[oppOrder[nb]].id] = true;
+    const frei = oppDeck.filter((c) => c && !newFrozenOppPending[c.id]);
+    // Stabile Sortierung: bei gleichem Wert entscheidet die Deck-Reihenfolge, damit der Griff deterministisch bleibt.
+    frei.sort((a, b) => (b.value ?? b.baseRank ?? 0) - (a.value ?? a.baseRank ?? 0));
+    for (const c of frei.slice(0, Math.max(0, ice.einfrierenCards))) newFrozenOppPending[c.id] = true;
   }
   // (§5.2: Erstarrung ist gestrichen — die Kontrolle liegt bei Einfrieren, dessen Reichweite mit der Stufe steigt.)
-  // Frostbund (docs §4 Frostgriff): bricht dieser Gletscher, bufft er seine NICHT-Gletscher-Nachbarn (2. Archetyp) → +Stichwert.
+  // Frostbund (docs §4 Frostgriff): bricht dieser Gletscher, bufft er seine Nachbarn → +Stichwert. §5.18: ALLE Nachbarn,
+  // nicht nur die fremden — im dichten Cluster waren alle Nachbarn Gletscher, dort war er tot. Die Duo-Fantasie bleibt:
+  // im Mischbuild trifft er weiter die Karten des zweiten Archetyps.
   if (glacierActive && glacierRoles.includes(GLACIER_ROLES.FROSTBUND) && glacierNF && glacierPreNow && glacierPreNow.breaks.some((b) => b.pos === actualPos))
-    for (const nb of glacierNF(actualPos)) if (!glacierLocked[nb]) {
+    for (const nb of glacierNF(actualPos)) {
       const id = deck[playerOrder[nb]].id;
       newGlacierBuffPending[id] = Math.max(newGlacierBuffPending[id] || 0, ice.frostbundBuff);
     }
-  // Verdichtung (docs §4 Firn): der auf diesem Gletscher unterdrückte Gebäude-Wertbonus wird in Masse getankt.
-  if (verdichtung && architectValue > 0) newGlacierMass[actualPos] = (newGlacierMass[actualPos] || 0) + architectValue * ice.verdichtungRate;
 
   // #UI: bester GLETSCHER-Stich separat erfassen — der volle Stich-Score (inkl. Bruch), sobald dieser Stich
   // einen Gletscher-Bruch trug. `bestTrickScore` (oben) wird VOR dem Bruch-Score gebucht und zeigt ihn daher nicht; der
@@ -938,13 +965,14 @@ export function resolveTrick(state, rng) {
     // Packeis / Verzahnung (docs §4 Eisschild): Dichte-Bonus je Gletscher-Nachbar / Cluster-Größe (Eisbrücke-adjazenz-aware).
     if (glacierActive && glacierRoles.includes(GLACIER_ROLES.PACKEIS)) newGlacierMass = packeisTick(newGlacierMass, glacierLocked, glacierNF, ice.packeisPer);
     if (glacierActive && glacierRoles.includes(GLACIER_ROLES.VERZAHNUNG)) newGlacierMass = verzahnungTick(newGlacierMass, glacierLocked, glacierNF, ice.verzahnungPer);
-    // Eiszeit (Legendär): brettweite Flut in die Boden-RESERVE (#386 firnStack), dann trinken die Gletscher den
-    // angrenzenden offenen Boden leer — die Reserve wird zu Gletscher-Masse.
-    if (glacierActive && glacierRoles.includes(GLACIER_ROLES.L_EISZEIT)) {
-      // §5.15: die Eiszeit friert nicht mehr ein — sie flutet die Reserve und die Gletscher trinken den angrenzenden
-      // offenen Boden leer. Damit entfällt hier jede Deckel-Frage (§5.11/§5.14): sie erzeugt keinen Gletscher mehr.
-      const ez = eiszeitTick(newFirnStack, newGlacierMass, glacierLocked);
-      newFirnStack = ez.firn; newGlacierMass = ez.mass;
+    // Eiszeit (Legendär): brettweite Flut in die Boden-RESERVE (#386 firnStack). §5.15: sie friert nichts mehr ein, damit
+    // entfällt hier jede Deckel-Frage (§5.11/§5.14).
+    if (glacierActive && glacierRoles.includes(GLACIER_ROLES.L_EISZEIT)) newFirnStack = eiszeitFlood(newFirnStack, glacierLocked);
+    // Der ZUG (§5.18): NACH allen Quellen — jedes offene Feld gibt aus seiner Reserve an den nächsten Gletscher ab. Er
+    // gehörte bis §5.17 der Eiszeit allein; jetzt ist er Fundament, und Schneetreiben wie Dauerfrost kommen ohne sie an.
+    if (glacierActive) {
+      const fd = firnDrawTick(newFirnStack, newGlacierMass, glacierLocked);
+      newFirnStack = fd.firn; newGlacierMass = fd.mass;
     }
     // ---- Legendär-Perks-Rework (#203): Durchlauf-Ende-Payoffs, VOR dem Rundenscore-Tracking (dem beendeten Durchlauf
     //      attribuiert). Zinseszins — ABRECHNUNG der Bank (s. u.). Echo — der beste Stich dieses Durchlaufs wird ein

@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { resolveTrick } from "../src/game/engine.js";
 import { initialState } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
-import { precomputeGlacier, ROLES, RESET_TO } from "../src/game/glacier.js";
+import { precomputeGlacier, ROLES } from "../src/game/glacier.js";
 import { iceSnapshotOpts } from "../src/game/factions/ice.js";
 import { EIS_TIERS as EIS } from "../src/game/skills.js"; // §5.3: die Zahlen stehen in der Stufenleiter (Normal = Zeile 0)
 
@@ -24,21 +24,48 @@ const scen = (over = {}) => ({
 describe("iceSnapshotOpts — Rollen und Stufe → Snapshot-opts", () => {
   it("baut opts nur für aktive Rollen, komponiert additiv", () => {
     expect(iceSnapshotOpts([])).toEqual({});
-    expect(iceSnapshotOpts([ROLES.RISSBILDUNG]).burstAt).toBe(EIS.rissbildung[0].burstAt);
-    const all = iceSnapshotOpts([ROLES.RISSBILDUNG, ROLES.ABBRUCHKANTE]);
-    expect(all).toHaveProperty("burstAt");
+    expect(iceSnapshotOpts([ROLES.EISBEBEN]).eisbebenPer).toBe(EIS.eisbeben[0].per);
+    const all = iceSnapshotOpts([ROLES.EISBEBEN, ROLES.ABBRUCHKANTE]);
+    expect(all).toHaveProperty("eisbebenPer");
     expect(all).toHaveProperty("tierMult");
+  });
+  // §5.18: Rissbildung ist gestrichen, mit ihr die einzige Quelle für `burstAt` — gebrochen wird immer bei BURST_AT.
+  it("keine Rolle senkt mehr die Berst-Schwelle", () => {
+    for (const role of Object.values(ROLES)) expect(iceSnapshotOpts([role])).not.toHaveProperty("burstAt");
   });
 });
 
-describe("Rissbildung — senkt die Berst-Schwelle (Tempo)", () => {
-  it("bricht schon an seiner gesenkten Schwelle, wo ein normaler Gletscher noch hält", () => {
+/* §5.18 — Gletscherzunge ersetzt Rissbildung auf SK_ICE_13: Masse wird Kampfwert. Der Hebel ist der Grund, warum Eis
+   überhaupt Stiche gewinnen kann; der Bruch bekommt den vollen Sieg-Stack nur bei einem Sieg. */
+describe("Gletscherzunge — Masse wird Kampfwert", () => {
+  it("gewinnt einen Stich, den dieselbe Karte ohne sie verliert", () => {
     const glacierLocked = falses(); glacierLocked[0] = true;
-    const glacierMass = zeros(); glacierMass[0] = EIS.rissbildung[0].burstAt;
-    const base = resolveTrick(scen({ glacierLocked, glacierMass }), noCrit);
-    const riss = resolveTrick(scen({ glacierLocked, glacierMass, glacierRoles: [ROLES.RISSBILDUNG] }), noCrit);
-    expect(base.lastTrick.breakdown?.glacierDirect ?? 0).toBe(0); // unter der normalen Schwelle 12: hält
-    expect(riss.lastTrick.breakdown.glacierDirect).toBeGreaterThan(0);
+    const glacierMass = zeros(); glacierMass[0] = 12;   // Normal: 12 / 6 = +2 Wert
+    const opp = oppOf(13);                              // Kartenwert an pos0 ist 12 → ohne Zunge zu wenig
+    const ohne = resolveTrick(scen({ glacierLocked, glacierMass, oppDeck: opp }), noCrit);
+    const mit = resolveTrick(scen({ glacierLocked, glacierMass, oppDeck: opp, glacierRoles: [ROLES.GLETSCHERZUNGE] }), noCrit);
+    expect(ohne.lastTrick.result).toBe("loss");
+    expect(mit.lastTrick.result).toBe("win");
+    expect(mit.lastTrick.pValue - ohne.lastTrick.pValue).toBe(2); // genau der Satz der Stufe
+  });
+
+  /* Die Naht, die beim Bauen zuerst falsch war: der Bruch-Abfall wird dem Feld VOR der Wertberechnung abgezogen. Wer
+     den laufenden Akkumulator liest, lässt den Gletscher ausgerechnet in seiner Bruchrunde mit +0 kämpfen — und das ist
+     die Runde, in der ein Sieg am meisten wert ist, weil der volle Sieg-Stack auf den Bruch geht. */
+  it("liest die Masse DIESES Durchlaufs, auch wenn der Gletscher im selben Stich birst", () => {
+    const glacierLocked = falses(); glacierLocked[0] = true;
+    const glacierMass = zeros(); glacierMass[0] = 12;   // birst in diesem Stich (Berst-Schwelle)
+    const opp = oppOf(13);
+    const s = resolveTrick(scen({ glacierLocked, glacierMass, oppDeck: opp, glacierRoles: [ROLES.GLETSCHERZUNGE] }), noCrit);
+    expect(s.lastTrick.breakdown.glacierDirect).toBeGreaterThan(0); // er ist wirklich gebrochen
+    expect(s.lastTrick.result).toBe("win");                         // und hat trotzdem mit +2 gekämpft
+  });
+
+  it("ohne Masse kein Bonus — der Skill hängt an der Ressource, nicht am Besitz", () => {
+    const glacierLocked = falses(); glacierLocked[0] = true;
+    const ohne = resolveTrick(scen({ glacierLocked }), noCrit);
+    const mit = resolveTrick(scen({ glacierLocked, glacierRoles: [ROLES.GLETSCHERZUNGE] }), noCrit);
+    expect(mit.lastTrick.pValue).toBe(ohne.lastTrick.pValue);
   });
 });
 
@@ -52,11 +79,15 @@ describe("Abbruchkante — steilere Stufen", () => {
   });
 });
 
-describe("Rissbildung — Abkalben nach frühem Bruch", () => {
-  it("bricht an seiner gesenkten Schwelle und kalbt auf RESET_TO zurück", () => {
-    const { resetMass, breaks } = precomputeGlacier(
-      (() => { const m = zeros(); m[0] = EIS.rissbildung[0].burstAt; return m; })(), new Set([0]), iceSnapshotOpts([ROLES.RISSBILDUNG]));
-    expect(breaks).toHaveLength(1);
-    expect(resetMass[0]).toBe(RESET_TO);
+describe("Abbruchkante — die vierte Schwelle", () => {
+  // §5.18: die Leiter hat eine vierte Zeile bekommt, weil es eine vierte Schwelle gibt. Der Wächter hält fest, dass
+  // die Rolle sie auch WEITERREICHT — eine Tabelle mit t4, die im Snapshot nicht ankommt, wäre stumm.
+  it("reicht auch die Wucht der vierten Schwelle in den Snapshot", () => {
+    const { tierMult } = iceSnapshotOpts([ROLES.ABBRUCHKANTE]);
+    expect(tierMult).toHaveLength(5);
+    expect(tierMult[4]).toBe(EIS.abbruchkante[0].t4);
+    const m = zeros(); m[0] = 18;
+    const { breaks } = precomputeGlacier(m, new Set([0]), iceSnapshotOpts([ROLES.ABBRUCHKANTE]));
+    expect(breaks[0].tier).toBe(4);
   });
 });

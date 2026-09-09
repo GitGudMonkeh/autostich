@@ -667,7 +667,6 @@ export default {
   "glacierlegend.block": "cuadrado 2×2 (4 glaciares)",
   "glacierlegend.kreuz": "centro + 4 vecinas (5 glaciares)",
   "glacierlegend.linie": "fila completa (5) o columna (8)",
-  "glacierlegend.linie.wall": "fila completa (5) o columna (8) · Muro de hielo",
   "glacierlegend.flaeche": "3×3 lleno (9 glaciares)",
   "glacierlegend.mark.a": "una",
   "glacierlegend.mark.compact": "azul = carta en formación activa",
