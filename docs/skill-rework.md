@@ -6455,6 +6455,75 @@ drücken, verwässert das Design und ist nicht messbar. Ein Regler ist es.
 
 ---
 
+### 6.28 Der Durchgang ist gebaut und gemessen: +21 %, und der Regler reicht nicht (2026-09-09, Owner) — gemessen
+
+**Owner: „ja Bau, und eventuell über blühend etwas runter tarieren."** Alle fünf Etappen aus §6.26 stehen im Code,
+jede mit grünen Gates gepusht. Danach dieselbe Messung wie §6.27 (Duell, 200 Läufe, ohne Legendäre, alle vier
+Fraktionen im Topf).
+
+#### A · Was der Durchgang bringt
+
+| Build | vor §6.26 (§6.27 B) | nach §6.26 | Δ |
+| --- | --- | --- | --- |
+| Feuer mono | 7.149.056 | 7.149.056 | **bit-identisch** |
+| Blitz mono | 5.646.630 | 5.646.630 | **bit-identisch** |
+| Eis mono | 7.371.566 | 7.371.566 | **bit-identisch** |
+| **Pflanze mono** | 9,01M | **10,88M** | **+21 %** |
+| Siegquote Pflanze | 55,1 % | 55,3 % | unverändert |
+
+Die drei anderen Fraktionen reproduzieren auf die Stelle genau — der Umbau ist sauber isoliert, und der Zuwachs
+der Pflanze ist echt. Die Siegquote bleibt liegen, wie vorgesehen: die Fraktion gibt weiter keinen Kartenwert.
+
+**Pflanze ÷ Feuer: 1,26× → 1,52×.**
+
+#### B · Der Sweep über das Blühgewicht — er reicht nicht
+
+| Grundgewicht | je … Wachstum +1 | Median | ÷ Feuer |
+| --- | --- | --- | --- |
+| 3 (heute) | 40 (heute) | 10,88M | 1,52× |
+| 2 | 40 | 9,72M | 1,36× |
+| 1 | 40 | 8,59M | 1,20× |
+| 3 | 80 | 9,22M | 1,29× |
+| 2 | 80 | 8,01M | 1,12× |
+| 2 | 120 | 7,58M | 1,06× |
+
+**Das Grundgewicht allein kommt nicht hin:** selbst bei 1 — eine frisch blühende Karte zählt dann wie eine grüne,
+der Blüh-Bonus ist weg — steht die Fraktion bei 1,20×. Parität verlangt zusätzlich einen Schritt von 40 auf grob
+120–150, und **genau das entkernt den Wachstumsterm**, der in §6.20/§6.21 gebaut wurde, um die Wachstums-Skills
+überhaupt zu bezahlen: bei 205 Wachstum am Laufende fällt das Gewicht von 6 auf 3.
+
+#### C · Eine Vermutung, gemessen und widerlegt
+
+Die naheliegende Erklärung war, dass die zwei neuen Faktor-Skills den Überschuss tragen — Verwachsung Episch hebt
+`OVERLAP_BONUS[2]` von ×1,5 auf ×2,5, also **+67 %** und nicht die +17 %, die §6.26 für die Normalstufe nennt.
+Gemessen stimmt das nicht:
+
+| Lauf | Median | Anteil |
+| --- | --- | --- |
+| voll | 10,88M | — |
+| Verwachsung neutralisiert | 10,49M | −3,6 % |
+| Dickicht neutralisiert | 10,40M | −4,4 % |
+
+**Zusammen tragen die beiden neuen Skills rund 8 %.** Der Überschuss sitzt breit im Rest des Durchgangs — den vier
+gehobenen Leitern, dem Setzlingsbeet als Dauerquelle, dem Ranken-Kreislauf und dem Zähen Halm. Damit ist das
+Blühgewicht tatsächlich der richtige Regler (er skaliert alles gleichmäßig), nur eben kein hinreichender.
+
+#### Offen (Entscheid Owner)
+
+Zwei Wege, und sie schließen einander nicht aus:
+
+1. **Über das Blühgewicht tarieren** (Gewicht 2, Schritt 120–150). Trifft Parität, kostet aber die Steigung, die
+   das Wachstum über der Blüh-Schwelle überhaupt bezahlt — also die Kopplung aus §6.18, für die dieser Durchgang
+   gebaut wurde.
+2. **Den Durchgang selbst kleiner machen** — die vier gehobenen Leitern (Aussaat, Lichtung, Hecke, Setzlingsbeet)
+   ganz oder teilweise zurücknehmen. Trifft die Ursache, lässt das Passiv in Ruhe, macht aber die Buffs rückgängig,
+   die diese Runde beschlossen hat.
+
+Ob Parität überhaupt das Ziel ist, ist ebenfalls offen: §6.22 hat die Pflanze bewusst als Bekenntnis-Fraktion
+gesetzt, ihre Siegquote liegt zwölf Punkte unter Feuer, und im gemischten Split trägt sie sich mit 6,03M.
+
+---
+
 ## Änderungsprotokoll
 
 
