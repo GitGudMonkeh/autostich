@@ -53,8 +53,9 @@ export const GROSSE_LAWINE_EVERY = envNum("SIM_GLACIER_LAWINE_EVERY", 5);
 // keine Prämie je Auslösung, sondern die Entschädigung für die niedrigere Masse. Sweep: ×2 → −8 %, ×6 → +13 %,
 // ×10 → +29 %. ×10 ist der beste gemessene Wert; das Band der übrigen elf beginnt bei +34 %.
 export const GROSSE_LAWINE_MULT = envNum("SIM_GLACIER_LAWINE_MULT", 10);
-// Ablehn-Gletscher (Sim-tunebar): ab so vielen gehaltenen Eis-Skills friert auch das Ablehnen eines Skill-Angebots einen
-// Gletscher (statt nur der Skill-Pick/Tausch). Entkoppelt „mehr Gletscher" vom Tauschen guter Skills.
+// Ablehn-Gletscher: ab so vielen gehaltenen Eis-Skills friert auch ein abgelehntes Skill-Angebot einen Gletscher.
+// Der ursprüngliche Zweck (Ausgleich für volle Skill-Slots) ist mit den unbegrenzten Slots entfallen; was bleibt, ist
+// die Wahl „Skill ODER Gletscher + Perk". Gültige Owner-Frage, ob die Regel bleiben soll.
 export const DECLINE_MIN_SKILLS = 4;
 // §5.5 (Owner-Frage): Wie viele Karten friert EIN Eis-Skill-Pick fest? Bisher genau eine — der Verdacht ist, dass die
 // Fraktion daran hängt, weil ein Cluster über 7 Picks nie dicht wird. Regler, damit 1–3 messbar sind.

@@ -948,10 +948,9 @@ export function reducer(state, action) {
       if (state.skillOfferBonus) return { ...state, ...cleared, ...paid, skillOfferBonus: false, phase: "play" };
       if (state.devMode) return { ...state, ...cleared, ...paid, phase: "play" }; // Dev-Run: „Runde überspringen" → direkt weiter, KEIN Perk-Ersatz
       const off = buildPerkOffer(state.perks, state.familyTiers, rngFor(state, action, state.cycle, "perk", 0), runRules(state).perksOffered, perkLegendaryChance(state.shop) * (state.treeLegMult ?? 1), state.treeRareShift || 0, state.architectEnabled, C.perkPhaseAt(state.devSchedule || C.DECISION_SCHEDULE, state.cycle) === C.LEG_PERK2_PHASE ? (state.treeLegForce2 || 0) : 0, state.rareCap || 4, state.rareFloor || 1); // M4/M5: 2. Perk-Phase (Reroll behält Garantie) · §4c Rarität-Deckel · #370 Rarität-Boden
-      // Eis-Neudesign: bei VOLLEN Eis-Slots (SKILL_SLOTS Eis-Skills) friert das Ablehnen trotzdem einen Gletscher fest —
-      // Ausgleich dafür, dass kein weiterer Eis-Skill mehr in die Slots passt (analog: ein Tausch bei vollen Slots gibt
-      // ebenfalls einen). Der Perk bleibt: das Perk-Angebot wird geparkt (pendingPerkOffer) und nach der Gletscher-Wahl
-      // (GLACIER_LOCK) wieder aufgemacht. Nur, wenn überhaupt ein freies Feld zum Einfrieren da ist.
+      // Eis-Neudesign: ab DECLINE_MIN_SKILLS gehaltenen Eis-Skills friert auch das Ablehnen einen Gletscher fest.
+      // Der Perk bleibt: das Perk-Angebot wird geparkt (pendingPerkOffer) und nach der Gletscher-Wahl (GLACIER_LOCK)
+      // wieder aufgemacht. Nur, wenn überhaupt ein freies Feld zum Einfrieren da ist.
       const iceSkillCount = state.skills.filter((id) => archetypeOf(id) === "ice" && !isLegendarySkill(id)).length;
       const declineGrant = glacierGrant(state.glacierLocked, state.challengeBlockForm, (state.playerOrder || []).length, 1, schildHeld(state));
       if ((state.activeArchetypes || []).includes("ice") && iceSkillCount >= G_DECLINE_MIN_SKILLS && declineGrant > 0) {
