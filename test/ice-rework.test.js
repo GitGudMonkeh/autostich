@@ -104,15 +104,13 @@ describe("Eis-Stufen — die Stufe erreicht die Mechanik", () => {
     expect(nachbar(3)).toBeGreaterThan(nachbar(0));
   });
 
-  it("Kettenbruch: die Stufe begrenzt, wie weit die Kette läuft", () => {
-    // Reihe 0: pos0 bricht, pos1/2/3 liegen unter der Schwelle und hängen in einer Kette daran.
-    const mass = withMass([[0, 12], [1, 2], [2, 2], [3, 2]]);
-    const locked = new Set([0, 1, 2, 3]);
-    const chain = (tier) => precomputeGlacier(mass, locked,
-      iceSnapshotOpts([ROLES.KETTENBRUCH], iceTuning([ROLES.KETTENBRUCH], { [ROLES.KETTENBRUCH]: tier }))).breaks.length;
-    expect(chain(0)).toBe(2); // pos0 plus ein Schritt
-    expect(chain(1)).toBe(3);
-    expect(chain(3)).toBe(4); // Episch: durch das ganze Cluster
+  it("Eisbeben: die Stufe hebt das Nachbeben, und nur der Überschuss zählt", () => {
+    const locked = new Set([0]);
+    const nach = (tier, m) => precomputeGlacier(withMass([[0, m]]), locked,
+      iceSnapshotOpts([ROLES.EISBEBEN], iceTuning([ROLES.EISBEBEN], { [ROLES.EISBEBEN]: tier }))).payout[0];
+    const roh = (m) => precomputeGlacier(withMass([[0, m]]), locked).payout[0];
+    expect(nach(3, 18)).toBeGreaterThan(nach(0, 18)); // Episch bebt stärker nach als Normal
+    expect(nach(3, 12)).toBeCloseTo(roh(12), 6);      // genau auf der Schwelle: kein Überschuss, kein Beben
   });
 
   it("Eisbrücke: die Diagonale zählt nur anteilig, und die Stufe hebt den Anteil", () => {

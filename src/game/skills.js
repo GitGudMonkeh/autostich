@@ -118,7 +118,11 @@ const EIS = {
   verzahnung:     [{ per: 0.15 }, { per: 0.25 }, { per: 0.4 }, { per: 0.6 }], // niedrig angesetzt: der Ertrag wächst quadratisch mit der Clustergröße
   // Lawine — der Payoff
   abbruchkante:   [{ t2: 1.6, t3: 2.6, t4: 3.8 }, { t2: 1.8, t3: 3, t4: 4.4 }, { t2: 2.1, t3: 3.6, t4: 5.2 }, { t2: 2.5, t3: 4.4, t4: 6.4 }], // §5.18: vierte Zahl für die vierte Schwelle
-  kettenbruch:    [{ depth: 1 }, { depth: 2 }, { depth: 3 }, { depth: C.BOARD_POSITIONS, whole: true }], // §5.2: Regler ist die Reichweite der Kette
+  // §5.23 (Owner): Eisbeben ersetzt den Kettenbruch auf SK_ICE_11. Der Kettenbruch fasste fremde Gletscher an und
+  // war damit nicht zu retten (§5.22, zwei gemessene Fehlversuche); das Eisbeben liegt ganz auf dem eigenen Bruch.
+  // Die Leiter steht doppelt so hoch wie entworfen (3/4/6/9): mit 3 % gemessen tot (Lift 0,97, +1 %), weil der Überschuss
+  // über der Schwelle klein ist — KEEP_MAX deckelt, was liegen bleibt. Mit 6 % greift er (+14 %); 9 % war zu stark (§5.23).
+  eisbeben:       [{ per: 0.06 }, { per: 0.08 }, { per: 0.12 }, { per: 0.18, sturz: true }],
   // §5.18 (Owner): Gletscherzunge ersetzt Rissbildung auf SK_ICE_13. Rissbildung widersprach als einzige der eigenen
   // Schleife (halten & wachsen, dann gewaltig brechen), stand bei −7 % (§5.7) — und wer bei 6 bricht, sieht die vierte
   // Schwelle nie. An ihrer Stelle der Hebel, der Eis fehlte: Masse zu Kampfwert, damit der Gletscher seinen Stich gewinnt.
@@ -263,8 +267,8 @@ export const SKILL_DEFS = {
   // Linie 3 — Lawine (Brechen/Kaskade)
   SK_ICE_10: { id: "SK_ICE_10", name: "Abbruchkante", archetype: "ice", keywords: ["glacier"], role: "G_ABBRUCHKANTE", tiers: EIS.abbruchkante,
     ...tiered(EIS.abbruchkante, (r) => `Höhere Masse-Schwellen bersten steiler: Wucht ×${de(r.t2)} statt ×${de(G_TIER_MULT[2])} an der 2. Schwelle, ×${de(r.t3)} statt ×${de(G_TIER_MULT[3])} an der 3., ×${de(r.t4)} statt ×${de(G_TIER_MULT[4])} an der 4.`) },
-  SK_ICE_11: { id: "SK_ICE_11", name: "Kettenbruch", archetype: "ice", keywords: ["glacier"], role: "G_KETTENBRUCH", tiers: EIS.kettenbruch,
-    ...tiered(EIS.kettenbruch, (r) => `Bricht ein Gletscher, reißt er die Masse angrenzender Gletscher mit in seinen Bruch: ihre Felder fallen auf null, ihre Masse zählt zu seiner. Die Kette läuft ${r.whole ? "durch das ganze Cluster" : r.depth === 1 ? "einen Schritt weit" : `${de1(r.depth)} Schritte weit`}.`) },
+  SK_ICE_11: { id: "SK_ICE_11", name: "Eisbeben", archetype: "ice", keywords: ["glacier"], role: "G_EISBEBEN", tiers: EIS.eisbeben,
+    ...tiered(EIS.eisbeben, (r) => `Bricht ein Gletscher über der Berst-Schwelle, bebt das Eis nach: je Punkt Masse darüber zählt der Bruch +${pct(r.per)} % zusätzlich.${r.sturz ? " Das Nachbeben zählt für den Gletschersturz als eigener Bruch." : ""}`) },
   // (§5.2: Zermalmen SK_ICE_12 gestrichen — dieselbe Achse wie die Kaskade, beide zahlen für Gletscher-Nachbarn.)
   SK_ICE_13: { id: "SK_ICE_13", name: "Gletscherzunge", archetype: "ice", keywords: ["glacier"], role: "G_GLETSCHERZUNGE", tiers: EIS.gletscherzunge,
     ...tiered(EIS.gletscherzunge, (r) => `Ein Gletscher kämpft mit +1 Wert je ${de(r.per)} Masse.${r.neighbors ? " Auch seine Nachbarkarten kämpfen mit der Hälfte dieses Bonus." : ""}`) },

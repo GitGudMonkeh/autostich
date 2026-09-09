@@ -239,7 +239,7 @@ export const GLOSSARY = {
     text: `Eine Ionisierung auf einer einzelnen Karte, ohne Deckel. Jeder Stapel gibt bei Sieg mit der Karte +${C.ION_SCORE_PER_STACK} Score und +${de(C.ION_CRIT_MULT_PER_STACK)}× Crit-Multiplikator; Jede ionisierte Karte kämpft mit Blitzfänger stärker, Kurzschluss zählt tiefe Stapel doppelt, Kettenblitz vertieft die tiefste Karte.`,
     match: ["Ionisierungsstapel", "Ionisierungsstapeln", "Stapel", "Stapeln"] },
   kaskade: { category: "frak", group: "gen", label: "Kaskade", icon: "⇶", color: CLR.lightning,
-    text: `Ein Ereignis zündet das nächste. Bei Blitz: die Stapel einer Karte machen ihren eigenen Crit wahrscheinlicher (Lichtbogen), und jeder Crit füllt die Ladungsleiste weiter. Bei Eis: ein berstender Gletscher reißt seine Nachbarn mit, sodass eine Bruchwelle durchs Cluster läuft.`,
+    text: `Ein Ereignis zündet das nächste. Bei Blitz: die Stapel einer Karte machen ihren eigenen Crit wahrscheinlicher (Lichtbogen), und jeder Crit füllt die Ladungsleiste weiter. Bei Eis: jeder angrenzende Gletscher macht einen Bruch wuchtiger, sodass ein dichtes Cluster sich selbst verstärkt.`,
     match: ["Kaskade", "Kaskaden"] },
 
   /* ============ 4 · Eis ============ */
@@ -253,7 +253,7 @@ export const GLOSSARY = {
     text: `Erreicht ein Gletscher ${G_BURST_AT} Masse, bricht er: Berst-Score aus Masse × Wucht der erreichten Schwelle (Schwellen ${G_THRESHOLDS.join(" / ")}), verstärkt um +${pct(G_KASKADE)} % je angrenzendem Gletscher und Kollision, wenn der Bruch einen Gletscher-Nachbarn trifft. Danach fällt er um ${G_BURST_AT} Masse — was darüber lag, bleibt liegen — und füllt sich zum Durchlauf-Beginn aus seiner Boden-Reserve wieder auf.`,
     match: ["Bersten", "bricht", "brechen", "Bruch", "Brüche", "Bruchs", "brechendem", "Berst-Score", "Berst-Schwelle"] },
   cluster: { category: "frak", group: "ice", label: "Cluster", icon: "⧉", color: CLR.ice,
-    text: "Eine Gruppe direkt aneinandergrenzender Gletscher. Mehrere Eis-Skills messen die Cluster-Größe (Packeis, Verzahnung, Kettenbruch); Eisbrücke zählt auch die Diagonalen dazu.",
+    text: "Eine Gruppe direkt aneinandergrenzender Gletscher. Verzahnung misst die Cluster-Größe, Packeis und Frostbund zählen die direkten Nachbarn; Eisbrücke zählt auch die Diagonalen dazu.",
     match: ["Cluster", "Clusters", "Clustern"] },
   eisformation: { category: "frak", group: "ice", label: "Gletscher-Formationen", icon: "❄", color: CLR.ice,
     text: `Eis ist das einzige Deck mit Gletscher-Formationen: geometrische Formen aus festgefrorenen Gletschern verstärken deren Bersten: Block = 2×2 (4 Gletscher, ×${de(G_BLOCK)}), Kreuz = Zentrum + 4 Nachbarn (5, ×${de(G_KREUZ)}), Linie = volle Reihe (5) oder Spalte (8) (×${de(G_LINIE)}), Große Fläche = 3×3 (9, ×${de(G_FLAECHE)}). Überlappt ein Gletscher mehrere Formen, zählt die stärkste.`,

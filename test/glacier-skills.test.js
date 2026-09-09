@@ -35,7 +35,7 @@ describe("Eis-Skill-Registry", () => {
   it("glacierRolesOf mappt gehaltene Eis-Skills → ihre Rollen", () => {
     expect(glacierRolesOf(["SK_ICE_01"])).toEqual([ROLES.ANFRIEREN]);
     expect(glacierRolesOf(["SK_ICE_L03"])).toEqual([ROLES.L_LAWINE]);
-    expect(glacierRolesOf(["SK_ICE_01", "SK_ICE_11"])).toEqual([ROLES.ANFRIEREN, ROLES.KETTENBRUCH]);
+    expect(glacierRolesOf(["SK_ICE_01", "SK_ICE_11"])).toEqual([ROLES.ANFRIEREN, ROLES.EISBEBEN]);
     expect(glacierRolesOf([])).toEqual([]);
   });
 });
