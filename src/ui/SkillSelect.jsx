@@ -6,7 +6,6 @@ import { FactionIcon, ArchIcon, GlossaryIcon } from "./FactionIcon.jsx"; // #308
 import { SKILL_SLOT_LIMIT, LIGHTNING_CRIT_SOCKET, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_MAX_CHARGE, ION_SCORE_PER_STACK, ION_CRIT_MULT_PER_STACK,
          PLANT_GREEN_THRESHOLD, PLANT_BLOOM_THRESHOLD, PLANT_GROWTH_WIN, PLANT_GROWTH_PER_FORMATION, PLANT_BLOOM_SCORE_PER_GREEN,
          HEAT_MIN_MARGIN, HEAT_MARGIN_OFFSET, HEAT_PER_POINT, HEAT_LOSS, HEAT_MULT_PER_10, ION_VALUE_PER_BAR, PLANT_BLOOM_WEIGHT, PLANT_BLOOM_WEIGHT_PER_GROWTH } from "../game/constants.js";
-import { DECLINE_MIN_SKILLS as G_DECLINE_MIN_SKILLS } from "../game/glacier.js"; // Eis-Neudesign: Ablehn-Gletscher-Schwelle für den Passiv-Text
 import { rerollOffer, FOCUS_PRICE, UPGRADE_FROM, FORFEIT_SKILL } from "../game/coins.js"; // Münz-Ökonomie §3.1 Neuwurf · §3.3 Fokus · §3.5 Aufwerten — dieselben Zahlen wie der Reducer
 import { RerollLabel, CoinAmount, CoinReward } from "./CoinMark.jsx";      // Beschriftung: Anzahl solange gratis, danach der Preis · §2.3 was das Ablehnen einbringt
 import { SkillUpgrade } from "./SkillUpgrade.jsx";                        // §3.5: die Aufwertphase (eigener Bildschirm)
@@ -222,7 +221,7 @@ export function SkillSelect({ offer = null, doors = null, onPick, onDecline, onR
         return t("skill.passive.fire", { margin: HEAT_MIN_MARGIN, offset: HEAT_MARGIN_OFFSET, per: HEAT_PER_POINT,
           cool: HEAT_LOSS, mult: FIRE_MULT_PCT });
       case "ice":
-        return t("skill.passive.ice", { declineFrom: G_DECLINE_MIN_SKILLS });
+        return t("skill.passive.ice");
       case "plant":
         return t("skill.passive.plant", { win: PLANT_GROWTH_WIN, perForm: PLANT_GROWTH_PER_FORMATION,
           green: PLANT_GREEN_THRESHOLD, bloom: PLANT_BLOOM_THRESHOLD, score: PLANT_BLOOM_SCORE_PER_GREEN,

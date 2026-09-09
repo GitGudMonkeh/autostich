@@ -499,7 +499,7 @@ export default {
   "skill.passive.collapse": "{arch}: collapse passive",
   "skill.passive.lightning": "The first lightning skill gives +{first}% crit chance, every further one +{each}%. On top of that +{mult}× crit multiplier per lightning skill.",
   "skill.passive.fire": "Wins from {margin} combat-value margin give +{heat}% heat and +{score} fire score. The bigger the margin, the more of both. Losses cost {cool}% heat, plus your value deficit, at most {coolMax}. Every further fire skill gives +{perSkill} fire score per point of margin.",
-  "skill.passive.ice": "Every ice skill freezes one of your cards where it stands: it can no longer be moved in any order phase, but gathers mass every cycle and eventually bursts over its neighbours. Open ground freezes too: every free cell builds up snow and hands it to your glaciers — the fewer glaciers you hold, the more each one receives. From {declineFrom} ice skills held, a declined skill offer freezes a glacier too.",
+  "skill.passive.ice": "Every ice skill freezes one of your cards where it stands: it can no longer be moved in any order phase, but gathers mass every cycle and eventually bursts over its neighbours. Open ground freezes too: every free cell builds up snow and hands it to your glaciers — the fewer glaciers you hold, the more each one receives.",
   "skill.passive.plant": "Every win gives the card up to +1 growth, at full pace from {ref} plant skills. From {green} growth it turns green. If you hold only plant skills, every {perValue} growth gives +1 card value, up to {cap}; then it is fully grown. From {minSkills} plant skills it then also grows once every {everyLoss} losses.",
   "skill.forms.head": "Your active formations",
   "skill.forms.expand": "Expand the order board",
