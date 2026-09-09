@@ -7419,6 +7419,85 @@ jetzt zu ist — die Staffel der vier Score-Skills lässt sich erst nach einer n
 
 ---
 
+### 6.30 §6.29 nachgemessen: der Schnitt sitzt, und er sitzt tief (2026-09-09, auf Ansage) — gemessen
+
+7 Pflanze-Welten, 56.875 Läufe, 39 min. Dieselben Parameter wie die §8-Baseline (Explore 900 · Greedy/Ablation 175),
+damit die Zahlen nebeneinander stehen dürfen.
+
+#### A · Die Welten
+
+| Welt | §8 | nach §6.29 | Δ | sauber? |
+| --- | --- | --- | --- | --- |
+| **Pf** | 2.306.329.242 | **523.764.008** | **−77 %** | ja |
+| Fe+Pf | 435.711.050 | 164.401.306 | −62 % | ja |
+| Bl+Pf | 656.965.124 | 332.384.271 | −49 % | ja |
+| Fe+Bl+Pf | 155.049.540 | 105.136.235 | −32 % | ja |
+| Ei+Pf | 92.443.205 | 76.705.968 | −17 % | nein — Eis hat sich mitbewegt |
+| Fe+Ei+Pf | 57.228.097 | 57.810.366 | +1 % | nein |
+| Bl+Ei+Pf | 30.483.351 | 39.501.768 | +30 % | nein |
+
+Die drei Eis-Welten taugen nicht als Beleg: dort haben sich seit §8 ZWEI Fraktionen verschoben (§5.29–§5.33).
+
+**Die Fraktionen stehen damit neu** (mono, Median; Blitz und Feuer sind seit §8 unangetastet):
+
+| Bl | 1.686.071.449 |
+| --- | --- |
+| **Pf** | **523.764.008** |
+| Ei | 348.155.337 (§8-Stand; die Eis-Runde misst 224M) |
+| Fe | 112.712.536 |
+
+Die Pflanze war der Ausreißer nach oben und ist es nicht mehr. **Jetzt ist es Blitz**, mit dem 3,2-fachen der Pflanze.
+
+#### B · Die drei Legendären
+
+| Skill | §8 mono | jetzt | Paar | Tripel |
+| --- | --- | --- | --- | --- |
+| **Baumreihe** | +1079 % | **+112 %** | +953 → +138 % | +522 → +90 % |
+| **Wurzelgeflecht** | +591 % | **+505 %** | +284 → +210 % | +141 → +90 % |
+| Ewiger Frühling | +282 % | +291 % | +109 → +115 % | +85 → +64 % |
+
+Der Schnitt an der Mitgliederliste hat die Baumreihe um **rund 90 %** ihrer Wirkung gekostet — der Beleg, dass Kanal 4
+tatsächlich der Motor war und die Schraube aus §6.12 am falschen Ende saß. Sie ist damit vom stärksten Legendären des
+Spiels zum schwächsten der Pflanze geworden, liegt aber im gesunden Band (Große Lawine +143 %, Eiszeit +131 % in §8)
+und wird weiter in 59 % der Läufe gehalten. Wenn sie wieder etwas größer sein soll, ist `BAUMREIHE_FACTOR_SCALE`
+(0,15) jetzt der saubere Regler: er fasst den einzigen verbliebenen Score-Kanal.
+
+Wurzelgeflecht −15 % — genau die bestellte kleine Korrektur. Es ist jetzt das stärkste Pflanze-Legendäre und liegt
+neben Resonanz (+553 %) und Hochspannung (+520 %). Ewiger Frühling unverändert, wie erwartet: nicht angefasst.
+
+#### C · Die sieben angehobenen Skills
+
+| Skill | Haltequote | Wirkung mono · Paar · Tripel | Urteil |
+| --- | --- | --- | --- |
+| **Blätterdach** | **6 % → 53 %** | +2 → +8 % · −1 → −24 % · +1 → +6 % | **repariert** — der gierige Spieler nimmt ihn jetzt |
+| **Rankgerüst** | 98 → 90 % | −0 → **+6 %** · +1 → +5 % · −3 → **+150 %** | **repariert**, trotz nur +10 % Satz |
+| Jahresringe | 47 → 76 % | −0 → −4 % · +1 → +1 % · −11 → −2 % | besser gehalten, Wirkung weiter ~0 |
+| Setzlingsbeet | 29 → 37 % | −1 → −4 % · −3 → −11 % · −15 → −2 % | Tripel-Schaden weg, sonst flach |
+| Verwachsung | 98 → 42 % | +1 → +5 % · −2 → +8 % · −1 → −0 % | Wirkung leicht hoch, wird seltener genommen |
+| Zäher Halm | 100 → 98 % | −2 → −4 % · −3 → −14 % · −10 → +7 % | unverändert flach |
+| **Lichtung** | 100 → 74 % | −0 → −2 % · −5 → −3 % · 0 → 0 % | **weiter in allen sieben Welten schwach** |
+
+Zwei von sieben sind repariert, zwei sind besser, drei sind unverändert flach — und alle drei unveränderten sind
+Wachstums-Skills. Das ist genau der Befund, den §6.29 D vorweggenommen hat: **die Wachstums-Achse trägt nicht, und
+Einzelsätze heben sie nicht.** Wer sie heben will, muss an `PLANT_BLOOM_WEIGHT_PER_GROWTH` (40 Wachstum = +1
+Blühgewicht), nicht an sieben Zahlen.
+
+#### D · Der Nebenbefund: die Hecke ist mitgefallen
+
+| | §8 | jetzt |
+| --- | --- | --- |
+| Hecke, mono | 100 % gehalten · **+105 %** | 33 % gehalten · **+12 %** |
+
+Die Hecke liest den Typ *Wiederholung* — und ihre +105 % kamen zum großen Teil aus der Baumreihe, deren Mitglieder sie
+mitzählte. Ohne diesen Kanal ist sie ein normaler Score-Skill mit einer seltenen Bedingung (eine grüne Wiederholung),
+und der gierige Spieler lässt sie in zwei Dritteln der Läufe liegen. Das ist keine Nebenwirkung, die man wegtariert —
+es ist die Hecke, die man jetzt zum ersten Mal ohne Verstärker sieht. Kandidat für die nächste Runde.
+
+Damit ist auch die Staffel der vier Score-Sätze neu zu beurteilen (§6.29 E): sie war an einer Hecke kalibriert, die es
+so nicht mehr gibt.
+
+---
+
 ### 5.30 Die Eis-Skills auf dem neuen Motor (2026-09-09) — gemessen, nichts umgesetzt
 
 **Owner:** „und dann schauen wir uns alle skills an die davon profitieren müssen und designen wie."
@@ -7819,3 +7898,4 @@ leichtesten haben.
 | 2026-09-09 | Eis-Passiv-Text korrigiert (Owner-Befund: „wir haben keinen Tausch, wir haben kein slot limit mehr"). `skill.passive.ice` beschrieb noch zwei Regeln, die es seit dem exp-Skill-Rework nicht mehr gibt: das Einfrieren „auch wenn du bei vollen Skill-Slots tauschst" und „mehr Gletscher als Skill-Slots". Slots sind unbegrenzt (`SKILL_SLOT_LIMIT = 99`, nur eine Dev-Run-Regel begrenzt), damit gibt es im normalen Lauf keinen Tausch — der Glossar-Eintrag *Skill-Slot* sagte das schon, der Passiv-Text daneben das Gegenteil. Text in de/en/es neu; nur Wortlaut, keine Mechanik. Die dritte genannte Regel, der Ablehn-Gletscher ab `DECLINE_MIN_SKILLS = 4`, LEBT dagegen noch im Code (`reducer.js` DECLINE_SKILL) — nur ihre Begründung („Ausgleich für volle Slots") ist entfallen; die Kommentare dort sagen das jetzt, die Regel selbst ist eine offene Owner-Frage. |
 | 2026-09-09 | Der Ablehn-Gletscher ist gestrichen (§5.33, Owner: „fliegt auch raus"). Ab vier gehaltenen Eis-Skills fror auch ein abgelehntes Skill-Angebot einen Gletscher ein — der Ausgleich dafür, dass bei vollen Skill-Slots kein weiterer Eis-Skill mehr passte. Slots sind seit dem exp-Skill-Rework unbegrenzt, damit ist der Ausgleich ohne Gegenstand. Raus: `DECLINE_MIN_SKILLS`, der Eis-Zweig in DECLINE_SKILL und das geparkte Perk-Angebot (`pendingPerkOffer`), das nur diesen einen Umweg bediente. Gletscher kommen jetzt ausschließlich aus Eis-Picks; Ablehnen zahlt für alle Fraktionen gleich (Münzen + Perk-Ersatz). Der Passiv-Satz dazu ist aus de/en/es raus, der Wächter dreht sich um (drei Fälle: 3, 4 und 6 Eis-Skills, alle ohne Gletscher). Wirkung auf die Eis-Stärke UNGEMESSEN — der gierige Spieler lehnt selten ab, aber ein Mono-Eis-Build verliert damit eine Gletscher-Quelle. |
 | 2026-09-09 | Pflanze tariert (§6.29, Owner: „Baumreihe definitv, Wurzelgeflecht ein bisschen nerfen. danach diese skills alle ein bisschen buffen"). **Baumreihe** stand mono bei +1079 %, dem Doppelten des nächsten Legendären — und ihre Schraube aus §6.12 konnte das nicht fassen: sie zahlte auf vier Kanälen, der Regler fasst nur einen. Der Motor ist Kanal vier, die MITGLIEDERLISTE: die Reihe ist eine Wiederholung mit bis zu 40 blühenden Karten, und Hecke wie Blüte-Passiv zahlen je Mitglied — damit tat die Multiplikator-Achse die Arbeit der Dichte-Achse des Wurzelgeflechts. Owner-Entscheid a: die Reihe behält Faktor, Formationszahl und Wachstum, ihre Mitglieder zahlen keinen Basis-Score mehr (`scoreless` + `plantScoreFormations`). Gegenprobe am neuen Wächter: mit offener Naht zahlt ein Stich 720 statt 240. **Wurzelgeflecht** (+591 %) `WURZELGEFLECHT_FACTOR_SCALE` 1 → 0,85 — die halbe Strecke zurück, nicht die ganze, weil §6.15 die 0,7 schon einmal als zu hart verworfen hatte. **Sieben Skills angehoben**: Blätterdach 10→15 (+50 %), Rankgerüst 30→33 (nur +10 % — mehr lässt die Staffel der vier Score-Sätze nicht zu, ein Wächter hat meinen ersten Wurf zu Recht gerissen), Verwachsung +40 %, Lichtung/Zäher Halm/Setzlingsbeet +50 %, Jahresringe Teiler 15→12 und Sätze +25 %. Offen benannt: vier der sieben sind Wachstums-Skills, und die Achse ist als ganze flach — der systemische Hebel wäre `PLANT_BLOOM_WEIGHT_PER_GROWTH`, nicht sieben Einzelsätze; nicht angefasst, weil er die ganze Fraktion mithebt. ALLES UNGEMESSEN. |
+| 2026-09-09 | §6.29 nachgemessen (§6.30, Owner: „mess nach"). 7 Pflanze-Welten, 56.875 Läufe, 39 min, Parameter der §8-Baseline. **Der Schnitt sitzt: Baumreihe +1079 → +112 % mono**, also rund 90 % ihrer Wirkung — der Beleg, dass die Mitgliederliste der Motor war und die Schraube aus §6.12 am falschen Ende saß. Sie ist damit das schwächste der drei Pflanze-Legendären, liegt aber im Band von Großer Lawine (+143 %) und Eiszeit (+131 %) und wird in 59 % der Läufe gehalten; `BAUMREIHE_FACTOR_SCALE` ist jetzt der saubere Regler, falls sie wieder wachsen soll. Wurzelgeflecht +591 → +505 % (die bestellte kleine Korrektur), Ewiger Frühling unverändert. **Die Fraktion fällt mono 2,31 Mrd → 524M (−77 %)**, in den drei sauber vergleichbaren Mischwelten −32 bis −62 %; damit ist die Pflanze nicht mehr der Ausreißer, sondern **Blitz** (1,69 Mrd, 3,2× Pflanze). Von den sieben angehobenen Skills sind zwei repariert (Blätterdach Haltequote 6 → 53 %, Rankgerüst mono −0 → +6 % und im Tripel −3 → +150 %), zwei besser, drei unverändert flach — und alle drei sind Wachstums-Skills, wie in §6.29 D vorhergesagt: die Achse hebt man nicht mit Einzelsätzen, sondern mit `PLANT_BLOOM_WEIGHT_PER_GROWTH`. Nebenbefund: **die Hecke ist mitgefallen** (100 % gehalten/+105 % → 33 %/+12 %) — ihre alte Zahl kam zum großen Teil aus dem Baumreihen-Kanal. Sie ist jetzt zum ersten Mal ohne Verstärker sichtbar und der Kandidat für die nächste Runde. |
