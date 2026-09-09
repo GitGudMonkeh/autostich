@@ -3790,6 +3790,194 @@ neu zu erheben.
 gehört hinter das Bauen. Und ob die Legendär-Abhängigkeit (C, 6,9×) danach kleiner ist: Vorschlag 4 hebt die
 Streuung für alle, aber Doppelentladung multipliziert sie weiterhin mit fünf.
 
+### 7.30 Sockel im Passiv, und die tote Ecke aufgeräumt (2026-09-09, Owner) — umgesetzt und gemessen
+
+Owner nach dem Befund in §7.29: **„Sockel steigern und Skillnutzlichkeit erhöhen."** Drei Eingriffe, alle in der
+Reihenfolge gebaut, in der sie voneinander abhängen — erst der Sockel, dann die Rangliste neu erhoben, dann die
+beiden Skills, die danach unten standen.
+
+#### A. Was gebaut wurde
+
+| # | Eingriff | Vorher | Nachher |
+| --- | --- | --- | --- |
+| 1 | **Passiv-Sockel** (`LIGHTNING_CRIT_SOCKET`) | nur ein Satz je Skill, 4 % | **8 % Sockel, sobald Blitz aktiv ist**, dazu 3 % je gehaltenem Skill |
+| 2 | **Serienschutz** (SK_LIGHTNING_17) | Anteil der Leiste (70 / 50 / 40 / 30 %), bei JEDER Niederlage | **1 Ladung, höchstens 2 / 3 / 5 / 8 mal je Durchlauf** |
+| 3 | **Ladungsserie** (SK_LIGHTNING_07) | Crit-Chance je Serienpunkt, Ladung nur als Episch-Extra | **ab Serie 16 / 12 / 8 / 5 gibt jeder Sieg +1 Ladung** |
+
+Der Sockel sitzt in `lightningCritChance` und zahlt an der Aktivierung, nicht an der Zahl gehaltener Skills — die
+Form, die §7.29 F verlangt hat. Passiv-Text, Glossar-Eintrag „Crit" und die Stufentexte interpolieren die Konstanten
+wie bisher, es gibt also keinen Text↔Code-Drift; `npm run loc:export` ist gelaufen. Die drei abgeschalteten Kataloge
+(en/es/zh-Hans) bleiben auf ihrem Stand — das ist die dokumentierte Regel für inaktive Kataloge auf `exp`, und ihre
+Blitz-Passivzeile stand schon vor dieser Runde auf dem Text von vor dem Rework.
+
+#### B. Die Rampe: der Motor springt fünf Runden früher an
+
+`blitz-ramp.mjs`, 100 Läufe, Welt nur Blitz, die Läufe ohne Legendäres. Dieselbe Sonde und dieselben Seeds wie in
+§7.29 A:
+
+| | vorher | nur Sockel | Sockel + beide Skills |
+| --- | --- | --- | --- |
+| Crit-Chance Runden 1–10 | 8,4 % | **14,2 %** | 14,3 % |
+| Crit-Chance Runden 11–20 | 20,8 % | 24,3 % | 24,3 % |
+| Crit-Chance Runden 41–50 | 71,6 % | 72,5 % | 84,1 % |
+| Erste volle Leiste (Median-Runde) | R 8 | **R 5** | R 5 |
+| Siege mit Stapel, Runden 21–30 | 31 % | 47 % | **48 %** |
+| Siege mit Stapel, Runden 41–50 | 82 % | 85 % | **96 %** |
+| Volle Leisten am Laufende | 55,8 | 71,5 | **145,9** |
+| Stapel auf dem Deck | 210 | 256 | **420** |
+
+**Die beiden Hälften des Eingriffs trennen sich sauber.** Der Sockel wirkt vorn (Runden 1–10 von 8,4 auf 14,2 %,
+erste Ionisierung von Runde 8 auf Runde 5) und lässt das Laufende praktisch stehen. Die beiden Skill-Umbauten wirken
+hinten (Leisten 71,5 → 145,9), weil beide auf die Ladung zahlen und die Serie erst spät lang genug wird.
+
+#### C. Serienschutz: der Effekt war gut, der Preis war die Falle
+
+Gepaart, fixe Policy, die den Skill immer hält, 100 Läufe:
+
+| Fassung | Median | besser als ohne ihn |
+| --- | --- | --- |
+| ohne Serienschutz | 60,0M (1,00×) | — |
+| **Ist vor dem Umbau** (70 % der Leiste, jede Niederlage) | 49,7M (**0,83×**) | 30 % |
+| derselbe Skill **gratis** (Preis 0, unbegrenzt) | 74,0M (**1,23×**) | 71 % |
+
+**Der Effekt ist +23 %, der Preis macht −17 % daraus.** Der Grund ist die Kadenz, nicht die Zahl: bei rund
+14 Niederlagen je Durchlauf wird jeder Preis öfter fällig, als die Leiste Ladung erzeugt — und er wird genau dann
+fällig, wenn die Leiste kurz vor der Ionisierung steht. Ein Sweep über Preis und Deckel zeigt, wie hart die Währung
+ist (jeweils „besser als ohne"):
+
+| Preis 3, 1× | Preis 3, 2× | Preis 2, 3× | Preis 2, 5× | **Preis 1, 2×** | Preis 1, 5× | Preis 1, 8× |
+| --- | --- | --- | --- | --- | --- | --- |
+| 51 % | 49 % | 56 % | 57 % | **64 %** | 63 % | 69 % |
+
+**Bei Preis 2 bleibt er neutral, bei Preis 1 trägt er** — eine einzelne Ladung ist teuer, weil die Leiste der
+Engpass der Fraktion ist. Gesetzt: **Preis 1 auf allen Stufen, die Leiter ist die Kadenz** (2 / 3 / 5 / 8 je
+Durchlauf). Das ist zugleich die vierte Häufigkeitsleiter, die Blitz nach §7.26 D fehlt. Zum Maßstab: derselbe
+Messaufbau gibt Blitzableiter Normal — dem stärksten Skill der Fraktion — 68 %, Blitzfänger Normal 60 %.
+
+**Verworfen:** nur den Anteil senken (0,2 statt 0,7). Bei 14 Niederlagen kostet auch das mehr Ladung, als ein
+Durchlauf erzeugt; ohne Deckel ist keine Zahl klein genug.
+
+#### D. Ladungsserie: von der gesättigten Achse auf den Engpass
+
+Der Skill stand in §7.29 D bei −1 % und **fiel durch den Sockel auf −17 %** — die Zwischenmessung nach Eingriff 1
+ist damit selbst der Befund. Seine Achse ist Crit-Chance je Serienpunkt, und die ist nach dem Sockel spät am
+Anschlag: mit dem Sockel stehen in den Runden 41–50 **31 % der Stiche** bei
+100 % Crit-Chance und **49 % der Crits** am 8×-Deckel (`overcrit-engine.mjs`, 60 Läufe, Blitz mono; vor dem Sockel
+waren es 15 % und 27 %, §7.28 B). Mehr Chance auf dieser Achse ist verschenkt.
+
+Gepaarter Sweep, derselbe Aufbau wie oben:
+
+| Fassung | Median | besser als ohne |
+| --- | --- | --- |
+| Ist (0,1 % Crit je Serienpunkt) | 0,79× | 44 % |
+| Crit ×10 (1 % je Punkt) | 1,23× | 60 % |
+| Ladung ab Serie 30 / 22 / 16 | 1,05× / 1,04× / 1,10× | 51 % / 55 % / **57 %** |
+| Ladung ab Serie 12 / 8 | 1,32× / 1,30× | 68 % / 69 % |
+| Ladung ab Serie 5 / 3 | 1,57× / 1,88× | 80 % / 81 % |
+
+Gesetzt: **Ladung ab Serie 16 / 12 / 8 / 5**. Damit steht Normal bei 57 % (Blitzfänger-Niveau) und Episch bei 80 %,
+und der Skill trägt seinen Namen wieder — „Ladungsserie" heißt Ladung aus der Serie, nicht Crit aus der Serie. Die
+Ladung war schon vorher da, aber nur als Episch-Extra; sie ist jetzt der ganze Skill, und die Leiter ist die
+fallende Schwelle.
+
+**Verworfen:** den Crit-Satz verzehnfachen (1,23× / 60 %). Es funktioniert, aber es legt einen dritten Geber auf
+die Achse, die nach dem Sockel als erste sättigt — genau die Dublette, die §7.26 B als Befund führt.
+
+**Technischer Nebeneffekt:** `lightningCritChance` liest die Serie damit nicht mehr. Der Parameter bleibt als
+`_streak` stehen — die Engine berechnet die Serie ohnehin und reicht sie durch, und eine künftige
+Serie-zu-Chance-Quelle gehört an dieselbe Stelle; die fünfzehn Aufrufstellen zweimal umzustellen wäre der teurere
+Weg.
+
+#### E. Die Nutzlichkeitsverteilung danach
+
+Dieselbe gepaarte gierige Ablation wie in §7.29 D, dieselbe legendärfreie Welt, dieselben Seeds
+(`SIM_SKILL_LEGENDARY_PER_SLOT=0 --mode skills --arch lightning --explore 800 --runs 120`). Gierig-Median 71,4M,
+Ø 12,9 Skills:
+
+Die Vergleichsspalte ist die Zwischenmessung **nach dem Sockel, vor den beiden Skill-Umbauten** — nur so trennen
+sich die Eingriffe; §7.29 D steht daneben, wo es die Geschichte des Skills erzählt.
+
+| Skill | gehalten | Median-Δ | typ. | besser MIT | Flag | nur Sockel | §7.29 D |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Ionenfeld | 97 % | +14,6M | +28 % | 65 % | stark | +21 % | +42 % |
+| Gewitterfront | 94 % | +13,5M | +33 % | 70 % | stark | +12 % | +23 % |
+| Blitzableiter | 72 % | +13,3M | +33 % | 63 % | stark | +71 % | +100 % |
+| Kurzschluss | 100 % | +12,1M | +23 % | 73 % | | +5 % | +10 % |
+| Kettenblitz | 93 % | +5,9M | +13 % | 61 % | | +6 % | +5 % |
+| Blitzfänger | 76 % | +5,2M | +15 % | 69 % | | +24 % | +15 % |
+| **Ladungsserie** | 98 % | +3,5M | **+7 %** | 56 % | | **−17 %** | −1 % |
+| Reststrom | 79 % | +3,5M | +9 % | 63 % | | +17 % | +16 % |
+| Blitzschlag | 92 % | +0,2M | 0 % | 54 % | tot | +10 % | +13 % |
+| **Serienschutz** | 97 % | −0,1M | **−0 %** | 49 % | tot | **−45 %** | −47 % |
+| Vorentladung | 99 % | −3,0M | −4 % | 38 % | schadet | +1 % | +3 % |
+| Lichtbogen | 99 % | −2,6M | −6 % | 39 % | schadet | −2 % | −7 % |
+| Entladung | 100 % | −9,5M | −13 % | 31 % | schadet | −7 % | −10 % |
+| Spannungsstau | 100 % | −17,1M | −26 % | 30 % | schadet | −6 % | −10 % |
+
+**Die beiden Umbauten sind angekommen.** Serienschutz geht von −45 auf −0 %, Ladungsserie von −17 auf +7 %. Keiner
+von beiden ist damit ein Zugpferd, aber keiner ist mehr eine Falle — und das war das Ziel: ein Skill, den der
+gierige Spieler in 97 % der Läufe nimmt und für den er 47 % zahlt, ist der teuerste Fehler, den ein Angebot
+enthalten kann.
+
+**Die Verteilung ist deutlich flacher.** Die Zahl, auf die es ankommt, ist die Spannweite im Verhältnis zum Median
+— wo der Spieler 13 von 14 Skills hält, summiert sich die Spalte konstruktionsbedingt auf null, „alle positiv" ist
+also gar nicht erreichbar (§7.29 D):
+
+| | vorher | nur Sockel | jetzt |
+| --- | --- | --- | --- |
+| Bester Skill | +100 % | +71 % | **+33 %** |
+| Schlechtester | −47 % | −45 % | **−26 %** |
+| Spannweite ÷ Median | 1,23 | 1,19 | **0,44** |
+
+**Was jetzt unten steht, ist ein Bündel, kein Einzelfall.** Spannungsstau (−26 %), Entladung (−13 %),
+Vorentladung (−4 %) und Lichtbogen (−6 %) sind genau die vier, die auf den **Crit-Multiplikator** zahlen — und der
+Deckel steht bei 8×. Nach dem Sockel sitzen in den Runden 41–50 **49 % der Crits** dort (vorher 27 %), das heißt:
+knapp die Hälfte dessen, was diese vier oben drauflegen, schneidet der Deckel wieder ab. Das ist §7.29 G #10, jetzt
+mit Zahl. Es ist eine Drei- bis Vier-Skill-Frage und keine Tarierung, deshalb steht sie in H und nicht in dieser
+Runde.
+
+#### F. Parität: Blitz ist im Feld angekommen — und Feuer steht jetzt allein unten
+
+Duell über alle vier Fraktionen, 120 Läufe, Seeds 1–120, gepaart gegen denselben Lauf auf `origin/exp`:
+
+| Build | vorher | nachher |
+| --- | --- | --- |
+| Feuer mono | 6,29M | 6,29M |
+| **Blitz mono** | **6,92M** | **10,93M** |
+| Eis mono | 9,88M | 9,88M |
+| Pflanze mono | 11,36M | 11,36M |
+| Split (alle vier) | 6,51M | 9,57M |
+| Mix (zufällig) | 4,34M | 4,92M |
+
+Blitz steigt um **58 %** und liegt jetzt zwischen Eis (9,88M) und Pflanze (11,36M). Die anderen drei stehen auf den
+Seeds unverändert — der Eingriff ist sauber lokal.
+
+**Damit ist Feuer die neue Untergrenze**, und zwar nicht erst seit dieser Runde: Feuer stand schon vorher bei
+6,29M gegen Eis 9,88M und Pflanze 11,36M. Der Blitz-Buff hat die Lücke nur sichtbar gemacht, indem er den zweiten
+Kandidaten aus ihr herausgezogen hat. Das ist eine eigene Entscheidung und keine Nacharbeit an dieser hier.
+
+**Der Blitz-Schwanz ist gewachsen** (Mean 19,0 → 44,2M, p95 88,8 → 158,3M). Er ist damit der zweitgrößte des Feldes
+hinter dem der Pflanze (Mean 181,7M) und bleibt der Wachpunkt aus §7.25.
+
+#### G. Der Balance-Guard wurde nachgezogen — mit Beleg
+
+`test/sim-balance-guard.test.js` fängt einen Tail-Runaway über 40 feste Seeds. Der Mean steigt von 6,39M auf 8,84M
+und lief damit gegen die Obergrenze 8,5M. Nachgezogen auf 10,5M, und zwar erst nach der Prüfung, ob es ein echter
+Runaway ist: über die 40 Seeds trägt **ein einziger Lauf** (129M) den Mean — ohne ihn stehen 5,75M —, und über
+Seeds 1..200 liegt der Mean bei **6,48M**, also mitten im Band. Der Median-Guard darüber wandert von 2,59 auf
+3,12M und bleibt in seinem Band, ohne Eingriff. Die Obergrenze fängt weiterhin, wofür sie da ist: der dokumentierte
+echte Blowup lag bei 352M, also Faktor 33 über der neuen Grenze.
+
+#### H. Offen
+
+- **Feuer** ist jetzt allein unten (F). Entscheid Owner, ob Feuer nachzieht oder das Band so bleibt.
+- **Die Stapel-Streuung** aus §7.29 G #4 (Grundstapel je Leiste 1 → 2) ist **nicht** gebaut — der Owner hat den
+  Sockel und die Skillnutzlichkeit gewählt. Die Legendär-Abhängigkeit ist damit nicht direkt angefasst; sie sinkt
+  nur mittelbar, weil der Lauf ohne Legendäres jetzt mehr Leisten schafft.
+- **Die untere Hälfte der Rangliste** in E: nach dem Umbau von zwei Skills sind die verbliebenen Minus-Zeilen klein.
+  Wo die Ablation 13 von 14 Skills hält, summiert sie sich konstruktionsbedingt auf null — irgendwer steht immer
+  unten. Die Frage ist die **Spannweite**, nicht das Vorzeichen.
+
 ## 5. Eis
 
 ### 5.1 Bestandsaufnahme (2026-09-07, Befund, nichts umgesetzt)
@@ -6478,3 +6666,4 @@ und die Ranked-Texte, die eine andere Runde meinen.
 | 2026-09-08 | Owner: „eigener kleiner Schritt" für die Firn-Familie. Vor dem Bauen gemessen, warum Dauerfrost schwach ist: 69 % aller Boden-Reserve auf ungefrorenen Feldern liegt über `FIRN_REFILL_TARGET` (12), höchster Stand 136 — totes Kapital, die fehlende Kopplung war nur das Symptom. Jetzt gibt jedes offene Feld bis zu `EISZEIT_DRAW` an den nächstgelegenen Gletscher ab statt nur an einen angrenzenden; damit erreicht auch Dauerfrosts ferne Reserve einen Abnehmer. Eiszeit +30 → +42 % (besser in 56 → 63 %), stärkste der drei Eis-Karten und im Band. Korrigiert §5.15: „Masse füttern trägt nicht" galt nur bei Berstfaktor 1 — mit dem Faktor aus §5.16 wandelt Masse sich in Berst-Häufigkeit, die beiden Änderungen wirken nur zusammen. Nicht gelöst: ohne Eiszeit bleibt die Dauerfrost-Kohorte bei 65,2 % totem Kapital. Verbund beider Legendären Faktor 106 → 11. §5.17. |
 | 2026-09-08 | Owner: die drei Eis-Texte kompakter, ohne Gedankenstriche, ohne Fluff. Nur Wortlaut, keine Mechanik. Raus: die angehängten Erklärsätze („freier Boden ist deine Wucht…", „du kannst das ganze Brett einfrieren"), die Versalien und die Füllwörter. Die Große Lawine nennt jetzt ihren Faktor (×`GROSSE_LAWINE_MULT`) statt „verstärkt" — dieselbe Auskunft, präzise, wie in den übrigen Texten. Die Bindestriche in *Boden-Reserve*, *Eis-Skill* und *Gletscher-Formation* bleiben: das sind projektweite Begriffe aus Glossar und i18n, ein abweichender Wortlaut nur in diesen drei Karten bräche „ein Begriff je Sache". Nebenbei fielen die englischen und spanischen Schild-Texte auf, die noch auf dem Stand vor §5.13/§5.14 standen; beide nachgezogen. §5.18. |
 | 2026-09-09 | Blitz-Befund (7.29, Owner-Ansage „Blitz anlassen"): Rampe, Crit-Quellen, Skillnutzlichkeit und Legendär-Abhängigkeit gemessen. Bis Runde 30 ist das Passiv die einzige Crit-Quelle; der Satz je Skill hat die falsche Form, ein Sockel ist gemessen (nicht gebaut); Serienschutz misst −47 %. Vier Sonden in `sim/probes/`. Vorschläge zum Entscheid, nichts umgesetzt. |
+| 2026-09-09 | Blitz umgesetzt (7.30, Owner: „Sockel steigern und Skillnutzlichkeit erhöhen"): Passiv-Sockel 8 % bei 3 % je Skill (Runden 1–10 8,4 → 14,2 % Crit, erste Leiste R 8 → R 5); Serienschutz zahlt 1 Ladung mit Deckel je Durchlauf statt eines Leisten-Anteils bei jeder Niederlage (−45 → −0 %); Ladungsserie von Crit-Chance auf Ladung ab Serie 16/12/8/5 (−17 → +7 %). Spannweite der Skillnutzlichkeit ÷ Median 1,23 → 0,44. Duell gepaart: Blitz mono 6,92 → 10,93M, die anderen drei unverändert — Feuer steht jetzt allein unten. Balance-Guard-Obergrenze 8,5 → 10,5M mit Beleg. Offen: das Crit-Multiplikator-Bündel (Spannungsstau, Entladung, Vorentladung, Lichtbogen) läuft gegen den 8×-Deckel. |

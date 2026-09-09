@@ -953,7 +953,7 @@ export function resolveTrick(state, rng) {
   const newArchitectPre = archPreNow;
   if (pos >= cycleLen) { // Zeitsegment (§8 A-L1): Durchlauf endet nach cycleLen Stichen (40, mit Zeitsegment 45)
     cycle += 1;
-    lightning = lightningCycleEnd(lightning); // exp Blitz: Gratis-Serienschutz (Episch) je Runde wieder frei
+    lightning = lightningCycleEnd(lightning); // exp Blitz (§7.30): der Serienschutz-Deckel füllt sich je Durchlauf wieder auf
     // Eis-Neudesign (docs §2.6): Ewiger Frost — bedingungsloser Masse-Tick je Durchlauf auf jeden Gletscher (nach Auszahlung).
     if (glacierActive) newGlacierMass = ewigerFrostTick(newGlacierMass, glacierLocked);
     // Dauerfrost (docs §4 Firn): offener Boden friert am tiefsten — passiver Frost in die Boden-Reserve (#386 firnStack).
