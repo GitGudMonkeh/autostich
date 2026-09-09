@@ -59,9 +59,11 @@ function SellRow({ entry, onSell }) {
         {info.cat && <span className="text-meta-1 px-1.5 py-0.5 rounded"
           style={{ background: `${info.cat.color}22`, color: info.cat.color }}>{info.cat.name}</span>}
         <span className="ml-auto">
+          {/* Grüner RAHMEN, goldene Münze (Owner 2026-09-09): die Richtung trägt die Umrandung, der
+              Betrag bleibt die Währungsfarbe. */}
           <span className="inline-flex items-center rounded-lg px-2.5 py-1"
             style={{ background: "linear-gradient(180deg,#16241a,#121a14)", border: `1px solid ${COIN_GAIN}66` }}>
-            <CoinAmount n={entry.price} size={11} dim={blocked} style={{ color: COIN_GAIN }} />
+            <CoinAmount n={entry.price} size={11} dim={blocked} />
           </span>
         </span>
       </div>
