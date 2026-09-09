@@ -31,9 +31,10 @@ export const TIER_MULT = [0, 1, 1.5, 2.2, 3.2]; // überlineare Wucht je Stufe (
 // Reihen-Bau, das hebt den Boden der Fraktion (1,00× → 1,16×). Gemessen 64 → Median-Parität 1,00×.
 // §5.25 nachtariert: 64 → 60. Das Einfrieren nimmt jetzt die höchsten Gegnerkarten; die Stichquote steigt 59,6 → 62 %,
 // und ein gewonnener Gletscher-Stich zahlt den vollen Sieg-Stack (glacierWinMult). Gemessen 60 → Parität 1,01×.
-// §5.27 nachtariert: 60 → 28. Der offene Zug (s. FIRN_DRAW) verdoppelt das Masse-Einkommen der Fraktion — jeder Punkt
+// §5.27 nachtariert: 60 → 30. Der offene Zug (s. FIRN_DRAW) verdoppelt das Masse-Einkommen der Fraktion — jeder Punkt
 // Schnee kommt jetzt an, statt mit 1 je Durchlauf zu tröpfeln. Ohne Nachtarierung stand Eis bei 1,97× Feuer.
-export const BURST_SCALE = envNum("SIM_GLACIER_BURST_SCALE", 28);
+// (Gemessen 28 → 0,97×; der Owner nimmt die rundere 30, die im Band bleibt.)
+export const BURST_SCALE = envNum("SIM_GLACIER_BURST_SCALE", 30);
 // Große Lawine (§5.8, Owner): feuert nicht mehr einmal am Laufende, sondern im TAKT — jeden GROSSE_LAWINE_EVERY-ten
 // Durchlauf bricht das ganze Feld auf einen Schlag, jeder Gletscher mit der Wucht der höchsten Schwelle. Damit ist sie
 // den ganzen Lauf über sichtbar, und sie synchronisiert das Feld: Kaskade, Kollision und Gletschersturz greifen
