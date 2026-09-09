@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { resolveTrick } from "../src/game/engine.js";
 import { initialState } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
-import { precomputeGlacier, ROLES, BURST_AT } from "../src/game/glacier.js";
+import { precomputeGlacier, ROLES, BURST_AT, THRESHOLDS, TIER_MULT, KEEP_MAX } from "../src/game/glacier.js";
 import { iceSnapshotOpts, iceTuning } from "../src/game/factions/ice.js";
 import { EIS_TIERS as EIS } from "../src/game/skills.js"; // §5.3: die Zahlen stehen in der Stufenleiter (Normal = Zeile 0)
 
@@ -96,6 +96,20 @@ describe("Abbruchkante — der Gletscher sammelt", () => {
     expect(abb.breaks).toHaveLength(1);
     expect(abb.payout[0]).toBeGreaterThan(norm.payout[0]);
     expect(abb.breaks[0].tier).toBeGreaterThan(norm.breaks[0].tier); // die höhere Sprosse ist der Gegenwert
+  });
+
+  /* §5.32: der Wächter zu einem gemessenen Fehler. Der erste Wurf legte die Schwellen ZWISCHEN die Sprossen der
+     Leiter (24 zählt noch zur vierten wie 18, 38 noch zur fünften wie 30). Dann kostet die höhere Stufe Wartezeit,
+     ohne Wucht zu bringen: Stufe 2 zahlte weniger als gar kein Skill, Episch weniger als Stufe 3 — der gierige
+     Spieler ließ ihn fallen (Haltequote 68 % → 20 %). Beide Bedingungen müssen gelten, nicht nur eine. */
+  it("jede Schwelle liegt AUF einer Sprosse, und die Auszahlung steigt mit der Stufe", () => {
+    const tOf = (m) => THRESHOLDS.filter((t) => m >= t).length;
+    // Auszahlung je Durchlauf und Punkt Einkommen: Masse × Wucht ÷ Kletterzeit von KEEP_MAX auf die Schwelle.
+    const proRunde = (B) => B * TIER_MULT[tOf(B)] / (B - KEEP_MAX);
+    for (const r of EIS.abbruchkante) expect(THRESHOLDS).toContain(r.at);
+    expect(proRunde(EIS.abbruchkante[0].at)).toBeGreaterThan(proRunde(BURST_AT)); // Normal lohnt gegen „kein Skill"
+    for (let t = 1; t < EIS.abbruchkante.length; t++)
+      expect(proRunde(EIS.abbruchkante[t].at)).toBeGreaterThan(proRunde(EIS.abbruchkante[t - 1].at));
   });
 
   it("die Stufe des Skills verschiebt die Schwelle weiter nach oben", () => {

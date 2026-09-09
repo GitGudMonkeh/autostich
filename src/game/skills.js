@@ -145,7 +145,12 @@ const EIS = {
   /* §5.31: die Abbruchkante ist der SAMMEL-Skill geworden. Sie hebt die Berst-Schwelle, statt die Stufenwucht ein
      wenig anzuheben — das alte +7/+18/+19 % war gegen eine Leiter, die bis ×9,7 reicht, ein Nebengeräusch (gemessen
      +9 % mono / +15 % Paar / −3 % Tripel). Wer hält, trifft die Sprosse, die sein Einkommen hergibt. */
-  abbruchkante:   [{ at: 18 }, { at: 24 }, { at: 30 }, { at: 38 }],
+  /* §5.32: die Schwellen liegen jetzt AUF den Sprossen der Leiter. Der erste Wurf (18/24/30/38) lag zwischen ihnen —
+     24 zählt noch zur vierten Sprosse wie 18, 38 noch zur fünften wie 30. Auszahlung je Durchlauf und Punkt Einkommen
+     (Masse × Wucht ÷ Kletterzeit): 12 → 4,40 · 18 → 4,80 · 24 → 4,27 · 30 → 5,75 · 38 → 5,46. Stufe 2 war damit
+     SCHLECHTER als gar kein Skill und Episch schlechter als Stufe 3 — der gierige Spieler hat ihn folgerichtig fallen
+     lassen (Haltequote 68 % → 20 %). Auf den Sprossen: 18 → +9 %, 27 → +34 %, 40 → +79 %, 60 → +145 %. */
+  abbruchkante:   [{ at: 18 }, { at: 27 }, { at: 40 }, { at: 60 }],
   // §5.23 (Owner): Eisbeben ersetzt den Kettenbruch auf SK_ICE_11. Der Kettenbruch fasste fremde Gletscher an und
   // war damit nicht zu retten (§5.22, zwei gemessene Fehlversuche); das Eisbeben liegt ganz auf dem eigenen Bruch.
   // Die Leiter steht doppelt so hoch wie entworfen (3/4/6/9): mit 3 % gemessen tot (Lift 0,97, +1 %), weil der Überschuss

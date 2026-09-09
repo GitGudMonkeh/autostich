@@ -7432,8 +7432,48 @@ der Runde. Eis mono 7,14 → 6,78M, Bl+Ei 7,16 → 6,54M.
 
 Das ist kein Widerspruch, sondern die Messgrenze: die Fraktions-Policy im Cross-Lauf setzt ihre Gletscher **immer**
 auf das 3×3-Cluster — auch im Tripel mit vier Picks. Für einen so gebauten Build ist Packeis' Seitenwechsel ein
-reiner Nerf, und die übrigen drei Änderungen betreffen Skills, die der Zufallsspieler ohnehin selten hält. Was die
-Runde wirklich bewirkt, steht in der Welten-Messung mit dem gierigen Spieler (unten).
+reiner Nerf, und die übrigen drei Änderungen betreffen Skills, die der Zufallsspieler ohnehin selten hält.
+
+#### Welten-Messung: drei von vier wirken, einer ist kaputt
+
+Sieben Eis-Welten, dieselben Parameter wie §5.30 (Explore 600 · Greedy/Ablation 140), Haltequote / typischer Effekt:
+
+| Skill | mono vorher → jetzt | Paar vorher → jetzt | Urteil |
+| --- | --- | --- | --- |
+| **Verdichtung** | 97 % / −10 % → **41 % / +29 %** | 36 % / +2 % → **57 % / +6 %** | wirkt |
+| **Packeis** | 100 % / +24 % → **83 % / −10 %** | 26 % / −8 % → **21 % / +37 %** | Spiegel wie bestellt |
+| **Anfrieren** | 19 % / −7 % → **56 % / −2 %** | 12 % / −10 % → 15 % / +2 % | halb: wird genommen, wirkt nicht |
+| **Abbruchkante** | 68 % / +9 % → **20 % / +12 %** | 20 % / +15 % → 20 % / +0 % | **kaputt** |
+
+**Und Eis mono fällt in dieser Messung von 409,8M auf 224,2M.** Der Hauptposten ist Packeis: er war mono die zweite
+Masse-Quelle und ist dort jetzt fast wirkungslos (ein Gletscher im Cluster hat kaum offene Nachbarn). Das ist der
+bestellte Preis des Seitenwechsels — die Höhe ist offen und gehört tariert.
+
+### 5.32 Der Fehler in der Abbruchkante: Schwellen zwischen den Sprossen (2026-09-09)
+
+Die Haltequote 68 % → 20 % war kein Rauschen, sondern ein Konstruktionsfehler von mir. Auszahlung je Durchlauf und
+Punkt Einkommen (Masse × Wucht ÷ Kletterzeit von `KEEP_MAX` auf die Schwelle):
+
+| Schwelle | Sprosse | Wucht | Auszahlung | gegen „kein Skill" |
+| --- | --- | --- | --- | --- |
+| 12 (ohne Skill) | 3 | 2,2 | 4,40 | — |
+| **18** | 4 | 3,2 | 4,80 | +9 % |
+| **24** | 4 | 3,2 | **4,27** | **−3 %** |
+| 27 | 5 | 4,6 | 5,91 | +34 % |
+| **30** | 5 | 4,6 | 5,75 | +31 % |
+| **38** | 5 | 4,6 | **5,46** | +24 % |
+| 40 | 6 | 6,7 | 7,88 | +79 % |
+| 60 | 7 | 9,7 | 10,78 | +145 % |
+
+24 zählt noch zur vierten Sprosse wie 18, 38 noch zur fünften wie 30 — **die höhere Stufe kostete Wartezeit, ohne
+Wucht zu bringen.** Stufe 2 zahlte weniger als gar kein Skill, Episch weniger als Stufe 3. Der gierige Spieler hat
+das korrekt erkannt und den Skill fallen lassen.
+
+**Korrigiert auf 18 / 27 / 40 / 60** — die Sprossen selbst: +9 % / +34 % / +79 % / +145 %, monoton. Ein Wächter hält
+jetzt beide Bedingungen fest: jede Schwelle liegt auf einer Sprosse, und die Auszahlung steigt mit jeder Stufe.
+
+**Offen:** die Korrektur ist gerechnet, nicht gemessen — die Welten-Messung nach §5.32 steht aus. Ebenso die Frage,
+wie weit Packeis' Mono-Verlust nachtariert werden soll.
 
 ---
 
@@ -7697,3 +7737,4 @@ leichtesten haben.
 | 2026-09-09 | Eis-System, zweite Etappe (§5.29, Owner: „1." — die Stufenleiter öffnen). `THRESHOLDS` 4/8/12/18 → 4/8/12/18/27/40/60, `TIER_MULT` bis 9,7 (Rhythmus der alten Leiter: Schwellen ×1,5, Wucht ×1,45), `FIRN_GROUND` 0,35 → 0,6, `BURST_SCALE` 24 → 20. Erst damit zahlt sich Masse für WENIGE Gletscher aus: Anteil eines Drei-Gletscher-Builds am Zwölfer (reiner Gletscher-Score) 0,27 → 0,38 (Leiter allein) → 0,59 (mit Boden 0,6). Eis-Ansteckung auf Build-Ebene 0,43/0,50/0,52/0,63× → **0,49/0,55/0,59/0,67×**; Eis mono 6,73 → 7,14M (+6 %) und damit nicht mehr die schwächste Fraktion. Nebenfund beim Bauen: die Abbruchkante überschrieb die Stufen mit einem fünfstelligen Array und hätte `undefined` in den Bruch gereicht — die neuen Sprossen erben jetzt denselben relativen Zuschlag, ein Wächter hält die Länge. Balance-Guard Median-Band neu zentriert (3,79M über Seeds 1–40, 3,98M über 1–200), Mean-Band unverändert. Offen: die Skill-Seite — ein Misch-Build hat 4,3 Eis-Slots, die so viel wert sein müssen wie 4,3 Feuer-Slots. |
 | 2026-09-09 | Eis-Skills auf dem neuen Motor gemessen (§5.30, Owner: „schauen wir uns alle skills an die davon profitieren müssen"). Sieben Eis-Welten, 44 660 Läufe, 40 min. Kernbefunde: **kein Eis-Skill ist mehr in allen sieben Welten schwach** (in §8 waren es Frostbund und Anfrieren); in den Paaren hält der gierige Spieler deutlich mehr Eis (Ei+Pf 3,9 → 5,7, Bl+Ei+Pf 1,7 → 3,0). Die Dichte-Achse verhält sich wie vorhergesagt — Packeis +24 % mono → −8/−8 im Mix, Verzahnung +48 → +1/−2, Eisbrücke +17 → −14/−0, Gletschersturz +43 → +2/−5: vier Skills, die nur mono zahlen. Die Masse-Achse trägt NICHT von selbst: Abbruchkante +9/+15/−3, Sprödbruch +8/+14/−0, Verdichtung −10/+2/−2, Anfrieren −7/−10/+17. Diagnose: Anfrieren und Verdichtung geben eine flache Masse-Zahl und sind vom eigenen Boden-Einkommen (≈ 20 Masse je Durchlauf) entwertet; die Abbruchkante hebt die Stufen 2–4 um +7/+18/+19 % gegen eine Leiter, die bis 9,7 reicht. Dauerfrost ist der erste Eis-Skill, der im Mix BESSER ist als mono (+3 → +27 %) — das Vorbild für die Masse-Achse. Nichts umgesetzt. Nebenbei den Treiber repariert: mit `--only welten` lief das JSON-Schreiben auf die leere Cross-Map. |
 | 2026-09-09 | Vier Eis-Skills auf die Masse-Achse (§5.31, Owner: „passt, bau aber vllt noch einen für duo oder Triplett um"). **Abbruchkante** hebt jetzt die Berst-Schwelle (18/24/30/38 statt 12) statt die Stufenwucht um +7/+18/+19 % — sie ist der Sammel-Skill geworden: seltener bersten, dafür auf der Sprosse, die das eigene Einkommen hergibt. **Anfrieren** gibt +10/15/20/28 % der Masse je Sieg statt flach +1…4 (Bezugsgröße einschließlich dieses Siegs, sonst gäbe der Skill auf einem frisch gefrorenen Feld exakt null). **Verdichtung** 0,25–1 → 0,6–2 je Punkt Kampfwert (97 % Haltequote bei −10 % Wirkung). **Packeis** zählt die OFFENEN Nachbarn statt der gefrorenen — der eine Seitenwechsel, den der Owner bestellt hat; es war der reinste Mono-Skill der Fraktion (+24 % mono, −8 %/−8 % im Mix). Nicht angefasst mit Grund: Gletscherzunge und Sprödbruch lesen die Masse direkt und wachsen mit dem neuen Motor von selbst mit — §5.30 hatte ihre Stufenleitern zum Nachziehen vorgeschlagen, der Code sagt, dass das nicht nötig ist. Die drei übrigen Dichte-Skills (Verzahnung, Eisbrücke, Gletschersturz) bleiben: sie sind der Grund, mono zu spielen. Wächter-Fund: die Abbruchkante war die einzige `tierMult`-Quelle und ist jetzt die einzige `burstAt`-Quelle — der Wächter hält fest, dass sie die Schwelle nur HEBT, nie senkt. Build-Ebene unverändert (Ansteckung 0,50/0,56/0,60/0,67×), was eine Messgrenze ist: die Fraktions-Policy im Cross-Lauf baut immer das 3×3-Cluster, dort ist Packeis' Wechsel ein reiner Nerf. Die Welten-Messung mit dem gierigen Spieler steht noch aus. |
+| 2026-09-09 | Welten-Messung nach §5.31 und die Korrektur (§5.32). Drei der vier Umbauten wirken: **Verdichtung** mono −10 → +29 %, **Packeis** im Paar −8 → +37 % (der bestellte Spiegel), **Anfrieren** Haltequote 19 → 56 % bei weiterhin ~0 Wirkung. **Abbruchkante ist gefallen** (Haltequote 68 → 20 %) — und das war mein Konstruktionsfehler, kein Rauschen: die Schwellen 24 und 38 liegen ZWISCHEN den Sprossen der Leiter (24 zählt wie 18 zur vierten, 38 wie 30 zur fünften). Auszahlung je Durchlauf und Punkt Einkommen: 12 → 4,40 · 18 → 4,80 · **24 → 4,27** · 30 → 5,75 · **38 → 5,46** · 40 → 7,88 · 60 → 10,78. Stufe 2 zahlte damit weniger als gar kein Skill und Episch weniger als Stufe 3; der gierige Spieler hat das korrekt erkannt. Korrigiert auf **18/27/40/60** (die Sprossen selbst): +9/+34/+79/+145 %, monoton. Neuer Wächter hält beide Bedingungen: jede Schwelle liegt auf einer Sprosse UND die Auszahlung steigt mit der Stufe. Offen: Eis mono fiel in der Messung 409,8 → 224,2M, Hauptposten ist Packeis' Seitenwechsel (im Cluster hat ein Gletscher kaum offene Nachbarn) — die Höhe dieses Preises ist noch nicht tariert, und die Welten-Messung nach der Korrektur steht aus. |
