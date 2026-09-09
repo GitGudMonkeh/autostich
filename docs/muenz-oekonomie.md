@@ -1,5 +1,13 @@
 # Münz-Ökonomie — Umsetzungsplan
 
+> **UMGESETZT auf `exp` (2026-09-09). Dieses Dokument ist ab hier ein Protokoll, keine offene Aufgabe.**
+> Wer daran anschließt, liest zuerst den Code — `src/game/coins.js`, `src/game/perkSale.js` und die
+> §-Verweise in den Kommentaren sind der aktuelle Stand, dieser Plan der Beschluss davor. Drei Stellen
+> gingen beim Bauen über den Plan hinaus und stehen nur im Code: der Deckel greift bei 32 Formationen,
+> die Einnahme zählt gebaute Formationen ohne Formationskerne, Anker und Nachhall, und die
+> Verzichts-Erträge stehen an ihren Knöpfen.
+> **Offen geblieben:** die zwei Skill-Screen-Altlasten aus §5.1 — Banner raus, Panel-Höhe.
+
 **Status: beschlossen** (Owner, 2026-09-07). Dieses Dokument ist die Vorgabe für die Umsetzung, nicht
 eine Ideensammlung. Alle Zahlen sind **Startwerte für die erste Fassung** und über die Sim tunebar —
 gesetzt genug zum Bauen, nicht gesetzt genug zum Verteidigen.

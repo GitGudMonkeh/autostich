@@ -1215,7 +1215,10 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                     <button type="button" disabled aria-disabled="true" title={t("arch.noRotate.title")}
                       className="shrink-0 px-3 rounded-lg py-2 text-body-lg-5 font-bold cursor-not-allowed" style={{ background: "#141c24", border: "1px solid #2b3e4d", color: "#5a6672", opacity: 0.55 }}>{t("arch.noRotate")}</button>
                   ))}
-                  <button onClick={() => onDone?.()} className="flex-1 basis-[170px] rounded-lg py-2 text-body-lg-5 font-bold" style={{ background: CAT.value.color, color: "#fff" }}>{t("arch.confirmStart")}</button>
+                  {/* §2.3: derselbe Ausgang wie „Nichts bauen", nur über das Umstellen erreicht — versetzen
+                      verbraucht keinen Bauplan, die Phase zahlt also weiterhin aus. Die Marke steht deshalb
+                      auch hier (Owner 2026-09-09); ohne sie bekäme man die Münzen, ohne sie je zu sehen. */}
+                  <button onClick={() => onDone?.()} className="flex-1 basis-[170px] rounded-lg py-2 text-body-lg-5 font-bold inline-flex items-center justify-center gap-1.5" style={{ background: CAT.value.color, color: "#fff" }}>{t("arch.confirmStart")}<CoinReward n={idleReward} /></button>
                 </div>
               ) : null}
               {/* #UI: Effekt des gerade platzierten (place) bzw. gewählten (move) Gebäudes — floatet mit der Leiste. */}
