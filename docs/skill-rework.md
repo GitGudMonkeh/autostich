@@ -4992,6 +4992,54 @@ Gletscher der dort gebaut wird".
 Offen zur Owner-Entscheidung: drei Design-Routen für Schneetreiben (Cluster-Aussaat · selbstgefrierender Boden ·
 Aussaat gegen den Gegner). **Dauerfrost hängt an derselben Diagnose** und steht bei −18 %.
 
+### 5.27 Der Zug-Deckel fällt, die Eiszeit zieht nach (2026-09-09, Owner) — umgesetzt und gemessen
+
+#### Der Grundsatz (Owner, wörtlich)
+
+> „skills haben Vorrang vor legendären, die müssen sich gut anfühlen, legendäre bauen wir danach um sie herum, nicht
+> unsere skills um zu starke legendäre"
+
+**Das ist ab hier die Kollisionsregel.** Wo ein Fundament-Eingriff einem Skill hilft und eine Legendäre aus dem Band
+trägt, wird die Legendäre nachtariert — nicht der Eingriff zurückgenommen. §5.26 hatte noch andersherum
+argumentiert („der Deckel hält die Legendäre im Band, er bleibt"); diese Begründung ist damit **überholt**.
+
+#### Was geändert wurde
+
+Der Owner verwirft die drei Design-Routen aus §5.26 und entscheidet stattdessen: **„lass uns nochmal zug Deckel
+öffnen, es ist scheiße dass wir mehr generieren als nutzen können."** Schneetreiben und Dauerfrost bleiben
+mechanisch **unverändert**.
+
+- `FIRN_DRAW` 1 → **ganze Reserve**. Jedes offene Feld gibt seinen kompletten Schnee an den nächsten Gletscher ab;
+  nichts bleibt ungenutzt liegen. Der Regler bleibt für Diagnose-Sweeps (endlich = Deckel je Feld, 0 = Zug aus).
+- `EISZEIT_FLOOD` 3 → **1**. Die Eiszeit flutet jedes freie Feld und war der größte Gewinner des offenen Zugs.
+- `BURST_SCALE` 60 → **28**. Der offene Zug verdoppelt das Masse-Einkommen der Fraktion.
+
+#### Gemessen
+
+Die Eiszeit trug den **Schwanz**, nicht den Median — die Flut-Zahl allein bewegt bei gleichem `BURST_SCALE`:
+
+| | Median Eis ÷ Feuer | Mean | p90 |
+| --- | --- | --- | --- |
+| Flut 3 | 1,97× | 4,08× | 2,99× |
+| Flut 1 | 1,91× | **2,76×** | 2,58× |
+
+Danach `BURST_SCALE` 28 → **Parität 0,97×** (Mean 1,34×, p90 1,23×). Balance-Guard im Band, nicht neu zentriert.
+
+#### D1 ist beantwortet: der offene Zug rettet die beiden Skills NICHT
+
+Ablation mit offenem Zug: **Schneetreiben −3 % bei 13 % Haltequote**, **Dauerfrost 0 %, Flag „tot"** bei 83 %.
+Beide sind von „schadet" auf „wirkungslos" gestiegen — mehr nicht. Das deckt sich mit dem Sweep aus §5.26 und
+bestätigt dessen Kern: die Ursache liegt in der Währung, nicht im Durchfluss. **Dauerfrost braucht damit doch eine
+eigene Designrunde** (D1 war „erst messen, dann entscheiden" — gemessen ist).
+
+Nebenbefund derselben Ablation, unberührt gelassen: **Packeis −12 %** und **Abbruchkante −13 %** stehen jetzt auf
+„schadet", Gletscherzunge · Anfrieren · Eisbrücke · Verdichtung auf „tot". Der Boden der Fraktion ist breiter
+geworden, nicht schmaler.
+
+**Nicht nachgemessen:** ob die Eiszeit mit Flut 1 im **fraktionsübergreifenden** Legendär-Band der übrigen elf
+liegt. Innerhalb Eis sind die drei stimmig (Lift 1,34 / 1,36 / 1,35); der Quervergleich (`--mode legendaries`)
+steht aus.
+
 ## 6. Pflanze
 
 ### 6.1 Richtung und Abgrenzung (gesetzt, Owner 2026-09-06)
