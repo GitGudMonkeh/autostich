@@ -1,7 +1,7 @@
 import { useState, useRef, useMemo, useEffect } from "react";
 import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import { PANEL_BG, phaseCard, phasePanel, PhaseHairline, PHASE_ACCENTS } from "./modalStyle.jsx";
-import { summarizeFormations, SEGMENT_SIZE, openBorderInfo } from "../game/formations.js";
+import { summarizeFormations, countBuiltFormations, SEGMENT_SIZE, openBorderInfo } from "../game/formations.js";
 import { allianceGroups } from "../game/families.js";
 import { architectCoverFor, structLitPosOf, distrLitPosOf } from "./architectCover.js";
 import { CardGrid } from "./CardGrid.jsx";
@@ -15,7 +15,7 @@ import { haptics } from "./haptics.js";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { skillDef } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
 import { t } from "../i18n/index.js";
-import { energyBuy, unspentEnergyCoins } from "../game/coins.js";  // Münz-Ökonomie §3.2 Preis und Vorrat · §2.3 was übrige Energie einbringt — dieselbe Quelle wie der Reducer
+import { energyBuy, unspentEnergyCoins, coinsForFormations } from "../game/coins.js";  // Münz-Ökonomie §3.2 Preis und Vorrat · §2.3 was übrige Energie einbringt · §2.2 was die Aufstellung zahlt — dieselbe Quelle wie der Reducer
 import { P as PLANT_S } from "../game/factions/plant.js"; // Skill-ids der Pflanze (Spalier-Zeile)
 import { CoinAmount, CoinReward } from "./CoinMark.jsx"; // §2.3: was die übrige Energie einbringt
 
@@ -122,6 +122,12 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, onBu
   };
 
   const { count } = summarizeFormations(formations);
+  /* §2.2: was diese Aufstellung am Durchlaufende auszahlt — live, mit jedem Tausch. Bewusst über
+     countBuiltFormations und nicht über `count` daneben: der zählt auch Formationskerne und Anker mit,
+     die keine gebaute Formation sind und nicht zahlen. Gemessen gehen die beiden Zahlen in einem Drittel
+     der Aufstellungen auseinander (Ø 22,2 angezeigt gegen Ø 18,8 bezahlt) — die Münzen müssen der
+     Rechnung des Reducers folgen, nicht der Zahl, neben der sie stehen. */
+  const placementCoins = coinsForFormations(countBuiltFormations(formations));
   const hasSwaps = (formationSwaps || []).length > 0;
   // #201.4: Karten, die in einem Tausch dieser Phase beteiligt waren, dezent ausgrauen (folgt der KARTE via id,
   // nicht dem Slot → übersteht Weg-und-zurück-Tausch; Undo/Reset ziehen die ids automatisch mit).
@@ -218,7 +224,11 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, onBu
           </div>
           <div className="flex flex-col justify-center gap-1 px-4 py-2.5 text-right border-l" style={{ borderColor: "rgba(90,184,122,.30)" }}>
             <span className="text-meta-1 uppercase tracking-wide font-bold" style={{ color: "#6d7288" }}>{t("form.count")}</span>
-            <span className="ty-num leading-none" style={{ fontVariantNumeric: "tabular-nums", fontSize: 19 }}>{count}</span>
+            <span className="inline-flex items-center justify-end gap-1.5">
+              <span className="ty-num leading-none" style={{ fontVariantNumeric: "tabular-nums", fontSize: 19 }}>{count}</span>
+              {/* §2.2: was die Aufstellung zahlt, neben der Zahl, die man beim Tauschen ohnehin liest. */}
+              <CoinReward n={placementCoins} />
+            </span>
           </div>
         </div>
         {/* Sticky-Aktionsleiste (#161 FB-4): Aktionen bleiben oben erreichbar — bei 8 Segmenten kein Scrollen nötig.

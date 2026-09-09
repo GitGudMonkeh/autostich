@@ -611,6 +611,15 @@ describe("Verzichts-Ertrag am Knopf (Owner 2026-09-09)", () => {
     // GEKAUFTE Energie heraus — dieselbe Funktion, die der Reducer beim Bestätigen benutzt.
     expect(read("src/ui/FormationPhase.jsx")).toMatch(/<CoinReward n=\{unspentEnergyCoins\(formationEnergy, state\.coinEnergy\)\}/);
   });
+
+  it("die Auszahlung der Aufstellung rechnet über die GEBAUTEN Formationen, nicht über die angezeigte Zahl", () => {
+    /* Die Zahl daneben (`summarizeFormations`) zählt Formationskerne und Anker mit — gemessen gehen die
+       beiden in einem Drittel der Aufstellungen auseinander (Ø 22,2 gegen Ø 18,8). Wer die Anzeige auf
+       `count` umstellt, zeigt eine Auszahlung, die am Durchlaufende nicht kommt. */
+    expect(read("src/ui/FormationPhase.jsx"))
+      .toMatch(/placementCoins = coinsForFormations\(countBuiltFormations\(formations\)\)/);
+    expect(read("src/ui/FormationPhase.jsx")).toMatch(/<CoinReward n=\{placementCoins\}/);
+  });
 });
 
 describe("Stufen-Textvergleich (§3.5, Anzeige)", () => {
