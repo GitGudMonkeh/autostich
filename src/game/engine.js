@@ -25,7 +25,7 @@ import { computeFormations, positionHasFormation, activeFormationCount, summariz
 import { perkLegendaryChance, anchorAt } from "./shop.js";
 import { precomputeArchitect, architectValueBonus, architectScore, buildArchitectOffer } from "./architect.js";
 import { precomputeGlacier, ewigerFrostTick, dauerfrostTick, driftTargets as glacierDriftTargets,
-  neighbors4 as glacierNeighbors4, uebergletscherPool, packeisTick, verzahnungTick, eiszeitFlood, firnDrawTick, glacierGeometry,
+  uebergletscherPool, packeisTick, verzahnungTick, eiszeitFlood, firnDrawTick, glacierGeometry,
   ROLES as GLACIER_ROLES, WIN_MASS as GLACIER_WIN_MASS, GROSSE_LAWINE_EVERY as GLACIER_LAWINE_EVERY,
   FIRN_REFILL_TARGET as GLACIER_FIRN_REFILL_TARGET } from "./glacier.js"; // Eis-Neudesign (isoliert, activeArchetypes "ice") · #386 Firn-Reserve-Nachschub
 import { iceTuning, iceSnapshotOpts, iceNeighborFn } from "./factions/ice.js"; // §5.3: die Zahlen der Eis-Skills kommen aus ihrer Stufe
@@ -869,13 +869,16 @@ export function resolveTrick(state, rng) {
     score += glacierDirect; gained += glacierDirect; glacierYield += glacierDirect;
     if (breakdown) { breakdown.glacierDirect = glacierDirect; breakdown.total += glacierDirect; }
   }
-  // Einfrieren (docs §4 Frostgriff): bricht dieser Gletscher, verliert die hier getroffene Gegnerkarte ihren NÄCHSTEN
-  // Stich. Die Stufe entscheidet, wie weit der Griff reicht (§5.2): die getroffene Karte plus so viele ihrer Nachbarn
-  // im Gegnerfeld, bis `einfrierenCards` voll ist.
+  /* Einfrieren (docs §4 Frostgriff): bricht dieser Gletscher, verlieren Gegnerkarten ihren NÄCHSTEN Stich.
+     §5.25 (Owner): NICHT mehr die zufällig hier getroffene Karte und ihre Nachbarn, sondern die HÖCHSTEN Karten des
+     Gegnerdecks. Der alte Griff hing daran, wo der Gletscher zufällig lag — meist auf einer Karte, die der Spieler
+     ohnehin geschlagen hätte (gemessen −4 % bei 16 % Haltequote). Schon markierte Karten werden übersprungen, damit
+     mehrere Brüche im selben Durchlauf verschiedene Karten treffen statt derselben. */
   if (glacierActive && glacierRoles.includes(GLACIER_ROLES.EINFRIEREN) && glacierPreNow && glacierPreNow.breaks.some((b) => b.pos === actualPos)) {
-    newFrozenOppPending[oCard.id] = true;
-    for (const nb of glacierNeighbors4(actualPos).slice(0, Math.max(0, ice.einfrierenCards - 1)))
-      newFrozenOppPending[oppDeck[oppOrder[nb]].id] = true;
+    const frei = oppDeck.filter((c) => c && !newFrozenOppPending[c.id]);
+    // Stabile Sortierung: bei gleichem Wert entscheidet die Deck-Reihenfolge, damit der Griff deterministisch bleibt.
+    frei.sort((a, b) => (b.value ?? b.baseRank ?? 0) - (a.value ?? a.baseRank ?? 0));
+    for (const c of frei.slice(0, Math.max(0, ice.einfrierenCards))) newFrozenOppPending[c.id] = true;
   }
   // (§5.2: Erstarrung ist gestrichen — die Kontrolle liegt bei Einfrieren, dessen Reichweite mit der Stufe steigt.)
   // Frostbund (docs §4 Frostgriff): bricht dieser Gletscher, bufft er seine Nachbarn → +Stichwert. §5.18: ALLE Nachbarn,

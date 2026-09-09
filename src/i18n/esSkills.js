@@ -145,7 +145,7 @@ export default {
   "ability.SK_ICE_14.name": "Derrumbe de Glaciar",
   "ability.SK_ICE_14.desc": `Cada estallido es un +3 % más fuerte por cada glaciar que estalle en el mismo ciclo.`,
   "ability.SK_ICE_15.name": "Congelar",
-  "ability.SK_ICE_15.desc": "Cuando un glaciar estalla sobre una carta rival, esa carta pierde su baza en el ciclo siguiente.",
+  "ability.SK_ICE_15.desc": "Cuando un glaciar estalla, la carta más alta del mazo rival pierde su baza en el ciclo siguiente.",
   "ability.SK_ICE_16.name": "Pacto de Escarcha",
   "ability.SK_ICE_16.desc": `Cuando un glaciar estalla, todas sus vecinas reciben +2 de valor de baza en el ciclo siguiente. Con el puente de hielo, esto vale para la vecindad de 8.`,
   "ability.SK_ICE_17.name": "Fractura Frágil",

@@ -140,7 +140,7 @@ export default {
   "ability.SK_ICE_14.name": "Glacier Collapse",
   "ability.SK_ICE_14.desc": `Every burst is +3% stronger per glacier that bursts in the same cycle.`,
   "ability.SK_ICE_15.name": "Freeze",
-  "ability.SK_ICE_15.desc": "When a glacier bursts onto an opponent card, that card loses its trick in the next cycle.",
+  "ability.SK_ICE_15.desc": "When a glacier bursts, the highest card of the opponent deck loses its trick in the next cycle.",
   "ability.SK_ICE_16.name": "Frost Bond",
   "ability.SK_ICE_16.desc": `When a glacier bursts, all its neighbours get +2 trick value in the next cycle. With ice bridge, this applies to the 8-neighbourhood.`,
   "ability.SK_ICE_17.name": "Brittle Fracture",

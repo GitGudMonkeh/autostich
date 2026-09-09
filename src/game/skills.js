@@ -143,7 +143,8 @@ const EIS = {
 };
 export const EIS_TIERS = EIS;
 // Einfrieren: der Nachsatz je Reichweite — ausgeschrieben, weil Singular und Plural sonst am Zahlwort auseinanderfallen.
-const EINFRIEREN_NACHBARN = { 2: " Eine ihrer Nachbarkarten verliert ihn ebenfalls.", 3: " Zwei ihrer Nachbarkarten verlieren ihn ebenfalls.", 5: " Ihre vier Nachbarkarten verlieren ihn ebenfalls." };
+// §5.25: der Griff zählt Karten, nicht Nachbarn — „die höchste" / „die N höchsten".
+const EINFRIEREN_ZIEL = (n) => (n === 1 ? "die höchste Karte des Gegnerdecks" : `die ${de1(n)} höchsten Karten des Gegnerdecks`);
 
 export const SKILL_DEFS = {
   // ---- Blitz (exp skill rework, §3): Passiv +5 % Crit je Skill, Leiste 10 Crits → nächste Karte ionisieren.
@@ -279,7 +280,7 @@ export const SKILL_DEFS = {
     ...tiered(EIS.gletschersturz, (r) => `Jeder Bruch wird +${pct(r.per)} % stärker je Gletscher, der im selben Durchlauf bricht.`) },
   // Linie 4 — Frostgriff (Kontrolle/Duo)
   SK_ICE_15: { id: "SK_ICE_15", name: "Einfrieren", archetype: "ice", keywords: ["glacier"], role: "G_EINFRIEREN", tiers: EIS.einfrieren,
-    ...tiered(EIS.einfrieren, (r) => `Bricht ein Gletscher auf das Gegnerfeld, verliert die getroffene Karte ihren Stich im nächsten Durchlauf.${EINFRIEREN_NACHBARN[r.cards] || ""}`) },
+    ...tiered(EIS.einfrieren, (r) => `Bricht ein Gletscher, verliert ${EINFRIEREN_ZIEL(r.cards)} den Stich im nächsten Durchlauf.`) },
   SK_ICE_16: { id: "SK_ICE_16", name: "Frostbund", archetype: "ice", keywords: ["glacier"], role: "G_FROSTBUND", tiers: EIS.frostbund,
     ...tiered(EIS.frostbund, (r) => `Bricht ein Gletscher, bekommen alle seine Nachbarn +${de(r.buff)} Stichwert im nächsten Durchlauf. Mit Eisbrücke gilt das für die acht Nachbarn.`) },
   SK_ICE_17: { id: "SK_ICE_17", name: "Sprödbruch", archetype: "ice", keywords: ["glacier", "crit"], role: "G_SPROEDBRUCH", tiers: EIS.sproedbruch,

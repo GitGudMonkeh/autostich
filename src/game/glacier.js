@@ -29,7 +29,9 @@ export const TIER_MULT = [0, 1, 1.5, 2.2, 3.2]; // überlineare Wucht je Stufe (
 // die Fraktion stand ohne ihn schon auf 1,15× Feuer; das Eisbeben legt darauf. Gemessen 75 → Median-Parität 1,01×.
 // §5.24 nachtariert: 75 → 64. Derselbe Posten wie zuvor: der Eiswall zahlt jetzt in JEDEM Eis-Bau statt nur im
 // Reihen-Bau, das hebt den Boden der Fraktion (1,00× → 1,16×). Gemessen 64 → Median-Parität 1,00×.
-export const BURST_SCALE = envNum("SIM_GLACIER_BURST_SCALE", 64);
+// §5.25 nachtariert: 64 → 60. Das Einfrieren nimmt jetzt die höchsten Gegnerkarten; die Stichquote steigt 59,6 → 62 %,
+// und ein gewonnener Gletscher-Stich zahlt den vollen Sieg-Stack (glacierWinMult). Gemessen 60 → Parität 1,01×.
+export const BURST_SCALE = envNum("SIM_GLACIER_BURST_SCALE", 60);
 // Große Lawine (§5.8, Owner): feuert nicht mehr einmal am Laufende, sondern im TAKT — jeden GROSSE_LAWINE_EVERY-ten
 // Durchlauf bricht das ganze Feld auf einen Schlag, jeder Gletscher mit der Wucht der höchsten Schwelle. Damit ist sie
 // den ganzen Lauf über sichtbar, und sie synchronisiert das Feld: Kaskade, Kollision und Gletschersturz greifen

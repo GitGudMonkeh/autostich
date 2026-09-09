@@ -4920,6 +4920,47 @@ Die Wächter sind gegengeprüft: ohne den Faktor in der Bruchformel fallen vier 
 14 %), Einfrieren bei −4 % mit 16 % Haltequote, und drei Skills sind „tot" (Anfrieren, Frostbund, Gletscherzunge).
 Das ist die nächste Runde, nicht diese.
 
+### 5.25 Einfrieren greift die höchsten Gegnerkarten (2026-09-09, Owner) — umgesetzt und gemessen
+
+Owner: „einfrieren, so umstellen das nicht die getroffene sondern die höchsten Gegnerkarten eingefroren werden."
+
+Der Griff hing bis dahin daran, **wo der Gletscher zufällig lag**: er markierte die an dieser Position getroffene
+Gegnerkarte plus so viele Nachbarfelder, bis die Stufenzahl voll war. Zwei Folgen, beide schlecht:
+
+- Getroffen wurde meist eine Karte, die der brechende Gletscher **ohnehin geschlagen hatte** — der Griff verbrauchte
+  sich an einem Sieg, den es schon gab.
+- Am Rand kam die Stufe nie an: die Ecke hat zwei Nachbarn, die Episch-Reichweite fünf.
+
+Gemessen stand er bei **−4 %, Haltequote 16 %, Siegquote 29 %** — auf der „schadet"-Liste.
+
+**Jetzt** markiert jeder Bruch die höchsten Karten des Gegnerdecks, unabhängig von der Lage des Gletschers. Schon
+markierte Karten werden übersprungen, damit mehrere Brüche im selben Durchlauf **verschiedene** Karten treffen statt
+derselben — sonst wäre die Stufe für einen Mehrfach-Bruch wertlos. Sortiert wird stabil, bei gleichem Wert
+entscheidet die Deck-Reihenfolge; kein Zufall im Griff.
+
+| | Haltequote | Median-Δ | Siegquote |
+| --- | --- | --- | --- |
+| alt (getroffene Karte + Nachbarn) | 16 % | −4 % | 29 % |
+| neu (höchste Karten) | **62 %** | **+17 %** | **62 %** |
+
+`BURST_SCALE` 64 → **60**: die Stichquote des Mono-Eis-Builds steigt 59,6 → 62 %, und ein **gewonnener**
+Gletscher-Stich zahlt den vollen Sieg-Stack (`glacierWinMult`) — der Griff hebt also auch den Bruch, nicht nur die
+Kontrolle. Gemessen bei 60: **Parität 1,01×** gegen Feuer.
+
+#### Nebenbefund zum Schneetreiben (nichts geändert)
+
+Owner-Frage: „wieso geben sie nicht ihren vollen Schnee ab, ansonsten ist ja egal wie viel Schnee man aussäht wenn
+immer nur 1 ankommt." — Der Befund stützt das. `FIRN_DRAW` steht auf **1**: jedes offene Feld gibt je Durchlauf
+höchstens einen Punkt seiner Reserve an den nächsten Gletscher ab. Das Schneetreiben sät 2 · 3 · 4 · 5, der Abfluss
+bleibt 1 — die Leiter verschiebt also nur, **wie lange** ein Feld nachliefert, nicht wie viel je Durchlauf ankommt.
+Solange das Feld schneller gefüllt als geleert wird, ist die Stufe fast wirkungslos.
+
+Der Deckel stammt aus §5.15, wo ein höherer Zug gemessen **nichts** brachte (Flut/Zug 3/2 → −10 %, 8/8 → −5 %,
+15/15 → −3 %). Die dortige Begründung war `mCap`: die Bruchmasse war auf 12 gedeckelt, mehr Masse zu füttern war
+linear und lief ins Leere. **§5.18 hat `mCap` gestrichen** — die Masse über der Schwelle bleibt seither liegen und
+trägt in den nächsten Durchlauf. Damit ist die Begründung für `FIRN_DRAW` = 1 hinfällig, und der Deckel ist
+ungeprüfter Altbestand. Zu messen wäre ein Sweep über `SIM_GLACIER_FIRN_DRAW`; wartet auf die Ansage des Owners.
+
 ## 6. Pflanze
 
 ### 6.1 Richtung und Abgrenzung (gesetzt, Owner 2026-09-06)
