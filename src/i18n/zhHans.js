@@ -1751,7 +1751,6 @@ export default {
   "glacierlegend.block": "2×2方块（4座冰川）",
   "glacierlegend.kreuz": "中心加4个相邻（5座冰川）",
   "glacierlegend.linie": "整行（5）或整列（8）",
-  "glacierlegend.linie.wall": "整行（5）或整列（8） · 冰墙",
   "glacierlegend.flaeche": "填满的3×3（9座冰川）",
   "glacierlegend.mark.a": "蓝色的",
   "glacierlegend.mark.compact": "代表生效阵型中的卡牌",

@@ -1,5 +1,5 @@
 import { SKILL_DEFS, isLegendarySkill } from "../skills.js";
-import { ROLES, TIER_MULT, GEO_LINIE, neighbors4, neighbors8, EISZEIT_BURST_PER } from "../glacier.js";
+import { ROLES, TIER_MULT, neighbors4, neighbors8, EISZEIT_BURST_PER } from "../glacier.js";
 
 /* ============================================================
    EIS — Fraktionsmodul (exp skill rework, docs/skill-rework.md §5). Reine Logik: kein React, kein Math.random.
@@ -56,7 +56,7 @@ export function iceTuning(roles = [], roleTiers = {}) {
     verdichtungPer: v ? v.per : 0,
     packeisPer: pk ? pk.per : 0,
     eisbrueckeWeight: eb ? eb.weight : 1,
-    eiswallLinie: ew ? ew.linie : GEO_LINIE,
+    eiswallPer: ew ? ew.per : 0,                 // Zuschlag je Gletscher über EISWALL_MIN−1 in der geraden Kette
     verzahnungPer: vz ? vz.per : 0,
     abbruchTierMult: ab ? [TIER_MULT[0], TIER_MULT[1], ab.t2, ab.t3, ab.t4] : null,
     eisbebenPer: eb2 ? eb2.per : 0,               // Nachbeben-Anteil je Punkt Masse über der Berst-Schwelle
@@ -79,6 +79,7 @@ export function iceSnapshotOpts(roles = [], tune = null) {
   if (roles.includes(ROLES.ABBRUCHKANTE)) opts.tierMult = t.abbruchTierMult;
   if (roles.includes(ROLES.EISBRUECKE)) { opts.neighborFn = neighbors8; opts.diagWeight = t.eisbrueckeWeight; }
   if (roles.includes(ROLES.EISBEBEN)) { opts.eisbebenPer = t.eisbebenPer; opts.eisbebenSturz = t.eisbebenSturz; }
+  if (roles.includes(ROLES.EISWALL)) opts.eiswallPer = t.eiswallPer;
   if (roles.includes(ROLES.GLETSCHERSTURZ)) opts.gletschersturzPer = t.gletschersturzPer;
   // L_LAWINE (Große Lawine) wird NICHT hier gesetzt — sie ist ein EINMALIGER Finisher, die Engine schaltet sie nur im
   // letzten Durchlauf ein (sonst verhinderte sie das Horten).

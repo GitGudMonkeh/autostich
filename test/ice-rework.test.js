@@ -132,13 +132,14 @@ describe("Eis-Stufen — die Stufe erreicht die Mechanik", () => {
     };
     expect(frozen(0)).toBe(EIS.einfrieren[0].cards);
     expect(frozen(3)).toBe(EIS.einfrieren[3].cards);
-    // Am Rand greift der Griff nur so weit, wie es Nachbarn gibt — die Ecke pos0 hat zwei.
+    // §5.25: die Lage des Gletschers kostet keine Reichweite mehr. Vorher griff der Griff über die Nachbarfelder, und
+    // die Ecke pos0 hatte davon nur zwei — die Episch-Stufe kam dort nie an. Jetzt zählt der Griff Karten, nicht Felder.
     let corner = scen({ glacierLocked: lockAt(0), glacierMass: withMass([[0, 12]]), ...at(ROLES.EINFRIEREN, 3) });
     corner = resolveTrick(corner, noCrit);
-    expect(Object.keys(corner.frozenOppPending)).toHaveLength(3);
+    expect(Object.keys(corner.frozenOppPending)).toHaveLength(EIS.einfrieren[3].cards);
   });
 
-  it("Eiswall: die Stufe hebt den Linien-Faktor der vollen Reihe", () => {
+  it("Eiswall: die Stufe hebt den Zuschlag auf die Kette", () => {
     const row = [0, 1, 2, 3, 4];
     const gm = zeros(); for (const p of row) gm[p] = 12;
     const burst = (tier) => resolveTrick(scen({ glacierMass: gm, glacierLocked: lockAt(...row), ...at(ROLES.EISWALL, tier) }), noCrit)

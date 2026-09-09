@@ -27,7 +27,11 @@ export const TIER_MULT = [0, 1, 1.5, 2.2, 3.2]; // überlineare Wucht je Stufe (
 // §5.21 nachtariert: 150 → 105 (der Kettenbruch sammelt Masse in die vierte Schwelle, statt sie zu verbrennen).
 // §5.23 nachtariert: 105 → 75. Zwei Posten: der gestrichene Kettenbruch war ein Fallen-Skill (gemessen Lift 0,68), und
 // die Fraktion stand ohne ihn schon auf 1,15× Feuer; das Eisbeben legt darauf. Gemessen 75 → Median-Parität 1,01×.
-export const BURST_SCALE = envNum("SIM_GLACIER_BURST_SCALE", 75);
+// §5.24 nachtariert: 75 → 64. Derselbe Posten wie zuvor: der Eiswall zahlt jetzt in JEDEM Eis-Bau statt nur im
+// Reihen-Bau, das hebt den Boden der Fraktion (1,00× → 1,16×). Gemessen 64 → Median-Parität 1,00×.
+// §5.25 nachtariert: 64 → 60. Das Einfrieren nimmt jetzt die höchsten Gegnerkarten; die Stichquote steigt 59,6 → 62 %,
+// und ein gewonnener Gletscher-Stich zahlt den vollen Sieg-Stack (glacierWinMult). Gemessen 60 → Parität 1,01×.
+export const BURST_SCALE = envNum("SIM_GLACIER_BURST_SCALE", 60);
 // Große Lawine (§5.8, Owner): feuert nicht mehr einmal am Laufende, sondern im TAKT — jeden GROSSE_LAWINE_EVERY-ten
 // Durchlauf bricht das ganze Feld auf einen Schlag, jeder Gletscher mit der Wucht der höchsten Schwelle. Damit ist sie
 // den ganzen Lauf über sichtbar, und sie synchronisiert das Feld: Kaskade, Kollision und Gletschersturz greifen
@@ -57,6 +61,7 @@ export const SCHILD_NEIGHBORS = envNum("SIM_GLACIER_SCHILD_NEIGHBORS", 8);
 // Optionaler Deckel auf die GESAMTZAHL der Gletscher (0 = keiner). Nicht der gestrichene Score-Deckel aus §5.5, sondern
 // eine Grenze für das Brett: ein Voll-Mono-Eis-Build soll nicht die ganze Aufstellung einfrieren können.
 export const GLACIER_MAX = envNum("SIM_GLACIER_MAX", 12); // §5.5: 12 lässt die Große Fläche (3×3, neun Gletscher) zu und hält drei Felder Luft
+export const EISWALL_MIN = 3;                  // Eiswall (§5.24): ab dieser Kettenlänge zahlt die Wand — davor nichts
 export const KASKADE_PER_NEIGHBOR = 0.25;      // Berst-Faktor = 1 + 0,25 × Gletscher-Nachbarn (Dichte)
 export const KOLLISION_MULT = 1.5;             // Treffer auf Gletscher-Nachbarn (anteilig, docs §2.3)
 export const EWIGER_FROST = 1;                 // Fraktions-Passiv: bedingungsloser Masse-Tick je Durchlauf (docs §2.6)
@@ -113,6 +118,7 @@ export function precomputeGlacier(mass, locked, opts = {}) {
   const wOf = (p, n) => (rowOf(p) !== rowOf(n) && colOf(p) !== colOf(n) ? diagWeight : 1);
   const eisbebenPer = opts.eisbebenPer || 0;            // Eisbeben: Nachbeben-Anteil je Punkt Masse über der Schwelle
   const eisbebenSturz = !!opts.eisbebenSturz;           // Episch: das Nachbeben zählt dem Gletschersturz als eigener Bruch
+  const eiswallPer = opts.eiswallPer || 0;              // Eiswall: Zuschlag je Gletscher über EISWALL_MIN−1 in der geraden Kette
   const gletschersturzPer = opts.gletschersturzPer || 0; // Amp ∝ Bruch-Zahl
   const formFactor = opts.formFactor || null;           // 2D-Geometrie-Formationen: Burst-Faktor je Feld (docs §9)
   const grosseLawine = !!opts.grosseLawine;             // Legendär: ALLES bricht (Schwellen ignoriert)
@@ -148,6 +154,13 @@ export function precomputeGlacier(mass, locked, opts = {}) {
      misst schlecht (§5.22): eine Kette, die jede Runde dieselben Nachbarn nullt, lässt sie nie reifen, und ein
      eingesammelter Bruch verliert den vollen Sieg-Stack seines eigenen Stichs. Das Eisbeben liegt deshalb ganz auf
      dem Stich, der ohnehin auszahlt, und belohnt genau die vierte Schwelle, die §5.18 geschaffen hat. */
+  /* Eiswall (§5.24, Owner-Route A): nicht mehr „volle Reihe oder nichts", sondern die LÄNGE der geraden Kette, in der
+     ein Gletscher steht — ab EISWALL_MIN zahlt sie, jeder weitere Gletscher zahlt mehr. Zwei gemessene Ursachen dafür
+     (§5.24): das Alles-oder-nichts-Tor (5 von 12 Gletschern in einer Reihe, davor null) und die Anti-Synergie — die
+     Reihe ist die DÜNNSTE Form, während Kaskade, Kollision, Packeis und Verzahnung alle Dichte bezahlen. Als eigener
+     Skill-Faktor statt als fünfte Geometrie-Form, sonst schluckt ihn die „stärkste Form zählt"-Regel im dichten Bau. */
+  const wallRun = eiswallPer > 0 ? eiswallRuns(locked) : null;
+  const wallFactor = (p) => (wallRun && wallRun[p] >= EISWALL_MIN ? 1 + eiswallPer * (wallRun[p] - (EISWALL_MIN - 1)) : 1);
   const bebt = (p) => isBreaker[p] && !forced[p] && mNow[p] > burstAt;
   let breakCount = 0;
   for (let p = 0; p < N_POS; p++) if (isBreaker[p]) breakCount += (eisbebenSturz && bebt(p)) ? 2 : 1;
@@ -175,7 +188,7 @@ export function precomputeGlacier(mass, locked, opts = {}) {
     // nur anteilig zählt, zählt der Eiszeit auch nur anteilig. Sonst zahlte die Eisbrücke der Eiszeit doppelt.
     const oN = nb.reduce((t, n) => t + (isG(n) ? 0 : wOf(p, n)), 0);
     const eisFaktor = eiszeitPer ? 1 + eiszeitPer * oN : 1;
-    let burst = effMass * tierMult[effTier] * berstFaktor * kollFaktor * sturzFactor * geoFactor * eisFaktor * BURST_SCALE;
+    let burst = effMass * tierMult[effTier] * berstFaktor * kollFaktor * sturzFactor * geoFactor * eisFaktor * wallFactor(p) * BURST_SCALE;
     if (grosseLawine) burst *= GROSSE_LAWINE_MULT;        // Lawinen-Takt: Verstärker je erzwungenem Bruch
     // Eisbeben: das Nachbeben. Stetig statt mit hartem Tor — bei genau der Berst-Schwelle ist es null und wächst mit
     // jedem Punkt darüber. Ein Tor hätte den Skill früh tot gemacht (die Abbruchkante misst auf Normal Lift 0,04).
@@ -299,7 +312,8 @@ export function verzahnungTick(mass, locked, neighborFn = neighbors4, per = 0) {
    Erkennt geometrische Formen aus GEFRORENEN Gletschern und gibt einen Burst-Faktor je Feld zurück. Überlappende
    Formen stapeln NICHT: die stärkste zählt (§5.6). Vorher multiplizierten sie sich, und weil ein dichtes Feld viele
    Formen zugleich erfüllt, wuchs der Feld-Bruch von 4 auf 16 Gletscher um das 23-fache statt um das 8-fache — der
-   Runaway der Fraktion saß hier, nicht in der Grundzahl. Immer an, wenn Gletscher aktiv. Eiswall hebt die „Linie". */
+   Runaway der Fraktion saß hier, nicht in der Grundzahl. Immer an, wenn Gletscher aktiv. (Der Eiswall ist seit §5.24
+   KEINE Form mehr, sondern ein eigener Skill-Faktor auf der Kettenlänge — er fasst diese Tabelle nicht mehr an.) */
 export const GEO_BLOCK = 1.15;    // 2×2-Quadrat (Dichte-Sockel)
 export const GEO_KREUZ = 1.25;    // Zentrum + 4 orthogonale (Kollisions-Knoten)
 export const GEO_LINIE = 1.30;    // volle Reihe (5) oder Spalte (8)
@@ -307,16 +321,15 @@ export const GEO_FLAECHE = 1.50;  // gefülltes 3×3 (Endgame-Mega-Cluster)
 
 // Detail-Variante (für UI: Karten-Badge, Formationsbeschreibung, HUD-Multiplikator): liefert
 //   { factor:[40] (wie glacierGeometry), forms:[{type,factor,positions}] (aktive benannte Formen), formPos:Set<pos> }.
-export function glacierFormations(locked, opts = {}) {
+export function glacierFormations(locked) {
   const isG = (p) => (locked instanceof Set ? locked.has(p) : !!(locked && locked[p]));
   const f = new Array(N_POS).fill(1);
   const forms = [], formPos = new Set();
   const addForm = (type, factor, positions) => { forms.push({ type, factor, positions }); for (const p of positions) { f[p] = Math.max(f[p], factor); formPos.add(p); } };
-  const linieFactor = opts.eiswallLinie || GEO_LINIE;
   // Linie: volle Reihe (5 Spalten)
-  for (let r = 0; r < 8; r++) { let full = true; for (let c = 0; c < 5; c++) if (!isG(posOf(r, c))) { full = false; break; } if (full) addForm("linie", linieFactor, Array.from({ length: 5 }, (_, c) => posOf(r, c))); }
+  for (let r = 0; r < 8; r++) { let full = true; for (let c = 0; c < 5; c++) if (!isG(posOf(r, c))) { full = false; break; } if (full) addForm("linie", GEO_LINIE, Array.from({ length: 5 }, (_, c) => posOf(r, c))); }
   // Linie: volle Spalte (8 Zeilen)
-  for (let c = 0; c < 5; c++) { let full = true; for (let r = 0; r < 8; r++) if (!isG(posOf(r, c))) { full = false; break; } if (full) addForm("linie", linieFactor, Array.from({ length: 8 }, (_, r) => posOf(r, c))); }
+  for (let c = 0; c < 5; c++) { let full = true; for (let r = 0; r < 8; r++) if (!isG(posOf(r, c))) { full = false; break; } if (full) addForm("linie", GEO_LINIE, Array.from({ length: 8 }, (_, r) => posOf(r, c))); }
   // Block: gefülltes 2×2
   for (let r = 0; r < 7; r++) for (let c = 0; c < 4; c++)
     if (isG(posOf(r, c)) && isG(posOf(r, c + 1)) && isG(posOf(r + 1, c)) && isG(posOf(r + 1, c + 1)))
@@ -335,8 +348,28 @@ export function glacierFormations(locked, opts = {}) {
   }
   return { factor: f, forms, formPos };
 }
+/* Eiswall (§5.24): je Feld die Länge der längsten UNUNTERBROCHENEN geraden Kette aus Gletschern, in der es steht —
+   waagerecht oder senkrecht, die längere von beiden. 0 für Felder ohne Gletscher. Ein 3×3-Klotz liefert damit überall
+   3, eine volle Reihe 5, eine volle Spalte 8; die Wand zahlt also auch im dichten Bau, statt nur im Reihen-Bau. */
+export function eiswallRuns(locked) {
+  const isG = (p) => (locked instanceof Set ? locked.has(p) : !!(locked && locked[p]));
+  const out = new Array(N_POS).fill(0);
+  const scan = (cells) => {              // eine Zeile oder Spalte als Positionsliste: Läufe abgreifen und eintragen
+    let start = 0;
+    for (let i = 0; i <= cells.length; i++) {
+      if (i < cells.length && isG(cells[i])) continue;
+      const len = i - start;
+      if (len > 0) for (let k = start; k < i; k++) out[cells[k]] = Math.max(out[cells[k]], len);
+      start = i + 1;
+    }
+  };
+  for (let r = 0; r < 8; r++) scan(Array.from({ length: 5 }, (_, c) => posOf(r, c)));
+  for (let c = 0; c < 5; c++) scan(Array.from({ length: 8 }, (_, r) => posOf(r, c)));
+  return out;
+}
+
 // Engine-Pfad (Burst-Faktor je Feld): nur das Faktor-Array.
-export const glacierGeometry = (locked, opts = {}) => glacierFormations(locked, opts).factor;
+export const glacierGeometry = (locked) => glacierFormations(locked).factor;
 // Anzeigenamen der 2D-Gletscher-Formen (UI).
 export const GLACIER_FORM_LABEL = { block: "Block", kreuz: "Kreuz", linie: "Linie", flaeche: "Große Fläche" };
 
@@ -353,7 +386,7 @@ export const ROLES = {
   EISBRUECKE: "G_EISBRUECKE",     // Eisschild: erweitert „angrenzend" um die 4 Diagonalen (8-Nachbarschaft)
   EISBEBEN: "G_EISBEBEN",         // §5.23: der Bruch bebt nach — je Punkt Masse über der Schwelle mehr (ersetzt Kettenbruch)
   GLETSCHERSTURZ: "G_GLETSCHERSTURZ", // Lawine: je mehr Gletscher im Durchlauf brechen, desto stärker jeder Bruch
-  EISWALL: "G_EISWALL",           // Eisschild: komplett gefrorene Reihe/Spalte (die „Linie") → verstärkt alle ihre Gletscher
+  EISWALL: "G_EISWALL",           // §5.24: gerade Kette ab EISWALL_MIN → Zuschlag je Gletscher darüber (ersetzt den Linien-Hebel)
   EINFRIEREN: "G_EINFRIEREN",     // Frostgriff: bricht ein Gletscher, verliert die getroffene Gegnerkarte ihren nächsten Stich garantiert
   FROSTBUND: "G_FROSTBUND",       // Frostgriff: bricht ein Gletscher auf einen Nicht-Eis-Nachbarn (2. Archetyp) → bufft ihn (+Stichwert)
   VERDICHTUNG: "G_VERDICHTUNG",   // Firn: der Gebäude-Wertbonus auf einem Gletscher wird nicht ausgespielt, sondern in Masse getankt

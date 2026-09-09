@@ -606,7 +606,6 @@ export default {
   "glacierlegend.block": "2×2 square (4 glaciers)",
   "glacierlegend.kreuz": "centre + 4 neighbours (5 glaciers)",
   "glacierlegend.linie": "full row (5) or column (8)",
-  "glacierlegend.linie.wall": "full row (5) or column (8) · Ice Wall",
   "glacierlegend.flaeche": "filled 3×3 (9 glaciers)",
   "glacierlegend.mark.a": "a blue",
   "glacierlegend.mark.compact": "= card in an active formation",

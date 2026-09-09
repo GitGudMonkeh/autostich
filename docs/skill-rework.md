@@ -5276,6 +5276,101 @@ Kette — *Kaskade* („ein berstender Gletscher reißt seine Nachbarn mit") und
 Cluster-Leser). Beide sagen jetzt, was wirklich passiert; nachgeprüft statt umbenannt: `glacierClusters` hat genau
 einen Leser, die Verzahnung.
 
+### 5.24 Eiswall zahlt ab drei statt ab der vollen Reihe (2026-09-09, Owner-Route A) — umgesetzt und gemessen
+
+Der Eiswall hob den Linien-Faktor einer **komplett** gefrorenen Reihe oder Spalte (1,45 … 2,1 statt 1,30) und maß
+**−8 % bei 38 % Haltequote**, alle vier Stufen unter Lift 1 — der schwächste Skill der Fraktion.
+
+#### Zwei Ursachen, nicht eine
+
+**Alles oder nichts.** Bis die Reihe voll ist, zahlt er exakt null. Eine Reihe kostet 5 der 12 Gletscher, eine Spalte 8.
+
+**Anti-Synergie — der eigentliche Befund.** Die halbe Fraktion bezahlt **Dichte**: Kaskade (+25 % je Nachbar),
+Kollision, Packeis, Verzahnung, Frostbund. Die Reihe ist die **dünnste** Form überhaupt, jeder Gletscher hat
+höchstens zwei Nachbarn. Gerechnet (nicht gemessen), Wucht je Gletscher:
+
+| Bau | Gletscher | Kaskade | Kollision | Form | Wucht je Gletscher |
+| --- | --- | --- | --- | --- | --- |
+| Volle Reihe + Eiswall Episch | 5 | ×1,40 | ×1,22 | ×2,10 | **×3,59** |
+| 3×3-Fläche, ohne jeden Skill | 9 | ×1,67 | ×1,33 | ×1,50 | **×3,33** |
+
+Der Skill auf seiner höchsten Stufe erreicht knapp, was ein dichter Klotz gratis kann — mit weniger Gletschern und
+schlechter für jeden anderen Eis-Skill. Kein Zahlenproblem.
+
+#### Route A (Owner)
+
+Der Eiswall liest jetzt die **Länge der geraden Kette**, in der ein Gletscher steht (Reihe oder Spalte, die längere
+von beiden). Ab `EISWALL_MIN` = 3 zahlt sie, jeder weitere Gletscher zahlt mehr: `×(1 + per × (Länge − 2))`, Leiter
+15 · 20 · 25 · 30 %. Eine volle Reihe ist auf Normal +45 % — ungefähr dort, wo der alte Hebel stand.
+
+Zwei Entscheidungen dabei:
+
+- **Eigener Skill-Faktor, keine fünfte Geometrie-Form.** Als Form hätte die „stärkste Form zählt"-Regel (§5.6) ihn
+  im dichten Bau wieder verschluckt: eine Drei-Kette (1,15) verliert gegen die Fläche (1,50). Der Eiswall fasst
+  `glacierFormations` seit dieser Runde gar nicht mehr an, die Linie steht wieder auf ihrer Konstanten.
+- **Der dichte Bau enthält Ketten.** Ein 3×3-Klotz liefert in jeder Zeile und Spalte eine Drei — genau das macht den
+  Skill in **jedem** Eis-Bau brauchbar statt nur im Reihen-Bau, was die Vorgabe des Owners war.
+
+#### Gemessen
+
+| | Haltequote | Lift | Median-Δ | Siegquote |
+| --- | --- | --- | --- | --- |
+| alt (voller Linien-Hebel) | 38 % | 0,64 | −8 % | 38 % |
+| neu (Kettenlänge) | **99 %** | 1,02 | **+27 %** | **70 %** |
+
+Vom letzten Platz auf den besten Nicht-Legendären nach Verzahnung und Gletschersturz.
+
+`BURST_SCALE` 75 → **64**: der Eiswall zahlt jetzt in jedem Eis-Bau statt nur im Reihen-Bau, das hebt den Boden der
+Fraktion (1,00× → 1,16× Feuer). Gemessen bei 64: Eis mono 17,86M gegen Feuer 17,80M, **Parität 1,00×** (Mean 1,29×,
+p90 1,14×). Balance-Guard im Band, nicht neu zentriert.
+
+Die Wächter sind gegengeprüft: ohne den Faktor in der Bruchformel fallen vier der neuen Fälle um.
+
+**Offen, nicht angefasst:** der Boden der Fraktion hat sich verschoben. Schneetreiben steht bei −16 % (Siegquote
+14 %), Einfrieren bei −4 % mit 16 % Haltequote, und drei Skills sind „tot" (Anfrieren, Frostbund, Gletscherzunge).
+Das ist die nächste Runde, nicht diese.
+
+### 5.25 Einfrieren greift die höchsten Gegnerkarten (2026-09-09, Owner) — umgesetzt und gemessen
+
+Owner: „einfrieren, so umstellen das nicht die getroffene sondern die höchsten Gegnerkarten eingefroren werden."
+
+Der Griff hing bis dahin daran, **wo der Gletscher zufällig lag**: er markierte die an dieser Position getroffene
+Gegnerkarte plus so viele Nachbarfelder, bis die Stufenzahl voll war. Zwei Folgen, beide schlecht:
+
+- Getroffen wurde meist eine Karte, die der brechende Gletscher **ohnehin geschlagen hatte** — der Griff verbrauchte
+  sich an einem Sieg, den es schon gab.
+- Am Rand kam die Stufe nie an: die Ecke hat zwei Nachbarn, die Episch-Reichweite fünf.
+
+Gemessen stand er bei **−4 %, Haltequote 16 %, Siegquote 29 %** — auf der „schadet"-Liste.
+
+**Jetzt** markiert jeder Bruch die höchsten Karten des Gegnerdecks, unabhängig von der Lage des Gletschers. Schon
+markierte Karten werden übersprungen, damit mehrere Brüche im selben Durchlauf **verschiedene** Karten treffen statt
+derselben — sonst wäre die Stufe für einen Mehrfach-Bruch wertlos. Sortiert wird stabil, bei gleichem Wert
+entscheidet die Deck-Reihenfolge; kein Zufall im Griff.
+
+| | Haltequote | Median-Δ | Siegquote |
+| --- | --- | --- | --- |
+| alt (getroffene Karte + Nachbarn) | 16 % | −4 % | 29 % |
+| neu (höchste Karten) | **62 %** | **+17 %** | **62 %** |
+
+`BURST_SCALE` 64 → **60**: die Stichquote des Mono-Eis-Builds steigt 59,6 → 62 %, und ein **gewonnener**
+Gletscher-Stich zahlt den vollen Sieg-Stack (`glacierWinMult`) — der Griff hebt also auch den Bruch, nicht nur die
+Kontrolle. Gemessen bei 60: **Parität 1,01×** gegen Feuer.
+
+#### Nebenbefund zum Schneetreiben (nichts geändert)
+
+Owner-Frage: „wieso geben sie nicht ihren vollen Schnee ab, ansonsten ist ja egal wie viel Schnee man aussäht wenn
+immer nur 1 ankommt." — Der Befund stützt das. `FIRN_DRAW` steht auf **1**: jedes offene Feld gibt je Durchlauf
+höchstens einen Punkt seiner Reserve an den nächsten Gletscher ab. Das Schneetreiben sät 2 · 3 · 4 · 5, der Abfluss
+bleibt 1 — die Leiter verschiebt also nur, **wie lange** ein Feld nachliefert, nicht wie viel je Durchlauf ankommt.
+Solange das Feld schneller gefüllt als geleert wird, ist die Stufe fast wirkungslos.
+
+Der Deckel stammt aus §5.15, wo ein höherer Zug gemessen **nichts** brachte (Flut/Zug 3/2 → −10 %, 8/8 → −5 %,
+15/15 → −3 %). Die dortige Begründung war `mCap`: die Bruchmasse war auf 12 gedeckelt, mehr Masse zu füttern war
+linear und lief ins Leere. **§5.18 hat `mCap` gestrichen** — die Masse über der Schwelle bleibt seither liegen und
+trägt in den nächsten Durchlauf. Damit ist die Begründung für `FIRN_DRAW` = 1 hinfällig, und der Deckel ist
+ungeprüfter Altbestand. Zu messen wäre ein Sweep über `SIM_GLACIER_FIRN_DRAW`; wartet auf die Ansage des Owners.
+
 ## 6. Pflanze
 
 ### 6.1 Richtung und Abgrenzung (gesetzt, Owner 2026-09-06)

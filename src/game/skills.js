@@ -2,7 +2,7 @@ import * as C from "./constants.js";
 import { shuffle } from "./deck.js";
 // Eis: die Zahlen der SKILLS stehen in der Stufentabelle EIS unten. Aus glacier.js kommt nur, was ohne Skill gilt —
 // die Schwellen, die Wucht je Stufe, der Linien-Faktor der Geometrie und die Werte der drei Legendären.
-import { GEO_LINIE as G_GEO_LINIE, TIER_MULT as G_TIER_MULT,
+import { EISWALL_MIN as G_EISWALL_MIN, TIER_MULT as G_TIER_MULT,
   EISZEIT_FLOOD as G_EISZEIT_FLOOD, EISZEIT_BURST_PER as G_EISZEIT_BURST,
   GROSSE_LAWINE_EVERY as G_LAWINE_EVERY,
   SCHILD_PER_PICK as G_SCHILD_PER_PICK, GROSSE_LAWINE_MULT as G_LAWINE_MULT } from "./glacier.js";
@@ -116,7 +116,10 @@ const EIS = {
   // Eisschild — Cluster und Dichte
   packeis:        [{ per: 0.5 }, { per: 0.75 }, { per: 1 }, { per: 1.5 }],
   eisbruecke:     [{ weight: 0.5 }, { weight: 0.75 }, { weight: 1 }, { weight: 1.25 }], // §5.2: die Diagonale bekommt ein Gewicht statt eines Schalters
-  eiswall:        [{ linie: 1.45 }, { linie: 1.6 }, { linie: 1.8 }, { linie: 2.1 }],
+  // §5.24 (Owner-Route A): der Eiswall liest die KETTENLÄNGE statt „volle Reihe oder nichts". Der alte Hebel hob den
+  // Linien-Faktor (1,45 … 2,1) und maß −8 % bei 38 % Haltequote: er zahlte erst ab 5 Gletschern in einer Reihe und
+  // verlangte dafür die dünnste Form, während die halbe Fraktion Dichte bezahlt. Jetzt zahlt schon eine Kette aus 3.
+  eiswall:        [{ per: 0.15 }, { per: 0.2 }, { per: 0.25 }, { per: 0.3 }],
   verzahnung:     [{ per: 0.15 }, { per: 0.25 }, { per: 0.4 }, { per: 0.6 }], // niedrig angesetzt: der Ertrag wächst quadratisch mit der Clustergröße
   // Lawine — der Payoff
   abbruchkante:   [{ t2: 1.6, t3: 2.6, t4: 3.8 }, { t2: 1.8, t3: 3, t4: 4.4 }, { t2: 2.1, t3: 3.6, t4: 5.2 }, { t2: 2.5, t3: 4.4, t4: 6.4 }], // §5.18: vierte Zahl für die vierte Schwelle
@@ -142,7 +145,8 @@ const EIS = {
 };
 export const EIS_TIERS = EIS;
 // Einfrieren: der Nachsatz je Reichweite — ausgeschrieben, weil Singular und Plural sonst am Zahlwort auseinanderfallen.
-const EINFRIEREN_NACHBARN = { 2: " Eine ihrer Nachbarkarten verliert ihn ebenfalls.", 3: " Zwei ihrer Nachbarkarten verlieren ihn ebenfalls.", 5: " Ihre vier Nachbarkarten verlieren ihn ebenfalls." };
+// §5.25: der Griff zählt Karten, nicht Nachbarn — „die höchste" / „die N höchsten".
+const EINFRIEREN_ZIEL = (n) => (n === 1 ? "die höchste Karte des Gegnerdecks" : `die ${de1(n)} höchsten Karten des Gegnerdecks`);
 
 export const SKILL_DEFS = {
   // ---- Blitz (exp skill rework, §3): Passiv +5 % Crit je Skill, Leiste 10 Crits → nächste Karte ionisieren.
@@ -263,7 +267,7 @@ export const SKILL_DEFS = {
   SK_ICE_07: { id: "SK_ICE_07", name: "Eisbrücke", archetype: "ice", keywords: ["glacier"], role: "G_EISBRUECKE", tiers: EIS.eisbruecke,
     ...tiered(EIS.eisbruecke, (r) => `Zählt auch die vier Diagonalen als angrenzend: zersplitterte Felder werden zu einem Cluster. Für Kaskade und Kollision zählt ein diagonaler Gletscher zu ${pct(r.weight)} %.`) },
   SK_ICE_08: { id: "SK_ICE_08", name: "Eiswall", archetype: "ice", keywords: ["glacier", "formation"], role: "G_EISWALL", tiers: EIS.eiswall,
-    ...tiered(EIS.eiswall, (r) => `Eine komplett gefrorene Reihe oder Spalte verstärkt das Bersten aller ihrer Gletscher: ×${de(r.linie)} statt ×${de(G_GEO_LINIE)}.`) },
+    ...tiered(EIS.eiswall, (r) => `Steht ein Gletscher in einer geraden Kette aus mindestens ${G_EISWALL_MIN} Gletschern (Reihe oder Spalte), berstet er um +${pct(r.per)} % stärker je Gletscher der Kette über zwei — eine volle Reihe also +${pct(r.per * 3)} %.`) },
   SK_ICE_09: { id: "SK_ICE_09", name: "Verzahnung", archetype: "ice", keywords: ["glacier"], role: "G_VERZAHNUNG", tiers: EIS.verzahnung,
     ...tiered(EIS.verzahnung, (r) => `Jeden Durchlauf gewinnt jeder Gletscher +${de(r.per)} Masse je Gletscher im verbundenen Cluster.`) },
   // Linie 3 — Lawine (Brechen/Kaskade)
@@ -278,7 +282,7 @@ export const SKILL_DEFS = {
     ...tiered(EIS.gletschersturz, (r) => `Jeder Bruch wird +${pct(r.per)} % stärker je Gletscher, der im selben Durchlauf bricht.`) },
   // Linie 4 — Frostgriff (Kontrolle/Duo)
   SK_ICE_15: { id: "SK_ICE_15", name: "Einfrieren", archetype: "ice", keywords: ["glacier"], role: "G_EINFRIEREN", tiers: EIS.einfrieren,
-    ...tiered(EIS.einfrieren, (r) => `Bricht ein Gletscher auf das Gegnerfeld, verliert die getroffene Karte ihren Stich im nächsten Durchlauf.${EINFRIEREN_NACHBARN[r.cards] || ""}`) },
+    ...tiered(EIS.einfrieren, (r) => `Bricht ein Gletscher, verliert ${EINFRIEREN_ZIEL(r.cards)} den Stich im nächsten Durchlauf.`) },
   SK_ICE_16: { id: "SK_ICE_16", name: "Frostbund", archetype: "ice", keywords: ["glacier"], role: "G_FROSTBUND", tiers: EIS.frostbund,
     ...tiered(EIS.frostbund, (r) => `Bricht ein Gletscher, bekommen alle seine Nachbarn +${de(r.buff)} Stichwert im nächsten Durchlauf. Mit Eisbrücke gilt das für die acht Nachbarn.`) },
   SK_ICE_17: { id: "SK_ICE_17", name: "Sprödbruch", archetype: "ice", keywords: ["glacier", "crit"], role: "G_SPROEDBRUCH", tiers: EIS.sproedbruch,
