@@ -101,9 +101,8 @@ export function GlacierBar({ active, glacierLocked = [], glacierMass = [], firnS
   const duo = new Set([...Object.keys(glacierBuffActive || {}), ...Object.keys(glacierBuffPending || {})]).size;
   const hasLawine = (glacierRoles || []).includes(ROLES.L_LAWINE);
   // Aktive 2D-Gletscher-Formationen (Block/Kreuz/Linie/Fläche) + ihr Burst-Multiplikator — je Typ der höchste Faktor.
-  const eiswall = (glacierRoles || []).includes(ROLES.EISWALL);
   const formByType = {};
-  for (const gf of glacierFormations(glacierLocked, { eiswall }).forms) formByType[gf.type] = Math.max(formByType[gf.type] || 0, gf.factor);
+  for (const gf of glacierFormations(glacierLocked).forms) formByType[gf.type] = Math.max(formByType[gf.type] || 0, gf.factor);
   const activeForms = Object.entries(formByType).sort((a, b) => b[1] - a[1]);
 
   // Brech-Moment: fällt eine hohe Gletschermasse stark ab (Bruch) ODER springt der Ertrag, blitzt ein transienter

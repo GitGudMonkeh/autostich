@@ -133,7 +133,7 @@ export default {
   "ability.SK_ICE_07.name": "Puente de Hielo",
   "ability.SK_ICE_07.desc": `Cuenta también las cuatro diagonales como contiguas: las celdas dispersas se convierten en una sola agrupación, para estallidos, colisiones y tamaño de agrupación.`,
   "ability.SK_ICE_08.name": "Muro de Hielo",
-  "ability.SK_ICE_08.desc": `Una fila o columna totalmente congelada refuerza el estallido de todos sus glaciares: ×1,45 en vez de ×1,3.`,
+  "ability.SK_ICE_08.desc": `Un glaciar situado en una cadena recta de al menos 3 glaciares (fila o columna) estalla un +15 % más fuerte por cada glaciar de la cadena por encima de dos — una fila completa es un +45 %.`,
   "ability.SK_ICE_09.name": "Engranaje",
   "ability.SK_ICE_09.desc": `En cada ciclo, cada glaciar gana +0,15 de masa por cada glaciar de la agrupación conectada.`,
   "ability.SK_ICE_10.name": "Frente de Desprendimiento",

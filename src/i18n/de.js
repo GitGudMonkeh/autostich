@@ -582,7 +582,6 @@ export default {
   "glacierlegend.block": "2×2-Quadrat (4 Gletscher)",
   "glacierlegend.kreuz": "Zentrum + 4 Nachbarn (5 Gletscher)",
   "glacierlegend.linie": "volle Reihe (5) oder Spalte (8)",
-  "glacierlegend.linie.wall": "volle Reihe (5) oder Spalte (8) · Eiswall",
   "glacierlegend.flaeche": "gefülltes 3×3 (9 Gletscher)",
   "glacierlegend.mark.a": "blaues",
   "glacierlegend.mark.compact": "= Karte in aktiver Formation",

@@ -138,7 +138,7 @@ describe("Eis-Stufen — die Stufe erreicht die Mechanik", () => {
     expect(Object.keys(corner.frozenOppPending)).toHaveLength(3);
   });
 
-  it("Eiswall: die Stufe hebt den Linien-Faktor der vollen Reihe", () => {
+  it("Eiswall: die Stufe hebt den Zuschlag auf die Kette", () => {
     const row = [0, 1, 2, 3, 4];
     const gm = zeros(); for (const p of row) gm[p] = 12;
     const burst = (tier) => resolveTrick(scen({ glacierMass: gm, glacierLocked: lockAt(...row), ...at(ROLES.EISWALL, tier) }), noCrit)

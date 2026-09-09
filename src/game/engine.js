@@ -242,8 +242,9 @@ export function resolveTrick(state, rng) {
     const refilledMass = newGlacierMass;
     const snapMass = glacierRoles.includes(GLACIER_ROLES.L_SCHILD) ? uebergletscherPool(refilledMass, glacierLocked)
       : refilledMass;
-    // 2D-Geometrie-Formationen (unique Deck-Passiv, docs §2.7/§9): Block/Kreuz/Linie/Fläche → Burst-Faktor je Feld; Eiswall hebt die Linie.
-    const glacierGeo = glacierGeometry(glacierLocked, { eiswallLinie: glacierRoles.includes(GLACIER_ROLES.EISWALL) ? ice.eiswallLinie : 0 });
+    // 2D-Geometrie-Formationen (unique Deck-Passiv, docs §2.7/§9): Block/Kreuz/Linie/Fläche → Burst-Faktor je Feld.
+    // §5.24: der Eiswall fasst diese Tabelle nicht mehr an, er ist ein eigener Faktor im Snapshot (`eiswallPer`).
+    const glacierGeo = glacierGeometry(glacierLocked);
     // Ewiges Schild (§5.8): das ganze Feld IST ein Gletscher — also erbt jeder Gletscher die stärkste Form des Bretts.
     // Das ersetzt den alten additiven Masse-Bonus, der am Masse-Deckel verfiel.
     if (glacierRoles.includes(GLACIER_ROLES.L_SCHILD)) {

@@ -128,7 +128,7 @@ export default {
   "ability.SK_ICE_07.name": "Ice Bridge",
   "ability.SK_ICE_07.desc": `Counts the four diagonals as adjacent too: scattered cells become one cluster, for bursts, collisions and cluster size.`,
   "ability.SK_ICE_08.name": "Ice Wall",
-  "ability.SK_ICE_08.desc": `A fully frozen row or column strengthens the burst of all its glaciers: ×1.45 instead of ×1.3.`,
+  "ability.SK_ICE_08.desc": `A glacier standing in a straight chain of at least 3 glaciers (row or column) bursts +15% harder per glacier of the chain beyond two — a full row is +45%.`,
   "ability.SK_ICE_09.name": "Interlock",
   "ability.SK_ICE_09.desc": `Every cycle, each glacier gains +0.15 mass per glacier in the connected cluster.`,
   "ability.SK_ICE_10.name": "Calving Edge",
