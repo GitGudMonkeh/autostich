@@ -556,3 +556,19 @@ export function summarizeFormations(perPosition) {
   }
   return { count, maxMult };
 }
+
+/* GEBAUTE Formationen einer Aufstellung — die Bemessungsgrundlage der Münz-Einnahme
+   (docs/muenz-oekonomie.md §2.2). Zwei Unterschiede zu summarizeFormations, beide notwendig:
+
+   1. Nur die VIER echten Typen. Im selben Array liegen `formationskern` (Architekt-Gebäude) und
+      `anker` (Positionsanker) — die sind keine gebaute Formation. Ungefiltert zählt die Einnahme
+      Architektur mit und liegt gemessen rund ein Drittel zu hoch (Ø 61 Paare gegen Ø 18 echte).
+   2. `ordinal === 1` zählt jede Formation EINMAL, nicht je Position. Gemessen tragen 3 Formationen
+      auf einer Position den Median — ohne diese Regel wären es 40×3 statt 18. */
+export function countBuiltFormations(perPosition) {
+  let n = 0;
+  for (const p of perPosition || []) {
+    for (const f of p.formations || []) if (f.ordinal === 1 && FORMATION_TYPES.includes(f.type)) n += 1;
+  }
+  return n;
+}

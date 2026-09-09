@@ -51,6 +51,25 @@ export function CoinAmount({ n = 0, size = 13, minDigits = 0, dim = false, have 
   );
 }
 
+/* Eine Gutschrift im Moment ihres Anfallens (§2.3, Anzeige §4): ein „+N", das über dem Kontostand
+   aufsteigt und von selbst wieder geht. Ohne sie zählt die Leiste stumm hoch, und niemand lernt, dass
+   Ablehnen zahlt — die Zahlung wäre da, die Regel unsichtbar.
+
+   KEIN Zustand und kein Timer: die Animation endet bei Opacity 0 und läuft mit `forwards` aus. Ausgelöst
+   wird sie vom React-`key` — und der ist die laufende Nummer `seq`, nicht der Betrag: zweimal +6
+   hintereinander sind zwei Ereignisse und sollen zweimal aufblitzen. Absolut positioniert, damit die
+   Leiste beim Aufblitzen nicht springt; der Elternteil setzt dafür `position: relative`. */
+export function CoinGain({ gain = null }) {
+  if (!gain || !(gain.n > 0)) return null;
+  return (
+    <span key={gain.seq} aria-hidden="true" className="ty-num pointer-events-none"
+      style={{ position: "absolute", top: 0, right: 10, opacity: 0, color: "#5ab87a", fontSize: 13, fontWeight: 700,
+               fontVariantNumeric: "tabular-nums", animation: "as-coingain 1500ms ease-out forwards" }}>
+      +{fmtNum(gain.n)}
+    </span>
+  );
+}
+
 /* Beschriftung des Neuwurf-Knopfs (§3.1) — zwei Zeilen: oben die Handlung, unten was sie kostet.
 
    Der PREIS steht IMMER da (Owner 2026-09-08). Vorher zeigte der Knopf nur die Anzahl, solange Gratis-

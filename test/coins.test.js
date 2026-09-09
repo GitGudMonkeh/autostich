@@ -1,16 +1,20 @@
 /* Münz-Ökonomie (docs/muenz-oekonomie.md) — Einnahme und Auszahlungs-Naht.
 
-   Die Tabelle in §2 ist der Vertrag, nicht die Formel: sie wird hier Zeile für Zeile geprüft, damit ein
-   Tuning-Schritt an Schwelle oder Schrittweite sichtbar wird statt still durchzurutschen. Die zweite
-   Gruppe prüft die NAHT — dass die Auszahlung vor dem cycleWins-Reset steht. Genau dort kann sie
-   unbemerkt kaputtgehen: eine Zeile zu tief und jeder Durchlauf zahlt null, ohne dass sonst etwas auffällt. */
+   Die Tabelle in §2.2 ist der Vertrag, nicht die Formel: sie wird hier Zeile für Zeile geprüft, damit ein
+   Tuning-Schritt an Sockel, Schrittweite oder Deckel sichtbar wird statt still durchzurutschen.
+   Die zweite Gruppe prüft die NAHT — dass die Auszahlung die AUFSTELLUNG zählt und nicht die Siege, und
+   dass der Filter greift: `formationskern`/`anker` liegen im selben Array und sind keine gebaute
+   Formation. Ohne Filter liegt die Einnahme gemessen rund ein Drittel zu hoch. */
 import { describe, it, expect } from "vitest";
+import { readFileSync } from "node:fs";
 import { makeRng } from "../src/game/deck.js";
 import { initialState, reducer } from "../src/game/reducer.js";
 import { resolveTrick } from "../src/game/engine.js";
-import { coinsForWins, COIN_WIN_THRESHOLD, COIN_WIN_PER, rerollPrice, rerollOffer,
+import { coinsForFormations, COIN_CYCLE_BASE, COIN_FORM_PER, COIN_FORM_CAP, COIN_START, rerollPrice, rerollOffer,
          energyPrice, energyBuy, ENERGY_MAX_BUYS, coverPrice, coverBuy, COVER_CELLS,
-         upgradePrice, MAX_SKILL_TIER, familyUpgradeBuy, MAX_FAMILY_TIER } from "../src/game/coins.js";
+         upgradePrice, MAX_SKILL_TIER, familyUpgradeBuy, MAX_FAMILY_TIER,
+         unspentEnergyCoins, FORFEIT_SKILL, FORFEIT_PERK, FORFEIT_BUILD } from "../src/game/coins.js";
+import { countBuiltFormations } from "../src/game/formations.js";
 import { FAMILY_DEFS } from "../src/game/families.js";
 import { isLegendarySkill, archetypeOf } from "../src/game/skills.js";
 import { maxChargeFor } from "../src/game/factions/lightning.js";
@@ -27,59 +31,187 @@ const scenario = (pVal, oVal, over = {}) => ({
 });
 const rng = makeRng(9);
 
-describe("Münz-Einnahme (§2)", () => {
-  it("die Tabelle aus §2 — unter der Schwelle nichts, danach je vier Siege eine Münze", () => {
-    // Genau die Zeilen des Plans, Schwelle 12 (Owner 2026-09-08, nach Messung — coins.js §2 erklärt warum).
-    // Ändert jemand Schwelle oder Schritt, fällt DIESER Test, nicht erst der Playtest.
-    expect([0, 12, 16, 20, 24, 28, 32, 36, 40].map(coinsForWins)).toEqual([0, 0, 1, 2, 3, 4, 5, 6, 7]);
+describe("Münz-Einnahme (§2.2)", () => {
+  it("die Tabelle aus §2.2 — Sockel 2, je acht Formationen eine Münze, Deckel bei 6", () => {
+    // Genau die Zeilen des Plans. Ändert jemand Sockel, Schritt oder Deckel, fällt DIESER Test, nicht
+    // erst der Playtest. 18 Formationen sind der gemessene Median → 4 Münzen.
+    expect([0, 8, 16, 18, 24, 32, 40, 80].map(coinsForFormations)).toEqual([2, 3, 4, 4, 5, 6, 6, 6]);
   });
 
-  it("nie negativ, und die Schwelle selbst zahlt noch nichts", () => {
-    expect(coinsForWins(COIN_WIN_THRESHOLD)).toBe(0);
-    expect(coinsForWins(COIN_WIN_THRESHOLD + COIN_WIN_PER - 1)).toBe(0); // erst der volle Schritt zahlt
-    expect(coinsForWins(COIN_WIN_THRESHOLD + COIN_WIN_PER)).toBe(1);
-    expect(coinsForWins(-5)).toBe(0);
+  it("der Sockel zahlt auch ohne jede Formation, und nichts wird negativ", () => {
+    expect(coinsForFormations(0)).toBe(COIN_CYCLE_BASE);
+    expect(coinsForFormations(-5)).toBe(COIN_CYCLE_BASE);
+    expect(coinsForFormations(COIN_FORM_PER - 1)).toBe(COIN_CYCLE_BASE); // erst der volle Schritt zahlt
+    expect(coinsForFormations(COIN_FORM_PER)).toBe(COIN_CYCLE_BASE + 1);
+  });
+
+  it("der Deckel bindet — ein randvolles Brett zahlt nicht mehr als das Maximum", () => {
+    // Gemessen: bis 145 Positions×Formations-Paare, bei mittlerer Länge 3,3 also ~48 distinkte.
+    // Ungedeckelt wären das 8 Münzen statt 6 (§2.5).
+    expect(coinsForFormations(48)).toBe(COIN_CYCLE_BASE + COIN_FORM_CAP);
+    expect(coinsForFormations(999)).toBe(COIN_CYCLE_BASE + COIN_FORM_CAP);
   });
 });
 
-describe("Auszahlung am Durchlaufende (§2, Naht)", () => {
-  // Schlussstich eines Durchlaufs (pos = TRICKS_PER_CYCLE − 1) als Sieg; cycleWins zählt diesen Sieg mit.
-  const endOfCycle = (winsBefore, over = {}) =>
-    resolveTrick(scenario(12, 0, { pos: TRICKS_PER_CYCLE - 1, cycleWins: winsBefore, ...over }), rng);
+describe("Gebaute Formationen zählen (§2.2)", () => {
+  const pos = (...types) => ({ mult: 1, formations: types.map((type) => ({ type, ordinal: 1 })) });
 
-  it("zahlt aus den Siegen DIESES Durchlaufs, vor dem Reset", () => {
-    const s = endOfCycle(20); // +1 durch den Schlussstich = 21 Siege (der gemessene Median) → 2 Münzen
-    expect(s.lastCycleWins).toBe(21);
-    expect(s.lastCycleCoins).toBe(2);
-    expect(s.coins).toBe(2);
-    expect(s.cycleWins).toBe(0); // Bilanz für den nächsten Durchlauf zurückgesetzt
+  it("zählt je Formation einmal, nicht je Position", () => {
+    // Dieselbe Formation über drei Positionen: ordinal 1 nur am Anfang.
+    const board = [
+      { mult: 1, formations: [{ type: "treppe", ordinal: 1 }] },
+      { mult: 1, formations: [{ type: "treppe", ordinal: 2 }] },
+      { mult: 1, formations: [{ type: "treppe", ordinal: 3 }] },
+    ];
+    expect(countBuiltFormations(board)).toBe(1);
+  });
+
+  it("filtert Architektur und Anker heraus — sie sind keine gebaute Formation", () => {
+    const board = [pos("wiederholung", "formationskern", "anker"), pos("farbblock")];
+    expect(countBuiltFormations(board)).toBe(2); // nur Wiederholung + Farbblock
+  });
+
+  it("alle vier echten Typen zählen", () => {
+    expect(countBuiltFormations([pos("wiederholung"), pos("farbblock"), pos("treppe"), pos("wechsel")])).toBe(4);
+  });
+
+  it("leeres oder fehlendes Brett zählt null", () => {
+    expect(countBuiltFormations([])).toBe(0);
+    expect(countBuiltFormations(null)).toBe(0);
+  });
+});
+
+describe("Auszahlung am Durchlaufende (§2.2, Naht)", () => {
+  // Ein Brett mit n gebauten Formationen: n Positionen, je eine Formation mit ordinal 1.
+  const boardWith = (n) => Array.from({ length: 40 }, (_, i) =>
+    (i < n ? { mult: 1, formations: [{ type: "wiederholung", ordinal: 1 }] } : { mult: 1, formations: [] }));
+  // Schlussstich eines Durchlaufs (pos = TRICKS_PER_CYCLE − 1); dort fällt die Auszahlung.
+  const endOfCycle = (forms, over = {}) =>
+    resolveTrick(scenario(12, 0, { pos: TRICKS_PER_CYCLE - 1, formations: boardWith(forms), ...over }), rng);
+
+  it("zahlt aus der AUFSTELLUNG dieses Durchlaufs, nicht aus den Siegen", () => {
+    const s = endOfCycle(18, { cycleWins: 39 }); // 18 Formationen (Median) trotz fast perfekter Siegzahl
+    expect(s.lastCycleForms).toBe(18);
+    expect(s.lastCycleCoins).toBe(4);
+    expect(s.coins).toBe(COIN_START + 4);
+  });
+
+  it("die Siegzahl ändert die Einnahme nicht", () => {
+    expect(endOfCycle(18, { cycleWins: 5 }).lastCycleCoins).toBe(endOfCycle(18, { cycleWins: 39 }).lastCycleCoins);
   });
 
   it("der Kontostand summiert über die Durchläufe", () => {
-    const first = endOfCycle(20);
-    const second = resolveTrick(scenario(12, 0, { pos: TRICKS_PER_CYCLE - 1, cycleWins: 39, coins: first.coins }), rng);
-    expect(second.lastCycleCoins).toBe(7); // 40 Siege — der Deckel, alle Stiche gewonnen
-    expect(second.coins).toBe(9);          // 2 aus dem ersten Durchlauf + 7
+    const first = endOfCycle(18);                          // +4
+    const second = endOfCycle(32, { coins: first.coins });  // +6, der Deckel
+    expect(second.lastCycleCoins).toBe(6);
+    expect(second.coins).toBe(COIN_START + 4 + 6);
   });
 
-  it("ein schwacher Durchlauf zahlt null, ohne den Kontostand anzutasten", () => {
-    const s = endOfCycle(10, { coins: 7 }); // 11 Siege → unter der Schwelle
-    expect(s.lastCycleCoins).toBe(0);
-    expect(s.coins).toBe(7);
+  it("ein leeres Brett zahlt den Sockel, nie null", () => {
+    const s = endOfCycle(0, { coins: 7 });
+    expect(s.lastCycleCoins).toBe(COIN_CYCLE_BASE);
+    expect(s.coins).toBe(7 + COIN_CYCLE_BASE);
   });
 
   it("mitten im Durchlauf wird nicht ausgezahlt", () => {
-    const s = resolveTrick(scenario(12, 0, { pos: 5, cycleWins: 30 }), rng);
-    expect(s.coins).toBe(0);
+    const s = resolveTrick(scenario(12, 0, { pos: 5, formations: boardWith(18) }), rng);
+    expect(s.coins).toBe(COIN_START);
     expect(s.lastCycleCoins).toBe(null);
   });
 
-  it("kein Startbetrag (§2): ein frischer Lauf beginnt bei null", () => {
-    expect(initialState(makeRng(1)).coins).toBe(0);
+  it("Startbetrag (§2.1): ein frischer Lauf beginnt mit dem Sockel in der Kasse", () => {
+    expect(initialState(makeRng(1)).coins).toBe(COIN_START);
   });
 });
 
-/* ---- Neuwurf kaufen (§3.1) --------------------------------------------------------------------- */
+/* ---- Verzicht zahlt (§2.3) ----------------------------------------------------------------------
+   Die zweite Einnahmeart, und die einzige, die der Spieler selbst auslöst. Geprüft wird jede der vier
+   Quellen an ihrer Naht im Reducer — die Beträge stehen im Plan und sind Owner-Entscheide, also fällt
+   ein Tuning-Schritt hier auf und nicht erst im Playtest. */
+describe("Verzicht zahlt (§2.3)", () => {
+  const atSkill = (over = {}) => ({
+    ...initialState(makeRng(1), 7),
+    phase: "levelup",
+    skillOffer: ["SK_FIRE_01", "SK_LIGHTNING_01", "SK_FIRE_02"],
+    skillOfferTiers: { SK_FIRE_01: 0, SK_LIGHTNING_01: 0, SK_FIRE_02: 0 },
+    skillOfferArchs: ["fire", "lightning", "fire"],
+    ...over,
+  });
+  const atPerk = (over = {}) => ({ ...initialState(makeRng(1), 7), phase: "levelup", offer: ["P_A_01"], ...over });
+  const inFormation = (over = {}) => ({ ...initialState(makeRng(1), 7), phase: "formation", formationEnergy: 3, ...over });
+  const inArchitect = (over = {}) => ({ ...initialState(makeRng(1), 7), phase: "architect",
+    architect: { buildings: [], offers: [], actedMain: false, winCounters: {}, phaseHistory: [], phaseAnchor: {} }, ...over });
+
+  it("einen Skill ablehnen bringt 12", () => {
+    const s = reducer(atSkill({ coins: 5 }), { type: "DECLINE_SKILL", rng: Math.random });
+    expect(s.coins).toBe(17);
+    expect(s.coinGain).toMatchObject({ n: FORFEIT_SKILL, source: "skill" });
+  });
+
+  it("auch der abgelehnte Meisterhand-Bonus zahlt — der Slot bleibt leer, der Verzicht ist derselbe", () => {
+    // Der Bonus nimmt einen eigenen Ausgang im Reducer (kein Perk-Ersatz). Eine Zahlung, die an einem
+    // der fünf Ausgänge fehlte, wäre für den Spieler nicht erklärbar.
+    const s = reducer(atSkill({ coins: 0, skillOfferBonus: true }), { type: "DECLINE_SKILL", rng: Math.random });
+    expect(s.coins).toBe(FORFEIT_SKILL);
+    expect(s.skillOfferBonus).toBe(false);
+  });
+
+  it("einen Perk ablehnen bringt 6 — halb so viel wie ein Skill", () => {
+    const s = reducer(atPerk({ coins: 5 }), { type: "DECLINE_PERK" });
+    expect(s.coins).toBe(11);
+    expect(FORFEIT_PERK * 2).toBe(FORFEIT_SKILL);
+  });
+
+  it("je übrige Formations-Energie eine Münze", () => {
+    const s = reducer(inFormation({ coins: 0, formationEnergy: 3 }), { type: "CONFIRM_FORMATION" });
+    expect(s.coins).toBe(3);
+    expect(s.formationEnergy).toBe(0);
+  });
+
+  it("GEKAUFTE Energie zahlt nicht zurück — sonst wäre der Kauf ein Rabatt auf die Erstattung", () => {
+    // Gekauft 2 für 3+6 Münzen, keine davon verbraucht: erstattet wird nur, was über die gekaufte
+    // hinaus übrig bleibt. Sonst kauft man für 3 und bekommt 1 zurück.
+    expect(unspentEnergyCoins(5, 2)).toBe(3);
+    expect(unspentEnergyCoins(2, 2)).toBe(0);
+    expect(unspentEnergyCoins(1, 2)).toBe(0);   // mehr verbraucht als Basis — nie negativ
+    const s = reducer(inFormation({ coins: 0, formationEnergy: 5, coinEnergy: 2 }), { type: "CONFIRM_FORMATION" });
+    expect(s.coins).toBe(3);
+  });
+
+  it("wer alle Energie verbraucht, bekommt nichts — und der Zustand bleibt derselbe Gegenstand", () => {
+    const s = reducer(inFormation({ coins: 4, formationEnergy: 0 }), { type: "CONFIRM_FORMATION" });
+    expect(s.coins).toBe(4);
+    expect(s.coinGain).toBe(null);
+  });
+
+  it("eine Architekt-Phase ohne Gebäude und ohne Aufwertung bringt 6", () => {
+    const s = reducer(inArchitect({ coins: 1 }), { type: "ARCHITECT_DONE" });
+    expect(s.coins).toBe(1 + FORFEIT_BUILD);
+  });
+
+  it("wer gebaut oder ausgebaut hat, bekommt nichts — `actedMain` ist die Bedingung", () => {
+    const acted = inArchitect({ coins: 1 });
+    const s = reducer({ ...acted, architect: { ...acted.architect, actedMain: true } }, { type: "ARCHITECT_DONE" });
+    expect(s.coins).toBe(1);
+  });
+
+  it("Versetzen und Abreißen kosten keinen Bauplan — die Phase zahlt trotzdem aus", () => {
+    // Beide setzen `actedMain` bewusst nicht: sie ordnen um, sie verbrauchen nichts.
+    const moved = inArchitect({ coins: 0 });
+    const s = reducer({ ...moved, architect: { ...moved.architect, moved: true } }, { type: "ARCHITECT_DONE" });
+    expect(s.coins).toBe(FORFEIT_BUILD);
+  });
+
+  it("`seq` zählt hoch, damit zweimal derselbe Betrag zwei Ereignisse sind", () => {
+    // Ohne die laufende Nummer bliebe die Anzeige beim zweiten gleichen Betrag stumm — der React-`key`
+    // sähe keinen Unterschied und startete das Aufblitzen nicht neu.
+    const first = reducer(atPerk({ coins: 0 }), { type: "DECLINE_PERK" });
+    const second = reducer(atPerk({ coins: first.coins, coinGain: first.coinGain }), { type: "DECLINE_PERK" });
+    expect(second.coinGain.n).toBe(first.coinGain.n);
+    expect(second.coinGain.seq).toBe(first.coinGain.seq + 1);
+  });
+});
+
 describe("Neuwurf-Preistreppe (§3.1)", () => {
   it("zwei Grundpreise, EIN Zähler — Verdopplung je Kauf der Phase", () => {
     expect([0, 1, 2, 3].map((n) => rerollPrice(n, false))).toEqual([3, 6, 12, 24]);
@@ -430,6 +562,29 @@ describe("Perk aufwerten — dieselbe Leiter, ab Rang 1 gezählt", () => {
     } else {
       expect(reducer(s0, { type: "PICK_FAMILY", familyId: withTarget.id, tier: 1 }).phase).toBe("play");
     }
+  });
+});
+
+/* ---- Kauf-Bestätigung (Owner 2026-09-09) --------------------------------------------------------
+   NACH BILDSCHIRM, nicht nach Preis: Aufwerten und Verkaufen fragen IMMER nach, alle übrigen Käufe nie.
+   Die Regel lebt in der UI und lässt sich nicht über den Reducer prüfen — der Wächter liest deshalb die
+   Quellen. Er prüft eine BEZIEHUNG (welche Bildschirme die Rückfrage führen und welche nicht), nicht
+   eine Schreibweise: ein umbenannter Knopf lässt ihn kalt, ein vergessener oder ein zu viel eingebauter
+   Dialog nicht. Genau das ist der Fehler, der sonst erst im Playtest auffällt — und dann als „warum
+   fragt es hier und dort nicht?". */
+describe("Kauf-Bestätigung nach Bildschirm (Owner 2026-09-09)", () => {
+  const read = (p) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
+  const uses = (p) => /<BuyConfirm[\s/>]/.test(read(p));
+
+  it("die drei LISTEN fragen nach — dicht stehende Zeilen, und beim Verkauf kostet ein Fehlgriff einen Perk", () => {
+    for (const f of ["src/ui/SkillUpgrade.jsx", "src/ui/PerkUpgrade.jsx", "src/ui/PerkSell.jsx"])
+      expect(uses(f), `${f} führt die Rückfrage nicht`).toBe(true);
+  });
+
+  it("die EINZELNEN Kaufknöpfe fragen nicht — an einem Knopf mit Platz um sich herum vertippt man sich nicht", () => {
+    // Energie (Aufstellphase), Baufeld (Architekt), Fokus und Neuwurf (Skill-Wahl).
+    for (const f of ["src/ui/FormationPhase.jsx", "src/ui/ArchitectScreen.jsx", "src/ui/SkillSelect.jsx"])
+      expect(uses(f), `${f} fragt nach, obwohl es ein einzelner Knopf ist`).toBe(false);
   });
 });
 

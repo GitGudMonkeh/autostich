@@ -1,43 +1,79 @@
 /* Münz-Ökonomie (docs/muenz-oekonomie.md) — die laufinterne Währung. Reine, deterministische Kernlogik:
    Einnahme je Durchlauf und die Preistreppen der Ausgabeflächen. Kein State, keine UI, kein Zufall.
 
-   Mentalmodell: die Einnahme hängt an der SIEGZAHL, nicht am Score. Der Score wächst über einen Lauf um
-   Faktor hundert, die Siegzahl ist je Durchlauf hart gedeckelt — die Ökonomie kann deshalb nicht
-   explodieren. Die Preistreppen laufen je PHASE und werden in der nächsten auf den Grundpreis
-   zurückgesetzt: Sparen bringt Reichweite, nicht Höhe.
+   Mentalmodell: die Einnahme hängt an der AUFSTELLUNG — weder am Score noch an der Siegzahl. Der Score
+   wächst über einen Lauf um Faktor hundert; die Siegzahl wächst weniger, bevorzugt aber die Fraktionen,
+   die leichter Stiche gewinnen. Die Aufstellung tut beides nicht. Die Preistreppen laufen je PHASE und
+   werden in der nächsten auf den Grundpreis zurückgesetzt: Sparen bringt Reichweite, nicht Höhe.
 
    ⚠ Alle Zahlen sind Startwerte der ersten Fassung und über die Sim tunebar (envNum) — gesetzt genug zum
-   Bauen, nicht gesetzt genug zum Verteidigen. Ändert sich die Einnahme, müssen die Preise mitwandern. */
+   Bauen, nicht gesetzt genug zum Verteidigen. Ändert sich die Einnahme, müssen die Preise mitwandern.
+   Die Preise stehen bewusst noch gegen die ALTE Größenordnung (~130 statt gemessener ~200 je Lauf):
+   Owner-Entscheid 2026-09-09, um im Spiel zu sehen, wie sich die höhere Kaufkraft anfühlt. */
 
 import { envNum } from "./constants.js";
 
-/* ---- NICHT ENTSCHIEDEN (docs/muenz-oekonomie.md §8) ----------------------------------------------
-   Zwei Punkte des Plans sind ausdrücklich offen. Umgesetzt ist jeweils der EINFACHSTE Weg, damit die
-   Ökonomie läuft — beide sind so gebaut, dass die Entscheidung sie an einer Stelle umdreht:
+/* ---- Zwei Regeln, die nirgends Code brauchen (docs/muenz-oekonomie.md) ---------------------------
+   1. MÜNZVERFALL AM LAUFENDE. Übrige Münzen verfallen (Owner 2026-09-09) — kein Score-Umtausch, keine
+      Mitnahme. Umgesetzt durch Nichtstun: `coins` liegt im Lauf-State und geht mit ihm. Ein Umtauschkurs
+      würde gegen jeden Kauf aufgerechnet und machte den letzten Durchlauf zur Rechenaufgabe.
 
-   1. KAUF-BESTÄTIGUNG (§8.1). Kein Kauf fragt nach. Ein Fehltipper kostet Münzen, ein zweiter Tap kostet
-      Zeit — dreimal je Phase. Der Mittelweg des Plans wäre, nur die teuren Käufe bestätigen zu lassen
-      (Baufeld, Episch-Aufwertung, Legendär-Neuwurf). Nichts hier verhindert das: alle Käufe laufen über
-      eine Reducer-Aktion und einen Knopf, ein Bestätigungsschritt sitzt dazwischen.
-
-   2. MÜNZVERFALL AM LAUFENDE (§8.2). Münzen verfallen: `coins` liegt im Lauf-State und geht mit ihm.
-      Umgesetzt durch Nichtstun — es gibt keinen Weg, auf dem sie den Lauf verlassen könnten. Soll die
-      Mitnahme kommen, ist das eine Regel mehr (im Profil sichern, beim Start laden), keine Umbauten. */
+   2. KAUF-BESTÄTIGUNG NACH BILDSCHIRM, nicht nach Preis (Owner 2026-09-09): Aufwerten und Verkaufen
+      fragen IMMER nach, unabhängig vom Betrag; alle übrigen Käufe nie. In einer Liste dicht stehender
+      Einträge vertippt man sich, an einem einzelnen Knopf nicht — und eine Preisschwelle wäre nicht
+      erklärbar (bei 15 gefragt, bei 14 still). Die Regel sitzt in der UI, nicht hier. */
 
 /* ---- Einnahme (§2) ------------------------------------------------------------------------------- */
-/* Schwelle und Schrittweite: floor((Siege − THRESHOLD) / PER). Die Schwelle erzeugt die Spreizung — sie
-   frisst die Siege, die jeder Durchlauf ohnehin macht, und lässt nur den Überschuss zahlen.
+/* SOCKEL + AUFSTELLUNG: `BASE + min(CAP, floor(gebaute Formationen / PER))`.
 
-   Schwelle 20 (Owner-Entscheid 2026-09-08 → 12): der Plan rechnete mit „~24 Siege früh, ~32 in der Mitte,
-   ~40 spät" und ~130 Münzen je Lauf. Gemessen über 24 Läufe / 1200 Durchläufe stimmt das nicht: Median 21
-   Siege je Durchlauf (p25 19, p75 25). Bei Schwelle 20 zahlten nur 34 % der Durchläufe überhaupt etwas,
-   Median-Einnahme 25 Münzen je LAUF statt 130 — die Ökonomie hungerte.
-   Bei 12 zahlen 98 % der Durchläufe, Median 114 Münzen je Lauf (min 62, max 188). Das trifft die
-   Größenordnung, gegen die alle Preise in §3 gesetzt sind. */
-export const COIN_WIN_THRESHOLD = envNum("SIM_COIN_THRESHOLD", 12);
-export const COIN_WIN_PER = envNum("SIM_COIN_PER_WINS", 4);
+   Die Kopplung an die SIEGZAHL ist gestrichen (Owner 2026-09-09). Sie bevorzugte die Fraktionen, die
+   leichter Stiche gewinnen: gemessen 1,76× zwischen Feuer (144 Münzen je Lauf) und Pflanze (82) — Eis
+   und Feuer heben den Kartenwert bzw. senken den des Gegners, Blitz zahlt auf Score statt auf Siege.
+   Über Formationen gemessen sind es 1,14× (190…216 je Lauf).
 
-export const coinsForWins = (wins) => Math.max(0, Math.floor(((wins || 0) - COIN_WIN_THRESHOLD) / COIN_WIN_PER));
+   Warum die Aufstellung fair ist: Formationen entstehen in der AUFSTELLPHASE — computeFormations läuft
+   einmal je Durchlauf über die Reihenfolge, bevor der erste Stich fällt. Der Stich entscheidet nur, ob
+   der Formations-MULTIPLIKATOR ausgezahlt wird; für die Zählung ist er egal.
+
+   Der DECKEL (Owner 2026-09-09) ist kein Feintuning, sondern schließt eine Lücke: ein randvolles Brett
+   trägt bis 145 Positions×Formations-Paare, und weil KURZE Formationen mehr distinkte ergeben als lange
+   (gemessene mittlere Länge 3,3), zahlte der Extremfall ungedeckelt 8–12 statt 4. Bei 32 Formationen
+   bindet er und trifft 1 % der gemessenen Durchläufe. */
+export const COIN_CYCLE_BASE = envNum("SIM_COIN_BASE", 2);        // Sockel je Durchlauf, unabhängig von allem
+export const COIN_FORM_PER = envNum("SIM_COIN_PER_FORMS", 8);     // so viele gebaute Formationen zahlen eine Münze
+export const COIN_FORM_CAP = envNum("SIM_COIN_FORM_CAP", 4);      // höchstens so viele Münzen aus Formationen
+export const COIN_START = envNum("SIM_COIN_START", 3);            // Startbetrag beim Laufstart
+
+export const coinsForFormations = (forms) =>
+  COIN_CYCLE_BASE + Math.min(COIN_FORM_CAP, Math.floor(Math.max(0, forms || 0) / COIN_FORM_PER));
+
+/* ---- Verzicht zahlt (§2.3) ------------------------------------------------------------------------ */
+/* Vier Quellen, ein Gedanke: wer auf etwas verzichtet, tauscht Build-Stärke gegen Kaufkraft. Sie sind die
+   ZWEITE Einnahmeart neben dem Durchlauf und die einzige, die der Spieler selbst auslöst.
+
+   Beim Spielen im Auge behalten (§2.3): Ablehnen zahlt mehr, als ein Neuwurf kostet (Perk 6 gegen
+   Neuwurf 3). Wer ohnehin ablehnen will, kann vorher mit Gewinn würfeln — selbstbegrenzend, weil es die
+   Phase kostet, aber eine Schleife, die ein Spieler findet. */
+export const FORFEIT_SKILL = envNum("SIM_COIN_FORFEIT_SKILL", 12);
+export const FORFEIT_PERK = envNum("SIM_COIN_FORFEIT_PERK", 6);
+export const FORFEIT_ENERGY = envNum("SIM_COIN_FORFEIT_ENERGY", 1);   // je übriger Energie
+export const FORFEIT_BUILD = envNum("SIM_COIN_FORFEIT_BUILD", 6);     // Architekt-Phase ohne Hauptaktion
+
+/* Übrige Formations-Energie am Ende der Aufstellphase. GEKAUFTE Energie (§3.2) zählt nicht mit — sonst
+   kauft man für 3 und bekommt 1 zurück, und der Kauf wäre Geldvernichtung mit Rabatt. Die Rechnung
+   behandelt die gekaufte Energie damit als die zuletzt übrige: erst zahlt sich aus, was über sie
+   hinausgeht. */
+export const unspentEnergyCoins = (left = 0, bought = 0) =>
+  Math.max(0, (left || 0) - (bought || 0)) * FORFEIT_ENERGY;
+
+/* Eine Gutschrift, an EINER Stelle gebaut: Kontostand plus die Spur für die Anzeige (§4 — eine
+   Verzichts-Zahlung muss in dem Moment sichtbar werden, in dem sie anfällt, sonst merkt niemand, dass
+   Ablehnen zahlt). `seq` zählt hoch, damit zweimal derselbe Betrag als zwei Ereignisse ankommt und die
+   Leiste nicht stumm bleibt. Betrag ≤ 0 → null, der Aufrufer schreibt dann nichts. */
+export function coinGrant(state = {}, n = 0, source = "") {
+  if (!(n > 0)) return null;
+  return { coins: (state.coins || 0) + n, coinGain: { n, source, seq: ((state.coinGain && state.coinGain.seq) || 0) + 1 } };
+}
 
 /* ---- Neuwurf (§3.1) ------------------------------------------------------------------------------ */
 // Zwei Grundpreise, EIN Zähler. Der Zähler sind die GEKAUFTEN Neuwürfe dieser Phase (state.coinRerolls) —

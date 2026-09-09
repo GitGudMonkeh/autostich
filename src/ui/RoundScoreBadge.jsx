@@ -6,18 +6,18 @@ import { fmtScore } from "./format.js";
 import { t } from "../i18n/index.js"; // #sprache
 import { CoinAmount } from "./CoinMark.jsx"; // Münz-Ökonomie (§4): die Auszahlung des Durchlaufs sichtbar machen
 
-/* Münz-Auszahlung des eben beendeten Durchlaufs (docs/muenz-oekonomie.md §4): „N Siege → +M". Sie steht
-   NEBEN dem Rundenscore, weil beide dasselbe beantworten — was der Durchlauf gebracht hat — und weil der
-   Chip damit ohne eigene Verdrahtung auf allen Entscheidungs-Panels erscheint.
-   Auch die Null wird gezeigt: dass unter 20 Siegen nichts gezahlt wird, ist die Regel, die man am
-   schnellsten dadurch lernt, dass die Zeile es sagt. */
+/* Münz-Auszahlung des eben beendeten Durchlaufs (docs/muenz-oekonomie.md §4): „N Formationen → +M". Sie
+   steht NEBEN dem Rundenscore, weil beide dasselbe beantworten — was der Durchlauf gebracht hat — und
+   weil der Chip damit ohne eigene Verdrahtung auf allen Entscheidungs-Panels erscheint.
+   Die Zahl nennt die AUFSTELLUNG, nicht die Siege: seit die Einnahme an den Formationen hängt, ist das
+   die Größe, die der Spieler beeinflusst hat — und die Zeile ist der schnellste Weg, das zu lernen. */
 function CoinPayoutChip({ state }) {
   const paid = state.lastCycleCoins;
   if (paid == null) return null;
   return (
     <span className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-body-5"
       style={{ background: "#20202a", border: "1px solid #33333e" }} title={t("coins.payout.title")}>
-      <span className="opacity-55 uppercase tracking-wide text-meta-1">{t("coins.payout.label", { n: state.lastCycleWins ?? 0 })}</span>
+      <span className="opacity-55 uppercase tracking-wide text-meta-1">{t("coins.payout.label", { n: state.lastCycleForms ?? 0 })}</span>
       <CoinAmount n={paid} dim={paid === 0} className="font-bold" />
     </span>
   );

@@ -544,8 +544,8 @@ export default {
 
   /* ---- Münz-Ökonomie (docs/muenz-oekonomie.md) ---- */
   "hud.coins": "Münzen",
-  "coins.payout.label": "{n} Siege",
-  "coins.payout.title": "Münzen aus den Siegen dieses Durchlaufs",
+  "coins.payout.label": "{n} Formationen",
+  "coins.payout.title": "Münzen aus der Aufstellung dieses Durchlaufs",
   "focus.title": "Fokus rufen",
   "focus.hint": "Öffnet sofort eine dritte Tür mit drei Skills dieser Fraktion.",
   "focus.tap": "Ein Tap wählt und bezahlt.",
@@ -569,6 +569,25 @@ export default {
   "upgrade.perk.empty": "Du hältst noch kein Perk, das eine Stufe hat.",
   "upgrade.perk.back": "Zurück zur Perk-Wahl",
   "upgrade.perk.picksTarget": "fragt nach einem Ziel",
+  // Perk verkaufen (§3.6, Testfeature). Der Hinweis sagt die Folge, nicht die Handlung: dass Münzen
+  // kommen, sieht man am Preis — dass der Effekt geht, muss dastehen.
+  "sell.open": "Perk verkaufen",
+  "sell.eyebrow": "Deine Perks",
+  "sell.title": "Verkaufen",
+  "sell.hint": "Der Perk geht, sein Effekt auch. Die Münzen bleiben dir.",
+  "sell.empty": "Du hältst noch kein Perk, das du verkaufen könntest.",
+  "sell.back": "Zurück zur Perk-Wahl",
+  "sell.legendary": "Legendär",
+  "sell.youGet": "Du bekommst",
+  "sell.youPay": "Du zahlst",
+  "sell.confirm.title": "Wirklich verkaufen?",
+  "sell.confirm.sub": "Der Effekt wird zurückgebaut. Was du erspielt hast, bleibt.",
+  "sell.blocked.cover": "Erst Gebäude abreißen — ohne die Bauhütte ist dein Baufeld zu klein für das, was darauf steht.",
+  "sell.blocked.slots": "Ihr Slot ist inzwischen mit einem anderen Skill belegt. Der Verkauf würde ihn mitreißen.",
+  "common.cancel": "Abbrechen",
+  // Die Rückfrage vor dem Aufwerten — gefragt wird nach Bildschirm, nicht nach Preis (§3.5/§3.6).
+  "upgrade.confirm.title": "Aufwerten?",
+  "upgrade.confirm.sub": "Die Stufe bleibt für den Rest des Laufs.",
 
   /* ---- Formations-Panel (FormationPanel) ---- */
   "formpanel.title": "Deine aktiven Formationen",

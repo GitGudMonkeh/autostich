@@ -1019,7 +1019,8 @@ function AutostichGame() {
   const declineSkill = () => dispatch({ type: "DECLINE_SKILL", rng: Math.random });
   const chooseDoor = (index) => dispatch({ type: "CHOOSE_DOOR", index }); // exp skill rework: eine der zwei Türen öffnen
   const rerollPerk = () => dispatch({ type: "REROLL_PERK", rng: Math.random });
-  const declinePerk = () => dispatch({ type: "DECLINE_PERK" }); // #138: Perk-Angebot ablehnen → +Münze
+  const declinePerk = () => dispatch({ type: "DECLINE_PERK" }); // #138 + §2.3: Perk-Angebot ablehnen → +Münzen
+  const sellPerk = (kind, id) => dispatch({ type: "SELL_PERK", kind, id }); // §3.6: gehaltenen Perk abgeben → +Münzen
   const rerollSkill = () => dispatch({ type: "REROLL_SKILL", rng: Math.random });
   // Architekt (#202, ersetzt den Shop): Bauplan errichten / Gebäude ausbauen / versetzen / abreißen / Phase bestätigen.
   const architectBuild = ({ familyId, tier, footprint, colorChoice }) => dispatch({ type: "ARCHITECT_BUILD", familyId, tier, footprint, colorChoice });
@@ -1181,7 +1182,7 @@ function AutostichGame() {
             mult={{ value: baseScoreMult, color: multColor, hot: multHot, shakeClass: multShakeClass, pulseKey: multPulse }}
             getElapsed={getElapsed} timerTicking={active && visible} paused={paused}
             cycle={state.cycle} totalCycles={totalCycles} pos={state.pos} cycleLen={cycleLenFor(state.shop)}
-            coins={state.coins || 0}
+            coins={state.coins || 0} coinGain={state.coinGain}
             onTogglePause={() => setPaused((p) => !p)}
             speedMult={speedMult} onSpeed={(m) => setSpeedMult((cur) => (cur === m ? 1 : m))}
             onChronik={() => setShowChronik(true)} deckBack={deckSkin.back}
@@ -1287,7 +1288,7 @@ function AutostichGame() {
       )}
       {showChronik && <Suspense fallback={<OverlayFallback />}><ChronikOverview state={state} onClose={() => setShowChronik(false)} options={options} onOption={changeOptions} /></Suspense>}
       {state.phase === "levelup" && state.offer && (
-        <PerkSelect offer={state.offer} onPick={pick} onReroll={rerollPerk} onDecline={declinePerk} onUpgradeFamily={upgradeFamily} perks={state.perks} deck={state.deck} state={state}
+        <PerkSelect offer={state.offer} onPick={pick} onReroll={rerollPerk} onDecline={declinePerk} onUpgradeFamily={upgradeFamily} onSellPerk={sellPerk} perks={state.perks} deck={state.deck} state={state}
           options={options} onOption={changeOptions} currentTraj={currentTraj.current} recordTraj={recordTraj.current} best={best} />
       )}
       {state.phase === "levelup" && (state.skillOffer || state.skillDoors) && (

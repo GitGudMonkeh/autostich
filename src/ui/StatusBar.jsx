@@ -2,7 +2,7 @@ import { fmtScore } from "./format.js";
 import { t, fmtNum } from "../i18n/index.js"; // #sprache
 import { RunTimer } from "./RunTimer.jsx";
 import { DECK_BORDER } from "./modalStyle.jsx"; // #356: deck-getönter neutraler Struktur-Rahmen
-import { CoinAmount } from "./CoinMark.jsx"; // Münz-Ökonomie (§4): Kontostand, immer sichtbar
+import { CoinAmount, CoinGain } from "./CoinMark.jsx"; // Münz-Ökonomie (§4): Kontostand, immer sichtbar (+ §2.3: die Gutschrift im Moment ihres Anfallens)
 
 /* Gameplay-Neu-Aufbau (docs/gameplay-redesign.md, Phase 1): die schwebende Kompakt-Leiste — die „Vitalwerte" des Laufs
    in einer oben klebenden Karte, samt Ablauf-Steuerung (Pause/Tempo/Karten). Ersetzt die früheren Kopf-Stat-Zellen.
@@ -48,7 +48,7 @@ function Cell({ label, children, className = "", style = null }) {
 
 export function StatusBar({
   score, ghost = {}, mult, timeStr, getElapsed = null, timerTicking = false, paused,
-  cycle = 0, totalCycles = 1, coins = 0,
+  cycle = 0, totalCycles = 1, coins = 0, coinGain = null,
   onTogglePause, speedMult = 1, onSpeed, onChronik, deckBack, className = "",
   // #buehne: Ab 1280 px ziehen Musik und Meilensteinbalken IN die Leiste — sie sind dort, wo man sie
   // sucht, und der Lauf spart zwei eigene Reihen. Der Umzug ist DOM (App.jsx entscheidet per useIsWide),
@@ -125,8 +125,11 @@ export function StatusBar({
               Verlaufswert und steht jetzt unten in der Bilanz-Zeile der Rail.
               `minDigits={3}` hält die Breite fest — der Kontostand wird dreistellig, und die Zeile darf
               beim Hochzählen nicht springen. */}
-          <Cell label={t("hud.coins")} className="sb-coins border-l border-[color:var(--deck-border)]" style={{ minWidth: 92 }}>
+          {/* `position: relative` trägt die Gutschrift (§2.3): das „+N" schwebt über der Zelle, statt sie
+              zu verbreitern — eine Leiste, die bei jeder Zahlung springt, wäre schlimmer als keine Anzeige. */}
+          <Cell label={t("hud.coins")} className="sb-coins border-l border-[color:var(--deck-border)]" style={{ minWidth: 92, position: "relative" }}>
             <CoinAmount n={coins} size={15} minDigits={3} style={{ fontSize: 18 }} />
+            <CoinGain gain={coinGain} />
           </Cell>
           {/* Mult — ganz rechts. */}
           <Cell label={t("hud.mult")} className="sb-mult border-l border-[color:var(--deck-border)]">
