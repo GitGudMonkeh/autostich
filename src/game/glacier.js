@@ -81,6 +81,9 @@ export const BURST_AT = THRESHOLDS[2];          // natürliche Berst-Schwelle (1
 export const FIRN_REFILL_TARGET = BURST_AT;     // Runden-Start-Nachschub-Ziel: volle Masse (12)
 // §5.18: der Zug ist FUNDAMENT, nicht mehr Eiszeit-Mechanik — jedes offene Feld gibt so viel Reserve an den nächsten
 // Gletscher ab. Ohne ihn zahlte Schnee nur, wenn genau dieses Feld später einfriert (gemessen 65 % totes Kapital, §5.17).
+// §5.26 gemessen (Sweep 1 / 2 / 4 / alles): die 1 bremst NICHT die Firn-Skills — Schneetreiben bleibt auf jeder Stufe
+// negativ, Dauerfrost erreicht bestenfalls null. Was der offene Zug hebt, ist die EISZEIT (+59 % → +153 %), die jedes
+// freie Feld flutet und dann leersaugt. Der Deckel hält also die Legendäre im Band; er bleibt aus diesem Grund.
 export const FIRN_DRAW = envNum("SIM_GLACIER_FIRN_DRAW", 1);
 // Deckel auf den LIEGENBLEIBENDEN Überschuss (nicht auf die Bruchmasse — der Deckel je Einzelbruch bleibt gestrichen,
 // §5.5). Ohne ihn hat die Masse gar keine Decke mehr: ein ausgebautes Cluster gewinnt je Durchlauf mehr als der Bruch

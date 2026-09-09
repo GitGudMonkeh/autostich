@@ -4958,8 +4958,39 @@ Solange das Feld schneller gefüllt als geleert wird, ist die Stufe fast wirkung
 Der Deckel stammt aus §5.15, wo ein höherer Zug gemessen **nichts** brachte (Flut/Zug 3/2 → −10 %, 8/8 → −5 %,
 15/15 → −3 %). Die dortige Begründung war `mCap`: die Bruchmasse war auf 12 gedeckelt, mehr Masse zu füttern war
 linear und lief ins Leere. **§5.18 hat `mCap` gestrichen** — die Masse über der Schwelle bleibt seither liegen und
-trägt in den nächsten Durchlauf. Damit ist die Begründung für `FIRN_DRAW` = 1 hinfällig, und der Deckel ist
-ungeprüfter Altbestand. Zu messen wäre ein Sweep über `SIM_GLACIER_FIRN_DRAW`; wartet auf die Ansage des Owners.
+trägt in den nächsten Durchlauf. Damit war die Begründung für `FIRN_DRAW` = 1 hinfällig und der Deckel ungeprüft.
+**Nachgemessen in §5.26 — die Vermutung war falsch, der Deckel bleibt.**
+
+### 5.26 Der Zug-Deckel ist nicht der Engpass (2026-09-09, auf Ansage) — gemessen, nichts geändert
+
+Sweep über `SIM_GLACIER_FIRN_DRAW` (Ablation Eis, je 90 gierige Läufe, Seed 701):
+
+| Zug | Schneetreiben | Dauerfrost | Eiszeit | Greedy-Median |
+| --- | --- | --- | --- | --- |
+| **1** (gesetzt) | −20 % | −18 % | +59 % | 427M |
+| 2 | −8 % | −7 % | +55 % | 633M |
+| 4 | −25 % | −13 % | +131 % | 610M |
+| alles | −3 % | 0 % | **+153 %** | 668M |
+
+**Die These aus §5.25 ist widerlegt.** Selbst wenn jedes Feld seine ganze Reserve abgibt, erreichen die beiden
+Firn-Skills bestenfalls null — sie sind auf keiner Zug-Stufe positiv. Was der offene Zug hebt, ist die **Eiszeit**:
+sie flutet jedes freie Feld und saugt es dann leer, also skaliert sie mit dem Zug, während die Skills es nicht tun.
+Der Deckel bremst nicht die Skills, er hält die Legendäre im Band — er bleibt, jetzt aus einem belegten Grund.
+
+**Die Ursache liegt in der Währung, nicht im Durchfluss.** Bei Eis zahlt Masse nur, wenn sie viele Gletscher auf
+einmal trifft: Verzahnung (Masse je Gletscher im Cluster, quadratisch in der Clustergröße) misst +42 % und ist
+„stark"; **Anfrieren** legt seine Masse ohne jeden Umweg direkt auf den siegreichen Gletscher und ist trotzdem
+**tot**. „Ein Sieg → etwas Masse für einen Gletscher" trägt strukturell nicht, mit Röhre wie ohne. *(Aus der
+Ablation geschlossen, nicht einzeln gemessen.)*
+
+Zweiter Befund im Code, unabhängig vom Durchfluss: `driftTargets` filtert auf **Nicht-Gletscher**-Nachbarn. Ein
+Gletscher, dessen Nachbarn alle gefroren sind, sät gar nichts — der Skill hat im dichten Bau kein Ziel, während die
+halbe Fraktion Dichte bezahlt. Dieselbe Anti-Dichte-Falle wie beim alten Eiswall (§5.24), und wörtlich die
+Eröffnungsbeschwerde des Owners: „viele sähen nur auf unbelegten Boden und dadurch ist der skill tot für einen
+Gletscher der dort gebaut wird".
+
+Offen zur Owner-Entscheidung: drei Design-Routen für Schneetreiben (Cluster-Aussaat · selbstgefrierender Boden ·
+Aussaat gegen den Gegner). **Dauerfrost hängt an derselben Diagnose** und steht bei −18 %.
 
 ## 6. Pflanze
 
