@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { resolveTrick } from "../src/game/engine.js";
 import { initialState } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
-import { ROLES, WIN_MASS, EWIGER_FROST } from "../src/game/glacier.js";
+import { ROLES, WIN_MASS, EWIGER_FROST, dauerfrostTick, FIRN_DRAW } from "../src/game/glacier.js";
 import { EIS_TIERS as EIS } from "../src/game/skills.js";
 
 // §5.3: die Zahlen kommen aus der Stufenleiter. Ein Szenario, das nur `glacierRoles` setzt, hält Normal (Stufe 0) —
@@ -64,13 +64,24 @@ describe("Schneetreiben — additive Verwehung in die Boden-Reserve (#386 firnSt
 });
 
 describe("Dauerfrost — Boden-Reserve nach Abstand zum Gletscher (#386 firnStack)", () => {
-  it("Abstand ≥3 → FAR, Abstand 2 → NEAR, 8er-Ring → 0; Gletscher lädt über Ewiger Frost", () => {
+  /* §5.18: der Null-Ring um den Gletscher ist gefallen — Abstand 1 und 2 liegen jetzt BEIDE im Nah-Band. Er würgte
+     Dauerfrost genau dort ab, wo ein dichtes Cluster steht. Die Bänder am reinen Tick, weil im Durchlauf zusätzlich
+     der Zug greift und die Reserve sofort wieder abräumt. */
+  it("Bänder: Abstand ≥3 → FAR, Abstand 1 und 2 → NEAR, Gletscher-Feld selbst → nichts", () => {
     const glacierLocked = falses(); glacierLocked[0] = true;            // ein Gletscher an pos0 (0,0)
+    const { near, far } = EIS.dauerfrost[NORMAL];
+    const f = dauerfrostTick(zeros(), glacierLocked, near, far);
+    expect(f[39]).toBe(far);   // pos39 (7,4), Abstand 7
+    expect(f[2]).toBe(near);   // pos2 (0,2), Abstand 2
+    expect(f[1]).toBe(near);   // pos1 (0,1), Abstand 1 — früher 0
+    expect(f[0]).toBe(0);      // das Gletscher-Feld selbst bekommt nie Firn
+  });
+
+  it("im Durchlauf zieht der Gletscher die frisch gefrostete Reserve zu sich — Dauerfrost speist ihn ohne Eiszeit", () => {
+    const glacierLocked = falses(); glacierLocked[0] = true;
     const s = runCycle(scen({ oppDeck: oppOf(99), glacierLocked, glacierRoles: [ROLES.DAUERFROST] })); // alles verlieren → nur Boden-Frost
-    expect(s.firnStack[39]).toBe(EIS.dauerfrost[NORMAL].far);         // pos39 (7,4), Abstand 7 → der Fern-Satz
-    expect(s.firnStack[2]).toBe(EIS.dauerfrost[NORMAL].near);         // pos2 (0,2), Abstand 2 → der Nah-Satz
-    expect(s.firnStack[1]).toBe(0);                                   // pos1 (0,1), Abstand 1 (8er-Ring) → 0
-    expect(s.glacierMass[0]).toBe(EWIGER_FROST);                       // der Gletscher selbst lädt über Ewiger Frost, nicht Dauerfrost
+    expect(s.firnStack[39]).toBe(EIS.dauerfrost[NORMAL].far - FIRN_DRAW); // geladen und sofort angezapft
+    expect(s.glacierMass[0]).toBeGreaterThan(EWIGER_FROST);               // mehr als der Passiv-Tick: der Zug ist angekommen
   });
   it("ohne Dauerfrost bleiben ungefrorene Felder (Reserve) leer", () => {
     const glacierLocked = falses(); glacierLocked[0] = true;

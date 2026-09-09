@@ -29,7 +29,7 @@
 import * as C from "../game/constants.js";
 import { WIN_MASS as G_WIN_MASS, EWIGER_FROST as G_EWIGER_FROST, THRESHOLDS as G_THRESHOLDS,
   KASKADE_PER_NEIGHBOR as G_KASKADE, GEO_BLOCK as G_BLOCK, GEO_KREUZ as G_KREUZ, GEO_LINIE as G_LINIE,
-  GEO_FLAECHE as G_FLAECHE } from "../game/glacier.js";
+  GEO_FLAECHE as G_FLAECHE, BURST_AT as G_BURST_AT, FIRN_REFILL_TARGET as G_REFILL, FIRN_DRAW as G_DRAW } from "../game/glacier.js";
 import { SKILL_LIST } from "../game/skills.js";
 import esSkills from "./esSkills.js";
 // Only the joined ladder is needed here; esMeta.js imports RARE/EPIC straight from esTerms.
@@ -41,7 +41,7 @@ const pct = (x) => Math.round(x * 100);
 // Prunable skills with their SPANISH names — filtered from the registry, named from the ES catalog.
 const TRIMMABLE_ES = SKILL_LIST.filter((s) => s.trimGrowth).map((s) => esSkills[`ability.${s.id}.name`]).join(", ");
 const RARITY_NAMES_ES = RARITY_ES.join(" · ");
-const BURST_AT = G_THRESHOLDS[G_THRESHOLDS.length - 1];
+const BURST_AT = G_BURST_AT; // §5.18: the burst threshold is no longer the highest tier — the ladder runs past it to 18.
 
 /* Shorthand: [id, label, text, [match…]] — more compact than four keys per entry and therefore
    easier to read against the German source. Unfolded below. */
@@ -108,10 +108,10 @@ const E = [
   ["kaskade", "Cascada", "Un suceso enciende el siguiente. Con Rayo: un crítico con una carta muy ionizada genera carga adicional (Sobretensión). Con Hielo: un glaciar que estalla arrastra a sus vecinos, de modo que una ola de estallidos recorre la agrupación.", ["cascada", "cascadas"]],
   ["glacier", "Glaciar", "Hielo es el arquetipo del glaciar: congelas una carta sobre su celda del tablero. A partir de ahí queda rígida (ya no se puede mover en ninguna fase de orden futura), pero a cambio acumula masa. Con suficiente masa, el glaciar estalla sobre sus vecinos.", ["glaciar", "glaciares"]],
   ["masse", "Masa", `El recurso de Hielo: la masa está sobre la celda del tablero. Cada glaciar gana +${num(G_EWIGER_FROST)} de masa en cada ciclo, sin condiciones, tanto en victoria como en derrota; una victoria trae +${num(G_WIN_MASS)} de masa más.`, ["masa"]],
-  ["bersten", "Estallido", `Cuando un glaciar alcanza ${BURST_AT} de masa, estalla: puntuación de estallido a partir de masa × la fuerza del umbral alcanzado (umbrales ${G_THRESHOLDS.join(" / ")}), amplificada un +${pct(G_KASKADE)} % por cada glaciar contiguo, más una colisión cuando el estallido alcanza a un glaciar vecino. Después cae a 0 y se rellena desde su reserva del suelo al inicio del ciclo.`, ["estallido", "estallidos", "estalla", "estallan", "estallar", "umbral de estallido"]],
+  ["bersten", "Estallido", `Cuando un glaciar alcanza ${BURST_AT} de masa, estalla: puntuación de estallido a partir de masa × la fuerza del umbral alcanzado (umbrales ${G_THRESHOLDS.join(" / ")}), amplificada un +${pct(G_KASKADE)} % por cada glaciar contiguo, más una colisión cuando el estallido alcanza a un glaciar vecino. Después baja ${BURST_AT} de masa — lo que quedaba por encima se conserva — y se rellena desde su reserva del suelo al inicio del ciclo.`, ["estallido", "estallidos", "estalla", "estallan", "estallar", "umbral de estallido"]],
   ["cluster", "Agrupación", "Un grupo de glaciares directamente contiguos. Muchas habilidades de Hielo miden el tamaño de la agrupación (por ejemplo Fusión y Engranaje); el Puente de Hielo cuenta también las diagonales.", ["agrupación", "agrupaciones"]],
   ["eisformation", "Formaciones de glaciar", `Hielo es el único mazo con formaciones de glaciar: las formas geométricas de glaciares congelados refuerzan su estallido: bloque = 2×2 (4 glaciares, ×${num(G_BLOCK)}), cruz = centro + 4 vecinas (5, ×${num(G_KREUZ)}), línea = fila completa (5) o columna (8) (×${num(G_LINIE)}), gran área = 3×3 (9, ×${num(G_FLAECHE)}). Las formas solapadas se acumulan.`, ["formaciones de glaciar", "formación de glaciar"]],
-  ["freeze", "Nieve", `La nieve está como reserva sobre la celda del tablero, separada de la masa del glaciar. Si congelas un glaciar sobre una celda cargada, la nieve acumulada se convierte en su reserva del suelo; el glaciar empieza vacío y tira de ella en cada ciclo hasta volver a las ${BURST_AT} de masa completas (solo la diferencia, nunca más allá), hasta que la reserva se vacía. El suelo abierto lo cargan Permafrost, Ventisca y Edad de Hielo, nunca bajo un glaciar.`, ["nieve"]],
+  ["freeze", "Nieve", `La nieve está como reserva sobre la celda del tablero, separada de la masa del glaciar. En cada ciclo, cada celda abierta entrega hasta ${G_DRAW} de nieve al glaciar más cercano. Si congelas un glaciar sobre una celda cargada, la nieve acumulada se convierte en su reserva del suelo; empieza vacío y tira de ella en cada ciclo hasta volver a las ${G_REFILL} de masa completas (solo la diferencia, nunca más allá), hasta que la reserva se vacía. El suelo abierto lo cargan Permafrost, Ventisca y Edad de Hielo, nunca bajo un glaciar.`, ["nieve"]],
   ["growth", "Crecimiento", `Tus propias cartas crecen con las victorias (solo hacia arriba), y tanto más rápido cuantas más habilidades de Planta tengas (a pleno ritmo desde ${C.PLANT_GROWTH_SKILL_REF} habilidades, por debajo en proporción). Desde ${C.PLANT_GREEN_THRESHOLD} de crecimiento una carta se vuelve verde (madura) de forma permanente; por debajo es una plántula.`, ["crecimiento"]],
   ["setzling", "Plántula", `Una carta que ya crece pero aún no está madura (crecimiento por debajo de ${C.PLANT_GREEN_THRESHOLD}). Una plántula todavía NO cuenta para el bloque de palo verde; solo desde ${C.PLANT_GREEN_THRESHOLD} de crecimiento se vuelve verde (madura). Semillero da a la carta más baja de cada segmento +${C.SETZLINGSBEET_GROWTH} de crecimiento de adelanto.`, ["plántula", "plántulas"]],
   ["green", "Verde (madura)", "Las cartas verdes son permanentes y forman un bloque de palo común: cuanto más grande sea el bloque, más puntuación. El multiplicador de bloque de palo para cartas verdes está topado en ×1,35.", ["verde", "verdes", "madura", "maduras"]],

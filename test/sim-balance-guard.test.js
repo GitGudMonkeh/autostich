@@ -78,6 +78,12 @@ import { randomPolicy } from "../sim/policies/random.js";
 // eigentliche Runaway: der Schwanz kommt fast auf den Stand vor dem Eingriff zurück, während die Grundzahl wieder
 // höher stehen darf (170 → 250, Parität unverändert). Seeds 1..40 Median ≈ 2,78M, Mean ≈ 6,24M (Seeds 1..200:
 // 2,55M / 4,47M). Bänder darauf neu zentriert (≈ ±35 %).
+// §5.18 (Owner, 2026-09-09): der Eis-Umbau — Zug im Fundament, vierte Schwelle 18, liegenbleibender Überschuss,
+// Gletscherzunge und Sprödbruch statt Rissbildung/Eispanzer. ZWEI Messungen haben hier eingegriffen: ohne Deckel auf
+// den liegenbleibenden Überschuss lag der Mean bei 48,25M (ein Seed auf 959M) — der Deckel (KEEP_MAX 6) drückt ihn auf
+// 9,47M, ohne den Median zu bewegen (3,95 → 3,94M). Danach stand Eis mono im Duell bei 1,65× Feuer; BURST_SCALE
+// 250 → 150 bringt den Median auf 1,04×. Endstand Seeds 1..40: Median ≈ 3,36M, Mean ≈ 7,70M — BEIDE im bestehenden
+// Band, die Grenzen sind deshalb unverändert geblieben.
 describe("sim balance guard", () => {
   const SEEDS = 40; // feste Seeds 1..40 → deterministischer Median/Mean
   const scores = Array.from({ length: SEEDS }, (_, i) => runOne(1 + i, randomPolicy()).score).sort((a, b) => a - b);

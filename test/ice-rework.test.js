@@ -3,7 +3,7 @@ import { resolveTrick } from "../src/game/engine.js";
 import { initialState, reducer } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
 import { SKILL_DEFS, EIS_TIERS as EIS } from "../src/game/skills.js";
-import { ROLES, precomputeGlacier, eiszeitTick, GLACIER_MAX, GLACIER_PER_PICK, SCHILD_PER_PICK } from "../src/game/glacier.js";
+import { ROLES, precomputeGlacier, eiszeitFlood, GLACIER_MAX, GLACIER_PER_PICK, SCHILD_PER_PICK } from "../src/game/glacier.js";
 import { I, iceTuning, iceRoleTiers, iceSnapshotOpts } from "../src/game/factions/ice.js";
 import { posOf } from "../src/game/architect.js";
 
@@ -91,12 +91,17 @@ describe("Eis-Stufen — die Stufe erreicht die Mechanik", () => {
     expect(run(ROLES.VERZAHNUNG, 3)).toBeGreaterThan(run(ROLES.VERZAHNUNG, 0));
   });
 
-  it("Rissbildung: Episch bricht bei einer Masse, bei der Normal noch hält", () => {
-    const mass = withMass([[0, EIS.rissbildung[3].burstAt]]);
-    const n = precomputeGlacier(mass, new Set([0]), iceSnapshotOpts([ROLES.RISSBILDUNG], iceTuning([ROLES.RISSBILDUNG], { [ROLES.RISSBILDUNG]: 0 })));
-    const e = precomputeGlacier(mass, new Set([0]), iceSnapshotOpts([ROLES.RISSBILDUNG], iceTuning([ROLES.RISSBILDUNG], { [ROLES.RISSBILDUNG]: 3 })));
-    expect(n.breaks).toHaveLength(0);
-    expect(e.breaks).toHaveLength(1);
+  it("Gletscherzunge: die Stufe senkt die Masse je Wertpunkt, Episch reicht an die Nachbarn weiter", () => {
+    const wert = (tier) => resolveTrick(scen({ glacierLocked: lockAt(0), glacierMass: withMass([[0, 12]]), ...at(ROLES.GLETSCHERZUNGE, tier) }), noCrit)
+      .lastTrick.pValue;
+    expect(wert(3)).toBeGreaterThan(wert(0));   // 12/2 gegen 12/6
+    // Episch: die NACHBARKARTE (pos1, selbst kein Gletscher) bekommt die Hälfte — auf Normal gar nichts.
+    const nachbar = (tier) => {
+      let s = scen({ glacierLocked: lockAt(0), glacierMass: withMass([[0, 12]]), ...at(ROLES.GLETSCHERZUNGE, tier) });
+      s = resolveTrick(s, noCrit);              // pos0 (der Gletscher)
+      return resolveTrick(s, noCrit).lastTrick.pValue; // pos1
+    };
+    expect(nachbar(3)).toBeGreaterThan(nachbar(0));
   });
 
   it("Kettenbruch: die Stufe begrenzt, wie weit die Kette läuft", () => {
@@ -143,21 +148,19 @@ describe("Eis-Stufen — die Stufe erreicht die Mechanik", () => {
     expect(burst(3)).toBeGreaterThan(burst(0));
   });
 
-  it("Frostbund und Eispanzer: die Stufe skaliert Buff und Masse", () => {
+  it("Frostbund und Sprödbruch: die Stufe skaliert Buff und Crit-Chance", () => {
     const buff = (tier) => resolveTrick(scen({ glacierLocked: lockAt(0), glacierMass: withMass([[0, 12]]), ...at(ROLES.FROSTBUND, tier) }), noCrit)
       .glacierBuffPending.F1;
     expect(buff(3)).toBeGreaterThan(buff(0));
-    const shield = (tier) => {
-      let s = scen({ glacierLocked: lockAt(0), oppDeck: oppOf(99), ...at(ROLES.EISPANZER, tier) });
-      s = resolveTrick(s, noCrit); // pos0: der Gletscher selbst verliert
-      return resolveTrick(s, noCrit).glacierMass[0]; // pos1: Niederlage neben dem Gletscher füttert ihn
-    };
-    expect(shield(3)).toBeGreaterThan(shield(0));
+    // Sprödbruch: die Stufe hebt die Crit-Chance je Punkt Masse — derselbe Wurf trifft erst auf der höheren Stufe.
+    const crit = (tier) => resolveTrick(scen({ glacierLocked: lockAt(0), glacierMass: withMass([[0, 10]]), ...at(ROLES.SPROEDBRUCH, tier) }), () => 0.1).crits;
+    expect(crit(0)).toBe(0);   // 10 × 0,5 % = 5 %
+    expect(crit(3)).toBe(1);   // 10 × 1,5 % = 15 %
   });
 
   it("Verdichtung, Dauerfrost, Abbruchkante, Gletschersturz: die Stufe steht in der Tuning-Zeile", () => {
     const t = (role, tier) => iceTuning([role], { [role]: tier });
-    expect(t(ROLES.VERDICHTUNG, 3).verdichtungRate).toBeGreaterThan(t(ROLES.VERDICHTUNG, 0).verdichtungRate);
+    expect(t(ROLES.VERDICHTUNG, 3).verdichtungPer).toBeGreaterThan(t(ROLES.VERDICHTUNG, 0).verdichtungPer);
     expect(t(ROLES.DAUERFROST, 3).dauerfrostFar).toBeGreaterThan(t(ROLES.DAUERFROST, 0).dauerfrostFar);
     expect(t(ROLES.ABBRUCHKANTE, 3).abbruchTierMult[3]).toBeGreaterThan(t(ROLES.ABBRUCHKANTE, 0).abbruchTierMult[3]);
     expect(t(ROLES.GLETSCHERSTURZ, 3).gletschersturzPer).toBeGreaterThan(t(ROLES.GLETSCHERSTURZ, 0).gletschersturzPer);
@@ -204,8 +207,8 @@ describe("Eis-Stufen — vom Pick bis in den State", () => {
     // §5.15: die zweite Quelle gibt es nicht mehr — die Eiszeit friert nichts ein, also kann sie den aufgehobenen
     // Deckel auch nicht mehr füllen. Genau das nimmt dem Paar den Faktor-106-Verbund aus §5.14.
     const firn = new Array(40).fill(9);
-    expect(eiszeitTick(firn, new Array(40).fill(0), locked).firn).toHaveLength(40);
-    expect(locked.filter(Boolean)).toHaveLength(GLACIER_MAX); // eiszeitTick fasst `locked` nicht mehr an
+    expect(eiszeitFlood(firn, locked)).toHaveLength(40);
+    expect(locked.filter(Boolean)).toHaveLength(GLACIER_MAX); // die Flut fasst `locked` nicht mehr an
   });
 
   it("Ewiges Schild friert je Eis-Pick mehrere Felder statt einem — ab dem eigenen Pick (§5.13)", () => {

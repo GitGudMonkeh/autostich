@@ -8,7 +8,7 @@
 // Rein informativ, keine Engine-Kopplung (spiegelt state.glacier*).
 import { useRef, useEffect, useState } from "react";
 import { FactionShell, PanelSkills } from "./indicators/panelKit.jsx";
-import { glacierClusters, glacierFormations, THRESHOLDS, ROLES, GROSSE_LAWINE_EVERY } from "../game/glacier.js";
+import { glacierClusters, glacierFormations, THRESHOLDS, BURST_AT, TOP, ROLES, GROSSE_LAWINE_EVERY } from "../game/glacier.js";
 import { iceNeighborFn } from "../game/factions/ice.js"; // Eisbrücke → 8-Nachbarschaft (eine Quelle mit der Engine)
 import { fmtScore, fmtScoreShort } from "./format.js"; // #253: kompakte Abkürzung (Mio./Mrd.) für enge Kacheln + voller Wert im Tooltip
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon (Header/Marker = Eis-Icon)
@@ -22,10 +22,12 @@ const KRIT_FROM = 9; // ab dieser Masse gilt ein Gletscher als „kritisch" (kur
 
 // Ein Gletscher-Chip: Positionsnummer (#Spielreihenfolge) + Kartenwert · Icon (Größe = Stufe) + Masse + Stufen-Segmente.
 function Glacier({ mass, order = null, value = null }) {
-  const [T1, T2, T3] = THRESHOLDS;
-  const scale = 0.5 + 0.5 * Math.min(1, mass / T3);
-  const bricht = mass >= T3;                  // Bruch-bereit: höchste Stufe (12) erreicht → bricht
+  // §5.18: die Berst-Schwelle ist NICHT mehr die letzte Stufe — gebrochen wird bei BURST_AT (12), die Leiter läuft bis
+  // TOP (18) weiter. Das Icon wächst deshalb bis TOP, das Bruch-Signal hängt an BURST_AT.
+  const scale = 0.5 + 0.5 * Math.min(1, mass / TOP);
+  const bricht = mass >= BURST_AT;            // Bruch-bereit
   const krit = mass >= KRIT_FROM && !bricht;  // kurz davor
+  const stufe = THRESHOLDS.reduce((t, thr) => (mass >= thr ? t + 1 : t), 0);
   const alert = bricht || krit;
   const seg = (thr, i) => {
     const on = mass >= thr;
@@ -45,7 +47,7 @@ function Glacier({ mass, order = null, value = null }) {
       borderRadius: 8, padding: "5px 4px 6px", display: "flex", flexDirection: "column", alignItems: "center", gap: 3, width: 46,
       boxShadow: bricht ? `0 0 16px ${FROST}77, inset 0 0 16px ${FROST}18` : krit ? `0 0 12px ${FROST}44, inset 0 0 14px ${FROST}10` : undefined,
     }} className={alert ? "as-glacier-shiver" : undefined} title={t(bricht ? "bar.ice.chip.title.burst" : "bar.ice.chip.title",
-      { mass, tier: mass >= T3 ? 3 : mass >= T2 ? 2 : mass >= T1 ? 1 : 0 })}>
+      { mass, tier: stufe })}>
       {alert && <span style={{
         /* #typo: KEIN `--font-mono` — „kritisch"/„bricht" sind Wörter, keine Werte. Die drei Zahlen
            an diesem Chip (Reihenfolge, Kartenwert, Masse) tragen es dagegen sehr wohl. */
@@ -148,7 +150,7 @@ export function GlacierBar({ active, glacierLocked = [], glacierMass = [], firnS
   if (!active) return null; // Ausstieg NACH den Hooks (rules-of-hooks): sonst wechselt die Hook-Zahl je Render.
 
   // Phase-3-Headline: „gleich knallt's"-Zustand (ein Gletscher an der Bruch-Schwelle) für die einklappbare Fraktions-Zeile.
-  const readyBreak = glaciers.some((g) => g.mass >= THRESHOLDS[2]);
+  const readyBreak = glaciers.some((g) => g.mass >= BURST_AT);
   const collapsed = options.collapseFacIce ?? manyActive;
   const onToggle = () => onOption && onOption({ collapseFacIce: !collapsed });
   const stateText = readyBreak ? t("bar.ice.state.ready") : t("bar.ice.state.count", { n: glaciers.length });

@@ -4565,6 +4565,97 @@ zu Dauerfrost, nicht zur Eiszeit.
 Die Trennung hält, und diesmal auf gesunder Basis: die Eiszeit allein ist +3,3M wert, nicht mehr nahe null wie in
 §5.16.
 
+### 5.18 Der Eis-Umbau: eine Achse, ein Ventil, ein Kampfwert-Hebel (2026-09-09, Owner) — umgesetzt und gemessen
+
+Owner-Befund: „Eis is not hitting the mark. im Vergleich zu den anderen etwas zu schwer gut an score zu kommen. eis hat
+aktuell von seinen skills keinen Fokus auf serie und verliert dadurch viele Stiche. die skill Auswahl ist zu breit
+ausgelegt auf eng und breit bauen … Schnee ist zu situativ … wir brauchen die skills so das sich jeder gut anfühlt für
+Eis zu locken, vllt nicht in jedem misch build aber zumindest für jedes Eis build."
+
+#### Der Befund vor dem Bauen
+
+1. **Warum die Stiche fehlen.** `glacierDirect = payout × glacierWinMult` — und `glacierWinMult` wird nur im
+   Sieg-Zweig gesetzt (engine.js). Der Bruch bekommt Serie, Perks, Formation und Crit also **nur, wenn die
+   Gletscherkarte ihren Stich gewinnt**, sonst zahlt er ×1. Die Fraktion, deren ganzer Score daran hängt, hatte
+   **keinen einzigen Skill, der einen Gletscher stärker kämpfen lässt** — Frostbund buffte die *Nicht*-Gletscher, und
+   Verdichtung nahm der Karte den Gebäude-Wertbonus sogar weg. Feuer hat die Glühende Klinge, Blitz den Blitzfänger,
+   Pflanze den Ewigen Frühling.
+2. **Der eng/breit-Riss ist einseitig.** Dichte wollen Packeis, Verzahnung, Eiswall, Kettenbruch — dazu Kaskade,
+   Kollision und alle vier 2D-Formen. Offenen Boden wollten nur Schneetreiben, Dauerfrost und Frostbund. Kein
+   Gegenpol also, sondern drei Ausreißer gegen das eigene Fundament, bei einer Brett-Entscheidung, die unumkehrbar
+   und früh fällt.
+3. **Schnee war eine Wette** auf „dieses Feld friert später ein" — bei Deckel 12 auf 40 Feldern selten. §5.17 hatte
+   65 % der Reserve als totes Kapital gemessen und den Schritt ausdrücklich offen gelassen.
+
+#### Was gebaut wurde
+
+| | |
+| --- | --- |
+| **F1 · Der Zug ins Fundament** | Jedes offene Feld gibt je Durchlauf bis zu `FIRN_DRAW` (1) an den nächstgelegenen Gletscher ab. Die Mechanik steckte seit §5.17 in der Eiszeit; jetzt zahlen Schneetreiben und Dauerfrost ab Runde eins, in jeder Geometrie, ohne Wette. Dauerfrosts Null-Ring fällt. |
+| **F2 · Vierte Schwelle** | Schwellen 4 / 8 / 12 / **18**, Wucht ×1 / ×1,5 / ×2,2 / **×3,2**. `BURST_AT` ist von `TOP` entkoppelt und bleibt 12. |
+| **F3 · Überschuss bleibt liegen** | Der Bruch rechnet mit der vollen Masse statt mit gedeckelten 12; danach bleibt `Masse − BURST_AT` liegen. Der alte Überlauf-Score (1 Punkt je Masse neben ×250) entfällt — ein Ventil statt zwei. |
+| **Gletscherzunge** (SK_ICE_13) | Ersetzt Rissbildung. „+1 Wert je 6/4/3/2 Masse"; Episch reicht die Hälfte an die Nachbarkarten weiter (stärkster Anspruch, nicht Summe). |
+| **Sprödbruch** (SK_ICE_17) | Ersetzt Eispanzer. „+0,5/0,75/1/1,5 % Crit-Chance je Punkt Masse"; Episch gibt ein Crit +3 Masse zurück. Crit ist der größte Hebel auf den Bruch, und kein Eis-Skill bediente ihn. |
+| **Verdichtung** | Neu gebaut: Masse je Punkt Kampfwert **über dem Grundwert**, ohne etwas zu unterdrücken, aus jeder Quelle. |
+| **Frostbund** | Bufft **alle** Nachbarn statt nur der fremden. |
+| **Eiszeit** | Behält Flut und Berstkraft; der Zug gehört ihr nicht mehr allein. |
+
+**Ein Fehler beim Bauen, den ein Test gefangen hat.** Der Bruch-Abfall wird dem Feld **vor** der Wertberechnung
+abgezogen (engine.js, `burn`/`consumed`). Wer den laufenden Akkumulator liest, lässt den Gletscher ausgerechnet in
+seiner Bruchrunde mit +0 kämpfen — der Runde, in der ein Sieg am meisten wert ist. Zunge und Sprödbruch lesen deshalb
+`glacierPreNow.snapMass`, dieselbe Masse, aus der der Bruch gerechnet wird.
+
+**Die Rückkopplung, die zugemacht wurde.** Masse gibt Kampfwert (Zunge), Kampfwert gibt Masse (Verdichtung) — als
+Kreis wüchse die Masse je Durchlauf um einen Bruchteil ihrer selbst und liefe ab ~24 geometrisch weg. Verdichtung
+zählt den Zungen-Bonus deshalb nicht mit. (Die erste Einschätzung „gedämpft, darf stehen bleiben" war falsch: sie
+rechnete einen Durchgang statt der Wiederholung.)
+
+#### Gemessen — und zwei Eingriffe, die daraus folgten
+
+**(a) F3 nahm der Masse die einzige Decke.** Ohne Deckel auf den liegenbleibenden Überschuss lag der Zufallsspieler
+(Seeds 1..40) bei **Mean 48,25M**, ein Seed auf 959M. Ein ausgebautes Cluster gewinnt je Durchlauf mehr, als der Bruch
+abzieht. Sweep über `KEEP_MAX`:
+
+| KEEP_MAX | Median | Mean | Max |
+| --- | --- | --- | --- |
+| 0 (kein Deckel) | 3,95M | **48,25M** | 959,3M |
+| 12 | 3,95M | 10,19M | 130,6M |
+| **6** | **3,94M** | **9,47M** | 124,2M |
+| 3 | 3,86M | 9,20M | 119,5M |
+
+Der Deckel **kostet den Median nichts** (3,95 → 3,94M) und schneidet nur den Schwanz. 6 gesetzt — der Abstand zwischen
+dritter und vierter Schwelle. Es ist kein Deckel je Einzelbruch (der bleibt gestrichen, §5.5), sondern eine Grenze für
+das, was liegen bleibt.
+
+**(b) Eis war danach zu stark.** Duell Eis/Feuer (Seeds 401..470), Median Eis ÷ Feuer:
+250 → **1,65×**, 150 → **1,04×**, 110 → 0,80×. `BURST_SCALE` 250 → **150** gesetzt.
+
+**Woher die Kraft kam — nicht von den neuen Skills.** Ablation Eis mono (explore 500, greedy 90):
+
+| | Median-Δ | |
+| --- | --- | --- |
+| Ewiges Schild | +2999 % | die drei Legendären tragen |
+| Große Lawine | +218 % | F2/F3 haben sie mitmultipliziert |
+| Eiszeit | +199 % | |
+| Gletschersturz | +83 % | |
+| **Sprödbruch** | **+19 %** | die neuen Skills sind Mittelfeld |
+| **Gletscherzunge** | **−1 %** | im gierigen Mono tot (s. u.) |
+| Dauerfrost | −2 % | trotz F1 weiter unten |
+
+**Endstand** Seeds 1..40: Median ≈ 3,36M, Mean ≈ 7,70M — **beide im bestehenden Band des Balance-Guards**, die Grenzen
+sind deshalb unverändert geblieben.
+
+#### Offen (Entscheid Owner)
+
+1. **Die Gletscherzunge misst im gierigen Mono-Eis als tot (−1 %).** Der Grund ist erklärbar: dort liegt die
+   Siegquote schon bei 63 %, der Hebel „gewinne den Stich, der den Bruch trägt" greift also selten. Ihr eigentliches
+   Ziel — dass sich ein Eis-Build *nicht mehr wie Stiche-Verlieren anfühlt* — misst dieses Instrument nicht. Ob das
+   reicht oder ob sie einen zweiten Hook braucht, ist eine Playtest-Frage, keine Sim-Frage.
+2. **Der Schwanz gehört den Legendären**, nicht dem Fundament: Mean/p90 stehen im Duell weiter bei 2,79× / 1,85×
+   gegen Feuer, während der Median auf 1,04× sitzt. Ewiges Schild mit +2999 % ist die eigentliche offene Baustelle —
+   und es war schon vor §5.18 die stärkste der drei.
+3. **Dauerfrost bleibt bei −2 %**, obwohl F1 genau seine Naht war. Der Zug allein trägt ihn nicht.
+
 ## 6. Pflanze
 
 ### 6.1 Richtung und Abgrenzung (gesetzt, Owner 2026-09-06)

@@ -3,9 +3,9 @@ import { TIER_META } from "./rarity.js";                 // Raritäts-Namen: EIN
 import { numWord } from "./skills.js";                   // Zahlwörter aus derselben Quelle wie die Skilltexte
 // Eis-Neudesign: die Gletscher-Tuning-Zahlen leben in glacier.js (Single Source, Sim-tunebar) — direkt ziehen, damit
 // die Eis-Glossartexte driftfrei mitlaufen. Kein Import-Zyklus (glacier.js → architect.js, keins importiert glossary.js).
-import { WIN_MASS as G_WIN_MASS, EWIGER_FROST as G_EWIGER_FROST, THRESHOLDS as G_THRESHOLDS,
+import { WIN_MASS as G_WIN_MASS, EWIGER_FROST as G_EWIGER_FROST, THRESHOLDS as G_THRESHOLDS, BURST_AT as G_BURST_AT,
   KASKADE_PER_NEIGHBOR as G_KASKADE, GEO_BLOCK as G_BLOCK, GEO_KREUZ as G_KREUZ, GEO_LINIE as G_LINIE,
-  GEO_FLAECHE as G_FLAECHE, GLACIER_MAX as G_MAX } from "./glacier.js";
+  GEO_FLAECHE as G_FLAECHE, GLACIER_MAX as G_MAX, FIRN_REFILL_TARGET as G_REFILL, FIRN_DRAW as G_DRAW } from "./glacier.js";
 
 /* ============================================================
    GLOSSAR — die EINZIGE Quelle für die Erklärungen der Spielbegriffe (#212 / #201 P1+P9 / Glossar-Rework).
@@ -250,7 +250,7 @@ export const GLOSSARY = {
     text: `Die Eis-Ressource: Masse liegt auf dem Brettfeld. Jeder Gletscher gewinnt jeden Durchlauf +${de(G_EWIGER_FROST)} Masse, bedingungslos bei Sieg wie Niederlage; ein Sieg bringt +${de(G_WIN_MASS)} Masse zusätzlich.`,
     match: ["Masse"] },
   bersten: { category: "frak", group: "ice", label: "Bersten", icon: "✷", color: CLR.ice,
-    text: `Erreicht ein Gletscher ${G_THRESHOLDS[G_THRESHOLDS.length - 1]} Masse, bricht er: Berst-Score aus Masse × Wucht der erreichten Schwelle (Schwellen ${G_THRESHOLDS.join(" / ")}), verstärkt um +${pct(G_KASKADE)} % je angrenzendem Gletscher und Kollision, wenn der Bruch einen Gletscher-Nachbarn trifft. Danach fällt er auf 0 ab und füllt sich zum Durchlauf-Beginn aus seiner Boden-Reserve wieder auf.`,
+    text: `Erreicht ein Gletscher ${G_BURST_AT} Masse, bricht er: Berst-Score aus Masse × Wucht der erreichten Schwelle (Schwellen ${G_THRESHOLDS.join(" / ")}), verstärkt um +${pct(G_KASKADE)} % je angrenzendem Gletscher und Kollision, wenn der Bruch einen Gletscher-Nachbarn trifft. Danach fällt er um ${G_BURST_AT} Masse — was darüber lag, bleibt liegen — und füllt sich zum Durchlauf-Beginn aus seiner Boden-Reserve wieder auf.`,
     match: ["Bersten", "bricht", "brechen", "Bruch", "Brüche", "Bruchs", "brechendem", "Berst-Score", "Berst-Schwelle"] },
   cluster: { category: "frak", group: "ice", label: "Cluster", icon: "⧉", color: CLR.ice,
     text: "Eine Gruppe direkt aneinandergrenzender Gletscher. Mehrere Eis-Skills messen die Cluster-Größe (Packeis, Verzahnung, Kettenbruch); Eisbrücke zählt auch die Diagonalen dazu.",
@@ -260,7 +260,7 @@ export const GLOSSARY = {
     match: ["Gletscher-Formationen", "Gletscher-Formation", "Eis-Formationen", "Eis-Formation"] },
   // id `freeze` bleibt als Backcompat-Token erhalten (glossary.test.js), umgewidmet auf „Schnee".
   freeze: { category: "frak", group: "ice", label: "Schnee", icon: "❄", color: CLR.ice,
-    text: `Schnee liegt als Reserve auf dem Brettfeld, getrennt von der Gletschermasse. Frierst du einen Gletscher auf ein aufgeladenes Feld, wird der angesammelte Schnee zu seiner Boden-Reserve; der Gletscher startet leer und zieht daraus jeden Durchlauf wieder auf volle ${G_THRESHOLDS[G_THRESHOLDS.length - 1]} Masse nach (nur die Differenz, nie darüber), bis die Reserve leer ist. Offenen Boden laden Dauerfrost, Schneetreiben und Eiszeit auf, nie unter einen Gletscher.`,
+    text: `Schnee liegt als Reserve auf dem Brettfeld, getrennt von der Gletschermasse. Jeden Durchlauf gibt jedes offene Feld bis zu ${de(G_DRAW)} Schnee an den nächstgelegenen Gletscher ab. Frierst du einen Gletscher auf ein aufgeladenes Feld, wird der angesammelte Schnee zu seiner Boden-Reserve; er startet leer und zieht daraus jeden Durchlauf wieder auf volle ${G_REFILL} Masse nach (nur die Differenz, nie darüber), bis die Reserve leer ist. Offenen Boden laden Dauerfrost, Schneetreiben und Eiszeit auf, nie unter einen Gletscher.`,
     match: ["Schnee"] },
 
   /* ============ 4 · Pflanze (exp skill rework, §6) ============ */

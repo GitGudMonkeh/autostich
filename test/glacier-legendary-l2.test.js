@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { resolveTrick } from "../src/game/engine.js";
 import { initialState } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
-import { eiszeitTick, precomputeGlacier, ROLES, EISZEIT_FLOOD, EISZEIT_DRAW, EISZEIT_BURST_PER } from "../src/game/glacier.js";
+import { firnDrawTick, eiszeitFlood, precomputeGlacier, ROLES, EISZEIT_FLOOD, FIRN_DRAW, EISZEIT_BURST_PER } from "../src/game/glacier.js";
 import { iceSnapshotOpts } from "../src/game/factions/ice.js";
 import { N_POS, posOf } from "../src/game/architect.js";
 
@@ -23,36 +23,44 @@ const scen = (over = {}) => ({
 });
 const runCycle = (s0) => { let s = s0; for (let i = 0; i < 40; i++) s = resolveTrick(s, noCrit); return s; };
 
-describe("eiszeitTick — Flut + Zug aus dem offenen Boden (§5.15)", () => {
-  it("flutet jedes ungefrorene Feld und friert dabei nichts ein", () => {
-    const locked = lockAt(0);
-    const { firn, mass } = eiszeitTick(zeros(), zeros(), locked);
-    expect(firn[39]).toBe(EISZEIT_FLOOD - EISZEIT_DRAW); // erst geflutet, dann vom Gletscher angezapft (§5.17)
-    expect(firn[0]).toBe(0);                // unter dem Gletscher wird nicht geflutet
-    expect(mass.some((v, i) => i !== 0 && v > 0)).toBe(false); // kein zweiter Gletscher entstanden
-  });
-
-  it("jedes offene Feld gibt an den nächsten Gletscher ab — auch fernes (§5.17)", () => {
-    // Ein einzelner Gletscher zieht vom GANZEN Brett: 39 offene Felder, je EISZEIT_DRAW.
-    const reserve = new Array(40).fill(EISZEIT_DRAW);
-    const { mass } = eiszeitTick(reserve, zeros(), lockAt(0), 0); // ohne Flut, damit nur der Vorrat zählt
-    expect(mass[0]).toBe(39 * EISZEIT_DRAW);
-    // Das ist der Punkt des Schritts: vorher endete der Zug am Ring und Dauerfrost (Abstand ≥ 2) kam nie an.
+/* §5.18: der ZUG ist Fundament geworden. Er gehörte bis dahin allein der Eiszeit — und ohne sie hatte die Reserve
+   überhaupt keinen Ausgang außer „dieses Feld friert später ein" (gemessen 65 % totes Kapital, §5.17). Jetzt teilen
+   sich Schneetreiben, Dauerfrost und die Eiszeit eine Währung, die immer ankommt. */
+describe("Firn-Zug — jedes offene Feld gibt an den nächsten Gletscher", () => {
+  it("ein einzelner Gletscher zieht vom GANZEN Brett, auch von fernen Feldern", () => {
+    const reserve = new Array(40).fill(FIRN_DRAW);
+    expect(firnDrawTick(reserve, zeros(), lockAt(0)).mass[0]).toBe(39 * FIRN_DRAW);
+    // Der Punkt des Schritts: vorher endete der Zug am Ring, und Dauerfrost (Abstand ≥ 2) kam nie an.
     const fern = new Array(40).fill(0);
-    fern[39] = EISZEIT_DRAW;                                       // maximal weit von pos0 entfernt
-    expect(eiszeitTick(fern, zeros(), lockAt(0), 0).mass[0]).toBe(EISZEIT_DRAW);
+    fern[39] = FIRN_DRAW;                   // maximal weit von pos0 entfernt
+    expect(firnDrawTick(fern, zeros(), lockAt(0)).mass[0]).toBe(FIRN_DRAW);
   });
 
   it("ein Feld gibt nur EINMAL ab, an den nächsten — nicht an jeden", () => {
     const reserve = new Array(40).fill(0);
-    reserve[1] = EISZEIT_DRAW;              // pos1 liegt zwischen pos0 und pos2, gleich weit
-    const { mass } = eiszeitTick(reserve, zeros(), lockAt(0, 2), 0);
-    expect(mass[0] + mass[2]).toBe(EISZEIT_DRAW);
+    reserve[1] = FIRN_DRAW;                 // pos1 liegt zwischen pos0 und pos2, gleich weit
+    const { mass } = firnDrawTick(reserve, zeros(), lockAt(0, 2));
+    expect(mass[0] + mass[2]).toBe(FIRN_DRAW);
     // und näher gewinnt: pos1 liegt direkt an pos0, pos30 ist weit weg
-    const r2 = new Array(40).fill(0); r2[1] = EISZEIT_DRAW;
-    const m2 = eiszeitTick(r2, zeros(), lockAt(0, 30), 0).mass;
-    expect(m2[0]).toBe(EISZEIT_DRAW);
+    const r2 = new Array(40).fill(0); r2[1] = FIRN_DRAW;
+    const m2 = firnDrawTick(r2, zeros(), lockAt(0, 30)).mass;
+    expect(m2[0]).toBe(FIRN_DRAW);
     expect(m2[30]).toBe(0);
+  });
+
+  it("ohne Gletscher bleibt die Reserve liegen", () => {
+    const reserve = new Array(40).fill(FIRN_DRAW);
+    const { firn, mass } = firnDrawTick(reserve, zeros(), falses());
+    expect(firn).toEqual(reserve);
+    expect(mass.every((v) => v === 0)).toBe(true);
+  });
+});
+
+describe("Eiszeit — die Flut (§5.15)", () => {
+  it("flutet jedes ungefrorene Feld und friert dabei nichts ein", () => {
+    const firn = eiszeitFlood(zeros(), lockAt(0));
+    expect(firn[39]).toBe(EISZEIT_FLOOD);
+    expect(firn[0]).toBe(0);                // unter dem Gletscher wird nicht geflutet
   });
 });
 

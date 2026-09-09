@@ -5,8 +5,9 @@ import { makeRng } from "../src/game/deck.js";
 import { initialArchitect } from "../src/game/architect.js";
 import { ROLES } from "../src/game/glacier.js";
 
-// Eis-Neudesign Phase 3.2d — Verdichtung (Firn, Architekt-gekoppelt): der Gebäude-Wertbonus auf einem Gletscher
-// wird im Kampf unterdrückt und stattdessen in Masse getankt.
+/* §5.18 — Verdichtung neu gebaut: Kampfwert ÜBER dem Grundwert wird zusätzlich Masse. Sie unterdrückt nichts mehr
+   (das zwang dazu, gerade KEINE guten Gebäude auf einen Gletscher zu setzen) und liest jede Quelle, nicht nur den
+   Architekten. Ausgenommen ist allein der Zungen-Bonus — sonst schlösse sich Masse → Wert → Masse zu einem Kreis. */
 const identity = () => Array.from({ length: 40 }, (_, i) => i);
 const flat = () => Array.from({ length: 40 }, (_, i) => ({ id: `F${i}`, suit: i % 2 ? "B" : "R", baseRank: i % 2 ? 11 : 12, value: i % 2 ? 11 : 12 }));
 const oppOf = (v) => Array.from({ length: 40 }, (_, i) => ({ id: `O${i}`, suit: "R", baseRank: v, value: v }));
@@ -30,10 +31,21 @@ describe("Verdichtung — Bauwert → Masse", () => {
     const verd = resolveTrick(scen({ glacierRoles: [ROLES.VERDICHTUNG] }), noCrit); // Bauwert → Masse
     expect(verd.glacierMass[0]).toBeGreaterThan(base.glacierMass[0]);
   });
-  it("unterdrückt den Bauwert im Kampf (niedrigerer Kartenwert an der Position)", () => {
+  it("lässt den Bauwert im Kampf stehen — das gute Gebäude auf dem Gletscher bleibt das richtige", () => {
     const base = resolveTrick(scen({}), noCrit);
     const verd = resolveTrick(scen({ glacierRoles: [ROLES.VERDICHTUNG] }), noCrit);
-    expect(verd.lastTrick.pValue).toBeLessThan(base.lastTrick.pValue); // Gebäude-Bonus im Kampf weg (in Masse gekippt)
+    expect(verd.lastTrick.pValue).toBe(base.lastTrick.pValue); // nichts wird mehr unterdrückt
+  });
+
+  /* Der Kreis, den §5.18 bewusst zulässt und dann schließt: Masse gibt Kampfwert (Gletscherzunge), Kampfwert gibt
+     Masse (Verdichtung). Zusammengehalten wüchse die Masse jeden Durchlauf um einen Bruchteil ihrer selbst und liefe
+     ab einer Schwelle geometrisch weg. Deshalb zählt der Zungen-Bonus hier NICHT mit. */
+  it("der Zungen-Bonus zählt nicht als Überschuss — sonst wäre der Kreis geschlossen", () => {
+    const glacierMass = zeros(); glacierMass[0] = 12;   // Zunge Normal: +2 Wert
+    const nurVerd = resolveTrick(scen({ glacierMass, glacierRoles: [ROLES.VERDICHTUNG] }), noCrit);
+    const beide = resolveTrick(scen({ glacierMass, glacierRoles: [ROLES.VERDICHTUNG, ROLES.GLETSCHERZUNGE] }), noCrit);
+    expect(beide.lastTrick.pValue).toBeGreaterThan(nurVerd.lastTrick.pValue); // die Zunge wirkt im Kampf
+    expect(beide.glacierMass[0]).toBe(nurVerd.glacierMass[0]);                // aber sie füttert die Verdichtung nicht
   });
   it("ohne Gebäude auf dem Gletscher keine Extra-Masse", () => {
     const noArch = resolveTrick(scen({ architectEnabled: false, glacierRoles: [ROLES.VERDICHTUNG] }), noCrit);

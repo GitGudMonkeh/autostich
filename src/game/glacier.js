@@ -14,14 +14,19 @@ import { N_POS, rowOf, colOf, posOf } from "./architect.js"; // Brett-Geometrie 
 import { envNum } from "./constants.js";                     // Sim-übersteuerbare Grundzahl (Sweep ohne Code-Änderung)
 
 /* ---- TUNING-Block (Platzhalter, Sim-tunebar) ------------------------------------------------------ */
-export const THRESHOLDS = [4, 8, 12];          // Schwellen-Stufen; Stufe = #Schwellen ≤ Masse (0..3)
-export const TIER_MULT = [0, 1, 1.5, 2.2];     // überlineare Wucht je Stufe (Stufe 0 bricht nicht)
+// §5.18 (Owner): eine VIERTE Schwelle über der Berst-Schwelle. Gebrochen wird weiter ab BURST_AT (12) — die 18
+// erreicht nur, wer in EINEM Durchlauf über die Schwelle hinausschießt. Damit lohnt Anhäufen erstmals über 12.
+export const THRESHOLDS = [4, 8, 12, 18];      // Schwellen-Stufen; Stufe = #Schwellen ≤ Masse (0..4)
+export const TIER_MULT = [0, 1, 1.5, 2.2, 3.2]; // überlineare Wucht je Stufe (Stufe 0 bricht nicht)
 // Globaler Burst-Skalierer: die Gletscher SIND der Hauptscore (nicht das Deck) — einzelne, massive Hits. Frequenz bleibt
 // (kein schnelleres Bersten), nur die Wucht je Bruch. §5.5: der weiche Deckel je Einzelbruch ist gestrichen (§1 der
 // Doku: keine Deckel, lieber niedrigere Werte). Er hatte die ganze Fraktion flach gemacht — in der Großen Fläche kamen
 // 49 % des Bruchs an, und ein Verstärker mit nominal +18 % brachte +2,2 %. Statt seiner steht die Grundzahl tiefer.
 // §5.6: seit die Geo-Formen nicht mehr stapeln, ist die Kurve flacher und die Grundzahl darf wieder höher stehen.
-export const BURST_SCALE = envNum("SIM_GLACIER_BURST_SCALE", 250); // §5.6 neu tariert: 170 → 250, weil die Geometrie nicht mehr stapelt (Eis 6,58M gegen Feuer 6,42M)
+// §5.18 neu tariert: 250 → 150. F2/F3 (vierte Schwelle, volle Bruchmasse, liegenbleibender Überschuss) haben den Bruch
+// selbst gehoben und dabei die Legendären mitmultipliziert — gemessen stand Eis mono bei 1,65× Feuer im Median. Sweep
+// im Duell (Seeds 401..470): 250 → 1,65×, 150 → 1,04×, 110 → 0,80×.
+export const BURST_SCALE = envNum("SIM_GLACIER_BURST_SCALE", 150);
 // Große Lawine (§5.8, Owner): feuert nicht mehr einmal am Laufende, sondern im TAKT — jeden GROSSE_LAWINE_EVERY-ten
 // Durchlauf bricht das ganze Feld auf einen Schlag, jeder Gletscher mit der Wucht der höchsten Schwelle. Damit ist sie
 // den ganzen Lauf über sichtbar, und sie synchronisiert das Feld: Kaskade, Kollision und Gletschersturz greifen
@@ -51,16 +56,26 @@ export const KASKADE_PER_NEIGHBOR = 0.25;      // Berst-Faktor = 1 + 0,25 × Gle
 export const KOLLISION_MULT = 1.5;             // Treffer auf Gletscher-Nachbarn (anteilig, docs §2.3)
 export const EWIGER_FROST = 1;                 // Fraktions-Passiv: bedingungsloser Masse-Tick je Durchlauf (docs §2.6)
 export const WIN_MASS = 1;                     // Baseline: Sieg eines Gletschers → +Masse (docs §2.2)
-export const TOP = THRESHOLDS[THRESHOLDS.length - 1]; // höchste Stufe (Überlauf-Grenze)
+export const TOP = THRESHOLDS[THRESHOLDS.length - 1]; // höchste Stufe (18)
 // Berst-Kadenz (docs §2.3, „einzelne massive Hits"): ein Gletscher HÄLT & wächst, bis er die höchste Schwelle erreicht,
 // dann bricht er gewaltig (volle Stufe) und kalbt zurück. Selten + eskalierend statt häufig+klein.
-export const BURST_AT = TOP;                    // natürliche Berst-Schwelle = höchste Stufe (12)
-export const RESET_TO = 0;                      // nach dem Bruch abgekalbt → baut wieder von unten auf
+// §5.18: die Berst-Schwelle ist NICHT mehr die höchste Stufe — sie bleibt bei 12, während die Leiter bis 18 reicht.
+export const BURST_AT = THRESHOLDS[2];          // natürliche Berst-Schwelle (12)
+// §5.18 (Owner): nach dem Bruch bleibt der ÜBERSCHUSS liegen (Masse − BURST_AT) statt auf null zu fallen. Damit ist der
+// alte Überlauf-Score gestorben: er zahlte 1 Punkt je Masse neben einem Bruch, der mit BURST_SCALE rechnet — genau diese
+// Masse trägt jetzt in den nächsten Durchlauf. Ein Ventil statt zwei.
 // #386 Firn-Boden-Reserve: der auf offenem Boden angesammelte Firn (firnStack) ist die RESERVE eines Feldes. Wird ein Feld
 // gefroren, startet der Gletscher LEER (Masse 0) und zieht zum Rundenstart aus seiner Reserve wieder auf FIRN_REFILL_TARGET
-// (=TOP, volle Masse) auf — nur die Differenz zur selbst-erzeugten Masse. Die Reserve ist ungedeckelt und leert sich Runde
-// für Runde, bis sie leer ist. Trennung von glacierMass (Gletscher-Eigenmasse) und firnStack (Boden-Reserve).
-export const FIRN_REFILL_TARGET = TOP;          // Runden-Start-Nachschub-Ziel: volle Masse (12)
+// auf — nur die Differenz zur selbst-erzeugten Masse. Ziel ist die BERST-Schwelle, nicht die höchste: sonst bekäme ein
+// frisch gefrorenes Feld die vierte Stufe geschenkt. Die Reserve ist ungedeckelt und leert sich Runde für Runde.
+export const FIRN_REFILL_TARGET = BURST_AT;     // Runden-Start-Nachschub-Ziel: volle Masse (12)
+// §5.18: der Zug ist FUNDAMENT, nicht mehr Eiszeit-Mechanik — jedes offene Feld gibt so viel Reserve an den nächsten
+// Gletscher ab. Ohne ihn zahlte Schnee nur, wenn genau dieses Feld später einfriert (gemessen 65 % totes Kapital, §5.17).
+export const FIRN_DRAW = envNum("SIM_GLACIER_FIRN_DRAW", 1);
+// Deckel auf den LIEGENBLEIBENDEN Überschuss (nicht auf die Bruchmasse — der Deckel je Einzelbruch bleibt gestrichen,
+// §5.5). Ohne ihn hat die Masse gar keine Decke mehr: ein ausgebautes Cluster gewinnt je Durchlauf mehr als der Bruch
+// abzieht, und die Masse steigt unbegrenzt. 0 = kein Deckel.
+export const KEEP_MAX = envNum("SIM_GLACIER_KEEP_MAX", 6);
 
 /* ---- Geometrie: 4 orthogonale Nachbarn (links/rechts/oben/unten) auf dem 8×5-Brett ---------------- */
 export function neighbors4(p) {
@@ -97,31 +112,29 @@ export function precomputeGlacier(mass, locked, opts = {}) {
   const grosseLawine = !!opts.grosseLawine;             // Legendär: ALLES bricht (Schwellen ignoriert)
   const ewigesSchild = !!opts.ewigesSchild;             // Legendär: das ganze Feld gilt als EIN Übergletscher (Kaskade = volle Feldgröße)
   const eiszeitPer = opts.eiszeitBurstPer || 0;         // Legendär Eiszeit: Bruch × offene Nachbarn (Spiegel der Kaskade)
-  const burstAt = opts.burstAt ?? BURST_AT;             // natürliche Berst-Schwelle (Rissbildung senkt sie)
+  const burstAt = opts.burstAt ?? BURST_AT;             // natürliche Berst-Schwelle
+  const keepMax = opts.keepMax ?? KEEP_MAX;             // Deckel auf den liegenbleibenden Überschuss (0 = keiner)
   const tOf = (m) => { let t = 0; for (const th of thresholds) if (m >= th) t++; return t; };
-  const top = thresholds[thresholds.length - 1];
 
   const payout = new Array(N_POS).fill(0);
   const resetMass = Array.isArray(mass) ? mass.slice() : new Array(N_POS).fill(0);
 
-  // Vorbereitung: Überlauf auszahlen, Masse deckeln, natürliche Stufe je Gletscher.
-  const mCap = new Array(N_POS).fill(0), natTier = new Array(N_POS).fill(0);
+  // Vorbereitung: Masse und natürliche Stufe je Gletscher. §5.18: KEIN Deckel mehr auf der Bruchmasse und kein
+  // Überlauf-Score — die Masse über der Berst-Schwelle geht in die Wucht und bleibt danach liegen (s. resetMass unten).
+  const mNow = new Array(N_POS).fill(0), natTier = new Array(N_POS).fill(0);
   let totalG = 0;
   for (let p = 0; p < N_POS; p++) {
     if (!isG(p)) continue;
     totalG++;
-    const m0 = resetMass[p] || 0;
-    const ov = Math.max(0, m0 - top);
-    if (ov > 0) payout[p] += ov;                        // Überlauf → Score (jede Runde)
-    mCap[p] = m0 - ov;
-    natTier[p] = tOf(mCap[p]);
+    mNow[p] = resetMass[p] || 0;
+    natTier[p] = tOf(mNow[p]);
   }
 
   // Breaker bestimmen: NATÜRLICH bricht nur, wer die Berst-Schwelle erreicht hat (halten & wachsen, dann gewaltig).
   // Große Lawine zwingt ALLE (auch nicht-reife), Kettenbruch flutet auf angrenzende Gletscher.
   const isBreaker = new Array(N_POS).fill(false), forced = new Array(N_POS).fill(false), queue = [];
   for (let p = 0; p < N_POS; p++) if (isG(p)) {
-    if (mCap[p] >= burstAt) { isBreaker[p] = true; queue.push(p); }
+    if (mNow[p] >= burstAt) { isBreaker[p] = true; queue.push(p); }
     else if (grosseLawine) { isBreaker[p] = true; forced[p] = true; } // Große Lawine: auch unreife brechen
   }
   if (kettenbruchDepth > 0) {
@@ -141,7 +154,7 @@ export function precomputeGlacier(mass, locked, opts = {}) {
   const breaks = [];
   for (let p = 0; p < N_POS; p++) {
     if (!isG(p)) continue;
-    if (!isBreaker[p]) { resetMass[p] = mCap[p]; continue; } // kein Bruch: gedeckelte Masse bleibt
+    if (!isBreaker[p]) { resetMass[p] = mNow[p]; continue; } // kein Bruch: die Masse bleibt stehen
     // Große Lawine bricht ALLES auf voller Stufe (echter Finisher); Kettenbruch-erzwungene mind. Stufe 1; sonst natürliche Stufe.
     const effTier = grosseLawine ? (tierMult.length - 1) : (forced[p] ? Math.max(1, natTier[p]) : natTier[p]);
     const nb = neighborFn(p);
@@ -155,10 +168,13 @@ export function precomputeGlacier(mass, locked, opts = {}) {
     // nur anteilig zählt, zählt der Eiszeit auch nur anteilig. Sonst zahlte die Eisbrücke der Eiszeit doppelt.
     const oN = nb.reduce((t, n) => t + (isG(n) ? 0 : wOf(p, n)), 0);
     const eisFaktor = eiszeitPer ? 1 + eiszeitPer * oN : 1;
-    let burst = mCap[p] * tierMult[effTier] * berstFaktor * kollFaktor * sturzFactor * geoFactor * eisFaktor * BURST_SCALE;
+    let burst = mNow[p] * tierMult[effTier] * berstFaktor * kollFaktor * sturzFactor * geoFactor * eisFaktor * BURST_SCALE;
     if (grosseLawine) burst *= GROSSE_LAWINE_MULT;        // Lawinen-Takt: Verstärker je erzwungenem Bruch
     payout[p] += burst;
-    resetMass[p] = RESET_TO;                             // abgekalbt: baut wieder von unten auf (selten + gewaltig)
+    // §5.18: abgekalbt wird die Berst-Schwelle, der Überschuss bleibt liegen. Die Große Lawine bricht auch unreife
+    // Gletscher — dort ist die Differenz negativ und der Boden ist die 0.
+    const keep = Math.max(0, mNow[p] - burstAt);
+    resetMass[p] = keepMax > 0 ? Math.min(keepMax, keep) : keep;
     breaks.push({ pos: p, tier: effTier, burst, glacierNeighbors: gN, forced: forced[p] });
   }
   return { payout, resetMass, breaks, grosseLawine }; // grosseLawine: dieser Durchlauf ist der Große-Lawine-Finisher (HUD zeigt „Lawine")
@@ -206,32 +222,17 @@ export function uebergletscherPool(mass, locked) {
   return out;
 }
 
-// Eiszeit (Legendär, docs §7) — §5.15, Owner-Variante a: die Eiszeit friert NICHTS mehr ein. Sie flutet die
-// Boden-Reserve jedes ungefrorenen Felds und lässt die Gletscher den angrenzenden OFFENEN Boden leertrinken:
-// je Durchlauf zieht jeder Gletscher aus jedem offenen Nachbarfeld bis zu EISZEIT_DRAW Reserve in seine Masse.
-// Damit will die Eiszeit freie Felder, wo das Ewige Schild gefrorene will — die beiden können sich nicht mehr
-// verstärken (§5.14: gemeinsam frieren sie sonst das ganze Brett ein, Faktor 106).
-// Bis §5.14 fror sie das reservestärkste Feld ein; das war der einzige Ausgang, den die Reserve überhaupt hatte.
-// `firn` ist die Boden-RESERVE (firnStack), `mass` die Gletscher-Eigenmasse — beide kommen aus der Engine.
-export const EISZEIT_FLOOD = envNum("SIM_GLACIER_EISZEIT_FLOOD", 3);
-export const EISZEIT_DRAW = envNum("SIM_GLACIER_EISZEIT_DRAW", 2); // Zug je offenem Nachbarfeld und Durchlauf
-// §5.16: die zweite, eigentliche Auszahlung der Eiszeit — der SPIEGEL der Dichte-Kaskade. Die Kaskade multipliziert
-// den Bruch mit den GEFRORENEN Nachbarn (KASKADE_PER_NEIGHBOR), die Eiszeit mit den OFFENEN. §5.15 hat gemessen,
-// dass Masse zu füttern nicht trägt: mCap deckelt die Bruchmasse auf TOP und ein Gletscher birst höchstens einmal
-// je Durchlauf, also verfällt jede Flut über die Decke hinaus. Die Berstkraft kennt diese Decke nicht.
-// Sweep §5.16: 0,25 → −4 %, 0,5 → −1 %, 1 → +13 %, 2 → +30 %. Bei 2 sitzt die Eiszeit im Band der übrigen elf.
-export const EISZEIT_BURST_PER = envNum("SIM_GLACIER_EISZEIT_BURST", 2);
-export function eiszeitTick(firn, mass, locked, base = EISZEIT_FLOOD, draw = EISZEIT_DRAW) {
+/* Der ZUG (§5.17, ab §5.18 Fundament): JEDES offene Feld gibt bis zu `draw` seiner Boden-Reserve an den NÄCHSTEN
+   Gletscher ab — einmal, nicht an jeden, also wird nichts doppelt gezahlt; bei gleichem Abstand entscheidet die
+   Position. Bis §5.18 gehörte der Zug allein der Eiszeit, und ohne sie hatte die Reserve überhaupt keinen Ausgang
+   außer „dieses Feld friert später ein" (gemessen 65 % totes Kapital). Jetzt teilen sich Schneetreiben (nahe
+   Quelle), Dauerfrost (ferne Quelle) und die Eiszeit (Flut) eine Währung, die immer ankommt. */
+export function firnDrawTick(firn, mass, locked, draw = FIRN_DRAW) {
   const isG = (p) => (locked instanceof Set ? locked.has(p) : !!(locked && locked[p]));
   const f = Array.isArray(firn) ? firn.slice() : new Array(N_POS).fill(0);
   const m = Array.isArray(mass) ? mass.slice() : new Array(N_POS).fill(0);
-  for (let p = 0; p < N_POS; p++) if (!isG(p)) f[p] = (f[p] || 0) + base;   // brettweite Flut in die Reserve
-  // Zug (§5.17): JEDES offene Feld gibt an den NÄCHSTEN Gletscher ab, nicht nur an einen angrenzenden. Vorher endete
-  // der Zug am Ring, und Dauerfrost füllt gezielt Felder mit Abstand ≥ 2 — seine Reserve erreichte nie einen
-  // Gletscher. Gemessen lagen 69 % aller Reserve über dem, was ein Feld je abrufen kann. Jedes Feld gibt nur einmal
-  // ab (an den nächsten), also wird nichts doppelt gezahlt; bei gleichem Abstand entscheidet die Position.
   const gs = []; for (let p = 0; p < N_POS; p++) if (isG(p)) gs.push(p);
-  if (gs.length) for (let p = 0; p < N_POS; p++) {
+  if (gs.length && draw > 0) for (let p = 0; p < N_POS; p++) {
     if (isG(p) || !(f[p] > 0)) continue;
     let best = gs[0], bestD = Infinity;
     for (const g of gs) {
@@ -242,6 +243,21 @@ export function eiszeitTick(firn, mass, locked, base = EISZEIT_FLOOD, draw = EIS
     f[p] -= take; m[best] = (m[best] || 0) + take;
   }
   return { firn: f, mass: m };
+}
+
+// Eiszeit (Legendär, docs §7) — §5.15, Owner-Variante a: sie friert NICHTS mehr ein, sondern flutet die Boden-Reserve
+// jedes ungefrorenen Felds. Damit will sie freie Felder, wo das Ewige Schild gefrorene will (§5.14: gemeinsam froren
+// sie sonst das ganze Brett ein, Faktor 106). §5.18: der Zug oben ist nicht mehr ihrer — sie füttert ihn nur am stärksten.
+export const EISZEIT_FLOOD = envNum("SIM_GLACIER_EISZEIT_FLOOD", 3);
+// §5.16: ihre zweite Auszahlung — der SPIEGEL der Dichte-Kaskade. Die Kaskade multipliziert den Bruch mit den
+// GEFRORENEN Nachbarn (KASKADE_PER_NEIGHBOR), die Eiszeit mit den OFFENEN.
+// Sweep §5.16: 0,25 → −4 %, 0,5 → −1 %, 1 → +13 %, 2 → +30 %. Bei 2 sitzt die Eiszeit im Band der übrigen elf.
+export const EISZEIT_BURST_PER = envNum("SIM_GLACIER_EISZEIT_BURST", 2);
+export function eiszeitFlood(firn, locked, base = EISZEIT_FLOOD) {
+  const isG = (p) => (locked instanceof Set ? locked.has(p) : !!(locked && locked[p]));
+  const f = Array.isArray(firn) ? firn.slice() : new Array(N_POS).fill(0);
+  for (let p = 0; p < N_POS; p++) if (!isG(p)) f[p] = (f[p] || 0) + base;
+  return f;
 }
 
 // Packeis (docs §4): am Durchlauf-Ende +Masse je Gletscher-Nachbar — belohnt die Mitte des Feldes.
@@ -313,12 +329,12 @@ export const GLACIER_FORM_LABEL = { block: "Block", kreuz: "Kreuz", linie: "Lini
 
 /* ---- Rollen-Schlüssel (docs §4) — die Engine gattert über sie, die ZAHLEN je Stufe liefert factions/ice.js. */
 export const ROLES = {
-  RISSBILDUNG: "G_RISSBILDUNG",   // instabiles Eis: erste Schwelle runter → bricht früh & oft
+  GLETSCHERZUNGE: "G_GLETSCHERZUNGE", // §5.18: die Zunge schiebt sich vor — Masse wird Kampfwert (ersetzt Rissbildung)
   ABBRUCHKANTE: "G_ABBRUCHKANTE", // belohnt hohe Stufen noch steiler (Riesen)
   ANFRIEREN: "G_ANFRIEREN",       // Firn: Sieg → +Masse extra; Formations-Sieg → doppelt
   SCHNEETREIBEN: "G_SCHNEETREIBEN", // Firn: Verwehung — Sieg verweht Firn in die Boden-Reserve des Nachbarfelds (#386: nur offener Boden, nie unter einen Gletscher)
   DAUERFROST: "G_DAUERFROST",     // Firn: offener Boden friert am tiefsten — passiver Frost in die Boden-Reserve (fern; #386 firnStack)
-  EISPANZER: "G_EISPANZER",       // Frostgriff: Niederlage neben Gletscher folgenlos + füttert Masse (der Gletscher frisst, was zerbricht)
+  SPROEDBRUCH: "G_SPROEDBRUCH",   // §5.18: sprödes Eis — Masse wird Crit-Chance (ersetzt Eispanzer)
   PACKEIS: "G_PACKEIS",           // Eisschild: Gletscher mit vielen Gletscher-Nachbarn → Bonus-Masse (belohnt die Mitte)
   VERZAHNUNG: "G_VERZAHNUNG",     // Eisschild: je größer das Cluster, desto schneller wächst jeder Gletscher (Runaway-Kandidat)
   EISBRUECKE: "G_EISBRUECKE",     // Eisschild: erweitert „angrenzend" um die 4 Diagonalen (8-Nachbarschaft)
@@ -354,9 +370,10 @@ export function driftTargets(pos, locked, count = 1) {
 }
 
 // Dauerfrost (docs §4 Firn): am Durchlauf-ENDE frosten UNGEFRORENE Felder nach ABSTAND zum nächsten Gletscher
-// (King-Move/Chebyshev, weil „die 8 direkt um einen Gletscher"): Abstand 1 (der 8er-Ring) → 0, Abstand 2 → NEAR,
-// Abstand ≥3 (oder gar kein Gletscher) → FAR. Bewusst einfache Bänder statt Bruch-Skalierung. #386: schreibt in die
-// Firn-Boden-RESERVE (firnStack), nie unter einen Gletscher — die Engine reicht das firnStack-Array herein.
+// (King-Move/Chebyshev): Abstand ≤ 2 → NEAR, Abstand ≥ 3 (oder gar kein Gletscher) → FAR. §5.18: der Null-Ring um
+// jeden Gletscher ist gefallen — er würgte Dauerfrost genau dort ab, wo ein dichtes Cluster steht, und mit dem Zug
+// (firnDrawTick) ist naher Boden jetzt die BESSERE Quelle, nicht die tote. #386: schreibt in die Firn-Boden-RESERVE
+// (firnStack), nie unter einen Gletscher — die Engine reicht das firnStack-Array herein.
 export function dauerfrostTick(mass, locked, near = 0, far = 0) {
   const isG = (p) => (locked instanceof Set ? locked.has(p) : !!(locked && locked[p]));
   const glaciers = [];
@@ -367,9 +384,9 @@ export function dauerfrostTick(mass, locked, near = 0, far = 0) {
     let dist = Infinity;
     for (const g of glaciers) {
       const cd = Math.max(Math.abs(rowOf(p) - rowOf(g)), Math.abs(colOf(p) - colOf(g)));
-      if (cd < dist) { dist = cd; if (dist <= 1) break; }
+      if (cd < dist) { dist = cd; if (dist <= 2) break; } // ab hier steht das Band (NEAR) fest
     }
-    const add = dist <= 1 ? 0 : (dist === 2 ? near : far);
+    const add = dist <= 2 ? near : far;
     if (add > 0) out[p] = (out[p] || 0) + add;
   }
   return out;
