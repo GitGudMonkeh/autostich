@@ -6147,6 +6147,66 @@ und die Ranked-Texte, die eine andere Runde meinen.
 
 ---
 
+### 6.26 Durchgang durch die Wachstums-Skills (2026-09-09, Owner) — Entwürfe, NICHTS UMGESETZT
+
+**Owner:** „nix Dritter Ausgang. ich entscheide die skills und wir designen die Änderungen." Und zum Vorgehen:
+„nur Entwurf, wir machen erst alle skills durch bevor weiter gemeinsam bauen." Dieser Abschnitt sammelt die
+Entwürfe je Skill; gebaut wird nichts, bevor der Durchgang steht.
+
+**Der Ausgangsbefund** (§6.21 B, §6.22 B, Blühgewicht 3): von den fünf Wachstums-Skills lebt einer. Aussaat
++0,71M (+4 %) in der reinen Pflanze-Welt, Ranken −1,73M, Setzlingsbeet und Zäher Halm nahe null bis negativ,
+Lichtung flach. Der Grund ist bei allen derselbe: **sie geben Wachstum an Karten, die in dem Moment nicht
+gewinnen.** Das Blühgewicht zahlt nur auf der Siegkarte und ihren Formations-Mitläufern. Aussaat trifft die
+Nachbarn der Siegkarte, also genau die, die mit ihr in einer Formation stehen — deshalb lebt genau der eine.
+
+§6.18 bleibt in Kraft: Wachstum ist die Kernmechanik, ein dritter Ausgang neben Grün-Schwelle und Blühgewicht
+wird **nicht** gebaut (Owner: „nix Dritter Ausgang"). Die Entwürfe drehen den Empfänger, nicht die Währung.
+
+#### Ranken (SK_PLANT_09) — die Gegnerdeck-Achse kommt zurück
+
+**Owner:** „ich hätte gerne die Mechanik vom alten pflanzen system wieder aufgelebt. grüne siege ranken in die
+Gegnerkarten. Sieg auf einer gegnerkarte beeinflusst von ranken geben zusätzliches Wachstum."
+
+Vorlage ist der gestrichene **Ausläufer** (SK_PLANT_15 alt): „Gewinnt eine grüne Karte, kolonisiert sie die
+niedrigste Gegnerkarte. Besiegst du eine kolonisierte Karte, erntest du +2 Wachstum." Die Ernte ging an die
+**Siegkarte** — das ist der Teil, der Ranken heilt, aus demselben Grund, aus dem Aussaat als einziger lebt.
+
+Damit ist §6.1 in einem Punkt aufgehoben: das Gegnerdeck war dort Feuers Achse. **Abgrenzung:** Brand senkt
+Gegnerwert, Ranken senkt nichts und erntet Wachstum. Gleiche Achse, verschiedene Erträge.
+
+**Bauform (Owner: „a").** Der Sieg rankt in die Karte, die er gerade geschlagen hat — nicht in die niedrigste
+freie wie beim alten Ausläufer. Dieselbe Gegnerkarte alterniert damit zwischen ranken und ernten, und der
+Kreislauf ist an dem Stich sichtbar, der ihn auslöst.
+
+> Gewinnt eine grüne Karte, rankt sie in die geschlagene Gegnerkarte — oder erntet sie, wenn dort schon Ranken
+> liegen: +N Wachstum für die Siegkarte.
+
+**Die Ernte verbraucht die Ranken.** Sonst wiederholt sich der gemessene Fehler der Feuerwalze (§7.27): nach
+zehn Durchläufen sind 36 von 40 Positionen schon einmal gewonnen, die Bedingung wird zur Formalität, und der
+Skill ist ab der Laufmitte ein bedingungsloses „+N Wachstum je Sieg". Mit Verbrauch bleibt die Knappheit
+strukturell statt historisch — und „ernten" heißt sprachlich ohnehin, dass danach nichts mehr da ist.
+
+**Leiter — Vorschlag, UNGEMESSEN** (Startwerte erst auf Ansage, §6.20-Prozessregel):
+
+| Normal | Selten | Sehr selten | Episch |
+| --- | --- | --- | --- |
+| +2 Wachstum | +3 | +4 | +6, und beim Ernten ranken die Nachbarn der geernteten Karte mit |
+
+Das Episch-Extra ist das alte **Rhizom** (SK_PLANT_16) als halbe Zeile, statt als Verstärker-Skill mit `enabler`.
+
+**Nebenbefund:** der Fraktions-Kaltstart (die zehn grünen Karten sind grün, sobald die Pflanze steht) lässt den
+neuen Ranken ab Durchlauf 1 zünden. Der alte Auslöser „wird eine Karte grün" hätte umgekehrt gelitten — der
+Kaltstart-Pfad im Reducer läuft an der Ranken-Kette vorbei, die zehn Karten hätten sie nicht ausgelöst.
+
+**Umfang, wenn gebaut wird:** ein Lauf-Zustand für die Marker auf Gegnerkarten (analog `brandActive`, über
+`card.id`) in `engine.js`/`reducer.js`, die Logik in `factions/plant.js`, Tabelle und Text in `skills.js`, dazu
+Glossar, `de.js`, `loc:export`. Das neue Schlüsselwort braucht einen Glossareintrag.
+
+**Offen (Owner):** ob die Ranken auf der Gegnerkarte sichtbar sind. Der Brand hat dafür eine Anzeige; ohne sie
+ist der Kreislauf für den Spieler unsichtbar.
+
+---
+
 ## Änderungsprotokoll
 
 
