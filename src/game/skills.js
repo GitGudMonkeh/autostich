@@ -80,10 +80,10 @@ export const FEUER_TIERS = FEUER;
    Das Modul factions/plant.js liest sie über `plantParam`; die vier Hebel liest zusätzlich formations.js. */
 const PFLANZE = {
   // Wachstum
-  aussaat:       [{ growth: 1 }, { growth: 2 }, { growth: 3 }, { growth: 4, second: 1 }],
+  aussaat:       [{ growth: 2 }, { growth: 3 }, { growth: 4 }, { growth: 5, second: 1 }], // §6.26: eine Stufe hoch — der einzige Wachstums-Skill, der schon zahlte, bekommt den kleinsten Schub
   ranken:        [{ growth: 5 }, { growth: 8 }, { growth: 12 }, { growth: 16, chain: true }], // Episch: der einzige Dominoeffekt der Fraktion
   setzlingsbeet: [{ growth: 8, cards: 1 }, { growth: 12, cards: 1 }, { growth: 16, cards: 1 }, { growth: 16, cards: 2 }],
-  lichtung:      [{ extra: 1 }, { extra: 2 }, { extra: 3 }, { extra: 3, perFormation: true }],
+  lichtung:      [{ extra: 2 }, { extra: 3 }, { extra: 4 }, { extra: 4, perFormation: true }], // §6.26: eine Stufe hoch (mechanisch richtig gebaut, maß nur flach)
   halm:          [{ growth: 1 }, { growth: 2 }, { growth: 3 }, { growth: 3, greenToo: 1 }],
   // Hebel — sie ändern, was als Formation erkannt wird (formations.js), und addieren keinen Score
   spalier:       [{ borders: 1 }, { borders: 2 }, { borders: 3 }, { borders: 7 }],
@@ -93,9 +93,13 @@ const PFLANZE = {
   // Score aus grünen Formationen — je Formationstyp einer, dazu die Tiefe der einzelnen Karte
   blaetterdach:  [{ score: 10 }, { score: 15 }, { score: 20 }, { score: 25 }],
   rankgeruest:   [{ score: 30 }, { score: 45 }, { score: 60 }, { score: 80 }],
-  hecke:         [{ score: 30 }, { score: 45 }, { score: 60 }, { score: 80 }],
+  // §6.26: +33 % gegen Rankgerüst — beide Leitern waren nach Formationslänge gleich, aber eine grüne Wiederholung
+  // entsteht seltener als eine grüne Treppe, und der Unterschied ging voll auf die Hecke (§6.17 B).
+  hecke:         [{ score: 40 }, { score: 60 }, { score: 80 }, { score: 105 }],
   windung:       [{ score: 35 }, { score: 50 }, { score: 70 }, { score: 90 }],
-  jahresringe:   [{ per: 10, score: 20 }, { per: 10, score: 30 }, { per: 10, score: 40 }, { per: 10, score: 50, overDouble: true }],
+  // §6.26: Teiler 10 → 15 (−33 %). Er liest Wachstum direkt, also hebt ihn jeder Wachstums-Buff dieser Runde
+  // kostenlos mit; die Skala wird gröber, weil Wachstum reichlicher wird. Die Sätze bleiben.
+  jahresringe:   [{ per: 15, score: 20 }, { per: 15, score: 30 }, { per: 15, score: 40 }, { per: 15, score: 50, overDouble: true }],
   // Kombination
   bluetenlese:   [{ score: 40, growth: 1 }, { score: 60, growth: 1 }, { score: 80, growth: 1 }, { score: 100, growth: 2 }],
 };

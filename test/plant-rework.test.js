@@ -82,11 +82,13 @@ describe("Pflanze — Register und Stufenleitern (§6.7, §6.8)", () => {
       expect(new Set(seen).size, `zwei gleiche Stufen: ${seen[0]}`).toBe(rows.length);
     }
   });
-  it("die Sätze sind nach der Länge des Formationstyps gestaffelt (§6.8)", () => {
+  it("die Sätze sind nach Länge und Häufigkeit des Formationstyps gestaffelt (§6.8, §6.26)", () => {
     // Ein grüner Farbblock wird am längsten, der Wechsel bleibt am kürzesten → je Karte zahlt er am meisten.
     expect(PT.blaetterdach[0].score).toBeLessThan(PT.rankgeruest[0].score);
     expect(PT.rankgeruest[0].score).toBeLessThan(PT.windung[0].score);
-    expect(PT.hecke[0].score).toBe(PT.rankgeruest[0].score);
+    // §6.26: Treppe und Wiederholung sind gleich lang, aber eine grüne Wiederholung entsteht seltener — gemessen
+    // trug Rankgerüst +0,05M und die Hecke −0,40M bei identischer Leiter. Die Hecke steht deshalb darüber.
+    expect(PT.hecke[0].score).toBeGreaterThan(PT.rankgeruest[0].score);
   });
   it("die Texte interpolieren die Tabellen (kein Drift zwischen Regel und Beschreibung)", () => {
     expect(SKILL_DEFS[P.AUSSAAT].desc).toContain(`+${PT.aussaat[0].growth}`);
@@ -266,7 +268,7 @@ describe("Pflanze — Score aus grünen Formationen (§6.8)", () => {
     expect(s.plantBase).toBe(Math.floor(42 / PT.jahresringe[0].per) * PT.jahresringe[0].score); // 41 + 1 Sieg
     const s2 = resolveTrick(scen({ deck, growth: { X1: B + 19 }, ...tier(P.JAHRESRINGE, 3) }), noCrit);
     const g = B + 20;
-    expect(s2.plantBase).toBe(Math.floor((g + (g - B)) / 10) * PT.jahresringe[3].score);
+    expect(s2.plantBase).toBe(Math.floor((g + (g - B)) / PT.jahresringe[3].per) * PT.jahresringe[3].score);
   });
   it("Blütenlese: eine REIN grüne Formation zahlt einmal und lässt alle Karten darin wachsen", () => {
     const s = resolveTrick(scen({ deck: greenRun(), growth: { X1: G }, formations: withRun([0, 1, 2]), ...tier(P.BLUETENLESE, 0) }), noCrit);
