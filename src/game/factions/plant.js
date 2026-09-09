@@ -89,6 +89,11 @@ export function bloomAllIfFullGreen(skills, deck) {
    Meta-Faktoren. `plantFormCount` ist die Zahl, die das Wachstum liest. */
 export const plantFormations = (posForm) => (posForm?.formations || []).filter((f) => Array.isArray(f.members));
 export const plantFormCount = (posForm) => plantFormations(posForm).length;
+/* §6.29 (Owner): Formationen, die Basis-Score zahlen — alle außer den `scoreless` markierten. Bisher gibt es genau
+   eine: die Baumreihe. Sie hält bis zu vierzig blühende Karten, und Hecke wie Blüte-Passiv zahlen JE MITGLIED; damit
+   lief der Multiplikator-Legendäre über die Dichte-Achse des Wurzelgeflechts und maß mono +1079 %, das Doppelte des
+   nächsten Legendären. Multiplikator, Formationszahl und Wachstum bleiben ihr — nur der Score je Karte nicht. */
+export const plantScoreFormations = (posForm) => plantFormations(posForm).filter((f) => !f.scoreless);
 
 /* Blühgewicht einer Karte (§6.20, Owner-Variante B): WIE VIELE grüne Karten sie in einer Formation zählt.
    Grau 0 · grün 1 · blühend PLANT_BLOOM_WEIGHT, +1 je PLANT_BLOOM_WEIGHT_PER_GROWTH Wachstum über der Blüh-Schwelle.
@@ -108,7 +113,7 @@ export function greenWeight(card, growth = 0) {
 export function formationGreenCount(posForm, cardAt, growthOf = () => 0) {
   const seen = new Set();
   let n = 0;
-  for (const f of plantFormations(posForm)) for (const p of f.members) {
+  for (const f of plantScoreFormations(posForm)) for (const p of f.members) {
     if (seen.has(p)) continue;
     seen.add(p);
     const c = cardAt(p);
@@ -191,7 +196,7 @@ export function plantOnTendril(growth, deck, skills, skillTiers,
 function formationScore(skills, skillTiers, { card, posForm, cardAt, growth = 0, growthOf = () => 0 }) {
   let flat = 0;
   if (card && card.green) {
-    for (const f of plantFormations(posForm)) {
+    for (const f of plantScoreFormations(posForm)) {
       const id = SCORE_BY_TYPE[f.type];
       const rate = id ? plantParam(skills, skillTiers, id, "score") : undefined;
       if (!rate) continue;
@@ -218,7 +223,7 @@ function bluetenlese(skills, skillTiers, { posForm, cardAt }) {
   const step = plantParam(skills, skillTiers, P.BLUETENLESE, "growth") || 0;
   const seen = new Set();
   let any = false;
-  for (const f of plantFormations(posForm)) {
+  for (const f of plantScoreFormations(posForm)) {
     if (!f.members.every((p) => { const c = cardAt(p); return c && c.green; })) continue;
     any = true;
     for (const p of f.members) { const c = cardAt(p); if (c) seen.add(c.id); }

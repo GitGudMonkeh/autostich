@@ -86,10 +86,10 @@ const PFLANZE = {
   // §6.26: Ranken greift ins Gegnerdeck (Vorlage: der gestrichene Ausläufer). Die Ernte geht an die SIEGKARTE — der
   // Grund, aus dem der Skill vorher tot war: Wachstum auf Karten, die nicht gewinnen, zahlt nicht.
   ranken:        [{ growth: 2 }, { growth: 3 }, { growth: 4 }, { growth: 6, neighbors: true }],
-  setzlingsbeet: [{ growth: 2 }, { growth: 3 }, { growth: 4 }, { growth: 4, allSegments: true }], // §6.26: aus dem einmaligen Kaltstart wird ein Ort, der jeden Durchlauf wächst
+  setzlingsbeet: [{ growth: 3 }, { growth: 4 }, { growth: 6 }, { growth: 6, allSegments: true }], // §6.26: aus dem einmaligen Kaltstart wird ein Ort, der jeden Durchlauf wächst; §6.29: +50 %
 
-  lichtung:      [{ extra: 2 }, { extra: 3 }, { extra: 4 }, { extra: 4, perFormation: true }], // §6.26: eine Stufe hoch (mechanisch richtig gebaut, maß nur flach)
-  halm:          [{ growth: 1 }, { growth: 2 }, { growth: 3 }, { growth: 4, perFormation: true }], // §6.26: ohne Grau-Schranke — jede Karte wächst; Episch nimmt das Formations-Wachstum eines Siegs mit
+  lichtung:      [{ extra: 3 }, { extra: 5 }, { extra: 7 }, { extra: 7, perFormation: true }], // §6.29: +50 % — in allen sieben Welten schwach, mechanisch richtig gebaut
+  halm:          [{ growth: 2 }, { growth: 3 }, { growth: 4 }, { growth: 6, perFormation: true }], // §6.26: ohne Grau-Schranke — jede Karte wächst; §6.29: +50 %
   // Hebel — sie ändern, was als Formation erkannt wird (formations.js), und addieren keinen Score
   spalier:       [{ borders: 1 }, { borders: 2 }, { borders: 3 }, { borders: 7 }],
   wildwuchs:     [{ jokers: 1 }, { jokers: 2 }, { jokers: 3 }, { jokers: Infinity }],
@@ -99,17 +99,22 @@ const PFLANZE = {
   dickicht:      [{ cap: 4, mult: 1.55 }, { cap: 5, mult: 1.75 }, { cap: 6, mult: 1.95 }, { cap: 8, mult: 2.35 }],
   // §6.26: Verwachsung ersetzt Überwucherung auf SK_PLANT_14 — deren Tor („ab 80 % grünem Feld") lag hinter dem Ziel.
   // Der Zuschlag ist ABSOLUT: der Zwei-Formations-Sieg gewinnt am meisten, und dort liegen 38 % der Siege (§6.21 C).
-  verwachsung:   [{ bonus: 0.25 }, { bonus: 0.5 }, { bonus: 0.75 }, { bonus: 1 }],
+  verwachsung:   [{ bonus: 0.4 }, { bonus: 0.7 }, { bonus: 1 }, { bonus: 1.4 }], // §6.29: +40 %
   // Score aus grünen Formationen — je Formationstyp einer, dazu die Tiefe der einzelnen Karte
-  blaetterdach:  [{ score: 10 }, { score: 15 }, { score: 20 }, { score: 25 }],
-  rankgeruest:   [{ score: 30 }, { score: 45 }, { score: 60 }, { score: 80 }],
+  // §6.29: +50 %. Der Farbblock-Satz stand auf einem Viertel der Hecke, weil ein grüner Block das ganze Segment füllen
+  // kann — der gierige Spieler hielt ihn mono trotzdem nur in 6 % der Läufe. Er bleibt der niedrigste der vier.
+  blaetterdach:  [{ score: 15 }, { score: 22 }, { score: 30 }, { score: 40 }],
+  // §6.29: nur +10 %. Mehr lässt die Staffel nicht zu — die Treppe muss unter dem Wechsel bleiben (kürzerer Lauf zahlt
+  // je Karte mehr) und unter der Hecke (eine grüne Wiederholung entsteht seltener). Rankgerüsts Problem ist ohnehin die
+  // HÄUFIGKEIT einer grünen Treppe, nicht der Satz; der Satz allein holt es nicht.
+  rankgeruest:   [{ score: 33 }, { score: 49 }, { score: 66 }, { score: 88 }],
   // §6.26: +33 % gegen Rankgerüst — beide Leitern waren nach Formationslänge gleich, aber eine grüne Wiederholung
   // entsteht seltener als eine grüne Treppe, und der Unterschied ging voll auf die Hecke (§6.17 B).
   hecke:         [{ score: 40 }, { score: 60 }, { score: 80 }, { score: 105 }],
   windung:       [{ score: 35 }, { score: 50 }, { score: 70 }, { score: 90 }],
-  // §6.26: Teiler 10 → 15 (−33 %). Er liest Wachstum direkt, also hebt ihn jeder Wachstums-Buff dieser Runde
-  // kostenlos mit; die Skala wird gröber, weil Wachstum reichlicher wird. Die Sätze bleiben.
-  jahresringe:   [{ per: 15, score: 20 }, { per: 15, score: 30 }, { per: 15, score: 40 }, { per: 15, score: 50, overDouble: true }],
+  // §6.26 hob den Teiler 10 → 15 (−33 %), weil Wachstum reichlicher wurde. Gemessen war das zu viel: Haltequote 47 %,
+  // Wirkung −0 %, im Tripel −11 %. §6.29 nimmt die Hälfte zurück (Teiler 12) und hebt die Sätze um ein Viertel.
+  jahresringe:   [{ per: 12, score: 25 }, { per: 12, score: 35 }, { per: 12, score: 45 }, { per: 12, score: 60, overDouble: true }],
   // Kombination
   bluetenlese:   [{ score: 40, growth: 1 }, { score: 60, growth: 1 }, { score: 80, growth: 1 }, { score: 100, growth: 2 }],
 };
@@ -368,7 +373,7 @@ export const SKILL_DEFS = {
   SK_PLANT_L02: { id: "SK_PLANT_L02", name: "Wurzelgeflecht", archetype: "plant", legendary: true, keywords: ["bloom", "formation"],
     desc: `Jede blühende Karte zählt in jeder Formation ihres Segments mit.${C.WURZELGEFLECHT_FACTOR_SCALE < 1 ? ` Sie selbst bekommt ${pct(C.WURZELGEFLECHT_FACTOR_SCALE)} % des Formations-Bonus.` : ""}` },
   SK_PLANT_L03: { id: "SK_PLANT_L03", name: "Baumreihe", archetype: "plant", legendary: true, keywords: ["bloom", "formation"],
-    desc: `Blühende Karten bilden eine positionsfreie Wiederholung, egal wo sie liegen; sie zahlt ${pct(C.BAUMREIHE_FACTOR_SCALE)} % des Wiederholungs-Bonus. Jede darf zugleich in einer anderen Formation zählen.` },
+    desc: `Blühende Karten bilden eine positionsfreie Wiederholung, egal wo sie liegen; sie zahlt ${pct(C.BAUMREIHE_FACTOR_SCALE)} % des Wiederholungs-Bonus und zählt als Formation. Basis-Score je Karte gibt sie nicht. Jede darf zugleich in einer anderen Formation zählen.` },
   SK_PLANT_L04: { id: "SK_PLANT_L04", name: "Ewiger Frühling", archetype: "plant", legendary: true, keywords: ["green", "bloom"],
     desc: `Blühende Karten kämpfen mit +${C.EWIGER_FRUEHLING_BLOOM_VALUE} Wert, und ein Sieg mit einer blühenden Karte zählt +${pct(C.EWIGER_FRUEHLING_FORM_MULT)} % je Formation an ihrer Position. Ist das Feld vollständig grün, sind alle deine Karten blühend.` },
 

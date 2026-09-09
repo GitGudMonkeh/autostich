@@ -413,7 +413,9 @@ export function computeFormations(order, deck, roles = {}, _perks = [], skills =
       // §6.12: die Reihe zahlt den Wiederholungs-Bonus zum Anteil BAUMREIHE_FACTOR_SCALE (1 = wie ein echter Lauf).
       const factor = 1 + (wiedFactor(idx + 1) - 1) * BAUMREIHE_FACTOR_SCALE;
       if (factor > 1) out[pos].mult *= factor;
-      out[pos].formations.push({ type: "wiederholung", ordinal: idx + 1, factor, members: blooms });
+      // §6.29 (Owner): `scoreless` — die Reihe trägt ihren Faktor und zählt als Formation, zahlt aber keinen
+      // Basis-Score je Mitglied. Sonst tut die Multiplikator-Achse die Arbeit der Dichte-Achse (plant.js).
+      out[pos].formations.push({ type: "wiederholung", ordinal: idx + 1, factor, members: blooms, scoreless: true });
     });
   }
   /* Wurzelgeflecht (Pflanze-Legendär, §6.11): JEDE blühende Karte zählt in jeder Formation ihres Segments mit — sie

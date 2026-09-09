@@ -7341,6 +7341,84 @@ die davon profitieren müssen und designen wie").
 
 ---
 
+### 6.29 Pflanze tarieren: Baumreihe gebremst, sieben Skills angehoben (2026-09-09, Owner) — UNGEMESSEN
+
+Owner nach der Bestandsaufnahme (§8): „Baumreihe definitiv, Wurzelgeflecht ein bisschen nerfen. danach diese skills
+alle ein bisschen buffen und dann sieht pflanze ja ganz rund aus."
+
+#### A · Warum die Baumreihe nicht mit ihrer Schraube zu bremsen war
+
+Gemessen (§8, mono / Paar / Tripel): **Baumreihe +1079 / +953 / +522 %** — das Doppelte des nächsten Legendären
+(Wurzelgeflecht +591 %) und weit über dem Blitz-Band (+383 bis +553 %). §6.12 hatte dafür schon einen Regler gebaut,
+`BAUMREIHE_FACTOR_SCALE`, und ihn von 1 auf 0,15 gedreht. Es hat nicht gereicht — und der Grund steht in der Mechanik:
+
+Die Reihe zahlte auf **vier Kanälen** gleichzeitig, und der Regler fasst nur den ersten an.
+
+| Kanal | Was er tut | Vom Regler erfasst |
+| --- | --- | --- |
+| 1 · eigener Faktor | `1 + (wiedFactor(n) − 1) × 0,15` auf jede blühende Position | **ja** |
+| 2 · Überlappung | die Reihe ist eine Formation MEHR → `OVERLAP_BONUS` ×1,5 / ×2 / ×3 | nein |
+| 3 · Wachstum | +1 Wachstum je Formation je Sieg → schneller blühen → längere Reihe (Rückkopplung) | nein |
+| 4 · **Mitglieder** | die Reihe hält bis zu 40 blühende Karten, und Hecke wie Blüte-Passiv zahlen **je Mitglied** | nein |
+
+Kanal 4 ist der Motor. Die Hecke liest den Typ *Wiederholung* — und die Reihe IST eine Wiederholung, deren
+Mitgliederliste das ganze Brett sein kann. Ein Sieg zahlte damit `Mitglieder × Blühgewicht × Heckensatz`; bei
+vollgrünem Feld (Ewiger Frühling) sind das 40 × ≥3 × 105.
+
+Damit tat die **Multiplikator-Achse die Arbeit der Dichte-Achse** — und zwar besser als das Wurzelgeflecht, dem sie
+laut §6.11 gehört.
+
+#### B · Der Schnitt (Owner-Entscheid a)
+
+Die Reihe behält Faktor (Kanal 1), Formationszahl (Kanal 2) und Wachstum (Kanal 3). **Ihre Mitglieder zahlen keinen
+Basis-Score mehr** (Kanal 4). Ein Feld `scoreless: true` auf dem Formations-Eintrag, und `plantScoreFormations`
+filtert es aus den drei Score-Pfaden (`formationScore`, `formationGreenCount`, `bluetenlese`); `plantFormCount`
+und der Überlappungsbonus lesen weiter alles.
+
+Gegengeprobe am Wächter (Naht absichtlich geöffnet, 8 Karten, 4 blühend): ein Stich zahlt **720 statt 240** Basis-Score.
+Auf einem echten Brett mit 20–40 blühenden Karten ist der Faktor entsprechend größer.
+
+`BAUMREIHE_FACTOR_SCALE` bleibt bei 0,15 — jetzt ist es der saubere Regler für ihre Größe, weil er den einzigen
+verbliebenen Score-Kanal fasst. Erst messen, dann drehen.
+
+#### C · Wurzelgeflecht
+
+`WURZELGEFLECHT_FACTOR_SCALE` **1 → 0,85**. Die Historie ist wichtig: §6.12 stellte 0,7 ein (+164 → +75 %), §6.15
+drehte wieder auf 1 (+63 → +100 %) — beides richtig für den damaligen Stand. Heute misst der Skill +591 %. „Ein
+bisschen nerfen" ist deshalb die halbe Strecke zurück, nicht die ganze.
+
+#### D · Die sieben angehobenen Skills
+
+Alle sieben aus dem unteren Ende der Pflanze-Tabelle in §8. Die Sätze sind Startwerte, keiner ist gemessen.
+
+| Skill | gemessen (mono · Paar · Tripel) | alt | neu |
+| --- | --- | --- | --- |
+| Blätterdach | Halte 6 % · −1 % · +1 % | 10/15/20/25 | **15/22/30/40** |
+| Rankgerüst | −0 % · +1 % · −3 % | 30/45/60/80 | **33/49/66/88** |
+| Verwachsung | +1 % · −2 % · −1 % | 0,25/0,5/0,75/1 | **0,4/0,7/1,0/1,4** |
+| Lichtung | in allen sieben Welten schwach | 2/3/4/4 | **3/5/7/7** |
+| Jahresringe | −0 % · +1 % · −11 % | Teiler 15, 20/30/40/50 | **Teiler 12, 25/35/45/60** |
+| Zäher Halm | −2 % · −3 % · −10 % | 1/2/3/4 | **2/3/4/6** |
+| Setzlingsbeet | −1 % · −3 % · −15 % | 2/3/4/4 | **3/4/6/6** |
+
+Zwei Einschränkungen, die der Satz allein nicht auflöst:
+
+- **Rankgerüst durfte nur +10 %.** Die vier Score-Sätze sind nach Formationstyp gestaffelt (Farbblock < Treppe <
+  Wechsel, Hecke über der Treppe) — ein Wächter hält das, und mein erster Wurf (40/60/80/110) hat ihn zu Recht
+  gerissen. Rankgerüsts eigentliches Problem ist ohnehin die **Häufigkeit** einer grünen Treppe, nicht der Satz.
+- **Vier der sieben sind Wachstums-Skills** (Lichtung, Zäher Halm, Setzlingsbeet, halb auch Jahresringe), und die
+  Wachstums-Achse ist als ganze flach: Aussaat misst +2 %, Ranken −2 %. Wachstum ist seit dem Fraktions-Kaltstart
+  nicht knapp, und über der Blüh-Schwelle zahlt es nur noch über `PLANT_BLOOM_WEIGHT_PER_GROWTH` (40 Wachstum = +1
+  Gewicht). Der systemische Hebel wäre dieser Teiler, nicht sieben Einzelsätze — **nicht angefasst**, weil er die
+  ganze Fraktion und beide Legendären mithebt und das eine eigene Entscheidung ist.
+
+#### E · Was offen bleibt
+
+Alles hier ist ungemessen. Insbesondere: Heckes gemessene +105 % mono stammen zum Teil aus genau dem Kanal, der
+jetzt zu ist — die Staffel der vier Score-Skills lässt sich erst nach einer neuen Messung beurteilen.
+
+---
+
 ### 5.30 Die Eis-Skills auf dem neuen Motor (2026-09-09) — gemessen, nichts umgesetzt
 
 **Owner:** „und dann schauen wir uns alle skills an die davon profitieren müssen und designen wie."
@@ -7740,3 +7818,4 @@ leichtesten haben.
 | 2026-09-09 | Welten-Messung nach §5.31 und die Korrektur (§5.32). Drei der vier Umbauten wirken: **Verdichtung** mono −10 → +29 %, **Packeis** im Paar −8 → +37 % (der bestellte Spiegel), **Anfrieren** Haltequote 19 → 56 % bei weiterhin ~0 Wirkung. **Abbruchkante ist gefallen** (Haltequote 68 → 20 %) — und das war mein Konstruktionsfehler, kein Rauschen: die Schwellen 24 und 38 liegen ZWISCHEN den Sprossen der Leiter (24 zählt wie 18 zur vierten, 38 wie 30 zur fünften). Auszahlung je Durchlauf und Punkt Einkommen: 12 → 4,40 · 18 → 4,80 · **24 → 4,27** · 30 → 5,75 · **38 → 5,46** · 40 → 7,88 · 60 → 10,78. Stufe 2 zahlte damit weniger als gar kein Skill und Episch weniger als Stufe 3; der gierige Spieler hat das korrekt erkannt. Korrigiert auf **18/27/40/60** (die Sprossen selbst): +9/+34/+79/+145 %, monoton. Neuer Wächter hält beide Bedingungen: jede Schwelle liegt auf einer Sprosse UND die Auszahlung steigt mit der Stufe. Offen: Eis mono fiel in der Messung 409,8 → 224,2M, Hauptposten ist Packeis' Seitenwechsel (im Cluster hat ein Gletscher kaum offene Nachbarn) — die Höhe dieses Preises ist noch nicht tariert, und die Welten-Messung nach der Korrektur steht aus. |
 | 2026-09-09 | Eis-Passiv-Text korrigiert (Owner-Befund: „wir haben keinen Tausch, wir haben kein slot limit mehr"). `skill.passive.ice` beschrieb noch zwei Regeln, die es seit dem exp-Skill-Rework nicht mehr gibt: das Einfrieren „auch wenn du bei vollen Skill-Slots tauschst" und „mehr Gletscher als Skill-Slots". Slots sind unbegrenzt (`SKILL_SLOT_LIMIT = 99`, nur eine Dev-Run-Regel begrenzt), damit gibt es im normalen Lauf keinen Tausch — der Glossar-Eintrag *Skill-Slot* sagte das schon, der Passiv-Text daneben das Gegenteil. Text in de/en/es neu; nur Wortlaut, keine Mechanik. Die dritte genannte Regel, der Ablehn-Gletscher ab `DECLINE_MIN_SKILLS = 4`, LEBT dagegen noch im Code (`reducer.js` DECLINE_SKILL) — nur ihre Begründung („Ausgleich für volle Slots") ist entfallen; die Kommentare dort sagen das jetzt, die Regel selbst ist eine offene Owner-Frage. |
 | 2026-09-09 | Der Ablehn-Gletscher ist gestrichen (§5.33, Owner: „fliegt auch raus"). Ab vier gehaltenen Eis-Skills fror auch ein abgelehntes Skill-Angebot einen Gletscher ein — der Ausgleich dafür, dass bei vollen Skill-Slots kein weiterer Eis-Skill mehr passte. Slots sind seit dem exp-Skill-Rework unbegrenzt, damit ist der Ausgleich ohne Gegenstand. Raus: `DECLINE_MIN_SKILLS`, der Eis-Zweig in DECLINE_SKILL und das geparkte Perk-Angebot (`pendingPerkOffer`), das nur diesen einen Umweg bediente. Gletscher kommen jetzt ausschließlich aus Eis-Picks; Ablehnen zahlt für alle Fraktionen gleich (Münzen + Perk-Ersatz). Der Passiv-Satz dazu ist aus de/en/es raus, der Wächter dreht sich um (drei Fälle: 3, 4 und 6 Eis-Skills, alle ohne Gletscher). Wirkung auf die Eis-Stärke UNGEMESSEN — der gierige Spieler lehnt selten ab, aber ein Mono-Eis-Build verliert damit eine Gletscher-Quelle. |
+| 2026-09-09 | Pflanze tariert (§6.29, Owner: „Baumreihe definitv, Wurzelgeflecht ein bisschen nerfen. danach diese skills alle ein bisschen buffen"). **Baumreihe** stand mono bei +1079 %, dem Doppelten des nächsten Legendären — und ihre Schraube aus §6.12 konnte das nicht fassen: sie zahlte auf vier Kanälen, der Regler fasst nur einen. Der Motor ist Kanal vier, die MITGLIEDERLISTE: die Reihe ist eine Wiederholung mit bis zu 40 blühenden Karten, und Hecke wie Blüte-Passiv zahlen je Mitglied — damit tat die Multiplikator-Achse die Arbeit der Dichte-Achse des Wurzelgeflechts. Owner-Entscheid a: die Reihe behält Faktor, Formationszahl und Wachstum, ihre Mitglieder zahlen keinen Basis-Score mehr (`scoreless` + `plantScoreFormations`). Gegenprobe am neuen Wächter: mit offener Naht zahlt ein Stich 720 statt 240. **Wurzelgeflecht** (+591 %) `WURZELGEFLECHT_FACTOR_SCALE` 1 → 0,85 — die halbe Strecke zurück, nicht die ganze, weil §6.15 die 0,7 schon einmal als zu hart verworfen hatte. **Sieben Skills angehoben**: Blätterdach 10→15 (+50 %), Rankgerüst 30→33 (nur +10 % — mehr lässt die Staffel der vier Score-Sätze nicht zu, ein Wächter hat meinen ersten Wurf zu Recht gerissen), Verwachsung +40 %, Lichtung/Zäher Halm/Setzlingsbeet +50 %, Jahresringe Teiler 15→12 und Sätze +25 %. Offen benannt: vier der sieben sind Wachstums-Skills, und die Achse ist als ganze flach — der systemische Hebel wäre `PLANT_BLOOM_WEIGHT_PER_GROWTH`, nicht sieben Einzelsätze; nicht angefasst, weil er die ganze Fraktion mithebt. ALLES UNGEMESSEN. |

@@ -1,7 +1,8 @@
 import { describe, it, expect } from "vitest";
 import * as C from "../src/game/constants.js";
 import { SKILL_DEFS, PFLANZE_TIERS as PT, ARCHETYPE_ORDER, SKILL_TIER_COUNT } from "../src/game/skills.js";
-import { P, plantStage, greenCount, applyGrowth, growthOnWin, beetGains, plantValueBonus, plantFormMult, greenWeight } from "../src/game/factions/plant.js";
+import { P, plantStage, greenCount, applyGrowth, growthOnWin, beetGains, plantValueBonus, plantFormMult, greenWeight,
+  plantOnWin, plantFormCount, plantScoreFormations } from "../src/game/factions/plant.js";
 import { resolveTrick } from "../src/game/engine.js";
 import { initialState, reducer } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
@@ -381,6 +382,28 @@ describe("Pflanze — die vier Legendären (§6.5)", () => {
     const w = f[0].formations.find((x) => x.type === "wiederholung");
     expect(w.members).toEqual([0, 4]);
     expect(f[4].mult).toBeGreaterThan(1); // die zweite blühende Karte trägt den Wiederholungs-Faktor
+  });
+
+  /* §6.29 (Owner): die Reihe zahlt keinen Basis-Score je Mitglied. Gemessen stand Baumreihe mono bei +1079 %, dem
+     Doppelten des nächsten Legendären — weil ihre Mitgliederliste bis zu vierzig blühende Karten hält und die Hecke
+     (sie liest die Wiederholung) wie der Blüte-Passiv JE MITGLIED zahlen. Damit tat die Multiplikator-Achse die Arbeit
+     der Dichte-Achse. Der Wächter hält beide Seiten des Schnitts: kein Score je Mitglied, aber Faktor und
+     Formationszahl bleiben — sonst wäre der Skill nicht genervt, sondern gestrichen. */
+  it("Baumreihe: die Reihe zahlt keinen Score je Mitglied, behält aber Faktor und Formationszahl", () => {
+    // Vier blühende Karten, alle grün, verteilt über zwei Segmente → ohne die Reihe steht an Platz 0 KEINE Wiederholung.
+    const deck = Array.from({ length: 8 }, (_, i) => ({ id: `C${i}`, suit: ["R", "B"][i % 2], value: i + 2,
+      bloom: i % 2 === 0, green: i % 2 === 0 }));
+    const growth = Object.fromEntries(deck.map((c) => [c.id, c.bloom ? 80 : 0]));
+    const skills = [P.BAUMREIHE, P.HECKE];
+    const posForm = forms(deck, skills)[0];
+    const reihe = posForm.formations.find((f) => f.type === "wiederholung");
+    expect(reihe.members.length).toBe(4);                 // die Reihe hält alle vier blühenden Karten
+    // Zuerst die Wirkung: die Hecke liest die Wiederholung, und die Reihe ist hier die einzige. Sie darf nichts tragen.
+    const run = (sk) => plantOnWin(growth, deck, sk, {}, { pos: 0, order: ord(8), posForm, cardId: "C0" }).flat;
+    expect(run(skills)).toBe(run([P.BAUMREIHE]));         // Hecke dazu ändert nichts → kein Score je Mitglied
+    // Und die Gegenseite des Handels: Formationszahl (Wachstum, Überlappung) und Faktor bleiben ihr.
+    expect(plantFormCount(posForm)).toBeGreaterThan(0);
+    expect(plantScoreFormations(posForm)).not.toContain(reihe);
   });
   it("Wurzelgeflecht: JEDE blühende Karte zählt in jeder Formation ihres Segments mit", () => {
     // Treppe 3-5-7 aus grünen Karten; die blühende Karte auf Platz 3 bricht sie (7 → 7) und ist NICHT ihr Mitglied.
