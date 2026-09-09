@@ -544,8 +544,8 @@ export default {
 
   /* ---- Münz-Ökonomie (docs/muenz-oekonomie.md) ---- */
   "hud.coins": "Münzen",
-  "coins.payout.label": "{n} Siege",
-  "coins.payout.title": "Münzen aus den Siegen dieses Durchlaufs",
+  "coins.payout.label": "{n} Formationen",
+  "coins.payout.title": "Münzen aus der Aufstellung dieses Durchlaufs",
   "focus.title": "Fokus rufen",
   "focus.hint": "Öffnet sofort eine dritte Tür mit drei Skills dieser Fraktion.",
   "focus.tap": "Ein Tap wählt und bezahlt.",

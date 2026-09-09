@@ -576,8 +576,8 @@ export default {
 
   /* ---- Coin economy (docs/muenz-oekonomie.md) ---- */
   "hud.coins": "Coins",
-  "coins.payout.label": "{n} wins",
-  "coins.payout.title": "Coins from this cycle's wins",
+  "coins.payout.label": "{n} formations",
+  "coins.payout.title": "Coins from this cycle's placement",
   "focus.title": "Call a focus",
   "focus.hint": "Opens a third door right away, with three skills of that faction.",
   "focus.tap": "One tap picks and pays.",
