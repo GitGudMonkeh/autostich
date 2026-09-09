@@ -5032,9 +5032,36 @@ Beide sind von „schadet" auf „wirkungslos" gestiegen — mehr nicht. Das dec
 bestätigt dessen Kern: die Ursache liegt in der Währung, nicht im Durchfluss. **Dauerfrost braucht damit doch eine
 eigene Designrunde** (D1 war „erst messen, dann entscheiden" — gemessen ist).
 
-Nebenbefund derselben Ablation, unberührt gelassen: **Packeis −12 %** und **Abbruchkante −13 %** stehen jetzt auf
-„schadet", Gletscherzunge · Anfrieren · Eisbrücke · Verdichtung auf „tot". Der Boden der Fraktion ist breiter
-geworden, nicht schmaler.
+#### Methodik-Korrektur: ein gieriger Lauf reicht nicht
+
+Die erste Fassung dieses Abschnitts nannte eine Liste toter Skills aus **einem** Lauf, gemessen am Stand **vor** der
+Nachtarierung (Bruchwucht 60, Flut 3). Beides war falsch — und die Annahme dahinter, „die Bruchwucht skaliert alle
+Gletscher-Skills gleich, also bleibt die Rangfolge", ebenfalls: mit anderer Wucht wählt die gierige Politik andere
+Builds, und damit kippen die Nachbarschaftseffekte.
+
+Zwei Läufe am **Endstand** (Bruchwucht 30, Flut 1, offener Zug), Seeds 701 und 913, zeigen wie weit die gierige
+Median-Δ zwischen Seeds schwankt:
+
+| Skill | Median-Δ 701 | Median-Δ 913 | Lift 701 | Lift 913 |
+| --- | --- | --- | --- | --- |
+| Dauerfrost | +1 % („tot") | **+32 % („stark")** | 0,83 | 0,97 |
+| Gletscherzunge | +15 % | −1 % | 0,80 | 0,73 |
+| Schneetreiben | −13 % | −0 % | 0,81 | 0,70 |
+| Frostbund | −13 % | +1 % | 0,72 | 0,65 |
+| Verdichtung | −5 % | +0 % | 0,98 | 0,63 |
+
+**Die gierige Median-Δ ist zwischen Seeds nicht belastbar** (Dauerfrost springt von „tot" auf „stark"). Der **Lift**
+aus den Explore-Läufen ist es eher — er hat 500 statt 90 Läufe hinter sich. Wo beide Metriken über beide Seeds
+zusammenfallen, ist der Befund echt.
+
+**Belastbar schwach (Lift < 1 in beiden Läufen):** Frostbund (0,72 / 0,65) · Gletscherzunge (0,80 / 0,73) ·
+Schneetreiben (0,81 / 0,70) · Verdichtung (0,98 / 0,63).
+
+**Eigener Fall — Abbruchkante:** Haltequote 97 % in beiden Läufen, Median-Δ −4 % und −1 %. Sie wird immer genommen
+und tut nichts; das ist ein anderes Problem als „zu schwach, wird gemieden".
+
+**Regel für kommende Runden:** eine Liste, gegen die designt wird, braucht mindestens zwei Seeds am aktuellen
+Tarierungsstand. Ein Lauf taugt zur Richtungsanzeige, nicht zur Entscheidungsgrundlage.
 
 **Nicht nachgemessen:** ob die Eiszeit mit Flut 1 im **fraktionsübergreifenden** Legendär-Band der übrigen elf
 liegt. Innerhalb Eis sind die drei stimmig (Lift 1,34 / 1,36 / 1,35); der Quervergleich (`--mode legendaries`)
