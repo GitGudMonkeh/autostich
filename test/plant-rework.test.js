@@ -5,7 +5,7 @@ import { P, plantStage, greenCount, applyGrowth, growthOnWin, beetGains, plantVa
 import { resolveTrick } from "../src/game/engine.js";
 import { initialState, reducer } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
-import { computeFormations, SEGMENT_SIZE, spalierOpenBorders, openBorderInfo } from "../src/game/formations.js";
+import { computeFormations, SEGMENT_SIZE, spalierOpenBorders, openBorderInfo, FARBBLOCK_BASE, ESKALATION_STEP, OVERLAP_BONUS } from "../src/game/formations.js";
 
 /* ============================================================
    PFLANZE (exp skill rework, docs/skill-rework.md §6) — Passiv, die 15 Skills, die vier Formationshebel und die vier
@@ -56,8 +56,8 @@ describe("Pflanze — Register und Stufenleitern (§6.7, §6.8)", () => {
     expect(byId).toEqual({
       SK_PLANT_03: "Spalier", SK_PLANT_04: "Jahresringe", SK_PLANT_05: "Aussaat", SK_PLANT_06: "Wildwuchs",
       SK_PLANT_07: "Setzlingsbeet", SK_PLANT_08: "Zäher Halm", SK_PLANT_09: "Ranken", SK_PLANT_10: "Hecke",
-      SK_PLANT_11: "Windung", SK_PLANT_12: "Lichtung", SK_PLANT_13: "Blätterdach", SK_PLANT_14: "Überwucherung",
-      SK_PLANT_15: "Lücke", SK_PLANT_16: "Rankgerüst", SK_PLANT_17: "Blütenlese",
+      SK_PLANT_11: "Windung", SK_PLANT_12: "Lichtung", SK_PLANT_13: "Blätterdach", SK_PLANT_14: "Verwachsung",
+      SK_PLANT_15: "Dickicht", SK_PLANT_16: "Rankgerüst", SK_PLANT_17: "Blütenlese",
       SK_PLANT_L02: "Wurzelgeflecht", SK_PLANT_L03: "Baumreihe", SK_PLANT_L04: "Ewiger Frühling",
     });
   });
@@ -67,16 +67,16 @@ describe("Pflanze — Register und Stufenleitern (§6.7, §6.8)", () => {
       expect(s.trimGrowth, `${s.id} trägt noch die Trimm-Klausel`).toBeUndefined();
     }
   });
-  it("Leitern steigen bzw. Schwellen fallen mit der Stufe, keine zwei Stufen sind gleich (§1)", () => {
+  it("Leitern steigen mit der Stufe, keine zwei Stufen sind gleich (§1)", () => {
+    // §6.26: die Fraktion hat keine fallende Schwelle mehr — Überwucherungs `field` ist mit ihr gestrichen.
     const asc = (rows, key) => rows.every((r, i) => i === 0 || r[key] >= rows[i - 1][key]);
-    const desc = (rows, key) => rows.every((r, i) => i === 0 || r[key] <= rows[i - 1][key]);
     for (const k of ["aussaat", "ranken", "halm", "bluetenlese"]) expect(asc(PT[k], "growth"), k).toBe(true);
     for (const k of ["blaetterdach", "rankgeruest", "hecke", "windung", "jahresringe", "bluetenlese"]) expect(asc(PT[k], "score"), k).toBe(true);
     expect(asc(PT.spalier, "borders")).toBe(true);
     expect(asc(PT.wildwuchs, "jokers")).toBe(true);
-    expect(asc(PT.luecke, "gaps")).toBe(true);
+    expect(asc(PT.dickicht, "cap")).toBe(true);
+    expect(asc(PT.verwachsung, "bonus")).toBe(true);
     expect(asc(PT.lichtung, "extra")).toBe(true);
-    expect(desc(PT.ueberwucherung, "field")).toBe(true);
     for (const rows of Object.values(PT)) {
       const seen = rows.map((r) => JSON.stringify(r));
       expect(new Set(seen).size, `zwei gleiche Stufen: ${seen[0]}`).toBe(rows.length);
@@ -95,7 +95,9 @@ describe("Pflanze — Register und Stufenleitern (§6.7, §6.8)", () => {
     // §6.20: das Blühgewicht gehört der Karte, nicht dem Skill — die Score-Skills nennen es NICHT.
     for (const t of [0, 1, 2, 3]) expect(SKILL_DEFS[P.BLAETTERDACH].descTiers[t]).not.toContain("blühende");
     for (const rows of [PT.blaetterdach, PT.rankgeruest, PT.hecke, PT.windung]) for (const r of rows) expect(r.bloom).toBeUndefined();
-    expect(SKILL_DEFS[P.UEBERWUCHERUNG].desc).toContain(`Ab ${Math.round(PT.ueberwucherung[0].field * 100)} %`);
+    expect(SKILL_DEFS[P.VERWACHSUNG].desc).toContain(`um ${String(PT.verwachsung[0].bonus).replace(".", ",")} höher`);
+    // §6.26: `mult` muss der Faktor sein, den `cap` erzeugt — sonst driften Skilltext und Motor auseinander.
+    for (const r of PT.dickicht) expect(r.mult).toBeCloseTo(FARBBLOCK_BASE + (r.cap - 3) * ESKALATION_STEP, 5);
     expect(SKILL_DEFS[P.JAHRESRINGE].descTiers[3]).toContain(`über ${B}`);
   });
 });
@@ -333,32 +335,28 @@ describe("Pflanze — die vier Formationshebel (§6.7, formations.js)", () => {
     expect(hasType(f, 0, "wiederholung")).toBe(true);
     expect(f[0].formations.find((x) => x.type === "wiederholung").members).toEqual([0, 1, 2]);
   });
-  it("Lücke lässt einen grünen Lauf eine fremde Karte überspringen und meldet sie", () => {
-    const deck = [
-      { id: "A", suit: "R", value: 5, green: true },
-      { id: "F", suit: "B", value: 5 },
-      { id: "B", suit: "R", value: 5, green: true },
-      { id: "C", suit: "R", value: 5, green: true },
-    ];
-    expect(hasType(forms(deck, [], null), 0, "farbblock")).toBe(false);
-    const f = forms(deck, [P.LUECKE], bag(P.LUECKE, 0));
-    const fb = f[0].formations.find((x) => x.type === "farbblock");
-    expect(fb.members).toEqual([0, 2, 3]);
-    expect(fb.gapped).toEqual([1]);
+  it("Dickicht hebt den eingefrorenen Faktor des grünen Farbblocks (§6.26)", () => {
+    // Fünf grüne Karten einer Farbe: an Position 4 steht die Ordinalzahl 5, ohne Skill gedeckelt bei
+    // PLANT_GREEN_FARBBLOCK_CAP = 3 → der Faktor bleibt auf FARBBLOCK_BASE stehen, egal wie lang der Block wird.
+    const deck = Array.from({ length: 5 }, (_, i) => ({ id: `G${i}`, suit: "R", value: 5, green: true }));
+    const factorAt4 = (skills, plant) => forms(deck, skills, plant)[4].formations.find((x) => x.type === "farbblock").factor;
+    expect(factorAt4([], null)).toBeCloseTo(FARBBLOCK_BASE, 5);
+    expect(factorAt4([P.DICKICHT], bag(P.DICKICHT, 0))).toBeCloseTo(PT.dickicht[0].mult, 5);
+    // Steht der Deckel über der Blocklänge, eskaliert der Block voll — wie ein nicht-grüner.
+    expect(factorAt4([P.DICKICHT], bag(P.DICKICHT, 3))).toBeCloseTo(FARBBLOCK_BASE + 2 * ESKALATION_STEP, 5);
+    // Der Deckel wird nur GEHOBEN: ein nicht-grüner Block eskaliert weiter ungebremst.
+    const grey = deck.map((c) => ({ ...c, green: false }));
+    expect(forms(grey, [], null)[4].formations.find((x) => x.type === "farbblock").factor)
+      .toBeCloseTo(FARBBLOCK_BASE + 2 * ESKALATION_STEP, 5);
   });
-  it("Überwucherung senkt die Mindestlänge REIN grüner Formationen, nie unter zwei", () => {
-    const deck = [
-      { id: "A", suit: "R", value: 5, green: true },
-      { id: "B", suit: "R", value: 5, green: true },
-      { id: "C", suit: "Y", value: 9 },
-      { id: "D", suit: "Y", value: 3 },
-    ];
-    expect(hasType(forms(deck, [], null), 0, "farbblock")).toBe(false); // Farbblock erst ab 3
-    const f = forms(deck, [P.UEBERWUCHERUNG], bag(P.UEBERWUCHERUNG, 2)); // 50 % Feld grün → Schwelle erreicht
-    expect(hasType(f, 0, "farbblock")).toBe(true);
-    expect(f[0].formations.find((x) => x.type === "farbblock").members).toEqual([0, 1]);
-    // unter der Feldschwelle bleibt alles beim Alten
-    expect(hasType(forms(deck, [P.UEBERWUCHERUNG], bag(P.UEBERWUCHERUNG, 0)), 0, "farbblock")).toBe(false);
+  it("Verwachsung hebt den Überlappungsbonus — absolut, nicht prozentual (§6.26)", () => {
+    // Drei Karten gleicher Farbe UND gleichen Werts: an jeder Position liegen Farbblock und Wiederholung → zwei
+    // Formationen, also greift OVERLAP_BONUS[2].
+    const deck = Array.from({ length: 3 }, (_, i) => ({ id: `S${i}`, suit: "R", value: 5 }));
+    expect(forms(deck, [], null)[0].formations).toHaveLength(2);
+    const base = forms(deck, [], null)[0].mult;
+    const boosted = forms(deck, [P.VERWACHSUNG], bag(P.VERWACHSUNG, 0))[0].mult;
+    expect(boosted / base).toBeCloseTo((OVERLAP_BONUS[2] + PT.verwachsung[0].bonus) / OVERLAP_BONUS[2], 5);
   });
 });
 

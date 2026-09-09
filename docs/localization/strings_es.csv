@@ -469,20 +469,20 @@ Pruning: replacing the skill permanently grants +NaN% root/bloom score (up to +N
 "ability.SK_PLANT_13.desc.2","i18n","Ein Sieg in einem grünen Farbblock gibt +20 Basis-Score je grüner Karte darin.","","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "ability.SK_PLANT_13.desc.3","i18n","Ein Sieg in einem grünen Farbblock gibt +25 Basis-Score je grüner Karte darin.","","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "ability.SK_PLANT_13.name","i18n","Blätterdach","Dosel","Canopy","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
-"ability.SK_PLANT_14.desc","i18n","Ab 80 % grünem Feld entstehen grüne Formationen mit einer Karte weniger, mindestens aber ab zwei Karten.","Cuando el campo está verde en un NaN % o más, todos los bloques de palo dan +undefined de factor y la floración cuenta el doble.","Once the field is NaN% green or more, all suit blocks give +undefined factor and bloom counts double.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
-"ability.SK_PLANT_14.desc.0","i18n","Ab 80 % grünem Feld entstehen grüne Formationen mit einer Karte weniger, mindestens aber ab zwei Karten.","","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
-"ability.SK_PLANT_14.desc.1","i18n","Ab 65 % grünem Feld entstehen grüne Formationen mit einer Karte weniger, mindestens aber ab zwei Karten.","","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
-"ability.SK_PLANT_14.desc.2","i18n","Ab 50 % grünem Feld entstehen grüne Formationen mit einer Karte weniger, mindestens aber ab zwei Karten.","","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
-"ability.SK_PLANT_14.desc.3","i18n","Ab 35 % grünem Feld entstehen grüne Formationen mit zwei Karten weniger, mindestens aber ab zwei Karten.","","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
-"ability.SK_PLANT_14.name","i18n","Überwucherung","Invasión","Overgrowth","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
-"ability.SK_PLANT_15.desc","i18n","Ein Lauf aus grünen Karten darf eine fremde Karte überspringen.","Cuando una carta verde gana, coloniza la carta rival más baja. Si vences a una carta colonizada, cosechas +undefined de crecimiento.
+"ability.SK_PLANT_14.desc","i18n","Mehrere Formationen an deiner Siegposition: ihr Überlappungsbonus ist um 0,25 höher.","Cuando el campo está verde en un NaN % o más, todos los bloques de palo dan +undefined de factor y la floración cuenta el doble.","Once the field is NaN% green or more, all suit blocks give +undefined factor and bloom counts double.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
+"ability.SK_PLANT_14.desc.0","i18n","Mehrere Formationen an deiner Siegposition: ihr Überlappungsbonus ist um 0,25 höher.","","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
+"ability.SK_PLANT_14.desc.1","i18n","Mehrere Formationen an deiner Siegposition: ihr Überlappungsbonus ist um 0,5 höher.","","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
+"ability.SK_PLANT_14.desc.2","i18n","Mehrere Formationen an deiner Siegposition: ihr Überlappungsbonus ist um 0,75 höher.","","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
+"ability.SK_PLANT_14.desc.3","i18n","Mehrere Formationen an deiner Siegposition: ihr Überlappungsbonus ist um 1 höher.","","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
+"ability.SK_PLANT_14.name","i18n","Verwachsung","Invasión","Overgrowth","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
+"ability.SK_PLANT_15.desc","i18n","Grüne Farbblöcke zählen bis ×1,55.","Cuando una carta verde gana, coloniza la carta rival más baja. Si vences a una carta colonizada, cosechas +undefined de crecimiento.
 Poda: al sustituir la habilidad, +NaN % permanente de puntuación de raíz y floración (hasta +NaN %).","When a green card wins, it colonizes the lowest opponent card. Beat a colonized card and you harvest +undefined growth.
 Pruning: replacing the skill permanently grants +NaN% root/bloom score (up to +NaN%).","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
-"ability.SK_PLANT_15.desc.0","i18n","Ein Lauf aus grünen Karten darf eine fremde Karte überspringen.","","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
-"ability.SK_PLANT_15.desc.1","i18n","Ein Lauf aus grünen Karten darf zwei fremde Karten überspringen.","","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
-"ability.SK_PLANT_15.desc.2","i18n","Ein Lauf aus grünen Karten darf drei fremde Karten überspringen.","","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
-"ability.SK_PLANT_15.desc.3","i18n","Ein Lauf aus grünen Karten darf drei fremde Karten überspringen. Die übersprungenen Karten wachsen +2.","","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
-"ability.SK_PLANT_15.name","i18n","Lücke","Estolones","Runners","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
+"ability.SK_PLANT_15.desc.0","i18n","Grüne Farbblöcke zählen bis ×1,55.","","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
+"ability.SK_PLANT_15.desc.1","i18n","Grüne Farbblöcke zählen bis ×1,75.","","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
+"ability.SK_PLANT_15.desc.2","i18n","Grüne Farbblöcke zählen bis ×1,95.","","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
+"ability.SK_PLANT_15.desc.3","i18n","Grüne Farbblöcke zählen bis ×2,35.","","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
+"ability.SK_PLANT_15.name","i18n","Dickicht","Estolones","Runners","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "ability.SK_PLANT_16.desc","i18n","Ein Sieg in einer grünen Treppe gibt +30 Basis-Score je grüner Karte darin.","Amplificador: Al cosechar, también se cosecha una carta rival vecina igualmente colonizada: +undefined de crecimiento extra.
 Poda: al sustituir la habilidad, +NaN % permanente de puntuación de raíz y floración (hasta +NaN %).","Amplifier: When harvesting, an equally colonized opponent neighbour is harvested along with it: +undefined extra growth.
 Pruning: replacing the skill permanently grants +NaN% root/bloom score (up to +NaN%).","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""

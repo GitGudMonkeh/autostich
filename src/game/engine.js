@@ -19,8 +19,8 @@ import { syncHeatMax, fireValueBonus, fireOnWin, fireOnLoss, heatMult, verbrennu
 // exp skill rework: die Pflanze-Mechanik (Passiv „Wachstum", 15 Skills, 4 Legendäre) lebt im Fraktionsmodul; die
 // Engine ruft ihre Übergänge (Sieg, Niederlage, Durchlaufende) und reicht das Bündel { skillTiers, growth } an die
 // Formations-Engine weiter, deren Erkennung vier Pflanze-Hebel und zwei Legendäre ändern.
-import { plantOnWin, plantOnLoss, plantOnGap, plantParam, plantValueBonus, plantFormMult, beetGains, applyGrowth,
-  bloomAllIfFullGreen, P as PLANT } from "./factions/plant.js";
+import { plantOnWin, plantOnLoss, plantValueBonus, plantFormMult, beetGains, applyGrowth,
+  bloomAllIfFullGreen } from "./factions/plant.js";
 // (#267: import aus stats.js entfernt — die Stat-Phase/Faktoren sind weg.)
 import { computeFormations, positionHasFormation, activeFormationCount, summarizeFormations, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
 import { perkLegendaryChance, anchorAt } from "./shop.js";
@@ -512,16 +512,8 @@ export function resolveTrick(state, rng) {
       const r = plantOnWin(newGrowth, deck, skills, skillTiers, { pos: actualPos, order: playerOrder, posForm, cardId: pCard.id });
       newGrowth = r.growth; deck = r.deck; plantFlat = r.flat; growthTotal += r.grown; // #270 Motor-Zähler „Gewachsen"
       plantBase += r.flat;
-      // Lücke Episch (§6.8): die vom grünen Lauf übersprungenen Karten wachsen mit. Die Positionen liegen auf dem
-      // Farbblock-Eintrag der Siegposition (`gapped`, formations.js).
-      const gapGrowth = plantParam(skills, skillTiers, PLANT.LUECKE, "growth");
-      if (gapGrowth) {
-        const gapped = (posForm.formations || []).find((f) => f.type === "farbblock" && f.gapped)?.gapped || [];
-        if (gapped.length) {
-          const g2 = plantOnGap(newGrowth, deck, skills, gapped.map((p) => deck[playerOrder[p]].id), gapGrowth);
-          newGrowth = g2.growth; deck = g2.deck; growthTotal += g2.grown;
-        }
-      }
+      // (§6.26: Lücke ist gestrichen — mit ihr der `gapped`-Weg. Dickicht und Verwachsung fassen kein Wachstum an,
+      //  sie heben Faktoren und leben ganz in formations.js.)
     }
     // Crit ZUERST bestimmen — die Crit-Flats (scoreFlatOnCrit) müssen in die multiplizierte Basis. Der Crit-Wurf
     // verbraucht rng nur, wenn wirklich gewürfelt wird → rng-Reihenfolge unverändert (kein Drift). rawCrit steht oben

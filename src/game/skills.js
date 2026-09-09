@@ -89,8 +89,13 @@ const PFLANZE = {
   // Hebel — sie ändern, was als Formation erkannt wird (formations.js), und addieren keinen Score
   spalier:       [{ borders: 1 }, { borders: 2 }, { borders: 3 }, { borders: 7 }],
   wildwuchs:     [{ jokers: 1 }, { jokers: 2 }, { jokers: 3 }, { jokers: Infinity }],
-  luecke:        [{ gaps: 1 }, { gaps: 2 }, { gaps: 3 }, { gaps: 3, growth: 2 }],
-  ueberwucherung:[{ field: 0.8, less: 1 }, { field: 0.65, less: 1 }, { field: 0.5, less: 1 }, { field: 0.35, less: 2 }],
+  // §6.26: Dickicht ersetzt Lücke auf SK_PLANT_15. Der grüne Farbblock ist der einzige Formationstyp, den die Pflanze
+  // selbst erzeugt (grün IST eine Farbe) — und ausgerechnet sein Faktor ist für Grün bei PLANT_GREEN_FARBBLOCK_CAP
+  // eingefroren. `mult` ist der Faktor, den `cap` ergibt; ein Guard hält beide gegen escalatingFactor (kein Drift).
+  dickicht:      [{ cap: 4, mult: 1.55 }, { cap: 5, mult: 1.75 }, { cap: 6, mult: 1.95 }, { cap: 8, mult: 2.35 }],
+  // §6.26: Verwachsung ersetzt Überwucherung auf SK_PLANT_14 — deren Tor („ab 80 % grünem Feld") lag hinter dem Ziel.
+  // Der Zuschlag ist ABSOLUT: der Zwei-Formations-Sieg gewinnt am meisten, und dort liegen 38 % der Siege (§6.21 C).
+  verwachsung:   [{ bonus: 0.25 }, { bonus: 0.5 }, { bonus: 0.75 }, { bonus: 1 }],
   // Score aus grünen Formationen — je Formationstyp einer, dazu die Tiefe der einzelnen Karte
   blaetterdach:  [{ score: 10 }, { score: 15 }, { score: 20 }, { score: 25 }],
   rankgeruest:   [{ score: 30 }, { score: 45 }, { score: 60 }, { score: 80 }],
@@ -316,10 +321,10 @@ export const SKILL_DEFS = {
     ...tiered(PFLANZE.spalier, (r) => `${r.borders === 1 ? "Die Segmentgrenze mit den meisten grünen Karten daneben ist offen" : r.borders >= 7 ? "Alle Segmentgrenzen mit grünen Karten daneben sind offen" : `Die ${r.borders} Segmentgrenzen mit den meisten grünen Karten daneben sind offen`}: Formationen laufen dort über das Segment hinaus.`) },
   SK_PLANT_06: { id: "SK_PLANT_06", name: "Wildwuchs", archetype: "plant", keywords: ["bloom", "formation"], tiers: PFLANZE.wildwuchs,
     ...tiered(PFLANZE.wildwuchs, (r) => `${r.jokers === 1 ? "Deine am weitesten gewachsene blühende Karte zählt" : Number.isFinite(r.jokers) ? `Deine ${r.jokers} am weitesten gewachsenen blühenden Karten zählen` : "Alle blühenden Karten zählen"} bei der Formationserkennung als Joker.`) },
-  SK_PLANT_15: { id: "SK_PLANT_15", name: "Lücke", archetype: "plant", keywords: ["green", "formation"], tiers: PFLANZE.luecke,
-    ...tiered(PFLANZE.luecke, (r) => `Ein Lauf aus grünen Karten darf ${r.gaps === 1 ? "eine fremde Karte" : `${de1(r.gaps)} fremde Karten`} überspringen.${r.growth ? ` Die übersprungenen Karten wachsen +${r.growth}.` : ""}`) },
-  SK_PLANT_14: { id: "SK_PLANT_14", name: "Überwucherung", archetype: "plant", keywords: ["green", "formation"], tiers: PFLANZE.ueberwucherung,
-    ...tiered(PFLANZE.ueberwucherung, (r) => `Ab ${pct(r.field)} % grünem Feld entstehen grüne Formationen mit ${r.less === 1 ? "einer Karte" : `${de1(r.less)} Karten`} weniger, mindestens aber ab zwei Karten.`) },
+  SK_PLANT_15: { id: "SK_PLANT_15", name: "Dickicht", archetype: "plant", keywords: ["green", "formation"], tiers: PFLANZE.dickicht,
+    ...tiered(PFLANZE.dickicht, (r) => `Grüne Farbblöcke zählen bis ×${de(r.mult)}.`) },
+  SK_PLANT_14: { id: "SK_PLANT_14", name: "Verwachsung", archetype: "plant", keywords: ["formation"], tiers: PFLANZE.verwachsung,
+    ...tiered(PFLANZE.verwachsung, (r) => `Mehrere Formationen an deiner Siegposition: ihr Überlappungsbonus ist um ${de(r.bonus)} höher.`) },
   // Score aus grünen Formationen — je Formationstyp einer, dazu die Tiefe der einzelnen Karte
   SK_PLANT_13: { id: "SK_PLANT_13", name: "Blätterdach", archetype: "plant", keywords: ["green", "formation", "score"], tiers: PFLANZE.blaetterdach,
     ...tiered(PFLANZE.blaetterdach, (r) => `Ein Sieg in einem grünen Farbblock gibt +${r.score} Basis-Score je grüner Karte darin.`) },

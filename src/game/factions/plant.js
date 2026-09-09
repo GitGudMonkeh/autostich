@@ -27,8 +27,9 @@ import { SKILL_DEFS, TIER_EPIC, isLegendarySkill } from "../skills.js";
 export const P = Object.freeze({
   // Wachstum
   AUSSAAT: "SK_PLANT_05", RANKEN: "SK_PLANT_09", SETZLINGSBEET: "SK_PLANT_07", LICHTUNG: "SK_PLANT_12", ZAEHER_HALM: "SK_PLANT_08",
-  // Hebel (Mechanik in formations.js)
-  SPALIER: "SK_PLANT_03", WILDWUCHS: "SK_PLANT_06", LUECKE: "SK_PLANT_15", UEBERWUCHERUNG: "SK_PLANT_14",
+  // Erkennung und Formations-Faktor (Mechanik in formations.js) — §6.26: Dickicht und Verwachsung greifen den
+  // Faktor selbst an, Spalier und Wildwuchs bleiben Erkennungshebel.
+  SPALIER: "SK_PLANT_03", WILDWUCHS: "SK_PLANT_06", DICKICHT: "SK_PLANT_15", VERWACHSUNG: "SK_PLANT_14",
   // Score aus grünen Formationen
   BLAETTERDACH: "SK_PLANT_13", RANKGERUEST: "SK_PLANT_16", HECKE: "SK_PLANT_10", WINDUNG: "SK_PLANT_11", JAHRESRINGE: "SK_PLANT_04",
   // Kombination
@@ -285,12 +286,8 @@ export function plantOnWin(growth, deck, skills, skillTiers, { pos = -1, order =
   return { growth: g, deck: d, flat: Math.round(flat), grown };
 }
 
-/* Lücke Episch (§6.8): die Karten, die ein grüner Lauf übersprungen hat, wachsen mit. Welche das sind, weiß nur die
-   Formations-Engine (Eintrag `gapped`) — die Engine reicht die IDs herein. */
-export function plantOnGap(growth, deck, skills, ids, amount) {
-  const r = applyGrowth(growth, deck, (ids || []).map((id) => ({ id, amount })));
-  return { growth: r.growth, deck: bloomAllIfFullGreen(skills, r.deck), grown: r.total };
-}
+/* (§6.26: Lücke ist mit dem Dickicht gestrichen — mit ihr der `gapped`-Weg, über den ihr Episch die übersprungenen
+   Karten wachsen ließ. Das Dickicht fasst kein Wachstum an, es hebt den Faktor des grünen Farbblocks.) */
 
 /* Niederlage: nur Zäher Halm (§6.26) — die verlierende Karte wächst trotzdem, unabhängig von ihrem Zustand
    (die Grau-Schranke ist mit §6.26 gefallen). Episch legt das Formations-Wachstum drauf, das ein Sieg an dieser
