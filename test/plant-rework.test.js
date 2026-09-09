@@ -166,20 +166,31 @@ describe("Pflanze — die Wachstums-Skills (§6.8)", () => {
     expect(s.growth.X0).toBe(PT.aussaat[3].second);
     expect(s.growth.X1).toBe(PT.aussaat[3].growth);
   });
-  it("Ranken: wird eine Karte grün, wachsen ihre grauen Nachbarn", () => {
-    const s = resolveTrick(scen({ growth: { X1: G - 1 }, ...tier(P.RANKEN, 0) }), noCrit);
-    expect(s.deck[1].green).toBe(true);
-    expect(s.growth.X0).toBe(PT.ranken[0].growth);
-    expect(s.growth.X2).toBe(PT.ranken[0].growth);
+  /* Ranken (§6.26): eigene IDs fürs Gegnerdeck, sonst kollidieren `tendrils` (je Gegnerkarte) und `growth`
+     (je eigener Karte) im Testaufbau — beide Decks heißen sonst X0…X39. */
+  const oppO = () => Array.from({ length: N }, (_, i) => ({ id: `O${i}`, suit: "R", baseRank: 0, value: 0 }));
+  const greenAt1 = () => deckOf((i) => (i === 1 ? { green: true } : {}));
+  it("Ranken: ein grüner Sieg rankt in die geschlagene Gegnerkarte, ein Sieg darauf erntet (§6.26)", () => {
+    const run = (over) => resolveTrick(scen({ deck: greenAt1(), oppDeck: oppO(), growth: { X1: G }, ...tier(P.RANKEN, 0), ...over }), noCrit);
+    // Der grüne Sieg rankt — und zahlt selbst noch nichts.
+    const s = run({});
+    expect(s.tendrils.O1).toBe(true);
+    expect(s.growth.X1).toBe(G + C.PLANT_GROWTH_WIN);
+    // Der Sieg auf einer berankten Karte erntet sie: Wachstum für die SIEGKARTE, und die Ranken sind verbraucht.
+    const s2 = run({ tendrils: { O1: true } });
+    expect(s2.growth.X1).toBe(G + C.PLANT_GROWTH_WIN + PT.ranken[0].growth);
+    expect(s2.tendrils.O1, "die Ernte verbraucht die Ranken (§7.27: sonst wird die Bedingung zur Formalität)").toBeUndefined();
+    // Eine graue Siegkarte rankt nicht.
+    expect(resolveTrick(scen({ oppDeck: oppO(), ...tier(P.RANKEN, 0) }), noCrit).tendrils.O1).toBeUndefined();
   });
-  it("Ranken Episch kettet: eine dadurch grün gewordene Karte steckt ihre Nachbarn an", () => {
-    const step = PT.ranken[3].growth;
-    const s = resolveTrick(scen({ growth: { X1: G - 1, X2: G - step, X3: 0 }, ...tier(P.RANKEN, 3) }), noCrit);
-    expect(s.deck[2].green, "X2 wird durch den Ruck grün").toBe(true);
-    expect(s.growth.X3, "und steckt X3 an").toBe(step);
-    // Normal kettet nicht
-    const s2 = resolveTrick(scen({ growth: { X1: G - 1, X2: G - PT.ranken[0].growth, X3: 0 }, ...tier(P.RANKEN, 0) }), noCrit);
-    expect(s2.growth.X3 || 0).toBe(0);
+  it("Ranken Episch: beim Ernten ranken die Nachbarn der Gegnerkarte mit (§6.26)", () => {
+    const s = resolveTrick(scen({ deck: greenAt1(), oppDeck: oppO(), growth: { X1: G }, tendrils: { O1: true }, ...tier(P.RANKEN, 3) }), noCrit);
+    expect(s.growth.X1).toBe(G + C.PLANT_GROWTH_WIN + PT.ranken[3].growth);
+    expect([s.tendrils.O0, s.tendrils.O2]).toEqual([true, true]);
+    expect(s.tendrils.O1).toBeUndefined();
+    // Normal berankt beim Ernten keine Nachbarn.
+    const s2 = resolveTrick(scen({ deck: greenAt1(), oppDeck: oppO(), growth: { X1: G }, tendrils: { O1: true }, ...tier(P.RANKEN, 0) }), noCrit);
+    expect(s2.tendrils.O0).toBeUndefined();
   });
   it("Lichtung: ein Formations-Sieg wächst zusätzlich, Episch je Formation", () => {
     const base = C.PLANT_GROWTH_WIN + C.PLANT_GROWTH_PER_FORMATION;

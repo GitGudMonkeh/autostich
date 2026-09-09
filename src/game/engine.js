@@ -19,7 +19,7 @@ import { syncHeatMax, fireValueBonus, fireOnWin, fireOnLoss, heatMult, verbrennu
 // exp skill rework: die Pflanze-Mechanik (Passiv „Wachstum", 15 Skills, 4 Legendäre) lebt im Fraktionsmodul; die
 // Engine ruft ihre Übergänge (Sieg, Niederlage, Durchlaufende) und reicht das Bündel { skillTiers, growth } an die
 // Formations-Engine weiter, deren Erkennung vier Pflanze-Hebel und zwei Legendäre ändern.
-import { plantOnWin, plantOnLoss, plantValueBonus, plantFormMult, beetGains, applyGrowth,
+import { plantOnWin, plantOnLoss, plantOnTendril, plantValueBonus, plantFormMult, beetGains, applyGrowth,
   bloomAllIfFullGreen } from "./factions/plant.js";
 // (#267: import aus stats.js entfernt — die Stat-Phase/Faktoren sind weg.)
 import { computeFormations, positionHasFormation, activeFormationCount, summarizeFormations, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
@@ -149,6 +149,7 @@ export function resolveTrick(state, rng) {
     skillTiers = {}, // exp skill rework: Stufe je gehaltenem Skill (0 Normal … 3 Episch) — die Fraktionsmodule lesen ihre Tabellen damit
     iceTemp = {}, // (exp: ehemals Blitzfänger-Temp; wird nur noch durchgereicht)
     brandPending = {}, brandActive = {}, forged = {}, // Feuer: Brand-Marker (Gegner, je card.id, Wertabzug nächste Runde) / geschmiedete Dauerwerte
+    tendrils = {}, // Pflanze (§6.26 Ranken): berankte Gegnerkarten je oppCard.id — ein grüner Sieg rankt, ein Sieg darauf erntet
     growth = {}, // Pflanze (§6.2): Wachstum je card.id (nur steigend) — grün und blühend liegen als Flag auf der Karte
 
     shop = null, // hält nur noch die (inerten) Positionsanker []; der Shop selbst ist entfernt (#229)
@@ -404,6 +405,7 @@ export function resolveTrick(state, rng) {
   // Feuer: Brand-Marker für die NÄCHSTE Runde (brandActive wird am Rundenende getauscht; Quellen summieren sich je Karte).
   let newBrandPending = { ...brandPending };
   let newBrandActive = brandActive;
+  let newTendrils = tendrils; // §6.26: Arbeitskopie der Ranken (nur im plant-Zweig ersetzt → Nicht-Pflanze-Läufe byte-identisch)
   let newForged = forged;
   // Pflanze (§6.2): Wachstum je Karte, immutabel fortgeschrieben. Die Zustände grün/blühend liegen als Flag auf der
   // Karte (card.green / card.bloom) und werden vom Modul mitgezogen.
@@ -512,6 +514,15 @@ export function resolveTrick(state, rng) {
       const r = plantOnWin(newGrowth, deck, skills, skillTiers, { pos: actualPos, order: playerOrder, posForm, cardId: pCard.id });
       newGrowth = r.growth; deck = r.deck; plantFlat = r.flat; growthTotal += r.grown; // #270 Motor-Zähler „Gewachsen"
       plantBase += r.flat;
+      /* Ranken (§6.26): ein grüner Sieg rankt in die geschlagene Gegnerkarte, ein Sieg auf einer BERANKTEN erntet sie.
+         Läuft NACH plantOnWin — die Siegkarte kann durch ihren eigenen Sieg grün geworden sein und rankt dann sofort.
+         Die Nachbarn sind die der Gegnerkarte in der GEGNER-Reihenfolge (Episch berankt sie beim Ernten mit). */
+      const oi = oppOrder[actualPos];
+      const t = plantOnTendril(newGrowth, deck, skills, skillTiers, {
+        tendrils: newTendrils, cardId: pCard.id, oppCardId: oCard.id,
+        oppNeighborIds: [oi - 1, oi + 1].map((k) => (k >= 0 && k < oppDeck.length ? oppDeck[k].id : null)),
+      });
+      newGrowth = t.growth; deck = t.deck; newTendrils = t.tendrils; growthTotal += t.grown;
       // (§6.26: Lücke ist gestrichen — mit ihr der `gapped`-Weg. Dickicht und Verwachsung fassen kein Wachstum an,
       //  sie heben Faktoren und leben ganz in formations.js.)
     }
@@ -1182,6 +1193,7 @@ export function resolveTrick(state, rng) {
     heat, // Feuer-Archetyp (#93 F1): Hitze-Substate (null solange kein Feuer-Skill aktiv)
     iceTemp: newIceTemp, // temporärer Wertbonus je card.id (Blitzfänger)
     brandPending: newBrandPending, brandActive: newBrandActive, forged: newForged, // Feuer: Brände (nächste/aktive Runde) + Schmiedewerte
+    tendrils: newTendrils, // Pflanze (§6.26): die berankten Gegnerkarten
     growth: newGrowth, // Pflanze (§6.2): Wachstum je Karte (grün/blühend liegen als Flag auf der Karte)
     shop, // hält nur noch die (inerten) Positionsanker (#229: Shop entfernt)
     lastTrick, phase,

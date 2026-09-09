@@ -154,39 +154,34 @@ export function applyGrowth(growth, deck, gains) {
   return { growth: next, deck: d, total, becameGreen };
 }
 
-// Position → Karte / Karten-ID → Position für die Nachbarschafts-Skills (Aussaat, Ranken).
+// Position → Karte, für die Nachbarschaft der Aussaat und die Formations-Mitglieder.
+// (§6.26: die ID→Position-Karte ist mit der alten Ranken-Kette weggefallen.)
 const cardAtOf = (deck, order) => (p) => (p >= 0 && p < order.length ? deck[order[p]] : null);
-const posOfId = (deck, order) => {
-  const m = new Map();
-  for (let p = 0; p < order.length; p++) m.set(deck[order[p]].id, p);
-  return m;
-};
 
-/* Ranken (§6.8): wird eine Karte grün, wachsen ihre GRAUEN Nachbarn um `growth`. Episch kettet — eine Karte, die
-   dadurch grün wird, steckt ihre eigenen Nachbarn ebenso an (der einzige Dominoeffekt der Fraktion). Die Kette läuft
-   höchstens so viele Runden, wie es Karten gibt; sie kann nicht kreisen, weil Grün nie zurückfällt. */
-function rankenChain(growth, deck, skills, skillTiers, order, seeds) {
+/* Ranken (§6.26, Vorlage: der gestrichene Ausläufer SK_PLANT_15 alt): ein Sieg mit einer GRÜNEN Karte rankt in die
+   geschlagene Gegnerkarte — liegen dort schon Ranken, wird sie stattdessen GEERNTET: die Siegkarte wächst um `growth`,
+   und die Ranken sind verbraucht. Episch berankt beim Ernten die Nachbarn der geernteten Gegnerkarte.
+
+   Zwei Entscheidungen, die der Skill trägt: die Ernte geht an die SIEGKARTE (Wachstum auf Karten, die nicht gewinnen,
+   zahlt nicht — der Grund, aus dem Ranken vorher tot war), und die Ernte VERBRAUCHT die Ranken. Ohne den Verbrauch
+   wiederholte sich der Fehler der Feuerwalze (§7.27): ab der Laufmitte ist jede Gegnerkarte einmal geschlagen, und
+   der Skill wäre ein bedingungsloses „+N Wachstum je Sieg". So bleibt die Knappheit strukturell.
+
+   `tendrils` ist der Lauf-Zustand je Gegnerkarten-id (wie brandActive). Rein und immutabel. */
+export function plantOnTendril(growth, deck, skills, skillTiers,
+  { tendrils = {}, cardId = null, oppCardId = null, oppNeighborIds = [] } = {}) {
   const step = plantParam(skills, skillTiers, P.RANKEN, "growth");
-  let g = growth, d = deck, total = 0;
-  if (!step || !seeds.length) return { growth: g, deck: d, total };
-  const chain = !!plantParam(skills, skillTiers, P.RANKEN, "chain");
-  let wave = seeds;
-  for (let round = 0; round < order.length && wave.length; round++) {
-    const at = cardAtOf(d, order), posOf = posOfId(d, order);
-    const gains = [];
-    for (const id of wave) {
-      const p = posOf.get(id);
-      if (p == null) continue;
-      for (const nb of [p - 1, p + 1]) {
-        const c = at(nb);
-        if (c && !c.green) gains.push({ id: c.id, amount: step });
-      }
-    }
-    const r = applyGrowth(g, d, gains);
-    g = r.growth; d = r.deck; total += r.total;
-    wave = chain ? r.becameGreen : [];
+  if (!step || cardId == null || oppCardId == null) return { growth, deck, tendrils, grown: 0 };
+  if (tendrils[oppCardId]) {
+    const next = { ...tendrils };
+    delete next[oppCardId];
+    if (plantParam(skills, skillTiers, P.RANKEN, "neighbors")) for (const id of oppNeighborIds) if (id != null) next[id] = true;
+    const r = applyGrowth(growth, deck, [{ id: cardId, amount: step }]);
+    return { growth: r.growth, deck: bloomAllIfFullGreen(skills, r.deck), tendrils: next, grown: r.total };
   }
-  return { growth: g, deck: d, total };
+  const card = deck.find((c) => c.id === cardId);
+  if (!card || !card.green) return { growth, deck, tendrils, grown: 0 };
+  return { growth, deck, tendrils: { ...tendrils, [oppCardId]: true }, grown: 0 };
 }
 
 /* Score aus grünen Formationen (§6.8): je Formationstyp ein Skill, der Satz gilt je grüner Karte in der Formation an
@@ -269,12 +264,11 @@ export function plantOnWin(growth, deck, skills, skillTiers, { pos = -1, order =
       if (second && n2) gains.push({ id: n2.id, amount: second });
     }
   }
-  let seeds = gain(gains);
+  gain(gains);
   // 2. Blütenlese: Score und Wachstum aus einer rein grünen Formation.
   const lese = bluetenlese(skills, skillTiers, { posForm, cardAt: at() });
-  if (lese.gains.length) seeds = [...seeds, ...gain(lese.gains)];
-  // 3. Ranken: die Ansteckung im Reifemoment, danach die Kette (Episch).
-  if (seeds.length) { const r = rankenChain(g, d, skills, skillTiers, order, seeds); g = r.growth; d = r.deck; grown += r.total; }
+  if (lese.gains.length) gain(lese.gains);
+  // (§6.26: Ranken hängt nicht mehr am Reifemoment — es greift ins Gegnerdeck, plantOnTendril, von der Engine gerufen.)
   d = bloomAllIfFullGreen(skills, d);
   // 4. Score: Passiv-Blüte + Score-Skills, beides auf dem Stand NACH dem Wachstum.
   const card = cardId != null ? d.find((c) => c.id === cardId) : null;

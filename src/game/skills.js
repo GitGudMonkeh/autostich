@@ -81,7 +81,9 @@ export const FEUER_TIERS = FEUER;
 const PFLANZE = {
   // Wachstum
   aussaat:       [{ growth: 2 }, { growth: 3 }, { growth: 4 }, { growth: 5, second: 1 }], // §6.26: eine Stufe hoch — der einzige Wachstums-Skill, der schon zahlte, bekommt den kleinsten Schub
-  ranken:        [{ growth: 5 }, { growth: 8 }, { growth: 12 }, { growth: 16, chain: true }], // Episch: der einzige Dominoeffekt der Fraktion
+  // §6.26: Ranken greift ins Gegnerdeck (Vorlage: der gestrichene Ausläufer). Die Ernte geht an die SIEGKARTE — der
+  // Grund, aus dem der Skill vorher tot war: Wachstum auf Karten, die nicht gewinnen, zahlt nicht.
+  ranken:        [{ growth: 2 }, { growth: 3 }, { growth: 4 }, { growth: 6, neighbors: true }],
   setzlingsbeet: [{ growth: 2 }, { growth: 3 }, { growth: 4 }, { growth: 4, allSegments: true }], // §6.26: aus dem einmaligen Kaltstart wird ein Ort, der jeden Durchlauf wächst
 
   lichtung:      [{ extra: 2 }, { extra: 3 }, { extra: 4 }, { extra: 4, perFormation: true }], // §6.26: eine Stufe hoch (mechanisch richtig gebaut, maß nur flach)
@@ -309,7 +311,7 @@ export const SKILL_DEFS = {
   SK_PLANT_05: { id: "SK_PLANT_05", name: "Aussaat", archetype: "plant", keywords: ["growth", "green"], tiers: PFLANZE.aussaat,
     ...tiered(PFLANZE.aussaat, (r) => `Gewinnt eine grüne Karte, wachsen beide Nachbarn +${r.growth}.${r.second ? ` Auch die zweiten Nachbarn wachsen +${r.second}.` : ""}`) },
   SK_PLANT_09: { id: "SK_PLANT_09", name: "Ranken", archetype: "plant", keywords: ["growth", "green"], tiers: PFLANZE.ranken,
-    ...tiered(PFLANZE.ranken, (r) => `Wird eine Karte grün, wachsen ihre grauen Nachbarn +${r.growth}.${r.chain ? ` Wird eine Karte dadurch grün, wachsen ihre grauen Nachbarn ebenfalls +${r.growth}.` : ""}`) },
+    ...tiered(PFLANZE.ranken, (r) => `Gewinnt eine grüne Karte, rankt sie in die geschlagene Gegnerkarte. Besiegst du eine berankte Gegnerkarte, erntest du sie: +${r.growth} Wachstum für deine Siegkarte.${r.neighbors ? " Beim Ernten ranken ihre Nachbarn mit." : ""}`) },
   SK_PLANT_07: { id: "SK_PLANT_07", name: "Setzlingsbeet", archetype: "plant", keywords: ["growth"], tiers: PFLANZE.setzlingsbeet,
     ...tiered(PFLANZE.setzlingsbeet, (r) => `Die Karten ${r.allSegments ? "jedes Segments" : "deines grünsten Segments"} wachsen am Ende eines Durchlaufs +${r.growth}.`) },
   SK_PLANT_12: { id: "SK_PLANT_12", name: "Lichtung", archetype: "plant", keywords: ["growth", "formation"], tiers: PFLANZE.lichtung,

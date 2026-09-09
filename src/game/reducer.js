@@ -169,6 +169,7 @@ export function initialState(rng = Math.random, seed = null) {
     iceTemp: {}, // temporärer Wertbonus je card.id (Blitzfänger — Blitz-Archetyp, in engine.js gelesen)
     growth: {}, // Pflanze (§6.2): Wachstum je card.id (nur steigend) — grün und blühend liegen als Flag auf der Karte
     brandPending: {}, brandActive: {}, forged: {}, // Feuer: Brand-Marker (Gegner, je card.id, Wertabzug nächste Runde) / geschmiedete Dauerwerte
+    tendrils: {}, // Pflanze (§6.26 Ranken): berankte Gegnerkarten je oppCard.id
     // #270 Fraktions-Panels: kumulative Lauf-Kennzahlen (nur Anzeige) — Eigen-Score-Kanäle + Motor-Zähler.
     lightYield: 0, plantBase: 0, fireBase: 0, fireHeat: 0, // #270 Eigen-Score-Kanäle (Feuer: Flats / Hitze-Multiplikator-Anteil)
     ionTotal: 0, growthTotal: 0, brandTotal: 0, // #270 Motor-Zähler
@@ -704,6 +705,7 @@ export function reducer(state, action) {
       let deck = state.deck;
       // Feuer: Brand-Marker / geschmiedete Werte (beim Deaktivieren des Feuer-Archetyps zurückgesetzt).
       let brandPending = state.brandPending || {}, brandActive = state.brandActive || {}, forged = state.forged || {};
+      let tendrils = state.tendrils || {};
       // Blitzfänger-Temp (iceTemp, Blitz-Archetyp) — beim Eis-Deaktivieren aus Alt-Verhalten geleert (#140).
       let iceTemp = state.iceTemp;
       let growth = state.growth || {}; // Pflanze (§6.2): Wachstum je Karte
@@ -729,6 +731,7 @@ export function reducer(state, action) {
       activeArchetypes = activeArchetypes.filter((a) => stillActive.has(a));
       if (!stillActive.has("lightning")) lightning = initLightning();               // Ladungsleiste weg
       if (!stillActive.has("fire")) { heat = null; brandPending = {}; brandActive = {}; forged = {}; } // Hitze/Brand/Schmiede-Zähler weg (geschmiedete Dauerwerte bleiben gebacken)
+      if (!stillActive.has("plant")) tendrils = {}; // §6.26: ohne Pflanzen-Skill verschwinden die Ranken auf dem Gegnerdeck
       if (!stillActive.has("ice")) iceTemp = {};                                     // Blitzfänger-Temp beim Eis-Deaktivieren leeren (Alt-Verhalten)
       // Pflanze weg (letzter Pflanzen-Skill ersetzt): Wachstum und beide Zustände fallen mit ihr.
       if (!stillActive.has("plant")) { deck = deck.map((c) => (c.green || c.bloom ? { ...c, green: false, bloom: false } : c)); growth = {}; }
@@ -748,7 +751,7 @@ export function reducer(state, action) {
       const icePicks = arch === "ice" ? glacierGrant(glacierLocked, state.challengeBlockForm, (state.playerOrder || []).length, perPick, schild) : 0;
       // Formationen neu berechnen (Anker/Familien/Architekt beeinflussen die Erkennung).
       const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, skills, state.shop?.anchors || [], state.familyTiers, archOf(state), { skillTiers, growth });
-      return { ...state, skills, skillTiers, skillOfferTiers: null, activeArchetypes, lightning, heat, deck, iceTemp, growth, brandPending, brandActive, forged, formations,
+      return { ...state, skills, skillTiers, skillOfferTiers: null, activeArchetypes, lightning, heat, deck, iceTemp, growth, brandPending, brandActive, forged, tendrils, formations,
                glacierRoles, glacierRoleTiers, glacierMass, firnStack, glacierLocked, glacierYield, frozenOppPending, frozenOppActive, glacierBuffPending, glacierBuffActive, // Eis-Neudesign (#386 Firn-Reserve mitgeführt)
                // Eis-Neudesign: jeder Eis-Skill-Pick öffnet SOFORT die Gletscher-Wahl (Pflicht) — analog zum Perk-Ziel-Flow.
                // §5.5: der Pick vergibt GLACIER_PER_PICK Gletscher nacheinander, begrenzt durch freie Felder und den
