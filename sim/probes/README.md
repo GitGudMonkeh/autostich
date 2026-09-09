@@ -16,6 +16,7 @@ node sim/probes/print-skill-texts.mjs                    # every Feuer/Blitz ski
 GDOC_LOGDIR=/path/to/logs GDOC_TAG=725 node sim/probes/gdoc.mjs   # owner document (HTML for Google Docs)
 N=100 node sim/probes/blitz-ramp.mjs                     # when the lightning engine comes online, per 10-round block
 N=100 node sim/probes/blitz-critsource.mjs               # which source the lightning crit chance comes from, per block
+SIM_CRIT_MULT_CAP=1000 N=60 node sim/probes/blitz-multsource.mjs   # same for the crit MULTIPLIER, and what the 8x cap cuts
 N=60 node sim/probes/faction-pacing.mjs                  # score after rounds 10/20/30/40/50 per faction, legendary split
 SIM_LIGHTNING_CRIT_SOCKET=0.08 SIM_LIGHTNING_CRIT_PER_SKILL=0.03 \
   node --import ./sim/probes/lightning-socket-hook.mjs sim/probes/blitz-ramp.mjs   # unbuilt passive shape (§7.29)
