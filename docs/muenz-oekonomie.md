@@ -17,15 +17,15 @@ mitschreibt — bewusste Abweichung von der Engineering-Sprache (`AGENTS.md`), w
 
 ## 1. Was gebaut wird
 
-Eine **laufinterne Währung**. Der Spieler verdient Münzen dadurch, dass er Stiche gewinnt, und gibt sie
-in fünf Situationen aus — immer dann, wenn in der laufenden Phase **knapp etwas fehlt**: ein passendes
-Angebot, ein Tausch, ein Bauplatz, eine Fraktion, eine Stufe.
+Eine **laufinterne Währung**. Der Spieler verdient Münzen durch seine **Aufstellung** und durch
+**Verzicht**, und gibt sie in fünf Situationen aus — immer dann, wenn in der laufenden Phase **knapp
+etwas fehlt**: ein passendes Angebot, ein Tausch, ein Bauplatz, eine Fraktion, eine Stufe.
 
 Drei Eigenschaften halten das zusammen:
 
-- **Die Einnahme wächst mit der Siegzahl, nicht mit dem Score.** Der Score wächst über den Lauf um
-  Faktor hundert, die Siegzahl ist bei 40 je Durchlauf hart gedeckelt. Die Ökonomie kann deshalb nicht
-  explodieren.
+- **Die Einnahme hängt weder am Score noch an der Siegzahl.** Der Score wächst über den Lauf um Faktor
+  hundert; die Siegzahl wächst weniger, bevorzugt aber die Fraktionen, die leichter Stiche gewinnen
+  (gemessen 1,76×, §2.4). Die Aufstellung tut beides nicht.
 - **Die Preistreppen laufen je Phase.** Sparen bringt Reichweite, nicht Höhe.
 - **Kein Kauf kostet einen Spielzug.** Man zahlt Münzen, nie die Skill- oder Perk-Wahl.
 
