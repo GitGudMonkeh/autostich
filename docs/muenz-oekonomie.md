@@ -48,6 +48,12 @@ Drei Quellen:
 **3 Münzen** beim Laufstart (Owner, 2026-09-09 — ersetzt das frühere „kein Startbetrag"). Damit ist die
 erste Skill-Phase nicht mehr mittellos.
 
+**Am Laufende verfallen übrige Münzen** (Owner, 2026-09-09). Sie werden nicht in Score getauscht und
+nicht mitgenommen — es gibt nach dem letzten Durchlauf keinen Adressaten mehr. Das ist die Regel, die
+der Münze ihre interessanteste Eigenschaft erhält: man *muss* sie ausgeben. Gäbe es einen Umtauschkurs,
+rechnete der Spieler ihn gegen jeden Kauf auf, und der letzte Durchlauf würde von „alles raushauen" zu
+einer Rechenaufgabe. Umgesetzt durch Nichtstun: `coins` liegt im Lauf-State und geht mit ihm.
+
 ### 2.2 Je Durchlauf: Sockel plus Aufstellung
 
 **Formel:** `Münzen je Durchlauf = 2 + floor(gebaute Formationen / 8)`
@@ -165,6 +171,11 @@ Gemeinsame Regeln:
 - **Der Preis steht am Knopf, nicht in einem Tooltip.** Auf dem Handy gibt es keine Tooltips, und ein
   Kauf, dessen Preis man erst durch Antippen erfährt, ist ein Fehlkauf.
 - Wer die Münzen nicht hat, sieht den Kauf, kann ihn aber nicht auslösen.
+- **Bestätigt wird nach Bildschirm, nicht nach Preis** (Owner, 2026-09-09): **Aufwerten (§3.5) und
+  Verkaufen (§3.6) fragen immer nach — jeder Eintrag, unabhängig vom Betrag.** Alle übrigen Käufe
+  (Neuwurf, Energie, Fokus-Ruf, Baufeld) fragen nie. Grund: in einer Liste mit vielen dicht stehenden
+  Einträgen tippt man daneben, an einem einzelnen Knopf nicht. Eine Preisschwelle wäre zudem nicht
+  erklärbar — wer bei 15 gefragt wird, wundert sich bei 14 über das Schweigen.
 
 ---
 
@@ -429,19 +440,13 @@ Dann Neuwurf, Energie, Baufeld. Fokus-Ruf und Aufwerten zuletzt, wenn ihre Vorau
 
 ---
 
-## 8. Offene Punkte
+## 8. Technische Prüfpunkte für die Umsetzung
 
-1. **Braucht ein Kauf eine Bestätigung?** Auf dem Handy ist ein Fehltipper leicht, ein zweiter Tap aber
-   zäh, wenn man ihn dreimal je Phase macht. Mittelweg: nur die teuren Käufe bestätigen lassen —
-   Baufeld, Episch-Aufwertung, Legendär-Neuwurf. **Nicht entschieden.**
-2. **Verfallen Münzen am Laufende?** Der Plan geht von **Verfall** aus — sonst wird Sparen immer
-   richtig. Falls Mitnahme gewollt ist, ändert das nur diese eine Regel, nicht die Struktur.
-   **Nicht entschieden.**
-3. **Ranked.** Die Ökonomie ist von selbst seed-unabhängig (sie hängt an der eigenen Aufstellung). Zu prüfen
+1. **Ranked.** Die Ökonomie ist von selbst seed-unabhängig (sie hängt an der eigenen Aufstellung). Zu prüfen
    ist nur, ob Wochen-Modifikatoren, die Neuwürfe oder Energie beschneiden („Kein Reroll",
    „Energie-Ebbe"), mit gekauften kollidieren.
-4. **Namensgleichheit beachten:** der legendäre Perk „Zinseszins" arbeitet mit `zinsCapital` /
+2. **Namensgleichheit beachten:** der legendäre Perk „Zinseszins" arbeitet mit `zinsCapital` /
    `zinsRate` auf Score-Kapital, nicht mit Münzen. Kein Zusammenhang, aber verwechselbar.
-5. **Tote Preisleiter im Code:** `TIER_META` in `rarity.js` trägt noch `price: 8 / 12 / 18 / 30` aus der
+3. **Tote Preisleiter im Code:** `TIER_META` in `rarity.js` trägt noch `price: 8 / 12 / 18 / 30` aus der
    Shop-Zeit; `priceOfTier` wird nirgends mehr aufgerufen. Entweder für §3.5 wiederverwenden oder
    entfernen — nicht danebenlegen.
