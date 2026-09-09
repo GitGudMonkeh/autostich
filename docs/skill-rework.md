@@ -6291,6 +6291,106 @@ Drei Skills geben oder lesen Wachstum nebenbei und bleiben **unverändert**: Lü
 übersprungenen Karten), Blütenlese (+1, Episch +2 auf alle Karten der rein grünen Formation) und Jahresringe,
 der als einziger Wachstum *liest* statt gibt — und der beste Skill der Fraktion ist (§6.18).
 
+#### Die übrigen zehn: zwei Reworks, ein Buff, ein Nerf
+
+**Owner, nach dem Blick auf die Liste:** „Lücke und überwucherung rework, hecke buffen und Jahresringe etwas
+nerfen (vor allem da wir Wachstums Optionen gerade buffen)." Spalier, Wildwuchs, Blätterdach, Rankgerüst, Windung
+und Blütenlese bleiben unangetastet, ebenso die drei Legendären (seit §6.15 auf einem Band).
+
+**Zwei Befunde steuern die Reworks.**
+
+*Die Pflanze kann strukturell nur einen der vier Formationstypen selbst erzeugen.* Grün ist eine Farbe, also baut
+sie Farbblöcke; Treppe, Wiederholung und Wechsel brauchen Wertmuster, und Kartenwerte fasst die Fraktion bewusst
+nicht an (§6.1). Rankgerüst, Hecke und Windung warten deshalb darauf, dass die Aufstellung zufällig passt — der
+einzige Gegenhebel ist Wildwuchs.
+
+*Und ausgerechnet auf dem Farbblock ist der Faktor für Grün eingefroren.* `escalatingFactor` gibt jedem Lauf
+`FARBBLOCK_BASE 1,35 + ESKALATION_STEP 0,20` je Karte über der Mindestlänge; für grüne Karten deckelt
+`PLANT_GREEN_FARBBLOCK_CAP` die Ordinalzahl bei 3. Ein grüner Farbblock steht damit **immer bei ×1,35**, ob er
+drei Karten lang ist oder vierzig (ohne Deckel wären es ×2,75 bei zehn, ×8,75 bei vierzig). Der Deckel kam in v0.3
+gegen den Runaway; §6.2 hat die Frage ausdrücklich offen gelassen („Owner: warten").
+
+##### Dickicht ersetzt Lücke (SK_PLANT_15)
+
+Lücke wurde nicht einmal genommen (4 % gehalten, −0,19M / −2,02M). Der Grund ist ein enges Fenster: bei wenig Grün
+gibt es keine Läufe zu retten, bei viel Grün sind die Lücken schon grün. Sie repariert Löcher, statt Raum zu
+schaffen — der Unterschied zu Spalier (+36 %). Der Platz behält seine Achse: Lücke arbeitete auf dem Farbblock
+(`suitGapFor`), Dickicht tut es auch.
+
+> **Grüne Farbblöcke zählen bis ×1,55 statt ×1,35.**
+
+| Normal | Selten | Sehr selten | Episch |
+| --- | --- | --- | --- |
+| bis ×1,55 | bis ×1,75 | bis ×1,95 | bis ×2,35 |
+
+Der Text nennt nur die Zahl, die sich ändert (Hausmuster wie Eiswall) — dass ein längerer Lauf mehr Faktor gibt,
+erklärt die Formations-Legende dem Spieler ohnehin. **Wachpunkt:** das war der Runaway-Schutz; der Deckel wird
+gehoben, nicht aufgehoben. „Unbegrenzt" auf Episch ist der Kandidat zum Sprengen und wartet auf die Messung.
+
+##### Verwachsung ersetzt Überwucherung (SK_PLANT_14)
+
+Bei Überwucherung liegt das Tor hinter dem Ziel: „ab 80 % grünem Feld" sind 32 von 40 Karten — wer so weit ist,
+bekommt Formationen ohnehin geschenkt. Der Skill schaltet ein, wenn man ihn nicht mehr braucht (−0,05M / −0,23M).
+
+An seine Stelle tritt der Griff auf `OVERLAP_BONUS` (`2 ×1,5 · 3 ×2 · 4 ×3`) — den gemessenen Motor der Fraktion
+(§6.21 C: 8 % der Siege tragen 45 % des Scores). Kein neuer Multiplikator, sondern der Formations-Faktor, den
+§6.1 erlaubt.
+
+> **Mehrere Formationen an deiner Siegposition: ihr Überlappungsbonus ist um 0,25 höher.**
+
+| Normal | Selten | Sehr selten | Episch |
+| --- | --- | --- | --- |
+| +0,25 | +0,5 | +0,75 | +1 |
+
+**Bewusst absolut statt prozentual:** der Zwei-Formations-Sieg gewinnt am meisten (×1,5 → ×1,75 ist +17 %, ×3 →
+×3,25 nur +8 %), und dort liegen 38 % der Siege. §6.22 hat die Konzentration genau im Überlappungs-Multiplikator
+verortet; ein prozentualer Aufschlag würde die Spitze weiter aufblasen, der absolute verbreitert die Basis.
+
+##### Hecke +33 %, Jahresringe −33 %
+
+**Hecke** (SK_PLANT_10) teilt sich die Leiter mit Rankgerüst (30/45/60/80), weil §6.8 nach Formationslänge
+staffelt — Treppe und Wiederholung sind beide drei bis fünf Karten lang. Gemessen entstehen grüne Wiederholungen
+aber seltener als Treppen, und der Unterschied ging voll auf die Hecke (−0,40M gegen +0,05M). Neue Leiter
+**40 / 60 / 80 / 105** (≈ 1,33× Rankgerüst). Die saubere Zahl käme aus einer Sonde, die zählt, wie oft eine grüne
+Wiederholung gegen eine grüne Treppe entsteht; bis dahin ist 1,33× ein bewusst konservativer Schritt.
+
+**Jahresringe** (SK_PLANT_04) liest Wachstum direkt und wird deshalb von jedem der fünf Wachstums-Buffs
+mitgehoben, ohne angefasst zu werden — er ist schon heute der beste Skill der Fraktion (+17 %). Der Teiler wird
+gröber, die Sätze bleiben: **je 15 Wachstum** statt je 10 (−33 %). Das trifft genau die Kopplung, die dieser
+Durchgang verstärkt, und lässt das Episch („über der Blüh-Schwelle zählt doppelt") unberührt.
+
+##### Was sich strukturell verschiebt
+
+Die Kategorie „Formationshebel (4)" aus §6.6 gibt es so nicht mehr: Spalier und Wildwuchs bleiben Erkennungs-
+hebel, Dickicht und Verwachsung sind **Formations-Faktor-Skills**. Damit bekommt die Fraktion erstmals eine
+Multiplikator-Achse auf der Ebene der 15 — genau der Mangel, den §6.17 C gemessen und benannt hat („Feuer hat
+einen Multiplikator, Blitz hat Crit … §6.15 hat der Fraktion beides gegeben, aber nur im Legendären").
+
+**Emblem-Umbenennung** (`git mv`, der ID-Präfix ist, was `skillArt.js` liest):
+`SK_PLANT_15_luecke.webp` → `…_dickicht.webp`, `SK_PLANT_14_ueberwucherung.webp` → `…_verwachsung.webp`.
+
+**Anzeige-Notiz:** die Formations-Legende (`formlegend.overlap`) zeigt die Zahlen aus `OVERLAP_BONUS`. Ändert
+Verwachsung sie, muss die Legende mitrechnen — sonst läuft die Anzeige dem Motor davon, genau der Fehler, den
+§6.23 bei Spalier behoben hat.
+
+#### Der Durchgang auf einer Seite
+
+Alle 15 Skills sind durchgesprochen. **Nichts davon ist gebaut, alle Werte sind ungemessen.**
+
+| Skill | Was passiert | Leiter |
+| --- | --- | --- |
+| **Ranken** (09) | Rework: rankt in die geschlagene Gegnerkarte, Ernte gibt der Siegkarte Wachstum und verbraucht die Ranken | 2 / 3 / 4 / 6 + Nachbarn beim Ernten |
+| **Setzlingsbeet** (07) | Rework: das grünste Segment wächst jeden Durchlauf | 2 / 3 / 4 / 4 auf jedem Segment |
+| **Aussaat** (05) | Leiter | 2 / 3 / 4 / 5 |
+| **Lichtung** (12) | Leiter | 2 / 3 / 4 / 4 je Formation |
+| **Zäher Halm** (08) | Grau-Limit raus, neues Episch | 1 / 2 / 3 / 4 + je Formation |
+| **Dickicht** (15) | ersetzt Lücke: hebt den Grün-Farbblock-Deckel | ×1,55 / 1,75 / 1,95 / 2,35 |
+| **Verwachsung** (14) | ersetzt Überwucherung: hebt den Überlappungsbonus | +0,25 / 0,5 / 0,75 / 1 |
+| **Hecke** (10) | Buff gegen die seltenere Formation | 40 / 60 / 80 / 105 |
+| **Jahresringe** (04) | Nerf: gröberer Teiler | je 15 Wachstum statt je 10 |
+| Spalier · Wildwuchs · Blätterdach · Rankgerüst · Windung · Blütenlese | unverändert | — |
+| Wurzelgeflecht · Baumreihe · Ewiger Frühling | unverändert (§6.15) | — |
+
 #### Wachpunkt für den Schluss des Durchgangs
 
 Die Parität steht bei **1,08× Feuer** (§6.22). Dieser Durchgang bufft mehrere Skills gleichzeitig; die Summe ist
