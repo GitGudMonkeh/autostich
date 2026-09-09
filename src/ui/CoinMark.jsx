@@ -12,6 +12,7 @@
 import { fmtNum, t } from "../i18n/index.js";
 
 export const COIN_GOLD = "#d4a63a"; // dasselbe Gold wie Score und Neuwurf — die Währung führt keine neue Farbe ein
+export const COIN_GAIN = "#5ab87a"; // Einnahme statt Ausgabe: dasselbe Grün wie „reicht" am Preis und die Formations-Energie
 
 // Zwei Kreise: Rand und Prägung. Bewusst anders als das `info`/`block`-Rund der Modal-Icons, die den
 // Innenraum leer lassen — nebeneinander sollen die drei nicht verwechselbar sein.
@@ -51,6 +52,24 @@ export function CoinAmount({ n = 0, size = 13, minDigits = 0, dim = false, have 
   );
 }
 
+/* Was eine Handlung EINBRINGT, hinter ihrer Beschriftung in Klammern (§2.3, Owner 2026-09-09) — der
+   Gegenpol zum Preis am Kaufknopf. Ohne sie steht der Verzicht dort, wo man ihn wählt, ohne seinen Wert:
+   die Gutschrift blitzt erst NACH der Entscheidung in der Leiste auf, also zu spät, um sie zu treffen.
+
+   Grün und nicht Gold: Gold heißt an jedem anderen Knopf „das kostet". Dieselbe Farbe für Ein- und
+   Ausgang wäre die eine Verwechslung, die diese Anzeige nicht machen darf. */
+export function CoinReward({ n = 0, size = 11, className = "" }) {
+  if (!(n > 0)) return null;
+  return (
+    <span className={`inline-flex items-center gap-1 whitespace-nowrap ${className}`} style={{ color: COIN_GAIN }}>
+      <span className="opacity-60">(</span>
+      <CoinIcon size={size} />
+      <span className="ty-num" style={{ fontVariantNumeric: "tabular-nums" }}>+{fmtNum(n)}</span>
+      <span className="opacity-60">)</span>
+    </span>
+  );
+}
+
 /* Eine Gutschrift im Moment ihres Anfallens (§2.3, Anzeige §4): ein „+N", das über dem Kontostand
    aufsteigt und von selbst wieder geht. Ohne sie zählt die Leiste stumm hoch, und niemand lernt, dass
    Ablehnen zahlt — die Zahlung wäre da, die Regel unsichtbar.
@@ -63,7 +82,7 @@ export function CoinGain({ gain = null }) {
   if (!gain || !(gain.n > 0)) return null;
   return (
     <span key={gain.seq} aria-hidden="true" className="ty-num pointer-events-none"
-      style={{ position: "absolute", top: 0, right: 10, opacity: 0, color: "#5ab87a", fontSize: 13, fontWeight: 700,
+      style={{ position: "absolute", top: 0, right: 10, opacity: 0, color: COIN_GAIN, fontSize: 13, fontWeight: 700,
                fontVariantNumeric: "tabular-nums", animation: "as-coingain 1500ms ease-out forwards" }}>
       +{fmtNum(gain.n)}
     </span>

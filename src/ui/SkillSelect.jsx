@@ -7,8 +7,8 @@ import { SKILL_SLOT_LIMIT, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_MAX_CHARGE, ION_S
          PLANT_GREEN_THRESHOLD, PLANT_BLOOM_THRESHOLD, PLANT_GROWTH_WIN, PLANT_GROWTH_PER_FORMATION, PLANT_BLOOM_SCORE_PER_GREEN,
          HEAT_MIN_MARGIN, HEAT_MARGIN_OFFSET, HEAT_PER_POINT, HEAT_LOSS, HEAT_MULT_PER_10, ION_VALUE_PER_BAR, PLANT_BLOOM_WEIGHT, PLANT_BLOOM_WEIGHT_PER_GROWTH } from "../game/constants.js";
 import { DECLINE_MIN_SKILLS as G_DECLINE_MIN_SKILLS } from "../game/glacier.js"; // Eis-Neudesign: Ablehn-Gletscher-Schwelle für den Passiv-Text
-import { rerollOffer, FOCUS_PRICE, UPGRADE_FROM } from "../game/coins.js"; // Münz-Ökonomie §3.1 Neuwurf · §3.3 Fokus · §3.5 Aufwerten — dieselben Zahlen wie der Reducer
-import { RerollLabel, CoinAmount } from "./CoinMark.jsx";                  // Beschriftung: Anzahl solange gratis, danach der Preis
+import { rerollOffer, FOCUS_PRICE, UPGRADE_FROM, FORFEIT_SKILL } from "../game/coins.js"; // Münz-Ökonomie §3.1 Neuwurf · §3.3 Fokus · §3.5 Aufwerten — dieselben Zahlen wie der Reducer
+import { RerollLabel, CoinAmount, CoinReward } from "./CoinMark.jsx";      // Beschriftung: Anzahl solange gratis, danach der Preis · §2.3 was das Ablehnen einbringt
 import { SkillUpgrade } from "./SkillUpgrade.jsx";                        // §3.5: die Aufwertphase (eigener Bildschirm)
 
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
@@ -366,8 +366,13 @@ export function SkillSelect({ offer = null, doors = null, onPick, onDecline, onR
                   buyKey={atDoors ? "skill.reroll.doors.buy" : "skill.reroll.buy"} />
               </ActionButton>
             )}
+            {/* §2.3: was das Ablehnen EINBRINGT, direkt an seinem Knopf. Es zahlt auf JEDEM Weg — auch
+                auf dem Meisterhand-Bonus und im Dev-Run —, deshalb steht die Marke ohne Bedingung da. */}
             <ActionButton kind="decline" flex className="sk-actbtn lv-actbtn" onClick={onDecline}>
-              {t(devMode ? "skill.skipCycle" : bonusOffer ? "skill.declinePlain" : "skill.decline")}
+              <span className="inline-flex items-center gap-1.5">
+                {t(devMode ? "skill.skipCycle" : bonusOffer ? "skill.declinePlain" : "skill.decline")}
+                <CoinReward n={FORFEIT_SKILL} />
+              </span>
             </ActionButton>
           </div>
 
