@@ -187,12 +187,16 @@ describe("Pflanze — die Wachstums-Skills (§6.8)", () => {
     two[1].formations.push({ type: "treppe", ordinal: 2, factor: 1.35, members: [0, 1, 2] });
     expect(win({ formations: two, ...tier(P.LICHTUNG, 3) }).growth.X1).toBe(1 + 2 + 2 * PT.lichtung[3].extra);
   });
-  it("Zäher Halm: graue Karten wachsen bei einer Niederlage, Episch auch grüne", () => {
+  it("Zäher Halm: jede Karte wächst bei einer Niederlage, Episch je Formation (§6.26)", () => {
     const lose = (over) => resolveTrick(scen({ deck: constDeck(0), oppDeck: constDeck(9), ...over }), noCrit);
     expect(lose(tier(P.ZAEHER_HALM, 0)).growth.X1).toBe(PT.halm[0].growth);
+    // §6.26: die Grau-Schranke ist gefallen — eine grüne Karte wächst genauso wie eine graue.
     const greenDeck = deckOf((i) => (i === 1 ? { green: true, value: 0, baseRank: 0 } : { value: 0, baseRank: 0 }));
-    expect(lose({ deck: greenDeck, growth: { X1: G }, ...tier(P.ZAEHER_HALM, 0) }).growth.X1, "grün ohne Episch: nichts").toBe(G);
-    expect(lose({ deck: greenDeck, growth: { X1: G }, ...tier(P.ZAEHER_HALM, 3) }).growth.X1).toBe(G + PT.halm[3].greenToo);
+    expect(lose({ deck: greenDeck, growth: { X1: G }, ...tier(P.ZAEHER_HALM, 0) }).growth.X1, "grün wächst wie grau").toBe(G + PT.halm[0].growth);
+    // Episch legt das Formations-Wachstum drauf, das ein Sieg an dieser Position gegeben hätte — ohne Formation nichts.
+    expect(lose({ deck: greenDeck, growth: { X1: G }, ...tier(P.ZAEHER_HALM, 3) }).growth.X1, "ohne Formation kein Zuschlag").toBe(G + PT.halm[3].growth);
+    expect(lose({ deck: greenDeck, growth: { X1: G }, formations: withRun([0, 1, 2]), ...tier(P.ZAEHER_HALM, 3) }).growth.X1)
+      .toBe(G + PT.halm[3].growth + C.PLANT_GROWTH_PER_FORMATION);
   });
   it("Setzlingsbeet: der Kaltstart je Segment, deterministisch die niedrigste Karte", () => {
     const deck = deckOf((i) => ({ value: i % SEGMENT_SIZE === 3 ? 1 : 9 })); // je Segment ist Position 3 die niedrigste

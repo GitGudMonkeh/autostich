@@ -292,16 +292,17 @@ export function plantOnGap(growth, deck, skills, ids, amount) {
   return { growth: r.growth, deck: bloomAllIfFullGreen(skills, r.deck), grown: r.total };
 }
 
-/* Niederlage: nur Zäher Halm (§6.8) — graue Karten wachsen trotzdem, Episch auch grüne (blühende zählen als grün).
+/* Niederlage: nur Zäher Halm (§6.26) — die verlierende Karte wächst trotzdem, unabhängig von ihrem Zustand
+   (die Grau-Schranke ist mit §6.26 gefallen). Episch legt das Formations-Wachstum drauf, das ein Sieg an dieser
+   Position gegeben hätte — die einzige Achse, über die Wachstum auf einer nicht-siegenden Karte zahlt.
    Sonst gibt eine Niederlage nichts. */
-export function plantOnLoss(growth, deck, skills, skillTiers, { cardId = null } = {}) {
+export function plantOnLoss(growth, deck, skills, skillTiers, { cardId = null, posForm = null } = {}) {
   if (cardId == null) return { growth, deck, grown: 0 };
   const card = deck.find((c) => c.id === cardId);
   if (!card) return { growth, deck, grown: 0 };
-  const amount = card.green
-    ? (plantParam(skills, skillTiers, P.ZAEHER_HALM, "greenToo") || 0)
-    : (plantParam(skills, skillTiers, P.ZAEHER_HALM, "growth") || 0);
+  let amount = plantParam(skills, skillTiers, P.ZAEHER_HALM, "growth") || 0;
   if (!amount) return { growth, deck, grown: 0 };
+  if (plantParam(skills, skillTiers, P.ZAEHER_HALM, "perFormation")) amount += plantFormCount(posForm) * C.PLANT_GROWTH_PER_FORMATION;
   const r = applyGrowth(growth, deck, [{ id: cardId, amount }]);
   return { growth: r.growth, deck: bloomAllIfFullGreen(skills, r.deck), grown: r.total };
 }

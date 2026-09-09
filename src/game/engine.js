@@ -828,10 +828,10 @@ export function resolveTrick(state, rng) {
     if (interplayStoreOnLoss) interplayStored += interplayStoreOnLoss; // D_INTERPLAY IV: Niederlage bankt Score für den nächsten Sieg
     winSuit = null; winSuitStreak = 0; // #71 Farbserie: Niederlage beendet die Farbserie
     serieStreak = streakNoReset ? winStreak : 0; // Serienschutz/Serienanker: effektive Serie hält
-    // Pflanze (§6.8): eine Niederlage gibt nichts — außer mit Zähem Halm, der graue (Episch auch grüne) Karten
-    // trotzdem wachsen lässt. Alles im Modul.
+    // Pflanze (§6.26): eine Niederlage gibt nichts — außer mit Zähem Halm, der jede Karte trotzdem wachsen lässt
+    // (Episch zusätzlich je Formation an ihrer Position). Alles im Modul.
     if ((activeArchetypes || []).includes("plant")) {
-      const r = plantOnLoss(newGrowth, deck, skills, skillTiers, { cardId: pCard.id });
+      const r = plantOnLoss(newGrowth, deck, skills, skillTiers, { cardId: pCard.id, posForm });
       newGrowth = r.growth; deck = r.deck; growthTotal += r.grown;
     }
     lastResult = "loss";

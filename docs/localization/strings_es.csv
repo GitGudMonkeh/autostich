@@ -431,13 +431,13 @@ Pruning: replacing the skill permanently grants +NaN% root/bloom score (up to +N
 "ability.SK_PLANT_07.desc.2","i18n","Die niedrigste Karte je Segment startet mit +16 Wachstum.","","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "ability.SK_PLANT_07.desc.3","i18n","Die 2 niedrigsten Karten je Segment starten mit +16 Wachstum.","","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "ability.SK_PLANT_07.name","i18n","Setzlingsbeet","Semillero","Seedbed","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
-"ability.SK_PLANT_08.desc","i18n","Graue Karten wachsen bei einer Niederlage +1.","Las cartas sin madurar (grises) crecen +1 también con una derrota, hasta que están verdes.
+"ability.SK_PLANT_08.desc","i18n","Verliert eine Karte, wächst sie +1.","Las cartas sin madurar (grises) crecen +1 también con una derrota, hasta que están verdes.
 Poda: al sustituir la habilidad, +NaN % permanente de puntuación de raíz y floración (hasta +NaN %).","Unripe (grey) cards grow +1 even on a loss, until they are green.
 Pruning: replacing the skill permanently grants +NaN% root/bloom score (up to +NaN%).","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
-"ability.SK_PLANT_08.desc.0","i18n","Graue Karten wachsen bei einer Niederlage +1.","","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
-"ability.SK_PLANT_08.desc.1","i18n","Graue Karten wachsen bei einer Niederlage +2.","","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
-"ability.SK_PLANT_08.desc.2","i18n","Graue Karten wachsen bei einer Niederlage +3.","","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
-"ability.SK_PLANT_08.desc.3","i18n","Graue Karten wachsen bei einer Niederlage +3. Auch grüne Karten wachsen +1.","","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
+"ability.SK_PLANT_08.desc.0","i18n","Verliert eine Karte, wächst sie +1.","","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
+"ability.SK_PLANT_08.desc.1","i18n","Verliert eine Karte, wächst sie +2.","","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
+"ability.SK_PLANT_08.desc.2","i18n","Verliert eine Karte, wächst sie +3.","","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
+"ability.SK_PLANT_08.desc.3","i18n","Verliert eine Karte, wächst sie +4. Zusätzlich +1 je Formation an ihrer Position.","","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "ability.SK_PLANT_08.name","i18n","Zäher Halm","Tallo Resistente","Tough Stalk","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "ability.SK_PLANT_09.desc","i18n","Wird eine Karte grün, wachsen ihre grauen Nachbarn +5.","Cuando una carta verde gana, vuelve verde de inmediato a una vecina que aún esté gris.","When a green card wins, it immediately turns a still-grey neighbour green.","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "ability.SK_PLANT_09.desc.0","i18n","Wird eine Karte grün, wachsen ihre grauen Nachbarn +5.","","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""

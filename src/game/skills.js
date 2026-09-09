@@ -84,7 +84,7 @@ const PFLANZE = {
   ranken:        [{ growth: 5 }, { growth: 8 }, { growth: 12 }, { growth: 16, chain: true }], // Episch: der einzige Dominoeffekt der Fraktion
   setzlingsbeet: [{ growth: 8, cards: 1 }, { growth: 12, cards: 1 }, { growth: 16, cards: 1 }, { growth: 16, cards: 2 }],
   lichtung:      [{ extra: 2 }, { extra: 3 }, { extra: 4 }, { extra: 4, perFormation: true }], // §6.26: eine Stufe hoch (mechanisch richtig gebaut, maß nur flach)
-  halm:          [{ growth: 1 }, { growth: 2 }, { growth: 3 }, { growth: 3, greenToo: 1 }],
+  halm:          [{ growth: 1 }, { growth: 2 }, { growth: 3 }, { growth: 4, perFormation: true }], // §6.26: ohne Grau-Schranke — jede Karte wächst; Episch nimmt das Formations-Wachstum eines Siegs mit
   // Hebel — sie ändern, was als Formation erkannt wird (formations.js), und addieren keinen Score
   spalier:       [{ borders: 1 }, { borders: 2 }, { borders: 3 }, { borders: 7 }],
   wildwuchs:     [{ jokers: 1 }, { jokers: 2 }, { jokers: 3 }, { jokers: Infinity }],
@@ -309,7 +309,7 @@ export const SKILL_DEFS = {
   SK_PLANT_12: { id: "SK_PLANT_12", name: "Lichtung", archetype: "plant", keywords: ["growth", "formation"], tiers: PFLANZE.lichtung,
     ...tiered(PFLANZE.lichtung, (r) => `Ein Sieg in einer Formation gibt +${r.extra} Wachstum zusätzlich${r.perFormation ? ", je Formation an der Siegposition" : ""}.`) },
   SK_PLANT_08: { id: "SK_PLANT_08", name: "Zäher Halm", archetype: "plant", keywords: ["growth"], tiers: PFLANZE.halm,
-    ...tiered(PFLANZE.halm, (r) => `Graue Karten wachsen bei einer Niederlage +${r.growth}.${r.greenToo ? ` Auch grüne Karten wachsen +${r.greenToo}.` : ""}`) },
+    ...tiered(PFLANZE.halm, (r) => `Verliert eine Karte, wächst sie +${r.growth}.${r.perFormation ? ` Zusätzlich +${C.PLANT_GROWTH_PER_FORMATION} je Formation an ihrer Position.` : ""}`) },
   // Hebel — sie ändern, was als Formation erkannt wird, und addieren keinen Score
   SK_PLANT_03: { id: "SK_PLANT_03", name: "Spalier", archetype: "plant", keywords: ["green", "formation"], tiers: PFLANZE.spalier,
     ...tiered(PFLANZE.spalier, (r) => `${r.borders === 1 ? "Die Segmentgrenze mit den meisten grünen Karten daneben ist offen" : r.borders >= 7 ? "Alle Segmentgrenzen mit grünen Karten daneben sind offen" : `Die ${r.borders} Segmentgrenzen mit den meisten grünen Karten daneben sind offen`}: Formationen laufen dort über das Segment hinaus.`) },
