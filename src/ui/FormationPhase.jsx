@@ -15,9 +15,9 @@ import { haptics } from "./haptics.js";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { skillDef } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
 import { t } from "../i18n/index.js";
-import { energyBuy } from "../game/coins.js";  // Münz-Ökonomie §3.2: Preis und Vorrat — dieselbe Quelle wie der Reducer
+import { energyBuy, unspentEnergyCoins } from "../game/coins.js";  // Münz-Ökonomie §3.2 Preis und Vorrat · §2.3 was übrige Energie einbringt — dieselbe Quelle wie der Reducer
 import { P as PLANT_S } from "../game/factions/plant.js"; // Skill-ids der Pflanze (Spalier-Zeile)
-import { CoinAmount } from "./CoinMark.jsx";
+import { CoinAmount, CoinReward } from "./CoinMark.jsx"; // §2.3: was die übrige Energie einbringt
 
 const GOLD = "#d4a63a"; // #201.2: einheitliche Bestätigen-/Aktionsfarbe
 // Summe aller Formations-Stärken (Σ mult−1 über alle Positionen) — Basis für das reaktive Delta (#95.6).
@@ -235,6 +235,11 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, onBu
           <div className="flex items-center gap-2">
             <span className="text-meta-1 uppercase tracking-wide font-bold" style={{ color: "#6d7288" }}>{t("form.energy")}</span>
             <span className="ty-num font-bold" style={{ fontVariantNumeric: "tabular-nums", fontSize: 18, color: formationEnergy > 0 ? "#5ab87a" : "#6d7288" }}>{formationEnergy}</span>
+            {/* §2.3: was die ÜBRIGE Energie beim Bestätigen einbringt — sie zählt mit jedem Tausch herunter,
+                und der Spieler sieht den Preis eines Tauschs, während er ihn erwägt. GEKAUFTE Energie ist
+                herausgerechnet (unspentEnergyCoins): ein Kauf hebt die Zahl nicht, sonst wäre er ein Rabatt
+                auf die eigene Erstattung. */}
+            <CoinReward n={unspentEnergyCoins(formationEnergy, state.coinEnergy)} />
             {!energy.soldOut && (
               <button onClick={energy.can ? onBuyEnergy : undefined} disabled={!energy.can}
                 className="ml-auto as-edge-thin px-2.5 py-1.5 rounded-lg text-body-5 font-bold inline-flex items-center gap-1.5 transition-all disabled:cursor-not-allowed"

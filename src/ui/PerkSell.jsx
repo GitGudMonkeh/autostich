@@ -18,7 +18,7 @@
 import { useState } from "react";
 import { overlayPortal } from "./overlayPortal.jsx";
 import { phaseCard, PhaseHairline, PHASE_ACCENTS } from "./modalStyle.jsx";
-import { CoinAmount } from "./CoinMark.jsx";
+import { CoinAmount, COIN_GAIN } from "./CoinMark.jsx";
 import { BuyConfirm } from "./BuyConfirm.jsx";
 import { GlossaryText } from "./Glossary.jsx";
 import { tierMeta, romanOf } from "../game/rarity.js";
@@ -27,7 +27,6 @@ import { familyDef, perkDef, perkCat, rarityLabel } from "../i18n/labels.js";
 import { t } from "../i18n/index.js";
 
 const LEG_GOLD = "#d4a63a";   // dasselbe Gold wie überall für „legendär" — keine neue Farbe
-const GAIN_GREEN = "#5ab87a"; // dasselbe Grün wie die Gutschrift in der Leiste
 
 /* Name, Beschreibung und Marke einer Zeile — die eine Stelle, an der Familie und flacher Perk
    auseinandergehen. Danach sind beide dieselbe Zeile. */
@@ -61,8 +60,8 @@ function SellRow({ entry, onSell }) {
           style={{ background: `${info.cat.color}22`, color: info.cat.color }}>{info.cat.name}</span>}
         <span className="ml-auto">
           <span className="inline-flex items-center rounded-lg px-2.5 py-1"
-            style={{ background: "linear-gradient(180deg,#16241a,#121a14)", border: `1px solid ${GAIN_GREEN}66` }}>
-            <CoinAmount n={entry.price} size={11} dim={blocked} style={{ color: GAIN_GREEN }} />
+            style={{ background: "linear-gradient(180deg,#16241a,#121a14)", border: `1px solid ${COIN_GAIN}66` }}>
+            <CoinAmount n={entry.price} size={11} dim={blocked} style={{ color: COIN_GAIN }} />
           </span>
         </span>
       </div>

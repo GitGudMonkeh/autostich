@@ -18,8 +18,8 @@ import { formationBorder } from "./formationStyle.js";
 import { formationAbbr, formationLabel } from "./formationLabels.js";
 import { archFrameLines } from "./CardGrid.jsx"; // #UI: durchgezogene Gebäude-Kontur wie in der Aufstellungsphase
 import { fmtScore } from "./format.js";
-import { rerollOffer, coverBuy, COVER_CELLS } from "../game/coins.js"; // Münz-Ökonomie §3.1 Neuwurf · §3.4 Baufeld — dieselben Rechnungen wie der Reducer
-import { RerollLabel, CoinAmount } from "./CoinMark.jsx";              // Beschriftung: Anzahl solange gratis, danach der Preis
+import { rerollOffer, coverBuy, COVER_CELLS, FORFEIT_BUILD } from "../game/coins.js"; // Münz-Ökonomie §3.1 Neuwurf · §3.4 Baufeld · §2.3 Phase ohne Hauptaktion — dieselben Rechnungen wie der Reducer
+import { RerollLabel, CoinAmount, CoinReward } from "./CoinMark.jsx";  // Beschriftung: Anzahl solange gratis, danach der Preis · §2.3 was das Nichtbauen einbringt
 import { GlossaryPanel } from "./Glossary.jsx";
 import { glacierGridProps } from "./glacierBoard.js"; // Eis: Gletscher-/Firn-Marker auch am Architekt-Brett
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon (Eis ersetzt glacier.webp)
@@ -393,6 +393,10 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
     const el = typeof document !== "undefined" && document.getElementById(`arch-inspect-${inspectId}`);
     if (el) el.scrollIntoView({ block: "nearest", behavior: "smooth" });
   }, [inspectId]);
+  /* §2.3: was diese Phase einbringt, wenn sie ohne Hauptaktion endet. `actedMain` ist dieselbe Bedingung,
+     die der Reducer prüft — errichten und ausbauen setzen sie, versetzen und abreißen nicht. Nach einer
+     Hauptaktion ist der Wert 0 und die Marke verschwindet, statt eine Zahlung zu versprechen, die ausfällt. */
+  const idleReward = architect.actedMain ? 0 : FORFEIT_BUILD;
   // #281: alle markierten Gebäude abreißen (nur wenn die Menge wirklich Platz schafft); der removeFor-Effekt baut danach automatisch.
   const confirmDemolish = () => { if (!demolishIds.length || !demolishFit) return; demolishIds.forEach((id) => onDemolish?.(id)); setDemolishIds([]); };
   // #361-Folge: „↶ Rückgängig"/„Zurücksetzen" betreffen NUR Verschiebungen (die Gebäude bleiben, actedMain unberührt) →
@@ -1190,10 +1194,10 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                 committed.length > 0 ? (
                   <div className="flex gap-2">
                     <button onClick={() => { setInspectId(null); setSelId(null); setPhase("move"); }} className="flex-1 rounded-lg py-2 text-body-5 font-bold" style={{ background: `${CAT.value.color}22`, border: `1px solid ${CAT.value.color}`, color: "#cfe3f5" }}>{t("arch.rearrange")}</button>
-                    <button onClick={() => onDone?.()} className="flex-1 rounded-lg py-2 text-body-5 font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>{t("arch.buildNothing")}</button>
+                    <button onClick={() => onDone?.()} className="flex-1 rounded-lg py-2 text-body-5 font-bold inline-flex items-center justify-center gap-1.5" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>{t("arch.buildNothing")}<CoinReward n={idleReward} /></button>
                   </div>
                 ) : (
-                  <button onClick={() => onDone?.()} className="w-full rounded-lg py-2 text-body-5 font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>{t("arch.buildNothing")}</button>
+                  <button onClick={() => onDone?.()} className="w-full rounded-lg py-2 text-body-5 font-bold inline-flex items-center justify-center gap-1.5" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>{t("arch.buildNothing")}<CoinReward n={idleReward} /></button>
                 )
               ) : phase === "upgrade" && pendingUpgrade != null ? (
                 <div className="flex gap-2">

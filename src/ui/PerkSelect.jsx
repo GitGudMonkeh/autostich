@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { rarityOf, RARITY_META, totalCritChanceRaw, hasCritPerk, baseScoreMultFor, zinsReadout, offerHasLegendary } from "../game/perks.js";
-import { rerollOffer, UPGRADE_FROM } from "../game/coins.js";  // Münz-Ökonomie §3.1 Neuwurf · §3.5 Aufwerten — dieselben Zahlen wie der Reducer
-import { RerollLabel, CoinAmount } from "./CoinMark.jsx";      // Beschriftung: Anzahl solange gratis, danach der Preis
+import { rerollOffer, UPGRADE_FROM, FORFEIT_PERK } from "../game/coins.js";  // Münz-Ökonomie §3.1 Neuwurf · §3.5 Aufwerten — dieselben Zahlen wie der Reducer
+import { RerollLabel, CoinAmount, CoinReward } from "./CoinMark.jsx";  // Beschriftung: Anzahl solange gratis, danach der Preis · §2.3 was das Ablehnen einbringt
 import { PerkUpgrade } from "./PerkUpgrade.jsx";               // Aufwertphase für Perks (Zwilling von SkillUpgrade)
 import { PerkSell } from "./PerkSell.jsx";                     // §3.6 Perk-Verkauf (Testfeature) — eine Ebene unter dem Aufwerten
 import { sellables } from "../game/perkSale.js";               // §3.6: gibt es überhaupt etwas zu verkaufen?
@@ -120,7 +120,13 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, onUpgradeFamily
                 <RerollLabel r={rerollBuy} freeKey="perk.reroll" buyKey="perk.reroll.buy" have={state.coins || 0} />
               </ActionButton>
             )}
-            {onDecline && <ActionButton kind="decline" flex className="lv-actbtn" onClick={onDecline}>{tr("perk.declineAll")}</ActionButton>}
+            {/* §2.3: was das Ablehnen EINBRINGT, direkt an seinem Knopf. Die Gutschrift blitzt sonst erst
+                nach der Entscheidung in der Leiste auf — zu spät, um sie zu treffen. */}
+            {onDecline && (
+              <ActionButton kind="decline" flex className="lv-actbtn" onClick={onDecline}>
+                <span className="inline-flex items-center gap-1.5">{tr("perk.declineAll")}<CoinReward n={FORFEIT_PERK} /></span>
+              </ActionButton>
+            )}
           </ActionBar>
         )}
 
