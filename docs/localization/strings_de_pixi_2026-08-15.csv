@@ -421,12 +421,12 @@ Pruning: replacing the skill permanently grants +NaN% root/bloom score (up to +N
 "ability.SK_PLANT_06.desc.2","i18n","Deine 3 am weitesten gewachsenen blühenden Karten zählen bei der Formationserkennung als Joker.","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "ability.SK_PLANT_06.desc.3","i18n","Alle blühenden Karten zählen bei der Formationserkennung als Joker.","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "ability.SK_PLANT_06.name","i18n","Wildwuchs","Wind Seeds","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
-"ability.SK_PLANT_07.desc","i18n","Die niedrigste Karte je Segment startet mit +8 Wachstum.","The lowest card in each segment starts the run with +undefined growth of a head start.
+"ability.SK_PLANT_07.desc","i18n","Die Karten deines grünsten Segments wachsen am Ende eines Durchlaufs +2.","The lowest card in each segment starts the run with +undefined growth of a head start.
 Pruning: replacing the skill permanently grants +NaN% root/bloom score (up to +NaN%).","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
-"ability.SK_PLANT_07.desc.0","i18n","Die niedrigste Karte je Segment startet mit +8 Wachstum.","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
-"ability.SK_PLANT_07.desc.1","i18n","Die niedrigste Karte je Segment startet mit +12 Wachstum.","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
-"ability.SK_PLANT_07.desc.2","i18n","Die niedrigste Karte je Segment startet mit +16 Wachstum.","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
-"ability.SK_PLANT_07.desc.3","i18n","Die 2 niedrigsten Karten je Segment starten mit +16 Wachstum.","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
+"ability.SK_PLANT_07.desc.0","i18n","Die Karten deines grünsten Segments wachsen am Ende eines Durchlaufs +2.","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
+"ability.SK_PLANT_07.desc.1","i18n","Die Karten deines grünsten Segments wachsen am Ende eines Durchlaufs +3.","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
+"ability.SK_PLANT_07.desc.2","i18n","Die Karten deines grünsten Segments wachsen am Ende eines Durchlaufs +4.","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
+"ability.SK_PLANT_07.desc.3","i18n","Die Karten jedes Segments wachsen am Ende eines Durchlaufs +4.","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "ability.SK_PLANT_07.name","i18n","Setzlingsbeet","Seedbed","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "ability.SK_PLANT_08.desc","i18n","Verliert eine Karte, wächst sie +1.","Unripe (grey) cards grow +1 even on a loss, until they are green.
 Pruning: replacing the skill permanently grants +NaN% root/bloom score (up to +NaN%).","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""

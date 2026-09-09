@@ -19,7 +19,8 @@ import { syncHeatMax, fireValueBonus, fireOnWin, fireOnLoss, heatMult, verbrennu
 // exp skill rework: die Pflanze-Mechanik (Passiv „Wachstum", 15 Skills, 4 Legendäre) lebt im Fraktionsmodul; die
 // Engine ruft ihre Übergänge (Sieg, Niederlage, Durchlaufende) und reicht das Bündel { skillTiers, growth } an die
 // Formations-Engine weiter, deren Erkennung vier Pflanze-Hebel und zwei Legendäre ändern.
-import { plantOnWin, plantOnLoss, plantOnGap, plantParam, plantValueBonus, plantFormMult, P as PLANT } from "./factions/plant.js";
+import { plantOnWin, plantOnLoss, plantOnGap, plantParam, plantValueBonus, plantFormMult, beetGains, applyGrowth,
+  bloomAllIfFullGreen, P as PLANT } from "./factions/plant.js";
 // (#267: import aus stats.js entfernt — die Stat-Phase/Faktoren sind weg.)
 import { computeFormations, positionHasFormation, activeFormationCount, summarizeFormations, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
 import { perkLegendaryChance, anchorAt } from "./shop.js";
@@ -1037,8 +1038,15 @@ export function resolveTrick(state, rng) {
       const r = fireCycleEnd(heat, skills, skillTiers, deck, newForged);
       heat = r.heat; deck = r.deck; newForged = r.forged;
     }
-    // (§6.11: die Pflanze hat am Durchlaufende nichts mehr zu tun — der Weltenbaum ist mit den Legendären auf drei
-    //  gestrichen; ihr Zustand wandert ausschließlich über Siege.)
+    // Pflanze (§6.26): das Setzlingsbeet ist der einzige Durchlaufende-Haken der Fraktion — die Karten des grünsten
+    // Segments (Episch: jedes Segment) wachsen. Der nächste Durchlauf rechnet seine Formationen auf diesem Stand.
+    if ((activeArchetypes || []).includes("plant")) {
+      const gains = beetGains(skills, skillTiers, { order: playerOrder, deck, segmentSize: SEGMENT_SIZE });
+      if (gains.length) {
+        const r = applyGrowth(newGrowth, deck, gains);
+        newGrowth = r.growth; deck = bloomAllIfFullGreen(skills, r.deck); growthTotal += r.total;
+      }
+    }
 
     // #226 Großmeister: kürzerer Lauf als Schwierigkeits-Hebel (maxCycles override, sonst C.MAX_CYCLES → byte-identisch).
     // Dev-Run (Test-Layout): state.maxCycles setzt die Rundenzahl eines einzelnen Laufs frei (20..100); null → Bestand.

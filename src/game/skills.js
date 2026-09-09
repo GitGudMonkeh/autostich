@@ -82,7 +82,8 @@ const PFLANZE = {
   // Wachstum
   aussaat:       [{ growth: 2 }, { growth: 3 }, { growth: 4 }, { growth: 5, second: 1 }], // §6.26: eine Stufe hoch — der einzige Wachstums-Skill, der schon zahlte, bekommt den kleinsten Schub
   ranken:        [{ growth: 5 }, { growth: 8 }, { growth: 12 }, { growth: 16, chain: true }], // Episch: der einzige Dominoeffekt der Fraktion
-  setzlingsbeet: [{ growth: 8, cards: 1 }, { growth: 12, cards: 1 }, { growth: 16, cards: 1 }, { growth: 16, cards: 2 }],
+  setzlingsbeet: [{ growth: 2 }, { growth: 3 }, { growth: 4 }, { growth: 4, allSegments: true }], // §6.26: aus dem einmaligen Kaltstart wird ein Ort, der jeden Durchlauf wächst
+
   lichtung:      [{ extra: 2 }, { extra: 3 }, { extra: 4 }, { extra: 4, perFormation: true }], // §6.26: eine Stufe hoch (mechanisch richtig gebaut, maß nur flach)
   halm:          [{ growth: 1 }, { growth: 2 }, { growth: 3 }, { growth: 4, perFormation: true }], // §6.26: ohne Grau-Schranke — jede Karte wächst; Episch nimmt das Formations-Wachstum eines Siegs mit
   // Hebel — sie ändern, was als Formation erkannt wird (formations.js), und addieren keinen Score
@@ -305,7 +306,7 @@ export const SKILL_DEFS = {
   SK_PLANT_09: { id: "SK_PLANT_09", name: "Ranken", archetype: "plant", keywords: ["growth", "green"], tiers: PFLANZE.ranken,
     ...tiered(PFLANZE.ranken, (r) => `Wird eine Karte grün, wachsen ihre grauen Nachbarn +${r.growth}.${r.chain ? ` Wird eine Karte dadurch grün, wachsen ihre grauen Nachbarn ebenfalls +${r.growth}.` : ""}`) },
   SK_PLANT_07: { id: "SK_PLANT_07", name: "Setzlingsbeet", archetype: "plant", keywords: ["growth"], tiers: PFLANZE.setzlingsbeet,
-    ...tiered(PFLANZE.setzlingsbeet, (r) => `${r.cards === 1 ? "Die niedrigste Karte je Segment startet" : `Die ${r.cards} niedrigsten Karten je Segment starten`} mit +${r.growth} Wachstum.`) },
+    ...tiered(PFLANZE.setzlingsbeet, (r) => `Die Karten ${r.allSegments ? "jedes Segments" : "deines grünsten Segments"} wachsen am Ende eines Durchlaufs +${r.growth}.`) },
   SK_PLANT_12: { id: "SK_PLANT_12", name: "Lichtung", archetype: "plant", keywords: ["growth", "formation"], tiers: PFLANZE.lichtung,
     ...tiered(PFLANZE.lichtung, (r) => `Ein Sieg in einer Formation gibt +${r.extra} Wachstum zusätzlich${r.perFormation ? ", je Formation an der Siegposition" : ""}.`) },
   SK_PLANT_08: { id: "SK_PLANT_08", name: "Zäher Halm", archetype: "plant", keywords: ["growth"], tiers: PFLANZE.halm,

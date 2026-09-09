@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import * as C from "../src/game/constants.js";
 import { SKILL_DEFS, PFLANZE_TIERS as PT, ARCHETYPE_ORDER, SKILL_TIER_COUNT } from "../src/game/skills.js";
-import { P, plantStage, greenCount, applyGrowth, growthOnWin, setzlingsbeetGains, plantValueBonus, plantFormMult, greenWeight } from "../src/game/factions/plant.js";
+import { P, plantStage, greenCount, applyGrowth, growthOnWin, beetGains, plantValueBonus, plantFormMult, greenWeight } from "../src/game/factions/plant.js";
 import { resolveTrick } from "../src/game/engine.js";
 import { initialState, reducer } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
@@ -198,37 +198,34 @@ describe("Pflanze — die Wachstums-Skills (§6.8)", () => {
     expect(lose({ deck: greenDeck, growth: { X1: G }, formations: withRun([0, 1, 2]), ...tier(P.ZAEHER_HALM, 3) }).growth.X1)
       .toBe(G + PT.halm[3].growth + C.PLANT_GROWTH_PER_FORMATION);
   });
-  it("Setzlingsbeet: der Kaltstart je Segment, deterministisch die niedrigste Karte", () => {
-    const deck = deckOf((i) => ({ value: i % SEGMENT_SIZE === 3 ? 1 : 9 })); // je Segment ist Position 3 die niedrigste
-    const gains = setzlingsbeetGains([P.SETZLINGSBEET], { [P.SETZLINGSBEET]: 0 }, { order: identity(), deck, segmentSize: SEGMENT_SIZE });
-    expect(gains).toHaveLength(N / SEGMENT_SIZE);
-    expect(gains[0]).toEqual({ id: "X3", amount: PT.setzlingsbeet[0].growth });
-    expect(setzlingsbeetGains([P.SETZLINGSBEET], { [P.SETZLINGSBEET]: 3 }, { order: identity(), deck, segmentSize: SEGMENT_SIZE })).toHaveLength(2 * N / SEGMENT_SIZE);
+  it("Setzlingsbeet: das grünste Segment wächst, Episch jedes (§6.26)", () => {
+    const beet = (t, deck) => beetGains([P.SETZLINGSBEET], { [P.SETZLINGSBEET]: t }, { order: identity(), deck, segmentSize: SEGMENT_SIZE });
+    const deck = deckOf((i) => (i >= 5 && i <= 7 ? { green: true } : {})); // Segment 1 hat drei grüne Karten, die anderen keine
+    expect(beet(0, deck).map((g) => g.id)).toEqual(["X5", "X6", "X7", "X8", "X9"]);
+    expect(beet(0, deck)[0].amount).toBe(PT.setzlingsbeet[0].growth);
+    expect(beet(3, deck), "Episch: jedes Segment").toHaveLength(N);
+    // Ohne grüne Karte ist kein Segment vorn — dann gewinnt deterministisch das vordere.
+    expect(beet(0, deckOf(() => ({}))).map((g) => g.id)).toEqual(["X0", "X1", "X2", "X3", "X4"]);
   });
-  /* Owner 2026-09-08: der erste Pflanzen-Pick legt jetzt ZWEI Kaltstarts übereinander — erst den der
-     Fraktion (die zehn grünen Karten des Decks sind grün), dann den des Setzlingsbeets. Der Test prüft
-     beide und vor allem ihre Reihenfolge: das Beet zählt OBENDRAUF, der Fraktions-Kaltstart hebt nur an. */
-  it("der erste Pflanzen-Pick legt beide Kaltstarts an — grüne Farbe, dann Setzlingsbeet (Reducer)", () => {
+  /* Owner 2026-09-08: der erste Pflanzen-Pick legt den Fraktions-Kaltstart — die zehn grünen Karten des Decks sind
+     grün. §6.26: das Setzlingsbeet sät hier NICHT mehr mit (es wächst am Ende jedes Durchlaufs, engine.js), also ist
+     der Kaltstart der Fraktion die einzige Quelle beim Pick. */
+  it("der erste Pflanzen-Pick legt den Fraktions-Kaltstart an — nur die grüne Farbe (Reducer)", () => {
     const base = { ...initialState(makeRng(1)), phase: "levelup", skillOffer: [P.SETZLINGSBEET], skillOfferTiers: { [P.SETZLINGSBEET]: 0 } };
     const s = reducer(base, { type: "PICK_SKILL", skillId: P.SETZLINGSBEET, rng: makeRng(2) });
     expect(s.activeArchetypes).toContain("plant");
     const greens = base.deck.filter((c) => c.suit === "G");
     expect(greens).toHaveLength(N / 4); // zehn im 40er-Deck
-    const beet = setzlingsbeetGains([P.SETZLINGSBEET], { [P.SETZLINGSBEET]: 0 }, { order: base.playerOrder, deck: base.deck, segmentSize: SEGMENT_SIZE });
-    expect(beet).toHaveLength(N / SEGMENT_SIZE);
-    // Gewachsen ist genau die Vereinigung der beiden Mengen, sonst nichts.
-    expect(new Set(Object.keys(s.growth))).toEqual(new Set([...greens.map((c) => c.id), ...beet.map((g) => g.id)]));
+    // Gewachsen ist genau die grüne Farbe, sonst nichts — das Beet sät beim Pick nicht mehr mit (§6.26).
+    expect(new Set(Object.keys(s.growth))).toEqual(new Set(greens.map((c) => c.id)));
     // Grün ist grün: über der Schwelle UND mit dem Flag auf der Karte (der Weg über applyGrowth).
     const inDeck = (id) => s.deck.find((c) => c.id === id);
     for (const c of greens) {
       expect(s.growth[c.id]).toBeGreaterThanOrEqual(C.PLANT_GREEN_THRESHOLD);
       expect(inDeck(c.id).green).toBe(true);
     }
-    // Das Beet addiert auf den Boden, den der Fraktions-Kaltstart gelegt hat — auf einer grünen Karte zählt beides.
-    for (const g of beet) {
-      const floor = inDeck(g.id).suit === "G" ? C.PLANT_GREEN_THRESHOLD : 0;
-      expect(s.growth[g.id]).toBe(floor + PT.setzlingsbeet[0].growth);
-    }
+    // Der Kaltstart hebt nur an: genau auf die Schwelle, keinen Punkt darüber.
+    for (const c of greens) expect(s.growth[c.id]).toBe(C.PLANT_GREEN_THRESHOLD);
   });
 });
 

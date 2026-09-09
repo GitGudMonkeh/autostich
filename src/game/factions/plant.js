@@ -310,9 +310,8 @@ export function plantOnLoss(growth, deck, skills, skillTiers, { cardId = null, p
 // (§6.11: der Weltenbaum ist gestrichen — eine reine Wachstums-Rampe am Durchlaufende ohne eigene Auszahlung. Damit
 //  hat die Fraktion keinen Durchlaufende-Haken mehr.)
 
-/* Setzlingsbeet (§6.8): der Kaltstart — die niedrigste Karte je Segment (Episch die zwei niedrigsten) startet mit
-   Wachstumsvorsprung. Läuft einmal, wenn der erste Pflanzen-Skill liegt (Reducer). Niedrigste Karte deterministisch:
-   kleinster Wert, dann kleinste id. `segmentSize` kommt vom Aufrufer (formations.js SEGMENT_SIZE). */
+/* Der Fraktions-Kaltstart (unten, greenSuitGains) hat mit §6.26 die Kaltstart-Rolle des Setzlingsbeets übernommen —
+   und stärker, weil er die zehn grünen Karten gleich über die Grün-Schwelle hebt. */
 /* Kaltstart der FRAKTION (Owner 2026-09-08): sobald die Pflanze steht, sind die zehn GRÜNEN Karten des
    Decks grün — mit genau dem Wachstum, das dafür nötig ist, keines mehr. Die eigene Farbe ist gewachsen,
    der Rest muss es sich verdienen.
@@ -337,16 +336,22 @@ export function greenSuitGains(deck = [], growth = {}) {
   return out;
 }
 
-export function setzlingsbeetGains(skills, skillTiers, { order = [], deck = [], segmentSize = 5 } = {}) {
+/* Setzlingsbeet (§6.26): das Beet ist das Segment mit den meisten grünen Karten; seine Karten wachsen am Ende jedes
+   Durchlaufs, Episch wächst jedes Segment. Ein Segment ist die Einheit, in der Formationen entstehen — die Karten
+   wachsen also als Gruppe, die zusammen in einer Formation steht und als Mitläufer zählt. Das ist der einzige
+   Ausgang, über den Wachstum auf einer nicht-siegenden Karte zahlt (§6.26). Gleichstand: das vordere Segment. */
+export function beetGains(skills, skillTiers, { order = [], deck = [], segmentSize = 5 } = {}) {
   const step = plantParam(skills, skillTiers, P.SETZLINGSBEET, "growth");
   if (!step) return [];
-  const n = plantParam(skills, skillTiers, P.SETZLINGSBEET, "cards") || 1;
-  const gains = [];
+  const segs = [];
   for (let s = 0; s * segmentSize < order.length; s++) {
     const seg = [];
-    for (let p = s * segmentSize; p < (s + 1) * segmentSize && p < order.length; p++) seg.push(deck[order[p]]);
-    seg.sort((a, b) => (a.value - b.value) || (a.id < b.id ? -1 : 1));
-    for (const c of seg.slice(0, n)) gains.push({ id: c.id, amount: step });
+    for (let p = s * segmentSize; p < (s + 1) * segmentSize && p < order.length; p++) if (deck[order[p]]) seg.push(deck[order[p]]);
+    if (seg.length) segs.push(seg);
   }
-  return gains;
+  if (!segs.length) return [];
+  const chosen = plantParam(skills, skillTiers, P.SETZLINGSBEET, "allSegments")
+    ? segs
+    : [segs.reduce((best, cur) => (greenCount(cur) > greenCount(best) ? cur : best), segs[0])];
+  return chosen.flatMap((seg) => seg.map((c) => ({ id: c.id, amount: step })));
 }
