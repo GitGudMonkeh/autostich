@@ -26,11 +26,17 @@ const scen = (over = {}) => ({
 const massAt = (p, v) => { const m = zeros(); m[p] = v; return m; };
 // Stufe je Rolle setzen (Normal ist Zeile 0, also der Default eines Szenarios ohne glacierRoleTiers).
 const at = (role, tier) => ({ glacierRoles: [role], glacierRoleTiers: { [role]: tier } });
+// Die Würfe kommen AUS der Stufenleiter, nicht aus abgetippten Prozenten — sonst rostet der Wächter bei jeder
+// Neutarierung (§5.20 hat die Zeile verdoppelt und genau das ausgelöst).
+const CRIT = EIS.sproedbruch[0].crit;                 // Crit-Chance je Punkt Masse, Normal
+const chance = (masse) => masse * CRIT;
+const knappDrunter = (masse) => chance(masse) - 0.001; // trifft
+const knappDrueber = (masse) => chance(masse) + 0.001; // trifft nicht
 
 describe("Sprödbruch — Masse wird Crit-Chance", () => {
   it("ein Wurf unter der Massen-Chance crittet, derselbe Wurf ohne den Skill nicht", () => {
     const base = { glacierLocked: lockAt(0), glacierMass: massAt(0, 10) };
-    const roll = () => 0.04;                       // 10 Masse × 0,5 % = 5 % Chance → 0,04 trifft
+    const roll = () => knappDrunter(10);
     const ohne = resolveTrick(scen(base), roll);
     const mit = resolveTrick(scen({ ...base, glacierRoles: [ROLES.SPROEDBRUCH] }), roll);
     expect(ohne.crits).toBe(0);                    // Eis hat ohne Skill 0 % Grund-Crit
@@ -38,25 +44,25 @@ describe("Sprödbruch — Masse wird Crit-Chance", () => {
   });
 
   it("knapp über der Chance crittet auch mit Skill nicht — es ist eine Chance, kein Schalter", () => {
-    const s = resolveTrick(scen({ glacierLocked: lockAt(0), glacierMass: massAt(0, 10), glacierRoles: [ROLES.SPROEDBRUCH] }), () => 0.06);
+    const s = resolveTrick(scen({ glacierLocked: lockAt(0), glacierMass: massAt(0, 10), glacierRoles: [ROLES.SPROEDBRUCH] }), () => knappDrueber(10));
     expect(s.crits).toBe(0);
   });
 
   it("ohne Masse keine Chance — der Skill hängt an der Ressource", () => {
-    const s = resolveTrick(scen({ glacierLocked: lockAt(0), glacierRoles: [ROLES.SPROEDBRUCH] }), () => 0.001);
+    const s = resolveTrick(scen({ glacierLocked: lockAt(0), glacierRoles: [ROLES.SPROEDBRUCH] }), () => 0.0001);
     expect(s.crits).toBe(0);
   });
 
   it("mehr Masse, mehr Chance: derselbe Wurf trifft erst ab genug Masse", () => {
-    const roll = () => 0.04;
+    const roll = () => knappDrunter(10);   // liegt zwischen der Chance bei 4 und der bei 10 Masse
     const wenig = resolveTrick(scen({ glacierLocked: lockAt(0), glacierMass: massAt(0, 4), glacierRoles: [ROLES.SPROEDBRUCH] }), roll);
     const viel = resolveTrick(scen({ glacierLocked: lockAt(0), glacierMass: massAt(0, 10), glacierRoles: [ROLES.SPROEDBRUCH] }), roll);
-    expect(wenig.crits).toBe(0);                   // 4 × 0,5 % = 2 % < 4 %
-    expect(viel.crits).toBe(1);                    // 10 × 0,5 % = 5 % > 4 %
+    expect(wenig.crits).toBe(0);                   // die Chance bei 4 Masse liegt unter dem Wurf
+    expect(viel.crits).toBe(1);                    // die bei 10 darüber
   });
 
   it("nur der Gletscher selbst — eine freie Karte bekommt nichts", () => {
-    const s = resolveTrick(scen({ glacierLocked: lockAt(1), glacierMass: massAt(1, 20), glacierRoles: [ROLES.SPROEDBRUCH] }), () => 0.04);
+    const s = resolveTrick(scen({ glacierLocked: lockAt(1), glacierMass: massAt(1, 20), glacierRoles: [ROLES.SPROEDBRUCH] }), () => knappDrunter(10));
     expect(s.crits).toBe(0);                       // gespielt wird pos0, und pos0 ist kein Gletscher
   });
 });
@@ -65,8 +71,8 @@ describe("Sprödbruch Episch — der Crit friert wieder an", () => {
   it("ein Crit gibt dem Gletscher die Episch-Masse zurück", () => {
     const base = { glacierLocked: lockAt(0), glacierMass: massAt(0, 10) };
     const { critMass } = EIS.sproedbruch[3];
-    const normal = resolveTrick(scen({ ...base, ...at(ROLES.SPROEDBRUCH, 0) }), () => 0.04);
-    const episch = resolveTrick(scen({ ...base, ...at(ROLES.SPROEDBRUCH, 3) }), () => 0.04);
+    const normal = resolveTrick(scen({ ...base, ...at(ROLES.SPROEDBRUCH, 0) }), () => knappDrunter(10));
+    const episch = resolveTrick(scen({ ...base, ...at(ROLES.SPROEDBRUCH, 3) }), () => knappDrunter(10));
     expect(normal.crits).toBe(1);
     expect(episch.crits).toBe(1);
     expect(episch.glacierMass[0] - normal.glacierMass[0]).toBe(critMass);

@@ -130,7 +130,9 @@ const EIS = {
   // §5.18 (Owner): Sprödbruch ersetzt Eispanzer auf SK_ICE_17. Crit ist der größte Hebel auf den Bruch (glacierWinMult
   // nimmt den Crit-Multiplikator mit, Basis ×2,25) — und kein Eis-Skill bediente ihn, Eis hat 0 % Grund-Crit. Startwert
   // bewusst niedrig: multiplikativ auf den Bruch tariert man von unten hoch.
-  sproedbruch:    [{ crit: 0.005 }, { crit: 0.0075 }, { crit: 0.01 }, { crit: 0.015, critMass: 3 }],
+  // §5.20 (Owner): verdoppelt — der Startwert war bewusst niedrig gewählt (multiplikativ auf den Bruch), und §5.19 hat
+  // ihn bei −9 % gemessen. Bei Masse 12 sind das jetzt 12 / 18 / 24 / 36 % Crit-Chance.
+  sproedbruch:    [{ crit: 0.01 }, { crit: 0.015 }, { crit: 0.02 }, { crit: 0.03, critMass: 3 }],
 };
 export const EIS_TIERS = EIS;
 // Einfrieren: der Nachsatz je Reichweite — ausgeschrieben, weil Singular und Plural sonst am Zahlwort auseinanderfallen.

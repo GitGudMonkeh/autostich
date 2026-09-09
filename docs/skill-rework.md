@@ -4709,6 +4709,37 @@ vergleichbar (dazwischen liegt BURST_SCALE 250 → 150). Der strukturelle Grund 
 Siegquote schon bei 63 %, der Hebel „gewinne den Stich, der den Bruch trägt" greift also selten, und der Sim misst
 nicht, wofür die beiden gebaut wurden. Das entscheidet der Playtest, nicht dieses Instrument.
 
+### 5.20 Sprödbruch verdoppelt — und Kettenbruch ist der neue Anti-Skill (2026-09-09, Owner)
+
+Owner: „sprödbruch werte verdoppeln, und wie steht kettenbruch aktuell da".
+
+**Sprödbruch** 0,5/0,75/1/1,5 → **1/1,5/2/3 %** Crit-Chance je Punkt Masse (bei Masse 12 also 12/18/24/36 %). Der
+Startwert war in §5.18 bewusst niedrig gesetzt, weil Crit multiplikativ auf den Bruch wirkt. Ablation (gleiche Seeds
+701.., explore 500 / greedy 90): **−9 % → +51 %**, damit Platz 4 direkt hinter den drei Legendären. Die
+**Gletscherzunge** ist mitgestiegen (**−10 % → +11 %**) — sie hängt am selben Sieg-Stack, den der Crit multipliziert.
+
+Nebenbei: der Wächter in `glacier-roles-b2.test.js` tippte die Prozente ab und ist an der Verdopplung zerbrochen. Er
+leitet seine Würfe jetzt aus `EIS.sproedbruch` ab — eine Neutarierung darf einen Wächter nicht mehr rot machen.
+
+#### Kettenbruch: −18 %, der schlechteste Skill der Fraktion
+
+Er war in §5.18 bei −8 % und ist jetzt bei **−18 %** (Haltequote 59 %, Siegquote der Ablation 34 %, Leiter invertiert:
+N 0,66 · S 0,73 · SS 0,56 · E 1,01). Die Ursache ist strukturell, nicht numerisch — **er verbrennt Masse**. Sonde,
+ein reifer Gletscher (12) neben drei jungen (5):
+
+| | Brüche | Score | Masse danach |
+| --- | --- | --- | --- |
+| ohne Kettenbruch | 1 | 6.188 | 0 / 5 / 5 / 5 |
+| mit Kettenbruch | 2 | 7.688 | 0 / **0** / 5 / 5 |
+
+Er kassiert 5 Masse sofort auf Stufe 1 für +1.500 — und wirft damit den Weg zu einem Bruch auf Stufe 3 oder 4 weg,
+der ein Vielfaches wert gewesen wäre. Ein erzwungener Bruch rechnet mit `Math.max(1, natTier)`, und seit §5.18 fällt
+das Feld dabei auf `max(0, Masse − 12)`, also auf null. **§5.18 hat ihn also verschlimmert:** mit der vierten Schwelle
+lohnt sich Warten mehr denn je, und er ist die Regel, die das Warten unterbricht.
+
+Das ist exakt die Form, in der Rissbildung als Anti-Skill erkannt und in §5.18 ersetzt wurde („halten & wachsen, dann
+gewaltig brechen" — und Kettenbruch bricht früh). Der Entscheid, ob er umgebaut oder ersetzt wird, liegt beim Owner.
+
 ## 6. Pflanze
 
 ### 6.1 Richtung und Abgrenzung (gesetzt, Owner 2026-09-06)
