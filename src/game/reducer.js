@@ -1,7 +1,8 @@
 import { buildDeck, shuffledOrder } from "./deck.js";
 import { rngAt } from "./rng.js"; // #205 Challenger Mode: adressierte Sub-Ströme (build-unabhängige Slots)
 import { PERK_DEFS, buildPerkOffer, offerHasLegendary, isLegendary } from "./perks.js";
-import { rerollPrice, energyBuy, coverBuy, COVER_CELLS, FOCUS_PRICE, upgradeBuy, familyUpgradeBuy, COIN_START } from "./coins.js"; // Münz-Ökonomie: dieselben Rechnungen wie die Knöpfe (§3.1 Neuwurf · §3.2 Energie · §3.3 Fokus · §3.4 Baufeld · §3.5 Aufwerten Skill+Perk)
+import { rerollPrice, energyBuy, coverBuy, COVER_CELLS, FOCUS_PRICE, upgradeBuy, familyUpgradeBuy, COIN_START,
+         coinGrant, unspentEnergyCoins, FORFEIT_SKILL, FORFEIT_PERK, FORFEIT_BUILD } from "./coins.js"; // Münz-Ökonomie: dieselben Rechnungen wie die Knöpfe (§3.1 Neuwurf · §3.2 Energie · §3.3 Fokus · §3.4 Baufeld · §3.5 Aufwerten Skill+Perk) + Verzicht (§2.3)
 import { familyDef, applyFamilyPick } from "./families.js"; // formationEnergyBonus läuft jetzt über engine.formationEnergyFor
 import { UPGRADE_TYPES } from "./rarity.js";
 import { archetypeOf, buildSkillDoors, rerollDoorSkills, glacierRolesOf, ARCHETYPE_ORDER } from "./skills.js";
@@ -149,6 +150,7 @@ export function initialState(rng = Math.random, seed = null) {
     // tragen die letzte Auszahlung für die Anzeige (§4) — reine Schau, der Kontostand selbst ist `coins`. Nicht
     // verwechseln mit dem Perk „Zinseszins" (zinsCapital/zinsRate): der arbeitet auf Score-Kapital, nicht auf Münzen.
     coins: COIN_START, lastCycleCoins: null, lastCycleForms: null,
+    coinGain: null, // §2.3: die zuletzt gutgeschriebene Verzichts-Zahlung { n, source, seq } — nur Anzeige, `seq` löst das Aufblitzen aus
     coinRerolls: 0, // §3.1: gekaufte Neuwürfe DIESER Phase — die Preistreppe; Reset überall dort, wo auch offerRerolls auf 0 geht
     coinEnergy: 0,  // §3.2: gekaufte Energie DIESER Aufstellphase (verfällt mit ihr)
     focusCalled: false, // §3.3: in DIESER Skill-Phase wurde schon ein Fokus gerufen (einmal je Phase)
@@ -476,8 +478,13 @@ export function reducer(state, action) {
     }
     case "ARCHITECT_DONE": { // Architekt-Phase verlassen → zugehöriger Durchlauf startet (Angebot leeren).
       if (state.phase !== "architect") return state;
+      /* Verzicht zahlt (§2.3): eine Phase ohne Hauptaktion bringt Münzen. `actedMain` ist genau die
+         richtige Bedingung — es ist der Riegel, den Errichten UND Ausbauen setzen und den sonst nichts
+         setzt. Versetzen, Umfärben und Abreißen zahlen also weiter aus, und das ist gewollt: sie kosten
+         keinen Bauplan, sie ordnen nur um. */
+      const idle = state.architect && !state.architect.actedMain ? FORFEIT_BUILD : 0;
       // #361 transiente Undo-Daten mit der Phase verwerfen (nicht in den gespeicherten Lauf mitschleppen).
-      return { ...state, phase: "play", architect: { ...state.architect, offers: null, phaseHistory: [], phaseAnchor: null } };
+      return { ...state, ...coinGrant(state, idle, "build"), phase: "play", architect: { ...state.architect, offers: null, phaseHistory: [], phaseAnchor: null } };
     }
 
     case "RESOLVE_TRICK":
@@ -869,13 +876,18 @@ export function reducer(state, action) {
     case "DECLINE_SKILL": {
       if (state.phase !== "levelup" || (!state.skillOffer && !state.skillDoors)) return state;
       const cleared = { skillOffer: null, skillOfferTiers: null, skillOfferArchs: null, skillDoors: null };
+      /* Verzicht zahlt (§2.3): ein abgelehnter Skill bringt Münzen. Einmal oben gerechnet und in JEDEN
+         Ausgang gespreizt — die fünf Wege hier (Meisterhand-Bonus, Dev-Run, Eis-Gletscher, Perk-Ersatz,
+         leerer Pool) sind alle derselbe Verzicht, und eine Zahlung, die an einem davon fehlt, wäre für
+         den Spieler nicht erklärbar. Auch der Meisterhand-Bonus zahlt: der Slot bleibt leer. */
+      const paid = coinGrant(state, FORFEIT_SKILL, "skill");
       // Meisterhand-Bonus (s. PICK_PERK): das Angebot ist ein GESCHENK des eben genommenen Perks, kein
       // Rundenplatz. Die „nie verschwendet"-Regel darunter (Skill abgelehnt → stattdessen ein Perk) darf
       // hier deshalb nicht greifen — sie machte aus einem Perk zwei. Ablehnen heißt: Slot bleibt vorerst
       // leer, die nächste reguläre Skill-Phase füllt ihn. Steht VOR dem Dev-Zweig, weil der Bonus auch im
       // Dev-Run ein Bonus ist. Der Eis-Ablehn-Gletscher unten entfällt aus demselben Grund.
-      if (state.skillOfferBonus) return { ...state, ...cleared, skillOfferBonus: false, phase: "play" };
-      if (state.devMode) return { ...state, ...cleared, phase: "play" }; // Dev-Run: „Runde überspringen" → direkt weiter, KEIN Perk-Ersatz
+      if (state.skillOfferBonus) return { ...state, ...cleared, ...paid, skillOfferBonus: false, phase: "play" };
+      if (state.devMode) return { ...state, ...cleared, ...paid, phase: "play" }; // Dev-Run: „Runde überspringen" → direkt weiter, KEIN Perk-Ersatz
       const off = buildPerkOffer(state.perks, state.familyTiers, rngFor(state, action, state.cycle, "perk", 0), runRules(state).perksOffered, perkLegendaryChance(state.shop) * (state.treeLegMult ?? 1), state.treeRareShift || 0, state.architectEnabled, C.perkPhaseAt(state.devSchedule || C.DECISION_SCHEDULE, state.cycle) === C.LEG_PERK2_PHASE ? (state.treeLegForce2 || 0) : 0, state.rareCap || 4, state.rareFloor || 1); // M4/M5: 2. Perk-Phase (Reroll behält Garantie) · §4c Rarität-Deckel · #370 Rarität-Boden
       // Eis-Neudesign: bei VOLLEN Eis-Slots (SKILL_SLOTS Eis-Skills) friert das Ablehnen trotzdem einen Gletscher fest —
       // Ausgleich dafür, dass kein weiterer Eis-Skill mehr in die Slots passt (analog: ein Tausch bei vollen Slots gibt
@@ -884,21 +896,22 @@ export function reducer(state, action) {
       const iceSkillCount = state.skills.filter((id) => archetypeOf(id) === "ice" && !isLegendarySkill(id)).length;
       const declineGrant = glacierGrant(state.glacierLocked, state.challengeBlockForm, (state.playerOrder || []).length, 1, schildHeld(state));
       if ((state.activeArchetypes || []).includes("ice") && iceSkillCount >= G_DECLINE_MIN_SKILLS && declineGrant > 0) {
-        return { ...state, ...cleared, phase: "glacier-target", glacierPicksLeft: declineGrant, pendingPerkOffer: off.length > 0 ? off : null };
+        return { ...state, ...cleared, ...paid, phase: "glacier-target", glacierPicksLeft: declineGrant, pendingPerkOffer: off.length > 0 ? off : null };
       }
       return off.length > 0
-        ? { ...state, ...cleared, offer: off, offerRerolls: 0, coinRerolls: 0, focusCalled: false } // → Perk-Auswahl (#205: frisches Angebot → Reroll-Index 0; §3.1: frische Entscheidung → Preistreppe von vorn)
-        : { ...state, ...cleared, phase: "play" };             // Perk-Pool leer → weiterspielen
+        ? { ...state, ...cleared, ...paid, offer: off, offerRerolls: 0, coinRerolls: 0, focusCalled: false } // → Perk-Auswahl (#205: frisches Angebot → Reroll-Index 0; §3.1: frische Entscheidung → Preistreppe von vorn)
+        : { ...state, ...cleared, ...paid, phase: "play" };    // Perk-Pool leer → weiterspielen
     }
 
     // exp skill rework: Legendäre kommen als fünfte Seltenheit im normalen Skill-Angebot (PICK_SKILL); die
     // eigene Legendär-Phase (#272) und ihre Aktionen PICK_/DECLINE_/REROLL_LEGENDARY sind entfallen.
 
     // Perk-Angebot komplett ablehnen (#138): Angebot verworfen, weiter im Spiel — so ist eine Perk-Runde nie
-    // „verschwendet". Keine Belohnung mehr: mit dem Architekten (#202/#225.1) gibt es keine Münzökonomie.
+    // „verschwendet". Verzicht zahlt (§2.3): dafür gibt es Münzen — halb so viel wie für einen Skill, weil
+    // ein Perk weniger Lauf-Gewicht trägt. (Die alte #138-Belohnung fiel mit dem Shop weg; sie ist zurück.)
     case "DECLINE_PERK": {
       if (state.phase !== "levelup" || !state.offer) return state;
-      return { ...state, offer: null, phase: "play" };
+      return { ...state, ...coinGrant(state, FORFEIT_PERK, "perk"), offer: null, phase: "play" };
     }
 
     // #263: Perk-Angebot neu würfeln — eigener Perk-Reroll-Pool (rerollsPerk), kein Free-Reroll mehr.
@@ -1059,10 +1072,15 @@ export function reducer(state, action) {
                formationEnergy: formationEnergyFor(state) + (state.coinEnergy || 0),
                formationSwaps: [] };
     }
-    // Bestätigen → Reihenfolge bleibt persistent, Übergang in die Kampfphase.
+    /* Bestätigen → Reihenfolge bleibt persistent, Übergang in die Kampfphase.
+       Verzicht zahlt (§2.3): jede ÜBRIGE Energie bringt eine Münze — gekaufte ausgenommen
+       (unspentEnergyCoins), sonst wäre der Kauf ein Rabatt auf die eigene Rückerstattung. Hier und nicht
+       beim Phasenwechsel in der Engine: das Bestätigen ist der Moment, in dem der Spieler den Verzicht
+       trifft, und nur hier steht `formationEnergy` noch auf dem Rest, den er stehen lässt. */
     case "CONFIRM_FORMATION": {
       if (state.phase !== "formation") return state;
-      return { ...state, phase: "play", formationEnergy: 0, formationSwaps: [] };
+      const left = unspentEnergyCoins(state.formationEnergy, state.coinEnergy);
+      return { ...state, ...coinGrant(state, left, "energy"), phase: "play", formationEnergy: 0, formationSwaps: [] };
     }
 
     default:

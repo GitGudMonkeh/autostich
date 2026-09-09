@@ -1181,7 +1181,7 @@ function AutostichGame() {
             mult={{ value: baseScoreMult, color: multColor, hot: multHot, shakeClass: multShakeClass, pulseKey: multPulse }}
             getElapsed={getElapsed} timerTicking={active && visible} paused={paused}
             cycle={state.cycle} totalCycles={totalCycles} pos={state.pos} cycleLen={cycleLenFor(state.shop)}
-            coins={state.coins || 0}
+            coins={state.coins || 0} coinGain={state.coinGain}
             onTogglePause={() => setPaused((p) => !p)}
             speedMult={speedMult} onSpeed={(m) => setSpeedMult((cur) => (cur === m ? 1 : m))}
             onChronik={() => setShowChronik(true)} deckBack={deckSkin.back}

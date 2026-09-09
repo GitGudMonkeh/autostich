@@ -11,7 +11,8 @@ import { initialState, reducer } from "../src/game/reducer.js";
 import { resolveTrick } from "../src/game/engine.js";
 import { coinsForFormations, COIN_CYCLE_BASE, COIN_FORM_PER, COIN_FORM_CAP, COIN_START, rerollPrice, rerollOffer,
          energyPrice, energyBuy, ENERGY_MAX_BUYS, coverPrice, coverBuy, COVER_CELLS,
-         upgradePrice, MAX_SKILL_TIER, familyUpgradeBuy, MAX_FAMILY_TIER } from "../src/game/coins.js";
+         upgradePrice, MAX_SKILL_TIER, familyUpgradeBuy, MAX_FAMILY_TIER,
+         unspentEnergyCoins, FORFEIT_SKILL, FORFEIT_PERK, FORFEIT_BUILD } from "../src/game/coins.js";
 import { countBuiltFormations } from "../src/game/formations.js";
 import { FAMILY_DEFS } from "../src/game/families.js";
 import { isLegendarySkill, archetypeOf } from "../src/game/skills.js";
@@ -119,6 +120,94 @@ describe("Auszahlung am Durchlaufende (§2.2, Naht)", () => {
 
   it("Startbetrag (§2.1): ein frischer Lauf beginnt mit dem Sockel in der Kasse", () => {
     expect(initialState(makeRng(1)).coins).toBe(COIN_START);
+  });
+});
+
+/* ---- Verzicht zahlt (§2.3) ----------------------------------------------------------------------
+   Die zweite Einnahmeart, und die einzige, die der Spieler selbst auslöst. Geprüft wird jede der vier
+   Quellen an ihrer Naht im Reducer — die Beträge stehen im Plan und sind Owner-Entscheide, also fällt
+   ein Tuning-Schritt hier auf und nicht erst im Playtest. */
+describe("Verzicht zahlt (§2.3)", () => {
+  const atSkill = (over = {}) => ({
+    ...initialState(makeRng(1), 7),
+    phase: "levelup",
+    skillOffer: ["SK_FIRE_01", "SK_LIGHTNING_01", "SK_FIRE_02"],
+    skillOfferTiers: { SK_FIRE_01: 0, SK_LIGHTNING_01: 0, SK_FIRE_02: 0 },
+    skillOfferArchs: ["fire", "lightning", "fire"],
+    ...over,
+  });
+  const atPerk = (over = {}) => ({ ...initialState(makeRng(1), 7), phase: "levelup", offer: ["P_A_01"], ...over });
+  const inFormation = (over = {}) => ({ ...initialState(makeRng(1), 7), phase: "formation", formationEnergy: 3, ...over });
+  const inArchitect = (over = {}) => ({ ...initialState(makeRng(1), 7), phase: "architect",
+    architect: { buildings: [], offers: [], actedMain: false, winCounters: {}, phaseHistory: [], phaseAnchor: {} }, ...over });
+
+  it("einen Skill ablehnen bringt 12", () => {
+    const s = reducer(atSkill({ coins: 5 }), { type: "DECLINE_SKILL", rng: Math.random });
+    expect(s.coins).toBe(17);
+    expect(s.coinGain).toMatchObject({ n: FORFEIT_SKILL, source: "skill" });
+  });
+
+  it("auch der abgelehnte Meisterhand-Bonus zahlt — der Slot bleibt leer, der Verzicht ist derselbe", () => {
+    // Der Bonus nimmt einen eigenen Ausgang im Reducer (kein Perk-Ersatz). Eine Zahlung, die an einem
+    // der fünf Ausgänge fehlte, wäre für den Spieler nicht erklärbar.
+    const s = reducer(atSkill({ coins: 0, skillOfferBonus: true }), { type: "DECLINE_SKILL", rng: Math.random });
+    expect(s.coins).toBe(FORFEIT_SKILL);
+    expect(s.skillOfferBonus).toBe(false);
+  });
+
+  it("einen Perk ablehnen bringt 6 — halb so viel wie ein Skill", () => {
+    const s = reducer(atPerk({ coins: 5 }), { type: "DECLINE_PERK" });
+    expect(s.coins).toBe(11);
+    expect(FORFEIT_PERK * 2).toBe(FORFEIT_SKILL);
+  });
+
+  it("je übrige Formations-Energie eine Münze", () => {
+    const s = reducer(inFormation({ coins: 0, formationEnergy: 3 }), { type: "CONFIRM_FORMATION" });
+    expect(s.coins).toBe(3);
+    expect(s.formationEnergy).toBe(0);
+  });
+
+  it("GEKAUFTE Energie zahlt nicht zurück — sonst wäre der Kauf ein Rabatt auf die Erstattung", () => {
+    // Gekauft 2 für 3+6 Münzen, keine davon verbraucht: erstattet wird nur, was über die gekaufte
+    // hinaus übrig bleibt. Sonst kauft man für 3 und bekommt 1 zurück.
+    expect(unspentEnergyCoins(5, 2)).toBe(3);
+    expect(unspentEnergyCoins(2, 2)).toBe(0);
+    expect(unspentEnergyCoins(1, 2)).toBe(0);   // mehr verbraucht als Basis — nie negativ
+    const s = reducer(inFormation({ coins: 0, formationEnergy: 5, coinEnergy: 2 }), { type: "CONFIRM_FORMATION" });
+    expect(s.coins).toBe(3);
+  });
+
+  it("wer alle Energie verbraucht, bekommt nichts — und der Zustand bleibt derselbe Gegenstand", () => {
+    const s = reducer(inFormation({ coins: 4, formationEnergy: 0 }), { type: "CONFIRM_FORMATION" });
+    expect(s.coins).toBe(4);
+    expect(s.coinGain).toBe(null);
+  });
+
+  it("eine Architekt-Phase ohne Gebäude und ohne Aufwertung bringt 6", () => {
+    const s = reducer(inArchitect({ coins: 1 }), { type: "ARCHITECT_DONE" });
+    expect(s.coins).toBe(1 + FORFEIT_BUILD);
+  });
+
+  it("wer gebaut oder ausgebaut hat, bekommt nichts — `actedMain` ist die Bedingung", () => {
+    const acted = inArchitect({ coins: 1 });
+    const s = reducer({ ...acted, architect: { ...acted.architect, actedMain: true } }, { type: "ARCHITECT_DONE" });
+    expect(s.coins).toBe(1);
+  });
+
+  it("Versetzen und Abreißen kosten keinen Bauplan — die Phase zahlt trotzdem aus", () => {
+    // Beide setzen `actedMain` bewusst nicht: sie ordnen um, sie verbrauchen nichts.
+    const moved = inArchitect({ coins: 0 });
+    const s = reducer({ ...moved, architect: { ...moved.architect, moved: true } }, { type: "ARCHITECT_DONE" });
+    expect(s.coins).toBe(FORFEIT_BUILD);
+  });
+
+  it("`seq` zählt hoch, damit zweimal derselbe Betrag zwei Ereignisse sind", () => {
+    // Ohne die laufende Nummer bliebe die Anzeige beim zweiten gleichen Betrag stumm — der React-`key`
+    // sähe keinen Unterschied und startete das Aufblitzen nicht neu.
+    const first = reducer(atPerk({ coins: 0 }), { type: "DECLINE_PERK" });
+    const second = reducer(atPerk({ coins: first.coins, coinGain: first.coinGain }), { type: "DECLINE_PERK" });
+    expect(second.coinGain.n).toBe(first.coinGain.n);
+    expect(second.coinGain.seq).toBe(first.coinGain.seq + 1);
   });
 });
 

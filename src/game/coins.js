@@ -47,6 +47,34 @@ export const COIN_START = envNum("SIM_COIN_START", 3);            // Startbetrag
 export const coinsForFormations = (forms) =>
   COIN_CYCLE_BASE + Math.min(COIN_FORM_CAP, Math.floor(Math.max(0, forms || 0) / COIN_FORM_PER));
 
+/* ---- Verzicht zahlt (§2.3) ------------------------------------------------------------------------ */
+/* Vier Quellen, ein Gedanke: wer auf etwas verzichtet, tauscht Build-Stärke gegen Kaufkraft. Sie sind die
+   ZWEITE Einnahmeart neben dem Durchlauf und die einzige, die der Spieler selbst auslöst.
+
+   Beim Spielen im Auge behalten (§2.3): Ablehnen zahlt mehr, als ein Neuwurf kostet (Perk 6 gegen
+   Neuwurf 3). Wer ohnehin ablehnen will, kann vorher mit Gewinn würfeln — selbstbegrenzend, weil es die
+   Phase kostet, aber eine Schleife, die ein Spieler findet. */
+export const FORFEIT_SKILL = envNum("SIM_COIN_FORFEIT_SKILL", 12);
+export const FORFEIT_PERK = envNum("SIM_COIN_FORFEIT_PERK", 6);
+export const FORFEIT_ENERGY = envNum("SIM_COIN_FORFEIT_ENERGY", 1);   // je übriger Energie
+export const FORFEIT_BUILD = envNum("SIM_COIN_FORFEIT_BUILD", 6);     // Architekt-Phase ohne Hauptaktion
+
+/* Übrige Formations-Energie am Ende der Aufstellphase. GEKAUFTE Energie (§3.2) zählt nicht mit — sonst
+   kauft man für 3 und bekommt 1 zurück, und der Kauf wäre Geldvernichtung mit Rabatt. Die Rechnung
+   behandelt die gekaufte Energie damit als die zuletzt übrige: erst zahlt sich aus, was über sie
+   hinausgeht. */
+export const unspentEnergyCoins = (left = 0, bought = 0) =>
+  Math.max(0, (left || 0) - (bought || 0)) * FORFEIT_ENERGY;
+
+/* Eine Gutschrift, an EINER Stelle gebaut: Kontostand plus die Spur für die Anzeige (§4 — eine
+   Verzichts-Zahlung muss in dem Moment sichtbar werden, in dem sie anfällt, sonst merkt niemand, dass
+   Ablehnen zahlt). `seq` zählt hoch, damit zweimal derselbe Betrag als zwei Ereignisse ankommt und die
+   Leiste nicht stumm bleibt. Betrag ≤ 0 → null, der Aufrufer schreibt dann nichts. */
+export function coinGrant(state = {}, n = 0, source = "") {
+  if (!(n > 0)) return null;
+  return { coins: (state.coins || 0) + n, coinGain: { n, source, seq: ((state.coinGain && state.coinGain.seq) || 0) + 1 } };
+}
+
 /* ---- Neuwurf (§3.1) ------------------------------------------------------------------------------ */
 // Zwei Grundpreise, EIN Zähler. Der Zähler sind die GEKAUFTEN Neuwürfe dieser Phase (state.coinRerolls) —
 // Gratis-Neuwürfe aus den Pools zählen nicht mit, sonst wäre der erste Kauf nach zwei Freiwürfen schon
