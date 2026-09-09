@@ -55,10 +55,11 @@ erste Skill-Phase nicht mehr mittellos.
 Ausgezahlt am Ende jedes Durchlaufs. „Gebaute Formationen" sind die **distinkten** Formationen der
 Aufstellung — je Formation einmal (`ordinal === 1`), nicht je Position.
 
-**Deckel — Vorschlag, noch nicht entschieden:** `2 + min(4, floor(F / 8))`, also höchstens 6 Münzen je
-Durchlauf. Grund in §2.5: ein volles Brett kann 8 bis 12 zahlen, wenn die Formationen kurz sind. Der
-Deckel bindet ab 32 Formationen und trifft damit 1 % der gemessenen Durchläufe — der normale Verlauf
-merkt nichts, die Spitze ist weg.
+**Deckel (Owner, 2026-09-09):** `2 + min(4, floor(F / 8))`, also **höchstens 6 Münzen je Durchlauf**.
+Grund in §2.5: ein volles Brett kann 8 bis 12 zahlen, wenn die Formationen kurz sind. Der Deckel bindet
+ab 32 Formationen und trifft damit 1 % der gemessenen Durchläufe — der normale Verlauf merkt nichts, die
+Spitze ist weg. Die Kurzformations-Taktik wäre zudem unsichtbar gewesen: man hätte sie ausrechnen
+müssen, um sie zu finden.
 
 > **Fallstrick bei der Zählung:** im selben Array liegen `formationskern` und `anker` — Architekt- und
 > Ankereffekte, die keine gebaute Formation sind. **Auf `FORMATION_TYPES` filtern**
@@ -300,24 +301,58 @@ gekauft oder gefunden wurde.
 
 | Perk-Stufe | Kumuliert investiert | **Erlös** |
 | --- | --- | --- |
-| I · Normal | 0 | **0** |
+| I · Normal | 0 | **3** (Sockel, Owner 2026-09-09) |
 | II · Selten | 12 | **6** |
 | III · Sehr selten | 37 | **18** |
 | IV · Episch | 77 | **38** |
+| Legendär | keine Stufe | **50** (Owner 2026-09-09) |
+
+Der **Sockel von 3** für Stufe I macht jeden Perk verkäuflich — ohne ihn wäre die Hälfte der Liste
+ausgegraut, weil 60 % aller Drops auf Grundstufe fallen. **Legendäre** tragen keine Stufe und wären nach
+der Formel wertlos; 50 setzt die Leiter über Episch fort. Das Argument dafür ist ihr eingebauter
+Nachteil: bei allen anderen Perks ist Verkaufen eine Notlösung, bei Legendären löst es ein Problem, das
+das Design absichtlich erzeugt hat.
 
 **Das Verhältnis zum Ablehnen ist gewollt** (Owner, 2026-09-09). Ablehnen zahlt fest 6; ab Stufe III ist
 Annehmen-und-Verkaufen also bis zu 6× einträglicher. Das ist kein Leck: wer verkauft, hat den Perk den
 ganzen Lauf über nicht. Ablehnen bleibt der eine Klick für schlechte Angebote, Verkaufen der Umweg, der
 sich bei seltenen Perks lohnt.
 
-**Zwei Punkte offen:**
+#### Was beim Verkauf zurückgebaut wird
 
-1. **Stufe I gibt 0** — ein Grundstufen-Perk ist damit unverkäuflich, man wird ihn auch dann nicht los,
-   wenn man will. Ein Sockel von 3 (die Hälfte des Ablehn-Werts) würde jeden Perk verkäuflich machen,
-   ohne die Leiter zu verzerren.
-2. **Legendäre Perks tragen keine Stufe** (`upgradeInfo` gibt bei `legendary` sofort „nicht aufwertbar"
-   zurück) und wären nach der Formel 0 wert. Entweder ein fester Wert über Episch — 50 wäre die
-   naheliegende Fortsetzung — oder gar nicht verkäuflich.
+**Die Regel (Owner, 2026-09-09): was man aufbaut, behält man — alles andere wird zurückgebaut.**
+
+Der Code trennt das bereits: `card.value` ist der Grundwert, und was erspielt wird (Pflanzenwachstum,
+Feuer-Schmieden, Eis-Buffs) kommt beim Stich als eigener Summand dazu (`plantValue`, `fireValue`,
+`glacierBuff`), nicht in die Karte. Ein Rückbau von `card.value` fasst Erspieltes also nicht an.
+
+| Art | Anzahl | Beim Verkauf |
+| --- | --- | --- |
+| Werte-Perks | 48 Familien | nichts zu tun — die Werte werden ohnehin je Berechnung aus der gehaltenen Stufe gelesen |
+| Rollen-Perks | 13 Familien | `roles[familyId]` löschen. Betroffen u. a. **Farballianz**, **Formationskern**, **Farbfokus**, die C-Familien |
+| Deck-Perks | 8 Familien + **Umverteilung**, **Opfergang** | gespeicherte Differenzen abziehen — siehe unten |
+| **Meisterhand** | — | Slot zurück **und der über sie gewählte Skill geht mit** (Owner). Braucht ein Gedächtnis, welcher Skill über Meisterhand kam. Eine dort investierte Aufwertung ist mit weg |
+| **Bauhütte** | — | Deckel zurück, aber **Verkauf gesperrt, solange mehr Zellen belegt sind, als ohne sie erlaubt wären** — sonst stünden Gebäude auf Zellen, die es nicht mehr gibt |
+| **Zinseszins** | — | Das Kapital **fließt als Score aus** (Owner) — der Perk, der es verzinst hätte, ist weg |
+| Wachstum, Schmieden, Gletschermasse | — | **bleibt** — erspielt, nicht gekauft |
+
+**Deck-Perks: Differenzen speichern, nicht Regeln nachspielen.** 14 der Deck-Effekte würfeln
+(`A_EVEN`, `A_ODD`, `A_SUIT_BOOST`, `A_SMALL_BIG`, `A_MIDRANGE`, `A_SUIT_DUEL`, `A_CONDENSE`); die Regel
+neu anzuwenden gäbe andere Werte. Stattdessen merkt sich der Perk beim Nehmen je Karte die
+**tatsächliche** Differenz vorher/nachher, und der Verkauf zieht sie ab. Das trägt auch die Klemmung:
+eine Karte, die von 2 auf 1 fiel, speichert −1, nicht −2.
+
+> **Bewusste Ungenauigkeit:** hing ein späterer Effekt davon ab, was ein früherer gesetzt hat
+> (Umverteilung macht alle Karten gleich, danach trifft Spitzenförderung andere Karten), kommt beim
+> Verkauf nicht exakt das Deck heraus, das ohne den Perk entstanden wäre. Der Effekt des verkauften
+> Perks ist sauber weg, aber die Geschichte wird nicht neu geschrieben. Dem Spieler gegenüber:
+> *der Perk wird zurückgenommen, nicht die Vergangenheit.*
+
+**Folge bei Zinseszins, die beim Spielen auffallen wird:** der Perk zahlt je Durchlauf nur 12–40 % des
+Kapitals aus, und nur wenn 65 % der Stiche gewonnen wurden (Hürde 26 von 40; gemessener Median 21 —
+sie wird meist verfehlt, dann schrumpft das Kapital sogar). Eine Sofortauszahlung von 100 % ist damit
+fast immer besser als Weiterhalten. Zinseszins wird dadurch vom Langzeit-Investment zum „aufladen und
+einlösen". Einmalig, also nicht ausbeutbar — aber die Spielweise ändert sich.
 
 **Naht:** dieselbe Preisleiter wie die Aufwertung (`UPGRADE_PRICES = [0, 12, 25, 40]` in `coins.js`,
 für Perks über `familyUpgradeBuy`). Es gibt eine Leiter, nicht zwei — wer sie anfasst, verschiebt Kauf
@@ -396,20 +431,17 @@ Dann Neuwurf, Energie, Baufeld. Fokus-Ruf und Aufwerten zuletzt, wenn ihre Vorau
 
 ## 8. Offene Punkte
 
-1. **Deckel auf die Formations-Einnahme?** Vorschlag `2 + min(4, floor(F/8))` — §2.2, begründet in §2.5.
-   Ohne ihn zahlt der Extremfall 8 bis 12 statt 4. **Nicht entschieden.**
-2. **Perk-Verkauf: Sockel für Stufe I, und was geben Legendäre?** §3.6. **Nicht entschieden.**
-3. **Braucht ein Kauf eine Bestätigung?** Auf dem Handy ist ein Fehltipper leicht, ein zweiter Tap aber
+1. **Braucht ein Kauf eine Bestätigung?** Auf dem Handy ist ein Fehltipper leicht, ein zweiter Tap aber
    zäh, wenn man ihn dreimal je Phase macht. Mittelweg: nur die teuren Käufe bestätigen lassen —
    Baufeld, Episch-Aufwertung, Legendär-Neuwurf. **Nicht entschieden.**
-4. **Verfallen Münzen am Laufende?** Der Plan geht von **Verfall** aus — sonst wird Sparen immer
+2. **Verfallen Münzen am Laufende?** Der Plan geht von **Verfall** aus — sonst wird Sparen immer
    richtig. Falls Mitnahme gewollt ist, ändert das nur diese eine Regel, nicht die Struktur.
    **Nicht entschieden.**
-5. **Ranked.** Die Ökonomie ist von selbst seed-unabhängig (sie hängt an der eigenen Aufstellung). Zu prüfen
+3. **Ranked.** Die Ökonomie ist von selbst seed-unabhängig (sie hängt an der eigenen Aufstellung). Zu prüfen
    ist nur, ob Wochen-Modifikatoren, die Neuwürfe oder Energie beschneiden („Kein Reroll",
    „Energie-Ebbe"), mit gekauften kollidieren.
-6. **Namensgleichheit beachten:** der legendäre Perk „Zinseszins" arbeitet mit `zinsCapital` /
+4. **Namensgleichheit beachten:** der legendäre Perk „Zinseszins" arbeitet mit `zinsCapital` /
    `zinsRate` auf Score-Kapital, nicht mit Münzen. Kein Zusammenhang, aber verwechselbar.
-7. **Tote Preisleiter im Code:** `TIER_META` in `rarity.js` trägt noch `price: 8 / 12 / 18 / 30` aus der
+5. **Tote Preisleiter im Code:** `TIER_META` in `rarity.js` trägt noch `price: 8 / 12 / 18 / 30` aus der
    Shop-Zeit; `priceOfTier` wird nirgends mehr aufgerufen. Entweder für §3.5 wiederverwenden oder
    entfernen — nicht danebenlegen.
