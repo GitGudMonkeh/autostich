@@ -3978,6 +3978,74 @@ echte Blowup lag bei 352M, also Faktor 33 über der neuen Grenze.
   Wo die Ablation 13 von 14 Skills hält, summiert sie sich konstruktionsbedingt auf null — irgendwer steht immer
   unten. Die Frage ist die **Spannweite**, nicht das Vorzeichen.
 
+### 7.31 Das Crit-Multiplikator-Bündel (2026-09-09) — Vorschlag, NICHT abgenommen, nichts umgesetzt
+
+Nach §7.30 stehen vier Skills unten, und drei davon auf derselben Achse. Diese Runde hält den Befund und den
+Designstand fest; gebaut ist nichts, abgenommen ist nichts.
+
+#### A. Gemessen: 81 % des Multiplikators wird verworfen
+
+`sim/probes/blitz-multsource.mjs` (neu), Blitz mono, 60 Läufe, mit `SIM_CRIT_MULT_CAP=1000` gefahren, damit der
+gebaute Wert überhaupt sichtbar wird:
+
+| Runden | Basis | Entladung | Stau | Vorentladung | Stapel | Rest | gebaut | ausgezahlt | verworfen |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1–10 | 2,25× | 0,00× | 0,01× | 0,00× | 0,01× | 0,06× | 2,33× | 2,33× | 0 % |
+| 11–20 | 2,25× | 0,04× | 0,01× | 0,02× | 0,07× | 0,12× | 2,50× | 2,50× | 0 % |
+| 21–30 | 2,25× | 0,29× | 0,01× | 0,30× | 0,41× | 0,66× | 3,91× | 3,21× | 18 % |
+| 31–40 | 2,25× | 1,27× | 0,00× | 3,11× | 1,55× | 3,32× | 11,51× | 4,60× | 60 % |
+| **41–50** | 2,25× | 3,54× | **0,00×** | **+16,43×** | 4,64× | 9,19× | **36,01×** | **6,97×** | **81 %** |
+
+Dazu `capexcess-probe.mjs` (ungedeckelt, 60 Läufe): in den Runden 41–50 liegen **67 % der Crits über 8×**, im Schnitt
+um **+49,6×**. Zum Vergleich stand in §7.24 noch „29 % der Crits, Ø +14×" — der Überschuss hat sich vervierfacht,
+auch durch den Sockel und die Ladungsserie aus §7.30 (mehr Leisten → größere Entladungs-Rampe).
+
+**Die Regel, die daraus folgt:** solange die SUMME über dem Deckel liegt, ändert Umverteilen INNERHALB des
+Multiplikators nichts. Vorentladung von +16,4× auf +1× zu stutzen senkt die gebaute Summe von 36× auf 21× —
+ausgezahlt werden weiter 8×, der Skill misst danach genauso schlecht. Es gibt zwei Wege: alle Quellen unter 8
+drücken (das hieße auch Präzision und Raserei streichen) oder die Skills verlassen die Währung.
+
+**Der Deckel selbst ist damit kein Regler mehr:** von 8 auf 12 holt 4 von 50 Punkten Überschuss zurück, also
+nichts. Nur ein vollständiges Streichen würde wirken — und das vervielfachte das Spätspiel. Der Owner-Entscheid aus
+§7.22 („der Deckel bleibt bei 8") wird davon also nicht in Frage gestellt, er wird bestätigt.
+
+#### B. Spannungsstau ist ein anderer Fall als die zwei anderen
+
+Er baut spät **0,00×**. Nicht der Deckel frisst ihn, sein Auslöser ist weg: er zahlt für Siege **ohne** Crit, und
+seit dem Sockel crittet ein Sieg in 84 % der Fälle. Sein Konzept („Trockenphase staut sich auf") setzt seltene
+Crits voraus — genau die hat §7.30 abgeschafft. Das erklärt seine −26 % vollständig und unabhängig vom Deckel.
+
+**Nebenbefund:** Blitzableiter **Episch** hängt am selben sterbenden Auslöser („+1 Ladung je Sieg ohne Crit"). Nicht
+tot, aber auf ein Sechstel der früheren Häufigkeit entwertet.
+
+#### C. Der Designstand (Vorschlag, Entscheid Owner)
+
+**Owner-Regel, gesetzt am 2026-09-09: keine Skills, die auf Niederlagen reagieren.** Ein erster Entwurf, den
+Spannungsstau an Niederlagen zu hängen („verlieren lädt auf"), ist daran gescheitert und ist verworfen.
+
+| Skill | Vorschlag | Warum diese Währung |
+| --- | --- | --- |
+| **Vorentladung** | „Ab Serie X zählt ein Sieg **×1,5**", Leiter auf der Schwelle 20 / 15 / 10 / 6 | Der ×-Faktor sitzt an einer anderen Stelle der Formel, der Deckel fasst ihn nicht an. Identität unverändert. Bewusst der EINZIGE der drei mit einem ×-Faktor — sie multiplizieren mit allem und treiben den Schwanz |
+| **Entladung** | „Jede volle Leiste gibt dauerhaft **+N Basis-Score** je Sieg", Startwerte 1 / 2 / 3 / 5 | Basis-Score kennt keinen Deckel, und das Paar mit Gewitterfront wird sinnvoll: eine gibt Chance, die andere Ertrag, statt zweier Rampen auf derselben vollen Achse |
+| **Spannungsstau** | „Je **Ladung auf der Leiste** zählt dein Sieg **+N Basis-Score**", Startwerte 15 / 25 / 35 / 50 | Der Stau IST die Leiste: aufstauen, entladen, von vorn. Kein Blitz-Skill liest heute den Füllstand — freie Achse. Der Skill braucht danach keinen eigenen Zustand mehr (`stauBonus` fällt weg) |
+| **Lichtbogen** | diese Runde nicht anfassen | Kleinster der vier (−6 %), anderes Problem (Crit-CHANCE ist geklemmt, nicht der Multiplikator), und in §7.28 E bewusst gesetzt. Vier Skills gleichzeitig zu ändern macht jede Zuordnung hinterher unmöglich |
+
+**Verworfen für Spannungsstau,** neben den Niederlagen: „Stiche seit der letzten Ionisierung" (belohnt eine
+LANGSAME Leiste, arbeitet gegen den eigenen Motor) und „je ionisierter Karte im Deck" (freie Achse, aber das ist
+eine Rampe, kein Stau — der Name würde lügen).
+
+#### D. Was auch danach offen bleibt
+
+Nach den drei Umbauten stünden im Multiplikator noch Basis 2,25× + Stapel 4,6× + Rest 9,2× ≈ **16× gegen einen
+Deckel von 8**. Der Deckel bindet also weiter, nur nicht mehr an Blitz-Skills, sondern am Passiv und an
+systemweiten Quellen. Der „Rest" ist dabei auffällig groß; der Verdacht ist die Überschussregel (Crit-Chance über
+100 % → +0,01× je Prozentpunkt), weil tiefe Stapel mit Lichtbogen die ROHE Chance weit über 100 % treiben. Das wäre
+eine eigene Messung — und sie würde §7.28 C korrigieren, wo die Regel als „unbedenklich, kostet nichts" eingestuft
+wurde.
+
+Ebenfalls offen und älter: **Feuer** steht seit §7.30 F allein unten (6,29M gegen Blitz 10,93M, Eis 9,88M,
+Pflanze 11,36M).
+
 ## 5. Eis
 
 ### 5.1 Bestandsaufnahme (2026-09-07, Befund, nichts umgesetzt)
@@ -7245,3 +7313,4 @@ gesetzt, ihre Siegquote liegt zwölf Punkte unter Feuer, und im gemischten Split
 | 2026-09-08 | Owner: die drei Eis-Texte kompakter, ohne Gedankenstriche, ohne Fluff. Nur Wortlaut, keine Mechanik. Raus: die angehängten Erklärsätze („freier Boden ist deine Wucht…", „du kannst das ganze Brett einfrieren"), die Versalien und die Füllwörter. Die Große Lawine nennt jetzt ihren Faktor (×`GROSSE_LAWINE_MULT`) statt „verstärkt" — dieselbe Auskunft, präzise, wie in den übrigen Texten. Die Bindestriche in *Boden-Reserve*, *Eis-Skill* und *Gletscher-Formation* bleiben: das sind projektweite Begriffe aus Glossar und i18n, ein abweichender Wortlaut nur in diesen drei Karten bräche „ein Begriff je Sache". Nebenbei fielen die englischen und spanischen Schild-Texte auf, die noch auf dem Stand vor §5.13/§5.14 standen; beide nachgezogen. §5.18. |
 | 2026-09-09 | Blitz-Befund (7.29, Owner-Ansage „Blitz anlassen"): Rampe, Crit-Quellen, Skillnutzlichkeit und Legendär-Abhängigkeit gemessen. Bis Runde 30 ist das Passiv die einzige Crit-Quelle; der Satz je Skill hat die falsche Form, ein Sockel ist gemessen (nicht gebaut); Serienschutz misst −47 %. Vier Sonden in `sim/probes/`. Vorschläge zum Entscheid, nichts umgesetzt. |
 | 2026-09-09 | Blitz umgesetzt (7.30, Owner: „Sockel steigern und Skillnutzlichkeit erhöhen"): Passiv-Sockel 8 % bei 3 % je Skill (Runden 1–10 8,4 → 14,2 % Crit, erste Leiste R 8 → R 5); Serienschutz zahlt 1 Ladung mit Deckel je Durchlauf statt eines Leisten-Anteils bei jeder Niederlage (−45 → −0 %); Ladungsserie von Crit-Chance auf Ladung ab Serie 16/12/8/5 (−17 → +7 %). Spannweite der Skillnutzlichkeit ÷ Median 1,23 → 0,44. Duell gepaart: Blitz mono 6,92 → 10,93M, die anderen drei unverändert — Feuer steht jetzt allein unten. Balance-Guard-Obergrenze 8,5 → 10,5M mit Beleg. Offen: das Crit-Multiplikator-Bündel (Spannungsstau, Entladung, Vorentladung, Lichtbogen) läuft gegen den 8×-Deckel. |
+| 2026-09-09 | Crit-Multiplikator-Bündel (7.31, Vorschlag, nichts umgesetzt): 81 % des gebauten Multiplikators fällt spät am 8×-Deckel weg (36,01× gebaut, 6,97× ausgezahlt), Vorentladung allein trägt +16,4× davon; Spannungsstau baut 0,00× — sein Auslöser (Sieg ohne Crit) ist seit dem Sockel fast verschwunden. Regel: Umverteilen INNERHALB des Multiplikators ändert nichts, solange die Summe über dem Deckel liegt. Owner-Regel gesetzt: keine Skills, die auf Niederlagen reagieren. Designstand für die drei Skills eingetragen, Abnahme offen. Neue Sonde `blitz-multsource.mjs`. |
