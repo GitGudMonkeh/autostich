@@ -607,6 +607,12 @@ describe("Verzichts-Ertrag am Knopf (Owner 2026-09-09)", () => {
     expect(read("src/ui/PerkSelect.jsx")).toMatch(/<CoinReward n=\{FORFEIT_PERK\}/);
     expect(read("src/ui/SkillSelect.jsx")).toMatch(/<CoinReward n=\{FORFEIT_SKILL\}/);
     expect(read("src/ui/ArchitectScreen.jsx")).toMatch(/idleReward = architect\.actedMain \? 0 : FORFEIT_BUILD/);
+    /* Die Architekt-Phase hat DREI Ausgänge (nichts bauen mit und ohne Gebäude, und das Bestätigen nach
+       dem Umstellen). Alle drei zahlen — versetzen verbraucht keinen Bauplan —, also trägt jeder die
+       Marke. Ohne die Zählung fällt ein vierter Ausgang später still durch. */
+    const doneButtons = read("src/ui/ArchitectScreen.jsx").split("\n").filter((l) => l.includes("onClick={() => onDone?.()}"));
+    expect(doneButtons.length).toBe(3);
+    for (const line of doneButtons) expect(line).toContain("<CoinReward n={idleReward} />");
     // Die Energie ist die einzige laufende Zahl: sie zählt mit jedem Tausch herunter und rechnet die
     // GEKAUFTE Energie heraus — dieselbe Funktion, die der Reducer beim Bestätigen benutzt.
     expect(read("src/ui/FormationPhase.jsx")).toMatch(/<CoinReward n=\{unspentEnergyCoins\(formationEnergy, state\.coinEnergy\)\}/);
