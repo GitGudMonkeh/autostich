@@ -36,31 +36,82 @@ Stelle, an der die Entscheidung ohnehin fällt.
 
 ## 2. Einnahme
 
-**Formel:** `Münzen je Durchlauf = floor((gewonnene Stiche − 20) / 4)`
+**Die Kopplung an die Siegzahl ist gestrichen** (Owner, 2026-09-09). Sie bevorzugte die Fraktionen, die
+leichter Stiche gewinnen — gemessen 1,76× zwischen Feuer (144 Münzen je Lauf) und Pflanze (82). §2.4 hat
+die Messung.
 
-| Gewonnene Stiche | Münzen |
+Drei Quellen:
+
+### 2.1 Startbetrag
+
+**3 Münzen** beim Laufstart (Owner, 2026-09-09 — ersetzt das frühere „kein Startbetrag"). Damit ist die
+erste Skill-Phase nicht mehr mittellos.
+
+### 2.2 Je Durchlauf: Sockel plus Aufstellung
+
+**Formel:** `Münzen je Durchlauf = 2 + floor(gebaute Formationen / 8)`
+
+Ausgezahlt am Ende jedes Durchlaufs. „Gebaute Formationen" sind die **distinkten** Formationen der
+Aufstellung — je Formation einmal (`ordinal === 1`), nicht je Position.
+
+> **Fallstrick bei der Zählung:** im selben Array liegen `formationskern` und `anker` — Architekt- und
+> Ankereffekte, die keine gebaute Formation sind. **Auf `FORMATION_TYPES` filtern**
+> (wiederholung · farbblock · treppe · wechsel), sonst zählt die Einnahme Architektur mit und ist um
+> etwa ein Drittel zu hoch.
+
+**Warum Formationen:** Sie entstehen in der **Aufstellphase**, unabhängig von jedem Stich —
+`computeFormations(playerOrder, deck, …)` läuft einmal je Durchlauf über die Aufstellung, bevor der
+erste Stich fällt. Der Stich entscheidet nur, ob der Formations-*Multiplikator* ausgezahlt wird; für die
+Zählung ist er egal. Damit hängt die Einnahme an der einen Phase, in der der Spieler ohne Fraktionshilfe
+entscheidet.
+
+### 2.3 Verzicht zahlt
+
+Vier Quellen (Owner, 2026-09-09). Alle folgen demselben Gedanken: wer auf etwas verzichtet, tauscht
+Build-Stärke gegen Kaufkraft.
+
+| Verzicht | Münzen |
 | --- | --- |
-| ≤ 20 | 0 |
-| 24 | 1 |
-| 28 | 2 |
-| 32 | 3 |
-| 36 | 4 |
-| 40 | 5 |
+| Einen Skill ablehnen | **+12** |
+| Einen Perk ablehnen | **+6** |
+| Je übrige Formations-Energie am Ende der Aufstellphase | **+1** |
+| Eine Architekt-Phase ohne Gebäude **und** ohne Aufwertung | **+6** |
 
-- Ausgezahlt **am Ende jedes Durchlaufs**.
-- Über einen Lauf grob **130 Münzen** (Annahme: ~24 Siege früh, ~32 in der Mitte, ~40 spät). Das ist
-  die Größenordnung, gegen die alle Preise in §3 gesetzt sind. **Ändert sich die Formel, müssen die
-  Preise mitwandern.**
-- **Kein Perfektionsbonus** (Owner): 40 von 40 zahlt 5, wie die Formel sagt.
-- **Kein Startbetrag** (Owner): der erste Durchlauf zahlt nichts, die erste Skill-Phase hat leere Kasse.
+> **Lesart zum Bestätigen:** „überbelichtete Energie" ist als **übrige, nicht verbrauchte** Energie
+> gelesen. Gekaufte Energie (§3.2) zählt dabei nicht mit — sonst kauft man Energie für 3 und bekommt 1
+> zurück, was den Kauf zur Geldvernichtung mit Rabatt macht.
 
-**Warum Schwelle 20:** Sie erzeugt die Spreizung. Die Siegzahl steigt über den Lauf nur um Faktor ~1,7
-(24 → 40); durch die Schwelle wird daraus Faktor 5 bei den Münzen. Früh knapp, spät reichlich, ohne
-dass die Kopplung an den Score zurückkommt.
+**Eine Wechselwirkung, die auffallen wird:** Ablehnen zahlt mehr, als ein Neuwurf kostet (Perk +6 gegen
+Neuwurf 3). Wer ohnehin ablehnen will, kann vorher mit Gewinn neu würfeln. Das kostet ihn die Phase, ist
+also selbstbegrenzend — aber es ist eine Schleife, die ein Spieler finden wird. Beim Spielen darauf
+achten.
 
-**Naht:** `cycleWins` existiert bereits in `engine.js` (Durchlauf-Sieg-Bilanz, eingeführt für
-Zinseszins #203) und wird je Durchlauf zurückgesetzt. Die Auszahlung hängt an derselben Stelle, an der
-der Durchlauf abgerechnet wird.
+### 2.4 Was gemessen ist
+
+Sim auf dem exp-Stand, 10 Seeds je Fraktion, reine Fraktions-Policy mit Greedy-Aufstellung
+(2026-09-09). **Gemessen**, nicht geschätzt:
+
+| | Ø Formationen | Ø Siege | Münzen/Lauf alt (Siege) | Münzen/Lauf neu (2 + F/8) |
+| --- | --- | --- | --- | --- |
+| Blitz | 17,9 | 23,0 | 128 | 198 |
+| Feuer | 17,3 | 24,4 | 144 | 197 |
+| Eis | 16,9 | 20,4 | 94 | 190 |
+| Pflanze | 20,8 | 19,5 | 82 | 216 |
+| **Spanne** | | | **1,76×** | **1,14×** |
+
+Die Fraktions-Schieflage fällt damit von 1,76× auf 1,14×. Das Einkommen steigt von ~112 auf **~200 je
+Lauf**; jeder Durchlauf zahlt 3 bis 5, keiner mehr null.
+
+**Die Preise in §3 bleiben unverändert** (Owner, 2026-09-09) — bewusst, um im Spiel zu sehen, wie sich
+die höhere Kaufkraft anfühlt. Sie sind gegen ~130 gesetzt; mit ~200 plus den Verzichts-Quellen ist
+deutlich mehr kaufbar als geplant. Das ist der Punkt, an dem beim Spielen zuerst etwas auffallen wird.
+
+**Verworfen: die Zahl der Formations-*Typen*** (0–4 statt der Menge). Gemessen tragen 81–95 % aller
+Aufstellungen alle vier Typen, Treppe ist in 100 % dabei, keine hat weniger als drei. Ein verkleideter
+Fixbetrag.
+
+**Naht:** `state.formations` liegt am Durchlaufende vor, an derselben Stelle, an der bisher
+`coinsForWins(cycleWins)` stand. `cycleWins` wird für die Einnahme nicht mehr gebraucht.
 
 ---
 
@@ -208,7 +259,8 @@ aufwerten, als man hält.
   über `hidden sm:inline` weg.
 - Jeder Kaufknopf zeigt **seinen aktuellen Preis** — bei den Treppen also den nächsten, nicht den
   Grundpreis.
-- Die Auszahlung am Ende eines Durchlaufs soll sichtbar sein (Siege → Münzen).
+- Die Auszahlung am Ende eines Durchlaufs soll sichtbar sein (Formationen → Münzen), und die
+  Verzichts-Zahlungen aus §2.3 im Moment, in dem sie anfallen — sonst merkt niemand, dass Ablehnen zahlt.
 - Alle Texte über die i18n-Kataloge (`src/i18n/de.js`, `src/i18n/en.js`), keine hart kodierten Strings.
   Nach Textänderungen `npm run loc:export` — sonst schlagen die Katalog-Tests fehl.
 
@@ -276,7 +328,7 @@ Dann Neuwurf, Energie, Baufeld. Fokus-Ruf und Aufwerten zuletzt, wenn ihre Vorau
 2. **Verfallen Münzen am Laufende?** Der Plan geht von **Verfall** aus — sonst wird Sparen immer
    richtig. Falls Mitnahme gewollt ist, ändert das nur diese eine Regel, nicht die Struktur.
    **Nicht entschieden.**
-3. **Ranked.** Die Ökonomie ist von selbst seed-unabhängig (sie hängt an gespielten Siegen). Zu prüfen
+3. **Ranked.** Die Ökonomie ist von selbst seed-unabhängig (sie hängt an der eigenen Aufstellung). Zu prüfen
    ist nur, ob Wochen-Modifikatoren, die Neuwürfe oder Energie beschneiden („Kein Reroll",
    „Energie-Ebbe"), mit gekauften kollidieren.
 4. **Namensgleichheit beachten:** der legendäre Perk „Zinseszins" arbeitet mit `zinsCapital` /
