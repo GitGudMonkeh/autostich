@@ -14,6 +14,11 @@ VARIANT=quarter node sim/probes/variant-duel.mjs         # duel with a tier tabl
 N=150 node sim/probes/weissglut-gate.mjs                 # how often the Feuersturm/Schmelzpunkt gates stand open, with and without Weissglut
 node sim/probes/print-skill-texts.mjs                    # every Feuer/Blitz skill with its four tier texts
 GDOC_LOGDIR=/path/to/logs GDOC_TAG=725 node sim/probes/gdoc.mjs   # owner document (HTML for Google Docs)
+N=100 node sim/probes/blitz-ramp.mjs                     # when the lightning engine comes online, per 10-round block
+N=100 node sim/probes/blitz-critsource.mjs               # which source the lightning crit chance comes from, per block
+N=60 node sim/probes/faction-pacing.mjs                  # score after rounds 10/20/30/40/50 per faction, legendary split
+SIM_LIGHTNING_CRIT_SOCKET=0.08 SIM_LIGHTNING_CRIT_PER_SKILL=0.03 \
+  node --import ./sim/probes/lightning-socket-hook.mjs sim/probes/blitz-ramp.mjs   # unbuilt passive shape (§7.29)
 ```
 
 Reading rules (measured, see §7.22): the paired greedy ablation (`--mode skills`) is the arbiter for

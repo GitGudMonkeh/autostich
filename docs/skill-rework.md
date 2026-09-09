@@ -3568,6 +3568,228 @@ gesetzt.** Empfehlung war dieselbe: Er wird genommen, ohne zu tragen, und die
 Rückkopplung liegt bei den Tiefen-Skills, nicht bei ihm — das ist die Rolle, die der Platz haben sollte. Wenn er
 sich zu blass anfühlt, ist der doppelte Satz der Regler; dann aber gierig neu messen, nicht im Duell.
 
+### 7.29 Blitz springt zu spät an (2026-09-09, Owner-Ansage) — Befund, nichts umgesetzt
+
+Owner: „wir müssen etwas Blitz anlassen. aktuell ist es zu langsam crit gut zum laufen zu bekommen und
+ionisierungen zu stapeln ohne einen legendären. schau die Verteilung der skillnutzlichkeit an und auch ob wir am
+passive Bonus drehen müssen." Diese Runde **misst nur** — am Code der Fraktion ist nichts geändert.
+
+Vier neue Sonden tragen die Zahlen: `sim/probes/blitz-ramp.mjs` (wann der Motor anspringt),
+`blitz-critsource.mjs` (woher die Crit-Chance kommt), `faction-pacing.mjs` (wann eine Fraktion verdient) und
+`lightning-socket-hook.mjs`, der eine **nicht gebaute** Passiv-Form messbar macht, ohne `src/` anzufassen.
+
+#### A. Die Rampe: der Kreis schließt sich in den ersten sieben Runden kein einziges Mal
+
+`blitz-ramp.mjs`, 100 Läufe, Welt nur Blitz, Fraktions-Policy (zufällige Blitz-Picks). Die 62 Läufe **ohne
+Legendäres**:
+
+| Runden | Blitz-Skills | Ø Crit-Chance | Leisten kumuliert | Ø Stapel je Karte | ionisierte Karten | Siege mit Stapel |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1–10 | 1,8 | 8,4 % | 1 | 0,0 | 1 % | 1 % |
+| 11–20 | 4,2 | 20,8 % | 5 | 0,1 | 9 % | 12 % |
+| 21–30 | 6,8 | 34,4 % | 9 | 0,4 | 27 % | 31 % |
+| 31–40 | 9,2 | 49,6 % | 17 | 1,3 | 52 % | 59 % |
+| 41–50 | 11,8 | 71,6 % | 39 | 3,4 | 77 % | 82 % |
+
+Meilensteine als Median-Runde: **erste Ionisierung Runde 8**, fünfte Leiste Runde 20, zehnte Leiste Runde 28;
+Crit-Chance ≥ 25 % ab Runde 14, ≥ 50 % ab Runde 33.
+
+**Das ist die gemessene Fassung des Owner-Befundes.** Blitz hat 50 Runden à 40 Stiche. Die erste Runde gibt den
+ersten Skill, also 4 % Crit-Chance; bei rund 26 Siegen je Runde ist das ein Crit je Runde und damit **zehn Runden
+für die erste volle Leiste**. Skills aus den Runden 5 und 9 drücken das auf acht. Bis dahin ist Blitz eine Fraktion
+ohne Fraktionsmechanik: die Ladungsleiste steht sichtbar auf dem Schirm, und es passiert nichts.
+
+Die Spalte „Siege mit Stapel" ist die härteste: sie sagt, wie oft die Ionisierung überhaupt **ausgezahlt** wird —
+die Karte, mit der man gerade gewinnt, trägt Stapel. Das erste Laufdrittel liegt bei 1 %, die Laufmitte bei 31 %.
+
+#### B. Bis Runde 30 ist das Passiv die Crit-Chance
+
+`blitz-critsource.mjs`, 80 Läufe, dieselbe Welt; die 51 Läufe ohne Legendäres. Rohsumme je Quelle, vor der
+100-%-Klemme:
+
+| Runden | Passiv | Gewitterfront | Ladungsserie | Lichtbogen | Rest (Perks) | angezeigt |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1–10 | 7,3 % | 0,0 % | 0,0 % | 0,0 % | 1,2 % | 8,5 % |
+| 11–20 | 16,9 % | 0,5 % | 0,1 % | 0,0 % | 3,3 % | 20,8 % |
+| 21–30 | 27,3 % | 1,8 % | 0,2 % | 0,2 % | 4,7 % | 34,2 % |
+| 31–40 | 37,0 % | 5,7 % | 0,5 % | 0,8 % | 6,2 % | 49,4 % |
+| 41–50 | 47,4 % | 19,6 % | 2,0 % | 3,3 % | 7,0 % | 72,3 % |
+
+**Blitz hat keinen einzigen Skill, der flach Crit-Chance gibt.** Die drei Chance-Skills hängen alle an einer Größe,
+die es früh nicht gibt: Gewitterfront an vollen Leisten, Ladungsserie an der Serie, Lichtbogen an Stapeln auf der
+gespielten Karte. Zusammen tragen sie in den ersten zwanzig Runden **0,6 Prozentpunkte**. Damit ist die Antwort auf
+die Owner-Frage „müssen wir am passiven Bonus drehen" formal beantwortet: In der ersten Laufhälfte **ist** der
+passive Bonus der einzige Regler, den es gibt.
+
+#### C. Ohne Legendäres — und im Vergleich mit den anderen drei Fraktionen
+
+`faction-pacing.mjs`, 60 Läufe je Fraktion, mono-Welt, Median-Score zum Rundenstand:
+
+| Fraktion | nach R 20 | nach R 30 | nach R 40 | Ende | Legendär-Quote | Median mit ÷ ohne |
+| --- | --- | --- | --- | --- | --- | --- |
+| Feuer | 0,39M | 1,21M | 4,35M | 16,99M | 42 % | **1,3×** |
+| **Blitz** | 0,43M | **1,12M** | **2,98M** | 14,85M | 35 % | **6,9×** |
+| Eis | 0,53M | 1,96M | 6,01M | 16,35M | 30 % | 3,9× |
+| Pflanze | 0,39M | 1,73M | 5,58M | 19,31M | 42 % | 8,5× |
+
+Blitz steht nach Runde 30 und nach Runde 40 **als letzte der vier** — nach Runde 40 bei 2,98M gegen 6,01M der
+Eis-Fraktion. Ohne Legendäres endet Blitz bei 8,10M, mit einem bei 55,81M. (Die Legendär-Spalte ist **beobachtet,
+nicht gepaart**: die Gruppe ist, wem eines angeboten wurde und wer es genommen hat. Gepaart, `--mode legendaries`
+in der Blitz-Welt, Phase 7 von 13: Resonanz typ. +840 %, Hochspannung +400 %, Doppelentladung +142 % — und in 75 %
+der Basisläufe hält der gierige Spieler in dieser Welt ohnehin schon eines.)
+
+Der Grund steht in A: zwei der drei Legendären greifen **genau** an der Stelle, an der die Fraktion ohne sie nichts
+hat. Doppelentladung macht aus jeder Ionisierung fünf Stapel statt einem; Resonanz lässt die gespielte Karte mit
+den Stapeln ihrer Formationspartner kämpfen. Beide reparieren die dünne Streuung aus A — und beide sind legendär.
+(Das dritte, Hochspannung, hebt jede gehaltene Stufe um drei und wirkt damit auf einer anderen Achse: es macht die
+Leiter bezahlbar, die der Angebotswurf sonst nur zu 3 % ausgibt.)
+
+#### D. Verteilung der Skillnutzlichkeit
+
+Der Schiedsrichter ist die gepaarte gierige Ablation (§7.22). Gemessen in der Welt, nach der der Owner fragt —
+`SIM_SKILL_LEGENDARY_PER_SLOT=0 npm run sim -- --mode skills --arch lightning --explore 800 --runs 120`.
+Gierig-Median 35,2M, Siegquote 65 %, Ø **13,0** Skills:
+
+| Skill | gehalten | Median-Δ | typ. | besser MIT | Flag |
+| --- | --- | --- | --- | --- | --- |
+| Blitzableiter | 82 % | +13,3M | **+100 %** | 71 % | stark |
+| Gewitterfront | 100 % | +7,3M | +23 % | 60 % | |
+| Ionenfeld | 82 % | +7,0M | +42 % | 70 % | stark |
+| Kurzschluss | 98 % | +2,7M | +10 % | 63 % | |
+| Reststrom | 90 % | +2,4M | +16 % | 62 % | |
+| Blitzfänger | 96 % | +2,1M | +15 % | 61 % | |
+| Blitzschlag | 86 % | +2,0M | +13 % | 69 % | |
+| Kettenblitz | 92 % | +1,0M | +5 % | 62 % | |
+| Vorentladung | 98 % | +0,5M | +3 % | 55 % | tot |
+| Ladungsserie | 92 % | −0,9M | −1 % | 44 % | tot |
+| Lichtbogen | 89 % | −1,2M | −7 % | 37 % | schadet |
+| Spannungsstau | 93 % | −2,3M | −10 % | 27 % | schadet |
+| Entladung | 100 % | −3,3M | −10 % | 36 % | schadet |
+| **Serienschutz** | 99 % | **−30,1M** | **−47 %** | **21 %** | schadet |
+
+**Wie diese Tabelle zu lesen ist.** Die Slots sind unbegrenzt, es gibt 13 Skill-Phasen und 14 normale Blitz-Skills
+— der Spieler hält also **13 von 14**, und ein verbotener Skill wird schlicht durch den ersetzt, den er sonst
+ausgelassen hätte. Beide Arme halten dieselbe Zahl Skills, das Passiv ist identisch, und die Spalte summiert sich
+konstruktionsbedingt auf ungefähr null (gemessen −0,6M). Die Tabelle ist damit **keine Aussage darüber, ob ein
+Skill trägt, sondern eine Rangliste innerhalb der Fraktion**: was ist dieser Skill wert gegen den, den man
+stattdessen nimmt. Genau das ist die Frage nach der Nutzlichkeitsverteilung.
+
+**Die Spannweite ist die eigentliche Zahl: von +13,3M bis −30,1M sind 43,4M auf einem Median von 35,2M.** Welchen
+Skill man auslässt, entscheidet mehr als der halbe Lauf.
+
+**Serienschutz ist ein Fallenskill, und zwar der teuerste.** Er zahlt mit **Ladung** — derselben Ladung, die die
+Leiste füllt und die Ionisierung erzeugt; auf Normal kostet ein Halten 70 % der Leiste. Er ist der einzige
+Blitz-Skill, der die eigene Fraktionsressource **ausgibt** statt sie zu erzeugen, und in einer Fraktion, die nach
+A ohnehin an Leisten-Durchsatz hungert, ist das der schlechteste Tausch, den es gibt. Der gierige Spieler nimmt
+ihn trotzdem in 99 % der Läufe; ohne ihn ist der Lauf in **79 %** der Seeds besser.
+
+**Was trägt, sind die Rate-Skills, nicht die Crit-Skills.** Oben stehen Blitzableiter (+100 %), Ionenfeld (+42 %)
+und Reststrom (+16 %) — zwei Rate-Skills und der einzige Skill, dessen Ertrag **nicht** davon abhängt, wo die
+Stapel gelandet sind (das Feld gibt allen Karten Wert). Unten stehen Vorentladung, Ladungsserie, Lichtbogen,
+Spannungsstau und Entladung: fünf der sechs Skills, die auf Crit-Chance oder Crit-Multiplikator zahlen und dafür
+eine Größe brauchen, die es früh nicht gibt. Die eine Ausnahme ist Gewitterfront (+23 %) — ihre Rampe ist
+**dauerhaft**, sie sammelt also ab der ersten Leiste und verliert nichts mehr.
+
+**Lichtbogen ist der Beleg für die zwei Regime.** Dieselbe Ablation **mit** Legendären (normale Welt,
+Gierig-Median 1,96 Mrd) reiht ihn bei +22 %; ohne Legendäres steht er bei −7 %. Er ist kein Skill, sondern ein
+Verstärker: er zahlt je Stapel auf der gespielten Karte, und Stapel auf der gespielten Karte gibt es ohne
+Doppelentladung oder Resonanz kaum (A: 12 % der Siege in den Runden 11–20). Dieselbe Welt reiht die drei
+Legendären mit +1952 / +637 / +475 % vor allen normalen Skills und dreht zusätzlich Gewitterfront (−1 %),
+Ionenfeld (0 %) und Blitzfänger (−7 %) ins Minus — **die Rangliste der normalen Skills ist eine andere, je
+nachdem, ob ein Legendäres im Build liegt.** Das ist für sich schon ein Befund.
+
+**Die Stufenleitern funktionieren — aber nur oben.** Im legendärfreien Lauf ist die Episch-Spalte in **10 von 14**
+Zeilen die höchste (Reststrom E 2,15 · Blitzableiter E 1,82 · Ionenfeld E 1,50 · Blitzschlag E 1,49), die
+mittleren Stufen sind Rauschen. Die vier Ausnahmen sind Vorentladung, Lichtbogen, Spannungsstau und Entladung —
+also fast genau die Gruppe, die auch in der Ablation unten steht. Wo der Effekt nicht landet, ist auch die Leiter
+nicht messbar. (Episch kommt im Angebotswurf mit 3 %; siehe `SKILL_TIER_WEIGHTS`.)
+
+Als dritte, ungepaarte Sicht bestätigt `ARCH=lightning NOLEG=1 N=300 sim/probes/lifts.mjs` (184 Läufe ohne
+Legendäres) das Muster nicht überall — sie stellt Blitzfänger (1,58) und Lichtbogen (1,78) nach oben und
+Kettenblitz (0,58) und Ladungsserie (0,30) nach unten. Ladungsserie und Serienschutz (0,65) stehen in beiden
+Sichten unten; Lichtbogen widerspricht sich. Nach der Leseregel aus §7.22 gilt die gepaarte Ablation.
+
+#### E. Was die vorhandenen Regler tun (Sweep, `blitz-ramp.mjs`, je 100 Läufe, Gruppe ohne Legendäres)
+
+| Variante | n | R 1–10 | R 11–20 | R 41–50 | 1. Leiste | ≥ 50 % Crit | Leisten am Laufende | Stapel auf dem Deck |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| **Ist** (4 %/Skill, Leiste 10) | 62 | 8,4 % | 20,8 % | 71,6 % | R 8 | R 33 | 55,8 | 210 |
+| 6 % je Skill | 62 | 12,1 % | 29,6 % | 93,1 % | R 6 | R 22 | 95,7 | 307 |
+| 8 % je Skill | 71 | 15,6 % | 38,5 % | 99,7 % | R 6 | R 17 | 137,9 | 488 |
+| Leiste 7 statt 10 | 75 | 8,3 % | 21,3 % | 87,9 % | R 6 | R 29 | 183,7 | 474 |
+| Sockel 6 pp + 4 %/Skill | 58 | 14,3 % | 27,2 % | 82,8 % | R 5 | R 27 | 98,5 | 345 |
+| **Sockel 8 pp + 3 %/Skill** | 64 | 14,2 % | 24,3 % | **72,5 %** | **R 5** | R 30 | 71,5 | 256 |
+
+Die beiden Sockel-Zeilen sind mit `lightning-socket-hook.mjs` gemessen; die Form ist **nicht gebaut**.
+
+**Der Median-Score steht bewusst nicht in der Tabelle.** Eine geänderte Crit-Chance kippt andere Stiche zu Crits,
+danach läuft der ganze Lauf anders — dieselbe Falle wie in §7.28 F; und wie die Spalte `n` zeigt, ist die Gruppe
+„ohne Legendäres" zwischen den Varianten nicht dieselbe Menge Läufe (alle sechs Läufe starten auf den Seeds
+1–100). Die Rampenspalten sind direkte Beobachtungen und vergleichbar, der Median ist es nicht.
+
+#### F. Warum „mehr je Skill" die falsche Form für dieses Problem ist
+
+Das Passiv ist **linear in der Zahl gehaltener Blitz-Skills** — also zahlt es am wenigsten genau dann, wenn man am
+wenigsten hält. Bei 13 Skill-Phasen im 50-Runden-Plan heißt das — nur der **passive Anteil**, die Rampen aus B
+kommen oben drauf:
+
+| Satz je Skill | Runde 1 (1 Skill) | Runden 1–10 (Ø 1,8) | Laufende (Ø 11,8) |
+| --- | --- | --- | --- |
+| 4 % (Ist) | 4 % | 7,3 % | 47 % |
+| 6 % | 6 % | 10,9 % | 71 % |
+| 8 % | 8 % | 14,5 % | 94 % |
+
+Der Satz je Skill hebt das Laufende drei- bis viermal so stark wie den Anfang: 8 % je Skill setzt die Crit-Chance
+am Laufende auf 99,7 % — die Fraktion crittet dann **immer**, und Gewitterfront, Ladungsserie und Lichtbogen zahlen
+nur noch über die Überschussregel (die laut §7.28 C am 8×-Deckel verpufft). Das ist kein Tarierungsdetail, sondern
+der Grund, warum der vorhandene Regler das Owner-Problem nicht löst: er verstärkt das Ende, das ohnehin läuft.
+
+**Ein Sockel hat die umgekehrte Form.** „Blitz aktiv → +X Prozentpunkte, dazu +Y je gehaltenem Skill" zahlt vom
+ersten Skill an voll und wächst danach nicht mit. Gemessen (Sockel 8 pp, Satz 3 %): die ersten zehn Runden gehen
+von 8,4 auf 14,2 % Crit-Chance, die erste Leiste von Runde 8 auf **Runde 5** — und das Laufende bleibt mit 72,5
+gegen 71,6 % praktisch stehen. Das ist genau die Verschiebung, nach der der Owner gefragt hat, und sie kostet die
+Spätspiel-Balance nichts.
+
+#### G. Vorschläge (Entscheid Owner, nichts umgesetzt)
+
+**Zum Crit (Problem 1).**
+
+| # | Vorschlag | Was es tut | Risiko |
+| --- | --- | --- | --- |
+| 1 | **Sockel im Passiv: „Blitz aktiv → +8 pp Crit-Chance", Satz je Skill 4 % → 3 %** | Empfehlung. Gemessen: R 1–10 8,4 → 14,2 %, erste Leiste R 8 → R 5, Laufende unverändert. Ein Regler, beide Symptome — die Ladung kommt aus Crits, die frühere Crit-Chance zieht die erste Ionisierung mit. | Der erste Blitz-Skill wird stark aufgewertet, ein einzelner Splash-Pick in einen Fremdbuild wird attraktiver. Regler dagegen: Sockel niedriger, Satz je Skill höher. |
+| 2 | Sockel 6 pp, Satz je Skill bleibt 4 % | Derselbe frühe Effekt (14,3 %), aber das Laufende steigt mit (71,6 → 82,8 %). | Nur wählen, wenn Blitz **auch** stärker enden soll — das ist eine Paritätsfrage und gehört ins Duell, nicht hierher. |
+| 3 | Satz je Skill 4 % → 6 %, kein Sockel | Der Regler, den es heute schon gibt (`SIM_LIGHTNING_CRIT_PER_SKILL`). | Nach F die falsche Form: hebt das Laufende (71,6 → 93,1 %) mehr als den Anfang, und drückt die drei Chance-Skills gegen die 100-%-Klemme. |
+
+**Zu den Stapeln (Problem 2).** Die Streuung ist das Problem, nicht die Menge: eine volle Leiste ionisiert **die
+nächste Karte in der Reihenfolge** — über einen Lauf verteilt sich das auf 40 Karten —, und Kettenblitz
+konzentriert auf die **tiefste** Karte, die man einmal je 40 Stiche spielt. Keiner der beiden Wege erzeugt „die
+Karte, die ich gleich spiele, trägt Stapel"; genau das ist die Lücke, die Doppelentladung und Resonanz füllen.
+
+| # | Vorschlag | Was es tut | Risiko |
+| --- | --- | --- | --- |
+| 4 | **Grundstapel je Leiste als Konstante öffnen und auf 2 setzen** — heute steht in `fillBar` eine harte 1, die Doppelentladung mit ×5 multipliziert | Empfehlung für den ersten Schritt: verdoppelt die Streuung, ohne eine Identität anzufassen, und gibt einen sauberen Sweep-Regler (`SIM_ION_STACKS_PER_BAR`). Doppelentladung bleibt der Faktor darauf, Kettenblitz und Blitzschlag bleiben unberührt. | Hebt auch das Laufende; im Sweep gegen die Duell-Parität prüfen. |
+| 5 | Kettenblitz zielt auf die **Siegkarte** statt auf die tiefste Karte | Macht aus der Tiefe etwas, das man auch spielt — repariert „Siege mit Stapel" direkt. | Ändert die Identität des Skills („Tiefe"), die in §7.18/§7.19 gesetzt wurde. Owner-Sache. |
+| 6 | Eine kleine Resonanz für alle ins Passiv | Löst das Problem am direktesten. | **Nicht empfohlen** — das ist Resonanz' Kopfzeile in klein, genau die Dublette, die §7.26 B als Befund führt. |
+| 7 | Leiste 10 → 7 | Vorhandener Regler, erste Leiste R 8 → R 6. | Nach E der teuerste Weg: das Crit-Gefühl ändert sich gar nicht (8,3 % in R 1–10), das Laufende explodiert (Leisten 55,8 → 183,7). |
+
+**Zur toten Ecke (Problem 3, das der Owner nicht genannt hat, das aber in D steht).** Vier Skills stehen ohne
+Legendäres im Minus, und einer davon groß.
+
+| # | Vorschlag | Warum |
+| --- | --- | --- |
+| 8 | **Serienschutz zahlt nicht mehr mit Ladung** — fester kleiner Preis, oder die ausgegebene Ladung wird zu Stapeln statt zu verfallen | −47 % und in 79 % der Seeds besser ohne ihn. Er ist der einzige Blitz-Skill, der die Fraktionsressource ausgibt. Solange die Leiste der Engpass ist (A), kann kein Zahlenwert das reparieren — die Währung ist das Problem. |
+| 9 | Ladungsserie ansehen | Seit dem ÷10 in §7.23 gibt sie auf Normal 0,1 % Crit je Serienpunkt und trägt in den ersten zwanzig Runden 0,1 pp (B). In beiden Sichten unten. |
+| 10 | Das Crit-Multiplikator-Bündel (Entladung, Spannungsstau, Vorentladung) zusammen ansehen | Alle drei zahlen erst, wenn ohnehin gecrittet wird, und laufen dann gegen den 8×-Deckel (§7.28 C). Drei Skills auf derselben späten Achse. |
+
+**Empfehlung: 1 und 4, dann messen** — erst die Rampe mit `blitz-ramp.mjs` (die Zahlen oben sind die
+Vergleichsbasis), danach gierig gepaart und die Parität im Duell. Die tote Ecke (8–10) ist ein eigener Schritt und
+gehört nicht in dieselbe Messung: der Sockel verschiebt die Rangliste aus D, also ist jede Zahl von dort danach
+neu zu erheben.
+
+**Was diese Runde NICHT beantwortet.** Ob Blitz nach den Eingriffen die Parität hält — das ist das Duell und
+gehört hinter das Bauen. Und ob die Legendär-Abhängigkeit (C, 6,9×) danach kleiner ist: Vorschlag 4 hebt die
+Streuung für alle, aber Doppelentladung multipliziert sie weiterhin mit fünf.
+
 ## 5. Eis
 
 ### 5.1 Bestandsaufnahme (2026-09-07, Befund, nichts umgesetzt)
@@ -6213,3 +6435,4 @@ und die Ranked-Texte, die eine andere Runde meinen.
 | 2026-09-08 | Owner: „bau und messe." Die Eiszeit zahlt jetzt in Berstkraft statt in Masse — `1 + 2 × offene Nachbarn` im Bruch, der Spiegel der Dichte-Kaskade (`1 + 0,25 × gefrorene Nachbarn`), mit derselben `wOf`-Gewichtung, damit die Eisbrücke nicht doppelt zahlt. Sweep 0,25 → −4 %, 0,5 → −1 %, 1 → +13 %, 2 → +30 %; 2 gesetzt. Damit sind wieder alle zwölf Legendären positiv (+24 bis +137 %), die drei Eis-Karten liegen bei +25/+30/+33 %. Der Verbund aus §5.14 fällt von +305M auf +30M und ist selbstbegrenzend: auf vollem Brett ist der Eiszeit-Faktor exakt 1,00. Der Zug bleibt bei 2, Texte de/en/es und Guards nachgezogen. §5.16. |
 | 2026-09-08 | Owner: „eigener kleiner Schritt" für die Firn-Familie. Vor dem Bauen gemessen, warum Dauerfrost schwach ist: 69 % aller Boden-Reserve auf ungefrorenen Feldern liegt über `FIRN_REFILL_TARGET` (12), höchster Stand 136 — totes Kapital, die fehlende Kopplung war nur das Symptom. Jetzt gibt jedes offene Feld bis zu `EISZEIT_DRAW` an den nächstgelegenen Gletscher ab statt nur an einen angrenzenden; damit erreicht auch Dauerfrosts ferne Reserve einen Abnehmer. Eiszeit +30 → +42 % (besser in 56 → 63 %), stärkste der drei Eis-Karten und im Band. Korrigiert §5.15: „Masse füttern trägt nicht" galt nur bei Berstfaktor 1 — mit dem Faktor aus §5.16 wandelt Masse sich in Berst-Häufigkeit, die beiden Änderungen wirken nur zusammen. Nicht gelöst: ohne Eiszeit bleibt die Dauerfrost-Kohorte bei 65,2 % totem Kapital. Verbund beider Legendären Faktor 106 → 11. §5.17. |
 | 2026-09-08 | Owner: die drei Eis-Texte kompakter, ohne Gedankenstriche, ohne Fluff. Nur Wortlaut, keine Mechanik. Raus: die angehängten Erklärsätze („freier Boden ist deine Wucht…", „du kannst das ganze Brett einfrieren"), die Versalien und die Füllwörter. Die Große Lawine nennt jetzt ihren Faktor (×`GROSSE_LAWINE_MULT`) statt „verstärkt" — dieselbe Auskunft, präzise, wie in den übrigen Texten. Die Bindestriche in *Boden-Reserve*, *Eis-Skill* und *Gletscher-Formation* bleiben: das sind projektweite Begriffe aus Glossar und i18n, ein abweichender Wortlaut nur in diesen drei Karten bräche „ein Begriff je Sache". Nebenbei fielen die englischen und spanischen Schild-Texte auf, die noch auf dem Stand vor §5.13/§5.14 standen; beide nachgezogen. §5.18. |
+| 2026-09-09 | Blitz-Befund (7.29, Owner-Ansage „Blitz anlassen"): Rampe, Crit-Quellen, Skillnutzlichkeit und Legendär-Abhängigkeit gemessen. Bis Runde 30 ist das Passiv die einzige Crit-Quelle; der Satz je Skill hat die falsche Form, ein Sockel ist gemessen (nicht gebaut); Serienschutz misst −47 %. Vier Sonden in `sim/probes/`. Vorschläge zum Entscheid, nichts umgesetzt. |
