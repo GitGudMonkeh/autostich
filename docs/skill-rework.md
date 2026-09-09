@@ -6223,11 +6223,16 @@ einer Nicht-Siegkarte hat. Das Beet zieht dorthin, wo schon grün ist, und koppe
 und die Score-Skills. Der Skill lebt den ganzen Lauf statt nur im Moment des Picks.
 
 **Leiter — Vorschlag, UNGEMESSEN** (Owner: „vllt einen kleinen buff", darum eine Stufe über dem Erstentwurf
-1/2/3/3):
+1/2/3/3; Episch nach Owner-Ansage „es wirkt schon auf jedes segment", Werte unverändert):
 
 | Normal | Selten | Sehr selten | Episch |
 | --- | --- | --- | --- |
-| +2 | +3 | +4 | +4, auf den zwei grünsten Segmenten |
+| +2 | +3 | +4 | +4, auf **jedem** Segment |
+
+Das Episch folgt damit dem Muster der Fraktion — Spalier öffnet auf Episch alle sieben Grenzen, Wildwuchs zählt
+alle blühenden Karten. **Wachpunkt:** dort sitzt der Sprung auf der Erkennung, hier auf einer Wachstumsrate, und
+die Breite springt von 5 auf 40 Karten. Übersteuert nach dem Umbau etwas, ist der Episch-Satz der erste Regler —
+nicht die Breite, die ist die Entscheidung.
 
 #### Lichtung (SK_PLANT_12) — bleibt, kleiner Buff
 
@@ -6255,6 +6260,20 @@ gestorben (§7.22, §7.24), weil dort die Siegquote über den Lauf steigt und di
 Pflanze gibt bewusst keinen Kartenwert (§6.1) und liegt über alle Balance-Runden hinweg unverändert bei
 **53,3 % Siegquote** — fast jeder zweite Stich ist eine Niederlage. Ob die Quote *innerhalb* eines Laufs steigt,
 ist nicht gemessen; der Lauf-Durchschnitt spricht dagegen, dass der Auslöser wegbricht.
+
+#### Aussaat (SK_PLANT_05) — bleibt, kleinster Buff
+
+**Owner: „Aussaat passt, eventuell kleiner buff."**
+
+Der einzige Wachstums-Skill, der schon zahlt (+0,71M / +4 % in der reinen Pflanze-Welt, §6.22), weil er als
+einziger die Nachbarn der **Siegkarte** trifft — also die Karten, die mit ihr in einer Formation stehen. Er ist
+die Blaupause für den ganzen Durchgang und braucht deshalb den kleinsten Schub. Der Satz zählt zudem doppelt: er
+geht an beide Nachbarn.
+
+| | Normal | Selten | Sehr selten | Episch |
+| --- | --- | --- | --- | --- |
+| heute | +1 | +2 | +3 | +4, zweite Nachbarn +1 |
+| **Vorschlag** | **+2** | **+3** | **+4** | **+5**, zweite Nachbarn +1 (unverändert) |
 
 #### Wachpunkt für den Schluss des Durchgangs
 
