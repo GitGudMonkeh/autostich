@@ -7203,6 +7203,150 @@ gesetzt, ihre Siegquote liegt zwölf Punkte unter Feuer, und im gemischten Split
 
 ---
 
+## 8. Bestandsaufnahme über alle vier Fraktionen (2026-09-09)
+
+**Owner:** „wir haben jetzt reworks für Blitz, pflanze, Eis auf exp gebracht. diese sind noch nicht fertig aber bevor
+wir da weiter machen müssen wir den aktuellen ist stand in der sim aufnehmen. […] wo steht jede Fraktion mono, wo
+stehen die Fraktion wenn ich 2 bzw 3 mische. wie schneiden die einzelnen skills in den Kombinationen Mono, 2, 3 ab.
+[…] gibt es skills die viel zu stark sind, gibt es skills die über alle Varianten unterperformen."
+
+Gemessen auf `2ae80e4c` — enthält §6.26 (Pflanze), §7.30/§7.31 (Blitz), die Münz-Ökonomie und den Eis-Stand aus
+§5.27. Neues Werkzeug `sim/survey.js` + `sim/survey-worker.js`: ein Auftrags-Pool über vier Prozesse,
+**108 800 Läufe in 93 Minuten**. Rohdaten in `sim/out/survey.json` (ignoriert, reproduzierbar über
+`node sim/survey.js --explore 900 --runs 175 --cross 500 --jobs 4`).
+
+### 8.1 Aufbau — zwei Messungen, zwei Spieler
+
+Das ist Absicht: die eine Frage ist „was passiert, wenn ich mische", die andere „was tut dieser Skill in dieser Welt".
+
+| | **A · Build-Ranking** | **B · Skill je Welt** |
+| --- | --- | --- |
+| Spieler | planlos bei Skills/Perks | kompetent (Explore → eingefrorene Wertetabelle → Greedy) |
+| Aufstellung/Architekt | greedy | greedy |
+| Angebot | voller Pool, die Policy lehnt Fremdes ab | nur die Fraktionen dieser Welt |
+| Slots | erzwungener Split (Paar 3+3, Tripel 2+2+2) | frei |
+| Umfang | 16 Builds × 500 Läufe, gleiche Seeds | 14 Welten × (900 Explore + 175 Greedy + 175 je Skill) |
+
+Abweichung von `--mode cross`: der Zufalls-Mix stellt hier ebenfalls greedy auf (`greedyFormationStep`). In
+`--mode cross` tat er das als einziger Build nicht und war damit systematisch benachteiligt — was ausgerechnet die
+beiden formationslastigen Fraktionen (Eis, Pflanze) verzerrt hat. Die Mix-Zahl ist deshalb **nicht** mit älteren
+Cross-Läufen vergleichbar, alle übrigen Zeilen schon.
+
+Die Ablation ist wie in `--mode skills` gepaart: derselbe Spieler, dieselben 175 Seeds, einmal mit und einmal ohne
+den Skill; `robustDelta` und `flagFor` sind geteilt, damit die Flags identisch definiert bleiben.
+
+### 8.2 A · Wo steht welcher Build (Median, 500 Läufe, Seeds 1–500)
+
+| Build | Median | Mean | p90 | Siege | ÷ Mix | ÷ bester Reiner |
+| --- | --- | --- | --- | --- | --- | --- |
+| Fe+Pf | 16,61M | 39,21M | 82,70M | 60 % | 2,03× | 1,33× |
+| Bl+Pf | 15,78M | 65,36M | 93,28M | 58 % | 1,93× | 1,27× |
+| Fe+Bl | 15,21M | 44,43M | 62,77M | 65 % | 1,86× | 1,33× |
+| Fe+Bl+Pf | 14,42M | 46,17M | 80,92M | 60 % | 1,77× | 1,16× |
+| Pf | 12,47M | 85,78M | 93,45M | 56 % | 1,53× | — |
+| Bl | 11,44M | 117,99M | 97,79M | 63 % | 1,40× | — |
+| Fe+Bl+Ei+Pf | 9,10M | 15,85M | 28,36M | 59 % | 1,11× | 0,73× |
+| Ei+Pf | 8,87M | 15,66M | 28,39M | 55 % | 1,09× | 0,71× |
+| Fe+Ei+Pf | 8,27M | 15,93M | 33,31M | 58 % | 1,01× | 0,66× |
+| Zufalls-Mix | 8,16M | 14,78M | 28,22M | 59 % | 1,00× | — |
+| Bl+Ei+Pf | 8,14M | 15,71M | 26,01M | 57 % | 1,00× | 0,65× |
+| Fe | 7,28M | 11,89M | 25,41M | 65 % | 0,89× | — |
+| Ei | 6,73M | 12,51M | 23,33M | 60 % | 0,82× | — |
+| Fe+Bl+Ei | 6,49M | 10,75M | 22,41M | 61 % | 0,80× | 0,57× |
+| Bl+Ei | 6,01M | 10,52M | 20,40M | 59 % | 0,74× | 0,53× |
+| Fe+Ei | 5,65M | 9,26M | 17,03M | 61 % | 0,69× | 0,78× |
+
+Die Trennlinie verläuft exakt an Eis: **die sechs besten Builds enthalten kein Eis, die fünf schlechtesten alle.**
+
+### 8.3 Eis ist ansteckend
+
+Dieselbe Kombination, einmal ohne und einmal mit Eis, gleiche Seeds:
+
+| ohne Eis | mit Eis | Faktor |
+| --- | --- | --- |
+| Fe+Bl 15,21M | Fe+Bl+Ei 6,49M | **0,43×** |
+| Fe+Pf 16,61M | Fe+Ei+Pf 8,27M | **0,50×** |
+| Bl+Pf 15,78M | Bl+Ei+Pf 8,14M | **0,52×** |
+| Fe+Bl+Pf 14,42M | Fe+Bl+Ei+Pf 9,10M | **0,63×** |
+
+Der Befund geht über „Eis ist schwach" hinaus: Eis **kostet den Partner die Hälfte**. Die Ursache steht in 8.4 —
+allein hält der kompetente Spieler 13,0 Eis-Skills, im Tripel nur noch 1,7 bis 3,1. Er lässt Eis fallen, sobald er
+die Wahl hat, und der Gletscher-Motor braucht genau diese Masse. Das bestätigt §5.12 (Ewiges Schild: 1,83 Gletscher
+gemischt gegen 5,18 in Eis pur) als **strukturelles** Problem der Fraktion, nicht als Eigenheit einer Karte. Solange
+das so ist, repariert kein einzelner Eis-Skill die Fraktion.
+
+### 8.4 B · Die 14 Welten (kompetenter Spieler)
+
+| Welt | Median | p90 | Siege | Ø Skills | Aufteilung |
+| --- | --- | --- | --- | --- | --- |
+| Pf | 2,31 Mrd | 19,74 Mrd | 64 % | 13,0 | Pf 13,0 |
+| Bl | 1,69 Mrd | 19,14 Mrd | 72 % | 11,6 | Bl 11,6 |
+| Ei | 348M | 1,64 Mrd | 64 % | 13,0 | Ei 13,0 |
+| Fe | 113M | 367M | 77 % | 13,0 | Fe 13,0 |
+| Bl+Pf | 657M | 13,70 Mrd | 64 % | 13,0 | Bl 6,7 · Pf 6,3 |
+| Fe+Pf | 436M | 5,33 Mrd | 67 % | 12,7 | Fe 5,6 · Pf 7,1 |
+| Fe+Bl | 283M | 3,85 Mrd | 71 % | 11,2 | Fe 2,9 · Bl 8,4 |
+| Bl+Ei | 104M | 1,47 Mrd | 68 % | 12,9 | Bl 8,7 · **Ei 4,2** |
+| Ei+Pf | 92M | 1,71 Mrd | 59 % | 12,9 | **Ei 3,9** · Pf 9,0 |
+| Fe+Ei | 79M | 558M | 70 % | 12,6 | Fe 4,0 · Ei 8,6 |
+| Fe+Bl+Pf | 155M | 2,79 Mrd | 67 % | 12,9 | Fe 4,3 · Bl 4,7 · Pf 3,9 |
+| Fe+Ei+Pf | 57M | 537M | 64 % | 12,8 | Fe 4,1 · **Ei 3,1** · Pf 5,6 |
+| Fe+Bl+Ei | 39M | 313M | 67 % | 12,0 | Fe 3,7 · Bl 5,9 · **Ei 2,5** |
+| Bl+Ei+Pf | 30M | 383M | 60 % | 11,4 | Bl 5,4 · **Ei 1,7** · Pf 4,2 |
+
+**Skalierung vom planlosen (A) zum kompetenten Spieler (B), reine Fraktion:**
+Feuer **×15** (7,3M → 113M) · Eis **×52** (6,7M → 348M) · Blitz **×147** (11,4M → 1,69 Mrd) ·
+Pflanze **×185** (12,5M → 2,31 Mrd).
+
+Am Boden liegen alle vier innerhalb von Faktor 1,7; oben trennen sie 20×. **Feuer hat keine Decke** — es belohnt
+Können praktisch nicht. Das ist die Gegenprobe zu §7.30 („Feuer steht jetzt allein unten") mit einem zweiten
+Messverfahren.
+
+### 8.5 Die Ausreißer
+
+**In allen sieben Welten stark** (alle legendär): Baumreihe (Pf) +1079 % mono · Wurzelgeflecht (Pf) +591 % ·
+Resonanz (Bl) +553 % · Ewiger Frühling (Pf) +282 % · Sonnenzorn (Fe) +91 %.
+
+Die zwölf Legendären spannen **+1079 % bis +13 %** — Faktor 80. Ganz unten stehen zwei Feuer-Karten
+(Ewige Glut +13 %, Sonnenkern +14 %), die schwächer sind als *normale* Skills anderer Fraktionen
+(Glühende Klinge +141 %, Hecke +105 %). Bevor die Pflanze feintariert wird, muss Baumreihe runter: bei +1079 %
+misst sich jeder andere Pflanze-Skill gegen einen Lauf, den Baumreihe längst gewonnen hat.
+
+**In allen sieben Welten schwach:** Lichtung (Pf, hält 100 % und wirkt −0 %) · Frostbund (Ei) · Anfrieren (Ei).
+
+**Schwach in sechs von sieben:** Ladungsserie (Bl) · Serienschutz (Bl) · Glutstahl (Fe) · Glutbett (Fe) ·
+Packeis (Ei) · Schneetreiben (Ei) · Rankgerüst (Pf) · Zäher Halm (Pf) · Setzlingsbeet (Pf).
+
+**Immer genommen, nie gespürt** — die schlimmste Sorte, weil sie einen Slot belegt und sich nach Fortschritt anfühlt:
+Lichtung 100 %/−0 % · Zäher Halm 100 %/−2 % · Rankgerüst 98 %/−0 % · Glutstahl 98 %/−5 % · Verwachsung 98 %/+1 % ·
+Windung 99 %/+2 % · Aussaat 99 %/+2 % · Abbruchkante 99 %/+4 %.
+
+**26 von 70 Skills** bewegen den Score in ihrer eigenen Mono-Welt um weniger als 3 % — dort, wo sie es am
+leichtesten haben.
+
+### 8.6 Was diese Messung NICHT kann
+
+1. **Die Stufenleiter ist hier nicht messbar.** Bei 900 Explore-Läufen bekommt eine einzelne Stufe im Median nur
+   98–186 Läufe, und die Lifts springen (Blitzableiter N/S/SS/E: 0,13 → 1,01 → 1,35 → 0,34). Der „Leiter"-Verdacht
+   feuert bei **41 von 58** normalen Skills. Das ist Rauschen. **Auf dieser Grundlage keine Stufen umbauen** — dafür
+   braucht es einen eigenen Lauf mit erzwungener Stufengleichverteilung.
+2. **Ein einzelner Effektwert hat Streuung.** 175 gepaarte Läufe sind für den Median-Effekt knapp (§5.27). Belastbar
+   wird es durch die Wiederholung: sieben Welten je Skill sind zusammen 1225 gepaarte Läufe. Dem Muster über
+   mono/Paar/Tripel trauen, nicht der Einzelzahl.
+3. **A und B messen zwei Spieler.** Wo beide sich widersprechen, steckt die Information (8.4), nicht der Fehler.
+4. **Ein Foto, kein Video.** Während des Laufs wurde nicht auf exp gepusht; danach kann sich alles verschoben haben.
+
+### 8.7 Reihenfolge, die ich vorschlagen würde
+
+1. **Eis als System**, nicht als Skill-Liste (8.3) — der Gletscher-Motor braucht eine Auszahlung, die auch bei zwei
+   bis vier Gletschern trägt. Solange das offen ist, sind weitere Eis-Skill-Runden verlorene Arbeit.
+2. **Feuer bekommt eine Decke** (8.4) — die multiplikative Kette fehlt, die Blitz über Crit und Pflanze über
+   Wachstum haben; zwei der drei Feuer-Legendären zahlen nicht.
+3. **Baumreihe herunter** (8.5), sonst tariert jede Pflanze-Runde gegen Rauschen.
+4. **Die zwölf Dauerschwachen** aus 8.5 — die konkrete Arbeitsliste für „kein Skill darf nirgends sinnvoll sein".
+
+---
+
 ## Änderungsprotokoll
 
 
@@ -7314,3 +7458,4 @@ gesetzt, ihre Siegquote liegt zwölf Punkte unter Feuer, und im gemischten Split
 | 2026-09-09 | Blitz-Befund (7.29, Owner-Ansage „Blitz anlassen"): Rampe, Crit-Quellen, Skillnutzlichkeit und Legendär-Abhängigkeit gemessen. Bis Runde 30 ist das Passiv die einzige Crit-Quelle; der Satz je Skill hat die falsche Form, ein Sockel ist gemessen (nicht gebaut); Serienschutz misst −47 %. Vier Sonden in `sim/probes/`. Vorschläge zum Entscheid, nichts umgesetzt. |
 | 2026-09-09 | Blitz umgesetzt (7.30, Owner: „Sockel steigern und Skillnutzlichkeit erhöhen"): Passiv-Sockel 8 % bei 3 % je Skill (Runden 1–10 8,4 → 14,2 % Crit, erste Leiste R 8 → R 5); Serienschutz zahlt 1 Ladung mit Deckel je Durchlauf statt eines Leisten-Anteils bei jeder Niederlage (−45 → −0 %); Ladungsserie von Crit-Chance auf Ladung ab Serie 16/12/8/5 (−17 → +7 %). Spannweite der Skillnutzlichkeit ÷ Median 1,23 → 0,44. Duell gepaart: Blitz mono 6,92 → 10,93M, die anderen drei unverändert — Feuer steht jetzt allein unten. Balance-Guard-Obergrenze 8,5 → 10,5M mit Beleg. Offen: das Crit-Multiplikator-Bündel (Spannungsstau, Entladung, Vorentladung, Lichtbogen) läuft gegen den 8×-Deckel. |
 | 2026-09-09 | Crit-Multiplikator-Bündel (7.31, Vorschlag, nichts umgesetzt): 81 % des gebauten Multiplikators fällt spät am 8×-Deckel weg (36,01× gebaut, 6,97× ausgezahlt), Vorentladung allein trägt +16,4× davon; Spannungsstau baut 0,00× — sein Auslöser (Sieg ohne Crit) ist seit dem Sockel fast verschwunden. Regel: Umverteilen INNERHALB des Multiplikators ändert nichts, solange die Summe über dem Deckel liegt. Owner-Regel gesetzt: keine Skills, die auf Niederlagen reagieren. Designstand für die drei Skills eingetragen, Abnahme offen. Neue Sonde `blitz-multsource.mjs`. |
+| 2026-09-09 | Bestandsaufnahme über alle vier Fraktionen (§8, Owner: „bevor wir da weiter machen müssen wir den aktuellen ist stand in der sim aufnehmen"). Neues Werkzeug `sim/survey.js` + `sim/survey-worker.js` — Auftrags-Pool über vier Prozesse, 108 800 Läufe in 93 min statt ~7 h seriell. Gemessen, nichts am Spiel geändert. Kernbefunde: (a) **Eis ist ansteckend** — jede Kombination mit Eis fällt auf 0,43–0,63× derselben Kombination ohne Eis, weil der freie Spieler von 13,0 Eis-Skills mono auf 1,7–3,1 im Tripel herunterfällt; (b) die Fraktionen skalieren vom planlosen zum kompetenten Spieler um ×15 (Feuer) bis ×185 (Pflanze) — Feuer hat keine Decke; (c) die zwölf Legendären spannen +1079 % (Baumreihe) bis +13 % (Ewige Glut), Faktor 80; (d) 26 von 70 Skills wirken in ihrer eigenen Mono-Welt unter 3 %, drei sind in allen sieben Welten schwach (Lichtung, Frostbund, Anfrieren), neun weitere in sechs von sieben. Ausdrücklich NICHT messbar: die Stufenleiter (98–186 Läufe je Stufe, „Leiter"-Flag feuert bei 41 von 58 normalen Skills — Rauschen). |
