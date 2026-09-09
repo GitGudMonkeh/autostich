@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { resolveTrick } from "../src/game/engine.js";
 import { initialState } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
-import { precomputeGlacier, ROLES } from "../src/game/glacier.js";
+import { precomputeGlacier, ROLES, TIER_MULT } from "../src/game/glacier.js";
 import { iceSnapshotOpts } from "../src/game/factions/ice.js";
 import { EIS_TIERS as EIS } from "../src/game/skills.js"; // §5.3: die Zahlen stehen in der Stufenleiter (Normal = Zeile 0)
 
@@ -84,8 +84,13 @@ describe("Abbruchkante — die vierte Schwelle", () => {
   // die Rolle sie auch WEITERREICHT — eine Tabelle mit t4, die im Snapshot nicht ankommt, wäre stumm.
   it("reicht auch die Wucht der vierten Schwelle in den Snapshot", () => {
     const { tierMult } = iceSnapshotOpts([ROLES.ABBRUCHKANTE]);
-    expect(tierMult).toHaveLength(5);
+    /* §5.29: die Leiter reicht über die vierte Sprosse hinaus. Die Rolle MUSS die ganze Länge abdecken — eine
+       kürzere Tabelle liefert `undefined` in den Bruch, sobald ein Gletscher die neuen Sprossen erreicht. */
+    expect(tierMult).toHaveLength(TIER_MULT.length);
+    expect(tierMult.every((v) => Number.isFinite(v))).toBe(true);
     expect(tierMult[4]).toBe(EIS.abbruchkante[0].t4);
+    // Die Sprossen darüber erben denselben relativen Zuschlag wie die vierte.
+    expect(tierMult[5] / TIER_MULT[5]).toBeCloseTo(EIS.abbruchkante[0].t4 / TIER_MULT[4], 6);
     const m = zeros(); m[0] = 18;
     const { breaks } = precomputeGlacier(m, new Set([0]), iceSnapshotOpts([ROLES.ABBRUCHKANTE]));
     expect(breaks[0].tier).toBe(4);

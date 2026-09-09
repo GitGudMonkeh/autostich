@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   neighbors4, precomputeGlacier, ewigerFrostTick,
-  TOP, EWIGER_FROST, BURST_AT,
+  TOP, EWIGER_FROST, BURST_AT, THRESHOLDS,
 } from "../src/game/glacier.js";
 import { N_POS, posOf } from "../src/game/architect.js";
 
@@ -74,11 +74,21 @@ describe("precomputeGlacier — Snapshot", () => {
     expect(drueber.payout[10]).toBeGreaterThan(knapp.payout[10]);           // und er hat mitgeschlagen
   });
 
-  it("die vierte Schwelle greift: ab TOP birst derselbe Gletscher auf einer höheren Stufe", () => {
-    const dritte = precomputeGlacier(withMass([[10, TOP - 1]]), lockedSet(10));
-    const vierte = precomputeGlacier(withMass([[10, TOP]]), lockedSet(10));
-    expect(dritte.breaks[0].tier).toBe(3);
-    expect(vierte.breaks[0].tier).toBe(4);
+  /* §5.29: die Leiter endet nicht mehr bei der vierten Schwelle — sie läuft weiter, damit ANSAMMELN bezahlbar wird.
+     Der Wächter prüft deshalb die Beziehung (die oberste Sprosse liegt genau eine über der darunter) statt fester
+     Stufen-Indizes, und hält zusätzlich fest, dass jede Sprosse der Leiter wirklich erreichbar ist. */
+  it("die oberste Schwelle greift: ab TOP birst derselbe Gletscher auf einer höheren Stufe", () => {
+    const unten = precomputeGlacier(withMass([[10, TOP - 1]]), lockedSet(10));
+    const oben = precomputeGlacier(withMass([[10, TOP]]), lockedSet(10));
+    expect(oben.breaks[0].tier).toBe(unten.breaks[0].tier + 1);
+    expect(oben.breaks[0].tier).toBe(THRESHOLDS.length);
+    expect(oben.payout[10]).toBeGreaterThan(unten.payout[10]);
+  });
+
+  it("jede erreichbare Sprosse ist eine eigene Stufe — keine Lücke, keine doppelte", () => {
+    const reach = THRESHOLDS.filter((t) => t >= BURST_AT);   // darunter bricht der Gletscher gar nicht
+    const tiers = reach.map((t) => precomputeGlacier(withMass([[10, t]]), lockedSet(10)).breaks[0].tier);
+    expect(tiers).toEqual(reach.map((t) => THRESHOLDS.filter((x) => x <= t).length));
   });
 
   it("Immutabilität: Eingabe-Array wird nicht mutiert", () => {

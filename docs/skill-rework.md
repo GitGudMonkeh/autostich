@@ -7283,6 +7283,64 @@ beherrschende Term. Offen zur Entscheidung:
 
 ---
 
+### 5.29 Die Stufenleiter wird geöffnet (2026-09-09) — gebaut und gemessen
+
+**Owner:** „1." (von den drei Wegen aus §5.28 E) — „und dann schauen wir uns alle skills an die davon profitieren
+müssen und designen wie."
+
+§5.28 D hatte die Ursache benannt: die Leiter endete bei 18. Ein Drei-Gletscher-Build sitzt mit Ø 17,6 Masse schon an
+der obersten Sprosse und wandelt jede weitere Masse nur noch linear; ein Zwölfer sitzt mit 11,3 unter der
+Berst-Schwelle, wo dieselbe Masse doppelt zahlt. Deshalb half das Boden-Einkommen den vielen mehr als den wenigen.
+
+#### A · Gebaut
+
+| | vorher | jetzt |
+| --- | --- | --- |
+| `THRESHOLDS` | 4 / 8 / 12 / 18 | **4 / 8 / 12 / 18 / 27 / 40 / 60** |
+| `TIER_MULT` | 0 / 1 / 1,5 / 2,2 / 3,2 | **0 / 1 / 1,5 / 2,2 / 3,2 / 4,6 / 6,7 / 9,7** |
+| `FIRN_GROUND` | 0,35 | **0,6** |
+| `BURST_SCALE` | 24 | **20** |
+
+Die Fortsetzung hält den Rhythmus der bestehenden Leiter: Schwellen ×1,5, Wucht ×1,45 je Sprosse. Die Berst-Schwelle
+bleibt bei 12 — wer sie überschießt, landet auf der Sprosse, die sein Einkommen hergibt.
+
+**Ein Fund beim Bauen:** die Abbruchkante überschreibt die Stufen 2–4 mit einem eigenen fünfstelligen Array
+(`abbruchTierMult`). Ohne Nacharbeit hätte `tierMult[5]` `undefined` in den Bruch gereicht, sobald der Skill liegt.
+Die Sprossen über der vierten erben jetzt denselben relativen Zuschlag; ein Wächter hält die volle Länge fest.
+
+#### B · Gemessen
+
+Anteil eines Drei-Gletscher-Builds am Zwölfer, **am reinen Gletscher-Score** (`SIM_GLACIER_MAX`, 40 Läufe):
+
+| | Boden 0,35 | 0,6 | 1,0 | 1,6 |
+| --- | --- | --- | --- | --- |
+| Leiter bis 18 | 0,27 | — | — | — |
+| **Leiter offen** | **0,38** | **0,59** | **0,68** | **0,74** |
+
+Ab 1,0 bläht sich der ganze Motor auf (Mono +47 %), ohne die Form noch viel zu verbessern — deshalb 0,6.
+
+Build-Ebene (Cross, 400 Läufe je Build, Seeds 1–400), **Eis-Ansteckung = Kombi mit Eis ÷ dieselbe ohne**:
+
+| | §8 (Ausgangslage) | §5.28 | **§5.29** |
+| --- | --- | --- | --- |
+| Fe+Bl → Fe+Bl+Ei | 0,43× | 0,43× | **0,49×** |
+| Fe+Pf → Fe+Ei+Pf | 0,50× | 0,50× | **0,55×** |
+| Bl+Pf → Bl+Ei+Pf | 0,52× | 0,54× | **0,59×** |
+| Fe+Bl+Pf → Vierer | 0,63× | 0,64× | **0,67×** |
+
+Eis mono 6,73M → **7,14M (+6 %)**; die Fraktion ist damit nicht mehr die schwächste (Feuer 7,31M). Fe+Ei 5,65 →
+6,62M · Bl+Ei 6,01 → 7,16M · Fe+Bl+Ei 6,49 → 7,53M. Balance-Guard Seeds 1–40: Median 3,79M, Mean 8,35M
+(Seeds 1–200: 3,98M / 8,41M) — Median-Band neu zentriert, Mean-Band unverändert.
+
+#### C · Was bleibt
+
+Die Ansteckung ist von 0,43–0,63× auf 0,49–0,67× gestiegen — die Richtung stimmt, gesund wäre ≈ 1,0. Der Rest ist
+**keine Motor-Frage mehr, sondern eine Skill-Frage**: ein Misch-Build hat 4,3 Eis-Slots, und die müssen so viel wert
+sein wie 4,3 Feuer- oder Pflanze-Slots. Genau das ist der nächste Schritt (Owner: „dann schauen wir uns alle skills an
+die davon profitieren müssen und designen wie").
+
+---
+
 ## 8. Bestandsaufnahme über alle vier Fraktionen (2026-09-09)
 
 **Owner:** „wir haben jetzt reworks für Blitz, pflanze, Eis auf exp gebracht. diese sind noch nicht fertig aber bevor
@@ -7540,3 +7598,4 @@ leichtesten haben.
 | 2026-09-09 | Crit-Multiplikator-Bündel (7.31, Vorschlag, nichts umgesetzt): 81 % des gebauten Multiplikators fällt spät am 8×-Deckel weg (36,01× gebaut, 6,97× ausgezahlt), Vorentladung allein trägt +16,4× davon; Spannungsstau baut 0,00× — sein Auslöser (Sieg ohne Crit) ist seit dem Sockel fast verschwunden. Regel: Umverteilen INNERHALB des Multiplikators ändert nichts, solange die Summe über dem Deckel liegt. Owner-Regel gesetzt: keine Skills, die auf Niederlagen reagieren. Designstand für die drei Skills eingetragen, Abnahme offen. Neue Sonde `blitz-multsource.mjs`. |
 | 2026-09-09 | Bestandsaufnahme über alle vier Fraktionen (§8, Owner: „bevor wir da weiter machen müssen wir den aktuellen ist stand in der sim aufnehmen"). Neues Werkzeug `sim/survey.js` + `sim/survey-worker.js` — Auftrags-Pool über vier Prozesse, 108 800 Läufe in 93 min statt ~7 h seriell. Gemessen, nichts am Spiel geändert. Kernbefunde: (a) **Eis ist ansteckend** — jede Kombination mit Eis fällt auf 0,43–0,63× derselben Kombination ohne Eis, weil der freie Spieler von 13,0 Eis-Skills mono auf 1,7–3,1 im Tripel herunterfällt; (b) die Fraktionen skalieren vom planlosen zum kompetenten Spieler um ×15 (Feuer) bis ×185 (Pflanze) — Feuer hat keine Decke; (c) die zwölf Legendären spannen +1079 % (Baumreihe) bis +13 % (Ewige Glut), Faktor 80; (d) 26 von 70 Skills wirken in ihrer eigenen Mono-Welt unter 3 %, drei sind in allen sieben Welten schwach (Lichtung, Frostbund, Anfrieren), neun weitere in sechs von sieben. Ausdrücklich NICHT messbar: die Stufenleiter (98–186 Läufe je Stufe, „Leiter"-Flag feuert bei 41 von 58 normalen Skills — Rauschen). |
 | 2026-09-09 | Eis-System, erste Etappe (§5.28, Owner: „wie reparieren wir das System?" → „sonde und dann c"). Gebaut: `FIRN_GROUND` 0,35 (jedes offene Feld friert Reserve an — das Brett stellt 40−G Quellen und hängt damit fast nicht an der Pick-Zahl), der ZUG verteilt anteilig nach 1/Abstand statt „der Nächste nimmt alles" (im 3×3-Cluster bekamen sechs von zwölf Gletschern gar nichts), die Reserve unter einem Gletscher fließt in ihn selbst, `BURST_SCALE` 30 → 24. Gemessen und **Ziel verfehlt**: das Boden-Einkommen hebt zwölf Gletscher (×1,45) stärker als drei (×1,26), weil die Stufenleiter bei 18 endet — ein Drei-Gletscher-Build sitzt mit Ø 17,6 Masse schon an der obersten Sprosse, ein Zwölfer mit 11,3 unter der Berst-Schwelle. Der Deckel auf der Restmasse ist auch nicht der Hebel (Anteil 3÷12: 0,27 → 0,34 über KEEP 6/18/40). Endstand: Eis mono +2 %, Fe+Ei +10 %, Fe+Bl+Ei −5 % — Mono steht, die Ansteckung bleibt. Korrigiert meine Diagnose aus §8: die Dichte-Multiplikatoren bringen nur ×2,4, der Rest ist die schiere Zahl der Brüche. Offen: Leiter über 18 öffnen und/oder ein Trigger, der Ansammeln erlaubt (Owner-Idee); Träger-Kandidat ist die Abbruchkante. Neue Sonde `sim/probes/eis-kurve.mjs`, `sim/survey.js --only cross|welten`. |
+| 2026-09-09 | Eis-System, zweite Etappe (§5.29, Owner: „1." — die Stufenleiter öffnen). `THRESHOLDS` 4/8/12/18 → 4/8/12/18/27/40/60, `TIER_MULT` bis 9,7 (Rhythmus der alten Leiter: Schwellen ×1,5, Wucht ×1,45), `FIRN_GROUND` 0,35 → 0,6, `BURST_SCALE` 24 → 20. Erst damit zahlt sich Masse für WENIGE Gletscher aus: Anteil eines Drei-Gletscher-Builds am Zwölfer (reiner Gletscher-Score) 0,27 → 0,38 (Leiter allein) → 0,59 (mit Boden 0,6). Eis-Ansteckung auf Build-Ebene 0,43/0,50/0,52/0,63× → **0,49/0,55/0,59/0,67×**; Eis mono 6,73 → 7,14M (+6 %) und damit nicht mehr die schwächste Fraktion. Nebenfund beim Bauen: die Abbruchkante überschrieb die Stufen mit einem fünfstelligen Array und hätte `undefined` in den Bruch gereicht — die neuen Sprossen erben jetzt denselben relativen Zuschlag, ein Wächter hält die Länge. Balance-Guard Median-Band neu zentriert (3,79M über Seeds 1–40, 3,98M über 1–200), Mean-Band unverändert. Offen: die Skill-Seite — ein Misch-Build hat 4,3 Eis-Slots, die so viel wert sein müssen wie 4,3 Feuer-Slots. |

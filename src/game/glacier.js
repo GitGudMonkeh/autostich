@@ -16,8 +16,13 @@ import { envNum } from "./constants.js";                     // Sim-übersteuerb
 /* ---- TUNING-Block (Platzhalter, Sim-tunebar) ------------------------------------------------------ */
 // §5.18 (Owner): eine VIERTE Schwelle über der Berst-Schwelle. Gebrochen wird weiter ab BURST_AT (12) — die 18
 // erreicht nur, wer in EINEM Durchlauf über die Schwelle hinausschießt. Damit lohnt Anhäufen erstmals über 12.
-export const THRESHOLDS = [4, 8, 12, 18];      // Schwellen-Stufen; Stufe = #Schwellen ≤ Masse (0..4)
-export const TIER_MULT = [0, 1, 1.5, 2.2, 3.2]; // überlineare Wucht je Stufe (Stufe 0 bricht nicht)
+/* §5.29 (Owner: „1." — die Leiter nach oben öffnen): über der vierten Schwelle ging es bisher nicht weiter, und
+   damit war ANSAMMELN nicht bezahlbar. Gemessen (§5.28 D): ein Drei-Gletscher-Build sitzt mit Ø 17,6 Masse schon an
+   der obersten Sprosse und wandelt jede weitere Masse nur noch linear, während ein Zwölfer mit 11,3 unter der
+   Berst-Schwelle sitzt und dieselbe Masse doppelt zahlt. Genau deshalb half das Boden-Einkommen den vielen mehr als
+   den wenigen. Die Fortsetzung hält den Rhythmus der bestehenden Leiter bei: Schwellen ×1,5, Wucht ×1,45 je Sprosse. */
+export const THRESHOLDS = [4, 8, 12, 18, 27, 40, 60];  // Schwellen-Stufen; Stufe = #Schwellen ≤ Masse (0..7)
+export const TIER_MULT = [0, 1, 1.5, 2.2, 3.2, 4.6, 6.7, 9.7]; // überlineare Wucht je Stufe (Stufe 0 bricht nicht)
 // Globaler Burst-Skalierer: die Gletscher SIND der Hauptscore (nicht das Deck) — einzelne, massive Hits. Frequenz bleibt
 // (kein schnelleres Bersten), nur die Wucht je Bruch. §5.5: der weiche Deckel je Einzelbruch ist gestrichen (§1 der
 // Doku: keine Deckel, lieber niedrigere Werte). Er hatte die ganze Fraktion flach gemacht — in der Großen Fläche kamen
@@ -34,10 +39,10 @@ export const TIER_MULT = [0, 1, 1.5, 2.2, 3.2]; // überlineare Wucht je Stufe (
 // §5.27 nachtariert: 60 → 30. Der offene Zug (s. FIRN_DRAW) verdoppelt das Masse-Einkommen der Fraktion — jeder Punkt
 // Schnee kommt jetzt an, statt mit 1 je Durchlauf zu tröpfeln. Ohne Nachtarierung stand Eis bei 1,97× Feuer.
 // (Gemessen 28 → 0,97×; der Owner nimmt die rundere 30, die im Band bleibt.)
-// §8 nachtariert: 30 → 24. Der gefrorene Boden (FIRN_GROUND) ist eine zweite Einkommensquelle und hebt den
-// Gletscher-Score um rund ein Drittel; der Regler zieht ihn zurück auf den Stand davor. Gemessen (60 Läufe,
-// Fraktions-Policy, Seeds 1–60): Regler 22 → Eis mono 6,82M, Regler 25 → 7,51M, Ziel war 7,12M.
-export const BURST_SCALE = envNum("SIM_GLACIER_BURST_SCALE", 24);
+// §8 nachtariert: 30 → 24 (Boden-Einkommen). §5.29 erneut: 24 → 20, weil die offene Leiter und das höhere
+// Boden-Einkommen den Motor noch einmal heben. Ziel ist der Stand VOR der Runde (Eis mono 6,73M im Cross-Lauf über
+// 400–500 Läufe): die Runde soll die FORM ändern, nicht die Höhe. Parität ist eine eigene Owner-Entscheidung.
+export const BURST_SCALE = envNum("SIM_GLACIER_BURST_SCALE", 20);
 // Große Lawine (§5.8, Owner): feuert nicht mehr einmal am Laufende, sondern im TAKT — jeden GROSSE_LAWINE_EVERY-ten
 // Durchlauf bricht das ganze Feld auf einen Schlag, jeder Gletscher mit der Wucht der höchsten Schwelle. Damit ist sie
 // den ganzen Lauf über sichtbar, und sie synchronisiert das Feld: Kaskade, Kollision und Gletschersturz greifen
@@ -103,7 +108,11 @@ export const FIRN_DRAW = envNum("SIM_GLACIER_FIRN_DRAW", Infinity);
 // Sonde `sim/probes/eis-kurve.mjs`, Anteil eines Drei-Gletscher-Builds am Mono-Motor: 0 → 18 %, 0,25 → 44 %,
 // 0,35 → 52 %, 0,5 → 66 %, 0,75 → 74 %. Ab 0,75 kippt die Kurve (mehr Gletscher werden SCHLECHTER, weil jedes
 // gefrorene Feld dem Brett eine Quelle nimmt). 0,35 hält Mono bei rund dem Doppelten eines Drei-Gletscher-Splashs.
-export const FIRN_GROUND = envNum("SIM_GLACIER_FIRN_GROUND", 0.35);
+// §5.29 nachgezogen: 0,35 → 0,6. Erst mit der offenen Leiter zahlt sich das Boden-Einkommen für WENIGE Gletscher aus —
+// vorher saßen sie mit Ø 17,6 Masse an der obersten Sprosse fest. Anteil eines Drei-Gletscher-Builds am Zwölfer,
+// gemessen am reinen Gletscher-Score: Leiter bis 18 → 0,27 · offene Leiter mit 0,35 → 0,38 · mit 0,6 → 0,59 ·
+// mit 1,0 → 0,68. Ab 1,0 bläht sich der ganze Motor auf (Mono +47 %), ohne die Form noch viel zu verbessern.
+export const FIRN_GROUND = envNum("SIM_GLACIER_FIRN_GROUND", 0.6);
 // Deckel auf den LIEGENBLEIBENDEN Überschuss (nicht auf die Bruchmasse — der Deckel je Einzelbruch bleibt gestrichen,
 // §5.5). Ohne ihn hat die Masse gar keine Decke mehr: ein ausgebautes Cluster gewinnt je Durchlauf mehr als der Bruch
 // abzieht, und die Masse steigt unbegrenzt. 0 = kein Deckel.

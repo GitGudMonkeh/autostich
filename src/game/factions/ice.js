@@ -58,7 +58,10 @@ export function iceTuning(roles = [], roleTiers = {}) {
     eisbrueckeWeight: eb ? eb.weight : 1,
     eiswallPer: ew ? ew.per : 0,                 // Zuschlag je Gletscher über EISWALL_MIN−1 in der geraden Kette
     verzahnungPer: vz ? vz.per : 0,
-    abbruchTierMult: ab ? [TIER_MULT[0], TIER_MULT[1], ab.t2, ab.t3, ab.t4] : null,
+    /* §5.29: die Leiter reicht über die vierte Sprosse hinaus. Die Abbruchkante benennt nur t2/t3/t4 — die Sprossen
+       darüber erben denselben relativen Zuschlag, sonst stünde dort `undefined` im Bruch, sobald der Skill liegt. */
+    abbruchTierMult: ab ? [TIER_MULT[0], TIER_MULT[1], ab.t2, ab.t3, ab.t4,
+      ...TIER_MULT.slice(5).map((m) => m * (ab.t4 / TIER_MULT[4]))] : null,
     eisbebenPer: eb2 ? eb2.per : 0,               // Nachbeben-Anteil je Punkt Masse über der Berst-Schwelle
     eisbebenSturz: !!(eb2 && eb2.sturz),          // Episch: zählt dem Gletschersturz als eigener Bruch
     gletscherzungePer: gz ? gz.per : 0,          // Masse je +1 Kampfwert (0 = Skill nicht gehalten)

@@ -84,6 +84,11 @@ import { randomPolicy } from "../sim/policies/random.js";
 // 9,47M, ohne den Median zu bewegen (3,95 → 3,94M). Danach stand Eis mono im Duell bei 1,65× Feuer; BURST_SCALE
 // 250 → 150 bringt den Median auf 1,04×. Endstand Seeds 1..40: Median ≈ 3,36M, Mean ≈ 7,70M — BEIDE im bestehenden
 // Band, die Grenzen sind deshalb unverändert geblieben.
+// §5.29 (Owner, 2026-09-09): die Stufenleiter ist über die vierte Schwelle hinaus geöffnet (Schwellen 4/8/12/18/27/40/60),
+// das Boden-Einkommen steht bei 0,6 und BURST_SCALE bei 20. Der Zufallsspieler steigt: seine Gletscher zahlen
+// unabhängig vom Rest des Builds, und die neuen Sprossen verwerten angesammelte Masse, die vorher linear verfiel.
+// Seeds 1..40 Median ≈ 3,79M, Mean ≈ 8,35M (Seeds 1..200: 3,98M / 8,41M — dasselbe Niveau, der Mean hängt also
+// nicht an einem einzelnen Ausreißer). Das Median-Band ist darauf neu zentriert (≈ ±35 %), das Mean-Band bleibt.
 describe("sim balance guard", () => {
   const SEEDS = 40; // feste Seeds 1..40 → deterministischer Median/Mean
   const scores = Array.from({ length: SEEDS }, (_, i) => runOne(1 + i, randomPolicy()).score).sort((a, b) => a - b);
@@ -91,9 +96,12 @@ describe("sim balance guard", () => {
   const mean = scores.reduce((t, v) => t + v, 0) / SEEDS;
 
   it("Median-Score im erwarteten Band (breite Power-Verschiebung)", () => {
-    // Ist-Wert ≈ 2,78M (exp §5.6, 50 Runden, Angebot Feuer/Blitz/Pflanze/Eis). Band toleriert normales Tuning, schlägt bei grober Verschiebung an.
-    expect(median).toBeGreaterThan(1_800_000);
-    expect(median).toBeLessThan(3_750_000);
+    /* Ist-Wert ≈ 3,79M (exp §5.29). Band toleriert normales Tuning, schlägt bei grober Verschiebung an.
+       Neu zentriert mit Beleg statt auf Verdacht: die alte Obergrenze 3,75M war um 1 % überschritten, und der
+       Wert ist über Seeds 1..200 mit 3,98M auf demselben Niveau — es ist kein Ausreißer, sondern die gewollte
+       Folge der offenen Stufenleiter. Der Mean (Guard darunter) bleibt bei 8,35M im bestehenden Band. */
+    expect(median).toBeGreaterThan(2_450_000);
+    expect(median).toBeLessThan(5_150_000);
   });
 
   it("Mean-Score im erwarteten Band (Tail-Runaway-Fänger)", () => {
