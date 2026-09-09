@@ -260,7 +260,7 @@ export const GLOSSARY = {
     match: ["Gletscher-Formationen", "Gletscher-Formation", "Eis-Formationen", "Eis-Formation"] },
   // id `freeze` bleibt als Backcompat-Token erhalten (glossary.test.js), umgewidmet auf „Schnee".
   freeze: { category: "frak", group: "ice", label: "Schnee", icon: "❄", color: CLR.ice,
-    text: `Schnee liegt als Reserve auf dem Brettfeld, getrennt von der Gletschermasse. Jeden Durchlauf gibt jedes offene Feld bis zu ${de(G_DRAW)} Schnee an den nächstgelegenen Gletscher ab. Frierst du einen Gletscher auf ein aufgeladenes Feld, wird der angesammelte Schnee zu seiner Boden-Reserve; er startet leer und zieht daraus jeden Durchlauf wieder auf volle ${G_REFILL} Masse nach (nur die Differenz, nie darüber), bis die Reserve leer ist. Offenen Boden laden Dauerfrost, Schneetreiben und Eiszeit auf, nie unter einen Gletscher.`,
+    text: `Schnee liegt als Reserve auf dem Brettfeld, getrennt von der Gletschermasse. Jeden Durchlauf gibt jedes offene Feld ${Number.isFinite(G_DRAW) ? `bis zu ${de(G_DRAW)} Schnee` : "seinen ganzen Schnee"} an den nächstgelegenen Gletscher ab. Frierst du einen Gletscher auf ein aufgeladenes Feld, wird der angesammelte Schnee zu seiner Boden-Reserve; er startet leer und zieht daraus jeden Durchlauf wieder auf volle ${G_REFILL} Masse nach (nur die Differenz, nie darüber), bis die Reserve leer ist. Offenen Boden laden Dauerfrost, Schneetreiben und Eiszeit auf, nie unter einen Gletscher.`,
     match: ["Schnee"] },
 
   /* ============ 4 · Pflanze (exp skill rework, §6) ============ */

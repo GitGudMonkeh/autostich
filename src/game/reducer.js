@@ -1,7 +1,9 @@
 import { buildDeck, shuffledOrder } from "./deck.js";
 import { rngAt } from "./rng.js"; // #205 Challenger Mode: adressierte Sub-Ströme (build-unabhängige Slots)
 import { PERK_DEFS, buildPerkOffer, offerHasLegendary, isLegendary } from "./perks.js";
-import { rerollPrice, energyBuy, coverBuy, COVER_CELLS, FOCUS_PRICE, upgradeBuy, familyUpgradeBuy } from "./coins.js"; // Münz-Ökonomie: dieselben Rechnungen wie die Knöpfe (§3.1 Neuwurf · §3.2 Energie · §3.3 Fokus · §3.4 Baufeld · §3.5 Aufwerten Skill+Perk)
+import { rerollPrice, energyBuy, coverBuy, COVER_CELLS, FOCUS_PRICE, upgradeBuy, familyUpgradeBuy, COIN_START,
+         coinGrant, unspentEnergyCoins, FORFEIT_SKILL, FORFEIT_PERK, FORFEIT_BUILD } from "./coins.js"; // Münz-Ökonomie: dieselben Rechnungen wie die Knöpfe (§3.1 Neuwurf · §3.2 Energie · §3.3 Fokus · §3.4 Baufeld · §3.5 Aufwerten Skill+Perk) + Verzicht (§2.3)
+import { sellPatch, deckDeltaOf, withDeckDelta } from "./perkSale.js"; // §3.6 Perk-Verkauf: Erlös, Rückbau und das Gedächtnis der Deck-Differenzen
 import { familyDef, applyFamilyPick } from "./families.js"; // formationEnergyBonus läuft jetzt über engine.formationEnergyFor
 import { UPGRADE_TYPES } from "./rarity.js";
 import { archetypeOf, buildSkillDoors, rerollDoorSkills, glacierRolesOf, ARCHETYPE_ORDER } from "./skills.js";
@@ -144,11 +146,15 @@ export function initialState(rng = Math.random, seed = null) {
     roles: {}, targetPerk: null, successorQueue: [], triumphArmed: [], // Kartenrollen (V2 §22.6 C): Rollen-ids, aktive Zielauswahl, Nachfolger-/Triumph-State
     l4Boost: {}, // Legendär-Perk L4 Kritische Masse (Crit-Wert-Gewinn je Karte)
     zinsCapital: 0, zinsRate: C.ZINS_RATE_START, zinsPaidTotal: 0, cycleWins: 0, cycleLosses: 0, cycleBestTrick: 0, sammlerTypes: [], vabanquePaid: 0, cycleOpenScore: 0, cycleScoreSum: 0, // Legendär-Perks-Rework (#203) + Zinseszins-Bank
-    // Münz-Ökonomie (docs/muenz-oekonomie.md §2): Kontostand des Laufs. Kein Startbetrag — der erste Durchlauf zahlt
-    // nichts, die erste Skill-Phase hat leere Kasse. lastCycleCoins/lastCycleWins tragen die letzte Auszahlung für die
-    // Anzeige (§4) — reine Schau, der Kontostand selbst ist `coins`. Nicht verwechseln mit dem Perk „Zinseszins"
-    // (zinsCapital/zinsRate): der arbeitet auf Score-Kapital, nicht auf Münzen (§8.4).
-    coins: 0, lastCycleCoins: null, lastCycleWins: null,
+    // Münz-Ökonomie (docs/muenz-oekonomie.md §2.1): Kontostand des Laufs, mit Startbetrag — ohne ihn wäre die erste
+    // Skill-Phase mittellos, weil die erste Auszahlung erst am Ende von Durchlauf 1 kommt. lastCycleCoins/lastCycleForms
+    // tragen die letzte Auszahlung für die Anzeige (§4) — reine Schau, der Kontostand selbst ist `coins`. Nicht
+    // verwechseln mit dem Perk „Zinseszins" (zinsCapital/zinsRate): der arbeitet auf Score-Kapital, nicht auf Münzen.
+    coins: COIN_START, lastCycleCoins: null, lastCycleForms: null,
+    coinGain: null, // §2.3: die zuletzt gutgeschriebene Verzichts-Zahlung { n, source, seq } — nur Anzeige, `seq` löst das Aufblitzen aus
+    // §3.6 Perk-Verkauf: was ein Deck-Perk je Karte TATSÄCHLICH bewirkt hat, unter seiner id. Beim Verkauf
+    // abgezogen. `meisterSkill` merkt den über Meisterhand gewählten Skill — er geht mit dem Perk.
+    deckDeltas: {}, meisterSkill: null,
     coinRerolls: 0, // §3.1: gekaufte Neuwürfe DIESER Phase — die Preistreppe; Reset überall dort, wo auch offerRerolls auf 0 geht
     coinEnergy: 0,  // §3.2: gekaufte Energie DIESER Aufstellphase (verfällt mit ihr)
     focusCalled: false, // §3.3: in DIESER Skill-Phase wurde schon ein Fokus gerufen (einmal je Phase)
@@ -251,6 +257,41 @@ const buyReroll = (state, legendary) => {
   // `patch` ist genau das, was in den State geht; `legendary` steuert die Garantie und bleibt draußen.
   return { legendary: !!legendary, price, patch: { coins: (state.coins || 0) - price, coinRerolls: (state.coinRerolls || 0) + 1 } };
 };
+
+/* Einen gehaltenen Skill wieder abgeben (§3.6: der Meisterhand-Verkauf nimmt den über sie gewählten Skill
+   mit). Der Rückbau ist derselbe wie in PICK_SKILL, wenn dort der LETZTE Skill eines Archetyps ersetzt
+   wird (#140): ein Archetyp ohne Skill hinterließe Geister — eine laufende Ladungsleiste, gefrorene
+   Karten, grüne Karten ohne Pflanze. Eigener Weg statt geteilter Funktion, weil PICK_SKILL zusätzlich die
+   AKTIVIERUNG des neuen Skills rechnet, die es hier nicht gibt.
+   Erspieltes bleibt: geschmiedete Dauerwerte sind in die Karten gebacken, Wachstum fällt nur, wenn die
+   Pflanze selbst geht. */
+function dropSkill(state, skillId) {
+  const skills = (state.skills || []).filter((id) => id !== skillId);
+  const skillTiers = { ...(state.skillTiers || {}) }; delete skillTiers[skillId];
+  const still = new Set(skills.map(archetypeOf).filter(Boolean));
+  let deck = state.deck, growth = state.growth || {};
+  let lightning = state.lightning, heat = state.heat, iceTemp = state.iceTemp;
+  let brandPending = state.brandPending || {}, brandActive = state.brandActive || {}, forged = state.forged || {};
+  if (still.has("lightning")) {
+    lightning = { ...lightning, maxCharge: maxChargeFor(skills, skillTiers) };
+    if (skillId === LIGHT.SPANNUNGSSTAU && lightning.stauBonus) lightning = { ...lightning, stauBonus: 0 }; // sein Stau geht mit ihm
+  } else lightning = initLightning();
+  if (still.has("fire")) heat = syncHeatMax(heat, skills);
+  else { heat = null; brandPending = {}; brandActive = {}; forged = {}; }
+  if (!still.has("ice")) iceTemp = {};
+  if (!still.has("plant")) { deck = deck.map((c) => (c.green || c.bloom ? { ...c, green: false, bloom: false } : c)); growth = {}; }
+  let glacierRoles = glacierRolesOf(skills), glacierRoleTiers = iceRoleTiers(skills, skillTiers);
+  const ice = still.has("ice");
+  return { skills, skillTiers, activeArchetypes: (state.activeArchetypes || []).filter((a) => still.has(a)),
+    lightning, heat, deck, growth, iceTemp, brandPending, brandActive, forged,
+    glacierRoles: ice ? glacierRoles : [], glacierRoleTiers: ice ? glacierRoleTiers : {},
+    glacierMass: ice ? state.glacierMass : new Array(C.BOARD_POSITIONS).fill(0),
+    firnStack: ice ? state.firnStack : new Array(C.BOARD_POSITIONS).fill(0),
+    glacierLocked: ice ? state.glacierLocked : new Array(C.BOARD_POSITIONS).fill(false),
+    glacierYield: ice ? state.glacierYield : 0,
+    frozenOppPending: ice ? state.frozenOppPending : {}, frozenOppActive: ice ? state.frozenOppActive : {},
+    glacierBuffPending: ice ? state.glacierBuffPending : {}, glacierBuffActive: ice ? state.glacierBuffActive : {} };
+}
 
 export function reducer(state, action) {
   switch (action.type) {
@@ -477,8 +518,13 @@ export function reducer(state, action) {
     }
     case "ARCHITECT_DONE": { // Architekt-Phase verlassen → zugehöriger Durchlauf startet (Angebot leeren).
       if (state.phase !== "architect") return state;
+      /* Verzicht zahlt (§2.3): eine Phase ohne Hauptaktion bringt Münzen. `actedMain` ist genau die
+         richtige Bedingung — es ist der Riegel, den Errichten UND Ausbauen setzen und den sonst nichts
+         setzt. Versetzen, Umfärben und Abreißen zahlen also weiter aus, und das ist gewollt: sie kosten
+         keinen Bauplan, sie ordnen nur um. */
+      const idle = state.architect && !state.architect.actedMain ? FORFEIT_BUILD : 0;
       // #361 transiente Undo-Daten mit der Phase verwerfen (nicht in den gespeicherten Lauf mitschleppen).
-      return { ...state, phase: "play", architect: { ...state.architect, offers: null, phaseHistory: [], phaseAnchor: null } };
+      return { ...state, ...coinGrant(state, idle, "build"), phase: "play", architect: { ...state.architect, offers: null, phaseHistory: [], phaseAnchor: null } };
     }
 
     case "RESOLVE_TRICK":
@@ -539,6 +585,9 @@ export function reducer(state, action) {
         ? computeFormations(state.playerOrder, deck, state.roles, perks, state.skills, state.shop?.anchors || [], state.familyTiers, archOf(state), plantBag(state))
         : state.formations;
       return { ...state, perks, deck, architect, skillSlots, offer: null, formations,
+               // §3.6: Umverteilung und Opfergang greifen HIER ins Deck — was sie je Karte tatsächlich
+               // bewirkt haben, merkt sich der Perk unter seiner eigenen id; der Verkauf zieht es ab.
+               deckDeltas: withDeckDelta(state.deckDeltas, perkId, deckDeltaOf(state.deck, deck)),
                // Leeres Angebot (Skill-Pool erschöpft) → normal weiterspielen; der Slot bleibt, die nächste
                // reguläre Skill-Phase füllt ihn dann (`normalCount < skillSlots` → hinzufügen statt ersetzen).
                ...(bonusDoors.length
@@ -563,7 +612,7 @@ export function reducer(state, action) {
         const { familyTiers, deck, roles } = applyFamilyPick(
           familyId, tier, { familyTiers: state.familyTiers, deck: state.deck, roles: state.roles }, rngFor(state, action, state.cycle, "pick"));
         // [#229 N3] Formationen sofort neu berechnen (analog CONFIRM_TARGET) — sonst bis zum nächsten RESOLVE_TRICK stale.
-        return { ...state, familyTiers, deck, roles,
+        return { ...state, familyTiers, deck, roles, deckDeltas: withDeckDelta(state.deckDeltas, familyId, deckDeltaOf(state.deck, deck)), // §3.6: was der Eingriff je Karte TAT — der Verkauf zieht genau das ab
           formations: computeFormations(state.playerOrder, deck, roles, state.perks, state.skills, state.shop?.anchors || [], familyTiers, archOf(state), plantBag(state)),
           offer: null, phase: "play" };
       };
@@ -578,7 +627,7 @@ export function reducer(state, action) {
           const target = { suits: C.SUIT_ORDER.slice(), cards: [], formationType: null, order: state.playerOrder };
           const { familyTiers, deck, roles } = applyFamilyPick(
             familyId, tier, { familyTiers: state.familyTiers, deck: state.deck, roles: state.roles, target }, rngFor(state, action, state.cycle, "target"));
-          return { ...state, familyTiers, deck, roles,
+          return { ...state, familyTiers, deck, roles, deckDeltas: withDeckDelta(state.deckDeltas, familyId, deckDeltaOf(state.deck, deck)), // §3.6
             formations: computeFormations(state.playerOrder, deck, roles, state.perks, state.skills, state.shop?.anchors || [], familyTiers, archOf(state), plantBag(state)),
             offer: null, phase: "play" };
         }
@@ -636,12 +685,13 @@ export function reducer(state, action) {
         ft.familyId, ft.tier, { familyTiers: state.familyTiers, deck: state.deck, roles: state.roles, target }, rngFor(state, action, state.cycle, "target"));
       // Rollen/Deck können die Formationserkennung ändern (C_JOKER/C_BRIDGE, C_SACRIFICE-Deckmod) → neu berechnen (wie CONFIRM_TARGET).
       const formations = computeFormations(state.playerOrder, deck, roles, state.perks, state.skills, state.shop?.anchors || [], familyTiers, archOf(state), plantBag(state)); // #health-check G1: archOf ergänzt — diese Stelle war älter als der Architekt (#202) und liess Gebäude-Effekte bis zur nächsten Engine-Neuberechnung fallen
+      const deckDeltas = withDeckDelta(state.deckDeltas, ft.familyId, deckDeltaOf(state.deck, deck)); // §3.6: C_SACRIFICE und die Farb-Stufen greifen hier ins Deck
       // Aufwertung (UPGRADE_FAMILY): zurück, wo der Kauf ausgelöst wurde, und ERST HIER bezahlen. Ein Pick
       // dagegen hat seinen Rundenplatz verbraucht und geht ins Spiel — daher die Adresse am familyTarget.
       if (ft.from === "upgrade")
-        return { ...state, familyTiers, deck, roles, formations, coins: (state.coins || 0) - (ft.pendingPrice || 0),
+        return { ...state, familyTiers, deck, roles, formations, deckDeltas, coins: (state.coins || 0) - (ft.pendingPrice || 0),
                  phase: ft.backPhase || "levelup", familyTarget: null };
-      return { ...state, familyTiers, deck, roles, formations, phase: "play", familyTarget: null };
+      return { ...state, familyTiers, deck, roles, formations, deckDeltas, phase: "play", familyTarget: null };
     }
 
     // Zielauswahl bestätigen (V2 §22.6): genau needsTarget Karten → Rolle setzen bzw. dauerhafte Wertmod (L1/L9).
@@ -752,6 +802,12 @@ export function reducer(state, action) {
       // Formationen neu berechnen (Anker/Familien/Architekt beeinflussen die Erkennung).
       const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, skills, state.shop?.anchors || [], state.familyTiers, archOf(state), { skillTiers, growth });
       return { ...state, skills, skillTiers, skillOfferTiers: null, activeArchetypes, lightning, heat, deck, iceTemp, growth, brandPending, brandActive, forged, tendrils, formations,
+               /* §3.6: kam dieser Skill aus dem Meisterhand-Bonus, merkt sich der Lauf, welcher es war —
+                  der Verkauf des Perks nimmt ihn mit, und ohne Gedächtnis wäre er nicht wiederzufinden.
+                  Wird er später ERSETZT, folgt die Marke dem Nachfolger: der Slot ist der von Meisterhand,
+                  wer darin sitzt, ist eine spätere Entscheidung. */
+               ...(state.skillOfferBonus ? { meisterSkill: skillId }
+                 : (replaceId && replaceId === state.meisterSkill ? { meisterSkill: skillId } : {})),
                glacierRoles, glacierRoleTiers, glacierMass, firnStack, glacierLocked, glacierYield, frozenOppPending, frozenOppActive, glacierBuffPending, glacierBuffActive, // Eis-Neudesign (#386 Firn-Reserve mitgeführt)
                // Eis-Neudesign: jeder Eis-Skill-Pick öffnet SOFORT die Gletscher-Wahl (Pflicht) — analog zum Perk-Ziel-Flow.
                // §5.5: der Pick vergibt GLACIER_PER_PICK Gletscher nacheinander, begrenzt durch freie Felder und den
@@ -833,6 +889,7 @@ export function reducer(state, action) {
         const { familyTiers, deck, roles } = applyFamilyPick(
           familyId, tier, { familyTiers: state.familyTiers, deck: state.deck, roles: state.roles }, rngFor(state, action, state.cycle, "upgrade"));
         return { ...state, coins: (state.coins || 0) - buy.price, familyTiers, deck, roles,
+          deckDeltas: withDeckDelta(state.deckDeltas, familyId, deckDeltaOf(state.deck, deck)), // §3.6: Stufe 2 kommt zu Stufe 1 DAZU
           formations: computeFormations(state.playerOrder, deck, roles, state.perks, state.skills, state.shop?.anchors || [], familyTiers, archOf(state), plantBag(state)) };
       };
       const pt = fam.tiers[tier] && fam.tiers[tier].pickTarget;
@@ -846,6 +903,7 @@ export function reducer(state, action) {
           const { familyTiers, deck, roles } = applyFamilyPick(
             familyId, tier, { familyTiers: state.familyTiers, deck: state.deck, roles: state.roles, target }, rngFor(state, action, state.cycle, "upgrade"));
           return { ...state, coins: (state.coins || 0) - buy.price, familyTiers, deck, roles,
+            deckDeltas: withDeckDelta(state.deckDeltas, familyId, deckDeltaOf(state.deck, deck)), // §3.6
             formations: computeFormations(state.playerOrder, deck, roles, state.perks, state.skills, state.shop?.anchors || [], familyTiers, archOf(state), plantBag(state)) };
         }
         return { ...state, phase: "family-target", familyTarget: { familyId, tier, kind: "suits", need: pt.suits, suits: [], cards: [], formationType: null, ...back } };
@@ -857,18 +915,38 @@ export function reducer(state, action) {
       return { ...state, phase: "family-target", familyTarget: { familyId, tier, kind: "cards", need, suits: [], cards: [], ...back } };
     }
 
+    /* Perk verkaufen (docs/muenz-oekonomie.md §3.6) — TESTFEATURE, nur Perks. Der Erlös ist die Hälfte
+       des investierten Aufwert-Werts; der Rückbau folgt der Owner-Regel „was man aufbaut, behält man".
+       Die Rechnung und der Rückbau liegen in perkSale.js; hier wird nur genäht: `dropSkill` reicht das
+       Reducer-Wissen für den Meisterhand-Fall hinein, und die Formationen müssen danach neu gerechnet
+       werden — Rollen und Kartenwerte ändern die Erkennung (Farballianz, Formationskern, Umverteilung).
+       Ohne die Neuberechnung stünde das Brett bis zum nächsten Stich auf dem Stand VOR dem Verkauf. */
+    case "SELL_PERK": {
+      if (state.phase !== "levelup") return state;
+      const patch = sellPatch(state, action.kind, action.id, dropSkill);
+      if (!patch) return state;                                  // nicht gehalten oder gesperrt (Bauhütte/Meisterhand)
+      const next = { ...state, ...patch };
+      return { ...next, formations: computeFormations(next.playerOrder, next.deck, next.roles, next.perks, next.skills,
+        next.shop?.anchors || [], next.familyTiers, archOf(next), plantBag(next)) };
+    }
+
     // Skill-Angebot ablehnen → stattdessen ein Perk-Angebot für diese Runde (nie „verschwendet").
     // exp skill rework: geht an beiden Stufen — vor den Türen wie auf dem geöffneten Angebot.
     case "DECLINE_SKILL": {
       if (state.phase !== "levelup" || (!state.skillOffer && !state.skillDoors)) return state;
       const cleared = { skillOffer: null, skillOfferTiers: null, skillOfferArchs: null, skillDoors: null };
+      /* Verzicht zahlt (§2.3): ein abgelehnter Skill bringt Münzen. Einmal oben gerechnet und in JEDEN
+         Ausgang gespreizt — die fünf Wege hier (Meisterhand-Bonus, Dev-Run, Eis-Gletscher, Perk-Ersatz,
+         leerer Pool) sind alle derselbe Verzicht, und eine Zahlung, die an einem davon fehlt, wäre für
+         den Spieler nicht erklärbar. Auch der Meisterhand-Bonus zahlt: der Slot bleibt leer. */
+      const paid = coinGrant(state, FORFEIT_SKILL, "skill");
       // Meisterhand-Bonus (s. PICK_PERK): das Angebot ist ein GESCHENK des eben genommenen Perks, kein
       // Rundenplatz. Die „nie verschwendet"-Regel darunter (Skill abgelehnt → stattdessen ein Perk) darf
       // hier deshalb nicht greifen — sie machte aus einem Perk zwei. Ablehnen heißt: Slot bleibt vorerst
       // leer, die nächste reguläre Skill-Phase füllt ihn. Steht VOR dem Dev-Zweig, weil der Bonus auch im
       // Dev-Run ein Bonus ist. Der Eis-Ablehn-Gletscher unten entfällt aus demselben Grund.
-      if (state.skillOfferBonus) return { ...state, ...cleared, skillOfferBonus: false, phase: "play" };
-      if (state.devMode) return { ...state, ...cleared, phase: "play" }; // Dev-Run: „Runde überspringen" → direkt weiter, KEIN Perk-Ersatz
+      if (state.skillOfferBonus) return { ...state, ...cleared, ...paid, skillOfferBonus: false, phase: "play" };
+      if (state.devMode) return { ...state, ...cleared, ...paid, phase: "play" }; // Dev-Run: „Runde überspringen" → direkt weiter, KEIN Perk-Ersatz
       const off = buildPerkOffer(state.perks, state.familyTiers, rngFor(state, action, state.cycle, "perk", 0), runRules(state).perksOffered, perkLegendaryChance(state.shop) * (state.treeLegMult ?? 1), state.treeRareShift || 0, state.architectEnabled, C.perkPhaseAt(state.devSchedule || C.DECISION_SCHEDULE, state.cycle) === C.LEG_PERK2_PHASE ? (state.treeLegForce2 || 0) : 0, state.rareCap || 4, state.rareFloor || 1); // M4/M5: 2. Perk-Phase (Reroll behält Garantie) · §4c Rarität-Deckel · #370 Rarität-Boden
       // Eis-Neudesign: bei VOLLEN Eis-Slots (SKILL_SLOTS Eis-Skills) friert das Ablehnen trotzdem einen Gletscher fest —
       // Ausgleich dafür, dass kein weiterer Eis-Skill mehr in die Slots passt (analog: ein Tausch bei vollen Slots gibt
@@ -877,21 +955,22 @@ export function reducer(state, action) {
       const iceSkillCount = state.skills.filter((id) => archetypeOf(id) === "ice" && !isLegendarySkill(id)).length;
       const declineGrant = glacierGrant(state.glacierLocked, state.challengeBlockForm, (state.playerOrder || []).length, 1, schildHeld(state));
       if ((state.activeArchetypes || []).includes("ice") && iceSkillCount >= G_DECLINE_MIN_SKILLS && declineGrant > 0) {
-        return { ...state, ...cleared, phase: "glacier-target", glacierPicksLeft: declineGrant, pendingPerkOffer: off.length > 0 ? off : null };
+        return { ...state, ...cleared, ...paid, phase: "glacier-target", glacierPicksLeft: declineGrant, pendingPerkOffer: off.length > 0 ? off : null };
       }
       return off.length > 0
-        ? { ...state, ...cleared, offer: off, offerRerolls: 0, coinRerolls: 0, focusCalled: false } // → Perk-Auswahl (#205: frisches Angebot → Reroll-Index 0; §3.1: frische Entscheidung → Preistreppe von vorn)
-        : { ...state, ...cleared, phase: "play" };             // Perk-Pool leer → weiterspielen
+        ? { ...state, ...cleared, ...paid, offer: off, offerRerolls: 0, coinRerolls: 0, focusCalled: false } // → Perk-Auswahl (#205: frisches Angebot → Reroll-Index 0; §3.1: frische Entscheidung → Preistreppe von vorn)
+        : { ...state, ...cleared, ...paid, phase: "play" };    // Perk-Pool leer → weiterspielen
     }
 
     // exp skill rework: Legendäre kommen als fünfte Seltenheit im normalen Skill-Angebot (PICK_SKILL); die
     // eigene Legendär-Phase (#272) und ihre Aktionen PICK_/DECLINE_/REROLL_LEGENDARY sind entfallen.
 
     // Perk-Angebot komplett ablehnen (#138): Angebot verworfen, weiter im Spiel — so ist eine Perk-Runde nie
-    // „verschwendet". Keine Belohnung mehr: mit dem Architekten (#202/#225.1) gibt es keine Münzökonomie.
+    // „verschwendet". Verzicht zahlt (§2.3): dafür gibt es Münzen — halb so viel wie für einen Skill, weil
+    // ein Perk weniger Lauf-Gewicht trägt. (Die alte #138-Belohnung fiel mit dem Shop weg; sie ist zurück.)
     case "DECLINE_PERK": {
       if (state.phase !== "levelup" || !state.offer) return state;
-      return { ...state, offer: null, phase: "play" };
+      return { ...state, ...coinGrant(state, FORFEIT_PERK, "perk"), offer: null, phase: "play" };
     }
 
     // #263: Perk-Angebot neu würfeln — eigener Perk-Reroll-Pool (rerollsPerk), kein Free-Reroll mehr.
@@ -1052,10 +1131,15 @@ export function reducer(state, action) {
                formationEnergy: formationEnergyFor(state) + (state.coinEnergy || 0),
                formationSwaps: [] };
     }
-    // Bestätigen → Reihenfolge bleibt persistent, Übergang in die Kampfphase.
+    /* Bestätigen → Reihenfolge bleibt persistent, Übergang in die Kampfphase.
+       Verzicht zahlt (§2.3): jede ÜBRIGE Energie bringt eine Münze — gekaufte ausgenommen
+       (unspentEnergyCoins), sonst wäre der Kauf ein Rabatt auf die eigene Rückerstattung. Hier und nicht
+       beim Phasenwechsel in der Engine: das Bestätigen ist der Moment, in dem der Spieler den Verzicht
+       trifft, und nur hier steht `formationEnergy` noch auf dem Rest, den er stehen lässt. */
     case "CONFIRM_FORMATION": {
       if (state.phase !== "formation") return state;
-      return { ...state, phase: "play", formationEnergy: 0, formationSwaps: [] };
+      const left = unspentEnergyCoins(state.formationEnergy, state.coinEnergy);
+      return { ...state, ...coinGrant(state, left, "energy"), phase: "play", formationEnergy: 0, formationSwaps: [] };
     }
 
     default:

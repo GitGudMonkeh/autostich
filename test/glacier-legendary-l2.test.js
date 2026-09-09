@@ -89,7 +89,10 @@ describe("Eiszeit — Berstkraft aus offenem Boden (§5.16)", () => {
 describe("Eiszeit — Engine", () => {
   it("über einen Durchlauf: Reserve geflutet, Masse gewachsen, kein Feld eingefroren", () => {
     const s = runCycle(scen({ glacierLocked: lockAt(0), glacierRoles: [ROLES.L_EISZEIT], oppDeck: oppOf(99) }));
-    expect(s.firnStack[39]).toBeGreaterThan(0);            // #386: offener Boden sammelt Reserve
+    /* §5.27: mit offenem Zug bleibt am Durchlauf-Ende KEINE Reserve stehen — sie ist im selben Durchlauf beim
+       Gletscher angekommen. Die Flut ist deshalb nicht mehr am firnStack zu sehen, sondern nur noch an der Masse;
+       genau das ist der Punkt des Owners („nichts generieren, das wir nicht nutzen"). */
+    expect(s.firnStack[39]).toBe(0);
     expect(s.glacierLocked.filter(Boolean).length).toBe(1); // §5.15: die Eiszeit friert nichts mehr ein
     const ohne = runCycle(scen({ glacierLocked: lockAt(0), glacierRoles: [], oppDeck: oppOf(99) }));
     expect(s.glacierMass[0]).toBeGreaterThan(ohne.glacierMass[0]); // der Zug aus dem Boden schlägt bis in die Masse durch

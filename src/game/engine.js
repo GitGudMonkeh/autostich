@@ -6,7 +6,7 @@ import { PERK_DEFS, buildPerkOffer, critChanceRawFor, critMultiplierFor, streakB
 import { familySumHook, familyProdHook, familyTierParam, activeFamilyEntries, formationEnergyBonus, familyCritChanceRaw, familyCritMult, allianceGroups } from "./families.js";
 import { colorsAllied } from "./color.js"; // #289: Farb-Serie/Architekt/Farbfokus respektieren Farballianz
 import { skillSum, buildSkillDoors } from "./skills.js"; // exp skill rework: Türen-Angebot (Stufen mit der Tür gewürfelt)
-import { coinsForWins } from "./coins.js"; // Münz-Ökonomie (§2): Einnahme je Durchlauf aus der Siegzahl
+import { coinsForFormations } from "./coins.js"; // Münz-Ökonomie (§2.2): Einnahme je Durchlauf aus der Aufstellung
 // exp skill rework: die Blitz-Mechanik (Passiv, 15 Skills, 4 Legendäre) lebt im Fraktionsmodul; die Engine ruft nur
 // ihre reinen Übergänge (Crit-Beiträge, Ladungsgewinn, volle Leiste, Niederlage, Rundenende).
 import { lightningCritChance, lightningCritMult, overcritMult, blitzfaengerValue, ionenfeldValue, fieldTick, ionScoreFor as lightIonScore, ionCritMultFor as lightIonCritMult, chargeGainOnWin,
@@ -22,11 +22,11 @@ import { syncHeatMax, fireValueBonus, fireOnWin, fireOnLoss, heatMult, verbrennu
 import { plantOnWin, plantOnLoss, plantOnTendril, plantValueBonus, plantFormMult, beetGains, applyGrowth,
   bloomAllIfFullGreen } from "./factions/plant.js";
 // (#267: import aus stats.js entfernt — die Stat-Phase/Faktoren sind weg.)
-import { computeFormations, positionHasFormation, activeFormationCount, summarizeFormations, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
+import { computeFormations, positionHasFormation, activeFormationCount, summarizeFormations, countBuiltFormations, SEGMENT_SIZE, FORMATION_TYPES } from "./formations.js";
 import { perkLegendaryChance, anchorAt } from "./shop.js";
 import { precomputeArchitect, architectValueBonus, architectScore, buildArchitectOffer } from "./architect.js";
 import { precomputeGlacier, ewigerFrostTick, dauerfrostTick, driftTargets as glacierDriftTargets,
-  neighbors4 as glacierNeighbors4, uebergletscherPool, packeisTick, verzahnungTick, eiszeitFlood, firnDrawTick, glacierGeometry,
+  uebergletscherPool, packeisTick, verzahnungTick, eiszeitFlood, firnDrawTick, glacierGeometry,
   ROLES as GLACIER_ROLES, WIN_MASS as GLACIER_WIN_MASS, GROSSE_LAWINE_EVERY as GLACIER_LAWINE_EVERY,
   FIRN_REFILL_TARGET as GLACIER_FIRN_REFILL_TARGET } from "./glacier.js"; // Eis-Neudesign (isoliert, activeArchetypes "ice") · #386 Firn-Reserve-Nachschub
 import { iceTuning, iceSnapshotOpts, iceNeighborFn } from "./factions/ice.js"; // §5.3: die Zahlen der Eis-Skills kommen aus ihrer Stufe
@@ -129,7 +129,7 @@ export function resolveTrick(state, rng) {
     roles = {}, successorQueue = [], triumphArmed = [], // Kartenrollen (V2 §22.6 C): Rollen-ids / Nachfolger-Boni / Triumph-Armierung
     l4Boost = {}, // Legendär-Perk L4 Kritische Masse: Crit-Wert-Gewinn je Karte (Kappe)
     zinsCapital = 0, zinsRate = C.ZINS_RATE_START, zinsPaidTotal = 0, cycleWins = 0, cycleLosses = 0, cycleBestTrick = 0, sammlerTypes = [], // Zinseszins-Bank (Kapital/Zinssatz/kumulierte Auszahlung) / Durchlauf-Bilanz / Echo-Bester-Stich / Sammler distinct Formationsarten
-    coins = 0, lastCycleCoins = null, lastCycleWins = null, // Münz-Ökonomie (§2): Kontostand + letzte Auszahlung (Anzeige)
+    coins = 0, lastCycleCoins = null, lastCycleForms = null, // Münz-Ökonomie (§2): Kontostand + letzte Auszahlung (Anzeige)
     cycleOpenScore = 0, // Vabanque: Score der Eröffnungsstiche DIESES Durchlaufs (Bezugsgröße der selbstskalierenden Wette)
     richtfestBonus = 0, // Gebäude-Legendäres Richtfest: Auszahlung des letzten Durchlaufs (reine Telemetrie, kein Stapel mehr)
     cycleScoreSum = 0,  // Summe der Stich-Erträge DIESES Durchlaufs — Bezugsgröße der Richtfest-Dividende
@@ -244,8 +244,9 @@ export function resolveTrick(state, rng) {
     const refilledMass = newGlacierMass;
     const snapMass = glacierRoles.includes(GLACIER_ROLES.L_SCHILD) ? uebergletscherPool(refilledMass, glacierLocked)
       : refilledMass;
-    // 2D-Geometrie-Formationen (unique Deck-Passiv, docs §2.7/§9): Block/Kreuz/Linie/Fläche → Burst-Faktor je Feld; Eiswall hebt die Linie.
-    const glacierGeo = glacierGeometry(glacierLocked, { eiswallLinie: glacierRoles.includes(GLACIER_ROLES.EISWALL) ? ice.eiswallLinie : 0 });
+    // 2D-Geometrie-Formationen (unique Deck-Passiv, docs §2.7/§9): Block/Kreuz/Linie/Fläche → Burst-Faktor je Feld.
+    // §5.24: der Eiswall fasst diese Tabelle nicht mehr an, er ist ein eigener Faktor im Snapshot (`eiswallPer`).
+    const glacierGeo = glacierGeometry(glacierLocked);
     // Ewiges Schild (§5.8): das ganze Feld IST ein Gletscher — also erbt jeder Gletscher die stärkste Form des Bretts.
     // Das ersetzt den alten additiven Masse-Bonus, der am Masse-Deckel verfiel.
     if (glacierRoles.includes(GLACIER_ROLES.L_SCHILD)) {
@@ -872,13 +873,16 @@ export function resolveTrick(state, rng) {
     score += glacierDirect; gained += glacierDirect; glacierYield += glacierDirect;
     if (breakdown) { breakdown.glacierDirect = glacierDirect; breakdown.total += glacierDirect; }
   }
-  // Einfrieren (docs §4 Frostgriff): bricht dieser Gletscher, verliert die hier getroffene Gegnerkarte ihren NÄCHSTEN
-  // Stich. Die Stufe entscheidet, wie weit der Griff reicht (§5.2): die getroffene Karte plus so viele ihrer Nachbarn
-  // im Gegnerfeld, bis `einfrierenCards` voll ist.
+  /* Einfrieren (docs §4 Frostgriff): bricht dieser Gletscher, verlieren Gegnerkarten ihren NÄCHSTEN Stich.
+     §5.25 (Owner): NICHT mehr die zufällig hier getroffene Karte und ihre Nachbarn, sondern die HÖCHSTEN Karten des
+     Gegnerdecks. Der alte Griff hing daran, wo der Gletscher zufällig lag — meist auf einer Karte, die der Spieler
+     ohnehin geschlagen hätte (gemessen −4 % bei 16 % Haltequote). Schon markierte Karten werden übersprungen, damit
+     mehrere Brüche im selben Durchlauf verschiedene Karten treffen statt derselben. */
   if (glacierActive && glacierRoles.includes(GLACIER_ROLES.EINFRIEREN) && glacierPreNow && glacierPreNow.breaks.some((b) => b.pos === actualPos)) {
-    newFrozenOppPending[oCard.id] = true;
-    for (const nb of glacierNeighbors4(actualPos).slice(0, Math.max(0, ice.einfrierenCards - 1)))
-      newFrozenOppPending[oppDeck[oppOrder[nb]].id] = true;
+    const frei = oppDeck.filter((c) => c && !newFrozenOppPending[c.id]);
+    // Stabile Sortierung: bei gleichem Wert entscheidet die Deck-Reihenfolge, damit der Griff deterministisch bleibt.
+    frei.sort((a, b) => (b.value ?? b.baseRank ?? 0) - (a.value ?? a.baseRank ?? 0));
+    for (const c of frei.slice(0, Math.max(0, ice.einfrierenCards))) newFrozenOppPending[c.id] = true;
   }
   // (§5.2: Erstarrung ist gestrichen — die Kontrolle liegt bei Einfrieren, dessen Reichweite mit der Stufe steigt.)
   // Frostbund (docs §4 Frostgriff): bricht dieser Gletscher, bufft er seine Nachbarn → +Stichwert. §5.18: ALLE Nachbarn,
@@ -1019,11 +1023,11 @@ export function resolveTrick(state, rng) {
     // Score-Summe je Karte weiterhin exakt `score` reproduziert (metrics.observe liest lastTrick.gained). lastTrick ist
     // oben schon gebaut; Mutation einer const-Objekt-Property ist erlaubt.
     if (cycleEndScore) { lastTrick.gained += cycleEndScore; lastTrick.scoreGain += cycleEndScore; }
-    // Münz-Ökonomie (docs/muenz-oekonomie.md §2): die Einnahme dieses Durchlaufs. Sie hängt an der SIEGZAHL, nicht am
-    // Score — der Score wächst über den Lauf um Faktor hundert, die Siegzahl ist je Durchlauf gedeckelt, die Ökonomie
-    // kann also nicht explodieren. Muss VOR dem cycleWins-Reset stehen. lastCycle* trägt nur die Anzeige (§4).
-    lastCycleWins = cycleWins;
-    lastCycleCoins = coinsForWins(cycleWins);
+    // Münz-Ökonomie (docs/muenz-oekonomie.md §2.2): die Einnahme dieses Durchlaufs — Sockel plus Aufstellung, weder
+    // Score noch Siegzahl. `formations` ist der Stand DIESES Durchlaufs (in der Aufstellphase gerechnet, bei Wachstum
+    // nachgezogen); countBuiltFormations filtert Architektur/Anker heraus. lastCycle* trägt nur die Anzeige (§4).
+    lastCycleForms = countBuiltFormations(formations);
+    lastCycleCoins = coinsForFormations(lastCycleForms);
     coins += lastCycleCoins;
     cycleWins = 0; cycleLosses = 0; cycleBestTrick = 0; sammlerTypes = []; cycleOpenScore = 0; cycleScoreSum = 0; // Pro-Durchlauf-States zurücksetzen (#203)
     // #131 Rundenscore: Zuwachs dieses gerade beendeten Durchlaufs (score enthält bereits den letzten Stich + #203-Payoffs)
@@ -1186,7 +1190,7 @@ export function resolveTrick(state, rng) {
     successorQueue, triumphArmed, // Kartenrollen (V2 §22.6 C): C4/C5-Nachfolger-Boni / C2-Triumph-Armierung
     l4Boost, // Legendär-Perk L4 Kritische Masse (Crit-Wert-Gewinn je Karte)
     zinsCapital, zinsRate, zinsPaidTotal, cycleWins, cycleLosses, cycleBestTrick, sammlerTypes, vabanquePaid, cycleOpenScore, // Legendär-Perks-Rework (#203) + Zinseszins-Bank
-    coins, lastCycleCoins, lastCycleWins, // Münz-Ökonomie (§2): Kontostand des Laufs + die Auszahlung des letzten Durchlaufs
+    coins, lastCycleCoins, lastCycleForms, // Münz-Ökonomie (§2): Kontostand des Laufs + die Auszahlung des letzten Durchlaufs
     richtfestBonus, cycleScoreSum, // Gebäude-Legendäres Richtfest (Struktur-Dividende auf den Durchlauf-Ertrag)
     roles, // (unverändert vom Reducer gesetzt, hier durchgereicht)
     skillOffer: newSkillOffer, skillOfferTiers: newSkillOfferTiers, skillDoors: newSkillDoors, lightning, // Skill-System / Blitz-Archetyp · exp: Stufe je angebotenem Skill · Türen
