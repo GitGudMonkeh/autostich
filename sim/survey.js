@@ -46,7 +46,13 @@ const C = Number(arg("--c", 1.4));
 const OUT = arg("--out", "sim/out/survey.json");
 
 // ---- Welten (B) und Builds (A) ----
-const worldList = [...combos(ARCHES, 1), ...combos(ARCHES, 2), ...combos(ARCHES, 3)];
+/* --fraktion <arch> schneidet die Welten auf die, in denen diese Fraktion vorkommt (mono + ihre drei Paare + ihre
+   drei Tripel). Für eine Runde an EINER Fraktion sind das 7 statt 14 Welten — die Hälfte der Rechenzeit, und die
+   übrigen Welten sagen über sie ohnehin nichts. */
+const FRAKTION = String(arg("--fraktion", "")).toLowerCase();
+if (FRAKTION && !ARCHES.includes(FRAKTION)) { console.error(`Unbekannte --fraktion '${FRAKTION}' (${ARCHES.join("|")})`); process.exit(1); }
+const worldList = [...combos(ARCHES, 1), ...combos(ARCHES, 2), ...combos(ARCHES, 3)]
+  .filter((arch) => !FRAKTION || arch.includes(FRAKTION));
 const keyOf = (arch) => arch.map((a) => SHORT[a]).join("+");
 const skillsOf = (arch) => Object.keys(SKILL_DEFS).filter((id) => arch.includes(archetypeOf(id)));
 const worlds = new Map(worldList.map((arch) => [keyOf(arch), { key: keyOf(arch), arch, size: arch.length, ids: skillsOf(arch), explore: null, greedy: null, ablate: new Map() }]));
