@@ -7203,6 +7203,86 @@ gesetzt, ihre Siegquote liegt zwölf Punkte unter Feuer, und im gemischten Split
 
 ---
 
+### 5.28 Eis als System: der Boden wird Motor (2026-09-09) — gebaut, gemessen, Ziel NICHT erreicht
+
+**Owner:** „dann lass uns bei Eis ansetzen. wie reparieren wir das System?" — und nach dem Vorschlag: „sonde und dann c,
+das klingt gut. eventuell auch einen anderer schwellen Trigger und wenn sich masse verteil brechen viele klein oder
+einer sammelt an und bricht stark."
+
+#### A · Diagnose, und eine Korrektur an meiner eigenen
+
+§8.3 hat gemessen, dass jede Kombination mit Eis halbiert wird. Meine erste Erklärung („die Dichte-Multiplikatoren
+brechen zusammen") ist **falsch**. Die reine Formel, auf synthetischen Brettern durchgerechnet (alle Gletscher auf
+Berst-Schwelle, ohne Skills):
+
+| Gletscher | dicht | je Gletscher | verstreut | je Gletscher |
+| --- | --- | --- | --- | --- |
+| 1 | 792 | 792 | 792 | 792 |
+| 4 | 6 435 | 1 609 | 3 168 | 792 |
+| 12 | 23 141 | 1 928 | 9 504 | 792 |
+
+Die ganze Dichte-Maschine (Kaskade, Kollision, Geometrie) bringt **×2,4**. Die restlichen **×12** sind schlicht
+zwölfmal so viele Brüche. **Eis ist die einzige Fraktion, deren Motor-GRÖSSE an der Pick-Zahl hängt** — Feuer, Blitz
+und Pflanze haben einen Motor, der pro Stich ohnehin läuft, und ihre Skills schrauben nur daran.
+
+Gemessene Gletscherzahlen je Build (Fraktions-Policy, 30 Läufe): Eis mono **12,9** · Paar **6,9–7,5** ·
+Tripel **4,7** · Vierer **4,1**.
+
+#### B · Ein Fehler im ZUG, unabhängig von der Balance
+
+`firnDrawTick` gab die Reserve jedes offenen Feldes an den **nächsten** Gletscher. Im dichten Cluster ist kein Feld je
+zu einem INNEREN Gletscher am nächsten — bei zwölf im 3×3-Block bekamen sechs gar nichts, während ein Randgletscher
+19 von 28 Punkten zog. Jetzt teilt jedes Feld anteilig auf alle, Gewicht 1/Abstand: der nächste bekommt am meisten,
+keiner geht leer aus. Zweite Hälfte desselben Fehlers: die Reserve UNTER einem Gletscher floss nicht mehr ab, sobald
+der Rundenstart-Nachschub sie nicht abrief — sie fließt jetzt in ihn selbst.
+
+#### C · Gebaut
+
+- **`FIRN_GROUND` 0,35** — jedes offene Feld friert je Durchlauf so viel Reserve an (Fraktions-Passiv, zweite Hälfte).
+  Das Brett stellt (40 − Gletscher) Quellen und ist damit fast unabhängig von der Pick-Zahl.
+- **ZUG anteilig** statt „der Nächste nimmt alles"; Reserve unter Eis fließt in den eigenen Gletscher.
+- **`BURST_SCALE` 30 → 24**, damit Mono steht bleibt.
+
+#### D · Gemessen — und das Ziel ist verfehlt
+
+Gletscherzahl künstlich gedeckelt (`SIM_GLACIER_MAX`), Regler in beiden Spalten 30, damit nur das Einkommen wirkt:
+
+| Deckel | Gletscher-Score, Boden 0 | Boden 0,35 | Faktor | Ø Masse je Gletscher (Boden 0) |
+| --- | --- | --- | --- | --- |
+| 3 | 1,53M | 1,93M | **×1,26** | **17,6** |
+| 12 | 4,95M | 7,19M | **×1,45** | **11,3** |
+
+**Das Boden-Einkommen hilft zwölf Gletschern MEHR als dreien** — die Kurve wird steiler, nicht flacher. Der Grund
+steht in der letzten Spalte: **die Stufenleiter endet bei 18.** Ein Drei-Gletscher-Build sitzt mit 17,6 Masse schon an
+der obersten Sprosse, dort wandelt zusätzliche Masse nur noch linear (`effMass` × 3,2). Ein Zwölfer sitzt mit 11,3
+UNTER der Berst-Schwelle — dort schiebt dieselbe Masse ihn über die Schwelle und zahlt doppelt.
+
+Auch der Deckel auf der liegenbleibenden Masse ist nicht der Hebel (`SIM_GLACIER_KEEP_MAX`, Boden 0,35, Regler 30;
+Anteil 3 ÷ 12 am Gletscher-Score): KEEP 6 → **0,27** · KEEP 18 → **0,30** · KEEP 40 → **0,34**. Er hebt beide Seiten
+um rund das Doppelte und verschiebt die Form kaum.
+
+Endstand mit Regler 24 (60 Läufe, Seeds 1–60, Median): Eis mono 7,28M (vorher 7,12M, **+2 %**) · Fe+Ei 7,09M
+(vorher 6,44M, **+10 %**) · Fe+Bl+Ei 6,46M (vorher 6,81M, **−5 %**). Mono steht, das Paar gewinnt durch den
+reparierten ZUG, die Ansteckung bleibt.
+
+**Warum meine Sonde (`sim/probes/eis-kurve.mjs`) das Gegenteil vorhersagte:** sie startet Gletscher bei Masse 0 und
+lässt sie wachsen. Im echten Lauf sitzt ein Build mit wenigen Gletschern längst über der obersten Sprosse. Die Sonde
+misst die Masse-Ökonomie richtig und die Umwandlung falsch. Sie bleibt nützlich für die Verteilungsfrage (B), nicht
+für die Höhe.
+
+#### E · Was jetzt fehlt — die Idee des Owners ist die Lösung, nicht die Kür
+
+„Einer sammelt an und bricht stark" ist heute **nicht baubar**: der Bruch feuert bei 12, und über 18 zahlt die Leiter
+nicht mehr. Damit ist Masse für einen kleinen Eis-Anteil eine lineare Währung, und die ZAHL der Gletscher bleibt der
+beherrschende Term. Offen zur Entscheidung:
+
+1. **Leiter nach oben öffnen** — weitere Sprossen über 18, dicht genug, dass angesammelte Masse sie erreicht.
+2. **Trigger, der Halten erlaubt** — Bruch erst an einer hohen Schwelle, oder im Takt statt jeden Durchlauf.
+3. **Als Skill statt als Regel** — die Abbruchkante („belohnt hohe Stufen noch steiler") misst 99 % Haltequote bei
+   +4 % Wirkung und ist der offensichtliche Träger dieser Fantasie.
+
+---
+
 ## 8. Bestandsaufnahme über alle vier Fraktionen (2026-09-09)
 
 **Owner:** „wir haben jetzt reworks für Blitz, pflanze, Eis auf exp gebracht. diese sind noch nicht fertig aber bevor
@@ -7459,3 +7539,4 @@ leichtesten haben.
 | 2026-09-09 | Blitz umgesetzt (7.30, Owner: „Sockel steigern und Skillnutzlichkeit erhöhen"): Passiv-Sockel 8 % bei 3 % je Skill (Runden 1–10 8,4 → 14,2 % Crit, erste Leiste R 8 → R 5); Serienschutz zahlt 1 Ladung mit Deckel je Durchlauf statt eines Leisten-Anteils bei jeder Niederlage (−45 → −0 %); Ladungsserie von Crit-Chance auf Ladung ab Serie 16/12/8/5 (−17 → +7 %). Spannweite der Skillnutzlichkeit ÷ Median 1,23 → 0,44. Duell gepaart: Blitz mono 6,92 → 10,93M, die anderen drei unverändert — Feuer steht jetzt allein unten. Balance-Guard-Obergrenze 8,5 → 10,5M mit Beleg. Offen: das Crit-Multiplikator-Bündel (Spannungsstau, Entladung, Vorentladung, Lichtbogen) läuft gegen den 8×-Deckel. |
 | 2026-09-09 | Crit-Multiplikator-Bündel (7.31, Vorschlag, nichts umgesetzt): 81 % des gebauten Multiplikators fällt spät am 8×-Deckel weg (36,01× gebaut, 6,97× ausgezahlt), Vorentladung allein trägt +16,4× davon; Spannungsstau baut 0,00× — sein Auslöser (Sieg ohne Crit) ist seit dem Sockel fast verschwunden. Regel: Umverteilen INNERHALB des Multiplikators ändert nichts, solange die Summe über dem Deckel liegt. Owner-Regel gesetzt: keine Skills, die auf Niederlagen reagieren. Designstand für die drei Skills eingetragen, Abnahme offen. Neue Sonde `blitz-multsource.mjs`. |
 | 2026-09-09 | Bestandsaufnahme über alle vier Fraktionen (§8, Owner: „bevor wir da weiter machen müssen wir den aktuellen ist stand in der sim aufnehmen"). Neues Werkzeug `sim/survey.js` + `sim/survey-worker.js` — Auftrags-Pool über vier Prozesse, 108 800 Läufe in 93 min statt ~7 h seriell. Gemessen, nichts am Spiel geändert. Kernbefunde: (a) **Eis ist ansteckend** — jede Kombination mit Eis fällt auf 0,43–0,63× derselben Kombination ohne Eis, weil der freie Spieler von 13,0 Eis-Skills mono auf 1,7–3,1 im Tripel herunterfällt; (b) die Fraktionen skalieren vom planlosen zum kompetenten Spieler um ×15 (Feuer) bis ×185 (Pflanze) — Feuer hat keine Decke; (c) die zwölf Legendären spannen +1079 % (Baumreihe) bis +13 % (Ewige Glut), Faktor 80; (d) 26 von 70 Skills wirken in ihrer eigenen Mono-Welt unter 3 %, drei sind in allen sieben Welten schwach (Lichtung, Frostbund, Anfrieren), neun weitere in sechs von sieben. Ausdrücklich NICHT messbar: die Stufenleiter (98–186 Läufe je Stufe, „Leiter"-Flag feuert bei 41 von 58 normalen Skills — Rauschen). |
+| 2026-09-09 | Eis-System, erste Etappe (§5.28, Owner: „wie reparieren wir das System?" → „sonde und dann c"). Gebaut: `FIRN_GROUND` 0,35 (jedes offene Feld friert Reserve an — das Brett stellt 40−G Quellen und hängt damit fast nicht an der Pick-Zahl), der ZUG verteilt anteilig nach 1/Abstand statt „der Nächste nimmt alles" (im 3×3-Cluster bekamen sechs von zwölf Gletschern gar nichts), die Reserve unter einem Gletscher fließt in ihn selbst, `BURST_SCALE` 30 → 24. Gemessen und **Ziel verfehlt**: das Boden-Einkommen hebt zwölf Gletscher (×1,45) stärker als drei (×1,26), weil die Stufenleiter bei 18 endet — ein Drei-Gletscher-Build sitzt mit Ø 17,6 Masse schon an der obersten Sprosse, ein Zwölfer mit 11,3 unter der Berst-Schwelle. Der Deckel auf der Restmasse ist auch nicht der Hebel (Anteil 3÷12: 0,27 → 0,34 über KEEP 6/18/40). Endstand: Eis mono +2 %, Fe+Ei +10 %, Fe+Bl+Ei −5 % — Mono steht, die Ansteckung bleibt. Korrigiert meine Diagnose aus §8: die Dichte-Multiplikatoren bringen nur ×2,4, der Rest ist die schiere Zahl der Brüche. Offen: Leiter über 18 öffnen und/oder ein Trigger, der Ansammeln erlaubt (Owner-Idee); Träger-Kandidat ist die Abbruchkante. Neue Sonde `sim/probes/eis-kurve.mjs`, `sim/survey.js --only cross|welten`. |

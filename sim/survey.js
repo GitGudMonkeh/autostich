@@ -60,10 +60,16 @@ const push = (prio, job) => ready[prio].push(job);
 const take = () => { for (const b of ready) if (b.length) return b.shift(); return null; };
 const pending = () => ready.reduce((t, b) => t + b.length, 0);
 
-for (const w of worlds.values()) push(0, { kind: "explore", world: w.key, arch: w.arch, runs: EXPLORE, seed0: SEED0, c: C });
-for (const b of crossBuilds) push(3, { kind: "cross", label: b.label, members: b.members, runs: CROSS, seed0: SEED0 });
+/* --only trennt die zwei Messungen: `cross` ist in Minuten durch und beantwortet allein die Build-Frage (taugt für
+   jede Tuning-Runde), `welten` ist der teure Teil mit der Ablation je Skill. Ohne Angabe läuft beides. */
+const ONLY = String(arg("--only", "")).toLowerCase();
+const wantWorlds = ONLY !== "cross";
+const wantCross = ONLY !== "welten";
+if (wantWorlds) for (const w of worlds.values()) push(0, { kind: "explore", world: w.key, arch: w.arch, runs: EXPLORE, seed0: SEED0, c: C });
+if (wantCross) for (const b of crossBuilds) push(3, { kind: "cross", label: b.label, members: b.members, runs: CROSS, seed0: SEED0 });
 
-const plannedRuns = worldList.reduce((t, arch) => t + EXPLORE + RUNS + skillsOf(arch).length * RUNS, 0) + crossBuilds.length * CROSS;
+const plannedRuns = (wantWorlds ? worldList.reduce((t, arch) => t + EXPLORE + RUNS + skillsOf(arch).length * RUNS, 0) : 0)
+  + (wantCross ? crossBuilds.length * CROSS : 0);
 const cross = new Map();
 let doneRuns = 0;
 const t0 = Date.now();
@@ -183,16 +189,23 @@ function verdicts(byWorld) {
 
 // ---- Bericht auf der Konsole (die volle Auflösung liegt im JSON) ----
 function report(byWorld, verd) {
-  console.log(`\n=== A) WO STEHT WELCHER BUILD (${CROSS} Läufe je Build, Seeds ${SEED0}..${SEED0 + CROSS - 1}) ===`);
-  const rows = crossBuilds.map((b) => ({ ...b, m: cross.get(b.label) })).map((b) => ({ ...b, s: stats(b.m.scores) }));
-  const mono = Object.fromEntries(ARCHES.map((a) => [a, rows.find((r) => r.label === SHORT[a]).s.median]));
-  const mix = rows.find((r) => r.label === "Zufalls-Mix").s.median;
-  console.log(`  ${"Build".padEnd(14)} ${"Median".padStart(12)} ${"Mean".padStart(12)} ${"p90".padStart(12)}  Siege  ÷Mix  ÷b.Rein  Split`);
-  for (const b of [...rows].sort((x, y) => y.s.median - x.s.median)) {
-    const best = b.members ? Math.max(...b.members.map((a) => mono[a])) : null;
-    const split = b.members ? b.members.map((a) => `${SHORT[a]} ${b.m.held[a].toFixed(1)}`).join(" ") : `Ø ${b.m.skillsHeld.toFixed(1)} Skills`;
-    console.log(`  ${b.label.padEnd(14)} ${fmt(b.s.median).padStart(12)} ${fmt(b.s.mean).padStart(12)} ${fmt(b.s.p90).padStart(12)}  ${pct(b.m.winrate).padStart(4)}  ${(b.s.median / mix).toFixed(2)}×  ${best ? `${(b.s.median / best).toFixed(2)}×` : "  — "}    ${split}`);
+  if (wantCross) {
+    console.log(`\n=== A) WO STEHT WELCHER BUILD (${CROSS} Läufe je Build, Seeds ${SEED0}..${SEED0 + CROSS - 1}) ===`);
+    const rows = crossBuilds.map((b) => ({ ...b, m: cross.get(b.label) })).map((b) => ({ ...b, s: stats(b.m.scores) }));
+    const mono = Object.fromEntries(ARCHES.map((a) => [a, rows.find((r) => r.label === SHORT[a]).s.median]));
+    const mix = rows.find((r) => r.label === "Zufalls-Mix").s.median;
+    console.log(`  ${"Build".padEnd(14)} ${"Median".padStart(12)} ${"Mean".padStart(12)} ${"p90".padStart(12)}  Siege  ÷Mix  ÷b.Rein  Split`);
+    for (const b of [...rows].sort((x, y) => y.s.median - x.s.median)) {
+      const best = b.members ? Math.max(...b.members.map((a) => mono[a])) : null;
+      const split = b.members ? b.members.map((a) => `${SHORT[a]} ${b.m.held[a].toFixed(1)}`).join(" ") : `Ø ${b.m.skillsHeld.toFixed(1)} Skills`;
+      console.log(`  ${b.label.padEnd(14)} ${fmt(b.s.median).padStart(12)} ${fmt(b.s.mean).padStart(12)} ${fmt(b.s.p90).padStart(12)}  ${pct(b.m.winrate).padStart(4)}  ${(b.s.median / mix).toFixed(2)}×  ${best ? `${(b.s.median / best).toFixed(2)}×` : "  — "}    ${split}`);
+    }
+    // Die Eis-Ansteckung als eigene Zeile: dieselbe Kombination ohne und mit Eis (§8.3).
+    const by = Object.fromEntries(rows.map((r) => [r.label, r.s.median]));
+    const paare = [["Fe+Bl", "Fe+Bl+Ei"], ["Fe+Pf", "Fe+Ei+Pf"], ["Bl+Pf", "Bl+Ei+Pf"], ["Fe+Bl+Pf", "Fe+Bl+Ei+Pf"]];
+    console.log(`\n  Eis-Ansteckung (Kombi mit Eis ÷ dieselbe ohne):  ${paare.map(([a, b]) => `${a}→${b} ${(by[b] / by[a]).toFixed(2)}×`).join("   ")}`);
   }
+  if (!wantWorlds) return;
 
   console.log(`\n=== B) DIE 14 WELTEN (Explore ${EXPLORE} · Greedy/Ablation ${RUNS}) ===`);
   console.log(`  ${"Welt".padEnd(10)} ${"Greedy-Median".padStart(14)} ${"p90".padStart(13)}  Siege  Ø Skills  Aufteilung`);
@@ -220,8 +233,8 @@ function report(byWorld, verd) {
 // ---- Lauf ----
 console.log(`BESTANDSAUFNAHME — ${JOBS} Prozesse · ${worldList.length} Welten · ${crossBuilds.length} Builds · geplant ${plannedRuns.toLocaleString("de-DE")} Läufe`);
 await runPool();
-const byWorld = [...worlds.values()].sort((a, b) => a.size - b.size || a.key.localeCompare(b.key)).map(evaluateWorld);
-const verd = verdicts(byWorld);
+const byWorld = wantWorlds ? [...worlds.values()].sort((a, b) => a.size - b.size || a.key.localeCompare(b.key)).map(evaluateWorld) : [];
+const verd = wantWorlds ? verdicts(byWorld) : [];
 report(byWorld, verd);
 mkdirSync(dirname(OUT), { recursive: true });
 writeFileSync(OUT, JSON.stringify({

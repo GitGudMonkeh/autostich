@@ -34,7 +34,10 @@ export const TIER_MULT = [0, 1, 1.5, 2.2, 3.2]; // überlineare Wucht je Stufe (
 // §5.27 nachtariert: 60 → 30. Der offene Zug (s. FIRN_DRAW) verdoppelt das Masse-Einkommen der Fraktion — jeder Punkt
 // Schnee kommt jetzt an, statt mit 1 je Durchlauf zu tröpfeln. Ohne Nachtarierung stand Eis bei 1,97× Feuer.
 // (Gemessen 28 → 0,97×; der Owner nimmt die rundere 30, die im Band bleibt.)
-export const BURST_SCALE = envNum("SIM_GLACIER_BURST_SCALE", 30);
+// §8 nachtariert: 30 → 24. Der gefrorene Boden (FIRN_GROUND) ist eine zweite Einkommensquelle und hebt den
+// Gletscher-Score um rund ein Drittel; der Regler zieht ihn zurück auf den Stand davor. Gemessen (60 Läufe,
+// Fraktions-Policy, Seeds 1–60): Regler 22 → Eis mono 6,82M, Regler 25 → 7,51M, Ziel war 7,12M.
+export const BURST_SCALE = envNum("SIM_GLACIER_BURST_SCALE", 24);
 // Große Lawine (§5.8, Owner): feuert nicht mehr einmal am Laufende, sondern im TAKT — jeden GROSSE_LAWINE_EVERY-ten
 // Durchlauf bricht das ganze Feld auf einen Schlag, jeder Gletscher mit der Wucht der höchsten Schwelle. Damit ist sie
 // den ganzen Lauf über sichtbar, und sie synchronisiert das Feld: Kaskade, Kollision und Gletschersturz greifen
@@ -92,6 +95,15 @@ export const FIRN_REFILL_TARGET = BURST_AT;     // Runden-Start-Nachschub-Ziel: 
 // nach dem Grundsatz des Owners IHR Problem: Skills haben Vorrang, Legendäre werden um sie herum tariert.
 // Der Regler bleibt für Diagnose-Sweeps (endlicher Wert = Deckel je Feld und Durchlauf, 0 = Zug ganz aus).
 export const FIRN_DRAW = envNum("SIM_GLACIER_FIRN_DRAW", Infinity);
+// §8 (Bestandsaufnahme): das Fraktions-Einkommen kommt jetzt zur Hälfte vom BRETT statt vom Gletscher. Jedes offene
+// Feld friert je Durchlauf so viel Reserve an; der ZUG trägt sie zu den Gletschern. Der Punkt ist die ZAHL: das Brett
+// stellt (40 − Gletscher) Felder, ist also fast konstant, während der Gletscher-Sockel (EWIGER_FROST + Siegmasse)
+// linear mit den Picks wächst. Genau daran hing die Ansteckung — ein Misch-Build mit drei Picks bekam 18 % des
+// Mono-Motors, und jede Kombination mit Eis fiel auf 0,43–0,63× derselben Kombination ohne Eis.
+// Sonde `sim/probes/eis-kurve.mjs`, Anteil eines Drei-Gletscher-Builds am Mono-Motor: 0 → 18 %, 0,25 → 44 %,
+// 0,35 → 52 %, 0,5 → 66 %, 0,75 → 74 %. Ab 0,75 kippt die Kurve (mehr Gletscher werden SCHLECHTER, weil jedes
+// gefrorene Feld dem Brett eine Quelle nimmt). 0,35 hält Mono bei rund dem Doppelten eines Drei-Gletscher-Splashs.
+export const FIRN_GROUND = envNum("SIM_GLACIER_FIRN_GROUND", 0.35);
 // Deckel auf den LIEGENBLEIBENDEN Überschuss (nicht auf die Bruchmasse — der Deckel je Einzelbruch bleibt gestrichen,
 // §5.5). Ohne ihn hat die Masse gar keine Decke mehr: ein ausgebautes Cluster gewinnt je Durchlauf mehr als der Bruch
 // abzieht, und die Masse steigt unbegrenzt. 0 = kein Deckel.
@@ -263,22 +275,41 @@ export function uebergletscherPool(mass, locked) {
    Position. Bis §5.18 gehörte der Zug allein der Eiszeit, und ohne sie hatte die Reserve überhaupt keinen Ausgang
    außer „dieses Feld friert später ein" (gemessen 65 % totes Kapital). Jetzt teilen sich Schneetreiben (nahe
    Quelle), Dauerfrost (ferne Quelle) und die Eiszeit (Flut) eine Währung, die immer ankommt. */
+export const chebyshev = (a, b) => Math.max(Math.abs(rowOf(a) - rowOf(b)), Math.abs(colOf(a) - colOf(b)));
+
 export function firnDrawTick(firn, mass, locked, draw = FIRN_DRAW) {
   const isG = (p) => (locked instanceof Set ? locked.has(p) : !!(locked && locked[p]));
   const f = Array.isArray(firn) ? firn.slice() : new Array(N_POS).fill(0);
   const m = Array.isArray(mass) ? mass.slice() : new Array(N_POS).fill(0);
   const gs = []; for (let p = 0; p < N_POS; p++) if (isG(p)) gs.push(p);
   if (gs.length && draw > 0) for (let p = 0; p < N_POS; p++) {
-    if (isG(p) || !(f[p] > 0)) continue;
-    let best = gs[0], bestD = Infinity;
-    for (const g of gs) {
-      const d = Math.max(Math.abs(rowOf(p) - rowOf(g)), Math.abs(colOf(p) - colOf(g)));
-      if (d < bestD) { bestD = d; best = g; }
-    }
+    if (!(f[p] > 0)) continue;
     const take = Math.min(draw, f[p]);
-    f[p] -= take; m[best] = (m[best] || 0) + take;
+    /* §8: auch die Reserve UNTER einem Gletscher fließt ab — in ihn selbst. Vorher blieb sie liegen, sobald der
+       Rundenstart-Nachschub sie nicht mehr abrief; mit dem Boden-Einkommen steht die Masse ohnehin über
+       FIRN_REFILL_TARGET, der Nachschub zieht dann 0, und der vergrabene Schnee wäre für immer totes Kapital —
+       genau der Zustand, den §5.27 abgeschafft hat („nichts generieren, das wir nicht nutzen können"). */
+    if (isG(p)) { m[p] = (m[p] || 0) + take; f[p] -= take; continue; }
+    /* §8: ANTEILIG statt „der Nächste nimmt alles". Die alte Regel verhungerte im dichten Bau genau die Gletscher, für
+       die der Spieler baut: bei zwölf im Cluster bekamen SECHS gar nichts, während ein Randgletscher 19 von 28 Punkten
+       zog — kein Feld ist je zu einem inneren Gletscher am nächsten. Jetzt teilt jedes Feld seine Abgabe auf ALLE
+       Gletscher, Gewicht 1/Abstand: der nächste bekommt am meisten, keiner geht leer aus, die Lage bleibt relevant.
+       Nebenwirkung, die den Ausschlag gab: erst damit wird die Auszahlung über die Gletscherzahl monoton (Sonde). */
+    let tot = 0;
+    const w = gs.map((g) => { const v = 1 / Math.max(1, chebyshev(p, g)); tot += v; return v; });
+    gs.forEach((g, i) => { m[g] = (m[g] || 0) + take * w[i] / tot; });
+    f[p] -= take;
   }
   return { firn: f, mass: m };
+}
+
+/* Der BODEN friert (Fraktions-Passiv, zweite Hälfte — §8). Jedes offene Feld legt `amount` in seine Reserve; der ZUG
+   oben trägt sie weiter. Die Eiszeit ist derselbe Griff mit ihrer eigenen, größeren Zahl. */
+export function firnGroundTick(firn, locked, amount = FIRN_GROUND) {
+  const isG = (p) => (locked instanceof Set ? locked.has(p) : !!(locked && locked[p]));
+  const f = Array.isArray(firn) ? firn.slice() : new Array(N_POS).fill(0);
+  if (amount > 0) for (let p = 0; p < N_POS; p++) if (!isG(p)) f[p] = (f[p] || 0) + amount;
+  return f;
 }
 
 // Eiszeit (Legendär, docs §7) — §5.15, Owner-Variante a: sie friert NICHTS mehr ein, sondern flutet die Boden-Reserve
@@ -292,12 +323,7 @@ export const EISZEIT_FLOOD = envNum("SIM_GLACIER_EISZEIT_FLOOD", 1);
 // GEFRORENEN Nachbarn (KASKADE_PER_NEIGHBOR), die Eiszeit mit den OFFENEN.
 // Sweep §5.16: 0,25 → −4 %, 0,5 → −1 %, 1 → +13 %, 2 → +30 %. Bei 2 sitzt die Eiszeit im Band der übrigen elf.
 export const EISZEIT_BURST_PER = envNum("SIM_GLACIER_EISZEIT_BURST", 2);
-export function eiszeitFlood(firn, locked, base = EISZEIT_FLOOD) {
-  const isG = (p) => (locked instanceof Set ? locked.has(p) : !!(locked && locked[p]));
-  const f = Array.isArray(firn) ? firn.slice() : new Array(N_POS).fill(0);
-  for (let p = 0; p < N_POS; p++) if (!isG(p)) f[p] = (f[p] || 0) + base;
-  return f;
-}
+export function eiszeitFlood(firn, locked, base = EISZEIT_FLOOD) { return firnGroundTick(firn, locked, base); }
 
 // Packeis (docs §4): am Durchlauf-Ende +Masse je Gletscher-Nachbar — belohnt die Mitte des Feldes.
 export function packeisTick(mass, locked, neighborFn = neighbors4, per = 0) {

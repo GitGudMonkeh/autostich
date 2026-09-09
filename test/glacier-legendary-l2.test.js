@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { resolveTrick } from "../src/game/engine.js";
 import { initialState } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
-import { firnDrawTick, eiszeitFlood, precomputeGlacier, ROLES, EISZEIT_FLOOD, FIRN_DRAW, EISZEIT_BURST_PER } from "../src/game/glacier.js";
+import { firnDrawTick, eiszeitFlood, precomputeGlacier, ROLES, EISZEIT_FLOOD, EISZEIT_BURST_PER } from "../src/game/glacier.js";
 import { iceSnapshotOpts } from "../src/game/factions/ice.js";
 import { N_POS, posOf } from "../src/game/architect.js";
 
@@ -26,30 +26,52 @@ const runCycle = (s0) => { let s = s0; for (let i = 0; i < 40; i++) s = resolveT
 /* §5.18: der ZUG ist Fundament geworden. Er gehörte bis dahin allein der Eiszeit — und ohne sie hatte die Reserve
    überhaupt keinen Ausgang außer „dieses Feld friert später ein" (gemessen 65 % totes Kapital, §5.17). Jetzt teilen
    sich Schneetreiben, Dauerfrost und die Eiszeit eine Währung, die immer ankommt. */
-describe("Firn-Zug — jedes offene Feld gibt an den nächsten Gletscher", () => {
+/* §8: der Zug verteilt ANTEILIG statt „der Nächste nimmt alles". Die alte Regel verhungerte im dichten Bau die
+   Gletscher, für die der Spieler baut — bei zwölf im Cluster bekamen sechs gar nichts. */
+describe("Firn-Zug — jedes offene Feld speist ALLE Gletscher, nach Nähe gewichtet", () => {
   it("ein einzelner Gletscher zieht vom GANZEN Brett, auch von fernen Feldern", () => {
-    const reserve = new Array(40).fill(FIRN_DRAW);
-    expect(firnDrawTick(reserve, zeros(), lockAt(0)).mass[0]).toBe(39 * FIRN_DRAW);
+    const reserve = new Array(40).fill(3);
+    // 40, nicht 39: seit §8 nimmt der Gletscher auch die Reserve unter sich selbst auf.
+    expect(firnDrawTick(reserve, zeros(), lockAt(0)).mass[0]).toBeCloseTo(40 * 3, 6);
     // Der Punkt des Schritts: vorher endete der Zug am Ring, und Dauerfrost (Abstand ≥ 2) kam nie an.
     const fern = new Array(40).fill(0);
-    fern[39] = FIRN_DRAW;                   // maximal weit von pos0 entfernt
-    expect(firnDrawTick(fern, zeros(), lockAt(0)).mass[0]).toBe(FIRN_DRAW);
+    fern[39] = 3;                           // maximal weit von pos0 entfernt
+    expect(firnDrawTick(fern, zeros(), lockAt(0)).mass[0]).toBeCloseTo(3, 6);
   });
 
-  it("ein Feld gibt nur EINMAL ab, an den nächsten — nicht an jeden", () => {
+  it("§8: ein Feld teilt auf ALLE — der nähere bekommt mehr, keiner geht leer aus", () => {
     const reserve = new Array(40).fill(0);
-    reserve[1] = FIRN_DRAW;                 // pos1 liegt zwischen pos0 und pos2, gleich weit
+    reserve[1] = 12;                        // pos1 liegt zwischen pos0 und pos2, gleich weit
     const { mass } = firnDrawTick(reserve, zeros(), lockAt(0, 2));
-    expect(mass[0] + mass[2]).toBe(FIRN_DRAW);
-    // und näher gewinnt: pos1 liegt direkt an pos0, pos30 ist weit weg
-    const r2 = new Array(40).fill(0); r2[1] = FIRN_DRAW;
+    expect(mass[0] + mass[2]).toBeCloseTo(12, 6);
+    expect(mass[0]).toBeCloseTo(mass[2], 6); // gleicher Abstand → gleicher Anteil
+    // Nähe zählt weiter, aber nicht mehr alles-oder-nichts: pos1 grenzt an pos0 (Abstand 1), pos30 liegt 6 weit.
+    const r2 = new Array(40).fill(0); r2[1] = 12;
     const m2 = firnDrawTick(r2, zeros(), lockAt(0, 30)).mass;
-    expect(m2[0]).toBe(FIRN_DRAW);
-    expect(m2[30]).toBe(0);
+    expect(m2[0] + m2[30]).toBeCloseTo(12, 6); // nichts geht verloren
+    expect(m2[30]).toBeGreaterThan(0);         // vorher exakt 0 — genau das war der Fehler
+    expect(m2[0] / m2[30]).toBeCloseTo(6, 6);  // Gewicht 1/Abstand, also 6:1
+  });
+
+  it("§8: im dichten Cluster geht KEIN Gletscher mehr leer aus", () => {
+    const cluster = [0, 1, 2, 5, 6, 7, 10, 11, 12]; // das 3×3, auf das die Eis-Policy baut
+    const firn = new Array(40).fill(0);
+    for (let p = 0; p < 40; p++) if (!cluster.includes(p)) firn[p] = 1;
+    const { mass } = firnDrawTick(firn, zeros(), lockAt(...cluster));
+    expect(cluster.every((p) => mass[p] > 0)).toBe(true);
+    expect(cluster.reduce((t, p) => t + mass[p], 0)).toBeCloseTo(40 - cluster.length, 6); // Summe bleibt erhalten
+  });
+
+  it("§8: die Reserve UNTER einem Gletscher fließt in ihn selbst, statt liegenzubleiben", () => {
+    const reserve = new Array(40).fill(0);
+    reserve[0] = 30;                        // vergrabener Schnee auf dem Gletscher-Feld
+    const { firn, mass } = firnDrawTick(reserve, zeros(), lockAt(0));
+    expect(mass[0]).toBe(30);
+    expect(firn[0]).toBe(0);
   });
 
   it("ohne Gletscher bleibt die Reserve liegen", () => {
-    const reserve = new Array(40).fill(FIRN_DRAW);
+    const reserve = new Array(40).fill(3);
     const { firn, mass } = firnDrawTick(reserve, zeros(), falses());
     expect(firn).toEqual(reserve);
     expect(mass.every((v) => v === 0)).toBe(true);

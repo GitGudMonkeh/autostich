@@ -5,7 +5,8 @@ import { numWord } from "./skills.js";                   // Zahlwörter aus ders
 // die Eis-Glossartexte driftfrei mitlaufen. Kein Import-Zyklus (glacier.js → architect.js, keins importiert glossary.js).
 import { WIN_MASS as G_WIN_MASS, EWIGER_FROST as G_EWIGER_FROST, THRESHOLDS as G_THRESHOLDS, BURST_AT as G_BURST_AT,
   KASKADE_PER_NEIGHBOR as G_KASKADE, GEO_BLOCK as G_BLOCK, GEO_KREUZ as G_KREUZ, GEO_LINIE as G_LINIE,
-  GEO_FLAECHE as G_FLAECHE, GLACIER_MAX as G_MAX, FIRN_REFILL_TARGET as G_REFILL, FIRN_DRAW as G_DRAW } from "./glacier.js";
+  GEO_FLAECHE as G_FLAECHE, GLACIER_MAX as G_MAX, FIRN_REFILL_TARGET as G_REFILL, FIRN_DRAW as G_DRAW,
+  FIRN_GROUND as G_GROUND } from "./glacier.js";
 
 /* ============================================================
    GLOSSAR — die EINZIGE Quelle für die Erklärungen der Spielbegriffe (#212 / #201 P1+P9 / Glossar-Rework).
@@ -247,7 +248,7 @@ export const GLOSSARY = {
     text: `Eis ist der Gletscher-Archetyp: du frierst eine Karte auf ihrem Brettfeld fest. Ab dann ist sie starr (in keiner künftigen Aufstellung mehr verschiebbar), sammelt dafür aber Masse an. Genug Masse, und der Gletscher bricht über seine Nachbarn. Auf dem Brett haben höchstens ${G_MAX} Gletscher Platz, egal woher sie kommen — nur das Ewige Schild hebt diese Grenze auf.`,
     match: ["Gletscher", "Gletschern"] },
   masse: { category: "frak", group: "ice", label: "Masse", icon: "❄", color: CLR.ice,
-    text: `Die Eis-Ressource: Masse liegt auf dem Brettfeld. Jeder Gletscher gewinnt jeden Durchlauf +${de(G_EWIGER_FROST)} Masse, bedingungslos bei Sieg wie Niederlage; ein Sieg bringt +${de(G_WIN_MASS)} Masse zusätzlich.`,
+    text: `Die Eis-Ressource: Masse liegt auf dem Brettfeld. Jeder Gletscher gewinnt jeden Durchlauf +${de(G_EWIGER_FROST)} Masse, bedingungslos bei Sieg wie Niederlage; ein Sieg bringt +${de(G_WIN_MASS)} Masse zusätzlich. Dazu friert jedes offene Feld je Durchlauf +${de(G_GROUND)} in seine Boden-Reserve — dieser Teil hängt am Brett, nicht an der Zahl deiner Gletscher, und kommt deshalb auch einem kleinen Eis-Anteil voll zugute.`,
     match: ["Masse"] },
   bersten: { category: "frak", group: "ice", label: "Bersten", icon: "✷", color: CLR.ice,
     text: `Erreicht ein Gletscher ${G_BURST_AT} Masse, bricht er: Berst-Score aus Masse × Wucht der erreichten Schwelle (Schwellen ${G_THRESHOLDS.join(" / ")}), verstärkt um +${pct(G_KASKADE)} % je angrenzendem Gletscher und Kollision, wenn der Bruch einen Gletscher-Nachbarn trifft. Danach fällt er um ${G_BURST_AT} Masse — was darüber lag, bleibt liegen — und füllt sich zum Durchlauf-Beginn aus seiner Boden-Reserve wieder auf.`,
@@ -260,7 +261,7 @@ export const GLOSSARY = {
     match: ["Gletscher-Formationen", "Gletscher-Formation", "Eis-Formationen", "Eis-Formation"] },
   // id `freeze` bleibt als Backcompat-Token erhalten (glossary.test.js), umgewidmet auf „Schnee".
   freeze: { category: "frak", group: "ice", label: "Schnee", icon: "❄", color: CLR.ice,
-    text: `Schnee liegt als Reserve auf dem Brettfeld, getrennt von der Gletschermasse. Jeden Durchlauf gibt jedes offene Feld ${Number.isFinite(G_DRAW) ? `bis zu ${de(G_DRAW)} Schnee` : "seinen ganzen Schnee"} an den nächstgelegenen Gletscher ab. Frierst du einen Gletscher auf ein aufgeladenes Feld, wird der angesammelte Schnee zu seiner Boden-Reserve; er startet leer und zieht daraus jeden Durchlauf wieder auf volle ${G_REFILL} Masse nach (nur die Differenz, nie darüber), bis die Reserve leer ist. Offenen Boden laden Dauerfrost, Schneetreiben und Eiszeit auf, nie unter einen Gletscher.`,
+    text: `Schnee liegt als Reserve auf dem Brettfeld, getrennt von der Gletschermasse. Jedes offene Feld friert je Durchlauf +${de(G_GROUND)} Schnee an und gibt ${Number.isFinite(G_DRAW) ? `bis zu ${de(G_DRAW)} davon` : "alles davon"} an deine Gletscher ab — aufgeteilt auf alle, der nächstgelegene bekommt am meisten, keiner geht leer aus. Frierst du einen Gletscher auf ein aufgeladenes Feld, wird der angesammelte Schnee zu seiner Boden-Reserve; er startet leer und zieht daraus jeden Durchlauf wieder auf volle ${G_REFILL} Masse nach (nur die Differenz, nie darüber), bis die Reserve leer ist. Zusätzlich laden Dauerfrost, Schneetreiben und Eiszeit den offenen Boden auf, nie unter einen Gletscher.`,
     match: ["Schnee"] },
 
   /* ============ 4 · Pflanze (exp skill rework, §6) ============ */

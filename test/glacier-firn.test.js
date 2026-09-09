@@ -49,18 +49,24 @@ describe("#386 Runden-Start-Nachschub — Reserve füllt den Gletscher auf 12", 
   });
 });
 
-describe("#386 Reserve leert sich über die Runden bis leer", () => {
-  it("ein burstender Gletscher (pos3) zieht jede Runde nach, bis die Reserve aufgebraucht ist", () => {
+describe("#386 Reserve leert sich bis leer — nichts bleibt liegen", () => {
+  /* §8: die Reserve ist nach EINEM Durchlauf weg, nicht mehr nach vieren. Zwei Hälften greifen: der Rundenstart-
+     Nachschub zieht auf FIRN_REFILL_TARGET hoch, und der ZUG am Rundenende nimmt den Rest in denselben Gletscher.
+     Nötig wurde das durch das Boden-Einkommen — mit ihm steht die Masse ohnehin über dem Nachschub-Ziel, der
+     Nachschub zöge also 0, und der vergrabene Schnee wäre totes Kapital (§5.27: „nichts generieren, das wir nicht
+     nutzen können"). Der Wächter hält beide Seiten fest: Reserve leer UND die Masse hat sie bekommen. */
+  it("ein burstender Gletscher (pos3) hat seine Reserve nach einem Durchlauf ganz aufgenommen", () => {
     const glacierLocked = falses(); glacierLocked[3] = true;
     const firnStack = zeros(); firnStack[3] = 30;
     let s = scen({ firnStack, glacierLocked, oppDeck: oppOf(99) }); // alles verlieren → keine Sieg-Masse
     const reserves = [];
     // Zwischen den Durchläufen die (im echten Spiel per Level-Up-Entscheidung erledigte) Rückkehr in die play-Phase simulieren.
     for (let c = 0; c < 4; c++) { s = runCycle({ ...s, phase: "play" }); reserves.push(s.firnStack[3]); }
-    // Reserve nimmt monoton ab und erreicht 0; die Masse bleibt dabei stets ≤ 12.
-    for (let i = 1; i < reserves.length; i++) expect(reserves[i]).toBeLessThanOrEqual(reserves[i - 1]);
-    expect(reserves[0]).toBeGreaterThan(0);      // nach Runde 1 noch Reserve übrig
-    expect(reserves[reserves.length - 1]).toBe(0); // am Ende leer
+    for (let i = 1; i < reserves.length; i++) expect(reserves[i]).toBeLessThanOrEqual(reserves[i - 1]); // monoton
+    expect(reserves[0]).toBe(0);                 // schon nach dem ersten Durchlauf leer
+    // und sie ist nicht verschwunden, sondern angekommen: ohne Siege und ohne Reserve käme nur der Boden an.
+    const ohne = runCycle({ ...scen({ glacierLocked, oppDeck: oppOf(99) }), phase: "play" });
+    expect(s.glacierMass[3]).toBeGreaterThan(ohne.glacierMass[3]);
   });
 });
 

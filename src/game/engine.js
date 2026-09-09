@@ -26,7 +26,7 @@ import { computeFormations, positionHasFormation, activeFormationCount, summariz
 import { perkLegendaryChance, anchorAt } from "./shop.js";
 import { precomputeArchitect, architectValueBonus, architectScore, buildArchitectOffer } from "./architect.js";
 import { precomputeGlacier, ewigerFrostTick, dauerfrostTick, driftTargets as glacierDriftTargets,
-  uebergletscherPool, packeisTick, verzahnungTick, eiszeitFlood, firnDrawTick, glacierGeometry,
+  uebergletscherPool, packeisTick, verzahnungTick, eiszeitFlood, firnDrawTick, firnGroundTick, glacierGeometry,
   ROLES as GLACIER_ROLES, WIN_MASS as GLACIER_WIN_MASS, GROSSE_LAWINE_EVERY as GLACIER_LAWINE_EVERY,
   FIRN_REFILL_TARGET as GLACIER_FIRN_REFILL_TARGET } from "./glacier.js"; // Eis-Neudesign (isoliert, activeArchetypes "ice") · #386 Firn-Reserve-Nachschub
 import { iceTuning, iceSnapshotOpts, iceNeighborFn } from "./factions/ice.js"; // §5.3: die Zahlen der Eis-Skills kommen aus ihrer Stufe
@@ -964,6 +964,10 @@ export function resolveTrick(state, rng) {
     lightning = lightningCycleEnd(lightning); // exp Blitz (§7.30): der Serienschutz-Deckel füllt sich je Durchlauf wieder auf
     // Eis-Neudesign (docs §2.6): Ewiger Frost — bedingungsloser Masse-Tick je Durchlauf auf jeden Gletscher (nach Auszahlung).
     if (glacierActive) newGlacierMass = ewigerFrostTick(newGlacierMass, glacierLocked);
+    // §8: die zweite Hälfte des Passivs — der offene BODEN friert ebenfalls. Sie ist der Grund, warum ein Misch-Build
+    // wieder einen Motor hat: das Brett stellt (40 − Gletscher) Quellen und ist damit fast unabhängig von der Zahl der
+    // Eis-Picks, während der Gletscher-Sockel darüber linear mitwächst. Vor dem ZUG, damit sie im selben Durchlauf ankommt.
+    if (glacierActive) newFirnStack = firnGroundTick(newFirnStack, glacierLocked);
     // Dauerfrost (docs §4 Firn): offener Boden friert am tiefsten — passiver Frost in die Boden-Reserve (#386 firnStack).
     if (glacierActive && glacierRoles.includes(GLACIER_ROLES.DAUERFROST)) newFirnStack = dauerfrostTick(newFirnStack, glacierLocked, ice.dauerfrostNear, ice.dauerfrostFar);
     // Packeis / Verzahnung (docs §4 Eisschild): Dichte-Bonus je Gletscher-Nachbar / Cluster-Größe (Eisbrücke-adjazenz-aware).

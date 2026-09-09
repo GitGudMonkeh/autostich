@@ -54,8 +54,13 @@ describe("Packeis — Dichte-Bonus je Nachbar", () => {
     expect(bridge[0]).toBe(PACKEIS_PER_NEIGHBOR); // mit Eisbrücke schon
   });
   it("Engine: Packeis lädt am Durchlauf-Ende zusätzlich zu Ewiger Frost", () => {
-    const s = runCycle(scen({ glacierLocked: lockAt(0, 1), glacierRoles: [ROLES.PACKEIS], oppDeck: oppOf(99) }));
-    expect(s.glacierMass[0]).toBe(EWIGER_FROST + PACKEIS_PER_NEIGHBOR);
+    /* §8: die absolute Masse enthält jetzt auch die Boden-Abgabe (Zug). Gemessen wird deshalb der UNTERSCHIED
+       zwischen Lauf mit und ohne die Rolle — das ist genau, was der Wächter benennt, und er hält auch dann,
+       wenn am Einkommen weiter geschraubt wird. */
+    const bau = (roles) => runCycle(scen({ glacierLocked: lockAt(0, 1), glacierRoles: roles, oppDeck: oppOf(99) }));
+    const mit = bau([ROLES.PACKEIS]), ohne = bau([]);
+    expect(mit.glacierMass[0] - ohne.glacierMass[0]).toBeCloseTo(PACKEIS_PER_NEIGHBOR, 6);
+    expect(ohne.glacierMass[0]).toBeGreaterThan(EWIGER_FROST); // ohne Rolle trägt der Boden bereits
   });
 });
 
