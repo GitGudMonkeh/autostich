@@ -139,7 +139,7 @@ export default {
   "ability.SK_ICE_10.name": "Frente de Desprendimiento",
   "ability.SK_ICE_10.desc": `Los umbrales de masa más altos estallan con más fuerza: potencia ×1,6 en vez de ×1,5 en el umbral 2, ×2,6 en vez de ×2,2 en el 3, ×3,8 en vez de ×3,2 en el 4.`,
   "ability.SK_ICE_11.name": "Estallido en Cadena",
-  "ability.SK_ICE_11.desc": `Cuando un glaciar estalla, los glaciares contiguos estallan con él de inmediato, aunque no hayan alcanzado su umbral.`,
+  "ability.SK_ICE_11.desc": `Cuando un glaciar estalla, arrastra la masa de los glaciares contiguos a su estallido: sus celdas caen a cero y su masa cuenta para la de él.`,
   "ability.SK_ICE_13.name": "Lengua Glaciar",
   "ability.SK_ICE_13.desc": `Un glaciar combate con +1 de valor por cada 6 de masa.`,
   "ability.SK_ICE_14.name": "Derrumbe de Glaciar",

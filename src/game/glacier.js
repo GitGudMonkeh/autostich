@@ -23,10 +23,10 @@ export const TIER_MULT = [0, 1, 1.5, 2.2, 3.2]; // überlineare Wucht je Stufe (
 // Doku: keine Deckel, lieber niedrigere Werte). Er hatte die ganze Fraktion flach gemacht — in der Großen Fläche kamen
 // 49 % des Bruchs an, und ein Verstärker mit nominal +18 % brachte +2,2 %. Statt seiner steht die Grundzahl tiefer.
 // §5.6: seit die Geo-Formen nicht mehr stapeln, ist die Kurve flacher und die Grundzahl darf wieder höher stehen.
-// §5.18 neu tariert: 250 → 150. F2/F3 (vierte Schwelle, volle Bruchmasse, liegenbleibender Überschuss) haben den Bruch
-// selbst gehoben und dabei die Legendären mitmultipliziert — gemessen stand Eis mono bei 1,65× Feuer im Median. Sweep
-// im Duell (Seeds 401..470): 250 → 1,65×, 150 → 1,04×, 110 → 0,80×.
-export const BURST_SCALE = envNum("SIM_GLACIER_BURST_SCALE", 150);
+// §5.18 neu tariert: 250 → 150 (F2/F3 hoben den Bruch selbst und multiplizierten die Legendären mit).
+// §5.21 nachtariert: 150 → 105. Der Kettenbruch sammelt jetzt Masse in die vierte Schwelle statt sie zu verbrennen,
+// und das hob Eis auf 1,47× Feuer im Median. Sweep im Duell (Seeds 401..470): 150 → 1,47×, 120 → 1,21×, 105 → 1,07×.
+export const BURST_SCALE = envNum("SIM_GLACIER_BURST_SCALE", 105);
 // Große Lawine (§5.8, Owner): feuert nicht mehr einmal am Laufende, sondern im TAKT — jeden GROSSE_LAWINE_EVERY-ten
 // Durchlauf bricht das ganze Feld auf einen Schlag, jeder Gletscher mit der Wucht der höchsten Schwelle. Damit ist sie
 // den ganzen Lauf über sichtbar, und sie synchronisiert das Feld: Kaskade, Kollision und Gletschersturz greifen
@@ -125,13 +125,12 @@ export function precomputeGlacier(mass, locked, opts = {}) {
 
   // Vorbereitung: Masse und natürliche Stufe je Gletscher. §5.18: KEIN Deckel mehr auf der Bruchmasse und kein
   // Überlauf-Score — die Masse über der Berst-Schwelle geht in die Wucht und bleibt danach liegen (s. resetMass unten).
-  const mNow = new Array(N_POS).fill(0), natTier = new Array(N_POS).fill(0);
+  const mNow = new Array(N_POS).fill(0);
   let totalG = 0;
   for (let p = 0; p < N_POS; p++) {
     if (!isG(p)) continue;
     totalG++;
     mNow[p] = resetMass[p] || 0;
-    natTier[p] = tOf(mNow[p]);
   }
 
   // Breaker bestimmen: NATÜRLICH bricht nur, wer die Berst-Schwelle erreicht hat (halten & wachsen, dann gewaltig).
@@ -141,26 +140,41 @@ export function precomputeGlacier(mass, locked, opts = {}) {
     if (mNow[p] >= burstAt) { isBreaker[p] = true; queue.push(p); }
     else if (grosseLawine) { isBreaker[p] = true; forced[p] = true; } // Große Lawine: auch unreife brechen
   }
-  if (kettenbruchDepth > 0) {
-    // Breitensuche statt Flut: die Kette läuft nur `kettenbruchDepth` Schritte weit (Stufenleiter §5.2).
-    let front = queue.slice();
+  /* Kettenbruch (§5.21, Owner): die Kette REISST DIE MASSE MIT, statt unreife Gletscher zum Bruch zu zwingen.
+     Vorher brach ein mitgerissener Gletscher auf Stufe 1 und fiel auf null — gemessen −18 %, der schlechteste Skill
+     der Fraktion, weil er die Schleife der Fraktion (halten & wachsen, dann gewaltig brechen) selbst unterbricht.
+     Jetzt fließt seine Masse in den auslösenden Bruch: derselbe Vorrat, nur auf einer höheren Schwelle ausgezahlt
+     (ab 18 sind es 480 statt 330 Score je Punkt Masse). Ein absorbiertes Feld GILT WEITER ALS GEBROCHEN — Einfrieren,
+     Frostbund und Gletschersturz hängen an der Zahl der Brüche, nicht an der Masse, und sollen nichts verlieren. */
+  const collected = new Array(N_POS).fill(0);   // Masse, die dieser Auslöser mitreißt
+  const absorbed = new Array(N_POS).fill(false); // Feld wurde leergezogen (bricht, zahlt aber nicht selbst)
+  if (kettenbruchDepth > 0) for (const start of queue) {
+    let front = [start];
     for (let step = 0; step < kettenbruchDepth && front.length; step++) {
       const next = [];
-      for (const q of front) for (const n of neighborFn(q)) if (isG(n) && !isBreaker[n]) { isBreaker[n] = true; forced[n] = true; next.push(n); }
+      for (const q of front) for (const n of neighborFn(q)) {
+        if (!isG(n) || isBreaker[n] || absorbed[n]) continue;
+        absorbed[n] = true; collected[start] += mNow[n]; next.push(n);
+      }
       front = next;
     }
   }
   let breakCount = 0;
-  for (let p = 0; p < N_POS; p++) if (isBreaker[p]) breakCount++;
+  for (let p = 0; p < N_POS; p++) if (isBreaker[p] || absorbed[p]) breakCount++;
   const sturzFactor = 1 + gletschersturzPer * breakCount; // Gletschersturz: je mehr brechen, desto stärker JEDER Bruch
 
   // Bruch-Scores + Teil-Reset.
   const breaks = [];
   for (let p = 0; p < N_POS; p++) {
     if (!isG(p)) continue;
+    // Vom Kettenbruch leergezogen: gilt als gebrochen (für Einfrieren/Frostbund/Gletschersturz), zahlt aber nicht
+    // selbst — seine Masse steckt im auslösenden Bruch.
+    if (absorbed[p]) { resetMass[p] = 0; breaks.push({ pos: p, tier: 0, burst: 0, glacierNeighbors: 0, forced: true, absorbed: true }); continue; }
     if (!isBreaker[p]) { resetMass[p] = mNow[p]; continue; } // kein Bruch: die Masse bleibt stehen
-    // Große Lawine bricht ALLES auf voller Stufe (echter Finisher); Kettenbruch-erzwungene mind. Stufe 1; sonst natürliche Stufe.
-    const effTier = grosseLawine ? (tierMult.length - 1) : (forced[p] ? Math.max(1, natTier[p]) : natTier[p]);
+    // §5.21: die mitgerissene Masse zählt zur Bruchmasse — und hebt damit die Schwelle, auf der ausgezahlt wird.
+    const effMass = mNow[p] + collected[p];
+    // Große Lawine bricht ALLES auf voller Stufe (echter Finisher); sonst die Stufe der (gesammelten) Masse.
+    const effTier = grosseLawine ? (tierMult.length - 1) : (forced[p] ? Math.max(1, tOf(effMass)) : tOf(effMass));
     const nb = neighborFn(p);
     // Ewiges Schild: das ganze Feld gilt als angrenzend — aber GEDECKELT (§5.19). Die Kaskade gibt +25 % je Nachbar
     // und war für höchstens 4 (mit Eisbrücke 8) gebaut; „alle anderen" fütterte sie bei 40 Gletschern mit 39, also
@@ -175,12 +189,12 @@ export function precomputeGlacier(mass, locked, opts = {}) {
     // nur anteilig zählt, zählt der Eiszeit auch nur anteilig. Sonst zahlte die Eisbrücke der Eiszeit doppelt.
     const oN = nb.reduce((t, n) => t + (isG(n) ? 0 : wOf(p, n)), 0);
     const eisFaktor = eiszeitPer ? 1 + eiszeitPer * oN : 1;
-    let burst = mNow[p] * tierMult[effTier] * berstFaktor * kollFaktor * sturzFactor * geoFactor * eisFaktor * BURST_SCALE;
+    let burst = effMass * tierMult[effTier] * berstFaktor * kollFaktor * sturzFactor * geoFactor * eisFaktor * BURST_SCALE;
     if (grosseLawine) burst *= GROSSE_LAWINE_MULT;        // Lawinen-Takt: Verstärker je erzwungenem Bruch
     payout[p] += burst;
     // §5.18: abgekalbt wird die Berst-Schwelle, der Überschuss bleibt liegen. Die Große Lawine bricht auch unreife
     // Gletscher — dort ist die Differenz negativ und der Boden ist die 0.
-    const keep = Math.max(0, mNow[p] - burstAt);
+    const keep = Math.max(0, effMass - burstAt);
     resetMass[p] = keepMax > 0 ? Math.min(keepMax, keep) : keep;
     breaks.push({ pos: p, tier: effTier, burst, glacierNeighbors: gN, forced: forced[p] });
   }

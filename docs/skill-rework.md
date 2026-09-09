@@ -4740,6 +4740,55 @@ lohnt sich Warten mehr denn je, und er ist die Regel, die das Warten unterbricht
 Das ist exakt die Form, in der Rissbildung als Anti-Skill erkannt und in §5.18 ersetzt wurde („halten & wachsen, dann
 gewaltig brechen" — und Kettenbruch bricht früh). Der Entscheid, ob er umgebaut oder ersetzt wird, liegt beim Owner.
 
+### 5.21 Kettenbruch sammelt Masse, statt sie zu verbrennen (2026-09-09, Owner) — umgesetzt und gemessen
+
+§5.20 hatte ihn bei −18 % vermessen und die Ursache benannt: der erzwungene Bruch eines unreifen Gletschers zahlt auf
+Stufe 1 und lässt das Feld auf null fallen. Owner: „lege erstmal ein Design vor" — und zum Vorschlag der zutreffende
+Einwand: „ich verliere wiederum den bruch von einem anderen Gletscher der kompensiert werden muss".
+
+#### Die Regel
+
+> Bricht ein Gletscher, reißt er die **Masse** angrenzender Gletscher mit in seinen Bruch: ihre Felder fallen auf
+> null, ihre Masse zählt zu seiner. Die Kette läuft 1 · 2 · 3 Schritte · Episch durch das ganze Cluster.
+
+Aus dem Skill, der die vierte Schwelle sabotiert, wird der Skill, der sie **erreicht** — 27 Masse bringt kein
+Gletscher allein zusammen. Die Leiter dreht sich damit richtig herum: Episch war die schlechteste Stufe (je weiter
+die Kette, desto mehr verbrannte sie), jetzt ist es die stärkste.
+
+**Die Kompensation, ohne die der Owner nicht zugestimmt hätte.** Der Einwand traf, aber nur zur Hälfte — und das
+ist messbar. Score je Punkt Masse, einzelner Gletscher: **330 bei Masse 12–17, 480 ab 18.** Die Masse ist also
+kompensiert (+45 %), aber **erst wenn die Kette wirklich über 18 kommt**; darunter ist der Satz derselbe. Was gar
+nicht kompensiert war, sind die Bruch-*Ereignisse*: Einfrieren, Frostbund und Gletschersturz zahlen je brechendem
+Gletscher, nicht je Masse. **Deshalb gilt ein absorbiertes Feld weiter als gebrochen** — es steht in `breaks`, zahlt
+aber `burst: 0`. Damit ist die Bilanz nie schlechter als vorher.
+
+Sonde (reifer Gletscher 12, drei junge auf 5):
+
+| | Brüche | Score |
+| --- | --- | --- |
+| ohne Skill | 1 | 6.188 |
+| alt (verbrennt) | 2 | 7.688 |
+| **neu, ein Schritt** | 2 | 8.766 |
+| **neu, ganzes Cluster** | 4 | **20.250** (27 Masse, Stufe 4) |
+
+#### Gemessen
+
+**Kettenbruch −18 % → −5 %**, damit im Rauschband, das §5.7 mit ±5 % beziffert. Er schadet nicht mehr.
+
+Die Parität ist dabei weggelaufen: Duell Eis/Feuer (Seeds 401..470) stand der Median auf **1,47×**. `BURST_SCALE`
+150 → **105** bringt ihn auf 1,07× (Sweep: 150 → 1,47×, 120 → 1,21×, 105 → 1,07×). Balance-Guard Seeds 1..40
+danach 3,17M / 7,02M — beide im bestehenden Band, die Grenzen bleiben unverändert.
+
+#### Offen
+
+1. **Die Haltequote des Kettenbruchs ist auf 17 % gefallen** (vorher 59 %). Der gierige Spieler nimmt ihn kaum noch
+   — und bei 17 % ist die −5 % auf dünner Stichprobe gemessen. Ob er zu selten *angeboten* oder zu schwach *gewertet*
+   wird, trennt dieses Instrument nicht.
+2. **Eis behält einen fetteren Schwanz als Feuer**: Median 1,07×, aber Mean 1,46× und p90 1,52×. Das zieht sich
+   durch §5.19 bis hier und liegt an den Legendären, nicht am Fundament.
+3. **Eiswall ist jetzt die unterste Zeile** (−6 % bei 100 % Haltequote) — die nächste Kandidatin, wenn eine Runde
+   gewünscht ist.
+
 ## 6. Pflanze
 
 ### 6.1 Richtung und Abgrenzung (gesetzt, Owner 2026-09-06)

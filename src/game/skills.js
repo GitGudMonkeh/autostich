@@ -264,7 +264,7 @@ export const SKILL_DEFS = {
   SK_ICE_10: { id: "SK_ICE_10", name: "Abbruchkante", archetype: "ice", keywords: ["glacier"], role: "G_ABBRUCHKANTE", tiers: EIS.abbruchkante,
     ...tiered(EIS.abbruchkante, (r) => `Höhere Masse-Schwellen bersten steiler: Wucht ×${de(r.t2)} statt ×${de(G_TIER_MULT[2])} an der 2. Schwelle, ×${de(r.t3)} statt ×${de(G_TIER_MULT[3])} an der 3., ×${de(r.t4)} statt ×${de(G_TIER_MULT[4])} an der 4.`) },
   SK_ICE_11: { id: "SK_ICE_11", name: "Kettenbruch", archetype: "ice", keywords: ["glacier"], role: "G_KETTENBRUCH", tiers: EIS.kettenbruch,
-    ...tiered(EIS.kettenbruch, (r) => `Bricht ein Gletscher, brechen angrenzende Gletscher sofort mit, auch ohne ihre Schwelle erreicht zu haben. Die Kette läuft ${r.whole ? "durch das ganze Cluster" : r.depth === 1 ? "einen Schritt weit" : `${de1(r.depth)} Schritte weit`}.`) },
+    ...tiered(EIS.kettenbruch, (r) => `Bricht ein Gletscher, reißt er die Masse angrenzender Gletscher mit in seinen Bruch: ihre Felder fallen auf null, ihre Masse zählt zu seiner. Die Kette läuft ${r.whole ? "durch das ganze Cluster" : r.depth === 1 ? "einen Schritt weit" : `${de1(r.depth)} Schritte weit`}.`) },
   // (§5.2: Zermalmen SK_ICE_12 gestrichen — dieselbe Achse wie die Kaskade, beide zahlen für Gletscher-Nachbarn.)
   SK_ICE_13: { id: "SK_ICE_13", name: "Gletscherzunge", archetype: "ice", keywords: ["glacier"], role: "G_GLETSCHERZUNGE", tiers: EIS.gletscherzunge,
     ...tiered(EIS.gletscherzunge, (r) => `Ein Gletscher kämpft mit +1 Wert je ${de(r.per)} Masse.${r.neighbors ? " Auch seine Nachbarkarten kämpfen mit der Hälfte dieses Bonus." : ""}`) },
