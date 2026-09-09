@@ -593,6 +593,25 @@ export default {
   "upgrade.justRaised": "just raised",
   "upgrade.empty": "You do not hold a skill with a tier yet.",
   "upgrade.back": "Back to the skill choice",
+  // Selling a perk (§3.6, test feature). The hint states the consequence, not the action: that coins
+  // arrive is visible from the price — that the effect goes has to be said.
+  "sell.open": "Sell a perk",
+  "sell.eyebrow": "Your perks",
+  "sell.title": "Sell",
+  "sell.hint": "The perk goes, and so does its effect. The coins stay yours.",
+  "sell.empty": "You do not hold a perk you could sell yet.",
+  "sell.back": "Back to the perk choice",
+  "sell.legendary": "Legendary",
+  "sell.youGet": "You get",
+  "sell.youPay": "You pay",
+  "sell.confirm.title": "Really sell?",
+  "sell.confirm.sub": "The effect is rolled back. What you earned in play stays.",
+  "sell.blocked.cover": "Demolish a building first — without the Bauhütte your build area is too small for what stands on it.",
+  "sell.blocked.slots": "Its slot now holds a different skill. Selling would take that one with it.",
+  "common.cancel": "Cancel",
+  // The question before an upgrade — asked per screen, not per price (§3.5/§3.6).
+  "upgrade.confirm.title": "Upgrade?",
+  "upgrade.confirm.sub": "The tier stays for the rest of the run.",
 
   /* ---- Formation panel (FormationPanel) ---- */
   "formpanel.title": "Your active formations",

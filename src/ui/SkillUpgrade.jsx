@@ -12,6 +12,7 @@ import { phaseCard, PhaseHairline, PHASE_ACCENTS } from "./modalStyle.jsx";
 import { ArchIcon } from "./FactionIcon.jsx";
 import { SkillTierBadge } from "./HeldSkills.jsx";
 import { CoinAmount } from "./CoinMark.jsx";
+import { BuyConfirm } from "./BuyConfirm.jsx"; // §3.5/§3.6: Aufwerten fragt IMMER nach — die Regel gilt je Bildschirm, nicht je Preis
 import { GlossaryText } from "./Glossary.jsx";
 import { archetypeOf, isLegendarySkill, tierOf } from "../game/skills.js";
 import { upgradeBuy } from "../game/coins.js";
@@ -59,7 +60,7 @@ function UpgradeRow({ id, state, coins, onUpgrade, justRaised }) {
   const d = next ? tierTextDiff(cur?.desc || "", next.desc || "") : null;
   return (
     <button type="button" disabled={buy.maxed || !buy.can}
-      onClick={buy.maxed || !buy.can ? undefined : () => onUpgrade(id)}
+      onClick={buy.maxed || !buy.can ? undefined : () => onUpgrade({ id, name: cur?.name, price: buy.price })}
       className="su-row as-edge-card text-left rounded-xl p-3 flex flex-col gap-2 transition-all disabled:cursor-not-allowed"
       /* Drei Zustände, drei Helligkeiten: bezahlbar (voll), zu teuer (gedämpft — der Kauf ist zu sehen, aber
          nicht auszulösen), höchste Stufe (am blassesten, hier endet die Leiter). Ohne den mittleren Schritt
@@ -100,11 +101,14 @@ function UpgradeRow({ id, state, coins, onUpgrade, justRaised }) {
 
 export function SkillUpgrade({ state = {}, onUpgrade, onClose }) {
   const [justRaised, setJustRaised] = useState(null);
+  // Der Kauf fragt IMMER nach (BuyConfirm) — unabhängig vom Betrag, weil die Regel je Bildschirm gilt
+  // und nicht je Preis. `ask` ist die Zeile, für die gerade gefragt wird.
+  const [ask, setAsk] = useState(null);
   const coins = state.coins || 0;
   // Legendäre tragen keine Stufe und stehen deshalb gar nicht erst in der Liste — ein ausgegrauter
   // „Höchste Stufe"-Eintrag wäre eine Auskunft über eine Leiter, auf der sie nie standen.
   const ids = (state.skills || []).filter((id) => !isLegendarySkill(id));
-  const raise = (id) => { setJustRaised(id); onUpgrade?.(id); };
+  const raise = () => { setJustRaised(ask.id); onUpgrade?.(ask.id); setAsk(null); };
   return overlayPortal((
     <div className="fixed inset-0 overlay-root z-30 flex items-center justify-center p-4"
       style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }}>
@@ -120,13 +124,17 @@ export function SkillUpgrade({ state = {}, onUpgrade, onClose }) {
           ? <div className="text-body-5 opacity-60 text-center py-6">{t("upgrade.empty")}</div>
           : <div className="grid gap-2">
               {ids.map((id) => (
-                <UpgradeRow key={id} id={id} state={state} coins={coins} onUpgrade={raise} justRaised={justRaised} />
+                <UpgradeRow key={id} id={id} state={state} coins={coins} onUpgrade={setAsk} justRaised={justRaised} />
               ))}
             </div>}
         <button onClick={onClose} className="as-edge-neutral w-full mt-4 rounded-lg py-2 text-body-lg-5 font-bold">
           {t("upgrade.back")}
         </button>
       </div>
+      {ask && (
+        <BuyConfirm title={t("upgrade.confirm.title")} name={ask.name} sub={t("upgrade.confirm.sub")}
+          amount={ask.price} have={coins} onConfirm={raise} onCancel={() => setAsk(null)} />
+      )}
     </div>
   ));
 }

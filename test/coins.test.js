@@ -6,6 +6,7 @@
    dass der Filter greift: `formationskern`/`anker` liegen im selben Array und sind keine gebaute
    Formation. Ohne Filter liegt die Einnahme gemessen rund ein Drittel zu hoch. */
 import { describe, it, expect } from "vitest";
+import { readFileSync } from "node:fs";
 import { makeRng } from "../src/game/deck.js";
 import { initialState, reducer } from "../src/game/reducer.js";
 import { resolveTrick } from "../src/game/engine.js";
@@ -561,6 +562,29 @@ describe("Perk aufwerten — dieselbe Leiter, ab Rang 1 gezählt", () => {
     } else {
       expect(reducer(s0, { type: "PICK_FAMILY", familyId: withTarget.id, tier: 1 }).phase).toBe("play");
     }
+  });
+});
+
+/* ---- Kauf-Bestätigung (Owner 2026-09-09) --------------------------------------------------------
+   NACH BILDSCHIRM, nicht nach Preis: Aufwerten und Verkaufen fragen IMMER nach, alle übrigen Käufe nie.
+   Die Regel lebt in der UI und lässt sich nicht über den Reducer prüfen — der Wächter liest deshalb die
+   Quellen. Er prüft eine BEZIEHUNG (welche Bildschirme die Rückfrage führen und welche nicht), nicht
+   eine Schreibweise: ein umbenannter Knopf lässt ihn kalt, ein vergessener oder ein zu viel eingebauter
+   Dialog nicht. Genau das ist der Fehler, der sonst erst im Playtest auffällt — und dann als „warum
+   fragt es hier und dort nicht?". */
+describe("Kauf-Bestätigung nach Bildschirm (Owner 2026-09-09)", () => {
+  const read = (p) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
+  const uses = (p) => /<BuyConfirm[\s/>]/.test(read(p));
+
+  it("die drei LISTEN fragen nach — dicht stehende Zeilen, und beim Verkauf kostet ein Fehlgriff einen Perk", () => {
+    for (const f of ["src/ui/SkillUpgrade.jsx", "src/ui/PerkUpgrade.jsx", "src/ui/PerkSell.jsx"])
+      expect(uses(f), `${f} führt die Rückfrage nicht`).toBe(true);
+  });
+
+  it("die EINZELNEN Kaufknöpfe fragen nicht — an einem Knopf mit Platz um sich herum vertippt man sich nicht", () => {
+    // Energie (Aufstellphase), Baufeld (Architekt), Fokus und Neuwurf (Skill-Wahl).
+    for (const f of ["src/ui/FormationPhase.jsx", "src/ui/ArchitectScreen.jsx", "src/ui/SkillSelect.jsx"])
+      expect(uses(f), `${f} fragt nach, obwohl es ein einzelner Knopf ist`).toBe(false);
   });
 });
 

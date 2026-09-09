@@ -3,6 +3,7 @@ import { rngAt } from "./rng.js"; // #205 Challenger Mode: adressierte Sub-Strö
 import { PERK_DEFS, buildPerkOffer, offerHasLegendary, isLegendary } from "./perks.js";
 import { rerollPrice, energyBuy, coverBuy, COVER_CELLS, FOCUS_PRICE, upgradeBuy, familyUpgradeBuy, COIN_START,
          coinGrant, unspentEnergyCoins, FORFEIT_SKILL, FORFEIT_PERK, FORFEIT_BUILD } from "./coins.js"; // Münz-Ökonomie: dieselben Rechnungen wie die Knöpfe (§3.1 Neuwurf · §3.2 Energie · §3.3 Fokus · §3.4 Baufeld · §3.5 Aufwerten Skill+Perk) + Verzicht (§2.3)
+import { sellPatch, deckDeltaOf, withDeckDelta } from "./perkSale.js"; // §3.6 Perk-Verkauf: Erlös, Rückbau und das Gedächtnis der Deck-Differenzen
 import { familyDef, applyFamilyPick } from "./families.js"; // formationEnergyBonus läuft jetzt über engine.formationEnergyFor
 import { UPGRADE_TYPES } from "./rarity.js";
 import { archetypeOf, buildSkillDoors, rerollDoorSkills, glacierRolesOf, ARCHETYPE_ORDER } from "./skills.js";
@@ -151,6 +152,9 @@ export function initialState(rng = Math.random, seed = null) {
     // verwechseln mit dem Perk „Zinseszins" (zinsCapital/zinsRate): der arbeitet auf Score-Kapital, nicht auf Münzen.
     coins: COIN_START, lastCycleCoins: null, lastCycleForms: null,
     coinGain: null, // §2.3: die zuletzt gutgeschriebene Verzichts-Zahlung { n, source, seq } — nur Anzeige, `seq` löst das Aufblitzen aus
+    // §3.6 Perk-Verkauf: was ein Deck-Perk je Karte TATSÄCHLICH bewirkt hat, unter seiner id. Beim Verkauf
+    // abgezogen. `meisterSkill` merkt den über Meisterhand gewählten Skill — er geht mit dem Perk.
+    deckDeltas: {}, meisterSkill: null,
     coinRerolls: 0, // §3.1: gekaufte Neuwürfe DIESER Phase — die Preistreppe; Reset überall dort, wo auch offerRerolls auf 0 geht
     coinEnergy: 0,  // §3.2: gekaufte Energie DIESER Aufstellphase (verfällt mit ihr)
     focusCalled: false, // §3.3: in DIESER Skill-Phase wurde schon ein Fokus gerufen (einmal je Phase)
@@ -252,6 +256,41 @@ const buyReroll = (state, legendary) => {
   // `patch` ist genau das, was in den State geht; `legendary` steuert die Garantie und bleibt draußen.
   return { legendary: !!legendary, price, patch: { coins: (state.coins || 0) - price, coinRerolls: (state.coinRerolls || 0) + 1 } };
 };
+
+/* Einen gehaltenen Skill wieder abgeben (§3.6: der Meisterhand-Verkauf nimmt den über sie gewählten Skill
+   mit). Der Rückbau ist derselbe wie in PICK_SKILL, wenn dort der LETZTE Skill eines Archetyps ersetzt
+   wird (#140): ein Archetyp ohne Skill hinterließe Geister — eine laufende Ladungsleiste, gefrorene
+   Karten, grüne Karten ohne Pflanze. Eigener Weg statt geteilter Funktion, weil PICK_SKILL zusätzlich die
+   AKTIVIERUNG des neuen Skills rechnet, die es hier nicht gibt.
+   Erspieltes bleibt: geschmiedete Dauerwerte sind in die Karten gebacken, Wachstum fällt nur, wenn die
+   Pflanze selbst geht. */
+function dropSkill(state, skillId) {
+  const skills = (state.skills || []).filter((id) => id !== skillId);
+  const skillTiers = { ...(state.skillTiers || {}) }; delete skillTiers[skillId];
+  const still = new Set(skills.map(archetypeOf).filter(Boolean));
+  let deck = state.deck, growth = state.growth || {};
+  let lightning = state.lightning, heat = state.heat, iceTemp = state.iceTemp;
+  let brandPending = state.brandPending || {}, brandActive = state.brandActive || {}, forged = state.forged || {};
+  if (still.has("lightning")) {
+    lightning = { ...lightning, maxCharge: maxChargeFor(skills, skillTiers) };
+    if (skillId === LIGHT.SPANNUNGSSTAU && lightning.stauBonus) lightning = { ...lightning, stauBonus: 0 }; // sein Stau geht mit ihm
+  } else lightning = initLightning();
+  if (still.has("fire")) heat = syncHeatMax(heat, skills);
+  else { heat = null; brandPending = {}; brandActive = {}; forged = {}; }
+  if (!still.has("ice")) iceTemp = {};
+  if (!still.has("plant")) { deck = deck.map((c) => (c.green || c.bloom ? { ...c, green: false, bloom: false } : c)); growth = {}; }
+  let glacierRoles = glacierRolesOf(skills), glacierRoleTiers = iceRoleTiers(skills, skillTiers);
+  const ice = still.has("ice");
+  return { skills, skillTiers, activeArchetypes: (state.activeArchetypes || []).filter((a) => still.has(a)),
+    lightning, heat, deck, growth, iceTemp, brandPending, brandActive, forged,
+    glacierRoles: ice ? glacierRoles : [], glacierRoleTiers: ice ? glacierRoleTiers : {},
+    glacierMass: ice ? state.glacierMass : new Array(C.BOARD_POSITIONS).fill(0),
+    firnStack: ice ? state.firnStack : new Array(C.BOARD_POSITIONS).fill(0),
+    glacierLocked: ice ? state.glacierLocked : new Array(C.BOARD_POSITIONS).fill(false),
+    glacierYield: ice ? state.glacierYield : 0,
+    frozenOppPending: ice ? state.frozenOppPending : {}, frozenOppActive: ice ? state.frozenOppActive : {},
+    glacierBuffPending: ice ? state.glacierBuffPending : {}, glacierBuffActive: ice ? state.glacierBuffActive : {} };
+}
 
 export function reducer(state, action) {
   switch (action.type) {
@@ -545,6 +584,9 @@ export function reducer(state, action) {
         ? computeFormations(state.playerOrder, deck, state.roles, perks, state.skills, state.shop?.anchors || [], state.familyTiers, archOf(state), plantBag(state))
         : state.formations;
       return { ...state, perks, deck, architect, skillSlots, offer: null, formations,
+               // §3.6: Umverteilung und Opfergang greifen HIER ins Deck — was sie je Karte tatsächlich
+               // bewirkt haben, merkt sich der Perk unter seiner eigenen id; der Verkauf zieht es ab.
+               deckDeltas: withDeckDelta(state.deckDeltas, perkId, deckDeltaOf(state.deck, deck)),
                // Leeres Angebot (Skill-Pool erschöpft) → normal weiterspielen; der Slot bleibt, die nächste
                // reguläre Skill-Phase füllt ihn dann (`normalCount < skillSlots` → hinzufügen statt ersetzen).
                ...(bonusDoors.length
@@ -569,7 +611,7 @@ export function reducer(state, action) {
         const { familyTiers, deck, roles } = applyFamilyPick(
           familyId, tier, { familyTiers: state.familyTiers, deck: state.deck, roles: state.roles }, rngFor(state, action, state.cycle, "pick"));
         // [#229 N3] Formationen sofort neu berechnen (analog CONFIRM_TARGET) — sonst bis zum nächsten RESOLVE_TRICK stale.
-        return { ...state, familyTiers, deck, roles,
+        return { ...state, familyTiers, deck, roles, deckDeltas: withDeckDelta(state.deckDeltas, familyId, deckDeltaOf(state.deck, deck)), // §3.6: was der Eingriff je Karte TAT — der Verkauf zieht genau das ab
           formations: computeFormations(state.playerOrder, deck, roles, state.perks, state.skills, state.shop?.anchors || [], familyTiers, archOf(state), plantBag(state)),
           offer: null, phase: "play" };
       };
@@ -584,7 +626,7 @@ export function reducer(state, action) {
           const target = { suits: C.SUIT_ORDER.slice(), cards: [], formationType: null, order: state.playerOrder };
           const { familyTiers, deck, roles } = applyFamilyPick(
             familyId, tier, { familyTiers: state.familyTiers, deck: state.deck, roles: state.roles, target }, rngFor(state, action, state.cycle, "target"));
-          return { ...state, familyTiers, deck, roles,
+          return { ...state, familyTiers, deck, roles, deckDeltas: withDeckDelta(state.deckDeltas, familyId, deckDeltaOf(state.deck, deck)), // §3.6
             formations: computeFormations(state.playerOrder, deck, roles, state.perks, state.skills, state.shop?.anchors || [], familyTiers, archOf(state), plantBag(state)),
             offer: null, phase: "play" };
         }
@@ -642,12 +684,13 @@ export function reducer(state, action) {
         ft.familyId, ft.tier, { familyTiers: state.familyTiers, deck: state.deck, roles: state.roles, target }, rngFor(state, action, state.cycle, "target"));
       // Rollen/Deck können die Formationserkennung ändern (C_JOKER/C_BRIDGE, C_SACRIFICE-Deckmod) → neu berechnen (wie CONFIRM_TARGET).
       const formations = computeFormations(state.playerOrder, deck, roles, state.perks, state.skills, state.shop?.anchors || [], familyTiers, archOf(state), plantBag(state)); // #health-check G1: archOf ergänzt — diese Stelle war älter als der Architekt (#202) und liess Gebäude-Effekte bis zur nächsten Engine-Neuberechnung fallen
+      const deckDeltas = withDeckDelta(state.deckDeltas, ft.familyId, deckDeltaOf(state.deck, deck)); // §3.6: C_SACRIFICE und die Farb-Stufen greifen hier ins Deck
       // Aufwertung (UPGRADE_FAMILY): zurück, wo der Kauf ausgelöst wurde, und ERST HIER bezahlen. Ein Pick
       // dagegen hat seinen Rundenplatz verbraucht und geht ins Spiel — daher die Adresse am familyTarget.
       if (ft.from === "upgrade")
-        return { ...state, familyTiers, deck, roles, formations, coins: (state.coins || 0) - (ft.pendingPrice || 0),
+        return { ...state, familyTiers, deck, roles, formations, deckDeltas, coins: (state.coins || 0) - (ft.pendingPrice || 0),
                  phase: ft.backPhase || "levelup", familyTarget: null };
-      return { ...state, familyTiers, deck, roles, formations, phase: "play", familyTarget: null };
+      return { ...state, familyTiers, deck, roles, formations, deckDeltas, phase: "play", familyTarget: null };
     }
 
     // Zielauswahl bestätigen (V2 §22.6): genau needsTarget Karten → Rolle setzen bzw. dauerhafte Wertmod (L1/L9).
@@ -760,6 +803,12 @@ export function reducer(state, action) {
       // Formationen neu berechnen (Anker/Familien/Architekt beeinflussen die Erkennung).
       const formations = computeFormations(state.playerOrder, deck, state.roles, state.perks, skills, state.shop?.anchors || [], state.familyTiers, archOf(state), { skillTiers, growth });
       return { ...state, skills, skillTiers, skillOfferTiers: null, activeArchetypes, lightning, heat, deck, iceTemp, growth, brandPending, brandActive, forged, formations,
+               /* §3.6: kam dieser Skill aus dem Meisterhand-Bonus, merkt sich der Lauf, welcher es war —
+                  der Verkauf des Perks nimmt ihn mit, und ohne Gedächtnis wäre er nicht wiederzufinden.
+                  Wird er später ERSETZT, folgt die Marke dem Nachfolger: der Slot ist der von Meisterhand,
+                  wer darin sitzt, ist eine spätere Entscheidung. */
+               ...(state.skillOfferBonus ? { meisterSkill: skillId }
+                 : (replaceId && replaceId === state.meisterSkill ? { meisterSkill: skillId } : {})),
                glacierRoles, glacierRoleTiers, glacierMass, firnStack, glacierLocked, glacierYield, frozenOppPending, frozenOppActive, glacierBuffPending, glacierBuffActive, // Eis-Neudesign (#386 Firn-Reserve mitgeführt)
                // Eis-Neudesign: jeder Eis-Skill-Pick öffnet SOFORT die Gletscher-Wahl (Pflicht) — analog zum Perk-Ziel-Flow.
                // §5.5: der Pick vergibt GLACIER_PER_PICK Gletscher nacheinander, begrenzt durch freie Felder und den
@@ -847,6 +896,7 @@ export function reducer(state, action) {
         const { familyTiers, deck, roles } = applyFamilyPick(
           familyId, tier, { familyTiers: state.familyTiers, deck: state.deck, roles: state.roles }, rngFor(state, action, state.cycle, "upgrade"));
         return { ...state, coins: (state.coins || 0) - buy.price, familyTiers, deck, roles,
+          deckDeltas: withDeckDelta(state.deckDeltas, familyId, deckDeltaOf(state.deck, deck)), // §3.6: Stufe 2 kommt zu Stufe 1 DAZU
           formations: computeFormations(state.playerOrder, deck, roles, state.perks, state.skills, state.shop?.anchors || [], familyTiers, archOf(state), plantBag(state)) };
       };
       const pt = fam.tiers[tier] && fam.tiers[tier].pickTarget;
@@ -860,6 +910,7 @@ export function reducer(state, action) {
           const { familyTiers, deck, roles } = applyFamilyPick(
             familyId, tier, { familyTiers: state.familyTiers, deck: state.deck, roles: state.roles, target }, rngFor(state, action, state.cycle, "upgrade"));
           return { ...state, coins: (state.coins || 0) - buy.price, familyTiers, deck, roles,
+            deckDeltas: withDeckDelta(state.deckDeltas, familyId, deckDeltaOf(state.deck, deck)), // §3.6
             formations: computeFormations(state.playerOrder, deck, roles, state.perks, state.skills, state.shop?.anchors || [], familyTiers, archOf(state), plantBag(state)) };
         }
         return { ...state, phase: "family-target", familyTarget: { familyId, tier, kind: "suits", need: pt.suits, suits: [], cards: [], formationType: null, ...back } };
@@ -869,6 +920,21 @@ export function reducer(state, action) {
       const need = Math.max(0, pt.cards - held);
       if (need === 0) return applyNow();                       // Stufe braucht keine NEUEN Ziele
       return { ...state, phase: "family-target", familyTarget: { familyId, tier, kind: "cards", need, suits: [], cards: [], ...back } };
+    }
+
+    /* Perk verkaufen (docs/muenz-oekonomie.md §3.6) — TESTFEATURE, nur Perks. Der Erlös ist die Hälfte
+       des investierten Aufwert-Werts; der Rückbau folgt der Owner-Regel „was man aufbaut, behält man".
+       Die Rechnung und der Rückbau liegen in perkSale.js; hier wird nur genäht: `dropSkill` reicht das
+       Reducer-Wissen für den Meisterhand-Fall hinein, und die Formationen müssen danach neu gerechnet
+       werden — Rollen und Kartenwerte ändern die Erkennung (Farballianz, Formationskern, Umverteilung).
+       Ohne die Neuberechnung stünde das Brett bis zum nächsten Stich auf dem Stand VOR dem Verkauf. */
+    case "SELL_PERK": {
+      if (state.phase !== "levelup") return state;
+      const patch = sellPatch(state, action.kind, action.id, dropSkill);
+      if (!patch) return state;                                  // nicht gehalten oder gesperrt (Bauhütte/Meisterhand)
+      const next = { ...state, ...patch };
+      return { ...next, formations: computeFormations(next.playerOrder, next.deck, next.roles, next.perks, next.skills,
+        next.shop?.anchors || [], next.familyTiers, archOf(next), plantBag(next)) };
     }
 
     // Skill-Angebot ablehnen → stattdessen ein Perk-Angebot für diese Runde (nie „verschwendet").
