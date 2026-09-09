@@ -19,7 +19,8 @@ mitschreibt — bewusste Abweichung von der Engineering-Sprache (`AGENTS.md`), w
 
 Eine **laufinterne Währung**. Der Spieler verdient Münzen durch seine **Aufstellung** und durch
 **Verzicht**, und gibt sie in fünf Situationen aus — immer dann, wenn in der laufenden Phase **knapp
-etwas fehlt**: ein passendes Angebot, ein Tausch, ein Bauplatz, eine Fraktion, eine Stufe.
+etwas fehlt**: ein passendes Angebot, ein Tausch, ein Bauplatz, eine Fraktion, eine Stufe. Dazu kommt
+als Testfeature der Verkauf eines Perks (§3.6), der als einziger in die Gegenrichtung läuft.
 
 Drei Eigenschaften halten das zusammen:
 
@@ -53,6 +54,11 @@ erste Skill-Phase nicht mehr mittellos.
 
 Ausgezahlt am Ende jedes Durchlaufs. „Gebaute Formationen" sind die **distinkten** Formationen der
 Aufstellung — je Formation einmal (`ordinal === 1`), nicht je Position.
+
+**Deckel — Vorschlag, noch nicht entschieden:** `2 + min(4, floor(F / 8))`, also höchstens 6 Münzen je
+Durchlauf. Grund in §2.5: ein volles Brett kann 8 bis 12 zahlen, wenn die Formationen kurz sind. Der
+Deckel bindet ab 32 Formationen und trifft damit 1 % der gemessenen Durchläufe — der normale Verlauf
+merkt nichts, die Spitze ist weg.
 
 > **Fallstrick bei der Zählung:** im selben Array liegen `formationskern` und `anker` — Architekt- und
 > Ankereffekte, die keine gebaute Formation sind. **Auf `FORMATION_TYPES` filtern**
@@ -110,12 +116,44 @@ deutlich mehr kaufbar als geplant. Das ist der Punkt, an dem beim Spielen zuerst
 Aufstellungen alle vier Typen, Treppe ist in 100 % dabei, keine hat weniger als drei. Ein verkleideter
 Fixbetrag.
 
+### 2.5 Wie voll wird das Brett — und was zahlt der Extremfall
+
+Nachgemessen (2026-09-09, 2040 Durchläufe / 81 600 Positionen), weil die erste Messung nur das Maximum
+*einer* Position kannte und die Frage „was, wenn auf allen 40 Karten 3–4 Formationen liegen" damit nicht
+beantwortete.
+
+| Formationen auf einer Position | Anteil aller Positionen |
+| --- | --- |
+| 0 | 11,9 % |
+| 1 | 40,6 % |
+| 2 | 33,4 % |
+| 3 | 10,9 % |
+| 4 | 3,0 % |
+| 5+ | 0,2 % |
+
+Das Brett ist fast immer voll belegt (Ø 35,2 von 40 Positionen tragen mindestens eine Formation, max. 40),
+und es gibt Durchläufe mit **36 Positionen auf 3+** und **22 auf 4+**. Die Paare (Position × Formation)
+gehen bis **145**; „alle 40 × 4" wären 160, liegen also knapp darüber.
+
+**Der Extremfall zahlt mehr, als die distinkte Zählung vermuten lässt** — weil kurze Formationen mehr
+distinkte ergeben als lange. Bei 160 Paaren:
+
+| mittlere Formationslänge | distinkte Formationen | Münzen ohne Deckel |
+| --- | --- | --- |
+| 2 | 80 | 12 |
+| **3,3 (gemessen)** | **48** | **8** |
+| 5 | 32 | 6 |
+
+Gegen den Normalfall von 4 Münzen ist das Faktor 2 bis 3 — der Grund für den Deckel-Vorschlag in §2.2.
+Wer auf Münzen optimiert, baut viele kurze Formationen und opfert dabei den Formations-Multiplikator,
+weil der mit der Länge eskaliert; der Deckel macht diesen Tausch endgültig unattraktiv.
+
 **Naht:** `state.formations` liegt am Durchlaufende vor, an derselben Stelle, an der bisher
 `coinsForWins(cycleWins)` stand. `cycleWins` wird für die Einnahme nicht mehr gebraucht.
 
 ---
 
-## 3. Die fünf Ausgabeflächen
+## 3. Die Ausgabeflächen — und der Verkauf
 
 Gemeinsame Regeln:
 
@@ -251,6 +289,42 @@ aufwerten, als man hält.
 
 ---
 
+### 3.6 Perk verkaufen — Testfeature
+
+**Nur Perks** (Owner, 2026-09-09). Skills sind nicht verkäuflich.
+
+**Wirkung:** ein gehaltener Perk wird abgegeben, dafür gibt es Münzen.
+**Wo:** eigener Knopf **unter „Aufwerten"**, öffnet die Auswahl der verkäuflichen Perks.
+**Erlös:** die **Hälfte des Aufwert-Werts der aktuellen Rarität** — unabhängig davon, ob der Perk
+gekauft oder gefunden wurde.
+
+| Perk-Stufe | Kumuliert investiert | **Erlös** |
+| --- | --- | --- |
+| I · Normal | 0 | **0** |
+| II · Selten | 12 | **6** |
+| III · Sehr selten | 37 | **18** |
+| IV · Episch | 77 | **38** |
+
+**Das Verhältnis zum Ablehnen ist gewollt** (Owner, 2026-09-09). Ablehnen zahlt fest 6; ab Stufe III ist
+Annehmen-und-Verkaufen also bis zu 6× einträglicher. Das ist kein Leck: wer verkauft, hat den Perk den
+ganzen Lauf über nicht. Ablehnen bleibt der eine Klick für schlechte Angebote, Verkaufen der Umweg, der
+sich bei seltenen Perks lohnt.
+
+**Zwei Punkte offen:**
+
+1. **Stufe I gibt 0** — ein Grundstufen-Perk ist damit unverkäuflich, man wird ihn auch dann nicht los,
+   wenn man will. Ein Sockel von 3 (die Hälfte des Ablehn-Werts) würde jeden Perk verkäuflich machen,
+   ohne die Leiter zu verzerren.
+2. **Legendäre Perks tragen keine Stufe** (`upgradeInfo` gibt bei `legendary` sofort „nicht aufwertbar"
+   zurück) und wären nach der Formel 0 wert. Entweder ein fester Wert über Episch — 50 wäre die
+   naheliegende Fortsetzung — oder gar nicht verkäuflich.
+
+**Naht:** dieselbe Preisleiter wie die Aufwertung (`UPGRADE_PRICES = [0, 12, 25, 40]` in `coins.js`,
+für Perks über `familyUpgradeBuy`). Es gibt eine Leiter, nicht zwei — wer sie anfasst, verschiebt Kauf
+und Verkauf zugleich.
+
+---
+
 ## 4. Anzeige
 
 - **Kontostand immer sichtbar**, in der Statusleiste (`StatusBar.jsx`), ganz rechts als eigene Zelle:
@@ -322,17 +396,20 @@ Dann Neuwurf, Energie, Baufeld. Fokus-Ruf und Aufwerten zuletzt, wenn ihre Vorau
 
 ## 8. Offene Punkte
 
-1. **Braucht ein Kauf eine Bestätigung?** Auf dem Handy ist ein Fehltipper leicht, ein zweiter Tap aber
+1. **Deckel auf die Formations-Einnahme?** Vorschlag `2 + min(4, floor(F/8))` — §2.2, begründet in §2.5.
+   Ohne ihn zahlt der Extremfall 8 bis 12 statt 4. **Nicht entschieden.**
+2. **Perk-Verkauf: Sockel für Stufe I, und was geben Legendäre?** §3.6. **Nicht entschieden.**
+3. **Braucht ein Kauf eine Bestätigung?** Auf dem Handy ist ein Fehltipper leicht, ein zweiter Tap aber
    zäh, wenn man ihn dreimal je Phase macht. Mittelweg: nur die teuren Käufe bestätigen lassen —
    Baufeld, Episch-Aufwertung, Legendär-Neuwurf. **Nicht entschieden.**
-2. **Verfallen Münzen am Laufende?** Der Plan geht von **Verfall** aus — sonst wird Sparen immer
+4. **Verfallen Münzen am Laufende?** Der Plan geht von **Verfall** aus — sonst wird Sparen immer
    richtig. Falls Mitnahme gewollt ist, ändert das nur diese eine Regel, nicht die Struktur.
    **Nicht entschieden.**
-3. **Ranked.** Die Ökonomie ist von selbst seed-unabhängig (sie hängt an der eigenen Aufstellung). Zu prüfen
+5. **Ranked.** Die Ökonomie ist von selbst seed-unabhängig (sie hängt an der eigenen Aufstellung). Zu prüfen
    ist nur, ob Wochen-Modifikatoren, die Neuwürfe oder Energie beschneiden („Kein Reroll",
    „Energie-Ebbe"), mit gekauften kollidieren.
-4. **Namensgleichheit beachten:** der legendäre Perk „Zinseszins" arbeitet mit `zinsCapital` /
+6. **Namensgleichheit beachten:** der legendäre Perk „Zinseszins" arbeitet mit `zinsCapital` /
    `zinsRate` auf Score-Kapital, nicht mit Münzen. Kein Zusammenhang, aber verwechselbar.
-5. **Tote Preisleiter im Code:** `TIER_META` in `rarity.js` trägt noch `price: 8 / 12 / 18 / 30` aus der
+7. **Tote Preisleiter im Code:** `TIER_META` in `rarity.js` trägt noch `price: 8 / 12 / 18 / 30` aus der
    Shop-Zeit; `priceOfTier` wird nirgends mehr aufgerufen. Entweder für §3.5 wiederverwenden oder
    entfernen — nicht danebenlegen.
