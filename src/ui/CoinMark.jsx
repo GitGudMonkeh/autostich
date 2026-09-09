@@ -12,7 +12,10 @@
 import { fmtNum, t } from "../i18n/index.js";
 
 export const COIN_GOLD = "#d4a63a"; // dasselbe Gold wie Score und Neuwurf — die Währung führt keine neue Farbe ein
-export const COIN_GAIN = "#5ab87a"; // Einnahme statt Ausgabe: dasselbe Grün wie „reicht" am Preis und die Formations-Energie
+/* Einnahme-Akzent für RAHMEN und Flächen — NICHT für Zeichen und Zahl. Owner 2026-09-09: die Münze ist
+   gold, überall, ohne Ausnahme. Eine grüne Münze war ein zweites Währungszeichen, das keins sein wollte;
+   „bringt ein" gegen „kostet" trägt jetzt die Umrandung, nicht die Ziffer. */
+export const COIN_GAIN = "#5ab87a";
 
 // Zwei Kreise: Rand und Prägung. Bewusst anders als das `info`/`block`-Rund der Modal-Icons, die den
 // Innenraum leer lassen — nebeneinander sollen die drei nicht verwechselbar sein.
@@ -56,12 +59,13 @@ export function CoinAmount({ n = 0, size = 13, minDigits = 0, dim = false, have 
    Gegenpol zum Preis am Kaufknopf. Ohne sie steht der Verzicht dort, wo man ihn wählt, ohne seinen Wert:
    die Gutschrift blitzt erst NACH der Entscheidung in der Leiste auf, also zu spät, um sie zu treffen.
 
-   Grün und nicht Gold: Gold heißt an jedem anderen Knopf „das kostet". Dieselbe Farbe für Ein- und
-   Ausgang wäre die eine Verwechslung, die diese Anzeige nicht machen darf. */
+   GOLD wie jede andere Münze (Owner 2026-09-09). Der erste Entwurf war grün — „bringt ein" gegen
+   „kostet" —, aber damit hatte die Währung zwei Farben, und die Münze ist in diesem Spiel gold. Was die
+   Marke von einem Preis unterscheidet, ist das Vorzeichen und die Klammer, nicht der Farbton. */
 export function CoinReward({ n = 0, size = 11, className = "" }) {
   if (!(n > 0)) return null;
   return (
-    <span className={`inline-flex items-center gap-1 whitespace-nowrap ${className}`} style={{ color: COIN_GAIN }}>
+    <span className={`inline-flex items-center gap-1 whitespace-nowrap ${className}`} style={{ color: COIN_GOLD }}>
       <span className="opacity-60">(</span>
       <CoinIcon size={size} />
       <span className="ty-num" style={{ fontVariantNumeric: "tabular-nums" }}>+{fmtNum(n)}</span>
@@ -82,7 +86,7 @@ export function CoinGain({ gain = null }) {
   if (!gain || !(gain.n > 0)) return null;
   return (
     <span key={gain.seq} aria-hidden="true" className="ty-num pointer-events-none"
-      style={{ position: "absolute", top: 0, right: 10, opacity: 0, color: COIN_GAIN, fontSize: 13, fontWeight: 700,
+      style={{ position: "absolute", top: 0, right: 10, opacity: 0, color: COIN_GOLD, fontSize: 13, fontWeight: 700,
                fontVariantNumeric: "tabular-nums", animation: "as-coingain 1500ms ease-out forwards" }}>
       +{fmtNum(gain.n)}
     </span>

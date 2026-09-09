@@ -18,8 +18,9 @@ import { MODAL_CARD, ModalHairline, ActionBar, ActionButton, STICKY_HEAD_BG } fr
 import { CoinAmount } from "./CoinMark.jsx";
 import { t } from "../i18n/index.js"; // #sprache
 
-/* `tone` trennt die zwei Fälle: Aufwerten kostet (Gold, wie jeder Preis), Verkaufen bringt ein (Grün,
-   wie jede Gutschrift). Der Betrag steht groß in der Mitte — er ist die eine Zahl, wegen der gefragt wird. */
+/* `tone` trennt die zwei Fälle, aber NICHT über die Farbe des Betrags: die Münze ist gold, in beide
+   Richtungen (Owner 2026-09-09). Was den Verkauf vom Kauf unterscheidet, ist die Zeile darüber („Du
+   bekommst" statt „Du zahlst") und der rote Bestätigen-Knopf — der Verkauf ist die endgültigere Tat. */
 export function BuyConfirm({ title, name, sub = null, amount = 0, have = null, tone = "buy", onConfirm, onCancel }) {
   const gain = tone === "sell";
   return overlayPortal(
@@ -34,7 +35,7 @@ export function BuyConfirm({ title, name, sub = null, amount = 0, have = null, t
           {sub && <div className="text-body-5 opacity-65 mt-0.5">{sub}</div>}
           <div className="mt-3 flex items-center gap-2">
             <span className="text-meta-1 uppercase tracking-wide opacity-55">{t(gain ? "sell.youGet" : "sell.youPay")}</span>
-            <CoinAmount n={amount} size={15} have={gain ? null : have} style={{ fontSize: 17, color: gain ? "#5ab87a" : undefined }} />
+            <CoinAmount n={amount} size={15} have={gain ? null : have} style={{ fontSize: 17 }} />
           </div>
           <ActionBar pad={5} bg={STICKY_HEAD_BG} className="mt-4">
             <ActionButton kind="secondary" flex onClick={onCancel}>{t("common.cancel")}</ActionButton>
