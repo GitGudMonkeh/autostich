@@ -245,7 +245,11 @@ report(byWorld, verd);
 mkdirSync(dirname(OUT), { recursive: true });
 writeFileSync(OUT, JSON.stringify({
   params: { explore: EXPLORE, runs: RUNS, cross: CROSS, seed0: SEED0, c: C, jobs: JOBS },
-  cross: crossBuilds.map((b) => ({ label: b.label, members: b.members, ...cross.get(b.label), scores: undefined, stats: stats(cross.get(b.label).scores) })),
+  // Nur die Builds, die dieser Lauf wirklich gemessen hat — mit `--only welten` ist die Map leer.
+  cross: crossBuilds.filter((b) => cross.has(b.label)).map((b) => {
+    const m = cross.get(b.label);
+    return { label: b.label, members: b.members, ...m, scores: undefined, stats: stats(m.scores) };
+  }),
   worlds: byWorld, verdicts: verd,
 }, null, 2));
 console.log(`\n  → ${OUT}   (${((Date.now() - t0) / 60000).toFixed(0)} min)`);

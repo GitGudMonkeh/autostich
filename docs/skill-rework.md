@@ -7341,6 +7341,66 @@ die davon profitieren müssen und designen wie").
 
 ---
 
+### 5.30 Die Eis-Skills auf dem neuen Motor (2026-09-09) — gemessen, nichts umgesetzt
+
+**Owner:** „und dann schauen wir uns alle skills an die davon profitieren müssen und designen wie."
+
+Sieben Eis-Welten (mono, drei Paare, drei Tripel), Explore 600 → Greedy 140 → gepaarte Ablation je Skill,
+44 660 Läufe, 40 min (`node sim/survey.js --only welten --fraktion ice`). Die Zahlen aus §8 waren auf dem ALTEN
+Motor gemessen und sind für Eis nicht mehr gültig.
+
+#### A · Die Tabelle (Haltequote / typischer Effekt)
+
+| Skill | Achse | mono | Paar Ø | Tripel Ø | schwach in |
+| --- | --- | --- | --- | --- | --- |
+| **Große Lawine** (L) | Zahl | 71 % / +511 % | 38 % / +169 % | 13 % / +89 % | 0/7 |
+| **Eiszeit** (L) | Masse | 62 % / +138 % | 35 % / +63 % | 18 % / +72 % | 0/7 |
+| **Ewiges Schild** (L) | Dichte | 65 % / +221 % | 29 % / +60 % | 10 % / +28 % | 1/7 |
+| Einfrieren | — | 99 % / +30 % | 29 % / +18 % | 20 % / +26 % | 2/7 |
+| Dauerfrost | Masse | 100 % / +3 % | 61 % / **+27 %** | 23 % / +13 % | 2/7 |
+| Abbruchkante | Masse | 68 % / +9 % | 20 % / +15 % | 9 % / −3 % | 2/7 |
+| Frostbund | Dichte | 32 % / −5 % | 26 % / −4 % | 18 % / +39 % | 3/7 |
+| Eisbeben | Masse | 35 % / +43 % | 60 % / +9 % | 15 % / +1 % | 3/7 |
+| Sprödbruch | Masse | 100 % / +8 % | 28 % / +14 % | 16 % / −0 % | 3/7 |
+| Eiswall | Dichte | 99 % / +14 % | 40 % / +5 % | 15 % / +19 % | 4/7 |
+| Verzahnung | Dichte | 100 % / **+48 %** | 32 % / +1 % | 26 % / −2 % | 4/7 |
+| Anfrieren | Masse | 19 % / −7 % | 12 % / −10 % | 15 % / +17 % | 4/7 |
+| Eisbrücke | Dichte | 95 % / +17 % | 17 % / −14 % | 13 % / −0 % | 4/7 |
+| Gletscherzunge | Masse | 34 % / −0 % | 39 % / −4 % | 8 % / +39 % | 5/7 |
+| Gletschersturz | Zahl | 94 % / **+43 %** | 40 % / +2 % | 22 % / −5 % | 5/7 |
+| Verdichtung | Masse | 97 % / −10 % | 36 % / +2 % | 15 % / −2 % | 5/7 |
+| Packeis | Dichte | 100 % / **+24 %** | 26 % / −8 % | 14 % / −8 % | 5/7 |
+
+Gehaltene Eis-Skills je Welt: Ei 13,1 · Bl+Ei 4,6 · **Ei+Pf 5,7 (§8: 3,9)** · Fe+Ei 8,3 · Bl+Ei+Pf **3,0 (§8: 1,7)** ·
+Fe+Bl+Ei 2,7 · Fe+Ei+Pf 2,9. In den Paaren greift der gierige Spieler deutlich häufiger zu Eis als vor der Runde.
+
+#### B · Was die Zahlen sagen
+
+1. **Kein Eis-Skill ist mehr in allen sieben Welten schwach.** In §8 standen dort Frostbund und Anfrieren; die
+   Liste der neun „überall Schwachen" enthält jetzt kein Eis mehr.
+2. **Die Dichte-Achse verhält sich exakt wie vorhergesagt.** Packeis +24 % mono → −8 %/−8 % im Mix, Verzahnung
+   +48 → +1/−2, Eisbrücke +17 → −14/−0, Gletschersturz +43 → +2/−5. Vier Skills, die *nur* mono zahlen — und alle
+   vier auf dieselbe Weise.
+3. **Die Masse-Achse trägt noch nicht von selbst.** Die offene Leiter hat Abbruchkante (+9/+15/−3), Sprödbruch
+   (+8/+14/−0), Verdichtung (−10/+2/−2) und Anfrieren (−7/−10/+17) NICHT geheilt.
+4. **Dauerfrost ist der erste Eis-Skill, der im Mix besser ist als mono** (+3 % → +27 %). Er lebt von offenen
+   Feldern und wenigen Gletschern — genau die Bedingung eines Splashs. Das ist das Vorbild für die Masse-Achse.
+5. **Zwei „immer genommen, kaum gespürt"**: Sprödbruch (100 % / +8 %) und Verdichtung (97 % / −10 %).
+
+#### C · Diagnose je Reparaturfall
+
+- **Anfrieren und Verdichtung** geben eine FLACHE Masse-Zahl (+1…4 je Sieg bzw. je Gebäude-Bonus). Das
+  Boden-Einkommen liefert inzwischen rund 20 Masse je Durchlauf — die flache Zahl ist darin nicht mehr zu spüren.
+  **Beide wurden vom eigenen Fundament entwertet.**
+- **Abbruchkante** hebt die Wucht der Stufen 2–4 (1,6/2,6/3,8 auf Normal gegen die Basis 1,5/2,2/3,2) — das sind
+  +7/+18/+19 %. Gegen eine Leiter, die jetzt bis 9,7 reicht, ist das ein Nebengeräusch.
+- **Gletscherzunge und Sprödbruch** lesen Masse und profitieren automatisch; ihre Stufenleitern sind aber gegen
+  die alte Masse (≈ 12) gerechnet und stehen jetzt zu niedrig.
+
+Nichts davon ist umgesetzt — die Design-Entscheidungen stehen beim Owner.
+
+---
+
 ## 8. Bestandsaufnahme über alle vier Fraktionen (2026-09-09)
 
 **Owner:** „wir haben jetzt reworks für Blitz, pflanze, Eis auf exp gebracht. diese sind noch nicht fertig aber bevor
@@ -7599,3 +7659,4 @@ leichtesten haben.
 | 2026-09-09 | Bestandsaufnahme über alle vier Fraktionen (§8, Owner: „bevor wir da weiter machen müssen wir den aktuellen ist stand in der sim aufnehmen"). Neues Werkzeug `sim/survey.js` + `sim/survey-worker.js` — Auftrags-Pool über vier Prozesse, 108 800 Läufe in 93 min statt ~7 h seriell. Gemessen, nichts am Spiel geändert. Kernbefunde: (a) **Eis ist ansteckend** — jede Kombination mit Eis fällt auf 0,43–0,63× derselben Kombination ohne Eis, weil der freie Spieler von 13,0 Eis-Skills mono auf 1,7–3,1 im Tripel herunterfällt; (b) die Fraktionen skalieren vom planlosen zum kompetenten Spieler um ×15 (Feuer) bis ×185 (Pflanze) — Feuer hat keine Decke; (c) die zwölf Legendären spannen +1079 % (Baumreihe) bis +13 % (Ewige Glut), Faktor 80; (d) 26 von 70 Skills wirken in ihrer eigenen Mono-Welt unter 3 %, drei sind in allen sieben Welten schwach (Lichtung, Frostbund, Anfrieren), neun weitere in sechs von sieben. Ausdrücklich NICHT messbar: die Stufenleiter (98–186 Läufe je Stufe, „Leiter"-Flag feuert bei 41 von 58 normalen Skills — Rauschen). |
 | 2026-09-09 | Eis-System, erste Etappe (§5.28, Owner: „wie reparieren wir das System?" → „sonde und dann c"). Gebaut: `FIRN_GROUND` 0,35 (jedes offene Feld friert Reserve an — das Brett stellt 40−G Quellen und hängt damit fast nicht an der Pick-Zahl), der ZUG verteilt anteilig nach 1/Abstand statt „der Nächste nimmt alles" (im 3×3-Cluster bekamen sechs von zwölf Gletschern gar nichts), die Reserve unter einem Gletscher fließt in ihn selbst, `BURST_SCALE` 30 → 24. Gemessen und **Ziel verfehlt**: das Boden-Einkommen hebt zwölf Gletscher (×1,45) stärker als drei (×1,26), weil die Stufenleiter bei 18 endet — ein Drei-Gletscher-Build sitzt mit Ø 17,6 Masse schon an der obersten Sprosse, ein Zwölfer mit 11,3 unter der Berst-Schwelle. Der Deckel auf der Restmasse ist auch nicht der Hebel (Anteil 3÷12: 0,27 → 0,34 über KEEP 6/18/40). Endstand: Eis mono +2 %, Fe+Ei +10 %, Fe+Bl+Ei −5 % — Mono steht, die Ansteckung bleibt. Korrigiert meine Diagnose aus §8: die Dichte-Multiplikatoren bringen nur ×2,4, der Rest ist die schiere Zahl der Brüche. Offen: Leiter über 18 öffnen und/oder ein Trigger, der Ansammeln erlaubt (Owner-Idee); Träger-Kandidat ist die Abbruchkante. Neue Sonde `sim/probes/eis-kurve.mjs`, `sim/survey.js --only cross|welten`. |
 | 2026-09-09 | Eis-System, zweite Etappe (§5.29, Owner: „1." — die Stufenleiter öffnen). `THRESHOLDS` 4/8/12/18 → 4/8/12/18/27/40/60, `TIER_MULT` bis 9,7 (Rhythmus der alten Leiter: Schwellen ×1,5, Wucht ×1,45), `FIRN_GROUND` 0,35 → 0,6, `BURST_SCALE` 24 → 20. Erst damit zahlt sich Masse für WENIGE Gletscher aus: Anteil eines Drei-Gletscher-Builds am Zwölfer (reiner Gletscher-Score) 0,27 → 0,38 (Leiter allein) → 0,59 (mit Boden 0,6). Eis-Ansteckung auf Build-Ebene 0,43/0,50/0,52/0,63× → **0,49/0,55/0,59/0,67×**; Eis mono 6,73 → 7,14M (+6 %) und damit nicht mehr die schwächste Fraktion. Nebenfund beim Bauen: die Abbruchkante überschrieb die Stufen mit einem fünfstelligen Array und hätte `undefined` in den Bruch gereicht — die neuen Sprossen erben jetzt denselben relativen Zuschlag, ein Wächter hält die Länge. Balance-Guard Median-Band neu zentriert (3,79M über Seeds 1–40, 3,98M über 1–200), Mean-Band unverändert. Offen: die Skill-Seite — ein Misch-Build hat 4,3 Eis-Slots, die so viel wert sein müssen wie 4,3 Feuer-Slots. |
+| 2026-09-09 | Eis-Skills auf dem neuen Motor gemessen (§5.30, Owner: „schauen wir uns alle skills an die davon profitieren müssen"). Sieben Eis-Welten, 44 660 Läufe, 40 min. Kernbefunde: **kein Eis-Skill ist mehr in allen sieben Welten schwach** (in §8 waren es Frostbund und Anfrieren); in den Paaren hält der gierige Spieler deutlich mehr Eis (Ei+Pf 3,9 → 5,7, Bl+Ei+Pf 1,7 → 3,0). Die Dichte-Achse verhält sich wie vorhergesagt — Packeis +24 % mono → −8/−8 im Mix, Verzahnung +48 → +1/−2, Eisbrücke +17 → −14/−0, Gletschersturz +43 → +2/−5: vier Skills, die nur mono zahlen. Die Masse-Achse trägt NICHT von selbst: Abbruchkante +9/+15/−3, Sprödbruch +8/+14/−0, Verdichtung −10/+2/−2, Anfrieren −7/−10/+17. Diagnose: Anfrieren und Verdichtung geben eine flache Masse-Zahl und sind vom eigenen Boden-Einkommen (≈ 20 Masse je Durchlauf) entwertet; die Abbruchkante hebt die Stufen 2–4 um +7/+18/+19 % gegen eine Leiter, die bis 9,7 reicht. Dauerfrost ist der erste Eis-Skill, der im Mix BESSER ist als mono (+3 → +27 %) — das Vorbild für die Masse-Achse. Nichts umgesetzt. Nebenbei den Treiber repariert: mit `--only welten` lief das JSON-Schreiben auf die leere Cross-Map. |
