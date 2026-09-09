@@ -1,5 +1,5 @@
 import { SKILL_DEFS, isLegendarySkill } from "../skills.js";
-import { ROLES, TIER_MULT, neighbors4, neighbors8, EISZEIT_BURST_PER } from "../glacier.js";
+import { ROLES, neighbors4, neighbors8, EISZEIT_BURST_PER } from "../glacier.js";
 
 /* ============================================================
    EIS — Fraktionsmodul (exp skill rework, docs/skill-rework.md §5). Reine Logik: kein React, kein Math.random.
@@ -47,8 +47,8 @@ export function iceTuning(roles = [], roleTiers = {}) {
   const ab = row(ROLES.ABBRUCHKANTE), eb2 = row(ROLES.EISBEBEN), gz = row(ROLES.GLETSCHERZUNGE), gs = row(ROLES.GLETSCHERSTURZ);
   const ef = row(ROLES.EINFRIEREN), fb = row(ROLES.FROSTBUND), sb = row(ROLES.SPROEDBRUCH);
   return {
-    anfrierenMass: a ? a.mass : 0,
-    anfrierenForm: a && a.form ? a.form : 0,
+    anfrierenPct: a ? a.pct : 0,                 // §5.31: ANTEIL der vorhandenen Masse je Sieg, nicht mehr flach
+    anfrierenFormDouble: !!(a && a.form),        // Episch: der Formations-Sieg zählt doppelt
     schneetreibenSeed: s ? s.seed : 0,
     schneetreibenFields: s ? s.fields : 0,
     dauerfrostNear: d ? d.near : 0,
@@ -58,10 +58,7 @@ export function iceTuning(roles = [], roleTiers = {}) {
     eisbrueckeWeight: eb ? eb.weight : 1,
     eiswallPer: ew ? ew.per : 0,                 // Zuschlag je Gletscher über EISWALL_MIN−1 in der geraden Kette
     verzahnungPer: vz ? vz.per : 0,
-    /* §5.29: die Leiter reicht über die vierte Sprosse hinaus. Die Abbruchkante benennt nur t2/t3/t4 — die Sprossen
-       darüber erben denselben relativen Zuschlag, sonst stünde dort `undefined` im Bruch, sobald der Skill liegt. */
-    abbruchTierMult: ab ? [TIER_MULT[0], TIER_MULT[1], ab.t2, ab.t3, ab.t4,
-      ...TIER_MULT.slice(5).map((m) => m * (ab.t4 / TIER_MULT[4]))] : null,
+    abbruchAt: ab ? ab.at : 0,                   // §5.31: die Berst-Schwelle, die der Skill setzt (0 = nicht gehalten)
     eisbebenPer: eb2 ? eb2.per : 0,               // Nachbeben-Anteil je Punkt Masse über der Berst-Schwelle
     eisbebenSturz: !!(eb2 && eb2.sturz),          // Episch: zählt dem Gletschersturz als eigener Bruch
     gletscherzungePer: gz ? gz.per : 0,          // Masse je +1 Kampfwert (0 = Skill nicht gehalten)
@@ -79,7 +76,9 @@ export function iceTuning(roles = [], roleTiers = {}) {
 export function iceSnapshotOpts(roles = [], tune = null) {
   const t = tune || iceTuning(roles, {});
   const opts = {};
-  if (roles.includes(ROLES.ABBRUCHKANTE)) opts.tierMult = t.abbruchTierMult;
+  // §5.31: die Abbruchkante hebt die BERST-SCHWELLE. Der Gletscher hält länger und trifft dafür die Sprosse, die sein
+  // Einkommen hergibt — die Wahl zwischen „viele kleine Brüche" und „einer sammelt an und bricht stark".
+  if (roles.includes(ROLES.ABBRUCHKANTE) && t.abbruchAt > 0) opts.burstAt = t.abbruchAt;
   if (roles.includes(ROLES.EISBRUECKE)) { opts.neighborFn = neighbors8; opts.diagWeight = t.eisbrueckeWeight; }
   if (roles.includes(ROLES.EISBEBEN)) { opts.eisbebenPer = t.eisbebenPer; opts.eisbebenSturz = t.eisbebenSturz; }
   if (roles.includes(ROLES.EISWALL)) opts.eiswallPer = t.eiswallPer;

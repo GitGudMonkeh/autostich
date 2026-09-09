@@ -2,7 +2,7 @@ import * as C from "./constants.js";
 import { shuffle } from "./deck.js";
 // Eis: die Zahlen der SKILLS stehen in der Stufentabelle EIS unten. Aus glacier.js kommt nur, was ohne Skill gilt —
 // die Schwellen, die Wucht je Stufe, der Linien-Faktor der Geometrie und die Werte der drei Legendären.
-import { EISWALL_MIN as G_EISWALL_MIN, TIER_MULT as G_TIER_MULT,
+import { EISWALL_MIN as G_EISWALL_MIN, BURST_AT as G_BURST_AT,
   EISZEIT_FLOOD as G_EISZEIT_FLOOD, EISZEIT_BURST_PER as G_EISZEIT_BURST,
   GROSSE_LAWINE_EVERY as G_LAWINE_EVERY,
   SCHILD_PER_PICK as G_SCHILD_PER_PICK, GROSSE_LAWINE_MULT as G_LAWINE_MULT } from "./glacier.js";
@@ -121,11 +121,19 @@ export const PFLANZE_TIERS = PFLANZE;
    Startwerte, NICHT gemessen (Owner: erst Design, dann Startwert, dann messen — auf Ansage). */
 const EIS = {
   // Firn — die Masse-Motoren
-  anfrieren:      [{ mass: 1 }, { mass: 2 }, { mass: 3 }, { mass: 4, form: 4 }], // Episch-Extra: der Formations-Sieg legt noch einmal nach
+  // §5.31: ANTEIL statt flacher Zahl. Der gefrorene Boden liefert seit §5.29 rund 20 Masse je Durchlauf — daneben war
+  // „+1 bis +4 je Sieg" nicht mehr zu spüren (gemessen −7 % mono / −10 % Paar). Episch: der Formations-Sieg zählt doppelt.
+  anfrieren:      [{ pct: 0.1 }, { pct: 0.15 }, { pct: 0.2 }, { pct: 0.28, form: true }],
   schneetreiben:  [{ seed: 2, fields: 1 }, { seed: 3, fields: 1 }, { seed: 4, fields: 1 }, { seed: 5, fields: 2 }],
   dauerfrost:     [{ near: 1, far: 2 }, { near: 2, far: 3 }, { near: 2, far: 4 }, { near: 3, far: 6 }],
-  verdichtung:    [{ per: 0.25 }, { per: 0.4 }, { per: 0.6 }, { per: 1 }], // §5.18: Masse je Punkt Kampfwert-Überschuss (vorher: Umwandlungsrate des unterdrückten Gebäude-Bonus)
+  // §5.31 nachgezogen (Mechanik unverändert): 0,25–1 war neben dem Boden-Einkommen kaum zu spüren — 97 % Haltequote
+  // bei −10 % Wirkung, der klassische „immer genommen, nie gespürt"-Fall.
+  verdichtung:    [{ per: 0.6 }, { per: 0.9 }, { per: 1.3 }, { per: 2 }], // §5.18: Masse je Punkt Kampfwert-Überschuss
   // Eisschild — Cluster und Dichte
+  /* §5.31 (Owner: „bau aber vllt noch einen für duo oder Triplett um"): Packeis zählt jetzt die OFFENEN Nachbarn
+     statt der gefrorenen — der einzige der vier Dichte-Skills, der die Seite wechselt. Gemessen war er der reinste
+     Mono-Skill der Fraktion (+24 % mono, −8 %/−8 % im Mix). Als Kante zwischen Eis und offenem Wasser trägt er den
+     Namen weiterhin, und ein dünn gebauter Eis-Anteil bekommt damit neben Dauerfrost eine zweite Masse-Quelle. */
   packeis:        [{ per: 0.5 }, { per: 0.75 }, { per: 1 }, { per: 1.5 }],
   eisbruecke:     [{ weight: 0.5 }, { weight: 0.75 }, { weight: 1 }, { weight: 1.25 }], // §5.2: die Diagonale bekommt ein Gewicht statt eines Schalters
   // §5.24 (Owner-Route A): der Eiswall liest die KETTENLÄNGE statt „volle Reihe oder nichts". Der alte Hebel hob den
@@ -134,7 +142,10 @@ const EIS = {
   eiswall:        [{ per: 0.15 }, { per: 0.2 }, { per: 0.25 }, { per: 0.3 }],
   verzahnung:     [{ per: 0.15 }, { per: 0.25 }, { per: 0.4 }, { per: 0.6 }], // niedrig angesetzt: der Ertrag wächst quadratisch mit der Clustergröße
   // Lawine — der Payoff
-  abbruchkante:   [{ t2: 1.6, t3: 2.6, t4: 3.8 }, { t2: 1.8, t3: 3, t4: 4.4 }, { t2: 2.1, t3: 3.6, t4: 5.2 }, { t2: 2.5, t3: 4.4, t4: 6.4 }], // §5.18: vierte Zahl für die vierte Schwelle
+  /* §5.31: die Abbruchkante ist der SAMMEL-Skill geworden. Sie hebt die Berst-Schwelle, statt die Stufenwucht ein
+     wenig anzuheben — das alte +7/+18/+19 % war gegen eine Leiter, die bis ×9,7 reicht, ein Nebengeräusch (gemessen
+     +9 % mono / +15 % Paar / −3 % Tripel). Wer hält, trifft die Sprosse, die sein Einkommen hergibt. */
+  abbruchkante:   [{ at: 18 }, { at: 24 }, { at: 30 }, { at: 38 }],
   // §5.23 (Owner): Eisbeben ersetzt den Kettenbruch auf SK_ICE_11. Der Kettenbruch fasste fremde Gletscher an und
   // war damit nicht zu retten (§5.22, zwei gemessene Fehlversuche); das Eisbeben liegt ganz auf dem eigenen Bruch.
   // Die Leiter steht doppelt so hoch wie entworfen (3/4/6/9): mit 3 % gemessen tot (Lift 0,97, +1 %), weil der Überschuss
@@ -265,7 +276,7 @@ export const SKILL_DEFS = {
   //      "ice" → activeArchetypes "ice" aktiviert den Gletscher-Block; PICK_SKILL seedet state.glacierRoles aus den `role`s.
   // Linie 1 — Firn (Masse-Motor)
   SK_ICE_01: { id: "SK_ICE_01", name: "Anfrieren", archetype: "ice", keywords: ["glacier"], role: "G_ANFRIEREN", tiers: EIS.anfrieren,
-    ...tiered(EIS.anfrieren, (r) => `Ein Gletscher-Sieg gibt +${de(r.mass)} Masse extra${r.form ? `, in einer Formation zusätzlich +${de(r.form)}` : ""}.`) },
+    ...tiered(EIS.anfrieren, (r) => `Ein Gletscher-Sieg gibt +${pct(r.pct)} % seiner Masse extra${r.form ? ", in einer Formation doppelt" : ""}.`) },
   SK_ICE_02: { id: "SK_ICE_02", name: "Schneetreiben", archetype: "ice", keywords: ["glacier", "freeze"], role: "G_SCHNEETREIBEN", tiers: EIS.schneetreiben,
     ...tiered(EIS.schneetreiben, (r) => `Gewinnt ein Gletscher, sät er +${de(r.seed)} Schnee in die Boden-Reserve ${r.fields === 1 ? "eines angrenzenden offenen Felds" : `von ${de1(r.fields)} angrenzenden offenen Feldern`}.`) },
   SK_ICE_03: { id: "SK_ICE_03", name: "Dauerfrost", archetype: "ice", keywords: ["glacier", "freeze"], role: "G_DAUERFROST", tiers: EIS.dauerfrost,
@@ -275,7 +286,7 @@ export const SKILL_DEFS = {
   // Linie 2 — Eisschild (Cluster/Dichte). (§5.2: Verschmelzen SK_ICE_05 gestrichen — binär, im Spiel unsichtbar, und
   // dieselbe Achse wie Packeis/Verzahnung; in groß ist es das Legendäre Ewiges Schild.)
   SK_ICE_06: { id: "SK_ICE_06", name: "Packeis", archetype: "ice", keywords: ["glacier"], role: "G_PACKEIS", tiers: EIS.packeis,
-    ...tiered(EIS.packeis, (r) => `Jeden Durchlauf gewinnt ein Gletscher +${de(r.per)} Masse je Gletscher-Nachbar.`) },
+    ...tiered(EIS.packeis, (r) => `Jeden Durchlauf gewinnt ein Gletscher +${de(r.per)} Masse je angrenzendem offenen Feld.`) },
   SK_ICE_07: { id: "SK_ICE_07", name: "Eisbrücke", archetype: "ice", keywords: ["glacier"], role: "G_EISBRUECKE", tiers: EIS.eisbruecke,
     ...tiered(EIS.eisbruecke, (r) => `Zählt auch die vier Diagonalen als angrenzend: zersplitterte Felder werden zu einem Cluster. Für Kaskade und Kollision zählt ein diagonaler Gletscher zu ${pct(r.weight)} %.`) },
   SK_ICE_08: { id: "SK_ICE_08", name: "Eiswall", archetype: "ice", keywords: ["glacier", "formation"], role: "G_EISWALL", tiers: EIS.eiswall,
@@ -284,7 +295,7 @@ export const SKILL_DEFS = {
     ...tiered(EIS.verzahnung, (r) => `Jeden Durchlauf gewinnt jeder Gletscher +${de(r.per)} Masse je Gletscher im verbundenen Cluster.`) },
   // Linie 3 — Lawine (Brechen/Kaskade)
   SK_ICE_10: { id: "SK_ICE_10", name: "Abbruchkante", archetype: "ice", keywords: ["glacier"], role: "G_ABBRUCHKANTE", tiers: EIS.abbruchkante,
-    ...tiered(EIS.abbruchkante, (r) => `Höhere Masse-Schwellen bersten steiler: Wucht ×${de(r.t2)} statt ×${de(G_TIER_MULT[2])} an der 2. Schwelle, ×${de(r.t3)} statt ×${de(G_TIER_MULT[3])} an der 3., ×${de(r.t4)} statt ×${de(G_TIER_MULT[4])} an der 4.`) },
+    ...tiered(EIS.abbruchkante, (r) => `Deine Gletscher bersten erst ab ${de(r.at)} Masse statt ab ${de(G_BURST_AT)} — sie sammeln länger und treffen dafür eine höhere Schwelle.`) },
   SK_ICE_11: { id: "SK_ICE_11", name: "Eisbeben", archetype: "ice", keywords: ["glacier"], role: "G_EISBEBEN", tiers: EIS.eisbeben,
     ...tiered(EIS.eisbeben, (r) => `Bricht ein Gletscher über der Berst-Schwelle, bebt das Eis nach: je Punkt Masse darüber zählt der Bruch +${pct(r.per)} % zusätzlich.${r.sturz ? " Das Nachbeben zählt für den Gletschersturz als eigener Bruch." : ""}`) },
   // (§5.2: Zermalmen SK_ICE_12 gestrichen — dieselbe Achse wie die Kaskade, beide zahlen für Gletscher-Nachbarn.)

@@ -116,7 +116,7 @@ export default {
 
   /* ---- ❄️ Ice ---- */
   "ability.SK_ICE_01.name": "Freeze-On",
-  "ability.SK_ICE_01.desc": `A glacier win gives +1 extra mass, +4 more inside a formation.`,
+  "ability.SK_ICE_01.desc": `A glacier win gives +10 % of its mass as extra mass, doubled inside a formation.`,
   "ability.SK_ICE_02.name": "Snowdrift",
   "ability.SK_ICE_02.desc": `When a glacier wins, it seeds +2 snow into the ground reserve of one of the 4 adjacent open cells, keeping its own mass.`,
   "ability.SK_ICE_03.name": "Permafrost",
@@ -124,7 +124,7 @@ export default {
   "ability.SK_ICE_04.name": "Compaction",
   "ability.SK_ICE_04.desc": `A glacier gains +0.25 mass per point of combat value above its base value. The value is played out as normal; value that itself comes from mass does not count.`,
   "ability.SK_ICE_06.name": "Pack Ice",
-  "ability.SK_ICE_06.desc": `Every cycle, a glacier gains +0.5 mass per glacier neighbour.`,
+  "ability.SK_ICE_06.desc": `Every cycle, a glacier gains +0.5 mass per adjacent open cell.`,
   "ability.SK_ICE_07.name": "Ice Bridge",
   "ability.SK_ICE_07.desc": `Counts the four diagonals as adjacent too: scattered cells become one cluster, for bursts, collisions and cluster size.`,
   "ability.SK_ICE_08.name": "Ice Wall",
@@ -132,7 +132,7 @@ export default {
   "ability.SK_ICE_09.name": "Interlock",
   "ability.SK_ICE_09.desc": `Every cycle, each glacier gains +0.15 mass per glacier in the connected cluster.`,
   "ability.SK_ICE_10.name": "Calving Edge",
-  "ability.SK_ICE_10.desc": `Higher mass thresholds burst more steeply: force ×1.6 instead of ×1.5 at the 2nd threshold, ×2.6 instead of ×2.2 at the 3rd, ×3.8 instead of ×3.2 at the 4th.`,
+  "ability.SK_ICE_10.desc": `Your glaciers only burst from 18 mass instead of 12 — they gather longer and hit a higher threshold for it.`,
   "ability.SK_ICE_11.name": "Icequake",
   "ability.SK_ICE_11.desc": `When a glacier bursts above the burst threshold, the ice quakes on: every point of mass above it makes the burst count +6% more.`,
   "ability.SK_ICE_13.name": "Glacier Tongue",

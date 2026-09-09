@@ -2,8 +2,8 @@ import { describe, it, expect } from "vitest";
 import { resolveTrick } from "../src/game/engine.js";
 import { initialState } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
-import { precomputeGlacier, ROLES, TIER_MULT } from "../src/game/glacier.js";
-import { iceSnapshotOpts } from "../src/game/factions/ice.js";
+import { precomputeGlacier, ROLES, BURST_AT } from "../src/game/glacier.js";
+import { iceSnapshotOpts, iceTuning } from "../src/game/factions/ice.js";
 import { EIS_TIERS as EIS } from "../src/game/skills.js"; // §5.3: die Zahlen stehen in der Stufenleiter (Normal = Zeile 0)
 
 
@@ -27,11 +27,19 @@ describe("iceSnapshotOpts — Rollen und Stufe → Snapshot-opts", () => {
     expect(iceSnapshotOpts([ROLES.EISBEBEN]).eisbebenPer).toBe(EIS.eisbeben[0].per);
     const all = iceSnapshotOpts([ROLES.EISBEBEN, ROLES.ABBRUCHKANTE]);
     expect(all).toHaveProperty("eisbebenPer");
-    expect(all).toHaveProperty("tierMult");
+    expect(all).toHaveProperty("burstAt");
   });
-  // §5.18: Rissbildung ist gestrichen, mit ihr die einzige Quelle für `burstAt` — gebrochen wird immer bei BURST_AT.
-  it("keine Rolle senkt mehr die Berst-Schwelle", () => {
-    for (const role of Object.values(ROLES)) expect(iceSnapshotOpts([role])).not.toHaveProperty("burstAt");
+  /* §5.31: die Abbruchkante ist die EINZIGE Quelle für `burstAt` — und sie HEBT die Schwelle (sammeln), sie senkt sie
+     nie. §5.18 hatte mit der Rissbildung die letzte senkende Quelle gestrichen; das muss so bleiben, sonst bricht ein
+     Gletscher früher als sein Text sagt. */
+  it("nur die Abbruchkante setzt die Berst-Schwelle — und sie hebt sie", () => {
+    for (const role of Object.values(ROLES)) {
+      const opts = iceSnapshotOpts([role]);
+      if (role === ROLES.ABBRUCHKANTE) expect(opts.burstAt).toBeGreaterThan(BURST_AT);
+      else expect(opts).not.toHaveProperty("burstAt");
+    }
+    // und jede Stufe hebt weiter als die davor
+    for (let t = 1; t < EIS.abbruchkante.length; t++) expect(EIS.abbruchkante[t].at).toBeGreaterThan(EIS.abbruchkante[t - 1].at);
   });
 });
 
@@ -69,30 +77,31 @@ describe("Gletscherzunge — Masse wird Kampfwert", () => {
   });
 });
 
-describe("Abbruchkante — steilere Stufen", () => {
-  it("höhere Stufe zahlt mit Abbruchkante mehr als ohne", () => {
-    const glacierLocked = falses(); glacierLocked[0] = true;
-    const glacierMass = zeros(); glacierMass[0] = 12; // Stufe 3
-    const base = resolveTrick(scen({ glacierLocked, glacierMass }), noCrit);
-    const abb = resolveTrick(scen({ glacierLocked, glacierMass, glacierRoles: [ROLES.ABBRUCHKANTE] }), noCrit);
-    expect(abb.lastTrick.breakdown.glacierDirect).toBeGreaterThan(base.lastTrick.breakdown.glacierDirect);
-  });
-});
+/* §5.31: die Abbruchkante hebt die BERST-SCHWELLE, statt die Stufenwucht ein wenig anzuheben. Der Handel ist:
+   seltener bersten, dafür auf einer höheren Sprosse. Die drei Wächter halten beide Seiten des Handels fest. */
+describe("Abbruchkante — der Gletscher sammelt", () => {
+  const at0 = EIS.abbruchkante[0].at;
 
-describe("Abbruchkante — die vierte Schwelle", () => {
-  // §5.18: die Leiter hat eine vierte Zeile bekommt, weil es eine vierte Schwelle gibt. Der Wächter hält fest, dass
-  // die Rolle sie auch WEITERREICHT — eine Tabelle mit t4, die im Snapshot nicht ankommt, wäre stumm.
-  it("reicht auch die Wucht der vierten Schwelle in den Snapshot", () => {
-    const { tierMult } = iceSnapshotOpts([ROLES.ABBRUCHKANTE]);
-    /* §5.29: die Leiter reicht über die vierte Sprosse hinaus. Die Rolle MUSS die ganze Länge abdecken — eine
-       kürzere Tabelle liefert `undefined` in den Bruch, sobald ein Gletscher die neuen Sprossen erreicht. */
-    expect(tierMult).toHaveLength(TIER_MULT.length);
-    expect(tierMult.every((v) => Number.isFinite(v))).toBe(true);
-    expect(tierMult[4]).toBe(EIS.abbruchkante[0].t4);
-    // Die Sprossen darüber erben denselben relativen Zuschlag wie die vierte.
-    expect(tierMult[5] / TIER_MULT[5]).toBeCloseTo(EIS.abbruchkante[0].t4 / TIER_MULT[4], 6);
-    const m = zeros(); m[0] = 18;
-    const { breaks } = precomputeGlacier(m, new Set([0]), iceSnapshotOpts([ROLES.ABBRUCHKANTE]));
-    expect(breaks[0].tier).toBe(4);
+  it("hält, wo er ohne sie schon bräche", () => {
+    const m = zeros(); m[0] = BURST_AT;                 // genau an der normalen Schwelle
+    expect(precomputeGlacier(m, new Set([0]), {}).breaks).toHaveLength(1);
+    expect(precomputeGlacier(m, new Set([0]), iceSnapshotOpts([ROLES.ABBRUCHKANTE])).breaks).toHaveLength(0);
+  });
+
+  it("birst an der eigenen Schwelle — und zahlt dort mehr als ein normaler Bruch", () => {
+    const m = zeros(); m[0] = at0;
+    const abb = precomputeGlacier(m, new Set([0]), iceSnapshotOpts([ROLES.ABBRUCHKANTE]));
+    const mNorm = zeros(); mNorm[0] = BURST_AT;
+    const norm = precomputeGlacier(mNorm, new Set([0]), {});
+    expect(abb.breaks).toHaveLength(1);
+    expect(abb.payout[0]).toBeGreaterThan(norm.payout[0]);
+    expect(abb.breaks[0].tier).toBeGreaterThan(norm.breaks[0].tier); // die höhere Sprosse ist der Gegenwert
+  });
+
+  it("die Stufe des Skills verschiebt die Schwelle weiter nach oben", () => {
+    const hoch = iceSnapshotOpts([ROLES.ABBRUCHKANTE], iceTuning([ROLES.ABBRUCHKANTE], { [ROLES.ABBRUCHKANTE]: 3 }));
+    expect(hoch.burstAt).toBe(EIS.abbruchkante[3].at);
+    const m = zeros(); m[0] = at0;                      // reicht für Normal, nicht für Episch
+    expect(precomputeGlacier(m, new Set([0]), hoch).breaks).toHaveLength(0);
   });
 });

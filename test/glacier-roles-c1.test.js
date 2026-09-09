@@ -42,16 +42,27 @@ describe("Nachbarschaft & Cluster", () => {
   });
 });
 
-describe("Packeis — Dichte-Bonus je Nachbar", () => {
-  it("mehr Gletscher-Nachbarn → mehr Masse", () => {
-    const out = packeisTick(zeros(), lockAt(0, 1), neighbors4, PACKEIS_PER_NEIGHBOR);
-    expect(out[0]).toBe(PACKEIS_PER_NEIGHBOR);   // 1 Nachbar
+/* §5.31 (Owner): Packeis hat die Seite gewechselt — es zählt die OFFENEN Nachbarn, nicht die gefrorenen. Es war der
+   reinste Mono-Skill der Fraktion (+24 % mono, −8 %/−8 % im Mix); jetzt ist es die zweite Masse-Quelle eines dünn
+   gebauten Eis-Anteils. Die Wächter halten die Umkehr fest, damit sie nicht versehentlich zurückkippt. */
+describe("Packeis — Masse je offenem Nachbarfeld", () => {
+  it("WENIGER Gletscher-Nachbarn → mehr Masse", () => {
+    const allein = packeisTick(zeros(), lockAt(0), neighbors4, PACKEIS_PER_NEIGHBOR);
+    const zuZweit = packeisTick(zeros(), lockAt(0, 1), neighbors4, PACKEIS_PER_NEIGHBOR);
+    expect(allein[0]).toBe(2 * PACKEIS_PER_NEIGHBOR);    // Ecke pos0: zwei Nachbarn, beide offen
+    expect(zuZweit[0]).toBe(PACKEIS_PER_NEIGHBOR);       // einer davon ist jetzt Eis → nur noch einer zahlt
+    expect(zuZweit[0]).toBeLessThan(allein[0]);
   });
-  it("Eisbrücke zählt Diagonalen (pos0 & pos(1,1))", () => {
-    const ortho = packeisTick(zeros(), lockAt(0, posOf(1, 1)), neighbors4, PACKEIS_PER_NEIGHBOR);
-    const bridge = packeisTick(zeros(), lockAt(0, posOf(1, 1)), neighbors8, PACKEIS_PER_NEIGHBOR);
-    expect(ortho[0]).toBe(0);                     // diagonal zählt ohne Eisbrücke nicht
-    expect(bridge[0]).toBe(PACKEIS_PER_NEIGHBOR); // mit Eisbrücke schon
+  it("voll umschlossen zahlt gar nichts — die exakte Umkehrung von früher", () => {
+    const mid = posOf(1, 1);
+    const out = packeisTick(zeros(), lockAt(mid, posOf(0, 1), posOf(2, 1), posOf(1, 0), posOf(1, 2)), neighbors4, PACKEIS_PER_NEIGHBOR);
+    expect(out[mid]).toBe(0);
+  });
+  it("Eisbrücke zählt auch die Diagonalen als offen (Ecke pos0: 2 → 3)", () => {
+    const ortho = packeisTick(zeros(), lockAt(0), neighbors4, PACKEIS_PER_NEIGHBOR);
+    const bridge = packeisTick(zeros(), lockAt(0), neighbors8, PACKEIS_PER_NEIGHBOR);
+    expect(ortho[0]).toBe(2 * PACKEIS_PER_NEIGHBOR);
+    expect(bridge[0]).toBe(3 * PACKEIS_PER_NEIGHBOR);
   });
   it("Engine: Packeis lädt am Durchlauf-Ende zusätzlich zu Ewiger Frost", () => {
     /* §8: die absolute Masse enthält jetzt auch die Boden-Abgabe (Zug). Gemessen wird deshalb der UNTERSCHIED

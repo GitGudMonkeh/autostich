@@ -25,12 +25,22 @@ const scen = (over = {}) => ({
 const runCycle = (s0) => { let s = s0; for (let i = 0; i < 40; i++) s = resolveTrick(s, noCrit); return s; };
 
 describe("Anfrieren — Sieg → +Masse extra", () => {
-  it("Sieg eines Gletschers addiert die Anfrieren-Masse über die Baseline", () => {
+  /* §5.31: ANTEIL statt flacher Zahl — Bezugsgröße ist die Masse einschließlich dieses Siegs. Der Wächter hält
+     beides fest: den Anteil auf einem gewachsenen Gletscher und die Untergrenze auf einem frisch gefrorenen Feld
+     (dort darf der Skill nicht exakt null geben, sonst ist er beim ersten Pick stumm). */
+  it("Sieg eines Gletschers addiert einen Anteil seiner Masse über die Baseline", () => {
     const glacierLocked = falses(); glacierLocked[0] = true;
-    const base = resolveTrick(scen({ glacierLocked }), noCrit);                                  // pos 0, Sieg
+    const glacierMass = zeros(); glacierMass[0] = 10;
+    const base = resolveTrick(scen({ glacierLocked, glacierMass }), noCrit);                     // pos 0, Sieg
+    const anf = resolveTrick(scen({ glacierLocked, glacierMass, glacierRoles: [ROLES.ANFRIEREN] }), noCrit);
+    expect(base.glacierMass[0]).toBe(10 + WIN_MASS);                                             // Baseline: nur +1
+    expect(anf.glacierMass[0]).toBeCloseTo(10 + WIN_MASS + (10 + WIN_MASS) * EIS.anfrieren[NORMAL].pct, 6);
+  });
+
+  it("auch auf einem leeren Gletscher gibt er etwas — der Sieg zählt zur Bezugsgröße", () => {
+    const glacierLocked = falses(); glacierLocked[0] = true;
     const anf = resolveTrick(scen({ glacierLocked, glacierRoles: [ROLES.ANFRIEREN] }), noCrit);
-    expect(base.glacierMass[0]).toBe(WIN_MASS);                                                  // Baseline: nur +1
-    expect(anf.glacierMass[0]).toBe(WIN_MASS + EIS.anfrieren[NORMAL].mass);                       // +Anfrieren (Normal)
+    expect(anf.glacierMass[0]).toBeGreaterThan(WIN_MASS);
   });
   it("der Formations-Zuschlag hängt an der Stufe: Normal hat ihn nicht, Episch schon", () => {
     // pos 0 = erste Wiederholungskarte (factor 1, zählt noch nicht als in-Formation); ab pos 1 greift die Formation.
@@ -41,9 +51,10 @@ describe("Anfrieren — Sieg → +Masse extra", () => {
       return resolveTrick(s, noCrit); // pos 1 — Gletscher gewinnt IN Formation
     };
     const normal = run(NORMAL), episch = run(3);
+    const anteil = (pct, mal) => WIN_MASS + WIN_MASS * pct * mal;                                  // Gletscher startet leer
     expect(normal.lastTrick.formationMult).toBeGreaterThan(1);
-    expect(normal.glacierMass[1]).toBe(WIN_MASS + EIS.anfrieren[NORMAL].mass);                     // Normal: kein Zuschlag
-    expect(episch.glacierMass[1]).toBe(WIN_MASS + EIS.anfrieren[3].mass + EIS.anfrieren[3].form);  // Episch: Zuschlag obendrauf
+    expect(normal.glacierMass[1]).toBeCloseTo(anteil(EIS.anfrieren[NORMAL].pct, 1), 6);            // Normal: einfach
+    expect(episch.glacierMass[1]).toBeCloseTo(anteil(EIS.anfrieren[3].pct, 2), 6);                 // Episch: doppelt
   });
 });
 

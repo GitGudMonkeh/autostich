@@ -7401,6 +7401,42 @@ Nichts davon ist umgesetzt — die Design-Entscheidungen stehen beim Owner.
 
 ---
 
+### 5.31 Vier Eis-Skills auf die Masse-Achse (2026-09-09)
+
+**Owner:** „passt, bau aber vllt noch einen für duo oder Triplett um."
+
+Aus §5.30 folgten vier Reparaturfälle. Drei davon sind Mechanik-Umbauten, einer ist ein Seitenwechsel.
+
+| Skill | vorher | jetzt | warum |
+| --- | --- | --- | --- |
+| **Abbruchkante** | Stufenwucht 1,6/2,6/3,8 statt 1,5/2,2/3,2 | **Berst-Schwelle 18/24/30/38** statt 12 | +7/+18/+19 % gegen eine Leiter bis ×9,7 war ein Nebengeräusch. Jetzt ist sie der Sammel-Skill: seltener bersten, dafür auf der Sprosse, die das eigene Einkommen hergibt. |
+| **Anfrieren** | flach +1…4 Masse je Sieg | **+10/15/20/28 %** der Masse je Sieg | Der Boden liefert seit §5.29 ≈ 20 Masse je Durchlauf — die flache Zahl war darin nicht mehr zu spüren. Bezugsgröße ist die Masse *einschließlich* dieses Siegs, sonst gäbe der Skill auf einem frisch gefrorenen Feld exakt null. |
+| **Verdichtung** | 0,25/0,4/0,6/1 je Punkt Kampfwert | **0,6/0,9/1,3/2** | 97 % Haltequote bei −10 % Wirkung. Mechanik unverändert, nur die Rate. |
+| **Packeis** | +Masse je **Gletscher**-Nachbar | +Masse je **offenem** Nachbarfeld | Der reinste Mono-Skill der Fraktion (+24 % mono, −8 %/−8 % im Mix). Als Kante zwischen Eis und offenem Wasser trägt er den Namen weiter. |
+
+**Nicht angefasst, mit Grund:** Gletscherzunge und Sprödbruch *lesen* die Masse (`floor(Masse / per)` bzw.
+`Masse × crit`) und wachsen mit dem neuen Motor automatisch mit — §5.30 hatte ihre Stufenleitern zum Nachziehen
+vorgeschlagen, der Code sagt, dass das nicht nötig ist.
+
+**Die drei Dichte-Skills bleiben** (Verzahnung, Eisbrücke, Gletschersturz) — sie sind der Grund, mono zu spielen,
+und das darf es geben (Owner: „nicht jeder skill muss in jeder Kombi gut sein").
+
+**Ein Fund beim Bauen:** die Abbruchkante war die einzige Stelle, die `tierMult` überschrieb. Der Wächter hält jetzt
+fest, dass sie die einzige `burstAt`-Quelle ist **und sie nur hebt** — §5.18 hatte mit der Rissbildung die letzte
+senkende Quelle gestrichen, und das muss so bleiben, sonst bräche ein Gletscher früher als sein Text sagt.
+
+#### Build-Ebene: unverändert, und das ist erklärbar
+
+Cross über 400 Läufe je Build: Eis-Ansteckung **0,50 / 0,56 / 0,60 / 0,67×** gegen 0,49 / 0,55 / 0,59 / 0,67× vor
+der Runde. Eis mono 7,14 → 6,78M, Bl+Ei 7,16 → 6,54M.
+
+Das ist kein Widerspruch, sondern die Messgrenze: die Fraktions-Policy im Cross-Lauf setzt ihre Gletscher **immer**
+auf das 3×3-Cluster — auch im Tripel mit vier Picks. Für einen so gebauten Build ist Packeis' Seitenwechsel ein
+reiner Nerf, und die übrigen drei Änderungen betreffen Skills, die der Zufallsspieler ohnehin selten hält. Was die
+Runde wirklich bewirkt, steht in der Welten-Messung mit dem gierigen Spieler (unten).
+
+---
+
 ## 8. Bestandsaufnahme über alle vier Fraktionen (2026-09-09)
 
 **Owner:** „wir haben jetzt reworks für Blitz, pflanze, Eis auf exp gebracht. diese sind noch nicht fertig aber bevor
@@ -7660,3 +7696,4 @@ leichtesten haben.
 | 2026-09-09 | Eis-System, erste Etappe (§5.28, Owner: „wie reparieren wir das System?" → „sonde und dann c"). Gebaut: `FIRN_GROUND` 0,35 (jedes offene Feld friert Reserve an — das Brett stellt 40−G Quellen und hängt damit fast nicht an der Pick-Zahl), der ZUG verteilt anteilig nach 1/Abstand statt „der Nächste nimmt alles" (im 3×3-Cluster bekamen sechs von zwölf Gletschern gar nichts), die Reserve unter einem Gletscher fließt in ihn selbst, `BURST_SCALE` 30 → 24. Gemessen und **Ziel verfehlt**: das Boden-Einkommen hebt zwölf Gletscher (×1,45) stärker als drei (×1,26), weil die Stufenleiter bei 18 endet — ein Drei-Gletscher-Build sitzt mit Ø 17,6 Masse schon an der obersten Sprosse, ein Zwölfer mit 11,3 unter der Berst-Schwelle. Der Deckel auf der Restmasse ist auch nicht der Hebel (Anteil 3÷12: 0,27 → 0,34 über KEEP 6/18/40). Endstand: Eis mono +2 %, Fe+Ei +10 %, Fe+Bl+Ei −5 % — Mono steht, die Ansteckung bleibt. Korrigiert meine Diagnose aus §8: die Dichte-Multiplikatoren bringen nur ×2,4, der Rest ist die schiere Zahl der Brüche. Offen: Leiter über 18 öffnen und/oder ein Trigger, der Ansammeln erlaubt (Owner-Idee); Träger-Kandidat ist die Abbruchkante. Neue Sonde `sim/probes/eis-kurve.mjs`, `sim/survey.js --only cross|welten`. |
 | 2026-09-09 | Eis-System, zweite Etappe (§5.29, Owner: „1." — die Stufenleiter öffnen). `THRESHOLDS` 4/8/12/18 → 4/8/12/18/27/40/60, `TIER_MULT` bis 9,7 (Rhythmus der alten Leiter: Schwellen ×1,5, Wucht ×1,45), `FIRN_GROUND` 0,35 → 0,6, `BURST_SCALE` 24 → 20. Erst damit zahlt sich Masse für WENIGE Gletscher aus: Anteil eines Drei-Gletscher-Builds am Zwölfer (reiner Gletscher-Score) 0,27 → 0,38 (Leiter allein) → 0,59 (mit Boden 0,6). Eis-Ansteckung auf Build-Ebene 0,43/0,50/0,52/0,63× → **0,49/0,55/0,59/0,67×**; Eis mono 6,73 → 7,14M (+6 %) und damit nicht mehr die schwächste Fraktion. Nebenfund beim Bauen: die Abbruchkante überschrieb die Stufen mit einem fünfstelligen Array und hätte `undefined` in den Bruch gereicht — die neuen Sprossen erben jetzt denselben relativen Zuschlag, ein Wächter hält die Länge. Balance-Guard Median-Band neu zentriert (3,79M über Seeds 1–40, 3,98M über 1–200), Mean-Band unverändert. Offen: die Skill-Seite — ein Misch-Build hat 4,3 Eis-Slots, die so viel wert sein müssen wie 4,3 Feuer-Slots. |
 | 2026-09-09 | Eis-Skills auf dem neuen Motor gemessen (§5.30, Owner: „schauen wir uns alle skills an die davon profitieren müssen"). Sieben Eis-Welten, 44 660 Läufe, 40 min. Kernbefunde: **kein Eis-Skill ist mehr in allen sieben Welten schwach** (in §8 waren es Frostbund und Anfrieren); in den Paaren hält der gierige Spieler deutlich mehr Eis (Ei+Pf 3,9 → 5,7, Bl+Ei+Pf 1,7 → 3,0). Die Dichte-Achse verhält sich wie vorhergesagt — Packeis +24 % mono → −8/−8 im Mix, Verzahnung +48 → +1/−2, Eisbrücke +17 → −14/−0, Gletschersturz +43 → +2/−5: vier Skills, die nur mono zahlen. Die Masse-Achse trägt NICHT von selbst: Abbruchkante +9/+15/−3, Sprödbruch +8/+14/−0, Verdichtung −10/+2/−2, Anfrieren −7/−10/+17. Diagnose: Anfrieren und Verdichtung geben eine flache Masse-Zahl und sind vom eigenen Boden-Einkommen (≈ 20 Masse je Durchlauf) entwertet; die Abbruchkante hebt die Stufen 2–4 um +7/+18/+19 % gegen eine Leiter, die bis 9,7 reicht. Dauerfrost ist der erste Eis-Skill, der im Mix BESSER ist als mono (+3 → +27 %) — das Vorbild für die Masse-Achse. Nichts umgesetzt. Nebenbei den Treiber repariert: mit `--only welten` lief das JSON-Schreiben auf die leere Cross-Map. |
+| 2026-09-09 | Vier Eis-Skills auf die Masse-Achse (§5.31, Owner: „passt, bau aber vllt noch einen für duo oder Triplett um"). **Abbruchkante** hebt jetzt die Berst-Schwelle (18/24/30/38 statt 12) statt die Stufenwucht um +7/+18/+19 % — sie ist der Sammel-Skill geworden: seltener bersten, dafür auf der Sprosse, die das eigene Einkommen hergibt. **Anfrieren** gibt +10/15/20/28 % der Masse je Sieg statt flach +1…4 (Bezugsgröße einschließlich dieses Siegs, sonst gäbe der Skill auf einem frisch gefrorenen Feld exakt null). **Verdichtung** 0,25–1 → 0,6–2 je Punkt Kampfwert (97 % Haltequote bei −10 % Wirkung). **Packeis** zählt die OFFENEN Nachbarn statt der gefrorenen — der eine Seitenwechsel, den der Owner bestellt hat; es war der reinste Mono-Skill der Fraktion (+24 % mono, −8 %/−8 % im Mix). Nicht angefasst mit Grund: Gletscherzunge und Sprödbruch lesen die Masse direkt und wachsen mit dem neuen Motor von selbst mit — §5.30 hatte ihre Stufenleitern zum Nachziehen vorgeschlagen, der Code sagt, dass das nicht nötig ist. Die drei übrigen Dichte-Skills (Verzahnung, Eisbrücke, Gletschersturz) bleiben: sie sind der Grund, mono zu spielen. Wächter-Fund: die Abbruchkante war die einzige `tierMult`-Quelle und ist jetzt die einzige `burstAt`-Quelle — der Wächter hält fest, dass sie die Schwelle nur HEBT, nie senkt. Build-Ebene unverändert (Ansteckung 0,50/0,56/0,60/0,67×), was eine Messgrenze ist: die Fraktions-Policy im Cross-Lauf baut immer das 3×3-Cluster, dort ist Packeis' Wechsel ein reiner Nerf. Die Welten-Messung mit dem gierigen Spieler steht noch aus. |

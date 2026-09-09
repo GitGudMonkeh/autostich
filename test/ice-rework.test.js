@@ -68,8 +68,9 @@ describe("Eis-Stufen — die Tabelle", () => {
 describe("Eis-Stufen — die Stufe erreicht die Mechanik", () => {
   it("Anfrieren: Episch friert mehr Masse an als Normal", () => {
     const gl = lockAt(0);
-    const n = resolveTrick(scen({ glacierLocked: gl, ...at(ROLES.ANFRIEREN, 0) }), noCrit);
-    const e = resolveTrick(scen({ glacierLocked: gl, ...at(ROLES.ANFRIEREN, 3) }), noCrit);
+    const mass = new Array(40).fill(0); mass[0] = 10;   // §5.31: der Skill zahlt einen ANTEIL — ohne Masse ist der Abstand winzig
+    const n = resolveTrick(scen({ glacierLocked: gl, glacierMass: mass, ...at(ROLES.ANFRIEREN, 0) }), noCrit);
+    const e = resolveTrick(scen({ glacierLocked: gl, glacierMass: mass, ...at(ROLES.ANFRIEREN, 3) }), noCrit);
     expect(e.glacierMass[0]).toBeGreaterThan(n.glacierMass[0]);
   });
 
@@ -161,7 +162,7 @@ describe("Eis-Stufen — die Stufe erreicht die Mechanik", () => {
     const t = (role, tier) => iceTuning([role], { [role]: tier });
     expect(t(ROLES.VERDICHTUNG, 3).verdichtungPer).toBeGreaterThan(t(ROLES.VERDICHTUNG, 0).verdichtungPer);
     expect(t(ROLES.DAUERFROST, 3).dauerfrostFar).toBeGreaterThan(t(ROLES.DAUERFROST, 0).dauerfrostFar);
-    expect(t(ROLES.ABBRUCHKANTE, 3).abbruchTierMult[3]).toBeGreaterThan(t(ROLES.ABBRUCHKANTE, 0).abbruchTierMult[3]);
+    expect(t(ROLES.ABBRUCHKANTE, 3).abbruchAt).toBeGreaterThan(t(ROLES.ABBRUCHKANTE, 0).abbruchAt); // §5.31: Schwelle statt Wucht
     expect(t(ROLES.GLETSCHERSTURZ, 3).gletschersturzPer).toBeGreaterThan(t(ROLES.GLETSCHERSTURZ, 0).gletschersturzPer);
   });
 });

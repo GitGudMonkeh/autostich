@@ -121,7 +121,7 @@ export default {
 
   /* ---- ❄️ Hielo ---- */
   "ability.SK_ICE_01.name": "Congelación",
-  "ability.SK_ICE_01.desc": `Una victoria de glaciar da +1 de masa extra, y +4 más dentro de una formación.`,
+  "ability.SK_ICE_01.desc": `Una victoria de glaciar da un +10 % de su masa como masa extra, el doble dentro de una formación.`,
   "ability.SK_ICE_02.name": "Ventisca",
   "ability.SK_ICE_02.desc": `Cuando un glaciar gana, siembra +2 de nieve en la reserva del suelo de una de las 4 celdas abiertas contiguas, sin ceder masa propia.`,
   "ability.SK_ICE_03.name": "Permafrost",
@@ -129,7 +129,7 @@ export default {
   "ability.SK_ICE_04.name": "Compactación",
   "ability.SK_ICE_04.desc": `Un glaciar gana +0,25 de masa por cada punto de valor de combate por encima de su valor base. El valor se juega con normalidad; el valor que proviene de la propia masa no cuenta.`,
   "ability.SK_ICE_06.name": "Banquisa",
-  "ability.SK_ICE_06.desc": `En cada ciclo, un glaciar gana +0,5 de masa por cada glaciar vecino.`,
+  "ability.SK_ICE_06.desc": `En cada ciclo, un glaciar gana +0,5 de masa por cada celda abierta contigua.`,
   "ability.SK_ICE_07.name": "Puente de Hielo",
   "ability.SK_ICE_07.desc": `Cuenta también las cuatro diagonales como contiguas: las celdas dispersas se convierten en una sola agrupación, para estallidos, colisiones y tamaño de agrupación.`,
   "ability.SK_ICE_08.name": "Muro de Hielo",
@@ -137,7 +137,7 @@ export default {
   "ability.SK_ICE_09.name": "Engranaje",
   "ability.SK_ICE_09.desc": `En cada ciclo, cada glaciar gana +0,15 de masa por cada glaciar de la agrupación conectada.`,
   "ability.SK_ICE_10.name": "Frente de Desprendimiento",
-  "ability.SK_ICE_10.desc": `Los umbrales de masa más altos estallan con más fuerza: potencia ×1,6 en vez de ×1,5 en el umbral 2, ×2,6 en vez de ×2,2 en el 3, ×3,8 en vez de ×3,2 en el 4.`,
+  "ability.SK_ICE_10.desc": `Tus glaciares solo estallan a partir de 18 de masa en vez de 12 — acumulan más tiempo y a cambio alcanzan un umbral más alto.`,
   "ability.SK_ICE_11.name": "Terremoto de Hielo",
   "ability.SK_ICE_11.desc": `Cuando un glaciar estalla por encima del umbral, el hielo sigue temblando: cada punto de masa por encima hace que el estallido cuente un +6 % más.`,
   "ability.SK_ICE_13.name": "Lengua Glaciar",

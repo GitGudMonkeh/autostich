@@ -334,13 +334,16 @@ export const EISZEIT_FLOOD = envNum("SIM_GLACIER_EISZEIT_FLOOD", 1);
 export const EISZEIT_BURST_PER = envNum("SIM_GLACIER_EISZEIT_BURST", 2);
 export function eiszeitFlood(firn, locked, base = EISZEIT_FLOOD) { return firnGroundTick(firn, locked, base); }
 
-// Packeis (docs §4): am Durchlauf-Ende +Masse je Gletscher-Nachbar — belohnt die Mitte des Feldes.
+/* Packeis (docs §4) — §5.31 (Owner: „bau aber vllt noch einen für duo oder Triplett um"): am Durchlauf-Ende +Masse je
+   OFFENEM Nachbarfeld statt je Gletscher-Nachbar. Er war der reinste Mono-Skill der Fraktion (gemessen +24 % mono,
+   −8 %/−8 % im Mix) — vier Skills sagten „bau dicht", keiner sagte etwas anderes. Als Kante zwischen Eis und offenem
+   Wasser trägt er den Namen weiter, und ein dünn gebauter Eis-Anteil bekommt neben Dauerfrost eine zweite Quelle. */
 export function packeisTick(mass, locked, neighborFn = neighbors4, per = 0) {
   const isG = (p) => (locked instanceof Set ? locked.has(p) : !!(locked && locked[p]));
   const out = Array.isArray(mass) ? mass.slice() : new Array(N_POS).fill(0);
   for (let p = 0; p < N_POS; p++) if (isG(p)) {
-    const gN = neighborFn(p).filter(isG).length;
-    if (gN) out[p] = (out[p] || 0) + per * gN;
+    const oN = neighborFn(p).filter((n) => !isG(n)).length;
+    if (oN) out[p] = (out[p] || 0) + per * oN;
   }
   return out;
 }

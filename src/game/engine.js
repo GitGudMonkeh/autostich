@@ -474,7 +474,12 @@ export function resolveTrick(state, rng) {
     if (glacierActive && glacierLocked[actualPos]) {
       let add = GLACIER_WIN_MASS;
       // Anfrieren: Sieg extra, Formations-Sieg zusätzlich obendrauf.
-      if (glacierRoles.includes(GLACIER_ROLES.ANFRIEREN)) add += ice.anfrierenMass + (hasFormation ? ice.anfrierenForm : 0);
+      /* Anfrieren (§5.31): ein ANTEIL der Masse statt einer flachen Zahl. Die flache Zahl war neben dem Boden-Einkommen
+         (≈ 20 Masse je Durchlauf seit §5.29) nicht mehr zu spüren; der Anteil wächst mit. Bezugsgröße ist die Masse
+         EINSCHLIESSLICH dieses Siegs — sonst gäbe der Skill auf einem frisch gefrorenen Feld exakt null. */
+      if (glacierRoles.includes(GLACIER_ROLES.ANFRIEREN))
+        add += ((newGlacierMass[actualPos] || 0) + GLACIER_WIN_MASS) * ice.anfrierenPct
+          * (hasFormation && ice.anfrierenFormDouble ? 2 : 1);
       newGlacierMass[actualPos] = (newGlacierMass[actualPos] || 0) + add;
       // Schneetreiben (Verwehung): ADDITIV +Schnee in die Boden-RESERVE (firnStack) der Nachbarfelder — der Gletscher
       // behält seine volle Sieg-Masse. Deterministisch, offener Boden, 4-Nb; Episch sät in zwei Felder. #386: Schnee
