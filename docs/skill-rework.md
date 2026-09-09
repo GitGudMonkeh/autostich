@@ -6205,6 +6205,63 @@ Glossar, `de.js`, `loc:export`. Das neue Schlüsselwort braucht einen Glossarein
 **Offen (Owner):** ob die Ranken auf der Gegnerkarte sichtbar sind. Der Brand hat dafür eine Anzeige; ohne sie
 ist der Kreislauf für den Spieler unsichtbar.
 
+#### Setzlingsbeet (SK_PLANT_07) — das Beet ist ein Ort, kein Zeitpunkt
+
+**Owner: „a"** — Mechanik ersetzen, Name und Platz bleiben.
+
+Zwei Befunde, nicht einer. **Die Rolle ist doppelt besetzt:** Setzlingsbeet war laut §6.3 der Kaltstart-Skill;
+seit dem 2026-09-08 hat die Fraktion einen eingebauten Kaltstart, und der ist stärker — er hebt zehn Karten auf
+die Grün-Schwelle, während der Skill acht Karten auf 8–16 von 30 hebt, also keine davon grün macht. **Und der
+Empfänger ist systematisch der falsche:** die niedrigste Karte je Segment ist die, die am seltensten gewinnt.
+Das erklärt, warum er mit −2,40M pur / −8,78M gemischt (§6.21) tiefer liegt als Ranken und Zäher Halm.
+
+> **Dein Beet ist das Segment mit den meisten grünen Karten. Seine Karten wachsen jeden Durchlauf +N.**
+
+Ein Segment ist die Einheit, in der Formationen entstehen (`SEGMENT_SIZE` 5) — die fünf Karten wachsen also als
+Gruppe, die zusammen in Formationen steht und als Mitläufer zählt. Das ist der einzige Ausgang, den Wachstum auf
+einer Nicht-Siegkarte hat. Das Beet zieht dorthin, wo schon grün ist, und koppelt damit an Spalier, Blütenlese
+und die Score-Skills. Der Skill lebt den ganzen Lauf statt nur im Moment des Picks.
+
+**Leiter — Vorschlag, UNGEMESSEN** (Owner: „vllt einen kleinen buff", darum eine Stufe über dem Erstentwurf
+1/2/3/3):
+
+| Normal | Selten | Sehr selten | Episch |
+| --- | --- | --- | --- |
+| +2 | +3 | +4 | +4, auf den zwei grünsten Segmenten |
+
+#### Lichtung (SK_PLANT_12) — bleibt, kleiner Buff
+
+**Owner: „setzlingsbeet und Lichtung ist gut, vllt einen kleinen buff."**
+
+Lichtung ist der einzige Wachstums-Skill, der direkt auf die Siegkarte zahlt und an Formationen hängt — er ist
+mechanisch richtig gebaut und misst deshalb flach statt tot (+0,71M gemischt / −0,00M pur, §6.17; die Zahl ist
+von vor dem Blühgewicht und damit veraltet). Kein Umbau, nur die Leiter.
+
+| | Normal | Selten | Sehr selten | Episch |
+| --- | --- | --- | --- | --- |
+| heute | +1 | +2 | +3 | +3 je Formation an der Siegposition |
+| **Vorschlag** | **+2** | **+3** | **+4** | **+4 je Formation** |
+
+#### Zäher Halm (SK_PLANT_08) — Richtung gesetzt, Episch offen
+
+**Owner: „zäher Halm die limitation von grau aufheben, episch was anderes designen, erst vorlegen."**
+
+Die Beschränkung auf graue Karten fällt: **jede** Karte wächst bei einer Niederlage. Damit ist das heutige
+Episch-Extra („auch grüne Karten wachsen +1") verbraucht und wird ersetzt; die Leiter wird 1/2/3/4 statt
+1/2/3/3. Das Episch-Extra ist noch nicht entschieden — Entwürfe liegen dem Owner vor.
+
+**Zum Auslöser, gegen die naheliegende Sorge:** Niederlage-Bedingungen sind bei Feuer und Blitz zweimal
+gestorben (§7.22, §7.24), weil dort die Siegquote über den Lauf steigt und die Niederlage verschwindet. Die
+Pflanze gibt bewusst keinen Kartenwert (§6.1) und liegt über alle Balance-Runden hinweg unverändert bei
+**53,3 % Siegquote** — fast jeder zweite Stich ist eine Niederlage. Ob die Quote *innerhalb* eines Laufs steigt,
+ist nicht gemessen; der Lauf-Durchschnitt spricht dagegen, dass der Auslöser wegbricht.
+
+#### Wachpunkt für den Schluss des Durchgangs
+
+Die Parität steht bei **1,08× Feuer** (§6.22). Dieser Durchgang bufft mehrere Skills gleichzeitig; die Summe ist
+nicht die Summe der Einzelmessungen. Nach dem Umbau gehört eine Duell-Runde gefahren — **auf Ansage des Owners**,
+nicht nebenbei.
+
 ---
 
 ## Änderungsprotokoll
