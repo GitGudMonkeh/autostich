@@ -2,56 +2,72 @@ import { describe, it, expect } from "vitest";
 import { resolveTrick } from "../src/game/engine.js";
 import { initialState } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
-import { precomputeGlacier, ROLES } from "../src/game/glacier.js";
+import { precomputeGlacier, ROLES, BURST_AT } from "../src/game/glacier.js";
 import { iceSnapshotOpts, iceTuning } from "../src/game/factions/ice.js";
+import { EIS_TIERS as EIS } from "../src/game/skills.js";
 import { N_POS, posOf } from "../src/game/architect.js";
 
-// Eis-Neudesign — Snapshot-Bruch-Mechanik (Kettenbruch/Gletschersturz/Eisbrücke-Kaskade). §5.3: die Zahlen kommen
+// Eis-Neudesign — Snapshot-Bruch-Mechanik (Eisbeben/Gletschersturz/Eisbrücke-Kaskade). §5.3: die Zahlen kommen
 // aus der Stufe; `iceSnapshotOpts(roles)` ohne Stufenkarte liest Normal.
 const zeros = () => new Array(N_POS).fill(0);
 const withMass = (pairs) => { const m = zeros(); for (const [p, v] of pairs) m[p] = v; return m; };
 const set = (...ps) => new Set(ps);
 
-/* §5.21 (Owner): der Kettenbruch reißt die MASSE mit, statt unreife Gletscher zum Bruch zu zwingen. Vorher brach der
-   Nachbar auf Stufe 1 und fiel auf null — gemessen −18 %, weil er damit die Schleife der Fraktion (halten & wachsen,
-   dann gewaltig brechen) selbst unterbrach. Jetzt fließt die Masse in den auslösenden Bruch und wird dort auf einer
-   höheren Schwelle ausgezahlt. */
-describe("Kettenbruch — der Bruch reißt die Masse der Nachbarn mit", () => {
-  it("der Nachbar zahlt nicht selbst — seine Masse landet im auslösenden Bruch", () => {
-    const mass = withMass([[0, 12], [1, 6]]);
+/* §5.23 (Owner): Eisbeben steht auf dem Platz des gestrichenen Kettenbruchs. Der Kettenbruch fasste fremde Gletscher
+   an — erst brachen sie unreif, dann wurden sie leergesaugt — und beides maß schlecht (§5.22), weil dieselben Nachbarn
+   jede Runde genullt wurden und nie reiften. Das Eisbeben rührt keinen Nachbarn an: es belohnt allein die Masse ÜBER
+   der Berst-Schwelle auf dem Stich, der ohnehin auszahlt. */
+describe("Eisbeben — der Bruch bebt nach, je Punkt Masse über der Schwelle", () => {
+  const per = EIS.eisbeben[0].per;
+
+  it("bei genau der Berst-Schwelle gibt es kein Nachbeben", () => {
+    const mass = withMass([[0, BURST_AT]]);
+    const ohne = precomputeGlacier(mass, set(0));
+    const beben = precomputeGlacier(mass, set(0), iceSnapshotOpts([ROLES.EISBEBEN]));
+    expect(beben.payout[0]).toBeCloseTo(ohne.payout[0], 6);
+  });
+
+  it("das Nachbeben wächst linear mit dem Überschuss", () => {
+    const ueber = 6;                                    // 18 = vierte Schwelle
+    const mass = withMass([[0, BURST_AT + ueber]]);
+    const ohne = precomputeGlacier(mass, set(0));
+    const beben = precomputeGlacier(mass, set(0), iceSnapshotOpts([ROLES.EISBEBEN]));
+    expect(beben.payout[0] / ohne.payout[0]).toBeCloseTo(1 + per * ueber, 6);
+  });
+
+  it("die Stufe hebt den Anteil je Punkt", () => {
+    const mass = withMass([[0, BURST_AT + 6]]);
+    const stufe = (t) => precomputeGlacier(mass, set(0),
+      iceSnapshotOpts([ROLES.EISBEBEN], iceTuning([ROLES.EISBEBEN], { [ROLES.EISBEBEN]: t }))).payout[0];
+    expect(stufe(3)).toBeGreaterThan(stufe(0));
+  });
+
+  /* Der Gegensatz zum Kettenbruch, und der Grund für den Umbau: kein fremdes Feld wird angefasst. Der Nachbar bricht
+     weiter selbst, behält seinen eigenen Stich und seinen liegengebliebenen Überschuss. */
+  it("die Nachbarn bleiben unberührt — eigener Bruch, eigene Restmasse", () => {
+    const mass = withMass([[0, BURST_AT + 6], [1, BURST_AT + 2]]);
     const ohne = precomputeGlacier(mass, set(0, 1));
-    const kette = precomputeGlacier(mass, set(0, 1), iceSnapshotOpts([ROLES.KETTENBRUCH]));
-    expect(kette.payout[1]).toBe(0);                        // absorbiert: kein eigener Berst-Score
-    expect(kette.payout[0]).toBeGreaterThan(ohne.payout[0]); // die Masse schlägt beim Auslöser mit
-    expect(kette.resetMass[1]).toBe(0);                      // leergezogen
+    const beben = precomputeGlacier(mass, set(0, 1), iceSnapshotOpts([ROLES.EISBEBEN]));
+    expect(beben.payout[1]).toBeGreaterThan(0);
+    expect(beben.resetMass[1]).toBe(ohne.resetMass[1]);
+    expect(beben.breaks).toHaveLength(ohne.breaks.length);
   });
 
-  /* Die Bedingung, unter der der Owner zugestimmt hat: „ich verliere den Bruch von einem anderen Gletscher, der
-     kompensiert werden muss". Einfrieren, Frostbund und Gletschersturz hängen an der ZAHL der Brüche, nicht an der
-     Masse — ein absorbiertes Feld gilt deshalb weiter als gebrochen. */
-  it("das absorbierte Feld gilt weiter als gebrochen — Einfrieren, Frostbund und Sturz verlieren nichts", () => {
-    const kette = precomputeGlacier(withMass([[0, 12], [1, 6]]), set(0, 1), iceSnapshotOpts([ROLES.KETTENBRUCH]));
-    const nachbar = kette.breaks.find((b) => b.pos === 1);
-    expect(nachbar).toBeTruthy();
-    expect(nachbar.absorbed).toBe(true);
-    expect(nachbar.burst).toBe(0);
+  it("ein erzwungener Bruch (Große Lawine) bebt nicht nach", () => {
+    const mass = withMass([[0, 2]]);                    // weit unter der Schwelle, nur die Lawine bricht ihn
+    const opts = { ...iceSnapshotOpts([ROLES.EISBEBEN]), grosseLawine: true };
+    const ohne = precomputeGlacier(mass, set(0), { grosseLawine: true });
+    expect(precomputeGlacier(mass, set(0), opts).payout[0]).toBeCloseTo(ohne.payout[0], 6);
   });
 
-  it("die gesammelte Masse hebt die Schwelle — das ist der Sinn der Kette", () => {
-    // 12 + 3×5 = 27 → vierte Schwelle, die ein Gletscher allein nie erreicht.
-    const mass = withMass([[0, 12], [1, 5], [2, 5], [3, 5]]);
-    const ganz = iceSnapshotOpts([ROLES.KETTENBRUCH], iceTuning([ROLES.KETTENBRUCH], { [ROLES.KETTENBRUCH]: 3 }));
-    const kette = precomputeGlacier(mass, set(0, 1, 2, 3), ganz);
-    const ausloeser = kette.breaks.find((b) => !b.absorbed);
-    expect(ausloeser.tier).toBe(4);
-    expect(kette.payout[0]).toBeGreaterThan(3 * precomputeGlacier(mass, set(0, 1, 2, 3)).payout[0]);
-  });
-
-  it("ein Feld wird nur EINMAL abgesaugt, auch zwischen zwei Auslösern", () => {
-    const mass = withMass([[0, 12], [1, 6], [2, 12]]);   // pos1 liegt zwischen zwei brechenden Gletschern
-    const kette = precomputeGlacier(mass, set(0, 1, 2), iceSnapshotOpts([ROLES.KETTENBRUCH]));
-    const gesammelt = kette.breaks.filter((b) => b.absorbed);
-    expect(gesammelt).toHaveLength(1);                   // nicht zweimal gezählt
+  it("Episch: das Nachbeben zählt dem Gletschersturz als eigener Bruch", () => {
+    const mass = withMass([[0, BURST_AT + 6]]);
+    const roles = [ROLES.EISBEBEN, ROLES.GLETSCHERSTURZ];
+    const opts = iceSnapshotOpts(roles, iceTuning(roles, { [ROLES.EISBEBEN]: 3 }));
+    expect(opts.eisbebenSturz).toBe(true);
+    // Dieselbe Leiterzahl, nur ohne das Sturz-Zählen — so misst der Vergleich allein den Episch-Zusatz.
+    const ohneZaehlung = precomputeGlacier(mass, set(0), { ...opts, eisbebenSturz: false }).payout[0];
+    expect(precomputeGlacier(mass, set(0), opts).payout[0]).toBeGreaterThan(ohneZaehlung);
   });
 });
 
@@ -85,20 +101,20 @@ describe("Engine-Verdrahtung — die Snapshot-Optionen erreichen precompute", ()
   const falses = () => new Array(40).fill(false);
   const lockAt = (...ps) => { const l = falses(); for (const p of ps) l[p] = true; return l; };
   const noCrit = () => 0.99;
-  it("Kettenbruch über glacierRoles: der ganze Bruch landet auf dem Stich des Auslösers", () => {
+  it("Eisbeben über glacierRoles: nur der Gletscher über der Schwelle zahlt mehr", () => {
     const base = {
       ...initialState(makeRng(1)), deck: flat(), oppDeck: oppOf(1), playerOrder: identity(), oppOrder: identity(),
-      activeArchetypes: ["ice"], glacierMass: withMass([[0, 12], [1, 6]]), glacierLocked: lockAt(0, 1),
+      activeArchetypes: ["ice"], glacierMass: withMass([[0, BURST_AT + 6], [1, BURST_AT]]), glacierLocked: lockAt(0, 1),
     };
     const lauf = (roles) => {
       let s = { ...base, glacierRoles: roles };
-      const ausloeser = resolveTrick(s, noCrit).lastTrick.breakdown.glacierDirect;   // pos0
+      const ueber = resolveTrick(s, noCrit).lastTrick.breakdown.glacierDirect;    // pos0, sechs Punkte über der Schwelle
       s = resolveTrick(s, noCrit);
-      return { ausloeser, nachbar: resolveTrick(s, noCrit).lastTrick.breakdown?.glacierDirect ?? 0 }; // pos1
+      return { ueber, genau: resolveTrick(s, noCrit).lastTrick.breakdown?.glacierDirect ?? 0 }; // pos1, genau auf ihr
     };
     const ohne = lauf([]);
-    const mit = lauf([ROLES.KETTENBRUCH]);
-    expect(mit.ausloeser).toBeGreaterThan(ohne.ausloeser); // die mitgerissene Masse zahlt beim Auslöser
-    expect(mit.nachbar).toBe(0);                           // und nicht mehr am eigenen Stich
+    const mit = lauf([ROLES.EISBEBEN]);
+    expect(mit.ueber).toBeGreaterThan(ohne.ueber);   // der Überschuss bebt nach
+    expect(mit.genau).toBeCloseTo(ohne.genau, 6);    // genau auf der Schwelle ändert sich nichts
   });
 });

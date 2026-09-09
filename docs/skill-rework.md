@@ -5046,6 +5046,48 @@ Zeit zu reifen, die eingesammelte Masse ist beim Auslösen groß statt winzig �
 Schwelle, die §5.18 geschaffen hat. Alternativen wären ein Takt wie bei der Großen Lawine oder ein Absaugen, das
 nur die halbe Masse nimmt und dem Feld seinen Vorlauf lässt.
 
+### 5.23 Eisbeben ersetzt den Kettenbruch (2026-09-09, Owner) — umgesetzt und gemessen
+
+Owner: „ne, ich mag die fixes nicht. skill ändern. neue Designrunde." — und aus der Runde: „eisbeben".
+
+**Die Mechanik.** Bricht ein Gletscher über der Berst-Schwelle, bebt das Eis nach: je Punkt Masse **über** der
+Schwelle zählt der Bruch zusätzlich. Episch dazu: das Nachbeben zählt dem Gletschersturz als eigener Bruch.
+
+Der Gegensatz zum Kettenbruch ist der ganze Punkt: **kein fremdes Feld wird angefasst.** §5.22 hatte gezeigt, dass
+genau das die Ursache war — eine Kette, die jede Runde dieselben Nachbarn nullt, lässt sie nie reifen. Das Eisbeben
+liegt vollständig auf dem Stich, der ohnehin auszahlt, und belohnt die vierte Schwelle aus §5.18. Stetig statt mit
+hartem Tor: bei genau der Schwelle ist es null und wächst mit jedem Punkt darüber. Ein Tor hätte den Skill früh tot
+gemacht (die Abbruchkante misst auf Normal Lift 0,04).
+
+#### Die Leiter steht doppelt so hoch wie entworfen
+
+Mit der entworfenen Leiter (3 · 4 · 6 · 9 %) misst der Skill **tot**: Lift 0,97, Median-Δ +1 %, Haltequote 48 %.
+Statt das als „Mechanik funktioniert nicht" zu buchen, wurde die Leiter probeweise verzehnfacht — die Sonde, die
+§5.22 gefehlt hat. Ergebnis: **Haltequote 100 %, Median-Δ +243 %, Flag „stark"**. Die Mechanik hat also eine
+Angriffsfläche, sie war nur eine Größenordnung zu klein dosiert. Grund: `KEEP_MAX` deckelt, was nach einem Bruch
+liegen bleibt, der Überschuss beim nächsten Bruch ist deshalb typisch klein.
+
+| Leiter (Normal) | Ablation Median-Δ | Haltequote | Duell Eis ÷ Feuer |
+| --- | --- | --- | --- |
+| 3 % (Entwurf) | +1 % | 48 % | 1,15× |
+| 6 % (**gesetzt**) | +14 % | 68 % | 1,38× → 1,01× nach Tarierung |
+| 9 % | +28 % | 81 % | 1,62× |
+| 30 % (Sonde) | +243 % | 100 % | — |
+
+9 % wurde verworfen, obwohl der Skill dort am besten dasteht: die Parität wäre nur mit `BURST_SCALE` ≈ 61 zu halten
+gewesen, und das hätte **jeden anderen Eis-Skill für diesen einen bezahlt**.
+
+#### Tarierung
+
+`BURST_SCALE` 105 → **75**. Zwei Posten, nicht einer: der gestrichene Kettenbruch war ein Fallen-Skill (Lift 0,68),
+und **ohne ihn stand die Fraktion schon bei 1,15×** — das Eisbeben legt darauf. Gemessen bei 75: Eis mono 17,95M
+gegen Feuer 17,80M, **Median-Parität 1,01×** (Mean 1,29×, p90 1,09×). Der Balance-Guard blieb unangetastet im Band.
+
+Nachgezogen: Emblem `SK_ICE_11_eisbeben.webp`, en/es-Katalog, Glossar. Zwei Glossar-Einträge beschrieben noch die
+Kette — *Kaskade* („ein berstender Gletscher reißt seine Nachbarn mit") und *Cluster* (nannte den Kettenbruch als
+Cluster-Leser). Beide sagen jetzt, was wirklich passiert; nachgeprüft statt umbenannt: `glacierClusters` hat genau
+einen Leser, die Verzahnung.
+
 ## 6. Pflanze
 
 ### 6.1 Richtung und Abgrenzung (gesetzt, Owner 2026-09-06)

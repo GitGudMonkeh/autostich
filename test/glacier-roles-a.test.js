@@ -24,9 +24,9 @@ const scen = (over = {}) => ({
 describe("iceSnapshotOpts — Rollen und Stufe → Snapshot-opts", () => {
   it("baut opts nur für aktive Rollen, komponiert additiv", () => {
     expect(iceSnapshotOpts([])).toEqual({});
-    expect(iceSnapshotOpts([ROLES.KETTENBRUCH]).kettenbruchDepth).toBe(EIS.kettenbruch[0].depth);
-    const all = iceSnapshotOpts([ROLES.KETTENBRUCH, ROLES.ABBRUCHKANTE]);
-    expect(all).toHaveProperty("kettenbruchDepth");
+    expect(iceSnapshotOpts([ROLES.EISBEBEN]).eisbebenPer).toBe(EIS.eisbeben[0].per);
+    const all = iceSnapshotOpts([ROLES.EISBEBEN, ROLES.ABBRUCHKANTE]);
+    expect(all).toHaveProperty("eisbebenPer");
     expect(all).toHaveProperty("tierMult");
   });
   // §5.18: Rissbildung ist gestrichen, mit ihr die einzige Quelle für `burstAt` — gebrochen wird immer bei BURST_AT.
