@@ -4789,6 +4789,41 @@ danach 3,17M / 7,02M — beide im bestehenden Band, die Grenzen bleiben unverän
 3. **Eiswall ist jetzt die unterste Zeile** (−6 % bei 100 % Haltequote) — die nächste Kandidatin, wenn eine Runde
    gewünscht ist.
 
+### 5.22 Kettenbruch: zwei Buffs gebaut, beide gemessen, beide zurückgenommen (2026-09-09, Owner)
+
+Owner: „Kettenbruch erstmal noch weiter buffen". §5.21 hatte ihn von −18 % auf −5 % gebracht, aber die Haltequote
+fiel dabei von 59 % auf 17 %. **Beide Versuche haben ihn nicht verbessert; der Code steht wieder auf dem Stand von
+§5.21.** Der Eintrag existiert, damit niemand sie ein zweites Mal baut.
+
+**Versuch 1 — die Kette sammelt auch REIFE Nachbarn ein.** Bis dahin übersprang sie jeden, der selbst bricht; in
+einem gut gebauten Cluster also fast alle, was die niedrige Haltequote erklärte. Die Rechnung sah gut aus (480 statt
+330 Score je Punkt Masse auf der vierten Schwelle, also +45 %). Gemessen wurde Eis dadurch **schwächer**: Median im
+Duell 1,07× → **0,86×** Feuer, Haltequote 17 % → **0 %**. Ein reifer Gletscher hätte selbst gebrochen und dabei
+seinen eigenen vollen Sieg-Stack bekommen — eingesammelt fällt der weg, und +45 % auf die Masse decken das nicht.
+
+**Versuch 2 — die eingesammelte Masse zählt im Bruch doppelt.** Das sollte bezahlen, was das Absaugen kostet.
+Gemessen: Lift **0,68**, Median-Δ **−7 %**, Haltequote 33 %. Die Parität lief auf 1,20× weg, ohne dass der Skill
+selbst besser dastand — der Buff hob die Fraktion, nicht ihn.
+
+#### Warum kein Zahlen-Buff greift
+
+Vier Messungen, vier Lifts unter 1 (0,72 · 0,49 · 0,35 · 0,68), Siegquote der Ablation durchweg 27–34 %. Das ist
+kein Rauschen, und die Ursache liegt nicht im Auszahlungssatz:
+
+**Die Kette feuert JEDE Runde, in der ihr Auslöser bricht — und nullt dabei jedes Mal dieselben Nachbarn.** Die
+reifen deshalb nie. Ein Feld, das jede Runde auf 0 gesetzt wird, sammelt nie mehr als den Ewigen Frost an; die
+eingesammelte Masse bleibt also dauerhaft winzig, und ein Faktor auf eine winzige Zahl bleibt winzig. Gleichzeitig
+kostet das Absaugen den Nachbarn dauerhaft seinen eigenen Bruch. Der Skill ist damit **eine dauerhafte Steuer auf
+seine eigene Nachbarschaft**, kein einmaliger Handel — und das lässt sich nicht wegtarieren.
+
+#### Vorschlag (Entscheid Owner)
+
+**Die Kette muss ein EREIGNIS werden, kein Dauerzustand.** Empfehlung: sie feuert nur, wenn der Auslöser auf der
+**vierten Schwelle** bricht (ab 18 Masse) statt bei jedem Bruch. Dann haben die Nachbarn zwischen zwei Ketten Runden
+Zeit zu reifen, die eingesammelte Masse ist beim Auslösen groß statt winzig — und der Skill hängt an genau der
+Schwelle, die §5.18 geschaffen hat. Alternativen wären ein Takt wie bei der Großen Lawine oder ein Absaugen, das
+nur die halbe Masse nimmt und dem Feld seinen Vorlauf lässt.
+
 ## 6. Pflanze
 
 ### 6.1 Richtung und Abgrenzung (gesetzt, Owner 2026-09-06)

@@ -24,8 +24,7 @@ export const TIER_MULT = [0, 1, 1.5, 2.2, 3.2]; // überlineare Wucht je Stufe (
 // 49 % des Bruchs an, und ein Verstärker mit nominal +18 % brachte +2,2 %. Statt seiner steht die Grundzahl tiefer.
 // §5.6: seit die Geo-Formen nicht mehr stapeln, ist die Kurve flacher und die Grundzahl darf wieder höher stehen.
 // §5.18 neu tariert: 250 → 150 (F2/F3 hoben den Bruch selbst und multiplizierten die Legendären mit).
-// §5.21 nachtariert: 150 → 105. Der Kettenbruch sammelt jetzt Masse in die vierte Schwelle statt sie zu verbrennen,
-// und das hob Eis auf 1,47× Feuer im Median. Sweep im Duell (Seeds 401..470): 150 → 1,47×, 120 → 1,21×, 105 → 1,07×.
+// §5.21 nachtariert: 150 → 105 (der Kettenbruch sammelt Masse in die vierte Schwelle, statt sie zu verbrennen).
 export const BURST_SCALE = envNum("SIM_GLACIER_BURST_SCALE", 105);
 // Große Lawine (§5.8, Owner): feuert nicht mehr einmal am Laufende, sondern im TAKT — jeden GROSSE_LAWINE_EVERY-ten
 // Durchlauf bricht das ganze Feld auf einen Schlag, jeder Gletscher mit der Wucht der höchsten Schwelle. Damit ist sie
@@ -148,6 +147,15 @@ export function precomputeGlacier(mass, locked, opts = {}) {
      Frostbund und Gletschersturz hängen an der Zahl der Brüche, nicht an der Masse, und sollen nichts verlieren. */
   const collected = new Array(N_POS).fill(0);   // Masse, die dieser Auslöser mitreißt
   const absorbed = new Array(N_POS).fill(false); // Feld wurde leergezogen (bricht, zahlt aber nicht selbst)
+  /* §5.22 GEMESSEN UND ZURÜCKGENOMMEN: die Kette auch REIFE Nachbarn einsammeln zu lassen klang nach dem besseren
+     Handel (480 statt 330 Score je Punkt Masse auf der vierten Schwelle), machte Eis aber netto SCHWÄCHER — Median
+     im Duell 1,07× → 0,86× Feuer, Haltequote 17 % → 0 %. Ein reifer Gletscher hätte selbst gebrochen und dabei
+     seinen eigenen vollen Sieg-Stack bekommen; eingesammelt fällt der weg, und +45 % auf die Masse decken das nicht.
+     Die Kette überspringt deshalb weiterhin, wer selbst bricht — sie holt nur, was sonst liegen bliebe.
+     §5.22, zweiter Versuch, ebenfalls GEMESSEN UND ZURÜCKGENOMMEN: die eingesammelte Masse im Bruch doppelt zu zählen
+     half genauso wenig (Lift 0,68, −7 %). Der Grund liegt nicht im Auszahlungssatz: die Kette feuert JEDE Runde, in
+     der der Auslöser bricht, und nullt dabei jedes Mal dieselben Nachbarn — die reifen nie. Kein Faktor auf eine
+     Masse, die nie wächst, repariert das. Das ist eine Mechanik-Frage, keine Zahlenfrage (Doku §5.22). */
   if (kettenbruchDepth > 0) for (const start of queue) {
     let front = [start];
     for (let step = 0; step < kettenbruchDepth && front.length; step++) {
