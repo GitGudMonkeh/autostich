@@ -61,14 +61,19 @@ describe("Blitz-Modul — Stufen und Kennwerte", () => {
     expect(maxChargeFor([L.RESTSTROM], { [L.RESTSTROM]: 2 })).toBe(C.LIGHTNING_MAX_CHARGE);
     expect(maxChargeFor([L.RESTSTROM, L.HOCHSPANNUNG], { [L.RESTSTROM]: 2 })).toBe(T.reststrom[3].bar); // Hochspannung hebt auf Episch
   });
-  it("lightningCritChance: +Crit je Blitz-Skill (auch Legendäre), Gewitterfront-Rampe additiv, Ladungsserie je Serienpunkt; der Stau zählt nicht mehr hier (§7.18)", () => {
-    expect(lightningCritChance(initLightning(), [L.ABLEITER], {})).toBe(0); // inaktiv
-    expect(lightningCritChance(light(), [L.ABLEITER, L.RESTSTROM], {})).toBeCloseTo(2 * C.LIGHTNING_CRIT_PER_SKILL, 9);
-    expect(lightningCritChance(light(), [L.RESONANZ], {})).toBeCloseTo(C.LIGHTNING_CRIT_PER_SKILL, 9);
-    expect(lightningCritChance(light({ stormCritBonus: 0.2, stauBonus: 0.1 }), [], {})).toBeCloseTo(0.2, 9);
-    expect(lightningCritChance(light(), [L.LADUNGSSERIE], {}, 10)).toBeCloseTo(C.LIGHTNING_CRIT_PER_SKILL + 10 * T.serie[0].critPerStreak, 9);
-    expect(lightningCritChance(light(), [L.LADUNGSSERIE], { [L.LADUNGSSERIE]: 3 }, 20)).toBeCloseTo(C.LIGHTNING_CRIT_PER_SKILL + 20 * T.serie[3].critPerStreak, 9);
-    expect(lightningCritChance(light(), [L.LADUNGSSERIE], {}, 0)).toBeCloseTo(C.LIGHTNING_CRIT_PER_SKILL, 9); // ohne Serie kein Bonus
+  /* §7.30: das Passiv ist ein SOCKEL (sobald aktiv, einmal) plus ein Satz JE gehaltenem Skill. `SOCK` steht in jeder
+     Zeile ausgeschrieben, damit ein späterer Umbau nicht still eine der beiden Hälften in die andere schieben kann —
+     genau das prüfen die ersten drei Zeilen: der Sockel bleibt gleich, der Satz wächst mit der Zahl der Skills. */
+  it("lightningCritChance: Sockel einmal + Satz je Blitz-Skill (auch Legendäre), Gewitterfront-Rampe additiv; Serie und Stau zählen hier nicht mehr (§7.18, §7.30)", () => {
+    const SOCK = C.LIGHTNING_CRIT_SOCKET;
+    expect(lightningCritChance(initLightning(), [L.ABLEITER], {})).toBe(0); // inaktiv: auch kein Sockel
+    expect(lightningCritChance(light(), [], {})).toBeCloseTo(SOCK, 9);      // aktiv ohne Skill: nur der Sockel
+    expect(lightningCritChance(light(), [L.ABLEITER, L.RESTSTROM], {})).toBeCloseTo(SOCK + 2 * C.LIGHTNING_CRIT_PER_SKILL, 9);
+    expect(lightningCritChance(light(), [L.RESONANZ], {})).toBeCloseTo(SOCK + C.LIGHTNING_CRIT_PER_SKILL, 9);
+    expect(lightningCritChance(light({ stormCritBonus: 0.2, stauBonus: 0.1 }), [], {})).toBeCloseTo(SOCK + 0.2, 9);
+    // §7.30: die Ladungsserie zahlt in Ladung, nicht in Chance — die Serie hebt die Crit-Chance nicht mehr, egal wie lang.
+    expect(lightningCritChance(light(), [L.LADUNGSSERIE], {}, 40)).toBeCloseTo(SOCK + C.LIGHTNING_CRIT_PER_SKILL, 9);
+    expect(lightningCritChance(light(), [L.LADUNGSSERIE], { [L.LADUNGSSERIE]: 3 }, 200)).toBeCloseTo(SOCK + C.LIGHTNING_CRIT_PER_SKILL, 9);
   });
   it("lightningCritMult: Entladung-Rampe + Spannungsstau + Vorentladung ab der Serie (§7.19: Überschlag gestrichen)", () => {
     expect(lightningCritMult(initLightning(), [L.RESONANZ], {})).toBe(0);
@@ -134,13 +139,18 @@ describe("Blitz-Modul — Ladung, Leiste, Niederlage (reine Übergänge)", () =>
     expect(chargeGainOnWin(light(), [L.LICHTBOGEN], {}, { isCrit: true }).gain).toBe(1);
     expect(chargeGainOnWin(light(), [L.LICHTBOGEN], { [L.LICHTBOGEN]: 3 }, { isCrit: false }).gain).toBe(0);
   });
-  it("chargeGainOnWin ohne Crit (§7.18): Blitzableiter Episch +1 je Sieg ohne Crit, darunter nichts; Ladungsserie Episch ab Serie 8", () => {
+  it("chargeGainOnWin ohne Crit (§7.18): Blitzableiter Episch +1 je Sieg ohne Crit, darunter nichts; Ladungsserie ab ihrer Schwelle (§7.30)", () => {
     expect(chargeGainOnWin(light(), [L.ABLEITER], {}, { isCrit: false }).gain).toBe(0);
     expect(chargeGainOnWin(light(), [L.ABLEITER], { [L.ABLEITER]: 2 }, { isCrit: false }).gain).toBe(0);
     expect(chargeGainOnWin(light(), [L.ABLEITER], { [L.ABLEITER]: 3 }, { isCrit: false }).gain).toBe(T.ableiter[3].noCritCharge);
     expect(chargeGainOnWin(light(), [L.ABLEITER], { [L.ABLEITER]: 3 }, { isCrit: true }).gain).toBe(2); // Crit: Passiv + jeder Crit
-    expect(chargeGainOnWin(light(), [L.LADUNGSSERIE], { [L.LADUNGSSERIE]: 3 }, { isCrit: false, streak: 8 }).gain).toBe(1);
-    expect(chargeGainOnWin(light(), [L.LADUNGSSERIE], { [L.LADUNGSSERIE]: 2 }, { isCrit: false, streak: 8 }).gain).toBe(0); // nur Episch
+    // §7.30: die Ladung aus der Serie ist der ganze Skill, nicht mehr ein Episch-Extra — sie greift auf JEDER Stufe,
+    // sobald die Serie die Schwelle der Stufe erreicht, und einen Punkt darunter nicht.
+    for (const tier of [0, 1, 2, 3]) {
+      const at = T.serie[tier].chargeFromStreak;
+      expect(chargeGainOnWin(light(), [L.LADUNGSSERIE], { [L.LADUNGSSERIE]: tier }, { isCrit: false, streak: at }).gain).toBe(1);
+      expect(chargeGainOnWin(light(), [L.LADUNGSSERIE], { [L.LADUNGSSERIE]: tier }, { isCrit: false, streak: at - 1 }).gain).toBe(0);
+    }
   });
   it("critFillsBar: Vorschau auf denselben Gewinn wie der echte Crit", () => {
     expect(critFillsBar(light({ charge: 9 }), [], {})).toBe(true);
@@ -162,16 +172,22 @@ describe("Blitz-Modul — Ladung, Leiste, Niederlage (reine Übergänge)", () =>
     const l = light({ stauBonus: 0.3 });
     expect(stauAfterWin(l, [], {}, false)).toBe(l);
   });
-  it("lightningOnLoss: Serienschutz ab dem Anteil der Stufe, kostet ihn; Episch einmal je Runde gratis", () => {
-    const cost0 = Math.ceil(C.LIGHTNING_MAX_CHARGE * T.serienschutz[0].frac);
+  /* §7.30: fester Preis statt eines Anteils der Leiste, und ein DECKEL je Durchlauf. Der Deckel ist der Kern des
+     Umbaus (die Kadenz war das Problem, nicht der Preis), deshalb prüft der Test ihn ausdrücklich: die (perRound+1).
+     Auslösung im selben Durchlauf hält NICHT mehr, obwohl die Ladung reicht. */
+  it("lightningOnLoss: Serienschutz kostet den festen Preis der Stufe und greift höchstens perRound-mal je Durchlauf", () => {
+    const { cost: cost0, perRound: per0 } = T.serienschutz[0];
     const held = lightningOnLoss(light({ charge: cost0 + 1 }), [L.SERIENSCHUTZ], {});
     expect(held.streakHeld).toBe(true); expect(held.lightning.charge).toBe(1); expect(held.lightning.serienschutzCount).toBe(1);
+    expect(held.lightning.serienschutzRound).toBe(1);
     const broke = lightningOnLoss(light({ charge: cost0 - 1 }), [L.SERIENSCHUTZ], {});
     expect(broke.streakHeld).toBe(false); expect(broke.lightning.charge).toBe(cost0 - 1);
-    const free = lightningOnLoss(light({ charge: 0 }), [L.SERIENSCHUTZ], { [L.SERIENSCHUTZ]: 3 });
-    expect(free.streakHeld).toBe(true); expect(free.lightning.serienschutzFree).toBe(true); expect(free.lightning.charge).toBe(0);
-    const again = lightningOnLoss(free.lightning, [L.SERIENSCHUTZ], { [L.SERIENSCHUTZ]: 3 });
-    expect(again.streakHeld).toBe(false); // Gratis-Schutz verbraucht, Ladung 0 < 30 %
+    // Deckel: mit voller Ladung, aber perRound schon verbraucht, hält die Serie nicht mehr — und kostet auch nichts.
+    const capped = lightningOnLoss(light({ charge: 10, serienschutzRound: per0 }), [L.SERIENSCHUTZ], {});
+    expect(capped.streakHeld).toBe(false); expect(capped.lightning.charge).toBe(10);
+    // Episch greift öfter im selben Durchlauf: dieselbe Lage hält dort noch.
+    const epic = lightningOnLoss(light({ charge: 10, serienschutzRound: per0 }), [L.SERIENSCHUTZ], { [L.SERIENSCHUTZ]: 3 });
+    expect(epic.streakHeld).toBe(true); expect(epic.lightning.charge).toBe(10 - T.serienschutz[3].cost);
     expect(lightningOnLoss(light({ charge: 9 }), [L.SERIENSCHUTZ], {}, { alreadyHeld: true }).lightning.charge).toBe(9); // Serienanker hält schon → keine Kosten
     expect(lightningOnLoss(light({ charge: 4 }), [L.ABLEITER], { [L.ABLEITER]: 3 }).lightning.charge).toBe(4); // §7.18: keine Niederlagen-Ladung mehr
     expect(lightningOnLoss(initLightning(), [L.SERIENSCHUTZ], {}).streakHeld).toBe(false);
@@ -234,8 +250,8 @@ describe("Blitz-Modul — Ladung, Leiste, Niederlage (reine Übergänge)", () =>
     expect(fillBar(light({ charge: 10 }), [L.IONENFELD], { [L.IONENFELD]: 3 }, deck, order, 0).lightning.fieldLeft).toBe(T.ionenfeld[3].tricks);
     expect(fillBar(light({ charge: 10, fieldLeft: 2 }), [], {}, deck, order, 0).lightning.fieldLeft).toBe(2); // ohne Ionenfeld unberührt
   });
-  it("lightningCycleEnd: Gratis-Serienschutz wird je Runde wieder frei", () => {
-    expect(lightningCycleEnd(light({ serienschutzFree: true })).serienschutzFree).toBe(false);
+  it("lightningCycleEnd: der Serienschutz-Deckel füllt sich je Durchlauf wieder auf (§7.30)", () => {
+    expect(lightningCycleEnd(light({ serienschutzRound: 2 })).serienschutzRound).toBe(0);
     const l = light();
     expect(lightningCycleEnd(l)).toBe(l);
     expect(lightningCycleEnd(null)).toBeNull();
@@ -269,7 +285,8 @@ describe("Blitz — Engine-Integration (resolveTrick)", () => {
   });
   it("Lichtbogen (§7.28): die Stapel der gespielten Karte geben Crit-Chance auf diesen Stich, im Modul und in der Engine", () => {
     const card = { id: "X0", ionStacks: 4 };
-    const base = C.LIGHTNING_CRIT_PER_SKILL; // ein gehaltener Blitz-Skill
+    const passive = (n) => C.LIGHTNING_CRIT_SOCKET + n * C.LIGHTNING_CRIT_PER_SKILL; // §7.30: Sockel + Satz je Skill
+    const base = passive(1); // ein gehaltener Blitz-Skill
     expect(lightningCritChance(light(), [L.LICHTBOGEN], {}, 0, card)).toBeCloseTo(base + 4 * T.lichtbogen[0].critPerStack, 9);
     expect(lightningCritChance(light(), [L.LICHTBOGEN], { [L.LICHTBOGEN]: 3 }, 0, card)).toBeCloseTo(base + 4 * T.lichtbogen[3].critPerStack, 9);
     expect(lightningCritChance(light(), [L.LICHTBOGEN], {}, 0, null)).toBeCloseTo(base, 9);   // ohne Karte nur das Passiv
@@ -278,7 +295,7 @@ describe("Blitz — Engine-Integration (resolveTrick)", () => {
     // Kurzschluss zählt die Stapel ab seiner Schwelle doppelt — hier dieselbe Zählung wie beim Stapel-Score.
     const deep = { id: "X0", ionStacks: T.kurzschluss[0].minStacks };
     expect(lightningCritChance(light(), [L.LICHTBOGEN, L.KURZSCHLUSS], {}, 0, deep))
-      .toBeCloseTo(2 * base + 2 * deep.ionStacks * T.lichtbogen[0].critPerStack, 9);
+      .toBeCloseTo(passive(2) + 2 * deep.ionStacks * T.lichtbogen[0].critPerStack, 9);
     // Engine: die Chance des Stichs trägt die Stapel der gespielten Karte (Position 0).
     const deck = constDeck(12).map((c, i) => (i === 0 ? { ...c, ionStacks: 10 } : c));
     const s = resolveTrick(scen(12, 0, { skills: [L.LICHTBOGEN], deck, lightning: light() }), noCrit);
@@ -310,11 +327,15 @@ describe("Blitz — Engine-Integration (resolveTrick)", () => {
     const later = resolveTrick(scen(12, 0, { skills: [L.ENTLADUNG], skillTiers: { [L.ENTLADUNG]: 3 }, lightning: light({ charge: 5 }) }), zero);
     expect(later.lastTrick.critMultiplier).toBeCloseTo(M, 6);
   });
-  it("Ladungsserie: Crit-Chance je Serienpunkt; Episch ab Serie 8 jeder Sieg +1 Ladung", () => {
+  it("Ladungsserie (§7.30): Ladung ab der Schwelle der Stufe, KEINE Crit-Chance mehr", () => {
+    // Serie 4 (also 5 nach dem Sieg) liegt unter Normal-Schwelle 16 → keine Ladung, und die Chance ist reines Passiv.
     const s = resolveTrick(scen(12, 0, { skills: [L.LADUNGSSERIE], lightning: light(), winStreak: 4 }), noCrit);
-    expect(s.lastTrick.critChance).toBeCloseTo(C.LIGHTNING_CRIT_PER_SKILL + 5 * T.serie[0].critPerStreak, 6);
-    const epic = resolveTrick(scen(12, 0, { skills: [L.LADUNGSSERIE], skillTiers: { [L.LADUNGSSERIE]: 3 }, lightning: light(), winStreak: 7 }), noCrit);
-    expect(epic.lightning.charge).toBe(1);
+    expect(s.lastTrick.critChance).toBeCloseTo(C.LIGHTNING_CRIT_SOCKET + C.LIGHTNING_CRIT_PER_SKILL, 6);
+    expect(s.lightning.charge).toBe(0);
+    // Serie über der Schwelle: +1 Ladung, die Chance bleibt dieselbe (der Skill zahlt nicht mehr auf sie).
+    const long = resolveTrick(scen(12, 0, { skills: [L.LADUNGSSERIE], lightning: light(), winStreak: T.serie[0].chargeFromStreak }), noCrit);
+    expect(long.lightning.charge).toBe(1);
+    expect(long.lastTrick.critChance).toBeCloseTo(C.LIGHTNING_CRIT_SOCKET + C.LIGHTNING_CRIT_PER_SKILL, 6);
   });
   it("Ionenfeld (§7.18): die volle Leiste lädt das Feld, die nächsten Stiche kämpfen alle Karten mit +Wert, danach nicht mehr", () => {
     const charged = resolveTrick(scen(12, 0, { skills: [L.IONENFELD], lightning: light({ charge: 9 }) }), zero);
@@ -352,29 +373,31 @@ describe("Blitz — Engine-Integration (resolveTrick)", () => {
     expect(resolveTrick(scen(12, 0, { skills: [L.SPANNUNGSSTAU], skillTiers: { [L.SPANNUNGSSTAU]: 3 }, lightning: light({ stauBonus: 0.3 }) }), zero).lightning.stauBonus).toBeCloseTo(0.15, 9);
   });
   it("Überschuss über 100 %: nur noch die Systemregel (klein) hebt den Crit-Multiplikator — Überschlag ist gestrichen (§7.19)", () => {
-    const rule = resolveTrick(scen(12, 0, { lightning: light({ stormCritBonus: 1.5 }) }), zero); // rawCrit 1,5 → 50 Punkte (Gewitterfront-Rampe als synthetische Quelle)
+    // §7.30: ein aktiver Blitz trägt den Sockel auch ohne Skill, der Überschuss ist also Sockel + Rampe − 100 %.
+    const rule = resolveTrick(scen(12, 0, { lightning: light({ stormCritBonus: 1.5 }) }), zero); // Gewitterfront-Rampe als synthetische Quelle
     expect(rule.lastTrick.isCrit).toBe(true);
-    expect(rule.lastTrick.critMultiplier).toBeCloseTo(M + 50 * C.OVERCRIT_MULT_PER_PP, 6);
-    const pp = Math.round((C.LIGHTNING_CRIT_PER_SKILL + 1.5 - 1) * 100); // ein Blitz-Skill + 1,5 → Punkte über 100 (§7.12: 4 % je Skill → 54)
+    expect(rule.lastTrick.critMultiplier).toBeCloseTo(M + Math.round((C.LIGHTNING_CRIT_SOCKET + 1.5 - 1) * 100) * C.OVERCRIT_MULT_PER_PP, 6);
+    const pp = Math.round((C.LIGHTNING_CRIT_SOCKET + C.LIGHTNING_CRIT_PER_SKILL + 1.5 - 1) * 100); // Sockel + ein Blitz-Skill + 1,5 → Punkte über 100
     const withSkill = resolveTrick(scen(12, 0, { skills: [L.ABLEITER], lightning: light({ stormCritBonus: 1.5 }) }), zero);
     expect(withSkill.lastTrick.critMultiplier).toBeCloseTo(M + pp * C.OVERCRIT_MULT_PER_PP, 6); // kein Skill-Term mehr auf dem Überschuss
   });
-  it("Serienschutz: Niederlage ab 70 % Ladung hält die Serie und kostet sie; Episch einmal je Runde gratis, Rundenende gibt es frei", () => {
-    const cost = Math.ceil(C.LIGHTNING_MAX_CHARGE * T.serienschutz[0].frac);
+  it("Serienschutz: die Niederlage kostet den festen Preis und hält die Serie; der Deckel je Durchlauf bindet, das Durchlauf-Ende hebt ihn auf (§7.30)", () => {
+    const { cost, perRound } = T.serienschutz[0];
     const held = resolveTrick(scen(0, 12, { skills: [L.SERIENSCHUTZ], winStreak: 4, lightning: light({ charge: cost + 1 }) }), noCrit);
     expect(held.lastTrick.result).toBe("loss");
     expect(held.winStreak).toBe(4);
     expect(held.lightning.charge).toBe(1);
+    expect(held.lightning.serienschutzRound).toBe(1); // eine von perRound Auslösungen verbraucht
     const broke = resolveTrick(scen(0, 12, { skills: [L.SERIENSCHUTZ], winStreak: 4, lightning: light({ charge: cost - 1 }) }), noCrit);
     expect(broke.winStreak).toBe(0);
-    const free = resolveTrick(scen(0, 12, { skills: [L.SERIENSCHUTZ], skillTiers: { [L.SERIENSCHUTZ]: 3 }, winStreak: 4, lightning: light() }), noCrit);
-    expect(free.winStreak).toBe(4);
-    expect(free.lightning.serienschutzFree).toBe(true);
-    const spent = resolveTrick({ ...free, phase: "play" }, noCrit);
-    expect(spent.winStreak).toBe(0);
-    const endOfRound = resolveTrick(scen(0, 12, { pos: 39, skills: [L.SERIENSCHUTZ], skillTiers: { [L.SERIENSCHUTZ]: 3 }, winStreak: 4, lightning: light() }), noCrit);
-    expect(endOfRound.winStreak).toBe(4);
-    expect(endOfRound.lightning.serienschutzFree).toBe(false);
+    // Zweite Niederlage im selben Durchlauf: Ladung genug, Deckel voll → die Serie bricht und nichts wird bezahlt.
+    // (Ladung 9, nicht 10 — bei voller Leiste zündete sie und die Ladung wäre ohnehin weg.)
+    const capped = resolveTrick(scen(0, 12, { skills: [L.SERIENSCHUTZ], winStreak: 4, lightning: light({ charge: 9, serienschutzRound: perRound }) }), noCrit);
+    expect(capped.winStreak).toBe(0);
+    expect(capped.lightning.charge).toBe(9);
+    // Der letzte Stich eines Durchlaufs setzt den Deckel zurück (lightningCycleEnd über die Engine).
+    const endOfRound = resolveTrick(scen(0, 12, { pos: 39, skills: [L.SERIENSCHUTZ], winStreak: 4, lightning: light({ charge: cost + 1, serienschutzRound: perRound }) }), noCrit);
+    expect(endOfRound.lightning.serienschutzRound).toBe(0);
   });
   it("volle Leiste zündet auch auf einer Niederlage (Ladung, die ein Stich über der Leiste hinterlässt)", () => {
     const s = resolveTrick(scen(0, 12, { skills: [L.ABLEITER], lightning: light({ charge: 10 }) }), noCrit);

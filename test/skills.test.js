@@ -39,11 +39,16 @@ describe("skills — Blitz-Registry (exp skill rework)", () => {
     expect(BLITZ_TIERS.ueberspannung).toBeUndefined();               // §7.28: Überspannung gestrichen
     expect(asc(BLITZ_TIERS.ionenfeld, "value")).toBe(true);         // §7.19
     expect(asc(BLITZ_TIERS.ionenfeld, "tricks")).toBe(true);        // §7.18
-    expect(desc(BLITZ_TIERS.serienschutz, "frac")).toBe(true);
+    // §7.30: der Preis ist absolut statt anteilig, und die Kadenz IST jetzt die Leiter — der Preis fällt, der Deckel steigt.
+    expect(desc(BLITZ_TIERS.serienschutz, "cost")).toBe(true);
+    expect(asc(BLITZ_TIERS.serienschutz, "perRound")).toBe(true);
+    expect(BLITZ_TIERS.serienschutz.every((r) => r.frac === undefined)).toBe(true); // der Anteil der Leiste ist raus
     expect(asc(BLITZ_TIERS.reststrom, "floor")).toBe(true);
     expect(asc(BLITZ_TIERS.gewitter, "critPerBar")).toBe(true);
     expect(asc(BLITZ_TIERS.entladung, "multPerBar")).toBe(true);
-    expect(asc(BLITZ_TIERS.serie, "critPerStreak")).toBe(true);
+    // §7.30: die Ladungsserie zahlt in Ladung, ihre Leiter ist die fallende Schwelle (und trägt keinen Crit-Satz mehr).
+    expect(desc(BLITZ_TIERS.serie, "chargeFromStreak")).toBe(true);
+    expect(BLITZ_TIERS.serie.every((r) => r.critPerStreak === undefined)).toBe(true);
     expect(asc(BLITZ_TIERS.stau, "step")).toBe(true);
     expect(asc(BLITZ_TIERS.kette, "extra")).toBe(true); // §7.18: Tiefe
   });

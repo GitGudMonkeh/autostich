@@ -3,7 +3,7 @@ import { makeRng } from "../src/game/deck.js";
 import { initialState } from "../src/game/reducer.js";
 import { resolveTrick, rollCrit } from "../src/game/engine.js";
 import { SKILL_DEFS } from "../src/game/skills.js";
-import { MAX_CYCLES, FORMATION_ENERGY, TRICKS_PER_CYCLE, DECISION_SCHEDULE, SCORE_PER_WIN, CRIT_BASE_MULT, LIGHTNING_CRIT_PER_SKILL,
+import { MAX_CYCLES, FORMATION_ENERGY, TRICKS_PER_CYCLE, DECISION_SCHEDULE, SCORE_PER_WIN, CRIT_BASE_MULT, LIGHTNING_CRIT_SOCKET, LIGHTNING_CRIT_PER_SKILL,
   HENKER_MULT, HENKER_ZONE_START, BRENNPUNKT_MULT, VABANQUE_MULT, VABANQUE_TRICKS, PATT_MARGIN, ECHO_FACTOR, SAMMLER_STEP, UNAUFHALTSAM_VALUE,
   ZINS_DEPOSIT, ZINS_RATE_START, ZINS_RATE_STEP, ZINS_RATE_MAX, ZINS_CRASH_KEEP,
   CRIT_MULT_CAP, ION_SCORE_PER_STACK, OVERCRIT_MULT_PER_PP } from "../src/game/constants.js";
@@ -34,11 +34,13 @@ const B = SCORE_PER_WIN; // Basis-relativ: erwartete Scores skalieren mit der Si
 // Formationsneutrales Spielerdeck (Werte 12/11 abwechselnd, Farbe R/B abwechselnd): gewinnt immer gegen
 // Wert 0, bildet aber über die Positionen KEINE Formation → isoliert Score-Mechaniken in Multi-Stich-Tests.
 // Gleiche Farbe (R), aber abwechselnde Werte → Farbserie zählt, ohne Wiederholung/Farbblock (bei ≤2 Karten).
-// #267: der entfernte Crit-Stat wird als reine Crit-CHANCE-Quelle über den Blitz-Spannungsstau ersetzt. Ein blank
-// aktiver Blitz OHNE Skills/ionisierte Karten trägt exakt stormCritBonus zur rawCrit bei (exp: kein Sockel mehr) — sonst
-// NICHTS (kein Score, kein Crit-Mult, keine Ladung). litCrit(V) hebt die rawCrit damit auf genau V → Drop-in für den
+// #267: der entfernte Crit-Stat wird als reine Crit-CHANCE-Quelle über die Blitz-Gewitterfront ersetzt. Ein blank
+// aktiver Blitz OHNE Skills/ionisierte Karten trägt LIGHTNING_CRIT_SOCKET + stormCritBonus zur rawCrit bei — sonst
+// NICHTS (kein Score, kein Crit-Mult, keine Ladung). litCrit(V) hebt die rawCrit damit auf GENAU V → Drop-in für den
 // alten additiven statCritChance:V (der Kritwurf bleibt rng()<V; makeRng-Wert <1 ⇒ V≥1 crittet garantiert).
-const litCrit = (v = 1) => ({ active: true, charge: 0, maxCharge: 10, stormCritBonus: v }); // §7.18: die Gewitterfront-Rampe (der Stau zahlt jetzt auf den Multiplikator)
+// §7.30: der Sockel wird hier herausgerechnet, sonst stünde rawCrit bei V + Sockel und die Systemregel „Überschuss über
+// 100 %" (overcritMult) hinge in jedem Crit-Mult-Test mit drin — die Helferzusage ist „genau V", nicht „mindestens V".
+const litCrit = (v = 1) => ({ active: true, charge: 0, maxCharge: 10, stormCritBonus: v - LIGHTNING_CRIT_SOCKET });
 
 describe("resolveTrick — Grundausgänge (V2: ohne Leben)", () => {
   it("Sieg: +Score, +Sieg, Initiative Spieler", () => {
@@ -478,10 +480,16 @@ describe("Blitz-Archetyp — Engine (exp skill rework: Passiv)", () => {
   const LR = "SK_LIGHTNING_01";
   const lit = (over = {}) => ({ ...initLightning(), active: true, ...over });
 
-  it("Crit-Chance: aktiver Blitz + 1 Skill → +LIGHTNING_CRIT_PER_SKILL, kein Sockel, kein Crit-Mult je Skill", () => {
+  /* §7.30 (Owner): das Passiv hat jetzt EINEN Sockel — er zahlt, sobald Blitz aktiv ist, und wächst nicht mit der
+     Zahl gehaltener Skills. Der Test hält beide Hälften auseinander: ein Skill = Sockel + 1× Satz, zwei Skills =
+     Sockel + 2× Satz. Genau die Trennung wäre sonst still wieder verloren (vorher hielt er „kein Sockel" fest).
+     Crit-Mult je Skill gibt es weiterhin nicht. */
+  it("Crit-Chance: aktiver Blitz → LIGHTNING_CRIT_SOCKET einmal + LIGHTNING_CRIT_PER_SKILL je Skill, kein Crit-Mult je Skill", () => {
     const s = resolveTrick(scenario(12, 0, { skills: [LR], lightning: lit() }), rng);
-    expect(s.lastTrick.critChance).toBeCloseTo(LIGHTNING_CRIT_PER_SKILL);
+    expect(s.lastTrick.critChance).toBeCloseTo(LIGHTNING_CRIT_SOCKET + LIGHTNING_CRIT_PER_SKILL);
     expect(s.lastTrick.critMultiplier).toBeCloseTo(CRIT_BASE_MULT);
+    const two = resolveTrick(scenario(12, 0, { skills: [LR, "SK_LIGHTNING_05"], lightning: lit() }), rng);
+    expect(two.lastTrick.critChance).toBeCloseTo(LIGHTNING_CRIT_SOCKET + 2 * LIGHTNING_CRIT_PER_SKILL);
   });
 
   it("Crit: +1 Ladung (Passiv); Blitzableiter Normal gibt erst jedem 2. Crit +1 extra; kein Crit-Flat", () => {
@@ -566,8 +574,11 @@ describe("Crit-Chance/-Mult über Blitz & Präzision — Engine (#267, Stat-Ersa
   it("Crit-Chance additiv: Präzision-Schärfe UND der Blitz-Stau heben die Crit-Chance flach (Basis-Crit 0)", () => {
     // P_SHARPNESS I → +0,06 pp flat auf ALLE Karten → critChance 0,06 (rng 0,99 → kein realer Crit, nur ablesen).
     expect(resolveTrick(scenario(12, 0, { familyTiers: { P_SHARPNESS: 1 } }), () => 0.99).lastTrick.critChance).toBeCloseTo(0.06);
-    // Gleiche Anhebung über den Blitz-Spannungsstau als additiver Stat-Ersatz (exp: kein Sockel mehr): 0,06 → 0,06.
-    expect(resolveTrick(scenario(12, 0, { lightning: { active: true, charge: 0, maxCharge: 10, stormCritBonus: 0.06 } }), () => 0.99).lastTrick.critChance).toBeCloseTo(0.06);
+    // Gleiche Anhebung über die Blitz-Gewitterfront als additiver Stat-Ersatz — plus der Passiv-Sockel, den ein
+    // aktiver Blitz seit §7.30 immer trägt, auch ohne einen einzigen gehaltenen Skill.
+    expect(resolveTrick(scenario(12, 0, { lightning: { active: true, charge: 0, maxCharge: 10, stormCritBonus: 0.06 } }), () => 0.99).lastTrick.critChance).toBeCloseTo(LIGHTNING_CRIT_SOCKET + 0.06);
+    // …und ein inaktiver Blitz trägt weiterhin gar nichts: der Sockel hängt an der Aktivierung, nicht am Vorhandensein.
+    expect(resolveTrick(scenario(12, 0, { lightning: { active: false, charge: 0, maxCharge: 10 } }), () => 0.99).lastTrick.critChance).toBeCloseTo(0);
   });
   it("Crit-Mult: Präzision-Wucht hebt den Crit-Faktor auf Basis + Bonus (P_FORCE II → Basis + 0,40)", () => {
     // P_FORCE II → +0,40× auf den Basis-Crit-Mult; Crit über den Blitz-Stau (rawCrit 1) garantiert.

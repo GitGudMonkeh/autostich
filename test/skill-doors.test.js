@@ -247,8 +247,13 @@ describe("Stufentexte — ein Text je Stufe (descTiers, ability.<id>.desc.<t>, s
   it("Episch-Extras stehen nur im Episch-Text", () => {
     expect(SKILL_DEFS.SK_LIGHTNING_01.descTiers[3]).toContain("Jeder Sieg ohne Crit gibt +1 Ladung"); // §7.18: das Episch-Extra aus Statische Aufladung
     expect(SKILL_DEFS.SK_LIGHTNING_01.descTiers[2]).not.toContain("ohne Crit");
-    expect(SKILL_DEFS.SK_LIGHTNING_07.descTiers[3]).toContain("Ab Serie 8 gibt jeder Sieg +1 Ladung");
-    expect(SKILL_DEFS.SK_LIGHTNING_07.descTiers[0]).not.toContain("Ab Serie");
+    /* §7.30: die Ladungsserie hat KEIN Episch-Extra mehr — die Ladung aus der Serie ist der ganze Skill, die Leiter
+       ist die Schwelle. Statt der weggefallenen Zusage steht hier die neue: derselbe Satz auf allen vier Stufen, nur
+       die Zahl wandert, und kein Crit-Satz mehr im Text (sonst schliche die alte zweite Achse zurück). */
+    for (const t of SKILL_DEFS.SK_LIGHTNING_07.descTiers) {
+      expect(t).toMatch(/^Ab Serie \d+ gibt jeder Sieg \+1 Ladung\.$/);
+      expect(t).not.toContain("Crit");
+    }
     expect(SKILL_DEFS.SK_FIRE_04.descTiers[3]).toBe("Niederlagen kühlen die Hitze nicht.");
     expect(SKILL_DEFS.SK_FIRE_16.descTiers[3]).toContain("Schmiedewert zählt doppelt");
     expect(SKILL_DEFS.SK_FIRE_16.descTiers[1]).not.toContain("Schmiedewert");

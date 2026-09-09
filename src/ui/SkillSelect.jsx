@@ -3,7 +3,7 @@ import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Re
 import { PANEL_BG, phaseCard, PhaseHairline, PHASE_ACCENTS, ActionButton } from "./modalStyle.jsx";
 import { ARCHETYPE_ORDER, archetypeOf, isLegendarySkill, tierOf, numWord } from "../game/skills.js";
 import { FactionIcon, ArchIcon, GlossaryIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
-import { SKILL_SLOT_LIMIT, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_MAX_CHARGE, ION_SCORE_PER_STACK, ION_CRIT_MULT_PER_STACK,
+import { SKILL_SLOT_LIMIT, LIGHTNING_CRIT_SOCKET, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_MAX_CHARGE, ION_SCORE_PER_STACK, ION_CRIT_MULT_PER_STACK,
          PLANT_GREEN_THRESHOLD, PLANT_BLOOM_THRESHOLD, PLANT_GROWTH_WIN, PLANT_GROWTH_PER_FORMATION, PLANT_BLOOM_SCORE_PER_GREEN,
          HEAT_MIN_MARGIN, HEAT_MARGIN_OFFSET, HEAT_PER_POINT, HEAT_LOSS, HEAT_MULT_PER_10, ION_VALUE_PER_BAR, PLANT_BLOOM_WEIGHT, PLANT_BLOOM_WEIGHT_PER_GROWTH } from "../game/constants.js";
 import { DECLINE_MIN_SKILLS as G_DECLINE_MIN_SKILLS } from "../game/glacier.js"; // Eis-Neudesign: Ablehn-Gletscher-Schwelle für den Passiv-Text
@@ -34,7 +34,9 @@ const ARCH_LOSS = {
   lightning: { key: "skill.loss.lightning", baked: false },
 };
 
-const PER_SKILL_PCT = Math.round(LIGHTNING_CRIT_PER_SKILL * 100); // exp Blitz-Passiv: +Crit-Chance je Blitz-Skill (5 %)
+// exp Blitz-Passiv (§7.30): ein Sockel, sobald Blitz aktiv ist, plus ein Satz je gehaltenem Skill.
+const SOCKET_PCT = Math.round(LIGHTNING_CRIT_SOCKET * 100);
+const PER_SKILL_PCT = Math.round(LIGHTNING_CRIT_PER_SKILL * 100);
 // Feuer-Passiv (exp skill rework §4.2): Hitze je Punkt Vorsprung über dem Offset, flache Kühlung, Multiplikator je 10 %.
 const FIRE_MULT_PCT = Math.round(HEAT_MULT_PER_10 * 100);  // +% Score je 10 % gehaltener Hitze
 // Kuratierte Schlüsselbegriffe je Archetyp-Passive — der Aufklapper zeigt AUSSCHLIESSLICH diese als kleine Unterkategorien
@@ -215,7 +217,7 @@ export function SkillSelect({ offer = null, doors = null, onPick, onDecline, onR
   const unlockLine = (arch) => {
     switch (arch) {
       case "lightning":
-        return t("skill.passive.lightning", { each: PER_SKILL_PCT, bar: LIGHTNING_MAX_CHARGE, value: ION_VALUE_PER_BAR, stack: ION_SCORE_PER_STACK, critPer: String(ION_CRIT_MULT_PER_STACK).replace(".", ",") });
+        return t("skill.passive.lightning", { socket: SOCKET_PCT, each: PER_SKILL_PCT, bar: LIGHTNING_MAX_CHARGE, value: ION_VALUE_PER_BAR, stack: ION_SCORE_PER_STACK, critPer: String(ION_CRIT_MULT_PER_STACK).replace(".", ",") });
       case "fire":
         return t("skill.passive.fire", { margin: HEAT_MIN_MARGIN, offset: HEAT_MARGIN_OFFSET, per: HEAT_PER_POINT,
           cool: HEAT_LOSS, mult: FIRE_MULT_PCT });

@@ -12,7 +12,7 @@ const de = (x) => String(x).replace(".", ",");
 const pct = (x) => Math.round(x * 100);                                 // Anteil → Prozent (0,25 → 25)
 // Kleine Anzahl als Wort (Register: „zwei fremde Karten", „fünffach"). Exportiert, weil auch die Passiv-Texte in der
 // UI sie brauchen — eine Quelle für die Zahlwörter, sonst driften Skilltext und Passiv auseinander.
-export const numWord = (n) => ({ 1: "eine", 2: "zwei", 3: "drei", 4: "vier", 5: "fünf", 6: "sechs", 7: "sieben" })[n] || String(n);
+export const numWord = (n) => ({ 1: "eine", 2: "zwei", 3: "drei", 4: "vier", 5: "fünf", 6: "sechs", 7: "sieben", 8: "acht" })[n] || String(n);
 const de1 = numWord;
 
 // (§6.1: „Trimmen" ist mit dem Türen-Angebot gestorben — Skills werden nicht mehr ersetzt, die Klausel an sechs
@@ -35,7 +35,7 @@ const BLITZ = {
   reststrom:     [{ floor: 2 }, { floor: 3 }, { floor: 4 }, { floor: 6, bar: 9 }], // §7.22 Episch-Extra: die Leiste ist bei 9 voll
   gewitter:      [{ critPerBar: 0.005 }, { critPerBar: 0.0075 }, { critPerBar: 0.01 }, { critPerBar: 0.015, multPerBar: 0.02 }], // §7.22 Episch-Extra: dazu +0,02× Crit-Multiplikator je Leiste
   entladung:     [{ multPerBar: 0.02 }, { multPerBar: 0.03 }, { multPerBar: 0.04 }, { multPerBar: 0.06, fillDouble: true }],
-  serie:         [{ critPerStreak: 0.001 }, { critPerStreak: 0.0015 }, { critPerStreak: 0.002 }, { critPerStreak: 0.0025, chargeFromStreak: 8 }], // §7.23 (Owner): ÷10 — 1/1,5/2/2,5 % je Punkt gaben bei Serie 540 +540 % Crit (Feuer-Serien sind endlos, Median 614)
+  serie:         [{ chargeFromStreak: 16 }, { chargeFromStreak: 12 }, { chargeFromStreak: 8 }, { chargeFromStreak: 5 }], // §7.30 (Owner: „Skillnutzlichkeit erhöhen"): von Crit-Chance auf LADUNG umgestellt — als Chance-Skill maß er 0,79× und stand mit −17 % unten (§7.29 D), weil die Chance seit dem Sockel spät ohnehin gegen die 100-%-Klemme läuft. Ladung ist der Engpass, und der Name sagt es. Gepaarter Sweep der Schwelle 30/22/16/12/8/5/3: besser in 51/55/57/68/69/80/81 % (Blitzableiter Normal zum Vergleich 68 %)
   vorentladung:  [{ minStreak: 5, multPerStreak: 0.1 }, { minStreak: 4, multPerStreak: 0.1 }, { minStreak: 3, multPerStreak: 0.1 }, { minStreak: 2, multPerStreak: 0.15 }], // §7.18 neu (SK_LIGHTNING_12): Serie zu Crit-Multiplikator; §7.22 Episch 0,15
   kette:         [{ barEvery: 1, extra: 1 }, { barEvery: 1, extra: 2 }, { barEvery: 1, extra: 3 }, { barEvery: 1, extra: 4, second: 1 }], // §7.18: Tiefe — die Karte mit den meisten Stapeln; §7.19: jede Leiste, 1/2/3/4; §7.22 Episch-Extra: die zweittiefste +1
   faenger:       [{ minStacks: 1, value: 1 }, { minStacks: 1, value: 2 }, { minStacks: 1, value: 3 }, { minStacks: 1, value: 4, perStack: 1 }], // §7.18: ohne Schwelle, der Wert steigt; §7.22 Episch-Extra: +1 je Stapel
@@ -43,7 +43,7 @@ const BLITZ = {
   stau:          [{ step: 0.05, critKeep: 0 }, { step: 0.075, critKeep: 0 }, { step: 0.1, critKeep: 0 }, { step: 0.15, critKeep: 0.5 }], // §7.18: Crit-Multiplikator statt Crit-Chance
   lichtbogen:    [{ critPerStack: 0.005 }, { critPerStack: 0.01 }, { critPerStack: 0.015 }, { critPerStack: 0.02 }], // §7.28 (Owner): ersetzt Überspannung auf SK_LIGHTNING_04 — jeder wirksame Stapel der gespielten Karte gibt Crit-CHANCE auf den Stich, die Richtung, die bis dahin keine Regel und kein Skill bediente. Startwerte, noch nicht gemessen (Owner: erst Design, dann Startwert, dann messen)
   blitzschlag:   [{ critEvery: 4, stacks: 1 }, { critEvery: 3, stacks: 1 }, { critEvery: 2, stacks: 1 }, { critEvery: 2, stacks: 2 }], // §7.18: einen Schritt schneller, Episch zwei Stapel
-  serienschutz:  [{ frac: 0.7 }, { frac: 0.5 }, { frac: 0.4 }, { frac: 0.3, freePerRound: 1 }],
+  serienschutz:  [{ cost: 1, perRound: 2 }, { cost: 1, perRound: 3 }, { cost: 1, perRound: 5 }, { cost: 1, perRound: 8 }], // §7.30: fester Preis + Deckel je Durchlauf statt eines Anteils der Leiste bei JEDER Niederlage (Effekt +23 %, so wie er war −17 %). Sweep: bei Preis 2 bleibt er neutral (51 % besser als ohne), bei Preis 1 trägt er (59–69 %) — eine Ladung ist teuer, die Leiste ist der Engpass. Die Leiter ist damit die KADENZ, die Häufigkeitsleiter, die Blitz fehlte (§7.26 D)
 };
 export const BLITZ_TIERS = BLITZ;
 const pctS = (x) => de(Math.round(x * 10000) / 100); // Anteil → Prozent mit bis zu zwei Nachkommastellen (0,0075 → „0,75"; eine Stelle rundete 0,75 auf „0,8")
@@ -53,6 +53,8 @@ const pctS = (x) => de(Math.round(x * 10000) / 100); // Anteil → Prozent mit b
    Tabellenzeile (z. B. `overflow`, `chargeFromStreak`) und erscheint nur dort. */
 const tiered = (rows, f) => { const descTiers = rows.map((r) => f(r)); return { desc: descTiers[0], descTiers }; };
 const jeder = (n, w = "Jeder") => (n === 1 ? w : `${w} ${n}.`); // „Jeder 2. Crit" / „Jeder Crit"
+// „Einmal" / „Zweimal je Durchlauf" — aus numWord abgeleitet, damit die Zahlwörter EINE Quelle behalten (§7.30).
+const malWort = (n) => { const w = n === 1 ? "einmal" : `${numWord(n)}mal`; return w[0].toUpperCase() + w.slice(1); };
 // Stufentabellen der 15 Feuer-Skills (§4.5) — dieselbe Form; die Schwellen sinken, die Sätze steigen mit der Stufe.
 // Das Modul factions/fire.js liest sie über `fireParam`; Legendäre haben keine Zeile.
 const FEUER = {
@@ -159,8 +161,8 @@ export const SKILL_DEFS = {
   SK_LIGHTNING_10: { id: "SK_LIGHTNING_10", name: "Entladung", archetype: "lightning", keywords: ["charge", "crit"], tiers: BLITZ.entladung,
     ...tiered(BLITZ.entladung, (r) => `Jede volle Leiste gibt dauerhaft +${de(r.multPerBar)}× Crit-Multiplikator.${r.fillDouble ? " Der Crit, der die Leiste füllt, zählt mit doppeltem Crit-Multiplikator." : ""}`) },
   // Serie und Crit
-  SK_LIGHTNING_07: { id: "SK_LIGHTNING_07", name: "Ladungsserie", archetype: "lightning", keywords: ["crit", "streak"], tiers: BLITZ.serie,
-    ...tiered(BLITZ.serie, (r) => `Jeder Serienpunkt gibt +${pctS(r.critPerStreak)} % Crit-Chance.${r.chargeFromStreak ? ` Ab Serie ${r.chargeFromStreak} gibt jeder Sieg +1 Ladung.` : ""}`) },
+  SK_LIGHTNING_07: { id: "SK_LIGHTNING_07", name: "Ladungsserie", archetype: "lightning", keywords: ["charge", "streak"], tiers: BLITZ.serie,
+    ...tiered(BLITZ.serie, (r) => `Ab Serie ${r.chargeFromStreak} gibt jeder Sieg +1 Ladung.`) },
   SK_LIGHTNING_13: { id: "SK_LIGHTNING_13", name: "Spannungsstau", archetype: "lightning", keywords: ["crit"], tiers: BLITZ.stau,
     ...tiered(BLITZ.stau, (r) => `Jeder Sieg ohne Crit gibt +${de(r.step)}× Crit-Multiplikator für den nächsten Crit; ein Crit ${r.critKeep ? `behält ${pct(r.critKeep)} % des Staus` : "leert den Stau"}.`) },
   SK_LIGHTNING_12: { id: "SK_LIGHTNING_12", name: "Vorentladung", archetype: "lightning", keywords: ["crit", "streak"], tiers: BLITZ.vorentladung,
@@ -179,7 +181,7 @@ export const SKILL_DEFS = {
     ...tiered(BLITZ.lichtbogen, (r) => `Jeder Stapel auf der gespielten Karte gibt +${pctS(r.critPerStack)} % Crit-Chance auf diesen Stich.`) },
   // Schutz
   SK_LIGHTNING_17: { id: "SK_LIGHTNING_17", name: "Serienschutz", archetype: "lightning", keywords: ["charge", "streak"], tiers: BLITZ.serienschutz,
-    ...tiered(BLITZ.serienschutz, (r) => `Verlierst du einen Stich mit mindestens ${pct(r.frac)} % Ladung, hält die Serie; diese ${pct(r.frac)} % werden verbraucht.${r.freePerRound ? " Einmal je Durchlauf ist der Schutz kostenlos." : ""}`) },
+    ...tiered(BLITZ.serienschutz, (r) => `Verlierst du einen Stich, hält die Serie für ${r.cost} Ladung. ${malWort(r.perRound)} je Durchlauf.`) },
   // Legendäre (§3.7): keine Stufe, zwei Effekte erlaubt.
   // (§6.11, Owner: drei Legendäre je Fraktion, die stärksten — SK_LIGHTNING_L01 Donnergott ist gestrichen, gemessen
   //  als schwächstes der vier: +30 % gegen Resonanz +106 %, Doppelentladung +85 %, Hochspannung +40 %.)

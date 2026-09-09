@@ -97,9 +97,12 @@ describe("sim balance guard", () => {
   });
 
   it("Mean-Score im erwarteten Band (Tail-Runaway-Fänger)", () => {
-    // Ist-Wert ≈ 6,24M (exp §5.6). Die Obergrenze fängt weiterhin einen ECHTEN Tail-Blowup (mit stapelnder Geometrie
-    // und ohne Gletscher-Deckel lag der Mean bei 352M).
+    // Ist-Wert ≈ 8,84M (exp §7.30, Blitz-Sockel + Ladungsserie/Serienschutz umgebaut; auf origin/exp davor 6,39M).
+    // Obergrenze 8,5 → 10,5M nachgezogen, und zwar mit Beleg statt auf Verdacht: über 40 Seeds trägt EIN Lauf (129M)
+    // den Mean, ohne ihn stehen 5,75M; über Seeds 1..200 liegt der Mean bei 6,48M, also mitten im Band. Der Median
+    // (Guard darüber) wandert von 2,59 auf 3,12M und bleibt im Band. Die Obergrenze fängt weiterhin einen ECHTEN Blowup
+    // (mit stapelnder Geometrie und ohne Gletscher-Deckel lag der Mean bei 352M) — sie ist um den Faktor 33 entfernt.
     expect(mean).toBeGreaterThan(4_000_000);
-    expect(mean).toBeLessThan(8_500_000);
+    expect(mean).toBeLessThan(10_500_000);
   });
 });

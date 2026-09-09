@@ -322,7 +322,12 @@ export const COMMIT_EXP        = envNum("SIM_COMMIT_EXP", 1);
 // single skill matters again, and every stack on the winning card adds ION_CRIT_MULT_PER_STACK to the crit multiplier.
 // Sweep (100 runs): 0.1×/4 % floor 1.01×, stack build 2.76M < crit build 2.91M · 0.15×/4 % floor 0.98×, stack build
 // 2.97M ≈ crit build 2.95M, stacks 18 % of a random build's score · 0.2×/3 % floor 1.11×, fewer crits fill fewer bars.
-export const LIGHTNING_CRIT_PER_SKILL = envNum("SIM_LIGHTNING_CRIT_PER_SKILL", 0.04); // Passiv: +Crit-Chance je gehaltenem Blitz-Skill (nicht gestuft)
+// §7.30 (Owner: „Sockel steigern"): das Passiv bekommt einen SOCKEL, der Satz je Skill sinkt dafür 0,04 → 0,03.
+// Der Satz je Skill ist linear in gehaltenen Skills und zahlt damit am wenigsten, wenn man am wenigsten hält (§7.29 F);
+// der Sockel zahlt ab dem ersten Skill voll. Gemessen (§7.29 E): Runden 1–10 von 8,4 auf 14,2 % Crit-Chance, erste
+// volle Leiste von Runde 8 auf Runde 5, Laufende unverändert bei 72 %.
+export const LIGHTNING_CRIT_SOCKET    = envNum("SIM_LIGHTNING_CRIT_SOCKET", 0.08); // Passiv: +Crit-Chance, sobald Blitz aktiv ist (einmal, nicht je Skill)
+export const LIGHTNING_CRIT_PER_SKILL = envNum("SIM_LIGHTNING_CRIT_PER_SKILL", 0.03); // Passiv: +Crit-Chance je gehaltenem Blitz-Skill (nicht gestuft)
 export const ION_CRIT_MULT_PER_STACK  = envNum("SIM_ION_CRIT_MULT_PER_STACK", 0.15);  // +Crit-Multiplikator je Stapel auf der Siegkarte (Kurzschluss zählt die Stapel ab der Schwelle doppelt)
 export const LIGHTNING_MAX_CHARGE     = envNum("SIM_LIGHTNING_MAX_CHARGE", 10);       // Leiste: so viele Ladungen (= Crits) bis zur Ionisierung
 // Tariert 2026-09-05 (docs/skill-rework.md §7.5): 12 → 60. Gemessen in der Feuer/Blitz-Welt (--mode duel, 200 Läufe):

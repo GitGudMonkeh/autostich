@@ -4,7 +4,8 @@ import { SKILL_DEFS, TIER_EPIC, activeLightningCount, isLegendarySkill } from ".
 /* ============================================================
    BLITZ — Fraktionsmodul (exp skill rework, docs/skill-rework.md §3). Reine Logik: kein React, kein Math.random.
 
-   Passiv (§3.2): jeder gehaltene Blitz-Skill gibt +LIGHTNING_CRIT_PER_SKILL Crit-Chance. Jeder Crit gibt +1 Ladung;
+   Passiv (§3.2, §7.30): aktiver Blitz gibt +LIGHTNING_CRIT_SOCKET Crit-Chance, jeder gehaltene Blitz-Skill zusätzlich
+   +LIGHTNING_CRIT_PER_SKILL. Jeder Crit gibt +1 Ladung;
    ist die Leiste voll (LIGHTNING_MAX_CHARGE, Reststrom Episch früher), ionisiert sie die NÄCHSTE Karte in der
    Reihenfolge (+1 Stapel) und leert sich auf den Reststrom-Boden. Ein Stapel gibt bei Sieg mit der Karte
    ION_SCORE_PER_STACK Score in die Basis. Stapel sind ohne Deckel und wachsen nie von selbst (Lesart A).
@@ -32,10 +33,10 @@ export const L = Object.freeze({
    bars = volle Leisten (Kettenblitz Normal zählt jede 2.; Anzeige), critCount = Crits (Blitzableiter Normal jeder 2.,
    Blitzschlag jeder N.). Rampen ohne Deckel: stormCritBonus (Gewitterfront), entladungMult (Entladung). stauBonus =
    Spannungsstau (Crit-Multiplikator für den nächsten Crit). fieldLeft = Stiche, die das Ionenfeld noch trägt.
-   serienschutzFree = Episch-Gratisschutz dieser Runde verbraucht. */
+   serienschutzRound = in diesem Durchlauf schon verbrauchte Serienschutz-Auslösungen (§7.30, Deckel je Stufe). */
 export function initLightning() {
   return { active: false, charge: 0, maxCharge: C.LIGHTNING_MAX_CHARGE, bars: 0, critCount: 0,
-    stormCritBonus: 0, entladungMult: 0, stauBonus: 0, fieldLeft: 0, stackBank: 0, serienschutzCount: 0, serienschutzFree: false };
+    stormCritBonus: 0, entladungMult: 0, stauBonus: 0, fieldLeft: 0, stackBank: 0, serienschutzCount: 0, serienschutzRound: 0 };
 }
 
 const held = (skills, id) => (skills || []).includes(id);
@@ -81,17 +82,18 @@ export function lightParam(skills, skillTiers, id, key) {
   return row ? row[key] : undefined;
 }
 
-/* Crit-Chance-Beitrag des Blitz-Archetyps (ungeklemmt): Passiv je Skill + Gewitterfront-Rampe + Ladungsserie (je
-   Serienpunkt der Serie NACH diesem Sieg) + Lichtbogen (§7.28: je wirksamem Stapel der gespielten Karte — die
+/* Crit-Chance-Beitrag des Blitz-Archetyps (ungeklemmt): Passiv (Sockel, sobald aktiv, plus Satz je Skill — §7.30,
+   der Sockel ist die frühe Hälfte, der Satz die späte) + Gewitterfront-Rampe
+   + Lichtbogen (§7.28: je wirksamem Stapel der gespielten Karte — die
    Richtung „Ionisierung → Crit-Chance", die es vorher nicht gab; `card` ist die Lesesicht der Karte, also mit
    Resonanz-Summe, und `effectiveStacks` heißt: Kurzschluss verdoppelt hier genauso wie beim Stapel-Score).
    0, solange der Archetyp inaktiv ist. (Der Spannungsstau zahlt seit §7.18 auf den Crit-Multiplikator, nicht auf die
-   Chance.) */
-export function lightningCritChance(lightning, skills, skillTiers, streak = 0, card = null) {
+   Chance. §7.30: die Ladungsserie zahlt jetzt in Ladung, nicht mehr in Chance — damit liest gerade niemand die Serie.
+   Der Platz bleibt als `_streak` stehen, weil die Engine sie ohnehin berechnet und weiterreicht: eine künftige
+   Serie-zu-Chance-Quelle gehört hierher, und die 15 Aufrufstellen zweimal umzustellen ist der teurere Weg.) */
+export function lightningCritChance(lightning, skills, skillTiers, _streak = 0, card = null) {
   if (!lightning || !lightning.active) return 0;
-  let c = activeLightningCount(skills) * C.LIGHTNING_CRIT_PER_SKILL + (lightning.stormCritBonus || 0);
-  const perStreak = lightParam(skills, skillTiers, L.LADUNGSSERIE, "critPerStreak");
-  if (perStreak) c += perStreak * Math.max(0, streak || 0);
+  let c = C.LIGHTNING_CRIT_SOCKET + activeLightningCount(skills) * C.LIGHTNING_CRIT_PER_SKILL + (lightning.stormCritBonus || 0);
   const perStack = lightParam(skills, skillTiers, L.LICHTBOGEN, "critPerStack");
   if (perStack && card) c += perStack * effectiveStacks(card, skills, skillTiers);
   return c;
@@ -199,21 +201,25 @@ export function stauAfterWin(lightning, skills, skillTiers, isCrit) {
   return { ...lightning, stauBonus: isCrit ? cur * keep : cur + step };
 }
 
-/* Niederlage: Serienschutz (Ladung ab dem Anteil der Stufe hält die Serie und wird verbraucht; Episch einmal je Runde
-   gratis). Kurzschluss Episch (§7.22): verliert eine Karte ab der Schwelle, wird ihr doppelter Stapel-Score vorgemerkt
+/* Niederlage: Serienschutz (fester Ladungspreis der Stufe hält die Serie, höchstens `perRound` mal je Durchlauf).
+   §7.30: bis dahin kostete er einen ANTEIL der Leiste (Normal 70 %) und griff bei JEDER Niederlage — gemessen war der
+   Effekt +23 % und der Preis machte −17 % daraus (gepaart, fixe Policy, 100 Läufe). Der Grund ist die Kadenz, nicht die
+   Zahl: bei rund 14 Niederlagen je Durchlauf frisst jeder Preis mehr Ladung, als die Leiste erzeugt, und er frisst sie
+   genau dann, wenn sie kurz vor der Ionisierung steht. Deckel je Durchlauf + kleiner fester Preis lösen das.
+   Kurzschluss Episch (§7.22): verliert eine Karte ab der Schwelle, wird ihr doppelter Stapel-Score vorgemerkt
    (stackBank) und zahlt mit dem nächsten Sieg in die Basis. Gibt den neuen Substate und ob die Serie gehalten wurde.
    `alreadyHeld` = ein anderer Schutz (Serienanker, Eispanzer) hält die Serie schon — dann wird keine Ladung ausgegeben. */
 export function lightningOnLoss(lightning, skills, skillTiers, { alreadyHeld = false, card = null } = {}) {
   if (!lightning || !lightning.active) return { lightning, streakHeld: false };
   let next = { ...lightning };
   let streakHeld = false;
-  const frac = lightParam(skills, skillTiers, L.SERIENSCHUTZ, "frac");
-  if (frac != null && !alreadyHeld) {
-    const free = (lightParam(skills, skillTiers, L.SERIENSCHUTZ, "freePerRound") || 0) > 0 && !lightning.serienschutzFree;
-    const cost = Math.ceil(maxChargeFor(skills, skillTiers) * frac);
-    if (free) { next.serienschutzFree = true; streakHeld = true; }
-    else if ((lightning.charge || 0) >= cost) { next.charge = lightning.charge - cost; streakHeld = true; }
-    if (streakHeld) next.serienschutzCount = (lightning.serienschutzCount || 0) + 1;
+  const cost = lightParam(skills, skillTiers, L.SERIENSCHUTZ, "cost");
+  const perRound = lightParam(skills, skillTiers, L.SERIENSCHUTZ, "perRound") || 0;
+  if (cost != null && !alreadyHeld && (lightning.serienschutzRound || 0) < perRound && (lightning.charge || 0) >= cost) {
+    next.charge = lightning.charge - cost;
+    next.serienschutzRound = (lightning.serienschutzRound || 0) + 1;
+    next.serienschutzCount = (lightning.serienschutzCount || 0) + 1;
+    streakHeld = true;
   }
   const ksMin = lightParam(skills, skillTiers, L.KURZSCHLUSS, "minStacks");
   if (lightParam(skills, skillTiers, L.KURZSCHLUSS, "onLoss") && ksMin != null && (card?.ionStacks || 0) >= ksMin)
@@ -279,5 +285,5 @@ export function fillBar(lightning, skills, skillTiers, deck, playerOrder, actual
   return { lightning: next, deck: newDeck, filled: true, stacks, targets };
 }
 
-// Rundenende: der Gratis-Serienschutz (Episch) steht wieder zur Verfügung.
-export const lightningCycleEnd = (lightning) => (lightning && lightning.serienschutzFree ? { ...lightning, serienschutzFree: false } : lightning);
+// Durchlauf-Ende: der Serienschutz-Deckel füllt sich wieder auf (§7.30).
+export const lightningCycleEnd = (lightning) => (lightning && (lightning.serienschutzRound || 0) > 0 ? { ...lightning, serienschutzRound: 0 } : lightning);
