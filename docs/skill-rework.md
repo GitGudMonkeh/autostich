@@ -8905,6 +8905,77 @@ rückwirkend für jede Prozentzahl in §7.41 bis §7.52.
 
 ---
 
+### 7.54 Die zwei Zahlen-Skills: einer war einer, der andere nicht (2026-09-10, Owner) — umgesetzt und gemessen
+
+**Owner: „zahlen, messen."** Beide Läufe, Seed 1 und Seed 101, weil §7.53 gezeigt hat, dass ein Einzellauf unter
+35 Prozentpunkten nicht lesbar ist.
+
+#### A · Gebaut
+
+| Skill | vorher | jetzt |
+| --- | --- | --- |
+| **Spannungsfeld** | 2/3/4/6 % Crit-Chance je ionisierter Karte | **5/7/10/15 %** |
+| **Blitzschlag** | +1/1/1/2 Stapel je Auslösung | **+2/3/4/6**, Kadenz unverändert |
+
+Blitzschlags **Kadenz war nie das Problem**: die Leisten schütten im Lauf Ø 634 Stapel aufs Deck (`blitz-ramp`),
+gegen die ein Stapel je zweitem Crit nicht ankommt. Der Satz musste hoch, nicht die Frequenz.
+
+#### B · Blitzschlag ist repariert, deutlich
+
+| Skill | vorher S1 / S101 | jetzt S1 / S101 |
+| --- | ---: | ---: |
+| **Blitzschlag** | +4 % / +1 % | **+74 % / +58 %** |
+| Spannungsfeld | 0 % / +0 % | **−1 % / +1 %** |
+| Blitzfänger *(nicht angefasst)* | +4 % / 0 % | 0 % / −1 % |
+
+**+74 und +58 % in zwei unabhängigen Läufen** — weit über der Rauschgrenze, und damit der erste eindeutig
+reparierte tote Skill der Reihe. Er ist jetzt der stärkste normale Skill neben Kurzschluss. Dass er die SIEGKARTE
+ionisiert, die je Stich wechselt, macht ihn zum Streuer — er speist genau das, wofür Spannungsfeld zahlt.
+
+#### C · Spannungsfeld ist kein Zahlen-Problem, und das ist jetzt belegt
+
+**Zwei Achsen, zwei Anhebungen, kein Effekt:**
+
+- §7.50: als Score-Multiplikator verdreifacht (`SPANNUNGSFELD_SCALE` ×3) → der Skill-Effekt stieg, aber drei von
+  vier Stufen blieben unter Lift 1.
+- §7.54: als Crit-Chance ×2,5 → **−1 % / +1 %**, also unverändert null.
+
+Die Diagnose steht damit fest, und sie ist strukturell: **sein Tor ist zu eng und seine Skala zu klein.** Er zündet
+nur bei einem Formations-Sieg, und er zählt höchstens die Karten einer Formation (Median 4). Lichtbogen sitzt auf
+DERSELBEN Achse und misst +2 / +23 % — weil er bei JEDEM Stich zündet und mit der Stapeltiefe skaliert (Ø 10,7 je
+Karte, tiefste Ø 215).
+
+Bittere Pointe: **die Schranke, die den Weglauf aus §7.46 behoben hat, ist dieselbe, die den Skill klein hält.** Die
+Kartenzahl ist begrenzt — das war der Zweck, und es ist auch der Preis.
+
+#### D · Blitzfänger, dritte und vierte Bestätigung
+
+Nicht angefasst, misst 0 % / −1 % (nach +4 % / 0 % in §7.53). Vier Läufe, viermal null. Zusammen mit dem Befund,
+dass Episch schon heute **+1 Wert je Stapel ungedeckelt** gibt (auf der tiefsten Karte Ø +215 bei Grundwert ~7),
+ist die Sache entschieden: **Wert sättigt, sobald der Stich ohnehin gewonnen ist.** Ein größerer Satz kann dort
+nichts ausrichten.
+
+#### E · Der Preis: die Fraktion steigt wieder
+
+| | Seed 1 | Seed 101 |
+| --- | ---: | ---: |
+| vor der Runde | 383.967.591 | 756.807.703 |
+| jetzt | **792.291.254** | **1.196.265.415** |
+
+Rund verdoppelt, also **1,9× bis 2,9× der Basis** (415.748.556). Das ist kein Nebeneffekt, sondern die Rechnung:
+einen toten Skill lebendig zu machen fügt der Fraktion Kraft hinzu. Blitzschlags `stacks` ist der Regler, wenn sie
+wieder runter soll.
+
+#### F · Bilanz der toten Skills
+
+Von den sechs aus §7.53 D ist **einer repariert** (Blitzschlag) und **fünf sind strukturell**: Serienschutz,
+Gewitterfront, Ladungsserie, Blitzfänger und jetzt auch Spannungsfeld. Meine Einordnung in §7.53 D war damit
+zweimal falsch (Blitzfänger und Spannungsfeld als „Zahlen-Problem"), und beide Male hat dieselbe Prüfung gefehlt:
+**erst nachsehen, ob der bestehende Satz auf seinem Maximum schon etwas bewirkt.** Bei Blitzfänger tat er es nicht
+(+215 Wert = 0 %), bei Spannungsfeld ebenso wenig (§7.50s Verdreifachung).
+
+---
+
 ### 5.30 Die Eis-Skills auf dem neuen Motor (2026-09-09) — gemessen, nichts umgesetzt
 
 **Owner:** „und dann schauen wir uns alle skills an die davon profitieren müssen und designen wie."
@@ -9329,3 +9400,4 @@ leichtesten haben.
 | 2026-09-10 | Blitz bekommt keinen eigenen Multiplikator, das Feld zieht auf die Crit-Chance (§7.51, Owner: „lass den blitz mult raus. Blitz nutzt schon crit als mult. lass mir damit arbeiten"). **Die Prämisse aus §7.43 war falsch.** Dort stand als struktureller Fund „Blitz hatte keinen eigenen Multiplikator — er zahlte nur in Basis-Score, Wert und Crit"; das letzte Wort widerlegt den Satz. Der Crit-Multiplikator IST die Multiplikator-Achse der Fraktion, und sie hängt an derselben Kernressource wie alles andere (jeder Stapel der Siegkarte zahlt über `ION_CRIT_MULT_PER_STACK` dorthin). Ich habe daneben eine zweite gestellt — zwei Multiplikator-Achsen an derselben Ressource sind genau das kubische Wachstum aus §7.46 C. Die drei Runden §7.43 → §7.47 → §7.49 haben an den Symptomen dieser einen Annahme gearbeitet. **Raus:** `lightMult` aus Score-Produkt, `glacierWinMult` und Breakdown, `lightFormMult` aus dem Blitz-Modul, `SPANNUNGSFELD_SCALE` aus den Konstanten (der Sweep-Griff aus §7.49 hat keinen Gegenstand mehr), Sonde `spannungsfeld.mjs` gelöscht. **Der Skill bleibt** (Owner-Untergrenze 14 normale Skills je Fraktion, §7.16) und zieht auf die Achse, die Blitz ohnehin hat: **+2/3/4/6 % Crit-CHANCE je ionisierter Karte der Formation**, Episch-Anhang unverändert. Damit steht er gegen Lichtbogen, der eine Zeile höher in derselben Funktion sitzt und die Tiefe EINER Karte belohnt — Streuung gegen Tiefe, auf einer vorhandenen Achse; das ist die Entscheidung, die §7.43 bauen wollte und mit einer zweiten Achse verfehlt hat. Die 100-%-Klemme deckelt ihn von selbst, darüber zahlt er über die Überschuss-Regel (§7.44) gedämpft weiter; gemessen (§7.46 F) sind es mittig 2,0 und spät 4,4 ionisierte Karten, der Beitrag wächst also dort, wo Chance knapp ist, und sättigt dort, wo sie es nicht mehr ist. `litCards` ist 0, wo die Formation nicht bekannt ist (Statusleiste) — dieselbe Bauform wie `card = null` bei Lichtbogen. **Wächter:** kein Blitz-Faktor im Breakdown (über die vollständige Liste der `*Mult`-Schlüssel, nicht nur den alten Namen) UND die Stapel heben weiterhin den Crit-Multiplikator; gegengeprobt in der Form, die wirklich droht — ein `lightMult = 1` zurück in den Breakdown, ein Faktor, der KEINE Zahl im Spiel ändert und sonst niemandem auffiele. Dazu: weder `perStack` (§7.43) noch `perCard` (§7.47) dürfen in der Stufentabelle zurückkommen. **Der Stand aus §7.50 (Median 1,0 Mrd, 2,4× der Basis) ist damit nicht mehr gültig.** Was aus der Reihe bleibt: der weiche Crit-Deckel bei 0,05 (§7.49 A, von §7.50 als der wirksame Hebel belegt) und §7.44, das jetzt sogar wichtiger ist. Startwerte, UNGEMESSEN. |
 | 2026-09-10 | §7.51 nachgemessen (§7.52). Blitz-Mono, 12.050 Läufe. **Die Fraktion ist auf dem Basisniveau angekommen, und zwar auf JEDER Kennzahl: Median 384M gegen 416M (0,92×), p95 3,07 gegen 3,44 Mrd (0,89×), max 58,1 gegen 71,5 Mrd (0,81×).** Nicht nur der Median — der ganze Schwanz ist zurück, und das ohne einen einzigen neuen Deckel. Gegen das Feld aus §7.41 (Pf 367M · Ei 348M/224M · Fe 137M, je zum Stand ihrer letzten Messung) steht Blitz gleichauf mit der Pflanze. **Die Form stimmt auch:** die drei Legendären führen (+211 / +137 / +69 %), der stärkste normale Skill ist Kurzschluss mit +45 % — dieselbe Form, die §7.33 für Feuer als richtig festgehalten hat. **Kettenblitz ist repariert**, der Zeuge des ganzen Problems: +5 % (Basis) → +601 % (§7.46) → +238 % (§7.47) → +40 % (§7.50) → **+1 %**, Haltequote 92 → 48 %. Reine Tiefe auf einer Karte ist kein Motor mehr. **Lichtbogen ist zurück** (+18 → −10 → 0 → **+25 %**, 98 % gehalten) und damit zweitstärkster normaler Skill — die Crit-Chance-Achse trägt wieder, und genau dort sitzt das Spannungsfeld jetzt als Gegenspieler. **Offen:** das Spannungsfeld selbst misst 0 % bei 58 % Haltequote, die Stufen-Lifts (1,97 / 0,48 / 0,18 / 1,68) sind nicht monoton und damit Rauschen — der Skill ist neutral, nicht kaputt, die Höhe seiner Leiter ist der nächste Regler und ein Owner-Entscheid. Drei Skills im Minus (Entladung −23 %, Vorentladung −23 %, Serienschutz −13 %, alle ~100 % gehalten); Vorentladungs Fall von +4 auf −23 % ist ein KANDIDAT, kein Befund — sie zahlt Crit-Multiplikator je Serienpunkt und die flachere Rest-Steigung entwertet genau das, aber §7.50 hat sie auf derselben Steigung noch mit +4 % gemessen, also liegt das im Rauschen der Reihe (§7.46 B) und gehört gezielt nachgemessen. |
 | 2026-09-10 | Die Rauschgrenze gemessen statt geschätzt (§7.53, Owner: „nachmessen, dann toten skills angehen"). Zweimal dieselbe Konfiguration, nur ein anderer Seed-Satz (`--seed 1` gegen `--seed 101`). **Ergebnis: Faktor 1,97 auf dem Fraktions-Median (384M gegen 757M) und Faktor 3,0 auf dem p95 — bei identischem Code.** Je Skill ist der Median der Spannen **17 Prozentpunkte**, im Einzelfall weit mehr (Hochspannung 211 pp, Kettenblitz 35 pp, Resonanz 33 pp); auch die Haltequoten springen (Gewitterfront 20 → 85 %, Ladungsserie 100 → 51 %). **Das korrigiert drei frühere Aussagen:** §7.52 A („Median 0,92× der Basis") gilt nur für Seed 1, mit Seed 101 wären es 1,82× — belastbar ist allein, dass Blitz in der GRÖSSENORDNUNG der Basis liegt statt beim Vier- bis Achtfachen (die Richtung 1.639 → 1.014 → 384/757M hält mit großem Abstand, die zweite Stelle nicht); §7.52 B („Kettenblitz ist repariert", +1 %) war zu stark, der zweite Lauf misst +35 % — weit weg von +601 % bleibt richtig, die Genauigkeit nicht; und die Vorsicht bei Vorentladung (§7.52 C, als Kandidat markiert) war berechtigt, der zweite Lauf sagt +5 % statt −23 %. **Faustregel daraus: unter etwa 35 pp ist ein Einzellauf dieser Reihe nicht lesbar, und er trägt eine Stelle, nicht zwei — rückwirkend für jede Prozentzahl in §7.41 bis §7.52.** Hochspannung ist mono grundsätzlich nicht messbar (211 pp bei gleicher Haltequote), was §7.41 C aus anderem Grund schon sagte. **Die toten Skills, diesmal belegt** (in BEIDEN Läufen ≤ 0 mit kleiner Spanne, sechs von dreizehn): Serienschutz −13/−20 % (kostet aktiv: zahlt Ladung für eine Serie nach einer Niederlage, und Ladung ist der Engpass — dazu ein Niederlagen-Skill gegen die Owner-Regel aus §7.31), Spannungsfeld 0/+0 %, Gewitterfront 0/0 % (spät ist die Chance gesättigt, früh gibt es kaum Leisten — er zahlt genau dann nicht, wenn er könnte), Blitzschlag +4/+1 %, Blitzfänger +4/0 %, Ladungsserie −5/+3 % (Ladung IST der Engpass, trotzdem neutral: die Schwelle greift zu spät). Entladung (−23/−5 %, 17 pp) liegt auf der Grenze und ist nicht entschieden. Drei der sechs haben eine STRUKTURELLE Diagnose, keine Zahlen-Diagnose — dort hilft ein größerer Satz nicht. Nichts umgesetzt, Owner-Entscheid. |
+| 2026-09-10 | Die zwei Zahlen-Skills angehoben und gemessen (§7.54, Owner: „zahlen, messen"), beide Seed-Sätze, weil §7.53 die Rauschgrenze bei 35 pp beziffert hat. Gebaut: **Spannungsfeld 2/3/4/6 → 5/7/10/15 % Crit-Chance je ionisierter Karte**, **Blitzschlag +1/1/1/2 → +2/3/4/6 Stapel je Auslösung** bei unveränderter Kadenz (die war nie das Problem: die Leisten schütten im Lauf Ø 634 Stapel aufs Deck, gegen die ein Stapel je zweitem Crit nicht ankommt). **Blitzschlag ist repariert, und zwar deutlich: +4/+1 % → +74/+58 %** in zwei unabhängigen Läufen, weit über der Rauschgrenze — der erste eindeutig reparierte tote Skill der Reihe, jetzt stärkster normaler Skill neben Kurzschluss. Weil er die SIEGKARTE ionisiert, die je Stich wechselt, streut er und speist damit das Spannungsfeld. **Spannungsfeld ist dagegen KEIN Zahlen-Problem, und das ist jetzt belegt: zwei Achsen, zwei Anhebungen, kein Effekt** (§7.50 als Score-Multiplikator verdreifacht → drei von vier Stufen blieben unter Lift 1; §7.54 als Crit-Chance ×2,5 → −1/+1 %). Die Diagnose ist strukturell: sein Tor ist zu eng (nur Formations-Siege) und seine Skala zu klein (höchstens die Karten einer Formation, Median 4), während Lichtbogen auf DERSELBEN Achse +2/+23 % misst, weil er bei JEDEM Stich zündet und mit der Stapeltiefe skaliert (Ø 10,7 je Karte, tiefste Ø 215). Bittere Pointe: **die Schranke, die den Weglauf aus §7.46 behoben hat, ist dieselbe, die den Skill klein hält.** Blitzfänger (nicht angefasst) misst 0/−1 % — vierte Bestätigung, zusammen mit dem Befund, dass Episch schon heute +1 Wert je Stapel ungedeckelt gibt (auf der tiefsten Karte Ø +215 bei Grundwert ~7): **Wert sättigt, sobald der Stich ohnehin gewonnen ist.** **Preis der Runde:** die Fraktion steigt von 384/757M auf **792/1.196M**, also 1,9× bis 2,9× der Basis — kein Nebeneffekt, sondern die Rechnung: einen toten Skill lebendig zu machen fügt Kraft hinzu; Blitzschlags `stacks` ist der Regler. **Bilanz:** von den sechs toten Skills ist EINER repariert und FÜNF sind strukturell (Serienschutz, Gewitterfront, Ladungsserie, Blitzfänger, Spannungsfeld). Meine Einordnung in §7.53 D war damit zweimal falsch, und beide Male hat dieselbe Prüfung gefehlt: erst nachsehen, ob der bestehende Satz auf seinem Maximum überhaupt etwas bewirkt. |
