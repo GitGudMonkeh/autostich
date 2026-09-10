@@ -8376,9 +8376,22 @@ weiterhin keinen Deckel, ist aber nicht das Problem dieser Runde.
 
 #### F · Neue Sonde
 
-`sim/probes/spannungsfeld.mjs` liest je 10-Runden-Block die gehaltene Stufe, `lightMult` aus dem Breakdown, die
-Stapelsumme auf dem Deck und die Spitze je Sieg. Mit der Fraktions-Policy (Selten) bleibt `lightMult` in den Runden
-41–50 bei Median 1,07×, p99 1,54× — der Faktor allein trägt den Ausschlag nicht, was das 2×2 in B bestätigt.
+`sim/probes/spannungsfeld.mjs` bildet je Formations-Sieg die Sicht des Skills nach (`formationStacks`, also die
+Vereinigung, jede Karte einmal) und meldet je 10-Runden-Block, wie viele Karten in der Formation hängen, wie viele
+davon ionisiert sind, die Stapelsumme und die tiefste Karte. 100 Läufe, Blitz mono, Fraktions-Policy:
+
+| Runden | gehalten | Ø Mitglieder | Ø davon ionisiert | Ø Stapelsumme | Ø tiefste Karte |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 1–10 | 13 % | 3,76 | 0,15 | 0,2 | 0,2 |
+| 11–20 | 28 % | 4,07 | 0,85 | 1,7 | 1,1 |
+| 21–30 | 48 % | 4,17 | 2,00 | 6,0 | 3,3 |
+| 31–40 | 64 % | 4,35 | 3,37 | 21,3 | 10,4 |
+| 41–50 | 78 % | 4,60 | 4,40 | 67,1 | 33,0 |
+
+Runden 41–50 je Formations-Sieg: Mitglieder Median 4,0 / p99 40 (die Formation ist durch das Brett begrenzt) —
+**Stapelsumme Median 24, p99 1.423, max 2.577.** Die zwei Spalten sind der ganze Unterschied: die Mitgliederzahl
+hat eine Obergrenze, die Stapelsumme nicht. Und **spät ist fast jedes Mitglied ohnehin ionisiert** (4,40 von 4,60),
+die Streu-Bedingung greift also früh und mittig und sättigt gegen Ende.
 
 #### G · Was offen ist
 
