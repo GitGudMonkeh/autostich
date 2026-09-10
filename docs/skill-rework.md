@@ -7785,6 +7785,61 @@ absichtlich Nische, und **zwei sind offen** (Zunder, Glutstahl). Feuer ist als F
 
 ---
 
+### 7.37 Die drei Blitz-Legendären gesenkt (2026-09-10, Owner) — umgesetzt, UNGEMESSEN
+
+Owner nach der Feuer-Runde: „als nächstes blitz", und auf die Frage nach dem Einstieg: die drei Legendären senken.
+Zahlen vorher vorgelegt und abgenommen (Dosis „mittel").
+
+#### A · Ausgangslage
+
+§8 misst mono **Resonanz +553 % · Hochspannung +520 % · Doppelentladung +383 %** — die drei stärksten Legendären
+des Spiels. Zum Vergleich die Spitzen der anderen Fraktionen nach ihren Runden: Pflanze +274 %, Eis +284 % (§8-Stand),
+Feuer +66 %. Zielband dieser Runde: **250–300 %**.
+
+Jeder der drei hängt an genau EINEM Regler, und zwei davon aneinander.
+
+| Skill | Regler | alt | neu | was er tut |
+| --- | --- | --- | --- | --- |
+| Resonanz | `RESONANZ_SHARE` | 2,25 | **1,5** | eine Karte kämpft mit ihren Stapeln + Anteil × den Stapeln der anderen Formations-Mitglieder |
+| Hochspannung | `HOCHSPANNUNG_STEPS` | 3 | **2** | alle gehaltenen Blitz-Skills wirken so viele Stufen höher |
+| Doppelentladung | `DOPPELENTLADUNG_STACKS` | 5 | **3** | Stapel je Ionisierung |
+
+`DOPPELENTLADUNG_STRIKE` (2) bleibt bewusst stehen: ein Hebel je Skill und Runde.
+
+#### B · Warum genau diese Zahlen
+
+**Resonanz stand weit über ihrem eigenen Nullpunkt.** Der Regler ist mit „1 = die ganze Summe" dokumentiert; bei 2,25
+bekam jede Karte mehr als das Doppelte der vollen Partnersumme. Gerechnet an einer Vierer-Formation, die anderen drei
+mit je 5 Stapeln (ein Stapel = +75 Basis-Score und +0,15× Crit-Multiplikator):
+
+| SHARE | Stapel der Siegkarte | Score | Crit-Multiplikator |
+| --- | --- | --- | --- |
+| 2,25 (alt) | 38 | 2.850 | +5,70× |
+| **1,5 (neu)** | **27** | **2.025** | **+4,05×** |
+| 1,0 (Nullpunkt) | 20 | 1.500 | +3,00× |
+
+**Hochspannung hat keinen anderen Zwischenwert.** Der Regler ist diskret, und die Kurve ist extrem steil: bei 1 maß er
++8 % (schwächer als ein normaler Pick, §6.12), bei 3 sind es +520 %. **2 ist der einzige Wert dazwischen.** Landet er
+falsch, braucht der Skill eine andere MECHANIK — etwa nur N Skills statt aller —, keine andere Zahl. Das ist die
+wichtigste offene Stelle dieser Runde.
+
+**Doppelentladung** geht auf 3 zurück, den Mittelwert ihrer eigenen Historie (2 → 4 → 5).
+
+#### C · Zwei Vorhersagen, die die Messung prüfen soll
+
+1. **Resonanz und Doppelentladung sind gekoppelt** — Doppelentladung erzeugt die Stapel, Resonanz teilt sie. Beide
+   fallen also, und der Anteil ist nicht sauber trennbar. Dieselbe Lage wie Wurzelgeflecht/Baumreihe (§6.31) und
+   Klinge/Weißglut (§7.33); dort ist der ungetroffene Partner jedes Mal von allein mitgefallen.
+2. **Die Stapel-Schnitte landen vermutlich WEICHER, als die Prozente aussehen.** §7.31 hat gemessen, dass 81 % des
+   gebauten Crit-Multiplikators am 8×-Deckel verfällt — 54 Stapel reichen allein schon dafür. Was hier weggenommen
+   wird, wurde zum Teil ohnehin verworfen. Hochspannung dagegen sollte HÄRTER treffen, weil Stufen jeden
+   Skill-Effekt heben, nicht nur den Multiplikator.
+
+Trifft (2) zu, ist der eigentliche Hebel der Fraktion nicht ihre Spitze, sondern der Deckel — und §7.31 wartet
+weiter auf eine Abnahme.
+
+---
+
 ### 5.30 Die Eis-Skills auf dem neuen Motor (2026-09-09) — gemessen, nichts umgesetzt
 
 **Owner:** „und dann schauen wir uns alle skills an die davon profitieren müssen und designen wie."
@@ -8192,3 +8247,4 @@ leichtesten haben.
 | 2026-09-10 | Sieben der acht flachen Feuer-Skills angehoben (§7.34, Owner: „dann buff die acht flachen feuer skills"). Zwei strukturelle Funde vor den Zahlen: (a) **die Ewige Glut hatte ein verschobenes Tor** — ihre Rampe wächst bei voller Leiste, und „voll" las die Leiste des BUILDS; mit Weißglut (98 % gehalten) stand sie bei 200 statt 100, die Rampe tickte fast nie, und das Legendäre maß −0 %. Derselbe Fehler wie bei der Klinge in §7.32. Tor liest jetzt `HEAT_MAX`. (b) **Das Glutbett darf nach der eigenen Owner-Regel nicht gebufft werden**: es ist ein reiner Niederlagen-Skill (Boden unter der Kühlung, Episch „kühlt gar nicht"), bei 74 % Siegquote und einer Leiste am Anschlag verteidigt es gegen etwas, das nicht passiert — und §7.31 hält fest „keine Skills, die auf Niederlagen reagieren", genau der Grund, aus dem die Rückzündung in §7.24 umgebaut wurde. Nicht angefasst; es gehört ersetzt, und das ist ein Owner-Entscheid. Die sieben: Glutstahl 8–20 → 14–36 · Feuerlinie 0,02–0,05 → 0,035–0,08 bei Kosten 3 → 2 · Zunder 2–5 → 4–10 (bei voller Leiste ein Score-Skill über den Schmelzpunkt) · Rückzündung ×1,5 → ×1,8 · Brandschneise Breite 3–6 → 4–10 und ×2,5 → ×3 · Schmiede 1/1/1/2 → 1/2/2/3 Karten · `FORGE_VALUE` 3 → 4. Drei Wächter auf die neue Wahrheit gezogen (der Schmiede-Textwächter prüft jetzt JEDE Stufe statt „Plural nur bei Episch" — strenger als vorher). Balance-Guard-Median neu zentriert mit Beleg: 5,26M über Seeds 1..40, 4,74M über 1..200 (kein Ausreißer), Band 3,40–7,10M; der Mean bleibt im bestehenden Band. UNGEMESSEN. |
 | 2026-09-10 | §7.34 nachgemessen (§7.35). Feuer-Mono, 7 min. **Die Fraktion ist repariert: mono 65,1M → 137,3M (+111 %)**, über dem Stand vor dem Klingen-Schnitt; der Rückstand auf Blitz fällt von 26× auf 12×. Fünf von sieben sitzen — und der größte Einzelgewinn war KEIN Buff, sondern der Tor-Fix: **Ewige Glut −0 → +52 %** und damit das dritte Legendäre in einem gesunden Band (Sonnenkern +66 %, Sonnenzorn +54 %). Dazu Feuerlinie −5 → +28 %, Brandschneise +1 → +8 %, Schmiede −2 → +6 %, Rückzündung −2 → +2 %. **Zwei haben nicht gewirkt, und bei einem war meine Begründung falsch:** *Zunder* (0 → −2 % trotz Verdopplung) sollte laut §7.34 über den Schmelzpunkt-Überlauf zahlen — aber der Schmelzpunkt wird nicht mehr zuverlässig gebaut, seine Haltequote fällt in derselben Messung von 100 % auf 61 %; ohne ihn wird Überlauf-Hitze weggeworfen, und doppelt so viel Weggeworfenes ist nichts. *Glutstahl* (−4 → −7 % trotz +75 %) ist ein Mitfahrer der Klinge, deren Motor §7.32 halbiert hat und die nur noch 55 % gehalten wird — ein höherer Satz auf eine Bemessungsgrundlage nahe null bleibt nahe null (dieselbe Signatur wie Verwachsung in §6.30). Beide brauchen eine Mechanik, keine Zahl; das ist ein Owner-Entscheid. Nebenbefund: die Glühende Klinge fällt weiter (+24 → +9 %, Haltequote 82 → 55 %) — Ablation gegen einen gewachsenen Rest, also die Absicht. |
 | 2026-09-10 | Glutstahl zurück auf 8/12/16/20 (§7.36, Owner). §7.34 hatte den Satz um 75 % gehoben, §7.35 hat gemessen, dass das nichts bringt: −4 → −7 %, also schlechter. Der Grund steht dort — er zahlt je Punkt Kampfwert über dem Grundwert, und diese Bemessungsgrundlage war zum guten Teil die Glühende Klinge, deren Motor §7.32 halbiert hat. Owner-Entscheid, mit Begründung: „es gibt noch genügend andere quellen werte zu erhöhen über perks wenn man darauf spielt" — Glutstahl bleibt damit ein Bau-Skill für einen Wert-Bau, kein Grundstock, und seine gemessene Schwäche im gierigen Mono-Lauf ist kein Defekt. Damit ist der Vorschlag aus §7.35 C (Glutstahl braucht eine eigene Wertquelle) zurückgezogen; offen bleibt allein Zunder. |
+| 2026-09-10 | Die drei Blitz-Legendären gesenkt (§7.37, Owner, Zahlen vorher vorgelegt und abgenommen). §8 maß mono Resonanz +553 %, Hochspannung +520 %, Doppelentladung +383 % — die drei stärksten des Spiels, gegen Pflanze +274 % und Eis +284 % an ihren Spitzen; Zielband 250–300 %. Jeder hängt an genau einem Regler: `RESONANZ_SHARE` 2,25 → **1,5**, `HOCHSPANNUNG_STEPS` 3 → **2**, `DOPPELENTLADUNG_STACKS` 5 → **3**. `DOPPELENTLADUNG_STRIKE` bleibt bei 2 — ein Hebel je Skill und Runde. Resonanz stand weit über ihrem eigenen dokumentierten Nullpunkt („1 = die ganze Summe"): eine Karte in einer Vierer-Formation mit je 5 Partnerstapeln kämpfte mit 38 statt 27 Stapeln, also 2.850 statt 2.025 Basis-Score und +5,70× statt +4,05× Crit-Multiplikator. Hochspannung hat KEINEN anderen Zwischenwert — der Regler ist diskret, bei 1 maß er +8 %, bei 3 +520 %; landet 2 falsch, braucht der Skill eine andere Mechanik, keine andere Zahl. Zwei Vorhersagen für die Messung: (a) Resonanz und Doppelentladung sind gekoppelt und fallen beide, der Anteil ist nicht trennbar; (b) die Stapel-Schnitte landen vermutlich weicher als die Prozente aussehen, weil laut §7.31 81 % des gebauten Crit-Multiplikators am 8×-Deckel verfällt — trifft das zu, ist der eigentliche Hebel der Fraktion der Deckel, nicht ihre Spitze. UNGEMESSEN. |
