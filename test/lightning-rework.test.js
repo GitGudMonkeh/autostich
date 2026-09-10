@@ -222,7 +222,7 @@ describe("Blitz-Modul — Ladung, Leiste, Niederlage (reine Übergänge)", () =>
   });
   it("blitzschlagStacks: jeder N. Crit (Zähler nach dem Crit), Doppelentladung 2 Stapel", () => {
     const n = T.blitzschlag[0].critEvery;
-    expect(blitzschlagStacks(light({ critCount: n }), [L.BLITZSCHLAG], {})).toBe(1);
+    expect(blitzschlagStacks(light({ critCount: n }), [L.BLITZSCHLAG], {})).toBe(T.blitzschlag[0].stacks);
     expect(blitzschlagStacks(light({ critCount: n - 1 }), [L.BLITZSCHLAG], {})).toBe(0);
     expect(blitzschlagStacks(light({ critCount: 2 }), [L.BLITZSCHLAG, L.DOPPELENTLADUNG], { [L.BLITZSCHLAG]: 3 })).toBe(T.blitzschlag[3].stacks * C.DOPPELENTLADUNG_STACKS); // §7.18: Episch zwei Stapel, Doppelentladung verdoppelt
     expect(blitzschlagStacks(light({ critCount: 5 }), [], {})).toBe(0);
