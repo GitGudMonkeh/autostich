@@ -8281,6 +8281,122 @@ Drei, alle gegengeprobt:
 
 ---
 
+### 7.46 §7.42/§7.43/§7.44 nachgemessen: der Stapel hat drei Achsen bekommen (2026-09-10) — gemessen
+
+Blitz-Mono, 12.050 Läufe je Variante, Parameter der §8-Baseline, dieselbe Zeile wie §7.41
+(`node sim/survey.js --fraktion lightning --groesse 1 --explore 900 --runs 175 --cross 500 --seed 1`).
+
+**Die Basis `blitz-mono2` liegt VOR §7.42.** In dieser Messung stecken deshalb drei Zahlenänderungen, nicht zwei —
+das ist beim Aufsetzen fast untergegangen und wäre derselbe Fehler wie in §7.41, wo zwei Änderungen nicht trennbar
+waren. Diesmal sind sie getrennt worden.
+
+#### A · Die Zahl
+
+| | §7.41 (Basis) | jetzt |
+| --- | ---: | ---: |
+| Bl mono Median | 415.748.556 | **3.115.597.844** |
+| p95 / Median | 8× | **120×** |
+| max / Median | 172× | **1.138×** |
+| Siegquote | 68,6 % | 66,9 % |
+
+7,5× über der Basis. Der Median ist dabei nicht einmal das Schlimme: die Verteilung ist von „breit" auf
+**„weglaufend"** gekippt. Ein Lauf im oberen Zwanzigstel zahlt jetzt das 120-fache des mittleren.
+
+#### B · Welche der drei war es — das 2×2
+
+Zwei der drei Änderungen haben einen ENV-Regler und lassen sich einzeln zurückdrehen: `SIM_CRIT_MULT_SOFT_SLOPE=0`
+stellt den harten Deckel aus der Zeit vor §7.42 wieder her (so in §7.42 als Rückweg gebaut), `SIM_OVERCRIT_MULT_PER_PP=0.01`
+den Satz vor §7.44.
+
+| Median | Überschuss 0,01 (alt) | Überschuss 0,03 (§7.44) |
+| --- | ---: | ---: |
+| **harter** Deckel (vor §7.42) | **523.458.186** | 1.691.611.064 |
+| **weicher** Deckel (§7.42) | 4.491.542.696 | **3.115.597.844** (Ist-Stand) |
+
+Mit beiden Deckeln zurück steht Blitz bei **523M gegen 416M Basis**. Der einzige Unterschied dieser Zelle zur Basis
+ist Spannungsfeld: **§7.43 allein kostet +26 %**, und der Skill misst dort +45 %. Das ist ein normaler, gesunder
+Skill. Der Ausschlag kommt nicht von ihm.
+
+**§7.44 lässt sich aus diesen Zahlen nicht sauber ablesen** — die zwei Zellen sagen ×3,2 und ×0,7, also nicht
+einmal dasselbe Vorzeichen. Der gierige Spieler lernt seine Wertetabelle je Variante NEU, und eine geänderte
+Crit-Chance kippt andere Stiche in Crits (§7.28 F). Unterschiede unter rund Faktor 2 sind in dieser Messreihe nicht
+interpretierbar. Belastbar ist nur: §7.44 ist nicht der Treiber, in keiner Zelle.
+
+#### C · Der Treiber ist der weiche Deckel, und Kettenblitz ist der Zeuge
+
+**Kettenblitz: +5 % (Basis) → +601 % (Ist-Stand) → +11 % (beide Deckel zurück).** Er ist der einzige Blitz-Skill,
+der reine TIEFE auf EINER Karte macht — jede volle Leiste legt auf die Karte mit den meisten Stapeln nach.
+
+Vorher zahlte Tiefe genau einmal. Der Crit-Multiplikator klemmte **ab Stapel 39** hart bei 8×, jeder weitere Stapel
+war auf dieser Achse tot; nur der Basis-Score lief weiter. Das, und nicht eine zu kleine Zahl, war der Grund für die
++5 % in §7.41.
+
+Jetzt zahlt derselbe Stapel dreimal, und keine der drei Achsen hat noch eine Obergrenze:
+
+| Achse | je Stapel | Deckel |
+| --- | ---: | --- |
+| Basis-Score (`ION_SCORE_PER_STACK`) | +75 | hatte nie einen |
+| Crit-Multiplikator (`ION_CRIT_MULT_PER_STACK`) | +0,15 | seit §7.42 weich, also praktisch keiner |
+| `lightMult` (Spannungsfeld) | +0,3 bis +0,7 % | neu in §7.43, keiner |
+
+Die drei stehen als **Produkt** in der Score-Formel. Mit den echten Funktionen nachgerechnet (kein Simulationslauf),
+eine Karte mit S Stapeln in einer Dreier-Formation, Spannungsfeld Episch:
+
+| Stapel S | Crit-Mult hart | Crit-Mult weich | `lightMult` | Stich vorher | Stich jetzt | Faktor |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 50 | 8,00× | 8,35× | 1,350× | 33.200 | 46.781 | 1,41× |
+| 100 | 8,00× | 9,85× | 1,700× | 63.200 | 132.286 | 2,09× |
+| 200 | 8,00× | 12,85× | 2,400× | 123.200 | 474.936 | 3,86× |
+| 400 | 8,00× | 18,85× | 3,800× | 243.200 | 2.177.552 | **8,95×** |
+
+Aus **linear** ist **kubisch** geworden, und die letzte Spalte läuft weiter. Genau das erzeugt den Schwanz: ein Lauf,
+der zufällig tief stapelt, gewinnt nicht 30 % mehr, sondern das Zehnfache. Stapel verschwinden nie und wachsen über
+50 Runden monoton — die Kurve wird also in jedem langen Lauf abgefahren, nicht nur in Ausreißern.
+
+#### D · Was ich in §7.43 falsch konstruiert habe
+
+§7.43 C behauptet, Spannungsfeld zahle für **gestreute** Stapel und stehe damit gegen Kurzschluss und Kettenblitz,
+die Tiefe wollen — „die Entscheidung, die Blitz gefehlt hat".
+
+**Das stimmt nicht.** `formationStacks` bildet die SUMME der Stapel über die Formation, und eine Summe unterscheidet
+nicht, ob sie aus drei Karten mit je 20 Stapeln kommt oder aus einer mit 60. Der Vergleich in §7.43 C („dreimal so
+viel wie dieselbe Formation mit einer tiefen Karte und zwei leeren") hält nur, wenn man die tiefe Karte künstlich
+auf der Tiefe der anderen einfriert. Real macht Kettenblitz die eine Karte tief, und Spannungsfeld zählt sie voll
+mit. Der Skill steht nicht gegen Kettenblitz — **er multipliziert mit ihm.**
+
+Die Entscheidung, die Blitz fehlen sollte, ist damit nicht gebaut. Der eigene Multiplikator (der strukturelle Fund
+aus §7.43) ist gebaut und wirkt; die Streu-Bedingung ist es nicht.
+
+#### E · Der Überschuss über 100 %, gemessen
+
+Sonde `sim/probes/overcrit-probe.mjs`, 120 Läufe. Blitz mono, Runden 41–50: **31 % der Stiche liegen über 100 %
+Crit-Chance, im Mittel 52 Punkte darüber** — bei 0,03 also +1,56× Multiplikator. Im Zufallsmix sind es 5 % der
+Stiche. Die in §7.44 notierte Sorge (400 % Chance wären +9×) tritt im gierigen Lauf nicht ein; die Regel hat
+weiterhin keinen Deckel, ist aber nicht das Problem dieser Runde.
+
+#### F · Neue Sonde
+
+`sim/probes/spannungsfeld.mjs` liest je 10-Runden-Block die gehaltene Stufe, `lightMult` aus dem Breakdown, die
+Stapelsumme auf dem Deck und die Spitze je Sieg. Mit der Fraktions-Policy (Selten) bleibt `lightMult` in den Runden
+41–50 bei Median 1,07×, p99 1,54× — der Faktor allein trägt den Ausschlag nicht, was das 2×2 in B bestätigt.
+
+#### G · Was offen ist
+
+Alles Owner-Entscheide, nichts davon umgesetzt:
+
+1. **Die Tiefe einer Karte hat keinen Gegenspieler.** Drei Achsen, kein Deckel, Produkt. Ein harter Deckel zurück
+   widerspricht der Owner-Regel „Deckel sind frustrierend" und war der Grund für §7.42; die Alternativen wären eine
+   flachere Rest-Steigung (`CRIT_MULT_SOFT_SLOPE` 0,2 → kleiner), ein zweiter Knick weit oben, oder eine
+   abnehmende Wirkung der Stapel EINER Karte an der Wurzel (`effectiveStacks`).
+2. **Spannungsfelds Streu-Bedingung fehlt** (D). Zählte der Skill etwa die ionisierten KARTEN der Formation statt
+   der Stapelsumme, wäre die Entscheidung gebaut und eine Achse aus dem Tiefen-Produkt heraus.
+3. **Die Rauschgrenze dieser Messreihe ist rund Faktor 2** (B). Für kleinere Effekte braucht es mehr Läufe oder
+   feste Builds statt des gierigen Spielers.
+4. Unverändert offen: Gewitterfronts Episch-Anhang steht seit §7.42 allein auf der Crit-Mult-Achse, und Hochspannung
+   lässt sich mono weiterhin nicht beurteilen (§7.41 C) — dafür braucht es die Misch-Welten.
+
+---
+
 ### 5.30 Die Eis-Skills auf dem neuen Motor (2026-09-09) — gemessen, nichts umgesetzt
 
 **Owner:** „und dann schauen wir uns alle skills an die davon profitieren müssen und designen wie."
@@ -8697,3 +8813,4 @@ leichtesten haben.
 | 2026-09-10 | Spannungsfeld ersetzt den Spannungsstau (§7.43, Owner: „können wir vllt irgendetwas bauen was Stapel mehr streut oder etwas das pro Stapel einen Bonus gibt, eventuell auf Formation"). Vier Entwürfe fielen vorher, jeder aus einem eigenen Grund (§7.43 A): der Stau umgehängt (sein Auslöser „Sieg ohne Crit" wird seltener, je besser der Build läuft — §7.31 maß 0,00× gebaut), der Kondensator („nur ionisiere mehr Karten mit extra Steps", dazu: ein Prozent-Aufschlag ist auf einer Kästchen-Leiste unlesbar, ein flacher Aufschlag kostet je nach Build zwischen einem Sechstel und einem Drittel der Rate), und zwei Episch-Anhänge (Überlauf sparen — es gibt nichts zu sparen, die Leiste fällt bei jeder Füllung auf den Boden; „alle Karten ionisiert" — eine Zeitschaltuhr, weil die Leiste im Kreis ionisiert und Stapel nie verschwinden). Der Fund, der es gelöst hat: **Blitz hatte keinen eigenen Multiplikator** — Feuer hat `fireMult`, Pflanze `plantMult`, Blitz zahlte nur in Basis-Score, Wert und Crit. Gebaut: Formations-Sieg zählt **+0,3/0,4/0,5/0,7 % je Stapel der Formation**, Episch dazu +1 Stapel auf die Karte mit den wenigsten Stapeln je Sieg. Jede Karte zählt einmal (Vereinigung wie bei Resonanz), gelesen wird die echte Siegkarte statt der Resonanz-Sicht, der Episch-Stapel läuft nicht durch Doppelentladung. Der Skill zahlt für GESTREUTE Stapel und steht damit gegen Kurzschluss und Kettenblitz. Drei Wächter, alle gegengeprobt. Startwerte, UNGEMESSEN; größtes Risiko ist das Episch (Dreier-Formation mit je 20 Stapeln = +84 %, Kurzschluss als ganzer Skill misst +56 %). |
 | 2026-09-10 | Der Chance-Überschuss wird sichtbar und zahlt dreifach (§7.44, Owner, Zahlen vorher abgenommen). Die Regel gab es schon (`overcritMult`, +0,01× je Punkt über 100 %, §7.28), sie war nur wirkungslos: unsichtbar (kein Text, keine Zeile) und vom weichen Deckel aus §7.42 auf ein Fünftel gedämpft — ausgerechnet für die Builds, die Chance über 100 % stapeln. `OVERCRIT_MULT_PER_PP` **0,01 → 0,03**, so gewählt, dass **5 Punkte Crit-Chance genau einen Stapel wert sind** (ION_CRIT_MULT_PER_STACK 0,15); linear, keine Treppe. Die Statusleiste zeigt die Chance jetzt höchstens 100 % (Owner: „darf nicht mehr über 100 % anzeigen") und den Überschuss als Unterzeile; `displayCritChance`/`critChanceOverPP` liegen als geteilte Helfer neben `totalCritMult`, derselbe Griff wie §7.39. **Beim Rechnen aufgefallen und notiert (§7.44 C): unterhalb eines Crit-Multiplikators von 4× ist ein Punkt ÜBER 100 % mehr wert als einer darunter** — eine echte Umkehrung des Anreizes, praktisch aber selten, weil wer über 100 % baut fast immer Stapel und damit einen hohen Multiplikator hat. Der alte Wächter (100 Punkte ≤ ein Achtel des Deckels) fällt bei 0,03 und wurde NICHT gelockert, sondern durch zwei Aussagen ersetzt, die noch stimmen (am Knick bleibt ein Punkt darüber schlechter als einer darunter; die Regel allein bleibt unter dem Knick). Zwei neue Anzeige-Wächter, beide gegengeprobt. Die Regel hat weiterhin keinen Deckel — bei 400 % Chance wären es +9×, das ist die Zahl für die Messung. |
 | 2026-09-10 | Die Anzeige zeigt die wirksame Stufe (§7.45, Owner: „überall bei dem Skill auch die neue Rarität angezeigt wird, Skillauswahl, Panels usw."). `tierOf` gab die GEWÜRFELTE Stufe, die Engine rechnet seit §7.39 über `boostedTier` — und das Badge war dabei das kleinere Problem: `skillDef(id, tier)` wählt auch den TEXT, ein von Hochspannung gehobener Skill zeigte „SELTEN" und beschrieb die Selten-Zahlen, während der Stich die Episch-Zahlen abrechnete. **Die Beschreibung log.** Neu `effectiveTierOf`/`tierIsLifted` in skills.js als EINE Quelle für alle Oberflächen (derselbe Griff wie `totalCritMult` §7.39 und `displayCritChance` §7.44); umgestellt sind gehaltene Skills, Skillauswahl (Bestand, Ersetzen-Liste UND Angebot — Owner: „dort auch schon anzeigen", über `boostedTier(state.skills, rolledTier)`, weil die Angebotsstufe in `skillOfferTiers` steht), Bauplan-Panel, Chronik-Detail und Lauf-Statistik. **Der Aufwert-Screen bleibt bewusst auf der gewürfelten Stufe** — dort ist sie der Preis, mit der wirksamen stünde ein gehobener Skill fälschlich auf „höchste Stufe" und `upgradeBuy` rechnete falsch. Die Marke ist ein gedämpftes „gehoben" neben dem Badge, Form wie das vorhandene „gehalten", kein neues Symbol. Drei Wächter, alle gegengeprobt, darunter einer, der prüft, dass keine der fünf Oberflächen wieder `tierOf` liest. |
+| 2026-09-10 | §7.42/§7.43/§7.44 nachgemessen (§7.46). Blitz-Mono, vier Varianten à 12.050 Läufe. Zuerst der Aufsetz-Fund: die Basis liegt VOR §7.42, es steckten also DREI Zahlenänderungen in der Messung, nicht zwei — diesmal getrennt statt wie in §7.41 vermischt. **Blitz mono 416M → 3.116M (7,5×)**, und der Schwanz ist das eigentliche Problem: p95/Median 8× → 120×, max/Median 172× → 1.138×. Das 2×2 über die zwei ENV-Regler zeigt: **mit beiden Deckeln zurück steht Blitz bei 523M gegen 416M Basis, Spannungsfeld allein kostet also +26 %** (misst dort +45 %, ein normaler Skill). §7.44 ist in keiner Zelle der Treiber (die zwei Zellen sagen ×3,2 und ×0,7 — der gierige Spieler lernt je Variante neu, unter Faktor 2 ist diese Reihe nicht interpretierbar; das ist die Rauschgrenze und sie ist jetzt beziffert). **Treiber ist der weiche Crit-Deckel, Zeuge ist Kettenblitz: +5 % → +601 % → +11 % mit den Deckeln zurück.** Ursache strukturell: ein Stapel zahlt jetzt auf DREI Achsen ohne Obergrenze (Basis-Score +75, Crit-Mult +0,15 seit §7.42 nur noch weich gedeckelt, `lightMult` +0,3–0,7 % neu aus §7.43), und die drei stehen als Produkt in der Formel — aus linear ist kubisch geworden. Mit den echten Funktionen nachgerechnet zahlt eine Karte mit 400 Stapeln 243.200 → 2.177.552, Faktor 8,95× und ohne Ende. **Dazu ein Konstruktionsfehler von mir in §7.43 C**: Spannungsfeld zahlt NICHT für gestreute Stapel — `formationStacks` bildet die Summe, und eine Summe unterscheidet nicht drei Karten mit je 20 von einer mit 60. Der Skill steht nicht gegen Kettenblitz, er multipliziert mit ihm; die Entscheidung, die Blitz fehlen sollte, ist nicht gebaut. Der Überschuss über 100 % gemessen (Sonde, 120 Läufe): 31 % der Stiche in den Runden 41–50, im Mittel 52 Punkte darüber = +1,56× — die §7.44-Sorge (400 % = +9×) tritt im gierigen Lauf nicht ein. Neue Sonde `spannungsfeld.mjs`. Nichts umgesetzt, vier offene Owner-Entscheide in §7.46 G. |
