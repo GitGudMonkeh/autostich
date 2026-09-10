@@ -51,8 +51,13 @@ const OUT = arg("--out", "sim/out/survey.json");
    übrigen Welten sagen über sie ohnehin nichts. */
 const FRAKTION = String(arg("--fraktion", "")).toLowerCase();
 if (FRAKTION && !ARCHES.includes(FRAKTION)) { console.error(`Unbekannte --fraktion '${FRAKTION}' (${ARCHES.join("|")})`); process.exit(1); }
+/* --groesse 1|2|3 schneidet zusätzlich auf Welten dieser Größe. `--fraktion plant --groesse 1` ist die Mono-Welt
+   allein: 18 Skills statt 288, ein paar Minuten statt einer Stunde. Genau die richtige Schleife für einen Sweep über
+   EINEN Regler — die Seeds je Welt hängen nicht davon ab, welche anderen Welten mitlaufen, die Zahl ist also mit dem
+   großen Lauf vergleichbar. */
+const GROESSE = Number(arg("--groesse", 0));
 const worldList = [...combos(ARCHES, 1), ...combos(ARCHES, 2), ...combos(ARCHES, 3)]
-  .filter((arch) => !FRAKTION || arch.includes(FRAKTION));
+  .filter((arch) => (!FRAKTION || arch.includes(FRAKTION)) && (!GROESSE || arch.length === GROESSE));
 const keyOf = (arch) => arch.map((a) => SHORT[a]).join("+");
 const skillsOf = (arch) => Object.keys(SKILL_DEFS).filter((id) => arch.includes(archetypeOf(id)));
 const worlds = new Map(worldList.map((arch) => [keyOf(arch), { key: keyOf(arch), arch, size: arch.length, ids: skillsOf(arch), explore: null, greedy: null, ablate: new Map() }]));
