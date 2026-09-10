@@ -1,7 +1,7 @@
 import { ArchIcon } from "./FactionIcon.jsx";
 import { GlossaryText } from "./Glossary.jsx";
 import { CollapsibleField } from "./CollapsibleField.jsx"; // #UI: geteiltes Klappfeld (Perk-Auswahl, Chronik)
-import { archetypeOf, isLegendarySkill, tierOf } from "../game/skills.js";
+import { archetypeOf, isLegendarySkill, effectiveTierOf, tierIsLifted } from "../game/skills.js"; // §7.45: die WIRKSAME Stufe (Hochspannung), nicht die gewürfelte
 import { SKILL_SLOT_LIMIT } from "../game/constants.js";
 import { tierColor } from "../game/rarity.js"; // exp skill rework: die vier Skill-Stufen tragen die Farben der Raritätsleiter I–IV
 import { skillDef, archMeta } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
@@ -28,18 +28,23 @@ const ac = (id) => archMeta(archetypeOf(id)) || { label: t("skill.arch.none"), i
    Katalog. Legendäre haben keine Stufe (tier null) und tragen ihr eigenes Gold-Badge. Geteilt mit der Skill-Auswahl,
    damit Angebot und Bestand dieselbe Stufe gleich zeigen — eine Quelle, kein zweites Abschreiben. */
 export const skillTierColor = (tier) => tierColor((tier ?? 0) + 1);
-export function SkillTierBadge({ tier, className = "text-meta-1 px-1.5 py-0.5 rounded font-bold tracking-wide" }) {
+export function SkillTierBadge({ tier, lifted = false, className = "text-meta-1 px-1.5 py-0.5 rounded font-bold tracking-wide" }) {
   if (tier == null) return null;
   const col = skillTierColor(tier);
   return (
-    <span className={className} style={{ background: `${col}22`, color: col, border: `1px solid ${col}88` }}>
-      {t(`skill.tier.${tier}`).toUpperCase()}
-    </span>
+    <>
+      <span className={className} style={{ background: `${col}22`, color: col, border: `1px solid ${col}88` }}>
+        {t(`skill.tier.${tier}`).toUpperCase()}
+      </span>
+      {/* §7.45: ohne die Marke sieht ein von Hochspannung gehobenes Selten aus wie ein gewürfeltes Episch — und
+          fällt scheinbar grundlos zurück, sobald die Legendäre ersetzt wird. Gedämpft wie „gehalten" daneben. */}
+      {lifted && <span className="opacity-45 text-meta-3">{t("skill.tier.lifted")}</span>}
+    </>
   );
 }
 
 export function HeldSkills({ skills = [], state = {}, className = "mt-5", open = null, onToggle = null }) {
-  const held = skills.map((id) => skillDef(id, tierOf(state, id))).filter(Boolean); // exp: der Text der GEHALTENEN Stufe
+  const held = skills.map((id) => skillDef(id, effectiveTierOf(state, id))).filter(Boolean); // exp/§7.45: der Text der WIRKSAMEN Stufe
   if (!held.length) return null;
   /* Dieselbe Zählung wie in der Skill-Auswahl: Der legendäre Skill bringt seinen eigenen Slot mit,
      die Anzeige nennt deshalb `slots + legendär` (sonst stünde „7 / 6"). exp: Slots sind standardmäßig
@@ -57,7 +62,7 @@ export function HeldSkills({ skills = [], state = {}, className = "mt-5", open =
             <div className="flex items-center gap-1.5 mb-1 flex-wrap">
               <ArchIcon meta={ac(s.id)} size={13} />
               <b style={{ color: "#c8c8d0" }}>{s.name}</b>
-              <SkillTierBadge tier={tierOf(state, s.id)} className="text-meta-3 px-1 py-px rounded font-bold tracking-wide" />
+              <SkillTierBadge tier={effectiveTierOf(state, s.id)} lifted={tierIsLifted(state, s.id)} className="text-meta-3 px-1 py-px rounded font-bold tracking-wide" />
               {s.legendary && (
                 <span className="text-meta-3 px-1 py-px rounded font-bold tracking-wide"
                   style={{ background: "#e0b84522", color: "#e0b845", border: "1px solid #e0b84588" }}>{t("skill.badge.legendary")}</span>

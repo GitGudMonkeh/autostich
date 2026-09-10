@@ -8227,6 +8227,60 @@ Zahl, auf die bei der Messung zu schauen ist.
 
 ---
 
+### 7.45 Die Anzeige zeigt die wirksame Stufe, nicht die gewürfelte (2026-09-10, Owner) — umgesetzt
+
+**Owner:** „überall bei dem Skill auch die neue Rarität angezeigt wird, Skillauswahl, Panels usw."
+
+#### A · Der Fehler war größer als das Badge
+
+`tierOf(state, id)` gibt die **gewürfelte** Stufe und weiß nichts von Hochspannung; die Engine rechnet über
+`boostedTier`. Seit §7.39 hebt Hochspannung jede gehaltene Stufe um eins, in jeder Fraktion — und die Oberfläche
+zeigte das nirgends.
+
+Das Badge war dabei das kleinere Problem. `skillDef(id, tier)` wählt den **Text** dieser Stufe: ein von Hochspannung
+gehobener Skill zeigte „SELTEN" und beschrieb die Selten-Zahlen, während der Stich mit den Episch-Zahlen abrechnete.
+**Die Beschreibung log den Spieler an.**
+
+#### B · Was umgestellt ist
+
+Neu in `skills.js` neben `boostedTier`: `effectiveTierOf(state, id)` und `tierIsLifted(state, id)` — eine Quelle für
+alle Oberflächen, derselbe Griff wie bei `totalCritMult` (§7.39) und `displayCritChance` (§7.44).
+
+| Oberfläche | liest jetzt |
+| --- | --- |
+| Gehaltene Skills (`HeldSkills`) | wirksame Stufe, Badge **und** Text |
+| Skillauswahl: Bestandsliste und Ersetzen-Liste | wirksame Stufe |
+| Skillauswahl: **Angebot** | wirksame Stufe (Owner: „dort auch schon anzeigen") |
+| Bauplan-Panel (`SkillList`) | wirksame Stufe |
+| Chronik-Detail, Lauf-Statistik | wirksame Stufe |
+| **Skill aufwerten** (`SkillUpgrade`) | **gewürfelte Stufe** |
+
+Das Angebot rechnet nicht über `effectiveTierOf`, sondern über `boostedTier(state.skills, rolledTier)` — die
+Angebotsstufe steht in `state.skillOfferTiers`, nicht in `skillTiers`. Liegt Hochspannung im Bau, zeigt die Karte
+also, was man **bekommt**, statt was gewürfelt wurde.
+
+**Die Ausnahme ist keine Nachlässigkeit.** Im Aufwert-Screen bezahlt man dafür, die gewürfelte Stufe zu heben.
+Stünde dort die wirksame, zeigte ein gehobener Skill fälschlich „höchste Stufe" und `upgradeBuy` rechnete den
+falschen Preis. Ein Kommentar an der Zeile sagt das, damit es beim nächsten Umbau nicht „mitgezogen" wird.
+
+#### C · Die Marke
+
+Ohne Kennzeichnung sieht ein gehobenes Selten aus wie ein gewürfeltes Episch — und fällt scheinbar grundlos zurück,
+sobald Hochspannung ersetzt wird. `SkillTierBadge` bekommt `lifted` und hängt ein gedämpftes **„gehoben"** an, in
+derselben Form wie das vorhandene „gehalten" daneben. Kein neues Symbol.
+
+#### D · Wächter
+
+Drei, alle gegengeprobt:
+
+- `effectiveTierOf` liefert dieselbe Zahl wie die Stufenfunktion des Motors, und `descTiers` wandert mit,
+- `tierIsLifted` meldet nur, wenn wirklich gehoben wurde (Episch bleibt Episch, Legendäre haben keine Stufe),
+- **die fünf Oberflächen lesen `effectiveTierOf` und keine davon `tierOf`** — der Aufwert-Screen genau umgekehrt.
+  Der letzte prüft den Quelltext, weil dort der Rückfall passiert: ein `tierOf` schleicht sich beim nächsten Umbau
+  in eine Anzeige zurück, und keine Zahl im Spiel würde sich ändern, nur der Text würde wieder lügen.
+
+---
+
 ### 5.30 Die Eis-Skills auf dem neuen Motor (2026-09-09) — gemessen, nichts umgesetzt
 
 **Owner:** „und dann schauen wir uns alle skills an die davon profitieren müssen und designen wie."
@@ -8642,3 +8696,4 @@ leichtesten haben.
 | 2026-09-10 | Crit-Deckel weich, Entladung auf die Score-Achse (§7.42, Owner, Zahlen vorher abgenommen). Befund: der Multiplikator hat 5,75× Kopfraum, und **Stapel allein füllen ihn bei 38 — mit Kurzschluss schon bei 19**, was ein Doppelentladung/Resonanz-Bau mühelos erreicht; ab da ist jeder weitere Punkt aus jeder Quelle null wert. Das geht tiefer als §7.31: ein Stapel zahlt Basis-Score UND Crit-Multiplikator, über dem Deckel nur noch das erste — der harte Schnitt halbiert also die Auszahlung der Kernressource, nicht nur vier Skills (was auch Ladungsserie erklärt, −11 % bei 100 % Haltequote). Umgesetzt: `CRIT_MULT_SOFT_SLOPE = 0,2`, Form wie das vorhandene `WIN_SOFTCAP`, EINE Quelle (`softCritMult`) für Motor und Anzeige; gebaut 10/16/36× zahlt 8,4/9,6/13,6×, und SLOPE 0 stellt den alten harten Deckel ohne Codeänderung wieder her. Entladung verlässt die Multiplikator-Achse (dort sagten vier Skills dasselbe; behalten hat sie Vorentladung, die einzige, die eine Entscheidung verlangt) und zahlt jetzt **+2/3/4/6 Basis-Score je Sieg, dauerhaft je voller Leiste**, Episch verdoppelt die Rampe bei einem Crit statt den Multiplikator; eigener Zustand `entladungScore`, `entladungMult` speist nur noch Gewitterfronts Episch-Anhang. Der steht damit allein auf der Achse und ist offen (nicht Teil der drei abgenommenen Punkte). Drei Wächter, alle gegengeprobt. Startwerte, UNGEMESSEN — wie viele volle Leisten ein Lauf hat, ist nicht erhoben. |
 | 2026-09-10 | Spannungsfeld ersetzt den Spannungsstau (§7.43, Owner: „können wir vllt irgendetwas bauen was Stapel mehr streut oder etwas das pro Stapel einen Bonus gibt, eventuell auf Formation"). Vier Entwürfe fielen vorher, jeder aus einem eigenen Grund (§7.43 A): der Stau umgehängt (sein Auslöser „Sieg ohne Crit" wird seltener, je besser der Build läuft — §7.31 maß 0,00× gebaut), der Kondensator („nur ionisiere mehr Karten mit extra Steps", dazu: ein Prozent-Aufschlag ist auf einer Kästchen-Leiste unlesbar, ein flacher Aufschlag kostet je nach Build zwischen einem Sechstel und einem Drittel der Rate), und zwei Episch-Anhänge (Überlauf sparen — es gibt nichts zu sparen, die Leiste fällt bei jeder Füllung auf den Boden; „alle Karten ionisiert" — eine Zeitschaltuhr, weil die Leiste im Kreis ionisiert und Stapel nie verschwinden). Der Fund, der es gelöst hat: **Blitz hatte keinen eigenen Multiplikator** — Feuer hat `fireMult`, Pflanze `plantMult`, Blitz zahlte nur in Basis-Score, Wert und Crit. Gebaut: Formations-Sieg zählt **+0,3/0,4/0,5/0,7 % je Stapel der Formation**, Episch dazu +1 Stapel auf die Karte mit den wenigsten Stapeln je Sieg. Jede Karte zählt einmal (Vereinigung wie bei Resonanz), gelesen wird die echte Siegkarte statt der Resonanz-Sicht, der Episch-Stapel läuft nicht durch Doppelentladung. Der Skill zahlt für GESTREUTE Stapel und steht damit gegen Kurzschluss und Kettenblitz. Drei Wächter, alle gegengeprobt. Startwerte, UNGEMESSEN; größtes Risiko ist das Episch (Dreier-Formation mit je 20 Stapeln = +84 %, Kurzschluss als ganzer Skill misst +56 %). |
 | 2026-09-10 | Der Chance-Überschuss wird sichtbar und zahlt dreifach (§7.44, Owner, Zahlen vorher abgenommen). Die Regel gab es schon (`overcritMult`, +0,01× je Punkt über 100 %, §7.28), sie war nur wirkungslos: unsichtbar (kein Text, keine Zeile) und vom weichen Deckel aus §7.42 auf ein Fünftel gedämpft — ausgerechnet für die Builds, die Chance über 100 % stapeln. `OVERCRIT_MULT_PER_PP` **0,01 → 0,03**, so gewählt, dass **5 Punkte Crit-Chance genau einen Stapel wert sind** (ION_CRIT_MULT_PER_STACK 0,15); linear, keine Treppe. Die Statusleiste zeigt die Chance jetzt höchstens 100 % (Owner: „darf nicht mehr über 100 % anzeigen") und den Überschuss als Unterzeile; `displayCritChance`/`critChanceOverPP` liegen als geteilte Helfer neben `totalCritMult`, derselbe Griff wie §7.39. **Beim Rechnen aufgefallen und notiert (§7.44 C): unterhalb eines Crit-Multiplikators von 4× ist ein Punkt ÜBER 100 % mehr wert als einer darunter** — eine echte Umkehrung des Anreizes, praktisch aber selten, weil wer über 100 % baut fast immer Stapel und damit einen hohen Multiplikator hat. Der alte Wächter (100 Punkte ≤ ein Achtel des Deckels) fällt bei 0,03 und wurde NICHT gelockert, sondern durch zwei Aussagen ersetzt, die noch stimmen (am Knick bleibt ein Punkt darüber schlechter als einer darunter; die Regel allein bleibt unter dem Knick). Zwei neue Anzeige-Wächter, beide gegengeprobt. Die Regel hat weiterhin keinen Deckel — bei 400 % Chance wären es +9×, das ist die Zahl für die Messung. |
+| 2026-09-10 | Die Anzeige zeigt die wirksame Stufe (§7.45, Owner: „überall bei dem Skill auch die neue Rarität angezeigt wird, Skillauswahl, Panels usw."). `tierOf` gab die GEWÜRFELTE Stufe, die Engine rechnet seit §7.39 über `boostedTier` — und das Badge war dabei das kleinere Problem: `skillDef(id, tier)` wählt auch den TEXT, ein von Hochspannung gehobener Skill zeigte „SELTEN" und beschrieb die Selten-Zahlen, während der Stich die Episch-Zahlen abrechnete. **Die Beschreibung log.** Neu `effectiveTierOf`/`tierIsLifted` in skills.js als EINE Quelle für alle Oberflächen (derselbe Griff wie `totalCritMult` §7.39 und `displayCritChance` §7.44); umgestellt sind gehaltene Skills, Skillauswahl (Bestand, Ersetzen-Liste UND Angebot — Owner: „dort auch schon anzeigen", über `boostedTier(state.skills, rolledTier)`, weil die Angebotsstufe in `skillOfferTiers` steht), Bauplan-Panel, Chronik-Detail und Lauf-Statistik. **Der Aufwert-Screen bleibt bewusst auf der gewürfelten Stufe** — dort ist sie der Preis, mit der wirksamen stünde ein gehobener Skill fälschlich auf „höchste Stufe" und `upgradeBuy` rechnete falsch. Die Marke ist ein gedämpftes „gehoben" neben dem Badge, Form wie das vorhandene „gehalten", kein neues Symbol. Drei Wächter, alle gegengeprobt, darunter einer, der prüft, dass keine der fünf Oberflächen wieder `tierOf` liest. |

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import * as C from "../src/game/constants.js";
-import { SKILL_DEFS, BLITZ_TIERS } from "../src/game/skills.js";
+import { SKILL_DEFS, BLITZ_TIERS, effectiveTierOf, tierIsLifted } from "../src/game/skills.js";
 import { initLightning, L, maxChargeFor, effectiveTier, lightParam, lightningCritChance, lightningCritMult, overcritMult,
   blitzfaengerValue, ionenfeldValue, fieldTick, ionScoreFor, ionCritMultFor, chargeGainOnWin, critFillsBar, blitzschlagStacks,
   formationStacks, lightFormMult, feldFeed, lightningOnLoss, fillBar, lightningCycleEnd } from "../src/game/factions/lightning.js";
@@ -50,6 +50,30 @@ describe("Blitz-Modul — Stufen und Kennwerte", () => {
     expect(effectiveTier([L.ABLEITER, L.HOCHSPANNUNG], { [L.ABLEITER]: 2 }, L.ABLEITER)).toBe(Math.min(3, 2 + C.HOCHSPANNUNG_STEPS));
     expect(effectiveTier([L.ABLEITER, L.HOCHSPANNUNG], { [L.ABLEITER]: 3 }, L.ABLEITER)).toBe(3); // Episch bleibt Episch
     expect(effectiveTier([L.ABLEITER, L.HOCHSPANNUNG], {}, L.ABLEITER)).toBe(Math.min(3, C.HOCHSPANNUNG_STEPS));
+  });
+
+  /* §7.45 (Owner: „überall bei dem Skill auch die neue Rarität anzeigen"). Bis dahin las die Anzeige `tierOf`, also
+     die GEWÜRFELTE Stufe: mit Hochspannung stand „SELTEN" an einem Skill, der wie Episch wirkt, und der Kartentext
+     beschrieb die Selten-Zahlen — die Beschreibung log. `effectiveTierOf` ist die Quelle, die die Anzeige teilt;
+     geprüft wird, dass sie mit der Stufenfunktion der Engine übereinstimmt und dass der TEXT mitwandert. */
+  it("effectiveTierOf: die Anzeige-Stufe folgt derselben Leiter wie der Motor, und der Skilltext wandert mit", () => {
+    const rolled = { skills: [L.ABLEITER], skillTiers: { [L.ABLEITER]: 1 } };
+    const boosted = { skills: [L.ABLEITER, L.HOCHSPANNUNG], skillTiers: { [L.ABLEITER]: 1 } };
+    const up = Math.min(3, 1 + C.HOCHSPANNUNG_STEPS);
+    expect(effectiveTierOf(rolled, L.ABLEITER)).toBe(1);
+    expect(effectiveTierOf(boosted, L.ABLEITER)).toBe(up);
+    // dieselbe Zahl wie der Motor rechnet — sonst zeigt die Leiste etwas anderes an, als der Stich zahlt
+    expect(effectiveTierOf(boosted, L.ABLEITER)).toBe(effectiveTier(boosted.skills, boosted.skillTiers, L.ABLEITER));
+    // der Text folgt der Stufe: die Anzeige greift descTiers mit der WIRKSAMEN Stufe, nicht mit der gewürfelten
+    const tiersOf = SKILL_DEFS[L.ABLEITER].descTiers;
+    expect(tiersOf[effectiveTierOf(boosted, L.ABLEITER)]).toBe(tiersOf[up]);
+    expect(tiersOf[effectiveTierOf(boosted, L.ABLEITER)]).not.toBe(tiersOf[effectiveTierOf(rolled, L.ABLEITER)]);
+    // die Marke: gehoben ja, gewürfelt nein, Episch bleibt Episch (die Leiter endet), Legendäre haben keine Stufe
+    expect(tierIsLifted(boosted, L.ABLEITER)).toBe(true);
+    expect(tierIsLifted(rolled, L.ABLEITER)).toBe(false);
+    expect(tierIsLifted({ skills: [L.ABLEITER, L.HOCHSPANNUNG], skillTiers: { [L.ABLEITER]: 3 } }, L.ABLEITER)).toBe(false);
+    expect(effectiveTierOf(boosted, L.HOCHSPANNUNG)).toBeNull();
+    expect(tierIsLifted(boosted, L.HOCHSPANNUNG)).toBe(false);
   });
 
   /* §7.39 (Owner): Hochspannung hebt JEDE Fraktion, nicht mehr nur Blitz. §7.38 hatte gemessen, dass keine Zahl den

@@ -13,7 +13,7 @@ import { fmtScore } from "./format.js";
 import FormIcon from "./FormIcon.jsx";
 import { ArchToggle } from "./ArchPanels.jsx"; // #398: geteilter Gebäude-Umschalter (eine Quelle für alle vier Bildschirme)
 import { CATEGORIES, RARITY_META, rarityOf } from "../game/perks.js"; // #rd-zaehlen: die sieben Perk-Kategorien + die Raritätsfarbe
-import { ARCHETYPE_ORDER, tierOf } from "../game/skills.js";           // #rd-zaehlen: die vier Fraktionen · exp: tierOf
+import { ARCHETYPE_ORDER, effectiveTierOf } from "../game/skills.js";  // #rd-zaehlen: die vier Fraktionen · exp/§7.45: die wirksame Stufe
 import { CATEGORIES as ARCH_CATEGORIES } from "../game/architect.js";  // #rd-zaehlen: value · score · formation
 import { romanOf, tierMeta } from "../game/rarity.js";
 import { archFamily, archCatDef, archMeta, perkCat, perkDef, skillDef, familyDef } from "../i18n/labels.js"; // #sprache: Namen zur Anzeigezeit
@@ -93,7 +93,7 @@ const entryOf = (id, name, tier, desc, color) => ({ id, name, tier: tier || null
 function skillFields(skills, skillTiers = {}) {
   const by = new Map(ARCHETYPE_ORDER.map((a) => [a, []]));
   for (const id of skills || []) {
-    const d = skillDef(id, tierOf({ skillTiers: skillTiers || {} }, id));
+    const d = skillDef(id, effectiveTierOf({ skills, skillTiers: skillTiers || {} }, id));
     if (!d || !by.has(d.archetype)) continue;
     by.get(d.archetype).push(entryOf(id, d.name, d.legendary ? t("arch.legendaryCap") : null, d.desc,
       (archMeta(d.archetype) || {}).color || "#8a8a95"));

@@ -1,4 +1,6 @@
 import { describe, it, expect } from "vitest";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { makeRng } from "../src/game/deck.js";
 import { SKILL_DEFS, skillSum, buildSkillOffer, BLITZ_TIERS,
   rollTier, rollSkillOfferTiers, tierOf, SKILL_TIER_COUNT, TIER_NORMAL, TIER_EPIC,
@@ -311,5 +313,27 @@ describe("buildSkillOffer — max. 3 Skills pro Archetyp (#Onboarding-Fix)", () 
   it("Mono (1 Archetyp) → höchstens 3 statt count", () => {
     const offer = buildSkillOffer([], [], makeRng(9), 12, 0, false, ["lightning"]);
     expect(offer.length).toBeLessThanOrEqual(3);
+  });
+});
+
+/* §7.45 (Owner: „überall bei dem Skill auch die neue Rarität anzeigen, Skillauswahl, Panels usw."). Die Anzeige darf
+   die GEWÜRFELTE Stufe nicht mehr lesen — sonst steht mit Hochspannung „SELTEN" an einem Skill, der wie Episch
+   wirkt, und der Kartentext beschreibt die falschen Zahlen. Der Wächter prüft die Verdrahtung im Quelltext, weil
+   genau dort der Rückfall passiert: ein `tierOf` schleicht sich beim nächsten Umbau zurück in eine Anzeige.
+   Die EINE erlaubte Ausnahme ist der Aufwert-Screen: dort bezahlt man den Wurf, nicht die Wirkung. */
+describe("Anzeige-Stufe: keine Oberfläche liest die gewürfelte Stufe, außer dem Aufwert-Screen (§7.45)", () => {
+  const read = (rel) => readFileSync(fileURLToPath(new URL(`../src/ui/${rel}`, import.meta.url)), "utf8");
+  const SURFACES = ["HeldSkills.jsx", "SkillSelect.jsx", "BuildSummary.jsx", "RunDetail.jsx", "RunStats.jsx"];
+  it("die fünf Oberflächen lesen effectiveTierOf, keine davon tierOf", () => {
+    for (const f of SURFACES) {
+      const src = read(f);
+      expect(src, f).toContain("effectiveTierOf");
+      expect(src.match(/(?<!effective)\btierOf\b/), f).toBeNull();
+    }
+  });
+  it("der Aufwert-Screen bleibt auf der gewürfelten Stufe — dort ist sie der Preis", () => {
+    const src = read("SkillUpgrade.jsx");
+    expect(src).toContain("tierOf(state, id)");
+    expect(src).not.toContain("effectiveTierOf");
   });
 });

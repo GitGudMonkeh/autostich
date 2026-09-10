@@ -2366,6 +2366,7 @@ Pruning: replacing the skill permanently grants +NaN% root/bloom score (up to +N
 "skill.tier.1","i18n","Selten","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "skill.tier.2","i18n","Sehr selten","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "skill.tier.3","i18n","Episch","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
+"skill.tier.lifted","i18n","gehoben","raised","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "skill.title","i18n","Wähle einen Skill","Choose a skill","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "sparkline.axis.x","i18n","Stiche","Tricks","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""
 "sparkline.axis.y","i18n","Score","Score","i18n-Katalog (src/i18n) — über t() aufgelöst","","done",""

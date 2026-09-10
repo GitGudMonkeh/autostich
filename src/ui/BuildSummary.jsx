@@ -2,7 +2,7 @@ import { useState } from "react";
 import { CATEGORIES, rarityOf, RARITY_META } from "../game/perks.js";
 
 import { tierMeta, romanOf } from "../game/rarity.js";
-import { SKILL_DEFS, archetypeOf, tierOf } from "../game/skills.js"; // exp: tierOf — der Text der gehaltenen Stufe
+import { SKILL_DEFS, archetypeOf, effectiveTierOf } from "../game/skills.js"; // exp/§7.45: der Text der WIRKSAMEN Stufe (Hochspannung hebt sie)
 import { ArchIcon, GlossaryIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { glossaryKeywords } from "../game/glossary.js";
 import { SUIT_ORDER, suitColor } from "../game/constants.js";
@@ -135,7 +135,7 @@ export function PerkList({ perks, familyTiers = {}, empty = t("build.perks.empty
    (Ein `heat`-Prop der Aufrufer wird ignoriert — die Ertragszeile ist weg.) */
 export function SkillList({ skills = [], skillTiers = {}, empty = t("build.skills.empty") }) {
   const [openSkill, setOpenSkill] = useState(null);
-  const open = openSkill && skills.includes(openSkill) ? skillDef(openSkill, tierOf({ skillTiers }, openSkill)) : null; // exp: Text der gehaltenen Stufe
+  const open = openSkill && skills.includes(openSkill) ? skillDef(openSkill, effectiveTierOf({ skills, skillTiers }, openSkill)) : null; // exp/§7.45: Text der wirksamen Stufe
   if (skills.length === 0) return <div className="text-body-lg-5 opacity-40">{empty}</div>;
   const om = open ? ac(open.id) : null; // Archetyp-Meta des aufgeklappten Skills
   return (

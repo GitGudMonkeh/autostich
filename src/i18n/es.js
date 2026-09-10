@@ -491,6 +491,7 @@ export default {
   "skill.badge.legendary": "★ LEGENDARIA",
   "skill.selected": "✓ seleccionada",
   "skill.held": "Tus habilidades: {held}/{slots} · ya en tu poder",
+  "skill.tier.lifted": "elevado",
   "skill.heldBadge": "✓ en tu poder",
   "skill.lastOfArch": "⚠ Última habilidad de {arch}: {loss}.",
   "skill.lastOfArch.baked": " El valor de carta ya ganado se conserva.",

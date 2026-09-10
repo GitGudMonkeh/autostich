@@ -489,6 +489,7 @@ export default {
   "skill.badge.legendary": "★ LEGENDARY",
   "skill.selected": "✓ selected",
   "skill.held": "Your skills: {held}/{slots} · already held",
+  "skill.tier.lifted": "raised",
   "skill.heldBadge": "✓ held",
   "skill.lastOfArch": "⚠ Last {arch} skill: {loss}.",
   "skill.lastOfArch.baked": " Card value already gained is kept.",

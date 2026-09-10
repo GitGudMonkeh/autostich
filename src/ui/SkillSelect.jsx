@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import { PANEL_BG, phaseCard, PhaseHairline, PHASE_ACCENTS, ActionButton } from "./modalStyle.jsx";
-import { ARCHETYPE_ORDER, archetypeOf, isLegendarySkill, tierOf, numWord } from "../game/skills.js";
+import { ARCHETYPE_ORDER, archetypeOf, isLegendarySkill, boostedTier, effectiveTierOf, tierIsLifted, numWord } from "../game/skills.js"; // §7.45: die WIRKSAME Stufe (Hochspannung)
 import { FactionIcon, ArchIcon, GlossaryIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { SKILL_SLOT_LIMIT, LIGHTNING_CRIT_SOCKET, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_MAX_CHARGE, ION_SCORE_PER_STACK, ION_CRIT_MULT_PER_STACK,
          PLANT_GREEN_THRESHOLD, PLANT_BLOOM_THRESHOLD, PLANT_GROWTH_WIN, PLANT_GROWTH_PER_FORMATION, PLANT_BLOOM_SCORE_PER_GREEN,
@@ -165,7 +165,7 @@ export function SkillSelect({ offer = null, doors = null, onPick, onDecline, onR
   const wide = useIsWide();
   const phone = useIsPhone();   // #mobil-emblem — unter 640 px, NICHT die Verneinung von `wide`
   // #lv-fluegel: ab 1280 px lebt das Formationsfeld im linken Flügel (Breite, nicht Flügel-Zustand — s. PerkSelect).
-  const held = skills.map((id) => skillDef(id, tierOf(state, id))).filter(Boolean); // exp: der Text der GEHALTENEN Stufe
+  const held = skills.map((id) => skillDef(id, effectiveTierOf(state, id))).filter(Boolean); // exp/§7.45: der Text der WIRKSAMEN Stufe
   const atDoors = !offer && Array.isArray(doors) && doors.length > 0; // exp: Türstufe — noch kein Angebot offen
   const offerIds = offer || [];
   // Neuwurf (#263): eigener Skill-Reroll-Pool (2 je Lauf), kein Free-Reroll mehr.
@@ -555,7 +555,7 @@ export function SkillSelect({ offer = null, doors = null, onPick, onDecline, onR
                     style={{ "--c": deactivates ? "#d1462f" : ac(s.id).color }}>
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="text-meta-1 px-1.5 py-0.5 rounded font-bold tracking-wide" style={{ background: `${ac(s.id).color}22`, color: ac(s.id).color, border: `1px solid ${ac(s.id).color}88` }}><ArchIcon meta={ac(s.id)} size={11} /> {ac(s.id).label.toUpperCase()}</span>
-                      <SkillTierBadge tier={tierOf(state, s.id)} />{/* exp: gehaltene Stufe */}
+                      <SkillTierBadge tier={effectiveTierOf(state, s.id)} lifted={tierIsLifted(state, s.id)} />{/* exp/§7.45: wirksame Stufe */}
                       {s.legendary && <span className="text-meta-1 px-1.5 py-0.5 rounded font-bold tracking-wide" style={{ background: "#e0b84522", color: "#e0b845", border: "1px solid #e0b84588" }}>{t("skill.badge.legendary")}</span>}
                     </div>
                     <div className="font-bold text-body-lg-5" style={{ color: ac(s.id).color }}>{s.name}</div>
@@ -622,7 +622,11 @@ export function SkillSelect({ offer = null, doors = null, onPick, onDecline, onR
                   /* exp skill rework: die für DIESEN Angebotsplatz gewürfelte Stufe (state.skillOfferTiers, Reducer/Engine
                      rollSkillOfferTiers). Legendäre haben keine (null) — sie tragen ihr Gold. Ohne Eintrag (Dev-Pfade,
                      ältere Snapshots) Normal, wie PICK_SKILL es dann auch einträgt. Der Text ist der DIESER Stufe. */
-                  const tier = isLegendarySkill(id) ? null : ((state.skillOfferTiers || {})[id] ?? 0);
+                  /* §7.45 (Owner: „dort auch schon anzeigen"): liegt Hochspannung im Bau, wirkt der Skill vom
+                     ersten Stich an eine Stufe höher — dann muss das Angebot zeigen, was man BEKOMMT, nicht was
+                     gewürfelt wurde. `rolledTier` bleibt daneben stehen, damit die Marke sagt, woher der Schub kommt. */
+                  const rolledTier = isLegendarySkill(id) ? null : ((state.skillOfferTiers || {})[id] ?? 0);
+                  const tier = rolledTier == null ? null : boostedTier(state.skills || [], rolledTier);
                   const s = skillDef(id, tier);
                   const sel = pending === id;
                   const am = ac(id); // exp: die Fraktion der KARTE — eine Tür-Seite mischt bis zu zwei
@@ -641,7 +645,7 @@ export function SkillSelect({ offer = null, doors = null, onPick, onDecline, onR
                         style={{ background: `${col}22`, color: col, border: `1px solid ${col}88` }}>
                         <ArchIcon meta={am} size={12} /> {am.label.toUpperCase()}
                       </span>
-                      <SkillTierBadge tier={tier} />
+                      <SkillTierBadge tier={tier} lifted={rolledTier != null && tier > rolledTier} />
                       {s.legendary && (
                         <span className="text-meta-1 px-1.5 py-0.5 rounded font-bold tracking-wide"
                           style={{ background: "#e0b84522", color: "#e0b845", border: "1px solid #e0b84588" }}>

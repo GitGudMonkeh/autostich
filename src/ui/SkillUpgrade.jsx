@@ -52,6 +52,8 @@ function TierArrow() {
 }
 
 function UpgradeRow({ id, state, coins, onUpgrade, justRaised }) {
+  // §7.45: hier bleibt es bei der GEWÜRFELTEN Stufe — bezahlt wird der Wurf, nicht die von Hochspannung gehobene
+  // Wirkung. Mit der wirksamen Stufe stünde ein gehobener Skill fälschlich auf „höchste Stufe" und der Preis wäre falsch.
   const tier = tierOf(state, id);
   const buy = upgradeBuy({ coins }, tier);
   const am = archMeta(archetypeOf(id)) || { color: "#8a8a95" };

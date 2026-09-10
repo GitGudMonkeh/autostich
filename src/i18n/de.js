@@ -455,6 +455,7 @@ export default {
   "skill.tier.1": "Selten",
   "skill.tier.2": "Sehr selten",
   "skill.tier.3": "Episch",
+  "skill.tier.lifted": "gehoben", // §7.45: Hochspannung hebt die Stufe — die Marke neben dem Badge sagt, dass sie nicht gewürfelt ist
   // exp: Slots sind standardmäßig unbegrenzt — Kopfzeile und Bestand ohne „{held}/{slots}". Die Slot-Fassungen
   // darüber/darunter gelten weiter, wenn eine Dev-Run-Regel die Slots begrenzt.
   "skill.eyebrow.free": "Skill · Durchlauf {cycle} · {held} gehalten",

@@ -543,6 +543,18 @@ export const HOCHSPANNUNG_ID = "SK_LIGHTNING_L03";
 export const boostedTier = (skills, base) =>
   Math.min(TIER_EPIC, Math.max(0, base) + ((skills || []).includes(HOCHSPANNUNG_ID) ? C.HOCHSPANNUNG_STEPS : 0));
 
+/* §7.45 (Owner): was die ANZEIGE zeigen muss — die Stufe, mit der die Engine rechnet, nicht die gewürfelte. Ohne das
+   steht mit Hochspannung „SELTEN" an einem Skill, der wie Episch wirkt, und der Kartentext beschreibt die
+   Selten-Zahlen: die Beschreibung lügt. Gilt auch für ein ANGEBOT, das noch nicht gehalten wird — `skills` sagt nur,
+   ob Hochspannung im Bau liegt. Die EINE Ausnahme ist der Aufwert-Screen: dort bezahlt man die gewürfelte Stufe,
+   also liest er weiter `tierOf`. */
+export const effectiveTierOf = (state, id) =>
+  (isLegendarySkill(id) ? null : boostedTier((state && state.skills) || [], tierOf(state, id)));
+export const tierIsLifted = (state, id) => {
+  const base = tierOf(state, id);
+  return base != null && effectiveTierOf(state, id) > base;
+};
+
 // One weighted draw over SKILL_TIER_WEIGHTS → tier index. Exactly one rng() call.
 export function rollTier(rng, weights = C.SKILL_TIER_WEIGHTS) {
   const total = weights.reduce((a, b) => a + b, 0);
