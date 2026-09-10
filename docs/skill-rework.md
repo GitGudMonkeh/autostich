@@ -7706,10 +7706,17 @@ Median über Seeds 1..40: **5,26M** (alte Obergrenze 5,15M, um 2 % überschritte
 dasselbe Niveau, also kein einzelner Ausreißer, sondern die gewollte Folge. Band neu auf 3,40M–7,10M (≈ ±35 %).
 Der Mean liegt bei 8,76M (Seeds 1..200: 8,04M) und bleibt im bestehenden Band 4,0–10,5M.
 
-#### D · Offen
+#### D · Das Glutbett bleibt (Owner-Entscheid, 2026-09-10)
 
-Alles ungemessen. Und das Glutbett wartet auf einen Owner-Entscheid: ersetzen — oder als Niederlagen-Skill stehen
-lassen und die Regel aus §7.31 für diesen einen Fall aufheben.
+Owner: „gluttbett so lassen, das bleibt ein nichen pick." Damit ist die Frage aus A 2 beantwortet und die Regel aus
+§7.31 bekommt ihre erste ausdrückliche Ausnahme: **ein Niederlagen-Skill darf als Nische bestehen bleiben** — er
+darf nur nicht als Baustein eines Motors geplant werden. Das Glutbett behält seine Werte, seine gemessenen −6 % im
+Mono-Bau sind kein Defekt, sondern der Preis der Nische. Es wird in dieser Runde nicht mehr angefasst und ist auch
+kein offener Punkt mehr.
+
+#### E · Offen
+
+Alles ungemessen.
 
 ---
 
