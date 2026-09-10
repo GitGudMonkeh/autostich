@@ -7956,6 +7956,56 @@ gemessen — und die Misch-Welten schon gar nicht.
 
 ---
 
+### 7.41 §7.39/§7.40 nachgemessen: Blitz ist eingefangen, mein Fit war falsch (2026-09-10) — gemessen
+
+Blitz-Mono, 4.050 Läufe, 6 min, Parameter der §8-Baseline. In dieser Messung stecken ZWEI Änderungen (Hochspannungs
+neue Mechanik und Resonanz 0,7); die Anteile sind deshalb nicht sauber trennbar, was vorher so angesagt war.
+
+#### A · Die Fraktion ist eingefangen
+
+| | §8 | §7.38 | jetzt |
+| --- | --- | --- | --- |
+| Bl mono Median | 1.686.071.449 | 1.028.320.158 | **415.748.556** |
+| Doppelentladung | +383 % | +275 % | **+235 %** |
+| Resonanz | +553 % | +438 % | **+170 %** |
+| Hochspannung | +520 % | +428 % | **+92 %** |
+
+Damit steht das Feld so: **Bl 416M · Pf 367M · Ei 348M (§8-Stand) / 224M · Fe 137M.** Blitz und Pflanze liegen
+gleichauf, Eis daneben, Feuer als einziges deutlich darunter. Der 12-fache Abstand aus §7.38 ist weg.
+
+#### B · Mein Potenzgesetz war falsch
+
+§7.40 hat aus zwei Messpunkten (2,25 → +553 %, 1,5 → +438 %) einen Exponenten von 0,58 gefittet und für 0,7 rund
+**+280 %** vorhergesagt. Gemessen sind **+170 %**.
+
+Rechnet man den neuen Punkt nach, liegt der Exponent zwischen 1,5 und 0,7 bei **1,24** statt 0,58 — die Elastizität
+ist also nicht konstant, sie STEILT sich nach unten auf. Zwei Punkte reichten für diese Kurve nicht, und ich habe
+das Ergebnis genauer angegeben, als die Datenlage hergab.
+
+Ein Teil der Abweichung ist allerdings nicht Resonanz: Hochspannung ist in derselben Messung von +2 auf +1 Stufe
+gefallen, und in 65 % der Läufe wird er gehalten. Dort liegt jeder Blitz-Skill jetzt eine Stufe tiefer, erzeugt
+weniger Stapel — und Resonanz teilt genau diese Stapel. Die zwei Schnitte multiplizieren sich.
+
+#### C · Hochspannung lässt sich mono gar nicht beurteilen
+
++428 → +92 %. In einer MONO-Welt ist die neue Mechanik („+1 Stufe für alle Fraktionen") identisch mit der alten
+(„+1 Stufe für Blitz") — es gibt keine anderen Fraktionen im Bau. Mono misst also nur die Zahl 2 → 1, nicht den
+Umbau. **Sein eigentlicher Zweck ist in dieser Messung unsichtbar.** Wer wissen will, ob der Skill jetzt taugt,
+muss die Misch-Welten fahren.
+
+#### D · Der Preis: der Mittelbau ist eingebrochen
+
+Acht Blitz-Skills messen mono bei oder unter null (Ionenfeld +2, Blitzableiter +2, Serienschutz 0, Vorentladung −0,
+Spannungsstau −2, Gewitterfront −6, Ladungsserie −11, Entladung −19). Vorher waren es sechs, und **Gewitterfront ist
+von +69 auf −6 gefallen, Kettenblitz von +33 auf +5, Blitzableiter von +24 auf +2** — ohne dass einer von ihnen
+angefasst wurde.
+
+Die Ursache ist Hochspannung: eine Stufe weniger trifft nicht nur den Legendären, sondern **jeden der dreizehn
+gehaltenen Skills** in jedem Lauf, in dem er liegt. Das war der teuerste Teil des Umbaus, und er war nicht
+beabsichtigt — beabsichtigt war, den Skill von Mono nach Misch zu verschieben.
+
+---
+
 ### 5.30 Die Eis-Skills auf dem neuen Motor (2026-09-09) — gemessen, nichts umgesetzt
 
 **Owner:** „und dann schauen wir uns alle skills an die davon profitieren müssen und designen wie."
@@ -8367,3 +8417,4 @@ leichtesten haben.
 | 2026-09-10 | §7.37 nachgemessen (§7.38). Blitz-Mono, 7 min. Alle drei gefallen, aber **weniger als proportional**: Resonanz +553 → +438 % (Regler −33 %), Hochspannung +520 → +428 % (−33 %), Doppelentladung +383 → +275 % (−40 %); Fraktion 1,686 → 1,028 Mrd (−39 %). Zielband war 250–300 % — **nur Doppelentladung ist angekommen**. Vorhersage (b) aus §7.37 C bestätigt: die Stapel-Schnitte landen weich, weil laut §7.31 81 % des Crit-Multiplikators am Deckel verfällt. Vorhersage zu Hochspannung **WIDERLEGT**: sie sollte härter treffen, ist aber am wenigsten gefallen. Der Grund ist strukturell — die Stufenleiter ist nur VIER lang, ein auf Selten oder höher gewürfelter Skill erreicht mit +2 genauso Episch wie mit +3; der Unterschied betrifft nur die auf Normal gewürfelten. Der Regler sättigt also: 1 → +8 %, 2 → +428 %, 3 → +520 %. **Es gibt keine Zahl, die diesen Skill ins Band bringt** — er braucht eine andere Mechanik. Zweiter Befund: drei Schnitte von 33–40 % haben die Fraktion nur um 39 % gesenkt, und sie steht weiter beim 2,8-fachen der Pflanze und beim 7,5-fachen von Feuer — die Legendären tragen die Höhe nicht allein. Dritter: die zwei schwächsten Blitz-Skills sind ausgerechnet die zwei Crit-Multiplikator-Karten (Vorentladung −11 %, Entladung −11 %), genau §7.31s Befund, live in den Daten. Dazu der Anzeigefehler: `totalCritMult` (Statusleiste, Ladungsleiste) addiert vier Quellen OHNE `CRIT_MULT_CAP` — der Motor deckelt korrekt, die Anzeige nicht, und ihr fehlt zugleich `lightIonCritMult`. Nicht angefasst, Entscheid offen. |
 | 2026-09-10 | Zwei Owner-Entscheide nach §7.38 (§7.39). (a) **Hochspannung wird ein Misch-Legendäres**: +1 Stufe statt +2, dafür auf JEDE Fraktion statt nur auf Blitz. §7.38 hatte gezeigt, dass keine Zahl den Skill ins Band bringt, weil die vierstufige Leiter bei +2 sättigt; also eine andere Mechanik. Der Hebel wandert aus `lightning.js` als `boostedTier` nach `skills.js` (gemeinsame Quelle, ein Import auf lightning.js aus den anderen drei Modulen wäre ein Zyklus) und wird an vier Nähten gelesen: `effectiveTier`, `fireTier`, `plantTier` und — für Eis — `iceRoleTiers`, weil die Stufe dort einmal je Rolle geseedet wird. `HOCHSPANNUNG_STEPS` 2 → 1, Skilltext neu. Wächter prüft alle vier Fraktionen über ihre eigene Stufenfunktion (nicht über den Helfer) und ist gegengeprobt. (b) **Crit-Anzeige, Entscheid B**: der Motor deckelt korrekt, `totalCritMult` tat es nicht — Statusleiste und Ladungsleiste zeigten Werte, die kein Stich zahlt, und luden damit ausgerechnet dort zum Weiterkaufen ein, wo laut §7.31 ohnehin 81 % verfällt. `totalCritMult` klemmt jetzt wie der Motor, der gebaute Wert bleibt als `totalCritMultRaw` und steht als Unterzeile daneben („am Deckel · 11,3 gebaut"). Ehrlich benannt: die Zeile war und bleibt unvollständig, weil `lightIonCritMult` an der Siegkarte hängt und keine Build-Anzeige sie kennen kann — der echte Stich liegt oft höher am Deckel, als sie vermuten lässt. Beides UNGEMESSEN. |
 | 2026-09-10 | Resonanz auf 0,7 und die Gedankenstriche raus (§7.40, Owner). `RESONANZ_SHARE` 1,5 → **0,7**: §7.38 hatte das Zielband 250–300 % mit +438 % verfehlt, zwei Messpunkte ergeben ein Potenzgesetz (Regler ×0,667 → Wirkung ×0,79, Exponent 0,58) und daraus 0,7 für rund +280 %. Der Anteil liegt damit UNTER dem Nullpunkt des Reglers: eine Karte bekommt 70 % der Partnersumme statt der vollen. Zweitens, Owner wörtlich „keine bescheuerten Bindestriche": alle fünf Gedankenstriche aus den Kartentexten raus — Hochspannung und Abbruchkante (beide von mir in dieser Runde), Eiswall und der Glutbett-Badge (Bestand) sowie der Eis-Passivtext in de/en/es. §5.18 hatte die Regel für die drei Eis-Texte schon aufgestellt; sie ist jetzt ein Wächter über ALLE Skill- und Passiv-Texte (`i18n-guards`), gegengeprobt. Bewusst NICHT im Wächter und offen: 19 Gedankenstriche in Glossar-Einträgen und Tooltips, davon drei aus der Eis-Runde — das ist ein eigener Textdurchgang und ein Owner-Entscheid. Hochspannung bleibt wie in §7.39 gebaut (Owner: „der passt"). |
+| 2026-09-10 | §7.39/§7.40 nachgemessen (§7.41). Blitz-Mono, 6 min, zwei Änderungen zugleich (nicht trennbar, war so angesagt). **Blitz ist eingefangen: mono 1,028 Mrd → 416M**, damit Bl 416M · Pf 367M · Ei 348M/224M · Fe 137M — Blitz und Pflanze gleichauf, der 12-fache Abstand aus §7.38 ist weg. Doppelentladung +275 → +235 %, Resonanz +438 → **+170 %**, Hochspannung +428 → **+92 %**. **Mein Potenzgesetz aus §7.40 war falsch**: aus zwei Punkten gefittet (Exponent 0,58) sagte es für 0,7 rund +280 % voraus, gemessen sind +170 %; der Exponent liegt zwischen 1,5 und 0,7 tatsächlich bei 1,24, die Elastizität steilt sich nach unten auf. Zwei Punkte reichten für diese Kurve nicht. Teil der Abweichung ist nicht Resonanz: Hochspannung fiel gleichzeitig von +2 auf +1 Stufe und wird in 65 % der Läufe gehalten, dort erzeugt jeder Blitz-Skill weniger Stapel — und Resonanz teilt genau die. **Hochspannung lässt sich mono gar nicht beurteilen**: in einer Mono-Welt ist „+1 für alle Fraktionen" identisch mit „+1 für Blitz", die Messung sieht also nur 2 → 1, nicht den Umbau; dafür braucht es die Misch-Welten. Preis der Runde: der Mittelbau ist eingebrochen — acht Skills bei oder unter null, und Gewitterfront fiel +69 → −6, Kettenblitz +33 → +5, Blitzableiter +24 → +2, ohne angefasst worden zu sein. Ursache ist Hochspannung: eine Stufe weniger trifft jeden der dreizehn gehaltenen Skills, nicht nur den Legendären. Das war nicht beabsichtigt. |
