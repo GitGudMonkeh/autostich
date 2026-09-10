@@ -9091,6 +9091,66 @@ Mitglieder-Bedingung eingebaut wurde: der Wächter fällt. Dazu bleibt in der St
 
 ---
 
+### 7.57 §7.56 nachgemessen: null im Score, vier Runden in der Rampe (2026-09-10) — gemessen
+
+Beide Seed-Sätze wie seit §7.53, dazu die Rampen-Sonde.
+
+#### A · Im Score: die dritte Null
+
+**Spannungsfeld +0 % / −2 %**, gehalten 78 / 54 %. Damit sind es drei Bauformen und drei Nullen:
+
+| Bauform | Achse | Ergebnis |
+| --- | --- | --- |
+| §7.43/§7.47 | eigener Score-Multiplikator, je Stapel bzw. je ionisierter Karte | verdreifacht → drei von vier Stufen unter Lift 1 (§7.50) |
+| §7.51/§7.54 | Crit-Chance je ionisierter Karte | ×2,5 → −1 % / +1 % |
+| §7.56 | Crit-Chance je Formation, ohne Bedingung | **+0 % / −2 %** |
+
+Die Fraktion bewegt sich ebenfalls nicht: 1.295M / 613M gegen 792M / 1.196M davor — beide Paare überlappen sich,
+das ist Rauschen (§7.53).
+
+#### B · In der Rampe: der Zweck ist erfüllt
+
+`blitz-ramp`, 60 Läufe, gegen denselben Lauf vor §7.54/§7.56:
+
+| | vorher | jetzt |
+| --- | ---: | ---: |
+| Crit-Chance Runden 1–10 | 14,8 % | 15,5 % |
+| Crit-Chance Runden 21–30 | 41,7 % | **45,9 %** |
+| **Median-Runde, in der die Crit-Chance 25 % erreicht** | 14 | **10** |
+| Median-Runde der 5. vollen Leiste | 15 | **14** |
+| Median-Runde der 10. vollen Leiste | 22 | **21** |
+| Volle Leisten je Lauf | 150,1 | **163,1** |
+| Stapel auf dem Deck je Lauf | 633,7 | **979,4** |
+
+**Die 25-%-Marke fällt vier Runden früher.** Genau das war die Absicht („hilft früher Ladungen zu bekommen").
+
+**Nicht getrennt:** in diesen Zahlen stecken §7.54 (Blitzschlag) und §7.56 zusammen. Blitzschlag braucht Crits, um
+zu zünden, kann den Anstieg in den Runden 1–10 also kaum verursacht haben — der frühe Teil ist plausibel das Feld,
+aber das ist eine Zuordnung, keine Messung. Trennbar wäre es mit einem Lauf ohne das Feld.
+
+#### C · Warum beides zugleich stimmt
+
+Der Score eines Laufs wächst exponentiell; die Runden 41–50 tragen ihn fast allein. **Ein Skill, der nur früh
+hilft, ist im Median-Score praktisch unsichtbar** — er verschiebt den Startpunkt einer Kurve, deren Ende die Zahl
+bestimmt.
+
+Damit ist die Ablation, das Werkzeug dieser ganzen Reihe, für Früh-Skills das falsche Maß. Die richtige Kennzahl
+ist der Meilenstein (welche Runde erreicht die 25 %, die 5. Leiste), nicht der Endstand. Das gilt rückwirkend für
+jede „0 %"-Aussage über einen Skill, dessen Wirkung vorne liegt — bei Blitz sind das Spannungsfeld und, dem
+Mechanismus nach, auch Gewitterfront.
+
+#### D · Was das für die Entscheidung heißt
+
+Der Skill tut, was er soll, aber in einer Größe, die im Endstand nicht ankommt: bei Normal (5 %) und rund 1,4
+Formationen sind das **+7 Punkte Crit-Chance auf einem Formations-Sieg**, und Formations-Siege sind gut ein Drittel
+der Stiche. Wer ihn im Score sehen will, muss ihn um ein Vielfaches größer machen — dann ist er allerdings früh
+sehr stark, weil die Basis dort nur 15 % beträgt.
+
+Offen, Owner-Entscheid: **Satz deutlich hoch** (er wird ein ausgesprochener Früh-Skill), oder **so lassen** und
+akzeptieren, dass er eine Rampenhilfe ist, die die Ablation nicht sieht.
+
+---
+
 ### 5.30 Die Eis-Skills auf dem neuen Motor (2026-09-09) — gemessen, nichts umgesetzt
 
 **Owner:** „und dann schauen wir uns alle skills an die davon profitieren müssen und designen wie."
@@ -9518,3 +9578,4 @@ leichtesten haben.
 | 2026-09-10 | Die zwei Zahlen-Skills angehoben und gemessen (§7.54, Owner: „zahlen, messen"), beide Seed-Sätze, weil §7.53 die Rauschgrenze bei 35 pp beziffert hat. Gebaut: **Spannungsfeld 2/3/4/6 → 5/7/10/15 % Crit-Chance je ionisierter Karte**, **Blitzschlag +1/1/1/2 → +2/3/4/6 Stapel je Auslösung** bei unveränderter Kadenz (die war nie das Problem: die Leisten schütten im Lauf Ø 634 Stapel aufs Deck, gegen die ein Stapel je zweitem Crit nicht ankommt). **Blitzschlag ist repariert, und zwar deutlich: +4/+1 % → +74/+58 %** in zwei unabhängigen Läufen, weit über der Rauschgrenze — der erste eindeutig reparierte tote Skill der Reihe, jetzt stärkster normaler Skill neben Kurzschluss. Weil er die SIEGKARTE ionisiert, die je Stich wechselt, streut er und speist damit das Spannungsfeld. **Spannungsfeld ist dagegen KEIN Zahlen-Problem, und das ist jetzt belegt: zwei Achsen, zwei Anhebungen, kein Effekt** (§7.50 als Score-Multiplikator verdreifacht → drei von vier Stufen blieben unter Lift 1; §7.54 als Crit-Chance ×2,5 → −1/+1 %). Die Diagnose ist strukturell: sein Tor ist zu eng (nur Formations-Siege) und seine Skala zu klein (höchstens die Karten einer Formation, Median 4), während Lichtbogen auf DERSELBEN Achse +2/+23 % misst, weil er bei JEDEM Stich zündet und mit der Stapeltiefe skaliert (Ø 10,7 je Karte, tiefste Ø 215). Bittere Pointe: **die Schranke, die den Weglauf aus §7.46 behoben hat, ist dieselbe, die den Skill klein hält.** Blitzfänger (nicht angefasst) misst 0/−1 % — vierte Bestätigung, zusammen mit dem Befund, dass Episch schon heute +1 Wert je Stapel ungedeckelt gibt (auf der tiefsten Karte Ø +215 bei Grundwert ~7): **Wert sättigt, sobald der Stich ohnehin gewonnen ist.** **Preis der Runde:** die Fraktion steigt von 384/757M auf **792/1.196M**, also 1,9× bis 2,9× der Basis — kein Nebeneffekt, sondern die Rechnung: einen toten Skill lebendig zu machen fügt Kraft hinzu; Blitzschlags `stacks` ist der Regler. **Bilanz:** von den sechs toten Skills ist EINER repariert und FÜNF sind strukturell (Serienschutz, Gewitterfront, Ladungsserie, Blitzfänger, Spannungsfeld). Meine Einordnung in §7.53 D war damit zweimal falsch, und beide Male hat dieselbe Prüfung gefehlt: erst nachsehen, ob der bestehende Satz auf seinem Maximum überhaupt etwas bewirkt. |
 | 2026-09-10 | Zwei Sonden vor dem Umbau der drei freigegebenen toten Skills (§7.55) — beide widerlegen eine Annahme. **(a) Die neue Spannungsfeld-Lesart zündet NICHT früher.** Neue Sonde `feld-formationen.mjs`: je Formations-Sieg hängt eine Position im Schnitt in nur **1,4 bis 1,7 Formationen**, früh sind die zwei Lesarten praktisch gleich (0,18 gegen 0,17 in den Runden 1–10; 0,81 gegen 0,89 in 11–20) und spät ist die neue deutlich KLEINER (1,72 gegen 4,09). Die Annahme, eine ionisierte Karte könne mehrere Formationen zugleich erhellen, trägt nicht — es gibt meist keine mehreren. Der frühe Engpass ist ein anderer: in den Runden 1–10 haben 86 % der Formations-Siege überhaupt keine ionisierte Karte in Reichweite. Der Umbau wie spezifiziert macht den Skill also SCHWÄCHER statt früher; wer früh will, muss die Ionisierungs-Bedingung streichen statt ihre Zählweise zu ändern. **(b) Meine Ladungsserie-Diagnose aus §7.53 D war falsch.** : `streak-probe` misst Blitz mono beste Serie p50 **240**, und 82 % der Läufe erreichen ≥ 75 — die Schwelle „ab Serie 16" ist bequem erreichbar, greift also nicht zu spät. Die echte Erklärung: `blitz-ramp` zählt Ø 150 volle Leisten je Lauf, davon nur 2 bis Runde 10 und 9 bis Runde 20 — **Ladung ist spät im Überfluss da und früh knapp**, und eine Serie von 16 hat man erst, wenn die Leisten ohnehin laufen. Der strukturelle Fehler ist nicht die Höhe der Schwelle, sondern die Kopplung an die Serie als Spätindikator. Nichts umgesetzt, zwei neue Sonden im Baum, Owner-Entscheid offen. |
 | 2026-09-10 | Spannungsfeld zählt Formationen, ohne Ionisierungs-Bedingung (§7.56, Owner: „Formations-Sieg gibt +X % Crit-Chance je Formation dieser Position — genau das meinte ich"). Das ist die Variante aus §7.55 A statt der zuerst genannten; die Sonde hatte gezeigt, dass „je Formation, in der eine ionisierte Karte ist" den Skill **schwächer statt früher** macht. Kennwert ist jetzt die Zahl der FORMATIONEN dieser Position (`positionFormations`, braucht weder Karte noch Deck; Meta-Faktoren ohne Mitglieder zählen nicht mit), **Bedingung keine**, Sätze unverändert 5/7/10/15 %, Episch-Anhang unverändert. **Früh ist das der Faktor 8** (1,38 Formationen gegen 0,17 ionisierte Karten in den Runden 1–10), spät die Hälfte (1,73 gegen 4,09) — genau die Verschiebung dorthin, wo Crit-Chance knapp ist (Runden 1–10: Ø 14,8 % Roh-Chance gegen 87,1 % spät). Der Zweck ist die Kette dahinter: mehr Crits → schnellere volle Leisten → früher Ladung und Stapel; Blitz hat in den Runden 1–10 nur 2 volle Leisten (§7.55 B), das ist der Kaltstart der Fraktion. **Damit stehen auf der Crit-Chance-Achse zwei Skills mit entgegengesetzter Bauanleitung:** Lichtbogen zahlt je Stapel der gespielten Karte (Tiefe, wächst über den Lauf — Ø 10,7 je Karte spät, tiefste Ø 215), Spannungsfeld je Formation (Breite, von Anfang an da, aber gedeckelt bei 1,4–1,7). Früh trägt das Feld, spät der Bogen — das ist die Entscheidung, die §7.43 bauen wollte und dreimal verfehlt hat. Wächter gegengeprobt (eine nie erfüllbare Mitglieder-Bedingung eingebaut, er fällt); die Stufentabelle hält weiterhin fest, dass weder `perStack` (§7.43) noch `perCard` (§7.47) noch `critPerCard` (§7.51) zurückkommen dürfen. Startwerte, UNGEMESSEN. |
+| 2026-09-10 | §7.56 nachgemessen (§7.57), beide Seed-Sätze plus Rampen-Sonde. **Im Score die dritte Null: Spannungsfeld +0 % / −2 %** — damit drei Bauformen und drei Nullen (eigener Score-Multiplikator §7.43/§7.47, Crit-Chance je ionisierter Karte §7.51/§7.54, Crit-Chance je Formation §7.56). Die Fraktion bewegt sich auch nicht (1.295M/613M gegen 792M/1.196M davor, überlappende Paare, also Rauschen). **In der RAMPE ist der Zweck dagegen erfüllt:** `blitz-ramp` misst die Median-Runde, in der die Crit-Chance 25 % erreicht, bei **10 statt 14 — vier Runden früher**; 5. volle Leiste Runde 15 → 14, 10. Leiste 22 → 21, volle Leisten je Lauf 150,1 → 163,1, Stapel auf dem Deck 633,7 → 979,4, Crit-Chance in den Runden 21–30 41,7 → 45,9 %. Nicht getrennt: darin stecken §7.54 (Blitzschlag) und §7.56 zusammen; Blitzschlag braucht Crits zum Zünden und kann den Anstieg in den Runden 1–10 kaum verursacht haben, der frühe Teil ist also plausibel das Feld — eine Zuordnung, keine Messung, trennbar mit einem Lauf ohne das Feld. **Der methodische Kern: der Score eines Laufs wächst exponentiell, die Runden 41–50 tragen ihn fast allein — ein Skill, der nur früh hilft, ist im Median-Score praktisch unsichtbar.** Die Ablation, das Werkzeug dieser ganzen Reihe, ist für Früh-Skills das falsche Maß; die richtige Kennzahl ist der Meilenstein, nicht der Endstand. Das gilt rückwirkend für jede „0 %"-Aussage über einen Skill, dessen Wirkung vorne liegt — bei Blitz sind das Spannungsfeld und, dem Mechanismus nach, auch Gewitterfront. Konkret: bei Normal (5 %) und rund 1,4 Formationen sind es +7 Punkte Crit-Chance auf einem Formations-Sieg, und das ist gut ein Drittel der Stiche. Owner-Entscheid offen: Satz deutlich hoch (er wird ein ausgesprochener Früh-Skill) oder so lassen und akzeptieren, dass er eine Rampenhilfe ist, die die Ablation nicht sieht. |
