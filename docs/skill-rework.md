@@ -8763,6 +8763,64 @@ dürfen zurückkommen** — beide waren Lesarten der zweiten Achse.
 
 ---
 
+### 7.52 §7.51 nachgemessen: die Fraktion ist auf dem Basisniveau angekommen (2026-09-10) — gemessen
+
+Blitz-Mono, 12.050 Läufe, dieselbe Zeile wie §7.41/§7.46/§7.48/§7.50.
+
+#### A · Jede Kennzahl liegt auf oder unter der Basis
+
+| | Basis (vor §7.42) | §7.48 | §7.50 | **jetzt** | jetzt ÷ Basis |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Median | 415.748.556 | 1.639.303.628 | 1.014.231.310 | **383.967.591** | **0,92×** |
+| p90 | 1,89 Mrd | 20,93 Mrd | 6,67 Mrd | **2,17 Mrd** | 1,15× |
+| p95 | 3,44 Mrd | 35,33 Mrd | 10,23 Mrd | **3,07 Mrd** | **0,89×** |
+| max | 71,5 Mrd | 3.425 Mrd | 73,7 Mrd | **58,1 Mrd** | **0,81×** |
+| Siegquote | 68,6 % | 70,0 % | 71,3 % | 67,1 % | — |
+
+Nicht nur der Median: **der ganze Schwanz ist zurück.** Gegen das Feld aus §7.41 (Pf 367M · Ei 348M/224M · Fe 137M
+— je zum Stand ihrer letzten Messung, also nur grob vergleichbar) steht Blitz mit 384M **gleichauf mit der
+Pflanze**. Das ist der Zustand, den §7.41 als gesund beschrieben hat, und er ist ohne einen einzigen neuen Deckel
+erreicht.
+
+#### B · Die Form der Fraktion stimmt
+
+| Skill | Basis | §7.48 | §7.50 | **jetzt** | gehalten |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Doppelentladung (L) | +235 % | +330 % | +325 % | **+211 %** | 60 % |
+| Resonanz (L) | +170 % | +213 % | +208 % | **+137 %** | 69 % |
+| Hochspannung (L) | +92 % | +217 % | +55 % | **+69 %** | 64 % |
+| Kurzschluss | +56 % | +116 % | +72 % | **+45 %** | 99 % |
+| **Lichtbogen** | +18 % | −10 % | 0 % | **+25 %** | 98 % |
+| Blitzableiter | +2 % | +54 % | +14 % | **+11 %** | 98 % |
+| **Kettenblitz** | +5 % | **+238 %** | +40 % | **+1 %** | 48 % |
+
+**Die drei Legendären führen, der stärkste normale Skill steht bei +45 %.** Dieselbe Form, die §7.33 für Feuer als
+richtig festgehalten hat.
+
+**Kettenblitz ist repariert**, und er war der Zeuge des ganzen Problems: +5 % (Basis) → +601 % (§7.46) → +238 %
+(§7.47) → +40 % (§7.50) → **+1 %**. Seine Haltequote fällt von 92 % auf 48 % — der gierige Spieler nimmt ihn nur
+noch, wenn er passt, statt immer. Reine Tiefe auf einer Karte ist kein Motor mehr.
+
+**Lichtbogen ist zurück** (+18 → −10 → 0 → **+25 %**, 98 % gehalten) und damit der zweitstärkste normale Skill. Die
+Crit-Chance-Achse trägt wieder, und genau dort sitzt das Spannungsfeld jetzt als Gegenspieler.
+
+#### C · Was offen bleibt
+
+**Das Spannungsfeld selbst misst 0 %** bei 58 % Haltequote. Die Stufen-Lifts (1,97 / 0,48 / 0,18 / 1,68) sind nicht
+monoton und damit reines Rauschen — die Stichprobe je Stufe trägt diese Auflösung nicht, wie schon in §7.50 C. Der
+Skill ist neutral, nicht kaputt; die Höhe seiner Leiter ist der nächste Regler und ein Owner-Entscheid.
+
+**Drei Skills stehen im Minus:** Entladung −23 %, Vorentladung −23 %, Serienschutz −13 % (alle ~100 % gehalten).
+Vorentladungs Fall von +4 auf −23 % ist auffällig — sie zahlt Crit-Multiplikator je Serienpunkt, und die flachere
+Rest-Steigung aus §7.49 entwertet genau das. **Kandidat, nicht Befund:** Unterschiede dieser Größe liegen bei
+mittleren Skills im Rauschen dieser Reihe (§7.46 B), und §7.50 hat Vorentladung auf derselben Steigung noch mit
++4 % gemessen. Das gehört gezielt nachgemessen, bevor jemand daran dreht.
+
+Unverändert offen: Gewitterfronts Episch-Anhang, Hochspannung nur in Misch-Welten beurteilbar (§7.41 C), und die
+Kontrollmessung des neuen Deckels an Feuer und Eis (§7.49 D, vom Owner ausgesetzt).
+
+---
+
 ### 5.30 Die Eis-Skills auf dem neuen Motor (2026-09-09) — gemessen, nichts umgesetzt
 
 **Owner:** „und dann schauen wir uns alle skills an die davon profitieren müssen und designen wie."
@@ -9185,3 +9243,4 @@ leichtesten haben.
 | 2026-09-10 | Deckel flacher, Leiter bekommt einen Sweep-Griff (§7.49, Owner: „so bauen", beides aus §7.48 D, aber die zwei Zahlen nicht gleichzeitig raten). **`CRIT_MULT_SOFT_SLOPE` 0,20 → 0,05**: über dem Knick zählt jeder Punkt nur noch zu 5 %, die Form aus §7.42 bleibt, kein harter Schnitt kommt zurück. Bei 400 Stapeln fällt der Stich von 2,92× auf **1,66×** gegenüber der Zeit vor §7.42. Die Zahl ist zweifach belegt: §7.48 A (der max hat sich durch §7.47 nicht bewegt, der Extremlauf lebt ganz auf dieser Achse) und §7.48 C (Kettenblitz +5 % Basis → +601 % → immer noch +238 %). **Zweitens `SPANNUNGSFELD_SCALE`** (Default 1), Form wie `WURZELGEFLECHT_FACTOR_SCALE`: der Sweep-Griff für die Leiter des Spannungsfelds, damit ihre Höhe GEMESSEN statt geschätzt wird — §7.47 hatte den Satz schon einmal falsch geeicht, ein zweiter Schätzwert wäre derselbe Fehler mit anderer Zahl. Ein Skalierer und keine vier Einzelsätze, weil §7.48 B ein Höhen- und kein Formproblem gemessen hat (Stufen 3/4 tragen mit Lift 1,22/1,43, Stufen 1/2 nicht mit 0,52/0,60). **Der Regler sitzt in der TABELLE, nicht im Motor** — sonst zeigte die Karte weiter 6 %, während der Stich 12 % abrechnet, also der Fehler aus §7.45, der keine Zahl im Spiel ändert und deshalb niemandem auffällt. Drei Wächter; der neue fragt ein zweites Node mit gesetztem ENV (die Konstante wird beim Laden gelesen) und prüft, dass Kennwert und Kartentext zusammen wandern — gegengeprobt durch Verschieben des Reglers in `lightFormMult`, dann fällt er. **Bewusst offen und Owner-Entscheid:** die Kontrollmessung des neuen Deckels an Feuer und Eis bleibt draußen; der Deckel ist eine Systemregel für alle vier Fraktionen, gemessen wird er nur an Blitz mono. UNGEMESSEN. |
 | 2026-09-10 | §7.49 nachgemessen (§7.50). Vier Läufe à 12.050: ein Punkt für den Deckel allein, drei für die Leiter (`SIM_SPANNUNGSFELD_SCALE` 1/2/3). **Der Deckel sitzt, und der Beleg ist NICHT der Median** (1.639 → 1.014M, −38 %, das liegt unter der in §7.46 B bezifferten Rauschgrenze von rund Faktor 2), sondern das andere Ende der Verteilung: **p90 −68 %, p95 −71 %, max −98 %** (3.425 → 73,7 Mrd). **Der max ist damit auf Basisniveau zurück** — 71,5 Mrd vor §7.42 gegen 73,7 Mrd jetzt, Faktor 1,03. Drei Kennzahlen, eine Richtung, alle weit außerhalb des Rauschens; die Diagnose aus §7.46 C und §7.48 A ist bestätigt, der Extremlauf lebte ganz auf der Crit-Deckel-Achse. Siegquote 71,3 %, der höchste Wert der Reihe. **Der Leiter-Sweep ist am Median dagegen nicht lesbar**: 1.014 → 769 → 1.057M, nicht monoton, Spannweite 1,37× — Rauschen. Lesbar ist nur der Skill-Effekt, und der ist monoton: **+3 → +7 → +26 %**. **Was der Sweep NICHT gelöst hat:** auch bei ×3 tragen die unteren drei Stufen nicht (Lift 0,65 / 0,74 / 0,51), der Wert sitzt vollständig in Episch (2,11) — Verdreifachen hat den Skill angehoben, aber die Leiter nicht begradigt. Die Stufen-Lifts sind dabei selbst verrauscht (bei ×2 Stufe 2 auf 0,29 unter Stufe 3 auf 1,28; eine monotone Leiter kann das nicht erzeugen, n ≈ 60–270 je Stufe trägt die Auflösung nicht) und sollen deshalb keinen Entscheid tragen. Vermutung, ausdrücklich UNGEMESSEN: die Arbeit macht der Episch-Anhang (+1 Stapel auf die dünnste Karte), nicht der Prozentsatz — er ist das einzige, was die unteren Stufen nicht haben; trennbar mit einem Lauf, in dem `feedLowest` auf allen Stufen liegt. **Wo Blitz steht: rund 1,0 Mrd gegen 416M Basis (2,4×) und rund das Dreifache der Pflanze.** Die FORM der Verteilung stimmt wieder, die HÖHE nicht — das ist ein eigener Posten und mit diesen zwei Reglern nicht zu holen. Die Leiter bleibt unentschieden (Owner); ×3 ist der beste gemessene Punkt. |
 | 2026-09-10 | Blitz bekommt keinen eigenen Multiplikator, das Feld zieht auf die Crit-Chance (§7.51, Owner: „lass den blitz mult raus. Blitz nutzt schon crit als mult. lass mir damit arbeiten"). **Die Prämisse aus §7.43 war falsch.** Dort stand als struktureller Fund „Blitz hatte keinen eigenen Multiplikator — er zahlte nur in Basis-Score, Wert und Crit"; das letzte Wort widerlegt den Satz. Der Crit-Multiplikator IST die Multiplikator-Achse der Fraktion, und sie hängt an derselben Kernressource wie alles andere (jeder Stapel der Siegkarte zahlt über `ION_CRIT_MULT_PER_STACK` dorthin). Ich habe daneben eine zweite gestellt — zwei Multiplikator-Achsen an derselben Ressource sind genau das kubische Wachstum aus §7.46 C. Die drei Runden §7.43 → §7.47 → §7.49 haben an den Symptomen dieser einen Annahme gearbeitet. **Raus:** `lightMult` aus Score-Produkt, `glacierWinMult` und Breakdown, `lightFormMult` aus dem Blitz-Modul, `SPANNUNGSFELD_SCALE` aus den Konstanten (der Sweep-Griff aus §7.49 hat keinen Gegenstand mehr), Sonde `spannungsfeld.mjs` gelöscht. **Der Skill bleibt** (Owner-Untergrenze 14 normale Skills je Fraktion, §7.16) und zieht auf die Achse, die Blitz ohnehin hat: **+2/3/4/6 % Crit-CHANCE je ionisierter Karte der Formation**, Episch-Anhang unverändert. Damit steht er gegen Lichtbogen, der eine Zeile höher in derselben Funktion sitzt und die Tiefe EINER Karte belohnt — Streuung gegen Tiefe, auf einer vorhandenen Achse; das ist die Entscheidung, die §7.43 bauen wollte und mit einer zweiten Achse verfehlt hat. Die 100-%-Klemme deckelt ihn von selbst, darüber zahlt er über die Überschuss-Regel (§7.44) gedämpft weiter; gemessen (§7.46 F) sind es mittig 2,0 und spät 4,4 ionisierte Karten, der Beitrag wächst also dort, wo Chance knapp ist, und sättigt dort, wo sie es nicht mehr ist. `litCards` ist 0, wo die Formation nicht bekannt ist (Statusleiste) — dieselbe Bauform wie `card = null` bei Lichtbogen. **Wächter:** kein Blitz-Faktor im Breakdown (über die vollständige Liste der `*Mult`-Schlüssel, nicht nur den alten Namen) UND die Stapel heben weiterhin den Crit-Multiplikator; gegengeprobt in der Form, die wirklich droht — ein `lightMult = 1` zurück in den Breakdown, ein Faktor, der KEINE Zahl im Spiel ändert und sonst niemandem auffiele. Dazu: weder `perStack` (§7.43) noch `perCard` (§7.47) dürfen in der Stufentabelle zurückkommen. **Der Stand aus §7.50 (Median 1,0 Mrd, 2,4× der Basis) ist damit nicht mehr gültig.** Was aus der Reihe bleibt: der weiche Crit-Deckel bei 0,05 (§7.49 A, von §7.50 als der wirksame Hebel belegt) und §7.44, das jetzt sogar wichtiger ist. Startwerte, UNGEMESSEN. |
+| 2026-09-10 | §7.51 nachgemessen (§7.52). Blitz-Mono, 12.050 Läufe. **Die Fraktion ist auf dem Basisniveau angekommen, und zwar auf JEDER Kennzahl: Median 384M gegen 416M (0,92×), p95 3,07 gegen 3,44 Mrd (0,89×), max 58,1 gegen 71,5 Mrd (0,81×).** Nicht nur der Median — der ganze Schwanz ist zurück, und das ohne einen einzigen neuen Deckel. Gegen das Feld aus §7.41 (Pf 367M · Ei 348M/224M · Fe 137M, je zum Stand ihrer letzten Messung) steht Blitz gleichauf mit der Pflanze. **Die Form stimmt auch:** die drei Legendären führen (+211 / +137 / +69 %), der stärkste normale Skill ist Kurzschluss mit +45 % — dieselbe Form, die §7.33 für Feuer als richtig festgehalten hat. **Kettenblitz ist repariert**, der Zeuge des ganzen Problems: +5 % (Basis) → +601 % (§7.46) → +238 % (§7.47) → +40 % (§7.50) → **+1 %**, Haltequote 92 → 48 %. Reine Tiefe auf einer Karte ist kein Motor mehr. **Lichtbogen ist zurück** (+18 → −10 → 0 → **+25 %**, 98 % gehalten) und damit zweitstärkster normaler Skill — die Crit-Chance-Achse trägt wieder, und genau dort sitzt das Spannungsfeld jetzt als Gegenspieler. **Offen:** das Spannungsfeld selbst misst 0 % bei 58 % Haltequote, die Stufen-Lifts (1,97 / 0,48 / 0,18 / 1,68) sind nicht monoton und damit Rauschen — der Skill ist neutral, nicht kaputt, die Höhe seiner Leiter ist der nächste Regler und ein Owner-Entscheid. Drei Skills im Minus (Entladung −23 %, Vorentladung −23 %, Serienschutz −13 %, alle ~100 % gehalten); Vorentladungs Fall von +4 auf −23 % ist ein KANDIDAT, kein Befund — sie zahlt Crit-Multiplikator je Serienpunkt und die flachere Rest-Steigung entwertet genau das, aber §7.50 hat sie auf derselben Steigung noch mit +4 % gemessen, also liegt das im Rauschen der Reihe (§7.46 B) und gehört gezielt nachgemessen. |
