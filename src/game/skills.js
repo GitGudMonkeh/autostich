@@ -236,7 +236,7 @@ export const SKILL_DEFS = {
   SK_LIGHTNING_L02: { id: "SK_LIGHTNING_L02", name: "Doppelentladung", archetype: "lightning", legendary: true, keywords: ["ionize", "crit"],
     desc: `Jede Ionisierung gibt ${C.DOPPELENTLADUNG_STACKS} Stapel statt 1. Crit mit einer ionisierten Karte: der Blitz schlägt zweimal ein, der Stich zählt doppelt.` },
   SK_LIGHTNING_L03: { id: "SK_LIGHTNING_L03", name: "Hochspannung", archetype: "lightning", legendary: true, keywords: ["crit"],
-    desc: `Alle deine gehaltenen Skills wirken ${C.HOCHSPANNUNG_STEPS === 1 ? "eine Stufe" : `${de1(C.HOCHSPANNUNG_STEPS)} Stufen`} höher — jede Fraktion. Episch ist das Ende der Leiter.` },
+    desc: `Alle deine gehaltenen Skills wirken ${C.HOCHSPANNUNG_STEPS === 1 ? "eine Stufe" : `${de1(C.HOCHSPANNUNG_STEPS)} Stufen`} höher, in jeder Fraktion. Episch ist das Ende der Leiter.` },
   SK_LIGHTNING_L04: { id: "SK_LIGHTNING_L04", name: "Resonanz", archetype: "lightning", legendary: true, keywords: ["ionize", "formation"], // §7.25: ersetzt Durchschlag (Emblem bleibt)
     desc: `Ionisierte Karten in einer Formation teilen ihre Stapel: jede Karte kämpft mit ihren eigenen Stapeln plus ${de(C.RESONANZ_SHARE)}× den Stapeln der anderen Mitglieder ihrer Formation, abgerundet.` },
 
@@ -311,12 +311,12 @@ export const SKILL_DEFS = {
   SK_ICE_07: { id: "SK_ICE_07", name: "Eisbrücke", archetype: "ice", keywords: ["glacier"], role: "G_EISBRUECKE", tiers: EIS.eisbruecke,
     ...tiered(EIS.eisbruecke, (r) => `Zählt auch die vier Diagonalen als angrenzend: zersplitterte Felder werden zu einem Cluster. Für Kaskade und Kollision zählt ein diagonaler Gletscher zu ${pct(r.weight)} %.`) },
   SK_ICE_08: { id: "SK_ICE_08", name: "Eiswall", archetype: "ice", keywords: ["glacier", "formation"], role: "G_EISWALL", tiers: EIS.eiswall,
-    ...tiered(EIS.eiswall, (r) => `Steht ein Gletscher in einer geraden Kette aus mindestens ${G_EISWALL_MIN} Gletschern (Reihe oder Spalte), berstet er um +${pct(r.per)} % stärker je Gletscher der Kette über zwei — eine volle Reihe also +${pct(r.per * 3)} %.`) },
+    ...tiered(EIS.eiswall, (r) => `Steht ein Gletscher in einer geraden Kette aus mindestens ${G_EISWALL_MIN} Gletschern (Reihe oder Spalte), berstet er um +${pct(r.per)} % stärker je Gletscher der Kette über zwei. Eine volle Reihe gibt also +${pct(r.per * 3)} %.`) },
   SK_ICE_09: { id: "SK_ICE_09", name: "Verzahnung", archetype: "ice", keywords: ["glacier"], role: "G_VERZAHNUNG", tiers: EIS.verzahnung,
     ...tiered(EIS.verzahnung, (r) => `Jeden Durchlauf gewinnt jeder Gletscher +${de(r.per)} Masse je Gletscher im verbundenen Cluster.`) },
   // Linie 3 — Lawine (Brechen/Kaskade)
   SK_ICE_10: { id: "SK_ICE_10", name: "Abbruchkante", archetype: "ice", keywords: ["glacier"], role: "G_ABBRUCHKANTE", tiers: EIS.abbruchkante,
-    ...tiered(EIS.abbruchkante, (r) => `Deine Gletscher bersten erst ab ${de(r.at)} Masse statt ab ${de(G_BURST_AT)} — sie sammeln länger und treffen dafür eine höhere Schwelle.`) },
+    ...tiered(EIS.abbruchkante, (r) => `Deine Gletscher bersten erst ab ${de(r.at)} Masse statt ab ${de(G_BURST_AT)}. Sie sammeln länger und treffen dafür eine höhere Schwelle.`) },
   SK_ICE_11: { id: "SK_ICE_11", name: "Eisbeben", archetype: "ice", keywords: ["glacier"], role: "G_EISBEBEN", tiers: EIS.eisbeben,
     ...tiered(EIS.eisbeben, (r) => `Bricht ein Gletscher über der Berst-Schwelle, bebt das Eis nach: je Punkt Masse darüber zählt der Bruch +${pct(r.per)} % zusätzlich.${r.sturz ? " Das Nachbeben zählt für den Gletschersturz als eigener Bruch." : ""}`) },
   // (§5.2: Zermalmen SK_ICE_12 gestrichen — dieselbe Achse wie die Kaskade, beide zahlen für Gletscher-Nachbarn.)

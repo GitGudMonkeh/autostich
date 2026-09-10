@@ -188,7 +188,7 @@ export default {
   "bar.fire.badge.schneise.title": "Brandschneise: deine {n} Siege mit dem größten Vorsprung eines Durchlaufs schlagen die Schneise; im nächsten Durchlauf zählt ein Sieg auf diesen Positionen ×{m}.",
   "bar.fire.badge.glutbett": "Glutbett {n} %",
   "bar.fire.badge.glutbett.title": "Glutbett: Niederlagen kühlen die Hitze nicht unter {n} %. Fängt der Boden einen Sturz ab, steigt er um {rise} %.",
-  "bar.fire.badge.glutbett.title.grown": "Glutbett: der Boden liegt bei {n} % — {grown} Prozentpunkte über der Stufe, erarbeitet aus abgefangenen Stürzen. Jeder weitere hebt ihn um {rise} %.",
+  "bar.fire.badge.glutbett.title.grown": "Glutbett: der Boden liegt bei {n} %, also {grown} Prozentpunkte über der Stufe, erarbeitet aus abgefangenen Stürzen. Jeder weitere hebt ihn um {rise} %.",
   "bar.fire.tick.glutbett": "Glutbett-Boden: {n} % Hitze",
   "bar.fire.badge.verbrennung": "Verbrennung ab {n}",
   "bar.fire.badge.verbrennung.title": "Verbrennung: ein Sieg mit Kampfwert-Vorsprung ab {n} zählt ×{m}.",
@@ -475,7 +475,7 @@ export default {
   // damit ein Balancing-Dreh nicht am Text vorbeigeht.
   "skill.passive.lightning": "Blitz gibt +{socket} % Crit-Chance, jeder gehaltene Blitz-Skill zusätzlich +{each} %. Alle {bar} Crits ist die Ladungsleiste voll und ionisiert die nächste Karte in der Reihenfolge: Sie bekommt einen Stapel und dauerhaft +{value} Kartenwert; jeder Stapel gibt bei Sieg mit ihr +{stack} Score in die Basis und +{critPer}× Crit-Multiplikator.",
   "skill.passive.fire": "Siege ab {margin} Kampfwert-Vorsprung geben Hitze: +{per} % je Punkt Vorsprung über {offset}, ohne Deckel. Niederlagen kühlen −{cool} %. Je 10 % gehaltener Hitze zählt jeder Sieg +{mult} % Score, als eigener Multiplikator. Die Feuer-Skills nutzen die Hitze.",
-  "skill.passive.ice": "Jeder Eis-Skill friert eine deiner Karten dort fest, wo sie steht: Sie lässt sich in keiner Aufstellung mehr verschieben, sammelt dafür jeden Durchlauf Masse und bricht schließlich über ihre Nachbarn. Auch der offene Boden friert: jedes freie Feld legt Schnee an und gibt ihn an deine Gletscher ab — je weniger Gletscher du hast, desto mehr bekommt jeder einzelne.",
+  "skill.passive.ice": "Jeder Eis-Skill friert eine deiner Karten dort fest, wo sie steht: Sie lässt sich in keiner Aufstellung mehr verschieben, sammelt dafür jeden Durchlauf Masse und bricht schließlich über ihre Nachbarn. Auch der offene Boden friert: jedes freie Feld legt Schnee an und gibt ihn an deine Gletscher ab. Je weniger Gletscher du hast, desto mehr bekommt jeder einzelne.",
   "skill.passive.plant": "Sobald die Pflanze steht, sind die grünen Karten des Decks grün. Jeder Sieg lässt die Siegkarte wachsen: +{win} Wachstum, dazu +{perForm} je Formation an ihrer Position. Niederlagen geben nichts. Ab {green} Wachstum ist die Karte grün. Ab {bloom} blüht sie, und ein Sieg mit ihr gibt +{score} Basis-Score je grüner Karte in ihren Formationen. Eine blühende Karte zahlt dabei {weight}fach. Je {per} weitere Wachstumspunkte zahlt sie einmal mehr.",
   "skill.forms.head": "Deine aktiven Formationen",
   "skill.forms.expand": "Aufstellfeld ausklappen",

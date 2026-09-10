@@ -338,9 +338,11 @@ export const ION_SCORE_PER_STACK      = envNum("SIM_ION_SCORE_PER_STACK", 75);  
 export const ION_VALUE_PER_BAR        = envNum("SIM_ION_VALUE_PER_BAR", 1);         // Blitz-Passiv (§7.24, Owner): jede volle Leiste gibt der ionisierten Karte dauerhaft +so viel Wert — bis §7.23 war das Überspannung (1–4 je Stufe) und trug Blitz mono; Duell-Sweep 0/1/2: Blitz mono 7,3 / 13,0 / 13,6M, Floor 1,93 / 1,09 / 1,04×
 export const ION_MAX_STACKS           = 5;  // NUR ANZEIGE (Karten-Pips, „voll ionisiert"-Effekte): Stapel sind seit dem Rework ohne Deckel
 export const OVERCRIT_MULT_PER_PP     = envNum("SIM_OVERCRIT_MULT_PER_PP", 0.01);     // Systemregel (alle Fraktionen): die Crit-Chance ist bei 100 % gedeckelt, jeder Prozentpunkt darüber wird +Crit-Mult (§7.28, Owner: 0,002 → 0,01)
-export const RESONANZ_SHARE           = envNum("SIM_RESONANZ_SHARE", 1.5);               // Resonanz (L, §7.25, ersetzt Durchschlag): Anteil der Stapel der ANDEREN Karten ihrer Formation, mit dem die gespielte Karte kämpft (1 = die ganze Summe; Sim-Regler)
-// §7.37 (Owner): 2,25 → 1,5. §8 misst mono +553 %, das stärkste Legendäre des Spiels, und 2,25 lag weit über dem
-// eigenen Nullpunkt des Reglers — jede Karte bekam mehr als das Doppelte der vollen Partnersumme. UNGEMESSEN.
+export const RESONANZ_SHARE           = envNum("SIM_RESONANZ_SHARE", 0.7);               // Resonanz (L, §7.25, ersetzt Durchschlag): Anteil der Stapel der ANDEREN Karten ihrer Formation, mit dem die gespielte Karte kämpft (1 = die ganze Summe; Sim-Regler)
+// §7.37 setzte 2,25 → 1,5, §7.38 hat gemessen: +553 → +438 %, das Zielband 250–300 % also verfehlt. Zwei Messpunkte
+// ergeben ein Potenzgesetz (Regler ×0,667 → Wirkung ×0,79, Exponent 0,58); daraus 0,7 für rund +280 %.
+// §7.40 (Owner: „0.7 klingt gut"): gesetzt. Damit liegt der Anteil unter dem Nullpunkt des Reglers, eine Karte
+// bekommt also 70 % der Partnersumme statt der vollen. UNGEMESSEN.
 export const DOPPELENTLADUNG_STACKS   = envNum("SIM_DOPPELENTLADUNG_STACKS", 3);      // Doppelentladung (L): Stapel je Ionisierung (statt 1); §6.12: 2 → 4, §6.14: → 5, §7.37 (Owner): → 3 (mono +383 %). Der zweite Regler des Skills, DOPPELENTLADUNG_STRIKE, bleibt bei 2 — ein Hebel je Runde
 export const DOPPELENTLADUNG_STRIKE   = envNum("SIM_DOPPELENTLADUNG_STRIKE", 2);      // Doppelentladung (L): Crit mit ionisierter Karte → der Stich zählt so oft (Sim-Regler, ggf. 1,5)
 export const HOCHSPANNUNG_STEPS       = envNum("SIM_HOCHSPANNUNG_STEPS", 1);          // Hochspannung (L): um so viele Stufen wirken ALLE gehaltenen Skills höher (Episch bleibt das Ende der Leiter)

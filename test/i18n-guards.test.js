@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
 import { locTodo } from "../scripts/loc-todo.mjs";
 import de from "../src/i18n/de.js";
+import { SKILL_DEFS } from "../src/game/skills.js";
 import en from "../src/i18n/en.js";
 import { t, fmtNum, fmtPct, fmtDayMonth, LOCALE_IDS, READY_LOCALE_IDS, INACTIVE_LOCALE_IDS, setLocale, getLocale,
   interpolate, SOURCE_LOCALE, DEFAULT_LOCALE, catalog, numberFormat } from "../src/i18n/index.js";
@@ -1208,5 +1209,20 @@ describe("i18n · Abdeckung wächst mit", () => {
       return true;
     });
     expect(unused, `Toter Katalog-Eintrag (nirgends per t() gerufen):\n  ${unused.join("\n  ")}`).toEqual([]);
+  });
+
+  /* §5.18 hat es für die drei Eis-Texte festgehalten, §7.40 macht es zur Regel: KEINE Gedankenstriche in Skilltexten
+     und Passiv-Texten (Owner, wörtlich: „keine bescheuerten Bindestriche"). Ein Halbsatz nach Gedankenstrich ist auf
+     einer Karte immer ein zweiter Satz, der sich als Nachtrag tarnt. Der Wächter deckt genau die Fläche, die auf den
+     Karten steht; Glossar und Tooltips sind bewusst NICHT darin, dort steht der Bestand noch offen (Owner-Entscheid). */
+  it("Skill- und Passiv-Texte kommen ohne Gedankenstrich aus (§7.40)", () => {
+    const bad = [];
+    for (const d of Object.values(SKILL_DEFS)) {
+      if (typeof d.desc === "string" && d.desc.includes("\u2014")) bad.push(`${d.id}.desc`);
+      (d.descTiers || []).forEach((t2, i) => { if (typeof t2 === "string" && t2.includes("\u2014")) bad.push(`${d.id}.descTiers[${i}]`); });
+    }
+    for (const [k, v] of Object.entries(de))
+      if (k.startsWith("skill.passive.") && typeof v === "string" && v.includes("\u2014")) bad.push(k);
+    expect(bad, `Gedankenstrich im Kartentext:\n  ${bad.join("\n  ")}`).toEqual([]);
   });
 });
