@@ -350,13 +350,6 @@ export const LIGHTNING_MAX_CHARGE     = envNum("SIM_LIGHTNING_MAX_CHARGE", 10); 
 export const ION_SCORE_PER_STACK      = envNum("SIM_ION_SCORE_PER_STACK", 75);        // +Score (Basis, vor den Multiplikatoren) je Stapel bei Sieg mit der Karte — der Paritäts-Regler Feuer/Blitz (§7.14: 60 → 75 bei 50 Runden; Duell-Sweep 60/75/80/90/120: Floor 1,16/1,07/1,03/0,99/0,88×, Mean 1,04/0,95/0,92/0,87/0,75×)
 export const ION_VALUE_PER_BAR        = envNum("SIM_ION_VALUE_PER_BAR", 1);         // Blitz-Passiv (§7.24, Owner): jede volle Leiste gibt der ionisierten Karte dauerhaft +so viel Wert — bis §7.23 war das Überspannung (1–4 je Stufe) und trug Blitz mono; Duell-Sweep 0/1/2: Blitz mono 7,3 / 13,0 / 13,6M, Floor 1,93 / 1,09 / 1,04×
 export const ION_MAX_STACKS           = 5;  // NUR ANZEIGE (Karten-Pips, „voll ionisiert"-Effekte): Stapel sind seit dem Rework ohne Deckel
-/* Spannungsfeld (SK_LIGHTNING_13): Faktor auf den Satz je ionisierter Karte, Form wie WURZELGEFLECHT_FACTOR_SCALE.
-   Der Sweep-Griff für die LEITER als ganze — §7.48 hat gemessen, dass die Startleiter 2/3/4/6 % zu flach ist
-   (Lift 0,52 / 0,60 / 1,22 / 1,43: unter „Sehr selten" ist der Skill keinen Platz wert), und ihn zum zweiten Mal
-   zu SCHÄTZEN wäre derselbe Fehler mit anderer Zahl. `SIM_SPANNUNGSFELD_SCALE=2 node sim/survey.js …` fährt die
-   ganze Leiter, ohne die Tabelle anzufassen. Ein Skalierer ist hier richtig und ein Einzelsatz nicht: die
-   Staffelung der vier Stufen ist abgenommen, unsicher ist nur ihre Höhe. */
-export const SPANNUNGSFELD_SCALE      = envNum("SIM_SPANNUNGSFELD_SCALE", 1);
 export const OVERCRIT_MULT_PER_PP     = envNum("SIM_OVERCRIT_MULT_PER_PP", 0.03);     // Systemregel (alle Fraktionen): die Crit-Chance ist bei 100 % gedeckelt, jeder Prozentpunkt darüber wird +Crit-Mult (§7.28, Owner: 0,002 → 0,01; §7.44: → 0,03, damit 5 Punkte genau EINEN Stapel wert sind — der weiche Deckel dämpft den Überschuss über dem Knick auf ein Fünftel)
 export const RESONANZ_SHARE           = envNum("SIM_RESONANZ_SHARE", 0.7);               // Resonanz (L, §7.25, ersetzt Durchschlag): Anteil der Stapel der ANDEREN Karten ihrer Formation, mit dem die gespielte Karte kämpft (1 = die ganze Summe; Sim-Regler)
 // §7.37 setzte 2,25 → 1,5, §7.38 hat gemessen: +553 → +438 %, das Zielband 250–300 % also verfehlt. Zwei Messpunkte

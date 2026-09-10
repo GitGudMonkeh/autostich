@@ -68,8 +68,6 @@ export default {
   "ability.SK_LIGHTNING_11.desc": "当电离落在一张已满的卡牌上：这张卡牌下次出场时+2墩值，并给予+1充能。",
   "ability.SK_LIGHTNING_09.name": "短路",
   "ability.SK_LIGHTNING_09.desc": "用一张电离已满的卡牌获胜：+250得分和+3充能。",
-  "ability.SK_LIGHTNING_13.name": "电压积压",
-  "ability.SK_LIGHTNING_13.desc": "每次无暴击的获胜给予下一次获胜+5%暴击率（最高+50%）。一次暴击会把它清空。",
   "ability.SK_LIGHTNING_14.name": "跃弧",
   "ability.SK_LIGHTNING_14.desc": "超过100%的暴击率会在每次获胜时换成充能：每10个百分点+1充能。当约85%的卡牌电离已满时，5个百分点就够。",
   "ability.SK_LIGHTNING_04.name": "过压",

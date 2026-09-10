@@ -15,8 +15,9 @@ import { SKILL_DEFS, activeLightningCount, isLegendarySkill, boostedTier } from 
    Stufe. Alle Funktionen sind immutabel: sie geben neue Objekte zurück und fassen ihre Eingaben nicht an.
    §7.18 (Blitz-Runde): Statische Aufladung und Dauerstrom sind in Blitzableiter aufgegangen, Ionenfeld (SK_LIGHTNING_02)
    und Vorentladung (SK_LIGHTNING_12) sind neu, Kettenblitz vertieft statt verbreitert, Blitzfänger hat keine Stapel-
-   Schwelle mehr. §7.43: SK_LIGHTNING_13 trägt das Spannungsfeld statt des Spannungsstaus — ein eigener
-   Multiplikator auf den Formations-Sieg; §7.47 zählt er die ionisierten KARTEN der Formation, nicht ihre Stapel. §7.19: Überschlag ist gestrichen (14 Skills). §7.24:
+   Schwelle mehr. §7.19: Überschlag ist gestrichen. §7.51: Blitz hat KEINEN eigenen Faktor im
+   Score-Produkt — der Crit-Multiplikator IST seine Multiplikator-Achse; das Spannungsfeld (SK_LIGHTNING_13) zahlt
+   seitdem auf die Crit-CHANCE, je ionisierter Karte der Formation. §7.24:
    Überspannung macht den Überschuss eines Crits über dem Deckel zu Ladung (vorher Dauerwert je Leiste).
    ============================================================ */
 
@@ -25,7 +26,7 @@ import { SKILL_DEFS, activeLightningCount, isLegendarySkill, boostedTier } from 
 export const L = Object.freeze({
   ABLEITER: "SK_LIGHTNING_01", IONENFELD: "SK_LIGHTNING_02", KETTENBLITZ: "SK_LIGHTNING_03", LICHTBOGEN: "SK_LIGHTNING_04", // 04: Lichtbogen ersetzt Überspannung (§7.28)
   RESTSTROM: "SK_LIGHTNING_05", GEWITTERFRONT: "SK_LIGHTNING_06", LADUNGSSERIE: "SK_LIGHTNING_07", KURZSCHLUSS: "SK_LIGHTNING_09",
-  ENTLADUNG: "SK_LIGHTNING_10", BLITZFAENGER: "SK_LIGHTNING_11", VORENTLADUNG: "SK_LIGHTNING_12", SPANNUNGSFELD: "SK_LIGHTNING_13", // 13: Spannungsfeld ersetzt den Spannungsstau (§7.43)
+  ENTLADUNG: "SK_LIGHTNING_10", BLITZFAENGER: "SK_LIGHTNING_11", VORENTLADUNG: "SK_LIGHTNING_12", SPANNUNGSFELD: "SK_LIGHTNING_13", // 13: §7.51 auf der Crit-Chance (Streuung), war seit §7.43 ein eigener Score-Faktor
   BLITZSCHLAG: "SK_LIGHTNING_15", SERIENSCHUTZ: "SK_LIGHTNING_17", // SK_LIGHTNING_14 Überschlag: gestrichen (§7.19)
   DOPPELENTLADUNG: "SK_LIGHTNING_L02", HOCHSPANNUNG: "SK_LIGHTNING_L03", RESONANZ: "SK_LIGHTNING_L04", // L04: Resonanz ersetzt Durchschlag (§7.25); L01 Donnergott gestrichen (§6.11, Owner: drei je Fraktion, die stärksten)
 });
@@ -88,16 +89,21 @@ export function lightParam(skills, skillTiers, id, key) {
    + Lichtbogen (§7.28: je wirksamem Stapel der gespielten Karte — die
    Richtung „Ionisierung → Crit-Chance", die es vorher nicht gab; `card` ist die Lesesicht der Karte, also mit
    Resonanz-Summe, und `effectiveStacks` heißt: Kurzschluss verdoppelt hier genauso wie beim Stapel-Score).
-   0, solange der Archetyp inaktiv ist. (§7.43: SK_LIGHTNING_13 trägt das Spannungsfeld und zahlt auf den
-   Stich-Multiplikator, weder auf Chance noch auf Crit-Multiplikator.
+   0, solange der Archetyp inaktiv ist. (
    §7.30: die Ladungsserie zahlt jetzt in Ladung, nicht mehr in Chance — damit liest gerade niemand die Serie.
    Der Platz bleibt als `_streak` stehen, weil die Engine sie ohnehin berechnet und weiterreicht: eine künftige
    Serie-zu-Chance-Quelle gehört hierher, und die 15 Aufrufstellen zweimal umzustellen ist der teurere Weg.) */
-export function lightningCritChance(lightning, skills, skillTiers, _streak = 0, card = null) {
+export function lightningCritChance(lightning, skills, skillTiers, _streak = 0, card = null, litCards = 0) {
   if (!lightning || !lightning.active) return 0;
   let c = C.LIGHTNING_CRIT_SOCKET + activeLightningCount(skills) * C.LIGHTNING_CRIT_PER_SKILL + (lightning.stormCritBonus || 0);
   const perStack = lightParam(skills, skillTiers, L.LICHTBOGEN, "critPerStack");
   if (perStack && card) c += perStack * effectiveStacks(card, skills, skillTiers);
+  /* Spannungsfeld (§7.51, Owner): je IONISIERTER KARTE der Formation. Es steht damit gegen Lichtbogen eine Zeile
+     höher, der die Tiefe EINER Karte belohnt — Streuung gegen Tiefe, auf derselben Achse. `litCards` ist 0, wo die
+     Formation nicht bekannt ist (Statusleiste), genau wie `card` bei Lichtbogen: die Anzeige zeigt den Bau, nicht
+     den Stich. Die 100-%-Klemme deckelt den Beitrag von selbst; darüber zahlt er über die Überschuss-Regel. */
+  const perCard = lightParam(skills, skillTiers, L.SPANNUNGSFELD, "critPerCard");
+  if (perCard && litCards) c += perCard * litCards;
   return c;
 }
 
@@ -203,10 +209,10 @@ export function blitzschlagStacks(lightning, skills, skillTiers) {
   return (lightParam(skills, skillTiers, L.BLITZSCHLAG, "stacks") || 1) * (hasDoppelentladung(skills) ? C.DOPPELENTLADUNG_STACKS : 1);
 }
 
-/* Spannungsfeld (§7.43) — die Mitglieder der Formationen an einer Position, jede Karte GENAU EINMAL und die
-   gespielte eingeschlossen. Ohne echten Partner leer: Meta-Faktoren (Anker, Nachhall) haben keine Mitglieder, und
-   ohne Formation gibt es kein Feld. Ohne die Vereinigung zahlt eine Karte, die in drei Formationen hängt, dreifach
-   für sich selbst — Resonanz zählt aus demselben Grund genauso. */
+/* Spannungsfeld — die Mitglieder der Formationen an einer Position, jede Karte GENAU EINMAL und die gespielte
+   eingeschlossen. Ohne echten Partner leer: Meta-Faktoren (Anker, Nachhall) haben keine Mitglieder. Ohne die
+   Vereinigung zahlt eine Karte, die in drei Formationen hängt, dreifach für sich selbst — Resonanz zählt aus
+   demselben Grund genauso. */
 export function formationStacks(card, posForm, slot, cardAt) {
   const seen = new Set([slot]);
   const out = [{ slot, stacks: card?.ionStacks || 0 }];
@@ -218,20 +224,9 @@ export function formationStacks(card, posForm, slot, cardAt) {
   return out.length > 1 ? out : [];
 }
 
-/* Der einzige eigene MULTIPLIKATOR der Fraktion (Feuer hat fireMult, Pflanze plantMult, Blitz hatte keinen): der
-   Formations-Sieg zählt +Satz je IONISIERTER KARTE der Formation. Gelesen wird die ECHTE Siegkarte, nicht die
-   Resonanz-Sicht — die trägt die Formationssumme schon. 1 ohne Skill, ohne Formation, inaktiv.
-   §7.47: gezählt werden KARTEN, nicht Stapel. Über die Stapelsumme hing der Faktor an der Tiefe EINER Karte und
-   multiplizierte sich mit den zwei anderen Stapel-Achsen (Basis-Score, Crit-Mult) zu einem kubischen Ausschlag
-   (§7.46 C). Die Kartenzahl ist durch die Formation begrenzt, die Stapelsumme war es nicht. */
-export function lightFormMult(lightning, skills, skillTiers, card, posForm, slot, cardAt) {
-  if (!lightning || !lightning.active) return 1;
-  const per = lightParam(skills, skillTiers, L.SPANNUNGSFELD, "perCard");
-  if (!per) return 1;
-  const members = formationStacks(card, posForm, slot, cardAt);
-  if (!members.length) return 1;
-  return 1 + per * members.filter((m) => m.stacks > 0).length;
-}
+// Wie viele Karten der Formation sind ionisiert? Der Kennwert, auf dem Spannungsfeld sitzt (§7.51).
+export const litFormationCards = (card, posForm, slot, cardAt) =>
+  formationStacks(card, posForm, slot, cardAt).filter((m) => m.stacks > 0).length;
 
 /* Episch-Anhang: der Formations-Sieg lädt die Karte mit den wenigsten Stapeln seiner Formation nach (Gleichstand:
    die vordere Position). Läuft NICHT durch Doppelentladung — das ist keine Ionisierung durch die Leiste, sondern
@@ -246,6 +241,7 @@ export function feldFeed(lightning, skills, skillTiers, card, posForm, slot, car
   for (const m of members) if (m.stacks < best.stacks || (m.stacks === best.stacks && m.slot < best.slot)) best = m;
   return { slot: best.slot, stacks: n };
 }
+
 
 /* Niederlage: Serienschutz (fester Ladungspreis der Stufe hält die Serie, höchstens `perRound` mal je Durchlauf).
    §7.30: bis dahin kostete er einen ANTEIL der Leiste (Normal 70 %) und griff bei JEDER Niederlage — gemessen war der

@@ -29,13 +29,6 @@ const de1 = numWord;
    ============================================================ */
 // Stufentabellen der 15 Blitz-Skills (§3.5) — Zeile 0 Normal · 1 Selten · 2 Sehr selten · 3 Episch. Die Texte darunter
 // interpolieren dieselben Zahlen (kein Drift zwischen Regel und Beschreibung). Startwerte für die Sim.
-/* §7.49: die Leiter des Spannungsfelds hängt am Sweep-Regler SPANNUNGSFELD_SCALE — HIER in der Tabelle, nicht erst
-   im Motor. Sonst zeigte der Kartentext die ungeskalierte Zahl, während der Stich die geskalierte abrechnet: genau
-   der Fehler, den §7.45 an der Stufenanzeige gefunden hat. Die letzte Stufe trägt den Episch-Anhang. */
-const feldLadder = (rates) => rates.map((p, i) => ({
-  perCard: Math.round(p * C.SPANNUNGSFELD_SCALE * 1e6) / 1e6,
-  ...(i === rates.length - 1 ? { feedLowest: 1 } : {}),
-}));
 const BLITZ = {
   ableiter:      [{ critEvery: 2, back: 0 }, { critEvery: 2, back: 1 }, { critEvery: 1, back: 1 }, { critEvery: 1, back: 2, noCritCharge: 1 }], // §7.18: nimmt Statische Aufladung und Dauerstrom auf (beide gestrichen)
   ionenfeld:     [{ tricks: 5, value: 2 }, { tricks: 7, value: 3 }, { tricks: 10, value: 4 }, { tricks: 15, value: 5 }], // §7.18 neu (SK_LIGHTNING_02): jede volle Leiste lädt das Feld; §7.20: 2/3/4/5 (2/2/2/3 war neutral, 3/3/4/5 kippte die Parität — Normal entscheidet den Median)
@@ -50,14 +43,12 @@ const BLITZ = {
   kette:         [{ barEvery: 1, extra: 1 }, { barEvery: 1, extra: 2 }, { barEvery: 1, extra: 3 }, { barEvery: 1, extra: 4, second: 1 }], // §7.18: Tiefe — die Karte mit den meisten Stapeln; §7.19: jede Leiste, 1/2/3/4; §7.22 Episch-Extra: die zweittiefste +1
   faenger:       [{ minStacks: 1, value: 1 }, { minStacks: 1, value: 2 }, { minStacks: 1, value: 3 }, { minStacks: 1, value: 4, perStack: 1 }], // §7.18: ohne Schwelle, der Wert steigt; §7.22 Episch-Extra: +1 je Stapel
   kurzschluss:   [{ minStacks: 6, factor: 2 }, { minStacks: 5, factor: 2 }, { minStacks: 4, factor: 2 }, { minStacks: 3, factor: 2, onLoss: true }], // §7.22 Episch-Extra: der doppelte Stapel-Score zählt auch bei Niederlage (zahlt beim nächsten Sieg)
-  /* §7.43 (Owner): Spannungsfeld ersetzt den Spannungsstau und sitzt auf der einzigen Achse, die Blitz noch gar
-     nicht hatte: einem eigenen MULTIPLIKATOR auf den Stich (Feuer und Pflanze haben je einen).
-     §7.47 (Owner): gezählt werden IONISIERTE KARTEN, nicht Stapel. Über die Stapelsumme zahlte der Skill nach
-     TIEFE — gemessen Median 24, p99 1.423, ohne Obergrenze — und stand damit nicht gegen Kettenblitz, sondern
-     multiplizierte mit ihm (§7.46 D). Die Kartenzahl ist durch die Formation begrenzt (Median 4, äußerstenfalls
-     das Brett). Satz je Karte so gewählt, dass der Normalfall bleibt (4 Karten × 6 % = +24 % gegen vorher +17 %)
-     und der Extremfall fällt (+996 % → +240 %). */
-  feld:          feldLadder([0.02, 0.03, 0.04, 0.06]),
+  /* §7.51 (Owner): "lass den blitz mult raus. Blitz nutzt schon crit als mult". Das Spannungsfeld war seit §7.43
+     ein eigener Faktor im Score-Produkt — die Annahme dahinter ("Blitz hat keinen Multiplikator") war falsch, und
+     zwei Achsen an derselben Ressource ergaben den kubischen Ausschlag aus §7.46 C. Es zahlt jetzt auf die
+     Crit-CHANCE, je ionisierter Karte der Formation: dieselbe Achse wie Lichtbogen darunter, aber die Gegenrichtung
+     — Streuung statt Tiefe. Die 100-%-Klemme deckelt es von selbst. Startwerte, NICHT gemessen. */
+  feld:          [{ critPerCard: 0.02 }, { critPerCard: 0.03 }, { critPerCard: 0.04 }, { critPerCard: 0.06, feedLowest: 1 }],
   lichtbogen:    [{ critPerStack: 0.005 }, { critPerStack: 0.01 }, { critPerStack: 0.015 }, { critPerStack: 0.02 }], // §7.28 (Owner): ersetzt Überspannung auf SK_LIGHTNING_04 — jeder wirksame Stapel der gespielten Karte gibt Crit-CHANCE auf den Stich, die Richtung, die bis dahin keine Regel und kein Skill bediente. Startwerte, noch nicht gemessen (Owner: erst Design, dann Startwert, dann messen)
   blitzschlag:   [{ critEvery: 4, stacks: 1 }, { critEvery: 3, stacks: 1 }, { critEvery: 2, stacks: 1 }, { critEvery: 2, stacks: 2 }], // §7.18: einen Schritt schneller, Episch zwei Stapel
   serienschutz:  [{ cost: 1, perRound: 2 }, { cost: 1, perRound: 3 }, { cost: 1, perRound: 5 }, { cost: 1, perRound: 8 }], // §7.30: fester Preis + Deckel je Durchlauf statt eines Anteils der Leiste bei JEDER Niederlage (Effekt +23 %, so wie er war −17 %). Sweep: bei Preis 2 bleibt er neutral (51 % besser als ohne), bei Preis 1 trägt er (59–69 %) — eine Ladung ist teuer, die Leiste ist der Engpass. Die Leiter ist damit die KADENZ, die Häufigkeitsleiter, die Blitz fehlte (§7.26 D)
@@ -228,8 +219,8 @@ export const SKILL_DEFS = {
   // Serie und Crit
   SK_LIGHTNING_07: { id: "SK_LIGHTNING_07", name: "Ladungsserie", archetype: "lightning", keywords: ["charge", "streak"], tiers: BLITZ.serie,
     ...tiered(BLITZ.serie, (r) => `Ab Serie ${r.chargeFromStreak} gibt jeder Sieg +1 Ladung.`) },
-  SK_LIGHTNING_13: { id: "SK_LIGHTNING_13", name: "Spannungsfeld", archetype: "lightning", keywords: ["ionize", "formation"], tiers: BLITZ.feld,
-    ...tiered(BLITZ.feld, (r) => `Gewinnst du mit einer Karte in einer Formation, zählt der Stich +${pctS(r.perCard)} % je ionisierter Karte dieser Formation.${r.feedLowest ? ` Die Karte mit den wenigsten Stapeln dieser Formation erhält +${r.feedLowest} Stapel.` : ""}`) },
+  SK_LIGHTNING_13: { id: "SK_LIGHTNING_13", name: "Spannungsfeld", archetype: "lightning", keywords: ["ionize", "crit", "formation"], tiers: BLITZ.feld,
+    ...tiered(BLITZ.feld, (r) => `Gewinnst du mit einer Karte in einer Formation, gibt jede ionisierte Karte dieser Formation +${pctS(r.critPerCard)} % Crit-Chance auf den Stich.${r.feedLowest ? ` Die Karte mit den wenigsten Stapeln dieser Formation erhält +${r.feedLowest} Stapel.` : ""}`) },
   SK_LIGHTNING_12: { id: "SK_LIGHTNING_12", name: "Vorentladung", archetype: "lightning", keywords: ["crit", "streak"], tiers: BLITZ.vorentladung,
     ...tiered(BLITZ.vorentladung, (r) => `Ab Serie ${r.minStreak} gibt jeder Serienpunkt +${de(r.multPerStreak)}× Crit-Multiplikator auf diesen Stich.`) },
   // (§7.19: Überschlag SK_LIGHTNING_14 gestrichen — die Systemregel „Überschuss über 100 %" in groß, im gierigen Build −15 %.)

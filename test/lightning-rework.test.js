@@ -3,7 +3,7 @@ import * as C from "../src/game/constants.js";
 import { SKILL_DEFS, BLITZ_TIERS, effectiveTierOf, tierIsLifted } from "../src/game/skills.js";
 import { initLightning, L, maxChargeFor, effectiveTier, lightParam, lightningCritChance, lightningCritMult, overcritMult,
   blitzfaengerValue, ionenfeldValue, fieldTick, ionScoreFor, ionCritMultFor, chargeGainOnWin, critFillsBar, blitzschlagStacks,
-  formationStacks, lightFormMult, feldFeed, lightningOnLoss, fillBar, lightningCycleEnd } from "../src/game/factions/lightning.js";
+  formationStacks, litFormationCards, feldFeed, lightningOnLoss, fillBar, lightningCycleEnd } from "../src/game/factions/lightning.js";
 import { resolveTrick } from "../src/game/engine.js";
 import { computeFormations } from "../src/game/formations.js";
 import { initialState } from "../src/game/reducer.js";
@@ -35,9 +35,10 @@ const LIGHTNING_IDS = [ // §7.18: 08 (Statische Aufladung) und 16 (Dauerstrom) 
 ];
 
 describe("Blitz-Modul — Stufen und Kennwerte", () => {
-  it("L nennt genau die 18 registrierten Blitz-Skills (14 + 4 Legendäre)", () => {
+  it("L nennt genau die registrierten Blitz-Skills (14 + 3 Legendäre)", () => {
     const ids = Object.values(L);
-    expect(ids).toHaveLength(17); // §6.11 (Owner): drei Legendäre je Fraktion — Donnergott (L01) ist als schwächstes gestrichen
+    // §6.11 (Owner): drei Legendäre je Fraktion — Donnergott (L01) ist als schwächstes gestrichen.
+    expect(ids).toHaveLength(17);
     expect([...ids].sort()).toEqual([...LIGHTNING_IDS].sort());
     for (const id of ids) expect(SKILL_DEFS[id]?.archetype, id).toBe("lightning");
     expect(Object.values(SKILL_DEFS).filter((s) => s.archetype === "lightning").map((s) => s.id).sort()).toEqual([...LIGHTNING_IDS].sort());
@@ -226,9 +227,9 @@ describe("Blitz-Modul — Ladung, Leiste, Niederlage (reine Übergänge)", () =>
     expect(blitzschlagStacks(light({ critCount: 2 }), [L.BLITZSCHLAG, L.DOPPELENTLADUNG], { [L.BLITZSCHLAG]: 3 })).toBe(T.blitzschlag[3].stacks * C.DOPPELENTLADUNG_STACKS); // §7.18: Episch zwei Stapel, Doppelentladung verdoppelt
     expect(blitzschlagStacks(light({ critCount: 5 }), [], {})).toBe(0);
   });
-  /* Spannungsfeld (§7.43) — die Vereinigung ist der Kern: eine Karte, die in mehreren Formationen der Position
+  /* Spannungsfeld (§7.51) — die Vereinigung ist der Kern: eine Karte, die in mehreren Formationen der Position
      hängt, darf NUR EINMAL zählen, sonst zahlt sie mehrfach für sich selbst. Der Wächter überlappt deshalb zwei
-     Formationen absichtlich und rechnet die Summe von Hand aus. */
+     Formationen absichtlich. */
   it("formationStacks: jede Karte genau einmal über alle Formationen der Position, die gespielte eingeschlossen; ohne Partner leer", () => {
     const stacks = { 0: 2, 1: 1, 2: 3, 5: 4 };
     const cardAt = (k) => ({ ionStacks: stacks[k] || 0 });
@@ -237,28 +238,26 @@ describe("Blitz-Modul — Ladung, Leiste, Niederlage (reine Übergänge)", () =>
     expect(formationStacks({ ionStacks: 1 }, { formations: [] }, 1, cardAt)).toEqual([]); // ohne Formation kein Feld
     expect(formationStacks({ ionStacks: 1 }, { formations: [{ members: [] }] }, 1, cardAt)).toEqual([]); // Meta-Faktoren haben keine Mitglieder
   });
-  /* §7.47: der Satz gilt je IONISIERTER KARTE, nicht je Stapel. Der Kern des Wächters ist der Tiefen-Vergleich:
-     dieselben drei Karten, einmal flach und einmal hundertfach tiefer, müssen DENSELBEN Faktor geben. Über die
-     Stapelsumme (§7.43) hing der Faktor an der Tiefe EINER Karte und multiplizierte sich mit den zwei anderen
-     Stapel-Achsen zu einem kubischen Ausschlag (§7.46 C). */
-  it("lightFormMult (§7.47): 1 + Satz je ionisierter Karte der Formation, UNABHÄNGIG von der Tiefe; ohne Skill, ohne Formation und inaktiv genau 1", () => {
+  /* §7.51: der Kennwert ist die ZAHL der leuchtenden Karten, nicht ihre Tiefe. Der Wächter vergleicht deshalb
+     dieselben Karten flach und hundertfach tiefer — die Zahl darf sich nicht bewegen. Bewegt sie sich, ist eine
+     Tiefen-Lesart zurück, und mit ihr die zweite Multiplikator-Achse aus §7.46 C. */
+  it("litFormationCards: zählt die ionisierten Karten der Formation, unabhängig von ihrer Tiefe", () => {
     const at = (s) => (k) => ({ ionStacks: s[k] || 0 });
     const form = { formations: [{ members: [0, 1, 2] }] };
     const card = { ionStacks: 1 };
-    const per = (t) => T.feld[t].perCard;
-    const flach = at({ 0: 2, 1: 1, 2: 3 });   // drei ionisierte Karten, Stapelsumme 6
-    const tief = at({ 0: 200, 1: 1, 2: 300 }); // dieselben drei Karten, Stapelsumme 501
-    expect(lightFormMult(light(), [L.SPANNUNGSFELD], {}, card, form, 1, flach)).toBeCloseTo(1 + 3 * per(0), 9);
-    expect(lightFormMult(light(), [L.SPANNUNGSFELD], { [L.SPANNUNGSFELD]: 3 }, card, form, 1, flach)).toBeCloseTo(1 + 3 * per(3), 9);
-    // Die Tiefe ist raus: 501 Stapel zahlen keinen Cent mehr als 6.
-    expect(lightFormMult(light(), [L.SPANNUNGSFELD], {}, card, form, 1, tief))
-      .toBe(lightFormMult(light(), [L.SPANNUNGSFELD], {}, card, form, 1, flach));
-    // Eine dunkle Karte zählt nicht mit, und wenn keine leuchtet, ist der Faktor 1.
-    expect(lightFormMult(light(), [L.SPANNUNGSFELD], {}, card, form, 1, at({ 0: 2, 1: 1, 2: 0 }))).toBeCloseTo(1 + 2 * per(0), 9);
-    expect(lightFormMult(light(), [L.SPANNUNGSFELD], {}, { ionStacks: 0 }, form, 1, at({}))).toBe(1);
-    expect(lightFormMult(light(), [L.KETTENBLITZ], {}, card, form, 1, flach)).toBe(1);
-    expect(lightFormMult(light(), [L.SPANNUNGSFELD], {}, card, { formations: [] }, 1, flach)).toBe(1);
-    expect(lightFormMult(initLightning(), [L.SPANNUNGSFELD], {}, card, form, 1, flach)).toBe(1);
+    expect(litFormationCards(card, form, 1, at({ 0: 2, 1: 1, 2: 3 }))).toBe(3);
+    expect(litFormationCards(card, form, 1, at({ 0: 200, 1: 1, 2: 300 }))).toBe(3); // Tiefe bewegt die Zahl nicht
+    expect(litFormationCards(card, form, 1, at({ 0: 2, 1: 1, 2: 0 }))).toBe(2);     // eine dunkle Karte zählt nicht
+    expect(litFormationCards({ ionStacks: 0 }, form, 1, at({}))).toBe(0);
+    expect(litFormationCards(card, { formations: [] }, 1, at({ 0: 2 }))).toBe(0);   // ohne Formation kein Feld
+  });
+  it("lightningCritChance (§7.51): das Spannungsfeld gibt Crit-Chance je ionisierter Karte; ohne Formation nichts", () => {
+    const per = (t) => T.feld[t].critPerCard;
+    const base = lightningCritChance(light(), [L.SPANNUNGSFELD], {}, 0, null, 0);
+    expect(lightningCritChance(light(), [L.SPANNUNGSFELD], {}, 0, null, 3)).toBeCloseTo(base + 3 * per(0), 9);
+    expect(lightningCritChance(light(), [L.SPANNUNGSFELD], { [L.SPANNUNGSFELD]: 3 }, 0, null, 3)).toBeCloseTo(base + 3 * per(3), 9);
+    expect(lightningCritChance(light(), [L.KETTENBLITZ], {}, 0, null, 3)).toBeCloseTo(base, 9); // ohne den Skill kein Beitrag
+    expect(lightningCritChance(initLightning(), [L.SPANNUNGSFELD], {}, 0, null, 3)).toBe(0);    // inaktiv gar nichts
   });
   it("feldFeed (Episch): die Karte mit den WENIGSTEN Stapeln der Formation, Gleichstand die vordere Position; erst ab Episch", () => {
     const stacks = { 0: 2, 1: 1, 2: 3, 3: 1 };
@@ -267,7 +266,7 @@ describe("Blitz-Modul — Ladung, Leiste, Niederlage (reine Übergänge)", () =>
     const card = { ionStacks: 1 };
     const epic = { [L.SPANNUNGSFELD]: 3 };
     expect(feldFeed(light(), [L.SPANNUNGSFELD], epic, card, form, 1, cardAt)).toEqual({ slot: 1, stacks: T.feld[3].feedLowest }); // 1 und 3 haben je 1 → die vordere
-    expect(feldFeed(light(), [L.SPANNUNGSFELD], epic, { ionStacks: 9 }, form, 1, cardAt).slot).toBe(3); // die Siegkarte ist nicht mehr die dünnste (1 und 3: 1, aber 1 ist die gespielte mit 9)
+    expect(feldFeed(light(), [L.SPANNUNGSFELD], epic, { ionStacks: 9 }, form, 1, cardAt).slot).toBe(3); // die Siegkarte ist nicht mehr die dünnste
     expect(feldFeed(light(), [L.SPANNUNGSFELD], {}, card, form, 1, cardAt)).toBe(null); // Normal hat den Anhang nicht
     expect(feldFeed(light(), [L.SPANNUNGSFELD], epic, card, { formations: [] }, 1, cardAt)).toBe(null);
   });
@@ -475,49 +474,24 @@ describe("Blitz — Engine-Integration (resolveTrick)", () => {
     const first = resolveTrick(scen(12, 0, { skills: [L.BLITZSCHLAG], skillTiers: { [L.BLITZSCHLAG]: 3 }, lightning: light() }), zero);
     expect(first.deck[0].ionStacks || 0).toBe(0);
   });
-  /* Spannungsfeld (§7.43, ersetzt den Spannungsstau) — der EINZIGE eigene Multiplikator der Fraktion. Zwei Dinge
-     stehen hier auf dem Spiel und beide werden ausdrücklich geprüft: dass er als eigener Faktor im Produkt landet
-     (breakdown.lightMult, nicht in den Flats oder im Crit), und dass er ohne Formation genau 1 bleibt. */
-  it("Spannungsfeld (§7.47): der Formations-Sieg zählt +Satz je ionisierter Karte als eigener Multiplikator; Tiefe bewegt ihn nicht; ohne Formation 1", () => {
-    expect(SKILL_DEFS.SK_LIGHTNING_13.name).toBe("Spannungsfeld");
+  /* §7.51 (Owner): "lass den blitz mult raus. Blitz nutzt schon crit als mult". Die Fraktion hat KEINEN eigenen
+     Faktor im Score-Produkt — ihre Multiplikator-Achse IST der Crit-Multiplikator, den jeder Stapel über
+     ION_CRIT_MULT_PER_STACK speist. §7.43 hatte daneben einen zweiten gestellt (`lightMult`), und zwei Achsen an
+     derselben Ressource ergaben das kubische Wachstum aus §7.46 C. Der Wächter hält beide Hälften fest: keine
+     zweite Achse im Breakdown, und die Stapel zahlen weiterhin in den Crit-Multiplikator. */
+  it("Blitz hat keinen eigenen Faktor im Score-Produkt (§7.51) — der Crit-Multiplikator ist seine Achse", () => {
     const forms = computeFormations(identity(), constDeck(12));
-    const stacks = { 0: 2, 1: 1, 2: 3, 4: 1, 7: 5 };
-    const deck = constDeck(12).map((c, i) => ({ ...c, ionStacks: stacks[i] || 0 }));
-    const lit = 4; // Mitglieder 0–4: vier davon leuchten (3 ist dunkel), die 5 auf Position 7 liegt außerhalb
-    const at1 = (over) => scen(12, 0, { pos: 1, deck, formations: forms, lightning: light(), ...over });
-    const s = resolveTrick(at1({ skills: [L.SPANNUNGSFELD] }), noCrit);
+    const deck = constDeck(12).map((c, i) => ({ ...c, ionStacks: { 0: 2, 1: 4, 2: 3, 4: 1 }[i] || 0 }));
+    const s = resolveTrick(scen(12, 0, { pos: 1, deck, formations: forms, lightning: light(), skills: [L.KETTENBLITZ] }), noCrit);
     expect(s.lastTrick.result).toBe("win");
-    expect(s.lastTrick.breakdown.lightMult).toBeCloseTo(1 + lit * T.feld[0].perCard, 9);
-    const epic = resolveTrick(at1({ skills: [L.SPANNUNGSFELD], skillTiers: { [L.SPANNUNGSFELD]: 3 } }), noCrit);
-    expect(epic.lastTrick.breakdown.lightMult).toBeCloseTo(1 + lit * T.feld[3].perCard, 9);
-    /* §7.47 im Motor: dieselben vier leuchtenden Karten hundertfach tiefer geben DENSELBEN Faktor. Fällt dieser
-       Vergleich, ist die Tiefen-Lesart aus §7.43 zurück und mit ihr der kubische Ausschlag aus §7.46 C. */
-    const tief = constDeck(12).map((c, i) => ({ ...c, ionStacks: (stacks[i] || 0) * 100 }));
-    const deep = resolveTrick(at1({ deck: tief, skills: [L.SPANNUNGSFELD] }), noCrit);
-    expect(deep.lastTrick.breakdown.lightMult).toBe(s.lastTrick.breakdown.lightMult);
-    // Ohne den Skill und ohne Formation bleibt der Faktor neutral — er darf nicht still in andere Faktoren lecken.
-    const plain = resolveTrick(at1({ skills: [L.KETTENBLITZ] }), noCrit); // Kettenblitz zündet nur an der vollen Leiste → gleiche Skillzahl, sonst nichts
-    expect(plain.lastTrick.breakdown.lightMult).toBe(1);
-    // Und er muss im PRODUKT stehen, nicht nur im Breakdown: der Stich zahlt genau um den Faktor mehr.
-    expect(s.lastTrick.breakdown.total).toBeCloseTo(plain.lastTrick.breakdown.total * (1 + lit * T.feld[0].perCard), 6);
-    const loose = constDeck(12).map((c, i) => ({ ...c, value: i % 2 ? 7 : 5, baseRank: i % 2 ? 7 : 5, ionStacks: 3 }));
-    const looseForms = computeFormations(identity(), loose);
-    expect(looseForms[1].formations).toEqual([]);
-    expect(resolveTrick(scen(7, 0, { pos: 1, deck: loose, formations: looseForms, skills: [L.SPANNUNGSFELD], lightning: light() }), noCrit)
-      .lastTrick.breakdown.lightMult).toBe(1);
-  });
-  it("Spannungsfeld Episch: der Formations-Sieg lädt die Karte mit den wenigsten Stapeln nach — Normal nicht, und nicht durch Doppelentladung", () => {
-    const forms = computeFormations(identity(), constDeck(12));
-    const deck = constDeck(12).map((c, i) => ({ ...c, ionStacks: { 0: 2, 1: 1, 2: 3, 4: 1 }[i] || 0 }));
-    const at1 = (over) => scen(12, 0, { pos: 1, deck, formations: forms, lightning: light(), ...over });
-    const one = T.feld[3].feedLowest;
-    const e = resolveTrick(at1({ skills: [L.SPANNUNGSFELD], skillTiers: { [L.SPANNUNGSFELD]: 3 } }), noCrit);
-    expect(e.deck[3].ionStacks).toBe(one); // Position 3 hatte 0 Stapel, also die wenigsten der Formation 0–4
-    expect(e.deck[1].ionStacks).toBe(1);   // die Siegkarte bleibt unberührt
-    // Doppelentladung vervielfacht die Ionisierung der LEISTE, nicht diesen einen Stapel.
-    const dbl = resolveTrick(at1({ skills: [L.SPANNUNGSFELD, L.DOPPELENTLADUNG], skillTiers: { [L.SPANNUNGSFELD]: 3 } }), noCrit);
-    expect(dbl.deck[3].ionStacks).toBe(one);
-    expect(resolveTrick(at1({ skills: [L.SPANNUNGSFELD] }), noCrit).deck[3].ionStacks || 0).toBe(0); // Normal hat den Anhang nicht
+    // Kein Blitz-Multiplikator im Breakdown: weder unter dem alten Namen noch unter einem neuen neben den anderen.
+    expect(s.lastTrick.breakdown.lightMult).toBeUndefined();
+    expect(Object.keys(s.lastTrick.breakdown).filter((k) => /Mult$/.test(k)).sort())
+      .toEqual(["afterglowMult", "architectMult", "coreMult", "critMult", "fireMult", "formMult", "perkMult", "plantMult", "streakMult", "strikeMult"]);
+    // Die Achse, die Blitz WIRKLICH hat: jeder Stapel der Siegkarte hebt den Crit-Multiplikator.
+    const crit = resolveTrick(scen(12, 0, { pos: 1, deck, formations: forms, lightning: light(), skills: [L.KETTENBLITZ] }), zero);
+    expect(crit.lastTrick.isCrit).toBe(true);
+    expect(crit.lastTrick.critMultiplier).toBeGreaterThan(C.CRIT_BASE_MULT);
   });
   it("Überschuss über 100 %: nur noch die Systemregel (klein) hebt den Crit-Multiplikator — Überschlag ist gestrichen (§7.19)", () => {
     // §7.30: ein aktiver Blitz trägt den Sockel auch ohne Skill, der Überschuss ist also Sockel + Rampe − 100 %.

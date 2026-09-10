@@ -13,7 +13,7 @@ const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replac
 const TIERS = ["Normal", "Selten", "Sehr selten", "Episch"];
 const AXIS = {
   SK_LIGHTNING_01: "Rate", SK_LIGHTNING_05: "Rate", SK_LIGHTNING_02: "Feld nach jeder Leiste", SK_LIGHTNING_06: "Rampe Crit-Chance",
-  SK_LIGHTNING_10: "Rampe Crit-Multiplikator", SK_LIGHTNING_07: "Serie zu Crit-Chance", SK_LIGHTNING_13: "Glättung", SK_LIGHTNING_12: "Serie zu Crit-Multiplikator",
+  SK_LIGHTNING_10: "Rampe Crit-Multiplikator", SK_LIGHTNING_07: "Serie zu Crit-Chance", SK_LIGHTNING_12: "Serie zu Crit-Multiplikator",
   SK_LIGHTNING_03: "Tiefe", SK_LIGHTNING_15: "Tiefen-Motor", SK_LIGHTNING_11: "Ionisierung zu Wert", SK_LIGHTNING_09: "Tiefe zu Score",
   SK_LIGHTNING_04: "Überschuss zu Ladung", SK_LIGHTNING_17: "Schutz",
   SK_LIGHTNING_L01: "Rate und Tiefe", SK_LIGHTNING_L02: "Tiefe und Crit", SK_LIGHTNING_L03: "Stufen", SK_LIGHTNING_L04: "Formation × Ionisierung",
@@ -23,7 +23,7 @@ const AXIS = {
   SK_FIRE_L01: "Gegner", SK_FIRE_L02: "Rampe", SK_FIRE_L03: "Multiplikator", SK_FIRE_L04: "Schmiede",
 };
 const ORDER = {
-  lightning: ["SK_LIGHTNING_01", "SK_LIGHTNING_05", "SK_LIGHTNING_02", "SK_LIGHTNING_06", "SK_LIGHTNING_10", "SK_LIGHTNING_07", "SK_LIGHTNING_13", "SK_LIGHTNING_12", "SK_LIGHTNING_03", "SK_LIGHTNING_15", "SK_LIGHTNING_11", "SK_LIGHTNING_09", "SK_LIGHTNING_04", "SK_LIGHTNING_17"],
+  lightning: ["SK_LIGHTNING_01", "SK_LIGHTNING_05", "SK_LIGHTNING_02", "SK_LIGHTNING_06", "SK_LIGHTNING_10", "SK_LIGHTNING_07", "SK_LIGHTNING_12", "SK_LIGHTNING_03", "SK_LIGHTNING_15", "SK_LIGHTNING_11", "SK_LIGHTNING_09", "SK_LIGHTNING_04", "SK_LIGHTNING_17"],
   fire: ["SK_FIRE_01", "SK_FIRE_02", "SK_FIRE_03", "SK_FIRE_04", "SK_FIRE_05", "SK_FIRE_06", "SK_FIRE_07", "SK_FIRE_08", "SK_FIRE_09", "SK_FIRE_12", "SK_FIRE_13", "SK_FIRE_14", "SK_FIRE_15", "SK_FIRE_16"],
 };
 const LEG = { lightning: ["SK_LIGHTNING_L01", "SK_LIGHTNING_L02", "SK_LIGHTNING_L03", "SK_LIGHTNING_L04"], fire: ["SK_FIRE_L01", "SK_FIRE_L02", "SK_FIRE_L03", "SK_FIRE_L04"] };
@@ -37,7 +37,7 @@ const legRows = (arch) => LEG[arch].map((id) => { const d = SKILL_DEFS[id]; retu
 const KEYS = { critEvery: "jeder N. Crit", back: "Rückgabe", noCritCharge: "Ladung je Sieg ohne Crit", floor: "Boden", bar: "Leiste voll bei", tricks: "Stiche", value: "Wert", critPerBar: "Crit je Leiste", multPerBar: "Crit-Mult je Leiste", fillDouble: "Leisten-Crit ×2", critPerStreak: "Crit je Serienpunkt", chargeFromStreak: "Ladung ab Serie", step: "Schritt", critKeep: "Crit behält", minStreak: "ab Serie", multPerStreak: "Crit-Mult je Serienpunkt", barEvery: "jede N. Leiste", extra: "Stapel", second: "zweittiefste", minStacks: "ab Stapel", perStack: "je Stapel", factor: "Faktor", onLoss: "auch bei Niederlage", stacks: "Stapel", frac: "Ladung", freePerRound: "gratis je Runde", perOver: "je N× über dem Deckel", chancePer: "je Chance über 100 %", heat: "Hitze", lossHeat: "Hitze je Niederlage", minHeat: "ab Hitze", noCool: "keine Kühlung", perHeat: "je Hitze", multPer10: "je 10 %", afterLoss: "auch nach Niederlage", minMargin: "ab Vorsprung", mult: "Faktor", heatToo: "auch auf Hitze", perPoint: "je Punkt", cost: "kostet Hitze", perFormation: "je Formation", every: "jeder N. Sieg", lossPays: "Kühlung zahlt", reach: "Reichweite", cards: "Karten", forgedDouble: "Schmiedewert doppelt" };
 const fmt = (k, v) => { if (v === true) return KEYS[k] || k; const n = typeof v === "number" ? String(v).replace(".", ",") : String(v); return `${KEYS[k] || k} ${n}`; };
 const rowText = (r) => Object.entries(r).map(([k, v]) => fmt(k, v)).join(", ");
-const TIER_MAP = { lightning: { SK_LIGHTNING_01: "ableiter", SK_LIGHTNING_05: "reststrom", SK_LIGHTNING_02: "ionenfeld", SK_LIGHTNING_06: "gewitter", SK_LIGHTNING_10: "entladung", SK_LIGHTNING_07: "serie", SK_LIGHTNING_13: "stau", SK_LIGHTNING_12: "vorentladung", SK_LIGHTNING_03: "kette", SK_LIGHTNING_15: "blitzschlag", SK_LIGHTNING_11: "faenger", SK_LIGHTNING_09: "kurzschluss", SK_LIGHTNING_04: "lichtbogen", SK_LIGHTNING_17: "serienschutz" },
+const TIER_MAP = { lightning: { SK_LIGHTNING_01: "ableiter", SK_LIGHTNING_05: "reststrom", SK_LIGHTNING_02: "ionenfeld", SK_LIGHTNING_06: "gewitter", SK_LIGHTNING_10: "entladung", SK_LIGHTNING_07: "serie", SK_LIGHTNING_12: "vorentladung", SK_LIGHTNING_03: "kette", SK_LIGHTNING_15: "blitzschlag", SK_LIGHTNING_11: "faenger", SK_LIGHTNING_09: "kurzschluss", SK_LIGHTNING_04: "lichtbogen", SK_LIGHTNING_17: "serienschutz" },
   fire: { SK_FIRE_01: "feuerlinie", SK_FIRE_02: "zunder", SK_FIRE_03: "feuersturm", SK_FIRE_04: "glutbett", SK_FIRE_05: "rueckzuendung", SK_FIRE_06: "klinge", SK_FIRE_07: "weissglut", SK_FIRE_08: "feuerwalze", SK_FIRE_09: "verbrennung", SK_FIRE_12: "schmelzpunkt", SK_FIRE_13: "brandmal", SK_FIRE_14: "lauffeuer", SK_FIRE_15: "schmiede", SK_FIRE_16: "glutstahl" } };
 const tierRows = (arch) => ORDER[arch].map((id) => { const T = arch === "lightning" ? BLITZ_TIERS : FEUER_TIERS; const rows = T[TIER_MAP[arch][id]] || []; return [`<b>${esc(SKILL_DEFS[id].name)}</b>`, ...rows.map((r) => esc(rowText(r)))]; });
 
