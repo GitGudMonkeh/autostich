@@ -236,7 +236,7 @@ export const SKILL_DEFS = {
   SK_LIGHTNING_L02: { id: "SK_LIGHTNING_L02", name: "Doppelentladung", archetype: "lightning", legendary: true, keywords: ["ionize", "crit"],
     desc: `Jede Ionisierung gibt ${C.DOPPELENTLADUNG_STACKS} Stapel statt 1. Crit mit einer ionisierten Karte: der Blitz schlägt zweimal ein, der Stich zählt doppelt.` },
   SK_LIGHTNING_L03: { id: "SK_LIGHTNING_L03", name: "Hochspannung", archetype: "lightning", legendary: true, keywords: ["crit"],
-    desc: `Alle gehaltenen Blitz-Skills wirken ${de1(C.HOCHSPANNUNG_STEPS)} Stufen höher. Episch ist das Ende der Leiter.` },
+    desc: `Alle deine gehaltenen Skills wirken ${C.HOCHSPANNUNG_STEPS === 1 ? "eine Stufe" : `${de1(C.HOCHSPANNUNG_STEPS)} Stufen`} höher — jede Fraktion. Episch ist das Ende der Leiter.` },
   SK_LIGHTNING_L04: { id: "SK_LIGHTNING_L04", name: "Resonanz", archetype: "lightning", legendary: true, keywords: ["ionize", "formation"], // §7.25: ersetzt Durchschlag (Emblem bleibt)
     desc: `Ionisierte Karten in einer Formation teilen ihre Stapel: jede Karte kämpft mit ihren eigenen Stapeln plus ${de(C.RESONANZ_SHARE)}× den Stapeln der anderen Mitglieder ihrer Formation, abgerundet.` },
 
@@ -524,6 +524,16 @@ export const SKILL_TIER_COUNT = 4;
 export const TIER_NORMAL = 0, TIER_RARE = 1, TIER_VERY_RARE = 2, TIER_EPIC = 3;
 // Tier of a held skill: state.skillTiers[id], Normal when unknown (older snapshots), null for legendaries.
 export const tierOf = (state, id) => (isLegendarySkill(id) ? null : ((state && state.skillTiers && state.skillTiers[id]) ?? TIER_NORMAL));
+
+/* Hochspannung (§7.39, Owner): das Legendäre hebt die wirksame Stufe JEDES gehaltenen Skills, nicht mehr nur der
+   Blitz-Skills — und nur noch um eine Stufe. Vorher lag der Hebel in lightning.js und war mit +3 Stufen für Blitz
+   allein gebaut; §7.38 hat gemessen, dass ihn keine Zahl ins Band bringt (1 → +8 %, 2 → +428 %, 3 → +520 %), weil
+   eine vierstufige Leiter bei +2 für fast jeden Wurf schon sättigt. Aus dem Mono-Verstärker wird damit ein
+   Misch-Legendäres. Hier statt in einem Fraktionsmodul, weil alle vier ihn lesen — ein Import auf lightning.js
+   aus den anderen drei wäre ein Zyklus. */
+export const HOCHSPANNUNG_ID = "SK_LIGHTNING_L03";
+export const boostedTier = (skills, base) =>
+  Math.min(TIER_EPIC, Math.max(0, base) + ((skills || []).includes(HOCHSPANNUNG_ID) ? C.HOCHSPANNUNG_STEPS : 0));
 
 // One weighted draw over SKILL_TIER_WEIGHTS → tier index. Exactly one rng() call.
 export function rollTier(rng, weights = C.SKILL_TIER_WEIGHTS) {

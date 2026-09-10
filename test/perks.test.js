@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { PERK_DEFS, PERK_LIST, critChanceFor, critChanceRawFor, isLegendary, baseScoreMultFor, streakBaseMult, isLayoutPerk, layoutPerks, buildPerkOffer } from "../src/game/perks.js";
+import { PERK_DEFS, PERK_LIST, critChanceFor, critChanceRawFor, isLegendary, baseScoreMultFor, streakBaseMult, isLayoutPerk, layoutPerks, buildPerkOffer, totalCritMult, totalCritMultRaw } from "../src/game/perks.js";
 import { makeRng } from "../src/game/deck.js";
 import { effectivePlayerValue } from "../src/game/engine.js";
-import { UNAUFHALTSAM_VALUE, KRITMASSE_VALUE, MONOCHROM_STEP, MONOCHROM_CAP } from "../src/game/constants.js";
+import { UNAUFHALTSAM_VALUE, KRITMASSE_VALUE, MONOCHROM_STEP, MONOCHROM_CAP, CRIT_MULT_CAP } from "../src/game/constants.js";
 
 // Kat.-A-Deck-Mods (früher A1–A10 onPick) sind zu KUMULATIVEN Familien migriert (#167) — die
 // Deck-Effekte je Stufe sind in test/families.test.js geprüft (onPick direkt), der Reducer-Pick +
@@ -188,5 +188,26 @@ describe("buildPerkOffer — #370 Perk-Segen: Rarität-Boden (minTier)", () => {
       if (offer.some((e) => e && typeof e === "object" && e.tier <= 2)) sawLow = true;
     }
     expect(sawLow).toBe(true);
+  });
+});
+
+/* §7.39 (Owner-Entscheid B): die Anzeige darf keinen Crit-Multiplikator versprechen, den kein Stich zahlt. Der Motor
+   klemmt seit jeher auf CRIT_MULT_CAP (engine.js, nach allen Additionen), `totalCritMult` tat es NICHT — Statusleiste
+   und Ladungsleiste zeigten Werte darüber. Das ist teuer, nicht kosmetisch: laut §7.31 verfällt ohnehin 81 % des
+   gebauten Multiplikators am Deckel, und die Anzeige lud zum Weiterkaufen ein. `totalCritMultRaw` behält den
+   gebauten Wert — nur für die „davon verfällt"-Unterzeile. */
+describe("Crit-Multiplikator: Anzeige und Motor deckeln gleich (§7.39)", () => {
+  /* Ein Build, der den Deckel sicher reißt: alle Crit-Mult-Perks plus eine ausgebaute Entladung-Rampe — genau die
+     Lage, in der ein echter Blitz-Bau spät im Lauf steht (§7.31: 36,01× gebaut, 6,97× ausgezahlt). */
+  const heavy = { perks: PERK_LIST.filter((p) => PERK_DEFS[p.id].critMultBonus).map((p) => p.id),
+    skills: [], skillTiers: {}, familyTiers: {}, lightning: { active: true, entladungMult: 20, stauBonus: 0 } };
+  it("totalCritMult klemmt auf CRIT_MULT_CAP, totalCritMultRaw nicht", () => {
+    expect(totalCritMultRaw(heavy)).toBeGreaterThan(CRIT_MULT_CAP);   // der Build baut mehr, als er bekommt …
+    expect(totalCritMult(heavy)).toBe(CRIT_MULT_CAP);                  // … und die Anzeige sagt genau das
+  });
+  it("unter dem Deckel sind beide identisch — die Klemme erfindet nichts", () => {
+    const light = { perks: [], skills: [], skillTiers: {}, familyTiers: {}, lightning: null };
+    expect(totalCritMultRaw(light)).toBeLessThanOrEqual(CRIT_MULT_CAP);
+    expect(totalCritMult(light)).toBe(totalCritMultRaw(light));
   });
 });

@@ -343,6 +343,7 @@ export default {
   "rail.critChance.ion": "+{pct} ion.",
   "rail.critMult": "Crit mult",
   "rail.jackpot": "Jackpot",
+  "rail.critMult.capped": "at the cap · {raw} built",
   "rail.wins": "Wins",
   "rail.losses": "Loss.",
   "rail.rate": "Rate",

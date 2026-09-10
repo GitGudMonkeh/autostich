@@ -292,6 +292,7 @@ export default {
   "rail.critChance": "Crit-Chance",
   "rail.critMult": "Crit-Mult",
   "rail.jackpot": "Jackpot",
+  "rail.critMult.capped": "am Deckel · {raw} gebaut",
   "rail.wins": "Siege",
   "rail.losses": "Verl.",
   "rail.rate": "Quote",

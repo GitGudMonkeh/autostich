@@ -1,5 +1,5 @@
 import * as C from "../constants.js";
-import { SKILL_DEFS, TIER_EPIC, activeLightningCount, isLegendarySkill } from "../skills.js";
+import { SKILL_DEFS, activeLightningCount, isLegendarySkill, boostedTier } from "../skills.js";
 
 /* ============================================================
    BLITZ — Fraktionsmodul (exp skill rework, docs/skill-rework.md §3). Reine Logik: kein React, kein Math.random.
@@ -70,7 +70,7 @@ export function maxChargeFor(skills, skillTiers = {}) {
 export function effectiveTier(skills, skillTiers, id) {
   if (!held(skills, id) || isLegendarySkill(id)) return null;
   const base = Number.isInteger(skillTiers?.[id]) ? skillTiers[id] : 0;
-  return Math.min(TIER_EPIC, base + (hasHochspannung(skills) ? C.HOCHSPANNUNG_STEPS : 0));
+  return boostedTier(skills, base); // §7.39: der Hebel liegt jetzt in skills.js und gilt fuer alle Fraktionen
 }
 
 // Kennwert eines gehaltenen Skills auf seiner wirksamen Stufe; undefined, wenn der Skill nicht gehalten wird oder die

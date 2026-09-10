@@ -7,6 +7,9 @@ import { initLightning, L, maxChargeFor, effectiveTier, lightParam, lightningCri
 import { resolveTrick } from "../src/game/engine.js";
 import { computeFormations } from "../src/game/formations.js";
 import { initialState } from "../src/game/reducer.js";
+import { fireTier, F } from "../src/game/factions/fire.js";
+import { plantTier, P } from "../src/game/factions/plant.js";
+import { iceRoleTiers } from "../src/game/factions/ice.js";
 import { makeRng } from "../src/game/deck.js";
 
 /* Blitz — exp skill rework (docs/skill-rework.md §3): Passiv, 14 Skills mit vier Stufen (§7.19), 4 Legendäre. Erst die reinen
@@ -47,6 +50,33 @@ describe("Blitz-Modul — Stufen und Kennwerte", () => {
     expect(effectiveTier([L.ABLEITER, L.HOCHSPANNUNG], { [L.ABLEITER]: 2 }, L.ABLEITER)).toBe(Math.min(3, 2 + C.HOCHSPANNUNG_STEPS));
     expect(effectiveTier([L.ABLEITER, L.HOCHSPANNUNG], { [L.ABLEITER]: 3 }, L.ABLEITER)).toBe(3); // Episch bleibt Episch
     expect(effectiveTier([L.ABLEITER, L.HOCHSPANNUNG], {}, L.ABLEITER)).toBe(Math.min(3, C.HOCHSPANNUNG_STEPS));
+  });
+
+  /* §7.39 (Owner): Hochspannung hebt JEDE Fraktion, nicht mehr nur Blitz. §7.38 hatte gemessen, dass keine Zahl den
+     Skill ins Band bringt — die Stufenleiter ist nur vier lang, +2 sättigt sie für fast jeden Wurf (1 → +8 %,
+     2 → +428 %, 3 → +520 %). Aus dem Mono-Verstärker wurde deshalb ein Misch-Legendäres: +1 Stufe für alle.
+     Der Wächter prüft alle vier Fraktionen über ihre EIGENE Stufenfunktion — der Hebel sitzt in skills.js, aber
+     jedes Modul muss ihn auch wirklich lesen. */
+  it("Hochspannung hebt die Stufe in JEDER Fraktion, nicht nur bei Blitz (§7.39)", () => {
+    const step = C.HOCHSPANNUNG_STEPS;
+    const up = (t) => Math.min(3, t + step);
+    // Blitz
+    expect(effectiveTier([L.ABLEITER, L.HOCHSPANNUNG], { [L.ABLEITER]: 1 }, L.ABLEITER)).toBe(up(1));
+    // Feuer
+    expect(fireTier([F.ZUNDER], { [F.ZUNDER]: 1 }, F.ZUNDER)).toBe(1);
+    expect(fireTier([F.ZUNDER, L.HOCHSPANNUNG], { [F.ZUNDER]: 1 }, F.ZUNDER)).toBe(up(1));
+    // Pflanze
+    expect(plantTier([P.AUSSAAT], { [P.AUSSAAT]: 1 }, P.AUSSAAT)).toBe(1);
+    expect(plantTier([P.AUSSAAT, L.HOCHSPANNUNG], { [P.AUSSAAT]: 1 }, P.AUSSAAT)).toBe(up(1));
+    // Eis — die Stufe wird je ROLLE geseedet, der Hebel muss dort sitzen
+    const iceId = Object.keys(SKILL_DEFS).find((id) => SKILL_DEFS[id].archetype === "ice" && SKILL_DEFS[id].role);
+    const role = SKILL_DEFS[iceId].role;
+    expect(iceRoleTiers([iceId], { [iceId]: 1 })[role]).toBe(1);
+    expect(iceRoleTiers([iceId, L.HOCHSPANNUNG], { [iceId]: 1 })[role]).toBe(up(1));
+    // Episch bleibt in jeder Fraktion das Ende der Leiter
+    expect(fireTier([F.ZUNDER, L.HOCHSPANNUNG], { [F.ZUNDER]: 3 }, F.ZUNDER)).toBe(3);
+    expect(plantTier([P.AUSSAAT, L.HOCHSPANNUNG], { [P.AUSSAAT]: 3 }, P.AUSSAAT)).toBe(3);
+    expect(iceRoleTiers([iceId, L.HOCHSPANNUNG], { [iceId]: 3 })[role]).toBe(3);
   });
   it("lightParam liest die Zeile der wirksamen Stufe; unbekannter Schlüssel / nicht gehalten → undefined", () => {
     expect(lightParam([L.RESTSTROM], {}, L.RESTSTROM, "floor")).toBe(T.reststrom[0].floor);

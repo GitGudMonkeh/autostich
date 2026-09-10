@@ -1,5 +1,5 @@
 import * as C from "../constants.js";
-import { SKILL_DEFS, TIER_EPIC, isLegendarySkill } from "../skills.js";
+import { SKILL_DEFS, isLegendarySkill, boostedTier } from "../skills.js";
 
 /* ============================================================
    PFLANZE — Fraktionsmodul (exp skill rework, docs/skill-rework.md §6). Reine Logik: kein React, kein Math.random.
@@ -53,7 +53,7 @@ export const hasEwigerFruehling = (skills) => held(skills, P.EWIGER_FRUEHLING);
 export function plantTier(skills, skillTiers, id) {
   if (!held(skills, id) || isLegendarySkill(id)) return null;
   const base = Number.isInteger(skillTiers?.[id]) ? skillTiers[id] : 0;
-  return Math.min(TIER_EPIC, Math.max(0, base));
+  return boostedTier(skills, base); // §7.39: Hochspannung hebt jede Fraktion, nicht mehr nur Blitz
 }
 
 // Kennwert eines gehaltenen Skills auf seiner Stufe; undefined, wenn der Skill nicht gehalten wird oder die Zeile den

@@ -7898,6 +7898,64 @@ Siegkarte). Nicht angefasst, Entscheid offen.
 
 ---
 
+### 7.39 Hochspannung wird ein Misch-Legendäres, und die Crit-Anzeige sagt die Wahrheit (2026-09-10, Owner) — umgesetzt, UNGEMESSEN
+
+Zwei Owner-Entscheide nach §7.38.
+
+#### A · Hochspannung: +1 Stufe, dafür für JEDE Fraktion
+
+§7.38 hat gezeigt, dass keine Zahl den Skill ins Band bringt — der Regler sättigt, weil die Stufenleiter nur vier
+lang ist (1 → +8 %, 2 → +428 %, 3 → +520 %). Owner: „+1 Stufe aber für alle skills, nicht nur Blitz."
+
+Damit ändert sich die ROLLE des Skills: aus dem Mono-Blitz-Verstärker wird ein **Misch-Legendäres**. Wer Blitz mono
+spielt, bekommt +1 Stufe auf 13 Blitz-Skills; wer mischt, bekommt sie auf denselben 13 Slots, egal welcher Fraktion.
+Der Skill verliert seinen Mono-Bonus und behält seinen Wert — das ist genau die Richtung, in die die Fraktion soll.
+
+**Umsetzung.** Der Hebel lag in `lightning.js` und war für Blitz allein gebaut. Er liegt jetzt als `boostedTier`
+in `skills.js` — die gemeinsame Quelle, die alle vier Fraktionsmodule ohnehin importieren; ein Import auf
+`lightning.js` aus den anderen dreien wäre ein Zyklus. Vier Nähte lesen ihn:
+
+| Fraktion | Stelle |
+| --- | --- |
+| Blitz | `effectiveTier` |
+| Feuer | `fireTier` |
+| Pflanze | `plantTier` |
+| Eis | `iceRoleTiers` — dort, weil die Stufe EINMAL je Rolle geseedet wird und alles darunter nur `roleTiers` liest |
+
+`HOCHSPANNUNG_STEPS` 2 → **1**. Skilltext neu: „Alle deine gehaltenen Skills wirken eine Stufe höher — jede
+Fraktion."
+
+Ein Wächter prüft alle vier Fraktionen über ihre EIGENE Stufenfunktion, nicht über den Helfer: der Hebel sitzt
+zentral, aber jedes Modul muss ihn auch wirklich lesen. Gegengeprobt — nimmt man ihn aus `fireTier` heraus, fällt er.
+
+#### B · Die Crit-Anzeige (Owner-Entscheid B)
+
+Der Deckel im Motor greift korrekt (`engine.js`, `Math.min` nach allen Additionen — auch die
+Entladung-Verdopplung läuft davor). **Die Anzeige griff nicht:** `totalCritMult` addierte vier Quellen ohne
+`CRIT_MULT_CAP`, und Statusleiste wie Ladungsleiste zeigten Werte, die kein Stich je zahlt.
+
+Das ist nicht Kosmetik. Laut §7.31 verfällt ohnehin 81 % des gebauten Multiplikators am Deckel — die Anzeige lud
+also ausgerechnet dort zum Weiterkaufen ein, wo nichts mehr ankommt.
+
+Jetzt: `totalCritMult` klemmt wie der Motor. Der gebaute Wert bleibt als `totalCritMultRaw` erhalten und steht in
+der Statusleiste als Unterzeile daneben — **„am Deckel · 11,3 gebaut"** —, sobald er über dem Deckel liegt.
+
+Zwei Dinge dazu ehrlich benannt:
+
+- Die Zeile ist zugleich UNVOLLSTÄNDIG und war es immer: `lightIonCritMult` (die Stapel der Siegkarte, bei Blitz die
+  größte Quelle) hängt an der Karte, die gerade gewinnt, nicht am Build — eine Build-Anzeige kann sie nicht kennen.
+  Der echte Stich liegt also oft HÖHER am Deckel, als die Zeile vermuten lässt.
+- Die Ladungsleiste zeigt nur den gedeckelten Wert, ohne Überschuss — dort ist kein Platz. Wer den Überschuss sehen
+  will, findet ihn in der Statusleiste.
+
+#### C · Offen
+
+Beides ungemessen. Hochspannung ist der größere Eingriff: er verschiebt den Skill von Mono nach Misch und hebt
+zugleich alle drei anderen Fraktionen, wenn er dort liegt. Die Wirkung auf die Fraktionshöhen ist noch nicht
+gemessen — und die Misch-Welten schon gar nicht.
+
+---
+
 ### 5.30 Die Eis-Skills auf dem neuen Motor (2026-09-09) — gemessen, nichts umgesetzt
 
 **Owner:** „und dann schauen wir uns alle skills an die davon profitieren müssen und designen wie."
@@ -8307,3 +8365,4 @@ leichtesten haben.
 | 2026-09-10 | Glutstahl zurück auf 8/12/16/20 (§7.36, Owner). §7.34 hatte den Satz um 75 % gehoben, §7.35 hat gemessen, dass das nichts bringt: −4 → −7 %, also schlechter. Der Grund steht dort — er zahlt je Punkt Kampfwert über dem Grundwert, und diese Bemessungsgrundlage war zum guten Teil die Glühende Klinge, deren Motor §7.32 halbiert hat. Owner-Entscheid, mit Begründung: „es gibt noch genügend andere quellen werte zu erhöhen über perks wenn man darauf spielt" — Glutstahl bleibt damit ein Bau-Skill für einen Wert-Bau, kein Grundstock, und seine gemessene Schwäche im gierigen Mono-Lauf ist kein Defekt. Damit ist der Vorschlag aus §7.35 C (Glutstahl braucht eine eigene Wertquelle) zurückgezogen; offen bleibt allein Zunder. |
 | 2026-09-10 | Die drei Blitz-Legendären gesenkt (§7.37, Owner, Zahlen vorher vorgelegt und abgenommen). §8 maß mono Resonanz +553 %, Hochspannung +520 %, Doppelentladung +383 % — die drei stärksten des Spiels, gegen Pflanze +274 % und Eis +284 % an ihren Spitzen; Zielband 250–300 %. Jeder hängt an genau einem Regler: `RESONANZ_SHARE` 2,25 → **1,5**, `HOCHSPANNUNG_STEPS` 3 → **2**, `DOPPELENTLADUNG_STACKS` 5 → **3**. `DOPPELENTLADUNG_STRIKE` bleibt bei 2 — ein Hebel je Skill und Runde. Resonanz stand weit über ihrem eigenen dokumentierten Nullpunkt („1 = die ganze Summe"): eine Karte in einer Vierer-Formation mit je 5 Partnerstapeln kämpfte mit 38 statt 27 Stapeln, also 2.850 statt 2.025 Basis-Score und +5,70× statt +4,05× Crit-Multiplikator. Hochspannung hat KEINEN anderen Zwischenwert — der Regler ist diskret, bei 1 maß er +8 %, bei 3 +520 %; landet 2 falsch, braucht der Skill eine andere Mechanik, keine andere Zahl. Zwei Vorhersagen für die Messung: (a) Resonanz und Doppelentladung sind gekoppelt und fallen beide, der Anteil ist nicht trennbar; (b) die Stapel-Schnitte landen vermutlich weicher als die Prozente aussehen, weil laut §7.31 81 % des gebauten Crit-Multiplikators am 8×-Deckel verfällt — trifft das zu, ist der eigentliche Hebel der Fraktion der Deckel, nicht ihre Spitze. UNGEMESSEN. |
 | 2026-09-10 | §7.37 nachgemessen (§7.38). Blitz-Mono, 7 min. Alle drei gefallen, aber **weniger als proportional**: Resonanz +553 → +438 % (Regler −33 %), Hochspannung +520 → +428 % (−33 %), Doppelentladung +383 → +275 % (−40 %); Fraktion 1,686 → 1,028 Mrd (−39 %). Zielband war 250–300 % — **nur Doppelentladung ist angekommen**. Vorhersage (b) aus §7.37 C bestätigt: die Stapel-Schnitte landen weich, weil laut §7.31 81 % des Crit-Multiplikators am Deckel verfällt. Vorhersage zu Hochspannung **WIDERLEGT**: sie sollte härter treffen, ist aber am wenigsten gefallen. Der Grund ist strukturell — die Stufenleiter ist nur VIER lang, ein auf Selten oder höher gewürfelter Skill erreicht mit +2 genauso Episch wie mit +3; der Unterschied betrifft nur die auf Normal gewürfelten. Der Regler sättigt also: 1 → +8 %, 2 → +428 %, 3 → +520 %. **Es gibt keine Zahl, die diesen Skill ins Band bringt** — er braucht eine andere Mechanik. Zweiter Befund: drei Schnitte von 33–40 % haben die Fraktion nur um 39 % gesenkt, und sie steht weiter beim 2,8-fachen der Pflanze und beim 7,5-fachen von Feuer — die Legendären tragen die Höhe nicht allein. Dritter: die zwei schwächsten Blitz-Skills sind ausgerechnet die zwei Crit-Multiplikator-Karten (Vorentladung −11 %, Entladung −11 %), genau §7.31s Befund, live in den Daten. Dazu der Anzeigefehler: `totalCritMult` (Statusleiste, Ladungsleiste) addiert vier Quellen OHNE `CRIT_MULT_CAP` — der Motor deckelt korrekt, die Anzeige nicht, und ihr fehlt zugleich `lightIonCritMult`. Nicht angefasst, Entscheid offen. |
+| 2026-09-10 | Zwei Owner-Entscheide nach §7.38 (§7.39). (a) **Hochspannung wird ein Misch-Legendäres**: +1 Stufe statt +2, dafür auf JEDE Fraktion statt nur auf Blitz. §7.38 hatte gezeigt, dass keine Zahl den Skill ins Band bringt, weil die vierstufige Leiter bei +2 sättigt; also eine andere Mechanik. Der Hebel wandert aus `lightning.js` als `boostedTier` nach `skills.js` (gemeinsame Quelle, ein Import auf lightning.js aus den anderen drei Modulen wäre ein Zyklus) und wird an vier Nähten gelesen: `effectiveTier`, `fireTier`, `plantTier` und — für Eis — `iceRoleTiers`, weil die Stufe dort einmal je Rolle geseedet wird. `HOCHSPANNUNG_STEPS` 2 → 1, Skilltext neu. Wächter prüft alle vier Fraktionen über ihre eigene Stufenfunktion (nicht über den Helfer) und ist gegengeprobt. (b) **Crit-Anzeige, Entscheid B**: der Motor deckelt korrekt, `totalCritMult` tat es nicht — Statusleiste und Ladungsleiste zeigten Werte, die kein Stich zahlt, und luden damit ausgerechnet dort zum Weiterkaufen ein, wo laut §7.31 ohnehin 81 % verfällt. `totalCritMult` klemmt jetzt wie der Motor, der gebaute Wert bleibt als `totalCritMultRaw` und steht als Unterzeile daneben („am Deckel · 11,3 gebaut"). Ehrlich benannt: die Zeile war und bleibt unvollständig, weil `lightIonCritMult` an der Siegkarte hängt und keine Build-Anzeige sie kennen kann — der echte Stich liegt oft höher am Deckel, als sie vermuten lässt. Beides UNGEMESSEN. |

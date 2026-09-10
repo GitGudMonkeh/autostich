@@ -343,10 +343,12 @@ export const RESONANZ_SHARE           = envNum("SIM_RESONANZ_SHARE", 1.5);      
 // eigenen Nullpunkt des Reglers — jede Karte bekam mehr als das Doppelte der vollen Partnersumme. UNGEMESSEN.
 export const DOPPELENTLADUNG_STACKS   = envNum("SIM_DOPPELENTLADUNG_STACKS", 3);      // Doppelentladung (L): Stapel je Ionisierung (statt 1); §6.12: 2 → 4, §6.14: → 5, §7.37 (Owner): → 3 (mono +383 %). Der zweite Regler des Skills, DOPPELENTLADUNG_STRIKE, bleibt bei 2 — ein Hebel je Runde
 export const DOPPELENTLADUNG_STRIKE   = envNum("SIM_DOPPELENTLADUNG_STRIKE", 2);      // Doppelentladung (L): Crit mit ionisierter Karte → der Stich zählt so oft (Sim-Regler, ggf. 1,5)
-export const HOCHSPANNUNG_STEPS       = envNum("SIM_HOCHSPANNUNG_STEPS", 2);          // Hochspannung (L, §6.12): um so viele Stufen wirken gehaltene Blitz-Skills höher (Episch bleibt das Ende der Leiter); 1 → 3, bei 1 war es mit +8 % weniger wert als ein normaler Pick
-// §7.37 (Owner): 3 → 2. Der Regler ist DISKRET und die Kurve extrem steil — bei 1 maß er +8 %, bei 3 sind es +520 %.
-// 2 ist der einzige Zwischenwert, den es gibt; landet er falsch, braucht der Skill eine andere Mechanik (etwa nur
-// N Skills statt aller), keine andere Zahl.
+export const HOCHSPANNUNG_STEPS       = envNum("SIM_HOCHSPANNUNG_STEPS", 1);          // Hochspannung (L): um so viele Stufen wirken ALLE gehaltenen Skills höher (Episch bleibt das Ende der Leiter)
+// §7.37 setzte 3 → 2, §7.38 hat gemessen, dass das nichts bringt: 1 → +8 %, 2 → +428 %, 3 → +520 %. Der Regler
+// SÄTTIGT, weil die Stufenleiter nur vier lang ist — ein auf Selten oder höher gewürfelter Skill erreicht mit +2
+// genauso Episch wie mit +3. Keine Zahl bringt den Skill ins Band. §7.39 (Owner): der Skill bekommt deshalb eine
+// andere MECHANIK — +1 Stufe, dafür auf JEDE Fraktion statt nur auf Blitz (skills.js `boostedTier`). Aus dem
+// Mono-Verstärker wird ein Misch-Legendäres. UNGEMESSEN.
 
 /* ============================================================
    FEUER — exp skill rework (docs/skill-rework.md §4). Passiv: Siege mit Abstand erzeugen Hitze, Niederlagen kühlen,

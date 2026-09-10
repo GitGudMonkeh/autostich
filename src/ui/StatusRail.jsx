@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { summarizeFormations } from "../game/formations.js";
 import { precomputeArchitect, architectValueBonus } from "../game/architect.js";
-import { hasCritPerk, totalCritChanceRaw, totalCritMult, fundamentBonus } from "../game/perks.js";
+import { hasCritPerk, totalCritChanceRaw, totalCritMult, totalCritMultRaw, fundamentBonus } from "../game/perks.js";
 import { hasCritFamily, allianceGroups } from "../game/families.js";
 import { Sparkline } from "./Sparkline.jsx";
 import { ScoreSourceBar, sourceShares } from "./RunGraphs.jsx";
@@ -55,6 +55,11 @@ export function StatusRail({ state, currentTraj = [], recordTraj = [], options =
   // Crit-Mult VOLLSTÄNDIG (geteilter Helfer): Perk-Basis + Familien-Wucht + Blitz (Entladung-Rampe, Spannungsstau,
   // Vorentladung) + Systemregel — der STAND des Crit-Multiplikators. (exp: der feldweite Ionisierungs-Crit ist weg.)
   const critMultTotal = totalCritMult(state);
+  /* §7.39 (Owner-Entscheid B): der Wert oben ist der GEDECKELTE — das, was ein Stich wirklich zahlt. Liegt der
+     gebaute Multiplikator darüber, sagt die Unterzeile, wie viel davon verfällt; sonst bleibt es beim bisherigen
+     Text. Ohne das kaufte man weiter Crit-Multiplikator, von dem laut §7.31 ohnehin 81 % am Deckel liegen bleibt. */
+  const critMultRaw = totalCritMultRaw(state);
+  const critOverCap = critMultRaw > critMultTotal + 1e-9;
   // #123/#UI: Formations-Bonus der aktuellen Aufstellung dauerhaft sichtbar (gleiche Quelle wie die
   // Formationsphase → kein Drift). Als SUMME aller Positionen in % (Σ(mult−1)·100) — nicht mehr max/aktuelle Position.
   const { count: formCount } = summarizeFormations(state.formations || []);
@@ -93,7 +98,7 @@ export function StatusRail({ state, currentTraj = [], recordTraj = [], options =
           <MCell label={t("rail.formation")} tone="#5ab87a" value={formCount > 0 ? t("rail.formation.value", { n: formCount, pct: formBonusPct }) : "–"} />
           <MCell label={t("rail.buildings")} tone="#d4a63a" value={buildBonusPct > 0 ? t("rail.pct", { pct: buildBonusPct }) : "–"} />
           {showCrit && <MCell label={t("rail.critChance")} tone="#e879f9" value={t("rail.pct.plain", { pct: critPct })} />}
-          {showCrit && <MCell label={t("rail.critMult")} tone={perks.includes("L5") ? "#d4a63a" : "#e879f9"} value={`×${fmtMult(critMultTotal)}`} sub={perks.includes("L5") ? t("rail.jackpot") : null} />}
+          {showCrit && <MCell label={t("rail.critMult")} tone={perks.includes("L5") ? "#d4a63a" : "#e879f9"} value={`×${fmtMult(critMultTotal)}`} sub={critOverCap ? t("rail.critMult.capped", { raw: fmtMult(critMultRaw) }) : perks.includes("L5") ? t("rail.jackpot") : null} />}
         </div>
       </div>
 

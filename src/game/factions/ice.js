@@ -1,4 +1,4 @@
-import { SKILL_DEFS, isLegendarySkill } from "../skills.js";
+import { SKILL_DEFS, isLegendarySkill, boostedTier } from "../skills.js";
 import { ROLES, neighbors4, neighbors8, EISZEIT_BURST_PER } from "../glacier.js";
 
 /* ============================================================
@@ -99,7 +99,8 @@ export function iceRoleTiers(skills = [], skillTiers = {}) {
   for (const id of skills) {
     const def = SKILL_DEFS[id];
     if (!def || def.archetype !== "ice" || !def.role || isLegendarySkill(id)) continue;
-    out[def.role] = Number.isInteger(skillTiers[id]) ? skillTiers[id] : 0;
+    // §7.39: Hochspannung hebt auch die Eis-Rollen — hier, weil alles darunter nur noch `roleTiers` liest.
+    out[def.role] = boostedTier(skills, Number.isInteger(skillTiers[id]) ? skillTiers[id] : 0);
   }
   return out;
 }

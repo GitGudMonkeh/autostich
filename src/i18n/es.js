@@ -269,6 +269,7 @@ export default {
   "rail.critChance.ion": "+{pct} ion.",
   "rail.critMult": "Mult. crítico",
   "rail.jackpot": "Bote",
+  "rail.critMult.capped": "en el tope · {raw} acumulado",
   "rail.wins": "Victorias",
   "rail.losses": "Derr.",
   "rail.rate": "Tasa",

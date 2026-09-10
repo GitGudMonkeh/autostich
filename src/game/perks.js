@@ -316,11 +316,21 @@ export function critMultiplierFor(perks, ctx = {}) {
 // Anzeige-Helfer: VOLLER Crit-Multiplikator (persistente Terme, wie die Engine) — Perk-Basis + Familien-Wucht + Blitz
 // (Entladung-Rampe, Spannungsstau, Vorentladung) + Systemregel (Überschuss über 100 %). Ohne die situativen Terme
 // (Entladung Episch beim Leisten-Crit), die nur im Crit selbst zünden. Geteilt: StatusRail (Crit-Zeile) + ChargeBar.
-export function totalCritMult(state) {
+/* Der GEBAUTE Crit-Multiplikator des Builds: die Summe aller dauerhaften Quellen, ohne Deckel. Die Stapel der
+   Siegkarte (`lightIonCritMult`) fehlen hier zwangsläufig — die hängen an der Karte, die gerade gewinnt, nicht am
+   Build. Nur für die „davon verfällt"-Anzeige gedacht. */
+export function totalCritMultRaw(state) {
   const perks = state.perks || [];
   const critRaw = totalCritChanceRaw(state);
   return critMultiplierFor(perks, { rawCrit: critRaw }) + familyCritMult(state.familyTiers || {})
     + lightningCritMult(state.lightning, state.skills || [], state.skillTiers || {}, critRaw) + overcritMult(critRaw);
+}
+/* Was ein Stich davon WIRKLICH zahlt. §7.39 (Owner-Entscheid B): dieselbe Klemme wie im Motor (engine.js, nach allen
+   Additionen). Vorher gab diese Funktion die ungedeckelte Summe zurück, und Statusleiste wie Ladungsleiste zeigten
+   Werte über dem Deckel an — ein Spieler kaufte also weiter Crit-Multiplikator, von dem laut §7.31 ohnehin 81 %
+   verfällt. Der Überschuss steht jetzt daneben (totalCritMultRaw), statt die Zahl selbst zu verfälschen. */
+export function totalCritMult(state) {
+  return Math.min(totalCritMultRaw(state), C.CRIT_MULT_CAP);
 }
 // Hat der Build überhaupt ein Crit-Perk? (steuert die UI-Sichtbarkeit der Crit-Anzeigen)
 // V2: Crit-Chance kommt aus Stat/Blitz; D-Perks belohnen Crits über scoreFlatOnCrit; L6 trägt Crit-Chance → alle zählen.
