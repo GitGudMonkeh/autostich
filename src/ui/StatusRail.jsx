@@ -1,8 +1,9 @@
 import { useMemo } from "react";
 import { summarizeFormations } from "../game/formations.js";
 import { precomputeArchitect, architectValueBonus } from "../game/architect.js";
-import { hasCritPerk, totalCritChanceRaw, totalCritMult, totalCritMultRaw, fundamentBonus } from "../game/perks.js";
+import { hasCritPerk, totalCritChanceRaw, displayCritChance, critChanceOverPP, totalCritMult, totalCritMultRaw, fundamentBonus } from "../game/perks.js";
 import { hasCritFamily, allianceGroups } from "../game/families.js";
+import { overcritMult } from "../game/factions/lightning.js"; // §7.44: die Systemregel für den Chance-Überschuss (dieselbe Quelle wie der Motor)
 import { Sparkline } from "./Sparkline.jsx";
 import { ScoreSourceBar, sourceShares } from "./RunGraphs.jsx";
 import { fmtScore, fmtScoreShort } from "./format.js"; // Gameplay-Neu-Aufbau: „Bester Score" in der Analyse-Ecke
@@ -48,10 +49,13 @@ export function StatusRail({ state, currentTraj = [], recordTraj = [], options =
   // Live-Crit-Chance des NÄCHSTEN Siegs: analog zum echten Wurf (#19). #267: die Crit-Chance kommt aus der Blitz-Basis
   // (lightning) + den Präzision-Familien (unkonditionale Schärfe im Live-Preview), dieselbe Rechnung wie die Engine.
   const critRaw = totalCritChanceRaw(state);
-  // #181: Gesamt-Crit-Chance UNGEKLEMMT anzeigen (kann > 100 % sein — der Überschuss speist L6 „Raserei" und
-  // Familie D „Überschusskrit"). Nur nach unten bei 0 begrenzen; KEIN Math.min(1, …) mehr (das war nur Anzeige;
-  // der echte Wurf bleibt in der Engine bei engine.js:302 geklemmt).
-  const critPct = Math.round(Math.max(0, critRaw) * 100);
+  /* §7.44 (Owner): die Chance-Zeile zeigt höchstens 100 % — mehr kann ein Wurf nicht treffen, und eine Zahl wie
+     „180 %" behauptet einen Nutzen, den sie nicht hat. Der Überschuss verschwindet trotzdem nicht: er steht als
+     Unterzeile, weil er über die Systemregel (overcritMult, 0,03× je Punkt) in den Crit-Multiplikator zahlt und
+     zusätzlich L6 „Raserei" und Familie D „Überschusskrit" speist. (Bis dahin stand hier die rohe Zahl, #181 — der
+     Überschuss war sichtbar, aber nicht als das, was er tut.) */
+  const critPct = Math.round(displayCritChance(state) * 100);
+  const critOverPP = critChanceOverPP(state);
   // Crit-Mult VOLLSTÄNDIG (geteilter Helfer): Perk-Basis + Familien-Wucht + Blitz (Gewitterfront-Rampe,
   // Vorentladung) + Systemregel — der STAND des Crit-Multiplikators. (exp: der feldweite Ionisierungs-Crit ist weg.)
   const critMultTotal = totalCritMult(state);
@@ -97,7 +101,8 @@ export function StatusRail({ state, currentTraj = [], recordTraj = [], options =
         <div className="grid grid-cols-2 gap-2">
           <MCell label={t("rail.formation")} tone="#5ab87a" value={formCount > 0 ? t("rail.formation.value", { n: formCount, pct: formBonusPct }) : "–"} />
           <MCell label={t("rail.buildings")} tone="#d4a63a" value={buildBonusPct > 0 ? t("rail.pct", { pct: buildBonusPct }) : "–"} />
-          {showCrit && <MCell label={t("rail.critChance")} tone="#e879f9" value={t("rail.pct.plain", { pct: critPct })} />}
+          {showCrit && <MCell label={t("rail.critChance")} tone="#e879f9" value={t("rail.pct.plain", { pct: critPct })}
+            sub={critOverPP > 0 ? t("rail.critChance.over", { pp: critOverPP, mult: fmtMult(overcritMult(critRaw)) }) : null} />}
           {showCrit && <MCell label={t("rail.critMult")} tone={perks.includes("L5") ? "#d4a63a" : "#e879f9"} value={`×${fmtMult(critMultTotal)}`} sub={critOverCap ? t("rail.critMult.capped", { raw: fmtMult(critMultRaw) }) : perks.includes("L5") ? t("rail.jackpot") : null} />}
         </div>
       </div>

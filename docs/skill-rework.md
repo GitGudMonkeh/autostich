@@ -8162,6 +8162,71 @@ Stapeln zahlt +84 % auf den Stich, während Kurzschluss als ganzer Skill +56 % m
 
 ---
 
+### 7.44 Der Chance-Überschuss wird sichtbar und zahlt dreifach (2026-09-10, Owner) — umgesetzt, UNGEMESSEN
+
+**Owner:** „mit dem Umbau von crit multi das er weniger über 8 gibt können wir auch den Deckel von 100 % crit Chance
+so nutzen das alle 5 % mehr crit etwas mehr crit multi geben, das hilft bei Gewitterfront und auch dem skill der crit
+Chance pro Stapel auf der Karte gibt." Dann: „die crit Chance darf dann auch nicht mehr über 100 % anzeigen."
+
+#### A · Die Regel gab es schon, sie war nur wirkungslos
+
+`overcritMult` zahlte bereits +0,01× Crit-Mult je Prozentpunkt über 100 % (§7.28, derselbe Owner-Entscheid,
+0,002 → 0,01). Zwei Gründe, warum sie sich nicht anfühlte:
+
+1. **Sie war unsichtbar.** Kein Kartentext, kein Glossareintrag, keine Zeile in der Statusleiste.
+2. **Der weiche Deckel frisst sie.** Der Bonus wird auf `critMultiplier` addiert und läuft danach durch
+   `softCritMult` — ein Build über dem Knick bekommt **ein Fünftel**. Also genau die Builds, die Chance über 100 %
+   stapeln (Blitz), bekommen am wenigsten zurück. Das ist eine Wechselwirkung aus §7.42, die dort nicht bedacht war.
+
+#### B · Was gebaut ist
+
+`OVERCRIT_MULT_PER_PP` **0,01 → 0,03**, also +0,15× je 5 Punkte. Der Satz ist so gewählt, dass **5 Punkte
+Crit-Chance genau einen Stapel wert sind** (`ION_CRIT_MULT_PER_STACK` = 0,15) — eine merkbare Äquivalenz, und
+oberhalb des Knicks gibt sie ungefähr das zurück, was der weiche Deckel wegnimmt.
+
+| Crit-Chance | vorher | jetzt | davon über dem Knick |
+| --- | --- | --- | --- |
+| 150 % | +0,5× | +1,5× | +0,3× |
+| 200 % | +1,0× | +3,0× | +0,6× |
+
+Linear, keine Treppe: bei 103 % gibt es +0,09×, nicht null. Eine Treppe je 5 Punkte hätte eine tote Zone erzeugt;
+Feuer stuft nur deshalb, weil die Hitzeleiste selbst in Zehnerschritten steht.
+
+Die Statusleiste zeigt die Chance jetzt **höchstens 100 %** und den Überschuss als Unterzeile
+(`+{pp} über 100 % · +{mult}× Mult`). Bis dahin stand dort die rohe Zahl (#181) — der Überschuss war sichtbar, aber
+nicht als das, was er tut. Die Anzeige rechnet nicht mehr selbst: `displayCritChance` und `critChanceOverPP` liegen
+neben `totalCritMult` in `perks.js`, derselbe Griff wie in §7.39, damit Motor und Anzeige eine Quelle behalten.
+
+#### C · Ein Nebeneffekt, der beim Rechnen auffiel
+
+Ein Punkt **unter** 100 % wandelt 1 % der Stiche von ×1 auf ×M, bringt also (M−1)/100. Ein Punkt **über** 100 %
+bringt den Satz. Die beiden sind gleich viel wert bei **M = 4**:
+
+- Build mit 8× Multiplikator: ein Punkt darunter bringt 0,07, darüber 0,03 → darunter bleibt deutlich besser.
+- Build mit 3× Multiplikator: darunter 0,02, darüber 0,03 → **darüber ist besser**.
+
+Für Builds mit niedrigem Crit-Multiplikator lohnt es sich also, die Chance absichtlich zu überschießen, statt sie zu
+erreichen. Praktisch trifft das kaum jemanden — wer über 100 % Chance baut, hat fast immer auch Stapel und damit
+einen hohen Multiplikator — aber es ist eine echte Umkehrung und gehört notiert. Bei 0,02 läge der Kipppunkt bei
+M = 3, bei 0,01 bei M = 2 (praktisch nie).
+
+#### D · Der alte Wächter ist gefallen, nicht aufgeweicht
+
+Die bisherige Invariante hieß „100 Punkte über 100 % dürfen den Multiplikator um höchstens ein Achtel des Deckels
+heben, sonst wird die Regel selbst zur Crit-Quelle" — bei 0,03 sind es drei Achtel. Sie wurde **nicht gelockert,
+sondern durch die Aussagen ersetzt, die noch stimmen**:
+
+- am Knick ist ein Punkt über 100 % weniger wert als ein Punkt darunter (`< (CRIT_MULT_CAP − 1) / 100`),
+- die Regel allein bleibt unter dem Knick (`100 × Satz < CRIT_MULT_CAP`).
+
+Dazu zwei neue Anzeige-Wächter, beide gegengeprobt: die Anzeige-Chance erreicht 100 % und geht nie darüber, und der
+Überschuss steht mit genau `OVERCRIT_MULT_PER_PP` je Punkt im Multiplikator.
+
+**Die Regel hat weiterhin keinen Deckel.** Bei 400 % Chance wären das +9×. Bei 0,01 egal, bei 0,03 nicht mehr — die
+Zahl, auf die bei der Messung zu schauen ist.
+
+---
+
 ### 5.30 Die Eis-Skills auf dem neuen Motor (2026-09-09) — gemessen, nichts umgesetzt
 
 **Owner:** „und dann schauen wir uns alle skills an die davon profitieren müssen und designen wie."
@@ -8576,3 +8641,4 @@ leichtesten haben.
 | 2026-09-10 | §7.39/§7.40 nachgemessen (§7.41). Blitz-Mono, 6 min, zwei Änderungen zugleich (nicht trennbar, war so angesagt). **Blitz ist eingefangen: mono 1,028 Mrd → 416M**, damit Bl 416M · Pf 367M · Ei 348M/224M · Fe 137M — Blitz und Pflanze gleichauf, der 12-fache Abstand aus §7.38 ist weg. Doppelentladung +275 → +235 %, Resonanz +438 → **+170 %**, Hochspannung +428 → **+92 %**. **Mein Potenzgesetz aus §7.40 war falsch**: aus zwei Punkten gefittet (Exponent 0,58) sagte es für 0,7 rund +280 % voraus, gemessen sind +170 %; der Exponent liegt zwischen 1,5 und 0,7 tatsächlich bei 1,24, die Elastizität steilt sich nach unten auf. Zwei Punkte reichten für diese Kurve nicht. Teil der Abweichung ist nicht Resonanz: Hochspannung fiel gleichzeitig von +2 auf +1 Stufe und wird in 65 % der Läufe gehalten, dort erzeugt jeder Blitz-Skill weniger Stapel — und Resonanz teilt genau die. **Hochspannung lässt sich mono gar nicht beurteilen**: in einer Mono-Welt ist „+1 für alle Fraktionen" identisch mit „+1 für Blitz", die Messung sieht also nur 2 → 1, nicht den Umbau; dafür braucht es die Misch-Welten. Preis der Runde: der Mittelbau ist eingebrochen — acht Skills bei oder unter null, und Gewitterfront fiel +69 → −6, Kettenblitz +33 → +5, Blitzableiter +24 → +2, ohne angefasst worden zu sein. Ursache ist Hochspannung: eine Stufe weniger trifft jeden der dreizehn gehaltenen Skills, nicht nur den Legendären. Das war nicht beabsichtigt. |
 | 2026-09-10 | Crit-Deckel weich, Entladung auf die Score-Achse (§7.42, Owner, Zahlen vorher abgenommen). Befund: der Multiplikator hat 5,75× Kopfraum, und **Stapel allein füllen ihn bei 38 — mit Kurzschluss schon bei 19**, was ein Doppelentladung/Resonanz-Bau mühelos erreicht; ab da ist jeder weitere Punkt aus jeder Quelle null wert. Das geht tiefer als §7.31: ein Stapel zahlt Basis-Score UND Crit-Multiplikator, über dem Deckel nur noch das erste — der harte Schnitt halbiert also die Auszahlung der Kernressource, nicht nur vier Skills (was auch Ladungsserie erklärt, −11 % bei 100 % Haltequote). Umgesetzt: `CRIT_MULT_SOFT_SLOPE = 0,2`, Form wie das vorhandene `WIN_SOFTCAP`, EINE Quelle (`softCritMult`) für Motor und Anzeige; gebaut 10/16/36× zahlt 8,4/9,6/13,6×, und SLOPE 0 stellt den alten harten Deckel ohne Codeänderung wieder her. Entladung verlässt die Multiplikator-Achse (dort sagten vier Skills dasselbe; behalten hat sie Vorentladung, die einzige, die eine Entscheidung verlangt) und zahlt jetzt **+2/3/4/6 Basis-Score je Sieg, dauerhaft je voller Leiste**, Episch verdoppelt die Rampe bei einem Crit statt den Multiplikator; eigener Zustand `entladungScore`, `entladungMult` speist nur noch Gewitterfronts Episch-Anhang. Der steht damit allein auf der Achse und ist offen (nicht Teil der drei abgenommenen Punkte). Drei Wächter, alle gegengeprobt. Startwerte, UNGEMESSEN — wie viele volle Leisten ein Lauf hat, ist nicht erhoben. |
 | 2026-09-10 | Spannungsfeld ersetzt den Spannungsstau (§7.43, Owner: „können wir vllt irgendetwas bauen was Stapel mehr streut oder etwas das pro Stapel einen Bonus gibt, eventuell auf Formation"). Vier Entwürfe fielen vorher, jeder aus einem eigenen Grund (§7.43 A): der Stau umgehängt (sein Auslöser „Sieg ohne Crit" wird seltener, je besser der Build läuft — §7.31 maß 0,00× gebaut), der Kondensator („nur ionisiere mehr Karten mit extra Steps", dazu: ein Prozent-Aufschlag ist auf einer Kästchen-Leiste unlesbar, ein flacher Aufschlag kostet je nach Build zwischen einem Sechstel und einem Drittel der Rate), und zwei Episch-Anhänge (Überlauf sparen — es gibt nichts zu sparen, die Leiste fällt bei jeder Füllung auf den Boden; „alle Karten ionisiert" — eine Zeitschaltuhr, weil die Leiste im Kreis ionisiert und Stapel nie verschwinden). Der Fund, der es gelöst hat: **Blitz hatte keinen eigenen Multiplikator** — Feuer hat `fireMult`, Pflanze `plantMult`, Blitz zahlte nur in Basis-Score, Wert und Crit. Gebaut: Formations-Sieg zählt **+0,3/0,4/0,5/0,7 % je Stapel der Formation**, Episch dazu +1 Stapel auf die Karte mit den wenigsten Stapeln je Sieg. Jede Karte zählt einmal (Vereinigung wie bei Resonanz), gelesen wird die echte Siegkarte statt der Resonanz-Sicht, der Episch-Stapel läuft nicht durch Doppelentladung. Der Skill zahlt für GESTREUTE Stapel und steht damit gegen Kurzschluss und Kettenblitz. Drei Wächter, alle gegengeprobt. Startwerte, UNGEMESSEN; größtes Risiko ist das Episch (Dreier-Formation mit je 20 Stapeln = +84 %, Kurzschluss als ganzer Skill misst +56 %). |
+| 2026-09-10 | Der Chance-Überschuss wird sichtbar und zahlt dreifach (§7.44, Owner, Zahlen vorher abgenommen). Die Regel gab es schon (`overcritMult`, +0,01× je Punkt über 100 %, §7.28), sie war nur wirkungslos: unsichtbar (kein Text, keine Zeile) und vom weichen Deckel aus §7.42 auf ein Fünftel gedämpft — ausgerechnet für die Builds, die Chance über 100 % stapeln. `OVERCRIT_MULT_PER_PP` **0,01 → 0,03**, so gewählt, dass **5 Punkte Crit-Chance genau einen Stapel wert sind** (ION_CRIT_MULT_PER_STACK 0,15); linear, keine Treppe. Die Statusleiste zeigt die Chance jetzt höchstens 100 % (Owner: „darf nicht mehr über 100 % anzeigen") und den Überschuss als Unterzeile; `displayCritChance`/`critChanceOverPP` liegen als geteilte Helfer neben `totalCritMult`, derselbe Griff wie §7.39. **Beim Rechnen aufgefallen und notiert (§7.44 C): unterhalb eines Crit-Multiplikators von 4× ist ein Punkt ÜBER 100 % mehr wert als einer darunter** — eine echte Umkehrung des Anreizes, praktisch aber selten, weil wer über 100 % baut fast immer Stapel und damit einen hohen Multiplikator hat. Der alte Wächter (100 Punkte ≤ ein Achtel des Deckels) fällt bei 0,03 und wurde NICHT gelockert, sondern durch zwei Aussagen ersetzt, die noch stimmen (am Knick bleibt ein Punkt darüber schlechter als einer darunter; die Regel allein bleibt unter dem Knick). Zwei neue Anzeige-Wächter, beide gegengeprobt. Die Regel hat weiterhin keinen Deckel — bei 400 % Chance wären es +9×, das ist die Zahl für die Messung. |

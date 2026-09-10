@@ -332,6 +332,12 @@ export function totalCritMultRaw(state) {
 export function totalCritMult(state) {
   return C.softCritMult(totalCritMultRaw(state));
 }
+/* §7.44 (Owner: „die Crit-Chance darf dann auch nicht mehr über 100 % anzeigen"). Die Anzeige-Chance ist der ANTEIL,
+   den ein Wurf treffen kann — dieselbe Klemme wie im Motor (engine.js `Math.min(1, …)`), eine Quelle für beide, damit
+   Motor und Anzeige nicht wieder auseinanderlaufen wie in §7.39. Der Überschuss ist damit nicht verschwunden: er
+   steht als eigener Wert daneben und zahlt über overcritMult in den Multiplikator. */
+export const displayCritChance = (state) => Math.min(1, Math.max(0, totalCritChanceRaw(state)));
+export const critChanceOverPP = (state) => Math.round(Math.max(0, totalCritChanceRaw(state) - 1) * 100);
 // Hat der Build überhaupt ein Crit-Perk? (steuert die UI-Sichtbarkeit der Crit-Anzeigen)
 // V2: Crit-Chance kommt aus Stat/Blitz; D-Perks belohnen Crits über scoreFlatOnCrit; L6 trägt Crit-Chance → alle zählen.
 export function hasCritPerk(perks) {

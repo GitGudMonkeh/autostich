@@ -120,10 +120,18 @@ describe("Blitz-Modul — Stufen und Kennwerte", () => {
     expect(overcritMult(1)).toBe(0);
     expect(overcritMult(1.5)).toBeCloseTo(50 * C.OVERCRIT_MULT_PER_PP, 9);
     expect(C.OVERCRIT_MULT_PER_PP).toBeGreaterThan(0);
-    // §7.28 (Owner): der Satz ist 0,01 — die alte Schranke hieß „sehr klein" (< 0,01) und ist damit überholt. Die
-    // Invariante ist jetzt: der Überschuss bleibt klein gegen den Deckel — 100 Prozentpunkte darüber dürfen den
-    // Multiplikator um höchstens ein Achtel des Deckels heben, sonst wird die Regel selbst zur Crit-Quelle.
-    expect(100 * C.OVERCRIT_MULT_PER_PP).toBeLessThanOrEqual(C.CRIT_MULT_CAP / 8);
+    /* §7.44 (Owner): der Satz ist 0,03 — die alte Schranke (100 Punkte heben höchstens ein Achtel des Deckels)
+       ist damit gefallen und wird hier NICHT aufgeweicht, sondern durch die Aussage ersetzt, die noch stimmt.
+       Der Grund für den alten Wert war „die Regel darf nicht selbst zur Crit-Quelle werden"; seit §7.42 dämpft
+       der weiche Deckel den Überschuss über dem Knick ohnehin auf ein Fünftel, und genau dort sitzen die Builds,
+       die über 100 % Chance bauen. Was weiter gelten MUSS:
+       (a) am Knick ist ein Punkt ÜBER 100 % weniger wert als ein Punkt darunter — sonst lohnt es sich, die
+           Chance absichtlich zu überschießen, statt sie zu erreichen (ein Punkt darunter wandelt 1 % der Stiche
+           von ×1 auf ×M, bringt also (M−1)/100),
+       (b) die Regel allein bleibt unter dem Knick: 100 Punkte darüber heben den Multiplikator um weniger als
+           den Deckel selbst. */
+    expect(C.OVERCRIT_MULT_PER_PP).toBeLessThan((C.CRIT_MULT_CAP - 1) / 100);
+    expect(100 * C.OVERCRIT_MULT_PER_PP).toBeLessThan(C.CRIT_MULT_CAP);
   });
   it("blitzfaengerValue / ionScoreFor: Schwellen fallen mit der Stufe, Kurzschluss zählt Stapel ab Schwelle doppelt", () => {
     for (let t = 0; t < 4; t++) {
