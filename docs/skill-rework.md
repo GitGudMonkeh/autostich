@@ -7840,6 +7840,64 @@ weiter auf eine Abnahme.
 
 ---
 
+### 7.38 §7.37 nachgemessen: weich gelandet, eine Vorhersage widerlegt (2026-09-10) — gemessen
+
+Blitz-Mono, 4.050 Läufe, 7 min, Parameter der §8-Baseline.
+
+#### A · Die drei
+
+| Skill | §8 | jetzt | Regler-Schnitt | Wirkungs-Verlust |
+| --- | --- | --- | --- | --- |
+| Resonanz | +553 % | **+438 %** | −33 % | −21 % |
+| Hochspannung | +520 % | **+428 %** | −33 % | −18 % |
+| Doppelentladung | +383 % | **+275 %** | −40 % | −28 % |
+| **Bl mono Median** | 1.686.071.449 | **1.028.320.158** | | **−39 %** |
+
+Zielband war 250–300 %. **Nur Doppelentladung ist angekommen.** Jeder Regler hat weniger als proportional gewirkt.
+
+#### B · Vorhersage 2 bestätigt, Vorhersage zu Hochspannung WIDERLEGT
+
+§7.37 C sagte: die Stapel-Schnitte landen weicher als die Prozente, weil laut §7.31 81 % des gebauten
+Crit-Multiplikators am 8×-Deckel verfällt. **Das stimmt** — Resonanz und Doppelentladung verlieren beide weniger
+Wirkung, als der Regler hergibt.
+
+Derselbe Absatz sagte, **Hochspannung müsse HÄRTER treffen**, weil Stufen jeden Skill-Effekt heben. **Das war
+falsch** — sie ist von den dreien am wenigsten gefallen (−18 %). Der Grund ist strukturell und hätte mir vorher
+auffallen müssen: **die Stufenleiter ist nur vier lang.** Ein Skill, der auf Selten oder höher gewürfelt wurde,
+erreicht mit +2 Stufen genauso Episch wie mit +3. Der Unterschied zwischen 3 und 2 betrifft also nur die Skills, die
+auf NORMAL gewürfelt wurden — ein Viertel des Angebots.
+
+Damit ist die offene Stelle aus §7.37 B beantwortet, und zwar schlecht:
+
+| `HOCHSPANNUNG_STEPS` | Wirkung |
+| --- | --- |
+| 1 | +8 % (§6.12: schwächer als ein normaler Pick) |
+| 2 | **+428 %** |
+| 3 | +520 % |
+
+Der Regler ist nicht nur diskret, er **sättigt**. Zwischen 1 und 2 liegt der ganze Sprung, zwischen 2 und 3 fast
+nichts. **Es gibt keine Zahl, die diesen Skill ins Band bringt** — er braucht eine andere Mechanik (etwa: nur die
+N ältesten/wenigsten Skills werden gehoben, oder +1 Stufe mit einer zweiten Wirkung daneben).
+
+#### C · Die Legendären tragen die Höhe nicht allein
+
+Drei Schnitte von 33–40 % haben die Fraktion um 39 % gesenkt — und sie steht damit immer noch bei **1,03 Mrd**,
+also beim **2,8-fachen der Pflanze** (367M) und beim **7,5-fachen von Feuer** (137M). Der Motor darunter trägt den
+Großteil; wer Blitz ins Feld holen will, kommt über die Legendären allein nicht hin.
+
+#### D · §7.31 ist in den Daten sichtbar
+
+Die zwei schwächsten Blitz-Skills dieser Messung sind ausgerechnet die zwei Crit-Multiplikator-Karten:
+**Vorentladung −11 % · Entladung −11 %**, dazu Spannungsstau −1 %. Genau die Skills, von denen §7.31 sagt, dass
+ihr Beitrag am 8×-Deckel verfällt. Der Befund liegt seit dem 09.09. vor und wartet weiter auf eine Abnahme.
+
+Dazu passt der Anzeigefehler aus derselben Runde: `totalCritMult` (Statusleiste und Ladungsleiste) addiert vier
+Quellen **ohne** `CRIT_MULT_CAP` — der Motor deckelt korrekt (`engine.js` nach allen Additionen), die Anzeige nicht.
+Sie zeigt also einen Wert, den der Stich nie zahlt, und fehlt gleichzeitig um `lightIonCritMult` (die Stapel der
+Siegkarte). Nicht angefasst, Entscheid offen.
+
+---
+
 ### 5.30 Die Eis-Skills auf dem neuen Motor (2026-09-09) — gemessen, nichts umgesetzt
 
 **Owner:** „und dann schauen wir uns alle skills an die davon profitieren müssen und designen wie."
@@ -8248,3 +8306,4 @@ leichtesten haben.
 | 2026-09-10 | §7.34 nachgemessen (§7.35). Feuer-Mono, 7 min. **Die Fraktion ist repariert: mono 65,1M → 137,3M (+111 %)**, über dem Stand vor dem Klingen-Schnitt; der Rückstand auf Blitz fällt von 26× auf 12×. Fünf von sieben sitzen — und der größte Einzelgewinn war KEIN Buff, sondern der Tor-Fix: **Ewige Glut −0 → +52 %** und damit das dritte Legendäre in einem gesunden Band (Sonnenkern +66 %, Sonnenzorn +54 %). Dazu Feuerlinie −5 → +28 %, Brandschneise +1 → +8 %, Schmiede −2 → +6 %, Rückzündung −2 → +2 %. **Zwei haben nicht gewirkt, und bei einem war meine Begründung falsch:** *Zunder* (0 → −2 % trotz Verdopplung) sollte laut §7.34 über den Schmelzpunkt-Überlauf zahlen — aber der Schmelzpunkt wird nicht mehr zuverlässig gebaut, seine Haltequote fällt in derselben Messung von 100 % auf 61 %; ohne ihn wird Überlauf-Hitze weggeworfen, und doppelt so viel Weggeworfenes ist nichts. *Glutstahl* (−4 → −7 % trotz +75 %) ist ein Mitfahrer der Klinge, deren Motor §7.32 halbiert hat und die nur noch 55 % gehalten wird — ein höherer Satz auf eine Bemessungsgrundlage nahe null bleibt nahe null (dieselbe Signatur wie Verwachsung in §6.30). Beide brauchen eine Mechanik, keine Zahl; das ist ein Owner-Entscheid. Nebenbefund: die Glühende Klinge fällt weiter (+24 → +9 %, Haltequote 82 → 55 %) — Ablation gegen einen gewachsenen Rest, also die Absicht. |
 | 2026-09-10 | Glutstahl zurück auf 8/12/16/20 (§7.36, Owner). §7.34 hatte den Satz um 75 % gehoben, §7.35 hat gemessen, dass das nichts bringt: −4 → −7 %, also schlechter. Der Grund steht dort — er zahlt je Punkt Kampfwert über dem Grundwert, und diese Bemessungsgrundlage war zum guten Teil die Glühende Klinge, deren Motor §7.32 halbiert hat. Owner-Entscheid, mit Begründung: „es gibt noch genügend andere quellen werte zu erhöhen über perks wenn man darauf spielt" — Glutstahl bleibt damit ein Bau-Skill für einen Wert-Bau, kein Grundstock, und seine gemessene Schwäche im gierigen Mono-Lauf ist kein Defekt. Damit ist der Vorschlag aus §7.35 C (Glutstahl braucht eine eigene Wertquelle) zurückgezogen; offen bleibt allein Zunder. |
 | 2026-09-10 | Die drei Blitz-Legendären gesenkt (§7.37, Owner, Zahlen vorher vorgelegt und abgenommen). §8 maß mono Resonanz +553 %, Hochspannung +520 %, Doppelentladung +383 % — die drei stärksten des Spiels, gegen Pflanze +274 % und Eis +284 % an ihren Spitzen; Zielband 250–300 %. Jeder hängt an genau einem Regler: `RESONANZ_SHARE` 2,25 → **1,5**, `HOCHSPANNUNG_STEPS` 3 → **2**, `DOPPELENTLADUNG_STACKS` 5 → **3**. `DOPPELENTLADUNG_STRIKE` bleibt bei 2 — ein Hebel je Skill und Runde. Resonanz stand weit über ihrem eigenen dokumentierten Nullpunkt („1 = die ganze Summe"): eine Karte in einer Vierer-Formation mit je 5 Partnerstapeln kämpfte mit 38 statt 27 Stapeln, also 2.850 statt 2.025 Basis-Score und +5,70× statt +4,05× Crit-Multiplikator. Hochspannung hat KEINEN anderen Zwischenwert — der Regler ist diskret, bei 1 maß er +8 %, bei 3 +520 %; landet 2 falsch, braucht der Skill eine andere Mechanik, keine andere Zahl. Zwei Vorhersagen für die Messung: (a) Resonanz und Doppelentladung sind gekoppelt und fallen beide, der Anteil ist nicht trennbar; (b) die Stapel-Schnitte landen vermutlich weicher als die Prozente aussehen, weil laut §7.31 81 % des gebauten Crit-Multiplikators am 8×-Deckel verfällt — trifft das zu, ist der eigentliche Hebel der Fraktion der Deckel, nicht ihre Spitze. UNGEMESSEN. |
+| 2026-09-10 | §7.37 nachgemessen (§7.38). Blitz-Mono, 7 min. Alle drei gefallen, aber **weniger als proportional**: Resonanz +553 → +438 % (Regler −33 %), Hochspannung +520 → +428 % (−33 %), Doppelentladung +383 → +275 % (−40 %); Fraktion 1,686 → 1,028 Mrd (−39 %). Zielband war 250–300 % — **nur Doppelentladung ist angekommen**. Vorhersage (b) aus §7.37 C bestätigt: die Stapel-Schnitte landen weich, weil laut §7.31 81 % des Crit-Multiplikators am Deckel verfällt. Vorhersage zu Hochspannung **WIDERLEGT**: sie sollte härter treffen, ist aber am wenigsten gefallen. Der Grund ist strukturell — die Stufenleiter ist nur VIER lang, ein auf Selten oder höher gewürfelter Skill erreicht mit +2 genauso Episch wie mit +3; der Unterschied betrifft nur die auf Normal gewürfelten. Der Regler sättigt also: 1 → +8 %, 2 → +428 %, 3 → +520 %. **Es gibt keine Zahl, die diesen Skill ins Band bringt** — er braucht eine andere Mechanik. Zweiter Befund: drei Schnitte von 33–40 % haben die Fraktion nur um 39 % gesenkt, und sie steht weiter beim 2,8-fachen der Pflanze und beim 7,5-fachen von Feuer — die Legendären tragen die Höhe nicht allein. Dritter: die zwei schwächsten Blitz-Skills sind ausgerechnet die zwei Crit-Multiplikator-Karten (Vorentladung −11 %, Entladung −11 %), genau §7.31s Befund, live in den Daten. Dazu der Anzeigefehler: `totalCritMult` (Statusleiste, Ladungsleiste) addiert vier Quellen OHNE `CRIT_MULT_CAP` — der Motor deckelt korrekt, die Anzeige nicht, und ihr fehlt zugleich `lightIonCritMult`. Nicht angefasst, Entscheid offen. |
