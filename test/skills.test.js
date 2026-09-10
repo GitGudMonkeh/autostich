@@ -59,8 +59,8 @@ describe("skills — Blitz-Registry (exp skill rework)", () => {
     // §7.51 (Owner): das Spannungsfeld zahlt auf die Crit-CHANCE je ionisierter Karte. Die zwei fruehren Lesarten
     // duerfen NICHT zurueckkommen: "perStack" war die Tiefe (§7.43) und "perCard" der eigene Score-Faktor (§7.47) —
     // beide haengten an einer zweiten Multiplikator-Achse, die Blitz gar nicht braucht (§7.46 C).
-    expect(asc(BLITZ_TIERS.feld, "critPerCard")).toBe(true);
-    expect(BLITZ_TIERS.feld.every((r) => r.step === undefined && r.critKeep === undefined && r.perStack === undefined && r.perCard === undefined)).toBe(true);
+    expect(asc(BLITZ_TIERS.feld, "critPerForm")).toBe(true);
+    expect(BLITZ_TIERS.feld.every((r) => r.step === undefined && r.critKeep === undefined && r.perStack === undefined && r.perCard === undefined && r.critPerCard === undefined)).toBe(true);
     expect(BLITZ_TIERS.stau).toBeUndefined();
     expect(BLITZ_TIERS.feld[3].feedLowest).toBe(1); // §7.47: der Episch-Anhang hängt an der letzten Stufe der Leiter
     expect(asc(BLITZ_TIERS.kette, "extra")).toBe(true); // §7.18: Tiefe
@@ -71,7 +71,7 @@ describe("skills — Blitz-Registry (exp skill rework)", () => {
     expect(SKILL_DEFS.SK_LIGHTNING_12.desc).toContain(`Ab Serie ${BLITZ_TIERS.vorentladung[0].minStreak}`);
     expect(SKILL_DEFS.SK_LIGHTNING_05.desc).toContain(`bei ${BLITZ_TIERS.reststrom[0].floor} statt 0`);
     expect(SKILL_DEFS.SK_LIGHTNING_06.desc).toContain("+0,5");
-    expect(SKILL_DEFS.SK_LIGHTNING_13.descTiers[3]).toContain(`+${pctText(BLITZ_TIERS.feld[3].critPerCard)} % Crit-Chance`);
+    expect(SKILL_DEFS.SK_LIGHTNING_13.descTiers[3]).toContain(`+${pctText(BLITZ_TIERS.feld[3].critPerForm)} % Crit-Chance`);
   });
   it("skillSum summiert einen Hook über die gehaltenen Skills (fehlender Hook → 0)", () => {
     expect(skillSum([], "scoreFlatOnCrit", {})).toBe(0);

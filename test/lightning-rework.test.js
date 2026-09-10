@@ -3,7 +3,7 @@ import * as C from "../src/game/constants.js";
 import { SKILL_DEFS, BLITZ_TIERS, effectiveTierOf, tierIsLifted } from "../src/game/skills.js";
 import { initLightning, L, maxChargeFor, effectiveTier, lightParam, lightningCritChance, lightningCritMult, overcritMult,
   blitzfaengerValue, ionenfeldValue, fieldTick, ionScoreFor, ionCritMultFor, chargeGainOnWin, critFillsBar, blitzschlagStacks,
-  formationStacks, litFormationCards, feldFeed, lightningOnLoss, fillBar, lightningCycleEnd } from "../src/game/factions/lightning.js";
+  formationStacks, positionFormations, feldFeed, lightningOnLoss, fillBar, lightningCycleEnd } from "../src/game/factions/lightning.js";
 import { resolveTrick } from "../src/game/engine.js";
 import { computeFormations } from "../src/game/formations.js";
 import { initialState } from "../src/game/reducer.js";
@@ -238,26 +238,26 @@ describe("Blitz-Modul — Ladung, Leiste, Niederlage (reine Übergänge)", () =>
     expect(formationStacks({ ionStacks: 1 }, { formations: [] }, 1, cardAt)).toEqual([]); // ohne Formation kein Feld
     expect(formationStacks({ ionStacks: 1 }, { formations: [{ members: [] }] }, 1, cardAt)).toEqual([]); // Meta-Faktoren haben keine Mitglieder
   });
-  /* §7.51: der Kennwert ist die ZAHL der leuchtenden Karten, nicht ihre Tiefe. Der Wächter vergleicht deshalb
-     dieselben Karten flach und hundertfach tiefer — die Zahl darf sich nicht bewegen. Bewegt sie sich, ist eine
-     Tiefen-Lesart zurück, und mit ihr die zweite Multiplikator-Achse aus §7.46 C. */
-  it("litFormationCards: zählt die ionisierten Karten der Formation, unabhängig von ihrer Tiefe", () => {
-    const at = (s) => (k) => ({ ionStacks: s[k] || 0 });
-    const form = { formations: [{ members: [0, 1, 2] }] };
-    const card = { ionStacks: 1 };
-    expect(litFormationCards(card, form, 1, at({ 0: 2, 1: 1, 2: 3 }))).toBe(3);
-    expect(litFormationCards(card, form, 1, at({ 0: 200, 1: 1, 2: 300 }))).toBe(3); // Tiefe bewegt die Zahl nicht
-    expect(litFormationCards(card, form, 1, at({ 0: 2, 1: 1, 2: 0 }))).toBe(2);     // eine dunkle Karte zählt nicht
-    expect(litFormationCards({ ionStacks: 0 }, form, 1, at({}))).toBe(0);
-    expect(litFormationCards(card, { formations: [] }, 1, at({ 0: 2 }))).toBe(0);   // ohne Formation kein Feld
+  /* §7.56: der Kennwert ist die Zahl der FORMATIONEN dieser Position, ohne Ionisierungs-Bedingung. Der Wächter
+     hält beides fest: Meta-Faktoren ohne `members` (Anker, Nachhall) zählen nicht mit, und Ionisierung spielt keine
+     Rolle mehr — ein leeres Deck gibt dieselbe Zahl wie ein voll ionisiertes. Fällt der zweite Vergleich, ist die
+     Bedingung zurück, die den Skill früh abgeschaltet hat (§7.55 A: 86 % der frühen Formations-Siege ohne eine
+     einzige ionisierte Karte in Reichweite). */
+  it("positionFormations (§7.56): zählt die echten Formationen der Position, unabhängig von Ionisierung", () => {
+    const two = { formations: [{ members: [0, 1, 2] }, { members: [1, 2, 5] }] };
+    expect(positionFormations(two)).toBe(2);
+    expect(positionFormations({ formations: [{ members: [0, 1] }] })).toBe(1);
+    expect(positionFormations({ formations: [{ members: [] }, {}] })).toBe(0); // Meta-Faktoren haben keine Mitglieder
+    expect(positionFormations({ formations: [] })).toBe(0);
+    expect(positionFormations(null)).toBe(0);
   });
-  it("lightningCritChance (§7.51): das Spannungsfeld gibt Crit-Chance je ionisierter Karte; ohne Formation nichts", () => {
-    const per = (t) => T.feld[t].critPerCard;
+  it("lightningCritChance (§7.56): das Spannungsfeld gibt Crit-Chance je Formation; ohne Formation nichts", () => {
+    const per = (t) => T.feld[t].critPerForm;
     const base = lightningCritChance(light(), [L.SPANNUNGSFELD], {}, 0, null, 0);
-    expect(lightningCritChance(light(), [L.SPANNUNGSFELD], {}, 0, null, 3)).toBeCloseTo(base + 3 * per(0), 9);
-    expect(lightningCritChance(light(), [L.SPANNUNGSFELD], { [L.SPANNUNGSFELD]: 3 }, 0, null, 3)).toBeCloseTo(base + 3 * per(3), 9);
-    expect(lightningCritChance(light(), [L.KETTENBLITZ], {}, 0, null, 3)).toBeCloseTo(base, 9); // ohne den Skill kein Beitrag
-    expect(lightningCritChance(initLightning(), [L.SPANNUNGSFELD], {}, 0, null, 3)).toBe(0);    // inaktiv gar nichts
+    expect(lightningCritChance(light(), [L.SPANNUNGSFELD], {}, 0, null, 2)).toBeCloseTo(base + 2 * per(0), 9);
+    expect(lightningCritChance(light(), [L.SPANNUNGSFELD], { [L.SPANNUNGSFELD]: 3 }, 0, null, 2)).toBeCloseTo(base + 2 * per(3), 9);
+    expect(lightningCritChance(light(), [L.KETTENBLITZ], {}, 0, null, 2)).toBeCloseTo(base, 9); // ohne den Skill kein Beitrag
+    expect(lightningCritChance(initLightning(), [L.SPANNUNGSFELD], {}, 0, null, 2)).toBe(0);    // inaktiv gar nichts
   });
   it("feldFeed (Episch): die Karte mit den WENIGSTEN Stapeln der Formation, Gleichstand die vordere Position; erst ab Episch", () => {
     const stacks = { 0: 2, 1: 1, 2: 3, 3: 1 };

@@ -17,7 +17,7 @@ import { SKILL_DEFS, activeLightningCount, isLegendarySkill, boostedTier } from 
    und Vorentladung (SK_LIGHTNING_12) sind neu, Kettenblitz vertieft statt verbreitert, Blitzfänger hat keine Stapel-
    Schwelle mehr. §7.19: Überschlag ist gestrichen. §7.51: Blitz hat KEINEN eigenen Faktor im
    Score-Produkt — der Crit-Multiplikator IST seine Multiplikator-Achse; das Spannungsfeld (SK_LIGHTNING_13) zahlt
-   seitdem auf die Crit-CHANCE, je ionisierter Karte der Formation. §7.24:
+   seitdem auf die Crit-CHANCE; §7.56 je FORMATION der Position, ohne Ionisierungs-Bedingung. §7.24:
    Überspannung macht den Überschuss eines Crits über dem Deckel zu Ladung (vorher Dauerwert je Leiste).
    ============================================================ */
 
@@ -26,7 +26,7 @@ import { SKILL_DEFS, activeLightningCount, isLegendarySkill, boostedTier } from 
 export const L = Object.freeze({
   ABLEITER: "SK_LIGHTNING_01", IONENFELD: "SK_LIGHTNING_02", KETTENBLITZ: "SK_LIGHTNING_03", LICHTBOGEN: "SK_LIGHTNING_04", // 04: Lichtbogen ersetzt Überspannung (§7.28)
   RESTSTROM: "SK_LIGHTNING_05", GEWITTERFRONT: "SK_LIGHTNING_06", LADUNGSSERIE: "SK_LIGHTNING_07", KURZSCHLUSS: "SK_LIGHTNING_09",
-  ENTLADUNG: "SK_LIGHTNING_10", BLITZFAENGER: "SK_LIGHTNING_11", VORENTLADUNG: "SK_LIGHTNING_12", SPANNUNGSFELD: "SK_LIGHTNING_13", // 13: §7.51 auf der Crit-Chance (Streuung), war seit §7.43 ein eigener Score-Faktor
+  ENTLADUNG: "SK_LIGHTNING_10", BLITZFAENGER: "SK_LIGHTNING_11", VORENTLADUNG: "SK_LIGHTNING_12", SPANNUNGSFELD: "SK_LIGHTNING_13", // 13: §7.51 auf der Crit-Chance, §7.56 je Formation der Position (Breite)
   BLITZSCHLAG: "SK_LIGHTNING_15", SERIENSCHUTZ: "SK_LIGHTNING_17", // SK_LIGHTNING_14 Überschlag: gestrichen (§7.19)
   DOPPELENTLADUNG: "SK_LIGHTNING_L02", HOCHSPANNUNG: "SK_LIGHTNING_L03", RESONANZ: "SK_LIGHTNING_L04", // L04: Resonanz ersetzt Durchschlag (§7.25); L01 Donnergott gestrichen (§6.11, Owner: drei je Fraktion, die stärksten)
 });
@@ -93,17 +93,17 @@ export function lightParam(skills, skillTiers, id, key) {
    §7.30: die Ladungsserie zahlt jetzt in Ladung, nicht mehr in Chance — damit liest gerade niemand die Serie.
    Der Platz bleibt als `_streak` stehen, weil die Engine sie ohnehin berechnet und weiterreicht: eine künftige
    Serie-zu-Chance-Quelle gehört hierher, und die 15 Aufrufstellen zweimal umzustellen ist der teurere Weg.) */
-export function lightningCritChance(lightning, skills, skillTiers, _streak = 0, card = null, litCards = 0) {
+export function lightningCritChance(lightning, skills, skillTiers, _streak = 0, card = null, forms = 0) {
   if (!lightning || !lightning.active) return 0;
   let c = C.LIGHTNING_CRIT_SOCKET + activeLightningCount(skills) * C.LIGHTNING_CRIT_PER_SKILL + (lightning.stormCritBonus || 0);
   const perStack = lightParam(skills, skillTiers, L.LICHTBOGEN, "critPerStack");
   if (perStack && card) c += perStack * effectiveStacks(card, skills, skillTiers);
-  /* Spannungsfeld (§7.51, Owner): je IONISIERTER KARTE der Formation. Es steht damit gegen Lichtbogen eine Zeile
-     höher, der die Tiefe EINER Karte belohnt — Streuung gegen Tiefe, auf derselben Achse. `litCards` ist 0, wo die
-     Formation nicht bekannt ist (Statusleiste), genau wie `card` bei Lichtbogen: die Anzeige zeigt den Bau, nicht
-     den Stich. Die 100-%-Klemme deckelt den Beitrag von selbst; darüber zahlt er über die Überschuss-Regel. */
-  const perCard = lightParam(skills, skillTiers, L.SPANNUNGSFELD, "critPerCard");
-  if (perCard && litCards) c += perCard * litCards;
+  /* Spannungsfeld (§7.56, Owner): je FORMATION dieser Position, ohne Ionisierungs-Bedingung. Es steht damit
+     gegen Lichtbogen eine Zeile höher, der die Stapeltiefe EINER Karte belohnt: Breite gegen Tiefe. `forms` ist 0,
+     wo die Formationen nicht bekannt sind (Statusleiste), genau wie `card` bei Lichtbogen — die Anzeige zeigt den
+     Bau, nicht den Stich. Die 100-%-Klemme deckelt den Beitrag von selbst. */
+  const perForm = lightParam(skills, skillTiers, L.SPANNUNGSFELD, "critPerForm");
+  if (perForm && forms) c += perForm * forms;
   return c;
 }
 
@@ -224,9 +224,14 @@ export function formationStacks(card, posForm, slot, cardAt) {
   return out.length > 1 ? out : [];
 }
 
-// Wie viele Karten der Formation sind ionisiert? Der Kennwert, auf dem Spannungsfeld sitzt (§7.51).
-export const litFormationCards = (card, posForm, slot, cardAt) =>
-  formationStacks(card, posForm, slot, cardAt).filter((m) => m.stacks > 0).length;
+/* Wie viele echte Formationen hängen an dieser Position? Der Kennwert, auf dem Spannungsfeld sitzt (§7.56).
+   Meta-Faktoren (Anker, Nachhall) haben keine `members` und zählen nicht mit.
+   §7.56 (Owner): vorher waren es die IONISIERTEN KARTEN der Formation. Die Sonde `feld-formationen` hat gemessen,
+   dass diese Bedingung den Skill früh abschaltet — in den Runden 1–10 haben 86 % der Formations-Siege gar keine
+   ionisierte Karte in Reichweite, und eine Position hängt ohnehin in nur 1,4–1,7 Formationen. Ohne die Bedingung
+   zündet er ab Runde 1 bei JEDEM Formations-Sieg, und genau das soll er: früher Crits, früher volle Leisten. */
+export const positionFormations = (posForm) =>
+  (posForm?.formations || []).filter((f) => Array.isArray(f.members) && f.members.length).length;
 
 /* Episch-Anhang: der Formations-Sieg lädt die Karte mit den wenigsten Stapeln seiner Formation nach (Gleichstand:
    die vordere Position). Läuft NICHT durch Doppelentladung — das ist keine Ionisierung durch die Leiste, sondern

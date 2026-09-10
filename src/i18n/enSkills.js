@@ -50,7 +50,7 @@ export default {
   "ability.SK_LIGHTNING_14.name": "Arc-Over",
   "ability.SK_LIGHTNING_14.desc": "Per 10 points of crit chance above 100%: +0.02× crit multiplier while the excess lasts. Uncommon +0.03×, Rare +0.04×, Epic +0.06×.",
   "ability.SK_LIGHTNING_13.name": "Voltage Field",
-  "ability.SK_LIGHTNING_13.desc": "When you win with a card that stands in a formation, every ionized card in that formation grants +5% crit chance on the trick. Uncommon +7%, Rare +10%, Epic +15%, and the card with the fewest stacks in that formation gains +1 stack.",
+  "ability.SK_LIGHTNING_13.desc": "When you win with a card that stands in a formation, every formation at that position grants +5% crit chance on the trick. Uncommon +7%, Rare +10%, Epic +15%, and the card with the fewest stacks in that formation gains +1 stack.",
   "ability.SK_LIGHTNING_03.name": "Chain Lightning",
   "ability.SK_LIGHTNING_03.desc": "Every 2nd full bar ionizes one more card in order. Uncommon: every bar +1 card. Rare: +2 cards. Epic: +3 cards, and the target card gets one extra stack.",
   "ability.SK_LIGHTNING_15.name": "Lightning Strike",

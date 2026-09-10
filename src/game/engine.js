@@ -10,7 +10,7 @@ import { coinsForFormations } from "./coins.js"; // Münz-Ökonomie (§2.2): Ein
 // exp skill rework: die Blitz-Mechanik (Passiv, 15 Skills, 4 Legendäre) lebt im Fraktionsmodul; die Engine ruft nur
 // ihre reinen Übergänge (Crit-Beiträge, Ladungsgewinn, volle Leiste, Niederlage, Rundenende).
 import { lightningCritChance, lightningCritMult, overcritMult, blitzfaengerValue, ionenfeldValue, fieldTick, ionScoreFor as lightIonScore, ionCritMultFor as lightIonCritMult, chargeGainOnWin, entladungScoreFor,
-  blitzschlagStacks, litFormationCards, feldFeed, lightningOnLoss, fillBar as lightFillBar, lightningCycleEnd, maxChargeFor,
+  blitzschlagStacks, positionFormations, feldFeed, lightningOnLoss, fillBar as lightFillBar, lightningCycleEnd, maxChargeFor,
   hasDoppelentladung, hasResonanz, resonantStacks } from "./factions/lightning.js";
 // exp skill rework: die Feuer-Mechanik (Passiv, 15 Skills, 4 Legendäre) lebt ebenso im Fraktionsmodul — die Engine
 // ruft ihre Übergänge (Kampfwert-Bonus, Sieg, Niederlage, Hitze-Multiplikator, Rundenende, Brand-Wechsel).
@@ -452,7 +452,7 @@ export function resolveTrick(state, rng) {
   const glacierCrit = glacierActive && glacierLocked[actualPos] && glacierRoles.includes(GLACIER_ROLES.SPROEDBRUCH)
     ? glacierMassNow(actualPos) * ice.sproedbruchCrit : 0;
   const rawCrit = critChanceRawFor(perks, wctx) + familyCritChanceRaw(familyTiers, critFamCtx)
-                  + lightningCritChance(lightning, skills, skillTiers, winStreak + 1, pCardR, litFormationCards(pCard, posForm, actualPos, (k) => deck[playerOrder[k]])) // exp: Passiv je Blitz-Skill + Rampen + Lichtbogen (§7.28: je Stapel der gespielten Karte, pCardR = mit Resonanz-Summe) + Spannungsfeld (§7.51: je ionisierter Karte der Formation; pCard, NICHT pCardR — die Resonanz-Sicht traegt die Formationssumme schon)
+                  + lightningCritChance(lightning, skills, skillTiers, winStreak + 1, pCardR, positionFormations(posForm)) // exp: Passiv je Blitz-Skill + Rampen + Lichtbogen (§7.28: je Stapel der gespielten Karte, pCardR = mit Resonanz-Summe) + Spannungsfeld (§7.56: je Formation dieser Position, ohne Ionisierungs-Bedingung)
                   + glacierCrit                                                              // §5.18 Sprödbruch: je Punkt Masse
                   + (anchorType === "crit" ? (aParam("crit") || 0) : 0); // Kritanker (§4.2, Stärke = Stufe)
   // (§7.25: Durchschlag — der Crit auf einer Niederlage — ist gestrichen; auf dem Platz steht Resonanz, oben bei pCardR.)

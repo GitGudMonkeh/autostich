@@ -54,7 +54,7 @@ export default {
   "ability.SK_LIGHTNING_14.name": "Arco",
   "ability.SK_LIGHTNING_14.desc": "Por cada 10 puntos de probabilidad de crítico por encima del 100 %: +0,02× de multiplicador de crítico mientras dure el exceso. Poco común +0,03×, Rara +0,04×, Épica +0,06×.",
   "ability.SK_LIGHTNING_13.name": "Campo de Tensión",
-  "ability.SK_LIGHTNING_13.desc": "Si ganas con una carta que forma parte de una formación, cada carta ionizada de esa formación da +5 % de probabilidad de crítico en la baza. Poco común +7 %, Rara +10 %, Épica +15 %, y la carta con menos acumulaciones de esa formación recibe +1.",
+  "ability.SK_LIGHTNING_13.desc": "Si ganas con una carta que forma parte de una formación, cada formación de esa posición da +5 % de probabilidad de crítico en la baza. Poco común +7 %, Rara +10 %, Épica +15 %, y la carta con menos acumulaciones de esa formación recibe +1.",
   "ability.SK_LIGHTNING_03.name": "Rayo en Cadena",
   "ability.SK_LIGHTNING_03.desc": "Cada 2.ª barra llena ioniza una carta más en el orden. Poco común: cada barra +1 carta. Rara: +2 cartas. Épica: +3 cartas, y la carta objetivo recibe una acumulación extra.",
   "ability.SK_LIGHTNING_15.name": "Impacto de Rayo",
