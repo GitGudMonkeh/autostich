@@ -8482,6 +8482,87 @@ Drei, alle gegengeprobt, indem die Naht absichtlich auf die Stapelsumme zurückg
 
 ---
 
+### 7.48 §7.47 nachgemessen: der Schwanz sitzt, der Skill ist tot (2026-09-10) — gemessen
+
+Blitz-Mono, 12.050 Läufe, dieselbe Zeile wie §7.41/§7.46. Genau **eine** Änderung seit §7.46 (Spannungsfeld liest
+Karten statt Stapel), die Zahl ist also sauber zuzuordnen.
+
+#### A · Die Verteilung: das Ziel ist getroffen
+
+| | Basis (vor §7.42) | §7.46 | jetzt |
+| --- | ---: | ---: | ---: |
+| Median | 415.748.556 | 3.115.597.844 | **1.639.303.628** |
+| p90 | 1,89 Mrd | 84,4 Mrd | **20,9 Mrd** |
+| p95 | 3,44 Mrd | 374,9 Mrd | **35,3 Mrd** |
+| max | 71,5 Mrd | 3.545 Mrd | 3.425 Mrd |
+| Siegquote | 68,6 % | 66,9 % | **70,0 %** |
+
+**p95 ist auf ein Zehntel gefallen** (375 → 35,3 Mrd), p90 auf ein Viertel, der Median auf die Hälfte. Der
+Körper der Verteilung ist eingefangen, und die Siegquote ist die höchste aller vier Messungen.
+
+**Der max hat sich nicht bewegt** (−3 %). Das ist keine Überraschung, sondern die Vorhersage aus §7.47 D: der
+Umbau nimmt EINE der zwei Achsen heraus. Der eine Extremlauf lebt vollständig auf der anderen — Basis-Score ×
+Crit-Multiplikator, beide linear in der Stapeltiefe, beide ohne Deckel. `max/Median` steht deshalb rechnerisch
+schlechter da als vorher (2.089× statt 1.138×), aber nur, weil der Median gefallen ist und der Ausreißer nicht.
+
+Blitz steht damit bei **3,9× der Basis** statt 7,5×. Wie angekündigt: nicht zurück auf 416M.
+
+#### B · Der Preis: der umgebaute Skill misst nichts mehr
+
+**Spannungsfeld +139 % → +3 %**, Haltequote 100 % → 66 %, Explore-Lift 1,014 → 0,867. Je Stufe:
+
+| Stufe | Satz | Lift |
+| --- | ---: | ---: |
+| Normal | 2 % | **0,52** |
+| Selten | 3 % | **0,60** |
+| Sehr selten | 4 % | 1,22 |
+| Episch | 6 % | 1,43 |
+
+**Unter „Sehr selten" ist der Skill keinen Platz wert.**
+
+Der Fehler liegt bei mir, und er ist benennbar: ich habe den Satz am **Median** der alten Auszahlung geeicht
+(+17 % → +24 %) und daraus geschlossen, der Normalfall bleibe gleich. Der Median war aber nie, wo der Wert des
+Skills lag. Die gemessenen +139 % kamen fast vollständig aus genau dem Schwanz, den der Umbau absichtlich
+abschneidet (p99 der alten Stapelsumme: 1.423 Stapel = +996 % auf den Stich). Ein Skill, dessen Wert im
+99. Perzentil steckt, verliert seinen Wert, wenn man das 99. Perzentil kappt — das hätte ich vorher sehen können,
+statt „der Median liegt leicht über heute" zu berichten.
+
+Die Bauform selbst ist davon nicht widerlegt: die Kartenzahl ist begrenzt und tut, was sie soll. Nur die Leiter
+ist zu flach.
+
+#### C · Was der Umbau sonst bewegt hat
+
+| Skill | Basis | §7.46 | jetzt |
+| --- | ---: | ---: | ---: |
+| Doppelentladung (L) | +235 % | +420 % | +330 % |
+| Kettenblitz | +5 % | +601 % | **+238 %** |
+| Hochspannung (L) | +92 % | +420 % | +217 % |
+| Resonanz (L) | +170 % | +133 % | +213 % |
+| Kurzschluss | +56 % | +106 % | +116 % |
+| Blitzableiter | +2 % | +77 % | +54 % |
+
+**Kettenblitz ist nicht repariert, nur gedämpft** (+601 → +238 %). Er steht weiter als zweitstärkster normaler
+Skill weit über seinem Basiswert von +5 %, weil seine beiden verbleibenden Achsen offen sind. Das ist derselbe
+Befund wie beim max in A, an einem anderen Zeugen.
+
+Drei Skills sind mitgefallen, ohne angefasst worden zu sein: Lichtbogen +3 → −10 %, Serienschutz 0 → −15 %,
+Blitzfänger +13 → −4 %. Alle drei hängen an der Stapeltiefe der gespielten Karte, deren Auszahlung mit dem
+Wegfall des Feld-Faktors kleiner geworden ist.
+
+#### D · Was offen ist
+
+1. **Die Leiter des Spannungsfelds ist zu flach** (B). Eine Verdopplung auf **4/6/8/12 %** hielte die Obergrenze
+   intakt (die Kartenzahl bleibt begrenzt) und brächte Normal auf +16 % je Formations-Sieg statt +8 %. Nicht
+   gerechnet, ob das reicht — die Beziehung zwischen Satz und gemessenem Effekt ist in dieser Reihe nicht linear
+   und gehört gesweept, nicht geschätzt.
+2. **Der weiche Crit-Deckel** (§7.46 G 1) ist weiter der Haupthebel und jetzt zweifach belegt: am unbewegten max
+   und an Kettenblitz. Gerechnet, nicht gemessen: Rest-Steigung 0,20 → 0,05 bringt den Stich bei 400 Stapeln von
+   2,92× auf 1,66× gegenüber vor §7.42.
+3. Unverändert offen: Gewitterfronts Episch-Anhang (−6 % bei 95 % Haltequote), und Hochspannung ist mono
+   weiterhin nicht beurteilbar (§7.41 C).
+
+---
+
 ### 5.30 Die Eis-Skills auf dem neuen Motor (2026-09-09) — gemessen, nichts umgesetzt
 
 **Owner:** „und dann schauen wir uns alle skills an die davon profitieren müssen und designen wie."
@@ -8900,3 +8981,4 @@ leichtesten haben.
 | 2026-09-10 | Die Anzeige zeigt die wirksame Stufe (§7.45, Owner: „überall bei dem Skill auch die neue Rarität angezeigt wird, Skillauswahl, Panels usw."). `tierOf` gab die GEWÜRFELTE Stufe, die Engine rechnet seit §7.39 über `boostedTier` — und das Badge war dabei das kleinere Problem: `skillDef(id, tier)` wählt auch den TEXT, ein von Hochspannung gehobener Skill zeigte „SELTEN" und beschrieb die Selten-Zahlen, während der Stich die Episch-Zahlen abrechnete. **Die Beschreibung log.** Neu `effectiveTierOf`/`tierIsLifted` in skills.js als EINE Quelle für alle Oberflächen (derselbe Griff wie `totalCritMult` §7.39 und `displayCritChance` §7.44); umgestellt sind gehaltene Skills, Skillauswahl (Bestand, Ersetzen-Liste UND Angebot — Owner: „dort auch schon anzeigen", über `boostedTier(state.skills, rolledTier)`, weil die Angebotsstufe in `skillOfferTiers` steht), Bauplan-Panel, Chronik-Detail und Lauf-Statistik. **Der Aufwert-Screen bleibt bewusst auf der gewürfelten Stufe** — dort ist sie der Preis, mit der wirksamen stünde ein gehobener Skill fälschlich auf „höchste Stufe" und `upgradeBuy` rechnete falsch. Die Marke ist ein gedämpftes „gehoben" neben dem Badge, Form wie das vorhandene „gehalten", kein neues Symbol. Drei Wächter, alle gegengeprobt, darunter einer, der prüft, dass keine der fünf Oberflächen wieder `tierOf` liest. |
 | 2026-09-10 | §7.42/§7.43/§7.44 nachgemessen (§7.46). Blitz-Mono, vier Varianten à 12.050 Läufe. Zuerst der Aufsetz-Fund: die Basis liegt VOR §7.42, es steckten also DREI Zahlenänderungen in der Messung, nicht zwei — diesmal getrennt statt wie in §7.41 vermischt. **Blitz mono 416M → 3.116M (7,5×)**, und der Schwanz ist das eigentliche Problem: p95/Median 8× → 120×, max/Median 172× → 1.138×. Das 2×2 über die zwei ENV-Regler zeigt: **mit beiden Deckeln zurück steht Blitz bei 523M gegen 416M Basis, Spannungsfeld allein kostet also +26 %** (misst dort +45 %, ein normaler Skill). §7.44 ist in keiner Zelle der Treiber (die zwei Zellen sagen ×3,2 und ×0,7 — der gierige Spieler lernt je Variante neu, unter Faktor 2 ist diese Reihe nicht interpretierbar; das ist die Rauschgrenze und sie ist jetzt beziffert). **Treiber ist der weiche Crit-Deckel, Zeuge ist Kettenblitz: +5 % → +601 % → +11 % mit den Deckeln zurück.** Ursache strukturell: ein Stapel zahlt jetzt auf DREI Achsen ohne Obergrenze (Basis-Score +75, Crit-Mult +0,15 seit §7.42 nur noch weich gedeckelt, `lightMult` +0,3–0,7 % neu aus §7.43), und die drei stehen als Produkt in der Formel — aus linear ist kubisch geworden. Mit den echten Funktionen nachgerechnet zahlt eine Karte mit 400 Stapeln 243.200 → 2.177.552, Faktor 8,95× und ohne Ende. **Dazu ein Konstruktionsfehler von mir in §7.43 C**: Spannungsfeld zahlt NICHT für gestreute Stapel — `formationStacks` bildet die Summe, und eine Summe unterscheidet nicht drei Karten mit je 20 von einer mit 60. Der Skill steht nicht gegen Kettenblitz, er multipliziert mit ihm; die Entscheidung, die Blitz fehlen sollte, ist nicht gebaut. Der Überschuss über 100 % gemessen (Sonde, 120 Läufe): 31 % der Stiche in den Runden 41–50, im Mittel 52 Punkte darüber = +1,56× — die §7.44-Sorge (400 % = +9×) tritt im gierigen Lauf nicht ein. Neue Sonde `spannungsfeld.mjs`. Nichts umgesetzt, vier offene Owner-Entscheide in §7.46 G. |
 | 2026-09-10 | Spannungsfeld zählt Karten statt Stapel (§7.47, Owner-Entscheid auf §7.46 G: nur Vorschlag 2, der weiche Crit-Deckel bleibt vorerst). `lightFormMult` liest nicht mehr die Stapel**summe** der Formation, sondern die Zahl der ionisierten **Karten**: **0,3/0,4/0,5/0,7 % je Stapel → 2/3/4/6 % je ionisierter Karte**, Episch-Anhang unverändert. Der Grund in einer Zeile: eine Summe wächst ins Unendliche (gemessen Median 24, p99 1.423), eine Kartenzahl ist durch das Brett begrenzt (Median 4, höchstens 40). Damit hängt `lightMult` nicht mehr an der Tiefe EINER Karte und multipliziert sich nicht mehr mit den zwei anderen Stapel-Achsen — aus dem kubischen Ausschlag aus §7.46 C wird ein quadratischer. Die Sätze sind so gewählt, dass der Normalfall bleibt und nur der Ausreißer fällt: Median +17 → +24 %, p90 +76 → +30 %, Extremfall **+996 → +240 %**. Der Episch-Anhang (+1 Stapel auf die dünnste Karte der Formation) passt jetzt erst richtig — er macht aus einer dunklen Karte eine leuchtende, also genau das, wofür der Skill zahlt. **Zwei Dinge offen benannt:** (a) spät SÄTTIGT der Skill, weil in den Runden 41–50 ohnehin 4,40 von 4,60 Mitgliedern ionisiert sind — dort misst er die Formationsgröße, nicht die Streuung; die Bedingung greift früh und mittig (Runden 21–30: 2,00 von 4,17). (b) Der Umbau nimmt EINE der zwei offenen Achsen heraus, nicht beide: bei 400 Stapeln zahlt der Stich weiterhin 2,92× so viel wie vor §7.42, **Blitz landet damit nicht wieder bei 416M**. Der Rest ist der weiche Crit-Deckel (§7.46 G 1, weiter offen); gerechnet, nicht gemessen, brächte eine Rest-Steigung 0,20 → 0,05 den Faktor auf 1,66×. Drei Wächter, alle gegengeprobt durch Zurückdrehen auf die Stapelsumme; einer davon hält fest, dass `perStack` nicht zurückkommen darf — ein stiller Rückfall dorthin würde keinen Text im Spiel ändern. UNGEMESSEN. |
+| 2026-09-10 | §7.47 nachgemessen (§7.48). Blitz-Mono, 12.050 Läufe, genau EINE Änderung seit §7.46, die Zahl ist also sauber zuzuordnen. **Das Ziel ist getroffen: p95 374,9 → 35,3 Mrd (ein Zehntel), p90 84,4 → 20,9 Mrd, Median 3.116 → 1.639M, Siegquote 66,9 → 70,0 % (die höchste aller vier Messungen).** Der Körper der Verteilung ist eingefangen. **Der max hat sich NICHT bewegt** (3.545 → 3.425 Mrd, −3 %) — genau die Vorhersage aus §7.47 D: der eine Extremlauf lebt vollständig auf der zweiten, unangetasteten Achse (Basis-Score × Crit-Mult, beide linear in der Tiefe, beide ohne Deckel). Blitz steht bei 3,9× der Basis statt 7,5×, also wie angekündigt nicht zurück auf 416M. **Der Preis, und der Fehler ist meiner: Spannungsfeld misst +139 → +3 %**, Haltequote 100 → 66 %, und je Stufe liegt der Lift bei 0,52 / 0,60 / 1,22 / 1,43 — **unter „Sehr selten" ist der Skill keinen Platz wert**. Ich hatte den Satz am MEDIAN der alten Auszahlung geeicht (+17 → +24 %) und daraus berichtet, der Normalfall bleibe gleich. Der Median war aber nie, wo der Wert lag: die alten +139 % kamen fast vollständig aus dem Schwanz, den der Umbau absichtlich abschneidet (p99 der Stapelsumme 1.423 = +996 % auf den Stich). Ein Skill, dessen Wert im 99. Perzentil steckt, verliert ihn, wenn man das 99. Perzentil kappt — das war vorher sichtbar. Die Bauform ist davon nicht widerlegt (die Kartenzahl ist begrenzt und tut, was sie soll), nur die Leiter ist zu flach. **Kettenblitz ist nur gedämpft, nicht repariert** (+601 → +238 %, Basis +5 %) — derselbe Befund wie beim max, an einem zweiten Zeugen. Drei Skills sind ungefragt mitgefallen (Lichtbogen +3 → −10, Serienschutz 0 → −15, Blitzfänger +13 → −4), alle drei hängen an der Stapeltiefe der gespielten Karte. Offen: die Leiter des Feldes (Verdopplung auf 4/6/8/12 % wäre der Kandidat, gehört gesweept statt geschätzt) und der weiche Crit-Deckel als Haupthebel, jetzt zweifach belegt. |
