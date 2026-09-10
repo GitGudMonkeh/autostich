@@ -8006,6 +8006,78 @@ beabsichtigt — beabsichtigt war, den Skill von Mono nach Misch zu verschieben.
 
 ---
 
+### 7.42 Der Crit-Deckel wird weich, Entladung wechselt die Achse (2026-09-10, Owner) — umgesetzt, UNGEMESSEN
+
+Owner nach der Mittelbau-Diagnose: „Deckel weich machen und Dupletten von der Achse nehmen", dann alle drei
+Vorschläge angenommen (Steigung 0,2 · Entladung auf Basis-Score · Spannungsstau-Entwürfe).
+
+#### A · Der Befund, der dahinter steht
+
+Der Crit-Multiplikator hat **5,75× Kopfraum** (Basis 2,25, Deckel 8). Was ihn füllt:
+
+| Quelle | füllt den Kopfraum allein bei |
+| --- | --- |
+| Stapel (0,15× je Stapel) | **38 Stapeln** — mit Kurzschluss schon bei **19** |
+| Vorentladung Episch (0,15× je Serienpunkt) | Serie 38 |
+| Spannungsstau Normal (0,05× je Sieg ohne Crit) | 115 Siegen in Folge |
+| Entladung Normal (0,02× je volle Leiste) | **288 vollen Leisten** |
+
+Ein Doppelentladung/Resonanz-Bau erreicht 19 Stapel mühelos. Ab da ist jeder weitere Punkt Crit-Multiplikator, aus
+welcher Quelle auch immer, exakt null wert — und das erklärt vier der sechs schwächsten Blitz-Skills.
+
+**Es geht tiefer als §7.31.** Ein Stapel zahlt ZWEIERLEI: +75 Basis-Score und +0,15× Crit-Multiplikator. Über dem
+Deckel bleibt nur der Score. Der harte Deckel halbiert also die Auszahlung der **Kernressource der Fraktion**, nicht
+nur den Wert von vier Skills — was auch Ladungsserie erklärt (−11 % bei 100 % Haltequote): sie beschleunigt die
+Leiste, die Leiste macht Stapel, und Stapel sind ab Nummer 19 nur noch halb so viel wert.
+
+#### B · Der weiche Deckel
+
+```
+m > CRIT_MULT_CAP  →  CRIT_MULT_CAP + (m − CRIT_MULT_CAP) × CRIT_MULT_SOFT_SLOPE
+```
+
+`CRIT_MULT_SOFT_SLOPE = 0,2`, dieselbe Form wie das vorhandene `WIN_SOFTCAP`. Eine Quelle (`softCritMult` in
+`constants.js`), die Motor UND Anzeige lesen — sonst driften sie wieder auseinander wie in §7.39.
+
+| gebaut | 10× | 16× | 36× |
+| --- | --- | --- | --- |
+| gezahlt | 8,4 | 9,6 | 13,6 |
+
+**`SLOPE = 0` stellt exakt den alten harten Deckel wieder her** — der Rückweg braucht keine Codeänderung, nur eine 0.
+
+#### C · Entladung von der Multiplikator- auf die Score-Achse
+
+Vier Skills sagten dasselbe (Entladung, Spannungsstau, Vorentladung, Gewitterfronts Episch-Anhang). Behalten hat die
+Achse **Vorentladung** — die einzige, die eine Entscheidung verlangt (Serie aufbauen und halten); die anderen sammeln
+passiv.
+
+Die volle Leiste zahlt schon in Rate (Blitzableiter, Reststrom), Kartenwert (Ionenfeld), Crit-Chance (Gewitterfront),
+Stapel (Kettenblitz) und Multiplikator. Frei war allein der **Basis-Score**.
+
+| | alt | neu |
+| --- | --- | --- |
+| Entladung | +0,02/0,03/0,04/0,06× Crit-Mult je Leiste | **+2/3/4/6 Basis-Score je Sieg**, dauerhaft |
+| Episch-Extra | der Leisten-füllende Crit zählt ×2 Mult | **die Rampe zählt bei einem Crit doppelt** |
+
+Eigener Zustand `lightning.entladungScore`; `entladungMult` bleibt bestehen, wird aber nur noch von Gewitterfronts
+Episch-Anhang gespeist. **Startwerte, NICHT gemessen** — wie viele volle Leisten ein Lauf hat, ist nicht erhoben.
+
+#### D · Gewitterfront bleibt vorerst
+
+Ihr Episch-Anhang (+0,02× Crit-Mult) steht jetzt allein auf der Achse. Er war nie ihre Identität — sie ist der
+Crit-Chance-Skill — aber er war NICHT Teil der drei abgenommenen Punkte. Offen, Owner-Entscheid.
+
+#### E · Wächter
+
+Drei, alle gegengeprobt:
+
+- der Backstop ist weich: der Überschuss kommt an, aber gedämpft, wächst linear mit der Steigung, und unter dem Knick
+  ändert sich nichts (macht man `softCritMult` wieder hart, fällt er),
+- Entladungs Rampe zahlt Basis-Score und fasst den Multiplikator NICHT an; Episch verdoppelt sie bei einem Crit,
+- die Stufenleiter trägt `scorePerBar` und darf `multPerBar`/`fillDouble` auf keiner Stufe zurückbekommen.
+
+---
+
 ### 5.30 Die Eis-Skills auf dem neuen Motor (2026-09-09) — gemessen, nichts umgesetzt
 
 **Owner:** „und dann schauen wir uns alle skills an die davon profitieren müssen und designen wie."
@@ -8418,3 +8490,4 @@ leichtesten haben.
 | 2026-09-10 | Zwei Owner-Entscheide nach §7.38 (§7.39). (a) **Hochspannung wird ein Misch-Legendäres**: +1 Stufe statt +2, dafür auf JEDE Fraktion statt nur auf Blitz. §7.38 hatte gezeigt, dass keine Zahl den Skill ins Band bringt, weil die vierstufige Leiter bei +2 sättigt; also eine andere Mechanik. Der Hebel wandert aus `lightning.js` als `boostedTier` nach `skills.js` (gemeinsame Quelle, ein Import auf lightning.js aus den anderen drei Modulen wäre ein Zyklus) und wird an vier Nähten gelesen: `effectiveTier`, `fireTier`, `plantTier` und — für Eis — `iceRoleTiers`, weil die Stufe dort einmal je Rolle geseedet wird. `HOCHSPANNUNG_STEPS` 2 → 1, Skilltext neu. Wächter prüft alle vier Fraktionen über ihre eigene Stufenfunktion (nicht über den Helfer) und ist gegengeprobt. (b) **Crit-Anzeige, Entscheid B**: der Motor deckelt korrekt, `totalCritMult` tat es nicht — Statusleiste und Ladungsleiste zeigten Werte, die kein Stich zahlt, und luden damit ausgerechnet dort zum Weiterkaufen ein, wo laut §7.31 ohnehin 81 % verfällt. `totalCritMult` klemmt jetzt wie der Motor, der gebaute Wert bleibt als `totalCritMultRaw` und steht als Unterzeile daneben („am Deckel · 11,3 gebaut"). Ehrlich benannt: die Zeile war und bleibt unvollständig, weil `lightIonCritMult` an der Siegkarte hängt und keine Build-Anzeige sie kennen kann — der echte Stich liegt oft höher am Deckel, als sie vermuten lässt. Beides UNGEMESSEN. |
 | 2026-09-10 | Resonanz auf 0,7 und die Gedankenstriche raus (§7.40, Owner). `RESONANZ_SHARE` 1,5 → **0,7**: §7.38 hatte das Zielband 250–300 % mit +438 % verfehlt, zwei Messpunkte ergeben ein Potenzgesetz (Regler ×0,667 → Wirkung ×0,79, Exponent 0,58) und daraus 0,7 für rund +280 %. Der Anteil liegt damit UNTER dem Nullpunkt des Reglers: eine Karte bekommt 70 % der Partnersumme statt der vollen. Zweitens, Owner wörtlich „keine bescheuerten Bindestriche": alle fünf Gedankenstriche aus den Kartentexten raus — Hochspannung und Abbruchkante (beide von mir in dieser Runde), Eiswall und der Glutbett-Badge (Bestand) sowie der Eis-Passivtext in de/en/es. §5.18 hatte die Regel für die drei Eis-Texte schon aufgestellt; sie ist jetzt ein Wächter über ALLE Skill- und Passiv-Texte (`i18n-guards`), gegengeprobt. Bewusst NICHT im Wächter und offen: 19 Gedankenstriche in Glossar-Einträgen und Tooltips, davon drei aus der Eis-Runde — das ist ein eigener Textdurchgang und ein Owner-Entscheid. Hochspannung bleibt wie in §7.39 gebaut (Owner: „der passt"). |
 | 2026-09-10 | §7.39/§7.40 nachgemessen (§7.41). Blitz-Mono, 6 min, zwei Änderungen zugleich (nicht trennbar, war so angesagt). **Blitz ist eingefangen: mono 1,028 Mrd → 416M**, damit Bl 416M · Pf 367M · Ei 348M/224M · Fe 137M — Blitz und Pflanze gleichauf, der 12-fache Abstand aus §7.38 ist weg. Doppelentladung +275 → +235 %, Resonanz +438 → **+170 %**, Hochspannung +428 → **+92 %**. **Mein Potenzgesetz aus §7.40 war falsch**: aus zwei Punkten gefittet (Exponent 0,58) sagte es für 0,7 rund +280 % voraus, gemessen sind +170 %; der Exponent liegt zwischen 1,5 und 0,7 tatsächlich bei 1,24, die Elastizität steilt sich nach unten auf. Zwei Punkte reichten für diese Kurve nicht. Teil der Abweichung ist nicht Resonanz: Hochspannung fiel gleichzeitig von +2 auf +1 Stufe und wird in 65 % der Läufe gehalten, dort erzeugt jeder Blitz-Skill weniger Stapel — und Resonanz teilt genau die. **Hochspannung lässt sich mono gar nicht beurteilen**: in einer Mono-Welt ist „+1 für alle Fraktionen" identisch mit „+1 für Blitz", die Messung sieht also nur 2 → 1, nicht den Umbau; dafür braucht es die Misch-Welten. Preis der Runde: der Mittelbau ist eingebrochen — acht Skills bei oder unter null, und Gewitterfront fiel +69 → −6, Kettenblitz +33 → +5, Blitzableiter +24 → +2, ohne angefasst worden zu sein. Ursache ist Hochspannung: eine Stufe weniger trifft jeden der dreizehn gehaltenen Skills, nicht nur den Legendären. Das war nicht beabsichtigt. |
+| 2026-09-10 | Crit-Deckel weich, Entladung auf die Score-Achse (§7.42, Owner, Zahlen vorher abgenommen). Befund: der Multiplikator hat 5,75× Kopfraum, und **Stapel allein füllen ihn bei 38 — mit Kurzschluss schon bei 19**, was ein Doppelentladung/Resonanz-Bau mühelos erreicht; ab da ist jeder weitere Punkt aus jeder Quelle null wert. Das geht tiefer als §7.31: ein Stapel zahlt Basis-Score UND Crit-Multiplikator, über dem Deckel nur noch das erste — der harte Schnitt halbiert also die Auszahlung der Kernressource, nicht nur vier Skills (was auch Ladungsserie erklärt, −11 % bei 100 % Haltequote). Umgesetzt: `CRIT_MULT_SOFT_SLOPE = 0,2`, Form wie das vorhandene `WIN_SOFTCAP`, EINE Quelle (`softCritMult`) für Motor und Anzeige; gebaut 10/16/36× zahlt 8,4/9,6/13,6×, und SLOPE 0 stellt den alten harten Deckel ohne Codeänderung wieder her. Entladung verlässt die Multiplikator-Achse (dort sagten vier Skills dasselbe; behalten hat sie Vorentladung, die einzige, die eine Entscheidung verlangt) und zahlt jetzt **+2/3/4/6 Basis-Score je Sieg, dauerhaft je voller Leiste**, Episch verdoppelt die Rampe bei einem Crit statt den Multiplikator; eigener Zustand `entladungScore`, `entladungMult` speist nur noch Gewitterfronts Episch-Anhang. Der steht damit allein auf der Achse und ist offen (nicht Teil der drei abgenommenen Punkte). Drei Wächter, alle gegengeprobt. Startwerte, UNGEMESSEN — wie viele volle Leisten ein Lauf hat, ist nicht erhoben. |

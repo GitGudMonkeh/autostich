@@ -9,9 +9,9 @@ import { skillSum, buildSkillDoors } from "./skills.js"; // exp skill rework: T�
 import { coinsForFormations } from "./coins.js"; // Münz-Ökonomie (§2.2): Einnahme je Durchlauf aus der Aufstellung
 // exp skill rework: die Blitz-Mechanik (Passiv, 15 Skills, 4 Legendäre) lebt im Fraktionsmodul; die Engine ruft nur
 // ihre reinen Übergänge (Crit-Beiträge, Ladungsgewinn, volle Leiste, Niederlage, Rundenende).
-import { lightningCritChance, lightningCritMult, overcritMult, blitzfaengerValue, ionenfeldValue, fieldTick, ionScoreFor as lightIonScore, ionCritMultFor as lightIonCritMult, chargeGainOnWin,
-  critFillsBar, blitzschlagStacks, stauAfterWin, lightningOnLoss, fillBar as lightFillBar, lightningCycleEnd, maxChargeFor,
-  lightParam, L as LIGHT, hasDoppelentladung, hasResonanz, resonantStacks } from "./factions/lightning.js";
+import { lightningCritChance, lightningCritMult, overcritMult, blitzfaengerValue, ionenfeldValue, fieldTick, ionScoreFor as lightIonScore, ionCritMultFor as lightIonCritMult, chargeGainOnWin, entladungScoreFor,
+  blitzschlagStacks, stauAfterWin, lightningOnLoss, fillBar as lightFillBar, lightningCycleEnd, maxChargeFor,
+  hasDoppelentladung, hasResonanz, resonantStacks } from "./factions/lightning.js";
 // exp skill rework: die Feuer-Mechanik (Passiv, 15 Skills, 4 Legendäre) lebt ebenso im Fraktionsmodul — die Engine
 // ruft ihre Übergänge (Kampfwert-Bonus, Sieg, Niederlage, Hitze-Multiplikator, Rundenende, Brand-Wechsel).
 import { syncHeatMax, fireValueBonus, fireOnWin, fireOnLoss, heatMult, verbrennungMult, feuersturmMult,
@@ -543,15 +543,13 @@ export function resolveTrick(state, rng) {
     // über 100 % → sehr kleiner Crit-Mult-Bonus, alle Fraktionen).
     critMultiplier = critMultiplierFor(perks, critCtx) + familyCritMult(familyTiers)
                    + lightningCritMult(lightning, skills, skillTiers, serieStreak) + lightIonCritMult(pCardR, skills, skillTiers) + overcritMult(rawCrit); // pCardR: Resonanz-Stapel (§7.25)
-    // Entladung Episch: der Crit, der die Leiste füllt, zählt mit doppeltem Crit-Multiplikator. Vorschau auf denselben
-    // Ladungsgewinn, den ein Crit unten wirklich bringt — der Multiplikator wird nur bei einem Crit gelesen.
-    if (lightning && lightning.active && lightParam(skills, skillTiers, LIGHT.ENTLADUNG, "fillDouble")
-        && critFillsBar(lightning, skills, skillTiers, { streak: serieStreak })) critMultiplier *= 2;
-    // BACKSTOP (Crit-Bändigung): der fertige Crit-Multiplikator wird hart gedeckelt — bewusst NACH allen Additionen,
+    // (§7.42: Entladungs Episch-Extra hing hier als Crit-Mult-Verdopplung; mit dem Wechsel auf die Score-Achse zählt
+    //  die Rampe stattdessen bei einem Crit doppelt — s. entladungScoreFor in den Flats unten.)
+    // BACKSTOP (Crit-Bändigung): der fertige Crit-Multiplikator wird WEICH gedeckelt — bewusst NACH allen Additionen,
     // damit keine Quelle (auch keine offene Rampe) ihn umgehen kann. Der Owner hält den Deckel (docs/skill-rework.md §1).
     // (§7.28: den ungedeckelten Wert liest niemand mehr — Überspannung, die den Überschuss über dem Deckel in Ladung
     // wandelte, ist gestrichen; was über dem Deckel liegt, verfällt wieder.)
-    critMultiplier = Math.min(critMultiplier, C.CRIT_MULT_CAP);
+    critMultiplier = C.softCritMult(critMultiplier);
     isCrit = rollCrit(critChance, forceCrit, rngAtOr(cycle, "crit", pos)) && !reducedRepeat; // #205 Glückslandschaft: fester Wurf je (cycle,pos); forceCrit = Henker; reducedRepeat = Zeitsegment III
     // Sprödbruch Episch (§5.18): ein Crit mit einer Gletscherkarte friert wieder an. Der Kreis Masse → Crit → Masse ist
     // gedämpft (bei Masse 12 und 1,5 % je Punkt kommen ~0,5 Masse je Durchlauf zurück), nicht selbsttragend.
@@ -587,7 +585,9 @@ export function resolveTrick(state, rng) {
                                   + familySumHook(familyTiers, "scoreFlatOnCrit", critCtx)
                                   + (critFollowArmed ? critFollowCritBonus : 0) // D_CRIT_FOLLOW IV: Crit-Folgesieg, der selbst Crit ist
                                   + (anchorType === "crit" ? (aParam("critScore") || 0) : 0) : 0) // Kritanker IV: Crit dort +250 Score
-                      + lightIonScore(pCardR, skills, skillTiers) + ((lightning && lightning.stackBank) || 0) + fireFlat + plantFlat // exp: Stapel-Score der Siegkarte (Kurzschluss zählt ab Schwelle doppelt; §7.22 Episch: dazu der vorgemerkte Stapel-Score verlorener Karten; §7.25 Resonanz: pCardR trägt die Stapel der Formation)
+                      + lightIonScore(pCardR, skills, skillTiers) + ((lightning && lightning.stackBank) || 0)
+                      + entladungScoreFor(lightning, skills, skillTiers, isCrit) // §7.42: Entladungs Rampe zahlt Basis-Score je Sieg
+                      + fireFlat + plantFlat // exp: Stapel-Score der Siegkarte (Kurzschluss zählt ab Schwelle doppelt; §7.22 Episch: dazu der vorgemerkte Stapel-Score verlorener Karten; §7.25 Resonanz: pCardR trägt die Stapel der Formation)
                       + (anchorType === "score" ? (aParam("score") || 0) : 0) // Punkteanker (§4.2, Stärke = Stufe)
                       + (anchorType === "power" ? (aParam("winScore") || 0) : 0) // Kraftanker IV: Sieg dort +100 Score
                       + architectScoreRes.flat // Architekt Handelsbauten (#202): Flat-Score, s. o.

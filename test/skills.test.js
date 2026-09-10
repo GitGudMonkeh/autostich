@@ -45,7 +45,10 @@ describe("skills — Blitz-Registry (exp skill rework)", () => {
     expect(BLITZ_TIERS.serienschutz.every((r) => r.frac === undefined)).toBe(true); // der Anteil der Leiste ist raus
     expect(asc(BLITZ_TIERS.reststrom, "floor")).toBe(true);
     expect(asc(BLITZ_TIERS.gewitter, "critPerBar")).toBe(true);
-    expect(asc(BLITZ_TIERS.entladung, "multPerBar")).toBe(true);
+    // §7.42: Entladung ist von der Crit-Multiplikator-Achse auf den Basis-Score gewechselt — die Leiter ist jetzt
+    // `scorePerBar`, und `multPerBar` darf auf KEINER Stufe zurückkommen (sonst stünden wieder vier Skills auf einer Achse).
+    expect(asc(BLITZ_TIERS.entladung, "scorePerBar")).toBe(true);
+    expect(BLITZ_TIERS.entladung.every((r) => r.multPerBar === undefined && r.fillDouble === undefined)).toBe(true);
     // §7.30: die Ladungsserie zahlt in Ladung, ihre Leiter ist die fallende Schwelle (und trägt keinen Crit-Satz mehr).
     expect(desc(BLITZ_TIERS.serie, "chargeFromStreak")).toBe(true);
     expect(BLITZ_TIERS.serie.every((r) => r.critPerStreak === undefined)).toBe(true);

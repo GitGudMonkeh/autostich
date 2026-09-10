@@ -3,7 +3,8 @@ import { makeRng } from "../src/game/deck.js";
 import { initialState } from "../src/game/reducer.js";
 import { resolveTrick, rollCrit } from "../src/game/engine.js";
 import { SKILL_DEFS } from "../src/game/skills.js";
-import { MAX_CYCLES, FORMATION_ENERGY, TRICKS_PER_CYCLE, DECISION_SCHEDULE, SCORE_PER_WIN, CRIT_BASE_MULT, LIGHTNING_CRIT_SOCKET, LIGHTNING_CRIT_PER_SKILL,
+import { softCritMult, CRIT_MULT_SOFT_SLOPE,
+  MAX_CYCLES, FORMATION_ENERGY, TRICKS_PER_CYCLE, DECISION_SCHEDULE, SCORE_PER_WIN, CRIT_BASE_MULT, LIGHTNING_CRIT_SOCKET, LIGHTNING_CRIT_PER_SKILL,
   HENKER_MULT, HENKER_ZONE_START, BRENNPUNKT_MULT, VABANQUE_MULT, VABANQUE_TRICKS, PATT_MARGIN, ECHO_FACTOR, SAMMLER_STEP, UNAUFHALTSAM_VALUE,
   ZINS_DEPOSIT, ZINS_RATE_START, ZINS_RATE_STEP, ZINS_RATE_MAX, ZINS_CRASH_KEEP,
   CRIT_MULT_CAP, ION_SCORE_PER_STACK, OVERCRIT_MULT_PER_PP } from "../src/game/constants.js";
@@ -648,11 +649,19 @@ describe("Ionisierung — Engine (exp skill rework: Stapel-Score in der Basis, k
       .deck.find((c) => c.id === "P0").ionStacks).toBe(9);
   });
 
-  it("Backstop: der Crit-Multiplikator ist hart gedeckelt, egal welcher Kanal ihn treibt", () => {
-    // Entladung-Rampe weit über dem Deckel angesetzt → der fertige Mult wird auf CRIT_MULT_CAP geklemmt.
-    const s = resolveTrick(scenario(12, 0, { skills: ["SK_LIGHTNING_01"], lightning: lit({ entladungMult: 50 }) }), () => 0);
-    expect(s.lastTrick.isCrit).toBe(true);
-    expect(s.lastTrick.critMultiplier).toBeCloseTo(CRIT_MULT_CAP, 6);
+  /* §7.42 (Owner): der Backstop ist WEICH — über CRIT_MULT_CAP zählt jeder Punkt noch zum Anteil
+     CRIT_MULT_SOFT_SLOPE. Grund war §7.41: vier Blitz-Skills starben am harten Schnitt, und mit ihnen die halbe
+     Auszahlung der Stapel. Der Wächter hält beide Seiten: der Überschuss kommt an, aber gedämpft — und er bleibt
+     ein Backstop, nicht ein offener Kanal. */
+  it("Backstop: der Crit-Multiplikator ist WEICH gedeckelt, egal welcher Kanal ihn treibt", () => {
+    const of = (ramp) => resolveTrick(scenario(12, 0, { skills: ["SK_LIGHTNING_01"], lightning: lit({ entladungMult: ramp }) }), () => 0).lastTrick;
+    const s = of(50);
+    expect(s.isCrit).toBe(true);
+    expect(s.critMultiplier).toBe(softCritMult(CRIT_BASE_MULT + 50));       // dieselbe Kurve wie der Motor
+    expect(s.critMultiplier).toBeGreaterThan(CRIT_MULT_CAP);                // der Überschuss verfällt nicht mehr …
+    expect(s.critMultiplier).toBeLessThan(CRIT_BASE_MULT + 50);             // … zahlt aber nur noch gedämpft
+    expect(of(100).critMultiplier - s.critMultiplier).toBeCloseTo(50 * CRIT_MULT_SOFT_SLOPE, 6); // linear mit der Steigung
+    expect(softCritMult(CRIT_MULT_CAP - 1)).toBe(CRIT_MULT_CAP - 1);        // unter dem Knick unverändert
   });
 });
 // (Die 15 Blitz-Skills und die vier Legendären sind in test/lightning-rework.test.js gegen Modul UND Engine geprüft.)

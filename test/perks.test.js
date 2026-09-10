@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { PERK_DEFS, PERK_LIST, critChanceFor, critChanceRawFor, isLegendary, baseScoreMultFor, streakBaseMult, isLayoutPerk, layoutPerks, buildPerkOffer, totalCritMult, totalCritMultRaw } from "../src/game/perks.js";
 import { makeRng } from "../src/game/deck.js";
 import { effectivePlayerValue } from "../src/game/engine.js";
-import { UNAUFHALTSAM_VALUE, KRITMASSE_VALUE, MONOCHROM_STEP, MONOCHROM_CAP, CRIT_MULT_CAP } from "../src/game/constants.js";
+import { UNAUFHALTSAM_VALUE, KRITMASSE_VALUE, MONOCHROM_STEP, MONOCHROM_CAP, CRIT_MULT_CAP, softCritMult } from "../src/game/constants.js";
 
 // Kat.-A-Deck-Mods (früher A1–A10 onPick) sind zu KUMULATIVEN Familien migriert (#167) — die
 // Deck-Effekte je Stufe sind in test/families.test.js geprüft (onPick direkt), der Reducer-Pick +
@@ -201,11 +201,15 @@ describe("Crit-Multiplikator: Anzeige und Motor deckeln gleich (§7.39)", () => 
      Lage, in der ein echter Blitz-Bau spät im Lauf steht (§7.31: 36,01× gebaut, 6,97× ausgezahlt). */
   const heavy = { perks: PERK_LIST.filter((p) => PERK_DEFS[p.id].critMultBonus).map((p) => p.id),
     skills: [], skillTiers: {}, familyTiers: {}, lightning: { active: true, entladungMult: 20, stauBonus: 0 } };
-  it("totalCritMult klemmt auf CRIT_MULT_CAP, totalCritMultRaw nicht", () => {
-    expect(totalCritMultRaw(heavy)).toBeGreaterThan(CRIT_MULT_CAP);   // der Build baut mehr, als er bekommt …
-    expect(totalCritMult(heavy)).toBe(CRIT_MULT_CAP);                  // … und die Anzeige sagt genau das
+  /* §7.42: der Deckel ist weich geworden — die Anzeige muss dieselbe Kurve fahren wie der Motor, nicht mehr eine
+     harte Klemme. Sonst kippt der Fehler nur die andere Richtung: sie zeigte zu viel, jetzt zeigte sie zu wenig. */
+  it("totalCritMult fährt die weiche Kurve des Motors, totalCritMultRaw bleibt der gebaute Wert", () => {
+    expect(totalCritMultRaw(heavy)).toBeGreaterThan(CRIT_MULT_CAP);            // der Build baut über den Knick …
+    expect(totalCritMult(heavy)).toBe(softCritMult(totalCritMultRaw(heavy)));  // … die Anzeige dämpft wie der Motor
+    expect(totalCritMult(heavy)).toBeGreaterThan(CRIT_MULT_CAP);               // über dem Knick, aber
+    expect(totalCritMult(heavy)).toBeLessThan(totalCritMultRaw(heavy));        // unter dem gebauten Wert
   });
-  it("unter dem Deckel sind beide identisch — die Klemme erfindet nichts", () => {
+  it("unter dem Knick sind beide identisch — die Kurve erfindet nichts", () => {
     const light = { perks: [], skills: [], skillTiers: {}, familyTiers: {}, lightning: null };
     expect(totalCritMultRaw(light)).toBeLessThanOrEqual(CRIT_MULT_CAP);
     expect(totalCritMult(light)).toBe(totalCritMultRaw(light));

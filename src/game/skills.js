@@ -34,7 +34,10 @@ const BLITZ = {
   ionenfeld:     [{ tricks: 5, value: 2 }, { tricks: 7, value: 3 }, { tricks: 10, value: 4 }, { tricks: 15, value: 5 }], // §7.18 neu (SK_LIGHTNING_02): jede volle Leiste lädt das Feld; §7.20: 2/3/4/5 (2/2/2/3 war neutral, 3/3/4/5 kippte die Parität — Normal entscheidet den Median)
   reststrom:     [{ floor: 2 }, { floor: 3 }, { floor: 4 }, { floor: 6, bar: 9 }], // §7.22 Episch-Extra: die Leiste ist bei 9 voll
   gewitter:      [{ critPerBar: 0.005 }, { critPerBar: 0.0075 }, { critPerBar: 0.01 }, { critPerBar: 0.015, multPerBar: 0.02 }], // §7.22 Episch-Extra: dazu +0,02× Crit-Multiplikator je Leiste
-  entladung:     [{ multPerBar: 0.02 }, { multPerBar: 0.03 }, { multPerBar: 0.04 }, { multPerBar: 0.06, fillDouble: true }],
+  /* §7.42 (Owner): Entladung verlässt die Crit-Multiplikator-Achse. Dort sagten vier Skills dasselbe, und §7.41 hat
+     gemessen, dass sie am Deckel verfallen (−19 % bei 99 % Haltequote). Die volle Leiste zahlt schon in Rate, Wert,
+     Crit-Chance, Stapel und Multiplikator — frei war allein der BASIS-SCORE. Startwerte, NICHT gemessen. */
+  entladung:     [{ scorePerBar: 2 }, { scorePerBar: 3 }, { scorePerBar: 4 }, { scorePerBar: 6, critDouble: true }],
   serie:         [{ chargeFromStreak: 16 }, { chargeFromStreak: 12 }, { chargeFromStreak: 8 }, { chargeFromStreak: 5 }], // §7.30 (Owner: „Skillnutzlichkeit erhöhen"): von Crit-Chance auf LADUNG umgestellt — als Chance-Skill maß er 0,79× und stand mit −17 % unten (§7.29 D), weil die Chance seit dem Sockel spät ohnehin gegen die 100-%-Klemme läuft. Ladung ist der Engpass, und der Name sagt es. Gepaarter Sweep der Schwelle 30/22/16/12/8/5/3: besser in 51/55/57/68/69/80/81 % (Blitzableiter Normal zum Vergleich 68 %)
   vorentladung:  [{ minStreak: 5, multPerStreak: 0.1 }, { minStreak: 4, multPerStreak: 0.1 }, { minStreak: 3, multPerStreak: 0.1 }, { minStreak: 2, multPerStreak: 0.15 }], // §7.18 neu (SK_LIGHTNING_12): Serie zu Crit-Multiplikator; §7.22 Episch 0,15
   kette:         [{ barEvery: 1, extra: 1 }, { barEvery: 1, extra: 2 }, { barEvery: 1, extra: 3 }, { barEvery: 1, extra: 4, second: 1 }], // §7.18: Tiefe — die Karte mit den meisten Stapeln; §7.19: jede Leiste, 1/2/3/4; §7.22 Episch-Extra: die zweittiefste +1
@@ -207,7 +210,7 @@ export const SKILL_DEFS = {
   SK_LIGHTNING_06: { id: "SK_LIGHTNING_06", name: "Gewitterfront", archetype: "lightning", keywords: ["charge", "crit"], tiers: BLITZ.gewitter,
     ...tiered(BLITZ.gewitter, (r) => `Jede volle Leiste gibt dauerhaft +${pctS(r.critPerBar)} % Crit-Chance${r.multPerBar ? ` und +${de(r.multPerBar)}× Crit-Multiplikator` : ""}.`) },
   SK_LIGHTNING_10: { id: "SK_LIGHTNING_10", name: "Entladung", archetype: "lightning", keywords: ["charge", "crit"], tiers: BLITZ.entladung,
-    ...tiered(BLITZ.entladung, (r) => `Jede volle Leiste gibt dauerhaft +${de(r.multPerBar)}× Crit-Multiplikator.${r.fillDouble ? " Der Crit, der die Leiste füllt, zählt mit doppeltem Crit-Multiplikator." : ""}`) },
+    ...tiered(BLITZ.entladung, (r) => `Jede volle Leiste gibt dauerhaft +${de(r.scorePerBar)} Basis-Score je Sieg.${r.critDouble ? " Bei einem Crit zählt die Rampe doppelt." : ""}`) },
   // Serie und Crit
   SK_LIGHTNING_07: { id: "SK_LIGHTNING_07", name: "Ladungsserie", archetype: "lightning", keywords: ["charge", "streak"], tiers: BLITZ.serie,
     ...tiered(BLITZ.serie, (r) => `Ab Serie ${r.chargeFromStreak} gibt jeder Sieg +1 Ladung.`) },

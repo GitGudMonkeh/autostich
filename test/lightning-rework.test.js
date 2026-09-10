@@ -247,9 +247,12 @@ describe("Blitz-Modul — Ladung, Leiste, Niederlage (reine Übergänge)", () =>
       .toBe(T.reststrom[0].floor + T.ableiter[2].back);
     expect(fillBar(light({ charge: 13 }), [L.ABLEITER], { [L.ABLEITER]: 3 }, deck, order, 0).lightning.charge).toBe(T.ableiter[3].back);
     expect(fillBar(light({ charge: 13 }), [L.ABLEITER], { [L.ABLEITER]: 2 }, deck, order, 0).lightning.charge).toBe(T.ableiter[2].back); // Überschuss verfällt
-    const ramps = fillBar(light({ charge: 10, stormCritBonus: 0.5, entladungMult: 2 }), [L.GEWITTERFRONT, L.ENTLADUNG], {}, deck, order, 0).lightning;
+    const ramps = fillBar(light({ charge: 10, stormCritBonus: 0.5, entladungScore: 2 }), [L.GEWITTERFRONT, L.ENTLADUNG], {}, deck, order, 0).lightning;
     expect(ramps.stormCritBonus).toBeCloseTo(0.5 + T.gewitter[0].critPerBar, 9);
-    expect(ramps.entladungMult).toBeCloseTo(2 + T.entladung[0].multPerBar, 9);
+    // §7.42: Entladungs Rampe ist Basis-Score, nicht mehr Crit-Multiplikator — der Multiplikator-Kanal gehört jetzt
+    // allein der Gewitterfront (Episch-Anhang), und Entladung fasst ihn nicht mehr an.
+    expect(ramps.entladungScore).toBeCloseTo(2 + T.entladung[0].scorePerBar, 9);
+    expect(ramps.entladungMult).toBe(0);
     // §7.22 Episch-Extras: Gewitterfront Episch rampt auch den Crit-Multiplikator; Reststrom Episch macht die Leiste bei 9 voll.
     expect(fillBar(light({ charge: 10 }), [L.GEWITTERFRONT], { [L.GEWITTERFRONT]: 3 }, deck, order, 0).lightning.entladungMult).toBeCloseTo(T.gewitter[3].multPerBar, 9);
     expect(fillBar(light({ charge: 10 }), [L.GEWITTERFRONT], { [L.GEWITTERFRONT]: 2 }, deck, order, 0).lightning.entladungMult).toBe(0);
@@ -346,16 +349,25 @@ describe("Blitz — Engine-Integration (resolveTrick)", () => {
     expect(over.lightning.charge).toBe(T.ableiter[3].back);
   });
   it("Gewitterfront / Entladung: jede volle Leiste rampt dauerhaft, ohne Deckel", () => {
-    const s = resolveTrick(scen(12, 0, { skills: [L.GEWITTERFRONT, L.ENTLADUNG], lightning: light({ charge: 9, stormCritBonus: 0.9, entladungMult: 3 }) }), zero);
+    const s = resolveTrick(scen(12, 0, { skills: [L.GEWITTERFRONT, L.ENTLADUNG], lightning: light({ charge: 9, stormCritBonus: 0.9, entladungScore: 3 }) }), zero);
     expect(s.lightning.stormCritBonus).toBeCloseTo(0.9 + T.gewitter[0].critPerBar, 9);
-    expect(s.lightning.entladungMult).toBeCloseTo(3 + T.entladung[0].multPerBar, 9);
+    expect(s.lightning.entladungScore).toBeCloseTo(3 + T.entladung[0].scorePerBar, 9);
   });
-  it("Entladung Episch: der Crit, der die Leiste füllt, zählt mit doppeltem Crit-Multiplikator", () => {
-    const fills = resolveTrick(scen(12, 0, { skills: [L.ENTLADUNG], skillTiers: { [L.ENTLADUNG]: 3 }, lightning: light({ charge: 9 }) }), zero);
-    expect(fills.lastTrick.isCrit).toBe(true);
-    expect(fills.lastTrick.critMultiplier).toBeCloseTo(M * 2, 6);
-    const later = resolveTrick(scen(12, 0, { skills: [L.ENTLADUNG], skillTiers: { [L.ENTLADUNG]: 3 }, lightning: light({ charge: 5 }) }), zero);
-    expect(later.lastTrick.critMultiplier).toBeCloseTo(M, 6);
+  /* §7.42 (Owner): Entladungs Episch-Extra ist mit ihr auf die Score-Achse gewandert — vorher verdoppelte es den
+     Crit-Multiplikator des Leisten-füllenden Crits, jetzt zählt die RAMPE bei einem Crit doppelt. Der Wächter hält
+     beide Seiten: die Verdopplung wirkt, und sie fasst den Multiplikator nicht mehr an. */
+  it("Entladung Episch: die Rampe zählt bei einem Crit doppelt, der Crit-Multiplikator bleibt unberührt", () => {
+    const ramp = 40;
+    const base = { skills: [L.ENTLADUNG], skillTiers: { [L.ENTLADUNG]: 3 } };
+    const crit = resolveTrick(scen(12, 0, { ...base, lightning: light({ charge: 5, entladungScore: ramp }) }), zero);
+    const kein = resolveTrick(scen(12, 0, { ...base, lightning: light({ charge: 5, entladungScore: ramp }) }), noCrit);
+    expect(crit.lastTrick.isCrit).toBe(true);
+    expect(kein.lastTrick.isCrit).toBe(false);
+    expect(crit.lastTrick.breakdown.flats - kein.lastTrick.breakdown.flats).toBe(ramp); // einmal Rampe extra
+    expect(crit.lastTrick.critMultiplier).toBeCloseTo(M, 6);                            // und KEIN Multiplikator-Griff
+    // Ohne Episch zahlt die Rampe auch im Crit nur einfach.
+    const norm = resolveTrick(scen(12, 0, { skills: [L.ENTLADUNG], lightning: light({ charge: 5, entladungScore: ramp }) }), zero);
+    expect(norm.lastTrick.breakdown.flats).toBe(kein.lastTrick.breakdown.flats);
   });
   it("Ladungsserie (§7.30): Ladung ab der Schwelle der Stufe, KEINE Crit-Chance mehr", () => {
     // Serie 4 (also 5 nach dem Sieg) liegt unter Normal-Schwelle 16 → keine Ladung, und die Chance ist reines Passiv.

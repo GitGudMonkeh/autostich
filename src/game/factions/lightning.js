@@ -36,7 +36,7 @@ export const L = Object.freeze({
    serienschutzRound = in diesem Durchlauf schon verbrauchte Serienschutz-Auslösungen (§7.30, Deckel je Stufe). */
 export function initLightning() {
   return { active: false, charge: 0, maxCharge: C.LIGHTNING_MAX_CHARGE, bars: 0, critCount: 0,
-    stormCritBonus: 0, entladungMult: 0, stauBonus: 0, fieldLeft: 0, stackBank: 0, serienschutzCount: 0, serienschutzRound: 0 };
+    stormCritBonus: 0, entladungMult: 0, entladungScore: 0, stauBonus: 0, fieldLeft: 0, stackBank: 0, serienschutzCount: 0, serienschutzRound: 0 };
 }
 
 const held = (skills, id) => (skills || []).includes(id);
@@ -110,6 +110,16 @@ export function lightningCritMult(lightning, skills, skillTiers, streak = 0) {
   const vMin = lightParam(skills, skillTiers, L.VORENTLADUNG, "minStreak");
   if (vMin != null && streak >= vMin) m += Math.max(0, streak) * (lightParam(skills, skillTiers, L.VORENTLADUNG, "multPerStreak") || 0);
   return m;
+}
+
+/* Entladung (§7.42): die dauerhafte Rampe zahlt BASIS-SCORE je Sieg, nicht mehr Crit-Multiplikator. Episch zählt sie
+   bei einem Crit doppelt — dasselbe „der Crit ist besonders" wie im alten Episch-Extra, nur auf der neuen Achse.
+   0 ohne den Skill; die Rampe selbst wächst in fillBar. */
+export function entladungScoreFor(lightning, skills, skillTiers, isCrit = false) {
+  if (!lightning || !lightning.active) return 0;
+  const ramp = lightning.entladungScore || 0;
+  if (!ramp) return 0;
+  return ramp * (isCrit && lightParam(skills, skillTiers, L.ENTLADUNG, "critDouble") ? 2 : 1);
 }
 
 // Systemregel (alle Fraktionen, §1): Crit-Chance über 100 % gibt einen sehr kleinen Crit-Mult-Bonus je Prozentpunkt.
@@ -274,13 +284,16 @@ export function fillBar(lightning, skills, skillTiers, deck, playerOrder, actual
     }
   }
   const storm = lightParam(skills, skillTiers, L.GEWITTERFRONT, "critPerBar") || 0;
-  // §7.22 Gewitterfront Episch-Extra: die Rampe zahlt zusätzlich auf den Crit-Multiplikator (wie Entladung).
-  const ent = (lightParam(skills, skillTiers, L.ENTLADUNG, "multPerBar") || 0) + (lightParam(skills, skillTiers, L.GEWITTERFRONT, "multPerBar") || 0);
+  // §7.22 Gewitterfront Episch-Extra: die Rampe zahlt zusätzlich auf den Crit-Multiplikator. §7.42: Entladung ist von
+  // dieser Achse weg, Gewitterfront steht dort jetzt allein — ihr Anhang ist offen (Owner-Entscheid ausstehend).
+  const ent = lightParam(skills, skillTiers, L.GEWITTERFRONT, "multPerBar") || 0;
+  const entScore = lightParam(skills, skillTiers, L.ENTLADUNG, "scorePerBar") || 0;
   const floor = lightParam(skills, skillTiers, L.RESTSTROM, "floor") || 0;
   const back = lightParam(skills, skillTiers, L.ABLEITER, "back") || 0;
   const field = lightParam(skills, skillTiers, L.IONENFELD, "tricks") || 0;
   const next = { ...lightning, charge: floor + back, bars,
     stormCritBonus: (lightning.stormCritBonus || 0) + storm, entladungMult: (lightning.entladungMult || 0) + ent,
+    entladungScore: (lightning.entladungScore || 0) + entScore,
     fieldLeft: field > 0 ? field : (lightning.fieldLeft || 0) };
   return { lightning: next, deck: newDeck, filled: true, stacks, targets };
 }

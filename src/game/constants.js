@@ -33,6 +33,13 @@ export const SCORE_PER_WIN    = envNum("SIM_SCORE_PER_WIN", 400);    // Basispun
 // + Entladung 1,00 + Raserei 1,00) → der Deckel bindet einen ehrlichen Build NICHT,
 // fängt aber jede künftige Kombi ab, die wieder eine unbegrenzte Größe in den Multiplikator kippt.
 export const CRIT_MULT_CAP    = envNum("SIM_CRIT_MULT_CAP", 8); // exp §7.20 (Owner): zurück auf 8 — der Deckel 12 (§7.19) gab die Luft den Stapeln, nicht den Rampen (Duell: ein Viertel des Blitz-Schwanzes, gierig ein Fünftel des Medians)
+/* §7.42 (Owner): der Deckel ist WEICH. Bis CRIT_MULT_CAP zählt alles voll, darüber jeder Punkt nur noch zum Anteil
+   CRIT_MULT_SOFT_SLOPE. Grund: §7.41 hat gemessen, dass vier Blitz-Skills tot sind, WEIL der harte Schnitt ihren
+   Beitrag verschluckt — und mit ihnen die halbe Auszahlung der Kernressource Stapel (ein Stapel zahlt Basis-Score UND
+   Crit-Multiplikator, über dem Deckel nur noch das erste). Die Form ist dieselbe wie beim vorhandenen WIN_SOFTCAP.
+   SLOPE 0 stellt exakt den alten harten Deckel wieder her, ist also der Rückweg ohne Codeänderung. UNGEMESSEN. */
+export const CRIT_MULT_SOFT_SLOPE = envNum("SIM_CRIT_MULT_SOFT_SLOPE", 0.2);
+export const softCritMult = (m) => (m > CRIT_MULT_CAP ? CRIT_MULT_CAP + (m - CRIT_MULT_CAP) * CRIT_MULT_SOFT_SLOPE : m);
 // D_OVERCRIT IV (Überschusskrit): höchstens so viele Prozentpunkte Crit-Überschuss zahlen den Zuschlag je Punkt aus.
 export const OVERCRIT_EXCESS_PP_CAP = envNum("SIM_OVERCRIT_EXCESS_PP_CAP", 100);
 export const CRIT_BASE_MULT   = envNum("SIM_CRIT_BASE_MULT", 2.25);  // Basis-Crit-Multiplikator. #268: 1,5→2,25 — jetzt wo Crit aus der Stat-Phase raus ist, hilft der höhere Basis-Mult differenziell dem Crit-Archetyp Blitz (Sim: Blitz-Floor 1,47×→1,93× Mix), Nicht-Blitz nur schwach (RNG-gegateter Präzision-Crit) [TUNING · Sim-übersteuerbar]

@@ -330,7 +330,7 @@ export function totalCritMultRaw(state) {
    Werte über dem Deckel an — ein Spieler kaufte also weiter Crit-Multiplikator, von dem laut §7.31 ohnehin 81 %
    verfällt. Der Überschuss steht jetzt daneben (totalCritMultRaw), statt die Zahl selbst zu verfälschen. */
 export function totalCritMult(state) {
-  return Math.min(totalCritMultRaw(state), C.CRIT_MULT_CAP);
+  return C.softCritMult(totalCritMultRaw(state));
 }
 // Hat der Build überhaupt ein Crit-Perk? (steuert die UI-Sichtbarkeit der Crit-Anzeigen)
 // V2: Crit-Chance kommt aus Stat/Blitz; D-Perks belohnen Crits über scoreFlatOnCrit; L6 trägt Crit-Chance → alle zählen.
