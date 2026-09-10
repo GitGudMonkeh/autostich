@@ -7601,6 +7601,63 @@ Weißglut danach über dem Band, sind die Regler `WEISSGLUT_HEAT_MAX` (200) und 
 
 ---
 
+### 7.33 Der Schnitt nachgemessen: ein Hebel, zwei Skills, und Feuer steht jetzt letzter (2026-09-10) — gemessen
+
+Feuer-Mono allein, 900 Explore / 175 Greedy und Ablation, 7 min. Feuer ist seit §8 sonst unangetastet, die Zahlen
+stehen also direkt nebeneinander.
+
+#### A · Beide Ziele getroffen — mit einem Hebel
+
+| Skill | §8 | jetzt | |
+| --- | --- | --- | --- |
+| **Glühende Klinge** | +141 % | **+24 %** | angefasst |
+| **Weißglut** | +96 % | **+20 %** | **nicht angefasst** |
+| Sonnenzorn (L) | +91 % | +96 % | — |
+| Sonnenkern (L) | +14 % | **+116 %** | — |
+| Feuersturm | +35 % | +20 % | — |
+| Verbrennung | +27 % | +10 % | — |
+| Schmelzpunkt | +22 % | +9 % | — |
+
+**Die Verkopplungs-These ist bestätigt.** Weißglut ist um 79 % gefallen, ohne dass eine seiner beiden Zahlen
+verändert wurde — genau die Vorhersage aus §7.32 B, und dieselbe Mechanik, mit der die Baumreihe in §6.31 ungefragt
+von +112 auf +75 mitgefallen ist. Hätten wir beide gleichzeitig genervt, stünde Weißglut jetzt irgendwo unten und
+niemand wüsste, welcher Schnitt es dorthin gebracht hat.
+
+**Die Regler für Weißglut bleiben deshalb, wo sie sind.** +20 % ist Mittelfeld; es braucht keinen zweiten Schnitt.
+
+#### B · Die Form der Fraktion ist jetzt richtig
+
+Vorher standen **zwei normale Skills über dem Legendären** der Fraktion (Klinge +141 %, Weißglut +96 % gegen
+Sonnenzorn +91 %). Jetzt führen die beiden Legendären die Tabelle an (+116 % und +96 %), und der stärkste normale
+Skill steht bei +24 %. Das ist die Ordnung, die das Design will.
+
+Sonnenkerns Sprung (+14 → +116 %) ist keine zweite Änderung, sondern wieder die Ablation: sein Beitrag wurde vorher
+vom Klingen-Motor überdeckt. Er war die ganze Zeit so groß, nur nicht sichtbar.
+
+#### C · Der Preis: Feuer ist jetzt klar letzter
+
+Die Fraktion fällt mono **112,7M → 65,1M (−42 %)**. Damit steht sie so:
+
+| Bl | 1.686M | (seit §8 unangetastet) |
+| --- | --- | --- |
+| Pf | 367M | §6.31 |
+| Ei | 348M | §8-Stand; die Eis-Runde misst 224M |
+| **Fe** | **65M** | |
+
+Feuer war schon in §8 letzter (15× hinter Blitz), jetzt sind es **26×**. Der Schnitt hat das Problem nicht
+geschaffen, er hat es vertieft — und er war trotzdem richtig, weil die FORM vorher falsch war.
+
+Acht der siebzehn Feuer-Skills messen mono bei oder unter null (Brandschneise +1, Zunder 0, Ewige Glut −0,
+Schmiede −2, Rückzündung −2, Glutstahl −4, Feuerlinie −5, Glutbett −6). Sie waren schon in §8 flach; mit dem
+kleineren Motor sind sie es etwas deutlicher.
+
+#### D · Was daraus folgt
+
+Feuer braucht als nächstes einen **Buff**, keinen zweiten Nerf — und die acht flachen Skills sind der Ort dafür,
+nicht die Spitze. Blitz steht mit 1,686 Mrd weiter allein oben und ist seit der Bestandsaufnahme unangetastet.
+
+---
+
 ### 5.30 Die Eis-Skills auf dem neuen Motor (2026-09-09) — gemessen, nichts umgesetzt
 
 **Owner:** „und dann schauen wir uns alle skills an die davon profitieren müssen und designen wie."
@@ -8004,3 +8061,4 @@ leichtesten haben.
 | 2026-09-09 | §6.29 nachgemessen (§6.30, Owner: „mess nach"). 7 Pflanze-Welten, 56.875 Läufe, 39 min, Parameter der §8-Baseline. **Der Schnitt sitzt: Baumreihe +1079 → +112 % mono**, also rund 90 % ihrer Wirkung — der Beleg, dass die Mitgliederliste der Motor war und die Schraube aus §6.12 am falschen Ende saß. Sie ist damit das schwächste der drei Pflanze-Legendären, liegt aber im Band von Großer Lawine (+143 %) und Eiszeit (+131 %) und wird in 59 % der Läufe gehalten; `BAUMREIHE_FACTOR_SCALE` ist jetzt der saubere Regler, falls sie wieder wachsen soll. Wurzelgeflecht +591 → +505 % (die bestellte kleine Korrektur), Ewiger Frühling unverändert. **Die Fraktion fällt mono 2,31 Mrd → 524M (−77 %)**, in den drei sauber vergleichbaren Mischwelten −32 bis −62 %; damit ist die Pflanze nicht mehr der Ausreißer, sondern **Blitz** (1,69 Mrd, 3,2× Pflanze). Von den sieben angehobenen Skills sind zwei repariert (Blätterdach Haltequote 6 → 53 %, Rankgerüst mono −0 → +6 % und im Tripel −3 → +150 %), zwei besser, drei unverändert flach — und alle drei sind Wachstums-Skills, wie in §6.29 D vorhergesagt: die Achse hebt man nicht mit Einzelsätzen, sondern mit `PLANT_BLOOM_WEIGHT_PER_GROWTH`. Nebenbefund: **die Hecke ist mitgefallen** (100 % gehalten/+105 % → 33 %/+12 %) — ihre alte Zahl kam zum großen Teil aus dem Baumreihen-Kanal. Sie ist jetzt zum ersten Mal ohne Verstärker sichtbar und der Kandidat für die nächste Runde. |
 | 2026-09-10 | Wurzelgeflecht gesweept (§6.31, Owner: „auf die 150-250"). Neuer Survey-Schalter `--groesse` misst eine Weltgröße allein — `--fraktion plant --groesse 1` sind 13 min statt 39, und der Kontrollpunkt bei 0,85 reproduziert §6.30 auf den Euro (+505 %, Median 523.764.008), die Abkürzung ist also belastbar. Sweep über `WURZELGEFLECHT_FACTOR_SCALE`: 0,85 → +505 % · 0,60 → +397 % · **0,45 → +220 %**. 0,45 gesetzt, gemessener Punkt im Band. Die Kurve greift unten härter (Schritt 0,25 kostet 21 %, Schritt 0,15 kostet 45 %) — der Faktor wirkt multiplikativ über die Positionen eines Laufs. Mitgenommen: die Fraktion fällt mono 524M → 367M, und die Baumreihe sinkt ohne eigene Änderung von +112 auf +75 % (Ablation misst gegen den Rest des Builds, und der ist kleiner geworden) — gehalten wird sie dabei häufiger, 59 → 71 %. Die drei Pflanze-Legendären stehen jetzt bei +274 / +220 / +75 % statt +1079 / +591 / +282 % vor der Runde. Offen: Blitz steht mit 1,69 Mrd allein oben, der Abstand ist durch diese Runde größer geworden. |
 | 2026-09-10 | Glühende Klinge entkoppelt (§7.32, Owner: „erst den nerf designen", dann Entscheid a). Befund: die Klinge ist der einzige Feuer-Skill, der den Motor am EINGANG füttert — +Wert hebt den Vorsprung, und der Vorsprung IST das Hitze-Einkommen. Ein Sieg mit Vorsprung 3 (2 % Hitze) wird mit +4 Wert zu Vorsprung 7 (6 %): dreifaches Einkommen, dazu die Verbrennungs-Mitnahme und die gedrehten Niederlagen. Das ist die gemessene +141 %, nicht die Zahl auf der Karte. Weißglut (+96 %) ist kein eigener Motor, sondern der Hebel darunter: die Leiste 100 → 200 verdoppelt Klinge (+5 → +10 Wert), Hitze-Multiplikator und Sonnenzorns Spitzen-Lesart. Umgesetzt: **die Klinge liest `HEAT_MAX`, nie die verlängerte Leiste** — stärkster Build +10 → +5, normaler Build unverändert, die Rückkopplung bleibt halb so lang. Weißglut bewusst NICHT angefasst: dieselbe Verkopplung wie Wurzelgeflecht/Baumreihe in §6.31, wo die Baumreihe ungefragt von +112 auf +75 mitfiel; erst messen, dann entscheiden. Wächter gegengeprobt (offene Naht → 10 statt 5). UNGEMESSEN. |
+| 2026-09-10 | §7.32 nachgemessen (§7.33). Feuer-Mono, 7 min. **Ein Hebel, beide Ziele getroffen: Glühende Klinge +141 → +24 %, Weißglut +96 → +20 % — und Weißglut wurde NICHT angefasst.** Die Verkopplungs-These aus §7.32 B ist damit bestätigt; hätten wir beide gleichzeitig genervt, wäre nicht trennbar gewesen, welcher Schnitt was bewirkt. Die Regler für Weißglut bleiben unangetastet, +20 % ist Mittelfeld. Die FORM der Fraktion stimmt jetzt: vorher standen zwei normale Skills über dem Legendären (141/96 gegen Sonnenzorn 91), jetzt führen die zwei Legendären (+116 % Sonnenkern, +96 % Sonnenzorn) und der stärkste normale steht bei +24 %. Sonnenkerns Sprung +14 → +116 % ist keine zweite Änderung, sondern die Ablation: sein Beitrag war vorher vom Klingen-Motor überdeckt. Preis: die Fraktion fällt mono 112,7M → 65,1M (−42 %) und steht damit klar letzter — der Rückstand auf Blitz wächst von 15× auf 26×. Der Schnitt hat das nicht geschaffen, nur vertieft. Nächster Schritt für Feuer ist ein Buff an den acht flachen Skills, kein zweiter Nerf. |
