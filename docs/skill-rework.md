@@ -9151,6 +9151,65 @@ akzeptieren, dass er eine Rampenhilfe ist, die die Ablation nicht sieht.
 
 ---
 
+### 7.58 Nur zahlende Formationen (2026-09-10, Owner) — umgesetzt, UNGEMESSEN
+
+**Owner zu §7.57 D:** „Rampenhilfe und nur mit vollen formations zahlen arbeiten, das macht sonst kein Sinn für den
+Spieler."
+
+Zwei Entscheide in einem Satz: der **Satz bleibt** (also kein Früh-Skill mit großem Satz, sondern die Rampenhilfe,
+die die Ablation nicht sieht), und der **Kennwert wird enger**.
+
+#### A · Was sich ändert
+
+| | vorher (§7.56) | jetzt |
+| --- | --- | --- |
+| Kennwert | `positionFormations` — Formationen mit Mitgliedern | `activeFormationCount` — Formationen mit Faktor > 1 |
+| Mitgliedschaft ohne Faktor (Ordinal 1) | zählte mit | **zählt nicht** |
+| Meta-Faktoren (Anker, Nachhall, Kern, Grenzbonus) | zählten nie | **zählen, sobald sie zahlen** |
+| Sätze | 5/7/10/15 % | unverändert |
+
+`positionFormations` ist damit aus `factions/lightning.js` raus, der Aufrufer in `engine.js` liest dieselbe
+Funktion wie alle anderen.
+
+#### B · Warum genau diese Zählung
+
+Es gab zwei Kandidaten. Genommen ist der, der **schon da war**:
+
+- **`activeFormationCount` (gewählt).** Das ist die Zahl, die der Stich dem Spieler ANZEIGT — `Battlefield.jsx`
+  filtert seine Formations-Anzeige mit genau `factor > 1` — und die Zahl, die **Brennpunkt** („Gewinnt eine Karte
+  in mindestens 3 gleichzeitigen Formationen") und **Feuerlinie** („je Formation an der Siegposition") bereits
+  lesen. Wer den Skilltext liest und auf den Stich schaut, sieht dieselbe Zahl.
+- **Verworfen: eine engere, faktionseigene Zählung** (echte Läufe UND Faktor > 1). Sie hätte den Skill etwas
+  knapper gehalten, wäre aber die **dritte** Lesart von „Formation" im selben Spiel gewesen — und der Grund des
+  Owners war ausdrücklich, dass es für den Spieler Sinn ergeben soll.
+
+Der Skilltext bleibt deshalb wortgleich („jede Formation dieser Position"). Brennpunkt und Feuerlinie schreiben
+„Formation" ohne Zusatz und meinen dasselbe; ein Zusatz nur an diesem einen Skill würde einen Unterschied
+behaupten, den es gerade nicht mehr gibt. Keine Katalog-Änderung, kein `loc:export`.
+
+#### C · Was das an der Höhe tut — ungemessen
+
+Die zwei Änderungen ziehen **gegeneinander**, und beide sind ungemessen:
+
+- **abwärts:** jede Mitgliedschaft mit Ordinal 1 fällt weg. Bei einer Wiederholung der Länge 2 ist das die halbe
+  Formation, bei einem Farbblock die ersten zwei Karten (`escalatingFactor` gibt bis Ordinal 2 den Faktor 1).
+- **aufwärts:** Anker, Nachhall, Formationskern und Grenzbonus zählen jetzt mit, sobald sie zahlen. Früh sind das
+  wenige (sie hängen an Perk-Familien, Shop-Ankern und dem Architekten), spät mehr.
+
+Der gemessene Ausgangswert von 1,38–1,73 Formationen je Position (§7.55 A) gilt damit **nicht mehr**. Ob die neue
+Zahl darüber oder darunter liegt, sagt erst eine Messung — und weil §7.57 C zeigt, dass der Score sie ohnehin nicht
+sieht, wäre die richtige Sonde die Rampe (`blitz-ramp`), nicht die Ablation.
+
+#### D · Wächter
+
+Der neue fährt den Unterschied durch die **ganze Kette**, nicht nur durch die Zählfunktion: im konstanten Deck ist
+Position 0 Mitglied des Wiederholungs-Laufs, bekommt daraus aber Ordinal 1 und damit Faktor 1 — ihre Crit-Chance
+muss die eines neutralen Skills sein; Position 1 zahlt genau einen Satz. Gegengeprobt, indem die alte
+Mitglieder-Zählung wieder in `engine.js` eingesetzt wurde: der Wächter fällt (0,16 gegen 0,11). Die Stufentabelle
+hält weiter fest, dass weder `perStack` (§7.43) noch `perCard` (§7.47) noch `critPerCard` (§7.51) zurückkommen.
+
+---
+
 ### 5.30 Die Eis-Skills auf dem neuen Motor (2026-09-09) — gemessen, nichts umgesetzt
 
 **Owner:** „und dann schauen wir uns alle skills an die davon profitieren müssen und designen wie."
@@ -9579,3 +9638,4 @@ leichtesten haben.
 | 2026-09-10 | Zwei Sonden vor dem Umbau der drei freigegebenen toten Skills (§7.55) — beide widerlegen eine Annahme. **(a) Die neue Spannungsfeld-Lesart zündet NICHT früher.** Neue Sonde `feld-formationen.mjs`: je Formations-Sieg hängt eine Position im Schnitt in nur **1,4 bis 1,7 Formationen**, früh sind die zwei Lesarten praktisch gleich (0,18 gegen 0,17 in den Runden 1–10; 0,81 gegen 0,89 in 11–20) und spät ist die neue deutlich KLEINER (1,72 gegen 4,09). Die Annahme, eine ionisierte Karte könne mehrere Formationen zugleich erhellen, trägt nicht — es gibt meist keine mehreren. Der frühe Engpass ist ein anderer: in den Runden 1–10 haben 86 % der Formations-Siege überhaupt keine ionisierte Karte in Reichweite. Der Umbau wie spezifiziert macht den Skill also SCHWÄCHER statt früher; wer früh will, muss die Ionisierungs-Bedingung streichen statt ihre Zählweise zu ändern. **(b) Meine Ladungsserie-Diagnose aus §7.53 D war falsch.** : `streak-probe` misst Blitz mono beste Serie p50 **240**, und 82 % der Läufe erreichen ≥ 75 — die Schwelle „ab Serie 16" ist bequem erreichbar, greift also nicht zu spät. Die echte Erklärung: `blitz-ramp` zählt Ø 150 volle Leisten je Lauf, davon nur 2 bis Runde 10 und 9 bis Runde 20 — **Ladung ist spät im Überfluss da und früh knapp**, und eine Serie von 16 hat man erst, wenn die Leisten ohnehin laufen. Der strukturelle Fehler ist nicht die Höhe der Schwelle, sondern die Kopplung an die Serie als Spätindikator. Nichts umgesetzt, zwei neue Sonden im Baum, Owner-Entscheid offen. |
 | 2026-09-10 | Spannungsfeld zählt Formationen, ohne Ionisierungs-Bedingung (§7.56, Owner: „Formations-Sieg gibt +X % Crit-Chance je Formation dieser Position — genau das meinte ich"). Das ist die Variante aus §7.55 A statt der zuerst genannten; die Sonde hatte gezeigt, dass „je Formation, in der eine ionisierte Karte ist" den Skill **schwächer statt früher** macht. Kennwert ist jetzt die Zahl der FORMATIONEN dieser Position (`positionFormations`, braucht weder Karte noch Deck; Meta-Faktoren ohne Mitglieder zählen nicht mit), **Bedingung keine**, Sätze unverändert 5/7/10/15 %, Episch-Anhang unverändert. **Früh ist das der Faktor 8** (1,38 Formationen gegen 0,17 ionisierte Karten in den Runden 1–10), spät die Hälfte (1,73 gegen 4,09) — genau die Verschiebung dorthin, wo Crit-Chance knapp ist (Runden 1–10: Ø 14,8 % Roh-Chance gegen 87,1 % spät). Der Zweck ist die Kette dahinter: mehr Crits → schnellere volle Leisten → früher Ladung und Stapel; Blitz hat in den Runden 1–10 nur 2 volle Leisten (§7.55 B), das ist der Kaltstart der Fraktion. **Damit stehen auf der Crit-Chance-Achse zwei Skills mit entgegengesetzter Bauanleitung:** Lichtbogen zahlt je Stapel der gespielten Karte (Tiefe, wächst über den Lauf — Ø 10,7 je Karte spät, tiefste Ø 215), Spannungsfeld je Formation (Breite, von Anfang an da, aber gedeckelt bei 1,4–1,7). Früh trägt das Feld, spät der Bogen — das ist die Entscheidung, die §7.43 bauen wollte und dreimal verfehlt hat. Wächter gegengeprobt (eine nie erfüllbare Mitglieder-Bedingung eingebaut, er fällt); die Stufentabelle hält weiterhin fest, dass weder `perStack` (§7.43) noch `perCard` (§7.47) noch `critPerCard` (§7.51) zurückkommen dürfen. Startwerte, UNGEMESSEN. |
 | 2026-09-10 | §7.56 nachgemessen (§7.57), beide Seed-Sätze plus Rampen-Sonde. **Im Score die dritte Null: Spannungsfeld +0 % / −2 %** — damit drei Bauformen und drei Nullen (eigener Score-Multiplikator §7.43/§7.47, Crit-Chance je ionisierter Karte §7.51/§7.54, Crit-Chance je Formation §7.56). Die Fraktion bewegt sich auch nicht (1.295M/613M gegen 792M/1.196M davor, überlappende Paare, also Rauschen). **In der RAMPE ist der Zweck dagegen erfüllt:** `blitz-ramp` misst die Median-Runde, in der die Crit-Chance 25 % erreicht, bei **10 statt 14 — vier Runden früher**; 5. volle Leiste Runde 15 → 14, 10. Leiste 22 → 21, volle Leisten je Lauf 150,1 → 163,1, Stapel auf dem Deck 633,7 → 979,4, Crit-Chance in den Runden 21–30 41,7 → 45,9 %. Nicht getrennt: darin stecken §7.54 (Blitzschlag) und §7.56 zusammen; Blitzschlag braucht Crits zum Zünden und kann den Anstieg in den Runden 1–10 kaum verursacht haben, der frühe Teil ist also plausibel das Feld — eine Zuordnung, keine Messung, trennbar mit einem Lauf ohne das Feld. **Der methodische Kern: der Score eines Laufs wächst exponentiell, die Runden 41–50 tragen ihn fast allein — ein Skill, der nur früh hilft, ist im Median-Score praktisch unsichtbar.** Die Ablation, das Werkzeug dieser ganzen Reihe, ist für Früh-Skills das falsche Maß; die richtige Kennzahl ist der Meilenstein, nicht der Endstand. Das gilt rückwirkend für jede „0 %"-Aussage über einen Skill, dessen Wirkung vorne liegt — bei Blitz sind das Spannungsfeld und, dem Mechanismus nach, auch Gewitterfront. Konkret: bei Normal (5 %) und rund 1,4 Formationen sind es +7 Punkte Crit-Chance auf einem Formations-Sieg, und das ist gut ein Drittel der Stiche. Owner-Entscheid offen: Satz deutlich hoch (er wird ein ausgesprochener Früh-Skill) oder so lassen und akzeptieren, dass er eine Rampenhilfe ist, die die Ablation nicht sieht. |
+| 2026-09-10 | Spannungsfeld zählt nur noch ZAHLENDE Formationen (§7.58, Owner zu §7.57 D: „Rampenhilfe und nur mit vollen formations zahlen arbeiten, das macht sonst kein Sinn für den Spieler"). Zwei Entscheide in einem Satz: der **Satz bleibt** (5/7/10/15 %, also die Rampenhilfe statt des großen Früh-Skills), und der **Kennwert wird enger**. Statt `positionFormations` (§7.56, Formationen mit Mitgliedern) liest der Skill jetzt `activeFormationCount` aus formations.js — Formationen mit **Faktor > 1**. Die faktionseigene Zählung ist damit raus. **Warum diese und keine engere:** es ist die Zahl, die der Stich dem Spieler ANZEIGT (`Battlefield.jsx` filtert seine Formations-Anzeige mit genau `factor > 1`) und die **Brennpunkt** („in mindestens 3 gleichzeitigen Formationen") und **Feuerlinie** („je Formation an der Siegposition") schon lesen — eine Lesart von „Formation" im ganzen Spiel statt einer dritten. Verworfen: echte Läufe UND Faktor > 1, knapper, aber genau die dritte Lesart. Der Skilltext bleibt wortgleich, weil die beiden anderen Skills „Formation" ebenfalls ohne Zusatz schreiben — kein Katalog-Diff, kein `loc:export`. **Die Höhe ist ungemessen und die zwei Änderungen ziehen gegeneinander:** abwärts fällt jede Mitgliedschaft mit Ordinal 1 weg (`escalatingFactor` gibt bis Ordinal 2 den Faktor 1, `wiederholungFactor` bis Ordinal 1), aufwärts zählen Anker, Nachhall, Kern und Grenzbonus jetzt mit, sobald sie zahlen. Der gemessene Ausgangswert 1,38–1,73 Formationen je Position (§7.55 A) gilt damit nicht mehr; die richtige Sonde wäre nach §7.57 C die Rampe (`blitz-ramp`), nicht die Ablation. Wächter fährt den Unterschied durch die ganze Kette (Position 0 ist Mitglied des Wiederholungs-Laufs, bekommt aber Ordinal 1 und damit Faktor 1 → keine Crit-Chance; Position 1 zahlt einen Satz) und ist gegengeprobt, indem die alte Mitglieder-Zählung wieder in engine.js eingesetzt wurde: er fällt mit 0,16 gegen 0,11. UNGEMESSEN. |

@@ -3,9 +3,9 @@ import * as C from "../src/game/constants.js";
 import { SKILL_DEFS, BLITZ_TIERS, effectiveTierOf, tierIsLifted } from "../src/game/skills.js";
 import { initLightning, L, maxChargeFor, effectiveTier, lightParam, lightningCritChance, lightningCritMult, overcritMult,
   blitzfaengerValue, ionenfeldValue, fieldTick, ionScoreFor, ionCritMultFor, chargeGainOnWin, critFillsBar, blitzschlagStacks,
-  formationStacks, positionFormations, feldFeed, lightningOnLoss, fillBar, lightningCycleEnd } from "../src/game/factions/lightning.js";
+  formationStacks, feldFeed, lightningOnLoss, fillBar, lightningCycleEnd } from "../src/game/factions/lightning.js";
 import { resolveTrick } from "../src/game/engine.js";
-import { computeFormations } from "../src/game/formations.js";
+import { computeFormations, activeFormationCount } from "../src/game/formations.js";
 import { initialState } from "../src/game/reducer.js";
 import { fireTier, F } from "../src/game/factions/fire.js";
 import { plantTier, P } from "../src/game/factions/plant.js";
@@ -238,18 +238,23 @@ describe("Blitz-Modul — Ladung, Leiste, Niederlage (reine Übergänge)", () =>
     expect(formationStacks({ ionStacks: 1 }, { formations: [] }, 1, cardAt)).toEqual([]); // ohne Formation kein Feld
     expect(formationStacks({ ionStacks: 1 }, { formations: [{ members: [] }] }, 1, cardAt)).toEqual([]); // Meta-Faktoren haben keine Mitglieder
   });
-  /* §7.56: der Kennwert ist die Zahl der FORMATIONEN dieser Position, ohne Ionisierungs-Bedingung. Der Wächter
-     hält beides fest: Meta-Faktoren ohne `members` (Anker, Nachhall) zählen nicht mit, und Ionisierung spielt keine
-     Rolle mehr — ein leeres Deck gibt dieselbe Zahl wie ein voll ionisiertes. Fällt der zweite Vergleich, ist die
-     Bedingung zurück, die den Skill früh abgeschaltet hat (§7.55 A: 86 % der frühen Formations-Siege ohne eine
-     einzige ionisierte Karte in Reichweite). */
-  it("positionFormations (§7.56): zählt die echten Formationen der Position, unabhängig von Ionisierung", () => {
-    const two = { formations: [{ members: [0, 1, 2] }, { members: [1, 2, 5] }] };
-    expect(positionFormations(two)).toBe(2);
-    expect(positionFormations({ formations: [{ members: [0, 1] }] })).toBe(1);
-    expect(positionFormations({ formations: [{ members: [] }, {}] })).toBe(0); // Meta-Faktoren haben keine Mitglieder
-    expect(positionFormations({ formations: [] })).toBe(0);
-    expect(positionFormations(null)).toBe(0);
+  /* §7.58 (Owner: „nur mit vollen Formationen zahlen"): der Kennwert ist `activeFormationCount` — die Formationen,
+     die an DIESER Position auch einen Faktor zahlen. Genau die zeigt der Stich an (Battlefield filtert factor > 1),
+     und genau die lesen Brennpunkt und Feuerlinie; eine faktionseigene Zählung (§7.56 `positionFormations`) wäre
+     eine dritte Lesart von „Formation".
+     Der Wächter fährt den Unterschied durch die ganze Kette: im konstanten Deck ist Position 0 MITGLIED des
+     Wiederholungs-Laufs, bekommt daraus aber Ordinal 1 und damit Faktor 1 — sie darf nichts zahlen. Position 1
+     zahlt genau einen Satz. Fällt der erste Vergleich, ist die Mitglieder-Zählung zurück; fällt der zweite, zahlt
+     der Skill gar nicht mehr. */
+  it("Spannungsfeld (§7.58): nur Formationen, die an dieser Position auch zahlen", () => {
+    const forms = computeFormations(identity(), constDeck(12));
+    expect(forms[0].formations.filter((f) => (f.members || []).length)).toHaveLength(1); // Mitglied des Laufs …
+    expect(activeFormationCount(forms[0])).toBe(0);                                      // … aber ohne eigenen Faktor
+    expect(activeFormationCount(forms[1])).toBe(1);
+    const at = (pos, skill) => resolveTrick(scen(12, 0, { pos, formations: forms, lightning: light(), skills: [skill] }), noCrit).lastTrick.critChance;
+    // Kettenblitz als neutraler Vergleich: derselbe Sockel und derselbe Satz je gehaltenem Skill, ohne Crit-Chance.
+    expect(at(0, L.SPANNUNGSFELD)).toBeCloseTo(at(0, L.KETTENBLITZ), 9);                          // Faktor 1 → kein Beitrag
+    expect(at(1, L.SPANNUNGSFELD) - at(1, L.KETTENBLITZ)).toBeCloseTo(T.feld[0].critPerForm, 9);  // zahlende Formation → ein Satz
   });
   it("lightningCritChance (§7.56): das Spannungsfeld gibt Crit-Chance je Formation; ohne Formation nichts", () => {
     const per = (t) => T.feld[t].critPerForm;

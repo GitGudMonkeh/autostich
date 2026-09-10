@@ -101,7 +101,10 @@ export function lightningCritChance(lightning, skills, skillTiers, _streak = 0, 
   /* Spannungsfeld (§7.56, Owner): je FORMATION dieser Position, ohne Ionisierungs-Bedingung. Es steht damit
      gegen Lichtbogen eine Zeile höher, der die Stapeltiefe EINER Karte belohnt: Breite gegen Tiefe. `forms` ist 0,
      wo die Formationen nicht bekannt sind (Statusleiste), genau wie `card` bei Lichtbogen — die Anzeige zeigt den
-     Bau, nicht den Stich. Die 100-%-Klemme deckelt den Beitrag von selbst. */
+     Bau, nicht den Stich. Die 100-%-Klemme deckelt den Beitrag von selbst.
+     §7.58 (Owner: „nur mit vollen Formationen zahlen"): `forms` ist jetzt `activeFormationCount(posForm)` — nur
+     Formationen mit Faktor > 1. Eine Mitgliedschaft ohne Faktor (Farbblock-Ordinal 1) zahlte vorher mit, stand
+     aber nirgends auf dem Schirm. */
   const perForm = lightParam(skills, skillTiers, L.SPANNUNGSFELD, "critPerForm");
   if (perForm && forms) c += perForm * forms;
   return c;
@@ -224,14 +227,10 @@ export function formationStacks(card, posForm, slot, cardAt) {
   return out.length > 1 ? out : [];
 }
 
-/* Wie viele echte Formationen hängen an dieser Position? Der Kennwert, auf dem Spannungsfeld sitzt (§7.56).
-   Meta-Faktoren (Anker, Nachhall) haben keine `members` und zählen nicht mit.
-   §7.56 (Owner): vorher waren es die IONISIERTEN KARTEN der Formation. Die Sonde `feld-formationen` hat gemessen,
-   dass diese Bedingung den Skill früh abschaltet — in den Runden 1–10 haben 86 % der Formations-Siege gar keine
-   ionisierte Karte in Reichweite, und eine Position hängt ohnehin in nur 1,4–1,7 Formationen. Ohne die Bedingung
-   zündet er ab Runde 1 bei JEDEM Formations-Sieg, und genau das soll er: früher Crits, früher volle Leisten. */
-export const positionFormations = (posForm) =>
-  (posForm?.formations || []).filter((f) => Array.isArray(f.members) && f.members.length).length;
+/* (§7.58: der Kennwert des Spannungsfelds ist `activeFormationCount` aus formations.js — die Formationen, die an
+   dieser Position wirklich einen Faktor zahlen. Die faktionseigene Zählung `positionFormations` (§7.56) ist damit
+   raus: sie war eine dritte Lesart von „Formation" neben der, die der Stich anzeigt (Battlefield filtert
+   factor > 1) und der, die Brennpunkt und Feuerlinie lesen. Der Aufrufer sitzt in engine.js.) */
 
 /* Episch-Anhang: der Formations-Sieg lädt die Karte mit den wenigsten Stapeln seiner Formation nach (Gleichstand:
    die vordere Position). Läuft NICHT durch Doppelentladung — das ist keine Ionisierung durch die Leiste, sondern
