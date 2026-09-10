@@ -52,7 +52,7 @@ export function StatusRail({ state, currentTraj = [], recordTraj = [], options =
   // Familie D „Überschusskrit"). Nur nach unten bei 0 begrenzen; KEIN Math.min(1, …) mehr (das war nur Anzeige;
   // der echte Wurf bleibt in der Engine bei engine.js:302 geklemmt).
   const critPct = Math.round(Math.max(0, critRaw) * 100);
-  // Crit-Mult VOLLSTÄNDIG (geteilter Helfer): Perk-Basis + Familien-Wucht + Blitz (Entladung-Rampe, Spannungsstau,
+  // Crit-Mult VOLLSTÄNDIG (geteilter Helfer): Perk-Basis + Familien-Wucht + Blitz (Gewitterfront-Rampe,
   // Vorentladung) + Systemregel — der STAND des Crit-Multiplikators. (exp: der feldweite Ionisierungs-Crit ist weg.)
   const critMultTotal = totalCritMult(state);
   /* §7.39 (Owner-Entscheid B): der Wert oben ist der GEDECKELTE — das, was ein Stich wirklich zahlt. Liegt der

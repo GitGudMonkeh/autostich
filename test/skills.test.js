@@ -52,7 +52,10 @@ describe("skills — Blitz-Registry (exp skill rework)", () => {
     // §7.30: die Ladungsserie zahlt in Ladung, ihre Leiter ist die fallende Schwelle (und trägt keinen Crit-Satz mehr).
     expect(desc(BLITZ_TIERS.serie, "chargeFromStreak")).toBe(true);
     expect(BLITZ_TIERS.serie.every((r) => r.critPerStreak === undefined)).toBe(true);
-    expect(asc(BLITZ_TIERS.stau, "step")).toBe(true);
+    // §7.43: das Spannungsfeld ersetzt den Stau — sein Satz je Stapel steigt, und der Stau-Schritt darf nicht zurückkommen.
+    expect(asc(BLITZ_TIERS.feld, "perStack")).toBe(true);
+    expect(BLITZ_TIERS.feld.every((r) => r.step === undefined && r.critKeep === undefined)).toBe(true);
+    expect(BLITZ_TIERS.stau).toBeUndefined();
     expect(asc(BLITZ_TIERS.kette, "extra")).toBe(true); // §7.18: Tiefe
   });
   it("Beschreibungen interpolieren die Tabellen (kein Drift zwischen Regel und Text)", () => {

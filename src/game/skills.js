@@ -43,7 +43,12 @@ const BLITZ = {
   kette:         [{ barEvery: 1, extra: 1 }, { barEvery: 1, extra: 2 }, { barEvery: 1, extra: 3 }, { barEvery: 1, extra: 4, second: 1 }], // §7.18: Tiefe — die Karte mit den meisten Stapeln; §7.19: jede Leiste, 1/2/3/4; §7.22 Episch-Extra: die zweittiefste +1
   faenger:       [{ minStacks: 1, value: 1 }, { minStacks: 1, value: 2 }, { minStacks: 1, value: 3 }, { minStacks: 1, value: 4, perStack: 1 }], // §7.18: ohne Schwelle, der Wert steigt; §7.22 Episch-Extra: +1 je Stapel
   kurzschluss:   [{ minStacks: 6, factor: 2 }, { minStacks: 5, factor: 2 }, { minStacks: 4, factor: 2 }, { minStacks: 3, factor: 2, onLoss: true }], // §7.22 Episch-Extra: der doppelte Stapel-Score zählt auch bei Niederlage (zahlt beim nächsten Sieg)
-  stau:          [{ step: 0.05, critKeep: 0 }, { step: 0.075, critKeep: 0 }, { step: 0.1, critKeep: 0 }, { step: 0.15, critKeep: 0.5 }], // §7.18: Crit-Multiplikator statt Crit-Chance
+  /* §7.43 (Owner): Spannungsfeld ersetzt den Spannungsstau. Der Stau schaltete sich selbst ab — sein Auslöser „Sieg
+     ohne Crit" wird seltener, je besser der Build läuft, und §7.31 maß ihn mit 0,00× gebaut. Das Feld sitzt auf der
+     einzigen Achse, die Blitz noch gar nicht hatte: einen eigenen MULTIPLIKATOR auf den Stich (Feuer und Pflanze
+     haben je einen). Es zahlt für GESTREUTE Stapel und steht damit gegen Kurzschluss und Kettenblitz, die Tiefe
+     wollen. Startwerte, NICHT gemessen. */
+  feld:          [{ perStack: 0.003 }, { perStack: 0.004 }, { perStack: 0.005 }, { perStack: 0.007, feedLowest: 1 }],
   lichtbogen:    [{ critPerStack: 0.005 }, { critPerStack: 0.01 }, { critPerStack: 0.015 }, { critPerStack: 0.02 }], // §7.28 (Owner): ersetzt Überspannung auf SK_LIGHTNING_04 — jeder wirksame Stapel der gespielten Karte gibt Crit-CHANCE auf den Stich, die Richtung, die bis dahin keine Regel und kein Skill bediente. Startwerte, noch nicht gemessen (Owner: erst Design, dann Startwert, dann messen)
   blitzschlag:   [{ critEvery: 4, stacks: 1 }, { critEvery: 3, stacks: 1 }, { critEvery: 2, stacks: 1 }, { critEvery: 2, stacks: 2 }], // §7.18: einen Schritt schneller, Episch zwei Stapel
   serienschutz:  [{ cost: 1, perRound: 2 }, { cost: 1, perRound: 3 }, { cost: 1, perRound: 5 }, { cost: 1, perRound: 8 }], // §7.30: fester Preis + Deckel je Durchlauf statt eines Anteils der Leiste bei JEDER Niederlage (Effekt +23 %, so wie er war −17 %). Sweep: bei Preis 2 bleibt er neutral (51 % besser als ohne), bei Preis 1 trägt er (59–69 %) — eine Ladung ist teuer, die Leiste ist der Engpass. Die Leiter ist damit die KADENZ, die Häufigkeitsleiter, die Blitz fehlte (§7.26 D)
@@ -214,8 +219,8 @@ export const SKILL_DEFS = {
   // Serie und Crit
   SK_LIGHTNING_07: { id: "SK_LIGHTNING_07", name: "Ladungsserie", archetype: "lightning", keywords: ["charge", "streak"], tiers: BLITZ.serie,
     ...tiered(BLITZ.serie, (r) => `Ab Serie ${r.chargeFromStreak} gibt jeder Sieg +1 Ladung.`) },
-  SK_LIGHTNING_13: { id: "SK_LIGHTNING_13", name: "Spannungsstau", archetype: "lightning", keywords: ["crit"], tiers: BLITZ.stau,
-    ...tiered(BLITZ.stau, (r) => `Jeder Sieg ohne Crit gibt +${de(r.step)}× Crit-Multiplikator für den nächsten Crit; ein Crit ${r.critKeep ? `behält ${pct(r.critKeep)} % des Staus` : "leert den Stau"}.`) },
+  SK_LIGHTNING_13: { id: "SK_LIGHTNING_13", name: "Spannungsfeld", archetype: "lightning", keywords: ["ionize", "formation"], tiers: BLITZ.feld,
+    ...tiered(BLITZ.feld, (r) => `Gewinnst du mit einer Karte in einer Formation, zählt der Stich +${pctS(r.perStack)} % je Stapel dieser Formation.${r.feedLowest ? ` Die Karte mit den wenigsten Stapeln dieser Formation erhält +${r.feedLowest} Stapel.` : ""}`) },
   SK_LIGHTNING_12: { id: "SK_LIGHTNING_12", name: "Vorentladung", archetype: "lightning", keywords: ["crit", "streak"], tiers: BLITZ.vorentladung,
     ...tiered(BLITZ.vorentladung, (r) => `Ab Serie ${r.minStreak} gibt jeder Serienpunkt +${de(r.multPerStreak)}× Crit-Multiplikator auf diesen Stich.`) },
   // (§7.19: Überschlag SK_LIGHTNING_14 gestrichen — die Systemregel „Überschuss über 100 %" in groß, im gierigen Build −15 %.)

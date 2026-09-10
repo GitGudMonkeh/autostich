@@ -2,8 +2,8 @@ import { describe, it, expect } from "vitest";
 import * as C from "../src/game/constants.js";
 import { SKILL_DEFS, BLITZ_TIERS } from "../src/game/skills.js";
 import { initLightning, L, maxChargeFor, effectiveTier, lightParam, lightningCritChance, lightningCritMult, overcritMult,
-  blitzfaengerValue, ionenfeldValue, fieldTick, ionScoreFor, ionCritMultFor, chargeGainOnWin, critFillsBar, blitzschlagStacks, stauAfterWin,
-  lightningOnLoss, fillBar, lightningCycleEnd } from "../src/game/factions/lightning.js";
+  blitzfaengerValue, ionenfeldValue, fieldTick, ionScoreFor, ionCritMultFor, chargeGainOnWin, critFillsBar, blitzschlagStacks,
+  formationStacks, lightFormMult, feldFeed, lightningOnLoss, fillBar, lightningCycleEnd } from "../src/game/factions/lightning.js";
 import { resolveTrick } from "../src/game/engine.js";
 import { computeFormations } from "../src/game/formations.js";
 import { initialState } from "../src/game/reducer.js";
@@ -94,21 +94,20 @@ describe("Blitz-Modul — Stufen und Kennwerte", () => {
   /* §7.30: das Passiv ist ein SOCKEL (sobald aktiv, einmal) plus ein Satz JE gehaltenem Skill. `SOCK` steht in jeder
      Zeile ausgeschrieben, damit ein späterer Umbau nicht still eine der beiden Hälften in die andere schieben kann —
      genau das prüfen die ersten drei Zeilen: der Sockel bleibt gleich, der Satz wächst mit der Zahl der Skills. */
-  it("lightningCritChance: Sockel einmal + Satz je Blitz-Skill (auch Legendäre), Gewitterfront-Rampe additiv; Serie und Stau zählen hier nicht mehr (§7.18, §7.30)", () => {
+  it("lightningCritChance: Sockel einmal + Satz je Blitz-Skill (auch Legendäre), Gewitterfront-Rampe additiv; die Serie zählt hier nicht mehr (§7.30)", () => {
     const SOCK = C.LIGHTNING_CRIT_SOCKET;
     expect(lightningCritChance(initLightning(), [L.ABLEITER], {})).toBe(0); // inaktiv: auch kein Sockel
     expect(lightningCritChance(light(), [], {})).toBeCloseTo(SOCK, 9);      // aktiv ohne Skill: nur der Sockel
     expect(lightningCritChance(light(), [L.ABLEITER, L.RESTSTROM], {})).toBeCloseTo(SOCK + 2 * C.LIGHTNING_CRIT_PER_SKILL, 9);
     expect(lightningCritChance(light(), [L.RESONANZ], {})).toBeCloseTo(SOCK + C.LIGHTNING_CRIT_PER_SKILL, 9);
-    expect(lightningCritChance(light({ stormCritBonus: 0.2, stauBonus: 0.1 }), [], {})).toBeCloseTo(SOCK + 0.2, 9);
+    expect(lightningCritChance(light({ stormCritBonus: 0.2 }), [], {})).toBeCloseTo(SOCK + 0.2, 9);
     // §7.30: die Ladungsserie zahlt in Ladung, nicht in Chance — die Serie hebt die Crit-Chance nicht mehr, egal wie lang.
     expect(lightningCritChance(light(), [L.LADUNGSSERIE], {}, 40)).toBeCloseTo(SOCK + C.LIGHTNING_CRIT_PER_SKILL, 9);
     expect(lightningCritChance(light(), [L.LADUNGSSERIE], { [L.LADUNGSSERIE]: 3 }, 200)).toBeCloseTo(SOCK + C.LIGHTNING_CRIT_PER_SKILL, 9);
   });
-  it("lightningCritMult: Entladung-Rampe + Spannungsstau + Vorentladung ab der Serie (§7.19: Überschlag gestrichen)", () => {
+  it("lightningCritMult: Gewitterfront-Rampe + Vorentladung ab der Serie (§7.19: Überschlag gestrichen; §7.43: kein Stau mehr)", () => {
     expect(lightningCritMult(initLightning(), [L.RESONANZ], {})).toBe(0);
     expect(lightningCritMult(light({ entladungMult: 0.3 }), [L.RESONANZ], {})).toBeCloseTo(0.3, 9);
-    expect(lightningCritMult(light({ stauBonus: 0.25 }), [], {})).toBeCloseTo(0.25, 9); // §7.18: der Spannungsstau zahlt hier
     const vMin = T.vorentladung[0].minStreak;
     expect(lightningCritMult(light(), [L.VORENTLADUNG], {}, vMin)).toBeCloseTo(vMin * T.vorentladung[0].multPerStreak, 9);
     expect(lightningCritMult(light(), [L.VORENTLADUNG], {}, vMin - 1)).toBe(0);
@@ -195,12 +194,39 @@ describe("Blitz-Modul — Ladung, Leiste, Niederlage (reine Übergänge)", () =>
     expect(blitzschlagStacks(light({ critCount: 2 }), [L.BLITZSCHLAG, L.DOPPELENTLADUNG], { [L.BLITZSCHLAG]: 3 })).toBe(T.blitzschlag[3].stacks * C.DOPPELENTLADUNG_STACKS); // §7.18: Episch zwei Stapel, Doppelentladung verdoppelt
     expect(blitzschlagStacks(light({ critCount: 5 }), [], {})).toBe(0);
   });
-  it("stauAfterWin: ohne Crit +Schritt, Crit leert (Episch halbiert); ohne Skill unberührt (der Reducer leert beim Ersetzen)", () => {
-    expect(stauAfterWin(light(), [L.SPANNUNGSSTAU], {}, false).stauBonus).toBeCloseTo(T.stau[0].step, 9);
-    expect(stauAfterWin(light({ stauBonus: 0.3 }), [L.SPANNUNGSSTAU], {}, true).stauBonus).toBe(0);
-    expect(stauAfterWin(light({ stauBonus: 0.3 }), [L.SPANNUNGSSTAU], { [L.SPANNUNGSSTAU]: 3 }, true).stauBonus).toBeCloseTo(0.15, 9);
-    const l = light({ stauBonus: 0.3 });
-    expect(stauAfterWin(l, [], {}, false)).toBe(l);
+  /* Spannungsfeld (§7.43) — die Vereinigung ist der Kern: eine Karte, die in mehreren Formationen der Position
+     hängt, darf NUR EINMAL zählen, sonst zahlt sie mehrfach für sich selbst. Der Wächter überlappt deshalb zwei
+     Formationen absichtlich und rechnet die Summe von Hand aus. */
+  it("formationStacks: jede Karte genau einmal über alle Formationen der Position, die gespielte eingeschlossen; ohne Partner leer", () => {
+    const stacks = { 0: 2, 1: 1, 2: 3, 5: 4 };
+    const cardAt = (k) => ({ ionStacks: stacks[k] || 0 });
+    const two = { formations: [{ members: [0, 1, 2] }, { members: [1, 2, 5] }] }; // 2 steht in beiden
+    expect(formationStacks({ ionStacks: 1 }, two, 1, cardAt).map((m) => m.slot)).toEqual([1, 0, 2, 5]);
+    expect(formationStacks({ ionStacks: 1 }, { formations: [] }, 1, cardAt)).toEqual([]); // ohne Formation kein Feld
+    expect(formationStacks({ ionStacks: 1 }, { formations: [{ members: [] }] }, 1, cardAt)).toEqual([]); // Meta-Faktoren haben keine Mitglieder
+  });
+  it("lightFormMult: 1 + Satz je Stapel der Formation; ohne Skill, ohne Formation und inaktiv genau 1", () => {
+    const stacks = { 0: 2, 1: 1, 2: 3 };
+    const cardAt = (k) => ({ ionStacks: stacks[k] || 0 });
+    const form = { formations: [{ members: [0, 1, 2] }] };
+    const card = { ionStacks: 1 };
+    const per = (t) => T.feld[t].perStack;
+    expect(lightFormMult(light(), [L.SPANNUNGSFELD], {}, card, form, 1, cardAt)).toBeCloseTo(1 + 6 * per(0), 9);
+    expect(lightFormMult(light(), [L.SPANNUNGSFELD], { [L.SPANNUNGSFELD]: 3 }, card, form, 1, cardAt)).toBeCloseTo(1 + 6 * per(3), 9);
+    expect(lightFormMult(light(), [L.KETTENBLITZ], {}, card, form, 1, cardAt)).toBe(1);
+    expect(lightFormMult(light(), [L.SPANNUNGSFELD], {}, card, { formations: [] }, 1, cardAt)).toBe(1);
+    expect(lightFormMult(initLightning(), [L.SPANNUNGSFELD], {}, card, form, 1, cardAt)).toBe(1);
+  });
+  it("feldFeed (Episch): die Karte mit den WENIGSTEN Stapeln der Formation, Gleichstand die vordere Position; erst ab Episch", () => {
+    const stacks = { 0: 2, 1: 1, 2: 3, 3: 1 };
+    const cardAt = (k) => ({ ionStacks: stacks[k] || 0 });
+    const form = { formations: [{ members: [0, 1, 2, 3] }] };
+    const card = { ionStacks: 1 };
+    const epic = { [L.SPANNUNGSFELD]: 3 };
+    expect(feldFeed(light(), [L.SPANNUNGSFELD], epic, card, form, 1, cardAt)).toEqual({ slot: 1, stacks: T.feld[3].feedLowest }); // 1 und 3 haben je 1 → die vordere
+    expect(feldFeed(light(), [L.SPANNUNGSFELD], epic, { ionStacks: 9 }, form, 1, cardAt).slot).toBe(3); // die Siegkarte ist nicht mehr die dünnste (1 und 3: 1, aber 1 ist die gespielte mit 9)
+    expect(feldFeed(light(), [L.SPANNUNGSFELD], {}, card, form, 1, cardAt)).toBe(null); // Normal hat den Anhang nicht
+    expect(feldFeed(light(), [L.SPANNUNGSFELD], epic, card, { formations: [] }, 1, cardAt)).toBe(null);
   });
   /* §7.30: fester Preis statt eines Anteils der Leiste, und ein DECKEL je Durchlauf. Der Deckel ist der Kern des
      Umbaus (die Kadenz war das Problem, nicht der Preis), deshalb prüft der Test ihn ausdrücklich: die (perRound+1).
@@ -406,13 +432,43 @@ describe("Blitz — Engine-Integration (resolveTrick)", () => {
     const first = resolveTrick(scen(12, 0, { skills: [L.BLITZSCHLAG], skillTiers: { [L.BLITZSCHLAG]: 3 }, lightning: light() }), zero);
     expect(first.deck[0].ionStacks || 0).toBe(0);
   });
-  it("Spannungsstau (§7.18): Sieg ohne Crit rampt den Crit-Multiplikator, der Crit zahlt ihn und leert (Episch halbiert)", () => {
-    expect(resolveTrick(scen(12, 0, { skills: [L.SPANNUNGSSTAU], lightning: light() }), noCrit).lightning.stauBonus).toBeCloseTo(T.stau[0].step, 9);
-    const paid = resolveTrick(scen(12, 0, { skills: [L.SPANNUNGSSTAU], lightning: light({ stauBonus: 0.3 }) }), zero);
-    expect(paid.lastTrick.isCrit).toBe(true);
-    expect(paid.lastTrick.critMultiplier).toBeCloseTo(M + 0.3, 6);
-    expect(paid.lightning.stauBonus).toBe(0);
-    expect(resolveTrick(scen(12, 0, { skills: [L.SPANNUNGSSTAU], skillTiers: { [L.SPANNUNGSSTAU]: 3 }, lightning: light({ stauBonus: 0.3 }) }), zero).lightning.stauBonus).toBeCloseTo(0.15, 9);
+  /* Spannungsfeld (§7.43, ersetzt den Spannungsstau) — der EINZIGE eigene Multiplikator der Fraktion. Zwei Dinge
+     stehen hier auf dem Spiel und beide werden ausdrücklich geprüft: dass er als eigener Faktor im Produkt landet
+     (breakdown.lightMult, nicht in den Flats oder im Crit), und dass er ohne Formation genau 1 bleibt. */
+  it("Spannungsfeld (§7.43): der Formations-Sieg zählt +Satz je Stapel der Formation als eigener Multiplikator; ohne Formation 1", () => {
+    expect(SKILL_DEFS.SK_LIGHTNING_13.name).toBe("Spannungsfeld");
+    const forms = computeFormations(identity(), constDeck(12));
+    const deck = constDeck(12).map((c, i) => ({ ...c, ionStacks: { 0: 2, 1: 1, 2: 3, 4: 1, 7: 5 }[i] || 0 }));
+    const sum = 2 + 1 + 3 + 0 + 1; // die Mitglieder 0–4; die 5 auf Position 7 liegt außerhalb und zählt nicht
+    const at1 = (over) => scen(12, 0, { pos: 1, deck, formations: forms, lightning: light(), ...over });
+    const s = resolveTrick(at1({ skills: [L.SPANNUNGSFELD] }), noCrit);
+    expect(s.lastTrick.result).toBe("win");
+    expect(s.lastTrick.breakdown.lightMult).toBeCloseTo(1 + sum * T.feld[0].perStack, 9);
+    const epic = resolveTrick(at1({ skills: [L.SPANNUNGSFELD], skillTiers: { [L.SPANNUNGSFELD]: 3 } }), noCrit);
+    expect(epic.lastTrick.breakdown.lightMult).toBeCloseTo(1 + sum * T.feld[3].perStack, 9);
+    // Ohne den Skill und ohne Formation bleibt der Faktor neutral — er darf nicht still in andere Faktoren lecken.
+    const plain = resolveTrick(at1({ skills: [L.KETTENBLITZ] }), noCrit); // Kettenblitz zündet nur an der vollen Leiste → gleiche Skillzahl, sonst nichts
+    expect(plain.lastTrick.breakdown.lightMult).toBe(1);
+    // Und er muss im PRODUKT stehen, nicht nur im Breakdown: der Stich zahlt genau um den Faktor mehr.
+    expect(s.lastTrick.breakdown.total).toBeCloseTo(plain.lastTrick.breakdown.total * (1 + sum * T.feld[0].perStack), 6);
+    const loose = constDeck(12).map((c, i) => ({ ...c, value: i % 2 ? 7 : 5, baseRank: i % 2 ? 7 : 5, ionStacks: 3 }));
+    const looseForms = computeFormations(identity(), loose);
+    expect(looseForms[1].formations).toEqual([]);
+    expect(resolveTrick(scen(7, 0, { pos: 1, deck: loose, formations: looseForms, skills: [L.SPANNUNGSFELD], lightning: light() }), noCrit)
+      .lastTrick.breakdown.lightMult).toBe(1);
+  });
+  it("Spannungsfeld Episch: der Formations-Sieg lädt die Karte mit den wenigsten Stapeln nach — Normal nicht, und nicht durch Doppelentladung", () => {
+    const forms = computeFormations(identity(), constDeck(12));
+    const deck = constDeck(12).map((c, i) => ({ ...c, ionStacks: { 0: 2, 1: 1, 2: 3, 4: 1 }[i] || 0 }));
+    const at1 = (over) => scen(12, 0, { pos: 1, deck, formations: forms, lightning: light(), ...over });
+    const one = T.feld[3].feedLowest;
+    const e = resolveTrick(at1({ skills: [L.SPANNUNGSFELD], skillTiers: { [L.SPANNUNGSFELD]: 3 } }), noCrit);
+    expect(e.deck[3].ionStacks).toBe(one); // Position 3 hatte 0 Stapel, also die wenigsten der Formation 0–4
+    expect(e.deck[1].ionStacks).toBe(1);   // die Siegkarte bleibt unberührt
+    // Doppelentladung vervielfacht die Ionisierung der LEISTE, nicht diesen einen Stapel.
+    const dbl = resolveTrick(at1({ skills: [L.SPANNUNGSFELD, L.DOPPELENTLADUNG], skillTiers: { [L.SPANNUNGSFELD]: 3 } }), noCrit);
+    expect(dbl.deck[3].ionStacks).toBe(one);
+    expect(resolveTrick(at1({ skills: [L.SPANNUNGSFELD] }), noCrit).deck[3].ionStacks || 0).toBe(0); // Normal hat den Anhang nicht
   });
   it("Überschuss über 100 %: nur noch die Systemregel (klein) hebt den Crit-Multiplikator — Überschlag ist gestrichen (§7.19)", () => {
     // §7.30: ein aktiver Blitz trägt den Sockel auch ohne Skill, der Überschuss ist also Sockel + Rampe − 100 %.

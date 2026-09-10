@@ -15,7 +15,8 @@ import { SKILL_DEFS, activeLightningCount, isLegendarySkill, boostedTier } from 
    Stufe. Alle Funktionen sind immutabel: sie geben neue Objekte zurück und fassen ihre Eingaben nicht an.
    §7.18 (Blitz-Runde): Statische Aufladung und Dauerstrom sind in Blitzableiter aufgegangen, Ionenfeld (SK_LIGHTNING_02)
    und Vorentladung (SK_LIGHTNING_12) sind neu, Kettenblitz vertieft statt verbreitert, Blitzfänger hat keine Stapel-
-   Schwelle mehr, der Spannungsstau geht in den Crit-Multiplikator. §7.19: Überschlag ist gestrichen (14 Skills). §7.24:
+   Schwelle mehr. §7.43: SK_LIGHTNING_13 trägt das Spannungsfeld statt des Spannungsstaus — Formation × Stapel als
+   eigener Multiplikator auf den Stich. §7.19: Überschlag ist gestrichen (14 Skills). §7.24:
    Überspannung macht den Überschuss eines Crits über dem Deckel zu Ladung (vorher Dauerwert je Leiste).
    ============================================================ */
 
@@ -24,19 +25,19 @@ import { SKILL_DEFS, activeLightningCount, isLegendarySkill, boostedTier } from 
 export const L = Object.freeze({
   ABLEITER: "SK_LIGHTNING_01", IONENFELD: "SK_LIGHTNING_02", KETTENBLITZ: "SK_LIGHTNING_03", LICHTBOGEN: "SK_LIGHTNING_04", // 04: Lichtbogen ersetzt Überspannung (§7.28)
   RESTSTROM: "SK_LIGHTNING_05", GEWITTERFRONT: "SK_LIGHTNING_06", LADUNGSSERIE: "SK_LIGHTNING_07", KURZSCHLUSS: "SK_LIGHTNING_09",
-  ENTLADUNG: "SK_LIGHTNING_10", BLITZFAENGER: "SK_LIGHTNING_11", VORENTLADUNG: "SK_LIGHTNING_12", SPANNUNGSSTAU: "SK_LIGHTNING_13",
+  ENTLADUNG: "SK_LIGHTNING_10", BLITZFAENGER: "SK_LIGHTNING_11", VORENTLADUNG: "SK_LIGHTNING_12", SPANNUNGSFELD: "SK_LIGHTNING_13", // 13: Spannungsfeld ersetzt den Spannungsstau (§7.43)
   BLITZSCHLAG: "SK_LIGHTNING_15", SERIENSCHUTZ: "SK_LIGHTNING_17", // SK_LIGHTNING_14 Überschlag: gestrichen (§7.19)
   DOPPELENTLADUNG: "SK_LIGHTNING_L02", HOCHSPANNUNG: "SK_LIGHTNING_L03", RESONANZ: "SK_LIGHTNING_L04", // L04: Resonanz ersetzt Durchschlag (§7.25); L01 Donnergott gestrichen (§6.11, Owner: drei je Fraktion, die stärksten)
 });
 
 /* Frischer Blitz-Substate — inaktiv; der erste Blitz-Skill aktiviert ihn (Reducer). Zähler sind Lauf-kumulativ:
    bars = volle Leisten (Kettenblitz Normal zählt jede 2.; Anzeige), critCount = Crits (Blitzableiter Normal jeder 2.,
-   Blitzschlag jeder N.). Rampen ohne Deckel: stormCritBonus (Gewitterfront), entladungMult (Entladung). stauBonus =
-   Spannungsstau (Crit-Multiplikator für den nächsten Crit). fieldLeft = Stiche, die das Ionenfeld noch trägt.
+   Blitzschlag jeder N.). Rampen ohne Deckel: stormCritBonus (Gewitterfront), entladungMult (Entladung).
+   fieldLeft = Stiche, die das Ionenfeld noch trägt.
    serienschutzRound = in diesem Durchlauf schon verbrauchte Serienschutz-Auslösungen (§7.30, Deckel je Stufe). */
 export function initLightning() {
   return { active: false, charge: 0, maxCharge: C.LIGHTNING_MAX_CHARGE, bars: 0, critCount: 0,
-    stormCritBonus: 0, entladungMult: 0, entladungScore: 0, stauBonus: 0, fieldLeft: 0, stackBank: 0, serienschutzCount: 0, serienschutzRound: 0 };
+    stormCritBonus: 0, entladungMult: 0, entladungScore: 0, fieldLeft: 0, stackBank: 0, serienschutzCount: 0, serienschutzRound: 0 };
 }
 
 const held = (skills, id) => (skills || []).includes(id);
@@ -87,8 +88,9 @@ export function lightParam(skills, skillTiers, id, key) {
    + Lichtbogen (§7.28: je wirksamem Stapel der gespielten Karte — die
    Richtung „Ionisierung → Crit-Chance", die es vorher nicht gab; `card` ist die Lesesicht der Karte, also mit
    Resonanz-Summe, und `effectiveStacks` heißt: Kurzschluss verdoppelt hier genauso wie beim Stapel-Score).
-   0, solange der Archetyp inaktiv ist. (Der Spannungsstau zahlt seit §7.18 auf den Crit-Multiplikator, nicht auf die
-   Chance. §7.30: die Ladungsserie zahlt jetzt in Ladung, nicht mehr in Chance — damit liest gerade niemand die Serie.
+   0, solange der Archetyp inaktiv ist. (§7.43: SK_LIGHTNING_13 trägt das Spannungsfeld und zahlt auf den
+   Stich-Multiplikator, weder auf Chance noch auf Crit-Multiplikator.
+   §7.30: die Ladungsserie zahlt jetzt in Ladung, nicht mehr in Chance — damit liest gerade niemand die Serie.
    Der Platz bleibt als `_streak` stehen, weil die Engine sie ohnehin berechnet und weiterreicht: eine künftige
    Serie-zu-Chance-Quelle gehört hierher, und die 15 Aufrufstellen zweimal umzustellen ist der teurere Weg.) */
 export function lightningCritChance(lightning, skills, skillTiers, _streak = 0, card = null) {
@@ -99,14 +101,14 @@ export function lightningCritChance(lightning, skills, skillTiers, _streak = 0, 
   return c;
 }
 
-/* Crit-Multiplikator-Beitrag des Blitz-Archetyps (additiv auf die Basis): Entladung-Rampe + Spannungsstau (§7.18: der
-   Stau aus Siegen ohne Crit, für den nächsten Crit) + Vorentladung (§7.18: ab der Serie der Stufe je Serienpunkt;
-   `streak` = Serie NACH diesem Sieg, wie bei der Crit-Chance). Der Überschuss über 100 % zahlt nur noch über die
+/* Crit-Multiplikator-Beitrag des Blitz-Archetyps (additiv auf die Basis): Gewitterfront-Rampe (Episch-Anhang, sie
+   speist entladungMult) + Vorentladung (§7.18: ab der Serie der Stufe je Serienpunkt; `streak` = Serie NACH diesem
+   Sieg, wie bei der Crit-Chance). Der Überschuss über 100 % zahlt nur noch über die
    Systemregel (overcritMult) — Überschlag ist gestrichen (§7.19). (Der Stapel-Anteil zahlt über die Stapel der
    Siegkarte (ionCritMultFor), nicht mehr flach. 0, solange inaktiv. */
 export function lightningCritMult(lightning, skills, skillTiers, streak = 0) {
   if (!lightning || !lightning.active) return 0;
-  let m = (lightning.entladungMult || 0) + (lightning.stauBonus || 0);
+  let m = lightning.entladungMult || 0;
   const vMin = lightParam(skills, skillTiers, L.VORENTLADUNG, "minStreak");
   if (vMin != null && streak >= vMin) m += Math.max(0, streak) * (lightParam(skills, skillTiers, L.VORENTLADUNG, "multPerStreak") || 0);
   return m;
@@ -201,14 +203,45 @@ export function blitzschlagStacks(lightning, skills, skillTiers) {
   return (lightParam(skills, skillTiers, L.BLITZSCHLAG, "stacks") || 1) * (hasDoppelentladung(skills) ? C.DOPPELENTLADUNG_STACKS : 1);
 }
 
-// Spannungsstau nach einem Sieg: ohne Crit +Schritt (Crit-Multiplikator, §7.18), mit Crit geleert (Episch: halbiert).
-// Ohne den Skill unberührt — wird er ersetzt, leert der Reducer den Stau (PICK_SKILL).
-export function stauAfterWin(lightning, skills, skillTiers, isCrit) {
-  const step = lightParam(skills, skillTiers, L.SPANNUNGSSTAU, "step");
-  if (step == null) return lightning;
-  const cur = lightning.stauBonus || 0;
-  const keep = lightParam(skills, skillTiers, L.SPANNUNGSSTAU, "critKeep") || 0;
-  return { ...lightning, stauBonus: isCrit ? cur * keep : cur + step };
+/* Spannungsfeld (§7.43) — die Mitglieder der Formationen an einer Position, jede Karte GENAU EINMAL und die
+   gespielte eingeschlossen. Ohne echten Partner leer: Meta-Faktoren (Anker, Nachhall) haben keine Mitglieder, und
+   ohne Formation gibt es kein Feld. Ohne die Vereinigung zahlt eine Karte, die in drei Formationen hängt, dreifach
+   für sich selbst — Resonanz zählt aus demselben Grund genauso. */
+export function formationStacks(card, posForm, slot, cardAt) {
+  const seen = new Set([slot]);
+  const out = [{ slot, stacks: card?.ionStacks || 0 }];
+  for (const f of posForm?.formations || []) for (const p of f.members || []) {
+    if (seen.has(p)) continue;
+    seen.add(p);
+    out.push({ slot: p, stacks: cardAt(p)?.ionStacks || 0 });
+  }
+  return out.length > 1 ? out : [];
+}
+
+/* Der einzige eigene MULTIPLIKATOR der Fraktion (Feuer hat fireMult, Pflanze plantMult, Blitz hatte keinen): der
+   Formations-Sieg zählt +Satz je Stapel der Formation. Gelesen wird die ECHTE Siegkarte, nicht die Resonanz-Sicht —
+   die trägt die Formationssumme schon, das wäre dieselbe Zahl zweimal. 1 ohne Skill, ohne Formation, inaktiv. */
+export function lightFormMult(lightning, skills, skillTiers, card, posForm, slot, cardAt) {
+  if (!lightning || !lightning.active) return 1;
+  const per = lightParam(skills, skillTiers, L.SPANNUNGSFELD, "perStack");
+  if (!per) return 1;
+  const members = formationStacks(card, posForm, slot, cardAt);
+  if (!members.length) return 1;
+  return 1 + per * members.reduce((s, m) => s + m.stacks, 0);
+}
+
+/* Episch-Anhang: der Formations-Sieg lädt die Karte mit den wenigsten Stapeln seiner Formation nach (Gleichstand:
+   die vordere Position). Läuft NICHT durch Doppelentladung — das ist keine Ionisierung durch die Leiste, sondern
+   genau der eine Stapel. Gibt { slot, stacks } in der ZIEHREIHENFOLGE oder null. */
+export function feldFeed(lightning, skills, skillTiers, card, posForm, slot, cardAt) {
+  if (!lightning || !lightning.active) return null;
+  const n = lightParam(skills, skillTiers, L.SPANNUNGSFELD, "feedLowest") || 0;
+  if (!n) return null;
+  const members = formationStacks(card, posForm, slot, cardAt);
+  if (!members.length) return null;
+  let best = members[0];
+  for (const m of members) if (m.stacks < best.stacks || (m.stacks === best.stacks && m.slot < best.slot)) best = m;
+  return { slot: best.slot, stacks: n };
 }
 
 /* Niederlage: Serienschutz (fester Ladungspreis der Stufe hält die Serie, höchstens `perRound` mal je Durchlauf).

@@ -314,7 +314,7 @@ export function critMultiplierFor(perks, ctx = {}) {
   return C.CRIT_BASE_MULT + bonus;
 }
 // Anzeige-Helfer: VOLLER Crit-Multiplikator (persistente Terme, wie die Engine) — Perk-Basis + Familien-Wucht + Blitz
-// (Entladung-Rampe, Spannungsstau, Vorentladung) + Systemregel (Überschuss über 100 %). Ohne die situativen Terme
+// (Gewitterfront-Rampe, Vorentladung) + Systemregel (Überschuss über 100 %). Ohne die situativen Terme
 // (Entladung Episch beim Leisten-Crit), die nur im Crit selbst zünden. Geteilt: StatusRail (Crit-Zeile) + ChargeBar.
 /* Der GEBAUTE Crit-Multiplikator des Builds: die Summe aller dauerhaften Quellen, ohne Deckel. Die Stapel der
    Siegkarte (`lightIonCritMult`) fehlen hier zwangsläufig — die hängen an der Karte, die gerade gewinnt, nicht am

@@ -8078,6 +8078,90 @@ Drei, alle gegengeprobt:
 
 ---
 
+### 7.43 Spannungsfeld ersetzt den Spannungsstau (2026-09-10, Owner) — umgesetzt, UNGEMESSEN
+
+Vier Entwürfe sind vorher gefallen, und jeder aus einem Grund, der hier festgehalten gehört, weil er sich sonst
+wiederholt.
+
+#### A · Was nicht ging und warum
+
+**Der Stau umgehängt.** Sein Auslöser ist „Sieg ohne Crit", wird also seltener, je besser der Build läuft — §7.31 maß
+ihn mit 0,00× gebaut. Ein Skill, der sich abschaltet, sobald die Fraktion funktioniert, ist an jeder Achse falsch.
+
+**Kondensator (Leiste länger, Ionisierung größer).** Owner: „das ist nur ionisiere mehr Karten mit extra Steps." Er
+hat recht — mehr Stapel je Leiste bei längerer Leiste ist derselbe Regler in neuer Verpackung. Dazu zwei harte
+Zahlenprobleme, die beide erst beim Rechnen auffielen:
+
+- Ein **prozentualer** Aufschlag ist unlesbar auf einer Leiste, die der Spieler als Kästchen abzählt.
+- Ein **flacher** Aufschlag ist relativ zum Build. Reststrom Episch (Boden 6, Leiste 9) mit Blitzableiter Episch
+  (Rückgabe 2) braucht **1 Ladung je Leiste**; „+5 lang" macht daraus 6, also ein Sechstel der Rate für doppelte
+  Stapel. Der Preis wäre in dem Build, der am meisten Stapel will, am höchsten gewesen.
+
+**Der erste Episch-Anhang** („Ladung über der Leiste geht nicht verloren") war ein Nichts: die Leiste fällt bei jeder
+Füllung auf den Boden zurück, ein Stich bringt höchstens 1–3 Ladung, es gibt also nichts zu sparen.
+
+**Der zweite** („sind alle Karten der Formation ionisiert, zählt sie doppelt") war eine Zeitschaltuhr. Die Leiste
+ionisiert **die nächste Karte in der Reihenfolge** und läuft am Deck-Ende wieder vorne los, Stapel verschwinden nie —
+die Bedingung wird also irgendwann von allein wahr und danach nie wieder falsch. Auch das Wort „volle Formation" gab
+es im Spiel nicht; der Owner hat beides zurückgewiesen.
+
+#### B · Das Loch, das die Lösung gefunden hat
+
+Die Score-Kette ist
+
+```text
+(Basis + Flats) × Serie × Perk × Formation × Nachhall × Kern × fireMult × plantMult × architectMult × Crit
+```
+
+Feuer hat darin einen eigenen Faktor, Pflanze hat einen, **Blitz hatte keinen**. Alles, was die Fraktion tut, landet
+in Basis-Score, Kartenwert oder Crit. Owners Vorgabe — „etwas das pro Stapel einen Bonus gibt, eventuell auf
+Formation" — trifft genau diese Lücke.
+
+#### C · Der Skill
+
+**Spannungsfeld** (SK_LIGHTNING_13): „Gewinnst du mit einer Karte in einer Formation, zählt der Stich +X % je Stapel
+dieser Formation."
+
+| Stufe | je Stapel der Formation |
+| --- | --- |
+| Normal | +0,3 % |
+| Selten | +0,4 % |
+| Sehr selten | +0,5 % |
+| Episch | +0,7 %, dazu +1 Stapel auf die Karte mit den wenigsten Stapeln der Formation je Sieg |
+
+Zwei Festlegungen, die im Kartentext nicht stehen:
+
+- **Jede Karte zählt genau einmal**, auch wenn die Siegkarte in mehreren Formationen der Position hängt. Sonst zahlt
+  eine Karte in drei Formationen dreifach für sich selbst; Resonanz zählt aus demselben Grund so.
+- Gelesen wird die **echte** Siegkarte, nicht die Resonanz-Sicht. Die trägt die Formationssumme schon in `ionStacks`
+  — sonst stünde dieselbe Zahl zweimal im selben Produkt.
+- Der Episch-Stapel läuft **nicht** durch Doppelentladung. Das ist keine Ionisierung durch die Leiste.
+
+Der Skill zahlt für **gestreute** Stapel: eine Dreier-Formation, in der alle drei Karten Stapel haben, zahlt dreimal
+so viel wie dieselbe Formation mit einer tiefen Karte und zwei leeren. Damit steht er gegen Kurzschluss und
+Kettenblitz, die Tiefe wollen — die Entscheidung, die Blitz gefehlt hat.
+
+#### D · Was das kostet
+
+`stauBonus` ist aus dem Substate raus, `stauAfterWin` gestrichen, die beiden Reducer-Zeilen, die den Stau beim
+Ersetzen leerten, entfallen. Neu: `formationStacks`, `lightFormMult`, `feldFeed` im Blitz-Modul, `lightMult` als
+eigener Faktor im Produkt und im Breakdown.
+
+#### E · Wächter
+
+Drei, alle gegengeprobt:
+
+- `formationStacks` zählt jede Karte einmal über absichtlich überlappende Formationen (gibt man die Vereinigung auf,
+  fällt er),
+- `lightMult` steht im **Produkt**, nicht nur im Breakdown — der Stich zahlt genau um den Faktor mehr (nimmt man ihn
+  aus `scoreBeforeCrit`, fällt er),
+- die Episch-Nachladung trifft die Karte mit den wenigsten Stapeln und wird von Doppelentladung NICHT vervielfacht.
+
+**Startwerte, NICHT gemessen.** Die Zahl mit dem größten Risiko ist das Episch: eine Dreier-Formation mit je 20
+Stapeln zahlt +84 % auf den Stich, während Kurzschluss als ganzer Skill +56 % misst.
+
+---
+
 ### 5.30 Die Eis-Skills auf dem neuen Motor (2026-09-09) — gemessen, nichts umgesetzt
 
 **Owner:** „und dann schauen wir uns alle skills an die davon profitieren müssen und designen wie."
@@ -8491,3 +8575,4 @@ leichtesten haben.
 | 2026-09-10 | Resonanz auf 0,7 und die Gedankenstriche raus (§7.40, Owner). `RESONANZ_SHARE` 1,5 → **0,7**: §7.38 hatte das Zielband 250–300 % mit +438 % verfehlt, zwei Messpunkte ergeben ein Potenzgesetz (Regler ×0,667 → Wirkung ×0,79, Exponent 0,58) und daraus 0,7 für rund +280 %. Der Anteil liegt damit UNTER dem Nullpunkt des Reglers: eine Karte bekommt 70 % der Partnersumme statt der vollen. Zweitens, Owner wörtlich „keine bescheuerten Bindestriche": alle fünf Gedankenstriche aus den Kartentexten raus — Hochspannung und Abbruchkante (beide von mir in dieser Runde), Eiswall und der Glutbett-Badge (Bestand) sowie der Eis-Passivtext in de/en/es. §5.18 hatte die Regel für die drei Eis-Texte schon aufgestellt; sie ist jetzt ein Wächter über ALLE Skill- und Passiv-Texte (`i18n-guards`), gegengeprobt. Bewusst NICHT im Wächter und offen: 19 Gedankenstriche in Glossar-Einträgen und Tooltips, davon drei aus der Eis-Runde — das ist ein eigener Textdurchgang und ein Owner-Entscheid. Hochspannung bleibt wie in §7.39 gebaut (Owner: „der passt"). |
 | 2026-09-10 | §7.39/§7.40 nachgemessen (§7.41). Blitz-Mono, 6 min, zwei Änderungen zugleich (nicht trennbar, war so angesagt). **Blitz ist eingefangen: mono 1,028 Mrd → 416M**, damit Bl 416M · Pf 367M · Ei 348M/224M · Fe 137M — Blitz und Pflanze gleichauf, der 12-fache Abstand aus §7.38 ist weg. Doppelentladung +275 → +235 %, Resonanz +438 → **+170 %**, Hochspannung +428 → **+92 %**. **Mein Potenzgesetz aus §7.40 war falsch**: aus zwei Punkten gefittet (Exponent 0,58) sagte es für 0,7 rund +280 % voraus, gemessen sind +170 %; der Exponent liegt zwischen 1,5 und 0,7 tatsächlich bei 1,24, die Elastizität steilt sich nach unten auf. Zwei Punkte reichten für diese Kurve nicht. Teil der Abweichung ist nicht Resonanz: Hochspannung fiel gleichzeitig von +2 auf +1 Stufe und wird in 65 % der Läufe gehalten, dort erzeugt jeder Blitz-Skill weniger Stapel — und Resonanz teilt genau die. **Hochspannung lässt sich mono gar nicht beurteilen**: in einer Mono-Welt ist „+1 für alle Fraktionen" identisch mit „+1 für Blitz", die Messung sieht also nur 2 → 1, nicht den Umbau; dafür braucht es die Misch-Welten. Preis der Runde: der Mittelbau ist eingebrochen — acht Skills bei oder unter null, und Gewitterfront fiel +69 → −6, Kettenblitz +33 → +5, Blitzableiter +24 → +2, ohne angefasst worden zu sein. Ursache ist Hochspannung: eine Stufe weniger trifft jeden der dreizehn gehaltenen Skills, nicht nur den Legendären. Das war nicht beabsichtigt. |
 | 2026-09-10 | Crit-Deckel weich, Entladung auf die Score-Achse (§7.42, Owner, Zahlen vorher abgenommen). Befund: der Multiplikator hat 5,75× Kopfraum, und **Stapel allein füllen ihn bei 38 — mit Kurzschluss schon bei 19**, was ein Doppelentladung/Resonanz-Bau mühelos erreicht; ab da ist jeder weitere Punkt aus jeder Quelle null wert. Das geht tiefer als §7.31: ein Stapel zahlt Basis-Score UND Crit-Multiplikator, über dem Deckel nur noch das erste — der harte Schnitt halbiert also die Auszahlung der Kernressource, nicht nur vier Skills (was auch Ladungsserie erklärt, −11 % bei 100 % Haltequote). Umgesetzt: `CRIT_MULT_SOFT_SLOPE = 0,2`, Form wie das vorhandene `WIN_SOFTCAP`, EINE Quelle (`softCritMult`) für Motor und Anzeige; gebaut 10/16/36× zahlt 8,4/9,6/13,6×, und SLOPE 0 stellt den alten harten Deckel ohne Codeänderung wieder her. Entladung verlässt die Multiplikator-Achse (dort sagten vier Skills dasselbe; behalten hat sie Vorentladung, die einzige, die eine Entscheidung verlangt) und zahlt jetzt **+2/3/4/6 Basis-Score je Sieg, dauerhaft je voller Leiste**, Episch verdoppelt die Rampe bei einem Crit statt den Multiplikator; eigener Zustand `entladungScore`, `entladungMult` speist nur noch Gewitterfronts Episch-Anhang. Der steht damit allein auf der Achse und ist offen (nicht Teil der drei abgenommenen Punkte). Drei Wächter, alle gegengeprobt. Startwerte, UNGEMESSEN — wie viele volle Leisten ein Lauf hat, ist nicht erhoben. |
+| 2026-09-10 | Spannungsfeld ersetzt den Spannungsstau (§7.43, Owner: „können wir vllt irgendetwas bauen was Stapel mehr streut oder etwas das pro Stapel einen Bonus gibt, eventuell auf Formation"). Vier Entwürfe fielen vorher, jeder aus einem eigenen Grund (§7.43 A): der Stau umgehängt (sein Auslöser „Sieg ohne Crit" wird seltener, je besser der Build läuft — §7.31 maß 0,00× gebaut), der Kondensator („nur ionisiere mehr Karten mit extra Steps", dazu: ein Prozent-Aufschlag ist auf einer Kästchen-Leiste unlesbar, ein flacher Aufschlag kostet je nach Build zwischen einem Sechstel und einem Drittel der Rate), und zwei Episch-Anhänge (Überlauf sparen — es gibt nichts zu sparen, die Leiste fällt bei jeder Füllung auf den Boden; „alle Karten ionisiert" — eine Zeitschaltuhr, weil die Leiste im Kreis ionisiert und Stapel nie verschwinden). Der Fund, der es gelöst hat: **Blitz hatte keinen eigenen Multiplikator** — Feuer hat `fireMult`, Pflanze `plantMult`, Blitz zahlte nur in Basis-Score, Wert und Crit. Gebaut: Formations-Sieg zählt **+0,3/0,4/0,5/0,7 % je Stapel der Formation**, Episch dazu +1 Stapel auf die Karte mit den wenigsten Stapeln je Sieg. Jede Karte zählt einmal (Vereinigung wie bei Resonanz), gelesen wird die echte Siegkarte statt der Resonanz-Sicht, der Episch-Stapel läuft nicht durch Doppelentladung. Der Skill zahlt für GESTREUTE Stapel und steht damit gegen Kurzschluss und Kettenblitz. Drei Wächter, alle gegengeprobt. Startwerte, UNGEMESSEN; größtes Risiko ist das Episch (Dreier-Formation mit je 20 Stapeln = +84 %, Kurzschluss als ganzer Skill misst +56 %). |

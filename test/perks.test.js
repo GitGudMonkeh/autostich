@@ -200,7 +200,7 @@ describe("Crit-Multiplikator: Anzeige und Motor deckeln gleich (§7.39)", () => 
   /* Ein Build, der den Deckel sicher reißt: alle Crit-Mult-Perks plus eine ausgebaute Entladung-Rampe — genau die
      Lage, in der ein echter Blitz-Bau spät im Lauf steht (§7.31: 36,01× gebaut, 6,97× ausgezahlt). */
   const heavy = { perks: PERK_LIST.filter((p) => PERK_DEFS[p.id].critMultBonus).map((p) => p.id),
-    skills: [], skillTiers: {}, familyTiers: {}, lightning: { active: true, entladungMult: 20, stauBonus: 0 } };
+    skills: [], skillTiers: {}, familyTiers: {}, lightning: { active: true, entladungMult: 20 } };
   /* §7.42: der Deckel ist weich geworden — die Anzeige muss dieselbe Kurve fahren wie der Motor, nicht mehr eine
      harte Klemme. Sonst kippt der Fehler nur die andere Richtung: sie zeigte zu viel, jetzt zeigte sie zu wenig. */
   it("totalCritMult fährt die weiche Kurve des Motors, totalCritMultRaw bleibt der gebaute Wert", () => {

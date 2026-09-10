@@ -10,7 +10,7 @@ import { coinsForFormations } from "./coins.js"; // Münz-Ökonomie (§2.2): Ein
 // exp skill rework: die Blitz-Mechanik (Passiv, 15 Skills, 4 Legendäre) lebt im Fraktionsmodul; die Engine ruft nur
 // ihre reinen Übergänge (Crit-Beiträge, Ladungsgewinn, volle Leiste, Niederlage, Rundenende).
 import { lightningCritChance, lightningCritMult, overcritMult, blitzfaengerValue, ionenfeldValue, fieldTick, ionScoreFor as lightIonScore, ionCritMultFor as lightIonCritMult, chargeGainOnWin, entladungScoreFor,
-  blitzschlagStacks, stauAfterWin, lightningOnLoss, fillBar as lightFillBar, lightningCycleEnd, maxChargeFor,
+  blitzschlagStacks, lightFormMult, feldFeed, lightningOnLoss, fillBar as lightFillBar, lightningCycleEnd, maxChargeFor,
   hasDoppelentladung, hasResonanz, resonantStacks } from "./factions/lightning.js";
 // exp skill rework: die Feuer-Mechanik (Passiv, 15 Skills, 4 Legendäre) lebt ebenso im Fraktionsmodul — die Engine
 // ruft ihre Übergänge (Kampfwert-Bonus, Sieg, Niederlage, Hitze-Multiplikator, Rundenende, Brand-Wechsel).
@@ -538,7 +538,7 @@ export function resolveTrick(state, rng) {
     critChance = Math.min(1, Math.max(0, rawCrit));             // Anzeige/normaler Wurf (geklemmt)
     // Crit-Ctx trägt rawCrit — von D-Crit-Flats (D19 Überschusskrit) UND L6 „Raserei" (critMultBonus, #115) gebraucht.
     const critCtx = { ...wctx, rawCrit };
-    // Basis 2,25 + Präzision „Wucht" (familyCritMult) + L6-Überschuss + Blitz (Entladung-Rampe, Spannungsstau,
+    // Basis 2,25 + Präzision „Wucht" (familyCritMult) + L6-Überschuss + Blitz (Gewitterfront-Rampe,
     // Vorentladung) + Stapel der Siegkarte (§7.12: +ION_CRIT_MULT_PER_STACK je wirksamem Stapel) + Systemregel (§1: Überschuss
     // über 100 % → sehr kleiner Crit-Mult-Bonus, alle Fraktionen).
     critMultiplier = critMultiplierFor(perks, critCtx) + familyCritMult(familyTiers)
@@ -652,20 +652,24 @@ export function resolveTrick(state, rng) {
     // Pflanze (§6.15, Ewiger Frühling): gewinnt eine blühende Karte, zählt der Stich +Satz je aktiver Formation an
     // ihrer Position — der einzige Multiplikator der Fraktion, ein eigener Faktor wie der Feuer-Stack.
     const plantMult = plantFormMult(skills, pCard, posForm);
+    // Blitz (§7.43, Spannungsfeld): der Formations-Sieg zählt +Satz je Stapel der ganzen Formation — der erste eigene
+    // Multiplikator der Fraktion. Gelesen wird pCard, NICHT pCardR: die Resonanz-Sicht trägt die Formationssumme
+    // schon in ionStacks, das wäre dieselbe Zahl zweimal im selben Produkt.
+    const lightMult = lightFormMult(lightning, skills, skillTiers, pCard, posForm, actualPos, (k) => deck[playerOrder[k]]);
     // architectMult (#202, Architekt-Score-Gebäude: Struktur/Schatzkammer) läuft als eigener Faktor am Ende des Stacks.
     // #Pool Batch 4 (gamble/Risiko): Boden — der Architekt-Abzug (negativer Flat) darf den Stich höchstens auf 0 drücken,
     // nie ins Minus (sonst kippen die nachgelagerten Multiplikatoren). Bei Basis 400 praktisch immer ein No-op.
     // Serien-Flat (Reihenhaus) wird NEBEN der serien-multiplizierten Basis addiert → er bekommt Perk/Formation/Crit,
     // aber NICHT den globalen Serien-Mult (kein Doppel-Dip). Rest des Stacks unverändert.
     const streakMuldBase = Math.max(0, scoreBase) * streakMult;
-    scoreBeforeCrit = (streakMuldBase + architectStreakFlat) * perkMult * formMult * afterglowMult * coreMult * fireMult * plantMult * architectMult;
+    scoreBeforeCrit = (streakMuldBase + architectStreakFlat) * perkMult * formMult * afterglowMult * coreMult * fireMult * plantMult * lightMult * architectMult;
     gained = scoreBeforeCrit * (isCrit ? critMultiplier : 1);
     // Doppelentladung (Blitz-Legendär, §3.7): Crit mit einer ionisierten Karte — der Blitz schlägt zweimal ein, der ganze
     // gewertete Stich (Basis mal Multiplikatoren) zählt DOPPELENTLADUNG_STRIKE-fach. Kein Kreislauf: speist keine Leiste.
     const strikeMult = (isCrit && (pCardR.ionStacks || 0) > 0 && hasDoppelentladung(skills)) ? C.DOPPELENTLADUNG_STRIKE : 1; // pCardR: mit Resonanz zählt die Formation (§7.25)
     gained *= strikeMult;
     // Eis: derselbe multiplikative Stack (ohne additive Flats) skaliert auch den Gletscher-Bruch dieses Stichs (unten).
-    glacierWinMult = streakMult * perkMult * formMult * afterglowMult * coreMult * fireMult * plantMult * architectMult * (isCrit ? critMultiplier : 1);
+    glacierWinMult = streakMult * perkMult * formMult * afterglowMult * coreMult * fireMult * plantMult * lightMult * architectMult * (isCrit ? critMultiplier : 1);
     // SIM-Sättigungshebel (Default aus, K=0 → No-op): weicher Deckel auf den Score je Sieg. Greift NACH der
     // Crit-Multiplikation und VOR dem Verbuchen, verbraucht kein rng → Determinismus/rng-Reihenfolge unverändert.
     // [#229 T5] WIN_SOFTCAP ist ein Sim-Hook (Default 0). Ist er aktiv, wird `gained` geklemmt, die Einzelfaktoren im
@@ -735,10 +739,10 @@ export function resolveTrick(state, rng) {
     // streakFlat/fireMult stehen mit im Breakdown, damit die Stich-Aufschlüsselung (UI) die Kette EXAKT
     // nachrechnen kann: (Basis×Serie + streakFlat) × (Perks×Feuer×Architekt) × (Form×Nachhall×Kern) × Crit
     // + Direkt-Anteile = total. Ohne diese beiden blieb ein unerklärter Rest stehen. Reine Anzeige-Daten.
-    breakdown = { base: C.SCORE_PER_WIN, flats, streakFlat: architectStreakFlat, streakMult, perkMult, fireMult, plantMult, formMult, formBase: formBaseEff, afterglowMult, coreMult, architectMult, critMult: isCrit ? critMultiplier : 1, strikeMult, fireDirect: fireDirectApplied, lightDirect, perkDirect, total: gained };
+    breakdown = { base: C.SCORE_PER_WIN, flats, streakFlat: architectStreakFlat, streakMult, perkMult, fireMult, plantMult, lightMult, formMult, formBase: formBaseEff, afterglowMult, coreMult, architectMult, critMult: isCrit ? critMultiplier : 1, strikeMult, fireDirect: fireDirectApplied, lightDirect, perkDirect, total: gained };
     // Blitz (exp skill rework, §3): Ladungsgewinn dieses Siegs — Passiv (+1 je Crit), Blitzableiter (§7.18: auch je Sieg
     // ohne Crit auf Episch), Überspannung (§7.24: der Überschuss über dem Crit-Deckel und über 100 % Chance), Ladungsserie
-    // Episch — mit fortgeschriebenen Zählern; Blitzschlag (jeder N. Crit ionisiert die Siegkarte); Spannungsstau. Die volle
+    // Episch — mit fortgeschriebenen Zählern; Blitzschlag (jeder N. Crit ionisiert die Siegkarte). Die volle
     // Leiste zündet NACH der Verzweigung (unten), einmal je Stich. Kein Selbstwachstum ionisierter Siegkarten mehr (Lesart A).
     if (lightning && lightning.active) {
       const { gain, next } = chargeGainOnWin(lightning, skills, skillTiers, { isCrit, streak: serieStreak });
@@ -747,7 +751,14 @@ export function resolveTrick(state, rng) {
         const bs = blitzschlagStacks(lightning, skills, skillTiers);
         if (bs > 0) { deck = deck.map((c) => (c.id === pCard.id ? { ...c, ionStacks: (c.ionStacks || 0) + bs } : c)); ionTotal += bs; }
       }
-      lightning = stauAfterWin(lightning, skills, skillTiers, isCrit);
+      // §7.43 Spannungsfeld Episch: der Formations-Sieg lädt die Karte mit den wenigsten Stapeln seiner Formation
+      // nach — das Feld streut sich selbst. Liest den Stand NACH dem Blitzschlag.
+      const feed = feldFeed(lightning, skills, skillTiers, pCard, posForm, actualPos, (k) => deck[playerOrder[k]]);
+      if (feed) {
+        const fi = playerOrder[feed.slot];
+        deck = deck.map((c, i) => (i === fi ? { ...c, ionStacks: (c.ionStacks || 0) + feed.stacks } : c));
+        ionTotal += feed.stacks;
+      }
     }
     // Crit-Historie: Update NACH dem Wurf (wctx trug den Stand davor).
     critFollowArmed = isCrit;                                        // D14 Crit-Folge: nur ein Crit rüstet den nächsten Sieg

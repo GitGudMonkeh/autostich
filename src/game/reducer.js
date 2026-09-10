@@ -8,7 +8,7 @@ import { familyDef, applyFamilyPick } from "./families.js"; // formationEnergyBo
 import { UPGRADE_TYPES } from "./rarity.js";
 import { archetypeOf, buildSkillDoors, rerollDoorSkills, glacierRolesOf, ARCHETYPE_ORDER } from "./skills.js";
 import { iceRoleTiers } from "./factions/ice.js"; // §5.3: Stufe je Gletscher-Rolle (die Zahlen der Eis-Skills) // Eis-Neudesign: glacierRolesOf · exp: Türen-Angebot (Stufen im Wurf der Tür), Neuwurf der drei Skills
-import { initLightning, maxChargeFor, L as LIGHT } from "./factions/lightning.js"; // exp skill rework: Blitz-Substate (Leiste 10)
+import { initLightning, maxChargeFor } from "./factions/lightning.js"; // exp skill rework: Blitz-Substate (Leiste 10)
 import { initHeat, heatMaxFor, syncHeatMax } from "./factions/fire.js"; // exp skill rework: Hitze-Substate (Leiste 100, Weißglut 200)
 import { applyGrowth, greenSuitGains } from "./factions/plant.js"; // exp skill rework: Pflanze-Aktivierung (Fraktions-Kaltstart auf die grüne Farbe)
 // Pflanze-Bündel für die Formations-Engine (§6.7): Stufe je Skill + Wachstum je Karte — die vier Hebel und zwei
@@ -273,7 +273,6 @@ function dropSkill(state, skillId) {
   let brandPending = state.brandPending || {}, brandActive = state.brandActive || {}, forged = state.forged || {};
   if (still.has("lightning")) {
     lightning = { ...lightning, maxCharge: maxChargeFor(skills, skillTiers) };
-    if (skillId === LIGHT.SPANNUNGSSTAU && lightning.stauBonus) lightning = { ...lightning, stauBonus: 0 }; // sein Stau geht mit ihm
   } else lightning = initLightning();
   if (still.has("fire")) heat = syncHeatMax(heat, skills);
   else { heat = null; brandPending = {}; brandActive = {}; forged = {}; }
@@ -759,7 +758,6 @@ export function reducer(state, action) {
       let iceTemp = state.iceTemp;
       let growth = state.growth || {}; // Pflanze (§6.2): Wachstum je Karte
       if (arch === "lightning") lightning = { ...lightning, active: true, maxCharge: maxChargeFor(skills, skillTiers) }; // exp: Leiste 10, Reststrom Episch 9 (§7.22)
-      if (replaceId === LIGHT.SPANNUNGSSTAU && lightning && lightning.stauBonus) lightning = { ...lightning, stauBonus: 0 }; // exp: Spannungsstau ersetzt → sein Stau geht mit
       if (arch === "fire" && !(heat && heat.active)) heat = { ...initHeat(), active: true, max: heatMaxFor(skills) };
       heat = syncHeatMax(heat, skills); // exp: Weißglut gewählt oder ersetzt → Leiste 200 bzw. 100 (Hitze geklemmt)
       // Eis-Neudesign: der neue Eis-Archetyp friert KEINE Karten mehr ein — die Mechanik läuft über Masse/Gletscher
