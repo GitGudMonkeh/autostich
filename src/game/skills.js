@@ -78,9 +78,11 @@ const FEUER = {
   brandmal:      [{ minHeat: 80, value: 2 }, { minHeat: 60, value: 2 }, { minHeat: 40, value: 2 }, { minHeat: 20, value: 2, onLoss: true }],
   lauffeuer:     [{ minHeat: 80, value: 1, reach: 1 }, { minHeat: 60, value: 1, reach: 1 }, { minHeat: 40, value: 1, reach: 1 }, { minHeat: 20, value: 1, reach: 2 }],
   schmiede:      [{ minHeat: 80, cards: 1 }, { minHeat: 60, cards: 2 }, { minHeat: 40, cards: 2 }, { minHeat: 20, cards: 3 }], // §7.14: ohne Preis, nur Schwelle; §7.34: mehr Karten je Runde (die Schwelle lag schon tief genug, sie war nie das Problem)
-  // §7.34: +75 %. Er zahlt je Punkt Kampfwert ÜBER dem Grundwert — und diese Quelle hat §7.32 halbiert, als die
-  // Klinge die lange Leiste verlor. Der Satz zieht nach, was der Eingang verloren hat.
-  glutstahl:     [{ perPoint: 14 }, { perPoint: 20 }, { perPoint: 27 }, { perPoint: 36, forgedDouble: true }],
+  /* §7.34 hob den Satz um 75 %, §7.35 hat ihn zurückgemessen: −4 → −7 %, also SCHLECHTER. Er zahlt je Punkt Kampfwert
+     über dem Grundwert, und diese Bemessungsgrundlage war zum guten Teil die Klinge — ein höherer Satz auf fast null
+     bleibt fast null. §7.36 (Owner): zurück auf den alten Stand. „es gibt noch genügend andere quellen werte zu
+     erhöhen über perks wenn man darauf spielt" — Glutstahl ist damit ein Bau-Skill, kein Grundstock. */
+  glutstahl:     [{ perPoint: 8 }, { perPoint: 12 }, { perPoint: 16 }, { perPoint: 20, forgedDouble: true }],
 };
 export const FEUER_TIERS = FEUER;
 /* Stufentabellen der 15 Pflanze-Skills (§6.8) — dieselbe Form. Bezugsgrößen: Wachstum +1 je Sieg und +1 je Formation
