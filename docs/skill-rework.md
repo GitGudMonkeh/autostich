@@ -7720,6 +7720,71 @@ Alles ungemessen.
 
 ---
 
+### 7.35 §7.34 nachgemessen: fünf von sieben sitzen, zwei nicht — und einmal lag meine Begründung falsch (2026-09-10) — gemessen
+
+Feuer-Mono, 4.050 Läufe, 7 min, Parameter der §8-Baseline.
+
+#### A · Die Fraktion
+
+| | §8 (vor dem Nerf) | §7.33 (nach dem Nerf) | jetzt |
+| --- | --- | --- | --- |
+| Fe mono Median | 112.712.536 | 65.050.455 | **137.337.513** |
+| Siegquote | 77 % | 74 % | 76 % |
+
+**+111 % gegenüber §7.33** und damit über dem Stand VOR dem Klingen-Schnitt. Der Rückstand auf Blitz (1.686M,
+unverändert) fällt von 26× auf **12×**. Die Reihenfolge steht jetzt Bl 1.686M · Pf 367M · Ei 348M/224M · **Fe 137M**.
+
+#### B · Skill für Skill
+
+| Skill | §7.33 | jetzt | |
+| --- | --- | --- | --- |
+| **Ewige Glut** (L) | −0 % | **+52 %** | Tor-Fix, nicht die Zahl |
+| **Feuerlinie** | −5 % | **+28 %** | ✓ |
+| **Brandschneise** | +1 % | **+8 %** | ✓ |
+| **Schmiede** | −2 % | **+6 %** | ✓ |
+| **Rückzündung** | −2 % | **+2 %** | ✓, knapp |
+| **Zunder** | 0 % | **−2 %** | ✗ |
+| **Glutstahl** | −4 % | **−7 %** | ✗ |
+| Glutbett | −6 % | −9 % | absichtlich nicht angefasst (Owner: Nische) |
+
+Der größte Einzelgewinn war **kein Buff, sondern ein Tor-Fix**: die Ewige Glut steigt von −0 auf +52 % und ist damit
+das dritte Legendäre in einem gesunden Band (Sonnenkern +66 %, Sonnenzorn +54 %). Die Rampe lief die ganze Zeit, sie
+wurde nur nie freigegeben.
+
+Nebenbefund: **die Glühende Klinge fällt weiter** (+24 → +9 %, Haltequote 82 → 55 %). Das ist keine dritte Änderung,
+sondern wieder die Ablation — die anderen Skills sind gewachsen, also ist ihr relativer Beitrag kleiner. Sie ist vom
+Pflicht-Pick zum normalen Pick geworden, was genau die Absicht war.
+
+#### C · Die zwei, die nicht gewirkt haben — und warum
+
+**Zunder (0 → −2 %, verdoppelt).** Meine Begründung in §7.34 war: bei voller Leiste ist Zunder ein Score-Skill, weil
+der Überlauf über den Schmelzpunkt in den Basis-Score geht. **Das war falsch** — nicht die Mechanik, sondern die
+Annahme darunter. Der Schmelzpunkt wird gar nicht mehr zuverlässig gebaut: seine Haltequote fällt in derselben
+Messung von **100 % auf 61 %** und seine Wirkung von +9 auf +4 %. Ohne ihn wird jeder Punkt Hitze über der Leiste
+schlicht weggeworfen, und doppelt so viel Weggeworfenes ist immer noch nichts.
+
+**Glutstahl (−4 → −7 %, +75 % auf den Satz).** Er zahlt je Punkt Kampfwert ÜBER dem Grundwert — und diese Quelle war
+zu großen Teilen die Klinge, deren Motor §7.32 halbiert hat und die jetzt nur noch in 55 % der Läufe gehalten wird.
+Glutstahl ist ein **Mitfahrer**, kein Motor. Ein höherer Satz auf eine Bemessungsgrundlage nahe null bleibt nahe null.
+Dieselbe Signatur wie Verwachsung in der Pflanze-Runde (§6.30).
+
+Beide brauchen eine MECHANIK, keine Zahl:
+
+- Zunder: entweder an einen Ausgang hängen, den jeder Feuer-Bau hat, statt an den Schmelzpunkt — oder anerkennen,
+  dass Hitze-Einkommen an einer gesättigten Leiste keine eigene Achse trägt, und den Platz neu belegen.
+- Glutstahl: braucht eine eigene Wertquelle statt einer geliehenen — oder er wandert auf eine Achse, die der Bau
+  ohnehin baut.
+
+Beides sind Design-Entscheidungen und gehören dem Owner.
+
+#### D · Stand
+
+Von den acht flachen Skills aus §7.33 sind **vier repariert**, einer (Ewige Glut) weit darüber, einer bleibt
+absichtlich Nische, und **zwei sind offen** (Zunder, Glutstahl). Feuer ist als Fraktion nicht mehr das Problem —
+**Blitz steht mit dem Zwölffachen weiter allein oben und ist seit der Bestandsaufnahme unangetastet.**
+
+---
+
 ### 5.30 Die Eis-Skills auf dem neuen Motor (2026-09-09) — gemessen, nichts umgesetzt
 
 **Owner:** „und dann schauen wir uns alle skills an die davon profitieren müssen und designen wie."
@@ -8125,3 +8190,4 @@ leichtesten haben.
 | 2026-09-10 | Glühende Klinge entkoppelt (§7.32, Owner: „erst den nerf designen", dann Entscheid a). Befund: die Klinge ist der einzige Feuer-Skill, der den Motor am EINGANG füttert — +Wert hebt den Vorsprung, und der Vorsprung IST das Hitze-Einkommen. Ein Sieg mit Vorsprung 3 (2 % Hitze) wird mit +4 Wert zu Vorsprung 7 (6 %): dreifaches Einkommen, dazu die Verbrennungs-Mitnahme und die gedrehten Niederlagen. Das ist die gemessene +141 %, nicht die Zahl auf der Karte. Weißglut (+96 %) ist kein eigener Motor, sondern der Hebel darunter: die Leiste 100 → 200 verdoppelt Klinge (+5 → +10 Wert), Hitze-Multiplikator und Sonnenzorns Spitzen-Lesart. Umgesetzt: **die Klinge liest `HEAT_MAX`, nie die verlängerte Leiste** — stärkster Build +10 → +5, normaler Build unverändert, die Rückkopplung bleibt halb so lang. Weißglut bewusst NICHT angefasst: dieselbe Verkopplung wie Wurzelgeflecht/Baumreihe in §6.31, wo die Baumreihe ungefragt von +112 auf +75 mitfiel; erst messen, dann entscheiden. Wächter gegengeprobt (offene Naht → 10 statt 5). UNGEMESSEN. |
 | 2026-09-10 | §7.32 nachgemessen (§7.33). Feuer-Mono, 7 min. **Ein Hebel, beide Ziele getroffen: Glühende Klinge +141 → +24 %, Weißglut +96 → +20 % — und Weißglut wurde NICHT angefasst.** Die Verkopplungs-These aus §7.32 B ist damit bestätigt; hätten wir beide gleichzeitig genervt, wäre nicht trennbar gewesen, welcher Schnitt was bewirkt. Die Regler für Weißglut bleiben unangetastet, +20 % ist Mittelfeld. Die FORM der Fraktion stimmt jetzt: vorher standen zwei normale Skills über dem Legendären (141/96 gegen Sonnenzorn 91), jetzt führen die zwei Legendären (+116 % Sonnenkern, +96 % Sonnenzorn) und der stärkste normale steht bei +24 %. Sonnenkerns Sprung +14 → +116 % ist keine zweite Änderung, sondern die Ablation: sein Beitrag war vorher vom Klingen-Motor überdeckt. Preis: die Fraktion fällt mono 112,7M → 65,1M (−42 %) und steht damit klar letzter — der Rückstand auf Blitz wächst von 15× auf 26×. Der Schnitt hat das nicht geschaffen, nur vertieft. Nächster Schritt für Feuer ist ein Buff an den acht flachen Skills, kein zweiter Nerf. |
 | 2026-09-10 | Sieben der acht flachen Feuer-Skills angehoben (§7.34, Owner: „dann buff die acht flachen feuer skills"). Zwei strukturelle Funde vor den Zahlen: (a) **die Ewige Glut hatte ein verschobenes Tor** — ihre Rampe wächst bei voller Leiste, und „voll" las die Leiste des BUILDS; mit Weißglut (98 % gehalten) stand sie bei 200 statt 100, die Rampe tickte fast nie, und das Legendäre maß −0 %. Derselbe Fehler wie bei der Klinge in §7.32. Tor liest jetzt `HEAT_MAX`. (b) **Das Glutbett darf nach der eigenen Owner-Regel nicht gebufft werden**: es ist ein reiner Niederlagen-Skill (Boden unter der Kühlung, Episch „kühlt gar nicht"), bei 74 % Siegquote und einer Leiste am Anschlag verteidigt es gegen etwas, das nicht passiert — und §7.31 hält fest „keine Skills, die auf Niederlagen reagieren", genau der Grund, aus dem die Rückzündung in §7.24 umgebaut wurde. Nicht angefasst; es gehört ersetzt, und das ist ein Owner-Entscheid. Die sieben: Glutstahl 8–20 → 14–36 · Feuerlinie 0,02–0,05 → 0,035–0,08 bei Kosten 3 → 2 · Zunder 2–5 → 4–10 (bei voller Leiste ein Score-Skill über den Schmelzpunkt) · Rückzündung ×1,5 → ×1,8 · Brandschneise Breite 3–6 → 4–10 und ×2,5 → ×3 · Schmiede 1/1/1/2 → 1/2/2/3 Karten · `FORGE_VALUE` 3 → 4. Drei Wächter auf die neue Wahrheit gezogen (der Schmiede-Textwächter prüft jetzt JEDE Stufe statt „Plural nur bei Episch" — strenger als vorher). Balance-Guard-Median neu zentriert mit Beleg: 5,26M über Seeds 1..40, 4,74M über 1..200 (kein Ausreißer), Band 3,40–7,10M; der Mean bleibt im bestehenden Band. UNGEMESSEN. |
+| 2026-09-10 | §7.34 nachgemessen (§7.35). Feuer-Mono, 7 min. **Die Fraktion ist repariert: mono 65,1M → 137,3M (+111 %)**, über dem Stand vor dem Klingen-Schnitt; der Rückstand auf Blitz fällt von 26× auf 12×. Fünf von sieben sitzen — und der größte Einzelgewinn war KEIN Buff, sondern der Tor-Fix: **Ewige Glut −0 → +52 %** und damit das dritte Legendäre in einem gesunden Band (Sonnenkern +66 %, Sonnenzorn +54 %). Dazu Feuerlinie −5 → +28 %, Brandschneise +1 → +8 %, Schmiede −2 → +6 %, Rückzündung −2 → +2 %. **Zwei haben nicht gewirkt, und bei einem war meine Begründung falsch:** *Zunder* (0 → −2 % trotz Verdopplung) sollte laut §7.34 über den Schmelzpunkt-Überlauf zahlen — aber der Schmelzpunkt wird nicht mehr zuverlässig gebaut, seine Haltequote fällt in derselben Messung von 100 % auf 61 %; ohne ihn wird Überlauf-Hitze weggeworfen, und doppelt so viel Weggeworfenes ist nichts. *Glutstahl* (−4 → −7 % trotz +75 %) ist ein Mitfahrer der Klinge, deren Motor §7.32 halbiert hat und die nur noch 55 % gehalten wird — ein höherer Satz auf eine Bemessungsgrundlage nahe null bleibt nahe null (dieselbe Signatur wie Verwachsung in §6.30). Beide brauchen eine Mechanik, keine Zahl; das ist ein Owner-Entscheid. Nebenbefund: die Glühende Klinge fällt weiter (+24 → +9 %, Haltequote 82 → 55 %) — Ablation gegen einen gewachsenen Rest, also die Absicht. |
