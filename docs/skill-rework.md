@@ -7498,6 +7498,54 @@ so nicht mehr gibt.
 
 ---
 
+### 6.31 Wurzelgeflecht gesweept: 0,45 trifft das Band (2026-09-10, Owner) — gemessen
+
+Owner: „Wurzelgeflecht auch noch etwas runterbringen. auf die 150-250."
+
+#### A · Die Abkürzung, die den Sweep bezahlbar macht
+
+`sim/survey.js --fraktion plant --groesse 1` misst die Mono-Welt allein: 18 Skills statt 288, **13 min statt 39**.
+Die Seeds einer Welt hängen nicht davon ab, welche anderen Welten mitlaufen — die Zahl muss also mit dem großen Lauf
+identisch sein. **Kontrollpunkt gefahren und bestätigt:** bei 0,85 kommen exakt die +505 % und der Median
+523.764.008 aus §6.30 heraus, auf den Euro. Erst danach der Sweep.
+
+#### B · Der Sweep
+
+| `WURZELGEFLECHT_FACTOR_SCALE` | Wurzelgeflecht | Pf-Median | Baumreihe | Ewiger Frühling |
+| --- | --- | --- | --- | --- |
+| 0,85 (Kontrolle = §6.30) | +505 % | 523.764.008 | +112 % | +291 % |
+| 0,60 | +397 % | 455.460.117 | +105 % | +264 % |
+| **0,45** | **+220 %** | **366.535.256** | +75 % | +274 % |
+
+**0,45 gesetzt** — gemessener Punkt im bestellten Band, keine Interpolation.
+
+Die Kurve ist nicht linear: 0,85 → 0,60 (Schritt 0,25) kostet 21 % der Wirkung, 0,60 → 0,45 (Schritt 0,15) kostet
+45 %. Der Regler greift unten deutlich härter, weil der Faktor multiplikativ über die Positionen eines Laufs wirkt.
+Wer tiefer als 150 % will, braucht deshalb nur noch einen kleinen Schritt; wer bei 250 % landen will, liegt zwischen
+0,45 und 0,60.
+
+#### C · Was der Schnitt mitnimmt
+
+- **Die Fraktion fällt weiter**: mono 524M → **367M**. Gegen Blitz (1,686 Mrd, seit §8 unangetastet) ist das jetzt
+  das 4,6-fache statt des 3,2-fachen. Die Pflanze steht damit knapp über Eis (§8: 348M) und klar über Feuer (113M) —
+  aber Blitz steht allein oben, und der Abstand ist durch diese Runde größer geworden, nicht kleiner.
+- **Die Baumreihe sinkt mit** (+112 → +75 %), obwohl an ihr nichts geändert wurde. Das ist kein zweiter Effekt,
+  sondern die Ablation: sie misst den Beitrag GEGEN den Rest des Builds, und der Rest ist kleiner geworden. Sie wird
+  weiter in 71 % der Läufe gehalten (vorher 59 %) — der gierige Spieler nimmt sie also häufiger, nicht seltener.
+  Wenn sie wieder größer sein soll, ist `BAUMREIHE_FACTOR_SCALE` (0,15) der Regler.
+- Ewiger Frühling praktisch unverändert (+291 → +274 %) und damit das stärkste Pflanze-Legendäre.
+
+Die drei stehen jetzt bei **+274 / +220 / +75 %** statt +1079 / +591 / +282 % vor der Runde.
+
+#### D · Offen
+
+Die drei Zahlen sind mono gemessen. Die Misch-Welten sind seit §6.30 nicht neu gefahren — dort kann der Regler anders
+greifen, weil ein Misch-Build weniger blühende Karten je Segment hat. Und der eigentliche Befund aus §6.30 steht
+unverändert: die Hecke ist ohne den Baumreihen-Kanal zu dünn (33 % gehalten, +12 %), und die Wachstums-Achse trägt
+nicht.
+
+---
+
 ### 5.30 Die Eis-Skills auf dem neuen Motor (2026-09-09) — gemessen, nichts umgesetzt
 
 **Owner:** „und dann schauen wir uns alle skills an die davon profitieren müssen und designen wie."
@@ -7899,3 +7947,4 @@ leichtesten haben.
 | 2026-09-09 | Der Ablehn-Gletscher ist gestrichen (§5.33, Owner: „fliegt auch raus"). Ab vier gehaltenen Eis-Skills fror auch ein abgelehntes Skill-Angebot einen Gletscher ein — der Ausgleich dafür, dass bei vollen Skill-Slots kein weiterer Eis-Skill mehr passte. Slots sind seit dem exp-Skill-Rework unbegrenzt, damit ist der Ausgleich ohne Gegenstand. Raus: `DECLINE_MIN_SKILLS`, der Eis-Zweig in DECLINE_SKILL und das geparkte Perk-Angebot (`pendingPerkOffer`), das nur diesen einen Umweg bediente. Gletscher kommen jetzt ausschließlich aus Eis-Picks; Ablehnen zahlt für alle Fraktionen gleich (Münzen + Perk-Ersatz). Der Passiv-Satz dazu ist aus de/en/es raus, der Wächter dreht sich um (drei Fälle: 3, 4 und 6 Eis-Skills, alle ohne Gletscher). Wirkung auf die Eis-Stärke UNGEMESSEN — der gierige Spieler lehnt selten ab, aber ein Mono-Eis-Build verliert damit eine Gletscher-Quelle. |
 | 2026-09-09 | Pflanze tariert (§6.29, Owner: „Baumreihe definitv, Wurzelgeflecht ein bisschen nerfen. danach diese skills alle ein bisschen buffen"). **Baumreihe** stand mono bei +1079 %, dem Doppelten des nächsten Legendären — und ihre Schraube aus §6.12 konnte das nicht fassen: sie zahlte auf vier Kanälen, der Regler fasst nur einen. Der Motor ist Kanal vier, die MITGLIEDERLISTE: die Reihe ist eine Wiederholung mit bis zu 40 blühenden Karten, und Hecke wie Blüte-Passiv zahlen je Mitglied — damit tat die Multiplikator-Achse die Arbeit der Dichte-Achse des Wurzelgeflechts. Owner-Entscheid a: die Reihe behält Faktor, Formationszahl und Wachstum, ihre Mitglieder zahlen keinen Basis-Score mehr (`scoreless` + `plantScoreFormations`). Gegenprobe am neuen Wächter: mit offener Naht zahlt ein Stich 720 statt 240. **Wurzelgeflecht** (+591 %) `WURZELGEFLECHT_FACTOR_SCALE` 1 → 0,85 — die halbe Strecke zurück, nicht die ganze, weil §6.15 die 0,7 schon einmal als zu hart verworfen hatte. **Sieben Skills angehoben**: Blätterdach 10→15 (+50 %), Rankgerüst 30→33 (nur +10 % — mehr lässt die Staffel der vier Score-Sätze nicht zu, ein Wächter hat meinen ersten Wurf zu Recht gerissen), Verwachsung +40 %, Lichtung/Zäher Halm/Setzlingsbeet +50 %, Jahresringe Teiler 15→12 und Sätze +25 %. Offen benannt: vier der sieben sind Wachstums-Skills, und die Achse ist als ganze flach — der systemische Hebel wäre `PLANT_BLOOM_WEIGHT_PER_GROWTH`, nicht sieben Einzelsätze; nicht angefasst, weil er die ganze Fraktion mithebt. ALLES UNGEMESSEN. |
 | 2026-09-09 | §6.29 nachgemessen (§6.30, Owner: „mess nach"). 7 Pflanze-Welten, 56.875 Läufe, 39 min, Parameter der §8-Baseline. **Der Schnitt sitzt: Baumreihe +1079 → +112 % mono**, also rund 90 % ihrer Wirkung — der Beleg, dass die Mitgliederliste der Motor war und die Schraube aus §6.12 am falschen Ende saß. Sie ist damit das schwächste der drei Pflanze-Legendären, liegt aber im Band von Großer Lawine (+143 %) und Eiszeit (+131 %) und wird in 59 % der Läufe gehalten; `BAUMREIHE_FACTOR_SCALE` ist jetzt der saubere Regler, falls sie wieder wachsen soll. Wurzelgeflecht +591 → +505 % (die bestellte kleine Korrektur), Ewiger Frühling unverändert. **Die Fraktion fällt mono 2,31 Mrd → 524M (−77 %)**, in den drei sauber vergleichbaren Mischwelten −32 bis −62 %; damit ist die Pflanze nicht mehr der Ausreißer, sondern **Blitz** (1,69 Mrd, 3,2× Pflanze). Von den sieben angehobenen Skills sind zwei repariert (Blätterdach Haltequote 6 → 53 %, Rankgerüst mono −0 → +6 % und im Tripel −3 → +150 %), zwei besser, drei unverändert flach — und alle drei sind Wachstums-Skills, wie in §6.29 D vorhergesagt: die Achse hebt man nicht mit Einzelsätzen, sondern mit `PLANT_BLOOM_WEIGHT_PER_GROWTH`. Nebenbefund: **die Hecke ist mitgefallen** (100 % gehalten/+105 % → 33 %/+12 %) — ihre alte Zahl kam zum großen Teil aus dem Baumreihen-Kanal. Sie ist jetzt zum ersten Mal ohne Verstärker sichtbar und der Kandidat für die nächste Runde. |
+| 2026-09-10 | Wurzelgeflecht gesweept (§6.31, Owner: „auf die 150-250"). Neuer Survey-Schalter `--groesse` misst eine Weltgröße allein — `--fraktion plant --groesse 1` sind 13 min statt 39, und der Kontrollpunkt bei 0,85 reproduziert §6.30 auf den Euro (+505 %, Median 523.764.008), die Abkürzung ist also belastbar. Sweep über `WURZELGEFLECHT_FACTOR_SCALE`: 0,85 → +505 % · 0,60 → +397 % · **0,45 → +220 %**. 0,45 gesetzt, gemessener Punkt im Band. Die Kurve greift unten härter (Schritt 0,25 kostet 21 %, Schritt 0,15 kostet 45 %) — der Faktor wirkt multiplikativ über die Positionen eines Laufs. Mitgenommen: die Fraktion fällt mono 524M → 367M, und die Baumreihe sinkt ohne eigene Änderung von +112 auf +75 % (Ablation misst gegen den Rest des Builds, und der ist kleiner geworden) — gehalten wird sie dabei häufiger, 59 → 71 %. Die drei Pflanze-Legendären stehen jetzt bei +274 / +220 / +75 % statt +1079 / +591 / +282 % vor der Runde. Offen: Blitz steht mit 1,69 Mrd allein oben, der Abstand ist durch diese Runde größer geworden. |

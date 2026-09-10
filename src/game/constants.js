@@ -404,10 +404,10 @@ export const PLANT_GREEN_FARBBLOCK_CAP = 3;
 // Legendäre der Pflanze (§6.12): je ein Regler auf der bestehenden Mechanik, damit die neun Legendären in ein Band
 // gebracht werden können. Die Voreinstellungen sind exakt das Verhalten vor §6.12.
 export const BAUMREIHE_FACTOR_SCALE   = envNum("SIM_BAUMREIHE_FACTOR_SCALE", 0.15); // Baumreihe (L): Anteil des Wiederholungs-Bonus, den die positionsfreie Reihe zahlt (1 = wie eine echte Wiederholung); §6.12: 1 → 0,15 — ohne Positionsbindung eskaliert die Reihe über den ganzen Lauf
-export const WURZELGEFLECHT_FACTOR_SCALE = envNum("SIM_WURZELGEFLECHT_FACTOR_SCALE", 0.85); // Wurzelgeflecht (L): Anteil des Lauf-Bonus, den die beitretende blühende Karte bekommt (1 = der volle Faktor; Mitgliedschaft und Formationszahl bleiben immer ganz)
-// §6.12 stellte 0,7 ein (+164 → +75 %) und §6.15 drehte den Regler wieder auf 1 (+63 → +100 %) — richtig kalibriert für
-// den damaligen Stand. §8 misst mono +591 %, das zweitstärkste Legendäre des Spiels; §6.29 (Owner: „ein bisschen
-// nerfen") nimmt deshalb die halbe Strecke zurück: 0,85. UNGEMESSEN.
+export const WURZELGEFLECHT_FACTOR_SCALE = envNum("SIM_WURZELGEFLECHT_FACTOR_SCALE", 0.45); // Wurzelgeflecht (L): Anteil des Lauf-Bonus, den die beitretende blühende Karte bekommt (1 = der volle Faktor; Mitgliedschaft und Formationszahl bleiben immer ganz)
+// §6.12 stellte 0,7 ein, §6.15 drehte wieder auf 1 — richtig für den damaligen Stand. §8 maß mono +591 %, §6.29 nahm
+// die halbe Strecke (0,85 → +505 %). §6.31 (Owner: „auf die 150-250") gesweept: 0,85 → +505 % · 0,60 → +397 % ·
+// 0,45 → +220 %. GEMESSEN, 0,45 gesetzt.
 // (Verworfen: eine Mindest-Lauflänge als Regler — gemessen kippte Wurzelgeflecht damit von +164 % auf −4 %, die
 //  kurzen Läufe sind der Großteil seiner Wirkung. Der Faktor-Anteil greift weicher.)
 export const EWIGER_FRUEHLING_GREEN_FRAC = envNum("SIM_EWIGER_FRUEHLING_GREEN_FRAC", 1); // Ewiger Frühling (L): Anteil grüner Karten, ab dem alle Karten blühen (1 = vollständig grün)
