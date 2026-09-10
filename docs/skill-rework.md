@@ -8821,6 +8821,90 @@ Kontrollmessung des neuen Deckels an Feuer und Eis (§7.49 D, vom Owner ausgeset
 
 ---
 
+### 7.53 Die Rauschgrenze, zum ersten Mal gemessen — und was sie über die ganze Reihe sagt (2026-09-10) — gemessen
+
+**Owner: „nachmessen, dann toten skills angehen."**
+
+Zweimal dieselbe Konfiguration, nur ein anderer Seed-Satz (`--seed 1` gegen `--seed 101`), sonst identisch. Damit
+ist zum ersten Mal beziffert, was ein einzelner Lauf dieser Reihe überhaupt auflösen kann — bisher habe ich die
+Grenze geschätzt (§7.46 B: „rund Faktor 2") statt sie zu messen.
+
+#### A · Der Fraktions-Median schwankt um Faktor 2
+
+| | Seed 1 | Seed 101 |
+| --- | ---: | ---: |
+| Median | 383.967.591 | **756.807.703** |
+| p90 | 2,17 Mrd | 5,74 Mrd |
+| p95 | 3,07 Mrd | 9,23 Mrd |
+| Siegquote | 67,1 % | 69,0 % |
+
+**Faktor 1,97 auf dem Median, Faktor 3,0 auf dem p95 — bei identischem Code.** Die Schätzung aus §7.46 B war
+richtig, aber sie war eine Schätzung; jetzt ist sie ein Messwert.
+
+#### B · Je Skill: 17 Prozentpunkte, im Einzelfall weit mehr
+
+| Skill | Seed 1 | Seed 101 | Spanne | gehalten |
+| --- | ---: | ---: | ---: | ---: |
+| Doppelentladung (L) | +211 % | +232 % | 21 pp | 60 / 70 % |
+| Resonanz (L) | +137 % | +170 % | 33 pp | 69 / 61 % |
+| **Hochspannung (L)** | +69 % | +280 % | **211 pp** | 64 / 63 % |
+| Kurzschluss | +45 % | +40 % | **5 pp** | 99 / 99 % |
+| Blitzableiter | +11 % | +42 % | 31 pp | 98 / 85 % |
+| Lichtbogen | +25 % | +4 % | 22 pp | 98 / 77 % |
+| Ionenfeld | +6 % | +24 % | 18 pp | 60 / 99 % |
+| Reststrom | +2 % | +31 % | 29 pp | 83 / 74 % |
+| **Kettenblitz** | +1 % | +35 % | 35 pp | 48 / 91 % |
+| Blitzschlag | +4 % | +1 % | **3 pp** | 98 / 94 % |
+| Blitzfänger | +4 % | 0 % | **4 pp** | 51 / 86 % |
+| Spannungsfeld | 0 % | +0 % | **0 pp** | 58 / 29 % |
+| Gewitterfront | 0 % | 0 % | **0 pp** | 20 / 85 % |
+| Ladungsserie | −5 % | +3 % | 8 pp | 100 / 51 % |
+| Serienschutz | −13 % | −20 % | **7 pp** | 100 / 98 % |
+| Entladung | −23 % | −5 % | 17 pp | 99 / 53 % |
+| **Vorentladung** | −23 % | +5 % | 28 pp | 100 / 86 % |
+
+**Median der Spannen: 17 Prozentpunkte.** Auch die Haltequoten schwanken heftig (Gewitterfront 20 → 85 %,
+Ladungsserie 100 → 51 %, Kettenblitz 48 → 91 %).
+
+#### C · Was das an früheren Aussagen korrigiert
+
+- **§7.52 A ist zu präzise formuliert.** „Median 0,92× der Basis" gilt für Seed 1; mit Seed 101 wären es 1,82×.
+  Belastbar ist nur: Blitz liegt jetzt in der **Größenordnung** der Basis statt beim Vier- bis Achtfachen. Die
+  RICHTUNG hält mit großem Abstand (1.639 → 1.014 → 384/757M), die zweite Stelle nicht.
+- **§7.52 B, „Kettenblitz ist repariert" (+1 %), war zu stark.** Der zweite Lauf misst +35 %. Was hält: er ist weit
+  von den +601 % aus §7.46 weg. Was nicht hält: die Genauigkeit.
+- **Vorentladung −23 % war zu Recht als Kandidat markiert** (§7.52 C) — der zweite Lauf sagt +5 %. Die Vorsicht war
+  richtig, und die Regel taugt allgemein: **unter etwa 35 pp (zweimal der Median) ist ein Einzellauf nicht lesbar.**
+- **Hochspannung ist mono gar nicht messbar**, was §7.41 C schon aus einem anderen Grund festhielt: 211 pp Spanne
+  bei gleicher Haltequote. Jede Zahl zu diesem Skill aus einem Mono-Lauf ist wertlos.
+
+#### D · Die toten Skills — und diesmal belegt
+
+Tot heißt hier: **in beiden Läufen bei oder unter null, mit kleiner Spanne.** Das ist der Filter, den die Reihe
+bisher nicht hatte; unter ihm bleiben von den dreizehn normalen Skills sechs übrig:
+
+| Skill | Seed 1 | Seed 101 | Spanne | Diagnose |
+| --- | ---: | ---: | ---: | --- |
+| **Serienschutz** | −13 % | −20 % | 7 pp | Kostet aktiv. Zahlt Ladung, um eine Serie nach einer Niederlage zu halten — und Ladung ist der Engpass. Dazu ein reiner Niederlagen-Skill, gegen die Owner-Regel aus §7.31. |
+| **Spannungsfeld** | 0 % | +0 % | 0 pp | Neu auf der Crit-Chance (§7.51). Der Satz ist zu klein, die Bauform steht. |
+| **Gewitterfront** | 0 % | 0 % | 0 pp | Dauerhafte Crit-Chance je voller Leiste. Spät ist die Chance ohnehin gesättigt (Ø 91 %, §7.46 E), früh gibt es kaum Leisten — der Skill zahlt genau dann nicht, wenn er könnte. |
+| **Blitzschlag** | +4 % | +1 % | 3 pp | Jeder N. Crit ionisiert die Siegkarte. Ein Stapel ist seit §7.51 weniger wert, weil die Tiefe keine zweite Achse mehr hat. |
+| **Blitzfänger** | +4 % | 0 % | 4 pp | Karten ab N Stapeln kämpfen mit +Wert. Wert hilft, Stiche zu gewinnen — bei 67–69 % Siegquote ist der Grenznutzen klein. |
+| **Ladungsserie** | −5 % | +3 % | 8 pp | Ab Serie N gibt jeder Sieg +1 Ladung. Ladung IST der Engpass, trotzdem neutral — die Schwelle greift zu spät. |
+
+Entladung (−23 / −5 %, 17 pp) liegt genau auf der Grenze und ist damit **nicht** entschieden.
+
+**Nichts davon ist umgesetzt.** Die sechs sind ein Owner-Entscheid, und drei von ihnen (Gewitterfront, Ladungsserie,
+Blitzschlag) haben eine strukturelle Diagnose, keine Zahlen-Diagnose — dort hilft ein größerer Satz nicht.
+
+#### E · Konsequenz für die Methode
+
+Eine Einzelmessung dieser Reihe trägt **eine Stelle**, nicht zwei. Für alles darunter braucht es entweder mehr
+Läufe oder feste Builds statt des gierigen Spielers, der seine Wertetabelle je Variante neu lernt. Das gilt
+rückwirkend für jede Prozentzahl in §7.41 bis §7.52.
+
+---
+
 ### 5.30 Die Eis-Skills auf dem neuen Motor (2026-09-09) — gemessen, nichts umgesetzt
 
 **Owner:** „und dann schauen wir uns alle skills an die davon profitieren müssen und designen wie."
@@ -9244,3 +9328,4 @@ leichtesten haben.
 | 2026-09-10 | §7.49 nachgemessen (§7.50). Vier Läufe à 12.050: ein Punkt für den Deckel allein, drei für die Leiter (`SIM_SPANNUNGSFELD_SCALE` 1/2/3). **Der Deckel sitzt, und der Beleg ist NICHT der Median** (1.639 → 1.014M, −38 %, das liegt unter der in §7.46 B bezifferten Rauschgrenze von rund Faktor 2), sondern das andere Ende der Verteilung: **p90 −68 %, p95 −71 %, max −98 %** (3.425 → 73,7 Mrd). **Der max ist damit auf Basisniveau zurück** — 71,5 Mrd vor §7.42 gegen 73,7 Mrd jetzt, Faktor 1,03. Drei Kennzahlen, eine Richtung, alle weit außerhalb des Rauschens; die Diagnose aus §7.46 C und §7.48 A ist bestätigt, der Extremlauf lebte ganz auf der Crit-Deckel-Achse. Siegquote 71,3 %, der höchste Wert der Reihe. **Der Leiter-Sweep ist am Median dagegen nicht lesbar**: 1.014 → 769 → 1.057M, nicht monoton, Spannweite 1,37× — Rauschen. Lesbar ist nur der Skill-Effekt, und der ist monoton: **+3 → +7 → +26 %**. **Was der Sweep NICHT gelöst hat:** auch bei ×3 tragen die unteren drei Stufen nicht (Lift 0,65 / 0,74 / 0,51), der Wert sitzt vollständig in Episch (2,11) — Verdreifachen hat den Skill angehoben, aber die Leiter nicht begradigt. Die Stufen-Lifts sind dabei selbst verrauscht (bei ×2 Stufe 2 auf 0,29 unter Stufe 3 auf 1,28; eine monotone Leiter kann das nicht erzeugen, n ≈ 60–270 je Stufe trägt die Auflösung nicht) und sollen deshalb keinen Entscheid tragen. Vermutung, ausdrücklich UNGEMESSEN: die Arbeit macht der Episch-Anhang (+1 Stapel auf die dünnste Karte), nicht der Prozentsatz — er ist das einzige, was die unteren Stufen nicht haben; trennbar mit einem Lauf, in dem `feedLowest` auf allen Stufen liegt. **Wo Blitz steht: rund 1,0 Mrd gegen 416M Basis (2,4×) und rund das Dreifache der Pflanze.** Die FORM der Verteilung stimmt wieder, die HÖHE nicht — das ist ein eigener Posten und mit diesen zwei Reglern nicht zu holen. Die Leiter bleibt unentschieden (Owner); ×3 ist der beste gemessene Punkt. |
 | 2026-09-10 | Blitz bekommt keinen eigenen Multiplikator, das Feld zieht auf die Crit-Chance (§7.51, Owner: „lass den blitz mult raus. Blitz nutzt schon crit als mult. lass mir damit arbeiten"). **Die Prämisse aus §7.43 war falsch.** Dort stand als struktureller Fund „Blitz hatte keinen eigenen Multiplikator — er zahlte nur in Basis-Score, Wert und Crit"; das letzte Wort widerlegt den Satz. Der Crit-Multiplikator IST die Multiplikator-Achse der Fraktion, und sie hängt an derselben Kernressource wie alles andere (jeder Stapel der Siegkarte zahlt über `ION_CRIT_MULT_PER_STACK` dorthin). Ich habe daneben eine zweite gestellt — zwei Multiplikator-Achsen an derselben Ressource sind genau das kubische Wachstum aus §7.46 C. Die drei Runden §7.43 → §7.47 → §7.49 haben an den Symptomen dieser einen Annahme gearbeitet. **Raus:** `lightMult` aus Score-Produkt, `glacierWinMult` und Breakdown, `lightFormMult` aus dem Blitz-Modul, `SPANNUNGSFELD_SCALE` aus den Konstanten (der Sweep-Griff aus §7.49 hat keinen Gegenstand mehr), Sonde `spannungsfeld.mjs` gelöscht. **Der Skill bleibt** (Owner-Untergrenze 14 normale Skills je Fraktion, §7.16) und zieht auf die Achse, die Blitz ohnehin hat: **+2/3/4/6 % Crit-CHANCE je ionisierter Karte der Formation**, Episch-Anhang unverändert. Damit steht er gegen Lichtbogen, der eine Zeile höher in derselben Funktion sitzt und die Tiefe EINER Karte belohnt — Streuung gegen Tiefe, auf einer vorhandenen Achse; das ist die Entscheidung, die §7.43 bauen wollte und mit einer zweiten Achse verfehlt hat. Die 100-%-Klemme deckelt ihn von selbst, darüber zahlt er über die Überschuss-Regel (§7.44) gedämpft weiter; gemessen (§7.46 F) sind es mittig 2,0 und spät 4,4 ionisierte Karten, der Beitrag wächst also dort, wo Chance knapp ist, und sättigt dort, wo sie es nicht mehr ist. `litCards` ist 0, wo die Formation nicht bekannt ist (Statusleiste) — dieselbe Bauform wie `card = null` bei Lichtbogen. **Wächter:** kein Blitz-Faktor im Breakdown (über die vollständige Liste der `*Mult`-Schlüssel, nicht nur den alten Namen) UND die Stapel heben weiterhin den Crit-Multiplikator; gegengeprobt in der Form, die wirklich droht — ein `lightMult = 1` zurück in den Breakdown, ein Faktor, der KEINE Zahl im Spiel ändert und sonst niemandem auffiele. Dazu: weder `perStack` (§7.43) noch `perCard` (§7.47) dürfen in der Stufentabelle zurückkommen. **Der Stand aus §7.50 (Median 1,0 Mrd, 2,4× der Basis) ist damit nicht mehr gültig.** Was aus der Reihe bleibt: der weiche Crit-Deckel bei 0,05 (§7.49 A, von §7.50 als der wirksame Hebel belegt) und §7.44, das jetzt sogar wichtiger ist. Startwerte, UNGEMESSEN. |
 | 2026-09-10 | §7.51 nachgemessen (§7.52). Blitz-Mono, 12.050 Läufe. **Die Fraktion ist auf dem Basisniveau angekommen, und zwar auf JEDER Kennzahl: Median 384M gegen 416M (0,92×), p95 3,07 gegen 3,44 Mrd (0,89×), max 58,1 gegen 71,5 Mrd (0,81×).** Nicht nur der Median — der ganze Schwanz ist zurück, und das ohne einen einzigen neuen Deckel. Gegen das Feld aus §7.41 (Pf 367M · Ei 348M/224M · Fe 137M, je zum Stand ihrer letzten Messung) steht Blitz gleichauf mit der Pflanze. **Die Form stimmt auch:** die drei Legendären führen (+211 / +137 / +69 %), der stärkste normale Skill ist Kurzschluss mit +45 % — dieselbe Form, die §7.33 für Feuer als richtig festgehalten hat. **Kettenblitz ist repariert**, der Zeuge des ganzen Problems: +5 % (Basis) → +601 % (§7.46) → +238 % (§7.47) → +40 % (§7.50) → **+1 %**, Haltequote 92 → 48 %. Reine Tiefe auf einer Karte ist kein Motor mehr. **Lichtbogen ist zurück** (+18 → −10 → 0 → **+25 %**, 98 % gehalten) und damit zweitstärkster normaler Skill — die Crit-Chance-Achse trägt wieder, und genau dort sitzt das Spannungsfeld jetzt als Gegenspieler. **Offen:** das Spannungsfeld selbst misst 0 % bei 58 % Haltequote, die Stufen-Lifts (1,97 / 0,48 / 0,18 / 1,68) sind nicht monoton und damit Rauschen — der Skill ist neutral, nicht kaputt, die Höhe seiner Leiter ist der nächste Regler und ein Owner-Entscheid. Drei Skills im Minus (Entladung −23 %, Vorentladung −23 %, Serienschutz −13 %, alle ~100 % gehalten); Vorentladungs Fall von +4 auf −23 % ist ein KANDIDAT, kein Befund — sie zahlt Crit-Multiplikator je Serienpunkt und die flachere Rest-Steigung entwertet genau das, aber §7.50 hat sie auf derselben Steigung noch mit +4 % gemessen, also liegt das im Rauschen der Reihe (§7.46 B) und gehört gezielt nachgemessen. |
+| 2026-09-10 | Die Rauschgrenze gemessen statt geschätzt (§7.53, Owner: „nachmessen, dann toten skills angehen"). Zweimal dieselbe Konfiguration, nur ein anderer Seed-Satz (`--seed 1` gegen `--seed 101`). **Ergebnis: Faktor 1,97 auf dem Fraktions-Median (384M gegen 757M) und Faktor 3,0 auf dem p95 — bei identischem Code.** Je Skill ist der Median der Spannen **17 Prozentpunkte**, im Einzelfall weit mehr (Hochspannung 211 pp, Kettenblitz 35 pp, Resonanz 33 pp); auch die Haltequoten springen (Gewitterfront 20 → 85 %, Ladungsserie 100 → 51 %). **Das korrigiert drei frühere Aussagen:** §7.52 A („Median 0,92× der Basis") gilt nur für Seed 1, mit Seed 101 wären es 1,82× — belastbar ist allein, dass Blitz in der GRÖSSENORDNUNG der Basis liegt statt beim Vier- bis Achtfachen (die Richtung 1.639 → 1.014 → 384/757M hält mit großem Abstand, die zweite Stelle nicht); §7.52 B („Kettenblitz ist repariert", +1 %) war zu stark, der zweite Lauf misst +35 % — weit weg von +601 % bleibt richtig, die Genauigkeit nicht; und die Vorsicht bei Vorentladung (§7.52 C, als Kandidat markiert) war berechtigt, der zweite Lauf sagt +5 % statt −23 %. **Faustregel daraus: unter etwa 35 pp ist ein Einzellauf dieser Reihe nicht lesbar, und er trägt eine Stelle, nicht zwei — rückwirkend für jede Prozentzahl in §7.41 bis §7.52.** Hochspannung ist mono grundsätzlich nicht messbar (211 pp bei gleicher Haltequote), was §7.41 C aus anderem Grund schon sagte. **Die toten Skills, diesmal belegt** (in BEIDEN Läufen ≤ 0 mit kleiner Spanne, sechs von dreizehn): Serienschutz −13/−20 % (kostet aktiv: zahlt Ladung für eine Serie nach einer Niederlage, und Ladung ist der Engpass — dazu ein Niederlagen-Skill gegen die Owner-Regel aus §7.31), Spannungsfeld 0/+0 %, Gewitterfront 0/0 % (spät ist die Chance gesättigt, früh gibt es kaum Leisten — er zahlt genau dann nicht, wenn er könnte), Blitzschlag +4/+1 %, Blitzfänger +4/0 %, Ladungsserie −5/+3 % (Ladung IST der Engpass, trotzdem neutral: die Schwelle greift zu spät). Entladung (−23/−5 %, 17 pp) liegt auf der Grenze und ist nicht entschieden. Drei der sechs haben eine STRUKTURELLE Diagnose, keine Zahlen-Diagnose — dort hilft ein größerer Satz nicht. Nichts umgesetzt, Owner-Entscheid. |
