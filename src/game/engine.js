@@ -10,7 +10,7 @@ import { coinsForFormations } from "./coins.js"; // Münz-Ökonomie (§2.2): Ein
 // exp skill rework: die Blitz-Mechanik (Passiv, 15 Skills, 4 Legendäre) lebt im Fraktionsmodul; die Engine ruft nur
 // ihre reinen Übergänge (Crit-Beiträge, Ladungsgewinn, volle Leiste, Niederlage, Rundenende).
 import { lightningCritChance, lightningCritMult, overcritMult, blitzfaengerValue, ionenfeldValue, fieldTick, ionScoreFor as lightIonScore, ionCritMultFor as lightIonCritMult, chargeGainOnWin, entladungScoreFor,
-  blitzschlagStacks, feldFeed, lightningOnLoss, fillBar as lightFillBar, lightningCycleEnd, maxChargeFor,
+  blitzschlagStacks, feldFeed, lightningOnLoss, fillBar as lightFillBar, maxChargeFor,
   hasDoppelentladung, hasResonanz, resonantStacks } from "./factions/lightning.js";
 // exp skill rework: die Feuer-Mechanik (Passiv, 15 Skills, 4 Legendäre) lebt ebenso im Fraktionsmodul — die Engine
 // ruft ihre Übergänge (Kampfwert-Bonus, Sieg, Niederlage, Hitze-Multiplikator, Rundenende, Brand-Wechsel).
@@ -823,16 +823,16 @@ export function resolveTrick(state, rng) {
       heat = r.heat;
       for (const b of r.brands) { newBrandPending[b.id] = (newBrandPending[b.id] || 0) + b.value; brandTotal += 1; }
     }
-    // Blitz (exp skill rework): Serienschutz (Ladung ab dem Anteil der Stufe hält die Serie und wird verbraucht; Episch
-    // einmal je Runde gratis) — im Modul.
-    let serienschutzHeld = false;
+    // Blitz (exp skill rework): auf einer Niederlage tut die Fraktion nur noch das eine — Kurzschluss Episch merkt den
+    // Stapel-Score der verlorenen Karte vor. (§7.59: der Serienschutz ist gestrichen, Blitz hält keine Serie mehr.)
+    let lightStreakHeld = false;
     if (lightning && lightning.active) {
-      const r = lightningOnLoss(lightning, skills, skillTiers, { alreadyHeld: anchorNoReset, card: pCardR }); // §7.22: Kurzschluss Episch merkt den Stapel-Score der verlorenen Karte vor (pCardR: Resonanz-Stapel)
-      lightning = r.lightning; serienschutzHeld = r.streakHeld;
+      const r = lightningOnLoss(lightning, skills, skillTiers, { card: pCardR }); // §7.22: Kurzschluss Episch (pCardR: Resonanz-Stapel)
+      lightning = r.lightning; lightStreakHeld = r.streakHeld;
     }
     // (§5.18: der Eispanzer — Niederlage neben einem Gletscher folgenlos + Masse — ist mit dem Sprödbruch gegangen. Er
     //  war ein Pflaster auf dem Symptom; die Gletscherzunge behebt die Ursache, indem der Gletscher seinen Stich gewinnt.)
-    const streakNoReset = anchorNoReset || serienschutzHeld;
+    const streakNoReset = anchorNoReset || lightStreakHeld;
     winStreak = streakNoReset ? winStreak : 0;
     initiative = "opp";
     sinceWin += 1; // #71 Durchbruch: kein Sieg → Zähler hoch
@@ -848,7 +848,7 @@ export function resolveTrick(state, rng) {
     weaknessBig = weaknessBigDeficit != null && (oValue - pValue) >= weaknessBigDeficit;
     if (interplayStoreOnLoss) interplayStored += interplayStoreOnLoss; // D_INTERPLAY IV: Niederlage bankt Score für den nächsten Sieg
     winSuit = null; winSuitStreak = 0; // #71 Farbserie: Niederlage beendet die Farbserie
-    serieStreak = streakNoReset ? winStreak : 0; // Serienschutz/Serienanker: effektive Serie hält
+    serieStreak = streakNoReset ? winStreak : 0; // Serienanker: effektive Serie hält
     // Pflanze (§6.26): eine Niederlage gibt nichts — außer mit Zähem Halm, der jede Karte trotzdem wachsen lässt
     // (Episch zusätzlich je Formation an ihrer Position). Alles im Modul.
     if ((activeArchetypes || []).includes("plant")) {
@@ -977,7 +977,7 @@ export function resolveTrick(state, rng) {
   const newArchitectPre = archPreNow;
   if (pos >= cycleLen) { // Zeitsegment (§8 A-L1): Durchlauf endet nach cycleLen Stichen (40, mit Zeitsegment 45)
     cycle += 1;
-    lightning = lightningCycleEnd(lightning); // exp Blitz (§7.30): der Serienschutz-Deckel füllt sich je Durchlauf wieder auf
+    // (§7.59: `lightningCycleEnd` ist raus — der Serienschutz-Deckel war sein einziger Inhalt.)
     // Eis-Neudesign (docs §2.6): Ewiger Frost — bedingungsloser Masse-Tick je Durchlauf auf jeden Gletscher (nach Auszahlung).
     if (glacierActive) newGlacierMass = ewigerFrostTick(newGlacierMass, glacierLocked);
     // §8: die zweite Hälfte des Passivs — der offene BODEN friert ebenfalls. Sie ist der Grund, warum ein Misch-Build

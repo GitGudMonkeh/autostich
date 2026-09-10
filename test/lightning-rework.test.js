@@ -3,7 +3,7 @@ import * as C from "../src/game/constants.js";
 import { SKILL_DEFS, BLITZ_TIERS, effectiveTierOf, tierIsLifted } from "../src/game/skills.js";
 import { initLightning, L, maxChargeFor, effectiveTier, lightParam, lightningCritChance, lightningCritMult, overcritMult,
   blitzfaengerValue, ionenfeldValue, fieldTick, ionScoreFor, ionCritMultFor, chargeGainOnWin, critFillsBar, blitzschlagStacks,
-  formationStacks, feldFeed, lightningOnLoss, fillBar, lightningCycleEnd } from "../src/game/factions/lightning.js";
+  formationStacks, feldFeed, lightningOnLoss, fillBar } from "../src/game/factions/lightning.js";
 import { resolveTrick } from "../src/game/engine.js";
 import { computeFormations, activeFormationCount } from "../src/game/formations.js";
 import { initialState } from "../src/game/reducer.js";
@@ -275,25 +275,18 @@ describe("Blitz-Modul — Ladung, Leiste, Niederlage (reine Übergänge)", () =>
     expect(feldFeed(light(), [L.SPANNUNGSFELD], {}, card, form, 1, cardAt)).toBe(null); // Normal hat den Anhang nicht
     expect(feldFeed(light(), [L.SPANNUNGSFELD], epic, card, { formations: [] }, 1, cardAt)).toBe(null);
   });
-  /* §7.30: fester Preis statt eines Anteils der Leiste, und ein DECKEL je Durchlauf. Der Deckel ist der Kern des
-     Umbaus (die Kadenz war das Problem, nicht der Preis), deshalb prüft der Test ihn ausdrücklich: die (perRound+1).
-     Auslösung im selben Durchlauf hält NICHT mehr, obwohl die Ladung reicht. */
-  it("lightningOnLoss: Serienschutz kostet den festen Preis der Stufe und greift höchstens perRound-mal je Durchlauf", () => {
-    const { cost: cost0, perRound: per0 } = T.serienschutz[0];
-    const held = lightningOnLoss(light({ charge: cost0 + 1 }), [L.SERIENSCHUTZ], {});
-    expect(held.streakHeld).toBe(true); expect(held.lightning.charge).toBe(1); expect(held.lightning.serienschutzCount).toBe(1);
-    expect(held.lightning.serienschutzRound).toBe(1);
-    const broke = lightningOnLoss(light({ charge: cost0 - 1 }), [L.SERIENSCHUTZ], {});
-    expect(broke.streakHeld).toBe(false); expect(broke.lightning.charge).toBe(cost0 - 1);
-    // Deckel: mit voller Ladung, aber perRound schon verbraucht, hält die Serie nicht mehr — und kostet auch nichts.
-    const capped = lightningOnLoss(light({ charge: 10, serienschutzRound: per0 }), [L.SERIENSCHUTZ], {});
-    expect(capped.streakHeld).toBe(false); expect(capped.lightning.charge).toBe(10);
-    // Episch greift öfter im selben Durchlauf: dieselbe Lage hält dort noch.
-    const epic = lightningOnLoss(light({ charge: 10, serienschutzRound: per0 }), [L.SERIENSCHUTZ], { [L.SERIENSCHUTZ]: 3 });
-    expect(epic.streakHeld).toBe(true); expect(epic.lightning.charge).toBe(10 - T.serienschutz[3].cost);
-    expect(lightningOnLoss(light({ charge: 9 }), [L.SERIENSCHUTZ], {}, { alreadyHeld: true }).lightning.charge).toBe(9); // Serienanker hält schon → keine Kosten
+  /* §7.59 (Owner): der Serienschutz ist gestrichen — er war der letzte Blitz-Skill, der auf eine NIEDERLAGE
+     reagierte (Owner-Regel §7.31), und er zahlte mit Ladung, dem Engpass der Fraktion. Der Wächter hält die Regel
+     fest, nicht nur den Wegfall: keine Blitz-Quelle hält die Serie mehr, und keine kostet auf einer Niederlage
+     Ladung. Fällt eine dieser Zeilen, ist ein Niederlagen-Skill zurück. */
+  it("lightningOnLoss (§7.59): Blitz hält keine Serie mehr und zahlt auf einer Niederlage keine Ladung", () => {
+    for (const id of Object.values(L)) {
+      const r = lightningOnLoss(light({ charge: 9 }), [id], { [id]: 3 }, { card: { ionStacks: 4 } });
+      expect(r.streakHeld, id).toBe(false);
+      expect(r.lightning.charge, id).toBe(9);
+    }
     expect(lightningOnLoss(light({ charge: 4 }), [L.ABLEITER], { [L.ABLEITER]: 3 }).lightning.charge).toBe(4); // §7.18: keine Niederlagen-Ladung mehr
-    expect(lightningOnLoss(initLightning(), [L.SERIENSCHUTZ], {}).streakHeld).toBe(false);
+    expect(lightningOnLoss(initLightning(), [L.STREUUNG], {}).streakHeld).toBe(false);
     // §7.22 Kurzschluss Episch-Extra: verliert eine Karte ab der Schwelle, ist ihr doppelter Stapel-Score vorgemerkt; darunter und auf Normal nicht.
     const ksMin = T.kurzschluss[3].minStacks;
     const bank = lightningOnLoss(light(), [L.KURZSCHLUSS], { [L.KURZSCHLUSS]: 3 }, { card: { ionStacks: ksMin } }).lightning.stackBank;
@@ -356,11 +349,32 @@ describe("Blitz-Modul — Ladung, Leiste, Niederlage (reine Übergänge)", () =>
     expect(fillBar(light({ charge: 10 }), [L.IONENFELD], { [L.IONENFELD]: 3 }, deck, order, 0).lightning.fieldLeft).toBe(T.ionenfeld[3].tricks);
     expect(fillBar(light({ charge: 10, fieldLeft: 2 }), [], {}, deck, order, 0).lightning.fieldLeft).toBe(2); // ohne Ionenfeld unberührt
   });
-  it("lightningCycleEnd: der Serienschutz-Deckel füllt sich je Durchlauf wieder auf (§7.30)", () => {
-    expect(lightningCycleEnd(light({ serienschutzRound: 2 })).serienschutzRound).toBe(0);
-    const l = light();
-    expect(lightningCycleEnd(l)).toBe(l);
-    expect(lightningCycleEnd(null)).toBeNull();
+  /* Streuung (§7.59, Owner) — das Breite-Gegenstück zu Kettenblitz auf SK_LIGHTNING_17. Der Wächter hält die drei
+     Punkte, an denen ein Umbau sie still entwerten würde: sie trifft die DÜNNSTEN (Gleichstand → kleinerer
+     Deck-Index, Determinismus §9), sie IONISIERT wirklich (Stapel UND Dauerwert wie das Passiv — ohne den Wert
+     lägen die Stapel auf Karten, die den Stich nie gewinnen, und das ist die Sättigung aus §7.54 D), und das
+     Episch-Extra verdoppelt nur auf einer Karte OHNE Stapel. */
+  it("fillBar: Streuung (§7.59) ionisiert die dünnsten Karten — Stapel und Dauerwert, Episch stärker auf leeren", () => {
+    const order = identity();
+    // Karten 0/2/3 tragen Stapel, das Passiv ionisiert Karte 1 → die Dünnsten liegen danach ab Index 4.
+    const uneven = constDeck(5).map((c, i) => ([0, 2, 3].includes(i) ? { ...c, ionStacks: 2 } : c));
+    const norm = fillBar(light({ charge: 10 }), [L.STREUUNG], {}, uneven, order, 0);
+    expect(norm.deck[4].ionStacks).toBe(T.streuung[0].cards);         // Normal: genau eine Karte, die dünnste
+    expect(norm.deck[4].value).toBe(5 + C.ION_VALUE_PER_BAR);         // ionisiert = Stapel UND Dauerwert
+    expect(norm.deck[5].ionStacks || 0).toBe(0);                      // die zweitdünnste noch nicht
+    expect(norm.stacks).toBe(2); expect(norm.targets).toEqual([1, 4]); // Passiv + Streuung
+    expect(uneven[4].ionStacks || 0).toBe(0);                         // Original unverändert
+    const selten = fillBar(light({ charge: 10 }), [L.STREUUNG], { [L.STREUUNG]: 1 }, uneven, order, 0);
+    expect(selten.deck[4].ionStacks).toBe(1); expect(selten.deck[5].ionStacks).toBe(1);
+    // Episch: vier Karten, und eine Karte OHNE Stapel bekommt freshStacks statt einem. Hier hat nur 9 keine Stapel;
+    // 0/2/3 haben eine (1 ist durchs Passiv auf 2 und damit nicht mehr unter den Dünnsten).
+    const almost = constDeck(5).map((c, i) => ({ ...c, ionStacks: i === 9 ? 0 : 1 }));
+    const epic = fillBar(light({ charge: 10 }), [L.STREUUNG], { [L.STREUUNG]: 3 }, almost, order, 0);
+    expect(epic.deck[9].ionStacks).toBe(T.streuung[3].freshStacks);   // leer → das Episch-Extra
+    for (const i of [0, 2, 3]) expect(epic.deck[i].ionStacks, `Karte ${i}`).toBe(2); // hatten schon einen → nur +1
+    expect(epic.deck[1].ionStacks).toBe(2);                           // Passiv, nicht Streuung
+    expect(epic.stacks).toBe(1 + T.streuung[3].freshStacks + 3);
+    expect(fillBar(light({ charge: 10 }), [], {}, uneven, order, 0).deck[4].ionStacks || 0).toBe(0); // ohne den Skill nichts
   });
 });
 
@@ -507,23 +521,21 @@ describe("Blitz — Engine-Integration (resolveTrick)", () => {
     const withSkill = resolveTrick(scen(12, 0, { skills: [L.ABLEITER], lightning: light({ stormCritBonus: 1.5 }) }), zero);
     expect(withSkill.lastTrick.critMultiplier).toBeCloseTo(M + pp * C.OVERCRIT_MULT_PER_PP, 6); // kein Skill-Term mehr auf dem Überschuss
   });
-  it("Serienschutz: die Niederlage kostet den festen Preis und hält die Serie; der Deckel je Durchlauf bindet, das Durchlauf-Ende hebt ihn auf (§7.30)", () => {
-    const { cost, perRound } = T.serienschutz[0];
-    const held = resolveTrick(scen(0, 12, { skills: [L.SERIENSCHUTZ], winStreak: 4, lightning: light({ charge: cost + 1 }) }), noCrit);
-    expect(held.lastTrick.result).toBe("loss");
-    expect(held.winStreak).toBe(4);
-    expect(held.lightning.charge).toBe(1);
-    expect(held.lightning.serienschutzRound).toBe(1); // eine von perRound Auslösungen verbraucht
-    const broke = resolveTrick(scen(0, 12, { skills: [L.SERIENSCHUTZ], winStreak: 4, lightning: light({ charge: cost - 1 }) }), noCrit);
-    expect(broke.winStreak).toBe(0);
-    // Zweite Niederlage im selben Durchlauf: Ladung genug, Deckel voll → die Serie bricht und nichts wird bezahlt.
-    // (Ladung 9, nicht 10 — bei voller Leiste zündete sie und die Ladung wäre ohnehin weg.)
-    const capped = resolveTrick(scen(0, 12, { skills: [L.SERIENSCHUTZ], winStreak: 4, lightning: light({ charge: 9, serienschutzRound: perRound }) }), noCrit);
-    expect(capped.winStreak).toBe(0);
-    expect(capped.lightning.charge).toBe(9);
-    // Der letzte Stich eines Durchlaufs setzt den Deckel zurück (lightningCycleEnd über die Engine).
-    const endOfRound = resolveTrick(scen(0, 12, { pos: 39, skills: [L.SERIENSCHUTZ], winStreak: 4, lightning: light({ charge: cost + 1, serienschutzRound: perRound }) }), noCrit);
-    expect(endOfRound.lightning.serienschutzRound).toBe(0);
+  it("Streuung (§7.59): die volle Leiste ionisiert zusätzlich die dünnste Karte; eine Niederlage hält die Serie nicht mehr", () => {
+    expect(SKILL_DEFS.SK_LIGHTNING_17.name).toBe("Streuung");
+    // Karte 0 trägt Stapel, das Passiv ionisiert Karte 1 → dünnste ist danach Karte 2.
+    const deck = withStacks(12, 0, 3);
+    const s = resolveTrick(scen(12, 0, { deck, skills: [L.STREUUNG], lightning: light({ charge: 9 }) }), zero);
+    expect(s.lightning.bars).toBe(1);
+    expect(s.deck[2].ionStacks).toBe(1);
+    expect(s.deck[2].value).toBe(12 + C.ION_VALUE_PER_BAR); // der Dauerwert kommt mit, sonst gewinnt die Karte nie
+    const ohne = resolveTrick(scen(12, 0, { deck, skills: [L.ABLEITER], lightning: light({ charge: 9 }) }), zero);
+    expect(ohne.lightning.bars).toBe(1); expect(ohne.deck[2].ionStacks || 0).toBe(0);
+    // §7.31 (Owner-Regel) und §7.59: Blitz hat keinen Skill mehr, der auf eine Niederlage reagiert — die Serie bricht.
+    const loss = resolveTrick(scen(0, 12, { skills: [L.STREUUNG], winStreak: 4, lightning: light({ charge: 9 }) }), noCrit);
+    expect(loss.lastTrick.result).toBe("loss");
+    expect(loss.winStreak).toBe(0);
+    expect(loss.lightning.charge).toBe(9); // und sie kostet keine Ladung
   });
   it("volle Leiste zündet auch auf einer Niederlage (Ladung, die ein Stich über der Leiste hinterlässt)", () => {
     const s = resolveTrick(scen(0, 12, { skills: [L.ABLEITER], lightning: light({ charge: 10 }) }), noCrit);

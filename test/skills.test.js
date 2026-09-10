@@ -43,10 +43,15 @@ describe("skills — Blitz-Registry (exp skill rework)", () => {
     expect(BLITZ_TIERS.ueberspannung).toBeUndefined();               // §7.28: Überspannung gestrichen
     expect(asc(BLITZ_TIERS.ionenfeld, "value")).toBe(true);         // §7.19
     expect(asc(BLITZ_TIERS.ionenfeld, "tricks")).toBe(true);        // §7.18
-    // §7.30: der Preis ist absolut statt anteilig, und die Kadenz IST jetzt die Leiter — der Preis fällt, der Deckel steigt.
-    expect(desc(BLITZ_TIERS.serienschutz, "cost")).toBe(true);
-    expect(asc(BLITZ_TIERS.serienschutz, "perRound")).toBe(true);
-    expect(BLITZ_TIERS.serienschutz.every((r) => r.frac === undefined)).toBe(true); // der Anteil der Leiste ist raus
+    /* §7.59: auf SK_LIGHTNING_17 steht die Streuung, der Serienschutz ist gestrichen. Die Leiter ist die ZAHL DER
+       KARTEN (Breite), und der Wächter hält zugleich fest, dass die Zeile nichts von einer Niederlage weiß: `cost`
+       und `perRound` waren der Preis und der Deckel des alten Skills, und die Owner-Regel §7.31 verbietet den
+       Auslöser. Kommen sie zurück, ist der Niederlagen-Skill zurück. */
+    expect(BLITZ_TIERS.serienschutz).toBeUndefined();
+    expect(asc(BLITZ_TIERS.streuung, "cards")).toBe(true);
+    expect(BLITZ_TIERS.streuung.every((r) => r.cost === undefined && r.perRound === undefined && r.frac === undefined)).toBe(true);
+    expect(BLITZ_TIERS.streuung.at(-1).freshStacks).toBeGreaterThan(1); // Episch-Extra nur auf der letzten Stufe
+    expect(BLITZ_TIERS.streuung.slice(0, -1).every((r) => r.freshStacks === undefined)).toBe(true);
     expect(asc(BLITZ_TIERS.reststrom, "floor")).toBe(true);
     expect(asc(BLITZ_TIERS.gewitter, "critPerBar")).toBe(true);
     // §7.42: Entladung ist von der Crit-Multiplikator-Achse auf den Basis-Score gewechselt — die Leiter ist jetzt

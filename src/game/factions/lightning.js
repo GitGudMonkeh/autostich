@@ -27,7 +27,7 @@ export const L = Object.freeze({
   ABLEITER: "SK_LIGHTNING_01", IONENFELD: "SK_LIGHTNING_02", KETTENBLITZ: "SK_LIGHTNING_03", LICHTBOGEN: "SK_LIGHTNING_04", // 04: Lichtbogen ersetzt Überspannung (§7.28)
   RESTSTROM: "SK_LIGHTNING_05", GEWITTERFRONT: "SK_LIGHTNING_06", LADUNGSSERIE: "SK_LIGHTNING_07", KURZSCHLUSS: "SK_LIGHTNING_09",
   ENTLADUNG: "SK_LIGHTNING_10", BLITZFAENGER: "SK_LIGHTNING_11", VORENTLADUNG: "SK_LIGHTNING_12", SPANNUNGSFELD: "SK_LIGHTNING_13", // 13: §7.51 auf der Crit-Chance, §7.56 je Formation der Position (Breite)
-  BLITZSCHLAG: "SK_LIGHTNING_15", SERIENSCHUTZ: "SK_LIGHTNING_17", // SK_LIGHTNING_14 Überschlag: gestrichen (§7.19)
+  BLITZSCHLAG: "SK_LIGHTNING_15", STREUUNG: "SK_LIGHTNING_17", // 17: §7.59 Streuung ersetzt Serienschutz (Breite); SK_LIGHTNING_14 Überschlag: gestrichen (§7.19)
   DOPPELENTLADUNG: "SK_LIGHTNING_L02", HOCHSPANNUNG: "SK_LIGHTNING_L03", RESONANZ: "SK_LIGHTNING_L04", // L04: Resonanz ersetzt Durchschlag (§7.25); L01 Donnergott gestrichen (§6.11, Owner: drei je Fraktion, die stärksten)
 });
 
@@ -35,10 +35,11 @@ export const L = Object.freeze({
    bars = volle Leisten (Kettenblitz Normal zählt jede 2.; Anzeige), critCount = Crits (Blitzableiter Normal jeder 2.,
    Blitzschlag jeder N.). Rampen ohne Deckel: stormCritBonus (Gewitterfront), entladungMult (Entladung).
    fieldLeft = Stiche, die das Ionenfeld noch trägt.
-   serienschutzRound = in diesem Durchlauf schon verbrauchte Serienschutz-Auslösungen (§7.30, Deckel je Stufe). */
+   (§7.59: `serienschutzCount`/`serienschutzRound` sind mit dem Serienschutz gegangen — Blitz hat damit keinen Skill
+   mehr, der auf Niederlagen reagiert.) */
 export function initLightning() {
   return { active: false, charge: 0, maxCharge: C.LIGHTNING_MAX_CHARGE, bars: 0, critCount: 0,
-    stormCritBonus: 0, entladungMult: 0, entladungScore: 0, fieldLeft: 0, stackBank: 0, serienschutzCount: 0, serienschutzRound: 0 };
+    stormCritBonus: 0, entladungMult: 0, entladungScore: 0, fieldLeft: 0, stackBank: 0 };
 }
 
 const held = (skills, id) => (skills || []).includes(id);
@@ -247,30 +248,19 @@ export function feldFeed(lightning, skills, skillTiers, card, posForm, slot, car
 }
 
 
-/* Niederlage: Serienschutz (fester Ladungspreis der Stufe hält die Serie, höchstens `perRound` mal je Durchlauf).
-   §7.30: bis dahin kostete er einen ANTEIL der Leiste (Normal 70 %) und griff bei JEDER Niederlage — gemessen war der
-   Effekt +23 % und der Preis machte −17 % daraus (gepaart, fixe Policy, 100 Läufe). Der Grund ist die Kadenz, nicht die
-   Zahl: bei rund 14 Niederlagen je Durchlauf frisst jeder Preis mehr Ladung, als die Leiste erzeugt, und er frisst sie
-   genau dann, wenn sie kurz vor der Ionisierung steht. Deckel je Durchlauf + kleiner fester Preis lösen das.
-   Kurzschluss Episch (§7.22): verliert eine Karte ab der Schwelle, wird ihr doppelter Stapel-Score vorgemerkt
-   (stackBank) und zahlt mit dem nächsten Sieg in die Basis. Gibt den neuen Substate und ob die Serie gehalten wurde.
-   `alreadyHeld` = ein anderer Schutz (Serienanker, Eispanzer) hält die Serie schon — dann wird keine Ladung ausgegeben. */
-export function lightningOnLoss(lightning, skills, skillTiers, { alreadyHeld = false, card = null } = {}) {
+/* Niederlage: Kurzschluss Episch (§7.22) — verliert eine Karte ab der Schwelle, wird ihr doppelter Stapel-Score
+   vorgemerkt (stackBank) und zahlt mit dem nächsten Sieg in die Basis. Das ist das Einzige, was Blitz auf einer
+   Niederlage noch tut: §7.59 hat den Serienschutz gestrichen (Owner-Regel §7.31, keine Skills, die auf Niederlagen
+   reagieren), auf seinem Platz steht die Streuung.
+   `streakHeld` bleibt im Rückgabewert stehen und ist jetzt immer false — der Aufrufer in engine.js verodert es mit
+   dem Serienanker, und die Stelle soll offen bleiben, falls wieder ein Halter dazukommt. */
+export function lightningOnLoss(lightning, skills, skillTiers, { card = null } = {}) {
   if (!lightning || !lightning.active) return { lightning, streakHeld: false };
-  let next = { ...lightning };
-  let streakHeld = false;
-  const cost = lightParam(skills, skillTiers, L.SERIENSCHUTZ, "cost");
-  const perRound = lightParam(skills, skillTiers, L.SERIENSCHUTZ, "perRound") || 0;
-  if (cost != null && !alreadyHeld && (lightning.serienschutzRound || 0) < perRound && (lightning.charge || 0) >= cost) {
-    next.charge = lightning.charge - cost;
-    next.serienschutzRound = (lightning.serienschutzRound || 0) + 1;
-    next.serienschutzCount = (lightning.serienschutzCount || 0) + 1;
-    streakHeld = true;
-  }
+  const next = { ...lightning };
   const ksMin = lightParam(skills, skillTiers, L.KURZSCHLUSS, "minStacks");
   if (lightParam(skills, skillTiers, L.KURZSCHLUSS, "onLoss") && ksMin != null && (card?.ionStacks || 0) >= ksMin)
     next.stackBank = (lightning.stackBank || 0) + ionScoreFor(card, skills, skillTiers);
-  return { lightning: next, streakHeld };
+  return { lightning: next, streakHeld: false };
 }
 
 // Karte mit den meisten Stapeln (Gleichstand: der kleinste Deck-Index); −1 ohne ionisierte Karte. `exclude` = ein
@@ -281,8 +271,20 @@ function deepestIndex(deck, exclude = -1) {
   return best;
 }
 
+/* Streuung (§7.59): die `n` DÜNNSTEN Karten des Decks, aufsteigend nach Stapeln, bei Gleichstand der kleinere
+   Deck-Index (Determinismus §9). Das Gegenstück zu `deepestIndex` — dort sucht Kettenblitz die Tiefe, hier sucht die
+   Streuung die Breite. Ein leeres Deck gibt eine leere Liste; sonst gibt es immer `n` Treffer (auch Karten mit 0
+   Stapeln, genau die sind gemeint). */
+function thinnestIndices(deck, n) {
+  if (n <= 0 || !deck?.length) return [];
+  return deck.map((c, i) => [c.ionStacks || 0, i])
+    .sort((a, b) => (a[0] - b[0]) || (a[1] - b[1]))
+    .slice(0, n).map(([, i]) => i);
+}
+
 /* Volle Leiste (höchstens EINE je Stich): +1 Leiste, die nächste Karte in der Reihenfolge (Wrap ans Deck-Ende → Anfang)
    wird ionisiert; Kettenblitz (§7.18, Tiefe) gibt danach der Karte mit den meisten Stapeln die Stapel seiner Stufe dazu;
+   Streuung (§7.59, Breite) ionisiert die dünnsten Karten der Stufe — beide lesen den Deckstand NACH dem Passiv;
    Ionenfeld lädt das Feld für die Stiche seiner Stufe; Gewitterfront/Entladung rampen; die Ladung fällt auf den
    Reststrom-Boden plus Blitzableiter-Rückgabe. Ladung, die danach über der Leiste liegt (Boden + Rückgabe ≥ Leiste,
    etwa Reststrom Episch × Blitzableiter), zündet beim nächsten Stich — nie in einer Endlosschleife.
@@ -319,6 +321,18 @@ export function fillBar(lightning, skills, skillTiers, deck, playerOrder, actual
       stacks += second; if (!targets.includes(deep2)) targets.push(deep2);
     }
   }
+  /* Streuung (§7.59, Owner): dieselbe Leiste ionisiert zusätzlich die `cards` dünnsten Karten. IONISIERT heißt hier
+     genau, was das Passiv darunter versteht — Stapel UND dauerhaft +ION_VALUE_PER_BAR Kartenwert; ohne den Wert
+     landeten die Stapel auf Karten, die den Stich nie gewinnen, und das ist die Sättigung, an der Blitzfänger
+     gemessen 0 % steht (§7.54 D). Gegenstück zu Kettenblitz eine Ebene höher: der sucht die Tiefe, diese die Breite.
+     Episch `freshStacks`: eine Karte ohne Stapel bekommt so viele statt einem — der erste Schlag zündet stärker. */
+  const spread = lightParam(skills, skillTiers, L.STREUUNG, "cards") || 0;
+  if (spread > 0) {
+    const fresh = lightParam(skills, skillTiers, L.STREUUNG, "freshStacks") || 1;
+    const thin = new Map(thinnestIndices(newDeck, spread).map((i) => [i, ((newDeck[i].ionStacks || 0) === 0 ? fresh : 1) * per]));
+    newDeck = newDeck.map((c, i) => (thin.has(i) ? { ...c, ionStacks: (c.ionStacks || 0) + thin.get(i), value: c.value + C.ION_VALUE_PER_BAR } : c));
+    for (const [i, add] of thin) { stacks += add; if (!targets.includes(i)) targets.push(i); }
+  }
   const storm = lightParam(skills, skillTiers, L.GEWITTERFRONT, "critPerBar") || 0;
   // §7.22 Gewitterfront Episch-Extra: die Rampe zahlt zusätzlich auf den Crit-Multiplikator. §7.42: Entladung ist von
   // dieser Achse weg, Gewitterfront steht dort jetzt allein — ihr Anhang ist offen (Owner-Entscheid ausstehend).
@@ -334,5 +348,5 @@ export function fillBar(lightning, skills, skillTiers, deck, playerOrder, actual
   return { lightning: next, deck: newDeck, filled: true, stacks, targets };
 }
 
-// Durchlauf-Ende: der Serienschutz-Deckel füllt sich wieder auf (§7.30).
-export const lightningCycleEnd = (lightning) => (lightning && (lightning.serienschutzRound || 0) > 0 ? { ...lightning, serienschutzRound: 0 } : lightning);
+// (§7.59: `lightningCycleEnd` ist raus — es füllte allein den Serienschutz-Deckel je Durchlauf wieder auf. Blitz hat
+//  jetzt keinen Zustand mehr, der am Durchlauf-Ende zurückgesetzt werden müsste.)

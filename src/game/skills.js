@@ -51,7 +51,7 @@ const BLITZ = {
   feld:          [{ critPerForm: 0.05 }, { critPerForm: 0.07 }, { critPerForm: 0.10 }, { critPerForm: 0.15, feedLowest: 1 }], // §7.56 (Owner): je FORMATION dieser Position statt je ionisierter Karte. Die Sonde feld-formationen hat gemessen, dass die Ionisierungs-Bedingung den Skill frueh abschaltet (Runden 1-10: 86 % der Formations-Siege ohne eine einzige ionisierte Karte in Reichweite) und dass eine Position ohnehin nur in 1,4-1,7 Formationen haengt. Ohne die Bedingung zuendet er ab Runde 1. §7.58 (Owner): gezaehlt werden nur ZAHLENDE Formationen (activeFormationCount, Faktor > 1) - dieselbe Zahl, die der Stich anzeigt und die Brennpunkt und Feuerlinie lesen. Saetze unveraendert: der Owner-Entscheid zu §7.57 D war Rampenhilfe, nicht Satz hoch
   lichtbogen:    [{ critPerStack: 0.005 }, { critPerStack: 0.01 }, { critPerStack: 0.015 }, { critPerStack: 0.02 }], // §7.28 (Owner): ersetzt Überspannung auf SK_LIGHTNING_04 — jeder wirksame Stapel der gespielten Karte gibt Crit-CHANCE auf den Stich, die Richtung, die bis dahin keine Regel und kein Skill bediente. Startwerte, noch nicht gemessen (Owner: erst Design, dann Startwert, dann messen)
   blitzschlag:   [{ critEvery: 4, stacks: 2 }, { critEvery: 3, stacks: 3 }, { critEvery: 2, stacks: 4 }, { critEvery: 2, stacks: 6 }], // §7.18: einen Schritt schneller; §7.54: die Stapel je Auslösung 1/1/1/2 → 2/3/4/6, denn die Kadenz war nie das Problem — die Leisten schütten im Lauf Ø 634 Stapel aufs Deck (blitz-ramp), gegen die ein Stapel je zweitem Crit nicht ankommt. Die Karte wechselt je Sieg, der Skill STREUT also und speist damit das Spannungsfeld
-  serienschutz:  [{ cost: 1, perRound: 2 }, { cost: 1, perRound: 3 }, { cost: 1, perRound: 5 }, { cost: 1, perRound: 8 }], // §7.30: fester Preis + Deckel je Durchlauf statt eines Anteils der Leiste bei JEDER Niederlage (Effekt +23 %, so wie er war −17 %). Sweep: bei Preis 2 bleibt er neutral (51 % besser als ohne), bei Preis 1 trägt er (59–69 %) — eine Ladung ist teuer, die Leiste ist der Engpass. Die Leiter ist damit die KADENZ, die Häufigkeitsleiter, die Blitz fehlte (§7.26 D)
+  streuung:      [{ cards: 1 }, { cards: 2 }, { cards: 3 }, { cards: 4, freshStacks: 2 }], // §7.59 (Owner): Streuung ersetzt den Serienschutz auf SK_LIGHTNING_17. Der alte reagierte auf NIEDERLAGEN (Owner-Regel §7.31) und zahlte mit Ladung, dem Engpass. Der neue ist das Gegenstueck zu Kettenblitz: der sucht die Tiefe (die Karte mit den meisten Stapeln), diese die Breite (die duennsten). Grund aus der Messung: das Deck bekommt Oe 979 Stapel je Lauf, davon liegen 241 auf EINER Karte - die Fraktion konzentriert, und nichts arbeitet dagegen. Die Leiter ist die Zahl der Karten; Episch gibt einer Karte ohne Stapel 2 statt 1. STARTWERTE, ungemessen: 4 Karten je Leiste sind bei Oe 163 Leisten auch 4x das Dauerwert-Einkommen des Passivs, das ist der Hebel, an dem zuerst gedreht wird
 };
 export const BLITZ_TIERS = BLITZ;
 const pctS = (x) => de(Math.round(x * 10000) / 100); // Anteil → Prozent mit bis zu zwei Nachkommastellen (0,0075 → „0,75"; eine Stelle rundete 0,75 auf „0,8")
@@ -61,8 +61,8 @@ const pctS = (x) => de(Math.round(x * 10000) / 100); // Anteil → Prozent mit b
    Tabellenzeile (z. B. `overflow`, `chargeFromStreak`) und erscheint nur dort. */
 const tiered = (rows, f) => { const descTiers = rows.map((r) => f(r)); return { desc: descTiers[0], descTiers }; };
 const jeder = (n, w = "Jeder") => (n === 1 ? w : `${w} ${n}.`); // „Jeder 2. Crit" / „Jeder Crit"
-// „Einmal" / „Zweimal je Durchlauf" — aus numWord abgeleitet, damit die Zahlwörter EINE Quelle behalten (§7.30).
-const malWort = (n) => { const w = n === 1 ? "einmal" : `${numWord(n)}mal`; return w[0].toUpperCase() + w.slice(1); };
+// (§7.59: `malWort` — „Einmal" / „Zweimal je Durchlauf" — ist mit dem Serienschutz gegangen, seinem einzigen Leser.
+//  Die Zahlwörter selbst bleiben in `numWord`, das die Streuung und die Feuer-Texte weiter lesen.)
 // Stufentabellen der 15 Feuer-Skills (§4.5) — dieselbe Form; die Schwellen sinken, die Sätze steigen mit der Stufe.
 // Das Modul factions/fire.js liest sie über `fireParam`; Legendäre haben keine Zeile.
 const FEUER = {
@@ -235,9 +235,10 @@ export const SKILL_DEFS = {
     ...tiered(BLITZ.kurzschluss, (r) => `Sieg mit einer Karte ab ${r.minStacks} Stapeln: ihre Stapel zählen ${r.factor === 2 ? "doppelt" : `×${r.factor}`}.${r.onLoss ? " Verlierst du mit so einer Karte, zahlt ihr doppelter Stapel-Score beim nächsten Sieg." : ""}`) },
   SK_LIGHTNING_04: { id: "SK_LIGHTNING_04", name: "Lichtbogen", archetype: "lightning", keywords: ["ionize", "crit"], tiers: BLITZ.lichtbogen, // §7.28: Ionisierung zu Crit-Chance
     ...tiered(BLITZ.lichtbogen, (r) => `Jeder Stapel auf der gespielten Karte gibt +${pctS(r.critPerStack)} % Crit-Chance auf diesen Stich.`) },
-  // Schutz
-  SK_LIGHTNING_17: { id: "SK_LIGHTNING_17", name: "Serienschutz", archetype: "lightning", keywords: ["charge", "streak"], tiers: BLITZ.serienschutz,
-    ...tiered(BLITZ.serienschutz, (r) => `Verlierst du einen Stich, hält die Serie für ${r.cost} Ladung. ${malWort(r.perRound)} je Durchlauf.`) },
+  // (§7.59: der Platz „Schutz" ist aufgelöst — Serienschutz war der letzte Blitz-Skill, der auf eine Niederlage
+  //  reagierte. Auf SK_LIGHTNING_17 steht jetzt die Streuung, das Breite-Gegenstück zu Kettenblitz.)
+  SK_LIGHTNING_17: { id: "SK_LIGHTNING_17", name: "Streuung", archetype: "lightning", keywords: ["charge", "ionize"], tiers: BLITZ.streuung,
+    ...tiered(BLITZ.streuung, (r) => `Jede volle Leiste ionisiert zusätzlich ${r.cards === 1 ? "deine Karte" : `deine ${numWord(r.cards)} Karten`} mit den wenigsten Stapeln.${r.freshStacks ? ` Eine Karte ohne Stapel bekommt ${r.freshStacks} Stapel statt einem.` : ""}`) },
   // Legendäre (§3.7): keine Stufe, zwei Effekte erlaubt.
   // (§6.11, Owner: drei Legendäre je Fraktion, die stärksten — SK_LIGHTNING_L01 Donnergott ist gestrichen, gemessen
   //  als schwächstes der vier: +30 % gegen Resonanz +106 %, Doppelentladung +85 %, Hochspannung +40 %.)

@@ -9210,6 +9210,86 @@ hält weiter fest, dass weder `perStack` (§7.43) noch `perCard` (§7.47) noch `
 
 ---
 
+### 7.59 Streuung ersetzt den Serienschutz (2026-09-10, Owner) — umgesetzt, UNGEMESSEN
+
+**Owner:** „3a" — von den beiden Vorschlägen für den freien Platz die Streuung: *jede volle Leiste ionisiert
+zusätzlich die Karte mit den wenigsten Stapeln.*
+
+Damit ist der letzte Blitz-Skill weg, der auf eine **Niederlage** reagierte (Owner-Regel §7.31) und mit **Ladung**
+bezahlte, dem Engpass der Fraktion. Der Slot `SK_LIGHTNING_17` bleibt, das Emblem bleibt.
+
+#### A · Warum die Fraktion diesen Skill braucht
+
+`blitz-ramp` zählt Ø **979 Stapel je Lauf auf dem Deck** — und Ø **241 davon auf EINER Karte** (§7.57). Bei 40
+Karten heißt das: ein Viertel der Ionisierung liegt auf einem Viertelprozent des Decks. Die Fraktion konzentriert,
+und bis hierher arbeitete **nichts** dagegen: Kettenblitz füttert die tiefste Karte, Blitzschlag die Siegkarte, das
+Passiv läuft zwar reihum, aber Kettenblitz zieht schneller ab, als das Passiv verteilt.
+
+Die Streuung ist das Gegenstück eine Ebene daneben: **Kettenblitz sucht die Tiefe, die Streuung die Breite.** Beide
+hängen an derselben vollen Leiste, beide lesen den Deckstand, nachdem das Passiv ionisiert hat.
+
+#### B · Was gebaut ist
+
+| | |
+| --- | --- |
+| Auslöser | jede volle Leiste (wie Kettenblitz, Ionenfeld, Gewitterfront) |
+| Ziel | die `cards` Karten mit den WENIGSTEN Stapeln; Gleichstand → kleinerer Deck-Index (§9) |
+| Wirkung | **ionisieren**, nicht nur bestapeln: +1 Stapel **und** dauerhaft +`ION_VALUE_PER_BAR` Kartenwert |
+| Leiter | `cards` 1 / 2 / 3 / 4 |
+| Episch | eine Karte **ohne** Stapel bekommt `freshStacks` = 2 statt 1 |
+| Doppelentladung | verdoppelt die Stapel wie bei jeder Ionisierung |
+
+**Der Dauerwert ist die eigentliche Entscheidung.** Ohne ihn landeten die Stapel auf Karten, die den Stich nie
+gewinnen — und genau daran misst Blitzfänger seit drei Runden 0 % (§7.54 D: „man kann einen Stich nicht zweimal
+gewinnen"). Das Passiv definiert „ionisieren" bereits als *Stapel plus Dauerwert*; Kettenblitz sagt dagegen bewusst
+„+X Stapel". Die Streuung sagt „ionisiert" und tut deshalb beides. Ein Breite-Skill, der die Karten nicht auch
+gewinnfähig macht, ist ein Breite-Skill ohne Wirkung.
+
+#### C · Die Höhe ist der offene Punkt — ungemessen
+
+Bei Ø 163 vollen Leisten je Lauf gibt die Streuung an Dauerwert:
+
+| Stufe | Karten je Leiste | Dauerwert je Lauf | zum Vergleich |
+| --- | ---: | ---: | --- |
+| Normal | 1 | ~163 | genau so viel wie das Passiv selbst |
+| Episch | 4 | ~652 | das Vierfache des Passivs, Ø +16 je Karte |
+
+Kartenwerte liegen im einstelligen Bereich, das Episch verdoppelt das Deck also mehr als einmal. **Das ist der
+Hebel, an dem zuerst gedreht wird**, und die beiden Griffe stehen schon fest: die Leiter kürzen (1/2/2/3), oder den
+Dauerwert nur auf die ERSTE der gestreuten Karten legen und den Rest bei Stapeln lassen. Beides nach der Messung,
+nicht davor.
+
+#### D · Was mitgegangen ist
+
+- `serienschutzCount` / `serienschutzRound` aus dem Substate,
+- der Serienschutz-Zweig aus `lightningOnLoss` — die Funktion tut auf einer Niederlage jetzt nur noch das eine
+  (Kurzschluss Episch bankt den Stapel-Score); `streakHeld` bleibt im Rückgabewert und ist immer `false`,
+- `lightningCycleEnd` samt Aufruf in `engine.js` — der Deckel je Durchlauf war sein einziger Inhalt,
+- `malWort` aus `skills.js` — der Serienschutz war sein einziger Leser.
+
+#### E · Wächter
+
+Zwei, beide gegengeprobt:
+
+- **Modul (`fillBar`):** die Streuung trifft die dünnsten Karten, sie ionisiert wirklich (Stapel UND Dauerwert),
+  und das Episch-Extra greift nur auf einer Karte ohne Stapel. Gegenprobe 1 — Dauerwert entfernt: fällt (5 statt 6).
+  Gegenprobe 2 — Sortierung auf die TIEFSTEN gedreht: fällt.
+- **Engine (`resolveTrick`):** die volle Leiste ionisiert zusätzlich die dünnste Karte mit Stapel und Wert; und
+  eine Niederlage hält die Serie **nicht** mehr und kostet **keine** Ladung. Dazu in `lightningOnLoss` eine Schleife
+  über ALLE Blitz-IDs auf Episch: keine hält die Serie, keine nimmt Ladung. Kommt ein Niederlagen-Skill zurück,
+  fällt diese Zeile.
+- In der Stufentabelle hält ein Ratchet fest, dass `cost`, `perRound` und `frac` nicht zurückkommen.
+
+#### F · Nebenbefund, nicht behoben
+
+`enSkills.js` ist über die ganze Blitz-Fraktion veraltet — `SK_LIGHTNING_04` heißt dort noch „Overvoltage",
+`SK_LIGHTNING_11` trägt den Text von vor §7.18, `SK_LIGHTNING_L01` (Donnergott, gestrichen) steht noch drin. Der
+englische Katalog kennt außerdem keine Stufentexte, nur einen Satz je Skill. Angefasst ist nur `SK_LIGHTNING_17`,
+weil dieser Eintrag sonst einen Skill benennen würde, den es nicht mehr gibt. Der Rest wäre ein reiner
+Übersetzungs-Diff und gehört in eine eigene Runde.
+
+---
+
 ### 5.30 Die Eis-Skills auf dem neuen Motor (2026-09-09) — gemessen, nichts umgesetzt
 
 **Owner:** „und dann schauen wir uns alle skills an die davon profitieren müssen und designen wie."
@@ -9639,3 +9719,4 @@ leichtesten haben.
 | 2026-09-10 | Spannungsfeld zählt Formationen, ohne Ionisierungs-Bedingung (§7.56, Owner: „Formations-Sieg gibt +X % Crit-Chance je Formation dieser Position — genau das meinte ich"). Das ist die Variante aus §7.55 A statt der zuerst genannten; die Sonde hatte gezeigt, dass „je Formation, in der eine ionisierte Karte ist" den Skill **schwächer statt früher** macht. Kennwert ist jetzt die Zahl der FORMATIONEN dieser Position (`positionFormations`, braucht weder Karte noch Deck; Meta-Faktoren ohne Mitglieder zählen nicht mit), **Bedingung keine**, Sätze unverändert 5/7/10/15 %, Episch-Anhang unverändert. **Früh ist das der Faktor 8** (1,38 Formationen gegen 0,17 ionisierte Karten in den Runden 1–10), spät die Hälfte (1,73 gegen 4,09) — genau die Verschiebung dorthin, wo Crit-Chance knapp ist (Runden 1–10: Ø 14,8 % Roh-Chance gegen 87,1 % spät). Der Zweck ist die Kette dahinter: mehr Crits → schnellere volle Leisten → früher Ladung und Stapel; Blitz hat in den Runden 1–10 nur 2 volle Leisten (§7.55 B), das ist der Kaltstart der Fraktion. **Damit stehen auf der Crit-Chance-Achse zwei Skills mit entgegengesetzter Bauanleitung:** Lichtbogen zahlt je Stapel der gespielten Karte (Tiefe, wächst über den Lauf — Ø 10,7 je Karte spät, tiefste Ø 215), Spannungsfeld je Formation (Breite, von Anfang an da, aber gedeckelt bei 1,4–1,7). Früh trägt das Feld, spät der Bogen — das ist die Entscheidung, die §7.43 bauen wollte und dreimal verfehlt hat. Wächter gegengeprobt (eine nie erfüllbare Mitglieder-Bedingung eingebaut, er fällt); die Stufentabelle hält weiterhin fest, dass weder `perStack` (§7.43) noch `perCard` (§7.47) noch `critPerCard` (§7.51) zurückkommen dürfen. Startwerte, UNGEMESSEN. |
 | 2026-09-10 | §7.56 nachgemessen (§7.57), beide Seed-Sätze plus Rampen-Sonde. **Im Score die dritte Null: Spannungsfeld +0 % / −2 %** — damit drei Bauformen und drei Nullen (eigener Score-Multiplikator §7.43/§7.47, Crit-Chance je ionisierter Karte §7.51/§7.54, Crit-Chance je Formation §7.56). Die Fraktion bewegt sich auch nicht (1.295M/613M gegen 792M/1.196M davor, überlappende Paare, also Rauschen). **In der RAMPE ist der Zweck dagegen erfüllt:** `blitz-ramp` misst die Median-Runde, in der die Crit-Chance 25 % erreicht, bei **10 statt 14 — vier Runden früher**; 5. volle Leiste Runde 15 → 14, 10. Leiste 22 → 21, volle Leisten je Lauf 150,1 → 163,1, Stapel auf dem Deck 633,7 → 979,4, Crit-Chance in den Runden 21–30 41,7 → 45,9 %. Nicht getrennt: darin stecken §7.54 (Blitzschlag) und §7.56 zusammen; Blitzschlag braucht Crits zum Zünden und kann den Anstieg in den Runden 1–10 kaum verursacht haben, der frühe Teil ist also plausibel das Feld — eine Zuordnung, keine Messung, trennbar mit einem Lauf ohne das Feld. **Der methodische Kern: der Score eines Laufs wächst exponentiell, die Runden 41–50 tragen ihn fast allein — ein Skill, der nur früh hilft, ist im Median-Score praktisch unsichtbar.** Die Ablation, das Werkzeug dieser ganzen Reihe, ist für Früh-Skills das falsche Maß; die richtige Kennzahl ist der Meilenstein, nicht der Endstand. Das gilt rückwirkend für jede „0 %"-Aussage über einen Skill, dessen Wirkung vorne liegt — bei Blitz sind das Spannungsfeld und, dem Mechanismus nach, auch Gewitterfront. Konkret: bei Normal (5 %) und rund 1,4 Formationen sind es +7 Punkte Crit-Chance auf einem Formations-Sieg, und das ist gut ein Drittel der Stiche. Owner-Entscheid offen: Satz deutlich hoch (er wird ein ausgesprochener Früh-Skill) oder so lassen und akzeptieren, dass er eine Rampenhilfe ist, die die Ablation nicht sieht. |
 | 2026-09-10 | Spannungsfeld zählt nur noch ZAHLENDE Formationen (§7.58, Owner zu §7.57 D: „Rampenhilfe und nur mit vollen formations zahlen arbeiten, das macht sonst kein Sinn für den Spieler"). Zwei Entscheide in einem Satz: der **Satz bleibt** (5/7/10/15 %, also die Rampenhilfe statt des großen Früh-Skills), und der **Kennwert wird enger**. Statt `positionFormations` (§7.56, Formationen mit Mitgliedern) liest der Skill jetzt `activeFormationCount` aus formations.js — Formationen mit **Faktor > 1**. Die faktionseigene Zählung ist damit raus. **Warum diese und keine engere:** es ist die Zahl, die der Stich dem Spieler ANZEIGT (`Battlefield.jsx` filtert seine Formations-Anzeige mit genau `factor > 1`) und die **Brennpunkt** („in mindestens 3 gleichzeitigen Formationen") und **Feuerlinie** („je Formation an der Siegposition") schon lesen — eine Lesart von „Formation" im ganzen Spiel statt einer dritten. Verworfen: echte Läufe UND Faktor > 1, knapper, aber genau die dritte Lesart. Der Skilltext bleibt wortgleich, weil die beiden anderen Skills „Formation" ebenfalls ohne Zusatz schreiben — kein Katalog-Diff, kein `loc:export`. **Die Höhe ist ungemessen und die zwei Änderungen ziehen gegeneinander:** abwärts fällt jede Mitgliedschaft mit Ordinal 1 weg (`escalatingFactor` gibt bis Ordinal 2 den Faktor 1, `wiederholungFactor` bis Ordinal 1), aufwärts zählen Anker, Nachhall, Kern und Grenzbonus jetzt mit, sobald sie zahlen. Der gemessene Ausgangswert 1,38–1,73 Formationen je Position (§7.55 A) gilt damit nicht mehr; die richtige Sonde wäre nach §7.57 C die Rampe (`blitz-ramp`), nicht die Ablation. Wächter fährt den Unterschied durch die ganze Kette (Position 0 ist Mitglied des Wiederholungs-Laufs, bekommt aber Ordinal 1 und damit Faktor 1 → keine Crit-Chance; Position 1 zahlt einen Satz) und ist gegengeprobt, indem die alte Mitglieder-Zählung wieder in engine.js eingesetzt wurde: er fällt mit 0,16 gegen 0,11. UNGEMESSEN. |
+| 2026-09-10 | **Streuung ersetzt den Serienschutz** auf `SK_LIGHTNING_17` (§7.59, Owner: „3a"). Damit ist der letzte Blitz-Skill weg, der auf eine NIEDERLAGE reagierte (Owner-Regel §7.31) und mit LADUNG bezahlte, dem Engpass der Fraktion; Slot und Emblem bleiben. **Der Grund steht in der Messung:** das Deck bekommt Ø 979 Stapel je Lauf, davon liegen Ø 241 auf EINER Karte (§7.57) — die Fraktion konzentriert (Kettenblitz auf die tiefste, Blitzschlag auf die Siegkarte), und nichts arbeitete dagegen. Die Streuung ist das Gegenstück eine Ebene daneben: **Kettenblitz sucht die Tiefe, die Streuung die Breite**, beide an derselben vollen Leiste, beide nach dem Passiv. Gebaut: jede volle Leiste ionisiert zusätzlich die `cards` Karten mit den WENIGSTEN Stapeln (Gleichstand → kleinerer Deck-Index, §9), Leiter 1/2/3/4, Episch gibt einer Karte OHNE Stapel 2 Stapel statt einem, Doppelentladung verdoppelt wie bei jeder Ionisierung. **Die eigentliche Entscheidung ist der Dauerwert:** „ionisieren" heißt im Passiv Stapel PLUS dauerhaft +ION_VALUE_PER_BAR, Kettenblitz sagt bewusst nur „+X Stapel" — die Streuung sagt „ionisiert" und tut deshalb beides, denn ohne den Wert lägen die Stapel auf Karten, die den Stich nie gewinnen, und genau daran misst Blitzfänger seit drei Runden 0 % (§7.54 D). **Die Höhe ist offen und ungemessen:** bei Ø 163 Leisten je Lauf gibt Normal ~163 Dauerwert (so viel wie das Passiv selbst), Episch ~652 (Ø +16 je Karte auf einstellige Kartenwerte). Das ist der Hebel, an dem zuerst gedreht wird; die zwei Griffe stehen fest (Leiter kürzen auf 1/2/2/3, oder den Dauerwert nur auf die erste gestreute Karte legen), beide nach der Messung. Mitgegangen: `serienschutzCount`/`serienschutzRound` aus dem Substate, der Serienschutz-Zweig aus `lightningOnLoss` (`streakHeld` bleibt und ist immer false), `lightningCycleEnd` samt Engine-Aufruf, `malWort` aus skills.js. Wächter: Modul (trifft die Dünnsten, ionisiert wirklich, Episch nur auf leeren) und Engine (Leiste ionisiert die dünnste Karte mit Stapel und Wert; Niederlage hält die Serie nicht und kostet keine Ladung), dazu eine Schleife über ALLE Blitz-IDs auf Episch, die zeigt, dass keine die Serie hält. Beide gegengeprobt (Dauerwert entfernt → fällt; Sortierung auf die Tiefsten gedreht → fällt). Nebenbefund, nicht behoben: `enSkills.js` ist über die ganze Blitz-Fraktion veraltet (SK_LIGHTNING_04 heißt dort „Overvoltage", SK_LIGHTNING_11 trägt den Text von vor §7.18, der gestrichene Donnergott steht noch drin); angefasst ist nur SK_LIGHTNING_17. STARTWERTE, UNGEMESSEN. |
