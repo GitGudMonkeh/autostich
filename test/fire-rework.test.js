@@ -94,8 +94,11 @@ describe("Feuer — Roster und Stufenleitern", () => {
     expect(SKILL_DEFS.SK_FIRE_09.desc).toContain(`ab ${T.verbrennung[0].minMargin}`);
     expect(SKILL_DEFS.SK_FIRE_15.descTiers[3]).toContain(`ab ${T.schmiede[3].minHeat} % Hitze`);
     expect(SKILL_DEFS.SK_FIRE_15.descTiers[0]).not.toContain("kostet"); // §7.14: ohne Preis
-    expect(SKILL_DEFS.SK_FIRE_15.descTiers[3]).toContain(`${T.schmiede[3].cards} niedrigsten Karten`); // das Episch-Extra nur dort
-    expect(SKILL_DEFS.SK_FIRE_15.descTiers[2]).not.toContain("niedrigsten Karten");
+    /* §7.34: die Kartenzahl der Schmiede ist keine Episch-Zugabe mehr, sondern eine Leiter (1/2/2/3) — der Wächter
+       prüft deshalb JEDE Stufe gegen ihre eigene Zeile statt „Plural nur bei Episch". Ein Text, der eine fremde
+       Kartenzahl nennt, fällt damit weiterhin auf. */
+    for (const t of [0, 1, 2, 3]) expect(SKILL_DEFS.SK_FIRE_15.descTiers[t], `Stufe ${t}`)
+      .toContain(T.schmiede[t].cards === 1 ? "niedrigste Karte" : `${T.schmiede[t].cards} niedrigsten Karten`);
     expect(SKILL_DEFS.SK_FIRE_L02.name).toBe("Ewige Glut"); // §7.21: ersetzt Phönixfeuer auf demselben Platz
     expect(SKILL_DEFS.SK_FIRE_L02.desc).toContain(`+${Math.round(C.EWIGE_GLUT_MULT_PER_ROUND * 100)} %`);
     expect(SKILL_DEFS.SK_FIRE_L02.desc).toContain(`${Math.round(C.EWIGE_GLUT_FLOOR_FRAC * 100)} %`);
@@ -328,25 +331,35 @@ describe("Feuer — Modul (reine Übergänge)", () => {
     expect(fireCycleEnd(heat({ value: min - 1 }), [F.SCHMIEDE], {}, deck, {}).forgedIds).toEqual([]); // unter der Schwelle → keine Schmiedung
     expect(fireCycleEnd(heat({ value: min, max: 200 }), [F.SCHMIEDE, F.WEISSGLUT], {}, deck, {}).forgedIds).toEqual(["X3"]); // die Schwelle liest die Hitze, nicht die Leistenlänge
     const e = fireCycleEnd(heat({ value: T.schmiede[3].minHeat }), [F.SCHMIEDE], { [F.SCHMIEDE]: 3 }, deck, {});
-    expect(e.heat.value).toBe(T.schmiede[3].minHeat); expect(e.forgedIds).toEqual(["X3", "X7"]); // die zwei niedrigsten, verschieden
+    expect(e.heat.value).toBe(T.schmiede[3].minHeat);
+    expect(e.forgedIds).toHaveLength(T.schmiede[3].cards);            // §7.34: so viele, wie die Stufe sagt …
+    expect(new Set(e.forgedIds).size).toBe(T.schmiede[3].cards);      // … und jede nur einmal
+    expect(e.forgedIds.slice(0, 2)).toEqual(["X3", "X7"]);            // aufsteigend nach Kartenwert
     expect(fireCycleEnd(heat({ value: T.schmiede[3].minHeat - 1 }), [F.SCHMIEDE], { [F.SCHMIEDE]: 3 }, deck, {}).forgedIds).toEqual([]);
-    // §7.21 Ewige Glut: endet die Runde mit voller Leiste, wächst die Rampe um den Satz — darunter nicht, ohne Deckel, mit Weißglut erst bei 200.
+    /* §7.21 Ewige Glut: endet die Runde mit voller Leiste, wächst die Rampe um den Satz — darunter nicht, ohne Deckel.
+       §7.34 korrigiert das Tor: es liest HEAT_MAX, nicht die Leiste des Builds. Mit Weißglut stand es bei 200, die
+       Rampe tickte fast nie, und das Legendäre maß −0 %. Derselbe Fehler wie bei der Klinge in §7.32 — Weißglut
+       verschob eine Schwelle, die nichts mit ihm zu tun hat. Die letzte Zeile ist der Wächter dagegen. */
     const step = C.EWIGE_GLUT_MULT_PER_ROUND;
-    expect(fireCycleEnd(heat({ value: 100 }), [F.EWIGE_GLUT], {}, deck, {}).heat.emberMult).toBeCloseTo(step, 9);
-    expect(fireCycleEnd(heat({ value: 99 }), [F.EWIGE_GLUT], {}, deck, {}).heat.emberMult).toBe(0);
-    expect(fireCycleEnd(heat({ value: 100, emberMult: 40 * step }), [F.EWIGE_GLUT], {}, deck, {}).heat.emberMult).toBeCloseTo(41 * step, 9);
-    expect(fireCycleEnd(heat({ value: 100, max: 200 }), [F.EWIGE_GLUT, F.WEISSGLUT], {}, deck, {}).heat.emberMult).toBe(0);
+    expect(fireCycleEnd(heat({ value: C.HEAT_MAX }), [F.EWIGE_GLUT], {}, deck, {}).heat.emberMult).toBeCloseTo(step, 9);
+    expect(fireCycleEnd(heat({ value: C.HEAT_MAX - 1 }), [F.EWIGE_GLUT], {}, deck, {}).heat.emberMult).toBe(0);
+    expect(fireCycleEnd(heat({ value: C.HEAT_MAX, emberMult: 40 * step }), [F.EWIGE_GLUT], {}, deck, {}).heat.emberMult).toBeCloseTo(41 * step, 9);
+    expect(fireCycleEnd(heat({ value: C.HEAT_MAX, max: 200 }), [F.EWIGE_GLUT, F.WEISSGLUT], {}, deck, {}).heat.emberMult).toBeCloseTo(step, 9);
     expect(fireCycleEnd(heat({ value: 200, max: 200 }), [F.EWIGE_GLUT, F.WEISSGLUT], {}, deck, {}).heat.emberMult).toBeCloseTo(step, 9);
     expect(fireCycleEnd(heat({ value: 100 }), [F.KLINGE], {}, deck, {}).heat.emberMult).toBe(0); // ohne den Skill nichts
     expect(fireCycleEnd(null, [F.SCHMIEDE], {}, deck, {}).deck).toBe(deck);
   });
   it("Brandschneise (§7.27): der Schnitt sind die größten Vorsprünge des Durchlaufs, Episch hält zwei", () => {
     const deck = constDeck(5);
+    // §7.34: die Breite steht in der Tabelle (Normal 4) — der Wächter zählt sie von dort, damit er beim nächsten
+    // Tarieren nicht still danebenliegt. Vorsprünge absteigend: p9(9) · p1(4) · p7(4) · p5(2) · p3(1).
     const wins = [{ p: 5, m: 2 }, { p: 9, m: 9 }, { p: 1, m: 4 }, { p: 7, m: 4 }, { p: 3, m: 1 }];
+    const cut = [{ p: 9, m: 9 }, { p: 1, m: 4 }, { p: 7, m: 4 }, { p: 5, m: 2 }, { p: 3, m: 1 }]
+      .slice(0, T.schneise[0].width).map((w) => w.p).sort((a, b) => a - b);
     const r = fireCycleEnd(heat({ value: 0, laneWins: wins }), [F.BRANDSCHNEISE], {}, deck, {});
-    expect(r.heat.lanes[0]).toEqual([1, 7, 9]); // die drei größten Vorsprünge, bei Gleichstand die kleinere Position
-    expect(r.heat.laneWins).toEqual([]);        // der neue Durchlauf beginnt ohne gemerkte Siege
-    expect(schneiseLane([F.BRANDSCHNEISE], {}, r.heat)).toEqual([1, 7, 9]);
+    expect(r.heat.lanes[0]).toEqual(cut); // die größten Vorsprünge, bei Gleichstand die kleinere Position
+    expect(r.heat.laneWins).toEqual([]);  // der neue Durchlauf beginnt ohne gemerkte Siege
+    expect(schneiseLane([F.BRANDSCHNEISE], {}, r.heat)).toEqual(cut);
     expect(schneiseMult([F.BRANDSCHNEISE], {}, r.heat, 7)).toBe(T.schneise[0].mult);
     expect(schneiseMult([F.BRANDSCHNEISE], {}, r.heat, 8)).toBe(1);
     expect(schneiseMult([], {}, r.heat, 7)).toBe(1);   // ohne den Skill kein Faktor
@@ -471,9 +484,9 @@ describe("Feuer — Engine-Integration", () => {
     expect(on.lastTrick.breakdown.fireMult).toBeCloseTo(T.schneise[0].mult, 9);
     expect(resolveTrick(scen(12, 6, { skills: [F.BRANDSCHNEISE], heat: heat({ value: 0, lanes: [[1]] }) }), noCrit).lastTrick.breakdown.fireMult).toBe(1);
     expect(on.heat.laneWins).toEqual([{ p: 0, m: 6 }]); // gemerkt wird der Sieg, geschnitten wird am Durchlaufende
-    // Voller Durchlauf: alle 40 Positionen gewinnen mit demselben Vorsprung → die drei kleinsten Positionen sind der Schnitt.
+    // Voller Durchlauf: alle 40 Positionen gewinnen mit demselben Vorsprung → die `width` kleinsten Positionen sind der Schnitt.
     const done = playCycle(scen(12, 6, { skills: [F.BRANDSCHNEISE], heat: heat({ value: 0 }) }));
-    expect(done.heat.lanes[0]).toEqual([0, 1, 2]);
+    expect(done.heat.lanes[0]).toEqual(Array.from({ length: T.schneise[0].width }, (_, i) => i));
     expect(done.heat.laneWins).toEqual([]);
   });
   it("Glutstahl zahlt je Punkt Kampfwert über dem Grundwert, egal woher (hier: Klinge)", () => {

@@ -58,20 +58,29 @@ const malWort = (n) => { const w = n === 1 ? "einmal" : `${numWord(n)}mal`; retu
 // Stufentabellen der 15 Feuer-Skills (§4.5) — dieselbe Form; die Schwellen sinken, die Sätze steigen mit der Stufe.
 // Das Modul factions/fire.js liest sie über `fireParam`; Legendäre haben keine Zeile.
 const FEUER = {
-  feuerlinie:    [{ perPoint: 0.02, cost: 3 }, { perPoint: 0.03, cost: 3 }, { perPoint: 0.04, cost: 3 }, { perPoint: 0.05, cost: 3, perFormation: true }], // §7.23 (Owner): ersetzt Glut (Kaltstart, tot) auf SK_FIRE_01 — Formations-Sieg +Satz je Punkt Kampfwert, verbrennt `cost` Hitze; Episch je Formation an der Siegposition
-  zunder:        [{ heat: 2 }, { heat: 3 }, { heat: 4 }, { heat: 5, lossHeat: 2 }], // §7.16: 1–4 → 2–5; §7.22 Episch-Extra: auch Niederlagen geben +2
+  // §7.34: +75 % auf den Satz, Kosten 3 → 2. Beide Eingänge des Skills hat §7.32 verkleinert — er liest den KAMPFWERT
+  // der Siegkarte, und der kam zum guten Teil aus der Klinge. Die Kosten sind bei voller Leiste kein Nullposten: was
+  // verbrennt, fehlt dem Schmelzpunkt als Überlauf.
+  feuerlinie:    [{ perPoint: 0.035, cost: 2 }, { perPoint: 0.05, cost: 2 }, { perPoint: 0.065, cost: 2 }, { perPoint: 0.08, cost: 2, perFormation: true }], // §7.23 (Owner): ersetzt Glut (Kaltstart, tot) auf SK_FIRE_01 — Formations-Sieg +Satz je Punkt Kampfwert, verbrennt `cost` Hitze; Episch je Formation an der Siegposition
+  // §7.34: verdoppelt. Bei voller Leiste ist Zunder kein Hitze-Skill mehr, sondern ein Score-Skill — jeder Punkt, der
+  // nicht mehr auf die Leiste passt, geht über den Schmelzpunkt (100 % gehalten) in den Basis-Score.
+  zunder:        [{ heat: 4 }, { heat: 6 }, { heat: 8 }, { heat: 10, lossHeat: 2 }], // §7.16: 1–4 → 2–5; §7.22 Episch-Extra: auch Niederlagen geben +2
   feuersturm:    [{ multPerStreak: 0.001 }, { multPerStreak: 0.0015 }, { multPerStreak: 0.002 }, { multPerStreak: 0.003, minHeat: 90 }], // §7.17: Serie zu Score bei voller Leiste (Episch ab 90 %, §7.18: war 80); vorher Serie zu Hitze. Satz nach Sweep (0,5 % je Punkt war ×3 Blitz)
   glutbett:      [{ floor: 40, rise: 1 }, { floor: 60, rise: 2 }, { floor: 80, rise: 3 }, { noCool: true }], // §6.24: der Boden steigt, wenn er einen Sturz abfängt
-  rueckzuendung: [{ every: 5, mult: 1.5 }, { every: 4, mult: 1.5 }, { every: 3, mult: 1.5 }, { every: 2, mult: 1.5, value: 2 }], // §7.24 (Owner): Takt — jeder N. Sieg in Folge zündet und zählt ×mult, Episch kämpft die zündende Karte mit +2 (vorher Konter nach einer Niederlage, §7.22 — ab der Laufmitte gibt es keine Niederlagen mehr)
+  rueckzuendung: [{ every: 5, mult: 1.8 }, { every: 4, mult: 1.8 }, { every: 3, mult: 1.8 }, { every: 2, mult: 1.8, value: 2 }], // §7.24 (Owner): Takt — jeder N. Sieg in Folge zündet und zählt ×mult, Episch kämpft die zündende Karte mit +2 (vorher Konter nach einer Niederlage, §7.22 — ab der Laufmitte gibt es keine Niederlagen mehr); §7.34: Faktor 1,5 → 1,8 (die Leiter ist der Takt, der Faktor steht auf allen Stufen gleich)
   klinge:        [{ perHeat: 40, value: 1 }, { perHeat: 30, value: 1 }, { perHeat: 25, value: 1 }, { perHeat: 20, value: 1 }],
   weissglut:     [{ multPer10: 0.03 }, { multPer10: 0.04 }, { multPer10: 0.05 }, { multPer10: 0.06 }],
-  schneise:      [{ width: 3, mult: 2.5 }, { width: 4, mult: 2.5 }, { width: 5, mult: 2.5 }, { width: 6, mult: 2.5, hold: 2 }], // Satz nach Sweep (×1,5 / 2 / 2,5 / 3 im Duell → Floor 0,91 / 0,96 / 1,00 / 1,03×); §7.27 (Owner, Bauform a): ersetzt Feuerwalze auf SK_FIRE_08 — die `width` Siege mit dem größten Vorsprung eines Durchlaufs schlagen die Schneise, im nächsten zählt ein Sieg dort ×mult; Episch hält sie zwei Durchläufe. Die Knappheit ist strukturell (N von 40 Positionen), nicht historisch
+  // §7.34: Breite 3–6 → 4–10, Faktor 2,5 → 3. Die Schneise deckte 8–15 % der Stiche und zahlte im Schnitt ×1,2 —
+  // zu wenig für einen Skill, der einen ganzen Durchlauf Vorlauf braucht. Jetzt 10–25 % der Stiche.
+  schneise:      [{ width: 4, mult: 3 }, { width: 6, mult: 3 }, { width: 8, mult: 3 }, { width: 10, mult: 3, hold: 2 }], // Satz nach Sweep (×1,5 / 2 / 2,5 / 3 im Duell → Floor 0,91 / 0,96 / 1,00 / 1,03×); §7.27 (Owner, Bauform a): ersetzt Feuerwalze auf SK_FIRE_08 — die `width` Siege mit dem größten Vorsprung eines Durchlaufs schlagen die Schneise, im nächsten zählt ein Sieg dort ×mult; Episch hält sie zwei Durchläufe. Die Knappheit ist strukturell (N von 40 Positionen), nicht historisch
   verbrennung:   [{ minMargin: 8, mult: 1.5 }, { minMargin: 7, mult: 1.5 }, { minMargin: 6, mult: 1.5 }, { minMargin: 5, mult: 1.5, heatToo: true }], // §7.22 Episch-Extra: der Faktor zählt auch auf den Hitzegewinn
   schmelzpunkt:  [{ perPoint: 15 }, { perPoint: 20 }, { perPoint: 25 }, { perPoint: 30, lossPays: true }], // §7.16: Überlauf-Wandler — verbrennt nichts mehr; Flächenbrand (SK_FIRE_11) ist gestrichen
   brandmal:      [{ minHeat: 80, value: 2 }, { minHeat: 60, value: 2 }, { minHeat: 40, value: 2 }, { minHeat: 20, value: 2, onLoss: true }],
   lauffeuer:     [{ minHeat: 80, value: 1, reach: 1 }, { minHeat: 60, value: 1, reach: 1 }, { minHeat: 40, value: 1, reach: 1 }, { minHeat: 20, value: 1, reach: 2 }],
-  schmiede:      [{ minHeat: 80, cards: 1 }, { minHeat: 60, cards: 1 }, { minHeat: 40, cards: 1 }, { minHeat: 20, cards: 2 }], // §7.14: ohne Preis, nur Schwelle
-  glutstahl:     [{ perPoint: 8 }, { perPoint: 12 }, { perPoint: 16 }, { perPoint: 20, forgedDouble: true }],
+  schmiede:      [{ minHeat: 80, cards: 1 }, { minHeat: 60, cards: 2 }, { minHeat: 40, cards: 2 }, { minHeat: 20, cards: 3 }], // §7.14: ohne Preis, nur Schwelle; §7.34: mehr Karten je Runde (die Schwelle lag schon tief genug, sie war nie das Problem)
+  // §7.34: +75 %. Er zahlt je Punkt Kampfwert ÜBER dem Grundwert — und diese Quelle hat §7.32 halbiert, als die
+  // Klinge die lange Leiste verlor. Der Satz zieht nach, was der Eingang verloren hat.
+  glutstahl:     [{ perPoint: 14 }, { perPoint: 20 }, { perPoint: 27 }, { perPoint: 36, forgedDouble: true }],
 };
 export const FEUER_TIERS = FEUER;
 /* Stufentabellen der 15 Pflanze-Skills (§6.8) — dieselbe Form. Bezugsgrößen: Wachstum +1 je Sieg und +1 je Formation

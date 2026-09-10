@@ -96,12 +96,12 @@ describe("sim balance guard", () => {
   const mean = scores.reduce((t, v) => t + v, 0) / SEEDS;
 
   it("Median-Score im erwarteten Band (breite Power-Verschiebung)", () => {
-    /* Ist-Wert ≈ 3,79M (exp §5.29). Band toleriert normales Tuning, schlägt bei grober Verschiebung an.
-       Neu zentriert mit Beleg statt auf Verdacht: die alte Obergrenze 3,75M war um 1 % überschritten, und der
-       Wert ist über Seeds 1..200 mit 3,98M auf demselben Niveau — es ist kein Ausreißer, sondern die gewollte
-       Folge der offenen Stufenleiter. Der Mean (Guard darunter) bleibt bei 8,35M im bestehenden Band. */
-    expect(median).toBeGreaterThan(2_450_000);
-    expect(median).toBeLessThan(5_150_000);
+    /* Ist-Wert ≈ 5,26M (exp §7.34: sieben flache Feuer-Skills angehoben, Ewige Glut liest ihr Tor wieder).
+       Neu zentriert mit Beleg statt auf Verdacht: die alte Obergrenze 5,15M war um 2 % überschritten, und über
+       Seeds 1..200 steht der Median bei 4,74M — dasselbe Niveau, also kein einzelner Ausreißer, sondern die
+       gewollte Folge des Buffs. Der Mean (Guard darunter) liegt bei 8,76M und bleibt im bestehenden Band. */
+    expect(median).toBeGreaterThan(3_400_000);
+    expect(median).toBeLessThan(7_100_000);
   });
 
   it("Mean-Score im erwarteten Band (Tail-Runaway-Fänger)", () => {

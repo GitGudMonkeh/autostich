@@ -283,7 +283,6 @@ export function fireOnLoss(heat, skills, skillTiers, { deficit = 0, oppId = null
    Gibt { heat, deck, forged, forgedIds } zurück. */
 export function fireCycleEnd(heat, skills, skillTiers, deck, forged = {}) {
   if (!heat || !heat.active) return { heat, deck, forged, forgedIds: [] };
-  const max = heat.max || C.HEAT_MAX;
   let value = heat.value || 0;
   let d = deck;
   const f = { ...forged };
@@ -305,8 +304,11 @@ export function fireCycleEnd(heat, skills, skillTiers, deck, forged = {}) {
     const done = [];
     for (let k = 0; k < n; k++) { forgeLowest(done); if (forgedIds.length > done.length) done.push(forgedIds[forgedIds.length - 1]); }
   }
+  /* §7.34: die Rampe zählt die volle PASSIV-Leiste (HEAT_MAX), nicht die des Builds. Mit Weißglut (mono 98 % gehalten)
+     stand das Tor bei 200 statt 100 — die Rampe tickte fast nie, und das Legendäre maß −0 %. Derselbe Fehler wie bei
+     der Klinge in §7.32: Weißglut verschob eine Schwelle, die nichts mit ihm zu tun hat. */
   let emberMult = heat.emberMult || 0;
-  if (hasEwigeGlut(skills) && value >= max) emberMult += C.EWIGE_GLUT_MULT_PER_ROUND;
+  if (hasEwigeGlut(skills) && value >= C.HEAT_MAX) emberMult += C.EWIGE_GLUT_MULT_PER_ROUND;
   /* Brandschneise (§7.27): der Schnitt dieses Durchlaufs sind die `width` Siege mit dem größten Vorsprung — bei
      gleichem Vorsprung die kleinere Position (Determinismus §9). `lanes` hält die zwei jüngsten Schnitte, mehr liest
      keine Stufe; ohne den Skill bleibt nichts liegen (ein Wiedererwerb fängt bei leerer Schneise an). */

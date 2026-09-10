@@ -7658,6 +7658,61 @@ nicht die Spitze. Blitz steht mit 1,686 Mrd weiter allein oben und ist seit der 
 
 ---
 
+### 7.34 Sieben der acht flachen Feuer-Skills angehoben — und warum der achte nicht gebufft wird (2026-09-10, Owner) — UNGEMESSEN
+
+Owner: „dann buff die acht flachen feuer skills." §7.33 hatte acht mit einer Wirkung bei oder unter null gelistet.
+
+#### A · Zwei strukturelle Funde vor den Zahlen
+
+**1. Die Ewige Glut (L) hatte ein verschobenes Tor.** Ihre Rampe wächst, wenn eine Runde mit VOLLER Leiste endet —
+und „voll" las die Leiste des BUILDS. Mit Weißglut (mono in 98 % der Läufe gehalten) stand das Tor bei 200 statt 100,
+die Rampe tickte fast nie, und das Legendäre maß −0 %. Das ist derselbe Fehler wie bei der Klinge in §7.32: Weißglut
+verschob eine Schwelle, die nichts mit ihm zu tun hat. Das Tor liest jetzt `HEAT_MAX`.
+
+**2. Das Glutbett darf nach der eigenen Owner-Regel gar nicht gebufft werden.** Es ist ein reiner
+Niederlagen-Skill: ein Boden unter der Kühlung, und Episch „kühlt gar nicht". Bei 74 % Siegquote und einer Leiste,
+die ab der Laufmitte am Anschlag steht, verteidigt es gegen etwas, das nicht passiert — kein Satz auf der Karte
+erreicht das. Und §7.31 hält fest: **„keine Skills, die auf Niederlagen reagieren."** Genau aus diesem Grund wurde
+die Rückzündung in §7.24 vom Konter zum Takt umgebaut.
+
+Das Glutbett ist deshalb **nicht angefasst**. Es gehört ersetzt, nicht hochgedreht — dieselbe Entscheidung wie
+seinerzeit bei Glut, Feuerwalze und Flächenbrand, und sie gehört dem Owner.
+
+#### B · Die sieben
+
+| Skill | gemessen | alt | neu | warum |
+| --- | --- | --- | --- | --- |
+| Glutstahl | −4 % | 8/12/16/20 | **14/20/27/36** | zahlt je Punkt Kampfwert über dem Grundwert — genau die Quelle, die §7.32 halbiert hat |
+| Feuerlinie | −5 % | 0,02–0,05, Kosten 3 | **0,035–0,08, Kosten 2** | liest den Kampfwert der Siegkarte, derselbe verkleinerte Eingang; die Kosten fehlen bei voller Leiste dem Schmelzpunkt als Überlauf |
+| Zunder | 0 % | 2/3/4/5 | **4/6/8/10** | bei voller Leiste kein Hitze-, sondern ein Score-Skill: was nicht mehr auf die Leiste passt, geht über den Schmelzpunkt (100 % gehalten) in den Basis-Score |
+| Rückzündung | −2 % | ×1,5 | **×1,8** | die Leiter ist der Takt (5/4/3/2), der Faktor steht auf allen Stufen gleich — also hebt er auf allen |
+| Brandschneise | +1 % | Breite 3–6, ×2,5 | **Breite 4–10, ×3** | deckte 8–15 % der Stiche bei Ø ×1,2 — zu wenig für einen Skill mit einem ganzen Durchlauf Vorlauf; jetzt 10–25 % |
+| Schmiede | −2 % | 1/1/1/2 Karten | **1/2/2/3** | die Schwelle (80/60/40/20) war nie das Problem; +3 auf die niedrigste Karte hebt den Vorsprung kaum, und der Vorsprung IST das Hitze-Einkommen |
+| Ewige Glut (L) | −0 % | Tor = Leiste des Builds | **Tor = `HEAT_MAX`** | s. A 1 |
+
+Dazu `FORGE_VALUE` 3 → **4** (Schmiede und, über `forgedDouble`, Glutstahl Episch).
+
+Drei Wächter mussten mit, alle auf die neue Wahrheit statt auf ein weicheres Maß:
+
+- der Schmiede-Textwächter prüfte „Plural nur bei Episch"; die Kartenzahl ist jetzt eine Leiter, also prüft er
+  **jede** Stufe gegen ihre eigene Zeile — strenger als vorher, nicht lockerer,
+- die Schneisen-Wächter zählten 3 fest verdrahtete Positionen; sie lesen die Breite jetzt aus der Tabelle,
+- der Ewige-Glut-Wächter hielt ausdrücklich fest, dass die Rampe mit Weißglut erst bei 200 tickt — das war der Fehler,
+  er ist umgedreht und hält jetzt die Gegenrichtung.
+
+#### C · Balance-Guard neu zentriert, mit Beleg
+
+Median über Seeds 1..40: **5,26M** (alte Obergrenze 5,15M, um 2 % überschritten). Über Seeds 1..200: **4,74M** —
+dasselbe Niveau, also kein einzelner Ausreißer, sondern die gewollte Folge. Band neu auf 3,40M–7,10M (≈ ±35 %).
+Der Mean liegt bei 8,76M (Seeds 1..200: 8,04M) und bleibt im bestehenden Band 4,0–10,5M.
+
+#### D · Offen
+
+Alles ungemessen. Und das Glutbett wartet auf einen Owner-Entscheid: ersetzen — oder als Niederlagen-Skill stehen
+lassen und die Regel aus §7.31 für diesen einen Fall aufheben.
+
+---
+
 ### 5.30 Die Eis-Skills auf dem neuen Motor (2026-09-09) — gemessen, nichts umgesetzt
 
 **Owner:** „und dann schauen wir uns alle skills an die davon profitieren müssen und designen wie."
@@ -8062,3 +8117,4 @@ leichtesten haben.
 | 2026-09-10 | Wurzelgeflecht gesweept (§6.31, Owner: „auf die 150-250"). Neuer Survey-Schalter `--groesse` misst eine Weltgröße allein — `--fraktion plant --groesse 1` sind 13 min statt 39, und der Kontrollpunkt bei 0,85 reproduziert §6.30 auf den Euro (+505 %, Median 523.764.008), die Abkürzung ist also belastbar. Sweep über `WURZELGEFLECHT_FACTOR_SCALE`: 0,85 → +505 % · 0,60 → +397 % · **0,45 → +220 %**. 0,45 gesetzt, gemessener Punkt im Band. Die Kurve greift unten härter (Schritt 0,25 kostet 21 %, Schritt 0,15 kostet 45 %) — der Faktor wirkt multiplikativ über die Positionen eines Laufs. Mitgenommen: die Fraktion fällt mono 524M → 367M, und die Baumreihe sinkt ohne eigene Änderung von +112 auf +75 % (Ablation misst gegen den Rest des Builds, und der ist kleiner geworden) — gehalten wird sie dabei häufiger, 59 → 71 %. Die drei Pflanze-Legendären stehen jetzt bei +274 / +220 / +75 % statt +1079 / +591 / +282 % vor der Runde. Offen: Blitz steht mit 1,69 Mrd allein oben, der Abstand ist durch diese Runde größer geworden. |
 | 2026-09-10 | Glühende Klinge entkoppelt (§7.32, Owner: „erst den nerf designen", dann Entscheid a). Befund: die Klinge ist der einzige Feuer-Skill, der den Motor am EINGANG füttert — +Wert hebt den Vorsprung, und der Vorsprung IST das Hitze-Einkommen. Ein Sieg mit Vorsprung 3 (2 % Hitze) wird mit +4 Wert zu Vorsprung 7 (6 %): dreifaches Einkommen, dazu die Verbrennungs-Mitnahme und die gedrehten Niederlagen. Das ist die gemessene +141 %, nicht die Zahl auf der Karte. Weißglut (+96 %) ist kein eigener Motor, sondern der Hebel darunter: die Leiste 100 → 200 verdoppelt Klinge (+5 → +10 Wert), Hitze-Multiplikator und Sonnenzorns Spitzen-Lesart. Umgesetzt: **die Klinge liest `HEAT_MAX`, nie die verlängerte Leiste** — stärkster Build +10 → +5, normaler Build unverändert, die Rückkopplung bleibt halb so lang. Weißglut bewusst NICHT angefasst: dieselbe Verkopplung wie Wurzelgeflecht/Baumreihe in §6.31, wo die Baumreihe ungefragt von +112 auf +75 mitfiel; erst messen, dann entscheiden. Wächter gegengeprobt (offene Naht → 10 statt 5). UNGEMESSEN. |
 | 2026-09-10 | §7.32 nachgemessen (§7.33). Feuer-Mono, 7 min. **Ein Hebel, beide Ziele getroffen: Glühende Klinge +141 → +24 %, Weißglut +96 → +20 % — und Weißglut wurde NICHT angefasst.** Die Verkopplungs-These aus §7.32 B ist damit bestätigt; hätten wir beide gleichzeitig genervt, wäre nicht trennbar gewesen, welcher Schnitt was bewirkt. Die Regler für Weißglut bleiben unangetastet, +20 % ist Mittelfeld. Die FORM der Fraktion stimmt jetzt: vorher standen zwei normale Skills über dem Legendären (141/96 gegen Sonnenzorn 91), jetzt führen die zwei Legendären (+116 % Sonnenkern, +96 % Sonnenzorn) und der stärkste normale steht bei +24 %. Sonnenkerns Sprung +14 → +116 % ist keine zweite Änderung, sondern die Ablation: sein Beitrag war vorher vom Klingen-Motor überdeckt. Preis: die Fraktion fällt mono 112,7M → 65,1M (−42 %) und steht damit klar letzter — der Rückstand auf Blitz wächst von 15× auf 26×. Der Schnitt hat das nicht geschaffen, nur vertieft. Nächster Schritt für Feuer ist ein Buff an den acht flachen Skills, kein zweiter Nerf. |
+| 2026-09-10 | Sieben der acht flachen Feuer-Skills angehoben (§7.34, Owner: „dann buff die acht flachen feuer skills"). Zwei strukturelle Funde vor den Zahlen: (a) **die Ewige Glut hatte ein verschobenes Tor** — ihre Rampe wächst bei voller Leiste, und „voll" las die Leiste des BUILDS; mit Weißglut (98 % gehalten) stand sie bei 200 statt 100, die Rampe tickte fast nie, und das Legendäre maß −0 %. Derselbe Fehler wie bei der Klinge in §7.32. Tor liest jetzt `HEAT_MAX`. (b) **Das Glutbett darf nach der eigenen Owner-Regel nicht gebufft werden**: es ist ein reiner Niederlagen-Skill (Boden unter der Kühlung, Episch „kühlt gar nicht"), bei 74 % Siegquote und einer Leiste am Anschlag verteidigt es gegen etwas, das nicht passiert — und §7.31 hält fest „keine Skills, die auf Niederlagen reagieren", genau der Grund, aus dem die Rückzündung in §7.24 umgebaut wurde. Nicht angefasst; es gehört ersetzt, und das ist ein Owner-Entscheid. Die sieben: Glutstahl 8–20 → 14–36 · Feuerlinie 0,02–0,05 → 0,035–0,08 bei Kosten 3 → 2 · Zunder 2–5 → 4–10 (bei voller Leiste ein Score-Skill über den Schmelzpunkt) · Rückzündung ×1,5 → ×1,8 · Brandschneise Breite 3–6 → 4–10 und ×2,5 → ×3 · Schmiede 1/1/1/2 → 1/2/2/3 Karten · `FORGE_VALUE` 3 → 4. Drei Wächter auf die neue Wahrheit gezogen (der Schmiede-Textwächter prüft jetzt JEDE Stufe statt „Plural nur bei Episch" — strenger als vorher). Balance-Guard-Median neu zentriert mit Beleg: 5,26M über Seeds 1..40, 4,74M über 1..200 (kein Ausreißer), Band 3,40–7,10M; der Mean bleibt im bestehenden Band. UNGEMESSEN. |

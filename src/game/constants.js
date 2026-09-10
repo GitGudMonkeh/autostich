@@ -359,7 +359,7 @@ export const HEAT_MARGIN_OFFSET  = envNum("SIM_HEAT_MARGIN_OFFSET", 1);         
 export const HEAT_PER_POINT      = envNum("SIM_HEAT_PER_POINT", 1);                // % Hitze je Vorsprungspunkt über dem Offset, linear ohne Knie
 export const HEAT_LOSS           = envNum("SIM_HEAT_LOSS", 6);                     // % Hitze je Niederlage (flach)
 export const HEAT_MULT_PER_10    = envNum("SIM_HEAT_MULT_PER_10", 0.02);           // Score-Multiplikator je volle 10 % gehaltener Hitze (×1,2 bei 100)
-export const FORGE_VALUE         = envNum("SIM_FORGE_VALUE", 3);                   // Schmiede: +Dauerwert je Schmiedung
+export const FORGE_VALUE         = envNum("SIM_FORGE_VALUE", 4);                   // Schmiede: +Dauerwert je Schmiedung (§7.34: 3 → 4; +3 auf die niedrigste Karte hob den Vorsprung kaum, und der Vorsprung ist das Hitze-Einkommen)
 // Legendäre (§4.7): keine Stufe, zwei Effekte, jedes läuft allein.
 export const SONNENKERN_BRAND           = envNum("SIM_SONNENKERN_BRAND", 0.25);                // Sonnenkern: jeder Sieg brandmarkt so viel Wert weg (stapelt über die Runden) — der eigentliche Motor des Legendären; §6.12: 1 → 0,25 (bei 1 lag Sonnenkern auch ohne Brand-Score bei +296 %). Viertel sind binär exakt, die Anzeige bleibt sauber
 export const SONNENKERN_SCORE_PER_BRAND = envNum("SIM_SONNENKERN_SCORE_PER_BRAND", 4);         // Sonnenkern: Basis-Score je Brandpunkt auf der geschlagenen Karte (§6.12: 20 → 4)
