@@ -29,6 +29,13 @@ const de1 = numWord;
    ============================================================ */
 // Stufentabellen der 15 Blitz-Skills (§3.5) — Zeile 0 Normal · 1 Selten · 2 Sehr selten · 3 Episch. Die Texte darunter
 // interpolieren dieselben Zahlen (kein Drift zwischen Regel und Beschreibung). Startwerte für die Sim.
+/* §7.49: die Leiter des Spannungsfelds hängt am Sweep-Regler SPANNUNGSFELD_SCALE — HIER in der Tabelle, nicht erst
+   im Motor. Sonst zeigte der Kartentext die ungeskalierte Zahl, während der Stich die geskalierte abrechnet: genau
+   der Fehler, den §7.45 an der Stufenanzeige gefunden hat. Die letzte Stufe trägt den Episch-Anhang. */
+const feldLadder = (rates) => rates.map((p, i) => ({
+  perCard: Math.round(p * C.SPANNUNGSFELD_SCALE * 1e6) / 1e6,
+  ...(i === rates.length - 1 ? { feedLowest: 1 } : {}),
+}));
 const BLITZ = {
   ableiter:      [{ critEvery: 2, back: 0 }, { critEvery: 2, back: 1 }, { critEvery: 1, back: 1 }, { critEvery: 1, back: 2, noCritCharge: 1 }], // §7.18: nimmt Statische Aufladung und Dauerstrom auf (beide gestrichen)
   ionenfeld:     [{ tricks: 5, value: 2 }, { tricks: 7, value: 3 }, { tricks: 10, value: 4 }, { tricks: 15, value: 5 }], // §7.18 neu (SK_LIGHTNING_02): jede volle Leiste lädt das Feld; §7.20: 2/3/4/5 (2/2/2/3 war neutral, 3/3/4/5 kippte die Parität — Normal entscheidet den Median)
@@ -50,7 +57,7 @@ const BLITZ = {
      multiplizierte mit ihm (§7.46 D). Die Kartenzahl ist durch die Formation begrenzt (Median 4, äußerstenfalls
      das Brett). Satz je Karte so gewählt, dass der Normalfall bleibt (4 Karten × 6 % = +24 % gegen vorher +17 %)
      und der Extremfall fällt (+996 % → +240 %). */
-  feld:          [{ perCard: 0.02 }, { perCard: 0.03 }, { perCard: 0.04 }, { perCard: 0.06, feedLowest: 1 }],
+  feld:          feldLadder([0.02, 0.03, 0.04, 0.06]),
   lichtbogen:    [{ critPerStack: 0.005 }, { critPerStack: 0.01 }, { critPerStack: 0.015 }, { critPerStack: 0.02 }], // §7.28 (Owner): ersetzt Überspannung auf SK_LIGHTNING_04 — jeder wirksame Stapel der gespielten Karte gibt Crit-CHANCE auf den Stich, die Richtung, die bis dahin keine Regel und kein Skill bediente. Startwerte, noch nicht gemessen (Owner: erst Design, dann Startwert, dann messen)
   blitzschlag:   [{ critEvery: 4, stacks: 1 }, { critEvery: 3, stacks: 1 }, { critEvery: 2, stacks: 1 }, { critEvery: 2, stacks: 2 }], // §7.18: einen Schritt schneller, Episch zwei Stapel
   serienschutz:  [{ cost: 1, perRound: 2 }, { cost: 1, perRound: 3 }, { cost: 1, perRound: 5 }, { cost: 1, perRound: 8 }], // §7.30: fester Preis + Deckel je Durchlauf statt eines Anteils der Leiste bei JEDER Niederlage (Effekt +23 %, so wie er war −17 %). Sweep: bei Preis 2 bleibt er neutral (51 % besser als ohne), bei Preis 1 trägt er (59–69 %) — eine Ladung ist teuer, die Leiste ist der Engpass. Die Leiter ist damit die KADENZ, die Häufigkeitsleiter, die Blitz fehlte (§7.26 D)

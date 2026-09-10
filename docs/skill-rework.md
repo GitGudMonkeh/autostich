@@ -8563,6 +8563,60 @@ Wegfall des Feld-Faktors kleiner geworden ist.
 
 ---
 
+### 7.49 Der Deckel wird flacher, die Leiter bekommt einen Sweep-Griff (2026-09-10, Owner) — umgesetzt, UNGEMESSEN
+
+**Owner-Entscheid:** beides aus §7.48 D, aber die zwei Zahlen nicht gleichzeitig raten. Der Deckel ist gerechnet und
+wird gesetzt; die Leiter wird **gesweept statt geschätzt**, weil ihr Satz in §7.47 schon einmal falsch geeicht war
+und ein zweiter Schätzwert derselbe Fehler mit anderer Zahl wäre.
+
+#### A · Der weiche Deckel: 0,20 → 0,05
+
+`CRIT_MULT_SOFT_SLOPE`. Über dem Knick (CRIT_MULT_CAP = 8) zählt jeder weitere Punkt nur noch zu 5 % statt 20 %.
+Kein harter Schnitt kommt zurück — die Regel behält die Form aus §7.42, sie wird nur flacher.
+
+| Rest-Steigung | S = 100 | S = 200 | S = 400 | S = 400 ggü. vor §7.42 |
+| --- | ---: | ---: | ---: | ---: |
+| 0,20 (§7.42) | 96.491 | 245.384 | 710.570 | 2,92× |
+| **0,05** | 82.899 | 175.922 | **403.818** | **1,66×** |
+
+Belegt ist die Zahl zweifach: §7.48 A (der max hat sich durch §7.47 nicht bewegt, der Extremlauf lebt also ganz auf
+dieser Achse) und §7.48 C (Kettenblitz +5 % Basis → +601 % → nach §7.47 immer noch +238 %).
+
+**Systemregel, ausdrücklich:** `softCritMult` deckelt den Crit-Multiplikator **aller vier Fraktionen**, nicht nur
+Blitz. In der Praxis trifft die Zahl fast nur Blitz, weil kaum ein anderer Bau über CRIT_MULT_CAP kommt — aber
+gemessen wird sie hier nur an Blitz mono. Siehe D.
+
+#### B · Der Sweep-Griff für die Leiter
+
+Neu `SPANNUNGSFELD_SCALE` (Default 1), Form wie die vorhandenen `WURZELGEFLECHT_FACTOR_SCALE` und
+`BAUMREIHE_FACTOR_SCALE`. `SIM_SPANNUNGSFELD_SCALE=2 node sim/survey.js …` fährt die ganze Leiter, ohne die Tabelle
+anzufassen.
+
+Ein Skalierer und keine vier Einzelsätze, weil die **Staffelung** der Stufen abgenommen ist und nur ihre **Höhe**
+unsicher ist — §7.48 B hat gemessen, dass die Stufen 3 und 4 tragen (Lift 1,22 / 1,43) und die Stufen 1 und 2 nicht
+(0,52 / 0,60). Das ist ein Höhen-, kein Formproblem.
+
+**Der Regler sitzt in der TABELLE, nicht im Motor.** Sonst zeigte die Karte weiter 6 %, während der Stich mit 12 %
+abrechnet — genau der Fehler, den §7.45 an der Stufenanzeige gefunden hat, und einer, der keine Zahl im Spiel
+ändert und deshalb niemandem auffällt.
+
+#### C · Wächter
+
+- Die Leiter trägt `perCard` aufsteigend, `perStack` bleibt draußen (§7.47), und der Episch-Anhang hängt an der
+  letzten Stufe,
+- der Kartentext von Episch nennt genau den Tabellenwert,
+- **`SPANNUNGSFELD_SCALE` bewegt Kennwert UND Kartentext zusammen** — der Wächter fragt ein zweites Node mit
+  gesetztem ENV, weil die Konstante beim Laden gelesen wird, und prüft beide Seiten. Gegengeprobt: schiebt man den
+  Regler in `lightFormMult`, verdoppelt sich die Zahl und der Text bleibt stehen — der Wächter fällt.
+
+#### D · Bewusst offen (Owner)
+
+Die **Kontrollmessung an Feuer und Eis** zum neuen Deckel bleibt draußen, bis der Owner sie anweist. Das ist ein
+Entscheid, keine Lücke: der Deckel ist eine Systemregel, und dass ihre Wirkung auf die anderen drei Fraktionen
+ungemessen ist, steht hier, damit es nicht später als Fund verkauft wird.
+
+---
+
 ### 5.30 Die Eis-Skills auf dem neuen Motor (2026-09-09) — gemessen, nichts umgesetzt
 
 **Owner:** „und dann schauen wir uns alle skills an die davon profitieren müssen und designen wie."
@@ -8982,3 +9036,4 @@ leichtesten haben.
 | 2026-09-10 | §7.42/§7.43/§7.44 nachgemessen (§7.46). Blitz-Mono, vier Varianten à 12.050 Läufe. Zuerst der Aufsetz-Fund: die Basis liegt VOR §7.42, es steckten also DREI Zahlenänderungen in der Messung, nicht zwei — diesmal getrennt statt wie in §7.41 vermischt. **Blitz mono 416M → 3.116M (7,5×)**, und der Schwanz ist das eigentliche Problem: p95/Median 8× → 120×, max/Median 172× → 1.138×. Das 2×2 über die zwei ENV-Regler zeigt: **mit beiden Deckeln zurück steht Blitz bei 523M gegen 416M Basis, Spannungsfeld allein kostet also +26 %** (misst dort +45 %, ein normaler Skill). §7.44 ist in keiner Zelle der Treiber (die zwei Zellen sagen ×3,2 und ×0,7 — der gierige Spieler lernt je Variante neu, unter Faktor 2 ist diese Reihe nicht interpretierbar; das ist die Rauschgrenze und sie ist jetzt beziffert). **Treiber ist der weiche Crit-Deckel, Zeuge ist Kettenblitz: +5 % → +601 % → +11 % mit den Deckeln zurück.** Ursache strukturell: ein Stapel zahlt jetzt auf DREI Achsen ohne Obergrenze (Basis-Score +75, Crit-Mult +0,15 seit §7.42 nur noch weich gedeckelt, `lightMult` +0,3–0,7 % neu aus §7.43), und die drei stehen als Produkt in der Formel — aus linear ist kubisch geworden. Mit den echten Funktionen nachgerechnet zahlt eine Karte mit 400 Stapeln 243.200 → 2.177.552, Faktor 8,95× und ohne Ende. **Dazu ein Konstruktionsfehler von mir in §7.43 C**: Spannungsfeld zahlt NICHT für gestreute Stapel — `formationStacks` bildet die Summe, und eine Summe unterscheidet nicht drei Karten mit je 20 von einer mit 60. Der Skill steht nicht gegen Kettenblitz, er multipliziert mit ihm; die Entscheidung, die Blitz fehlen sollte, ist nicht gebaut. Der Überschuss über 100 % gemessen (Sonde, 120 Läufe): 31 % der Stiche in den Runden 41–50, im Mittel 52 Punkte darüber = +1,56× — die §7.44-Sorge (400 % = +9×) tritt im gierigen Lauf nicht ein. Neue Sonde `spannungsfeld.mjs`. Nichts umgesetzt, vier offene Owner-Entscheide in §7.46 G. |
 | 2026-09-10 | Spannungsfeld zählt Karten statt Stapel (§7.47, Owner-Entscheid auf §7.46 G: nur Vorschlag 2, der weiche Crit-Deckel bleibt vorerst). `lightFormMult` liest nicht mehr die Stapel**summe** der Formation, sondern die Zahl der ionisierten **Karten**: **0,3/0,4/0,5/0,7 % je Stapel → 2/3/4/6 % je ionisierter Karte**, Episch-Anhang unverändert. Der Grund in einer Zeile: eine Summe wächst ins Unendliche (gemessen Median 24, p99 1.423), eine Kartenzahl ist durch das Brett begrenzt (Median 4, höchstens 40). Damit hängt `lightMult` nicht mehr an der Tiefe EINER Karte und multipliziert sich nicht mehr mit den zwei anderen Stapel-Achsen — aus dem kubischen Ausschlag aus §7.46 C wird ein quadratischer. Die Sätze sind so gewählt, dass der Normalfall bleibt und nur der Ausreißer fällt: Median +17 → +24 %, p90 +76 → +30 %, Extremfall **+996 → +240 %**. Der Episch-Anhang (+1 Stapel auf die dünnste Karte der Formation) passt jetzt erst richtig — er macht aus einer dunklen Karte eine leuchtende, also genau das, wofür der Skill zahlt. **Zwei Dinge offen benannt:** (a) spät SÄTTIGT der Skill, weil in den Runden 41–50 ohnehin 4,40 von 4,60 Mitgliedern ionisiert sind — dort misst er die Formationsgröße, nicht die Streuung; die Bedingung greift früh und mittig (Runden 21–30: 2,00 von 4,17). (b) Der Umbau nimmt EINE der zwei offenen Achsen heraus, nicht beide: bei 400 Stapeln zahlt der Stich weiterhin 2,92× so viel wie vor §7.42, **Blitz landet damit nicht wieder bei 416M**. Der Rest ist der weiche Crit-Deckel (§7.46 G 1, weiter offen); gerechnet, nicht gemessen, brächte eine Rest-Steigung 0,20 → 0,05 den Faktor auf 1,66×. Drei Wächter, alle gegengeprobt durch Zurückdrehen auf die Stapelsumme; einer davon hält fest, dass `perStack` nicht zurückkommen darf — ein stiller Rückfall dorthin würde keinen Text im Spiel ändern. UNGEMESSEN. |
 | 2026-09-10 | §7.47 nachgemessen (§7.48). Blitz-Mono, 12.050 Läufe, genau EINE Änderung seit §7.46, die Zahl ist also sauber zuzuordnen. **Das Ziel ist getroffen: p95 374,9 → 35,3 Mrd (ein Zehntel), p90 84,4 → 20,9 Mrd, Median 3.116 → 1.639M, Siegquote 66,9 → 70,0 % (die höchste aller vier Messungen).** Der Körper der Verteilung ist eingefangen. **Der max hat sich NICHT bewegt** (3.545 → 3.425 Mrd, −3 %) — genau die Vorhersage aus §7.47 D: der eine Extremlauf lebt vollständig auf der zweiten, unangetasteten Achse (Basis-Score × Crit-Mult, beide linear in der Tiefe, beide ohne Deckel). Blitz steht bei 3,9× der Basis statt 7,5×, also wie angekündigt nicht zurück auf 416M. **Der Preis, und der Fehler ist meiner: Spannungsfeld misst +139 → +3 %**, Haltequote 100 → 66 %, und je Stufe liegt der Lift bei 0,52 / 0,60 / 1,22 / 1,43 — **unter „Sehr selten" ist der Skill keinen Platz wert**. Ich hatte den Satz am MEDIAN der alten Auszahlung geeicht (+17 → +24 %) und daraus berichtet, der Normalfall bleibe gleich. Der Median war aber nie, wo der Wert lag: die alten +139 % kamen fast vollständig aus dem Schwanz, den der Umbau absichtlich abschneidet (p99 der Stapelsumme 1.423 = +996 % auf den Stich). Ein Skill, dessen Wert im 99. Perzentil steckt, verliert ihn, wenn man das 99. Perzentil kappt — das war vorher sichtbar. Die Bauform ist davon nicht widerlegt (die Kartenzahl ist begrenzt und tut, was sie soll), nur die Leiter ist zu flach. **Kettenblitz ist nur gedämpft, nicht repariert** (+601 → +238 %, Basis +5 %) — derselbe Befund wie beim max, an einem zweiten Zeugen. Drei Skills sind ungefragt mitgefallen (Lichtbogen +3 → −10, Serienschutz 0 → −15, Blitzfänger +13 → −4), alle drei hängen an der Stapeltiefe der gespielten Karte. Offen: die Leiter des Feldes (Verdopplung auf 4/6/8/12 % wäre der Kandidat, gehört gesweept statt geschätzt) und der weiche Crit-Deckel als Haupthebel, jetzt zweifach belegt. |
+| 2026-09-10 | Deckel flacher, Leiter bekommt einen Sweep-Griff (§7.49, Owner: „so bauen", beides aus §7.48 D, aber die zwei Zahlen nicht gleichzeitig raten). **`CRIT_MULT_SOFT_SLOPE` 0,20 → 0,05**: über dem Knick zählt jeder Punkt nur noch zu 5 %, die Form aus §7.42 bleibt, kein harter Schnitt kommt zurück. Bei 400 Stapeln fällt der Stich von 2,92× auf **1,66×** gegenüber der Zeit vor §7.42. Die Zahl ist zweifach belegt: §7.48 A (der max hat sich durch §7.47 nicht bewegt, der Extremlauf lebt ganz auf dieser Achse) und §7.48 C (Kettenblitz +5 % Basis → +601 % → immer noch +238 %). **Zweitens `SPANNUNGSFELD_SCALE`** (Default 1), Form wie `WURZELGEFLECHT_FACTOR_SCALE`: der Sweep-Griff für die Leiter des Spannungsfelds, damit ihre Höhe GEMESSEN statt geschätzt wird — §7.47 hatte den Satz schon einmal falsch geeicht, ein zweiter Schätzwert wäre derselbe Fehler mit anderer Zahl. Ein Skalierer und keine vier Einzelsätze, weil §7.48 B ein Höhen- und kein Formproblem gemessen hat (Stufen 3/4 tragen mit Lift 1,22/1,43, Stufen 1/2 nicht mit 0,52/0,60). **Der Regler sitzt in der TABELLE, nicht im Motor** — sonst zeigte die Karte weiter 6 %, während der Stich 12 % abrechnet, also der Fehler aus §7.45, der keine Zahl im Spiel ändert und deshalb niemandem auffällt. Drei Wächter; der neue fragt ein zweites Node mit gesetztem ENV (die Konstante wird beim Laden gelesen) und prüft, dass Kennwert und Kartentext zusammen wandern — gegengeprobt durch Verschieben des Reglers in `lightFormMult`, dann fällt er. **Bewusst offen und Owner-Entscheid:** die Kontrollmessung des neuen Deckels an Feuer und Eis bleibt draußen; der Deckel ist eine Systemregel für alle vier Fraktionen, gemessen wird er nur an Blitz mono. UNGEMESSEN. |

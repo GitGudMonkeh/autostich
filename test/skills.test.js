@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { makeRng } from "../src/game/deck.js";
 import { SKILL_DEFS, skillSum, buildSkillOffer, BLITZ_TIERS,
@@ -10,6 +11,8 @@ import { MAX_ARCHETYPES, SKILL_TIER_WEIGHTS, SKILL_LEGENDARY_PER_SLOT } from "..
 
 const LR = "SK_LIGHTNING_01";
 const ALL = Object.keys(SKILL_DEFS);
+// Anteil → Prozenttext, wie `pctS` in skills.js (0,06 → „6", 0,045 → „4,5").
+const pctText = (x) => String(Math.round(x * 10000) / 100).replace(".", ",");
 
 describe("skills — Blitz-Registry (exp skill rework)", () => {
   it("17 Blitz-Skills: 14 normale mit vier Stufenzeilen + 3 Legendäre ohne Stufe, alle archetype=lightning", () => {
@@ -61,6 +64,7 @@ describe("skills — Blitz-Registry (exp skill rework)", () => {
     expect(asc(BLITZ_TIERS.feld, "perCard")).toBe(true);
     expect(BLITZ_TIERS.feld.every((r) => r.step === undefined && r.critKeep === undefined && r.perStack === undefined)).toBe(true);
     expect(BLITZ_TIERS.stau).toBeUndefined();
+    expect(BLITZ_TIERS.feld[3].feedLowest).toBe(1); // §7.47: der Episch-Anhang hängt an der letzten Stufe der Leiter
     expect(asc(BLITZ_TIERS.kette, "extra")).toBe(true); // §7.18: Tiefe
   });
   it("Beschreibungen interpolieren die Tabellen (kein Drift zwischen Regel und Text)", () => {
@@ -69,6 +73,28 @@ describe("skills — Blitz-Registry (exp skill rework)", () => {
     expect(SKILL_DEFS.SK_LIGHTNING_12.desc).toContain(`Ab Serie ${BLITZ_TIERS.vorentladung[0].minStreak}`);
     expect(SKILL_DEFS.SK_LIGHTNING_05.desc).toContain(`bei ${BLITZ_TIERS.reststrom[0].floor} statt 0`);
     expect(SKILL_DEFS.SK_LIGHTNING_06.desc).toContain("+0,5");
+    expect(SKILL_DEFS.SK_LIGHTNING_13.descTiers[3]).toContain(`+${pctText(BLITZ_TIERS.feld[3].perCard)} % je ionisierter Karte`);
+  });
+  /* §7.49: SPANNUNGSFELD_SCALE ist der Sweep-Griff für die Leiter. Er sitzt in der TABELLE, damit Kartentext und
+     Abrechnung dieselbe Zahl tragen — verrutscht er in den Motor, zeigt die Karte weiter 6 %, während der Stich mit
+     12 % rechnet (die Lehre aus §7.45: eine lügende Beschreibung ändert keine Zahl im Spiel und fällt niemandem auf).
+     Der Wächter kann das nicht im Prozess prüfen, weil die Konstante beim Laden gelesen wird, also fragt er ein
+     zweites Node mit gesetztem ENV — und prüft BEIDE Seiten. */
+  it("SPANNUNGSFELD_SCALE (§7.49) bewegt Kennwert UND Kartentext zusammen", () => {
+    const root = fileURLToPath(new URL("../", import.meta.url));
+    const read = (scale) => {
+      const out = execFileSync(process.execPath, ["--input-type=module", "-e",
+        `import { SKILL_DEFS } from "./src/game/skills.js";
+         const d = SKILL_DEFS.SK_LIGHTNING_13;
+         process.stdout.write(JSON.stringify({ per: d.tiers[3].perCard, text: d.descTiers[3] }));`],
+        { cwd: root, encoding: "utf8", env: { ...process.env, SIM_SPANNUNGSFELD_SCALE: String(scale) } });
+      return JSON.parse(out);
+    };
+    const one = read(1), two = read(2);
+    expect(one.per).toBeCloseTo(BLITZ_TIERS.feld[3].perCard, 9); // der Default ist der Regler auf 1
+    expect(two.per).toBeCloseTo(one.per * 2, 9);                 // die Zahl verdoppelt sich …
+    expect(two.text).toContain(`+${pctText(two.per)} %`);        // … und der Text sagt dieselbe Zahl
+    expect(two.text).not.toBe(one.text);
   });
   it("skillSum summiert einen Hook über die gehaltenen Skills (fehlender Hook → 0)", () => {
     expect(skillSum([], "scoreFlatOnCrit", {})).toBe(0);
