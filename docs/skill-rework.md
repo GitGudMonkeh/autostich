@@ -8976,6 +8976,62 @@ zweimal falsch (Blitzfänger und Spannungsfeld als „Zahlen-Problem"), und beid
 
 ---
 
+### 7.55 Zwei Sonden vor dem Umbau — beide widerlegen eine Annahme (2026-09-10) — gemessen, nichts umgesetzt
+
+Der Owner hat drei der fünf toten Skills freigegeben (Serienschutz und Ladungsserie umbauen, Spannungsfeld auf
+„Crit-Chance je Formation, in der eine ionisierte Karte ist"; Gewitterfront und Blitzfänger bleiben). Vor dem Bauen
+zwei Sonden — die Lehre aus §7.54, wo zweimal eine Zahl gedreht wurde, die nichts bewirken konnte.
+
+#### A · Formationen je Position: die neue Lesart zündet NICHT früher
+
+`sim/probes/feld-formationen.mjs`, 60 Läufe, Blitz mono, je Formations-Sieg:
+
+| Runden | Ø Formationen | **Ø erleuchtet (neue Lesart)** | Ø ionisierte Karten (alte) | Siege mit ≥ 1 erleuchteter |
+| --- | ---: | ---: | ---: | ---: |
+| 1–10 | 1,38 | **0,18** | 0,17 | 14 % |
+| 11–20 | 1,56 | **0,81** | 0,89 | 55 % |
+| 21–30 | 1,63 | **1,36** | 2,15 | 87 % |
+| 31–40 | 1,69 | **1,63** | 3,38 | 97 % |
+| 41–50 | 1,73 | **1,72** | 4,09 | 100 % |
+
+**Früh sind beide Lesarten praktisch gleich** (0,18 gegen 0,17 · 0,81 gegen 0,89), **spät ist die neue deutlich
+kleiner** (1,72 gegen 4,09).
+
+Der Grund ist die erste Spalte: eine Position hängt im Schnitt in nur **1,4 bis 1,7 Formationen**. Die Annahme, eine
+einzelne ionisierte Karte könne mehrere Formationen zugleich erhellen, trägt also nicht — es gibt meist gar keine
+mehreren. Und der frühe Engpass ist ein anderer: in den Runden 1–10 haben **86 % der Formations-Siege überhaupt
+keine ionisierte Karte** in Reichweite.
+
+**Folge: der Umbau wie spezifiziert macht den Skill schwächer, nicht früher.** Wer „früher" will, muss die
+Ionisierungs-Bedingung streichen, nicht ihre Zählweise ändern — „je Formation der Position" zündet ab Runde 1 bei
+jedem Formations-Sieg (1,38).
+
+#### B · Serienlängen: meine Ladungsserie-Diagnose war falsch
+
+`sim/probes/streak-probe.mjs`, 60 Läufe: **Blitz mono beste Serie p10 34 · p50 240 · p90 719**, und **82 % der
+Läufe erreichen ≥ 75**.
+
+Damit ist §7.53 D widerlegt, wo ich schrieb, Ladungsseries Schwelle („ab Serie 16") greife zu spät. **Sie ist
+bequem erreichbar.** Der Skill feuert also oft und misst trotzdem −6/−11 %.
+
+Die echte Erklärung liegt woanders: `blitz-ramp` zählt **Ø 150 volle Leisten je Lauf**, davon nur 2 in den Runden
+1–10 und 9 bis Runde 20. **Ladung ist spät im Überfluss da und früh knapp** — und eine Serie von 16 hat man erst,
+wenn die Leisten ohnehin laufen. Der Skill schenkt also Ladung genau dann, wenn sie nichts mehr wert ist.
+
+Der strukturelle Fehler ist damit nicht die Höhe der Schwelle, sondern **die Kopplung an die Serie**: sie ist ein
+Spätindikator. Ein Ladungs-Skill, der früh helfen soll, darf nicht an der Serie hängen.
+
+#### C · Was daraus folgt
+
+- Spannungsfeld: die spezifizierte Änderung erreicht ihr Ziel nicht (A) — Owner-Entscheid nötig, bevor gebaut wird.
+- Ladungsserie: der Umbau muss die Serie als Auslöser verlassen (B), nicht ihre Schwelle senken.
+- Serienschutz: unverändert der Fall aus §7.53 D — reagiert auf Niederlagen (Owner-Regel §7.31) und zahlt mit
+  Ladung. Sein Auslöser ist sein Wesen, also braucht er einen neuen, keinen justierten.
+
+**Nichts umgesetzt.** Zwei neue Sonden im Baum.
+
+---
+
 ### 5.30 Die Eis-Skills auf dem neuen Motor (2026-09-09) — gemessen, nichts umgesetzt
 
 **Owner:** „und dann schauen wir uns alle skills an die davon profitieren müssen und designen wie."
@@ -9401,3 +9457,4 @@ leichtesten haben.
 | 2026-09-10 | §7.51 nachgemessen (§7.52). Blitz-Mono, 12.050 Läufe. **Die Fraktion ist auf dem Basisniveau angekommen, und zwar auf JEDER Kennzahl: Median 384M gegen 416M (0,92×), p95 3,07 gegen 3,44 Mrd (0,89×), max 58,1 gegen 71,5 Mrd (0,81×).** Nicht nur der Median — der ganze Schwanz ist zurück, und das ohne einen einzigen neuen Deckel. Gegen das Feld aus §7.41 (Pf 367M · Ei 348M/224M · Fe 137M, je zum Stand ihrer letzten Messung) steht Blitz gleichauf mit der Pflanze. **Die Form stimmt auch:** die drei Legendären führen (+211 / +137 / +69 %), der stärkste normale Skill ist Kurzschluss mit +45 % — dieselbe Form, die §7.33 für Feuer als richtig festgehalten hat. **Kettenblitz ist repariert**, der Zeuge des ganzen Problems: +5 % (Basis) → +601 % (§7.46) → +238 % (§7.47) → +40 % (§7.50) → **+1 %**, Haltequote 92 → 48 %. Reine Tiefe auf einer Karte ist kein Motor mehr. **Lichtbogen ist zurück** (+18 → −10 → 0 → **+25 %**, 98 % gehalten) und damit zweitstärkster normaler Skill — die Crit-Chance-Achse trägt wieder, und genau dort sitzt das Spannungsfeld jetzt als Gegenspieler. **Offen:** das Spannungsfeld selbst misst 0 % bei 58 % Haltequote, die Stufen-Lifts (1,97 / 0,48 / 0,18 / 1,68) sind nicht monoton und damit Rauschen — der Skill ist neutral, nicht kaputt, die Höhe seiner Leiter ist der nächste Regler und ein Owner-Entscheid. Drei Skills im Minus (Entladung −23 %, Vorentladung −23 %, Serienschutz −13 %, alle ~100 % gehalten); Vorentladungs Fall von +4 auf −23 % ist ein KANDIDAT, kein Befund — sie zahlt Crit-Multiplikator je Serienpunkt und die flachere Rest-Steigung entwertet genau das, aber §7.50 hat sie auf derselben Steigung noch mit +4 % gemessen, also liegt das im Rauschen der Reihe (§7.46 B) und gehört gezielt nachgemessen. |
 | 2026-09-10 | Die Rauschgrenze gemessen statt geschätzt (§7.53, Owner: „nachmessen, dann toten skills angehen"). Zweimal dieselbe Konfiguration, nur ein anderer Seed-Satz (`--seed 1` gegen `--seed 101`). **Ergebnis: Faktor 1,97 auf dem Fraktions-Median (384M gegen 757M) und Faktor 3,0 auf dem p95 — bei identischem Code.** Je Skill ist der Median der Spannen **17 Prozentpunkte**, im Einzelfall weit mehr (Hochspannung 211 pp, Kettenblitz 35 pp, Resonanz 33 pp); auch die Haltequoten springen (Gewitterfront 20 → 85 %, Ladungsserie 100 → 51 %). **Das korrigiert drei frühere Aussagen:** §7.52 A („Median 0,92× der Basis") gilt nur für Seed 1, mit Seed 101 wären es 1,82× — belastbar ist allein, dass Blitz in der GRÖSSENORDNUNG der Basis liegt statt beim Vier- bis Achtfachen (die Richtung 1.639 → 1.014 → 384/757M hält mit großem Abstand, die zweite Stelle nicht); §7.52 B („Kettenblitz ist repariert", +1 %) war zu stark, der zweite Lauf misst +35 % — weit weg von +601 % bleibt richtig, die Genauigkeit nicht; und die Vorsicht bei Vorentladung (§7.52 C, als Kandidat markiert) war berechtigt, der zweite Lauf sagt +5 % statt −23 %. **Faustregel daraus: unter etwa 35 pp ist ein Einzellauf dieser Reihe nicht lesbar, und er trägt eine Stelle, nicht zwei — rückwirkend für jede Prozentzahl in §7.41 bis §7.52.** Hochspannung ist mono grundsätzlich nicht messbar (211 pp bei gleicher Haltequote), was §7.41 C aus anderem Grund schon sagte. **Die toten Skills, diesmal belegt** (in BEIDEN Läufen ≤ 0 mit kleiner Spanne, sechs von dreizehn): Serienschutz −13/−20 % (kostet aktiv: zahlt Ladung für eine Serie nach einer Niederlage, und Ladung ist der Engpass — dazu ein Niederlagen-Skill gegen die Owner-Regel aus §7.31), Spannungsfeld 0/+0 %, Gewitterfront 0/0 % (spät ist die Chance gesättigt, früh gibt es kaum Leisten — er zahlt genau dann nicht, wenn er könnte), Blitzschlag +4/+1 %, Blitzfänger +4/0 %, Ladungsserie −5/+3 % (Ladung IST der Engpass, trotzdem neutral: die Schwelle greift zu spät). Entladung (−23/−5 %, 17 pp) liegt auf der Grenze und ist nicht entschieden. Drei der sechs haben eine STRUKTURELLE Diagnose, keine Zahlen-Diagnose — dort hilft ein größerer Satz nicht. Nichts umgesetzt, Owner-Entscheid. |
 | 2026-09-10 | Die zwei Zahlen-Skills angehoben und gemessen (§7.54, Owner: „zahlen, messen"), beide Seed-Sätze, weil §7.53 die Rauschgrenze bei 35 pp beziffert hat. Gebaut: **Spannungsfeld 2/3/4/6 → 5/7/10/15 % Crit-Chance je ionisierter Karte**, **Blitzschlag +1/1/1/2 → +2/3/4/6 Stapel je Auslösung** bei unveränderter Kadenz (die war nie das Problem: die Leisten schütten im Lauf Ø 634 Stapel aufs Deck, gegen die ein Stapel je zweitem Crit nicht ankommt). **Blitzschlag ist repariert, und zwar deutlich: +4/+1 % → +74/+58 %** in zwei unabhängigen Läufen, weit über der Rauschgrenze — der erste eindeutig reparierte tote Skill der Reihe, jetzt stärkster normaler Skill neben Kurzschluss. Weil er die SIEGKARTE ionisiert, die je Stich wechselt, streut er und speist damit das Spannungsfeld. **Spannungsfeld ist dagegen KEIN Zahlen-Problem, und das ist jetzt belegt: zwei Achsen, zwei Anhebungen, kein Effekt** (§7.50 als Score-Multiplikator verdreifacht → drei von vier Stufen blieben unter Lift 1; §7.54 als Crit-Chance ×2,5 → −1/+1 %). Die Diagnose ist strukturell: sein Tor ist zu eng (nur Formations-Siege) und seine Skala zu klein (höchstens die Karten einer Formation, Median 4), während Lichtbogen auf DERSELBEN Achse +2/+23 % misst, weil er bei JEDEM Stich zündet und mit der Stapeltiefe skaliert (Ø 10,7 je Karte, tiefste Ø 215). Bittere Pointe: **die Schranke, die den Weglauf aus §7.46 behoben hat, ist dieselbe, die den Skill klein hält.** Blitzfänger (nicht angefasst) misst 0/−1 % — vierte Bestätigung, zusammen mit dem Befund, dass Episch schon heute +1 Wert je Stapel ungedeckelt gibt (auf der tiefsten Karte Ø +215 bei Grundwert ~7): **Wert sättigt, sobald der Stich ohnehin gewonnen ist.** **Preis der Runde:** die Fraktion steigt von 384/757M auf **792/1.196M**, also 1,9× bis 2,9× der Basis — kein Nebeneffekt, sondern die Rechnung: einen toten Skill lebendig zu machen fügt Kraft hinzu; Blitzschlags `stacks` ist der Regler. **Bilanz:** von den sechs toten Skills ist EINER repariert und FÜNF sind strukturell (Serienschutz, Gewitterfront, Ladungsserie, Blitzfänger, Spannungsfeld). Meine Einordnung in §7.53 D war damit zweimal falsch, und beide Male hat dieselbe Prüfung gefehlt: erst nachsehen, ob der bestehende Satz auf seinem Maximum überhaupt etwas bewirkt. |
+| 2026-09-10 | Zwei Sonden vor dem Umbau der drei freigegebenen toten Skills (§7.55) — beide widerlegen eine Annahme. **(a) Die neue Spannungsfeld-Lesart zündet NICHT früher.** Neue Sonde `feld-formationen.mjs`: je Formations-Sieg hängt eine Position im Schnitt in nur **1,4 bis 1,7 Formationen**, früh sind die zwei Lesarten praktisch gleich (0,18 gegen 0,17 in den Runden 1–10; 0,81 gegen 0,89 in 11–20) und spät ist die neue deutlich KLEINER (1,72 gegen 4,09). Die Annahme, eine ionisierte Karte könne mehrere Formationen zugleich erhellen, trägt nicht — es gibt meist keine mehreren. Der frühe Engpass ist ein anderer: in den Runden 1–10 haben 86 % der Formations-Siege überhaupt keine ionisierte Karte in Reichweite. Der Umbau wie spezifiziert macht den Skill also SCHWÄCHER statt früher; wer früh will, muss die Ionisierungs-Bedingung streichen statt ihre Zählweise zu ändern. **(b) Meine Ladungsserie-Diagnose aus §7.53 D war falsch.** : `streak-probe` misst Blitz mono beste Serie p50 **240**, und 82 % der Läufe erreichen ≥ 75 — die Schwelle „ab Serie 16" ist bequem erreichbar, greift also nicht zu spät. Die echte Erklärung: `blitz-ramp` zählt Ø 150 volle Leisten je Lauf, davon nur 2 bis Runde 10 und 9 bis Runde 20 — **Ladung ist spät im Überfluss da und früh knapp**, und eine Serie von 16 hat man erst, wenn die Leisten ohnehin laufen. Der strukturelle Fehler ist nicht die Höhe der Schwelle, sondern die Kopplung an die Serie als Spätindikator. Nichts umgesetzt, zwei neue Sonden im Baum, Owner-Entscheid offen. |
