@@ -248,7 +248,7 @@ export const SKILL_DEFS = {
       : `Niederlagen kühlen die Hitze nicht unter ${r.floor} %. Fängt der Boden eine Niederlage ab, steigt er um ${r.rise} %.`)) },
   // Zustand — Hitze zu Wert und Multiplikator
   SK_FIRE_06: { id: "SK_FIRE_06", name: "Glühende Klinge", archetype: "fire", keywords: ["heat"], tiers: FEUER.klinge,
-    ...tiered(FEUER.klinge, (r) => `Alle deine Karten haben +${r.value} Wert je ${r.perHeat} % Hitze.`) },
+    ...tiered(FEUER.klinge, (r) => `Alle deine Karten haben +${r.value} Wert je ${r.perHeat} % Hitze, bis ${C.HEAT_MAX} %.`) },
   SK_FIRE_07: { id: "SK_FIRE_07", name: "Weißglut", archetype: "fire", keywords: ["heat"], tiers: FEUER.weissglut,
     ...tiered(FEUER.weissglut, (r) => `Die Hitzeleiste reicht bis ${C.WEISSGLUT_HEAT_MAX} %. Über ${C.HEAT_MAX} % Hitze geben je 10 Prozentpunkte +${pct(r.multPer10)} % Score.`) },
   // Position — die Schneise durch das eigene Deck (§7.27: ersetzt Feuerwalze, deren Achse „Hitze zu Kampfwert" schon

@@ -7546,6 +7546,61 @@ nicht.
 
 ---
 
+### 7.32 Die Klinge liest nur noch die Passiv-Leiste (2026-09-10, Owner) — umgesetzt, UNGEMESSEN
+
+Owner: „als erstes einen nerf bei glühender klinge und weißglut. lass uns erst den nerf designen."
+
+#### A · Der Befund: die Klinge füttert den Motor am EINGANG
+
+§8 misst **Glühende Klinge +141 %** und **Weißglut +96 %** mono — die zwei stärksten NORMALEN Skills des Spiels,
+beide über Sonnenzorn (+91 %), dem Legendären der Fraktion.
+
+Das Passiv gibt Hitze aus dem Vorsprung: `(Vorsprung − HEAT_MARGIN_OFFSET) × HEAT_PER_POINT`, ab `HEAT_MIN_MARGIN`.
+Jeder andere Feuer-Skill LIEST Hitze und zahlt Score. Die Klinge liest Hitze und zahlt **mehr Hitze**:
+
+> +Wert → größerer Vorsprung → mehr Hitze → +Wert
+
+Gerechnet: ein Sieg, der ohne sie Vorsprung 3 hätte (2 % Hitze), macht mit +4 Wert Vorsprung 7 (6 %) — **dreifaches
+Hitze-Einkommen**. Dazu zwei Mitnahmen: der größere Vorsprung zündet die Verbrennung (Tor 8/7/6/5 → ×1,5), und
++Wert dreht Niederlagen in Siege, was wieder Hitze bringt.
+
+**Weißglut ist kein eigener Motor, sondern ein Hebel.** Es verlängert die Leiste 100 → 200 (binär, nicht auf der
+Stufenleiter) und verdoppelt damit die Landebahn für alles, was an Hitze hängt:
+
+| | ohne Weißglut | mit Weißglut |
+| --- | --- | --- |
+| Klinge Normal … Episch | +2 / +3 / +4 / **+5** | +5 / +6 / +8 / **+10** |
+| Hitze-Multiplikator voll | ×1,20 | ×1,50 … **×1,80** |
+| Sonnenzorn, Spitzen-Lesart | 10 Stufen | 20 Stufen |
+
+Seine +96 % sind damit zum großen Teil **die Zahl der Klinge in Verkleidung**.
+
+#### B · Der Schnitt (Owner-Entscheid)
+
+**Die Klinge liest `HEAT_MAX` (100), nie die von Weißglut verlängerte Leiste.** Eine Zeile in `fireValueBonus`,
+ein Halbsatz im Skilltext („… bis 100 %"). Wirkung:
+
+- stärkster Build (Episch + Weißglut): **+10 → +5 Wert**,
+- normaler Build ohne Weißglut: **unverändert**,
+- die Rückkopplung bleibt — sie ist nur noch halb so lang.
+
+Warum nicht zusätzlich die Stufen strecken: das wäre ungefähr die Dosis, mit der die Baumreihe von +1079 auf +112
+gefallen ist (§6.30). Ein Hebel, dann messen.
+
+**Weißglut bleibt vorerst unangetastet** (Owner). Der Grund ist derselbe wie bei Wurzelgeflecht/Baumreihe in §6.31:
+die beiden sind verkoppelt, und als das Wurzelgeflecht fiel, sank die Baumreihe ungefragt von +112 auf +75 mit. Wer
+hier beide gleichzeitig voll anfasst, kann hinterher nicht trennen, welcher Schnitt was bewirkt hat.
+
+Der Wächter (`fire-rework.test.js`) hält die Entkopplung an ihrer schärfsten Stelle — volle 200er-Leiste, Episch,
+mit und ohne den Weißglut-Skill. Gegengeprobt: mit offener Naht liefert er wieder 10 statt 5.
+
+#### C · Erwartung und offene Frage
+
+Die Klinge sollte deutlich fallen, Weißglut **von allein mit** — um wie viel, ist der Punkt der Messung. Bleibt
+Weißglut danach über dem Band, sind die Regler `WEISSGLUT_HEAT_MAX` (200) und `multPer10` bereit.
+
+---
+
 ### 5.30 Die Eis-Skills auf dem neuen Motor (2026-09-09) — gemessen, nichts umgesetzt
 
 **Owner:** „und dann schauen wir uns alle skills an die davon profitieren müssen und designen wie."
@@ -7948,3 +8003,4 @@ leichtesten haben.
 | 2026-09-09 | Pflanze tariert (§6.29, Owner: „Baumreihe definitv, Wurzelgeflecht ein bisschen nerfen. danach diese skills alle ein bisschen buffen"). **Baumreihe** stand mono bei +1079 %, dem Doppelten des nächsten Legendären — und ihre Schraube aus §6.12 konnte das nicht fassen: sie zahlte auf vier Kanälen, der Regler fasst nur einen. Der Motor ist Kanal vier, die MITGLIEDERLISTE: die Reihe ist eine Wiederholung mit bis zu 40 blühenden Karten, und Hecke wie Blüte-Passiv zahlen je Mitglied — damit tat die Multiplikator-Achse die Arbeit der Dichte-Achse des Wurzelgeflechts. Owner-Entscheid a: die Reihe behält Faktor, Formationszahl und Wachstum, ihre Mitglieder zahlen keinen Basis-Score mehr (`scoreless` + `plantScoreFormations`). Gegenprobe am neuen Wächter: mit offener Naht zahlt ein Stich 720 statt 240. **Wurzelgeflecht** (+591 %) `WURZELGEFLECHT_FACTOR_SCALE` 1 → 0,85 — die halbe Strecke zurück, nicht die ganze, weil §6.15 die 0,7 schon einmal als zu hart verworfen hatte. **Sieben Skills angehoben**: Blätterdach 10→15 (+50 %), Rankgerüst 30→33 (nur +10 % — mehr lässt die Staffel der vier Score-Sätze nicht zu, ein Wächter hat meinen ersten Wurf zu Recht gerissen), Verwachsung +40 %, Lichtung/Zäher Halm/Setzlingsbeet +50 %, Jahresringe Teiler 15→12 und Sätze +25 %. Offen benannt: vier der sieben sind Wachstums-Skills, und die Achse ist als ganze flach — der systemische Hebel wäre `PLANT_BLOOM_WEIGHT_PER_GROWTH`, nicht sieben Einzelsätze; nicht angefasst, weil er die ganze Fraktion mithebt. ALLES UNGEMESSEN. |
 | 2026-09-09 | §6.29 nachgemessen (§6.30, Owner: „mess nach"). 7 Pflanze-Welten, 56.875 Läufe, 39 min, Parameter der §8-Baseline. **Der Schnitt sitzt: Baumreihe +1079 → +112 % mono**, also rund 90 % ihrer Wirkung — der Beleg, dass die Mitgliederliste der Motor war und die Schraube aus §6.12 am falschen Ende saß. Sie ist damit das schwächste der drei Pflanze-Legendären, liegt aber im Band von Großer Lawine (+143 %) und Eiszeit (+131 %) und wird in 59 % der Läufe gehalten; `BAUMREIHE_FACTOR_SCALE` ist jetzt der saubere Regler, falls sie wieder wachsen soll. Wurzelgeflecht +591 → +505 % (die bestellte kleine Korrektur), Ewiger Frühling unverändert. **Die Fraktion fällt mono 2,31 Mrd → 524M (−77 %)**, in den drei sauber vergleichbaren Mischwelten −32 bis −62 %; damit ist die Pflanze nicht mehr der Ausreißer, sondern **Blitz** (1,69 Mrd, 3,2× Pflanze). Von den sieben angehobenen Skills sind zwei repariert (Blätterdach Haltequote 6 → 53 %, Rankgerüst mono −0 → +6 % und im Tripel −3 → +150 %), zwei besser, drei unverändert flach — und alle drei sind Wachstums-Skills, wie in §6.29 D vorhergesagt: die Achse hebt man nicht mit Einzelsätzen, sondern mit `PLANT_BLOOM_WEIGHT_PER_GROWTH`. Nebenbefund: **die Hecke ist mitgefallen** (100 % gehalten/+105 % → 33 %/+12 %) — ihre alte Zahl kam zum großen Teil aus dem Baumreihen-Kanal. Sie ist jetzt zum ersten Mal ohne Verstärker sichtbar und der Kandidat für die nächste Runde. |
 | 2026-09-10 | Wurzelgeflecht gesweept (§6.31, Owner: „auf die 150-250"). Neuer Survey-Schalter `--groesse` misst eine Weltgröße allein — `--fraktion plant --groesse 1` sind 13 min statt 39, und der Kontrollpunkt bei 0,85 reproduziert §6.30 auf den Euro (+505 %, Median 523.764.008), die Abkürzung ist also belastbar. Sweep über `WURZELGEFLECHT_FACTOR_SCALE`: 0,85 → +505 % · 0,60 → +397 % · **0,45 → +220 %**. 0,45 gesetzt, gemessener Punkt im Band. Die Kurve greift unten härter (Schritt 0,25 kostet 21 %, Schritt 0,15 kostet 45 %) — der Faktor wirkt multiplikativ über die Positionen eines Laufs. Mitgenommen: die Fraktion fällt mono 524M → 367M, und die Baumreihe sinkt ohne eigene Änderung von +112 auf +75 % (Ablation misst gegen den Rest des Builds, und der ist kleiner geworden) — gehalten wird sie dabei häufiger, 59 → 71 %. Die drei Pflanze-Legendären stehen jetzt bei +274 / +220 / +75 % statt +1079 / +591 / +282 % vor der Runde. Offen: Blitz steht mit 1,69 Mrd allein oben, der Abstand ist durch diese Runde größer geworden. |
+| 2026-09-10 | Glühende Klinge entkoppelt (§7.32, Owner: „erst den nerf designen", dann Entscheid a). Befund: die Klinge ist der einzige Feuer-Skill, der den Motor am EINGANG füttert — +Wert hebt den Vorsprung, und der Vorsprung IST das Hitze-Einkommen. Ein Sieg mit Vorsprung 3 (2 % Hitze) wird mit +4 Wert zu Vorsprung 7 (6 %): dreifaches Einkommen, dazu die Verbrennungs-Mitnahme und die gedrehten Niederlagen. Das ist die gemessene +141 %, nicht die Zahl auf der Karte. Weißglut (+96 %) ist kein eigener Motor, sondern der Hebel darunter: die Leiste 100 → 200 verdoppelt Klinge (+5 → +10 Wert), Hitze-Multiplikator und Sonnenzorns Spitzen-Lesart. Umgesetzt: **die Klinge liest `HEAT_MAX`, nie die verlängerte Leiste** — stärkster Build +10 → +5, normaler Build unverändert, die Rückkopplung bleibt halb so lang. Weißglut bewusst NICHT angefasst: dieselbe Verkopplung wie Wurzelgeflecht/Baumreihe in §6.31, wo die Baumreihe ungefragt von +112 auf +75 mitfiel; erst messen, dann entscheiden. Wächter gegengeprobt (offene Naht → 10 statt 5). UNGEMESSEN. |

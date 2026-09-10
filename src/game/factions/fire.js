@@ -164,15 +164,20 @@ export function schneiseMult(skills, skillTiers, heat, pos = -1) {
   return schneiseLane(skills, skillTiers, heat).includes(pos) ? mult : 1;
 }
 
-/* Kampfwert-Bonus der gespielten Karte (Zustand vor dem Stich): Glühende Klinge (+Wert je Hitze-Schritt, ohne Deckel),
+/* Kampfwert-Bonus der gespielten Karte (Zustand vor dem Stich): Glühende Klinge (+Wert je Hitze-Schritt),
    Rückzündung Episch (§7.24: die zündende Karte — wäre dieser Stich der N. Sieg in Folge, kämpft sie mit +Wert;
-   `winStreak` = Serie VOR dem Stich). (Feuerwalze ist seit §7.27 gestrichen — dieselbe Achse wie die Klinge.) */
+   `winStreak` = Serie VOR dem Stich). (Feuerwalze ist seit §7.27 gestrichen — dieselbe Achse wie die Klinge.)
+
+   §7.32 (Owner): die Klinge liest die PASSIV-Leiste (HEAT_MAX), nie die von Weißglut verlängerte. Sie ist der einzige
+   Feuer-Skill, der den Motor am EINGANG füttert — +Wert hebt den Vorsprung, der Vorsprung ist das Hitze-Einkommen —
+   und Weißglut verdoppelte ausgerechnet diese Rückkopplung (Episch +5 → +10 Wert). Mit dem Deckel bei HEAT_MAX
+   entkoppeln sich die zwei stärksten Feuer-Skills; die Rückkopplung bleibt, nur halb so lang. */
 export function fireValueBonus(heat, skills, skillTiers, { winStreak = 0 } = {}) {
   if (!heat || !heat.active) return 0;
   const value = heat.value || 0;
   let v = 0;
   const step = fireParam(skills, skillTiers, F.KLINGE, "perHeat");
-  if (step) v += Math.floor(value / step + 1e-9) * (fireParam(skills, skillTiers, F.KLINGE, "value") || 1);
+  if (step) v += Math.floor(Math.min(value, C.HEAT_MAX) / step + 1e-9) * (fireParam(skills, skillTiers, F.KLINGE, "value") || 1);
   const rz = fireParam(skills, skillTiers, F.RUECKZUENDUNG, "value");
   const every = fireParam(skills, skillTiers, F.RUECKZUENDUNG, "every");
   if (rz && every && ((winStreak || 0) + 1) % every === 0) v += rz;

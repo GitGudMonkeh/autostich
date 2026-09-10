@@ -203,7 +203,12 @@ describe("Feuer — Modul (reine Übergänge)", () => {
   it("fireValueBonus: Klinge je Schritt, Rückzündung Episch", () => {
     expect(fireValueBonus(heat({ value: 80 }), [F.KLINGE], {}, {})).toBe(2);
     expect(fireValueBonus(heat({ value: 100 }), [F.KLINGE], { [F.KLINGE]: 3 }, {})).toBe(5);
-    expect(fireValueBonus(heat({ value: 200 }), [F.KLINGE], { [F.KLINGE]: 3 }, {})).toBe(10);              // ohne Deckel
+    /* §7.32 (Owner): die Klinge liest die Passiv-Leiste, nie die von Weißglut verlängerte. Sie füttert als einziger
+       Feuer-Skill den Motor am EINGANG (+Wert → Vorsprung → Hitze), und Weißglut verdoppelte genau diese
+       Rückkopplung. Der Wächter hält die Entkopplung an ihrer schärfsten Stelle: volle 200er-Leiste, Episch. */
+    expect(fireValueBonus(heat({ value: 200 }), [F.KLINGE], { [F.KLINGE]: 3 }, {})).toBe(5);
+    expect(fireValueBonus(heat({ value: 200 }), [F.KLINGE, F.WEISSGLUT], { [F.KLINGE]: 3 }, {})).toBe(5); // auch mit dem Skill selbst
+    expect(fireValueBonus(heat({ value: C.HEAT_MAX }), [F.KLINGE], { [F.KLINGE]: 3 }, {})).toBe(5);       // … und schon bei 100 erreicht
     // §7.27: die Brandschneise hebt keinen Kampfwert (Feuerwalze ist gestrichen) — sie ist ein Faktor auf den Stich.
     expect(fireValueBonus(heat({ value: 100, lanes: [[0]] }), [F.BRANDSCHNEISE], {}, {})).toBe(0);
     // §7.24 Rückzündung Episch: die zündende Karte — wäre dieser Stich der N. Sieg in Folge, kämpft sie mit +2; nur Episch.
