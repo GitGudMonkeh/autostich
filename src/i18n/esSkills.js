@@ -52,7 +52,7 @@ export default {
   "ability.SK_LIGHTNING_07.name": "Racha de Carga",
   "ability.SK_LIGHTNING_07.desc": "Cada punto de racha otorga +1 % de probabilidad de crítico. Poco común +1,5 %, Rara +2 %, Épica +2,5 % — y a partir de racha 8 cada victoria da +1 carga.",
   "ability.SK_LIGHTNING_13.name": "Campo de Tensión",
-  "ability.SK_LIGHTNING_13.desc": "Si ganas con una carta que forma parte de una formación, la baza cuenta +0,3 % por cada acumulación de esa formación. Poco común +0,4 %, Rara +0,5 %, Épica +0,7 %, y la carta con menos acumulaciones de esa formación recibe +1.",
+  "ability.SK_LIGHTNING_13.desc": "Si ganas con una carta que forma parte de una formación, la baza cuenta +2 % por cada carta ionizada de esa formación. Poco común +3 %, Rara +4 %, Épica +6 %, y la carta con menos acumulaciones de esa formación recibe +1.",
   "ability.SK_LIGHTNING_14.name": "Arco",
   "ability.SK_LIGHTNING_14.desc": "Por cada 10 puntos de probabilidad de crítico por encima del 100 %: +0,02× de multiplicador de crítico mientras dure el exceso. Poco común +0,03×, Rara +0,04×, Épica +0,06×.",
   "ability.SK_LIGHTNING_03.name": "Rayo en Cadena",

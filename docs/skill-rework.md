@@ -8410,6 +8410,78 @@ Alles Owner-Entscheide, nichts davon umgesetzt:
 
 ---
 
+### 7.47 Spannungsfeld zählt Karten statt Stapel (2026-09-10, Owner) — umgesetzt, UNGEMESSEN
+
+**Owner-Entscheid** auf die zwei Vorschläge aus §7.46 G: nur Nummer 2 (die Streu-Bedingung nachbauen). Der weiche
+Crit-Deckel bleibt vorerst, wie er ist.
+
+#### A · Was sich ändert
+
+`lightFormMult` liest nicht mehr die Stapel**summe** der Formation, sondern die Zahl der ionisierten **Karten**.
+
+| Stufe | vorher (§7.43) | jetzt |
+| --- | --- | --- |
+| Normal | +0,3 % je Stapel | **+2 % je ionisierter Karte** |
+| Selten | +0,4 % | **+3 %** |
+| Sehr selten | +0,5 % | **+4 %** |
+| Episch | +0,7 % | **+6 %**, Anhang unverändert |
+
+Der Episch-Anhang (+1 Stapel auf die Karte mit den wenigsten Stapeln der Formation) bleibt Wort für Wort stehen —
+und passt jetzt erst richtig: er macht aus einer dunklen Karte eine leuchtende, also genau das, wofür der Skill
+zahlt. Vorher war er eine von vielen Stapelquellen unter anderen.
+
+#### B · Warum, in einer Zeile
+
+Eine Summe kann ins Unendliche wachsen, eine Kartenzahl nicht. Gemessen (§7.46 F, Runden 41–50):
+
+| | Median | p99 | Obergrenze |
+| --- | ---: | ---: | --- |
+| Stapelsumme der Formation | 24 | **1.423** | keine |
+| ionisierte Karten der Formation | 4 | 40 | **das Brett** |
+
+Damit hängt `lightMult` nicht mehr an der Tiefe EINER Karte und multipliziert sich nicht mehr mit den beiden anderen
+Stapel-Achsen (Basis-Score, Crit-Multiplikator). Aus dem kubischen Ausschlag aus §7.46 C wird ein quadratischer.
+
+#### C · Warum diese Sätze
+
+Der Satz je Karte ist so gewählt, dass der **Normalfall gleich bleibt und nur der Ausreißer fällt**:
+
+| | Median (4 Karten) | p90 (5) | Extremfall |
+| --- | ---: | ---: | ---: |
+| vorher, Episch 0,7 % je Stapel | +17 % | +76 % | **+996 %** |
+| jetzt, Episch 6 % je Karte | +24 % | +30 % | **+240 %** |
+
+#### D · Der Preis, offen benannt
+
+**Spät sättigt der Skill.** In den Runden 41–50 sind 4,40 von 4,60 Mitgliedern ohnehin ionisiert (§7.46 F) — dort
+ist „je ionisierter Karte" praktisch „je Formationsmitglied", und der Skill misst dann die Formationsgröße, nicht
+mehr die Streuung. Die Bedingung greift **früh und mittig** (Runden 21–30: 2,00 von 4,17). Das ist der Punkt, an dem
+die Obergrenze entsteht, aber es heißt auch: der Skill wird gegen Ende zu einem Formations-Skill.
+
+**Und der Umbau reicht nicht allein.** Er nimmt eine der beiden offenen Achsen heraus, nicht beide. Mit den echten
+Funktionen nachgerechnet, eine Karte mit S Stapeln:
+
+| S | vor §7.42 | §7.46-Stand (kubisch) | jetzt (quadratisch) | Rest gegenüber vorher |
+| ---: | ---: | ---: | ---: | ---: |
+| 100 | 63.200 | 132.286 | 96.491 | 1,53× |
+| 200 | 123.200 | 474.936 | 245.384 | 1,99× |
+| 400 | 243.200 | 2.177.552 | 710.570 | **2,92×** |
+
+**Blitz landet damit nicht wieder bei 416M.** Der Rest ist der weiche Crit-Deckel und steht weiter offen (§7.46 G 1);
+gerechnet, aber nicht gemessen, würde eine Rest-Steigung von 0,05 statt 0,20 den Faktor bei S = 400 auf 1,66× bringen.
+
+#### E · Wächter
+
+Drei, alle gegengeprobt, indem die Naht absichtlich auf die Stapelsumme zurückgedreht wurde — beide neuen fallen:
+
+- `lightFormMult` zählt Karten: dieselben drei Mitglieder einmal mit Stapelsumme 6 und einmal mit 501 geben
+  **denselben** Faktor; eine dunkle Karte zählt nicht mit; leuchtet keine, ist der Faktor 1,
+- derselbe Vergleich im Motor (`breakdown.lightMult` über `resolveTrick`, Deck hundertfach tiefer),
+- die Stufentabelle trägt `perCard` aufsteigend, und **`perStack` darf nicht zurückkommen** — das war die
+  Tiefen-Lesart, und ein stiller Rückfall dorthin würde keinen Text im Spiel ändern.
+
+---
+
 ### 5.30 Die Eis-Skills auf dem neuen Motor (2026-09-09) — gemessen, nichts umgesetzt
 
 **Owner:** „und dann schauen wir uns alle skills an die davon profitieren müssen und designen wie."
@@ -8827,3 +8899,4 @@ leichtesten haben.
 | 2026-09-10 | Der Chance-Überschuss wird sichtbar und zahlt dreifach (§7.44, Owner, Zahlen vorher abgenommen). Die Regel gab es schon (`overcritMult`, +0,01× je Punkt über 100 %, §7.28), sie war nur wirkungslos: unsichtbar (kein Text, keine Zeile) und vom weichen Deckel aus §7.42 auf ein Fünftel gedämpft — ausgerechnet für die Builds, die Chance über 100 % stapeln. `OVERCRIT_MULT_PER_PP` **0,01 → 0,03**, so gewählt, dass **5 Punkte Crit-Chance genau einen Stapel wert sind** (ION_CRIT_MULT_PER_STACK 0,15); linear, keine Treppe. Die Statusleiste zeigt die Chance jetzt höchstens 100 % (Owner: „darf nicht mehr über 100 % anzeigen") und den Überschuss als Unterzeile; `displayCritChance`/`critChanceOverPP` liegen als geteilte Helfer neben `totalCritMult`, derselbe Griff wie §7.39. **Beim Rechnen aufgefallen und notiert (§7.44 C): unterhalb eines Crit-Multiplikators von 4× ist ein Punkt ÜBER 100 % mehr wert als einer darunter** — eine echte Umkehrung des Anreizes, praktisch aber selten, weil wer über 100 % baut fast immer Stapel und damit einen hohen Multiplikator hat. Der alte Wächter (100 Punkte ≤ ein Achtel des Deckels) fällt bei 0,03 und wurde NICHT gelockert, sondern durch zwei Aussagen ersetzt, die noch stimmen (am Knick bleibt ein Punkt darüber schlechter als einer darunter; die Regel allein bleibt unter dem Knick). Zwei neue Anzeige-Wächter, beide gegengeprobt. Die Regel hat weiterhin keinen Deckel — bei 400 % Chance wären es +9×, das ist die Zahl für die Messung. |
 | 2026-09-10 | Die Anzeige zeigt die wirksame Stufe (§7.45, Owner: „überall bei dem Skill auch die neue Rarität angezeigt wird, Skillauswahl, Panels usw."). `tierOf` gab die GEWÜRFELTE Stufe, die Engine rechnet seit §7.39 über `boostedTier` — und das Badge war dabei das kleinere Problem: `skillDef(id, tier)` wählt auch den TEXT, ein von Hochspannung gehobener Skill zeigte „SELTEN" und beschrieb die Selten-Zahlen, während der Stich die Episch-Zahlen abrechnete. **Die Beschreibung log.** Neu `effectiveTierOf`/`tierIsLifted` in skills.js als EINE Quelle für alle Oberflächen (derselbe Griff wie `totalCritMult` §7.39 und `displayCritChance` §7.44); umgestellt sind gehaltene Skills, Skillauswahl (Bestand, Ersetzen-Liste UND Angebot — Owner: „dort auch schon anzeigen", über `boostedTier(state.skills, rolledTier)`, weil die Angebotsstufe in `skillOfferTiers` steht), Bauplan-Panel, Chronik-Detail und Lauf-Statistik. **Der Aufwert-Screen bleibt bewusst auf der gewürfelten Stufe** — dort ist sie der Preis, mit der wirksamen stünde ein gehobener Skill fälschlich auf „höchste Stufe" und `upgradeBuy` rechnete falsch. Die Marke ist ein gedämpftes „gehoben" neben dem Badge, Form wie das vorhandene „gehalten", kein neues Symbol. Drei Wächter, alle gegengeprobt, darunter einer, der prüft, dass keine der fünf Oberflächen wieder `tierOf` liest. |
 | 2026-09-10 | §7.42/§7.43/§7.44 nachgemessen (§7.46). Blitz-Mono, vier Varianten à 12.050 Läufe. Zuerst der Aufsetz-Fund: die Basis liegt VOR §7.42, es steckten also DREI Zahlenänderungen in der Messung, nicht zwei — diesmal getrennt statt wie in §7.41 vermischt. **Blitz mono 416M → 3.116M (7,5×)**, und der Schwanz ist das eigentliche Problem: p95/Median 8× → 120×, max/Median 172× → 1.138×. Das 2×2 über die zwei ENV-Regler zeigt: **mit beiden Deckeln zurück steht Blitz bei 523M gegen 416M Basis, Spannungsfeld allein kostet also +26 %** (misst dort +45 %, ein normaler Skill). §7.44 ist in keiner Zelle der Treiber (die zwei Zellen sagen ×3,2 und ×0,7 — der gierige Spieler lernt je Variante neu, unter Faktor 2 ist diese Reihe nicht interpretierbar; das ist die Rauschgrenze und sie ist jetzt beziffert). **Treiber ist der weiche Crit-Deckel, Zeuge ist Kettenblitz: +5 % → +601 % → +11 % mit den Deckeln zurück.** Ursache strukturell: ein Stapel zahlt jetzt auf DREI Achsen ohne Obergrenze (Basis-Score +75, Crit-Mult +0,15 seit §7.42 nur noch weich gedeckelt, `lightMult` +0,3–0,7 % neu aus §7.43), und die drei stehen als Produkt in der Formel — aus linear ist kubisch geworden. Mit den echten Funktionen nachgerechnet zahlt eine Karte mit 400 Stapeln 243.200 → 2.177.552, Faktor 8,95× und ohne Ende. **Dazu ein Konstruktionsfehler von mir in §7.43 C**: Spannungsfeld zahlt NICHT für gestreute Stapel — `formationStacks` bildet die Summe, und eine Summe unterscheidet nicht drei Karten mit je 20 von einer mit 60. Der Skill steht nicht gegen Kettenblitz, er multipliziert mit ihm; die Entscheidung, die Blitz fehlen sollte, ist nicht gebaut. Der Überschuss über 100 % gemessen (Sonde, 120 Läufe): 31 % der Stiche in den Runden 41–50, im Mittel 52 Punkte darüber = +1,56× — die §7.44-Sorge (400 % = +9×) tritt im gierigen Lauf nicht ein. Neue Sonde `spannungsfeld.mjs`. Nichts umgesetzt, vier offene Owner-Entscheide in §7.46 G. |
+| 2026-09-10 | Spannungsfeld zählt Karten statt Stapel (§7.47, Owner-Entscheid auf §7.46 G: nur Vorschlag 2, der weiche Crit-Deckel bleibt vorerst). `lightFormMult` liest nicht mehr die Stapel**summe** der Formation, sondern die Zahl der ionisierten **Karten**: **0,3/0,4/0,5/0,7 % je Stapel → 2/3/4/6 % je ionisierter Karte**, Episch-Anhang unverändert. Der Grund in einer Zeile: eine Summe wächst ins Unendliche (gemessen Median 24, p99 1.423), eine Kartenzahl ist durch das Brett begrenzt (Median 4, höchstens 40). Damit hängt `lightMult` nicht mehr an der Tiefe EINER Karte und multipliziert sich nicht mehr mit den zwei anderen Stapel-Achsen — aus dem kubischen Ausschlag aus §7.46 C wird ein quadratischer. Die Sätze sind so gewählt, dass der Normalfall bleibt und nur der Ausreißer fällt: Median +17 → +24 %, p90 +76 → +30 %, Extremfall **+996 → +240 %**. Der Episch-Anhang (+1 Stapel auf die dünnste Karte der Formation) passt jetzt erst richtig — er macht aus einer dunklen Karte eine leuchtende, also genau das, wofür der Skill zahlt. **Zwei Dinge offen benannt:** (a) spät SÄTTIGT der Skill, weil in den Runden 41–50 ohnehin 4,40 von 4,60 Mitgliedern ionisiert sind — dort misst er die Formationsgröße, nicht die Streuung; die Bedingung greift früh und mittig (Runden 21–30: 2,00 von 4,17). (b) Der Umbau nimmt EINE der zwei offenen Achsen heraus, nicht beide: bei 400 Stapeln zahlt der Stich weiterhin 2,92× so viel wie vor §7.42, **Blitz landet damit nicht wieder bei 416M**. Der Rest ist der weiche Crit-Deckel (§7.46 G 1, weiter offen); gerechnet, nicht gemessen, brächte eine Rest-Steigung 0,20 → 0,05 den Faktor auf 1,66×. Drei Wächter, alle gegengeprobt durch Zurückdrehen auf die Stapelsumme; einer davon hält fest, dass `perStack` nicht zurückkommen darf — ein stiller Rückfall dorthin würde keinen Text im Spiel ändern. UNGEMESSEN. |

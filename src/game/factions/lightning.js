@@ -15,8 +15,8 @@ import { SKILL_DEFS, activeLightningCount, isLegendarySkill, boostedTier } from 
    Stufe. Alle Funktionen sind immutabel: sie geben neue Objekte zurück und fassen ihre Eingaben nicht an.
    §7.18 (Blitz-Runde): Statische Aufladung und Dauerstrom sind in Blitzableiter aufgegangen, Ionenfeld (SK_LIGHTNING_02)
    und Vorentladung (SK_LIGHTNING_12) sind neu, Kettenblitz vertieft statt verbreitert, Blitzfänger hat keine Stapel-
-   Schwelle mehr. §7.43: SK_LIGHTNING_13 trägt das Spannungsfeld statt des Spannungsstaus — Formation × Stapel als
-   eigener Multiplikator auf den Stich. §7.19: Überschlag ist gestrichen (14 Skills). §7.24:
+   Schwelle mehr. §7.43: SK_LIGHTNING_13 trägt das Spannungsfeld statt des Spannungsstaus — ein eigener
+   Multiplikator auf den Formations-Sieg; §7.47 zählt er die ionisierten KARTEN der Formation, nicht ihre Stapel. §7.19: Überschlag ist gestrichen (14 Skills). §7.24:
    Überspannung macht den Überschuss eines Crits über dem Deckel zu Ladung (vorher Dauerwert je Leiste).
    ============================================================ */
 
@@ -219,15 +219,18 @@ export function formationStacks(card, posForm, slot, cardAt) {
 }
 
 /* Der einzige eigene MULTIPLIKATOR der Fraktion (Feuer hat fireMult, Pflanze plantMult, Blitz hatte keinen): der
-   Formations-Sieg zählt +Satz je Stapel der Formation. Gelesen wird die ECHTE Siegkarte, nicht die Resonanz-Sicht —
-   die trägt die Formationssumme schon, das wäre dieselbe Zahl zweimal. 1 ohne Skill, ohne Formation, inaktiv. */
+   Formations-Sieg zählt +Satz je IONISIERTER KARTE der Formation. Gelesen wird die ECHTE Siegkarte, nicht die
+   Resonanz-Sicht — die trägt die Formationssumme schon. 1 ohne Skill, ohne Formation, inaktiv.
+   §7.47: gezählt werden KARTEN, nicht Stapel. Über die Stapelsumme hing der Faktor an der Tiefe EINER Karte und
+   multiplizierte sich mit den zwei anderen Stapel-Achsen (Basis-Score, Crit-Mult) zu einem kubischen Ausschlag
+   (§7.46 C). Die Kartenzahl ist durch die Formation begrenzt, die Stapelsumme war es nicht. */
 export function lightFormMult(lightning, skills, skillTiers, card, posForm, slot, cardAt) {
   if (!lightning || !lightning.active) return 1;
-  const per = lightParam(skills, skillTiers, L.SPANNUNGSFELD, "perStack");
+  const per = lightParam(skills, skillTiers, L.SPANNUNGSFELD, "perCard");
   if (!per) return 1;
   const members = formationStacks(card, posForm, slot, cardAt);
   if (!members.length) return 1;
-  return 1 + per * members.reduce((s, m) => s + m.stacks, 0);
+  return 1 + per * members.filter((m) => m.stacks > 0).length;
 }
 
 /* Episch-Anhang: der Formations-Sieg lädt die Karte mit den wenigsten Stapeln seiner Formation nach (Gleichstand:

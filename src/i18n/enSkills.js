@@ -48,7 +48,7 @@ export default {
   "ability.SK_LIGHTNING_07.name": "Charge Streak",
   "ability.SK_LIGHTNING_07.desc": "Every streak point grants +1% crit chance. Uncommon +1.5%, Rare +2%, Epic +2.5% — and from streak 8 every win gives +1 charge.",
   "ability.SK_LIGHTNING_13.name": "Voltage Field",
-  "ability.SK_LIGHTNING_13.desc": "When you win with a card that stands in a formation, the trick counts +0.3% per stack in that formation. Uncommon +0.4%, Rare +0.5%, Epic +0.7%, and the card with the fewest stacks in that formation gains +1 stack.",
+  "ability.SK_LIGHTNING_13.desc": "When you win with a card that stands in a formation, the trick counts +2% per ionized card in that formation. Uncommon +3%, Rare +4%, Epic +6%, and the card with the fewest stacks in that formation gains +1 stack.",
   "ability.SK_LIGHTNING_14.name": "Arc-Over",
   "ability.SK_LIGHTNING_14.desc": "Per 10 points of crit chance above 100%: +0.02× crit multiplier while the excess lasts. Uncommon +0.03×, Rare +0.04×, Epic +0.06×.",
   "ability.SK_LIGHTNING_03.name": "Chain Lightning",
