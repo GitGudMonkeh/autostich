@@ -9290,6 +9290,102 @@ weil dieser Eintrag sonst einen Skill benennen würde, den es nicht mehr gibt. D
 
 ---
 
+### 7.60 Sonde vor dem Umbau: wie ionisiert ist die Karte, mit der man gewinnt? (2026-09-11) — gemessen, nichts umgesetzt
+
+Der Owner hat die Bauform für `SK_LIGHTNING_07` freigegeben („passt"): **Sieg mit einer Karte gibt +S Punkte
+Crit-Chance, je Stapel auf ihr D weniger; dafür zahlt jeder Stapel derselben Karte einen steigenden Bonus.** Offen
+war genau eine Zahl — der Abfall D. Er entscheidet, in welcher Runde der Skill sich selbst abschaltet, und das ist
+keine Geschmacksfrage: bleibt er spät stehen, schiebt er über die 100-%-Klemme, und jeder Punkt darüber wird über
+`OVERCRIT_MULT_PER_PP` (0,03) zum Crit-MULTIPLIKATOR. Ein Kaltstart-Skill, der still ein später Multiplikator wird,
+ist genau der Fehler aus §7.46.
+
+`sim/probes/zuendspannung.mjs`, 60 Läufe je Seed-Satz (1 und 101). Die Blocktabellen sind direkte Beobachtungen und
+nach §7.53 zwischen Seed-Sätzen stabil — sie sind es auch hier.
+
+#### A · Die Verteilung, Seed-Satz 1 (101 in Klammern, wo er abweicht)
+
+Stapel auf der **gespielten Karte bei Sieg**:
+
+| Runden | Ø roh | Median | p90 | Ø wirksam | Siege ohne Stapel |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 1–10 | 0,1 | 0 | 0 | 0,1 | **95 %** (96) |
+| 11–20 | 0,7 | 0 | 2 | 0,7 | 72 % (74) |
+| 21–30 | 3,0 | 1 | 6 | 3,7 | 35 % (35) |
+| 31–40 | 10,0 (7,2) | 4 | 18 (15) | 13,1 (11,7) | 9 % (8) |
+| 41–50 | 27,1 (19,7) | **15** (12) | 49 (36) | 43,5 (37,0) | 2 % (1) |
+
+Drei Dinge stehen darin, und zwei davon hatte ich anders erwartet:
+
+1. **Früh ist das Deck praktisch leer: 95 % der Siege in den Runden 1–10 laufen über eine Karte mit NULL Stapeln.**
+   Der Skill zündet dort also nicht „meistens", sondern fast immer, und mit vollem Satz.
+2. **Die Verteilung ist stark schief.** Spät steht der Mittelwert bei 27,1, der Median aber bei 15 — die tiefe
+   Karte ist EINE unter vierzig, und man spielt sie selten. Meine Hochrechnung „~16" in der letzten Runde traf
+   zufällig den Median und war als Mittelwert bezeichnet; das war unsauber.
+3. **Kurzschluss verschiebt spät massiv**: wirksam 43,5 gegen roh 27,1. Wer ihn hält, lässt den Skill deutlich
+   früher auslaufen — das ist stimmig, die beiden Skills sind Gegenspieler.
+
+#### B · Der Abfall ist ein SCHWACHER Regler — der Satz ist der starke
+
+Was bei Satz 40 übrig bleibt (Ø über alle Siege des Blocks / Anteil der Siege, auf denen überhaupt noch etwas
+ankommt), Seed-Satz 1:
+
+| Runden | D=3 | D=4 | D=5 | D=6 |
+| --- | ---: | ---: | ---: | ---: |
+| 1–10 | 39,8 / 100 % | 39,7 / 100 % | 39,6 / 100 % | 39,6 / 100 % |
+| 11–20 | 38,0 / 99 % | 37,4 / 99 % | 36,9 / 98 % | 36,4 / 98 % |
+| 21–30 | 33,0 / 94 % | 31,6 / 92 % | 30,4 / 91 % | 29,2 / 90 % |
+| 31–40 | 21,1 / 75 % | 18,7 / 66 % | 16,8 / 62 % | 15,2 / 60 % |
+| 41–50 | 5,3 / 25 % | 4,2 / 17 % | 3,6 / 15 % | 3,1 / 14 % |
+
+**Zwischen D=3 und D=6 liegen über den ganzen Lauf höchstens 6 Punkte.** Der Grund steht in A: die Verteilung ist
+zweigipflig — früh null Stapel (voller Satz, egal welcher Abfall), spät so viele, dass jeder Abfall den Satz
+auffrisst. Der Abfall entscheidet fast nur über die Runden 31–40.
+
+Damit ist der Regler, an dem man dreht, **der Satz S**, nicht der Abfall. Der Abfall bekommt deshalb eine Regel
+statt einer eigenen Leiter: **D = S/10**, jede Stufe endet bei 10 wirksamen Stapeln.
+
+#### C · Was das mit der Crit-Chance macht
+
+Roh-Chance je Block aus dem `blitz-ramp`-Lauf zu §7.57 (also vor §7.58), plus der Rest bei S=40 / D=4:
+
+| Runden | Roh-Chance | + Skill | zusammen |
+| --- | ---: | ---: | ---: |
+| 1–10 | 15,5 % | +39,7 | **55,2 %** |
+| 11–20 | 27,6 % | +37,4 | 65,0 % |
+| 21–30 | 45,9 % | +31,6 | 77,5 % |
+| 31–40 | 69,6 % | +18,7 | 88,3 % |
+| 41–50 | 91,5 % | +4,2 | **95,7 %** |
+
+Die Kurve tut genau, was sie soll: **früh das Dreieinhalbfache, spät nichts mehr**, und sie stößt nirgends an die
+100-%-Klemme. Die Overcrit-Sorge aus dem Entwurf ist damit ausgeräumt — nicht durch einen scharfen Abfall, sondern
+weil die tiefen Karten spät von selbst alles auffressen.
+
+**Eine Einschränkung, die die Tabelle nicht zeigen kann:** sie überlagert einen Skill über ein Deck, das OHNE ihn
+gemessen wurde. Mit ihm gibt es früh mehr Crits → mehr volle Leisten → schneller tiefe Karten, der Abfall greift
+also früher als hier abgelesen. Selbstbegrenzend, aber die Tabelle unterschätzt das Tempo der Selbstabschaltung.
+
+#### D · Die Leiter, die daraus folgt
+
+| Stufe | Satz S | Abfall D | Bonus je Stapel |
+| --- | ---: | ---: | ---: |
+| Normal | 20 | 2 | +10 Basis-Score |
+| Selten | 30 | 3 | +15 |
+| Sehr selten | 40 | 4 | +20 |
+| Episch | 50 | 5 | +30 |
+
+Die steigende Hälfte bleibt bewusst **Basis-Score je Stapel** und damit additiv: alles Multiplikative wäre eine
+dritte Achse auf demselben Stapel, und das war der kubische Weglauf aus §7.46. Größe: spät (Ø 43,5 wirksame Stapel)
+gibt Episch +1.305 auf eine Basis von rund 3.660, also gut ein Drittel mehr; Normal +435, also gut ein Achtel.
+
+**Zwei Dinge, die man vor der Messung wissen muss.** Erstens ist schon **Normal der größte frühe Hebel, den die
+Fraktion je hatte** — +20 Punkte auf eine Basis von 15,5 % sind mehr als eine Verdopplung, auf 95 % der frühen
+Siege; die ganze Fraktion wird sich bewegen, nicht nur dieser Skill. Zweitens steht er **gegen Lichtbogen**, der
+Crit-Chance STEIGEND je Stapel gibt: dieselbe Achse, derselbe Eingang, entgegengesetztes Vorzeichen.
+
+Nichts umgesetzt. Eine neue Sonde im Baum.
+
+---
+
 ### 5.30 Die Eis-Skills auf dem neuen Motor (2026-09-09) — gemessen, nichts umgesetzt
 
 **Owner:** „und dann schauen wir uns alle skills an die davon profitieren müssen und designen wie."
@@ -9720,3 +9816,4 @@ leichtesten haben.
 | 2026-09-10 | §7.56 nachgemessen (§7.57), beide Seed-Sätze plus Rampen-Sonde. **Im Score die dritte Null: Spannungsfeld +0 % / −2 %** — damit drei Bauformen und drei Nullen (eigener Score-Multiplikator §7.43/§7.47, Crit-Chance je ionisierter Karte §7.51/§7.54, Crit-Chance je Formation §7.56). Die Fraktion bewegt sich auch nicht (1.295M/613M gegen 792M/1.196M davor, überlappende Paare, also Rauschen). **In der RAMPE ist der Zweck dagegen erfüllt:** `blitz-ramp` misst die Median-Runde, in der die Crit-Chance 25 % erreicht, bei **10 statt 14 — vier Runden früher**; 5. volle Leiste Runde 15 → 14, 10. Leiste 22 → 21, volle Leisten je Lauf 150,1 → 163,1, Stapel auf dem Deck 633,7 → 979,4, Crit-Chance in den Runden 21–30 41,7 → 45,9 %. Nicht getrennt: darin stecken §7.54 (Blitzschlag) und §7.56 zusammen; Blitzschlag braucht Crits zum Zünden und kann den Anstieg in den Runden 1–10 kaum verursacht haben, der frühe Teil ist also plausibel das Feld — eine Zuordnung, keine Messung, trennbar mit einem Lauf ohne das Feld. **Der methodische Kern: der Score eines Laufs wächst exponentiell, die Runden 41–50 tragen ihn fast allein — ein Skill, der nur früh hilft, ist im Median-Score praktisch unsichtbar.** Die Ablation, das Werkzeug dieser ganzen Reihe, ist für Früh-Skills das falsche Maß; die richtige Kennzahl ist der Meilenstein, nicht der Endstand. Das gilt rückwirkend für jede „0 %"-Aussage über einen Skill, dessen Wirkung vorne liegt — bei Blitz sind das Spannungsfeld und, dem Mechanismus nach, auch Gewitterfront. Konkret: bei Normal (5 %) und rund 1,4 Formationen sind es +7 Punkte Crit-Chance auf einem Formations-Sieg, und das ist gut ein Drittel der Stiche. Owner-Entscheid offen: Satz deutlich hoch (er wird ein ausgesprochener Früh-Skill) oder so lassen und akzeptieren, dass er eine Rampenhilfe ist, die die Ablation nicht sieht. |
 | 2026-09-10 | Spannungsfeld zählt nur noch ZAHLENDE Formationen (§7.58, Owner zu §7.57 D: „Rampenhilfe und nur mit vollen formations zahlen arbeiten, das macht sonst kein Sinn für den Spieler"). Zwei Entscheide in einem Satz: der **Satz bleibt** (5/7/10/15 %, also die Rampenhilfe statt des großen Früh-Skills), und der **Kennwert wird enger**. Statt `positionFormations` (§7.56, Formationen mit Mitgliedern) liest der Skill jetzt `activeFormationCount` aus formations.js — Formationen mit **Faktor > 1**. Die faktionseigene Zählung ist damit raus. **Warum diese und keine engere:** es ist die Zahl, die der Stich dem Spieler ANZEIGT (`Battlefield.jsx` filtert seine Formations-Anzeige mit genau `factor > 1`) und die **Brennpunkt** („in mindestens 3 gleichzeitigen Formationen") und **Feuerlinie** („je Formation an der Siegposition") schon lesen — eine Lesart von „Formation" im ganzen Spiel statt einer dritten. Verworfen: echte Läufe UND Faktor > 1, knapper, aber genau die dritte Lesart. Der Skilltext bleibt wortgleich, weil die beiden anderen Skills „Formation" ebenfalls ohne Zusatz schreiben — kein Katalog-Diff, kein `loc:export`. **Die Höhe ist ungemessen und die zwei Änderungen ziehen gegeneinander:** abwärts fällt jede Mitgliedschaft mit Ordinal 1 weg (`escalatingFactor` gibt bis Ordinal 2 den Faktor 1, `wiederholungFactor` bis Ordinal 1), aufwärts zählen Anker, Nachhall, Kern und Grenzbonus jetzt mit, sobald sie zahlen. Der gemessene Ausgangswert 1,38–1,73 Formationen je Position (§7.55 A) gilt damit nicht mehr; die richtige Sonde wäre nach §7.57 C die Rampe (`blitz-ramp`), nicht die Ablation. Wächter fährt den Unterschied durch die ganze Kette (Position 0 ist Mitglied des Wiederholungs-Laufs, bekommt aber Ordinal 1 und damit Faktor 1 → keine Crit-Chance; Position 1 zahlt einen Satz) und ist gegengeprobt, indem die alte Mitglieder-Zählung wieder in engine.js eingesetzt wurde: er fällt mit 0,16 gegen 0,11. UNGEMESSEN. |
 | 2026-09-10 | **Streuung ersetzt den Serienschutz** auf `SK_LIGHTNING_17` (§7.59, Owner: „3a"). Damit ist der letzte Blitz-Skill weg, der auf eine NIEDERLAGE reagierte (Owner-Regel §7.31) und mit LADUNG bezahlte, dem Engpass der Fraktion; Slot und Emblem bleiben. **Der Grund steht in der Messung:** das Deck bekommt Ø 979 Stapel je Lauf, davon liegen Ø 241 auf EINER Karte (§7.57) — die Fraktion konzentriert (Kettenblitz auf die tiefste, Blitzschlag auf die Siegkarte), und nichts arbeitete dagegen. Die Streuung ist das Gegenstück eine Ebene daneben: **Kettenblitz sucht die Tiefe, die Streuung die Breite**, beide an derselben vollen Leiste, beide nach dem Passiv. Gebaut: jede volle Leiste ionisiert zusätzlich die `cards` Karten mit den WENIGSTEN Stapeln (Gleichstand → kleinerer Deck-Index, §9), Leiter 1/2/3/4, Episch gibt einer Karte OHNE Stapel 2 Stapel statt einem, Doppelentladung verdoppelt wie bei jeder Ionisierung. **Die eigentliche Entscheidung ist der Dauerwert:** „ionisieren" heißt im Passiv Stapel PLUS dauerhaft +ION_VALUE_PER_BAR, Kettenblitz sagt bewusst nur „+X Stapel" — die Streuung sagt „ionisiert" und tut deshalb beides, denn ohne den Wert lägen die Stapel auf Karten, die den Stich nie gewinnen, und genau daran misst Blitzfänger seit drei Runden 0 % (§7.54 D). **Die Höhe ist offen und ungemessen:** bei Ø 163 Leisten je Lauf gibt Normal ~163 Dauerwert (so viel wie das Passiv selbst), Episch ~652 (Ø +16 je Karte auf einstellige Kartenwerte). Das ist der Hebel, an dem zuerst gedreht wird; die zwei Griffe stehen fest (Leiter kürzen auf 1/2/2/3, oder den Dauerwert nur auf die erste gestreute Karte legen), beide nach der Messung. Mitgegangen: `serienschutzCount`/`serienschutzRound` aus dem Substate, der Serienschutz-Zweig aus `lightningOnLoss` (`streakHeld` bleibt und ist immer false), `lightningCycleEnd` samt Engine-Aufruf, `malWort` aus skills.js. Wächter: Modul (trifft die Dünnsten, ionisiert wirklich, Episch nur auf leeren) und Engine (Leiste ionisiert die dünnste Karte mit Stapel und Wert; Niederlage hält die Serie nicht und kostet keine Ladung), dazu eine Schleife über ALLE Blitz-IDs auf Episch, die zeigt, dass keine die Serie hält. Beide gegengeprobt (Dauerwert entfernt → fällt; Sortierung auf die Tiefsten gedreht → fällt). Nebenbefund, nicht behoben: `enSkills.js` ist über die ganze Blitz-Fraktion veraltet (SK_LIGHTNING_04 heißt dort „Overvoltage", SK_LIGHTNING_11 trägt den Text von vor §7.18, der gestrichene Donnergott steht noch drin); angefasst ist nur SK_LIGHTNING_17. STARTWERTE, UNGEMESSEN. |
+| 2026-09-11 | Sonde vor dem Umbau von `SK_LIGHTNING_07` (§7.60, Owner: „passt. miss"). Die Bauform ist frei — Sieg gibt +S Punkte Crit-Chance, je Stapel auf der gespielten Karte D weniger, dafür ein mit den Stapeln STEIGENDER Bonus — offen war nur der Abfall D, und der ist keine Geschmacksfrage: bleibt der Satz spät stehen, schiebt er über die 100-%-Klemme, und jeder Punkt darüber wird über OVERCRIT_MULT_PER_PP zum Crit-MULTIPLIKATOR (der Fehler aus §7.46). `sim/probes/zuendspannung.mjs`, 60 Läufe je Seed-Satz (1 und 101), beide decken sich. **Befund 1: früh ist das Deck praktisch leer — 95 % der Siege in den Runden 1–10 laufen über eine Karte mit NULL Stapeln**, der Skill zündet dort also fast immer mit vollem Satz. **Befund 2: die Verteilung ist stark schief** — spät (41–50) Ø 27,1 Stapel auf der Siegkarte, Median aber nur 15; die tiefe Karte ist EINE unter vierzig und wird selten gespielt. Meine Hochrechnung „~16" aus der Vorrunde traf zufällig den Median und war als Mittelwert bezeichnet, das war unsauber. Kurzschluss verschiebt spät massiv (wirksam 43,5 gegen roh 27,1) und lässt den Skill damit früher auslaufen — stimmig, die beiden sind Gegenspieler. **Befund 3, der wichtigste: der Abfall ist ein SCHWACHER Regler.** Zwischen D=3 und D=6 liegen über den ganzen Lauf höchstens 6 Punkte, weil die Verteilung zweigipflig ist (früh null Stapel → voller Satz egal welcher Abfall; spät so viele, dass jeder Abfall den Satz auffrisst); er entscheidet fast nur über die Runden 31–40. Der starke Regler ist der SATZ. Der Abfall bekommt deshalb eine Regel statt einer Leiter: **D = S/10**, jede Stufe endet bei 10 wirksamen Stapeln. Überlagert auf die Roh-Chance aus dem `blitz-ramp`-Lauf zu §7.57 ergibt S=40/D=4: 15,5 → 55,2 % (1–10), 45,9 → 77,5 % (21–30), 91,5 → 95,7 % (41–50) — **früh das Dreieinhalbfache, spät nichts mehr, und nirgends an der 100-%-Klemme**; die Overcrit-Sorge ist damit ausgeräumt, nicht durch scharfen Abfall, sondern weil die tiefen Karten spät von selbst alles auffressen. Einschränkung: die Tabelle überlagert einen Skill über ein Deck, das OHNE ihn gemessen wurde — mit ihm gibt es früh mehr Crits, also schneller tiefe Karten, der Abfall greift früher als abgelesen. Vorgeschlagene Leiter: Satz 20/30/40/50, Abfall 2/3/4/5, steigende Hälfte +10/15/20/30 Basis-Score je Stapel (bewusst additiv — alles Multiplikative wäre die dritte Achse auf demselben Stapel). Zwei Warnungen: schon **Normal ist der größte frühe Hebel, den die Fraktion je hatte** (+20 auf eine Basis von 15,5 %, auf 95 % der frühen Siege — die ganze Fraktion wird sich bewegen), und der Skill steht **gegen Lichtbogen**, der auf derselben Achse und demselben Eingang STEIGEND zahlt. Nichts umgesetzt. |
