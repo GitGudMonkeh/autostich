@@ -9447,6 +9447,102 @@ Startwerte, UNGEMESSEN.
 
 ---
 
+### 7.62 §7.58/§7.59/§7.61 nachgemessen — und eine Kennzahl, die endlich stabil ist (2026-09-11) — gemessen
+
+Beide Seed-Sätze (1 und 101), dazu die Rampen-Sonde auf beiden. Drei Umbauten stecken zusammen darin
+(Spannungsfeld auf zahlende Formationen, Streuung, Zündspannung); getrennt sind sie nicht.
+
+#### A · Der methodische Fund: die DUELL-Mediane sind stabil, die Explore-Mediane nicht
+
+Derselbe Bau, zwei Seed-Sätze:
+
+| | Seed 1 | Seed 101 | Spreizung |
+| --- | ---: | ---: | ---: |
+| Explore-Median (vor dieser Runde) | 969.654.891 | 533.056.799 | **1,82×** |
+| Duell-Median Blitz (vor dieser Runde) | 17,2 Mio | 17,5 Mio | **1,02×** |
+
+§7.53 hat die Rauschgrenze am **Explore**-Median gemessen und daraus geschlossen, die ganze Messreihe stehe auf
+Sand. Das war für den Explore-Median richtig und für die Fraktions-Bilanz falsch: der **Duell-Median** (`cross`,
+feste Policy, 500 Läufe je Kombination) schwankt um 2 %. Feuer, Eis und Pflanze kommen in beiden Sätzen
+praktisch identisch heraus (8,8/8,9 · 6,4/6,4 · 15,6/16,0 Mio), obwohl an ihnen nichts geändert wurde — genau das,
+was eine belastbare Kennzahl tun muss.
+
+**Ab hier ist der Duell-Median die Bilanzzahl der Fraktion, nicht der Explore-Median.**
+
+#### B · Die Bilanz: Blitz ist um die Hälfte gestiegen und steht bei 3× Feuer
+
+| | vorher | jetzt | |
+| --- | ---: | ---: | ---: |
+| Blitz (Duell-Median) | 17,2 / 17,5 Mio | **28,0 / 25,9 Mio** | **+63 % / +48 %** |
+| Blitz zu Feuer | 1,96 / 1,97× | **3,18 / 2,92×** | |
+| Feuer | 8,8 / 8,9 Mio | 8,8 / 8,9 Mio | unverändert |
+| Eis | 6,4 / 6,4 Mio | 6,4 / 6,4 Mio | unverändert |
+| Pflanze | 15,6 / 16,0 Mio | 15,6 / 16,0 Mio | unverändert |
+
+Die Warnung aus §7.60 D ist eingetreten, und zwar in der vorhergesagten Größenordnung. **Blitz braucht eine
+Tarierung**, bevor irgendetwas anderes an der Fraktion passiert.
+
+#### C · Je Skill: unlesbar, und diesmal ist das der Befund
+
+| Skill | gehalten 1 / 101 | Effekt 1 / 101 |
+| --- | ---: | ---: |
+| Streuung | **100 / 100 %** | +20 / +77 % |
+| Zündspannung | 97 / 32 % | +7 / +14 % |
+| Lichtbogen | 98 / 94 % | +107 / +3 % |
+| Spannungsfeld | 15 / 64 % | −0 / −0 % |
+| Gewitterfront | 31 / 86 % | 0 / 0 % |
+| Blitzfänger | 98 / 61 % | −2 / −2 % |
+
+**Die HALTEQUOTE schwankt zwischen Seed-Sätzen stärker als der Effekt** — 15 gegen 64 %, 97 gegen 32 %, 31 gegen
+86 %. Das ist neu: §7.53 hatte nur die Effekte als verrauscht ausgewiesen. Auf dem jetzigen Kraftniveau ist die
+Ablation als Einzelurteil unbrauchbar.
+
+Ich habe das in dieser Runde selbst vorgeführt: nach Seed-Satz 1 stand hier zuerst „Spannungsfeld ist eingebrochen,
+Haltequote 78 → 15 %". Seed-Satz 101 sagt 64 %. **Ein Einzellauf, gelesen wie ein Ergebnis** — derselbe Fehler, den
+§7.53 beschrieben hat, zwei Abschnitte nach der Beschreibung.
+
+Was übrig bleibt, weil es in beiden Sätzen gleich steht: **Streuung, 100 % Haltequote, klar positiv.** Sie ist
+plausibel der Hauptposten des Anstiegs aus B — eine Zuordnung, keine Messung.
+
+#### D · Die Rampe: ein bis zwei Runden, und eine unbequeme Erklärung
+
+`blitz-ramp`, 60 Läufe je Satz, gegen den Referenzlauf zu §7.57:
+
+| | vorher | jetzt (1 / 101) |
+| --- | ---: | ---: |
+| Crit-Chance Runden 1–10 | 15,5 % | 17,2 / 19,4 % |
+| Crit-Chance Runden 21–30 | 45,9 % | **53,0 / 53,8 %** |
+| 25-%-Marke | Runde 10 | **9 / 9** |
+| 5. volle Leiste | Runde 14 | **13 / 13** |
+| 10. volle Leiste | Runde 21 | **19 / 19** |
+| Stapel auf dem Deck | 979 | **1.426 / 1.099** |
+
+Die Meilensteine wandern ein bis zwei Runden nach vorn, konsistent in beiden Sätzen. Die Stapel auf dem Deck
+springen um 12 bis 46 % — das ist die Streuung.
+
+**Aber die Runden 1–10 bewegen sich kaum**, obwohl die Zündspannung dort +20 bis +50 Punkte verspricht. Die
+Sonde sagt warum, in einer Spalte, die ich bis jetzt überlesen habe:
+
+> **In den Runden 1–10 hält ein Lauf im Mittel 1,7 Blitz-Skills.** (11–20: 4,1 · 21–30: 6,5 · 41–50: 11,4)
+
+**Der Kaltstart einer Fraktion lässt sich nicht durch einen Skill beheben, weil man in den Kaltstart-Runden noch
+keinen Skill hat.** Das gilt für die Zündspannung, es galt für das Spannungsfeld (§7.56/§7.57), und es erklärt
+rückwirkend, warum drei Anläufe auf den frühen Blitz alle klein ausfielen. Wer die Runden 1–10 wirklich heben
+will, muss ans PASSIV oder ans Angebotstempo, nicht an einen Skill.
+
+#### E · Was zu tun ist
+
+Tarieren, und der erste Griff ist der, den §7.59 C schon benannt hat: **Streuungs Leiter**. Sie ist der einzige
+Skill mit stabilem Signal, sie wird zu 100 % gehalten, und ihr Episch gibt bei Ø 150 Leisten rund 650 Punkte
+Dauerwert je Lauf — das Vierfache des Passivs. Zwei Griffe stehen bereit: die Leiter auf 1/1/2/3 kürzen, oder den
+Dauerwert nur auf die ERSTE gestreute Karte legen und den Rest bei Stapeln lassen.
+
+Zweiter Griff, falls das nicht reicht: der Satz der Zündspannung (nach §7.60 B der starke Regler des Skills).
+
+Owner-Entscheid offen.
+
+---
+
 ### 5.30 Die Eis-Skills auf dem neuen Motor (2026-09-09) — gemessen, nichts umgesetzt
 
 **Owner:** „und dann schauen wir uns alle skills an die davon profitieren müssen und designen wie."
@@ -9878,3 +9974,4 @@ leichtesten haben.
 | 2026-09-10 | Spannungsfeld zählt nur noch ZAHLENDE Formationen (§7.58, Owner zu §7.57 D: „Rampenhilfe und nur mit vollen formations zahlen arbeiten, das macht sonst kein Sinn für den Spieler"). Zwei Entscheide in einem Satz: der **Satz bleibt** (5/7/10/15 %, also die Rampenhilfe statt des großen Früh-Skills), und der **Kennwert wird enger**. Statt `positionFormations` (§7.56, Formationen mit Mitgliedern) liest der Skill jetzt `activeFormationCount` aus formations.js — Formationen mit **Faktor > 1**. Die faktionseigene Zählung ist damit raus. **Warum diese und keine engere:** es ist die Zahl, die der Stich dem Spieler ANZEIGT (`Battlefield.jsx` filtert seine Formations-Anzeige mit genau `factor > 1`) und die **Brennpunkt** („in mindestens 3 gleichzeitigen Formationen") und **Feuerlinie** („je Formation an der Siegposition") schon lesen — eine Lesart von „Formation" im ganzen Spiel statt einer dritten. Verworfen: echte Läufe UND Faktor > 1, knapper, aber genau die dritte Lesart. Der Skilltext bleibt wortgleich, weil die beiden anderen Skills „Formation" ebenfalls ohne Zusatz schreiben — kein Katalog-Diff, kein `loc:export`. **Die Höhe ist ungemessen und die zwei Änderungen ziehen gegeneinander:** abwärts fällt jede Mitgliedschaft mit Ordinal 1 weg (`escalatingFactor` gibt bis Ordinal 2 den Faktor 1, `wiederholungFactor` bis Ordinal 1), aufwärts zählen Anker, Nachhall, Kern und Grenzbonus jetzt mit, sobald sie zahlen. Der gemessene Ausgangswert 1,38–1,73 Formationen je Position (§7.55 A) gilt damit nicht mehr; die richtige Sonde wäre nach §7.57 C die Rampe (`blitz-ramp`), nicht die Ablation. Wächter fährt den Unterschied durch die ganze Kette (Position 0 ist Mitglied des Wiederholungs-Laufs, bekommt aber Ordinal 1 und damit Faktor 1 → keine Crit-Chance; Position 1 zahlt einen Satz) und ist gegengeprobt, indem die alte Mitglieder-Zählung wieder in engine.js eingesetzt wurde: er fällt mit 0,16 gegen 0,11. UNGEMESSEN. |
 | 2026-09-10 | **Streuung ersetzt den Serienschutz** auf `SK_LIGHTNING_17` (§7.59, Owner: „3a"). Damit ist der letzte Blitz-Skill weg, der auf eine NIEDERLAGE reagierte (Owner-Regel §7.31) und mit LADUNG bezahlte, dem Engpass der Fraktion; Slot und Emblem bleiben. **Der Grund steht in der Messung:** das Deck bekommt Ø 979 Stapel je Lauf, davon liegen Ø 241 auf EINER Karte (§7.57) — die Fraktion konzentriert (Kettenblitz auf die tiefste, Blitzschlag auf die Siegkarte), und nichts arbeitete dagegen. Die Streuung ist das Gegenstück eine Ebene daneben: **Kettenblitz sucht die Tiefe, die Streuung die Breite**, beide an derselben vollen Leiste, beide nach dem Passiv. Gebaut: jede volle Leiste ionisiert zusätzlich die `cards` Karten mit den WENIGSTEN Stapeln (Gleichstand → kleinerer Deck-Index, §9), Leiter 1/2/3/4, Episch gibt einer Karte OHNE Stapel 2 Stapel statt einem, Doppelentladung verdoppelt wie bei jeder Ionisierung. **Die eigentliche Entscheidung ist der Dauerwert:** „ionisieren" heißt im Passiv Stapel PLUS dauerhaft +ION_VALUE_PER_BAR, Kettenblitz sagt bewusst nur „+X Stapel" — die Streuung sagt „ionisiert" und tut deshalb beides, denn ohne den Wert lägen die Stapel auf Karten, die den Stich nie gewinnen, und genau daran misst Blitzfänger seit drei Runden 0 % (§7.54 D). **Die Höhe ist offen und ungemessen:** bei Ø 163 Leisten je Lauf gibt Normal ~163 Dauerwert (so viel wie das Passiv selbst), Episch ~652 (Ø +16 je Karte auf einstellige Kartenwerte). Das ist der Hebel, an dem zuerst gedreht wird; die zwei Griffe stehen fest (Leiter kürzen auf 1/2/2/3, oder den Dauerwert nur auf die erste gestreute Karte legen), beide nach der Messung. Mitgegangen: `serienschutzCount`/`serienschutzRound` aus dem Substate, der Serienschutz-Zweig aus `lightningOnLoss` (`streakHeld` bleibt und ist immer false), `lightningCycleEnd` samt Engine-Aufruf, `malWort` aus skills.js. Wächter: Modul (trifft die Dünnsten, ionisiert wirklich, Episch nur auf leeren) und Engine (Leiste ionisiert die dünnste Karte mit Stapel und Wert; Niederlage hält die Serie nicht und kostet keine Ladung), dazu eine Schleife über ALLE Blitz-IDs auf Episch, die zeigt, dass keine die Serie hält. Beide gegengeprobt (Dauerwert entfernt → fällt; Sortierung auf die Tiefsten gedreht → fällt). Nebenbefund, nicht behoben: `enSkills.js` ist über die ganze Blitz-Fraktion veraltet (SK_LIGHTNING_04 heißt dort „Overvoltage", SK_LIGHTNING_11 trägt den Text von vor §7.18, der gestrichene Donnergott steht noch drin); angefasst ist nur SK_LIGHTNING_17. STARTWERTE, UNGEMESSEN. |
 | 2026-09-11 | Sonde vor dem Umbau von `SK_LIGHTNING_07` (§7.60, Owner: „passt. miss"). Die Bauform ist frei — Sieg gibt +S Punkte Crit-Chance, je Stapel auf der gespielten Karte D weniger, dafür ein mit den Stapeln STEIGENDER Bonus — offen war nur der Abfall D, und der ist keine Geschmacksfrage: bleibt der Satz spät stehen, schiebt er über die 100-%-Klemme, und jeder Punkt darüber wird über OVERCRIT_MULT_PER_PP zum Crit-MULTIPLIKATOR (der Fehler aus §7.46). `sim/probes/zuendspannung.mjs`, 60 Läufe je Seed-Satz (1 und 101), beide decken sich. **Befund 1: früh ist das Deck praktisch leer — 95 % der Siege in den Runden 1–10 laufen über eine Karte mit NULL Stapeln**, der Skill zündet dort also fast immer mit vollem Satz. **Befund 2: die Verteilung ist stark schief** — spät (41–50) Ø 27,1 Stapel auf der Siegkarte, Median aber nur 15; die tiefe Karte ist EINE unter vierzig und wird selten gespielt. Meine Hochrechnung „~16" aus der Vorrunde traf zufällig den Median und war als Mittelwert bezeichnet, das war unsauber. Kurzschluss verschiebt spät massiv (wirksam 43,5 gegen roh 27,1) und lässt den Skill damit früher auslaufen — stimmig, die beiden sind Gegenspieler. **Befund 3, der wichtigste: der Abfall ist ein SCHWACHER Regler.** Zwischen D=3 und D=6 liegen über den ganzen Lauf höchstens 6 Punkte, weil die Verteilung zweigipflig ist (früh null Stapel → voller Satz egal welcher Abfall; spät so viele, dass jeder Abfall den Satz auffrisst); er entscheidet fast nur über die Runden 31–40. Der starke Regler ist der SATZ. Der Abfall bekommt deshalb eine Regel statt einer Leiter: **D = S/10**, jede Stufe endet bei 10 wirksamen Stapeln. Überlagert auf die Roh-Chance aus dem `blitz-ramp`-Lauf zu §7.57 ergibt S=40/D=4: 15,5 → 55,2 % (1–10), 45,9 → 77,5 % (21–30), 91,5 → 95,7 % (41–50) — **früh das Dreieinhalbfache, spät nichts mehr, und nirgends an der 100-%-Klemme**; die Overcrit-Sorge ist damit ausgeräumt, nicht durch scharfen Abfall, sondern weil die tiefen Karten spät von selbst alles auffressen. Einschränkung: die Tabelle überlagert einen Skill über ein Deck, das OHNE ihn gemessen wurde — mit ihm gibt es früh mehr Crits, also schneller tiefe Karten, der Abfall greift früher als abgelesen. Vorgeschlagene Leiter: Satz 20/30/40/50, Abfall 2/3/4/5, steigende Hälfte +10/15/20/30 Basis-Score je Stapel (bewusst additiv — alles Multiplikative wäre die dritte Achse auf demselben Stapel). Zwei Warnungen: schon **Normal ist der größte frühe Hebel, den die Fraktion je hatte** (+20 auf eine Basis von 15,5 %, auf 95 % der frühen Siege — die ganze Fraktion wird sich bewegen), und der Skill steht **gegen Lichtbogen**, der auf derselben Achse und demselben Eingang STEIGEND zahlt. Nichts umgesetzt. |
+| 2026-09-11 | §7.58/§7.59/§7.61 nachgemessen (§7.62), beide Seed-Sätze plus Rampen-Sonde auf beiden; die drei Umbauten stecken zusammen darin und sind nicht getrennt. **Methodischer Hauptfund: die DUELL-Mediane (`cross`, feste Policy) sind zwischen Seed-Sätzen stabil, die Explore-Mediane nicht.** Derselbe Bau gibt im Explore 969,7M gegen 533,1M (Spreizung 1,82×), im Duell 17,2 gegen 17,5 Mio (1,02×) — und Feuer/Eis/Pflanze, an denen nichts geändert wurde, kommen in beiden Sätzen praktisch identisch heraus (8,8/8,9 · 6,4/6,4 · 15,6/16,0 Mio). §7.53 hatte die Rauschgrenze am Explore-Median gemessen und daraus auf die ganze Reihe geschlossen; für die FRAKTIONS-BILANZ war das zu pessimistisch. **Ab hier ist der Duell-Median die Bilanzzahl.** **Ergebnis: Blitz 17,2/17,5 → 28,0/25,9 Mio, also +63 % / +48 %, und damit 3,18 / 2,92× Feuer** (vorher 1,96 / 1,97×). Die Warnung aus §7.60 D ist in der vorhergesagten Größenordnung eingetreten; Blitz braucht eine Tarierung, bevor sonst etwas an der Fraktion passiert. **Je Skill ist die Ablation auf diesem Kraftniveau unbrauchbar, und zwar in der HALTEQUOTE:** Spannungsfeld 15 gegen 64 %, Zündspannung 97 gegen 32 %, Gewitterfront 31 gegen 86 %, Blitzfänger 98 gegen 61 %; die Effekte wandern mit (Lichtbogen +107 gegen +3 %). Das ist neu — §7.53 hatte nur die Effekte als verrauscht ausgewiesen. Ich habe den Fehler in dieser Runde selbst vorgeführt: nach Seed-Satz 1 stand hier zuerst „Spannungsfeld eingebrochen, 78 → 15 %", Seed-Satz 101 sagt 64 %. Stabil ist nur **Streuung: 100 % Haltequote in beiden Sätzen, klar positiv** — plausibel der Hauptposten des Anstiegs (Zuordnung, keine Messung). **Rampe:** die Meilensteine wandern ein bis zwei Runden nach vorn (25-%-Marke Runde 10 → 9, 5. Leiste 14 → 13, 10. Leiste 21 → 19), Crit-Chance in 21–30 45,9 → 53,0/53,8 %, Stapel auf dem Deck 979 → 1.426/1.099. **Die Runden 1–10 bewegen sich dagegen kaum, und die Sonde sagt warum: dort hält ein Lauf im Mittel nur 1,7 Blitz-Skills** (11–20: 4,1 · 21–30: 6,5 · 41–50: 11,4). **Der Kaltstart einer Fraktion lässt sich nicht durch einen Skill beheben, weil man in den Kaltstart-Runden noch keinen Skill hat.** Das erklärt rückwirkend, warum drei Anläufe auf den frühen Blitz (§7.43/§7.51/§7.56 und jetzt §7.61) alle klein ausfielen; wer die Runden 1–10 heben will, muss ans PASSIV oder ans Angebotstempo. Erster Tarier-Griff, schon in §7.59 C benannt: Streuungs Leiter (1/1/2/3 statt 1/2/3/4, oder Dauerwert nur auf die erste gestreute Karte). Zweiter: der Satz der Zündspannung. Owner-Entscheid offen. |
