@@ -4,6 +4,7 @@ import { reducer, initialState, menuState } from "../src/game/reducer.js";
 import { resolveTrick } from "../src/game/engine.js";
 import { buildSkillDoors, rerollDoorSkills, archetypeOf, isLegendarySkill, SKILL_DEFS, SKILL_LIST, TIER_EPIC } from "../src/game/skills.js";
 import { SKILL_DOORS, SKILL_DOOR_SIZE, SKILL_DOOR_FACTIONS, SKILL_OFFER_ARCHETYPES, TRICKS_PER_CYCLE } from "../src/game/constants.js";
+import { GLOSSARY } from "../src/game/glossary.js";
 import { skillDef } from "../src/i18n/labels.js";
 import de from "../src/i18n/de.js";
 import { runOne } from "../sim/run.js";
@@ -247,6 +248,21 @@ describe("Stufentexte — ein Text je Stufe (descTiers, ability.<id>.desc.<t>, s
       for (const text of s.descTiers) expect(text, `${s.id}: keine Leiter im Stufentext`).not.toMatch(/\bSelten\b|\bEpisch\b|Sehr selten/);
     }
     for (const s of SKILL_LIST.filter((x) => x.legendary)) expect(s.descTiers).toBeUndefined();
+  });
+
+  /* Owner-Regel: kein Strich als SATZZEICHEN in spieler-sichtbarem Text — er hängt einen Halbsatz an, statt
+     einen Satz zu bilden, und genau das macht Kartentexte lang. Bis-Striche bleiben erlaubt und sind hier
+     die Mehrheit („Werte 1–10", „Stufe I–IV"): unterschieden wird über die Leerzeichen, nicht über das
+     Zeichen. Gilt für alle 70 Skills und das Glossar, das seine Texte in dieselben Karten schreibt. */
+  it("kein Gedankenstrich in Skill- und Glossartexten (Bis-Striche wie 1–10 bleiben)", () => {
+    const SATZSTRICH = /\s[—–-]\s/;
+    const treffer = [];
+    for (const s of SKILL_LIST)
+      for (const [i, t] of (s.descTiers || [s.desc]).entries())
+        if (SATZSTRICH.test(t)) treffer.push(`${s.id}[${i}]`);
+    for (const [id, e] of Object.entries(GLOSSARY))
+      for (const f of ["label", "text"]) if (e[f] && SATZSTRICH.test(e[f])) treffer.push(`glossary.${id}.${f}`);
+    expect(treffer, `Strich als Satzzeichen: ${treffer.join(", ")}`).toEqual([]);
   });
   it("Episch-Extras stehen nur im Episch-Text", () => {
     expect(SKILL_DEFS.SK_LIGHTNING_01.descTiers[3]).toContain("Jeder Sieg ohne Crit gibt +1 Ladung"); // §7.18: das Episch-Extra aus Statische Aufladung

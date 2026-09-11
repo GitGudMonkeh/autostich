@@ -210,7 +210,7 @@ export const SKILL_DEFS = {
   SK_LIGHTNING_05: { id: "SK_LIGHTNING_05", name: "Reststrom", archetype: "lightning", keywords: ["charge"], tiers: BLITZ.reststrom,
     ...tiered(BLITZ.reststrom, (r) => `Nach jeder vollen Leiste startet die Ladung bei ${r.floor} statt 0.${r.bar ? ` Die Leiste ist schon bei ${r.bar} voll.` : ""}`) },
   SK_LIGHTNING_02: { id: "SK_LIGHTNING_02", name: "Ionenfeld", archetype: "lightning", keywords: ["charge", "ionize"], tiers: BLITZ.ionenfeld,
-    ...tiered(BLITZ.ionenfeld, (r) => `Jede volle Leiste lädt das Feld: für die nächsten ${r.tricks} Stiche haben alle deine Karten +${r.value} Wert.`) },
+    ...tiered(BLITZ.ionenfeld, (r) => `Jede volle Leiste gibt allen deinen Karten für ${r.tricks} Stiche +${r.value} Wert.`) },
   // Rampen — jede volle Leiste zählt dauerhaft
   SK_LIGHTNING_06: { id: "SK_LIGHTNING_06", name: "Gewitterfront", archetype: "lightning", keywords: ["charge", "crit"], tiers: BLITZ.gewitter,
     ...tiered(BLITZ.gewitter, (r) => `Jede volle Leiste gibt dauerhaft +${pctS(r.critPerBar)} % Crit-Chance${r.multPerBar ? ` und +${de(r.multPerBar)}× Crit-Multiplikator` : ""}.`) },
@@ -220,7 +220,7 @@ export const SKILL_DEFS = {
   SK_LIGHTNING_07: { id: "SK_LIGHTNING_07", name: "Zündspannung", archetype: "lightning", keywords: ["crit", "ionize"], tiers: BLITZ.zuendung,
     ...tiered(BLITZ.zuendung, (r) => `Gewinnst du mit einer Karte, gibt sie +${pctS(r.crit)} % Crit-Chance auf den Stich, je Stapel auf ihr ${pctS(r.perStack)} % weniger. Jeder ihrer Stapel gibt dafür +${r.scorePerStack} Basis-Score.`) },
   SK_LIGHTNING_13: { id: "SK_LIGHTNING_13", name: "Spannungsfeld", archetype: "lightning", keywords: ["ionize", "crit", "formation"], tiers: BLITZ.feld,
-    ...tiered(BLITZ.feld, (r) => `Ein Sieg in einer Formation gibt +${pctS(r.critPerForm)} % Crit-Chance je Formation an der Siegposition.${r.feedLowest ? ` Die Karte mit den wenigsten Stapeln in diesen Formationen erhält +${r.feedLowest} Stapel.` : ""}`) },
+    ...tiered(BLITZ.feld, (r) => `Ein Sieg gibt +${pctS(r.critPerForm)} % Crit-Chance je Formation an der Siegposition.${r.feedLowest ? ` Die Karte mit den wenigsten Stapeln in diesen Formationen erhält +${r.feedLowest} Stapel.` : ""}`) },
   SK_LIGHTNING_12: { id: "SK_LIGHTNING_12", name: "Vorentladung", archetype: "lightning", keywords: ["crit", "streak"], tiers: BLITZ.vorentladung,
     ...tiered(BLITZ.vorentladung, (r) => `Ab Serie ${r.minStreak} gibt jeder Serienpunkt +${de(r.multPerStreak)}× Crit-Multiplikator auf diesen Stich.`) },
   // (§7.19: Überschlag SK_LIGHTNING_14 gestrichen — die Systemregel „Überschuss über 100 %" in groß, im gierigen Build −15 %.)
@@ -274,13 +274,15 @@ export const SKILL_DEFS = {
   // Position — die Schneise durch das eigene Deck (§7.27: ersetzt Feuerwalze, deren Achse „Hitze zu Kampfwert" schon
   // der Klinge gehört; die Aufstellung entscheidet mit, welche Karte im nächsten Durchlauf auf der Schneise liegt)
   SK_FIRE_08: { id: "SK_FIRE_08", name: "Brandschneise", archetype: "fire", keywords: ["position", "wertvorsprung"], tiers: FEUER.schneise,
-    ...tiered(FEUER.schneise, (r) => `Deine ${r.width} Siege mit dem größten Vorsprung eines Durchlaufs schlagen eine Schneise: im nächsten Durchlauf zählt ein Sieg auf diesen Positionen ×${de(r.mult)}.${r.hold ? ` Die Schneise hält ${r.hold} Durchläufe.` : ""}`) },
+    ...tiered(FEUER.schneise, (r) => `Auf den Positionen deiner ${r.width} Siege mit dem größten Vorsprung zählt ein Sieg im nächsten Durchlauf ×${de(r.mult)}.${r.hold ? ` Der Bonus hält ${r.hold} Durchläufe.` : ""}`) },
   SK_FIRE_09: { id: "SK_FIRE_09", name: "Verbrennung", archetype: "fire", keywords: ["heat"], tiers: FEUER.verbrennung,
     ...tiered(FEUER.verbrennung, (r) => `Ein Sieg mit Kampfwert-Vorsprung ab ${r.minMargin} zählt ×${de(r.mult)}.${r.heatToo ? ` Seine Hitze zählt ebenfalls ×${de(r.mult)}.` : ""}`) },
   // Konsument — Hitze zu Score (§7.16: der Überlauf-Wandler; Flächenbrand SK_FIRE_11 ist gestrichen, der Brand kostete
   // Klinge, Siegquote und Serie, keine Auszahlung glich das aus)
   SK_FIRE_12: { id: "SK_FIRE_12", name: "Schmelzpunkt", archetype: "fire", keywords: ["heat", "consume"], tiers: FEUER.schmelzpunkt,
-    ...tiered(FEUER.schmelzpunkt, (r) => `Bei voller Hitzeleiste wird die Hitze, die ein Sieg nicht mehr auf die Leiste bringt, zu +${r.perPoint} Basis-Score je Punkt.${r.lossPays ? " Auch die Kühlung einer Niederlage zahlt, beim nächsten Sieg." : ""}`) },
+    // Der Glossareintrag „Überlauf" definiert genau das, was hier vorher ausgeschrieben stand — der Begriff
+    // ersetzt die Wiederholung und wird im Text automatisch gefettet.
+    ...tiered(FEUER.schmelzpunkt, (r) => `Bei voller Hitzeleiste zählt der Überlauf +${r.perPoint} Basis-Score je Punkt.${r.lossPays ? " Auch die Kühlung einer Niederlage zahlt beim nächsten Sieg." : ""}`) },
   // Gegner — Brände
   SK_FIRE_13: { id: "SK_FIRE_13", name: "Brandmal", archetype: "fire", keywords: ["heat", "brand"], tiers: FEUER.brandmal,
     ...tiered(FEUER.brandmal, (r) => `Ab ${r.minHeat} % Hitze brandmarkt jeder Sieg die geschlagene Gegnerkarte: −${r.value} Wert im nächsten Durchlauf.${r.onLoss ? " Auch eine Niederlage brandmarkt die Gegnerkarte, die gewonnen hat." : ""}`) },
@@ -293,7 +295,7 @@ export const SKILL_DEFS = {
     ...tiered(FEUER.glutstahl, (r) => `Ein Sieg zählt +${r.perPoint} Basis-Score je Punkt Kampfwert über dem Grundwert der Siegkarte.${r.forgedDouble ? " Schmiedewert zählt doppelt." : ""}`) },
   // Legendäre (§4.7): keine Stufe, zwei Effekte, jedes läuft allein.
   SK_FIRE_L01: { id: "SK_FIRE_L01", name: "Sonnenkern", archetype: "fire", legendary: true, keywords: ["heat", "brand"],
-    desc: `Jeder Sieg brandmarkt die geschlagene Gegnerkarte (−${de(C.SONNENKERN_BRAND)} Wert), und Brände stapeln sich über die Durchläufe, statt sich zu erneuern. Sieg gegen eine gebrandmarkte Karte: +${C.SONNENKERN_SCORE_PER_BRAND} Basis-Score je Brandpunkt auf ihr.` },
+    desc: `Jeder Sieg brandmarkt die geschlagene Gegnerkarte mit −${de(C.SONNENKERN_BRAND)} Wert, und Brände stapeln sich über die Durchläufe. Ein Sieg gegen eine gebrandmarkte Karte gibt +${C.SONNENKERN_SCORE_PER_BRAND} Basis-Score je Brandpunkt auf ihr.` },
   SK_FIRE_L02: { id: "SK_FIRE_L02", name: "Ewige Glut", archetype: "fire", legendary: true, keywords: ["heat"], // §7.21: ersetzt Phönixfeuer (Emblem bleibt)
     desc: `Jeder Durchlauf, der mit voller Hitzeleiste endet, hebt den Hitze-Multiplikator dauerhaft um +${pct(C.EWIGE_GLUT_MULT_PER_ROUND)} %. Die Hitze fällt nie unter ${pct(C.EWIGE_GLUT_FLOOR_FRAC)} % der höchsten je erreichten Hitze.` },
   SK_FIRE_L03: { id: "SK_FIRE_L03", name: "Sonnenzorn", archetype: "fire", legendary: true, keywords: ["heat"],
@@ -320,7 +322,7 @@ export const SKILL_DEFS = {
   SK_ICE_07: { id: "SK_ICE_07", name: "Eisbrücke", archetype: "ice", keywords: ["glacier"], role: "G_EISBRUECKE", tiers: EIS.eisbruecke,
     ...tiered(EIS.eisbruecke, (r) => `Auch die vier Diagonalen gelten als angrenzend: zersplitterte Felder werden zu einem Cluster. Für Kaskade und Kollision zählt ein diagonaler Gletscher zu ${pct(r.weight)} %.`) },
   SK_ICE_08: { id: "SK_ICE_08", name: "Eiswall", archetype: "ice", keywords: ["glacier", "formation"], role: "G_EISWALL", tiers: EIS.eiswall,
-    ...tiered(EIS.eiswall, (r) => `Steht ein Gletscher in einer geraden Kette aus mindestens ${G_EISWALL_MIN} Gletschern (Reihe oder Spalte), bricht er um +${pct(r.per)} % stärker je Gletscher der Kette über zwei. Eine volle Reihe gibt also +${pct(r.per * 3)} %.`) },
+    ...tiered(EIS.eiswall, (r) => `Steht ein Gletscher in einer Reihe oder Spalte aus mindestens ${G_EISWALL_MIN} Gletschern, bricht er je Gletscher darin über zwei um +${pct(r.per)} % stärker. Eine volle Reihe gibt also +${pct(r.per * 3)} %.`) },
   SK_ICE_09: { id: "SK_ICE_09", name: "Verzahnung", archetype: "ice", keywords: ["glacier"], role: "G_VERZAHNUNG", tiers: EIS.verzahnung,
     ...tiered(EIS.verzahnung, (r) => `Jeden Durchlauf gewinnt jeder Gletscher +${de(r.per)} Masse je Gletscher im verbundenen Cluster.`) },
   // Linie 3 — Lawine (Brechen/Kaskade)
@@ -393,7 +395,7 @@ export const SKILL_DEFS = {
   SK_PLANT_L02: { id: "SK_PLANT_L02", name: "Wurzelgeflecht", archetype: "plant", legendary: true, keywords: ["bloom", "formation"],
     desc: `Jede blühende Karte zählt in jeder Formation ihres Segments mit.${C.WURZELGEFLECHT_FACTOR_SCALE < 1 ? ` Sie selbst bekommt ${pct(C.WURZELGEFLECHT_FACTOR_SCALE)} % des Formations-Bonus.` : ""}` },
   SK_PLANT_L03: { id: "SK_PLANT_L03", name: "Baumreihe", archetype: "plant", legendary: true, keywords: ["bloom", "formation"],
-    desc: `Blühende Karten bilden eine Wiederholung, egal wo sie liegen; sie zahlt ${pct(C.BAUMREIHE_FACTOR_SCALE)} % des Wiederholungs-Bonus und zählt als Formation. Basis-Score je Karte gibt sie nicht. Jede darf zugleich in einer anderen Formation zählen.` },
+    desc: `Blühende Karten bilden eine Wiederholung, egal wo sie liegen. Sie zählt als Formation und zahlt ${pct(C.BAUMREIHE_FACTOR_SCALE)} % des Wiederholungs-Bonus, aber keinen Basis-Score je Karte. Jede Karte darf zugleich in einer anderen Formation zählen.` },
   SK_PLANT_L04: { id: "SK_PLANT_L04", name: "Ewiger Frühling", archetype: "plant", legendary: true, keywords: ["green", "bloom"],
     desc: `Blühende Karten kämpfen mit +${C.EWIGER_FRUEHLING_BLOOM_VALUE} Wert, und ihr Sieg zählt +${pct(C.EWIGER_FRUEHLING_FORM_MULT)} % je Formation an ihrer Position. Ist dein ganzes Deck grün, sind alle deine Karten blühend.` },
 
