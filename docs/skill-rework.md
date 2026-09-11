@@ -9631,6 +9631,52 @@ Owner-Entscheid offen.
 
 ---
 
+### 7.65 Zündspannung: die SCORE-Hälfte fällt, die Crit-Hälfte bleibt (2026-09-11, Owner) — umgesetzt, UNGEMESSEN
+
+**Owner:** „deine Empfehlung und dann messen." Der zweite Tarier-Griff aus §7.62 E war als „Satz der Zündspannung"
+angekündigt; die Empfehlung weicht davon ab und schneidet die andere Hälfte.
+
+| | vorher | jetzt |
+| --- | ---: | ---: |
+| Crit-Chance (Satz) | 20/30/40/50 % | **unverändert** |
+| Abfall je Stapel | 2/3/4/5 | **unverändert** |
+| **Basis-Score je Stapel** | 10/15/20/30 | **4/6/8/12** |
+
+#### A · Warum nicht die Crit-Hälfte
+
+Der Skill hat zwei Hälften, und sie liegen an entgegengesetzten Enden des Laufs:
+
+- Die **Crit-Hälfte wirkt früh** (auf einer frischen Karte voller Satz, gemessen 95 % der Siege in den Runden 1–10).
+  §7.62 D hat belegt, dass frühe Runden den Endscore kaum tragen: dort hält ein Lauf **1,7 Skills**, und der Score
+  wächst exponentiell — die letzten zehn Runden machen ihn.
+- Die **Score-Hälfte wirkt spät**, genau dort, wo der Score entsteht. Größe: spät trägt die Siegkarte Ø **43,5**
+  wirksame Stapel (§7.60 A), Episch gab +30 je Stapel — **+1.305 auf eine Basis von rund 3.660**, also gut ein
+  Drittel auf jeden späten Stich, und das dann mal Crit-Multiplikator.
+
+Die Crit-Hälfte zu halbieren hätte die Hälfte getroffen, die messbar wenig tut — und dem Skill genau das genommen,
+was der Owner bestellt hatte („crit Chance von 40-50 pro Karte, abnehmend pro Ionisierung"). Der Schnitt trifft
+deshalb die Score-Hälfte, mit −60 %.
+
+#### B · Erwartung, damit sie überprüfbar ist
+
+Nach §7.64 fehlen **rund 31 % / 28 %**, um von 2,84 / 2,73× Feuer auf die 1,96× vor der Runde zu kommen. Episch
+gab über die Score-Hälfte gut ein Drittel auf die späten Stiche; −60 % davon nimmt also grob ein Fünftel des späten
+Stich-Scores — **für die Lücke plausibel, aber nicht sicher**, weil der Skill nur in einem Teil der Läufe auf
+Episch liegt und die Haltequote zwischen Seed-Sätzen springt (§7.62 C).
+
+Bleibt danach eine Lücke, ist der nächste Kandidat **nicht** wieder dieser Skill, sondern das Spannungsfeld aus
+§7.58 — die dritte und bislang gar nicht angefasste Änderung derselben Runde.
+
+#### C · Was NICHT mitgeändert wurde, und warum
+
+Streuungs Leiter bleibt vorerst gekürzt, obwohl §7.64 C sie als „zu flach" ausgewiesen hat (Haltequote 47/48 %,
+Effekt ~0). Zwei Änderungen gleichzeitig wären wieder nicht trennbar, und genau daran ist die Zuordnung in §7.62 C
+gescheitert. **Erst messen, dann Streuung nachziehen.**
+
+Startwerte, UNGEMESSEN.
+
+---
+
 ### 5.30 Die Eis-Skills auf dem neuen Motor (2026-09-09) — gemessen, nichts umgesetzt
 
 **Owner:** „und dann schauen wir uns alle skills an die davon profitieren müssen und designen wie."

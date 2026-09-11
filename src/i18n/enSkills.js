@@ -46,7 +46,7 @@ export default {
   "ability.SK_LIGHTNING_10.name": "Discharge",
   "ability.SK_LIGHTNING_10.desc": "Every full bar permanently grants +0.02× crit multiplier. Uncommon +0.03×, Rare +0.04×, Epic +0.06× — and the crit that fills the bar counts with double crit multiplier.",
   "ability.SK_LIGHTNING_07.name": "Striking Voltage",
-  "ability.SK_LIGHTNING_07.desc": "Win with a card and it grants +20% crit chance on the trick, 2 points less per stack on it. Each of its stacks gives +10 base score instead. Uncommon 30%/3/+15, Rare 40%/4/+20, Epic 50%/5/+30.",
+  "ability.SK_LIGHTNING_07.desc": "Win with a card and it grants +20% crit chance on the trick, 2 points less per stack on it. Each of its stacks gives +4 base score instead. Uncommon 30%/3/+6, Rare 40%/4/+8, Epic 50%/5/+12.",
   "ability.SK_LIGHTNING_14.name": "Arc-Over",
   "ability.SK_LIGHTNING_14.desc": "Per 10 points of crit chance above 100%: +0.02× crit multiplier while the excess lasts. Uncommon +0.03×, Rare +0.04×, Epic +0.06×.",
   "ability.SK_LIGHTNING_13.name": "Voltage Field",
