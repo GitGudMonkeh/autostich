@@ -10029,6 +10029,70 @@ Startwerte, UNGEMESSEN — die große Aufnahme folgt, wenn auch Feuer entschiede
 
 ---
 
+### 7.73 Der Feuer-Regler gesweept: er kann Feuers Problem nicht lösen (2026-09-11, Owner-Idee) — gemessen, nichts umgesetzt
+
+**Owner:** „feuer könnten wir ähnlich den Feuermulti bei Hitze etwas anheben, das geht auch auf das gesamte
+Feuerdeck."
+
+`HEAT_MULT_PER_10` (heute 0,02 — Score-Multiplikator je volle 10 % gehaltener Hitze, ×1,2 bei voller Leiste),
+gesweept mit dem neuen Eis-Wert 80 im Spiel. `--only cross`, Seed 1.
+
+| Rate | Feuer | Fe+Bl | Fe+Ei | Fe+Pf |
+| ---: | ---: | ---: | ---: | ---: |
+| **0,02** (heute) | 8,8 | 19,8 | 13,8 | 19,6 |
+| 0,04 | 10,0 | 22,4 | 14,9 | 22,1 |
+| 0,06 | 11,2 | 25,2 | 16,6 | 24,6 |
+| 0,09 | 12,8 | 29,3 | 18,7 | 28,2 |
+
+Nebenbefund: **Eis landet mit 80 bei 17,8 Mio** — die Interpolation aus §7.72 stimmt.
+
+#### A · Der Regler ist schwach, und zwar aus seiner Bauart heraus
+
+Dreifacher Wert bringt **+27 %**. Bei Eis brachte dreifach ×2,2. Der Grund ist die Form: `BURST_SCALE` skaliert
+eine Auszahlung DIREKT, `HEAT_MULT_PER_10` sitzt in einem Multiplikator ×(1 + Rate × Hitze/10) — von 0,02 auf 0,06
+heißt bei voller Leiste ×1,2 → ×1,6, also ×1,33 auf den Stich.
+
+Die Gerade: **Feuer ≈ 7,70 Mio + 57 × Rate.** Für Pflanze-Niveau (15,6) bräuchte es 0,138, für Eis-Niveau (17,8)
+0,177 — also das Sieben- bis Neunfache des heutigen Werts.
+
+#### B · Der eigentliche Befund: die Mischbauten steigen 2,4-mal so schnell
+
+| Steigung je Rate-Punkt | |
+| --- | ---: |
+| Feuer allein | 57 |
+| Fe+Bl | **136** |
+| Fe+Pf | **123** |
+
+**Der Hitze-Multiplikator multipliziert den ganzen Stich — also auch den Score des PARTNERS.** In Fe+Bl multipliziert
+er Blitz' Stapel-Score, in Fe+Pf den der Pflanze. Feuer liefert die Hitze, der Partner liefert die Basis, auf die
+sie wirkt.
+
+Damit ist der Regler ungeeignet für das, was er lösen soll:
+
+| Rate | Feuer allein | Fe+Bl | Fe+Pf |
+| ---: | ---: | ---: | ---: |
+| 0,04 | 10,0 | 22,5 | 22,1 |
+| 0,05 | 10,6 | 23,8 | 23,3 |
+| 0,138 | 15,6 | **35,8** | **34,1** |
+| 0,177 | 17,8 | **41,1** | **38,9** |
+
+Bei der Rate, die Feuer ALLEIN auf Eis-Niveau brächte, stünde **Fe+Bl bei 41 Mio** — das Doppelte von Blitz und mit
+Abstand das Stärkste im Spiel. Man würde Feuers Mono-Schwäche gegen einen neuen, viel größeren Ausreißer tauschen.
+
+#### C · Was das heißt
+
+- **Als „etwas anheben" taugt der Regler.** 0,04 bis 0,05 gibt Feuer 10,0–10,6 und lässt Fe+Bl bei 22–24, also im
+  Feld. Das ist genau die Größenordnung, die der Owner vorgeschlagen hat.
+- **Als Lösung für Feuers Mono-Schwäche taugt er nicht.** Wer Feuer allein auf 15+ heben will, braucht einen Hebel,
+  der Feuer DIREKT zahlt statt den Stich zu multiplizieren — einen eigenen Score-Kanal, so wie Blitz ihn mit dem
+  Stapel-Score hat und Eis mit dem Bruch.
+- Feuer ist schon heute ein **hervorragender Partner** (Fe+Bl 19,8 gegen Bl allein 21,9 bei viel niedrigerer
+  Fraktion). Seine Schwäche ist ausschließlich das Alleinspiel.
+
+Gemessen, nichts umgesetzt. Owner-Entscheid offen.
+
+---
+
 ### 5.30 Die Eis-Skills auf dem neuen Motor (2026-09-09) — gemessen, nichts umgesetzt
 
 **Owner:** „und dann schauen wir uns alle skills an die davon profitieren müssen und designen wie."
