@@ -9677,6 +9677,78 @@ Startwerte, UNGEMESSEN.
 
 ---
 
+### 7.66 §7.65 nachgemessen — zwei Schnitte, zwei tote Skills, und die Fraktion steht fast unverändert (2026-09-11) — gemessen
+
+Beide Seed-Sätze, Duell-Median.
+
+#### A · Die Bilanz über alle vier Stände
+
+| Stand | Blitz s1 / s101 | zu Feuer |
+| --- | ---: | ---: |
+| vor der Runde | 17,2 / 17,5 Mio | 1,96 / 1,97× |
+| nach §7.58/59/61 | 28,0 / 25,9 Mio | 3,18 / 2,92× |
+| nach dem Kürzen (§7.63) | 25,0 / 24,3 Mio | 2,84 / 2,73× |
+| **nach dem Score-Schnitt (§7.65)** | **23,6 / 23,5 Mio** | **2,68 / 2,65×** |
+
+Der Score-Schnitt nimmt **−5,4 % / −3,0 %**. Meine Erwartung aus §7.65 B („grob ein Fünftel des späten
+Stich-Scores, für die Lücke plausibel") war deutlich zu hoch — zum zweiten Mal in Folge.
+
+**Beide Schnitte zusammen: −15,6 % / −9,2 %**, also 41 % / 28 % des Anstiegs. Die Fraktion steht immer noch
+**37 % / 35 % über dem Startwert.**
+
+#### B · Der Preis: beide neuen Skills messen jetzt null
+
+| | vor den Schnitten | nach den Schnitten |
+| --- | --- | --- |
+| Streuung | 100 / 100 % gehalten, +20 / +77 % | 73 / 83 % gehalten, **0 / +2 %** |
+| Zündspannung | 97 / 32 % gehalten, +7 / +14 % | 65 / 98 % gehalten, **+1 / −7 %** |
+
+Zwei frisch gebaute Skills sind damit auf dem Stand, den §7.53 D „tot" nennt — und die Fraktion hat dafür ein
+Sechstel bis ein Zehntel abgegeben. **Beide Schnitte waren schlechte Tauschgeschäfte.**
+
+#### C · Warum das so ist: die Ablation kann „bessere Option" nicht sehen
+
+Während die neuen Skills fielen, sind die alten gestiegen:
+
+| Skill | vor den Schnitten | nach den Schnitten |
+| --- | ---: | ---: |
+| Lichtbogen | +107 / +3 % | **+160 / +90 %** |
+| Blitzschlag | +20 / +29 % | **+117 / +24 %** |
+| Kurzschluss | +39 / +86 % | **+104 / +47 %** |
+
+Das ist Substitution, und sie erklärt den ganzen Befund. **Die Ablation nimmt EINEN Skill weg und lässt die
+Politik einen Ersatz wählen.** Ein Skill, dessen Wert darin besteht, *die bessere Option als die Alternative* zu
+sein, misst deshalb fast null — und hebt die Fraktion trotzdem, weil jeder Bau, der ihn zieht, besser ist als
+derselbe Bau mit dem, was sonst dagestanden hätte.
+
+Genau das ist in dieser Runde passiert: **auf zwei Plätzen standen tote Skills (Serienschutz §7.59, Ladungsserie
+§7.61), jetzt stehen dort funktionierende.** Der Anstieg von 17,2 auf 28,0 Mio ist zu einem guten Teil nicht „die
+neuen Skills sind zu stark", sondern **„zwei Plätze im Angebot sind keine Nieten mehr"** — also genau das, wofür
+die letzten Runden da waren.
+
+Das ist eine Zuordnung, keine Messung. Aber sie ist die einzige Lesart, die zusammenpasst: zwei Skills auf null
+geschnitten, Fraktion nur ein Zehntel niedriger.
+
+#### D · Empfehlung: aufhören, Skills zu schneiden
+
+Weiter an diesen beiden zu schneiden macht sie tot und bewegt die Fraktion kaum. Wenn die Fraktion als Ganzes zu
+hoch steht, gehört sie als Ganzes gesenkt — und dafür gibt es den Regler, den `constants.js` wörtlich so nennt:
+
+> `ION_SCORE_PER_STACK` (75) — **„der Paritäts-Regler Feuer/Blitz"**, mit hinterlegtem Duell-Sweep
+> (60/75/80/90/120 → Floor 1,16/1,07/1,03/0,99/0,88×).
+
+Vorschlag in drei Teilen:
+
+1. **Beide Schnitte zurücknehmen** — Streuung auf 1/2/3/4 Karten, Zündspannungs Score-Hälfte auf 10/15/20/30.
+   Sie haben zusammen 41 % / 28 % des Anstiegs gebracht und zwei Skills ihre Wirkung gekostet.
+2. **`ION_SCORE_PER_STACK` senken**, als einen Regler statt vieler. Er trifft jede Stapelquelle gleichmäßig, also
+   auch die Legendären (Doppelentladung, Resonanz), die in jeder Messung dieser Reihe die größten Posten sind.
+3. **Danach messen** — der Sweep im Kommentar ist von §7.14 und beschreibt einen anderen Stand der Fraktion.
+
+Owner-Entscheid offen.
+
+---
+
 ### 5.30 Die Eis-Skills auf dem neuen Motor (2026-09-09) — gemessen, nichts umgesetzt
 
 **Owner:** „und dann schauen wir uns alle skills an die davon profitieren müssen und designen wie."
