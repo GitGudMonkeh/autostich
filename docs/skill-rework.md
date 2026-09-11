@@ -10128,6 +10128,65 @@ aber nicht mehr das Tarier-Ziel.
 
 ---
 
+### 7.75 §7.72/§7.74 nachgemessen: die Paare sind auf 3 % genau gleich (2026-09-11) — gemessen
+
+`--only cross`, Seed 1, beide neuen Werte im Spiel (Eis 80, Feuer 0,05). Ausgabe nach dem neuen Maßstab getrennt
+(§7.74 C): Paare zuerst.
+
+#### A · Die Paare, das Ziel
+
+| Paar | Duell-Median | bester Einzelteil | Differenz |
+| --- | ---: | ---: | ---: |
+| Blitz+Pflanze | 23,9 Mio | 21,9 | **+9 %** |
+| Feuer+Blitz | 23,7 Mio | 21,9 | **+8 %** |
+| Feuer+Pflanze | 23,1 Mio | 15,6 | **+48 %** |
+| Blitz+Eis | 15,9 Mio | 21,9 | −27 % |
+| Feuer+Eis | 15,7 Mio | 17,8 | −12 % |
+| Eis+Pflanze | 15,4 Mio | 17,8 | −13 % |
+
+**Die drei Paare ohne Eis liegen auf 3 % genau gleich** (23,1 / 23,7 / 23,9 — Spreizung 1,03×), und **alle drei
+schlagen ihren besten Einzelteil.** Das ist Parität auf der Kennzahl, die seit §7.74 die richtige ist — und sie ist
+deutlich enger als die Mono-Spreizung von 2,05×.
+
+Die drei Paare MIT Eis liegen ebenfalls auf 3 % genau gleich (15,4 / 15,7 / 15,9), nur auf **0,66 des Niveaus**.
+
+#### B · Die Ansteckung ist weg, aber Eis synergiert nicht
+
+§7.71/§7.72 haben die Ansteckung beseitigt: Fe+Ei steht jetzt bei 1,47× Feuer allein (war 0,83×), Ei+Pf bei 0,99×
+(war 0,65×), Bl+Ei bei 0,73× (war 0,40×). Eis zieht also niemanden mehr herunter.
+
+Geblieben ist ein anderes, schärfer benanntes Problem: **jedes Eis-Paar ist schlechter als Eis allein.** Eis mono
+steht bei 17,8 Mio, jedes Paar mit Eis bei 15,4–15,9. Eis ist damit die einzige Fraktion, die **pur gespielt
+werden will** — die anderen drei gewinnen durch Mischung, Eis verliert dadurch.
+
+Dass alle drei Eis-Paare auf 3 % genau denselben Wert treffen, sagt zusätzlich: **der Partner trägt dort fast
+nichts bei.** Eis bestimmt das Ergebnis, egal wer danebensteht.
+
+#### C · Tripel
+
+| | |
+| --- | ---: |
+| Feuer+Blitz+Pflanze | **25,8 Mio** |
+| Feuer+Eis+Pflanze | 16,9 |
+| Feuer+Blitz+Eis | 15,9 |
+| Blitz+Eis+Pflanze | 15,2 |
+| alle vier | 19,3 |
+| Zufalls-Mix | 19,9 |
+
+Dasselbe Muster eine Ebene höher: das Tripel ohne Eis ist das stärkste im ganzen Feld, die drei mit Eis liegen
+wieder bei ~16.
+
+#### D · Was offen bleibt
+
+1. **Eis synergiert nicht.** Das ist der Nachfolger der Ansteckung und kleiner als sie, aber es steht dem Ziel
+   „Mischbuilds" weiter im Weg. Die Vermutung, die zu prüfen wäre: Gletscher besetzen Positionen exklusiv, der
+   Partner kann auf ihnen nichts tun — anders als Hitze, Stapel oder Wachstum, die auf DENSELBEN Karten liegen wie
+   alles andere.
+2. **Lichtbogen und Kettenblitz** brauchen nach §7.69 weiterhin neue Zahlen (§7.70 D).
+3. **Der Zufallsspieler hat sich verdoppelt** (§7.72 B) — die Zahl für den Playtest.
+
+---
+
 ### 5.30 Die Eis-Skills auf dem neuen Motor (2026-09-09) — gemessen, nichts umgesetzt
 
 **Owner:** „und dann schauen wir uns alle skills an die davon profitieren müssen und designen wie."
