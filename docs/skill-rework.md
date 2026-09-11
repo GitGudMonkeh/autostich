@@ -9749,6 +9749,39 @@ Owner-Entscheid offen.
 
 ---
 
+### 7.67 Beide Schnitte zurückgenommen (2026-09-11, Owner) — umgesetzt, UNGEMESSEN
+
+**Owner:** „ja, gehe so vor" — auf den Dreischritt aus §7.66 D.
+
+| | vor der Rücknahme | jetzt |
+| --- | --- | --- |
+| Streuung, Karten je Leiste | 1/1/2/3 (§7.63) | **1/2/3/4** |
+| Streuung, Anhang für leere Karten | ab Selten, oben 3 | **nur Episch, 2** |
+| Zündspannung, Basis-Score je Stapel | 4/6/8/12 (§7.65) | **10/15/20/30** |
+| Crit-Chance, Abfall | 20/30/40/50 %, −2/3/4/5 | unverändert |
+
+Begründung ist §7.66 B: beide Schnitte brachten zusammen 41 % / 28 % des Anstiegs und kosteten zwei frisch gebaute
+Skills ihre Wirkung (Streuung 0 / +2 %, Zündspannung +1 / −7 %). Schlechte Tauschgeschäfte, also zurück.
+
+**Was aus den zwei Runden bleibt:** der Wächter aus §7.63, der für ALLE gestuften Skills vier verschiedene
+Stufentexte verlangt. Er war der einzige bleibende Gewinn dieser Schleife — und er hätte den toten Stufenschritt
+gefangen, den mein eigener Vorschlag enthielt.
+
+Nächster Schritt ist nicht wieder ein Skill, sondern `ION_SCORE_PER_STACK` — gesweept, nicht geraten
+(`--only cross` misst die Duell-Zahl allein und ist in Minuten durch).
+
+#### Nebenbefund: die Gates sind unter Last nicht aussagefähig
+
+Während der Sweep vier Kerne belegte, fielen bei drei aufeinanderfolgenden Testläufen **verschiedene** Dateien mit
+`Test timed out in 5000ms` (`ecke`, `sim-greedy`, `skill-doors`) — jedes Mal eine andere Auswahl. Auf der
+unbelasteten Maschine läuft dieselbe Suite grün durch.
+
+**Konsequenz für die Arbeitsweise: Gates und Sim-Läufe nicht gleichzeitig.** Die betroffenen Tests spielen ganze
+Läufe durch und liegen im Normalbetrieb bei 2 bis 3 Sekunden gegen ein 5-Sekunden-Limit — unter Last reicht das
+nicht. Der dünne Abstand ist derselbe, der schon einmal aufgefallen ist; behoben ist er nicht.
+
+---
+
 ### 5.30 Die Eis-Skills auf dem neuen Motor (2026-09-09) — gemessen, nichts umgesetzt
 
 **Owner:** „und dann schauen wir uns alle skills an die davon profitieren müssen und designen wie."

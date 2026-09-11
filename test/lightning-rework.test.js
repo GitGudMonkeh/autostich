@@ -367,19 +367,17 @@ describe("Blitz-Modul — Ladung, Leiste, Niederlage (reine Übergänge)", () =>
     expect(norm.deck[5].ionStacks || 0).toBe(0);                      // die zweitdünnste noch nicht
     expect(norm.stacks).toBe(2); expect(norm.targets).toEqual([1, 4]); // Passiv + Streuung
     expect(uneven[4].ionStacks || 0).toBe(0);                         // Original unverändert
-    // §7.63: Selten hebt nicht die Kartenzahl (weiter eine), sondern den Anhang für leere Karten.
+    // §7.67: die Kürzung aus §7.63 ist zurückgenommen, die Leiter ist wieder die Zahl der Karten.
     const selten = fillBar(light({ charge: 10 }), [L.STREUUNG], { [L.STREUUNG]: 1 }, uneven, order, 0);
-    expect(selten.deck[4].ionStacks).toBe(T.streuung[1].freshStacks);
-    expect(selten.deck[5].ionStacks || 0).toBe(0);
-    // Episch: drei Karten, und eine Karte OHNE Stapel bekommt freshStacks statt einem. Hier hat nur 9 keine Stapel;
-    // 0/2 haben eine (1 ist durchs Passiv auf 2 und damit nicht mehr unter den Dünnsten).
+    expect(selten.deck[4].ionStacks).toBe(1); expect(selten.deck[5].ionStacks).toBe(1);
+    // Episch: vier Karten, und eine Karte OHNE Stapel bekommt freshStacks statt einem. Hier hat nur 9 keine Stapel;
+    // 0/2/3 haben eine (1 ist durchs Passiv auf 2 und damit nicht mehr unter den Dünnsten).
     const almost = constDeck(5).map((c, i) => ({ ...c, ionStacks: i === 9 ? 0 : 1 }));
     const epic = fillBar(light({ charge: 10 }), [L.STREUUNG], { [L.STREUUNG]: 3 }, almost, order, 0);
     expect(epic.deck[9].ionStacks).toBe(T.streuung[3].freshStacks);   // leer → das Episch-Extra
-    for (const i of [0, 2]) expect(epic.deck[i].ionStacks, `Karte ${i}`).toBe(2); // hatten schon einen → nur +1
-    expect(epic.deck[3].ionStacks).toBe(1);                           // vierte Karte: nicht mehr dabei (Leiter gekürzt)
+    for (const i of [0, 2, 3]) expect(epic.deck[i].ionStacks, `Karte ${i}`).toBe(2); // hatten schon einen → nur +1
     expect(epic.deck[1].ionStacks).toBe(2);                           // Passiv, nicht Streuung
-    expect(epic.stacks).toBe(1 + T.streuung[3].freshStacks + 2);
+    expect(epic.stacks).toBe(1 + T.streuung[3].freshStacks + 3);
     expect(fillBar(light({ charge: 10 }), [], {}, uneven, order, 0).deck[4].ionStacks || 0).toBe(0); // ohne den Skill nichts
   });
 });
