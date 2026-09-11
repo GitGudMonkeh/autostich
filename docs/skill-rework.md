@@ -9939,6 +9939,58 @@ Owner-Entscheid offen, welche zuerst.
 
 ---
 
+### 7.71 Der Bruchwert gesweept: die Ansteckung ist ein PREIS-Problem (2026-09-11, Owner-Idee) — gemessen, nichts umgesetzt
+
+**Owner:** „was passiert wenn wir bei Eis einfach wieder den Bruchwert erhöhen, der würde MASSIVE genervt und der
+Buff geht über das gesamte Eisdeck."
+
+`BURST_SCALE` (`glacier.js`, heute 20) ist ein reiner linearer Faktor auf jeden Bruch — der Buff geht also
+tatsächlich über das ganze Eisdeck. `--only cross`, Seed 1, 8.000 Läufe je Wert.
+
+| `BURST_SCALE` | Eis mono | Bl+Ei / Bl | Fe+Ei / Fe | Ei+Pf / Pf |
+| ---: | ---: | ---: | ---: | ---: |
+| **20** (heute) | 6,4 Mio | 0,40× | 0,83× | 0,65× |
+| 40 | 10,2 Mio | 0,51× | **1,09×** | 0,79× |
+| 60 | 13,9 Mio | 0,63× | **1,33×** | 0,92× |
+| 100 | 21,7 Mio | 0,82× | **1,80×** | **1,09×** |
+
+Feuer, Blitz und Pflanze stehen in allen vier Läufen unverändert (8,8 · 21,9 · 15,6) — der Regler fasst nur Eis an.
+
+#### A · Die Ansteckung geht mit dem Preis zurück, bei allen drei Paaren
+
+Das ist der Kern und er war vorher nicht belegt. **Eis war nicht ansteckend, weil Eis kaputt ist, sondern weil ein
+Gletscher eine Brettposition kostet und zu wenig dafür zahlt.** Jede Eis-Position im Mischbau war ein Downgrade
+gegenüber derselben Position in der anderen Fraktion. Steigt der Preis, wird der Tausch fair:
+
+- Bei **40** ist Eis für Feuer bereits ein **Gewinn** (1,09× statt 0,83×).
+- Bei **100** gilt das auch für Pflanze (1,09×), und Feuer profitiert stark (1,80×).
+- **Blitz bleibt der härteste Fall** (0,82× selbst bei 100) — Blitz steht bei 21,9 Mio, eine Eis-Position kommt
+  dort schlicht nicht mit. Das ist ein Blitz-Problem, kein Eis-Problem.
+
+Die Diagnose aus §8 („Eis ist ansteckend, weil der freie Spieler von 13 Eis-Skills auf 1,7–3,1 fällt") beschrieb
+das Symptom richtig und die Ursache falsch: es ist nicht die ZAHL der Skills, es ist der PREIS je Position.
+
+#### B · Eis skaliert unterlinear
+
+20 → 6,4 · 40 → 10,2 (×1,59) · 60 → 13,9 (×2,17) · 100 → 21,7 (×3,39) bei ×5 am Regler. Es sättigt also etwas —
+vermutlich die Masse-Schwellen (`BURST_AT`, die Stufenleiter), die eine feste Obergrenze je Bruch setzen. Wer Eis
+weiter heben will, stößt irgendwann an diese Decke statt an den Preis.
+
+#### C · Die Auswahl, die daraus folgt
+
+| Wert | Eis | Feld danach | Charakter |
+| ---: | ---: | --- | --- |
+| 40 | 10,2 | Bl 21,9 · Pf 15,6 · Ei 10,2 · Fe 8,8 | Eis überholt Feuer, Ansteckung halbiert |
+| 60 | 13,9 | Bl 21,9 · Pf 15,6 · Ei 13,9 · Fe 8,8 | Eis auf Augenhöhe mit Pflanze, Feuer allein unten |
+| 100 | 21,7 | **Ei 21,7 · Bl 21,9** · Pf 15,6 · Fe 8,8 | Eis gleichauf mit Blitz, Ansteckung praktisch weg |
+
+Bei 100 ist die Spreizung des Feldes nicht mehr 3,4× (Blitz zu Eis), sondern **2,5× (Blitz zu Feuer)** — und der
+Ausreißer heißt dann eindeutig Feuer.
+
+Gemessen, nichts umgesetzt. Owner-Entscheid offen.
+
+---
+
 ### 5.30 Die Eis-Skills auf dem neuen Motor (2026-09-09) — gemessen, nichts umgesetzt
 
 **Owner:** „und dann schauen wir uns alle skills an die davon profitieren müssen und designen wie."
