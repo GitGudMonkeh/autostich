@@ -388,7 +388,14 @@ export const HEAT_MIN_MARGIN     = envNum("SIM_HEAT_MIN_MARGIN", 3);            
 export const HEAT_MARGIN_OFFSET  = envNum("SIM_HEAT_MARGIN_OFFSET", 1);            // Hitze = (Vorsprung − Offset) × je Punkt
 export const HEAT_PER_POINT      = envNum("SIM_HEAT_PER_POINT", 1);                // % Hitze je Vorsprungspunkt über dem Offset, linear ohne Knie
 export const HEAT_LOSS           = envNum("SIM_HEAT_LOSS", 6);                     // % Hitze je Niederlage (flach)
-export const HEAT_MULT_PER_10    = envNum("SIM_HEAT_MULT_PER_10", 0.02);           // Score-Multiplikator je volle 10 % gehaltener Hitze (×1,2 bei 100)
+/* §7.73/§7.74 (Owner: „0.05 als moderater Schub"): 0,02 → 0,05, also ×1,5 statt ×1,2 bei voller Leiste. Gesweept,
+   nicht geraten: 0,02/0,04/0,06/0,09 → Feuer 8,8/10,0/11,2/12,8 Mio, Gerade Feuer ≈ 7,70 + 57 × Rate.
+   Der Regler ist BEWUSST nur ein Schub und keine Reparatur: er sitzt in ×(1 + Rate × Hitze/10), multipliziert also
+   den ganzen Stich — auch den Score des Partners. Die Mischbauten steigen deshalb 2,4-mal so schnell wie Feuer
+   allein (Steigung Fe+Bl 136 gegen Fe 57), und bei der Rate, die Feuer allein auf Eis-Niveau brächte (0,177),
+   stünde Fe+Bl bei 41 Mio. Owner dazu: „das Ziel sind eh Mischbilds, also passt wenn Feuer ein guter partner ist"
+   — Feuers Mono-Schwäche ist damit kein Fehler, sondern seine Rolle. */
+export const HEAT_MULT_PER_10    = envNum("SIM_HEAT_MULT_PER_10", 0.05);           // Score-Multiplikator je volle 10 % gehaltener Hitze (×1,5 bei 100)
 export const FORGE_VALUE         = envNum("SIM_FORGE_VALUE", 4);                   // Schmiede: +Dauerwert je Schmiedung (§7.34: 3 → 4; +3 auf die niedrigste Karte hob den Vorsprung kaum, und der Vorsprung ist das Hitze-Einkommen)
 // Legendäre (§4.7): keine Stufe, zwei Effekte, jedes läuft allein.
 export const SONNENKERN_BRAND           = envNum("SIM_SONNENKERN_BRAND", 0.25);                // Sonnenkern: jeder Sieg brandmarkt so viel Wert weg (stapelt über die Runden) — der eigentliche Motor des Legendären; §6.12: 1 → 0,25 (bei 1 lag Sonnenkern auch ohne Brand-Score bei +296 %). Viertel sind binär exakt, die Anzeige bleibt sauber

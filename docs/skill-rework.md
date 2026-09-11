@@ -10093,6 +10093,41 @@ Gemessen, nichts umgesetzt. Owner-Entscheid offen.
 
 ---
 
+### 7.74 Feuer: `HEAT_MULT_PER_10` 0,02 → 0,05 — und der Rahmen dahinter (2026-09-11, Owner) — umgesetzt
+
+**Owner:** „0.05 als moderater Schub, aber das Ziel sind eh Mischbilds, also passt wenn Feuer ein guter partner
+ist."
+
+Der zweite Halbsatz ist der wichtigere. **Mischbuilds sind das Ziel** — und damit ist die Kennzahl, nach der diese
+ganze Reihe tariert hat, die falsche gewesen.
+
+#### A · Was der Rahmen umschreibt
+
+| bisher gelesen als | jetzt |
+| --- | --- |
+| „Feuer ist mit 8,8 Mio die schwächste Fraktion" | Feuer ist ein **Partner**: Fe+Bl 19,8 gegen Blitz allein 21,9, bei weniger als halber Fraktion |
+| „Die Spreizung der Mono-Mediane (3,4×) ist das Problem" | Die Mono-Mediane sind **nicht der Maßstab**. Paare und Tripel sind es |
+| „Eis ist die schwächste Fraktion" | Eis' **Ansteckung** war der Fehler, weil sie genau das Ziel angriff — behoben in §7.72 |
+
+Der Sweep in §7.73 hatte schon gezeigt, dass der Hitze-Multiplikator die Mischbauten **2,4-mal so schnell** hebt
+wie Feuer allein (Steigung Fe+Bl 136 gegen Fe 57), weil er den ganzen Stich multipliziert — also auch den Score des
+Partners. Was dort als Einwand stand („er kann Feuers Problem nicht lösen"), ist unter dem Rahmen des Owners
+**genau die gewünschte Eigenschaft**.
+
+#### B · Der Wert
+
+0,02 → 0,05, also **×1,5 statt ×1,2 bei voller Leiste**. Aus der Geraden `Feuer ≈ 7,70 + 57 × Rate`:
+Feuer allein ≈ 10,6 Mio, Fe+Bl ≈ 23,8, Fe+Pf ≈ 23,3. Bewusst kein Wert, der Feuer allein auf Eis-Niveau bringt —
+dafür wären 0,177 nötig, und dort stünde Fe+Bl bei 41 Mio.
+
+#### C · Konsequenz für die Messung
+
+Ab hier werden die Duell-Zahlen **nach Mono / Paaren / Tripeln getrennt** ausgegeben, mit den Paaren als
+Hauptzahl. Die Mono-Spalte bleibt als Diagnose (sie zeigt, ob eine Fraktion allein überhaupt funktioniert), ist
+aber nicht mehr das Tarier-Ziel.
+
+---
+
 ### 5.30 Die Eis-Skills auf dem neuen Motor (2026-09-09) — gemessen, nichts umgesetzt
 
 **Owner:** „und dann schauen wir uns alle skills an die davon profitieren müssen und designen wie."
