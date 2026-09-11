@@ -9782,6 +9782,61 @@ nicht. Der dünne Abstand ist derselbe, der schon einmal aufgefallen ist; behobe
 
 ---
 
+### 7.68 Der Paritäts-Regler gesweept — und was die Kurve über die Fraktion sagt (2026-09-11) — gemessen
+
+`--only cross`, Seed 1, 8.000 Läufe je Wert. Die Maschine war dabei sonst leer (§7.67, Nebenbefund).
+
+| `ION_SCORE_PER_STACK` | Blitz | zu Feuer |
+| ---: | ---: | ---: |
+| **75** (heute) | 28,0 Mio | 3,18× |
+| 55 | 24,0 Mio | 2,72× |
+| 45 | 21,9 Mio | 2,49× |
+| 35 | 19,8 Mio | 2,24× |
+
+#### A · Die Kontrolle stimmt
+
+Bei 75 kommt **exakt 28,0 Mio** heraus — derselbe Wert wie in `zuend-s1` vor den beiden Schnitten. Die Rücknahme
+aus §7.67 hat den Stand also punktgenau wiederhergestellt; die Kurve misst nur den Regler.
+
+#### B · Die Kurve ist gerade, und ihr Achsenabschnitt ist die eigentliche Nachricht
+
+Ausgleichsgerade über die vier Punkte: **Blitz ≈ 12,7 Mio + 0,205 × Wert**, R praktisch eins.
+
+Zwei Zahlen folgen daraus:
+
+- **Für 17,5 Mio (die 1,96× vor der Runde) bräuchte es den Wert 24** — also **−68 %**. Der hinterlegte Sweep im
+  Konstanten-Kommentar reicht von 60 bis 120; 24 liegt weit außerhalb von allem, was je erwogen wurde.
+- **Bei Stapel-Score NULL stünde Blitz immer noch bei 12,7 Mio, also 1,44× Feuer.** Der Stapel-Score trägt damit
+  nur gut die Hälfte der Fraktionshöhe. Die andere Hälfte sind Crit-Multiplikator, Legendäre und der Rest des
+  Motors — und an die kommt dieser Regler nicht heran.
+
+**Ein Regler auf sein Extrem zu drehen, um die ganze Lücke zu schlucken, ist genau der Fehler, den ich mit den zwei
+Skill-Schnitten schon zweimal gemacht habe.** Deshalb keine Empfehlung für 24.
+
+#### C · Die Frage hinter der Frage: ist 1,96× überhaupt das Ziel?
+
+Die vier Fraktionen standen vor dieser Runde bei **Blitz 17,2 · Pflanze 15,6 · Feuer 8,8 · Eis 6,4**. Blitz war
+also bereits die stärkste, und „1,96× Feuer" beschreibt nicht einen ausgeglichenen Zustand, sondern den alten.
+
+§7.66 C hat gezeigt, dass ein guter Teil des Anstiegs daher kommt, dass **zwei tote Plätze jetzt funktionierende
+Skills tragen** — das ist die beabsichtigte Reparatur, die landet, und kein Überschuss.
+
+Damit stehen zwei verschiedene Ziele im Raum, und sie führen zu ganz verschiedenen Programmen:
+
+1. **Blitz zurück auf den alten Stand** (17,5 Mio). Braucht Wert 24 und nimmt dem Stapel zwei Drittel seines
+   Gewichts — der Signatur-Ressource der Fraktion.
+2. **Blitz moderat senken und stattdessen Feuer und Eis heben.** Die Ausreißer nach unten sind Feuer (8,8) und Eis
+   (6,4) gegen Pflanze (15,6), nicht Blitz nach oben.
+
+#### D · Empfehlung
+
+**Wert 45** (Blitz 21,9 Mio, 2,49×) als der Schnitt, der die Fraktion spürbar senkt (−22 %), ohne den Stapel zu
+entkernen — und dann die Frage aus C entscheiden, statt sie über einen Regler zu erschlagen.
+
+Owner-Entscheid offen.
+
+---
+
 ### 5.30 Die Eis-Skills auf dem neuen Motor (2026-09-09) — gemessen, nichts umgesetzt
 
 **Owner:** „und dann schauen wir uns alle skills an die davon profitieren müssen und designen wie."
