@@ -9860,6 +9860,85 @@ erstmal wieder alle übereinander").
 
 ---
 
+### 7.70 Große Aufnahme über alle vier Fraktionen nach dem Regler (2026-09-11) — gemessen
+
+`node sim/survey.js --explore 900 --runs 175 --cross 500 --jobs 4`, rund 108.000 Läufe in 116 Minuten, Maschine
+sonst leer. Owner: „dann messen wir erstmal wieder alle übereinander."
+
+#### A · Der Regler hat punktgenau geliefert
+
+**Blitz 21,9 Mio, 2,49× Feuer** — exakt der Wert, den der Sweep in §7.68 für 45 vorhergesagt hat. Nach zwei
+Schätzungen, die beide daneben lagen (§7.64, §7.66 A), ist das die Bestätigung, dass der Sweep das richtige
+Werkzeug war und die Kopfrechnung nicht.
+
+#### B · Das Feld
+
+| | Duell-Median | Siegquote |
+| --- | ---: | ---: |
+| **Blitz** | 21,9 Mio | 65,8 % |
+| **Pflanze** | 15,6 Mio | 55,9 % |
+| **Feuer** | 8,8 Mio | 66,3 % |
+| **Eis** | 6,4 Mio | 60,5 % |
+
+Blitz zu Eis ist **3,4×** — und damit ist die Spreizung nicht kleiner als vor der ganzen Blitz-Runde, sie hat nur
+die Plätze getauscht. **Die Fraktionen waren nie ausgeglichen**; „Blitz zurück auf 1,96× Feuer" hätte das
+Grundproblem nicht berührt (§7.68 C).
+
+Bemerkenswert: die **Siegquoten** liegen alle zwischen 56 und 66 %, bei Score-Medianen, die um das 3,4-fache
+auseinanderliegen. Die Fraktionen gewinnen also ähnlich viele Stiche und zahlen dafür völlig verschieden. Der
+Unterschied sitzt nicht im Spiel, sondern in der Score-Kette.
+
+#### C · Eis ist weiter ansteckend, unverändert seit §8
+
+| ohne Eis | | mit Eis | |
+| --- | ---: | --- | ---: |
+| Blitz | 21,9 | Bl+Ei | 8,7 = **0,40×** |
+| Feuer+Blitz | 19,8 | Fe+Bl+Ei | 9,1 = **0,46×** |
+| Blitz+Pflanze | 23,9 | Bl+Ei+Pf | 11,0 = **0,46×** |
+| Feuer+Pflanze | 19,6 | Fe+Ei+Pf | 10,3 = 0,53× |
+| Pflanze | 15,6 | Ei+Pf | 10,0 = 0,65× |
+| Feuer | 8,8 | Fe+Ei | 7,3 = 0,83× |
+
+**Jede Kombination mit Eis fällt auf 0,40 bis 0,83 ihres Werts ohne Eis.** Das ist der Befund aus §8, unverändert
+trotz der Eis-Etappen in §5.28 ff. Eis ist nicht nur die schwächste Fraktion — es zieht jede andere mit herunter,
+und zwar am härtesten die stärkste (Blitz 0,40×).
+
+**Damit ist Eis die Baustelle, nicht Feuer.** Feuer ist bloß klein; Eis ist ansteckend.
+
+#### D · Tote Skills: gleichmäßig verteilt, und Blitz ist keine Ausnahme mehr
+
+Wirkung unter 3 % in der eigenen Mono-Welt:
+
+| Fraktion | | |
+| --- | ---: | --- |
+| Feuer | 3 von 14 | Brandmal · Rückzündung · Zunder |
+| Blitz | 4 von 14 | Spannungsfeld · Blitzfänger · Lichtbogen · Kettenblitz |
+| Eis | 4 von 15 | Frostbund · Schneetreiben · Packeis · Abbruchkante |
+| Pflanze | 4 von 15 | Lichtung · Verwachsung · Jahresringe · Ranken |
+
+15 von 58 normalen Skills, gleichmäßig über alle vier verteilt. §8 zählte 26 von 70 — der Stand ist also besser,
+aber das Muster ist dasselbe, und es ist **kein Blitz-Problem**, sondern eines des Systems.
+
+Zwei Namen darin sind neu und unangenehm: **Lichtbogen und Kettenblitz** standen in §7.62/§7.66 noch mit +160 %
+und +13 % da. Nach dem Regler fallen sie unter 3 %. Der Stapel-Score war ihr Hebel, und 45 statt 75 nimmt ihnen
+mehr als der Fraktion insgesamt. **Der eine Regler, der die Fraktion sauber senkt, macht drinnen Skills tot** —
+dieselbe Kehrseite wie bei den Skill-Schnitten, nur an anderer Stelle.
+
+#### E · Was daraus folgt
+
+Drei Dinge stehen nebeneinander, und sie sind verschieden dringend:
+
+1. **Eis' Ansteckung** ist der größte Einzelposten im ganzen Spiel und seit §8 unbehoben. Wer Mischbauten will,
+   muss hier ansetzen.
+2. **Die Spreizung 3,4×** zwischen Blitz und Eis ist eine Produktfrage: sollen die vier Fraktionen gleich hoch
+   zahlen, oder dürfen sie verschieden hoch sein, solange jede spielbar ist? Die Siegquoten (56–66 %) sagen, dass
+   sie sich im SPIEL kaum unterscheiden.
+3. **Lichtbogen und Kettenblitz** brauchen nach dem Regler neue Zahlen — sie sind Kollateralschaden, nicht Absicht.
+
+Owner-Entscheid offen, welche zuerst.
+
+---
+
 ### 5.30 Die Eis-Skills auf dem neuen Motor (2026-09-09) — gemessen, nichts umgesetzt
 
 **Owner:** „und dann schauen wir uns alle skills an die davon profitieren müssen und designen wie."
