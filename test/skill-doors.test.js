@@ -256,7 +256,7 @@ describe("Stufentexte — ein Text je Stufe (descTiers, ability.<id>.desc.<t>, s
        davon still weggefallen) und dass das Wort „Serie" nicht zurückkommt: der alte Skill hing daran, und genau
        das war der Konstruktionsfehler (§7.55 B, die Serie ist ein Spätindikator). */
     for (const t of SKILL_DEFS.SK_LIGHTNING_07.descTiers) {
-      expect(t).toMatch(/^Gewinnst du mit einer Karte, gibt sie \+[\d,]+ % Crit-Chance auf den Stich, je Stapel auf ihr [\d,]+ Punkte weniger\. Jeder ihrer Stapel gibt dafür \+\d+ Basis-Score\.$/);
+      expect(t).toMatch(/^Gewinnst du mit einer Karte, gibt sie \+[\d,]+ % Crit-Chance auf den Stich, je Stapel auf ihr [\d,]+ % weniger\. Jeder ihrer Stapel gibt dafür \+\d+ Basis-Score\.$/);
       expect(t).not.toContain("Serie");
     }
     expect(SKILL_DEFS.SK_FIRE_04.descTiers[3]).toBe("Niederlagen kühlen die Hitze nicht.");

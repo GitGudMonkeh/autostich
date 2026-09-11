@@ -218,9 +218,9 @@ export const SKILL_DEFS = {
     ...tiered(BLITZ.entladung, (r) => `Jede volle Leiste gibt dauerhaft +${de(r.scorePerBar)} Basis-Score je Sieg.${r.critDouble ? " Bei einem Crit zählt die Rampe doppelt." : ""}`) },
   // Serie und Crit
   SK_LIGHTNING_07: { id: "SK_LIGHTNING_07", name: "Zündspannung", archetype: "lightning", keywords: ["crit", "ionize"], tiers: BLITZ.zuendung,
-    ...tiered(BLITZ.zuendung, (r) => `Gewinnst du mit einer Karte, gibt sie +${pctS(r.crit)} % Crit-Chance auf den Stich, je Stapel auf ihr ${pctS(r.perStack)} Punkte weniger. Jeder ihrer Stapel gibt dafür +${r.scorePerStack} Basis-Score.`) },
+    ...tiered(BLITZ.zuendung, (r) => `Gewinnst du mit einer Karte, gibt sie +${pctS(r.crit)} % Crit-Chance auf den Stich, je Stapel auf ihr ${pctS(r.perStack)} % weniger. Jeder ihrer Stapel gibt dafür +${r.scorePerStack} Basis-Score.`) },
   SK_LIGHTNING_13: { id: "SK_LIGHTNING_13", name: "Spannungsfeld", archetype: "lightning", keywords: ["ionize", "crit", "formation"], tiers: BLITZ.feld,
-    ...tiered(BLITZ.feld, (r) => `Gewinnst du mit einer Karte in einer Formation, gibt jede Formation dieser Position +${pctS(r.critPerForm)} % Crit-Chance auf den Stich.${r.feedLowest ? ` Die Karte mit den wenigsten Stapeln dieser Formation erhält +${r.feedLowest} Stapel.` : ""}`) },
+    ...tiered(BLITZ.feld, (r) => `Ein Sieg in einer Formation gibt +${pctS(r.critPerForm)} % Crit-Chance je Formation an der Siegposition.${r.feedLowest ? ` Die Karte mit den wenigsten Stapeln in diesen Formationen erhält +${r.feedLowest} Stapel.` : ""}`) },
   SK_LIGHTNING_12: { id: "SK_LIGHTNING_12", name: "Vorentladung", archetype: "lightning", keywords: ["crit", "streak"], tiers: BLITZ.vorentladung,
     ...tiered(BLITZ.vorentladung, (r) => `Ab Serie ${r.minStreak} gibt jeder Serienpunkt +${de(r.multPerStreak)}× Crit-Multiplikator auf diesen Stich.`) },
   // (§7.19: Überschlag SK_LIGHTNING_14 gestrichen — die Systemregel „Überschuss über 100 %" in groß, im gierigen Build −15 %.)
@@ -245,7 +245,7 @@ export const SKILL_DEFS = {
   SK_LIGHTNING_L02: { id: "SK_LIGHTNING_L02", name: "Doppelentladung", archetype: "lightning", legendary: true, keywords: ["ionize", "crit"],
     desc: `Jede Ionisierung gibt ${C.DOPPELENTLADUNG_STACKS} Stapel statt 1. Crit mit einer ionisierten Karte: der Blitz schlägt zweimal ein, der Stich zählt doppelt.` },
   SK_LIGHTNING_L03: { id: "SK_LIGHTNING_L03", name: "Hochspannung", archetype: "lightning", legendary: true, keywords: ["crit"],
-    desc: `Alle deine gehaltenen Skills wirken ${C.HOCHSPANNUNG_STEPS === 1 ? "eine Stufe" : `${de1(C.HOCHSPANNUNG_STEPS)} Stufen`} höher, in jeder Fraktion. Episch ist das Ende der Leiter.` },
+    desc: `Alle deine gehaltenen Skills wirken ${C.HOCHSPANNUNG_STEPS === 1 ? "eine Stufe" : `${de1(C.HOCHSPANNUNG_STEPS)} Stufen`} höher, in jedem Archetyp. Über Episch geht es nicht hinaus.` },
   SK_LIGHTNING_L04: { id: "SK_LIGHTNING_L04", name: "Resonanz", archetype: "lightning", legendary: true, keywords: ["ionize", "formation"], // §7.25: ersetzt Durchschlag (Emblem bleibt)
     desc: `Ionisierte Karten in einer Formation teilen ihre Stapel: jede Karte kämpft mit ihren eigenen Stapeln plus ${de(C.RESONANZ_SHARE)}× den Stapeln der anderen Mitglieder ihrer Formation, abgerundet.` },
 
@@ -280,7 +280,7 @@ export const SKILL_DEFS = {
   // Konsument — Hitze zu Score (§7.16: der Überlauf-Wandler; Flächenbrand SK_FIRE_11 ist gestrichen, der Brand kostete
   // Klinge, Siegquote und Serie, keine Auszahlung glich das aus)
   SK_FIRE_12: { id: "SK_FIRE_12", name: "Schmelzpunkt", archetype: "fire", keywords: ["heat", "consume"], tiers: FEUER.schmelzpunkt,
-    ...tiered(FEUER.schmelzpunkt, (r) => `Bei voller Hitzeleiste wird die Hitze, die ein Sieg nicht mehr auf die Leiste bringt, zu +${r.perPoint} Basis-Score je Punkt.${r.lossPays ? " Bei voller Leiste zahlt auch die Kühlung einer Niederlage, beim nächsten Sieg." : ""}`) },
+    ...tiered(FEUER.schmelzpunkt, (r) => `Bei voller Hitzeleiste wird die Hitze, die ein Sieg nicht mehr auf die Leiste bringt, zu +${r.perPoint} Basis-Score je Punkt.${r.lossPays ? " Auch die Kühlung einer Niederlage zahlt, beim nächsten Sieg." : ""}`) },
   // Gegner — Brände
   SK_FIRE_13: { id: "SK_FIRE_13", name: "Brandmal", archetype: "fire", keywords: ["heat", "brand"], tiers: FEUER.brandmal,
     ...tiered(FEUER.brandmal, (r) => `Ab ${r.minHeat} % Hitze brandmarkt jeder Sieg die geschlagene Gegnerkarte: −${r.value} Wert im nächsten Durchlauf.${r.onLoss ? " Auch eine Niederlage brandmarkt die Gegnerkarte, die gewonnen hat." : ""}`) },
@@ -293,11 +293,11 @@ export const SKILL_DEFS = {
     ...tiered(FEUER.glutstahl, (r) => `Ein Sieg zählt +${r.perPoint} Basis-Score je Punkt Kampfwert über dem Grundwert der Siegkarte.${r.forgedDouble ? " Schmiedewert zählt doppelt." : ""}`) },
   // Legendäre (§4.7): keine Stufe, zwei Effekte, jedes läuft allein.
   SK_FIRE_L01: { id: "SK_FIRE_L01", name: "Sonnenkern", archetype: "fire", legendary: true, keywords: ["heat", "brand"],
-    desc: `Jeder Sieg brandmarkt die geschlagene Gegnerkarte (−${de(C.SONNENKERN_BRAND)} Wert), und Brände erneuern sich nicht mehr: sie stapeln sich über die Durchläufe. Sieg gegen eine gebrandmarkte Karte: +${C.SONNENKERN_SCORE_PER_BRAND} Basis-Score je Brandpunkt auf ihr.` },
+    desc: `Jeder Sieg brandmarkt die geschlagene Gegnerkarte (−${de(C.SONNENKERN_BRAND)} Wert), und Brände stapeln sich über die Durchläufe, statt sich zu erneuern. Sieg gegen eine gebrandmarkte Karte: +${C.SONNENKERN_SCORE_PER_BRAND} Basis-Score je Brandpunkt auf ihr.` },
   SK_FIRE_L02: { id: "SK_FIRE_L02", name: "Ewige Glut", archetype: "fire", legendary: true, keywords: ["heat"], // §7.21: ersetzt Phönixfeuer (Emblem bleibt)
     desc: `Jeder Durchlauf, der mit voller Hitzeleiste endet, hebt den Hitze-Multiplikator dauerhaft um +${pct(C.EWIGE_GLUT_MULT_PER_ROUND)} %. Die Hitze fällt nie unter ${pct(C.EWIGE_GLUT_FLOOR_FRAC)} % der höchsten je erreichten Hitze.` },
   SK_FIRE_L03: { id: "SK_FIRE_L03", name: "Sonnenzorn", archetype: "fire", legendary: true, keywords: ["heat"],
-    desc: `Der Hitze-Multiplikator rechnet mit der höchsten je erreichten Hitze, nicht mit der aktuellen, und zwar bis ${C.WEISSGLUT_HEAT_MAX} %; je 10 Prozentpunkte Hitze +${pct(C.SONNENZORN_MULT_PER_10)} % Score statt +${pct(C.HEAT_MULT_PER_10)} %. Solange die Hitze unter der Spitze liegt, zählt die Hitze aus Siegen ×${de(C.SONNENZORN_HEAT_MULT)}.` },
+    desc: `Der Hitze-Multiplikator rechnet bis ${C.WEISSGLUT_HEAT_MAX} % mit der höchsten je erreichten Hitze statt mit der aktuellen: je 10 Prozentpunkte +${pct(C.SONNENZORN_MULT_PER_10)} % Score statt +${pct(C.HEAT_MULT_PER_10)} %. Liegt die Hitze unter der Spitze, zählt die Hitze aus Siegen ×${de(C.SONNENZORN_HEAT_MULT)}.` },
   // (§6.11, Owner: drei Legendäre je Fraktion — SK_FIRE_L04 Damaststahl ist gestrichen; der Owner behält Sonnenzorn,
   //  die gemessene Reihung der vier war Sonnenkern +76 %, Damaststahl +8 %, Ewige Glut −8 %, Sonnenzorn −14 %.)
 
@@ -306,26 +306,26 @@ export const SKILL_DEFS = {
   //      "ice" → activeArchetypes "ice" aktiviert den Gletscher-Block; PICK_SKILL seedet state.glacierRoles aus den `role`s.
   // Linie 1 — Firn (Masse-Motor)
   SK_ICE_01: { id: "SK_ICE_01", name: "Anfrieren", archetype: "ice", keywords: ["glacier"], role: "G_ANFRIEREN", tiers: EIS.anfrieren,
-    ...tiered(EIS.anfrieren, (r) => `Ein Gletscher-Sieg gibt +${pct(r.pct)} % seiner Masse extra${r.form ? ", in einer Formation doppelt" : ""}.`) },
+    ...tiered(EIS.anfrieren, (r) => `Ein Gletscher-Sieg gibt +${pct(r.pct)} % seiner Masse zusätzlich${r.form ? ", in einer Formation doppelt" : ""}.`) },
   SK_ICE_02: { id: "SK_ICE_02", name: "Schneetreiben", archetype: "ice", keywords: ["glacier", "freeze"], role: "G_SCHNEETREIBEN", tiers: EIS.schneetreiben,
     ...tiered(EIS.schneetreiben, (r) => `Gewinnt ein Gletscher, sät er +${de(r.seed)} Schnee in die Boden-Reserve ${r.fields === 1 ? "eines angrenzenden offenen Felds" : `von ${de1(r.fields)} angrenzenden offenen Feldern`}.`) },
   SK_ICE_03: { id: "SK_ICE_03", name: "Dauerfrost", archetype: "ice", keywords: ["glacier", "freeze"], role: "G_DAUERFROST", tiers: EIS.dauerfrost,
     ...tiered(EIS.dauerfrost, (r) => `Jeden Durchlauf sammeln ungefrorene Felder Schnee in ihrer Boden-Reserve: +${de(r.near)} bei bis zu 2 Feldern Abstand zum nächsten Gletscher, +${de(r.far)} ab 3.`) },
   SK_ICE_04: { id: "SK_ICE_04", name: "Verdichtung", archetype: "ice", keywords: ["glacier", "bauphase"], role: "G_VERDICHTUNG", tiers: EIS.verdichtung,
-    ...tiered(EIS.verdichtung, (r) => `Ein Gletscher gewinnt +${de(r.per)} Masse je Punkt Kampfwert über seinem Grundwert. Der Wert wird ganz normal ausgespielt; Wert, der selbst aus Masse stammt, zählt nicht mit.`) },
+    ...tiered(EIS.verdichtung, (r) => `Ein Gletscher gewinnt +${de(r.per)} Masse je Punkt Kampfwert über seinem Grundwert. Wert, der selbst aus Masse stammt, zählt nicht mit.`) },
   // Linie 2 — Eisschild (Cluster/Dichte). (§5.2: Verschmelzen SK_ICE_05 gestrichen — binär, im Spiel unsichtbar, und
   // dieselbe Achse wie Packeis/Verzahnung; in groß ist es das Legendäre Ewiges Schild.)
   SK_ICE_06: { id: "SK_ICE_06", name: "Packeis", archetype: "ice", keywords: ["glacier"], role: "G_PACKEIS", tiers: EIS.packeis,
     ...tiered(EIS.packeis, (r) => `Jeden Durchlauf gewinnt ein Gletscher +${de(r.per)} Masse je angrenzendem offenen Feld.`) },
   SK_ICE_07: { id: "SK_ICE_07", name: "Eisbrücke", archetype: "ice", keywords: ["glacier"], role: "G_EISBRUECKE", tiers: EIS.eisbruecke,
-    ...tiered(EIS.eisbruecke, (r) => `Zählt auch die vier Diagonalen als angrenzend: zersplitterte Felder werden zu einem Cluster. Für Kaskade und Kollision zählt ein diagonaler Gletscher zu ${pct(r.weight)} %.`) },
+    ...tiered(EIS.eisbruecke, (r) => `Auch die vier Diagonalen gelten als angrenzend: zersplitterte Felder werden zu einem Cluster. Für Kaskade und Kollision zählt ein diagonaler Gletscher zu ${pct(r.weight)} %.`) },
   SK_ICE_08: { id: "SK_ICE_08", name: "Eiswall", archetype: "ice", keywords: ["glacier", "formation"], role: "G_EISWALL", tiers: EIS.eiswall,
-    ...tiered(EIS.eiswall, (r) => `Steht ein Gletscher in einer geraden Kette aus mindestens ${G_EISWALL_MIN} Gletschern (Reihe oder Spalte), berstet er um +${pct(r.per)} % stärker je Gletscher der Kette über zwei. Eine volle Reihe gibt also +${pct(r.per * 3)} %.`) },
+    ...tiered(EIS.eiswall, (r) => `Steht ein Gletscher in einer geraden Kette aus mindestens ${G_EISWALL_MIN} Gletschern (Reihe oder Spalte), bricht er um +${pct(r.per)} % stärker je Gletscher der Kette über zwei. Eine volle Reihe gibt also +${pct(r.per * 3)} %.`) },
   SK_ICE_09: { id: "SK_ICE_09", name: "Verzahnung", archetype: "ice", keywords: ["glacier"], role: "G_VERZAHNUNG", tiers: EIS.verzahnung,
     ...tiered(EIS.verzahnung, (r) => `Jeden Durchlauf gewinnt jeder Gletscher +${de(r.per)} Masse je Gletscher im verbundenen Cluster.`) },
   // Linie 3 — Lawine (Brechen/Kaskade)
   SK_ICE_10: { id: "SK_ICE_10", name: "Abbruchkante", archetype: "ice", keywords: ["glacier"], role: "G_ABBRUCHKANTE", tiers: EIS.abbruchkante,
-    ...tiered(EIS.abbruchkante, (r) => `Deine Gletscher bersten erst ab ${de(r.at)} Masse statt ab ${de(G_BURST_AT)}. Sie sammeln länger und treffen dafür eine höhere Schwelle.`) },
+    ...tiered(EIS.abbruchkante, (r) => `Deine Gletscher brechen erst ab ${de(r.at)} Masse statt ab ${de(G_BURST_AT)} und treffen dafür eine höhere Schwelle.`) },
   SK_ICE_11: { id: "SK_ICE_11", name: "Eisbeben", archetype: "ice", keywords: ["glacier"], role: "G_EISBEBEN", tiers: EIS.eisbeben,
     ...tiered(EIS.eisbeben, (r) => `Bricht ein Gletscher über der Berst-Schwelle, bebt das Eis nach: je Punkt Masse darüber zählt der Bruch +${pct(r.per)} % zusätzlich.${r.sturz ? " Das Nachbeben zählt für den Gletschersturz als eigener Bruch." : ""}`) },
   // (§5.2: Zermalmen SK_ICE_12 gestrichen — dieselbe Achse wie die Kaskade, beide zahlen für Gletscher-Nachbarn.)
@@ -342,9 +342,9 @@ export const SKILL_DEFS = {
     ...tiered(EIS.sproedbruch, (r) => `Ein Gletscher kämpft mit +${pctS(r.crit)} % Crit-Chance je Punkt Masse.${r.critMass ? ` Ein Crit mit einer Gletscherkarte gibt ihrem Gletscher +${de(r.critMass)} Masse.` : ""}`) },
   // Legendäre (je Linie eine Capstone)
   SK_ICE_L01: { id: "SK_ICE_L01", name: "Eiszeit", archetype: "ice", legendary: true, keywords: ["glacier", "freeze"], role: "G_L_EISZEIT",
-    desc: `Jeden Durchlauf +${de(G_EISZEIT_FLOOD)} Schnee in die Boden-Reserve jedes ungefrorenen Felds. Jeder Gletscher birst mit +${de(G_EISZEIT_BURST * 100)} % Wucht je angrenzendem offenen Feld.` },
+    desc: `Jeden Durchlauf +${de(G_EISZEIT_FLOOD)} Schnee in die Boden-Reserve jedes ungefrorenen Felds. Jeder Gletscher bricht mit +${de(G_EISZEIT_BURST * 100)} % Wucht je angrenzendem offenen Feld.` },
   SK_ICE_L02: { id: "SK_ICE_L02", name: "Ewiges Schild", archetype: "ice", legendary: true, keywords: ["glacier"], role: "G_L_SCHILD",
-    desc: `Jeder Eis-Skill friert ${de(G_SCHILD_PER_PICK)} Felder ein statt einem, ohne Höchstzahl. Dein Feld zählt als ein Gletscher: jeden Durchlauf teilen sich alle dieselbe Masse. Beim Bersten zählt jeder wie ein voll umschlossener Gletscher und bekommt die stärkste Gletscher-Formation des Bretts.` },
+    desc: `Jeder Eis-Skill friert ${de(G_SCHILD_PER_PICK)} Felder ein statt einem, ohne Höchstzahl. Dein Brett zählt als ein Gletscher: jeden Durchlauf teilen sich alle dieselbe Masse. Beim Bersten gilt jeder als voll umschlossen und erbt die stärkste Gletscher-Formation des Bretts.` },
   SK_ICE_L03: { id: "SK_ICE_L03", name: "Große Lawine", archetype: "ice", legendary: true, keywords: ["glacier"], role: "G_L_LAWINE",
     desc: `${jeder(G_LAWINE_EVERY, "Jeden")} Durchlauf brechen alle deine Gletscher, auch die nicht vollen. Jeder Bruch zählt mit der Wucht der höchsten Schwelle und ×${de(G_LAWINE_MULT)}.` },
   // (§5.2: Erstarrung SK_ICE_L04 gestrichen — die Kontrolle ist Einfrieren in groß, und der Score-Teil war ein nackter
@@ -393,9 +393,9 @@ export const SKILL_DEFS = {
   SK_PLANT_L02: { id: "SK_PLANT_L02", name: "Wurzelgeflecht", archetype: "plant", legendary: true, keywords: ["bloom", "formation"],
     desc: `Jede blühende Karte zählt in jeder Formation ihres Segments mit.${C.WURZELGEFLECHT_FACTOR_SCALE < 1 ? ` Sie selbst bekommt ${pct(C.WURZELGEFLECHT_FACTOR_SCALE)} % des Formations-Bonus.` : ""}` },
   SK_PLANT_L03: { id: "SK_PLANT_L03", name: "Baumreihe", archetype: "plant", legendary: true, keywords: ["bloom", "formation"],
-    desc: `Blühende Karten bilden eine positionsfreie Wiederholung, egal wo sie liegen; sie zahlt ${pct(C.BAUMREIHE_FACTOR_SCALE)} % des Wiederholungs-Bonus und zählt als Formation. Basis-Score je Karte gibt sie nicht. Jede darf zugleich in einer anderen Formation zählen.` },
+    desc: `Blühende Karten bilden eine Wiederholung, egal wo sie liegen; sie zahlt ${pct(C.BAUMREIHE_FACTOR_SCALE)} % des Wiederholungs-Bonus und zählt als Formation. Basis-Score je Karte gibt sie nicht. Jede darf zugleich in einer anderen Formation zählen.` },
   SK_PLANT_L04: { id: "SK_PLANT_L04", name: "Ewiger Frühling", archetype: "plant", legendary: true, keywords: ["green", "bloom"],
-    desc: `Blühende Karten kämpfen mit +${C.EWIGER_FRUEHLING_BLOOM_VALUE} Wert, und ein Sieg mit einer blühenden Karte zählt +${pct(C.EWIGER_FRUEHLING_FORM_MULT)} % je Formation an ihrer Position. Ist das Feld vollständig grün, sind alle deine Karten blühend.` },
+    desc: `Blühende Karten kämpfen mit +${C.EWIGER_FRUEHLING_BLOOM_VALUE} Wert, und ihr Sieg zählt +${pct(C.EWIGER_FRUEHLING_FORM_MULT)} % je Formation an ihrer Position. Ist dein ganzes Deck grün, sind alle deine Karten blühend.` },
 
 };
 
