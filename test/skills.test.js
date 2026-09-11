@@ -58,9 +58,15 @@ describe("skills — Blitz-Registry (exp skill rework)", () => {
     // `scorePerBar`, und `multPerBar` darf auf KEINER Stufe zurückkommen (sonst stünden wieder vier Skills auf einer Achse).
     expect(asc(BLITZ_TIERS.entladung, "scorePerBar")).toBe(true);
     expect(BLITZ_TIERS.entladung.every((r) => r.multPerBar === undefined && r.fillDouble === undefined)).toBe(true);
-    // §7.30: die Ladungsserie zahlt in Ladung, ihre Leiter ist die fallende Schwelle (und trägt keinen Crit-Satz mehr).
-    expect(desc(BLITZ_TIERS.serie, "chargeFromStreak")).toBe(true);
-    expect(BLITZ_TIERS.serie.every((r) => r.critPerStreak === undefined)).toBe(true);
+    /* §7.61: auf SK_LIGHTNING_07 steht die Zündspannung, die Ladungsserie ist gestrichen. Drei Zeilen, drei
+       Invarianten: der Satz steigt mit der Stufe (die Leiter), der Abfall folgt der in §7.60 gemessenen Regel
+       perStack = crit/10 (jede Stufe endet bei 10 wirksamen Stapeln), und `chargeFromStreak` darf nicht
+       zurückkommen — die Serie ist ein Spätindikator und hat in einem Ladungs-Skill nichts verloren (§7.55 B). */
+    expect(BLITZ_TIERS.serie).toBeUndefined();
+    expect(asc(BLITZ_TIERS.zuendung, "crit")).toBe(true);
+    expect(asc(BLITZ_TIERS.zuendung, "scorePerStack")).toBe(true);
+    for (const r of BLITZ_TIERS.zuendung) expect(r.perStack).toBeCloseTo(r.crit / 10, 9);
+    expect(BLITZ_TIERS.zuendung.every((r) => r.chargeFromStreak === undefined && r.critPerStreak === undefined)).toBe(true);
     // §7.51 (Owner): das Spannungsfeld zahlt auf die Crit-CHANCE je ionisierter Karte. Die zwei fruehren Lesarten
     // duerfen NICHT zurueckkommen: "perStack" war die Tiefe (§7.43) und "perCard" der eigene Score-Faktor (§7.47) —
     // beide haengten an einer zweiten Multiplikator-Achse, die Blitz gar nicht braucht (§7.46 C).

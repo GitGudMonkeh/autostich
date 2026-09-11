@@ -745,7 +745,7 @@ export function resolveTrick(state, rng) {
     // Episch — mit fortgeschriebenen Zählern; Blitzschlag (jeder N. Crit ionisiert die Siegkarte). Die volle
     // Leiste zündet NACH der Verzweigung (unten), einmal je Stich. Kein Selbstwachstum ionisierter Siegkarten mehr (Lesart A).
     if (lightning && lightning.active) {
-      const { gain, next } = chargeGainOnWin(lightning, skills, skillTiers, { isCrit, streak: serieStreak });
+      const { gain, next } = chargeGainOnWin(lightning, skills, skillTiers, { isCrit }); // §7.61: die Serie zahlt keine Ladung mehr
       lightning = { ...next, charge: (next.charge || 0) + gain };
       if (isCrit) {
         const bs = blitzschlagStacks(lightning, skills, skillTiers);

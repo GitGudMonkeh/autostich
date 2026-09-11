@@ -25,7 +25,7 @@ import { SKILL_DEFS, activeLightningCount, isLegendarySkill, boostedTier } from 
 // Dauerstrom: gestrichen, §7.18.)
 export const L = Object.freeze({
   ABLEITER: "SK_LIGHTNING_01", IONENFELD: "SK_LIGHTNING_02", KETTENBLITZ: "SK_LIGHTNING_03", LICHTBOGEN: "SK_LIGHTNING_04", // 04: Lichtbogen ersetzt Überspannung (§7.28)
-  RESTSTROM: "SK_LIGHTNING_05", GEWITTERFRONT: "SK_LIGHTNING_06", LADUNGSSERIE: "SK_LIGHTNING_07", KURZSCHLUSS: "SK_LIGHTNING_09",
+  RESTSTROM: "SK_LIGHTNING_05", GEWITTERFRONT: "SK_LIGHTNING_06", ZUENDSPANNUNG: "SK_LIGHTNING_07", KURZSCHLUSS: "SK_LIGHTNING_09", // 07: §7.61 Zündspannung ersetzt die Ladungsserie (frische Karte statt Serie)
   ENTLADUNG: "SK_LIGHTNING_10", BLITZFAENGER: "SK_LIGHTNING_11", VORENTLADUNG: "SK_LIGHTNING_12", SPANNUNGSFELD: "SK_LIGHTNING_13", // 13: §7.51 auf der Crit-Chance, §7.56 je Formation der Position (Breite)
   BLITZSCHLAG: "SK_LIGHTNING_15", STREUUNG: "SK_LIGHTNING_17", // 17: §7.59 Streuung ersetzt Serienschutz (Breite); SK_LIGHTNING_14 Überschlag: gestrichen (§7.19)
   DOPPELENTLADUNG: "SK_LIGHTNING_L02", HOCHSPANNUNG: "SK_LIGHTNING_L03", RESONANZ: "SK_LIGHTNING_L04", // L04: Resonanz ersetzt Durchschlag (§7.25); L01 Donnergott gestrichen (§6.11, Owner: drei je Fraktion, die stärksten)
@@ -108,6 +108,17 @@ export function lightningCritChance(lightning, skills, skillTiers, _streak = 0, 
      aber nirgends auf dem Schirm. */
   const perForm = lightParam(skills, skillTiers, L.SPANNUNGSFELD, "critPerForm");
   if (perForm && forms) c += perForm * forms;
+  /* Zündspannung (§7.61, Owner): der Satz der Stufe, je wirksamem Stapel der gespielten Karte um `perStack`
+     kleiner. Zwei Dinge sind Absicht. Der eigene Beitrag ist bei 0 GEKLEMMT: der Abzug frisst nur den eigenen
+     Satz, nie fremde Crit-Chance — sonst wäre der Skill auf tiefen Karten eine Falle. Und ohne `card` (Statusleiste)
+     steht er voll da, weil „keine Karte" hier „keine Stapel" heißt: der Kartentext verspricht den Satz einer
+     frischen Karte, und das sind gemessen 95 % der frühen Siege (§7.60). Er steht damit gegen Lichtbogen zwei
+     Zeilen höher: dieselbe Achse, derselbe Eingang, umgekehrtes Vorzeichen. */
+  const zCrit = lightParam(skills, skillTiers, L.ZUENDSPANNUNG, "crit");
+  if (zCrit) {
+    const drop = (lightParam(skills, skillTiers, L.ZUENDSPANNUNG, "perStack") || 0) * effectiveStacks(card, skills, skillTiers);
+    c += Math.max(0, zCrit - drop);
+  }
   return c;
 }
 
@@ -164,9 +175,13 @@ export function effectiveStacks(card, skills = [], skillTiers = {}) {
   return st * factor;
 }
 
-// Stapel-Score der gespielten Karte (in die Basis): wirksame Stapel × ION_SCORE_PER_STACK.
+/* Stapel-Score der gespielten Karte (in die Basis): wirksame Stapel × ION_SCORE_PER_STACK.
+   §7.61: die Zündspannung hängt ihren Satz hier an, nicht an einer eigenen Stelle — ihre steigende Hälfte IST der
+   Stapel-Score, nur größer. Additiv und damit ungefährlich; eine eigene multiplikative Achse auf demselben Stapel
+   wäre §7.46. */
 export function ionScoreFor(card, skills = [], skillTiers = {}) {
-  return effectiveStacks(card, skills, skillTiers) * C.ION_SCORE_PER_STACK;
+  const extra = lightParam(skills, skillTiers, L.ZUENDSPANNUNG, "scorePerStack") || 0;
+  return effectiveStacks(card, skills, skillTiers) * (C.ION_SCORE_PER_STACK + extra);
 }
 
 // Stapel auf dem Crit-Multiplikator der Siegkarte (§7.12: die Ionisierung trägt über den Motor, der ohnehin trägt):
@@ -176,13 +191,16 @@ export function ionCritMultFor(card, skills = [], skillTiers = {}) {
   return effectiveStacks(card, skills, skillTiers) * per;
 }
 
-/* Ladungsgewinn eines gewonnenen Stichs und die fortgeschriebenen Zähler. `streak` = Serie NACH diesem Sieg.
-   Crit: +1 Passiv, Blitzableiter (jeder N. Crit +1). Sieg ohne Crit: Blitzableiter Episch (+1). Immer: Ladungsserie
-   Episch (ab Serie 8 +1). Deterministisch und ohne Nebenwirkung — die Engine ruft es für die Vorschau (füllt ein Crit
-   die Leiste? critFillsBar) und dann für den echten Stich. (§7.28: Überspannung, die den Überschuss über dem Deckel
-   und über 100 % Crit-Chance in Ladung wandelte, ist gestrichen — der Überschuss der Chance zahlt jetzt allein über
-   die Systemregel auf den Multiplikator, ihr Platz trägt den Lichtbogen.) */
-export function chargeGainOnWin(lightning, skills, skillTiers, { isCrit, streak = 0 } = {}) {
+/* Ladungsgewinn eines gewonnenen Stichs und die fortgeschriebenen Zähler.
+   Crit: +1 Passiv, Blitzableiter (jeder N. Crit +1). Sieg ohne Crit: Blitzableiter Episch (+1). Deterministisch und
+   ohne Nebenwirkung — die Engine ruft es für die Vorschau (füllt ein Crit die Leiste? critFillsBar) und dann für den
+   echten Stich. (§7.28: Überspannung, die den Überschuss über dem Deckel und über 100 % Crit-Chance in Ladung
+   wandelte, ist gestrichen — der Überschuss der Chance zahlt jetzt allein über die Systemregel auf den
+   Multiplikator, ihr Platz trägt den Lichtbogen. §7.61: die Ladungsserie, die ab einer Serienlänge +1 Ladung gab,
+   ist ebenfalls weg — die Serie ist ein Spätindikator, und Ladung war damit genau dann da, wenn sie nichts mehr
+   wert ist. Damit liest die Fraktion die SERIE nirgends mehr außer in der Vorentladung. `streak` bleibt im
+   Parameter-Objekt stehen, weil beide Aufrufer es ohnehin führen.) */
+export function chargeGainOnWin(lightning, skills, skillTiers, { isCrit } = {}) {
   let gain = 0;
   const next = { ...lightning };
   if (isCrit) {
@@ -193,15 +211,15 @@ export function chargeGainOnWin(lightning, skills, skillTiers, { isCrit, streak 
   } else {
     gain += lightParam(skills, skillTiers, L.ABLEITER, "noCritCharge") || 0;
   }
-  const from = lightParam(skills, skillTiers, L.LADUNGSSERIE, "chargeFromStreak");
-  if (from != null && streak >= from) gain += 1;
   return { gain, next };
 }
 
 // Vorschau für Entladung Episch: füllt ein Crit auf dieser Karte die Leiste in diesem Stich?
-export function critFillsBar(lightning, skills, skillTiers, { streak = 0 } = {}) {
+// (§7.61: der `streak`-Parameter ist weg — die Serie geht den Ladungsgewinn nichts mehr an, und die Funktion hat
+//  derzeit ohnehin keinen Aufrufer außerhalb der Tests.)
+export function critFillsBar(lightning, skills, skillTiers) {
   if (!lightning || !lightning.active) return false;
-  const { gain } = chargeGainOnWin(lightning, skills, skillTiers, { isCrit: true, streak });
+  const { gain } = chargeGainOnWin(lightning, skills, skillTiers, { isCrit: true });
   return (lightning.charge || 0) + gain >= maxChargeFor(skills, skillTiers);
 }
 

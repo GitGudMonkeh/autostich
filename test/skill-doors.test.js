@@ -247,12 +247,13 @@ describe("Stufentexte — ein Text je Stufe (descTiers, ability.<id>.desc.<t>, s
   it("Episch-Extras stehen nur im Episch-Text", () => {
     expect(SKILL_DEFS.SK_LIGHTNING_01.descTiers[3]).toContain("Jeder Sieg ohne Crit gibt +1 Ladung"); // §7.18: das Episch-Extra aus Statische Aufladung
     expect(SKILL_DEFS.SK_LIGHTNING_01.descTiers[2]).not.toContain("ohne Crit");
-    /* §7.30: die Ladungsserie hat KEIN Episch-Extra mehr — die Ladung aus der Serie ist der ganze Skill, die Leiter
-       ist die Schwelle. Statt der weggefallenen Zusage steht hier die neue: derselbe Satz auf allen vier Stufen, nur
-       die Zahl wandert, und kein Crit-Satz mehr im Text (sonst schliche die alte zweite Achse zurück). */
+    /* §7.61: die Zündspannung hat ebenfalls kein Episch-Extra — sie hat DERSELBE Satz auf allen vier Stufen, nur
+       die Zahlen wandern. Der Wächter hält den Bau des Textes fest (beide Hälften in jeder Stufe, sonst wäre eine
+       davon still weggefallen) und dass das Wort „Serie" nicht zurückkommt: der alte Skill hing daran, und genau
+       das war der Konstruktionsfehler (§7.55 B, die Serie ist ein Spätindikator). */
     for (const t of SKILL_DEFS.SK_LIGHTNING_07.descTiers) {
-      expect(t).toMatch(/^Ab Serie \d+ gibt jeder Sieg \+1 Ladung\.$/);
-      expect(t).not.toContain("Crit");
+      expect(t).toMatch(/^Gewinnst du mit einer Karte, gibt sie \+[\d,]+ % Crit-Chance auf den Stich, je Stapel auf ihr [\d,]+ Punkte weniger\. Jeder ihrer Stapel gibt dafür \+\d+ Basis-Score\.$/);
+      expect(t).not.toContain("Serie");
     }
     expect(SKILL_DEFS.SK_FIRE_04.descTiers[3]).toBe("Niederlagen kühlen die Hitze nicht.");
     expect(SKILL_DEFS.SK_FIRE_16.descTiers[3]).toContain("Schmiedewert zählt doppelt");

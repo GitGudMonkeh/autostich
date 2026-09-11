@@ -9386,6 +9386,67 @@ Nichts umgesetzt. Eine neue Sonde im Baum.
 
 ---
 
+### 7.61 Zündspannung ersetzt die Ladungsserie (2026-09-11, Owner) — umgesetzt, UNGEMESSEN
+
+**Owner:** „ja, Bau" — auf die in §7.60 gemessene Leiter.
+
+Die Ladungsserie hing an der **Serie**, und §7.55 B hat das als Konstruktionsfehler belegt: die Serie ist ein
+Spätindikator (Median beste Serie 240, 82 % der Läufe erreichen 75), also schenkte der Skill Ladung genau dann, wenn
+Ladung ohnehin im Überfluss da ist. Der neue liest stattdessen die **Stapel der gespielten Karte** — frisch voller
+Satz, geladen nichts mehr. Slot `SK_LIGHTNING_07` und Emblem bleiben.
+
+#### A · Die Leiter
+
+| Stufe | Crit-Chance | Abfall je Stapel | Basis-Score je Stapel |
+| --- | ---: | ---: | ---: |
+| Normal | +20 % | −2 | +10 |
+| Selten | +30 % | −3 | +15 |
+| Sehr selten | +40 % | −4 | +20 |
+| Episch | +50 % | −5 | +30 |
+
+Der Abfall ist **keine eigene Leiter, sondern die Regel `perStack = crit/10`**: jede Stufe endet bei 10 wirksamen
+Stapeln. §7.60 hat gezeigt, warum — zwischen Abfall 3 und 6 liegen über den ganzen Lauf höchstens 6 Punkte, weil die
+Verteilung zweigipflig ist. Der Satz ist der Regler, der Abfall ist Buchhaltung.
+
+#### B · Zwei Entscheidungen im Code
+
+**Der eigene Beitrag ist bei 0 geklemmt.** `Math.max(0, crit − perStack × Stapel)` — der Abzug frisst nur den
+eigenen Satz, nie fremde Crit-Chance. Ohne die Klemme wäre der Skill auf tiefen Karten eine Falle: man hielte ihn
+und stünde schlechter da als ohne. Gegengeprobt (Klemme raus → der Wächter fällt mit 0 gegen 0,11).
+
+**Ohne Karte steht er voll da.** Die Statusleiste kennt die gespielte Karte nicht; „keine Karte" heißt hier „keine
+Stapel", also der volle Satz. Das ist bewusst anders als beim Lichtbogen, der ohne Karte 0 zeigt: der Kartentext
+verspricht den Satz einer frischen Karte, und das sind gemessen **95 % der frühen Siege** (§7.60). Ein Spieler, der
+„+40 %" liest und in der Leiste nichts findet, hält den Skill für kaputt.
+
+**Die steigende Hälfte hängt im Stapel-Score, nicht an einer eigenen Stelle.** `ionScoreFor` rechnet jetzt
+`Stapel × (ION_SCORE_PER_STACK + Satz)`. Sie IST der Stapel-Score, nur größer — additiv, und damit ungefährlich;
+eine eigene multiplikative Achse auf demselben Stapel wäre §7.46, der kubische Weglauf. Nebenwirkung mit Absicht:
+Kurzschluss verdoppelt beide Hälften (er zählt die Stapel ab seiner Schwelle doppelt), beschleunigt also den Abfall
+UND hebt den Score-Anteil. Die zwei Skills sind Gegenspieler und bleiben es.
+
+#### C · Was mitgegangen ist
+
+- `chargeFromStreak` aus der Stufentabelle und der Ladungs-Zweig aus `chargeGainOnWin` — **damit liest die Fraktion
+  die Serie nirgends mehr außer in der Vorentladung.**
+- Der `streak`-Parameter aus `chargeGainOnWin` und `critFillsBar` (Letztere hat derzeit ohnehin keinen Aufrufer
+  außerhalb der Tests — Nebenbefund, nicht behoben).
+
+#### D · Wächter
+
+- **Engine:** frische Karte trägt den vollen Satz, eine Karte auf der Nullstelle nichts, eine dreimal so tiefe
+  ebenfalls nichts (nicht weniger — das ist die Klemme), und der Stapel-Score trägt den Satz der Stufe. Beide
+  Hälften gegengeprobt: Klemme raus → fällt; steigende Hälfte raus → fällt (750 gegen 850).
+- **Ladung:** eine Schleife über ALLE Blitz-IDs auf Episch prüft, dass eine Serie von 200 den Ladungsgewinn nicht
+  bewegt. Kommt ein Serien-Geber zurück, fällt die Zeile.
+- **Stufentabelle:** `serie` ist weg, der Satz steigt, `perStack` folgt auf jeder Stufe der Regel `crit/10`, und
+  `chargeFromStreak`/`critPerStreak` dürfen nicht zurückkommen.
+- **Text:** beide Hälften stehen in jeder Stufe, und das Wort „Serie" kommt nicht mehr vor.
+
+Startwerte, UNGEMESSEN.
+
+---
+
 ### 5.30 Die Eis-Skills auf dem neuen Motor (2026-09-09) — gemessen, nichts umgesetzt
 
 **Owner:** „und dann schauen wir uns alle skills an die davon profitieren müssen und designen wie."

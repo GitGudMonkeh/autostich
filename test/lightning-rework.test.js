@@ -126,9 +126,12 @@ describe("Blitz-Modul — Stufen und Kennwerte", () => {
     expect(lightningCritChance(light(), [L.ABLEITER, L.RESTSTROM], {})).toBeCloseTo(SOCK + 2 * C.LIGHTNING_CRIT_PER_SKILL, 9);
     expect(lightningCritChance(light(), [L.RESONANZ], {})).toBeCloseTo(SOCK + C.LIGHTNING_CRIT_PER_SKILL, 9);
     expect(lightningCritChance(light({ stormCritBonus: 0.2 }), [], {})).toBeCloseTo(SOCK + 0.2, 9);
-    // §7.30: die Ladungsserie zahlt in Ladung, nicht in Chance — die Serie hebt die Crit-Chance nicht mehr, egal wie lang.
-    expect(lightningCritChance(light(), [L.LADUNGSSERIE], {}, 40)).toBeCloseTo(SOCK + C.LIGHTNING_CRIT_PER_SKILL, 9);
-    expect(lightningCritChance(light(), [L.LADUNGSSERIE], { [L.LADUNGSSERIE]: 3 }, 200)).toBeCloseTo(SOCK + C.LIGHTNING_CRIT_PER_SKILL, 9);
+    /* §7.61: die Serie liest in der Crit-Chance niemand mehr — auf SK_LIGHTNING_07 steht die Zündspannung, die
+       die STAPEL der Karte liest. Der Wächter hält beides: eine beliebig lange Serie bewegt die Chance nicht, und
+       der Skill selbst zahlt trotzdem (ohne Karte den vollen Satz, siehe eigener Test unten). */
+    const zs = SOCK + C.LIGHTNING_CRIT_PER_SKILL + T.zuendung[0].crit;
+    expect(lightningCritChance(light(), [L.ZUENDSPANNUNG], {}, 40)).toBeCloseTo(zs, 9);
+    expect(lightningCritChance(light(), [L.ZUENDSPANNUNG], {}, 200)).toBeCloseTo(zs, 9);
   });
   it("lightningCritMult: Gewitterfront-Rampe + Vorentladung ab der Serie (§7.19: Überschlag gestrichen; §7.43: kein Stau mehr)", () => {
     expect(lightningCritMult(initLightning(), [L.RESONANZ], {})).toBe(0);
@@ -206,12 +209,12 @@ describe("Blitz-Modul — Ladung, Leiste, Niederlage (reine Übergänge)", () =>
     expect(chargeGainOnWin(light(), [L.ABLEITER], { [L.ABLEITER]: 2 }, { isCrit: false }).gain).toBe(0);
     expect(chargeGainOnWin(light(), [L.ABLEITER], { [L.ABLEITER]: 3 }, { isCrit: false }).gain).toBe(T.ableiter[3].noCritCharge);
     expect(chargeGainOnWin(light(), [L.ABLEITER], { [L.ABLEITER]: 3 }, { isCrit: true }).gain).toBe(2); // Crit: Passiv + jeder Crit
-    // §7.30: die Ladung aus der Serie ist der ganze Skill, nicht mehr ein Episch-Extra — sie greift auf JEDER Stufe,
-    // sobald die Serie die Schwelle der Stufe erreicht, und einen Punkt darunter nicht.
-    for (const tier of [0, 1, 2, 3]) {
-      const at = T.serie[tier].chargeFromStreak;
-      expect(chargeGainOnWin(light(), [L.LADUNGSSERIE], { [L.LADUNGSSERIE]: tier }, { isCrit: false, streak: at }).gain).toBe(1);
-      expect(chargeGainOnWin(light(), [L.LADUNGSSERIE], { [L.LADUNGSSERIE]: tier }, { isCrit: false, streak: at - 1 }).gain).toBe(0);
+    /* §7.61: keine Blitz-Quelle zahlt mehr Ladung aus der SERIE. Der Wächter geht alle IDs auf Episch durch und
+       hält die Ladung bei einer beliebig langen Serie auf dem, was ohne sie herauskommt — kommt ein Serien-Geber
+       zurück, fällt die Zeile. Die Serie war ein Spätindikator (§7.55 B), und Ladung ist spät ohnehin im Überfluss. */
+    for (const id of Object.values(L)) {
+      const ohne = chargeGainOnWin(light(), [id], { [id]: 3 }, { isCrit: false }).gain;
+      expect(chargeGainOnWin(light(), [id], { [id]: 3 }, { isCrit: false, streak: 200 }).gain, id).toBe(ohne);
     }
   });
   it("critFillsBar: Vorschau auf denselben Gewinn wie der echte Crit", () => {
@@ -456,15 +459,28 @@ describe("Blitz — Engine-Integration (resolveTrick)", () => {
     const norm = resolveTrick(scen(12, 0, { skills: [L.ENTLADUNG], lightning: light({ charge: 5, entladungScore: ramp }) }), zero);
     expect(norm.lastTrick.breakdown.flats).toBe(kein.lastTrick.breakdown.flats);
   });
-  it("Ladungsserie (§7.30): Ladung ab der Schwelle der Stufe, KEINE Crit-Chance mehr", () => {
-    // Serie 4 (also 5 nach dem Sieg) liegt unter Normal-Schwelle 16 → keine Ladung, und die Chance ist reines Passiv.
-    const s = resolveTrick(scen(12, 0, { skills: [L.LADUNGSSERIE], lightning: light(), winStreak: 4 }), noCrit);
-    expect(s.lastTrick.critChance).toBeCloseTo(C.LIGHTNING_CRIT_SOCKET + C.LIGHTNING_CRIT_PER_SKILL, 6);
-    expect(s.lightning.charge).toBe(0);
-    // Serie über der Schwelle: +1 Ladung, die Chance bleibt dieselbe (der Skill zahlt nicht mehr auf sie).
-    const long = resolveTrick(scen(12, 0, { skills: [L.LADUNGSSERIE], lightning: light(), winStreak: T.serie[0].chargeFromStreak }), noCrit);
-    expect(long.lightning.charge).toBe(1);
-    expect(long.lastTrick.critChance).toBeCloseTo(C.LIGHTNING_CRIT_SOCKET + C.LIGHTNING_CRIT_PER_SKILL, 6);
+  /* Zündspannung (§7.61, Owner) — der Satz der Stufe auf einer FRISCHEN Karte, je wirksamem Stapel weniger, und
+     als Gegenzug mehr Basis-Score je Stapel. Der Wächter fährt die drei Punkte durch die Engine, an denen ein
+     Umbau den Skill still umdrehen würde: die frische Karte trägt den vollen Satz, eine tiefe Karte NICHTS (und
+     zwar geklemmt — der Abzug darf nie fremde Crit-Chance fressen, sonst wäre der Skill eine Falle), und die
+     steigende Hälfte hängt am Stapel-Score, nicht an einer eigenen Achse. */
+  it("Zündspannung (§7.61): voller Satz auf der frischen Karte, nichts auf der tiefen, dafür Stapel-Score", () => {
+    expect(SKILL_DEFS.SK_LIGHTNING_07.name).toBe("Zündspannung");
+    const r = T.zuendung[0];
+    const passiv = C.LIGHTNING_CRIT_SOCKET + C.LIGHTNING_CRIT_PER_SKILL;
+    const fresh = resolveTrick(scen(12, 0, { skills: [L.ZUENDSPANNUNG], lightning: light() }), noCrit);
+    expect(fresh.lastTrick.critChance).toBeCloseTo(passiv + r.crit, 6);
+    // Genau auf der Nullstelle (crit/perStack Stapel) ist der Beitrag aufgebraucht …
+    const zero = Math.round(r.crit / r.perStack);
+    const deep = resolveTrick(scen(12, 0, { deck: withStacks(12, 0, zero), skills: [L.ZUENDSPANNUNG], lightning: light() }), noCrit);
+    expect(deep.lastTrick.critChance).toBeCloseTo(passiv, 6);
+    // … und darüber bleibt er bei 0 stehen, statt fremde Crit-Chance zu fressen.
+    const deeper = resolveTrick(scen(12, 0, { deck: withStacks(12, 0, zero * 3), skills: [L.ZUENDSPANNUNG], lightning: light() }), noCrit);
+    expect(deeper.lastTrick.critChance).toBeCloseTo(passiv, 6);
+    // Die steigende Hälfte: jeder Stapel zahlt ION_SCORE_PER_STACK + den Satz der Stufe in die Basis.
+    expect(deep.lightYield).toBe(zero * (C.ION_SCORE_PER_STACK + r.scorePerStack));
+    const ohne = resolveTrick(scen(12, 0, { deck: withStacks(12, 0, zero), skills: [L.ABLEITER], lightning: light() }), noCrit);
+    expect(ohne.lightYield).toBe(zero * C.ION_SCORE_PER_STACK);
   });
   it("Ionenfeld (§7.18): die volle Leiste lädt das Feld, die nächsten Stiche kämpfen alle Karten mit +Wert, danach nicht mehr", () => {
     const charged = resolveTrick(scen(12, 0, { skills: [L.IONENFELD], lightning: light({ charge: 9 }) }), zero);
