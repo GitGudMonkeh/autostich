@@ -42,7 +42,15 @@ export const TIER_MULT = [0, 1, 1.5, 2.2, 3.2, 4.6, 6.7, 9.7]; // überlineare W
 // §8 nachtariert: 30 → 24 (Boden-Einkommen). §5.29 erneut: 24 → 20, weil die offene Leiter und das höhere
 // Boden-Einkommen den Motor noch einmal heben. Ziel ist der Stand VOR der Runde (Eis mono 6,73M im Cross-Lauf über
 // 400–500 Läufe): die Runde soll die FORM ändern, nicht die Höhe. Parität ist eine eigene Owner-Entscheidung.
-export const BURST_SCALE = envNum("SIM_GLACIER_BURST_SCALE", 20);
+/* §7.71/§7.72 (Owner-Idee, dann „wir nehmen 80"): 20 → 80. Die Parität ist damit zur Owner-Entscheidung geworden,
+   die §5.29 sich noch offengehalten hat. Der Sweep (§7.71, `--only cross`, 8.000 Läufe je Wert) zeigt, dass dieser
+   Regler nicht nur die HÖHE von Eis bewegt, sondern seine ANSTECKUNG: 20/40/60/100 → Eis 6,4/10,2/13,9/21,7 Mio
+   und Bl+Ei 0,40/0,51/0,63/0,82× · Fe+Ei 0,83/1,09/1,33/1,80× · Ei+Pf 0,65/0,79/0,92/1,09×. Damit ist die
+   Diagnose aus §8 korrigiert: Eis war nicht ansteckend, weil man im Mischbau zu wenige Eis-Skills hält, sondern
+   weil ein Gletscher eine BRETTPOSITION kostet und zu wenig dafür zahlte — jede Eis-Position war ein Downgrade.
+   80 statt 100, damit der Playtest in beide Richtungen tarieren kann (Owner). Eis skaliert unterlinear (×5 am
+   Regler gibt ×3,4), es sättigt an den Masse-Schwellen — wer weiter hebt, stößt an die Decke statt an den Preis. */
+export const BURST_SCALE = envNum("SIM_GLACIER_BURST_SCALE", 80);
 // Große Lawine (§5.8, Owner): feuert nicht mehr einmal am Laufende, sondern im TAKT — jeden GROSSE_LAWINE_EVERY-ten
 // Durchlauf bricht das ganze Feld auf einen Schlag, jeder Gletscher mit der Wucht der höchsten Schwelle. Damit ist sie
 // den ganzen Lauf über sichtbar, und sie synchronisiert das Feld: Kaskade, Kollision und Gletschersturz greifen

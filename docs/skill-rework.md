@@ -9991,6 +9991,44 @@ Gemessen, nichts umgesetzt. Owner-Entscheid offen.
 
 ---
 
+### 7.72 Eis: `BURST_SCALE` 20 → 80 (2026-09-11, Owner) — umgesetzt, UNGEMESSEN
+
+**Owner:** „wir nehmen 80, dann haben wir nach den Playtest immer noch die Möglichkeit nach oben und nach unten zu
+tarieren."
+
+Aus dem Sweep in §7.71 interpoliert: **Eis ≈ 18 Mio, Fe+Ei ≈ 1,6×, Ei+Pf ≈ 1,0×, Bl+Ei ≈ 0,75×.** 80 statt 100
+lässt bewusst Luft in beide Richtungen — der Playtest ist der nächste Richter, nicht die Sim.
+
+#### A · Der Balance-Wächter hat angeschlagen, und das war richtig
+
+`sim-balance-guard` fiel mit Median 7,77M (Band bis 7,1M) und Mean 17,96M (Band bis 10,5M). Der Wächter ist ein
+Band um den ZUFALLSSPIELER und soll genau das melden: eine breite Verschiebung der Kraft.
+
+Neu zentriert nach dem im Kommentarblock etablierten Verfahren — **mit Beleg statt auf Verdacht**:
+
+| | Seeds 1..40 | Seeds 1..200 | ohne den größten Lauf |
+| --- | ---: | ---: | ---: |
+| Median | 7,77M | 8,27M | — |
+| Mean | 17,96M | 17,31M | 13,56M / 15,12M |
+
+Beide Kennzahlen stehen über 200 Seeds auf demselben Niveau wie über 40, und der Mean hängt auch nicht an einem
+Ausreißer. Das ist eine echte Niveau-Verschiebung, keine Zufallsspitze. Bänder: Median 5,0–10,5M, Mean 11,0–24,0M.
+Die Mean-Obergrenze fängt weiterhin einen ECHTEN Blowup (352M mit stapelnder Geometrie, Faktor 14 entfernt).
+
+#### B · Der Befund, der dabei abfällt: der Buff hebt den BODEN
+
+**Der Zufallsspieler verdoppelt sich: Median 3,79 → 7,77M.** Das ist mehr, als die Fraktion selbst zulegt, und der
+Grund steht schon in §5.29: **Gletscher zahlen unabhängig vom Rest des Builds.** Wer planlos pickt, hat trotzdem
+Gletscher, und die zahlen jetzt viermal so viel.
+
+Das ist die Kehrseite eines Reglers, der „über das ganze Deck geht": er hebt die Decke der Fraktion und den Boden
+des Spiels — und den Boden relativ stärker. **Für den Playtest ist das die Zahl, auf die zu achten ist:** nicht ob
+Eis sich gut anfühlt, sondern ob das Spiel insgesamt zu nachsichtig geworden ist.
+
+Startwerte, UNGEMESSEN — die große Aufnahme folgt, wenn auch Feuer entschieden ist.
+
+---
+
 ### 5.30 Die Eis-Skills auf dem neuen Motor (2026-09-09) — gemessen, nichts umgesetzt
 
 **Owner:** „und dann schauen wir uns alle skills an die davon profitieren müssen und designen wie."

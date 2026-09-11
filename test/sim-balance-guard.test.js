@@ -100,8 +100,12 @@ describe("sim balance guard", () => {
        Neu zentriert mit Beleg statt auf Verdacht: die alte Obergrenze 5,15M war um 2 % überschritten, und über
        Seeds 1..200 steht der Median bei 4,74M — dasselbe Niveau, also kein einzelner Ausreißer, sondern die
        gewollte Folge des Buffs. Der Mean (Guard darunter) liegt bei 8,76M und bleibt im bestehenden Band. */
-    expect(median).toBeGreaterThan(3_400_000);
-    expect(median).toBeLessThan(7_100_000);
+    /* §7.72 (Owner): `BURST_SCALE` 20 → 80. Neu zentriert mit Beleg: Seeds 1..40 Median 7,77M, Seeds 1..200
+       8,27M — dasselbe Niveau, also kein einzelner Ausreißer, sondern die gewollte Folge. Bemerkenswert und
+       ausdrücklich festgehalten: der ZUFALLSSPIELER verdoppelt sich (3,79 → 7,77M), weil Gletscher unabhängig vom
+       Rest des Builds zahlen — der Eis-Buff hebt den BODEN des Spiels stärker als seine Decke. */
+    expect(median).toBeGreaterThan(5_000_000);
+    expect(median).toBeLessThan(10_500_000);
   });
 
   it("Mean-Score im erwarteten Band (Tail-Runaway-Fänger)", () => {
@@ -110,7 +114,10 @@ describe("sim balance guard", () => {
     // den Mean, ohne ihn stehen 5,75M; über Seeds 1..200 liegt der Mean bei 6,48M, also mitten im Band. Der Median
     // (Guard darüber) wandert von 2,59 auf 3,12M und bleibt im Band. Die Obergrenze fängt weiterhin einen ECHTEN Blowup
     // (mit stapelnder Geometrie und ohne Gletscher-Deckel lag der Mean bei 352M) — sie ist um den Faktor 33 entfernt.
-    expect(mean).toBeGreaterThan(4_000_000);
-    expect(mean).toBeLessThan(10_500_000);
+    /* §7.72: Seeds 1..40 Mean 17,96M, Seeds 1..200 17,31M; ohne den jeweils größten Lauf 13,56M / 15,12M — der
+       Mean hängt also auch nicht an einem Ausreißer. Die Obergrenze fängt weiterhin einen ECHTEN Blowup: mit
+       stapelnder Geometrie und ohne Gletscher-Deckel lag der Mean bei 352M, das ist Faktor 14 entfernt. */
+    expect(mean).toBeGreaterThan(11_000_000);
+    expect(mean).toBeLessThan(24_000_000);
   });
 });
