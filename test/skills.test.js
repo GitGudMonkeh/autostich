@@ -50,8 +50,13 @@ describe("skills — Blitz-Registry (exp skill rework)", () => {
     expect(BLITZ_TIERS.serienschutz).toBeUndefined();
     expect(asc(BLITZ_TIERS.streuung, "cards")).toBe(true);
     expect(BLITZ_TIERS.streuung.every((r) => r.cost === undefined && r.perRound === undefined && r.frac === undefined)).toBe(true);
-    expect(BLITZ_TIERS.streuung.at(-1).freshStacks).toBeGreaterThan(1); // Episch-Extra nur auf der letzten Stufe
-    expect(BLITZ_TIERS.streuung.slice(0, -1).every((r) => r.freshStacks === undefined)).toBe(true);
+    /* §7.63 (Owner: „kürzen"): die Leiter ist auf 1/1/2/3 Karten gekürzt, und der Anhang für leere Karten sitzt
+       deshalb ab der ZWEITEN Stufe statt nur auf Episch — sonst wären Normal und Selten wortgleich. Der Wächter
+       hält, dass die Leiter nirgends fällt und der Anhang oben am größten ist; dass keine zwei Stufentexte
+       gleich sind, prüft skill-doors.test.js für alle gestuften Skills. */
+    expect(BLITZ_TIERS.streuung.at(-1).cards).toBe(3);
+    expect(BLITZ_TIERS.streuung[0].freshStacks).toBeUndefined();
+    expect(asc(BLITZ_TIERS.streuung.slice(1), "freshStacks")).toBe(true);
     expect(asc(BLITZ_TIERS.reststrom, "floor")).toBe(true);
     expect(asc(BLITZ_TIERS.gewitter, "critPerBar")).toBe(true);
     // §7.42: Entladung ist von der Crit-Multiplikator-Achse auf den Basis-Score gewechselt — die Leiter ist jetzt

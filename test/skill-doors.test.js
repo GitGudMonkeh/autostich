@@ -239,7 +239,11 @@ describe("Stufentexte — ein Text je Stufe (descTiers, ability.<id>.desc.<t>, s
       expect(Array.isArray(s.descTiers) && s.descTiers.length === 4, s.id).toBe(true);
       for (const text of s.descTiers) expect(typeof text === "string" && text.length > 0, s.id).toBe(true);
       expect(s.desc).toBe(s.descTiers[0]);
-      expect(new Set(s.descTiers).size, `${s.id}: Stufen ohne Unterschied im Text`).toBeGreaterThan(1);
+      /* §7.63: VIER verschiedene Texte, nicht bloß mehr als einer. Ein Stufenschritt, der den Text nicht ändert,
+         ist ein Schritt, für den der Spieler zahlt und nichts bekommt. Beim Kürzen der Streuung wäre genau das
+         passiert (Leiter 1/1/2/3 mit einem Anhang nur auf Episch → Normal und Selten wortgleich); gemessen halten
+         alle 58 gestuften Skills die schärfere Bedingung bereits. */
+      expect(new Set(s.descTiers).size, `${s.id}: zwei Stufen mit demselben Text`).toBe(4);
       for (const text of s.descTiers) expect(text, `${s.id}: keine Leiter im Stufentext`).not.toMatch(/\bSelten\b|\bEpisch\b|Sehr selten/);
     }
     for (const s of SKILL_LIST.filter((x) => x.legendary)) expect(s.descTiers).toBeUndefined();

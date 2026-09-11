@@ -62,7 +62,7 @@ export default {
   "ability.SK_LIGHTNING_04.name": "Overvoltage",
   "ability.SK_LIGHTNING_04.desc": "Crit with a card of 6 or more stacks: +2 charge. Uncommon from 5, Rare from 4, Epic from 3 stacks.",
   "ability.SK_LIGHTNING_17.name": "Scatter",
-  "ability.SK_LIGHTNING_17.desc": "Every full bar also ionizes your card with the fewest stacks. Uncommon two cards, Rare three, Epic four — and a card without stacks gets 2 stacks instead of one.",
+  "ability.SK_LIGHTNING_17.desc": "Every full bar also ionizes your card with the fewest stacks. From Uncommon a card without stacks gets 2 stacks instead of one; Rare two cards, Epic three cards and 3 stacks.",
   "ability.SK_LIGHTNING_L01.name": "Thunder God",
   "ability.SK_LIGHTNING_L01.desc": "The charge bar is full at 7. Permanently +0.4× crit multiplier.",
   "ability.SK_LIGHTNING_L02.name": "Double Discharge",
