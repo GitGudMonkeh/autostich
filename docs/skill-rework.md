@@ -9584,6 +9584,53 @@ Startwerte, UNGEMESSEN.
 
 ---
 
+### 7.64 §7.63 nachgemessen: der Schnitt trifft den Skill, nicht die Fraktion (2026-09-11) — gemessen
+
+Beide Seed-Sätze, Duell-Median (die Bilanzzahl seit §7.62 A).
+
+#### A · Die Bilanz
+
+| | vor dem Umbau | nach §7.58/59/61 | nach dem Kürzen |
+| --- | ---: | ---: | ---: |
+| Blitz, Seed 1 | 17,2 Mio | 28,0 Mio | **25,0 Mio** |
+| Blitz, Seed 101 | 17,5 Mio | 25,9 Mio | **24,3 Mio** |
+| Blitz zu Feuer | 1,96 / 1,97× | 3,18 / 2,92× | **2,84 / 2,73×** |
+
+Das Kürzen nimmt **−10,8 % / −6,4 %**, also **28 % / 20 % des Anstiegs**. Die Vorhersage aus §7.63 C („senkt, reicht
+aber nicht allein zurück auf 1,96×") stimmt, und jetzt ist die Größe bekannt: es fehlt noch rund ein Drittel.
+
+#### B · Der eigentliche Befund: der Schnitt trifft den Skill härter als die Fraktion
+
+**Streuungs Haltequote fällt von 100 / 100 % auf 47 / 48 %** — beide Seed-Sätze auf denselben Wert, das ist also
+kein Rauschen (anders als die Haltequoten in §7.62 C). Der gierige Spieler nimmt sie nur noch in jedem zweiten
+Lauf. Ihr gemessener Effekt liegt bei −1 / +6 %.
+
+Ein Skill geht von „immer genommen, klar positiv" auf „Münzwurf, wirkungslos" — und die Fraktion verliert dabei
+**6 bis 11 %**. Das heißt: **Streuung war nicht der Hauptposten des Anstiegs.** Meine Zuordnung in §7.62 C
+(„plausibel der Hauptposten") war falsch. Sie stützte sich darauf, dass Streuung der einzige Skill mit stabilem
+Signal war — das ist ein Argument dafür, dass man ihr Signal LESEN kann, und keines dafür, dass es das größte ist.
+
+Übrig bleiben als Treiber des Anstiegs die beiden anderen Änderungen derselben Runde: **Zündspannung** (§7.61) und
+das Spannungsfeld auf zahlenden Formationen (§7.58). Getrennt sind sie weiterhin nicht.
+
+#### C · Nebenbefund: die Leiter ist jetzt zu flach
+
+Dass ein Skill bei 47 % Haltequote und ~0 % Effekt landet, ist für sich genommen ein schlechter Zustand — genau die
+Beschreibung eines toten Skills aus §7.53 D. Der Schnitt war als Tarierung richtig, hat den Skill aber über die
+Kante geschoben. **Wenn der nächste Griff die Fraktion senkt, gehört Streuungs Leiter wieder ein Stück nach oben**,
+sonst ist ein frisch gebauter Skill nach zwei Runden wieder tot.
+
+#### D · Was als Nächstes zu tun ist
+
+Der zweite Griff aus §7.62 E: **der Satz der Zündspannung** (20/30/40/50 %). §7.60 B hat ihn als den starken Regler
+des Skills ausgewiesen, der Abfall ist der schwache. Ein Schnitt auf etwa **die Hälfte** wäre die Größenordnung,
+die das fehlende Drittel plausibel abdeckt — und weil der Skill früh auf 95 % der Siege zündet, schlägt sein Satz
+direkt auf die ganze Kurve durch.
+
+Owner-Entscheid offen.
+
+---
+
 ### 5.30 Die Eis-Skills auf dem neuen Motor (2026-09-09) — gemessen, nichts umgesetzt
 
 **Owner:** „und dann schauen wir uns alle skills an die davon profitieren müssen und designen wie."
@@ -10017,3 +10064,4 @@ leichtesten haben.
 | 2026-09-11 | Sonde vor dem Umbau von `SK_LIGHTNING_07` (§7.60, Owner: „passt. miss"). Die Bauform ist frei — Sieg gibt +S Punkte Crit-Chance, je Stapel auf der gespielten Karte D weniger, dafür ein mit den Stapeln STEIGENDER Bonus — offen war nur der Abfall D, und der ist keine Geschmacksfrage: bleibt der Satz spät stehen, schiebt er über die 100-%-Klemme, und jeder Punkt darüber wird über OVERCRIT_MULT_PER_PP zum Crit-MULTIPLIKATOR (der Fehler aus §7.46). `sim/probes/zuendspannung.mjs`, 60 Läufe je Seed-Satz (1 und 101), beide decken sich. **Befund 1: früh ist das Deck praktisch leer — 95 % der Siege in den Runden 1–10 laufen über eine Karte mit NULL Stapeln**, der Skill zündet dort also fast immer mit vollem Satz. **Befund 2: die Verteilung ist stark schief** — spät (41–50) Ø 27,1 Stapel auf der Siegkarte, Median aber nur 15; die tiefe Karte ist EINE unter vierzig und wird selten gespielt. Meine Hochrechnung „~16" aus der Vorrunde traf zufällig den Median und war als Mittelwert bezeichnet, das war unsauber. Kurzschluss verschiebt spät massiv (wirksam 43,5 gegen roh 27,1) und lässt den Skill damit früher auslaufen — stimmig, die beiden sind Gegenspieler. **Befund 3, der wichtigste: der Abfall ist ein SCHWACHER Regler.** Zwischen D=3 und D=6 liegen über den ganzen Lauf höchstens 6 Punkte, weil die Verteilung zweigipflig ist (früh null Stapel → voller Satz egal welcher Abfall; spät so viele, dass jeder Abfall den Satz auffrisst); er entscheidet fast nur über die Runden 31–40. Der starke Regler ist der SATZ. Der Abfall bekommt deshalb eine Regel statt einer Leiter: **D = S/10**, jede Stufe endet bei 10 wirksamen Stapeln. Überlagert auf die Roh-Chance aus dem `blitz-ramp`-Lauf zu §7.57 ergibt S=40/D=4: 15,5 → 55,2 % (1–10), 45,9 → 77,5 % (21–30), 91,5 → 95,7 % (41–50) — **früh das Dreieinhalbfache, spät nichts mehr, und nirgends an der 100-%-Klemme**; die Overcrit-Sorge ist damit ausgeräumt, nicht durch scharfen Abfall, sondern weil die tiefen Karten spät von selbst alles auffressen. Einschränkung: die Tabelle überlagert einen Skill über ein Deck, das OHNE ihn gemessen wurde — mit ihm gibt es früh mehr Crits, also schneller tiefe Karten, der Abfall greift früher als abgelesen. Vorgeschlagene Leiter: Satz 20/30/40/50, Abfall 2/3/4/5, steigende Hälfte +10/15/20/30 Basis-Score je Stapel (bewusst additiv — alles Multiplikative wäre die dritte Achse auf demselben Stapel). Zwei Warnungen: schon **Normal ist der größte frühe Hebel, den die Fraktion je hatte** (+20 auf eine Basis von 15,5 %, auf 95 % der frühen Siege — die ganze Fraktion wird sich bewegen), und der Skill steht **gegen Lichtbogen**, der auf derselben Achse und demselben Eingang STEIGEND zahlt. Nichts umgesetzt. |
 | 2026-09-11 | §7.58/§7.59/§7.61 nachgemessen (§7.62), beide Seed-Sätze plus Rampen-Sonde auf beiden; die drei Umbauten stecken zusammen darin und sind nicht getrennt. **Methodischer Hauptfund: die DUELL-Mediane (`cross`, feste Policy) sind zwischen Seed-Sätzen stabil, die Explore-Mediane nicht.** Derselbe Bau gibt im Explore 969,7M gegen 533,1M (Spreizung 1,82×), im Duell 17,2 gegen 17,5 Mio (1,02×) — und Feuer/Eis/Pflanze, an denen nichts geändert wurde, kommen in beiden Sätzen praktisch identisch heraus (8,8/8,9 · 6,4/6,4 · 15,6/16,0 Mio). §7.53 hatte die Rauschgrenze am Explore-Median gemessen und daraus auf die ganze Reihe geschlossen; für die FRAKTIONS-BILANZ war das zu pessimistisch. **Ab hier ist der Duell-Median die Bilanzzahl.** **Ergebnis: Blitz 17,2/17,5 → 28,0/25,9 Mio, also +63 % / +48 %, und damit 3,18 / 2,92× Feuer** (vorher 1,96 / 1,97×). Die Warnung aus §7.60 D ist in der vorhergesagten Größenordnung eingetreten; Blitz braucht eine Tarierung, bevor sonst etwas an der Fraktion passiert. **Je Skill ist die Ablation auf diesem Kraftniveau unbrauchbar, und zwar in der HALTEQUOTE:** Spannungsfeld 15 gegen 64 %, Zündspannung 97 gegen 32 %, Gewitterfront 31 gegen 86 %, Blitzfänger 98 gegen 61 %; die Effekte wandern mit (Lichtbogen +107 gegen +3 %). Das ist neu — §7.53 hatte nur die Effekte als verrauscht ausgewiesen. Ich habe den Fehler in dieser Runde selbst vorgeführt: nach Seed-Satz 1 stand hier zuerst „Spannungsfeld eingebrochen, 78 → 15 %", Seed-Satz 101 sagt 64 %. Stabil ist nur **Streuung: 100 % Haltequote in beiden Sätzen, klar positiv** — plausibel der Hauptposten des Anstiegs (Zuordnung, keine Messung). **Rampe:** die Meilensteine wandern ein bis zwei Runden nach vorn (25-%-Marke Runde 10 → 9, 5. Leiste 14 → 13, 10. Leiste 21 → 19), Crit-Chance in 21–30 45,9 → 53,0/53,8 %, Stapel auf dem Deck 979 → 1.426/1.099. **Die Runden 1–10 bewegen sich dagegen kaum, und die Sonde sagt warum: dort hält ein Lauf im Mittel nur 1,7 Blitz-Skills** (11–20: 4,1 · 21–30: 6,5 · 41–50: 11,4). **Der Kaltstart einer Fraktion lässt sich nicht durch einen Skill beheben, weil man in den Kaltstart-Runden noch keinen Skill hat.** Das erklärt rückwirkend, warum drei Anläufe auf den frühen Blitz (§7.43/§7.51/§7.56 und jetzt §7.61) alle klein ausfielen; wer die Runden 1–10 heben will, muss ans PASSIV oder ans Angebotstempo. Erster Tarier-Griff, schon in §7.59 C benannt: Streuungs Leiter (1/1/2/3 statt 1/2/3/4, oder Dauerwert nur auf die erste gestreute Karte). Zweiter: der Satz der Zündspannung. Owner-Entscheid offen. |
 | 2026-09-11 | Streuungs Leiter gekürzt (§7.63, Owner: „kürzen" — der erste der zwei Tarier-Griffe aus §7.62 E). Karten je Leiste 1/2/3/4 → **1/1/2/3**, Episch streut also 3 statt 4; bei Ø rund 150 vollen Leisten je Lauf sind das etwa 150 ionisierte Karten weniger auf der höchsten Stufe. **Der Episch-Anhang ist dabei von der letzten Stufe auf die zweite gewandert und steigt am Ende auf 3** — und das ist der eigentliche Befund dieser Runde: mein eigener Vorschlag („Leiter auf 1/1/2/3 kürzen") wäre wörtlich gebaut falsch gewesen, weil Normal und Selten dann WORTGLEICH gewesen wären, ein Stufenschritt, für den der Spieler zahlt und nichts bekommt. Nachgesehen statt geraten: **alle 58 gestuften Skills tragen heute vier verschiedene Stufentexte** — eine Hausregel, die bisher niemand aufgeschrieben hatte. Ein Wächter hält sie ab sofort für ALLE gestuften Skills (`descTiers` muss vier verschiedene Texte haben, vorher: mehr als einen); gegengeprobt, indem der Selten-Anhang wieder entfernt wurde, er fällt mit „SK_LIGHTNING_17: zwei Stufen mit demselben Text". **Was der Schnitt voraussichtlich nicht schafft:** §7.62 B misst Blitz bei 3,18/2,92× Feuer nach einem Anstieg um +63/+48 %; ein Viertel von Streuungs Ionisierung auf den oberen Stufen senkt die Fraktion, reicht rechnerisch aber nicht allein auf die 1,96× zurück — der zweite Griff (Satz der Zündspannung) bleibt wahrscheinlich nötig, und das entscheidet die Messung, nicht diese Vorhersage. UNGEMESSEN. |
+| 2026-09-11 | §7.63 nachgemessen (§7.64), beide Seed-Sätze, Duell-Median. **Das Kürzen nimmt −10,8 % / −6,4 %** (Blitz 28,0/25,9 → 25,0/24,3 Mio), also 28 % / 20 % des Anstiegs; Blitz steht bei **2,84 / 2,73× Feuer** statt 3,18/2,92×, Ziel wären 1,96×. Die Vorhersage aus §7.63 C stimmt, und die Größe ist jetzt bekannt: es fehlt rund ein Drittel. **Der eigentliche Befund ist ein anderer: der Schnitt trifft den SKILL härter als die Fraktion.** Streuungs Haltequote fällt von 100/100 % auf **47/48 %** — beide Seed-Sätze auf denselben Wert, also kein Rauschen (anders als die Haltequoten in §7.62 C) — bei einem Effekt von −1/+6 %. Ein Skill geht von „immer genommen, klar positiv" auf „Münzwurf, wirkungslos", und die Fraktion verliert dabei nur 6 bis 11 %. **Damit war Streuung nicht der Hauptposten des Anstiegs, und meine Zuordnung in §7.62 C war falsch.** Sie stützte sich darauf, dass Streuung der einzige Skill mit stabilem Signal war — das ist ein Argument dafür, dass man ihr Signal lesen KANN, und keines dafür, dass es das größte ist. Als Treiber bleiben die zwei anderen Änderungen derselben Runde (Zündspannung §7.61, Spannungsfeld auf zahlenden Formationen §7.58), weiterhin nicht getrennt. **Nebenbefund: die Leiter ist jetzt zu flach.** 47 % Haltequote bei ~0 % Effekt ist die Definition eines toten Skills aus §7.53 D; der Schnitt war als Tarierung richtig, hat den Skill aber über die Kante geschoben. Senkt der nächste Griff die Fraktion, gehört Streuungs Leiter wieder ein Stück nach oben, sonst ist ein frisch gebauter Skill nach zwei Runden wieder tot. Nächster Schritt: der Satz der Zündspannung (20/30/40/50 %), nach §7.60 B der starke Regler des Skills; ein Schnitt auf etwa die Hälfte wäre die Größenordnung für das fehlende Drittel. Owner-Entscheid offen. |
