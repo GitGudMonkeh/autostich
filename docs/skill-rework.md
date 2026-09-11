@@ -9837,6 +9837,29 @@ Owner-Entscheid offen.
 
 ---
 
+### 7.69 `ION_SCORE_PER_STACK` 75 → 45 (2026-09-11, Owner) — umgesetzt, UNGEMESSEN
+
+**Owner:** „a" — von den zwei Wegen aus §7.68 C der moderate: Blitz senken, ohne den Stapel zu entkernen, und
+danach die Frage nach Feuer und Eis stellen.
+
+Der Wert kommt aus dem Sweep in §7.68, nicht aus einer Schätzung: **45 → 21,9 Mio, 2,49× Feuer** (heute 3,18×),
+also **−22 %** auf die Fraktion. Der Regler trifft jede Stapelquelle gleichmäßig — auch die Legendären, die in
+jeder Messung dieser Reihe die größten Posten sind, und an die kein Skill-Schnitt herankommt.
+
+**Nicht tiefer, und der Grund steht in der Kurve:** bei Stapel-Score null stünde Blitz immer noch bei 12,7 Mio =
+1,44× Feuer. Der Stapel trägt nur gut die Hälfte der Fraktionshöhe.
+
+#### Der Gate hat wieder etwas gefangen
+
+Die Konstante steht nicht nur in der Engine, sondern auch im **Glossar** („ionisieren"): `loc-csv` fiel mit vier
+abweichenden Texten, bis `npm run loc:export` lief. Zum zweiten Mal in dieser Runde hat der Lokalisierungs-Gate
+eine Zahl erwischt, die sonst in einer Sprache stehen geblieben wäre.
+
+Startwerte, UNGEMESSEN — als Nächstes die große Aufnahme über alle vier Fraktionen (Owner: „dann messen wir
+erstmal wieder alle übereinander").
+
+---
+
 ### 5.30 Die Eis-Skills auf dem neuen Motor (2026-09-09) — gemessen, nichts umgesetzt
 
 **Owner:** „und dann schauen wir uns alle skills an die davon profitieren müssen und designen wie."

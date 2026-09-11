@@ -347,7 +347,15 @@ export const LIGHTNING_MAX_CHARGE     = envNum("SIM_LIGHTNING_MAX_CHARGE", 10); 
 // Blitz mono 2,15M bei 12, 2,37M bei 60 gegen Feuer mono 2,40M; bei 12 trugen die Stapel nur ~8 % der Basis (Ø 2,6 je
 // Karte am Laufende), der Regler war praktisch tot. Crit je Skill (0,07 → 2,43M) wäre der andere Weg; der Stapel-Weg
 // macht die Leiste und die Stapel-Skills (Kettenblitz, Kurzschluss, Blitzfänger) spürbar.
-export const ION_SCORE_PER_STACK      = envNum("SIM_ION_SCORE_PER_STACK", 75);        // +Score (Basis, vor den Multiplikatoren) je Stapel bei Sieg mit der Karte — der Paritäts-Regler Feuer/Blitz (§7.14: 60 → 75 bei 50 Runden; Duell-Sweep 60/75/80/90/120: Floor 1,16/1,07/1,03/0,99/0,88×, Mean 1,04/0,95/0,92/0,87/0,75×)
+/* §7.68/§7.69 (Owner: „a"): 75 → 45. Blitz stand nach der Skill-Runde (§7.58/59/61) bei 3,18× Feuer; zwei
+   Skill-Schnitte holten davon nur ein Drittel und machten beide Skills tot (§7.66), also senkt EIN Regler die
+   Fraktion statt vieler. Gesweept, nicht geraten (`--only cross`, 8.000 Läufe je Wert, Maschine leer):
+   75 → 28,0 Mio (3,18×) · 55 → 24,0 (2,72×) · 45 → 21,9 (2,49×) · 35 → 19,8 (2,24×), Gerade
+   Blitz ≈ 12,7 Mio + 0,205 × Wert. Warum nicht tiefer: bei Stapel-Score NULL stünde Blitz immer noch bei
+   12,7 Mio = 1,44× Feuer — der Stapel trägt nur gut die Hälfte der Fraktionshöhe, der Rest ist der
+   Crit-Multiplikator-Motor. Einen Regler auf sein Extrem zu drehen, um die ganze Lücke zu schlucken, war schon
+   bei den zwei Skill-Schnitten der Fehler. */
+export const ION_SCORE_PER_STACK      = envNum("SIM_ION_SCORE_PER_STACK", 45);        // +Score (Basis, vor den Multiplikatoren) je Stapel bei Sieg mit der Karte — der Paritäts-Regler Feuer/Blitz (§7.14: 60 → 75 bei 50 Runden; alter Duell-Sweep 60/75/80/90/120: Floor 1,16/1,07/1,03/0,99/0,88×, Mean 1,04/0,95/0,92/0,87/0,75× — der beschreibt einen Stand vor der Blitz-Runde)
 export const ION_VALUE_PER_BAR        = envNum("SIM_ION_VALUE_PER_BAR", 1);         // Blitz-Passiv (§7.24, Owner): jede volle Leiste gibt der ionisierten Karte dauerhaft +so viel Wert — bis §7.23 war das Überspannung (1–4 je Stufe) und trug Blitz mono; Duell-Sweep 0/1/2: Blitz mono 7,3 / 13,0 / 13,6M, Floor 1,93 / 1,09 / 1,04×
 export const ION_MAX_STACKS           = 5;  // NUR ANZEIGE (Karten-Pips, „voll ionisiert"-Effekte): Stapel sind seit dem Rework ohne Deckel
 export const OVERCRIT_MULT_PER_PP     = envNum("SIM_OVERCRIT_MULT_PER_PP", 0.03);     // Systemregel (alle Fraktionen): die Crit-Chance ist bei 100 % gedeckelt, jeder Prozentpunkt darüber wird +Crit-Mult (§7.28, Owner: 0,002 → 0,01; §7.44: → 0,03, damit 5 Punkte genau EINEN Stapel wert sind — der weiche Deckel dämpft den Überschuss über dem Knick auf ein Fünftel)
