@@ -3,7 +3,7 @@ import { resolveTrick } from "../src/game/engine.js";
 import { initialState, reducer } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
 import { SKILL_DEFS, EIS_TIERS as EIS } from "../src/game/skills.js";
-import { ROLES, precomputeGlacier, eiszeitFlood, GLACIER_MAX, GLACIER_PER_PICK, SCHILD_PER_PICK } from "../src/game/glacier.js";
+import { ROLES, precomputeGlacier, eiszeitFlood, driftTargets, GLACIER_MAX, GLACIER_PER_PICK, SCHILD_PER_PICK } from "../src/game/glacier.js";
 import { I, iceTuning, iceRoleTiers, iceSnapshotOpts } from "../src/game/factions/ice.js";
 import { posOf } from "../src/game/architect.js";
 
@@ -80,6 +80,27 @@ describe("Eis-Stufen — die Stufe erreicht die Mechanik", () => {
     const e = resolveTrick(scen({ glacierLocked: gl, ...at(ROLES.SCHNEETREIBEN, 3) }), noCrit);
     expect(n.firnStack.filter((x) => x > 0)).toHaveLength(1);
     expect(e.firnStack.filter((x) => x > 0)).toHaveLength(2);
+  });
+
+  /* Owner-Runde „Schneetreiben braucht einen Buff": der Skill starb im dichten Cluster, weil er einen offenen
+     4-Nachbarn braucht — bei zwölf geballten Gletschern haben nur fünf einen. Der Rückfall greift NUR bei null
+     offenen Nachbarn; ein teilweise verbauter Kranz wird nicht aufgefüllt, sonst wäre die Zahl in §5.31 eine
+     andere. Beide Richtungen stehen hier, damit ein späterer Griff an driftTargets nicht still die eine kippt. */
+  it("Schneetreiben: ein eingeschlossener Gletscher sät ins nächstgelegene offene Feld", () => {
+    const eingeschlossen = new Set([6, 1, 5, 7, 11]); // pos6 mit allen vier Nachbarn gefroren
+    expect(driftTargets(6, eingeschlossen, 1)).toEqual([0]);   // Chebyshev 1, kleinster Index
+    expect(driftTargets(6, eingeschlossen, 2)).toEqual([0, 2]);
+  });
+
+  it("Schneetreiben: mit offenem Nachbarn bleibt es beim Nachbarn, der Rückfall greift nicht", () => {
+    expect(driftTargets(0, new Set([0]), 1)).toEqual([5]);     // 5 und 1 sind offen → kein Rückfall
+    expect(driftTargets(0, new Set([0, 5]), 1)).toEqual([1]);  // ein Nachbar zu, der andere zählt weiter
+  });
+
+  it("Schneetreiben: der eingeschlossene Gletscher sät im Sieg wirklich Schnee", () => {
+    const gl = lockAt(0, 1, 5); // der Stich läuft auf pos0, dessen beide Nachbarn 1 und 5 selbst Gletscher sind
+    const s = resolveTrick(scen({ glacierLocked: gl, ...at(ROLES.SCHNEETREIBEN, 0) }), noCrit);
+    expect(s.firnStack[6]).toBe(EIS.schneetreiben[0].seed); // Rückfall: die Diagonale, nicht nichts
   });
 
   it("Packeis und Verzahnung: die Stufe skaliert die Masse je Durchlauf", () => {

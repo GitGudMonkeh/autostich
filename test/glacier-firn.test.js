@@ -85,11 +85,16 @@ describe("#386 Firn wird nie unter einen Gletscher gesät", () => {
     expect(s.glacierMass[0]).toBeGreaterThanOrEqual(far); // die ganze ferne Reserve kommt beim Gletscher an
   });
 
-  it("Schneetreiben sät nichts, wenn alle Nachbarn Gletscher sind (kein Firn unter Eis)", () => {
+  /* #386 hieß „kein Firn unter Eis", geprüft wurde aber „gar kein Firn" — das war eine FOLGE der alten Regel
+     (kein offener Nachbar → gar nichts), nicht die Zusicherung selbst. Mit dem Rückfall der Owner-Runde sät ein
+     eingeschlossener Gletscher ins nächstgelegene offene Feld, und der Wächter prüft jetzt das, was sein Titel
+     sagt: unter keinem Gletscher liegt Firn, und der Rückfall trifft wirklich ein offenes Feld. */
+  it("Schneetreiben sät nie unter einen Gletscher, auch nicht über den Rückfall", () => {
     const glacierLocked = falses(); glacierLocked[0] = true; glacierLocked[1] = true; glacierLocked[5] = true; // beide Nachbarn von pos0 gefroren
     const glacierMass = zeros(); glacierMass[0] = 5; // Masse >0 → additiver Verwehungs-Zweig
     const s = resolveTrick(scen({ glacierMass, glacierLocked, glacierRoles: [ROLES.SCHNEETREIBEN] }), noCrit);
-    expect(s.firnStack.every((v) => v === 0)).toBe(true); // nirgends Firn gesät
+    for (let p = 0; p < s.firnStack.length; p++) if (glacierLocked[p]) expect(s.firnStack[p], `Firn unter Gletscher ${p}`).toBe(0);
+    expect(s.firnStack[6]).toBe(EIS.schneetreiben[0].seed); // pos6 ist das nächstgelegene offene Feld
   });
 });
 

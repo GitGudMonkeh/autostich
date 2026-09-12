@@ -470,7 +470,17 @@ export function ewigerFrostTick(mass, locked, amount = EWIGER_FROST) {
 // alle Nachbarn Gletscher sind. #386: Firn wird NIE unter einen Gletscher gesät → kein Gletscher-Fallback mehr.
 export function driftTargets(pos, locked, count = 1) {
   const isG = (p) => (locked instanceof Set ? locked.has(p) : !!(locked && locked[p]));
-  return neighbors4(pos).filter((p) => !isG(p)).slice(0, Math.max(0, count));
+  const n = Math.max(0, count);
+  const offen = neighbors4(pos).filter((p) => !isG(p));
+  if (offen.length) return offen.slice(0, n);
+  /* Rückfall: ein ganz eingeschlossener Gletscher sät ins nächstgelegene offene Feld statt gar nicht. Ohne den
+     stirbt Schneetreiben genau im dichten Cluster, für den die Fraktion gebaut ist — bei zwölf geballten Gletschern
+     haben nur fünf überhaupt einen offenen 4-Nachbarn. Deterministisch: Chebyshev, bei Gleichstand der kleinere
+     Index. Greift nur bei NULL offenen Nachbarn, nicht als Auffüllung eines teilweise verbauten Kranzes. */
+  const frei = [];
+  for (let p = 0; p < N_POS; p++) if (p !== pos && !isG(p)) frei.push(p);
+  frei.sort((a, b) => chebyshev(pos, a) - chebyshev(pos, b) || a - b);
+  return frei.slice(0, n);
 }
 
 // Dauerfrost (docs §4 Firn): am Durchlauf-ENDE frosten UNGEFRORENE Felder nach ABSTAND zum nächsten Gletscher

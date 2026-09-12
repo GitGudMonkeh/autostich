@@ -148,7 +148,13 @@ const EIS = {
   // §5.31: ANTEIL statt flacher Zahl. Der gefrorene Boden liefert seit §5.29 rund 20 Masse je Durchlauf — daneben war
   // „+1 bis +4 je Sieg" nicht mehr zu spüren (gemessen −7 % mono / −10 % Paar). Episch: der Formations-Sieg zählt doppelt.
   anfrieren:      [{ pct: 0.1 }, { pct: 0.15 }, { pct: 0.2 }, { pct: 0.28, form: true }],
-  schneetreiben:  [{ seed: 2, fields: 1 }, { seed: 3, fields: 1 }, { seed: 4, fields: 1 }, { seed: 5, fields: 2 }],
+  // Owner: „Schneetreiben braucht einen Buff im Vergleich zu Dauerfrost … der mit der Bedingung braucht einen
+  // größeren Payoff." Beide zahlen in dieselbe Kasse (Boden-Reserve, je Durchlauf komplett abgezogen), also
+  // vergleichbar ohne Sim: Dauerfrost lieferte je Durchlauf das 3- bis 13-fache. Saat 2/3/4/5 -> 8/12/16/20,
+  // Felder unveraendert; dazu der Rueckfall in driftTargets. Damit kreuzen sich die beiden bei rund 8 Gletschern:
+  // Dauerfrost schrumpft mit jedem Gletscher (weniger offene Felder), Schneetreiben waechst mit jedem. GERECHNET
+  // aus der Brettgeometrie, nicht gemessen.
+  schneetreiben:  [{ seed: 8, fields: 1 }, { seed: 12, fields: 1 }, { seed: 16, fields: 1 }, { seed: 20, fields: 2 }],
   dauerfrost:     [{ near: 1, far: 2 }, { near: 2, far: 3 }, { near: 2, far: 4 }, { near: 3, far: 6 }],
   // §5.31 nachgezogen (Mechanik unverändert): 0,25–1 war neben dem Boden-Einkommen kaum zu spüren — 97 % Haltequote
   // bei −10 % Wirkung, der klassische „immer genommen, nie gespürt"-Fall.
@@ -310,7 +316,7 @@ export const SKILL_DEFS = {
   SK_ICE_01: { id: "SK_ICE_01", name: "Anfrieren", archetype: "ice", keywords: ["glacier"], role: "G_ANFRIEREN", tiers: EIS.anfrieren,
     ...tiered(EIS.anfrieren, (r) => `Ein Gletscher-Sieg gibt +${pct(r.pct)} % seiner Masse zusätzlich${r.form ? ", in einer Formation doppelt" : ""}.`) },
   SK_ICE_02: { id: "SK_ICE_02", name: "Schneetreiben", archetype: "ice", keywords: ["glacier", "freeze"], role: "G_SCHNEETREIBEN", tiers: EIS.schneetreiben,
-    ...tiered(EIS.schneetreiben, (r) => `Gewinnt ein Gletscher, sät er +${de(r.seed)} Schnee in die Boden-Reserve ${r.fields === 1 ? "eines angrenzenden offenen Felds" : `von ${de1(r.fields)} angrenzenden offenen Feldern`}.`) },
+    ...tiered(EIS.schneetreiben, (r) => `Gewinnt ein Gletscher, sät er +${de(r.seed)} Schnee in die Boden-Reserve ${r.fields === 1 ? "eines angrenzenden offenen Felds" : `von ${de1(r.fields)} angrenzenden offenen Feldern`}. Ist kein Nachbarfeld offen, sät er ins nächstgelegene offene Feld.`) },
   SK_ICE_03: { id: "SK_ICE_03", name: "Dauerfrost", archetype: "ice", keywords: ["glacier", "freeze"], role: "G_DAUERFROST", tiers: EIS.dauerfrost,
     ...tiered(EIS.dauerfrost, (r) => `Jeden Durchlauf sammeln ungefrorene Felder Schnee in ihrer Boden-Reserve: +${de(r.near)} bei bis zu 2 Feldern Abstand zum nächsten Gletscher, +${de(r.far)} ab 3.`) },
   SK_ICE_04: { id: "SK_ICE_04", name: "Verdichtung", archetype: "ice", keywords: ["glacier", "bauphase"], role: "G_VERDICHTUNG", tiers: EIS.verdichtung,
