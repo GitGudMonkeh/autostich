@@ -4,8 +4,9 @@ import { initialState } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
 import {
   neighbors4, neighbors8, glacierClusters, packeisTick, verzahnungTick, ROLES, EWIGER_FROST,
+  PACKEIS_RADIUS as R, PACKEIS_RADIUS_BRIDGE as R_BRIDGE,
 } from "../src/game/glacier.js";
-import { iceNeighborFn } from "../src/game/factions/ice.js";
+import { iceNeighborFn, icePackeisRadius } from "../src/game/factions/ice.js";
 import { EIS_TIERS as EIS } from "../src/game/skills.js"; // §5.3: die Zahlen stehen in der Stufenleiter (Normal = Zeile 0)
 const PACKEIS_PER_NEIGHBOR = EIS.packeis[0].per, VERZAHNUNG_PER = EIS.verzahnung[0].per;
 import { posOf } from "../src/game/architect.js";
@@ -45,24 +46,34 @@ describe("Nachbarschaft & Cluster", () => {
 /* §5.31 (Owner): Packeis hat die Seite gewechselt — es zählt die OFFENEN Nachbarn, nicht die gefrorenen. Es war der
    reinste Mono-Skill der Fraktion (+24 % mono, −8 %/−8 % im Mix); jetzt ist es die zweite Masse-Quelle eines dünn
    gebauten Eis-Anteils. Die Wächter halten die Umkehr fest, damit sie nicht versehentlich zurückkippt. */
-describe("Packeis — Masse je offenem Nachbarfeld", () => {
-  it("WENIGER Gletscher-Nachbarn → mehr Masse", () => {
-    const allein = packeisTick(zeros(), lockAt(0), neighbors4, PACKEIS_PER_NEIGHBOR);
-    const zuZweit = packeisTick(zeros(), lockAt(0, 1), neighbors4, PACKEIS_PER_NEIGHBOR);
-    expect(allein[0]).toBe(2 * PACKEIS_PER_NEIGHBOR);    // Ecke pos0: zwei Nachbarn, beide offen
-    expect(zuZweit[0]).toBe(PACKEIS_PER_NEIGHBOR);       // einer davon ist jetzt Eis → nur noch einer zahlt
+describe("Packeis — Masse je offenem Feld im Umkreis", () => {
+  it("WENIGER Gletscher in Reichweite → mehr Masse", () => {
+    const allein = packeisTick(zeros(), lockAt(0), R, PACKEIS_PER_NEIGHBOR);
+    const zuZweit = packeisTick(zeros(), lockAt(0, 1), R, PACKEIS_PER_NEIGHBOR);
+    expect(allein[0]).toBe(8 * PACKEIS_PER_NEIGHBOR);   // Ecke pos0, Umkreis 2: Zeilen 0-2 × Spalten 0-2 minus sich selbst
+    expect(zuZweit[0]).toBe(7 * PACKEIS_PER_NEIGHBOR);  // eines davon ist jetzt Eis
     expect(zuZweit[0]).toBeLessThan(allein[0]);
   });
-  it("voll umschlossen zahlt gar nichts — die exakte Umkehrung von früher", () => {
+  /* Owner-Runde 2026-09-12: „voll umschlossen zahlt gar nichts" war die alte Zusicherung und ist AUFGEHOBEN —
+     genau darin bestand der Deckel, der Packeis zum Schlusslicht machte (ein Gletscher grenzt an höchstens vier
+     Felder, also stand sein Einkommen bei zwölf geballten Gletschern auf demselben Wert wie bei sechs). Die
+     Umkehr aus §5.31 gilt weiter und wird hier weiter gehalten, nur als Verhältnis statt als Null. */
+  it("dicht gebaut zahlt weniger als allein, aber nicht mehr null", () => {
     const mid = posOf(1, 1);
-    const out = packeisTick(zeros(), lockAt(mid, posOf(0, 1), posOf(2, 1), posOf(1, 0), posOf(1, 2)), neighbors4, PACKEIS_PER_NEIGHBOR);
-    expect(out[mid]).toBe(0);
+    const allein = packeisTick(zeros(), lockAt(mid), R, PACKEIS_PER_NEIGHBOR);
+    const dicht = packeisTick(zeros(), lockAt(mid, posOf(0, 1), posOf(2, 1), posOf(1, 0), posOf(1, 2)), R, PACKEIS_PER_NEIGHBOR);
+    expect(allein[mid]).toBe(15 * PACKEIS_PER_NEIGHBOR);       // Umkreis 2 um (1,1): 4×4 Felder minus sich selbst
+    expect(dicht[mid]).toBe(11 * PACKEIS_PER_NEIGHBOR);        // vier davon sind jetzt Eis
+    expect(dicht[mid]).toBeLessThan(allein[mid]);
+    expect(dicht[mid]).toBeGreaterThan(0);
   });
-  it("Eisbrücke zählt auch die Diagonalen als offen (Ecke pos0: 2 → 3)", () => {
-    const ortho = packeisTick(zeros(), lockAt(0), neighbors4, PACKEIS_PER_NEIGHBOR);
-    const bridge = packeisTick(zeros(), lockAt(0), neighbors8, PACKEIS_PER_NEIGHBOR);
-    expect(ortho[0]).toBe(2 * PACKEIS_PER_NEIGHBOR);
-    expect(bridge[0]).toBe(3 * PACKEIS_PER_NEIGHBOR);
+  it("Eisbrücke schiebt den Umkreis eine Stufe weiter (Ecke pos0: 8 → 15 Felder)", () => {
+    expect(icePackeisRadius([])).toBe(R);
+    expect(icePackeisRadius([ROLES.EISBRUECKE])).toBe(R_BRIDGE);
+    const ortho = packeisTick(zeros(), lockAt(0), icePackeisRadius([]), PACKEIS_PER_NEIGHBOR);
+    const bridge = packeisTick(zeros(), lockAt(0), icePackeisRadius([ROLES.EISBRUECKE]), PACKEIS_PER_NEIGHBOR);
+    expect(ortho[0]).toBe(8 * PACKEIS_PER_NEIGHBOR);
+    expect(bridge[0]).toBe(15 * PACKEIS_PER_NEIGHBOR);
   });
   it("Engine: Packeis lädt am Durchlauf-Ende zusätzlich zu Ewiger Frost", () => {
     /* §8: die absolute Masse enthält jetzt auch die Boden-Abgabe (Zug). Gemessen wird deshalb der UNTERSCHIED
@@ -70,7 +81,7 @@ describe("Packeis — Masse je offenem Nachbarfeld", () => {
        wenn am Einkommen weiter geschraubt wird. */
     const bau = (roles) => runCycle(scen({ glacierLocked: lockAt(0, 1), glacierRoles: roles, oppDeck: oppOf(99) }));
     const mit = bau([ROLES.PACKEIS]), ohne = bau([]);
-    expect(mit.glacierMass[0] - ohne.glacierMass[0]).toBeCloseTo(PACKEIS_PER_NEIGHBOR, 6);
+    expect(mit.glacierMass[0] - ohne.glacierMass[0]).toBeCloseTo(7 * PACKEIS_PER_NEIGHBOR, 6); // Ecke pos0 mit Eis auf pos1: 7 offene Felder im Umkreis 2
     expect(ohne.glacierMass[0]).toBeGreaterThan(EWIGER_FROST); // ohne Rolle trägt der Boden bereits
   });
 });

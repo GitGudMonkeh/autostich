@@ -1,5 +1,5 @@
 import { SKILL_DEFS, isLegendarySkill, boostedTier } from "../skills.js";
-import { ROLES, neighbors4, neighbors8, EISZEIT_BURST_PER } from "../glacier.js";
+import { ROLES, neighbors4, neighbors8, EISZEIT_BURST_PER, PACKEIS_RADIUS, PACKEIS_RADIUS_BRIDGE } from "../glacier.js";
 
 /* ============================================================
    EIS — Fraktionsmodul (exp skill rework, docs/skill-rework.md §5). Reine Logik: kein React, kein Math.random.
@@ -92,6 +92,11 @@ export function iceSnapshotOpts(roles = [], tune = null) {
 
 // Aktive Nachbarschaftsfunktion: mit Eisbrücke die 8er, sonst die 4er. (Cluster/Frostbund lesen sie.)
 export const iceNeighborFn = (roles = []) => (roles.includes(ROLES.EISBRUECKE) ? neighbors8 : neighbors4);
+
+// Packeis zählt im Umkreis, nicht in der Nachbarschaft — die Eisbrücke-Kopplung sitzt deshalb hier statt in
+// iceNeighborFn: sie schiebt den Radius eine Stufe weiter, denn Umkreis 2 enthält die Diagonalen schon.
+export const icePackeisRadius = (roles = []) =>
+  (roles.includes(ROLES.EISBRUECKE) ? PACKEIS_RADIUS_BRIDGE : PACKEIS_RADIUS);
 
 // Stufe je Rolle aus den gehaltenen Skills und ihren Stufen — der Reducer legt das Ergebnis in state.glacierRoleTiers.
 export function iceRoleTiers(skills = [], skillTiers = {}) {

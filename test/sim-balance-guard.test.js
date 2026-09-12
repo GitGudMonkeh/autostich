@@ -104,8 +104,13 @@ describe("sim balance guard", () => {
        8,27M — dasselbe Niveau, also kein einzelner Ausreißer, sondern die gewollte Folge. Bemerkenswert und
        ausdrücklich festgehalten: der ZUFALLSSPIELER verdoppelt sich (3,79 → 7,77M), weil Gletscher unabhängig vom
        Rest des Builds zahlen — der Eis-Buff hebt den BODEN des Spiels stärker als seine Decke. */
-    expect(median).toBeGreaterThan(5_000_000);
-    expect(median).toBeLessThan(10_500_000);
+    /* Owner-Runde 2026-09-12 (Schneetreiben-Saat ×4 mit Rückfall, Packeis vom Nachbarn auf den Umkreis): Seeds
+       1..40 Median 10,99M, Seeds 1..200 11,54M — dasselbe Niveau, also erneut kein Ausreißer, sondern die
+       gewollte Folge. Damit wiederholt sich der Befund aus §7.72 B ein zweites Mal: ein Eis-Buff hebt den
+       ZUFALLSSPIELER überproportional, weil Gletscher unabhängig vom Rest des Builds zahlen. Beide Buffs stecken
+       zusammen drin (7,77 → 10,99M, +41 %) und sind nicht getrennt. Neu zentriert auf ±35 % wie gehabt. */
+    expect(median).toBeGreaterThan(7_000_000);
+    expect(median).toBeLessThan(15_000_000);
   });
 
   it("Mean-Score im erwarteten Band (Tail-Runaway-Fänger)", () => {
@@ -117,7 +122,11 @@ describe("sim balance guard", () => {
     /* §7.72: Seeds 1..40 Mean 17,96M, Seeds 1..200 17,31M; ohne den jeweils größten Lauf 13,56M / 15,12M — der
        Mean hängt also auch nicht an einem Ausreißer. Die Obergrenze fängt weiterhin einen ECHTEN Blowup: mit
        stapelnder Geometrie und ohne Gletscher-Deckel lag der Mean bei 352M, das ist Faktor 14 entfernt. */
-    expect(mean).toBeGreaterThan(11_000_000);
-    expect(mean).toBeLessThan(24_000_000);
+    /* Owner-Runde 2026-09-12: Seeds 1..40 Mean 22,68M, Seeds 1..200 23,11M. Der Mean stand damit noch INNERHALB
+       des alten Bandes (Obergrenze 24,0M), aber mit 6 % Luft — der nächste Griff hätte ihn ohne eigene Aussage
+       gerissen. Deshalb hier mit zentriert statt später auf Verdacht. Die Obergrenze fängt weiterhin einen
+       ECHTEN Blowup: mit stapelnder Geometrie und ohne Gletscher-Deckel lag der Mean bei 352M, Faktor 11. */
+    expect(mean).toBeGreaterThan(15_000_000);
+    expect(mean).toBeLessThan(31_000_000);
   });
 });

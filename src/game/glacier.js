@@ -345,12 +345,22 @@ export function eiszeitFlood(firn, locked, base = EISZEIT_FLOOD) { return firnGr
    OFFENEM Nachbarfeld statt je Gletscher-Nachbar. Er war der reinste Mono-Skill der Fraktion (gemessen +24 % mono,
    −8 %/−8 % im Mix) — vier Skills sagten „bau dicht", keiner sagte etwas anderes. Als Kante zwischen Eis und offenem
    Wasser trägt er den Namen weiter, und ein dünn gebauter Eis-Anteil bekommt neben Dauerfrost eine zweite Quelle. */
-export function packeisTick(mass, locked, neighborFn = neighbors4, per = 0) {
+/* Owner-Runde 2026-09-12: Reichweite statt Satz. Packeis war das Schlusslicht der vier Einkommen (6 Gletscher
+   verteilt: 10/15/20/30 gegen Dauerfrost 34/68/68/102), und der Grund war ein DECKEL, den nur es hatte: ein
+   Gletscher grenzt an höchstens vier Felder, also stand sein Einkommen bei 12 geballten Gletschern auf demselben
+   Wert wie bei sechs. Verzahnung wächst quadratisch mit dem Cluster, Dauerfrost mit dem ganzen Brett. Die Leiter
+   bleibt deshalb unangetastet, gezählt wird jetzt im UMKREIS (Chebyshev) — dieselbe Bandgrenze, die Dauerfrost
+   schon benutzt. Eisbrücke bleibt gekoppelt: sie schiebt den Umkreis auf 3, weil ein Umkreis 2 die Diagonalen
+   ohnehin enthält und die alte Kopplung (4 → 8 Nachbarn) sonst ersatzlos verfallen wäre. */
+export const PACKEIS_RADIUS = envNum("SIM_GLACIER_PACKEIS_RADIUS", 2);
+export const PACKEIS_RADIUS_BRIDGE = envNum("SIM_GLACIER_PACKEIS_RADIUS_BRIDGE", 3);
+export function packeisTick(mass, locked, radius = PACKEIS_RADIUS, per = 0) {
   const isG = (p) => (locked instanceof Set ? locked.has(p) : !!(locked && locked[p]));
   const out = Array.isArray(mass) ? mass.slice() : new Array(N_POS).fill(0);
-  for (let p = 0; p < N_POS; p++) if (isG(p)) {
-    const oN = neighborFn(p).filter((n) => !isG(n)).length;
-    if (oN) out[p] = (out[p] || 0) + per * oN;
+  for (let g = 0; g < N_POS; g++) if (isG(g)) {
+    let offen = 0;
+    for (let p = 0; p < N_POS; p++) if (!isG(p) && chebyshev(g, p) <= radius) offen++;
+    if (offen) out[g] = (out[g] || 0) + per * offen;
   }
   return out;
 }
