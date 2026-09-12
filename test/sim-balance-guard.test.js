@@ -108,7 +108,10 @@ describe("sim balance guard", () => {
        1..40 Median 10,99M, Seeds 1..200 11,54M — dasselbe Niveau, also erneut kein Ausreißer, sondern die
        gewollte Folge. Damit wiederholt sich der Befund aus §7.72 B ein zweites Mal: ein Eis-Buff hebt den
        ZUFALLSSPIELER überproportional, weil Gletscher unabhängig vom Rest des Builds zahlen. Beide Buffs stecken
-       zusammen drin (7,77 → 10,99M, +41 %) und sind nicht getrennt. Neu zentriert auf ±35 % wie gehabt. */
+       zusammen drin (7,77 → 10,99M, +41 %) und sind nicht getrennt. Neu zentriert auf ±35 % wie gehabt.
+       Direkt danach `BURST_SCALE` 80 → 60 (Owner): Median 9,83M, Mean 18,99M — beide im frisch zentrierten
+       Band, nicht erneut zentriert. Der Regler nimmt also gut die Hälfte dessen zurück, was die zwei Buffs
+       gebracht haben, ohne einen einzelnen Skill anzufassen. */
     expect(median).toBeGreaterThan(7_000_000);
     expect(median).toBeLessThan(15_000_000);
   });

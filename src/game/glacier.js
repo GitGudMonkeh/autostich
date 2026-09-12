@@ -49,8 +49,14 @@ export const TIER_MULT = [0, 1, 1.5, 2.2, 3.2, 4.6, 6.7, 9.7]; // überlineare W
    Diagnose aus §8 korrigiert: Eis war nicht ansteckend, weil man im Mischbau zu wenige Eis-Skills hält, sondern
    weil ein Gletscher eine BRETTPOSITION kostet und zu wenig dafür zahlte — jede Eis-Position war ein Downgrade.
    80 statt 100, damit der Playtest in beide Richtungen tarieren kann (Owner). Eis skaliert unterlinear (×5 am
-   Regler gibt ×3,4), es sättigt an den Masse-Schwellen — wer weiter hebt, stößt an die Decke statt an den Preis. */
-export const BURST_SCALE = envNum("SIM_GLACIER_BURST_SCALE", 80);
+   Regler gibt ×3,4), es sättigt an den Masse-Schwellen — wer weiter hebt, stößt an die Decke statt an den Preis.
+   2026-09-12 (Owner: „burst_scale runter auf 60"): 80 → 60, und genau dafür war die Reserve nach oben und unten
+   gedacht. Anlass sind die zwei Eis-Buffs desselben Tages (Schneetreiben, Packeis), die den ZUFALLSSPIELER um
+   41 % gehoben haben — derselbe Befund wie §7.72 B, weil Gletscher unabhängig vom Rest des Builds zahlen. Der
+   Regler ist der eine Griff, der die ganze Fraktion gleichmäßig senkt, statt einen frisch reparierten Skill
+   wieder totzuschneiden (die Lehre aus §7.66). Der Sweep oben bleibt gültig, 60 steht darin. UNGEMESSEN in der
+   neuen Kombination: der Sweep lief vor beiden Buffs. */
+export const BURST_SCALE = envNum("SIM_GLACIER_BURST_SCALE", 60);
 // Große Lawine (§5.8, Owner): feuert nicht mehr einmal am Laufende, sondern im TAKT — jeden GROSSE_LAWINE_EVERY-ten
 // Durchlauf bricht das ganze Feld auf einen Schlag, jeder Gletscher mit der Wucht der höchsten Schwelle. Damit ist sie
 // den ganzen Lauf über sichtbar, und sie synchronisiert das Feld: Kaskade, Kollision und Gletschersturz greifen
