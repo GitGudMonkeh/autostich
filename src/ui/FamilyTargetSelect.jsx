@@ -12,7 +12,6 @@ import { DeckStrength } from "./BuildSummary.jsx";
 import { CardGrid } from "./CardGrid.jsx";
 import { glacierGridProps } from "./glacierBoard.js";
 import { architectCoverFor } from "./architectCover.js";
-import { PhaseHintSlot } from "./hints/HintCard.jsx"; // Onboarding-Hints: Banner-Slot unter dem Kopf (docs/tutorial-onboarding-design.md)
 
 /* Familien-Ziel-Auswahl (Rarität #167, Spec §2.3/§2.4) — öffnet nach dem Pick einer Stufe mit `pickTarget`.
    Zwei Modi (state.familyTarget.kind):
@@ -57,7 +56,6 @@ export function FamilyTargetSelect({ state, onSuit, onCard, onFormationType, onC
           <h2 className="text-title-6 font-bold mt-1">{fam.name} {romanOf(ft.tier)}</h2>
           <p className="text-body-5 opacity-60 mt-1 max-w-xl mx-auto leading-snug">{tierDef.desc}</p>
         </div>
-        <PhaseHintSlot screen="family" />
 
         <ActionBar pad={5}>
           <span className="text-body-5 opacity-60 tabular-nums self-center">{tr("common.chosen", { n: sel.length, need })}</span>

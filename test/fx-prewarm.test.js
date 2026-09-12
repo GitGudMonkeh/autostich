@@ -27,7 +27,7 @@ const scen = (offer, over = {}) => ({
 
 describe("#372b — warum der Pick zu spät kommt", () => {
   it("ein Pflanzen-Pick landet SOFORT in der Spielphase — dort wärmt der Effekt bewusst nichts", () => {
-    const id = "SK_PLANT_02";
+    const id = "SK_PLANT_05"; // Aussaat (SK_PLANT_02 Wurzeltiefe ist mit der Wertachse gestrichen, §6.3)
     expect(archetypeOf(id)).toBe("plant");
     const next = reducer(scen([id]), { type: "PICK_SKILL", skillId: id, rng: () => 0.5 });
     expect(next.activeArchetypes, "der Archetyp ist ab jetzt aktiv").toContain("plant");
@@ -49,7 +49,7 @@ describe("#372c — der Ladebildschirm wärmt vor, nicht der Lauf", () => {
   });
 
   it("gewärmt werden die FREIGESCHALTETEN Archetypen — der Angebots-Pool ist genau darauf begrenzt", () => {
-    expect(app).toContain("return unlockedArchetypes(profile)");
+    expect(app).toContain("return ARCHETYPE_ORDER"); // exp: kein Baum — alle vier Archetypen werden gewärmt
     expect(app).toContain("fxPrewarmedRef.current.add(a); return FX_PREWARM[a](opts);");
   });
 
@@ -72,8 +72,8 @@ describe("#372c — der Ladebildschirm wärmt vor, nicht der Lauf", () => {
 });
 
 describe("#372b — das Angebot bleibt das Netz", () => {
-  it("die angebotenen Archetypen zählen mit, nicht nur die aktiven", () => {
-    expect(app).toContain("const offeredArchs = (state.skillOffer || []).map(archetypeOf).filter(Boolean).join(\",\");");
+  it("die angebotenen Archetypen zählen mit, nicht nur die aktiven — vor der Türwahl die Fraktionen beider Türen", () => {
+    expect(app).toContain("const offeredArchs = (state.skillOffer || (state.skillDoors || []).flatMap((d) => d.skills || [])).map(archetypeOf).filter(Boolean).join(\",\");");
     expect(app).toMatch(/const arch = \[\.\.\.new Set\(\[\.\.\.\(state\.activeArchetypes \|\| \[\]\), \.\.\./);
   });
 
@@ -83,6 +83,6 @@ describe("#372b — das Angebot bleibt das Netz", () => {
 
   it("das Skill-Angebot ist eine Nicht-Spiel-Phase, die Wärmung liegt also VOR dem Pick", () => {
     // Ohne diese Zuordnung wäre die Wärmung wieder im Stichspiel — genau das, was #372 verbietet.
-    expect(app).toContain('{state.phase === "levelup" && state.skillOffer && (');
+    expect(app).toContain('{state.phase === "levelup" && (state.skillOffer || state.skillDoors) && ('); // exp: Türen sind dieselbe Nicht-Spiel-Phase
   });
 });

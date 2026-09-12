@@ -1,33 +1,29 @@
-import { useContext, useEffect, useState, useRef } from "react";
+import { useState, useRef } from "react";
 import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import { PANEL_BG, phaseCard, PhaseHairline, PHASE_ACCENTS, ActionButton } from "./modalStyle.jsx";
-import { ARCHETYPE_ORDER, archetypeOf, marginHeatPoints, isLegendarySkill } from "../game/skills.js";
+import { ARCHETYPE_ORDER, archetypeOf, isLegendarySkill, boostedTier, effectiveTierOf, tierIsLifted, numWord } from "../game/skills.js"; // §7.45: die WIRKSAME Stufe (Hochspannung)
 import { FactionIcon, ArchIcon, GlossaryIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
-import { SKILL_SLOTS, LIGHTNING_CRIT_BASE, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_CRIT_MULT_PER_SKILL,
-         PLANT_GROWTH_SKILL_REF, PLANT_GREEN_THRESHOLD, WURZELSCHLAG_PER_GROWTH, PLANT_VALUE_CAP,
-         WURZELSCHLAG_LOSS_MIN_SKILLS, WURZELSCHLAG_LOSS_EVERY,
-         FIRE_MARGIN_OFFSET, FIRE_SCORE_BASE, FIRE_SCORE_PER_SKILL, FIRE_SCORE_SQRT_K,
-         HEAT_MIN_MARGIN, HEAT_PER_POINT, HEAT_LOSS_MAX, HEAT_LOSS_PCT } from "../game/constants.js";
-import { DECLINE_MIN_SKILLS as G_DECLINE_MIN_SKILLS } from "../game/glacier.js"; // Eis-Neudesign: Ablehn-Gletscher-Schwelle für den Passiv-Text
+import { SKILL_SLOT_LIMIT, LIGHTNING_CRIT_SOCKET, LIGHTNING_CRIT_PER_SKILL, LIGHTNING_MAX_CHARGE, ION_SCORE_PER_STACK, ION_CRIT_MULT_PER_STACK,
+         PLANT_GREEN_THRESHOLD, PLANT_BLOOM_THRESHOLD, PLANT_GROWTH_WIN, PLANT_GROWTH_PER_FORMATION, PLANT_BLOOM_SCORE_PER_GREEN,
+         HEAT_MIN_MARGIN, HEAT_MARGIN_OFFSET, HEAT_PER_POINT, HEAT_LOSS, HEAT_MULT_PER_10, ION_VALUE_PER_BAR, PLANT_BLOOM_WEIGHT, PLANT_BLOOM_WEIGHT_PER_GROWTH } from "../game/constants.js";
+import { rerollOffer, FOCUS_PRICE, UPGRADE_FROM, FORFEIT_SKILL } from "../game/coins.js"; // Münz-Ökonomie §3.1 Neuwurf · §3.3 Fokus · §3.5 Aufwerten — dieselben Zahlen wie der Reducer
+import { RerollLabel, CoinAmount, CoinReward } from "./CoinMark.jsx";      // Beschriftung: Anzahl solange gratis, danach der Preis · §2.3 was das Ablehnen einbringt
+import { SkillUpgrade } from "./SkillUpgrade.jsx";                        // §3.5: die Aufwertphase (eigener Bildschirm)
 
 import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 import { GlossaryPanel, GlossaryText } from "./Glossary.jsx";
-import { GuideOverlay } from "./GuideOverlay.jsx";
 import { FormationPanel } from "./FormationPanel.jsx";
 import { LevelupRig } from "./LevelupWings.jsx"; // #lv-fluegel: Deck links, Kennzahlen rechts (ab 1280 px)
-import { HeldSkills } from "./HeldSkills.jsx"; // gehaltene Skills — geteilt mit der Perk-Auswahl
+import { HeldSkills, SkillTierBadge, skillTierColor } from "./HeldSkills.jsx"; // gehaltene Skills — geteilt mit der Perk-Auswahl · exp: Stufen-Badge/-Farbe
 import { useIsWide, useIsPhone } from "./useIsWide.js";      // #sk-reiter: Reiterzeile statt Pager — DOM, nicht Anordnung
 import { skillArt } from "./skillArt.js";        // #skillart: Emblem je Skill (nur ab 1280 px gerendert)
 import { CardCorners } from "./CardCorners.jsx"; // #cornerart: Eck-Ornamente im Kartenkopf (folgen dem Reiter)
 import { skillDef, archMeta } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
 import { glossaryEntry } from "../i18n/glossaryText.js"; // #sprache: Glossartext zur Anzeigezeit
-import { t, fmtNum } from "../i18n/index.js";
-import { PhaseHintSlot, HintContext } from "./hints/HintCard.jsx"; // Onboarding-Hints: Banner-Slot unter dem Kopf (docs/tutorial-onboarding-design.md) · V1: aktive Seite melden
-import { recommendedStarter } from "./hints/hintScript.js"; // §6.2 „Guter Start": regelbasiert der Konsument des Erstlauf-Angebots
+import { t } from "../i18n/index.js";
 
 // Archetyp-Meta eines Skills (Theming) — Fallback neutral (#93 F0).
 const ac = (id) => archMeta(archetypeOf(id)) || { label: t("skill.arch.none"), icon: "•", color: "#8a8a95" };
-
 // #238b: Was verschwindet, wenn der LETZTE Skill eines Archetyps abgelegt wird (Wahrheit: reducer.js stillActive-Pfad).
 // Bereits in die Karten gebackener Wert (geschmiedet/gewachsen) bleibt erhalten → Zusatz nur bei Feuer/Pflanze.
 const ARCH_LOSS = {
@@ -37,21 +33,16 @@ const ARCH_LOSS = {
   lightning: { key: "skill.loss.lightning", baked: false },
 };
 
-const SOCKET_PCT = Math.round(LIGHTNING_CRIT_BASE * 100);         // einmaliger Aktivierungs-Sockel (5 %)
-const PER_SKILL_PCT = Math.round(LIGHTNING_CRIT_PER_SKILL * 100); // je Blitz-Skill (8 %)
-const FIRST_CRIT_PCT = SOCKET_PCT + PER_SKILL_PCT;               // Crit-Chance nach dem ERSTEN Blitz-Skill (Sockel + 1×)
-const PER_SKILL_MULT = () => fmtNum(LIGHTNING_CRIT_MULT_PER_SKILL); // +Crit-Multiplikator je Blitz-Skill (0,1)
-// Feuer-Passive: konkrete Zahlen (erster Feuer-Skill). Score = lineare Linie + √-Bonus; Hitze = marginHeatPoints (√-Schwanz).
-const fireScoreAt = (m) => Math.round((m - FIRE_MARGIN_OFFSET) * FIRE_SCORE_BASE + FIRE_SCORE_BASE * FIRE_SCORE_SQRT_K * Math.sqrt(m - FIRE_MARGIN_OFFSET));
-const fireHeatAt  = (m) => Math.round(marginHeatPoints(m) * HEAT_PER_POINT);
-const FIRE_MIN_HEAT = fireHeatAt(HEAT_MIN_MARGIN);         // Hitze bei Mindest-Vorsprung
-const FIRE_MIN_SCORE = fireScoreAt(HEAT_MIN_MARGIN);       // Score bei Mindest-Vorsprung
-const FIRE_LOSS_PCT = Math.round(HEAT_LOSS_PCT * 100);     // Abkühl-Anteil der aktuellen Hitze je Niederlage
+// exp Blitz-Passiv (§7.30): ein Sockel, sobald Blitz aktiv ist, plus ein Satz je gehaltenem Skill.
+const SOCKET_PCT = Math.round(LIGHTNING_CRIT_SOCKET * 100);
+const PER_SKILL_PCT = Math.round(LIGHTNING_CRIT_PER_SKILL * 100);
+// Feuer-Passiv (exp skill rework §4.2): Hitze je Punkt Vorsprung über dem Offset, flache Kühlung, Multiplikator je 10 %.
+const FIRE_MULT_PCT = Math.round(HEAT_MULT_PER_10 * 100);  // +% Score je 10 % gehaltener Hitze
 // Kuratierte Schlüsselbegriffe je Archetyp-Passive — der Aufklapper zeigt AUSSCHLIESSLICH diese als kleine Unterkategorien
 // (Icon + Begriff + Kurztext aus dem Glossar), damit alle vier Passive gleich schön lesbar sind statt einer Textwand.
 const PASSIVE_KEYWORDS = {
   lightning: ["charge", "ionize"],
-  fire:      ["glutdividende", "ash"],
+  fire:      ["heat", "consume"],
   ice:       ["masse", "bersten", "eisformation"],
   plant:     ["green"],
 };
@@ -75,33 +66,133 @@ function KeywordGlossary({ tokens }) {
   );
 }
 
+/* Eine Tür — gewürfelt oder gerufen. Beide zeigen dasselbe (Fraktionssymbole in Platzreihenfolge, keine
+   Namen, keine Stufen) und öffnen über denselben Weg; die gerufene trägt zusätzlich ihre Marke, den
+   violetten Rahmen mit Schein und steht über die volle Breite. EINE Komponente, damit die bezahlte Tür
+   nicht auseinanderdriftet von der, die man umsonst bekommt. */
+function DoorCard({ door, label = null, called = false, phone = false, onOpen }) {
+  const archs = (door.skills || []).map(archetypeOf).filter(Boolean);
+  const count = {};
+  for (const a of archs) count[a] = (count[a] || 0) + 1;
+  const leadArch = archs.length ? [...archs].sort((a, b) => count[b] - count[a] || archs.indexOf(a) - archs.indexOf(b))[0] : null;
+  const col = (archMeta(leadArch) || {}).color || LIGHT;
+  return (
+    <button type="button" onClick={onOpen}
+      className={`sk-door as-edge-card text-left rounded-xl px-4 py-5 flex flex-col items-center gap-3 transition-all hover:-translate-y-0.5 hover:brightness-110${called ? " sk-door-called mt-3" : ""}`}
+      style={{ "--c": col, ...(called ? { boxShadow: `0 0 26px -12px ${col}` } : null) }}>
+      {called
+        ? <div className="w-full flex items-center gap-2">
+            <FocusIcon />
+            <span className="text-meta-3 font-bold uppercase tracking-widest" style={{ color: "#cdbcf5" }}>{t("focus.called")}</span>
+            <span className="ml-auto text-meta-1 inline-flex items-center gap-1 opacity-70"><CoinAmount n={FOCUS_PRICE} size={11} />{t("focus.paid")}</span>
+          </div>
+        : <div className="text-meta-3 font-bold uppercase tracking-widest opacity-60">{label}</div>}
+      <div className="flex items-center justify-center gap-4">
+        {archs.map((a, k) => <ArchIcon key={k} meta={archMeta(a)} size={phone ? 30 : 40} />)}
+      </div>
+      <div className="text-body-5 opacity-70 text-center">{archs.map((a) => (archMeta(a) || {}).label || a).join(" · ")}</div>
+      <div className="text-body-lg-5 font-bold" style={{ color: col }}>{t("skill.door.open")}</div>
+    </button>
+  );
+}
+
+// Das Ziel-/Fokus-Zeichen: zwei Ringe. Es steht am Ruf-Block und an der gerufenen Tür — beide Male
+// dasselbe, damit man den Kauf und sein Ergebnis als dieselbe Sache liest.
+function FocusIcon({ size = 15 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+      strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ color: "#cdbcf5", flex: "none" }}>
+      <circle cx="12" cy="12" r="3" /><circle cx="12" cy="12" r="8" opacity=".45" />
+    </svg>
+  );
+}
+
+/* Fokus rufen (docs/muenz-oekonomie.md §3.3) — unter den Türen, vier Fraktions-Chips, ein Tap wählt UND
+   bezahlt. Einmal je Skill-Phase; danach ist der Block weg, weil die gerufene Tür darüber schon dasteht.
+   Die Fraktion, von der man am meisten hält, ist hervorgehoben — das ist die, die man am ehesten sucht,
+   und der Chip sagt es, ohne dass man zählen muss. */
+function FocusCall({ state, onCallFocus }) {
+  if (!onCallFocus || state.focusCalled) return null;
+  const coins = state.coins || 0;
+  const can = coins >= FOCUS_PRICE;
+  const held = {};
+  for (const id of state.skills || []) { const a = archetypeOf(id); if (a) held[a] = (held[a] || 0) + 1; }
+  const lead = Object.keys(held).sort((a, b) => held[b] - held[a])[0] || null;
+  return (
+    <div className="sk-focus mt-4 rounded-xl p-3.5"
+      style={{ background: "linear-gradient(180deg,#241f2e,#17151f)", border: "1px solid #6a5a9e" }}>
+      <div className="flex items-center gap-2">
+        <FocusIcon />
+        <span className="text-body-lg-5 font-bold" style={{ color: "#cdbcf5" }}>{t("focus.title")}</span>
+        <span className="ml-auto"><CoinAmount n={FOCUS_PRICE} size={12} dim={!can} have={coins} /></span>
+      </div>
+      <div className="text-body-5 leading-snug mt-1.5" style={{ color: "#9a93b5" }}>{t("focus.hint")}</div>
+      <div className="grid grid-cols-4 gap-1.5 mt-3">
+        {ARCHETYPE_ORDER.map((a) => {
+          const m = archMeta(a) || { color: "#8a8a95", label: a };
+          const on = a === lead;
+          return (
+            <button key={a} type="button" disabled={!can} onClick={can ? () => onCallFocus(a) : undefined}
+              className="sk-focuschip rounded-lg px-1 py-2.5 flex flex-col items-center gap-1.5 transition-all hover:brightness-125 disabled:cursor-not-allowed"
+              style={{ background: can ? `${m.color}${on ? "1f" : "12"}` : "#ffffff08",
+                       border: `1px solid ${can ? `${m.color}${on ? "66" : "3d"}` : "#ffffff14"}`,
+                       opacity: can ? 1 : 0.45 }}>
+              <ArchIcon meta={m} size={18} />
+              <span className="text-meta-1 font-bold" style={{ color: m.color }}>{m.label}</span>
+            </button>
+          );
+        })}
+      </div>
+      <div className="text-meta-1 text-center mt-2" style={{ color: "#5c5c68" }}>
+        {can ? t("focus.tap") : t("focus.broke")}
+      </div>
+    </div>
+  );
+}
+
 /* Skill-Auswahl (docs/blitz-archetyp.md, Abschnitt 7): erscheint zu festen Zeitpunkten (DECISION_SCHEDULE, erstmals Runde 7) STATT eines Perks.
    Seltene, regelverändernde Motoren. Ablehnen → stattdessen ein Perk (Runde nie verschwendet).
    Bei vollen Slots: neuen Skill wählen → dann den zu ersetzenden Skill antippen (übergibt replaceId).
    #201 P9: Angebot bleibt kompakt (nur Name + Kurztext). Die ausführliche Passiv-Beschreibung des
-   Archetyps (inkl. Schlüsselbegriffe) klappt per Tap/Klick auf den Archetyp-Header auf. */
-export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], state = {}, options = {}, onOption,
+   Archetyps (inkl. Schlüsselbegriffe) klappt per Tap/Klick auf den Archetyp-Header auf.
+   exp skill rework (docs/skill-rework.md §1): ZWEI STUFEN. Erst die Türen (`doors`, state.skillDoors): zwei Karten mit
+   je drei Fraktionssymbolen, ohne Namen und ohne Stufen — `onChooseDoor(i)` öffnet eine. Dann das Angebot (`offer`):
+   die drei Skills dieser Tür mit ihren Stufen auf EINER Seite, jede Karte in ihrer Fraktionsfarbe. Der Dev-Run zeigt
+   weiter den flachen Voll-Katalog, geblättert je Fraktion (der Pager unten). */
+export function SkillSelect({ offer = null, doors = null, onPick, onDecline, onReroll, onChooseDoor, onCallFocus, onUpgradeSkill,
+                              skills = [], state = {}, options = {}, onOption,
                               currentTraj = [], recordTraj = [], best = 0 }) {
   const wide = useIsWide();
   const phone = useIsPhone();   // #mobil-emblem — unter 640 px, NICHT die Verneinung von `wide`
   // #lv-fluegel: ab 1280 px lebt das Formationsfeld im linken Flügel (Breite, nicht Flügel-Zustand — s. PerkSelect).
-  const held = skills.map((id) => skillDef(id)).filter(Boolean);
+  const held = skills.map((id) => skillDef(id, effectiveTierOf(state, id))).filter(Boolean); // exp/§7.45: der Text der WIRKSAMEN Stufe
+  const atDoors = !offer && Array.isArray(doors) && doors.length > 0; // exp: Türstufe — noch kein Angebot offen
+  const offerIds = offer || [];
   // Neuwurf (#263): eigener Skill-Reroll-Pool (2 je Lauf), kein Free-Reroll mehr.
+  // Münz-Ökonomie §3.1: ist der Pool leer, ist derselbe Knopf käuflich — kein zweiter Knopf. Trägt das
+  // Angebot ein Legendäres, gilt der höhere Grundpreis und der neue Wurf enthält garantiert wieder eins.
+  // Owner 2026-09-08: der Neuwurf gilt auch auf der TÜRSTUFE — dieselbe Ressource, dieselbe Treppe, nur
+  // würfelt er dort die Türen. Dort nie der Legendär-Preis: was hinter einer Tür liegt, ist verdeckt.
   const rerollTokens = state.rerollsSkill || 0;
-  const canReroll = !!onReroll && rerollTokens > 0;
-  const slots = state.skillSlots || SKILL_SLOTS; // #370 Skill-Fülle / Meisterhand: erhöhtes Slot-Limit (sonst Basis)
-  /* #272: Der legendäre Skill sitzt in einem EIGENEN, festen Slot — er zählt nicht gegen `slots` und kann nie
-     ersetzt werden. Die Zählung hier muss dieselbe sein wie im Reducer (PICK_SKILL: `normalCount`), sonst laufen
-     UI und Regel auseinander. Genau das war der Meisterhand-Bug: `skills.length` schloss den Legendär mit ein,
-     also galten 6 normale + 1 legendärer Skill schon bei 7 Slots als „voll" — der gewonnene Slot war über die
-     Oberfläche nicht erreichbar, und der einzige Ausweg (Ersetzen-Fenster) tauschte nur, statt hinzuzufügen. */
+  const rerollBuy = rerollOffer(state, rerollTokens, !atDoors && offerIds.some(isLegendarySkill));
+  const canReroll = !!onReroll && (atDoors || !!offer);
+  /* exp skill rework: Slots sind standardmäßig unbegrenzt (SKILL_SLOT_LIMIT heißt „kein Limit"); nur eine Dev-Run-
+     Regel darunter begrenzt. Unbegrenzt rechnet `slots` als Infinity, damit `full` und das Ersetzen-Fenster
+     unverändert bleiben (nie voll) und der Reducer (PICK_SKILL: `state.skillSlots || C.SKILL_SLOT_LIMIT`) dasselbe sieht. */
+  const rawSlots = state.skillSlots || SKILL_SLOT_LIMIT;
+  const unlimited = rawSlots >= SKILL_SLOT_LIMIT;
+  const slots = unlimited ? Infinity : rawSlots;
+  /* #272: Der legendäre Skill zählt nicht gegen `slots` und kann nie ersetzt werden. Die Zählung hier muss dieselbe
+     sein wie im Reducer (PICK_SKILL: `normalCount`), sonst laufen UI und Regel auseinander. Genau das war der
+     Meisterhand-Bug: `skills.length` schloss den Legendär mit ein, also galten 6 normale + 1 legendärer Skill
+     schon bei 7 Slots als „voll" — der gewonnene Slot war über die Oberfläche nicht erreichbar. */
   const legendaryHeld = skills.filter(isLegendarySkill).length;
   const normalHeld = skills.length - legendaryHeld;
   const full = normalHeld >= slots;
-  // Anzeige: der Legendär bringt seinen eigenen Slot mit → „7 / 7" statt „7 / 6", nach Meisterhand „7 / 8".
+  // Anzeige (nur mit Limit): der Legendär bringt seinen eigenen Slot mit → „7 / 7" statt „7 / 6".
   const slotsShown = slots + legendaryHeld;
   const [pending, setPending] = useState(null); // bei vollen Slots gewählter neuer Skill — wartet auf Ersetzungsziel
-  const devMode = !!state.devMode;                  // Dev-Run: Reroll aus, „Runde überspringen"
+  const devMode = !!state.devMode;                  // Dev-Run: Reroll aus, „Runde überspringen", flacher Voll-Katalog
   // Meisterhand: diese Skill-Wahl kommt aus dem eben genommenen Perk, nicht aus dem Rundenplan (Reducer:
   // PICK_PERK). Sie braucht deshalb einen eigenen Ablehnen-Text — „Ablehnen → Perk" wäre hier eine Lüge.
   const bonusOffer = !!state.skillOfferBonus;
@@ -111,38 +202,50 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
   const [pageState, setPageState] = useState(null);
   const tx = useRef(0);
   const dir = useRef(1); // Richtung des letzten Seitenwechsels (−1 zurück / +1 vor) → steuert die Slide-in-Animation
-  const [guideArch, setGuideArch] = useState(null); // offener Leitfaden (Archetyp) — vom i-Chip geöffnet, direkt auf der passenden Seite
   const [openForms, setOpenForms] = useState(false); // Aufstellfeld (Formations-Panel) unten — einklappbar, default zu (#UI)
+  const [upgradeOpen, setUpgradeOpen] = useState(false); // §3.5: die Aufwertphase liegt über dem Angebot
+  // §3.5: „ab 12" am Knopf — der billigste Schritt, den es gibt. Der genaue Preis hängt an der
+  // Auswahl und steht drinnen; der Knopf sagt nur, ob es sich lohnt hineinzugehen.
+  const canUpgrade = !!onUpgradeSkill && !atDoors && skills.some((id) => !isLegendarySkill(id));
+  // Owner 2026-09-08: unter dem billigsten Schritt ist der Knopf aus. Er blieb hell, während drinnen jede
+  // Zeile unbezahlbar war — ein Knopf, der nur in eine Sackgasse führt, ist schlechter als ein grauer.
+  const canAffordUpgrade = (state.coins || 0) >= UPGRADE_FROM;
 
   // Passiv-Beschreibung je Archetyp — EIN Text, unabhängig davon, ob es der freischaltende oder ein weiterer Pick ist.
   // Beschreibt NUR die Passive (Deck-Mechanik lebt in der Deck-Erklärung). Ergänzt im Aufklapper durch die Glossar-Einträge.
   const unlockLine = (arch) => {
     switch (arch) {
       case "lightning":
-        return t("skill.passive.lightning", { first: FIRST_CRIT_PCT, each: PER_SKILL_PCT, mult: PER_SKILL_MULT() });
+        return t("skill.passive.lightning", { socket: SOCKET_PCT, each: PER_SKILL_PCT, bar: LIGHTNING_MAX_CHARGE, value: ION_VALUE_PER_BAR, stack: ION_SCORE_PER_STACK, critPer: String(ION_CRIT_MULT_PER_STACK).replace(".", ",") });
       case "fire":
-        return t("skill.passive.fire", { margin: HEAT_MIN_MARGIN, heat: FIRE_MIN_HEAT, score: FIRE_MIN_SCORE,
-          cool: FIRE_LOSS_PCT, coolMax: HEAT_LOSS_MAX, perSkill: FIRE_SCORE_PER_SKILL });
+        return t("skill.passive.fire", { margin: HEAT_MIN_MARGIN, offset: HEAT_MARGIN_OFFSET, per: HEAT_PER_POINT,
+          cool: HEAT_LOSS, mult: FIRE_MULT_PCT });
       case "ice":
-        return t("skill.passive.ice", { declineFrom: G_DECLINE_MIN_SKILLS });
+        return t("skill.passive.ice");
       case "plant":
-        return t("skill.passive.plant", { ref: PLANT_GROWTH_SKILL_REF, green: PLANT_GREEN_THRESHOLD,
-          perValue: WURZELSCHLAG_PER_GROWTH, cap: PLANT_VALUE_CAP, minSkills: WURZELSCHLAG_LOSS_MIN_SKILLS,
-          everyLoss: WURZELSCHLAG_LOSS_EVERY });
+        return t("skill.passive.plant", { win: PLANT_GROWTH_WIN, perForm: PLANT_GROWTH_PER_FORMATION,
+          green: PLANT_GREEN_THRESHOLD, bloom: PLANT_BLOOM_THRESHOLD, score: PLANT_BLOOM_SCORE_PER_GREEN,
+          weight: numWord(PLANT_BLOOM_WEIGHT), per: PLANT_BLOOM_WEIGHT_PER_GROWTH });
       default: return "";
     }
   };
 
-  /* §6.2 Erstlauf-Empfehlung: NUR im ersten Angebot des ersten Laufs (state.firstRun, noch kein
-     Skill gehalten) trägt der garantierte Konsument das „Guter Start"-Badge samt Begründungszeile.
-     Regelbasiert abgeleitet, nie kuratiert — siehe recommendedStarter in hintScript.js. */
-  const starterId = state.firstRun && (skills || []).length === 0 ? recommendedStarter(offer) : null;
-
   // Angebot nach Archetyp gruppieren (feste Reihenfolge). #93 F0: 2+2 …; jetzt bis zu 4 Fraktionen im Angebot.
   // #118: defensiver Guard — ein bereits gehaltener Skill erscheint NIE als Angebots-Karte (selbst bei inkonsistentem State).
-  const groups = ARCHETYPE_ORDER
-    .map((arch) => ({ arch, meta: archMeta(arch), ids: offer.filter((id) => archetypeOf(id) === arch && !skills.includes(id)) }))
+  const byArch = ARCHETYPE_ORDER
+    .map((arch) => ({ arch, meta: archMeta(arch), ids: offerIds.filter((id) => archetypeOf(id) === arch && !skills.includes(id)) }))
     .filter((g) => g.ids.length);
+  /* exp skill rework: das Angebot einer geöffneten Tür (drei Skills, bis zu zwei Fraktionen) steht auf EINER Seite —
+     man vergleicht drei Karten, man blättert nicht. Die Seite trägt die Fraktion mit den meisten Skills (Rahmen,
+     Ecken, Kopf), `archs` alle vorkommenden (Passiv-Aufklapper), und das Label nennt sie alle. Nur der Dev-Run
+     (Voll-Katalog) blättert weiter je Fraktion. */
+  const groups = (!devMode && byArch.length > 1)
+    ? [(() => {
+        const lead = [...byArch].sort((a, b) => b.ids.length - a.ids.length)[0];
+        return { arch: lead.arch, archs: byArch.map((g) => g.arch), meta: { ...lead.meta, label: byArch.map((g) => g.meta.label).join(" · ") },
+                 ids: byArch.flatMap((g) => g.ids) };
+      })()]
+    : byArch;
   const showFormations = groups.some((g) => g.arch === "ice") || (skills || []).some((id) => archetypeOf(id) === "ice"); // #161 FB-1: Formations-Panel bei Eis-Relevanz
 
   // Swipe-Pager (#12): eine Seite je angebotenem Archetyp. Endlos-Swipe (#UI): der Index läuft im Kreis (modulo),
@@ -169,22 +272,11 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
   const archAccent = curG
     ? { c: curG.meta.color, rgb: [1, 3, 5].map((i) => parseInt(curG.meta.color.slice(i, i + 2), 16)).join(",") }
     : PHASE_ACCENTS.violet;
-  const groupKws = curG ? (PASSIVE_KEYWORDS[curG.arch] || []) : [];
+  // exp: die Passiv-Blöcke der Seite — eine Tür-Seite kann zwei Fraktionen tragen, der Dev-Katalog eine je Seite.
+  const pageArchs = curG ? (curG.archs || [curG.arch]) : [];
   const go = (d) => { dir.current = d < 0 ? -1 : 1; setPageState(nPages > 0 ? (((page + d) % nPages) + nPages) % nPages : 0); };
   const goTo = (i) => { dir.current = i > page ? 1 : (i < page ? -1 : dir.current); setPageState(i); };
 
-  /* Runde 4, V1: die aktive Swiper-Seite (Archetyp) an die Hint-Schicht melden — die
-     Freischalt-Hinweise C7/C8 erscheinen nur auf ihrer eigenen Seite. Beim Verlassen des
-     Screens wird der Wert geräumt, sonst hielte die nächste Skill-Phase den alten Stand. */
-  const hintCtl = useContext(HintContext);
-  // Nur der Setter in die Deps: seine Identität ist stabil (useState), der Provider-Wert nicht —
-  // sonst liefe der Effekt in jedem App-Render statt nur beim Seitenwechsel.
-  const setSkillArch = hintCtl?.setSkillArch;
-  const curArch = curG?.arch || null;
-  useEffect(() => {
-    setSkillArch?.(curArch);
-    return () => setSkillArch?.(null);
-  }, [setSkillArch, curArch]);
 
   // Konsumenten-Typ eines Skills (#93): Hitze („heat") / Ladung („charge") / kein Konsument (null).
   const consumerTypeOf = (id) => (skillDef(id)?.heatConsumer ? "heat" : skillDef(id)?.onFullCharge ? "charge" : null);
@@ -213,18 +305,20 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
       <LevelupRig accent={archAccent.c} state={state} deck={state.deck || []} options={options} onOption={onOption}
                   currentTraj={currentTraj} recordTraj={recordTraj} best={best}>
         {/* FESTE Höhe (wie Bestenliste/Werkstatt) statt max-height: sonst sprang die zentrierte Karte beim
-            Archetyp-Wechsel in Position UND Größe, weil jede Archetyp-Seite unterschiedlich hoch ist. Jetzt
-            bleibt die Karte konstant, nur der Inhalt darunter scrollt.
+            Archetyp-Wechsel in Position UND Größe, weil jede Archetyp-Seite unterschiedlich hoch ist. Der Grund
+            gilt aber nur, WO geblättert wird — und das tut heute allein der Dev-Voll-Katalog. Das Tür-Angebot
+            steht auf einer Seite: dort hielt die feste Höhe nichts konstant, sie ließ nur unter der letzten
+            Skill-Karte einen halben Bildschirm Leere stehen (Owner-Meldung 2026-09-07). Deshalb hängt sie an
+            `nPages > 1` statt an der Breite.
 
-            AB 1280 px gilt das nicht mehr: dort ist die Karte kein zentriertes Modal, sondern die Mittelspur
-            eines Rasters, dessen Höhe die (deutlich höheren) Flügel bestimmen — der Kopf steht also fest,
-            egal wie hoch die Karte ist. Der Rahmen darf deshalb am Inhalt enden und erst mitwachsen, wenn
-            gehaltene Skills dazukommen. Bleibt die feste Höhe, steht unter dem Angebot in der ersten
-            Skill-Runde ein halber Bildschirm Leere. `max-height` bleibt als Deckel, der Inhalt scrollt. */}
+            AB 1280 px war das ohnehin schon so: dort ist die Karte kein zentriertes Modal, sondern die
+            Mittelspur eines Rasters, dessen Höhe die (deutlich höheren) Flügel bestimmen — der Kopf steht
+            fest, egal wie hoch die Karte ist. `max-height` bleibt in beiden Fällen der Deckel, der Inhalt
+            scrollt darin. */}
         <div className="relative w-full rounded-2xl px-4 pb-6 overflow-y-auto overlay-card"
           style={{ ...phaseCard(archAccent, undefined, { quiet: wide }),
-                   height: wide ? undefined : "min(92dvh, 760px)",
-                   maxHeight: wide ? "min(92dvh, 760px)" : undefined }}>
+                   height: (!wide && nPages > 1) ? "min(92dvh, 760px)" : undefined,
+                   maxHeight: "min(92dvh, 760px)" }}>
         <PhaseHairline accent={archAccent} />
         {/* #cornerart: die Ecken folgen dem AKTIVEN REITER (`curG.arch`), nicht dem Kartenakzent —
             der Kopf sagt damit dasselbe wie die Reiterzeile darunter. Gate wie beim Emblem im JSX,
@@ -232,8 +326,11 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
         {(wide || phone) && curG && <CardCorners artKey={curG.arch} />}
         <GlossaryPanel className="absolute top-3 right-3 z-10" />
         <div className="co-head text-center mb-1 pt-6">
-          <div className="text-body-5 uppercase tracking-widest" style={{ color: LIGHT }}>{t("skill.eyebrow", { cycle: (state.cycle || 0) + 1, held: skills.length, slots: slotsShown })}</div>
-          <h2 className="text-title-6 font-bold mt-1">{t("skill.title")}</h2>
+          <div className="text-body-5 uppercase tracking-widest" style={{ color: LIGHT }}>
+            {unlimited ? t("skill.eyebrow.free", { cycle: (state.cycle || 0) + 1, held: skills.length })
+                       : t("skill.eyebrow", { cycle: (state.cycle || 0) + 1, held: skills.length, slots: slotsShown })}
+          </div>
+          <h2 className="text-title-6 font-bold mt-1">{t(atDoors ? "skill.door.title" : "skill.title")}</h2>
           {/* Ohne diesen Satz steht mitten in einer PERK-Runde plötzlich eine Skill-Wahl — der Spieler sucht
               sonst den Fehler bei sich. */}
           {bonusOffer && (
@@ -243,7 +340,6 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
           )}
           {state.lastCycleScore != null && <div className="mt-3"><RoundScoreBadge state={state} /></div>}
         </div>
-        <PhaseHintSlot screen="skill" />
 
         {/* Reroll + Ablehnen: direkt unter dem Kopf, nebeneinander & STICKY → schweben beim Scrollen mit, damit man
             zum Neuwürfeln/Ablehnen nicht ans Ende der Skill-Liste scrollen muss. Voller Hintergrund maskiert durchscrollende Karten. */}
@@ -260,13 +356,44 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
               gemessen aus dem Knopf. Eine Zeile CSS statt eines zweiten JSX-Zweigs — der Knopf bleibt
               derselbe Knopf. */}
           <div className="flex flex-wrap items-stretch gap-2">
+            {/* Ein Knopf, zwei Stufen: auf der Türstufe würfelt er die TÜREN, danach die drei Skills der
+                geöffneten Tür. §3.1: nach dem Pool steht am selben Knopf der Preis. Er bleibt sichtbar, wenn
+                die Münzen nicht reichen — nur eben ausgegraut; wer den Kauf nicht sieht, kann nicht darauf sparen. */}
             {!devMode && canReroll && (
-              <ActionButton kind="reroll" flex className="sk-actbtn lv-actbtn lv-actbtn-reroll" onClick={onReroll}>{t("skill.reroll", { n: rerollTokens })}</ActionButton>
+              <ActionButton kind={rerollBuy.legendary ? "rerollLeg" : "reroll"} flex disabled={!rerollBuy.can}
+                className="sk-actbtn lv-actbtn lv-actbtn-reroll" onClick={onReroll}>
+                <RerollLabel r={rerollBuy} have={state.coins || 0}
+                  freeKey={atDoors ? "skill.reroll.doors" : "skill.reroll"}
+                  buyKey={atDoors ? "skill.reroll.doors.buy" : "skill.reroll.buy"} />
+              </ActionButton>
             )}
+            {/* §2.3: was das Ablehnen EINBRINGT, direkt an seinem Knopf. Es zahlt auf JEDEM Weg — auch
+                auf dem Meisterhand-Bonus und im Dev-Run —, deshalb steht die Marke ohne Bedingung da. */}
             <ActionButton kind="decline" flex className="sk-actbtn lv-actbtn" onClick={onDecline}>
-              {t(devMode ? "skill.skipCycle" : bonusOffer ? "skill.declinePlain" : "skill.decline")}
+              <span className="inline-flex items-center gap-1.5">
+                {t(devMode ? "skill.skipCycle" : bonusOffer ? "skill.declinePlain" : "skill.decline")}
+                <CoinReward n={FORFEIT_SKILL} />
+              </span>
             </ActionButton>
           </div>
+
+          {/* §3.5 „Skill aufwerten" — EIGENE Zeile unter den Phasen-Aktionen. Zwei Gründe, beide aus dem Plan:
+              auf 390 px passen drei Knöpfe nicht nebeneinander, und der Kauf ist eine andere Art Handlung als
+              Neuwurf und Ablehnen — er kostet Währung, nicht die Phase. Der Knopf trägt „ab {UPGRADE_FROM}",
+              damit man vorher weiß, ob es sich lohnt hineinzugehen; der genaue Preis hängt an der Auswahl
+              und steht drinnen. Nicht an der Tür: dort hält man noch kein Angebot in der Hand. */}
+          {canUpgrade && (
+            <button type="button" onClick={canAffordUpgrade ? () => setUpgradeOpen(true) : undefined} disabled={!canAffordUpgrade}
+              className="sk-upgradebtn w-full mt-2 rounded-lg px-4 py-2 text-body-lg-5 font-bold inline-flex items-center justify-center gap-2 transition-all disabled:cursor-not-allowed"
+              style={canAffordUpgrade
+                ? { background: "linear-gradient(180deg,#241f2e,#191722)", border: "1px solid #6a5a9e", color: "#cdbcf5" }
+                : { background: "var(--btn-off-bg)", border: "1px solid transparent", color: "var(--btn-off-fg)" }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 19V5" /><path d="M6 11l6-6 6 6" /></svg>
+              <span>{t("upgrade.open")}</span>
+              <span className="inline-flex items-center gap-1"><span className="opacity-70">{t("upgrade.from")}</span><CoinAmount n={UPGRADE_FROM} size={12} have={state.coins || 0} dim={!canAffordUpgrade} /></span>
+            </button>
+          )}
 
           {/* #sk-reiter — ab 1280 px steht statt des Pagers eine REITERZEILE: alle angebotenen Fraktionen
               nebeneinander. Der Zustand ist derselbe (`page`/`goTo`),
@@ -276,8 +403,12 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
               `repeat(n,1fr)` statt fester Vier — `groups` filtert leere Fraktionen weg, es können 1–4 sein.
               Die Reiter zeigten anfangs die drei Skillnamen als Vorschau — bewusst wieder entfernt: der
               längste Fall (Blitz) braucht 58 Zeichen DE / 60 EN auf ~181 px Textbreite, wäre also zweizeilig,
-              und die Zeile war vor allem Unruhe. Wer wissen will, was drin liegt, klickt den Reiter an. */}
-          {wide && nPages > 0 && curG && (
+              und die Zeile war vor allem Unruhe. Wer wissen will, was drin liegt, klickt den Reiter an.
+              `nPages > 1`, nicht `> 0` (Owner-Meldung 2026-09-07): das Tür-Angebot steht auf EINER Seite, dort
+              war die Reiterzeile ein einzelner Reiter über die volle Breite, der nichts umschaltet — ein Banner
+              der führenden Fraktion, das die Fraktions-Badges der Karten ohnehin schon sagen. Nur der
+              Dev-Voll-Katalog blättert noch, und nur dort ist eine Navigation etwas wert. */}
+          {wide && nPages > 1 && curG && (
             <div className="sk-tabs mt-2 grid gap-2"
                  style={{ gridTemplateColumns: `repeat(${nPages}, minmax(0,1fr))` }}>
               {groups.map((g, i) => {
@@ -291,7 +422,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                              background: on ? `linear-gradient(180deg,${g.meta.color}22,#12121a 72%)` : undefined,
                              boxShadow: on ? `0 0 18px -10px ${g.meta.color}` : undefined }}>
                     <div className="flex items-center gap-1.5">
-                      <ArchIcon meta={g.meta} size={14} />
+                      {(g.archs || [g.arch]).map((a) => <ArchIcon key={a} meta={archMeta(a)} size={14} />)}
                       <span className="text-body-3 font-bold uppercase tracking-wide truncate"
                             style={{ color: on ? g.meta.color : "#adadbc" }}>{g.meta.label}</span>
                       <span className="ml-auto text-meta-3 opacity-45 tabular-nums">{g.ids.length}</span>
@@ -302,9 +433,10 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
             </div>
           )}
 
-          {/* Archetyp-Navi (Indikator): aktueller Typ mittig (mit i-Chip → passender Leitfaden), Nachbarn links/rechts
-              im Endlos-Ring, Punkte für die Position (#12/#UI). */}
-          {!wide && nPages > 0 && curG && (
+          {/* Archetyp-Navi (Indikator): aktueller Typ mittig, Nachbarn links/rechts im Endlos-Ring, Punkte für die
+              Position (#12/#UI). Wie die Reiterzeile darüber erst ab ZWEI Seiten: bei einer Seite blieb nur der
+              mittige Fraktions-Chip stehen, ohne Nachbarn und ohne Punkte — ein Banner ohne Navigation. */}
+          {!wide && nPages > 1 && curG && (
             <div className="mt-2">
               <div className="grid items-center gap-2" style={{ gridTemplateColumns: "1fr auto 1fr" }}>
                 {nPages > 1 ? (
@@ -316,13 +448,8 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                 ) : <span />}
                 <span className="inline-flex items-center gap-1.5 font-bold text-body-lg-5 px-3 py-1 rounded-full whitespace-nowrap"
                   style={{ color: curG.meta.color, background: `${curG.meta.color}1f`, border: `1px solid ${curG.meta.color}55` }}>
-                  <ArchIcon meta={curG.meta} size={14} /> {curG.meta.label}
-                  {/* i im Kreis → öffnet den Leitfaden direkt auf der Seite dieses Archetyps (#UI). */}
-                  <button type="button" onClick={() => setGuideArch(curG.arch)}
-                    title={t("skill.guide.title", { arch: curG.meta.label })} aria-label={t("skill.guide.aria", { arch: curG.meta.label })}
-                    className="inline-grid place-items-center rounded-full leading-none transition-all hover:brightness-125"
-                    style={{ width: 16, height: 16, fontSize: 10, fontStyle: "italic", fontFamily: "Georgia, serif",
-                             color: curG.meta.color, background: `${curG.meta.color}22`, border: `1px solid ${curG.meta.color}99` }}>i</button>
+                  {pageArchs.map((a) => <ArchIcon key={a} meta={archMeta(a)} size={14} />)} {curG.meta.label}
+                  {/* exp: der i-Chip zum Archetyp-Leitfaden ist mit dem Onboarding gegangen. */}
                 </span>
                 {nPages > 1 ? (
                   <button type="button" onClick={() => go(1)}
@@ -344,6 +471,13 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
           )}
         </div>
 
+        {/* §3.5: die Aufwertphase liegt ÜBER dem Angebot (eigenes Overlay, wie das Ersetzen-Fenster), damit
+            man nach dem „Zurück zur Skill-Wahl" genau dort weitermacht, wo man war — der Skill-Zug der Phase
+            ist unangetastet, es wurde nur Währung ausgegeben. */}
+        {upgradeOpen && (
+          <SkillUpgrade state={state} onUpgrade={onUpgradeSkill} onClose={() => setUpgradeOpen(false)} />
+        )}
+
         {/* Konsumenten-Ersatzdialog (#93): zweiter Konsument desselben Typs ersetzt den bestehenden. */}
         {pendingConsumer && (
           <div className="mt-3 rounded-lg px-3 py-3 text-body-5 leading-snug" style={{ background: "#d4a63a1a", border: "1px solid #d4a63a66", color: "#e8dcb8" }}>
@@ -361,6 +495,27 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
               <button onClick={() => setPendingConsumer(null)}
                 className="as-edge-neutral as-edge-thin px-3 py-1.5 rounded transition-all hover:opacity-80">{t("skill.cancel")}</button>
             </div>
+          </div>
+        )}
+
+        {/* exp skill rework: die TÜRSTUFE. Zwei Karten, je drei Fraktionssymbole in Platzreihenfolge — keine Namen,
+            keine Stufen (die sind gewürfelt, aber verdeckt: state.skillDoors[i].tiers). Farbe = die Fraktion mit den
+            meisten Symbolen der Tür; ein Tipp öffnet sie (CHOOSE_DOOR), danach steht das Drei-Karten-Angebot unten. */}
+        {atDoors && (
+          <div className="mt-4">
+            <div className="text-body-5 opacity-65 text-center mb-3 max-w-md mx-auto leading-snug">{t("skill.door.hint")}</div>
+            <div className="sk-doors grid sm:grid-cols-2 gap-3 items-stretch">
+              {doors.map((d, i) => (d.called ? null : (
+                <DoorCard key={i} door={d} label={t("skill.door.n", { n: i + 1 })} phone={phone} onOpen={() => onChooseDoor?.(i)} />
+              )))}
+            </div>
+            {/* §3.3: die GERUFENE Tür steht UNTER den zwei gewürfelten und über die volle Breite — als dritte
+                Spalte wären es je ~115 px, und die gerufene sähe aus wie eine von dreien statt wie die, für
+                die bezahlt wurde. Sie ersetzt nichts: die zwei gewürfelten bleiben offen. */}
+            {doors.map((d, i) => (d.called ? (
+              <DoorCard key={`c${i}`} door={d} called phone={phone} onOpen={() => onChooseDoor?.(i)} />
+            ) : null))}
+            <FocusCall state={state} onCallFocus={onCallFocus} />
           </div>
         )}
 
@@ -400,7 +555,7 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                     style={{ "--c": deactivates ? "#d1462f" : ac(s.id).color }}>
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="text-meta-1 px-1.5 py-0.5 rounded font-bold tracking-wide" style={{ background: `${ac(s.id).color}22`, color: ac(s.id).color, border: `1px solid ${ac(s.id).color}88` }}><ArchIcon meta={ac(s.id)} size={11} /> {ac(s.id).label.toUpperCase()}</span>
-                      {(s.heatConsumer || s.onFullCharge) && <span className="text-meta-1 px-1.5 py-0.5 rounded font-bold tracking-wide" style={{ background: "#d4a63a22", color: "#d4a63a", border: "1px solid #d4a63a88" }}>{t("skill.badge.consumer")}</span>}
+                      <SkillTierBadge tier={effectiveTierOf(state, s.id)} lifted={tierIsLifted(state, s.id)} />{/* exp/§7.45: wirksame Stufe */}
                       {s.legendary && <span className="text-meta-1 px-1.5 py-0.5 rounded font-bold tracking-wide" style={{ background: "#e0b84522", color: "#e0b845", border: "1px solid #e0b84588" }}>{t("skill.badge.legendary")}</span>}
                     </div>
                     <div className="font-bold text-body-lg-5" style={{ color: ac(s.id).color }}>{s.name}</div>
@@ -447,31 +602,35 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                 </span>
                 <div className="flex-1 h-px" style={{ background: `${curG.meta.color}33` }} />
               </button>
-              {/* Der i-Chip saß am Pager-Badge — das gibt es ab 1280 px nicht mehr. Ohne diesen Ersatz wäre der
-                  Archetyp-Leitfaden auf dem Desktop von der Skill-Wahl aus gar nicht mehr erreichbar. */}
-              {wide && (
-                <button type="button" onClick={() => setGuideArch(curG.arch)}
-                  title={t("skill.guide.title", { arch: curG.meta.label })} aria-label={t("skill.guide.aria", { arch: curG.meta.label })}
-                  className="shrink-0 inline-grid place-items-center rounded-full leading-none transition-all hover:brightness-125"
-                  style={{ width: 18, height: 18, fontSize: 11, fontStyle: "italic", fontFamily: "Georgia, serif",
-                           color: curG.meta.color, background: `${curG.meta.color}22`, border: `1px solid ${curG.meta.color}99` }}>i</button>
-              )}
               </div>
-              {detailOpen && (
-                <div className="mb-3 rounded-lg px-3 py-2 text-body-5 leading-snug"
-                  style={{ background: `${curG.meta.color}14`, border: `1px solid ${curG.meta.color}44` }}>
-                  <div className="opacity-90">{unlockLine(curG.arch)}</div>
-                  <KeywordGlossary tokens={groupKws} />
+              {detailOpen && pageArchs.map((a) => (
+                /* exp: ein Block je Fraktion der Seite — die Tür-Seite kann zwei tragen, dann steht jede mit ihrem Namen. */
+                <div key={a} className="mb-3 rounded-lg px-3 py-2 text-body-5 leading-snug"
+                  style={{ background: `${archMeta(a).color}14`, border: `1px solid ${archMeta(a).color}44` }}>
+                  {pageArchs.length > 1 && (
+                    <div className="text-meta-3 font-bold uppercase tracking-wide mb-1" style={{ color: archMeta(a).color }}><ArchIcon meta={archMeta(a)} size={12} /> {archMeta(a).label}</div>
+                  )}
+                  <div className="opacity-90">{unlockLine(a)}</div>
+                  <KeywordGlossary tokens={PASSIVE_KEYWORDS[a] || []} />
                 </div>
-              )}
+              ))}
               {/* Karten hängen an ihrer eigenen Inhaltshöhe (`items-start`, kein `gridAutoRows:1fr`/`h-full`).
                   Vorher zog `1fr` alle Karten auf die Höhe der GRÖSSTEN — kurze Skills bekamen viel Leerraum
                   darunter (Playtest-Beschwerde). Jetzt sitzt jede Karte eng an ihrem Text. */}
               <div className="sk-offers grid sm:grid-cols-2 gap-2 items-start">
                 {curG.ids.map((id) => {
-                  const s = skillDef(id);
+                  /* exp skill rework: die für DIESEN Angebotsplatz gewürfelte Stufe (state.skillOfferTiers, Reducer/Engine
+                     rollSkillOfferTiers). Legendäre haben keine (null) — sie tragen ihr Gold. Ohne Eintrag (Dev-Pfade,
+                     ältere Snapshots) Normal, wie PICK_SKILL es dann auch einträgt. Der Text ist der DIESER Stufe. */
+                  /* §7.45 (Owner: „dort auch schon anzeigen"): liegt Hochspannung im Bau, wirkt der Skill vom
+                     ersten Stich an eine Stufe höher — dann muss das Angebot zeigen, was man BEKOMMT, nicht was
+                     gewürfelt wurde. `rolledTier` bleibt daneben stehen, damit die Marke sagt, woher der Schub kommt. */
+                  const rolledTier = isLegendarySkill(id) ? null : ((state.skillOfferTiers || {})[id] ?? 0);
+                  const tier = rolledTier == null ? null : boostedTier(state.skills || [], rolledTier);
+                  const s = skillDef(id, tier);
                   const sel = pending === id;
-                  const col = curG.meta.color;
+                  const am = ac(id); // exp: die Fraktion der KARTE — eine Tür-Seite mischt bis zu zwei
+                  const col = am.color;
                   /* #skillart / #mobil-emblem: ZWEI Fassungen, ein Gate je Fassung, und dazwischen NICHTS.
                      Ab 1280 px der Kopfstreifen, unter 640 px das Eck-Emblem, im Band 640–1279 px kein
                      <img> — dort ist die Kachel zwei- oder dreispaltig und hat die freie Ecke nicht, die
@@ -484,20 +643,9 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="text-meta-1 px-1.5 py-0.5 rounded font-bold tracking-wide"
                         style={{ background: `${col}22`, color: col, border: `1px solid ${col}88` }}>
-                        <ArchIcon meta={curG.meta} size={12} /> {curG.meta.label.toUpperCase()}
+                        <ArchIcon meta={am} size={12} /> {am.label.toUpperCase()}
                       </span>
-                      {id === starterId && (
-                        <span className="text-meta-1 px-1.5 py-0.5 rounded-full font-bold tracking-wide uppercase"
-                          style={{ background: "#26c6e6", color: "#06222a" }}>
-                          {t("hint.badge")}
-                        </span>
-                      )}
-                      {(s.heatConsumer || s.onFullCharge) && (
-                        <span className="text-meta-1 px-1.5 py-0.5 rounded font-bold tracking-wide"
-                          style={{ background: "#d4a63a22", color: "#d4a63a", border: "1px solid #d4a63a88" }}>
-                          {t("skill.badge.consumer")}
-                        </span>
-                      )}
+                      <SkillTierBadge tier={tier} lifted={rolledTier != null && tier > rolledTier} />
                       {s.legendary && (
                         <span className="text-meta-1 px-1.5 py-0.5 rounded font-bold tracking-wide"
                           style={{ background: "#e0b84522", color: "#e0b845", border: "1px solid #e0b84588" }}>
@@ -512,11 +660,11 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                     /* #kante: Karte in der Optik „Kante statt Fläche" (index.css .as-edge-card). Anders als beim
                        Perk-Angebot trägt die Kante hier die SELTENHEIT, nicht die Fraktion: man blättert die
                        Fraktionen einzeln durch, alle Karten einer Ansicht haben also dieselbe Fraktionsfarbe —
-                       als Kante würde sie nichts unterscheiden. Legendär (Gold) sticht damit sofort heraus.
-                       Die Fraktion steht weiterhin im Badge und in der Überschrift. */
+                       als Kante würde sie nichts unterscheiden. exp: die Kante ist die gewürfelte Stufe (Farben der
+                       Raritätsleiter I–IV), Legendär (Gold) sticht weiter heraus. Die Fraktion steht im Badge und in der Überschrift. */
                     <button key={id} onClick={() => clickSkill(id)}
                       className={`lv-offercard as-edge-card${sel ? " is-sel" : ""}${art ? (wide ? " sk-offer-art" : " mc-tile") : ""} text-left rounded-xl p-3 flex flex-col gap-1.5 transition-all hover:-translate-y-0.5${s.legendary ? " as-legendary" : ""}`}
-                      style={{ "--c": s.legendary ? "#e0b845" : "#8a8a95" }}>
+                      style={{ "--c": s.legendary ? "#e0b845" : skillTierColor(tier) }}>
                       {/* Der Streifen liegt ABSOLUT über dem Kartenkopf und schiebt nichts — die Zeilen darunter
                           stehen an derselben Stelle wie ohne Bild, nur tiefer (Polster in `.sk-offer-art`).
                           Ohne Bild bleibt der Baum exakt wie vorher: die Handy-Fassung ist unberührt. */}
@@ -524,12 +672,6 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
                       {badges}{title}
                       {/* #387: volle Beschreibung — auch für Legendäre (kein erster-Satz-Zuschnitt mehr); umbricht per whitespace-pre-line. */}
                       <div className="text-body-lg-5 opacity-75 leading-snug whitespace-pre-line"><GlossaryText text={s.desc} /></div>
-                      {/* §6.2: Die Empfehlung erklärt sich selbst — und definiert den Crit in dem Moment,
-                          in dem er relevant wird. Text baut auf dem H2-Banner darüber auf. */}
-                      {id === starterId && (
-                        <div className="text-body-5 leading-snug pt-1.5 mt-0.5 border-t"
-                          style={{ color: "#7fdcf0", borderColor: "rgba(38,198,230,0.18)" }}>{t("hint.badge.reason")}</div>
-                      )}
                     </button>
                   );
                 })}
@@ -563,8 +705,6 @@ export function SkillSelect({ offer, onPick, onDecline, onReroll, skills = [], s
         )}
         </div>
       </LevelupRig>
-      {/* Leitfaden-Overlay — vom i-Chip geöffnet, direkt auf der Seite des jeweiligen Archetyps (#UI). */}
-      {guideArch && <GuideOverlay onClose={() => setGuideArch(null)} initial={guideArch} />}
     </div>
   ));
 }

@@ -23,7 +23,6 @@ import { ARCH_CAT } from "../ui/indicators/vocab.js";
 import { PERK_DEFS, CATEGORIES as PERK_CATS } from "../game/perks.js";
 import { familyDef as rawFamilyDef, layoutFamilies as rawLayoutFamilies } from "../game/families.js";
 import { ARCHITECT_FAMILIES } from "../game/architect.js";
-import { NODES } from "../game/progression.js";
 import { WEEK_MODS } from "../game/weekMods.js";
 import { DECK_DEFS, BATTLEFIELD_DEFS } from "../game/cosmetics.js";
 import { THEME_DEFS, GLOBAL_FX } from "../game/themes.js";
@@ -76,10 +75,14 @@ export const formationAbbr = (type) => {
    alle übrigen Felder (archetype, enabler, trimGrowth, Hook-Funktionen …) unverändert nutzbar und
    die Aufrufstellen ändern sich minimal: `SKILL_DEFS[id]` → `skillDef(id)`.
    Unbekannte ID → null (wie der direkte Registerzugriff auch). */
-export function skillDef(id) {
+/* exp skill rework (docs/skill-rework.md §1): `tier` (0..3) wählt den Text GENAU DIESER Stufe — das Angebot zeigt die
+   gewürfelte, der Bestand die gehaltene Stufe, nie die ganze Leiter. Ohne `tier` (oder ohne Stufentexte: Legendäre,
+   Eis/Pflanze bis zu ihrer Runde) der Normal-Text `ability.<id>.desc`. Stufentexte: `ability.<id>.desc.<tier>`. */
+export function skillDef(id, tier = null) {
   const d = SKILL_DEFS[id];
   if (!d) return null;
-  return { ...d, name: t(`ability.${id}.name`), desc: t(`ability.${id}.desc`) };
+  const key = Number.isInteger(tier) && Array.isArray(d.descTiers) && d.descTiers[tier] != null ? `ability.${id}.desc.${tier}` : `ability.${id}.desc`;
+  return { ...d, name: t(`ability.${id}.name`), desc: t(key) };
 }
 // Ganze Liste, übersetzt. Funktion statt Konstante: ein Modul-Level-Array fröre die Sprache ein.
 export const skillList = () => SKILL_LIST.map((s) => skillDef(s.id));
@@ -134,16 +137,6 @@ export function archFamily(id) {
   if (!f) return null;
   return { ...f, name: t(`building.${id}.name`) };
 }
-
-/* ---- Upgrade-Baum (NODES / BRANCHES) ---- */
-export const nodeList = () => NODES.map((n) => ({
-  ...n, label: t(`node.${n.id}.label`), detail: n.detail ? t(`node.${n.id}.detail`) : n.detail,
-}));
-export const nodeDef = (id) => {
-  const n = NODES.find((x) => x.id === id);
-  if (!n) return null;
-  return { ...n, label: t(`node.${id}.label`), detail: n.detail ? t(`node.${id}.detail`) : n.detail };
-};
 
 /* ---- Wochen-Modifikatoren (WEEK_MODS) ----
    `desc` bleibt eine FUNKTION der gewürfelten Stärke — der Katalog trägt sie als {v}-Vorlage. */

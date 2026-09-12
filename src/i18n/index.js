@@ -32,30 +32,32 @@ import zhHans from "./zhHans.js";
 
    `via` ist die Rückfallkette VOR der Quellsprache. Ohne sie sähe ein spanischer Spieler bei
    einem fehlenden Schlüssel Deutsch (SOURCE_LOCALE), nicht Englisch. */
+/* exp (owner decision, 2026-09-02): German is the only active language on the playground. The other
+   three catalogs stay in the tree but are INACTIVE — `ready: false` takes them out of the UI and out
+   of the demanding guards, `inactive: true` says this is deliberate, not a catalog still being
+   translated (the completeness ratchet in test/i18n-guards.test.js reads that flag). New German keys
+   get no translation here; the gaps are closed when a language is reactivated. */
 export const LOCALES = [
   { id: "de", label: "Deutsch",  short: "DE", ready: true },
-  { id: "en", label: "English",  short: "EN", ready: true },
-  { id: "es", label: "Español",  short: "ES", ready: true,  via: ["en"] },  // #es-locale
-  /* #zh-hans: AUSLIEFERBAR seit dem Vollausbau (Basis: task/zh-hans-sample). Der Katalog ist
-     vollständig und `ready: true` schaltet ihn frei; `via: ["en"]` lässt einen künftig fehlenden
-     Schlüssel sichtbar auf Englisch zurückfallen, bevor die Quellsprache greift. Die Historie der
-     Fixture-Phase (111 Muster-Schlüssel, `ready: false` als Schalter) steht im Task-Contract:
-     docs/workstreams/zh-hans/zh-hans-sample/task-contract.md. */
-  { id: "zh-Hans", label: "简体中文", short: "ZH", ready: true,  via: ["en"] },  // #zh-hans
+  { id: "en", label: "English",  short: "EN", ready: false, inactive: true },
+  { id: "es", label: "Español",  short: "ES", ready: false, inactive: true, via: ["en"] },  // #es-locale
+  { id: "zh-Hans", label: "简体中文", short: "ZH", ready: false, inactive: true, via: ["en"] },  // #zh-hans
 ];
 export const LOCALE_IDS = LOCALES.map((l) => l.id);
 // Was die UI anbietet und was `setLocale` annimmt. Nie LOCALE_IDS dafür benutzen.
 export const READY_LOCALES = LOCALES.filter((l) => l.ready);
 export const READY_LOCALE_IDS = READY_LOCALES.map((l) => l.id);
+// Deliberately switched off (exp) — complete catalogs that must not be offered. For the guards.
+export const INACTIVE_LOCALE_IDS = LOCALES.filter((l) => l.inactive).map((l) => l.id);
 
 /* ZWEI verschiedene „Standards" — bewusst getrennt, sie werden gern verwechselt:
    - SOURCE_LOCALE = die Sprache, in der die Texte GESCHRIEBEN werden. Ihr Katalog ist immer
      vollständig, deshalb ist sie der Rückfall für einen fehlenden Schlüssel.
    - DEFAULT_LOCALE = die Sprache, die ein NEUER Spieler bekommt, solange er nichts gewählt hat.
-   Die Browsersprache wird bewusst NICHT befragt: Englisch ist gesetzt (Produktentscheidung),
-   und beim ersten Start wählt der Spieler ohnehin selbst (Namens-Dialog). */
+   Die Browsersprache wird bewusst NICHT befragt. exp: Deutsch ist die einzige aktive Sprache, also
+   auch der Standard — ein altes `options.lang: "en"` aus dem localStorage fällt hierauf zurück. */
 export const SOURCE_LOCALE = "de";
-export const DEFAULT_LOCALE = "en";
+export const DEFAULT_LOCALE = "de";
 
 const CATALOGS = { de, en, es, "zh-Hans": zhHans };
 

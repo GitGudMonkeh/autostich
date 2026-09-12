@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   TIERS, TIER_META, TIER_WEIGHTS, ROMAN,
-  priceOfTier, romanOf, tierColor, tierLabel,
+  romanOf, tierColor, tierLabel,
   canOfferFamilyTier,
   familyTierOf, withFamilyTier,
   UPGRADE_TYPES,
@@ -10,7 +10,8 @@ import {
 describe("Stufen-Metadaten (Spec §1)", () => {
   it("vier Stufen mit festen Preisen 8/12/18/30", () => {
     expect(TIERS).toEqual([1, 2, 3, 4]);
-    expect([1, 2, 3, 4].map(priceOfTier)).toEqual([8, 12, 18, 30]);
+    // (§8.5: die Shop-Preisleiter ist mit `priceOfTier` entfernt — die Aufwert-Preise der
+    //  Münz-Ökonomie stehen in coins.js und werden in test/coins.test.js geprüft.)
   });
   // Sprachprüfung: Stufe IV heißt sichtbar „Episch" (vorher „Rar" — steigerte gegen „Sehr selten"
   // rückwärts, beides Synonyme). Die INTERNE Kennung bleibt "epic" und darf sich nicht mitändern.

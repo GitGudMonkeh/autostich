@@ -1,287 +1,417 @@
 import * as C from "./constants.js";
 import { shuffle } from "./deck.js";
-// Eis-Neudesign: Gletscher-Tuning-Zahlen (Single Source glacier.js, Sim-tunebar) für driftfreie Eis-Skill-Descs.
-import { ANFRIEREN_WIN as G_ANFRIEREN_WIN, ANFRIEREN_FORM as G_ANFRIEREN_FORM, SCHNEETREIBEN_SEED as G_SCHNEETREIBEN_SEED,
-  DAUERFROST_NEAR as G_DAUERFROST_NEAR, DAUERFROST_FAR as G_DAUERFROST_FAR, VERDICHTUNG_RATE as G_VERDICHTUNG_RATE,
-  PACKEIS_PER_NEIGHBOR as G_PACKEIS_PER, VERZAHNUNG_PER as G_VERZAHNUNG_PER, GEO_LINIE as G_GEO_LINIE, EISWALL_LINIE as G_EISWALL_LINIE,
-  TIER_MULT as G_TIER_MULT, ABBRUCHKANTE_TIER_MULT as G_ABBRUCH_TIER, ZERMALMEN_KOLLISION as G_ZERMALMEN_KOLL, KOLLISION_MULT as G_KOLLISION,
-  RISSBILDUNG_BURST as G_RISSBILDUNG_BURST, THRESHOLDS as G_THRESHOLDS, GLETSCHERSTURZ_PER as G_GLETSCHERSTURZ_PER,
-  FROSTBUND_BUFF as G_FROSTBUND_BUFF, EISPANZER_MASS as G_EISPANZER_MASS, EISZEIT_FLOOD as G_EISZEIT_FLOOD,
-  EISZEIT_MAX_GLACIERS as G_EISZEIT_MAX, SCHILD_BONUS as G_SCHILD_BONUS, ERSTARRUNG_FRAC as G_ERSTARRUNG_FRAC } from "./glacier.js";
+// Eis: die Zahlen der SKILLS stehen in der Stufentabelle EIS unten. Aus glacier.js kommt nur, was ohne Skill gilt —
+// die Schwellen, die Wucht je Stufe, der Linien-Faktor der Geometrie und die Werte der drei Legendären.
+import { EISWALL_MIN as G_EISWALL_MIN, BURST_AT as G_BURST_AT,
+  EISZEIT_FLOOD as G_EISZEIT_FLOOD, EISZEIT_BURST_PER as G_EISZEIT_BURST,
+  GROSSE_LAWINE_EVERY as G_LAWINE_EVERY,
+  SCHILD_PER_PICK as G_SCHILD_PER_PICK, GROSSE_LAWINE_MULT as G_LAWINE_MULT,
+  PACKEIS_RADIUS as G_PACKEIS_R, PACKEIS_RADIUS_BRIDGE as G_PACKEIS_R_BRIDGE } from "./glacier.js";
 
 // Deutsche Zahlformatierung (1.08 → „1,08") — driftgefährdete Beschreibungszahlen aus den Konstanten interpolieren.
 const de = (x) => String(x).replace(".", ",");
 const pct = (x) => Math.round(x * 100);                                 // Anteil → Prozent (0,25 → 25)
-const grp = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ".");     // Tausendertrenner (2000 → „2.000")
+// Kleine Anzahl als Wort (Register: „zwei fremde Karten", „fünffach"). Exportiert, weil auch die Passiv-Texte in der
+// UI sie brauchen — eine Quelle für die Zahlwörter, sonst driften Skilltext und Passiv auseinander.
+export const numWord = (n) => ({ 1: "eine", 2: "zwei", 3: "drei", 4: "vier", 5: "fünf", 6: "sechs", 7: "sieben", 8: "acht" })[n] || String(n);
+const de1 = numWord;
 
-// Die Trimm-Klausel steht wortgleich an SECHS Pflanze-Skills — hier EINMAL gebaut (§4 „Einen Text an EINER
-// Stelle bauen"). `enSkills.js` hält seit jeher dasselbe als `PRUNE`; die deutsche Seite zog nach.
-// Sie hängt an einem eigenen `\n`: „Trimmen" ist ein Glossarbegriff und wird von <GlossaryText> ohnehin
-// fett gesetzt — auf eigener Zeile sieht man das auch.
-const TRIMMEN = `Trimmen: beim Ersetzen des Skills dauerhaft +${pct(C.TRIM_STEP)} % Wurzel-/Blüten-Score (bis +${pct(C.TRIM_CAP)} %).`;
+// (§6.1: „Trimmen" ist mit dem Türen-Angebot gestorben — Skills werden nicht mehr ersetzt, die Klausel an sechs
+//  Pflanze-Skills hatte keinen Auslöser mehr. Die Konstanten TRIM_STEP/TRIM_CAP sind mit ihr gegangen.)
 
 /* ============================================================
-   SKILL-REGISTRY — seltene, regelverändernde Build-Motoren NEBEN den Perks
-   (Spezifikation: docs/blitz-archetyp.md). Gleiche Hook-Shape wie Perks
-   (alle optional), aggregiert in engine.js. Reine Logik — kein Math.random/Date.
+   SKILL-REGISTRY — seltene, regelverändernde Build-Motoren NEBEN den Perks. Reine Logik — kein Math.random/Date.
 
-   Blitz-Hooks (Stufe A — vertikaler Slice):
-     critChance()      -> Crit-Basis je Blitz-Skill (Abschnitt 2a)
-     chargeOnCrit(ctx) -> ZUSÄTZLICHE Ladung je Crit (Basis +1 läuft über den lightning-State)
-     scoreFlatOnCrit() -> additiver Score NUR bei Crit (fließt in die multiplizierte Basis)
-   Ein Skill mit archetype:"lightning" aktiviert beim ersten Pick den Blitz-Archetyp
-   (lightning.active) — davor sind Ladung/Crit-Basis unsichtbar & inaktiv (Abschnitt 1).
+   exp skill rework (docs/skill-rework.md): jeder normale Skill hat vier Stufen (Normal · Selten · Sehr selten ·
+   Episch); die Kennwerte je Stufe stehen als `tiers[0..3]` am Skill, die Fraktionsmodule (src/game/factions/*.js)
+   lesen sie über die gehaltene Stufe (state.skillTiers). Blitz und Feuer sind umgestellt; Eis/Pflanze tragen bis zu
+   ihrer Runde noch die alten Flag-Hooks, die engine.js/skills.js-Helfer aggregieren.
+   Der erste Skill eines Archetyps aktiviert dessen System (lightning.active / heat.active, Reducer).
    ============================================================ */
+// Stufentabellen der 15 Blitz-Skills (§3.5) — Zeile 0 Normal · 1 Selten · 2 Sehr selten · 3 Episch. Die Texte darunter
+// interpolieren dieselben Zahlen (kein Drift zwischen Regel und Beschreibung). Startwerte für die Sim.
+const BLITZ = {
+  ableiter:      [{ critEvery: 2, back: 0 }, { critEvery: 2, back: 1 }, { critEvery: 1, back: 1 }, { critEvery: 1, back: 2, noCritCharge: 1 }], // §7.18: nimmt Statische Aufladung und Dauerstrom auf (beide gestrichen)
+  ionenfeld:     [{ tricks: 5, value: 2 }, { tricks: 7, value: 3 }, { tricks: 10, value: 4 }, { tricks: 15, value: 5 }], // §7.18 neu (SK_LIGHTNING_02): jede volle Leiste lädt das Feld; §7.20: 2/3/4/5 (2/2/2/3 war neutral, 3/3/4/5 kippte die Parität — Normal entscheidet den Median)
+  reststrom:     [{ floor: 2 }, { floor: 3 }, { floor: 4 }, { floor: 6, bar: 9 }], // §7.22 Episch-Extra: die Leiste ist bei 9 voll
+  gewitter:      [{ critPerBar: 0.005 }, { critPerBar: 0.0075 }, { critPerBar: 0.01 }, { critPerBar: 0.015, multPerBar: 0.02 }], // §7.22 Episch-Extra: dazu +0,02× Crit-Multiplikator je Leiste
+  /* §7.42 (Owner): Entladung verlässt die Crit-Multiplikator-Achse. Dort sagten vier Skills dasselbe, und §7.41 hat
+     gemessen, dass sie am Deckel verfallen (−19 % bei 99 % Haltequote). Die volle Leiste zahlt schon in Rate, Wert,
+     Crit-Chance, Stapel und Multiplikator — frei war allein der BASIS-SCORE. Startwerte, NICHT gemessen. */
+  entladung:     [{ scorePerBar: 2 }, { scorePerBar: 3 }, { scorePerBar: 4 }, { scorePerBar: 6, critDouble: true }],
+  zuendung:      [{ crit: 0.20, perStack: 0.02, scorePerStack: 10 }, { crit: 0.30, perStack: 0.03, scorePerStack: 15 }, { crit: 0.40, perStack: 0.04, scorePerStack: 20 }, { crit: 0.50, perStack: 0.05, scorePerStack: 30 }], // §7.65 (Owner: „deine Empfehlung"): die SCORE-Haelfte faellt auf 4/6/8/12 (war 10/15/20/30), die Crit-Chance bleibt. Begruendung aus den eigenen Messungen: die Crit-Haelfte wirkt FRUEH, und §7.62 D hat belegt, dass fruehe Runden den Endscore kaum tragen (1,7 gehaltene Skills in den Runden 1-10, und der Score waechst exponentiell). Die Score-Haelfte wirkt SPAET, wo der Score entsteht - bei Oe 43,5 wirksamen Stapeln auf der Siegkarte gab Episch +1.305 auf eine Basis von rund 3.660, also gut ein Drittel auf jeden spaeten Stich, und das mal Crit-Multiplikator. Die Crit-Haelfte zu schneiden haette die Haelfte getroffen, die messbar wenig tut, und dem Skill genau das genommen, was der Owner bestellt hatte. §7.61 (Owner): Zuendspannung ersetzt die Ladungsserie. Die alte hing an der SERIE, einem Spaetindikator (Median beste Serie 240, 82 % erreichen 75 - §7.55 B), und schenkte Ladung, wenn Ladung ohnehin im Ueberfluss da ist. Die neue liest die Stapel der gespielten Karte: frische Karte voller Satz, geladene Karte nichts mehr. §7.60 hat den Abfall gemessen und als SCHWACHEN Regler entlarvt (zwischen 3 und 6 Punkten je Stapel liegen ueber den Lauf hoechstens 6 Punkte, weil die Verteilung zweigipflig ist) - er folgt deshalb der Regel perStack = crit/10, jede Stufe endet bei 10 wirksamen Stapeln, und der SATZ ist die Leiter. Die steigende Haelfte ist bewusst additiver Basis-Score: alles Multiplikative waere die dritte Achse auf demselben Stapel (§7.46, kubischer Weglauf). STARTWERTE, ungemessen
+  vorentladung:  [{ minStreak: 5, multPerStreak: 0.1 }, { minStreak: 4, multPerStreak: 0.1 }, { minStreak: 3, multPerStreak: 0.1 }, { minStreak: 2, multPerStreak: 0.15 }], // §7.18 neu (SK_LIGHTNING_12): Serie zu Crit-Multiplikator; §7.22 Episch 0,15
+  kette:         [{ barEvery: 1, extra: 1 }, { barEvery: 1, extra: 2 }, { barEvery: 1, extra: 3 }, { barEvery: 1, extra: 4, second: 1 }], // §7.18: Tiefe — die Karte mit den meisten Stapeln; §7.19: jede Leiste, 1/2/3/4; §7.22 Episch-Extra: die zweittiefste +1
+  faenger:       [{ minStacks: 1, value: 1 }, { minStacks: 1, value: 2 }, { minStacks: 1, value: 3 }, { minStacks: 1, value: 4, perStack: 1 }], // §7.18: ohne Schwelle, der Wert steigt; §7.22 Episch-Extra: +1 je Stapel
+  kurzschluss:   [{ minStacks: 6, factor: 2 }, { minStacks: 5, factor: 2 }, { minStacks: 4, factor: 2 }, { minStacks: 3, factor: 2, onLoss: true }], // §7.22 Episch-Extra: der doppelte Stapel-Score zählt auch bei Niederlage (zahlt beim nächsten Sieg)
+  /* §7.51 (Owner): "lass den blitz mult raus. Blitz nutzt schon crit als mult". Das Spannungsfeld war seit §7.43
+     ein eigener Faktor im Score-Produkt — die Annahme dahinter ("Blitz hat keinen Multiplikator") war falsch, und
+     zwei Achsen an derselben Ressource ergaben den kubischen Ausschlag aus §7.46 C. Es zahlt jetzt auf die
+     Crit-CHANCE, je ionisierter Karte der Formation: dieselbe Achse wie Lichtbogen darunter, aber die Gegenrichtung
+     — Streuung statt Tiefe. Die 100-%-Klemme deckelt es von selbst. Startwerte, NICHT gemessen. */
+  feld:          [{ critPerForm: 0.05 }, { critPerForm: 0.07 }, { critPerForm: 0.10 }, { critPerForm: 0.15, feedLowest: 1 }], // §7.56 (Owner): je FORMATION dieser Position statt je ionisierter Karte. Die Sonde feld-formationen hat gemessen, dass die Ionisierungs-Bedingung den Skill frueh abschaltet (Runden 1-10: 86 % der Formations-Siege ohne eine einzige ionisierte Karte in Reichweite) und dass eine Position ohnehin nur in 1,4-1,7 Formationen haengt. Ohne die Bedingung zuendet er ab Runde 1. §7.58 (Owner): gezaehlt werden nur ZAHLENDE Formationen (activeFormationCount, Faktor > 1) - dieselbe Zahl, die der Stich anzeigt und die Brennpunkt und Feuerlinie lesen. Saetze unveraendert: der Owner-Entscheid zu §7.57 D war Rampenhilfe, nicht Satz hoch
+  lichtbogen:    [{ critPerStack: 0.005 }, { critPerStack: 0.01 }, { critPerStack: 0.015 }, { critPerStack: 0.02 }], // §7.28 (Owner): ersetzt Überspannung auf SK_LIGHTNING_04 — jeder wirksame Stapel der gespielten Karte gibt Crit-CHANCE auf den Stich, die Richtung, die bis dahin keine Regel und kein Skill bediente. Startwerte, noch nicht gemessen (Owner: erst Design, dann Startwert, dann messen)
+  blitzschlag:   [{ critEvery: 4, stacks: 2 }, { critEvery: 3, stacks: 3 }, { critEvery: 2, stacks: 4 }, { critEvery: 2, stacks: 6 }], // §7.18: einen Schritt schneller; §7.54: die Stapel je Auslösung 1/1/1/2 → 2/3/4/6, denn die Kadenz war nie das Problem — die Leisten schütten im Lauf Ø 634 Stapel aufs Deck (blitz-ramp), gegen die ein Stapel je zweitem Crit nicht ankommt. Die Karte wechselt je Sieg, der Skill STREUT also und speist damit das Spannungsfeld
+  streuung:      [{ cards: 1 }, { cards: 2 }, { cards: 3 }, { cards: 4, freshStacks: 2 }], // §7.63 (Owner: „kuerzen"): Leiter 1/2/3/4 -> 1/1/2/3 Karten, Episch also 3 statt 4 je Leiste. §7.62 hat Blitz bei 3,18/2,92x Feuer gemessen (Duell-Median 17,2/17,5 -> 28,0/25,9 Mio), und Streuung war der einzige Skill mit stabilem Signal (100 % Haltequote in beiden Seed-Saetzen). Der Episch-Anhang wandert dabei von der letzten Stufe auf die zweite und steigt am Ende auf 3: mit 1/1/2/3 und einem Anhang nur oben waeren Normal und Selten WORTGLEICH gewesen, ein Stufenschritt, der nichts tut - alle 58 gestuften Skills haben heute vier verschiedene Stufentexte, und ein Waechter haelt das jetzt fest. §7.59 (Owner): Streuung ersetzt den Serienschutz auf SK_LIGHTNING_17. Der alte reagierte auf NIEDERLAGEN (Owner-Regel §7.31) und zahlte mit Ladung, dem Engpass. Der neue ist das Gegenstueck zu Kettenblitz: der sucht die Tiefe (die Karte mit den meisten Stapeln), diese die Breite (die duennsten). Grund aus der Messung: das Deck bekommt Oe 979 Stapel je Lauf, davon liegen 241 auf EINER Karte - die Fraktion konzentriert, und nichts arbeitet dagegen. Die Leiter ist die Zahl der Karten; Episch gibt einer Karte ohne Stapel 2 statt 1. STARTWERTE, ungemessen: 4 Karten je Leiste sind bei Oe 163 Leisten auch 4x das Dauerwert-Einkommen des Passivs, das ist der Hebel, an dem zuerst gedreht wird
+};
+export const BLITZ_TIERS = BLITZ;
+const pctS = (x) => de(Math.round(x * 10000) / 100); // Anteil → Prozent mit bis zu zwei Nachkommastellen (0,0075 → „0,75"; eine Stelle rundete 0,75 auf „0,8")
+/* Ein Text je Stufe (docs/skill-rework.md §1): `f(row)` schreibt den Satz für EINE Stufenzeile — Angebot und Bestand
+   zeigen nur den Text der gezeigten Stufe (labels.js skillDef(id, tier)), nie die ganze Leiter. `desc` bleibt der
+   Normal-Text (Dev-Katalog, Datenbank, ältere Leser); `descTiers` trägt alle vier. Ein Episch-Extra hängt an seiner
+   Tabellenzeile (z. B. `overflow`, `chargeFromStreak`) und erscheint nur dort. */
+const tiered = (rows, f) => { const descTiers = rows.map((r) => f(r)); return { desc: descTiers[0], descTiers }; };
+const jeder = (n, w = "Jeder") => (n === 1 ? w : `${w} ${n}.`); // „Jeder 2. Crit" / „Jeder Crit"
+// (§7.59: `malWort` — „Einmal" / „Zweimal je Durchlauf" — ist mit dem Serienschutz gegangen, seinem einzigen Leser.
+//  Die Zahlwörter selbst bleiben in `numWord`, das die Streuung und die Feuer-Texte weiter lesen.)
+// Stufentabellen der 15 Feuer-Skills (§4.5) — dieselbe Form; die Schwellen sinken, die Sätze steigen mit der Stufe.
+// Das Modul factions/fire.js liest sie über `fireParam`; Legendäre haben keine Zeile.
+const FEUER = {
+  // §7.34: +75 % auf den Satz, Kosten 3 → 2. Beide Eingänge des Skills hat §7.32 verkleinert — er liest den KAMPFWERT
+  // der Siegkarte, und der kam zum guten Teil aus der Klinge. Die Kosten sind bei voller Leiste kein Nullposten: was
+  // verbrennt, fehlt dem Schmelzpunkt als Überlauf.
+  feuerlinie:    [{ perPoint: 0.035, cost: 2 }, { perPoint: 0.05, cost: 2 }, { perPoint: 0.065, cost: 2 }, { perPoint: 0.08, cost: 2, perFormation: true }], // §7.23 (Owner): ersetzt Glut (Kaltstart, tot) auf SK_FIRE_01 — Formations-Sieg +Satz je Punkt Kampfwert, verbrennt `cost` Hitze; Episch je Formation an der Siegposition
+  // §7.34: verdoppelt. Bei voller Leiste ist Zunder kein Hitze-Skill mehr, sondern ein Score-Skill — jeder Punkt, der
+  // nicht mehr auf die Leiste passt, geht über den Schmelzpunkt (100 % gehalten) in den Basis-Score.
+  zunder:        [{ heat: 4 }, { heat: 6 }, { heat: 8 }, { heat: 10, lossHeat: 2 }], // §7.16: 1–4 → 2–5; §7.22 Episch-Extra: auch Niederlagen geben +2
+  feuersturm:    [{ multPerStreak: 0.001 }, { multPerStreak: 0.0015 }, { multPerStreak: 0.002 }, { multPerStreak: 0.003, minHeat: 90 }], // §7.17: Serie zu Score bei voller Leiste (Episch ab 90 %, §7.18: war 80); vorher Serie zu Hitze. Satz nach Sweep (0,5 % je Punkt war ×3 Blitz)
+  glutbett:      [{ floor: 40, rise: 1 }, { floor: 60, rise: 2 }, { floor: 80, rise: 3 }, { noCool: true }], // §6.24: der Boden steigt, wenn er einen Sturz abfängt
+  rueckzuendung: [{ every: 5, mult: 1.8 }, { every: 4, mult: 1.8 }, { every: 3, mult: 1.8 }, { every: 2, mult: 1.8, value: 2 }], // §7.24 (Owner): Takt — jeder N. Sieg in Folge zündet und zählt ×mult, Episch kämpft die zündende Karte mit +2 (vorher Konter nach einer Niederlage, §7.22 — ab der Laufmitte gibt es keine Niederlagen mehr); §7.34: Faktor 1,5 → 1,8 (die Leiter ist der Takt, der Faktor steht auf allen Stufen gleich)
+  klinge:        [{ perHeat: 40, value: 1 }, { perHeat: 30, value: 1 }, { perHeat: 25, value: 1 }, { perHeat: 20, value: 1 }],
+  weissglut:     [{ multPer10: 0.03 }, { multPer10: 0.04 }, { multPer10: 0.05 }, { multPer10: 0.06 }],
+  // §7.34: Breite 3–6 → 4–10, Faktor 2,5 → 3. Die Schneise deckte 8–15 % der Stiche und zahlte im Schnitt ×1,2 —
+  // zu wenig für einen Skill, der einen ganzen Durchlauf Vorlauf braucht. Jetzt 10–25 % der Stiche.
+  schneise:      [{ width: 4, mult: 3 }, { width: 6, mult: 3 }, { width: 8, mult: 3 }, { width: 10, mult: 3, hold: 2 }], // Satz nach Sweep (×1,5 / 2 / 2,5 / 3 im Duell → Floor 0,91 / 0,96 / 1,00 / 1,03×); §7.27 (Owner, Bauform a): ersetzt Feuerwalze auf SK_FIRE_08 — die `width` Siege mit dem größten Vorsprung eines Durchlaufs schlagen die Schneise, im nächsten zählt ein Sieg dort ×mult; Episch hält sie zwei Durchläufe. Die Knappheit ist strukturell (N von 40 Positionen), nicht historisch
+  verbrennung:   [{ minMargin: 8, mult: 1.5 }, { minMargin: 7, mult: 1.5 }, { minMargin: 6, mult: 1.5 }, { minMargin: 5, mult: 1.5, heatToo: true }], // §7.22 Episch-Extra: der Faktor zählt auch auf den Hitzegewinn
+  schmelzpunkt:  [{ perPoint: 15 }, { perPoint: 20 }, { perPoint: 25 }, { perPoint: 30, lossPays: true }], // §7.16: Überlauf-Wandler — verbrennt nichts mehr; Flächenbrand (SK_FIRE_11) ist gestrichen
+  brandmal:      [{ minHeat: 80, value: 2 }, { minHeat: 60, value: 2 }, { minHeat: 40, value: 2 }, { minHeat: 20, value: 2, onLoss: true }],
+  lauffeuer:     [{ minHeat: 80, value: 1, reach: 1 }, { minHeat: 60, value: 1, reach: 1 }, { minHeat: 40, value: 1, reach: 1 }, { minHeat: 20, value: 1, reach: 2 }],
+  schmiede:      [{ minHeat: 80, cards: 1 }, { minHeat: 60, cards: 2 }, { minHeat: 40, cards: 2 }, { minHeat: 20, cards: 3 }], // §7.14: ohne Preis, nur Schwelle; §7.34: mehr Karten je Runde (die Schwelle lag schon tief genug, sie war nie das Problem)
+  /* §7.34 hob den Satz um 75 %, §7.35 hat ihn zurückgemessen: −4 → −7 %, also SCHLECHTER. Er zahlt je Punkt Kampfwert
+     über dem Grundwert, und diese Bemessungsgrundlage war zum guten Teil die Klinge — ein höherer Satz auf fast null
+     bleibt fast null. §7.36 (Owner): zurück auf den alten Stand. „es gibt noch genügend andere quellen werte zu
+     erhöhen über perks wenn man darauf spielt" — Glutstahl ist damit ein Bau-Skill, kein Grundstock. */
+  glutstahl:     [{ perPoint: 8 }, { perPoint: 12 }, { perPoint: 16 }, { perPoint: 20, forgedDouble: true }],
+};
+export const FEUER_TIERS = FEUER;
+/* Stufentabellen der 15 Pflanze-Skills (§6.8) — dieselbe Form. Bezugsgrößen: Wachstum +1 je Sieg und +1 je Formation
+   an der Siegposition, grün ab PLANT_GREEN_THRESHOLD, blühend ab PLANT_BLOOM_THRESHOLD; eine Position gewinnt über
+   einen Lauf grob 30-mal. Die Sätze der Score-Skills sind nach der LÄNGE ihres Formationstyps gestaffelt: ein grüner
+   Farbblock kann im Zielbild das ganze Segment füllen, Treppe und Wiederholung bleiben kurz, der Wechsel ist am
+   seltensten. Startwerte, NICHT gemessen (Owner: erst Design, dann Startwert, dann messen — auf Ansage).
+   Das Modul factions/plant.js liest sie über `plantParam`; die vier Hebel liest zusätzlich formations.js. */
+const PFLANZE = {
+  // Wachstum
+  aussaat:       [{ growth: 2 }, { growth: 3 }, { growth: 4 }, { growth: 5, second: 1 }], // §6.26: eine Stufe hoch — der einzige Wachstums-Skill, der schon zahlte, bekommt den kleinsten Schub
+  // §6.26: Ranken greift ins Gegnerdeck (Vorlage: der gestrichene Ausläufer). Die Ernte geht an die SIEGKARTE — der
+  // Grund, aus dem der Skill vorher tot war: Wachstum auf Karten, die nicht gewinnen, zahlt nicht.
+  ranken:        [{ growth: 2 }, { growth: 3 }, { growth: 4 }, { growth: 6, neighbors: true }],
+  setzlingsbeet: [{ growth: 3 }, { growth: 4 }, { growth: 6 }, { growth: 6, allSegments: true }], // §6.26: aus dem einmaligen Kaltstart wird ein Ort, der jeden Durchlauf wächst; §6.29: +50 %
+
+  lichtung:      [{ extra: 3 }, { extra: 5 }, { extra: 7 }, { extra: 7, perFormation: true }], // §6.29: +50 % — in allen sieben Welten schwach, mechanisch richtig gebaut
+  halm:          [{ growth: 2 }, { growth: 3 }, { growth: 4 }, { growth: 6, perFormation: true }], // §6.26: ohne Grau-Schranke — jede Karte wächst; §6.29: +50 %
+  // Hebel — sie ändern, was als Formation erkannt wird (formations.js), und addieren keinen Score
+  spalier:       [{ borders: 1 }, { borders: 2 }, { borders: 3 }, { borders: 7 }],
+  wildwuchs:     [{ jokers: 1 }, { jokers: 2 }, { jokers: 3 }, { jokers: Infinity }],
+  // §6.26: Dickicht ersetzt Lücke auf SK_PLANT_15. Der grüne Farbblock ist der einzige Formationstyp, den die Pflanze
+  // selbst erzeugt (grün IST eine Farbe) — und ausgerechnet sein Faktor ist für Grün bei PLANT_GREEN_FARBBLOCK_CAP
+  // eingefroren. `mult` ist der Faktor, den `cap` ergibt; ein Guard hält beide gegen escalatingFactor (kein Drift).
+  dickicht:      [{ cap: 4, mult: 1.55 }, { cap: 5, mult: 1.75 }, { cap: 6, mult: 1.95 }, { cap: 8, mult: 2.35 }],
+  // §6.26: Verwachsung ersetzt Überwucherung auf SK_PLANT_14 — deren Tor („ab 80 % grünem Feld") lag hinter dem Ziel.
+  // Der Zuschlag ist ABSOLUT: der Zwei-Formations-Sieg gewinnt am meisten, und dort liegen 38 % der Siege (§6.21 C).
+  verwachsung:   [{ bonus: 0.4 }, { bonus: 0.7 }, { bonus: 1 }, { bonus: 1.4 }], // §6.29: +40 %
+  // Score aus grünen Formationen — je Formationstyp einer, dazu die Tiefe der einzelnen Karte
+  // §6.29: +50 %. Der Farbblock-Satz stand auf einem Viertel der Hecke, weil ein grüner Block das ganze Segment füllen
+  // kann — der gierige Spieler hielt ihn mono trotzdem nur in 6 % der Läufe. Er bleibt der niedrigste der vier.
+  blaetterdach:  [{ score: 15 }, { score: 22 }, { score: 30 }, { score: 40 }],
+  // §6.29: nur +10 %. Mehr lässt die Staffel nicht zu — die Treppe muss unter dem Wechsel bleiben (kürzerer Lauf zahlt
+  // je Karte mehr) und unter der Hecke (eine grüne Wiederholung entsteht seltener). Rankgerüsts Problem ist ohnehin die
+  // HÄUFIGKEIT einer grünen Treppe, nicht der Satz; der Satz allein holt es nicht.
+  rankgeruest:   [{ score: 33 }, { score: 49 }, { score: 66 }, { score: 88 }],
+  // §6.26: +33 % gegen Rankgerüst — beide Leitern waren nach Formationslänge gleich, aber eine grüne Wiederholung
+  // entsteht seltener als eine grüne Treppe, und der Unterschied ging voll auf die Hecke (§6.17 B).
+  hecke:         [{ score: 40 }, { score: 60 }, { score: 80 }, { score: 105 }],
+  windung:       [{ score: 35 }, { score: 50 }, { score: 70 }, { score: 90 }],
+  // §6.26 hob den Teiler 10 → 15 (−33 %), weil Wachstum reichlicher wurde. Gemessen war das zu viel: Haltequote 47 %,
+  // Wirkung −0 %, im Tripel −11 %. §6.29 nimmt die Hälfte zurück (Teiler 12) und hebt die Sätze um ein Viertel.
+  jahresringe:   [{ per: 12, score: 25 }, { per: 12, score: 35 }, { per: 12, score: 45 }, { per: 12, score: 60, overDouble: true }],
+  // Kombination
+  bluetenlese:   [{ score: 40, growth: 1 }, { score: 60, growth: 1 }, { score: 80, growth: 1 }, { score: 100, growth: 2 }],
+};
+export const PFLANZE_TIERS = PFLANZE;
+/* Stufentabellen der 15 Eis-Skills (§5.3) — dieselbe Form. Eis ist die letzte Fraktion, die Stufen bekommt; bis dahin
+   las die Mechanik globale Konstanten über die Rolle `G_…`, und eine gewürfelte Stufe änderte nichts. Diese Tabelle ist
+   ab jetzt die EINZIGE Quelle der Zahlen: glacier.js hält nur noch, was ohne Skill gilt (Schwellen, Kaskade, Passiv).
+   Das Modul factions/ice.js liest sie über `iceTuning(roles, roleTiers)`; die drei Legendären haben keine Stufe.
+   Startwerte, NICHT gemessen (Owner: erst Design, dann Startwert, dann messen — auf Ansage). */
+const EIS = {
+  // Firn — die Masse-Motoren
+  // §5.31: ANTEIL statt flacher Zahl. Der gefrorene Boden liefert seit §5.29 rund 20 Masse je Durchlauf — daneben war
+  // „+1 bis +4 je Sieg" nicht mehr zu spüren (gemessen −7 % mono / −10 % Paar). Episch: der Formations-Sieg zählt doppelt.
+  anfrieren:      [{ pct: 0.1 }, { pct: 0.15 }, { pct: 0.2 }, { pct: 0.28, form: true }],
+  // Owner: „Schneetreiben braucht einen Buff im Vergleich zu Dauerfrost … der mit der Bedingung braucht einen
+  // größeren Payoff." Beide zahlen in dieselbe Kasse (Boden-Reserve, je Durchlauf komplett abgezogen), also
+  // vergleichbar ohne Sim: Dauerfrost lieferte je Durchlauf das 3- bis 13-fache. Saat 2/3/4/5 -> 8/12/16/20,
+  // Felder unveraendert; dazu der Rueckfall in driftTargets. Damit kreuzen sich die beiden bei rund 8 Gletschern:
+  // Dauerfrost schrumpft mit jedem Gletscher (weniger offene Felder), Schneetreiben waechst mit jedem. GERECHNET
+  // aus der Brettgeometrie, nicht gemessen.
+  schneetreiben:  [{ seed: 8, fields: 1 }, { seed: 12, fields: 1 }, { seed: 16, fields: 1 }, { seed: 20, fields: 2 }],
+  dauerfrost:     [{ near: 1, far: 2 }, { near: 2, far: 3 }, { near: 2, far: 4 }, { near: 3, far: 6 }],
+  // §5.31 nachgezogen (Mechanik unverändert): 0,25–1 war neben dem Boden-Einkommen kaum zu spüren — 97 % Haltequote
+  // bei −10 % Wirkung, der klassische „immer genommen, nie gespürt"-Fall.
+  verdichtung:    [{ per: 0.6 }, { per: 0.9 }, { per: 1.3 }, { per: 2 }], // §5.18: Masse je Punkt Kampfwert-Überschuss
+  // Eisschild — Cluster und Dichte
+  /* §5.31 (Owner: „bau aber vllt noch einen für duo oder Triplett um"): Packeis zählt jetzt die OFFENEN Nachbarn
+     statt der gefrorenen — der einzige der vier Dichte-Skills, der die Seite wechselt. Gemessen war er der reinste
+     Mono-Skill der Fraktion (+24 % mono, −8 %/−8 % im Mix). Als Kante zwischen Eis und offenem Wasser trägt er den
+     Namen weiterhin, und ein dünn gebauter Eis-Anteil bekommt damit neben Dauerfrost eine zweite Masse-Quelle. */
+  packeis:        [{ per: 0.5 }, { per: 0.75 }, { per: 1 }, { per: 1.5 }],
+  eisbruecke:     [{ weight: 0.5 }, { weight: 0.75 }, { weight: 1 }, { weight: 1.25 }], // §5.2: die Diagonale bekommt ein Gewicht statt eines Schalters
+  // §5.24 (Owner-Route A): der Eiswall liest die KETTENLÄNGE statt „volle Reihe oder nichts". Der alte Hebel hob den
+  // Linien-Faktor (1,45 … 2,1) und maß −8 % bei 38 % Haltequote: er zahlte erst ab 5 Gletschern in einer Reihe und
+  // verlangte dafür die dünnste Form, während die halbe Fraktion Dichte bezahlt. Jetzt zahlt schon eine Kette aus 3.
+  eiswall:        [{ per: 0.15 }, { per: 0.2 }, { per: 0.25 }, { per: 0.3 }],
+  verzahnung:     [{ per: 0.15 }, { per: 0.25 }, { per: 0.4 }, { per: 0.6 }], // niedrig angesetzt: der Ertrag wächst quadratisch mit der Clustergröße
+  // Lawine — der Payoff
+  /* §5.31: die Abbruchkante ist der SAMMEL-Skill geworden. Sie hebt die Berst-Schwelle, statt die Stufenwucht ein
+     wenig anzuheben — das alte +7/+18/+19 % war gegen eine Leiter, die bis ×9,7 reicht, ein Nebengeräusch (gemessen
+     +9 % mono / +15 % Paar / −3 % Tripel). Wer hält, trifft die Sprosse, die sein Einkommen hergibt. */
+  /* §5.32: die Schwellen liegen jetzt AUF den Sprossen der Leiter. Der erste Wurf (18/24/30/38) lag zwischen ihnen —
+     24 zählt noch zur vierten Sprosse wie 18, 38 noch zur fünften wie 30. Auszahlung je Durchlauf und Punkt Einkommen
+     (Masse × Wucht ÷ Kletterzeit): 12 → 4,40 · 18 → 4,80 · 24 → 4,27 · 30 → 5,75 · 38 → 5,46. Stufe 2 war damit
+     SCHLECHTER als gar kein Skill und Episch schlechter als Stufe 3 — der gierige Spieler hat ihn folgerichtig fallen
+     lassen (Haltequote 68 % → 20 %). Auf den Sprossen: 18 → +9 %, 27 → +34 %, 40 → +79 %, 60 → +145 %. */
+  abbruchkante:   [{ at: 18 }, { at: 27 }, { at: 40 }, { at: 60 }],
+  // §5.23 (Owner): Eisbeben ersetzt den Kettenbruch auf SK_ICE_11. Der Kettenbruch fasste fremde Gletscher an und
+  // war damit nicht zu retten (§5.22, zwei gemessene Fehlversuche); das Eisbeben liegt ganz auf dem eigenen Bruch.
+  // Die Leiter steht doppelt so hoch wie entworfen (3/4/6/9): mit 3 % gemessen tot (Lift 0,97, +1 %), weil der Überschuss
+  // über der Schwelle klein ist — KEEP_MAX deckelt, was liegen bleibt. Mit 6 % greift er (+14 %); 9 % war zu stark (§5.23).
+  eisbeben:       [{ per: 0.06 }, { per: 0.08 }, { per: 0.12 }, { per: 0.18, sturz: true }],
+  // §5.18 (Owner): Gletscherzunge ersetzt Rissbildung auf SK_ICE_13. Rissbildung widersprach als einzige der eigenen
+  // Schleife (halten & wachsen, dann gewaltig brechen), stand bei −7 % (§5.7) — und wer bei 6 bricht, sieht die vierte
+  // Schwelle nie. An ihrer Stelle der Hebel, der Eis fehlte: Masse zu Kampfwert, damit der Gletscher seinen Stich gewinnt.
+  gletscherzunge: [{ per: 6 }, { per: 4 }, { per: 3 }, { per: 2, neighbors: true }],
+  gletschersturz: [{ per: 0.03 }, { per: 0.05 }, { per: 0.07 }, { per: 0.1 }],
+  // Frostgriff — Kontrolle und Duo
+  einfrieren:     [{ cards: 1 }, { cards: 2 }, { cards: 3 }, { cards: 5 }], // §5.2: erbt die Reichweite des gestrichenen Legendären Erstarrung
+  frostbund:      [{ buff: 2 }, { buff: 3 }, { buff: 4 }, { buff: 6 }],
+  // §5.18 (Owner): Sprödbruch ersetzt Eispanzer auf SK_ICE_17. Crit ist der größte Hebel auf den Bruch (glacierWinMult
+  // nimmt den Crit-Multiplikator mit, Basis ×2,25) — und kein Eis-Skill bediente ihn, Eis hat 0 % Grund-Crit. Startwert
+  // bewusst niedrig: multiplikativ auf den Bruch tariert man von unten hoch.
+  // §5.20 (Owner): verdoppelt — der Startwert war bewusst niedrig gewählt (multiplikativ auf den Bruch), und §5.19 hat
+  // ihn bei −9 % gemessen. Bei Masse 12 sind das jetzt 12 / 18 / 24 / 36 % Crit-Chance.
+  sproedbruch:    [{ crit: 0.01 }, { crit: 0.015 }, { crit: 0.02 }, { crit: 0.03, critMass: 3 }],
+};
+export const EIS_TIERS = EIS;
+// Einfrieren: der Nachsatz je Reichweite — ausgeschrieben, weil Singular und Plural sonst am Zahlwort auseinanderfallen.
+// §5.25: der Griff zählt Karten, nicht Nachbarn — „die höchste" / „die N höchsten".
+const EINFRIEREN_ZIEL = (n) => (n === 1 ? "die höchste Karte des Gegnerdecks" : `die ${de1(n)} höchsten Karten des Gegnerdecks`);
+
 export const SKILL_DEFS = {
-  // ---- Blitz-Rework (v0) — „Der Sturm, der sich selbst nährt." 4 Währungen (Crit/Ladung/Ionis/Serie) + Kaskade.
-  //      Jeder Blitz-Skill trägt zur Crit-Chance bei (Sockel + je Skill). Flags in engine.js/skills.js gelesen.
-  // Linie 1 — Ladung (Aufbau · Reaktor · Entlade-Payoffs)
-  SK_LIGHTNING_01: { id: "SK_LIGHTNING_01", name: "Blitzableiter", archetype: "lightning", keywords: ["charge", "crit"],
-    desc: `Jeder Crit erzeugt +1 Ladung zusätzlich. Jeder volle Ladungsverbrauch gibt +${C.BLITZABLEITER_CONSUME_CHARGE} Ladung zurück.`,
-    critChance: () => C.LIGHTNING_CRIT_PER_SKILL, chargeOnCrit: () => 1 },
-  SK_LIGHTNING_08: { id: "SK_LIGHTNING_08", name: "Statische Aufladung", archetype: "lightning", keywords: ["charge", "score"],
-    desc: `Jeder Sieg ohne Crit erzeugt +${C.STATIC_CHARGE} Ladung. Jeder volle Ladungsverbrauch gibt +${C.CONSUME_SCORE} Direkt-Score.`,
-    critChance: () => C.LIGHTNING_CRIT_PER_SKILL, staticCharge: true },
-  SK_LIGHTNING_05: { id: "SK_LIGHTNING_05", name: "Reststrom", archetype: "lightning", keywords: ["charge"],
-    desc: `Nach jedem vollen Ladungsverbrauch bleiben ${C.REST_CHARGE_FLOOR} Ladungen statt 0.`,
-    critChance: () => C.LIGHTNING_CRIT_PER_SKILL, chargeFloor: () => C.REST_CHARGE_FLOOR },
-  SK_LIGHTNING_06: { id: "SK_LIGHTNING_06", name: "Gewitterfront", archetype: "lightning", keywords: ["charge", "crit"],
-    desc: `Jeder volle Ladungsverbrauch gibt dauerhaft +${pct(C.STORM_CRIT_STEP)} % Crit-Chance (bis +${pct(C.STORM_CRIT_CAP)} %).`,
-    critChance: () => C.LIGHTNING_CRIT_PER_SKILL, storm: true },
-  SK_LIGHTNING_10: { id: "SK_LIGHTNING_10", name: "Entladung", archetype: "lightning", keywords: ["charge", "crit"],
-    desc: `Jeder volle Ladungsverbrauch gibt dauerhaft +${de(C.ENTLADUNG_MULT_STEP)}× Crit-Multiplikator (bis +${de(C.ENTLADUNG_MULT_CAP)}×).`,
-    critChance: () => C.LIGHTNING_CRIT_PER_SKILL, discharge: true },
-  // Linie 2 — Konsumenten (volle Ladung → Payoff; max 1 im Build)
-  SK_LIGHTNING_02: { id: "SK_LIGHTNING_02", name: "Ionisierung", archetype: "lightning", keywords: ["charge", "ionize"],
-    /* #skilltext-ion: gekürzt. Drei Sachen sind bewusst RAUS, keine davon geht verloren:
-       · „+1 je Blitz-Skill über 2" — das skaliert mit dem ganzen ARCHETYP, nicht mit diesem Skill, und steht
-         jetzt im Glossar-Eintrag „Ionisierung" (den der Passiv-Aufklapper direkt darunter zeigt).
-       · „dann Ladung leeren" — implizit, und mit Reststrom sogar falsch: verbraucht wird auf den Boden, nicht auf 0.
-       · Der Voll-Tiefe-Satz — er beschreibt den Umrechnungskurs von ÜBERSCHLAG (10 → 5 Prozentpunkte je Ladung),
-         wirkt ohne diesen Skill also gar nicht, und Überschlag sagt ihn in seinem eigenen Text bereits wörtlich.
-       Score- und Crit-Zeile bleiben ausdrücklich stehen: sie entscheiden mit, ob man den Skill nimmt. */
-    desc: `Bei voller Ladung: ${C.ION_BASE_COUNT} ungespielte Karten ionisieren.
+  // ---- Blitz (exp skill rework, §3): Passiv +5 % Crit je Skill, Leiste 10 Crits → nächste Karte ionisieren.
+  //      Die Mechanik liest die Stufentabellen oben (factions/lightning.js). Texte: ein Satz je Stufe (`tiered`).
+  // Rate — die Leiste schneller füllen
+  // (§7.18: Statische Aufladung SK_LIGHTNING_08 und Dauerstrom SK_LIGHTNING_16 sind in Blitzableiter aufgegangen.)
+  SK_LIGHTNING_01: { id: "SK_LIGHTNING_01", name: "Blitzableiter", archetype: "lightning", keywords: ["charge", "crit"], tiers: BLITZ.ableiter,
+    ...tiered(BLITZ.ableiter, (r) => `${jeder(r.critEvery)} Crit gibt +1 Ladung zusätzlich.${r.back ? ` Nach jeder vollen Leiste kommt +${r.back} Ladung zurück.` : ""}${r.noCritCharge ? ` Jeder Sieg ohne Crit gibt +${r.noCritCharge} Ladung.` : ""}`) },
+  SK_LIGHTNING_05: { id: "SK_LIGHTNING_05", name: "Reststrom", archetype: "lightning", keywords: ["charge"], tiers: BLITZ.reststrom,
+    ...tiered(BLITZ.reststrom, (r) => `Nach jeder vollen Leiste startet die Ladung bei ${r.floor} statt 0.${r.bar ? ` Die Leiste ist schon bei ${r.bar} voll.` : ""}`) },
+  SK_LIGHTNING_02: { id: "SK_LIGHTNING_02", name: "Ionenfeld", archetype: "lightning", keywords: ["charge", "ionize"], tiers: BLITZ.ionenfeld,
+    ...tiered(BLITZ.ionenfeld, (r) => `Jede volle Leiste gibt allen deinen Karten für ${r.tricks} Stiche +${r.value} Wert.`) },
+  // Rampen — jede volle Leiste zählt dauerhaft
+  SK_LIGHTNING_06: { id: "SK_LIGHTNING_06", name: "Gewitterfront", archetype: "lightning", keywords: ["charge", "crit"], tiers: BLITZ.gewitter,
+    ...tiered(BLITZ.gewitter, (r) => `Jede volle Leiste gibt dauerhaft +${pctS(r.critPerBar)} % Crit-Chance${r.multPerBar ? ` und +${de(r.multPerBar)}× Crit-Multiplikator` : ""}.`) },
+  SK_LIGHTNING_10: { id: "SK_LIGHTNING_10", name: "Entladung", archetype: "lightning", keywords: ["charge", "crit"], tiers: BLITZ.entladung,
+    ...tiered(BLITZ.entladung, (r) => `Jede volle Leiste gibt dauerhaft +${de(r.scorePerBar)} Basis-Score je Sieg.${r.critDouble ? " Bei einem Crit zählt die Rampe doppelt." : ""}`) },
+  // Serie und Crit
+  SK_LIGHTNING_07: { id: "SK_LIGHTNING_07", name: "Zündspannung", archetype: "lightning", keywords: ["crit", "ionize"], tiers: BLITZ.zuendung,
+    ...tiered(BLITZ.zuendung, (r) => `Gewinnst du mit einer Karte, gibt sie +${pctS(r.crit)} % Crit-Chance auf den Stich, je Stapel auf ihr ${pctS(r.perStack)} % weniger. Jeder ihrer Stapel gibt dafür +${r.scorePerStack} Basis-Score.`) },
+  SK_LIGHTNING_13: { id: "SK_LIGHTNING_13", name: "Spannungsfeld", archetype: "lightning", keywords: ["ionize", "crit", "formation"], tiers: BLITZ.feld,
+    ...tiered(BLITZ.feld, (r) => `Ein Sieg gibt +${pctS(r.critPerForm)} % Crit-Chance je Formation an der Siegposition.${r.feedLowest ? ` Die Karte mit den wenigsten Stapeln in diesen Formationen erhält +${r.feedLowest} Stapel.` : ""}`) },
+  SK_LIGHTNING_12: { id: "SK_LIGHTNING_12", name: "Vorentladung", archetype: "lightning", keywords: ["crit", "streak"], tiers: BLITZ.vorentladung,
+    ...tiered(BLITZ.vorentladung, (r) => `Ab Serie ${r.minStreak} gibt jeder Serienpunkt +${de(r.multPerStreak)}× Crit-Multiplikator auf diesen Stich.`) },
+  // (§7.19: Überschlag SK_LIGHTNING_14 gestrichen — die Systemregel „Überschuss über 100 %" in groß, im gierigen Build −15 %.)
+  // Breite und Tiefe — Stapel erzeugen und nutzen
+  SK_LIGHTNING_03: { id: "SK_LIGHTNING_03", name: "Kettenblitz", archetype: "lightning", keywords: ["ionize"], tiers: BLITZ.kette,
+    ...tiered(BLITZ.kette, (r) => `${jeder(r.barEvery, "Jede")} volle Leiste gibt deiner Karte mit den meisten Stapeln +${r.extra} Stapel.${r.second ? ` Die Karte mit den zweitmeisten Stapeln erhält +${r.second}.` : ""}`) },
+  SK_LIGHTNING_15: { id: "SK_LIGHTNING_15", name: "Blitzschlag", archetype: "lightning", keywords: ["crit", "ionize"], tiers: BLITZ.blitzschlag,
+    ...tiered(BLITZ.blitzschlag, (r) => `${jeder(r.critEvery)} Crit ionisiert die Siegkarte (+${r.stacks} Stapel).`) },
+  SK_LIGHTNING_11: { id: "SK_LIGHTNING_11", name: "Blitzfänger", archetype: "lightning", keywords: ["ionize"], tiers: BLITZ.faenger,
+    ...tiered(BLITZ.faenger, (r) => `Ionisierte Karten kämpfen mit +${r.value} Wert${r.perStack ? ` und +${r.perStack} je Stapel` : ""}.`) },
+  SK_LIGHTNING_09: { id: "SK_LIGHTNING_09", name: "Kurzschluss", archetype: "lightning", keywords: ["ionize"], tiers: BLITZ.kurzschluss,
+    ...tiered(BLITZ.kurzschluss, (r) => `Sieg mit einer Karte ab ${r.minStacks} Stapeln: ihre Stapel zählen ${r.factor === 2 ? "doppelt" : `×${r.factor}`}.${r.onLoss ? " Verlierst du mit so einer Karte, zahlt ihr doppelter Stapel-Score beim nächsten Sieg." : ""}`) },
+  SK_LIGHTNING_04: { id: "SK_LIGHTNING_04", name: "Lichtbogen", archetype: "lightning", keywords: ["ionize", "crit"], tiers: BLITZ.lichtbogen, // §7.28: Ionisierung zu Crit-Chance
+    ...tiered(BLITZ.lichtbogen, (r) => `Jeder Stapel auf der gespielten Karte gibt +${pctS(r.critPerStack)} % Crit-Chance auf diesen Stich.`) },
+  // (§7.59: der Platz „Schutz" ist aufgelöst — Serienschutz war der letzte Blitz-Skill, der auf eine Niederlage
+  //  reagierte. Auf SK_LIGHTNING_17 steht jetzt die Streuung, das Breite-Gegenstück zu Kettenblitz.)
+  SK_LIGHTNING_17: { id: "SK_LIGHTNING_17", name: "Streuung", archetype: "lightning", keywords: ["charge", "ionize"], tiers: BLITZ.streuung,
+    ...tiered(BLITZ.streuung, (r) => `Jede volle Leiste ionisiert zusätzlich ${r.cards === 1 ? "deine Karte" : `deine ${numWord(r.cards)} Karten`} mit den wenigsten Stapeln.${r.freshStacks ? ` Eine Karte ohne Stapel bekommt ${r.freshStacks} Stapel statt einem.` : ""}`) },
+  // Legendäre (§3.7): keine Stufe, zwei Effekte erlaubt.
+  // (§6.11, Owner: drei Legendäre je Fraktion, die stärksten — SK_LIGHTNING_L01 Donnergott ist gestrichen, gemessen
+  //  als schwächstes der vier: +30 % gegen Resonanz +106 %, Doppelentladung +85 %, Hochspannung +40 %.)
+  SK_LIGHTNING_L02: { id: "SK_LIGHTNING_L02", name: "Doppelentladung", archetype: "lightning", legendary: true, keywords: ["ionize", "crit"],
+    desc: `Jede Ionisierung gibt ${C.DOPPELENTLADUNG_STACKS} Stapel statt 1. Crit mit einer ionisierten Karte: der Blitz schlägt zweimal ein, der Stich zählt doppelt.` },
+  SK_LIGHTNING_L03: { id: "SK_LIGHTNING_L03", name: "Hochspannung", archetype: "lightning", legendary: true, keywords: ["crit"],
+    desc: `Alle deine gehaltenen Skills wirken ${C.HOCHSPANNUNG_STEPS === 1 ? "eine Stufe" : `${de1(C.HOCHSPANNUNG_STEPS)} Stufen`} höher, in jedem Archetyp. Über Episch geht es nicht hinaus.` },
+  SK_LIGHTNING_L04: { id: "SK_LIGHTNING_L04", name: "Resonanz", archetype: "lightning", legendary: true, keywords: ["ionize", "formation"], // §7.25: ersetzt Durchschlag (Emblem bleibt)
+    desc: `Ionisierte Karten in einer Formation teilen ihre Stapel: jede Karte kämpft mit ihren eigenen Stapeln plus ${de(C.RESONANZ_SHARE)}× den Stapeln der anderen Mitglieder ihrer Formation, abgerundet.` },
 
-▸ Sieg mit ionisierter Karte: +${C.ION_SCORE_PER_STACK} Score je Stapel.
-▸ Jeder Stapel im Deck: +${pct(C.ION_CRIT_PP_PER_STACK)} % Crit-Chance feldweit (max +${pct(C.ION_CRIT_STACK_CAP * C.ION_CRIT_PP_PER_STACK)} %).
-▸ Sind ~${pct(C.ION_SAT_BREADTH_FRAC)} % der Karten ionisiert: alle Karten +${C.ION_SATURATION_VALUE} Wert.`,
-    critChance: () => C.LIGHTNING_CRIT_PER_SKILL, onFullCharge: "ionize", ionizeCount: () => C.ION_BASE_COUNT },
-  SK_LIGHTNING_07: { id: "SK_LIGHTNING_07", name: "Ladungsserie", archetype: "lightning", keywords: ["crit", "streak"],
-    desc: `Jeder Serienpunkt gibt +${pct(C.SERIESCRIT_STEP)} % Crit-Chance (bis +${pct(C.SERIESCRIT_CAP)} %). Verbraucht keine Ladung.`,
-    critChance: () => C.LIGHTNING_CRIT_PER_SKILL, seriesCrit: true },
-  // Linie 3 — Ionisierung (Breite · Tiefe · Überlauf · Konsum)
-  SK_LIGHTNING_03: { id: "SK_LIGHTNING_03", name: "Kettenblitz", archetype: "lightning", keywords: ["ionize"],
-    desc: `Verstärker: Jede Ionisierung erfasst +${C.KETTENBLITZ_COUNT} weitere Karten.`,
-    critChance: () => C.LIGHTNING_CRIT_PER_SKILL, enabler: "SK_LIGHTNING_02", ionizeCount: () => C.KETTENBLITZ_COUNT },
-  SK_LIGHTNING_12: { id: "SK_LIGHTNING_12", name: "Breitenbeschleuniger", archetype: "lightning", keywords: ["ionize"],
-    desc: `Gewinnt eine ionisierte Karte, springt ein Ionisierungsstapel auf eine noch nicht ionisierte Karte. Gibt es keine, auf den nächsten nicht-vollen Nachfolger.`,
-    critChance: () => C.LIGHTNING_CRIT_PER_SKILL, voltageArc: true },
-  SK_LIGHTNING_11: { id: "SK_LIGHTNING_11", name: "Blitzfänger", archetype: "lightning", keywords: ["ionize", "charge"],
-    desc: `Trifft eine Ionisierung eine volle Karte: +${C.BLITZFAENGER_VALUE} Stichwert beim nächsten Auftauchen dieser Karte und +1 Ladung.`,
-    critChance: () => C.LIGHTNING_CRIT_PER_SKILL, blitzcatcher: true },
-  SK_LIGHTNING_09: { id: "SK_LIGHTNING_09", name: "Kurzschluss", archetype: "lightning", keywords: ["ionize", "charge"],
-    desc: `Gewinnst du mit einer voll ionisierten Karte: +${C.KURZSCHLUSS_SCORE} Score und +${C.KURZSCHLUSS_CHARGE} Ladung.`,
-    critChance: () => C.LIGHTNING_CRIT_PER_SKILL, kurzschluss: true },
-  // Linie 4 — Crit-Maschine (Chance & Mult erzeugen — Blitz-exklusiv)
-  SK_LIGHTNING_13: { id: "SK_LIGHTNING_13", name: "Spannungsstau", archetype: "lightning", keywords: ["crit"],
-    desc: `Jeder Sieg ohne Crit gibt +${pct(C.SPANNUNGSSTAU_STEP)} % Crit-Chance für den nächsten Sieg (bis +${pct(C.SPANNUNGSSTAU_CAP)} %). Ein Crit setzt sie zurück.`,
-    critChance: () => C.LIGHTNING_CRIT_PER_SKILL, spannungsstau: true },
-  SK_LIGHTNING_14: { id: "SK_LIGHTNING_14", name: "Überschlag", archetype: "lightning", keywords: ["crit", "charge"],
-    desc: `Crit-Chance über 100 % wird bei jedem Sieg in Ladung umgewandelt: je ${C.UEBERSCHLAG_PP_PER_CHARGE} Prozentpunkte +1 Ladung. Sind ~${pct(C.ION_SAT_DEPTH_FRAC)} % der Karten voll ionisiert, reichen ${C.UEBERSCHLAG_DEPTH_PP_PER_CHARGE} Prozentpunkte.`,
-    critChance: () => C.LIGHTNING_CRIT_PER_SKILL, ueberschlag: true },
-  // Linie 5 — Kaskade (Verkabelung — Ereignis zündet Ereignis)
-  SK_LIGHTNING_04: { id: "SK_LIGHTNING_04", name: "Überspannung", archetype: "lightning", keywords: ["charge", "ionize", "crit"],
-    desc: `Ein Crit auf oder direkt neben einer ionisierten Karte erzeugt +${C.UEBERSPANNUNG_CHARGE} Ladung.`,
-    critChance: () => C.LIGHTNING_CRIT_PER_SKILL, ueberspannung: true },
-  SK_LIGHTNING_15: { id: "SK_LIGHTNING_15", name: "Blitzschlag", archetype: "lightning", keywords: ["crit", "ionize"],
-    desc: `Jeder Crit ionisiert die gewonnene Karte (+${C.BLITZSCHLAG_STACKS} Stapel).`,
-    critChance: () => C.LIGHTNING_CRIT_PER_SKILL, blitzschlag: true },
-  // Linie 6 — Serie-Schnittstelle (Serie → Blitz-Währung)
-  SK_LIGHTNING_16: { id: "SK_LIGHTNING_16", name: "Dauerstrom", archetype: "lightning", keywords: ["charge", "streak"],
-    desc: `Jeder Sieg in Folge gibt +1 Ladung je ${C.DAUERSTROM_PER_STREAK} Serienpunkte (höchstens +${C.DAUERSTROM_MAX}/Sieg). Jeder volle Ladungsverbrauch gibt dauerhaft +${pct(C.DAUERSTROM_CONSUME_CRIT)} % Crit-Chance (bis +${pct(C.DAUERSTROM_CRIT_CAP)} %).`,
-    critChance: () => C.LIGHTNING_CRIT_PER_SKILL, dauerstrom: true },
-  SK_LIGHTNING_17: { id: "SK_LIGHTNING_17", name: "Serienschutz", archetype: "lightning", keywords: ["charge", "streak"],
-    desc: `Verlierst du einen Stich mit mindestens ${pct(C.SERIENSCHUTZ_COST_FRAC)} % Ladung, bricht deine Serie nicht. Diese Ladung wird dafür verbraucht.`,
-    critChance: () => C.LIGHTNING_CRIT_PER_SKILL, serienschutz: true },
-  // Legendäre (Verstärker, kein Motor)
-  SK_LIGHTNING_L01: { id: "SK_LIGHTNING_L01", name: "Donnergott", archetype: "lightning", legendary: true, keywords: ["charge", "crit"],
-    desc: `Konsumenten lösen schon bei ${pct(C.DONNERGOTT_THRESHOLD_FRAC)} % Ladung aus und geben dauerhaft +${de(C.THUNDER_CRIT_MULT)}× Crit-Multiplikator.`,
-    critChance: () => C.LIGHTNING_CRIT_PER_SKILL, thunderGod: true },
-  SK_LIGHTNING_L02: { id: "SK_LIGHTNING_L02", name: "Doppelentladung", archetype: "lightning", legendary: true, keywords: ["charge", "ionize"],
-    desc: `Bei vollem Ladungsverbrauch ionisiert der Konsument ${C.DOPPELENTLADUNG_FACTOR}× so viele Karten. Jeder Sieg mit einer ionisierten Karte gibt +${C.DOPPELENT_DIRECT} Score je Ionisierungsstapel im Feld (bis ${C.DOPPELENT_FIELD_CAP}), anteilig zu deinen gehaltenen Blitz-Skills.`,
-    critChance: () => C.LIGHTNING_CRIT_PER_SKILL, doubleDischarge: true },
-  SK_LIGHTNING_L03: { id: "SK_LIGHTNING_L03", name: "Flächenionisation", archetype: "lightning", legendary: true, keywords: ["ionize"],
-    desc: `Gewinnst du mit einer ionisierten Karte, bekommen beide ungespielten Nachbarkarten je +1 Ionisierungsstapel, dazu +${C.FLAECHENION_DIRECT} Score je ionisierter Karte im Feld (bis ${C.FLAECHENION_FIELD_CAP}), anteilig zu deinen gehaltenen Blitz-Skills.`,
-    critChance: () => C.LIGHTNING_CRIT_PER_SKILL, areaIonize: true },
-  SK_LIGHTNING_L04: { id: "SK_LIGHTNING_L04", name: "Durchschlag", archetype: "lightning", legendary: true, keywords: ["ionize", "crit"],
-    desc: `Gewinnt eine voll ionisierte Karte mit Crit, gibt sie dauerhaft +${de(C.DURCHSCHLAG_CRIT_MULT)}× Crit-Multiplikator (bis +${de(C.DURCHSCHLAG_MULT_CAP)}×).`,
-    critChance: () => C.LIGHTNING_CRIT_PER_SKILL, durchschlag: true },
-
-  // ---- Feuer-Rework (v0) — „Hitze belohnt totale Überlegenheit." 21 Skills auf 7 Linien.
-  //      Flags werden in skills.js-Helfern (heatGainFor/heatLossFor/fireScoreFor) + engine.js gelesen. ----
-  // Linie 1 — Generation (Marge · Konstanz · Serie)
-  SK_FIRE_01: { id: "SK_FIRE_01", name: "Glut", archetype: "fire", keywords: ["heat"],
-    desc: `Siege mit Kampfwert-Vorsprung geben +${pct(C.EMBER_MULT - 1)} % mehr Hitze.`, emberBoost: true },
-  SK_FIRE_02: { id: "SK_FIRE_02", name: "Zunder", archetype: "fire", keywords: ["heat"],
-    desc: `Jeder Sieg gibt +${C.ZUNDER_HEAT} % Hitze, auch bei knappem Vorsprung.`, zunder: true },
-  SK_FIRE_03: { id: "SK_FIRE_03", name: "Feuersturm", archetype: "fire", keywords: ["heat", "streak"],
-    desc: `Jeder Sieg in Folge gibt +${C.FEUERSTURM_STEP} % mehr Hitze (bis +${C.FEUERSTURM_CAP} %). Eine Niederlage setzt zurück.`, feuersturm: true },
-  // Linie 2 — Verteidigung (abschirmen · kontern)
-  SK_FIRE_04: { id: "SK_FIRE_04", name: "Glutbett", archetype: "fire", keywords: ["heat"],
-    desc: `Niederlagen kosten nur ${pct(C.GLUTBETT_MULT)} % der Hitze; unter ${C.GLUTBETT_FREE_BELOW} % Hitze gar keine.`, glutbett: true },
-  SK_FIRE_05: { id: "SK_FIRE_05", name: "Rückzündung", archetype: "fire", keywords: ["heat"],
-    desc: `Nach einer Niederlage gibt der nächste Sieg +${C.RUECKZUENDUNG_HEAT_PER_DEFICIT} % Hitze je Punkt Wert-Rückstand und der Siegkarte +${C.RUECKZUENDUNG_VALUE} Stichwert.`, rueckzuendung: true },
-  // Linie 3 — Schwellen-Payoffs (hohe Hitze → Belohnung)
-  SK_FIRE_06: { id: "SK_FIRE_06", name: "Glühende Klinge", archetype: "fire", keywords: ["heat"],
-    desc: `Alle deine Karten bekommen Stichwert nach Hitze: +${C.GLOWING_T1_VALUE} ab ${C.GLOWING_T1_HEAT} %, +${C.GLOWING_T2_VALUE} ab ${C.GLOWING_T2_HEAT} %, +${C.GLOWING_T3_VALUE} bei ${C.GLOWING_T3_HEAT} %. Die oberen beiden verlangen im laufenden Segment zusätzlich einen Sieg mit ${C.GLOWING_T2_MARGIN} bzw. ${C.GLOWING_T3_MARGIN} Kampfwert-Vorsprung.`, glowingBlade: true },
-  SK_FIRE_07: { id: "SK_FIRE_07", name: "Weißglut", archetype: "fire", keywords: ["heat"],
-    desc: `Hitze über ${C.HEAT_MAX} % staut sich als Überhitzung auf, bis ${C.HEAT_MAX + C.OVERHEAT_MAX} %; je höher sie steht, desto weniger kommt an. Jeder Punkt gibt +${pct(C.OVERHEAT_SCORE_STEP)} % Feuer-Score. Sie baut ${C.OVERHEAT_DECAY} Punkte je Stich ab, ${C.OVERHEAT_DECAY_LOSS} bei einer Niederlage.`, whiteHeat: true },
-  // Linie 4 — Wert-/Score-Motoren
-  SK_FIRE_08: { id: "SK_FIRE_08", name: "Feuerwalze", archetype: "fire", keywords: ["heat"],
-    desc: `Ab ${C.FIREROLL_MIN_HEAT} % Hitze gibt jeder Sieg in Folge der nächsten Karte +1 Stichwert (bis +${C.FIREROLL_MAX}). Eine Niederlage setzt zurück.`, fireRoll: true },
-  SK_FIRE_09: { id: "SK_FIRE_09", name: "Verbrennung", archetype: "fire", keywords: ["heat"],
-    desc: `Großer Kampfwert-Vorsprung gibt mehr Feuer-Score: ×${de(C.VERBRENNUNG_T1_MULT)} ab ${C.VERBRENNUNG_T1_MARGIN}, ×${de(C.VERBRENNUNG_T2_MULT)} ab ${C.VERBRENNUNG_T2_MARGIN}.`, verbrennung: true },
-  SK_FIRE_10: { id: "SK_FIRE_10", name: "Funkenflug", archetype: "fire", keywords: ["heat"],
-    desc: `Jeder Sieg unter ${C.SPARKFLIGHT_MIN_MARGIN} Kampfwert-Vorsprung legt das ${de(C.SPARKFLIGHT_BANK_MULT)}-fache seines Feuer-Scores plus ${C.SPARKFLIGHT_FLOOR_BASE} in einen Speicher, +${C.SPARKFLIGHT_FLOOR_PER_SKILL} je weiterem Feuer-Skill. Ein Sieg ab ${C.SPARKFLIGHT_MIN_MARGIN} Vorsprung zahlt ihn als Score aus, eine Niederlage halbiert ihn.`, sparkflight: true },
-  // Linie 5 — Konsumenten (max 1 im Build — Burst vs. Drip)
-  SK_FIRE_11: { id: "SK_FIRE_11", name: "Flächenbrand", archetype: "fire", keywords: ["heat", "consume"],
-    desc: `Ab ${C.CONFLAG_MIN_HEAT} % Hitze brennt der nächste Sieg bis auf ${C.CONFLAG_KEEP} % herunter: +${C.CONFLAG_PER_HEAT} Score je verbranntem Hitzepunkt, +${C.CONFLAG_PER_SKILL} je weiterem Feuer-Skill (mit ${C.SKILL_SLOTS} Feuer-Skills ≈ +${grp((C.HEAT_MAX - C.CONFLAG_KEEP) * (C.CONFLAG_PER_HEAT + C.CONFLAG_PER_SKILL * (C.SKILL_SLOTS - 1)))}).`, heatConsumer: "conflagration" },
-  SK_FIRE_12: { id: "SK_FIRE_12", name: "Schmelzpunkt", archetype: "fire", keywords: ["heat", "consume"],
-    desc: `Jeder Sieg verbrennt ${C.MELT_COST} % Hitze: ${C.MELT_SCORE_BASE} Score je verbranntem Punkt, +${de(C.MELT_SCORE_PER_HEAT)} je gehaltenem Prozent Hitze (bei voller Leiste ${grp(Math.round(C.MELT_COST * (C.MELT_SCORE_BASE + C.MELT_SCORE_PER_HEAT * C.HEAT_MAX)))} je Sieg). Niederlagen kosten keine Hitze.`, heatConsumer: "melt" },
-  // Linie 6 — Verbrennen → Schmieden (Brand · Asche · Schmiede)
-  SK_FIRE_13: { id: "SK_FIRE_13", name: "Brandmal", archetype: "fire", keywords: ["heat", "brand", "ash"],
-    desc: `Jeder Sieg brandmarkt eine Gegnerkarte (−${C.BRAND_VALUE} Wert) und gibt +${C.BRAND_ASH} Asche.`, brandmal: true },
-  SK_FIRE_14: { id: "SK_FIRE_14", name: "Lauffeuer", archetype: "fire", keywords: ["heat", "brand", "ash"],
-    desc: `Verstärker: Brände greifen auf eine Nachbarkarte über (−${C.BRAND_VALUE} Wert) und geben +${C.BRAND_ASH} Asche.`, enabler: "SK_FIRE_13", lauffeuer: true },
-  SK_FIRE_15: { id: "SK_FIRE_15", name: "Ascheschmiede", archetype: "fire", keywords: ["heat", "forge", "ash"],
-    desc: `Am Ende jedes Durchlaufs erhält jeweils deine niedrigste Karte dauerhaft +${C.FORGE_VALUE} Kartenwert, solange du ≥${C.FORGE_COST} Asche hast. Ist die Schmiede voll, verglüht weitere Asche als Ascheglut: +${grp(C.FORGE_OVERFLOW_SCORE)} Score je ${C.FORGE_COST} Asche.`, ascheschmiede: true },
-  SK_FIRE_16: { id: "SK_FIRE_16", name: "Glutstahl", archetype: "fire", keywords: ["heat", "forge"],
-    desc: `Verstärker: Geschmiedete Karten geben bei Sieg +${C.GLUTSTAHL_PER_VALUE} Score je geschmiedetem Wert.`, enabler: "SK_FIRE_15", glutstahl: true },
-  SK_FIRE_17: { id: "SK_FIRE_17", name: "Schmelzofen", archetype: "fire", keywords: ["heat", "brand", "forge", "ash"],
-    desc: `Ab ${C.SCHMELZOFEN_MIN_HEAT} % Hitze geben Brände zusätzlich −${C.SCHMELZOFEN_BRAND_BONUS} Wert und +${C.SCHMELZOFEN_BRAND_BONUS} Asche. Schmieden kostet ${pct(C.SCHMELZOFEN_FORGE_DISCOUNT)} % weniger Asche.`, schmelzofen: true },
-  // Legendäre (umgeformt: dauerhaft/compoundend/direkt — je eine eigene Achse & Feuer-Playstyle)
-  SK_FIRE_L01: { id: "SK_FIRE_L01", name: "Sonnenkern", archetype: "fire", legendary: true, keywords: ["heat"],
-    desc: `Jeder Sieg gegen eine gebrandmarkte Gegnerkarte gibt +${grp(C.SONNENKERN_BRAND_SCORE)} Score je Brand darauf. Endet ein Durchlauf mit ≥${C.SONNENKERN_MIN_HEAT} % Hitze, stapeln sich deine Brände statt sich zu erneuern (bis ${C.SONNENKERN_BRAND_CAP} je Karte), und deine Karten unter Wert ${C.SONNENKERN_CARD_CAP} bekommen dauerhaft +${C.SONNENKERN_VALUE} Kartenwert.`, suncore: true },
-  SK_FIRE_L02: { id: "SK_FIRE_L02", name: "Phönixfeuer", archetype: "fire", legendary: true, keywords: ["heat"],
-    desc: `Niederlagen kosten keine Hitze, sondern geben +${C.PHOENIX_LOSS_HEAT} % Hitze je Rückstandspunkt. Sinkt deine Hitze durch Verbrauch auf 0, entzündet sie sich 1×/Durchlauf auf ${Math.round(C.PHOENIX_REIGNITE * 100)} % neu.`, phoenix: true },
+  // ---- Feuer (exp skill rework, §4): Passiv = Siege mit Abstand geben Hitze, Niederlagen kühlen, je 10 % Hitze +2 % Score.
+  //      Die Mechanik liest die Stufentabellen oben (factions/fire.js). Texte: ein Satz je Stufe (`tiered`).
+  // Formation und Wert — Hitze zu Score (§7.23: Feuerlinie ersetzt Glut auf demselben Platz, Emblem bleibt)
+  SK_FIRE_01: { id: "SK_FIRE_01", name: "Feuerlinie", archetype: "fire", keywords: ["heat", "formation"], tiers: FEUER.feuerlinie,
+    ...tiered(FEUER.feuerlinie, (r) => `Ein Sieg in einer Formation zählt +${pct(r.perPoint)} % Score je Punkt Kampfwert der Siegkarte und verbrennt ${r.cost} % Hitze.${r.perFormation ? " Der Bonus zählt je Formation an der Siegposition." : ""}`) },
+  // Rate — Hitze erzeugen
+  SK_FIRE_02: { id: "SK_FIRE_02", name: "Zunder", archetype: "fire", keywords: ["heat"], tiers: FEUER.zunder,
+    ...tiered(FEUER.zunder, (r) => `Jeder Sieg gibt +${r.heat} % Hitze, auch ein knapper.${r.lossHeat ? ` Auch jede Niederlage gibt +${r.lossHeat} % Hitze.` : ""}`) },
+  SK_FIRE_03: { id: "SK_FIRE_03", name: "Feuersturm", archetype: "fire", keywords: ["heat", "streak"], tiers: FEUER.feuersturm,
+    ...tiered(FEUER.feuersturm, (r) => `${r.minHeat ? `Ab ${r.minHeat} % Hitze` : "Bei voller Hitzeleiste"} zählt jeder Serienpunkt +${de(Math.round(r.multPerStreak * 10000) / 100)} % Score.`) },
+  SK_FIRE_05: { id: "SK_FIRE_05", name: "Rückzündung", archetype: "fire", keywords: ["streak"], tiers: FEUER.rueckzuendung, // §7.24: Takt statt Konter (§7.22)
+    ...tiered(FEUER.rueckzuendung, (r) => `${jeder(r.every)} Sieg in Folge zündet: er zählt ×${de(r.mult)}.${r.value ? ` Die zündende Karte kämpft mit +${r.value} Wert.` : ""}`) },
+  // Schutz
+  SK_FIRE_04: { id: "SK_FIRE_04", name: "Glutbett", archetype: "fire", keywords: ["heat"], tiers: FEUER.glutbett,
+    ...tiered(FEUER.glutbett, (r) => (r.noCool
+      ? "Niederlagen kühlen die Hitze nicht."
+      : `Niederlagen kühlen die Hitze nicht unter ${r.floor} %. Fängt der Boden eine Niederlage ab, steigt er um ${r.rise} %.`)) },
+  // Zustand — Hitze zu Wert und Multiplikator
+  SK_FIRE_06: { id: "SK_FIRE_06", name: "Glühende Klinge", archetype: "fire", keywords: ["heat"], tiers: FEUER.klinge,
+    ...tiered(FEUER.klinge, (r) => `Alle deine Karten haben +${r.value} Wert je ${r.perHeat} % Hitze, bis ${C.HEAT_MAX} %.`) },
+  SK_FIRE_07: { id: "SK_FIRE_07", name: "Weißglut", archetype: "fire", keywords: ["heat"], tiers: FEUER.weissglut,
+    ...tiered(FEUER.weissglut, (r) => `Die Hitzeleiste reicht bis ${C.WEISSGLUT_HEAT_MAX} %. Über ${C.HEAT_MAX} % Hitze geben je 10 Prozentpunkte +${pct(r.multPer10)} % Score.`) },
+  // Position — die Schneise durch das eigene Deck (§7.27: ersetzt Feuerwalze, deren Achse „Hitze zu Kampfwert" schon
+  // der Klinge gehört; die Aufstellung entscheidet mit, welche Karte im nächsten Durchlauf auf der Schneise liegt)
+  SK_FIRE_08: { id: "SK_FIRE_08", name: "Brandschneise", archetype: "fire", keywords: ["position", "wertvorsprung"], tiers: FEUER.schneise,
+    ...tiered(FEUER.schneise, (r) => `Auf den Positionen deiner ${r.width} Siege mit dem größten Vorsprung zählt ein Sieg im nächsten Durchlauf ×${de(r.mult)}.${r.hold ? ` Der Bonus hält ${r.hold} Durchläufe.` : ""}`) },
+  SK_FIRE_09: { id: "SK_FIRE_09", name: "Verbrennung", archetype: "fire", keywords: ["heat"], tiers: FEUER.verbrennung,
+    ...tiered(FEUER.verbrennung, (r) => `Ein Sieg mit Kampfwert-Vorsprung ab ${r.minMargin} zählt ×${de(r.mult)}.${r.heatToo ? ` Seine Hitze zählt ebenfalls ×${de(r.mult)}.` : ""}`) },
+  // Konsument — Hitze zu Score (§7.16: der Überlauf-Wandler; Flächenbrand SK_FIRE_11 ist gestrichen, der Brand kostete
+  // Klinge, Siegquote und Serie, keine Auszahlung glich das aus)
+  SK_FIRE_12: { id: "SK_FIRE_12", name: "Schmelzpunkt", archetype: "fire", keywords: ["heat", "consume"], tiers: FEUER.schmelzpunkt,
+    // Der Glossareintrag „Überlauf" definiert genau das, was hier vorher ausgeschrieben stand — der Begriff
+    // ersetzt die Wiederholung und wird im Text automatisch gefettet.
+    ...tiered(FEUER.schmelzpunkt, (r) => `Bei voller Hitzeleiste zählt der Überlauf +${r.perPoint} Basis-Score je Punkt.${r.lossPays ? " Auch die Kühlung einer Niederlage zahlt beim nächsten Sieg." : ""}`) },
+  // Gegner — Brände
+  SK_FIRE_13: { id: "SK_FIRE_13", name: "Brandmal", archetype: "fire", keywords: ["heat", "brand"], tiers: FEUER.brandmal,
+    ...tiered(FEUER.brandmal, (r) => `Ab ${r.minHeat} % Hitze brandmarkt jeder Sieg die geschlagene Gegnerkarte: −${r.value} Wert im nächsten Durchlauf.${r.onLoss ? " Auch eine Niederlage brandmarkt die Gegnerkarte, die gewonnen hat." : ""}`) },
+  SK_FIRE_14: { id: "SK_FIRE_14", name: "Lauffeuer", archetype: "fire", keywords: ["heat", "brand"], tiers: FEUER.lauffeuer,
+    ...tiered(FEUER.lauffeuer, (r) => `Ab ${r.minHeat} % Hitze brandmarkt jeder Sieg ${r.reach === 1 ? "beide Nachbarn" : `die ${2 * r.reach} Nachbarn`} der geschlagenen Gegnerkarte: −${r.value} Wert im nächsten Durchlauf.`) },
+  // Schmiede — Hitze zu Dauerwert (§7.14: ohne Preis, die Hitze ist nur die Schwelle), Wert zu Score
+  SK_FIRE_15: { id: "SK_FIRE_15", name: "Schmiede", archetype: "fire", keywords: ["heat", "forge"], tiers: FEUER.schmiede,
+    ...tiered(FEUER.schmiede, (r) => `Am Ende eines Durchlaufs ab ${r.minHeat} % Hitze: ${r.cards === 1 ? "deine niedrigste Karte erhält" : `deine ${r.cards} niedrigsten Karten erhalten`} dauerhaft +${C.FORGE_VALUE} Kartenwert.`) },
+  SK_FIRE_16: { id: "SK_FIRE_16", name: "Glutstahl", archetype: "fire", keywords: ["heat", "forge"], tiers: FEUER.glutstahl,
+    ...tiered(FEUER.glutstahl, (r) => `Ein Sieg zählt +${r.perPoint} Basis-Score je Punkt Kampfwert über dem Grundwert der Siegkarte.${r.forgedDouble ? " Schmiedewert zählt doppelt." : ""}`) },
+  // Legendäre (§4.7): keine Stufe, zwei Effekte, jedes läuft allein.
+  SK_FIRE_L01: { id: "SK_FIRE_L01", name: "Sonnenkern", archetype: "fire", legendary: true, keywords: ["heat", "brand"],
+    desc: `Jeder Sieg brandmarkt die geschlagene Gegnerkarte mit −${de(C.SONNENKERN_BRAND)} Wert, und Brände stapeln sich über die Durchläufe. Ein Sieg gegen eine gebrandmarkte Karte gibt +${C.SONNENKERN_SCORE_PER_BRAND} Basis-Score je Brandpunkt auf ihr.` },
+  SK_FIRE_L02: { id: "SK_FIRE_L02", name: "Ewige Glut", archetype: "fire", legendary: true, keywords: ["heat"], // §7.21: ersetzt Phönixfeuer (Emblem bleibt)
+    desc: `Jeder Durchlauf, der mit voller Hitzeleiste endet, hebt den Hitze-Multiplikator dauerhaft um +${pct(C.EWIGE_GLUT_MULT_PER_ROUND)} %. Die Hitze fällt nie unter ${pct(C.EWIGE_GLUT_FLOOR_FRAC)} % der höchsten je erreichten Hitze.` },
   SK_FIRE_L03: { id: "SK_FIRE_L03", name: "Sonnenzorn", archetype: "fire", legendary: true, keywords: ["heat"],
-    desc: `Dein gesamter Sieg-Score wird mit deinem höchsten je erreichten Hitzestand multipliziert: +${de(Math.round(C.SUNWRATH_PEAK_STEP * 1000) / 10)} % je Prozent bis ${C.HEAT_MAX} %, also bis ×${de(Math.round((1 + C.HEAT_MAX * C.SUNWRATH_PEAK_STEP) * 100) / 100)}, und +${de(Math.round(C.SUNWRATH_OVER_STEP * 1000) / 10)} % je Punkt Überhitzung darüber, mit Weißglut bis ×${de(Math.round((1 + C.HEAT_MAX * C.SUNWRATH_PEAK_STEP + C.OVERHEAT_MAX * C.SUNWRATH_OVER_STEP) * 100) / 100)}.`, sunwrath: true },
-  SK_FIRE_L04: { id: "SK_FIRE_L04", name: "Damaststahl", archetype: "fire", legendary: true, keywords: ["heat", "forge", "ash"],
-    desc: `Schmiedet jeden Durchlauf deine niedrigste Karte ohne Asche (+${C.FORGE_VALUE} Wert, bis ${C.DAMASCUS_MAX_FORGED} Karten). Geschmiedete Karten kämpfen mit +${C.DAMASCUS_COMBAT} Wert. Jeder Sieg gibt +${C.DAMASCUS_PER_VALUE} Score je Punkt geschmiedetem Wert im Deck. Eine Schmiedung sind ${C.FORGE_VALUE} Punkte.`, damascus: true },
+    desc: `Der Hitze-Multiplikator rechnet bis ${C.WEISSGLUT_HEAT_MAX} % mit der höchsten je erreichten Hitze statt mit der aktuellen: je 10 Prozentpunkte +${pct(C.SONNENZORN_MULT_PER_10)} % Score statt +${pct(C.HEAT_MULT_PER_10)} %. Liegt die Hitze unter der Spitze, zählt die Hitze aus Siegen ×${de(C.SONNENZORN_HEAT_MULT)}.` },
+  // (§6.11, Owner: drei Legendäre je Fraktion — SK_FIRE_L04 Damaststahl ist gestrichen; der Owner behält Sonnenzorn,
+  //  die gemessene Reihung der vier war Sonnenkern +76 %, Damaststahl +8 %, Ewige Glut −8 %, Sonnenzorn −14 %.)
 
   // ---- Eis-Neudesign — „Gletscher, Brechen & Kaskade." (docs/eis-rework.md) Spine = MASSE auf dem Brettfeld (Firn-Boden),
   //      Gletscher halten & brechen gewaltig. Jeder Skill trägt ein `role: G_…` (Mechanik in glacier.js). Gate = archetype
   //      "ice" → activeArchetypes "ice" aktiviert den Gletscher-Block; PICK_SKILL seedet state.glacierRoles aus den `role`s.
   // Linie 1 — Firn (Masse-Motor)
-  SK_ICE_01: { id: "SK_ICE_01", name: "Anfrieren", archetype: "ice", keywords: ["glacier"], role: "G_ANFRIEREN",
-    desc: `Ein Gletscher-Sieg gibt +${de(G_ANFRIEREN_WIN)} Masse extra, in einer Formation zusätzlich +${de(G_ANFRIEREN_FORM)}.` },
-  SK_ICE_02: { id: "SK_ICE_02", name: "Schneetreiben", archetype: "ice", keywords: ["glacier", "freeze"], role: "G_SCHNEETREIBEN",
-    desc: `Gewinnt ein Gletscher, sät er +${de(G_SCHNEETREIBEN_SEED)} Schnee in die Boden-Reserve eines der 4 angrenzenden offenen Felder, ohne eigene Masse abzugeben. Nur bei 0 eigener Masse gibt er stattdessen seine Sieg-Masse ab. Eisbrücke erweitert das nicht.` },
-  SK_ICE_03: { id: "SK_ICE_03", name: "Dauerfrost", archetype: "ice", keywords: ["glacier", "freeze"], role: "G_DAUERFROST",
-    desc: `Jeden Durchlauf sammeln ungefrorene Felder Schnee in ihrer Boden-Reserve: +${de(G_DAUERFROST_NEAR)} bei 2 Feldern Abstand zum nächsten Gletscher, +${de(G_DAUERFROST_FAR)} ab 3. Die 8 Felder direkt um einen Gletscher bleiben leer. Friert hier später ein Gletscher ein, füllt die Reserve ihn zum Durchlauf-Beginn auf.` },
-  SK_ICE_04: { id: "SK_ICE_04", name: "Verdichtung", archetype: "ice", keywords: ["glacier", "bauphase"], role: "G_VERDICHTUNG",
-    desc: `Erhöht ein Gebäude den Kampfwert einer Gletscher-Karte, wird dieser Bonus nicht ausgespielt, sondern in Masse umgewandelt: +${de(G_VERDICHTUNG_RATE)} Masse je Punkt. Score-Gebäude bleiben unberührt.` },
-  // Linie 2 — Eisschild (Cluster/Dichte)
-  SK_ICE_05: { id: "SK_ICE_05", name: "Verschmelzen", archetype: "ice", keywords: ["glacier"], role: "G_VERSCHMELZEN",
-    desc: `Zu Durchlauf-Beginn heben angrenzende Gletscher einander auf den Masse-Durchschnitt ihres Clusters, nie fallend.` },
-  SK_ICE_06: { id: "SK_ICE_06", name: "Packeis", archetype: "ice", keywords: ["glacier"], role: "G_PACKEIS",
-    desc: `Jeden Durchlauf gewinnt ein Gletscher +${de(G_PACKEIS_PER)} Masse je Gletscher-Nachbar.` },
-  SK_ICE_07: { id: "SK_ICE_07", name: "Eisbrücke", archetype: "ice", keywords: ["glacier"], role: "G_EISBRUECKE",
-    desc: `Zählt auch die vier Diagonalen als angrenzend: zersplitterte Felder werden zu einem Cluster, für Bruch, Kollision und Cluster-Größe.` },
-  SK_ICE_08: { id: "SK_ICE_08", name: "Eiswall", archetype: "ice", keywords: ["glacier", "formation"], role: "G_EISWALL",
-    desc: `Eine komplett gefrorene Reihe oder Spalte verstärkt das Bersten aller ihrer Gletscher: ×${de(G_EISWALL_LINIE)} statt ×${de(G_GEO_LINIE)}.` },
-  SK_ICE_09: { id: "SK_ICE_09", name: "Verzahnung", archetype: "ice", keywords: ["glacier"], role: "G_VERZAHNUNG",
-    desc: `Jeden Durchlauf gewinnt jeder Gletscher +${de(G_VERZAHNUNG_PER)} Masse je Gletscher im verbundenen Cluster.` },
+  SK_ICE_01: { id: "SK_ICE_01", name: "Anfrieren", archetype: "ice", keywords: ["glacier"], role: "G_ANFRIEREN", tiers: EIS.anfrieren,
+    ...tiered(EIS.anfrieren, (r) => `Ein Gletscher-Sieg gibt +${pct(r.pct)} % seiner Masse zusätzlich${r.form ? ", in einer Formation doppelt" : ""}.`) },
+  SK_ICE_02: { id: "SK_ICE_02", name: "Schneetreiben", archetype: "ice", keywords: ["glacier", "freeze"], role: "G_SCHNEETREIBEN", tiers: EIS.schneetreiben,
+    ...tiered(EIS.schneetreiben, (r) => `Gewinnt ein Gletscher, sät er +${de(r.seed)} Schnee in die Boden-Reserve ${r.fields === 1 ? "eines angrenzenden offenen Felds" : `von ${de1(r.fields)} angrenzenden offenen Feldern`}. Ist kein Nachbarfeld offen, sät er ins nächstgelegene offene Feld.`) },
+  SK_ICE_03: { id: "SK_ICE_03", name: "Dauerfrost", archetype: "ice", keywords: ["glacier", "freeze"], role: "G_DAUERFROST", tiers: EIS.dauerfrost,
+    ...tiered(EIS.dauerfrost, (r) => `Jeden Durchlauf sammeln ungefrorene Felder Schnee in ihrer Boden-Reserve: +${de(r.near)} bei bis zu 2 Feldern Abstand zum nächsten Gletscher, +${de(r.far)} ab 3.`) },
+  SK_ICE_04: { id: "SK_ICE_04", name: "Verdichtung", archetype: "ice", keywords: ["glacier", "bauphase"], role: "G_VERDICHTUNG", tiers: EIS.verdichtung,
+    ...tiered(EIS.verdichtung, (r) => `Ein Gletscher gewinnt +${de(r.per)} Masse je Punkt Kampfwert über seinem Grundwert. Wert, der selbst aus Masse stammt, zählt nicht mit.`) },
+  // Linie 2 — Eisschild (Cluster/Dichte). (§5.2: Verschmelzen SK_ICE_05 gestrichen — binär, im Spiel unsichtbar, und
+  // dieselbe Achse wie Packeis/Verzahnung; in groß ist es das Legendäre Ewiges Schild.)
+  SK_ICE_06: { id: "SK_ICE_06", name: "Packeis", archetype: "ice", keywords: ["glacier"], role: "G_PACKEIS", tiers: EIS.packeis,
+    ...tiered(EIS.packeis, (r) => `Jeden Durchlauf gewinnt ein Gletscher +${de(r.per)} Masse je offenem Feld im Umkreis ${de(G_PACKEIS_R)}. Mit Eisbrücke reicht er ${de(G_PACKEIS_R_BRIDGE)} Felder weit.`) },
+  SK_ICE_07: { id: "SK_ICE_07", name: "Eisbrücke", archetype: "ice", keywords: ["glacier"], role: "G_EISBRUECKE", tiers: EIS.eisbruecke,
+    ...tiered(EIS.eisbruecke, (r) => `Auch die vier Diagonalen gelten als angrenzend: zersplitterte Felder werden zu einem Cluster. Für Kaskade und Kollision zählt ein diagonaler Gletscher zu ${pct(r.weight)} %.`) },
+  SK_ICE_08: { id: "SK_ICE_08", name: "Eiswall", archetype: "ice", keywords: ["glacier", "formation"], role: "G_EISWALL", tiers: EIS.eiswall,
+    ...tiered(EIS.eiswall, (r) => `Steht ein Gletscher in einer Reihe oder Spalte aus mindestens ${G_EISWALL_MIN} Gletschern, bricht er je Gletscher darin über zwei um +${pct(r.per)} % stärker. Eine volle Reihe gibt also +${pct(r.per * 3)} %.`) },
+  SK_ICE_09: { id: "SK_ICE_09", name: "Verzahnung", archetype: "ice", keywords: ["glacier"], role: "G_VERZAHNUNG", tiers: EIS.verzahnung,
+    ...tiered(EIS.verzahnung, (r) => `Jeden Durchlauf gewinnt jeder Gletscher +${de(r.per)} Masse je Gletscher im verbundenen Cluster.`) },
   // Linie 3 — Lawine (Brechen/Kaskade)
-  SK_ICE_10: { id: "SK_ICE_10", name: "Abbruchkante", archetype: "ice", keywords: ["glacier"], role: "G_ABBRUCHKANTE",
-    desc: `Höhere Masse-Schwellen bersten steiler: Wucht ×${de(G_ABBRUCH_TIER[2])} statt ×${de(G_TIER_MULT[2])} an der 2. Schwelle, ×${de(G_ABBRUCH_TIER[3])} statt ×${de(G_TIER_MULT[3])} an der 3.` },
-  SK_ICE_11: { id: "SK_ICE_11", name: "Kettenbruch", archetype: "ice", keywords: ["glacier"], role: "G_KETTENBRUCH",
-    desc: `Bricht ein Gletscher, brechen angrenzende Gletscher sofort mit, auch ohne ihre Schwelle erreicht zu haben.` },
-  SK_ICE_12: { id: "SK_ICE_12", name: "Zermalmen", archetype: "ice", keywords: ["glacier"], role: "G_ZERMALMEN",
-    desc: `Trifft ein Bruch einen Gletscher-Nachbarn, zählt die Kollision stärker: Faktor ×${de(G_ZERMALMEN_KOLL)} statt ×${de(G_KOLLISION)}.` },
-  SK_ICE_13: { id: "SK_ICE_13", name: "Rissbildung", archetype: "ice", keywords: ["glacier"], role: "G_RISSBILDUNG",
-    desc: `Ein Gletscher bricht schon ab ${de(G_RISSBILDUNG_BURST)} Masse statt ${de(G_THRESHOLDS[G_THRESHOLDS.length - 1])}.` },
-  SK_ICE_14: { id: "SK_ICE_14", name: "Gletschersturz", archetype: "ice", keywords: ["glacier"], role: "G_GLETSCHERSTURZ",
-    desc: `Jeder Bruch wird +${pct(G_GLETSCHERSTURZ_PER)} % stärker je Gletscher, der im selben Durchlauf bricht.` },
+  SK_ICE_10: { id: "SK_ICE_10", name: "Abbruchkante", archetype: "ice", keywords: ["glacier"], role: "G_ABBRUCHKANTE", tiers: EIS.abbruchkante,
+    ...tiered(EIS.abbruchkante, (r) => `Deine Gletscher brechen erst ab ${de(r.at)} Masse statt ab ${de(G_BURST_AT)} und treffen dafür eine höhere Schwelle.`) },
+  SK_ICE_11: { id: "SK_ICE_11", name: "Eisbeben", archetype: "ice", keywords: ["glacier"], role: "G_EISBEBEN", tiers: EIS.eisbeben,
+    ...tiered(EIS.eisbeben, (r) => `Bricht ein Gletscher über der Berst-Schwelle, bebt das Eis nach: je Punkt Masse darüber zählt der Bruch +${pct(r.per)} % zusätzlich.${r.sturz ? " Das Nachbeben zählt für den Gletschersturz als eigener Bruch." : ""}`) },
+  // (§5.2: Zermalmen SK_ICE_12 gestrichen — dieselbe Achse wie die Kaskade, beide zahlen für Gletscher-Nachbarn.)
+  SK_ICE_13: { id: "SK_ICE_13", name: "Gletscherzunge", archetype: "ice", keywords: ["glacier"], role: "G_GLETSCHERZUNGE", tiers: EIS.gletscherzunge,
+    ...tiered(EIS.gletscherzunge, (r) => `Ein Gletscher kämpft mit +1 Wert je ${de(r.per)} Masse.${r.neighbors ? " Auch seine Nachbarkarten kämpfen mit der Hälfte dieses Bonus." : ""}`) },
+  SK_ICE_14: { id: "SK_ICE_14", name: "Gletschersturz", archetype: "ice", keywords: ["glacier"], role: "G_GLETSCHERSTURZ", tiers: EIS.gletschersturz,
+    ...tiered(EIS.gletschersturz, (r) => `Jeder Bruch wird +${pct(r.per)} % stärker je Gletscher, der im selben Durchlauf bricht.`) },
   // Linie 4 — Frostgriff (Kontrolle/Duo)
-  SK_ICE_15: { id: "SK_ICE_15", name: "Einfrieren", archetype: "ice", keywords: ["glacier"], role: "G_EINFRIEREN",
-    desc: "Bricht ein Gletscher auf eine Gegnerkarte, verliert diese ihren Stich im nächsten Durchlauf." },
-  SK_ICE_16: { id: "SK_ICE_16", name: "Frostbund", archetype: "ice", keywords: ["glacier"], role: "G_FROSTBUND",
-    desc: `Bricht ein Gletscher, bekommen seine Nicht-Gletscher-Nachbarn +${de(G_FROSTBUND_BUFF)} Stichwert im nächsten Durchlauf. Mit Eisbrücke gilt das für die 8er-Nachbarschaft.` },
-  SK_ICE_17: { id: "SK_ICE_17", name: "Eispanzer", archetype: "ice", keywords: ["glacier"], role: "G_EISPANZER",
-    desc: `Eine Niederlage neben einem Gletscher bricht deine Serie nicht und gibt +${de(G_EISPANZER_MASS)} Masse je angrenzendem Gletscher.` },
+  SK_ICE_15: { id: "SK_ICE_15", name: "Einfrieren", archetype: "ice", keywords: ["glacier"], role: "G_EINFRIEREN", tiers: EIS.einfrieren,
+    ...tiered(EIS.einfrieren, (r) => `Bricht ein Gletscher, verliert ${EINFRIEREN_ZIEL(r.cards)} den Stich im nächsten Durchlauf.`) },
+  SK_ICE_16: { id: "SK_ICE_16", name: "Frostbund", archetype: "ice", keywords: ["glacier"], role: "G_FROSTBUND", tiers: EIS.frostbund,
+    ...tiered(EIS.frostbund, (r) => `Bricht ein Gletscher, bekommen alle seine Nachbarn +${de(r.buff)} Stichwert im nächsten Durchlauf. Mit Eisbrücke gilt das für die acht Nachbarn.`) },
+  SK_ICE_17: { id: "SK_ICE_17", name: "Sprödbruch", archetype: "ice", keywords: ["glacier", "crit"], role: "G_SPROEDBRUCH", tiers: EIS.sproedbruch,
+    ...tiered(EIS.sproedbruch, (r) => `Ein Gletscher kämpft mit +${pctS(r.crit)} % Crit-Chance je Punkt Masse.${r.critMass ? ` Ein Crit mit einer Gletscherkarte gibt ihrem Gletscher +${de(r.critMass)} Masse.` : ""}`) },
   // Legendäre (je Linie eine Capstone)
   SK_ICE_L01: { id: "SK_ICE_L01", name: "Eiszeit", archetype: "ice", legendary: true, keywords: ["glacier", "freeze"], role: "G_L_EISZEIT",
-    desc: `Jeden Durchlauf +${de(G_EISZEIT_FLOOD)} Schnee in die Boden-Reserve jedes ungefrorenen Felds. Das reservestärkste friert dann zum Gletscher ein und füllt sich aus seiner Reserve. Bis zu ${G_EISZEIT_MAX} Gletscher.` },
+    desc: `Jeden Durchlauf +${de(G_EISZEIT_FLOOD)} Schnee in die Boden-Reserve jedes ungefrorenen Felds. Jeder Gletscher bricht mit +${de(G_EISZEIT_BURST * 100)} % Wucht je angrenzendem offenen Feld.` },
   SK_ICE_L02: { id: "SK_ICE_L02", name: "Ewiges Schild", archetype: "ice", legendary: true, keywords: ["glacier"], role: "G_L_SCHILD",
-    desc: `Jeden Durchlauf ziehen alle deine Gletscher auf die Masse des stärksten hoch, nie fallend, und bekommen +${G_SCHILD_BONUS} Masse obendrauf. Beim Bruch gilt jeder Gletscher als Nachbar aller anderen: volle Kaskade und Kollision, egal wo sie liegen.` },
+    desc: `Jeder Eis-Skill friert ${de(G_SCHILD_PER_PICK)} Felder ein statt einem, ohne Höchstzahl. Dein Brett zählt als ein Gletscher: jeden Durchlauf teilen sich alle dieselbe Masse. Beim Bersten gilt jeder als voll umschlossen und erbt die stärkste Gletscher-Formation des Bretts.` },
   SK_ICE_L03: { id: "SK_ICE_L03", name: "Große Lawine", archetype: "ice", legendary: true, keywords: ["glacier"], role: "G_L_LAWINE",
-    desc: `Im letzten Durchlauf brechen ALLE deine Gletscher auf einen Schlag, auch die noch nicht vollen, jeder mit der Wucht der höchsten Schwelle und massiv verstärkt.` },
-  SK_ICE_L04: { id: "SK_ICE_L04", name: "Erstarrung", archetype: "ice", legendary: true, keywords: ["glacier"], role: "G_L_ERSTARRUNG",
-    desc: `Jede vom Bruch getroffene Gegnerkarte verliert ihren Stich, und der Bruch greift über die vier Nachbarn hinaus ins Gegnerfeld. Jeder Bruch zählt ×${de(1 + G_ERSTARRUNG_FRAC)} Score.` },
+    desc: `${jeder(G_LAWINE_EVERY, "Jeden")} Durchlauf brechen alle deine Gletscher, auch die nicht vollen. Jeder Bruch zählt mit der Wucht der höchsten Schwelle und ×${de(G_LAWINE_MULT)}.` },
+  // (§5.2: Erstarrung SK_ICE_L04 gestrichen — die Kontrolle ist Einfrieren in groß, und der Score-Teil war ein nackter
+  //  Faktor auf den Bruch. Drei Legendäre je Fraktion, §6.11.)
 
-  // ---- Pflanze-Fraktion (v0) — „Der Garten, der sich selbst überwuchert." NEU (4. Fraktion). Wachstum (nur steigend)
-  //      → Reife (grün) → Farbblock → Score. Grün = Farbe, nicht Kraft; Wert nur über Wurzeln (Deckel 11).
-  //      Grundmechanik: Alter Anker (Aktivierung startet 1 reife Karte). Flags in engine/formations/reducer gelesen. ----
-  // Linie 1 — Wurzeln (Tiefe: Wert & Wurzeln-Score) — die Wert-aus-Wachstum-Mechanik ist jetzt die MONO-Fraktions-Passive (s. u.), kein Skill mehr.
-  SK_PLANT_02: { id: "SK_PLANT_02", name: "Wurzeltiefe", archetype: "plant", keywords: ["growth", "score"],
-    desc: `Jeder Sieg einer grünen Karte gibt +${C.WURZELTIEFE_SCORE} Wurzel-Score, dazu einen Bonus, der mit dem Gesamtwachstum des Feldes steigt (max. +${C.WURZELTIEFE_FIELD_CAP} bei ~${grp(Math.round((C.WURZELTIEFE_FIELD_CAP / C.WURZELTIEFE_FIELD_K) ** 2 / 1000) * 1000)} Wachstum).`, wurzeltiefe: true },
-  SK_PLANT_03: { id: "SK_PLANT_03", name: "Pfahlwurzel", archetype: "plant", keywords: ["growth", "score", "formation"],
-    desc: `Verstärker: Die Wurzel-Basis (${C.WURZELTIEFE_SCORE}) ×${C.PFAHLWURZEL_MULT}, wenn die grüne Karte in einer Formation gewinnt.`, enabler: "SK_PLANT_02", pfahlwurzel: true },
-  SK_PLANT_04: { id: "SK_PLANT_04", name: "Jahresringe", archetype: "plant", keywords: ["growth", "score"],
-    desc: `Verstärker: Je volle ${C.JAHRESRINGE_PER_GROWTH} eigenes Wachstum gibt eine grüne Karte bei ihrem Sieg +${C.JAHRESRINGE_SCORE} Wurzel-Score extra.`, enabler: "SK_PLANT_02", jahresringe: true },
-  // Linie 2 — Aussaat (Breite: Wachstum verbreiten)
-  SK_PLANT_05: { id: "SK_PLANT_05", name: "Aussaat", archetype: "plant", keywords: ["growth"],
-    desc: `Gewinnt eine grüne Karte, sät sie beide Nachbarn: +${C.AUSSAAT_GROWTH} Wachstum je Seite.\n${TRIMMEN}`, aussaat: true, trimGrowth: true },
-  SK_PLANT_06: { id: "SK_PLANT_06", name: "Flugsamen", archetype: "plant", keywords: ["growth"],
-    desc: `Verstärker: Aussaat überspringt schon grüne Karten und sät die nächste noch-graue dahinter.\n${TRIMMEN}`, enabler: "SK_PLANT_05", flugsamen: true, trimGrowth: true },
-  SK_PLANT_07: { id: "SK_PLANT_07", name: "Setzlingsbeet", archetype: "plant", keywords: ["growth"],
-    desc: `Die niedrigste Karte je Segment startet den Lauf mit +${C.SETZLINGSBEET_GROWTH} Wachstum Vorsprung.\n${TRIMMEN}`, setzlingsbeet: true, trimGrowth: true },
-  SK_PLANT_08: { id: "SK_PLANT_08", name: "Zäher Halm", archetype: "plant", keywords: ["growth"],
-    desc: `Unreife (graue) Karten wachsen auch bei Niederlage +1, bis sie grün sind.\n${TRIMMEN}`, zaeherHalm: true, trimGrowth: true },
-  // Linie 3 — Ranken/Blüte (Grün verbreiten)
-  SK_PLANT_09: { id: "SK_PLANT_09", name: "Ranken", archetype: "plant", keywords: ["green"],
-    desc: "Gewinnt eine grüne Karte, färbt sie einen noch-grauen Nachbarn sofort grün.", ranken: true },
-  SK_PLANT_10: { id: "SK_PLANT_10", name: "Blüte", archetype: "plant", keywords: ["green", "score"],
-    desc: `Gewinnt eine grüne Karte, deren Nachbarn schon grün sind, blüht sie: +${C.BLUETE_SCORE} Blüte-Score je grüner Karte im Segment.`, bluete: true },
-  SK_PLANT_11: { id: "SK_PLANT_11", name: "Blütezeit", archetype: "plant", keywords: ["green", "score", "formation"],
-    desc: `Verstärker: Blüte-Score ×${C.BLUETEZEIT_MULT}, wenn die Karte in einer Formation gewinnt.`, enabler: "SK_PLANT_10", bluetezeit: true },
-  // Linie 4 — Überwucherung (Mono-Grün-Payoff)
-  SK_PLANT_12: { id: "SK_PLANT_12", name: "Photosynthese", archetype: "plant", keywords: ["green", "formation"],
-    desc: `Grüne Karten in einer Formation geben zusätzlich ×${de(C.PHOTOSYNTHESE_MULT)} Score.`, photosynthese: true },
-  SK_PLANT_13: { id: "SK_PLANT_13", name: "Blätterdach", archetype: "plant", keywords: ["green", "formation", "score"],
-    desc: `In einem grünen Farbblock ab ${C.BLAETTERDACH_MIN} Karten gibt jede grüne Karte bei Sieg +${C.BLAETTERDACH_SCORE} Score je Karte im Block (bis ${C.BLAETTERDACH_CARD_CAP}).`, blaetterdach: true },
-  SK_PLANT_14: { id: "SK_PLANT_14", name: "Überwucherung", archetype: "plant", keywords: ["green", "formation", "overgrowth"],
-    desc: `Ist das Feld ≥${pct(C.UEBERWUCHERUNG_FIELD)} % grün, geben alle Farbblöcke +${de(C.UEBERWUCHERUNG_FACTOR)} Faktor und Blüte zählt doppelt.`, ueberwucherung: true },
-  SK_PLANT_18: { id: "SK_PLANT_18", name: "Kernholz", archetype: "plant", keywords: ["value", "score"],
-    desc: `Jeder Sieg einer grünen Karte gibt +${C.KERNHOLZ_SCORE_PER_VALUE} Score je Kartenwert-Punkt über ihrem Startwert (max. +${(C.PLANT_VALUE_CAP - 1) * C.KERNHOLZ_SCORE_PER_VALUE} von Wert 1 auf ${C.PLANT_VALUE_CAP}). Karten gewinnen Wert nur, solange du nur Pflanzen-Skills hältst.`, kernholz: true },
-  // Linie 5 — Ausläufer (Gegnerdeck: kolonisieren & ernten)
-  SK_PLANT_15: { id: "SK_PLANT_15", name: "Ausläufer", archetype: "plant", keywords: ["green", "colonize"],
-    desc: `Gewinnt eine grüne Karte, kolonisiert sie die niedrigste Gegnerkarte. Besiegst du eine kolonisierte Karte, erntest du +${C.AUSLAEUFER_HARVEST} Wachstum.\n${TRIMMEN}`, auslaeufer: true, trimGrowth: true },
-  SK_PLANT_16: { id: "SK_PLANT_16", name: "Rhizom", archetype: "plant", keywords: ["colonize"],
-    desc: `Verstärker: Beim Ernten wird ein ebenfalls kolonisierter Gegner-Nachbar mitgeerntet: +${C.AUSLAEUFER_HARVEST} Wachstum extra.\n${TRIMMEN}`, enabler: "SK_PLANT_15", rhizom: true, trimGrowth: true },
-  SK_PLANT_17: { id: "SK_PLANT_17", name: "Erntedank", archetype: "plant", keywords: ["colonize", "score"],
-    desc: `Verstärker: Erntest du mit einer reifen Karte, gibt es zusätzlich +${C.ERNTEDANK_SCORE} Score.`, enabler: "SK_PLANT_15", erntedank: true },
-  // Legendäre (Reshape 2026-07-30: lesen die verschwendeten Fluten — Überlauf-Wachstum/Grün-Feld/Kolonie — und zahlen je grünem Sieg DIREKT)
-  SK_PLANT_L01: { id: "SK_PLANT_L01", name: "Weltenbaum", archetype: "plant", legendary: true, keywords: ["growth"],
-    desc: `Am Ende jedes Durchlaufs wächst der ganze Wald: +1 Wachstum je ${C.WELTENBAUM_PER_GREEN} grüne Karten im Feld. Jeder grüne Sieg gibt +${de(C.WELTENBAUM_DIRECT)} Score je Wachstum über dem Wert-Deckel, summiert über alle grünen Karten (bis ${C.WELTENBAUM_OVERFLOW_CAP}).`, weltenbaum: true },
-  SK_PLANT_L02: { id: "SK_PLANT_L02", name: "Mutterbaum", archetype: "plant", legendary: true, keywords: ["growth", "score"],
-    desc: `Mit Wurzeltiefe: Ist deine höchstgewachsene Karte am Zug, verdoppelt sie ihren Wurzel-Score. Jeder grüne Sieg gibt +${C.MUTTERBAUM_DIRECT} Score je Wachstum deines tiefsten Baums über dem Wert-Deckel (bis ${C.MUTTERBAUM_OVERFLOW_CAP}), auch ohne Wurzeltiefe.`, mutterbaum: true },
-  SK_PLANT_L03: { id: "SK_PLANT_L03", name: "Baumreihe", archetype: "plant", legendary: true, keywords: ["growth", "formation"],
-    desc: `Voll ausgewachsene grüne Karten (Wert ${C.PLANT_VALUE_CAP}) bilden eine positionsfreie Wiederholung, egal wo sie liegen: ab 2 solchen Karten ×${de(C.BAUMREIHE_BASE)} auf ihre Stiche, je weitere +${de(C.BAUMREIHE_STEP)}, bis ×${de(C.BAUMREIHE_CAP)}. Jede darf zugleich in einer anderen Formation zählen.`, baumreihe: true },
-  SK_PLANT_L04: { id: "SK_PLANT_L04", name: "Ewiger Frühling", archetype: "plant", legendary: true, keywords: ["green", "overgrowth", "eternalSpring"],
-    desc: `Jeder grüne Sieg gibt +${C.EWIGER_FRUEHLING_DIRECT} Score je grüner Karte im Feld (bis ${C.EWIGER_FRUEHLING_FIELD_CAP}). Bei voll grünem Feld zählt jede grüne Karte ${de(C.EWIGER_FRUEHLING_FULLGREEN_MULT)}× (effektiv bis ${C.EWIGER_FRUEHLING_FIELD_CAP * C.EWIGER_FRUEHLING_FULLGREEN_MULT}).`, ewigerFruehling: true },
+  // ---- Pflanze (exp skill rework, §6): Passiv = Wachstum je Karte (+1 je Sieg, +1 je Formation an der Siegposition),
+  //      grün ab der Grün-Schwelle, blühend ab der Blüh-Schwelle; eine blühende Siegkarte zahlt Basis-Score je grüner
+  //      Karte in ihren Formationen. Die Mechanik liest die Stufentabellen oben (factions/plant.js); die vier Hebel
+  //      (Spalier, Wildwuchs, Lücke, Überwucherung) ändern die Erkennung in formations.js. Texte: ein Satz je Stufe.
+  // Wachstum — schneller und breiter grün werden
+  SK_PLANT_05: { id: "SK_PLANT_05", name: "Aussaat", archetype: "plant", keywords: ["growth", "green"], tiers: PFLANZE.aussaat,
+    ...tiered(PFLANZE.aussaat, (r) => `Gewinnt eine grüne Karte, wachsen beide Nachbarn +${r.growth}.${r.second ? ` Auch die zweiten Nachbarn wachsen +${r.second}.` : ""}`) },
+  SK_PLANT_09: { id: "SK_PLANT_09", name: "Ranken", archetype: "plant", keywords: ["growth", "green"], tiers: PFLANZE.ranken,
+    ...tiered(PFLANZE.ranken, (r) => `Gewinnt eine grüne Karte, rankt sie in die geschlagene Gegnerkarte. Besiegst du eine berankte Gegnerkarte, erntest du sie: +${r.growth} Wachstum für deine Siegkarte.${r.neighbors ? " Beim Ernten ranken ihre Nachbarn mit." : ""}`) },
+  SK_PLANT_07: { id: "SK_PLANT_07", name: "Setzlingsbeet", archetype: "plant", keywords: ["growth"], tiers: PFLANZE.setzlingsbeet,
+    ...tiered(PFLANZE.setzlingsbeet, (r) => `Die Karten ${r.allSegments ? "jedes Segments" : "deines grünsten Segments"} wachsen am Ende eines Durchlaufs +${r.growth}.`) },
+  SK_PLANT_12: { id: "SK_PLANT_12", name: "Lichtung", archetype: "plant", keywords: ["growth", "formation"], tiers: PFLANZE.lichtung,
+    ...tiered(PFLANZE.lichtung, (r) => `Ein Sieg in einer Formation gibt +${r.extra} Wachstum zusätzlich${r.perFormation ? ", je Formation an der Siegposition" : ""}.`) },
+  SK_PLANT_08: { id: "SK_PLANT_08", name: "Zäher Halm", archetype: "plant", keywords: ["growth"], tiers: PFLANZE.halm,
+    ...tiered(PFLANZE.halm, (r) => `Verliert eine Karte, wächst sie +${r.growth}.${r.perFormation ? ` Zusätzlich +${C.PLANT_GROWTH_PER_FORMATION} je Formation an ihrer Position.` : ""}`) },
+  // Hebel — sie ändern, was als Formation erkannt wird, und addieren keinen Score
+  SK_PLANT_03: { id: "SK_PLANT_03", name: "Spalier", archetype: "plant", keywords: ["green", "formation"], tiers: PFLANZE.spalier,
+    ...tiered(PFLANZE.spalier, (r) => `${r.borders === 1 ? "Die Segmentgrenze mit den meisten grünen Karten daneben ist offen" : r.borders >= 7 ? "Alle Segmentgrenzen mit grünen Karten daneben sind offen" : `Die ${r.borders} Segmentgrenzen mit den meisten grünen Karten daneben sind offen`}: Formationen laufen dort über das Segment hinaus.`) },
+  SK_PLANT_06: { id: "SK_PLANT_06", name: "Wildwuchs", archetype: "plant", keywords: ["bloom", "formation"], tiers: PFLANZE.wildwuchs,
+    ...tiered(PFLANZE.wildwuchs, (r) => `${r.jokers === 1 ? "Deine am weitesten gewachsene blühende Karte zählt" : Number.isFinite(r.jokers) ? `Deine ${r.jokers} am weitesten gewachsenen blühenden Karten zählen` : "Alle blühenden Karten zählen"} bei der Formationserkennung als Joker.`) },
+  SK_PLANT_15: { id: "SK_PLANT_15", name: "Dickicht", archetype: "plant", keywords: ["green", "formation"], tiers: PFLANZE.dickicht,
+    ...tiered(PFLANZE.dickicht, (r) => `Grüne Farbblöcke zählen bis ×${de(r.mult)}.`) },
+  SK_PLANT_14: { id: "SK_PLANT_14", name: "Verwachsung", archetype: "plant", keywords: ["formation"], tiers: PFLANZE.verwachsung,
+    ...tiered(PFLANZE.verwachsung, (r) => `Mehrere Formationen an deiner Siegposition: ihr Überlappungsbonus ist um ${de(r.bonus)} höher.`) },
+  // Score aus grünen Formationen — je Formationstyp einer, dazu die Tiefe der einzelnen Karte
+  SK_PLANT_13: { id: "SK_PLANT_13", name: "Blätterdach", archetype: "plant", keywords: ["green", "formation", "score"], tiers: PFLANZE.blaetterdach,
+    ...tiered(PFLANZE.blaetterdach, (r) => `Ein Sieg in einem grünen Farbblock gibt +${r.score} Basis-Score je grüner Karte darin.`) },
+  SK_PLANT_16: { id: "SK_PLANT_16", name: "Rankgerüst", archetype: "plant", keywords: ["green", "formation", "score"], tiers: PFLANZE.rankgeruest,
+    ...tiered(PFLANZE.rankgeruest, (r) => `Ein Sieg in einer grünen Treppe gibt +${r.score} Basis-Score je grüner Karte darin.`) },
+  SK_PLANT_10: { id: "SK_PLANT_10", name: "Hecke", archetype: "plant", keywords: ["green", "formation", "score"], tiers: PFLANZE.hecke,
+    ...tiered(PFLANZE.hecke, (r) => `Ein Sieg in einer grünen Wiederholung gibt +${r.score} Basis-Score je grüner Karte darin.`) },
+  SK_PLANT_11: { id: "SK_PLANT_11", name: "Windung", archetype: "plant", keywords: ["green", "formation", "score"], tiers: PFLANZE.windung,
+    ...tiered(PFLANZE.windung, (r) => `Ein Sieg in einem grünen Wechsel gibt +${r.score} Basis-Score je grüner Karte darin.`) },
+  SK_PLANT_04: { id: "SK_PLANT_04", name: "Jahresringe", archetype: "plant", keywords: ["growth", "score"], tiers: PFLANZE.jahresringe,
+    ...tiered(PFLANZE.jahresringe, (r) => `Ein Sieg gibt +${r.score} Basis-Score je ${r.per} Wachstum der Siegkarte.${r.overDouble ? ` Wachstum über ${C.PLANT_BLOOM_THRESHOLD} zählt doppelt.` : ""}`) },
+  // Kombination — Score und Wachstum in einem
+  SK_PLANT_17: { id: "SK_PLANT_17", name: "Blütenlese", archetype: "plant", keywords: ["green", "formation", "growth"], tiers: PFLANZE.bluetenlese,
+    ...tiered(PFLANZE.bluetenlese, (r) => `Ein Sieg in einer rein grünen Formation gibt +${r.score} Basis-Score und lässt alle Karten darin +${r.growth} wachsen.`) },
+  // Legendäre (§6.11, Owner: drei je Fraktion, die stärksten): keine Stufe, kein Direkt-Score. Drei Achsen —
+  // Wurzelgeflecht die Dichte, Baumreihe der Multiplikator, Ewiger Frühling das Zielbild.
+  SK_PLANT_L02: { id: "SK_PLANT_L02", name: "Wurzelgeflecht", archetype: "plant", legendary: true, keywords: ["bloom", "formation"],
+    desc: `Jede blühende Karte zählt in jeder Formation ihres Segments mit.${C.WURZELGEFLECHT_FACTOR_SCALE < 1 ? ` Sie selbst bekommt ${pct(C.WURZELGEFLECHT_FACTOR_SCALE)} % des Formations-Bonus.` : ""}` },
+  SK_PLANT_L03: { id: "SK_PLANT_L03", name: "Baumreihe", archetype: "plant", legendary: true, keywords: ["bloom", "formation"],
+    desc: `Blühende Karten bilden eine Wiederholung, egal wo sie liegen. Sie zählt als Formation und zahlt ${pct(C.BAUMREIHE_FACTOR_SCALE)} % des Wiederholungs-Bonus, aber keinen Basis-Score je Karte. Jede Karte darf zugleich in einer anderen Formation zählen.` },
+  SK_PLANT_L04: { id: "SK_PLANT_L04", name: "Ewiger Frühling", archetype: "plant", legendary: true, keywords: ["green", "bloom"],
+    desc: `Blühende Karten kämpfen mit +${C.EWIGER_FRUEHLING_BLOOM_VALUE} Wert, und ihr Sieg zählt +${pct(C.EWIGER_FRUEHLING_FORM_MULT)} % je Formation an ihrer Position. Ist dein ganzes Deck grün, sind alle deine Karten blühend.` },
+
 };
 
 export const SKILL_LIST = Object.values(SKILL_DEFS);
 export const archetypeOf = (id) => SKILL_DEFS[id]?.archetype || null;
 // Eis-Neudesign: aktive Gletscher-Rollen (glacier.js ROLES) aus den gehaltenen Skill-`role`-Feldern.
 export const glacierRolesOf = (skills = []) => (skills || []).map((id) => SKILL_DEFS[id]?.role).filter(Boolean);
-// #288 „Trimmen": ist der Skill wachstums-stützend? (Aussaat/Flugsamen/Setzlingsbeet/Zäher Halm + Ausläufer/Rhizom) — Ersetzen zählt als Trimmung.
-export const isTrimmableSkill = (id) => !!SKILL_DEFS[id]?.trimGrowth;
-// Die Namen der trimmbaren Skills als Aufzählung — EINE Quelle für alle Spielertexte, die sie auflisten
-// (Glossar „Trimmen", PlantBar-Tooltip). Vorher zweimal von Hand gepflegt und beide Male unvollständig.
-export const trimmableSkillNames = (sep = ", ") => SKILL_LIST.filter((s) => s.trimGrowth).map((s) => s.name).join(sep);
 
 /* Skill-Archetypen (#93). Metadaten (Theming/Label) — geteilte Quelle für SkillSelect & HUD.
    Alle drei Archetypen (Blitz/Feuer/Eis) sind vollständig ausgespielt (F0/F1/F3 abgeschlossen). */
@@ -317,13 +447,14 @@ export function archetypesWithSkills(owned = []) {
 /* Aus welchen Archetypen wird das nächste Skill-Angebot gezogen (max C.MAX_ARCHETYPES = 4)? Rein & testbar.
    - 0 aktiv → bis zu 4 zufällige verfügbare Archetypen (Erstangebot).
    - 1–3 aktiv → die aktiven + zufällige noch nicht aktive, bis max. C.MAX_ARCHETYPES.
-   - 4 aktiv → nur die vier aktiven. */
-export function offerArchetypes(activeArchetypes = [], available = [], rng = Math.random) {
+   - 4 aktiv → nur die vier aktiven.
+   exp: `max` overrides the constant for one run (rules.js); the default keeps every existing caller byte-identical. */
+export function offerArchetypes(activeArchetypes = [], available = [], rng = Math.random, max = C.MAX_ARCHETYPES) {
   const active = (activeArchetypes || []).filter((a) => available.includes(a));
-  if (active.length >= C.MAX_ARCHETYPES) return active.slice(0, C.MAX_ARCHETYPES);
+  if (active.length >= max) return active.slice(0, max);
   const picks = [...active];
   const pool = shuffle(available.filter((a) => !active.includes(a)), rng);
-  while (picks.length < C.MAX_ARCHETYPES && pool.length) picks.push(pool.shift());
+  while (picks.length < max && pool.length) picks.push(pool.shift());
   return picks;
 }
 
@@ -334,234 +465,21 @@ export function skillSum(skills, name, ctx) {
   return t;
 }
 
-// Frischer Blitz-Substate — inaktiv. Wird beim ersten Blitz-Skill aktiviert (Reducer).
-// storm* = Gewitterfront (Crit-Chance-Momentum, v0.5 uncapped); entladungMult = Entladung (Crit-Mult-Momentum, v0.5);
-// stauBonus = Spannungsstau-Rampe (Crit-Chance); durchschlagMult = Durchschlag-Dauer-Crit-Mult; dauerstromCritBonus = Dauerstrom-Verbrauchsrampe.
-export function initLightning() {
-  return { active: false, charge: 0, maxCharge: C.LIGHTNING_MAX_CHARGE, stormCritBonus: 0,
-    entladungMult: 0, stauBonus: 0, durchschlagMult: 0, dauerstromCritBonus: 0,
-    consumeCount: 0, serienschutzCount: 0 }; // v0.5-UI: Entladungen/Runde + abgefangene Serienbrüche (Anzeige)
-}
+// (exp skill rework: der Blitz-Substate und die Blitz-Mechanik leben in src/game/factions/lightning.js.)
 
-/* ---- Feuer-Archetyp (#93 F1) — Hitze-Substate + reine Helfer (testbar; Engine-Nutzung in resolveTrick) ---- */
-
-// Frischer Hitze-Substate — inaktiv. Wird beim ersten Feuer-Skill aktiviert (Reducer).
-// fireRoll = Feuerwalze-Stapel · sparkStore = Funkenflug-Speicher · phoenixUsed = Phönixfeuer (1×/Durchlauf).
-// over = Überhitzung (Weißglut, #fire-balance) · glowSegBest = größter Wertvorsprung im LAUFENDEN Segment, gelesen
-// von der Glühenden Klinge (s. glowMarginFor). Beide sind über `|| 0` abgesichert — Altstände laufen weiter.
-// sparkPaid/sparkPayouts (#384) = Bilanz des Funkenflugs für die Skill-Detailansicht: was seine Ausschüttungen
-// diesem Lauf WIRKLICH eingebracht haben (inkl. der Multiplikatoren des auslösenden Stichs, s. engine.js) und wie
-// oft er ausgeschüttet hat. Reine Anzeige — kein Leser im Regelwerk.
-export function initHeat() {
-  return { active: false, value: 0, max: C.HEAT_MAX, fireRoll: 0, sparkStore: 0, phoenixUsed: false, peak: 0,
-           over: 0, glowSegBest: 0, sparkPaid: 0, sparkPayouts: 0 };
-}
-
-// Anzahl gehaltener Feuer-Skills (Grundmechanik zählt nicht) & ob ein Feuer-Flag gehalten wird.
-export const activeFireCount = (skills) => (skills || []).filter((id) => SKILL_DEFS[id]?.archetype === "fire").length;
-// Anzahl gehaltener Blitz-Skills — Bekenntnis-Skalierung der Blitz-Legendär-Dividende (cross-health, wie activeFireCount/iceSkillCount).
+// Anzahl gehaltener Blitz-Skills — das Blitz-Passiv gibt je Skill Crit-Chance (factions/lightning.js).
 export const activeLightningCount = (skills) => (skills || []).filter((id) => SKILL_DEFS[id]?.archetype === "lightning").length;
-export const fireFlag = (skills, flag) => (skills || []).some((id) => SKILL_DEFS[id]?.[flag]);
-// Hitze-Maximum (fix 100).
-export const heatMaxFor = () => C.HEAT_MAX;
-// Anzahl gehaltener Hitze-Konsumenten (#234: informativ — nicht mehr im Reducer geblockt, seit Feuer mehrere halten darf).
-export const heatConsumerCount = (skills) => (skills || []).filter((id) => SKILL_DEFS[id]?.heatConsumer).length;
-// Hält der Spieler den Hitze-Konsumenten `kind` ("conflagration"/"melt")? #234: mehrere gleichzeitig erlaubt (heben sich
-// nicht auf) → die Engine prüft jeden Konsumenten EINZELN hiermit, statt nur den ersten.
-export const hasHeatConsumer = (skills, kind) => (skills || []).some((id) => SKILL_DEFS[id]?.heatConsumer === kind);
 
-// Hitzegewinn bei Sieg (%). ctx = { winStreak, lostLast, deficit } für Serie/Rückzündung.
-//  · Marge (ab HEAT_MIN_MARGIN): marginHeatPoints(Vorsprung)×PER_POINT (linear bis Knie, √-Schwanz darüber), Glut ×1,5 (kaufm. gerundet)
-//  · Zunder: +2 % flach, AUCH bei knappen Siegen unter der Marge-Schwelle
-//  · Feuersturm: +1 % je Serienstufe (bis +5 %)
-//  · Rückzündung: nach einer Niederlage +1 % je Wert-Rückstand des Vorstichs
-// Margen-Hitzepunkte: linear bis zum weichen Knie (HEAT_MARGIN_CAP), darüber √-Schwanz (uncapped, abnehmender
-// Ertrag — wie Wurzeltiefe). Ersetzt den früheren HARTEN Deckel: großer Vorsprung generiert weiter Hitze.
-export function marginHeatPoints(margin) {
-  const knee = C.HEAT_MARGIN_CAP;
-  const lin = Math.min(margin, knee) - C.FIRE_MARGIN_OFFSET; // linear bis zum Knie (wie bisher)
-  if (margin <= knee) return lin;
-  return lin + C.HEAT_MARGIN_TAIL_K * Math.sqrt(margin - knee); // √-Schwanz über dem Knie
-}
-export function heatGainFor(margin, skills, ctx = {}) {
-  let g = 0;
-  if (margin >= C.HEAT_MIN_MARGIN) {
-    let base = Math.round(marginHeatPoints(margin) * C.HEAT_PER_POINT); // ganzzahlige Hitze (√-Schwanz gerundet)
-    if (fireFlag(skills, "emberBoost")) base = Math.round(base * C.EMBER_MULT);
-    g += base;
-  }
-  if (fireFlag(skills, "zunder")) g += C.ZUNDER_HEAT;
-  if (fireFlag(skills, "feuersturm")) g += Math.min((ctx.winStreak || 0) * C.FEUERSTURM_STEP, C.FEUERSTURM_CAP);
-  if (fireFlag(skills, "rueckzuendung") && ctx.lostLast) g += (ctx.deficit || 0) * C.RUECKZUENDUNG_HEAT_PER_DEFICIT;
-  return g;
-}
-// Hitzeverlust bei Niederlage (%): Basis min(Rückstand,10). Glutbett: ×0,5, unter 30 % Hitze gar keiner.
-// `heatValue` = Hitze VOR dem Verlust.
-export function heatLossFor(deficit, skills, heatValue = 0) {
-  let l = Math.min(deficit, C.HEAT_LOSS_MAX) + heatValue * C.HEAT_LOSS_PCT; // Basis-Verlust + prozentuale Abkühlung (hält hohe Hitze nicht-trivial: mehr Verlust wenn heiß)
-  if (fireFlag(skills, "glutbett")) {
-    if (heatValue < C.GLUTBETT_FREE_BELOW) return 0;
-    l *= C.GLUTBETT_MULT;
-  }
-  return Math.floor(l);
-}
-// Verbrennung-Multiplikator auf den Feuer-Score nach Wertvorsprung (Linie 4).
-export function verbrennungMult(margin) {
-  if (margin >= C.VERBRENNUNG_T2_MARGIN) return C.VERBRENNUNG_T2_MULT;
-  if (margin >= C.VERBRENNUNG_T1_MARGIN) return C.VERBRENNUNG_T1_MULT;
-  return 1;
-}
-// Feuer-Flat-Score bei Sieg: (Vorsprung−FIRE_MARGIN_OFFSET) × (25 + 5×(FeuerSkills−1)) + additiver √-Bonus (Basis·K·√Vorsprung, uncapped), dann Verbrennung (×1,5/×2).
-// 0 ohne Feuer-Skill. (Sonnenzorn wirkt jetzt als peak-hitze-Multiplikator in der Engine, nicht mehr hier.)
-export function fireScoreFor(margin, skills, _heatValue = 0) {
-  const n = activeFireCount(skills);
-  if (n === 0 || margin < C.HEAT_MIN_MARGIN) return 0;
-  const base = C.FIRE_SCORE_BASE + C.FIRE_SCORE_PER_SKILL * (n - 1);
-  const over = Math.max(0, margin - C.FIRE_MARGIN_OFFSET);
-  // lineare Linie (wie bisher) + additiver √-Bonus (Wurzeltiefe-Muster): großer Vorsprung zahlt weiter mehr, uncapped.
-  let s = over * base + base * C.FIRE_SCORE_SQRT_K * Math.sqrt(over);
-  if (fireFlag(skills, "verbrennung")) s *= verbrennungMult(margin);
-  return Math.round(s);
-}
-// Maßgeblicher Wertvorsprung für die Glühende Klinge: der größte Sieg des LAUFENDEN Segments — kein Übertrag aus
-// dem vorigen. Jedes Segment beginnt damit auf der reinen Hitze-Stufe und hebt sich, sobald darin ein Sieg mit
-// genug Vorsprung fällt; bleiben alle fünf Karten darunter, steht die Klinge dieses Segment auf der Stufe, die der
-// beste Sieg darin hergibt. Ein einzelner knapper Sieg stuft NICHT zurück — der Beste des Segments zählt.
-export const glowMarginFor = (heat) => Math.max(0, heat?.glowSegBest || 0);
+// (exp skill rework: der Hitze-Substate und die Feuer-Mechanik leben in src/game/factions/fire.js — Passiv, 15 Skills
+//  und 4 Legendäre lesen dort die Stufentabellen FEUER_TIERS.)
 
-// Glühende-Klinge-Wertbonus (Stufen +1/+2/+3). Reiner Nicht-Legendär-Skill.
-// #fire-balance: Stufe 1 hängt allein an der Hitze (verlässlicher Sockel), die OBEREN zusätzlich am Wertvorsprung —
-// sonst lag mit Feuerwalze dauerhaft +6 Wert auf jeder Karte und blies genau die Margen auf, aus denen die Hitze
-// kommt. `bestMargin` kommt aus glowMarginFor (Segment-Fenster). Voreinstellung Infinity = „kein Margen-Gate"
-// (Anzeige-/Testaufrufer ohne Kontext).
-export function glowingValueFor(heatValue, skills, bestMargin = Infinity) {
-  if (!fireFlag(skills, "glowingBlade")) return 0;
-  let v = 0;
-  if (heatValue >= C.GLOWING_T1_HEAT) v = C.GLOWING_T1_VALUE;
-  if (heatValue >= C.GLOWING_T2_HEAT && bestMargin >= C.GLOWING_T2_MARGIN) v = C.GLOWING_T2_VALUE;
-  if (heatValue >= C.GLOWING_T3_HEAT && bestMargin >= C.GLOWING_T3_MARGIN) v = C.GLOWING_T3_VALUE;
-  return v;
-}
-
-/* Weißglut → ÜBERHITZUNG (#fire-balance). Drei reine Helfer; die Zone liegt in `heat.over` und ist damit von
-   allem isoliert, was `heat.value` liest (Sonnenzorn-Peak, Glutdividende, Glühende Klinge, Flächenbrand). */
-// Zufluss aus dem Hitze-Überlauf, mit STEIGENDEN Kosten: ankommend = Überlauf / (1 + over/K). Bei 0 kommt alles an,
-// bei 30 noch ein Viertel — tiefe Überhitzung verlangt echten Wertvorsprung, nicht viele kleine Siege.
-export function overheatGain(over, overflow, skills) {
-  const o = Math.max(0, over || 0);
-  if (overflow <= 0 || !fireFlag(skills, "whiteHeat")) return o;
-  return Math.min(C.OVERHEAT_MAX, o + overflow / (1 + o / C.OVERHEAT_COST_K));
-}
-// Kontinuierlicher Abbau je Stich (nicht nur bei Niederlage) — `amount` = OVERHEAT_DECAY bzw. OVERHEAT_DECAY_LOSS.
-export const overheatDecay = (over, amount) => Math.max(0, (over || 0) - amount);
-// Der Hebel: Multiplikator auf den GESAMTEN Feuer-Score eines Stichs (+2 % je Punkt, bei OVERHEAT_MAX also ×2).
-export function overheatMult(over, skills) {
-  if (!fireFlag(skills, "whiteHeat")) return 1;
-  return 1 + Math.min(Math.max(0, over || 0), C.OVERHEAT_MAX) * C.OVERHEAT_SCORE_STEP;
-}
-// Sonnenzorn: Score-Multiplikator aus dem Hitze-HÖCHSTSTAND. Zwei Sätze — bis HEAT_MAX der leichte Teil, darüber
-// die teuer erkaufte Überhitzung (#fire-leg, s. Konstanten-Block).
-export function sunwrathMultFor(peak, skills) {
-  if (!fireFlag(skills, "sunwrath")) return 1;
-  const p = Math.max(0, peak || 0);
-  return 1 + Math.min(p, C.HEAT_MAX) * C.SUNWRATH_PEAK_STEP
-           + Math.max(0, p - C.HEAT_MAX) * C.SUNWRATH_OVER_STEP;
-}
-// Flächenbrand: Score je verbranntem Hitzepunkt — bekenntnis-skaliert wie fireScoreFor (ein 2-Skill-Splash bekommt wenig).
-export const conflagRateFor = (skills) =>
-  C.CONFLAG_PER_HEAT + C.CONFLAG_PER_SKILL * Math.max(0, activeFireCount(skills) - 1);
-// Schmelzpunkt: Score je verbranntem Punkt — steigt mit der GEHALTENEN Hitze (Halte-Mechanik, s. Konstanten-Block).
-export const meltRateFor = (heatValue) =>
-  C.MELT_SCORE_BASE + C.MELT_SCORE_PER_HEAT * Math.max(0, heatValue || 0);
-// Funkenflug: Einlage je kleinem Sieg — Vielfaches des Feuer-Scores + bekenntnis-skalierter Sockel (damit auch ein
-// Sieg mit 1–2 Vorsprung einzahlt; dessen Feuer-Score ist unter HEAT_MIN_MARGIN exakt 0).
-export const sparkBankFor = (fireScore, skills) =>
-  Math.round((fireScore || 0) * C.SPARKFLIGHT_BANK_MULT
-    + C.SPARKFLIGHT_FLOOR_BASE + C.SPARKFLIGHT_FLOOR_PER_SKILL * Math.max(0, activeFireCount(skills) - 1));
-// Schmieden: Asche-Kosten je Schmiedung. #268: Schmelzofen-Rabatt ab 50 % Hitze als FAKTOR (−25 %, skaliert mit den
-// Kosten: 20 → 15), nicht mehr flat −1 (bei Kosten 20 trivial). Ganzzahlig gerundet, min 1.
-export function forgeCostFor(skills, heatValue = 0) {
-  let c = C.FORGE_COST;
-  if (fireFlag(skills, "schmelzofen") && heatValue >= C.SCHMELZOFEN_MIN_HEAT) c *= (1 - C.SCHMELZOFEN_FORGE_DISCOUNT);
-  return Math.max(1, Math.round(c));
-}
+// (exp skill rework §6: der Pflanze-Zustand — Wachstum je Karte, die drei Zustände und die Mechanik der 15 Skills und
+//  4 Legendären — lebt in src/game/factions/plant.js und liest dort die Stufentabellen PFLANZE_TIERS. Grün und blühend
+//  sind in der Karte gebacken (card.green / card.bloom), damit Formations-Engine und Anzeige dieselbe Quelle lesen.)
 
 
-/* ---- Pflanze-Fraktion (v0) — Wachstum (nur steigend) → Reife (grün) → Farbblock → Score. Reine Helfer. ---- */
-const plantFlag = (skills, flag) => (skills || []).some((id) => SKILL_DEFS[id]?.[flag]);
-export const plantSkillCount = (skills) => (skills || []).filter((id) => SKILL_DEFS[id]?.archetype === "plant").length;
-// Reife: grün ist ein KARTEN-Flag (card.green) — gebacken bei Erreichen der Wachstums-Schwelle
-// ODER per Recolor (Alter Anker/Ranken). So liest die Formations-Erkennung Grün direkt von der Karte (Farbblock).
-export const isGreen = (card) => !!card?.green;
-export const greenCount = (deck) => (deck || []).filter((c) => c.green).length;
-// Soll diese Karte (nach Wachstums-Update) reif/grün sein? (Schwelle erreicht.)
-export const growthRipe = (growth) => (growth || 0) >= C.PLANT_GREEN_THRESHOLD;
-// Wurzeln-Score je Sieg einer grünen Karte (Anzeige-Helfer für CardDetail #211): BASIS-Flat aus Wurzeltiefe +
-// Jahresringe (je 10 Wachstum). Spiegelt engine.js (Wurzeltiefe/Jahresringe); der Pfahlwurzel-Faktor (×2 in Formation)
-// wird in der UI separat vermerkt, damit die Basiszahl stabil bleibt. Der feldweite Feldtiefe-Bonus (√Gesamtwachstum)
-// hängt NICHT an einer Einzelkarte und ist hier bewusst nicht enthalten (er fließt nur in den echten Score der Engine).
-export const plantRootScore = (skills, growth) => {
-  if (!hasWurzeltiefe(skills)) return 0;
-  let r = C.WURZELTIEFE_SCORE;
-  if (hasJahresringe(skills)) r += Math.floor((growth || 0) / C.JAHRESRINGE_PER_GROWTH) * C.JAHRESRINGE_SCORE;
-  return r;
-};
-// Flag-Prädikate (in engine/formations/reducer gelesen).
-// Pflanze-Fraktions-Passive „Wurzelschlag" (v0.5): MONO-Gate — nur aktiv, solange AUSSCHLIESSLICH Pflanzen-Skills
-// gehalten werden (mind. 1). Steuert die Wert-aus-Wachstum-Ableitung (Sieg) + die Niederlage-Klausel.
-export const isMonoPlant      = (skills) => (skills || []).length > 0 && plantSkillCount(skills) === (skills || []).length;
-// ERKUNDUNG Hebel 3c: Gate der Wert-Passive. Default (PLANT_PASSIVE_MIN_SKILLS=0) = hartes Mono-Gate (isMonoPlant, neutral).
-// >0 = Schwellen-Knick: aktiv ab N Pflanzen-Skills, egal ob Fremd-Skills dabei (Commitment-Tiefe statt Reinheit).
-export const plantPassiveActive = (skills) =>
-  isMonoPlant(skills) || (C.PLANT_PASSIVE_MIN_SKILLS > 0 && plantSkillCount(skills) >= C.PLANT_PASSIVE_MIN_SKILLS);
-export const hasKernholz      = (skills) => plantFlag(skills, "kernholz");
-export const hasWurzeltiefe   = (skills) => plantFlag(skills, "wurzeltiefe");
-export const hasPfahlwurzel   = (skills) => plantFlag(skills, "pfahlwurzel");
-export const hasJahresringe   = (skills) => plantFlag(skills, "jahresringe");
-export const hasAussaat       = (skills) => plantFlag(skills, "aussaat");
-export const hasFlugsamen     = (skills) => plantFlag(skills, "flugsamen");
-export const hasSetzlingsbeet = (skills) => plantFlag(skills, "setzlingsbeet");
-export const hasZaeherHalm    = (skills) => plantFlag(skills, "zaeherHalm");
-export const hasRanken        = (skills) => plantFlag(skills, "ranken");
-export const hasBluete        = (skills) => plantFlag(skills, "bluete");
-export const hasBluetezeit    = (skills) => plantFlag(skills, "bluetezeit");
-export const hasPhotosynthese = (skills) => plantFlag(skills, "photosynthese");
-export const hasBlaetterdach  = (skills) => plantFlag(skills, "blaetterdach");
-export const hasUeberwucherung = (skills) => plantFlag(skills, "ueberwucherung");
-export const hasAuslaeufer    = (skills) => plantFlag(skills, "auslaeufer");
-export const hasRhizom        = (skills) => plantFlag(skills, "rhizom");
-export const hasErntedank     = (skills) => plantFlag(skills, "erntedank");
-export const hasWeltenbaum    = (skills) => plantFlag(skills, "weltenbaum");
-export const hasMutterbaum    = (skills) => plantFlag(skills, "mutterbaum");
-export const hasBaumreihe     = (skills) => plantFlag(skills, "baumreihe");
-export const hasEwigerFruehling = (skills) => plantFlag(skills, "ewigerFruehling");
-
-// Roh-Crit-Beitrag des Blitz-Archetyps (Abschnitt 2a): Aktivierungs-Sockel + Σ Skill-critChance
-// + Gewitterfront-Bonus (dauerhaft, Stufe C). Fließt additiv in die Gesamt-Crit-Chance. 0, solange inaktiv.
-export function lightningCritRaw(lightning, skills, streak = 0) {
-  if (!lightning || !lightning.active) return 0;
-  // Ladungsserie (v0): Serie speist die Crit-Maschine — je Serienpunkt +Crit-Chance (Cap). Dauerstrom-Verbrauchsrampe (dauerhaft).
-  const series = hasSeriesCrit(skills) ? Math.min((streak || 0) * C.SERIESCRIT_STEP, C.SERIESCRIT_CAP) : 0;
-  return C.LIGHTNING_CRIT_BASE + skillSum(skills, "critChance", {}) + (lightning.stormCritBonus || 0)
-    + (lightning.stauBonus || 0) + (lightning.dauerstromCritBonus || 0) + series;
-}
-
-// Ladung erhöhen (immutabel), gedeckelt auf maxCharge. No-op, solange der Archetyp inaktiv ist.
-export function addCharge(lightning, gained) {
-  if (!lightning || !lightning.active) return lightning;
-  return { ...lightning, charge: Math.min(lightning.maxCharge, lightning.charge + gained) };
-}
-
-// Ein Skill ist ein „Konsument", wenn er eine verbrauchbare Ressource auslöst: Feuer-Hitze-Konsument
-// (heatConsumer: Flächenbrand/Schmelzpunkt) oder Blitz-Ladungs-Konsument (onFullCharge: Ionisierung).
-const isConsumerSkill = (id) => { const d = SKILL_DEFS[id]; return !!(d && (d.heatConsumer || d.onFullCharge)); };
-// Hält der Build für diesen Archetyp bereits einen Konsumenten? Eis kennt keine → gilt als „hat einen" (nie erzwingen).
-// (heatConsumerCount/chargeConsumerCount stehen weiter unten im Modul — zur Laufzeit längst initialisiert.)
-function ownsConsumerFor(arch, skills) {
-  if (arch === "fire") return heatConsumerCount(skills) > 0;
-  if (arch === "lightning") return chargeConsumerCount(skills) > 0;
-  return true;
-}
+// (exp skill rework: die Konsument-Garantie des Angebots ist mit der Verbraucher-Regel entfallen — Blitz und Feuer
+//  tragen ihren Payoff im Passiv, ein Angebotsplatz wird nicht mehr erzwungen.)
 
 // Angebot (#93 F0): bis zu `count` noch nicht gehaltene Skills, nach Archetyp gruppiert (3+3+3+3),
 // aus max C.MAX_ARCHETYPES Archetypen (offerArchetypes). Deterministisch über den injizierten rng.
@@ -569,64 +487,38 @@ function ownsConsumerFor(arch, skills) {
 // #217 Meistergrade: ob eine Skill-id ein Legendär ist (Garantie-Erkennung bei Grad V). Rein & node-testbar.
 export const isLegendarySkill = (id) => !!SKILL_DEFS[id]?.legendary;
 
+// Immer HÖCHSTENS 3 Skills je Archetyp anbieten (das ganze Spiel, inkl. Onboarding). Bei wenigen freigeschalteten
+// Archetypen (Onboarding) ergäbe count/chosen.length sonst 6 pro Archetyp — daher hart auf PER_ARCH_CAP gedeckelt.
+// exp: exported as the default of buildSkillOffer's `perArchCap`; a Dev-Run passes its own (rules.js).
+export const SKILL_OFFER_PER_ARCH_CAP = 3;
+
 // unlockedArchetypes (Progression §4): Allowlist der im Lauf anbietbaren Archetypen (Onboarding-Gatung).
 // null/undefined = keine Gatung (Sim/Standard/Meister → alle 4, byte-identisch).
-export function buildSkillOffer(owned, activeArchetypes, rng, count, legendaryChance = 0, guaranteeOne = false, unlockedArchetypes = null) {
+// exp: maxArchetypes/perArchCap = per-run rules; the defaults are the constants → existing callers byte-identical.
+// exp skill rework: the 5th/6th parameters (legendary chance / guarantee) are kept in the signature for the existing
+// call sites and tests but are inert — legendaries never come out of this builder. They are the fifth rarity of
+// rollSkillOfferTiers() below.
+// Offerable skills of one faction: not held, not legendary (fifth rarity of the roll), and an enabler-gated
+// booster only with its base held (Anti-Pech: an ungated booster is a dead pick). Shared by both builders.
+const offerPool = (arch, owned) => SKILL_LIST.filter((s) => s.archetype === arch && !(owned || []).includes(s.id)
+  && !s.legendary && (!s.enabler || (owned || []).includes(s.enabler))).map((s) => s.id);
+
+// Flat offer: up to `perArchCap` skills per archetype, `count` in total. The game itself draws the door offer
+// (buildSkillDoors below); this builder stays for the sim's flat measurements and the tests of the pool rules.
+export function buildSkillOffer(owned, activeArchetypes, rng, count, _legendaryChance = 0, _guaranteeOne = false, unlockedArchetypes = null, maxArchetypes = C.MAX_ARCHETYPES, perArchCap = SKILL_OFFER_PER_ARCH_CAP) {
   let available = archetypesWithSkills(owned);
   if (unlockedArchetypes) available = available.filter((a) => unlockedArchetypes.includes(a));
-  const chosen = offerArchetypes(activeArchetypes || [], available, rng);
+  const chosen = offerArchetypes(activeArchetypes || [], available, rng, maxArchetypes);
   if (!chosen.length) return [];
-  // #247: Legendäre laufen über einen eigenen Wurf JE ARCHETYP (nicht mehr EIN globaler Roll). Bei gateLeg werden sie
-  // aus dem normalen Zug ausgeschlossen und kommen ausschließlich über diese Würfe — je getroffenem Archetyp EINER
-  // (mehrere je Angebot möglich, nie zwei im selben Archetyp). Ohne Chance UND ohne Garantie (Grad < V) bleibt das
-  // alte Verhalten exakt erhalten (kein rng-Drift, Legendäre gewichtet im Pool) → Bestandstests/Sim mit Chance 0 unberührt.
-  const gateLeg = legendaryChance > 0 || guaranteeOne;
-  const isLeg = (id) => !!SKILL_DEFS[id]?.legendary;
-  // Konsument-Garantie: ein angebotener Feuer-/Blitz-Archetyp ohne gehaltenen Konsumenten bekommt garantiert (mind.)
-  // einen seines Typs angeboten, solange einer verfügbar ist — sonst kann der Build nie „zünden" (frustrierend). Seit
-  // Blitz-Rework v0 NICHT mehr an activeArchetypes gebunden: der Verbraucher wird angeboten, bis er gewählt ist, damit
-  // ein späterer Einstieg (z. B. Blitz nachträglich ins Deck) nie ohne Ladungsverbraucher dasteht.
-  const needsConsumer = (arch) => !ownsConsumerFor(arch, owned);
-  // #191/#223: SCHON beim ERSTEN Skill-Angebot (noch kein Archetyp aktiv) bekommt JEDER angebotene Konsumenten-
-  // Archetyp (Feuer & Blitz; Eis/Pflanze haben keinen) garantiert seinen Konsumenten ins Angebot — nicht nur EINER
-  // insgesamt. Sonst zeigt das Erst-Angebot z. B. Blitz-Ladungsaufbau OHNE Blitz-Konsument (die Ladung „verpufft"),
-  // wenn die chosen-Reihenfolge Feuer zuerst nimmt. Jede angebotene Engine ist so von Anfang an komplett sichtbar.
-  const guaranteeAny = (activeArchetypes || []).length === 0;
-  // Immer HÖCHSTENS 3 Skills je Archetyp anbieten (das ganze Spiel, inkl. Onboarding). Bei wenigen freigeschalteten
-  // Archetypen (Onboarding) ergäbe count/chosen.length sonst 6 pro Archetyp — daher hart auf PER_ARCH_CAP gedeckelt.
-  const PER_ARCH_CAP = 3;
+  const PER_ARCH_CAP = perArchCap; // s. SKILL_OFFER_PER_ARCH_CAP oben — Deckel je Archetyp (Bestand 3, Dev-Run frei)
   const perArch = Math.max(1, Math.min(PER_ARCH_CAP, Math.floor(count / chosen.length)));
   const offer = [];
   const rest = [];
-  const guaranteed = new Set();  // garantierte Konsumenten-Slots — vor dem Legendär-Ersatz geschützt
-  const archLegs = {};           // #247: getroffener Legendär je Archetyp (aus dessen eigenem Wurf)
-  const legPoolByArch = {};      // #247: verfügbare Legendäre je Archetyp (auch für die Grad-V-Garantie)
   for (const arch of chosen) {
-    // Enabler-Gating (Anti-Pech): ein Verstärker-Skill (s.enabler) wird NUR angeboten, wenn seine Basis gehalten wird —
-    // sonst ist er ein toter Pick (Variety-Befund: der schwache Tail sind fast durchweg ungegatete Verstärker).
-    // #272: Legendäre sind NIE Teil des normalen Skill-Angebots — sie kommen ausschließlich über die Legendär-Phase
-    // (buildLegendaryOffer, Runde 29). Daher hier hart rausgefiltert; die #247-Würfe unten laufen dadurch leer (legPoolByArch=[]).
-    let pool = shuffle(SKILL_LIST.filter((s) => s.archetype === arch && !(owned || []).includes(s.id)
-      && !s.legendary && (!s.enabler || (owned || []).includes(s.enabler))).map((s) => s.id), rng);
-    if (gateLeg) { legPoolByArch[arch] = pool.filter(isLeg); pool = pool.filter((id) => !isLeg(id)); } // (#247, jetzt inert — Pool hat keine Legendäre mehr)
-    // Garantierten Konsumenten dieses Archetyps nach vorne ziehen (deterministisch, kein zusätzlicher rng-Zug: die
-    // Pool-Reihenfolge stammt schon aus dem Shuffle; perArch ≥ 1 → Slot 0 wird gewählt). Zwei Auslöser:
-    //  · needsConsumer(arch): aktiver Archetyp ohne gehaltenen Konsumenten (Pro-Archetyp-Garantie, Runden 2+).
-    //  · guaranteeAny (#191/#223): erstes Angebot → JEDER angebotene Feuer-/Blitz-Archetyp zeigt seinen Konsumenten.
-    if (needsConsumer(arch) || guaranteeAny) {
-      const ci = pool.findIndex(isConsumerSkill);
-      if (ci > 0) pool.unshift(pool.splice(ci, 1)[0]);
-      if (ci >= 0) guaranteed.add(pool[0]);
-    }
+    const pool = shuffle(offerPool(arch, owned), rng);
     // (v0.5: keine Pflanze-Kern-Garantie mehr — die Wert-aus-Wachstum-Mechanik ist jetzt die immer-aktive Mono-Passive.)
     for (let i = 0; i < perArch && pool.length; i++) offer.push(pool.shift());
     rest.push(...pool); // Reste des Archetyps für die Auffüllung
-    // #247: eigener Legendär-Wurf für DIESEN Archetyp — genau EIN rng()-Zug je Archetyp (nur wenn er Legendäre hat),
-    // stabile Reihenfolge (chosen). Der Meisterrang-Mult (IV+ ×3) steckt bereits im übergebenen legendaryChance;
-    // die Grad-V-Garantie („mindestens einer") kommt separat über guaranteeOne — NICHT als chance=1 (das wäre „in jedem").
-    if (legendaryChance > 0 && legPoolByArch[arch].length && rng() < legendaryChance) {
-      archLegs[arch] = shuffle(legPoolByArch[arch], rng)[0];
-    }
   }
   // Auffüllen bis count aus den Resten — aber NIE über PER_ARCH_CAP je Archetyp (bei wenigen Archetypen bleibt das
   // Angebot entsprechend kürzer: 3 je gezeigtem Archetyp). Sonst kämen im Onboarding wieder 6 desselben Archetyps.
@@ -640,190 +532,158 @@ export function buildSkillOffer(owned, activeArchetypes, rng, count, legendaryCh
     archCount[a] = (archCount[a] || 0) + 1;
     offer.push(id);
   }
-  // #247: je getroffenem Archetyp den Legendär einsetzen — ersetzt einen normalen Skill DESSELBEN Archetyps (Balance je
-  // Archetyp wahren: 3→2 normal + 1 legendär), garantierte Konsumenten überspringen. Kein ersetzbarer Slot dieses
-  // Archetyps (alles garantiert/schon legendär) → auslassen; so bleiben Angebotslänge UND Konsument-Garantie erhalten.
-  const placeLeg = (arch, leg) => {
-    if (!leg || offer.includes(leg)) return false;
-    for (let i = offer.length - 1; i >= 0; i--) {
-      if (archetypeOf(offer[i]) === arch && !guaranteed.has(offer[i]) && !isLeg(offer[i])) { offer[i] = leg; return true; }
-    }
-    return false;
-  };
-  for (const arch of chosen) placeLeg(arch, archLegs[arch]);
-  // #247 Grad-V-Garantie: kam über die Würfe KEIN Legendär, forciere (mind.) EINEN — erster Archetyp mit verfügbarem
-  // Legendär und ersetzbarem Slot. Bewusst „mindestens einer", nicht „in jedem Archetyp".
-  if (guaranteeOne && !offer.some(isLeg)) {
-    for (const arch of chosen) {
-      const pool = legPoolByArch[arch];
-      if (pool && pool.length && placeLeg(arch, shuffle(pool, rng)[0])) break;
-    }
-  }
   return offer;
 }
 
-// #272 Legendär-Phase (Runde 29, build-defining). Die Angebotsgröße richtet sich nach der Build-Breite (Nutzer-Wunsch):
-//   Mono (1 aktive Fraktion)  → 3 Legendäre dieser Fraktion
-//   Duo  (2 aktive Fraktionen) → 2 je Fraktion (4)
-//   Trio (3 aktive Fraktionen) → 2 je Fraktion (6)
-// Je Fraktion werden VERSCHIEDENE Legendäre gezogen (je Fraktion 4 im Pool); bereits gehaltene (owned, inkl. eines evtl.
-// schon gewählten Legendärs) sind ausgeschlossen. Reicht der Pool einer Fraktion nicht fürs Soll, füllt sie mit dem, was
-// da ist. Nur Fraktionen MIT verfügbarem Legendär zählen für die Breite. Deterministisch (seed-stabil), rein & testbar.
-const legendaryPerArch = (archCount) => (archCount <= 1 ? 3 : 2);
-// #369 §5a: countMap = { [arch]: n } — Pool = ALLE im Baum freigeschalteten Archetypen (unabhängig vom Build), je Archetyp
-// n VERSCHIEDENE Kandidaten (Tree-Stufe 1 = 1, Stufe 2 = 2; Beiträge addieren sich über die Archetypen). Ist countMap
-// gesetzt, ersetzt es activeArchetypes/perArch/perArchBonus komplett. null = Bestand (Sim/Standard: Build-Breite bestimmt die Größe).
-// perArchBonus (Alt): +N Kandidaten je aktivem Archetyp — reine „mehr Auswahl". 0 = byte-identisch.
-export function buildLegendaryOffer(activeArchetypes = [], owned = [], rng = Math.random, perArch = null, perArchBonus = 0, countMap = null) {
-  const ownedSet = new Set(owned || []);
-  const legsOf = (arch) => SKILL_LIST.filter((s) => s.legendary && s.archetype === arch && !ownedSet.has(s.id)).map((s) => s.id);
-  if (countMap) {
-    // Zähl-Map-Pfad (#369): stabile Reihenfolge (ARCHETYPE_ORDER), je Archetyp countMap[arch] verschiedene Legendäre.
-    const offer = [];
-    const archs = ARCHETYPE_ORDER.filter((a) => (countMap[a] || 0) > 0 && legsOf(a).length > 0);
-    for (const arch of shuffle(archs, rng)) {
-      const pool = shuffle(legsOf(arch), rng);
-      const per = countMap[arch] || 0;
-      for (let i = 0; i < per && pool.length; i++) offer.push(pool.shift());
-    }
-    return offer;
-  }
-  const archs = [...new Set(activeArchetypes || [])].filter((a) => legsOf(a).length > 0);
-  const per = (perArch ?? legendaryPerArch(archs.length)) + Math.max(0, perArchBonus);
-  const offer = [];
-  for (const arch of shuffle(archs, rng)) {
-    const pool = shuffle(legsOf(arch), rng);
-    for (let i = 0; i < per && pool.length; i++) offer.push(pool.shift());
-  }
-  return offer;
-}
+/* exp skill rework (docs/skill-rework.md §1, §3.7): rarity tiers.
+   Every held or offered non-legendary skill carries a tier 0..3 = Normal / Selten / Sehr selten / Episch; the
+   tier picks the row of the skill's tier table (Phase 2/3). Legendaries have no tier. */
+export const SKILL_TIER_COUNT = 4;
+export const TIER_NORMAL = 0, TIER_RARE = 1, TIER_VERY_RARE = 2, TIER_EPIC = 3;
+// Tier of a held skill: state.skillTiers[id], Normal when unknown (older snapshots), null for legendaries.
+export const tierOf = (state, id) => (isLegendarySkill(id) ? null : ((state && state.skillTiers && state.skillTiers[id]) ?? TIER_NORMAL));
 
-/* ---- Ionisierung (Stufe B, docs/blitz-archetyp.md Abschnitt 5/6) ---- */
+/* Hochspannung (§7.39, Owner): das Legendäre hebt die wirksame Stufe JEDES gehaltenen Skills, nicht mehr nur der
+   Blitz-Skills — und nur noch um eine Stufe. Vorher lag der Hebel in lightning.js und war mit +3 Stufen für Blitz
+   allein gebaut; §7.38 hat gemessen, dass ihn keine Zahl ins Band bringt (1 → +8 %, 2 → +428 %, 3 → +520 %), weil
+   eine vierstufige Leiter bei +2 für fast jeden Wurf schon sättigt. Aus dem Mono-Verstärker wird damit ein
+   Misch-Legendäres. Hier statt in einem Fraktionsmodul, weil alle vier ihn lesen — ein Import auf lightning.js
+   aus den anderen drei wäre ein Zyklus. */
+export const HOCHSPANNUNG_ID = "SK_LIGHTNING_L03";
+export const boostedTier = (skills, base) =>
+  Math.min(TIER_EPIC, Math.max(0, base) + ((skills || []).includes(HOCHSPANNUNG_ID) ? C.HOCHSPANNUNG_STEPS : 0));
 
-// Score-Bonus einer gespielten Karte: +ION_SCORE_PER_STACK je Stapel (Stand VOR dem Zuwachs).
-export function ionScoreFor(card) {
-  return (card?.ionStacks || 0) * C.ION_SCORE_PER_STACK;
-}
-
-// #271: feldweiter Crit-Chance-Beitrag der Ionisierung — Σ aller Ionisierungsstapel im Deck (gedeckelt) × pp/Stapel.
-// „Ein ionisiertes Feld lädt die Luft auf": jeder Stapel hebt die Crit-Chance JEDER Siegkarte (Breite, verteilt).
-// Rein aus dem Deck ableitbar (Stapel existieren nur durch Ionisierung → implizit Blitz); die Engine gatet zusätzlich
-// auf lightning.active. Der Überschuss >100 % fließt via Überschlag als Ladung zurück (kein toter Wert).
-export function ionCritChance(deck) {
-  let sum = 0;
-  for (const c of deck || []) sum += c.ionStacks || 0;
-  return Math.min(sum, C.ION_CRIT_STACK_CAP) * C.ION_CRIT_PP_PER_STACK;
-}
-
-// Voll-Ladungs-Verbraucher (Abschnitt 6): seit Rework v0 nur noch Ionisierung (ionize). Ladungsserie
-// verbraucht keine Ladung mehr, sondern speist die Crit-Maschine (seriesCrit) — s. lightningCritRaw.
-export function hasIonize(skills)  { return (skills || []).some((id) => SKILL_DEFS[id]?.onFullCharge === "ionize"); }
-// Prädikat „hat der Build einen Verbraucher?" — Test-/Anzeige-API; die Engine prüft hasIonize direkt.
-export function consumesCharge(skills) { return hasIonize(skills); }
-
-// Reaktoren (laufen bei JEDEM Verbrauch): Reststrom (Ladungsboden), Gewitterfront (Crit/Score).
-export function chargeFloorFor(skills) {
-  let floor = 0;
-  for (const id of skills || []) { const f = SKILL_DEFS[id]?.chargeFloor; if (f) floor = Math.max(floor, f()); }
-  return floor;
-}
-export function hasStorm(skills) { return (skills || []).some((id) => SKILL_DEFS[id]?.storm); }
-
-// ---- Blitz-Rework (v0): Flag-Prädikate + abgeleitete Werte ----
-const lightFlag = (skills, flag) => (skills || []).some((id) => SKILL_DEFS[id]?.[flag]);
-export const hasThunderGod   = (skills) => lightFlag(skills, "thunderGod");
-export const hasStaticCharge = (skills) => lightFlag(skills, "staticCharge");
-export const hasDischarge    = (skills) => lightFlag(skills, "discharge");
-export const hasBlitzcatcher = (skills) => lightFlag(skills, "blitzcatcher");
-export const hasVoltageArc   = (skills) => lightFlag(skills, "voltageArc");
-// Rework v0 — Kaskade/Crit-Maschine/Serie-Schnittstelle + Legendäre:
-export const hasUeberspannung  = (skills) => lightFlag(skills, "ueberspannung");  // Kaskade: Crit auf/neben Ionis. → Ladung (merge 04+09)
-export const hasKurzschluss    = (skills) => lightFlag(skills, "kurzschluss");    // volle (5) Siegkarte → Score+Ladung-Burst je Sieg, Stapel bleiben
-export const hasSpannungsstau  = (skills) => lightFlag(skills, "spannungsstau");  // Nicht-Crit-Siege rampen Crit-Chance
-export const hasUeberschlag    = (skills) => lightFlag(skills, "ueberschlag");    // Crit-Chance >100 % → Ladung
-export const hasBlitzschlag    = (skills) => lightFlag(skills, "blitzschlag");    // Crit ionisiert die Siegkarte
-export const hasDauerstrom     = (skills) => lightFlag(skills, "dauerstrom");     // Serie → Ladung (+ On-Consume-Crit-Rampe)
-export const hasSeriesCrit     = (skills) => lightFlag(skills, "seriesCrit");     // Ladungsserie: Serie → Crit-Chance (kein Verbraucher)
-export const hasBlitzableiter  = (skills) => lightFlag(skills, "chargeOnCrit");   // Blitzableiter: Crit → Ladung (+ Ladung zurück bei Verbrauch)
-export const hasDoubleDischarge = (skills) => lightFlag(skills, "doubleDischarge"); // L: Konsumenten ×2
-export const hasAreaIonize     = (skills) => lightFlag(skills, "areaIonize");     // L: ionis. Sieg → alle Nachbarn
-export const hasDurchschlag    = (skills) => lightFlag(skills, "durchschlag");    // L: volle Ionis.+Crit → dauerhaft Crit-Mult
-// Ladungsmaximum je Build (Donnergott → 15) & dessen dauerhafter Crit-Multiplikator-Bonus.
-export const maxChargeFor      = (_skills) => C.LIGHTNING_MAX_CHARGE; // v0.5: Donnergott hebt das Dach NICHT mehr (Turbo statt Dach)
-// Blitz-Crit-Multiplikator (dauerhaft, additiv): +LIGHTNING_CRIT_MULT_PER_SKILL je gehaltenem Blitz-Skill
-// + Donnergott-Bonus (Legendär). Kein Deckel — fließt in engine.js (critMultiplier) und totalCritMult (Anzeige).
-export const lightningCritMult = (skills) =>
-  activeLightningCount(skills) * C.LIGHTNING_CRIT_MULT_PER_SKILL
-  + (hasThunderGod(skills) ? C.THUNDER_CRIT_MULT : 0);
-export const hasSerienschutz   = (skills) => lightFlag(skills, "serienschutz"); // v0.5 (ex-Wetterleuchten)
-// Anzahl gehaltener Ladungs-Konsumenten (nur noch Ionisierung); der Reducer blockt > 1.
-export const chargeConsumerCount = (skills) => (skills || []).filter((id) => SKILL_DEFS[id]?.onFullCharge).length;
-// Aktiver Ladungs-Konsument (für HUD/Badge): "ionize" | null (Rework v0: nur noch Ionisierung).
-export const chargeConsumerOf = (skills) => {
-  for (const id of skills || []) { const c = SKILL_DEFS[id]?.onFullCharge; if (c) return c; }
-  return null;
+/* §7.45 (Owner): was die ANZEIGE zeigen muss — die Stufe, mit der die Engine rechnet, nicht die gewürfelte. Ohne das
+   steht mit Hochspannung „SELTEN" an einem Skill, der wie Episch wirkt, und der Kartentext beschreibt die
+   Selten-Zahlen: die Beschreibung lügt. Gilt auch für ein ANGEBOT, das noch nicht gehalten wird — `skills` sagt nur,
+   ob Hochspannung im Bau liegt. Die EINE Ausnahme ist der Aufwert-Screen: dort bezahlt man die gewürfelte Stufe,
+   also liest er weiter `tierOf`. */
+export const effectiveTierOf = (state, id) =>
+  (isLegendarySkill(id) ? null : boostedTier((state && state.skills) || [], tierOf(state, id)));
+export const tierIsLifted = (state, id) => {
+  const base = tierOf(state, id);
+  return base != null && effectiveTierOf(state, id) > base;
 };
 
-// Anzahl je Auslösung ionisierter Karten: Ionisierung (2) + Kettenblitz (+2), sofern gehalten.
-export function ionizeCountFor(skills) {
-  return skillSum(skills, "ionizeCount", {});
-}
-// Sturm-Sättigung (Blitz-Rework v0.5): zwei Stufen über den Deck-Zustand.
-//   Breite = Anteil Karten mit ≥1 Stapel ≥ FRAC · Tiefe = Anteil voller (ION_MAX_STACKS) Karten ≥ FRAC.
-export const fieldBreadthSaturated = (deck, frac = C.ION_SAT_BREADTH_FRAC) => {
-  const n = (deck || []).length; if (n === 0) return false;
-  let ion = 0; for (const c of deck) if ((c.ionStacks || 0) > 0) ion++;
-  return ion >= Math.ceil(n * frac);
-};
-export const fieldDepthSaturated = (deck, frac = C.ION_SAT_DEPTH_FRAC) => {
-  const n = (deck || []).length; if (n === 0) return false;
-  let full = 0; for (const c of deck) if ((c.ionStacks || 0) >= C.ION_MAX_STACKS) full++;
-  return full >= Math.ceil(n * frac);
-};
-// Ionisierungs-Speed ∝ Blitz-Skills (Mono): +Breite je Verbrauch je Blitz-Skill über der Schwelle.
-export const ionSpeedBonus = (skills) => Math.max(0, activeLightningCount(skills) - C.ION_SPEED_MIN_SKILLS) * C.ION_SPEED_PER_SKILL;
-
-// Ladung verbrauchen → auf den Boden (Stufe C: Reststrom hebt ihn; Default 0).
-export function consumeCharge(lightning, floor = 0) {
-  if (!lightning || !lightning.active) return lightning;
-  return { ...lightning, charge: Math.max(0, floor) };
+// One weighted draw over SKILL_TIER_WEIGHTS → tier index. Exactly one rng() call.
+export function rollTier(rng, weights = C.SKILL_TIER_WEIGHTS) {
+  const total = weights.reduce((a, b) => a + b, 0);
+  let r = rng() * total;
+  for (let i = 0; i < weights.length; i++) { if (r < weights[i]) return i; r -= weights[i]; }
+  return weights.length - 1;
 }
 
-// `count` Karten ionisieren (immutabel, deterministisch). Gültige Ziele = ungespielte Karten
-// (Deck-Indizes in `undrawn`); je +1 Stapel (max ION_MAX_STACKS). Reichen die ungespielten Karten
-// nicht (Kettenblitz-Fall), gehen die Rest-Stapel an bereits ionisierte Karten (Abschnitt 8.4).
-// Blitzfänger (#165): trifft ein Versuch im HAUPTZUG eine bereits volle Karte (ION_MAX_STACKS),
-// wird sie NICHT ionisiert; ihre card.id wird als „catch" zurückgegeben (Engine gibt +temp Wert & Ladung).
-function ionizeCore(deck, undrawn, count, rng, blitzcatcher) {
-  const bumps = {}; // Deck-Index -> zusätzliche Stapel
-  const catchIds = []; // Blitzfänger-Treffer (volle Karten) im Hauptzug
-  const pool = [...(undrawn || [])];
-  let remaining = count;
-  while (remaining > 0 && pool.length > 0) {
-    const j = Math.floor(rng() * pool.length);
-    const idx = pool.splice(j, 1)[0];
-    if (blitzcatcher && (deck[idx].ionStacks || 0) >= C.ION_MAX_STACKS) catchIds.push(deck[idx].id); // volle Karte → Fang statt Ionisierung
-    else bumps[idx] = (bumps[idx] || 0) + 1;
-    remaining -= 1;
-  }
-  if (remaining > 0) {
-    // Fallback: nicht genug ungespielte Karten → Rest auf bereits ionisierte Karten (deckweit).
-    // (Blitzfänger greift bewusst NUR im Hauptzug — der Fallback trifft evtl. schon gespielte Karten.)
-    let ionized = deck.map((_, i) => i).filter((i) => (deck[i].ionStacks || 0) > 0 || bumps[i]);
-    while (remaining > 0 && ionized.length > 0) {
-      const j = Math.floor(rng() * ionized.length);
-      const idx = ionized.splice(j, 1)[0];
-      bumps[idx] = (bumps[idx] || 0) + 1;
-      remaining -= 1;
+/* Roll the tiers of an offer. Per slot, in offer order: first the legendary chance — a hit replaces the slot with an
+   unowned legendary of the same faction that is not already in the offer (fifth rarity; no gate, no replacing of held
+   skills, two in one run are possible) — then a weighted tier for every slot that stayed a normal skill. Deterministic
+   for a given rng; exactly two draws per slot at most. Returns { offer, tiers } with tiers = { [id]: 0..3 } for the
+   normal skills only. */
+export function rollSkillOfferTiers(offer, owned = [], rng = Math.random, legendaryChance = C.SKILL_LEGENDARY_PER_SLOT, weights = C.SKILL_TIER_WEIGHTS,
+                                    { forceLegendary = 0, excludeLegendary = [] } = {}) {
+  const out = [...(offer || [])];
+  const tiers = {};
+  const taken = new Set([...(owned || []), ...out, ...(excludeLegendary || [])]);
+  /* Legendär-Neuwurf (docs/muenz-oekonomie.md §3.1): so viele Plätze tragen GARANTIERT ein Legendäres, und
+     `excludeLegendary` hält die gerade angezeigten heraus — man kauft einen anderen Wurf, nicht denselben.
+     Der Platz wird gezogen statt von vorn genommen, sonst säße das Legendäre immer links. Hat die Fraktion
+     eines Platzes keins mehr frei, geht es zum nächsten; bleibt gar keins übrig, kommt das Angebot ohne
+     Legendäres zurück und der Aufrufer kassiert nicht (Reducer REROLL_SKILL).
+     forceLegendary = 0 (Default) verbraucht KEINEN rng-Zug → alle Bestandspfade bleiben byte-identisch. */
+  let need = Math.max(0, forceLegendary || 0);
+  if (need > 0) {
+    const order = out.map((_, i) => i).filter((i) => !isLegendarySkill(out[i]));
+    for (let k = order.length - 1; k > 0; k--) { const j = Math.floor(rng() * (k + 1)); [order[k], order[j]] = [order[j], order[k]]; }
+    for (const i of order) {
+      if (!need) break;
+      const pool = SKILL_LIST.filter((s) => s.legendary && s.archetype === archetypeOf(out[i]) && !taken.has(s.id)).map((s) => s.id);
+      if (!pool.length) continue;
+      const leg = pool[Math.floor(rng() * pool.length)];
+      taken.add(leg); out[i] = leg; need -= 1;
     }
   }
-  const newDeck = deck.map((c, i) => (bumps[i] ? { ...c, ionStacks: Math.min(C.ION_MAX_STACKS, (c.ionStacks || 0) + bumps[i]) } : c));
-  return { deck: newDeck, catchIds };
+  for (let i = 0; i < out.length; i++) {
+    const id = out[i];
+    if (isLegendarySkill(id)) continue; // already a legendary (dev catalog) — nothing to roll
+    if (legendaryChance > 0 && rng() < legendaryChance) {
+      const arch = archetypeOf(id);
+      const pool = SKILL_LIST.filter((s) => s.legendary && s.archetype === arch && !taken.has(s.id)).map((s) => s.id);
+      if (pool.length) {
+        const leg = pool[Math.floor(rng() * pool.length)];
+        taken.add(leg);
+        out[i] = leg;
+        continue;
+      }
+    }
+    tiers[id] = rollTier(rng, weights);
+  }
+  return { offer: out, tiers };
 }
-export function ionizeCards(deck, undrawn, count, rng) {
-  return ionizeCore(deck, undrawn, count, rng, false).deck;
+
+/* The door offer (docs/skill-rework.md §1). A skill phase shows `doors` doors; every door hides `size` skills drawn
+   from at most `factions` factions of the pool, repetition allowed — a door may read Feuer·Feuer·Blitz or
+   Feuer·Feuer·Feuer. The door shows only the faction symbols (`door.skills.map(archetypeOf)` in slot order); the
+   tiers are rolled with the door (rollSkillOfferTiers, legendary chance included) and revealed when it is opened
+   (reducer CHOOSE_DOOR). Skills are distinct within a door and across the doors as long as the pool allows.
+   Pool = the run's allowlist (unlockedArchetypes: the sim's `--arch`, START_RUN action.archetypes) or, without one,
+   C.SKILL_OFFER_ARCHETYPES — the exp world of Feuer and Blitz while Eis and Pflanze wait for their rework; narrowed
+   to factions that still have an offerable skill, and once `maxArchetypes` factions are active, to those. Two rng
+   streams like the flat offer: `rng` draws factions and skills, `rngTiers` the tiers. Deterministic. Nothing left →
+   [] (perk fallback). Returns [{ skills: [id…], tiers: { [id]: 0..3 } }, …] — doors without a skill are dropped. */
+export function buildSkillDoors(owned, activeArchetypes, rng, rngTiers, { unlockedArchetypes = null, maxArchetypes = C.MAX_ARCHETYPES,
+  doors = C.SKILL_DOORS, size = C.SKILL_DOOR_SIZE, factions = C.SKILL_DOOR_FACTIONS, pool = C.SKILL_OFFER_ARCHETYPES,
+  legendaryChance = C.SKILL_LEGENDARY_PER_SLOT } = {}) {
+  const have = owned || [];
+  const active = activeArchetypes || [];
+  const world = unlockedArchetypes || pool;
+  let available = archetypesWithSkills(have).filter((a) => world.includes(a));
+  if (active.length >= maxArchetypes) available = available.filter((a) => active.includes(a));
+  const pools = {};
+  for (const a of available) pools[a] = shuffle(offerPool(a, have), rng);
+  const out = [];
+  const taken = new Set(have);
+  for (let d = 0; d < doors; d++) {
+    const skills = [];
+    for (let i = 0; i < size; i++) {
+      // Factions with a skill left; once `factions` distinct ones stand on the door, only those.
+      let cands = available.filter((a) => pools[a].length);
+      const onDoor = [...new Set(skills.map(archetypeOf))];
+      if (onDoor.length >= factions) cands = cands.filter((a) => onDoor.includes(a));
+      if (!cands.length) break;
+      const id = pools[cands[Math.floor(rng() * cands.length)]].shift();
+      skills.push(id); taken.add(id);
+    }
+    if (!skills.length) continue;
+    const rolled = rollSkillOfferTiers(skills, [...taken], rngTiers, legendaryChance); // taken keeps a legendary off both doors
+    for (const id of rolled.offer) taken.add(id);
+    out.push({ skills: rolled.offer, tiers: rolled.tiers });
+  }
+  return out;
 }
-// Blitzfänger-Variante (#165): liefert { deck, catchIds } — catchIds = card.id je vollem Fang im Hauptzug.
-export function ionizeCardsWithCatch(deck, undrawn, count, rng) {
-  return ionizeCore(deck, undrawn, count, rng, true);
+
+/* Reroll of an opened door (owner, 2026-09-05): the three skills are drawn again for the SAME faction symbols — the door's
+   promise stays, the skills behind it change. Per slot an unowned skill of that slot's faction, preferring skills not in
+   the current offer (those come back only when the faction has nothing else left); tiers and the legendary chance are
+   rolled again. A slot whose faction is exhausted is dropped; nothing left → { offer: [], tiers: {} } (reducer no-op). */
+export function rerollDoorSkills(archs, owned, current, rng, rngTiers, { legendaryChance = C.SKILL_LEGENDARY_PER_SLOT, forceLegendary = 0 } = {}) {
+  const have = owned || [];
+  const cur = current || [];
+  const pools = {};
+  const skills = [];
+  for (const a of archs || []) {
+    if (!pools[a]) {
+      const all = offerPool(a, have);
+      pools[a] = [...shuffle(all.filter((id) => !cur.includes(id)), rng), ...shuffle(all.filter((id) => cur.includes(id)), rng)];
+    }
+    const id = pools[a].shift();
+    if (id) skills.push(id);
+  }
+  if (!skills.length) return { offer: [], tiers: {} };
+  // §3.1: der gekaufte Legendär-Neuwurf garantiert wieder ein Legendäres und schließt die des AKTUELLEN
+  // Angebots aus. Nur gegen das aktuelle — die Kette hat kein Gedächtnis, beim zweiten Kauf darf das aus
+  // dem ersten wiederkommen.
+  return rollSkillOfferTiers(skills, have, rngTiers, legendaryChance, C.SKILL_TIER_WEIGHTS,
+    { forceLegendary, excludeLegendary: forceLegendary ? cur.filter(isLegendarySkill) : [] });
 }
+
+/* (exp skill rework: Ionisierung, Ladung, Stapel-Score und alle Blitz-Prädikate liegen in
+   src/game/factions/lightning.js — Passiv und 15 Skills lesen dort ihre Stufentabellen.) */

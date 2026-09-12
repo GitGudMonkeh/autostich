@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { suitColor, ION_MAX_STACKS, ION_SCORE_PER_STACK, ION_CRIT_PP_PER_STACK,
-         PLANT_GREEN_THRESHOLD, PLANT_VALUE_CAP, WURZELSCHLAG_PER_GROWTH } from "../game/constants.js";
+import { suitColor, ION_SCORE_PER_STACK,
+         PLANT_GREEN_THRESHOLD, PLANT_BLOOM_THRESHOLD } from "../game/constants.js";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 
 import { PLANT, PLANT_RIPE, PLANT_FULL } from "./indicators/vocab.js";
@@ -17,7 +17,7 @@ const fmt1 = (x) => String(Math.round(x * 10) / 10).replace(".", ",");
    Modifikatoren. Wird unter der Kachelfläche in Chronik-Übersicht UND Formationsphase genutzt.
    Rollen-Chips sind anklickbar → klappen die Perk-Beschreibung auf (touch-tauglich, plus Hover-Titel). */
 export function CardDetail({ card, pos, posForm, roles, familyTiers = {},
-                            plantReadout = false, plantGrowth = 0, plantRoots = 0, plantPfahl = false, forgedValue = 0, arch = null }) {
+                            plantReadout = false, plantGrowth = 0, forgedValue = 0, arch = null }) {
   const [openRole, setOpenRole] = useState(null); // aktuell aufgeklappte Rolle (perkId)
   useEffect(() => { setOpenRole(null); }, [card?.id]); // Karte gewechselt → Beschreibung schließen
 
@@ -86,29 +86,21 @@ export function CardDetail({ card, pos, posForm, roles, familyTiers = {},
       {ion > 0 && (
         <div className="flex flex-wrap gap-1.5 items-center mt-1">
           <span className="opacity-45">{t("carddetail.ion")}</span>
-          <Chip c="#5ec8f0"><FactionIcon type="lightning" size={11} /> {ion}/{ION_MAX_STACKS} · +{ion * ION_SCORE_PER_STACK} Score</Chip>
-          {/* #271: jeder Stapel hebt die Crit-Chance des ganzen Decks (feldweit) — hier der Beitrag dieser Karte. */}
-          <Chip c="#8a7de0">{t("carddetail.fieldCrit", { pct: Math.round(ion * ION_CRIT_PP_PER_STACK * 100) })}</Chip>
+          {/* exp skill rework: Stapel ohne Deckel, nur noch Score in der Basis (kein feldweiter Crit mehr). */}
+          <Chip c="#5ec8f0"><FactionIcon type="lightning" size={11} /> {ion} · +{ion * ION_SCORE_PER_STACK} Score</Chip>
         </div>
       )}
-      {/* Pflanze (#211): Wachstums-/Reife-Werte in der Aufstellung — Zustand, Wachstum, Wert (bis Deckel), Wurzeln-Score
-          je Sieg (Wurzeltiefe + Jahresringe, Pfahlwurzel ×2 in Formation) und die Überlauf-Tiefe (Wachstum über dem, was
-          Wurzelschlag zum Wert-Deckel braucht = Nahrung der Pflanze-Legendären). Nur für Pflanzen-Karten (reif ODER wachsend). */}
+      {/* Pflanze (§6.2): der Zustand dieser Karte in der Aufstellung — grau / grün / blühend und das Wachstum mit der
+          nächsten Schwelle. Nur für Karten, die schon wachsen oder grün sind. */}
       {plantReadout && (card.green || plantGrowth > 0) && (() => {
-        const ripe = !!card.green;
-        const full = ripe && card.value >= PLANT_VALUE_CAP;
-        const stateLabel = t(full ? "carddetail.plant.full" : ripe ? "carddetail.plant.ripe" : "carddetail.plant.seed");
-        const stateCol = full ? PLANT_FULL : ripe ? PLANT_RIPE : "#9aa4a0";
-        const need = Math.max(0, PLANT_VALUE_CAP - card.value) * WURZELSCHLAG_PER_GROWTH; // Wachstum bis zum Wert-Deckel
-        const overflow = ripe ? Math.max(0, plantGrowth - need) : 0;                      // „alter Wald" (Direkt-Score der Legendären)
+        const stateLabel = t(card.bloom ? "carddetail.plant.bloom" : card.green ? "carddetail.plant.green" : "carddetail.plant.grey");
+        const stateCol = card.bloom ? PLANT_FULL : card.green ? PLANT_RIPE : "#9aa4a0";
+        const next = card.bloom ? null : card.green ? PLANT_BLOOM_THRESHOLD : PLANT_GREEN_THRESHOLD; // Wachstum bis zur nächsten Stufe
         return (
           <div className="flex flex-wrap gap-1.5 items-center mt-1">
             <span className="opacity-45 inline-flex items-center gap-1"><FactionIcon type="plant" size={12} /> {t("carddetail.plant")}</span>
             <Chip c={stateCol}>{stateLabel}</Chip>
-            <Chip c={PLANT}>{t("carddetail.growth", { n: fmt1(plantGrowth) })}{ripe ? "" : ` / ${PLANT_GREEN_THRESHOLD}`}</Chip>
-            <Chip c={PLANT}>{t("carddetail.cardValue", { value: card.value, cap: PLANT_VALUE_CAP })}</Chip>
-            {ripe && plantRoots > 0 && <Chip c={PLANT}>{t("carddetail.rootScore", { n: plantRoots })}{plantPfahl ? t("carddetail.rootScore.tap") : ""}</Chip>}
-            {overflow > 0 && <Chip c={PLANT_FULL}>{t("carddetail.overflow", { n: fmt1(overflow) })}</Chip>}
+            <Chip c={PLANT}>{t("carddetail.growth", { n: fmt1(plantGrowth) })}{next ? ` / ${next}` : ""}</Chip>
           </div>
         );
       })()}

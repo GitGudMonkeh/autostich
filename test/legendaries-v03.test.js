@@ -43,14 +43,19 @@ describe("Legendäre v0.3 — Ausbau & Deck (Pick-Zeitpunkt)", () => {
                  skills: ["SK_FIRE_01"], activeArchetypes: ["fire"] };
     const s1 = reducer(s0, { type: "PICK_PERK", perkId: "L_MEIS", rng });
     expect(s1.phase).toBe("levelup");
-    expect(s1.skillOffer.length).toBeGreaterThan(0);
+    // exp skill rework: das Bonus-Angebot ist ein normales Türen-Angebot — zwei Türen, jeder normale Platz trägt eine
+    // Stufe, ein Legendär kann als fünfte Seltenheit dahinter stehen (die eigene Legendär-Phase #272 ist entfernt).
+    expect(s1.skillDoors.length).toBe(2);
     expect(s1.skillOfferBonus).toBe(true);
-    // Kein legendärer SKILL aus diesem Angebot — der hat seine eigene Phase und seinen eigenen Slot (#272).
-    expect(s1.skillOffer.some(isLegendarySkill)).toBe(false);
+    const s1b = reducer(s1, { type: "CHOOSE_DOOR", index: 0 });
+    expect(s1b.skillOffer.length).toBeGreaterThan(0);
+    expect(s1b.skillOfferBonus).toBe(true); // die Tür öffnen macht aus dem Geschenk keinen Rundenplatz
+    for (const id of s1b.skillOffer) expect(isLegendarySkill(id) ? !(id in s1b.skillOfferTiers) : Number.isInteger(s1b.skillOfferTiers[id])).toBe(true);
     // Und der Skill landet auch wirklich im Build.
-    const s2 = reducer(s1, { type: "PICK_SKILL", skillId: s1.skillOffer[0], rng });
-    expect(s2.skills).toContain(s1.skillOffer[0]);
+    const s2 = reducer(s1b, { type: "PICK_SKILL", skillId: s1b.skillOffer[0], rng });
+    expect(s2.skills).toContain(s1b.skillOffer[0]);
     expect(s2.skillOffer).toBe(null);
+    expect(s2.skillDoors).toBe(null);
     expect(s2.skillOfferBonus).toBe(false);
   });
 
@@ -60,13 +65,17 @@ describe("Legendäre v0.3 — Ausbau & Deck (Pick-Zeitpunkt)", () => {
     const s0 = { ...initialState(makeRng(1)), phase: "levelup", offer: ["L_MEIS"], seed: 4711,
                  skills: ["SK_FIRE_01"], activeArchetypes: ["fire"] };
     const s1 = reducer(s0, { type: "PICK_PERK", perkId: "L_MEIS", rng });
-    expect(s1.skillOffer.length).toBeGreaterThan(0); // sonst prüfte der Test unten ins Leere
-    const s2 = reducer(s1, { type: "DECLINE_SKILL", rng });
-    expect(s2.phase).toBe("play");
-    expect(s2.offer).toBe(null);
-    expect(s2.skillOffer).toBe(null);
-    expect(s2.skillOfferBonus).toBe(false);
-    expect(s2.perks).toEqual(["L_MEIS"]);
+    expect(s1.skillDoors.length).toBeGreaterThan(0); // sonst prüfte der Test unten ins Leere
+    // Ablehnen geht vor den Türen wie auf dem geöffneten Angebot — beide ohne Ersatz-Perk.
+    for (const st of [s1, reducer(s1, { type: "CHOOSE_DOOR", index: 1 })]) {
+      const s2 = reducer(st, { type: "DECLINE_SKILL", rng });
+      expect(s2.phase).toBe("play");
+      expect(s2.offer).toBe(null);
+      expect(s2.skillOffer).toBe(null);
+      expect(s2.skillDoors).toBe(null);
+      expect(s2.skillOfferBonus).toBe(false);
+      expect(s2.perks).toEqual(["L_MEIS"]);
+    }
   });
 
   /* Der Endzustand, um den es dem Spieler geht: nach der Legendär-Phase hält man 6 normale + 1 legendären
@@ -76,7 +85,7 @@ describe("Legendäre v0.3 — Ausbau & Deck (Pick-Zeitpunkt)", () => {
     const s0 = { ...initialState(makeRng(1)), phase: "levelup", offer: ["L_MEIS"], seed: 4711,
                  skills: [...sixFire, "SK_FIRE_L01"], activeArchetypes: ["fire"] };
     expect(s0.skills).toHaveLength(7);
-    const s1 = reducer(s0, { type: "PICK_PERK", perkId: "L_MEIS", rng });
+    const s1 = reducer(reducer(s0, { type: "PICK_PERK", perkId: "L_MEIS", rng }), { type: "CHOOSE_DOOR", index: 0 });
     expect(s1.skillSlots).toBe(SKILL_SLOTS + MEISTERHAND_SLOTS);
     const s2 = reducer(s1, { type: "PICK_SKILL", skillId: s1.skillOffer[0], rng });
     expect(s2.skills).toHaveLength(8);

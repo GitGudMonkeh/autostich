@@ -39,9 +39,9 @@ const WIN = "#5ab87a", LOSS = "#c0504a";
    → die Aufteilung ist bewusst eine Näherung, priorisiert aber die für Spieler wichtigste Frage: „welche Fraktion?"). */
 const FACTION_SRC = [
   { key: "glacier",   labelKey: "graphs.src.glacier", color: "#5ec8f0", srcs: ["glacierYield"] },
-  { key: "plant",     labelKey: "graphs.src.plant",   color: "#69cf59", srcs: ["plantRoot", "plantBloom", "plantHarvest"] },
+  { key: "plant",     labelKey: "graphs.src.plant",   color: "#69cf59", srcs: ["plantBase"] },
   { key: "light",     labelKey: "graphs.src.light",     color: "#8a7de0", srcs: ["lightYield"] },
-  { key: "fire",      labelKey: "graphs.src.fire",      color: "#ff7a3c", srcs: ["fireBase", "fireWhite"] },
+  { key: "fire",      labelKey: "graphs.src.fire",      color: "#ff7a3c", srcs: ["fireBase", "fireHeat"] },
   { key: "formation", labelKey: "graphs.src.formation",        color: "#5a8ade", srcs: ["formationScore"] },
   { key: "crit",      labelKey: "graphs.src.crit",       color: "#b47cff", srcs: ["critBonusScore"] },
   { key: "serie",     labelKey: "graphs.src.serie",            color: "#e0b34a", srcs: ["streakScore"] },

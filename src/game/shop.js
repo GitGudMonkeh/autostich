@@ -31,11 +31,9 @@ export const linkedPartnersOf = (view, suit) => {
   return [];
 };
 
-// Legendär-Chance je Perk-/Skill-Angebot: Basis + additiver Bonus (bis Cap). Ohne Shop = reine Basis.
+// Legendär-Chance je Perk-Angebot: Basis + additiver Bonus (bis Cap). Ohne Shop = reine Basis.
+// (exp skill rework: die Skill-Legendär-Chance lebt als fünfte Stufe im Stufenwurf, skills.js rollSkillOfferTiers.)
 export const perkLegendaryChance  = (shop = {}) => C.PERK_LEGENDARY_BASE  + Math.min(shop.perkLegendaryBonus  || 0, C.MAX_LEGENDARY_CHANCE_BONUS);
-// #247: Der additive „skillLegendaryBonus"-Pity ist totes Feld (Rest vom entfernten Shop, wurde nie hochgezählt) und
-// entfällt hier — die Skill-Legendär-Chance ist die reine Basis (je Archetyp gewürfelt in buildSkillOffer).
-export const skillLegendaryChance = () => C.SKILL_LEGENDARY_BASE;
 // #263: Free-Reroll-/fateControl-Mechanik entfernt — alle Rerolls laufen ausschließlich über die drei Kategorie-Pools.
 
 // Zykluslänge je Durchlauf: konstant TRICKS_PER_CYCLE (#229: das Shop-Zeitsegment ist entfernt).

@@ -39,7 +39,7 @@ const src = (p) => readFileSync(new URL(`../src/${p}`, import.meta.url), "utf8")
 const css = src("index.css");
 const skillJsx = src("ui/SkillSelect.jsx");
 const perkJsx = src("ui/PerkSelect.jsx");
-const legJsx = src("ui/LegendarySelect.jsx");
+// exp skill rework: LegendarySelect.jsx is gone (legendaries are the fifth rarity of the skill offer) — two screens remain.
 const cornersJsx = src("ui/CardCorners.jsx");
 const buildPy = readFileSync(new URL("../scripts/skill-art-build.py", import.meta.url), "utf8");
 
@@ -286,9 +286,9 @@ describe("#cornerart — no runtime bloom", () => {
 });
 
 describe("#cornerart — wiring", () => {
-  const screens = [["SkillSelect", skillJsx], ["PerkSelect", perkJsx], ["LegendarySelect", legJsx]];
+  const screens = [["SkillSelect", skillJsx], ["PerkSelect", perkJsx]];
 
-  it("all three heads come from ONE component, so they cannot drift apart", () => {
+  it("both heads come from ONE component, so they cannot drift apart", () => {
     for (const [name, jsx] of screens) {
       expect(jsx, `${name} does not use the shared component`)
         .toMatch(/import \{ CardCorners \} from "\.\/CardCorners\.jsx"/);
@@ -316,14 +316,8 @@ describe("#cornerart — wiring", () => {
     expect(perkJsx).toMatch(/import \{ CORNER_PERK \} from "\.\/cornerArt\.js"/);
   });
 
-  /* The legendary phase binds like the SKILL screen, not like the perk screen. A gold phase ornament
-     was built and rejected at the visual gate (Q9, 2026-08-22): that screen already carries the skill
-     tab row and the skill emblems, so the corner speaks the same language. Guarded in both
-     directions — it must follow the tab, and it must not have acquired a fixed key of its own. */
-  it("the legendary head follows its tab, exactly as the skill head does", () => {
-    expect(legJsx).toMatch(/<CardCorners artKey=\{curG\.arch\}/);
-    expect(legJsx).not.toMatch(/CORNER_LEGENDARY/);
-  });
+  /* exp skill rework: the legendary screen (which bound like the skill screen, Q9 2026-08-22) is gone with the
+     legendary phase; the dropped gold key stays dropped — see the isFiligree guard below. */
 
   it("the archetype binding is the KEY, never the translated label", () => {
     // `archMeta(arch).label` is „Blitz"/„Lightning" — an ornament hung on it vanishes on an English run.
@@ -350,10 +344,9 @@ describe("#cornerart — wiring", () => {
      carry no media query — its zone is one zone at every width, and a conditional there would mean two
      zones pretending to be one. What IS conditional is how MANY copies are shown: the phone shows one
      instead of the mirrored pair, and that is a rule on `.co-corner-r`, not on `.co-corner`. */
-  it("the gate is in JSX on ALL THREE screens, and covers desktop AND phone", () => {
+  it("the gate is in JSX on BOTH screens, and covers desktop AND phone", () => {
     expect(skillJsx).toMatch(/\{\(wide \|\| phone\) && curG && <CardCorners/);
     expect(perkJsx).toMatch(/\{\(inWings \|\| onPhone\) && <CardCorners/);
-    expect(legJsx).toMatch(/\{\(wide \|\| phone\) && curG && <CardCorners/);
     // No media query may render or hide the ornament ITSELF — a CSS gate still puts the <img> in the DOM.
     expect(coCorner).not.toMatch(/@media/);
   });

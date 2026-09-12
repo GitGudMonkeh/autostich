@@ -33,7 +33,6 @@ import esFamilies from "./esFamilies.js";   // 73 perk families x name + tier de
 import esMeta from "./esMeta.js";           // upgrade tree + weekly modifiers
 import esGlossary from "./esGlossary.js";   // 109 glossary entries + categories + groups
 import esCosmetics from "./esCosmetics.js"; // skin sets + global effects
-import esGuides from "./esGuides.js";       // the four archetype guides
 
 export default {
   ...esSkills,
@@ -42,7 +41,6 @@ export default {
   ...esMeta,
   ...esGlossary,
   ...esCosmetics,
-  ...esGuides,
 
   /* ---- Rarity ladder (package §3.5) ----
      Ends on "Épica", not "Legendaria": legendary is a separate axis in this game (legendary perks,
@@ -178,7 +176,9 @@ export default {
   "building.kick.critFlatMult": "con crítico ×{n} puntuación directa",
   "building.kick.streakDoubleFrom": "doble a partir de racha {n}",
   "building.kick.addType": "segundo tipo de comodín: {type}",
+  "building.kick.farbJoker": "se convierte en comodín de bloque de palo: la celda cuenta como el palo correspondiente",
   "building.kick.ankerValue": "+{n} valor de baza por celda de ancla",
+  "building.eff.tierValue": "además +{n} valor de baza en cada celda",
   "building.kick.active": "{base} · {kick}",
   "building.kick.preview": "{base} (nivel {tier}: {kick})",
 
@@ -269,6 +269,8 @@ export default {
   "rail.critChance.ion": "+{pct} ion.",
   "rail.critMult": "Mult. crítico",
   "rail.jackpot": "Bote",
+  "rail.critMult.capped": "en el tope · {raw} acumulado",
+  "rail.critChance.over": "+{pp} sobre 100 % · +{mult}× mult",
   "rail.wins": "Victorias",
   "rail.losses": "Derr.",
   "rail.rate": "Tasa",
@@ -355,8 +357,8 @@ export default {
   "bar.ice.firnReserve": "Reserva del suelo",
   "bar.ice.frozenOpp": "Rivales congelados",
   "bar.ice.duoBuff": "Bonificación de dúo",
-  "bar.ice.avalanche.ready": "Gran avalancha · lista",
-  "bar.ice.avalanche.used": "Gran avalancha · gastada",
+  "bar.ice.avalanche.now": "Gran avalancha · estalla",
+  "bar.ice.avalanche.in": "Gran avalancha · en {n} ciclos",
 
   /* Plant */
   "bar.plant.yield": "Rendimiento del jardín",
@@ -489,6 +491,7 @@ export default {
   "skill.badge.legendary": "★ LEGENDARIA",
   "skill.selected": "✓ seleccionada",
   "skill.held": "Tus habilidades: {held}/{slots} · ya en tu poder",
+  "skill.tier.lifted": "elevado",
   "skill.heldBadge": "✓ en tu poder",
   "skill.lastOfArch": "⚠ Última habilidad de {arch}: {loss}.",
   "skill.lastOfArch.baked": " El valor de carta ya ganado se conserva.",
@@ -501,7 +504,7 @@ export default {
   "skill.passive.collapse": "{arch}: plegar la pasiva",
   "skill.passive.lightning": "La primera habilidad de Rayo da +{first} % de probabilidad de crítico, y cada una siguiente +{each} %. Además +{mult}× de multiplicador de crítico por cada habilidad de Rayo.",
   "skill.passive.fire": "Las victorias desde {margin} de margen de valor de combate dan +{heat} % de calor y +{score} de puntuación de fuego. Cuanto mayor sea el margen, más de ambos. Las derrotas cuestan {cool} % de calor, más tu desventaja de valor, como máximo {coolMax}. Cada habilidad de Fuego adicional da +{perSkill} de puntuación de fuego por punto de margen.",
-  "skill.passive.ice": "Cada habilidad de Hielo congela una de tus cartas como glaciar, también cuando la cambias con las ranuras llenas. Deja de poder moverse en cualquier fase de orden, pero acumula masa en cada ciclo y acaba estallando sobre sus vecinas. A partir de {declineFrom} habilidades de Hielo en tu poder, incluso rechazar una oferta congela un glaciar, así que puedes tener más glaciares que ranuras de habilidad.",
+  "skill.passive.ice": "Cada habilidad de Hielo congela una de tus cartas donde está: deja de poder moverse en cualquier fase de orden, pero acumula masa en cada ciclo y acaba estallando sobre sus vecinas. El suelo abierto también se congela: cada celda libre acumula nieve y la entrega a tus glaciares. Cuantos menos glaciares tengas, más recibe cada uno.",
   "skill.passive.plant": "Cada victoria da a la carta hasta +1 de crecimiento, a pleno ritmo desde {ref} habilidades de Planta. Desde {green} de crecimiento se pone verde. Si solo tienes habilidades de Planta, cada {perValue} de crecimiento da +1 de valor de carta, hasta {cap}; entonces está completamente desarrollada. Desde {minSkills} habilidades de Planta crece además con cada {everyLoss} derrotas.",
   "skill.forms.head": "Tus formaciones activas",
   "skill.forms.expand": "Desplegar el tablero de orden",
@@ -667,7 +670,6 @@ export default {
   "glacierlegend.block": "cuadrado 2×2 (4 glaciares)",
   "glacierlegend.kreuz": "centro + 4 vecinas (5 glaciares)",
   "glacierlegend.linie": "fila completa (5) o columna (8)",
-  "glacierlegend.linie.wall": "fila completa (5) o columna (8) · Muro de hielo",
   "glacierlegend.flaeche": "3×3 lleno (9 glaciares)",
   "glacierlegend.mark.a": "una",
   "glacierlegend.mark.compact": "azul = carta en formación activa",
@@ -1065,7 +1067,7 @@ export default {
   "board.nav.global.sub": "Histórico · todas las partidas",
   "board.nav.champions.sub": "Puesto 1 de cada semana finalizada",
   "board.nav.rules.sub": "Base y todos los modificadores",
-  "board.rules.intro": "Todo el mundo juega cada semana la misma semilla con una base justa: el árbol de mejoras no tiene efecto ({rerolls} relanzamientos por fase, todas las rarezas, fase legendaria en el ciclo {legCycle}). Cada semana, de 3 a 5 modificadores aleatorios (≥2 positivos, ≥1 negativo) cambian la partida, idénticos para todos. Solo cuentan las partidas completadas; al final de la semana el puesto 1 pasa al archivo Challenger y la clasificación empieza de nuevo.",
+  "board.rules.intro": "Todo el mundo juega cada semana la misma semilla con una base justa: el árbol de mejoras no tiene efecto ({rerolls} relanzamientos por fase, todas las rarezas). Cada semana, de 3 a 5 modificadores aleatorios (≥2 positivos, ≥1 negativo) cambian la partida, idénticos para todos. Solo cuentan las partidas completadas; al final de la semana el puesto 1 pasa al archivo Challenger y la clasificación empieza de nuevo.",
   "board.rules.pos": "Modificadores positivos",
   "board.rules.neg": "Modificadores negativos",
   "board.rules.pairs": "Pares excluyentes (nunca juntos)",
@@ -1686,6 +1688,7 @@ export default {
   "start.tutorial": "Tutorial",
   "start.feedback": "Comentarios",
   "start.discord": "Abrir Discord",
+  "start.spotify": "Álbum en Spotify",
   "start.logo.alt": "AUTOBAZA",
   "start.tagline": "Ordena. Vence. Escala.",
   "start.progress.onboarding": "Introducción",

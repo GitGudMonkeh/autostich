@@ -1,9 +1,9 @@
 import { useMemo } from "react";
 import { summarizeFormations } from "../game/formations.js";
 import { precomputeArchitect, architectValueBonus } from "../game/architect.js";
-import { hasCritPerk, totalCritChanceRaw, totalCritMult, fundamentBonus } from "../game/perks.js";
+import { hasCritPerk, totalCritChanceRaw, displayCritChance, critChanceOverPP, totalCritMult, totalCritMultRaw, fundamentBonus } from "../game/perks.js";
 import { hasCritFamily, allianceGroups } from "../game/families.js";
-import { ionCritChance } from "../game/skills.js";
+import { overcritMult } from "../game/factions/lightning.js"; // §7.44: die Systemregel für den Chance-Überschuss (dieselbe Quelle wie der Motor)
 import { Sparkline } from "./Sparkline.jsx";
 import { ScoreSourceBar, sourceShares } from "./RunGraphs.jsx";
 import { fmtScore, fmtScoreShort } from "./format.js"; // Gameplay-Neu-Aufbau: „Bester Score" in der Analyse-Ecke
@@ -49,15 +49,21 @@ export function StatusRail({ state, currentTraj = [], recordTraj = [], options =
   // Live-Crit-Chance des NÄCHSTEN Siegs: analog zum echten Wurf (#19). #267: die Crit-Chance kommt aus der Blitz-Basis
   // (lightning) + den Präzision-Familien (unkonditionale Schärfe im Live-Preview), dieselbe Rechnung wie die Engine.
   const critRaw = totalCritChanceRaw(state);
-  // #181: Gesamt-Crit-Chance UNGEKLEMMT anzeigen (kann > 100 % sein — der Überschuss speist L6 „Raserei" und
-  // Familie D „Überschusskrit"). Nur nach unten bei 0 begrenzen; KEIN Math.min(1, …) mehr (das war nur Anzeige;
-  // der echte Wurf bleibt in der Engine bei engine.js:302 geklemmt).
-  const critPct = Math.round(Math.max(0, critRaw) * 100);
-  // #271: der feldweite Ionisierungs-Anteil an der Crit-Chance (im critPct oben enthalten) — separat ausgewiesen.
-  const ionCritPct = lightning && lightning.active ? Math.round(ionCritChance(state.deck || []) * 100) : 0;
-  // Crit-Mult VOLLSTÄNDIG (geteilter Helfer): Perk-Basis + Familien-Wucht + Blitz (inkl. Donnergott) + Durchschlag
-  // + Entladung-Momentum (v0.5) — der STAND des Crit-Multiplikators inkl. der neuen Blitz-Motoren.
+  /* §7.44 (Owner): die Chance-Zeile zeigt höchstens 100 % — mehr kann ein Wurf nicht treffen, und eine Zahl wie
+     „180 %" behauptet einen Nutzen, den sie nicht hat. Der Überschuss verschwindet trotzdem nicht: er steht als
+     Unterzeile, weil er über die Systemregel (overcritMult, 0,03× je Punkt) in den Crit-Multiplikator zahlt und
+     zusätzlich L6 „Raserei" und Familie D „Überschusskrit" speist. (Bis dahin stand hier die rohe Zahl, #181 — der
+     Überschuss war sichtbar, aber nicht als das, was er tut.) */
+  const critPct = Math.round(displayCritChance(state) * 100);
+  const critOverPP = critChanceOverPP(state);
+  // Crit-Mult VOLLSTÄNDIG (geteilter Helfer): Perk-Basis + Familien-Wucht + Blitz (Gewitterfront-Rampe,
+  // Vorentladung) + Systemregel — der STAND des Crit-Multiplikators. (exp: der feldweite Ionisierungs-Crit ist weg.)
   const critMultTotal = totalCritMult(state);
+  /* §7.39 (Owner-Entscheid B): der Wert oben ist der GEDECKELTE — das, was ein Stich wirklich zahlt. Liegt der
+     gebaute Multiplikator darüber, sagt die Unterzeile, wie viel davon verfällt; sonst bleibt es beim bisherigen
+     Text. Ohne das kaufte man weiter Crit-Multiplikator, von dem laut §7.31 ohnehin 81 % am Deckel liegen bleibt. */
+  const critMultRaw = totalCritMultRaw(state);
+  const critOverCap = critMultRaw > critMultTotal + 1e-9;
   // #123/#UI: Formations-Bonus der aktuellen Aufstellung dauerhaft sichtbar (gleiche Quelle wie die
   // Formationsphase → kein Drift). Als SUMME aller Positionen in % (Σ(mult−1)·100) — nicht mehr max/aktuelle Position.
   const { count: formCount } = summarizeFormations(state.formations || []);
@@ -95,18 +101,23 @@ export function StatusRail({ state, currentTraj = [], recordTraj = [], options =
         <div className="grid grid-cols-2 gap-2">
           <MCell label={t("rail.formation")} tone="#5ab87a" value={formCount > 0 ? t("rail.formation.value", { n: formCount, pct: formBonusPct }) : "–"} />
           <MCell label={t("rail.buildings")} tone="#d4a63a" value={buildBonusPct > 0 ? t("rail.pct", { pct: buildBonusPct }) : "–"} />
-          {showCrit && <MCell label={t("rail.critChance")} tone="#e879f9" value={t("rail.pct.plain", { pct: critPct })} sub={ionCritPct > 0 ? t("rail.critChance.ion", { pct: ionCritPct }) : null} />}
-          {showCrit && <MCell label={t("rail.critMult")} tone={perks.includes("L5") ? "#d4a63a" : "#e879f9"} value={`×${fmtMult(critMultTotal)}`} sub={perks.includes("L5") ? t("rail.jackpot") : null} />}
+          {showCrit && <MCell label={t("rail.critChance")} tone="#e879f9" value={t("rail.pct.plain", { pct: critPct })}
+            sub={critOverPP > 0 ? t("rail.critChance.over", { pp: critOverPP, mult: fmtMult(overcritMult(critRaw)) }) : null} />}
+          {showCrit && <MCell label={t("rail.critMult")} tone={perks.includes("L5") ? "#d4a63a" : "#e879f9"} value={`×${fmtMult(critMultTotal)}`} sub={critOverCap ? t("rail.critMult.capped", { raw: fmtMult(critMultRaw) }) : perks.includes("L5") ? t("rail.jackpot") : null} />}
         </div>
       </div>
 
-      {/* Bilanz — Siege/Verluste/Siegquote/Stiche (+ Crits, wenn relevant). Siegquote steht seit dem StatusBar-Umbau hier. */}
+      {/* Bilanz — Siege/Verluste/Siegquote/Stiche/Serie (+ Crits, wenn relevant). Siegquote steht seit dem
+          StatusBar-Umbau hier, die SERIE seit dem Owner-Playtest 2026-09-08: in der oberen Leiste hat jetzt der
+          Münz-Kontostand ihren Platz. Die Währung wird in jeder Entscheidungsphase gelesen und gehört nach oben;
+          die Serie ist ein Verlaufswert und steht hier bei den anderen Lauf-Zählern richtig. */}
       <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-body-5 pt-2 border-t" style={{ borderColor: DECK_BORDER }}>
         <span><span className="opacity-50">{t("rail.wins")} </span><b style={{ color: "#5ab87a" }}>{wins}</b></span>
         <span><span className="opacity-50">{t("rail.losses")} </span><b style={{ color: "#e0605a" }}>{losses}</b></span>
         <span><span className="opacity-50">{t("rail.rate")} </span><b style={{ color: winPct == null ? "#e8e8ea" : winPct >= 50 ? "#5ab87a" : "#e0605a" }}>{winPct == null ? "–" : `${winPct}%`}</b></span>
         <span><span className="opacity-50">{t("rail.tricks")} </span><b>{trickNo}</b></span>
         {showCrit && <span><span className="opacity-50">{t("rail.crits")} </span><b style={{ color: "#e879f9" }}>{crits || 0}</b></span>}
+        <span><span className="opacity-50">{t("rail.streak")} </span><b style={{ color: (state.winStreak || 0) >= 3 ? "#e0605a" : "#e8e8ea" }}>{(state.winStreak || 0) > 0 ? `${state.winStreak}×` : "–"}</b><span className="opacity-45 text-micro-3 ml-1">{t("hud.streak.best", { n: state.bestStreak || 0 })}</span></span>
       </div>
 
       {/* Analyse — Bester Score + einklappbare Score-Herkunft/Verlauf (default eingeklappt, Zustand über Runs gemerkt). */}

@@ -1,0 +1,483 @@
+import { describe, it, expect } from "vitest";
+import * as C from "../src/game/constants.js";
+import { SKILL_DEFS, PFLANZE_TIERS as PT, ARCHETYPE_ORDER, SKILL_TIER_COUNT } from "../src/game/skills.js";
+import { P, plantStage, greenCount, applyGrowth, growthOnWin, beetGains, plantValueBonus, plantFormMult, greenWeight,
+  plantOnWin, plantFormCount, plantScoreFormations } from "../src/game/factions/plant.js";
+import { resolveTrick } from "../src/game/engine.js";
+import { initialState, reducer } from "../src/game/reducer.js";
+import { makeRng } from "../src/game/deck.js";
+import { computeFormations, SEGMENT_SIZE, spalierOpenBorders, openBorderInfo, FARBBLOCK_BASE, ESKALATION_STEP, OVERLAP_BONUS } from "../src/game/formations.js";
+
+/* ============================================================
+   PFLANZE (exp skill rework, docs/skill-rework.md §6) — Passiv, die 15 Skills, die vier Formationshebel und die vier
+   Legendären. Ersetzt plant-v0.test.js: die alte Ökonomie (Wertachse mit Auto-Sieg bei 11, Direkt-Score, Trimmen,
+   Bekenntnis-Skalierung, Kolonisierung des Gegnerdecks, enabler-Verstärker) ist mit dem Rework gestrichen — mit ihr
+   die Wächter, die sie schützten. Was hier steht, prüft die neuen Invarianten:
+     Wachstum je Karte (+1 je Sieg, +1 je Formation), grau → grün → blühend, Score aus grünen Formationen,
+     Hebel ändern die ERKENNUNG, und ohne gehaltenen Pflanzen-Skill ändert sich an der Formations-Engine nichts.
+   ============================================================ */
+
+const N = 40;
+const deckOf = (f) => Array.from({ length: N }, (_, i) => ({ id: `X${i}`, suit: ["R", "B", "G", "Y"][i % 4], baseRank: 5, value: 5, ...f(i) }));
+const constDeck = (v) => Array.from({ length: N }, (_, i) => ({ id: `X${i}`, suit: ["R", "B", "G", "Y"][i % 4], baseRank: v, value: v }));
+const identity = () => Array.from({ length: N }, (_, i) => i);
+const noCrit = () => 0.99;
+// Formations-Sicht je Position: ohne Formation, bzw. mit EINEM Lauf über `members` (die Mitglieder liegen auf dem
+// Eintrag — genau das liest die Fraktion). Die Engine rechnet Formationen nur an Position 0 neu → Tests laufen auf
+// Position 1 mit injizierter Sicht (docs/engineering/testing.md, Falle „Formationen nur an Position 0").
+const noForm = () => Array.from({ length: N }, () => ({ mult: 1, baseMult: 1, formations: [] }));
+const withRun = (members, type = "farbblock", factor = 1.35) => {
+  const f = noForm();
+  members.forEach((p, i) => { f[p] = { mult: factor, baseMult: factor, formations: [{ type, ordinal: i + 1, factor, members }] }; });
+  return f;
+};
+const scen = (over = {}) => ({
+  ...initialState(makeRng(1)), deck: constDeck(5), oppDeck: constDeck(0), playerOrder: identity(), oppOrder: identity(),
+  activeArchetypes: ["plant"], pos: 1, formations: noForm(), ...over,
+});
+const win = (over = {}) => resolveTrick(scen(over), noCrit);
+const G = C.PLANT_GREEN_THRESHOLD, B = C.PLANT_BLOOM_THRESHOLD;
+
+describe("Pflanze — Register und Stufenleitern (§6.7, §6.8)", () => {
+  const plant = Object.values(SKILL_DEFS).filter((s) => s.archetype === "plant");
+  it("18 Pflanze-Skills: 15 normale mit vier Stufenzeilen + 3 Legendäre ohne Stufe", () => {
+    expect(plant).toHaveLength(18);
+    const normal = plant.filter((s) => !s.legendary), leg = plant.filter((s) => s.legendary);
+    expect(normal).toHaveLength(15);
+    expect(leg, "§6.11 (Owner): drei Legendäre je Fraktion").toHaveLength(3);
+    expect(SKILL_DEFS.SK_PLANT_L01, "Weltenbaum gestrichen — eine Rampe ohne eigene Auszahlung").toBeUndefined();
+    for (const s of normal) expect(Array.isArray(s.tiers) && s.tiers.length === SKILL_TIER_COUNT, `${s.id} ohne Stufentabelle`).toBe(true);
+    for (const s of leg) expect(s.tiers).toBeUndefined();
+    expect(SKILL_DEFS.SK_PLANT_02, "Wurzeltiefe gestrichen (§6.3)").toBeUndefined();
+    expect(SKILL_DEFS.SK_PLANT_18, "Kernholz gestrichen — die Wertachse ist weg (§6.1)").toBeUndefined();
+    expect(ARCHETYPE_ORDER).toContain("plant");
+  });
+  it("jeder Platz trägt seinen Skill — die ID ist der Fügepunkt zum Emblem (skillArt.js)", () => {
+    const byId = Object.fromEntries(plant.map((s) => [s.id, s.name]));
+    expect(byId).toEqual({
+      SK_PLANT_03: "Spalier", SK_PLANT_04: "Jahresringe", SK_PLANT_05: "Aussaat", SK_PLANT_06: "Wildwuchs",
+      SK_PLANT_07: "Setzlingsbeet", SK_PLANT_08: "Zäher Halm", SK_PLANT_09: "Ranken", SK_PLANT_10: "Hecke",
+      SK_PLANT_11: "Windung", SK_PLANT_12: "Lichtung", SK_PLANT_13: "Blätterdach", SK_PLANT_14: "Verwachsung",
+      SK_PLANT_15: "Dickicht", SK_PLANT_16: "Rankgerüst", SK_PLANT_17: "Blütenlese",
+      SK_PLANT_L02: "Wurzelgeflecht", SK_PLANT_L03: "Baumreihe", SK_PLANT_L04: "Ewiger Frühling",
+    });
+  });
+  it("jeder Skill trägt genau einen Effekt und keine Verstärker-Bindung (§6.1)", () => {
+    for (const s of plant) {
+      expect(s.enabler, `${s.id} ist ein Verstärker`).toBeUndefined();
+      expect(s.trimGrowth, `${s.id} trägt noch die Trimm-Klausel`).toBeUndefined();
+    }
+  });
+  it("Leitern steigen mit der Stufe, keine zwei Stufen sind gleich (§1)", () => {
+    // §6.26: die Fraktion hat keine fallende Schwelle mehr — Überwucherungs `field` ist mit ihr gestrichen.
+    const asc = (rows, key) => rows.every((r, i) => i === 0 || r[key] >= rows[i - 1][key]);
+    for (const k of ["aussaat", "ranken", "halm", "bluetenlese"]) expect(asc(PT[k], "growth"), k).toBe(true);
+    for (const k of ["blaetterdach", "rankgeruest", "hecke", "windung", "jahresringe", "bluetenlese"]) expect(asc(PT[k], "score"), k).toBe(true);
+    expect(asc(PT.spalier, "borders")).toBe(true);
+    expect(asc(PT.wildwuchs, "jokers")).toBe(true);
+    expect(asc(PT.dickicht, "cap")).toBe(true);
+    expect(asc(PT.verwachsung, "bonus")).toBe(true);
+    expect(asc(PT.lichtung, "extra")).toBe(true);
+    for (const rows of Object.values(PT)) {
+      const seen = rows.map((r) => JSON.stringify(r));
+      expect(new Set(seen).size, `zwei gleiche Stufen: ${seen[0]}`).toBe(rows.length);
+    }
+  });
+  it("die Sätze sind nach Länge und Häufigkeit des Formationstyps gestaffelt (§6.8, §6.26)", () => {
+    // Ein grüner Farbblock wird am längsten, der Wechsel bleibt am kürzesten → je Karte zahlt er am meisten.
+    expect(PT.blaetterdach[0].score).toBeLessThan(PT.rankgeruest[0].score);
+    expect(PT.rankgeruest[0].score).toBeLessThan(PT.windung[0].score);
+    // §6.26: Treppe und Wiederholung sind gleich lang, aber eine grüne Wiederholung entsteht seltener — gemessen
+    // trug Rankgerüst +0,05M und die Hecke −0,40M bei identischer Leiter. Die Hecke steht deshalb darüber.
+    expect(PT.hecke[0].score).toBeGreaterThan(PT.rankgeruest[0].score);
+  });
+  it("die Texte interpolieren die Tabellen (kein Drift zwischen Regel und Beschreibung)", () => {
+    expect(SKILL_DEFS[P.AUSSAAT].desc).toContain(`+${PT.aussaat[0].growth}`);
+    // §6.20: das Blühgewicht gehört der Karte, nicht dem Skill — die Score-Skills nennen es NICHT.
+    for (const t of [0, 1, 2, 3]) expect(SKILL_DEFS[P.BLAETTERDACH].descTiers[t]).not.toContain("blühende");
+    for (const rows of [PT.blaetterdach, PT.rankgeruest, PT.hecke, PT.windung]) for (const r of rows) expect(r.bloom).toBeUndefined();
+    expect(SKILL_DEFS[P.VERWACHSUNG].desc).toContain(`um ${String(PT.verwachsung[0].bonus).replace(".", ",")} höher`);
+    // §6.26: `mult` muss der Faktor sein, den `cap` erzeugt — sonst driften Skilltext und Motor auseinander.
+    for (const r of PT.dickicht) expect(r.mult).toBeCloseTo(FARBBLOCK_BASE + (r.cap - 3) * ESKALATION_STEP, 5);
+    expect(SKILL_DEFS[P.JAHRESRINGE].descTiers[3]).toContain(`über ${B}`);
+  });
+});
+
+describe("Pflanze — Passiv: Wachstum, Zustände, Blüten-Score (§6.2)", () => {
+  it("ein Sieg gibt +1 Wachstum, dazu +1 je Formation an der Siegposition", () => {
+    expect(win().growth.X1).toBe(C.PLANT_GROWTH_WIN);
+    const s = win({ formations: withRun([0, 1, 2]) });
+    expect(s.growth.X1).toBe(C.PLANT_GROWTH_WIN + C.PLANT_GROWTH_PER_FORMATION);
+    // zwei Formationen an derselben Position → dreimal so schnell wie ein Sieg ohne Aufstellung
+    const two = withRun([0, 1, 2]);
+    two[1].formations.push({ type: "treppe", ordinal: 2, factor: 1.35, members: [0, 1, 2] });
+    expect(win({ formations: two }).growth.X1).toBe(3);
+  });
+  it("eine Niederlage gibt nichts, Wachstum fällt nie", () => {
+    const s = resolveTrick(scen({ deck: constDeck(0), oppDeck: constDeck(9), growth: { X1: 12 } }), noCrit);
+    expect(s.lastTrick.result).toBe("loss");
+    expect(s.growth.X1).toBe(12);
+  });
+  it("Schwellen: ab G grün, ab B blühend — beides in die Karte gebacken", () => {
+    expect(plantStage(G - 1)).toBe("grey");
+    expect(plantStage(G)).toBe("green");
+    expect(plantStage(B)).toBe("bloom");
+    const s = win({ growth: { X1: G - 1 } });
+    expect(s.deck[1].green).toBe(true);
+    expect(s.deck[1].bloom).toBeFalsy();
+    const s2 = win({ growth: { X1: B - 1 } });
+    expect(s2.deck[1].bloom).toBe(true);
+  });
+  it("eine blühende Siegkarte zahlt Basis-Score je grüner Karte in ihren Formationen", () => {
+    const deck = deckOf((i) => (i <= 2 ? { green: true, bloom: i === 1 } : {}));
+    const s = resolveTrick(scen({ deck, growth: { X1: B }, formations: withRun([0, 1, 2]) }), noCrit);
+    // §6.20: gezählt wird das Blühgewicht — zwei grüne à 1 plus die blühende mit ihrem Gewicht.
+    const w = s.deck.slice(0, 3).reduce((t, c) => t + greenWeight(c, s.growth[c.id] || 0), 0);
+    expect(s.plantBase).toBe(w * C.PLANT_BLOOM_SCORE_PER_GREEN);
+    expect(w).toBe(2 + C.PLANT_BLOOM_WEIGHT);
+    // ohne Formation zahlt sie nichts — die Fraktion zahlt für die Aufstellung, nicht für den Sieg
+    expect(resolveTrick(scen({ deck, growth: { X1: B } }), noCrit).plantBase).toBe(0);
+  });
+  it("ohne aktiven Pflanze-Archetyp wächst nichts", () => {
+    const s = resolveTrick(scen({ activeArchetypes: [] }), noCrit);
+    expect(s.growth.X1).toBeUndefined();
+  });
+  it("applyGrowth ist immutabel und meldet die Grün-Übertritte", () => {
+    const deck = constDeck(5);
+    const r = applyGrowth({ X0: G - 1 }, deck, [{ id: "X0", amount: 1 }]);
+    expect(r.becameGreen).toEqual(["X0"]);
+    expect(r.deck[0].green).toBe(true);
+    expect(deck[0].green, "das Eingangs-Deck bleibt unberührt").toBeUndefined();
+  });
+});
+
+describe("Pflanze — die Wachstums-Skills (§6.8)", () => {
+  const tier = (id, t) => ({ skills: [id], skillTiers: { [id]: t } });
+  it("Aussaat: gewinnt eine GRÜNE Karte, wachsen beide Nachbarn", () => {
+    const deck = deckOf((i) => (i === 1 ? { green: true } : {}));
+    const s = resolveTrick(scen({ deck, growth: { X1: G }, ...tier(P.AUSSAAT, 0) }), noCrit);
+    expect(s.growth.X0).toBe(PT.aussaat[0].growth);
+    expect(s.growth.X2).toBe(PT.aussaat[0].growth);
+    // graue Siegkarte sät nicht
+    expect(resolveTrick(scen({ ...tier(P.AUSSAAT, 0) }), noCrit).growth.X0).toBeUndefined();
+  });
+  it("Aussaat Episch: auch die zweiten Nachbarn", () => {
+    const deck = deckOf((i) => (i === 2 ? { green: true } : {}));
+    const s = resolveTrick(scen({ deck, pos: 2, growth: { X2: G }, ...tier(P.AUSSAAT, 3) }), noCrit);
+    expect(s.growth.X0).toBe(PT.aussaat[3].second);
+    expect(s.growth.X1).toBe(PT.aussaat[3].growth);
+  });
+  /* Ranken (§6.26): eigene IDs fürs Gegnerdeck, sonst kollidieren `tendrils` (je Gegnerkarte) und `growth`
+     (je eigener Karte) im Testaufbau — beide Decks heißen sonst X0…X39. */
+  const oppO = () => Array.from({ length: N }, (_, i) => ({ id: `O${i}`, suit: "R", baseRank: 0, value: 0 }));
+  const greenAt1 = () => deckOf((i) => (i === 1 ? { green: true } : {}));
+  it("Ranken: ein grüner Sieg rankt in die geschlagene Gegnerkarte, ein Sieg darauf erntet (§6.26)", () => {
+    const run = (over) => resolveTrick(scen({ deck: greenAt1(), oppDeck: oppO(), growth: { X1: G }, ...tier(P.RANKEN, 0), ...over }), noCrit);
+    // Der grüne Sieg rankt — und zahlt selbst noch nichts.
+    const s = run({});
+    expect(s.tendrils.O1).toBe(true);
+    expect(s.growth.X1).toBe(G + C.PLANT_GROWTH_WIN);
+    // Der Sieg auf einer berankten Karte erntet sie: Wachstum für die SIEGKARTE, und die Ranken sind verbraucht.
+    const s2 = run({ tendrils: { O1: true } });
+    expect(s2.growth.X1).toBe(G + C.PLANT_GROWTH_WIN + PT.ranken[0].growth);
+    expect(s2.tendrils.O1, "die Ernte verbraucht die Ranken (§7.27: sonst wird die Bedingung zur Formalität)").toBeUndefined();
+    // Eine graue Siegkarte rankt nicht.
+    expect(resolveTrick(scen({ oppDeck: oppO(), ...tier(P.RANKEN, 0) }), noCrit).tendrils.O1).toBeUndefined();
+  });
+  it("Ranken Episch: beim Ernten ranken die Nachbarn der Gegnerkarte mit (§6.26)", () => {
+    const s = resolveTrick(scen({ deck: greenAt1(), oppDeck: oppO(), growth: { X1: G }, tendrils: { O1: true }, ...tier(P.RANKEN, 3) }), noCrit);
+    expect(s.growth.X1).toBe(G + C.PLANT_GROWTH_WIN + PT.ranken[3].growth);
+    expect([s.tendrils.O0, s.tendrils.O2]).toEqual([true, true]);
+    expect(s.tendrils.O1).toBeUndefined();
+    // Normal berankt beim Ernten keine Nachbarn.
+    const s2 = resolveTrick(scen({ deck: greenAt1(), oppDeck: oppO(), growth: { X1: G }, tendrils: { O1: true }, ...tier(P.RANKEN, 0) }), noCrit);
+    expect(s2.tendrils.O0).toBeUndefined();
+  });
+  it("Lichtung: ein Formations-Sieg wächst zusätzlich, Episch je Formation", () => {
+    const base = C.PLANT_GROWTH_WIN + C.PLANT_GROWTH_PER_FORMATION;
+    expect(win({ formations: withRun([0, 1, 2]), ...tier(P.LICHTUNG, 0) }).growth.X1).toBe(base + PT.lichtung[0].extra);
+    expect(win({ ...tier(P.LICHTUNG, 0) }).growth.X1, "ohne Formation kein Zuschlag").toBe(C.PLANT_GROWTH_WIN);
+    const two = withRun([0, 1, 2]);
+    two[1].formations.push({ type: "treppe", ordinal: 2, factor: 1.35, members: [0, 1, 2] });
+    expect(win({ formations: two, ...tier(P.LICHTUNG, 3) }).growth.X1).toBe(1 + 2 + 2 * PT.lichtung[3].extra);
+  });
+  it("Zäher Halm: jede Karte wächst bei einer Niederlage, Episch je Formation (§6.26)", () => {
+    const lose = (over) => resolveTrick(scen({ deck: constDeck(0), oppDeck: constDeck(9), ...over }), noCrit);
+    expect(lose(tier(P.ZAEHER_HALM, 0)).growth.X1).toBe(PT.halm[0].growth);
+    // §6.26: die Grau-Schranke ist gefallen — eine grüne Karte wächst genauso wie eine graue.
+    const greenDeck = deckOf((i) => (i === 1 ? { green: true, value: 0, baseRank: 0 } : { value: 0, baseRank: 0 }));
+    expect(lose({ deck: greenDeck, growth: { X1: G }, ...tier(P.ZAEHER_HALM, 0) }).growth.X1, "grün wächst wie grau").toBe(G + PT.halm[0].growth);
+    // Episch legt das Formations-Wachstum drauf, das ein Sieg an dieser Position gegeben hätte — ohne Formation nichts.
+    expect(lose({ deck: greenDeck, growth: { X1: G }, ...tier(P.ZAEHER_HALM, 3) }).growth.X1, "ohne Formation kein Zuschlag").toBe(G + PT.halm[3].growth);
+    expect(lose({ deck: greenDeck, growth: { X1: G }, formations: withRun([0, 1, 2]), ...tier(P.ZAEHER_HALM, 3) }).growth.X1)
+      .toBe(G + PT.halm[3].growth + C.PLANT_GROWTH_PER_FORMATION);
+  });
+  it("Setzlingsbeet: das grünste Segment wächst, Episch jedes (§6.26)", () => {
+    const beet = (t, deck) => beetGains([P.SETZLINGSBEET], { [P.SETZLINGSBEET]: t }, { order: identity(), deck, segmentSize: SEGMENT_SIZE });
+    const deck = deckOf((i) => (i >= 5 && i <= 7 ? { green: true } : {})); // Segment 1 hat drei grüne Karten, die anderen keine
+    expect(beet(0, deck).map((g) => g.id)).toEqual(["X5", "X6", "X7", "X8", "X9"]);
+    expect(beet(0, deck)[0].amount).toBe(PT.setzlingsbeet[0].growth);
+    expect(beet(3, deck), "Episch: jedes Segment").toHaveLength(N);
+    // Ohne grüne Karte ist kein Segment vorn — dann gewinnt deterministisch das vordere.
+    expect(beet(0, deckOf(() => ({}))).map((g) => g.id)).toEqual(["X0", "X1", "X2", "X3", "X4"]);
+  });
+  /* Owner 2026-09-08: der erste Pflanzen-Pick legt den Fraktions-Kaltstart — die zehn grünen Karten des Decks sind
+     grün. §6.26: das Setzlingsbeet sät hier NICHT mehr mit (es wächst am Ende jedes Durchlaufs, engine.js), also ist
+     der Kaltstart der Fraktion die einzige Quelle beim Pick. */
+  it("der erste Pflanzen-Pick legt den Fraktions-Kaltstart an — nur die grüne Farbe (Reducer)", () => {
+    const base = { ...initialState(makeRng(1)), phase: "levelup", skillOffer: [P.SETZLINGSBEET], skillOfferTiers: { [P.SETZLINGSBEET]: 0 } };
+    const s = reducer(base, { type: "PICK_SKILL", skillId: P.SETZLINGSBEET, rng: makeRng(2) });
+    expect(s.activeArchetypes).toContain("plant");
+    const greens = base.deck.filter((c) => c.suit === "G");
+    expect(greens).toHaveLength(N / 4); // zehn im 40er-Deck
+    // Gewachsen ist genau die grüne Farbe, sonst nichts — das Beet sät beim Pick nicht mehr mit (§6.26).
+    expect(new Set(Object.keys(s.growth))).toEqual(new Set(greens.map((c) => c.id)));
+    // Grün ist grün: über der Schwelle UND mit dem Flag auf der Karte (der Weg über applyGrowth).
+    const inDeck = (id) => s.deck.find((c) => c.id === id);
+    for (const c of greens) {
+      expect(s.growth[c.id]).toBeGreaterThanOrEqual(C.PLANT_GREEN_THRESHOLD);
+      expect(inDeck(c.id).green).toBe(true);
+    }
+    // Der Kaltstart hebt nur an: genau auf die Schwelle, keinen Punkt darüber.
+    for (const c of greens) expect(s.growth[c.id]).toBe(C.PLANT_GREEN_THRESHOLD);
+  });
+});
+
+describe("Pflanze — Score aus grünen Formationen (§6.8)", () => {
+  const tier = (id, t) => ({ skills: [id], skillTiers: { [id]: t } });
+  const greenRun = () => deckOf((i) => (i <= 2 ? { green: true } : {}));
+  it("Blätterdach zahlt je grüner Karte im Farbblock — gezählt wird das Blühgewicht (§6.20)", () => {
+    const s = resolveTrick(scen({ deck: greenRun(), growth: { X1: G }, formations: withRun([0, 1, 2]), ...tier(P.BLAETTERDACH, 0) }), noCrit);
+    expect(s.plantBase).toBe(3 * PT.blaetterdach[0].score); // drei grüne, keine blühend
+    // Eine der drei blüht: sie zählt wie ihr Gewicht — auf jeder Stufe gleich, denn das Gewicht gehört der Karte.
+    const bloomDeck = deckOf((i) => (i <= 2 ? { green: true, bloom: i === 0 } : {}));
+    const at = (t, g0) => resolveTrick(scen({ deck: bloomDeck, growth: { X0: g0, X1: G }, formations: withRun([0, 1, 2]), ...tier(P.BLAETTERDACH, t) }), noCrit).plantBase;
+    for (const t of [0, 1, 2, 3]) expect(at(t, B), `Stufe ${t}`).toBe((2 + C.PLANT_BLOOM_WEIGHT) * PT.blaetterdach[t].score);
+    // Und es WÄCHST: je PLANT_BLOOM_WEIGHT_PER_GROWTH Wachstum über der Schwelle zählt die Karte eine grüne mehr.
+    const W = C.PLANT_BLOOM_WEIGHT_PER_GROWTH;
+    expect(at(0, B + W)).toBe((2 + C.PLANT_BLOOM_WEIGHT + 1) * PT.blaetterdach[0].score);
+    expect(at(0, B + 3 * W)).toBe((2 + C.PLANT_BLOOM_WEIGHT + 3) * PT.blaetterdach[0].score);
+    expect(at(0, B + W - 1)).toBe((2 + C.PLANT_BLOOM_WEIGHT) * PT.blaetterdach[0].score); // knapp darunter: noch nicht
+  });
+  it("greenWeight (§6.20): grau 0, grün 1, blühend das Grundgewicht plus eins je Schritt darüber", () => {
+    const W = C.PLANT_BLOOM_WEIGHT_PER_GROWTH, BW = C.PLANT_BLOOM_WEIGHT;
+    expect(greenWeight(null, 0)).toBe(0);
+    expect(greenWeight({ id: "X", }, 999)).toBe(0);                       // grau zählt nie mit
+    expect(greenWeight({ id: "X", green: true }, 999)).toBe(1);           // grün ohne Blüte: genau eine
+    expect(greenWeight({ id: "X", green: true, bloom: true }, B)).toBe(BW);
+    expect(greenWeight({ id: "X", green: true, bloom: true }, B + W)).toBe(BW + 1);
+    expect(greenWeight({ id: "X", green: true, bloom: true }, B + 2 * W + 5)).toBe(BW + 2);
+  });
+  it("je Formationstyp liest genau ein Skill — eine Treppe zahlt Rankgerüst, nicht Blätterdach", () => {
+    const treppe = withRun([0, 1, 2], "treppe");
+    expect(resolveTrick(scen({ deck: greenRun(), growth: { X1: G }, formations: treppe, ...tier(P.RANKGERUEST, 0) }), noCrit).plantBase).toBe(3 * PT.rankgeruest[0].score);
+    expect(resolveTrick(scen({ deck: greenRun(), growth: { X1: G }, formations: treppe, ...tier(P.BLAETTERDACH, 0) }), noCrit).plantBase).toBe(0);
+  });
+  it("eine graue Siegkarte zahlt nicht, auch nicht in einer grünen Formation", () => {
+    const deck = deckOf((i) => (i === 0 || i === 2 ? { green: true } : {}));
+    expect(resolveTrick(scen({ deck, formations: withRun([0, 1, 2]), ...tier(P.BLAETTERDACH, 0) }), noCrit).plantBase).toBe(0);
+  });
+  it("Jahresringe zahlt je Wachstumsstufe der Siegkarte, Episch zählt über der Blüh-Schwelle doppelt", () => {
+    const deck = deckOf((i) => (i === 1 ? { green: true } : {}));
+    const s = resolveTrick(scen({ deck, growth: { X1: 41 }, ...tier(P.JAHRESRINGE, 0) }), noCrit);
+    expect(s.plantBase).toBe(Math.floor(42 / PT.jahresringe[0].per) * PT.jahresringe[0].score); // 41 + 1 Sieg
+    const s2 = resolveTrick(scen({ deck, growth: { X1: B + 19 }, ...tier(P.JAHRESRINGE, 3) }), noCrit);
+    const g = B + 20;
+    expect(s2.plantBase).toBe(Math.floor((g + (g - B)) / PT.jahresringe[3].per) * PT.jahresringe[3].score);
+  });
+  it("Blütenlese: eine REIN grüne Formation zahlt einmal und lässt alle Karten darin wachsen", () => {
+    const s = resolveTrick(scen({ deck: greenRun(), growth: { X1: G }, formations: withRun([0, 1, 2]), ...tier(P.BLUETENLESE, 0) }), noCrit);
+    expect(s.plantBase).toBe(PT.bluetenlese[0].score);
+    expect(s.growth.X0).toBe(PT.bluetenlese[0].growth);
+    expect(s.growth.X2).toBe(PT.bluetenlese[0].growth);
+    // eine gemischte Formation zahlt nichts
+    const mixed = deckOf((i) => (i <= 1 ? { green: true } : {}));
+    expect(resolveTrick(scen({ deck: mixed, growth: { X1: G }, formations: withRun([0, 1, 2]), ...tier(P.BLUETENLESE, 0) }), noCrit).plantBase).toBe(0);
+  });
+});
+
+describe("Pflanze — die vier Formationshebel (§6.7, formations.js)", () => {
+  const ord = (n) => Array.from({ length: n }, (_, i) => i);
+  const bag = (id, t, growth = {}) => ({ skillTiers: { [id]: t }, growth });
+  const forms = (deck, skills, plant) => computeFormations(ord(deck.length), deck, {}, [], skills, [], {}, null, plant);
+  const hasType = (f, pos, type) => (f[pos].formations || []).some((x) => x.type === type);
+
+  it("Gegenprobe: ohne gehaltenen Pflanzen-Skill ändert das Bündel nichts", () => {
+    const deck = Array.from({ length: 10 }, (_, i) => ({ id: `C${i}`, suit: "R", value: 3 + i, green: true, bloom: true }));
+    const a = JSON.stringify(forms(deck, [], null));
+    expect(JSON.stringify(forms(deck, [], bag(P.SPALIER, 3, {})))).toBe(a);
+    expect(JSON.stringify(forms(deck, ["SK_FIRE_01"], bag(P.WILDWUCHS, 3, {})))).toBe(a);
+  });
+  it("Spalier öffnet die Segmentgrenze mit den meisten grünen Karten daneben", () => {
+    // Ein durchgehender Farbblock über die Grenze bei Position 4/5 — ohne Spalier endet er am Segment.
+    const deck = Array.from({ length: 10 }, (_, i) => ({ id: `C${i}`, suit: "R", value: 5, green: true }));
+    const before = forms(deck, [], null);
+    const fb = (f, p) => (f[p].formations || []).find((x) => x.type === "farbblock");
+    expect(fb(before, 4).len).toBe(5);
+    const after = forms(deck, [P.SPALIER], bag(P.SPALIER, 0));
+    expect(fb(after, 4).len).toBe(10);
+  });
+  it("die Anzeige liest dieselbe Quelle wie die Engine: spalierOpenBorders und openBorderInfo", () => {
+    // Zehn Karten, zwei Segmente, eine innere Grenze (0) — beide Nachbarn grün, also offen.
+    const deck = Array.from({ length: 10 }, (_, i) => ({ id: `C${i}`, suit: "R", value: 5, green: true }));
+    const order = ord(10);
+    const cards = order.map((di) => deck[di]);
+    expect([...spalierOpenBorders(cards, [P.SPALIER], { [P.SPALIER]: 0 })]).toEqual([0]);
+    expect(spalierOpenBorders(cards, [], {}).size).toBe(0);                       // ohne den Skill nichts
+    expect(spalierOpenBorders(cards.map((c) => ({ ...c, green: false })), [P.SPALIER], { [P.SPALIER]: 0 }).size).toBe(0); // ohne grüne Nachbarn nie
+    // Genau die Grenze, die die Engine öffnet, meldet die Anzeige — Gegenprobe über den Lauf, der sie kreuzt.
+    const info = openBorderInfo(order, deck, [P.SPALIER], { [P.SPALIER]: 0 }, {});
+    expect(info.active).toBe(true);
+    expect(info.isOpen(0)).toBe(true);
+    expect([...info.spalier]).toEqual([0]);
+    const fb = (f, p) => (f[p].formations || []).find((x) => x.type === "farbblock");
+    expect(fb(forms(deck, [P.SPALIER], bag(P.SPALIER, 0)), 4).len).toBe(10);
+    // Ohne Spalier und ohne Werkzeug ist die Leiste inaktiv — die UI zeichnet dann keine Brücke.
+    expect(openBorderInfo(order, deck, [], {}, {}).active).toBe(false);
+  });
+  it("Wildwuchs macht die am weitesten gewachsene blühende Karte zum Joker", () => {
+    // Zwei gleiche Werte mit einer Fremdkarte dazwischen: erst der Joker verbindet sie zur Wiederholung.
+    const deck = [
+      { id: "A", suit: "R", value: 7 },
+      { id: "J", suit: "B", value: 2, green: true, bloom: true },
+      { id: "B", suit: "R", value: 7 },
+    ];
+    expect(hasType(forms(deck, [], null), 0, "wiederholung")).toBe(false);
+    const f = forms(deck, [P.WILDWUCHS], bag(P.WILDWUCHS, 0, { J: 90 }));
+    expect(hasType(f, 0, "wiederholung")).toBe(true);
+    expect(f[0].formations.find((x) => x.type === "wiederholung").members).toEqual([0, 1, 2]);
+  });
+  it("Dickicht hebt den eingefrorenen Faktor des grünen Farbblocks (§6.26)", () => {
+    // Fünf grüne Karten einer Farbe: an Position 4 steht die Ordinalzahl 5, ohne Skill gedeckelt bei
+    // PLANT_GREEN_FARBBLOCK_CAP = 3 → der Faktor bleibt auf FARBBLOCK_BASE stehen, egal wie lang der Block wird.
+    const deck = Array.from({ length: 5 }, (_, i) => ({ id: `G${i}`, suit: "R", value: 5, green: true }));
+    const factorAt4 = (skills, plant) => forms(deck, skills, plant)[4].formations.find((x) => x.type === "farbblock").factor;
+    expect(factorAt4([], null)).toBeCloseTo(FARBBLOCK_BASE, 5);
+    expect(factorAt4([P.DICKICHT], bag(P.DICKICHT, 0))).toBeCloseTo(PT.dickicht[0].mult, 5);
+    // Steht der Deckel über der Blocklänge, eskaliert der Block voll — wie ein nicht-grüner.
+    expect(factorAt4([P.DICKICHT], bag(P.DICKICHT, 3))).toBeCloseTo(FARBBLOCK_BASE + 2 * ESKALATION_STEP, 5);
+    // Der Deckel wird nur GEHOBEN: ein nicht-grüner Block eskaliert weiter ungebremst.
+    const grey = deck.map((c) => ({ ...c, green: false }));
+    expect(forms(grey, [], null)[4].formations.find((x) => x.type === "farbblock").factor)
+      .toBeCloseTo(FARBBLOCK_BASE + 2 * ESKALATION_STEP, 5);
+  });
+  it("Verwachsung hebt den Überlappungsbonus — absolut, nicht prozentual (§6.26)", () => {
+    // Drei Karten gleicher Farbe UND gleichen Werts: an jeder Position liegen Farbblock und Wiederholung → zwei
+    // Formationen, also greift OVERLAP_BONUS[2].
+    const deck = Array.from({ length: 3 }, (_, i) => ({ id: `S${i}`, suit: "R", value: 5 }));
+    expect(forms(deck, [], null)[0].formations).toHaveLength(2);
+    const base = forms(deck, [], null)[0].mult;
+    const boosted = forms(deck, [P.VERWACHSUNG], bag(P.VERWACHSUNG, 0))[0].mult;
+    expect(boosted / base).toBeCloseTo((OVERLAP_BONUS[2] + PT.verwachsung[0].bonus) / OVERLAP_BONUS[2], 5);
+  });
+});
+
+describe("Pflanze — die vier Legendären (§6.5)", () => {
+  const ord = (n) => Array.from({ length: n }, (_, i) => i);
+  const forms = (deck, skills, plant = null) => computeFormations(ord(deck.length), deck, {}, [], skills, [], {}, null, plant);
+  it("Baumreihe: blühende Karten bilden eine positionsfreie Wiederholung", () => {
+    const deck = Array.from({ length: 8 }, (_, i) => ({ id: `C${i}`, suit: ["R", "B"][i % 2], value: i + 2, bloom: i % 4 === 0, green: i % 4 === 0 }));
+    expect(forms(deck, [])[0].formations.some((f) => f.type === "wiederholung")).toBe(false);
+    const f = forms(deck, [P.BAUMREIHE]);
+    const w = f[0].formations.find((x) => x.type === "wiederholung");
+    expect(w.members).toEqual([0, 4]);
+    expect(f[4].mult).toBeGreaterThan(1); // die zweite blühende Karte trägt den Wiederholungs-Faktor
+  });
+
+  /* §6.29 (Owner): die Reihe zahlt keinen Basis-Score je Mitglied. Gemessen stand Baumreihe mono bei +1079 %, dem
+     Doppelten des nächsten Legendären — weil ihre Mitgliederliste bis zu vierzig blühende Karten hält und die Hecke
+     (sie liest die Wiederholung) wie der Blüte-Passiv JE MITGLIED zahlen. Damit tat die Multiplikator-Achse die Arbeit
+     der Dichte-Achse. Der Wächter hält beide Seiten des Schnitts: kein Score je Mitglied, aber Faktor und
+     Formationszahl bleiben — sonst wäre der Skill nicht genervt, sondern gestrichen. */
+  it("Baumreihe: die Reihe zahlt keinen Score je Mitglied, behält aber Faktor und Formationszahl", () => {
+    // Vier blühende Karten, alle grün, verteilt über zwei Segmente → ohne die Reihe steht an Platz 0 KEINE Wiederholung.
+    const deck = Array.from({ length: 8 }, (_, i) => ({ id: `C${i}`, suit: ["R", "B"][i % 2], value: i + 2,
+      bloom: i % 2 === 0, green: i % 2 === 0 }));
+    const growth = Object.fromEntries(deck.map((c) => [c.id, c.bloom ? 80 : 0]));
+    const skills = [P.BAUMREIHE, P.HECKE];
+    const posForm = forms(deck, skills)[0];
+    const reihe = posForm.formations.find((f) => f.type === "wiederholung");
+    expect(reihe.members.length).toBe(4);                 // die Reihe hält alle vier blühenden Karten
+    // Zuerst die Wirkung: die Hecke liest die Wiederholung, und die Reihe ist hier die einzige. Sie darf nichts tragen.
+    const run = (sk) => plantOnWin(growth, deck, sk, {}, { pos: 0, order: ord(8), posForm, cardId: "C0" }).flat;
+    expect(run(skills)).toBe(run([P.BAUMREIHE]));         // Hecke dazu ändert nichts → kein Score je Mitglied
+    // Und die Gegenseite des Handels: Formationszahl (Wachstum, Überlappung) und Faktor bleiben ihr.
+    expect(plantFormCount(posForm)).toBeGreaterThan(0);
+    expect(plantScoreFormations(posForm)).not.toContain(reihe);
+  });
+  it("Wurzelgeflecht: JEDE blühende Karte zählt in jeder Formation ihres Segments mit", () => {
+    // Treppe 3-5-7 aus grünen Karten; die blühende Karte auf Platz 3 bricht sie (7 → 7) und ist NICHT ihr Mitglied.
+    const seg0 = [
+      { id: "A", suit: "R", value: 3, green: true },
+      { id: "B", suit: "R", value: 5, green: true },
+      { id: "C", suit: "R", value: 7, green: true },
+      { id: "M", suit: "R", value: 7, green: true, bloom: true },
+      { id: "X", suit: "Y", value: 1 },
+    ];
+    const plain = forms(seg0, []);
+    expect(plain[3].formations.some((f) => f.type === "treppe")).toBe(false);
+    const f = forms(seg0, [P.WURZELGEFLECHT]);
+    expect(f[3].formations.some((x) => x.type === "treppe")).toBe(true);
+    expect(f[0].formations.find((x) => x.type === "treppe").members).toContain(3);
+    // Das NÄCHSTE Segment bleibt unberührt: die Treppe dort kennt die blühende Karte aus Segment 0 nicht.
+    const wide = [...seg0.map((c) => ({ ...c })),
+      { id: "D", suit: "Y", value: 2 }, { id: "E", suit: "Y", value: 4 }, { id: "F", suit: "Y", value: 6 }];
+    const f2 = forms(wide, [P.WURZELGEFLECHT]);
+    expect(f2[5].formations.some((x) => x.type === "treppe")).toBe(true);
+    expect(f2[5].formations.every((x) => !x.members.includes(3))).toBe(true);
+  });
+  it("Ewiger Frühling: ist das Feld vollständig grün, blüht alles", () => {
+    const deck = deckOf((i) => (i === 1 ? {} : { green: true }));
+    const s = resolveTrick(scen({ deck, skills: [P.EWIGER_FRUEHLING], growth: { X1: G - 1 } }), noCrit);
+    expect(greenCount(s.deck)).toBe(N);
+    expect(s.deck.every((c) => c.bloom)).toBe(true);
+  });
+  it("Ewiger Frühling (§6.13): blühende Karten kämpfen stärker — der einzige Wert-Hebel der Fraktion", () => {
+    // Reiner Helfer: nur blühend und nur mit dem Skill.
+    const bloomCard = { id: "X1", bloom: true }, greenCard = { id: "X1", green: true };
+    expect(plantValueBonus([P.EWIGER_FRUEHLING], bloomCard)).toBe(C.EWIGER_FRUEHLING_BLOOM_VALUE);
+    expect(plantValueBonus([P.EWIGER_FRUEHLING], greenCard)).toBe(0);   // grün reicht nicht
+    expect(plantValueBonus([P.BAUMREIHE], bloomCard)).toBe(0);          // ohne den Skill nichts
+    expect(plantValueBonus([], null)).toBe(0);
+    // In der Engine: dieselbe blühende Karte gewinnt den Stich, den sie ohne den Skill verliert.
+    const deck = deckOf((i) => (i === 1 ? { bloom: true, green: true } : {}));
+    const bonus = C.EWIGER_FRUEHLING_BLOOM_VALUE;
+    const over = { deck, oppDeck: constDeck(5 + bonus - 1), growth: { X1: B } };
+    const with_ = resolveTrick(scen({ ...over, skills: [P.EWIGER_FRUEHLING] }), noCrit);
+    expect(with_.lastTrick.pValue).toBe(5 + bonus);
+    expect(with_.lastTrick.result).toBe("win");
+    const without = resolveTrick(scen({ ...over, skills: [P.BAUMREIHE] }), noCrit);
+    expect(without.lastTrick.pValue).toBe(5);
+    expect(without.lastTrick.result).not.toBe("win");
+  });
+  it("Ewiger Frühling (§6.15): ein Sieg mit blühender Karte zählt je Formation mehr — der einzige Multiplikator der Fraktion", () => {
+    const m = C.EWIGER_FRUEHLING_FORM_MULT;
+    const two = { mult: 1, baseMult: 1, formations: [
+      { type: "farbblock", ordinal: 2, factor: 1.35, members: [0, 1] },
+      { type: "treppe", ordinal: 2, factor: 1.35, members: [1, 2] },
+      { type: "anker", ordinal: 1, factor: 1.25 }, // Meta-Faktor ohne Mitglieder: zählt für die Pflanze nicht
+    ] };
+    const bloomCard = { id: "X1", bloom: true };
+    expect(plantFormMult([P.EWIGER_FRUEHLING], bloomCard, two)).toBeCloseTo(1 + 2 * m, 9);
+    expect(plantFormMult([P.EWIGER_FRUEHLING], bloomCard, noForm()[0])).toBe(1);       // ohne Formation
+    expect(plantFormMult([P.EWIGER_FRUEHLING], { id: "X1", green: true }, two)).toBe(1); // grün reicht nicht
+    expect(plantFormMult([P.BAUMREIHE], bloomCard, two)).toBe(1);                      // ohne den Skill
+    // In der Engine: derselbe Faktor steht im Sieg-Stack.
+    const deck = deckOf((i) => (i === 1 ? { bloom: true, green: true } : {}));
+    const f = withRun([0, 1, 2]);
+    const over = { deck, formations: f, growth: { X1: B } };
+    const on = resolveTrick(scen({ ...over, skills: [P.EWIGER_FRUEHLING] }), noCrit);
+    expect(on.lastTrick.breakdown.plantMult).toBeCloseTo(1 + m, 9); // ein Lauf an der Position
+    expect(resolveTrick(scen({ ...over, skills: [P.BAUMREIHE] }), noCrit).lastTrick.breakdown.plantMult).toBe(1);
+  });
+});
+
+describe("Pflanze — reine Helfer", () => {
+  it("growthOnWin: Passiv-Satz plus Satz je Formation", () => {
+    expect(growthOnWin([], {}, { formCount: 0 })).toBe(C.PLANT_GROWTH_WIN);
+    expect(growthOnWin([], {}, { formCount: 3 })).toBe(C.PLANT_GROWTH_WIN + 3 * C.PLANT_GROWTH_PER_FORMATION);
+  });
+  it("greenCount zählt die Karten mit Grün-Flag", () => {
+    expect(greenCount([{ green: true }, {}, { green: true, bloom: true }])).toBe(2);
+  });
+});

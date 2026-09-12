@@ -9,12 +9,23 @@
 //  - Shop: gierig alle bezahlbaren Items OHNE Zielauswahl kaufen, dann verlassen.
 //    (Ziel-Items bleiben in S0 außen vor; das hält die shop-target-Phase draußen.)
 import { PERK_DEFS } from "../../src/game/perks.js";
-import { archetypeOf, heatConsumerCount, chargeConsumerCount, isLegendarySkill } from "../../src/game/skills.js";
+import { archetypeOf, isLegendarySkill } from "../../src/game/skills.js";
 import { SKILL_SLOTS, MAX_ARCHETYPES } from "../../src/game/constants.js";
 import { perkActionFor, familyTargetStep } from "../families-policy.js";
 import { architectStep } from "../architect-policy.js"; // #202: Architekt-Phase (random/greedy platzieren)
 
 const pick = (arr, rng) => arr[Math.floor(rng() * arr.length)];
+
+// exp skill rework: die Türstufe einer Skill-Phase (s.skillDoors gesetzt, s.skillOffer noch null). Jede Policy wählt
+// dort eine Tür nach den Skills DAHINTER, aber stufenblind — die Stufen sieht auch der Spieler erst nach dem Öffnen.
+export const atDoors = (s) => s.phase === "levelup" && !s.skillOffer && Array.isArray(s.skillDoors) && s.skillDoors.length > 0;
+export const doorSkills = (s, i) => (((s.skillDoors || [])[i] || {}).skills || []);
+// Tür mit dem höchsten Wert nach `score(door skills, index)`; Gleichstand → die erste (deterministisch).
+export function bestDoor(s, score) {
+  let best = 0, bestV = -Infinity;
+  for (let i = 0; i < s.skillDoors.length; i++) { const v = score(doorSkills(s, i), i); if (v > bestV) { bestV = v; best = i; } }
+  return best;
+}
 
 // Kann dieser Skill in einen freien Slot? Spiegelt die Free-Slot-Bedingungen von PICK_SKILL.
 export function canAddSkill(s, id) {
@@ -26,18 +37,20 @@ export function canAddSkill(s, id) {
   const a = archetypeOf(id);
   const active = s.activeArchetypes || [];
   if (a && !active.includes(a) && active.length >= MAX_ARCHETYPES) return false;
-  const next = [...s.skills, id];
-  return heatConsumerCount(next) <= 1 && chargeConsumerCount(next) <= 1;
+  return true; // exp skill rework: keine Konsumentenregel mehr — Blitz und Feuer tragen ihren Payoff im Passiv
 }
 
-export function randomPolicy({ architectGreedy = false } = {}) {
+// exclude (exp skill rework): Skills, die dieser Zufallsspieler nie nimmt — die Ablation der Random-Auswertung
+// (skills-eval --policy random). Die Zufallszüge verschieben sich dadurch; gepaart bleibt nur der Seed.
+export function randomPolicy({ architectGreedy = false, exclude = [] } = {}) {
   return {
     name: architectGreedy ? "random+arch" : "random",
     act(s, rng) {
       switch (s.phase) {
         case "levelup": {
+          if (atDoors(s)) return { type: "CHOOSE_DOOR", index: Math.floor(rng() * s.skillDoors.length) }; // Baseline: irgendeine Tür
           if (s.skillOffer) {
-            const addable = s.skillOffer.filter((id) => canAddSkill(s, id));
+            const addable = s.skillOffer.filter((id) => canAddSkill(s, id) && !exclude.includes(id));
             return addable.length
               ? { type: "PICK_SKILL", skillId: pick(addable, rng), rng }
               : { type: "DECLINE_SKILL", rng }; // immer akzeptiert → Perk-Angebot oder weiterspielen
@@ -68,13 +81,6 @@ export function randomPolicy({ architectGreedy = false } = {}) {
           }
           return { type: "FROST_SELECT_CONFIRM" };
         }
-
-        // #272 Legendär-Phase (Runde 29): einen der 2 angebotenen Legendäre in den 7. Slot (build-defining). Baseline:
-        // zufällig aus dem Angebot (das schon nur aus aktiven Fraktionen stammt); leer → ablehnen (→ normale Skill-Wahl).
-        case "legendary":
-          return s.legendaryOffer && s.legendaryOffer.length
-            ? { type: "PICK_LEGENDARY", legendaryId: pick(s.legendaryOffer, rng), rng }
-            : { type: "DECLINE_LEGENDARY", rng };
 
         case "formation":
           return { type: "CONFIRM_FORMATION" }; // Baseline: Reihenfolge unangetastet lassen

@@ -12,3 +12,7 @@
 // Community-Discord — zugleich der Kontaktweg für Datenschutz-Anfragen (s. PrivacyModal.jsx).
 export const DISCORD_URL = "https://discord.gg/xMJtFPrbWg";
 export const DISCORD_BLURPLE = "#5865F2"; // Discord-Markenfarbe fürs Icon
+
+// Projekt-Album auf Spotify (Künstlerseite). Ohne si/utm-Share-Tracking-Parameter.
+export const SPOTIFY_URL = "https://open.spotify.com/artist/7r56PEOnQwRC1wTFB0AH4R";
+export const SPOTIFY_GREEN = "#1DB954"; // Spotify-Markenfarbe fürs Icon

@@ -30,6 +30,11 @@ export function fullPerkOffer(architectEnabled = true) {
 export function fullSkillOffer() {
   return Object.keys(SKILL_DEFS);
 }
+// exp skill rework: the full catalog in the rolled-offer shape — every skill at tier 1 (Selten, today's values).
+export function devSkillOffer() {
+  const offer = fullSkillOffer();
+  return { offer, tiers: Object.fromEntries(offer.filter((id) => !SKILL_DEFS[id].legendary).map((id) => [id, 1])) };
+}
 
 // Voller Bauplan-Katalog im Architekt-Angebots-Format: jede Familie an Stufe 1..MAX_TIER; Legendäre als eine „legendary"-Stufe.
 export function fullArchitectOffer() {

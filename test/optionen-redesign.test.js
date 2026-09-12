@@ -3,7 +3,9 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { OptionsModal } from "../src/ui/OptionsModal.jsx";
 import { defaultScreenOptions } from "../src/game/storage.js";
-import { setLocale, SOURCE_LOCALE } from "../src/i18n/index.js";
+import { setLocale, SOURCE_LOCALE, READY_LOCALE_IDS } from "../src/i18n/index.js";
+// exp: English is inactive on the playground (LOCALES in index.js) — the English render-checks sleep until it is ready again.
+const EN_OFF = !READY_LOCALE_IDS.includes("en");
 
 /* ============================================================================
    #optionen-redesign — die Nähte des Umbaus, die still reißen.
@@ -136,7 +138,7 @@ describe("#optionen-redesign — die Zeichen sind gezeichnet, nicht getippt", ()
   });
 });
 
-describe("#optionen-redesign — englisch trägt dieselbe Struktur", () => {
+describe.skipIf(EN_OFF)("#optionen-redesign — englisch trägt dieselbe Struktur", () => {
   it("die Umbenennungen stehen in beiden Katalogen", () => {
     setLocale("en");
     const s = render({ muted: false });

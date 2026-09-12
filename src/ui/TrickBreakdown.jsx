@@ -7,10 +7,10 @@
    (engine.js, „Score-Stapelung §15/§22.7") — eine Quelle für Score UND Anzeige, kein Drift.
 
    Die Engine-Formel lautet ausgeschrieben:
-     (max(0,Basis) × Serie + Serien-Flat) × Perks × Sonnenzorn × Architekt
+     (max(0,Basis) × Serie + Serien-Flat) × Perks × Architekt
        × Form × Nachhall × Kern × Crit  +  Direkt-Anteile  =  total
    Damit die Zeile fünf Glieder behält, werden verwandte Faktoren zusammengefasst
-   (Perks ← Perk × Sonnenzorn × Architekt · Form ← Form × Nachhall × Kern). Alles, was dadurch nicht
+   (Perks ← Perk × Architekt · Form ← Form × Nachhall × Kern). Alles, was dadurch nicht
    in der Kette steht — der Serien-Flat samt seiner Multiplikatoren und die post-stack Direkt-Dividenden
    (Glut, Blitz, Pflanze, Gletscher, Vabanque) — landet als EIN „Direkt"-Glied im Rest. Der Rest wird als
    Differenz zur echten Summe gebildet, nicht nachgerechnet: die angezeigte Gleichung geht dadurch IMMER
@@ -27,7 +27,7 @@ const actsMult = (x) => Math.abs(x - 1) > 0.005;
 const CHAIN_COLOR = {
   base:   "#c8c8d2", // additive Basis (Grundwert + Flats) — neutral, sie trägt keinen Multiplikator
   streak: "#d4a63a", // Serie: dasselbe Gold wie der Score
-  perks:  "#8a7de0", // Perk-/Familien-Multiplikatoren (+ Sonnenzorn, Architekt-Score-Bauten)
+  perks:  "#8a7de0", // Perk-/Familien-Multiplikatoren (+ Architekt-Score-Bauten)
   form:   "#5ab87a", // Formationen (+ Nachhall, Kern) — Formations-Grün des Feldes
   crit:   "#e879f9", // Crit — identisch zu CRIT_COLOR im Battlefield
   direct: "#59b9c6", // Direkt-Score, der am Stack vorbeiläuft
@@ -53,8 +53,8 @@ export function TrickBreakdown({ trick = null }) {
 
   const base = (b.base || 0) + (b.flats || 0);
   const streakMult = b.streakMult || 1;
-  // Perks/Sonnenzorn/Architekt-Score-Bauten sind alle „Build-Multiplikatoren" — ein Glied.
-  const perkMult = (b.perkMult || 1) * (b.sunwrathMult || 1) * (b.architectMult || 1);
+  // Perks/Feuer (Hitze-Multiplikator, Verbrennung)/Architekt-Score-Bauten sind alle „Build-Multiplikatoren" — ein Glied.
+  const perkMult = (b.perkMult || 1) * (b.fireMult || 1) * (b.architectMult || 1);
   // Formation + ihre beiden Meta-Faktoren Nachhall (F6) und Formationskern (F-L1).
   const formMult = (b.formMult || 1) * (b.afterglowMult || 1) * (b.coreMult || 1);
   const critMult = b.critMult || 1;

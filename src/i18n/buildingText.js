@@ -93,11 +93,15 @@ export function buildingEffect(fam, tier = 1) {
     else if (k.critFlatMult) kick = t("building.kick.critFlatMult", { n: k.critFlatMult });
     else if (k.streakDoubleFrom) kick = t("building.kick.streakDoubleFrom", { n: k.streakDoubleFrom });
     else if (k.addType) kick = t("building.kick.addType", { type: formationName(k.addType) });
+    else if (k.farbJoker) kick = t("building.kick.farbJoker");
     else if (k.ankerValue) kick = t("building.kick.ankerValue", { n: k.ankerValue });
     if (kick && !(k.addType && on)) {
       s = on ? t("building.kick.active", { base: s, kick })
              : t("building.kick.preview", { base: s, kick, tier: ROMAN_TIER[k.at] || k.at });
     }
   }
+  // Stufen-Leiter (Runde 6): flacher Stichwert auf den Zellen — nur zeigen, wenn die aktuelle Stufe einen trägt.
+  const ladder = (fam.tierValue && typeof tr === "number" && fam.tierValue[tr]) || 0;
+  if (ladder > 0 && s) s = t("building.kick.active", { base: s, kick: t("building.eff.tierValue", { n: ladder }) });
   return s;
 }

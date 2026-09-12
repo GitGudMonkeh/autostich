@@ -61,32 +61,24 @@ describe("GLACIER_LOCK — Gletscher-Wahl bestätigen", () => {
   });
 });
 
-describe("DECLINE_SKILL — Ablehnen ab genug Eis-Skills friert trotzdem einen Gletscher", () => {
+/* §5.33 (Owner): der Ablehn-Gletscher ist gestrichen. Er war der Ausgleich dafür, dass bei vollen Skill-Slots kein
+   weiterer Eis-Skill mehr passte — und Slots sind seit dem exp-Skill-Rework unbegrenzt. Der Wächter hält die
+   Streichung an ihrer stärksten Stelle fest: bei SECHS Eis-Skills und leerem Brett, wo die alte Regel sicher feuerte. */
+describe("DECLINE_SKILL — Ablehnen friert keinen Gletscher mehr", () => {
   const ice6 = ["SK_ICE_01", "SK_ICE_02", "SK_ICE_03", "SK_ICE_04", "SK_ICE_05", "SK_ICE_06"];
   const levelupIce = (skills, over = {}) => ({
     ...initialState(makeRng(1)),
     phase: "levelup", activeArchetypes: ["ice"], deck: flat(), playerOrder: identity(),
     skills, skillOffer: ["SK_ICE_10"], glacierLocked: new Array(40).fill(false), ...over,
   });
-  it("ab der Schwelle (4 Eis-Skills): Ablehnen öffnet die Gletscher-Wahl, danach kommt das Perk-Angebot", () => {
-    let s = reducer(levelupIce(ice6.slice(0, 4)), { type: "DECLINE_SKILL", rng: makeRng(2) });
-    expect(s.phase).toBe("glacier-target");
-    expect(s.pendingPerkOffer).toBeTruthy();          // Perk geparkt
-    s = reducer(s, { type: "GLACIER_LOCK", pos: 0 });
-    expect(s.glacierLocked[0]).toBe(true);            // Gletscher gesetzt
-    expect(s.phase).toBe("levelup");                  // Perk-Angebot wird aufgemacht
-    expect(s.offer).toBeTruthy();
-    expect(s.pendingPerkOffer).toBeNull();            // geparktes Angebot verbraucht
-  });
-  it("unter der Schwelle (3 Eis-Skills): Ablehnen gibt nur ein Perk, keinen Gletscher", () => {
-    const s = reducer(levelupIce(ice6.slice(0, 3)), { type: "DECLINE_SKILL", rng: makeRng(2) });
-    expect(s.phase).not.toBe("glacier-target");
-    expect((s.glacierLocked || []).filter(Boolean).length).toBe(0);
-  });
-  it("kein freies Feld mehr → kein Gletscher (fällt auf das normale Perk-Angebot zurück)", () => {
-    const s = reducer(levelupIce(ice6, { glacierLocked: new Array(40).fill(true) }), { type: "DECLINE_SKILL", rng: makeRng(2) });
-    expect(s.phase).not.toBe("glacier-target");
-  });
+  for (const n of [3, 4, 6]) {
+    it(`${n} Eis-Skills: Ablehnen geht direkt ins Perk-Angebot, kein Gletscher`, () => {
+      const s = reducer(levelupIce(ice6.slice(0, n)), { type: "DECLINE_SKILL", rng: makeRng(2) });
+      expect(s.phase).not.toBe("glacier-target");
+      expect((s.glacierLocked || []).filter(Boolean).length).toBe(0);
+      expect(s.offer).toBeTruthy();                   // der Perk-Ersatz kommt ohne Umweg
+    });
+  }
 });
 
 describe("SWAP_CARDS — Fixierung respektieren", () => {

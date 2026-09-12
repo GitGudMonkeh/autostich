@@ -5,7 +5,7 @@
 // überschreiben (Default = aktueller Wert → in der App ohne gesetzte ENV KEINE Auswirkung, `process`
 // existiert im Browser gar nicht). So kann der Sim-Sweep Werte reproduzierbar durchprobieren, ohne den
 // Code zu editieren: z. B. `SIM_STREAK_STAT_CAP=1 node sim/batch.js --mode pacing`. Siehe docs/sim-harness-plan.md.
-const envNum = (name, def) => {
+export const envNum = (name, def) => {
   const v = (typeof process !== "undefined" && process.env) ? process.env[name] : undefined;
   const n = v == null || v === "" ? NaN : Number(v);
   return Number.isFinite(n) ? n : def;
@@ -15,23 +15,37 @@ const envNum = (name, def) => {
 // SIM-Sweep-Haken: per ENV übersteuerbar (im Browser existiert `process` nicht → immer 45). `SIM_MAX_CYCLES=50
 // node sim/batch.js …` verlängert/verkürzt für Diagnose; für n ≤ 45 wird ein Prefix des 45-Plans gespielt, darüber
 // hinaus wächst DECISION_SCHEDULE über buildSchedule() via TAIL_BLOCK weiter.
-export const MAX_CYCLES       = envNum("SIM_MAX_CYCLES", 50);     // #272: Run über so viele Deck-Durchläufe (45→50), danach Ende [TUNING · Sim-übersteuerbar]
+export const MAX_CYCLES       = envNum("SIM_MAX_CYCLES", 50);     // exp skill rework: 50 rounds (owner, §7.14; was 40), 13 skill phases (docs/skill-rework.md §1) [TUNING · Sim-übersteuerbar]
 // Architekt (#202, Shop-Ersatz): Modul-Default-Schalter. Das Spiel startet den Lauf mit architect:true (START_RUN, App.jsx);
 // dieser Default greift nur, wenn keine Action-Flag gesetzt ist (Sim ohne A/B). Im Browser existiert `process` nicht → false.
 export const ARCHITECT_ENABLED = (typeof process !== "undefined" && process.env && (process.env.ARCHITECT === "1" || process.env.ARCHITECT === "true")) || false;
 // #202/#214: Baseline des geteilten Reroll-Pools (Perk+Skill) je Lauf. Fix, kein Nachschub — Rerolls sind die Belohnungs-
 // Fläche für die Meistergrade (#217). Rang-Bonus fädelt später über einen erhöhten Startwert ein.
-export const BASE_REROLLS      = envNum("SIM_BASE_REROLLS", 2);
-// Feuer-Ziel-Hebel (#202): Verstärkung, mit der eine volle Architekt-Struktur die Glutdividende hebt
-// (fireDirect × (1+(struktMult−1)×AMP)). Isoliert Feuer (fireDirect=0 sonst) [Sim-getunt amp=2].
-export const FIRE_STRUCT_DIVIDEND_AMP = envNum("SIM_FIRE_STRUCT_DIV_AMP", 2);
+// Owner 2026-09-08: KEINE Gratis-Neuwürfe mehr. Der Neuwurf ist eine Ausgabe der Münz-Ökonomie
+// (docs/muenz-oekonomie.md §3.1) und kostet ab dem ersten. Die drei Pools bleiben als Naht stehen —
+// der Wochen-Mod „Kein Reroll" und ein künftiger Perk können sie weiterhin füllen —, nur ausgeteilt
+// wird nichts mehr. Der Kauf lief ohnehin schon über denselben Knopf und denselben Weg.
+export const BASE_REROLLS      = envNum("SIM_BASE_REROLLS", 0);
 // Merge test/sim←main: ENV-Sweep-Haken bleibt, Default = main's Live-Balance (SPW 100→400, Pacing-Pass Sim-validiert).
 export const SCORE_PER_WIN    = envNum("SIM_SCORE_PER_WIN", 400);    // Basispunkte je Sieg (Perks/Formationen skalieren darauf) [TUNING · Default = Live-Balance 400]
 // BACKSTOP (Crit-Bändigung 2026-08-15): harter Deckel auf den fertigen Crit-Multiplikator, egal aus welchen Kanälen er
 // kommt. Die legitime Summe aller gedeckelten Quellen liegt bei ~7,4× (Basis 2,25 + Wucht IV 0,90 + 6 Blitz-Skills 0,60
-// + Donnergott 0,40 + Durchschlag 2,00 + Entladung 1,00 + Raserei 1,00) → der Deckel bindet einen ehrlichen Build NICHT,
+// + Entladung 1,00 + Raserei 1,00) → der Deckel bindet einen ehrlichen Build NICHT,
 // fängt aber jede künftige Kombi ab, die wieder eine unbegrenzte Größe in den Multiplikator kippt.
-export const CRIT_MULT_CAP    = envNum("SIM_CRIT_MULT_CAP", 8);
+export const CRIT_MULT_CAP    = envNum("SIM_CRIT_MULT_CAP", 8); // exp §7.20 (Owner): zurück auf 8 — der Deckel 12 (§7.19) gab die Luft den Stapeln, nicht den Rampen (Duell: ein Viertel des Blitz-Schwanzes, gierig ein Fünftel des Medians)
+/* §7.42 (Owner): der Deckel ist WEICH. Bis CRIT_MULT_CAP zählt alles voll, darüber jeder Punkt nur noch zum Anteil
+   CRIT_MULT_SOFT_SLOPE. Grund: §7.41 hat gemessen, dass vier Blitz-Skills tot sind, WEIL der harte Schnitt ihren
+   Beitrag verschluckt — und mit ihnen die halbe Auszahlung der Kernressource Stapel (ein Stapel zahlt Basis-Score UND
+   Crit-Multiplikator, über dem Deckel nur noch das erste). Die Form ist dieselbe wie beim vorhandenen WIN_SOFTCAP.
+   SLOPE 0 stellt exakt den alten harten Deckel wieder her, ist also der Rückweg ohne Codeänderung.
+   §7.49 (Owner): 0,2 → 0,05. §7.46 und §7.48 haben die 0,2 zweifach als den Haupthebel des Blitz-Ausschlags
+   belegt — am unbewegten max und an Kettenblitz (+5 % Basis → +601 %, nach §7.47 noch +238 %). Bei 400 Stapeln
+   fällt der Stich damit von 2,92× auf 1,66× gegenüber der Zeit vor §7.42, ohne dass ein harter Schnitt zurückkommt.
+   ACHTUNG, Systemregel: `softCritMult` deckelt den Crit-Multiplikator ALLER Fraktionen. In der Praxis trifft die
+   Zahl fast nur Blitz (kaum ein anderer Bau kommt über CRIT_MULT_CAP), gemessen ist sie aber nur an Blitz mono —
+   die Kontrollmessung an Feuer und Eis ist ein Owner-Entscheid und bewusst offen (§7.49 D). */
+export const CRIT_MULT_SOFT_SLOPE = envNum("SIM_CRIT_MULT_SOFT_SLOPE", 0.05);
+export const softCritMult = (m) => (m > CRIT_MULT_CAP ? CRIT_MULT_CAP + (m - CRIT_MULT_CAP) * CRIT_MULT_SOFT_SLOPE : m);
 // D_OVERCRIT IV (Überschusskrit): höchstens so viele Prozentpunkte Crit-Überschuss zahlen den Zuschlag je Punkt aus.
 export const OVERCRIT_EXCESS_PP_CAP = envNum("SIM_OVERCRIT_EXCESS_PP_CAP", 100);
 export const CRIT_BASE_MULT   = envNum("SIM_CRIT_BASE_MULT", 2.25);  // Basis-Crit-Multiplikator. #268: 1,5→2,25 — jetzt wo Crit aus der Stat-Phase raus ist, hilft der höhere Basis-Mult differenziell dem Crit-Archetyp Blitz (Sim: Blitz-Floor 1,47×→1,93× Mix), Nicht-Blitz nur schwach (RNG-gegateter Präzision-Crit) [TUNING · Sim-übersteuerbar]
@@ -52,35 +66,18 @@ export const WIN_SOFTCAP_SLOPE = envNum("SIM_WIN_SOFTCAP_SLOPE", 0.25); // Rest-
 //  sind damit obsolet und entfernt.)
 
 // Entscheidungsplan (#272): Typ der Entscheidung VOR Durchlauf n (1-indexiert) = DECISION_SCHEDULE[n-1].
-// Fester 50-Einträge-Plan (Commitment-Funnel Skill→Perk→Aufstellen→Architekt, vom Dev handgesetzt — löst den 45-Plan
-// #267 ab). Engine liest DECISION_SCHEDULE[cycle] (nach cycle += 1); der Start-Entscheid (Index 0 = "skill",
-// Runde 1) läuft über START_RUN. Bewusster Blind-Commit: das Deck ist noch vanilla, kein Infoverlust.
-// Verteilung: 9 Skill · 13 Perk · 13 Formation (Aufstellen) · 14 Shop (Architekt) · 1 LEGENDÄR. Skills sind
-// front-loaded (Runden 1,5,9,13,17,22 füllen die 6 Slots) und tapern aus (31,40,48 = Tausch-Fenster).
-// #272 Legendär-Phase (Runde 29, spätes Mid-Game, build-defining): 2 Legendäre aus AKTIVEN Archetypen → fixer
-// 7. Slot (kein Tausch); ablehnen → normale Skill-Wahl. Legendäre kommen NUR hier, nicht mehr im Skill-Angebot.
-// Ein Block = Skill→Perk→Aufstellen→Architekt: erst Brett stellen, dann das Gebäude drauf. Indizes = sim-tunebar.
-const BASE_SCHEDULE = [
-  "skill", "perk", "formation", "shop", "skill", "perk", "formation", "shop", "skill", "perk",         //  1–10
-  "formation", "shop", "skill", "perk", "formation", "shop", "skill", "perk", "formation", "shop",     // 11–20
-  "skill", "perk", "formation", "shop", "skill", "perk", "formation", "shop", "legendary", "perk",     // 21–30
-  "formation", "shop", "skill", "shop", "perk", "formation", "shop", "perk", "skill", "shop",          // 31–40  (#293: R39 Aufstellung→Skill)
-  "formation", "perk", "skill", "formation", "shop", "perk", "formation", "shop", "perk", "formation", // 41–50  (#293: R43 Skill eingeschoben → alles ab 43 rutscht +1, alter R50-Architekt fällt hinten raus)
-];
-// Schwanz-Block für Runs ÜBER 50 Cycles hinaus (nur SIM_MAX_CYCLES > 50, reine Sweep-Diagnose). Hält grob das
-// 50er-Mix-Verhältnis (ohne Legendär — die eine Legendär-Phase steckt fest im Basis-Plan), clustert nicht
-// (nie zwei Shop/Skill hintereinander) und doppelt nicht an der 50/51-Grenze (Cycle 50 = perk → Block-Start = formation).
-const TAIL_BLOCK = [
-  "formation", "shop", "skill", "perk", "formation", "shop", "perk", "skill", "formation", "shop", "perk", "formation",
-];
-// Entscheidungsplan der Länge n: für n ≤ 50 ein exaktes Prefix des handgesetzten 50-Plans; darüber hinaus wird
-// TAIL_BLOCK wiederholt (nur für SIM_MAX_CYCLES-Sweeps > 50). Pur & testbar; die Engine liest ausschließlich
-// das daraus gebaute DECISION_SCHEDULE.
+// exp skill rework (docs/skill-rework.md §1, §7.14): the block Skill→Perk→Aufstellen→Architekt repeats for the
+// whole run — 50 rounds by default, so skills sit at rounds 1, 5, 9 … 49 (13 skill phases); every formation phase
+// is caught by an architect phase, no two shop/skill decisions in a row. The same block order holds for any
+// length (SIM_MAX_CYCLES sweeps included; the owner set 50 with the order unchanged, 2026-09-06). The engine reads
+// DECISION_SCHEDULE[cycle] (after cycle += 1); the start decision (index 0 = "skill", round 1) runs through START_RUN.
+// The dedicated legendary phase (old round 29) is gone: legendaries are the fifth rarity of the skill offer roll
+// (skills.js, rollSkillOfferTiers).
+const BLOCK = ["skill", "perk", "formation", "shop"];
+// Decision plan of length n: the block repeated, cut to n. Pure and testable; the engine reads only the
+// DECISION_SCHEDULE built from it.
 export function buildSchedule(n = MAX_CYCLES) {
-  if (n <= BASE_SCHEDULE.length) return BASE_SCHEDULE.slice(0, n);
-  const out = BASE_SCHEDULE.slice();
-  for (let i = 0; out.length < n; i++) out.push(TAIL_BLOCK[i % TAIL_BLOCK.length]);
-  return out;
+  return Array.from({ length: Math.max(0, n) }, (_, i) => BLOCK[i % BLOCK.length]);
 }
 export const DECISION_SCHEDULE = buildSchedule(MAX_CYCLES);
 // Welche Perk-Phase (1-basiert) ist der 0-indexierte Cycle `c` im Plan? 0 = keine Perk-Entscheidung.
@@ -90,8 +87,8 @@ export const LEG_PERK2_PHASE = envNum("PROG_LEG_PERK2_PHASE", 2); // die „2. P
 // Erste Skill-Runde (1-indexierter Durchlauf), driftfest aus dem festen Plan abgeleitet — für UI-Texte, die dem
 // Spieler sagen, ab wann Skills wählbar sind. Ändert sich der Plan, wandert die Zahl automatisch mit.
 export const FIRST_SKILL_CYCLE = DECISION_SCHEDULE.indexOf("skill") + 1;
-// Legendär-Phase (1-indexierter Durchlauf), ebenfalls aus dem Plan abgeleitet — für UI-/Glossartexte, die sie
-// benennen. Verschiebt sich die Phase im Plan, wandert die Zahl automatisch mit (kein „R29" im Text hartkodiert).
+// Legendär-Phase (1-indexierter Durchlauf), aus dem Plan abgeleitet. exp skill rework: der Plan kennt keine
+// Legendär-Phase mehr → 0. Der Export bleibt nur für die inaktiven Kataloge (en/es), die ihn noch nennen.
 export const LEG_PHASE_CYCLE = DECISION_SCHEDULE.indexOf("legendary") + 1;
 
 // (#229: Shop-Münzökonomie + Shop-Angebots-Konstanten entfernt — der Shop ist weg, es gibt keine Münzen/Angebote mehr.)
@@ -162,8 +159,23 @@ export const MAX_LEGENDARIES_PER_OFFER = 1;    // höchstens so viele Legendarie
 
 // Legendär-Roll (Shop-Spec §10 P5/P6): expliziter Wurf vor jedem Perk-/Skill-Angebot. Bei Erfolg wird genau
 // EIN Legendäres erzwungen, sonst enthält das Angebot keins. Chance = Basis + Bonus (P5/P6, je +5 pp), Bonus-Cap. [TUNING]
-export const PERK_LEGENDARY_BASE       = envNum("SIM_PERK_LEGENDARY_BASE", 0.03); // Basis-Legendär-Chance Perk-Angebot [0,08→0,03; Sim-tunebar für Legendär-Perk-Messung]
-export const SKILL_LEGENDARY_BASE      = envNum("SIM_SKILL_LEGENDARY_BASE", 0.03); // Basis-Legendär-Chance Skill-Angebot = 3 %, JE ARCHETYP gewürfelt (#263: 0,04→0,03 zurück; #247-Mechanik bleibt: eigener Wurf pro Fraktion → mehrere Legendäre je Angebot möglich)
+export const PERK_LEGENDARY_BASE       = envNum("SIM_PERK_LEGENDARY_BASE", 0.07); // Basis-Legendär-Chance Perk-Angebot [0,08→0,03→0,07; §5.10 Owner: legendäre Skills erschienen 3,5× so oft, weil sie JE PLATZ würfeln und der Perk nur einmal je Angebot]
+// exp skill rework (docs/skill-rework.md §1, §3.7): every offered skill rolls a rarity tier — Normal / Selten /
+// Sehr selten / Episch with these weights — and, before that, a legendary chance PER SLOT: a hit replaces the slot
+// with an unowned legendary of the same faction (fifth rarity, no gate, no replacing). Owner start value 3–4 %.
+export const SKILL_TIER_WEIGHTS        = [62, 25, 10, 3];
+export const SKILL_LEGENDARY_PER_SLOT  = envNum("SIM_SKILL_LEGENDARY_PER_SLOT", 0.035);
+// Door offer (docs/skill-rework.md §1): a skill phase shows SKILL_DOORS doors, each hiding SKILL_DOOR_SIZE skills
+// drawn from at most SKILL_DOOR_FACTIONS factions (repetition allowed). The door shows only the faction symbols;
+// the tiers are rolled with the door and revealed after it is opened. The pool is SKILL_OFFER_ARCHETYPES — all four
+// factions now that Eis carries its tier ladder (skills.js buildSkillDoors).
+export const SKILL_DOORS               = 2;
+export const SKILL_DOOR_SIZE           = 3;
+export const SKILL_DOOR_FACTIONS       = 2;
+export const SKILL_OFFER_ARCHETYPES    = ["fire", "lightning", "plant", "ice"]; // §5.4 (Owner): Eis hat Stufen und kommt ins Angebot (§6.16: die Pflanze davor)
+// Held skills are unlimited on exp (owner decision). The reducer and the screens treat a limit at or above this
+// value as "no limit". (§6.1: the plant commitment scaler that used SKILL_SLOTS as its denominator is gone.)
+export const SKILL_SLOT_LIMIT          = envNum("SIM_SKILL_SLOT_LIMIT", 99);
 export const MAX_LEGENDARY_CHANCE_BONUS = 0.15; // Cap des additiven Bonus (P5/P6): max +15 pp
 
 /* ============================================================
@@ -311,303 +323,87 @@ export const MAX_ARCHETYPES     = envNum("SIM_MAX_ARCHETYPES", 4);    // gleichz
 // ERKUNDUNG (Cross-Balance): Hebel 7 — Exponent auf die Commitment-Scaler (plant/fire/lightCommit = min(1, count/SKILL_SLOTS)^EXP).
 // 1 = linear (aktuell, neutral); >1 = konvex → Verdünnung kostet superlinear (naives Mischen ≤ Mono deutlicher). [ENV-Sweep-Haken]
 export const COMMIT_EXP        = envNum("SIM_COMMIT_EXP", 1);
-// ERKUNDUNG: Hebel 3c — Pflanze-Wert-Passive-Gate. 0 = Mono-Gate (aktuell, neutral: nur reine Pflanze); >0 = Schwellen-Knick:
-// Passive aktiv ab dieser Pflanzen-Skill-Zahl, UNABHÄNGIG von Fremd-Skills (belohnt Deep-Split statt Reinheit). [ENV-Sweep-Haken]
-export const PLANT_PASSIVE_MIN_SKILLS = envNum("SIM_PLANT_PASSIVE_MIN_SKILLS", 0);
+// (§6.1: das Pflanze-Passiv hat kein Skill-Tor mehr — es läuft, sobald ein Pflanzen-Skill liegt. Der alte Mono-Gate-
+//  Regler SIM_PLANT_PASSIVE_MIN_SKILLS ist mit der Wert-aus-Wachstum-Passive gestrichen.)
 // (vestigial entfernt: SKILL_EVERY_CYCLES — Skill-Runden kommen nicht mehr „jede 3.", sondern aus dem festen DECISION_SCHEDULE; siehe FIRST_SKILL_CYCLE)
-export const LIGHTNING_CRIT_BASE      = 0.05; // Blitz: Aktivierungs-Sockel Crit-Chance (Abschnitt 2a)
-export const LIGHTNING_CRIT_PER_SKILL = envNum("SIM_LIGHTNING_CRIT_PER_SKILL", 0.08); // Blitz: je gehaltenem Blitz-Skill [v0.5 Rework-Tune: 0,10→0,08 fürs Pflanze-Band, SIM-Sweep-Haken]
-export const LIGHTNING_CRIT_MULT_PER_SKILL = envNum("SIM_LIGHTNING_CRIT_MULT_PER_SKILL", 0.1); // Blitz: +Crit-Multiplikator je gehaltenem Blitz-Skill (additiv, dauerhaft; kein Deckel) [SIM-Sweep-Haken]
-export const LIGHTNING_MAX_CHARGE     = 10;   // Blitz: Ladungsmaximum
-// Ionisierung (Stufe B) — dauerhafte Kartenmarkierung
-export const ION_SCORE_PER_STACK  = envNum("SIM_ION_SCORE_PER_STACK", 12); // +Score je Ionisierungsstapel bei Sieg mit der Karte [#271: 25→12, Wert wandert in den Crit-Kanal · Sim-tunebar]
-// #271: Ionisierung speist die Crit-Maschine (feldweit/Breite) — Σ Ionisierungsstapel im Deck heben die Crit-Chance
-// JEDER Siegkarte (gedeckelt, nur bei aktivem Blitz). Der Überschuss über 100 % fließt via Überschlag als Ladung zurück
-// → schließt den Sturm-Loop. Nur Ionisierung erzeugt Stapel → generisches Nicht-Blitz unberührt. Werte aus Sim-Sweep
-// (Konfig D): leistungsneutral zum Alt-Blitz (Floor +0,5 %, p90 −1 %, Spread 1,18× = Baseline). [Sim-tunebar]
-export const ION_CRIT_PP_PER_STACK = envNum("SIM_ION_CRIT_PP_PER_STACK", 0.015); // +Crit-Chance je Feld-Ionisierungsstapel [v0.5 Rework-Tune: 0,02→0,015]
-export const ION_CRIT_STACK_CAP    = envNum("SIM_ION_CRIT_STACK_CAP", 12);      // gedeckelte gezählte Σ-Feldstapel (→ max +12 pp; zähmt den Heavy-Build-Tail)
-export const ION_MAX_STACKS       = 5;  // max Stapel je Karte [#165 Skills-Spec §5.1: 4→5]
-export const ION_BASE_COUNT       = 2;  // Ionisierung: ionisierte Karten je Verbrauch
-// Sturm-Sättigung (Blitz-Rework v0.5) — zwei Stufen als Board-Zustand (global, bedingt, nur bei aktivem Blitz):
-//   Breite  = Anteil Karten mit ≥1 Stapel ≥ FRAC → alle Karten zählen +ION_SATURATION_VALUE Wert.
-//   Tiefe   = Anteil Karten voll (ION_MAX_STACKS) ≥ FRAC → Crit-Überschuss (>100 %) kippt via Überschlag von Ladung auf Crit-Mult.
-export const ION_SAT_BREADTH_FRAC = envNum("SIM_ION_SAT_BREADTH_FRAC", 0.85); // Anteil ionisierter Karten für „Breite voll" [Sim-tunebar]
-export const ION_SAT_DEPTH_FRAC   = envNum("SIM_ION_SAT_DEPTH_FRAC", 0.85);   // Anteil voller (5-Stapel-)Karten für „Tiefe voll" [Sim-tunebar]
-export const ION_SATURATION_VALUE = envNum("SIM_ION_SATURATION_VALUE", 1);    // +Wert auf alle Karten solange Breite voll [v0.5 Rework-Tune: 2→1, der Runaway-Fix · Sim-tunebar]
-// (entfallen 2026-08-15: UEBERSCHLAG_EXCESS_TO_MULT — der Überschuss ging ab Voll-Tiefe UNGEDECKELT in den Crit-
-//  Multiplikator; genau der Verstärker, der aus einer unbegrenzten Chance einen unbegrenzten Multiplikator machte.
-//  Überschuss fließt jetzt AUSSCHLIESSLICH in Ladung; Voll-Tiefe verdoppelt nur noch die Ausbeute. s. UEBERSCHLAG_*_PER)
-// Ionisierungs-Geschwindigkeit ∝ Blitz-Skills (Mono): Breite je Verbrauch steigt mit jedem Blitz-Skill über der Schwelle.
-export const ION_SPEED_MIN_SKILLS = envNum("SIM_ION_SPEED_MIN_SKILLS", 2);    // ab dieser Blitz-Skill-Zahl skaliert die Ionisierungs-Breite
-export const ION_SPEED_PER_SKILL  = envNum("SIM_ION_SPEED_PER_SKILL", 1);     // +ionisierte Karten je Verbrauch je Blitz-Skill über der Schwelle
-export const BLITZFAENGER_VALUE   = 2;  // Blitzfänger (#165): eine bereits volle Karte (5 Stapel) statt zu ionisieren +temp Wert (+ 1 Ladung)
-export const KETTENBLITZ_COUNT    = 2;  // Kettenblitz: zusätzlich ionisierte Karten (nur mit Ionisierung)
-export const UEBERSPANNUNG_CHARGE = 3;  // Überspannung: Zusatzladung bei Crit mit ionisierter Karte
-// Reaktoren (Reststrom-Boden + Gewitterfront)
-export const REST_CHARGE_FLOOR = envNum("SIM_REST_CHARGE_FLOOR", 4);    // Reststrom: Ladungsboden nach jedem Verbrauch [v0.5: 3→4, Rapid-Fire-Hebel]
-export const STORM_CRIT_STEP   = envNum("SIM_STORM_CRIT_STEP", 0.01); // Gewitterfront: +Crit-Chance-Momentum je Verbrauch [v0.5 Rework-Tune: 0,02→0,01 · Sim-tunebar]
-export const STORM_CRIT_CAP    = envNum("SIM_STORM_CRIT_CAP", 0.50);  // … Deckel der Rampe (Crit-Bändigung 2026-08-15: war UNGEDECKELT, erreichte +325 pp @p90)
 /* ============================================================
-   BLITZ-REWORK v0 — „Der Sturm, der sich selbst nährt." 4 Währungen (⚡Crit · 🔋Ladung · 🧲Ionisierung ·
-   📈Serie) + 🔗Kaskade. Blitz BESITZT die Crit-Erzeugung. Werte v0, cross-archetype Sim-Pass. [v0 · tunebar]
+   BLITZ — exp skill rework (docs/skill-rework.md §3). Hier stehen NUR die Passiv-Größen und die Sim-Regler; die Zahlen
+   der 15 Skills liegen in ihren Stufentabellen (skills.js SKILL_DEFS[…].tiers, gelesen von factions/lightning.js).
+   Startwerte für die Sim (Phase 5). [TUNING]
    ============================================================ */
-export const THUNDER_CRIT_MULT = envNum("SIM_THUNDER_CRIT_MULT", 0.4);  // Donnergott (L, v0.5 Turbo): dauerhafter +Crit-Multiplikator [1,4→0,4, dafür Frequenz-Turbo]
-export const DONNERGOTT_THRESHOLD_FRAC = envNum("SIM_DONNERGOTT_THRESHOLD_FRAC", 0.7); // Donnergott (L, v0.5 Turbo): Konsumenten lösen schon bei diesem Anteil der Ladung aus (öfter entladen)
-export const STATIC_CHARGE     = envNum("SIM_STATIC_CHARGE", 1); // Statische Aufladung: Ladung je Sieg OHNE Crit // v0
-// UEBERSPANNUNG_CHARGE (oben, =3) = Kaskade: Crit auf/neben ionisierter Karte → Zusatzladung (merge 04+09).
-export const ENTLADUNG_MULT_STEP      = envNum("SIM_ENTLADUNG_MULT_STEP", 0.10); // Entladung (v0.5): +Crit-Multiplikator-Momentum je vollem Verbrauch (dauerhaft) // Sim-tunebar
-export const ENTLADUNG_MULT_CAP       = envNum("SIM_ENTLADUNG_MULT_CAP", 1.0);   // Entladung (v0.5): weicher Deckel des Multi-Momentums (kein Ventil für Multi) [Rework-Tune: 2,0→1,0] // Sim-tunebar
-// Kurzschluss (Rework): eine VOLLE (5) Siegkarte gibt bei JEDEM Sieg einen Burst — OHNE die Stapel zu opfern (Payoff fürs
-// Maxen statt Sättigung entladen). Wiederkehrend, weil die Stapel bleiben → weiter Flat-Score + Feld-Crit (#271). [Sim-tunebar]
-export const KURZSCHLUSS_SCORE  = envNum("SIM_KURZSCHLUSS_SCORE", 250); // Direkt-Score-Burst (post-stack) je Sieg mit voller Karte [Sim: Blitz-Aggregat unempfindlich → Feel-Wert]
-export const KURZSCHLUSS_CHARGE = envNum("SIM_KURZSCHLUSS_CHARGE", 3);  // + Ladungs-Burst je Sieg mit voller Karte
-export const SPANNUNGSSTAU_STEP       = 0.05; // Spannungsstau: +5 pp Crit-Chance je Sieg ohne Crit (ein Crit resettet) // v0
-export const SPANNUNGSSTAU_CAP        = 0.50; // Spannungsstau: … bis +50 pp                                       // v0 — tunebar
-// Überschlag = das Ventil der Crit-Maschine: Crit-Chance über 100 % ist für den Wurf tot (der Crit ist ohnehin sicher)
-// und wird in Ladung umgewandelt. Lesbare Regel: je UEBERSCHLAG_PP_PER_CHARGE Prozentpunkte über 100 % → +1 Ladung bei
-// jedem Sieg; ab Voll-Tiefe (ION_SAT_DEPTH_FRAC) reicht die Hälfte. Das Ladungsdach (LIGHTNING_MAX_CHARGE) deckelt die
-// Ausbeute von selbst → echtes Ventil statt Verstärker.
-export const UEBERSCHLAG_PP_PER_CHARGE       = envNum("SIM_UEBERSCHLAG_PP_PER_CHARGE", 10); // Prozentpunkte Überschuss je +1 Ladung
-export const UEBERSCHLAG_DEPTH_PP_PER_CHARGE = envNum("SIM_UEBERSCHLAG_DEPTH_PP_PER_CHARGE", 5); // … ab Voll-Tiefe (doppelte Ausbeute)
-export const BLITZSCHLAG_STACKS       = 1;    // Blitzschlag: ein Crit ionisiert die Siegkarte (+1 Stapel)          // v0
-export const DAUERSTROM_PER_STREAK    = 3;    // Dauerstrom: je 3 Serienpunkte +1 Ladung je Sieg in Folge           // v0
-export const DAUERSTROM_MAX           = 3;    // Dauerstrom: … höchstens +3 Ladung/Sieg                             // v0 — tunebar
-// Ladungsserie (ehem. Geladene Serie) — Serie speist die Crit-Maschine (kein Konsument mehr): je Serienpunkt +Crit-Chance (Cap).
-export const SERIESCRIT_STEP          = 0.02; // Ladungsserie: +2 pp Crit-Chance je Serienpunkt                     // v0 — tunebar
-export const SERIESCRIT_CAP           = 0.30; // Ladungsserie: … bis +30 pp                                          // v0 — tunebar
-// On-Consume-Passives (jeder volle Ladungsverbrauch): Statische Aufladung (Flat-Score), Blitzableiter (Ladung zurück), Dauerstrom (Crit-Rampe).
-export const CONSUME_SCORE            = 40;   // Statische Aufladung: +Score bei jedem vollen Ladungsverbrauch      // v0 — tunebar
-export const BLITZABLEITER_CONSUME_CHARGE = 1;// Blitzableiter: +Ladung zurück bei jedem vollen Verbrauch           // v0 — tunebar
-export const DAUERSTROM_CONSUME_CRIT  = 0.02; // Dauerstrom: +2 pp Crit-Chance je vollem Verbrauch (dauerhaft)         // v0 — tunebar
-export const DAUERSTROM_CRIT_CAP      = envNum("SIM_DAUERSTROM_CRIT_CAP", 0.40); // … Deckel der Rampe (Crit-Bändigung 2026-08-15: war UNGEDECKELT, erreichte +1.844 pp im Maximum)
-export const SERIENSCHUTZ_COST_FRAC   = envNum("SIM_SERIENSCHUTZ_COST_FRAC", 0.5); // Serienschutz (v0.5, ex-Wetterleuchten): Niederlage mit ≥ diesem Anteil der Max-Ladung → Serie hält, Anteil verbraucht // Sim-tunebar
-export const DOPPELENTLADUNG_FACTOR   = envNum("SIM_DOPPELENTLADUNG_FACTOR", 3);    // Doppelentladung (L): Konsumenten feuern FACTOR-fach (Ionisierungs-Anzahl x FACTOR) [Legendaer-Buff v1: 2->3]
-export const DURCHSCHLAG_CRIT_MULT    = envNum("SIM_DURCHSCHLAG_CRIT_MULT", 0.18); // Durchschlag (L): volle Ionis. (5) + Crit → dauerhaft +Crit-Mult [Legendär-Angleich: 0,25→0,18 — Spitze kappen, Sim unterschätzt Crit]
-export const DURCHSCHLAG_MULT_CAP     = envNum("SIM_DURCHSCHLAG_MULT_CAP", 2.0);  // Durchschlag: Deckel des dauerhaften Crit-Mult-Bonus (Anti-Runaway v0.1: uncapped → +100× im Smoke)
-// Blitz-Legendär-Reshape (2026-07-30): die Ionisierung FLUTET (blitz-economy.mjs: alle Karten @Deckel 5, ~ganzes Deck ab Cycle 20)
-// → „mehr Ionis."-Legendäre (Doppelentladung/Flächenionisation) waren tot (1,01×/0,90×). Sie lesen jetzt den BESTAND des
-// gesättigten Feldes und zahlen je IONISIERTEM Sieg DIREKT (post-stack, hart gedeckelt = Plateau, bekenntnis-skaliert = cross-health).
-// Nur Legendär-Halter → generisches Blitz (ION_SCORE_PER_STACK) unberührt. Analog zur Eis-Überlauf-Dividende.
-export const FLAECHENION_DIRECT       = envNum("SIM_FLAECHENION_DIRECT", 130);  // Flächenionisation (Sturmzelle, BREITE): DIREKTer Score je ionisiertem Sieg × #ionisierte Karten [Legendär-Angleich: 70→130]
-export const FLAECHENION_FIELD_CAP    = envNum("SIM_FLAECHENION_FIELD_CAP", 30); // … gedeckelte Feldbreite (max gezählte ionisierte Karten)
-export const DOPPELENT_DIRECT         = envNum("SIM_DOPPELENT_DIRECT", 40);    // Doppelentladung (endloser Sturm, ENERGIE): DIREKTer Score je ionisiertem Sieg × Σ Stapel im Feld [Legendär-Angleich: 16→40 — Trap-Pick heben]
-export const DOPPELENT_FIELD_CAP      = envNum("SIM_DOPPELENT_FIELD_CAP", 120); // … gedeckelte Feldenergie (max gezählte Σ Stapel)
+// docs/skill-rework.md §7.12 (owner: ionisation carries, via the crit multiplier): crit per skill 0.05 → 0.04 so the
+// single skill matters again, and every stack on the winning card adds ION_CRIT_MULT_PER_STACK to the crit multiplier.
+// Sweep (100 runs): 0.1×/4 % floor 1.01×, stack build 2.76M < crit build 2.91M · 0.15×/4 % floor 0.98×, stack build
+// 2.97M ≈ crit build 2.95M, stacks 18 % of a random build's score · 0.2×/3 % floor 1.11×, fewer crits fill fewer bars.
+// §7.30 (Owner: „Sockel steigern"): das Passiv bekommt einen SOCKEL, der Satz je Skill sinkt dafür 0,04 → 0,03.
+// Der Satz je Skill ist linear in gehaltenen Skills und zahlt damit am wenigsten, wenn man am wenigsten hält (§7.29 F);
+// der Sockel zahlt ab dem ersten Skill voll. Gemessen (§7.29 E): Runden 1–10 von 8,4 auf 14,2 % Crit-Chance, erste
+// volle Leiste von Runde 8 auf Runde 5, Laufende unverändert bei 72 %.
+export const LIGHTNING_CRIT_SOCKET    = envNum("SIM_LIGHTNING_CRIT_SOCKET", 0.08); // Passiv: +Crit-Chance, sobald Blitz aktiv ist (einmal, nicht je Skill)
+export const LIGHTNING_CRIT_PER_SKILL = envNum("SIM_LIGHTNING_CRIT_PER_SKILL", 0.03); // Passiv: +Crit-Chance je gehaltenem Blitz-Skill (nicht gestuft)
+export const ION_CRIT_MULT_PER_STACK  = envNum("SIM_ION_CRIT_MULT_PER_STACK", 0.15);  // +Crit-Multiplikator je Stapel auf der Siegkarte (Kurzschluss zählt die Stapel ab der Schwelle doppelt)
+export const LIGHTNING_MAX_CHARGE     = envNum("SIM_LIGHTNING_MAX_CHARGE", 10);       // Leiste: so viele Ladungen (= Crits) bis zur Ionisierung
+// Tariert 2026-09-05 (docs/skill-rework.md §7.5): 12 → 60. Gemessen in der Feuer/Blitz-Welt (--mode duel, 200 Läufe):
+// Blitz mono 2,15M bei 12, 2,37M bei 60 gegen Feuer mono 2,40M; bei 12 trugen die Stapel nur ~8 % der Basis (Ø 2,6 je
+// Karte am Laufende), der Regler war praktisch tot. Crit je Skill (0,07 → 2,43M) wäre der andere Weg; der Stapel-Weg
+// macht die Leiste und die Stapel-Skills (Kettenblitz, Kurzschluss, Blitzfänger) spürbar.
+/* §7.68/§7.69 (Owner: „a"): 75 → 45. Blitz stand nach der Skill-Runde (§7.58/59/61) bei 3,18× Feuer; zwei
+   Skill-Schnitte holten davon nur ein Drittel und machten beide Skills tot (§7.66), also senkt EIN Regler die
+   Fraktion statt vieler. Gesweept, nicht geraten (`--only cross`, 8.000 Läufe je Wert, Maschine leer):
+   75 → 28,0 Mio (3,18×) · 55 → 24,0 (2,72×) · 45 → 21,9 (2,49×) · 35 → 19,8 (2,24×), Gerade
+   Blitz ≈ 12,7 Mio + 0,205 × Wert. Warum nicht tiefer: bei Stapel-Score NULL stünde Blitz immer noch bei
+   12,7 Mio = 1,44× Feuer — der Stapel trägt nur gut die Hälfte der Fraktionshöhe, der Rest ist der
+   Crit-Multiplikator-Motor. Einen Regler auf sein Extrem zu drehen, um die ganze Lücke zu schlucken, war schon
+   bei den zwei Skill-Schnitten der Fehler. */
+export const ION_SCORE_PER_STACK      = envNum("SIM_ION_SCORE_PER_STACK", 45);        // +Score (Basis, vor den Multiplikatoren) je Stapel bei Sieg mit der Karte — der Paritäts-Regler Feuer/Blitz (§7.14: 60 → 75 bei 50 Runden; alter Duell-Sweep 60/75/80/90/120: Floor 1,16/1,07/1,03/0,99/0,88×, Mean 1,04/0,95/0,92/0,87/0,75× — der beschreibt einen Stand vor der Blitz-Runde)
+export const ION_VALUE_PER_BAR        = envNum("SIM_ION_VALUE_PER_BAR", 1);         // Blitz-Passiv (§7.24, Owner): jede volle Leiste gibt der ionisierten Karte dauerhaft +so viel Wert — bis §7.23 war das Überspannung (1–4 je Stufe) und trug Blitz mono; Duell-Sweep 0/1/2: Blitz mono 7,3 / 13,0 / 13,6M, Floor 1,93 / 1,09 / 1,04×
+export const ION_MAX_STACKS           = 5;  // NUR ANZEIGE (Karten-Pips, „voll ionisiert"-Effekte): Stapel sind seit dem Rework ohne Deckel
+export const OVERCRIT_MULT_PER_PP     = envNum("SIM_OVERCRIT_MULT_PER_PP", 0.03);     // Systemregel (alle Fraktionen): die Crit-Chance ist bei 100 % gedeckelt, jeder Prozentpunkt darüber wird +Crit-Mult (§7.28, Owner: 0,002 → 0,01; §7.44: → 0,03, damit 5 Punkte genau EINEN Stapel wert sind — der weiche Deckel dämpft den Überschuss über dem Knick auf ein Fünftel)
+export const RESONANZ_SHARE           = envNum("SIM_RESONANZ_SHARE", 0.7);               // Resonanz (L, §7.25, ersetzt Durchschlag): Anteil der Stapel der ANDEREN Karten ihrer Formation, mit dem die gespielte Karte kämpft (1 = die ganze Summe; Sim-Regler)
+// §7.37 setzte 2,25 → 1,5, §7.38 hat gemessen: +553 → +438 %, das Zielband 250–300 % also verfehlt. Zwei Messpunkte
+// ergeben ein Potenzgesetz (Regler ×0,667 → Wirkung ×0,79, Exponent 0,58); daraus 0,7 für rund +280 %.
+// §7.40 (Owner: „0.7 klingt gut"): gesetzt. Damit liegt der Anteil unter dem Nullpunkt des Reglers, eine Karte
+// bekommt also 70 % der Partnersumme statt der vollen. UNGEMESSEN.
+export const DOPPELENTLADUNG_STACKS   = envNum("SIM_DOPPELENTLADUNG_STACKS", 3);      // Doppelentladung (L): Stapel je Ionisierung (statt 1); §6.12: 2 → 4, §6.14: → 5, §7.37 (Owner): → 3 (mono +383 %). Der zweite Regler des Skills, DOPPELENTLADUNG_STRIKE, bleibt bei 2 — ein Hebel je Runde
+export const DOPPELENTLADUNG_STRIKE   = envNum("SIM_DOPPELENTLADUNG_STRIKE", 2);      // Doppelentladung (L): Crit mit ionisierter Karte → der Stich zählt so oft (Sim-Regler, ggf. 1,5)
+export const HOCHSPANNUNG_STEPS       = envNum("SIM_HOCHSPANNUNG_STEPS", 1);          // Hochspannung (L): um so viele Stufen wirken ALLE gehaltenen Skills höher (Episch bleibt das Ende der Leiter)
+// §7.37 setzte 3 → 2, §7.38 hat gemessen, dass das nichts bringt: 1 → +8 %, 2 → +428 %, 3 → +520 %. Der Regler
+// SÄTTIGT, weil die Stufenleiter nur vier lang ist — ein auf Selten oder höher gewürfelter Skill erreicht mit +2
+// genauso Episch wie mit +3. Keine Zahl bringt den Skill ins Band. §7.39 (Owner): der Skill bekommt deshalb eine
+// andere MECHANIK — +1 Stufe, dafür auf JEDE Fraktion statt nur auf Blitz (skills.js `boostedTier`). Aus dem
+// Mono-Verstärker wird ein Misch-Legendäres. UNGEMESSEN.
 
 /* ============================================================
-   FEUER-REWORK v0 — Hitzeleiste 0–100. „Hitze belohnt totale Überlegenheit."
-   Alle Zahlen sind Vorschlags-Startwerte (v0), geerdet an der bestehenden Hitze-Ökonomie
-   (Gewinn ≈ (Vorsprung−2) %, Score-Basis 400). Werte-Tuning: cross-archetype Sim-Pass. [v0 · tunebar]
+   FEUER — exp skill rework (docs/skill-rework.md §4). Passiv: Siege mit Abstand erzeugen Hitze, Niederlagen kühlen,
+   je 10 % gehaltener Hitze +2 % Score als eigener Multiplikator. Die 15 Skills lesen ihre Kennwerte aus den
+   Stufentabellen in skills.js (FEUER_TIERS); hier stehen nur die Passiv-Größen und die Legendär-Regler (Sim-Startwerte).
    ============================================================ */
-// Grundmechanik (passiv)
-export const HEAT_MAX          = 100;  // Hitzemaximum (fix)
-export const HEAT_MIN_MARGIN   = envNum("SIM_HEAT_MIN_MARGIN", 3);    // Mindest-Wertvorsprung für margen-basierten Hitzegewinn & Feuer-Score [Sim-tunebar]
-export const HEAT_PER_POINT    = envNum("SIM_HEAT_PER_POINT", 1);    // % Hitze je (Vorsprung−2) [Sim-tunebar]
-export const HEAT_MARGIN_CAP   = envNum("SIM_HEAT_MARGIN_CAP", 8);    // WEICHES KNIE des margen-Hitzegewinns: bis hier linear, darüber √-Schwanz (kein harter Deckel mehr) [Sim-tunebar]
-export const HEAT_MARGIN_TAIL_K = envNum("SIM_HEAT_MARGIN_TAIL_K", 1.5); // Skalar des √-Schwanzes über dem Knie: Margen-Hitze = (Knie−2) + K·√(Marge−Knie), uncapped/diminishing (wie Wurzeltiefe) [Sim-tunebar]
-export const HEAT_LOSS_MAX     = envNum("SIM_HEAT_LOSS_MAX", 10);   // max Hitzeverlust je Niederlage (%) [Sim-tunebar: Kühlung fürs Halte-Playstyle]
-export const HEAT_LOSS_PCT     = envNum("SIM_HEAT_LOSS_PCT", 0.25); // zusätzl. Hitzeverlust je Niederlage = Anteil der AKTUELLEN Hitze — hält hohe Hitze nicht-trivial (beißt NUR bei hoher Hitze → Konsum-Builds unberührt; Halte-Playstyle muss Hitze durch Siege halten) [Fire-Heat-Fix]
-export const FIRE_SCORE_BASE   = envNum("SIM_FIRE_SCORE_BASE", 25);   // Feuer-Flat-Score je Punkt (erster Feuer-Skill) [Sim-tunebar]
-export const FIRE_SCORE_PER_SKILL = 5; // +Feuer-Flat je Punkt je weiterem Feuer-Skill    // v0 — tunebar
-export const FIRE_MARGIN_OFFSET = envNum("SIM_FIRE_MARGIN_OFFSET", 2); // Feuer-Score-Offset: s = (Vorsprung − OFFSET) × Basis; kleiner = knappe Siege zahlen (Floor-Hebel) [Sim-tunebar]
-// Feuer-Score √-Bonus (wie Wurzeltiefe): additiv oben auf die lineare Linie, Basis·K·√(Vorsprung−OFFSET). Uncapped,
-// abnehmender Ertrag → großer Wertvorsprung bringt weiter mehr, ohne Deckel; kleine Margen bleiben ungestraft. [Sim-tunebar]
-export const FIRE_SCORE_SQRT_K  = envNum("SIM_FIRE_SCORE_SQRT_K", 1.0);
-// GLUTDIVIDENDE (Feuer-Rework, FLOOR-Hebel): ein DIREKTER Score je Feuer-Sieg, der NICHT durch den Serien/Crit/
-// Formations-Stack multipliziert wird (er zählt flach NACH der Multiplikation). Damit hebt er den Median (kleine
-// Mults → der flache Aufschlag ist relativ groß) deutlich stärker als das Ceiling (riesige Mults → der Aufschlag
-// verschwindet relativ). ∝ gehaltener Hitze beim Sieg, gedeckelt bei FIRE_DIVIDEND_HEAT_CAP (Sättigung: Top-Runs
-// mit Vollhitze ziehen den Deckel nicht weiter hoch → floor-clean). Das ist Feuers fehlende „Immer-an-Engine".
-// #fire-consumer 44 → 32: FRAKTIONS-Trimm, nachdem die drei Bauweisen gleichgezogen waren. Die Parität hatte Feuer
-// insgesamt auf 13,69 Mio gehoben (über Eis 11,74) — sie ist aber eine ANDERE Schraube als das Niveau, und beide
-// mussten gemeinsam gedreht werden: die Dividende allein zu senken bricht die Parität sofort (Spanne 1,02× → 1,31×
-// bei 22), weil der Halte-Build von ihr lebt und die Konsumenten nicht. FIRE_SCORE_BASE taugt dafür NICHT — 25 → 10
-// bewegt Feuer nur von 13,69 auf 13,10, der Grund-Score ist inzwischen ein kleiner Posten. Gefittet wurde deshalb
-// das Tripel Dividende/Flächenbrand/Schmelzpunkt gemeinsam (700 Läufe je Punkt):
-//   44/25/15 → 13,69 (Spanne 1,02×) · 32/17/9 → 11,02 (1,07×) · 30/15/8 → 10,54 (1,10×) · 28/13/7 → 10,01 (1,14×)
-export const FIRE_HEAT_DIVIDEND     = envNum("SIM_FIRE_HEAT_DIVIDEND", 32);      // direkter Score je Hitze-% je Feuer-Sieg (0 = aus), skaliert mit Feuer-Bekenntnis. #268: 48→44 (Feuer-Floor leicht runter: 2,17×→2,05× Mix) [TUNING · Feuer-Floor]
-// #fire-balance 45 → 70: der Deckel machte die OBERE LEISTENHÄLFTE wertlos. Über 45 % zahlte die Dividende nichts
-// mehr, und oberhalb lagen nur noch bedingte Skills (Glühende Klinge 70/100 · Schmelzofen 50 · Sonnenkern 60 ·
-// Weißglut 100) — Hitze zu HALTEN lohnte also strukturell nicht, genau die Klage „niemand spielt es als
-// Halte-Mechanik". Gemessen (700 reine Feuer-Läufe je Stand): Median 8,20 → 9,32 Mio bei 70, 9,97 bei 100. 70
-// gewählt, weil Feuer damit auf Blitz-Niveau landet, statt es zu überholen — alle vier Fraktionen bei n=700:
-// Feuer 9,95 · Blitz 9,93 · Pflanze 11,07 · Eis 11,74 (Spread 1,18× statt 1,88× vor dem Feuer-Pass).
-// ACHTUNG bei Nachmessungen: mit n=120 las derselbe Feuer-Stand 7,07 statt 8,20 — der Median dieser
-// Verteilung ist unter ~500 Läufen nicht belastbar.
-export const FIRE_DIVIDEND_HEAT_CAP = envNum("SIM_FIRE_DIVIDEND_HEAT_CAP", 70);  // Hitze-Deckel für die Dividende (Sättigung → floor-clean) [TUNING · Feuer-Floor]
-// Linie 1 — Generation (Marge · Konstanz · Serie)
-export const EMBER_MULT        = 1.5;  // Glut: Hitzegewinn ×1,5                            // v0 — tunebar
-export const ZUNDER_HEAT       = envNum("SIM_ZUNDER_HEAT", 2);    // Zunder: +2 % Hitze je Sieg (auch knappe Siege) [Sim-tunebar]
-export const FEUERSTURM_STEP   = 1;    // Feuersturm: +1 % Hitze je Serienstufe            // v0 — tunebar
-export const FEUERSTURM_CAP    = 5;    // Feuersturm: … bis +5 %                            // v0 — tunebar
-// Linie 2 — Verteidigung (abschirmen · kontern)
-export const GLUTBETT_MULT       = 0.5; // Glutbett: Hitzeverlust ×0,5                       // v0 — tunebar
-export const GLUTBETT_FREE_BELOW = 30;  // Glutbett: unter 30 % Hitze gar kein Verlust      // v0 — tunebar
-export const RUECKZUENDUNG_HEAT_PER_DEFICIT = 1; // Rückzündung: +1 % Hitze je Rückstandspunkt (Sieg nach Niederlage) // v0
-export const RUECKZUENDUNG_VALUE = 2;   // Rückzündung: … und die Siegkarte +2 Wert         // v0 — tunebar
-// Linie 3 — Schwellen-Payoffs (hohe Hitze → Belohnung)
-export const GLOWING_T1_HEAT = 40, GLOWING_T1_VALUE = 1; // Glühende Klinge: +1 Wert ab 40 % // v0 — tunebar
-export const GLOWING_T2_HEAT = 70, GLOWING_T2_VALUE = 2; //                 +2 Wert ab 70 %  // v0 — tunebar
-export const GLOWING_T3_HEAT = 100, GLOWING_T3_VALUE = 3;//                 +3 Wert bei 100 % // v0 — tunebar
-// #fire-balance: die OBEREN Stufen verlangen zusätzlich einen dominanten letzten Sieg. Grund: Hitze allein war zu
-// leicht oben zu halten — zusammen mit Feuerwalze (+3) lag dauerhaft +6 Wert auf JEDER Karte, was die Margen
-// aufblies, die die Hitze erzeugen (Rückkopplung). Die Stufe liest darum den Vorsprung des LETZTEN Siegs mit;
-// eine Niederlage setzt ihn auf 0 → die Klinge fällt ohne eigene Regel auf die Sockelstufe zurück. Die zwei Zahlen
-// sind bewusst die schon vorhandenen Fraktions-Schwellen (8 = groß · 12 = überlegen: Verbrennung, Funkenflug),
-// damit Feuer EINE Sprache spricht. Feuerwalze bleibt an der SERIE — die beiden trennen sich damit sauber:
-// eine Serie knapper Siege gibt Feuerwalze +3 und der Klinge nur +1.
-export const GLOWING_T2_MARGIN = 8;     // Glühende Klinge: +2 erst mit letztem Sieg ≥8 Vorsprung   // #fire-balance — tunebar
-export const GLOWING_T3_MARGIN = 12;    // Glühende Klinge: +3 erst mit letztem Sieg ≥12 Vorsprung  // #fire-balance — tunebar
-// WEISSGLUT → ÜBERHITZUNG (#fire-balance). Eigener Sub-Akku `heat.over` (0…OVERHEAT_MAX) NEBEN `heat.value` —
-// bewusst ein zweites Feld statt `heat.max = 150`: alles, was heat.value liest (Sonnenzorn-Peak, Glutdividende,
-// Glühende Klinge, Flächenbrand, Schmelzofen), bleibt damit OHNE eine einzige Zeile Sonderfall bei 100 gedeckelt.
-// Die Zone ist strukturell isoliert, nicht per Ausnahme. Die Leiste zeigt sie als 0–150 %.
-// Alt war „+10 Score je überlaufendem Hitzepunkt“ — ein flacher Betrag, der bei exakt 100 % Hitze ~160 Score gab und
-// mit dem Build nicht mitwuchs. Jetzt ist der Überlauf ein ZUSTAND mit steigenden Zuflusskosten und einem Hebel.
-export const OVERHEAT_MAX        = envNum("SIM_OVERHEAT_MAX", 50);   // Überhitzung max (= Leiste bis 150 %)                    // #fire-balance — tunebar
-export const OVERHEAT_COST_K     = envNum("SIM_OVERHEAT_COST_K", 10);   // Zuflusskosten: ankommender Anteil = 1/(1+Überhitzung/K) → tiefe Überhitzung verlangt echten Wertvorsprung, nicht Masse
-export const OVERHEAT_DECAY      = envNum("SIM_OVERHEAT_DECAY", 2);    // Abbau je Stich — KONTINUIERLICH (nicht nur bei Niederlage): nicht gefüttert = fällt auf 100 % zurück
-export const OVERHEAT_DECAY_LOSS = 5;    // Abbau bei Niederlage
-export const OVERHEAT_SCORE_STEP = envNum("SIM_OVERHEAT_SCORE_STEP", 0.02); // +2 % auf den GESAMTEN Feuer-Score je Punkt Überhitzung (bei MAX also ×2)
-// #fire-balance, 3. Durchgang — die 2 % waren richtig, mein Zwischenschritt auf 3,5 % beruhte auf einer FALSCHEN
-// MESSUNG: gemessen wurde in zufälligen Feuer-Builds, und in 46/47 % davon steckte Flächenbrand bzw. Schmelzpunkt.
-// Beide leeren genau die Leiste, von der Weißglut lebt — der Skill konnte dort per Konstruktion nicht wirken.
-// In SEINER Umgebung (reines Feuer OHNE Konsumenten, 700 Läufe) steigt sein Wert monoton mit der Siegquote:
-//   Siegquote 52–67 % → −0,4 Mio · 67–74 % → −0,6 · 74–79 % → +2,0 · 79–92 % → +5,2 · oberste 10 % → +11,8
-// Das ist die gewollte Bekenntnis-Wette: unten kostet der Slot, oben zahlt er groß. Mit 3,5 % wären es +3,7/+7,8/
-// +17,1 — dramatischer, aber der Skill braucht die Hilfe nicht, und es hob nur die Decke (p99 40,4 → 45,6).
-// NEBENBEI: pct() rundet für die Anzeige, 0,035 stand in der Beschreibung als „+4 %" statt 3,5 — bei 0,02 exakt.
-// Linie 4 — Wert-/Score-Motoren
-export const FIREROLL_MIN_HEAT = 40;    // Feuerwalze: erst ab 40 % Hitze                    // v0 — tunebar
-export const FIREROLL_MAX       = 3;    // Feuerwalze: +1 Wert je Sieg in Folge, bis +3      // v0 — tunebar
-export const VERBRENNUNG_T1_MARGIN = 8,  VERBRENNUNG_T1_MULT = 1.5; // Verbrennung: Feuer-Score ×1,5 ab 8 Vorsprung // v0
-export const VERBRENNUNG_T2_MARGIN = 12, VERBRENNUNG_T2_MULT = 2.0; // Verbrennung: Feuer-Score ×2 ab 12 Vorsprung  // v0
-export const SPARKFLIGHT_MIN_MARGIN = 8;  // Funkenflug: Sieg ≥8 Vorsprung entlädt den Speicher voll // v0 — tunebar
-export const SPARKFLIGHT_LOSS_KEEP  = 0.5;// Funkenflug: Niederlage halbiert den Speicher     // v0 — tunebar
-// #fire-balance: der Speicher bekam bisher eine 1:1-Kopie des Feuer-Scores kleiner Siege — und der ist bei kleiner
-// Marge naturgemäß klein (unter HEAT_MIN_MARGIN sogar exakt 0, ein Sieg mit 1–2 Vorsprung legte also NICHTS ein).
-// Jetzt das Doppelte plus einen bekenntnis-skalierten Sockel, damit auch der knappste Sieg sichtbar einzahlt.
-export const SPARKFLIGHT_BANK_MULT       = 2;  // Einlage = Vielfaches des Feuer-Scores des kleinen Siegs
-export const SPARKFLIGHT_FLOOR_BASE      = 60; // + Sockel je kleinem Sieg (erster Feuer-Skill)
-export const SPARKFLIGHT_FLOOR_PER_SKILL = 20; // + je weiterem Feuer-Skill (6 Skills → 160), Muster wie FIRE_SCORE_PER_SKILL
-// Linie 5 — Konsumenten (max 1 im Build — Burst vs. Drip)
-export const CONFLAG_MIN_HEAT = envNum("SIM_CONFLAG_MIN_HEAT", 80);     // Flächenbrand: ab 80 % Hitze bewaffnet [Sim-tunebar]
-// #fire-balance: Flächenbrand verbrannte die GANZE Leiste für einen flachen Satz. Der Verbrauch war nicht bezahlbar —
-// unten liegen VIER Dinge (Feuerwalze ≥40, Glühende Klinge 40/70/100, Glutdividende, Weißglut-Zufluss), und der
-// Wiederaufbau von 0 auf 80 dauert ~10 Siege. Jetzt: BODEN statt Totalverbrennung + bekenntnis-skalierter Satz.
-export const CONFLAG_KEEP     = envNum("SIM_CONFLAG_KEEP", 40);     // Boden: brennt bis hierher herunter, nicht auf 0 (Feuerwalze + Klingen-Sockel überleben; wieder scharf in ~3 Siegen statt ~10)
-export const CONFLAG_PER_HEAT = 20;     // Flächenbrand: Score je verbranntem Hitzepunkt (erster Feuer-Skill)
-// #fire-consumer: 5 → 25. GEMESSENE Parität — der Konsumenten-Weg war nicht „etwas schwach", er war schlechter als
-// GAR KEIN Konsument (700 Läufe: ohne Konsument 13,73 Mio · nur Flächenbrand 10,65 · nur Schmelzpunkt 8,07), und die
-// Angebots-Garantie (needsConsumer, s. buildSkillOffer) drückt ihn 93 % aller Feuer-Builds auf. Satz-Sweep über
-// dieselben 700 Seeds: 45/Punkt → 10,65 · 95 → 12,13 · 145 → 13,65 · 195 → 15,09. Bei 145 (= 20 + 25×5) sitzt der
-// Median auf dem Halte-Build. Die Decke läuft dabei NICHT davon — im Gegenteil: p99 36,3 gegen 56,3 des
-// Halte-Builds. Der Halte-Weg skaliert über Weißglut und den Sonnenzorn-Peak mit der Siegquote und hat deshalb die
-// extremen Läufe; der Burst zahlt gleichmäßig. Zwei Wege mit verschiedenem Risikoprofil statt zweier Kurvenvarianten.
-// 25 → 17 im Fraktions-Trimm (s. FIRE_HEAT_DIVIDEND): die Parität wurde bei 25 gemessen, das NIVEAU danach gemeinsam
-// gesenkt. Wer einen der drei Werte allein dreht, verschiebt nicht das Niveau, sondern die Wahl zwischen den Bauweisen.
-export const CONFLAG_PER_SKILL = envNum("SIM_CONFLAG_PER_SKILL", 17);    // … + je weiterem Feuer-Skill (6 Skills → 105/Punkt), Muster wie FIRE_SCORE_PER_SKILL
-// #fire-balance Schmelzpunkt: kostete 10 %/Stich — MEHR, als ein durchschnittlicher Sieg erzeugt (~16 % bei vollem
-// Feuer-Build, aber gezahlt wurde auch bei Niederlagen) — und gab dafür 50 Score. Er konnte gar nicht funktionieren.
-// Jetzt billiger UND mit einem Satz, der an der GEHALTENEN Hitze hängt: der Skill zahlt genau dann, wenn du oben
-// bleibst, und bremst sich selbst, wenn die Leiste leerläuft. Damit ist er erst die Halte-Mechanik, als die er gemeint war.
-export const MELT_COST           = envNum("SIM_MELT_COST", 4);   // Schmelzpunkt: −4 % Hitze je SIEG (nicht mehr je Stich)     // #fire-balance — tunebar
-export const MELT_SCORE_BASE     = 10;  // Score je verbranntem Punkt: Sockel …                     // #fire-balance — tunebar
-// Der Tropf geht in die MULTIPLIZIERTE Basis. Er lag zwischenzeitlich als Direkt-Score post-stack — das zähmt die
-// Decke sichtbar (p99/Median 3,3× gegen 4,5×), ist aber die falsche Bauform: ein fester Betrag verliert in einer
-// Ökonomie, deren Multiplikatoren über den Lauf davonziehen, laufend an Gewicht. Grundsatz: so wenig Direkt-Score
-// wie möglich. Der Preis ist gemessen und bewusst bezahlt — bei gleichem Median kostet der Wechsel rund ein Drittel
-// mehr Decke (Feuer p99 35,3 → 47,5). Gemessene Parität bei 6 (700 Läufe, Schmelzpunkt-Build / Feuer gesamt):
-//   Satz 5 → 10,17 / 10,88 · 6 → 10,86 / 11,06 · 7 → 11,64 / 11,22 · 8 → 12,26 / 11,35
-export const MELT_SCORE_PER_HEAT = envNum("SIM_MELT_SCORE_PER_HEAT", 6); // … + je % gehaltener Hitze           // #fire-consumer — tunebar
-// #fire-consumer: der Tropf hängt zusätzlich an der SIEGESSERIE. Ein Konsument, der jeden Sieg denselben Betrag
-// zahlt, hat keine eigene Kurve — Flächenbrand baut sichtbar eine Leiste auf und wirft sie ab, Schmelzpunkt tat
-// nichts dergleichen. Jetzt wächst sein Satz mit der Serie: dieselbe Auflade-Fantasie, nur kontinuierlich statt in
-// Bursts, und eine Niederlage kostet wirklich etwas (die Serie fällt). Der Deckel hält die Spitze endlich.
-// (Der zwischenzeitliche eigene SERIEN-Faktor am Tropf ist wieder entfallen. Er war als Gegenstück zu Flächenbrands
-//  Auflade-Leiste gedacht, ist aber redundant, seit der Tropf in der multiplizierten Basis liegt: dort skaliert er
-//  über streakBaseMult bereits mit der Serie. Ein zweiter Faktor darauf war ein Doppel-Dip und hat nur den Schwanz
-//  aufgebläht — gemessen p99/Median 5,8× mit gegen 4,5× ohne, bei gleichem Median.)
-// Linie 6 — Verbrennen → Schmieden (Brand · Asche · Schmiede)
-export const BRAND_VALUE      = 1;      // Brandmal: brandmarkierte Gegnerkarte −1 Wert (v0.1: 2→1, Brand-Winrate-Tail zähmen) // tunebar
-export const BRAND_ASH        = 1;      // Brandmal/Lauffeuer: +1 Asche je Brand              // v0 — tunebar
-export const BRAND_SPREAD_VALUE = 1;    // Lauffeuer: Übergriff auf eine Nachbarkarte −1 Wert // v0 — tunebar
-// #268 Asche-Ökonomie: Asche als KNAPPE, vollständig verbrauchte Ressource. Kosten hoch (≈ ein Durchlauf-Einkommen je
-// Schmiedung), Wert hoch (echter Payoff) → „früh nehmen, horten, später ernten". Am Durchlauf-Ende floor(Asche/Kosten)
-// Schmiedungen; Rest fließt über den Weißglut-Überlauf (unten) in Score → kein toter Haufen mehr.
-export const FORGE_COST       = envNum("SIM_FORGE_COST", 20);     // Ascheschmiede: 20 Asche je Schmiedung (≈ ein 50 %-Durchlauf-Einkommen) [#268 · Sim-tunebar]
-export const FORGE_VALUE      = envNum("SIM_FORGE_VALUE", 3);     // Ascheschmiede: niedrigste Karte +3 Dauerwert (echter Payoff) [#268 · Sim-tunebar]
-export const FORGE_MAX_PER_CARD = envNum("SIM_FORGE_MAX_PER_CARD", 9); // Schmieden: Deckel geschmiedeter Dauerwert je Karte (3 Schmiedungen/Karte bei Value 3) [#268: 6→9]
-export const FORGE_MAX_CARDS    = 10;   // Schmieden: max Anzahl VERSCHIEDENER geschmiedeter Karten (Boden heben, nicht ganzes Deck buffen)
-// Weißglut-Überlauf (#268, Variante A — ersetzt die alte Asche-Dividende): ist die Schmiede-Kapazität voll, wird die
-// RESTLICHE Asche am Durchlauf-Ende in Score-Häppchen (je FORGE_COST) verbrannt → „die Schmiede glüht weiß". Asche wird so
-// jeden Durchlauf auf < Kosten heruntergefahren (vollständig ausgegeben), mit konkretem Effekt. [#268 · Haupt-Balance-Hebel]
-export const FORGE_OVERFLOW_SCORE = envNum("SIM_FORGE_OVERFLOW_SCORE", 2000); // Score je FORGE_COST-Portion überlaufender Asche
-export const GLUTSTAHL_PER_VALUE = 12;  // Glutstahl: +Score je geschmiedetem Wert bei Sieg // v0.2: 20→12 (Feuer-Ceiling-Trim, Brand+Schmiede-Explosion)
-export const SCHMELZOFEN_MIN_HEAT = 50; // Schmelzofen: ab 50 % Hitze …                       // v0 — tunebar
-export const SCHMELZOFEN_BRAND_BONUS = 1;   // … Brände −1 extra Wert & +1 extra Asche         // v0 — tunebar
-export const SCHMELZOFEN_FORGE_DISCOUNT = envNum("SIM_SCHMELZOFEN_FORGE_DISCOUNT", 0.25); // … Schmieden −25 % Kosten (FAKTOR, skaliert mit den Kosten: 20→15) [#268: flat 1 → Faktor]
-// Legendäre — UMGEFORMT (dauerhaft/compoundend/direkt statt situativ), vier verschiedene Achsen.
-// Sonnenzorn (L) — SCORE-Mult ∝ HÖCHSTER je gehaltener Hitze (heat.peak): dauerhafter Feuer-Score-Multiplikator.
-// #fire-leg: der Peak zählt jetzt Hitze + ÜBERHITZUNG (heat.peak liest `value + over`) — Sonnenzorn ist damit an
-// Weißglut gekoppelt. Grund: 100 % Peak erreicht JEDER Feuer-Build nebenbei, der Multiplikator war praktisch ein
-// Fixwert. Die Zone darüber ist dagegen teuer erkauft (gedrosselter Zufluss, Abbau je Stich) und trägt deshalb den
-// dreifachen Satz. Zwei Sätze bewusst: der leichte Teil wird billiger (×2,3 → ×2,0), der schwere ist der Preis.
-//   Peak 100 (ohne Weißglut) → ×2,0 · Peak 125 → ×2,75 · Peak 150 (volle Überhitzung) → ×3,5
-// (Dreht die frühere „isolierte Zone"-Entscheidung NUR für den Peak. Glutdividende und Glühende Klinge lesen
-//  heat.value und bleiben unberührt.)
-export const SUNWRATH_PEAK_STEP    = envNum("SIM_SUNWRATH_PEAK_STEP", 0.010); // +GESAMT-Score je Peak-Hitze-% bis HEAT_MAX
-export const SUNWRATH_OVER_STEP    = envNum("SIM_SUNWRATH_OVER_STEP", 0.030); // … je Punkt Peak DARÜBER (Überhitzung)
-// Sonnenkern (L) — WIN-CONDITION: endet ein Durchlauf mit hoher Hitze, brennt sie sich dauerhaft in ALLE Karten (+Wert).
-export const SONNENKERN_MIN_HEAT   = envNum("SIM_SONNENKERN_MIN_HEAT", 60);   // ab dieser End-Hitze brennt Sonnenkern ein [Legendär-Angleich: 70→60 — häufiger auslösen]
-export const SONNENKERN_VALUE      = envNum("SIM_SONNENKERN_VALUE", 2);       // +Dauerwert je heißem Durchlauf (auf Karten unter dem Deckel) [Legendär-Angleich: 1→2]
-export const SONNENKERN_CARD_CAP   = envNum("SIM_SONNENKERN_CARD_CAP", 9);    // nur Karten UNTER diesem Wert brennen ein → hebt den Deck-BODEN [Legendär-Angleich: 7→9 — mehr Karten]
-// #fire-leg: Sonnenkern war ein SCHALTER ohne jede Interaktion — Hitze ≥ Schwelle am Durchlauf-Ende, alle Karten
-// unter dem Deckel +Wert, Hitze unangetastet, keine Entscheidung. Jetzt brennt die Sonne in BEIDE Decks: endet der
-// Durchlauf heiß, VERFALLEN die Brände dieses Durchlaufs nicht (normal hält ein Brand genau einen Durchlauf,
-// `brandActive = brandPending`), sondern stapeln sich auf den Gegnerkarten. Damit hängt er an der Brand-Linie
-// (Brandmal/Lauffeuer/Schmelzofen liefern das Material) UND weiter an der Hitze — endet ein Durchlauf kalt, fällt
-// der Stapel auf den normalen Ein-Durchlauf-Brand zurück. Der Deckel verhindert, dass ein Gegnerdeck auf 0 sinkt.
-export const SONNENKERN_BRAND_CAP   = envNum("SIM_SONNENKERN_BRAND_CAP", 4);   // max gestapelte Brände je Gegnerkarte
-// Der Stapel zahlt in SCORE, nicht in Wert: ein −4-Abzug würde die Gegnerkarte praktisch ausradieren (zusammen mit
-// dem +2 auf der eigenen Seite doppelt). Der Wert-Abzug bleibt deshalb auf dem normalen Brandmaß gedeckelt
-// (BRAND_VALUE_CAP), und die ANZAHL der Brände wird zur Score-Quelle: jeder Sieg gegen eine gebrandmarkte Karte
-// zahlt je Brand darauf. Das macht den Stapel sichtbar wertvoll, ohne den Gegner zu entwerten.
-// Gemessen (Halte-Build, 700 Laeufe je Punkt): Satz 100 -> Sonnenkern 16,63 Mio · 200 -> 17,90 · 350 -> 19,13.
-// 100 gewaehlt: das ist praktisch das Niveau der verworfenen −4-Fassung (16,20), also gleiche Staerke bei besserer
-// Mechanik. Nebenbefund derselben Messung: SONNENKERN_VALUE von 2 auf 1 bewegt nur 0,04 Mio — die alte
-// „+Kartenwert"-Passive ist fast wirkungslos, der Brand-Score traegt den Skill.
-export const SONNENKERN_BRAND_SCORE = envNum("SIM_SONNENKERN_BRAND_SCORE", 100); // Score je Brand auf der geschlagenen Karte
-// Deckel des WERT-Abzugs durch Brände — genau das bisherige Maximum (Brandmal + Schmelzofen-Bonus). Ohne Sonnenkern
-// stapeln Brände ohnehin nicht; der Deckel greift also nur für den Stapel und hält den Gegner spielbar.
-export const BRAND_VALUE_CAP        = BRAND_VALUE + SCHMELZOFEN_BRAND_BONUS;
-// Phönixfeuer (L) — KONSISTENZ: Niederlagen GEBEN Hitze (+je Rückstandspunkt) statt sie zu nehmen; + Reignite bei Konsum-0.
-export const PHOENIX_LOSS_HEAT     = envNum("SIM_PHOENIX_LOSS_HEAT", 8);      // +Hitze je Rückstandspunkt bei Niederlage (statt Verlust) [Legendär-Umbau]
-export const PHOENIX_REIGNITE      = envNum("SIM_PHOENIX_REIGNITE", 0.40);    // verbrauchte Hitze entzündet neu (Anteil zurück), 1×/Durchlauf
-// #fire-balance: Auslöser war allein „Hitze ≤ 0“. Seit Flächenbrand einen Boden hat (CONFLAG_KEEP), gibt es das aus
-// einem Konsum nicht mehr — die Klausel wäre still gestorben. Sie zündet jetzt zusätzlich nach einem GROSSEN Einzel-
-// verbrauch; der kleine Schmelzpunkt-Tropf (MELT_COST) liegt bewusst darunter, sonst verpuffte das 1×/Durchlauf sofort.
-export const PHOENIX_MIN_BURN      = 25;                                     // … oder: so viel Hitze auf einmal verbrannt
-// Damaststahl (L) — DIREKT-SCORE: geschmiedete Siegkarte → direkter Score ∝ geschmiedetem Wert (am Stack vorbei); Deckel entfällt; Asche verfällt nie.
-// #fire-nodirect 4 → 10: Damaststahl war mit -0,83 der schwaechste Feuer-Legendaer, und der Grund lag NICHT beim
-// Satz (4 → 14 bewegte sein Delta nur von -1,12 auf -0,83). Er lag hier: bei 4 Karten und FORGE_GROWTH = 0 ist der
-// Gesamt-Schmiedewert nach vier Durchlaeufen fuer immer 12 — die Damast-Dividende steht damit bei 12 x 14 = 168 je
-// Sieg, egal wie lange der Lauf noch geht. Der Deckel begrenzt seit dem Umbau auf GROWTH = 0 nur noch die BREITE,
-// nicht mehr das Compounding, gegen das er urspruenglich gesetzt wurde. Gemessen (700 Laeufe, Delta des Skills):
-//   4 Karten / kein Wachstum  -0,83  ·  10 / kein Wachstum  +2,16  ·  4 / +1 je Durchlauf  +2,29  ·  8 / +1  +6,81
-// 10 ohne Wachstum gewaehlt: Legendaer-Niveau (Sonnenzorn +1,63 · Sonnenkern +4,19), Decke unveraendert (p99 48,7),
-// und kein Compounding-Pfad zurueck.
-export const DAMASCUS_MAX_FORGED   = envNum("SIM_DAMASCUS_MAX_FORGED", 10);   // Selbst-Schmiede deckelt auf so viele Karten (Breite, nicht Compounding) [#fire-nodirect]
-export const DAMASCUS_FORGE_GROWTH = envNum("SIM_DAMASCUS_FORGE_GROWTH", 0);  // geschmiedete Karten +Dauerwert je Durchlauf (0 = kein Compounding) [Legendär-Umbau]
-// #fire-nodirect: war „DAMASCUS_DIRECT = 14", ein DIREKTER Score am Multiplikator-Stack vorbei. Umgestellt auf die
-// multiplizierte Basis (Name mitgezogen — „DIRECT" stimmte danach nicht mehr, und ein falscher Name ist schlimmer
-// als gar keiner). Grund ist derselbe wie beim Schmelzpunkt-Tropf: ein fester Betrag verliert gegen die über den
-// Lauf wachsenden Multiplikatoren. Gemessen am Feuer-Lauf: der Direkt-Anteil am Stich-Ertrag steigt bis Durchlauf
-// 20–29 auf 32,6 % und fällt danach auf 19,4 % — als kleiner Bonus (Glutdividende) trägt er, als Motor nicht.
-// Der Satz ist danach neu eingestellt, s. u. — multipliziert ist derselbe Zahlenwert ein Vielfaches wert.
-export const DAMASCUS_PER_VALUE    = envNum("SIM_DAMASCUS_PER_VALUE", 14);     // Score je Punkt GESAMT-Schmiedewert, je Sieg (Damast-Dividende), in der multiplizierten Basis
-export const DAMASCUS_COMBAT       = envNum("SIM_DAMASCUS_COMBAT", 5);        // Underdog: geschmiedete Karten kämpfen mit +Wert (schlagen über ihrem Gewicht) [Legendär-Umbau]
-// (Sonnenzorns alte ≥MIN_HEAT-Verstärkungen ausgebaut → Glühende Klinge/Weißglut sind jetzt reine Nicht-Legendär-Skills.)
+export const HEAT_MAX            = 100;                                            // Leiste des Passivs (fix)
+export const WEISSGLUT_HEAT_MAX  = envNum("SIM_WEISSGLUT_HEAT_MAX", 200);          // Leiste mit Weißglut (Skala, kein Rampen-Deckel)
+export const HEAT_MIN_MARGIN     = envNum("SIM_HEAT_MIN_MARGIN", 3);               // Mindest-Vorsprung für Passiv-Hitze
+// docs/skill-rework.md §7.10 (owner: heat must drain faster so the boosters matter): cooling 2 → 6 per loss makes a
+// single booster worth +10 % (Glut) to +23 % (Zunder) over the core build; offset 2 → 1 gives every margin win one more
+// point and brings Feuer mono back level with Blitz mono (floor 1.00×). Rejected: cooling 4 (Glut still flat), a
+// steeper multiplier slope (barely moves the floor, decimal display).
+export const HEAT_MARGIN_OFFSET  = envNum("SIM_HEAT_MARGIN_OFFSET", 1);            // Hitze = (Vorsprung − Offset) × je Punkt
+export const HEAT_PER_POINT      = envNum("SIM_HEAT_PER_POINT", 1);                // % Hitze je Vorsprungspunkt über dem Offset, linear ohne Knie
+export const HEAT_LOSS           = envNum("SIM_HEAT_LOSS", 6);                     // % Hitze je Niederlage (flach)
+/* §7.73/§7.74 (Owner: „0.05 als moderater Schub"): 0,02 → 0,05, also ×1,5 statt ×1,2 bei voller Leiste. Gesweept,
+   nicht geraten: 0,02/0,04/0,06/0,09 → Feuer 8,8/10,0/11,2/12,8 Mio, Gerade Feuer ≈ 7,70 + 57 × Rate.
+   Der Regler ist BEWUSST nur ein Schub und keine Reparatur: er sitzt in ×(1 + Rate × Hitze/10), multipliziert also
+   den ganzen Stich — auch den Score des Partners. Die Mischbauten steigen deshalb 2,4-mal so schnell wie Feuer
+   allein (Steigung Fe+Bl 136 gegen Fe 57), und bei der Rate, die Feuer allein auf Eis-Niveau brächte (0,177),
+   stünde Fe+Bl bei 41 Mio. Owner dazu: „das Ziel sind eh Mischbilds, also passt wenn Feuer ein guter partner ist"
+   — Feuers Mono-Schwäche ist damit kein Fehler, sondern seine Rolle. */
+export const HEAT_MULT_PER_10    = envNum("SIM_HEAT_MULT_PER_10", 0.05);           // Score-Multiplikator je volle 10 % gehaltener Hitze (×1,5 bei 100)
+export const FORGE_VALUE         = envNum("SIM_FORGE_VALUE", 4);                   // Schmiede: +Dauerwert je Schmiedung (§7.34: 3 → 4; +3 auf die niedrigste Karte hob den Vorsprung kaum, und der Vorsprung ist das Hitze-Einkommen)
+// Legendäre (§4.7): keine Stufe, zwei Effekte, jedes läuft allein.
+export const SONNENKERN_BRAND           = envNum("SIM_SONNENKERN_BRAND", 0.25);                // Sonnenkern: jeder Sieg brandmarkt so viel Wert weg (stapelt über die Runden) — der eigentliche Motor des Legendären; §6.12: 1 → 0,25 (bei 1 lag Sonnenkern auch ohne Brand-Score bei +296 %). Viertel sind binär exakt, die Anzeige bleibt sauber
+export const SONNENKERN_SCORE_PER_BRAND = envNum("SIM_SONNENKERN_SCORE_PER_BRAND", 4);         // Sonnenkern: Basis-Score je Brandpunkt auf der geschlagenen Karte (§6.12: 20 → 4)
+export const SONNENZORN_MULT_PER_10     = envNum("SIM_SONNENZORN_MULT_PER_10", 0.13);          // Sonnenzorn: Hitze-Multiplikator je 10 % Spitzen-Hitze (statt HEAT_MULT_PER_10; §7.20: 0,04 → 0,05)
+export const SONNENZORN_HEAT_MULT       = envNum("SIM_SONNENZORN_HEAT_MULT", 3);               // Sonnenzorn (§7.20): unter der Spitze zählt die Hitze aus Siegen × (§6.12: 2 → 3)
+export const EWIGE_GLUT_MULT_PER_ROUND  = envNum("SIM_EWIGE_GLUT_MULT_PER_ROUND", 0.15);       // Ewige Glut (L, §7.21, ersetzt Phönixfeuer): jede Runde, die mit voller Leiste endet, +so viel auf den Hitze-Multiplikator, dauerhaft (Rampe ohne Deckel). Sweep 0,03/0,05/0,08 zur Laufmitte: 1,02/1,14/1,32 gepaart
+export const EWIGE_GLUT_FLOOR_FRAC      = envNum("SIM_EWIGE_GLUT_FLOOR_FRAC", 0.85);            // Ewige Glut (L): die Hitze fällt nie unter diesen Anteil der Spitze (Kaltstart nur einmal); §6.12: 0,5 → 0,8 — der Boden trägt das Legendäre, die Rampe kaum (Sweep 0,05/0,075/0,10/0,15 lag flach bei +23 %)
 
 /* ============================================================
    EIS-REWORK v0 — „Was du richtig stellst, erstarrt für immer und wächst." Gletscher: Architektur × Permanenz.
@@ -618,86 +414,44 @@ export const DAMASCUS_COMBAT       = envNum("SIM_DAMASCUS_COMBAT", 5);        //
 // läuft jetzt vollständig über glacier.js (Masse/Rollen). Keine Alt-Eis-Konstanten mehr nötig.
 
 /* ============================================================
-   PFLANZE-FRAKTION v0 — „Der Garten, der sich selbst überwuchert." NEU (4. Fraktion). Wachstum (nur steigend) →
-   Reife (grün — Farbe, nicht Kraft) → Farbblock → Score. Wert-Deckel 11 (kein Runaway). Werte v0. [v0 · tunebar]
+   PFLANZE — exp skill rework (docs/skill-rework.md §6). Hier stehen NUR die Passiv-Größen; die Zahlen der Skills liegen
+   in ihren Stufentabellen (skills.js SKILL_DEFS[…].tiers, gelesen von factions/plant.js).
+
+   Passiv „Wachstum" (§6.2): ein Sieg gibt der Siegkarte PLANT_GROWTH_WIN Wachstum, dazu PLANT_GROWTH_PER_FORMATION je
+   AKTIVER Formation an ihrer Position — die Aufstellung ist damit die Wachstumsentscheidung. Niederlagen geben nichts,
+   Wachstum fällt nie. Ab PLANT_GREEN_THRESHOLD ist die Karte grün (eine Farbe „G" für alles, was Farbe liest), ab
+   PLANT_BLOOM_THRESHOLD blühend: ein Sieg mit ihr gibt PLANT_BLOOM_SCORE_PER_GREEN Basis-Score je grüner Karte in
+   ihren Formationen — die eine Score-Quelle der Fraktion, das Gegenstück zum Stapel-Score des Blitzes.
+   Startwerte, NICHT gemessen (Owner: erst Design, dann Startwert, dann messen — auf Ansage). [tunebar]
    ============================================================ */
-export const PLANT_GREEN_THRESHOLD = envNum("SIM_PLANT_GREEN_THRESHOLD", 8);   // Wachstum-Schwelle für Reife (grün) [Sim-tunebar: höher = Feld ergrünt langsamer → Winrate sättigt weniger] // v0 — tunebar
-// Skill-Gate fürs Win-Wachstum (v0.3, Anti-Splash): pro Sieg wächst eine Karte um min(1, PflanzenSkills / REF). Bei REF=3
-// volle +1/Sieg ab 3 Pflanzen-Skills; 1 Splash-Skill = 1/3 Speed. Hohes Wachstum ist so an Pflanzen-Deck-COMMITMENT
-// (Skill-Anzahl) gegatet, statt 1 Skill zur Pflicht für alle Decks zu machen. [Sim-tunebar]
-export const PLANT_GROWTH_SKILL_REF = envNum("SIM_PLANT_GROWTH_SKILL_REF", 3);
-export const PLANT_VALUE_CAP       = envNum("SIM_PLANT_VALUE_CAP", 11);  // Wert-Deckel grüner Karten (Auto-Sieg; Tiefe zahlt dann in Score) [Sim-tunebar: 10 = kein Auto-Sieg mehr] // v0
-export const PLANT_ANCHOR_VALUE    = 11;  // Alter Anker: Aktivierung startet 1 Karte reif (grün, Wert 11)      // v0
-export const PLANT_GREEN_FARBBLOCK_CAP = 3;// Grün-Farbblock-Cap: der eskalierende Farbblock-Faktor grüner Karten wird bei dieser Ordinalzahl gedeckelt (v0.3: ganzes Feld grün → 40er-Block ×8+ war der Runaway) // tunebar
-// Pflanze-Fraktions-Passive „Wurzelschlag" (v0.5: vom Skill zur MONO-gegateten Archetyp-Passive — nur aktiv, solange
-// ausschließlich Pflanzen-Skills gehalten werden). Wert wird aus Wachstum ABGELEITET (nicht verbraucht): +1 je N-Schwelle.
-export const WURZELSCHLAG_PER_GROWTH = envNum("SIM_WURZELSCHLAG_PER_GROWTH", 4); // Passive: +1 Dauerwert je N abgeleitetem Wachstum (grüne Karte, bis Deckel) [Sim-tunebar: höher = Wert wächst langsamer → Auto-Sieg später]
-export const WURZELSCHLAG_LOSS_EVERY = envNum("SIM_WURZELSCHLAG_LOSS_EVERY", 2); // Passive: je N Niederlagen einer Karte wächst sie trotzdem +1 Zuwachs (Zähler je card.id) [Sim-tunebar: höher = seltener Trostwachstum]
-export const WURZELSCHLAG_LOSS_MIN_SKILLS = envNum("SIM_WURZELSCHLAG_LOSS_MIN_SKILLS", 4); // Niederlage-Klausel erst ab N gehaltenen Pflanzen-Skills [Sim-tunebar]
-// Linie 4 — „Kernholz" (Mono-Grün-Payoff): grüner Sieg → +Score je Kartenwert-Punkt ÜBER dem Startwert (baseRank).
-// Schließt den Loop Wachstum→Wert→Score (die Passive baut Wert, Kernholz erntet ihn). [Sim-tunebar]
-export const KERNHOLZ_SCORE_PER_VALUE = envNum("SIM_KERNHOLZ_SCORE_PER_VALUE", 15);
-export const WURZELTIEFE_SCORE     = envNum("SIM_WURZELTIEFE_SCORE", 15);  // Wurzeltiefe: Flat-Score je Sieg einer grünen Karte (Wurzeln-Score) [Pflanze-Buff: 12→15]
-// Wurzeltiefe-Feldtiefe (Buff): Bonus je grünem Sieg, der mit dem GESAMTWACHSTUM des Feldes skaliert — aber mit
-// √-Kennlinie (abnehmender Ertrag) und Deckel, damit tiefe Wälder nicht durchdrehen (Anti-Runaway). Bonus = K·√(ΣWachstum), gedeckelt.
-export const WURZELTIEFE_FIELD_K   = envNum("SIM_WURZELTIEFE_FIELD_K", 1.05);  // Skalar auf √(Gesamtwachstum) [gespreizt: Deckel erst am Top-Peak ~Σ13k statt früh]
-export const WURZELTIEFE_FIELD_CAP = envNum("SIM_WURZELTIEFE_FIELD_CAP", 120); // Deckel des Feldtiefe-Terms je Sieg
-export const PFAHLWURZEL_MULT      = 2;   // Pfahlwurzel: Wurzeln-Score ×2 bei Formations-Sieg                  // v0
-export const JAHRESRINGE_PER_GROWTH = 10; // Jahresringe: je 10 Wachstum der Karte +Wurzeln-Score              // v0
-export const JAHRESRINGE_SCORE     = envNum("SIM_JAHRESRINGE_SCORE", 35);  // … so viel je 10er-Stufe [Pflanze-Buff: 30→35]
-// #Ceiling-Buff (Pflanze): der strukturelle Grund fürs niedrige Ceiling ist, dass die generischen Payoffs LINEAR/flach
-// sind (anders als Eis' dreieckiger Schicht-Score). Beide Achsen bekommen daher einen SUPERLINEAREN (dreieckigen) High-
-// End-Anteil — additiv oben drauf, nur am oberen Rand → reines Ceiling, Floor unberührt, beide Skills bleiben Picks.
-// Wurzel/TIEFE: dreieckig in der Wachstums-Tiefe der Siegkarte (Wachstum über dem Wert-Deckel). Nur mit Wurzeltiefe.
-export const PLANT_ROOT_DEEP_K     = envNum("SIM_PLANT_ROOT_DEEP_K", 5);   // Score je Dreiecks-Einheit m(m+1)/2 der Siegkarten-Tiefe [Sim-tunebar]
-export const PLANT_ROOT_DEEP_CAP   = envNum("SIM_PLANT_ROOT_DEEP_CAP", 25); // gedeckelte gezählte Tiefe (Plateau, kein Runaway)
-// Blüte/BREITE: dreieckig im vollen grünen Feld (greenCount). Nur mit Blüte UND wenn das Feld überwuchert ist (Gating wie Überwucherung).
-export const PLANT_BLOOM_FIELD_K   = envNum("SIM_PLANT_BLOOM_FIELD_K", 5);   // Score je Dreiecks-Einheit m(m+1)/2 der Feldgröße [Sim-tunebar]
-export const PLANT_BLOOM_FIELD_CAP = envNum("SIM_PLANT_BLOOM_FIELD_CAP", 25); // gedeckelte gezählte Feldgröße (Plateau)
-// #288 „Trimmen": der Grow→Ernte-Pivot. Wird ein WACHSTUMS-stützender Skill (Aussaat/Flugsamen/Setzlingsbeet/Zäher Halm)
-// ERSETZT, zählt das global als Trimmung → dauerhafter Multiplikator auf Wurzel- & Blüten-Score, je mehr Trimmungen desto
-// höher (gedeckelt). Wachstums-Skills sterben so nicht, sie veredeln die Payoff-Phase. [Sim-tunebar]
-export const TRIM_STEP = envNum("SIM_TRIM_STEP", 0.20); // +Anteil Wurzel-/Blüten-Score je Trimmung [Pflanze-Tune: zurück auf 20 %/Trimmung (25→20) im v0.5-Rework]
-export const TRIM_CAP  = envNum("SIM_TRIM_CAP", 1.5);   // Deckel des Trimm-Multiplikator-Bonus [Pflanze-Buff: 1,0→1,5 = max +150 % → ×2,5]
-// Linie 2 — Aussaat (Breite: Wachstum verbreiten)
-export const AUSSAAT_GROWTH        = 1;   // Aussaat: +Wachstum je Nachbar bei Sieg einer grünen Karte          // v0
-export const SETZLINGSBEET_GROWTH  = 3;   // Setzlingsbeet: niedrigste Karte je Segment startet +3 Wachstum     // v0
-export const ZAEHER_HALM_GROWTH    = 1;   // Zäher Halm: graue Karten wachsen +1 auch bei Niederlage            // v0
-// Linie 3 — Ranken/Blüte (Grün verbreiten)
-export const BLUETE_SCORE          = 15;  // Blüte: +Score je grüner Karte im Segment (wenn Nachbarn grün)      // v0 — tunebar
-export const BLUETEZEIT_MULT       = 2;   // Blütezeit: Blüte-Score ×2 bei Formations-Sieg                      // v0
-// Linie 4 — Überwucherung (Mono-Grün-Payoff)
-export const PHOTOSYNTHESE_MULT    = 1.08;// Photosynthese: grüne Karte in Formation → ×1,08 Score              // v0 — tunebar
-export const BLAETTERDACH_MIN      = 4;   // Blätterdach: ab 4er-Grün-Farbblock …                               // v0
-export const BLAETTERDACH_SCORE    = envNum("SIM_BLAETTERDACH_SCORE", 8);  // … +Score je Karte im Block [Pflanze-Buff: 4→8]
-export const BLAETTERDACH_CARD_CAP = 10;  // Blätterdach: max so viele Karten im Block zählen (Deckel gegen Riesenblock) // v0
-export const UEBERWUCHERUNG_FIELD  = 0.66;// Überwucherung: ab 66 % Feld grün …                                 // v0 — tunebar
-export const UEBERWUCHERUNG_FACTOR = envNum("SIM_UEBERWUCHERUNG_FACTOR", 0.20);// … alle Farbblöcke +0,20 Faktor [Sim-tunebar: der feldweite multiplikative Compounder] // v0
-// Linie 5 — Ausläufer (Gegnerdeck: kolonisieren & ernten)
-export const AUSLAEUFER_HARVEST    = 2;   // Ausläufer: Ernte einer kolonisierten Gegnerkarte → +Wachstum       // v0 — tunebar
-export const ERNTEDANK_SCORE       = 70; // Erntedank: Ernte mit reifer Karte → +großer Flat-Score             // v0 — tunebar
-// Legendäre (Verstärker, meist mit Nachteil)
-export const WELTENBAUM_PER_GREEN  = envNum("SIM_WELTENBAUM_PER_GREEN", 5);  // Weltenbaum (L): +1 Wachstum je N grüne Karten im Feld (Durchlauf-Ende) [Legendär-Buff v1: 10→5]
-export const EWIGER_FRUEHLING_FARBBLOCK = 2; // Ewiger Frühling: Farbblock zählt Grün ab 2 Karten               // v0
-export const EWIGER_FRUEHLING_FIELD = envNum("SIM_EWIGER_FRUEHLING_FIELD", 0.25);  // Ewiger Frühling (L): Überwucherung ab diesem Feld-Anteil [Legendär-Buff v1: 0,33→0,25]
-// Pflanze-Legendär-Reshape (2026-07-30): Pflanze hat DREI flutende Währungen (plant-economy.mjs: Grün→100% ab Cy28,
-// Wachstum weit über den Wert-Deckel = „alter Wald" Σ-Überlauf 1441-4061 verschwendet, Kolonie→40) → alle 4 „mach-mehr"-
-// Legendären tot (0,86-1,00×). Sie lesen jetzt den verschwendeten BESTAND und zahlen je GRÜNEM Sieg DIREKT (post-stack,
-// floor-clean/ceiling-safe, hart gedeckelt = Plateau, bekenntnis-skaliert plantSkillCount/SKILL_SLOTS). Nur Legendär-Halter
-// → generisches Pflanze (die eben bestätigte Balance) unberührt. Analog Eis-Überlauf-Dividende (Permafrost/Gletscher/…).
-export const WELTENBAUM_DIRECT       = envNum("SIM_WELTENBAUM_DIRECT", 6.5);  // Weltenbaum (BREITE): DIREKT je grünem Sieg × Σ Überlauf-Wachstum (der ganze alte Wald) [Legendär-Angleich: 2,6→6,5]
-export const WELTENBAUM_OVERFLOW_CAP = envNum("SIM_WELTENBAUM_OVERFLOW_CAP", 600); // … gedeckelte Waldgröße
-export const MUTTERBAUM_DIRECT       = envNum("SIM_MUTTERBAUM_DIRECT", 68);   // Mutterbaum (TIEFE): DIREKT je grünem Sieg × Überlauf-Wachstum des TIEFSTEN Baums (Konzentration) [sim-gelockt ins Band: 55→68 nach Floor-Buff]
-export const MUTTERBAUM_OVERFLOW_CAP = envNum("SIM_MUTTERBAUM_OVERFLOW_CAP", 60); // … gedeckelte Tiefe des einen Mutterbaums
-// Baumreihe (Dornenkönig umgewidmet — 4-Lane-Redesign): voll ausgewachsene grüne Karten (Wert PLANT_VALUE_CAP) bilden eine
-// POSITIONSFREIE Wiederholung — je 11er auf dem Brett ein Faktor auf die Stiche DIESER Karten (Position egal → Doppelnutzung
-// mit lokalen Formationen). Gedeckelt, weil positionsfrei + doppelt wirkend stark ist (anders als die ungedeckelte Normal-Wiederholung).
-export const BAUMREIHE_BASE = envNum("SIM_BAUMREIHE_BASE", 1.3);  // Faktor ab 2 voll ausgewachsenen grünen Karten [sim-gelockt ins +45 %-Band]
-export const BAUMREIHE_STEP = envNum("SIM_BAUMREIHE_STEP", 0.15); // + je weiterer voll ausgewachsener grüner Karte
-export const BAUMREIHE_CAP  = envNum("SIM_BAUMREIHE_CAP", 2.0);   // Deckel des Baumreihen-Faktors
-export const EWIGER_FRUEHLING_DIRECT = envNum("SIM_EWIGER_FRUEHLING_DIRECT", 80); // Ewiger Frühling (GRÜN-FELD): DIREKT je grünem Sieg × #grüne Karten (das ewige Feld) [Rework sim-gelockt: 150→80 wegen Full-Green-Double]
-export const EWIGER_FRUEHLING_FIELD_CAP = envNum("SIM_EWIGER_FRUEHLING_FIELD_CAP", 40); // … gedeckelte Feldgröße
-export const EWIGER_FRUEHLING_FULLGREEN_MULT = envNum("SIM_EWIGER_FRUEHLING_FULLGREEN_MULT", 1.5); // Rework: bei VOLL grünem Feld zählt der Feld-Bonus ×1,5 (der Schwellen-Rider war bei grünem Feld tot) [sim-gelockt]
+export const PLANT_GREEN_THRESHOLD = envNum("SIM_PLANT_GREEN_THRESHOLD", 30); // Wachstum bis grün (§6.2: eine Position gewinnt über einen Lauf grob 30-mal — Mitläufer stehen am Laufende genau hier)
+export const PLANT_BLOOM_THRESHOLD = envNum("SIM_PLANT_BLOOM_THRESHOLD", 75); // … bis blühend (nur mit Formationen erreichbar)
+export const PLANT_GROWTH_WIN = envNum("SIM_PLANT_GROWTH_WIN", 1);            // Wachstum je Sieg
+export const PLANT_GROWTH_PER_FORMATION = envNum("SIM_PLANT_GROWTH_PER_FORMATION", 1); // … zusätzlich je aktiver Formation an der Siegposition (Owner-Idee: der eigentliche Regler)
+export const PLANT_BLOOM_SCORE_PER_GREEN = envNum("SIM_PLANT_BLOOM_SCORE_PER_GREEN", 20); // Basis-Score je grüner Karte in den Formationen der blühenden Siegkarte
+// Blühgewicht (§6.20, Owner-Variante B): WIE VIELE grüne Karten eine blühende in einer Formation zählt. Das Gewicht
+// gehört der KARTE, nicht dem Skill — deshalb steht die Regel einmal im Passiv und die Score-Skills bleiben einzeilig.
+// Der zweite Summand ist der eigentliche Punkt: Wachstum ÜBER der Blüh-Schwelle zahlt weiter, also lohnen sich die
+// Wachstums-Skills den ganzen Lauf (§6.19: mit festem Gewicht blieben sie tot).
+export const PLANT_BLOOM_WEIGHT = envNum("SIM_PLANT_BLOOM_WEIGHT", 3);                    // Grundgewicht einer blühenden Karte (§6.22: 5 → 3, bei 5 lag die Fraktion 1,35× über Feuer)
+export const PLANT_BLOOM_WEIGHT_PER_GROWTH = envNum("SIM_PLANT_BLOOM_WEIGHT_PER_GROWTH", 40); // … +1 je so viel Wachstum über der Blüh-Schwelle (Laufende ≈ 205 Wachstum → Gewicht 8)
+// Grün-Farbblock-Deckel (v0.3): der eskalierende Farbblock-Faktor grüner Karten wird bei dieser Ordinalzahl gedeckelt.
+// §6.2 lässt ihn bewusst stehen, bis die Messung sagt, ob er hoch, weg oder umgebaut wird (Owner: warten).
+export const PLANT_GREEN_FARBBLOCK_CAP = 3;
+// Legendäre der Pflanze (§6.12): je ein Regler auf der bestehenden Mechanik, damit die neun Legendären in ein Band
+// gebracht werden können. Die Voreinstellungen sind exakt das Verhalten vor §6.12.
+export const BAUMREIHE_FACTOR_SCALE   = envNum("SIM_BAUMREIHE_FACTOR_SCALE", 0.15); // Baumreihe (L): Anteil des Wiederholungs-Bonus, den die positionsfreie Reihe zahlt (1 = wie eine echte Wiederholung); §6.12: 1 → 0,15 — ohne Positionsbindung eskaliert die Reihe über den ganzen Lauf
+export const WURZELGEFLECHT_FACTOR_SCALE = envNum("SIM_WURZELGEFLECHT_FACTOR_SCALE", 0.45); // Wurzelgeflecht (L): Anteil des Lauf-Bonus, den die beitretende blühende Karte bekommt (1 = der volle Faktor; Mitgliedschaft und Formationszahl bleiben immer ganz)
+// §6.12 stellte 0,7 ein, §6.15 drehte wieder auf 1 — richtig für den damaligen Stand. §8 maß mono +591 %, §6.29 nahm
+// die halbe Strecke (0,85 → +505 %). §6.31 (Owner: „auf die 150-250") gesweept: 0,85 → +505 % · 0,60 → +397 % ·
+// 0,45 → +220 %. GEMESSEN, 0,45 gesetzt.
+// (Verworfen: eine Mindest-Lauflänge als Regler — gemessen kippte Wurzelgeflecht damit von +164 % auf −4 %, die
+//  kurzen Läufe sind der Großteil seiner Wirkung. Der Faktor-Anteil greift weicher.)
+export const EWIGER_FRUEHLING_GREEN_FRAC = envNum("SIM_EWIGER_FRUEHLING_GREEN_FRAC", 1); // Ewiger Frühling (L): Anteil grüner Karten, ab dem alle Karten blühen (1 = vollständig grün)
+// (§6.12: der Regler bleibt auf 1. Gemessen 1/0,85/0,6/0,35/0,25 → +4/+10/+17/+37/+34 % — er sättigt unter dem Band
+//  und kostet dafür das Zielbild. Der Auslöser war nie das Problem, die Auszahlung war es — §6.13, Owner.)
+export const EWIGER_FRUEHLING_BLOOM_VALUE = envNum("SIM_EWIGER_FRUEHLING_BLOOM_VALUE", 6);
+export const EWIGER_FRUEHLING_FORM_MULT   = envNum("SIM_EWIGER_FRUEHLING_FORM_MULT", 0.15);  // Ewiger Frühling (L, §6.15, Owner): ein Sieg mit einer blühenden Karte zählt +so viel je aktiver Formation an ihrer Position. Der EINZIGE Multiplikator der Fraktion — der Wert-Bonus allein sättigte bei +73 % (§6.14) // Ewiger Frühling (L, §6.13, Owner): blühende Karten kämpfen mit so viel mehr Wert. Der EINZIGE Wert-Hebel der Fraktion — die 15 Skills sind Wachstum, Basis-Score und Erkennung. Startwert ungemessen (Kartenwerte 1..10; Schmiede/Glutstahl geben +3 dauerhaft)
 
 // Geist (Rekord-Vergleich): Score-Stützstelle alle N Stiche [TUNING]
 export const GHOST_STEP = 13;

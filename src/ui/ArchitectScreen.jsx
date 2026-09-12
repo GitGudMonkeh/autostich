@@ -10,7 +10,7 @@ import { archFamily as familyDef } from "../i18n/labels.js"; // #sprache: Gebäu
 import { computeFormations, summarizeFormations } from "../game/formations.js";
 import { fundamentBonus } from "../game/perks.js"; // v0.3 „Fundament": Strukturfaktor-Bonus des Builds
 import { allianceGroups } from "../game/families.js"; // #289: Farballianz für Wert-Boost-Anzeige
-import { SUIT_ORDER, PLANT_VALUE_CAP } from "../game/constants.js";
+import { SUIT_ORDER } from "../game/constants.js";
 import { ARCH_CAT as CAT, PLANT_RIPE, PLANT_FULL } from "./indicators/vocab.js";
 import { tierColor } from "../game/rarity.js";
 import FormIcon from "./FormIcon.jsx";
@@ -18,6 +18,8 @@ import { formationBorder } from "./formationStyle.js";
 import { formationAbbr, formationLabel } from "./formationLabels.js";
 import { archFrameLines } from "./CardGrid.jsx"; // #UI: durchgezogene Gebäude-Kontur wie in der Aufstellungsphase
 import { fmtScore } from "./format.js";
+import { rerollOffer, coverBuy, COVER_CELLS, FORFEIT_BUILD } from "../game/coins.js"; // Münz-Ökonomie §3.1 Neuwurf · §3.4 Baufeld · §2.3 Phase ohne Hauptaktion — dieselben Rechnungen wie der Reducer
+import { RerollLabel, CoinAmount, CoinReward } from "./CoinMark.jsx";  // Beschriftung: Anzahl solange gratis, danach der Preis · §2.3 was das Nichtbauen einbringt
 import { GlossaryPanel } from "./Glossary.jsx";
 import { glacierGridProps } from "./glacierBoard.js"; // Eis: Gletscher-/Firn-Marker auch am Architekt-Brett
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon (Eis ersetzt glacier.webp)
@@ -26,7 +28,6 @@ import { phaseCard, phasePanel, PhaseHairline, PHASE_ACCENTS } from "./modalStyl
 import { buildingEffect } from "../i18n/buildingText.js"; // #sprache: Gebäude-Effekttext zur Anzeigezeit
 import { t, fmtNum } from "../i18n/index.js";
 import { suitLabel } from "../i18n/labels.js";
-import { PhaseHintSlot } from "./hints/HintCard.jsx"; // Onboarding-Hints: Banner-Slot unter dem Kopf (docs/tutorial-onboarding-design.md)
 
 /* ============================================================
    Der Architekt (#202) — Präsentations-Rework (#261): perk-artige Auswahl + EIN durchgehender Verschiebe-Flow.
@@ -92,7 +93,7 @@ function MiniShape({ form, color, rotIdx = 0 }) {
   );
 }
 
-export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, onUpgrade, onMove, onMoveMulti, onDemolish, onRecolor, onReroll, onDone, onUndo, onReset }) {
+export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, onUpgrade, onMove, onMoveMulti, onDemolish, onRecolor, onReroll, onBuyCover, onDone, onUndo, onReset }) {
   useEscape(onDone);
   // eslint-disable-next-line react-hooks/exhaustive-deps -- Perf-Hinweis (Dep-Ausdruck je Render neu), kein Stale-Closure — #292 geprüft
   const architect = state.architect || { buildings: [], offers: [] };
@@ -103,6 +104,10 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
   // #361: „↶ Rückgängig"/„Zurücksetzen" — aktiv, sobald in DIESER Phase etwas geschah (Undo-Stapel nicht leer),
   // analog `hasSwaps` in der Aufstellungsphase. Gleiche Beschriftung/Look wie dort.
   const canArchUndo = (architect.phaseHistory || []).length > 0;
+  // §3.1: Baupläne neu würfeln — erst der Pool, danach käuflich (kein Legendär-Grundpreis, s. Knopf unten).
+  const archReroll = rerollOffer(state, state.rerollsArch || 0, false);
+  // §3.4: Baufeld-Kauf — Preis, Restvorrat des Laufs, Auslösbarkeit.
+  const coverSale = coverBuy(state);
   const round = (state.cycle || 0) + 1;
   // #301 C2: gesperrte Bau-Zellen (Challenge) — als „belegt" für alle Platzierungs-Enumerationen und interaktions-/render-seitig geblockt.
   const chLockArch = state.challengeBlockArch || [];
@@ -388,6 +393,10 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
     const el = typeof document !== "undefined" && document.getElementById(`arch-inspect-${inspectId}`);
     if (el) el.scrollIntoView({ block: "nearest", behavior: "smooth" });
   }, [inspectId]);
+  /* §2.3: was diese Phase einbringt, wenn sie ohne Hauptaktion endet. `actedMain` ist dieselbe Bedingung,
+     die der Reducer prüft — errichten und ausbauen setzen sie, versetzen und abreißen nicht. Nach einer
+     Hauptaktion ist der Wert 0 und die Marke verschwindet, statt eine Zahlung zu versprechen, die ausfällt. */
+  const idleReward = architect.actedMain ? 0 : FORFEIT_BUILD;
   // #281: alle markierten Gebäude abreißen (nur wenn die Menge wirklich Platz schafft); der removeFor-Effekt baut danach automatisch.
   const confirmDemolish = () => { if (!demolishIds.length || !demolishFit) return; demolishIds.forEach((id) => onDemolish?.(id)); setDemolishIds([]); };
   // #361-Folge: „↶ Rückgängig"/„Zurücksetzen" betreffen NUR Verschiebungen (die Gebäude bleiben, actedMain unberührt) →
@@ -612,7 +621,6 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
           </div>
           <div className="ml-auto shrink-0"><GlossaryPanel /></div>
         </div>
-        <div className="mt-2"><PhaseHintSlot screen="architect" /></div>
         {/* Hero-Stat-Leiste: der Gebäude-Boost ist das, was man beim Bauen maximiert → Hero-Wert (grün). Baufeld & Durchlauf-
             Score als Nebenzellen (ersetzt den verstreuten Kopf-Cluster + das separate Score-Badge). Gleicher Bau wie die
             Hero-Leiste der Aufstellphase. */}
@@ -628,6 +636,25 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
             <span className="text-meta-1 uppercase tracking-wide font-bold" style={{ color: "#6d7f8e" }}>{t("arch.plot")}</span>
             <span className="ty-num leading-none" style={{ fontVariantNumeric: "tabular-nums", fontSize: 19, color: GOLD }}>{Math.max(0, maxCover - coverCount)}<span className="text-body-5 opacity-60"> / {maxCover}</span></span>
             <span className="text-micro-3 ty-num-sm opacity-45">{t("arch.plot.used", { n: coverCount, pct: Math.round(coverCount / maxCover * 100) })}</span>
+            {/* Baufeld kaufen (docs/muenz-oekonomie.md §3.4) — an der Deckel-Anzeige, weil hier die Frage
+                entsteht, ob der Platz reicht. Die Punkte sagen, wie viel vom LAUF noch übrig ist: als
+                einzige Ausgabe wirkt sie dauerhaft und hat einen Vorrat, der sich leert. Ausverkauft
+                verschwindet der Knopf — ein toter Knopf ist schlechter als keiner. */}
+            {!coverSale.soldOut && (
+              <button onClick={coverSale.can ? onBuyCover : undefined} disabled={!coverSale.can}
+                title={t("arch.plot.buy.title", { cells: COVER_CELLS, n: coverSale.left })}
+                className="mt-1 rounded-lg px-2 py-1 text-meta-1 font-bold inline-flex items-center justify-end gap-1.5 transition-all disabled:cursor-not-allowed"
+                style={coverSale.can ? { background: "#16232f", border: `1px solid ${GOLD}66`, color: GOLD }
+                                     : { background: "var(--btn-off-bg)", border: "1px solid transparent", color: "var(--btn-off-fg)" }}>
+                <span>{t("arch.plot.buy", { cells: COVER_CELLS })}</span>
+                <CoinAmount n={coverSale.price} size={11} dim={!coverSale.can} have={state.coins || 0} />
+                <span className="inline-flex gap-0.5" aria-hidden="true">
+                  {Array.from({ length: coverSale.max }, (_, i) => (
+                    <span key={i} className="rounded-full" style={{ width: 4, height: 4, background: i < coverSale.left ? GOLD : "#ffffff2e" }} />
+                  ))}
+                </span>
+              </button>
+            )}
           </div>
           {state.lastCycleScore != null && (
             <div className="flex flex-col justify-center gap-1 px-3.5 py-2.5 text-right border-l" style={{ borderColor: "rgba(59,125,190,.32)" }}>
@@ -686,7 +713,9 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                 {/* #248: „⟳ Drehen" wandert in die schwebende Aktionsleiste (unten) — dort beim Ziehen ohne Scrollen erreichbar. */}
               </div>
             </div>
-            <div ref={boardRef} className="relative grid grid-cols-5 gap-1" style={{ maxWidth: 300, margin: "0 auto" }}>
+            {/* Breite/Zentrierung stehen als `.arch-board` im Stylesheet, nicht inline: ab 768 px wächst das Brett
+                in die Spalte, und ein Inline-Stil ließe sich von dort nur mit `!important` überschreiben. */}
+            <div ref={boardRef} className="arch-board relative grid grid-cols-5 gap-1">
               {/* #UI: durchgezogene Gebäude-Kontur (SVG) über dem Brett — eine Linie je Gebäude in seiner Form (wie Aufstellung).
                   Während eines Drags ausgeblendet (das Gebäude schwebt frei) → snappt beim Loslassen wieder an seine neue Form. */}
               {archFrame && archFrame.lines.length > 0 && !dragPrev && (
@@ -726,7 +755,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                 const ev = effValueAt(pos);
                 const boost = ev - card.value;
                 // Pflanze (#211): reife (grüne) Karte → Zahl leuchtet grün (voll ausgewachsen am hellsten), wie am Aufstellungs-Brett.
-                const numCol = card.green ? (card.value >= PLANT_VALUE_CAP ? PLANT_FULL : PLANT_RIPE) : SUIT_COLOR[card.suit];
+                const numCol = card.green ? (card.bloom ? PLANT_FULL : PLANT_RIPE) : SUIT_COLOR[card.suit];
                 const isGlacier = glacierPos ? glacierPos.has(pos) : false;                       // festgefrorener Gletscher
                 const gMass = glacierMassByPos ? Math.round(glacierMassByPos[pos] || 0) : 0;       // Gletscher-Eigenmasse
                 const fMass = firnStackByPos ? Math.round(firnStackByPos[pos] || 0) : 0;           // #386 Boden-Reserve (firnStack)
@@ -840,7 +869,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                       <span className="absolute top-[1px] right-[2px] inline-flex items-center gap-[1px] text-micro-2 ty-num leading-none z-10" style={{ color: "#7fbfe0", opacity: 0.85 }} title={t("arch.firn.title", { n: fMass })}><FactionIcon type="ice" size={8} glow={false} />{fMass}</span>
                     )}
                     {/* #UI: keine Suit-Farbpunkte mehr — die Kartennummer selbst trägt die Farbe der Karte. */}
-                    <span className="text-body-3 sm:text-body-lg-3 leading-none relative" style={{ color: inDragPrev ? "#fff" : numCol, textShadow: card.green ? `0 0 5px ${numCol}88` : ((b && !isDragOrig) ? "0 1px 2px #000a" : undefined) }}>{ev}</span>
+                    <span className="ab-num text-body-3 sm:text-body-lg-3 leading-none relative" style={{ color: inDragPrev ? "#fff" : numCol, textShadow: card.green ? `0 0 5px ${numCol}88` : ((b && !isDragOrig) ? "0 1px 2px #000a" : undefined) }}>{ev}</span>
                     {b && !isDragOrig && pos === anchorCell && (
                       <span className="absolute bottom-[1px] left-[3px] text-micro-1 font-bold leading-none" style={{ color: "rgba(255,255,255,0.92)" }}>
                         {fam.name.slice(0, 3).toUpperCase()}
@@ -855,8 +884,12 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                         {fam.legendary ? "★" : ROMAN[b.tier]}
                       </span>
                     )}
+                    {/* Formations-Marke (Owner 2026-09-08: „etwas höher und etwas größer"). Sie klebte mit 7 px
+                        am unteren Kachelrand und war auf dem Brett kaum zu lesen. Jetzt 9 px und 4 px Abstand
+                        nach unten — die Zahl der Karte sitzt mittig im Flex und bleibt mehrere Pixel entfernt,
+                        auch auf der schmalsten Kachel (Handy, 300 px Brett → 57 px Zelle). */}
                     {showForms && inForm && (
-                      <span className="absolute bottom-[1px] left-1/2 -translate-x-1/2 text-micro-1 font-bold leading-none whitespace-nowrap" style={{ color: fb.color, textShadow: "0 1px 2px #000a" }}>
+                      <span className="absolute bottom-[4px] left-1/2 -translate-x-1/2 text-micro-3 font-bold leading-none whitespace-nowrap" style={{ color: fb.color, textShadow: "0 1px 2px #000a" }}>
                         {formLabels}×{fmt(pf.mult)}
                       </span>
                     )}
@@ -1020,11 +1053,18 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                     </button>
                   </div>
                   )}
-                  {/* #263: Bauplan-Angebot neu würfeln — eigener Gebäude-Reroll-Pool (rerollsArch). Im Dev-Modus entfällt Reroll (Voll-Katalog). */}
-                  {!state.devMode && onReroll && (state.rerollsArch || 0) > 0 && (
-                    <button onClick={onReroll} className="w-full mt-2 rounded-lg py-2 text-body-5 font-bold transition-all hover:brightness-110"
-                      style={{ background: "#16232f", border: `1px solid ${CAT.value.color}66`, color: CAT.value.color }}>
-                      {t("arch.reroll", { n: state.rerollsArch })}
+                  {/* #263: Bauplan-Angebot neu würfeln — eigener Gebäude-Reroll-Pool (rerollsArch). Im Dev-Modus entfällt Reroll (Voll-Katalog).
+                      §3.1: ist der Pool leer, ist derselbe Knopf käuflich; ohne Münzen bleibt er sichtbar, aber aus.
+                      Den Legendär-Grundpreis gibt es hier nicht — der Plan bindet ihn an Skill- und Perk-Angebote. */}
+                  {!state.devMode && onReroll && (
+                    <button onClick={archReroll.can ? onReroll : undefined} disabled={!archReroll.can}
+                      className="w-full mt-2 rounded-lg py-2 text-body-5 font-bold transition-all disabled:cursor-not-allowed"
+                      style={archReroll.can
+                        ? { background: "#16232f", border: `1px solid ${CAT.value.color}66`, color: CAT.value.color }
+                        : { background: "var(--btn-off-bg)", border: "1px solid transparent", color: "var(--btn-off-fg)" }}>
+                      <span className="inline-flex items-center justify-center gap-1.5">
+                        <RerollLabel r={archReroll} freeKey="arch.reroll" buyKey="arch.reroll.buy" have={state.coins || 0} />
+                      </span>
                     </button>
                   )}
                 </div>
@@ -1154,10 +1194,10 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                 committed.length > 0 ? (
                   <div className="flex gap-2">
                     <button onClick={() => { setInspectId(null); setSelId(null); setPhase("move"); }} className="flex-1 rounded-lg py-2 text-body-5 font-bold" style={{ background: `${CAT.value.color}22`, border: `1px solid ${CAT.value.color}`, color: "#cfe3f5" }}>{t("arch.rearrange")}</button>
-                    <button onClick={() => onDone?.()} className="flex-1 rounded-lg py-2 text-body-5 font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>{t("arch.buildNothing")}</button>
+                    <button onClick={() => onDone?.()} className="flex-1 rounded-lg py-2 text-body-5 font-bold inline-flex items-center justify-center gap-1.5" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>{t("arch.buildNothing")}<CoinReward n={idleReward} /></button>
                   </div>
                 ) : (
-                  <button onClick={() => onDone?.()} className="w-full rounded-lg py-2 text-body-5 font-bold" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>{t("arch.buildNothing")}</button>
+                  <button onClick={() => onDone?.()} className="w-full rounded-lg py-2 text-body-5 font-bold inline-flex items-center justify-center gap-1.5" style={{ background: "#16232f", border: "1px solid #2b3e4d" }}>{t("arch.buildNothing")}<CoinReward n={idleReward} /></button>
                 )
               ) : phase === "upgrade" && pendingUpgrade != null ? (
                 <div className="flex gap-2">
@@ -1175,7 +1215,10 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                     <button type="button" disabled aria-disabled="true" title={t("arch.noRotate.title")}
                       className="shrink-0 px-3 rounded-lg py-2 text-body-lg-5 font-bold cursor-not-allowed" style={{ background: "#141c24", border: "1px solid #2b3e4d", color: "#5a6672", opacity: 0.55 }}>{t("arch.noRotate")}</button>
                   ))}
-                  <button onClick={() => onDone?.()} className="flex-1 basis-[170px] rounded-lg py-2 text-body-lg-5 font-bold" style={{ background: CAT.value.color, color: "#fff" }}>{t("arch.confirmStart")}</button>
+                  {/* §2.3: derselbe Ausgang wie „Nichts bauen", nur über das Umstellen erreicht — versetzen
+                      verbraucht keinen Bauplan, die Phase zahlt also weiterhin aus. Die Marke steht deshalb
+                      auch hier (Owner 2026-09-09); ohne sie bekäme man die Münzen, ohne sie je zu sehen. */}
+                  <button onClick={() => onDone?.()} className="flex-1 basis-[170px] rounded-lg py-2 text-body-lg-5 font-bold inline-flex items-center justify-center gap-1.5" style={{ background: CAT.value.color, color: "#fff" }}>{t("arch.confirmStart")}<CoinReward n={idleReward} /></button>
                 </div>
               ) : null}
               {/* #UI: Effekt des gerade platzierten (place) bzw. gewählten (move) Gebäudes — floatet mit der Leiste. */}

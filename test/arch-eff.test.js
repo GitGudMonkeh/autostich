@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
-import { setLocale, t } from "../src/i18n/index.js";
+import { setLocale, t, READY_LOCALE_IDS } from "../src/i18n/index.js";
+// exp: English is inactive on the playground (LOCALES in index.js) — the English render-checks sleep until it is ready again.
+const EN_OFF = !READY_LOCALE_IDS.includes("en");
 import { architectEffectStrings } from "../src/ui/archEffects.js";
 
 /* ============================================================
@@ -38,7 +40,7 @@ describe("#arch-eff — jede Effektart kommt aus dem Katalog", () => {
       expect(code, `„${wort}" steht noch fest verdrahtet im Code`).not.toMatch(new RegExp(wort));
   });
 
-  it("die Ausgabe wechselt wirklich die Sprache", () => {
+  it.skipIf(EN_OFF)("die Ausgabe wechselt wirklich die Sprache", () => {
     /* Der eigentliche Beweis: dieselbe Rechnung, zwei Sprachen, zwei verschiedene Sätze. */
     const zeile = () => architectEffectStrings(pre({ kind: "streak", amount: 7 }), 0, null)[0];
     setLocale("de");
@@ -51,7 +53,7 @@ describe("#arch-eff — jede Effektart kommt aus dem Katalog", () => {
     setLocale("de");
   });
 
-  it("das Dezimalzeichen folgt der Sprache, die zwei Nachkommastellen bleiben", () => {
+  it.skipIf(EN_OFF)("das Dezimalzeichen folgt der Sprache, die zwei Nachkommastellen bleiben", () => {
     /* `fmt` hing an einem hart gesetzten Komma (`replace(".", ",")`) — im englischen Build also ein
        deutsches Dezimalzeichen. Und `fmtNum` allein kürzt die Null weg: aus ×1,40 würde ×1,4 und die
        Faktoren lesen sich nicht mehr als Reihe. Beides muss zusammen stimmen. */

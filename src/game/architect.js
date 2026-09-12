@@ -61,7 +61,14 @@ export const DISTRICT_BONUS = 0.08;   // je verschiedenem gleich-kategorigen Nac
 export const DISTRICT_CAP   = 3;      // höchstens so viele Nachbarn zählen (Deckel gegen Ballungs-Runaway)
 
 // Stufen-Skalierung: numerischer Effekt (Wert/Score) gerundet; Faktor-Effekte additiv über FORM_TIER_BONUS.
-export const tierNum    = (base, tier) => (tier === "legendary" ? base : Math.round(base * (TIER_FACTOR[tier] || 1)));
+// #Pool Runde 6 (X1): monoton — jede Stufe hebt den Wert um mindestens 1, sonst wäre der Ausbau ein No-op
+// (Basis 1 rundete auf 1/2/2/3). Basen ≥ 2 waren schon streng steigend und bleiben unverändert.
+export const tierNum = (base, tier) => {
+  if (tier === "legendary") return base;
+  let v = 0;
+  for (let t = 1; t <= (tier || 1); t++) v = Math.max(Math.round(base * (TIER_FACTOR[t] || 1)), v + 1);
+  return v;
+};
 export const tierFactor = (base, tier) => (tier === "legendary" ? base : base + FORM_TIER_BONUS * ((tier || 1) - 1));
 // Aufwert-Status eines Gebäudes: joker/transparentFarb/crossSeg lesen `tier` NICHT → dort ist Aufrüsten ein No-op.
 // „Nicht aufwertbar" = legendär | inert (No-op-Effektart) | max (Stufe IV). `reason` speist Label/Meldung in der UI.
@@ -71,15 +78,15 @@ export function upgradeInfo(fam, tier) {
   if (fam.legendary) return { can: false, reason: "legendary" };
   // #Pool: stufen-inerte Effektarten (joker/…) sind normalerweise No-op beim Aufrüsten. MIT tierKick werden sie bis
   // zur Kick-Stufe `at` wieder aufwertbar (dort zündet der Zusatz), darüber wieder inert.
-  if (TIER_INERT_KINDS.has(fam.base && fam.base.kind)) {
+  if (TIER_INERT_KINDS.has(fam.base && fam.base.kind) && !fam.tierValue) {
     if (fam.tierKick && typeof tier === "number" && tier < fam.tierKick.at) return { can: true, reason: null };
     return { can: false, reason: "inert" };
   }
   if (!(typeof tier === "number" && tier < MAX_TIER)) return { can: false, reason: "max" };
   return { can: true, reason: null };
 }
-// Kreuzgang-Bindeglied-Span (Bedingung minimal weiten): I/II ±1, III/IV ±2.
-export const bindSpanFor = (tier) => (tier === "legendary" || tier >= 3 ? 2 : 1);
+// Kreuzgang-Bindeglied-Span (Bedingung minimal weiten): I ±1, II ±2, III/IV ±3 (Runde 6: keine tote Stufe mehr).
+export const bindSpanFor = (tier) => (tier === "legendary" || tier >= 3 ? 3 : tier >= 2 ? 2 : 1);
 // Rampe-Schwelle (Bedingung minimal weiten): Wert ≤ 5 + (Stufe−1).
 const rampThresholdFor = (tier) => 5 + (tier === "legendary" ? 0 : (tier || 1) - 1);
 
@@ -292,13 +299,16 @@ export const ARCHITECT_FAMILIES = {
   A_WETTHALLE:   { id: "A_WETTHALLE",   name: "Wetthalle",   category: "score", form: "grundstueck", base: { kind: "gamble", score: 260, penalty: 60 } },
 
   /* ---- formation · Sakralbau (I–IV) ---- */
-  A_KLAMMER:    { id: "A_KLAMMER",    name: "Klammer",    category: "formation", form: "domino",    base: { kind: "joker", types: ["farbblock"] }, tierKick: { at: 3, addType: "wiederholung" } },
-  A_ARKADE:     { id: "A_ARKADE",     name: "Arkade",     category: "formation", form: "domino",    base: { kind: "transparentFarb" } },
-  A_KREUZGANG:  { id: "A_KREUZGANG",  name: "Kreuzgang",  category: "formation", form: "tromino_l", base: { kind: "bind" } },
-  A_FRIES:      { id: "A_FRIES",      name: "Fries",      category: "formation", form: "block2x2",  base: { kind: "joker", types: ["wiederholung"] } },
-  A_PFEILER:    { id: "A_PFEILER",    name: "Pfeiler",    category: "formation", form: "line4",     base: { kind: "crossSeg" } },
+  // Runde 6 (X3): tierValue = flacher Stichwert auf den Zellen je Stufe ([_, I, II, III, IV]) — die vorher
+  // stufen-inerten Familien bekommen auf JEDER Stufe etwas; die Kicks (addType/farbJoker) bleiben der
+  // qualitative Sprung auf III. Beträge klein (Referenz: Stützbalken IV = 4 auf 2 Zellen).
+  A_KLAMMER:    { id: "A_KLAMMER",    name: "Klammer",    category: "formation", form: "domino",    base: { kind: "joker", types: ["farbblock"] }, tierKick: { at: 3, addType: "wiederholung" }, tierValue: [0, 0, 1, 1, 2] },
+  A_ARKADE:     { id: "A_ARKADE",     name: "Arkade",     category: "formation", form: "domino",    base: { kind: "transparentFarb" }, tierKick: { at: 3, farbJoker: true }, tierValue: [0, 0, 1, 1, 2] },
+  A_KREUZGANG:  { id: "A_KREUZGANG",  name: "Kreuzgang",  category: "formation", form: "tromino_l", base: { kind: "bind" }, tierValue: [0, 0, 0, 0, 2] },
+  A_FRIES:      { id: "A_FRIES",      name: "Fries",      category: "formation", form: "block2x2",  base: { kind: "joker", types: ["wiederholung"] }, tierKick: { at: 3, addType: "farbblock" }, tierValue: [0, 0, 1, 1, 2] },
+  A_PFEILER:    { id: "A_PFEILER",    name: "Pfeiler",    category: "formation", form: "line4",     base: { kind: "crossSeg" }, tierValue: [0, 0, 1, 2, 3] },
   A_GRUNDSTEIN: { id: "A_GRUNDSTEIN", name: "Grundstein", category: "formation", form: "block2x2",  base: { kind: "anker", factor: 1.10 }, tierKick: { at: 3, ankerValue: 2 } },
-  A_GEWOELBE:   { id: "A_GEWOELBE",   name: "Gewölbe",    category: "formation", form: "tetro_t",   base: { kind: "joker", types: ["wiederholung", "treppe"] } },
+  A_GEWOELBE:   { id: "A_GEWOELBE",   name: "Gewölbe",    category: "formation", form: "tetro_t",   base: { kind: "joker", types: ["wiederholung", "treppe"] }, tierKick: { at: 3, addType: "farbblock" }, tierValue: [0, 0, 1, 1, 2] },
 
   /* ---- legendär (keine Stufen, kommen fertig; 2 je Kategorie) ---- */
   A_FUNDAMENT:  { id: "A_FUNDAMENT",  name: "Fundamentplatte", category: "value",     form: "zeile",    base: { kind: "flat", value: 5 },   legendary: true }, // #284: 2→5, damit es sich legendär anfühlt (+ füllt eine ganze Zeile → Struktur)
@@ -317,7 +327,7 @@ export const ARCHITECT_FAMILIES = {
   A_RATHAUS:    { id: "A_RATHAUS",    name: "Rathaus",         category: "score", form: "block2x2",    base: { kind: "neighbor", score: 45, cap: 6 }, legendary: true },     // Distrikt-Hauptstadt
   A_SPIELBANK:  { id: "A_SPIELBANK",  name: "Spielbank",       category: "score", form: "grundstueck", base: { kind: "gamble", score: 500, penalty: 80 }, legendary: true },  // größter Jackpot
   A_STERNWARTE: { id: "A_STERNWARTE", name: "Sternwarte",      category: "score", form: "zeile",       base: { kind: "compound", score: 90 }, legendary: true },             // +Score je vollendeter Struktur
-  A_ZWINGER:    { id: "A_ZWINGER",    name: "Zwinger",         category: "value", form: "block2x3",    base: { kind: "neighbor", value: 2, cap: 5 }, legendary: true },      // Wert-Distrikt, große Fläche
+  A_ZWINGER:    { id: "A_ZWINGER",    name: "Zwinger",         category: "value", form: "block2x3",    base: { kind: "neighbor", value: 3, cap: 5 }, legendary: true },      // Wert-Distrikt, große Fläche (Runde 6: 2→3, bleibt über Zunftviertel IV)
 };
 export const familyDef = (id) => ARCHITECT_FAMILIES[id] || null;
 export const CATEGORIES = ["value", "score", "formation"];
@@ -377,11 +387,12 @@ export function buildArchitectOffer(architect, rng, rareShift = _archRareShift, 
     for (const fam of pool) { const w = ARCHITECT_CAT_WEIGHT[fam.category] ?? 1; if (r < w) { f = fam; break; } r -= w; }
     usedFam.add(f.id);
     // T2 (#229): stufen-inerte Familien (joker/transparentFarb/crossSeg, siehe TIER_INERT_KINDS) skalieren NICHT
-    // mit `tier` — Aufrüsten ist dort ohnehin ein No-op (upgradeInfo → reason "inert"). Sie dürfen dann auch nicht
-    // mit höherem Raritätsrahmen als „Stufe III/IV" angeboten werden → auf Stufe 1 pinnen. Der weightedTier-rng-Zug
+    // mit `tier` — Aufrüsten ist dort ohne tierValue-Leiter ein No-op (upgradeInfo → reason "inert"). Sie dürfen
+    // dann nicht mit höherem Raritätsrahmen als „Stufe III/IV" angeboten werden → pinnen. Der weightedTier-rng-Zug
     // wird TROTZDEM immer gezogen (auch wenn verworfen), damit der Zufallsstrom identisch bleibt (Determinismus/Seed).
+    // Runde 6 (X4): mit tierValue-Leiter zählt jede Stufe → nicht mehr gepinnt.
     const t = weightedTier(rng, rareShift, maxTier);
-    const inert = TIER_INERT_KINDS.has(f.base && f.base.kind);
+    const inert = TIER_INERT_KINDS.has(f.base && f.base.kind) && !f.tierValue;
     // Inert ohne Kick → auf Stufe 1 pinnen (Aufrüsten ist No-op). Inert MIT Kick → bis zur Kick-Stufe `at` erlauben.
     const tier = inert ? (f.tierKick ? Math.min(t, f.tierKick.at) : 1) : t;
     offers.push({ familyId: f.id, tier, used: false });
@@ -514,10 +525,14 @@ export function precomputeArchitect(architect, order, deck, structBonus = 0) {
     } else if (fam.category === "score") {
       const eff = resolveNumEffect(fam, b, "score", order, deck, cardVal, boardCtx);
       for (const [p, e] of eff) score[p] = e;
-    } else if (fam.category === "formation" && fam.tierKick && fam.tierKick.ankerValue && typeof b.tier === "number" && b.tier >= fam.tierKick.at) {
-      // #Pool tierKick: Grundstein III legt zusätzlich einen flachen Stichwert auf jede (Anker-)Zelle. Formations-
-      // Gebäude überlappen nie value-Gebäude → value[p] ist hier frei. Der Anker-Faktor läuft davon unberührt über formSpec.
-      for (const p of b.footprint) value[p] = { kind: "flat", amount: fam.tierKick.ankerValue, familyId: fam.id, buildingId: b.id };
+    } else if (fam.category === "formation") {
+      // #Pool tierKick: Grundstein III legt zusätzlich einen flachen Stichwert auf jede (Anker-)Zelle. Runde 6 (X3):
+      // dieselbe Schiene trägt die tierValue-Leiter der übrigen Formations-Familien. Formations-Gebäude überlappen
+      // nie value-Gebäude → value[p] ist hier frei. Der Formations-Effekt selbst läuft unberührt über formSpec.
+      const kickFlat = (fam.tierKick && fam.tierKick.ankerValue && typeof b.tier === "number" && b.tier >= fam.tierKick.at) ? fam.tierKick.ankerValue : 0;
+      const ladderFlat = (fam.tierValue && typeof b.tier === "number" && fam.tierValue[b.tier]) || 0;
+      const flatAmt = kickFlat + ladderFlat;
+      if (flatAmt > 0) for (const p of b.footprint) value[p] = { kind: "flat", amount: flatAmt, familyId: fam.id, buildingId: b.id };
     }
     // formation-Gebäude wirken sonst über architectFormSpec (computeFormations), nicht hier.
   }
@@ -664,7 +679,8 @@ export function architectFormSpec(architect, _order, _deck) {
     const kickOn = fam.tierKick && typeof b.tier === "number" && b.tier >= fam.tierKick.at;
     for (const p of b.footprint) {
       if (k === "joker") { for (const t of fam.base.types) jokerSetFor[t].add(p); if (kickOn && fam.tierKick.addType) jokerSetFor[fam.tierKick.addType].add(p); }
-      else if (k === "transparentFarb") transparentFarb.add(p);
+      // Runde 6 (X3): Arkade III wird vom Transparent- zum echten Farbblock-Joker (Zelle zählt aktiv als passende Farbe).
+      else if (k === "transparentFarb") { transparentFarb.add(p); if (kickOn && fam.tierKick.farbJoker) jokerF.add(p); }
       else if (k === "crossSeg") crossSeg.add(rowOf(p)); // Pfeiler: öffnet die 1D-Segmentgrenze der berührten Zeilen
       else if (k === "bind") bind[p] = Math.max(bind[p] || 0, bindSpanFor(b.tier));
       else if (k === "anker") anker[p] = Math.max(anker[p] || 0, tierFactor(fam.base.factor, b.tier));

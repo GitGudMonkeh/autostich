@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { resolveTrick } from "../src/game/engine.js";
 import { initialState } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
-import { WIN_MASS, EWIGER_FROST, TOP, RESET_TO } from "../src/game/glacier.js";
+import { WIN_MASS, EWIGER_FROST, BURST_AT, FIRN_GROUND } from "../src/game/glacier.js";
 
 // Eis-Neudesign Phase 2 — Engine-Verdrahtung (isoliert über activeArchetypes "glacier").
 // Deck bewusst flach (alternierende Farben/Werte) → an pos 0 KEINE Formation → isoliert die Gletscher-Mechanik.
@@ -50,26 +50,30 @@ describe("Gletscher — Snapshot & Auszahlung (Phase B)", () => {
 });
 
 describe("Gletscher — Masse-Fortschreibung", () => {
-  it("Abkalben (RESET_TO) + Sieg-Masse am gebrochenen Feld: 12 → 0 (Reset) + 1 (Sieg)", () => {
+  it("Abkalben + Sieg-Masse am gebrochenen Feld: 12 → 0 (Masse − Schwelle) + 1 (Sieg)", () => {
     const glacierLocked = falses(); glacierLocked[0] = true;
-    const glacierMass = zeros(); glacierMass[0] = 12;
+    const glacierMass = zeros(); glacierMass[0] = BURST_AT;
     const s = resolveTrick(scen({ oppDeck: oppOf(1), glacierLocked, glacierMass }), noCrit); // pos 0, Sieg
-    expect(s.glacierMass[0]).toBe(RESET_TO + WIN_MASS); // 0 + 1
+    expect(s.glacierMass[0]).toBe(WIN_MASS); // genau auf der Schwelle → 0 bleibt liegen, + Sieg
   });
 
   it("Ewiger Frost tickt genau einmal je Durchlauf (am Durchlauf-Ende)", () => {
     const glacierLocked = falses(); glacierLocked[5] = true;
     const glacierMass = zeros(); glacierMass[5] = 1;          // unter Schwelle → kein Bruch, keine Sieg-Masse (Feld 5 verliert vs opp 5? egal)
-    const s = runCycle(scen({ oppDeck: oppOf(99), glacierLocked, glacierMass })); // alle Stiche verlieren → nur Ewiger Frost wirkt
-    expect(s.glacierMass[5]).toBe(1 + EWIGER_FROST);
+    const s = runCycle(scen({ oppDeck: oppOf(99), glacierLocked, glacierMass })); // alle Stiche verlieren → keine Sieg-Masse
+    /* §8: neben dem Frost speist jetzt der BODEN. Ein einzelner Gletscher bekommt über den Zug die Abgabe aller
+       39 offenen Felder — der Wächter hält beide Hälften des Passivs zugleich fest. */
+    expect(s.glacierMass[5]).toBeCloseTo(1 + EWIGER_FROST + 39 * FIRN_GROUND, 6);
   });
 
-  it("Überlauf über die höchste Stufe fließt als Score, Masse bleibt gedeckelt", () => {
+  // §5.18: der Überschuss über der Berst-Schwelle wird nicht mehr abgeschnitten und als Kleingeld ausgezahlt —
+  // er schlägt mit und bleibt danach liegen. Der Wächter prüft die Masse-Seite in der ECHTEN Engine.
+  it("Überschuss über der Berst-Schwelle bleibt nach dem Bruch liegen", () => {
     const glacierLocked = falses(); glacierLocked[0] = true;
-    const glacierMass = zeros(); glacierMass[0] = TOP + 6;    // Stufe 3 + Überlauf 6
+    const glacierMass = zeros(); glacierMass[0] = BURST_AT + 6;
     const s = resolveTrick(scen({ oppDeck: oppOf(1), glacierLocked, glacierMass }), noCrit);
-    expect(s.lastTrick.breakdown.glacierDirect).toBeGreaterThanOrEqual(6); // mind. der Überlauf
-    expect(s.glacierMass[0]).toBe(RESET_TO + WIN_MASS);                    // abgekalbt (0) + 1, nicht 18
+    expect(s.lastTrick.breakdown.glacierDirect).toBeGreaterThan(0);
+    expect(s.glacierMass[0]).toBe(6 + WIN_MASS); // Überschuss 6 + Sieg, nicht 0 + Sieg
   });
 });
 

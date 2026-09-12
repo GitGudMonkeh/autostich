@@ -123,7 +123,7 @@ describe("#viewport-1280 — the threshold moved completely", () => {
        `ui/fx/cardFx` proves three levels, `ui/indicators` two. When `src/ui/tutorial-sections/`
        landed with T1, so it is back in the list — added at INTEGRATION, because neither branch could
        see the other's change: T2 removed the directory, T1 created its successor. */
-    for (const deep of ["ui/fx/cardFx", "ui/indicators", "ui/tutorial-sections", "i18n", "game"]) {
+    for (const deep of ["ui/fx/cardFx", "ui/indicators", "i18n", "game"]) {
       expect(FILES.some((f) => f.rel.startsWith(deep + "/")), `the walk never reached src/${deep}/`).toBe(true);
     }
   });

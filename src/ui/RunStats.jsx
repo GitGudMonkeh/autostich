@@ -17,9 +17,9 @@ import { rarityOf, RARITY_META, CATEGORIES } from "../game/perks.js";
 import { ArchIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { fmtScore, fmtScoreShort } from "./format.js";
 import { archMeta, familyDef, perkCat, perkDef, skillDef } from "../i18n/labels.js"; // #sprache: Skills/Archetypen/Familien zur Anzeigezeit
+import { effectiveTierOf } from "../game/skills.js"; // exp/§7.45: die WIRKSAME Stufe eines Skills (Hochspannung hebt sie) — der Text dieser Stufe
 import { tierMeta, romanOf } from "../game/rarity.js"; // Familien-Perks: Stufenfarbe + römische Stufe (wie PerkList)
-import { TOTAL_NODES } from "../game/progression.js"; // #global: Nenner des Baumstands (x/27)
-import { t, fmtPct } from "../i18n/index.js";
+import { t } from "../i18n/index.js";
 
 /* #169 FB-8: wiederverwendbarer Run-Statblock — dieselben Kennzahlen wie im GameOver-/Victory-Screen plus die
    Perk-/Skill-Chips mit klickbarer Beschreibung. Genutzt vom End-Screen (GameOver) UND der Leaderboard-
@@ -173,7 +173,8 @@ export function RunBuildChips({ entry = {}, anonymized = false }) {
                 desc: (familyDef(sel.id).tiers[famTier(sel.id)] || {}).desc || "",
                 color: (tierMeta(famTier(sel.id)) || {}).color || perkCat(familyDef(sel.id).cat)?.color || "#8a8a95" }
             : null)
-        : (skillDef(sel.id) ? { title: skillDef(sel.id).name, desc: skillDef(sel.id).desc, color: (archMeta(skillDef(sel.id).archetype) || {}).color || "#8a8a95" } : null);
+        // exp skill rework: der Text der GEHALTENEN Stufe (entry.skillTiers; Alt-Einträge ohne die Map → Normal).
+        : (skillDef(sel.id) ? { title: skillDef(sel.id).name, desc: skillDef(sel.id, effectiveTierOf({ skills: entry.skills || [], skillTiers: entry.skillTiers || {} }, sel.id)).desc, color: (archMeta(skillDef(sel.id).archetype) || {}).color || "#8a8a95" } : null);
 
   const showPerks = !anonymized && ((perks !== null && perks.length > 0) || families.length > 0);
   const showSkills = skills !== null && skills.length > 0;
@@ -301,36 +302,6 @@ export function RunBuildChips({ entry = {}, anonymized = false }) {
   );
 }
 
-/* #global: Der Baumstand, mit dem ein Lauf gespielt wurde (x von 27 Upgrade-Knoten).
-   Er steht hier und nicht in den Kennzahl-Kacheln, weil er KEINE Kennzahl des Laufs ist, sondern seine
-   Vorbedingung — die Antwort auf „wie viel Meta-Fortschritt steckte hinter diesem Score".
-
-   Rendert NICHTS, wenn der Wert fehlt (Alt-Eintrag, lokaler Lauf, noch nicht migriertes Schema). Das ist die
-   bewusste Asymmetrie zur Liste: dort zeigt die Pille ein gestricheltes „–/27", weil ein fehlender Wert in
-   einer Spalte sichtbar bleiben muss (sonst vergleicht man Zeilen mit ungleicher Grundlage). In der
-   Einzelansicht gibt es nichts zu vergleichen, da wäre ein „kein Wert gespeichert"-Kasten nur Rauschen. */
-export function RunTreeBlock({ treeNodes }) {
-  const n = num(treeNodes);
-  if (n == null) return null;
-  const frac = Math.max(0, Math.min(1, TOTAL_NODES > 0 ? n / TOTAL_NODES : 0));
-  return (
-    // Der Abstand nach unten gehört zum Block selbst: der Aufrufer kann ihn nicht setzen, ohne bei fehlendem
-    // Wert eine leere Lücke zu hinterlassen (die Komponente rendert dann null).
-    <div className="rs-tree rounded-xl px-3 py-2.5 mb-4" style={{ background: "var(--sf-ground)", border: "1px solid var(--ed-quiet)" }}>
-      <div className="text-meta-1 uppercase tracking-wider opacity-45 mb-1.5">{t("runstats.tree")}</div>
-      <div className="flex items-baseline justify-between gap-3">
-        <span className="ty-num text-body-lg-3">{t("runstats.tree.nodes", { done: n, total: TOTAL_NODES })}</span>
-        <span className="ty-num-sm text-meta-3" style={{ color: "var(--deck-a1, #8a7de0)" }}>{fmtPct(frac)}</span>
-      </div>
-      {/* Der Balken ist die eigentliche Aussage — die Zahl daneben liest man erst, wenn der Balken auffällt. */}
-      {/* M7-G1: die SPUR eines Balkens, dieselbe Familie wie der Grund eines Graphen — kein Schritt. */}
-      <div className="h-1.5 rounded-full mt-2 overflow-hidden" style={{ background: "#1e1e26" }}>
-        <div className="h-full rounded-full" style={{ width: `${frac * 100}%`, background: "var(--deck-a1, #8a7de0)" }} />
-      </div>
-      <div className="text-meta-2 opacity-45 leading-snug mt-2">{t("runstats.tree.note")}</div>
-    </div>
-  );
-}
 
 /* Kombinierter Wrapper — Kennzahlen dann Build-Chips. Genutzt von der Leaderboard-Detailansicht (RunDetail);
    der Victory-Screen platziert RunStatCells und RunBuildChips separat (Stats- vs. Build-Sektion). */

@@ -2,7 +2,6 @@ import { describe, it, expect } from "vitest";
 import { resolveTrick } from "../src/game/engine.js";
 import { initialState } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
-import { RESET_TO, ROLES } from "../src/game/glacier.js";
 
 // Eis-Neudesign: Stufen-Verbrauch pro Stich. Die Masse eines Gletschers bleibt VOLL sichtbar, bis SEIN Stich dran ist,
 // und fällt erst dann auf den Nachbruch-Wert — nicht mehr für alle Gletscher gleichzeitig zu Durchlauf-Beginn (pos 0).
@@ -25,7 +24,7 @@ describe("Gletscher — Stufen-Verbrauch genau beim Stich (nicht zu Durchlauf-Be
 
     // Stich pos 0: NUR der Gletscher an 0 bricht/verbraucht; der an 3 bleibt voll (früher schon bei pos 0 zurückgesetzt).
     let s = resolveTrick(scen({ glacierMass: gm, glacierLocked }), noCrit);
-    expect(s.glacierMass[0]).toBe(RESET_TO); // hier gebrochen → 0
+    expect(s.glacierMass[0]).toBe(0);        // hier gebrochen → Masse 12 − Schwelle 12 = 0
     expect(s.glacierMass[3]).toBe(12);       // noch nicht dran → volle Masse sichtbar
 
     // Stiche pos 1, 2: der Gletscher an 3 bleibt weiterhin voll.
@@ -35,7 +34,7 @@ describe("Gletscher — Stufen-Verbrauch genau beim Stich (nicht zu Durchlauf-Be
 
     // Stich pos 3: jetzt bricht/verbraucht auch dieser Gletscher.
     s = resolveTrick(s, noCrit); // pos 3
-    expect(s.glacierMass[3]).toBe(RESET_TO);
+    expect(s.glacierMass[3]).toBe(0);
   });
 
   it("der Bruch-Score wird weiterhin am jeweiligen Stich ausgezahlt (Timing, nicht Score, ändert sich)", () => {
@@ -55,14 +54,3 @@ describe("Gletscher — Stufen-Verbrauch genau beim Stich (nicht zu Durchlauf-Be
   });
 });
 
-describe("Verschmelzen — angehobene Gletscher sind SOFORT sichtbar (nicht erst beim eigenen Stich)", () => {
-  it("das schwächere Nachbarfeld steht schon nach dem ersten Stich auf dem Cluster-Durchschnitt", () => {
-    // pos 0 (0,0) und pos 1 (0,1) sind Nachbarn → ein Cluster. Massen 10 & 2 → Durchschnitt 6, „nur anheben": pos1 → 6.
-    const glacierLocked = falses(); glacierLocked[0] = true; glacierLocked[1] = true;
-    const gm = zeros(); gm[0] = 10; gm[1] = 2;
-    // Stich pos 0: pos 1 ist noch NICHT dran, muss aber schon hochgezogen sein (Pooling ist ein Durchlauf-Beginn-Buff).
-    const s = resolveTrick(scen({ glacierMass: gm, glacierLocked, glacierRoles: [ROLES.VERSCHMELZEN] }), noCrit);
-    expect(s.glacierMass[1]).toBe(6);   // sofort auf den Cluster-Durchschnitt gehoben
-    expect(s.glacierMass[0]).toBe(10);  // der stärkere bleibt (nur anheben, nie fallend)
-  });
-});

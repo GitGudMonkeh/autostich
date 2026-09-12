@@ -77,10 +77,12 @@ const LIMIT_MEASURED = [
   { re: /^perkcat\..+\.name$/,    why: "Perk-Kategorie im Chip" },
 ];
 
-// Längster Eintrag der Familie über alle fertigen Sprachen — einmal je Familie, nicht je Schlüssel.
+// Längster Eintrag der Familie über ALLE angemeldeten Sprachen — einmal je Familie, nicht je Schlüssel.
+// exp: LOCALE_IDS statt READY_LOCALE_IDS — eine inaktive Sprache hat ihren Katalog noch, und eine
+// Schranke, die enger ist als ein vorhandener Text, beschreibt kein Layout mehr (loc-csv.test.js).
 const FAMILY_MAX = new Map(LIMIT_MEASURED.map((r) => {
   const ids = Object.keys(CAT_DE).filter((k) => r.re.test(k));
-  const lens = ids.flatMap((k) => READY_LOCALE_IDS.map((l) => String(CAT[l][k] ?? "").length));
+  const lens = ids.flatMap((k) => LOCALE_IDS.map((l) => String(CAT[l][k] ?? "").length));
   return [r, Math.max(0, ...lens)];
 }));
 
@@ -89,7 +91,7 @@ function limitFor(id) {
   for (const r of LIMIT_MEASURED) {
     if (!r.re.test(id)) continue;
     const max = FAMILY_MAX.get(r);
-    if (max) return { limit: String(max), note: `gemessen (längstes Geschwister, ${READY_LOCALE_IDS.join("/")}) — ${r.why}` };
+    if (max) return { limit: String(max), note: `gemessen (längstes Geschwister, ${LOCALE_IDS.join("/")}) — ${r.why}` };
   }
   return null;
 }

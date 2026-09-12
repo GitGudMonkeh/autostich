@@ -6,12 +6,11 @@ import { glacierGridProps } from "./glacierBoard.js";
 import { CardDetail } from "./CardDetail.jsx";
 import { LayoutPerks } from "./LayoutPerks.jsx";
 import { allianceGroups } from "../game/families.js";
-import { openSegmentInfo, summarizeFormations } from "../game/formations.js";
+import { openBorderInfo, summarizeFormations } from "../game/formations.js";
 import { archFamily, formationName, archCatDef, anchorLabel } from "../i18n/labels.js"; // #sprache: Formations-/Ankername zur Anzeigezeit
 import { t } from "../i18n/index.js";
 import { useEscape } from "./useEscape.js";
 // #218: Elementar-Zustände je Karte (wie FormationPhase) + globale Zusatz-Sektionen (Verteilung/Formationen/Architekt).
-import { plantRootScore, hasPfahlwurzel } from "../game/skills.js";
 import { DeckStrength, PerkList } from "./BuildSummary.jsx";
 import { zinsReadout } from "../game/perks.js"; // Zinseszins-Readout für die Perk-Liste (wie im Build-Panel)
 import { occupiedCells as archOccupied } from "../game/architect.js";
@@ -85,7 +84,7 @@ export function ChronikOverview({ state, onClose, options = {}, onOption }) {
             {hasArch && <ArchToggle on={showArch} onToggle={() => setShowArch((v) => !v)} />}
             <CardGrid cards={cards} formations={formations} roles={state.roles} {...glacierGridProps(state)} anchors={anchors} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
               highlightPos={highlightPos} highlightTitle="⏱ Zeitraffer · gekoppelte Position (20 & 40)"
-              openSegments={openSegmentInfo(state.familyTiers)}
+              openSegments={openBorderInfo(state.playerOrder, state.deck, state.skills, state.skillTiers, state.familyTiers)}
               architectCover={hasArch && showArch ? architectCover : null}
               structPos={hasArch && showArch ? structLitPos : null}
               distrPos={hasArch && showArch ? distrLitPos : null}
@@ -100,8 +99,6 @@ export function ChronikOverview({ state, onClose, options = {}, onOption }) {
             <CardDetail card={selCard} pos={selPos} posForm={selPos != null ? formations[selPos] : null} roles={state.roles} familyTiers={state.familyTiers}
               arch={selPos != null && architectCover ? architectCover[selPos] : null}
               plantReadout plantGrowth={selCard ? (state.growth?.[selCard.id] || 0) : 0}
-              plantRoots={selCard ? plantRootScore(state.skills || [], state.growth?.[selCard.id] || 0) : 0}
-              plantPfahl={hasPfahlwurzel(state.skills || [])}
               forgedValue={selCard ? (state.forged?.[selCard.id] || 0) : 0} />
             {/* #UI: geteilte Gebäude-Liste (ArchPanels) — identisch in Aufstellphase & Chronik. */}
             {hasArch && (

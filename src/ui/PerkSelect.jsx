@@ -1,4 +1,10 @@
-import { rarityOf, RARITY_META, totalCritChanceRaw, hasCritPerk, baseScoreMultFor, zinsReadout } from "../game/perks.js";
+import { useState } from "react";
+import { rarityOf, RARITY_META, totalCritChanceRaw, hasCritPerk, baseScoreMultFor, zinsReadout, offerHasLegendary } from "../game/perks.js";
+import { rerollOffer, UPGRADE_FROM, FORFEIT_PERK } from "../game/coins.js";  // Münz-Ökonomie §3.1 Neuwurf · §3.5 Aufwerten — dieselben Zahlen wie der Reducer
+import { RerollLabel, CoinAmount, CoinReward } from "./CoinMark.jsx";  // Beschriftung: Anzahl solange gratis, danach der Preis · §2.3 was das Ablehnen einbringt
+import { PerkUpgrade } from "./PerkUpgrade.jsx";               // Aufwertphase für Perks (Zwilling von SkillUpgrade)
+import { PerkSell } from "./PerkSell.jsx";                     // §3.6 Perk-Verkauf (Testfeature) — eine Ebene unter dem Aufwerten
+import { sellables } from "../game/perkSale.js";               // §3.6: gibt es überhaupt etwas zu verkaufen?
 import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import { phaseCard, phasePanel, PhaseHairline, PHASE_ACCENTS, ActionBar, ActionButton } from "./modalStyle.jsx";
 import { hasCritFamily } from "../game/families.js";
@@ -18,7 +24,6 @@ import { LevelupRig } from "./LevelupWings.jsx"; // #lv-fluegel: Deck links, Ken
 import { perkArt } from "./perkArt.js"; // #perkart: Kategorie-Emblem bzw. eigenes Emblem (nur ab 1280 px gerendert)
 import { CardCorners } from "./CardCorners.jsx"; // #cornerart: Eck-Ornamente im Kartenkopf
 import { CORNER_PERK } from "./cornerArt.js";
-import { PhaseHintSlot } from "./hints/HintCard.jsx"; // Onboarding-Hints: Banner-Slot unter dem Kopf (docs/tutorial-onboarding-design.md)
 
 // Legendär-Akzent: durchgehend gold (Rahmen, Ring, Badge, Titel) — Teil des Grau/Grün/Gold-Schemas (#71).
 const LEG_GOLD = "#d4a63a";
@@ -52,8 +57,16 @@ function offerView(entry, familyTiers = {}) {
 
 /* Level-Up-Auswahl (§7.8): pausiert das Spiel, bietet PERKS_OFFERED Optionen.
    Zeigt zusätzlich den Build-Kontext (aktive Perks + Deck-Histogramm, #22) und die Kern-Stats (#40). */
-export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], deck = [], state = {},
+export function PerkSelect({ offer, onPick, onReroll, onDecline, onUpgradeFamily, onSellPerk, perks = [], deck = [], state = {},
                              options = {}, onOption, currentTraj = [], recordTraj = [], best = 0 }) {
+  const [upgradeOpen, setUpgradeOpen] = useState(false); // die Aufwertphase liegt über dem Angebot
+  const [sellOpen, setSellOpen] = useState(false);       // §3.6: der Verkauf eine Ebene daneben
+  // Aufwerten setzt eine GEHALTENE Familie voraus (Rang ≥ 1); flache Perks tragen keine Stufe. Ohne eine
+  // einzige aufwertbare Familie gäbe es drinnen nichts zu sehen → der Knopf erscheint gar nicht erst.
+  const canUpgrade = !!onUpgradeFamily && Object.values(state.familyTiers || {}).some((r) => (r || 0) >= 1);
+  const canAffordUpgrade = (state.coins || 0) >= UPGRADE_FROM;
+  // Verkaufen kann man MEHR als aufwerten: auch flache Perks, die keine Stufe tragen (§3.6).
+  const canSell = !!onSellPerk && sellables(state).length > 0;
   // Neuwurf (#263): eigener Perk-Reroll-Pool (2 je Lauf), kein Free-Reroll mehr. In der Legendär-Perk-Phase
   // zählt NUR der dedizierte Token (rerollsPerk2) — sonst zeigte die UI den allgemeinen Pool (bis 3).
   /* #lv-fluegel: Ab 1280 px zeigt die Karte KEINE Kontext-Klappfelder mehr — Deck-Stärke, Formationen und
@@ -64,7 +77,10 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
   const onPhone = useIsPhone();   // #mobil-emblem — unter 640 px, NICHT die Verneinung von `inWings`
   const inLegPerkPhase = perkPhaseAt(state.devSchedule || DECISION_SCHEDULE, state.cycle) === LEG_PERK2_PHASE;
   const rerollTokens = inLegPerkPhase ? (state.rerollsPerk2 || 0) : (state.rerollsPerk || 0);
-  const canReroll = !!onReroll && rerollTokens > 0;
+  // Münz-Ökonomie §3.1: leerer Pool → derselbe Knopf ist käuflich. Ein Legendäres im Angebot hebt den
+  // Grundpreis und garantiert im neuen Wurf wieder eins (ein anderes als das gerade gezeigte).
+  const rerollBuy = rerollOffer(state, rerollTokens, offerHasLegendary(offer));
+  const canReroll = !!onReroll;
   // Kern-Stats — dieselben Helfer/Kontexte wie die StatusRail → kein Drift (#40).
   const { winStreak = 0, wins = 0, trickNo = 0, pos = 0, crits = 0, lightning } = state;
   // Crit inkl. Blitz-Basis (lightning) + Präzision-Familien — dieselbe geteilte Quelle wie Engine/StatusRail (kein Drift).
@@ -94,14 +110,62 @@ export function PerkSelect({ offer, onPick, onReroll, onDecline, perks = [], dec
           <h2 className="text-title-6 font-bold mt-1">{tr("perk.title")}</h2>
           {state.lastCycleScore != null && <div className="mt-3"><RoundScoreBadge state={state} className="lv-score" /></div>}
         </div>
-        <PhaseHintSlot screen="perk" />
 
         {!state.devMode && (onDecline || canReroll) && (
           <ActionBar pad={6}>
-            {canReroll && <ActionButton kind="reroll" flex className="lv-actbtn lv-actbtn-reroll" onClick={onReroll}>{tr("perk.reroll", { n: rerollTokens })}</ActionButton>}
-            {onDecline && <ActionButton kind="decline" flex className="lv-actbtn" onClick={onDecline}>{tr("perk.declineAll")}</ActionButton>}
+            {/* §3.1: nach dem Pool steht der Preis am selben Knopf; ohne Münzen bleibt er sichtbar, aber aus. */}
+            {canReroll && (
+              <ActionButton kind={rerollBuy.legendary ? "rerollLeg" : "reroll"} flex disabled={!rerollBuy.can}
+                className="lv-actbtn lv-actbtn-reroll" onClick={onReroll}>
+                <RerollLabel r={rerollBuy} freeKey="perk.reroll" buyKey="perk.reroll.buy" have={state.coins || 0} />
+              </ActionButton>
+            )}
+            {/* §2.3: was das Ablehnen EINBRINGT, direkt an seinem Knopf. Die Gutschrift blitzt sonst erst
+                nach der Entscheidung in der Leiste auf — zu spät, um sie zu treffen. */}
+            {onDecline && (
+              <ActionButton kind="decline" flex className="lv-actbtn" onClick={onDecline}>
+                <span className="inline-flex items-center gap-1.5">{tr("perk.declineAll")}<CoinReward n={FORFEIT_PERK} /></span>
+              </ActionButton>
+            )}
           </ActionBar>
         )}
+
+        {/* „Perk aufwerten" (Owner 2026-09-08) — EIGENE Zeile unter den Phasen-Aktionen, Wort für Wort die
+            Entscheidung des Skill-Zwillings: auf 390 px passen drei Knöpfe nicht nebeneinander, und der Kauf
+            ist eine andere Art Handlung als Neuwurf und Ablehnen — er kostet Währung, nicht die Phase.
+            „ab {UPGRADE_FROM}" steht am Knopf, der genaue Preis hängt an der Auswahl und steht drinnen.
+            Unter dem billigsten Schritt ist der Knopf aus: er führte sonst nur in eine Sackgasse. */}
+        {canUpgrade && (
+          <button type="button" onClick={canAffordUpgrade ? () => setUpgradeOpen(true) : undefined} disabled={!canAffordUpgrade}
+            className="pk-upgradebtn w-full mt-2 rounded-lg px-4 py-2 text-body-lg-5 font-bold inline-flex items-center justify-center gap-2 transition-all disabled:cursor-not-allowed"
+            style={canAffordUpgrade
+              ? { background: "linear-gradient(180deg,#241f2e,#191722)", border: "1px solid #6a5a9e", color: "#cdbcf5" }
+              : { background: "var(--btn-off-bg)", border: "1px solid transparent", color: "var(--btn-off-fg)" }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+              strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 19V5" /><path d="M6 11l6-6 6 6" /></svg>
+            <span>{tr("upgrade.perk.open")}</span>
+            <span className="inline-flex items-center gap-1"><span className="opacity-70">{tr("upgrade.from")}</span><CoinAmount n={UPGRADE_FROM} size={12} have={state.coins || 0} dim={!canAffordUpgrade} /></span>
+          </button>
+        )}
+        {upgradeOpen && <PerkUpgrade state={state} onUpgrade={onUpgradeFamily} onClose={() => setUpgradeOpen(false)} />}
+
+        {/* „Perk verkaufen" (§3.6, Testfeature) — eigener Knopf UNTER dem Aufwerten (Owner 2026-09-09).
+            Bewusst leiser als der Nachbar: Verkaufen ist die Notlösung, Aufwerten der übliche Weg, und
+            zwei gleich laute Knöpfe übereinander lasen sich wie zwei gleichwertige Angebote. Kein Preis
+            am Knopf — er hängt an der Auswahl und steht drinnen, Zeile für Zeile.
+            Der Knopf erscheint nur, wenn es überhaupt etwas zu verkaufen gibt; sonst führte er in eine
+            leere Liste. Anders als beim Aufwerten gibt es keine „zu wenig Münzen"-Sperre: man bekommt
+            hier welche. */}
+        {canSell && (
+          <button type="button" onClick={() => setSellOpen(true)}
+            className="pk-sellbtn w-full mt-2 rounded-lg px-4 py-2 text-body-lg-5 font-bold inline-flex items-center justify-center gap-2 transition-all"
+            style={{ background: "linear-gradient(180deg,#1b2420,#151b18)", border: "1px solid #3f6b52", color: "#8fd0a8" }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+              strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 5v14" /><path d="M6 13l6 6 6-6" /></svg>
+            <span>{tr("sell.open")}</span>
+          </button>
+        )}
+        {sellOpen && <PerkSell state={state} onSell={onSellPerk} onClose={() => setSellOpen(false)} />}
 
         {/* Kern-Stats (#40): dezent, damit die Perk-Auswahl die primäre Aktion bleibt. */}
         <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-body-5 mt-3">

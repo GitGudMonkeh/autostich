@@ -2,13 +2,15 @@ import { fmtScore } from "./format.js";
 import { t, fmtNum } from "../i18n/index.js"; // #sprache
 import { RunTimer } from "./RunTimer.jsx";
 import { DECK_BORDER } from "./modalStyle.jsx"; // #356: deck-getönter neutraler Struktur-Rahmen
+import { CoinAmount, CoinGain } from "./CoinMark.jsx"; // Münz-Ökonomie (§4): Kontostand, immer sichtbar (+ §2.3: die Gutschrift im Moment ihres Anfallens)
 
 /* Gameplay-Neu-Aufbau (docs/gameplay-redesign.md, Phase 1): die schwebende Kompakt-Leiste — die „Vitalwerte" des Laufs
    in einer oben klebenden Karte, samt Ablauf-Steuerung (Pause/Tempo/Karten). Ersetzt die früheren Kopf-Stat-Zellen.
    Rein präsentational — Score/Mult/Serie/Runde/Zeit werden fertig berechnet hereingereicht (kein Drift).
 
    #UI-Layout: zwei Zeilen. Oben Steuerung + Runde + Zeit (Sekundärwerte, rechts neben dem Karten-Icon). Unten der
-   Score über die volle Breite (Platz bis 999.999.999, nie abgeschnitten) mit Serie und Mult rechts daneben. */
+   Score über die volle Breite (Platz bis 999.999.999, nie abgeschnitten) mit Münzen und Mult rechts daneben
+   (Owner 2026-09-08: die Serie ist von hier in die Bilanz-Zeile der Rail gewandert, die Münzen an ihren Platz). */
 
 /* #kante: Tempo-/Pause-Schalter in der Kanten-Familie — gewählt trägt seinen Ton an der Kante statt als
    gefüllter Fläche. Das HUD ist der einzige Ort, den man in JEDEM Lauf dauernd sieht; hier zahlt Ruhe am
@@ -45,8 +47,8 @@ function Cell({ label, children, className = "", style = null }) {
 }
 
 export function StatusBar({
-  score, ghost = {}, mult, timeStr, getElapsed = null, timerTicking = false, paused, winStreak = 0, bestStreak = 0,
-  cycle = 0, totalCycles = 1,
+  score, ghost = {}, mult, timeStr, getElapsed = null, timerTicking = false, paused,
+  cycle = 0, totalCycles = 1, coins = 0, coinGain = null,
   onTogglePause, speedMult = 1, onSpeed, onChronik, deckBack, className = "",
   // #buehne: Ab 1280 px ziehen Musik und Meilensteinbalken IN die Leiste — sie sind dort, wo man sie
   // sucht, und der Lauf spart zwei eigene Reihen. Der Umzug ist DOM (App.jsx entscheidet per useIsWide),
@@ -103,7 +105,7 @@ export function StatusBar({
         </div>
 
         {/* Zeile 2: Score = wichtigster Wert, volle Breite (Platz bis 999.999.999, nie abgeschnitten). Das Rekord-Delta
-            steht in der Label-Zeile darüber, damit die große Zahl beim Wachsen nicht verrutscht. Serie + Mult rechts. */}
+            steht in der Label-Zeile darüber, damit die große Zahl beim Wachsen nicht verrutscht. Münzen + Mult rechts. */}
         <div className="sb-row2 flex items-stretch" data-hint-anchor="scorerow">
           <div className="sb-score flex-1 flex flex-col justify-center gap-1 px-3.5 py-2">
             <div className="flex items-baseline gap-2">
@@ -114,16 +116,20 @@ export function StatusBar({
                   ? <span className="text-meta-1 font-bold whitespace-nowrap tabular-nums" style={{ color: ghost.delta >= 0 ? "#5ab87a" : "#e0605a" }}>{ghost.delta >= 0 ? "▲ +" : "▼ "}{fmtScore(ghost.delta)}</span>
                   : null)}
             </div>
-            {/* #: Bei sehr großen Zahlen (>100 Mio · 9+ Stellen) die Score-Schrift etwas verkleinern, damit die Zeile
-                zusammen mit hoher Serie (z. B. 1000×) nicht rechts über den Rahmen hinausläuft. */}
+            {/* #: Bei sehr großen Zahlen (>100 Mio · 9+ Stellen) die Score-Schrift etwas verkleinern, damit die
+                Zeile nicht rechts über den Rahmen hinausläuft. */}
             <span className="ty-num leading-none whitespace-nowrap" style={{ fontVariantNumeric: "tabular-nums", fontSize: score >= 1000000000 ? 19 : score >= 100000000 ? 21 : 25, color: "#d4a63a" }}>{fmtScore(score)}</span>
           </div>
-          {/* Serie — kann in den Tausenderbereich gehen; rechtsbündig neben dem Score. Feste
-              Mindestbreite (Review-Runde, Zeile 29): der Rahmen wanderte sonst mit jeder
-              Serienänderung, weil die Zelle inhaltsbreit war. */}
-          <Cell label={t("hud.streak")} className="sb-streak border-l border-[color:var(--deck-border)]" style={{ minWidth: 104 }}>
-            <span style={{ color: winStreak >= 3 ? "#e0605a" : "#e8e8ea" }}>{winStreak > 0 ? `${winStreak}×` : "–"}</span>
-            <span className="text-micro-3 opacity-45 ml-1">{t("hud.streak.best", { n: bestStreak })}</span>
+          {/* Münzen (Owner 2026-09-08) — an dem Platz, an dem die Serie stand. Die Währung wird in jeder
+              Entscheidungsphase gelesen und muss dort stehen, wo man ohnehin hinsieht; die Serie ist ein
+              Verlaufswert und steht jetzt unten in der Bilanz-Zeile der Rail.
+              `minDigits={3}` hält die Breite fest — der Kontostand wird dreistellig, und die Zeile darf
+              beim Hochzählen nicht springen. */}
+          {/* `position: relative` trägt die Gutschrift (§2.3): das „+N" schwebt über der Zelle, statt sie
+              zu verbreitern — eine Leiste, die bei jeder Zahlung springt, wäre schlimmer als keine Anzeige. */}
+          <Cell label={t("hud.coins")} className="sb-coins border-l border-[color:var(--deck-border)]" style={{ minWidth: 92, position: "relative" }}>
+            <CoinAmount n={coins} size={15} minDigits={3} style={{ fontSize: 18 }} />
+            <CoinGain gain={coinGain} />
           </Cell>
           {/* Mult — ganz rechts. */}
           <Cell label={t("hud.mult")} className="sb-mult border-l border-[color:var(--deck-border)]">

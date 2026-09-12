@@ -165,6 +165,18 @@ memory.
    git rev-parse <branch>^{tree}
 ```
 
+### The `exp` branch
+
+`exp` is the fourth permanent branch: the stripped-down core-loop playground (rounds, offers,
+balance), cut from `dev` and deployed to `/autostich/exp/`. It sits **beside** the promotion chain,
+not in it.
+
+- `exp` never promotes. Nothing fast-forwards from `exp` into `dev`, `test` or `main`.
+- `dev -> exp`: ordinary merge commits are allowed to catch `exp` up with `dev`.
+- `exp -> dev`: only deliberately, one change at a time, by cherry-pick or by hand, when a rule
+  proven on `exp` is adopted.
+- `exp` is a protected ref like the other three: no cleanup proposal names it, no history rewrite.
+
 Detailed Git/worktree rules:
 `docs/engineering/git-workflow.md`
 

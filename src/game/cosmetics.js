@@ -25,6 +25,8 @@
    cosmeticAssets.js. Solange ein Bild-Asset noch nicht im Repo liegt, bleibt der Eintrag draußen
    (temporärer Umsetzungs-Zwischenstand); im fertigen Feature ist jeder Katalog-Eintrag sichtbar. */
 import { onboardingDone } from "./progression.js"; // #: Genesis-Freischaltung koppelt an abgeschlossenes Onboarding (6/6)
+// exp: one switch for "everything is open" — isUnlocked (skins), packOwned and globalFxOwned (themes.js) read it.
+export const ALL_UNLOCKED = true;
 
 // #310: Element-Challenge-Decks verlangen N abgeschlossene Läufe mit reinem Mono-Build der Fraktion
 // (extends #215 „1 Lauf" → Zähler). Prisma (Element-Bund) = alle vier Element-Decks frei (quasi 4×N Läufe).
@@ -225,6 +227,9 @@ const championWeeks = (p) => {
 // Reine Freischalt-Prüfung. Unbekannte kinds blockieren NICHT (defensiv: neuer kind ohne Code-Update
 // soll kein Deck unsichtbar-gesperrt lassen).
 export function isUnlocked(def, profile) {
+  /* exp (owner decision, 2026-09-02): the meta-progression is out, so every skin is open. The
+     conditions below stay as written for the way back; nothing reaches them on this branch. */
+  if (ALL_UNLOCKED) return true;
   const u = def && def.unlock;
   if (!u) return true;
   const p = profile || {};

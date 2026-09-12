@@ -8,7 +8,7 @@
 //
 // Nicht-Angebots-Phasen (target/formation/shop/shop-target) delegiert die Policy an die Baseline —
 // so bleibt S2 auf die Auswahl-Arme fokussiert; der Formations-/Shop-Ausbau kommt in S4.
-import { randomPolicy, canAddSkill } from "./random.js";
+import { randomPolicy, canAddSkill, atDoors, bestDoor } from "./random.js";
 import { greedyFormationStep } from "../formation.js";
 import { armKey } from "../memory.js";
 import { perkOptionId, perkActionFor } from "../families-policy.js";
@@ -22,16 +22,17 @@ export const byArchetype = (s) => [...(s.activeArchetypes || [])].sort().join(",
 export function ucbPolicy({ c = 1.4, bucket = byArchetype, solveFormations = false } = {}) {
   const base = randomPolicy(); // Fallback für target/shop/shop-target
 
+  // UCB-Wert eines Arms (nur lesen — legt keinen Arm an); ungesehen → ∞ (sicher probieren).
+  const ucbOf = (kind, id, s, mem, N) => {
+    const a = mem.peek(armKey(kind, id, bucket(s)));
+    return a.n ? a.sum / a.n + c * Math.sqrt(Math.log(N) / a.n) : Infinity;
+  };
   function ucbPick(kind, ids, s, mem) {
     const N = mem.totalPicks(kind) + 1;
     let best = null, bestU = -Infinity;
     for (const id of ids) {
-      const key = armKey(kind, id, bucket(s));
-      const a = mem.peek(key); // nur lesen — legt keinen Arm an
-      const mean = a.n ? a.sum / a.n : 0;
-      const explore = a.n ? c * Math.sqrt(Math.log(N) / a.n) : Infinity; // ungesehen → sicher probieren
-      const u = mean + explore;
-      if (u > bestU) { bestU = u; best = { id, key }; }
+      const u = ucbOf(kind, id, s, mem, N);
+      if (u > bestU) { bestU = u; best = { id, key: armKey(kind, id, bucket(s)) }; }
     }
     mem.pulled(kind, best.key); // merken; Reward (Run-Score) bucht der Treiber am Run-Ende
     return best.id;
@@ -42,6 +43,11 @@ export function ucbPolicy({ c = 1.4, bucket = byArchetype, solveFormations = fal
     act(s, rng, mem) {
       switch (s.phase) {
         case "levelup": {
+          // exp skill rework: die Tür mit dem höchsten UCB-Arm dahinter (nur lesen, gezogen wird erst auf dem Angebot).
+          if (atDoors(s)) {
+            const N = mem.totalPicks("skill") + 1;
+            return { type: "CHOOSE_DOOR", index: bestDoor(s, (ids) => Math.max(-Infinity, ...ids.filter((id) => canAddSkill(s, id)).map((id) => ucbOf("skill", id, s, mem, N)))) };
+          }
           if (s.skillOffer) {
             const addable = s.skillOffer.filter((id) => canAddSkill(s, id));
             const cands = addable.length ? [...addable, DECLINE] : [DECLINE];

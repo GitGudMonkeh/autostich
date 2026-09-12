@@ -33,7 +33,7 @@ const CONSUMER_SRC = CONSUMER_FILES.map(gameSrc).join("\n");
 
 // Strukturelle/Meta-Keys — beschreiben KEINEN Effekt, brauchen also keinen Consumer.
 const STRUCTURAL = new Set([
-  "id", "cat", "name", "desc", "tiers", "upgradeType", "rarity", "label",
+  "id", "cat", "name", "desc", "descTiers", "tiers", "upgradeType", "rarity", "label", // exp: descTiers = ein Text je Stufe
   "legacyIds", "keywords", "archetype", "repeatable", "enabled", "offerable", "legendary", "anchorType",
 ]);
 

@@ -149,7 +149,7 @@ function skillTiles(legendaryOnly) {
   const meta = ARCHETYPE_META[ARCH];
   const badgesOf = (s) => [
     { text: meta.label.toUpperCase(), color: meta.color },
-    ...(s.heatConsumer || s.onFullCharge ? [{ text: t("skill.badge.consumer"), color: "#d4a63a" }] : []),
+    ...((s.keywords || []).includes("consume") ? [{ text: t("skill.badge.consumer"), color: "#d4a63a" }] : []), // exp: Abzeichen am Glossar-Schlüsselwort (wie SkillSelect)
     ...(s.legendary ? [{ text: t("skill.badge.legendary"), color: "#e0b845" }] : []),
   ];
   /* The fullest row this screen can produce, found rather than assumed: sort by badge count, then by

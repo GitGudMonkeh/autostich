@@ -8,10 +8,13 @@ import { factionPolicy } from "../sim/policies/faction.js";
 // (ionisierte Karten / gewachsenes Wachstum / verbrannte Asche / gebrandmarkte Gegnerkarten). Nur Anzeige, keine Engine-
 // Kopplung. Hier: ein Mono-Fraktions-Lauf treibt GENAU die Kennzahlen seiner Fraktion (Isolation) und nichts sonst.
 
+// exp skill rework: der Standard-Pool ist Feuer/Blitz (Eis und Pflanze warten auf ihre Runde) — diese Isolation
+// braucht alle vier Fraktionen in den Türen, also die Allowlist eines Laufs (START_RUN action.archetypes).
+const ALL4 = ["lightning", "fire", "ice", "plant"];
 function runFaction(target, seed) {
   const pol = factionPolicy(target, { architectGreedy: true });
   const rng = makeRng(seed);
-  let s = reducer(null, { type: "START_RUN", rng, architect: true });
+  let s = reducer(null, { type: "START_RUN", rng, architect: true, archetypes: ALL4 });
   let guard = 0;
   while (s.phase !== "gameover") {
     if (++guard > 100000) throw new Error(`kein Fortschritt (${target}, seed ${seed}, phase ${s.phase})`);
@@ -27,10 +30,12 @@ function agg(target, keys, seeds = [1, 2, 3, 4]) {
   return out;
 }
 
-const YIELD = ["glacierYield", "lightYield", "plantRoot", "plantBloom", "plantHarvest", "fireBase", "fireWhite"];
-const MOTOR = ["ionTotal", "growthTotal", "ashBurned", "brandTotal"];
+// Vier volle Läufe je Test: mit 50 Runden (§7.14) reicht das Vitest-Default von 5 s unter Last nicht mehr sicher.
+const RUN_TIMEOUT = 30_000;
+const YIELD = ["glacierYield", "lightYield", "plantBase", "fireBase", "fireHeat"]; // exp: fireHeat = Hitze-Multiplikator-Anteil (ehemals fireWhite) · Pflanze hat seit §6 EINEN Kanal (kein Direkt-Score, keine Ernte)
+const MOTOR = ["ionTotal", "growthTotal", "brandTotal"]; // exp: Asche entfällt
 const ALL = [...YIELD, ...MOTOR];
-const plantYield = (a) => a.plantRoot + a.plantBloom + a.plantHarvest;
+const plantYield = (a) => a.plantBase;
 
 describe("#270 Fraktions-Panel-Kennzahlen — Ertrag-Kanäle + Motor-Zähler", () => {
   it("initialState startet alle Kennzahlen bei 0", () => {
@@ -42,37 +47,37 @@ describe("#270 Fraktions-Panel-Kennzahlen — Ertrag-Kanäle + Motor-Zähler", (
     const a = agg("lightning", ALL);
     expect(a.ionTotal).toBeGreaterThan(0);
     expect(a.lightYield).toBeGreaterThan(0);
-    expect(plantYield(a) + a.fireBase + a.fireWhite + a.glacierYield).toBe(0); // Isolation
-    expect(a.growthTotal + a.ashBurned + a.brandTotal).toBe(0);
-  });
+    expect(plantYield(a) + a.fireBase + a.fireHeat + a.glacierYield).toBe(0); // Isolation
+    expect(a.growthTotal + a.brandTotal).toBe(0);
+  }, RUN_TIMEOUT);
 
-  it("Pflanze-Lauf treibt Gewachsen + Wurzel-Score (mind. Wurzel-Kanal); keine Fremd-Fraktions-Kennzahl", () => {
+  it("Pflanze-Lauf treibt Gewachsen und den Basis-Score; keine Fremd-Fraktions-Kennzahl", () => {
     const a = agg("plant", ALL);
     expect(a.growthTotal).toBeGreaterThan(0);
-    expect(a.plantRoot).toBeGreaterThan(0);      // Wurzeltiefe ist der verlässliche Grund-Kanal
-    expect(plantYield(a)).toBeGreaterThan(0);
-    expect(a.lightYield + a.fireBase + a.fireWhite + a.glacierYield).toBe(0);
-    expect(a.ionTotal + a.ashBurned + a.brandTotal).toBe(0);
-  });
+    expect(plantYield(a)).toBeGreaterThan(0);    // Blüte + die Score-Skills — ein Kanal (§6.1: kein Direkt-Score)
+    expect(a.lightYield + a.fireBase + a.fireHeat + a.glacierYield).toBe(0);
+    expect(a.ionTotal + a.brandTotal).toBe(0);
+  }, RUN_TIMEOUT);
 
-  it("Feuer-Lauf treibt den Feuer-Grund-Score (Feuers Kern); keine Fremd-Fraktions-Kennzahl", () => {
+  it("Feuer-Lauf treibt den Feuer-Ertrag (Hitze-Multiplikator-Anteil, Feuers Kern); keine Fremd-Fraktions-Kennzahl", () => {
     const a = agg("fire", ALL);
-    expect(a.fireBase).toBeGreaterThan(0);
+    expect(a.fireHeat).toBeGreaterThan(0); // exp: das Passiv zahlt als Multiplikator; Feuer-Score (fireBase) nur mit Konsumenten/Glutstahl/Sonnenkern
+    expect(a.fireBase).toBeGreaterThanOrEqual(0);
     expect(a.lightYield + plantYield(a) + a.glacierYield).toBe(0);
     expect(a.ionTotal + a.growthTotal).toBe(0);
-  });
+  }, RUN_TIMEOUT);
 
   it("Eis-Lauf treibt den Gletscher-Ertrag (Masse→Bruch→Score); keine Fremd-Fraktions-Kennzahl", () => {
     const a = agg("ice", ALL);
     expect(a.glacierYield).toBeGreaterThan(0);
-    expect(a.lightYield + plantYield(a) + a.fireBase + a.fireWhite).toBe(0);
-    expect(a.ionTotal + a.growthTotal + a.ashBurned + a.brandTotal).toBe(0);
-  });
+    expect(a.lightYield + plantYield(a) + a.fireBase + a.fireHeat).toBe(0);
+    expect(a.ionTotal + a.growthTotal + a.brandTotal).toBe(0);
+  }, RUN_TIMEOUT);
 
   it("Kennzahlen wachsen monoton über den Lauf (nur steigend, Anzeige-Akkumulatoren)", () => {
     const pol = factionPolicy("ice", { architectGreedy: true });
     const rng = makeRng(2);
-    let s = reducer(null, { type: "START_RUN", rng, architect: true });
+    let s = reducer(null, { type: "START_RUN", rng, architect: true, archetypes: ALL4 });
     let prev = 0, guard = 0;
     while (s.phase !== "gameover") {
       if (++guard > 100000) break;

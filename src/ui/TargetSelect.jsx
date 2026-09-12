@@ -7,7 +7,6 @@ import { glacierGridProps } from "./glacierBoard.js";
 import { architectCoverFor } from "./architectCover.js";
 import { t } from "../i18n/index.js"; // #sprache
 import { perkDef } from "../i18n/labels.js";
-import { PhaseHintSlot } from "./hints/HintCard.jsx"; // Onboarding-Hints: Banner-Slot unter dem Kopf (docs/tutorial-onboarding-design.md)
 
 
 /* Kartenrollen-Zielauswahl (V2 §22.6 C / §22.5): öffnet nach dem Pick eines Ziel-Perks.
@@ -35,7 +34,6 @@ export function TargetSelect({ state, onConfirm }) {
           <h2 className="text-title-6 font-bold mt-1">{t("target.pickCards", { count: need })}</h2>
           <p className="text-body-5 opacity-60 mt-1 max-w-xl mx-auto leading-snug">{def.desc}</p>
         </div>
-        <PhaseHintSlot screen="target" />
 
         <ActionBar pad={5}>
           <span className="text-body-5 opacity-60 tabular-nums self-center">{t("common.chosen", { n: sel.length, need })}</span>

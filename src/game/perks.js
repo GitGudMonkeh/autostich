@@ -2,7 +2,7 @@ import * as C from "./constants.js";
 import { FAMILY_LIST, familyCritChanceRaw, familyCritMult } from "./families.js";
 import { TIERS, tierWeightsForShift, canOfferFamilyTier, familyTierOf } from "./rarity.js";
 import { SEGMENT_SIZE } from "./formations.js";
-import { lightningCritRaw, ionCritChance, lightningCritMult } from "./skills.js";
+import { lightningCritChance, lightningCritMult, overcritMult } from "./factions/lightning.js"; // exp skill rework: Blitz-Beiträge für die Live-Anzeige
 
 // Deutsche Zahlformatierung (2.5 → „2,5") — Beschreibungszahlen aus den Konstanten interpolieren (kein Text↔Code-Drift).
 const de = (x) => String(x).replace(".", ",");
@@ -127,7 +127,7 @@ export const PERK_DEFS = {
   // --- v0.3-Erweiterung (2026-08-15): 7 neue gegen die Pool-Lücken. Zwei davon (Opfergang, Ballast) haben als ERSTE
   //     einen echten NACHTEIL — die #33-Definition „mächtig, aber mit Nachteil" hatte bis hier kein einziger Perk erfüllt. ---
   L_MEIS: { id: "L_MEIS", cat: "S", rarity: "legendary", label: "Meisterhand", skillSlotBonus: C.MEISTERHAND_SLOTS,
-        desc: `Sofort: du hältst dauerhaft ${C.MEISTERHAND_SLOTS === 1 ? "einen Skill" : `${C.MEISTERHAND_SLOTS} Skills`} mehr (${C.SKILL_SLOTS} → ${C.SKILL_SLOTS + C.MEISTERHAND_SLOTS}).` },
+        desc: `Sofort: eine zusätzliche Skill-Wahl außerhalb des Rundenplans (${C.MEISTERHAND_SLOTS === 1 ? "ein Skill" : `${C.MEISTERHAND_SLOTS} Skills`} mehr im Build).` }, // exp skill rework: Slots sind unbegrenzt — der Wert des Perks ist die sofortige Wahl
   L_SCHM: { id: "L_SCHM", cat: "A", rarity: "legendary", label: "Schmiede", schmiede: C.SCHMIEDE_STEP,
         desc: `Am Ende jedes Durchlaufs erhält die schwächste Karte deines Decks dauerhaft +${C.SCHMIEDE_STEP} Kartenwert.` },
   L_HOCH: { id: "L_HOCH", cat: "D", rarity: "legendary", label: "Hochseil", hochseil: true,
@@ -152,6 +152,10 @@ export const fundamentBonus = (perks = []) => perks.reduce((t, id) => t + (PERK_
 
 export const rarityOf    = (id) => PERK_DEFS[id]?.rarity || "common";
 export const isLegendary = (id) => rarityOf(id) === "legendary";
+// Münz-Ökonomie §3.1: trägt DIESES Angebot ein Legendäres? Entscheidet über den Grundpreis des gekauften
+// Neuwurfs. Eine Quelle für Reducer und Knopf — `rarityOf` versteht beide Angebots-Formen (flache id und
+// { familyId, tier }), eine handgeschriebene Prüfung im UI wäre die zweite Wahrheit.
+export const offerHasLegendary = (offer) => (offer || []).some((e) => rarityOf(e) === "legendary");
 // #370 Perk-Segen: flache Perk-Rarität → grobe Stufe (I..IV) für den Rarität-Boden. Flache Nicht-Legendäre sind
 // „common" (I); die 4-Stufen-Namen decken potenzielle künftige flache Perks mit ab. Legendär wird separat behandelt.
 const RARITY_TIER_APPROX = { common: 1, normal: 1, uncommon: 2, rare: 3, epic: 4 };
@@ -294,34 +298,46 @@ export function critChanceFor(perks, ctx) {
 // konditionalen Generatoren Zielsicherheit/Brennglas/Farbfokus bleiben im Live-Preview aus = ehrlicher Crit-Boden).
 // Der positionsabhängige Kritanker (§4.2) bleibt der Engine vorbehalten.
 export function totalCritChanceRaw(state = {}) {
-  const { perks = [], winStreak = 0, wins = 0, trickNo = 0, pos = 0, lightning, skills = [], familyTiers = {}, roles = {}, deck = [] } = state;
+  const { perks = [], winStreak = 0, wins = 0, trickNo = 0, pos = 0, lightning, skills = [], skillTiers = {}, familyTiers = {}, roles = {} } = state;
   return critChanceRawFor(perks, { winValue: 0, winStreak: winStreak + 1, wins: wins + 1, trickNo, posInCycle: pos })
-       + lightningCritRaw(lightning, skills, winStreak + 1)
-       + (lightning?.active ? ionCritChance(deck) : 0) // #271: feldweiter Ionisierungs-Crit (deckt HUD/StatusRail/PerkSelect)
+       + lightningCritChance(lightning, skills, skillTiers, winStreak + 1) // exp: Passiv je Blitz-Skill + Rampen + Ladungsserie
        + familyCritChanceRaw(familyTiers, { winValue: 0, suit: null, formCount: 0, focusSuits: (roles || {}).P_COLORFOCUS || [] });
 }
 // Crit-Faktor: Basis (CRIT_BASE_MULT 1,5) + Perk-Crit-Mult-Boni (critMultBonus-Hook). #267: der Crit-Mult-Stat ist
 // weg → die Präzision-Familie „Wucht" (familyCritMult) UND Blitz addiert die Engine SEPARAT (nicht hier). Signatur
 // (perks, ctx) bleibt für die Aufrufer stabil. #115: L6 „Raserei" hebt aus dem Crit-Überschuss >100 % den Crit-
-// MULTIPLIKATOR (erwartet `rawCrit` im ctx), gedeckelt auf +1,00× — der zweite Verwerter desselben Überschusses
-// neben Überschlag (der ihn in Ladung wandelt). Beide sind gedeckelt bzw. selbstlimitierend (Crit-Bändigung).
+// MULTIPLIKATOR (erwartet `rawCrit` im ctx), gedeckelt auf +1,00× — neben der Systemregel (overcritMult) der zweite
+// Verwerter desselben Überschusses (exp §7.19: Überschlag ist gestrichen). Beide gedeckelt bzw. klein (Crit-Bändigung).
 export function critMultiplierFor(perks, ctx = {}) {
   let bonus = 0;
   for (const id of perks) { const f = PERK_DEFS[id].critMultBonus; if (f) bonus += f(ctx); }
   return C.CRIT_BASE_MULT + bonus;
 }
 // Anzeige-Helfer: VOLLER Crit-Multiplikator (persistente Terme, wie die Engine) — Perk-Basis + Familien-Wucht + Blitz
-// (lightningCritMult inkl. Donnergott) + Durchschlag + Entladung-Momentum (v0.5). Ohne die situativen Terme (Frostkaskade/
-// Überschlag-Graduierung), die nur im Crit selbst zünden. Geteilt: StatusRail (Crit-Zeile) + ChargeBar (Blitzfrequenz).
-export function totalCritMult(state) {
+// (Gewitterfront-Rampe, Vorentladung) + Systemregel (Überschuss über 100 %). Ohne die situativen Terme
+// (Entladung Episch beim Leisten-Crit), die nur im Crit selbst zünden. Geteilt: StatusRail (Crit-Zeile) + ChargeBar.
+/* Der GEBAUTE Crit-Multiplikator des Builds: die Summe aller dauerhaften Quellen, ohne Deckel. Die Stapel der
+   Siegkarte (`lightIonCritMult`) fehlen hier zwangsläufig — die hängen an der Karte, die gerade gewinnt, nicht am
+   Build. Nur für die „davon verfällt"-Anzeige gedacht. */
+export function totalCritMultRaw(state) {
   const perks = state.perks || [];
-  const lightning = state.lightning;
   const critRaw = totalCritChanceRaw(state);
   return critMultiplierFor(perks, { rawCrit: critRaw }) + familyCritMult(state.familyTiers || {})
-    + (lightning && lightning.active
-        ? lightningCritMult(state.skills || []) + (lightning.durchschlagMult || 0) + (lightning.entladungMult || 0)
-        : 0);
+    + lightningCritMult(state.lightning, state.skills || [], state.skillTiers || {}, critRaw) + overcritMult(critRaw);
 }
+/* Was ein Stich davon WIRKLICH zahlt. §7.39 (Owner-Entscheid B): dieselbe Klemme wie im Motor (engine.js, nach allen
+   Additionen). Vorher gab diese Funktion die ungedeckelte Summe zurück, und Statusleiste wie Ladungsleiste zeigten
+   Werte über dem Deckel an — ein Spieler kaufte also weiter Crit-Multiplikator, von dem laut §7.31 ohnehin 81 %
+   verfällt. Der Überschuss steht jetzt daneben (totalCritMultRaw), statt die Zahl selbst zu verfälschen. */
+export function totalCritMult(state) {
+  return C.softCritMult(totalCritMultRaw(state));
+}
+/* §7.44 (Owner: „die Crit-Chance darf dann auch nicht mehr über 100 % anzeigen"). Die Anzeige-Chance ist der ANTEIL,
+   den ein Wurf treffen kann — dieselbe Klemme wie im Motor (engine.js `Math.min(1, …)`), eine Quelle für beide, damit
+   Motor und Anzeige nicht wieder auseinanderlaufen wie in §7.39. Der Überschuss ist damit nicht verschwunden: er
+   steht als eigener Wert daneben und zahlt über overcritMult in den Multiplikator. */
+export const displayCritChance = (state) => Math.min(1, Math.max(0, totalCritChanceRaw(state)));
+export const critChanceOverPP = (state) => Math.round(Math.max(0, totalCritChanceRaw(state) - 1) * 100);
 // Hat der Build überhaupt ein Crit-Perk? (steuert die UI-Sichtbarkeit der Crit-Anzeigen)
 // V2: Crit-Chance kommt aus Stat/Blitz; D-Perks belohnen Crits über scoreFlatOnCrit; L6 trägt Crit-Chance → alle zählen.
 export function hasCritPerk(perks) {

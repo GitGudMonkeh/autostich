@@ -3,6 +3,10 @@
 //   npm run sim -- --mode explore  --runs 2000 --seed 1    UCB-Explore: Coverage + Stärke-Rangliste je Option
 //   npm run sim -- --mode eval     --runs 300 --explore 1500  Fixed-Policy + paarweise Ablation → Marginalwerte
 //   npm run sim -- --mode pacing   --runs 400                 Score-Verteilung über die 44 Cycles (Early/Mid/Late-Balance)
+//   npm run sim -- --mode duel     --runs 200                 exp: Feuer/Blitz-Welt (ohne Eis/Pflanze) — mono, Split, Mix
+//   npm run sim -- --mode skills   --runs 200 --explore 1200  exp: große Auswertung je Skill und Stufe (Explore → Greedy → Ablation)
+//   npm run sim -- --mode motor    --runs 100                 exp: Motor-Diagnose — Hitze im Lauf (Feuer), Ionisierung und Score-Treiber (Blitz)
+//   npm run sim -- --mode legendaries --runs 150 --explore 600 --at 7   exp: jedes Legendäre in Skill-Phase `at` (Default: die mittlere) bekommen, gepaart gegen den Lauf ohne
 //
 // Bewusst OHNE Zeitstempel im Output → gleicher Seed-Satz erzeugt byte-gleiches JSON (Reproduzierbarkeit, §9).
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -129,4 +133,16 @@ else if (mode === "eval") {
 } else if (mode === "cross") {
   const { runCross } = await import("./cross.js"); // Cross-Archetype: gemischte Builds (2–3 Fraktionen) vs. rein
   runCross({ arg, seed0 });
-} else { console.error(`Unbekannter --mode '${mode}' (baseline|explore|eval|pacing|balance|variety|cross)`); process.exit(1); }
+} else if (mode === "duel") {
+  const { runDuel } = await import("./duel.js"); // exp skill rework: Feuer/Blitz-Welt zum Tarieren
+  runDuel({ arg, seed0 });
+} else if (mode === "skills") {
+  const { runSkillsEval } = await import("./skills-eval.js"); // exp skill rework: je Skill und Stufe, Greedy + Ablation
+  runSkillsEval({ arg, seed0, c, f, write });
+} else if (mode === "motor") {
+  const { runMotor } = await import("./motor.js"); // exp skill rework: Hitze im Lauf (Feuer), Ionisierung und Score-Treiber (Blitz)
+  runMotor({ arg, seed0, write });
+} else if (mode === "legendaries") {
+  const { runLegendaries } = await import("./legendaries.js"); // exp skill rework: jedes Legendäre zur selben Skill-Phase bekommen, gepaart
+  runLegendaries({ arg, seed0, c, f, write });
+} else { console.error(`Unbekannter --mode '${mode}' (baseline|explore|eval|pacing|balance|variety|cross|duel|skills|motor|legendaries)`); process.exit(1); }

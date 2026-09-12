@@ -4,7 +4,6 @@ import { decodeArchetypes } from "../game/skills.js";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { RunDetail } from "./RunDetail.jsx";
 import { fmtScore } from "./format.js";
-import { TOTAL_NODES } from "../game/progression.js"; // #global: Nenner der Baum-Pille (x/27)
 import { formatSeed } from "../game/rng.js"; // #205: Seed der Board-Zeile → SeedChip/Nachspielen in RunDetail
 import { archMeta } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
 import { t } from "../i18n/index.js";
@@ -36,30 +35,6 @@ const toRunEntry = (r) => ({
   treeNodes: r.tree_nodes,
 });
 
-/* #global: Baumstand als Pille — die FÜLLUNG trägt den Anteil, nicht nur die Zahl. Über zwanzig Zeilen
-   liest man daran „viel Baum gegen wenig Baum", ohne zwei Zahlen im Kopf zu vergleichen; das ist der
-   ganze Zweck der Angabe (ein Score ohne Baumstand lässt sich nicht einordnen).
-   Fehlt der Wert, steht bewusst eine GESTRICHELTE „–/27"-Pille da statt nichts: In einer Spalte muss eine
-   Lücke sichtbar bleiben, sonst vergleicht man Zeilen mit ungleicher Grundlage, ohne es zu merken. */
-function TreePill({ value }) {
-  // #241-Falle: PostgREST liefert Zahlenspalten je nach Typ als String → vor dem Rechnen casten.
-  const n = value == null || value === "" ? null : Number(value);
-  const ok = n != null && Number.isFinite(n);
-  const frac = ok && TOTAL_NODES > 0 ? Math.max(0, Math.min(1, n / TOTAL_NODES)) : 0;
-  return (
-    <span className="relative shrink-0 inline-flex items-center rounded-full overflow-hidden px-1.5 leading-none"
-      title={ok ? t("board.tree.title", { done: n, total: TOTAL_NODES }) : t("board.tree.none.title")}
-      style={{ border: `1px ${ok ? "solid" : "dashed"} #3a3a48`, background: ok ? "#15151d" : "transparent" }}>
-      {ok && (
-        <span aria-hidden="true" className="absolute left-0 top-0 bottom-0"
-          style={{ width: `${frac * 100}%`, background: "color-mix(in srgb, var(--deck-a1, #8a7de0) 30%, transparent)" }} />
-      )}
-      <b className="relative ty-num-sm text-micro-4 font-semibold py-[1px]" style={{ color: ok ? "#cfcbe4" : "#4e4e5a" }}>
-        {ok ? `${n}/${TOTAL_NODES}` : `–/${TOTAL_NODES}`}
-      </b>
-    </span>
-  );
-}
 
 /* Globaler Highscore (#14): additiv UNTER dem lokalen Block. Holt Top-N selbst und
    degradiert lautlos — fehlende Config blendet den Block ganz aus, offline/Fehler zeigt
@@ -71,10 +46,8 @@ function TreePill({ value }) {
    framed      — eigener Panel-Rahmen (StartScreen). Ohne: schlichte Sektion (Game-Over).
    board       — §7: gesetzt ('standard'|'meister') → getrenntes Ranglisten-Board (fetchBoardTop) statt des
                  Global-Boards (fetchGlobalTop, alle CASUAL-Läufe — Ranglisten-Zeilen filtert die Abfrage weg).
-   showTree    — #global: Baum-Pille je Zeile. NUR im Global-Board sinnvoll: Ranglisten-Läufe fahren auf fixer
-                 Baseline, dort ist der Baum wirkungslos und die Pille behauptete einen Vorteil, den es in
-                 dieser Zeile nicht gab. */
-export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, framed = false, board = null, seed = null, hideHeader = false, onPlaySeed = null, showTree = false }) {
+   exp: die Baum-Pille (showTree) ist mit der Meta-Progression gegangen. */
+export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, framed = false, board = null, seed = null, hideHeader = false, onPlaySeed = null }) {
   const [rows, setRows] = useState(null);   // null = lädt · [] = leer · [...] = Daten
   const [error, setError] = useState(false);
   const [detail, setDetail] = useState(null); // #169 FB-8: gewählte Zeile → RunDetail-Overlay
@@ -183,7 +156,6 @@ export function GlobalLeaderboard({ limit = 10, mine = null, reloadToken = 0, fr
                         {icons.map((m, k) => <FactionIcon key={k} type={m.key} size={12} title={m.label} />)}
                       </span>
                     )}
-                    {showTree && <TreePill value={r.tree_nodes} />}
                     <span className="ty-num-sm text-meta-1 opacity-40 truncate">{t("board.row.cycle", { n: r.cycles ?? 0 })}</span>
                   </span>
                 </span>

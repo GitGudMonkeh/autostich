@@ -67,13 +67,15 @@ describe("Gletscher-Wahl wird nur mit gültigem Ziel betreten (F-09)", () => {
   });
 
   it("gesperrte Felder allein reichen nicht als „frei“ (blockForm zählt mit)", () => {
-    // Alle bis auf EIN gesperrtes Feld sind gefroren → es gibt kein gültiges Ziel.
-    const locked = Array.from({ length: N }, (_, i) => i !== 7);
-    const s = reducer(base({ glacierLocked: locked, challengeBlockForm: [7] }),
+    // Ein Feld ist gefroren, ALLE anderen sind gesperrt → es gibt kein gültiges Ziel.
+    // (§5.5: die Gletscherzahl ist gedeckelt, der Aufbau bleibt deshalb unter dem Deckel.)
+    const locked = Array.from({ length: N }, (_, i) => i === 0);
+    const blockedAll = Array.from({ length: N - 1 }, (_, i) => i + 1);
+    const s = reducer(base({ glacierLocked: locked, challengeBlockForm: blockedAll }),
       { type: "PICK_SKILL", skillId: iceSkill, rng: makeRng(2) });
     expect(s.phase).toBe("play");
-    // Gegenprobe: dasselbe Feld NICHT gesperrt → Phase wird betreten.
-    const s2 = reducer(base({ glacierLocked: locked, challengeBlockForm: [] }),
+    // Gegenprobe: ein einziges Feld NICHT gesperrt → Phase wird betreten.
+    const s2 = reducer(base({ glacierLocked: locked, challengeBlockForm: blockedAll.filter((p) => p !== 7) }),
       { type: "PICK_SKILL", skillId: iceSkill, rng: makeRng(2) });
     expect(s2.phase).toBe("glacier-target");
   });

@@ -1,7 +1,9 @@
 import { describe, it, expect, beforeEach, afterAll } from "vitest";
 import { formationBorder } from "../src/ui/formationStyle.js";
 import { formationLabel, formationAbbr, formationTypes } from "../src/ui/formationLabels.js";
-import { setLocale, DEFAULT_LOCALE } from "../src/i18n/index.js";
+import { setLocale, DEFAULT_LOCALE, READY_LOCALE_IDS } from "../src/i18n/index.js";
+// exp: English is inactive on the playground (LOCALES in index.js) — the English render-checks sleep until it is ready again.
+const EN_OFF = !READY_LOCALE_IDS.includes("en");
 
 // Rahmen-Helfer (Issue #95): Farbe = Anzahl Formations-Mitgliedschaften (1 grün · 2 blau · 3 lila · 4 gold),
 // Stil = gestrichelt nur ohne wirksamen Multiplikator. Durch den Überlappungsbonus (#95) hat jede Karte
@@ -54,7 +56,7 @@ describe("formationLabels (#147: eine Quelle für alle Formations-Anzeigen)", ()
     expect(formationAbbr("nachhall")).toBe("N");
     expect(formationAbbr("formationskern")).toBe("K");
   });
-  it("dieselben Typen auf Englisch (Übersetzerpaket §3.3)", () => {
+  it.skipIf(EN_OFF)("dieselben Typen auf Englisch (Übersetzerpaket §3.3)", () => {
     setLocale("en");
     expect(formationLabel("nachhall")).toBe("Echo");
     expect(formationLabel("formationskern")).toBe("Core");

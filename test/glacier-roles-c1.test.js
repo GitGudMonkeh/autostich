@@ -3,19 +3,21 @@ import { resolveTrick } from "../src/game/engine.js";
 import { initialState } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
 import {
-  neighbors4, neighbors8, glacierClusters, verschmelzenPool, packeisTick, verzahnungTick, glacierNeighborFn,
-  ROLES, PACKEIS_PER_NEIGHBOR, VERZAHNUNG_PER, EWIGER_FROST,
+  neighbors4, neighbors8, glacierClusters, packeisTick, verzahnungTick, ROLES, EWIGER_FROST,
+  PACKEIS_RADIUS as R, PACKEIS_RADIUS_BRIDGE as R_BRIDGE,
 } from "../src/game/glacier.js";
+import { iceNeighborFn, icePackeisRadius } from "../src/game/factions/ice.js";
+import { EIS_TIERS as EIS } from "../src/game/skills.js"; // §5.3: die Zahlen stehen in der Stufenleiter (Normal = Zeile 0)
+const PACKEIS_PER_NEIGHBOR = EIS.packeis[0].per, VERZAHNUNG_PER = EIS.verzahnung[0].per;
 import { posOf } from "../src/game/architect.js";
 
-// Eis-Neudesign Phase 3.2 Gruppe C1 — Cluster/Dichte (Packeis/Verschmelzen/Verzahnung) + Eisbrücke-Adjazenz.
+// Eis-Neudesign Phase 3.2 Gruppe C1 — Cluster/Dichte (Packeis/Verzahnung) + Eisbrücke-Adjazenz. §5.2: Verschmelzen gestrichen.
 const identity = () => Array.from({ length: 40 }, (_, i) => i);
 const flat = () => Array.from({ length: 40 }, (_, i) => ({ id: `F${i}`, suit: i % 2 ? "B" : "R", baseRank: i % 2 ? 11 : 12, value: i % 2 ? 11 : 12 }));
 const oppOf = (v) => Array.from({ length: 40 }, (_, i) => ({ id: `O${i}`, suit: "R", baseRank: v, value: v }));
 const zeros = () => new Array(40).fill(0);
 const falses = () => new Array(40).fill(false);
 const lockAt = (...ps) => { const l = falses(); for (const p of ps) l[p] = true; return l; };
-const withMass = (pairs) => { const m = zeros(); for (const [p, v] of pairs) m[p] = v; return m; };
 const noCrit = () => 0.99;
 const scen = (over = {}) => ({
   ...initialState(makeRng(1)),
@@ -35,48 +37,59 @@ describe("Nachbarschaft & Cluster", () => {
     expect(glacierClusters(lockAt(0, posOf(1, 1)), neighbors4)).toHaveLength(2); // diagonal getrennt
     expect(glacierClusters(lockAt(0, posOf(1, 1)), neighbors8)).toHaveLength(1); // diagonal verbunden
   });
-  it("glacierNeighborFn: Eisbrücke → 8er, sonst 4er", () => {
-    expect(glacierNeighborFn([])).toBe(neighbors4);
-    expect(glacierNeighborFn([ROLES.EISBRUECKE])).toBe(neighbors8);
+  it("iceNeighborFn: Eisbrücke → 8er, sonst 4er", () => {
+    expect(iceNeighborFn([])).toBe(neighbors4);
+    expect(iceNeighborFn([ROLES.EISBRUECKE])).toBe(neighbors8);
   });
 });
 
-describe("Verschmelzen — auf Cluster-Durchschnitt heben (nie fallend)", () => {
-  it("hebt das niedrige Feld auf den Schnitt, lässt das hohe unberührt", () => {
-    const out = verschmelzenPool(withMass([[0, 0], [1, 8]]), lockAt(0, 1), neighbors4);
-    expect(out[0]).toBe(4); // Schnitt (0+8)/2
-    expect(out[1]).toBe(8); // nie fallend
+/* §5.31 (Owner): Packeis hat die Seite gewechselt — es zählt die OFFENEN Nachbarn, nicht die gefrorenen. Es war der
+   reinste Mono-Skill der Fraktion (+24 % mono, −8 %/−8 % im Mix); jetzt ist es die zweite Masse-Quelle eines dünn
+   gebauten Eis-Anteils. Die Wächter halten die Umkehr fest, damit sie nicht versehentlich zurückkippt. */
+describe("Packeis — Masse je offenem Feld im Umkreis", () => {
+  it("WENIGER Gletscher in Reichweite → mehr Masse", () => {
+    const allein = packeisTick(zeros(), lockAt(0), R, PACKEIS_PER_NEIGHBOR);
+    const zuZweit = packeisTick(zeros(), lockAt(0, 1), R, PACKEIS_PER_NEIGHBOR);
+    expect(allein[0]).toBe(8 * PACKEIS_PER_NEIGHBOR);   // Ecke pos0, Umkreis 2: Zeilen 0-2 × Spalten 0-2 minus sich selbst
+    expect(zuZweit[0]).toBe(7 * PACKEIS_PER_NEIGHBOR);  // eines davon ist jetzt Eis
+    expect(zuZweit[0]).toBeLessThan(allein[0]);
   });
-  it("Engine: gepoolter Nachbar bricht, der sonst unter der Schwelle bliebe", () => {
-    const glacierLocked = lockAt(0, 1); const glacierMass = withMass([[1, 24]]); // pos0=0, pos1=24 → Pool-Schnitt 12
-    const base = resolveTrick(scen({ glacierLocked, glacierMass }), noCrit);
-    const versch = resolveTrick(scen({ glacierLocked, glacierMass, glacierRoles: [ROLES.VERSCHMELZEN] }), noCrit);
-    expect(base.lastTrick.breakdown?.glacierDirect ?? 0).toBe(0);           // pos0 Masse 0 → kein Bruch
-    expect(versch.lastTrick.breakdown.glacierDirect).toBeGreaterThan(0);    // gepoolt auf 4 → bricht
+  /* Owner-Runde 2026-09-12: „voll umschlossen zahlt gar nichts" war die alte Zusicherung und ist AUFGEHOBEN —
+     genau darin bestand der Deckel, der Packeis zum Schlusslicht machte (ein Gletscher grenzt an höchstens vier
+     Felder, also stand sein Einkommen bei zwölf geballten Gletschern auf demselben Wert wie bei sechs). Die
+     Umkehr aus §5.31 gilt weiter und wird hier weiter gehalten, nur als Verhältnis statt als Null. */
+  it("dicht gebaut zahlt weniger als allein, aber nicht mehr null", () => {
+    const mid = posOf(1, 1);
+    const allein = packeisTick(zeros(), lockAt(mid), R, PACKEIS_PER_NEIGHBOR);
+    const dicht = packeisTick(zeros(), lockAt(mid, posOf(0, 1), posOf(2, 1), posOf(1, 0), posOf(1, 2)), R, PACKEIS_PER_NEIGHBOR);
+    expect(allein[mid]).toBe(15 * PACKEIS_PER_NEIGHBOR);       // Umkreis 2 um (1,1): 4×4 Felder minus sich selbst
+    expect(dicht[mid]).toBe(11 * PACKEIS_PER_NEIGHBOR);        // vier davon sind jetzt Eis
+    expect(dicht[mid]).toBeLessThan(allein[mid]);
+    expect(dicht[mid]).toBeGreaterThan(0);
   });
-});
-
-describe("Packeis — Dichte-Bonus je Nachbar", () => {
-  it("mehr Gletscher-Nachbarn → mehr Masse", () => {
-    const out = packeisTick(zeros(), lockAt(0, 1), neighbors4);
-    expect(out[0]).toBe(PACKEIS_PER_NEIGHBOR);   // 1 Nachbar
-  });
-  it("Eisbrücke zählt Diagonalen (pos0 & pos(1,1))", () => {
-    const ortho = packeisTick(zeros(), lockAt(0, posOf(1, 1)), neighbors4);
-    const bridge = packeisTick(zeros(), lockAt(0, posOf(1, 1)), neighbors8);
-    expect(ortho[0]).toBe(0);                     // diagonal zählt ohne Eisbrücke nicht
-    expect(bridge[0]).toBe(PACKEIS_PER_NEIGHBOR); // mit Eisbrücke schon
+  it("Eisbrücke schiebt den Umkreis eine Stufe weiter (Ecke pos0: 8 → 15 Felder)", () => {
+    expect(icePackeisRadius([])).toBe(R);
+    expect(icePackeisRadius([ROLES.EISBRUECKE])).toBe(R_BRIDGE);
+    const ortho = packeisTick(zeros(), lockAt(0), icePackeisRadius([]), PACKEIS_PER_NEIGHBOR);
+    const bridge = packeisTick(zeros(), lockAt(0), icePackeisRadius([ROLES.EISBRUECKE]), PACKEIS_PER_NEIGHBOR);
+    expect(ortho[0]).toBe(8 * PACKEIS_PER_NEIGHBOR);
+    expect(bridge[0]).toBe(15 * PACKEIS_PER_NEIGHBOR);
   });
   it("Engine: Packeis lädt am Durchlauf-Ende zusätzlich zu Ewiger Frost", () => {
-    const s = runCycle(scen({ glacierLocked: lockAt(0, 1), glacierRoles: [ROLES.PACKEIS], oppDeck: oppOf(99) }));
-    expect(s.glacierMass[0]).toBe(EWIGER_FROST + PACKEIS_PER_NEIGHBOR);
+    /* §8: die absolute Masse enthält jetzt auch die Boden-Abgabe (Zug). Gemessen wird deshalb der UNTERSCHIED
+       zwischen Lauf mit und ohne die Rolle — das ist genau, was der Wächter benennt, und er hält auch dann,
+       wenn am Einkommen weiter geschraubt wird. */
+    const bau = (roles) => runCycle(scen({ glacierLocked: lockAt(0, 1), glacierRoles: roles, oppDeck: oppOf(99) }));
+    const mit = bau([ROLES.PACKEIS]), ohne = bau([]);
+    expect(mit.glacierMass[0] - ohne.glacierMass[0]).toBeCloseTo(7 * PACKEIS_PER_NEIGHBOR, 6); // Ecke pos0 mit Eis auf pos1: 7 offene Felder im Umkreis 2
+    expect(ohne.glacierMass[0]).toBeGreaterThan(EWIGER_FROST); // ohne Rolle trägt der Boden bereits
   });
 });
 
 describe("Verzahnung — Cluster-Größe skaliert", () => {
   it("größeres Cluster → mehr Masse je Gletscher", () => {
-    const small = verzahnungTick(zeros(), lockAt(0), neighbors4);          // Cluster-Größe 1
-    const big = verzahnungTick(zeros(), lockAt(0, 1, 2), neighbors4);      // Cluster-Größe 3 (pos0-1-2 in Zeile 0)
+    const small = verzahnungTick(zeros(), lockAt(0), neighbors4, VERZAHNUNG_PER);          // Cluster-Größe 1
+    const big = verzahnungTick(zeros(), lockAt(0, 1, 2), neighbors4, VERZAHNUNG_PER);      // Cluster-Größe 3 (pos0-1-2 in Zeile 0)
     expect(small[0]).toBe(VERZAHNUNG_PER * 1);
     expect(big[0]).toBe(VERZAHNUNG_PER * 3);
     expect(big[0]).toBeGreaterThan(small[0]);

@@ -18,9 +18,9 @@
    E3 Treppe darf 1× gleich · E4 Treppe darf 1× Rückschritt · E5 Wechsel schon ab 2 Karten ·
    E6 Karte in zwei Treppen · E7/E8 Anker · E9 Formationen über Segmentgrenzen.
    ============================================================ */
-import { ANCHOR_FORM_FACTOR, FORMATION_CORE_FACTOR,
-  UEBERWUCHERUNG_FIELD, UEBERWUCHERUNG_FACTOR, EWIGER_FRUEHLING_FARBBLOCK, EWIGER_FRUEHLING_FIELD, PLANT_GREEN_FARBBLOCK_CAP } from "./constants.js";
-import { hasEwigerFruehling, hasUeberwucherung, greenCount } from "./skills.js";
+import { ANCHOR_FORM_FACTOR, FORMATION_CORE_FACTOR, PLANT_GREEN_FARBBLOCK_CAP,
+  BAUMREIHE_FACTOR_SCALE, WURZELGEFLECHT_FACTOR_SCALE } from "./constants.js";
+import { P, plantParam, hasBaumreihe, hasWurzelgeflecht } from "./factions/plant.js";
 import { activeFamilyEntries, familyTierParam, allianceGroups } from "./families.js";
 import { architectFormSpec } from "./architect.js";
 
@@ -38,6 +38,41 @@ export function openSegmentInfo(familyTiers) {
   const all = count === Infinity;
   return { active: count > 0, all, count, isOpen: (g) => all || (g >= 0 && g < count) };
 }
+/* Spalier (Pflanze-Hebel, §6.8): die `borders` Segmentgrenzen mit den meisten grünen Karten daneben sind offen —
+   Läufe wachsen dort über das Segment hinaus. „Daneben" sind die zwei Karten links und rechts der Grenze; eine
+   Grenze ohne grünen Nachbarn öffnet nie. Bei Gleichstand die kleinere Grenznummer (Determinismus §9).
+   `cards` = die Karten in Ziehreihenfolge. Wie openSegmentInfo EINE Quelle für Engine und UI: die Aufstellphase
+   und die Chronik zeigen dieselben Grenzen, die computeFormations öffnet. Leeres Set ohne den Skill. */
+export function spalierOpenBorders(cards = [], skills = [], skillTiers = {}) {
+  const out = new Set();
+  const need = plantParam(skills, skillTiers, P.SPALIER, "borders");
+  if (!need) return out;
+  const cand = [];
+  for (let g = 0; (g + 1) * SEGMENT_SIZE < cards.length; g++) {
+    const a = (g + 1) * SEGMENT_SIZE - 1;
+    const greens = (cards[a]?.green ? 1 : 0) + (cards[a + 1]?.green ? 1 : 0);
+    if (greens > 0) cand.push({ g, greens });
+  }
+  cand.sort((x, y) => (y.greens - x.greens) || (x.g - y.g));
+  for (const e of cand.slice(0, need)) out.add(e.g);
+  return out;
+}
+
+/* Alle offenen Segmentgrenzen einer Aufstellung, für die Anzeige: E_SEGMENT (Werkzeug) plus Spalier (Pflanze).
+   Gleiche Form wie openSegmentInfo, damit CardGrid unverändert bleibt; `spalier` bleibt daneben stehen, damit die
+   UI sagen kann, WOHER eine Grenze offen ist. */
+export function openBorderInfo(order = [], deck = [], skills = [], skillTiers = {}, familyTiers = {}) {
+  const seg = openSegmentInfo(familyTiers);
+  const spalier = spalierOpenBorders(order.map((di) => deck[di]), skills, skillTiers);
+  return {
+    active: seg.active || spalier.size > 0,
+    all: seg.all,
+    count: seg.all ? Infinity : seg.count + spalier.size,
+    isOpen: (g) => seg.isOpen(g) || spalier.has(g),
+    spalier,
+  };
+}
+
 export const WECHSEL_MIN_DIFF = 4;   // [Balance: 5→4 — Wechsel eine Stufe leichter, kleinerer Nachbarabstand reicht] — natürlicher Default (Shop „Enger Wechsel" senkt ihn)
 export const MAX_TREPPE_STEP = 4;   // [Balance: 3→4 — Treppe eine Stufe leichter, größerer Schritt je Nachbarpaar erlaubt]
 // Die vier Basis-Formationstypen (ohne Anker) — Zielauswahl F-L1 Formationskern + Anzeige-Labels.
@@ -76,12 +111,17 @@ export const FARBBLOCK_BASE = 1.35, TREPPE_BASE = 1.35, WECHSEL_BASE = 1.40; // 
 // erste REALE Karte des Laufs verglichen (`anchor`), nie gegen den Joker; ein Lauf zählt nur mit ≥1 realer Karte.
 // `gap` = { run, seg }: erlaubte fremde Karten je LAUF bzw. je SEGMENT (E_PACE Wiederholung / E_COLORBRIDGE Farbblock,
 // Rarität #167). {0,0} = keine Überbrückung. Infinity = unbegrenzt (Stufe IV: fremde Karte zählt nicht, unterbricht nicht).
+// `gap` darf auch eine FUNKTION der Startposition sein (Pflanze-Lücke, §6.8: nur grüne Läufe dürfen überspringen);
+// `minMembers` ebenso eine Funktion der Mitglieder (Pflanze-Überwucherung: grüne Läufe entstehen kürzer).
+// `onRun(members, skipped)` meldet die Mitglieder UND die übersprungenen Positionen (Lücke Episch lässt sie wachsen).
 function markRuns(n, minMembers, matches, gap, canExtendSeg, assign, transparent = () => false, onRunEnd = null, isJoker = () => false, onRun = null) {
   const segGaps = {};
   let i = 0;
   while (i < n) {
     if (transparent(i)) { i++; continue; }        // transparente Karte startet keinen eigenen Lauf
     const members = [i];
+    const gp = typeof gap === "function" ? gap(i) : gap;
+    const skipped = [];
     let j = i, gapsRun = 0;
     let anchor = isJoker(i) ? -1 : i;             // Vergleichsanker = erste reale Karte (-1 = bisher nur Joker)
     const memberMatch = (k) => isJoker(k) || anchor === -1 || matches(anchor, k); // Joker passt immer; ohne Anker passt alles
@@ -91,15 +131,16 @@ function markRuns(n, minMembers, matches, gap, canExtendSeg, assign, transparent
       if (memberMatch(j + 1)) { j++; members.push(j); noteReal(j); }
       else {
         const seg = Math.floor((j + 1) / SEGMENT_SIZE);
-        if (gapsRun < gap.run && (segGaps[seg] || 0) < gap.seg && j + 2 < n && canExtendSeg(j + 1) && !transparent(j + 2) && memberMatch(j + 2)) {
-          gapsRun++; segGaps[seg] = (segGaps[seg] || 0) + 1; j += 2; members.push(j); noteReal(j); // fremde Karte an j+1 überspringen
+        if (gapsRun < gp.run && (segGaps[seg] || 0) < gp.seg && j + 2 < n && canExtendSeg(j + 1) && !transparent(j + 2) && memberMatch(j + 2)) {
+          gapsRun++; segGaps[seg] = (segGaps[seg] || 0) + 1; skipped.push(j + 1); j += 2; members.push(j); noteReal(j); // fremde Karte an j+1 überspringen
         } else break;
       }
     }
-    if (members.length >= minMembers && anchor !== -1) { // Joker erzeugen allein keine Formation
+    const need = typeof minMembers === "function" ? minMembers(members) : minMembers;
+    if (members.length >= need && anchor !== -1) { // Joker erzeugen allein keine Formation
       members.forEach((pos, idx) => assign(pos, idx + 1));
       if (onRunEnd) onRunEnd(members[members.length - 1], members.length); // F6 Nachhall: letztes Mitglied + Ordinal
-      if (onRun) onRun(members); // #179 E_SEGMENT IV: Lauf-Mitglieder für den Grenz-Bonus melden
+      if (onRun) onRun(members, skipped); // #179 E_SEGMENT IV: Lauf-Mitglieder für den Grenz-Bonus melden
     }
     i = j + 1;
   }
@@ -116,7 +157,7 @@ function markRuns(n, minMembers, matches, gap, canExtendSeg, assign, transparent
 // Alles 0 = klassische strenge Treppe. Infinity = unbegrenzt (Stufe IV — §10-Näherung: „gleich = +1 Schritt" bzw.
 // „Richtung einmal wechseln" als unbegrenzte Gleichstände/Rückschritte).
 // #195: nur aufsteigende Treppen (dir war fest 1 — der Abstieg-Aufruf ist längst entfernt; der tote dir=-1-Zweig raus).
-function markTreppe(n, val, bind, e, canExtendSeg, assign, onRunEnd = null, isJoker = () => false, onRun = null) {
+function markTreppe(n, val, bind, e, canExtendSeg, assign, onRunEnd = null, isJoker = () => false, onRun = null, minLen = 3) {
   const segEq = {}, segRev = {}, segDreh = {};
   let i = 0;
   while (i < n) {
@@ -141,7 +182,7 @@ function markTreppe(n, val, bind, e, canExtendSeg, assign, onRunEnd = null, isJo
         revUsed++; segRev[seg] = (segRev[seg] || 0) + 1; j = jj; members.push(j); prev = v; pb = b; hasReal = true;
       } else break;
     }
-    if (members.length >= 3 && hasReal) {                  // Joker allein bilden keine Treppe
+    if (members.length >= (typeof minLen === "function" ? minLen(members) : minLen) && hasReal) { // Joker allein bilden keine Treppe
       members.forEach((pos, idx) => assign(pos, idx + 1));
       if (onRunEnd) onRunEnd(members[members.length - 1], members.length); // F6 Nachhall
       if (onRun) onRun(members); // #179 E_SEGMENT IV: Grenz-Bonus
@@ -182,25 +223,32 @@ function markWechsel(val, valSets, n, minLen, canExtendSeg, assign, minDiff = WE
       curVal = pick.val; prevDir = pick.dir; j = jj;
       if (!isJoker(jj)) reals++;
     }
-    if (j - i + 1 >= minLen && reals >= 1) { // Joker allein bilden keinen Wechsel
+    const mem = []; for (let k = i; k <= j; k++) mem.push(k);
+    if (mem.length >= (typeof minLen === "function" ? minLen(mem) : minLen) && reals >= 1) { // Joker allein bilden keinen Wechsel
       for (let k = i; k <= j; k++) assign(k, k - i + 1);
       if (onRunEnd) onRunEnd(j, j - i + 1); // F6 Nachhall: letztes Mitglied j + Ordinal
-      if (onRun) { const mem = []; for (let k = i; k <= j; k++) mem.push(k); onRun(mem); } // #179 E_SEGMENT IV: Grenz-Bonus
+      if (onRun) onRun(mem); // #179 E_SEGMENT IV: Grenz-Bonus
     }
     // Gleichgerichteter großer Schritt (rohe Werte) → diese Karte kann neu beginnen.
     i = (j < n - 1 && j > i && Math.abs(val[j + 1] - val[j]) >= minDiff && canExtendSeg(j)) ? j : j + 1;
   }
 }
 
-/* Berechnet für jede Position { mult, formations: [{ type, ordinal, factor }] }.
+/* Berechnet für jede Position { mult, formations: [{ type, ordinal, factor, members? }] } — `members` = die Positionen des
+   Laufs (nur echte Formationen: Wiederholung, Farbblock, Treppe, Wechsel; Anker, Grenzbonus, Nachhall, Kern haben keine).
    `order` = Ziehreihenfolge, `deck` = Karten, `roles` = Kartenrollen (Familien C_JOKER/C_BRIDGE unter familyId,
    plus L-Rollen; #179 zusätzlich E_COLOR_ALLIANCE = gewählte Farben, E_CORE = [gewählter Formationstyp]),
    `familyTiers` = Familienrang je Familie (#167, u. a. E-Formationswerkzeuge). `perks` wird nicht mehr gelesen
    (E1–E9 sind zu Familien migriert) — Parameter bleibt für die Aufrufer-Signatur. Der frühere `pe`-Parameter
    (shop.permanentEffects) entfiel #179 vollständig: Formations-Regeln laufen jetzt ausschließlich über familyTiers/roles. */
-export function computeFormations(order, deck, roles = {}, _perks = [], skills = [], anchors = [], familyTiers = {}, architect = null) {
+export function computeFormations(order, deck, roles = {}, _perks = [], skills = [], anchors = [], familyTiers = {}, architect = null, plant = null) {
   const n = order.length;
   const cards = order.map((di) => deck[di]);
+  // Pflanze (§6.7): die vier Hebel und zwei Legendäre ändern die ERKENNUNG. `plant` = { skillTiers, growth } — die
+  // Stufe je Skill und das Wachstum je Karte (Wildwuchs braucht die Rangfolge). Ohne das Bündel
+  // (Aufrufer ohne Pflanze, Tests) rechnet alles wie vorher.
+  const pTiers = plant?.skillTiers || {};
+  const pGrowth = plant?.growth || {};
   // ---- Architekt (#202, Shop-Ersatz): formation-Gebäude biegen die Erkennung für abgedeckte Positionen (Joker /
   //      Farbblock-Transparenz / Bindeglied / Segmentgrenze / Anker / Formations-Mult). null = kein Architekt aktiv. ----
   const af = architect ? architectFormSpec(architect, order, deck) : null;
@@ -254,7 +302,9 @@ export function computeFormations(order, deck, roles = {}, _perks = [], skills =
   // ersten 1/2 Grenzen deterministisch von vorne, III/IV alle. EINE Quelle mit der UI: openSegmentInfo (s. o.).
   // Grenze NACH Position k existiert nur, wenn (k+1)%SEGMENT_SIZE===0; ihr 0-basierter Grenz-Index ist (k+1)/SIZE−1.
   const segInfo = openSegmentInfo(familyTiers);
+  const spalierBorders = spalierOpenBorders(cards, skills, pTiers);
   const canExtendSeg = (k) => ((k + 1) % SEGMENT_SIZE !== 0) || segInfo.isOpen((k + 1) / SEGMENT_SIZE - 1)
+    || spalierBorders.has((k + 1) / SEGMENT_SIZE - 1) // Pflanze Spalier: grün gesäumte Grenze offen
     || (af && af.crossSeg.has(Math.floor(k / SEGMENT_SIZE))); // Architekt Pfeiler: Segmentgrenze der berührten Zeile offen
   // #179 E_SEGMENT IV Grenz-Bonus: Karten in einer Formation, die eine (frühere) Segmentgrenze überschreitet,
   // geben zusätzlich ×crossBonus. noteCross sammelt die Mitglieds-Positionen kreuzender Läufe (nur aktiv bei Stufe IV).
@@ -268,17 +318,35 @@ export function computeFormations(order, deck, roles = {}, _perks = [], skills =
   const jokerFor = (type) => { const s = new Set(); for (const a of anchors || []) if (a.type === "joker" && a.position < n && (a.jokerTypes || []).includes(type)) s.add(a.position); return s; };
   const jokerWied = jokerFor("wiederholung"), jokerTreppe = jokerFor("treppe"), jokerFarbblock = jokerFor("farbblock"), jokerWechsel = jokerFor("wechsel");
   // Architekt-Joker (Klammer/Prisma/Fries/Gewölbe/Basilika) unionieren mit den Anker-Jokern je Typ.
-  const isJW = (k) => jokerWied.has(k) || !!(af && af.jokerW.has(k)),
-        isJT = (k) => jokerTreppe.has(k) || !!(af && af.jokerT.has(k)),
-        isJF = (k) => jokerFarbblock.has(k) || !!(af && af.jokerF.has(k)),
-        isJX = (k) => jokerWechsel.has(k) || !!(af && af.jokerX.has(k));
+  /* Wildwuchs (Pflanze-Hebel, §6.8): die `jokers` am weitesten gewachsenen BLÜHENDEN Karten passen bei der Erkennung
+     auf jeden Wert und jede Farbe — für alle vier Formationstypen. Rangfolge nach Wachstum, bei Gleichstand die
+     kleinere Position (Determinismus §9); Episch (Infinity) nimmt alle blühenden Karten. */
+  const wildJokers = new Set();
+  const wildN = plantParam(skills, pTiers, P.WILDWUCHS, "jokers");
+  if (wildN) {
+    const blooms = [];
+    for (let k = 0; k < n; k++) if (cards[k].bloom) blooms.push(k);
+    blooms.sort((a, b) => ((pGrowth[cards[b].id] || 0) - (pGrowth[cards[a].id] || 0)) || (a - b));
+    for (const k of (Number.isFinite(wildN) ? blooms.slice(0, wildN) : blooms)) wildJokers.add(k);
+  }
+  const isJW = (k) => jokerWied.has(k) || wildJokers.has(k) || !!(af && af.jokerW.has(k)),
+        isJT = (k) => jokerTreppe.has(k) || wildJokers.has(k) || !!(af && af.jokerT.has(k)),
+        isJF = (k) => jokerFarbblock.has(k) || wildJokers.has(k) || !!(af && af.jokerF.has(k)),
+        isJX = (k) => jokerWechsel.has(k) || wildJokers.has(k) || !!(af && af.jokerX.has(k));
+  /* (§6.26: Überwucherung ist mit der Verwachsung gestrichen — ihr Tor „ab `field` grünem Feld" lag hinter dem Ziel:
+     wer 80 % grün hat, bekommt Formationen ohnehin. Die Mindestlängen sind damit wieder für alle gleich; die
+     Verwachsung greift stattdessen den Überlappungsbonus an, unten am Faktor-Produkt.) */
+  const minFor = (base) => base;
 
   const out = Array.from({ length: n }, () => ({ mult: 1, baseMult: 1, afterglowFactor: 1, coreFactor: 1, formations: [] }));
   const add = (pos, type, ordinal, factor) => {
     if (factor > 1) out[pos].mult *= factor;
     out[pos].formations.push({ type, ordinal, factor });
   };
-  const onRunJoker = () => (mem) => { if (noteCross) noteCross(mem); };
+  // Mitglieder je Lauf auf jedem Eintrag ablegen (Resonanz, Blitz-Legendär §7.25: die Karten einer Formation teilen ihre
+  // Stapel). Ein Eintrag je Typ und Lauf — bei zwei Treppen (E_RPM) bekommt der zweite Eintrag den zweiten Lauf.
+  const noteMembers = (type, mem) => { for (const p of mem) { const fe = out[p].formations.find((f) => f.type === type && !f.members); if (fe) fe.members = mem; } };
+  const onRunJoker = (type) => (mem) => { if (noteCross) noteCross(mem); noteMembers(type, mem); };
   // F6 Nachhall: bester (höchster) Endfaktor je Endposition eines Basislaufs (Wiederholung/Farbblock/Treppe/Wechsel).
   // Der Empfänger ist die direkt folgende Karte; Anker zählen NICHT als Ursprung.
   const endBest = {}; // pos(letztes Mitglied) → { factor, type }
@@ -290,7 +358,7 @@ export function computeFormations(order, deck, roles = {}, _perks = [], skills =
   const valSetWied = val.map((v) => new Set([v]));
   const matchWied = (a, b) => [...valSetWied[a]].some((v) => valSetWied[b].has(v));
   const wiedFactor = (ord) => wiederholungFactor(ord, repBonus, repThird, repMult);
-  markRuns(n, 2, matchWied, wiedGap, canExtendSeg,
+  markRuns(n, minFor(2), matchWied, wiedGap, canExtendSeg,
     (pos, ord) => add(pos, "wiederholung", ord, wiedFactor(ord)), () => false,
     (last, ord) => recordEnd(last, "wiederholung", wiedFactor(ord)), isJW, onRunJoker("wiederholung"));
 
@@ -298,30 +366,29 @@ export function computeFormations(order, deck, roles = {}, _perks = [], skills =
   // eingefrorene Karten transparent (kein Mitglied).
   const matchSuit = (a, b) => famJokerFree.has(cards[a].id) || famJokerFree.has(cards[b].id) || effSuit[a] === effSuit[b];
   const farbSkip = (k) => !!(af && af.transparentFarb.has(k)); // Architekt Arkade: abgedeckte Karte unterbricht den Farbblock nicht (transparent)
-  // Pflanze (v0): Ewiger Frühling zählt Farbblock schon ab 2 Karten; Überwucherung (Feld genug grün) → alle Farbblöcke +0,20.
-  const farbMin = hasEwigerFruehling(skills) ? EWIGER_FRUEHLING_FARBBLOCK : 3;
-  const greenField = n > 0 ? greenCount(cards) / n : 0;
-  const uebThresh = hasEwigerFruehling(skills) ? EWIGER_FRUEHLING_FIELD : UEBERWUCHERUNG_FIELD;
-  // #292: Farballianz IV hebt den Farbblock-Startfaktor (farbblockBonus, +0,20) — stapelt mit Überwucherung (Pflanze).
-  const farbBase = FARBBLOCK_BASE + (hasUeberwucherung(skills) && greenField >= uebThresh ? UEBERWUCHERUNG_FACTOR : 0)
-    + (eP("E_COLOR_ALLIANCE", "farbblockBonus", 0) || 0);
-  // Grün-Farbblock-Cap (v0.3): grüne (card.green) Karten deckeln ihre Ordinalzahl → ein voll-grünes Feld gibt keinen ×8-Riesenblock mehr.
-  const farbFactor = (pos, ord) => escalatingFactor(cards[pos].green ? Math.min(ord, PLANT_GREEN_FARBBLOCK_CAP) : ord, farbBase);
+  // #292: Farballianz IV hebt den Farbblock-Startfaktor (farbblockBonus, +0,20).
+  const farbBase = FARBBLOCK_BASE + (eP("E_COLOR_ALLIANCE", "farbblockBonus", 0) || 0);
+  /* Grün-Farbblock-Cap (v0.3): grüne (card.green) Karten deckeln ihre Ordinalzahl → ein voll-grünes Feld gibt keinen
+     ×8-Riesenblock mehr. Dickicht (Pflanze, §6.26) HEBT diesen Deckel auf seine Stufe — nie darunter, damit ein
+     gehaltener Skill den Faktor niemals senkt. Aufgehoben wird er nicht: der Runaway-Schutz bleibt. */
+  const greenCap = Math.max(PLANT_GREEN_FARBBLOCK_CAP, plantParam(skills, pTiers, P.DICKICHT, "cap") || 0);
+  const farbFactor = (pos, ord) => escalatingFactor(cards[pos].green ? Math.min(ord, greenCap) : ord, farbBase);
+  const suitGapFor = suitGap;
   // onRun: Grenz-Bonus melden (noteCross) UND die echte Lauflänge auf jedem Farbblock-Eintrag ablegen
   // (Blätterdach #228 C2 zahlt „je Karte im Block" — braucht die Blockgröße, nicht nur das Ordinal an der Siegposition).
-  markRuns(n, farbMin, matchSuit, suitGap, canExtendSeg,
+  markRuns(n, minFor(3), matchSuit, suitGapFor, canExtendSeg,
     (pos, ord) => add(pos, "farbblock", ord, farbFactor(pos, ord)), farbSkip,
     (last, ord) => recordEnd(last, "farbblock", farbFactor(last, ord)), isJF,
-    (mem) => { if (noteCross) noteCross(mem); for (const p of mem) { const fe = out[p].formations.find((f) => f.type === "farbblock"); if (fe) fe.len = mem.length; } });
+    (mem, skipped) => { if (noteCross) noteCross(mem); noteMembers("farbblock", mem); for (const p of mem) { const fe = out[p].formations.find((f) => f.type === "farbblock"); if (fe) { fe.len = mem.length; if (skipped && skipped.length) fe.gapped = skipped; } } });
 
   const treppeAssign = (pos, ord) => add(pos, "treppe", ord, escalatingFactor(ord, TREPPE_BASE));
   const treppeEnd = (last, ord) => recordEnd(last, "treppe", escalatingFactor(ord, TREPPE_BASE));
-  markTreppe(n, val, bind, treppeE, canExtendSeg, treppeAssign, treppeEnd, isJT, onRunJoker("treppe"));
+  markTreppe(n, val, bind, treppeE, canExtendSeg, treppeAssign, treppeEnd, isJT, onRunJoker("treppe"), minFor(3));
   // (Fallende Treppen „Abstieg" entfielen #179 — E_BIGSTEP deckt Rückschritte/Richtungswechsel innerhalb der Treppe ab.)
   // E_PENDULUM IV: wFactorStart hebt den Wechsel-Faktor bereits ab Länge 2 auf ×1,35 (sonst erst ab der 3. Karte).
   const valSetWechsel = val.map((v) => [v]);
   const wechselFactor = (ord) => Math.max(escalatingFactor(ord, WECHSEL_BASE), ord >= 2 && wFactorStart ? wFactorStart : 1);
-  markWechsel(val, valSetWechsel, n, wMinLen, canExtendSeg,
+  markWechsel(val, valSetWechsel, n, minFor(wMinLen), canExtendSeg,
     (pos, ord) => add(pos, "wechsel", ord, wechselFactor(ord)), wMinDiff,
     (last, ord) => recordEnd(last, "wechsel", wechselFactor(ord)), isJX, onRunJoker("wechsel"));
 
@@ -336,12 +403,59 @@ export function computeFormations(order, deck, roles = {}, _perks = [], skills =
   // Architekt Grundstein (#202): jede abgedeckte Zelle zählt als Anker (Faktor je Stufe), falls dort noch kein Anker liegt.
   if (af) for (const key in af.anker) { const pos = Number(key); if (pos < n && !out[pos].formations.some((f) => f.type === "anker")) add(pos, "anker", 1, af.anker[pos]); }
 
+  /* Baumreihe (Pflanze-Legendär, §6.5): blühende Karten bilden EINE positionsfreie Wiederholung, egal wo sie liegen —
+     die Faktoren sind die der normalen Wiederholung, und jede Karte darf zugleich in ihrer lokalen Formation zählen.
+     Der Eintrag trägt seine Mitglieder selbst, damit die Fraktion ihn wie jeden anderen Lauf liest (Score, Wachstum). */
+  if (hasBaumreihe(skills)) {
+    const blooms = [];
+    for (let k = 0; k < n; k++) if (cards[k].bloom) blooms.push(k);
+    if (blooms.length >= 2) blooms.forEach((pos, idx) => {
+      // §6.12: die Reihe zahlt den Wiederholungs-Bonus zum Anteil BAUMREIHE_FACTOR_SCALE (1 = wie ein echter Lauf).
+      const factor = 1 + (wiedFactor(idx + 1) - 1) * BAUMREIHE_FACTOR_SCALE;
+      if (factor > 1) out[pos].mult *= factor;
+      // §6.29 (Owner): `scoreless` — die Reihe trägt ihren Faktor und zählt als Formation, zahlt aber keinen
+      // Basis-Score je Mitglied. Sonst tut die Multiplikator-Achse die Arbeit der Dichte-Achse (plant.js).
+      out[pos].formations.push({ type: "wiederholung", ordinal: idx + 1, factor, members: blooms, scoreless: true });
+    });
+  }
+  /* Wurzelgeflecht (Pflanze-Legendär, §6.11): JEDE blühende Karte zählt in jeder Formation ihres Segments mit — sie
+     tritt den Läufen als weiteres Mitglied bei und bekommt deren Faktor auf der nächsten Ordinalzahl. Das ist die
+     Dichte-Achse der Fraktion: mehr Mitglieder je Lauf (Passiv-Score und die vier Score-Skills lesen die Mitglieder)
+     und eine Formation mehr je blühender Karte (Wachstum und Überlappungsbonus). */
+  if (hasWurzelgeflecht(skills) && n > 0) {
+    const factorFor = { wiederholung: (ord) => wiedFactor(ord), farbblock: (pos, ord) => farbFactor(pos, ord),
+      treppe: (ord) => escalatingFactor(ord, TREPPE_BASE), wechsel: (ord) => wechselFactor(ord) };
+    for (let k = 0; k < n; k++) {
+      if (!cards[k].bloom) continue;
+      const seg = Math.floor(k / SEGMENT_SIZE);
+      const seen = new Set();
+      for (let j = seg * SEGMENT_SIZE; j < Math.min(n, (seg + 1) * SEGMENT_SIZE); j++) {
+        for (const f of [...out[j].formations]) {
+          if (!Array.isArray(f.members) || seen.has(f.members) || f.members.includes(k)) continue;
+          seen.add(f.members);
+          f.members.push(k);
+          const fn = factorFor[f.type];
+          // §6.12: die beitretende Karte bekommt den Lauf-Bonus zum Anteil WURZELGEFLECHT_FACTOR_SCALE (1 = ganz).
+          const raw = fn ? (f.type === "farbblock" ? fn(k, f.members.length) : fn(f.members.length)) : 1;
+          const factor = 1 + (raw - 1) * WURZELGEFLECHT_FACTOR_SCALE;
+          if (factor > 1) out[k].mult *= factor;
+          out[k].formations.push({ type: f.type, ordinal: f.members.length, factor, members: f.members });
+        }
+      }
+    }
+  }
+
   // Überlappungsbonus (#95): steckt eine Karte in mehreren Formationen, multipliziert der
+
   // Bonus das Faktor-Produkt zusätzlich (2 Formationen ×1,5 · 3 ×2 · 4 ×3). Gezählt werden ALLE
   // Mitgliedschaften (auch Faktor-1-Läufe) → deckt sich mit der Rahmen-Anzahl im UI.
+  // Verwachsung (Pflanze, §6.26): hebt den Überlappungsbonus um einen ABSOLUTEN Betrag — der Zwei-Formations-Sieg
+  // gewinnt damit relativ am meisten (×1,5 → ×1,75 sind +17 %, ×3 → ×3,25 nur +8 %), und dort liegen 38 % der Siege.
+  // Prozentual würde die Spitze aufgeblasen, in der die Konzentration der Fraktion ohnehin sitzt (§6.22 C).
+  const overlapPlus = plantParam(skills, pTiers, P.VERWACHSUNG, "bonus") || 0;
   for (const p of out) {
     const c = Math.min(p.formations.length, 4);
-    if (c >= 2) p.mult *= OVERLAP_BONUS[c];
+    if (c >= 2) p.mult *= OVERLAP_BONUS[c] + overlapPlus;
   }
 
   // #179 E_SEGMENT IV Grenz-Bonus: Karten, die zu ≥1 segmentüberschreitenden Formation gehören, erhalten zusätzlich
@@ -436,4 +550,20 @@ export function summarizeFormations(perPosition) {
     if (p.mult > maxMult) maxMult = p.mult;
   }
   return { count, maxMult };
+}
+
+/* GEBAUTE Formationen einer Aufstellung — die Bemessungsgrundlage der Münz-Einnahme
+   (docs/muenz-oekonomie.md §2.2). Zwei Unterschiede zu summarizeFormations, beide notwendig:
+
+   1. Nur die VIER echten Typen. Im selben Array liegen `formationskern` (Architekt-Gebäude) und
+      `anker` (Positionsanker) — die sind keine gebaute Formation. Ungefiltert zählt die Einnahme
+      Architektur mit und liegt gemessen rund ein Drittel zu hoch (Ø 61 Paare gegen Ø 18 echte).
+   2. `ordinal === 1` zählt jede Formation EINMAL, nicht je Position. Gemessen tragen 3 Formationen
+      auf einer Position den Median — ohne diese Regel wären es 40×3 statt 18. */
+export function countBuiltFormations(perPosition) {
+  let n = 0;
+  for (const p of perPosition || []) {
+    for (const f of p.formations || []) if (f.ordinal === 1 && FORMATION_TYPES.includes(f.type)) n += 1;
+  }
+  return n;
 }

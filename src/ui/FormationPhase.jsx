@@ -1,9 +1,8 @@
 import { useState, useRef, useMemo, useEffect } from "react";
 import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import { PANEL_BG, phaseCard, phasePanel, PhaseHairline, PHASE_ACCENTS } from "./modalStyle.jsx";
-import { summarizeFormations, SEGMENT_SIZE, openSegmentInfo } from "../game/formations.js";
+import { summarizeFormations, countBuiltFormations, SEGMENT_SIZE, openBorderInfo } from "../game/formations.js";
 import { allianceGroups } from "../game/families.js";
-import { hasPfahlwurzel, plantRootScore, plantSkillCount } from "../game/skills.js";
 import { architectCoverFor, structLitPosOf, distrLitPosOf } from "./architectCover.js";
 import { CardGrid } from "./CardGrid.jsx";
 import { CardDetail } from "./CardDetail.jsx";
@@ -16,7 +15,9 @@ import { haptics } from "./haptics.js";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { skillDef } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
 import { t } from "../i18n/index.js";
-import { PhaseHintSlot } from "./hints/HintCard.jsx"; // Onboarding-Hints: Banner-Slot unter dem Kopf (docs/tutorial-onboarding-design.md)
+import { energyBuy, unspentEnergyCoins, coinsForFormations } from "../game/coins.js";  // Münz-Ökonomie §3.2 Preis und Vorrat · §2.3 was übrige Energie einbringt · §2.2 was die Aufstellung zahlt — dieselbe Quelle wie der Reducer
+import { P as PLANT_S } from "../game/factions/plant.js"; // Skill-ids der Pflanze (Spalier-Zeile)
+import { CoinAmount, CoinReward } from "./CoinMark.jsx"; // §2.3: was die übrige Energie einbringt
 
 const GOLD = "#d4a63a"; // #201.2: einheitliche Bestätigen-/Aktionsfarbe
 // Summe aller Formations-Stärken (Σ mult−1 über alle Positionen) — Basis für das reaktive Delta (#95.6).
@@ -63,9 +64,11 @@ export function gainedPositions(prev, cur, eps = 0.001) {
    Zwei Karten antippen = Tausch (1 Energie). Formationen werden nach jedem Tausch live neu berechnet
    (kommt aus state.formations, vom Reducer gefüllt). Undo/Zurücksetzen erstatten Energie.
    Desktop (#101): zweispaltig — Karten-Grid links, Info-Panel rechts; Mobil gestapelt. */
-export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, options = {}, onOption }) {
+export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, onBuyEnergy, options = {}, onOption }) {
   const { playerOrder = [], deck = [], formations = [], formationEnergy = 0, formationSwaps = [] } = state;
   const [sel, setSel] = useState(null);
+  // §3.2: der Energie-Kauf dieser Phase (Preis, Restvorrat, Auslösbarkeit) — eine Rechnung mit dem Reducer.
+  const energy = energyBuy(state);
   // Eis-Neudesign: der Gletscher-Build friert Karten als Gletscher fest (starr). Marker/Masse am Brett + Freeze-Button.
   const iceActive = (state.activeArchetypes || []).includes("ice");
   // eslint-disable-next-line react-hooks/exhaustive-deps -- Perf-Hinweis (Dep-Ausdruck je Render neu), kein Stale-Closure — #292 geprüft
@@ -106,7 +109,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
   const structLitPos = useMemo(() => structLitPosOf(state), [hasArch, archBuildings]); // eslint-disable-line react-hooks/exhaustive-deps -- wie oben: gekeyt, Werte wechseln synchron
   const distrLitPos = useMemo(() => distrLitPosOf(state), [hasArch, archBuildings]); // eslint-disable-line react-hooks/exhaustive-deps -- wie oben: gekeyt, Werte wechseln synchron
   // Pflanze (#211): Klick-Detail-Readout nur, wenn ein Pflanzen-Skill gehalten wird (sonst irrelevant).
-  const plantHeld = plantSkillCount(state.skills || []) > 0;
+  const plantHeld = (state.activeArchetypes || []).includes("plant");
 
   const clickPos = (pos) => {
     if (chLockFormSet.has(pos)) { audio.play("denied"); haptics.denied(); return; } // #301 C3: fixierte Zelle — nicht wählbar/tauschbar
@@ -119,12 +122,23 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
   };
 
   const { count } = summarizeFormations(formations);
+  /* §2.2: was diese Aufstellung am Durchlaufende auszahlt — live, mit jedem Tausch. Bewusst über
+     countBuiltFormations und nicht über `count` daneben: der zählt auch Formationskerne und Anker mit,
+     die keine gebaute Formation sind und nicht zahlen. Gemessen gehen die beiden Zahlen in einem Drittel
+     der Aufstellungen auseinander (Ø 22,2 angezeigt gegen Ø 18,8 bezahlt) — die Münzen müssen der
+     Rechnung des Reducers folgen, nicht der Zahl, neben der sie stehen. */
+  const placementCoins = coinsForFormations(countBuiltFormations(formations));
   const hasSwaps = (formationSwaps || []).length > 0;
   // #201.4: Karten, die in einem Tausch dieser Phase beteiligt waren, dezent ausgrauen (folgt der KARTE via id,
   // nicht dem Slot → übersteht Weg-und-zurück-Tausch; Undo/Reset ziehen die ids automatisch mit).
   const swappedIds = new Set((state.formationSwaps || []).flatMap((s) => [s.idA, s.idB]).filter(Boolean));
-  // #FB Segmentarbeit (E_SEGMENT): welche Segmentgrenzen sind offen? Speist den Verbinder im CardGrid + den Intro-Text.
-  const segInfo = openSegmentInfo(state.familyTiers);
+  // #FB Segmentarbeit (E_SEGMENT) UND Spalier (Pflanze): welche Segmentgrenzen sind offen? Speist den Verbinder im
+  // CardGrid + den Intro-Text. Dieselbe Quelle, die computeFormations benutzt — die Anzeige kann nicht davonlaufen.
+  // Spalier hängt am Grün-Stand der Nachbarkarten, wandert also mit jedem Tausch mit.
+  const segInfo = openBorderInfo(playerOrder, deck, state.skills, state.skillTiers, state.familyTiers);
+  // Wer Spalier hält, bekommt auch dann eine Zeile, wenn gerade KEINE Grenze offen ist. Ohne sie sieht ein
+  // Spalier, das mangels grüner Nachbarn nichts öffnet, aus wie ein Spalier, das nicht funktioniert.
+  const hasSpalier = (state.skills || []).includes(PLANT_S.SPALIER);
 
   /* Aufleuchten nach einem GEWINNBRINGENDEN Tausch: Positionen, deren Formations-Faktor gegenüber dem
      Zustand VOR dem Tausch gestiegen ist, blitzen einmal in ihrer Formationsfarbe auf.
@@ -200,7 +214,6 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
           <div className="ml-auto shrink-0"><GlossaryPanel /></div>
         </div>
         {state.lastCycleScore != null && <div className="mt-2"><RoundScoreBadge state={state} /></div>}
-        <div className="mt-2"><PhaseHintSlot screen="formation" /></div>
 
         {/* Hero-Stat-Leiste: der Formations-Bonus ist das, was der Spieler durch Tauschen maximiert → groß in Gold.
             Energie & das live-Δ wandern auf den (immer sichtbaren) Fortfahren-Knopf → direktes Feedback bei jedem Tausch. */}
@@ -211,7 +224,11 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
           </div>
           <div className="flex flex-col justify-center gap-1 px-4 py-2.5 text-right border-l" style={{ borderColor: "rgba(90,184,122,.30)" }}>
             <span className="text-meta-1 uppercase tracking-wide font-bold" style={{ color: "#6d7288" }}>{t("form.count")}</span>
-            <span className="ty-num leading-none" style={{ fontVariantNumeric: "tabular-nums", fontSize: 19 }}>{count}</span>
+            <span className="inline-flex items-center justify-end gap-1.5">
+              <span className="ty-num leading-none" style={{ fontVariantNumeric: "tabular-nums", fontSize: 19 }}>{count}</span>
+              {/* §2.2: was die Aufstellung zahlt, neben der Zahl, die man beim Tauschen ohnehin liest. */}
+              <CoinReward n={placementCoins} />
+            </span>
           </div>
         </div>
         {/* Sticky-Aktionsleiste (#161 FB-4): Aktionen bleiben oben erreichbar — bei 8 Segmenten kein Scrollen nötig.
@@ -219,6 +236,30 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
             stehen oben in der Leiste). */}
         <div className="sticky top-0 z-20 -mx-5 px-5 py-2.5 mt-3 mb-3 flex flex-col gap-2"
              style={{ background: PANEL_BG, borderBottom: "1px solid #2a2a34" }}>
+          {/* Energie (docs/muenz-oekonomie.md §3.2) — die Anzeige der Phase, jetzt mit dem Kauf daran. Sie sitzt
+              in der STICKY-Leiste und nicht in der Kennzahlenzeile darüber: die Energie ist der Wert, den man
+              beim Tauschen dauernd liest, und die Leiste ist der Teil, der beim Scrollen mitgeht (deshalb stand
+              der Rest bisher am Fortfahren-Knopf — dort ging kein zweiter Knopf hinein, verschachtelte
+              <button> sind ungültiges HTML). Höchstens ENERGY_MAX_BUYS je Phase, jeder weitere teurer,
+              gekaufte Energie verfällt mit der Phase. */}
+          <div className="flex items-center gap-2">
+            <span className="text-meta-1 uppercase tracking-wide font-bold" style={{ color: "#6d7288" }}>{t("form.energy")}</span>
+            <span className="ty-num font-bold" style={{ fontVariantNumeric: "tabular-nums", fontSize: 18, color: formationEnergy > 0 ? "#5ab87a" : "#6d7288" }}>{formationEnergy}</span>
+            {/* §2.3: was die ÜBRIGE Energie beim Bestätigen einbringt — sie zählt mit jedem Tausch herunter,
+                und der Spieler sieht den Preis eines Tauschs, während er ihn erwägt. GEKAUFTE Energie ist
+                herausgerechnet (unspentEnergyCoins): ein Kauf hebt die Zahl nicht, sonst wäre er ein Rabatt
+                auf die eigene Erstattung. */}
+            <CoinReward n={unspentEnergyCoins(formationEnergy, state.coinEnergy)} />
+            {!energy.soldOut && (
+              <button onClick={energy.can ? onBuyEnergy : undefined} disabled={!energy.can}
+                className="ml-auto as-edge-thin px-2.5 py-1.5 rounded-lg text-body-5 font-bold inline-flex items-center gap-1.5 transition-all disabled:cursor-not-allowed"
+                title={t("form.energy.buy.title", { n: energy.left })}
+                style={energy.can ? { "--c": GOLD, borderLeft: `3px solid ${GOLD}`, border: "1px solid #ffffff29", color: GOLD }
+                                  : { background: "var(--btn-off-bg)", border: "1px solid transparent", color: "var(--btn-off-fg)" }}>
+                <span>{t("form.energy.buy")}</span><CoinAmount n={energy.price} dim={!energy.can} have={state.coins || 0} />
+              </button>
+            )}
+          </div>
           {/* Rückgängig + Zurücksetzen teilen sich die volle Breite. */}
           <div className="flex gap-2">
             {/* #kante: Beides sind Auswege — neutral, ohne Farbsignal. */}
@@ -235,7 +276,6 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
             <span className="text-body-lg-5">{t("form.confirm")}</span>
             <span className="text-meta-3 mt-0.5" title={t("form.confirm.title")}>
               <span className="font-bold" style={{ color: deltaOnGold }}>Δ {deltaStr}</span>
-              <span style={{ opacity: 0.55 }}>{t("form.energyLeft", { n: formationEnergy })}</span>
             </span>
           </button>
         </div>
@@ -248,7 +288,10 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
             : <span key={i}>{part}</span>))}
           {segInfo.active && (segInfo.all
             ? <> — <span style={{ color: "#8be0a8" }}><b>{t("form.segwork")}</b> {t("form.segwork.all")}</span></>
-            : <> — <span style={{ color: "#8be0a8" }}><b>{t("form.segwork")}</b> {t("form.segwork.marked")}</span></>)}.
+            : <> — <span style={{ color: "#8be0a8" }}><b>{t("form.segwork")}</b> {t("form.segwork.marked")}</span></>)}
+          {hasSpalier && (segInfo.spalier.size > 0
+            ? <> — <span style={{ color: "#8be0a8" }}><b>{t("form.spalier")}</b> {t("form.spalier.open", { count: segInfo.spalier.size })}</span></>
+            : <> — <span style={{ opacity: 0.7 }}><b>{t("form.spalier")}</b> {t("form.spalier.none")}</span></>)}.
         </p>
 
         <div className="md:flex md:gap-4 md:items-start">
@@ -256,6 +299,8 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
           <div className="md:w-1/2 md:shrink-0">
             {/* Architekt-Overlay-Steuerung (#202): welche Karten liegen unter welchem Gebäude? Toggle + Kategorie-Legende. */}
             {hasArch && <ArchToggle on={showArch} onToggle={() => setShowArch((v) => !v)} />}
+            {/* #aufstell-ruhe: der Deck-Skin ist inzwischen aus dem Kartengitter selbst raus (CardGrid) —
+                hier steht deshalb keine Abbestellung mehr, sondern nichts. */}
             <CardGrid cards={cards} formations={formations} roles={state.roles} anchors={state.shop?.anchors || []} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }} selectedPos={sel} onTilePick={clickPos} quietTiles openSegments={segInfo} swappedIds={swappedIds} disabledPos={chLockFormSet} lockedPos={chLockFormSet} segStrength={segStrength} segDelta={segDelta} flashPos={flash.pos} flashKey={flash.key} architectCover={hasArch && showArch ? architectCover : null} structPos={hasArch && showArch ? structLitPos : null} distrPos={hasArch && showArch ? distrLitPos : null} glowBid={hasArch && showArch ? inspectBid : null}
               glacierPos={iceActive ? glacierPos : null} glacierMassByPos={iceActive ? glacierMass : null} firnStackByPos={iceActive ? firnStack : null} />
           </div>
@@ -265,9 +310,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, opti
             <CardDetail card={sel != null ? cards[sel] : null} pos={sel} posForm={sel != null ? formations[sel] : null} roles={state.roles} familyTiers={state.familyTiers}
               arch={sel != null && architectCover ? architectCover[sel] : null}
               plantReadout={plantHeld}
-              plantGrowth={sel != null && cards[sel] ? (state.growth?.[cards[sel].id] || 0) : 0}
-              plantRoots={sel != null && cards[sel] ? plantRootScore(state.skills || [], state.growth?.[cards[sel].id] || 0) : 0}
-              plantPfahl={hasPfahlwurzel(state.skills || [])} />
+              plantGrowth={sel != null && cards[sel] ? (state.growth?.[cards[sel].id] || 0) : 0} />
             {/* #UI-Redesign: Referenz-Legende (Formationen & Rahmenfarben) einklappbar — default zu, damit die
                 Aufstellung nicht von der 7-zeiligen Textwand zugestellt wird. Wer's kennt, sieht sie nie. */}
             {/* Wrapper trägt den Tutorial-Anker: FormCollapse reicht keine Fremd-Props durch. */}

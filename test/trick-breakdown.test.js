@@ -10,8 +10,9 @@ import en from "../src/i18n/en.js";
    Die Zeile rechnet NICHTS selbst, sie liest `lastTrick.breakdown`. Diese Tests sichern die Naht:
 
      1. Der Breakdown trägt die Felder, aus denen die Kette gebaut wird — inklusive der beiden
-        (streakFlat / sunwrathMult), die erst dafür dazugekommen sind. Ohne sie blieb bei einem
-        Sonnenzorn- oder Reihenhaus-Build ein unerklärter Rest stehen.
+        (streakFlat / fireMult — exp: der Feuer-Faktor aus Hitze-Multiplikator und Verbrennung, ehemals
+        sunwrathMult), die erst dafür dazugekommen sind. Ohne sie blieb bei einem Feuer- oder Reihenhaus-Build
+        ein unerklärter Rest stehen.
      2. Bei einem schlichten Sieg (keine Direkt-Dividenden, kein Serien-Flat) geht die angezeigte
         Gleichung EXAKT auf: Basis × Serie × Perks × Form × Crit = Summe. Kippt die Engine den
         Score-Stack um, wird das hier rot statt still falsch angezeigt zu werden.
@@ -34,14 +35,14 @@ const scen = (over = {}) => ({
 // Exakt die Zusammenfassung, die TrickBreakdown anzeigt (fünf Glieder statt neun Faktoren).
 const chainOf = (b) => Math.max(0, (b.base || 0) + (b.flats || 0))
   * (b.streakMult || 1)
-  * ((b.perkMult || 1) * (b.sunwrathMult || 1) * (b.architectMult || 1))
+  * ((b.perkMult || 1) * (b.fireMult || 1) * (b.architectMult || 1))
   * ((b.formMult || 1) * (b.afterglowMult || 1) * (b.coreMult || 1))
   * (b.critMult || 1);
 
 describe("Stich-Aufschlüsselung · Engine-Daten", () => {
-  it("ein Sieg liefert alle Glieder der Kette (inkl. streakFlat/sunwrathMult)", () => {
+  it("ein Sieg liefert alle Glieder der Kette (inkl. streakFlat/fireMult)", () => {
     const b = resolveTrick(scen(), noCrit).lastTrick.breakdown;
-    for (const k of ["base", "flats", "streakFlat", "streakMult", "perkMult", "sunwrathMult",
+    for (const k of ["base", "flats", "streakFlat", "streakMult", "perkMult", "fireMult",
                      "formMult", "afterglowMult", "coreMult", "architectMult", "critMult", "total"])
       expect(b[k], `breakdown.${k} fehlt — die Kette könnte den Score nicht mehr erklären`).toBeTypeOf("number");
   });

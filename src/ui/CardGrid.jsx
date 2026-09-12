@@ -1,5 +1,5 @@
 import { memo, useRef, useState, useLayoutEffect } from "react";
-import { suitColor, PLANT_VALUE_CAP } from "../game/constants.js";
+import { suitColor } from "../game/constants.js";
 
 import { SEGMENT_SIZE } from "../game/formations.js";
 import { anchorTypeAt, linkedPartnersOf } from "../game/shop.js";
@@ -14,6 +14,20 @@ import { t } from "../i18n/index.js";
 // #350: stabile Leer-Referenz für rollenlose Karten (Normalfall) — `|| []` erzeugte je Render ein neues Array und
 //   ließ den React.memo-Vergleich von CardTile für fast alle Kacheln fehlschlagen (Memo praktisch wirkungslos).
 const EMPTY_ROLES = [];
+
+/* #aufstell-ruhe (Owner 2026-09-08) — das Kartengitter trägt KEINEN Deck-Skin mehr, nirgends.
+
+   Das Artwork ist das Bild EINER Karte. Vierzigmal nebeneinander wird daraus eine unruhige Fläche, und
+   genau darüber liegen die Signale, die diese Ansichten tragen: Formationsrahmen und -kürzel, Segment-
+   grenzen, Architekten-Wash und -Ring, Gletscher, Reife, Rollenpunkte. Ohne Skin trägt die Kachel wieder
+   die Farbe ihrer KARTE — Zahl voll in der Suit, Rahmen als deren gedämpfte Fassung.
+
+   Erst nur in der Aufstellung abbestellt, auf Owner-Ansage dann überall (Chronik, Skill-/Perk-Ansichten,
+   Zielwahl, GameOver). Damit war der Context, der die Front hierher trug, ohne Aufgabe und ist weg —
+   eine Naht weniger, die man beim nächsten Deck-Thema wieder erklären müsste.
+
+   NICHT betroffen: die echten Spielkarten der Rundenbühne (Card.jsx, `frontImage` aus Battlefield). Dort
+   ist eine Karte eine Karte, das Artwork hat Platz, und dafür gibt es die Deck-Werkstatt. */
 
 // Anker-Typ → Kurzlabel (Tooltip); gleiche Bedeutung wie in ChronikOverview (#119).
 const fmt = (x) => x.toFixed(2).replace(".", ",");
@@ -80,7 +94,7 @@ const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], sele
   // Farbblock-Planungssignal in der Aufstellung; heller als die Grün-Suit (#5ab87a) + 🌿 im Status-Cluster
   // machen eine reife Grün-Karte trotz gleicher Grundfarbe erkennbar.
   const ripe = !!card.green;
-  const numCol = ripe ? (card.value >= PLANT_VALUE_CAP ? PLANT_FULL : PLANT_RIPE) : col;
+  const numCol = ripe ? (card.bloom ? PLANT_FULL : PLANT_RIPE) : col;
   const labels = [...new Set((pf.formations || []).map((f) => formationAbbr(f.type)))].join("");
   const fb = formationBorder(pf);
   // Eis-Neudesign: Firn-Boden = ungefrorenes Feld mit angesammelter Boden-Reserve (#386 firnStack, noch kein Gletscher).
@@ -133,7 +147,7 @@ const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], sele
         }).join(", ")})`
       : null,
     "linear-gradient(0deg, #20202a, #20202a)",
-  ].join(", ");
+  ].filter(Boolean).join(", ");
   /* Die Wash-Ebenen enden an der PADDING-Box, alles andere an der Border-Box. Das ist kein Detail: ein
      `inset`-Schatten wird an der Padding-Box geclippt, eine Hintergrund-Ebene standardmäßig an der Border-Box.
      Der Kachelrahmen ist ohne Formation/Auswahl halbdurchlässig (`col + "55"`) — ohne diese Zeile läge der
@@ -192,7 +206,9 @@ const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], sele
       {/* Formations-Gewinn-Blitz: EIN Overlay je Karte in ihrer Formationsfarbe (kein Sammelrahmen um
           die Gruppe). `key` am Flash-Zähler → derselbe Keyframe startet auch beim zweiten Mal neu. */}
       {formFlash && <span key={formFlash} className="form-gain-flash" style={{ "--form-flash": fb.color || "#5ab87a" }} />}
-      {labels && <span className="cg-lab absolute bottom-0.5 right-1 text-[8px] sm:text-[11px] font-bold opacity-80" style={{ color: fb.color || "#5ab87a" }}>{labels}</span>}
+      {/* Kürzel in Weiß statt Formationsfarbe: die Farbe trägt schon der Rahmen, und auf den Deck-Skin-Fronten
+          war der farbige Text nicht mehr verlässlich lesbar. Dunkler Schein hält ihn auf jedem Artwork sichtbar. */}
+      {labels && <span className="cg-lab absolute bottom-0.5 right-1 text-[8px] sm:text-[11px] font-bold" style={{ color: "#fff", textShadow: "0 1px 3px rgba(0,0,0,.9), 0 0 2px rgba(0,0,0,.7)" }}>{labels}</span>}
       {/* Eis-Neudesign: Gletscher-Marker (starr festgefroren) + aktuelle Masse. */}
       {glacier && (
         <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 inline-flex items-center gap-0.5 text-[8px] sm:text-[10px] font-bold leading-none tabular-nums" style={{ color: "#8be6ff", textShadow: "0 0 4px #5ec8f0" }} title={firnMass >= 0.5 ? t("cardgrid.glacierMass.reserve", { mass: Math.round(glacierMass), firn: Math.round(firnMass), cap: FIRN_REFILL_TARGET }) : t("cardgrid.glacierMass.title", { mass: Math.round(glacierMass) })}>
@@ -223,10 +239,12 @@ const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], sele
 // die geteilten Nutzungen (Chronik/Shop-/Perk-Zielauswahl) lassen den Klick-Sound per Default unangetastet.
 // #FB Segmentarbeit: Verbinder ZWISCHEN zwei Segment-Zeilen — signalisiert, dass Formationen diese Grenze
 // überschreiten dürfen (welche Segmente ist durch die Lage zwischen ihren Bereichs-Labels ersichtlich).
-function SegmentBridge({ segA, segB }) {
+// `viaSpalier` = die Grenze ist durch den Pflanzen-Skill offen, nicht durch das Werkzeug Segmentarbeit. Die Brücke
+// sieht gleich aus (offen ist offen), nur der Tooltip nennt die Quelle.
+function SegmentBridge({ segA, segB, viaSpalier = false }) {
   const line = { background: "linear-gradient(90deg, #5ab87a00, #5ab87a99, #5ab87a00)" };
   return (
-    <div className="flex items-center gap-2" title={t("cardgrid.segbridge.title", { a: segA, b: segB })}>
+    <div className="flex items-center gap-2" title={t(viaSpalier ? "cardgrid.segbridge.title.spalier" : "cardgrid.segbridge.title", { a: segA, b: segB })}>
       <div className="w-9 shrink-0" />
       <div className="flex-1 flex items-center gap-1.5">
         <div className="h-px flex-1" style={line} />
@@ -370,7 +388,7 @@ export function CardGrid({ cards = [], formations = [], roles = {}, anchors = []
         );
         // Grenze NACH Segment s offen (und es folgt eine weitere Zeile) → Verbinder einschieben.
         return segOpen && s < nSeg - 1 && segOpen.isOpen(s)
-          ? [row, <SegmentBridge key={`bridge${s}`} segA={s + 1} segB={s + 2} />]
+          ? [row, <SegmentBridge key={`bridge${s}`} segA={s + 1} segB={s + 2} viaSpalier={!!segOpen.spalier?.has(s)} />]
           : [row];
       })}
     </div>

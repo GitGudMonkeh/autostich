@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useIsWide } from "./useIsWide.js"; // #desktop: ab 1280 px derselbe gerahmte Screen wie nach einem Lauf
 import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import { useEscape } from "./useEscape.js";
-import { RunStatCells, RunBuildChips, RunTreeBlock } from "./RunStats.jsx";
+import { RunStatCells, RunBuildChips } from "./RunStats.jsx";
 import { Sparkline } from "./Sparkline.jsx";   // #rd-verlauf: derselbe Graph wie im Victory-Screen
 import { RunGraphs } from "./RunGraphs.jsx";   // #rd-verlauf: Stich-Score je Durchlauf
 import { fmtDuration } from "../game/deck.js";
@@ -13,7 +13,7 @@ import { fmtScore } from "./format.js";
 import FormIcon from "./FormIcon.jsx";
 import { ArchToggle } from "./ArchPanels.jsx"; // #398: geteilter Gebäude-Umschalter (eine Quelle für alle vier Bildschirme)
 import { CATEGORIES, RARITY_META, rarityOf } from "../game/perks.js"; // #rd-zaehlen: die sieben Perk-Kategorien + die Raritätsfarbe
-import { ARCHETYPE_ORDER } from "../game/skills.js";                   // #rd-zaehlen: die vier Fraktionen
+import { ARCHETYPE_ORDER, effectiveTierOf } from "../game/skills.js";  // #rd-zaehlen: die vier Fraktionen · exp/§7.45: die wirksame Stufe
 import { CATEGORIES as ARCH_CATEGORIES } from "../game/architect.js";  // #rd-zaehlen: value · score · formation
 import { romanOf, tierMeta } from "../game/rarity.js";
 import { archFamily, archCatDef, archMeta, perkCat, perkDef, skillDef, familyDef } from "../i18n/labels.js"; // #sprache: Namen zur Anzeigezeit
@@ -89,10 +89,11 @@ const LEG_KEY = "__leg";
    nie zeigen konnte. `tier` ist optional (ein flacher Perk hat keine). */
 const entryOf = (id, name, tier, desc, color) => ({ id, name, tier: tier || null, desc: desc || "", color });
 
-function skillFields(skills) {
+// exp skill rework: `skillTiers` (die gehaltene Stufe je Skill aus dem Lauf-Eintrag) wählt den Text dieser Stufe.
+function skillFields(skills, skillTiers = {}) {
   const by = new Map(ARCHETYPE_ORDER.map((a) => [a, []]));
   for (const id of skills || []) {
-    const d = skillDef(id);
+    const d = skillDef(id, effectiveTierOf({ skills, skillTiers: skillTiers || {} }, id));
     if (!d || !by.has(d.archetype)) continue;
     by.get(d.archetype).push(entryOf(id, d.name, d.legendary ? t("arch.legendaryCap") : null, d.desc,
       (archMeta(d.archetype) || {}).color || "#8a8a95"));
@@ -264,7 +265,7 @@ export function RunDetail({ entry, rank = null, onClose, anonymized = false, onP
   /* #rd-zaehlen: die fünfzehn Felder. Sie werden bei jedem Render neu gerechnet und nicht gemerkt —
      `entry` ist ein Prop und ändert sich nur, wenn ein anderer Lauf geöffnet wird. */
   const buildGroups = [
-    { key: "skills", label: t("runstats.skills"), fields: skillFields(entry.skills) },
+    { key: "skills", label: t("runstats.skills"), fields: skillFields(entry.skills, entry.skillTiers) },
     { key: "perks", label: t("bf.bd.perks"), fields: perkFields(anonymized ? [] : entry.perks, anonymized ? null : entry.families) },
     { key: "buildings", label: t("arch.buildings"), fields: buildingFields(anonymized ? [] : archBuildings, archCover) },
   ];
@@ -336,7 +337,6 @@ export function RunDetail({ entry, rank = null, onClose, anonymized = false, onP
         <div className="rd-c1 as-ring as-ring-quiet">
           <i className="as-ring-run" aria-hidden="true" />
           <div className="rd-ph hidden dt:block">{t("gameover.stats")}</div>
-          <RunTreeBlock treeNodes={entry.treeNodes} />
           <RunStatCells entry={entry} sourceCells />
         </div>
         <div className="rd-c2 as-ring as-ring-quiet">
