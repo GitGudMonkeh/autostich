@@ -702,6 +702,7 @@ export default {
   "arch.plot": "Baufeld",
   "arch.plot.used": "{n} belegt · {pct}%",
   "arch.plot.buy": "+{cells} Zellen",
+  "arch.plot.buyStrip": "Baufeld erweitern",
   "arch.plot.buy.title": "Das Baufeld dauerhaft um {cells} Zellen erweitern — noch {n}× im Lauf möglich",
   "arch.cycleScore": "Durchlauf-Score",
   "arch.scoreDiff": "{sign}{pct} %",

@@ -623,47 +623,65 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
         </div>
         {/* Hero-Stat-Leiste: der Gebäude-Boost ist das, was man beim Bauen maximiert → Hero-Wert (grün). Baufeld & Durchlauf-
             Score als Nebenzellen (ersetzt den verstreuten Kopf-Cluster + das separate Score-Badge). Gleicher Bau wie die
-            Hero-Leiste der Aufstellphase. */}
-        <div className="flex items-stretch mt-3 rounded-xl overflow-hidden" style={phasePanel(PHASE_ACCENTS.blue, "#0e1a24")}>
-          <div className="flex-1 min-w-0 flex flex-col justify-center gap-1 px-3.5 py-2.5"
+            Hero-Leiste der Aufstellphase.
+
+            Owner-Runde 2026-09-14 („c, zweizeilig"): die Zeile war ein Flex-Row, in dem NUR die Boost-Kachel schrumpfen
+            durfte (`flex-1 min-w-0`) — die beiden rechten hielten ihre natürliche Breite, und in der mittleren saß der
+            Kauf-Knopf, der wegen Preis, Münze und Vorrats-Punkten nicht schmaler wird. Der ganze Druck landete damit auf
+            der Boost-Kachel: auf dem Telefon brach erst ihre Beschriftung um, dann riss das „%" von der Zahl ab.
+            Jetzt ein RASTER, das jeder Kachel ihren Anteil gibt: schmal zwei Spalten (Boost | Baufeld) mit dem
+            Durchlauf-Score als flacher Zeile darunter, ab `sm` wieder drei Spalten nebeneinander. Der Kauf-Knopf ist
+            dazu aus der Kachel heraus in eine eigene Leiste gezogen — er ist eine Handlung, keine Kennzahl, und er war
+            der einzige Grund, warum eine der drei Kacheln nicht passte. */}
+        <div className={`grid grid-cols-2 ${state.lastCycleScore != null ? "sm:grid-cols-3" : ""} mt-3 rounded-xl overflow-hidden`}
+          style={phasePanel(PHASE_ACCENTS.blue, "#0e1a24")}>
+          <div className="min-w-0 flex flex-col justify-center gap-1 px-3.5 py-2.5"
             title={t("arch.boost.title")}>
-            <span className="text-meta-1 uppercase tracking-wide font-bold" style={{ color: "#6d7f8e" }}>{t("arch.boost")}</span>
-            <span className="ty-num leading-none" style={{ fontVariantNumeric: "tabular-nums", fontSize: 25, color: archBoostPct > 0 ? "#5fce86" : "#8a97a5" }}>+{archBoostPct} %</span>
+            <span className="text-meta-1 uppercase tracking-wide font-bold whitespace-nowrap" style={{ color: "#6d7f8e" }}>{t("arch.boost")}</span>
+            {/* whitespace-nowrap: Zahl und Einheit gehören zusammen — sie waren das sichtbarste Symptom der Quetschung. */}
+            <span className="ty-num leading-none whitespace-nowrap" style={{ fontVariantNumeric: "tabular-nums", fontSize: 25, color: archBoostPct > 0 ? "#5fce86" : "#8a97a5" }}>+{archBoostPct} %</span>
           </div>
           {/* data-hint-anchor: C5 (kein Bauplan passt mehr) laesst das Baufeld-Panel leuchten. */}
-          <div className="flex flex-col justify-center gap-1 px-3.5 py-2.5 text-right border-l" data-hint-anchor="baufeld"
+          <div className="min-w-0 flex flex-col justify-center gap-1 px-3.5 py-2.5 text-right border-l" data-hint-anchor="baufeld"
             style={{ borderColor: "rgba(59,125,190,.32)" }}>
-            <span className="text-meta-1 uppercase tracking-wide font-bold" style={{ color: "#6d7f8e" }}>{t("arch.plot")}</span>
-            <span className="ty-num leading-none" style={{ fontVariantNumeric: "tabular-nums", fontSize: 19, color: GOLD }}>{Math.max(0, maxCover - coverCount)}<span className="text-body-5 opacity-60"> / {maxCover}</span></span>
-            <span className="text-micro-3 ty-num-sm opacity-45">{t("arch.plot.used", { n: coverCount, pct: Math.round(coverCount / maxCover * 100) })}</span>
-            {/* Baufeld kaufen (docs/muenz-oekonomie.md §3.4) — an der Deckel-Anzeige, weil hier die Frage
-                entsteht, ob der Platz reicht. Die Punkte sagen, wie viel vom LAUF noch übrig ist: als
-                einzige Ausgabe wirkt sie dauerhaft und hat einen Vorrat, der sich leert. Ausverkauft
-                verschwindet der Knopf — ein toter Knopf ist schlechter als keiner. */}
-            {!coverSale.soldOut && (
-              <button onClick={coverSale.can ? onBuyCover : undefined} disabled={!coverSale.can}
-                title={t("arch.plot.buy.title", { cells: COVER_CELLS, n: coverSale.left })}
-                className="mt-1 rounded-lg px-2 py-1 text-meta-1 font-bold inline-flex items-center justify-end gap-1.5 transition-all disabled:cursor-not-allowed"
-                style={coverSale.can ? { background: "#16232f", border: `1px solid ${GOLD}66`, color: GOLD }
-                                     : { background: "var(--btn-off-bg)", border: "1px solid transparent", color: "var(--btn-off-fg)" }}>
-                <span>{t("arch.plot.buy", { cells: COVER_CELLS })}</span>
-                <CoinAmount n={coverSale.price} size={11} dim={!coverSale.can} have={state.coins || 0} />
-                <span className="inline-flex gap-0.5" aria-hidden="true">
-                  {Array.from({ length: coverSale.max }, (_, i) => (
-                    <span key={i} className="rounded-full" style={{ width: 4, height: 4, background: i < coverSale.left ? GOLD : "#ffffff2e" }} />
-                  ))}
-                </span>
-              </button>
-            )}
+            <span className="text-meta-1 uppercase tracking-wide font-bold whitespace-nowrap" style={{ color: "#6d7f8e" }}>{t("arch.plot")}</span>
+            <span className="ty-num leading-none whitespace-nowrap" style={{ fontVariantNumeric: "tabular-nums", fontSize: 19, color: GOLD }}>{Math.max(0, maxCover - coverCount)}<span className="text-body-5 opacity-60"> / {maxCover}</span></span>
+            <span className="text-micro-3 ty-num-sm opacity-45 whitespace-nowrap">{t("arch.plot.used", { n: coverCount, pct: Math.round(coverCount / maxCover * 100) })}</span>
           </div>
           {state.lastCycleScore != null && (
-            <div className="flex flex-col justify-center gap-1 px-3.5 py-2.5 text-right border-l" style={{ borderColor: "rgba(59,125,190,.32)" }}>
-              <span className="text-meta-1 uppercase tracking-wide font-bold" style={{ color: "#6d7f8e" }}>{t("arch.cycleScore")}</span>
-              <span className="ty-num leading-none" style={{ fontVariantNumeric: "tabular-nums", fontSize: 19, color: GOLD }}>{fmtScore(state.lastCycleScore)}</span>
-              {scoreHasDiff && <span className="text-meta-1 font-bold" style={{ color: scoreDiffColor }}>{scoreDiffStr}</span>}
+            /* Schmal: volle Breite unter den beiden oberen Kacheln, als flache Zeile (Beschriftung, Wert, Delta
+               nebeneinander) — so bleibt die Leiste zweizeilig statt dreizeilig. Ab `sm` wieder eine Spalte wie die
+               anderen beiden. */
+            <div className="col-span-2 sm:col-span-1 min-w-0 flex items-baseline gap-2 px-3.5 py-2.5 border-t sm:flex-col sm:items-stretch sm:gap-1 sm:border-t-0 sm:border-l sm:text-right"
+              style={{ borderColor: "rgba(59,125,190,.32)" }}>
+              <span className="text-meta-1 uppercase tracking-wide font-bold whitespace-nowrap" style={{ color: "#6d7f8e" }}>{t("arch.cycleScore")}</span>
+              <span className="ty-num leading-none whitespace-nowrap" style={{ fontVariantNumeric: "tabular-nums", fontSize: 19, color: GOLD }}>{fmtScore(state.lastCycleScore)}</span>
+              {scoreHasDiff && <span className="text-meta-1 font-bold whitespace-nowrap ml-auto sm:ml-0" style={{ color: scoreDiffColor }}>{scoreDiffStr}</span>}
             </div>
           )}
         </div>
+        {/* Baufeld kaufen (docs/muenz-oekonomie.md §3.4) — eigene Leiste direkt unter der Baufeld-Anzeige, weil hier
+            die Frage entsteht, ob der Platz reicht. Die Punkte sagen, wie viel vom LAUF noch übrig ist: als einzige
+            Ausgabe wirkt sie dauerhaft und hat einen Vorrat, der sich leert. Ausverkauft verschwindet die ganze
+            Leiste — ein toter Knopf ist schlechter als keiner. */}
+        {!coverSale.soldOut && (
+          <div className="flex items-center gap-2 mt-2 px-3.5 py-2 rounded-xl" style={phasePanel(PHASE_ACCENTS.blue, "#0e1a24")}>
+            <span className="text-meta-1 uppercase tracking-wide font-bold min-w-0 truncate" style={{ color: "#6d7f8e" }}>{t("arch.plot.buyStrip")}</span>
+            <button onClick={coverSale.can ? onBuyCover : undefined} disabled={!coverSale.can}
+              title={t("arch.plot.buy.title", { cells: COVER_CELLS, n: coverSale.left })}
+              className="ml-auto shrink-0 rounded-lg px-2.5 py-1.5 text-meta-1 font-bold inline-flex items-center gap-1.5 transition-all disabled:cursor-not-allowed"
+              style={coverSale.can ? { background: "#16232f", border: `1px solid ${GOLD}66`, color: GOLD }
+                                   : { background: "var(--btn-off-bg)", border: "1px solid transparent", color: "var(--btn-off-fg)" }}>
+              <span className="whitespace-nowrap">{t("arch.plot.buy", { cells: COVER_CELLS })}</span>
+              <CoinAmount n={coverSale.price} size={11} dim={!coverSale.can} have={state.coins || 0} />
+              <span className="inline-flex gap-0.5" aria-hidden="true">
+                {Array.from({ length: coverSale.max }, (_, i) => (
+                  <span key={i} className="rounded-full" style={{ width: 4, height: 4, background: i < coverSale.left ? GOLD : "#ffffff2e" }} />
+                ))}
+              </span>
+            </button>
+          </div>
+        )}
 
         <div className="grid gap-4 mt-4 md:grid-cols-[minmax(0,1fr)_minmax(280px,360px)] items-start">
           {/* ---- Brett 8×5 — Mobil in der Mitte (order-2): Phase-Panel drüber, Vorschau drunter; Desktop links (md:order-1). ---- */}
