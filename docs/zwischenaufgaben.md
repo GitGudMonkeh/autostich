@@ -1,7 +1,7 @@
 # Zwischenaufgaben (exp) — Planungsdokument
 
 **Status: lebendes Dokument.** Beutekatalog und Aufgaben-Katalog sind durchdesignt und vom Owner Wert
-für Wert abgenommen (2026-09-14). Offen sind die elf Punkte in §10; danach ist das Dokument
+für Wert abgenommen (2026-09-14). Offen sind die zwölf Punkte in §10; danach ist das Dokument
 umsetzungsreif.
 
 Entscheidungen des Owners stehen unter **Gesetzt**. Alles unter **Vorschlag** ist Diskussionsstand und
@@ -32,12 +32,13 @@ der Beute, die sie zahlt, beides sichtbar. Eins nimmst du an, die anderen zwei v
 
 - Zwei Fenster: **D1 bis D15** und **D16 bis D30**.
 - **Drei Angebote zur Wahl**, jedes mit eigener Schwierigkeit.
-- **Jede Aufgabe hat vier Stufen, benannt wie die Raritäten** (Normal, Selten, Sehr selten, Episch).
-- **Die Stufe der Aufgabe ist die Stufe der Beute.** Es gibt keine zweite Leiter und keinen zweiten Zug.
+- **Jede Aufgabe hat vier Stufen** mit **eigenen Namen** und den Farben der Raritäten.
+- **Die Stufe bestimmt ein Beute-Band aus zwei benachbarten Raritäten** (§3.2). Legendäre Beute gibt
+  es nur in der oberen Hälfte des vierten Bandes.
 - **Aufgabe und Beute sind beim Wählen sichtbar.** Man soll erkennen, ob ein Angebot zum geplanten Bau
   passt. Kein Neuwurf.
 - Beute **wirkt weiter und zahlt nie in Score**.
-- **Legendäre Beute ist schon bei D15 möglich**, als Chance auf der Stufe Episch.
+- **Legendäre Beute ist schon bei D15 möglich**, über das vierte Band.
 - **Die unterste Stufe ist knapp ohne Aufwand erreichbar.** Wer sie nimmt, tauscht Rarität gegen
   Sicherheit. Alle Stufen darüber verlangen Investition.
 - Nicht erfüllt zahlt **nichts**.
@@ -116,17 +117,35 @@ zwischen Sicherheit und Rarität, sondern nur zwischen Tätigkeiten.
 Die Wahl fällt im ersten Fenster **nach der ersten Skill-Wahl**, im zweiten bei **D16**. Beide Male
 weiß der Spieler genug über seinen Bau, um zu beurteilen, was zu ihm passt.
 
-### 3.2 Vier Stufen, dieselbe Leiter wie überall
+### 3.2 Vier Stufen, jede mit einem Beute-Band
 
-| Stufe der Aufgabe | Beute | Was die Stufe verlangt |
-| --- | --- | --- |
-| Normal | ein Stück Normal | läuft nebenbei mit, wenn man nichts dagegen tut |
-| Selten | ein Stück Selten | die Aufstellung muss ernst genommen werden |
-| Sehr selten | ein Stück Sehr selten | man muss darauf zuspielen |
-| Episch | ein Stück Episch, mit einer Chance auf ein Legendäres | der Bau muss danach ausgerichtet sein |
+Die Aufgabenstufen tragen **eigene Namen**, die Farben bleiben die der Raritäten (Owner,
+2026-09-14). Namen offen, siehe §10.
 
-Der Satz für Legendär auf der Stufe Episch ist offen (§10). Es ist die einzige Stelle, an der ein
-legendäres Stück in den Lauf kommt.
+**Jede Stufe zahlt aus einem Band von zwei benachbarten Raritäten** (Owner, 2026-09-14):
+
+| Stufe | Farbe | Beute | Was die Stufe verlangt |
+| --- | --- | --- | --- |
+| 1 | Normal | Normal oder Selten | läuft nebenbei mit, wenn man nichts dagegen tut |
+| 2 | Selten | Selten oder Sehr selten | die Aufstellung muss ernst genommen werden |
+| 3 | Sehr selten | Sehr selten oder Episch | man muss darauf zuspielen |
+| 4 | Episch | Episch oder Legendär | der Bau muss danach ausgerichtet sein |
+
+**Das Band ist keine Ungewissheit für den Spieler.** Weil die Beute beim Wählen sichtbar ist, sieht
+man das Ergebnis des Wurfs, nicht den Wurf. Das Band macht die drei Angebote **ungleich**, und das ist
+sein Zweck: ohne es wäre die Wahl jedes Mal nur „wie viel Risiko". Mit ihm kann eine Aufgabe der
+untersten Stufe ein seltenes Stück zeigen und damit zur klar besten Wahl werden.
+
+**Legendäre Beute hat damit genau ein Zuhause:** die obere Hälfte des vierten Bandes. Der frühere
+offene Punkt „Legendär-Satz" wird zur Frage, wie die zwei Hälften eines Bandes gewichtet sind. Mein
+Vorschlag: **70 zu 30 zugunsten der unteren**, damit die Stufe im Regelfall das bedeutet, was sie
+sagt. Offen (§10).
+
+Die Bänder überlappen: Selten kommt aus Stufe 1 und 2, Sehr selten aus 2 und 3, Episch aus 3 und 4.
+Nur Normal und Legendär haben je einen einzigen Zugang.
+
+> **Ersetzt** die frühere Regel „die Stufe der Aufgabe ist die Stufe der Beute" (Owner, 2026-09-14).
+> Die Kopplung bleibt, sie ist nur weich geworden.
 
 ### 3.3 Drei Arten Zähler
 
@@ -703,19 +722,21 @@ bei D30 nur in 5. Das ist keine Schieflage, sondern der Zweck.
    schreiben durchgehend „Fraktion". Im deutschen Katalog steht es 13 zu 8 für Archetyp. Zu
    entscheiden, bevor die Aufgabentexte geschrieben werden.
 
-Dazu drei Punkte aus §3 und §4, die ebenfalls beim Owner liegen:
+Dazu sechs Punkte aus §3 und §4, die ebenfalls beim Owner liegen:
 
-7. **Legendär-Satz auf der Stufe Episch.** Noch keine Zahl. Es ist die einzige Stelle, an der ein
-   legendäres Stück in den Lauf kommt.
-8. **Säckel im ersten Fenster.** Die Stufen 100 und 120 sind bis D15 arithmetisch unmöglich, weil das
+7. **Die Gewichtung innerhalb eines Beute-Bandes.** Vorschlag 70 zu 30 zugunsten der unteren
+   Rarität (§3.2). Auf der vierten Stufe ist das zugleich der Legendär-Satz.
+8. **Die Namen der vier Aufgabenstufen.** Eigene Wörter statt der Raritätsnamen, Farben bleiben
+   (Owner, 2026-09-14). Vorschläge stehen aus.
+9. **Säckel im ersten Fenster.** Die Stufen 100 und 120 sind bis D15 arithmetisch unmöglich, weil das
    Gesamteinkommen dort 64 bis 72 Münzen beträgt (§4.3). Entweder niedrigere obere Stufen, oder Säckel
    wird in Fenster 1 nur bis Selten angeboten.
-9. **Treppe und Wechsel bei Reinheit.** Die beiden Leitern (4·5·6·8 und 5·7·9·11) sind Vorschlag aus
+10. **Treppe und Wechsel bei Reinheit.** Die beiden Leitern (4·5·6·8 und 5·7·9·11) sind Vorschlag aus
    den gemessenen Typanteilen, nicht Owner-Entscheid.
-10. **Wo genau sitzt die Fortschrittsanzeige?** `StatusRail.jsx` ist der Kandidat, bestätigt ist es
+11. **Wo genau sitzt die Fortschrittsanzeige?** `StatusRail.jsx` ist der Kandidat, bestätigt ist es
     nicht. Das Mockup schlägt den Platz **über** den Multiplikatoren vor, weil der Auftrag das einzige
     Element der Leiste mit einer Frist ist.
-11. **Erscheint der Grundfarben-Ring dauerhaft** oder nur, solange ein Buntspiel-Auftrag läuft (§4.1).
+12. **Erscheint der Grundfarben-Ring dauerhaft** oder nur, solange ein Buntspiel-Auftrag läuft (§4.1).
 
 **Erledigt:** Farbtreue würfelt keine Farbe (§3.6). Der Grundfarben-Marker ist ein Ring um das Blatt,
 nicht ein eigener Punkt (§4.1). Die Beute steht nicht in der laufenden Anzeige (§4.3).
