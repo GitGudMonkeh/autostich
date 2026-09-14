@@ -15,7 +15,7 @@
    ============================================================ */
 import { t, fmtNum } from "./index.js";
 import { formationName } from "./labels.js";
-import { tierNum, tierFactor, bindSpanFor } from "../game/architect.js";
+import { tierNum, tierFactor, bindSpanFor, halfOf } from "../game/architect.js";
 import { ARCH_STREAK_CAP } from "../game/constants.js";
 
 /* Faktor mit zwei Nachkommastellen, im Zahlformat der aktiven Sprache (1,10 vs. 1.10).
@@ -52,9 +52,13 @@ export function buildingEffect(fam, tier = 1) {
     case "lowValue":   s = t("building.eff.lowValue", { n: nz(base.value) }); break;
     case "color":      s = isValue ? t("building.eff.color.value", { n: nz(base.value) }) : t("building.eff.color.score", { n: nz(base.score) }); break;
     case "target": {
+      // Owner-Runde 2026-09-14: der Effekt liegt nicht mehr NUR auf der Zielzelle — die übrigen Zellen des
+      // Fußabdrucks bekommen die Hälfte. Der Kartentext muss das nennen, sonst sieht der Spieler drei tote
+      // Zellen und rechnet das Gebäude falsch. Dieselbe Halbierung wie in architect.js (resolveNumEffect).
       const which = t(fam.target === "highest" ? "building.eff.target.highest" : "building.eff.target.lowest");
+      const n = nz(isValue ? base.value : base.score);
       s = t(isValue ? "building.eff.target.value" : "building.eff.target.score",
-        { which, n: nz(isValue ? base.value : base.score) });
+        { which, n, half: halfOf(n) });
       break;
     }
     case "streak":     s = t("building.eff.streak", { n: nz(base.score), cap: ARCH_STREAK_CAP }); break;
