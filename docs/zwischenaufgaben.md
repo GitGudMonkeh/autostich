@@ -35,8 +35,8 @@ der Beute, die sie zahlt, beides sichtbar. Eins nimmst du an, die anderen zwei v
 - **Jede Aufgabe hat vier Stufen** mit **eigenen Namen** und den Farben der Raritäten.
 - **Die Stufe bestimmt ein Beute-Band aus zwei benachbarten Raritäten** (§3.2). Legendäre Beute gibt
   es nur in der oberen Hälfte des vierten Bandes.
-- **Aufgabe und Beute sind beim Wählen sichtbar.** Man soll erkennen, ob ein Angebot zum geplanten Bau
-  passt. Kein Neuwurf.
+- **Beim Wählen sieht man die Aufgabe und ihre Stufe, nicht die Beute** (Owner, 2026-09-14). Kein
+  Neuwurf.
 - Beute **wirkt weiter und zahlt nie in Score**.
 - **Legendäre Beute ist schon bei D15 möglich**, über das vierte Band.
 - **Die unterste Stufe ist knapp ohne Aufwand erreichbar.** Wer sie nimmt, tauscht Rarität gegen
@@ -44,10 +44,11 @@ der Beute, die sie zahlt, beides sichtbar. Eins nimmst du an, die anderen zwei v
 - Nicht erfüllt zahlt **nichts**.
 - **Keine Kategorie doppelt** im Beutekatalog.
 
-**Ersetzt zwei frühere Beschlüsse** (beide vom Owner selbst, 2026-09-14): die Aufgabe wird nicht mehr
-zufällig zugewiesen, sondern gewählt, und die Beute ist nicht mehr bis zur Erfüllung verdeckt. Mit der
-Schwierigkeit als Raritätsträger entfällt auch die Marken-Leiter aus Bronze, Silber und Gold; sie war
-ein zweites Vokabular für eine Leiter, die das Spiel schon hat.
+**Ersetzt frühere Beschlüsse** (alle vom Owner selbst, 2026-09-14): die Aufgabe wird nicht mehr
+zufällig zugewiesen, sondern gewählt. Die Marken-Leiter aus Bronze, Silber und Gold entfällt, sie war
+ein zweites Vokabular für eine Leiter, die das Spiel schon hat. Und die zwischenzeitliche Regel
+„Aufgabe **und Beute** sind beim Wählen sichtbar" ist zurückgenommen: **sichtbar ist die Aufgabe mit
+ihrer Stufe, die Beute nicht.**
 
 ---
 
@@ -110,9 +111,13 @@ denn eine Bedingung, die von allein abläuft, trägt auf keiner Stufe eine Entsc
 
 ### 3.1 Drei Angebote, drei Schwierigkeiten
 
-Zu Beginn eines Fensters liegen drei Angebote aus. Jedes zeigt die Aufgabe, ihre Stufe und die Beute,
-die sie zahlt. Die drei tragen **immer drei verschiedene Stufen**, sonst wäre es keine Entscheidung
+Zu Beginn eines Fensters liegen drei Angebote aus. Jedes zeigt **die Aufgabe und ihre Stufe**, nicht
+die Beute. Die drei tragen **immer drei verschiedene Stufen**, sonst wäre es keine Entscheidung
 zwischen Sicherheit und Rarität, sondern nur zwischen Tätigkeiten.
+
+Was der Spieler damit weiß: **welche Arbeit** vor ihm liegt und **welches Beute-Band** sie zahlt
+(§3.2). Was er nicht weiß: welches Stück aus dem Band es wird. Die Regel ist lernbar, das Ergebnis
+bleibt offen.
 
 Die Wahl fällt im ersten Fenster **nach der ersten Skill-Wahl**, im zweiten bei **D16**. Beide Male
 weiß der Spieler genug über seinen Bau, um zu beurteilen, was zu ihm passt.
@@ -131,10 +136,10 @@ Die Aufgabenstufen tragen **eigene Namen**, die Farben bleiben die der Raritäte
 | 3 | Sehr selten | Sehr selten oder Episch | man muss darauf zuspielen |
 | 4 | Episch | Episch oder Legendär | der Bau muss danach ausgerichtet sein |
 
-**Das Band ist keine Ungewissheit für den Spieler.** Weil die Beute beim Wählen sichtbar ist, sieht
-man das Ergebnis des Wurfs, nicht den Wurf. Das Band macht die drei Angebote **ungleich**, und das ist
-sein Zweck: ohne es wäre die Wahl jedes Mal nur „wie viel Risiko". Mit ihm kann eine Aufgabe der
-untersten Stufe ein seltenes Stück zeigen und damit zur klar besten Wahl werden.
+**Das Band ist die Spannung.** Da die Beute verdeckt bleibt, weiß der Spieler beim Wählen das Band,
+aber nicht das Stück. Eine Aufgabe der dritten Stufe zahlt Sehr selten **oder** Episch, und welches
+von beiden, entscheidet sich erst beim Erfüllen. Die Stufe verspricht damit einen Korridor, keine
+Zahl.
 
 **Legendäre Beute hat damit genau ein Zuhause:** die obere Hälfte des vierten Bandes. Der frühere
 offene Punkt „Legendär-Satz" wird zur Frage, wie die zwei Hälften eines Bandes gewichtet sind. Mein
@@ -146,6 +151,15 @@ Nur Normal und Legendär haben je einen einzigen Zugang.
 
 > **Ersetzt** die frühere Regel „die Stufe der Aufgabe ist die Stufe der Beute" (Owner, 2026-09-14).
 > Die Kopplung bleibt, sie ist nur weich geworden.
+
+**Regeln der Beute-Ziehung.** Sie standen zwischenzeitlich nur im Beutekatalog und gehören hierher,
+denn mit verdeckter Beute kann der Spieler sich gegen ein schlechtes Los nicht mehr wehren:
+
+- **Keine tote Karte.** Was dieser Lauf nicht nutzen kann, wird nicht gezogen. Solange die Beute
+  sichtbar war, war das Komfort; jetzt ist es Pflicht. Wer eine Aufgabe der vierten Stufe erfüllt und
+  ein Baurecht bekommt, obwohl er nie baut, hat fünfzehn Durchläufe umsonst gearbeitet.
+- **Nie zweimal dieselbe Familie**, wenn in einem Fenster mehrere Stücke fallen.
+- **Kein Neuwurf.**
 
 ### 3.3 Drei Arten Zähler
 
