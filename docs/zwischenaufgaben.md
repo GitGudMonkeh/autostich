@@ -14,6 +14,9 @@ Bewusste Abweichung von der Engineering-Sprache in `AGENTS.md`, wie bei `docs/sk
 Übersicht aller 56 Beutestücke mit Raritätsfarben:
 <https://claude.ai/code/artifact/e6122960-8f20-464e-849a-66ba5f83163d>
 
+Mockup der Fortschrittsanzeige (§4.3):
+<https://claude.ai/code/artifact/37556d61-a8ed-4e6f-a068-790685b73008>
+
 Der Platzhalter in `docs/muenz-oekonomie.md` §7 („Zwischenaufgaben bei Durchlauf 15/30: später") wird
 durch dieses Dokument abgelöst. Bosse bleiben weiterhin ausgeklammert (§11).
 
@@ -158,8 +161,8 @@ er es aufmacht.
    (`range: [min,max]`, `desc(mag)`): Reinheit würfelt den Formationstyp (vier Varianten), Quartier
    die Gebäudekategorie (drei). Damit ergeben 15 Definitionen **20 unterscheidbare Angebote** und mit
    den vier Stufen 80 mögliche Karten. Bei zwei Aufgaben je Lauf sieht ein Spieler 2 davon.
-   **Offen:** ob auch Farbtreue eine Farbe würfelt („Gewinne X Stiche in Rot in Folge"). Der Text tut
-   es heute nicht; mit Wurf wären es 23 Varianten und 92 Karten, und die Aufgabe würde härter.
+   **Farbtreue würfelt keine Farbe** (Owner, 2026-09-14): die Serie zählt, egal in welcher Farbe sie
+   läuft.
 2. **Kein Angebot zweimal in einem Lauf**, und Fenster 2 zieht keine Aufgabe aus Fenster 1.
 3. **Die letzten vier Aufgaben sind gesperrt.** Ein Feld im Profil, additiv über `DEFAULT_PROFILE`,
    kein Schema-Sprung nötig.
@@ -240,8 +243,15 @@ gewählt: gemessen färbt Pflanze bis D15 im Median 17,5 von 40 Karten grün und
 sondern auf jeder Stufe unmöglich. Über die Grundfarbe liegt Pflanze gleichauf mit dem naiven Spieler.
 
 > **Der Preis dieser Regel:** ein Pflanzenspieler sieht eine grüne Karte gewinnen, und der Zähler
-> schreibt es Rot gut. Die Anzeige muss die vier Grundfarben deshalb getrennt mitzählen (§4.3). Ob eine
-> grüne Karte ihre Grundfarbe überhaupt noch zeigt, ist vor dem Bauen am laufenden Spiel zu prüfen.
+> schreibt es Rot gut. Die Anzeige muss die vier Grundfarben deshalb getrennt mitzählen (§4.3).
+>
+> **Die Karte bekommt dafür einen Punkt in ihrer Grundfarbe** (Owner, 2026-09-14). Die zuerst
+> vorgeschlagene Stelle oben links ist allerdings **belegt**: `src/ui/indicators/vocab.js` führt die
+> Ecken als Single Source of Truth, und dort sitzt auf genau diesen Karten bereits das Blatt
+> (`CORNER.green`), dem der Feuer-Brand schon ausweicht (`left: green ? 22 : 4`). Zwei freie Wege,
+> beide im Mockup gezeigt: ein **Ring in der Grundfarbe am Blatt** (ein Marker, zwei Aussagen, keine
+> neue Ecke) oder ein Punkt auf der **unteren Kante**, dem einzigen Platz, den das Vokabular nicht
+> vergibt. Empfehlung: der Ring, und **nur sichtbar, solange ein Buntspiel-Auftrag läuft**.
 
 **Farbtreue nutzt dagegen die Farbserie** und damit Farballianz und Grün, weil dort die Mechanik das
 Thema ist. Zwei Aufgaben, zwei Zwecke; in beiden Texten steht, was gezählt wird.
@@ -693,11 +703,12 @@ Dazu drei Punkte aus §3 und §4, die ebenfalls beim Owner liegen:
    wird in Fenster 1 nur bis Selten angeboten.
 9. **Treppe und Wechsel bei Reinheit.** Die beiden Leitern (4·5·6·8 und 5·7·9·11) sind Vorschlag aus
    den gemessenen Typanteilen, nicht Owner-Entscheid.
-10. **Würfelt Farbtreue eine Farbe?** Heute nicht. Mit Wurf wächst der Pool von 20 auf 23 Varianten
-    und die Aufgabe wird härter, weil man sich die Farbe nicht mehr aussuchen kann (§3.6).
-11. **Wo genau sitzt die Fortschrittsanzeige?** `StatusRail.jsx` ist der Kandidat, bestätigt ist es
-    nicht (§4.3). Dazu die Frage, ob eine grün gefärbte Karte ihre Grundfarbe noch zeigt, was
-    Buntspiel lesbar hält.
+10. **Wo genau sitzt die Fortschrittsanzeige?** `StatusRail.jsx` ist der Kandidat, bestätigt ist es
+    nicht. Das Mockup schlägt den Platz **über** den Multiplikatoren vor, weil der Auftrag das einzige
+    Element der Leiste mit einer Frist ist.
+11. **Welcher der beiden Wege für den Grundfarben-Punkt**, Ring am Blatt oder untere Kante (§4.1).
+
+**Erledigt:** Farbtreue würfelt keine Farbe (§3.6).
 
 **Erledigt:** „Wird die Stufe angekündigt" hat sich mit dem sichtbaren Angebot von selbst beantwortet.
 Aufgabe, Stufe und Beute stehen alle drei am Angebot.
