@@ -4,7 +4,7 @@ import { CATEGORIES, rarityOf, RARITY_META } from "../game/perks.js";
 import { tierMeta, romanOf } from "../game/rarity.js";
 import { SKILL_DEFS, archetypeOf, effectiveTierOf, isLegendarySkill } from "../game/skills.js"; // exp/§7.45: der Text der WIRKSAMEN Stufe (Hochspannung hebt sie)
 import { ArchIcon, GlossaryIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
-import { LEGENDARY_GOLD } from "./HeldSkills.jsx"; // eine Quelle für das Gold der Legendär-Marke
+import { LEGENDARY_GOLD } from "./indicators/vocab.js"; // eine Quelle für das Gold der Seltenheitsstufe „legendär"
 import { glossaryKeywords } from "../game/glossary.js";
 import { SUIT_ORDER, suitColor } from "../game/constants.js";
 import { archMeta, familyDef, perkCat, perkDef, skillDef, suitLabel } from "../i18n/labels.js"; // #sprache: Skills/Archetypen/Farben zur Anzeigezeit

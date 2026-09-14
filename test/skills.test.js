@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { SkillList } from "../src/ui/BuildSummary.jsx";
-import { LEGENDARY_GOLD } from "../src/ui/HeldSkills.jsx";
+import { LEGENDARY_GOLD } from "../src/ui/indicators/vocab.js";
 import { archMeta } from "../src/i18n/labels.js";
 import { makeRng } from "../src/game/deck.js";
 import { SKILL_DEFS, skillSum, buildSkillOffer, BLITZ_TIERS,
@@ -391,13 +391,6 @@ describe("Build-Übersicht: legendäre Skills tragen den Goldrahmen", () => {
     expect(chip, "color: muss die Fraktionsfarbe bleiben").toContain(`color:${fire}`);
     expect(chip, "outline: muss das Gold tragen").toMatch(new RegExp(`outline:[^;"]*${LEGENDARY_GOLD}`));
   });
-  it("Skill-Auswahl und Bestandsliste lesen dieselbe Konstante — kein zweites Gold im Quelltext", () => {
-    const read = (rel) => readFileSync(fileURLToPath(new URL(`../src/ui/${rel}`, import.meta.url)), "utf8");
-    for (const f of ["SkillSelect.jsx", "BuildSummary.jsx"]) {
-      expect(read(f), `${f} schreibt das Gold selbst hin statt es zu importieren`).not.toContain(LEGENDARY_GOLD);
-      expect(read(f), `${f} importiert LEGENDARY_GOLD nicht`).toContain("LEGENDARY_GOLD");
-    }
-    // Die Quelle selbst darf den Wert genau EINMAL nennen — als Definition.
-    expect(read("HeldSkills.jsx").split(LEGENDARY_GOLD).length - 1).toBe(1);
-  });
+  /* Dass das Gold nur EINMAL im Quelltext steht, prüft test/legendary-gold.test.js für alle
+     Seltenheits-Oberflächen, nicht nur für diese beiden — hier stand vorher eine schwächere Abschrift. */
 });

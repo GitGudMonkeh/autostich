@@ -14,7 +14,8 @@ import { RoundScoreBadge } from "./RoundScoreBadge.jsx";
 import { GlossaryPanel, GlossaryText } from "./Glossary.jsx";
 import { FormationPanel } from "./FormationPanel.jsx";
 import { LevelupRig } from "./LevelupWings.jsx"; // #lv-fluegel: Deck links, Kennzahlen rechts (ab 1280 px)
-import { HeldSkills, SkillTierBadge, skillTierColor, LEGENDARY_GOLD } from "./HeldSkills.jsx"; // gehaltene Skills — geteilt mit der Perk-Auswahl · exp: Stufen-Badge/-Farbe
+import { HeldSkills, SkillTierBadge, skillTierColor } from "./HeldSkills.jsx"; // gehaltene Skills — geteilt mit der Perk-Auswahl · exp: Stufen-Badge/-Farbe
+import { LEGENDARY_GOLD } from "./indicators/vocab.js"; // eine Quelle für das Gold der Seltenheitsstufe „legendär"
 import { useIsWide, useIsPhone } from "./useIsWide.js";      // #sk-reiter: Reiterzeile statt Pager — DOM, nicht Anordnung
 import { skillArt } from "./skillArt.js";        // #skillart: Emblem je Skill (nur ab 1280 px gerendert)
 import { CardCorners } from "./CardCorners.jsx"; // #cornerart: Eck-Ornamente im Kartenkopf (folgen dem Reiter)

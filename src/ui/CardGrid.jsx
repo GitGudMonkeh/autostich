@@ -5,7 +5,7 @@ import { SEGMENT_SIZE } from "../game/formations.js";
 import { anchorTypeAt, linkedPartnersOf } from "../game/shop.js";
 import { formationBorder } from "./formationStyle.js";
 import { formationAbbr } from "./formationLabels.js";
-import { PLANT_RIPE, PLANT_FULL } from "./indicators/vocab.js";
+import { PLANT_RIPE, PLANT_FULL, LEGENDARY_GOLD } from "./indicators/vocab.js";
 import { glacierFormations, FIRN_REFILL_TARGET } from "../game/glacier.js";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon (Eis ersetzt glacier.webp)
 import { familyDef, perkDef, anchorLabel } from "../i18n/labels.js"; // #sprache: Perks/Anker zur Anzeigezeit
@@ -50,7 +50,7 @@ export function archFrameLines(cover, cells, total, exH, exV, exVOut = exV) {
     if (!a || !rect) continue;
     const col = pos % SEGMENT_SIZE;
     const same = (p, exists) => exists && cover[p] && cover[p].bid != null && cover[p].bid === a.bid;
-    const color = a.legendary ? "#c8962f" : a.color;
+    const color = a.legendary ? LEGENDARY_GOLD : a.color;
     const up = pos - SEGMENT_SIZE, down = pos + SEGMENT_SIZE, lft = pos - 1, rgt = pos + 1;
     const sameUp = same(up, up >= 0), sameDown = same(down, down < total);
     const sameLeft = same(lft, col > 0), sameRight = same(rgt, col < SEGMENT_SIZE - 1);
@@ -133,7 +133,7 @@ const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], sele
      genannte Schatten oben, bei `background` die zuerst genannte Ebene). */
   const washes = [
     firn ? "#5ec8f014" : null,
-    arch ? `${arch.legendary ? "#c8962f" : arch.color}1f` : null,
+    arch ? `${arch.legendary ? LEGENDARY_GOLD : arch.color}1f` : null,
   ].filter(Boolean);
   /* F4 Farballianz (#125): diagonaler Zweifarben-Split auch in der Grid-Kachel (obere Hälfte Eigen-, untere
      Partnerfarbe). Der Grundton steht als eigene EBENE statt als `background-color`, damit `background-clip`

@@ -24,9 +24,10 @@ import { LevelupRig } from "./LevelupWings.jsx"; // #lv-fluegel: Deck links, Ken
 import { perkArt } from "./perkArt.js"; // #perkart: Kategorie-Emblem bzw. eigenes Emblem (nur ab 1280 px gerendert)
 import { CardCorners } from "./CardCorners.jsx"; // #cornerart: Eck-Ornamente im Kartenkopf
 import { CORNER_PERK } from "./cornerArt.js";
+import { LEGENDARY_GOLD } from "./indicators/vocab.js"; // eine Quelle für das Gold der Seltenheitsstufe „legendär"
 
 // Legendär-Akzent: durchgehend gold (Rahmen, Ring, Badge, Titel) — Teil des Grau/Grün/Gold-Schemas (#71).
-const LEG_GOLD = "#d4a63a";
+const LEG_GOLD = LEGENDARY_GOLD;
 const fmtMult = (x) => fmtNum(x.toFixed(2));
 
 /* Ein Angebotseintrag → einheitliches Anzeige-Modell (Rarität #167 §8). Familie {familyId,tier} zeigt den

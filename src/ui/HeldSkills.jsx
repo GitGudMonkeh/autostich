@@ -4,6 +4,7 @@ import { CollapsibleField } from "./CollapsibleField.jsx"; // #UI: geteiltes Kla
 import { archetypeOf, isLegendarySkill, effectiveTierOf, tierIsLifted } from "../game/skills.js"; // §7.45: die WIRKSAME Stufe (Hochspannung), nicht die gewürfelte
 import { SKILL_SLOT_LIMIT } from "../game/constants.js";
 import { tierColor } from "../game/rarity.js"; // exp skill rework: die vier Skill-Stufen tragen die Farben der Raritätsleiter I–IV
+import { LEGENDARY_GOLD } from "./indicators/vocab.js"; // eine Quelle für das Gold der Seltenheitsstufe „legendär"
 import { skillDef, archMeta } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
 import { t } from "../i18n/index.js";
 
@@ -28,10 +29,6 @@ const ac = (id) => archMeta(archetypeOf(id)) || { label: t("skill.arch.none"), i
    Katalog. Legendäre haben keine Stufe (tier null) und tragen ihr eigenes Gold-Badge. Geteilt mit der Skill-Auswahl,
    damit Angebot und Bestand dieselbe Stufe gleich zeigen — eine Quelle, kein zweites Abschreiben. */
 export const skillTierColor = (tier) => tierColor((tier ?? 0) + 1);
-/* Das Gold der Legendär-Marke. Stand als Literal in dieser Datei UND in der Skill-Auswahl; die Build-Übersicht
-   wäre die dritte Abschrift geworden. Legendäre stehen außerhalb der Stufenleiter (rarity.js), deshalb eine eigene
-   Konstante statt eines fünften TIER_META-Eintrags. */
-export const LEGENDARY_GOLD = "#e0b845";
 export function SkillTierBadge({ tier, lifted = false, className = "text-meta-1 px-1.5 py-0.5 rounded font-bold tracking-wide" }) {
   if (tier == null) return null;
   const col = skillTierColor(tier);

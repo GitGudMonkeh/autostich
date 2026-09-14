@@ -3,7 +3,7 @@ import { suitColor, ION_SCORE_PER_STACK,
          PLANT_GREEN_THRESHOLD, PLANT_BLOOM_THRESHOLD } from "../game/constants.js";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 
-import { PLANT, PLANT_RIPE, PLANT_FULL } from "./indicators/vocab.js";
+import { PLANT, PLANT_RIPE, PLANT_FULL, LEGENDARY_GOLD } from "./indicators/vocab.js";
 import { formationLabel } from "./formationLabels.js";
 import { formationBorder } from "./formationStyle.js"; // Rahmenfarbe = Anzahl Formationen (grau/grün/blau/lila/gold), wie die Kacheln
 import { familyDef, perkDef, suitLabel } from "../i18n/labels.js"; // #sprache: Perks/Farben zur Anzeigezeit
@@ -117,9 +117,9 @@ export function CardDetail({ card, pos, posForm, roles, familyTiers = {},
       {arch && (
         <div className="flex flex-wrap gap-1.5 items-center mt-1">
           <span className="opacity-45">{t("carddetail.building")}</span>
-          <Chip c={arch.legendary ? "#d4a63a" : arch.color}>{arch.name}{arch.legendary ? " ★" : arch.tier ? t("carddetail.building.tier", { tier: arch.tier }) : ""}</Chip>
+          <Chip c={arch.legendary ? LEGENDARY_GOLD : arch.color}>{arch.name}{arch.legendary ? " ★" : arch.tier ? t("carddetail.building.tier", { tier: arch.tier }) : ""}</Chip>
           {(arch.effects || []).map((e, i) => (
-            <Chip key={i} c={arch.legendary ? "#d4a63a" : arch.color}>{e}</Chip>
+            <Chip key={i} c={arch.legendary ? LEGENDARY_GOLD : arch.color}>{e}</Chip>
           ))}
           {(arch.effects || []).length === 0 && <span className="opacity-40">{t("carddetail.building.none")}</span>}
         </div>

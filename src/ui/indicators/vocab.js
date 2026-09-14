@@ -4,6 +4,13 @@
 
 import { PLANT_GREEN_THRESHOLD, PLANT_BLOOM_THRESHOLD } from "../../game/constants.js";
 
+/* ---- Legendär (Owner 2026-09-14: „gold zusammenlegen und einheitlich machen") ----
+   Eine Seltenheitsstufe, drei Goldtöne: Perks trugen #d4a63a, Skills #e0b845, Gebäude #c8962f. Am deutlichsten
+   auf der legendären Skill-Karte, die den Gold-Ring aus `.as-legendary` (#d4a63a) und ihre eigene Kante
+   (#e0b845) einen Pixel nebeneinander stellte. Kanonisch ist #d4a63a — der Wert, den `--ac-gold` (index.css)
+   und `RARITY_META.legendary.color` (game/perks.js) schon tragen; ein Wächter hält die drei zusammen. */
+export const LEGENDARY_GOLD = "#d4a63a";
+
 // ---- Fraktions-Grundfarben (aus dem bestehenden Code-Vokabular) ----
 export const FIRE = "#e0714a"; // Feuer
 export const FIRE_HOT = "#f0a83a"; // heißes Ende des Hitze-Verlaufs

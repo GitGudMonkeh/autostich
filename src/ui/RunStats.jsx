@@ -20,6 +20,7 @@ import { archMeta, familyDef, perkCat, perkDef, skillDef } from "../i18n/labels.
 import { effectiveTierOf } from "../game/skills.js"; // exp/§7.45: die WIRKSAME Stufe eines Skills (Hochspannung hebt sie) — der Text dieser Stufe
 import { tierMeta, romanOf } from "../game/rarity.js"; // Familien-Perks: Stufenfarbe + römische Stufe (wie PerkList)
 import { t } from "../i18n/index.js";
+import { LEGENDARY_GOLD } from "./indicators/vocab.js"; // eine Quelle für das Gold der Seltenheitsstufe „legendär"
 
 /* #169 FB-8: wiederverwendbarer Run-Statblock — dieselben Kennzahlen wie im GameOver-/Victory-Screen plus die
    Perk-/Skill-Chips mit klickbarer Beschreibung. Genutzt vom End-Screen (GameOver) UND der Leaderboard-
@@ -273,7 +274,7 @@ export function RunBuildChips({ entry = {}, anonymized = false }) {
                 return (
                   <button key={id} onClick={() => toggle("skill", id)} title={t("runstats.showDesc")}
                     className="text-meta-3 px-2 py-0.5 rounded transition-all hover:brightness-125"
-                    style={{ background: `${am.color}22`, color: am.color, border: `1px solid ${on ? am.color : d.legendary ? "#d4a63a" : "transparent"}` }}>
+                    style={{ background: `${am.color}22`, color: am.color, border: `1px solid ${on ? am.color : d.legendary ? LEGENDARY_GOLD : "transparent"}` }}>
                     <ArchIcon meta={am} size={13} /> {d.legendary ? "★ " : ""}{d.name}
                   </button>
                 );

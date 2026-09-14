@@ -11,7 +11,7 @@ import { computeFormations, summarizeFormations } from "../game/formations.js";
 import { fundamentBonus } from "../game/perks.js"; // v0.3 „Fundament": Strukturfaktor-Bonus des Builds
 import { allianceGroups } from "../game/families.js"; // #289: Farballianz für Wert-Boost-Anzeige
 import { SUIT_ORDER } from "../game/constants.js";
-import { ARCH_CAT as CAT, PLANT_RIPE, PLANT_FULL } from "./indicators/vocab.js";
+import { ARCH_CAT as CAT, PLANT_RIPE, PLANT_FULL, LEGENDARY_GOLD } from "./indicators/vocab.js";
 import { tierColor } from "../game/rarity.js";
 import FormIcon from "./FormIcon.jsx";
 import { formationBorder } from "./formationStyle.js";
@@ -52,7 +52,7 @@ const UPGRADE_REASON = {
   acted: "arch.upgrade.reason.acted",
 };
 
-const GOLD = "#c8962f"; // Legendär
+const GOLD = LEGENDARY_GOLD; // Legendär — eine Quelle (indicators/vocab.js), nicht mehr ein eigenes Architekten-Gold
 const ROMAN = { 1: "I", 2: "II", 3: "III", 4: "IV" };
 const tierLabel = (t) => (t === "legendary" ? "★" : ROMAN[t] || "");
 const fmt = (x) => fmtNum(x.toFixed(2));
@@ -991,7 +991,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
                             className={`as-edge-card as-edge-thin${marked ? " is-sel" : ""} rounded-lg px-2.5 py-1.5 text-left text-meta-3 leading-snug transition-all hover:brightness-110`}
                             style={{ "--c": marked ? "#d1462f" : "#3a4a58" }}>
                             <span className="inline-flex items-center gap-1.5 align-middle flex-wrap">
-                              <FormIcon form={bf.form} color={bf.legendary ? "#d4a63a" : CAT[bf.category].color} title={`${bf.name} · ${bf.form}`} />
+                              <FormIcon form={bf.form} color={bf.legendary ? GOLD : CAT[bf.category].color} title={`${bf.name} · ${bf.form}`} />
                               <b>{bf.name}</b>
                               <span className="opacity-55">{bf.legendary ? t("arch.legendaryCap") : t("arch.tier", { tier: tierLabel(b.tier) })}</span>
                               {marked ? <span style={{ color: "#ff8a6d" }}>{t("arch.marked")}</span> : (soloOk && <span className="opacity-45">{t("arch.soloEnough")}</span>)}
