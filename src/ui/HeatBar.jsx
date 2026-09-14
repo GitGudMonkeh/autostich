@@ -1,4 +1,4 @@
-import { F, fireParam, heatMult, heatMaxFor, schneiseLane, glutbettFloor } from "../game/factions/fire.js";
+import { F, fireParam, heatMult, heatMaxFor, schneiseLane, glutbettFloor, klingeValue, klingeTicks } from "../game/factions/fire.js";
 import { HEAT_MAX, HEAT_MULT_PER_10, SONNENZORN_MULT_PER_10, FORGE_VALUE } from "../game/constants.js";
 import { FactionShell, PanelSkills, CounterCell, YieldMeter } from "./indicators/panelKit.jsx";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
@@ -47,12 +47,13 @@ export function HeatBar({ heat, skills = [], skillTiers = {}, forged = {}, brand
   const showForge = forgeMin != null || totalForged > 0;
 
   const badges = [];
-  // Glühende Klinge: fixes Readout (+n nach Hitze), dazu die Schrittweite der Stufe im Tooltip.
+  // Glühende Klinge: fixes Readout (+n nach Hitze), dazu die Schrittweite der Stufe im Tooltip. §7.32: der Skill
+  // liest die PASSIV-Leiste, nicht die von Weißglut verlängerte — `klingeValue` ist dieselbe Quelle wie der Motor.
   const step = param(F.KLINGE, "perHeat");
   if (step) {
-    const gv = Math.floor(value / step + 1e-9) * (param(F.KLINGE, "value") || 1);
+    const gv = klingeValue(skills, skillTiers, value);
     badges.push({ k: "gk", t: gv > 0 ? t("bar.fire.badge.glow.n", { n: gv }) : t("bar.fire.badge.glow"), c: HOT, dim: gv === 0,
-      title: t("bar.fire.badge.glow.title", { step }) });
+      title: t("bar.fire.badge.glow.title", { step, max: HEAT_MAX }) });
   }
   // Brandschneise (§7.27): dauerhaft sichtbar, sobald gehalten; die Zahl ist die Breite der liegenden Schneise — der
   // erste Schnitt fällt am Ende des laufenden Durchlaufs, bis dahin steht das Abzeichen gedimmt.
@@ -106,9 +107,10 @@ export function HeatBar({ heat, skills = [], skillTiers = {}, forged = {}, brand
     : null;
   const ambientPulse = heatRatio >= 0.9 ? "as-heat-pulse" : null;
 
-  // Schwellenstriche: die Klingen-Schritte (bis zur Leiste) und, mit Weißglut, die 100er-Marke.
-  const ticks = [];
-  if (step) for (let h = step; h < scale; h += step) ticks.push(h);
+  // Schwellenstriche: die Klingen-Schritte und, mit Weißglut, die 100er-Marke. Die Striche enden bei HEAT_MAX,
+  // weil die Klinge dort aufhört zu zählen (§7.32); vorher liefen sie mit Weißglut bis 200 durch und
+  // versprachen Stufen, die es nicht gibt.
+  const ticks = klingeTicks(skills, skillTiers, scale);
 
   return (
     <FactionShell anchor="faction-fire" icon={<FactionIcon type="fire" size={15} />} name={archetypeLabel("fire")} color={FIRE} stateText={stateText} stateOn={stateOn} collapsed={collapsed} onToggle={onToggle}

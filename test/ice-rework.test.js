@@ -3,8 +3,9 @@ import { resolveTrick } from "../src/game/engine.js";
 import { initialState, reducer } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
 import { SKILL_DEFS, EIS_TIERS as EIS } from "../src/game/skills.js";
-import { ROLES, precomputeGlacier, eiszeitFlood, driftTargets, GLACIER_MAX, GLACIER_PER_PICK, SCHILD_PER_PICK } from "../src/game/glacier.js";
-import { I, iceTuning, iceRoleTiers, iceSnapshotOpts } from "../src/game/factions/ice.js";
+import { ROLES, precomputeGlacier, eiszeitFlood, driftTargets, GLACIER_MAX, GLACIER_PER_PICK, SCHILD_PER_PICK,
+  BURST_AT, THRESHOLDS } from "../src/game/glacier.js";
+import { I, iceTuning, iceRoleTiers, iceSnapshotOpts, iceBurstAt } from "../src/game/factions/ice.js";
 import { posOf } from "../src/game/architect.js";
 
 /* Eis-Stufen (§5.3). Bis zu dieser Runde las die Eis-Mechanik globale Konstanten über die Rolle: eine an der Tür
@@ -185,6 +186,22 @@ describe("Eis-Stufen — die Stufe erreicht die Mechanik", () => {
     expect(t(ROLES.DAUERFROST, 3).dauerfrostFar).toBeGreaterThan(t(ROLES.DAUERFROST, 0).dauerfrostFar);
     expect(t(ROLES.ABBRUCHKANTE, 3).abbruchAt).toBeGreaterThan(t(ROLES.ABBRUCHKANTE, 0).abbruchAt); // §5.31: Schwelle statt Wucht
     expect(t(ROLES.GLETSCHERSTURZ, 3).gletschersturzPer).toBeGreaterThan(t(ROLES.GLETSCHERSTURZ, 0).gletschersturzPer);
+  });
+
+  /* Owner-Runde 2026-09-14: das Gletscher-Panel hatte die 12 fest verdrahtet und rief „bricht", während ein
+     Gletscher mit Abbruchkante noch bis 60 weiterwuchs. `iceBurstAt` ist die eine Quelle für Panel und Motor —
+     der Wächter hält sie an derselben Naht fest, die precomputeGlacier liest (opts.burstAt). */
+  it("iceBurstAt gibt die Schwelle, mit der der Motor rechnet — ohne Abbruchkante die natürliche", () => {
+    expect(iceBurstAt([], {})).toBe(BURST_AT);
+    expect(iceBurstAt([ROLES.PACKEIS], { [ROLES.PACKEIS]: 3 })).toBe(BURST_AT); // fremde Rolle verschiebt nichts
+    for (let tier = 0; tier < EIS.abbruchkante.length; tier++) {
+      const roles = [ROLES.ABBRUCHKANTE], tiers = { [ROLES.ABBRUCHKANTE]: tier };
+      const at = iceBurstAt(roles, tiers);
+      expect(at).toBe(EIS.abbruchkante[tier].at);
+      expect(at).toBe(iceSnapshotOpts(roles, iceTuning(roles, tiers)).burstAt); // dieselbe Naht wie der Snapshot
+      expect(at).toBeGreaterThan(BURST_AT);
+      expect(THRESHOLDS).toContain(at); // §5.32: die Schwellen liegen AUF den Sprossen — sonst hat das Panel kein Segment dafür
+    }
   });
 });
 

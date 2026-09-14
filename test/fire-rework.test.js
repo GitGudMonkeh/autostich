@@ -3,7 +3,7 @@ import * as C from "../src/game/constants.js";
 import { SKILL_DEFS, FEUER_TIERS, buildSkillOffer, archetypeOf } from "../src/game/skills.js";
 import { F, initHeat, heatMaxFor, syncHeatMax, fireTier, fireParam, heatGainOnWin, heatMult, verbrennungMult, feuersturmMult,
   rueckzuendungMult, feuerlinieMult, schneiseLane, schneiseMult, fireValueBonus, fireOnWin, fireOnLoss, glutbettFloor,
-  fireCycleEnd, nextBrandActive } from "../src/game/factions/fire.js";
+  fireCycleEnd, nextBrandActive, klingeValue, klingeTicks } from "../src/game/factions/fire.js";
 import { resolveTrick } from "../src/game/engine.js";
 import { initialState, reducer } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
@@ -219,6 +219,27 @@ describe("Feuer — Modul (reine Übergänge)", () => {
     expect(fireValueBonus(heat({ value: 0 }), [F.RUECKZUENDUNG], { [F.RUECKZUENDUNG]: 3 }, { winStreak: T.rueckzuendung[3].every })).toBe(0);
     expect(fireValueBonus(heat({ value: 0 }), [F.RUECKZUENDUNG], {}, { winStreak: T.rueckzuendung[0].every - 1 })).toBe(0);
     expect(fireValueBonus(null, [F.KLINGE], {}, {})).toBe(0);
+  });
+  /* Owner-Runde 2026-09-14: der Deckel aus §7.32 stand nur im MOTOR. Die Hitzeleiste rechnete ihr Abzeichen selbst
+     und zeichnete ihre Striche bis ans Leistenende — mit Weißglut also bis 200, für Stufen, die die Klinge nie
+     zahlt. Beides liest jetzt dieselben zwei Funktionen wie fireValueBonus. */
+  it("Anzeige und Motor lesen denselben Klingen-Deckel (§7.32): Wert und Schwellenstriche enden bei HEAT_MAX", () => {
+    const tiers = { [F.KLINGE]: 3 };
+    // Der Wert, den das Abzeichen zeigt, ist der Wert, den der Stich bekommt — auch auf der langen Leiste.
+    for (const v of [0, 40, C.HEAT_MAX, C.WEISSGLUT_HEAT_MAX]) {
+      expect(klingeValue([F.KLINGE], tiers, v)).toBe(fireValueBonus(heat({ value: v }), [F.KLINGE], tiers, {}));
+      expect(klingeValue([F.KLINGE, F.WEISSGLUT], tiers, v)).toBe(klingeValue([F.KLINGE], tiers, v)); // Weißglut hebt ihn nicht
+    }
+    expect(klingeValue([], {}, C.HEAT_MAX)).toBe(0); // ohne den Skill kein Abzeichen
+    // Die Striche: einer je Schritt, der letzte noch unter HEAT_MAX — die lange Leiste verlängert sie nicht.
+    const step = FEUER_TIERS.klinge[3].perHeat;
+    const kurz = klingeTicks([F.KLINGE], tiers, C.HEAT_MAX);
+    const lang = klingeTicks([F.KLINGE, F.WEISSGLUT], tiers, C.WEISSGLUT_HEAT_MAX);
+    expect(kurz).toEqual(lang);
+    expect(lang[0]).toBe(step);
+    expect(Math.max(...lang)).toBeLessThan(C.HEAT_MAX);
+    expect(lang).toHaveLength(Math.ceil(C.HEAT_MAX / step) - 1);
+    expect(klingeTicks([], {}, C.WEISSGLUT_HEAT_MAX)).toEqual([]);
   });
   it("fireOnWin (§7.16, Überlauf-Wandler): Schmelzpunkt wandelt die Hitze über der Leiste in Basis-Score, die Leiste bleibt voll; unter voll nichts; Episch zahlt die vorgemerkte Kühlung", () => {
     // Nicht voll: der Gewinn geht auf die Leiste, nichts wird gewandelt.

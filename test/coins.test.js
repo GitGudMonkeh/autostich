@@ -12,7 +12,7 @@ import { initialState, reducer } from "../src/game/reducer.js";
 import { resolveTrick } from "../src/game/engine.js";
 import { coinsForFormations, COIN_CYCLE_BASE, COIN_FORM_PER, COIN_FORM_CAP, COIN_START, rerollPrice, rerollOffer,
          energyPrice, energyBuy, ENERGY_MAX_BUYS, coverPrice, coverBuy, COVER_CELLS,
-         upgradePrice, MAX_SKILL_TIER, familyUpgradeBuy, MAX_FAMILY_TIER,
+         upgradePrice, MAX_SKILL_TIER, upgradeBuy, familyUpgradeBuy, MAX_FAMILY_TIER, upgradeSortKey,
          unspentEnergyCoins, FORFEIT_SKILL, FORFEIT_PERK, FORFEIT_BUILD } from "../src/game/coins.js";
 import { countBuiltFormations } from "../src/game/formations.js";
 import { FAMILY_DEFS } from "../src/game/families.js";
@@ -579,6 +579,30 @@ describe("Kauf-Bestätigung nach Bildschirm (Owner 2026-09-09)", () => {
   it("die drei LISTEN fragen nach — dicht stehende Zeilen, und beim Verkauf kostet ein Fehlgriff einen Perk", () => {
     for (const f of ["src/ui/SkillUpgrade.jsx", "src/ui/PerkUpgrade.jsx", "src/ui/PerkSell.jsx"])
       expect(uses(f), `${f} führt die Rückfrage nicht`).toBe(true);
+  });
+
+  /* ---- Reihenfolge der Listen (Owner 2026-09-14) ------------------------------------------------
+     „Oben günstig, nach Rarität aufsteigend." Die Regel selbst ist rein und wird hier direkt geprüft;
+     dass die beiden Aufwert-Bildschirme sie auch BENUTZEN, prüft der Wächter darunter an der Naht
+     (Schlüssel + Sortierung), nicht an einer Schreibweise. Der Verkaufs-Zwilling sortiert in seinem
+     Modul und hat seinen Wächter in perk-sale.test.js. */
+  it("upgradeSortKey: billig vor teuer, höchste Stufe ans Ende", () => {
+    const skill = Array.from({ length: MAX_SKILL_TIER + 1 }, (_, tier) => upgradeSortKey(upgradeBuy({}, tier)));
+    expect(skill.slice(0, -1)).toEqual([...skill.slice(0, -1)].sort((a, b) => a - b)); // streng die Preisleiter
+    expect(skill[skill.length - 1]).toBe(Infinity);                                    // maxed zuletzt
+    const fam = Array.from({ length: MAX_FAMILY_TIER }, (_, i) => upgradeSortKey(familyUpgradeBuy({}, i + 1)));
+    expect(fam.slice(0, -1)).toEqual([...fam.slice(0, -1)].sort((a, b) => a - b));
+    expect(fam[fam.length - 1]).toBe(Infinity);
+    // Der Kontostand darf die Reihenfolge NICHT verschieben — sonst sprängen die Zeilen nach jedem Kauf.
+    expect(upgradeSortKey(upgradeBuy({ coins: 0 }, 1))).toBe(upgradeSortKey(upgradeBuy({ coins: 999 }, 1)));
+  });
+
+  it("beide Aufwert-Listen sortieren über diesen Schlüssel", () => {
+    for (const f of ["src/ui/SkillUpgrade.jsx", "src/ui/PerkUpgrade.jsx"]) {
+      const code = read(f).split("\n").filter((l) => !/^\s*(\/\/|\/\*|\*)/.test(l)).join("\n"); // Kommentare raus
+      expect(/upgradeSortKey\(/.test(code), `${f} liest den Schlüssel nicht`).toBe(true);
+      expect(/\.sort\(\(a, b\) => upPrice\(a\) - upPrice\(b\)\)/.test(code), `${f} sortiert nicht danach`).toBe(true);
+    }
   });
 
   it("die EINZELNEN Kaufknöpfe fragen nicht — an einem Knopf mit Platz um sich herum vertippt man sich nicht", () => {

@@ -10,7 +10,7 @@ import {
 } from "../src/game/architect.js";
 import { ARCH_STREAK_CAP } from "../src/game/constants.js";
 import { archFamily } from "../src/i18n/labels.js"; // UI-Anzeige-Resolver (i18n-Name) — muss jedes Angebot auflösen
-import { computeFormations } from "../src/game/formations.js";
+import { computeFormations, openBorderInfo, SEGMENT_SIZE } from "../src/game/formations.js";
 import { reducer } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
 import { runOne } from "../sim/run.js";
@@ -299,6 +299,26 @@ describe("Architekt — formation-Direktiven & computeFormations", () => {
     expect(spec.crossSeg.has(0)).toBe(true);      // Pfeiler → Zeile 0 offen (rowOf(0))
     expect(spec.anker[20]).toBeGreaterThan(1);    // Grundstein → Anker-Faktor
     expect(spec.formMult[30]).toBe(ARCHITECT_FAMILIES.A_KATHEDRALE.base.factor); // Kathedrale → ×Faktor
+  });
+
+  /* Owner-Runde 2026-09-14: der Pfeiler öffnete die Grenze im MOTOR (canExtendSeg), die Anzeige kannte aber nur
+     Segmentarbeit und Spalier — im Kartengitter fehlte die Brücke. openBorderInfo ist jetzt die eine Quelle für
+     alle drei Herkünfte. Der Wächter hält beide Richtungen: gemeldet UND vom Lauf tatsächlich gekreuzt. */
+  it("openBorderInfo meldet die Grenze, die der Pfeiler öffnet (eine Quelle mit computeFormations)", () => {
+    const deck = fakeDeck();                                          // durchgehend gleiche Farbe → ein Farbblock je Segment
+    const architect = { buildings: [B("A_PFEILER", [0, 1, 2, 3])] };  // line4 in Zeile 0 → Grenze 0
+    const info = openBorderInfo(idOrder, deck, [], {}, {}, architect);
+    expect(info.active).toBe(true);
+    expect([...info.arch]).toEqual([0]);
+    expect(info.isOpen(0)).toBe(true);
+    expect(info.isOpen(1)).toBe(false);           // nur die berührte Zeile, nicht das ganze Brett
+    // Gegenprobe am Motor: derselbe Lauf wächst über genau diese Grenze hinaus.
+    const fb = (f, p) => (f[p].formations || []).find((x) => x.type === "farbblock");
+    expect(fb(computeFormations(idOrder, deck, {}, [], [], [], {}, null), 4).len).toBe(SEGMENT_SIZE);
+    expect(fb(computeFormations(idOrder, deck, {}, [], [], [], {}, architect), 4).len).toBe(2 * SEGMENT_SIZE);
+    // Ohne Gebäude keine Brücke — und die letzte Zeile hat keine Grenze hinter sich, die sie öffnen könnte.
+    expect(openBorderInfo(idOrder, deck, [], {}, {}, null).active).toBe(false);
+    expect(openBorderInfo(idOrder, deck, [], {}, {}, { buildings: [B("A_PFEILER", [35, 36, 37, 38])] }).active).toBe(false);
   });
 
   it("Grundstein macht abgedeckte Positionen zu Ankern (Formation)", () => {

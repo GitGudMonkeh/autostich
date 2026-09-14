@@ -132,10 +132,12 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, onBu
   // #201.4: Karten, die in einem Tausch dieser Phase beteiligt waren, dezent ausgrauen (folgt der KARTE via id,
   // nicht dem Slot → übersteht Weg-und-zurück-Tausch; Undo/Reset ziehen die ids automatisch mit).
   const swappedIds = new Set((state.formationSwaps || []).flatMap((s) => [s.idA, s.idB]).filter(Boolean));
-  // #FB Segmentarbeit (E_SEGMENT) UND Spalier (Pflanze): welche Segmentgrenzen sind offen? Speist den Verbinder im
-  // CardGrid + den Intro-Text. Dieselbe Quelle, die computeFormations benutzt — die Anzeige kann nicht davonlaufen.
+  // #FB Segmentarbeit (E_SEGMENT), Spalier (Pflanze) UND Pfeiler (Gebäude): welche Segmentgrenzen sind offen?
+  // Speist den Verbinder im CardGrid + den Intro-Text. Dieselbe Quelle, die computeFormations benutzt (samt
+  // architectEnabled-Gatter) — die Anzeige kann nicht davonlaufen.
   // Spalier hängt am Grün-Stand der Nachbarkarten, wandert also mit jedem Tausch mit.
-  const segInfo = openBorderInfo(playerOrder, deck, state.skills, state.skillTiers, state.familyTiers);
+  const segInfo = openBorderInfo(playerOrder, deck, state.skills, state.skillTiers, state.familyTiers,
+    state.architectEnabled ? state.architect : null);
   // Wer Spalier hält, bekommt auch dann eine Zeile, wenn gerade KEINE Grenze offen ist. Ohne sie sieht ein
   // Spalier, das mangels grüner Nachbarn nichts öffnet, aus wie ein Spalier, das nicht funktioniert.
   const hasSpalier = (state.skills || []).includes(PLANT_S.SPALIER);
@@ -291,7 +293,11 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, onBu
             : <> — <span style={{ color: "#8be0a8" }}><b>{t("form.segwork")}</b> {t("form.segwork.marked")}</span></>)}
           {hasSpalier && (segInfo.spalier.size > 0
             ? <> — <span style={{ color: "#8be0a8" }}><b>{t("form.spalier")}</b> {t("form.spalier.open", { count: segInfo.spalier.size })}</span></>
-            : <> — <span style={{ opacity: 0.7 }}><b>{t("form.spalier")}</b> {t("form.spalier.none")}</span></>)}.
+            : <> — <span style={{ opacity: 0.7 }}><b>{t("form.spalier")}</b> {t("form.spalier.none")}</span></>)}
+          {/* Pfeiler: nur wenn er wirklich eine Grenze öffnet. Anders als Spalier hängt er nicht am Tausch —
+              eine „öffnet gerade nichts"-Zeile wäre hier kein Hinweis, sondern Dauerrauschen. */}
+          {segInfo.arch.size > 0
+            && <> — <span style={{ color: "#8be0a8" }}><b>{t("form.pfeiler")}</b> {t("form.pfeiler.open", { count: segInfo.arch.size })}</span></>}.
         </p>
 
         <div className="md:flex md:gap-4 md:items-start">

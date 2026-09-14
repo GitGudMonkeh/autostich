@@ -110,6 +110,13 @@ export function sellables(state = {}) {
     if (!PERK_DEFS[id]) continue;
     out.push({ kind: "perk", id, tier: null, price: perkSellPrice(id), blocked: blockReason(state, id) });
   }
+  /* Reihenfolge (Owner 2026-09-14): aufsteigend nach Erlös — oben das Billigste, unten das Wertvollste. Der Erlös
+     folgt der gehaltenen Stufe (sellPrice), das ist also zugleich die Sortierung nach Rarität, und die Legendären
+     zu 50 schließen sie ab. Gesperrte ans Ende: sie sind nicht verkäuflich, und zwischen den handelbaren Zeilen
+     wäre jede von ihnen ein Fehlgriff. Die id bricht Gleichstände, damit die Liste nicht springt (§9). */
+  out.sort((a, b) => ((a.blocked ? 1 : 0) - (b.blocked ? 1 : 0))
+    || (a.price - b.price)
+    || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
   return out;
 }
 

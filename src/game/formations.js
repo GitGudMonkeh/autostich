@@ -58,18 +58,25 @@ export function spalierOpenBorders(cards = [], skills = [], skillTiers = {}) {
   return out;
 }
 
-/* Alle offenen Segmentgrenzen einer Aufstellung, für die Anzeige: E_SEGMENT (Werkzeug) plus Spalier (Pflanze).
-   Gleiche Form wie openSegmentInfo, damit CardGrid unverändert bleibt; `spalier` bleibt daneben stehen, damit die
-   UI sagen kann, WOHER eine Grenze offen ist. */
-export function openBorderInfo(order = [], deck = [], skills = [], skillTiers = {}, familyTiers = {}) {
+/* Alle offenen Segmentgrenzen einer Aufstellung, für die Anzeige: E_SEGMENT (Werkzeug), Spalier (Pflanze) und
+   der Pfeiler (Architekt-Gebäude, crossSeg). Gleiche Form wie openSegmentInfo, damit CardGrid unverändert bleibt;
+   `spalier` und `arch` stehen daneben, damit die UI sagen kann, WOHER eine Grenze offen ist.
+   `architect` gehört schon gegattert herein (architectEnabled), wie bei computeFormations. */
+export function openBorderInfo(order = [], deck = [], skills = [], skillTiers = {}, familyTiers = {}, architect = null) {
   const seg = openSegmentInfo(familyTiers);
   const spalier = spalierOpenBorders(order.map((di) => deck[di]), skills, skillTiers);
+  // Pfeiler: `crossSeg` zählt ZEILEN, und die Zeile vor einer Grenze trägt deren Nummer — dieselbe Rechnung, die
+  // canExtendSeg unten macht. Die letzte Zeile hat keine Grenze hinter sich und fällt deshalb heraus.
+  const nBorder = Math.max(0, Math.ceil(order.length / SEGMENT_SIZE) - 1);
+  const af = architect ? architectFormSpec(architect, order, deck) : null;
+  const arch = new Set();
+  if (af) for (const g of af.crossSeg) if (g < nBorder) arch.add(g);
   return {
-    active: seg.active || spalier.size > 0,
+    active: seg.active || spalier.size > 0 || arch.size > 0,
     all: seg.all,
-    count: seg.all ? Infinity : seg.count + spalier.size,
-    isOpen: (g) => seg.isOpen(g) || spalier.has(g),
-    spalier,
+    count: seg.all ? Infinity : seg.count + spalier.size + arch.size,
+    isOpen: (g) => seg.isOpen(g) || spalier.has(g) || arch.has(g),
+    spalier, arch,
   };
 }
 

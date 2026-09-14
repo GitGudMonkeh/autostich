@@ -176,3 +176,9 @@ export function familyUpgradeBuy(state = {}, tier = 0) {
 }
 
 export const MAX_FAMILY_TIER = MAX_SKILL_TIER + 1;
+
+/* Reihenfolge der Aufwert-Listen (Owner 2026-09-14): aufsteigend nach dem Preis der nächsten Stufe — oben das
+   Bezahlbare, unten das (noch) zu Teure, „höchste Stufe" ganz ans Ende. Weil der Preis allein an der gehaltenen
+   Stufe hängt, ist das zugleich die Sortierung nach Rarität. Als Funktion, damit Skill- und Perk-Bildschirm
+   dieselbe Regel lesen, statt sie zweimal in JSX zu führen. `buy` ist upgradeBuy bzw. familyUpgradeBuy. */
+export const upgradeSortKey = (buy) => (buy && buy.maxed ? Infinity : (buy && buy.price) || 0);

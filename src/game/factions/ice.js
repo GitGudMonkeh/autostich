@@ -1,5 +1,5 @@
 import { SKILL_DEFS, isLegendarySkill, boostedTier } from "../skills.js";
-import { ROLES, neighbors4, neighbors8, EISZEIT_BURST_PER, PACKEIS_RADIUS, PACKEIS_RADIUS_BRIDGE } from "../glacier.js";
+import { ROLES, neighbors4, neighbors8, EISZEIT_BURST_PER, PACKEIS_RADIUS, PACKEIS_RADIUS_BRIDGE, BURST_AT } from "../glacier.js";
 
 /* ============================================================
    EIS — Fraktionsmodul (exp skill rework, docs/skill-rework.md §5). Reine Logik: kein React, kein Math.random.
@@ -92,6 +92,11 @@ export function iceSnapshotOpts(roles = [], tune = null) {
 
 // Aktive Nachbarschaftsfunktion: mit Eisbrücke die 8er, sonst die 4er. (Cluster/Frostbund lesen sie.)
 export const iceNeighborFn = (roles = []) => (roles.includes(ROLES.EISBRUECKE) ? neighbors8 : neighbors4);
+
+// Die WIRKSAME Berst-Schwelle dieses Builds — dieselbe Zahl, die precomputeGlacier über iceSnapshotOpts bekommt.
+// Das Gletscher-Panel liest sie hier, statt BURST_AT fest zu verdrahten: mit Abbruchkante bricht später (§5.32).
+export const iceBurstAt = (roles = [], roleTiers = {}) =>
+  iceSnapshotOpts(roles, iceTuning(roles, roleTiers)).burstAt ?? BURST_AT;
 
 // Packeis zählt im Umkreis, nicht in der Nachbarschaft — die Eisbrücke-Kopplung sitzt deshalb hier statt in
 // iceNeighborFn: sie schiebt den Radius eine Stufe weiter, denn Umkreis 2 enthält die Diagonalen schon.

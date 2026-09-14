@@ -172,12 +172,26 @@ export function schneiseMult(skills, skillTiers, heat, pos = -1) {
    Feuer-Skill, der den Motor am EINGANG füttert — +Wert hebt den Vorsprung, der Vorsprung ist das Hitze-Einkommen —
    und Weißglut verdoppelte ausgerechnet diese Rückkopplung (Episch +5 → +10 Wert). Mit dem Deckel bei HEAT_MAX
    entkoppeln sich die zwei stärksten Feuer-Skills; die Rückkopplung bleibt, nur halb so lang. */
+// Der Klingen-Anteil allein — EINE Quelle für Motor und Leisten-Anzeige. Die Anzeige rechnete den Deckel aus
+// §7.32 nicht mit und zeigte mit Weißglut mehr Wert an, als der Stich bekam.
+export function klingeValue(skills, skillTiers, heatValue = 0) {
+  const step = fireParam(skills, skillTiers, F.KLINGE, "perHeat");
+  if (!step) return 0;
+  return Math.floor(Math.min(heatValue, C.HEAT_MAX) / step + 1e-9) * (fireParam(skills, skillTiers, F.KLINGE, "value") || 1);
+}
+
+// Die Schwellenstriche der Klinge auf einer Leiste der Länge `scale` — an derselben Grenze wie klingeValue, damit
+// die Anzeige keine Stufe verspricht, die der Skill nicht mehr zahlt. Leer ohne den Skill.
+export function klingeTicks(skills, skillTiers, scale = C.HEAT_MAX) {
+  const step = fireParam(skills, skillTiers, F.KLINGE, "perHeat");
+  const out = [];
+  if (step) for (let h = step; h < Math.min(scale, C.HEAT_MAX); h += step) out.push(h);
+  return out;
+}
+
 export function fireValueBonus(heat, skills, skillTiers, { winStreak = 0 } = {}) {
   if (!heat || !heat.active) return 0;
-  const value = heat.value || 0;
-  let v = 0;
-  const step = fireParam(skills, skillTiers, F.KLINGE, "perHeat");
-  if (step) v += Math.floor(Math.min(value, C.HEAT_MAX) / step + 1e-9) * (fireParam(skills, skillTiers, F.KLINGE, "value") || 1);
+  let v = klingeValue(skills, skillTiers, heat.value || 0);
   const rz = fireParam(skills, skillTiers, F.RUECKZUENDUNG, "value");
   const every = fireParam(skills, skillTiers, F.RUECKZUENDUNG, "every");
   if (rz && every && ((winStreak || 0) + 1) % every === 0) v += rz;

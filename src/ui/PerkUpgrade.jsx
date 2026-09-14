@@ -21,7 +21,7 @@ import { BuyConfirm } from "./BuyConfirm.jsx"; // §3.5/§3.6: Aufwerten fragt I
 import { tierTextDiff } from "./SkillUpgrade.jsx";   // eine Fassung des Stufen-Diffs, nicht zwei
 import { GlossaryText } from "./Glossary.jsx";
 import { tierMeta, romanOf, familyTierOf } from "../game/rarity.js";
-import { familyUpgradeBuy } from "../game/coins.js";
+import { familyUpgradeBuy, upgradeSortKey } from "../game/coins.js";
 import { familyDef, perkCat, rarityLabel } from "../i18n/labels.js";
 import { t } from "../i18n/index.js";
 
@@ -116,7 +116,11 @@ export function PerkUpgrade({ state = {}, onUpgrade, onClose }) {
   const coins = state.coins || 0;
   // Nur GEHALTENE Familien (Rang ≥ 1). Flache Perks (PERK_DEFS) tragen keine Stufe und stehen deshalb gar
   // nicht erst in der Liste — ein ausgegrauter Eintrag wäre eine Auskunft über eine Leiter, auf der sie nie standen.
-  const ids = Object.keys(state.familyTiers || {}).filter((id) => (state.familyTiers[id] || 0) >= 1 && familyDef(id));
+  // Reihenfolge wie beim Skill-Zwilling: `upgradeSortKey` (coins.js) — billigste Aufwertung oben, „höchste
+  // Stufe" ans Ende. Dieselbe Leiter, also auch dieselbe Sortierung nach Rarität.
+  const upPrice = (id) => upgradeSortKey(familyUpgradeBuy({ coins }, familyTierOf(state.familyTiers || {}, id)));
+  const ids = Object.keys(state.familyTiers || {}).filter((id) => (state.familyTiers[id] || 0) >= 1 && familyDef(id))
+    .sort((a, b) => upPrice(a) - upPrice(b));
   const raise = () => { setJustRaised(ask.id); onUpgrade?.(ask.id); setAsk(null); };
   return overlayPortal((
     <div className="fixed inset-0 overlay-root z-30 flex items-center justify-center p-4"
