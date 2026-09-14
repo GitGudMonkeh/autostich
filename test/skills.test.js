@@ -44,7 +44,11 @@ describe("skills — Blitz-Registry (exp skill rework)", () => {
     expect(desc(BLITZ_TIERS.blitzschlag, "critEvery")).toBe(true);
     expect(desc(BLITZ_TIERS.vorentladung, "minStreak")).toBe(true); // §7.18
     expect(asc(BLITZ_TIERS.faenger, "value")).toBe(true);           // §7.18: ohne Schwelle, der Wert steigt
-    expect(asc(BLITZ_TIERS.lichtbogen, "critPerStack")).toBe(true); // §7.28: Ionisierung zu Crit-Chance, der Satz je Stapel steigt
+    /* §7.68 (Owner): der Lichtbogen ist der Kaltstart. Die Leiter ist der TAKT der Siege ohne Crit und fällt
+       deshalb; `critPerStack` darf nicht zurückkommen, das war der Konstruktionsfehler (er las die Stapel, die
+       erst aus vollen Leisten entstehen, und hing damit hinter seiner eigenen Wirkung). */
+    expect(desc(BLITZ_TIERS.lichtbogen, "winEvery")).toBe(true);
+    expect(BLITZ_TIERS.lichtbogen.every((r) => r.critPerStack === undefined)).toBe(true);
     expect(BLITZ_TIERS.ueberspannung).toBeUndefined();               // §7.28: Überspannung gestrichen
     expect(asc(BLITZ_TIERS.ionenfeld, "value")).toBe(true);         // §7.19
     expect(asc(BLITZ_TIERS.ionenfeld, "tricks")).toBe(true);        // §7.18

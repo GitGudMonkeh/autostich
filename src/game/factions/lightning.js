@@ -39,7 +39,8 @@ export const L = Object.freeze({
    mehr, der auf Niederlagen reagiert.) */
 export function initLightning() {
   return { active: false, charge: 0, maxCharge: C.LIGHTNING_MAX_CHARGE, bars: 0, critCount: 0,
-    stormCritBonus: 0, entladungMult: 0, entladungScore: 0, fieldLeft: 0, stackBank: 0 };
+    stormCritBonus: 0, entladungMult: 0, entladungScore: 0, fieldLeft: 0, stackBank: 0,
+    noCritCount: 0, critSeen: false }; // §7.68 Lichtbogen: Takt der Siege ohne Crit · critSeen wird je Durchlauf zurückgesetzt
 }
 
 const held = (skills, id) => (skills || []).includes(id);
@@ -97,8 +98,6 @@ export function lightParam(skills, skillTiers, id, key) {
 export function lightningCritChance(lightning, skills, skillTiers, _streak = 0, card = null, forms = 0) {
   if (!lightning || !lightning.active) return 0;
   let c = C.LIGHTNING_CRIT_SOCKET + activeLightningCount(skills) * C.LIGHTNING_CRIT_PER_SKILL + (lightning.stormCritBonus || 0);
-  const perStack = lightParam(skills, skillTiers, L.LICHTBOGEN, "critPerStack");
-  if (perStack && card) c += perStack * effectiveStacks(card, skills, skillTiers);
   /* Spannungsfeld (§7.56, Owner): je FORMATION dieser Position, ohne Ionisierungs-Bedingung. Es steht damit
      gegen Lichtbogen eine Zeile höher, der die Stapeltiefe EINER Karte belohnt: Breite gegen Tiefe. `forms` ist 0,
      wo die Formationen nicht bekannt sind (Statusleiste), genau wie `card` bei Lichtbogen — die Anzeige zeigt den
@@ -205,11 +204,19 @@ export function chargeGainOnWin(lightning, skills, skillTiers, { isCrit } = {}) 
   const next = { ...lightning };
   if (isCrit) {
     next.critCount = (lightning.critCount || 0) + 1;
+    next.critSeen = true; // Lichtbogen Episch: ab hier zahlt der Kaltstart nur noch einfach (Reset je Durchlauf, engine.js)
     gain += 1;
     const every = lightParam(skills, skillTiers, L.ABLEITER, "critEvery");
-    if (every && next.critCount % every === 0) gain += 1;
+    if (every && next.critCount % every === 0) gain += lightParam(skills, skillTiers, L.ABLEITER, "extra") || 1;
   } else {
-    gain += lightParam(skills, skillTiers, L.ABLEITER, "noCritCharge") || 0;
+    /* Lichtbogen (§7.68): der einzige Ladungs-Eingang ohne Crit. Der Zähler läuft wie `critCount` über den ganzen
+       Lauf mit, auch ohne den Skill — dieselbe Bauform wie beim Blitzschlag, damit ein später Kauf nicht auf einem
+       frischen Takt anfängt und der Zähler in beiden Richtungen dasselbe bedeutet. */
+    next.noCritCount = (lightning.noCritCount || 0) + 1;
+    const every = lightParam(skills, skillTiers, L.LICHTBOGEN, "winEvery");
+    if (every && next.noCritCount % every === 0) {
+      gain += (lightParam(skills, skillTiers, L.LICHTBOGEN, "coldDouble") && !lightning.critSeen) ? 2 : 1;
+    }
   }
   return { gain, next };
 }

@@ -1050,6 +1050,8 @@ export function resolveTrick(state, rng) {
     lastCycleCoins = coinsForFormations(lastCycleForms);
     coins += lastCycleCoins;
     cycleWins = 0; cycleLosses = 0; cycleBestTrick = 0; sammlerTypes = []; cycleOpenScore = 0; cycleScoreSum = 0; // Pro-Durchlauf-States zurücksetzen (#203)
+    // §7.68 Lichtbogen Episch: „bis zum ersten Crit eines Durchlaufs" — die Marke gehört zum Durchlauf, nicht zum Lauf.
+    if (lightning && lightning.critSeen) lightning = { ...lightning, critSeen: false };
     // #131 Rundenscore: Zuwachs dieses gerade beendeten Durchlaufs (score enthält bereits den letzten Stich + #203-Payoffs)
     // + Rollover, damit das nächste Entscheidungs-Panel Rundenscore und %-Differenz zur Vorrunde zeigen kann.
     prevCycleScore = lastCycleScore;

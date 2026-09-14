@@ -31,7 +31,11 @@ const de1 = numWord;
 // Stufentabellen der 15 Blitz-Skills (§3.5) — Zeile 0 Normal · 1 Selten · 2 Sehr selten · 3 Episch. Die Texte darunter
 // interpolieren dieselben Zahlen (kein Drift zwischen Regel und Beschreibung). Startwerte für die Sim.
 const BLITZ = {
-  ableiter:      [{ critEvery: 2, back: 0 }, { critEvery: 2, back: 1 }, { critEvery: 1, back: 1 }, { critEvery: 1, back: 2, noCritCharge: 1 }], // §7.18: nimmt Statische Aufladung und Dauerstrom auf (beide gestrichen)
+  /* §7.68 (Owner): die Episch-Zeile `noCritCharge` ist an den Lichtbogen gegangen — Ladung OHNE Crit ist jetzt ein
+     eigener Skill, nicht mehr ein Anhang am Crit-Skill. Als Ersatz steigt der Satz je Takt-Crit auf Episch von 1 auf 2:
+     dieselbe Achse, kein zweites Thema. NICHT über `back` gelöst — Reststrom Episch hat Boden 6 bei Leiste 9, ein
+     `back: 3` hätte die Leiste nach jedem Leeren sofort wieder gefüllt. */
+  ableiter:      [{ critEvery: 2, extra: 1, back: 0 }, { critEvery: 2, extra: 1, back: 1 }, { critEvery: 1, extra: 1, back: 1 }, { critEvery: 1, extra: 2, back: 2 }], // §7.18: nimmt Statische Aufladung und Dauerstrom auf (beide gestrichen)
   ionenfeld:     [{ tricks: 5, value: 2 }, { tricks: 7, value: 3 }, { tricks: 10, value: 4 }, { tricks: 15, value: 5 }], // §7.18 neu (SK_LIGHTNING_02): jede volle Leiste lädt das Feld; §7.20: 2/3/4/5 (2/2/2/3 war neutral, 3/3/4/5 kippte die Parität — Normal entscheidet den Median)
   reststrom:     [{ floor: 2 }, { floor: 3 }, { floor: 4 }, { floor: 6, bar: 9 }], // §7.22 Episch-Extra: die Leiste ist bei 9 voll
   gewitter:      [{ critPerBar: 0.005 }, { critPerBar: 0.0075 }, { critPerBar: 0.01 }, { critPerBar: 0.015, multPerBar: 0.02 }], // §7.22 Episch-Extra: dazu +0,02× Crit-Multiplikator je Leiste
@@ -50,7 +54,15 @@ const BLITZ = {
      Crit-CHANCE, je ionisierter Karte der Formation: dieselbe Achse wie Lichtbogen darunter, aber die Gegenrichtung
      — Streuung statt Tiefe. Die 100-%-Klemme deckelt es von selbst. Startwerte, NICHT gemessen. */
   feld:          [{ critPerForm: 0.05 }, { critPerForm: 0.07 }, { critPerForm: 0.10 }, { critPerForm: 0.15, feedLowest: 1 }], // §7.56 (Owner): je FORMATION dieser Position statt je ionisierter Karte. Die Sonde feld-formationen hat gemessen, dass die Ionisierungs-Bedingung den Skill frueh abschaltet (Runden 1-10: 86 % der Formations-Siege ohne eine einzige ionisierte Karte in Reichweite) und dass eine Position ohnehin nur in 1,4-1,7 Formationen haengt. Ohne die Bedingung zuendet er ab Runde 1. §7.58 (Owner): gezaehlt werden nur ZAHLENDE Formationen (activeFormationCount, Faktor > 1) - dieselbe Zahl, die der Stich anzeigt und die Brennpunkt und Feuerlinie lesen. Saetze unveraendert: der Owner-Entscheid zu §7.57 D war Rampenhilfe, nicht Satz hoch
-  lichtbogen:    [{ critPerStack: 0.005 }, { critPerStack: 0.01 }, { critPerStack: 0.015 }, { critPerStack: 0.02 }], // §7.28 (Owner): ersetzt Überspannung auf SK_LIGHTNING_04 — jeder wirksame Stapel der gespielten Karte gibt Crit-CHANCE auf den Stich, die Richtung, die bis dahin keine Regel und kein Skill bediente. Startwerte, noch nicht gemessen (Owner: erst Design, dann Startwert, dann messen)
+  /* §7.68 (Owner): der Lichtbogen wird der KALTSTART der Fraktion. Vorher gab er Crit-Chance je Stapel der gespielten
+     Karte — und Stapel entstehen nur aus vollen Leisten, Leisten nur aus Crits. Er hing damit am Ende seiner eigenen
+     Schleife: gerechnet gibt es bei 17 % Crit erst nach 2,5 Durchläufen EINEN Stapel im ganzen Deck, und oben, ab
+     rund 100 % Crit, ist die Chance-Achse ohnehin geklemmt. Kein Fenster, in dem er zahlt.
+     Jetzt liest er den einzigen Eingang, den niemand bediente: Siege OHNE Crit. Die Leiter ist der Takt, der Betrag
+     steht überall gleich. Das baut sich von selbst ab, ohne eigene Regel — bei 100 % Crit gibt er exakt null.
+     Gerechnet (Leiste 10, 40 Stiche, Siegquote 55 %, nur das Passiv als Crit-Quelle): bei 17 % Crit steigen die
+     Leisten je Durchlauf von 0,37 auf 0,83 / 0,98 / 1,29 / 2,20. STARTWERTE, auf Owner-Ansage NICHT gemessen. */
+  lichtbogen:    [{ winEvery: 4 }, { winEvery: 3 }, { winEvery: 2 }, { winEvery: 1, coldDouble: true }],
   blitzschlag:   [{ critEvery: 4, stacks: 2 }, { critEvery: 3, stacks: 3 }, { critEvery: 2, stacks: 4 }, { critEvery: 2, stacks: 6 }], // §7.18: einen Schritt schneller; §7.54: die Stapel je Auslösung 1/1/1/2 → 2/3/4/6, denn die Kadenz war nie das Problem — die Leisten schütten im Lauf Ø 634 Stapel aufs Deck (blitz-ramp), gegen die ein Stapel je zweitem Crit nicht ankommt. Die Karte wechselt je Sieg, der Skill STREUT also und speist damit das Spannungsfeld
   streuung:      [{ cards: 1 }, { cards: 2 }, { cards: 3 }, { cards: 4, freshStacks: 2 }], // §7.63 (Owner: „kuerzen"): Leiter 1/2/3/4 -> 1/1/2/3 Karten, Episch also 3 statt 4 je Leiste. §7.62 hat Blitz bei 3,18/2,92x Feuer gemessen (Duell-Median 17,2/17,5 -> 28,0/25,9 Mio), und Streuung war der einzige Skill mit stabilem Signal (100 % Haltequote in beiden Seed-Saetzen). Der Episch-Anhang wandert dabei von der letzten Stufe auf die zweite und steigt am Ende auf 3: mit 1/1/2/3 und einem Anhang nur oben waeren Normal und Selten WORTGLEICH gewesen, ein Stufenschritt, der nichts tut - alle 58 gestuften Skills haben heute vier verschiedene Stufentexte, und ein Waechter haelt das jetzt fest. §7.59 (Owner): Streuung ersetzt den Serienschutz auf SK_LIGHTNING_17. Der alte reagierte auf NIEDERLAGEN (Owner-Regel §7.31) und zahlte mit Ladung, dem Engpass. Der neue ist das Gegenstueck zu Kettenblitz: der sucht die Tiefe (die Karte mit den meisten Stapeln), diese die Breite (die duennsten). Grund aus der Messung: das Deck bekommt Oe 979 Stapel je Lauf, davon liegen 241 auf EINER Karte - die Fraktion konzentriert, und nichts arbeitet dagegen. Die Leiter ist die Zahl der Karten; Episch gibt einer Karte ohne Stapel 2 statt 1. STARTWERTE, ungemessen: 4 Karten je Leiste sind bei Oe 163 Leisten auch 4x das Dauerwert-Einkommen des Passivs, das ist der Hebel, an dem zuerst gedreht wird
 };
@@ -213,7 +225,7 @@ export const SKILL_DEFS = {
   // Rate — die Leiste schneller füllen
   // (§7.18: Statische Aufladung SK_LIGHTNING_08 und Dauerstrom SK_LIGHTNING_16 sind in Blitzableiter aufgegangen.)
   SK_LIGHTNING_01: { id: "SK_LIGHTNING_01", name: "Blitzableiter", archetype: "lightning", keywords: ["charge", "crit"], tiers: BLITZ.ableiter,
-    ...tiered(BLITZ.ableiter, (r) => `${jeder(r.critEvery)} Crit gibt +1 Ladung zusätzlich.${r.back ? ` Nach jeder vollen Leiste kommt +${r.back} Ladung zurück.` : ""}${r.noCritCharge ? ` Jeder Sieg ohne Crit gibt +${r.noCritCharge} Ladung.` : ""}`) },
+    ...tiered(BLITZ.ableiter, (r) => `${jeder(r.critEvery)} Crit gibt +${r.extra} Ladung zusätzlich.${r.back ? ` Nach jeder vollen Leiste kommt +${r.back} Ladung zurück.` : ""}`) },
   SK_LIGHTNING_05: { id: "SK_LIGHTNING_05", name: "Reststrom", archetype: "lightning", keywords: ["charge"], tiers: BLITZ.reststrom,
     ...tiered(BLITZ.reststrom, (r) => `Nach jeder vollen Leiste startet die Ladung bei ${r.floor} statt 0.${r.bar ? ` Die Leiste ist schon bei ${r.bar} voll.` : ""}`) },
   SK_LIGHTNING_02: { id: "SK_LIGHTNING_02", name: "Ionenfeld", archetype: "lightning", keywords: ["charge", "ionize"], tiers: BLITZ.ionenfeld,
@@ -240,8 +252,8 @@ export const SKILL_DEFS = {
     ...tiered(BLITZ.faenger, (r) => `Ionisierte Karten kämpfen mit +${r.value} Wert${r.perStack ? ` und +${r.perStack} je Stapel` : ""}.`) },
   SK_LIGHTNING_09: { id: "SK_LIGHTNING_09", name: "Kurzschluss", archetype: "lightning", keywords: ["ionize"], tiers: BLITZ.kurzschluss,
     ...tiered(BLITZ.kurzschluss, (r) => `Sieg mit einer Karte ab ${r.minStacks} Stapeln: ihre Stapel zählen ${r.factor === 2 ? "doppelt" : `×${r.factor}`}.${r.onLoss ? " Verlierst du mit so einer Karte, zahlt ihr doppelter Stapel-Score beim nächsten Sieg." : ""}`) },
-  SK_LIGHTNING_04: { id: "SK_LIGHTNING_04", name: "Lichtbogen", archetype: "lightning", keywords: ["ionize", "crit"], tiers: BLITZ.lichtbogen, // §7.28: Ionisierung zu Crit-Chance
-    ...tiered(BLITZ.lichtbogen, (r) => `Jeder Stapel auf der gespielten Karte gibt +${pctS(r.critPerStack)} % Crit-Chance auf diesen Stich.`) },
+  SK_LIGHTNING_04: { id: "SK_LIGHTNING_04", name: "Lichtbogen", archetype: "lightning", keywords: ["charge"], tiers: BLITZ.lichtbogen, // §7.68: Kaltstart — Ladung aus Siegen OHNE Crit (vorher Ionisierung zu Crit-Chance)
+    ...tiered(BLITZ.lichtbogen, (r) => `${jeder(r.winEvery)} Sieg ohne Crit gibt +1 Ladung.${r.coldDouble ? " Bis zum ersten Crit eines Durchlaufs sind es +2." : ""}`) },
   // (§7.59: der Platz „Schutz" ist aufgelöst — Serienschutz war der letzte Blitz-Skill, der auf eine Niederlage
   //  reagierte. Auf SK_LIGHTNING_17 steht jetzt die Streuung, das Breite-Gegenstück zu Kettenblitz.)
   SK_LIGHTNING_17: { id: "SK_LIGHTNING_17", name: "Streuung", archetype: "lightning", keywords: ["charge", "ionize"], tiers: BLITZ.streuung,
