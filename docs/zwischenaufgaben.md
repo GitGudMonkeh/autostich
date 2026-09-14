@@ -248,10 +248,12 @@ sondern auf jeder Stufe unmöglich. Über die Grundfarbe liegt Pflanze gleichauf
 > **Die Karte bekommt dafür einen Punkt in ihrer Grundfarbe** (Owner, 2026-09-14). Die zuerst
 > vorgeschlagene Stelle oben links ist allerdings **belegt**: `src/ui/indicators/vocab.js` führt die
 > Ecken als Single Source of Truth, und dort sitzt auf genau diesen Karten bereits das Blatt
-> (`CORNER.green`), dem der Feuer-Brand schon ausweicht (`left: green ? 22 : 4`). Zwei freie Wege,
-> beide im Mockup gezeigt: ein **Ring in der Grundfarbe am Blatt** (ein Marker, zwei Aussagen, keine
-> neue Ecke) oder ein Punkt auf der **unteren Kante**, dem einzigen Platz, den das Vokabular nicht
-> vergibt. Empfehlung: der Ring, und **nur sichtbar, solange ein Buntspiel-Auftrag läuft**.
+> (`CORNER.green`), dem der Feuer-Brand schon ausweicht (`left: green ? 22 : 4`).
+>
+> **Gesetzt: ein Ring in der Grundfarbe um das Blatt** (Owner, 2026-09-14). Ein Marker, zwei Aussagen,
+> keine neue Ecke, keine Änderung am Ecken-Vokabular. Der Alternativplatz auf der unteren Kante ist
+> damit vom Tisch. **Offen** bleibt, ob der Ring dauerhaft erscheint oder nur, solange ein
+> Buntspiel-Auftrag läuft.
 
 **Farbtreue nutzt dagegen die Farbserie** und damit Farballianz und Grün, weil dort die Mechanik das
 Thema ist. Zwei Aufgaben, zwei Zwecke; in beiden Texten steht, was gezählt wird.
@@ -307,6 +309,13 @@ Die Anzeigeform folgt der Art des Zählers:
 | Aufmarsch | aktuelle Differenz zum Gegnerdeck |
 | Quartier | volle Segmente je Kategorie |
 | Säckel | Kontostand gegen das Ziel |
+
+Dazu bei jeder Form die **Restlaufzeit** („noch 6 Durchläufe"): sechs Durchläufe sind sechs Versuche,
+und ohne die Zahl weiß niemand, ob Umbauen sich noch lohnt.
+
+**Keine Beute in der Anzeige** (Owner, 2026-09-14). Ein Name wie „Baurecht III" sagt nicht, was man
+bekommt, und die Wirkung dazuzuschreiben sprengt die Leiste. Vollständig gesehen hat man die Beute
+beim Annehmen; die laufende Anzeige zeigt nur, wie weit der Auftrag ist.
 
 Zwei Sonderfälle:
 
@@ -706,9 +715,10 @@ Dazu drei Punkte aus §3 und §4, die ebenfalls beim Owner liegen:
 10. **Wo genau sitzt die Fortschrittsanzeige?** `StatusRail.jsx` ist der Kandidat, bestätigt ist es
     nicht. Das Mockup schlägt den Platz **über** den Multiplikatoren vor, weil der Auftrag das einzige
     Element der Leiste mit einer Frist ist.
-11. **Welcher der beiden Wege für den Grundfarben-Punkt**, Ring am Blatt oder untere Kante (§4.1).
+11. **Erscheint der Grundfarben-Ring dauerhaft** oder nur, solange ein Buntspiel-Auftrag läuft (§4.1).
 
-**Erledigt:** Farbtreue würfelt keine Farbe (§3.6).
+**Erledigt:** Farbtreue würfelt keine Farbe (§3.6). Der Grundfarben-Marker ist ein Ring um das Blatt,
+nicht ein eigener Punkt (§4.1). Die Beute steht nicht in der laufenden Anzeige (§4.3).
 
 **Erledigt:** „Wird die Stufe angekündigt" hat sich mit dem sichtbaren Angebot von selbst beantwortet.
 Aufgabe, Stufe und Beute stehen alle drei am Angebot.
