@@ -1,7 +1,7 @@
 # Zwischenaufgaben (exp) — Planungsdokument
 
 **Status: lebendes Dokument.** Beutekatalog und Aufgaben-Katalog sind durchdesignt und vom Owner Wert
-für Wert abgenommen (2026-09-14). Offen sind die neun Punkte in §10; danach ist das Dokument
+für Wert abgenommen (2026-09-14). Offen sind die elf Punkte in §10; danach ist das Dokument
 umsetzungsreif.
 
 Entscheidungen des Owners stehen unter **Gesetzt**. Alles unter **Vorschlag** ist Diskussionsstand und
@@ -142,7 +142,7 @@ Phasen jeder Sorte nach, bei D30 nur in 5. **Frühe Beute ist wertvoller, späte
 
 ### 3.5 Voraussetzungen werden genannt, nicht weggefiltert
 
-Bei sechs der elf Aufgaben sind die oberen Stufen an etwas gebunden, das man erst finden muss. Das ist
+Bei sechs der fünfzehn Aufgaben sind die oberen Stufen an etwas gebunden, das man erst finden muss. Das ist
 **gewollt** (Owner, 2026-09-14): eine solche Aufgabe sagt dem Spieler, wohin er bauen soll.
 
 Ein erster Vorschlag, solche Stufen gar nicht erst anzubieten, ist damit **verworfen**: er hätte genau
@@ -155,8 +155,11 @@ er es aufmacht.
 **Vorschlag**, drei Regeln, alle billig:
 
 1. **Gewürfelte Parameter statt einer langen Liste.** Dasselbe Muster wie `WEEK_MODS`
-   (`range: [min,max]`, `desc(mag)`): Reinheit würfelt den Formationstyp, Quartier die Kategorie,
-   Farbtreue die Farbe.
+   (`range: [min,max]`, `desc(mag)`): Reinheit würfelt den Formationstyp (vier Varianten), Quartier
+   die Gebäudekategorie (drei). Damit ergeben 15 Definitionen **20 unterscheidbare Angebote** und mit
+   den vier Stufen 80 mögliche Karten. Bei zwei Aufgaben je Lauf sieht ein Spieler 2 davon.
+   **Offen:** ob auch Farbtreue eine Farbe würfelt („Gewinne X Stiche in Rot in Folge"). Der Text tut
+   es heute nicht; mit Wurf wären es 23 Varianten und 92 Karten, und die Aufgabe würde härter.
 2. **Kein Angebot zweimal in einem Lauf**, und Fenster 2 zieht keine Aufgabe aus Fenster 1.
 3. **Die letzten vier Aufgaben sind gesperrt.** Ein Feld im Profil, additiv über `DEFAULT_PROFILE`,
    kein Schema-Sprung nötig.
@@ -165,7 +168,7 @@ er es aufmacht.
 
 ## 4. Der Aufgaben-Katalog
 
-**Elf Aufgaben mit je vier Stufen.** Die Werte sind Owner-Entscheid aus Playtest-Erfahrung
+**Fünfzehn Aufgaben mit je vier Stufen.** Die Werte sind Owner-Entscheid aus Playtest-Erfahrung
 (2026-09-14), wo nicht anders vermerkt. Die Messungen darunter sagen, wo sie gegenüber dem
 Sim-Verhalten stehen.
 
@@ -178,10 +181,18 @@ Sim-Verhalten stehen.
 | **Reinheit** Formationen eines gewürfelten Typs | Spitze | siehe unten |
 | **Langbau** längste Formation | Spitze | 5 · 10 · 15 · 20 |
 | **Vollbrett** Positionen mit mindestens einer Formation | Spitze | 30 · 34 · 37 · 40 |
+| **Verflechtung** Positionen in mindestens drei Formationen | Spitze | 3 · 5 · 7 · 10 |
 | **Farbtreue** Siege derselben Farbe in Folge | Spitze | 5 · 7 · 10 · 15 |
+| **Buntspiel** Siege je Grundfarbe in einem Durchlauf | Spitze | 4 · 5 · 6 · 7 |
+| **Brecher** zehn Siege über einem Kampfwert | Summe | über 10 · 12 · 15 · 20 |
+| **Fußvolk** Siege mit Grundwert 4 oder weniger | Summe | 40 · 60 · 80 · 110 |
 | **Aufmarsch** Kampfwert über dem Gegnerdeck | Zustand | 20 · 30 · 40 · 60 |
 | **Quartier** volle Baufeld-Segmente einer Kategorie | Zustand | 1 · 2 · 3 · 4 |
 | **Säckel** Münzen gehalten | Zustand | 60 · 80 · 100 · 120 |
+
+**Brecher ist anders gebaut als die übrigen:** die Zahl der Stiche steht fest bei zehn, die Leiter
+läuft über die **Schwelle**. Zehn Siege mit einem Kampfwert über 10 sind die unterste Stufe, zehn über
+20 die oberste.
 
 **Reinheit je Typ.** Treppe und Wechsel kommen je Aufstellung häufiger vor als Farbblock und
 Wiederholung (gemessen 4,1 und 5,5 gegen 2,6 und 3,1), deshalb tragen sie höhere Leitern. Farbblock
@@ -208,7 +219,11 @@ Gedankenstrich, kein Selbstbezug.
 | Reinheit | Baue X Formationen vom Typ [Typ] in einer Aufstellung. |
 | Langbau | Baue eine Formation aus X Karten. |
 | Vollbrett | Bringe X der 40 Positionen in mindestens eine Formation. |
+| Verflechtung | Bringe X Positionen in mindestens drei Formationen. |
 | Farbtreue | Gewinne X Stiche derselben Farbe in Folge. |
+| Buntspiel | Gewinne in einem Durchlauf mit jeder Farbe mindestens X Stiche. |
+| Brecher | Gewinne zehn Stiche mit einem Kampfwert über X. |
+| Fußvolk | Gewinne X Stiche mit Karten vom Grundwert 4 oder weniger. |
 | Aufmarsch | Bringe dein Deck X Kampfwert über das Gegnerdeck. |
 | Quartier | Bedecke X Baufeld-Segmente vollständig mit Gebäuden einer Kategorie. |
 | Säckel | Halte X Münzen, bis der Auftrag endet. |
@@ -216,6 +231,20 @@ Gedankenstrich, kein Selbstbezug.
 **Sperrfeuer braucht eine genaue Erklärung** (Owner): ein Segment sind die festen Fünferblöcke der
 Aufstellung, also die Positionen 1 bis 5, 6 bis 10 und so weiter bis 36 bis 40. Acht Stück je
 Durchlauf, kein gleitendes Fenster. Ein Segment zählt nur, wenn alle fünf Stiche darin gewonnen sind.
+
+**Buntspiel zählt die Grundfarbe der Karte.** Grün gefärbte Karten zählen weiter in ihrer
+ursprünglichen Farbe, und eine Farballianz fasst keine Farben zusammen. Die Regel ist erzwungen, nicht
+gewählt: gemessen färbt Pflanze bis D15 im Median 17,5 von 40 Karten grün und bis D30 deren 36, und
+**schon bei D15 hat mindestens eine Farbe keine ungefärbte Karte mehr** (kleinste verbliebene Farbe:
+0 im p25 wie im p90). Über die effektive Farbe gezählt wäre Buntspiel für Pflanze nicht schwer,
+sondern auf jeder Stufe unmöglich. Über die Grundfarbe liegt Pflanze gleichauf mit dem naiven Spieler.
+
+> **Der Preis dieser Regel:** ein Pflanzenspieler sieht eine grüne Karte gewinnen, und der Zähler
+> schreibt es Rot gut. Die Anzeige muss die vier Grundfarben deshalb getrennt mitzählen (§4.3). Ob eine
+> grüne Karte ihre Grundfarbe überhaupt noch zeigt, ist vor dem Bauen am laufenden Spiel zu prüfen.
+
+**Farbtreue nutzt dagegen die Farbserie** und damit Farballianz und Grün, weil dort die Mechanik das
+Thema ist. Zwei Aufgaben, zwei Zwecke; in beiden Texten steht, was gezählt wird.
 
 ### 4.2 Zwei harte Grenzen im Regelwerk
 
@@ -233,7 +262,51 @@ Wiederholung schafft ohne Deckumbau höchstens 4 (vier Karten je Wert), Farbbloc
 **Farballianz** (zwei Farben zählen als eine, dann bis 20) oder mit Pflanzen-Grün. Farbtreue auf Episch
 ist damit gebunden.
 
-### 4.3 Was die Messung zu diesen Werten sagt
+### 4.3 Anzeige: der Stand jeder Aufgabe
+
+**Gesetzt (Owner, 2026-09-14): jede Aufgabe zeigt ihren Stand im Multiplikator-Panel.** Ohne Anzeige
+ist eine Aufgabe, die über fünfzehn Durchläufe läuft, nicht spielbar; man wüsste nie, ob der laufende
+Durchlauf noch etwas bringt.
+
+Kandidat für die Stelle ist `src/ui/StatusRail.jsx`, wo Crit-Chance, Crit-Multiplikator,
+Formations-Übersicht und Score-Quellen bereits zusammenlaufen. **Am laufenden Spiel zu bestätigen**,
+bevor gebaut wird.
+
+Die Anzeigeform folgt der Art des Zählers:
+
+- **Spitze:** zwei Zahlen. Der Wert des **laufenden** Durchlaufs oder der laufenden Aufstellung, und
+  daneben der beste bisher. Nur die zweite entscheidet, aber ohne die erste weiß niemand, ob die
+  aktuelle Runde noch gewinnbar ist.
+- **Summe:** die laufende Summe gegen das Ziel.
+- **Zustand:** der aktuelle Wert gegen das Ziel.
+
+| Aufgabe | was das Panel zeigt |
+| --- | --- |
+| Durchmarsch | Siege im laufenden Durchlauf, daneben der beste Durchlauf bisher |
+| Sperrfeuer | volle Segmente im laufenden Durchlauf, daneben der beste bisher |
+| Strähne | die laufende Serie, daneben die längste bisher |
+| Gedränge | Formationen der aktuellen Aufstellung, daneben die beste bisher |
+| Reinheit | dieselbe Zahl, auf den gewürfelten Typ gefiltert |
+| Langbau | längste Formation der aktuellen Aufstellung, daneben die beste bisher |
+| Vollbrett | belegte Positionen der aktuellen Aufstellung, daneben die beste bisher |
+| Verflechtung | Positionen mit drei oder mehr Formationen, aktuell und beste |
+| Farbtreue | die laufende Farbserie, daneben die längste bisher |
+| Buntspiel | **vier Zähler, einer je Grundfarbe**, plus das Minimum daraus |
+| Brecher | laufende Summe der Siege über der Schwelle, gegen 10 |
+| Fußvolk | laufende Summe |
+| Aufmarsch | aktuelle Differenz zum Gegnerdeck |
+| Quartier | volle Segmente je Kategorie |
+| Säckel | Kontostand gegen das Ziel |
+
+Zwei Sonderfälle:
+
+**Buntspiel braucht am meisten Platz**, weil vier Zähler nebeneinander stehen müssen. Das Minimum
+allein reicht nicht: man muss sehen, welche Farbe zurückhängt, sonst kann man nicht gegensteuern.
+
+**Säckel braucht eine Warnung am Kauf.** Wer Münzen ausgibt, während der Auftrag läuft, kann ihn damit
+verlieren. Ein Kauf, der den Kontostand unter das Ziel drückt, muss das vorher sagen.
+
+### 4.4 Was die Messung zu diesen Werten sagt
 
 Drei Stellen, an denen die Sim niedriger liegt als die Playtest-Werte. Zwei davon sind
 Messartefakte, eine ist eine echte Decke.
@@ -253,13 +326,52 @@ unmöglich**, egal wie gut jemand spielt; sie funktionieren nur in Fenster 2 (Ei
 151). Entweder bekommt Säckel niedrigere obere Stufen, oder es wird im ersten Fenster nur bis Selten
 angeboten. **Offen.**
 
+**Fußvolk, gemessen** (Siege mit Grundwert 4 oder weniger, Fenster 1, 40 Läufe je Spielweise):
+
+| | p25 | p50 | p75 | p90 |
+| --- | --- | --- | --- | --- |
+| naiv | 38 | 43,5 | 52,5 | 69 |
+| Feuer | 39 | 47 | 61 | 76 |
+| Blitz | 41 | 44 | 52 | 61 |
+| Eis | 40 | 48 | 54 | 65 |
+| Pflanze | 38 | 41 | 48 | 59 |
+
+Deutlich mehr als erwartet: die schwachen Karten gewinnen öfter, als ihr Grundwert vermuten lässt,
+weil Perks und Fraktionen sie mitheben. Die Leiter 40 · 60 · 80 · 110 setzt Normal knapp unter den
+naiven Median, Sehr selten über das p90 von Fenster 1 und Episch ins zweite Fenster (dort p50 zwischen
+56 und 95).
+
+**Brecher, gemessen** (Siege über der Schwelle, Fenster 1, naiver Spieler):
+
+| Schwelle | p50 | p75 | p90 | liegt damit auf |
+| --- | --- | --- | --- | --- |
+| über 10 | 13 | 26 | 56 | Median, also Normal |
+| über 12 | 0 | 8 | 22 | p75, also Selten |
+| über 15 | 0 | 0 | 6 | p90, also Sehr selten |
+| über 20 | 0 | 0 | 0 | über allem Gemessenen, auch in Fenster 2 |
+
+Die feste Zahl von zehn Stichen passt dazu: über 10 schafft der Median knapp, über 20 erreichte im
+ganzen Datensatz kein Lauf.
+
+**Buntspiel, gemessen** (Minimum über die vier Grundfarben, bester Durchlauf in Fenster 1):
+
+| | p25 | p50 | p75 | p90 | Durchläufe mit jeder Farbe ≥ 4 / 5 / 6 / 7 |
+| --- | --- | --- | --- | --- | --- |
+| naiv | 4 | 5 | 5 | 5 | 7 / 1 / 0 / 0 von 15 |
+| Feuer | 5 | 5 | 5 | 6 | 8 / 1 / 0 / 0 |
+| Pflanze | 4 | 5 | 5 | 5 | 7 / 1 / 0 / 0 |
+
+Normal (4) gelingt in jedem zweiten Durchlauf von allein, Selten (5) einmal je Fenster, Sehr selten (6)
+nur bei Feuer im p90, Episch (7) in Fenster 1 bei keiner Spielweise. **Pflanze liegt mit
+Grundfarben-Zählung exakt auf dem naiven Spieler**, die Regel aus §4.1 funktioniert also.
+
 **Korrektur zu einer früheren Aussage in dieser Reihe:** die Obergrenze für Formationen je Aufstellung
 ist **nicht** 21. Das war das Beste, was die Sim erreicht. Gemessen (Münz-Doku §2.5) gehen die Paare
 aus Position mal Formation bis 145, was bei mittlerer Länge 3,3 rund **45 distinkte Formationen**
 ergibt; der Münz-Deckel bindet ab 32 und trifft 1 % aller Durchläufe. Gedränge auf Episch sitzt damit
 auf dem beobachteten Maximum.
 
-### 4.4 Verworfene Aufgaben
+### 4.5 Verworfene Aufgaben
 
 | Aufgabe | Grund |
 | --- | --- |
@@ -581,6 +693,11 @@ Dazu drei Punkte aus §3 und §4, die ebenfalls beim Owner liegen:
    wird in Fenster 1 nur bis Selten angeboten.
 9. **Treppe und Wechsel bei Reinheit.** Die beiden Leitern (4·5·6·8 und 5·7·9·11) sind Vorschlag aus
    den gemessenen Typanteilen, nicht Owner-Entscheid.
+10. **Würfelt Farbtreue eine Farbe?** Heute nicht. Mit Wurf wächst der Pool von 20 auf 23 Varianten
+    und die Aufgabe wird härter, weil man sich die Farbe nicht mehr aussuchen kann (§3.6).
+11. **Wo genau sitzt die Fortschrittsanzeige?** `StatusRail.jsx` ist der Kandidat, bestätigt ist es
+    nicht (§4.3). Dazu die Frage, ob eine grün gefärbte Karte ihre Grundfarbe noch zeigt, was
+    Buntspiel lesbar hält.
 
 **Erledigt:** „Wird die Stufe angekündigt" hat sich mit dem sichtbaren Angebot von selbst beantwortet.
 Aufgabe, Stufe und Beute stehen alle drei am Angebot.
@@ -620,7 +737,7 @@ Engine-Primitive.
 | Stiftung | Auszahlung am Phasenbeginn |
 | Aufgaben-Gedächtnis | Profil in `storage.js`, additiv über `DEFAULT_PROFILE` |
 
-Die Zähler der elf Aufgaben, alle aus vorhandenem State:
+Die Zähler der fünfzehn Aufgaben, alle aus vorhandenem State:
 
 | Aufgabe | Zähler |
 | --- | --- |
@@ -631,10 +748,20 @@ Die Zähler der elf Aufgaben, alle aus vorhandenem State:
 | Reinheit | dieselbe Funktion, gefiltert auf einen Typ aus `FORMATION_TYPES` |
 | Langbau | Länge des längsten Laufs, `members.length` in `computeFormations` |
 | Vollbrett | Positionen mit mindestens einem Eintrag in `formations` |
+| Verflechtung | Positionen, deren `formations` drei oder mehr Einträge der vier echten Typen tragen |
 | Farbtreue | `suitStreak` in der Engine, respektiert Farballianz und Pflanzen-Grün |
+| Buntspiel | `lastTrick.pCard.suit` je Sieg, also die **Grundfarbe**, ausdrücklich nicht `effColor` |
+| Brecher | `lastTrick.pValue` je Sieg gegen die Schwelle |
+| Fußvolk | `lastTrick.pCard.baseRank` je Sieg, der unveränderte Grundwert |
 | Aufmarsch | Summe über `deck[].value` minus Summe über `oppDeck[].value` |
 | Quartier | `occupiedCells` je Zeile plus `familyDef(b.familyId).category`, wie `summarizeArchitect` es tut |
 | Säckel | `state.coins` am Fensterende |
+
+**Drei Zähler brauchen den Stich-Strom**, nicht nur den Rundenendstand: Buntspiel, Brecher und Fußvolk
+lesen `state.lastTrick` nach jedem Stich. Das Feld liegt vor; `trickLog` (der größere Puffer) wird
+dafür nicht gebraucht.
+
+Die Anzeige (§4.3) braucht dieselben Zahlen live, nicht erst am Fensterende.
 
 **Bauaufwand, geschätzt:** elf der dreizehn Familien sind Zahlen auf vorhandenen Pfaden. Jede braucht
 ein Feld im Lauf-State, eine Lesestelle, Text in zwei Sprachen und einen Test.
