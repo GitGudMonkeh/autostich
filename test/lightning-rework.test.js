@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import * as C from "../src/game/constants.js";
 import { SKILL_DEFS, BLITZ_TIERS, effectiveTierOf, tierIsLifted } from "../src/game/skills.js";
 import { initLightning, L, maxChargeFor, effectiveTier, lightParam, lightningCritChance, lightningCritMult, overcritMult,
-  blitzfaengerValue, ionenfeldValue, fieldTick, ionScoreFor, ionCritMultFor, chargeGainOnWin, critFillsBar, blitzschlagStacks,
+  blitzfaengerValue, ionenfeldValue, potenzialValue, fieldTick, ionScoreFor, ionCritMultFor, chargeGainOnWin, critFillsBar, blitzschlagStacks,
   formationStacks, feldFeed, lightningOnLoss, fillBar } from "../src/game/factions/lightning.js";
 import { resolveTrick } from "../src/game/engine.js";
 import { computeFormations, activeFormationCount } from "../src/game/formations.js";
@@ -27,18 +27,18 @@ const T = BLITZ_TIERS;
 const M = C.CRIT_BASE_MULT;
 
 /* Roster mit LITERALEN IDs — das Coverage-Gate in registry-guards.test.js sucht jede Skill-ID als Text in den Tests. */
-const LIGHTNING_IDS = [ // §7.18: 08 (Statische Aufladung) und 16 (Dauerstrom) in Blitzableiter aufgegangen; 02 Ionenfeld und 12 Vorentladung neu; §7.19: 14 (Überschlag) gestrichen
-  "SK_LIGHTNING_01", "SK_LIGHTNING_02", "SK_LIGHTNING_03", "SK_LIGHTNING_04", "SK_LIGHTNING_05", "SK_LIGHTNING_06", "SK_LIGHTNING_07",
+const LIGHTNING_IDS = [ // §7.18: 16 (Dauerstrom) in Blitzableiter aufgegangen; 02 Ionenfeld und 12 Vorentladung neu; §7.19: 14 (Überschlag) gestrichen; §7.69: 08 trägt jetzt Potenzial (der 15.)
+  "SK_LIGHTNING_01", "SK_LIGHTNING_02", "SK_LIGHTNING_03", "SK_LIGHTNING_04", "SK_LIGHTNING_05", "SK_LIGHTNING_06", "SK_LIGHTNING_07", "SK_LIGHTNING_08",
   "SK_LIGHTNING_09", "SK_LIGHTNING_10", "SK_LIGHTNING_11", "SK_LIGHTNING_12", "SK_LIGHTNING_13",
   "SK_LIGHTNING_15", "SK_LIGHTNING_17",
   "SK_LIGHTNING_L02", "SK_LIGHTNING_L03", "SK_LIGHTNING_L04",
 ];
 
 describe("Blitz-Modul — Stufen und Kennwerte", () => {
-  it("L nennt genau die registrierten Blitz-Skills (14 + 3 Legendäre)", () => {
+  it("L nennt genau die registrierten Blitz-Skills (15 + 3 Legendäre)", () => {
     const ids = Object.values(L);
     // §6.11 (Owner): drei Legendäre je Fraktion — Donnergott (L01) ist als schwächstes gestrichen.
-    expect(ids).toHaveLength(17);
+    expect(ids).toHaveLength(18); // §7.69: 15 normale (Potenzial neu) + 3 Legendäre
     expect([...ids].sort()).toEqual([...LIGHTNING_IDS].sort());
     for (const id of ids) expect(SKILL_DEFS[id]?.archetype, id).toBe("lightning");
     expect(Object.values(SKILL_DEFS).filter((s) => s.archetype === "lightning").map((s) => s.id).sort()).toEqual([...LIGHTNING_IDS].sort());
@@ -406,6 +406,32 @@ describe("Blitz — Engine-Integration (resolveTrick)", () => {
     expect(win.lastTrick.pValue).toBe(10 + T.faenger[1].value);
     const loss = resolveTrick(scen(10, 11, { deck: withStacks(10, 0, 0), skills: [L.BLITZFAENGER], skillTiers: { [L.BLITZFAENGER]: 1 }, lightning: light() }), noCrit);
     expect(loss.lastTrick.result).toBe("loss");
+  });
+  /* §7.69 (Owner): Potenzial, der 15. Blitz-Skill. Die LADUNG selbst gibt Kampfwert — der einzige Wert-Geber der
+     Fraktion ohne Ionisierungs-Vorstufe. Der Wächter hält die drei Eigenschaften, die ihn ausmachen: er steigt mit
+     der Ladung, er braucht KEINE Stapel (sonst wäre er der Lichtbogen von vorher), und er fällt mit dem Einschlag
+     auf null zurück — der Sägezahn ist die Bauart, nicht ein Nebeneffekt. */
+  it("Potenzial (§7.69): die Ladung auf der Leiste gibt Kampfwert, abgerundet je Stufe", () => {
+    for (const tier of [0, 1, 2, 3]) {
+      const per = T.potenzial[tier].per;
+      for (const charge of [0, per - 1, per, 2 * per, 9]) {
+        expect(potenzialValue(light({ charge }), [L.POTENZIAL], { [L.POTENZIAL]: tier }), `Stufe ${tier}, Ladung ${charge}`)
+          .toBe(Math.floor(charge / per));
+      }
+    }
+    expect(potenzialValue(light({ charge: 9 }), [L.KETTENBLITZ], {})).toBe(0);        // ohne den Skill nichts
+    expect(potenzialValue({ ...initLightning(), charge: 9 }, [L.POTENZIAL], {})).toBe(0); // inaktiver Archetyp
+  });
+  it("Potenzial (§7.69): gewinnt den knappen Stich aus der Ladung heraus, ohne einen einzigen Stapel", () => {
+    const bau = (charge) => scen(5, 7, { skills: [L.POTENZIAL], skillTiers: { [L.POTENZIAL]: 3 }, lightning: light({ charge }) });
+    const leer = resolveTrick(bau(0), noCrit);
+    expect(leer.lastTrick.result).toBe("loss");
+    expect(leer.lastTrick.pValue).toBe(5);
+    const voll = resolveTrick(bau(9), noCrit); // Episch: je 2 Ladung +1 → +4
+    expect(voll.lastTrick.pValue).toBe(5 + Math.floor(9 / T.potenzial[3].per));
+    expect(voll.lastTrick.result).toBe("win");
+    // Keine Karte im Deck trägt Stapel — genau das unterscheidet ihn vom alten Lichtbogen.
+    expect(voll.deck.every((c) => !(c.ionStacks > 0))).toBe(true);
   });
   it("Kurzschluss: Stapel der Siegkarte zählen ab Schwelle doppelt — in der Basis", () => {
     const min = T.kurzschluss[0].minStacks;

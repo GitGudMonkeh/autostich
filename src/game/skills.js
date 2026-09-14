@@ -63,6 +63,16 @@ const BLITZ = {
      Gerechnet (Leiste 10, 40 Stiche, Siegquote 55 %, nur das Passiv als Crit-Quelle): bei 17 % Crit steigen die
      Leisten je Durchlauf von 0,37 auf 0,83 / 0,98 / 1,29 / 2,20. STARTWERTE, auf Owner-Ansage NICHT gemessen. */
   lichtbogen:    [{ winEvery: 4 }, { winEvery: 3 }, { winEvery: 2 }, { winEvery: 1, coldDouble: true }],
+  /* §7.69 (Owner): der 15. Blitz-Skill — Eis und Pflanze führen 15, Blitz und Feuer waren durch Streichungen auf 14
+     gefallen. Anlass ist der Engpass, der beim Lichtbogen-Bau sichtbar wurde: Ladung gibt es NUR bei einem Sieg, die
+     Siegquote drosselt also die ganze Fraktion — und dafür arbeiteten bisher nur Blitzfänger und Ionenfeld, beide
+     hinter der Ionisierung, also wieder hinter Leisten, also wieder hinter Siegen. Potenzial macht die LADUNG SELBST
+     zum Kampfwert und hängt damit an nichts. Der Sägezahn ist Absicht: kurz vor dem Einschlag am stärksten, direkt
+     danach bei null. Kein Deckel nötig, die Leiste leert sich von selbst.
+     Gerechnet aus der Kartenverteilung (beide Decks 4 × 1..10, Leistenstand gleichverteilt angenommen): der Anteil
+     verlorener Stiche, der kippt, liegt bei 4,5 / 7,0 / 10,2 / 16,0 %. STARTWERTE, auf Owner-Ansage NICHT gemessen.
+     Kein Episch-Extra (Owner-Entscheid offen gelassen, Vorschlag ohne): die vier Stufentexte trennt der Teiler. */
+  potenzial:     [{ per: 5 }, { per: 4 }, { per: 3 }, { per: 2 }],
   blitzschlag:   [{ critEvery: 4, stacks: 2 }, { critEvery: 3, stacks: 3 }, { critEvery: 2, stacks: 4 }, { critEvery: 2, stacks: 6 }], // §7.18: einen Schritt schneller; §7.54: die Stapel je Auslösung 1/1/1/2 → 2/3/4/6, denn die Kadenz war nie das Problem — die Leisten schütten im Lauf Ø 634 Stapel aufs Deck (blitz-ramp), gegen die ein Stapel je zweitem Crit nicht ankommt. Die Karte wechselt je Sieg, der Skill STREUT also und speist damit das Spannungsfeld
   streuung:      [{ cards: 1 }, { cards: 2 }, { cards: 3 }, { cards: 4, freshStacks: 2 }], // §7.63 (Owner: „kuerzen"): Leiter 1/2/3/4 -> 1/1/2/3 Karten, Episch also 3 statt 4 je Leiste. §7.62 hat Blitz bei 3,18/2,92x Feuer gemessen (Duell-Median 17,2/17,5 -> 28,0/25,9 Mio), und Streuung war der einzige Skill mit stabilem Signal (100 % Haltequote in beiden Seed-Saetzen). Der Episch-Anhang wandert dabei von der letzten Stufe auf die zweite und steigt am Ende auf 3: mit 1/1/2/3 und einem Anhang nur oben waeren Normal und Selten WORTGLEICH gewesen, ein Stufenschritt, der nichts tut - alle 58 gestuften Skills haben heute vier verschiedene Stufentexte, und ein Waechter haelt das jetzt fest. §7.59 (Owner): Streuung ersetzt den Serienschutz auf SK_LIGHTNING_17. Der alte reagierte auf NIEDERLAGEN (Owner-Regel §7.31) und zahlte mit Ladung, dem Engpass. Der neue ist das Gegenstueck zu Kettenblitz: der sucht die Tiefe (die Karte mit den meisten Stapeln), diese die Breite (die duennsten). Grund aus der Messung: das Deck bekommt Oe 979 Stapel je Lauf, davon liegen 241 auf EINER Karte - die Fraktion konzentriert, und nichts arbeitet dagegen. Die Leiter ist die Zahl der Karten; Episch gibt einer Karte ohne Stapel 2 statt 1. STARTWERTE, ungemessen: 4 Karten je Leiste sind bei Oe 163 Leisten auch 4x das Dauerwert-Einkommen des Passivs, das ist der Hebel, an dem zuerst gedreht wird
 };
@@ -226,6 +236,8 @@ export const SKILL_DEFS = {
   // (§7.18: Statische Aufladung SK_LIGHTNING_08 und Dauerstrom SK_LIGHTNING_16 sind in Blitzableiter aufgegangen.)
   SK_LIGHTNING_01: { id: "SK_LIGHTNING_01", name: "Blitzableiter", archetype: "lightning", keywords: ["charge", "crit"], tiers: BLITZ.ableiter,
     ...tiered(BLITZ.ableiter, (r) => `${jeder(r.critEvery)} Crit gibt +${r.extra} Ladung zusätzlich.${r.back ? ` Nach jeder vollen Leiste kommt +${r.back} Ladung zurück.` : ""}`) },
+  SK_LIGHTNING_08: { id: "SK_LIGHTNING_08", name: "Potenzial", archetype: "lightning", keywords: ["charge"], tiers: BLITZ.potenzial, // §7.69: der 15. Blitz-Skill — die Ladung selbst als Kampfwert (Platz der gestrichenen Statischen Aufladung)
+    ...tiered(BLITZ.potenzial, (r) => `Je ${r.per} Ladung auf der Leiste kämpfen deine Karten mit +1 Wert.`) },
   SK_LIGHTNING_05: { id: "SK_LIGHTNING_05", name: "Reststrom", archetype: "lightning", keywords: ["charge"], tiers: BLITZ.reststrom,
     ...tiered(BLITZ.reststrom, (r) => `Nach jeder vollen Leiste startet die Ladung bei ${r.floor} statt 0.${r.bar ? ` Die Leiste ist schon bei ${r.bar} voll.` : ""}`) },
   SK_LIGHTNING_02: { id: "SK_LIGHTNING_02", name: "Ionenfeld", archetype: "lightning", keywords: ["charge", "ionize"], tiers: BLITZ.ionenfeld,

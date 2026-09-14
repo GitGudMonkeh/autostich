@@ -19,11 +19,11 @@ const ALL = Object.keys(SKILL_DEFS);
 const pctText = (x) => String(Math.round(x * 10000) / 100).replace(".", ",");
 
 describe("skills — Blitz-Registry (exp skill rework)", () => {
-  it("17 Blitz-Skills: 14 normale mit vier Stufenzeilen + 3 Legendäre ohne Stufe, alle archetype=lightning", () => {
+  it("18 Blitz-Skills: 15 normale mit vier Stufenzeilen + 3 Legendäre ohne Stufe, alle archetype=lightning", () => {
     const light = Object.values(SKILL_DEFS).filter((s) => s.archetype === "lightning");
-    expect(light).toHaveLength(17); // §7.19: 14 normale (Überschlag gestrichen, Owner-Untergrenze 14) + 3 Legendäre (§6.11, Owner)
+    expect(light).toHaveLength(18); // §7.69 (Owner): 15 normale — Potenzial füllt auf den Stand von Eis und Pflanze auf; + 3 Legendäre (§6.11, Owner)
     const normal = light.filter((s) => !s.legendary), leg = light.filter((s) => s.legendary);
-    expect(normal).toHaveLength(14);
+    expect(normal).toHaveLength(15);
     expect(SKILL_DEFS.SK_LIGHTNING_14).toBeUndefined();           // §7.19: Überschlag gestrichen
     expect(leg).toHaveLength(3);
     expect(SKILL_DEFS.SK_LIGHTNING_L01, "Donnergott gestrichen (gemessen +30 %, das schwächste der vier)").toBeUndefined();
@@ -33,7 +33,7 @@ describe("skills — Blitz-Registry (exp skill rework)", () => {
     expect(SKILL_DEFS.SK_LIGHTNING_L03.name).toBe("Hochspannung"); // ersetzt Flächenionisation
     expect(SKILL_DEFS.SK_LIGHTNING_02.name).toBe("Ionenfeld");    // §7.18: neu auf dem Platz der alten Ionisierung (die ist das Passiv)
     expect(SKILL_DEFS.SK_LIGHTNING_12.name).toBe("Vorentladung"); // §7.18: neu auf dem Platz des gestrichenen Breitenbeschleunigers
-    expect(SKILL_DEFS.SK_LIGHTNING_08).toBeUndefined();           // §7.18: Statische Aufladung in Blitzableiter aufgegangen
+    expect(SKILL_DEFS.SK_LIGHTNING_08.name).toBe("Potenzial");    // §7.69: der 15., auf dem Platz der gestrichenen Statischen Aufladung
     expect(SKILL_DEFS.SK_LIGHTNING_16).toBeUndefined();           // §7.18: Dauerstrom in Blitzableiter aufgegangen
     expect(archetypeOf(LR)).toBe("lightning");
   });
@@ -49,6 +49,12 @@ describe("skills — Blitz-Registry (exp skill rework)", () => {
        erst aus vollen Leisten entstehen, und hing damit hinter seiner eigenen Wirkung). */
     expect(desc(BLITZ_TIERS.lichtbogen, "winEvery")).toBe(true);
     expect(BLITZ_TIERS.lichtbogen.every((r) => r.critPerStack === undefined)).toBe(true);
+    /* §7.69 (Owner): Potenzial. Die Leiter ist der TEILER auf der Ladung und fällt deshalb — je kleiner, desto mehr
+       Wert je Ladung. Der Skill darf keine Stapel- oder Crit-Bedingung bekommen: sein ganzer Zweck ist, dass er VOR
+       der Ionisierung wirkt (§7.68 hat denselben Fehler aus dem Lichtbogen entfernt). */
+    expect(desc(BLITZ_TIERS.potenzial, "per")).toBe(true);
+    expect(BLITZ_TIERS.potenzial.every((r) => r.per >= 1)).toBe(true);
+    expect(BLITZ_TIERS.potenzial.every((r) => r.minStacks === undefined && r.critPerStack === undefined && r.minBars === undefined)).toBe(true);
     expect(BLITZ_TIERS.ueberspannung).toBeUndefined();               // §7.28: Überspannung gestrichen
     expect(asc(BLITZ_TIERS.ionenfeld, "value")).toBe(true);         // §7.19
     expect(asc(BLITZ_TIERS.ionenfeld, "tricks")).toBe(true);        // §7.18

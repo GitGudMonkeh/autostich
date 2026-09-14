@@ -28,6 +28,7 @@ export const L = Object.freeze({
   RESTSTROM: "SK_LIGHTNING_05", GEWITTERFRONT: "SK_LIGHTNING_06", ZUENDSPANNUNG: "SK_LIGHTNING_07", KURZSCHLUSS: "SK_LIGHTNING_09", // 07: §7.61 Zündspannung ersetzt die Ladungsserie (frische Karte statt Serie)
   ENTLADUNG: "SK_LIGHTNING_10", BLITZFAENGER: "SK_LIGHTNING_11", VORENTLADUNG: "SK_LIGHTNING_12", SPANNUNGSFELD: "SK_LIGHTNING_13", // 13: §7.51 auf der Crit-Chance, §7.56 je Formation der Position (Breite)
   BLITZSCHLAG: "SK_LIGHTNING_15", STREUUNG: "SK_LIGHTNING_17", // 17: §7.59 Streuung ersetzt Serienschutz (Breite); SK_LIGHTNING_14 Überschlag: gestrichen (§7.19)
+  POTENZIAL: "SK_LIGHTNING_08", // §7.69: der 15. Skill auf dem Platz der gestrichenen Statischen Aufladung — Ladung als Kampfwert
   DOPPELENTLADUNG: "SK_LIGHTNING_L02", HOCHSPANNUNG: "SK_LIGHTNING_L03", RESONANZ: "SK_LIGHTNING_L04", // L04: Resonanz ersetzt Durchschlag (§7.25); L01 Donnergott gestrichen (§6.11, Owner: drei je Fraktion, die stärksten)
 });
 
@@ -154,6 +155,16 @@ export function blitzfaengerValue(skills, skillTiers, card) {
   const st = card?.ionStacks || 0;
   if (min == null || st < min) return 0;
   return (lightParam(skills, skillTiers, L.BLITZFAENGER, "value") || 0) + (lightParam(skills, skillTiers, L.BLITZFAENGER, "perStack") || 0) * st;
+}
+
+/* Potenzial (§7.69, Owner): die LADUNG selbst gibt Kampfwert — je `per` Ladung auf der Leiste +1, abgerundet. Der
+   einzige Wert-Geber der Fraktion, der nicht hinter der Ionisierung sitzt: er wirkt ab der ersten Ladung und fällt
+   beim Einschlag auf den Reststrom-Boden zurück. Zustand vor dem Stich, wie Blitzfänger und Ionenfeld. */
+export function potenzialValue(lightning, skills, skillTiers) {
+  if (!lightning || !lightning.active) return 0;
+  const per = lightParam(skills, skillTiers, L.POTENZIAL, "per");
+  if (!per) return 0;
+  return Math.floor((lightning.charge || 0) / per);
 }
 
 // Ionenfeld (§7.18): solange das Feld trägt (fieldLeft > 0, gesetzt von jeder vollen Leiste), kämpfen ALLE Karten mit

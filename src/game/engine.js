@@ -9,7 +9,7 @@ import { skillSum, buildSkillDoors } from "./skills.js"; // exp skill rework: T�
 import { coinsForFormations } from "./coins.js"; // Münz-Ökonomie (§2.2): Einnahme je Durchlauf aus der Aufstellung
 // exp skill rework: die Blitz-Mechanik (Passiv, 15 Skills, 4 Legendäre) lebt im Fraktionsmodul; die Engine ruft nur
 // ihre reinen Übergänge (Crit-Beiträge, Ladungsgewinn, volle Leiste, Niederlage, Rundenende).
-import { lightningCritChance, lightningCritMult, overcritMult, blitzfaengerValue, ionenfeldValue, fieldTick, ionScoreFor as lightIonScore, ionCritMultFor as lightIonCritMult, chargeGainOnWin, entladungScoreFor,
+import { lightningCritChance, lightningCritMult, overcritMult, blitzfaengerValue, ionenfeldValue, potenzialValue, fieldTick, ionScoreFor as lightIonScore, ionCritMultFor as lightIonCritMult, chargeGainOnWin, entladungScoreFor,
   blitzschlagStacks, feldFeed, lightningOnLoss, fillBar as lightFillBar, maxChargeFor,
   hasDoppelentladung, hasResonanz, resonantStacks } from "./factions/lightning.js";
 // exp skill rework: die Feuer-Mechanik (Passiv, 15 Skills, 4 Legendäre) lebt ebenso im Fraktionsmodul — die Engine
@@ -351,7 +351,9 @@ export function resolveTrick(state, rng) {
   const fireValue = fireValueBonus(heat, skills, skillTiers, { winStreak }); // §7.24: Rückzündung Episch liest die Serie (die zündende Karte)
   // Blitzfänger (exp skill rework): ionisierte Karten kämpfen mit +Wert; Ionenfeld (§7.18): solange das Feld trägt, alle
   // Karten. Beides Zustand vor dem Stich, kein Ereignis.
-  const blitzValueBonus = blitzfaengerValue(skills, skillTiers, pCardR) + ionenfeldValue(state.lightning, skills, skillTiers);
+  // §7.69 Potenzial: dazu die Ladung auf der Leiste selbst — der einzige Wert-Geber ohne Ionisierungs-Vorstufe.
+  const blitzValueBonus = blitzfaengerValue(skills, skillTiers, pCardR) + ionenfeldValue(state.lightning, skills, skillTiers)
+    + potenzialValue(state.lightning, skills, skillTiers);
   const anchorPowerBonus = anchorType === "power" ? (aParam("power") || 0) : 0; // Kraftanker (§4.2, Stärke = Stufe)
   // E_QUICKSHOT IV (Rarität #167 Kat. E, Spec §3.2 E8 IV): jede Anker-Position (jede fünfte) erhält zusätzlich +2 Wert.
   // Der Anker-FAKTOR selbst läuft über computeFormations; hier nur der Stufe-IV-Wertbonus (anchor.value auf Anker-Positionen).

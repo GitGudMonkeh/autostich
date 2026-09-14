@@ -35,8 +35,8 @@ export default {
      the texts name the Normal row first and then the ladder, mirroring the German source. */
   "ability.SK_LIGHTNING_01.name": "Lightning Rod",
   "ability.SK_LIGHTNING_01.desc": "Every 2nd crit gives +1 extra charge. Uncommon: every crit. Rare: plus +1 charge after every full bar. Epic: +2 back, and charge above the bar is kept.",
-  "ability.SK_LIGHTNING_08.name": "Static Buildup",
-  "ability.SK_LIGHTNING_08.desc": "Every 2nd win without a crit gives +1 charge. Uncommon: every win without a crit. Rare: plus every 2nd loss +1 charge. Epic: win without a crit +2 charge, and the full bar gives the ionized card +1 card value permanently.",
+  "ability.SK_LIGHTNING_08.name": "Potential",
+  "ability.SK_LIGHTNING_08.desc": "Every 5 charge on the bar, your cards fight with +1 value. Uncommon every 4, Rare every 3, Epic every 2.",
   "ability.SK_LIGHTNING_05.name": "Residual Current",
   "ability.SK_LIGHTNING_05.desc": "After every full bar the charge starts at 2 instead of 0. Uncommon 3, Rare 4, Epic 6.",
   "ability.SK_LIGHTNING_16.name": "Continuous Current",
