@@ -104,7 +104,10 @@ export function upgradeInfo(fam, tier) {
 // Kreuzgang-Bindeglied-Span (Bedingung minimal weiten): I ±1, II ±2, III/IV ±3 (Runde 6: keine tote Stufe mehr).
 export const bindSpanFor = (tier) => (tier === "legendary" || tier >= 3 ? 3 : tier >= 2 ? 2 : 1);
 // Rampe-Schwelle (Bedingung minimal weiten): Wert ≤ 5 + (Stufe−1).
-const rampThresholdFor = (tier) => 5 + (tier === "legendary" ? 0 : (tier || 1) - 1);
+/* Owner-Runde 2026-09-14 („a": Tore lockern): Schwelle eine Stufe weiter, ≤6…≤9 statt ≤5…≤8. Das Deck trägt
+   die Werte 1–10 gleichverteilt, der Anteil qualifizierender Karten steigt damit von 50–80 % auf 60–90 %.
+   Die Rampe bleibt „niedrige Karten" — das Tor wird geweitet, nicht abgeschafft. */
+export const rampThresholdFor = (tier) => 6 + (tier === "legendary" ? 0 : (tier || 1) - 1);
 
 /* ============================================================
    SPIELER-BESCHREIBUNG eines Bauplans/Gebäudes (Sprachprüfung A13) — die EINE Quelle.
@@ -285,7 +288,7 @@ export const ARCHITECT_FAMILIES = {
   A_RIEGEL:   { id: "A_RIEGEL",   name: "Riegel",       category: "value", form: "tromino_i", base: { kind: "flat", value: 3 } },
   A_QUADER:   { id: "A_QUADER",   name: "Quader",       category: "value", form: "block2x2",  base: { kind: "flat", value: 3 } },
   A_RAMPE:    { id: "A_RAMPE",    name: "Rampe",        category: "value", form: "tetro_s",   base: { kind: "lowValue", value: 3 } },
-  A_BUNTGLAS: { id: "A_BUNTGLAS", name: "Buntglas",     category: "value", form: "tetro_t",   base: { kind: "color", value: 3 }, colorLocked: true },
+  A_BUNTGLAS: { id: "A_BUNTGLAS", name: "Buntglas",     category: "value", form: "tetro_t",   base: { kind: "color", value: 3 }, colorLocked: true, tierKick: { at: 3, anyColor: true } }, // Owner 2026-09-14: ab III fällt die Farbbedingung — das Farbtor (1 von 4) drückte die Decke des Tragwerks auf ein Viertel
   A_FIRST:    { id: "A_FIRST",    name: "Firstträger",  category: "value", form: "line4",     base: { kind: "target", value: 5 }, target: "highest" },
   A_SOCKEL:   { id: "A_SOCKEL",   name: "Sockel",       category: "value", form: "tetro_l",   base: { kind: "target", value: 5 }, target: "lowest" },
   A_ZUNFTV:   { id: "A_ZUNFTV",   name: "Zunftviertel", category: "value", form: "tromino_l",  base: { kind: "neighbor", value: 2, cap: 3 } }, // #Pool: +Wert je Nachbargebäude
@@ -613,7 +616,10 @@ function resolveNumEffect(fam, b, cat, order, deck, cardVal, boardCtx = {}) {
     let e = null;
     if (base.kind === "flat") e = { kind: "flat", amount: tierNum(cat === "value" ? base.value : base.score, b.tier) };
     else if (base.kind === "lowValue") e = { kind: "lowValue", amount: tierNum(base.value, b.tier), threshold: rampThresholdFor(b.tier) };
-    else if (base.kind === "color") e = { kind: "color", amount: tierNum(cat === "value" ? base.value : base.score, b.tier), colorChoice: b.colorChoice };
+    // #Pool tierKick anyColor (Buntglas III): die Farbbedingung fällt weg — aus dem Tor wird ein freier Betrag.
+    else if (base.kind === "color") e = (kickOn && fam.tierKick.anyColor)
+      ? { kind: "flat", amount: tierNum(cat === "value" ? base.value : base.score, b.tier) }
+      : { kind: "color", amount: tierNum(cat === "value" ? base.value : base.score, b.tier), colorChoice: b.colorChoice };
     else if (base.kind === "streak") e = { kind: "streak", amount: tierNum(base.score, b.tier) };
     else if (base.kind === "crit") e = { kind: "crit", amount: tierNum(base.score, b.tier) };
     else if (base.kind === "milestone") e = { kind: "milestone", amount: tierNum(base.score, b.tier), every: kickOn ? fam.tierKick.every : base.every, buildingId: b.id };

@@ -103,7 +103,7 @@ export default {
      in den Katalog; die reinen Zahlen-Helfer (tierNum/tierFactor/bindSpanFor) bleiben im Spiel-Layer. */
   "building.eff.flat.value": "alle Abgedeckten +{n} Stichwert",
   "building.eff.flat.score": "Sieg +{n} Score",
-  "building.eff.lowValue": "niedrige Karten +{n} Stichwert",
+  "building.eff.lowValue": "Karten bis Wert {max} +{n} Stichwert",
   "building.eff.color.value": "passende Farbe +{n} Stichwert",
   "building.eff.color.score": "passende Farbe +{n} Score",
   "building.eff.target.highest": "höchste",
@@ -136,6 +136,7 @@ export default {
   "building.kick.streakDoubleFrom": "ab Serie {n} doppelt",
   "building.kick.addType": "zweiter Joker-Typ: {type}",
   "building.kick.farbJoker": "wird zum Farbblock-Joker: die Zelle zählt als passende Farbe",
+  "building.kick.anyColor": "die Farbbedingung fällt weg: jede Karte zählt",
   "building.kick.ankerValue": "+{n} Stichwert je Ankerzelle",
   // Stufen-Leiter (Runde 6): flacher Stichwert auf den Zellen der Formations-Gebäude, je Stufe.
   "building.eff.tierValue": "dazu +{n} Stichwert auf jeder Zelle",

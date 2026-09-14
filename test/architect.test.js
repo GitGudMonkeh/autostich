@@ -4,7 +4,7 @@ import {
   nextRotationFootprint, currentRotationIndex, ROWS, COLS,
   buildArchitectOffer, initialArchitect, precomputeArchitect, architectValueBonus, architectScore,
   architectFormSpec, summarizeArchitect, tierNum, upgradeInfo, bindSpanFor, MAX_TIER,
-  ARCHITECT_OFFER, HAEUSERZEILE_FACTOR, RUND_AB, RUND_AUF, halfOf,
+  ARCHITECT_OFFER, HAEUSERZEILE_FACTOR, RUND_AB, RUND_AUF, halfOf, rampThresholdFor,
   posOf, rowOf, colOf, N_POS,
   districtFactorMap, boardFactorMap, DISTRICT_BONUS, DISTRICT_CAP,
 } from "../src/game/architect.js";
@@ -229,6 +229,34 @@ describe("Architekt — value-Effekte (Precompute + Anwendung)", () => {
     const lo = precomputeArchitect({ buildings: [B("A_SOCKEL", [0, 1, 2, 3], 1)] }, idOrder, deck);
     expect(architectValueBonus(lo, 0, deck[0])).toBe(tierNum(ARCHITECT_FAMILIES.A_SOCKEL.base.value, 1)); // 2 = niedrigste
     expect(architectValueBonus(lo, 1, deck[1])).toBe(halb);
+  });
+
+  /* Owner-Runde 2026-09-14 („a": Tore lockern). Zwei Wert-Gebäude trugen ein Tor, das ihre Decke unter das
+     Band drückte — ein Stich lässt sich nur einmal kippen, ein Viertel-Tor deckelt also bei einem Viertel
+     der Wert-Decke. Buntglas verliert die Farbbedingung ab Stufe III (Kick, dieselbe Bauart wie Arkades
+     farbJoker), die Rampe nimmt eine Schwelle mehr. Geprüft wird das VERHALTEN, nicht die Zahl. */
+  it("Buntglas III lässt die Farbbedingung fallen, darunter gilt sie", () => {
+    const deck = fakeDeck(() => 5, (i) => ["R", "B", "G", "Y"][i % 4]);
+    const bei = (tier, pos) => {
+      const pre = precomputeArchitect({ buildings: [B("A_BUNTGLAS", [0, 1, 2, 6], tier, { colorChoice: "R" })] }, idOrder, deck);
+      return architectValueBonus(pre, pos, deck[pos]);
+    };
+    const passt = 0, passtNicht = 1; // deck[0] ist R (gewählt), deck[1] ist B
+    expect(bei(2, passt)).toBeGreaterThan(0);
+    expect(bei(2, passtNicht)).toBe(0);              // unter dem Kick zählt nur die Farbe
+    expect(bei(3, passtNicht)).toBeGreaterThan(0);   // ab III jede Karte
+    expect(bei(3, passtNicht)).toBe(bei(3, passt));
+    expect(buildingEffect(ARCHITECT_FAMILIES.A_BUNTGLAS, 4)).not.toContain("passende Farbe"); // der Satz darf sich nicht widersprechen
+  });
+
+  it("die Rampe nennt ihre Schwelle, und der Motor rechnet mit derselben", () => {
+    const grenze = rampThresholdFor(1);
+    const deck = fakeDeck((i) => (i === 0 ? grenze : grenze + 1));
+    const pre = precomputeArchitect({ buildings: [B("A_RAMPE", [0, 1, 5, 6], 1)] }, idOrder, deck);
+    expect(architectValueBonus(pre, 0, deck[0])).toBeGreaterThan(0);  // genau auf der Schwelle zählt
+    expect(architectValueBonus(pre, 1, deck[1])).toBe(0);             // einen darüber nicht
+    expect(buildingEffect(ARCHITECT_FAMILIES.A_RAMPE, 1)).toContain(String(grenze));
+    for (let t = 2; t <= MAX_TIER; t++) expect(rampThresholdFor(t)).toBeGreaterThan(rampThresholdFor(t - 1));
   });
 
   /* Die Hälfte ist eine SPIELERZAHL — sie steht auf der Karte und muss deshalb durch dieselbe Rundung wie
