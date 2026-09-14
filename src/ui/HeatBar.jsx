@@ -1,5 +1,5 @@
 import { F, fireParam, heatMult, heatMaxFor, schneiseLane, glutbettFloor, klingeValue, klingeTicks } from "../game/factions/fire.js";
-import { HEAT_MAX, HEAT_MULT_PER_10, SONNENZORN_MULT_PER_10, FORGE_VALUE } from "../game/constants.js";
+import { HEAT_MAX, HEAT_LOSS, HEAT_MULT_PER_10, SONNENZORN_MULT_PER_10, FORGE_VALUE } from "../game/constants.js";
 import { FactionShell, PanelSkills, CounterCell, YieldMeter } from "./indicators/panelKit.jsx";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { FIRE, FIRE_HOT, FORGE, WHITE_HEAT } from "./indicators/vocab.js";
@@ -63,18 +63,16 @@ export function HeatBar({ heat, skills = [], skillTiers = {}, forged = {}, brand
     badges.push({ k: "bs", t: lane.length ? t("bar.fire.badge.schneise.n", { n: lane.length }) : t("bar.fire.badge.schneise"), c: HOT, dim: lane.length === 0,
       title: t("bar.fire.badge.schneise.title", { n: laneWidth, m: fmtNum(param(F.BRANDSCHNEISE, "mult") || 1) }) });
   }
-  // Glutbett (§6.24): der Boden, unter den die Kühlung nicht drückt — samt dem, was er über den Lauf gewachsen ist.
-  // Ohne den Anstieg wäre der Skill unsichtbar; so sieht der Spieler das Bett dicker werden.
+  // Glutbett (§7.70): der Boden, unter den die Kühlung nicht drückt. Er STEHT jetzt fest — der frühere Anstieg lief
+  // bis an die Leiste und hob die Rarität auf; die zweite Hälfte des Skills ist statt dessen die mildere Kühlung.
   const bedFloor = glutbettFloor(heat, skills, skillTiers);
   // Strich nur zeichnen, wenn der Boden mitten auf der Leiste liegt. glutbettFloor klemmt ihn bereits auf die
   // Leistenlänge, „nicht gleich der Länge" ist also dasselbe wie „darunter" — und die i18n-Ratsche liest den
   // Kleiner-Vergleich sonst als Text zwischen zwei Tags (AGENTS.md: Quelltext-Ratschen).
   const showBedTick = bedFloor > 0 && bedFloor !== scale;
   if (bedFloor > 0) {
-    const grown = Math.round(heat.bedFloor || 0);
     badges.push({ k: "gb", t: t("bar.fire.badge.glutbett", { n: Math.round(bedFloor) }), c: FIRE, dim: value <= bedFloor,
-      title: t(grown > 0 ? "bar.fire.badge.glutbett.title.grown" : "bar.fire.badge.glutbett.title",
-        { n: Math.round(bedFloor), grown, rise: param(F.GLUTBETT, "rise") || 0 }) });
+      title: t("bar.fire.badge.glutbett.title", { n: Math.round(bedFloor), cool: param(F.GLUTBETT, "cool") ?? HEAT_LOSS }) });
   }
   // Verbrennung: die Vorsprungs-Schwelle der Stufe (Zustand des Builds, kein Hitze-Tor).
   const vbMin = param(F.VERBRENNUNG, "minMargin");

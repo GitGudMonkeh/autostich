@@ -95,6 +95,8 @@ export default {
   "ability.SK_FIRE_09.desc": "A win with a margin of 8 or more counts ×1.5. Uncommon from 7, Rare from 6, Epic from 5.",
   "ability.SK_FIRE_11.name": "Wildfire",
   "ability.SK_FIRE_11.desc": "From 80% heat the next win burns the heat down to 40: +15 base score per burnt point. Uncommon +20, Rare +25, Epic +30 — and the fire burns down to 0.",
+  "ability.SK_FIRE_10.name": "Seat of Fire",
+  "ability.SK_FIRE_10.desc": "A win gives +2 % heat per paying formation at the winning position. Uncommon +3 %, Rare +4 %, Epic +5 %.",
   "ability.SK_FIRE_12.name": "Melting Point",
   "ability.SK_FIRE_12.desc": "Every win burns 4% heat: +15 base score per point. Uncommon +20, Rare +25, Epic +30 — and half of the burnt heat comes back.",
   "ability.SK_FIRE_13.name": "Brand",

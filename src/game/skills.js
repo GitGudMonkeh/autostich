@@ -97,7 +97,25 @@ const FEUER = {
   // nicht mehr auf die Leiste passt, geht über den Schmelzpunkt (100 % gehalten) in den Basis-Score.
   zunder:        [{ heat: 4 }, { heat: 6 }, { heat: 8 }, { heat: 10, lossHeat: 2 }], // §7.16: 1–4 → 2–5; §7.22 Episch-Extra: auch Niederlagen geben +2
   feuersturm:    [{ multPerStreak: 0.001 }, { multPerStreak: 0.0015 }, { multPerStreak: 0.002 }, { multPerStreak: 0.003, minHeat: 90 }], // §7.17: Serie zu Score bei voller Leiste (Episch ab 90 %, §7.18: war 80); vorher Serie zu Hitze. Satz nach Sweep (0,5 % je Punkt war ×3 Blitz)
-  glutbett:      [{ floor: 40, rise: 1 }, { floor: 60, rise: 2 }, { floor: 80, rise: 3 }, { noCool: true }], // §6.24: der Boden steigt, wenn er einen Sturz abfängt
+  /* §7.70 (Owner): der steigende Boden aus §6.24 ist weg. Er lief bis an die Leiste und machte die Rarität wertlos —
+     simuliert über 50 Durchläufe endeten ALLE vier Stufen bei Boden 100 und Hitze 100, bei 45 % wie bei 55 % Siegquote;
+     die Stufe entschied nur, wie schnell (Normal 60 Abfänge, Sehr selten 7). Nach dem Lauf war Normal gleich Episch.
+     Statt zu steigen mildert der Boden jetzt die Kühlung, und zwar dort, wo er vorher nichts tat: OBERHALB der Schwelle
+     (Owner: „über dem Schwellenwert Niederlagen um einen Kampfwert weniger weh tun"). Gemessene Endhitze damit
+     40 / 61 / 82 / 100 bei 45 % und 56 / 75 / 90 / 100 bei 55 % — also ×1,20 / 1,30 / 1,40 / 1,50.
+     Die Kühlungs-Leiter trägt dabei wenig (gegen ein flaches „immer 5" unterscheidet sie sich in einer Zelle); der
+     BODEN macht die Stufen. Sie ist gestaffelt, damit beide Sätze der Karte eine Stufe tragen. */
+  glutbett:      [{ floor: 40, cool: 5 }, { floor: 60, cool: 4 }, { floor: 80, cool: 3 }, { noCool: true }],
+  /* §7.70 (Owner): Brandherd, der 15. Feuer-Skill — Eis und Pflanze führen 15, Feuer stand seit §7.16 bei 14.
+     Anlass ist die gerechnete Hitze-Ökonomie: Siege ab Vorsprung 3 geben (Vorsprung − 1) %, jede Niederlage kühlt 6 %
+     flach — die Drift ist bei 45 % Siegquote −2,18 % je Stich und dreht erst bei rund 64 % ins Plus. Darunter steht die
+     Leiste bei null, und damit stehen sechs Feuer-Skills still, die auf 80 bis 100 % warten. Feuer hat seinen Kaltstart
+     verloren, als §7.23 die Glut strich und den Platz an die Feuerlinie gab: die ist ein Auszahler, kein Starter.
+     Brandherd koppelt die Hitze vom (unsichtbaren) Vorsprung ab und an die AUFSTELLUNG, die Entscheidung des Spielers.
+     Gerechnet mit 1,5 zahlenden Formationen je Position (§7.58 gemessen 1,4–1,7) und 55 % Siegquote: Drift
+     +0,51 / +1,34 / +2,16 / +2,99 je Stich, also 4,9 / 1,9 / 1,2 / 0,8 Durchläufe bis zur vollen Leiste.
+     Kein Episch-Extra: der Satz trennt die vier Texte. STARTWERTE, auf Owner-Ansage NICHT gemessen. */
+  brandherd:     [{ perForm: 2 }, { perForm: 3 }, { perForm: 4 }, { perForm: 5 }],
   rueckzuendung: [{ every: 5, mult: 1.8 }, { every: 4, mult: 1.8 }, { every: 3, mult: 1.8 }, { every: 2, mult: 1.8, value: 2 }], // §7.24 (Owner): Takt — jeder N. Sieg in Folge zündet und zählt ×mult, Episch kämpft die zündende Karte mit +2 (vorher Konter nach einer Niederlage, §7.22 — ab der Laufmitte gibt es keine Niederlagen mehr); §7.34: Faktor 1,5 → 1,8 (die Leiter ist der Takt, der Faktor steht auf allen Stufen gleich)
   klinge:        [{ perHeat: 40, value: 1 }, { perHeat: 30, value: 1 }, { perHeat: 25, value: 1 }, { perHeat: 20, value: 1 }],
   weissglut:     [{ multPer10: 0.03 }, { multPer10: 0.04 }, { multPer10: 0.05 }, { multPer10: 0.06 }],
@@ -286,6 +304,8 @@ export const SKILL_DEFS = {
   SK_FIRE_01: { id: "SK_FIRE_01", name: "Feuerlinie", archetype: "fire", keywords: ["heat", "formation"], tiers: FEUER.feuerlinie,
     ...tiered(FEUER.feuerlinie, (r) => `Ein Sieg in einer Formation zählt +${pct(r.perPoint)} % Score je Punkt Kampfwert der Siegkarte und verbrennt ${r.cost} % Hitze.${r.perFormation ? " Der Bonus zählt je Formation an der Siegposition." : ""}`) },
   // Rate — Hitze erzeugen
+  SK_FIRE_10: { id: "SK_FIRE_10", name: "Brandherd", archetype: "fire", keywords: ["heat", "formation"], tiers: FEUER.brandherd, // §7.70: der 15. Feuer-Skill — Hitze aus der Aufstellung statt aus dem Vorsprung
+    ...tiered(FEUER.brandherd, (r) => `Ein Sieg gibt +${r.perForm} % Hitze je zahlender Formation an der Siegposition.`) },
   SK_FIRE_02: { id: "SK_FIRE_02", name: "Zunder", archetype: "fire", keywords: ["heat"], tiers: FEUER.zunder,
     ...tiered(FEUER.zunder, (r) => `Jeder Sieg gibt +${r.heat} % Hitze, auch ein knapper.${r.lossHeat ? ` Auch jede Niederlage gibt +${r.lossHeat} % Hitze.` : ""}`) },
   SK_FIRE_03: { id: "SK_FIRE_03", name: "Feuersturm", archetype: "fire", keywords: ["heat", "streak"], tiers: FEUER.feuersturm,
@@ -296,7 +316,7 @@ export const SKILL_DEFS = {
   SK_FIRE_04: { id: "SK_FIRE_04", name: "Glutbett", archetype: "fire", keywords: ["heat"], tiers: FEUER.glutbett,
     ...tiered(FEUER.glutbett, (r) => (r.noCool
       ? "Niederlagen kühlen die Hitze nicht."
-      : `Niederlagen kühlen die Hitze nicht unter ${r.floor} %. Fängt der Boden eine Niederlage ab, steigt er um ${r.rise} %.`)) },
+      : `Niederlagen kühlen nur ${r.cool} % statt ${C.HEAT_LOSS} % und nie unter ${r.floor} %.`)) },
   // Zustand — Hitze zu Wert und Multiplikator
   SK_FIRE_06: { id: "SK_FIRE_06", name: "Glühende Klinge", archetype: "fire", keywords: ["heat"], tiers: FEUER.klinge,
     ...tiered(FEUER.klinge, (r) => `Alle deine Karten haben +${r.value} Wert je ${r.perHeat} % Hitze, bis ${C.HEAT_MAX} %.`) },

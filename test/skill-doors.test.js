@@ -235,7 +235,7 @@ describe("Sim — jede Policy geht durch die Türstufe", () => {
 describe("Stufentexte — ein Text je Stufe (descTiers, ability.<id>.desc.<t>, skillDef(id, tier))", () => {
   const tiered = SKILL_LIST.filter((s) => !s.legendary && ["fire", "lightning"].includes(s.archetype));
   it("jeder Blitz- und Feuer-Skill trägt vier Stufentexte; `desc` ist der Normal-Text; Legendäre haben keine", () => {
-    expect(tiered).toHaveLength(29); // 15 Blitz (§7.69: Potenzial neu) + 14 Feuer (§7.16: Flächenbrand gestrichen)
+    expect(tiered).toHaveLength(30); // 15 Blitz (§7.69: Potenzial) + 15 Feuer (§7.70: Brandherd)
     for (const s of tiered) {
       expect(Array.isArray(s.descTiers) && s.descTiers.length === 4, s.id).toBe(true);
       for (const text of s.descTiers) expect(typeof text === "string" && text.length > 0, s.id).toBe(true);
