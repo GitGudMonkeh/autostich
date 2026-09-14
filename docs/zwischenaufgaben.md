@@ -1,7 +1,7 @@
 # Zwischenaufgaben (exp) — Planungsdokument
 
 **Status: lebendes Dokument.** Beutekatalog und Aufgaben-Katalog sind durchdesignt und vom Owner Wert
-für Wert abgenommen (2026-09-14). Offen sind die zwölf Punkte in §10; danach ist das Dokument
+für Wert abgenommen (2026-09-14). Offen sind die elf Punkte in §10; danach ist das Dokument
 umsetzungsreif.
 
 Entscheidungen des Owners stehen unter **Gesetzt**. Alles unter **Vorschlag** ist Diskussionsstand und
@@ -25,8 +25,9 @@ durch dieses Dokument abgelöst. Bosse bleiben weiterhin ausgeklammert (§11).
 ## 1. Was gebaut wird
 
 Zwei Aufgaben je Lauf. Die erste läuft über die Durchläufe 1 bis 15, die zweite über 16 bis 30. Zu
-Beginn jedes Fensters liegen **drei Angebote** auf dem Tisch. Jedes ist ein Paar aus einer Aufgabe und
-der Beute, die sie zahlt, beides sichtbar. Eins nimmst du an, die anderen zwei verfallen.
+Beginn jedes Fensters liegen **drei Angebote** auf dem Tisch. Jedes zeigt eine Aufgabe und ihre Stufe;
+die Stufe nennt das Beute-Band, das Stück selbst bleibt verdeckt. Eins nimmst du an, die anderen zwei
+verfallen.
 
 **Gesetzt (Owner, 2026-09-14):**
 
@@ -125,16 +126,23 @@ weiß der Spieler genug über seinen Bau, um zu beurteilen, was zu ihm passt.
 ### 3.2 Vier Stufen, jede mit einem Beute-Band
 
 Die Aufgabenstufen tragen **eigene Namen**, die Farben bleiben die der Raritäten (Owner,
-2026-09-14). Namen offen, siehe §10.
+2026-09-14). Die Namen sind literal, nicht bildhaft: die Stufe soll sagen, wie schwer die Arbeit ist,
+und die Farbe sagt, was sie zahlt.
 
 **Jede Stufe zahlt aus einem Band von zwei benachbarten Raritäten** (Owner, 2026-09-14):
 
-| Stufe | Farbe | Beute | Was die Stufe verlangt |
+| Stufe | Farbe | Beute-Band | Was die Stufe verlangt |
 | --- | --- | --- | --- |
-| 1 | Normal | Normal oder Selten | läuft nebenbei mit, wenn man nichts dagegen tut |
-| 2 | Selten | Selten oder Sehr selten | die Aufstellung muss ernst genommen werden |
-| 3 | Sehr selten | Sehr selten oder Episch | man muss darauf zuspielen |
-| 4 | Episch | Episch oder Legendär | der Bau muss danach ausgerichtet sein |
+| **Leicht** | Normal | Normal oder Selten | läuft nebenbei mit, wenn man nichts dagegen tut |
+| **Mittel** | Selten | Selten oder Sehr selten | die Aufstellung muss ernst genommen werden |
+| **Schwer** | Sehr selten | Sehr selten oder Episch | man muss darauf zuspielen |
+| **Sehr schwer** | Episch | Episch oder Legendär | der Bau muss danach ausgerichtet sein |
+
+> **Zwei Wörter, die auf einem Chip nah beieinander liegen.** „Schwer" und „Sehr schwer"
+> unterscheiden sich in Versalien nur durch das erste Wort. Die Breite reicht (überschlagen rund
+> 70 px für „SEHR SCHWER" neben bis zu 95 px Aufgabenname in einer 246 px breiten Spalte), aber die
+> Lesbarkeit auf einen Blick ist am echten Screen zu prüfen; das kritische Paar ist
+> **Verflechtung** plus **Sehr schwer**.
 
 **Das Band ist die Spannung.** Da die Beute verdeckt bleibt, weiß der Spieler beim Wählen das Band,
 aber nicht das Stück. Eine Aufgabe der dritten Stufe zahlt Sehr selten **oder** Episch, und welches
@@ -736,23 +744,22 @@ bei D30 nur in 5. Das ist keine Schieflage, sondern der Zweck.
    schreiben durchgehend „Fraktion". Im deutschen Katalog steht es 13 zu 8 für Archetyp. Zu
    entscheiden, bevor die Aufgabentexte geschrieben werden.
 
-Dazu sechs Punkte aus §3 und §4, die ebenfalls beim Owner liegen:
+Dazu fünf Punkte aus §3 und §4, die ebenfalls beim Owner liegen:
 
 7. **Die Gewichtung innerhalb eines Beute-Bandes.** Vorschlag 70 zu 30 zugunsten der unteren
    Rarität (§3.2). Auf der vierten Stufe ist das zugleich der Legendär-Satz.
-8. **Die Namen der vier Aufgabenstufen.** Eigene Wörter statt der Raritätsnamen, Farben bleiben
-   (Owner, 2026-09-14). Vorschläge stehen aus.
-9. **Säckel im ersten Fenster.** Die Stufen 100 und 120 sind bis D15 arithmetisch unmöglich, weil das
+8. **Säckel im ersten Fenster.** Die Stufen 100 und 120 sind bis D15 arithmetisch unmöglich, weil das
    Gesamteinkommen dort 64 bis 72 Münzen beträgt (§4.3). Entweder niedrigere obere Stufen, oder Säckel
    wird in Fenster 1 nur bis Selten angeboten.
-10. **Treppe und Wechsel bei Reinheit.** Die beiden Leitern (4·5·6·8 und 5·7·9·11) sind Vorschlag aus
+9. **Treppe und Wechsel bei Reinheit.** Die beiden Leitern (4·5·6·8 und 5·7·9·11) sind Vorschlag aus
    den gemessenen Typanteilen, nicht Owner-Entscheid.
-11. **Wo genau sitzt die Fortschrittsanzeige?** `StatusRail.jsx` ist der Kandidat, bestätigt ist es
+10. **Wo genau sitzt die Fortschrittsanzeige?** `StatusRail.jsx` ist der Kandidat, bestätigt ist es
     nicht. Das Mockup schlägt den Platz **über** den Multiplikatoren vor, weil der Auftrag das einzige
     Element der Leiste mit einer Frist ist.
-12. **Erscheint der Grundfarben-Ring dauerhaft** oder nur, solange ein Buntspiel-Auftrag läuft (§4.1).
+11. **Erscheint der Grundfarben-Ring dauerhaft** oder nur, solange ein Buntspiel-Auftrag läuft (§4.1).
 
-**Erledigt:** Farbtreue würfelt keine Farbe (§3.6). Der Grundfarben-Marker ist ein Ring um das Blatt,
+**Erledigt:** Die vier Aufgabenstufen heißen **Leicht, Mittel, Schwer, Sehr schwer** (§3.2).
+Farbtreue würfelt keine Farbe (§3.6). Der Grundfarben-Marker ist ein Ring um das Blatt,
 nicht ein eigener Punkt (§4.1). Die Beute steht nicht in der laufenden Anzeige (§4.3).
 
 **Erledigt:** „Wird die Stufe angekündigt" hat sich mit dem sichtbaren Angebot von selbst beantwortet.
