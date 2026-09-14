@@ -28,6 +28,10 @@ const ac = (id) => archMeta(archetypeOf(id)) || { label: t("skill.arch.none"), i
    Katalog. Legendäre haben keine Stufe (tier null) und tragen ihr eigenes Gold-Badge. Geteilt mit der Skill-Auswahl,
    damit Angebot und Bestand dieselbe Stufe gleich zeigen — eine Quelle, kein zweites Abschreiben. */
 export const skillTierColor = (tier) => tierColor((tier ?? 0) + 1);
+/* Das Gold der Legendär-Marke. Stand als Literal in dieser Datei UND in der Skill-Auswahl; die Build-Übersicht
+   wäre die dritte Abschrift geworden. Legendäre stehen außerhalb der Stufenleiter (rarity.js), deshalb eine eigene
+   Konstante statt eines fünften TIER_META-Eintrags. */
+export const LEGENDARY_GOLD = "#e0b845";
 export function SkillTierBadge({ tier, lifted = false, className = "text-meta-1 px-1.5 py-0.5 rounded font-bold tracking-wide" }) {
   if (tier == null) return null;
   const col = skillTierColor(tier);
@@ -65,7 +69,7 @@ export function HeldSkills({ skills = [], state = {}, className = "mt-5", open =
               <SkillTierBadge tier={effectiveTierOf(state, s.id)} lifted={tierIsLifted(state, s.id)} className="text-meta-3 px-1 py-px rounded font-bold tracking-wide" />
               {s.legendary && (
                 <span className="text-meta-3 px-1 py-px rounded font-bold tracking-wide"
-                  style={{ background: "#e0b84522", color: "#e0b845", border: "1px solid #e0b84588" }}>{t("skill.badge.legendary")}</span>
+                  style={{ background: `${LEGENDARY_GOLD}22`, color: LEGENDARY_GOLD, border: `1px solid ${LEGENDARY_GOLD}88` }}>{t("skill.badge.legendary")}</span>
               )}
               <span className="opacity-40 text-meta-3">{t("skill.heldBadge")}</span>
             </div>

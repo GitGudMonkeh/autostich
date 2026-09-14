@@ -1,6 +1,11 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { SkillList } from "../src/ui/BuildSummary.jsx";
+import { LEGENDARY_GOLD } from "../src/ui/HeldSkills.jsx";
+import { archMeta } from "../src/i18n/labels.js";
 import { makeRng } from "../src/game/deck.js";
 import { SKILL_DEFS, skillSum, buildSkillOffer, BLITZ_TIERS,
   rollTier, rollSkillOfferTiers, tierOf, SKILL_TIER_COUNT, TIER_NORMAL, TIER_EPIC,
@@ -357,5 +362,42 @@ describe("Anzeige-Stufe: keine Oberfläche liest die gewürfelte Stufe, außer d
     const src = read("SkillUpgrade.jsx");
     expect(src).toContain("tierOf(state, id)");
     expect(src).not.toContain("effectiveTierOf");
+  });
+});
+
+/* Owner 2026-09-14: „legendäre skills sollen in diesem Panel auch einen goldenen Rahmen haben". Die Build-Übersicht
+   färbte ihre Skill-Chips allein nach Fraktion — Ewige Glut sah dort aus wie Glutbett. Geprüft wird das GERENDERTE
+   Markup, nicht der Quelltext: eine Ratsche auf `LEGENDARY_GOLD` im Quelltext würde auch dann halten, wenn die
+   Konstante an der falschen Stelle steht. Gegenprobe: gibt man dem legendären Chip die Fraktionsfarbe zurück,
+   fällt die erste Erwartung; vertauscht man legendär und normal, fällt die zweite. */
+describe("Build-Übersicht: legendäre Skills tragen den Goldrahmen", () => {
+  const chipOf = (markup, name) => {
+    const i = markup.indexOf(name);
+    const start = markup.lastIndexOf("<button", i);
+    return markup.slice(start, i);
+  };
+  it("legendär trägt Gold im Rahmen, ein normaler Skill derselben Fraktion nicht", () => {
+    const leg = "SK_FIRE_L02", norm = "SK_FIRE_02";
+    expect(isLegendarySkill(leg), "Testdaten: L02 muss legendär sein").toBe(true);
+    expect(isLegendarySkill(norm), "Testdaten: 02 darf nicht legendär sein").toBe(false);
+    const markup = renderToStaticMarkup(createElement(SkillList, { skills: [leg, norm], skillTiers: {} }));
+    expect(chipOf(markup, SKILL_DEFS[leg].name)).toContain(LEGENDARY_GOLD);
+    expect(chipOf(markup, SKILL_DEFS[norm].name)).not.toContain(LEGENDARY_GOLD);
+  });
+  it("die Schrift bleibt Fraktionsfarbe — der Rahmen trägt die Seltenheit, nicht der Name", () => {
+    const markup = renderToStaticMarkup(createElement(SkillList, { skills: ["SK_FIRE_L02"], skillTiers: {} }));
+    const chip = chipOf(markup, SKILL_DEFS.SK_FIRE_L02.name);
+    const fire = archMeta("fire").color;
+    expect(chip, "color: muss die Fraktionsfarbe bleiben").toContain(`color:${fire}`);
+    expect(chip, "outline: muss das Gold tragen").toMatch(new RegExp(`outline:[^;"]*${LEGENDARY_GOLD}`));
+  });
+  it("Skill-Auswahl und Bestandsliste lesen dieselbe Konstante — kein zweites Gold im Quelltext", () => {
+    const read = (rel) => readFileSync(fileURLToPath(new URL(`../src/ui/${rel}`, import.meta.url)), "utf8");
+    for (const f of ["SkillSelect.jsx", "BuildSummary.jsx"]) {
+      expect(read(f), `${f} schreibt das Gold selbst hin statt es zu importieren`).not.toContain(LEGENDARY_GOLD);
+      expect(read(f), `${f} importiert LEGENDARY_GOLD nicht`).toContain("LEGENDARY_GOLD");
+    }
+    // Die Quelle selbst darf den Wert genau EINMAL nennen — als Definition.
+    expect(read("HeldSkills.jsx").split(LEGENDARY_GOLD).length - 1).toBe(1);
   });
 });
