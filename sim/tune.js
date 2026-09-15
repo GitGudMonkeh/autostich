@@ -37,12 +37,31 @@ const OUT = arg("--out", "sim/out/tune.json");
 /* Der Suchraum. `sd` ist die ANFANGS-Streuung — groß genug, dass die erste Generation den Raum wirklich
    abtastet statt um den Startwert zu zittern. `depth`/`famFirst` sind Schalter, die als Zahl geführt und
    bei 0,5 geschnitten werden: CEM braucht stetige Achsen, die Policy einen Boolean. */
-const SPACE = [
+export const COIN_SPACE = [
   { key: "reserve",       lo: 0, hi: 150, init: 40, sd: 45 },
   { key: "reserveEnergy", lo: 0, hi: 150, init: 40, sd: 45 },
   { key: "depth",         lo: 0, hi: 1,   init: 0,  sd: 0.5 },
   { key: "famFirst",      lo: 0, hi: 1,   init: 0,  sd: 0.5 },
 ];
+/* Die elf Architekt-Gewichte (sim/architect-policy.js, DEFAULT_WEIGHTS). `init` ist jeweils der handgesetzte
+   Wert — der Lauf startet also beim Bestand und muss ihn schlagen, statt ihn zufällig zu treffen. Einzeln sagt
+   keines der Gewichte etwas, weil sie gegeneinander gewichten; genau dafür ist CEM da. */
+export const ARCH_SPACE = [
+  { key: "row",           lo: 0, hi: 400, init: 100, sd: 120 },
+  { key: "col",           lo: 0, hi: 400, init: 200, sd: 120 },
+  { key: "diag",          lo: 0, hi: 400, init: 150, sd: 120 },
+  { key: "partial",       lo: 0, hi: 1,   init: 0.3, sd: 0.3 },
+  { key: "struct",        lo: 0, hi: 30,  init: 5,   sd: 8 },
+  { key: "val",           lo: 0, hi: 15,  init: 1.5, sd: 4 },
+  { key: "cat",           lo: 0, hi: 50,  init: 10,  sd: 15 },
+  { key: "tier",          lo: 0, hi: 30,  init: 5,   sd: 8 },
+  { key: "swapGain",      lo: 0, hi: 60,  init: 12,  sd: 18 },
+  { key: "moveGain",      lo: 0, hi: 60,  init: 10,  sd: 18 },
+  { key: "maxVictimTier", lo: 0, hi: 4,   init: 2,   sd: 1.5, round: true },
+];
+const WHICH = arg("--space", "arch"); // coins | arch | all
+const SPACE = WHICH === "coins" ? COIN_SPACE : WHICH === "all" ? [...COIN_SPACE, ...ARCH_SPACE] : ARCH_SPACE;
+const COIN_DIMS = SPACE === ARCH_SPACE ? 0 : COIN_SPACE.length;
 const SD_FLOOR = SPACE.map((p) => p.sd * 0.08); // gegen vorzeitigen Kollaps auf einen Punkt
 const ELITE = Math.max(2, Math.round(POP * 0.25));
 const ALPHA = 0.7; // Glättung: so viel vom Elite-Mittel geht in den neuen Mittelwert
@@ -52,6 +71,9 @@ export const toBuys = (v) => ({
   energy: true, cover: true, upgradeSkill: true, upgradeFamily: true,
   reserve: Math.round(v[0]), reserveEnergy: Math.round(v[1]), depth: v[2] >= 0.5, famFirst: v[3] >= 0.5,
 });
+// Der Architekt-Teil des Vektors → Gewichts-Objekt. `round` nur, wo die Policy ganze Stufen vergleicht.
+export const toWeights = (v, space = ARCH_SPACE) =>
+  Object.fromEntries(space.map((p, i) => [p.key, p.round ? Math.round(v[i]) : v[i]]));
 
 /* Trainings- und Holdout-Seeds, an EINER Stelle gebaut und exportiert, damit ein Test die Trennung
    festhalten kann: überlappen sie, misst der Holdout nur noch, wie gut der Vektor diese Seeds auswendig
@@ -60,7 +82,12 @@ export const seedSets = (seed0, nTrain, nHold) => ({
   train: Array.from({ length: nTrain }, (_, i) => 100000 + seed0 * 1000 + i),
   hold: Array.from({ length: nHold }, (_, i) => 900000 + seed0 * 1000 + i),
 });
-const show = (v) => `Reserve ${Math.round(v[0])} · Energie-Reserve ${Math.round(v[1])} · ${v[2] >= 0.5 ? "tief" : "breit"} · ${v[3] >= 0.5 ? "Familie zuerst" : "Skill zuerst"}`;
+// Kandidaten-Vektor → die zwei Stellschrauben-Objekte, die der Arbeiter der Policy gibt.
+const toParams = (v) => ({
+  buys: COIN_DIMS ? toBuys(v.slice(0, COIN_DIMS)) : ALL_BUYS,
+  weights: SPACE.length > COIN_DIMS ? toWeights(v.slice(COIN_DIMS), ARCH_SPACE) : null,
+});
+const show = (v) => SPACE.map((p, i) => `${p.key} ${p.hi <= 1 ? v[i].toFixed(2) : Math.round(v[i])}`).join(" · ");
 const median = (a) => { const s = [...a].sort((x, y) => x - y); if (!s.length) return 0;
   const m = (s.length - 1) / 2; return s.length % 2 ? s[m] : (s[Math.floor(m)] + s[Math.ceil(m)]) / 2; };
 const fmt = (n) => Math.round(n).toLocaleString("de-DE");
@@ -96,12 +123,12 @@ function runPool(jobs) {
 }
 
 const evaluate = async (vectors, seeds) => {
-  const scores = await runPool(vectors.map((v, id) => ({ id, seeds, buys: toBuys(v) })));
+  const scores = await runPool(vectors.map((v, id) => ({ id, seeds, ...toParams(v) })));
   return scores.map(median);
 };
 
 async function main() {
-  console.log(`CEM: ${GENS} Generationen × ${POP} Kandidaten × ${SEEDS} Seeds, ${JOBS} Prozesse`);
+  console.log(`CEM (${WHICH}, ${SPACE.length} Achsen): ${GENS} Generationen × ${POP} Kandidaten × ${SEEDS} Seeds, ${JOBS} Prozesse`);
   console.log(`Training-Seeds ${trainSeeds[0]}..${trainSeeds[SEEDS - 1]} · Holdout ${holdSeeds[0]}..${holdSeeds[HOLDOUT - 1]}\n`);
   let mean = SPACE.map((p) => p.init), sd = SPACE.map((p) => p.sd);
   const history = [];
@@ -122,21 +149,21 @@ async function main() {
   }
 
   // Urteil auf dem HOLDOUT: getunter Vektor gegen den Bestand (ALL_BUYS) und gegen gar keinen Kauf.
-  const tuned = toBuys(mean);
+  const tuned = toParams(mean);
   const [mTuned, mDefault, mNone] = await Promise.all([
-    runPool([{ id: 0, seeds: holdSeeds, buys: tuned }]).then((r) => median(r[0])),
-    runPool([{ id: 0, seeds: holdSeeds, buys: ALL_BUYS }]).then((r) => median(r[0])),
-    runPool([{ id: 0, seeds: holdSeeds, buys: null }]).then((r) => median(r[0])),
+    runPool([{ id: 0, seeds: holdSeeds, ...tuned }]).then((r) => median(r[0])),
+    runPool([{ id: 0, seeds: holdSeeds, buys: ALL_BUYS, weights: null }]).then((r) => median(r[0])),
+    runPool([{ id: 0, seeds: holdSeeds, buys: null, weights: null }]).then((r) => median(r[0])),
   ]);
   console.log(`\n=== Holdout (${HOLDOUT} disjunkte Seeds) ===`);
   console.log(`  kein Kauf          ${fmt(mNone).padStart(12)}`);
-  console.log(`  Bestand ALL_BUYS   ${fmt(mDefault).padStart(12)}   ${((mDefault / mNone - 1) * 100).toFixed(0)} % über „kein Kauf"`);
+  console.log(`  Bestand (Hand)     ${fmt(mDefault).padStart(12)}   ${((mDefault / mNone - 1) * 100).toFixed(0)} % über „kein Kauf"`);
   console.log(`  getunt             ${fmt(mTuned).padStart(12)}   ${((mTuned / mNone - 1) * 100).toFixed(0)} % über „kein Kauf", ${((mTuned / mDefault - 1) * 100).toFixed(0)} % über Bestand`);
   console.log(`  Vektor: ${show(mean)}`);
 
   mkdirSync(dirname(OUT), { recursive: true });
-  writeFileSync(OUT, JSON.stringify({ gens: GENS, pop: POP, seeds: SEEDS, holdoutSeeds: HOLDOUT, seed: SEED0,
-    space: SPACE, history, tuned, holdout: { none: mNone, default: mDefault, tuned: mTuned } }, null, 2));
+  writeFileSync(OUT, JSON.stringify({ space: WHICH, gens: GENS, pop: POP, seeds: SEEDS, holdoutSeeds: HOLDOUT, seed: SEED0,
+    axes: SPACE, history, tuned, holdout: { none: mNone, default: mDefault, tuned: mTuned } }, null, 2));
   console.log(`  → ${OUT}`);
 }
 
