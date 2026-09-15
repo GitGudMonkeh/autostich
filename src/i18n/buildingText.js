@@ -15,7 +15,7 @@
    ============================================================ */
 import { t, fmtNum } from "./index.js";
 import { formationName } from "./labels.js";
-import { tierNum, tierFactor, bindSpanFor } from "../game/architect.js";
+import { tierNum, tierFactor, bindSpanFor, halfOf, rampThresholdFor } from "../game/architect.js";
 import { ARCH_STREAK_CAP } from "../game/constants.js";
 
 /* Faktor mit zwei Nachkommastellen, im Zahlformat der aktiven Sprache (1,10 vs. 1.10).
@@ -49,12 +49,24 @@ export function buildingEffect(fam, tier = 1) {
   let s;
   switch (base.kind) {
     case "flat":       s = isValue ? t("building.eff.flat.value", { n: nz(base.value) }) : t("building.eff.flat.score", { n: nz(base.score) }); break;
-    case "lowValue":   s = t("building.eff.lowValue", { n: nz(base.value) }); break;
-    case "color":      s = isValue ? t("building.eff.color.value", { n: nz(base.value) }) : t("building.eff.color.score", { n: nz(base.score) }); break;
+    case "lowValue":   s = t("building.eff.lowValue", { n: nz(base.value), max: rampThresholdFor(tr) }); break;
+    // Zündet der anyColor-Kick, fällt die Farbbedingung — dann muss auch der SATZ der flache sein, sonst
+    // steht „passende Farbe +7" neben „die Farbbedingung fällt weg" und widerspricht sich.
+    case "color": {
+      const frei = fam.tierKick && fam.tierKick.anyColor && (tier === "legendary" || (typeof tr === "number" && tr >= fam.tierKick.at));
+      const key = frei ? (isValue ? "building.eff.flat.value" : "building.eff.flat.score")
+                       : (isValue ? "building.eff.color.value" : "building.eff.color.score");
+      s = t(key, { n: nz(isValue ? base.value : base.score) });
+      break;
+    }
     case "target": {
+      // Owner-Runde 2026-09-14: der Effekt liegt nicht mehr NUR auf der Zielzelle — die übrigen Zellen des
+      // Fußabdrucks bekommen die Hälfte. Der Kartentext muss das nennen, sonst sieht der Spieler drei tote
+      // Zellen und rechnet das Gebäude falsch. Dieselbe Halbierung wie in architect.js (resolveNumEffect).
       const which = t(fam.target === "highest" ? "building.eff.target.highest" : "building.eff.target.lowest");
+      const n = nz(isValue ? base.value : base.score);
       s = t(isValue ? "building.eff.target.value" : "building.eff.target.score",
-        { which, n: nz(isValue ? base.value : base.score) });
+        { which, n, half: halfOf(n) });
       break;
     }
     case "streak":     s = t("building.eff.streak", { n: nz(base.score), cap: ARCH_STREAK_CAP }); break;
@@ -93,11 +105,16 @@ export function buildingEffect(fam, tier = 1) {
     else if (k.critFlatMult) kick = t("building.kick.critFlatMult", { n: k.critFlatMult });
     else if (k.streakDoubleFrom) kick = t("building.kick.streakDoubleFrom", { n: k.streakDoubleFrom });
     else if (k.addType) kick = t("building.kick.addType", { type: formationName(k.addType) });
+    else if (k.farbJoker) kick = t("building.kick.farbJoker");
+    else if (k.anyColor) kick = t("building.kick.anyColor");
     else if (k.ankerValue) kick = t("building.kick.ankerValue", { n: k.ankerValue });
     if (kick && !(k.addType && on)) {
       s = on ? t("building.kick.active", { base: s, kick })
              : t("building.kick.preview", { base: s, kick, tier: ROMAN_TIER[k.at] || k.at });
     }
   }
+  // Stufen-Leiter (Runde 6): flacher Stichwert auf den Zellen — nur zeigen, wenn die aktuelle Stufe einen trägt.
+  const ladder = (fam.tierValue && typeof tr === "number" && fam.tierValue[tr]) || 0;
+  if (ladder > 0 && s) s = t("building.kick.active", { base: s, kick: t("building.eff.tierValue", { n: ladder }) });
   return s;
 }

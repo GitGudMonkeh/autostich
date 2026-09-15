@@ -35,7 +35,7 @@ line of defence.
   remote-tracking refs, and such a ref can be the only local reachability anchor for commits on a
   branch that was deleted upstream.
 - **Never use a force flag** — `-D`, `--force`, `-f` — anywhere, including inside a printed command.
-- **Never name a protected ref in a proposed command:** `main`, `test`, `dev`, `archive/*`,
+- **Never name a protected ref in a proposed command:** `main`, `test`, `dev`, `exp`, `archive/*`,
   `gh-pages`.
 - **Never guess an integration base.** See step 5.
 - **Never propose promotion**, and never present `test` being behind `dev` as an action. Promotion is

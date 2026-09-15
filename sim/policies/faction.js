@@ -8,7 +8,7 @@
 //   factionPolicy(["fire","ice"])   → Kombi mit SLOT-SPLIT: bevorzugt beim Pick das Ziel mit den WENIGSTEN
 //                                     aktuell gehaltenen Skills → balanciert (6 Slots: 2 Ziele → 3+3, 3 → 2+2+2).
 import { archetypeOf, isLegendarySkill } from "../../src/game/skills.js";
-import { randomPolicy, canAddSkill } from "./random.js";
+import { randomPolicy, canAddSkill, atDoors, bestDoor } from "./random.js";
 import { greedyFormationStep } from "../formation.js";
 import { isFamilyOffer, perkOptionId, perkActionFor } from "../families-policy.js";
 
@@ -30,6 +30,8 @@ export function factionPolicy(target, { architectGreedy = true, drop = null, pre
   return {
     name: `faction:${targets.join("+")}${architectGreedy ? "+arch" : ""}${drop ? `(drop=${drop})` : prefer ? `(prefer=${prefer})` : ""}`,
     act(s, rng, mem) {
+      // exp skill rework: an der Tür zählt, wie viele Ziel-Fraktions-Skills dahinter liegen (stufenblind); Gleichstand → erste.
+      if (atDoors(s)) return { type: "CHOOSE_DOOR", index: bestDoor(s, (ids) => ids.filter((id) => targets.includes(archetypeOf(id)) && !s.skills.includes(id)).length) };
       if (s.phase === "levelup" && s.skillOffer) {
         // Nur Ziel-Archetyp-Skills, die in einen freien Slot passen (NIE einen Fremd-Archetyp aufnehmen).
         const addable = s.skillOffer.filter((id) => canAddSkill(s, id) && targets.includes(archetypeOf(id)));

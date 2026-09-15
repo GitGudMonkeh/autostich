@@ -1,24 +1,23 @@
-import { GEO_BLOCK, GEO_KREUZ, GEO_LINIE, GEO_FLAECHE, EISWALL_LINIE, ROLES } from "../game/glacier.js";
+import { GEO_BLOCK, GEO_KREUZ, GEO_LINIE, GEO_FLAECHE } from "../game/glacier.js";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { t, fmtNum } from "../i18n/index.js"; // #sprache
 import { glacierFormName } from "../i18n/labels.js";
 
 // Eis-Neudesign: erklärt die 2D-Gletscher-Formationen (Block/Kreuz/Linie/Große Fläche) in BLAU — analog zur
 // grünen Formations-Legende (W/F/T/Z/A). Gezeigt in der Aufstellung (FormationPhase) und der Chronik, sobald der
-// Eis-Archetyp aktiv ist. Die Faktoren kommen aus glacier.js (SSOT); Eiswall hebt die Linie an (×1,60 statt ×1,30).
+// Eis-Archetyp aktiv ist. Die Faktoren kommen aus glacier.js (SSOT). §5.24: der Eiswall steht nicht mehr hier — er ist
+// keine Formation mehr, sondern ein eigener Faktor auf der Kettenlänge, und sein Skilltext sagt das.
 const dfmt = (x) => fmtNum(x);
 const FROST = "#7fd4f0", FROST_TXT = "#93bcd0";
 
 export function GlacierFormLegend({ state = {}, compact = false }) {
   const ice = (state.activeArchetypes || []).includes("ice");
   if (!ice) return null;
-  const eiswall = (state.glacierRoles || []).includes(ROLES.EISWALL);
-  const linie = eiswall ? EISWALL_LINIE : GEO_LINIE;
   // Namen aus dem Gletscher-Register (übersetzt), Beschreibungen aus dem Katalog.
   const rows = [
     ["block", GEO_BLOCK, t("glacierlegend.block")],
     ["kreuz", GEO_KREUZ, t("glacierlegend.kreuz")],
-    ["linie", linie, t(eiswall ? "glacierlegend.linie.wall" : "glacierlegend.linie")],
+    ["linie", GEO_LINIE, t("glacierlegend.linie")],
     ["flaeche", GEO_FLAECHE, t("glacierlegend.flaeche")],
   ];
   if (compact) {

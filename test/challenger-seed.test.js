@@ -50,6 +50,7 @@ describe("#205 (a) Reproduzierbarkeit — gleicher Seed + gleiche Picks → bit-
 function firstPerkOffer(seed, skillIdx) {
   const rng = makeRng(1); // Policy-rng irrelevant — Picks sind hier fest vorgegeben
   let s = reducer(null, { type: "START_RUN", rng, seed });
+  s = reducer(s, { type: "CHOOSE_DOOR", index: 0 }); // exp skill rework: erst eine Tür öffnen, dann wählen
   const skillId = s.skillOffer[Math.min(skillIdx, s.skillOffer.length - 1)];
   s = reducer(s, { type: "PICK_SKILL", skillId, rng });
   if (s.phase === "glacier-target") s = reducer(s, { type: "GLACIER_LOCK", pos: 0 }); // Eis-Skill → Gletscher-Wahl bestätigen

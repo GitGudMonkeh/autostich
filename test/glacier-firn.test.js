@@ -2,10 +2,12 @@ import { describe, it, expect } from "vitest";
 import { resolveTrick } from "../src/game/engine.js";
 import { reducer, initialState } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
-import { ROLES, DAUERFROST_FAR, TOP } from "../src/game/glacier.js";
+import { ROLES, FIRN_REFILL_TARGET as REFILL, FIRN_DRAW } from "../src/game/glacier.js";
+import { EIS_TIERS as EIS } from "../src/game/skills.js"; // §5.3: die Zahlen stehen in der Stufenleiter (Normal = Zeile 0)
+
 
 // #386 Firn-Boden-Reserve — glacierMass (Gletscher-Eigenmasse) und firnStack (Boden-Reserve) sind getrennt: ein gefrorener
-// Gletscher zieht zum Rundenstart aus seiner Reserve wieder auf die volle Masse (TOP=12) auf, nur die Differenz. Die Reserve
+// Gletscher zieht zum Rundenstart aus seiner Reserve wieder auf die volle Masse (FIRN_REFILL_TARGET=12) auf, nur die Differenz. Die Reserve
 // ist ungedeckelt und leert sich Runde für Runde. Firn wird NIE unter einen Gletscher gesät.
 const identity = () => Array.from({ length: 40 }, (_, i) => i);
 const flat = () => Array.from({ length: 40 }, (_, i) => ({ id: `F${i}`, suit: i % 2 ? "B" : "R", baseRank: i % 2 ? 11 : 12, value: i % 2 ? 11 : 12 }));
@@ -26,16 +28,16 @@ describe("#386 Runden-Start-Nachschub — Reserve füllt den Gletscher auf 12", 
     const glacierMass = zeros(); glacierMass[3] = 3;   // Eigenmasse aus der Vorrunde
     const firnStack = zeros(); firnStack[3] = 20;       // reichlich Reserve
     const s = resolveTrick(scen({ glacierMass, firnStack, glacierLocked }), noCrit); // pos0: Nachschub, pos3 noch nicht dran
-    expect(s.glacierMass[3]).toBe(TOP);                 // 3 → 12 (nachgefüllt, vor dem Bruch sichtbar)
-    expect(s.firnStack[3]).toBe(20 - (TOP - 3));        // nur die Differenz (9) gezogen → Reserve 11
+    expect(s.glacierMass[3]).toBe(REFILL);              // 3 → 12 (nachgefüllt, vor dem Bruch sichtbar)
+    expect(s.firnStack[3]).toBe(20 - (REFILL - 3));     // nur die Differenz (9) gezogen → Reserve 11
   });
 
-  it("nie über 12: eine riesige Reserve füllt exakt auf TOP, nicht höher", () => {
+  it("nie über 12: eine riesige Reserve füllt exakt auf die Berst-Schwelle, nicht höher", () => {
     const glacierLocked = falses(); glacierLocked[3] = true;
     const firnStack = zeros(); firnStack[3] = 100;
     const s = resolveTrick(scen({ firnStack, glacierLocked }), noCrit);
-    expect(s.glacierMass[3]).toBe(TOP);                 // gedeckelt auf 12
-    expect(s.firnStack[3]).toBe(100 - TOP);             // nur 12 gezogen, Rest bleibt Reserve
+    expect(s.glacierMass[3]).toBe(REFILL);              // gedeckelt auf 12
+    expect(s.firnStack[3]).toBe(100 - REFILL);          // nur 12 gezogen, Rest bleibt Reserve
   });
 
   it("kein Nachschub ohne Reserve (leerer firnStack → Masse unverändert)", () => {
@@ -47,18 +49,24 @@ describe("#386 Runden-Start-Nachschub — Reserve füllt den Gletscher auf 12", 
   });
 });
 
-describe("#386 Reserve leert sich über die Runden bis leer", () => {
-  it("ein burstender Gletscher (pos3) zieht jede Runde nach, bis die Reserve aufgebraucht ist", () => {
+describe("#386 Reserve leert sich bis leer — nichts bleibt liegen", () => {
+  /* §8: die Reserve ist nach EINEM Durchlauf weg, nicht mehr nach vieren. Zwei Hälften greifen: der Rundenstart-
+     Nachschub zieht auf FIRN_REFILL_TARGET hoch, und der ZUG am Rundenende nimmt den Rest in denselben Gletscher.
+     Nötig wurde das durch das Boden-Einkommen — mit ihm steht die Masse ohnehin über dem Nachschub-Ziel, der
+     Nachschub zöge also 0, und der vergrabene Schnee wäre totes Kapital (§5.27: „nichts generieren, das wir nicht
+     nutzen können"). Der Wächter hält beide Seiten fest: Reserve leer UND die Masse hat sie bekommen. */
+  it("ein burstender Gletscher (pos3) hat seine Reserve nach einem Durchlauf ganz aufgenommen", () => {
     const glacierLocked = falses(); glacierLocked[3] = true;
     const firnStack = zeros(); firnStack[3] = 30;
     let s = scen({ firnStack, glacierLocked, oppDeck: oppOf(99) }); // alles verlieren → keine Sieg-Masse
     const reserves = [];
     // Zwischen den Durchläufen die (im echten Spiel per Level-Up-Entscheidung erledigte) Rückkehr in die play-Phase simulieren.
     for (let c = 0; c < 4; c++) { s = runCycle({ ...s, phase: "play" }); reserves.push(s.firnStack[3]); }
-    // Reserve nimmt monoton ab und erreicht 0; die Masse bleibt dabei stets ≤ 12.
-    for (let i = 1; i < reserves.length; i++) expect(reserves[i]).toBeLessThanOrEqual(reserves[i - 1]);
-    expect(reserves[0]).toBeGreaterThan(0);      // nach Runde 1 noch Reserve übrig
-    expect(reserves[reserves.length - 1]).toBe(0); // am Ende leer
+    for (let i = 1; i < reserves.length; i++) expect(reserves[i]).toBeLessThanOrEqual(reserves[i - 1]); // monoton
+    expect(reserves[0]).toBe(0);                 // schon nach dem ersten Durchlauf leer
+    // und sie ist nicht verschwunden, sondern angekommen: ohne Siege und ohne Reserve käme nur der Boden an.
+    const ohne = runCycle({ ...scen({ glacierLocked, oppDeck: oppOf(99) }), phase: "play" });
+    expect(s.glacierMass[3]).toBeGreaterThan(ohne.glacierMass[3]);
   });
 });
 
@@ -67,14 +75,26 @@ describe("#386 Firn wird nie unter einen Gletscher gesät", () => {
     const glacierLocked = falses(); glacierLocked[0] = true;
     const s = runCycle(scen({ oppDeck: oppOf(99), glacierLocked, glacierRoles: [ROLES.DAUERFROST] }));
     expect(s.firnStack[0]).toBe(0);              // Gletscher-Feld bekommt keinen Firn
-    expect(s.firnStack[39]).toBe(DAUERFROST_FAR); // fernes offenes Feld schon
+    /* §5.18: im selben Durchlauf gibt jedes offene Feld an den nächsten Gletscher ab — das ferne Feld wird also
+       geladen UND sofort angezapft. Beides zusammen ist genau der Punkt der Kopplung.
+       §5.27 (Owner): der Zug-Deckel ist gefallen, das Feld gibt seine GANZE Reserve ab und bleibt leer zurück —
+       „es ist scheiße, dass wir mehr generieren als nutzen können". Der Wächter hält beide Seiten fest: das Feld
+       ist leer, und exakt die gesäte Menge ist beim Gletscher angekommen. */
+    const far = EIS.dauerfrost[0].far;
+    expect(s.firnStack[39]).toBe(Number.isFinite(FIRN_DRAW) ? Math.max(0, far - FIRN_DRAW) : 0);
+    expect(s.glacierMass[0]).toBeGreaterThanOrEqual(far); // die ganze ferne Reserve kommt beim Gletscher an
   });
 
-  it("Schneetreiben sät nichts, wenn alle Nachbarn Gletscher sind (kein Firn unter Eis)", () => {
+  /* #386 hieß „kein Firn unter Eis", geprüft wurde aber „gar kein Firn" — das war eine FOLGE der alten Regel
+     (kein offener Nachbar → gar nichts), nicht die Zusicherung selbst. Mit dem Rückfall der Owner-Runde sät ein
+     eingeschlossener Gletscher ins nächstgelegene offene Feld, und der Wächter prüft jetzt das, was sein Titel
+     sagt: unter keinem Gletscher liegt Firn, und der Rückfall trifft wirklich ein offenes Feld. */
+  it("Schneetreiben sät nie unter einen Gletscher, auch nicht über den Rückfall", () => {
     const glacierLocked = falses(); glacierLocked[0] = true; glacierLocked[1] = true; glacierLocked[5] = true; // beide Nachbarn von pos0 gefroren
     const glacierMass = zeros(); glacierMass[0] = 5; // Masse >0 → additiver Verwehungs-Zweig
     const s = resolveTrick(scen({ glacierMass, glacierLocked, glacierRoles: [ROLES.SCHNEETREIBEN] }), noCrit);
-    expect(s.firnStack.every((v) => v === 0)).toBe(true); // nirgends Firn gesät
+    for (let p = 0; p < s.firnStack.length; p++) if (glacierLocked[p]) expect(s.firnStack[p], `Firn unter Gletscher ${p}`).toBe(0);
+    expect(s.firnStack[6]).toBe(EIS.schneetreiben[0].seed); // pos6 ist das nächstgelegene offene Feld
   });
 });
 

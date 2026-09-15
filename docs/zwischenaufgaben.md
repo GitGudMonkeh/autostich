@@ -1,0 +1,1236 @@
+# Zwischenaufgaben (exp) — Planungsdokument
+
+**Status: lebendes Dokument.** Beutekatalog und Aufgaben-Katalog sind durchdesignt und vom Owner Wert
+für Wert abgenommen (2026-09-14). **Die zehn offenen Punkte sind entschieden (2026-09-15)** — §10
+hält sie mit ihren Begründungen fest, dazu zwei Folgearbeiten über dieses Dokument hinaus.
+
+Aus §3.6 sind zwei der drei Regeln gegen Wiederholung gebaut; die dritte (gesperrte Aufgaben) ist
+Progression und braucht vom Owner noch eine Bedingung — §3.6.
+
+Entscheidungen des Owners stehen unter **Gesetzt**. Alles unter **Vorschlag** ist Diskussionsstand und
+gilt erst, wenn es nach Gesetzt wandert.
+
+Sprache Deutsch, weil Beutenamen und Beutetexte Produktsprache sind und der Owner hier mitschreibt.
+Bewusste Abweichung von der Engineering-Sprache in `AGENTS.md`, wie bei `docs/skill-rework.md` und
+`docs/muenz-oekonomie.md`, und nur für dieses Dokument.
+
+**Zusammenfassung des ganzen Systems** — Ablauf, vier Stufen, alle 15 Aufgaben und alle 61
+Beutestücke mit ihren Spieltexten:
+<https://claude.ai/artifact/H3h142reTigpGDNKFkK2ha>
+
+Übersicht der Beutestücke mit Raritätsfarben (älter, nur die Beute, noch ohne Durchlass und Schleifung):
+<https://claude.ai/code/artifact/e6122960-8f20-464e-849a-66ba5f83163d>
+
+Mockup der Fortschrittsanzeige (§4.3):
+<https://claude.ai/code/artifact/37556d61-a8ed-4e6f-a068-790685b73008>
+
+**Stand der Umsetzung (2026-09-15): gebaut, hinter einem eigenen Knopf.** Auf `exp` startet ein
+Auftragslauf ausschließlich über **„Aufträge"** im Startbildschirm. Ein Lauf ohne diesen Knopf trägt
+`contractsEnabled: false` und rührt kein Feld dieses Systems an — `test/contracts.test.js` prüft das
+ausdrücklich, weil es die Zusage ist, unter der das Feature überhaupt einziehen durfte.
+
+| Naht | Datei |
+| --- | --- |
+| Aufgaben, Beute, Angebot, Messung | `src/game/contracts.js` |
+| Flag, Strichliste, die zwei Aktionen | `src/game/reducer.js` (`contractStep`, `PICK_CONTRACT`, `PICK_LOOT`) |
+| Die beiden Overlays und der Stand | `src/ui/ContractPhase.jsx` |
+| Der Einstieg | `src/ui/StartScreen.jsx` · `.as-contract-btn` |
+
+**Die Beute wirkt vollständig** (2026-09-15). Jede Wirkung hat ihre Lesestelle. Die Zugriffe stehen
+gesammelt in `contracts.js` und haben alle dieselbe Form: sie nehmen den Wert, den das Spiel **ohne**
+Aufträge nähme, und geben den zurück, der gilt. Ein normaler Lauf zahlt eine Feldabfrage und bekommt
+seine eigene Zahl unverändert zurück — geprüft, Zugriff für Zugriff.
+
+| Familie | Lesestelle |
+| --- | --- |
+| Zehrgeld · Baurecht · Stadtrecht | sofort beim Nehmen (`applyLoot`) |
+| Lehrbrief · Aufstockung | sofort beim Nehmen, höchste ausbaufähige Stufe zuerst |
+| Vollendung | eigener Auswahlschritt (`PICK_CONTRACT_SKILL`) |
+| Münzrecht | `engine.js` — Auszahlung am Durchlaufende |
+| Freizug | `formationEnergyFor`; Stufe IV zusätzlich `CONFIRM_FORMATION` |
+| Ablass | `DECLINE_SKILL` und `DECLINE_PERK` |
+| Nachlass · Freilos IV | `buyReroll` |
+| Freilos I–III · Stiftung | `contractStep`, am Durchlaufwechsel |
+| Auslage · Beschau · Reliquiar | `engine.js` — Bau des Perk-Angebots |
+| Freibrief · Veredelung | `engine.js` — `buildSkillDoors` und die Stufen der Türen |
+
+**Vollendung hat ihren eigenen Auswahlschritt** (2026-09-15). „Ein gehaltener Skill **deiner Wahl**
+wird sofort episch" heißt jetzt genau das: beim Nehmen ändert sich noch nichts, stattdessen öffnet
+sich ein drittes Overlay mit den gehaltenen Skills, und erst die Wahl wirkt. Die frühere
+Auto-Auswahl ist damit zurückgenommen.
+
+> **Beim Bauen des Pickers gefunden und mitrepariert:** legendäre Skills stehen in `state.skills` wie
+> jeder andere, tragen aber **keine Stufe** — `UPGRADE_SKILL` weist sie aus genau dem Grund ab. Meine
+> Hebungen taten das nicht: Lehrbrief hätte einem Legendären eine Stufe erfunden und Vollendung hätte
+> es zur Wahl gestellt. Beides läuft jetzt über `upgradableSkills`, und hält ein Lauf **nur**
+> Legendäre, entfällt die Auswahl ersatzlos, statt ein Fenster zu öffnen, aus dem niemand herauskommt.
+
+> Lehrbrief und Aufstockung heben weiterhin die **höchsten** ausbaufähigen Stufen zuerst — die
+> Stufenpreise (12 · 25 · 40) und die Gebäudefaktoren (1 · 1,5 · 2,2 · 3,1) steigen überproportional,
+> der obere Schritt ist der wertvollere. Dort gibt es nichts zu wählen: die Familie nennt eine Anzahl,
+> keinen Skill.
+
+> **Zwei Regeln, die nur zusammen stimmen.** Freilos IV („der legendäre Neuwurf kostet den normalen
+> Preis") und Nachlass greifen beide am Preis. Sie werden **nacheinander** gerechnet, erst der normale
+> Grundpreis, dann der Rabatt — multipliziert man sie, wäre ein Viertel Nachlass auf einen legendären
+> Neuwurf billiger als die Familie verspricht. Und Reliquiar wirkt auf **ein** Angebot: der Zwang
+> fällt, sobald die Perk-Phase verlassen ist, sonst stünden bis zum Laufende drei Legendäre in jedem.
+
+> **Korrektur aus der Umsetzung:** Das Legendär-Gold ist **`#d4a63a`**, nicht `#e6b93a`. Auf `exp`
+> wurden die drei Gold-Töne zu einem zusammengelegt (`LEGENDARY_GOLD` in
+> `src/ui/indicators/vocab.js`, Wächter `test/legendary-gold.test.js`). Die Übersichtsseite trug den
+> alten Wert und ist nachgezogen.
+
+Der Platzhalter in `docs/muenz-oekonomie.md` §7 („Zwischenaufgaben bei Durchlauf 15/30: später") wird
+durch dieses Dokument abgelöst — **auch in der Zahl**: die Fenster enden bei 16 und 32, nicht bei
+15 und 30. Bosse bleiben weiterhin ausgeklammert (§11).
+
+---
+
+## 1. Was gebaut wird
+
+Zwei Aufgaben je Lauf. Die erste läuft über die Durchläufe 1 bis 16, die zweite über 17 bis 32. Zu
+Beginn jedes Fensters liegen **drei Angebote** auf dem Tisch. Jedes zeigt eine Aufgabe und ihre Stufe;
+die Stufe nennt das Beute-Band, das Stück selbst bleibt verdeckt. Eins nimmst du an, die anderen zwei
+verfallen. Abgerechnet wird am **Fensterende**; erfüllt, stehen dann **drei Beutestücke** zur Wahl.
+
+**Gesetzt (Owner, 2026-09-14):**
+
+- Zwei Fenster: **D1 bis D16** und **D17 bis D32** (Owner, 2026-09-15).
+- **Drei Angebote zur Wahl**, jedes mit eigener Schwierigkeit.
+- **Jede Aufgabe hat vier Stufen** mit **eigenen Namen** und den Farben der Raritäten.
+- **Die Stufe bestimmt ein Beute-Band aus zwei benachbarten Raritäten** (§3.2). Legendäre Beute gibt
+  es nur in der oberen Hälfte des vierten Bandes.
+- **Beim Wählen sieht man die Aufgabe und ihre Stufe, nicht die Beute** (Owner, 2026-09-14). Kein
+  Neuwurf.
+- Beute **wirkt weiter und zahlt nie in Score**.
+- **Legendäre Beute ist schon am Ende von Fenster 1 möglich**, über das vierte Band.
+- **Erfüllt zahlt drei Beutestücke zur Wahl** (Owner, 2026-09-15).
+- **Abgerechnet wird erst nach der letzten Runde des Fensters** — D16 und D32 (Owner, 2026-09-15).
+  Die Beute wirkt ab der nächsten Phase. Siehe §3.7.
+- **Die unterste Stufe ist knapp ohne Aufwand erreichbar.** Wer sie nimmt, tauscht Rarität gegen
+  Sicherheit. Alle Stufen darüber verlangen Investition.
+- Nicht erfüllt zahlt **nichts**.
+- **Keine Kategorie doppelt** im Beutekatalog.
+
+> **Warum 16 und 32.** Der Entscheidungsblock ist Skill · Perk · Aufstellen · Architekt und wiederholt
+> sich über den ganzen Lauf. Nachgeprüft an `DECISION_SCHEDULE`: **D16 und D32 sind beide die letzte
+> Runde eines vollständigen Blocks**, und jedes Fenster umfasst damit genau vier komplette Blöcke —
+> 4 Skill-, 4 Perk-, 4 Aufstell- und 4 Architektenphasen. Die früheren Grenzen 15 und 30 schnitten
+> mitten hinein: D15 ist eine Aufstellphase (der Architekt des Blocks fehlte), D30 eine Perk-Phase
+> (Aufstellen und Architekt fehlten). Zwischen Annahme und Abrechnung liegen jetzt drei volle Blöcke.
+
+**Ersetzt frühere Beschlüsse** (alle vom Owner selbst, 2026-09-14): die Aufgabe wird nicht mehr
+zufällig zugewiesen, sondern gewählt. Die Marken-Leiter aus Bronze, Silber und Gold entfällt, sie war
+ein zweites Vokabular für eine Leiter, die das Spiel schon hat. Und die zwischenzeitliche Regel
+„Aufgabe **und Beute** sind beim Wählen sichtbar" ist zurückgenommen: **sichtbar ist die Aufgabe mit
+ihrer Stufe, die Beute nicht.**
+
+---
+
+## 2. Warum: die Messung
+
+Alle Zahlen in diesem Abschnitt sind **gemessen** auf dem exp-Stand (2026-09-14), nicht geschätzt.
+Die Sonden liegen nicht im Repo; die Methode steht jeweils dabei und ist nachbaubar.
+
+> **Messgrundlage nach der Fensterverschiebung.** Alle Messungen im Dokument wurden an den
+> Durchlaufgrenzen **D15 und D30** abgetastet, also an den alten Fenstern. Die Fenster enden jetzt
+> einen beziehungsweise zwei Durchläufe später (D16, D32); die Zahlen sind damit **leicht
+> konservativ** — ein Fenster mehr heißt ein Versuch mehr. Nachgemessen auf den neuen Grenzen wurde
+> bisher nur **Reinheit** (§4, Vorspann); dort bewegte sich von sechzehn Zellen genau eine. Für die
+> übrigen Werte ist der Unterschied nicht nachgemessen, sondern aus dieser einen Gegenprobe
+> **geschlossen**.
+
+### 2.1 Der frühe Lauf trägt nichts zum Score bei
+
+`node sim/batch.js --mode pacing --runs 60 --seed 7`, Median-Lauf:
+
+| | bis D13 | bis D25 | bis D38 | letzte 10 Durchläufe |
+| --- | --- | --- | --- | --- |
+| Anteil am Endscore | **1,9 %** | 6,3 bis 7,9 % | rund 26 % | **66 %** |
+
+Entscheidungen sind dagegen **linear** verteilt: der Block Skill, Perk, Aufstellen, Architekt
+wiederholt sich über alle 50 Durchläufe. Der frühe Lauf kostet vollen Entscheidungspreis und zahlt
+zwei Prozent. Das ist die Lücke, die die Aufgaben schließen sollen.
+
+Daraus folgt die Regel, an der der ganze Katalog hängt: **jede Belohnung in Score wäre früh
+unsichtbar.** Nur was weiterwirkt, hat am Ende von Fenster 1 Gewicht.
+
+### 2.2 Was die beiden Fenster produzieren
+
+Eigene Sonde über `runOne` mit `onTrick`-Sampling an den Durchlaufgrenzen, 40 Läufe je Spielweise,
+Median:
+
+| Fenster 1 (gemessen bis D15) | je Durchlauf p50 / p90 | bester Durchlauf p50 / p90 |
+| --- | --- | --- |
+| Siege | 19 / 22 | 22 / 26 |
+| Formationen | 15 / 19 | 18 / 21 |
+| beste Serie am Fensterende | 8 / 12 | |
+
+Kumuliert bis D15: rund 285 Siege, 128 Formationen (naiv) bis 223 (Greedy-Aufstellung), 64 bis 73
+Münzen, 3 bis 4 gehaltene Skills.
+
+### 2.3 Uhr, Können, Fraktion
+
+Der wichtigste Fund für die Bedingung. Wie stark hängt ein Zähler an der Spielweise?
+
+| Zähler | Spanne zwischen den Bauweisen | taugt als Bedingung |
+| --- | --- | --- |
+| Siege | 19 gegen 19 | neutral, aber allein betrachtet eine **Uhr** |
+| Serie | 8 gegen 9 | ja |
+| Formationen | 15 gegen 15 in Fenster 1, 17 gegen 21 in Fenster 2 (Pflanze vorn) | ja, mit leichter Schlagseite |
+| Crits | **2 (Feuer) gegen 52 (Blitz)** | nein, reine Fraktionssteuer |
+
+Eine Aufgabe auf Siegen allein ändert nichts am Spiel, sie tickt ab. Eine Aufgabe auf Formationen
+bewegt sich um Faktor 1,7 zwischen naivem und überlegtem Aufstellen. Eine Aufgabe auf Crits ist mit
+Blitz eine Formalität und mit Feuer unmöglich, weshalb keine im Katalog steht.
+
+Seit die Aufgabe **gewählt** statt zugewiesen wird, ist die Fraktions-Schieflage kein Fairness-Problem
+mehr, sondern ein Passungs-Problem: man nimmt, was zum Bau passt. Die Uhren-Frage bleibt trotzdem,
+denn eine Bedingung, die von allein abläuft, trägt auf keiner Stufe eine Entscheidung.
+
+---
+
+## 3. Die Aufgabe
+
+### 3.1 Drei Angebote, drei Schwierigkeiten
+
+Zu Beginn eines Fensters liegen drei Angebote aus. Jedes zeigt **die Aufgabe und ihre Stufe**, nicht
+die Beute. Die drei tragen **immer drei verschiedene Stufen**, sonst wäre es keine Entscheidung
+zwischen Sicherheit und Rarität, sondern nur zwischen Tätigkeiten.
+
+Was der Spieler damit weiß: **welche Arbeit** vor ihm liegt und **welches Beute-Band** sie zahlt
+(§3.2). Was er nicht weiß: welches Stück aus dem Band es wird. Die Regel ist lernbar, das Ergebnis
+bleibt offen.
+
+Die Wahl fällt im ersten Fenster **nach der ersten Skill-Wahl**, im zweiten bei **D17**. Beide Male
+weiß der Spieler genug über seinen Bau, um zu beurteilen, was zu ihm passt.
+
+### 3.2 Vier Stufen, jede mit einem Beute-Band
+
+Die Aufgabenstufen tragen **eigene Namen**, die Farben bleiben die der Raritäten (Owner,
+2026-09-14). Die Namen sind literal, nicht bildhaft: die Stufe soll sagen, wie schwer die Arbeit ist,
+und die Farbe sagt, was sie zahlt.
+
+**Jede Stufe zahlt aus einem Band von zwei benachbarten Raritäten** (Owner, 2026-09-14):
+
+| Stufe | Farbe | Beute-Band | Was die Stufe verlangt |
+| --- | --- | --- | --- |
+| **Leicht** | Normal | Normal oder Selten | läuft nebenbei mit, wenn man nichts dagegen tut |
+| **Mittel** | Selten | Selten oder Sehr selten | die Aufstellung muss ernst genommen werden |
+| **Schwer** | Sehr selten | Sehr selten oder Episch | man muss darauf zuspielen |
+| **Sehr schwer** | Episch | Episch oder Legendär | der Bau muss danach ausgerichtet sein |
+
+> **Zwei Wörter, die auf einem Chip nah beieinander liegen.** „Schwer" und „Sehr schwer"
+> unterscheiden sich in Versalien nur durch das erste Wort. Die Breite reicht (überschlagen rund
+> 70 px für „SEHR SCHWER" neben bis zu 95 px Aufgabenname in einer 246 px breiten Spalte), aber die
+> Lesbarkeit auf einen Blick ist am echten Screen zu prüfen; das kritische Paar ist
+> **Verflechtung** plus **Sehr schwer**.
+
+**Das Band ist die Spannung.** Da die Beute verdeckt bleibt, weiß der Spieler beim Wählen das Band,
+aber nicht das Stück. Eine Aufgabe der dritten Stufe zahlt Sehr selten **oder** Episch, und welches
+von beiden, entscheidet sich erst beim Erfüllen. Die Stufe verspricht damit einen Korridor, keine
+Zahl.
+
+**Legendäre Beute hat damit genau ein Zuhause:** die obere Hälfte des vierten Bandes.
+
+**Gesetzt (Owner, 2026-09-15): das Band ist 70 zu 30 gewichtet, zugunsten der unteren Rarität.**
+Dieselbe Zahl gilt für alle vier Stufen, ohne Sonderfall für die Spitze. Auf der vierten Stufe ist
+das zugleich der **Legendär-Satz**: 70 % Episch, 30 % Legendär. Damit bedeutet jede Stufe im
+Regelfall das, was ihr Name sagt, und Legendär bleibt der Ausreißer statt der Erwartung.
+
+> **Was der Satz für Legendär bedeutet.** Gerechnet, nicht gemessen, und unter zwei Annahmen: die
+> Rarität wird **je Stück** gewürfelt, und der Spieler schafft **beide** Aufgaben auf „Sehr schwer".
+>
+> | | je Aufgabe (3 Stücke) | ganzer Lauf (6 Stücke) |
+> | --- | --- | --- |
+> | **70/30 (gesetzt)** | 66 % mindestens eines · 0,9 im Schnitt | 88 % · 1,8 |
+> | 50/50 (verworfen) | 88 % · 1,5 | 98 % · 3,0 |
+>
+> Bei 50/50 wäre die halbe Auslage legendär. Das hätte der Episch-Hälfte desselben Bandes ihren
+> Platz genommen: „Sehr schwer" hätte faktisch „legendär oder knapp daneben" geheißen.
+>
+> **Nachgezogen auf drei Stücke** (Owner, 2026-09-15). Bei vier Stücken je Aufgabe standen hier
+> 76 % / 94 % und 2,4 legendäre Stücke je Lauf. Die Auswahl ist um ein Viertel kleiner geworden,
+> der Legendär-Satz ist damit von 2,4 auf 1,8 Stücke gefallen — Legendär bleibt seltener, ohne dass
+> an der 70/30-Gewichtung gedreht wurde.
+
+Die Bänder überlappen: Selten kommt aus Stufe 1 und 2, Sehr selten aus 2 und 3, Episch aus 3 und 4.
+Nur Normal und Legendär haben je einen einzigen Zugang.
+
+> **Ersetzt** die frühere Regel „die Stufe der Aufgabe ist die Stufe der Beute" (Owner, 2026-09-14).
+> Die Kopplung bleibt, sie ist nur weich geworden.
+
+**Regeln der Beute-Ziehung.** Sie standen zwischenzeitlich nur im Beutekatalog und gehören hierher,
+denn mit verdeckter Beute kann der Spieler sich gegen ein schlechtes Los nicht mehr wehren:
+
+- **Keine tote Karte.** Was dieser Lauf nicht nutzen kann, wird nicht gezogen. Solange die Beute
+  sichtbar war, war das Komfort; jetzt ist es Pflicht. Wer eine Aufgabe der vierten Stufe erfüllt und
+  ein Baurecht bekommt, obwohl er nie baut, hat fünfzehn Durchläufe umsonst gearbeitet.
+- **Nie zweimal dieselbe Familie**, wenn in einem Fenster mehrere Stücke fallen.
+- **Kein Neuwurf.**
+
+### 3.3 Drei Arten Zähler
+
+Ohne diese Unterscheidung stünde Fenster 2 mit dem Vorsprung aus Fenster 1 da.
+
+- **Summe** zählt nur im eigenen Fenster.
+- **Zustand** wird am Fensterende abgelesen, der ganze Lauf zählt.
+- **Spitze** ist das beste einzelne Vorkommen im Fenster, also die beste Aufstellung oder der beste
+  Durchlauf.
+
+### 3.4 Dieselbe Leiter in beiden Fenstern
+
+Eine Aufgabe hat **einen** Satz Schwellen, nicht zwei. Damit ist dieselbe Stufe im zweiten Fenster
+leichter als im ersten, weil der Bau steht. Das gleicht sich von selbst aus: Beute aus Fenster 1 wirkt
+in **8 bis 9** Phasen jeder Sorte nach (34 Durchläufe nach D16), Beute aus Fenster 2 in **4 bis 5**
+(18 Durchläufe nach D32). **Frühe Beute ist wertvoller, späte Stufen sind billiger.**
+
+### 3.5 Voraussetzungen werden genannt, nicht weggefiltert
+
+Bei sechs der fünfzehn Aufgaben sind die oberen Stufen an etwas gebunden, das man erst finden muss. Das ist
+**gewollt** (Owner, 2026-09-14): eine solche Aufgabe sagt dem Spieler, wohin er bauen soll.
+
+Ein erster Vorschlag, solche Stufen gar nicht erst anzubieten, ist damit **verworfen**: er hätte genau
+die Aufgaben entfernt, die den frühen Lauf lenken sollen. Stattdessen **steht die Voraussetzung am
+Angebot**, etwa „Diese Stufe verlangt offene Segmentgrenzen". Wer das Tor sieht, kann entscheiden, ob
+er es aufmacht.
+
+### 3.6 Gegen Wiederholung
+
+**Regel 1 und 2 sind gebaut** (2026-09-15), Regel 3 ist gestrichen.
+
+1. **Gewürfelte Parameter statt einer langen Liste** — gebaut. Dasselbe Muster wie `WEEK_MODS`:
+   Reinheit würfelt den Formationstyp (vier Varianten), Quartier die Gebäudekategorie (drei). Am Code
+   nachgezählt ergeben 15 Definitionen **20 unterscheidbare Angebote** und mit den vier Stufen **80**
+   mögliche Karten; bei zwei Aufgaben je Lauf sieht ein Spieler zwei davon. **Farbtreue würfelt keine
+   Farbe** (Owner, 2026-09-14): die Serie zählt, egal in welcher sie läuft. Alle drei Zahlen stehen
+   als Test, nicht als Behauptung.
+2. **Kein Angebot zweimal in einem Lauf** — gebaut, und dabei eine Lücke geschlossen: gesperrt waren
+   zuerst nur die **angenommenen** Aufgaben. Damit konnte Fenster 2 genau die zwei zeigen, die man
+   eben hatte verfallen lassen. Jetzt wandern **alle drei Aufsteller** beim Auslegen in `usedTasks`,
+   nicht beim Annehmen. Fünfzehn Aufgaben minus drei lassen für das zweite Fenster genug übrig.
+**Regel 3 ist gestrichen** (Owner, 2026-09-15). Sie lautete „die letzten vier Aufgaben sind
+gesperrt" und war ein Vorschlag von mir, den nie jemand aufgegriffen hat. Der Befund bleibt notiert,
+damit niemand sie später als gute Idee wiederentdeckt:
+
+- **Die Wiederholung ist ohnehin niedrig.** Gemessen sieht ein Spieler je Lauf **6 von 15** Aufgaben,
+  nach drei Läufen hat **niemand** alle gesehen, und im Schnitt braucht es **7,2 Läufe**, bis der
+  Katalog einmal durch ist.
+- **Sie wirkt in die falsche Richtung.** Vier zu sperren verkleinert den Pool genau dort, wo er am
+  größten sein soll — in den ersten Läufen. Das ist mehr Wiederholung früh gegen Neuheit spät, in
+  einem Abschnitt, der „Gegen Wiederholung" heißt.
+- **Sie war doppelt unterbestimmt:** welche vier, und wodurch sie aufgehen, stand nirgends.
+
+### 3.7 Abgerechnet wird am Fensterende
+
+**Gesetzt (Owner, 2026-09-15).** Die Beute kommt **nach der letzten Runde des Fensters** — nach D16
+und nach D32 —, nicht in dem Moment, in dem der Zähler die Schwelle reißt. Sie wirkt ab der nächsten
+Phase.
+
+Vorher zahlte der Auftrag sofort bei Erfüllung. Zwei Dinge sprachen dagegen:
+
+- **Eine früh erfüllte Aufgabe der untersten Stufe zahlte fast das ganze Fenster mit.** Wer „Leicht"
+  im zweiten Durchlauf schaffte, hatte seine Beute vierzehn Runden lang, wer „Sehr schwer" erst am
+  Ende schaffte, ein paar. Das Band soll die Rarität staffeln, nicht zusätzlich die Wirkdauer.
+- **Der Abrechnungszeitpunkt war unvorhersehbar.** Jetzt ist er eine feste Runde, gleich für beide
+  Fenster und für alle vier Stufen.
+
+Was daraus folgt:
+
+- **Ein erfüllter Auftrag läuft weiter.** Die Kachel zeigt „erfüllt · noch N Durchläufe": der Stand
+  ist sicher, der Spieler muss nichts mehr tun, die Auszahlung wartet trotzdem.
+- **Spitzen-Zähler können nicht mehr zurückfallen**, sobald sie einmal oben waren — das war schon so
+  (`readBest`), aber jetzt ist es sichtbar wichtig statt nur formal richtig.
+- **Beute des alten Fensters und Angebot des neuen fallen auf dieselbe Durchlaufgrenze.** Das Angebot
+  wartet nicht auf die abgeholte Beute, sonst verlöre Fenster 2 eine Runde; die Reihenfolge der
+  Overlays in `App.jsx` entscheidet, was der Spieler zuerst sieht — erst die Beute samt Nachwahl,
+  dann der neue Aufsteller.
+
+---
+
+## 4. Der Aufgaben-Katalog
+
+**Fünfzehn Aufgaben mit je vier Stufen.** Die Werte sind Owner-Entscheid aus Playtest-Erfahrung
+(2026-09-14), wo nicht anders vermerkt. Die Messungen darunter sagen, wo sie gegenüber dem
+Sim-Verhalten stehen.
+
+| Aufgabe | zählt | Normal · Selten · Sehr selten · Episch |
+| --- | --- | --- |
+| **Durchmarsch** Siege in einem Durchlauf | Spitze | 22 · 26 · 30 · 34 |
+| **Sperrfeuer** Segmente mit allen fünf Stichen | Spitze | 2 · 3 · 4 · 5 |
+| **Strähne** längste Siegesserie | Spitze | 10 · 15 · 30 · 60 |
+| **Gedränge** Formationen in einer Aufstellung | Spitze | 30 · 35 · 40 · 45 |
+| **Reinheit** Formationen eines gewürfelten Typs | Spitze | siehe unten |
+| **Langbau** längste Formation | Spitze | 5 · 10 · 15 · 20 |
+| **Vollbrett** Positionen mit mindestens einer Formation | Spitze | 30 · 34 · 37 · 40 |
+| **Verflechtung** Positionen in mindestens drei Formationen | Spitze | 3 · 5 · 7 · 10 |
+| **Farbtreue** Siege derselben Farbe in Folge | Spitze | 5 · 7 · 10 · 15 |
+| **Buntspiel** Siege je Grundfarbe in einem Durchlauf | Spitze | 4 · 5 · 6 · 7 |
+| **Brecher** zehn Siege über einem Kampfwert | Summe | über 10 · 12 · 15 · 20 |
+| **Fußvolk** Siege mit Grundwert 4 oder weniger | Summe | 40 · 60 · 80 · 110 |
+| **Aufmarsch** Kampfwert über dem Gegnerdeck | Zustand | 20 · 30 · 40 · 60 |
+| **Quartier** volle Baufeld-Segmente einer Kategorie | Zustand | 1 · 2 · 3 · 4 |
+| **Säckel** Münzen gehalten | Zustand | 60 · 80 · 100 · 120 |
+
+**Brecher ist anders gebaut als die übrigen:** die Zahl der Stiche steht fest bei zehn, die Leiter
+läuft über die **Schwelle**. Zehn Siege mit einem Kampfwert über 10 sind die unterste Stufe, zehn über
+20 die oberste.
+
+**Gesetzt (Owner, 2026-09-15): Reinheit zählt KARTEN, nicht Formationen.** Gemessen wird, wie viele
+der vierzig Positionen in mindestens **einer** Formation des gewürfelten Typs liegen. Eine Position in
+drei Farbblöcken zählt einmal.
+
+| Typ | Leicht · Mittel · Schwer · Sehr schwer |
+| --- | --- |
+| Farbblock | **25 · 30 · 35 · 40** |
+| Wiederholung | **10 · 14 · 18 · 25** |
+| Treppe | **12 · 16 · 20 · 28** |
+| Wechsel | **12 · 16 · 20 · 28** |
+
+**Warum das Maß gewechselt hat.** Distinkte Läufe eines Typs reichen gemessen von **2 bis 8** — neun
+mögliche Werte für vier Stufen, jede Stufe also ein Sprung. Karten reichen von **6 bis 40**. Erst das
+lässt sich feinjustieren, und genau das war der Auslöser: der Owner hatte „Schwer" im Playtest im
+**ersten Durchlauf** erfüllt.
+
+> **KORREKTUR — meine frühere Kalibrierung war falsch gemessen.** Die Sonde rief
+> `computeFormations(order, deck)` mit **zwei** Argumenten auf, also ohne Rollen, Perks, Skills,
+> Anker, Familien und Architekt — sie maß ein nacktes Brett, nicht den Lauf. Richtig gerechnet lag
+> die oberste Stufe bei **14 bis 31 %** statt bei den behaupteten 11 bis 14 %, und „Schwer" bei
+> **43 bis 51 %** statt 26 bis 39 %. Die damit gesetzten Leitern (2·3·4·5 aufwärts) sind damit
+> hinfällig. **Jede Zahl in §2.2 und §4.4, die Formationen zählt, stammt aus derselben Sonde und ist
+> entsprechend zu tief.**
+
+**Die neuen Leitern sind Owner-Werte**, nicht kalibriert. Gemessen (bester Durchlauf in Fenster 1,
+spielende Bauweisen, korrekt gerechnet) liegen sie so:
+
+| Typ | Leicht | Mittel | Schwer | Sehr schwer |
+| --- | --- | --- | --- | --- |
+| Farbblock | 8 % | 3 % | 3 % | 1 % |
+| Wiederholung | 61 % | 23 % | 10 % | 3 % |
+| Treppe | 94 % | 68 % | 34 % | 1 % |
+| Wechsel | 99 % | 96 % | 88 % | 21 % |
+
+> Die Messung läuft über `factionPolicy`, die die Aufstellung **nicht** optimiert; ein Spieler, der
+> gezielt tauscht, liegt darüber. Sie taugt als Vergleich der vier Typen untereinander, nicht als
+> absolute Erfolgsquote. Weitere Anpassungen sind vom Owner angekündigt.
+
+### 4.1 Die Texte
+
+Nach denselben Regeln wie die Beutetexte (§8): ein Satzmuster je Aufgabe, nur die Zahl skaliert, kein
+Gedankenstrich, kein Selbstbezug.
+
+| Aufgabe | Text |
+| --- | --- |
+| Durchmarsch | Gewinne in einem Durchlauf X Stiche. |
+| Sperrfeuer | Gewinne in einem Durchlauf alle fünf Stiche in X Segmenten. |
+| Strähne | Gewinne X Stiche in Folge. |
+| Gedränge | Baue X Formationen in einer Aufstellung. |
+| Reinheit | Baue X Formationen vom Typ [Typ] in einer Aufstellung. |
+| Langbau | Baue eine Formation aus X Karten. |
+| Vollbrett | Bringe X der 40 Positionen in mindestens eine Formation. |
+| Verflechtung | Bringe X Positionen in mindestens drei Formationen. |
+| Farbtreue | Gewinne X Stiche derselben Farbe in Folge. |
+| Buntspiel | Gewinne in einem Durchlauf mit jeder Farbe mindestens X Stiche. |
+| Brecher | Gewinne zehn Stiche mit einem Kampfwert über X. |
+| Fußvolk | Gewinne X Stiche mit Karten vom Grundwert 4 oder weniger. |
+| Aufmarsch | Bringe dein Deck X Kampfwert über das Gegnerdeck. |
+| Quartier | Bedecke X Baufeld-Segmente vollständig mit Gebäuden einer Kategorie. |
+| Säckel | Halte X Münzen, bis der Auftrag endet. |
+
+**Sperrfeuer braucht eine genaue Erklärung** (Owner): ein Segment sind die festen Fünferblöcke der
+Aufstellung, also die Positionen 1 bis 5, 6 bis 10 und so weiter bis 36 bis 40. Acht Stück je
+Durchlauf, kein gleitendes Fenster. Ein Segment zählt nur, wenn alle fünf Stiche darin gewonnen sind.
+
+**Buntspiel zählt die Grundfarbe der Karte.** Grün gefärbte Karten zählen weiter in ihrer
+ursprünglichen Farbe, und eine Farballianz fasst keine Farben zusammen. Die Regel ist erzwungen, nicht
+gewählt: gemessen färbt Pflanze bis D15 im Median 17,5 von 40 Karten grün und bis D30 deren 36, und
+**schon bei D15 hat mindestens eine Farbe keine ungefärbte Karte mehr** (kleinste verbliebene Farbe:
+0 im p25 wie im p90). Über die effektive Farbe gezählt wäre Buntspiel für Pflanze nicht schwer,
+sondern auf jeder Stufe unmöglich. Über die Grundfarbe liegt Pflanze gleichauf mit dem naiven Spieler.
+
+> **Der Preis dieser Regel:** ein Pflanzenspieler sieht eine grüne Karte gewinnen, und der Zähler
+> schreibt es Rot gut. Die Anzeige muss die vier Grundfarben deshalb getrennt mitzählen (§4.3).
+>
+> **Die Karte bekommt dafür einen Punkt in ihrer Grundfarbe** (Owner, 2026-09-14). Die zuerst
+> vorgeschlagene Stelle oben links ist allerdings **belegt**: `src/ui/indicators/vocab.js` führt die
+> Ecken als Single Source of Truth, und dort sitzt auf genau diesen Karten bereits das Blatt
+> (`CORNER.green`), dem der Feuer-Brand schon ausweicht (`left: green ? 22 : 4`).
+>
+> **Gesetzt: ein Ring in der Grundfarbe um das Blatt** (Owner, 2026-09-14). Ein Marker, zwei Aussagen,
+> keine neue Ecke, keine Änderung am Ecken-Vokabular. Der Alternativplatz auf der unteren Kante ist
+> damit vom Tisch.
+>
+> **Gesetzt (Owner, 2026-09-15): der Ring erscheint NUR, solange ein Buntspiel-Auftrag läuft.**
+> Drei Gründe, in dieser Reihenfolge: die Ecke ist das knappste Gut auf der Karte und teilt sich
+> bereits mit dem Marken-Badge; außerhalb von Buntspiel ist die Grundfarbe unter dem Grün mechanisch
+> folgenlos, die Karte spielt als grün, und eine dauerhafte Markierung für Information ohne
+> Verwendung macht die Ecke unlesbar; und mit dem Auftrag kommt die Erklärung mit — in der
+> Fortschrittsanzeige steht daneben, was gezählt wird. Dauerhaft müsste der Ring sich selbst
+> erklären.
+>
+> Verworfen: dauerhaft. Das Gegenargument bleibt notiert — ein Element, das auftaucht und
+> verschwindet, ist selbst eine Lernlast, weil man bemerken muss, dass es kam. Der Owner gewichtet
+> die knappe Ecke höher.
+
+**Farbtreue nutzt dagegen die Farbserie** und damit Farballianz und Grün, weil dort die Mechanik das
+Thema ist. Zwei Aufgaben, zwei Zwecke; in beiden Texten steht, was gezählt wird.
+
+### 4.2 Zwei harte Grenzen im Regelwerk
+
+Beide sind aus dem Code gelesen, nicht geschätzt, und beide binden obere Stufen.
+
+**Formationen enden an Segmentgrenzen.** `canExtendSeg` (`formations.js`) lässt einen Lauf nur dann
+über eine Grenze wachsen, wenn sie offen ist. Geöffnet wird sie durch die Perk-Familie **E_SEGMENT**
+(Stufe I und II öffnen die ersten ein bis zwei Grenzen, III und IV alle), durch das Pflanzen-**Spalier**
+oder durch den Architekten-**Pfeiler**. Ohne eines davon ist eine Formation **höchstens fünf Karten
+lang**. Langbau ab Stufe Selten ist damit faktisch eine E_SEGMENT-Aufgabe. Dazu kommt die Typgrenze:
+Wiederholung schafft ohne Deckumbau höchstens 4 (vier Karten je Wert), Farbblock und Treppe höchstens
+10, nur Wechsel läuft frei.
+
+**Eine Farbe hat zehn Karten.** Mehr als zehn gleichfarbige Siege in Folge gehen nur mit
+**Farballianz** (zwei Farben zählen als eine, dann bis 20) oder mit Pflanzen-Grün. Farbtreue auf Episch
+ist damit gebunden.
+
+### 4.3 Anzeige: der Stand jeder Aufgabe
+
+**Gesetzt (Owner, 2026-09-14): jede Aufgabe zeigt ihren Stand im Multiplikator-Panel.** Ohne Anzeige
+ist eine Aufgabe, die über fünfzehn Durchläufe läuft, nicht spielbar; man wüsste nie, ob der laufende
+Durchlauf noch etwas bringt.
+
+**Gesetzt (Owner, 2026-09-15): die Anzeige hat ZWEI Orte, nicht einen.** Am Code nachgesehen, nicht
+mehr vermutet.
+
+**1. Zuhause ist `src/ui/StatusRail.jsx`**, als neues erstes Kind über den Multiplikatoren. Dort
+laufen Crit-Chance, Crit-Multiplikator, Formations-Übersicht und Score-Quellen bereits zusammen.
+
+Der Einbau ist billig, geprüft:
+
+- Die Wurzel ist eine `grid gap-3` mit drei Kindern (Multiplikatoren · Bilanz · Analyse). Ein viertes
+  oben ist ein `<div>`, keine Layout-Operation. Das Kachel-Muster `MCell` steht in der Datei.
+- **Kein Test steht im Weg.** Die einzigen zwei Zusicherungen auf die Datei
+  (`rahmen-huelle.test.js`, `graph-labels.test.js`) pinnen beide dieselbe Zeile
+  `<Sparkline current={currentTraj} record={recordTraj} />` — nichts darüber.
+  `levelup-wings.test.js` verlangt `<PerkList>` **nach** `<StatusRail>`, das betrifft den Flügel,
+  nicht das Innere der Leiste. `i18n-guards.test.js` führt die Datei in der Liste, die jeden
+  Spielertext über `t()` schicken muss: eine Auflage, kein Hindernis.
+- Die Leiste folgt bereits in die **Skill-Phase** — `LevelupWings.jsx` bindet die echte Komponente
+  ein, ausdrücklich „kein Nachbau".
+
+**2. Dazu eine Zeile im Aufstell-Overlay** und im Architekten. Grund ist ein Befund, den das Mockup
+nicht hatte:
+
+> **Ein Drittel des Katalogs wird hinter einem Overlay entschieden.** `FormationPhase.jsx` rendert
+> `fixed inset-0 overlay-root z-30`, die Kopfleiste `StatusBar.jsx` liegt auf `z-20`;
+> `ArchitectScreen.jsx` ist ebenfalls `fixed inset-0` und später im DOM. **Beide Overlays decken
+> Leiste und Kopfleiste zu.**
+
+| wo entschieden | Aufgaben | stehende Anzeige sichtbar |
+| --- | --- | --- |
+| Stichspiel | Durchmarsch, Sperrfeuer, Strähne, Farbtreue, Buntspiel, Brecher, Fußvolk (7) | **ja** |
+| Aufstell-Overlay | Gedränge, Reinheit, Langbau, Vollbrett, Verflechtung (5) | **nein** |
+| Architekt-Overlay | Quartier (1) | **nein** |
+| beides | Aufmarsch, Säckel (2) | teilweise |
+
+Keine zweite Tafel: **eine Zeile**, dasselbe Label-plus-Wert wie die Kachel in der Leiste. Die Naht
+liegt schon da — `FormationPhase.jsx` rechnet bereits `countBuiltFormations(formations)` und zeigt
+den Münzertrag der Aufstellung live. Die Zahl, die die Aufgabe braucht, hat der Screen schon.
+
+> **Warum nicht die Kopfleiste**, obwohl in `StatusBar.jsx` steht, die Währung werde „in jeder
+> Entscheidungsphase gelesen und muss dort stehen, wo man ohnehin hinsieht"? Das Argument trägt hier
+> nicht: die Overlays decken die Kopfleiste genauso zu. Dazu ist Zeile 2
+> `Score (flex-1) · Münzen · Mult`, und der Score ist ausdrücklich geschützt („Platz bis 999.999.999,
+> nie abgeschnitten") — eine vierte Zelle ginge von seiner Breite. Der Münz-Präzedenzfall löst das
+> Problem also nicht, er hat es nur nie gehabt: ein Kontostand ist eine Zahl, ein Auftrag braucht
+> Stand **und** Frist.
+
+> **Beiläufig gefunden:** `panel-tokens.test.js` verweist im Kommentar auf `StatusRail.jsx:133` als
+> Fundstelle der Sparkline. Die steht heute in Zeile 145 — der Verweis ist bereits veraltet, ohne
+> dass ein Test darauf anspringt. Ein Einschub oben verschiebt ihn weiter.
+
+
+Die Anzeigeform folgt der Art des Zählers:
+
+- **Spitze:** zwei Zahlen. Der Wert des **laufenden** Durchlaufs oder der laufenden Aufstellung, und
+  daneben der beste bisher. Nur die zweite entscheidet, aber ohne die erste weiß niemand, ob die
+  aktuelle Runde noch gewinnbar ist.
+- **Summe:** die laufende Summe gegen das Ziel.
+- **Zustand:** der aktuelle Wert gegen das Ziel.
+
+| Aufgabe | was das Panel zeigt |
+| --- | --- |
+| Durchmarsch | Siege im laufenden Durchlauf, daneben der beste Durchlauf bisher |
+| Sperrfeuer | volle Segmente im laufenden Durchlauf, daneben der beste bisher |
+| Strähne | die laufende Serie, daneben die längste bisher |
+| Gedränge | Formationen der aktuellen Aufstellung, daneben die beste bisher |
+| Reinheit | dieselbe Zahl, auf den gewürfelten Typ gefiltert |
+| Langbau | längste Formation der aktuellen Aufstellung, daneben die beste bisher |
+| Vollbrett | belegte Positionen der aktuellen Aufstellung, daneben die beste bisher |
+| Verflechtung | Positionen mit drei oder mehr Formationen, aktuell und beste |
+| Farbtreue | die laufende Farbserie, daneben die längste bisher |
+| Buntspiel | **vier Zähler, einer je Grundfarbe**, plus das Minimum daraus |
+| Brecher | laufende Summe der Siege über der Schwelle, gegen 10 |
+| Fußvolk | laufende Summe |
+| Aufmarsch | aktuelle Differenz zum Gegnerdeck |
+| Quartier | volle Segmente je Kategorie |
+| Säckel | Kontostand gegen das Ziel |
+
+Dazu bei jeder Form die **Restlaufzeit** („noch 6 Durchläufe"): sechs Durchläufe sind sechs Versuche,
+und ohne die Zahl weiß niemand, ob Umbauen sich noch lohnt.
+
+**Keine Beute in der Anzeige** (Owner, 2026-09-14). Ein Name wie „Baurecht III" sagt nicht, was man
+bekommt, und die Wirkung dazuzuschreiben sprengt die Leiste. Vollständig gesehen hat man die Beute
+beim Annehmen; die laufende Anzeige zeigt nur, wie weit der Auftrag ist.
+
+Zwei Sonderfälle:
+
+**Buntspiel braucht am meisten Platz**, weil vier Zähler nebeneinander stehen müssen. Das Minimum
+allein reicht nicht: man muss sehen, welche Farbe zurückhängt, sonst kann man nicht gegensteuern.
+
+**Säckel braucht eine Warnung am Kauf.** Wer Münzen ausgibt, während der Auftrag läuft, kann ihn damit
+verlieren. Ein Kauf, der den Kontostand unter das Ziel drückt, muss das vorher sagen.
+
+### 4.4 Was die Messung zu diesen Werten sagt
+
+Drei Stellen, an denen die Sim niedriger liegt als die Playtest-Werte. Zwei davon sind
+Messartefakte, eine ist eine echte Decke.
+
+**Sperrfeuer.** Der Median-Lauf schafft im besten Durchlauf des ersten Fensters 1 volles Segment, p90
+sind 2. Der Greedy-Löser der Sim optimiert aber **Formationen**, nicht Segmentsiege, er versucht es
+also nie. Feuer erreicht bei D30 im p90 acht volle Segmente. Die Messung misst hier einen Spieler, der
+nicht danach spielt.
+
+**Aufmarsch.** Gemessen liegt die Kampfwert-Differenz bei D15 im Median bei 3,5 (naiv) bis 11 (Blitz),
+p90 bei 24. Die unterste Stufe ist 20. Vermutlich derselbe Grund: die Perk-Politik der Sim nimmt
+Wert-Perks nicht gezielt. Aufmarsch ist damit auch auf Normal ein echter Auftrag.
+
+**Säckel bleibt bei 60 · 80 · 100 · 120, in beiden Fenstern** (Owner, 2026-09-15).
+
+> **Korrektur.** Hier stand, die Stufen 100 und 120 seien bis D15 „arithmetisch unmöglich, egal wie
+> gut jemand spielt". Das war falsch. Ich hatte den gemessenen **Kontostand** eines Sims, der normal
+> spielt, für die **Obergrenze** gehalten und die zweite Einnahmeart übersehen, die `coins.js` §2.3
+> ausdrücklich führt: **Verzicht zahlt.**
+
+Nachgemessen am Entscheidungsplan (`DECISION_SCHEDULE`, Block Skill · Perk · Aufstellen · Architekt):
+
+| bis D16 | Münzen |
+| --- | --- |
+| Sockel 2 je Durchlauf, ohne eine einzige Formation | 35 |
+| passiv am Formations-Deckel (2 + 4 je Durchlauf) | **99** |
+| 4 abgelehnte Skill-Phasen (`FORFEIT_SKILL` 12) | +48 |
+| 4 abgelehnte Perk-Phasen (`FORFEIT_PERK` 6) | +24 |
+| 4 Aufstellphasen mit ungenutzter Energie (4 × `FORFEIT_ENERGY` 1) | +16 |
+| 4 Architektenphasen ohne Hauptaktion (`FORFEIT_BUILD` 6) | +24 |
+| **Obergrenze bei vollem Verzicht** | **211** |
+
+> Auf das neue Fenster nachgerechnet (Owner, 2026-09-15). Bis D15 waren es 199: ein Durchlauf weniger
+> passiv **und** eine Architektenphase weniger, weil D16 genau diese Phase ist.
+
+Zum Vergleich der tatsächliche Kontostand im Sim bei D15, der normal spielt und ausgibt: p25/p50/p75
+**59 / 67 / 74** über Zufall, Feuer und Pflanze (30 Läufe je Spielweise). Das ist die Zahl, die ich
+vorher fälschlich als Decke gelesen hatte.
+
+**Damit ist 120 am Ende von Fenster 1 erreichbar, aber teuer:** rund 55 Münzen über dem normalen Stand, also im
+Kern jede Skill-Phase des ersten Fensters ablehnen. Genau das ist die Entscheidung, die die Stufe
+verlangt.
+
+**Owner-Begründung, warum das keine Reparatur braucht:** Man wählt aus drei Angeboten. Liegt Säckel
+in Fenster 1 auf „Sehr schwer", nimmt man eben ein anderes — die Stufe wird dann im zweiten Fenster
+genommen, nicht im ersten. Das Angebotssystem regelt die Machbarkeit bereits, ohne Sonderregel je Fenster. Und
+der Zwang zum Ablehnen oder zum Energiesparen ist kein Nebeneffekt, sondern der Hebel, den die
+Münzökonomie für genau diesen Fall vorgesehen hat.
+
+> Verworfen wurden drei Vorschläge von mir: Säckel nur in Fenster 2 anbieten, zwei Leitern je
+> Fenster (35 · 45 · 55 · 65 für Fenster 1), und in Fenster 1 nur bis Selten anbieten. Alle drei
+> hätten eine Sonderregel eingeführt, die keine der übrigen 14 Aufgaben braucht.
+
+**Fußvolk, gemessen** (Siege mit Grundwert 4 oder weniger, Fenster 1, 40 Läufe je Spielweise):
+
+| | p25 | p50 | p75 | p90 |
+| --- | --- | --- | --- | --- |
+| naiv | 38 | 43,5 | 52,5 | 69 |
+| Feuer | 39 | 47 | 61 | 76 |
+| Blitz | 41 | 44 | 52 | 61 |
+| Eis | 40 | 48 | 54 | 65 |
+| Pflanze | 38 | 41 | 48 | 59 |
+
+Deutlich mehr als erwartet: die schwachen Karten gewinnen öfter, als ihr Grundwert vermuten lässt,
+weil Perks und Fraktionen sie mitheben. Die Leiter 40 · 60 · 80 · 110 setzt Normal knapp unter den
+naiven Median, Sehr selten über das p90 von Fenster 1 und Episch ins zweite Fenster (dort p50 zwischen
+56 und 95).
+
+**Brecher, gemessen** (Siege über der Schwelle, Fenster 1, naiver Spieler):
+
+| Schwelle | p50 | p75 | p90 | liegt damit auf |
+| --- | --- | --- | --- | --- |
+| über 10 | 13 | 26 | 56 | Median, also Normal |
+| über 12 | 0 | 8 | 22 | p75, also Selten |
+| über 15 | 0 | 0 | 6 | p90, also Sehr selten |
+| über 20 | 0 | 0 | 0 | über allem Gemessenen, auch in Fenster 2 |
+
+Die feste Zahl von zehn Stichen passt dazu: über 10 schafft der Median knapp, über 20 erreichte im
+ganzen Datensatz kein Lauf.
+
+**Buntspiel, gemessen** (Minimum über die vier Grundfarben, bester Durchlauf in Fenster 1):
+
+| | p25 | p50 | p75 | p90 | Durchläufe mit jeder Farbe ≥ 4 / 5 / 6 / 7 |
+| --- | --- | --- | --- | --- | --- |
+| naiv | 4 | 5 | 5 | 5 | 7 / 1 / 0 / 0 von 15 |
+| Feuer | 5 | 5 | 5 | 6 | 8 / 1 / 0 / 0 |
+| Pflanze | 4 | 5 | 5 | 5 | 7 / 1 / 0 / 0 |
+
+Normal (4) gelingt in jedem zweiten Durchlauf von allein, Selten (5) einmal je Fenster, Sehr selten (6)
+nur bei Feuer im p90, Episch (7) in Fenster 1 bei keiner Spielweise. **Pflanze liegt mit
+Grundfarben-Zählung exakt auf dem naiven Spieler**, die Regel aus §4.1 funktioniert also.
+
+**Gedränge, nachgemessen** (2026-09-15, `countBuiltFormations` an echten Läufen, bester Durchlauf je
+Fenster, 30 Seeds je Spielweise). Die frühere Zahl fiel unter die Sonden-Korrektur in §2.2 und ist
+ersetzt. Gemessen wird hier mit **`factionPolicy`**, weil die den Greedy-Solver in der Aufstellphase
+fährt; `randomPolicy` bestätigt die Reihenfolge unangetastet und misst deshalb nicht Gedränge,
+sondern einen Spieler, der die Phase gar nicht spielt.
+
+| Spielweise | Fenster | p25 | p50 | p75 | p90 | max | erreicht 15 / 25 / 35 / 45 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| naiv (kein Umbau) | F1 | 9 | 11 | 12 | 13 | 17 | 7 % / 0 % / 0 % / 0 % |
+| naiv (kein Umbau) | F2 | 11 | 14 | 16 | 19 | 25 | 47 % / 3 % / 0 % / 0 % |
+| Blitz | F1 | 17 | 18 | 20 | 21 | 23 | 93 % / 0 % / 0 % / 0 % |
+| Blitz | F2 | 18 | 20 | 22 | 25 | 26 | 100 % / 10 % / 0 % / 0 % |
+| Feuer | F1 | 17 | 19 | 20 | 21 | 23 | 100 % / 0 % / 0 % / 0 % |
+| Feuer | F2 | 19 | 21 | 23 | 24 | 25 | 100 % / 7 % / 0 % / 0 % |
+| Eis | F1 | 16 | 17 | 19 | 22 | 29 | 90 % / 3 % / 0 % / 0 % |
+| Eis | F2 | 17 | 19 | 21 | 25 | 30 | 87 % / 10 % / 0 % / 0 % |
+| Pflanze | F1 | 17 | 19 | 21 | 23 | 25 | 100 % / 3 % / 0 % / 0 % |
+| Pflanze | F2 | 23 | 25 | 26 | 29 | 32 | 100 % / 50 % / 0 % / 0 % |
+
+Die letzte Spalte misst gegen die **alte** Leiter 15 · 25 · 35 · 45; die Verteilungswerte links davon
+sind von der Leiter unabhängig und gelten weiter.
+
+**Die Leiter ist jetzt 30 · 35 · 40 · 45** (Owner, 2026-09-15). Gegen dieselbe Messung gerechnet:
+
+| Stufe | erreicht in den 300 gemessenen Fenstern |
+| --- | --- |
+| Normal 30 | Eis F2 3 %, Pflanze F2 7 %, **sonst überall 0 %** |
+| Selten 35 · Sehr selten 40 · Episch 45 | **0 %**, in jedem Fenster und bei jeder Spielweise |
+
+> **Einspruch fürs Protokoll, die Entscheidung bleibt beim Owner.** Die gesetzte Regel aus §1 lautet
+> „die unterste Stufe ist knapp ohne Aufwand erreichbar". Mit 30 ist sie das gemessen nicht: der
+> Median liegt bei 17 bis 25, das beste beobachtete Fenster über alle 150 Läufe bei **32**. Die drei
+> oberen Stufen liegen über allem Gemessenen, 45 auch über dem arithmetischen Deckel aus 145 Paaren.
+> Gegen die Messung spricht, dass sie einen Spieler misst, der nicht auf Formationsanzahl spielt,
+> sondern auf Score — derselbe Vorbehalt, der bei Sperrfeuer und Aufmarsch schon steht. Ob der
+> Vorbehalt 13 Formationen Abstand trägt, ist eine Playtest-Frage, keine Messfrage.
+
+**Korrektur zu einer früheren Aussage in dieser Reihe:** die Obergrenze für Formationen je Aufstellung
+ist **nicht** 21. Das war das Beste, was die Sim erreicht. Gemessen (Münz-Doku §2.5) gehen die Paare
+aus Position mal Formation bis 145, was bei mittlerer Länge 3,3 rund **45 distinkte Formationen**
+ergibt; der Münz-Deckel bindet ab 32 und trifft 1 % aller Durchläufe.
+
+> **Und eine Korrektur der Korrektur.** Aus ihr wurde geschlossen, „Gedränge auf Episch sitzt auf dem
+> beobachteten Maximum". Das hält der Messung oben nicht stand. Die 145 Paare sind **beobachtet**,
+> die 45 distinkten Formationen sind aus 160 Paaren — dem vollen Brett — **hochgerechnet**. Beobachtet
+> ist 32. 45 ist also der arithmetische Deckel, nicht ein erreichter Wert, und 35 liegt ebenfalls
+> darüber.
+
+### 4.5 Verworfene Aufgaben
+
+| Aufgabe | Grund |
+| --- | --- |
+| **Übergewicht** (Gewinnquote) | dieselbe Sache wie Durchmarsch, nur anders verpackt. Zusätzlich im ersten Fenster eine reine Uhr: naiv 48,0 %, Feuer 47,8 %, Blitz 48,0 %, Pflanze 47,7 %. |
+| **Dichte** (belegte Baufeldzellen) | zu einfach. Ohne Limitierung geht es nur darum, dem Architekten überhaupt etwas zu bauen. |
+| **Genügsam** (Angebote ablehnen) | Ablehnen als Weg zum Gewinnen ist keine Mechanik, die das Spiel haben soll (Owner). |
+| **Meisterschaft** (Skills auf hoher Stufe) | zu wenig Einfluss, zu nah am Glückswurf (Owner). Gegenmessung fürs Protokoll: bei D15 hält ein Lauf **0 Skills auf Selten oder höher** (p90: 1), bei D30 ebenso. Ohne Kaufen passiert dort nichts. |
+| **Hochbau** (Gebäude auf Stufe 3) | gestrichen (Owner). |
+| **Kaltstart** (die ersten zehn Stiche) | ging in Sperrfeuer auf. |
+
+---
+
+## 5. Was die Raritäten bedeuten
+
+Die Stufe sagt nicht nur, wie groß eine Zahl ist, sondern wie weit sie reicht. Beim Lesen einer Karte
+ist das die erste Information.
+
+| Stufe | Bedeutung |
+| --- | --- |
+| Normal | Wirkt sofort oder für ein paar Phasen. Sie hilft im Moment und ist danach vorbei. |
+| Selten | Dieselbe Sache, meist bis zum Laufende. Ab hier zahlt Beute nicht einmal, sondern jede Phase. |
+| Sehr selten | Die dauerhafte Wirkung wird so groß, dass sich Bauen danach lohnt. |
+| Episch | Höchste Stufe. Meist mit einem Zusatz, den keine Stufe darunter hat. |
+| Legendär | Einzelstück ohne Stufe. Es hebt eine Regel des Laufs auf, statt eine Zahl zu heben. |
+
+---
+
+## 6. Der Beutekatalog
+
+**61 einzigartige Belohnungen:** 14 Familien mit je vier Stufen (56) plus fünf legendäre
+Einzelstücke. Sechs Kategorien, keine doppelt.
+
+Alle Werte sind vom Owner abgenommen (2026-09-14) und über die Sim tunebar.
+
+### 6.1 Münze
+
+Kaufkraft. Zum Vergleich: ein Lauf verdient heute gemessen 205 bis 260 Münzen.
+
+**Zehrgeld** (`coins`, sofort)
+
+| Stufe | Text |
+| --- | --- |
+| Normal | Du bekommst sofort 15 Münzen. |
+| Selten | Du bekommst sofort 25 Münzen. |
+| Sehr selten | Du bekommst sofort 50 Münzen. |
+| Episch | Du bekommst sofort 100 Münzen. |
+
+**Münzrecht** (Auszahlung am Durchlaufende)
+
+| Stufe | Text |
+| --- | --- |
+| Normal | Jeder Durchlauf zahlt 1 Münze zusätzlich, die nächsten 15 lang. |
+| Selten | Jeder Durchlauf zahlt 1 Münze zusätzlich, bis zum Laufende. |
+| Sehr selten | Jeder Durchlauf zahlt 2 Münzen zusätzlich, bis zum Laufende. |
+| Episch | Jeder Durchlauf zahlt 4 Münzen zusätzlich, bis zum Laufende. |
+
+**Ablass** (Ablehnerträge: Skill 12, Perk 6)
+
+| Stufe | Text |
+| --- | --- |
+| Normal | Ein abgelehnter Skill oder Perk zahlt anderthalbmal so viele Münzen. |
+| Selten | Ein abgelehnter Skill oder Perk zahlt doppelt so viele Münzen. |
+| Sehr selten | Ein abgelehnter Skill oder Perk zahlt zweieinhalbmal so viele Münzen. |
+| Episch | Ein abgelehnter Skill oder Perk zahlt dreimal so viele Münzen. |
+
+> Der Name grenzt die Familie auf das **Ablehnen** ein. Übrige Formations-Energie und die leere
+> Bauphase zahlen weiter ihren normalen Satz.
+
+### 6.2 Aufstellung
+
+Zwei Familien: wie oft du tauschen darfst, und wo die Blöcke aufhören.
+
+**Freizug** (`formationEnergyBase`, Basis 4)
+
+| Stufe | Text |
+| --- | --- |
+| Normal | Jede Aufstellphase beginnt mit 1 Energie mehr, die nächsten fünf lang. |
+| Selten | Jede Aufstellphase beginnt mit 1 Energie mehr, bis zum Laufende. |
+| Sehr selten | Jede Aufstellphase beginnt mit 2 Energie mehr, bis zum Laufende. |
+| Episch | Jede Aufstellphase beginnt mit 2 Energie mehr. Übrige Energie zahlt am Phasenende doppelt. |
+
+> **Verworfen: Aufklärung** (die kommende Gegnerreihenfolge sehen). Technisch fast umsonst, weil
+> `oppOrder` am Rundenende bereits im State liegt. Vom Owner gestrichen.
+
+**Durchlass** (`openBorders`, vierte Grenzen-Quelle neben E_SEGMENT, Spalier und Pfeiler)
+
+| Stufe | Text |
+| --- | --- |
+| Normal | Eine zufällige Segmentgrenze ist offen, bis zum Laufende. |
+| Selten | Wähle eine Segmentgrenze. Sie ist offen, bis zum Laufende. |
+| Sehr selten | Wähle zwei Segmentgrenzen. Sie sind offen, bis zum Laufende. |
+| Episch | Wähle vier Segmentgrenzen. Sie sind offen, bis zum Laufende. |
+
+Neu (Owner, 2026-09-15). Die Familie greift die härteste Regel des Aufstellens an: **Formationen enden
+an der Blockkante**, und ohne Öffner ist bei fünf Schluss (§4.2). Acht Segmente haben **sieben** innere
+Grenzen — die letzte Position hat keine hinter sich.
+
+> **Die Wahl zeigt, was schon offen ist** (Owner). Grenzen können aus vier Quellen offen sein:
+> Perk-Familie `E_SEGMENT`, Pflanzen-Spalier, Architekten-Pfeiler und ein früherer Durchlass. Die
+> Auswahl markiert sie und lässt sie nicht anklicken — ohne das gibt jemand eine Wahl für eine Tür
+> aus, die längst offen steht. **Stufe Normal würfelt** und würfelt nur unter den noch geschlossenen,
+> sonst verpufft sie.
+
+### 6.3 Baufeld
+
+Fläche und Höhe.
+
+**Baurecht** (`architect.maxCover`, Basis 24)
+
+| Stufe | Text |
+| --- | --- |
+| Normal | Das Baufeld trägt 1 Zelle mehr, bis zum Laufende. |
+| Selten | Das Baufeld trägt 2 Zellen mehr, bis zum Laufende. |
+| Sehr selten | Das Baufeld trägt 3 Zellen mehr, bis zum Laufende. |
+| Episch | Das Baufeld trägt 4 Zellen mehr, bis zum Laufende. |
+
+**Aufstockung** (Gebäudestufen, Deckel bleibt 4)
+
+| Stufe | Text |
+| --- | --- |
+| Normal | Ein gebautes Gebäude steigt sofort um eine Stufe. |
+| Selten | Zwei gebaute Gebäude steigen sofort um eine Stufe. |
+| Sehr selten | Drei gebaute Gebäude steigen sofort um eine Stufe. |
+| Episch | Alle gebauten Gebäude steigen sofort um eine Stufe. |
+
+> **Verworfen: Bauangebot** (mehr Baupläne zur Auswahl je Bauphase). Vom Owner gestrichen.
+
+### 6.4 Skills
+
+Lehrbrief hebt, was du hältst. Veredelung hebt, was angeboten wird. Freibrief öffnet, woraus du wählst.
+
+**Lehrbrief** (Preisleiter 12, 25, 40)
+
+| Stufe | Text |
+| --- | --- |
+| Normal | Ein gehaltener Skill steigt ohne Münzen um eine Stufe. |
+| Selten | Zwei gehaltene Skills steigen ohne Münzen um eine Stufe. |
+| Sehr selten | Drei gehaltene Skills steigen ohne Münzen um eine Stufe. |
+| Episch | Bis zu vier gehaltene Skills steigen ohne Münzen um zwei Stufen. |
+
+**Freibrief** (`skillDoors`, Fokus rufen 5)
+
+| Stufe | Text |
+| --- | --- |
+| Normal | Die nächste Skill-Phase öffnet eine dritte Tür. |
+| Selten | Die nächsten drei Skill-Phasen öffnen eine dritte Tür. |
+| Sehr selten | Jede Skill-Phase öffnet eine dritte Tür, bis zum Laufende. |
+| Episch | Jede Skill-Phase öffnet eine dritte Tür, bis zum Laufende. Episch und Legendär erscheinen im Skill-Angebot häufiger. |
+
+**Veredelung** (Stufe des ganzen Angebots)
+
+| Stufe | Text |
+| --- | --- |
+| Normal | Im nächsten Skill-Angebot steht jeder Skill eine Stufe höher. |
+| Selten | In den nächsten drei Skill-Angeboten steht jeder Skill eine Stufe höher. |
+| Sehr selten | In jedem Skill-Angebot steigen Normal und Selten um eine Stufe. Sehr selten bleibt. |
+| Episch | In jedem Skill-Angebot steigt jede Stufe unter Episch um eine. |
+
+### 6.5 Perks
+
+Wie viele zur Auswahl stehen, und wie gut sie sein dürfen.
+
+**Auslage** (`perksOffered`, heute 3)
+
+| Stufe | Text |
+| --- | --- |
+| Normal | Die nächste Perk-Auswahl zeigt vier Perks statt drei. |
+| Selten | Jede Perk-Auswahl zeigt vier Perks statt drei. |
+| Sehr selten | Jede Perk-Auswahl zeigt vier Perks statt drei, keiner davon Normal. |
+| Episch | Jede Perk-Auswahl zeigt vier Perks statt drei, keiner davon Normal oder Selten. |
+
+**Beschau** (`rareFloor`)
+
+| Stufe | Text |
+| --- | --- |
+| Normal | Im nächsten Perk-Angebot fällt kein Perk unter Selten. |
+| Selten | In jedem Perk-Angebot fällt kein Perk unter Selten. |
+| Sehr selten | In jedem Perk-Angebot fällt kein Perk unter Sehr selten. |
+| Episch | In jedem Perk-Angebot fällt kein Perk unter Sehr selten. Legendäre erscheinen häufiger. |
+
+> **Verworfen: Zweitwahl** (zwei Perks statt einem). Vom Owner gestrichen.
+
+### 6.6 Neuwurf
+
+Vorrat und Preis. Die drei Freiwurf-Pools stehen heute auf 0 und warten als Naht
+(`docs/muenz-oekonomie.md` §3.1).
+
+**Freilos** (`rerollsSkill`, `rerollsPerk`, `rerollsArch`)
+
+| Stufe | Text |
+| --- | --- |
+| Normal | Du bekommst zwei Neuwürfe ohne Münzen. |
+| Selten | Jede Skill-Phase hat einen Neuwurf ohne Münzen. |
+| Sehr selten | Jede Phase hat einen Neuwurf ohne Münzen, bei Skills, Perks und Gebäuden. |
+| Episch | Jede Phase hat einen Neuwurf ohne Münzen. Auch der legendäre Neuwurf kostet nur den normalen Preis. |
+
+**Nachlass** (Preistreppe 3, 6, 12. **Abgerundet, nie unter 1.**)
+
+| Stufe | Text |
+| --- | --- |
+| Normal | Jeder Neuwurf kostet ein Viertel weniger. (2, 4, 9) |
+| Selten | Jeder Neuwurf kostet die Hälfte. (1, 3, 6) |
+| Sehr selten | Jeder Neuwurf kostet ein Viertel des Preises. (1, 1, 3) |
+| Episch | Neuwürfe kosten nichts mehr, bei Skills, Perks und Gebäuden. |
+
+> Aufgerundet hätte bei einem Viertel Nachlass den ersten Neuwurf unverändert gelassen (3 wird 2,25
+> wird 3). Abgerundet ohne Mindestpreis wäre er bei drei Vierteln gratis. Deshalb abgerundet mit
+> Mindestpreis 1.
+
+> **Verworfen: Rückgriff** (das verworfene Angebot bleibt wählbar). Vom Owner gestrichen. Der Befund
+> dahinter bleibt notiert: der Neuwurf **ersetzt** das Angebot heute vollständig, nur eine gerufene
+> Tür überlebt (`REROLL_SKILL` in `reducer.js`).
+
+### 6.7 Legendäre Einzelstücke
+
+Ohne Stufe, wie die legendären Perks. Nur aus einer Gold-Ziehung.
+
+| Name | Text |
+| --- | --- |
+| **Reliquiar** | Drei legendäre Perks stehen zur Wahl. |
+| **Vollendung** | Ein gehaltener Skill deiner Wahl wird sofort episch. Alle anderen gehaltenen Skills steigen um eine Stufe. |
+| **Stadtrecht** | Das Baufeld hat keinen Deckel mehr. Du baust, so weit die Fläche reicht. |
+| **Stiftung** | Jede Phase beginnt mit 5 Münzen, bis zum Laufende. |
+| **Schleifung** | Alle Segmentgrenzen sind offen. Formationen enden nicht mehr am Block. |
+
+> **Verworfen: Zwilling** (die nächste Tür zeigt zwei Angebote, beide werden genommen) und
+> **Doppelernte** (die nächste Aufgabe zieht zweimal). Beide vom Owner gestrichen.
+
+---
+
+## 7. Namen und Register
+
+Beute heißt nach **Urkunden und Privilegien der Stadt**. Das ist die vierte freie Schublade neben
+Elementen (Skills), Mechanik (Perks) und Bauwerken (Gebäude), und sie passt zum Gegenstand: fast jede
+Belohnung handelt von Erlaubnis.
+
+**Kollisionsprüfung (2026-09-14):** `grep -ro` über `src/` gegen alle 70 Skill-Namen, 41 Gebäude,
+22 Perks, rund 75 Perk-Familien, Themes und Ränge sowie beide i18n-Kataloge. **Null Treffer.**
+Zwei Fundstellen waren Fließtext, keine Namen: „Auslage" steckt in einem Kommentar zur
+Medien-Auslagerung, „Refinement" in einem englischen Tutorialsatz.
+
+Eine echte Kollision wurde dabei gefunden und beseitigt: **Schatzkammer ist bereits ein Gebäude**,
+daraus wurde Reliquiar.
+
+| Kategorie | Arbeitswort | Name | Englisch (Vorschlag) |
+| --- | --- | --- | --- |
+| Münze | Münzsack | **Zehrgeld** | Purse |
+| | Rente | **Münzrecht** | Minting Right |
+| | Ablehnerträge | **Ablass** | Indulgence |
+| Aufstellung | Energie | **Freizug** | Leeway |
+| Baufeld | Zellen | **Baurecht** | Building Rights |
+| | Stufe | **Aufstockung** | Storey |
+| Skills | Aufwertung | **Lehrbrief** | Indenture |
+| | Tür | **Freibrief** | Free Pass |
+| | Fund | **Veredelung** | Refinement |
+| Perks | Breite | **Auslage** | Wares |
+| | Güte | **Beschau** | Hallmark |
+| Neuwurf | Freiwürfe | **Freilos** | Free Draw |
+| | Rabatt | **Nachlass** | Rebate |
+| Aufstellung | Grenze | **Durchlass** | Passage |
+| Legendär | | **Reliquiar** | Reliquary |
+| | | **Vollendung** | Culmination |
+| | | **Stadtrecht** | City Charter |
+| | | **Stiftung** | Endowment |
+| | | **Schleifung** | Razing |
+
+Das Englische ist ein erster Wurf und noch **nicht** an `docs/text-style-guide.md` abgeglichen.
+Indenture und Hallmark sind die exakten zünftigen Gegenstücke, Leeway und Culmination die schwächsten
+der Liste.
+
+**Freilos** teilt den Wortstamm mit dem Gebäude **Losbude**. Keine Namensgleichheit, aber dieselbe
+Assoziationsecke. Bewusst in Kauf genommen; Gnadenwurf steht als Alternative bereit.
+
+---
+
+## 8. Textregeln
+
+Die Beutetexte folgen `docs/text-style-guide.md` §3, ohne Ausnahme:
+
+- **Kein Gedankenstrich.** Geprüft: 0 im ganzen Katalog. Komposita und Halbgeviertstriche in
+  Zahlenbereichen bleiben, wie der Guide es vorsieht.
+- **Keine Pfeilnotation.** Geprüft: 0.
+- **Ein Satzmuster je Familie, nur die Zahl skaliert.** Aufstockung: „Ein / Zwei / Drei / Alle
+  gebaute(n) Gebäude steigen sofort um eine Stufe."
+- **Bedingung vor Wirkung**, kurz und aktiv, ein bis zwei Sätze.
+- **Kein Selbstbezug.** Keine Karte nennt ihren eigenen Namen.
+- Kanonische Begriffe aus §1 des Guides: Durchlauf (nicht Runde), Stich, Lauf, Score, Serie, Position,
+  Formation, Neuwurf, Rarität.
+
+---
+
+## 9. Wert-Anker
+
+Was dieselbe Wirkung heute in Münzen kostet. Der Maßstab, an dem jede Stufe hängt.
+
+| | Münzen |
+| --- | --- |
+| Skill-Aufwertung auf Selten / Sehr selten / Episch | 12 · 25 · 40 |
+| Baufeld, 2 Zellen: erster / zweiter Kauf | 20 · 40 |
+| Energie, 1 mehr in der laufenden Phase | 3 · 6 |
+| Fokus rufen | 5 |
+| Neuwurf, Treppe je Phase | 3 · 6 · 12 |
+| Legendärer Neuwurf | 15 · 30 · 60 |
+| Einkommen je Lauf (gemessen) | 205 bis 260 |
+| Phasen jeder Sorte nach D16 / nach D32 | 8 bis 9 · 4 bis 5 |
+
+**Fenster 1 ist die wertvollere Beute.** Dieselbe Karte wirkt dort in 8 bis 9 Phasen jeder Sorte nach,
+nach Fenster 2 nur in 4 bis 5. Das ist keine Schieflage, sondern der Zweck.
+
+---
+
+## 10. Entschieden, und was daraus folgt
+
+**Keine offenen Punkte mehr** (Stand 2026-09-15). Dieser Abschnitt hält fest, was entschieden wurde
+und warum — die Befunde bleiben stehen, damit spätere Leser eine bewusste Entscheidung nicht für ein
+Versehen halten. Am Ende stehen **zwei Folgearbeiten**, die über dieses Dokument hinausreichen: der
+Neuwurf-Deckel und die Begriffsumbenennung auf Fraktion.
+
+**Erledigt:** Die vier Aufgabenstufen heißen **Leicht, Mittel, Schwer, Sehr schwer** (§3.2).
+Farbtreue würfelt keine Farbe (§3.6). Der Grundfarben-Marker ist ein Ring um das Blatt,
+nicht ein eigener Punkt (§4.1). Die Beute steht nicht in der laufenden Anzeige (§4.3).
+
+**Erledigt:** „Wird die Stufe angekündigt" ist beantwortet: die Stufe steht am Angebot, die Beute
+nicht (§3.1).
+
+**Gesetzt (Owner, 2026-09-15): die zwei Musterbrüche sind repariert.** Freibrief II heißt jetzt
+„Die nächsten drei Skill-Phasen öffnen eine dritte Tür" (der gratis Fokus-Ruf entfällt), Lehrbrief IV
+„Bis zu vier gehaltene Skills steigen ohne Münzen um zwei Stufen". Damit laufen beide Familien
+durchgehend im selben Satz, nur mit skalierender Zahl, und die Ausnahme vom Style-Guide entfällt.
+
+> **Gegengeprüft gegen das Legendäre:** Lehrbrief IV hebt bei vier gehaltenen Skills acht Stufen,
+> **Vollendung** bei vier gehaltenen sechs. In der reinen Stufenzahl liegt das Epische damit im ersten
+> Fenster vorn. Es bleibt trotzdem schwächer, weil nur Vollendung **Episch erreicht** (Normal plus zwei
+> Stufen endet bei Sehr selten) und weil Vollendung mit der Zahl der gehaltenen Skills mitwächst: bei
+> Ende von Fenster 2 sind es zehn Stufen gegen acht.
+
+**Gesetzt (Owner, 2026-09-15): die Beute wird JE FAMILIE gezogen, nicht je Kategorie.** Alle
+**vierzehn** Familien sind damit gleich wahrscheinlich (7,1 % je Stück). Je Kategorie gezogen käme
+eine Aufstellungs-Familie auf 8,3 % und eine Münz-Familie auf 5,6 % — eineinhalbmal so oft, nur weil
+ihre Kategorie dünner besetzt ist. Für Streuung über die Kategorien sorgt bereits die Regel „keine
+Kategorie doppelt".
+
+> **Nachgezogen (2026-09-15), nachdem Durchlass dazukam.** Hier stand „dreizehn Familien, 7,7 % je
+> Stück" und „das Dreifache", gerechnet auf eine Aufstellung mit nur einer Familie. Mit der zweiten
+> ist der Unterschied auf **1,5×** gefallen, und aus der Aufstellphase kommt jetzt jedes **siebte**
+> Stück statt jedes dreizehnten. Das Argument trägt unverändert, die Zahlen nicht.
+
+**Gesetzt (Owner, 2026-09-15): der Produktbegriff heißt FRAKTION, überall.** Die Aufgabentexte,
+die Beutetexte und die Fortschrittsanzeige schreiben Fraktion. „Archetyp" wird nicht mehr verwendet.
+
+> **Korrektur zu meiner Messung.** Ich hatte „im deutschen Katalog 13 zu 8 für Archetyp" geschrieben
+> und das als Argument benutzt. Das war falsch: gezählt waren Importe, Kommentare und Schlüsselnamen
+> mit. Nur über die tatsächlichen Katalogwerte gezählt steht der deutsche Katalog **5 zu 5** — also
+> gleichauf, nicht mehrheitlich Archetyp. Die Entscheidung stand ohnehin dem Owner zu; die falsche
+> Zahl ändert aber den Umfang der Folgearbeit, deshalb steht die Korrektur hier.
+
+**Erledigt (2026-09-15): der Begriff ist umbenannt.** Vier deutsche Werte, 21 in den inaktiven
+Katalogen, dazu `docs/text-style-guide.md` (Zeile 47, §1c und drei Fließtextstellen). Stehen
+geblieben sind nur die vier `{archetype}`-Stellen — das ist ein **Platzhalter**, kein Wort, und ihn
+umzubenennen bräche die Einsetzung. Code-Bezeichner (`ARCHETYPE_META`, `archetype.*`) bleiben
+englisch, wie `AGENTS.md` es verlangt.
+
+> **Die Entscheidung steht jetzt in der Begriffstabelle**, nicht nur im Style-Guide:
+> `test/i18n-guards.test.js` führt `Fraktion → faction` mit `never: /archetype/`. Eine Vokabel, die
+> niemand prüft, driftet zurück; der Wächter fängt genau den Rückfall ab.
+
+Der Umfang zum Vergleich, gemessen über die reinen Katalogwerte vor der Umbenennung:
+
+| Katalog | `ready` | Archetyp | Fraktion |
+| --- | --- | --- | --- |
+| `de.js` | **ja** | 5 | 5 |
+| `en.js` | nein | 14 | 4 |
+| `enMeta.js` | nein | 5 | 0 |
+| `enGlossary.js` | nein | 2 | 0 |
+| `es.js`, `zhHans.js` | nein | je 1 | 0 |
+
+Nur **Deutsch** ist `ready: true` (`src/i18n/index.js`); die anderen drei stehen `inactive: true` und
+sind heute nicht im Spiel sichtbar. Der spielersichtbare Teil der Umbenennung sind also die **fünf
+deutschen Werte**; die übrigen 23 wandern mit, sonst driftet die Terminologie über die Paritätstests.
+
+Drei Dinge bleiben ausdrücklich unberührt:
+
+- **Code-Bezeichner** — `ARCHETYPE_META`, `archetypeLabel`, `archetype.*`-Schlüssel, `archetypesUsed`.
+  `AGENTS.md` hält Bezeichner auf Englisch; die Entscheidung betrifft Produktsprache, nicht Code.
+- **Bestehende deutsche Kommentare und Testnamen.** Nachgeprüft: kein Test behauptet den Wortlaut
+  „Archetyp" als Katalogwert — die 50 Treffer in `test/` sind Bezeichner, Kommentare und
+  `describe`-Titel. `AGENTS.md` rät von reinen Übersetzungs-Diffs ab.
+- **Historische Aufzeichnungen** in `docs/decisions/`.
+
+`docs/text-style-guide.md` muss mit: Zeile 47 führt heute **Archetyp** als kanonisch und „Fraktion"
+in der Spalte der zu vermeidenden Synonyme. Die beiden Spalten tauschen. Ebenso §1c und die drei
+Fließtextstellen. Die Umbenennung ändert Spielertext, braucht also `npm run loc:export` zusätzlich
+zu den normalen Gates.
+
+**Folgearbeit (Owner, 2026-09-15): alle Neuwürfe bekommen einen Deckel von 3 je Phase.** Gebaut
+wird er, wenn die offenen Punkte durch sind. Damit bleiben Nachlass und Freilos unverändert: der
+Deckel schließt das Loch, das Nachlass IV sonst aufreißt (kostenlos heißt sonst unbegrenzt).
+
+> **Das ist eine Änderung an der laufenden Münzökonomie, nicht nur an der Beute.**
+> `docs/muenz-oekonomie.md` §3.1 sagt heute „beliebig oft je Phase, jeder weitere teurer" und zum
+> legendären Neuwurf ausdrücklich „Kein Deckel … die Kosten sind der Regler". Ein Deckel von 3 hebt
+> beide Sätze auf und kappt die Preistreppen bei 12 (normal) und 60 (legendär). Nachgeprüft am Code:
+> `buyReroll` in `reducer.js` prüft heute **nur den Preis**, `coinRerolls` stellt lediglich die
+> Treppe und begrenzt nichts. Wer den Deckel baut, muss die Ökonomie-Doku mitziehen.
+
+**Gesetzt (Owner, 2026-09-15): der Grundfarben-Ring erscheint nur bei laufendem Buntspiel-Auftrag**,
+nicht dauerhaft (§4.1).
+
+**Gesetzt (Owner, 2026-09-15): die Fortschrittsanzeige hat zwei Orte.** `StatusRail.jsx` als
+erstes Kind über den Multiplikatoren (der Platz aus dem Mockup bestätigt sich), **plus** eine Zeile
+im Aufstell- und im Architekt-Overlay. Am Code nachgesehen: beide Overlays decken Leiste und
+Kopfleiste zu, und dahinter werden sechs der fünfzehn Aufgaben entschieden. Die Prüfung der Tests,
+der Einbaukosten und des Kopfleisten-Gegenvorschlags steht in §4.3.
+
+**Gesetzt (Owner, 2026-09-15): Reinheit läuft auf EINER Leiterform mit vier Startwerten** —
+Farbblock 2, Wiederholung 3, Treppe 4, Wechsel 5, je vier aufeinanderfolgende Zahlen. An der
+kalibrierten Kurve gemessen liegt „Sehr schwer" damit bei 11 bis 14 % statt bei 0 bis 75 %. Die
+zwischenzeitlich gesetzte flache Leiter 3·4·5·6 ist am selben Tag zurückgenommen worden, nachdem die
+Messung sie widerlegt hat (§4, Vorspann).
+
+**Bewusst so belassen (Owner, 2026-09-15): Säckel behält 60 · 80 · 100 · 120 in beiden Fenstern.**
+Meine Behauptung, 100 und 120 seien bis D15 unmöglich, war falsch — gemessene Obergrenze bei vollem
+Verzicht ist 199 Münzen gegen einen normalen Stand von 67. Die Rechnung und die drei verworfenen
+Reparaturvorschläge stehen in §4.4.
+
+**Bewusst so belassen (Owner, 2026-09-15): Auslage und Beschau bleiben unverändert.** Der Befund
+bleibt notiert, damit ihn niemand für ein Versehen hält: Auslage III ist „vier Perks, keiner unter
+Selten" und enthält damit Beschau II („keiner unter Selten") vollständig, Auslage IV ebenso
+Beschau III. Beide schreiben auf `rareFloor`. Die Überlappung ist gesehen und akzeptiert.
+
+**Bewusst so belassen (Owner, 2026-09-15): Veredelung und Freibrief IV bleiben unverändert.** Auch
+dieser Befund bleibt notiert: Veredelung hebt die Stufe des Skill-Angebots garantiert, Freibrief IV
+hängt an die dritte Tür zusätzlich „Episch und Legendär erscheinen im Skill-Angebot häufiger" — also
+denselben Hebel, nur als Chance statt als Garantie. Vorgeschlagen war, Freibrief IV stattdessen auf
+**Auswahl** umzustellen (Stufen an der Tür sichtbar). Der Owner behält den Qualitätszusatz: die
+vierte Stufe einer Familie darf über ihr Thema hinausgreifen, und die beiden bleiben unterscheidbar,
+weil Veredelung jede Skill-Phase des Laufs anhebt und Freibrief IV nur die Türen zählt, die es
+selbst öffnet.
+
+---
+
+## 11. Nicht in diesem Umfang
+
+| Thema | Status |
+| --- | --- |
+| **Bosse** | Ausgeklammert (Owner, 2026-09-12). Der Befund aus der Vorarbeit bleibt notiert: ein Boss ist kein Entscheidungs-Slot, sondern ein Durchlauf, und alle Hebel dafür existieren bereits (Gegnerwert-Aufschlag, gesperrte Positionen, Marker je Gegnerkarte, Front-Load-Reihenfolge). Ohne Niederlage im Spiel braucht er einen Einsatz. |
+| **Score mit Par** | Später. Wenn der frühe Lauf **Anteil am Endscore** bekommen soll statt nur Gewicht im Lauf, ist Par der Hebel, nicht die Aufgabe. |
+| **Befristete Beute** | Regler in der Hinterhand. Gemessen liegen 66 % des Endscores in den letzten zehn Durchläufen; dauerhafte Beute hebt den Schwanz mit. Wenn das Ende zu fett wird, läuft Beute aus Fenster 1 am Ende von Fenster 2 ab. |
+| **Beute-Kompendium im Glossar** | Vorschlag. Man sieht nur 6 von 61 Stücken je Lauf und behält zwei; gesehene Stücke im Glossar zu sammeln macht den Katalog über Läufe hinweg lesbar. |
+
+---
+
+## 12. Nähte im Code
+
+Jede Familie hängt an etwas, das auf `exp` bereits existiert. Keine Familie braucht eine neue
+Engine-Primitive.
+
+| Familie | Naht |
+| --- | --- |
+| Zehrgeld, Münzrecht, Ablass | `coins.js`: `coinGrant`, `coinsForFormations`, `FORFEIT_*` |
+| Freizug | `formationEnergyBase` im Reducer, `unspentEnergyCoins` |
+| Baurecht, Stadtrecht | `architect.maxCover` (Basis `MAX_COVER` 24) |
+| Aufstockung | Gebäudestufen in `architect.js`, `MAX_TIER` 4 |
+| Lehrbrief | `UPGRADE_PRICES` in `coins.js` |
+| Freibrief | `state.skillDoors`, Fokus-Ruf |
+| Veredelung | Stufenwurf des Skill-Angebots (`rollSkillOfferTiers`) |
+| Auslage | `perksOffered` |
+| Beschau | `rareFloor`, `perkLegendaryChance` |
+| Freilos, Nachlass | `rerollsSkill` / `rerollsPerk` / `rerollsArch`, `buyReroll` |
+| Reliquiar | Legendär-Pool in `perks.js` |
+| Vollendung | `skillTiers` |
+| Stiftung | Auszahlung am Phasenbeginn |
+| Aufgaben-Gedächtnis | Profil in `storage.js`, additiv über `DEFAULT_PROFILE` |
+
+Die Zähler der fünfzehn Aufgaben, alle aus vorhandenem State:
+
+| Aufgabe | Zähler |
+| --- | --- |
+| Durchmarsch | Siege je Durchlauf aus dem `wins`-Verlauf |
+| Sperrfeuer | Stichergebnisse je Fünferblock, `SEGMENT_SIZE` in `formations.js` |
+| Strähne | `bestStreak` |
+| Gedränge | `countBuiltFormations(state.formations)`, dieselbe Zahl, die die Münz-Einnahme zählt |
+| Reinheit | dieselbe Funktion, gefiltert auf einen Typ aus `FORMATION_TYPES` |
+| Langbau | Länge des längsten Laufs, `members.length` in `computeFormations` |
+| Vollbrett | Positionen mit mindestens einem Eintrag in `formations` |
+| Verflechtung | Positionen, deren `formations` drei oder mehr Einträge der vier echten Typen tragen |
+| Farbtreue | `suitStreak` in der Engine, respektiert Farballianz und Pflanzen-Grün |
+| Buntspiel | `lastTrick.pCard.suit` je Sieg, also die **Grundfarbe**, ausdrücklich nicht `effColor` |
+| Brecher | `lastTrick.pValue` je Sieg gegen die Schwelle |
+| Fußvolk | `lastTrick.pCard.baseRank` je Sieg, der unveränderte Grundwert |
+| Aufmarsch | Summe über `deck[].value` minus Summe über `oppDeck[].value` |
+| Quartier | `occupiedCells` je Zeile plus `familyDef(b.familyId).category`, wie `summarizeArchitect` es tut |
+| Säckel | `state.coins` am Fensterende |
+
+**Drei Zähler brauchen den Stich-Strom**, nicht nur den Rundenendstand: Buntspiel, Brecher und Fußvolk
+lesen `state.lastTrick` nach jedem Stich. Das Feld liegt vor; `trickLog` (der größere Puffer) wird
+dafür nicht gebraucht.
+
+Die Anzeige (§4.3) braucht dieselben Zahlen live, nicht erst am Fensterende.
+
+**Bauaufwand, geschätzt:** elf der dreizehn Familien sind Zahlen auf vorhandenen Pfaden. Jede braucht
+ein Feld im Lauf-State, eine Lesestelle, Text in zwei Sprachen und einen Test.

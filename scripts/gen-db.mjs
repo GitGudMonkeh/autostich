@@ -43,14 +43,20 @@ const archEff = (fam, tier) => buildingEffect(fam, tier);
 const entries = [];
 
 // ---- Skills (Archetypen inkl. Legendäre) ----
+// exp skill rework: ein Skill mit Stufentexten (descTiers) zeigt alle vier Stufen als Zeilen (Normal … Episch);
+// Legendäre und Skills ohne Stufen die eine Effektzeile.
+const SKILL_TIER_LABEL = ["Normal", "Selten", "Sehr selten", "Episch"];
 for (const s of SKILL_LIST) {
   const meta = ARCHETYPE_META[s.archetype] || { label: s.archetype, color: "#8a8a95", icon: "" };
+  const lines = Array.isArray(s.descTiers) && s.descTiers.length
+    ? s.descTiers.map((text, i) => ({ label: SKILL_TIER_LABEL[i] || `Stufe ${i + 1}`, text: text || "" }))
+    : [{ label: s.legendary ? "★ Legendär" : "Effekt", text: s.desc || "" }];
   entries.push({
     kind: "Skill", id: s.id, name: s.name,
     group: meta.label, groupColor: meta.color, icon: meta.icon || "",
     rarity: s.legendary ? "Legendär" : "Skill",
     tags: [meta.label, s.legendary ? "Legendär" : "Skill", ...(s.keywords || [])],
-    lines: [{ label: s.legendary ? "★ Legendär" : "Effekt", text: s.desc || "" }],
+    lines,
   });
 }
 
@@ -89,9 +95,9 @@ const ROMANV = { 1: "I", 2: "II", 3: "III", 4: "IV" };
 for (const fam of Object.values(ARCHITECT_FAMILIES)) {
   const catLabel = ARCH_CAT_LABEL[fam.category] || fam.category;
   // Maximal ERREICHBARE Stufe: stufen-inerte Formen (joker/transparentFarb/crossSeg) werden im Spiel auf Stufe 1
-  // gepinnt (nicht aufwertbar) — mit tierKick bis zur Kick-Stufe `at`; alle anderen bis IV. So zeigt der Katalog
-  // nur real existierende Stufen.
-  const inert = TIER_INERT_KINDS.has(fam.base && fam.base.kind);
+  // gepinnt (nicht aufwertbar) — mit tierKick bis zur Kick-Stufe `at`; mit tierValue-Leiter (Runde 6) und alle
+  // anderen bis IV. So zeigt der Katalog nur real existierende Stufen.
+  const inert = TIER_INERT_KINDS.has(fam.base && fam.base.kind) && !fam.tierValue;
   const maxTier = inert ? (fam.tierKick ? fam.tierKick.at : 1) : 4;
   const lines = fam.legendary
     ? [{ label: "★ Legendär", text: archEff(fam, "legendary") }]

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { anchorTypeAt, anchorAt, linkedPartnerOf, perkLegendaryChance, skillLegendaryChance, cycleLenFor, initialShop } from "../src/game/shop.js";
-import { PERK_LEGENDARY_BASE, SKILL_LEGENDARY_BASE, MAX_LEGENDARY_CHANCE_BONUS, TRICKS_PER_CYCLE } from "../src/game/constants.js";
+import { anchorTypeAt, anchorAt, linkedPartnerOf, perkLegendaryChance, cycleLenFor, initialShop } from "../src/game/shop.js";
+import { PERK_LEGENDARY_BASE, MAX_LEGENDARY_CHANCE_BONUS, TRICKS_PER_CYCLE } from "../src/game/constants.js";
 
 /* #347/6: pure Shop-Residuen-Helfer (pro Stich/Render genutzt), bisher ungetestet. */
 
@@ -44,9 +44,7 @@ describe("Legendär-Chancen + Zykluslänge", () => {
     expect(perkLegendaryChance({ perkLegendaryBonus: 0.05 })).toBeCloseTo(PERK_LEGENDARY_BASE + 0.05, 10);
     expect(perkLegendaryChance({ perkLegendaryBonus: 999 })).toBeCloseTo(PERK_LEGENDARY_BASE + MAX_LEGENDARY_CHANCE_BONUS, 10); // Cap
   });
-  it("skillLegendaryChance = reine Basis (Pity-Feld entfernt)", () => {
-    expect(skillLegendaryChance()).toBeCloseTo(SKILL_LEGENDARY_BASE, 10);
-  });
+  // exp skill rework: skillLegendaryChance ist weg — die Skill-Legendär-Chance ist die fünfte Stufe des Stufenwurfs (skills.test.js).
   it("cycleLenFor = konstante Zykluslänge; initialShop nur inerte Anker", () => {
     expect(cycleLenFor()).toBe(TRICKS_PER_CYCLE);
     expect(initialShop()).toEqual({ anchors: [] });

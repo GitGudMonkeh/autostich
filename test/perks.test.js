@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { PERK_DEFS, PERK_LIST, critChanceFor, critChanceRawFor, isLegendary, baseScoreMultFor, streakBaseMult, isLayoutPerk, layoutPerks, buildPerkOffer } from "../src/game/perks.js";
+import { PERK_DEFS, PERK_LIST, critChanceFor, critChanceRawFor, isLegendary, baseScoreMultFor, streakBaseMult, isLayoutPerk, layoutPerks, buildPerkOffer, totalCritMult, totalCritMultRaw, totalCritChanceRaw, displayCritChance, critChanceOverPP } from "../src/game/perks.js";
 import { makeRng } from "../src/game/deck.js";
 import { effectivePlayerValue } from "../src/game/engine.js";
-import { UNAUFHALTSAM_VALUE, KRITMASSE_VALUE, MONOCHROM_STEP, MONOCHROM_CAP } from "../src/game/constants.js";
+import { UNAUFHALTSAM_VALUE, KRITMASSE_VALUE, MONOCHROM_STEP, MONOCHROM_CAP, CRIT_MULT_CAP, softCritMult, OVERCRIT_MULT_PER_PP } from "../src/game/constants.js";
 
 // Kat.-A-Deck-Mods (früher A1–A10 onPick) sind zu KUMULATIVEN Familien migriert (#167) — die
 // Deck-Effekte je Stufe sind in test/families.test.js geprüft (onPick direkt), der Reducer-Pick +
@@ -188,5 +188,55 @@ describe("buildPerkOffer — #370 Perk-Segen: Rarität-Boden (minTier)", () => {
       if (offer.some((e) => e && typeof e === "object" && e.tier <= 2)) sawLow = true;
     }
     expect(sawLow).toBe(true);
+  });
+});
+
+/* §7.39 (Owner-Entscheid B): die Anzeige darf keinen Crit-Multiplikator versprechen, den kein Stich zahlt. Der Motor
+   klemmt seit jeher auf CRIT_MULT_CAP (engine.js, nach allen Additionen), `totalCritMult` tat es NICHT — Statusleiste
+   und Ladungsleiste zeigten Werte darüber. Das ist teuer, nicht kosmetisch: laut §7.31 verfällt ohnehin 81 % des
+   gebauten Multiplikators am Deckel, und die Anzeige lud zum Weiterkaufen ein. `totalCritMultRaw` behält den
+   gebauten Wert — nur für die „davon verfällt"-Unterzeile. */
+describe("Crit-Multiplikator: Anzeige und Motor deckeln gleich (§7.39)", () => {
+  /* Ein Build, der den Deckel sicher reißt: alle Crit-Mult-Perks plus eine ausgebaute Entladung-Rampe — genau die
+     Lage, in der ein echter Blitz-Bau spät im Lauf steht (§7.31: 36,01× gebaut, 6,97× ausgezahlt). */
+  const heavy = { perks: PERK_LIST.filter((p) => PERK_DEFS[p.id].critMultBonus).map((p) => p.id),
+    skills: [], skillTiers: {}, familyTiers: {}, lightning: { active: true, entladungMult: 20 } };
+  /* §7.42: der Deckel ist weich geworden — die Anzeige muss dieselbe Kurve fahren wie der Motor, nicht mehr eine
+     harte Klemme. Sonst kippt der Fehler nur die andere Richtung: sie zeigte zu viel, jetzt zeigte sie zu wenig. */
+  it("totalCritMult fährt die weiche Kurve des Motors, totalCritMultRaw bleibt der gebaute Wert", () => {
+    expect(totalCritMultRaw(heavy)).toBeGreaterThan(CRIT_MULT_CAP);            // der Build baut über den Knick …
+    expect(totalCritMult(heavy)).toBe(softCritMult(totalCritMultRaw(heavy)));  // … die Anzeige dämpft wie der Motor
+    expect(totalCritMult(heavy)).toBeGreaterThan(CRIT_MULT_CAP);               // über dem Knick, aber
+    expect(totalCritMult(heavy)).toBeLessThan(totalCritMultRaw(heavy));        // unter dem gebauten Wert
+  });
+  it("unter dem Knick sind beide identisch — die Kurve erfindet nichts", () => {
+    const light = { perks: [], skills: [], skillTiers: {}, familyTiers: {}, lightning: null };
+    expect(totalCritMultRaw(light)).toBeLessThanOrEqual(CRIT_MULT_CAP);
+    expect(totalCritMult(light)).toBe(totalCritMultRaw(light));
+  });
+});
+
+/* §7.44 (Owner: „die Crit-Chance darf dann auch nicht mehr über 100 % anzeigen"). Die Statusleiste rechnet den Wert
+   nicht mehr selbst, sondern liest dieselben Helfer, die hier geprüft werden — derselbe Griff wie in §7.39 beim
+   Multiplikator, damit Motor und Anzeige EINE Quelle behalten. Der Überschuss verschwindet nicht, er wechselt die
+   Zeile: `critChanceOverPP` ist die Zahl, die daneben steht. */
+describe("Crit-Chance: die Anzeige klemmt bei 100 %, der Überschuss steht daneben (§7.44)", () => {
+  const build = (bonus) => ({ perks: [], skills: [], skillTiers: {}, familyTiers: {},
+    lightning: { active: true, charge: 0, maxCharge: 10, stormCritBonus: bonus } });
+  it("displayCritChance erreicht 100 % und geht nie darüber; critChanceOverPP zählt den Rest", () => {
+    const over = build(2); // weit über 100 % gebaut
+    expect(totalCritChanceRaw(over)).toBeGreaterThan(1);
+    expect(displayCritChance(over)).toBe(1);
+    expect(critChanceOverPP(over)).toBe(Math.round((totalCritChanceRaw(over) - 1) * 100));
+    // Unter 100 % zeigt die Zeile den echten Wert und die Unterzeile nichts.
+    const under = build(0.2);
+    expect(totalCritChanceRaw(under)).toBeLessThan(1);
+    expect(displayCritChance(under)).toBe(totalCritChanceRaw(under));
+    expect(critChanceOverPP(under)).toBe(0);
+  });
+  it("der Überschuss ist nicht verloren: er steht im Multiplikator, mit OVERCRIT_MULT_PER_PP je Punkt", () => {
+    const a = build(1.2), b = build(1.7); // 50 Prozentpunkte Unterschied im Überschuss
+    expect(critChanceOverPP(b) - critChanceOverPP(a)).toBe(50);
+    expect(totalCritMultRaw(b) - totalCritMultRaw(a)).toBeCloseTo(50 * OVERCRIT_MULT_PER_PP, 6);
   });
 });
