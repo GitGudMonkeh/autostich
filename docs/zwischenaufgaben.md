@@ -1,7 +1,7 @@
 # Zwischenaufgaben (exp) — Planungsdokument
 
 **Status: lebendes Dokument.** Beutekatalog und Aufgaben-Katalog sind durchdesignt und vom Owner Wert
-für Wert abgenommen (2026-09-14). Offen sind die drei Punkte in §10; danach ist das Dokument
+für Wert abgenommen (2026-09-14). Offen sind die zwei Punkte in §10; danach ist das Dokument
 umsetzungsreif.
 
 Entscheidungen des Owners stehen unter **Gesetzt**. Alles unter **Vorschlag** ist Diskussionsstand und
@@ -251,16 +251,46 @@ Sim-Verhalten stehen.
 läuft über die **Schwelle**. Zehn Siege mit einem Kampfwert über 10 sind die unterste Stufe, zehn über
 20 die oberste.
 
-**Reinheit je Typ.** Treppe und Wechsel kommen je Aufstellung häufiger vor als Farbblock und
-Wiederholung (gemessen 4,1 und 5,5 gegen 2,6 und 3,1), deshalb tragen sie höhere Leitern. Farbblock
-und Wiederholung sind Owner-Werte, Treppe und Wechsel **Vorschlag**.
+**Gesetzt (Owner, 2026-09-15): eine Leiter für alle vier Typen — 3 · 4 · 5 · 6.**
 
 | Typ | Normal · Selten · Sehr selten · Episch |
 | --- | --- |
 | Farbblock | 3 · 4 · 5 · 6 |
 | Wiederholung | 3 · 4 · 5 · 6 |
-| Treppe | 4 · 5 · 6 · 8 |
-| Wechsel | 5 · 7 · 9 · 11 |
+| Treppe | 3 · 4 · 5 · 6 |
+| Wechsel | 3 · 4 · 5 · 6 |
+
+Eine Regel statt vier: „Reinheit will drei bis sechs vom selben Typ." Dass die Typen unterschiedlich
+leicht entstehen, ist dabei bewusst in Kauf genommen — wer auf Wechsel baut, nimmt die Aufgabe, wer
+nicht, nimmt eine der anderen vierzehn. Verworfen wurde mein Vorschlag gestaffelter Leitern
+(Treppe 4·5·6·8, Wechsel 5·7·9·11): er hätte alle vier Stufen gleich schwer gemacht, aber niemand
+kann sich vier Leitern merken.
+
+**Gemessen, was die eine Leiter bedeutet** (40 Läufe je Spielweise, distinkte Formationen je Typ und
+Durchlauf, bester Durchlauf des Fensters — Reinheit ist ein Spitzen-Zähler). Anteil der Läufe, die
+die jeweilige Stufe im ersten Fenster erreichen:
+
+| Typ | Zufall (3 / 6) | Feuer (3 / 6) | Pflanze (3 / 6) |
+| --- | --- | --- | --- |
+| Wechsel | 70 % / 8 % | **100 % / 75 %** | 100 % / 73 % |
+| Treppe | 30 % / 0 % | 95 % / 43 % | 95 % / 40 % |
+| Wiederholung | 53 % / 3 % | 78 % / 15 % | 70 % / 15 % |
+| Farbblock | 13 % / 3 % | 55 % / **0 %** | 75 % / 13 % |
+
+> **Zwei Ausreißer, die der Playtest ansehen sollte.** Sie sind keine Ungleichheit mehr, sondern
+> Ränder:
+>
+> - **Wechsel auf „Sehr schwer" ist bei einem spielenden Bau kein „sehr schwer"** — drei von vier
+>   Läufen erreichen 6 im ersten Fenster. Die Stufe zahlt damit das Episch/Legendär-Band für nahezu
+>   normales Aufstellen.
+> - **Farbblock auf „Sehr schwer" ist für Feuer in Fenster 1 gar nicht erreichbar** (0 von 40), für
+>   Pflanze in 13 %. Erst in Fenster 2 dreht es sich für Pflanze auf 83 %, weil grüne Karten einen
+>   Farbblock bilden.
+>
+> Beide Stufen zahlen dasselbe Band. Die Spanne an der Spitze ist damit 75 % gegen 0 %.
+
+Der naive Bau (Zufall) erreicht oberhalb von Stufe 1 fast nichts — Reinheit ist über alle vier Typen
+eine Aufgabe für jemanden, der die Aufstellung führt.
 
 ### 4.1 Die Texte
 
@@ -768,14 +798,12 @@ bei D30 nur in 5. Das ist keine Schieflage, sondern der Zweck.
 
 ## 10. Offene Punkte
 
-Drei Punkte aus §3 und §4 liegen beim Owner:
+Zwei Punkte aus §3 und §4 liegen beim Owner:
 
-1. **Treppe und Wechsel bei Reinheit.** Die beiden Leitern (4·5·6·8 und 5·7·9·11) sind Vorschlag aus
-   den gemessenen Typanteilen, nicht Owner-Entscheid.
-2. **Wo genau sitzt die Fortschrittsanzeige?** `StatusRail.jsx` ist der Kandidat, bestätigt ist es
+1. **Wo genau sitzt die Fortschrittsanzeige?** `StatusRail.jsx` ist der Kandidat, bestätigt ist es
    nicht. Das Mockup schlägt den Platz **über** den Multiplikatoren vor, weil der Auftrag das einzige
    Element der Leiste mit einer Frist ist.
-3. **Erscheint der Grundfarben-Ring dauerhaft** oder nur, solange ein Buntspiel-Auftrag läuft (§4.1).
+2. **Erscheint der Grundfarben-Ring dauerhaft** oder nur, solange ein Buntspiel-Auftrag läuft (§4.1).
 
 **Erledigt:** Die vier Aufgabenstufen heißen **Leicht, Mittel, Schwer, Sehr schwer** (§3.2).
 Farbtreue würfelt keine Farbe (§3.6). Der Grundfarben-Marker ist ein Ring um das Blatt,
@@ -849,6 +877,10 @@ Deckel schließt das Loch, das Nachlass IV sonst aufreißt (kostenlos heißt son
 > beide Sätze auf und kappt die Preistreppen bei 12 (normal) und 60 (legendär). Nachgeprüft am Code:
 > `buyReroll` in `reducer.js` prüft heute **nur den Preis**, `coinRerolls` stellt lediglich die
 > Treppe und begrenzt nichts. Wer den Deckel baut, muss die Ökonomie-Doku mitziehen.
+
+**Gesetzt (Owner, 2026-09-15): Reinheit läuft auf EINER Leiter — 3 · 4 · 5 · 6 für alle vier
+Typen**, zum Testen so belassen. Gemessen ist die Spanne an der obersten Stufe groß: Wechsel 75 %,
+Farbblock 0 % bei Feuer im ersten Fenster. Beide Ränder und die Messung stehen in §4.2.
 
 **Bewusst so belassen (Owner, 2026-09-15): Säckel behält 60 · 80 · 100 · 120 in beiden Fenstern.**
 Meine Behauptung, 100 und 120 seien bis D15 unmöglich, war falsch — gemessene Obergrenze bei vollem
