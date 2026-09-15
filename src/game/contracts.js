@@ -58,7 +58,7 @@ export const TASKS = [
   { id: "durchmarsch",  kind: "spitze",  rungs: [22, 26, 30, 34] },
   { id: "sperrfeuer",   kind: "spitze",  rungs: [2, 3, 4, 5] },
   { id: "straehne",     kind: "spitze",  rungs: [10, 15, 30, 60] },
-  { id: "gedraenge",    kind: "spitze",  rungs: [15, 25, 35, 45] },
+  { id: "gedraenge",    kind: "spitze",  rungs: [30, 35, 40, 45] },
   /* Reinheit zählt KARTEN in einer Formation des gewürfelten Typs, nicht die Formationen selbst
      (Owner, 2026-09-15). Distinkte Läufe eines Typs reichen gemessen von 2 bis 8 — neun mögliche
      Werte für vier Stufen, jede Stufe ein Sprung. Karten reichen von 6 bis 40 und lassen sich

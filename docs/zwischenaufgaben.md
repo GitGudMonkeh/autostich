@@ -360,7 +360,7 @@ Sim-Verhalten stehen.
 | **Durchmarsch** Siege in einem Durchlauf | Spitze | 22 · 26 · 30 · 34 |
 | **Sperrfeuer** Segmente mit allen fünf Stichen | Spitze | 2 · 3 · 4 · 5 |
 | **Strähne** längste Siegesserie | Spitze | 10 · 15 · 30 · 60 |
-| **Gedränge** Formationen in einer Aufstellung | Spitze | 15 · 25 · 35 · 45 |
+| **Gedränge** Formationen in einer Aufstellung | Spitze | 30 · 35 · 40 · 45 |
 | **Reinheit** Formationen eines gewürfelten Typs | Spitze | siehe unten |
 | **Langbau** längste Formation | Spitze | 5 · 10 · 15 · 20 |
 | **Vollbrett** Positionen mit mindestens einer Formation | Spitze | 30 · 34 · 37 · 40 |
@@ -702,10 +702,23 @@ sondern einen Spieler, der die Phase gar nicht spielt.
 | Pflanze | F1 | 17 | 19 | 21 | 23 | 25 | 100 % / 3 % / 0 % / 0 % |
 | Pflanze | F2 | 23 | 25 | 26 | 29 | 32 | 100 % / 50 % / 0 % / 0 % |
 
-**Normal (15) ist für jeden, der die Aufstellphase überhaupt spielt, fast geschenkt** — 90 bis 100 %
-schon in Fenster 1. Das ist die unterste Stufe und soll das sein. **Selten (25) liegt über dem p90
-beider Fenster** außer bei Pflanze, **Sehr selten (35) und Episch (45) wurden in 300 gemessenen
-Fenstern nie erreicht**; das Beste über alle Läufe war **32**.
+Die letzte Spalte misst gegen die **alte** Leiter 15 · 25 · 35 · 45; die Verteilungswerte links davon
+sind von der Leiter unabhängig und gelten weiter.
+
+**Die Leiter ist jetzt 30 · 35 · 40 · 45** (Owner, 2026-09-15). Gegen dieselbe Messung gerechnet:
+
+| Stufe | erreicht in den 300 gemessenen Fenstern |
+| --- | --- |
+| Normal 30 | Eis F2 3 %, Pflanze F2 7 %, **sonst überall 0 %** |
+| Selten 35 · Sehr selten 40 · Episch 45 | **0 %**, in jedem Fenster und bei jeder Spielweise |
+
+> **Einspruch fürs Protokoll, die Entscheidung bleibt beim Owner.** Die gesetzte Regel aus §1 lautet
+> „die unterste Stufe ist knapp ohne Aufwand erreichbar". Mit 30 ist sie das gemessen nicht: der
+> Median liegt bei 17 bis 25, das beste beobachtete Fenster über alle 150 Läufe bei **32**. Die drei
+> oberen Stufen liegen über allem Gemessenen, 45 auch über dem arithmetischen Deckel aus 145 Paaren.
+> Gegen die Messung spricht, dass sie einen Spieler misst, der nicht auf Formationsanzahl spielt,
+> sondern auf Score — derselbe Vorbehalt, der bei Sperrfeuer und Aufmarsch schon steht. Ob der
+> Vorbehalt 13 Formationen Abstand trägt, ist eine Playtest-Frage, keine Messfrage.
 
 **Korrektur zu einer früheren Aussage in dieser Reihe:** die Obergrenze für Formationen je Aufstellung
 ist **nicht** 21. Das war das Beste, was die Sim erreicht. Gemessen (Münz-Doku §2.5) gehen die Paare
