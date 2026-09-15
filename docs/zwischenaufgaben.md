@@ -1,7 +1,7 @@
 # Zwischenaufgaben (exp) — Planungsdokument
 
 **Status: lebendes Dokument.** Beutekatalog und Aufgaben-Katalog sind durchdesignt und vom Owner Wert
-für Wert abgenommen (2026-09-14). Offen sind die zwei Punkte in §10; danach ist das Dokument
+für Wert abgenommen (2026-09-14). Offen ist der eine Punkt in §10; danach ist das Dokument
 umsetzungsreif.
 
 Entscheidungen des Owners stehen unter **Gesetzt**. Alles unter **Vorschlag** ist Diskussionsstand und
@@ -371,9 +371,56 @@ ist damit gebunden.
 ist eine Aufgabe, die über fünfzehn Durchläufe läuft, nicht spielbar; man wüsste nie, ob der laufende
 Durchlauf noch etwas bringt.
 
-Kandidat für die Stelle ist `src/ui/StatusRail.jsx`, wo Crit-Chance, Crit-Multiplikator,
-Formations-Übersicht und Score-Quellen bereits zusammenlaufen. **Am laufenden Spiel zu bestätigen**,
-bevor gebaut wird.
+**Gesetzt (Owner, 2026-09-15): die Anzeige hat ZWEI Orte, nicht einen.** Am Code nachgesehen, nicht
+mehr vermutet.
+
+**1. Zuhause ist `src/ui/StatusRail.jsx`**, als neues erstes Kind über den Multiplikatoren. Dort
+laufen Crit-Chance, Crit-Multiplikator, Formations-Übersicht und Score-Quellen bereits zusammen.
+
+Der Einbau ist billig, geprüft:
+
+- Die Wurzel ist eine `grid gap-3` mit drei Kindern (Multiplikatoren · Bilanz · Analyse). Ein viertes
+  oben ist ein `<div>`, keine Layout-Operation. Das Kachel-Muster `MCell` steht in der Datei.
+- **Kein Test steht im Weg.** Die einzigen zwei Zusicherungen auf die Datei
+  (`rahmen-huelle.test.js`, `graph-labels.test.js`) pinnen beide dieselbe Zeile
+  `<Sparkline current={currentTraj} record={recordTraj} />` — nichts darüber.
+  `levelup-wings.test.js` verlangt `<PerkList>` **nach** `<StatusRail>`, das betrifft den Flügel,
+  nicht das Innere der Leiste. `i18n-guards.test.js` führt die Datei in der Liste, die jeden
+  Spielertext über `t()` schicken muss: eine Auflage, kein Hindernis.
+- Die Leiste folgt bereits in die **Skill-Phase** — `LevelupWings.jsx` bindet die echte Komponente
+  ein, ausdrücklich „kein Nachbau".
+
+**2. Dazu eine Zeile im Aufstell-Overlay** und im Architekten. Grund ist ein Befund, den das Mockup
+nicht hatte:
+
+> **Ein Drittel des Katalogs wird hinter einem Overlay entschieden.** `FormationPhase.jsx` rendert
+> `fixed inset-0 overlay-root z-30`, die Kopfleiste `StatusBar.jsx` liegt auf `z-20`;
+> `ArchitectScreen.jsx` ist ebenfalls `fixed inset-0` und später im DOM. **Beide Overlays decken
+> Leiste und Kopfleiste zu.**
+
+| wo entschieden | Aufgaben | stehende Anzeige sichtbar |
+| --- | --- | --- |
+| Stichspiel | Durchmarsch, Sperrfeuer, Strähne, Farbtreue, Buntspiel, Brecher, Fußvolk (7) | **ja** |
+| Aufstell-Overlay | Gedränge, Reinheit, Langbau, Vollbrett, Verflechtung (5) | **nein** |
+| Architekt-Overlay | Quartier (1) | **nein** |
+| beides | Aufmarsch, Säckel (2) | teilweise |
+
+Keine zweite Tafel: **eine Zeile**, dasselbe Label-plus-Wert wie die Kachel in der Leiste. Die Naht
+liegt schon da — `FormationPhase.jsx` rechnet bereits `countBuiltFormations(formations)` und zeigt
+den Münzertrag der Aufstellung live. Die Zahl, die die Aufgabe braucht, hat der Screen schon.
+
+> **Warum nicht die Kopfleiste**, obwohl in `StatusBar.jsx` steht, die Währung werde „in jeder
+> Entscheidungsphase gelesen und muss dort stehen, wo man ohnehin hinsieht"? Das Argument trägt hier
+> nicht: die Overlays decken die Kopfleiste genauso zu. Dazu ist Zeile 2
+> `Score (flex-1) · Münzen · Mult`, und der Score ist ausdrücklich geschützt („Platz bis 999.999.999,
+> nie abgeschnitten") — eine vierte Zelle ginge von seiner Breite. Der Münz-Präzedenzfall löst das
+> Problem also nicht, er hat es nur nie gehabt: ein Kontostand ist eine Zahl, ein Auftrag braucht
+> Stand **und** Frist.
+
+> **Beiläufig gefunden:** `panel-tokens.test.js` verweist im Kommentar auf `StatusRail.jsx:133` als
+> Fundstelle der Sparkline. Die steht heute in Zeile 145 — der Verweis ist bereits veraltet, ohne
+> dass ein Test darauf anspringt. Ein Einschub oben verschiebt ihn weiter.
+
 
 Die Anzeigeform folgt der Art des Zählers:
 
@@ -805,12 +852,9 @@ bei D30 nur in 5. Das ist keine Schieflage, sondern der Zweck.
 
 ## 10. Offene Punkte
 
-Zwei Punkte aus §3 und §4 liegen beim Owner:
+Ein Punkt aus §4 liegt beim Owner:
 
-1. **Wo genau sitzt die Fortschrittsanzeige?** `StatusRail.jsx` ist der Kandidat, bestätigt ist es
-   nicht. Das Mockup schlägt den Platz **über** den Multiplikatoren vor, weil der Auftrag das einzige
-   Element der Leiste mit einer Frist ist.
-2. **Erscheint der Grundfarben-Ring dauerhaft** oder nur, solange ein Buntspiel-Auftrag läuft (§4.1).
+1. **Erscheint der Grundfarben-Ring dauerhaft** oder nur, solange ein Buntspiel-Auftrag läuft (§4.1).
 
 **Erledigt:** Die vier Aufgabenstufen heißen **Leicht, Mittel, Schwer, Sehr schwer** (§3.2).
 Farbtreue würfelt keine Farbe (§3.6). Der Grundfarben-Marker ist ein Ring um das Blatt,
@@ -884,6 +928,12 @@ Deckel schließt das Loch, das Nachlass IV sonst aufreißt (kostenlos heißt son
 > beide Sätze auf und kappt die Preistreppen bei 12 (normal) und 60 (legendär). Nachgeprüft am Code:
 > `buyReroll` in `reducer.js` prüft heute **nur den Preis**, `coinRerolls` stellt lediglich die
 > Treppe und begrenzt nichts. Wer den Deckel baut, muss die Ökonomie-Doku mitziehen.
+
+**Gesetzt (Owner, 2026-09-15): die Fortschrittsanzeige hat zwei Orte.** `StatusRail.jsx` als
+erstes Kind über den Multiplikatoren (der Platz aus dem Mockup bestätigt sich), **plus** eine Zeile
+im Aufstell- und im Architekt-Overlay. Am Code nachgesehen: beide Overlays decken Leiste und
+Kopfleiste zu, und dahinter werden sechs der fünfzehn Aufgaben entschieden. Die Prüfung der Tests,
+der Einbaukosten und des Kopfleisten-Gegenvorschlags steht in §4.3.
 
 **Gesetzt (Owner, 2026-09-15): Reinheit läuft auf EINER Leiterform mit vier Startwerten** —
 Farbblock 2, Wiederholung 3, Treppe 4, Wechsel 5, je vier aufeinanderfolgende Zahlen. An der
