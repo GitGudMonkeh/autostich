@@ -9,6 +9,7 @@ import { ScoreSourceBar, sourceShares } from "./RunGraphs.jsx";
 import { fmtScore, fmtScoreShort } from "./format.js"; // Gameplay-Neu-Aufbau: „Bester Score" in der Analyse-Ecke
 import { DECK_BORDER } from "./modalStyle.jsx"; // #356: deck-getönter neutraler Struktur-Rahmen
 import { t, fmtNum } from "../i18n/index.js"; // #sprache
+import { ContractTile } from "./ContractPhase.jsx"; // Zwischenaufgaben: der Stand des laufenden Auftrags
 
 // #252: einklappbarer Panel-Abschnitt (Kopf mit ▸/▾ togglet; Inhalt nur bei !collapsed). Der Zustand kommt aus den
 // Optionen (über Runs gemerkt) — der Kopf ruft onToggle, das die Option persistiert.
@@ -95,6 +96,10 @@ export function StatusRail({ state, currentTraj = [], recordTraj = [], options =
   return (
     <div className="rounded-xl p-4 grid gap-3 as-panel as-panel-deck" data-hint-anchor="panels"
       style={{ background: "linear-gradient(180deg,#1b1a24,#141019)", border: `1px solid ${DECK_BORDER}` }}>
+      {/* Zwischenaufgaben: der Auftrag steht ÜBER den Multiplikatoren, weil er als einziges Element der
+          Leiste eine Frist hat. Rendert sich selbst weg, wenn kein Auftrag läuft. */}
+      <ContractTile state={state} />
+
       {/* Multiplikatoren — die stehenden Score-Treiber (Formation/Gebäude/Crit) dauerhaft sichtbar. */}
       <div>
         <div className="text-meta-1 uppercase tracking-wide opacity-50 mb-2">{t("rail.mults")}</div>

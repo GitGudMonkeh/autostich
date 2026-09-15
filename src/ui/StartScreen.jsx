@@ -116,7 +116,7 @@ function TileGlyph({ kind }) {
   );
 }
 
-export function StartScreen({ onStart, onResume = null, resume = null, onPlaySeed = null, onSecretSeed = null, onRankedBoard = null, onOptions, onStats, onCustomize, onLeaderboard = null, onDevRun = null, onFeedback = null, onPrivacy = null, muted, onToggleMute, username = "", onEditName,
+export function StartScreen({ onStart, onResume = null, resume = null, onPlaySeed = null, onSecretSeed = null, onRankedBoard = null, onOptions, onStats, onCustomize, onLeaderboard = null, onDevRun = null, onContracts = null, onFeedback = null, onPrivacy = null, muted, onToggleMute, username = "", onEditName,
   // #desktop — Zutaten für Status-Tafel und Deck-Hintergrund. Beide erscheinen erst ab 1280 px;
   // darunter bleiben die Props ungenutzt.
   deckId = null, bfId = null, deckBack = null, lastRun = null, battlefield = null,
@@ -400,6 +400,16 @@ export function StartScreen({ onStart, onResume = null, resume = null, onPlaySee
             <path d="m9 6 6 6-6 6" />
           </svg>
         </button>
+        {/* Zwischenaufgaben (docs/zwischenaufgaben.md): ein EIGENER Einstieg, nicht ein Schalter im
+            normalen Lauf. Nur ein Lauf von hier trägt das System; „Lauf beginnen" bleibt unberührt.
+            Solange es Testfassung ist, sagt die Unterzeile das auch. */}
+        {onContracts && (
+          <button onClick={onContracts} title={t("start.contracts.hint")}
+            className="as-contract-btn relative w-full px-5 py-2.5 rounded-xl ty-title text-body-lg-3 dt:text-title-3 transition-all hover:-translate-y-0.5 flex flex-col items-center justify-center gap-0.5">
+            <span>{t("start.contracts")}</span>
+            <span className="text-meta-1 font-normal opacity-70 normal-case tracking-normal">{t("start.contracts.hint")}</span>
+          </button>
+        )}
         {/* #382 Seed-Zeile dauerhaft unter „Lauf beginnen": Seed einfügen + „↻ Spielen" (inkl. Test-Code-Pfad
             tryPlaySeed). Zwischenzeitlich hing sie an einem Satelliten-Knopf neben dem CTA — zurückgebaut: der
             Seed gehört unter den Knopf, zu dem er die Variante ist, nicht daneben. Radius eine Stufe unter dem

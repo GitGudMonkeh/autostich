@@ -15,7 +15,8 @@ import { haptics } from "./haptics.js";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { skillDef } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
 import { t } from "../i18n/index.js";
-import { energyBuy, unspentEnergyCoins, coinsForFormations } from "../game/coins.js";  // Münz-Ökonomie §3.2 Preis und Vorrat · §2.3 was übrige Energie einbringt · §2.2 was die Aufstellung zahlt — dieselbe Quelle wie der Reducer
+import { energyBuy, unspentEnergyCoins, coinsForFormations } from "../game/coins.js";
+import { ContractLine } from "./ContractPhase.jsx"; // Zwischenaufgaben: der Stand, den dieses Overlay sonst zudeckt  // Münz-Ökonomie §3.2 Preis und Vorrat · §2.3 was übrige Energie einbringt · §2.2 was die Aufstellung zahlt — dieselbe Quelle wie der Reducer
 import { P as PLANT_S } from "../game/factions/plant.js"; // Skill-ids der Pflanze (Spalier-Zeile)
 import { CoinAmount, CoinReward } from "./CoinMark.jsx"; // §2.3: was die übrige Energie einbringt
 
@@ -216,6 +217,9 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, onBu
           <div className="ml-auto shrink-0"><GlossaryPanel /></div>
         </div>
         {state.lastCycleScore != null && <div className="mt-2"><RoundScoreBadge state={state} /></div>}
+        {/* Zwischenaufgaben: dieses Overlay deckt Leiste und Kopfleiste zu (z-30 über z-20), und genau
+            hier werden fünf der fünfzehn Aufgaben entschieden. Der Stand muss deshalb mit herein. */}
+        <ContractLine state={state} className="mt-2" />
 
         {/* Hero-Stat-Leiste: der Formations-Bonus ist das, was der Spieler durch Tauschen maximiert → groß in Gold.
             Energie & das live-Δ wandern auf den (immer sichtbaren) Fortfahren-Knopf → direktes Feedback bei jedem Tausch. */}

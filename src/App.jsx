@@ -17,6 +17,7 @@ import { fmtDuration } from "./game/deck.js";
 import { setLocale, t } from "./i18n/index.js"; // #sprache: Anzeigesprache aus den Optionen
 import { useBackGuard } from "./ui/useBackGuard.js";
 import { StatusRail } from "./ui/StatusRail.jsx";
+import { ContractOffer, ContractLoot } from "./ui/ContractPhase.jsx"; // Zwischenaufgaben — nur im Auftragslauf
 import { useIsWide, DESKTOP_MIN, PHONE_MAX } from "./ui/useIsWide.js"; // #buehne: Musik/Meilenstein ziehen ab 1280 px in die Leiste (DOM-Umzug) · #mobil-emblem: dieselben zwei Schwellen für den Emblem-Vorlader
 import { StatusBar } from "./ui/StatusBar.jsx"; // Gameplay-Neu-Aufbau Phase 1: schwebende Kompakt-Leiste (Vitals + Pause/Tempo/Karten)
 import { architectCoverFor } from "./ui/architectCover.js"; // Lauf-Details: Gebäude-Overlay in den Snapshot persistieren
@@ -238,6 +239,7 @@ function AutostichGame() {
   const pendingSeed = useRef(null);                               // #205: Challenge-Seed für den nächsten Lauf (null → frischer Zufalls-Seed)
   const pendingDev = useRef(null);                                // Dev-Run: Config { rounds, schedule, cover, energy } für den nächsten Lauf (null = normaler Lauf)
   const pendingRanked = useRef(null);                             // §7 (Schritt 6): nächster Lauf = Ranglisten-Lauf? ('ranked' = Wochen-Modus)
+  const pendingContracts = useRef(false);                         // Zwischenaufgaben: nächster Lauf über den „Aufträge"-Knopf? (false = normaler Lauf)
   const [showFeedback, setShowFeedback] = useState(false);      // #396 Feedback-Melder (nur im Menü, deshalb OHNE Einfrier-Kopplung)
   /* #datenschutz: Der Hinweis wird aus DREI Stellen geöffnet (Optionen · Startbildschirm · Namens-Dialog)
      und liegt deshalb hier an der Wurzel statt in einem der drei. Er pausiert bewusst NICHTS: die Optionen,
@@ -919,17 +921,19 @@ function AutostichGame() {
     setIsRecord(false);
     const dev = pendingDev.current; pendingDev.current = null; // Dev-Run-Config (Test-Layout) für DIESEN Lauf, dann zurücksetzen
     const ranked = pendingRanked.current; pendingRanked.current = null; // §7: Ranglisten-Lauf ('ranked' = Wochen-Modus)
-    dispatch({ type: "START_RUN", rng: Math.random, architect: true, seed, dev, ranked }); // #202 Architekt · #205 Seed · Dev-Run · §7 Rangliste (exp: kein Profil, kein Baum)
+    const contracts = pendingContracts.current; pendingContracts.current = false; // Zwischenaufgaben nur über den eigenen Knopf
+    dispatch({ type: "START_RUN", rng: Math.random, architect: true, seed, dev, ranked, contracts }); // #202 Architekt · #205 Seed · Dev-Run · §7 Rangliste · Aufträge (exp: kein Profil, kein Baum)
   }
   // #190: aktive Skin-Bilder vorladen, DANN starten. Der RunLoader zeigt sich nur bei spürbarer Ladezeit
   // (Cache-Treffer → sofort) und hat ein Timeout-Sicherheitsnetz → Start hängt nie.
   // #205: `seed` (Zahl) startet einen Challenge-Lauf (Nachspielen/Paste); als Event-Handler aufgerufen (Zahl-Guard)
   // ODER ohne Argument → frischer Zufalls-Seed in beginRun.
   // #190: Skins vorladen, dann beginRun. Zentraler Trigger, den alle Lauf-Arten teilen (Normal/Meister/Neustart).
-  function launchRun({ seed = null, dev = null, ranked = null } = {}) {
+  function launchRun({ seed = null, dev = null, ranked = null, contracts = false } = {}) {
     pendingSeed.current = (typeof seed === "number" && Number.isFinite(seed)) ? (seed >>> 0) : null;
     pendingDev.current = dev; // Dev-Run-Config (null = normaler Lauf)
     pendingRanked.current = ranked; // §7: 'ranked' = Wochen-Modus (tree-unabhängige Baseline)
+    pendingContracts.current = !!contracts; // Zwischenaufgaben: nur wahr, wenn der Lauf vom „Aufträge"-Knopf kommt
     // #393 Zufalls-Deck je Lauf: ist der Toggle an UND kein Ranglisten-Lauf (Ranked hat eine feste Baseline und bleibt
     //   unberührt), für DIESEN Lauf einen zufälligen besessenen (farbigen) Pack ziehen. Neu je Lauf (bewusst nicht
     //   persistiert); leerer Pool → null → gewähltes Deck. Sonst immer zurücksetzen, damit kein Alt-Override hängen bleibt.
@@ -1138,6 +1142,7 @@ function AutostichGame() {
             resume={resumable ? { cycle: resumable.state.cycle, totalCycles: resumable.state.maxCycles || resumable.state.difficulty?.maxCycles || MAX_CYCLES, score: resumable.state.score } : null}
             onStats={() => setShowStats(true)} onCustomize={() => setShowCustomize(true)} onLeaderboard={() => setShowLeaderboard("board")}
             onDevRun={() => setShowDevSetup(true)}
+            onContracts={() => launchRun({ contracts: true })}
             muted={!!options.muted} onToggleMute={() => changeOptions({ muted: !options.muted })}
             onFeedback={() => setShowFeedback(true)} onPrivacy={() => setShowPrivacy(true)}
             username={username} onEditName={() => setShowUsername(true)}
@@ -1266,6 +1271,17 @@ function AutostichGame() {
           {!wide && state.phase !== "gameover" && <MusicBar title={musicTitle} onNext={() => music.next()} />}
         </>)}
       </div>
+
+      {/* Zwischenaufgaben: zwei Overlays, beide nur im Auftragslauf. Sie hängen NICHT an `phase` —
+          damit bleibt die Phasenmaschine des normalen Laufs unverändert. */}
+      {state.contractsEnabled && (state.contracts?.offers || []).length > 0 && (
+        <ContractOffer offers={state.contracts.offers} windowId={state.contracts.windowId}
+          onPick={(o) => dispatch({ type: "PICK_CONTRACT", taskId: o.taskId, step: o.step })} />
+      )}
+      {state.contractsEnabled && (state.contracts?.pendingLoot || []).length > 0 && (
+        <ContractLoot pieces={state.contracts.pendingLoot}
+          onPick={(p) => dispatch({ type: "PICK_LOOT", lootId: p.id, tier: p.tier })} />
+      )}
 
       {state.phase === "formation" && (
         <FormationPhase state={state} onSwap={swapCards} onUndo={undoSwap} onReset={resetFormation} onConfirm={confirmFormation} onBuyEnergy={buyEnergy} options={options} onOption={changeOptions} />

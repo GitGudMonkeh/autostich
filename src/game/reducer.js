@@ -17,7 +17,8 @@ const plantBag = (s) => ({ skillTiers: s.skillTiers || {}, growth: s.growth || {
 // (#267: import aus stats.js entfernt — die Stat-Phase ist weg.)
 import { computeFormations, formationPotential, FORMATION_TYPES } from "./formations.js";
 import { initialShop, perkLegendaryChance } from "./shop.js";
-import { resolveTrick, formationEnergyFor } from "./engine.js"; // formationEnergyFor: eine Quelle für Phasen-Eintritt + RESET_FORMATION
+import { resolveTrick, formationEnergyFor } from "./engine.js";
+import * as CT from "./contracts.js"; // Zwischenaufgaben — nur aktiv, wenn der Lauf über „Aufträge" gestartet wurde // formationEnergyFor: eine Quelle für Phasen-Eintritt + RESET_FORMATION
 import * as C from "./constants.js";
 import { runRules, perksOfferedFor, skillOfferParams, sanitizeRules } from "./rules.js"; // exp: Regeln je Lauf (state.rules; null → Konstanten)
 import { isLegendarySkill } from "./skills.js"; // #217: Garantie-Erkennung (Legendär im Skill-Reroll-Angebot)
@@ -200,9 +201,50 @@ export function initialState(rng = Math.random, seed = null) {
     // #382 Gesperrte Felder (Positionen 0..39) — nur noch aus den Ranked-Wochen-Mods (blockForm/blockArch) gespeist;
     // der Challenge-Modus ist entfernt. Leer außerhalb Ranked. Als Arrays gehalten (serialisierbar für RESTORE_RUN).
     challengeBlockArch: [], challengeBlockForm: [],
+    /* Zwischenaufgaben (contracts.js) — OPT-IN je Lauf. Ohne `contractsEnabled` bleibt alles hier null
+       und kein Codepfad dieses Systems läuft; der normale Lauf ist damit unverändert. */
+    contractsEnabled: false, contracts: null, contractTally: null, contractBoons: null,
     lastTrick: null,
   };
 }
+/* Zwischenaufgaben — die einzige Stelle, an der ein Auftragslauf vom normalen abweicht, solange keine
+   Beute gewirkt hat. Läuft NUR bei `contractsEnabled` (siehe RESOLVE_TRICK) und tut drei Dinge:
+   die Strichliste je Stich, das Einfrieren der Spitzen am Durchlaufende, und das Öffnen des nächsten
+   Fensters. Nicht erfüllt zahlt nichts — der Auftrag verfällt am Fensterende ersatzlos. */
+function contractStep(prev, next, rng = Math.random) {
+  const c = next.contracts;
+  if (!c) return next;
+  let tally = next.contractTally || CT.emptyTally();
+  const active = c.active;
+
+  if (next.trickNo > prev.trickNo && next.lastTrick) {
+    // Brecher ist die einzige Aufgabe, deren Leiter eine SCHWELLE ist — sie geht in die Strichliste.
+    const threshold = active && active.taskId === "brecher" ? active.rung : null;
+    tally = CT.tallyTrick(tally, next.lastTrick, { trickNo: next.trickNo, threshold });
+  }
+  if (active && active.taskId === "reinheit") tally = CT.tallyPure(tally, next, active.variantId);
+
+  let contracts = c;
+  if (next.cycle > prev.cycle) {
+    tally = CT.tallyCycleEnd(tally, prev);      // die Spitzen des GERADE beendeten Durchlaufs
+    const finished = prev.cycle + 1;            // 1-basierte Anzeige-Nummer des beendeten Durchlaufs
+    if (active) {
+      const win = CT.WINDOWS.find((w) => w.id === active.windowId);
+      if (CT.isFulfilled({ ...next, contractTally: tally }, active)) {
+        contracts = { ...contracts, active: null, done: [...(contracts.done || []), active.taskId],
+                      pendingLoot: CT.rollLoot(rng, active.step) };
+      } else if (win && finished >= win.to) {
+        contracts = { ...contracts, active: null };
+      }
+    }
+    const win = CT.windowFor(finished + 1);
+    if (win && !contracts.active && !(contracts.pendingLoot || []).length && contracts.windowId !== win.id) {
+      contracts = { ...contracts, windowId: win.id, offers: CT.rollOffers(rng, contracts.usedTasks || []) };
+    }
+  }
+  return { ...next, contractTally: tally, contracts };
+}
+
 /* Eis-Neudesign: Gibt es überhaupt noch eine Zelle, die GLACIER_LOCK annehmen würde? Die Phase „glacier-target"
    ist Pflicht und hat keinen Ausgang (GlacierPick kennt nur Bestätigen) — wer sie ohne gültiges Ziel betritt,
    sitzt fest, weil GLACIER_LOCK jede Eingabe zurückweist. Die Prüfung muss deshalb DIESELBEN Bedingungen
@@ -366,13 +408,43 @@ export function reducer(state, action) {
         challengeBlockArch: [...new Set(wmBlockArch)],
         challengeBlockForm: [...new Set(wmBlockForm)] };
       const startPatch = startDecisionSetup(C.DECISION_SCHEDULE[0] || "skill", sBase, seed, action.rng, architectEnabled, undefined, false);
+      /* Zwischenaufgaben: nur über den „Aufträge"-Knopf. Das erste Angebot liegt sofort aus — gewählt
+         wird laut docs/zwischenaufgaben.md §3.1 nach der ersten Skill-Wahl, und genau dann ist der
+         Start-Patch durch und der Spieler sieht den Aufsteller. */
+      const contractsOn = !!action.contracts;
+      const contractStart = contractsOn
+        ? { contractsEnabled: true, contractTally: CT.emptyTally(), contractBoons: {},
+            contracts: { windowId: 1, offers: CT.rollOffers(action.rng || Math.random, []), active: null,
+                         done: [], usedTasks: [], taken: [], pendingLoot: null } }
+        : null;
       return { ...sBase, architectEnabled,
         difficulty: null,
         // #263: drei getrennte Reroll-Pools, exp: immer C.BASE_REROLLS (2/2/2). #370 Wochen-Mod „Kein Reroll" nullt alle drei.
         rerollsPerk: effReroll,
         rerollsArch: effReroll,
         rerollsSkill: effReroll,
-        ...startPatch };
+        ...startPatch,
+        ...(contractStart || {}) };
+    }
+
+    case "PICK_CONTRACT": { // einen der drei Aufsteller annehmen; die anderen beiden verfallen
+      const c = state.contracts;
+      if (!state.contractsEnabled || !c || !(c.offers || []).length) return state;
+      const chosen = c.offers.find((o) => o.taskId === action.taskId && o.step === action.step);
+      if (!chosen) return state;
+      return { ...state, contracts: { ...c, offers: [],
+        usedTasks: [...(c.usedTasks || []), chosen.taskId],
+        active: { ...chosen, windowId: c.windowId } } };
+    }
+
+    case "PICK_LOOT": { // eins der drei Beutestücke nehmen — kein Neuwurf, die anderen zwei verfallen
+      const c = state.contracts;
+      if (!state.contractsEnabled || !c || !(c.pendingLoot || []).length) return state;
+      const piece = c.pendingLoot.find((p) => p.id === action.lootId && p.tier === action.tier);
+      if (!piece) return state;
+      const patch = CT.applyLoot(state, piece) || {};
+      return { ...state, ...patch,
+        contracts: { ...c, pendingLoot: null, taken: [...(c.taken || []), { id: piece.id, tier: piece.tier }] } };
     }
 
     case "TO_MENU":     // laufenden Run verlassen (#5)
@@ -525,8 +597,10 @@ export function reducer(state, action) {
       return { ...state, ...coinGrant(state, idle, "build"), phase: "play", architect: { ...state.architect, offers: null, phaseHistory: [], phaseAnchor: null } };
     }
 
-    case "RESOLVE_TRICK":
-      return resolveTrick(state, action.rng);
+    case "RESOLVE_TRICK": {
+      const next = resolveTrick(state, action.rng);
+      return state.contractsEnabled ? contractStep(state, next, action.rng) : next;
+    }
 
     case "PICK_PERK": {
       if (state.phase !== "levelup") return state;

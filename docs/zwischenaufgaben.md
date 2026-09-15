@@ -25,6 +25,23 @@ Beutestücke mit ihren Spieltexten:
 Mockup der Fortschrittsanzeige (§4.3):
 <https://claude.ai/code/artifact/37556d61-a8ed-4e6f-a068-790685b73008>
 
+**Stand der Umsetzung (2026-09-15): gebaut, hinter einem eigenen Knopf.** Auf `exp` startet ein
+Auftragslauf ausschließlich über **„Aufträge"** im Startbildschirm. Ein Lauf ohne diesen Knopf trägt
+`contractsEnabled: false` und rührt kein Feld dieses Systems an — `test/contracts.test.js` prüft das
+ausdrücklich, weil es die Zusage ist, unter der das Feature überhaupt einziehen durfte.
+
+| Naht | Datei |
+| --- | --- |
+| Aufgaben, Beute, Angebot, Messung | `src/game/contracts.js` |
+| Flag, Strichliste, die zwei Aktionen | `src/game/reducer.js` (`contractStep`, `PICK_CONTRACT`, `PICK_LOOT`) |
+| Die beiden Overlays und der Stand | `src/ui/ContractPhase.jsx` |
+| Der Einstieg | `src/ui/StartScreen.jsx` · `.as-contract-btn` |
+
+> **Korrektur aus der Umsetzung:** Das Legendär-Gold ist **`#d4a63a`**, nicht `#e6b93a`. Auf `exp`
+> wurden die drei Gold-Töne zu einem zusammengelegt (`LEGENDARY_GOLD` in
+> `src/ui/indicators/vocab.js`, Wächter `test/legendary-gold.test.js`). Die Übersichtsseite trug den
+> alten Wert und ist nachgezogen.
+
 Der Platzhalter in `docs/muenz-oekonomie.md` §7 („Zwischenaufgaben bei Durchlauf 15/30: später") wird
 durch dieses Dokument abgelöst — **auch in der Zahl**: die Fenster enden bei 16 und 32, nicht bei
 15 und 30. Bosse bleiben weiterhin ausgeklammert (§11).

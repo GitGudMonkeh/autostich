@@ -1872,6 +1872,15 @@ b, strong { font-weight: 600; }
   border-left: 4px solid color-mix(in srgb, var(--deck-a2, #6696a4) 80%, transparent);
   color: color-mix(in srgb, var(--deck-a2, #6696a4) 55%, #ffffff);
 }
+/* Zwischenaufgaben: der eigene Einstieg neben „Lauf beginnen". Gebaut wie .as-ranked-btn, damit er
+   als GESCHWISTER des Ranglisten-Knopfs liest und nicht als dritte Erfindung — nur die Kante trägt
+   das Episch-Violett der Raritätsleiter, weil das System an ihr hängt. */
+.as-contract-btn {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--ac-violet) 18%, #0e0e14) 0%, #0e0e14 30%);
+  border: 1px solid rgba(150, 150, 170, .16);
+  border-left: 4px solid color-mix(in srgb, var(--ac-violet) 80%, transparent);
+  color: color-mix(in srgb, var(--ac-violet) 45%, #ffffff);
+}
 .as-tut-btn {
   background: linear-gradient(90deg, color-mix(in srgb, var(--deck-a2, #6696a4) 20%, #0e0e14) 0%, #0e0e14 30%);
   border: 1px solid rgba(150, 150, 170, .16);
