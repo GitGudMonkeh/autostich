@@ -1,7 +1,7 @@
 # Zwischenaufgaben (exp) — Planungsdokument
 
 **Status: lebendes Dokument.** Beutekatalog und Aufgaben-Katalog sind durchdesignt und vom Owner Wert
-für Wert abgenommen (2026-09-14). Offen sind die zehn Punkte in §10; danach ist das Dokument
+für Wert abgenommen (2026-09-14). Offen sind die neun Punkte in §10; danach ist das Dokument
 umsetzungsreif.
 
 Entscheidungen des Owners stehen unter **Gesetzt**. Alles unter **Vorschlag** ist Diskussionsstand und
@@ -723,37 +723,33 @@ bei D30 nur in 5. Das ist keine Schieflage, sondern der Zweck.
 
 ## 10. Offene Punkte
 
-1. **Nachlass IV macht Freilos überflüssig.** Kostet der Neuwurf nichts mehr, ist ein Freiwurf-Vorrat
-   wertlos. Und der legendäre Neuwurf verliert seinen einzigen Regler: laut
-   `docs/muenz-oekonomie.md` §3.1 sind die Kosten das, was „würfeln bis das passende Legendäre kommt"
-   begrenzt.
-2. **Aufstellung hat nur noch eine Familie.** Zieht die Beute je Kategorie, ist Freizug viermal so
+1. **Aufstellung hat nur noch eine Familie.** Zieht die Beute je Kategorie, ist Freizug viermal so
    häufig wie jede Münz-Familie. Zieht sie je Familie, kommt aus der Aufstellphase fast nie etwas.
    Der Ziehungs-Modus ist damit eine Entscheidung, die vorher nicht nötig war.
-3. **Zwei Stufen brechen ihr Satzmuster.** Lehrbrief IV wechselt von „Skills steigen" zu
+2. **Zwei Stufen brechen ihr Satzmuster.** Lehrbrief IV wechselt von „Skills steigen" zu
    „Aufwertungen kosten die Hälfte", Freibrief II von „dritte Tür" zu „Fokus rufen ist gratis".
    Gedeckt durch die Regel des Skill-Reworks („Episch hat ein kleines Extra"), aber gegen das
    Stufenmuster aus dem Style-Guide.
-4. **Veredelung und Freibrief IV ziehen am selben Hebel.** Veredelung hebt die Stufe des
+3. **Veredelung und Freibrief IV ziehen am selben Hebel.** Veredelung hebt die Stufe des
    Skill-Angebots garantiert, Freibrief IV erhöht die Chance auf Episch und Legendär. Wenn eine davon
    etwas anderes tun soll, dann Freibrief: dort ist die Auswahl das Thema, nicht die Güte.
-5. **Archetyp oder Fraktion.** Der Style-Guide setzt **Archetyp** als kanonisch, die exp-Dokumente
+4. **Archetyp oder Fraktion.** Der Style-Guide setzt **Archetyp** als kanonisch, die exp-Dokumente
    schreiben durchgehend „Fraktion". Im deutschen Katalog steht es 13 zu 8 für Archetyp. Zu
    entscheiden, bevor die Aufgabentexte geschrieben werden.
 
-Dazu fünf Punkte aus §3 und §4, die ebenfalls beim Owner liegen:
+Dazu vier Punkte aus §3 und §4, die ebenfalls beim Owner liegen:
 
-6. **Die Gewichtung innerhalb eines Beute-Bandes.** Vorschlag 70 zu 30 zugunsten der unteren
+5. **Die Gewichtung innerhalb eines Beute-Bandes.** Vorschlag 70 zu 30 zugunsten der unteren
    Rarität (§3.2). Auf der vierten Stufe ist das zugleich der Legendär-Satz.
-7. **Säckel im ersten Fenster.** Die Stufen 100 und 120 sind bis D15 arithmetisch unmöglich, weil das
+6. **Säckel im ersten Fenster.** Die Stufen 100 und 120 sind bis D15 arithmetisch unmöglich, weil das
    Gesamteinkommen dort 64 bis 72 Münzen beträgt (§4.3). Entweder niedrigere obere Stufen, oder Säckel
    wird in Fenster 1 nur bis Selten angeboten.
-8. **Treppe und Wechsel bei Reinheit.** Die beiden Leitern (4·5·6·8 und 5·7·9·11) sind Vorschlag aus
+7. **Treppe und Wechsel bei Reinheit.** Die beiden Leitern (4·5·6·8 und 5·7·9·11) sind Vorschlag aus
    den gemessenen Typanteilen, nicht Owner-Entscheid.
-9. **Wo genau sitzt die Fortschrittsanzeige?** `StatusRail.jsx` ist der Kandidat, bestätigt ist es
+8. **Wo genau sitzt die Fortschrittsanzeige?** `StatusRail.jsx` ist der Kandidat, bestätigt ist es
     nicht. Das Mockup schlägt den Platz **über** den Multiplikatoren vor, weil der Auftrag das einzige
     Element der Leiste mit einer Frist ist.
-10. **Erscheint der Grundfarben-Ring dauerhaft** oder nur, solange ein Buntspiel-Auftrag läuft (§4.1).
+9. **Erscheint der Grundfarben-Ring dauerhaft** oder nur, solange ein Buntspiel-Auftrag läuft (§4.1).
 
 **Erledigt:** Die vier Aufgabenstufen heißen **Leicht, Mittel, Schwer, Sehr schwer** (§3.2).
 Farbtreue würfelt keine Farbe (§3.6). Der Grundfarben-Marker ist ein Ring um das Blatt,
@@ -761,6 +757,17 @@ nicht ein eigener Punkt (§4.1). Die Beute steht nicht in der laufenden Anzeige 
 
 **Erledigt:** „Wird die Stufe angekündigt" ist beantwortet: die Stufe steht am Angebot, die Beute
 nicht (§3.1).
+
+**Folgearbeit (Owner, 2026-09-15): alle Neuwürfe bekommen einen Deckel von 3 je Phase.** Gebaut
+wird er, wenn die offenen Punkte durch sind. Damit bleiben Nachlass und Freilos unverändert: der
+Deckel schließt das Loch, das Nachlass IV sonst aufreißt (kostenlos heißt sonst unbegrenzt).
+
+> **Das ist eine Änderung an der laufenden Münzökonomie, nicht nur an der Beute.**
+> `docs/muenz-oekonomie.md` §3.1 sagt heute „beliebig oft je Phase, jeder weitere teurer" und zum
+> legendären Neuwurf ausdrücklich „Kein Deckel … die Kosten sind der Regler". Ein Deckel von 3 hebt
+> beide Sätze auf und kappt die Preistreppen bei 12 (normal) und 60 (legendär). Nachgeprüft am Code:
+> `buyReroll` in `reducer.js` prüft heute **nur den Preis**, `coinRerolls` stellt lediglich die
+> Treppe und begrenzt nichts. Wer den Deckel baut, muss die Ökonomie-Doku mitziehen.
 
 **Bewusst so belassen (Owner, 2026-09-15): Auslage und Beschau bleiben unverändert.** Der Befund
 bleibt notiert, damit ihn niemand für ein Versehen hält: Auslage III ist „vier Perks, keiner unter
