@@ -251,46 +251,53 @@ Sim-Verhalten stehen.
 läuft über die **Schwelle**. Zehn Siege mit einem Kampfwert über 10 sind die unterste Stufe, zehn über
 20 die oberste.
 
-**Gesetzt (Owner, 2026-09-15): eine Leiter für alle vier Typen — 3 · 4 · 5 · 6.**
+**Gesetzt (Owner, 2026-09-15): eine Leiterform, vier Startwerte.** Jede Leiter ist
+N · N+1 · N+2 · N+3; der Startwert läuft in der Schwierigkeitsreihenfolge der Typen 2 · 3 · 4 · 5.
 
-| Typ | Normal · Selten · Sehr selten · Episch |
+| Typ | Leicht · Mittel · Schwer · Sehr schwer |
 | --- | --- |
-| Farbblock | 3 · 4 · 5 · 6 |
-| Wiederholung | 3 · 4 · 5 · 6 |
-| Treppe | 3 · 4 · 5 · 6 |
-| Wechsel | 3 · 4 · 5 · 6 |
+| Farbblock | **2 · 3 · 4 · 5** |
+| Wiederholung | **3 · 4 · 5 · 6** |
+| Treppe | **4 · 5 · 6 · 7** |
+| Wechsel | **5 · 6 · 7 · 8** |
 
-Eine Regel statt vier: „Reinheit will drei bis sechs vom selben Typ." Dass die Typen unterschiedlich
-leicht entstehen, ist dabei bewusst in Kauf genommen — wer auf Wechsel baut, nimmt die Aufgabe, wer
-nicht, nimmt eine der anderen vierzehn. Verworfen wurde mein Vorschlag gestaffelter Leitern
-(Treppe 4·5·6·8, Wechsel 5·7·9·11): er hätte alle vier Stufen gleich schwer gemacht, aber niemand
-kann sich vier Leitern merken.
+Die Merkregel bleibt eine: vier aufeinanderfolgende Zahlen, Startwert 2 / 3 / 4 / 5 in dieser
+Reihenfolge. Wiederholung behält dabei exakt den Owner-Wert 3 · 4 · 5 · 6 — der war schon richtig
+kalibriert.
 
-**Gemessen, was die eine Leiter bedeutet** (40 Läufe je Spielweise, distinkte Formationen je Typ und
-Durchlauf, bester Durchlauf des Fensters — Reinheit ist ein Spitzen-Zähler). Anteil der Läufe, die
-die jeweilige Stufe im ersten Fenster erreichen:
+**Kalibriert, nicht geschätzt.** Gemessen wurde die volle Kurve: Trefferquote je Typ für N = 2 bis 12,
+40 Läufe je Bauweise über vier Bauweisen (Zufall, Feuer, Pflanze und ein Bau, der die Aufstellung
+löst — `fixedPolicy([], { solveFormations: true })`). Gezählt werden distinkte Formationen je Typ und
+Durchlauf (`ordinal === 1`), gewertet wird der beste Durchlauf des Fensters, weil Reinheit ein
+Spitzen-Zähler ist.
 
-| Typ | Zufall (3 / 6) | Feuer (3 / 6) | Pflanze (3 / 6) |
-| --- | --- | --- | --- |
-| Wechsel | 70 % / 8 % | **100 % / 75 %** | 100 % / 73 % |
-| Treppe | 30 % / 0 % | 95 % / 43 % | 95 % / 40 % |
-| Wiederholung | 53 % / 3 % | 78 % / 15 % | 70 % / 15 % |
-| Farbblock | 13 % / 3 % | 55 % / **0 %** | 75 % / 13 % |
+Anteil der Läufe, die die Stufe im **ersten Fenster** erreichen, gemittelt über die drei **spielenden**
+Bauweisen (Feuer, Pflanze, Solver):
 
-> **Zwei Ausreißer, die der Playtest ansehen sollte.** Sie sind keine Ungleichheit mehr, sondern
-> Ränder:
->
-> - **Wechsel auf „Sehr schwer" ist bei einem spielenden Bau kein „sehr schwer"** — drei von vier
->   Läufen erreichen 6 im ersten Fenster. Die Stufe zahlt damit das Episch/Legendär-Band für nahezu
->   normales Aufstellen.
-> - **Farbblock auf „Sehr schwer" ist für Feuer in Fenster 1 gar nicht erreichbar** (0 von 40), für
->   Pflanze in 13 %. Erst in Fenster 2 dreht es sich für Pflanze auf 83 %, weil grüne Karten einen
->   Farbblock bilden.
->
-> Beide Stufen zahlen dasselbe Band. Die Spanne an der Spitze ist damit 75 % gegen 0 %.
+| Typ | Leicht | Mittel | Schwer | **Sehr schwer** |
+| --- | --- | --- | --- | --- |
+| Farbblock | 81 % | 52 % | 26 % | **14 %** |
+| Wiederholung | 86 % | 57 % | 28 % | **14 %** |
+| Treppe | 89 % | 75 % | 39 % | **11 %** |
+| Wechsel | 98 % | 83 % | 44 % | **13 %** |
 
-Der naive Bau (Zufall) erreicht oberhalb von Stufe 1 fast nichts — Reinheit ist über alle vier Typen
-eine Aufgabe für jemanden, der die Aufstellung führt.
+Die oberste Stufe liegt damit zwischen 11 und 14 %, die unterste zwischen 81 und 98 % — „knapp ohne
+viel Aufwand" unten, echte Arbeit oben, und über alle vier Typen vergleichbar.
+
+> **Ersetzt die flache Leiter 3 · 4 · 5 · 6 für alle vier** (Owner, 2026-09-15, am selben Tag
+> zurückgenommen). Sie war zum Testen gesetzt; die Messung hat sie vorher widerlegt. Unter ihr
+> erreichten im ersten Fenster **75 % der Läufe** die oberste Wechsel-Stufe und **0 %** die oberste
+> Farbblock-Stufe bei Feuer — dasselbe Beute-Band für 75 % gegen 0 %. Ebenfalls verworfen bleibt mein
+> früherer Vorschlag ungleichmäßiger Leitern (Treppe 4·5·6·8, Wechsel 5·7·9·11): er hatte zusätzlich
+> die falschen zwei Typen als die häufigen eingestuft.
+
+> **Ein Loch bleibt, benannt statt kaschiert.** Farbblock ist in **Fenster 2 für Pflanze** auf allen
+> vier Stufen bei 95 % oder darüber, für Feuer auf der obersten bei 5 %. Ursache ist der
+> Grünkarten-Effekt: grüne Karten bilden einen Farbblock, und Pflanze färbt bis D30 genug Karten ein.
+> Eine Zelle, kein Systemfehler — aber die einzige, die die Kalibrierung nicht einfängt.
+
+Der naive Bau (Zufall) erreicht oberhalb der untersten Stufe fast nichts. Reinheit ist über alle vier
+Typen eine Aufgabe für jemanden, der die Aufstellung führt.
 
 ### 4.1 Die Texte
 
@@ -878,14 +885,16 @@ Deckel schließt das Loch, das Nachlass IV sonst aufreißt (kostenlos heißt son
 > `buyReroll` in `reducer.js` prüft heute **nur den Preis**, `coinRerolls` stellt lediglich die
 > Treppe und begrenzt nichts. Wer den Deckel baut, muss die Ökonomie-Doku mitziehen.
 
-**Gesetzt (Owner, 2026-09-15): Reinheit läuft auf EINER Leiter — 3 · 4 · 5 · 6 für alle vier
-Typen**, zum Testen so belassen. Gemessen ist die Spanne an der obersten Stufe groß: Wechsel 75 %,
-Farbblock 0 % bei Feuer im ersten Fenster. Beide Ränder und die Messung stehen in §4.2.
+**Gesetzt (Owner, 2026-09-15): Reinheit läuft auf EINER Leiterform mit vier Startwerten** —
+Farbblock 2, Wiederholung 3, Treppe 4, Wechsel 5, je vier aufeinanderfolgende Zahlen. An der
+kalibrierten Kurve gemessen liegt „Sehr schwer" damit bei 11 bis 14 % statt bei 0 bis 75 %. Die
+zwischenzeitlich gesetzte flache Leiter 3·4·5·6 ist am selben Tag zurückgenommen worden, nachdem die
+Messung sie widerlegt hat (§4, Vorspann).
 
 **Bewusst so belassen (Owner, 2026-09-15): Säckel behält 60 · 80 · 100 · 120 in beiden Fenstern.**
 Meine Behauptung, 100 und 120 seien bis D15 unmöglich, war falsch — gemessene Obergrenze bei vollem
 Verzicht ist 199 Münzen gegen einen normalen Stand von 67. Die Rechnung und die drei verworfenen
-Reparaturvorschläge stehen in §4.3.
+Reparaturvorschläge stehen in §4.4.
 
 **Bewusst so belassen (Owner, 2026-09-15): Auslage und Beschau bleiben unverändert.** Der Befund
 bleibt notiert, damit ihn niemand für ein Versehen hält: Auslage III ist „vier Perks, keiner unter
