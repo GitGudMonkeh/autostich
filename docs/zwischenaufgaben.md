@@ -1,8 +1,12 @@
 # Zwischenaufgaben (exp) — Planungsdokument
 
 **Status: lebendes Dokument.** Beutekatalog und Aufgaben-Katalog sind durchdesignt und vom Owner Wert
-für Wert abgenommen (2026-09-14). Offen ist der eine Punkt in §10; danach ist das Dokument
-umsetzungsreif.
+für Wert abgenommen (2026-09-14). **Die zehn offenen Punkte sind entschieden (2026-09-15)** — §10
+hält sie mit ihren Begründungen fest, dazu zwei Folgearbeiten über dieses Dokument hinaus.
+
+Eines steht weiterhin als **Vorschlag** und war nie einer der zehn Punkte: die drei Regeln gegen
+Wiederholung in §3.6. Sie sind überwiegend technisch, eine davon (gesperrte Aufgaben bis zum vierten
+Lauf) ist Progression und damit Owner-Sache.
 
 Entscheidungen des Owners stehen unter **Gesetzt**. Alles unter **Vorschlag** ist Diskussionsstand und
 gilt erst, wenn es nach Gesetzt wandert.
@@ -343,8 +347,19 @@ sondern auf jeder Stufe unmöglich. Über die Grundfarbe liegt Pflanze gleichauf
 >
 > **Gesetzt: ein Ring in der Grundfarbe um das Blatt** (Owner, 2026-09-14). Ein Marker, zwei Aussagen,
 > keine neue Ecke, keine Änderung am Ecken-Vokabular. Der Alternativplatz auf der unteren Kante ist
-> damit vom Tisch. **Offen** bleibt, ob der Ring dauerhaft erscheint oder nur, solange ein
-> Buntspiel-Auftrag läuft.
+> damit vom Tisch.
+>
+> **Gesetzt (Owner, 2026-09-15): der Ring erscheint NUR, solange ein Buntspiel-Auftrag läuft.**
+> Drei Gründe, in dieser Reihenfolge: die Ecke ist das knappste Gut auf der Karte und teilt sich
+> bereits mit dem Marken-Badge; außerhalb von Buntspiel ist die Grundfarbe unter dem Grün mechanisch
+> folgenlos, die Karte spielt als grün, und eine dauerhafte Markierung für Information ohne
+> Verwendung macht die Ecke unlesbar; und mit dem Auftrag kommt die Erklärung mit — in der
+> Fortschrittsanzeige steht daneben, was gezählt wird. Dauerhaft müsste der Ring sich selbst
+> erklären.
+>
+> Verworfen: dauerhaft. Das Gegenargument bleibt notiert — ein Element, das auftaucht und
+> verschwindet, ist selbst eine Lernlast, weil man bemerken muss, dass es kam. Der Owner gewichtet
+> die knappe Ecke höher.
 
 **Farbtreue nutzt dagegen die Farbserie** und damit Farballianz und Grün, weil dort die Mechanik das
 Thema ist. Zwei Aufgaben, zwei Zwecke; in beiden Texten steht, was gezählt wird.
@@ -850,11 +865,12 @@ bei D30 nur in 5. Das ist keine Schieflage, sondern der Zweck.
 
 ---
 
-## 10. Offene Punkte
+## 10. Entschieden, und was daraus folgt
 
-Ein Punkt aus §4 liegt beim Owner:
-
-1. **Erscheint der Grundfarben-Ring dauerhaft** oder nur, solange ein Buntspiel-Auftrag läuft (§4.1).
+**Keine offenen Punkte mehr** (Stand 2026-09-15). Dieser Abschnitt hält fest, was entschieden wurde
+und warum — die Befunde bleiben stehen, damit spätere Leser eine bewusste Entscheidung nicht für ein
+Versehen halten. Am Ende stehen **zwei Folgearbeiten**, die über dieses Dokument hinausreichen: der
+Neuwurf-Deckel und die Begriffsumbenennung auf Fraktion.
 
 **Erledigt:** Die vier Aufgabenstufen heißen **Leicht, Mittel, Schwer, Sehr schwer** (§3.2).
 Farbtreue würfelt keine Farbe (§3.6). Der Grundfarben-Marker ist ein Ring um das Blatt,
@@ -928,6 +944,9 @@ Deckel schließt das Loch, das Nachlass IV sonst aufreißt (kostenlos heißt son
 > beide Sätze auf und kappt die Preistreppen bei 12 (normal) und 60 (legendär). Nachgeprüft am Code:
 > `buyReroll` in `reducer.js` prüft heute **nur den Preis**, `coinRerolls` stellt lediglich die
 > Treppe und begrenzt nichts. Wer den Deckel baut, muss die Ökonomie-Doku mitziehen.
+
+**Gesetzt (Owner, 2026-09-15): der Grundfarben-Ring erscheint nur bei laufendem Buntspiel-Auftrag**,
+nicht dauerhaft (§4.1).
 
 **Gesetzt (Owner, 2026-09-15): die Fortschrittsanzeige hat zwei Orte.** `StatusRail.jsx` als
 erstes Kind über den Multiplikatoren (der Platz aus dem Mockup bestätigt sich), **plus** eine Zeile
