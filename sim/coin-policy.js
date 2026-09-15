@@ -20,7 +20,13 @@ import { greedyFormationStep } from "./formation.js";
    aufwerten allein +92 %, Baufeld allein +16 %, alle vier zusammen nur +64 % — die Flächen konkurrieren um
    dieselbe Börse, und Baufeld/Energie werden früher im Lauf fällig als die Aufwertungen. Ohne Reserve
    verhungert die stärkste Fläche an der schwächeren. Der Wert ist ein Tuning-Parameter, kein Naturgesetz. */
-export const ALL_BUYS = { energy: true, cover: true, upgradeSkill: true, upgradeFamily: true, reserve: 40 };
+export const ALL_BUYS = {
+  energy: true, cover: true, upgradeSkill: true, upgradeFamily: true,
+  reserve: 40,          // Boden für Baufeld
+  reserveEnergy: null,  // eigener Boden für Energie; null = `reserve`
+  depth: false,         // false = billigster Schritt zuerst (breit), true = teuerster bezahlbarer (tief)
+  famFirst: false,      // bei beidem bezahlbar: Familie vor Skill aufwerten
+};
 
 /* Lohnt in DIESER Aufstellphase noch ein Tausch? Der Reducer ist pur und `SWAP_CARDS` rng-frei, also
    beantwortet eine Kopie mit einer Energie die Frage exakt, statt sie zu schätzen. Nötig, weil übrige
@@ -28,25 +34,28 @@ export const ALL_BUYS = { energy: true, cover: true, upgradeSkill: true, upgrade
    Tausch ist ein echter Verlust, kein Nullsummenspiel. */
 const swapStillPays = (s) => greedyFormationStep({ ...s, formationEnergy: 1 }).type === "SWAP_CARDS";
 
-// Billigster nächster Schritt zuerst — dieselbe Regel, nach der die Aufwert-Bildschirme sortieren
-// (coins.js, upgradeSortKey): breit aufwerten, bevor einzelne Einträge in die Tiefe gehen.
-function cheapestSkillUpgrade(s) {
+// `depth` false = billigster Schritt zuerst — dieselbe Regel, nach der die Aufwert-Bildschirme sortieren
+// (coins.js, upgradeSortKey): breit aufwerten, bevor einzelne Einträge in die Tiefe gehen. true dreht es um
+// (wenige Skills nach oben treiben). Welches besser ist, entscheidet die Messung, nicht dieser Kommentar.
+const better = (price, best, depth) => !best || (depth ? price > best.price : price < best.price);
+
+function bestSkillUpgrade(s, depth) {
   let best = null;
   for (const id of s.skills || []) {
     if (isLegendarySkill(id)) continue;                       // Legendäre tragen keine Stufe
     const tier = (s.skillTiers || {})[id] ?? 0;
     if (tier >= MAX_SKILL_TIER) continue;
     const buy = upgradeBuy(s, tier);
-    if (!buy.maxed && buy.can && (!best || buy.price < best.price)) best = { id, price: buy.price };
+    if (!buy.maxed && buy.can && better(buy.price, best, depth)) best = { id, price: buy.price };
   }
   return best;
 }
-function cheapestFamilyUpgrade(s) {
+function bestFamilyUpgrade(s, depth) {
   let best = null;
   for (const [familyId, tier] of Object.entries(s.familyTiers || {})) {
     if (!tier || tier < 1 || !familyDef(familyId)) continue;  // 0 = nicht besessen
     const buy = familyUpgradeBuy(s, tier);
-    if (!buy.maxed && buy.can && (!best || buy.price < best.price)) best = { familyId, price: buy.price };
+    if (!buy.maxed && buy.can && better(buy.price, best, depth)) best = { familyId, price: buy.price };
   }
   return best;
 }
@@ -57,23 +66,28 @@ function cheapestFamilyUpgrade(s) {
 export function coinStep(s, rng, buys = ALL_BUYS) {
   if (!s || !buys) return null;
   const reserve = buys.reserve || 0;
-  const affordable = (buy) => buy.can && (s.coins || 0) - buy.price >= reserve; // Reserve bleibt den Aufwertungen
+  const reserveEnergy = buys.reserveEnergy == null ? reserve : buys.reserveEnergy;
+  // Reserve bleibt den Aufwertungen: die sind die stärkste Fläche, werden aber SPÄTER fällig als Baufeld/Energie.
+  const affordable = (buy, floor) => buy.can && (s.coins || 0) - buy.price >= floor;
   switch (s.phase) {
     case "formation": {
       // Nur bei leerer Energie fragen: solange noch welche da ist, tauscht der Solver ohnehin weiter.
       const buy = energyBuy(s);
-      if (buys.energy && (s.formationEnergy || 0) === 0 && affordable(buy) && swapStillPays(s)) {
+      if (buys.energy && (s.formationEnergy || 0) === 0 && affordable(buy, reserveEnergy) && swapStillPays(s)) {
         return { type: "BUY_ENERGY" };
       }
       return null;
     }
     case "architect":
       // Baufeld ist die einzige Ausgabe mit DAUERHAFTER Wirkung; die Treppe (20 → 40) deckelt sie selbst.
-      if (buys.cover && affordable(coverBuy(s))) return { type: "BUY_COVER" };
+      if (buys.cover && affordable(coverBuy(s), reserve)) return { type: "BUY_COVER" };
       return null;
     case "levelup": {
-      if (buys.upgradeSkill) { const u = cheapestSkillUpgrade(s); if (u) return { type: "UPGRADE_SKILL", skillId: u.id }; }
-      if (buys.upgradeFamily) { const u = cheapestFamilyUpgrade(s); if (u) return { type: "UPGRADE_FAMILY", familyId: u.familyId, rng }; }
+      const skill = buys.upgradeSkill ? bestSkillUpgrade(s, buys.depth) : null;
+      const fam = buys.upgradeFamily ? bestFamilyUpgrade(s, buys.depth) : null;
+      const famWins = fam && (buys.famFirst || !skill);
+      if (famWins) return { type: "UPGRADE_FAMILY", familyId: fam.familyId, rng };
+      if (skill) return { type: "UPGRADE_SKILL", skillId: skill.id };
       return null;
     }
     default:
