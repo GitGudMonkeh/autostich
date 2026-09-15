@@ -26,20 +26,21 @@ Mockup der Fortschrittsanzeige (§4.3):
 <https://claude.ai/code/artifact/37556d61-a8ed-4e6f-a068-790685b73008>
 
 Der Platzhalter in `docs/muenz-oekonomie.md` §7 („Zwischenaufgaben bei Durchlauf 15/30: später") wird
-durch dieses Dokument abgelöst. Bosse bleiben weiterhin ausgeklammert (§11).
+durch dieses Dokument abgelöst — **auch in der Zahl**: die Fenster enden bei 16 und 32, nicht bei
+15 und 30. Bosse bleiben weiterhin ausgeklammert (§11).
 
 ---
 
 ## 1. Was gebaut wird
 
-Zwei Aufgaben je Lauf. Die erste läuft über die Durchläufe 1 bis 15, die zweite über 16 bis 30. Zu
+Zwei Aufgaben je Lauf. Die erste läuft über die Durchläufe 1 bis 16, die zweite über 17 bis 32. Zu
 Beginn jedes Fensters liegen **drei Angebote** auf dem Tisch. Jedes zeigt eine Aufgabe und ihre Stufe;
 die Stufe nennt das Beute-Band, das Stück selbst bleibt verdeckt. Eins nimmst du an, die anderen zwei
-verfallen.
+verfallen. Erfüllt, stehen **drei Beutestücke** zur Wahl.
 
 **Gesetzt (Owner, 2026-09-14):**
 
-- Zwei Fenster: **D1 bis D15** und **D16 bis D30**.
+- Zwei Fenster: **D1 bis D16** und **D17 bis D32** (Owner, 2026-09-15).
 - **Drei Angebote zur Wahl**, jedes mit eigener Schwierigkeit.
 - **Jede Aufgabe hat vier Stufen** mit **eigenen Namen** und den Farben der Raritäten.
 - **Die Stufe bestimmt ein Beute-Band aus zwei benachbarten Raritäten** (§3.2). Legendäre Beute gibt
@@ -47,11 +48,19 @@ verfallen.
 - **Beim Wählen sieht man die Aufgabe und ihre Stufe, nicht die Beute** (Owner, 2026-09-14). Kein
   Neuwurf.
 - Beute **wirkt weiter und zahlt nie in Score**.
-- **Legendäre Beute ist schon bei D15 möglich**, über das vierte Band.
+- **Legendäre Beute ist schon am Ende von Fenster 1 möglich**, über das vierte Band.
+- **Erfüllt zahlt drei Beutestücke zur Wahl** (Owner, 2026-09-15).
 - **Die unterste Stufe ist knapp ohne Aufwand erreichbar.** Wer sie nimmt, tauscht Rarität gegen
   Sicherheit. Alle Stufen darüber verlangen Investition.
 - Nicht erfüllt zahlt **nichts**.
 - **Keine Kategorie doppelt** im Beutekatalog.
+
+> **Warum 16 und 32.** Der Entscheidungsblock ist Skill · Perk · Aufstellen · Architekt und wiederholt
+> sich über den ganzen Lauf. Nachgeprüft an `DECISION_SCHEDULE`: **D16 und D32 sind beide die letzte
+> Runde eines vollständigen Blocks**, und jedes Fenster umfasst damit genau vier komplette Blöcke —
+> 4 Skill-, 4 Perk-, 4 Aufstell- und 4 Architektenphasen. Die früheren Grenzen 15 und 30 schnitten
+> mitten hinein: D15 ist eine Aufstellphase (der Architekt des Blocks fehlte), D30 eine Perk-Phase
+> (Aufstellen und Architekt fehlten). Zwischen Annahme und Abrechnung liegen jetzt drei volle Blöcke.
 
 **Ersetzt frühere Beschlüsse** (alle vom Owner selbst, 2026-09-14): die Aufgabe wird nicht mehr
 zufällig zugewiesen, sondern gewählt. Die Marken-Leiter aus Bronze, Silber und Gold entfällt, sie war
@@ -66,6 +75,14 @@ ihrer Stufe, die Beute nicht.**
 Alle Zahlen in diesem Abschnitt sind **gemessen** auf dem exp-Stand (2026-09-14), nicht geschätzt.
 Die Sonden liegen nicht im Repo; die Methode steht jeweils dabei und ist nachbaubar.
 
+> **Messgrundlage nach der Fensterverschiebung.** Alle Messungen im Dokument wurden an den
+> Durchlaufgrenzen **D15 und D30** abgetastet, also an den alten Fenstern. Die Fenster enden jetzt
+> einen beziehungsweise zwei Durchläufe später (D16, D32); die Zahlen sind damit **leicht
+> konservativ** — ein Fenster mehr heißt ein Versuch mehr. Nachgemessen auf den neuen Grenzen wurde
+> bisher nur **Reinheit** (§4, Vorspann); dort bewegte sich von sechzehn Zellen genau eine. Für die
+> übrigen Werte ist der Unterschied nicht nachgemessen, sondern aus dieser einen Gegenprobe
+> **geschlossen**.
+
 ### 2.1 Der frühe Lauf trägt nichts zum Score bei
 
 `node sim/batch.js --mode pacing --runs 60 --seed 7`, Median-Lauf:
@@ -79,14 +96,14 @@ wiederholt sich über alle 50 Durchläufe. Der frühe Lauf kostet vollen Entsche
 zwei Prozent. Das ist die Lücke, die die Aufgaben schließen sollen.
 
 Daraus folgt die Regel, an der der ganze Katalog hängt: **jede Belohnung in Score wäre früh
-unsichtbar.** Nur was weiterwirkt, hat bei D15 Gewicht.
+unsichtbar.** Nur was weiterwirkt, hat am Ende von Fenster 1 Gewicht.
 
 ### 2.2 Was die beiden Fenster produzieren
 
 Eigene Sonde über `runOne` mit `onTrick`-Sampling an den Durchlaufgrenzen, 40 Läufe je Spielweise,
 Median:
 
-| Fenster 1 (D1 bis D15) | je Durchlauf p50 / p90 | bester Durchlauf p50 / p90 |
+| Fenster 1 (gemessen bis D15) | je Durchlauf p50 / p90 | bester Durchlauf p50 / p90 |
 | --- | --- | --- |
 | Siege | 19 / 22 | 22 / 26 |
 | Formationen | 15 / 19 | 18 / 21 |
@@ -128,7 +145,7 @@ Was der Spieler damit weiß: **welche Arbeit** vor ihm liegt und **welches Beute
 (§3.2). Was er nicht weiß: welches Stück aus dem Band es wird. Die Regel ist lernbar, das Ergebnis
 bleibt offen.
 
-Die Wahl fällt im ersten Fenster **nach der ersten Skill-Wahl**, im zweiten bei **D16**. Beide Male
+Die Wahl fällt im ersten Fenster **nach der ersten Skill-Wahl**, im zweiten bei **D17**. Beide Male
 weiß der Spieler genug über seinen Bau, um zu beurteilen, was zu ihm passt.
 
 ### 3.2 Vier Stufen, jede mit einem Beute-Band
@@ -167,13 +184,18 @@ Regelfall das, was ihr Name sagt, und Legendär bleibt der Ausreißer statt der 
 > **Was der Satz für Legendär bedeutet.** Gerechnet, nicht gemessen, und unter zwei Annahmen: die
 > Rarität wird **je Stück** gewürfelt, und der Spieler schafft **beide** Aufgaben auf „Sehr schwer".
 >
-> | | je Aufgabe (4 Stücke) | ganzer Lauf (8 Stücke) |
+> | | je Aufgabe (3 Stücke) | ganzer Lauf (6 Stücke) |
 > | --- | --- | --- |
-> | **70/30 (gesetzt)** | 76 % mindestens eines · 1,2 im Schnitt | 94 % · 2,4 |
-> | 50/50 (verworfen) | 94 % · 2,0 | 99,6 % · 4,0 |
+> | **70/30 (gesetzt)** | 66 % mindestens eines · 0,9 im Schnitt | 88 % · 1,8 |
+> | 50/50 (verworfen) | 88 % · 1,5 | 98 % · 3,0 |
 >
 > Bei 50/50 wäre die halbe Auslage legendär. Das hätte der Episch-Hälfte desselben Bandes ihren
 > Platz genommen: „Sehr schwer" hätte faktisch „legendär oder knapp daneben" geheißen.
+>
+> **Nachgezogen auf drei Stücke** (Owner, 2026-09-15). Bei vier Stücken je Aufgabe standen hier
+> 76 % / 94 % und 2,4 legendäre Stücke je Lauf. Die Auswahl ist um ein Viertel kleiner geworden,
+> der Legendär-Satz ist damit von 2,4 auf 1,8 Stücke gefallen — Legendär bleibt seltener, ohne dass
+> an der 70/30-Gewichtung gedreht wurde.
 
 Die Bänder überlappen: Selten kommt aus Stufe 1 und 2, Sehr selten aus 2 und 3, Episch aus 3 und 4.
 Nur Normal und Legendär haben je einen einzigen Zugang.
@@ -201,9 +223,10 @@ Ohne diese Unterscheidung stünde Fenster 2 mit dem Vorsprung aus Fenster 1 da.
 
 ### 3.4 Dieselbe Leiter in beiden Fenstern
 
-Eine Aufgabe hat **einen** Satz Schwellen, nicht zwei. Damit ist dieselbe Stufe bei D30 leichter als
-bei D15, weil der Bau steht. Das gleicht sich von selbst aus: Beute aus Fenster 1 wirkt in 8 bis 9
-Phasen jeder Sorte nach, bei D30 nur in 5. **Frühe Beute ist wertvoller, späte Stufen sind billiger.**
+Eine Aufgabe hat **einen** Satz Schwellen, nicht zwei. Damit ist dieselbe Stufe im zweiten Fenster
+leichter als im ersten, weil der Bau steht. Das gleicht sich von selbst aus: Beute aus Fenster 1 wirkt
+in **8 bis 9** Phasen jeder Sorte nach (34 Durchläufe nach D16), Beute aus Fenster 2 in **4 bis 5**
+(18 Durchläufe nach D32). **Frühe Beute ist wertvoller, späte Stufen sind billiger.**
 
 ### 3.5 Voraussetzungen werden genannt, nicht weggefiltert
 
@@ -277,20 +300,25 @@ kalibriert.
 40 Läufe je Bauweise über vier Bauweisen (Zufall, Feuer, Pflanze und ein Bau, der die Aufstellung
 löst — `fixedPolicy([], { solveFormations: true })`). Gezählt werden distinkte Formationen je Typ und
 Durchlauf (`ordinal === 1`), gewertet wird der beste Durchlauf des Fensters, weil Reinheit ein
-Spitzen-Zähler ist.
+Spitzen-Zähler ist. **Nachgemessen auf den neuen Fenstern D1–D16 und D17–D32** (Owner, 2026-09-15).
 
 Anteil der Läufe, die die Stufe im **ersten Fenster** erreichen, gemittelt über die drei **spielenden**
 Bauweisen (Feuer, Pflanze, Solver):
 
 | Typ | Leicht | Mittel | Schwer | **Sehr schwer** |
 | --- | --- | --- | --- | --- |
-| Farbblock | 81 % | 52 % | 26 % | **14 %** |
+| Farbblock | 84 % | 52 % | 26 % | **14 %** |
 | Wiederholung | 86 % | 57 % | 28 % | **14 %** |
 | Treppe | 89 % | 75 % | 39 % | **11 %** |
 | Wechsel | 98 % | 83 % | 44 % | **13 %** |
 
-Die oberste Stufe liegt damit zwischen 11 und 14 %, die unterste zwischen 81 und 98 % — „knapp ohne
+Die oberste Stufe liegt damit zwischen 11 und 14 %, die unterste zwischen 84 und 98 % — „knapp ohne
 viel Aufwand" unten, echte Arbeit oben, und über alle vier Typen vergleichbar.
+
+> **Das Fenster um einen Durchlauf zu verlängern hat die Kalibrierung nicht bewegt.** Von sechzehn
+> gemessenen Zellen änderte sich **eine**: Farbblock auf „Leicht" von 81 auf 84 %. Der Grund liegt in
+> der Zählart — ein Spitzen-Zähler nimmt ohnehin das beste Vorkommen aus fünfzehn Versuchen, und ein
+> sechzehnter verschiebt das Maximum kaum noch.
 
 > **Ersetzt die flache Leiter 3 · 4 · 5 · 6 für alle vier** (Owner, 2026-09-15, am selben Tag
 > zurückgenommen). Sie war zum Testen gesetzt; die Messung hat sie vorher widerlegt. Unter ihr
@@ -505,27 +533,30 @@ Wert-Perks nicht gezielt. Aufmarsch ist damit auch auf Normal ein echter Auftrag
 
 Nachgemessen am Entscheidungsplan (`DECISION_SCHEDULE`, Block Skill · Perk · Aufstellen · Architekt):
 
-| bis D15 | Münzen |
+| bis D16 | Münzen |
 | --- | --- |
-| Sockel 2 je Durchlauf, ohne eine einzige Formation | 33 |
-| passiv am Formations-Deckel (2 + 4 je Durchlauf) | **93** |
+| Sockel 2 je Durchlauf, ohne eine einzige Formation | 35 |
+| passiv am Formations-Deckel (2 + 4 je Durchlauf) | **99** |
 | 4 abgelehnte Skill-Phasen (`FORFEIT_SKILL` 12) | +48 |
 | 4 abgelehnte Perk-Phasen (`FORFEIT_PERK` 6) | +24 |
 | 4 Aufstellphasen mit ungenutzter Energie (4 × `FORFEIT_ENERGY` 1) | +16 |
-| 3 Architektenphasen ohne Hauptaktion (`FORFEIT_BUILD` 6) | +18 |
-| **Obergrenze bei vollem Verzicht** | **199** |
+| 4 Architektenphasen ohne Hauptaktion (`FORFEIT_BUILD` 6) | +24 |
+| **Obergrenze bei vollem Verzicht** | **211** |
+
+> Auf das neue Fenster nachgerechnet (Owner, 2026-09-15). Bis D15 waren es 199: ein Durchlauf weniger
+> passiv **und** eine Architektenphase weniger, weil D16 genau diese Phase ist.
 
 Zum Vergleich der tatsächliche Kontostand im Sim bei D15, der normal spielt und ausgibt: p25/p50/p75
 **59 / 67 / 74** über Zufall, Feuer und Pflanze (30 Läufe je Spielweise). Das ist die Zahl, die ich
 vorher fälschlich als Decke gelesen hatte.
 
-**Damit ist 120 bei D15 erreichbar, aber teuer:** rund 55 Münzen über dem normalen Stand, also im
+**Damit ist 120 am Ende von Fenster 1 erreichbar, aber teuer:** rund 55 Münzen über dem normalen Stand, also im
 Kern jede Skill-Phase des ersten Fensters ablehnen. Genau das ist die Entscheidung, die die Stufe
 verlangt.
 
 **Owner-Begründung, warum das keine Reparatur braucht:** Man wählt aus drei Angeboten. Liegt Säckel
-in Fenster 1 auf „Sehr schwer", nimmt man eben ein anderes — die Stufe wird dann bei D30 genommen,
-nicht bei D15. Das Angebotssystem regelt die Machbarkeit bereits, ohne Sonderregel je Fenster. Und
+in Fenster 1 auf „Sehr schwer", nimmt man eben ein anderes — die Stufe wird dann im zweiten Fenster
+genommen, nicht im ersten. Das Angebotssystem regelt die Machbarkeit bereits, ohne Sonderregel je Fenster. Und
 der Zwang zum Ablehnen oder zum Energiesparen ist kein Nebeneffekt, sondern der Hebel, den die
 Münzökonomie für genau diesen Fall vorgesehen hat.
 
@@ -862,10 +893,10 @@ Was dieselbe Wirkung heute in Münzen kostet. Der Maßstab, an dem jede Stufe h�
 | Neuwurf, Treppe je Phase | 3 · 6 · 12 |
 | Legendärer Neuwurf | 15 · 30 · 60 |
 | Einkommen je Lauf (gemessen) | 205 bis 260 |
-| Phasen jeder Sorte nach D15 / nach D30 | 8 bis 9 · 5 |
+| Phasen jeder Sorte nach D16 / nach D32 | 8 bis 9 · 4 bis 5 |
 
 **Fenster 1 ist die wertvollere Beute.** Dieselbe Karte wirkt dort in 8 bis 9 Phasen jeder Sorte nach,
-bei D30 nur in 5. Das ist keine Schieflage, sondern der Zweck.
+nach Fenster 2 nur in 4 bis 5. Das ist keine Schieflage, sondern der Zweck.
 
 ---
 
@@ -892,7 +923,7 @@ durchgehend im selben Satz, nur mit skalierender Zahl, und die Ausnahme vom Styl
 > **Vollendung** bei vier gehaltenen sechs. In der reinen Stufenzahl liegt das Epische damit im ersten
 > Fenster vorn. Es bleibt trotzdem schwächer, weil nur Vollendung **Episch erreicht** (Normal plus zwei
 > Stufen endet bei Sehr selten) und weil Vollendung mit der Zahl der gehaltenen Skills mitwächst: bei
-> D30 sind es zehn Stufen gegen acht.
+> Ende von Fenster 2 sind es zehn Stufen gegen acht.
 
 **Gesetzt (Owner, 2026-09-15): die Beute wird JE FAMILIE gezogen, nicht je Kategorie.** Alle
 dreizehn Familien sind damit gleich wahrscheinlich (7,7 % je Stück). Je Kategorie gezogen käme
@@ -992,7 +1023,7 @@ selbst öffnet.
 | **Bosse** | Ausgeklammert (Owner, 2026-09-12). Der Befund aus der Vorarbeit bleibt notiert: ein Boss ist kein Entscheidungs-Slot, sondern ein Durchlauf, und alle Hebel dafür existieren bereits (Gegnerwert-Aufschlag, gesperrte Positionen, Marker je Gegnerkarte, Front-Load-Reihenfolge). Ohne Niederlage im Spiel braucht er einen Einsatz. |
 | **Score mit Par** | Später. Wenn der frühe Lauf **Anteil am Endscore** bekommen soll statt nur Gewicht im Lauf, ist Par der Hebel, nicht die Aufgabe. |
 | **Befristete Beute** | Regler in der Hinterhand. Gemessen liegen 66 % des Endscores in den letzten zehn Durchläufen; dauerhafte Beute hebt den Schwanz mit. Wenn das Ende zu fett wird, läuft Beute aus Fenster 1 am Ende von Fenster 2 ab. |
-| **Beute-Kompendium im Glossar** | Vorschlag. Man sieht nur 4 von 56 Stücken je Lauf; gesehene Stücke im Glossar zu sammeln macht den Katalog über Läufe hinweg lesbar. |
+| **Beute-Kompendium im Glossar** | Vorschlag. Man sieht nur 6 von 56 Stücken je Lauf und behält zwei; gesehene Stücke im Glossar zu sammeln macht den Katalog über Läufe hinweg lesbar. |
 
 ---
 
