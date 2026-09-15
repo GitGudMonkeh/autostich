@@ -15,7 +15,11 @@ Sprache Deutsch, weil Beutenamen und Beutetexte Produktsprache sind und der Owne
 Bewusste Abweichung von der Engineering-Sprache in `AGENTS.md`, wie bei `docs/skill-rework.md` und
 `docs/muenz-oekonomie.md`, und nur für dieses Dokument.
 
-Übersicht aller 56 Beutestücke mit Raritätsfarben:
+**Zusammenfassung des ganzen Systems** — Ablauf, vier Stufen, alle 15 Aufgaben und alle 56
+Beutestücke mit ihren Spieltexten:
+<https://claude.ai/artifact/H3h142reTigpGDNKFkK2ha>
+
+Übersicht aller 56 Beutestücke mit Raritätsfarben (älter, nur die Beute):
 <https://claude.ai/code/artifact/e6122960-8f20-464e-849a-66ba5f83163d>
 
 Mockup der Fortschrittsanzeige (§4.3):
