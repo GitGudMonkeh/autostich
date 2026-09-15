@@ -108,7 +108,7 @@ function runExplore() {
   for (let i = 0; i < N; i++) scores.push(runOne(seed0 + i, policy, mem).score);
   const rankings = { perk: mem.ranking("perk"), skill: mem.ranking("skill") };
   const scoreAgg = stats(scores);
-  console.log(`sim 'ucb' explore: ${N} runs (seeds ${seed0}..${seed0 + N - 1}), c=${c}, Aufstellung ${SOLVE_FORMATIONS ? "gespielt" : "unangetastet (--formations 1)"}`);
+  console.log(`sim 'ucb' explore: ${N} runs (seeds ${seed0}..${seed0 + N - 1}), c=${c}, Aufstellung ${SOLVE_FORMATIONS ? "GESPIELT (Solver)" : "UNANGETASTET — zum Einschalten: --formations 1"}`);
   console.log(`  score   median ${f(scoreAgg.p50)}  p90 ${f(scoreAgg.p90)}  mean ${f(scoreAgg.mean)}`);
   const row = (r) => `    ${r.id.padEnd(16)} ${String(r.bucket).padEnd(14)} n=${String(r.n).padStart(4)}  mean ${r.mean.toFixed(3)}`;
   for (const kind of ["perk", "skill"]) {
