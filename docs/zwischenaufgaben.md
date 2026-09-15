@@ -683,11 +683,40 @@ Normal (4) gelingt in jedem zweiten Durchlauf von allein, Selten (5) einmal je F
 nur bei Feuer im p90, Episch (7) in Fenster 1 bei keiner Spielweise. **Pflanze liegt mit
 Grundfarben-Zählung exakt auf dem naiven Spieler**, die Regel aus §4.1 funktioniert also.
 
+**Gedränge, nachgemessen** (2026-09-15, `countBuiltFormations` an echten Läufen, bester Durchlauf je
+Fenster, 30 Seeds je Spielweise). Die frühere Zahl fiel unter die Sonden-Korrektur in §2.2 und ist
+ersetzt. Gemessen wird hier mit **`factionPolicy`**, weil die den Greedy-Solver in der Aufstellphase
+fährt; `randomPolicy` bestätigt die Reihenfolge unangetastet und misst deshalb nicht Gedränge,
+sondern einen Spieler, der die Phase gar nicht spielt.
+
+| Spielweise | Fenster | p25 | p50 | p75 | p90 | max | erreicht 15 / 25 / 35 / 45 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| naiv (kein Umbau) | F1 | 9 | 11 | 12 | 13 | 17 | 7 % / 0 % / 0 % / 0 % |
+| naiv (kein Umbau) | F2 | 11 | 14 | 16 | 19 | 25 | 47 % / 3 % / 0 % / 0 % |
+| Blitz | F1 | 17 | 18 | 20 | 21 | 23 | 93 % / 0 % / 0 % / 0 % |
+| Blitz | F2 | 18 | 20 | 22 | 25 | 26 | 100 % / 10 % / 0 % / 0 % |
+| Feuer | F1 | 17 | 19 | 20 | 21 | 23 | 100 % / 0 % / 0 % / 0 % |
+| Feuer | F2 | 19 | 21 | 23 | 24 | 25 | 100 % / 7 % / 0 % / 0 % |
+| Eis | F1 | 16 | 17 | 19 | 22 | 29 | 90 % / 3 % / 0 % / 0 % |
+| Eis | F2 | 17 | 19 | 21 | 25 | 30 | 87 % / 10 % / 0 % / 0 % |
+| Pflanze | F1 | 17 | 19 | 21 | 23 | 25 | 100 % / 3 % / 0 % / 0 % |
+| Pflanze | F2 | 23 | 25 | 26 | 29 | 32 | 100 % / 50 % / 0 % / 0 % |
+
+**Normal (15) ist für jeden, der die Aufstellphase überhaupt spielt, fast geschenkt** — 90 bis 100 %
+schon in Fenster 1. Das ist die unterste Stufe und soll das sein. **Selten (25) liegt über dem p90
+beider Fenster** außer bei Pflanze, **Sehr selten (35) und Episch (45) wurden in 300 gemessenen
+Fenstern nie erreicht**; das Beste über alle Läufe war **32**.
+
 **Korrektur zu einer früheren Aussage in dieser Reihe:** die Obergrenze für Formationen je Aufstellung
 ist **nicht** 21. Das war das Beste, was die Sim erreicht. Gemessen (Münz-Doku §2.5) gehen die Paare
 aus Position mal Formation bis 145, was bei mittlerer Länge 3,3 rund **45 distinkte Formationen**
-ergibt; der Münz-Deckel bindet ab 32 und trifft 1 % aller Durchläufe. Gedränge auf Episch sitzt damit
-auf dem beobachteten Maximum.
+ergibt; der Münz-Deckel bindet ab 32 und trifft 1 % aller Durchläufe.
+
+> **Und eine Korrektur der Korrektur.** Aus ihr wurde geschlossen, „Gedränge auf Episch sitzt auf dem
+> beobachteten Maximum". Das hält der Messung oben nicht stand. Die 145 Paare sind **beobachtet**,
+> die 45 distinkten Formationen sind aus 160 Paaren — dem vollen Brett — **hochgerechnet**. Beobachtet
+> ist 32. 45 ist also der arithmetische Deckel, nicht ein erreichter Wert, und 35 liegt ebenfalls
+> darüber.
 
 ### 4.5 Verworfene Aufgaben
 
