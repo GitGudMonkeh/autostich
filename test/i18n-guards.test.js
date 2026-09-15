@@ -626,6 +626,12 @@ describe("i18n · Terminologie", () => {
     // sichtbar, englisch liest sich dasselbe Wort als Nähbegriff (stitch). Die Marke folgt deshalb
     // derselben Abbildung wie das Wort darin (Stich → trick).
     { de: /\bAutostich\b/i,   ok: /\bAutotrick\b/i,  never: /\bAutostich\b/i,  name: "Autostich → Autotrick (Spieltitel)" },
+    /* 15.09.2026 (Owner): der Spielerbegriff für Feuer · Blitz · Eis · Pflanze heißt „Fraktion",
+       nicht mehr „Archetyp". Die Entscheidung steht hier und nicht nur im Style-Guide, weil eine
+       Vokabel, die niemand prüft, zurückdriftet: `never` fängt genau den Rückfall ab. Die
+       `archetype.*`-SCHLÜSSEL und `ARCHETYPE_META` bleiben englische Bezeichner (AGENTS.md) — die
+       Regel liest nur Werte. */
+    { de: /\bFraktion/i,      ok: /\bfaction/i,     never: /\barchetype\b/i,     name: "Fraktion → faction (nie „archetype“)" },
   ];
 
   /* Begriffstabelle SPANISCH — eingefroren am 26.08.2026 (#es-translate) aus

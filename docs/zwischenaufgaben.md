@@ -998,7 +998,17 @@ die Beutetexte und die Fortschrittsanzeige schreiben Fraktion. „Archetyp" wird
 > gleichauf, nicht mehrheitlich Archetyp. Die Entscheidung stand ohnehin dem Owner zu; die falsche
 > Zahl ändert aber den Umfang der Folgearbeit, deshalb steht die Korrektur hier.
 
-**Folgearbeit: den Begriff im Katalog nachziehen.** Gemessen über die reinen Katalogwerte:
+**Erledigt (2026-09-15): der Begriff ist umbenannt.** Vier deutsche Werte, 21 in den inaktiven
+Katalogen, dazu `docs/text-style-guide.md` (Zeile 47, §1c und drei Fließtextstellen). Stehen
+geblieben sind nur die vier `{archetype}`-Stellen — das ist ein **Platzhalter**, kein Wort, und ihn
+umzubenennen bräche die Einsetzung. Code-Bezeichner (`ARCHETYPE_META`, `archetype.*`) bleiben
+englisch, wie `AGENTS.md` es verlangt.
+
+> **Die Entscheidung steht jetzt in der Begriffstabelle**, nicht nur im Style-Guide:
+> `test/i18n-guards.test.js` führt `Fraktion → faction` mit `never: /archetype/`. Eine Vokabel, die
+> niemand prüft, driftet zurück; der Wächter fängt genau den Rückfall ab.
+
+Der Umfang zum Vergleich, gemessen über die reinen Katalogwerte vor der Umbenennung:
 
 | Katalog | `ready` | Archetyp | Fraktion |
 | --- | --- | --- | --- |

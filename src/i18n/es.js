@@ -1129,7 +1129,7 @@ export default {
   "guide.core": "Idea central",
   "guide.loop": "El bucle",
   "guide.principles": "Cómo se juega",
-  "guide.nav.archetypes": "Arquetipos",
+  "guide.nav.archetypes": "Facciones",
   "guide.nav.note": "La guía explica cómo se juega. Los términos y las reglas especiales están en el glosario.",
 
   /* ---- Deck detail ---- */

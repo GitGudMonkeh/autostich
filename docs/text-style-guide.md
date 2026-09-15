@@ -16,7 +16,7 @@ Gilt für **jeden** Text, den ein Spieler sieht: die Register in `src/game/`
 2. **Ein Wort = eine Bedeutung.** Kein Wort bezeichnet zwei Mechaniken (§1b) — das Glossar fettet
    Begriffe automatisch und zeigt genau **eine** Erklärung.
 3. **Was an einem Skill/Perk hängt, wird auch so gesagt.** Skill-gebundene Effekte nie als
-   Grundeigenschaft des Archetyps formulieren (§3).
+   Grundeigenschaft der Fraktion formulieren (§3).
 
 ---
 
@@ -44,7 +44,7 @@ Kurzerklärungen, aus `constants.js`/`glacier.js`/`rarity.js` gespeist und im Sp
 | **Direkt-Score** | Flat, Flat-Score | Score ohne Serien-/Crit-/Formations-Multiplikator |
 | **Crit** | Kritischer Treffer* | Sieg mit Crit-Multiplikator (*Langform ok im Fließtext) |
 | **Rarität** | Seltenheit, Seltenheitsstufe | Normal · Selten · Sehr selten · Rar (Namen aus `TIER_META`) |
-| **Archetyp** | Fraktion | Feuer · Blitz · Eis · Pflanze |
+| **Fraktion** | Archetyp | Feuer · Blitz · Eis · Pflanze |
 | **Neuwurf (Reroll)** | — | Angebot neu würfeln |
 
 \* **Die Ausnahme zu „Slot".** §1e reserviert „Position" für den festen Kartenplatz 1–40 —
@@ -62,7 +62,7 @@ Kurzerklärungen, aus `constants.js`/`glacier.js`/`rarity.js` gespeist und im Sp
 | **Formations-Energie** | Aufstell-Energie, Tausch-Energie | das Tausch-Budget dieser Phase |
 | **Multiplikator** / **Faktor** | Multi | — |
 
-### 1c. Archetypen
+### 1c. Fraktionen
 
 | Kanonisch | NICHT verwenden | Bedeutung (Kurz) |
 |---|---|---|
@@ -85,7 +85,7 @@ Kurzerklärungen, aus `constants.js`/`glacier.js`/`rarity.js` gespeist und im Sp
 | **Ausläufer / Kolonisieren** | — | Pflanze markiert Gegnerkarten grün |
 | **Konsument** | — | Skill, der eine Ressource für einen Effekt verbraucht |
 | **Verstärker** | — | Skill, der ohne seinen Basis-Skill nichts tut (`enabler`) |
-| **Bekenntnis** | Commitment | Anteil der Skill-Slots eines Archetyps |
+| **Bekenntnis** | Commitment | Anteil der Skill-Slots einer Fraktion |
 
 ### 1d. Architekt & Meta
 
@@ -144,7 +144,7 @@ Kurzerklärungen, aus `constants.js`/`glacier.js`/`rarity.js` gespeist und im Sp
 - **Voraussetzungen nennen.** Hängt ein Effekt an einem Skill, steht der Skill im Satz:
   „**Mit Glühender Klinge** schaltet hohe Hitze Schwellen-Boni frei", nicht „Hohe Hitze macht deine
   Karten stärker". Das gilt besonders in den Leitfäden (`src/ui/guides.js`), die sonst
-  skill-gebundene Effekte als Grundeigenschaft des Archetyps verkaufen.
+  skill-gebundene Effekte als Grundeigenschaft der Fraktion verkaufen.
 - **Verstärker markieren.** Skills mit `enabler` beginnen mit „Verstärker: …".
 - **Kein Selbstbezug.** Ein Perk/Skill/eine Familie nennt im eigenen Beschreibungstext nicht den
   eigenen Namen — der steht bereits als Überschrift darüber.
