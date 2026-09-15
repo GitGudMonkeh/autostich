@@ -221,21 +221,40 @@ export function contractReadout(state) {
   return { active, value, target, left, done: value >= target, tone: tierColor(STEP_TIER[active.step]) };
 }
 
+/* Die Kachel zeigt nur den STAND — „Reinheit 1/4" sagt nicht, was zu tun ist, und bei Reinheit und
+   Quartier fehlt damit sogar der gewürfelte Typ, also die halbe Aufgabe. Ein Klick klappt den Satz
+   auf, den der Spieler beim Annehmen gelesen hat (Owner, 2026-09-15). Zugeklappt, weil die Leiste
+   eng ist; der Zustand hält, solange ein Auftrag läuft. */
 export function ContractTile({ state }) {
+  const [open, setOpen] = useState(false);
   const r = contractReadout(state);
   if (!r) return null;
+  const band = CT.STEP_BAND[r.active.step] || [];
   return (
-    <div className="rounded-lg px-2.5 py-1.5 min-w-0" style={{ background: "#141419", border: `1px solid ${DECK_BORDER}` }}>
-      <div className="text-micro-3 uppercase tracking-wide opacity-50 truncate">
-        {t("contract.rail.label")} · {contractName(r.active)}
-      </div>
-      <div className="font-bold text-body-lg-5 leading-tight whitespace-nowrap overflow-hidden text-ellipsis"
-        style={{ color: r.done ? "#5ab87a" : r.tone }}>
-        {r.value}<span className="opacity-45">/{r.target}</span>
-        <span className="text-meta-1 opacity-45 ml-1">
-          {r.done ? t("contract.done") : t("contract.left", { count: r.left, n: r.left })}
-        </span>
-      </div>
+    <div className="rounded-lg min-w-0" style={{ background: "#141419", border: `1px solid ${DECK_BORDER}` }}>
+      <button type="button" onClick={() => setOpen((v) => !v)} data-sfx="none"
+        className="w-full text-left px-2.5 py-1.5 min-w-0" style={{ background: "transparent" }}
+        aria-expanded={open} title={contractText(r.active)}>
+        <div className="text-micro-3 uppercase tracking-wide opacity-50 truncate flex items-center gap-1">
+          <span className="inline-block w-2 text-center" aria-hidden="true">{open ? "▾" : "▸"}</span>
+          {t("contract.rail.label")} · {contractName(r.active)}
+        </div>
+        <div className="font-bold text-body-lg-5 leading-tight whitespace-nowrap overflow-hidden text-ellipsis"
+          style={{ color: r.done ? "#5ab87a" : r.tone }}>
+          {r.value}<span className="opacity-45">/{r.target}</span>
+          <span className="text-meta-1 opacity-45 ml-1">
+            {r.done ? t("contract.done") : t("contract.left", { count: r.left, n: r.left })}
+          </span>
+        </div>
+      </button>
+      {open && (
+        <div className="px-2.5 pb-2 pt-1 border-t" style={{ borderColor: DECK_BORDER }}>
+          <div className="text-body-5 opacity-80 leading-snug">{contractText(r.active)}</div>
+          <div className="text-meta-1 opacity-50 mt-1">
+            {t(`contract.step.${r.active.step}`)} · {t("contract.offer.band", { a: CT.tierLabel(band[0]), b: CT.tierLabel(band[1]) })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -243,18 +262,25 @@ export function ContractTile({ state }) {
 /* Eine Zeile für Aufstell- und Architekt-Overlay. Sie decken Leiste und Kopfleiste zu, und dahinter
    werden sechs der fünfzehn Aufgaben entschieden (docs/zwischenaufgaben.md §4.3). */
 export function ContractLine({ state, className = "" }) {
+  const [open, setOpen] = useState(false);
   const r = contractReadout(state);
   if (!r) return null;
   return (
-    <div className={`flex items-center gap-2 text-body-5 ${className}`}>
-      <span className="text-micro-3 uppercase tracking-wide opacity-50">{t("contract.rail.label")}</span>
-      <span className="font-bold">{contractName(r.active)}</span>
-      <span className="font-bold" style={{ color: r.done ? "#5ab87a" : r.tone }}>
-        {r.value}<span className="opacity-45">/{r.target}</span>
-      </span>
-      <span className="text-meta-1 opacity-45">
-        {r.done ? t("contract.done") : t("contract.left", { count: r.left, n: r.left })}
-      </span>
+    <div className={className}>
+      <button type="button" onClick={() => setOpen((v) => !v)} data-sfx="none"
+        className="flex items-center gap-2 text-body-5 text-left w-full" style={{ background: "transparent" }}
+        aria-expanded={open} title={contractText(r.active)}>
+        <span className="inline-block w-2 text-center opacity-50" aria-hidden="true">{open ? "▾" : "▸"}</span>
+        <span className="text-micro-3 uppercase tracking-wide opacity-50">{t("contract.rail.label")}</span>
+        <span className="font-bold">{contractName(r.active)}</span>
+        <span className="font-bold" style={{ color: r.done ? "#5ab87a" : r.tone }}>
+          {r.value}<span className="opacity-45">/{r.target}</span>
+        </span>
+        <span className="text-meta-1 opacity-45">
+          {r.done ? t("contract.done") : t("contract.left", { count: r.left, n: r.left })}
+        </span>
+      </button>
+      {open && <div className="text-body-5 opacity-80 leading-snug mt-1 pl-4">{contractText(r.active)}</div>}
     </div>
   );
 }

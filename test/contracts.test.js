@@ -4,6 +4,7 @@ import { DECISION_SCHEDULE } from "../src/game/constants.js";
 import { reducer } from "../src/game/reducer.js";
 import { SKILL_LIST, isLegendarySkill } from "../src/game/skills.js";
 import { computeFormations, openBorderInfo, FORMATION_TYPES } from "../src/game/formations.js";
+import de from "../src/i18n/de.js";
 
 /* ============================================================
    ZWISCHENAUFGABEN (Aufträge) — docs/zwischenaufgaben.md
@@ -421,6 +422,35 @@ describe("Aufträge · eine offene Grenze trägt die Formation wirklich über de
     expect(info.isOpen(0)).toBe(false);
     expect(info.active).toBe(true);
     expect(info.loot.has(1), "die Quelle bleibt unterscheidbar").toBe(true);
+  });
+});
+
+describe("Aufträge · der Aufgabentext nennt den gewürfelten Parameter", () => {
+  /* Die Kachel zeigt nur „Reinheit 1/4". Welcher FORMATIONSTYP gewürfelt wurde, steht allein im
+     Aufgabentext — ohne ihn fehlt die halbe Aufgabe. Genau das ist im Playtest aufgefallen
+     (Owner, 2026-09-15), deshalb hängt hier ein Wächter: wer einen Parameter würfelt, muss ihn im
+     Satz auch einsetzen, und wer keinen würfelt, darf keinen Platzhalter tragen. */
+  it("genau die Aufgaben mit `variants` tragen {variant} im deutschen Text", () => {
+    for (const task of CT.TASKS) {
+      const text = de[`contract.task.${task.id}.text`];
+      expect(text, `Text fehlt: ${task.id}`).toBeTruthy();
+      expect(text.includes("{variant}"), `${task.id}: {variant} im Text`).toBe(!!task.variants);
+    }
+  });
+
+  it("jede gewürfelte Variante hat einen übersetzten Namen", () => {
+    for (const task of CT.TASKS) {
+      for (const v of task.variants || []) {
+        const key = `contract.${task.variantKey === "category" ? "category" : "formation"}.${v.id}`;
+        expect(de[key], `fehlender Name: ${key}`).toBeTruthy();
+      }
+    }
+  });
+
+  it("jede Aufgabe trägt {n} — ohne die Zahl steht keine Schwelle im Satz", () => {
+    for (const task of CT.TASKS) {
+      expect(de[`contract.task.${task.id}.text`].includes("{n}"), task.id).toBe(true);
+    }
   });
 });
 
