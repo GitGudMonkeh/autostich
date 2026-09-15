@@ -1,7 +1,7 @@
 # Zwischenaufgaben (exp) — Planungsdokument
 
 **Status: lebendes Dokument.** Beutekatalog und Aufgaben-Katalog sind durchdesignt und vom Owner Wert
-für Wert abgenommen (2026-09-14). Offen sind die neun Punkte in §10; danach ist das Dokument
+für Wert abgenommen (2026-09-14). Offen sind die acht Punkte in §10; danach ist das Dokument
 umsetzungsreif.
 
 Entscheidungen des Owners stehen unter **Gesetzt**. Alles unter **Vorschlag** ist Diskussionsstand und
@@ -723,33 +723,30 @@ bei D30 nur in 5. Das ist keine Schieflage, sondern der Zweck.
 
 ## 10. Offene Punkte
 
-1. **Aufstellung hat nur noch eine Familie.** Zieht die Beute je Kategorie, ist Freizug viermal so
-   häufig wie jede Münz-Familie. Zieht sie je Familie, kommt aus der Aufstellphase fast nie etwas.
-   Der Ziehungs-Modus ist damit eine Entscheidung, die vorher nicht nötig war.
-2. **Zwei Stufen brechen ihr Satzmuster.** Lehrbrief IV wechselt von „Skills steigen" zu
+1. **Zwei Stufen brechen ihr Satzmuster.** Lehrbrief IV wechselt von „Skills steigen" zu
    „Aufwertungen kosten die Hälfte", Freibrief II von „dritte Tür" zu „Fokus rufen ist gratis".
    Gedeckt durch die Regel des Skill-Reworks („Episch hat ein kleines Extra"), aber gegen das
    Stufenmuster aus dem Style-Guide.
-3. **Veredelung und Freibrief IV ziehen am selben Hebel.** Veredelung hebt die Stufe des
+2. **Veredelung und Freibrief IV ziehen am selben Hebel.** Veredelung hebt die Stufe des
    Skill-Angebots garantiert, Freibrief IV erhöht die Chance auf Episch und Legendär. Wenn eine davon
    etwas anderes tun soll, dann Freibrief: dort ist die Auswahl das Thema, nicht die Güte.
-4. **Archetyp oder Fraktion.** Der Style-Guide setzt **Archetyp** als kanonisch, die exp-Dokumente
+3. **Archetyp oder Fraktion.** Der Style-Guide setzt **Archetyp** als kanonisch, die exp-Dokumente
    schreiben durchgehend „Fraktion". Im deutschen Katalog steht es 13 zu 8 für Archetyp. Zu
    entscheiden, bevor die Aufgabentexte geschrieben werden.
 
 Dazu vier Punkte aus §3 und §4, die ebenfalls beim Owner liegen:
 
-5. **Die Gewichtung innerhalb eines Beute-Bandes.** Vorschlag 70 zu 30 zugunsten der unteren
+4. **Die Gewichtung innerhalb eines Beute-Bandes.** Vorschlag 70 zu 30 zugunsten der unteren
    Rarität (§3.2). Auf der vierten Stufe ist das zugleich der Legendär-Satz.
-6. **Säckel im ersten Fenster.** Die Stufen 100 und 120 sind bis D15 arithmetisch unmöglich, weil das
+5. **Säckel im ersten Fenster.** Die Stufen 100 und 120 sind bis D15 arithmetisch unmöglich, weil das
    Gesamteinkommen dort 64 bis 72 Münzen beträgt (§4.3). Entweder niedrigere obere Stufen, oder Säckel
    wird in Fenster 1 nur bis Selten angeboten.
-7. **Treppe und Wechsel bei Reinheit.** Die beiden Leitern (4·5·6·8 und 5·7·9·11) sind Vorschlag aus
+6. **Treppe und Wechsel bei Reinheit.** Die beiden Leitern (4·5·6·8 und 5·7·9·11) sind Vorschlag aus
    den gemessenen Typanteilen, nicht Owner-Entscheid.
-8. **Wo genau sitzt die Fortschrittsanzeige?** `StatusRail.jsx` ist der Kandidat, bestätigt ist es
+7. **Wo genau sitzt die Fortschrittsanzeige?** `StatusRail.jsx` ist der Kandidat, bestätigt ist es
     nicht. Das Mockup schlägt den Platz **über** den Multiplikatoren vor, weil der Auftrag das einzige
     Element der Leiste mit einer Frist ist.
-9. **Erscheint der Grundfarben-Ring dauerhaft** oder nur, solange ein Buntspiel-Auftrag läuft (§4.1).
+8. **Erscheint der Grundfarben-Ring dauerhaft** oder nur, solange ein Buntspiel-Auftrag läuft (§4.1).
 
 **Erledigt:** Die vier Aufgabenstufen heißen **Leicht, Mittel, Schwer, Sehr schwer** (§3.2).
 Farbtreue würfelt keine Farbe (§3.6). Der Grundfarben-Marker ist ein Ring um das Blatt,
@@ -757,6 +754,13 @@ nicht ein eigener Punkt (§4.1). Die Beute steht nicht in der laufenden Anzeige 
 
 **Erledigt:** „Wird die Stufe angekündigt" ist beantwortet: die Stufe steht am Angebot, die Beute
 nicht (§3.1).
+
+**Gesetzt (Owner, 2026-09-15): die Beute wird JE FAMILIE gezogen, nicht je Kategorie.** Alle
+dreizehn Familien sind damit gleich wahrscheinlich (7,7 % je Stück). Je Kategorie gezogen käme
+Freizug auf 16,7 % und jede Münz-Familie auf 5,6 %, also **das Dreifache** für die einzige Familie
+der Aufstellung; dass Freizug dreimal so oft erscheint wie Zehrgeld, wäre in einer gemeinsamen Liste
+nicht erklärbar. Für Streuung über die Kategorien sorgt bereits die Regel „keine Kategorie doppelt".
+Der Preis ist bewusst in Kauf genommen: aus der Aufstellphase kommt nur jedes dreizehnte Stück.
 
 **Folgearbeit (Owner, 2026-09-15): alle Neuwürfe bekommen einen Deckel von 3 je Phase.** Gebaut
 wird er, wenn die offenen Punkte durch sind. Damit bleiben Nachlass und Freilos unverändert: der
