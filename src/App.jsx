@@ -17,7 +17,8 @@ import { fmtDuration } from "./game/deck.js";
 import { setLocale, t } from "./i18n/index.js"; // #sprache: Anzeigesprache aus den Optionen
 import { useBackGuard } from "./ui/useBackGuard.js";
 import { StatusRail } from "./ui/StatusRail.jsx";
-import { ContractOffer, ContractLoot } from "./ui/ContractPhase.jsx"; // Zwischenaufgaben — nur im Auftragslauf
+import { ContractOffer, ContractLoot, ContractSkillPick } from "./ui/ContractPhase.jsx"; // Zwischenaufgaben — nur im Auftragslauf
+import { upgradableSkills } from "./game/contracts.js"; // Vollendung: legendäre Skills tragen keine Stufe und stehen nicht zur Wahl
 import { useIsWide, DESKTOP_MIN, PHONE_MAX } from "./ui/useIsWide.js"; // #buehne: Musik/Meilenstein ziehen ab 1280 px in die Leiste (DOM-Umzug) · #mobil-emblem: dieselben zwei Schwellen für den Emblem-Vorlader
 import { StatusBar } from "./ui/StatusBar.jsx"; // Gameplay-Neu-Aufbau Phase 1: schwebende Kompakt-Leiste (Vitals + Pause/Tempo/Karten)
 import { architectCoverFor } from "./ui/architectCover.js"; // Lauf-Details: Gebäude-Overlay in den Snapshot persistieren
@@ -1281,6 +1282,11 @@ function AutostichGame() {
       {state.contractsEnabled && (state.contracts?.pendingLoot || []).length > 0 && (
         <ContractLoot pieces={state.contracts.pendingLoot}
           onPick={(p) => dispatch({ type: "PICK_LOOT", lootId: p.id, tier: p.tier })} />
+      )}
+      {state.contractsEnabled && state.contracts?.pendingSkillPick && (
+        <ContractSkillPick skills={upgradableSkills(state)} skillTiers={state.skillTiers || {}}
+          rest={state.contracts.pendingSkillPick.rest || 0}
+          onPick={(id) => dispatch({ type: "PICK_CONTRACT_SKILL", skillId: id })} />
       )}
 
       {state.phase === "formation" && (

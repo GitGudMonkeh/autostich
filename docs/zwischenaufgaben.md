@@ -45,7 +45,8 @@ seine eigene Zahl unverändert zurück — geprüft, Zugriff für Zugriff.
 | Familie | Lesestelle |
 | --- | --- |
 | Zehrgeld · Baurecht · Stadtrecht | sofort beim Nehmen (`applyLoot`) |
-| Lehrbrief · Aufstockung · Vollendung | sofort beim Nehmen, höchste ausbaufähige Stufe zuerst |
+| Lehrbrief · Aufstockung | sofort beim Nehmen, höchste ausbaufähige Stufe zuerst |
+| Vollendung | eigener Auswahlschritt (`PICK_CONTRACT_SKILL`) |
 | Münzrecht | `engine.js` — Auszahlung am Durchlaufende |
 | Freizug | `formationEnergyFor`; Stufe IV zusätzlich `CONFIRM_FORMATION` |
 | Ablass | `DECLINE_SKILL` und `DECLINE_PERK` |
@@ -54,12 +55,21 @@ seine eigene Zahl unverändert zurück — geprüft, Zugriff für Zugriff.
 | Auslage · Beschau · Reliquiar | `engine.js` — Bau des Perk-Angebots |
 | Freibrief · Veredelung | `engine.js` — `buildSkillDoors` und die Stufen der Türen |
 
-> **Eine bewusste Abweichung, damit sie niemand für einen Fehler hält.** Vollendung sagt „ein
-> gehaltener Skill **deiner Wahl** wird sofort episch". Gebaut ist kein Auswahlschritt: das Spiel
-> nimmt den am weitesten ausgebauten Skill, also den, in den schon investiert wurde. Ein eigener
-> Picker wäre die treuere Umsetzung und ist Nacharbeit. Aus demselben Grund heben Lehrbrief und
-> Aufstockung die **höchsten** ausbaufähigen Stufen zuerst — die Stufenpreise (12 · 25 · 40) und die
-> Gebäudefaktoren (1 · 1,5 · 2,2 · 3,1) steigen überproportional, der obere Schritt ist der wertvollere.
+**Vollendung hat ihren eigenen Auswahlschritt** (2026-09-15). „Ein gehaltener Skill **deiner Wahl**
+wird sofort episch" heißt jetzt genau das: beim Nehmen ändert sich noch nichts, stattdessen öffnet
+sich ein drittes Overlay mit den gehaltenen Skills, und erst die Wahl wirkt. Die frühere
+Auto-Auswahl ist damit zurückgenommen.
+
+> **Beim Bauen des Pickers gefunden und mitrepariert:** legendäre Skills stehen in `state.skills` wie
+> jeder andere, tragen aber **keine Stufe** — `UPGRADE_SKILL` weist sie aus genau dem Grund ab. Meine
+> Hebungen taten das nicht: Lehrbrief hätte einem Legendären eine Stufe erfunden und Vollendung hätte
+> es zur Wahl gestellt. Beides läuft jetzt über `upgradableSkills`, und hält ein Lauf **nur**
+> Legendäre, entfällt die Auswahl ersatzlos, statt ein Fenster zu öffnen, aus dem niemand herauskommt.
+
+> Lehrbrief und Aufstockung heben weiterhin die **höchsten** ausbaufähigen Stufen zuerst — die
+> Stufenpreise (12 · 25 · 40) und die Gebäudefaktoren (1 · 1,5 · 2,2 · 3,1) steigen überproportional,
+> der obere Schritt ist der wertvollere. Dort gibt es nichts zu wählen: die Familie nennt eine Anzahl,
+> keinen Skill.
 
 > **Zwei Regeln, die nur zusammen stimmen.** Freilos IV („der legendäre Neuwurf kostet den normalen
 > Preis") und Nachlass greifen beide am Preis. Sie werden **nacheinander** gerechnet, erst der normale

@@ -1644,6 +1644,12 @@ export default {
   "contract.loot.nachlass.t3": "Jeder Neuwurf kostet ein Viertel des Preises.",
   "contract.loot.nachlass.t4": "Neuwürfe kosten nichts mehr, bei Skills, Perks und Gebäuden.",
 
+  "contract.skillpick.title": "Vollendung",
+  "contract.skillpick.sub": "Wähle den Skill, der sofort episch wird. Alle anderen gehaltenen Skills steigen um {n} Stufe.",
+  "contract.skillpick.sub.only": "Wähle den Skill, der sofort episch wird.",
+  "contract.skillpick.from": "steht auf {tier}",
+  "contract.skillpick.take": "Vollenden",
+
   "contract.leg.reliquiar.name": "Reliquiar",
   "contract.leg.reliquiar.text": "Drei legendäre Perks stehen zur Wahl.",
   "contract.leg.vollendung.name": "Vollendung",

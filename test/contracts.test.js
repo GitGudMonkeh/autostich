@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import * as CT from "../src/game/contracts.js";
 import { DECISION_SCHEDULE } from "../src/game/constants.js";
 import { reducer } from "../src/game/reducer.js";
+import { SKILL_LIST, isLegendarySkill } from "../src/game/skills.js";
 
 /* ============================================================
    ZWISCHENAUFGABEN (Aufträge) — docs/zwischenaufgaben.md
@@ -269,12 +270,23 @@ describe("Aufträge · Sofortwirkungen greifen beim Nehmen", () => {
     expect(p.skillTiers).toEqual({ a: 1, b: 3, c: 3 });
   });
 
-  it("Vollendung macht einen Skill episch und hebt die übrigen um eins", () => {
+  it("Vollendung WÄHLT nicht selbst — sie stellt die Auswahl", () => {
     const s = { ...base, skillTiers: { a: 0, b: 2, c: 1 } };
     const p = CT.applyLoot(s, { kind: "legendary", id: "vollendung", tier: 5, effect: { skillToEpic: 1, skillUpRest: 1 } });
-    expect(p.skillTiers.b).toBe(3);   // der am weitesten ausgebaute wird episch
-    expect(p.skillTiers.a).toBe(1);
+    expect(p.skillTiers, "Vollendung darf beim Nehmen nichts an den Stufen ändern").toBeUndefined();
+    expect(p.pendingSkillPick).toEqual({ rest: 1 });
+  });
+
+  it("die getroffene Wahl macht GENAU den gewählten episch, die übrigen steigen", () => {
+    const s = { ...base, skillTiers: { a: 0, b: 2, c: 1 } };
+    const p = CT.applySkillPick(s, "a", 1);
+    expect(p.skillTiers.a).toBe(3);   // der GEWÄHLTE, nicht der am weitesten ausgebaute
+    expect(p.skillTiers.b).toBe(3);
     expect(p.skillTiers.c).toBe(2);
+  });
+
+  it("ein Skill, den der Lauf nicht hält, wird abgewiesen", () => {
+    expect(CT.applySkillPick(base, "gibtsnicht", 1)).toBe(null);
   });
 
   it("Aufstockung hebt gebaute Gebäude, Legendäre ohne Stufe bleiben unberührt", () => {
@@ -287,6 +299,36 @@ describe("Aufträge · Sofortwirkungen greifen beim Nehmen", () => {
     const s = { ...base, architect: { maxCover: 24, buildings: [] } };
     const p = CT.applyLoot(s, { kind: "legendary", id: "stadtrecht", tier: 5, effect: { coverUncapped: true } });
     expect(p.architect.maxCover).toBe(Infinity);
+  });
+});
+
+describe("Aufträge · legendäre Skills tragen keine Stufe", () => {
+  /* Sie stehen in `state.skills` wie jeder andere, aber UPGRADE_SKILL weist sie ab. Jede Hebung der
+     Beute muss sie deshalb ausdrücklich überspringen — sonst erfindet Lehrbrief für ein Legendäres
+     eine Stufe, die es nicht gibt. Der Test nimmt eine ECHTE legendäre id aus dem Katalog. */
+  const legendary = SKILL_LIST.map((x) => x.id).find((id) => isLegendarySkill(id));
+  const normal = SKILL_LIST.map((x) => x.id).filter((id) => !isLegendarySkill(id)).slice(0, 2);
+
+  it("der Katalog hat überhaupt ein legendäres — sonst prüft dieser Test nichts", () => {
+    expect(legendary, "kein legendärer Skill im Katalog").toBeTruthy();
+  });
+
+  it("upgradableSkills lässt Legendäre draußen", () => {
+    const s = { skills: [...normal, legendary], skillTiers: {} };
+    expect(CT.upgradableSkills(s)).toEqual(normal);
+  });
+
+  it("Lehrbrief hebt kein legendäres, auch wenn es das einzige gehaltene ist", () => {
+    const s = { contractsEnabled: true, contractBoons: {}, skills: [legendary], skillTiers: {} };
+    const p = CT.applyLoot(s, { kind: "family", id: "lehrbrief", tier: 1, effect: { skillUp: 1, steps: 1 } });
+    expect(p.skillTiers).toEqual({});
+  });
+
+  it("Vollendung stellt keine Auswahl, wenn nur Legendäre gehalten werden — sonst käme niemand heraus", () => {
+    const s = { contractsEnabled: true, contractBoons: {}, skills: [legendary], skillTiers: {} };
+    const p = CT.applyLoot(s, { kind: "legendary", id: "vollendung", tier: 5, effect: { skillToEpic: 1, skillUpRest: 1 } });
+    expect(p.pendingSkillPick).toBe(null);
+    expect(CT.applySkillPick(s, legendary, 1)).toBe(null);
   });
 });
 
@@ -322,6 +364,24 @@ describe("Aufträge · der normale Lauf bleibt unberührt", () => {
     expect(after.contracts.active.taskId).toBe(chosen.taskId);
     expect(after.contracts.offers).toEqual([]);
     expect(after.contracts.usedTasks).toContain(chosen.taskId);
+  });
+
+  it("Vollendung führt über den Reducer zur Auswahl und dann zur Wirkung", () => {
+    const s = start({ contracts: true });
+    const piece = { kind: "legendary", id: "vollendung", tier: 5, effect: { skillToEpic: 1, skillUpRest: 1 } };
+    const armed = { ...s, skills: ["s1", "s2"], skillTiers: { s1: 0, s2: 1 },
+      contracts: { ...s.contracts, pendingLoot: [piece] } };
+    const chosen = reducer(armed, { type: "PICK_LOOT", lootId: "vollendung", tier: 5 });
+    expect(chosen.contracts.pendingSkillPick).toEqual({ rest: 1 });
+    expect(chosen.skillTiers, "beim Nehmen ändert sich noch nichts").toEqual({ s1: 0, s2: 1 });
+    const done = reducer(chosen, { type: "PICK_CONTRACT_SKILL", skillId: "s1" });
+    expect(done.skillTiers).toEqual({ s1: 3, s2: 2 });
+    expect(done.contracts.pendingSkillPick).toBe(null);
+  });
+
+  it("die Skill-Wahl tut im normalen Lauf NICHTS", () => {
+    const s = start();
+    expect(reducer(s, { type: "PICK_CONTRACT_SKILL", skillId: "s1" })).toBe(s);
   });
 
   it("ein Beutestück wirkt und verbraucht die Auslage", () => {

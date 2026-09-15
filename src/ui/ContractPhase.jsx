@@ -11,6 +11,7 @@ import { PHASE_ACCENTS, phaseCard, PhaseHairline, DECK_BORDER } from "./modalSty
 import { overlayPortal } from "./overlayPortal.jsx"; // Pflicht für jedes Vollbild-Overlay (test/overlay-nesting.test.js)
 import { t } from "../i18n/index.js";
 import { TIER_META } from "../game/rarity.js";
+import { skillDef } from "../i18n/labels.js"; // übersetzter Skill-Name, EINE Quelle
 import { LEGENDARY_GOLD } from "./indicators/vocab.js"; // EINE Quelle für das Legendär-Gold (test/legendary-gold.test.js)
 import * as CT from "../game/contracts.js";
 
@@ -124,6 +125,33 @@ export function ContractLoot({ pieces = [], onPick }) {
               body={lootText(p)}
               cta={t("contract.loot.take")}
               onPick={() => onPick && onPick(p)} />
+          );
+        })}
+      </div>
+    </Overlay>
+  );
+}
+
+/* --- Vollendung: der eine Skill, der episch wird ------------------------------------------------
+   Das einzige Beutestück mit einer eigenen Wahl. „Ein gehaltener Skill DEINER WAHL" — also ein
+   Schritt, kein Automatismus. Legendäre Skills stehen nicht zur Wahl: sie tragen keine Stufe. */
+
+export function ContractSkillPick({ skills = [], skillTiers = {}, rest = 0, onPick }) {
+  return (
+    <Overlay>
+      <Head title={t("contract.skillpick.title")}
+        sub={rest > 0 ? t("contract.skillpick.sub", { n: rest }) : t("contract.skillpick.sub.only")} />
+      <div className="grid gap-3 sm:grid-cols-3">
+        {skills.map((id) => {
+          const def = skillDef(id);
+          const cur = skillTiers[id] ?? 0;
+          return (
+            <PickCard key={id} tone={tierColor(CT.TIER_LEGENDARY)}
+              chip={t("contract.skillpick.from", { tier: CT.tierLabel(cur + 1) })}
+              title={(def && def.name) || id}
+              body={(def && def.desc) || ""}
+              cta={t("contract.skillpick.take")}
+              onPick={() => onPick && onPick(id)} />
           );
         })}
       </div>

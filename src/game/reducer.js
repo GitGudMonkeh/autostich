@@ -468,9 +468,20 @@ export function reducer(state, action) {
       if (!state.contractsEnabled || !c || !(c.pendingLoot || []).length) return state;
       const piece = c.pendingLoot.find((p) => p.id === action.lootId && p.tier === action.tier);
       if (!piece) return state;
-      const patch = CT.applyLoot(state, piece) || {};
+      const { pendingSkillPick, ...patch } = CT.applyLoot(state, piece) || {};
+      /* Vollendung bringt eine Auswahl statt einer Wirkung mit. Sie gehört in den Auftrags-Zustand,
+         nicht in den Lauf-Zustand — sonst müsste jeder andere Codepfad sie kennen. */
       return { ...state, ...patch,
-        contracts: { ...c, pendingLoot: null, taken: [...(c.taken || []), { id: piece.id, tier: piece.tier }] } };
+        contracts: { ...c, pendingLoot: null, pendingSkillPick: pendingSkillPick || null,
+                     taken: [...(c.taken || []), { id: piece.id, tier: piece.tier }] } };
+    }
+
+    case "PICK_CONTRACT_SKILL": { // Vollendung: DER gewählte Skill wird episch, die übrigen steigen
+      const c = state.contracts;
+      if (!state.contractsEnabled || !c || !c.pendingSkillPick) return state;
+      const applied = CT.applySkillPick(state, action.skillId, c.pendingSkillPick.rest || 0);
+      if (!applied) return state;
+      return { ...state, ...applied, contracts: { ...c, pendingSkillPick: null } };
     }
 
     case "TO_MENU":     // laufenden Run verlassen (#5)

@@ -13,6 +13,7 @@ import { FORMATION_TYPES, SEGMENT_SIZE, countBuiltFormations } from "./formation
 import { TIER_META } from "./rarity.js";
 import { ROWS as ARCH_ROWS, COLS as ARCH_COLS, posOf as archPos, familyDef, MAX_TIER as ARCH_MAX_TIER } from "./architect.js";
 import { MAX_SKILL_TIER } from "./coins.js";
+import { isLegendarySkill } from "./skills.js";
 
 /* ------------------------------------------------------------------------------------------------
    Windows and steps
@@ -396,13 +397,32 @@ export function tallyPure(tally, state, variantId) {
    Lehrbrief hebt die am weitesten ausgebauten Skills zuerst: die Stufe ist superlinear bezahlt
    (12 · 25 · 40), also ist der obere Schritt der wertvollere. Aus demselben Grund hebt Aufstockung
    die höchsten ausbaufähigen Gebäude — TIER_FACTOR steigt mit 1 · 1,5 · 2,2 · 3,1. */
+/* Legendäre Skills tragen KEINE Stufe (UPGRADE_SKILL weist sie aus demselben Grund ab). Sie stehen in
+   `state.skills` wie jeder andere, also muss jede Hebung sie ausdrücklich überspringen — sonst hebt
+   Lehrbrief ein Legendäres auf „Episch" und erfindet eine Stufe, die es nicht gibt. */
+export const upgradableSkills = (state) =>
+  (state.skills || []).filter((id) => !isLegendarySkill(id));
+
 function raiseSkills(state, count, steps) {
   const tiers = { ...(state.skillTiers || {}) };
-  const open = (state.skills || [])
+  const open = upgradableSkills(state)
     .filter((id) => (tiers[id] ?? 0) < MAX_SKILL_TIER)
     .sort((a, b) => (tiers[b] ?? 0) - (tiers[a] ?? 0));
   for (const id of open.slice(0, count)) tiers[id] = Math.min(MAX_SKILL_TIER, (tiers[id] ?? 0) + steps);
   return tiers;
+}
+
+/* Vollendung: „ein gehaltener Skill DEINER WAHL wird episch, alle anderen steigen um eine Stufe."
+   Die Wahl ist ein eigener Schritt, kein Automatismus — deshalb rechnet applyLoot hier nichts, sondern
+   stellt die Auswahl, und diese Funktion führt sie aus, sobald der Spieler gewählt hat. */
+export function applySkillPick(state, skillId, rest = 0) {
+  const open = upgradableSkills(state);
+  if (!open.includes(skillId)) return null;
+  const tiers = { ...(state.skillTiers || {}) };
+  for (const id of open) {
+    tiers[id] = id === skillId ? MAX_SKILL_TIER : Math.min(MAX_SKILL_TIER, (tiers[id] ?? 0) + rest);
+  }
+  return { skillTiers: tiers };
 }
 
 function raiseBuildings(state, count) {
@@ -435,16 +455,11 @@ export function applyLoot(state, piece) {
     if (arch) patch.architect = { ...(patch.architect || {}), ...arch };
   }
   if (e.skillUp) patch.skillTiers = raiseSkills(state, e.skillUp, e.steps || 1);
+  /* Vollendung stellt eine AUSWAHL statt sie zu treffen. Hält der Lauf keinen stufbaren Skill, gibt es
+     nichts zu wählen — dann entfällt der Schritt ersatzlos, statt ein leeres Fenster zu öffnen, aus dem
+     niemand herauskommt. */
   if (e.skillToEpic) {
-    /* Vollendung: „ein gehaltener Skill deiner Wahl wird episch". Ohne eigenen Auswahlschritt nimmt
-       das Spiel den am weitesten ausgebauten — der, in den schon investiert wurde. Ein Picker wäre
-       die treuere Umsetzung und steht als Nacharbeit im Dokument. */
-    const tiers = { ...(state.skillTiers || {}) };
-    const held = (state.skills || []).filter((id) => Number.isInteger(tiers[id] ?? 0));
-    const top = [...held].sort((a, b) => (tiers[b] ?? 0) - (tiers[a] ?? 0))[0];
-    for (const id of held) if (id !== top) tiers[id] = Math.min(MAX_SKILL_TIER, (tiers[id] ?? 0) + (e.skillUpRest || 0));
-    if (top) tiers[top] = MAX_SKILL_TIER;
-    patch.skillTiers = tiers;
+    patch.pendingSkillPick = upgradableSkills(state).length ? { rest: e.skillUpRest || 0 } : null;
   }
   if (e.thirdDoor) boons.thirdDoor = e.thirdDoor === "run" ? "run" : (state.cycle || 0) + e.thirdDoor * 4;
   if (e.highTierChance) boons.highTierChance = true;
