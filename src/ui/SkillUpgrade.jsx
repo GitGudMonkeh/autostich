@@ -15,7 +15,7 @@ import { CoinAmount } from "./CoinMark.jsx";
 import { BuyConfirm } from "./BuyConfirm.jsx"; // §3.5/§3.6: Aufwerten fragt IMMER nach — die Regel gilt je Bildschirm, nicht je Preis
 import { GlossaryText } from "./Glossary.jsx";
 import { archetypeOf, isLegendarySkill, tierOf } from "../game/skills.js";
-import { upgradeBuy } from "../game/coins.js";
+import { upgradeBuy, upgradeSortKey } from "../game/coins.js";
 import { skillDef, archMeta } from "../i18n/labels.js";
 import { t } from "../i18n/index.js";
 
@@ -109,7 +109,11 @@ export function SkillUpgrade({ state = {}, onUpgrade, onClose }) {
   const coins = state.coins || 0;
   // Legendäre tragen keine Stufe und stehen deshalb gar nicht erst in der Liste — ein ausgegrauter
   // „Höchste Stufe"-Eintrag wäre eine Auskunft über eine Leiter, auf der sie nie standen.
-  const ids = (state.skills || []).filter((id) => !isLegendarySkill(id));
+  // Reihenfolge: `upgradeSortKey` (coins.js) — billigste Aufwertung oben, „höchste Stufe" ans Ende. Der Schlüssel
+  // hängt nur an der Stufe, nicht am Kontostand: sonst sprängen die Zeilen nach jedem Kauf durcheinander.
+  // Gleichstand behält die Pick-Reihenfolge (stabile Sortierung).
+  const upPrice = (id) => upgradeSortKey(upgradeBuy({ coins }, tierOf(state, id)));
+  const ids = (state.skills || []).filter((id) => !isLegendarySkill(id)).sort((a, b) => upPrice(a) - upPrice(b));
   const raise = () => { setJustRaised(ask.id); onUpgrade?.(ask.id); setAsk(null); };
   return overlayPortal((
     <div className="fixed inset-0 overlay-root z-30 flex items-center justify-center p-4"

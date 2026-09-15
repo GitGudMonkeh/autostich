@@ -89,6 +89,18 @@ import { randomPolicy } from "../sim/policies/random.js";
 // unabhängig vom Rest des Builds, und die neuen Sprossen verwerten angesammelte Masse, die vorher linear verfiel.
 // Seeds 1..40 Median ≈ 3,79M, Mean ≈ 8,35M (Seeds 1..200: 3,98M / 8,41M — dasselbe Niveau, der Mean hängt also
 // nicht an einem einzelnen Ausreißer). Das Median-Band ist darauf neu zentriert (≈ ±35 %), das Mean-Band bleibt.
+// Owner-Runde 2026-09-14 (Architekt-Balance: 33 Basiswerte ins Band 180–230, Rundung auf 0/5, target-Fix):
+// BEIDE Bänder halten, sie sind NICHT angefasst worden — Seeds 1..40 Median 10,23M, Mean 21,14M. Der Weg
+// dahin ist der eigentliche Eintrag: der erste Wurf der Wert-Leitern (1/3/5/7 auf den Formations-Gebäuden)
+// riss den Mean auf 32,31M, und zwar über EINEN Lauf (Seed 34: 23M → 443M, der größte Lauf vorher lag bei
+// 175M). Der Median bewegte sich dabei kaum (9,83 → 10,92M). Genau diese Signatur — Median ruhig, Schwanz
+// explodiert — ist der Grund, warum hier BEIDE Kennzahlen stehen; ein Median-Guard allein hätte es durchgelassen.
+// Ursache war ein Modellfehler im Entwurf, nicht die Zahl an sich: die Leiter legt +Wert auf die Zellen von
+// JOKER-Gebäuden, und die stehen auf den formationsdichten Feldern, wo ein gekippter Stich ein Vielfaches der
+// Siegbasis wert ist. Der Sweep über die Leiter zeigt die Kante scharf zwischen IV=6 und IV=7:
+//   1/2/3/4 → Median 9,84M · Mean 21,12M · max 147M
+//   1/3/4/6 → Median 10,23M · Mean 21,14M · max 147M   ← gesetzt
+//   1/3/5/7 → Median 10,92M · Mean 32,31M · max 443M   ← Runaway
 describe("sim balance guard", () => {
   const SEEDS = 40; // feste Seeds 1..40 → deterministischer Median/Mean
   const scores = Array.from({ length: SEEDS }, (_, i) => runOne(1 + i, randomPolicy()).score).sort((a, b) => a - b);

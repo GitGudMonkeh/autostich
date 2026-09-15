@@ -18,6 +18,7 @@ import { CATEGORIES as ARCH_CATEGORIES } from "../game/architect.js";  // #rd-za
 import { romanOf, tierMeta } from "../game/rarity.js";
 import { archFamily, archCatDef, archMeta, perkCat, perkDef, skillDef, familyDef } from "../i18n/labels.js"; // #sprache: Namen zur Anzeigezeit
 import { t, fmtNum } from "../i18n/index.js";
+import { LEGENDARY_GOLD } from "./indicators/vocab.js"; // eine Quelle für das Gold der Seltenheitsstufe „legendär"
 
 /* #169 FB-8: Detailansicht eines Bestenlisten-Eintrags (lokal ODER global) — Overlay über der Liste, zeigt
    denselben Statblock wie der eigene Victory-Screen (RunStats). Escape/Klick-außen schließt. `entry` ist bereits
@@ -141,7 +142,7 @@ function buildingFields(buildings, cover) {
     const meta = archCatDef(fam.category) || {};
     by.get(fam.category).push(entryOf(b.id, fam.name,
       fam.legendary ? t("arch.legendaryCap") : t("arch.tier", { tier: romanOf(b.tier) }),
-      cover?.[anchor]?.effects?.join(" · ") || "", fam.legendary ? "#d4a63a" : (meta.color || "#8a8a92")));
+      cover?.[anchor]?.effects?.join(" · ") || "", fam.legendary ? LEGENDARY_GOLD : (meta.color || "#8a8a92")));
   }
   return ARCH_CATEGORIES.map((k) => {
     const m = archCatDef(k) || {};
@@ -417,7 +418,7 @@ export function RunDetail({ entry, rank = null, onClose, anonymized = false, onP
                              CTA und nichts anderem (MENU-50, richtig verweigert). */
                           style={{ background: on ? "#12313f" : "#191922", border: `1px solid ${on ? "#5ec8f0" : "var(--ed-quiet)"}`, boxShadow: on ? "0 0 8px #5ec8f055" : undefined }}>
                           <span className="inline-flex items-center gap-1.5 flex-wrap">
-                            <FormIcon form={fam.form} color={fam.legendary ? "#d4a63a" : (meta.color || "#8a8a92")} title={`${fam.name} · ${fam.form}`} />
+                            <FormIcon form={fam.form} color={fam.legendary ? LEGENDARY_GOLD : (meta.color || "#8a8a92")} title={`${fam.name} · ${fam.form}`} />
                             <b>{fam.name}</b>
                             <span className="opacity-55">{fam.legendary ? t("arch.legendaryCap") : t("arch.tier", { tier: ["", "I", "II", "III", "IV"][b.tier] || b.tier })}</span>
                           </span>

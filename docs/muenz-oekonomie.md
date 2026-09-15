@@ -66,6 +66,12 @@ einer Rechenaufgabe. Umgesetzt durch Nichtstun: `coins` liegt im Lauf-State und 
 
 **Formel:** `Münzen je Durchlauf = 2 + floor(gebaute Formationen / 8)`
 
+> **GEÄNDERT (2026-09-14, Owner: „Formationen sollen erst ab 10 und nicht 8 schon eine Münze geben").**
+> Der Schritt steht jetzt auf **10**: `2 + min(4, floor(F / 10))`. Der gemessene Median von 18 Formationen
+> zahlt damit **3 statt 4** Münzen je Durchlauf. Folge für den Deckel unten: er bindet erst ab **50**
+> statt ab 32 und liegt damit über dem gemessenen Extremfall von 48 — er greift nach heutigem Stand nie
+> mehr. Ungemessen, was das über den ganzen Lauf ausmacht. Aktueller Stand steht in `src/game/coins.js`.
+
 Ausgezahlt am Ende jedes Durchlaufs. „Gebaute Formationen" sind die **distinkten** Formationen der
 Aufstellung — je Formation einmal (`ordinal === 1`), nicht je Position.
 
@@ -241,6 +247,10 @@ Wahl, keine Ersetzung.
 **Regel:** einmal je Skill-Phase. Nichts wird aufgehoben, nichts verfällt — der Ruf ist gekaufte
 Auswahl, keine Vormerkung.
 **Preis [TUNING]:** 5, fest.
+
+> **GEÄNDERT (2026-09-14, Owner: „erhöhe die Kosten für Fokus auf 10").** Preis **10**, weiter fest und
+> weiter einmal je Skill-Phase. Zusammen mit dem Schritt oben kostet der Ruf damit über drei
+> Durchlauf-Einnahmen statt einer knappen.
 
 Die Stufen der drei Skills werden wie überall gewürfelt; gerufen wird die Fraktion, nicht die Qualität.
 

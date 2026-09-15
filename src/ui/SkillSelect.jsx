@@ -15,6 +15,7 @@ import { GlossaryPanel, GlossaryText } from "./Glossary.jsx";
 import { FormationPanel } from "./FormationPanel.jsx";
 import { LevelupRig } from "./LevelupWings.jsx"; // #lv-fluegel: Deck links, Kennzahlen rechts (ab 1280 px)
 import { HeldSkills, SkillTierBadge, skillTierColor } from "./HeldSkills.jsx"; // gehaltene Skills — geteilt mit der Perk-Auswahl · exp: Stufen-Badge/-Farbe
+import { LEGENDARY_GOLD } from "./indicators/vocab.js"; // eine Quelle für das Gold der Seltenheitsstufe „legendär"
 import { useIsWide, useIsPhone } from "./useIsWide.js";      // #sk-reiter: Reiterzeile statt Pager — DOM, nicht Anordnung
 import { skillArt } from "./skillArt.js";        // #skillart: Emblem je Skill (nur ab 1280 px gerendert)
 import { CardCorners } from "./CardCorners.jsx"; // #cornerart: Eck-Ornamente im Kartenkopf (folgen dem Reiter)
@@ -556,7 +557,7 @@ export function SkillSelect({ offer = null, doors = null, onPick, onDecline, onR
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="text-meta-1 px-1.5 py-0.5 rounded font-bold tracking-wide" style={{ background: `${ac(s.id).color}22`, color: ac(s.id).color, border: `1px solid ${ac(s.id).color}88` }}><ArchIcon meta={ac(s.id)} size={11} /> {ac(s.id).label.toUpperCase()}</span>
                       <SkillTierBadge tier={effectiveTierOf(state, s.id)} lifted={tierIsLifted(state, s.id)} />{/* exp/§7.45: wirksame Stufe */}
-                      {s.legendary && <span className="text-meta-1 px-1.5 py-0.5 rounded font-bold tracking-wide" style={{ background: "#e0b84522", color: "#e0b845", border: "1px solid #e0b84588" }}>{t("skill.badge.legendary")}</span>}
+                      {s.legendary && <span className="text-meta-1 px-1.5 py-0.5 rounded font-bold tracking-wide" style={{ background: `${LEGENDARY_GOLD}22`, color: LEGENDARY_GOLD, border: `1px solid ${LEGENDARY_GOLD}88` }}>{t("skill.badge.legendary")}</span>}
                     </div>
                     <div className="font-bold text-body-lg-5" style={{ color: ac(s.id).color }}>{s.name}</div>
                     <div className="text-body-5 opacity-75 leading-snug whitespace-pre-line"><GlossaryText text={s.desc} /></div>
@@ -648,7 +649,7 @@ export function SkillSelect({ offer = null, doors = null, onPick, onDecline, onR
                       <SkillTierBadge tier={tier} lifted={rolledTier != null && tier > rolledTier} />
                       {s.legendary && (
                         <span className="text-meta-1 px-1.5 py-0.5 rounded font-bold tracking-wide"
-                          style={{ background: "#e0b84522", color: "#e0b845", border: "1px solid #e0b84588" }}>
+                          style={{ background: `${LEGENDARY_GOLD}22`, color: LEGENDARY_GOLD, border: `1px solid ${LEGENDARY_GOLD}88` }}>
                           {t("skill.badge.legendary")}
                         </span>
                       )}
@@ -664,7 +665,7 @@ export function SkillSelect({ offer = null, doors = null, onPick, onDecline, onR
                        Raritätsleiter I–IV), Legendär (Gold) sticht weiter heraus. Die Fraktion steht im Badge und in der Überschrift. */
                     <button key={id} onClick={() => clickSkill(id)}
                       className={`lv-offercard as-edge-card${sel ? " is-sel" : ""}${art ? (wide ? " sk-offer-art" : " mc-tile") : ""} text-left rounded-xl p-3 flex flex-col gap-1.5 transition-all hover:-translate-y-0.5${s.legendary ? " as-legendary" : ""}`}
-                      style={{ "--c": s.legendary ? "#e0b845" : skillTierColor(tier) }}>
+                      style={{ "--c": s.legendary ? LEGENDARY_GOLD : skillTierColor(tier) }}>
                       {/* Der Streifen liegt ABSOLUT über dem Kartenkopf und schiebt nichts — die Zeilen darunter
                           stehen an derselben Stelle wie ohne Bild, nur tiefer (Polster in `.sk-offer-art`).
                           Ohne Bild bleibt der Baum exakt wie vorher: die Handy-Fassung ist unberührt. */}

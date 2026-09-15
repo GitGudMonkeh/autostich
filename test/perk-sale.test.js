@@ -47,6 +47,23 @@ describe("Was verkäuflich ist (§3.6)", () => {
     expect(list.find((e) => e.id === "L_MONO")).toMatchObject({ kind: "perk", price: SELL_LEGENDARY });
   });
 
+  /* Owner 2026-09-14: die Liste kam in Objekt-Reihenfolge, also praktisch zufällig. Jetzt aufsteigend nach Erlös
+     (= nach Rarität, es ist dieselbe Leiter), Gesperrte ans Ende. Der Wächter liest die Preise aus der Liste
+     selbst — er hält die ORDNUNG fest, nicht die Beträge, und übersteht damit jede Preisrunde. */
+  it("die Liste steht nach Erlös aufsteigend, Gesperrte zuletzt", () => {
+    const s = fresh({ familyTiers: { A_WEAK_STRONG: 4, B_SUPERIOR: 1, C_SACRIFICE: 2 }, perks: ["L_MONO"] });
+    const list = sellables(s);
+    expect(list).toHaveLength(4);
+    expect(list.map((e) => e.price)).toEqual([...list.map((e) => e.price)].sort((a, b) => a - b));
+    expect(list[0].price).toBe(SELL_FLOOR);          // Rang 1 zuerst
+    expect(list[list.length - 1].id).toBe("L_MONO"); // der Legendäre zu 50 schließt ab
+    // Gesperrte rutschen ans Ende, auch wenn ihr Erlös hoch ist: verkäuflich ist, was oben steht.
+    const voll = Array.from({ length: C.SKILL_SLOTS + C.MEISTERHAND_SLOTS }, (_, i) => `SK_FIRE_0${i + 1}`);
+    const mitSperre = sellables({ ...s, perks: ["L_MONO", "L_MEIS"], meisterSkill: null, skills: voll,
+      skillSlots: C.SKILL_SLOTS + C.MEISTERHAND_SLOTS });
+    expect(mitSperre[mitSperre.length - 1]).toMatchObject({ id: "L_MEIS", blocked: BLOCK_SLOTS });
+  });
+
   it("was man nicht hält, lässt sich nicht verkaufen", () => {
     const before = fresh({ coins: 0, perks: [] });
     expect(reducer(before, { type: "SELL_PERK", kind: "perk", id: "L_MONO" })).toBe(before);

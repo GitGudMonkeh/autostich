@@ -4,6 +4,7 @@ import { CollapsibleField } from "./CollapsibleField.jsx"; // #UI: geteiltes Kla
 import { archetypeOf, isLegendarySkill, effectiveTierOf, tierIsLifted } from "../game/skills.js"; // §7.45: die WIRKSAME Stufe (Hochspannung), nicht die gewürfelte
 import { SKILL_SLOT_LIMIT } from "../game/constants.js";
 import { tierColor } from "../game/rarity.js"; // exp skill rework: die vier Skill-Stufen tragen die Farben der Raritätsleiter I–IV
+import { LEGENDARY_GOLD } from "./indicators/vocab.js"; // eine Quelle für das Gold der Seltenheitsstufe „legendär"
 import { skillDef, archMeta } from "../i18n/labels.js"; // #sprache: Skills/Archetypen zur Anzeigezeit
 import { t } from "../i18n/index.js";
 
@@ -65,7 +66,7 @@ export function HeldSkills({ skills = [], state = {}, className = "mt-5", open =
               <SkillTierBadge tier={effectiveTierOf(state, s.id)} lifted={tierIsLifted(state, s.id)} className="text-meta-3 px-1 py-px rounded font-bold tracking-wide" />
               {s.legendary && (
                 <span className="text-meta-3 px-1 py-px rounded font-bold tracking-wide"
-                  style={{ background: "#e0b84522", color: "#e0b845", border: "1px solid #e0b84588" }}>{t("skill.badge.legendary")}</span>
+                  style={{ background: `${LEGENDARY_GOLD}22`, color: LEGENDARY_GOLD, border: `1px solid ${LEGENDARY_GOLD}88` }}>{t("skill.badge.legendary")}</span>
               )}
               <span className="opacity-40 text-meta-3">{t("skill.heldBadge")}</span>
             </div>

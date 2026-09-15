@@ -25,8 +25,9 @@ import { tierMeta, romanOf } from "../game/rarity.js";
 import { sellables, BLOCK_COVER } from "../game/perkSale.js";
 import { familyDef, perkDef, perkCat, rarityLabel } from "../i18n/labels.js";
 import { t } from "../i18n/index.js";
+import { LEGENDARY_GOLD } from "./indicators/vocab.js"; // eine Quelle für das Gold der Seltenheitsstufe „legendär"
 
-const LEG_GOLD = "#d4a63a";   // dasselbe Gold wie überall für „legendär" — keine neue Farbe
+const LEG_GOLD = LEGENDARY_GOLD;
 
 /* Name, Beschreibung und Marke einer Zeile — die eine Stelle, an der Familie und flacher Perk
    auseinandergehen. Danach sind beide dieselbe Zeile. */

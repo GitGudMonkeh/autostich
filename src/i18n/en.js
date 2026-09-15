@@ -727,6 +727,7 @@ export default {
   "arch.plot": "Plot",
   "arch.plot.used": "{n} taken · {pct}%",
   "arch.plot.buy": "+{cells} cells",
+  "arch.plot.buyStrip": "Extend plot",
   "arch.plot.buy.title": "Extend the build plot by {cells} cells permanently - {n} left this run",
   "arch.cycleScore": "Cycle score",
   "arch.scoreDiff": "{sign}{pct}%",

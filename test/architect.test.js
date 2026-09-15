@@ -4,13 +4,14 @@ import {
   nextRotationFootprint, currentRotationIndex, ROWS, COLS,
   buildArchitectOffer, initialArchitect, precomputeArchitect, architectValueBonus, architectScore,
   architectFormSpec, summarizeArchitect, tierNum, upgradeInfo, bindSpanFor, MAX_TIER,
-  ARCHITECT_OFFER, HAEUSERZEILE_FACTOR,
+  ARCHITECT_OFFER, HAEUSERZEILE_FACTOR, RUND_AB, RUND_AUF, halfOf, rampThresholdFor,
   posOf, rowOf, colOf, N_POS,
   districtFactorMap, boardFactorMap, DISTRICT_BONUS, DISTRICT_CAP,
 } from "../src/game/architect.js";
 import { ARCH_STREAK_CAP } from "../src/game/constants.js";
+import { buildingEffect } from "../src/i18n/buildingText.js"; // Kartentext — muss dieselbe Zahl nennen wie der Motor
 import { archFamily } from "../src/i18n/labels.js"; // UI-Anzeige-Resolver (i18n-Name) — muss jedes Angebot auflösen
-import { computeFormations } from "../src/game/formations.js";
+import { computeFormations, openBorderInfo, SEGMENT_SIZE } from "../src/game/formations.js";
 import { reducer } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
 import { runOne } from "../sim/run.js";
@@ -212,13 +213,68 @@ describe("Architekt — value-Effekte (Precompute + Anwendung)", () => {
     expect(architectValueBonus(r, 0, deck[0])).toBe(amt);                        // nicht grün → weiterhin R
   });
 
-  it("target highest/lowest: Effekt liegt nur auf der Ziel-Position", () => {
+  /* Owner-Runde 2026-09-14: der Effekt lag NUR auf der Zielzelle — vier Zellen bezahlt, eine benutzt, und das
+     bei einem Baufeld von MAX_COVER Zellen. Jetzt trägt die Zielkarte den vollen Betrag und jede andere Zelle
+     die Hälfte. Der Wächter hält beides: dass die Zielzelle wirklich die höchste bzw. niedrigste Karte ist
+     (das ist die Familie), und dass der Rest des Fußabdrucks nicht mehr leer ausgeht. */
+  it("target highest/lowest: Zielkarte voll, übrige Zellen die Hälfte", () => {
     const deck = fakeDeck((i) => [2, 9, 4, 7][i] ?? 0); // Werte an 0..3
+    const voll = tierNum(ARCHITECT_FAMILIES.A_FIRST.base.value, 1), halb = Math.floor(voll / 2);
     const hi = precomputeArchitect({ buildings: [B("A_FIRST", [0, 1, 2, 3], 1)] }, idOrder, deck);
-    expect(architectValueBonus(hi, 1, deck[1])).toBe(tierNum(ARCHITECT_FAMILIES.A_FIRST.base.value, 1)); // 9 = höchste
-    expect(architectValueBonus(hi, 3, deck[3])).toBe(0);
+    expect(architectValueBonus(hi, 1, deck[1])).toBe(voll);  // 9 = höchste
+    expect(architectValueBonus(hi, 3, deck[3])).toBe(halb);  // 7 = zweithöchste, zahlt die Hälfte
+    expect(architectValueBonus(hi, 0, deck[0])).toBe(halb);
+    expect(halb).toBeGreaterThan(0);                         // keine tote Fläche mehr
+    expect(halb).toBeLessThan(voll);                         // die Zielzelle bleibt die Pointe
     const lo = precomputeArchitect({ buildings: [B("A_SOCKEL", [0, 1, 2, 3], 1)] }, idOrder, deck);
     expect(architectValueBonus(lo, 0, deck[0])).toBe(tierNum(ARCHITECT_FAMILIES.A_SOCKEL.base.value, 1)); // 2 = niedrigste
+    expect(architectValueBonus(lo, 1, deck[1])).toBe(halb);
+  });
+
+  /* Owner-Runde 2026-09-14 („a": Tore lockern). Zwei Wert-Gebäude trugen ein Tor, das ihre Decke unter das
+     Band drückte — ein Stich lässt sich nur einmal kippen, ein Viertel-Tor deckelt also bei einem Viertel
+     der Wert-Decke. Buntglas verliert die Farbbedingung ab Stufe III (Kick, dieselbe Bauart wie Arkades
+     farbJoker), die Rampe nimmt eine Schwelle mehr. Geprüft wird das VERHALTEN, nicht die Zahl. */
+  it("Buntglas III lässt die Farbbedingung fallen, darunter gilt sie", () => {
+    const deck = fakeDeck(() => 5, (i) => ["R", "B", "G", "Y"][i % 4]);
+    const bei = (tier, pos) => {
+      const pre = precomputeArchitect({ buildings: [B("A_BUNTGLAS", [0, 1, 2, 6], tier, { colorChoice: "R" })] }, idOrder, deck);
+      return architectValueBonus(pre, pos, deck[pos]);
+    };
+    const passt = 0, passtNicht = 1; // deck[0] ist R (gewählt), deck[1] ist B
+    expect(bei(2, passt)).toBeGreaterThan(0);
+    expect(bei(2, passtNicht)).toBe(0);              // unter dem Kick zählt nur die Farbe
+    expect(bei(3, passtNicht)).toBeGreaterThan(0);   // ab III jede Karte
+    expect(bei(3, passtNicht)).toBe(bei(3, passt));
+    expect(buildingEffect(ARCHITECT_FAMILIES.A_BUNTGLAS, 4)).not.toContain("passende Farbe"); // der Satz darf sich nicht widersprechen
+  });
+
+  it("die Rampe nennt ihre Schwelle, und der Motor rechnet mit derselben", () => {
+    const grenze = rampThresholdFor(1);
+    const deck = fakeDeck((i) => (i === 0 ? grenze : grenze + 1));
+    const pre = precomputeArchitect({ buildings: [B("A_RAMPE", [0, 1, 5, 6], 1)] }, idOrder, deck);
+    expect(architectValueBonus(pre, 0, deck[0])).toBeGreaterThan(0);  // genau auf der Schwelle zählt
+    expect(architectValueBonus(pre, 1, deck[1])).toBe(0);             // einen darüber nicht
+    expect(buildingEffect(ARCHITECT_FAMILIES.A_RAMPE, 1)).toContain(String(grenze));
+    for (let t = 2; t <= MAX_TIER; t++) expect(rampThresholdFor(t)).toBeGreaterThan(rampThresholdFor(t - 1));
+  });
+
+  /* Die Hälfte ist eine SPIELERZAHL — sie steht auf der Karte und muss deshalb durch dieselbe Rundung wie
+     jede andere. Ohne die gemeinsame Quelle stand „die übrigen Zellen +247" neben einer 495. Der Wächter
+     hält beides zusammen: dass Motor und Kartentext dieselbe Zahl meinen, und dass sie gerundet ist. */
+  it("die halbe Hälfte ist gerundet und steht im Kartentext", () => {
+    for (const base of [5, 115, 160, 335]) for (const t of [1, 2, 3, 4]) {
+      const voll = tierNum(base, t), h = halfOf(voll);
+      expect(h).toBeGreaterThan(0);
+      expect(h).toBeLessThan(voll);
+      if (h >= RUND_AB) expect(h % RUND_AUF, `Hälfte von ${voll} → ${h}`).toBe(0);
+    }
+    // Motor und Text lesen dieselbe Funktion: was der Precompute auf eine Nicht-Zielzelle legt, nennt der Text.
+    const deck = fakeDeck((i) => [2, 9, 4, 7][i] ?? 0);
+    const pre = precomputeArchitect({ buildings: [B("A_GIEBEL", [0, 1, 2, 3], 4)] }, idOrder, deck);
+    const voll = tierNum(ARCHITECT_FAMILIES.A_GIEBEL.base.score, 4);
+    expect(architectScore(pre, 0, { isCrit: false, serieStreak: 1, suit: "R" }, {}).flat).toBe(halfOf(voll));
+    expect(buildingEffect(ARCHITECT_FAMILIES.A_GIEBEL, 4)).toContain(String(halfOf(voll)));
   });
 });
 
@@ -301,6 +357,26 @@ describe("Architekt — formation-Direktiven & computeFormations", () => {
     expect(spec.formMult[30]).toBe(ARCHITECT_FAMILIES.A_KATHEDRALE.base.factor); // Kathedrale → ×Faktor
   });
 
+  /* Owner-Runde 2026-09-14: der Pfeiler öffnete die Grenze im MOTOR (canExtendSeg), die Anzeige kannte aber nur
+     Segmentarbeit und Spalier — im Kartengitter fehlte die Brücke. openBorderInfo ist jetzt die eine Quelle für
+     alle drei Herkünfte. Der Wächter hält beide Richtungen: gemeldet UND vom Lauf tatsächlich gekreuzt. */
+  it("openBorderInfo meldet die Grenze, die der Pfeiler öffnet (eine Quelle mit computeFormations)", () => {
+    const deck = fakeDeck();                                          // durchgehend gleiche Farbe → ein Farbblock je Segment
+    const architect = { buildings: [B("A_PFEILER", [0, 1, 2, 3])] };  // line4 in Zeile 0 → Grenze 0
+    const info = openBorderInfo(idOrder, deck, [], {}, {}, architect);
+    expect(info.active).toBe(true);
+    expect([...info.arch]).toEqual([0]);
+    expect(info.isOpen(0)).toBe(true);
+    expect(info.isOpen(1)).toBe(false);           // nur die berührte Zeile, nicht das ganze Brett
+    // Gegenprobe am Motor: derselbe Lauf wächst über genau diese Grenze hinaus.
+    const fb = (f, p) => (f[p].formations || []).find((x) => x.type === "farbblock");
+    expect(fb(computeFormations(idOrder, deck, {}, [], [], [], {}, null), 4).len).toBe(SEGMENT_SIZE);
+    expect(fb(computeFormations(idOrder, deck, {}, [], [], [], {}, architect), 4).len).toBe(2 * SEGMENT_SIZE);
+    // Ohne Gebäude keine Brücke — und die letzte Zeile hat keine Grenze hinter sich, die sie öffnen könnte.
+    expect(openBorderInfo(idOrder, deck, [], {}, {}, null).active).toBe(false);
+    expect(openBorderInfo(idOrder, deck, [], {}, {}, { buildings: [B("A_PFEILER", [35, 36, 37, 38])] }).active).toBe(false);
+  });
+
   it("Grundstein macht abgedeckte Positionen zu Ankern (Formation)", () => {
     const deck = fakeDeck(() => 5, (i) => ["R", "B", "G", "Y"][i % 4]); // bewusst keine natürliche Formation
     const architect = { buildings: [B("A_GRUNDSTEIN", [0, 1, 5, 6], 1)] };
@@ -321,12 +397,26 @@ describe("Architekt — formation-Direktiven & computeFormations", () => {
 });
 
 describe("Architekt — Runde 6: jede Aufwertung trägt (X1–X3)", () => {
-  it("X1: tierNum ist streng monoton — Basis 1 wird 1/2/3/4, Basen ≥ 2 bleiben unverändert", () => {
+  it("X1: tierNum ist streng monoton, und ab 10 enden alle Stufen auf 0 oder 5", () => {
+    /* Owner 2026-09-14: „passe alle Zahlen an, dass sie auf 0 oder 5 enden — schwierig für Spieler, mit 112 zu
+       rechnen." Gerundet wird ab RUND_AB; darunter (Kampfwert 1–9) bleibt die Leiter fein, sonst hätte sie tote
+       Stufen. Die Monotonie aus X1 bleibt die STÄRKERE Regel und wird hier weiter über alle Basen gehalten. */
     expect([1, 2, 3, 4].map((t) => tierNum(1, t))).toEqual([1, 2, 3, 4]);   // vorher 1/2/2/3 (II→III tot)
-    expect([1, 2, 3, 4].map((t) => tierNum(2, t))).toEqual([2, 3, 4, 6]);   // wie bisher
-    expect([1, 2, 3, 4].map((t) => tierNum(35, t))).toEqual([35, 53, 77, 109]); // wie bisher (Zollhaus)
-    for (const base of [1, 2, 3, 9, 20, 35, 40, 50, 65, 70, 80, 90, 130, 160, 200, 260]) {
+    expect([1, 2, 3, 4].map((t) => tierNum(3, t))).toEqual([3, 5, 7, 9]);   // klein: ungerundet
+    expect([1, 2, 3, 4].map((t) => tierNum(115, t))).toEqual([115, 175, 255, 355]); // Zollhaus, auf 5er gerundet
+    for (const base of [1, 2, 3, 5, 9, 20, 35, 55, 65, 115, 150, 160, 175, 200, 225, 260, 335, 445, 500]) {
       for (let t = 2; t <= MAX_TIER; t++) expect(tierNum(base, t)).toBeGreaterThan(tierNum(base, t - 1));
+      for (let t = 1; t <= MAX_TIER; t++) {
+        const v = tierNum(base, t);
+        if (v >= RUND_AB) expect(v % RUND_AUF, `Basis ${base}, Stufe ${t} → ${v}`).toBe(0);
+      }
+    }
+    // Auch die Legendären, die keine Stufe tragen, gehen durch dieselbe Rundung.
+    for (const fam of Object.values(ARCHITECT_FAMILIES)) {
+      const feld = fam.category === "score" ? fam.base.score : fam.base.value;
+      if (feld == null) continue;
+      const v = tierNum(feld, fam.legendary ? "legendary" : MAX_TIER);
+      if (v >= RUND_AB) expect(v % RUND_AUF, `${fam.id} → ${v}`).toBe(0);
     }
   });
 
@@ -336,14 +426,20 @@ describe("Architekt — Runde 6: jede Aufwertung trägt (X1–X3)", () => {
       const pre = precomputeArchitect({ buildings: [B("A_ARKADE", [0, 1], tier)] }, idOrder, deck);
       return architectValueBonus(pre, 0, deck[0]);
     };
-    expect(at(1)).toBe(0); expect(at(2)).toBe(1); expect(at(3)).toBe(1); expect(at(4)).toBe(2);
-    // Pfeiler steigt jede Stufe (1/2/3), Kreuzgang erst auf IV (+2).
+    /* Owner-Runde 2026-09-14: die Leiter ist der EINZIGE Zahlen-Griff dieser Familien — sie tragen sonst keinen
+       Betrag, sondern biegen nur die Erkennung. Sie wurde deshalb von 0/1/1/2 auf 1/3/5/7 gezogen, damit die
+       Gebäude das Band erreichen. Geprüft wird die Eigenschaft, nicht die Zahlenreihe: jede Stufe legt zu, und
+       keine Stufe ist mehr leer (vorher war Stufe I ein reiner No-op). */
+    const leiter = [1, 2, 3, 4].map(at);
+    expect(leiter[0]).toBeGreaterThan(0);
+    for (let i = 1; i < leiter.length; i++) expect(leiter[i]).toBeGreaterThan(leiter[i - 1]);
+    expect(leiter).toEqual(ARCHITECT_FAMILIES.A_ARKADE.tierValue.slice(1));
+    // Der Pfeiler hat seine eigene, flachere Leiter — er trägt zusätzlich die offene Segmentgrenze.
     const pfeiler = precomputeArchitect({ buildings: [B("A_PFEILER", [0, 5, 10, 15], 3)] }, idOrder, deck);
-    expect(architectValueBonus(pfeiler, 5, deck[5])).toBe(2);
+    expect(architectValueBonus(pfeiler, 5, deck[5])).toBe(ARCHITECT_FAMILIES.A_PFEILER.tierValue[3]);
     const kreuz3 = precomputeArchitect({ buildings: [B("A_KREUZGANG", [10, 15, 16], 3)] }, idOrder, deck);
     const kreuz4 = precomputeArchitect({ buildings: [B("A_KREUZGANG", [10, 15, 16], 4)] }, idOrder, deck);
-    expect(architectValueBonus(kreuz3, 10, deck[10])).toBe(0);
-    expect(architectValueBonus(kreuz4, 10, deck[10])).toBe(2);
+    expect(architectValueBonus(kreuz4, 10, deck[10])).toBeGreaterThan(architectValueBonus(kreuz3, 10, deck[10]));
   });
 
   it("X3: Arkade III wird zum Farbblock-Joker (Kick), bleibt darunter transparent", () => {

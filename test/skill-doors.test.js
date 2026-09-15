@@ -235,7 +235,7 @@ describe("Sim — jede Policy geht durch die Türstufe", () => {
 describe("Stufentexte — ein Text je Stufe (descTiers, ability.<id>.desc.<t>, skillDef(id, tier))", () => {
   const tiered = SKILL_LIST.filter((s) => !s.legendary && ["fire", "lightning"].includes(s.archetype));
   it("jeder Blitz- und Feuer-Skill trägt vier Stufentexte; `desc` ist der Normal-Text; Legendäre haben keine", () => {
-    expect(tiered).toHaveLength(28); // 14 Blitz (§7.19: Überschlag gestrichen) + 14 Feuer (§7.16: Flächenbrand gestrichen)
+    expect(tiered).toHaveLength(30); // 15 Blitz (§7.69: Potenzial) + 15 Feuer (§7.70: Brandherd)
     for (const s of tiered) {
       expect(Array.isArray(s.descTiers) && s.descTiers.length === 4, s.id).toBe(true);
       for (const text of s.descTiers) expect(typeof text === "string" && text.length > 0, s.id).toBe(true);
@@ -265,8 +265,15 @@ describe("Stufentexte — ein Text je Stufe (descTiers, ability.<id>.desc.<t>, s
     expect(treffer, `Strich als Satzzeichen: ${treffer.join(", ")}`).toEqual([]);
   });
   it("Episch-Extras stehen nur im Episch-Text", () => {
-    expect(SKILL_DEFS.SK_LIGHTNING_01.descTiers[3]).toContain("Jeder Sieg ohne Crit gibt +1 Ladung"); // §7.18: das Episch-Extra aus Statische Aufladung
-    expect(SKILL_DEFS.SK_LIGHTNING_01.descTiers[2]).not.toContain("ohne Crit");
+    /* §7.68 (Owner): „Sieg ohne Crit" gehört jetzt dem Lichtbogen — auf ALLEN vier Stufen, denn er ist der
+       Kaltstart der Fraktion und nicht mehr ein Anhang am Crit-Skill. Der Blitzableiter darf das Wort nirgends
+       mehr führen, sonst steht die Zeile wieder doppelt. Sein Episch-Extra ist der höhere Satz je Takt-Crit. */
+    for (const t of SKILL_DEFS.SK_LIGHTNING_01.descTiers) expect(t).not.toContain("ohne Crit");
+    expect(SKILL_DEFS.SK_LIGHTNING_01.descTiers[3]).toContain("+2 Ladung zusätzlich");
+    expect(SKILL_DEFS.SK_LIGHTNING_01.descTiers[2]).toContain("+1 Ladung zusätzlich");
+    for (const t of SKILL_DEFS.SK_LIGHTNING_04.descTiers) expect(t).toContain("Sieg ohne Crit gibt +1 Ladung");
+    expect(SKILL_DEFS.SK_LIGHTNING_04.descTiers[3]).toContain("Bis zum ersten Crit eines Durchlaufs sind es +2");
+    for (const i of [0, 1, 2]) expect(SKILL_DEFS.SK_LIGHTNING_04.descTiers[i]).not.toContain("Bis zum ersten Crit");
     /* §7.61: die Zündspannung hat ebenfalls kein Episch-Extra — sie hat DERSELBE Satz auf allen vier Stufen, nur
        die Zahlen wandern. Der Wächter hält den Bau des Textes fest (beide Hälften in jeder Stufe, sonst wäre eine
        davon still weggefallen) und dass das Wort „Serie" nicht zurückkommt: der alte Skill hing daran, und genau

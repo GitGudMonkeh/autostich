@@ -2,8 +2,9 @@ import { useState } from "react";
 import { CATEGORIES, rarityOf, RARITY_META } from "../game/perks.js";
 
 import { tierMeta, romanOf } from "../game/rarity.js";
-import { SKILL_DEFS, archetypeOf, effectiveTierOf } from "../game/skills.js"; // exp/§7.45: der Text der WIRKSAMEN Stufe (Hochspannung hebt sie)
+import { SKILL_DEFS, archetypeOf, effectiveTierOf, isLegendarySkill } from "../game/skills.js"; // exp/§7.45: der Text der WIRKSAMEN Stufe (Hochspannung hebt sie)
 import { ArchIcon, GlossaryIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
+import { LEGENDARY_GOLD } from "./indicators/vocab.js"; // eine Quelle für das Gold der Seltenheitsstufe „legendär"
 import { glossaryKeywords } from "../game/glossary.js";
 import { SUIT_ORDER, suitColor } from "../game/constants.js";
 import { archMeta, familyDef, perkCat, perkDef, skillDef, suitLabel } from "../i18n/labels.js"; // #sprache: Skills/Archetypen/Farben zur Anzeigezeit
@@ -146,11 +147,16 @@ export function SkillList({ skills = [], skillTiers = {}, empty = t("build.skill
           if (!s) return null;
           const active = openSkill === id;
           const c = ac(id).color;
+          /* Legendäre tragen den Goldrahmen ihrer Marke — dieselbe Farbe wie ihr Badge in Skill-Auswahl und
+             Bestandsliste, und dieselbe Deckkraft wie die Legendär-Perks eine Zeile darüber. Die Schrift bleibt
+             Fraktionsfarbe: sie sagt WELCHE Fraktion, der Rahmen sagt welche Seltenheit. */
+          const leg = isLegendarySkill(id);
+          const rim = leg ? LEGENDARY_GOLD : c;
           return (
             <button key={id} type="button" onClick={() => setOpenSkill(active ? null : id)}
               className="text-body-5 px-2 py-0.5 rounded transition-all"
               style={{ background: active ? `${c}33` : "#22222b", color: c,
-                       outline: active ? `1px solid ${c}` : `1px solid ${c}66` }}>
+                       outline: `1px solid ${rim}${active ? "" : (leg ? "88" : "66")}` }}>
               <ArchIcon meta={ac(id)} size={13} /> {s.name}
             </button>
           );

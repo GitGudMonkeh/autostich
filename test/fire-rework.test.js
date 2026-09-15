@@ -3,16 +3,16 @@ import * as C from "../src/game/constants.js";
 import { SKILL_DEFS, FEUER_TIERS, buildSkillOffer, archetypeOf } from "../src/game/skills.js";
 import { F, initHeat, heatMaxFor, syncHeatMax, fireTier, fireParam, heatGainOnWin, heatMult, verbrennungMult, feuersturmMult,
   rueckzuendungMult, feuerlinieMult, schneiseLane, schneiseMult, fireValueBonus, fireOnWin, fireOnLoss, glutbettFloor,
-  fireCycleEnd, nextBrandActive } from "../src/game/factions/fire.js";
+  fireCycleEnd, nextBrandActive, klingeValue, klingeTicks } from "../src/game/factions/fire.js";
 import { resolveTrick } from "../src/game/engine.js";
 import { initialState, reducer } from "../src/game/reducer.js";
 import { makeRng } from "../src/game/deck.js";
 
 /* Feuer (exp skill rework, docs/skill-rework.md §4): Roster, Stufenleitern, das reine Modul und die Engine-Nähte.
    Die Ids stehen hier wörtlich (Registry-Coverage-Gate); die Zahlen kommen aus den Stufentabellen, nicht abgetippt. */
-const FIRE_IDS = [
+const FIRE_IDS = [ // §7.70: SK_FIRE_10 trägt jetzt den Brandherd (der 15.), Platz des gestrichenen Funkenflugs
   "SK_FIRE_01", "SK_FIRE_02", "SK_FIRE_03", "SK_FIRE_04", "SK_FIRE_05", "SK_FIRE_06", "SK_FIRE_07", "SK_FIRE_08",
-  "SK_FIRE_09", "SK_FIRE_12", "SK_FIRE_13", "SK_FIRE_14", "SK_FIRE_15", "SK_FIRE_16",
+  "SK_FIRE_09", "SK_FIRE_10", "SK_FIRE_12", "SK_FIRE_13", "SK_FIRE_14", "SK_FIRE_15", "SK_FIRE_16",
   "SK_FIRE_L01", "SK_FIRE_L02", "SK_FIRE_L03",
 ];
 const T = FEUER_TIERS;
@@ -29,9 +29,10 @@ const playCycle = (s) => { let g = 0; while (s.cycle === 0 && g++ < 100) s = res
 const G = (m) => (m >= C.HEAT_MIN_MARGIN ? (m - C.HEAT_MARGIN_OFFSET) * C.HEAT_PER_POINT : 0);
 
 describe("Feuer — Roster und Stufenleitern", () => {
-  it("18 Feuer-Skills: 14 normale mit vier Stufen + 4 Legendäre ohne Stufe; Funkenflug, Schmelzofen und Flächenbrand sind weg", () => {
+  it("18 Feuer-Skills: 15 normale mit vier Stufen + 3 Legendäre ohne Stufe; Schmelzofen und Flächenbrand sind weg", () => {
     const fire = Object.values(SKILL_DEFS).filter((s) => s.archetype === "fire");
-    expect(fire).toHaveLength(17); // §6.11 (Owner): drei Legendäre je Fraktion — Damaststahl (L04) ist gestrichen
+    expect(fire).toHaveLength(18); // §7.70 (Owner): 15 normale — Brandherd füllt auf den Stand von Eis und Pflanze auf; §6.11: drei Legendäre, Damaststahl (L04) gestrichen
+    expect(SKILL_DEFS.SK_FIRE_10.name).toBe("Brandherd"); // §7.70: der 15., auf dem Platz des gestrichenen Funkenflugs
     expect(SKILL_DEFS.SK_FIRE_11).toBeUndefined(); // §7.16: Flächenbrand gestrichen (Owner-Untergrenze: 14 je Fraktion)
     expect(fire.filter((s) => s.legendary)).toHaveLength(3);
     expect(SKILL_DEFS.SK_FIRE_L04, "Damaststahl gestrichen (§6.11, Owner behält Sonnenzorn)").toBeUndefined();
@@ -42,8 +43,7 @@ describe("Feuer — Roster und Stufenleitern", () => {
       if (SKILL_DEFS[id].legendary) expect(SKILL_DEFS[id].tiers).toBeUndefined();
       else expect(SKILL_DEFS[id].tiers).toHaveLength(4);
     }
-    expect(SKILL_DEFS.SK_FIRE_10).toBeUndefined();
-    expect(SKILL_DEFS.SK_FIRE_17).toBeUndefined();
+    expect(SKILL_DEFS.SK_FIRE_17).toBeUndefined(); // §7.70: 10 ist wieder belegt (Brandherd), 11 und 17 bleiben frei
     // Keine Verstärker-Bindung und keine Effekt-Flags mehr — die Mechanik liest nur die Tabellen.
     for (const s of fire) { expect(s.enabler).toBeUndefined(); expect(s.heatConsumer).toBeUndefined(); }
     expect(SKILL_DEFS.SK_FIRE_15.name).toBe("Schmiede");
@@ -60,8 +60,19 @@ describe("Feuer — Roster und Stufenleitern", () => {
     expect(up(T.feuersturm, "multPerStreak")).toBe(true); // §7.17: Serie zu Score
     expect(T.feuersturm[3].minHeat).toBe(90); // Episch-Extra: schon ab 90 % Hitze statt voller Leiste (§7.18: war 80)
     for (const r of T.feuersturm) expect(r.perStreak).toBeUndefined(); // keine Hitze mehr
+    /* §7.70 (Owner): Glutbett trägt jetzt ZWEI Leitern. Der Boden steigt, die Kühlung oberhalb sinkt — und der
+       frühere steigende Boden (`rise`) darf nicht zurückkommen: er lief bis an die Leiste und machte die Rarität
+       wertlos (simuliert endeten alle vier Stufen bei Boden 100 und Hitze 100). */
     expect(up(T.glutbett.slice(0, 3), "floor")).toBe(true);
+    expect(down(T.glutbett.slice(0, 3), "cool")).toBe(true);
+    for (const r of T.glutbett.slice(0, 3)) expect(r.cool).toBeLessThan(C.HEAT_LOSS);
+    expect(T.glutbett.every((r) => r.rise === undefined)).toBe(true);
     expect(T.glutbett[3].noCool).toBe(true);
+    /* §7.70 (Owner): Brandherd, der 15. Feuer-Skill. Die Leiter ist der Satz je zahlender Formation und STEIGT.
+       Er darf keine Schwelle bekommen — weder Vorsprung noch Hitze: sein Zweck ist der Kaltstart, und ein Tor
+       davor wäre derselbe Konstruktionsfehler, den §7.68 aus dem Lichtbogen entfernt hat. */
+    expect(up(T.brandherd, "perForm")).toBe(true);
+    expect(T.brandherd.every((r) => r.minHeat === undefined && r.minMargin === undefined && r.cost === undefined)).toBe(true);
     expect(down(T.rueckzuendung, "every")).toBe(true); // §7.24: Takt — jeder N. Sieg in Folge, N sinkt mit der Stufe, der Faktor bleibt
     for (const r of T.rueckzuendung) { expect(r.perDeficit).toBeUndefined(); expect(r.mult).toBe(T.rueckzuendung[0].mult); }
     expect(T.rueckzuendung[3].value).toBe(2); // Episch-Extra: die zündende Karte +2
@@ -135,6 +146,17 @@ describe("Feuer — Modul (reine Übergänge)", () => {
     expect(heatGainOnWin([F.FEUERLINIE, F.ZUNDER], st({}), { margin: 6, heatValue: 0 })).toBe(G(6) + T.zunder[0].heat); // §7.23: kein Kaltstart-Faktor mehr
     expect(heatGainOnWin([F.ZUNDER], st({ [F.ZUNDER]: 1 }), { margin: 1 })).toBe(T.zunder[1].heat);     // auch knapp
     expect(heatGainOnWin([F.FEUERSTURM], st({ [F.FEUERSTURM]: 1 }), { margin: 1, streak: 3 })).toBe(0);
+    /* §7.70 (Owner): Brandherd — Hitze je ZAHLENDER Formation der Siegposition, ohne Vorsprungs-Schwelle und ohne
+       Hitze-Tor. Das ist sein Zweck: Feuer hatte seit §7.23 keinen Kaltstart mehr, und die Drift des Passivs ist
+       unter rund 64 % Siegquote negativ. Der Wächter hält, dass er (a) ohne Vorsprung zahlt, (b) mit der Zahl der
+       Formationen skaliert, (c) ohne Formation nichts gibt und (d) neben dem Passiv steht statt es zu ersetzen. */
+    for (const tier of [0, 1, 2, 3]) {
+      const satz = T.brandherd[tier].perForm;
+      expect(heatGainOnWin([F.BRANDHERD], st({ [F.BRANDHERD]: tier }), { margin: 1, formCount: 2 }), `Stufe ${tier}`).toBe(2 * satz);
+      expect(heatGainOnWin([F.BRANDHERD], st({ [F.BRANDHERD]: tier }), { margin: 1, formCount: 0 }), `Stufe ${tier} ohne Formation`).toBe(0);
+    }
+    expect(heatGainOnWin([F.BRANDHERD], st({}), { margin: 6, formCount: 3 })).toBe(G(6) + 3 * T.brandherd[0].perForm);
+    expect(heatGainOnWin([F.ZUNDER], st({}), { margin: 1, formCount: 3 })).toBe(T.zunder[0].heat); // ohne den Skill zählt die Formation nicht
     expect(heatGainOnWin([F.RUECKZUENDUNG], st({ [F.RUECKZUENDUNG]: 1 }), { margin: 1, lastResult: "loss", lastLossDeficit: 4 })).toBe(0); // §7.22: Rückzündung gibt keine Hitze mehr (Konter, rueckzuendungMult)
     // §7.22 Verbrennung Episch-Extra: ab dem Vorsprung der Stufe zählt auch die Hitze ×mult; darunter und auf Sehr selten nur der Score-Faktor.
     expect(heatGainOnWin([F.VERBRENNUNG], st({ [F.VERBRENNUNG]: 3 }), { margin: T.verbrennung[3].minMargin })).toBe(G(T.verbrennung[3].minMargin) * T.verbrennung[3].mult);
@@ -220,6 +242,27 @@ describe("Feuer — Modul (reine Übergänge)", () => {
     expect(fireValueBonus(heat({ value: 0 }), [F.RUECKZUENDUNG], {}, { winStreak: T.rueckzuendung[0].every - 1 })).toBe(0);
     expect(fireValueBonus(null, [F.KLINGE], {}, {})).toBe(0);
   });
+  /* Owner-Runde 2026-09-14: der Deckel aus §7.32 stand nur im MOTOR. Die Hitzeleiste rechnete ihr Abzeichen selbst
+     und zeichnete ihre Striche bis ans Leistenende — mit Weißglut also bis 200, für Stufen, die die Klinge nie
+     zahlt. Beides liest jetzt dieselben zwei Funktionen wie fireValueBonus. */
+  it("Anzeige und Motor lesen denselben Klingen-Deckel (§7.32): Wert und Schwellenstriche enden bei HEAT_MAX", () => {
+    const tiers = { [F.KLINGE]: 3 };
+    // Der Wert, den das Abzeichen zeigt, ist der Wert, den der Stich bekommt — auch auf der langen Leiste.
+    for (const v of [0, 40, C.HEAT_MAX, C.WEISSGLUT_HEAT_MAX]) {
+      expect(klingeValue([F.KLINGE], tiers, v)).toBe(fireValueBonus(heat({ value: v }), [F.KLINGE], tiers, {}));
+      expect(klingeValue([F.KLINGE, F.WEISSGLUT], tiers, v)).toBe(klingeValue([F.KLINGE], tiers, v)); // Weißglut hebt ihn nicht
+    }
+    expect(klingeValue([], {}, C.HEAT_MAX)).toBe(0); // ohne den Skill kein Abzeichen
+    // Die Striche: einer je Schritt, der letzte noch unter HEAT_MAX — die lange Leiste verlängert sie nicht.
+    const step = FEUER_TIERS.klinge[3].perHeat;
+    const kurz = klingeTicks([F.KLINGE], tiers, C.HEAT_MAX);
+    const lang = klingeTicks([F.KLINGE, F.WEISSGLUT], tiers, C.WEISSGLUT_HEAT_MAX);
+    expect(kurz).toEqual(lang);
+    expect(lang[0]).toBe(step);
+    expect(Math.max(...lang)).toBeLessThan(C.HEAT_MAX);
+    expect(lang).toHaveLength(Math.ceil(C.HEAT_MAX / step) - 1);
+    expect(klingeTicks([], {}, C.WEISSGLUT_HEAT_MAX)).toEqual([]);
+  });
   it("fireOnWin (§7.16, Überlauf-Wandler): Schmelzpunkt wandelt die Hitze über der Leiste in Basis-Score, die Leiste bleibt voll; unter voll nichts; Episch zahlt die vorgemerkte Kühlung", () => {
     // Nicht voll: der Gewinn geht auf die Leiste, nichts wird gewandelt.
     const warm = fireOnWin(heat({ value: 50 }), [F.SCHMELZPUNKT], { [F.SCHMELZPUNKT]: 1 }, { margin: 6 });
@@ -284,22 +327,29 @@ describe("Feuer — Modul (reine Übergänge)", () => {
     expect(fireOnLoss(heat({ value: 1 }), [], {}, { deficit: 1 }).heat.value).toBe(0);
     expect(fireOnLoss(heat({ value: 41 }), [F.GLUTBETT], {}, { deficit: 1 }).heat.value).toBe(T.glutbett[0].floor);
     expect(fireOnLoss(heat({ value: 30 }), [F.GLUTBETT], {}, { deficit: 1 }).heat.value).toBe(30);   // unter dem Boden: nichts
-    // §6.24 Glutbett-Anstieg: der Boden steigt NUR, wenn er einen echten Sturz abfängt.
+    /* §7.70 (Owner): der steigende Boden ist weg — er lief bis an die Leiste und hob die Rarität auf (simuliert
+       endeten alle vier Stufen bei Boden 100). Glutbett hat jetzt zwei Leitern: den festen BODEN und die mildere
+       KÜHLUNG oberhalb davon. Der Wächter hält beides und dass `bedFloor` nicht zurückkommt. */
     const gb = (over, tier = 0) => fireOnLoss(heat(over), [F.GLUTBETT], { [F.GLUTBETT]: tier }, { deficit: 1 }).heat;
-    const F0 = T.glutbett[0].floor, R0 = T.glutbett[0].rise;
-    expect(gb({ value: F0 + 1 }).bedFloor).toBe(R0);                 // abgefangen → der Boden wächst
-    expect(gb({ value: F0 + C.HEAT_LOSS }).bedFloor).toBe(0);        // genau bis auf den Boden: kein Sturz darunter
-    expect(gb({ value: F0 }).bedFloor).toBe(0);                      // schon unten: nichts, sonst liefe er davon
-    expect(gb({ value: 20 }).bedFloor).toBe(0);
-    // Der gewachsene Boden hält beim nächsten Mal — und wächst weiter.
-    const grown = gb({ value: F0 + 1 });
-    expect(fireOnLoss({ ...grown, value: F0 + R0 + 1 }, [F.GLUTBETT], {}, { deficit: 1 }).heat.value).toBe(F0 + R0);
-    expect(fireOnLoss({ ...grown, value: F0 + R0 + 1 }, [F.GLUTBETT], {}, { deficit: 1 }).heat.bedFloor).toBe(2 * R0);
+    for (const tier of [0, 1, 2]) {
+      const { floor, cool } = T.glutbett[tier];
+      expect(cool, `Stufe ${tier} ohne Kühlungssatz`).toBeLessThan(C.HEAT_LOSS);
+      expect(gb({ value: floor + 20 }, tier).value, `Stufe ${tier} kühlt ${cool}`).toBe(floor + 20 - cool);
+      expect(gb({ value: floor + 1 }, tier).value, `Stufe ${tier} fängt auf dem Boden ab`).toBe(floor);
+      expect(gb({ value: floor - 5 }, tier).value, `Stufe ${tier} unter dem Boden`).toBe(floor - 5);
+      expect(gb({ value: floor + 20 }, tier).bedFloor, "bedFloor ist zurück").toBeUndefined();
+    }
+    // Der Boden STEHT: zweimal dieselbe Niederlage aus derselben Höhe gibt zweimal dasselbe.
+    const einmal = gb({ value: T.glutbett[0].floor + 1 });
+    expect(fireOnLoss({ ...einmal, value: T.glutbett[0].floor + 1 }, [F.GLUTBETT], {}, { deficit: 1 }).heat.value)
+      .toBe(T.glutbett[0].floor);
+    expect(T.glutbett.every((r) => r.rise === undefined), "rise ist zurück").toBe(true);
     // Episch kühlt gar nicht — dort gibt es keinen Boden und nichts zu heben.
     expect(gb({ value: 90 }, 3).value).toBe(90);
-    expect(gb({ value: 90 }, 3).bedFloor).toBe(0);
     expect(glutbettFloor(heat({ value: 50 }), [F.GLUTBETT], { [F.GLUTBETT]: 3 })).toBe(0);
-    expect(glutbettFloor({ ...grown, max: 100 }, [F.GLUTBETT], {})).toBe(F0 + R0);
+    // §7.70: der Boden ist allein die Zahl der Stufe — kein Zustand hebt ihn mehr.
+    for (const tier of [0, 1, 2])
+      expect(glutbettFloor(heat({ value: 50 }), [F.GLUTBETT], { [F.GLUTBETT]: tier }), `Boden Stufe ${tier}`).toBe(T.glutbett[tier].floor);
     expect(glutbettFloor(heat({ value: 50 }), [], {})).toBe(0);      // ohne den Skill kein Boden
     expect(fireOnLoss(heat({ value: 95 }), [F.GLUTBETT], { [F.GLUTBETT]: 3 }, { deficit: 9 }).heat.value).toBe(95);
     // §7.21 Ewige Glut: die Hitze fällt nie unter den Anteil der Spitze — der Boden hält, hebt aber nie; Glutbett-Boden darüber gewinnt.
@@ -409,6 +459,20 @@ describe("Feuer — Engine-Integration", () => {
     const plain = resolveTrick(scen(12, 6, { pos: 1, skills: [F.FEUERLINIE], skillTiers: { [F.FEUERLINIE]: 1 }, heat: heat({ value: 50 }), formations: form(0) }), noCrit); // keine Formation
     expect(plain.lastTrick.breakdown.fireMult).toBeCloseTo(heatMult([], {}, 50 + G(6)), 6);
     expect(plain.heat.value).toBe(50 + G(6));
+  });
+  /* §7.70: Brandherd in der Engine. Derselbe Aufbau wie bei der Feuerlinie darüber — dieselbe Eingabe, aber der
+     Brandherd zahlt in HITZE statt in Score. Der knappe Sieg (Vorsprung 1) liegt bewusst UNTER der Passiv-Schwelle:
+     ohne den Skill gäbe dieser Stich null Hitze, mit ihm die Formationen. Das ist der Kaltstart. */
+  it("Brandherd in der Engine (§7.70): der Formations-Sieg heizt, auch ohne Vorsprung; ohne Formation nicht", () => {
+    const form = (n) => [{ mult: 1, formations: [] }, { mult: 1.5, baseMult: 1.5, afterglowFactor: 1, coreFactor: 1, formations: Array.from({ length: n }, () => ({ type: "farbblock", ordinal: 2, factor: 1.5 })) }];
+    const satz = T.brandherd[0].perForm;
+    const knapp = resolveTrick(scen(7, 6, { pos: 1, skills: [F.BRANDHERD], heat: heat({ value: 20 }), formations: form(2) }), noCrit);
+    expect(knapp.lastTrick.result).toBe("win");
+    expect(knapp.heat.value).toBe(20 + 2 * satz);            // Vorsprung 1 → Passiv gibt nichts, der Brandherd alles
+    const ohne = resolveTrick(scen(7, 6, { pos: 1, skills: [F.BRANDHERD], heat: heat({ value: 20 }), formations: form(0) }), noCrit);
+    expect(ohne.heat.value).toBe(20);                         // keine Formation, kein Vorsprung: nichts
+    const gross = resolveTrick(scen(12, 6, { pos: 1, skills: [F.BRANDHERD], skillTiers: { [F.BRANDHERD]: 3 }, heat: heat({ value: 20 }), formations: form(1) }), noCrit);
+    expect(gross.heat.value).toBe(20 + G(6) + T.brandherd[3].perForm); // Passiv und Brandherd addieren sich
   });
   it("Niederlage kühlt −6 und merkt den Rückstand; die Serie reißt (kein Feuer-Serienschutz mehr)", () => {
     const s = resolveTrick(scen(2, 9, { skills: [F.FEUERLINIE], heat: heat({ value: 50 }), winStreak: 5 }), noCrit);

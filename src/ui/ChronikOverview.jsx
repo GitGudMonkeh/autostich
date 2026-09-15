@@ -84,7 +84,8 @@ export function ChronikOverview({ state, onClose, options = {}, onOption }) {
             {hasArch && <ArchToggle on={showArch} onToggle={() => setShowArch((v) => !v)} />}
             <CardGrid cards={cards} formations={formations} roles={state.roles} {...glacierGridProps(state)} anchors={anchors} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
               highlightPos={highlightPos} highlightTitle="⏱ Zeitraffer · gekoppelte Position (20 & 40)"
-              openSegments={openBorderInfo(state.playerOrder, state.deck, state.skills, state.skillTiers, state.familyTiers)}
+              openSegments={openBorderInfo(state.playerOrder, state.deck, state.skills, state.skillTiers, state.familyTiers,
+                state.architectEnabled ? state.architect : null)}
               architectCover={hasArch && showArch ? architectCover : null}
               structPos={hasArch && showArch ? structLitPos : null}
               distrPos={hasArch && showArch ? distrLitPos : null}

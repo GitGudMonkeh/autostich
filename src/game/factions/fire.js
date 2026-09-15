@@ -21,16 +21,17 @@ export const F = Object.freeze({ // 01: Feuerlinie ersetzt Glut (§7.23)
   KLINGE: "SK_FIRE_06", WEISSGLUT: "SK_FIRE_07", BRANDSCHNEISE: "SK_FIRE_08", VERBRENNUNG: "SK_FIRE_09", // 08: Brandschneise ersetzt Feuerwalze (§7.27)
   SCHMELZPUNKT: "SK_FIRE_12", BRANDMAL: "SK_FIRE_13", LAUFFEUER: "SK_FIRE_14", // SK_FIRE_11 Flächenbrand: gestrichen (§7.16)
   SCHMIEDE: "SK_FIRE_15", GLUTSTAHL: "SK_FIRE_16",
+  BRANDHERD: "SK_FIRE_10", // §7.70: der 15. — auf dem Platz des gestrichenen Funkenflugs
   SONNENKERN: "SK_FIRE_L01", EWIGE_GLUT: "SK_FIRE_L02", SONNENZORN: "SK_FIRE_L03", // L02: Ewige Glut ersetzt Phönixfeuer (§7.21); L04 Damaststahl gestrichen (§6.11, Owner: drei je Fraktion)
 });
 
 /* Frischer Hitze-Substate — inaktiv; der erste Feuer-Skill aktiviert ihn (Reducer). value = Hitze (0..max, auch mit
    Nachkommastellen), peak = höchste je erreichte Hitze (Sonnenzorn, Ewige Glut), lastLossDeficit = Rückstand der letzten
-   Niederlage (Rückzündung), emberMult = dauerhafte Rampe der Ewigen Glut auf den Hitze-Multiplikator, bedFloor =
-   wie weit Glutbetts Boden über seiner Stufe liegt (§6.24, wächst über den Lauf), lanes/laneWins =
-   Brandschneise (§7.27: die Schnitte der letzten Durchläufe, neuester zuerst / die Siege des laufenden Durchlaufs). */
+   Niederlage (Rückzündung), emberMult = dauerhafte Rampe der Ewigen Glut auf den Hitze-Multiplikator, lanes/laneWins =
+   Brandschneise (§7.27: die Schnitte der letzten Durchläufe, neuester zuerst / die Siege des laufenden Durchlaufs).
+   (§7.70: `bedFloor` ist weg — Glutbetts Boden steht fest, statt über den Lauf zu wachsen.) */
 export function initHeat() {
-  return { active: false, value: 0, max: C.HEAT_MAX, peak: 0, lastLossDeficit: 0, emberMult: 0, bedFloor: 0, lanes: [], laneWins: [] };
+  return { active: false, value: 0, max: C.HEAT_MAX, peak: 0, lastLossDeficit: 0, emberMult: 0, lanes: [], laneWins: [] };
 }
 
 /* Glutbetts wirksamer Boden: die Schwelle der Stufe plus das, was der Boden über den Lauf gewachsen ist (§6.24).
@@ -39,7 +40,7 @@ export function glutbettFloor(heat, skills, skillTiers) {
   if (fireParam(skills, skillTiers, F.GLUTBETT, "noCool")) return 0;
   const base = fireParam(skills, skillTiers, F.GLUTBETT, "floor");
   if (base == null) return 0;
-  return Math.min(heat?.max || C.HEAT_MAX, base + (heat?.bedFloor || 0));
+  return Math.min(heat?.max || C.HEAT_MAX, base); // §7.70: der Boden steht fest — er wuchs bis an die Leiste und hob die Rarität auf
 }
 
 const held = (skills, id) => (skills || []).includes(id);
@@ -80,10 +81,15 @@ export function syncHeatMax(heat, skills) {
    §7.20): liegt die Hitze vor dem Sieg unter der Spitze, zählt der Gewinn ×SONNENZORN_HEAT_MULT (der Zorn holt die
    Spitze zurück). (Feuersturm gibt seit §7.17 keine Hitze mehr — er ist Serie zu Score; Rückzündung seit §7.22 auch
    nicht — sie ist der Takt, rueckzuendungMult; Glut, der Kaltstart-Verstärker, ist seit §7.23 gestrichen.) */
-export function heatGainOnWin(skills, skillTiers, { margin = 0, heatValue = 0, heatPeak = 0 } = {}) {
+export function heatGainOnWin(skills, skillTiers, { margin = 0, heatValue = 0, heatPeak = 0, formCount = 0 } = {}) {
   let g = 0;
   if (margin >= C.HEAT_MIN_MARGIN) g += (margin - C.HEAT_MARGIN_OFFSET) * C.HEAT_PER_POINT;
   g += fireParam(skills, skillTiers, F.ZUNDER, "heat") || 0;
+  /* Brandherd (§7.70, Owner): Hitze je ZAHLENDER Formation der Siegposition — dieselbe Zahl, die Feuerlinie und
+     Spannungsfeld lesen (activeFormationCount, Faktor > 1). Er hängt an keinem Vorsprung und keiner Schwelle und ist
+     damit der Kaltstart, den Feuer seit §7.23 nicht mehr hatte. Feuerlinie liest dieselbe Eingabe, zahlt sie aber in
+     SCORE statt in Hitze: ein Paar, keine Dopplung. */
+  g += (fireParam(skills, skillTiers, F.BRANDHERD, "perForm") || 0) * (formCount || 0);
   const vMin = fireParam(skills, skillTiers, F.VERBRENNUNG, "minMargin");
   if (fireParam(skills, skillTiers, F.VERBRENNUNG, "heatToo") && vMin != null && margin >= vMin) g *= fireParam(skills, skillTiers, F.VERBRENNUNG, "mult") || 1;
   if (hasSonnenzorn(skills) && (heatValue || 0) < (heatPeak || 0)) g *= C.SONNENZORN_HEAT_MULT;
@@ -172,12 +178,26 @@ export function schneiseMult(skills, skillTiers, heat, pos = -1) {
    Feuer-Skill, der den Motor am EINGANG füttert — +Wert hebt den Vorsprung, der Vorsprung ist das Hitze-Einkommen —
    und Weißglut verdoppelte ausgerechnet diese Rückkopplung (Episch +5 → +10 Wert). Mit dem Deckel bei HEAT_MAX
    entkoppeln sich die zwei stärksten Feuer-Skills; die Rückkopplung bleibt, nur halb so lang. */
+// Der Klingen-Anteil allein — EINE Quelle für Motor und Leisten-Anzeige. Die Anzeige rechnete den Deckel aus
+// §7.32 nicht mit und zeigte mit Weißglut mehr Wert an, als der Stich bekam.
+export function klingeValue(skills, skillTiers, heatValue = 0) {
+  const step = fireParam(skills, skillTiers, F.KLINGE, "perHeat");
+  if (!step) return 0;
+  return Math.floor(Math.min(heatValue, C.HEAT_MAX) / step + 1e-9) * (fireParam(skills, skillTiers, F.KLINGE, "value") || 1);
+}
+
+// Die Schwellenstriche der Klinge auf einer Leiste der Länge `scale` — an derselben Grenze wie klingeValue, damit
+// die Anzeige keine Stufe verspricht, die der Skill nicht mehr zahlt. Leer ohne den Skill.
+export function klingeTicks(skills, skillTiers, scale = C.HEAT_MAX) {
+  const step = fireParam(skills, skillTiers, F.KLINGE, "perHeat");
+  const out = [];
+  if (step) for (let h = step; h < Math.min(scale, C.HEAT_MAX); h += step) out.push(h);
+  return out;
+}
+
 export function fireValueBonus(heat, skills, skillTiers, { winStreak = 0 } = {}) {
   if (!heat || !heat.active) return 0;
-  const value = heat.value || 0;
-  let v = 0;
-  const step = fireParam(skills, skillTiers, F.KLINGE, "perHeat");
-  if (step) v += Math.floor(Math.min(value, C.HEAT_MAX) / step + 1e-9) * (fireParam(skills, skillTiers, F.KLINGE, "value") || 1);
+  let v = klingeValue(skills, skillTiers, heat.value || 0);
   const rz = fireParam(skills, skillTiers, F.RUECKZUENDUNG, "value");
   const every = fireParam(skills, skillTiers, F.RUECKZUENDUNG, "every");
   if (rz && every && ((winStreak || 0) + 1) % every === 0) v += rz;
@@ -193,7 +213,7 @@ export function fireValueBonus(heat, skills, skillTiers, { winStreak = 0 } = {})
    Feuerlinie-Faktor dieses Siegs (1 ohne). */
 export function fireOnWin(heat, skills, skillTiers, { margin = 0, valueOver = 0, value: cardValue = 0, formCount = 0,
   pos = -1, card = null, forged = {}, brandOnOpp = 0, oppId = null, oppIndex = -1, oppDeck = null } = {}) {
-  const gain = heatGainOnWin(skills, skillTiers, { margin, heatValue: heat.value || 0, heatPeak: heat.peak || 0 });
+  const gain = heatGainOnWin(skills, skillTiers, { margin, heatValue: heat.value || 0, heatPeak: heat.peak || 0, formCount });
   const max = heat.max || C.HEAT_MAX;
   const raw = (heat.value || 0) + gain;
   let value = Math.min(max, raw);
@@ -256,12 +276,13 @@ export function fireOnLoss(heat, skills, skillTiers, { deficit = 0, oppId = null
      „Abfangen" heißt: die Hitze lag darüber und die Kühlung hätte sie darunter gedrückt. Liegt sie schon unten,
      passiert nichts; der Spieler muss erst wieder hochheizen. So kann der Boden nicht davonlaufen, und der Skill
      belohnt genau seinen Rhythmus: hochkommen, runtergeschlagen werden, das Bett wird dicker. */
-  let bedFloor = heat.bedFloor || 0;
   if (!fireParam(skills, skillTiers, F.GLUTBETT, "noCool")) {
+    /* §7.70 (Owner): Glutbett hat zwei Hälften, und beide tragen jetzt eine Stufe. Der BODEN hält die Kühlung an
+       (unterhalb kostet eine Niederlage nichts), und oberhalb kühlt sie nur noch `cool` statt HEAT_LOSS — dort, wo
+       der frühere steigende Boden nichts tat. Ohne den Skill bleibt es bei HEAT_LOSS. */
     const floor = glutbettFloor(heat, skills, skillTiers);
-    const caught = before > floor && before - C.HEAT_LOSS < floor;
-    value = before <= floor ? before : Math.max(floor, before - C.HEAT_LOSS);
-    if (caught) bedFloor += fireParam(skills, skillTiers, F.GLUTBETT, "rise") || 0;
+    const kuehl = fireParam(skills, skillTiers, F.GLUTBETT, "cool") ?? C.HEAT_LOSS;
+    value = before <= floor ? before : Math.max(floor, before - kuehl);
   }
   if (hasEwigeGlut(skills)) value = Math.max(value, Math.min(before, (heat.peak || 0) * C.EWIGE_GLUT_FLOOR_FRAC));
   const lossHeat = fireParam(skills, skillTiers, F.ZUNDER, "lossHeat"); // §7.22 Zunder Episch-Extra: auch Niederlagen heizen
@@ -272,7 +293,7 @@ export function fireOnLoss(heat, skills, skillTiers, { deficit = 0, oppId = null
   const bm = fireParam(skills, skillTiers, F.BRANDMAL, "minHeat");
   if (fireParam(skills, skillTiers, F.BRANDMAL, "onLoss") && bm != null && before >= bm && oppId != null)
     brands.push({ id: oppId, value: fireParam(skills, skillTiers, F.BRANDMAL, "value") || 0 });
-  return { heat: { ...heat, value, peak: Math.max(heat.peak || 0, value), lastLossDeficit: Math.max(0, deficit), meltPending, bedFloor }, brands };
+  return { heat: { ...heat, value, peak: Math.max(heat.peak || 0, value), lastLossDeficit: Math.max(0, deficit), meltPending }, brands };
 }
 
 /* Rundenende: Schmiede (§7.14: ohne Preis, die Hitze ist nur die Schwelle der Stufe — liegt sie an, erhält die niedrigste

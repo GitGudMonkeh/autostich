@@ -1,6 +1,11 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { SkillList } from "../src/ui/BuildSummary.jsx";
+import { LEGENDARY_GOLD } from "../src/ui/indicators/vocab.js";
+import { archMeta } from "../src/i18n/labels.js";
 import { makeRng } from "../src/game/deck.js";
 import { SKILL_DEFS, skillSum, buildSkillOffer, BLITZ_TIERS,
   rollTier, rollSkillOfferTiers, tierOf, SKILL_TIER_COUNT, TIER_NORMAL, TIER_EPIC,
@@ -14,11 +19,11 @@ const ALL = Object.keys(SKILL_DEFS);
 const pctText = (x) => String(Math.round(x * 10000) / 100).replace(".", ",");
 
 describe("skills — Blitz-Registry (exp skill rework)", () => {
-  it("17 Blitz-Skills: 14 normale mit vier Stufenzeilen + 3 Legendäre ohne Stufe, alle archetype=lightning", () => {
+  it("18 Blitz-Skills: 15 normale mit vier Stufenzeilen + 3 Legendäre ohne Stufe, alle archetype=lightning", () => {
     const light = Object.values(SKILL_DEFS).filter((s) => s.archetype === "lightning");
-    expect(light).toHaveLength(17); // §7.19: 14 normale (Überschlag gestrichen, Owner-Untergrenze 14) + 3 Legendäre (§6.11, Owner)
+    expect(light).toHaveLength(18); // §7.69 (Owner): 15 normale — Potenzial füllt auf den Stand von Eis und Pflanze auf; + 3 Legendäre (§6.11, Owner)
     const normal = light.filter((s) => !s.legendary), leg = light.filter((s) => s.legendary);
-    expect(normal).toHaveLength(14);
+    expect(normal).toHaveLength(15);
     expect(SKILL_DEFS.SK_LIGHTNING_14).toBeUndefined();           // §7.19: Überschlag gestrichen
     expect(leg).toHaveLength(3);
     expect(SKILL_DEFS.SK_LIGHTNING_L01, "Donnergott gestrichen (gemessen +30 %, das schwächste der vier)").toBeUndefined();
@@ -28,7 +33,7 @@ describe("skills — Blitz-Registry (exp skill rework)", () => {
     expect(SKILL_DEFS.SK_LIGHTNING_L03.name).toBe("Hochspannung"); // ersetzt Flächenionisation
     expect(SKILL_DEFS.SK_LIGHTNING_02.name).toBe("Ionenfeld");    // §7.18: neu auf dem Platz der alten Ionisierung (die ist das Passiv)
     expect(SKILL_DEFS.SK_LIGHTNING_12.name).toBe("Vorentladung"); // §7.18: neu auf dem Platz des gestrichenen Breitenbeschleunigers
-    expect(SKILL_DEFS.SK_LIGHTNING_08).toBeUndefined();           // §7.18: Statische Aufladung in Blitzableiter aufgegangen
+    expect(SKILL_DEFS.SK_LIGHTNING_08.name).toBe("Potenzial");    // §7.69: der 15., auf dem Platz der gestrichenen Statischen Aufladung
     expect(SKILL_DEFS.SK_LIGHTNING_16).toBeUndefined();           // §7.18: Dauerstrom in Blitzableiter aufgegangen
     expect(archetypeOf(LR)).toBe("lightning");
   });
@@ -39,7 +44,17 @@ describe("skills — Blitz-Registry (exp skill rework)", () => {
     expect(desc(BLITZ_TIERS.blitzschlag, "critEvery")).toBe(true);
     expect(desc(BLITZ_TIERS.vorentladung, "minStreak")).toBe(true); // §7.18
     expect(asc(BLITZ_TIERS.faenger, "value")).toBe(true);           // §7.18: ohne Schwelle, der Wert steigt
-    expect(asc(BLITZ_TIERS.lichtbogen, "critPerStack")).toBe(true); // §7.28: Ionisierung zu Crit-Chance, der Satz je Stapel steigt
+    /* §7.68 (Owner): der Lichtbogen ist der Kaltstart. Die Leiter ist der TAKT der Siege ohne Crit und fällt
+       deshalb; `critPerStack` darf nicht zurückkommen, das war der Konstruktionsfehler (er las die Stapel, die
+       erst aus vollen Leisten entstehen, und hing damit hinter seiner eigenen Wirkung). */
+    expect(desc(BLITZ_TIERS.lichtbogen, "winEvery")).toBe(true);
+    expect(BLITZ_TIERS.lichtbogen.every((r) => r.critPerStack === undefined)).toBe(true);
+    /* §7.69 (Owner): Potenzial. Die Leiter ist der TEILER auf der Ladung und fällt deshalb — je kleiner, desto mehr
+       Wert je Ladung. Der Skill darf keine Stapel- oder Crit-Bedingung bekommen: sein ganzer Zweck ist, dass er VOR
+       der Ionisierung wirkt (§7.68 hat denselben Fehler aus dem Lichtbogen entfernt). */
+    expect(desc(BLITZ_TIERS.potenzial, "per")).toBe(true);
+    expect(BLITZ_TIERS.potenzial.every((r) => r.per >= 1)).toBe(true);
+    expect(BLITZ_TIERS.potenzial.every((r) => r.minStacks === undefined && r.critPerStack === undefined && r.minBars === undefined)).toBe(true);
     expect(BLITZ_TIERS.ueberspannung).toBeUndefined();               // §7.28: Überspannung gestrichen
     expect(asc(BLITZ_TIERS.ionenfeld, "value")).toBe(true);         // §7.19
     expect(asc(BLITZ_TIERS.ionenfeld, "tricks")).toBe(true);        // §7.18
@@ -358,4 +373,34 @@ describe("Anzeige-Stufe: keine Oberfläche liest die gewürfelte Stufe, außer d
     expect(src).toContain("tierOf(state, id)");
     expect(src).not.toContain("effectiveTierOf");
   });
+});
+
+/* Owner 2026-09-14: „legendäre skills sollen in diesem Panel auch einen goldenen Rahmen haben". Die Build-Übersicht
+   färbte ihre Skill-Chips allein nach Fraktion — Ewige Glut sah dort aus wie Glutbett. Geprüft wird das GERENDERTE
+   Markup, nicht der Quelltext: eine Ratsche auf `LEGENDARY_GOLD` im Quelltext würde auch dann halten, wenn die
+   Konstante an der falschen Stelle steht. Gegenprobe: gibt man dem legendären Chip die Fraktionsfarbe zurück,
+   fällt die erste Erwartung; vertauscht man legendär und normal, fällt die zweite. */
+describe("Build-Übersicht: legendäre Skills tragen den Goldrahmen", () => {
+  const chipOf = (markup, name) => {
+    const i = markup.indexOf(name);
+    const start = markup.lastIndexOf("<button", i);
+    return markup.slice(start, i);
+  };
+  it("legendär trägt Gold im Rahmen, ein normaler Skill derselben Fraktion nicht", () => {
+    const leg = "SK_FIRE_L02", norm = "SK_FIRE_02";
+    expect(isLegendarySkill(leg), "Testdaten: L02 muss legendär sein").toBe(true);
+    expect(isLegendarySkill(norm), "Testdaten: 02 darf nicht legendär sein").toBe(false);
+    const markup = renderToStaticMarkup(createElement(SkillList, { skills: [leg, norm], skillTiers: {} }));
+    expect(chipOf(markup, SKILL_DEFS[leg].name)).toContain(LEGENDARY_GOLD);
+    expect(chipOf(markup, SKILL_DEFS[norm].name)).not.toContain(LEGENDARY_GOLD);
+  });
+  it("die Schrift bleibt Fraktionsfarbe — der Rahmen trägt die Seltenheit, nicht der Name", () => {
+    const markup = renderToStaticMarkup(createElement(SkillList, { skills: ["SK_FIRE_L02"], skillTiers: {} }));
+    const chip = chipOf(markup, SKILL_DEFS.SK_FIRE_L02.name);
+    const fire = archMeta("fire").color;
+    expect(chip, "color: muss die Fraktionsfarbe bleiben").toContain(`color:${fire}`);
+    expect(chip, "outline: muss das Gold tragen").toMatch(new RegExp(`outline:[^;"]*${LEGENDARY_GOLD}`));
+  });
+  /* Dass das Gold nur EINMAL im Quelltext steht, prüft test/legendary-gold.test.js für alle
+     Seltenheits-Oberflächen, nicht nur für diese beiden — hier stand vorher eine schwächere Abschrift. */
 });

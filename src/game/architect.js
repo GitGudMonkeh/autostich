@@ -60,13 +60,29 @@ export const DIAGONALE_FACTOR    = 1.62;                 // volle Diagonale (5, 
 export const DISTRICT_BONUS = 0.08;   // je verschiedenem gleich-kategorigen Nachbargebäude +8 % auf die Zellen des Gebäudes
 export const DISTRICT_CAP   = 3;      // höchstens so viele Nachbarn zählen (Deckel gegen Ballungs-Runaway)
 
-// Stufen-Skalierung: numerischer Effekt (Wert/Score) gerundet; Faktor-Effekte additiv über FORM_TIER_BONUS.
-// #Pool Runde 6 (X1): monoton — jede Stufe hebt den Wert um mindestens 1, sonst wäre der Ausbau ein No-op
-// (Basis 1 rundete auf 1/2/2/3). Basen ≥ 2 waren schon streng steigend und bleiben unverändert.
+/* Stufen-Skalierung: numerischer Effekt (Wert/Score) gerundet; Faktor-Effekte additiv über FORM_TIER_BONUS.
+   #Pool Runde 6 (X1): monoton — jede Stufe hebt den Wert um mindestens 1, sonst wäre der Ausbau ein No-op
+   (Basis 1 rundete auf 1/2/2/3). Basen ≥ 2 waren schon streng steigend und bleiben unverändert.
+
+   Owner 2026-09-14: „passe alle Zahlen an, dass sie auf 0 oder 5 enden — schwierig für Spieler, mit 112 zu
+   rechnen." Gilt ab RUND_AB: kleine Beträge (Kampfwert 1–9) bleiben, wie sie sind, dort ist Kopfrechnen kein
+   Problem und die Leiter hätte sonst tote Stufen. Gerundet wird in der EINEN Funktion, die alle Stufenzahlen
+   erzeugt — Katalog, Anzeige und DB-Seite ziehen automatisch mit. Die Monotonie bleibt die stärkere Regel:
+   fällt eine gerundete Stufe auf die vorige zurück, wird sie um einen Schritt angehoben. */
+export const RUND_AB = 10;   // ab diesem Betrag auf Vielfache von 5
+export const RUND_AUF = 5;
+const snap5 = (v) => (v < RUND_AB ? v : Math.round(v / RUND_AUF) * RUND_AUF);
+/* Die Hälfte, die bei `target` auf die übrigen Zellen fällt — durch dieselbe Rundung wie jede andere
+   Spielerzahl, und als EINE Quelle für Motor (resolveNumEffect) und Kartentext (i18n/buildingText.js).
+   Ohne sie stand auf der Karte „die übrigen Zellen +247" neben einer 495, die auf 5 endet. */
+export const halfOf = (n) => Math.max(1, snap5(Math.floor((n || 0) / 2)));
 export const tierNum = (base, tier) => {
-  if (tier === "legendary") return base;
+  if (tier === "legendary") return snap5(base);
   let v = 0;
-  for (let t = 1; t <= (tier || 1); t++) v = Math.max(Math.round(base * (TIER_FACTOR[t] || 1)), v + 1);
+  for (let t = 1; t <= (tier || 1); t++) {
+    const roh = Math.max(Math.round(base * (TIER_FACTOR[t] || 1)), v + 1);
+    v = Math.max(snap5(roh), v < RUND_AB ? v + 1 : v + RUND_AUF);
+  }
   return v;
 };
 export const tierFactor = (base, tier) => (tier === "legendary" ? base : base + FORM_TIER_BONUS * ((tier || 1) - 1));
@@ -88,7 +104,10 @@ export function upgradeInfo(fam, tier) {
 // Kreuzgang-Bindeglied-Span (Bedingung minimal weiten): I ±1, II ±2, III/IV ±3 (Runde 6: keine tote Stufe mehr).
 export const bindSpanFor = (tier) => (tier === "legendary" || tier >= 3 ? 3 : tier >= 2 ? 2 : 1);
 // Rampe-Schwelle (Bedingung minimal weiten): Wert ≤ 5 + (Stufe−1).
-const rampThresholdFor = (tier) => 5 + (tier === "legendary" ? 0 : (tier || 1) - 1);
+/* Owner-Runde 2026-09-14 („a": Tore lockern): Schwelle eine Stufe weiter, ≤6…≤9 statt ≤5…≤8. Das Deck trägt
+   die Werte 1–10 gleichverteilt, der Anteil qualifizierender Karten steigt damit von 50–80 % auf 60–90 %.
+   Die Rampe bleibt „niedrige Karten" — das Tor wird geweitet, nicht abgeschafft. */
+export const rampThresholdFor = (tier) => 6 + (tier === "legendary" ? 0 : (tier || 1) - 1);
 
 /* ============================================================
    SPIELER-BESCHREIBUNG eines Bauplans/Gebäudes (Sprachprüfung A13) — die EINE Quelle.
@@ -265,57 +284,57 @@ export function nextRotationFootprint(form, footprint, others = []) {
    ============================================================ */
 export const ARCHITECT_FAMILIES = {
   /* ---- value · Tragwerk (I–IV) ---- */
-  A_STUETZE:  { id: "A_STUETZE",  name: "Stützbalken",  category: "value", form: "domino",    base: { kind: "flat", value: 1 } },
-  A_RIEGEL:   { id: "A_RIEGEL",   name: "Riegel",       category: "value", form: "tromino_i", base: { kind: "flat", value: 1 } },
-  A_QUADER:   { id: "A_QUADER",   name: "Quader",       category: "value", form: "block2x2",  base: { kind: "flat", value: 2 } },
-  A_RAMPE:    { id: "A_RAMPE",    name: "Rampe",        category: "value", form: "tetro_s",   base: { kind: "lowValue", value: 2 } },
-  A_BUNTGLAS: { id: "A_BUNTGLAS", name: "Buntglas",     category: "value", form: "tetro_t",   base: { kind: "color", value: 3 }, colorLocked: true },
-  A_FIRST:    { id: "A_FIRST",    name: "Firstträger",  category: "value", form: "line4",     base: { kind: "target", value: 3 }, target: "highest" },
-  A_SOCKEL:   { id: "A_SOCKEL",   name: "Sockel",       category: "value", form: "tetro_l",   base: { kind: "target", value: 3 }, target: "lowest" },
-  A_ZUNFTV:   { id: "A_ZUNFTV",   name: "Zunftviertel", category: "value", form: "tromino_l",  base: { kind: "neighbor", value: 1, cap: 3 } }, // #Pool: +Wert je Nachbargebäude
-  A_WEHRGANG: { id: "A_WEHRGANG", name: "Wehrgang",     category: "value", form: "grundstueck", base: { kind: "segment", value: 2, half: "early" } }, // #Pool Batch 3: +Wert nur in den frühen Segmenten
+  A_STUETZE:  { id: "A_STUETZE",  name: "Stützbalken",  category: "value", form: "domino",    base: { kind: "flat", value: 3 } },
+  A_RIEGEL:   { id: "A_RIEGEL",   name: "Riegel",       category: "value", form: "tromino_i", base: { kind: "flat", value: 3 } },
+  A_QUADER:   { id: "A_QUADER",   name: "Quader",       category: "value", form: "block2x2",  base: { kind: "flat", value: 3 } },
+  A_RAMPE:    { id: "A_RAMPE",    name: "Rampe",        category: "value", form: "tetro_s",   base: { kind: "lowValue", value: 3 } },
+  A_BUNTGLAS: { id: "A_BUNTGLAS", name: "Buntglas",     category: "value", form: "tetro_t",   base: { kind: "color", value: 3 }, colorLocked: true, tierKick: { at: 3, anyColor: true } }, // Owner 2026-09-14: ab III fällt die Farbbedingung — das Farbtor (1 von 4) drückte die Decke des Tragwerks auf ein Viertel
+  A_FIRST:    { id: "A_FIRST",    name: "Firstträger",  category: "value", form: "line4",     base: { kind: "target", value: 5 }, target: "highest" },
+  A_SOCKEL:   { id: "A_SOCKEL",   name: "Sockel",       category: "value", form: "tetro_l",   base: { kind: "target", value: 5 }, target: "lowest" },
+  A_ZUNFTV:   { id: "A_ZUNFTV",   name: "Zunftviertel", category: "value", form: "tromino_l",  base: { kind: "neighbor", value: 2, cap: 3 } }, // #Pool: +Wert je Nachbargebäude
+  A_WEHRGANG: { id: "A_WEHRGANG", name: "Wehrgang",     category: "value", form: "grundstueck", base: { kind: "segment", value: 3, half: "early" } }, // #Pool Batch 3: +Wert nur in den frühen Segmenten
 
   /* ---- score · Handelsbauten (I–IV) ---- */
   // tierKick (#Pool): ab Stufe `at` zündet ein QUALITATIVER Zusatzeffekt (nicht nur die skalierte Zahl) → Ausbau
   // wird zur echten Wahl statt Zahlen-Tick. Werte bewusst konservativ (Leitplanke: Eigenbeitrag ~25–35 %, nicht spät-lastig).
-  A_ZOLLHAUS:    { id: "A_ZOLLHAUS",    name: "Zollhaus",    category: "score", form: "domino",  base: { kind: "flat", score: 35 }, tierKick: { at: 4, mult: 1.15 } },
-  A_KONTOR:      { id: "A_KONTOR",      name: "Kontor",      category: "score", form: "tetro_l", base: { kind: "flat", score: 65 }, tierKick: { at: 4, critFlatMult: 2 } },
-  A_REIHENHAUS:  { id: "A_REIHENHAUS",  name: "Reihenhaus",  category: "score", form: "line4",   base: { kind: "streak", score: 9 }, tierKick: { at: 3, streakDoubleFrom: 4 } },
-  A_ZINNE:       { id: "A_ZINNE",       name: "Zinne",       category: "score", form: "tetro_t", base: { kind: "crit", score: 80 } }, // Pass3: 130→80 (Blitz-Crit-Synergie dämpfen)
-  A_ZUNFTHAUS:   { id: "A_ZUNFTHAUS",   name: "Zunfthaus",   category: "score", form: "tetro_t", base: { kind: "color", score: 130 }, colorLocked: true },
+  A_ZOLLHAUS:    { id: "A_ZOLLHAUS",    name: "Zollhaus",    category: "score", form: "domino",  base: { kind: "flat", score: 115 }, tierKick: { at: 4, mult: 1.15 } },
+  A_KONTOR:      { id: "A_KONTOR",      name: "Kontor",      category: "score", form: "tetro_l", base: { kind: "flat", score: 115 }, tierKick: { at: 4, critFlatMult: 2 } },
+  A_REIHENHAUS:  { id: "A_REIHENHAUS",  name: "Reihenhaus",  category: "score", form: "line4",   base: { kind: "streak", score: 20 }, tierKick: { at: 3, streakDoubleFrom: 4 } },
+  A_ZINNE:       { id: "A_ZINNE",       name: "Zinne",       category: "score", form: "tetro_t", base: { kind: "crit", score: 150 } }, // Pass3: 130→80 (Blitz-Crit-Synergie dämpfen)
+  A_ZUNFTHAUS:   { id: "A_ZUNFTHAUS",   name: "Zunfthaus",   category: "score", form: "tetro_t", base: { kind: "color", score: 445 }, colorLocked: true },
   A_GIEBEL:      { id: "A_GIEBEL",      name: "Giebel",      category: "score", form: "line4",   base: { kind: "target", score: 160 }, target: "highest" },
-  A_MEILENSTEIN: { id: "A_MEILENSTEIN", name: "Meilenstein", category: "score", form: "block2x2", base: { kind: "milestone", score: 200, every: 5 }, tierKick: { at: 4, every: 3 } },
+  A_MEILENSTEIN: { id: "A_MEILENSTEIN", name: "Meilenstein", category: "score", form: "block2x2", base: { kind: "milestone", score: 335, every: 5 }, tierKick: { at: 4, every: 3 } },
 
   /* ---- score · Distrikt (I–IV, #Pool): Gebäude, die auf das BRETT reagieren (Nachbarschaft / vollendete Strukturen).
          Zahlen zählen erst, wenn dicht/strukturiert gebaut wird → Spannung gegen die Struktur-Streuung (Zeile/Spalte). ---- */
-  A_MARKT:       { id: "A_MARKT",       name: "Marktplatz",  category: "score", form: "plus",   base: { kind: "neighbor", score: 20, cap: 4 } },
-  A_SPEICHER:    { id: "A_SPEICHER",    name: "Speicherstadt", category: "score", form: "luecke", base: { kind: "compound", score: 40 } },
+  A_MARKT:       { id: "A_MARKT",       name: "Marktplatz",  category: "score", form: "plus",   base: { kind: "neighbor", score: 55, cap: 4 } },
+  A_SPEICHER:    { id: "A_SPEICHER",    name: "Speicherstadt", category: "score", form: "luecke", base: { kind: "compound", score: 115 } },
   // Lage/Staffel (#Pool Batch 3): Effekt hängt von der POSITION ab (Segment-Hälfte / Weitergabe) → Platzierung zählt.
-  A_VORWERK:     { id: "A_VORWERK",     name: "Vorwerk",     category: "score", form: "zwilling", base: { kind: "segment", score: 70, half: "early" } }, // nur in den frühen 4 Segmenten
-  A_LAUFGANG:    { id: "A_LAUFGANG",    name: "Laufgang",    category: "score", form: "diag3",    base: { kind: "relay", score: 50 } },               // reicht Score ans Feld rechts weiter
+  A_VORWERK:     { id: "A_VORWERK",     name: "Vorwerk",     category: "score", form: "zwilling", base: { kind: "segment", score: 225, half: "early" } }, // nur in den frühen 4 Segmenten
+  A_LAUFGANG:    { id: "A_LAUFGANG",    name: "Laufgang",    category: "score", form: "diag3",    base: { kind: "relay", score: 115 } },               // reicht Score ans Feld rechts weiter
   // Risiko (#Pool Batch 4): Wette auf den Crit. Sieg MIT Crit → Jackpot; Sieg OHNE Crit → Abzug (penalty). Aufwerten hebt
   // NUR den Jackpot (tierNum auf score), der Abzug bleibt fix. Der Crit ist nicht steuerbar → echte Wette. Boden in engine.
-  A_LOSBUDE:     { id: "A_LOSBUDE",     name: "Losbude",     category: "score", form: "domino",      base: { kind: "gamble", score: 90,  penalty: 15 } },
+  A_LOSBUDE:     { id: "A_LOSBUDE",     name: "Losbude",     category: "score", form: "domino",      base: { kind: "gamble", score: 150, penalty: 15 } },
   A_WETTHALLE:   { id: "A_WETTHALLE",   name: "Wetthalle",   category: "score", form: "grundstueck", base: { kind: "gamble", score: 260, penalty: 60 } },
 
   /* ---- formation · Sakralbau (I–IV) ---- */
   // Runde 6 (X3): tierValue = flacher Stichwert auf den Zellen je Stufe ([_, I, II, III, IV]) — die vorher
   // stufen-inerten Familien bekommen auf JEDER Stufe etwas; die Kicks (addType/farbJoker) bleiben der
   // qualitative Sprung auf III. Beträge klein (Referenz: Stützbalken IV = 4 auf 2 Zellen).
-  A_KLAMMER:    { id: "A_KLAMMER",    name: "Klammer",    category: "formation", form: "domino",    base: { kind: "joker", types: ["farbblock"] }, tierKick: { at: 3, addType: "wiederholung" }, tierValue: [0, 0, 1, 1, 2] },
-  A_ARKADE:     { id: "A_ARKADE",     name: "Arkade",     category: "formation", form: "domino",    base: { kind: "transparentFarb" }, tierKick: { at: 3, farbJoker: true }, tierValue: [0, 0, 1, 1, 2] },
-  A_KREUZGANG:  { id: "A_KREUZGANG",  name: "Kreuzgang",  category: "formation", form: "tromino_l", base: { kind: "bind" }, tierValue: [0, 0, 0, 0, 2] },
-  A_FRIES:      { id: "A_FRIES",      name: "Fries",      category: "formation", form: "block2x2",  base: { kind: "joker", types: ["wiederholung"] }, tierKick: { at: 3, addType: "farbblock" }, tierValue: [0, 0, 1, 1, 2] },
-  A_PFEILER:    { id: "A_PFEILER",    name: "Pfeiler",    category: "formation", form: "line4",     base: { kind: "crossSeg" }, tierValue: [0, 0, 1, 2, 3] },
+  A_KLAMMER:    { id: "A_KLAMMER",    name: "Klammer",    category: "formation", form: "domino",    base: { kind: "joker", types: ["farbblock"] }, tierKick: { at: 3, addType: "wiederholung" }, tierValue: [0, 1, 3, 4, 6] },
+  A_ARKADE:     { id: "A_ARKADE",     name: "Arkade",     category: "formation", form: "domino",    base: { kind: "transparentFarb" }, tierKick: { at: 3, farbJoker: true }, tierValue: [0, 1, 3, 4, 6] },
+  A_KREUZGANG:  { id: "A_KREUZGANG",  name: "Kreuzgang",  category: "formation", form: "tromino_l", base: { kind: "bind" }, tierValue: [0, 1, 3, 4, 6] },
+  A_FRIES:      { id: "A_FRIES",      name: "Fries",      category: "formation", form: "block2x2",  base: { kind: "joker", types: ["wiederholung"] }, tierKick: { at: 3, addType: "farbblock" }, tierValue: [0, 1, 3, 4, 6] },
+  A_PFEILER:    { id: "A_PFEILER",    name: "Pfeiler",    category: "formation", form: "line4",     base: { kind: "crossSeg" }, tierValue: [0, 1, 2, 3, 4] },
   A_GRUNDSTEIN: { id: "A_GRUNDSTEIN", name: "Grundstein", category: "formation", form: "block2x2",  base: { kind: "anker", factor: 1.10 }, tierKick: { at: 3, ankerValue: 2 } },
-  A_GEWOELBE:   { id: "A_GEWOELBE",   name: "Gewölbe",    category: "formation", form: "tetro_t",   base: { kind: "joker", types: ["wiederholung", "treppe"] }, tierKick: { at: 3, addType: "farbblock" }, tierValue: [0, 0, 1, 1, 2] },
+  A_GEWOELBE:   { id: "A_GEWOELBE",   name: "Gewölbe",    category: "formation", form: "tetro_t",   base: { kind: "joker", types: ["wiederholung", "treppe"] }, tierKick: { at: 3, addType: "farbblock" }, tierValue: [0, 1, 3, 4, 6] },
 
   /* ---- legendär (keine Stufen, kommen fertig; 2 je Kategorie) ---- */
-  A_FUNDAMENT:  { id: "A_FUNDAMENT",  name: "Fundamentplatte", category: "value",     form: "zeile",    base: { kind: "flat", value: 5 },   legendary: true }, // #284: 2→5, damit es sich legendär anfühlt (+ füllt eine ganze Zeile → Struktur)
-  A_BOLLWERK:   { id: "A_BOLLWERK",   name: "Bollwerk",        category: "value",     form: "block2x3", base: { kind: "flat", value: 6 },   legendary: true }, // #284: 2→6 (keine Eigen-Zeile → höher als Fundamentplatte; 6-Zellen-Festung = viele sichere Siege)
-  A_SCHATZ:     { id: "A_SCHATZ",     name: "Schatzkammer",    category: "score",     form: "block2x2", base: { kind: "mult", factor: 1.3 }, legendary: true },
+  A_FUNDAMENT:  { id: "A_FUNDAMENT",  name: "Fundamentplatte", category: "value",     form: "zeile",    base: { kind: "flat", value: 9 },   legendary: true }, // #284: 2→5, damit es sich legendär anfühlt (+ füllt eine ganze Zeile → Struktur)
+  A_BOLLWERK:   { id: "A_BOLLWERK",   name: "Bollwerk",        category: "value",     form: "block2x3", base: { kind: "flat", value: 9 },   legendary: true }, // #284: 2→6 (keine Eigen-Zeile → höher als Fundamentplatte; 6-Zellen-Festung = viele sichere Siege)
+  A_SCHATZ:     { id: "A_SCHATZ",     name: "Schatzkammer",    category: "score",     form: "block2x2", base: { kind: "mult", factor: 1.9 }, legendary: true },
   A_PRUNKSAAL:  { id: "A_PRUNKSAAL",  name: "Prunksaal",       category: "score",     form: "zeile",    base: { kind: "flat", score: 300 },  legendary: true }, // #284: 100→300, verlässlicher Top-Legendär (füllt eine ganze Zeile → ×Struktur)
-  A_KATHEDRALE: { id: "A_KATHEDRALE", name: "Kathedrale",      category: "formation", form: "zeile",    base: { kind: "formMult", factor: 1.4 }, legendary: true },
+  A_KATHEDRALE: { id: "A_KATHEDRALE", name: "Kathedrale",      category: "formation", form: "zeile",    base: { kind: "formMult", factor: 2.0 }, legendary: true },
   A_BASILIKA:   { id: "A_BASILIKA",   name: "Basilika",        category: "formation", form: "zeile",    base: { kind: "joker", types: ["wiederholung", "farbblock", "treppe", "wechsel"] }, legendary: true },
   // Prisma (Joker alle 4) war als normales Formations-Gebäude zu stark (schon nach dem 1. Lauf dominant) → in die
   // Legendären gezogen: nur noch über den seltenen Legendär-Slot, Effekt unverändert (Tetro-T, 4 Zellen).
@@ -323,11 +342,11 @@ export const ARCHITECT_FAMILIES = {
 
   /* ---- legendär · Distrikt (#Pool Batch 5): heben die neuen Mechaniken (Nachbarschaft/Ballung/Staffel/Risiko) auf
          Legendär-Niveau. Kommen fertig stark, aber mit großer/gestreuter Form → schwer optimal zu platzieren. ---- */
-  A_LEUCHTTURM: { id: "A_LEUCHTTURM", name: "Leuchtturm",      category: "score", form: "line4",       base: { kind: "relay", score: 100, both: true }, legendary: true },   // strahlt in BEIDE Nachbarfelder
-  A_RATHAUS:    { id: "A_RATHAUS",    name: "Rathaus",         category: "score", form: "block2x2",    base: { kind: "neighbor", score: 45, cap: 6 }, legendary: true },     // Distrikt-Hauptstadt
+  A_LEUCHTTURM: { id: "A_LEUCHTTURM", name: "Leuchtturm",      category: "score", form: "line4",       base: { kind: "relay", score: 175, both: true }, legendary: true },   // strahlt in BEIDE Nachbarfelder
+  A_RATHAUS:    { id: "A_RATHAUS",    name: "Rathaus",         category: "score", form: "block2x2",    base: { kind: "neighbor", score: 175, cap: 6 }, legendary: true },     // Distrikt-Hauptstadt
   A_SPIELBANK:  { id: "A_SPIELBANK",  name: "Spielbank",       category: "score", form: "grundstueck", base: { kind: "gamble", score: 500, penalty: 80 }, legendary: true },  // größter Jackpot
-  A_STERNWARTE: { id: "A_STERNWARTE", name: "Sternwarte",      category: "score", form: "zeile",       base: { kind: "compound", score: 90 }, legendary: true },             // +Score je vollendeter Struktur
-  A_ZWINGER:    { id: "A_ZWINGER",    name: "Zwinger",         category: "value", form: "block2x3",    base: { kind: "neighbor", value: 3, cap: 5 }, legendary: true },      // Wert-Distrikt, große Fläche (Runde 6: 2→3, bleibt über Zunftviertel IV)
+  A_STERNWARTE: { id: "A_STERNWARTE", name: "Sternwarte",      category: "score", form: "zeile",       base: { kind: "compound", score: 345 }, legendary: true },             // +Score je vollendeter Struktur
+  A_ZWINGER:    { id: "A_ZWINGER",    name: "Zwinger",         category: "value", form: "block2x3",    base: { kind: "neighbor", value: 5, cap: 5 }, legendary: true },      // Wert-Distrikt, große Fläche (Runde 6: 2→3, bleibt über Zunftviertel IV)
 };
 export const familyDef = (id) => ARCHITECT_FAMILIES[id] || null;
 export const CATEGORIES = ["value", "score", "formation"];
@@ -564,6 +583,15 @@ function resolveNumEffect(fam, b, cat, order, deck, cardVal, boardCtx = {}) {
   const base = fam.base;
   const out = [];
   const kickOn = base && fam.tierKick && typeof b.tier === "number" && b.tier >= fam.tierKick.at; // #Pool: Stufen-Kicker aktiv?
+  /* target (Firstträger · Sockel · Giebel): die Zielkarte bekommt den vollen Betrag, JEDE ANDERE Zelle des
+     Fußabdrucks die Hälfte.
+
+     Owner-Runde 2026-09-14: vorher lag der Effekt NUR auf der Zielzelle — vier Zellen bezahlt, eine benutzt.
+     Bei einem Baufeld von MAX_COVER Zellen war das der teuerste Posten im Katalog (gerechnet 45 gegen 156
+     Basis-Score je bezahlter Zelle beim gleich großen Quader). Die halbe Hälfte statt des vollen Betrags auf
+     allen Zellen ist bewusst: sonst wären Firstträger und Sockel exakt der Quader mit anderer Form, und die
+     Familie verlöre das, was sie ist — „die höchste/niedrigste Karte zählt". So bleibt die Zielzelle die Pointe
+     und der Rest des Gebäudes hört auf, tote Fläche zu sein. */
   if (base.kind === "target") {
     const cmp = fam.target === "highest"
       ? (a, c) => cardVal(c) > cardVal(a) || (cardVal(c) === cardVal(a) && c < a)
@@ -571,7 +599,9 @@ function resolveNumEffect(fam, b, cat, order, deck, cardVal, boardCtx = {}) {
     let tgt = b.footprint[0];
     for (const p of b.footprint) if (cmp(tgt, p)) tgt = p;
     const amount = tierNum(cat === "value" ? base.value : base.score, b.tier);
-    out.push([tgt, { kind: "target", amount, familyId: fam.id, buildingId: b.id }]);
+    const rest = halfOf(amount);
+    for (const p of b.footprint)
+      out.push([p, { kind: "target", amount: p === tgt ? amount : rest, familyId: fam.id, buildingId: b.id }]);
     return out;
   }
   // #Pool: Distrikt-Effekte (neighbor/compound) sind rein brett-abhängig → hier EINMAL auf einen flachen Betrag
@@ -586,7 +616,10 @@ function resolveNumEffect(fam, b, cat, order, deck, cardVal, boardCtx = {}) {
     let e = null;
     if (base.kind === "flat") e = { kind: "flat", amount: tierNum(cat === "value" ? base.value : base.score, b.tier) };
     else if (base.kind === "lowValue") e = { kind: "lowValue", amount: tierNum(base.value, b.tier), threshold: rampThresholdFor(b.tier) };
-    else if (base.kind === "color") e = { kind: "color", amount: tierNum(cat === "value" ? base.value : base.score, b.tier), colorChoice: b.colorChoice };
+    // #Pool tierKick anyColor (Buntglas III): die Farbbedingung fällt weg — aus dem Tor wird ein freier Betrag.
+    else if (base.kind === "color") e = (kickOn && fam.tierKick.anyColor)
+      ? { kind: "flat", amount: tierNum(cat === "value" ? base.value : base.score, b.tier) }
+      : { kind: "color", amount: tierNum(cat === "value" ? base.value : base.score, b.tier), colorChoice: b.colorChoice };
     else if (base.kind === "streak") e = { kind: "streak", amount: tierNum(base.score, b.tier) };
     else if (base.kind === "crit") e = { kind: "crit", amount: tierNum(base.score, b.tier) };
     else if (base.kind === "milestone") e = { kind: "milestone", amount: tierNum(base.score, b.tier), every: kickOn ? fam.tierKick.every : base.every, buildingId: b.id };

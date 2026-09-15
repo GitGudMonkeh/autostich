@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import * as C from "../src/game/constants.js";
 import { SKILL_DEFS, BLITZ_TIERS, effectiveTierOf, tierIsLifted } from "../src/game/skills.js";
 import { initLightning, L, maxChargeFor, effectiveTier, lightParam, lightningCritChance, lightningCritMult, overcritMult,
-  blitzfaengerValue, ionenfeldValue, fieldTick, ionScoreFor, ionCritMultFor, chargeGainOnWin, critFillsBar, blitzschlagStacks,
+  blitzfaengerValue, ionenfeldValue, potenzialValue, fieldTick, ionScoreFor, ionCritMultFor, chargeGainOnWin, critFillsBar, blitzschlagStacks,
   formationStacks, feldFeed, lightningOnLoss, fillBar } from "../src/game/factions/lightning.js";
 import { resolveTrick } from "../src/game/engine.js";
 import { computeFormations, activeFormationCount } from "../src/game/formations.js";
@@ -27,18 +27,18 @@ const T = BLITZ_TIERS;
 const M = C.CRIT_BASE_MULT;
 
 /* Roster mit LITERALEN IDs — das Coverage-Gate in registry-guards.test.js sucht jede Skill-ID als Text in den Tests. */
-const LIGHTNING_IDS = [ // §7.18: 08 (Statische Aufladung) und 16 (Dauerstrom) in Blitzableiter aufgegangen; 02 Ionenfeld und 12 Vorentladung neu; §7.19: 14 (Überschlag) gestrichen
-  "SK_LIGHTNING_01", "SK_LIGHTNING_02", "SK_LIGHTNING_03", "SK_LIGHTNING_04", "SK_LIGHTNING_05", "SK_LIGHTNING_06", "SK_LIGHTNING_07",
+const LIGHTNING_IDS = [ // §7.18: 16 (Dauerstrom) in Blitzableiter aufgegangen; 02 Ionenfeld und 12 Vorentladung neu; §7.19: 14 (Überschlag) gestrichen; §7.69: 08 trägt jetzt Potenzial (der 15.)
+  "SK_LIGHTNING_01", "SK_LIGHTNING_02", "SK_LIGHTNING_03", "SK_LIGHTNING_04", "SK_LIGHTNING_05", "SK_LIGHTNING_06", "SK_LIGHTNING_07", "SK_LIGHTNING_08",
   "SK_LIGHTNING_09", "SK_LIGHTNING_10", "SK_LIGHTNING_11", "SK_LIGHTNING_12", "SK_LIGHTNING_13",
   "SK_LIGHTNING_15", "SK_LIGHTNING_17",
   "SK_LIGHTNING_L02", "SK_LIGHTNING_L03", "SK_LIGHTNING_L04",
 ];
 
 describe("Blitz-Modul — Stufen und Kennwerte", () => {
-  it("L nennt genau die registrierten Blitz-Skills (14 + 3 Legendäre)", () => {
+  it("L nennt genau die registrierten Blitz-Skills (15 + 3 Legendäre)", () => {
     const ids = Object.values(L);
     // §6.11 (Owner): drei Legendäre je Fraktion — Donnergott (L01) ist als schwächstes gestrichen.
-    expect(ids).toHaveLength(17);
+    expect(ids).toHaveLength(18); // §7.69: 15 normale (Potenzial neu) + 3 Legendäre
     expect([...ids].sort()).toEqual([...LIGHTNING_IDS].sort());
     for (const id of ids) expect(SKILL_DEFS[id]?.archetype, id).toBe("lightning");
     expect(Object.values(SKILL_DEFS).filter((s) => s.archetype === "lightning").map((s) => s.id).sort()).toEqual([...LIGHTNING_IDS].sort());
@@ -201,14 +201,31 @@ describe("Blitz-Modul — Ladung, Leiste, Niederlage (reine Übergänge)", () =>
     // §7.28: der Überschuss über dem Deckel gibt KEINE Ladung mehr (Überspannung gestrichen) — die Ladung kennt nur
     // noch Crit, Blitzableiter und Ladungsserie Episch. Der Lichtbogen auf ihrem Platz zahlt auf die Crit-Chance.
     expect(T.ueberspannung).toBeUndefined(); expect(L.UEBERSPANNUNG).toBeUndefined();
-    expect(chargeGainOnWin(light(), [L.LICHTBOGEN], {}, { isCrit: true }).gain).toBe(1);
-    expect(chargeGainOnWin(light(), [L.LICHTBOGEN], { [L.LICHTBOGEN]: 3 }, { isCrit: false }).gain).toBe(0);
+    // §7.68: der Lichtbogen zahlt AUSSCHLIESSLICH ohne Crit — auf einem Crit legt er nichts drauf, auf keiner Stufe.
+    for (const tier of [0, 1, 2, 3])
+      expect(chargeGainOnWin(light(), [L.LICHTBOGEN], { [L.LICHTBOGEN]: tier }, { isCrit: true }).gain, `Stufe ${tier}`).toBe(1);
+    // §7.68: Blitzableiter Episch zahlt +2 je Takt-Crit (der Ersatz für die abgegebene Zeile „Sieg ohne Crit").
+    expect(chargeGainOnWin(light(), [L.ABLEITER], { [L.ABLEITER]: 3 }, { isCrit: true }).gain).toBe(1 + T.ableiter[3].extra);
   });
-  it("chargeGainOnWin ohne Crit (§7.18): Blitzableiter Episch +1 je Sieg ohne Crit, darunter nichts; Ladungsserie ab ihrer Schwelle (§7.30)", () => {
-    expect(chargeGainOnWin(light(), [L.ABLEITER], {}, { isCrit: false }).gain).toBe(0);
-    expect(chargeGainOnWin(light(), [L.ABLEITER], { [L.ABLEITER]: 2 }, { isCrit: false }).gain).toBe(0);
-    expect(chargeGainOnWin(light(), [L.ABLEITER], { [L.ABLEITER]: 3 }, { isCrit: false }).gain).toBe(T.ableiter[3].noCritCharge);
-    expect(chargeGainOnWin(light(), [L.ABLEITER], { [L.ABLEITER]: 3 }, { isCrit: true }).gain).toBe(2); // Crit: Passiv + jeder Crit
+  /* §7.68 (Owner): der Kaltstart der Fraktion. Der Wächter hält die drei Eigenschaften fest, die der Umbau
+     erreichen sollte: der Takt ist die Leiter, der Blitzableiter hat die Zeile ABGEGEBEN, und Episch baut sich
+     am eigenen Erfolg ab — nach dem ersten Crit eines Durchlaufs zahlt es einfach statt doppelt. */
+  it("chargeGainOnWin ohne Crit (§7.68): der Lichtbogen taktet, Episch verdoppelt bis zum ersten Crit", () => {
+    const takt = (tier) => T.lichtbogen[tier].winEvery;
+    for (const tier of [0, 1, 2]) {
+      const n = takt(tier);
+      expect(chargeGainOnWin(light({ noCritCount: n - 1 }), [L.LICHTBOGEN], { [L.LICHTBOGEN]: tier }, { isCrit: false }).gain, `Stufe ${tier} auf dem Takt`).toBe(1);
+      if (n > 1) expect(chargeGainOnWin(light({ noCritCount: 0 }), [L.LICHTBOGEN], { [L.LICHTBOGEN]: tier }, { isCrit: false }).gain, `Stufe ${tier} daneben`).toBe(0);
+    }
+    // Episch: jeder Sieg ohne Crit, und bis zum ersten Crit des Durchlaufs doppelt.
+    expect(chargeGainOnWin(light({ critSeen: false }), [L.LICHTBOGEN], { [L.LICHTBOGEN]: 3 }, { isCrit: false }).gain).toBe(2);
+    expect(chargeGainOnWin(light({ critSeen: true }), [L.LICHTBOGEN], { [L.LICHTBOGEN]: 3 }, { isCrit: false }).gain).toBe(1);
+    // … und ein Crit setzt die Marke, ohne die der Verdoppler nie aufhören würde.
+    expect(chargeGainOnWin(light({ critSeen: false }), [L.LICHTBOGEN], { [L.LICHTBOGEN]: 3 }, { isCrit: true }).next.critSeen).toBe(true);
+    // Der Blitzableiter hat die Zeile abgegeben: ohne Crit gibt er auf KEINER Stufe mehr Ladung.
+    for (const tier of [0, 1, 2, 3])
+      expect(chargeGainOnWin(light(), [L.ABLEITER], { [L.ABLEITER]: tier }, { isCrit: false }).gain, `Ableiter Stufe ${tier}`).toBe(0);
+    expect(T.ableiter.every((r) => r.noCritCharge === undefined), "noCritCharge zurück am Blitzableiter").toBe(true);
     /* §7.61: keine Blitz-Quelle zahlt mehr Ladung aus der SERIE. Der Wächter geht alle IDs auf Episch durch und
        hält die Ladung bei einer beliebig langen Serie auf dem, was ohne sie herauskommt — kommt ein Serien-Geber
        zurück, fällt die Zeile. Die Serie war ein Spätindikator (§7.55 B), und Ladung ist spät ohnehin im Überfluss. */
@@ -390,6 +407,32 @@ describe("Blitz — Engine-Integration (resolveTrick)", () => {
     const loss = resolveTrick(scen(10, 11, { deck: withStacks(10, 0, 0), skills: [L.BLITZFAENGER], skillTiers: { [L.BLITZFAENGER]: 1 }, lightning: light() }), noCrit);
     expect(loss.lastTrick.result).toBe("loss");
   });
+  /* §7.69 (Owner): Potenzial, der 15. Blitz-Skill. Die LADUNG selbst gibt Kampfwert — der einzige Wert-Geber der
+     Fraktion ohne Ionisierungs-Vorstufe. Der Wächter hält die drei Eigenschaften, die ihn ausmachen: er steigt mit
+     der Ladung, er braucht KEINE Stapel (sonst wäre er der Lichtbogen von vorher), und er fällt mit dem Einschlag
+     auf null zurück — der Sägezahn ist die Bauart, nicht ein Nebeneffekt. */
+  it("Potenzial (§7.69): die Ladung auf der Leiste gibt Kampfwert, abgerundet je Stufe", () => {
+    for (const tier of [0, 1, 2, 3]) {
+      const per = T.potenzial[tier].per;
+      for (const charge of [0, per - 1, per, 2 * per, 9]) {
+        expect(potenzialValue(light({ charge }), [L.POTENZIAL], { [L.POTENZIAL]: tier }), `Stufe ${tier}, Ladung ${charge}`)
+          .toBe(Math.floor(charge / per));
+      }
+    }
+    expect(potenzialValue(light({ charge: 9 }), [L.KETTENBLITZ], {})).toBe(0);        // ohne den Skill nichts
+    expect(potenzialValue({ ...initLightning(), charge: 9 }, [L.POTENZIAL], {})).toBe(0); // inaktiver Archetyp
+  });
+  it("Potenzial (§7.69): gewinnt den knappen Stich aus der Ladung heraus, ohne einen einzigen Stapel", () => {
+    const bau = (charge) => scen(5, 7, { skills: [L.POTENZIAL], skillTiers: { [L.POTENZIAL]: 3 }, lightning: light({ charge }) });
+    const leer = resolveTrick(bau(0), noCrit);
+    expect(leer.lastTrick.result).toBe("loss");
+    expect(leer.lastTrick.pValue).toBe(5);
+    const voll = resolveTrick(bau(9), noCrit); // Episch: je 2 Ladung +1 → +4
+    expect(voll.lastTrick.pValue).toBe(5 + Math.floor(9 / T.potenzial[3].per));
+    expect(voll.lastTrick.result).toBe("win");
+    // Keine Karte im Deck trägt Stapel — genau das unterscheidet ihn vom alten Lichtbogen.
+    expect(voll.deck.every((c) => !(c.ionStacks > 0))).toBe(true);
+  });
   it("Kurzschluss: Stapel der Siegkarte zählen ab Schwelle doppelt — in der Basis", () => {
     const min = T.kurzschluss[0].minStacks;
     const s = resolveTrick(scen(12, 0, { deck: withStacks(12, 0, min), skills: [L.KURZSCHLUSS], lightning: light() }), noCrit);
@@ -407,37 +450,71 @@ describe("Blitz — Engine-Integration (resolveTrick)", () => {
     expect(win.lightning.stackBank).toBe(0);
     expect(win.lightYield).toBeCloseTo(bank, 6);
   });
-  it("Lichtbogen (§7.28): die Stapel der gespielten Karte geben Crit-Chance auf diesen Stich, im Modul und in der Engine", () => {
-    const card = { id: "X0", ionStacks: 4 };
+  /* §7.68 (Owner): der Lichtbogen ist AUS der Crit-Chance heraus. Genau das war sein Konstruktionsfehler — er las
+     die Stapel der gespielten Karte, und Stapel entstehen erst aus vollen Leisten, Leisten erst aus Crits. Der
+     Wächter hält beide Richtungen: die Chance kennt ihn nicht mehr, und die Stapel bewegen sie nicht mehr. */
+  it("Lichtbogen (§7.68): die Stapel der gespielten Karte bewegen die Crit-Chance nicht mehr", () => {
     const passive = (n) => C.LIGHTNING_CRIT_SOCKET + n * C.LIGHTNING_CRIT_PER_SKILL; // §7.30: Sockel + Satz je Skill
     const base = passive(1); // ein gehaltener Blitz-Skill
-    expect(lightningCritChance(light(), [L.LICHTBOGEN], {}, 0, card)).toBeCloseTo(base + 4 * T.lichtbogen[0].critPerStack, 9);
-    expect(lightningCritChance(light(), [L.LICHTBOGEN], { [L.LICHTBOGEN]: 3 }, 0, card)).toBeCloseTo(base + 4 * T.lichtbogen[3].critPerStack, 9);
-    expect(lightningCritChance(light(), [L.LICHTBOGEN], {}, 0, null)).toBeCloseTo(base, 9);   // ohne Karte nur das Passiv
-    expect(lightningCritChance(light(), [L.KETTENBLITZ], {}, 0, card)).toBeCloseTo(base, 9);  // ohne den Skill nichts
-    expect(lightningCritChance(light(), [L.LICHTBOGEN], {}, 0, { id: "X1" })).toBeCloseTo(base, 9); // Karte ohne Stapel
-    // Kurzschluss zählt die Stapel ab seiner Schwelle doppelt — hier dieselbe Zählung wie beim Stapel-Score.
-    const deep = { id: "X0", ionStacks: T.kurzschluss[0].minStacks };
-    expect(lightningCritChance(light(), [L.LICHTBOGEN, L.KURZSCHLUSS], {}, 0, deep))
-      .toBeCloseTo(passive(2) + 2 * deep.ionStacks * T.lichtbogen[0].critPerStack, 9);
-    // Engine: die Chance des Stichs trägt die Stapel der gespielten Karte (Position 0).
+    for (const stacks of [0, 4, 40])
+      expect(lightningCritChance(light(), [L.LICHTBOGEN], { [L.LICHTBOGEN]: 3 }, 0, { id: "X0", ionStacks: stacks }), `${stacks} Stapel`).toBeCloseTo(base, 9);
+    expect(T.lichtbogen.every((r) => r.critPerStack === undefined), "critPerStack zurück").toBe(true);
+    // Engine: eine tief gestapelte Karte gibt dieselbe Chance wie eine frische.
     const deck = constDeck(12).map((c, i) => (i === 0 ? { ...c, ionStacks: 10 } : c));
-    const s = resolveTrick(scen(12, 0, { skills: [L.LICHTBOGEN], deck, lightning: light() }), noCrit);
-    expect(s.lastTrick.critChance).toBeCloseTo(base + 10 * T.lichtbogen[0].critPerStack, 6);
-    const ohne = resolveTrick(scen(12, 0, { skills: [L.LICHTBOGEN], lightning: light() }), noCrit); // Karte ohne Stapel
-    expect(ohne.lastTrick.critChance).toBeCloseTo(base, 6);
+    const tief = resolveTrick(scen(12, 0, { skills: [L.LICHTBOGEN], deck, lightning: light() }), noCrit);
+    const frisch = resolveTrick(scen(12, 0, { skills: [L.LICHTBOGEN], lightning: light() }), noCrit);
+    expect(tief.lastTrick.critChance).toBeCloseTo(base, 6);
+    expect(frisch.lastTrick.critChance).toBeCloseTo(base, 6);
+  });
+  it("Lichtbogen (§7.68): Kaltstart in der Engine — Sieg ohne Crit lädt, Episch doppelt bis zum ersten Crit", () => {
+    const takt = T.lichtbogen[0].winEvery;
+    const auf = resolveTrick(scen(12, 0, { skills: [L.LICHTBOGEN], lightning: light({ noCritCount: takt - 1 }) }), noCrit);
+    expect(auf.lightning.charge).toBe(1);                       // Normal: auf dem Takt
+    const neben = resolveTrick(scen(12, 0, { skills: [L.LICHTBOGEN], lightning: light({ noCritCount: 0 }) }), noCrit);
+    expect(neben.lightning.charge).toBe(0);                     // Normal: daneben
+    const kalt = resolveTrick(scen(12, 0, { skills: [L.LICHTBOGEN], skillTiers: { [L.LICHTBOGEN]: 3 }, lightning: light() }), noCrit);
+    expect(kalt.lightning.charge).toBe(2);                      // Episch, noch kein Crit im Durchlauf
+    const warm = resolveTrick(scen(12, 0, { skills: [L.LICHTBOGEN], skillTiers: { [L.LICHTBOGEN]: 3 }, lightning: light({ critSeen: true }) }), noCrit);
+    expect(warm.lightning.charge).toBe(1);                      // Episch, nach dem ersten Crit
+    // Eine Niederlage ist kein Sieg: der Takt bleibt stehen.
+    const verloren = resolveTrick(scen(0, 12, { skills: [L.LICHTBOGEN], skillTiers: { [L.LICHTBOGEN]: 3 }, lightning: light() }), noCrit);
+    expect(verloren.lightning.charge).toBe(0);
+    expect(verloren.lightning.noCritCount || 0).toBe(0);
+  });
+  /* §7.68: „bis zum ersten Crit eines DURCHLAUFS" — die Marke gehört dem Durchlauf, nicht dem Lauf. Ohne den Reset
+     am Durchlauf-Ende sähe niemand etwas: der Skill wäre nur leiser, und die Suite bliebe grün. Genau das ist beim
+     Gegenprobieren passiert, deshalb steht die Zeile hier. Geprüft wird am letzten Stich des Durchlaufs
+     (pos = TRICKS_PER_CYCLE − 1), also dort, wo die Engine den Durchlauf abschließt. */
+  it("Lichtbogen Episch (§7.68): die Crit-Marke wird am Durchlauf-Ende zurückgesetzt", () => {
+    const letzte = C.TRICKS_PER_CYCLE - 1;
+    const ende = resolveTrick(scen(12, 0, { pos: letzte, skills: [L.LICHTBOGEN], skillTiers: { [L.LICHTBOGEN]: 3 }, lightning: light({ critSeen: true }) }), noCrit);
+    expect(ende.lightning.critSeen, "Marke überlebt den Durchlauf").toBe(false);
+    // Mitten im Durchlauf bleibt sie stehen, sonst wäre der Verdoppler nie aus.
+    const mitten = resolveTrick(scen(12, 0, { pos: 5, skills: [L.LICHTBOGEN], skillTiers: { [L.LICHTBOGEN]: 3 }, lightning: light({ critSeen: true }) }), noCrit);
+    expect(mitten.lightning.critSeen).toBe(true);
   });
   it("Reststrom Selten + Blitzableiter Sehr selten: volle Leiste → Boden 3 + 1 zurück", () => {
     const s = resolveTrick(scen(12, 0, { skills: [L.ABLEITER, L.RESTSTROM], skillTiers: { [L.ABLEITER]: 2, [L.RESTSTROM]: 1 }, lightning: light({ charge: 8 }) }), zero);
     expect(s.lightning.bars).toBe(1);
     expect(s.lightning.charge).toBe(T.reststrom[1].floor + T.ableiter[2].back);
   });
-  it("Blitzableiter Episch (§7.18): jeder Sieg ohne Crit gibt +1 Ladung; Überschuss über der Leiste verfällt", () => {
+  it("Blitzableiter Episch (§7.68): ohne Crit nichts, mit Crit +2 zusätzlich; Überschuss über der Leiste verfällt", () => {
     const s = resolveTrick(scen(12, 0, { skills: [L.ABLEITER], skillTiers: { [L.ABLEITER]: 3 }, lightning: light() }), noCrit);
-    expect(s.lightning.charge).toBe(T.ableiter[3].noCritCharge);
-    const over = resolveTrick(scen(12, 0, { skills: [L.ABLEITER], skillTiers: { [L.ABLEITER]: 3 }, lightning: light({ charge: 9 }) }), zero); // 9 + 2 = 11 → voll, der Rest verfällt
+    expect(s.lightning.charge).toBe(0); // §7.68: die Zeile „Sieg ohne Crit" ist an den Lichtbogen gegangen
+    const crit = resolveTrick(scen(12, 0, { skills: [L.ABLEITER], skillTiers: { [L.ABLEITER]: 3 }, lightning: light() }), zero);
+    expect(crit.lightning.charge).toBe(1 + T.ableiter[3].extra); // Passiv +1, Takt-Crit +2
+    const over = resolveTrick(scen(12, 0, { skills: [L.ABLEITER], skillTiers: { [L.ABLEITER]: 3 }, lightning: light({ charge: 9 }) }), zero); // 9 + 3 = 12 → voll, der Rest verfällt
     expect(over.lightning.bars).toBe(1);
     expect(over.lightning.charge).toBe(T.ableiter[3].back);
+  });
+  /* §7.68: die Falle, die den Ersatz für die abgegebene Episch-Zeile entschieden hat. Der naheliegende Griff wäre
+     `back` gewesen (2 → 3). Reststrom Episch setzt die Leiste aber auf 9 und den Boden auf 6 — mit back 3 wäre sie
+     nach JEDEM Leeren sofort wieder voll gewesen, eine Leiste je Sieg ohne Ende. Der Wächter hält den Abstand, egal
+     an welcher der beiden Zahlen jemand später dreht. */
+  it("Boden plus Rückgabe bleibt unter der Leiste (Reststrom Episch gegen Blitzableiter Episch)", () => {
+    const bar = maxChargeFor([L.RESTSTROM], { [L.RESTSTROM]: 3 });
+    expect(bar).toBe(T.reststrom[3].bar);
+    expect(T.reststrom[3].floor + T.ableiter[3].back, "Leiste füllt sich beim Leeren selbst").toBeLessThan(bar);
   });
   it("Gewitterfront / Entladung: jede volle Leiste rampt dauerhaft, ohne Deckel", () => {
     const s = resolveTrick(scen(12, 0, { skills: [L.GEWITTERFRONT, L.ENTLADUNG], lightning: light({ charge: 9, stormCritBonus: 0.9, entladungScore: 3 }) }), zero);

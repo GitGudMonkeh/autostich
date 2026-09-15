@@ -12,7 +12,7 @@ import { initialState, reducer } from "../src/game/reducer.js";
 import { resolveTrick } from "../src/game/engine.js";
 import { coinsForFormations, COIN_CYCLE_BASE, COIN_FORM_PER, COIN_FORM_CAP, COIN_START, rerollPrice, rerollOffer,
          energyPrice, energyBuy, ENERGY_MAX_BUYS, coverPrice, coverBuy, COVER_CELLS,
-         upgradePrice, MAX_SKILL_TIER, familyUpgradeBuy, MAX_FAMILY_TIER,
+         upgradePrice, MAX_SKILL_TIER, upgradeBuy, familyUpgradeBuy, MAX_FAMILY_TIER, upgradeSortKey,
          unspentEnergyCoins, FORFEIT_SKILL, FORFEIT_PERK, FORFEIT_BUILD } from "../src/game/coins.js";
 import { countBuiltFormations } from "../src/game/formations.js";
 import { FAMILY_DEFS } from "../src/game/families.js";
@@ -32,10 +32,11 @@ const scenario = (pVal, oVal, over = {}) => ({
 const rng = makeRng(9);
 
 describe("Münz-Einnahme (§2.2)", () => {
-  it("die Tabelle aus §2.2 — Sockel 2, je acht Formationen eine Münze, Deckel bei 6", () => {
+  it("die Tabelle aus §2.2 — Sockel 2, je zehn Formationen eine Münze, Deckel bei 6", () => {
     // Genau die Zeilen des Plans. Ändert jemand Sockel, Schritt oder Deckel, fällt DIESER Test, nicht
-    // erst der Playtest. 18 Formationen sind der gemessene Median → 4 Münzen.
-    expect([0, 8, 16, 18, 24, 32, 40, 80].map(coinsForFormations)).toEqual([2, 3, 4, 4, 5, 6, 6, 6]);
+    // erst der Playtest. Owner 2026-09-14: Schritt 8 → 10; die 18 Formationen des gemessenen Medians
+    // zahlen damit 3 Münzen statt 4.
+    expect([0, 8, 16, 18, 24, 32, 40, 50, 80].map(coinsForFormations)).toEqual([2, 2, 3, 3, 4, 5, 6, 6, 6]);
   });
 
   it("der Sockel zahlt auch ohne jede Formation, und nichts wird negativ", () => {
@@ -46,9 +47,12 @@ describe("Münz-Einnahme (§2.2)", () => {
   });
 
   it("der Deckel bindet — ein randvolles Brett zahlt nicht mehr als das Maximum", () => {
-    // Gemessen: bis 145 Positions×Formations-Paare, bei mittlerer Länge 3,3 also ~48 distinkte.
-    // Ungedeckelt wären das 8 Münzen statt 6 (§2.5).
-    expect(coinsForFormations(48)).toBe(COIN_CYCLE_BASE + COIN_FORM_CAP);
+    // Über den Schritt gerechnet statt über eine feste Formationszahl: sonst prüft der Test nach einer
+    // Schritt-Änderung nur noch, dass der Deckel EXISTIERT, und nicht mehr, dass er greift (Owner
+    // 2026-09-14: Schritt 8 → 10 — bei 48 Formationen, dem gemessenen Extremfall aus §2.5, bindet er nicht mehr).
+    const erste = COIN_FORM_PER * (COIN_FORM_CAP + 1); // die erste Zahl, bei der der Deckel wirklich schneidet
+    expect(coinsForFormations(erste - COIN_FORM_PER)).toBe(COIN_CYCLE_BASE + COIN_FORM_CAP); // die letzte ungedeckelte Sprosse
+    expect(coinsForFormations(erste)).toBe(COIN_CYCLE_BASE + COIN_FORM_CAP);                 // hier greift er
     expect(coinsForFormations(999)).toBe(COIN_CYCLE_BASE + COIN_FORM_CAP);
   });
 });
@@ -92,8 +96,8 @@ describe("Auszahlung am Durchlaufende (§2.2, Naht)", () => {
   it("zahlt aus der AUFSTELLUNG dieses Durchlaufs, nicht aus den Siegen", () => {
     const s = endOfCycle(18, { cycleWins: 39 }); // 18 Formationen (Median) trotz fast perfekter Siegzahl
     expect(s.lastCycleForms).toBe(18);
-    expect(s.lastCycleCoins).toBe(4);
-    expect(s.coins).toBe(COIN_START + 4);
+    expect(s.lastCycleCoins).toBe(3);        // Owner 2026-09-14: Schritt 10 — der Median zahlt 3 statt 4
+    expect(s.coins).toBe(COIN_START + 3);
   });
 
   it("die Siegzahl ändert die Einnahme nicht", () => {
@@ -101,10 +105,10 @@ describe("Auszahlung am Durchlaufende (§2.2, Naht)", () => {
   });
 
   it("der Kontostand summiert über die Durchläufe", () => {
-    const first = endOfCycle(18);                          // +4
-    const second = endOfCycle(32, { coins: first.coins });  // +6, der Deckel
+    const first = endOfCycle(18);                          // +3
+    const second = endOfCycle(40, { coins: first.coins });  // +6, das volle Brett trifft den Deckel genau
     expect(second.lastCycleCoins).toBe(6);
-    expect(second.coins).toBe(COIN_START + 4 + 6);
+    expect(second.coins).toBe(COIN_START + 3 + 6);
   });
 
   it("ein leeres Brett zahlt den Sockel, nie null", () => {
@@ -393,7 +397,7 @@ describe("Fokus rufen (§3.3)", () => {
     expect(s.skillDoors).toHaveLength(3);
     expect(s.skillDoors[0]).toEqual(atDoors().skillDoors[0]);   // unverändert
     expect(s.skillDoors[1]).toEqual(atDoors().skillDoors[1]);
-    expect(s.coins).toBe(15);                                   // fester Preis 5
+    expect(s.coins).toBe(10);                                   // fester Preis 10 (Owner 2026-09-14, vorher 5)
     expect(s.focusCalled).toBe(true);
   });
 
@@ -579,6 +583,30 @@ describe("Kauf-Bestätigung nach Bildschirm (Owner 2026-09-09)", () => {
   it("die drei LISTEN fragen nach — dicht stehende Zeilen, und beim Verkauf kostet ein Fehlgriff einen Perk", () => {
     for (const f of ["src/ui/SkillUpgrade.jsx", "src/ui/PerkUpgrade.jsx", "src/ui/PerkSell.jsx"])
       expect(uses(f), `${f} führt die Rückfrage nicht`).toBe(true);
+  });
+
+  /* ---- Reihenfolge der Listen (Owner 2026-09-14) ------------------------------------------------
+     „Oben günstig, nach Rarität aufsteigend." Die Regel selbst ist rein und wird hier direkt geprüft;
+     dass die beiden Aufwert-Bildschirme sie auch BENUTZEN, prüft der Wächter darunter an der Naht
+     (Schlüssel + Sortierung), nicht an einer Schreibweise. Der Verkaufs-Zwilling sortiert in seinem
+     Modul und hat seinen Wächter in perk-sale.test.js. */
+  it("upgradeSortKey: billig vor teuer, höchste Stufe ans Ende", () => {
+    const skill = Array.from({ length: MAX_SKILL_TIER + 1 }, (_, tier) => upgradeSortKey(upgradeBuy({}, tier)));
+    expect(skill.slice(0, -1)).toEqual([...skill.slice(0, -1)].sort((a, b) => a - b)); // streng die Preisleiter
+    expect(skill[skill.length - 1]).toBe(Infinity);                                    // maxed zuletzt
+    const fam = Array.from({ length: MAX_FAMILY_TIER }, (_, i) => upgradeSortKey(familyUpgradeBuy({}, i + 1)));
+    expect(fam.slice(0, -1)).toEqual([...fam.slice(0, -1)].sort((a, b) => a - b));
+    expect(fam[fam.length - 1]).toBe(Infinity);
+    // Der Kontostand darf die Reihenfolge NICHT verschieben — sonst sprängen die Zeilen nach jedem Kauf.
+    expect(upgradeSortKey(upgradeBuy({ coins: 0 }, 1))).toBe(upgradeSortKey(upgradeBuy({ coins: 999 }, 1)));
+  });
+
+  it("beide Aufwert-Listen sortieren über diesen Schlüssel", () => {
+    for (const f of ["src/ui/SkillUpgrade.jsx", "src/ui/PerkUpgrade.jsx"]) {
+      const code = read(f).split("\n").filter((l) => !/^\s*(\/\/|\/\*|\*)/.test(l)).join("\n"); // Kommentare raus
+      expect(/upgradeSortKey\(/.test(code), `${f} liest den Schlüssel nicht`).toBe(true);
+      expect(/\.sort\(\(a, b\) => upPrice\(a\) - upPrice\(b\)\)/.test(code), `${f} sortiert nicht danach`).toBe(true);
+    }
   });
 
   it("die EINZELNEN Kaufknöpfe fragen nicht — an einem Knopf mit Platz um sich herum vertippt man sich nicht", () => {

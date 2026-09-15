@@ -5,7 +5,7 @@ import { SEGMENT_SIZE } from "../game/formations.js";
 import { anchorTypeAt, linkedPartnersOf } from "../game/shop.js";
 import { formationBorder } from "./formationStyle.js";
 import { formationAbbr } from "./formationLabels.js";
-import { PLANT_RIPE, PLANT_FULL } from "./indicators/vocab.js";
+import { PLANT_RIPE, PLANT_FULL, LEGENDARY_GOLD } from "./indicators/vocab.js";
 import { glacierFormations, FIRN_REFILL_TARGET } from "../game/glacier.js";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon (Eis ersetzt glacier.webp)
 import { familyDef, perkDef, anchorLabel } from "../i18n/labels.js"; // #sprache: Perks/Anker zur Anzeigezeit
@@ -50,7 +50,7 @@ export function archFrameLines(cover, cells, total, exH, exV, exVOut = exV) {
     if (!a || !rect) continue;
     const col = pos % SEGMENT_SIZE;
     const same = (p, exists) => exists && cover[p] && cover[p].bid != null && cover[p].bid === a.bid;
-    const color = a.legendary ? "#c8962f" : a.color;
+    const color = a.legendary ? LEGENDARY_GOLD : a.color;
     const up = pos - SEGMENT_SIZE, down = pos + SEGMENT_SIZE, lft = pos - 1, rgt = pos + 1;
     const sameUp = same(up, up >= 0), sameDown = same(down, down < total);
     const sameLeft = same(lft, col > 0), sameRight = same(rgt, col < SEGMENT_SIZE - 1);
@@ -133,7 +133,7 @@ const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], sele
      genannte Schatten oben, bei `background` die zuerst genannte Ebene). */
   const washes = [
     firn ? "#5ec8f014" : null,
-    arch ? `${arch.legendary ? "#c8962f" : arch.color}1f` : null,
+    arch ? `${arch.legendary ? LEGENDARY_GOLD : arch.color}1f` : null,
   ].filter(Boolean);
   /* F4 Farballianz (#125): diagonaler Zweifarben-Split auch in der Grid-Kachel (obere Hälfte Eigen-, untere
      Partnerfarbe). Der Grundton steht als eigene EBENE statt als `background-color`, damit `background-clip`
@@ -239,12 +239,12 @@ const CardTile = memo(function CardTile({ card, pos, posForm, roleIds = [], sele
 // die geteilten Nutzungen (Chronik/Shop-/Perk-Zielauswahl) lassen den Klick-Sound per Default unangetastet.
 // #FB Segmentarbeit: Verbinder ZWISCHEN zwei Segment-Zeilen — signalisiert, dass Formationen diese Grenze
 // überschreiten dürfen (welche Segmente ist durch die Lage zwischen ihren Bereichs-Labels ersichtlich).
-// `viaSpalier` = die Grenze ist durch den Pflanzen-Skill offen, nicht durch das Werkzeug Segmentarbeit. Die Brücke
-// sieht gleich aus (offen ist offen), nur der Tooltip nennt die Quelle.
-function SegmentBridge({ segA, segB, viaSpalier = false }) {
+// `via` = WOHER die Grenze offen ist: "spalier" (Pflanzen-Skill), "arch" (Gebäude Pfeiler) oder null (Werkzeug
+// Segmentarbeit). Die Brücke sieht in allen Fällen gleich aus (offen ist offen), nur der Tooltip nennt die Quelle.
+function SegmentBridge({ segA, segB, via = null }) {
   const line = { background: "linear-gradient(90deg, #5ab87a00, #5ab87a99, #5ab87a00)" };
   return (
-    <div className="flex items-center gap-2" title={t(viaSpalier ? "cardgrid.segbridge.title.spalier" : "cardgrid.segbridge.title", { a: segA, b: segB })}>
+    <div className="flex items-center gap-2" title={t(via ? `cardgrid.segbridge.title.${via}` : "cardgrid.segbridge.title", { a: segA, b: segB })}>
       <div className="w-9 shrink-0" />
       <div className="flex-1 flex items-center gap-1.5">
         <div className="h-px flex-1" style={line} />
@@ -388,7 +388,8 @@ export function CardGrid({ cards = [], formations = [], roles = {}, anchors = []
         );
         // Grenze NACH Segment s offen (und es folgt eine weitere Zeile) → Verbinder einschieben.
         return segOpen && s < nSeg - 1 && segOpen.isOpen(s)
-          ? [row, <SegmentBridge key={`bridge${s}`} segA={s + 1} segB={s + 2} viaSpalier={!!segOpen.spalier?.has(s)} />]
+          ? [row, <SegmentBridge key={`bridge${s}`} segA={s + 1} segB={s + 2}
+              via={segOpen.spalier?.has(s) ? "spalier" : segOpen.arch?.has(s) ? "arch" : null} />]
           : [row];
       })}
     </div>

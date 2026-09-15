@@ -1234,7 +1234,7 @@ function AutostichGame() {
                 options={options} onOption={changeOptions} manyActive={wide ? false : manyFac} showSkills={wide} />
               <GlacierBar active={(state.activeArchetypes || []).includes("ice")}
                 glacierLocked={state.glacierLocked || []} glacierMass={state.glacierMass || []} firnStack={state.firnStack || []}
-                glacierYield={state.glacierYield || 0} glacierRoles={state.glacierRoles || []}
+                glacierYield={state.glacierYield || 0} glacierRoles={state.glacierRoles || []} glacierRoleTiers={state.glacierRoleTiers || {}}
                 glacierPre={state.glacierPre} deck={state.deck || []} playerOrder={state.playerOrder || []}
                 frozenOppPending={state.frozenOppPending || {}} frozenOppActive={state.frozenOppActive || {}}
                 glacierBuffPending={state.glacierBuffPending || {}} glacierBuffActive={state.glacierBuffActive || {}}

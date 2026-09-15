@@ -1,5 +1,5 @@
-import { F, fireParam, heatMult, heatMaxFor, schneiseLane, glutbettFloor } from "../game/factions/fire.js";
-import { HEAT_MAX, HEAT_MULT_PER_10, SONNENZORN_MULT_PER_10, FORGE_VALUE } from "../game/constants.js";
+import { F, fireParam, heatMult, heatMaxFor, schneiseLane, glutbettFloor, klingeValue, klingeTicks } from "../game/factions/fire.js";
+import { HEAT_MAX, HEAT_LOSS, HEAT_MULT_PER_10, SONNENZORN_MULT_PER_10, FORGE_VALUE } from "../game/constants.js";
 import { FactionShell, PanelSkills, CounterCell, YieldMeter } from "./indicators/panelKit.jsx";
 import { FactionIcon } from "./FactionIcon.jsx"; // #308 zentrales Fraktions-Icon
 import { FIRE, FIRE_HOT, FORGE, WHITE_HEAT } from "./indicators/vocab.js";
@@ -47,12 +47,13 @@ export function HeatBar({ heat, skills = [], skillTiers = {}, forged = {}, brand
   const showForge = forgeMin != null || totalForged > 0;
 
   const badges = [];
-  // Glühende Klinge: fixes Readout (+n nach Hitze), dazu die Schrittweite der Stufe im Tooltip.
+  // Glühende Klinge: fixes Readout (+n nach Hitze), dazu die Schrittweite der Stufe im Tooltip. §7.32: der Skill
+  // liest die PASSIV-Leiste, nicht die von Weißglut verlängerte — `klingeValue` ist dieselbe Quelle wie der Motor.
   const step = param(F.KLINGE, "perHeat");
   if (step) {
-    const gv = Math.floor(value / step + 1e-9) * (param(F.KLINGE, "value") || 1);
+    const gv = klingeValue(skills, skillTiers, value);
     badges.push({ k: "gk", t: gv > 0 ? t("bar.fire.badge.glow.n", { n: gv }) : t("bar.fire.badge.glow"), c: HOT, dim: gv === 0,
-      title: t("bar.fire.badge.glow.title", { step }) });
+      title: t("bar.fire.badge.glow.title", { step, max: HEAT_MAX }) });
   }
   // Brandschneise (§7.27): dauerhaft sichtbar, sobald gehalten; die Zahl ist die Breite der liegenden Schneise — der
   // erste Schnitt fällt am Ende des laufenden Durchlaufs, bis dahin steht das Abzeichen gedimmt.
@@ -62,18 +63,16 @@ export function HeatBar({ heat, skills = [], skillTiers = {}, forged = {}, brand
     badges.push({ k: "bs", t: lane.length ? t("bar.fire.badge.schneise.n", { n: lane.length }) : t("bar.fire.badge.schneise"), c: HOT, dim: lane.length === 0,
       title: t("bar.fire.badge.schneise.title", { n: laneWidth, m: fmtNum(param(F.BRANDSCHNEISE, "mult") || 1) }) });
   }
-  // Glutbett (§6.24): der Boden, unter den die Kühlung nicht drückt — samt dem, was er über den Lauf gewachsen ist.
-  // Ohne den Anstieg wäre der Skill unsichtbar; so sieht der Spieler das Bett dicker werden.
+  // Glutbett (§7.70): der Boden, unter den die Kühlung nicht drückt. Er STEHT jetzt fest — der frühere Anstieg lief
+  // bis an die Leiste und hob die Rarität auf; die zweite Hälfte des Skills ist statt dessen die mildere Kühlung.
   const bedFloor = glutbettFloor(heat, skills, skillTiers);
   // Strich nur zeichnen, wenn der Boden mitten auf der Leiste liegt. glutbettFloor klemmt ihn bereits auf die
   // Leistenlänge, „nicht gleich der Länge" ist also dasselbe wie „darunter" — und die i18n-Ratsche liest den
   // Kleiner-Vergleich sonst als Text zwischen zwei Tags (AGENTS.md: Quelltext-Ratschen).
   const showBedTick = bedFloor > 0 && bedFloor !== scale;
   if (bedFloor > 0) {
-    const grown = Math.round(heat.bedFloor || 0);
     badges.push({ k: "gb", t: t("bar.fire.badge.glutbett", { n: Math.round(bedFloor) }), c: FIRE, dim: value <= bedFloor,
-      title: t(grown > 0 ? "bar.fire.badge.glutbett.title.grown" : "bar.fire.badge.glutbett.title",
-        { n: Math.round(bedFloor), grown, rise: param(F.GLUTBETT, "rise") || 0 }) });
+      title: t("bar.fire.badge.glutbett.title", { n: Math.round(bedFloor), cool: param(F.GLUTBETT, "cool") ?? HEAT_LOSS }) });
   }
   // Verbrennung: die Vorsprungs-Schwelle der Stufe (Zustand des Builds, kein Hitze-Tor).
   const vbMin = param(F.VERBRENNUNG, "minMargin");
@@ -106,9 +105,10 @@ export function HeatBar({ heat, skills = [], skillTiers = {}, forged = {}, brand
     : null;
   const ambientPulse = heatRatio >= 0.9 ? "as-heat-pulse" : null;
 
-  // Schwellenstriche: die Klingen-Schritte (bis zur Leiste) und, mit Weißglut, die 100er-Marke.
-  const ticks = [];
-  if (step) for (let h = step; h < scale; h += step) ticks.push(h);
+  // Schwellenstriche: die Klingen-Schritte und, mit Weißglut, die 100er-Marke. Die Striche enden bei HEAT_MAX,
+  // weil die Klinge dort aufhört zu zählen (§7.32); vorher liefen sie mit Weißglut bis 200 durch und
+  // versprachen Stufen, die es nicht gibt.
+  const ticks = klingeTicks(skills, skillTiers, scale);
 
   return (
     <FactionShell anchor="faction-fire" icon={<FactionIcon type="fire" size={15} />} name={archetypeLabel("fire")} color={FIRE} stateText={stateText} stateOn={stateOn} collapsed={collapsed} onToggle={onToggle}
