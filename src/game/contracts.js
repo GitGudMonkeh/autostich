@@ -11,7 +11,8 @@
 import * as C from "./constants.js";
 import { FORMATION_TYPES, SEGMENT_SIZE, countBuiltFormations } from "./formations.js";
 import { TIER_META } from "./rarity.js";
-import { ROWS as ARCH_ROWS, COLS as ARCH_COLS, posOf as archPos, familyDef } from "./architect.js";
+import { ROWS as ARCH_ROWS, COLS as ARCH_COLS, posOf as archPos, familyDef, MAX_TIER as ARCH_MAX_TIER } from "./architect.js";
+import { MAX_SKILL_TIER } from "./coins.js";
 
 /* ------------------------------------------------------------------------------------------------
    Windows and steps
@@ -390,6 +391,32 @@ export function tallyPure(tally, state, variantId) {
    (a third door for the next three skill phases, a price scale) land in `state.contractBoons`, which
    the engine reads where the corresponding knob is used. */
 
+/* Sofortwirkungen — sie schreiben in den State statt in die Segen-Ablage, weil sie EINMAL greifen.
+
+   Lehrbrief hebt die am weitesten ausgebauten Skills zuerst: die Stufe ist superlinear bezahlt
+   (12 · 25 · 40), also ist der obere Schritt der wertvollere. Aus demselben Grund hebt Aufstockung
+   die höchsten ausbaufähigen Gebäude — TIER_FACTOR steigt mit 1 · 1,5 · 2,2 · 3,1. */
+function raiseSkills(state, count, steps) {
+  const tiers = { ...(state.skillTiers || {}) };
+  const open = (state.skills || [])
+    .filter((id) => (tiers[id] ?? 0) < MAX_SKILL_TIER)
+    .sort((a, b) => (tiers[b] ?? 0) - (tiers[a] ?? 0));
+  for (const id of open.slice(0, count)) tiers[id] = Math.min(MAX_SKILL_TIER, (tiers[id] ?? 0) + steps);
+  return tiers;
+}
+
+function raiseBuildings(state, count) {
+  const arch = state.architect;
+  if (!arch || !Array.isArray(arch.buildings)) return null;
+  const open = arch.buildings
+    .map((b, i) => ({ i, tier: b.tier }))
+    .filter((x) => Number.isInteger(x.tier) && x.tier < ARCH_MAX_TIER)   // Legendäre tragen keine Stufe
+    .sort((a, b) => b.tier - a.tier);
+  const lift = new Set((count === "all" ? open : open.slice(0, count)).map((x) => x.i));
+  if (!lift.size) return null;
+  return { ...arch, buildings: arch.buildings.map((b, i) => (lift.has(i) ? { ...b, tier: b.tier + 1 } : b)) };
+}
+
 export function applyLoot(state, piece) {
   if (!piece || !piece.effect) return null;
   const e = piece.effect;
@@ -403,9 +430,22 @@ export function applyLoot(state, piece) {
   if (e.unspentMult) boons.unspentMult = e.unspentMult;
   if (e.cover) patch.architect = { ...state.architect, maxCover: (state.architect?.maxCover || 0) + e.cover };
   if (e.coverUncapped) patch.architect = { ...(patch.architect || state.architect), maxCover: Infinity };
-  if (e.upgradeBuildings) boons.upgradeBuildings = e.upgradeBuildings;
-  if (e.skillUp) boons.skillUp = { count: e.skillUp, steps: e.steps || 1 };
-  if (e.skillToEpic) boons.skillToEpic = { count: e.skillToEpic, rest: e.skillUpRest || 0 };
+  if (e.upgradeBuildings) {
+    const arch = raiseBuildings(state, e.upgradeBuildings);
+    if (arch) patch.architect = { ...(patch.architect || {}), ...arch };
+  }
+  if (e.skillUp) patch.skillTiers = raiseSkills(state, e.skillUp, e.steps || 1);
+  if (e.skillToEpic) {
+    /* Vollendung: „ein gehaltener Skill deiner Wahl wird episch". Ohne eigenen Auswahlschritt nimmt
+       das Spiel den am weitesten ausgebauten — der, in den schon investiert wurde. Ein Picker wäre
+       die treuere Umsetzung und steht als Nacharbeit im Dokument. */
+    const tiers = { ...(state.skillTiers || {}) };
+    const held = (state.skills || []).filter((id) => Number.isInteger(tiers[id] ?? 0));
+    const top = [...held].sort((a, b) => (tiers[b] ?? 0) - (tiers[a] ?? 0))[0];
+    for (const id of held) if (id !== top) tiers[id] = Math.min(MAX_SKILL_TIER, (tiers[id] ?? 0) + (e.skillUpRest || 0));
+    if (top) tiers[top] = MAX_SKILL_TIER;
+    patch.skillTiers = tiers;
+  }
   if (e.thirdDoor) boons.thirdDoor = e.thirdDoor === "run" ? "run" : (state.cycle || 0) + e.thirdDoor * 4;
   if (e.highTierChance) boons.highTierChance = true;
   if (e.offerLift) boons.offerLift = { steps: 1, until: (state.cycle || 0) + (e.phases || 1) * 4 };
@@ -425,6 +465,121 @@ export function applyLoot(state, piece) {
   patch.contractBoons = boons;
   return patch;
 }
+
+/* ------------------------------------------------------------------------------------------------
+   Reading the boons — the seams the rest of the engine calls
+   ------------------------------------------------------------------------------------------------
+   Every accessor takes the value the game would use WITHOUT contracts and returns the value to use.
+   The first line of each is the same null check, so a normal run pays one property read and gets its
+   own number back untouched. That shape is deliberate: it keeps the opt-in promise checkable at the
+   call site instead of spread through the engine. */
+
+export const boonsOf = (state) => (state && state.contractsEnabled && state.contractBoons) || null;
+
+/* A boon with `until` expires at that cycle; one without runs to the end of the run. */
+const live = (b, cycle) => !!b && (b.until == null || cycle <= b.until);
+
+/* Münzrecht — extra coins on top of the cycle payout. */
+export function coinsPerCycleWith(state, base, cycle = state.cycle || 0) {
+  const b = boonsOf(state);
+  return b && live(b.income, cycle) ? base + (b.income.per || 0) : base;
+}
+
+/* Freizug — more formation energy at the start of each placement phase. */
+export function formationEnergyWith(state, base, cycle = state.cycle || 0) {
+  const b = boonsOf(state);
+  return b && live(b.energy, cycle) ? base + (b.energy.plus || 0) : base;
+}
+
+/* Freizug IV — unspent energy pays a multiple at the end of the phase. */
+export function unspentEnergyWith(state, base) {
+  const b = boonsOf(state);
+  return b && b.unspentMult ? Math.floor(base * b.unspentMult) : base;
+}
+
+/* Ablass — a declined skill or perk pays more. Rounded down, so the family never pays a fraction. */
+export function forfeitWith(state, base) {
+  const b = boonsOf(state);
+  return b && b.forfeitMult ? Math.floor(base * b.forfeitMult) : base;
+}
+
+/* Nachlass and Freilos IV. The legendary reroll at normal price is its own knob, so it is applied
+   BEFORE the discount — otherwise the two would multiply and a quarter off a normal price would be
+   cheaper than the family says. */
+export function rerollPriceWith(state, base, legendary = false, normalBase = null) {
+  const b = boonsOf(state);
+  if (!b) return base;
+  const start = legendary && b.legendaryRerollNormalPrice && normalBase != null ? normalBase : base;
+  return contractRerollPrice(start, b);
+}
+
+/* Freilos I-IV — a free reroll that does not touch the coin pools. */
+export const freeRerollPhases = (state) => (boonsOf(state) || {}).freeRerollPerPhase || null;
+
+/* Auslage — how many perks the offer shows. */
+export function perksOfferedWith(state, base) {
+  const b = boonsOf(state);
+  return b && b.perksOffered ? Math.max(base, b.perksOffered) : base;
+}
+
+/* Auslage III/IV and Beschau — the rarity floor of the perk offer. */
+export function perkFloorWith(state, base) {
+  const b = boonsOf(state);
+  return b && b.perkFloor ? Math.max(base, b.perkFloor) : base;
+}
+
+/* Beschau IV — legendary perks appear more often. The factor multiplies the existing chance rather
+   than replacing it, so a run that already lifted it keeps that lift. */
+export function perkLegendaryWith(state, base) {
+  const b = boonsOf(state);
+  return b && b.legendaryChance ? base * 2 : base;
+}
+
+/* Reliquiar — the next perk offer is three legendaries. `legForce` already exists in buildPerkOffer;
+   the boon simply names how many slots, and clears once spent (the reducer drops it). */
+export const legendaryPerkForce = (state) => (boonsOf(state) || {}).legendaryPerkPick || 0;
+
+/* Freibrief — how many doors a skill phase opens. */
+export function skillDoorsWith(state, base, cycle = state.cycle || 0) {
+  const b = boonsOf(state);
+  if (!b || !b.thirdDoor) return base;
+  const open = b.thirdDoor === "run" || cycle <= b.thirdDoor;
+  return open ? base + 1 : base;
+}
+
+/* Freibrief IV — epic and legendary appear more often behind the doors. */
+export function skillLegendaryWith(state, base) {
+  const b = boonsOf(state);
+  return b && b.highTierChance ? base * 2 : base;
+}
+
+/* Veredelung — lift the tiers of one skill offer. `offerLift` raises every skill by one for a few
+   phases; `offerLiftBelow` raises every tier UNDER the named one, for the rest of the run. Tiers are
+   0-based here (0 Normal … 3 Episch), the same scale skillTiers uses. */
+export function liftSkillTiers(state, tiers, cycle = state.cycle || 0, maxTier = 3) {
+  const b = boonsOf(state);
+  if (!b || !Array.isArray(tiers)) return tiers;
+  const byPhase = live(b.offerLift, cycle) ? (b.offerLift.steps || 1) : 0;
+  const below = b.offerLiftBelow || 0;          // 3 = alles unter Sehr selten, 4 = alles unter Episch
+  if (!byPhase && !below) return tiers;
+  return tiers.map((t) => {
+    if (!Number.isInteger(t)) return t;          // Legendäre tragen keine Stufe
+    let out = t + byPhase;
+    if (below && t + 1 < below) out = Math.max(out, t + 1);
+    return Math.min(maxTier, out);
+  });
+}
+
+/* Die Türen tragen ihre Stufen selbst ([{ skills, tiers }]), also hebt Veredelung sie dort und nicht
+   an einer flachen Liste. Ohne Segen kommt dasselbe Array zurück, nicht eine Kopie. */
+export function liftDoorTiers(state, doors, cycle = state.cycle || 0) {
+  const b = boonsOf(state);
+  if (!b || !Array.isArray(doors) || (!b.offerLift && !b.offerLiftBelow)) return doors;
+  return doors.map((d) => (Array.isArray(d.tiers) ? { ...d, tiers: liftSkillTiers(state, d.tiers, cycle) } : d));
+}
+
+/* Stiftung — every phase begins with coins. */
+export const coinsPerPhase = (state) => (boonsOf(state) || {}).coinsPerPhase || 0;
 
 /* Reroll price under Nachlass: rounded DOWN, never below one coin, and free only at scale 0. */
 export function contractRerollPrice(base, boons) {

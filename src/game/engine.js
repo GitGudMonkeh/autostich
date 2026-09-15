@@ -7,6 +7,7 @@ import { familySumHook, familyProdHook, familyTierParam, activeFamilyEntries, fo
 import { colorsAllied } from "./color.js"; // #289: Farb-Serie/Architekt/Farbfokus respektieren Farballianz
 import { skillSum, buildSkillDoors } from "./skills.js"; // exp skill rework: Türen-Angebot (Stufen mit der Tür gewürfelt)
 import { coinsForFormations } from "./coins.js"; // Münz-Ökonomie (§2.2): Einnahme je Durchlauf aus der Aufstellung
+import * as CT from "./contracts.js"; // Zwischenaufgaben: die Beute-Segen. Ohne Auftragslauf geben alle Zugriffe ihren Eingabewert zurück.
 // exp skill rework: die Blitz-Mechanik (Passiv, 15 Skills, 4 Legendäre) lebt im Fraktionsmodul; die Engine ruft nur
 // ihre reinen Übergänge (Crit-Beiträge, Ladungsgewinn, volle Leiste, Niederlage, Rundenende).
 import { lightningCritChance, lightningCritMult, overcritMult, blitzfaengerValue, ionenfeldValue, potenzialValue, fieldTick, ionScoreFor as lightIonScore, ionCritMultFor as lightIonCritMult, chargeGainOnWin, entladungScoreFor,
@@ -41,7 +42,8 @@ import { runRules, perksOfferedFor, skillOfferParams } from "./rules.js"; // exp
 export function formationEnergyFor(state) {
   const base = state.devEnergy ?? state.formationEnergyBase ?? C.FORMATION_ENERGY;
   const perkSwaps = (state.perks || []).reduce((t, id) => t + ((PERK_DEFS[id] && PERK_DEFS[id].extraSwap) || 0), 0);
-  return base + perkSwaps + formationEnergyBonus(state.familyTiers, state.cycle); // #179 E_TUNING „Feinjustierung"
+  const sum = base + perkSwaps + formationEnergyBonus(state.familyTiers, state.cycle); // #179 E_TUNING „Feinjustierung"
+  return CT.formationEnergyWith(state, sum); // Freizug
 }
 
 // (§6.1: der Bekenntnis-Skalierer commitScale war der letzte Leser des Pflanze-Direkt-Scores und ist mit ihm
@@ -1049,7 +1051,7 @@ export function resolveTrick(state, rng) {
     // Score noch Siegzahl. `formations` ist der Stand DIESES Durchlaufs (in der Aufstellphase gerechnet, bei Wachstum
     // nachgezogen); countBuiltFormations filtert Architektur/Anker heraus. lastCycle* trägt nur die Anzeige (§4).
     lastCycleForms = countBuiltFormations(formations);
-    lastCycleCoins = coinsForFormations(lastCycleForms);
+    lastCycleCoins = CT.coinsPerCycleWith(state, coinsForFormations(lastCycleForms), cycle); // Münzrecht
     coins += lastCycleCoins;
     cycleWins = 0; cycleLosses = 0; cycleBestTrick = 0; sammlerTypes = []; cycleOpenScore = 0; cycleScoreSum = 0; // Pro-Durchlauf-States zurücksetzen (#203)
     // §7.68 Lichtbogen Episch: „bis zum ersten Crit eines Durchlaufs" — die Marke gehört zum Durchlauf, nicht zum Lauf.
@@ -1115,11 +1117,11 @@ export function resolveTrick(state, rng) {
       const legMultPerk = state.treeLegMult ?? 1;
       const legMultArch = state.treeLegMult ?? 1;
       const rareCapEff = state.rareCap || 4;    // Rarität-Deckel aus dem Baum (4 = kein Deckel)
-      const rareFloorEff = state.rareFloor || 1; // #370 Perk-Segen: Rarität-Boden (1 = kein Boden)
+      const rareFloorEff = CT.perkFloorWith(state, state.rareFloor || 1); // #370 Perk-Segen: Rarität-Boden (1 = kein Boden) · Auslage/Beschau
       // #370 Wochen-Mods (nur Ranked): Perk-Verknappung → nur 1 Perk je Auswahl · Skill-Verknappung → 1 Skill je Fraktion
       //   (Default 12 = 3/Fraktion → 4 = 1/Fraktion). Sonst die Konstanten (Normal-/Sim-Lauf byte-identisch).
       // exp: beide über rules.js — ohne state.rules exakt die alten Werte (Wochen-Mod vor Konstante).
-      const perksOffered = perksOfferedFor(state);
+      const perksOffered = CT.perksOfferedWith(state, perksOfferedFor(state)); // Auslage
       const skillP = skillOfferParams(state);
       if (decision === "skill") {
         // exp skill rework: a Dev-Run shows the flat full catalog; every other run gets the two doors (docs/skill-rework.md
@@ -1130,15 +1132,17 @@ export function resolveTrick(state, rng) {
           phase = "levelup"; newSkillOffer = rolled.offer; newSkillOfferTiers = rolled.tiers;
         } else {
           const doors = buildSkillDoors(skills, activeArchetypes, rngAtOr(cycle, "skill", 0), rngAtOr(cycle, "skill", 0, "tiers"),
-            { unlockedArchetypes: state.unlockedArchetypes, maxArchetypes: skillP.maxArchetypes, size: skillP.doorSize }); // §4b: Archetyp-Gatung
-          if (doors.length > 0) { phase = "levelup"; newSkillDoors = doors; }
+            { unlockedArchetypes: state.unlockedArchetypes, maxArchetypes: skillP.maxArchetypes, size: skillP.doorSize,
+              doors: CT.skillDoorsWith(state, C.SKILL_DOORS, cycle),                                   // Freibrief: die dritte Tür
+              legendaryChance: CT.skillLegendaryWith(state, C.SKILL_LEGENDARY_PER_SLOT) });             // Freibrief IV · §4b: Archetyp-Gatung
+          if (doors.length > 0) { phase = "levelup"; newSkillDoors = CT.liftDoorTiers(state, doors, cycle); } // Veredelung
           else { const off = buildPerkOffer(perks, familyTiers, rngAtOr(cycle, "perk", 0), perksOffered, perkLegendaryChance(shop) * legMultPerk, rareShift, architectEnabled, 0, rareCapEff, rareFloorEff); if (off.length > 0) { phase = "levelup"; newOffer = off; } } // leerer Skill-Pool → Perk · Rarität-Deckel
         }
       } else if (decision === "perk") {
         // M4/M5: In der 2. Perk-Phase garantierte Legendäre erzwingen (1 = M4, 3 = M5); sonst 0 = normaler Pfad.
         const legForce2Base = C.perkPhaseAt(state.devSchedule || C.DECISION_SCHEDULE, cycle) === C.LEG_PERK2_PHASE ? (state.treeLegForce2 || 0) : 0;
-        const legForce2 = onLegTakt ? runRules(state).perksOffered : legForce2Base; // #381 Legendär-Takt: alle 3 Angebots-Slots legendär
-        const off = state.devMode ? fullPerkOffer(architectEnabled) : buildPerkOffer(perks, familyTiers, rngAtOr(cycle, "perk", 0), perksOffered, perkLegendaryChance(shop) * legMultPerk, rareShift, architectEnabled, legForce2, rareCapEff, rareFloorEff); // #369: Perk-Legendär (Schicht+Drop) · 2. Perk-Phase · Rarität-Deckel
+        const legForce2 = Math.max(onLegTakt ? runRules(state).perksOffered : legForce2Base, CT.legendaryPerkForce(state)); // #381 Legendär-Takt: alle 3 Angebots-Slots legendär · Reliquiar
+        const off = state.devMode ? fullPerkOffer(architectEnabled) : buildPerkOffer(perks, familyTiers, rngAtOr(cycle, "perk", 0), perksOffered, CT.perkLegendaryWith(state, perkLegendaryChance(shop) * legMultPerk), rareShift, architectEnabled, legForce2, rareCapEff, rareFloorEff); // #369: Perk-Legendär (Schicht+Drop) · 2. Perk-Phase · Rarität-Deckel · Beschau IV
         if (off.length > 0) { phase = "levelup"; newOffer = off; }
       } else if (decision === "shop" && architectEnabled) {
         // Architekt-Phase (#202, ersetzt den Shop): frisches Bauplan-Angebot ziehen (deterministisch über rng) und die

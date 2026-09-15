@@ -18,7 +18,7 @@ const plantBag = (s) => ({ skillTiers: s.skillTiers || {}, growth: s.growth || {
 import { computeFormations, formationPotential, FORMATION_TYPES } from "./formations.js";
 import { initialShop, perkLegendaryChance } from "./shop.js";
 import { resolveTrick, formationEnergyFor } from "./engine.js";
-import * as CT from "./contracts.js"; // Zwischenaufgaben — nur aktiv, wenn der Lauf über „Aufträge" gestartet wurde // formationEnergyFor: eine Quelle für Phasen-Eintritt + RESET_FORMATION
+import * as CT from "./contracts.js"; // Zwischenaufgaben — nur aktiv, wenn der Lauf über „Aufträge" gestartet wurde
 import * as C from "./constants.js";
 import { runRules, perksOfferedFor, skillOfferParams, sanitizeRules } from "./rules.js"; // exp: Regeln je Lauf (state.rules; null → Konstanten)
 import { isLegendarySkill } from "./skills.js"; // #217: Garantie-Erkennung (Legendär im Skill-Reroll-Angebot)
@@ -207,6 +207,17 @@ export function initialState(rng = Math.random, seed = null) {
     lastTrick: null,
   };
 }
+/* Reliquiar ist ein Einzelstück und wirkt auf EIN Perk-Angebot. Sobald die Phase verlassen ist, fällt
+   der Zwang weg — sonst stünden bis zum Laufende drei Legendäre in jedem Angebot. Gibt {} zurück,
+   wenn nichts zu löschen ist, damit der normale Lauf keinen neuen Objekt-Spread bekommt. */
+function spendLegendaryPerk(state) {
+  const b = CT.boonsOf(state);
+  if (!b || !b.legendaryPerkPick) return {};
+  const rest = { ...b };
+  delete rest.legendaryPerkPick;
+  return { contractBoons: rest };
+}
+
 /* Zwischenaufgaben — die einzige Stelle, an der ein Auftragslauf vom normalen abweicht, solange keine
    Beute gewirkt hat. Läuft NUR bei `contractsEnabled` (siehe RESOLVE_TRICK) und tut drei Dinge:
    die Strichliste je Stich, das Einfrieren der Spitzen am Durchlaufende, und das Öffnen des nächsten
@@ -225,7 +236,19 @@ function contractStep(prev, next, rng = Math.random) {
   if (active && active.taskId === "reinheit") tally = CT.tallyPure(tally, next, active.variantId);
 
   let contracts = c;
+  let perPhase = null;
   if (next.cycle > prev.cycle) {
+    /* Zwei Segen zahlen JE PHASE statt einmal: Stiftung legt Münzen nach, Freilos füllt die
+       Neuwurf-Pools wieder auf. Der Durchlaufwechsel ist die eine Stelle, die jede Phase sieht. */
+    const stiftung = CT.coinsPerPhase(next);
+    const frei = CT.freeRerollPhases(next);
+    if (stiftung || frei) {
+      perPhase = {};
+      if (stiftung) perPhase.coins = (next.coins || 0) + stiftung;
+      for (const [kind, key] of [["skill", "rerollsSkill"], ["perk", "rerollsPerk"], ["arch", "rerollsArch"]]) {
+        if (frei && frei.includes(kind)) perPhase[key] = Math.max(next[key] || 0, 1);
+      }
+    }
     tally = CT.tallyCycleEnd(tally, prev);      // die Spitzen des GERADE beendeten Durchlaufs
     const finished = prev.cycle + 1;            // 1-basierte Anzeige-Nummer des beendeten Durchlaufs
     if (active) {
@@ -242,7 +265,7 @@ function contractStep(prev, next, rng = Math.random) {
       contracts = { ...contracts, windowId: win.id, offers: CT.rollOffers(rng, contracts.usedTasks || []) };
     }
   }
-  return { ...next, contractTally: tally, contracts };
+  return { ...next, ...(perPhase || {}), contractTally: tally, contracts };
 }
 
 /* Eis-Neudesign: Gibt es überhaupt noch eine Zelle, die GLACIER_LOCK annehmen würde? Die Phase „glacier-target"
@@ -293,7 +316,10 @@ export function menuState() {
    Münzen (der Knopf zeigt den Kauf trotzdem, er lässt sich nur nicht auslösen). Der Zähler `coinRerolls` läuft
    je Phase; den Grundpreis bestimmt die Art des Angebots, nicht die Stelle in der Treppe. */
 const buyReroll = (state, legendary) => {
-  const price = rerollPrice(state.coinRerolls || 0, legendary);
+  /* Nachlass senkt den Preis, Freilos IV lässt den legendären Neuwurf zum NORMALEN Grundpreis laufen.
+     Beide gehen durch rerollPriceWith, damit sie sich nicht multiplizieren. */
+  const price = CT.rerollPriceWith(state, rerollPrice(state.coinRerolls || 0, legendary), legendary,
+    rerollPrice(state.coinRerolls || 0, false));
   if ((state.coins || 0) < price) return null;
   // `patch` ist genau das, was in den State geht; `legendary` steuert die Garantie und bleibt draußen.
   return { legendary: !!legendary, price, patch: { coins: (state.coins || 0) - price, coinRerolls: (state.coinRerolls || 0) + 1 } };
@@ -657,6 +683,7 @@ export function reducer(state, action) {
         ? computeFormations(state.playerOrder, deck, state.roles, perks, state.skills, state.shop?.anchors || [], state.familyTiers, archOf(state), plantBag(state))
         : state.formations;
       return { ...state, perks, deck, architect, skillSlots, offer: null, formations,
+               ...spendLegendaryPerk(state), // Reliquiar wirkt genau auf DIESES Angebot
                // §3.6: Umverteilung und Opfergang greifen HIER ins Deck — was sie je Karte tatsächlich
                // bewirkt haben, merkt sich der Perk unter seiner eigenen id; der Verkauf zieht es ab.
                deckDeltas: withDeckDelta(state.deckDeltas, perkId, deckDeltaOf(state.deck, deck)),
@@ -1010,7 +1037,7 @@ export function reducer(state, action) {
          Ausgang gespreizt — die fünf Wege hier (Meisterhand-Bonus, Dev-Run, Eis-Gletscher, Perk-Ersatz,
          leerer Pool) sind alle derselbe Verzicht, und eine Zahlung, die an einem davon fehlt, wäre für
          den Spieler nicht erklärbar. Auch der Meisterhand-Bonus zahlt: der Slot bleibt leer. */
-      const paid = coinGrant(state, FORFEIT_SKILL, "skill");
+      const paid = coinGrant(state, CT.forfeitWith(state, FORFEIT_SKILL), "skill"); // Ablass
       // Meisterhand-Bonus (s. PICK_PERK): das Angebot ist ein GESCHENK des eben genommenen Perks, kein
       // Rundenplatz. Die „nie verschwendet"-Regel darunter (Skill abgelehnt → stattdessen ein Perk) darf
       // hier deshalb nicht greifen — sie machte aus einem Perk zwei. Ablehnen heißt: Slot bleibt vorerst
@@ -1034,7 +1061,8 @@ export function reducer(state, action) {
     // ein Perk weniger Lauf-Gewicht trägt. (Die alte #138-Belohnung fiel mit dem Shop weg; sie ist zurück.)
     case "DECLINE_PERK": {
       if (state.phase !== "levelup" || !state.offer) return state;
-      return { ...state, ...coinGrant(state, FORFEIT_PERK, "perk"), offer: null, phase: "play" };
+      return { ...state, ...coinGrant(state, CT.forfeitWith(state, FORFEIT_PERK), "perk"), offer: null, phase: "play",
+               ...spendLegendaryPerk(state) };
     }
 
     // #263: Perk-Angebot neu würfeln — eigener Perk-Reroll-Pool (rerollsPerk), kein Free-Reroll mehr.
@@ -1198,7 +1226,7 @@ export function reducer(state, action) {
        trifft, und nur hier steht `formationEnergy` noch auf dem Rest, den er stehen lässt. */
     case "CONFIRM_FORMATION": {
       if (state.phase !== "formation") return state;
-      const left = unspentEnergyCoins(state.formationEnergy, state.coinEnergy);
+      const left = CT.unspentEnergyWith(state, unspentEnergyCoins(state.formationEnergy, state.coinEnergy)); // Freizug IV
       return { ...state, ...coinGrant(state, left, "energy"), phase: "play", formationEnergy: 0, formationSwaps: [] };
     }
 

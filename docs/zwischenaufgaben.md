@@ -37,6 +37,36 @@ ausdrücklich, weil es die Zusage ist, unter der das Feature überhaupt einziehe
 | Die beiden Overlays und der Stand | `src/ui/ContractPhase.jsx` |
 | Der Einstieg | `src/ui/StartScreen.jsx` · `.as-contract-btn` |
 
+**Die Beute wirkt vollständig** (2026-09-15). Jede Wirkung hat ihre Lesestelle. Die Zugriffe stehen
+gesammelt in `contracts.js` und haben alle dieselbe Form: sie nehmen den Wert, den das Spiel **ohne**
+Aufträge nähme, und geben den zurück, der gilt. Ein normaler Lauf zahlt eine Feldabfrage und bekommt
+seine eigene Zahl unverändert zurück — geprüft, Zugriff für Zugriff.
+
+| Familie | Lesestelle |
+| --- | --- |
+| Zehrgeld · Baurecht · Stadtrecht | sofort beim Nehmen (`applyLoot`) |
+| Lehrbrief · Aufstockung · Vollendung | sofort beim Nehmen, höchste ausbaufähige Stufe zuerst |
+| Münzrecht | `engine.js` — Auszahlung am Durchlaufende |
+| Freizug | `formationEnergyFor`; Stufe IV zusätzlich `CONFIRM_FORMATION` |
+| Ablass | `DECLINE_SKILL` und `DECLINE_PERK` |
+| Nachlass · Freilos IV | `buyReroll` |
+| Freilos I–III · Stiftung | `contractStep`, am Durchlaufwechsel |
+| Auslage · Beschau · Reliquiar | `engine.js` — Bau des Perk-Angebots |
+| Freibrief · Veredelung | `engine.js` — `buildSkillDoors` und die Stufen der Türen |
+
+> **Eine bewusste Abweichung, damit sie niemand für einen Fehler hält.** Vollendung sagt „ein
+> gehaltener Skill **deiner Wahl** wird sofort episch". Gebaut ist kein Auswahlschritt: das Spiel
+> nimmt den am weitesten ausgebauten Skill, also den, in den schon investiert wurde. Ein eigener
+> Picker wäre die treuere Umsetzung und ist Nacharbeit. Aus demselben Grund heben Lehrbrief und
+> Aufstockung die **höchsten** ausbaufähigen Stufen zuerst — die Stufenpreise (12 · 25 · 40) und die
+> Gebäudefaktoren (1 · 1,5 · 2,2 · 3,1) steigen überproportional, der obere Schritt ist der wertvollere.
+
+> **Zwei Regeln, die nur zusammen stimmen.** Freilos IV („der legendäre Neuwurf kostet den normalen
+> Preis") und Nachlass greifen beide am Preis. Sie werden **nacheinander** gerechnet, erst der normale
+> Grundpreis, dann der Rabatt — multipliziert man sie, wäre ein Viertel Nachlass auf einen legendären
+> Neuwurf billiger als die Familie verspricht. Und Reliquiar wirkt auf **ein** Angebot: der Zwang
+> fällt, sobald die Perk-Phase verlassen ist, sonst stünden bis zum Laufende drei Legendäre in jedem.
+
 > **Korrektur aus der Umsetzung:** Das Legendär-Gold ist **`#d4a63a`**, nicht `#e6b93a`. Auf `exp`
 > wurden die drei Gold-Töne zu einem zusammengelegt (`LEGENDARY_GOLD` in
 > `src/ui/indicators/vocab.js`, Wächter `test/legendary-gold.test.js`). Die Übersichtsseite trug den

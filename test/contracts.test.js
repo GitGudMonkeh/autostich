@@ -179,6 +179,117 @@ describe("Aufträge · Nachlass rundet ab und nie unter eine Münze", () => {
   });
 });
 
+describe("Aufträge · die Beute wirkt wirklich — jede Naht einzeln", () => {
+  /* Jeder Zugriff nimmt den Wert, den das Spiel OHNE Aufträge nähme, und gibt den zurück, der gilt.
+     Deshalb wird jeder hier zweimal geprüft: einmal ohne Auftragslauf (Eingabe kommt unverändert
+     zurück) und einmal mit dem Segen. Der erste Fall ist die eigentliche Zusage. */
+  const withBoons = (boons, extra = {}) => ({ contractsEnabled: true, contractBoons: boons, cycle: 0, ...extra });
+  const plain = (extra = {}) => ({ contractsEnabled: false, contractBoons: null, cycle: 0, ...extra });
+
+  it("ohne Auftragslauf gibt JEDER Zugriff seinen Eingabewert unverändert zurück", () => {
+    const s = plain();
+    expect(CT.coinsPerCycleWith(s, 5)).toBe(5);
+    expect(CT.formationEnergyWith(s, 4)).toBe(4);
+    expect(CT.unspentEnergyWith(s, 3)).toBe(3);
+    expect(CT.forfeitWith(s, 12)).toBe(12);
+    expect(CT.rerollPriceWith(s, 6)).toBe(6);
+    expect(CT.perksOfferedWith(s, 3)).toBe(3);
+    expect(CT.perkFloorWith(s, 1)).toBe(1);
+    expect(CT.perkLegendaryWith(s, 0.03)).toBe(0.03);
+    expect(CT.skillDoorsWith(s, 2)).toBe(2);
+    expect(CT.skillLegendaryWith(s, 0.035)).toBe(0.035);
+    expect(CT.liftSkillTiers(s, [0, 1, 2])).toEqual([0, 1, 2]);
+    expect(CT.coinsPerPhase(s)).toBe(0);
+    expect(CT.freeRerollPhases(s)).toBe(null);
+    expect(CT.legendaryPerkForce(s)).toBe(0);
+  });
+
+  it("Münzrecht zahlt je Durchlauf und läuft mit `cycles` aus", () => {
+    const befristet = withBoons({ income: { per: 1, until: 15 } });
+    expect(CT.coinsPerCycleWith(befristet, 5, 15)).toBe(6);
+    expect(CT.coinsPerCycleWith(befristet, 5, 16)).toBe(5);   // abgelaufen
+    expect(CT.coinsPerCycleWith(withBoons({ income: { per: 4, until: null } }), 5, 49)).toBe(9); // bis Laufende
+  });
+
+  it("Freizug hebt die Energie, Stufe IV verdoppelt die übrige", () => {
+    expect(CT.formationEnergyWith(withBoons({ energy: { plus: 2, until: null } }), 4)).toBe(6);
+    expect(CT.unspentEnergyWith(withBoons({ unspentMult: 2 }), 3)).toBe(6);
+  });
+
+  it("Ablass rundet ab — die Familie zahlt keine Bruchmünze", () => {
+    expect(CT.forfeitWith(withBoons({ forfeitMult: 1.5 }), 12)).toBe(18);
+    expect(CT.forfeitWith(withBoons({ forfeitMult: 2.5 }), 6)).toBe(15);
+    expect(CT.forfeitWith(withBoons({ forfeitMult: 1.5 }), 5)).toBe(7);   // 7,5 → 7
+  });
+
+  it("Freilos IV senkt den legendären Neuwurf auf den NORMALEN Preis, ohne sich mit Nachlass zu multiplizieren", () => {
+    const s = withBoons({ legendaryRerollNormalPrice: true });
+    expect(CT.rerollPriceWith(s, 60, true, 12)).toBe(12);
+    // Mit Nachlass zusammen: erst der normale Grundpreis, DANN der Rabatt — nicht beides auf 60.
+    const beide = withBoons({ legendaryRerollNormalPrice: true, rerollScale: 0.5 });
+    expect(CT.rerollPriceWith(beide, 60, true, 12)).toBe(6);
+  });
+
+  it("Auslage und Beschau heben Zahl und Boden, nie nach unten", () => {
+    expect(CT.perksOfferedWith(withBoons({ perksOffered: 4 }), 3)).toBe(4);
+    expect(CT.perksOfferedWith(withBoons({ perksOffered: 4 }), 5)).toBe(5);  // ein höherer Bestand bleibt
+    expect(CT.perkFloorWith(withBoons({ perkFloor: 3 }), 1)).toBe(3);
+    expect(CT.perkFloorWith(withBoons({ perkFloor: 2 }), 3)).toBe(3);
+  });
+
+  it("Freibrief öffnet die dritte Tür, befristet und bis zum Laufende", () => {
+    expect(CT.skillDoorsWith(withBoons({ thirdDoor: 4 }), 2, 3)).toBe(3);
+    expect(CT.skillDoorsWith(withBoons({ thirdDoor: 4 }), 2, 9)).toBe(2);   // abgelaufen
+    expect(CT.skillDoorsWith(withBoons({ thirdDoor: "run" }), 2, 49)).toBe(3);
+  });
+
+  it("Veredelung hebt die Stufen des Angebots und respektiert den Deckel", () => {
+    const phasen = withBoons({ offerLift: { steps: 1, until: 8 } });
+    expect(CT.liftSkillTiers(phasen, [0, 1, 3], 4)).toEqual([1, 2, 3]);   // 3 ist Episch, der Deckel
+    expect(CT.liftSkillTiers(phasen, [0, 1, 3], 12)).toEqual([0, 1, 3]);  // abgelaufen
+    // „alles unter Sehr selten steigt um eine" — Sehr selten selbst bleibt.
+    expect(CT.liftSkillTiers(withBoons({ offerLiftBelow: 3 }), [0, 1, 2, 3])).toEqual([1, 2, 2, 3]);
+    // Legendäre tragen keine Stufe und dürfen nicht angefasst werden.
+    expect(CT.liftSkillTiers(phasen, [0, "L"], 4)).toEqual([1, "L"]);
+  });
+
+  it("Nachlass rundet ab und nie unter eine Münze — auch als Zugriff", () => {
+    expect(CT.rerollPriceWith(withBoons({ rerollScale: 0.25 }), 3)).toBe(1);
+    expect(CT.rerollPriceWith(withBoons({ rerollScale: 0 }), 12)).toBe(0);
+  });
+});
+
+describe("Aufträge · Sofortwirkungen greifen beim Nehmen", () => {
+  const base = { contractsEnabled: true, contractBoons: {}, coins: 0, cycle: 0,
+    skills: ["a", "b", "c"], skillTiers: { a: 0, b: 2, c: 3 } };
+
+  it("Lehrbrief hebt die am weitesten ausgebauten Skills zuerst und deckelt bei Episch", () => {
+    const p = CT.applyLoot(base, { kind: "family", id: "lehrbrief", tier: 2, effect: { skillUp: 2, steps: 1 } });
+    // c steht schon auf 3 (Episch) und ist damit nicht mehr ausbaubar → b und a steigen.
+    expect(p.skillTiers).toEqual({ a: 1, b: 3, c: 3 });
+  });
+
+  it("Vollendung macht einen Skill episch und hebt die übrigen um eins", () => {
+    const s = { ...base, skillTiers: { a: 0, b: 2, c: 1 } };
+    const p = CT.applyLoot(s, { kind: "legendary", id: "vollendung", tier: 5, effect: { skillToEpic: 1, skillUpRest: 1 } });
+    expect(p.skillTiers.b).toBe(3);   // der am weitesten ausgebaute wird episch
+    expect(p.skillTiers.a).toBe(1);
+    expect(p.skillTiers.c).toBe(2);
+  });
+
+  it("Aufstockung hebt gebaute Gebäude, Legendäre ohne Stufe bleiben unberührt", () => {
+    const s = { ...base, architect: { buildings: [{ tier: 1 }, { tier: 3 }, { tier: "legendary" }] } };
+    const p = CT.applyLoot(s, { kind: "family", id: "aufstockung", tier: 1, effect: { upgradeBuildings: 1 } });
+    expect(p.architect.buildings.map((b) => b.tier)).toEqual([1, 4, "legendary"]);
+  });
+
+  it("Stadtrecht nimmt dem Baufeld den Deckel", () => {
+    const s = { ...base, architect: { maxCover: 24, buildings: [] } };
+    const p = CT.applyLoot(s, { kind: "legendary", id: "stadtrecht", tier: 5, effect: { coverUncapped: true } });
+    expect(p.architect.maxCover).toBe(Infinity);
+  });
+});
+
 describe("Aufträge · der normale Lauf bleibt unberührt", () => {
   const start = (extra = {}) => reducer(undefined, { type: "START_RUN", rng: seeded(42), architect: true, seed: 7, ...extra });
 
