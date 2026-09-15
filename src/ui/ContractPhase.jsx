@@ -215,10 +215,25 @@ export function contractReadout(state) {
   const c = state && state.contracts;
   const active = c && c.active;
   if (!active) return null;
-  const value = CT.readValue(state, active);
+  const live = CT.readLive(state, active);
+  const best = CT.readBest(state, active);
   const target = active.target || 0;
   const left = CT.cyclesLeft((state.cycle || 0) + 1, active);
-  return { active, value, target, left, done: value >= target, tone: tierColor(STEP_TIER[active.step]) };
+  /* `peak` sagt, ob zwei Zahlen nötig sind: bei einem Spitzen-Zähler fällt der laufende Wert an der
+     Durchlaufgrenze zurück, der beste nicht. Nur eine Zahl zu zeigen hieße, entweder den Rückfall zu
+     verstecken oder den Fortschritt. */
+  return { active, live, best, target, left, done: best >= target,
+           peak: CT.hasPeak(active) && best > live, tone: tierColor(STEP_TIER[active.step]) };
+}
+
+/* Die Zahlen als EIN Fragment — Kachel und Overlay-Zeile lesen dasselbe, damit sie nicht auseinanderlaufen. */
+function Zahlen({ r }) {
+  return (
+    <>
+      {r.live}<span className="opacity-45">/{r.target}</span>
+      {r.peak && <span className="text-meta-1 opacity-45 ml-1">{t("contract.best", { n: r.best })}</span>}
+    </>
+  );
 }
 
 /* Die Kachel zeigt nur den STAND — „Reinheit 1/4" sagt nicht, was zu tun ist, und bei Reinheit und
@@ -241,7 +256,7 @@ export function ContractTile({ state }) {
         </div>
         <div className="font-bold text-body-lg-5 leading-tight whitespace-nowrap overflow-hidden text-ellipsis"
           style={{ color: r.done ? "#5ab87a" : r.tone }}>
-          {r.value}<span className="opacity-45">/{r.target}</span>
+          <Zahlen r={r} />
           <span className="text-meta-1 opacity-45 ml-1">
             {r.done ? t("contract.done") : t("contract.left", { count: r.left, n: r.left })}
           </span>
@@ -274,7 +289,7 @@ export function ContractLine({ state, className = "" }) {
         <span className="text-micro-3 uppercase tracking-wide opacity-50">{t("contract.rail.label")}</span>
         <span className="font-bold">{contractName(r.active)}</span>
         <span className="font-bold" style={{ color: r.done ? "#5ab87a" : r.tone }}>
-          {r.value}<span className="opacity-45">/{r.target}</span>
+          <Zahlen r={r} />
         </span>
         <span className="text-meta-1 opacity-45">
           {r.done ? t("contract.done") : t("contract.left", { count: r.left, n: r.left })}

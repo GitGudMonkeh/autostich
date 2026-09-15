@@ -1539,6 +1539,7 @@ export default {
   "contract.rail.none": "keiner",
   "contract.left_one": "noch {n} Durchlauf",
   "contract.left_other": "noch {n} Durchläufe",
+  "contract.best": "best {n}",
   "contract.done": "erfüllt",
   "contract.failed": "verfallen",
 
@@ -1557,7 +1558,7 @@ export default {
   "contract.task.straehne.name": "Strähne",
   "contract.task.straehne.text": "Gewinne {n} Stiche in Folge.",
   "contract.task.gedraenge.name": "Gedränge",
-  "contract.task.gedraenge.text": "Baue {n} Formationen in einer Aufstellung.",
+  "contract.task.gedraenge.text": "Baue {n} Formationen.",
   "contract.task.reinheit.name": "Reinheit",
   "contract.task.reinheit.text": "Bringe {n} Positionen in eine Formation vom Typ {variant}.",
   "contract.task.langbau.name": "Langbau",

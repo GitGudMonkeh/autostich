@@ -979,7 +979,9 @@ function AutostichGame() {
       : (seedWasChosen.current ? (state.seed ?? null) : null);
     // exp: ein Dev-Run startet mit DERSELBEN Config neu (Plan, Regeln, Voll-Katalog) — sonst würde „Neustart" still
     // zum Normal-Lauf. state.devConfig hält die vom Reducer bereinigte Fassung; null = normaler Lauf.
-    launchRun({ ranked: state.ranked || null, seed, dev: state.devConfig || null });
+    // Zwischenaufgaben: „Neustart" muss den Auftragslauf MITNEHMEN. Ohne das Flag fiel der neue Lauf
+    // stumm auf den normalen zurück und das Angebot blieb aus.
+    launchRun({ ranked: state.ranked || null, seed, dev: state.devConfig || null, contracts: !!state.contractsEnabled });
   }
   // Dev-Run (nur Preview): frei konfigurierter Lauf aus dem DevRunSetup-Overlay.
   function startDevRun(dev) { launchRun({ dev }); }

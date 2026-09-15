@@ -2,6 +2,7 @@ import { useState, useRef, useMemo, useEffect } from "react";
 import { overlayPortal } from "./overlayPortal.jsx"; // #overlay-portal: eine Regel für alle Vollbild-Overlays
 import { PANEL_BG, phaseCard, phasePanel, PhaseHairline, PHASE_ACCENTS } from "./modalStyle.jsx";
 import { summarizeFormations, countBuiltFormations, SEGMENT_SIZE, openBorderInfo } from "../game/formations.js";
+import { openBordersOf } from "../game/contracts.js"; // Durchlass: die aus der Beute geöffneten Grenzen
 import { allianceGroups } from "../game/families.js";
 import { architectCoverFor, structLitPosOf, distrLitPosOf } from "./architectCover.js";
 import { CardGrid } from "./CardGrid.jsx";
@@ -138,7 +139,7 @@ export function FormationPhase({ state, onSwap, onUndo, onReset, onConfirm, onBu
   // architectEnabled-Gatter) — die Anzeige kann nicht davonlaufen.
   // Spalier hängt am Grün-Stand der Nachbarkarten, wandert also mit jedem Tausch mit.
   const segInfo = openBorderInfo(playerOrder, deck, state.skills, state.skillTiers, state.familyTiers,
-    state.architectEnabled ? state.architect : null);
+    state.architectEnabled ? state.architect : null, openBordersOf(state)); // Durchlass zählt als vierte Quelle mit
   // Wer Spalier hält, bekommt auch dann eine Zeile, wenn gerade KEINE Grenze offen ist. Ohne sie sieht ein
   // Spalier, das mangels grüner Nachbarn nichts öffnet, aus wie ein Spalier, das nicht funktioniert.
   const hasSpalier = (state.skills || []).includes(PLANT_S.SPALIER);

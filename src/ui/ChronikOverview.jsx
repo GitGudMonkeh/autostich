@@ -7,6 +7,7 @@ import { CardDetail } from "./CardDetail.jsx";
 import { LayoutPerks } from "./LayoutPerks.jsx";
 import { allianceGroups } from "../game/families.js";
 import { openBorderInfo, summarizeFormations } from "../game/formations.js";
+import { openBordersOf } from "../game/contracts.js"; // Durchlass: die aus der Beute geöffneten Grenzen
 import { archFamily, formationName, archCatDef, anchorLabel } from "../i18n/labels.js"; // #sprache: Formations-/Ankername zur Anzeigezeit
 import { t } from "../i18n/index.js";
 import { useEscape } from "./useEscape.js";
@@ -85,7 +86,7 @@ export function ChronikOverview({ state, onClose, options = {}, onOption }) {
             <CardGrid cards={cards} formations={formations} roles={state.roles} {...glacierGridProps(state)} anchors={anchors} pe={{ linkedGroups: allianceGroups(state.familyTiers, state.roles) }}
               highlightPos={highlightPos} highlightTitle="⏱ Zeitraffer · gekoppelte Position (20 & 40)"
               openSegments={openBorderInfo(state.playerOrder, state.deck, state.skills, state.skillTiers, state.familyTiers,
-                state.architectEnabled ? state.architect : null)}
+                state.architectEnabled ? state.architect : null, openBordersOf(state))}
               architectCover={hasArch && showArch ? architectCover : null}
               structPos={hasArch && showArch ? structLitPos : null}
               distrPos={hasArch && showArch ? distrLitPos : null}

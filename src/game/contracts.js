@@ -311,22 +311,27 @@ function fullSegments(state, category) {
   return n;
 }
 
-/* The live value of one contract. `perPosition` is state.formations (the current placement). */
-export function readValue(state, contract) {
+/* ZWEI Zahlen, nicht eine. Ein Spitzen-Zähler erfüllt sich über den BESTEN Wert des Fensters, aber
+   steuern kann der Spieler nur den LAUFENDEN — und bei Sperrfeuer, Durchmarsch und Buntspiel fällt
+   der laufende an jeder Durchlaufgrenze auf null zurück. Zeigt die Leiste nur das Maximum, steht dort
+   dauerhaft dieselbe Zahl und niemand sieht, dass gerade wieder gezählt wird (Owner, 2026-09-15).
+
+   `readLive` ist der Stand JETZT, `readBest` der Spitzenwert des Fensters. Erfüllt wird über readBest. */
+export function readLive(state, contract) {
   if (!contract) return 0;
   const tally = state.contractTally || {};
   const forms = state.formations || [];
   switch (contract.taskId) {
-    case "durchmarsch":  return Math.max(tally.bestCycleWins || 0, state.cycleWins || 0);
-    case "sperrfeuer":   return Math.max(tally.bestSegments || 0, tally.segments || 0);
-    case "straehne":     return state.bestStreak || 0;
-    case "gedraenge":    return Math.max(tally.bestForms || 0, countBuiltFormations(forms));
-    case "reinheit":     return Math.max(tally.bestPure || 0, cardsInType(forms, contract.variantId));
-    case "langbau":      return Math.max(tally.bestLong || 0, longestFormation(forms));
-    case "vollbrett":    return Math.max(tally.bestCovered || 0, positionsWith(forms, 1));
-    case "verflechtung": return Math.max(tally.bestWoven || 0, positionsWith(forms, 3));
-    case "farbtreue":    return tally.bestSuitStreak || 0;
-    case "buntspiel":    return Math.max(tally.bestRainbow || 0, minSuitWins(tally.suitWins));
+    case "durchmarsch":  return state.cycleWins || 0;
+    case "sperrfeuer":   return tally.segments || 0;
+    case "straehne":     return state.winStreak || 0;
+    case "gedraenge":    return countBuiltFormations(forms);
+    case "reinheit":     return cardsInType(forms, contract.variantId);
+    case "langbau":      return longestFormation(forms);
+    case "vollbrett":    return positionsWith(forms, 1);
+    case "verflechtung": return positionsWith(forms, 3);
+    case "farbtreue":    return tally.suitStreak || 0;
+    case "buntspiel":    return minSuitWins(tally.suitWins);
     case "brecher":      return tally.overThreshold || 0;
     case "fussvolk":     return tally.lowWins || 0;
     case "aufmarsch":    return deckLead(state);
@@ -336,13 +341,41 @@ export function readValue(state, contract) {
   }
 }
 
+/* Der Spitzenwert des Fensters. Für Summe und Zustand gibt es keinen Unterschied zum laufenden Wert —
+   sie laufen ohnehin nicht zurück. */
+export function readBest(state, contract) {
+  if (!contract) return 0;
+  const tally = state.contractTally || {};
+  const live = readLive(state, contract);
+  switch (contract.taskId) {
+    case "durchmarsch":  return Math.max(tally.bestCycleWins || 0, live);
+    case "sperrfeuer":   return Math.max(tally.bestSegments || 0, live);
+    case "straehne":     return Math.max(state.bestStreak || 0, live);
+    case "gedraenge":    return Math.max(tally.bestForms || 0, live);
+    case "reinheit":     return Math.max(tally.bestPure || 0, live);
+    case "langbau":      return Math.max(tally.bestLong || 0, live);
+    case "vollbrett":    return Math.max(tally.bestCovered || 0, live);
+    case "verflechtung": return Math.max(tally.bestWoven || 0, live);
+    case "farbtreue":    return Math.max(tally.bestSuitStreak || 0, live);
+    case "buntspiel":    return Math.max(tally.bestRainbow || 0, live);
+    default:             return live;
+  }
+}
+
+/* Zeigt die Anzeige zwei Zahlen? Nur dort, wo der laufende Wert an einer Durchlaufgrenze zurückfällt
+   oder hinter dem Spitzenwert zurückbleiben kann. */
+export const hasPeak = (contract) =>
+  !!contract && (TASK_BY_ID[contract.taskId] || {}).kind === "spitze";
+
+export const readValue = readBest;   // Bestand: der erfüllende Wert
+
 export const minSuitWins = (suitWins) => {
   const w = suitWins || {};
   return Math.min(...C.SUIT_ORDER.map((s) => w[s] || 0));
 };
 
 export const isFulfilled = (state, contract) =>
-  !!contract && readValue(state, contract) >= (contract.target || Infinity);
+  !!contract && readBest(state, contract) >= (contract.target || Infinity);
 
 /* ------------------------------------------------------------------------------------------------
    The per-trick tally

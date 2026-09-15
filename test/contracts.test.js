@@ -445,6 +445,46 @@ describe("Aufträge · eine offene Grenze trägt die Formation wirklich über de
   });
 });
 
+describe("Aufträge · laufender Wert und Spitzenwert sind ZWEI Zahlen", () => {
+  /* Im Playtest stand Sperrfeuer dauerhaft auf „1/4": die Anzeige zeigte nur das Maximum, und das
+     fällt nie. Der laufende Wert muss jeden Durchlauf neu hochzählen und bei Nichterreichen wieder
+     auf null gehen (Owner, 2026-09-15). */
+  const sperrfeuer = { taskId: "sperrfeuer", step: "sehrschwer", rung: 5, target: 5 };
+
+  it("Sperrfeuer: laufend zählt je Durchlauf hoch, die Spitze bleibt stehen", () => {
+    const state = (tally) => ({ contractsEnabled: true, contractTally: tally, formations: [] });
+    // Zwei volle Segmente im laufenden Durchlauf, drei war der beste bisher.
+    const s = state({ ...CT.emptyTally(), segments: 2, bestSegments: 3 });
+    expect(CT.readLive(s, sperrfeuer), "laufend").toBe(2);
+    expect(CT.readBest(s, sperrfeuer), "Spitze").toBe(3);
+
+    // Durchlaufwechsel: der laufende Wert fällt auf null, die Spitze nicht.
+    const nach = CT.tallyCycleEnd(s.contractTally, { cycleWins: 0, formations: [] });
+    expect(nach.segments, "laufend zurück auf 0").toBe(0);
+    expect(nach.bestSegments, "die Spitze bleibt").toBe(3);
+  });
+
+  it("erfüllt wird über die SPITZE, nicht über den laufenden Wert", () => {
+    const s = { contractsEnabled: true, formations: [], contractTally: { ...CT.emptyTally(), segments: 0, bestSegments: 5 } };
+    expect(CT.readLive(s, sperrfeuer)).toBe(0);
+    expect(CT.isFulfilled(s, sperrfeuer), "einmal erreicht bleibt erreicht").toBe(true);
+  });
+
+  it("nur Spitzen-Zähler brauchen zwei Zahlen", () => {
+    expect(CT.hasPeak({ taskId: "sperrfeuer" })).toBe(true);
+    expect(CT.hasPeak({ taskId: "durchmarsch" })).toBe(true);
+    expect(CT.hasPeak({ taskId: "fussvolk" }), "Summe läuft nie zurück").toBe(false);
+    expect(CT.hasPeak({ taskId: "saeckel" }), "Zustand auch nicht").toBe(false);
+  });
+
+  it("bei Summe und Zustand sind beide Zahlen gleich", () => {
+    const s = { contractsEnabled: true, coins: 77, formations: [], contractTally: { ...CT.emptyTally(), lowWins: 12 } };
+    for (const c of [{ taskId: "saeckel" }, { taskId: "fussvolk" }]) {
+      expect(CT.readLive(s, c)).toBe(CT.readBest(s, c));
+    }
+  });
+});
+
 describe("Aufträge · der Aufgabentext nennt den gewürfelten Parameter", () => {
   /* Die Kachel zeigt nur „Reinheit 1/4". Welcher FORMATIONSTYP gewürfelt wurde, steht allein im
      Aufgabentext — ohne ihn fehlt die halbe Aufgabe. Genau das ist im Playtest aufgefallen
@@ -464,6 +504,14 @@ describe("Aufträge · der Aufgabentext nennt den gewürfelten Parameter", () =>
         const key = `contract.${task.variantKey === "category" ? "category" : "formation"}.${v.id}`;
         expect(de[key], `fehlender Name: ${key}`).toBeTruthy();
       }
+    }
+  });
+
+  it("kein Aufgabentext behauptet „in einer Aufstellung\" — die Aufstellung steht über den ganzen Lauf", () => {
+    /* Sie wird je Aufstellphase verfeinert, nicht neu gebaut. Der Zusatz las sich wie ein Sprint in
+       einer Phase (Owner, 2026-09-15). */
+    for (const task of CT.TASKS) {
+      expect(de[`contract.task.${task.id}.text`], task.id).not.toContain("in einer Aufstellung");
     }
   });
 
