@@ -1,7 +1,7 @@
 # Zwischenaufgaben (exp) — Planungsdokument
 
 **Status: lebendes Dokument.** Beutekatalog und Aufgaben-Katalog sind durchdesignt und vom Owner Wert
-für Wert abgenommen (2026-09-14). Offen sind die fünf Punkte in §10; danach ist das Dokument
+für Wert abgenommen (2026-09-14). Offen sind die vier Punkte in §10; danach ist das Dokument
 umsetzungsreif.
 
 Entscheidungen des Owners stehen unter **Gesetzt**. Alles unter **Vorschlag** ist Diskussionsstand und
@@ -149,10 +149,23 @@ aber nicht das Stück. Eine Aufgabe der dritten Stufe zahlt Sehr selten **oder**
 von beiden, entscheidet sich erst beim Erfüllen. Die Stufe verspricht damit einen Korridor, keine
 Zahl.
 
-**Legendäre Beute hat damit genau ein Zuhause:** die obere Hälfte des vierten Bandes. Der frühere
-offene Punkt „Legendär-Satz" wird zur Frage, wie die zwei Hälften eines Bandes gewichtet sind. Mein
-Vorschlag: **70 zu 30 zugunsten der unteren**, damit die Stufe im Regelfall das bedeutet, was sie
-sagt. Offen (§10).
+**Legendäre Beute hat damit genau ein Zuhause:** die obere Hälfte des vierten Bandes.
+
+**Gesetzt (Owner, 2026-09-15): das Band ist 70 zu 30 gewichtet, zugunsten der unteren Rarität.**
+Dieselbe Zahl gilt für alle vier Stufen, ohne Sonderfall für die Spitze. Auf der vierten Stufe ist
+das zugleich der **Legendär-Satz**: 70 % Episch, 30 % Legendär. Damit bedeutet jede Stufe im
+Regelfall das, was ihr Name sagt, und Legendär bleibt der Ausreißer statt der Erwartung.
+
+> **Was der Satz für Legendär bedeutet.** Gerechnet, nicht gemessen, und unter zwei Annahmen: die
+> Rarität wird **je Stück** gewürfelt, und der Spieler schafft **beide** Aufgaben auf „Sehr schwer".
+>
+> | | je Aufgabe (4 Stücke) | ganzer Lauf (8 Stücke) |
+> | --- | --- | --- |
+> | **70/30 (gesetzt)** | 76 % mindestens eines · 1,2 im Schnitt | 94 % · 2,4 |
+> | 50/50 (verworfen) | 94 % · 2,0 | 99,6 % · 4,0 |
+>
+> Bei 50/50 wäre die halbe Auslage legendär. Das hätte der Episch-Hälfte desselben Bandes ihren
+> Platz genommen: „Sehr schwer" hätte faktisch „legendär oder knapp daneben" geheißen.
 
 Die Bänder überlappen: Selten kommt aus Stufe 1 und 2, Sehr selten aus 2 und 3, Episch aus 3 und 4.
 Nur Normal und Legendär haben je einen einzigen Zugang.
@@ -724,19 +737,17 @@ bei D30 nur in 5. Das ist keine Schieflage, sondern der Zweck.
 
 ## 10. Offene Punkte
 
-Fünf Punkte aus §3 und §4 liegen beim Owner:
+Vier Punkte aus §3 und §4 liegen beim Owner:
 
-1. **Die Gewichtung innerhalb eines Beute-Bandes.** Vorschlag 70 zu 30 zugunsten der unteren
-   Rarität (§3.2). Auf der vierten Stufe ist das zugleich der Legendär-Satz.
-2. **Säckel im ersten Fenster.** Die Stufen 100 und 120 sind bis D15 arithmetisch unmöglich, weil das
+1. **Säckel im ersten Fenster.** Die Stufen 100 und 120 sind bis D15 arithmetisch unmöglich, weil das
    Gesamteinkommen dort 64 bis 72 Münzen beträgt (§4.3). Entweder niedrigere obere Stufen, oder Säckel
    wird in Fenster 1 nur bis Selten angeboten.
-3. **Treppe und Wechsel bei Reinheit.** Die beiden Leitern (4·5·6·8 und 5·7·9·11) sind Vorschlag aus
+2. **Treppe und Wechsel bei Reinheit.** Die beiden Leitern (4·5·6·8 und 5·7·9·11) sind Vorschlag aus
    den gemessenen Typanteilen, nicht Owner-Entscheid.
-4. **Wo genau sitzt die Fortschrittsanzeige?** `StatusRail.jsx` ist der Kandidat, bestätigt ist es
+3. **Wo genau sitzt die Fortschrittsanzeige?** `StatusRail.jsx` ist der Kandidat, bestätigt ist es
    nicht. Das Mockup schlägt den Platz **über** den Multiplikatoren vor, weil der Auftrag das einzige
    Element der Leiste mit einer Frist ist.
-5. **Erscheint der Grundfarben-Ring dauerhaft** oder nur, solange ein Buntspiel-Auftrag läuft (§4.1).
+4. **Erscheint der Grundfarben-Ring dauerhaft** oder nur, solange ein Buntspiel-Auftrag läuft (§4.1).
 
 **Erledigt:** Die vier Aufgabenstufen heißen **Leicht, Mittel, Schwer, Sehr schwer** (§3.2).
 Farbtreue würfelt keine Farbe (§3.6). Der Grundfarben-Marker ist ein Ring um das Blatt,
