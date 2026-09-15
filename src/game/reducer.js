@@ -265,17 +265,22 @@ function contractStep(prev, next, rng = Math.random) {
     }
     tally = CT.tallyCycleEnd(tally, prev);      // die Spitzen des GERADE beendeten Durchlaufs
     const finished = prev.cycle + 1;            // 1-basierte Anzeige-Nummer des beendeten Durchlaufs
-    if (active) {
-      const win = CT.WINDOWS.find((w) => w.id === active.windowId);
-      if (CT.isFulfilled({ ...next, contractTally: tally }, active)) {
-        contracts = { ...contracts, active: null, done: [...(contracts.done || []), active.taskId],
-                      pendingLoot: CT.rollLoot(rng, active.step) };
-      } else if (win && finished >= win.to) {
-        contracts = { ...contracts, active: null };
-      }
+    const activeWin = active && CT.WINDOWS.find((w) => w.id === active.windowId);
+    /* Abgerechnet wird ERST am Fensterende, nicht in dem Moment, in dem der Zähler die Schwelle
+       reißt (Owner, 2026-09-15, „Lesart A"). Ein früh erfüllter Auftrag läuft weiter und zahlt nach
+       D16 bzw. D32; die Beute wirkt damit ab der nächsten Phase. Die Kachel zeigt „erfüllt" schon
+       vorher — der Stand ist sicher, nur die Auszahlung wartet. */
+    if (activeWin && finished >= activeWin.to) {
+      const won = CT.isFulfilled({ ...next, contractTally: tally }, active);
+      contracts = { ...contracts, active: null,
+                    done: won ? [...(contracts.done || []), active.taskId] : contracts.done || [],
+                    pendingLoot: won ? CT.rollLoot(rng, active.step) : null };
     }
     const win = CT.windowFor(finished + 1);
-    if (win && !contracts.active && !(contracts.pendingLoot || []).length && contracts.windowId !== win.id) {
+    /* Die Beute des alten Fensters und das Angebot des neuen fallen jetzt auf DIESELBE Grenze. Das
+       Angebot darf deshalb nicht auf die abgeholte Beute warten, sonst verlöre Fenster 2 eine Runde.
+       Welches Overlay zuerst zu sehen ist, entscheidet die Reihenfolge in App.jsx. */
+    if (win && !contracts.active && contracts.windowId !== win.id) {
       const offers = CT.rollOffers(rng, contracts.usedTasks || []);
       contracts = { ...contracts, windowId: win.id, offers,
                     usedTasks: [...new Set([...(contracts.usedTasks || []), ...offers.map((o) => o.taskId)])] };
@@ -500,8 +505,16 @@ export function reducer(state, action) {
     case "PICK_CONTRACT_BORDER": { // Durchlass ab Stufe II: die gewählten Grenzen sind offen
       const c = state.contracts;
       if (!state.contractsEnabled || !c || !c.pendingBorderPick) return state;
-      const applied = CT.applyBorderPick(state, action.borders, openBordersFor(state));
-      if (!applied) return state;
+      const open = openBordersFor(state);
+      const applied = CT.applyBorderPick(state, action.borders, open);
+      /* Kein Ziel mehr — alle sieben Grenzen stehen schon über Perk, Spalier oder Pfeiler offen:
+         die Wahl muss trotzdem weg, sonst bliebe das Overlay bis zum Laufende stehen. Eine
+         ungültige Eingabe bei noch freien Grenzen bleibt dagegen ein No-Op. */
+      if (!applied) {
+        return CT.ALL_BORDERS.some((g) => !open.has(g))
+          ? state
+          : { ...state, contracts: { ...c, pendingBorderPick: null } };
+      }
       const next = { ...state, ...applied, contracts: { ...c, pendingBorderPick: null } };
       // Die Aufstellung sofort neu rechnen: eine offene Grenze ändert die Formationen dieser Runde.
       return { ...next, formations: computeFormations(next.playerOrder, next.deck, next.roles, next.perks, next.skills,

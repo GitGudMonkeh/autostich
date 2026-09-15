@@ -1287,12 +1287,11 @@ function AutostichGame() {
         </>)}
       </div>
 
-      {/* Zwischenaufgaben: zwei Overlays, beide nur im Auftragslauf. Sie hängen NICHT an `phase` —
-          damit bleibt die Phasenmaschine des normalen Laufs unverändert. */}
-      {state.contractsEnabled && (state.contracts?.offers || []).length > 0 && (
-        <ContractOffer offers={state.contracts.offers} windowId={state.contracts.windowId}
-          onPick={(o) => dispatch({ type: "PICK_CONTRACT", taskId: o.taskId, step: o.step })} />
-      )}
+      {/* Zwischenaufgaben: vier Overlays, alle nur im Auftragslauf. Sie hängen NICHT an `phase` —
+          damit bleibt die Phasenmaschine des normalen Laufs unverändert.
+          Reihenfolge ist Vorrang: seit der Abrechnung am Fensterende (§3.7) fallen Beute des alten
+          Fensters und Angebot des neuen auf dieselbe Durchlaufgrenze. Erst die Beute samt ihrer
+          Nachwahl, dann der neue Aufsteller — zwei Vollbild-Overlays gleichzeitig wären ein Stapel. */}
       {state.contractsEnabled && (state.contracts?.pendingLoot || []).length > 0 && (
         <ContractLoot pieces={state.contracts.pendingLoot}
           onPick={(p) => dispatch({ type: "PICK_LOOT", lootId: p.id, tier: p.tier })} />
@@ -1306,6 +1305,12 @@ function AutostichGame() {
         <ContractSkillPick skills={upgradableSkills(state)} skillTiers={state.skillTiers || {}}
           rest={state.contracts.pendingSkillPick.rest || 0}
           onPick={(id) => dispatch({ type: "PICK_CONTRACT_SKILL", skillId: id })} />
+      )}
+      {state.contractsEnabled && (state.contracts?.offers || []).length > 0
+        && !(state.contracts.pendingLoot || []).length
+        && !state.contracts.pendingBorderPick && !state.contracts.pendingSkillPick && (
+        <ContractOffer offers={state.contracts.offers} windowId={state.contracts.windowId}
+          onPick={(o) => dispatch({ type: "PICK_CONTRACT", taskId: o.taskId, step: o.step })} />
       )}
 
       {state.phase === "formation" && (

@@ -4,6 +4,8 @@ import { DECISION_SCHEDULE } from "../src/game/constants.js";
 import { reducer } from "../src/game/reducer.js";
 import { SKILL_LIST, isLegendarySkill } from "../src/game/skills.js";
 import { computeFormations, openBorderInfo, FORMATION_TYPES } from "../src/game/formations.js";
+import { makeRng } from "../src/game/deck.js";
+import { randomPolicy } from "../sim/policies/random.js";
 import de from "../src/i18n/de.js";
 
 /* ============================================================
@@ -611,5 +613,90 @@ describe("Aufträge · der normale Lauf bleibt unberührt", () => {
     expect(after.contracts.pendingLoot).toBe(null);
     expect(after.contracts.taken.length).toBe(1);
     if (piece.id === "zehrgeld") expect(after.coins).toBe((armed.coins || 0) + 15);
+  });
+});
+
+describe("Aufträge · abgerechnet wird erst am Fensterende (§3.7)", () => {
+  /* Owner, 2026-09-15 („Lesart A"): die Beute kommt nach der letzten Runde des Fensters, nicht in
+     dem Moment, in dem der Zähler die Schwelle reißt. Vorher zahlte eine früh erfüllte leichte
+     Aufgabe fast das ganze Fenster mit, eine spät erfüllte schwere nur ein paar Runden.
+
+     Geprüft an echten Läufen, nicht an einem gestellten Zustand: der Treiber beantwortet zusätzlich
+     die vier Auftrags-Overlays — sie hängen nicht an `phase`, die Policy sieht sie also gar nicht.
+     Er nimmt bewusst die LEICHTESTE der drei Aufgaben, damit früh erfüllt wird und die Verzögerung
+     überhaupt messbar ist. */
+  const ENDEN = CT.WINDOWS.map((w) => w.to);   // 16 und 32
+
+  function auftragslauf(seed) {
+    const pol = randomPolicy({ architectGreedy: true });
+    const rng = makeRng(seed);
+    let s = reducer(null, { type: "START_RUN", rng, architect: true, contracts: true });
+    const beuteBei = [];        // Durchläufe, in denen Beute auflag
+    const erfuelltOhne = new Set(); // Durchläufe, in denen erfüllt war und trotzdem nichts kam
+    let guard = 0;
+    while (s.phase !== "gameover") {
+      if (++guard > 200000) throw new Error(`kein Fortschritt (seed ${seed}, phase ${s.phase})`);
+      const c = s.contracts || {};
+      if ((c.pendingLoot || []).length) {
+        beuteBei.push(s.cycle);
+        const p = c.pendingLoot[0];
+        s = reducer(s, { type: "PICK_LOOT", lootId: p.id, tier: p.tier, rng });
+        continue;
+      }
+      if (c.pendingBorderPick) { s = reducer(s, { type: "PICK_CONTRACT_BORDER", borders: CT.ALL_BORDERS }); continue; }
+      if (c.pendingSkillPick) { s = reducer(s, { type: "PICK_CONTRACT_SKILL", skillId: CT.upgradableSkills(s)[0] }); continue; }
+      if ((c.offers || []).length) {
+        const o = c.offers.find((x) => x.step === "leicht") || c.offers[0];
+        s = reducer(s, { type: "PICK_CONTRACT", taskId: o.taskId, step: o.step });
+        continue;
+      }
+      if (c.active && CT.isFulfilled(s, c.active)) erfuelltOhne.add(s.cycle);
+      s = s.phase === "play" ? reducer(s, { type: "RESOLVE_TRICK", rng }) : reducer(s, pol.act(s, rng));
+    }
+    return { beuteBei, erfuelltOhne: [...erfuelltOhne].sort((a, b) => a - b) };
+  }
+
+  it("Beute liegt NIE mitten im Fenster auf — nur nach D16 und nach D32", () => {
+    for (const seed of [1, 2]) {
+      const { beuteBei } = auftragslauf(seed);
+      for (const d of beuteBei) expect(ENDEN, `seed ${seed}: Auszahlung im Durchlauf ${d}`).toContain(d);
+    }
+  }, 30_000);
+
+  it("ein früh erfüllter Auftrag läuft weiter und wartet auf das Fensterende", () => {
+    // Seed 1 erfüllt im ERSTEN Durchlauf und wird trotzdem erst nach D16 bezahlt.
+    const { beuteBei, erfuelltOhne } = auftragslauf(1);
+    expect(erfuelltOhne.length, "erfüllt, aber noch nicht bezahlt").toBeGreaterThan(0);
+    expect(beuteBei, "genau eine Auszahlung, am Fensterende").toEqual([16]);
+    expect(Math.max(...erfuelltOhne), "die Wartezeit reicht bis an die Grenze").toBe(15);
+  }, 30_000);
+});
+
+describe("Aufträge · eine Grenzwahl ohne Ziel darf nicht stehen bleiben", () => {
+  /* Durchlass ab Stufe II stellt eine Auswahl. Steht schon alles offen, hat sie kein Ziel —
+     bestätigen ließe sie sich nicht, und das Overlay bliebe bis zum Laufende auf dem Bildschirm.
+     Zwei Wege dorthin, deshalb zwei Sperren: Schleifung liegt im Beute-Zustand selbst, fremde
+     Quellen (Perk, Spalier, Pfeiler) sieht erst der Reducer. */
+  const armed = (boons) => ({ contractsEnabled: true, contractBoons: boons, playerOrder: [], deck: [],
+    skills: [], skillTiers: {}, familyTiers: {}, contracts: { pendingBorderPick: { count: 2 } } });
+
+  it("nach Schleifung stellt Durchlass gar keine Wahl mehr", () => {
+    const piece = { kind: "family", id: "durchlass", category: "aufstellung", tier: 3, effect: { openBorders: 2 } };
+    const lauf = (boons) => ({ contractsEnabled: true, contractBoons: boons });
+    const nachSchleifung = CT.applyLoot(lauf({ openBorders: "all" }), piece, seeded(5));
+    expect(nachSchleifung.pendingBorderPick, "kein Ziel → keine Wahl").toBeUndefined();
+    // Gegenprobe: mit freien Grenzen steht die Wahl sehr wohl.
+    expect(CT.applyLoot(lauf({}), piece, seeded(5)).pendingBorderPick).toEqual({ count: 2 });
+  });
+
+  it("sind alle sieben Grenzen offen, räumt der Reducer die Wahl ab", () => {
+    const s = armed({ openBorders: CT.ALL_BORDERS });
+    const after = reducer(s, { type: "PICK_CONTRACT_BORDER", borders: CT.ALL_BORDERS });
+    expect(after.contracts.pendingBorderPick, "abgeräumt statt festgefahren").toBe(null);
+  });
+
+  it("eine leere Eingabe bei freien Grenzen bleibt ein No-Op", () => {
+    const s = armed({});
+    expect(reducer(s, { type: "PICK_CONTRACT_BORDER", borders: [] })).toBe(s);
   });
 });

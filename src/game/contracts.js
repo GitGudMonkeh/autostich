@@ -564,7 +564,10 @@ export function applyLoot(state, piece, rng = Math.random) {
         boons.openBorders = [...new Set([...(boons.openBorders || []), g])];
       }
     } else {
-      patch.pendingBorderPick = { count: e.openBorders };
+      // Schleifung oder ein früherer Durchlass kann schon alles offen haben. Eine Wahl ohne Ziel
+      // ließe sich nicht bestätigen und das Overlay nie wieder schließen.
+      const open = new Set(openBordersOf(state) || []);
+      if (ALL_BORDERS.some((g) => !open.has(g))) patch.pendingBorderPick = { count: e.openBorders };
     }
   }
 

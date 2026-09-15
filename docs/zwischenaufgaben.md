@@ -92,7 +92,7 @@ durch dieses Dokument abgelöst — **auch in der Zahl**: die Fenster enden bei 
 Zwei Aufgaben je Lauf. Die erste läuft über die Durchläufe 1 bis 16, die zweite über 17 bis 32. Zu
 Beginn jedes Fensters liegen **drei Angebote** auf dem Tisch. Jedes zeigt eine Aufgabe und ihre Stufe;
 die Stufe nennt das Beute-Band, das Stück selbst bleibt verdeckt. Eins nimmst du an, die anderen zwei
-verfallen. Erfüllt, stehen **drei Beutestücke** zur Wahl.
+verfallen. Abgerechnet wird am **Fensterende**; erfüllt, stehen dann **drei Beutestücke** zur Wahl.
 
 **Gesetzt (Owner, 2026-09-14):**
 
@@ -106,6 +106,8 @@ verfallen. Erfüllt, stehen **drei Beutestücke** zur Wahl.
 - Beute **wirkt weiter und zahlt nie in Score**.
 - **Legendäre Beute ist schon am Ende von Fenster 1 möglich**, über das vierte Band.
 - **Erfüllt zahlt drei Beutestücke zur Wahl** (Owner, 2026-09-15).
+- **Abgerechnet wird erst nach der letzten Runde des Fensters** — D16 und D32 (Owner, 2026-09-15).
+  Die Beute wirkt ab der nächsten Phase. Siehe §3.7.
 - **Die unterste Stufe ist knapp ohne Aufwand erreichbar.** Wer sie nimmt, tauscht Rarität gegen
   Sicherheit. Alle Stufen darüber verlangen Investition.
 - Nicht erfüllt zahlt **nichts**.
@@ -296,7 +298,7 @@ er es aufmacht.
 
 ### 3.6 Gegen Wiederholung
 
-**Regel 1 und 2 sind gebaut** (2026-09-15), Regel 3 liegt beim Owner.
+**Regel 1 und 2 sind gebaut** (2026-09-15), Regel 3 ist gestrichen.
 
 1. **Gewürfelte Parameter statt einer langen Liste** — gebaut. Dasselbe Muster wie `WEEK_MODS`:
    Reinheit würfelt den Formationstyp (vier Varianten), Quartier die Gebäudekategorie (drei). Am Code
@@ -319,6 +321,31 @@ damit niemand sie später als gute Idee wiederentdeckt:
   größten sein soll — in den ersten Läufen. Das ist mehr Wiederholung früh gegen Neuheit spät, in
   einem Abschnitt, der „Gegen Wiederholung" heißt.
 - **Sie war doppelt unterbestimmt:** welche vier, und wodurch sie aufgehen, stand nirgends.
+
+### 3.7 Abgerechnet wird am Fensterende
+
+**Gesetzt (Owner, 2026-09-15).** Die Beute kommt **nach der letzten Runde des Fensters** — nach D16
+und nach D32 —, nicht in dem Moment, in dem der Zähler die Schwelle reißt. Sie wirkt ab der nächsten
+Phase.
+
+Vorher zahlte der Auftrag sofort bei Erfüllung. Zwei Dinge sprachen dagegen:
+
+- **Eine früh erfüllte Aufgabe der untersten Stufe zahlte fast das ganze Fenster mit.** Wer „Leicht"
+  im zweiten Durchlauf schaffte, hatte seine Beute vierzehn Runden lang, wer „Sehr schwer" erst am
+  Ende schaffte, ein paar. Das Band soll die Rarität staffeln, nicht zusätzlich die Wirkdauer.
+- **Der Abrechnungszeitpunkt war unvorhersehbar.** Jetzt ist er eine feste Runde, gleich für beide
+  Fenster und für alle vier Stufen.
+
+Was daraus folgt:
+
+- **Ein erfüllter Auftrag läuft weiter.** Die Kachel zeigt „erfüllt · noch N Durchläufe": der Stand
+  ist sicher, der Spieler muss nichts mehr tun, die Auszahlung wartet trotzdem.
+- **Spitzen-Zähler können nicht mehr zurückfallen**, sobald sie einmal oben waren — das war schon so
+  (`readBest`), aber jetzt ist es sichtbar wichtig statt nur formal richtig.
+- **Beute des alten Fensters und Angebot des neuen fallen auf dieselbe Durchlaufgrenze.** Das Angebot
+  wartet nicht auf die abgeholte Beute, sonst verlöre Fenster 2 eine Runde; die Reihenfolge der
+  Overlays in `App.jsx` entscheidet, was der Spieler zuerst sieht — erst die Beute samt Nachwahl,
+  dann der neue Aufsteller.
 
 ---
 

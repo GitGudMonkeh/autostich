@@ -236,6 +236,15 @@ function Zahlen({ r }) {
   );
 }
 
+/* Abgerechnet wird erst am Fensterende (§3.7), darum sind „erfüllt" und „noch N Durchläufe" kein
+   Entweder-oder mehr: der Stand ist sicher, die Beute wartet trotzdem. Beides zu zeigen ist der
+   einzige Weg, dem Spieler zu sagen, dass er nichts mehr tun muss und trotzdem noch nichts bekommt. */
+function statusLabel(r) {
+  const left = t("contract.left", { count: r.left, n: r.left });
+  if (!r.done) return left;
+  return r.left > 0 ? `${t("contract.done")} · ${left}` : t("contract.done");
+}
+
 /* Die Kachel zeigt nur den STAND — „Reinheit 1/4" sagt nicht, was zu tun ist, und bei Reinheit und
    Quartier fehlt damit sogar der gewürfelte Typ, also die halbe Aufgabe. Ein Klick klappt den Satz
    auf, den der Spieler beim Annehmen gelesen hat (Owner, 2026-09-15). Zugeklappt, weil die Leiste
@@ -257,9 +266,7 @@ export function ContractTile({ state }) {
         <div className="font-bold text-body-lg-5 leading-tight whitespace-nowrap overflow-hidden text-ellipsis"
           style={{ color: r.done ? "#5ab87a" : r.tone }}>
           <Zahlen r={r} />
-          <span className="text-meta-1 opacity-45 ml-1">
-            {r.done ? t("contract.done") : t("contract.left", { count: r.left, n: r.left })}
-          </span>
+          <span className="text-meta-1 opacity-45 ml-1">{statusLabel(r)}</span>
         </div>
       </button>
       {open && (
@@ -291,9 +298,7 @@ export function ContractLine({ state, className = "" }) {
         <span className="font-bold" style={{ color: r.done ? "#5ab87a" : r.tone }}>
           <Zahlen r={r} />
         </span>
-        <span className="text-meta-1 opacity-45">
-          {r.done ? t("contract.done") : t("contract.left", { count: r.left, n: r.left })}
-        </span>
+        <span className="text-meta-1 opacity-45">{statusLabel(r)}</span>
       </button>
       {open && <div className="text-body-5 opacity-80 leading-snug mt-1 pl-4">{contractText(r.active)}</div>}
     </div>
