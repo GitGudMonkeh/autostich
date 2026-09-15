@@ -1,7 +1,7 @@
 # Zwischenaufgaben (exp) — Planungsdokument
 
 **Status: lebendes Dokument.** Beutekatalog und Aufgaben-Katalog sind durchdesignt und vom Owner Wert
-für Wert abgenommen (2026-09-14). Offen sind die sechs Punkte in §10; danach ist das Dokument
+für Wert abgenommen (2026-09-14). Offen sind die fünf Punkte in §10; danach ist das Dokument
 umsetzungsreif.
 
 Entscheidungen des Owners stehen unter **Gesetzt**. Alles unter **Vorschlag** ist Diskussionsstand und
@@ -724,23 +724,19 @@ bei D30 nur in 5. Das ist keine Schieflage, sondern der Zweck.
 
 ## 10. Offene Punkte
 
-1. **Archetyp oder Fraktion.** Der Style-Guide setzt **Archetyp** als kanonisch, die exp-Dokumente
-   schreiben durchgehend „Fraktion". Im deutschen Katalog steht es 13 zu 8 für Archetyp. Zu
-   entscheiden, bevor die Aufgabentexte geschrieben werden.
+Fünf Punkte aus §3 und §4 liegen beim Owner:
 
-Dazu fünf Punkte aus §3 und §4, die ebenfalls beim Owner liegen:
-
-2. **Die Gewichtung innerhalb eines Beute-Bandes.** Vorschlag 70 zu 30 zugunsten der unteren
+1. **Die Gewichtung innerhalb eines Beute-Bandes.** Vorschlag 70 zu 30 zugunsten der unteren
    Rarität (§3.2). Auf der vierten Stufe ist das zugleich der Legendär-Satz.
-3. **Säckel im ersten Fenster.** Die Stufen 100 und 120 sind bis D15 arithmetisch unmöglich, weil das
+2. **Säckel im ersten Fenster.** Die Stufen 100 und 120 sind bis D15 arithmetisch unmöglich, weil das
    Gesamteinkommen dort 64 bis 72 Münzen beträgt (§4.3). Entweder niedrigere obere Stufen, oder Säckel
    wird in Fenster 1 nur bis Selten angeboten.
-4. **Treppe und Wechsel bei Reinheit.** Die beiden Leitern (4·5·6·8 und 5·7·9·11) sind Vorschlag aus
+3. **Treppe und Wechsel bei Reinheit.** Die beiden Leitern (4·5·6·8 und 5·7·9·11) sind Vorschlag aus
    den gemessenen Typanteilen, nicht Owner-Entscheid.
-5. **Wo genau sitzt die Fortschrittsanzeige?** `StatusRail.jsx` ist der Kandidat, bestätigt ist es
+4. **Wo genau sitzt die Fortschrittsanzeige?** `StatusRail.jsx` ist der Kandidat, bestätigt ist es
    nicht. Das Mockup schlägt den Platz **über** den Multiplikatoren vor, weil der Auftrag das einzige
    Element der Leiste mit einer Frist ist.
-6. **Erscheint der Grundfarben-Ring dauerhaft** oder nur, solange ein Buntspiel-Auftrag läuft (§4.1).
+5. **Erscheint der Grundfarben-Ring dauerhaft** oder nur, solange ein Buntspiel-Auftrag läuft (§4.1).
 
 **Erledigt:** Die vier Aufgabenstufen heißen **Leicht, Mittel, Schwer, Sehr schwer** (§3.2).
 Farbtreue würfelt keine Farbe (§3.6). Der Grundfarben-Marker ist ein Ring um das Blatt,
@@ -766,6 +762,43 @@ Freizug auf 16,7 % und jede Münz-Familie auf 5,6 %, also **das Dreifache** für
 der Aufstellung; dass Freizug dreimal so oft erscheint wie Zehrgeld, wäre in einer gemeinsamen Liste
 nicht erklärbar. Für Streuung über die Kategorien sorgt bereits die Regel „keine Kategorie doppelt".
 Der Preis ist bewusst in Kauf genommen: aus der Aufstellphase kommt nur jedes dreizehnte Stück.
+
+**Gesetzt (Owner, 2026-09-15): der Produktbegriff heißt FRAKTION, überall.** Die Aufgabentexte,
+die Beutetexte und die Fortschrittsanzeige schreiben Fraktion. „Archetyp" wird nicht mehr verwendet.
+
+> **Korrektur zu meiner Messung.** Ich hatte „im deutschen Katalog 13 zu 8 für Archetyp" geschrieben
+> und das als Argument benutzt. Das war falsch: gezählt waren Importe, Kommentare und Schlüsselnamen
+> mit. Nur über die tatsächlichen Katalogwerte gezählt steht der deutsche Katalog **5 zu 5** — also
+> gleichauf, nicht mehrheitlich Archetyp. Die Entscheidung stand ohnehin dem Owner zu; die falsche
+> Zahl ändert aber den Umfang der Folgearbeit, deshalb steht die Korrektur hier.
+
+**Folgearbeit: den Begriff im Katalog nachziehen.** Gemessen über die reinen Katalogwerte:
+
+| Katalog | `ready` | Archetyp | Fraktion |
+| --- | --- | --- | --- |
+| `de.js` | **ja** | 5 | 5 |
+| `en.js` | nein | 14 | 4 |
+| `enMeta.js` | nein | 5 | 0 |
+| `enGlossary.js` | nein | 2 | 0 |
+| `es.js`, `zhHans.js` | nein | je 1 | 0 |
+
+Nur **Deutsch** ist `ready: true` (`src/i18n/index.js`); die anderen drei stehen `inactive: true` und
+sind heute nicht im Spiel sichtbar. Der spielersichtbare Teil der Umbenennung sind also die **fünf
+deutschen Werte**; die übrigen 23 wandern mit, sonst driftet die Terminologie über die Paritätstests.
+
+Drei Dinge bleiben ausdrücklich unberührt:
+
+- **Code-Bezeichner** — `ARCHETYPE_META`, `archetypeLabel`, `archetype.*`-Schlüssel, `archetypesUsed`.
+  `AGENTS.md` hält Bezeichner auf Englisch; die Entscheidung betrifft Produktsprache, nicht Code.
+- **Bestehende deutsche Kommentare und Testnamen.** Nachgeprüft: kein Test behauptet den Wortlaut
+  „Archetyp" als Katalogwert — die 50 Treffer in `test/` sind Bezeichner, Kommentare und
+  `describe`-Titel. `AGENTS.md` rät von reinen Übersetzungs-Diffs ab.
+- **Historische Aufzeichnungen** in `docs/decisions/`.
+
+`docs/text-style-guide.md` muss mit: Zeile 47 führt heute **Archetyp** als kanonisch und „Fraktion"
+in der Spalte der zu vermeidenden Synonyme. Die beiden Spalten tauschen. Ebenso §1c und die drei
+Fließtextstellen. Die Umbenennung ändert Spielertext, braucht also `npm run loc:export` zusätzlich
+zu den normalen Gates.
 
 **Folgearbeit (Owner, 2026-09-15): alle Neuwürfe bekommen einen Deckel von 3 je Phase.** Gebaut
 wird er, wenn die offenen Punkte durch sind. Damit bleiben Nachlass und Freilos unverändert: der
