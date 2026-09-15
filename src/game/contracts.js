@@ -53,18 +53,22 @@ export const LOOT_PER_REWARD = 3;     // three pieces to choose from once the ta
 
    `variants` rolls a parameter instead of listing near-identical tasks (the same trick WEEK_MODS
    uses): Reinheit rolls the formation type, Quartier the building category. A variant may carry its
-   own rungs — Reinheit's four ladders share one shape and differ only in where they start. */
+   own rungs — Reinheit's four types are differently easy and each carries its own. */
 export const TASKS = [
   { id: "durchmarsch",  kind: "spitze",  rungs: [22, 26, 30, 34] },
   { id: "sperrfeuer",   kind: "spitze",  rungs: [2, 3, 4, 5] },
   { id: "straehne",     kind: "spitze",  rungs: [10, 15, 30, 60] },
   { id: "gedraenge",    kind: "spitze",  rungs: [15, 25, 35, 45] },
+  /* Reinheit zählt KARTEN in einer Formation des gewürfelten Typs, nicht die Formationen selbst
+     (Owner, 2026-09-15). Distinkte Läufe eines Typs reichen gemessen von 2 bis 8 — neun mögliche
+     Werte für vier Stufen, jede Stufe ein Sprung. Karten reichen von 6 bis 40 und lassen sich
+     überhaupt erst feinjustieren. Die Leitern sind Owner-Werte. */
   { id: "reinheit",     kind: "spitze",  variantKey: "formation",
     variants: [
-      { id: "farbblock",    rungs: [2, 3, 4, 5] },
-      { id: "wiederholung", rungs: [3, 4, 5, 6] },
-      { id: "treppe",       rungs: [4, 5, 6, 7] },
-      { id: "wechsel",      rungs: [5, 6, 7, 8] },
+      { id: "farbblock",    rungs: [25, 30, 35, 40] },
+      { id: "wiederholung", rungs: [10, 14, 18, 25] },
+      { id: "treppe",       rungs: [12, 16, 20, 28] },
+      { id: "wechsel",      rungs: [12, 16, 20, 28] },
     ] },
   { id: "langbau",      kind: "spitze",  rungs: [5, 10, 15, 20] },
   { id: "vollbrett",    kind: "spitze",  rungs: [30, 34, 37, 40] },
@@ -244,15 +248,14 @@ export function rollLoot(rng = Math.random, step = "leicht", count = LOOT_PER_RE
    Nine of the fifteen read state the engine already keeps. The other five need a per-trick tally,
    which the reducer maintains in `state.contractTally` (see tallyTrick below). Nothing here writes. */
 
-/* Distinct formations of the current placement, optionally filtered to one type. Counts each run
-   once (ordinal === 1) and only the four real types — `formationskern` and `anker` are architecture,
-   not a built formation. */
-function formationsOfType(perPosition, type = null) {
+/* Reinheits Maß: wie viele der vierzig Positionen in MINDESTENS EINER Formation des Typs liegen.
+   Eine Position, die in drei Farbblöcken steckt, zählt einmal — sonst wäre es wieder ein Läufe-Maß
+   mit anderem Namen. */
+export function cardsInType(perPosition, type) {
   let n = 0;
   for (const p of perPosition || []) {
     for (const f of p.formations || []) {
-      if (f.ordinal !== 1 || !FORMATION_TYPES.includes(f.type)) continue;
-      if (!type || f.type === type) n += 1;
+      if (f.type === type && FORMATION_TYPES.includes(f.type)) { n += 1; break; }
     }
   }
   return n;
@@ -318,7 +321,7 @@ export function readValue(state, contract) {
     case "sperrfeuer":   return Math.max(tally.bestSegments || 0, tally.segments || 0);
     case "straehne":     return state.bestStreak || 0;
     case "gedraenge":    return Math.max(tally.bestForms || 0, countBuiltFormations(forms));
-    case "reinheit":     return Math.max(tally.bestPure || 0, formationsOfType(forms, contract.variantId));
+    case "reinheit":     return Math.max(tally.bestPure || 0, cardsInType(forms, contract.variantId));
     case "langbau":      return Math.max(tally.bestLong || 0, longestFormation(forms));
     case "vollbrett":    return Math.max(tally.bestCovered || 0, positionsWith(forms, 1));
     case "verflechtung": return Math.max(tally.bestWoven || 0, positionsWith(forms, 3));
@@ -421,7 +424,7 @@ export function tallyCycleEnd(tally, state) {
    contract in hand rather than blindly for all four types. */
 export function tallyPure(tally, state, variantId) {
   if (!variantId) return tally;
-  const v = formationsOfType(state.formations || [], variantId);
+  const v = cardsInType(state.formations || [], variantId);
   return v > ((tally || {}).bestPure || 0) ? { ...tally, bestPure: v } : tally;
 }
 

@@ -1092,7 +1092,7 @@ Pruning: replacing the skill permanently grants +NaN% root/bloom score (up to +N
 "contract.task.quartier.name","i18n","Quartier","","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "contract.task.quartier.text","i18n","Bedecke {n} Baufeld-Segmente vollständig mit Gebäuden der Kategorie {variant}.","","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "contract.task.reinheit.name","i18n","Reinheit","","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
-"contract.task.reinheit.text","i18n","Baue {n} Formationen vom Typ {variant} in einer Aufstellung.","","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
+"contract.task.reinheit.text","i18n","Bringe {n} Positionen in eine Formation vom Typ {variant}.","","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "contract.task.saeckel.name","i18n","Säckel","","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "contract.task.saeckel.text","i18n","Halte {n} Münzen, bis der Auftrag endet.","","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "contract.task.sperrfeuer.name","i18n","Sperrfeuer","","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""

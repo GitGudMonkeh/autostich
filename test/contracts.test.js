@@ -69,13 +69,33 @@ describe("Aufträge · Katalog und Leitern", () => {
     }
   });
 
-  it("Reinheit: eine Leiterform, vier Startwerte 2·3·4·5 (Owner 2026-09-15)", () => {
-    const starts = { farbblock: 2, wiederholung: 3, treppe: 4, wechsel: 5 };
-    for (const [variant, start] of Object.entries(starts)) {
-      expect(CT.rungFor("reinheit", "leicht", variant), variant).toBe(start);
-      // N · N+1 · N+2 · N+3 — vier aufeinanderfolgende Zahlen, sonst ist es nicht EINE Form.
-      expect(CT.STEPS.map((s) => CT.rungFor("reinheit", s, variant)), variant).toEqual([0, 1, 2, 3].map((i) => start + i));
+  it("Reinheit: die vier Owner-Leitern auf dem KARTEN-Maß (2026-09-15)", () => {
+    const leitern = {
+      farbblock:    [25, 30, 35, 40],
+      wiederholung: [10, 14, 18, 25],
+      treppe:       [12, 16, 20, 28],
+      wechsel:      [12, 16, 20, 28],
+    };
+    for (const [variant, L] of Object.entries(leitern)) {
+      expect(CT.STEPS.map((st) => CT.rungFor("reinheit", st, variant)), variant).toEqual(L);
     }
+    // Karten, nicht Formationen: die oberste Farbblock-Stufe ist das ganze Brett.
+    expect(CT.rungFor("reinheit", "sehrschwer", "farbblock")).toBe(40);
+  });
+
+  it("Reinheit misst KARTEN — eine Position in drei Läufen desselben Typs zählt EINMAL", () => {
+    /* Sonst wäre es wieder ein Läufe-Maß mit anderem Namen, und genau dessen grobe Körnung
+       (2 bis 8 mögliche Werte) war der Grund für den Wechsel. */
+    const perPosition = [
+      { formations: [{ type: "farbblock", ordinal: 1 }, { type: "farbblock", ordinal: 2 }, { type: "farbblock", ordinal: 3 }] },
+      { formations: [{ type: "farbblock", ordinal: 1 }] },
+      { formations: [{ type: "treppe", ordinal: 1 }] },
+      { formations: [{ type: "formationskern", ordinal: 1 }] },   // Architektur, keine gebaute Formation
+      { formations: [] },
+    ];
+    expect(CT.cardsInType(perPosition, "farbblock")).toBe(2);
+    expect(CT.cardsInType(perPosition, "treppe")).toBe(1);
+    expect(CT.cardsInType(perPosition, "wechsel")).toBe(0);
   });
 
   it("Brecher zählt zehn Stiche, die Leiter ist die Schwelle", () => {

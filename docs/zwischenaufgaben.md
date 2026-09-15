@@ -350,58 +350,43 @@ Sim-Verhalten stehen.
 läuft über die **Schwelle**. Zehn Siege mit einem Kampfwert über 10 sind die unterste Stufe, zehn über
 20 die oberste.
 
-**Gesetzt (Owner, 2026-09-15): eine Leiterform, vier Startwerte.** Jede Leiter ist
-N · N+1 · N+2 · N+3; der Startwert läuft in der Schwierigkeitsreihenfolge der Typen 2 · 3 · 4 · 5.
+**Gesetzt (Owner, 2026-09-15): Reinheit zählt KARTEN, nicht Formationen.** Gemessen wird, wie viele
+der vierzig Positionen in mindestens **einer** Formation des gewürfelten Typs liegen. Eine Position in
+drei Farbblöcken zählt einmal.
 
 | Typ | Leicht · Mittel · Schwer · Sehr schwer |
 | --- | --- |
-| Farbblock | **2 · 3 · 4 · 5** |
-| Wiederholung | **3 · 4 · 5 · 6** |
-| Treppe | **4 · 5 · 6 · 7** |
-| Wechsel | **5 · 6 · 7 · 8** |
+| Farbblock | **25 · 30 · 35 · 40** |
+| Wiederholung | **10 · 14 · 18 · 25** |
+| Treppe | **12 · 16 · 20 · 28** |
+| Wechsel | **12 · 16 · 20 · 28** |
 
-Die Merkregel bleibt eine: vier aufeinanderfolgende Zahlen, Startwert 2 / 3 / 4 / 5 in dieser
-Reihenfolge. Wiederholung behält dabei exakt den Owner-Wert 3 · 4 · 5 · 6 — der war schon richtig
-kalibriert.
+**Warum das Maß gewechselt hat.** Distinkte Läufe eines Typs reichen gemessen von **2 bis 8** — neun
+mögliche Werte für vier Stufen, jede Stufe also ein Sprung. Karten reichen von **6 bis 40**. Erst das
+lässt sich feinjustieren, und genau das war der Auslöser: der Owner hatte „Schwer" im Playtest im
+**ersten Durchlauf** erfüllt.
 
-**Kalibriert, nicht geschätzt.** Gemessen wurde die volle Kurve: Trefferquote je Typ für N = 2 bis 12,
-40 Läufe je Bauweise über vier Bauweisen (Zufall, Feuer, Pflanze und ein Bau, der die Aufstellung
-löst — `fixedPolicy([], { solveFormations: true })`). Gezählt werden distinkte Formationen je Typ und
-Durchlauf (`ordinal === 1`), gewertet wird der beste Durchlauf des Fensters, weil Reinheit ein
-Spitzen-Zähler ist. **Nachgemessen auf den neuen Fenstern D1–D16 und D17–D32** (Owner, 2026-09-15).
+> **KORREKTUR — meine frühere Kalibrierung war falsch gemessen.** Die Sonde rief
+> `computeFormations(order, deck)` mit **zwei** Argumenten auf, also ohne Rollen, Perks, Skills,
+> Anker, Familien und Architekt — sie maß ein nacktes Brett, nicht den Lauf. Richtig gerechnet lag
+> die oberste Stufe bei **14 bis 31 %** statt bei den behaupteten 11 bis 14 %, und „Schwer" bei
+> **43 bis 51 %** statt 26 bis 39 %. Die damit gesetzten Leitern (2·3·4·5 aufwärts) sind damit
+> hinfällig. **Jede Zahl in §2.2 und §4.4, die Formationen zählt, stammt aus derselben Sonde und ist
+> entsprechend zu tief.**
 
-Anteil der Läufe, die die Stufe im **ersten Fenster** erreichen, gemittelt über die drei **spielenden**
-Bauweisen (Feuer, Pflanze, Solver):
+**Die neuen Leitern sind Owner-Werte**, nicht kalibriert. Gemessen (bester Durchlauf in Fenster 1,
+spielende Bauweisen, korrekt gerechnet) liegen sie so:
 
-| Typ | Leicht | Mittel | Schwer | **Sehr schwer** |
+| Typ | Leicht | Mittel | Schwer | Sehr schwer |
 | --- | --- | --- | --- | --- |
-| Farbblock | 84 % | 52 % | 26 % | **14 %** |
-| Wiederholung | 86 % | 57 % | 28 % | **14 %** |
-| Treppe | 89 % | 75 % | 39 % | **11 %** |
-| Wechsel | 98 % | 83 % | 44 % | **13 %** |
+| Farbblock | 8 % | 3 % | 3 % | 1 % |
+| Wiederholung | 61 % | 23 % | 10 % | 3 % |
+| Treppe | 94 % | 68 % | 34 % | 1 % |
+| Wechsel | 99 % | 96 % | 88 % | 21 % |
 
-Die oberste Stufe liegt damit zwischen 11 und 14 %, die unterste zwischen 84 und 98 % — „knapp ohne
-viel Aufwand" unten, echte Arbeit oben, und über alle vier Typen vergleichbar.
-
-> **Das Fenster um einen Durchlauf zu verlängern hat die Kalibrierung nicht bewegt.** Von sechzehn
-> gemessenen Zellen änderte sich **eine**: Farbblock auf „Leicht" von 81 auf 84 %. Der Grund liegt in
-> der Zählart — ein Spitzen-Zähler nimmt ohnehin das beste Vorkommen aus fünfzehn Versuchen, und ein
-> sechzehnter verschiebt das Maximum kaum noch.
-
-> **Ersetzt die flache Leiter 3 · 4 · 5 · 6 für alle vier** (Owner, 2026-09-15, am selben Tag
-> zurückgenommen). Sie war zum Testen gesetzt; die Messung hat sie vorher widerlegt. Unter ihr
-> erreichten im ersten Fenster **75 % der Läufe** die oberste Wechsel-Stufe und **0 %** die oberste
-> Farbblock-Stufe bei Feuer — dasselbe Beute-Band für 75 % gegen 0 %. Ebenfalls verworfen bleibt mein
-> früherer Vorschlag ungleichmäßiger Leitern (Treppe 4·5·6·8, Wechsel 5·7·9·11): er hatte zusätzlich
-> die falschen zwei Typen als die häufigen eingestuft.
-
-> **Ein Loch bleibt, benannt statt kaschiert.** Farbblock ist in **Fenster 2 für Pflanze** auf allen
-> vier Stufen bei 95 % oder darüber, für Feuer auf der obersten bei 5 %. Ursache ist der
-> Grünkarten-Effekt: grüne Karten bilden einen Farbblock, und Pflanze färbt bis D30 genug Karten ein.
-> Eine Zelle, kein Systemfehler — aber die einzige, die die Kalibrierung nicht einfängt.
-
-Der naive Bau (Zufall) erreicht oberhalb der untersten Stufe fast nichts. Reinheit ist über alle vier
-Typen eine Aufgabe für jemanden, der die Aufstellung führt.
+> Die Messung läuft über `factionPolicy`, die die Aufstellung **nicht** optimiert; ein Spieler, der
+> gezielt tauscht, liegt darüber. Sie taugt als Vergleich der vier Typen untereinander, nicht als
+> absolute Erfolgsquote. Weitere Anpassungen sind vom Owner angekündigt.
 
 ### 4.1 Die Texte
 

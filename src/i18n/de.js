@@ -1559,7 +1559,7 @@ export default {
   "contract.task.gedraenge.name": "Gedränge",
   "contract.task.gedraenge.text": "Baue {n} Formationen in einer Aufstellung.",
   "contract.task.reinheit.name": "Reinheit",
-  "contract.task.reinheit.text": "Baue {n} Formationen vom Typ {variant} in einer Aufstellung.",
+  "contract.task.reinheit.text": "Bringe {n} Positionen in eine Formation vom Typ {variant}.",
   "contract.task.langbau.name": "Langbau",
   "contract.task.langbau.text": "Baue eine Formation aus {n} Karten.",
   "contract.task.vollbrett.name": "Vollbrett",
