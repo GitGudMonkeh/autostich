@@ -1,7 +1,7 @@
 # Zwischenaufgaben (exp) — Planungsdokument
 
 **Status: lebendes Dokument.** Beutekatalog und Aufgaben-Katalog sind durchdesignt und vom Owner Wert
-für Wert abgenommen (2026-09-14). Offen sind die acht Punkte in §10; danach ist das Dokument
+für Wert abgenommen (2026-09-14). Offen sind die sieben Punkte in §10; danach ist das Dokument
 umsetzungsreif.
 
 Entscheidungen des Owners stehen unter **Gesetzt**. Alles unter **Vorschlag** ist Diskussionsstand und
@@ -551,14 +551,14 @@ Lehrbrief hebt, was du hältst. Veredelung hebt, was angeboten wird. Freibrief �
 | Normal | Ein gehaltener Skill steigt ohne Münzen um eine Stufe. |
 | Selten | Zwei gehaltene Skills steigen ohne Münzen um eine Stufe. |
 | Sehr selten | Drei gehaltene Skills steigen ohne Münzen um eine Stufe. |
-| Episch | Jede Aufwertung kostet die Hälfte, bis zum Laufende. |
+| Episch | Bis zu vier gehaltene Skills steigen ohne Münzen um zwei Stufen. |
 
 **Freibrief** (`skillDoors`, Fokus rufen 5)
 
 | Stufe | Text |
 | --- | --- |
 | Normal | Die nächste Skill-Phase öffnet eine dritte Tür. |
-| Selten | Fokus rufen kostet nichts mehr, bis zum Laufende. |
+| Selten | Die nächsten drei Skill-Phasen öffnen eine dritte Tür. |
 | Sehr selten | Jede Skill-Phase öffnet eine dritte Tür, bis zum Laufende. |
 | Episch | Jede Skill-Phase öffnet eine dritte Tür, bis zum Laufende. Episch und Legendär erscheinen im Skill-Angebot häufiger. |
 
@@ -723,30 +723,26 @@ bei D30 nur in 5. Das ist keine Schieflage, sondern der Zweck.
 
 ## 10. Offene Punkte
 
-1. **Zwei Stufen brechen ihr Satzmuster.** Lehrbrief IV wechselt von „Skills steigen" zu
-   „Aufwertungen kosten die Hälfte", Freibrief II von „dritte Tür" zu „Fokus rufen ist gratis".
-   Gedeckt durch die Regel des Skill-Reworks („Episch hat ein kleines Extra"), aber gegen das
-   Stufenmuster aus dem Style-Guide.
-2. **Veredelung und Freibrief IV ziehen am selben Hebel.** Veredelung hebt die Stufe des
+1. **Veredelung und Freibrief IV ziehen am selben Hebel.** Veredelung hebt die Stufe des
    Skill-Angebots garantiert, Freibrief IV erhöht die Chance auf Episch und Legendär. Wenn eine davon
    etwas anderes tun soll, dann Freibrief: dort ist die Auswahl das Thema, nicht die Güte.
-3. **Archetyp oder Fraktion.** Der Style-Guide setzt **Archetyp** als kanonisch, die exp-Dokumente
+2. **Archetyp oder Fraktion.** Der Style-Guide setzt **Archetyp** als kanonisch, die exp-Dokumente
    schreiben durchgehend „Fraktion". Im deutschen Katalog steht es 13 zu 8 für Archetyp. Zu
    entscheiden, bevor die Aufgabentexte geschrieben werden.
 
 Dazu vier Punkte aus §3 und §4, die ebenfalls beim Owner liegen:
 
-4. **Die Gewichtung innerhalb eines Beute-Bandes.** Vorschlag 70 zu 30 zugunsten der unteren
+3. **Die Gewichtung innerhalb eines Beute-Bandes.** Vorschlag 70 zu 30 zugunsten der unteren
    Rarität (§3.2). Auf der vierten Stufe ist das zugleich der Legendär-Satz.
-5. **Säckel im ersten Fenster.** Die Stufen 100 und 120 sind bis D15 arithmetisch unmöglich, weil das
+4. **Säckel im ersten Fenster.** Die Stufen 100 und 120 sind bis D15 arithmetisch unmöglich, weil das
    Gesamteinkommen dort 64 bis 72 Münzen beträgt (§4.3). Entweder niedrigere obere Stufen, oder Säckel
    wird in Fenster 1 nur bis Selten angeboten.
-6. **Treppe und Wechsel bei Reinheit.** Die beiden Leitern (4·5·6·8 und 5·7·9·11) sind Vorschlag aus
+5. **Treppe und Wechsel bei Reinheit.** Die beiden Leitern (4·5·6·8 und 5·7·9·11) sind Vorschlag aus
    den gemessenen Typanteilen, nicht Owner-Entscheid.
-7. **Wo genau sitzt die Fortschrittsanzeige?** `StatusRail.jsx` ist der Kandidat, bestätigt ist es
+6. **Wo genau sitzt die Fortschrittsanzeige?** `StatusRail.jsx` ist der Kandidat, bestätigt ist es
     nicht. Das Mockup schlägt den Platz **über** den Multiplikatoren vor, weil der Auftrag das einzige
     Element der Leiste mit einer Frist ist.
-8. **Erscheint der Grundfarben-Ring dauerhaft** oder nur, solange ein Buntspiel-Auftrag läuft (§4.1).
+7. **Erscheint der Grundfarben-Ring dauerhaft** oder nur, solange ein Buntspiel-Auftrag läuft (§4.1).
 
 **Erledigt:** Die vier Aufgabenstufen heißen **Leicht, Mittel, Schwer, Sehr schwer** (§3.2).
 Farbtreue würfelt keine Farbe (§3.6). Der Grundfarben-Marker ist ein Ring um das Blatt,
@@ -754,6 +750,17 @@ nicht ein eigener Punkt (§4.1). Die Beute steht nicht in der laufenden Anzeige 
 
 **Erledigt:** „Wird die Stufe angekündigt" ist beantwortet: die Stufe steht am Angebot, die Beute
 nicht (§3.1).
+
+**Gesetzt (Owner, 2026-09-15): die zwei Musterbrüche sind repariert.** Freibrief II heißt jetzt
+„Die nächsten drei Skill-Phasen öffnen eine dritte Tür" (der gratis Fokus-Ruf entfällt), Lehrbrief IV
+„Bis zu vier gehaltene Skills steigen ohne Münzen um zwei Stufen". Damit laufen beide Familien
+durchgehend im selben Satz, nur mit skalierender Zahl, und die Ausnahme vom Style-Guide entfällt.
+
+> **Gegengeprüft gegen das Legendäre:** Lehrbrief IV hebt bei vier gehaltenen Skills acht Stufen,
+> **Vollendung** bei vier gehaltenen sechs. In der reinen Stufenzahl liegt das Epische damit im ersten
+> Fenster vorn. Es bleibt trotzdem schwächer, weil nur Vollendung **Episch erreicht** (Normal plus zwei
+> Stufen endet bei Sehr selten) und weil Vollendung mit der Zahl der gehaltenen Skills mitwächst: bei
+> D30 sind es zehn Stufen gegen acht.
 
 **Gesetzt (Owner, 2026-09-15): die Beute wird JE FAMILIE gezogen, nicht je Kategorie.** Alle
 dreizehn Familien sind damit gleich wahrscheinlich (7,7 % je Stück). Je Kategorie gezogen käme
