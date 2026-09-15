@@ -10,7 +10,7 @@ import { readFileSync } from "node:fs";
 import { makeRng } from "../src/game/deck.js";
 import { initialState, reducer } from "../src/game/reducer.js";
 import { resolveTrick } from "../src/game/engine.js";
-import { coinsForFormations, COIN_CYCLE_BASE, COIN_FORM_PER, COIN_FORM_CAP, COIN_START, rerollPrice, rerollOffer,
+import { coinsForFormations, COIN_CYCLE_BASE, COIN_FORM_PER, COIN_FORM_CAP, COIN_START, rerollPrice, rerollOffer, REROLL_CAP, rerollsLeft,
          energyPrice, energyBuy, ENERGY_MAX_BUYS, coverPrice, coverBuy, COVER_CELLS,
          upgradePrice, MAX_SKILL_TIER, upgradeBuy, familyUpgradeBuy, MAX_FAMILY_TIER, upgradeSortKey,
          unspentEnergyCoins, FORFEIT_SKILL, FORFEIT_PERK, FORFEIT_BUILD } from "../src/game/coins.js";
@@ -685,5 +685,49 @@ describe("Stufen-Textvergleich (§3.5, Anzeige)", () => {
     const d = tierTextDiff("Gleich", "Gleich");
     expect(d.removed).toBe("");
     expect(d.added).toBe("");
+  });
+});
+
+/* ============================================================
+   NEUWURF-DECKEL (Owner 2026-09-15, docs/muenz-oekonomie.md §3.1)
+
+   Bis hierher war der Preis der einzige Regler. Die Beute-Familie „Nachlass" senkt ihn bis auf null,
+   und kostenlos heißt ohne Deckel unbegrenzt — man würfelt jedes Angebot durch, bis es passt. Der
+   Deckel zählt deshalb `offerRerolls`, den Index des laufenden Angebots: Token- UND Münzwürfe zählen
+   ihn hoch, jedes frische Angebot setzt ihn auf 0.
+   ============================================================ */
+describe("Neuwurf-Deckel je Phase", () => {
+  it("drei Neuwürfe, dann ist Schluss", () => {
+    expect(REROLL_CAP).toBe(3);
+    expect(rerollsLeft({ offerRerolls: 0 })).toBe(3);
+    expect(rerollsLeft({ offerRerolls: 2 })).toBe(1);
+    expect(rerollsLeft({ offerRerolls: 3 })).toBe(0);
+    expect(rerollsLeft({ offerRerolls: 99 }), "nie negativ").toBe(0);
+  });
+
+  it("der Deckel schlägt den Gratis-Wurf — sonst wäre er keiner", () => {
+    const voll = rerollOffer({ coins: 999, offerRerolls: 3 }, 5, false);
+    expect(voll.can).toBe(false);
+    expect(voll.capped).toBe(true);
+  });
+
+  it("darunter bleibt alles wie bisher", () => {
+    const frei = rerollOffer({ coins: 999, offerRerolls: 1 }, 2, false);
+    expect(frei.free).toBe(true);
+    expect(frei.can).toBe(true);
+    expect(frei.left).toBe(2);
+    const kauf = rerollOffer({ coins: 999, offerRerolls: 2 }, 0, false);
+    expect(kauf.can).toBe(true);
+    expect(kauf.left, "der letzte Wurf kündigt sich an").toBe(1);
+  });
+
+  it("der Reducer weist den vierten Neuwurf ab, in allen drei Phasen", () => {
+    const base = { coins: 9999, offerRerolls: 3, rerollsPerk: 9, rerollsSkill: 9, rerollsArch: 9 };
+    const perk = { ...base, phase: "levelup", offer: ["P1"] };
+    expect(reducer(perk, { type: "REROLL_PERK", rng: Math.random }), "Perk").toBe(perk);
+    const skill = { ...base, phase: "levelup", skillOffer: ["S1"], skillDoors: null };
+    expect(reducer(skill, { type: "REROLL_SKILL", rng: Math.random }), "Skill").toBe(skill);
+    const arch = { ...base, phase: "architect", architect: { actedMain: false, buildings: [], offers: [] } };
+    expect(reducer(arch, { type: "REROLL_ARCHITECT", rng: Math.random }), "Architekt").toBe(arch);
   });
 });

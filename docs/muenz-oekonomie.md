@@ -198,8 +198,22 @@ Gemeinsame Regeln:
 **Wirkung:** ein zusätzlicher Neuwurf des aktuellen Angebots.
 **Wo:** derselbe Neuwurf-Knopf, der schon da ist — Skill-, Perk- und Architekt-Angebot. Solange gratis
 Neuwürfe übrig sind, zeigt er die Anzahl; danach den Preis. Kein zweiter Knopf.
-**Regel:** beliebig oft je Phase, jeder weitere teurer. Reset in der nächsten Phase.
-**Preis [TUNING]:** 3 → 6 → 12 → … (Verdopplung).
+**Regel:** **höchstens drei je Phase**, jeder weitere teurer. Reset in der nächsten Phase.
+**Preis [TUNING]:** 3 → 6 → 12 (Verdopplung).
+
+> **Geändert (Owner, 2026-09-15): aus „beliebig oft" wurde ein Deckel von drei.** Bis hierher war der
+> Preis der einzige Regler, und das trug, solange jeder Wurf etwas kostete. Die Beute-Familie
+> **Nachlass** aus den Zwischenaufgaben (`docs/zwischenaufgaben.md` §6.6) senkt ihn bis auf null — und
+> kostenlos heißt ohne Deckel unbegrenzt: man würfelt jedes Angebot durch, bis das Gewünschte steht.
+>
+> Der Deckel gilt für **alle** Neuwürfe, nicht nur die gekauften. Gezählt wird `offerRerolls`, der
+> Index des laufenden Angebots — Token- und Münzwürfe zählen ihn gleichermaßen hoch, und jedes frische
+> Angebot setzt ihn auf 0. Ein Gratis-Wurf aus einem Pool ist damit ebenfalls einer der drei; sonst
+> hinge die Zahl davon ab, woher der Wurf kommt.
+>
+> **Naht:** `REROLL_CAP` und `rerollsLeft` in `coins.js`, die harte Sperre in den drei Reroll-Aktionen
+> des Reducers, sichtbar über `rerollOffer(...).capped` am geteilten Knopf-Label. Der letzte freie Wurf
+> kündigt den Deckel an — ohne die Warnung merkt man ihn erst am toten Knopf.
 
 #### Legendär-Neuwurf
 
@@ -210,8 +224,11 @@ Enthält das Angebot ein Legendäres (Skill oder Perk):
 - Das neue ist **nicht dasselbe wie das gerade angezeigte**. Der Ausschluss gilt **nur gegen das
   aktuelle Angebot** — beim zweiten Neuwurf kann das aus dem ersten wiederkommen. Kein Gedächtnis über
   die Kette.
-- **Kein Deckel.** Wer genug Münzen hat und so oft würfeln will, bis das passende Legendäre kommt, darf
-  das; die Kosten sind der Regler.
+- **Der Deckel von drei gilt auch hier** (Owner, 2026-09-15). Bis dahin stand an dieser Stelle „kein
+  Deckel — die Kosten sind der Regler". Das ist zurückgenommen: die Beute-Familie **Freilos** lässt den
+  legendären Neuwurf zum normalen Grundpreis laufen und **Nachlass** senkt auch den, womit „die Kosten
+  sind der Regler" seinen Regler verliert. Die Preistreppe 15 → 30 → 60 bleibt, sie endet nur nach dem
+  dritten Wurf.
 - **Ein Zähler, zwei Grundpreise:** die Treppe zählt die Neuwürfe *der Phase*, der Grundpreis kommt aus
   der Art. Wer erst normal (3) und dann legendär würfelt, zahlt beim zweiten Kauf 30, nicht 15 — sonst
   wäre Mischen billiger als Durchhalten.

@@ -95,6 +95,16 @@ const step = (base, bought) => Math.round(base * PRICE_LADDER ** Math.max(0, bou
 
 export const rerollPrice = (bought = 0, legendary = false) => step(legendary ? REROLL_LEG_BASE : REROLL_BASE, bought);
 
+/* DECKEL je Phase (Owner 2026-09-15). Bis hierher war der Preis der einzige Regler: „beliebig oft je
+   Phase, jeder weitere teurer", und beim legendären Neuwurf ausdrücklich „kein Deckel". Das hielt,
+   solange jeder Wurf etwas kostete. Die Beute-Familie Nachlass IV macht Neuwürfe GRATIS, und kostenlos
+   heißt ohne Deckel unbegrenzt — der Spieler könnte jedes Angebot durchwürfeln, bis das Gewünschte
+   steht. Der Deckel schließt genau das, und zwar für ALLE Neuwürfe, nicht nur die gekauften:
+   gezählt wird `offerRerolls`, der Index des laufenden Angebots, den Token- und Münzwürfe gleichermaßen
+   hochzählen und den jedes frische Angebot auf 0 setzt. */
+export const REROLL_CAP = envNum("SIM_COIN_REROLL_CAP", 3);
+export const rerollsLeft = (state = {}) => Math.max(0, REROLL_CAP - (state.offerRerolls || 0));
+
 /* Was der NÄCHSTE Neuwurf kostet — die eine Quelle für Knopf und Reducer. Läuft der Knopf auf einer
    anderen Rechnung als der Reducer, zeigt er einen Preis an, den der Kauf nicht nimmt.
 
@@ -109,8 +119,11 @@ export const rerollPrice = (bought = 0, legendary = false) => step(legendary ? R
    ein Gratis-Wurf verspricht kein Legendäres und trägt deshalb auch nicht den goldenen Rahmen. */
 export function rerollOffer(state = {}, freeTokens = 0, legendary = false) {
   const nextPrice = rerollPrice(state.coinRerolls || 0, legendary);
-  if (freeTokens > 0) return { free: true, tokens: freeTokens, price: 0, nextPrice, legendary: false, can: true };
-  return { free: false, tokens: 0, price: nextPrice, nextPrice, legendary: !!legendary, can: (state.coins || 0) >= nextPrice };
+  const left = rerollsLeft(state);
+  // Der Deckel steht VOR dem Preis: ist er erreicht, ist auch ein Gratis-Wurf keiner mehr.
+  if (left <= 0) return { free: false, tokens: freeTokens, price: nextPrice, nextPrice, legendary: false, can: false, left: 0, capped: true };
+  if (freeTokens > 0) return { free: true, tokens: freeTokens, price: 0, nextPrice, legendary: false, can: true, left, capped: false };
+  return { free: false, tokens: 0, price: nextPrice, nextPrice, legendary: !!legendary, can: (state.coins || 0) >= nextPrice, left, capped: false };
 }
 
 /* ---- Energie in der Aufstellphase (§3.2) ---------------------------------------------------------- */

@@ -185,7 +185,7 @@ export function ContractTile({ state }) {
         style={{ color: r.done ? "#5ab87a" : r.tone }}>
         {r.value}<span className="opacity-45">/{r.target}</span>
         <span className="text-meta-1 opacity-45 ml-1">
-          {r.done ? t("contract.done") : t(r.left === 1 ? "contract.left_one" : "contract.left_other", { n: r.left })}
+          {r.done ? t("contract.done") : t("contract.left", { count: r.left, n: r.left })}
         </span>
       </div>
     </div>
@@ -205,7 +205,7 @@ export function ContractLine({ state, className = "" }) {
         {r.value}<span className="opacity-45">/{r.target}</span>
       </span>
       <span className="text-meta-1 opacity-45">
-        {r.done ? t("contract.done") : t(r.left === 1 ? "contract.left_one" : "contract.left_other", { n: r.left })}
+        {r.done ? t("contract.done") : t("contract.left", { count: r.left, n: r.left })}
       </span>
     </div>
   );

@@ -105,13 +105,21 @@ export function CoinGain({ gain = null }) {
    Reducer dieselbe Rechnung benutzen. Fehlen die Münzen, steht der Preis blass da: den Kauf sieht man,
    auslösen lässt er sich nicht. */
 export function RerollLabel({ r, freeKey, buyKey, have = null }) {
+  /* Der Deckel (§3.1, Owner 2026-09-15) ersetzt die Preiszeile, sobald er greift — ein Preis an einem
+     Knopf, der nicht mehr auslöst, wäre eine Lüge. Der LETZTE freie Wurf kündigt ihn an: ohne die
+     Warnung merkt man den Deckel erst, wenn der Knopf tot ist. */
   return (
     <span className="inline-flex flex-col items-center leading-tight">
       <span>{t(r.free ? freeKey : buyKey)}</span>
       <span className="text-meta-1 inline-flex items-center gap-1 mt-0.5 opacity-85">
-        {r.free
-          ? <>{t("reroll.free", { n: r.tokens })}<span className="opacity-50">·</span>{t("reroll.then")}<CoinAmount n={r.nextPrice} size={11} have={have} /></>
-          : <CoinAmount n={r.price} size={12} dim={!r.can} have={have} />}
+        {r.capped
+          ? <span className="opacity-70">{t("reroll.capped")}</span>
+          : r.free
+            ? <>{t("reroll.free", { n: r.tokens })}<span className="opacity-50">·</span>{t("reroll.then")}<CoinAmount n={r.nextPrice} size={11} have={have} /></>
+            : <CoinAmount n={r.price} size={12} dim={!r.can} have={have} />}
+        {!r.capped && r.left <= 2 && (
+          <span className="opacity-55">·&nbsp;{t("reroll.left", { count: r.left, n: r.left })}</span>
+        )}
       </span>
     </span>
   );

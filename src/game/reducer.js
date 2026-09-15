@@ -1,7 +1,7 @@
 import { buildDeck, shuffledOrder } from "./deck.js";
 import { rngAt } from "./rng.js"; // #205 Challenger Mode: adressierte Sub-Ströme (build-unabhängige Slots)
 import { PERK_DEFS, buildPerkOffer, offerHasLegendary, isLegendary } from "./perks.js";
-import { rerollPrice, energyBuy, coverBuy, COVER_CELLS, FOCUS_PRICE, upgradeBuy, familyUpgradeBuy, COIN_START,
+import { rerollPrice, rerollsLeft, energyBuy, coverBuy, COVER_CELLS, FOCUS_PRICE, upgradeBuy, familyUpgradeBuy, COIN_START,
          coinGrant, unspentEnergyCoins, FORFEIT_SKILL, FORFEIT_PERK, FORFEIT_BUILD } from "./coins.js"; // Münz-Ökonomie: dieselben Rechnungen wie die Knöpfe (§3.1 Neuwurf · §3.2 Energie · §3.3 Fokus · §3.4 Baufeld · §3.5 Aufwerten Skill+Perk) + Verzicht (§2.3)
 import { sellPatch, deckDeltaOf, withDeckDelta } from "./perkSale.js"; // §3.6 Perk-Verkauf: Erlös, Rückbau und das Gedächtnis der Deck-Differenzen
 import { familyDef, applyFamilyPick } from "./families.js"; // formationEnergyBonus läuft jetzt über engine.formationEnergyFor
@@ -592,6 +592,7 @@ export function reducer(state, action) {
 
     case "REROLL_ARCHITECT": { // #263: Architekt-Bauplan-Angebot neu würfeln — eigener Gebäude-Reroll-Pool (rerollsArch).
       if (state.phase !== "architect") return state;
+      if (rerollsLeft(state) <= 0) return state;                      // §3.1 Deckel: drei Neuwürfe je Phase, Token wie Münze
       const a = state.architect;
       if (a.actedMain) return state;                                  // schon gebaut/aufgewertet → Angebot verbraucht
       const tokens = state.rerollsArch || 0;
@@ -1080,6 +1081,7 @@ export function reducer(state, action) {
     // Komplett neues Angebot (Seltenheitsregeln in buildOffer), rng deterministisch adressiert.
     case "REROLL_PERK": {
       if (state.phase !== "levelup" || !state.offer) return state;
+      if (rerollsLeft(state) <= 0) return state;                      // §3.1 Deckel: drei Neuwürfe je Phase, Token wie Münze
       // #369 §6: In der generellen Legendär-Phase (2. Perk-Phase) zieht zuerst der phasenspezifische Token (rerollsPerk2,
       // aus dem „Reroll · 2. Perk-Phase"-Knoten), erst danach der normale Perk-Pool — so bleibt der Zusatz-Reroll auf diese Phase begrenzt.
       const inLegPerkPhase = C.perkPhaseAt(state.devSchedule || C.DECISION_SCHEDULE, state.cycle) === C.LEG_PERK2_PHASE;
@@ -1116,6 +1118,7 @@ export function reducer(state, action) {
     // Neuwurf. Ein geöffnetes Angebot ohne gemerkte Symbole (ältere Snapshots) nimmt die Fraktionen seiner Skills.
     case "REROLL_SKILL": {
       if (state.phase !== "levelup") return state;
+      if (rerollsLeft(state) <= 0) return state;                      // §3.1 Deckel: drei Neuwürfe je Phase, Token wie Münze
       /* Owner 2026-09-08: der Neuwurf gilt AUCH auf der Türstufe — dieselbe Ressource, dieselbe Preistreppe
          wie beim Skill- und Perk-Angebot, nur würfelt er dort die TÜREN statt der drei Skills dahinter.
          Er zahlt immer den normalen Grundpreis: was hinter einer Tür liegt, ist verdeckt, ein Legendär-Preis
