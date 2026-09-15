@@ -1647,6 +1647,24 @@ export default {
   "contract.loot.nachlass.t3": "Jeder Neuwurf kostet ein Viertel des Preises.",
   "contract.loot.nachlass.t4": "Neuwürfe kosten nichts mehr, bei Skills, Perks und Gebäuden.",
 
+  "contract.borderpick.title": "Durchlass",
+  "contract.borderpick.sub": "Wähle {n} Segmentgrenzen. Formationen laufen dann über sie hinweg.",
+  "contract.borderpick.chosen": "{n} von {of} gewählt",
+  "contract.borderpick.between": "Position {a} zu {b}",
+  "contract.borderpick.already": "schon offen",
+  "contract.borderpick.picked": "gewählt",
+  "contract.borderpick.closed": "geschlossen",
+  "contract.borderpick.confirm": "Öffnen",
+
+  "contract.loot.durchlass.name": "Durchlass",
+  "contract.loot.durchlass.t1": "Eine zufällige Segmentgrenze ist offen, bis zum Laufende.",
+  "contract.loot.durchlass.t2": "Wähle eine Segmentgrenze. Sie ist offen, bis zum Laufende.",
+  "contract.loot.durchlass.t3": "Wähle zwei Segmentgrenzen. Sie sind offen, bis zum Laufende.",
+  "contract.loot.durchlass.t4": "Wähle vier Segmentgrenzen. Sie sind offen, bis zum Laufende.",
+
+  "contract.leg.schleifung.name": "Schleifung",
+  "contract.leg.schleifung.text": "Alle Segmentgrenzen sind offen. Formationen enden nicht mehr am Block.",
+
   "contract.skillpick.title": "Vollendung",
   "contract.skillpick.sub": "Wähle den Skill, der sofort episch wird. Alle anderen gehaltenen Skills steigen um {n} Stufe.",
   "contract.skillpick.sub.only": "Wähle den Skill, der sofort episch wird.",

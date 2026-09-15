@@ -14,11 +14,11 @@ Sprache Deutsch, weil Beutenamen und Beutetexte Produktsprache sind und der Owne
 Bewusste Abweichung von der Engineering-Sprache in `AGENTS.md`, wie bei `docs/skill-rework.md` und
 `docs/muenz-oekonomie.md`, und nur für dieses Dokument.
 
-**Zusammenfassung des ganzen Systems** — Ablauf, vier Stufen, alle 15 Aufgaben und alle 56
+**Zusammenfassung des ganzen Systems** — Ablauf, vier Stufen, alle 15 Aufgaben und alle 61
 Beutestücke mit ihren Spieltexten:
 <https://claude.ai/artifact/H3h142reTigpGDNKFkK2ha>
 
-Übersicht aller 56 Beutestücke mit Raritätsfarben (älter, nur die Beute):
+Übersicht der Beutestücke mit Raritätsfarben (älter, nur die Beute, noch ohne Durchlass und Schleifung):
 <https://claude.ai/code/artifact/e6122960-8f20-464e-849a-66ba5f83163d>
 
 Mockup der Fortschrittsanzeige (§4.3):
@@ -308,11 +308,17 @@ er es aufmacht.
    zuerst nur die **angenommenen** Aufgaben. Damit konnte Fenster 2 genau die zwei zeigen, die man
    eben hatte verfallen lassen. Jetzt wandern **alle drei Aufsteller** beim Auslegen in `usedTasks`,
    nicht beim Annehmen. Fünfzehn Aufgaben minus drei lassen für das zweite Fenster genug übrig.
-3. **Die letzten vier Aufgaben sind gesperrt** — **offen, und zwar zweifach.** Es ist eine
-   Progressions-Entscheidung und damit Owner-Sache; dazu sagt die Regel nicht, **was** sie
-   aufschließt. Ohne diese Bedingung ist sie nicht baubar. `DEFAULT_PROFILE` in `storage.js` existiert
-   und nimmt das Feld additiv auf, ein Schema-Sprung ist also nicht nötig — es fehlt nur der Auslöser.
-   **Welche vier, und wodurch?**
+**Regel 3 ist gestrichen** (Owner, 2026-09-15). Sie lautete „die letzten vier Aufgaben sind
+gesperrt" und war ein Vorschlag von mir, den nie jemand aufgegriffen hat. Der Befund bleibt notiert,
+damit niemand sie später als gute Idee wiederentdeckt:
+
+- **Die Wiederholung ist ohnehin niedrig.** Gemessen sieht ein Spieler je Lauf **6 von 15** Aufgaben,
+  nach drei Läufen hat **niemand** alle gesehen, und im Schnitt braucht es **7,2 Läufe**, bis der
+  Katalog einmal durch ist.
+- **Sie wirkt in die falsche Richtung.** Vier zu sperren verkleinert den Pool genau dort, wo er am
+  größten sein soll — in den ersten Läufen. Das ist mehr Wiederholung früh gegen Neuheit spät, in
+  einem Abschnitt, der „Gegen Wiederholung" heißt.
+- **Sie war doppelt unterbestimmt:** welche vier, und wodurch sie aufgehen, stand nirgends.
 
 ---
 
@@ -701,7 +707,7 @@ ist das die erste Information.
 
 ## 6. Der Beutekatalog
 
-**56 einzigartige Belohnungen:** 13 Familien mit je vier Stufen (52) plus vier legendäre
+**61 einzigartige Belohnungen:** 14 Familien mit je vier Stufen (56) plus fünf legendäre
 Einzelstücke. Sechs Kategorien, keine doppelt.
 
 Alle Werte sind vom Owner abgenommen (2026-09-14) und über die Sim tunebar.
@@ -742,8 +748,7 @@ Kaufkraft. Zum Vergleich: ein Lauf verdient heute gemessen 205 bis 260 Münzen.
 
 ### 6.2 Aufstellung
 
-Eine Familie: wie oft du tauschen darfst. Die dünnste Kategorie im Katalog. Weil je Familie gezogen
-wird (§10), kommt aus der Aufstellphase genau jedes dreizehnte Beutestück.
+Zwei Familien: wie oft du tauschen darfst, und wo die Blöcke aufhören.
 
 **Freizug** (`formationEnergyBase`, Basis 4)
 
@@ -756,6 +761,25 @@ wird (§10), kommt aus der Aufstellphase genau jedes dreizehnte Beutestück.
 
 > **Verworfen: Aufklärung** (die kommende Gegnerreihenfolge sehen). Technisch fast umsonst, weil
 > `oppOrder` am Rundenende bereits im State liegt. Vom Owner gestrichen.
+
+**Durchlass** (`openBorders`, vierte Grenzen-Quelle neben E_SEGMENT, Spalier und Pfeiler)
+
+| Stufe | Text |
+| --- | --- |
+| Normal | Eine zufällige Segmentgrenze ist offen, bis zum Laufende. |
+| Selten | Wähle eine Segmentgrenze. Sie ist offen, bis zum Laufende. |
+| Sehr selten | Wähle zwei Segmentgrenzen. Sie sind offen, bis zum Laufende. |
+| Episch | Wähle vier Segmentgrenzen. Sie sind offen, bis zum Laufende. |
+
+Neu (Owner, 2026-09-15). Die Familie greift die härteste Regel des Aufstellens an: **Formationen enden
+an der Blockkante**, und ohne Öffner ist bei fünf Schluss (§4.2). Acht Segmente haben **sieben** innere
+Grenzen — die letzte Position hat keine hinter sich.
+
+> **Die Wahl zeigt, was schon offen ist** (Owner). Grenzen können aus vier Quellen offen sein:
+> Perk-Familie `E_SEGMENT`, Pflanzen-Spalier, Architekten-Pfeiler und ein früherer Durchlass. Die
+> Auswahl markiert sie und lässt sie nicht anklicken — ohne das gibt jemand eine Wahl für eine Tür
+> aus, die längst offen steht. **Stufe Normal würfelt** und würfelt nur unter den noch geschlossenen,
+> sonst verpufft sie.
 
 ### 6.3 Baufeld
 
@@ -877,6 +901,7 @@ Ohne Stufe, wie die legendären Perks. Nur aus einer Gold-Ziehung.
 | **Vollendung** | Ein gehaltener Skill deiner Wahl wird sofort episch. Alle anderen gehaltenen Skills steigen um eine Stufe. |
 | **Stadtrecht** | Das Baufeld hat keinen Deckel mehr. Du baust, so weit die Fläche reicht. |
 | **Stiftung** | Jede Phase beginnt mit 5 Münzen, bis zum Laufende. |
+| **Schleifung** | Alle Segmentgrenzen sind offen. Formationen enden nicht mehr am Block. |
 
 > **Verworfen: Zwilling** (die nächste Tür zeigt zwei Angebote, beide werden genommen) und
 > **Doppelernte** (die nächste Aufgabe zieht zweimal). Beide vom Owner gestrichen.
@@ -912,10 +937,12 @@ daraus wurde Reliquiar.
 | | Güte | **Beschau** | Hallmark |
 | Neuwurf | Freiwürfe | **Freilos** | Free Draw |
 | | Rabatt | **Nachlass** | Rebate |
+| Aufstellung | Grenze | **Durchlass** | Passage |
 | Legendär | | **Reliquiar** | Reliquary |
 | | | **Vollendung** | Culmination |
 | | | **Stadtrecht** | City Charter |
 | | | **Stiftung** | Endowment |
+| | | **Schleifung** | Razing |
 
 Das Englische ist ein erster Wurf und noch **nicht** an `docs/text-style-guide.md` abgeglichen.
 Indenture und Hallmark sind die exakten zünftigen Gegenstücke, Leeway und Culmination die schwächsten
@@ -988,11 +1015,15 @@ durchgehend im selben Satz, nur mit skalierender Zahl, und die Ausnahme vom Styl
 > Ende von Fenster 2 sind es zehn Stufen gegen acht.
 
 **Gesetzt (Owner, 2026-09-15): die Beute wird JE FAMILIE gezogen, nicht je Kategorie.** Alle
-dreizehn Familien sind damit gleich wahrscheinlich (7,7 % je Stück). Je Kategorie gezogen käme
-Freizug auf 16,7 % und jede Münz-Familie auf 5,6 %, also **das Dreifache** für die einzige Familie
-der Aufstellung; dass Freizug dreimal so oft erscheint wie Zehrgeld, wäre in einer gemeinsamen Liste
-nicht erklärbar. Für Streuung über die Kategorien sorgt bereits die Regel „keine Kategorie doppelt".
-Der Preis ist bewusst in Kauf genommen: aus der Aufstellphase kommt nur jedes dreizehnte Stück.
+**vierzehn** Familien sind damit gleich wahrscheinlich (7,1 % je Stück). Je Kategorie gezogen käme
+eine Aufstellungs-Familie auf 8,3 % und eine Münz-Familie auf 5,6 % — eineinhalbmal so oft, nur weil
+ihre Kategorie dünner besetzt ist. Für Streuung über die Kategorien sorgt bereits die Regel „keine
+Kategorie doppelt".
+
+> **Nachgezogen (2026-09-15), nachdem Durchlass dazukam.** Hier stand „dreizehn Familien, 7,7 % je
+> Stück" und „das Dreifache", gerechnet auf eine Aufstellung mit nur einer Familie. Mit der zweiten
+> ist der Unterschied auf **1,5×** gefallen, und aus der Aufstellphase kommt jetzt jedes **siebte**
+> Stück statt jedes dreizehnten. Das Argument trägt unverändert, die Zahlen nicht.
 
 **Gesetzt (Owner, 2026-09-15): der Produktbegriff heißt FRAKTION, überall.** Die Aufgabentexte,
 die Beutetexte und die Fortschrittsanzeige schreiben Fraktion. „Archetyp" wird nicht mehr verwendet.
@@ -1095,7 +1126,7 @@ selbst öffnet.
 | **Bosse** | Ausgeklammert (Owner, 2026-09-12). Der Befund aus der Vorarbeit bleibt notiert: ein Boss ist kein Entscheidungs-Slot, sondern ein Durchlauf, und alle Hebel dafür existieren bereits (Gegnerwert-Aufschlag, gesperrte Positionen, Marker je Gegnerkarte, Front-Load-Reihenfolge). Ohne Niederlage im Spiel braucht er einen Einsatz. |
 | **Score mit Par** | Später. Wenn der frühe Lauf **Anteil am Endscore** bekommen soll statt nur Gewicht im Lauf, ist Par der Hebel, nicht die Aufgabe. |
 | **Befristete Beute** | Regler in der Hinterhand. Gemessen liegen 66 % des Endscores in den letzten zehn Durchläufen; dauerhafte Beute hebt den Schwanz mit. Wenn das Ende zu fett wird, läuft Beute aus Fenster 1 am Ende von Fenster 2 ab. |
-| **Beute-Kompendium im Glossar** | Vorschlag. Man sieht nur 6 von 56 Stücken je Lauf und behält zwei; gesehene Stücke im Glossar zu sammeln macht den Katalog über Läufe hinweg lesbar. |
+| **Beute-Kompendium im Glossar** | Vorschlag. Man sieht nur 6 von 61 Stücken je Lauf und behält zwei; gesehene Stücke im Glossar zu sammeln macht den Katalog über Läufe hinweg lesbar. |
 
 ---
 

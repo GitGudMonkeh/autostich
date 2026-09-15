@@ -3,6 +3,7 @@ import * as CT from "../src/game/contracts.js";
 import { DECISION_SCHEDULE } from "../src/game/constants.js";
 import { reducer } from "../src/game/reducer.js";
 import { SKILL_LIST, isLegendarySkill } from "../src/game/skills.js";
+import { computeFormations, openBorderInfo, FORMATION_TYPES } from "../src/game/formations.js";
 
 /* ============================================================
    ZWISCHENAUFGABEN (Aufträge) — docs/zwischenaufgaben.md
@@ -42,12 +43,17 @@ describe("Aufträge · die Fenster liegen auf vollen Entscheidungsblöcken", () 
 });
 
 describe("Aufträge · Katalog und Leitern", () => {
-  it("fünfzehn Aufgaben, 56 Beutestücke (13 Familien × 4 + 4 Legendäre)", () => {
+  it("fünfzehn Aufgaben, 61 Beutestücke (14 Familien × 4 + 5 Legendäre)", () => {
     expect(CT.TASKS.length).toBe(15);
-    expect(CT.LOOT_FAMILIES.length).toBe(13);
-    expect(CT.LEGENDARIES.length).toBe(4);
-    expect(CT.LOOT_FAMILIES.length * 4 + CT.LEGENDARIES.length).toBe(56);
+    expect(CT.LOOT_FAMILIES.length).toBe(14);
+    expect(CT.LEGENDARIES.length).toBe(5);
+    expect(CT.LOOT_FAMILIES.length * 4 + CT.LEGENDARIES.length).toBe(61);
     for (const f of CT.LOOT_FAMILIES) expect(f.effects.length, f.id).toBe(4);
+  });
+
+  it("jede Familie und jedes Legendäre trägt eine EIGENE id", () => {
+    const ids = [...CT.LOOT_FAMILIES.map((f) => f.id), ...CT.LEGENDARIES.map((l) => l.id)];
+    expect(new Set(ids).size, "doppelte id im Katalog").toBe(ids.length);
   });
 
   it("jede Leiter steigt streng — eine höhere Stufe verlangt nie weniger", () => {
@@ -329,6 +335,92 @@ describe("Aufträge · legendäre Skills tragen keine Stufe", () => {
     const p = CT.applyLoot(s, { kind: "legendary", id: "vollendung", tier: 5, effect: { skillToEpic: 1, skillUpRest: 1 } });
     expect(p.pendingSkillPick).toBe(null);
     expect(CT.applySkillPick(s, legendary, 1)).toBe(null);
+  });
+});
+
+describe("Aufträge · Durchlass öffnet Segmentgrenzen", () => {
+  const run = (boons = {}) => ({ contractsEnabled: true, contractBoons: boons, cycle: 0 });
+
+  it("sieben innere Grenzen bei acht Segmenten — die letzte Position hat keine hinter sich", () => {
+    expect(CT.BORDER_COUNT).toBe(7);
+    expect(CT.ALL_BORDERS).toEqual([0, 1, 2, 3, 4, 5, 6]);
+  });
+
+  it("Stufe I würfelt SOFORT eine Grenze, ohne Auswahl", () => {
+    const p = CT.applyLoot(run(), { kind: "family", id: "durchlass", tier: 1, effect: { openBorders: 1, random: true } }, seeded(5));
+    expect(p.pendingBorderPick, "Stufe I stellt keine Auswahl").toBeUndefined();
+    expect(p.contractBoons.openBorders.length).toBe(1);
+    expect(CT.ALL_BORDERS).toContain(p.contractBoons.openBorders[0]);
+  });
+
+  it("Stufe I würfelt nur unter den noch GESCHLOSSENEN — sonst verpufft sie", () => {
+    const fast = run({ openBorders: [0, 1, 2, 3, 4, 5] });   // nur Grenze 6 ist noch zu
+    const p = CT.applyLoot(fast, { kind: "family", id: "durchlass", tier: 1, effect: { openBorders: 1, random: true } }, seeded(9));
+    expect(p.contractBoons.openBorders.slice().sort((a, b) => a - b)).toEqual([0, 1, 2, 3, 4, 5, 6]);
+  });
+
+  it("ab Stufe II stellt sie eine Auswahl, mit der Anzahl der Stufe", () => {
+    for (const [tier, n] of [[2, 1], [3, 2], [4, 4]]) {
+      const eff = CT.LOOT_BY_ID.durchlass.effects[tier - 1];
+      const p = CT.applyLoot(run(), { kind: "family", id: "durchlass", tier, effect: eff }, seeded(1));
+      expect(p.pendingBorderPick, `Stufe ${tier}`).toEqual({ count: n });
+      expect(p.contractBoons.openBorders, "beim Nehmen geht noch keine auf").toBeUndefined();
+    }
+  });
+
+  it("die Auswahl zeigt schon offene Grenzen an und weist sie ab", () => {
+    const s = run({ openBorders: [2] });
+    const zeile = CT.borderPickState(s, new Set([0]));        // 0 aus einer anderen Quelle, 2 aus der Beute
+    expect(zeile.filter((b) => b.open).map((b) => b.g)).toEqual([0, 2]);
+    // Eine offene Grenze zu wählen darf nichts kosten und nichts tun.
+    expect(CT.applyBorderPick(s, [0], new Set([0]))).toBe(null);
+    expect(CT.applyBorderPick(s, [3], new Set([0])).contractBoons.openBorders.slice().sort()).toEqual([2, 3]);
+  });
+
+  it("Schleifung öffnet alle und lässt nichts mehr zu wählen", () => {
+    const p = CT.applyLoot(run(), { kind: "legendary", id: "schleifung", tier: 5, effect: { openBorders: "all" } });
+    expect(p.contractBoons.openBorders).toBe("all");
+    expect(CT.openBordersOf({ ...run(), contractBoons: p.contractBoons }).size).toBe(7);
+    expect(CT.applyBorderPick({ ...run(), contractBoons: p.contractBoons }, [1]), "nichts mehr offen zu machen").toBe(null);
+  });
+
+  it("ohne Auftragslauf sind keine Grenzen offen", () => {
+    expect(CT.openBordersOf({ contractsEnabled: false, contractBoons: { openBorders: [1, 2] } })).toBe(null);
+  });
+});
+
+describe("Aufträge · eine offene Grenze trägt die Formation wirklich über den Block", () => {
+  /* Der wichtigste Test dieser Beute: sie ist nur etwas wert, wenn computeFormations sie LIEST.
+     Aufbau: zehn gleiche Karten, also eine Wiederholung über die Grenze zwischen Position 5 und 6.
+     Ohne offene Grenze endet der Lauf bei fünf, mit offener Grenze läuft er durch. */
+  const deck = Array.from({ length: 10 }, (_, i) => ({ id: `c${i}`, suit: "R", value: 7 }));
+  const order = deck.map((_, i) => i);
+  const längste = (forms) => {
+    let max = 0;
+    for (const p of forms) for (const f of p.formations || []) {
+      if (FORMATION_TYPES.includes(f.type) && f.ordinal > max) max = f.ordinal;
+    }
+    return max;
+  };
+
+  it("zu: der Lauf endet am Segment; offen: er läuft weiter", () => {
+    const zu = computeFormations(order, deck, {}, [], [], [], {}, null, null, null);
+    expect(längste(zu), "ohne offene Grenze endet die Formation bei fünf").toBe(5);
+    const offen = computeFormations(order, deck, {}, [], [], [], {}, null, null, new Set([0]));
+    expect(längste(offen), "mit offener Grenze 0 läuft sie über alle zehn").toBe(10);
+  });
+
+  it("die FALSCHE Grenze hilft nicht", () => {
+    const forms = computeFormations(order, deck, {}, [], [], [], {}, null, null, new Set([3]));
+    expect(längste(forms)).toBe(5);
+  });
+
+  it("openBorderInfo meldet die Beute-Grenze als offen und nennt ihre Quelle", () => {
+    const info = openBorderInfo(order, deck, [], {}, {}, null, new Set([1]));
+    expect(info.isOpen(1)).toBe(true);
+    expect(info.isOpen(0)).toBe(false);
+    expect(info.active).toBe(true);
+    expect(info.loot.has(1), "die Quelle bleibt unterscheidbar").toBe(true);
   });
 });
 

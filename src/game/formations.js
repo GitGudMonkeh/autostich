@@ -62,8 +62,11 @@ export function spalierOpenBorders(cards = [], skills = [], skillTiers = {}) {
    der Pfeiler (Architekt-Gebäude, crossSeg). Gleiche Form wie openSegmentInfo, damit CardGrid unverändert bleibt;
    `spalier` und `arch` stehen daneben, damit die UI sagen kann, WOHER eine Grenze offen ist.
    `architect` gehört schon gegattert herein (architectEnabled), wie bei computeFormations. */
-export function openBorderInfo(order = [], deck = [], skills = [], skillTiers = {}, familyTiers = {}, architect = null) {
+export function openBorderInfo(order = [], deck = [], skills = [], skillTiers = {}, familyTiers = {}, architect = null, openBorders = null) {
   const seg = openSegmentInfo(familyTiers);
+  // Vierte Quelle: die Auftrags-Beute „Durchlass" öffnet GEWÄHLTE Grenzen (docs/zwischenaufgaben.md §6.2).
+  // Als Menge wie Spalier und Pfeiler, nicht als Präfix wie E_SEGMENT — der Spieler sucht sie sich aus.
+  const loot = openBorders instanceof Set ? openBorders : new Set(openBorders || []);
   const spalier = spalierOpenBorders(order.map((di) => deck[di]), skills, skillTiers);
   // Pfeiler: `crossSeg` zählt ZEILEN, und die Zeile vor einer Grenze trägt deren Nummer — dieselbe Rechnung, die
   // canExtendSeg unten macht. Die letzte Zeile hat keine Grenze hinter sich und fällt deshalb heraus.
@@ -72,11 +75,11 @@ export function openBorderInfo(order = [], deck = [], skills = [], skillTiers = 
   const arch = new Set();
   if (af) for (const g of af.crossSeg) if (g < nBorder) arch.add(g);
   return {
-    active: seg.active || spalier.size > 0 || arch.size > 0,
+    active: seg.active || spalier.size > 0 || arch.size > 0 || loot.size > 0,
     all: seg.all,
-    count: seg.all ? Infinity : seg.count + spalier.size + arch.size,
-    isOpen: (g) => seg.isOpen(g) || spalier.has(g) || arch.has(g),
-    spalier, arch,
+    count: seg.all ? Infinity : seg.count + spalier.size + arch.size + loot.size,
+    isOpen: (g) => seg.isOpen(g) || spalier.has(g) || arch.has(g) || loot.has(g),
+    spalier, arch, loot,
   };
 }
 
@@ -248,7 +251,7 @@ function markWechsel(val, valSets, n, minLen, canExtendSeg, assign, minDiff = WE
    `familyTiers` = Familienrang je Familie (#167, u. a. E-Formationswerkzeuge). `perks` wird nicht mehr gelesen
    (E1–E9 sind zu Familien migriert) — Parameter bleibt für die Aufrufer-Signatur. Der frühere `pe`-Parameter
    (shop.permanentEffects) entfiel #179 vollständig: Formations-Regeln laufen jetzt ausschließlich über familyTiers/roles. */
-export function computeFormations(order, deck, roles = {}, _perks = [], skills = [], anchors = [], familyTiers = {}, architect = null, plant = null) {
+export function computeFormations(order, deck, roles = {}, _perks = [], skills = [], anchors = [], familyTiers = {}, architect = null, plant = null, openBorders = null) {
   const n = order.length;
   const cards = order.map((di) => deck[di]);
   // Pflanze (§6.7): die vier Hebel und zwei Legendäre ändern die ERKENNUNG. `plant` = { skillTiers, growth } — die
@@ -310,8 +313,10 @@ export function computeFormations(order, deck, roles = {}, _perks = [], skills =
   // Grenze NACH Position k existiert nur, wenn (k+1)%SEGMENT_SIZE===0; ihr 0-basierter Grenz-Index ist (k+1)/SIZE−1.
   const segInfo = openSegmentInfo(familyTiers);
   const spalierBorders = spalierOpenBorders(cards, skills, pTiers);
+  const lootBorders = openBorders instanceof Set ? openBorders : new Set(openBorders || []);
   const canExtendSeg = (k) => ((k + 1) % SEGMENT_SIZE !== 0) || segInfo.isOpen((k + 1) / SEGMENT_SIZE - 1)
     || spalierBorders.has((k + 1) / SEGMENT_SIZE - 1) // Pflanze Spalier: grün gesäumte Grenze offen
+    || lootBorders.has((k + 1) / SEGMENT_SIZE - 1)    // Durchlass (Auftrags-Beute): gewählte Grenze offen
     || (af && af.crossSeg.has(Math.floor(k / SEGMENT_SIZE))); // Architekt Pfeiler: Segmentgrenze der berührten Zeile offen
   // #179 E_SEGMENT IV Grenz-Bonus: Karten in einer Formation, die eine (frühere) Segmentgrenze überschreitet,
   // geben zusätzlich ×crossBonus. noteCross sammelt die Mitglieds-Positionen kreuzender Läufe (nur aktiv bei Stufe IV).

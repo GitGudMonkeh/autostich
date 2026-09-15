@@ -1,4 +1,4 @@
-/* Zwischenaufgaben — the two overlays of a contract run (docs/zwischenaufgaben.md).
+/* Zwischenaufgaben — the overlays of a contract run (docs/zwischenaufgaben.md).
 
    ContractOffer  three tasks, three different steps, one is taken and the other two expire.
    ContractLoot   three pieces once the task is done, no reroll.
@@ -7,7 +7,8 @@
    state.contractsEnabled. They sit at z-30 like the other full-screen phases, so they cover the rail
    and the top bar the same way the formation overlay does. */
 
-import { PHASE_ACCENTS, phaseCard, PhaseHairline, DECK_BORDER } from "./modalStyle.jsx";
+import { useState } from "react";
+import { PHASE_ACCENTS, phaseCard, PhaseHairline, DECK_BORDER, ActionButton } from "./modalStyle.jsx";
 import { overlayPortal } from "./overlayPortal.jsx"; // Pflicht für jedes Vollbild-Overlay (test/overlay-nesting.test.js)
 import { t } from "../i18n/index.js";
 import { TIER_META } from "../game/rarity.js";
@@ -154,6 +155,53 @@ export function ContractSkillPick({ skills = [], skillTiers = {}, rest = 0, onPi
               onPick={() => onPick && onPick(id)} />
           );
         })}
+      </div>
+    </Overlay>
+  );
+}
+
+/* --- Durchlass: welche Segmentgrenzen aufgehen --------------------------------------------------
+   Anders als die übrigen Auswahlen sind hier MEHRERE Klicks nötig, und die Anzeige muss zeigen, was
+   schon offen ist — egal woher (Perk-Familie, Spalier, Pfeiler oder ein früherer Durchlass). Ohne das
+   gibt jemand eine Wahl für eine Tür aus, die längst offen steht (Owner, 2026-09-15). */
+
+export function ContractBorderPick({ borders = [], count = 1, onPick }) {
+  const [chosen, setChosen] = useState([]);
+  const frei = borders.filter((b) => !b.open);
+  const need = Math.min(count, frei.length);
+  const toggle = (g) => setChosen((c) =>
+    c.includes(g) ? c.filter((x) => x !== g) : (c.length >= need ? c : [...c, g]));
+  return (
+    <Overlay>
+      <Head title={t("contract.borderpick.title")}
+        sub={t("contract.borderpick.sub", { n: need })}
+        note={t("contract.borderpick.chosen", { n: chosen.length, of: need })} />
+      <div className="grid gap-2" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(128px, 1fr))" }}>
+        {borders.map((b) => {
+          const active = chosen.includes(b.g);
+          const tone = b.open ? "#5ab87a" : active ? "#a855f7" : "#8a8a95";
+          return (
+            <button key={b.g} type="button" disabled={b.open}
+              onClick={b.open ? undefined : () => toggle(b.g)}
+              className="rounded-lg px-3 py-2.5 text-left transition-all disabled:cursor-not-allowed"
+              style={{ background: "#141419", border: `1px solid ${tone}${active || b.open ? "aa" : "44"}`,
+                       opacity: b.open ? 0.6 : 1 }}>
+              {/* Grenze g liegt zwischen Position (g+1)·5 und der darauf folgenden. */}
+              <div className="text-micro-3 uppercase tracking-wide opacity-50">
+                {t("contract.borderpick.between", { a: (b.g + 1) * 5, b: (b.g + 1) * 5 + 1 })}
+              </div>
+              <div className="font-bold text-body-5" style={{ color: tone }}>
+                {b.open ? t("contract.borderpick.already") : active ? t("contract.borderpick.picked") : t("contract.borderpick.closed")}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+      <div className="mt-4 flex justify-end">
+        <ActionButton kind="primary" disabled={chosen.length !== need}
+          onClick={chosen.length === need ? () => onPick && onPick(chosen) : undefined}>
+          {t("contract.borderpick.confirm")}
+        </ActionButton>
       </div>
     </Overlay>
   );

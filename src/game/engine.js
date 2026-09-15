@@ -214,7 +214,7 @@ export function resolveTrick(state, rng) {
   // Architekt-Precompute je Durchlauf (stabil): value-/score-Effekte + Struktur-Faktor je Position (target einmal bestimmt).
   let archPreNow = architectPre;
   if (pos === 0) {
-    formations = computeFormations(playerOrder, deck, roles, perks, skills, anchors, familyTiers, archState, { skillTiers, growth });
+    formations = computeFormations(playerOrder, deck, roles, perks, skills, anchors, familyTiers, archState, { skillTiers, growth }, CT.openBordersOf(state));
     // Fundament (L_FUND, v0.3): additiver Bonus auf JEDEN Strukturfaktor. Wird in den Precompute gereicht, damit
     // Engine UND UI-Anzeige dieselbe Quelle behalten (boardFactorMap-Kommentar: gezeigte und verrechnete Faktoren
     // dürfen nicht driften). Default 0 ⇒ alle Bestands-Aufrufer/Tests byte-identisch.
@@ -1175,7 +1175,7 @@ export function resolveTrick(state, rng) {
         newFormationSwaps = [];
         // #137: anchors + familyTiers mitgeben (wie bei pos-0/Tausch/Kauf), sonst zeigt die Formationsphase beim
         // Eintritt einen veralteten Stand (ohne regeländernde Familien-Effekte) — erst der erste Tausch korrigierte.
-        formations = computeFormations(playerOrder, deck, roles, perks, skills, anchors, familyTiers, archState, { skillTiers, growth: newGrowth });
+        formations = computeFormations(playerOrder, deck, roles, perks, skills, anchors, familyTiers, archState, { skillTiers, growth: newGrowth }, CT.openBordersOf(state));
       }
     }
   }

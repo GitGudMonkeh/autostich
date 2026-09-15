@@ -17,8 +17,9 @@ import { fmtDuration } from "./game/deck.js";
 import { setLocale, t } from "./i18n/index.js"; // #sprache: Anzeigesprache aus den Optionen
 import { useBackGuard } from "./ui/useBackGuard.js";
 import { StatusRail } from "./ui/StatusRail.jsx";
-import { ContractOffer, ContractLoot, ContractSkillPick } from "./ui/ContractPhase.jsx"; // Zwischenaufgaben — nur im Auftragslauf
-import { upgradableSkills } from "./game/contracts.js"; // Vollendung: legendäre Skills tragen keine Stufe und stehen nicht zur Wahl
+import { ContractOffer, ContractLoot, ContractSkillPick, ContractBorderPick } from "./ui/ContractPhase.jsx"; // Zwischenaufgaben — nur im Auftragslauf
+import { upgradableSkills, borderPickState } from "./game/contracts.js"; // Vollendung: Legendäre tragen keine Stufe · Durchlass: welche Grenzen schon offen sind
+import { openBorderInfo } from "./game/formations.js"; // ALLE offenen Grenzen, egal aus welcher Quelle
 import { useIsWide, DESKTOP_MIN, PHONE_MAX } from "./ui/useIsWide.js"; // #buehne: Musik/Meilenstein ziehen ab 1280 px in die Leiste (DOM-Umzug) · #mobil-emblem: dieselben zwei Schwellen für den Emblem-Vorlader
 import { StatusBar } from "./ui/StatusBar.jsx"; // Gameplay-Neu-Aufbau Phase 1: schwebende Kompakt-Leiste (Vitals + Pause/Tempo/Karten)
 import { architectCoverFor } from "./ui/architectCover.js"; // Lauf-Details: Gebäude-Overlay in den Snapshot persistieren
@@ -146,6 +147,17 @@ const FX_PREWARM = {
 
 // Suspense-Fallback = derselbe abgedunkelte Blur-Grund wie die Overlays selbst → beim (seltenen, weil vorgeladenen)
 // Nachladen kein weißer Blitz, sondern ein nahtloser Übergang. pointer-events blockt Klicks während des Ladens.
+/* Alle offenen Segmentgrenzen, egal woher: Perk-Familie, Spalier, Pfeiler und die Auftrags-Beute
+   selbst. Die Grenzen-Auswahl zeigt sie an, statt den Spieler eine offene Tür wählen zu lassen. */
+function openBordersNow(state) {
+  const info = openBorderInfo(state.playerOrder || [], state.deck || [], state.skills || [],
+    state.skillTiers || {}, state.familyTiers || {},
+    state.architectEnabled ? state.architect : null, null);
+  const out = new Set();
+  for (let g = 0; g < 8; g++) if (info.isOpen(g)) out.add(g);
+  return out;
+}
+
 function OverlayFallback() {
   return overlayPortal(<div className="fixed inset-0 z-40" style={{ background: "#0c0c10cc", backdropFilter: "blur(3px)" }} aria-hidden="true" />);
 }
@@ -1282,6 +1294,11 @@ function AutostichGame() {
       {state.contractsEnabled && (state.contracts?.pendingLoot || []).length > 0 && (
         <ContractLoot pieces={state.contracts.pendingLoot}
           onPick={(p) => dispatch({ type: "PICK_LOOT", lootId: p.id, tier: p.tier })} />
+      )}
+      {state.contractsEnabled && state.contracts?.pendingBorderPick && (
+        <ContractBorderPick count={state.contracts.pendingBorderPick.count}
+          borders={borderPickState(state, openBordersNow(state))}
+          onPick={(bs) => dispatch({ type: "PICK_CONTRACT_BORDER", borders: bs })} />
       )}
       {state.contractsEnabled && state.contracts?.pendingSkillPick && (
         <ContractSkillPick skills={upgradableSkills(state)} skillTiers={state.skillTiers || {}}

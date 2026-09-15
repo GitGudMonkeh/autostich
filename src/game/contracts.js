@@ -103,10 +103,10 @@ export const targetFor = (taskId, step, variantId = null) => {
 };
 
 /* ------------------------------------------------------------------------------------------------
-   The loot catalogue — 13 families of four, plus four legendary singles
+   The loot catalogue — 14 families of four, plus five legendary singles
    ------------------------------------------------------------------------------------------------
    `effect` is read by applyLoot below. Categories exist so one reward never offers the same kind of
-   help twice; the draw is per FAMILY, so all thirteen are equally likely. */
+   help twice; the draw is per FAMILY, so all fourteen are equally likely. */
 export const LOOT_CATEGORIES = ["muenze", "aufstellung", "baufeld", "skills", "perks", "neuwurf"];
 
 export const LOOT_FAMILIES = [
@@ -114,6 +114,10 @@ export const LOOT_FAMILIES = [
   { id: "muenzrecht",  category: "muenze",      effects: [{ income: 1, cycles: 15 }, { income: 1 }, { income: 2 }, { income: 4 }] },
   { id: "ablass",      category: "muenze",      effects: [{ forfeitMult: 1.5 }, { forfeitMult: 2 }, { forfeitMult: 2.5 }, { forfeitMult: 3 }] },
   { id: "freizug",     category: "aufstellung", effects: [{ energy: 1, cycles: 5 }, { energy: 1 }, { energy: 2 }, { energy: 2, unspentMult: 2 }] },
+  /* Durchlass öffnet Segmentgrenzen. Stufe I würfelt eine, ab II wählt der Spieler — und die Wahl
+     zeigt, welche Grenzen schon offen sind, egal woher (E_SEGMENT, Spalier, Pfeiler, früherer
+     Durchlass). Ohne das kauft man eine Tür, die längst offen steht. */
+  { id: "durchlass",   category: "aufstellung", effects: [{ openBorders: 1, random: true }, { openBorders: 1 }, { openBorders: 2 }, { openBorders: 4 }] },
   { id: "baurecht",    category: "baufeld",     effects: [{ cover: 1 }, { cover: 2 }, { cover: 3 }, { cover: 4 }] },
   { id: "aufstockung", category: "baufeld",     effects: [{ upgradeBuildings: 1 }, { upgradeBuildings: 2 }, { upgradeBuildings: 3 }, { upgradeBuildings: "all" }] },
   { id: "lehrbrief",   category: "skills",      effects: [{ skillUp: 1, steps: 1 }, { skillUp: 2, steps: 1 }, { skillUp: 3, steps: 1 }, { skillUp: 4, steps: 2 }] },
@@ -135,7 +139,43 @@ export const LEGENDARIES = [
   { id: "vollendung", effect: { skillToEpic: 1, skillUpRest: 1 } },
   { id: "stadtrecht", effect: { coverUncapped: true } },
   { id: "stiftung",   effect: { coinsPerPhase: 5 } },
+  /* Wie Stadtrecht dem Baufeld: hebt eine REGEL auf, statt eine Zahl zu heben (§5). Der historische
+     Begriff für das Niederlegen einer Befestigung — die Grenzen fallen, nicht eine Zahl steigt. */
+  { id: "schleifung", effect: { openBorders: "all" } },
 ];
+
+/* Sieben innere Grenzen bei acht Segmenten zu fünf Positionen. Die letzte Position hat keine Grenze
+   hinter sich, deshalb eins weniger als Segmente. */
+export const BORDER_COUNT = Math.max(0, Math.ceil(C.BOARD_POSITIONS / SEGMENT_SIZE) - 1);
+export const ALL_BORDERS = Array.from({ length: BORDER_COUNT }, (_, i) => i);
+
+/* Die vom Auftrag geöffneten Grenzen — die Menge, die formations.js als vierte Quelle liest. */
+export const openBordersOf = (state) => {
+  const b = boonsOf(state);
+  if (!b || !b.openBorders) return null;
+  return b.openBorders === "all" ? new Set(ALL_BORDERS) : new Set(b.openBorders);
+};
+
+/* Grenzen, die der Spieler NICHT mehr wählen muss, weil sie ohnehin offen sind. Die Auswahl zeigt sie
+   an, statt sie zu verstecken — sonst gibt jemand eine Wahl für eine offene Tür aus. */
+export function borderPickState(state, alreadyOpen = null) {
+  const open = alreadyOpen instanceof Set ? alreadyOpen : new Set(alreadyOpen || []);
+  const fromLoot = openBordersOf(state) || new Set();
+  for (const g of fromLoot) open.add(g);
+  return ALL_BORDERS.map((g) => ({ g, open: open.has(g) }));
+}
+
+/* Die getroffene Wahl in den Segen schreiben. Schon offene Grenzen werden abgewiesen — der Klick darf
+   nicht ins Leere gehen. */
+export function applyBorderPick(state, borders, alreadyOpen = null) {
+  const open = alreadyOpen instanceof Set ? alreadyOpen : new Set(alreadyOpen || []);
+  const chosen = [...new Set(borders || [])].filter((g) => ALL_BORDERS.includes(g) && !open.has(g));
+  if (!chosen.length) return null;
+  const b = { ...(state.contractBoons || {}) };
+  if (b.openBorders === "all") return null;                 // Schleifung hat alles offen, nichts zu wählen
+  b.openBorders = [...new Set([...(b.openBorders || []), ...chosen])];
+  return { contractBoons: b };
+}
 
 /* ------------------------------------------------------------------------------------------------
    Rolling the offers and the loot
@@ -437,7 +477,7 @@ function raiseBuildings(state, count) {
   return { ...arch, buildings: arch.buildings.map((b, i) => (lift.has(i) ? { ...b, tier: b.tier + 1 } : b)) };
 }
 
-export function applyLoot(state, piece) {
+export function applyLoot(state, piece, rng = Math.random) {
   if (!piece || !piece.effect) return null;
   const e = piece.effect;
   const patch = {};
@@ -476,6 +516,21 @@ export function applyLoot(state, piece) {
   if (e.legendaryRerollNormalPrice) boons.legendaryRerollNormalPrice = true;
   if (e.rerollScale != null) boons.rerollScale = Math.min(boons.rerollScale ?? 1, e.rerollScale);
   if (e.coinsPerPhase) boons.coinsPerPhase = e.coinsPerPhase;
+  /* Durchlass. Stufe I würfelt SOFORT eine noch geschlossene Grenze; ab II stellt sie eine Auswahl,
+     genau wie Vollendung. Schleifung öffnet alle und braucht deshalb keine Wahl. */
+  if (e.openBorders === "all") boons.openBorders = "all";
+  else if (e.openBorders) {
+    if (e.random) {
+      const open = new Set(openBordersOf(state) || []);
+      const free = ALL_BORDERS.filter((g) => !open.has(g));
+      if (free.length) {
+        const g = free[Math.floor(rng() * free.length) % free.length];
+        boons.openBorders = [...new Set([...(boons.openBorders || []), g])];
+      }
+    } else {
+      patch.pendingBorderPick = { count: e.openBorders };
+    }
+  }
 
   patch.contractBoons = boons;
   return patch;
