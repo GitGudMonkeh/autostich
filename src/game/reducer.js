@@ -262,7 +262,9 @@ function contractStep(prev, next, rng = Math.random) {
     }
     const win = CT.windowFor(finished + 1);
     if (win && !contracts.active && !(contracts.pendingLoot || []).length && contracts.windowId !== win.id) {
-      contracts = { ...contracts, windowId: win.id, offers: CT.rollOffers(rng, contracts.usedTasks || []) };
+      const offers = CT.rollOffers(rng, contracts.usedTasks || []);
+      contracts = { ...contracts, windowId: win.id, offers,
+                    usedTasks: [...new Set([...(contracts.usedTasks || []), ...offers.map((o) => o.taskId)])] };
     }
   }
   return { ...next, ...(perPhase || {}), contractTally: tally, contracts };
@@ -438,10 +440,14 @@ export function reducer(state, action) {
          wird laut docs/zwischenaufgaben.md §3.1 nach der ersten Skill-Wahl, und genau dann ist der
          Start-Patch durch und der Spieler sieht den Aufsteller. */
       const contractsOn = !!action.contracts;
+      /* „Kein Angebot zweimal in einem Lauf" (§3.6) meint ALLE drei Aufsteller, nicht nur den
+         angenommenen — sonst kann Fenster 2 genau die zwei zeigen, die man eben hat verfallen lassen.
+         Deshalb wandern sie beim AUSLEGEN in `usedTasks`, nicht beim Annehmen. */
+      const startOffers = contractsOn ? CT.rollOffers(action.rng || Math.random, []) : null;
       const contractStart = contractsOn
         ? { contractsEnabled: true, contractTally: CT.emptyTally(), contractBoons: {},
-            contracts: { windowId: 1, offers: CT.rollOffers(action.rng || Math.random, []), active: null,
-                         done: [], usedTasks: [], taken: [], pendingLoot: null } }
+            contracts: { windowId: 1, offers: startOffers, active: null,
+                         done: [], usedTasks: startOffers.map((o) => o.taskId), taken: [], pendingLoot: null } }
         : null;
       return { ...sBase, architectEnabled,
         difficulty: null,
@@ -459,7 +465,7 @@ export function reducer(state, action) {
       const chosen = c.offers.find((o) => o.taskId === action.taskId && o.step === action.step);
       if (!chosen) return state;
       return { ...state, contracts: { ...c, offers: [],
-        usedTasks: [...(c.usedTasks || []), chosen.taskId],
+        usedTasks: [...new Set([...(c.usedTasks || []), chosen.taskId])],   // schon beim Auslegen vermerkt
         active: { ...chosen, windowId: c.windowId } } };
     }
 

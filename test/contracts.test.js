@@ -332,6 +332,33 @@ describe("Aufträge · legendäre Skills tragen keine Stufe", () => {
   });
 });
 
+describe("Aufträge · gegen Wiederholung (§3.6)", () => {
+  it("Regel 1: gewürfelte Parameter machen aus 15 Definitionen 20 Angebote und 80 Karten", () => {
+    const distinct = CT.TASKS.reduce((n, t) => n + (t.variants ? t.variants.length : 1), 0);
+    expect(CT.TASKS.length).toBe(15);
+    expect(distinct, "Reinheit würfelt vier Typen, Quartier drei Kategorien").toBe(20);
+    expect(distinct * CT.STEPS.length).toBe(80);
+  });
+
+  it("Regel 1: Farbtreue würfelt KEINE Farbe — die Serie zählt, egal in welcher", () => {
+    expect(CT.TASK_BY_ID.farbtreue.variants).toBeUndefined();
+  });
+
+  it("Regel 2: ALLE drei Aufsteller sind verbraucht, nicht nur der angenommene", () => {
+    /* Sonst zeigt Fenster 2 genau die zwei, die man eben hat verfallen lassen — und „kein Angebot
+       zweimal in einem Lauf" wäre nur für den angenommenen wahr. */
+    const s = reducer(undefined, { type: "START_RUN", rng: seeded(11), architect: true, seed: 3, contracts: true });
+    const gezeigt = s.contracts.offers.map((o) => o.taskId);
+    expect(s.contracts.usedTasks.slice().sort()).toEqual(gezeigt.slice().sort());
+    const nach = reducer(s, { type: "PICK_CONTRACT", taskId: gezeigt[0], step: s.contracts.offers[0].step });
+    expect(nach.contracts.usedTasks.slice().sort(), "annehmen ändert die Sperre nicht").toEqual(gezeigt.slice().sort());
+  });
+
+  it("Regel 2: der Pool trägt die zweite Runde — 15 minus 3 lässt genug übrig", () => {
+    expect(CT.TASKS.length - CT.OFFERS_PER_WINDOW).toBeGreaterThanOrEqual(CT.OFFERS_PER_WINDOW);
+  });
+});
+
 describe("Aufträge · der normale Lauf bleibt unberührt", () => {
   const start = (extra = {}) => reducer(undefined, { type: "START_RUN", rng: seeded(42), architect: true, seed: 7, ...extra });
 

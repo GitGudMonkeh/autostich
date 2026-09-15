@@ -4,9 +4,8 @@
 für Wert abgenommen (2026-09-14). **Die zehn offenen Punkte sind entschieden (2026-09-15)** — §10
 hält sie mit ihren Begründungen fest, dazu zwei Folgearbeiten über dieses Dokument hinaus.
 
-Eines steht weiterhin als **Vorschlag** und war nie einer der zehn Punkte: die drei Regeln gegen
-Wiederholung in §3.6. Sie sind überwiegend technisch, eine davon (gesperrte Aufgaben bis zum vierten
-Lauf) ist Progression und damit Owner-Sache.
+Aus §3.6 sind zwei der drei Regeln gegen Wiederholung gebaut; die dritte (gesperrte Aufgaben) ist
+Progression und braucht vom Owner noch eine Bedingung — §3.6.
 
 Entscheidungen des Owners stehen unter **Gesetzt**. Alles unter **Vorschlag** ist Diskussionsstand und
 gilt erst, wenn es nach Gesetzt wandert.
@@ -297,17 +296,23 @@ er es aufmacht.
 
 ### 3.6 Gegen Wiederholung
 
-**Vorschlag**, drei Regeln, alle billig:
+**Regel 1 und 2 sind gebaut** (2026-09-15), Regel 3 liegt beim Owner.
 
-1. **Gewürfelte Parameter statt einer langen Liste.** Dasselbe Muster wie `WEEK_MODS`
-   (`range: [min,max]`, `desc(mag)`): Reinheit würfelt den Formationstyp (vier Varianten), Quartier
-   die Gebäudekategorie (drei). Damit ergeben 15 Definitionen **20 unterscheidbare Angebote** und mit
-   den vier Stufen 80 mögliche Karten. Bei zwei Aufgaben je Lauf sieht ein Spieler 2 davon.
-   **Farbtreue würfelt keine Farbe** (Owner, 2026-09-14): die Serie zählt, egal in welcher Farbe sie
-   läuft.
-2. **Kein Angebot zweimal in einem Lauf**, und Fenster 2 zieht keine Aufgabe aus Fenster 1.
-3. **Die letzten vier Aufgaben sind gesperrt.** Ein Feld im Profil, additiv über `DEFAULT_PROFILE`,
-   kein Schema-Sprung nötig.
+1. **Gewürfelte Parameter statt einer langen Liste** — gebaut. Dasselbe Muster wie `WEEK_MODS`:
+   Reinheit würfelt den Formationstyp (vier Varianten), Quartier die Gebäudekategorie (drei). Am Code
+   nachgezählt ergeben 15 Definitionen **20 unterscheidbare Angebote** und mit den vier Stufen **80**
+   mögliche Karten; bei zwei Aufgaben je Lauf sieht ein Spieler zwei davon. **Farbtreue würfelt keine
+   Farbe** (Owner, 2026-09-14): die Serie zählt, egal in welcher sie läuft. Alle drei Zahlen stehen
+   als Test, nicht als Behauptung.
+2. **Kein Angebot zweimal in einem Lauf** — gebaut, und dabei eine Lücke geschlossen: gesperrt waren
+   zuerst nur die **angenommenen** Aufgaben. Damit konnte Fenster 2 genau die zwei zeigen, die man
+   eben hatte verfallen lassen. Jetzt wandern **alle drei Aufsteller** beim Auslegen in `usedTasks`,
+   nicht beim Annehmen. Fünfzehn Aufgaben minus drei lassen für das zweite Fenster genug übrig.
+3. **Die letzten vier Aufgaben sind gesperrt** — **offen, und zwar zweifach.** Es ist eine
+   Progressions-Entscheidung und damit Owner-Sache; dazu sagt die Regel nicht, **was** sie
+   aufschließt. Ohne diese Bedingung ist sie nicht baubar. `DEFAULT_PROFILE` in `storage.js` existiert
+   und nimmt das Feld additiv auf, ein Schema-Sprung ist also nicht nötig — es fehlt nur der Auslöser.
+   **Welche vier, und wodurch?**
 
 ---
 
