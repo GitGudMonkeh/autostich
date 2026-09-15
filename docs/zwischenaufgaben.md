@@ -1,7 +1,7 @@
 # Zwischenaufgaben (exp) — Planungsdokument
 
 **Status: lebendes Dokument.** Beutekatalog und Aufgaben-Katalog sind durchdesignt und vom Owner Wert
-für Wert abgenommen (2026-09-14). Offen sind die vier Punkte in §10; danach ist das Dokument
+für Wert abgenommen (2026-09-14). Offen sind die drei Punkte in §10; danach ist das Dokument
 umsetzungsreif.
 
 Entscheidungen des Owners stehen unter **Gesetzt**. Alles unter **Vorschlag** ist Diskussionsstand und
@@ -393,11 +393,42 @@ nicht danach spielt.
 p90 bei 24. Die unterste Stufe ist 20. Vermutlich derselbe Grund: die Perk-Politik der Sim nimmt
 Wert-Perks nicht gezielt. Aufmarsch ist damit auch auf Normal ein echter Auftrag.
 
-**Säckel hat eine arithmetische Decke.** Das gemessene Gesamteinkommen bis D15 beträgt 64 bis 72
-Münzen. Wer nichts ausgibt, hält am Ende von Fenster 1 rund 70. **Die Stufen 100 und 120 sind dort
-unmöglich**, egal wie gut jemand spielt; sie funktionieren nur in Fenster 2 (Einkommen bis D30: 121 bis
-151). Entweder bekommt Säckel niedrigere obere Stufen, oder es wird im ersten Fenster nur bis Selten
-angeboten. **Offen.**
+**Säckel bleibt bei 60 · 80 · 100 · 120, in beiden Fenstern** (Owner, 2026-09-15).
+
+> **Korrektur.** Hier stand, die Stufen 100 und 120 seien bis D15 „arithmetisch unmöglich, egal wie
+> gut jemand spielt". Das war falsch. Ich hatte den gemessenen **Kontostand** eines Sims, der normal
+> spielt, für die **Obergrenze** gehalten und die zweite Einnahmeart übersehen, die `coins.js` §2.3
+> ausdrücklich führt: **Verzicht zahlt.**
+
+Nachgemessen am Entscheidungsplan (`DECISION_SCHEDULE`, Block Skill · Perk · Aufstellen · Architekt):
+
+| bis D15 | Münzen |
+| --- | --- |
+| Sockel 2 je Durchlauf, ohne eine einzige Formation | 33 |
+| passiv am Formations-Deckel (2 + 4 je Durchlauf) | **93** |
+| 4 abgelehnte Skill-Phasen (`FORFEIT_SKILL` 12) | +48 |
+| 4 abgelehnte Perk-Phasen (`FORFEIT_PERK` 6) | +24 |
+| 4 Aufstellphasen mit ungenutzter Energie (4 × `FORFEIT_ENERGY` 1) | +16 |
+| 3 Architektenphasen ohne Hauptaktion (`FORFEIT_BUILD` 6) | +18 |
+| **Obergrenze bei vollem Verzicht** | **199** |
+
+Zum Vergleich der tatsächliche Kontostand im Sim bei D15, der normal spielt und ausgibt: p25/p50/p75
+**59 / 67 / 74** über Zufall, Feuer und Pflanze (30 Läufe je Spielweise). Das ist die Zahl, die ich
+vorher fälschlich als Decke gelesen hatte.
+
+**Damit ist 120 bei D15 erreichbar, aber teuer:** rund 55 Münzen über dem normalen Stand, also im
+Kern jede Skill-Phase des ersten Fensters ablehnen. Genau das ist die Entscheidung, die die Stufe
+verlangt.
+
+**Owner-Begründung, warum das keine Reparatur braucht:** Man wählt aus drei Angeboten. Liegt Säckel
+in Fenster 1 auf „Sehr schwer", nimmt man eben ein anderes — die Stufe wird dann bei D30 genommen,
+nicht bei D15. Das Angebotssystem regelt die Machbarkeit bereits, ohne Sonderregel je Fenster. Und
+der Zwang zum Ablehnen oder zum Energiesparen ist kein Nebeneffekt, sondern der Hebel, den die
+Münzökonomie für genau diesen Fall vorgesehen hat.
+
+> Verworfen wurden drei Vorschläge von mir: Säckel nur in Fenster 2 anbieten, zwei Leitern je
+> Fenster (35 · 45 · 55 · 65 für Fenster 1), und in Fenster 1 nur bis Selten anbieten. Alle drei
+> hätten eine Sonderregel eingeführt, die keine der übrigen 14 Aufgaben braucht.
 
 **Fußvolk, gemessen** (Siege mit Grundwert 4 oder weniger, Fenster 1, 40 Läufe je Spielweise):
 
@@ -737,17 +768,14 @@ bei D30 nur in 5. Das ist keine Schieflage, sondern der Zweck.
 
 ## 10. Offene Punkte
 
-Vier Punkte aus §3 und §4 liegen beim Owner:
+Drei Punkte aus §3 und §4 liegen beim Owner:
 
-1. **Säckel im ersten Fenster.** Die Stufen 100 und 120 sind bis D15 arithmetisch unmöglich, weil das
-   Gesamteinkommen dort 64 bis 72 Münzen beträgt (§4.3). Entweder niedrigere obere Stufen, oder Säckel
-   wird in Fenster 1 nur bis Selten angeboten.
-2. **Treppe und Wechsel bei Reinheit.** Die beiden Leitern (4·5·6·8 und 5·7·9·11) sind Vorschlag aus
+1. **Treppe und Wechsel bei Reinheit.** Die beiden Leitern (4·5·6·8 und 5·7·9·11) sind Vorschlag aus
    den gemessenen Typanteilen, nicht Owner-Entscheid.
-3. **Wo genau sitzt die Fortschrittsanzeige?** `StatusRail.jsx` ist der Kandidat, bestätigt ist es
+2. **Wo genau sitzt die Fortschrittsanzeige?** `StatusRail.jsx` ist der Kandidat, bestätigt ist es
    nicht. Das Mockup schlägt den Platz **über** den Multiplikatoren vor, weil der Auftrag das einzige
    Element der Leiste mit einer Frist ist.
-4. **Erscheint der Grundfarben-Ring dauerhaft** oder nur, solange ein Buntspiel-Auftrag läuft (§4.1).
+3. **Erscheint der Grundfarben-Ring dauerhaft** oder nur, solange ein Buntspiel-Auftrag läuft (§4.1).
 
 **Erledigt:** Die vier Aufgabenstufen heißen **Leicht, Mittel, Schwer, Sehr schwer** (§3.2).
 Farbtreue würfelt keine Farbe (§3.6). Der Grundfarben-Marker ist ein Ring um das Blatt,
@@ -821,6 +849,11 @@ Deckel schließt das Loch, das Nachlass IV sonst aufreißt (kostenlos heißt son
 > beide Sätze auf und kappt die Preistreppen bei 12 (normal) und 60 (legendär). Nachgeprüft am Code:
 > `buyReroll` in `reducer.js` prüft heute **nur den Preis**, `coinRerolls` stellt lediglich die
 > Treppe und begrenzt nichts. Wer den Deckel baut, muss die Ökonomie-Doku mitziehen.
+
+**Bewusst so belassen (Owner, 2026-09-15): Säckel behält 60 · 80 · 100 · 120 in beiden Fenstern.**
+Meine Behauptung, 100 und 120 seien bis D15 unmöglich, war falsch — gemessene Obergrenze bei vollem
+Verzicht ist 199 Münzen gegen einen normalen Stand von 67. Die Rechnung und die drei verworfenen
+Reparaturvorschläge stehen in §4.3.
 
 **Bewusst so belassen (Owner, 2026-09-15): Auslage und Beschau bleiben unverändert.** Der Befund
 bleibt notiert, damit ihn niemand für ein Versehen hält: Auslage III ist „vier Perks, keiner unter
