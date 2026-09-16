@@ -30,9 +30,8 @@ export const stepColor = (step) =>
 /* The sentence the player reads, with the rung filled in and the rolled variant named. */
 export function contractText(contract) {
   if (!contract) return "";
-  const variant = contract.variantId
-    ? t(`contract.${CT.TASK_BY_ID[contract.taskId]?.variantKey === "category" ? "category" : "formation"}.${contract.variantId}`)
-    : "";
+  // Reinheit ist die einzige Aufgabe, die noch einen Parameter würfelt — den Formationstyp.
+  const variant = contract.variantId ? t(`contract.formation.${contract.variantId}`) : "";
   /* Wechselt die Stufe den Zähler (Durchmarsch schwer), wechselt auch der Satz — sonst stünde dort
      „Gewinne 5 Stiche", wo fünf makellose DURCHLÄUFE gemeint sind. */
   const measure = CT.measureFor(contract.taskId, contract.step);

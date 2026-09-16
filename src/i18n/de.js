@@ -1554,9 +1554,6 @@ export default {
   "contract.formation.farbblock": "Farbblock",
   "contract.formation.treppe": "Treppe",
   "contract.formation.wechsel": "Wechsel",
-  "contract.category.score": "Punkte",
-  "contract.category.value": "Wert",
-  "contract.category.formation": "Formation",
 
   "contract.task.durchmarsch.name": "Durchmarsch",
   "contract.task.durchmarsch.text": "Gewinne in einem Durchlauf {n} Stiche.",
@@ -1587,7 +1584,7 @@ export default {
   "contract.task.aufmarsch.name": "Aufmarsch",
   "contract.task.aufmarsch.text": "Gewinne einen Durchlauf mit {n} Kampfwert Vorsprung insgesamt.",
   "contract.task.quartier.name": "Quartier",
-  "contract.task.quartier.text": "Bedecke {n} volle Reihen des Baufelds mit Gebäuden der Kategorie {variant}.",
+  "contract.task.quartier.text": "Bedecke {n} volle Reihen des Baufelds mit Gebäuden derselben Kategorie.",
   "contract.task.saeckel.name": "Säckel",
   "contract.task.saeckel.text": "Halte {n} Münzen, bis der Auftrag endet.",
 

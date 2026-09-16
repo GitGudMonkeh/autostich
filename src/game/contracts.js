@@ -11,7 +11,8 @@
 import * as C from "./constants.js";
 import { FORMATION_TYPES, SEGMENT_SIZE, countBuiltFormations } from "./formations.js";
 import { TIER_META } from "./rarity.js";
-import { ROWS as ARCH_ROWS, COLS as ARCH_COLS, posOf as archPos, familyDef, MAX_TIER as ARCH_MAX_TIER } from "./architect.js";
+import { ROWS as ARCH_ROWS, COLS as ARCH_COLS, posOf as archPos, familyDef, MAX_TIER as ARCH_MAX_TIER,
+         CATEGORIES as ARCH_CATEGORIES } from "./architect.js";
 import { MAX_SKILL_TIER } from "./coins.js";
 import { isLegendarySkill } from "./skills.js";
 
@@ -106,8 +107,11 @@ export const TASKS = [
      keinen Kampfwert, nur eine gespielte Karte hat einen. Gemessen wird deshalb der beste Durchlauf:
      die Summe (pValue − oValue) über seine vierzig Stiche. Damit zählt jede Quelle mit. */
   { id: "aufmarsch",    kind: "spitze",  rungs: [60, 120, 250] },
-  { id: "quartier",     kind: "zustand", rungs: [1, 3, 5], variantKey: "category",
-    variants: [{ id: "score" }, { id: "value" }, { id: "formation" }] },
+  /* Quartier würfelt die Kategorie NICHT mehr (Owner, 2026-09-16). Verlangt ist nur, dass die Reihen
+     dieselbe Kategorie tragen — welche, entscheidet der Spieler mit dem, was er baut. Gemessen wird
+     deshalb die beste der drei. Vorher gab der Wurf sie vor, und zwei der drei Kategorien erreichten
+     gemessen nie mehr als eine volle Reihe. */
+  { id: "quartier",     kind: "zustand", rungs: [1, 3, 5] },
   { id: "saeckel",      kind: "zustand", rungs: [60, 80, 120] },
 ];
 
@@ -378,6 +382,10 @@ function fullSegments(state, category) {
   return n;
 }
 
+/* Die beste der drei Kategorien. Quartier verlangt nur, dass die Reihen DIESELBE Kategorie tragen —
+   welche, sucht sich der Spieler mit seinem Bau aus (Owner, 2026-09-16). */
+const bestCategory = (state) => Math.max(...ARCH_CATEGORIES.map((c) => fullSegments(state, c)));
+
 /* ZWEI Zahlen, nicht eine. Ein Spitzen-Zähler erfüllt sich über den BESTEN Wert des Fensters, aber
    steuern kann der Spieler nur den LAUFENDEN — und bei Sperrfeuer, Durchmarsch und Buntspiel fällt
    der laufende an jeder Durchlaufgrenze auf null zurück. Zeigt die Leiste nur das Maximum, steht dort
@@ -402,7 +410,7 @@ export function readLive(state, contract) {
     case "brecher":      return tally.overThreshold || 0;
     case "fussvolk":     return tally.lowWins || 0;
     case "aufmarsch":    return tally.cycleMargin || 0;
-    case "quartier":     return fullSegments(state, contract.variantId);
+    case "quartier":     return bestCategory(state);
     case "saeckel":      return state.coins || 0;
     default:             return 0;
   }

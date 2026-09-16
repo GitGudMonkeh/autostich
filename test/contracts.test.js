@@ -630,14 +630,15 @@ describe("Aufträge · der Aufgabentext nennt den gewürfelten Parameter", () =>
 });
 
 describe("Aufträge · gegen Wiederholung (§3.6)", () => {
-  it("Regel 1: gewürfelte Parameter machen aus 14 Definitionen 19 Angebote und 56 Karten", () => {
+  it("Regel 1: gewürfelte Parameter machen aus 14 Definitionen 17 Angebote und 50 Karten", () => {
     const distinct = CT.TASKS.reduce((n, t) => n + (t.variants ? t.variants.length : 1), 0);
     expect(CT.TASKS.length).toBe(14);
-    expect(distinct, "Reinheit würfelt vier Typen, Quartier drei Kategorien").toBe(19);
-    /* Nicht distinct × Stufen: Langbau bietet nur zwei der drei an, also 18 × 3 + 2. */
+    // Seit 2026-09-16 würfelt nur noch Reinheit einen Parameter — Quartier lässt den Spieler wählen.
+    expect(distinct, "Reinheit würfelt vier Typen, sonst niemand").toBe(17);
+    /* Nicht distinct × Stufen: Langbau bietet nur zwei der drei an, also 16 × 3 + 2. */
     const karten = CT.TASKS.reduce((n, t) =>
       n + (t.variants ? t.variants.length : 1) * CT.stepsOf(t.id).length, 0);
-    expect(karten).toBe(56);
+    expect(karten).toBe(50);
   });
 
   it("Regel 1: Farbtreue würfelt KEINE Farbe — die Serie zählt, egal in welcher", () => {
@@ -785,12 +786,26 @@ describe("Aufträge · die vier neuen Maße (2026-09-16)", () => {
 
     // Eine volle SPALTE zählt jetzt — vorher zählten nur Zeilen.
     const spalte = CT.BUILD_LINES.find((l) => l.length === 8);
-    const bau = (footprint) => ({ architectEnabled: true, formations: [],
-      architect: { buildings: [{ familyId: "A_STUETZE", footprint }] } });
-    const c = { taskId: "quartier", step: "leicht", variantId: "value", rung: 1, target: 1 };
+    const bau = (footprint, familyId = "A_STUETZE") => ({ architectEnabled: true, formations: [],
+      architect: { buildings: [{ familyId, footprint }] } });
+    const c = { taskId: "quartier", step: "leicht", rung: 1, target: 1 };
     expect(CT.readLive(bau(spalte), c), "volle Spalte").toBe(1);
     expect(CT.readLive(bau(spalte.slice(0, 7)), c), "eine Zelle fehlt").toBe(0);
-    expect(CT.readLive({ ...bau(spalte), }, { ...c, variantId: "score" }), "falsche Kategorie").toBe(0);
+  });
+
+  it("Quartier gibt keine Kategorie mehr vor — gezählt wird die beste (Owner, 2026-09-16)", () => {
+    /* Vorher würfelte der Aufsteller die Kategorie, und zwei der drei erreichten gemessen nie mehr
+       als eine volle Reihe. Jetzt zählt, welche Kategorie der Spieler selbst voll bekommt. */
+    expect(CT.TASK_BY_ID.quartier.variants, "kein Wurf mehr").toBeUndefined();
+    expect(CT.TASK_BY_ID.quartier.variantKey).toBeUndefined();
+    const c = { taskId: "quartier", step: "leicht", rung: 1, target: 1 };
+    const zeile = CT.BUILD_LINES[0];
+    // A_STUETZE ist Kategorie „value" — dieselbe Reihe zählt, ohne dass der Auftrag sie nennt.
+    const gebaut = { architectEnabled: true, formations: [],
+      architect: { buildings: [{ familyId: "A_STUETZE", footprint: zeile }] } };
+    expect(CT.readLive(gebaut, c)).toBe(1);
+    // Und der Aufgabentext nennt keinen Parameter mehr.
+    expect(de["contract.task.quartier.text"]).not.toContain("{variant}");
   });
 });
 

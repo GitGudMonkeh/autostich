@@ -323,9 +323,10 @@ er es aufmacht.
 **Regel 1 und 2 sind gebaut** (2026-09-15), Regel 3 ist gestrichen.
 
 1. **Gewürfelte Parameter statt einer langen Liste** — gebaut. Dasselbe Muster wie `WEEK_MODS`:
-   Reinheit würfelt den Formationstyp (vier Varianten), Quartier die Gebäudekategorie (drei). Am Code
-   nachgezählt ergeben 14 Definitionen **19 unterscheidbare Angebote** und mit den drei Stufen **56**
-   mögliche Karten — nicht 57, weil Langbau nur zwei Stufen anbietet. Bei zwei Aufgaben je Lauf sieht
+   Nur noch Reinheit würfelt einen Parameter: den Formationstyp (vier Varianten). Quartier würfelte
+   bis 2026-09-16 die Gebäudekategorie und lässt sie jetzt den Spieler wählen (§4.0b). Am Code
+   nachgezählt ergeben 14 Definitionen **17 unterscheidbare Angebote** und mit den drei Stufen **50**
+   mögliche Karten — nicht 51, weil Langbau nur zwei Stufen anbietet. Bei zwei Aufgaben je Lauf sieht
    ein Spieler zwei davon. **Farbtreue würfelt keine Farbe** (Owner, 2026-09-14): die Serie zählt,
    egal in welcher sie läuft. Alle Zahlen stehen als Test, nicht als Behauptung.
 2. **Kein Angebot zweimal in einem Lauf** — gebaut, und dabei eine Lücke geschlossen: gesperrt waren
@@ -393,7 +394,7 @@ getrennt). Die Messungen darunter sagen, wo sie gegenüber dem Sim-Verhalten ste
 | **Brecher** zehn Siege über einem Kampfwert | Summe | über 10 · 15 · 20 |
 | **Fußvolk** Siege mit Grundwert 4 oder weniger | Summe | 50 · 100 · 200 |
 | **Aufmarsch** Kampfwert-Vorsprung in einem Durchlauf | Spitze | 60 · 120 · 250 |
-| **Quartier** volle Baufeld-Reihen einer Kategorie | Zustand | 1 · 3 · 5 |
+| **Quartier** volle Baufeld-Reihen derselben Kategorie | Zustand | 1 · 3 · 5 |
 | **Säckel** Münzen gehalten | Zustand | 60 · 80 · 120 |
 
 ### 4.0a Die Zusatzbedingung
@@ -417,6 +418,19 @@ den Bestwert ein, sonst wäre er über die Fensterlaufzeit umsonst.
 
 Die Anzeige führt den Zusatz eigens: „Zusatz erfüllt" oder „Zusatz offen" neben dem Zähler. Ohne das
 stünde der Hauptzähler am Ziel und der Auftrag bliebe offen — ein Rätsel ohne Lösung.
+
+### 4.0b Quartier gibt die Kategorie nicht vor
+
+**Gesetzt (Owner, 2026-09-16).** Verlangt ist, dass die vollen Reihen **dieselbe** Kategorie tragen —
+welche, entscheidet der Spieler mit dem, was er ohnehin baut. Gemessen wird die beste der drei.
+
+Vorher würfelte der Aufsteller die Kategorie mit. Das war die einzige Stelle im Katalog, an der ein
+Wurf die Aufgabe **unlösbar** machen konnte: gemessen (2026-09-16, 240 Fenster) erreichten *Wert* und
+*Formation* nie mehr als **eine** volle Reihe, *Punkte* in Fenster 2 immerhin 51 % auf eine und 10 %
+auf zwei. Bei einer Leiter von 1 · 3 · 5 hieß ein Wurf auf Wert oder Formation also: verfallen lassen.
+
+Damit würfelt nur noch **Reinheit** einen Parameter. Der Katalog fällt von 19 auf 17 unterscheidbare
+Angebote und von 56 auf 50 Karten.
 
 **Brecher ist anders gebaut als die übrigen:** die Zahl der Stiche steht fest bei zehn, die Leiter
 läuft über die **Schwelle**. Zehn Siege mit einem Kampfwert über 10 sind die unterste Stufe, zehn über
@@ -483,7 +497,7 @@ Gedankenstrich, kein Selbstbezug.
 | Brecher | Gewinne zehn Stiche mit einem Kampfwert über X. |
 | Fußvolk | Gewinne X Stiche mit Karten vom Grundwert 4 oder weniger. |
 | Aufmarsch | Gewinne einen Durchlauf mit X Kampfwert Vorsprung insgesamt. |
-| Quartier | Bedecke X volle Reihen des Baufelds mit Gebäuden einer Kategorie. |
+| Quartier | Bedecke X volle Reihen des Baufelds mit Gebäuden derselben Kategorie. |
 | Säckel | Halte X Münzen, bis der Auftrag endet. |
 
 **Sperrfeuer braucht eine genaue Erklärung** (Owner): ein Segment sind die festen Fünferblöcke der
@@ -619,7 +633,7 @@ Die Anzeigeform folgt der Art des Zählers:
 | Brecher | laufende Summe der Siege über der Schwelle, gegen 10 |
 | Fußvolk | laufende Summe |
 | Aufmarsch | Kampfwert-Vorsprung des laufenden Durchlaufs, daneben der beste bisher |
-| Quartier | volle Reihen je Kategorie |
+| Quartier | volle Reihen der besten Kategorie |
 | Säckel | Kontostand gegen das Ziel |
 
 Dazu bei jeder Form die **Restlaufzeit** („noch 6 Durchläufe"): sechs Durchläufe sind sechs Versuche,
@@ -1294,7 +1308,7 @@ Die Zähler der vierzehn Aufgaben, alle aus vorhandenem State:
 | Brecher | `lastTrick.pValue` je Sieg gegen die Schwelle |
 | Fußvolk | `lastTrick.pCard.baseRank` je Sieg, der unveränderte Grundwert |
 | Aufmarsch | Summe (`lastTrick.pValue` − `lastTrick.oValue`) über die Stiche des Durchlaufs |
-| Quartier | `BUILD_LINES` (21 Reihen) gegen die bedeckten Zellen plus `familyDef(b.familyId).category` |
+| Quartier | `BUILD_LINES` (21 Reihen) gegen die bedeckten Zellen, Maximum über die drei `CATEGORIES` |
 | Säckel | `state.coins` am Fensterende |
 
 **Drei Zähler brauchen den Stich-Strom**, nicht nur den Rundenendstand: Buntspiel, Brecher und Fußvolk
