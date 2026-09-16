@@ -213,17 +213,28 @@ weiß der Spieler genug über seinen Bau, um zu beurteilen, was zu ihm passt.
 
 ### 3.2 Drei Stufen, jede mit einem Beute-Band
 
-Die Aufgabenstufen tragen **eigene Namen**, die Farben bleiben die der Raritäten (Owner,
-2026-09-14). Die Namen sind literal, nicht bildhaft: die Stufe soll sagen, wie schwer die Arbeit ist,
-und die Farbe sagt, was sie zahlt.
+Die Aufgabenstufen tragen **eigene Namen** und seit 2026-09-16 auch **eigene Farben**: Bronze,
+Silber, Gold (Owner). Die Namen sind literal, nicht bildhaft — die Stufe sagt, wie schwer die
+Arbeit ist.
+
+> **Die Farben waren bis dahin die der Raritäten.** Damit lasen sich zwei verschiedene Leitern
+> gleich: die Stufe meint die ARBEIT, die Rarität die BEZAHLUNG. Die Beute behält die
+> Raritätsfarben, die Stufe bekommt Bronze/Silber/Gold. **Gold ist dabei dasselbe `#d4a63a` wie
+> das Legendär-Gold** — die Regel „ein Gold im Spiel“ gilt auch hier, und die schwere Stufe ist
+> ohnehin die einzige, die Legendäres zahlt. (Nicht zu verwechseln mit der am 2026-09-14
+> gestrichenen Marken-Leiter: die hätte die Stufen UMBENANNT, hier geht es nur um Farbe.)
+
+> **Die drei Angebote stehen immer in derselben Reihenfolge**, Leicht über Mittel über Schwer
+> (Owner, 2026-09-16). Ausgelost wird zufällig; unsortiert stünde die schwere Karte mal links, mal
+> rechts, und man müsste die drei jedes Mal neu lesen statt an ihrer Stelle zu wissen, was dort steht.
 
 **Jede Stufe zahlt aus einem Band von zwei benachbarten Raritäten** (Owner, 2026-09-14):
 
 | Stufe | Farbe | Beute-Band | Was die Stufe verlangt |
 | --- | --- | --- | --- |
-| **Leicht** | Normal | Normal oder Selten | läuft nebenbei mit, wenn man nichts dagegen tut |
-| **Mittel** | Selten | Selten oder Sehr selten | die Aufstellung muss ernst genommen werden |
-| **Schwer** | Sehr selten | Sehr selten oder Episch, selten Legendär | der Bau muss danach ausgerichtet sein |
+| **Leicht** | Bronze | Normal oder Selten | läuft nebenbei mit, wenn man nichts dagegen tut |
+| **Mittel** | Silber | Selten oder Sehr selten | die Aufstellung muss ernst genommen werden |
+| **Schwer** | Gold | Sehr selten oder Episch, selten Legendär | der Bau muss danach ausgerichtet sein |
 
 > **Von vier Stufen auf drei** (Owner, 2026-09-16). „Sehr schwer" ist entfallen und sein Anspruch in
 > „Schwer" aufgegangen. Zwei Nebenwirkungen, beide erwünscht: das Chip-Paar „Schwer" neben „Sehr

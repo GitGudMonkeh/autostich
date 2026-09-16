@@ -11,6 +11,14 @@ import { PLANT_GREEN_THRESHOLD, PLANT_BLOOM_THRESHOLD } from "../../game/constan
    und `RARITY_META.legendary.color` (game/perks.js) schon tragen; ein Wächter hält die drei zusammen. */
 export const LEGENDARY_GOLD = "#d4a63a";
 
+/* ---- Auftragsstufen: Bronze · Silber · Gold (Owner, 2026-09-16) ----
+   Die drei Schwierigkeiten tragen eine EIGENE Leiter, nicht mehr die Raritätsfarben. Gold ist
+   bewusst dasselbe #d4a63a wie oben statt eines zweiten Tons — die Regel „ein Gold im Spiel" gilt
+   auch hier, und die schwerste Stufe ist die einzige, die überhaupt Legendäres zahlt. */
+export const STEP_BRONZE = "#b0743c";
+export const STEP_SILVER = "#b8bcc4";
+export const STEP_GOLD = LEGENDARY_GOLD;
+
 // ---- Fraktions-Grundfarben (aus dem bestehenden Code-Vokabular) ----
 export const FIRE = "#e0714a"; // Feuer
 export const FIRE_HOT = "#f0a83a"; // heißes Ende des Hitze-Verlaufs

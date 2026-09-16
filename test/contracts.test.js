@@ -7,6 +7,8 @@ import { SKILL_LIST, isLegendarySkill } from "../src/game/skills.js";
 import { computeFormations, openBorderInfo, FORMATION_TYPES } from "../src/game/formations.js";
 import { makeRng } from "../src/game/deck.js";
 import { randomPolicy } from "../sim/policies/random.js";
+import { stepColor, tierColor } from "../src/ui/ContractPhase.jsx";
+import { LEGENDARY_GOLD, STEP_BRONZE, STEP_SILVER, STEP_GOLD } from "../src/ui/indicators/vocab.js";
 import de from "../src/i18n/de.js";
 
 /* ============================================================
@@ -789,6 +791,27 @@ describe("Aufträge · die vier neuen Maße (2026-09-16)", () => {
     expect(CT.readLive(bau(spalte), c), "volle Spalte").toBe(1);
     expect(CT.readLive(bau(spalte.slice(0, 7)), c), "eine Zelle fehlt").toBe(0);
     expect(CT.readLive({ ...bau(spalte), }, { ...c, variantId: "score" }), "falsche Kategorie").toBe(0);
+  });
+});
+
+describe("Aufträge · die Stufenfarben sind Bronze, Silber, Gold (2026-09-16)", () => {
+  /* Die Stufe meint die ARBEIT, die Rarität die BEZAHLUNG. Bis 2026-09-16 trugen beide dieselben
+     Farben; jetzt hat die Stufe eine eigene Leiter. Der Wächter hält zwei Dinge fest: die drei sind
+     unterscheidbar, und Gold ist DAS Gold des Spiels und kein zweiter Ton daneben. */
+  it("drei Stufen, drei verschiedene Farben, alle aus dem gemeinsamen Vokabular", () => {
+    const farben = CT.STEPS.map(stepColor);
+    expect(new Set(farben).size, "keine Stufe teilt ihre Farbe").toBe(3);
+    expect(farben).toEqual([STEP_BRONZE, STEP_SILVER, STEP_GOLD]);
+  });
+
+  it("das Gold der schweren Stufe ist das EINE Gold, kein zweiter Ton", () => {
+    expect(STEP_GOLD).toBe(LEGENDARY_GOLD);
+  });
+
+  it("die Stufenfarbe ist von der Beutefarbe getrennt", () => {
+    // Sonst wäre die Trennung nur behauptet: Mittel zahlt Selten, darf aber nicht so aussehen.
+    expect(stepColor("mittel")).not.toBe(tierColor(CT.STEP_TIER.mittel));
+    expect(stepColor("leicht")).not.toBe(tierColor(CT.STEP_TIER.leicht));
   });
 });
 

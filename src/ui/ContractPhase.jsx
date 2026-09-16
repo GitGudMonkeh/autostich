@@ -13,16 +13,19 @@ import { overlayPortal } from "./overlayPortal.jsx"; // Pflicht für jedes Vollb
 import { t } from "../i18n/index.js";
 import { TIER_META } from "../game/rarity.js";
 import { skillDef } from "../i18n/labels.js"; // übersetzter Skill-Name, EINE Quelle
-import { LEGENDARY_GOLD } from "./indicators/vocab.js"; // EINE Quelle für das Legendär-Gold (test/legendary-gold.test.js)
+import { LEGENDARY_GOLD, STEP_BRONZE, STEP_SILVER, STEP_GOLD } from "./indicators/vocab.js"; // EINE Quelle für das Legendär-Gold (test/legendary-gold.test.js) und die Stufenfarben
 import * as CT from "../game/contracts.js";
 import * as C from "../game/constants.js"; // BOARD_POSITIONS: „jede Position" statt „40 Positionen"
 
-/* One colour ramp for both overlays: the rarity colours of the game, plus the ONE legendary gold.
-   The step of a task and the tier of a piece are the SAME ladder, so they must read the same. */
+/* Die BEUTE liest die Raritätsfarben des Spiels, plus das eine Legendär-Gold. */
 export const tierColor = (tier) =>
   (tier >= CT.TIER_LEGENDARY ? LEGENDARY_GOLD : (TIER_META[tier] || {}).color || "#8a8a95");
 
-const STEP_TIER = CT.STEP_TIER;
+/* Die AUFGABENSTUFE liest seit 2026-09-16 (Owner) eine eigene Leiter: Bronze, Silber, Gold. Vorher
+   trug sie dieselben Raritätsfarben wie die Beute — was die zwei Leitern verwechselbar machte,
+   obwohl die Stufe die Arbeit meint und die Rarität die Bezahlung. */
+export const stepColor = (step) =>
+  ({ leicht: STEP_BRONZE, mittel: STEP_SILVER, schwer: STEP_GOLD })[step] || STEP_BRONZE;
 
 /* The sentence the player reads, with the rung filled in and the rolled variant named. */
 export function contractText(contract) {
@@ -98,13 +101,17 @@ function PickCard({ tone, chip, title, body, cta, onPick }) {
 
 export function ContractOffer({ offers = [], windowId = 1, onPick }) {
   const win = CT.WINDOWS.find((w) => w.id === windowId) || CT.WINDOWS[0];
+  /* Immer Leicht, Mittel, Schwer in dieser Reihenfolge (Owner, 2026-09-16). Ausgelost wird in
+     zufälliger Folge; unsortiert stünde die Schwere mal links, mal rechts, und man müsste die drei
+     Karten jedes Mal neu lesen, statt an ihrer Stelle zu wissen, was dort steht. */
+  const sortiert = [...offers].sort((a, b) => CT.STEPS.indexOf(a.step) - CT.STEPS.indexOf(b.step));
   return (
     <Overlay>
       <Head title={t("contract.offer.title")} sub={t("contract.offer.sub")}
         note={t("contract.offer.window", { from: win.from, to: win.to })} />
       <div className="grid gap-3 sm:grid-cols-3">
-        {offers.map((o) => {
-          const tone = tierColor(STEP_TIER[o.step]);
+        {sortiert.map((o) => {
+          const tone = stepColor(o.step);
           const band = CT.STEP_BAND[o.step] || [];
           return (
             <PickCard key={`${o.taskId}-${o.step}`} tone={tone}
@@ -242,7 +249,7 @@ export function contractReadout(state) {
      Durchlaufgrenze zurück, der beste nicht. Nur eine Zahl zu zeigen hieße, entweder den Rückfall zu
      verstecken oder den Fortschritt. */
   return { active, live, best, target, left, done: best >= target,
-           peak: CT.hasPeak(active) && best > live, tone: tierColor(STEP_TIER[active.step]),
+           peak: CT.hasPeak(active) && best > live, tone: stepColor(active.step),
            /* Die Zusatzbedingung hat einen eigenen Zustand: sie hält gerade oder nicht. Ohne diese
               Anzeige sähe der Spieler seinen Zähler am Ziel stehen und bekäme trotzdem nichts. */
            extra: active.extra ? contractExtraText(active) : "",
