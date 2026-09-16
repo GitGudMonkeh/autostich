@@ -79,6 +79,39 @@ describe("#179 E_COLOR_ALLIANCE (Farballianz) — Farben zählen als eine", () =
     expect(hasType(t4, 2, "farbblock")).toBe(true);
     expect(facOf(t4, 2, "farbblock")).toBeCloseTo(1.55);
   });
+
+  /* Playtest-Befund (Owner, 2026-09-16): eine Karte, die durch Pflanze grün wird, fiel aus der
+     Allianz heraus. Ursache war die REIHENFOLGE in computeFormations — erst wurde die Gruppe auf
+     ihre Referenzfarbe gemappt, dann überschrieb Grün das Ergebnis mit dem rohen „G". Da „G" eine
+     echte Farbe ist (SUIT_ORDER) und bei Stufe III/IV immer in der Gruppe steht, isolierte das die
+     Karte genau dort, wo families.js „kickt auch Pflanze" verspricht. */
+  const gruen = (c) => ({ ...c, green: true });
+
+  it("eine grün gewordene Karte bleibt in der Allianz (Stufe IV: Grün ist in der Gruppe)", () => {
+    const roles4 = { E_COLOR_ALLIANCE: ["R", "B", "G", "Y"] };
+    // Mitte wird durch Pflanze grün; ohne den Fix bricht sie den Block der drei.
+    const deck = [card("a", 5, "R"), gruen(card("b", 3, "B")), card("c", 9, "Y")];
+    const t4 = withFam(ord(3), deck, { E_COLOR_ALLIANCE: 4 }, roles4);
+    expect(hasType(t4, 2, "farbblock"), "der Block läuft über alle drei").toBe(true);
+    expect(t4[2].formations.find((f) => f.type === "farbblock").len).toBe(3);
+  });
+
+  it("ohne Grün in der Allianz bleibt die grüne Karte draußen — sie IST jetzt eine andere Farbe", () => {
+    // Gegenprobe zur Naht: der Fix soll die Reihenfolge reparieren, nicht Grün überall hineinreichen.
+    const roles2 = { E_COLOR_ALLIANCE: ["R", "B"] };
+    const deck = [card("a", 5, "R"), gruen(card("b", 3, "Y")), card("c", 9, "B")];
+    const t = withFam(ord(3), deck, { E_COLOR_ALLIANCE: 1 }, roles2);
+    const f = t[2].formations.find((x) => x.type === "farbblock");
+    expect(f == null || f.len < 3, "die grüne Karte trennt R und B").toBe(true);
+  });
+
+  it("die Allianz ohne Pflanze verhält sich unverändert", () => {
+    // Dieselbe Naht, ohne ein einziges grünes Feld: der Fix darf am Normalfall nichts ändern.
+    const roles2 = { E_COLOR_ALLIANCE: ["R", "B"] };
+    const deck = [card("a", 5, "R"), card("b", 3, "B"), card("c", 9, "R")];
+    const t = withFam(ord(3), deck, { E_COLOR_ALLIANCE: 1 }, roles2);
+    expect(t[2].formations.find((x) => x.type === "farbblock").len).toBe(3);
+  });
 });
 
 describe("#179 E_CORE (Formationskern) — Zusatzfaktor auf gewählten Typ", () => {
