@@ -1,9 +1,10 @@
 # Minibosse — Mechanik-Katalog (Brainstorm-Stand)
 
 **Status: Zwischenstand einer Design-Session, keine Spezifikation.** Aus zwei Sammelrunden
-(2026-09-16) hat der Owner **neunzehn Minibosse** ausgewählt — §3 führt sie mit stabilen Nummern,
-§2 die Messungen, die die Auswahl begründen. Gesetzt sind die Auswahl und der Rahmen in §1.
-**Tariert ist nichts**; der Durchgang Boss für Boss steht als Nächstes an.
+(2026-09-16) kamen neunzehn Vorschläge; ein Durchgang Boss für Boss hat daraus **vierzehn Minibosse
+mit gesetzten Werten**, vier Endboss-Kandidaten und einen optionalen gemacht — §3. §2 hält die
+Messungen, gegen die tariert wurde. Die Werte sind **Owner-Entscheid am Papier, nicht simuliert**;
+drei kleine Mechanikfragen stehen noch offen (§4, Punkt 5).
 
 Sprache Deutsch, weil die Bossnamen Produktsprache sind und der Owner hier mitschreibt. Bewusste
 Abweichung von der Engineering-Sprache in `AGENTS.md`, wie bei `docs/zwischenaufgaben.md`,
@@ -104,73 +105,59 @@ alle Restdurchläufe.
 
 ---
 
-## 3. Die neunzehn Minibosse
+## 3. Der Katalog
 
-Stand nach zwei Sammelrunden (Owner, 2026-09-16). Die Nummern sind stabil und dienen dem
-Tarierungs-Durchgang, der als Nächstes ansteht — **kein Wert unten ist tariert.** Die Spalte
-*Stellschraube* nennt, woran beim Tarieren gedreht wird.
+Zwei Sammelrunden ergaben neunzehn Vorschläge; der Durchgang Boss für Boss (Owner, 2026-09-16) hat
+sie auf drei Listen verteilt und die Werte gesetzt. Die Nummern sind stabil.
 
-### 3.1 Gegner
+### 3.1 Minibosse — vierzehn, mit gesetzten Werten
 
-| Nr. | Name | Regel | Stellschraube | Naht |
-| --- | --- | --- | --- | --- |
-| M01 | **Der Späher** | Die höchsten Gegnerkarten landen auf den Positionen mit dem höchsten Formations-Mult | Wie streng sortiert wird — ganz, oder nur die N höchsten gesetzt | `oppOrder` ist eine Permutation; `state.formations` liegt vor dem ersten Stich |
-| M02 | **Der Konter** | Jeder Sieg gibt der nächsten Gegnerkarte +1, stapelnd; eine Niederlage setzt zurück | Schritt je Sieg; ob die Rücksetzung hart ist oder abklingt | `oppValueMod` im Stich-Pfad |
-| M03 | **Die Zehrung** | Gegner +1 alle N Durchläufe | Intervall und Schrittgröße | `difficulty.oppRampEvery` (`engine.js`) |
+| Nr. | Name | Regel und Wert |
+| --- | --- | --- |
+| M01 | **Der Späher** | Die Gegnerreihenfolge ist nicht gemischt, sondern nach deiner Formationsstärke verteilt: die höchsten Gegnerkarten auf die Positionen mit dem höchsten Formations-Mult. Positionen ohne Formation stehen alle auf Mult 1 und werden untereinander gemischt. Der Anker zählt als Formation und fällt damit nicht in die Zufallsgruppe |
+| M03 | **Die Zehrung** | Alle Gegnerkarten **+1 alle 10 Durchläufe**, dauerhaft und kumulativ — bei D10, D20, D30, D40, D50 |
+| M04 | **Der Erbe** | **Alle 5 Durchläufe −1** auf die Karte, die in diesem Fenster die meisten Stiche gewonnen hat. Der Abzug bleibt bis zum Laufende |
+| M08 | **Die Drift** | Nach jedem Durchlauf rückt die Aufstellung **um eine Position** weiter; **Position 40 wandert auf 1**. Nach 40 Durchläufen steht das Brett wieder wie am Anfang |
+| M10 | **Die Quarantäne** | Vor jeder Aufstellphase rückt die Quarantäne **ein Segment** weiter. Die fünf Karten darin spielen ihre Stiche normal und zahlen auch, **können in dieser Phase aber nicht getauscht werden**. Bei acht Segmenten und einer Aufstellphase je vier Durchläufe braucht sie rund 32 Durchläufe einmal herum |
+| M11 | **Der Starrsinn** | Formations-Energie **4 → 2** je Aufstellphase |
+| M12 | **Der Kitt** | Eine getauschte Karte ist die **nächsten zwei Aufstellphasen** gesperrt. Zurücknehmen innerhalb der laufenden Phase bleibt möglich |
+| M13 | **Der Wucherer** | Die Preistreppe **verdreifacht** statt zu verdoppeln — Neuwurf 3 · 9 · 27 statt 3 · 6 · 12 |
+| M14 | **Der Schwund** | An jeder Durchlaufgrenze verfällt **ein Viertel des Kontostands, aufgerundet**. Bei 10 Münzen verfallen 3, bei 5 verfallen 2, bei 1 verfällt sie |
+| M15 | **Der Tribut** | **3 Münzen je Durchlauf**; bei Nichtzahlung **Gegner +1** in diesem Durchlauf |
+| M16 | **Die Zersiedelung** | Der Distrikt-Bonus kehrt sein Vorzeichen um, der Betrag bleibt: **−8 %** je verschiedenem gleich-kategorigem Nachbargebäude, höchstens drei gezählt — bis −24 % statt bis +24 % |
+| M17 | **Der Enge Grund** | Baufeld-Deckel **24 → 16** Zellen. Eine volle Spalte (8) bleibt erreichbar, kostet aber das halbe Budget |
+| M18 | **Die Zehrende Gier** | **1 Münze je 2 gehaltene Perks je Durchlauf.** Break-even bei rund 6 Perks gegen ein Einkommen von etwa 3 je Durchlauf |
+| M19 | **Der Wärter** | Bei **D20 und D40** gibst du je einen gehaltenen Skill ab. Welchen, entscheidest du |
 
-### 3.2 Karten
+### 3.2 Endboss-Kandidaten — vier, geparkt
 
-| Nr. | Name | Regel | Stellschraube | Naht |
-| --- | --- | --- | --- | --- |
-| M04 | **Der Erbe** | Die Karte mit den meisten Stichen in Durchlauf n verliert in n+1 zwei Wert | Wertverlust; wie „beste Karte" definiert wird; ob sich der Verlust erholt | Per-Karte-Zähler aus dem `lastTrick`-Strom |
-| M05 | **Der Gleichmacher** | Alle Spielerkarten zählen mit `baseRank`; dauerhafte Wertgewinne sind ignoriert | Anteil des Gewinns, der erhalten bleibt (voll ignoriert ist die härteste Sprosse) | `deck[i].value` gegen `baseRank` |
-| M06 | **Die Umkehr** | Spielerwerte gespiegelt (11 − Wert) | **Keine Größe** — siehe §4, Punkt 4 | `deck[i].value` |
+Nicht verworfen, sondern für den Endboss zurückgelegt (Owner, 2026-09-16). Ohne gesetzte Werte.
 
-### 3.3 Brett und Aufstellung
+| Nr. | Name | Regel |
+| --- | --- | --- |
+| M02 | **Der Konter** | Jeder Sieg gibt der nächsten Gegnerkarte +1, stapelnd; eine Niederlage setzt zurück |
+| M05 | **Der Gleichmacher** | Alle dauerhaften Wertgewinne sind wirkungslos; jede Karte kämpft mit ihrem Grundwert 1 bis 10 |
+| M06 | **Die Umkehr** | Der Kampfwert ist **11 − Wert**. Bewusst als Formel und nicht als Spiegelung notiert (Owner): so steht in der Regel, dass jede gekaufte Wertsteigerung gegen dich arbeitet — was über 10 gehoben wurde, fällt unter null |
+| M09 | **Die gezielte Sperre** | N Positionen gesperrt, und der Boss wählt sie mitten in deine längste Formation |
 
-| Nr. | Name | Regel | Stellschraube | Naht |
-| --- | --- | --- | --- | --- |
-| M07 | **Der Zensus** *(anzupassen)* | Alle 10 Durchläufe liest der Boss das Brett und schaltet den häufigsten Formationstyp für die nächsten 10 ab | Intervall; ob ein oder mehrere Typen fallen | `FORMATION_TYPES`-Filter in `computeFormations` |
-| M08 | **Die Drift** *(anzupassen)* | Die Aufstellung rotiert je Durchlauf um eine Position | Schrittweite und Takt | `playerOrder`; Gegenmittel liegt fertig (E_SEGMENT, Durchlass, Spalier, Pfeiler) |
-| M09 | **Die gezielte Sperre** *(anzupassen)* | N Positionen gesperrt, und der Boss wählt die Mitte der längsten Formation | Zahl der Positionen; wie oft neu gewählt wird | Wochen-Mod `blockForm` |
-| M10 | **Die Quarantäne** | Je Durchlauf ist ein Segment versiegelt, rotierend 1 → 8 | Zahl der gleichzeitig versiegelten Segmente; Rotationstempo | `SEGMENT_SIZE`-Blöcke im Stich-Pfad |
-| M11 | **Der Starrsinn** | Energie 4 → 1 je Aufstellphase | Energie je Phase; ob Zukauf erlaubt bleibt | `FORMATION_ENERGY`, `formationEnergyFor` |
-| M12 | **Der Kitt** | Eine getauschte Karte ist N Durchläufe gesperrt; kein `UNDO_SWAP` | Sperrdauer; ob das Undo mitfällt | `SWAP_CARDS` / `UNDO_SWAP`, Pinning wie Gletscher-STARR |
+### 3.3 Optional — einer
 
-### 3.4 Wirtschaft
+| Nr. | Name | Warum geparkt |
+| --- | --- | --- |
+| M07 | **Der Zensus** | Schwer zu umgehen, und er greift den Score direkt an statt über eine Bedingung (Owner) |
 
-| Nr. | Name | Regel | Stellschraube | Naht |
-| --- | --- | --- | --- | --- |
-| M13 | **Der Wucherer** | Die Preistreppe verdreifacht statt zu verdoppeln | `PRICE_LADDER` | `coins.js`, eine Konstante für alle drei Treppen |
-| M14 | **Der Schwund** | An jeder Durchlaufgrenze verfällt ein Anteil des Kontostands | Verfallsanteil | `coinGrant` / Kontostand am Durchlaufwechsel |
-| M15 | **Der Tribut** | Je Durchlauf N Münzen an den Boss; nicht gezahlt heißt Gegner +1 in diesem Durchlauf | Tributhöhe und Strafgröße | Durchlaufwechsel, plus `oppValueMod` |
+### 3.4 Was beim weiteren Tarieren zusammenstößt
 
-### 3.5 Bau
+Minibosse treten einzeln auf; die Paare zählen erst für den Endboss und für die Frage, ob eine Ebene
+denselben Boss zweimal ziehen darf.
 
-| Nr. | Name | Regel | Stellschraube | Naht |
-| --- | --- | --- | --- | --- |
-| M16 | **Die Zersiedelung** | Der Distrikt-Bonus kehrt sich um: gleich-kategorige Nachbarn kosten, statt zu zahlen | `DISTRICT_BONUS` (Vorzeichen und Betrag), `DISTRICT_CAP` | `architect.js` |
-| M17 | **Der Enge Grund** | Baufeld-Deckel 24 → 12 Zellen | `MAX_COVER` | `architect.maxCover`, Wochen-Mod `tightBuild` |
-
-### 3.6 Perks und Skills
-
-| Nr. | Name | Regel | Stellschraube | Naht |
-| --- | --- | --- | --- | --- |
-| M18 | **Die Zehrende Gier** | Jedes gehaltene Perk kostet eine Münze Unterhalt je Durchlauf | Unterhalt je Perk; was bei Zahlungsunfähigkeit passiert | `state.perks` gegen den Kontostand am Durchlaufwechsel |
-| M19 | **Der Wärter** | Bei D10, D20, D30 nimmt der Boss einen gehaltenen Skill — der Spieler wählt welchen | Zahl und Zeitpunkte; ob der Skill zurückkommt | `state.skills`, `skillTiers` |
-
-### 3.7 Was beim Tarieren zusammenstößt
-
-Minibosse treten einzeln auf, die Paare sind also erst für den Endboss und für die Frage relevant,
-ob eine Ebene denselben Boss zweimal ziehen darf. Notiert, solange es frisch ist:
-
-- **M11 Starrsinn × M08 Drift** und **M12 Kitt × M08 Drift** — Rotation je Durchlauf gegen einen
-  Tausch zur Antwort. Unspielbar.
-- **M16 Zersiedelung × M17 Enge Grund** — Zersiedelung verlangt Platz zum Streuen, Enge Grund nimmt
-  ihn. Direkter Widerspruch.
-- **M13 / M14 / M15 / M18** hängen alle an derselben Börse. Je zwei zusammen ziehen doppelt ab, und
-  die Tarierung jedes einzelnen verschiebt, was die anderen kosten.
-- **M02 / M03 / M15** enden alle in `oppValueMod`. Gemessener Anker: +1 kostet rund 10 % Endscore.
+- **M10, M11 und M12 sitzen alle drei auf der Aufstellphase.** Quarantäne sperrt fünf Positionen,
+  Starrsinn halbiert die Energie, Kitt bindet jeden Tausch für zwei Phasen. Je zwei zusammen nehmen
+  dieselbe Handlung doppelt.
+- **M08 Drift gegen M11 oder M12** — Rotation je Durchlauf gegen wenige, gebundene Tauschzüge.
+- **M13, M14, M15 und M18 hängen an derselben Börse.** Je zwei zusammen ziehen doppelt ab, und jede
+  Tarierung verschiebt, was die anderen kosten.
+- **M16 gegen M17** — Zersiedelung verlangt Platz zum Streuen, Enge Grund nimmt ihn.
 
 ## 4. Entschieden, und was offen bleibt
 
@@ -192,9 +179,15 @@ Was danach offen bleibt:
    ungefähr denselben gemessenen Score-Verlust tariert wird, oder ob der Threshold mit dem Boss
    wandert. Das Erste ist mit dem vorhandenen Sim-Harness messbar.
 4. **M06 Die Umkehr hat keine Größe.** Sie ist an oder aus; es gibt keine Zahl, an der man sie
-   schwächer stellen kann. Tarierbar ist sie nur über die **Dauer** (nicht den ganzen Lauf) oder über
-   den **Threshold**. Das gilt es vor dem Durchgang zu wissen, sonst sucht man an ihr eine
-   Stellschraube, die es nicht gibt.
+   schwächer stellen kann. Tarierbar ist sie nur über die **Dauer** oder über den **Threshold**.
+5. **Drei Mechaniken sind aus dem Durchgang offen geblieben**, alle klein und alle vor dem Bauen zu
+   klären:
+   - **M06** — wird der Kampfwert bei 0 abgefangen oder darf er wirklich negativ werden? Der
+     Gegnerwert wird heute bei 0 gedeckelt, der Spielerwert nicht.
+   - **M15** — darfst du die 3 Münzen **verweigern**, obwohl du sie hast, oder wird abgebucht,
+     solange Deckung da ist? Das entscheidet, ob der Tribut eine Entscheidung je Durchlauf ist oder
+     eine Steuer.
+   - **M18** — bei ungerader Perk-Zahl ab- oder aufrunden, und was passiert bei Nichtzahlung?
 
 ---
 
