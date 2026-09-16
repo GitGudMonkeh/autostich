@@ -16,7 +16,10 @@ export const LEGENDARY_GOLD = "#d4a63a";
    bewusst dasselbe #d4a63a wie oben statt eines zweiten Tons — die Regel „ein Gold im Spiel" gilt
    auch hier, und die schwerste Stufe ist die einzige, die überhaupt Legendäres zahlt. */
 export const STEP_BRONZE = "#b0743c";
-export const STEP_SILVER = "#b8bcc4";
+/* Silber muss HELLER und KÜHLER sein als das Grau der Leiste, sonst liest es sich als „ausgegraut"
+   statt als Metall (Owner, 2026-09-16: „silber sieht zu sehr nach grau aus"). Das erste #b8bcc4 lag
+   zu nah an der Normal-Rarität #8a8a95; dieser Ton hat den Blaustich und die Helligkeit dafür. */
+export const STEP_SILVER = "#cbd8ee";
 export const STEP_GOLD = LEGENDARY_GOLD;
 
 // ---- Fraktions-Grundfarben (aus dem bestehenden Code-Vokabular) ----

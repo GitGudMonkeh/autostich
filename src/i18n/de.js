@@ -1521,7 +1521,6 @@ export default {
   "start.contracts.hint": "Lauf mit Zwischenaufgaben — zwei Aufträge, eigene Beute. Testfassung.",
 
   "contract.offer.title": "Wähle deinen Auftrag",
-  "contract.offer.sub": "Drei Aufsteller, drei Schwierigkeiten. Einer gilt, die anderen zwei verfallen.",
   "contract.offer.window": "Durchlauf {from} bis {to}",
   "contract.offer.take": "Annehmen",
   "contract.offer.band": "zahlt {a} oder {b}",

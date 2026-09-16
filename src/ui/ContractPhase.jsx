@@ -71,11 +71,12 @@ function Overlay({ children }) {
   );
 }
 
-function Head({ title, sub, note = null }) {
+// `sub` ist optional: das Angebot erklärt sich über seine drei Karten, die Beute braucht den Satz.
+function Head({ title, sub = null, note = null }) {
   return (
     <div className="text-center mb-4">
       <h2 className="text-title-6 font-bold mt-1">{title}</h2>
-      <p className="text-body-5 opacity-60 mt-1 max-w-xl mx-auto leading-snug">{sub}</p>
+      {sub && <p className="text-body-5 opacity-60 mt-1 max-w-xl mx-auto leading-snug">{sub}</p>}
       {note && <p className="text-meta-1 opacity-45 mt-1">{note}</p>}
     </div>
   );
@@ -107,7 +108,7 @@ export function ContractOffer({ offers = [], windowId = 1, onPick }) {
   const sortiert = [...offers].sort((a, b) => CT.STEPS.indexOf(a.step) - CT.STEPS.indexOf(b.step));
   return (
     <Overlay>
-      <Head title={t("contract.offer.title")} sub={t("contract.offer.sub")}
+      <Head title={t("contract.offer.title")}
         note={t("contract.offer.window", { from: win.from, to: win.to })} />
       <div className="grid gap-3 sm:grid-cols-3">
         {sortiert.map((o) => {

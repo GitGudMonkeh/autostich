@@ -1056,7 +1056,6 @@ Pruning: replacing the skill permanently grants +NaN% root/bloom score (up to +N
 "contract.loot.zehrgeld.t4","i18n","Du bekommst sofort 100 Münzen.","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "contract.offer.band","i18n","zahlt {a} oder {b}","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "contract.offer.legendary","i18n","selten legendär","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
-"contract.offer.sub","i18n","Drei Aufsteller, drei Schwierigkeiten. Einer gilt, die anderen zwei verfallen.","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "contract.offer.take","i18n","Annehmen","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "contract.offer.title","i18n","Wähle deinen Auftrag","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "contract.offer.window","i18n","Durchlauf {from} bis {to}","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
