@@ -42,7 +42,7 @@ export function canAddSkill(s, id) {
 
 // exclude (exp skill rework): Skills, die dieser Zufallsspieler nie nimmt — die Ablation der Random-Auswertung
 // (skills-eval --policy random). Die Zufallszüge verschieben sich dadurch; gepaart bleibt nur der Seed.
-export function randomPolicy({ architectGreedy = false, exclude = [] } = {}) {
+export function randomPolicy({ architectGreedy = false, exclude = [], architectWeights = null } = {}) {
   return {
     name: architectGreedy ? "random+arch" : "random",
     act(s, rng) {
@@ -86,7 +86,7 @@ export function randomPolicy({ architectGreedy = false, exclude = [] } = {}) {
           return { type: "CONFIRM_FORMATION" }; // Baseline: Reihenfolge unangetastet lassen
 
         case "architect": // Architekt-Phase (#202, ersetzt den Shop): random oder greedy platzieren, dann fertig.
-          return architectStep(s, rng, { greedy: architectGreedy });
+          return architectStep(s, rng, { greedy: architectGreedy, weights: architectWeights });
 
         // Eis-Neudesign: nach jedem Eis-Skill-Pick genau 1 Karte als Gletscher festfrieren (Pflicht). Baseline:
         // erstes freies Feld (deterministisch); bei ≤7 Locks immer < Feldgröße.

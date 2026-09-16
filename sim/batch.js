@@ -95,14 +95,20 @@ function runBaseline() {
 
 // ---- Explore (S2): UCB + geteiltes memory → Coverage + Rangliste je Option ----
 const MIN_N = 5; // Arme mit weniger Ziehungen gelten als untergesampelt
+/* --formations 1 lets the explore run play the formation phase with the solver instead of confirming the deal
+   untouched. Default stays OFF so recorded baselines keep their meaning — but the FORMATION-ENABLING perk
+   families (E_SEGMENT, E_COLOR_ALLIANCE, E_CORE, …) only pay off once the board is actually arranged, so with
+   it off their arms measure as noise and rank near the bottom. Turn it on before reading anything into a
+   Kat.-E ranking; `--mode eval` has carried the same flag since S4. */
+const SOLVE_FORMATIONS = arg("--formations", "0") === "1";
 function runExplore() {
   const mem = newMemory();
-  const policy = ucbPolicy({ c });
+  const policy = ucbPolicy({ c, solveFormations: SOLVE_FORMATIONS });
   const scores = [];
   for (let i = 0; i < N; i++) scores.push(runOne(seed0 + i, policy, mem).score);
   const rankings = { perk: mem.ranking("perk"), skill: mem.ranking("skill") };
   const scoreAgg = stats(scores);
-  console.log(`sim 'ucb' explore: ${N} runs (seeds ${seed0}..${seed0 + N - 1}), c=${c}`);
+  console.log(`sim 'ucb' explore: ${N} runs (seeds ${seed0}..${seed0 + N - 1}), c=${c}, Aufstellung ${SOLVE_FORMATIONS ? "GESPIELT (Solver)" : "UNANGETASTET — zum Einschalten: --formations 1"}`);
   console.log(`  score   median ${f(scoreAgg.p50)}  p90 ${f(scoreAgg.p90)}  mean ${f(scoreAgg.mean)}`);
   const row = (r) => `    ${r.id.padEnd(16)} ${String(r.bucket).padEnd(14)} n=${String(r.n).padStart(4)}  mean ${r.mean.toFixed(3)}`;
   for (const kind of ["perk", "skill"]) {
@@ -113,7 +119,7 @@ function runExplore() {
     confident.slice(0, 6).forEach((r) => console.log(row(r)));
     if (confident.length > 6) { console.log(`  ${kind} — schwächste 3 (n≥${MIN_N}):`); confident.slice(-3).forEach((r) => console.log(row(r))); }
   }
-  write({ mode: "explore", runs: N, seedFrom: seed0, seedTo: seed0 + N - 1, c, minN: MIN_N, scoreAgg, rankings });
+  write({ mode: "explore", runs: N, seedFrom: seed0, seedTo: seed0 + N - 1, c, minN: MIN_N, solveFormations: SOLVE_FORMATIONS, scoreAgg, rankings });
 }
 
 if (mode === "baseline") runBaseline();

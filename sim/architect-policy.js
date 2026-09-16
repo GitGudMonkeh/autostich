@@ -12,32 +12,38 @@ import {
 import { SUIT_ORDER } from "../src/game/constants.js";
 
 /* ---- Struktur-Heuristik (nur Policy): treibt den Greedy zu VOLLEN Zeilen/Spalten (nur die zahlen einen Faktor).
-   Diskreter Sprung bei Komplettierung (der eigentliche Payout) + sanfter quadratischer Gradient (×0,3) als Wegweiser
-   zur volleren Struktur. Keine Viertel — die holt auch der Zufall. Spalte (8) > Zeile (5): teurer, höherer Payout. ---- */
-const W_ROW = 100, W_COL = 200, W_DIAG = 150;
-const PARTIAL = 0.3;    // Gewicht des Teil-Fortschritts relativ zur Komplettierung (Gradient, kein Selbstzweck)
-const STRUCT_W = 5;     // Gewicht des Struktur-Fortschritts im Bau-Score (Pass3b: 10→5, gegen Tunnelblick auf Zeilen)
-const VAL_W = 1.5;      // Gewicht der Effekt-Positionierung (value auf schwache, score/formation auf starke Felder)
-const CAT_W = 10;       // Gewicht des Kategorie-Ausgleichs
-const TIER_W = 5;       // Gewicht der Bauplan-Stufe
-const SWAP_GAIN = 12;   // Mindest-Struktur-Gewinn, damit ein Swap (Abriss + Neubau) sich lohnt
-const MOVE_GAIN = 10;   // Mindest-Struktur-Gewinn für den 1×-Move
-const SWAP_MAX_VICTIM_TIER = 2; // nur billig-investierte Gebäude wegwerfen (Stufen-Verlust nicht in der Heuristik)
+   Diskreter Sprung bei Komplettierung (der eigentliche Payout) + sanfter quadratischer Gradient als Wegweiser zur
+   volleren Struktur. Keine Viertel — die holt auch der Zufall.
+
+   Als Objekt statt als Modul-Konstanten, damit `sim/tune.js` die elf Schrauben GEMEINSAM optimieren kann: einzeln
+   betrachtet sagt keine von ihnen etwas, weil sie gegeneinander gewichten. Die Werte sind unverändert die von Hand
+   gesetzten; ohne Übergabe bleibt das Verhalten Zug für Zug gleich (test/sim-architect-weights.test.js). ---- */
+export const DEFAULT_WEIGHTS = Object.freeze({
+  row: 100, col: 200, diag: 150, // Spalte (8 Zellen) > Zeile (5): teurer, höherer Payout
+  partial: 0.3,        // Gewicht des Teil-Fortschritts relativ zur Komplettierung (Gradient, kein Selbstzweck)
+  struct: 5,           // Gewicht des Struktur-Fortschritts im Bau-Score (Pass3b: 10→5, gegen Tunnelblick auf Zeilen)
+  val: 1.5,            // Gewicht der Effekt-Positionierung (value auf schwache, score/formation auf starke Felder)
+  cat: 10,             // Gewicht des Kategorie-Ausgleichs
+  tier: 5,             // Gewicht der Bauplan-Stufe
+  swapGain: 12,        // Mindest-Struktur-Gewinn, damit ein Swap (Abriss + Neubau) sich lohnt
+  moveGain: 10,        // Mindest-Struktur-Gewinn für den 1×-Move
+  maxVictimTier: 2,    // nur billig-investierte Gebäude wegwerfen (Stufen-Verlust nicht in der Heuristik)
+});
 
 const cardValAt = (s, p) => (s.deck[s.playerOrder[p]] ? s.deck[s.playerOrder[p]].value : 0);
 const sumVals = (s, fp) => fp.reduce((t, p) => t + cardValAt(s, p), 0);
 const coverSetOf = (buildings) => occupiedCells(buildings);
 
-function structScore(coverSet) {
+function structScore(coverSet, w) {
   let s = 0;
-  for (let r = 0; r < ROWS; r++) { let n = 0; for (let c = 0; c < COLS; c++) if (coverSet.has(posOf(r, c))) n++; const f = n / COLS; s += n === COLS ? W_ROW : W_ROW * PARTIAL * f * f; }
-  for (let c = 0; c < COLS; c++) { let n = 0; for (let r = 0; r < ROWS; r++) if (coverSet.has(posOf(r, c))) n++; const f = n / ROWS; s += n === ROWS ? W_COL : W_COL * PARTIAL * f * f; }
+  for (let r = 0; r < ROWS; r++) { let n = 0; for (let c = 0; c < COLS; c++) if (coverSet.has(posOf(r, c))) n++; const f = n / COLS; s += n === COLS ? w.row : w.row * w.partial * f * f; }
+  for (let c = 0; c < COLS; c++) { let n = 0; for (let r = 0; r < ROWS; r++) if (coverSet.has(posOf(r, c))) n++; const f = n / ROWS; s += n === ROWS ? w.col : w.col * w.partial * f * f; }
   for (let r0 = 0; r0 <= ROWS - COLS; r0++) {   // Diagonalen (Haupt & Gegen), je 5 Zellen
     let nm = 0, na = 0;
     for (let i = 0; i < COLS; i++) { if (coverSet.has(posOf(r0 + i, i))) nm++; if (coverSet.has(posOf(r0 + i, COLS - 1 - i))) na++; }
     const fm = nm / COLS, fa = na / COLS;
-    s += nm === COLS ? W_DIAG : W_DIAG * PARTIAL * fm * fm;
-    s += na === COLS ? W_DIAG : W_DIAG * PARTIAL * fa * fa;
+    s += nm === COLS ? w.diag : w.diag * w.partial * fm * fm;
+    s += na === COLS ? w.diag : w.diag * w.partial * fa * fa;
   }
   return s;
 }
@@ -80,27 +86,27 @@ function cappedPlacements(form, buildings, cap = MAX_COVER) {
 }
 
 // Beste Platzierung EINES Angebots: Primär Struktur-Fortschritt, sekundär value/target-Feinlage.
-function bestPlacementForOffer(s, fam, buildings, before, beforeScore) {
+function bestPlacementForOffer(s, fam, buildings, before, beforeScore, w) {
   const places = cappedPlacements(fam.form, buildings, coverCapOf(s));
   if (!places.length) return null;
   const wantLow = fam.category === "value"; // value kippt schwache Felder; score/formation reitet starke
   let bestFp = null, bestKey = -Infinity;
   for (const fp of places) {
     const after = new Set(before); for (const p of fp) after.add(p);
-    const dStruct = structScore(after) - beforeScore;
-    const valTerm = sumVals(s, fp) * (wantLow ? -1 : 1) * VAL_W; // Effekt-Positionierung: value auf schwache, score/formation auf starke Felder
-    const key = dStruct * STRUCT_W + valTerm;
+    const dStruct = structScore(after, w) - beforeScore;
+    const valTerm = sumVals(s, fp) * (wantLow ? -1 : 1) * w.val; // Effekt-Positionierung: value auf schwache, score/formation auf starke Felder
+    const key = dStruct * w.struct + valTerm;
     if (key > bestKey) { bestKey = key; bestFp = fp; }
   }
   return { fp: bestFp, key: bestKey };
 }
 
 // Hauptaktion (errichten / swappen / ausbauen). Gibt eine State-verändernde Aktion oder null zurück.
-function decideMain(s) {
+function decideMain(s, w) {
   const a = s.architect;
   const open = (a.offers || []).filter((o) => !o.used);
   const before = coverSetOf(a.buildings);
-  const beforeScore = structScore(before);
+  const beforeScore = structScore(before, w);
   const byCat = { value: 0, score: 0, formation: 0 };
   for (const b of a.buildings) { const f = familyDef(b.familyId); if (f) byCat[f.category] += 1; }
 
@@ -108,31 +114,31 @@ function decideMain(s) {
   let bestBuild = null;
   for (const off of open) {
     const fam = familyDef(off.familyId);
-    const r = bestPlacementForOffer(s, fam, a.buildings, before, beforeScore);
+    const r = bestPlacementForOffer(s, fam, a.buildings, before, beforeScore, w);
     if (!r) continue;
     const catDeficit = -byCat[fam.category];
     const tierW = off.tier === "legendary" ? 5 : off.tier;
-    const key = r.key + catDeficit * CAT_W + tierW * TIER_W;
+    const key = r.key + catDeficit * w.cat + tierW * w.tier;
     if (!bestBuild || key > bestBuild.key) bestBuild = { off, fam, fp: r.fp, key };
   }
   if (bestBuild) return buildActionFor(s, bestBuild.fam, bestBuild.off, bestBuild.fp);
 
   // 2) Kein Neubau passt (Deckel voll) → Swap: schwächstes billiges Gebäude raus, wenn ein Angebot dadurch Platz
   //    findet UND die Struktur netto klar gewinnt. (Nächster Aufruf baut in die freigemachte Fläche.)
-  const victim = bestSwapVictim(s, open, beforeScore);
+  const victim = bestSwapVictim(s, open, beforeScore, w);
   if (victim != null) return { type: "ARCHITECT_DEMOLISH", buildingId: victim };
 
   // 3) Sonst ausbauen — das Gebäude mit dem höchsten Struktur-/Positions-Hebel.
   return bestUpgrade(s);
 }
 
-// Wähle ein Abriss-Opfer (id), dessen Entfernen einem Angebot Platz macht und die Struktur > SWAP_GAIN verbessert.
-function bestSwapVictim(s, open, beforeScore) {
+// Wähle ein Abriss-Opfer (id), dessen Entfernen einem Angebot Platz macht und die Struktur um mehr als w.swapGain verbessert.
+function bestSwapVictim(s, open, beforeScore, w) {
   const buildings = s.architect.buildings;
   let best = null;
   for (const victim of buildings) {
     const vfam = familyDef(victim.familyId);
-    if (!vfam || vfam.legendary || victim.tier > SWAP_MAX_VICTIM_TIER) continue; // Legendäre/hoch-investierte behalten
+    if (!vfam || vfam.legendary || victim.tier > w.maxVictimTier) continue; // Legendäre/hoch-investierte behalten
     const others = buildings.filter((b) => b.id !== victim.id);
     const afterRemove = coverSetOf(others);
     const occN = afterRemove.size;
@@ -140,10 +146,10 @@ function bestSwapVictim(s, open, beforeScore) {
       const fam = familyDef(off.familyId);
       const places = enumeratePlacements(fam.form, others).filter((fp) => occN + fp.length <= coverCapOf(s));
       let localBest = -Infinity;
-      for (const fp of places) { const after = new Set(afterRemove); for (const p of fp) after.add(p); const sc = structScore(after); if (sc > localBest) localBest = sc; }
+      for (const fp of places) { const after = new Set(afterRemove); for (const p of fp) after.add(p); const sc = structScore(after, w); if (sc > localBest) localBest = sc; }
       if (localBest === -Infinity) continue;
       const gain = localBest - beforeScore; // vs. aktuelles Brett (inkl. Opfer)
-      if (gain > SWAP_GAIN && (!best || gain > best.gain)) best = { victimId: victim.id, gain };
+      if (gain > w.swapGain && (!best || gain > best.gain)) best = { victimId: victim.id, gain };
     }
   }
   return best ? best.victimId : null;
@@ -164,12 +170,12 @@ function bestUpgrade(s) {
   return { type: "ARCHITECT_UPGRADE", buildingId: best.id };
 }
 
-// 1×-Move: ein Gebäude umsetzen, um eine Struktur zu schließen/voranzubringen (nur wenn Struktur netto > MOVE_GAIN gewinnt).
-function bestMove(s) {
+// 1×-Move: ein Gebäude umsetzen, um eine Struktur zu schließen/voranzubringen (nur wenn Struktur netto mehr als w.moveGain gewinnt).
+function bestMove(s, w) {
   const a = s.architect;
   const cur = coverSetOf(a.buildings);
   if (!anyStructureNearComplete(cur, 2)) return null; // kein lohnendes Ziel → sparen
-  const curScore = structScore(cur);
+  const curScore = structScore(cur, w);
   let best = null;
   for (const b of a.buildings) {
     const fam = familyDef(b.familyId);
@@ -182,8 +188,8 @@ function bestMove(s) {
       if (occN + fp.length > coverCapOf(s)) continue;
       if (fp.slice().sort((x, y) => x - y).join(",") === curKey) continue; // identische Lage → kein Fortschritt
       const after = new Set(base); for (const p of fp) after.add(p);
-      const gain = structScore(after) - curScore;
-      if (gain > MOVE_GAIN && (!best || gain > best.gain)) best = { buildingId: b.id, footprint: fp, gain };
+      const gain = structScore(after, w) - curScore;
+      if (gain > w.moveGain && (!best || gain > best.gain)) best = { buildingId: b.id, footprint: fp, gain };
     }
   }
   return best ? { type: "ARCHITECT_MOVE", buildingId: best.buildingId, footprint: best.footprint } : null;
@@ -191,10 +197,10 @@ function bestMove(s) {
 
 // Greedy-Phase: Hauptaktion → (falls noch frei) Move → fertig. DEMOLISH setzt actedMain NICHT, daher baut der
 // Folge-Aufruf in die durch den Swap freigemachte Fläche.
-function greedyStep(s) {
+function greedyStep(s, w) {
   const a = s.architect;
-  if (!a.actedMain) { const m = decideMain(s); if (m) return m; }
-  if (!a.moved) { const mv = bestMove(s); if (mv) return mv; }
+  if (!a.actedMain) { const m = decideMain(s, w); if (m) return m; }
+  if (!a.moved) { const mv = bestMove(s, w); if (mv) return mv; }
   return { type: "ARCHITECT_DONE" };
 }
 
@@ -219,10 +225,12 @@ function randomMain(s, rng) {
   return null;
 }
 
-export function architectStep(s, rng, { greedy = false } = {}) {
+export function architectStep(s, rng, { greedy = false, weights = null } = {}) {
   const a = s.architect;
   if (!a || !a.offers) return { type: "ARCHITECT_DONE" };
-  if (greedy) return greedyStep(s);
+  // Ohne `weights` exakt DEFAULT_WEIGHTS — kein Merge, damit ein Tippfehler im Schlüssel auffällt statt still
+  // auf den Vorgabewert zurückzufallen.
+  if (greedy) return greedyStep(s, weights || DEFAULT_WEIGHTS);
   if (!a.actedMain) { const action = randomMain(s, rng); if (action) return action; }
   return { type: "ARCHITECT_DONE" };
 }
