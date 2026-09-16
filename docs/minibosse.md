@@ -4,7 +4,7 @@
 (2026-09-16) kamen neunzehn Vorschläge; ein Durchgang Boss für Boss hat daraus **vierzehn Minibosse
 mit gesetzten Werten**, vier Endboss-Kandidaten und einen optionalen gemacht — §3. §2 hält die
 Messungen, gegen die tariert wurde. Die Werte sind **Owner-Entscheid am Papier, nicht simuliert**;
-die drei offenen Mechanikfragen sind entschieden (§4, Punkt 5).
+die offenen Mechanikfragen sind entschieden (§4, Punkt 4).
 
 Sprache Deutsch, weil die Bossnamen Produktsprache sind und der Owner hier mitschreibt. Bewusste
 Abweichung von der Engineering-Sprache in `AGENTS.md`, wie bei `docs/zwischenaufgaben.md`,
@@ -139,7 +139,36 @@ Endboss-Kandidaten und der optionale behalten ihre Arbeitsnamen, bis sie selbst 
 | M18 | **Schmarotzer** | **1 Münze je 2 gehaltene Perks je Durchlauf, abgerundet.** Bei Kontostand 0 passiert nichts. Break-even bei rund 6 Perks gegen ein Einkommen von etwa 3 je Durchlauf |
 | M19 | **Wärter** | Bei **D20 und D40** gibst du je einen gehaltenen Skill ab. Welchen, entscheidest du |
 
-### 3.2 Endboss-Kandidaten — vier, geparkt
+### 3.2 Die Spielertexte
+
+Was im Spiel an der Kachel steht. Nach `docs/text-style-guide.md` §3 und denselben Regeln wie die
+Auftragstexte (`docs/zwischenaufgaben.md` §8): ein bis zwei Sätze, Bedingung vor Wirkung, aktiv,
+kein Gedankenstrich, kein Selbstbezug, kanonische Begriffe (Durchlauf, Stich, Lauf, Position,
+Formation, Neuwurf, Kampfwert).
+
+| Nr. | Name | Text |
+| --- | --- | --- |
+| M01 | **Späher** | Die Gegnerkarten kommen nicht zufällig. Wo deine Formationen am stärksten sind, steht der stärkste Gegner. |
+| M03 | **Züchter** | Alle zehn Durchläufe gewinnen alle Gegnerkarten einen Punkt Kampfwert. Der Aufschlag bleibt bis zum Ende des Laufs. |
+| M04 | **Neider** | Alle fünf Durchläufe verliert die Karte mit den meisten Stichen einen Punkt Kampfwert. Der Verlust bleibt bis zum Ende des Laufs. |
+| M08 | **Dreher** | Nach jedem Durchlauf rückt deine Aufstellung eine Position weiter. Was auf Position 40 stand, steht danach auf Position 1. |
+| M10 | **Schließer** | Vor jeder Aufstellphase wird ein anderes Segment versiegelt. Seine fünf Karten spielen normal, lassen sich aber nicht tauschen. |
+| M11 | **Bremser** | Du hast zwei Tauschzüge je Aufstellphase statt vier. |
+| M12 | **Maurer** | Eine getauschte Karte bleibt zwei Aufstellphasen lang an ihrer Position. Zurücknehmen kannst du sie in der laufenden Phase weiterhin. |
+| M13 | **Wucherer** | Jeder weitere Kauf derselben Art verdreifacht den Preis, statt ihn zu verdoppeln. Der Neuwurf kostet 3, dann 9, dann 27. |
+| M14 | **Beutelschneider** | An jedem Durchlaufende verfällt ein Viertel deiner Münzen, aufgerundet. Bei 10 Münzen sind das 3. |
+| M15 | **Vogt** | Jeder Durchlauf kostet dich 3 Münzen. Reichen sie nicht, gewinnen alle Gegnerkarten in diesem Durchlauf einen Punkt Kampfwert. |
+| M16 | **Hetzer** | Jedes Gebäude verliert 8 Prozent je angrenzendem Gebäude derselben Kategorie. Höchstens drei Nachbarn zählen. |
+| M17 | **Bauaufseher** | Dir stehen 16 Baufeldzellen zur Verfügung statt 24. |
+| M18 | **Schmarotzer** | Je zwei gehaltene Perks kosten dich eine Münze je Durchlauf. Hast du keine Münzen, passiert nichts. |
+| M19 | **Wärter** | Nach Durchlauf 20 und nach Durchlauf 40 gibst du einen gehaltenen Skill ab. Welchen, entscheidest du. |
+
+> **Eine Regelkollision, bewusst aufgelöst.** Der Style Guide behält Bindestriche in Komposita
+> ausdrücklich, der Owner wollte keine (2026-09-16). Gewählt sind durchgehend zusammengeschriebene
+> Formen, die ohne Bindestrich korrekt sind: Aufstellphase, Baufeldzellen, Durchlaufende. Damit
+> bricht kein Kompositum und es steht trotzdem kein Strich im Text.
+
+### 3.3 Endboss-Kandidaten — vier, geparkt
 
 Nicht verworfen, sondern für den Endboss zurückgelegt (Owner, 2026-09-16). Ohne gesetzte Werte.
 
@@ -150,13 +179,13 @@ Nicht verworfen, sondern für den Endboss zurückgelegt (Owner, 2026-09-16). Ohn
 | M06 | **Die Umkehr** | Der Kampfwert ist **11 − Wert**, bei **0 abgefangen**. Bewusst als Formel und nicht als Spiegelung notiert (Owner): so steht in der Regel, dass jede gekaufte Wertsteigerung gegen dich arbeitet — was über 10 gehoben wurde, fällt auf 0 |
 | M09 | **Die gezielte Sperre** | N Positionen gesperrt, und der Boss wählt sie mitten in deine längste Formation |
 
-### 3.3 Optional — einer
+### 3.4 Optional — einer
 
 | Nr. | Name | Warum geparkt |
 | --- | --- | --- |
 | M07 | **Der Zensus** | Schwer zu umgehen, und er greift den Score direkt an statt über eine Bedingung (Owner) |
 
-### 3.4 Was beim weiteren Tarieren zusammenstößt
+### 3.5 Was beim weiteren Tarieren zusammenstößt
 
 Minibosse treten einzeln auf; die Paare zählen erst für den Endboss und für die Frage, ob eine Ebene
 denselben Boss zweimal ziehen darf.
@@ -184,13 +213,12 @@ Was danach offen bleibt:
 1. **Wo der Boss steht.** Lesbar sein muss er vor der ersten Skill-Wahl, die über `START_RUN` läuft, und
    danach den ganzen Lauf über. Die Aufträge haben dieselbe Frage schon beantwortet — ihr Stand
    sitzt in `src/ui/StatusRail.jsx` (`docs/zwischenaufgaben.md` §4.3). Anzeige ist Owner-Sache.
-2. **Zensus, Drift und gezielte Sperre** brauchen die Anpassungsrunde aus §3.3.
-3. **Tarierung.** Offen ist, ob der Threshold die Konstante je Ebene ist und jeder Miniboss auf
+2. **Tarierung.** Offen ist, ob der Threshold die Konstante je Ebene ist und jeder Miniboss auf
    ungefähr denselben gemessenen Score-Verlust tariert wird, oder ob der Threshold mit dem Boss
    wandert. Das Erste ist mit dem vorhandenen Sim-Harness messbar.
-4. **M06 Die Umkehr hat keine Größe.** Sie ist an oder aus; es gibt keine Zahl, an der man sie
+3. **M06 Die Umkehr hat keine Größe.** Sie ist an oder aus; es gibt keine Zahl, an der man sie
    schwächer stellen kann. Tarierbar ist sie nur über die **Dauer** oder über den **Threshold**.
-5. **Die drei offenen Mechaniken sind entschieden** (Owner, 2026-09-16):
+4. **Die drei offenen Mechaniken sind entschieden** (Owner, 2026-09-16):
    - **M06** — der Kampfwert **fängt bei 0 ab**, wie der Gegnerwert es heute schon tut. Eine über 10
      gehobene Karte fällt damit auf 0, nicht ins Negative.
    - **M15** — **keine Verweigerung.** Die 3 Münzen werden automatisch abgezogen, solange Deckung da
