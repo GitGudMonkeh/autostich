@@ -4,7 +4,7 @@
 (2026-09-16) kamen neunzehn Vorschläge; ein Durchgang Boss für Boss hat daraus **vierzehn Minibosse
 mit gesetzten Werten**, vier Endboss-Kandidaten und einen optionalen gemacht — §3. §2 hält die
 Messungen, gegen die tariert wurde. Die Werte sind **Owner-Entscheid am Papier, nicht simuliert**;
-drei kleine Mechanikfragen stehen noch offen (§4, Punkt 5).
+die drei offenen Mechanikfragen sind entschieden (§4, Punkt 5).
 
 Sprache Deutsch, weil die Bossnamen Produktsprache sind und der Owner hier mitschreibt. Bewusste
 Abweichung von der Engineering-Sprache in `AGENTS.md`, wie bei `docs/zwischenaufgaben.md`,
@@ -123,10 +123,10 @@ sie auf drei Listen verteilt und die Werte gesetzt. Die Nummern sind stabil.
 | M12 | **Der Kitt** | Eine getauschte Karte ist die **nächsten zwei Aufstellphasen** gesperrt. Zurücknehmen innerhalb der laufenden Phase bleibt möglich |
 | M13 | **Der Wucherer** | Die Preistreppe **verdreifacht** statt zu verdoppeln — Neuwurf 3 · 9 · 27 statt 3 · 6 · 12 |
 | M14 | **Der Schwund** | An jeder Durchlaufgrenze verfällt **ein Viertel des Kontostands, aufgerundet**. Bei 10 Münzen verfallen 3, bei 5 verfallen 2, bei 1 verfällt sie |
-| M15 | **Der Tribut** | **3 Münzen je Durchlauf**; bei Nichtzahlung **Gegner +1** in diesem Durchlauf |
+| M15 | **Der Tribut** | **3 Münzen je Durchlauf**, automatisch abgezogen, solange Deckung da ist — keine Verweigerung. Reicht der Kontostand nicht, **Gegner +1** in diesem Durchlauf |
 | M16 | **Die Zersiedelung** | Der Distrikt-Bonus kehrt sein Vorzeichen um, der Betrag bleibt: **−8 %** je verschiedenem gleich-kategorigem Nachbargebäude, höchstens drei gezählt — bis −24 % statt bis +24 % |
 | M17 | **Der Enge Grund** | Baufeld-Deckel **24 → 16** Zellen. Eine volle Spalte (8) bleibt erreichbar, kostet aber das halbe Budget |
-| M18 | **Die Zehrende Gier** | **1 Münze je 2 gehaltene Perks je Durchlauf.** Break-even bei rund 6 Perks gegen ein Einkommen von etwa 3 je Durchlauf |
+| M18 | **Die Zehrende Gier** | **1 Münze je 2 gehaltene Perks je Durchlauf, abgerundet.** Bei Kontostand 0 passiert nichts. Break-even bei rund 6 Perks gegen ein Einkommen von etwa 3 je Durchlauf |
 | M19 | **Der Wärter** | Bei **D20 und D40** gibst du je einen gehaltenen Skill ab. Welchen, entscheidest du |
 
 ### 3.2 Endboss-Kandidaten — vier, geparkt
@@ -137,7 +137,7 @@ Nicht verworfen, sondern für den Endboss zurückgelegt (Owner, 2026-09-16). Ohn
 | --- | --- | --- |
 | M02 | **Der Konter** | Jeder Sieg gibt der nächsten Gegnerkarte +1, stapelnd; eine Niederlage setzt zurück |
 | M05 | **Der Gleichmacher** | Alle dauerhaften Wertgewinne sind wirkungslos; jede Karte kämpft mit ihrem Grundwert 1 bis 10 |
-| M06 | **Die Umkehr** | Der Kampfwert ist **11 − Wert**. Bewusst als Formel und nicht als Spiegelung notiert (Owner): so steht in der Regel, dass jede gekaufte Wertsteigerung gegen dich arbeitet — was über 10 gehoben wurde, fällt unter null |
+| M06 | **Die Umkehr** | Der Kampfwert ist **11 − Wert**, bei **0 abgefangen**. Bewusst als Formel und nicht als Spiegelung notiert (Owner): so steht in der Regel, dass jede gekaufte Wertsteigerung gegen dich arbeitet — was über 10 gehoben wurde, fällt auf 0 |
 | M09 | **Die gezielte Sperre** | N Positionen gesperrt, und der Boss wählt sie mitten in deine längste Formation |
 
 ### 3.3 Optional — einer
@@ -180,14 +180,15 @@ Was danach offen bleibt:
    wandert. Das Erste ist mit dem vorhandenen Sim-Harness messbar.
 4. **M06 Die Umkehr hat keine Größe.** Sie ist an oder aus; es gibt keine Zahl, an der man sie
    schwächer stellen kann. Tarierbar ist sie nur über die **Dauer** oder über den **Threshold**.
-5. **Drei Mechaniken sind aus dem Durchgang offen geblieben**, alle klein und alle vor dem Bauen zu
-   klären:
-   - **M06** — wird der Kampfwert bei 0 abgefangen oder darf er wirklich negativ werden? Der
-     Gegnerwert wird heute bei 0 gedeckelt, der Spielerwert nicht.
-   - **M15** — darfst du die 3 Münzen **verweigern**, obwohl du sie hast, oder wird abgebucht,
-     solange Deckung da ist? Das entscheidet, ob der Tribut eine Entscheidung je Durchlauf ist oder
-     eine Steuer.
-   - **M18** — bei ungerader Perk-Zahl ab- oder aufrunden, und was passiert bei Nichtzahlung?
+5. **Die drei offenen Mechaniken sind entschieden** (Owner, 2026-09-16):
+   - **M06** — der Kampfwert **fängt bei 0 ab**, wie der Gegnerwert es heute schon tut. Eine über 10
+     gehobene Karte fällt damit auf 0, nicht ins Negative.
+   - **M15** — **keine Verweigerung.** Die 3 Münzen werden automatisch abgezogen, solange Deckung da
+     ist. Der Tribut ist damit eine Steuer, keine Entscheidung je Durchlauf — die Entscheidung
+     verschiebt sich auf das Ausgeben: wer seine Börse leerkauft, zahlt die Strafe.
+   - **M18** — **abgerundet**, ein Perk kostet also nichts, drei kosten eine Münze. Steht der
+     Kontostand auf 0, **passiert nichts** — keine Strafe, kein Rückstand. Die Familie kann damit
+     nie mehr tun, als die Börse leer zu halten.
 
 ---
 
