@@ -152,9 +152,9 @@ Formation, Neuwurf, Kampfwert).
 | M03 | **Züchter** | Alle zehn Durchläufe gewinnen alle Gegnerkarten einen Punkt Kampfwert. Der Aufschlag bleibt bis zum Ende des Laufs. |
 | M04 | **Neider** | Alle fünf Durchläufe verliert die Karte mit den meisten Stichen einen Punkt Kampfwert. Der Verlust bleibt bis zum Ende des Laufs. |
 | M08 | **Dreher** | Nach jedem Durchlauf rückt deine Aufstellung eine Position weiter. Was auf Position 40 stand, steht danach auf Position 1. |
-| M10 | **Schließer** | Vor jeder Aufstellphase wird ein anderes Segment versiegelt. Seine fünf Karten spielen normal, lassen sich aber nicht tauschen. |
+| M10 | **Schließer** | Vor jeder Aufstellphase wird ein anderes Segment festgesetzt. Seine fünf Karten lassen sich nicht tauschen. |
 | M11 | **Bremser** | Du hast zwei Tauschzüge je Aufstellphase statt vier. |
-| M12 | **Maurer** | Eine getauschte Karte bleibt zwei Aufstellphasen lang an ihrer Position. Zurücknehmen kannst du sie in der laufenden Phase weiterhin. |
+| M12 | **Maurer** | Eine getauschte Karte bleibt zwei Aufstellphasen lang an ihrer Position. |
 | M13 | **Wucherer** | Jeder weitere Kauf derselben Art verdreifacht den Preis, statt ihn zu verdoppeln. Der Neuwurf kostet 3, dann 9, dann 27. |
 | M14 | **Beutelschneider** | An jedem Durchlaufende verfällt ein Viertel deiner Münzen, aufgerundet. Bei 10 Münzen sind das 3. |
 | M15 | **Vogt** | Jeder Durchlauf kostet dich 3 Münzen. Reichen sie nicht, gewinnen alle Gegnerkarten in diesem Durchlauf einen Punkt Kampfwert. |
@@ -162,6 +162,16 @@ Formation, Neuwurf, Kampfwert).
 | M17 | **Bauaufseher** | Dir stehen 16 Baufeldzellen zur Verfügung statt 24. |
 | M18 | **Schmarotzer** | Je zwei gehaltene Perks kosten dich eine Münze je Durchlauf. Hast du keine Münzen, passiert nichts. |
 | M19 | **Wärter** | Nach Durchlauf 20 und nach Durchlauf 40 gibst du einen gehaltenen Skill ab. Welchen, entscheidest du. |
+
+> **Ein Spielertext nennt nicht, was unverändert bleibt** (Owner, 2026-09-16). Maurer trug zuerst
+> den Nachsatz „Zurücknehmen kannst du sie in der laufenden Phase weiterhin", Schließer das
+> „Seine fünf Karten spielen normal". Beides beschreibt eine Grundregel, die der Boss gar nicht
+> anfasst; sie stand nur da, weil wir sie im Durchgang als Frage geklärt hatten. Das gehört in die
+> Designnotiz, nicht auf die Kachel. Bei Schließer war der Zusatz allerdings nötig, solange das Verb
+> „versiegelt" die falsche Vermutung weckte, die Karten seien aus dem Spiel. Statt der Klarstellung
+> steht jetzt das richtige Verb: **festgesetzt**. Nicht betroffen ist Schmarotzers „Hast du keine
+> Münzen, passiert nichts" — das ist der eigene Ausfallzweig des Bosses, und der Vogt beantwortet
+> dieselbe Frage mit einer Strafe.
 
 > **Eine Regelkollision, bewusst aufgelöst.** Der Style Guide behält Bindestriche in Komposita
 > ausdrücklich, der Owner wollte keine (2026-09-16). Gewählt sind durchgehend zusammengeschriebene
