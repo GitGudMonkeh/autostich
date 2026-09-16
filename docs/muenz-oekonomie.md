@@ -3,7 +3,7 @@
 > **UMGESETZT auf `exp` (2026-09-09). Dieses Dokument ist ab hier ein Protokoll, keine offene Aufgabe.**
 > Wer daran anschließt, liest zuerst den Code — `src/game/coins.js`, `src/game/perkSale.js` und die
 > §-Verweise in den Kommentaren sind der aktuelle Stand, dieser Plan der Beschluss davor. Drei Stellen
-> gingen beim Bauen über den Plan hinaus und stehen nur im Code: der Deckel greift bei 32 Formationen,
+> gingen beim Bauen über den Plan hinaus und stehen nur im Code: der Einnahme-Deckel (inzwischen gestrichen, §2.2),
 > die Einnahme zählt gebaute Formationen ohne Formationskerne, Anker und Nachhall, und die
 > Verzichts-Erträge stehen an ihren Knöpfen.
 > **Offen geblieben:** die zwei Skill-Screen-Altlasten aus §5.1 — Banner raus, Panel-Höhe.
@@ -67,19 +67,29 @@ einer Rechenaufgabe. Umgesetzt durch Nichtstun: `coins` liegt im Lauf-State und 
 **Formel:** `Münzen je Durchlauf = 2 + floor(gebaute Formationen / 8)`
 
 > **GEÄNDERT (2026-09-14, Owner: „Formationen sollen erst ab 10 und nicht 8 schon eine Münze geben").**
-> Der Schritt steht jetzt auf **10**: `2 + min(4, floor(F / 10))`. Der gemessene Median von 18 Formationen
-> zahlt damit **3 statt 4** Münzen je Durchlauf. Folge für den Deckel unten: er bindet erst ab **50**
-> statt ab 32 und liegt damit über dem gemessenen Extremfall von 48 — er greift nach heutigem Stand nie
-> mehr. Ungemessen, was das über den ganzen Lauf ausmacht. Aktueller Stand steht in `src/game/coins.js`.
+> Der Schritt steht jetzt auf **10**: `2 + floor(F / 10)`. Der gemessene Median von 18 Formationen
+> zahlt damit **3 statt 4** Münzen je Durchlauf. Der Deckel, der hier einmal danebenstand, ist seit
+> 2026-09-16 gestrichen (unten). Ungemessen, was das über den ganzen Lauf ausmacht. Aktueller Stand
+> steht in `src/game/coins.js`.
 
 Ausgezahlt am Ende jedes Durchlaufs. „Gebaute Formationen" sind die **distinkten** Formationen der
 Aufstellung — je Formation einmal (`ordinal === 1`), nicht je Position.
 
-**Deckel (Owner, 2026-09-09):** `2 + min(4, floor(F / 8))`, also **höchstens 6 Münzen je Durchlauf**.
-Grund in §2.5: ein volles Brett kann 8 bis 12 zahlen, wenn die Formationen kurz sind. Der Deckel bindet
-ab 32 Formationen und trifft damit 1 % der gemessenen Durchläufe — der normale Verlauf merkt nichts, die
-Spitze ist weg. Die Kurzformations-Taktik wäre zudem unsichtbar gewesen: man hätte sie ausrechnen
-müssen, um sie zu finden.
+**Kein Deckel (Owner, 2026-09-16):** `2 + floor(F / 10)`, ohne Obergrenze. Die Einnahme steigt linear
+mit der Aufstellung weiter.
+
+> **Der Deckel ist gestrichen.** Er stand seit 2026-09-09 bei `2 + min(4, floor(F / 8))`, also
+> höchstens 6 Münzen je Durchlauf. Grund war §2.5: ein volles Brett kann 8 bis 12 zahlen, wenn die
+> Formationen kurz sind, und der Deckel band ab 32 Formationen — 1 % der Durchläufe.
+>
+> Seit dem Schritt 10 (Owner, 2026-09-14) hätte er erst ab **50** Formationen gebunden. Gemessen
+> (2026-09-16, 150 Läufe mit Formations-Solver) liegt der **beste** Durchlauf bei **32** und der
+> Median bei 17 bis 25. Der Deckel hat also seit zwei Tagen nichts mehr getan; ihn zu streichen
+> ändert am heutigen Spiel nichts und zahlt nur den, der über 50 Formationen baut.
+>
+> **Was damit wieder offen ist:** die Lücke, die der Deckel schließen sollte. Wer auf viele KURZE
+> Formationen optimiert, bekommt mehr distinkte und damit mehr Münzen, opfert dafür aber den
+> Formations-Multiplikator, der mit der Länge eskaliert. Der Tausch ist jetzt wieder erlaubt.
 
 > **Fallstrick bei der Zählung:** im selben Array liegen `formationskern` und `anker` — Architekt- und
 > Ankereffekte, die keine gebaute Formation sind. **Auf `FORMATION_TYPES` filtern**
@@ -165,9 +175,12 @@ distinkte ergeben als lange. Bei 160 Paaren:
 | **3,3 (gemessen)** | **48** | **8** |
 | 5 | 32 | 6 |
 
-Gegen den Normalfall von 4 Münzen ist das Faktor 2 bis 3 — der Grund für den Deckel-Vorschlag in §2.2.
-Wer auf Münzen optimiert, baut viele kurze Formationen und opfert dabei den Formations-Multiplikator,
-weil der mit der Länge eskaliert; der Deckel macht diesen Tausch endgültig unattraktiv.
+Gegen den Normalfall von 4 Münzen ist das Faktor 2 bis 3 — das war der Grund für den Deckel-Vorschlag
+in §2.2. Wer auf Münzen optimiert, baut viele kurze Formationen und opfert dabei den
+Formations-Multiplikator, weil der mit der Länge eskaliert.
+
+> **Seit 2026-09-16 gibt es keinen Deckel mehr** (§2.2). Dieser Tausch ist damit wieder erlaubt: die
+> Bremse ist jetzt allein der Multiplikator, den kurze Formationen kosten, nicht mehr eine Obergrenze.
 
 **Naht:** `state.formations` liegt am Durchlaufende vor, an derselben Stelle, an der bisher
 `coinsForWins(cycleWins)` stand. `cycleWins` wird für die Einnahme nicht mehr gebraucht.

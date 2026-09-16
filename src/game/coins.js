@@ -35,22 +35,21 @@ import { envNum } from "./constants.js";
    einmal je Durchlauf über die Reihenfolge, bevor der erste Stich fällt. Der Stich entscheidet nur, ob
    der Formations-MULTIPLIKATOR ausgezahlt wird; für die Zählung ist er egal.
 
-   Der DECKEL (Owner 2026-09-09) ist kein Feintuning, sondern schließt eine Lücke: ein randvolles Brett
-   trägt bis 145 Positions×Formations-Paare, und weil KURZE Formationen mehr distinkte ergeben als lange
-   (gemessene mittlere Länge 3,3), zahlte der Extremfall ungedeckelt 8–12 statt 4. Mit dem Schritt 8 band
-   er ab 32 Formationen und traf 1 % der gemessenen Durchläufe; seit dem Schritt 10 (Owner 2026-09-14)
-   bindet er erst ab 50 und liegt damit über dem gemessenen Extremfall von 48 — er steht noch da, greift
-   aber nach heutigem Stand nie. Wer die Lücke wieder schließen will, senkt COIN_FORM_CAP, nicht den Schritt. */
+   KEIN DECKEL mehr (Owner 2026-09-16). Der alte lag bei 4 Münzen. Er schloss ursprünglich eine Lücke:
+   ein randvolles Brett trägt bis 145 Positions×Formations-Paare, und weil KURZE Formationen mehr
+   distinkte ergeben als lange (gemessene mittlere Länge 3,3), zahlte der Extremfall ungedeckelt 8–12
+   statt 4. Mit dem Schritt 8 band er ab 32 Formationen und traf 1 % der Durchläufe. Seit dem Schritt 10
+   (Owner 2026-09-14) hätte er erst ab 50 gebunden, und gemessen (2026-09-16, 150 Läufe) liegt der beste
+   Durchlauf bei 32 Formationen — er hat also seit zwei Tagen nichts mehr getan. Die Einnahme steigt
+   damit linear weiter, und wer über 50 Formationen baut, wird dafür auch bezahlt. */
 export const COIN_CYCLE_BASE = envNum("SIM_COIN_BASE", 2);        // Sockel je Durchlauf, unabhängig von allem
 // Owner 2026-09-14: 8 → 10. Der gemessene Median von 18 Formationen zahlt damit 1 statt 2 Münzen, die
-// Durchlauf-Einnahme fällt von 4 auf 3. NEBENWIRKUNG, dem Owner gemeldet: der Deckel bindet jetzt erst
-// ab 50 Formationen (10 × 4 + 1) statt ab 32 — über dem gemessenen Extremfall von 48, er ist also faktisch tot.
+// Durchlauf-Einnahme fällt von 4 auf 3.
 export const COIN_FORM_PER = envNum("SIM_COIN_PER_FORMS", 10);    // so viele gebaute Formationen zahlen eine Münze
-export const COIN_FORM_CAP = envNum("SIM_COIN_FORM_CAP", 4);      // höchstens so viele Münzen aus Formationen
 export const COIN_START = envNum("SIM_COIN_START", 3);            // Startbetrag beim Laufstart
 
 export const coinsForFormations = (forms) =>
-  COIN_CYCLE_BASE + Math.min(COIN_FORM_CAP, Math.floor(Math.max(0, forms || 0) / COIN_FORM_PER));
+  COIN_CYCLE_BASE + Math.floor(Math.max(0, forms || 0) / COIN_FORM_PER);
 
 /* ---- Verzicht zahlt (§2.3) ------------------------------------------------------------------------ */
 /* Vier Quellen, ein Gedanke: wer auf etwas verzichtet, tauscht Build-Stärke gegen Kaufkraft. Sie sind die

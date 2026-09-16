@@ -668,15 +668,23 @@ Nachgemessen am Entscheidungsplan (`DECISION_SCHEDULE`, Block Skill · Perk · A
 | bis D16 | Münzen |
 | --- | --- |
 | Sockel 2 je Durchlauf, ohne eine einzige Formation | 35 |
-| passiv am Formations-Deckel (2 + 4 je Durchlauf) | **99** |
+| passiv beim gemessenen Bestwert (2 + 3 je Durchlauf, 32 Formationen) | **83** |
 | 4 abgelehnte Skill-Phasen (`FORFEIT_SKILL` 12) | +48 |
 | 4 abgelehnte Perk-Phasen (`FORFEIT_PERK` 6) | +24 |
 | 4 Aufstellphasen mit ungenutzter Energie (4 × `FORFEIT_ENERGY` 1) | +16 |
 | 4 Architektenphasen ohne Hauptaktion (`FORFEIT_BUILD` 6) | +24 |
-| **Obergrenze bei vollem Verzicht** | **211** |
+| **Obergrenze bei vollem Verzicht** | **195** |
 
 > Auf das neue Fenster nachgerechnet (Owner, 2026-09-15). Bis D15 waren es 199: ein Durchlauf weniger
 > passiv **und** eine Architektenphase weniger, weil D16 genau diese Phase ist.
+
+> **Nachgerechnet 2026-09-16, zweimal korrigiert.** Die Zeile stand vorher bei 99 („passiv am
+> Formations-Deckel, 2 + 4 je Durchlauf") und die Summe bei 211. Das setzte voraus, dass der Deckel
+> jeden Durchlauf getroffen wird — gemessen wird er **nie** getroffen, der beste Durchlauf trägt 32
+> Formationen und zahlt damit 5, nicht 6. Der Deckel selbst ist inzwischen gestrichen (Owner,
+> 2026-09-16, `docs/muenz-oekonomie.md` §2.2); das hebt die Obergrenze nicht, weil sie ohnehin nicht
+> am Deckel hing, sondern daran, wie viele Formationen ein Durchlauf trägt. **Ohne Deckel wächst die
+> Zeile jetzt aber mit jeder gebauten Formation weiter** — wer über 50 kommt, verschiebt sie.
 
 Zum Vergleich der tatsächliche Kontostand im Sim bei D15, der normal spielt und ausgibt: p25/p50/p75
 **59 / 67 / 74** über Zufall, Feuer und Pflanze (30 Läufe je Spielweise). Das ist die Zahl, die ich
@@ -775,7 +783,7 @@ sind von der Leiter unabhängig und gelten weiter.
 **Korrektur zu einer früheren Aussage in dieser Reihe:** die Obergrenze für Formationen je Aufstellung
 ist **nicht** 21. Das war das Beste, was die Sim erreicht. Gemessen (Münz-Doku §2.5) gehen die Paare
 aus Position mal Formation bis 145, was bei mittlerer Länge 3,3 rund **45 distinkte Formationen**
-ergibt; der Münz-Deckel bindet ab 32 und trifft 1 % aller Durchläufe.
+ergibt. (Der damals erwähnte Münz-Deckel ist seit 2026-09-16 gestrichen.)
 
 > **Und eine Korrektur der Korrektur.** Aus ihr wurde geschlossen, „Gedränge auf Episch sitzt auf dem
 > beobachteten Maximum". Das hält der Messung oben nicht stand. Die 145 Paare sind **beobachtet**,

@@ -10,7 +10,7 @@ import { readFileSync } from "node:fs";
 import { makeRng } from "../src/game/deck.js";
 import { initialState, reducer } from "../src/game/reducer.js";
 import { resolveTrick } from "../src/game/engine.js";
-import { coinsForFormations, COIN_CYCLE_BASE, COIN_FORM_PER, COIN_FORM_CAP, COIN_START, rerollPrice, rerollOffer, REROLL_CAP, rerollsLeft,
+import { coinsForFormations, COIN_CYCLE_BASE, COIN_FORM_PER, COIN_START, rerollPrice, rerollOffer, REROLL_CAP, rerollsLeft,
          energyPrice, energyBuy, ENERGY_MAX_BUYS, coverPrice, coverBuy, COVER_CELLS,
          upgradePrice, MAX_SKILL_TIER, upgradeBuy, familyUpgradeBuy, MAX_FAMILY_TIER, upgradeSortKey,
          unspentEnergyCoins, FORFEIT_SKILL, FORFEIT_PERK, FORFEIT_BUILD } from "../src/game/coins.js";
@@ -32,11 +32,11 @@ const scenario = (pVal, oVal, over = {}) => ({
 const rng = makeRng(9);
 
 describe("Münz-Einnahme (§2.2)", () => {
-  it("die Tabelle aus §2.2 — Sockel 2, je zehn Formationen eine Münze, Deckel bei 6", () => {
-    // Genau die Zeilen des Plans. Ändert jemand Sockel, Schritt oder Deckel, fällt DIESER Test, nicht
-    // erst der Playtest. Owner 2026-09-14: Schritt 8 → 10; die 18 Formationen des gemessenen Medians
-    // zahlen damit 3 Münzen statt 4.
-    expect([0, 8, 16, 18, 24, 32, 40, 50, 80].map(coinsForFormations)).toEqual([2, 2, 3, 3, 4, 5, 6, 6, 6]);
+  it("die Tabelle aus §2.2 — Sockel 2, je zehn Formationen eine Münze, ohne Deckel", () => {
+    // Genau die Zeilen des Plans. Ändert jemand Sockel oder Schritt, fällt DIESER Test, nicht erst der
+    // Playtest. Owner 2026-09-14: Schritt 8 → 10; die 18 Formationen des gemessenen Medians zahlen
+    // damit 3 Münzen statt 4. Owner 2026-09-16: der Deckel bei 6 ist weg, 50 und 80 zahlen weiter.
+    expect([0, 8, 16, 18, 24, 32, 40, 50, 80].map(coinsForFormations)).toEqual([2, 2, 3, 3, 4, 5, 6, 7, 10]);
   });
 
   it("der Sockel zahlt auch ohne jede Formation, und nichts wird negativ", () => {
@@ -46,14 +46,16 @@ describe("Münz-Einnahme (§2.2)", () => {
     expect(coinsForFormations(COIN_FORM_PER)).toBe(COIN_CYCLE_BASE + 1);
   });
 
-  it("der Deckel bindet — ein randvolles Brett zahlt nicht mehr als das Maximum", () => {
-    // Über den Schritt gerechnet statt über eine feste Formationszahl: sonst prüft der Test nach einer
-    // Schritt-Änderung nur noch, dass der Deckel EXISTIERT, und nicht mehr, dass er greift (Owner
-    // 2026-09-14: Schritt 8 → 10 — bei 48 Formationen, dem gemessenen Extremfall aus §2.5, bindet er nicht mehr).
-    const erste = COIN_FORM_PER * (COIN_FORM_CAP + 1); // die erste Zahl, bei der der Deckel wirklich schneidet
-    expect(coinsForFormations(erste - COIN_FORM_PER)).toBe(COIN_CYCLE_BASE + COIN_FORM_CAP); // die letzte ungedeckelte Sprosse
-    expect(coinsForFormations(erste)).toBe(COIN_CYCLE_BASE + COIN_FORM_CAP);                 // hier greift er
-    expect(coinsForFormations(999)).toBe(COIN_CYCLE_BASE + COIN_FORM_CAP);
+  it("KEIN Deckel mehr — die Einnahme steigt linear weiter (Owner 2026-09-16)", () => {
+    /* Der alte Deckel lag bei 4 Münzen und hätte ab 50 Formationen gebunden. Geprüft wird über den
+       SCHRITT statt über feste Zahlen: sonst prüfte der Test nach einer Schritt-Änderung nur noch,
+       dass irgendein Wert herauskommt. */
+    for (const n of [5, 6, 20, 100]) {
+      expect(coinsForFormations(COIN_FORM_PER * n), `${n} Sprossen`).toBe(COIN_CYCLE_BASE + n);
+    }
+    // Jede weitere volle Sprosse zahlt genau eine Münze mehr, ohne Obergrenze.
+    const weit = COIN_FORM_PER * 30;
+    expect(coinsForFormations(weit + COIN_FORM_PER) - coinsForFormations(weit)).toBe(1);
   });
 });
 
@@ -106,7 +108,7 @@ describe("Auszahlung am Durchlaufende (§2.2, Naht)", () => {
 
   it("der Kontostand summiert über die Durchläufe", () => {
     const first = endOfCycle(18);                          // +3
-    const second = endOfCycle(40, { coins: first.coins });  // +6, das volle Brett trifft den Deckel genau
+    const second = endOfCycle(40, { coins: first.coins });  // +6, das volle Brett ohne Deckel
     expect(second.lastCycleCoins).toBe(6);
     expect(second.coins).toBe(COIN_START + 3 + 6);
   });
