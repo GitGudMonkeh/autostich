@@ -15,6 +15,7 @@ import { TIER_META } from "../game/rarity.js";
 import { skillDef } from "../i18n/labels.js"; // übersetzter Skill-Name, EINE Quelle
 import { LEGENDARY_GOLD } from "./indicators/vocab.js"; // EINE Quelle für das Legendär-Gold (test/legendary-gold.test.js)
 import * as CT from "../game/contracts.js";
+import * as C from "../game/constants.js"; // BOARD_POSITIONS: „jede Position" statt „40 Positionen"
 
 /* One colour ramp for both overlays: the rarity colours of the game, plus the ONE legendary gold.
    The step of a task and the tier of a piece are the SAME ladder, so they must read the same. */
@@ -29,7 +30,21 @@ export function contractText(contract) {
   const variant = contract.variantId
     ? t(`contract.${CT.TASK_BY_ID[contract.taskId]?.variantKey === "category" ? "category" : "formation"}.${contract.variantId}`)
     : "";
-  return t(`contract.task.${contract.taskId}.text`, { n: contract.rung, variant });
+  /* Wechselt die Stufe den Zähler (Durchmarsch schwer), wechselt auch der Satz — sonst stünde dort
+     „Gewinne 5 Stiche", wo fünf makellose DURCHLÄUFE gemeint sind. */
+  const measure = CT.measureFor(contract.taskId, contract.step);
+  const key = measure === contract.taskId ? "text" : measure;
+  return t(`contract.task.${contract.taskId}.${key}`,
+    { n: contract.rung, count: contract.rung, variant, streak: CT.streakOf(contract) });
+}
+
+/* Der zweite Satz der schweren Stufe. Null, wo die Stufe keine Zusatzbedingung trägt. */
+export function contractExtraText(contract) {
+  const e = contract && contract.extra;
+  if (!e) return "";
+  if (e.noSuitStreak != null) return t("contract.extra.noSuitStreak", { n: e.noSuitStreak });
+  if (e.positions >= C.BOARD_POSITIONS) return t("contract.extra.allPositions", { min: e.min });
+  return t("contract.extra.positions", { n: e.positions, count: e.positions, min: e.min });
 }
 
 export const contractName = (contract) => (contract ? t(`contract.task.${contract.taskId}.name`) : "");
@@ -97,8 +112,12 @@ export function ContractOffer({ offers = [], windowId = 1, onPick }) {
               title={contractName(o)}
               body={<>
                 {contractText(o)}
+                {/* Die schwere Stufe hat zwei Bedingungen. Beide müssen VOR dem Annehmen zu lesen
+                    sein — sonst nimmt man eine Aufgabe an, deren halbe Hälfte man nicht kennt. */}
+                {o.extra && <span className="block mt-1">{contractExtraText(o)}</span>}
                 <span className="block mt-2 text-meta-1 opacity-60">
                   {t("contract.offer.band", { a: CT.tierLabel(band[0]), b: CT.tierLabel(band[1]) })}
+                  {o.step === CT.LEGENDARY_STEP && ` · ${t("contract.offer.legendary")}`}
                 </span>
               </>}
               cta={t("contract.offer.take")}
@@ -223,7 +242,11 @@ export function contractReadout(state) {
      Durchlaufgrenze zurück, der beste nicht. Nur eine Zahl zu zeigen hieße, entweder den Rückfall zu
      verstecken oder den Fortschritt. */
   return { active, live, best, target, left, done: best >= target,
-           peak: CT.hasPeak(active) && best > live, tone: tierColor(STEP_TIER[active.step]) };
+           peak: CT.hasPeak(active) && best > live, tone: tierColor(STEP_TIER[active.step]),
+           /* Die Zusatzbedingung hat einen eigenen Zustand: sie hält gerade oder nicht. Ohne diese
+              Anzeige sähe der Spieler seinen Zähler am Ziel stehen und bekäme trotzdem nichts. */
+           extra: active.extra ? contractExtraText(active) : "",
+           extraOk: active.extra ? CT.extraHolds(state, active) : true };
 }
 
 /* Die Zahlen als EIN Fragment — Kachel und Overlay-Zeile lesen dasselbe, damit sie nicht auseinanderlaufen. */
@@ -233,6 +256,18 @@ function Zahlen({ r }) {
       {r.live}<span className="opacity-45">/{r.target}</span>
       {r.peak && <span className="text-meta-1 opacity-45 ml-1">{t("contract.best", { n: r.best })}</span>}
     </>
+  );
+}
+
+/* Der Zustand der Zusatzbedingung. Ohne ihn stünde der Hauptzähler auf dem Ziel und der Auftrag
+   wäre trotzdem offen — ein Rätsel, das der Spieler nicht lösen kann. Farbe statt Symbol, weil das
+   Vokabular der Leiste keine neuen Glyphen kennt. */
+function ExtraMark({ r }) {
+  return (
+    <span className="text-meta-1 ml-1" style={{ color: r.extraOk ? "#5ab87a" : undefined }}
+      title={r.extra}>
+      {r.extraOk ? t("contract.extra.ok") : t("contract.extra.open")}
+    </span>
   );
 }
 
@@ -267,11 +302,13 @@ export function ContractTile({ state }) {
           style={{ color: r.done ? "#5ab87a" : r.tone }}>
           <Zahlen r={r} />
           <span className="text-meta-1 opacity-45 ml-1">{statusLabel(r)}</span>
+          {r.extra && <ExtraMark r={r} />}
         </div>
       </button>
       {open && (
         <div className="px-2.5 pb-2 pt-1 border-t" style={{ borderColor: DECK_BORDER }}>
           <div className="text-body-5 opacity-80 leading-snug">{contractText(r.active)}</div>
+          {r.extra && <div className="text-body-5 opacity-80 leading-snug mt-1">{r.extra}</div>}
           <div className="text-meta-1 opacity-50 mt-1">
             {t(`contract.step.${r.active.step}`)} · {t("contract.offer.band", { a: CT.tierLabel(band[0]), b: CT.tierLabel(band[1]) })}
           </div>
@@ -282,7 +319,7 @@ export function ContractTile({ state }) {
 }
 
 /* Eine Zeile für Aufstell- und Architekt-Overlay. Sie decken Leiste und Kopfleiste zu, und dahinter
-   werden sechs der fünfzehn Aufgaben entschieden (docs/zwischenaufgaben.md §4.3). */
+   werden sechs der vierzehn Aufgaben entschieden (docs/zwischenaufgaben.md §4.3). */
 export function ContractLine({ state, className = "" }) {
   const [open, setOpen] = useState(false);
   const r = contractReadout(state);
@@ -299,6 +336,7 @@ export function ContractLine({ state, className = "" }) {
           <Zahlen r={r} />
         </span>
         <span className="text-meta-1 opacity-45">{statusLabel(r)}</span>
+        {r.extra && <ExtraMark r={r} />}
       </button>
       {open && <div className="text-body-5 opacity-80 leading-snug mt-1 pl-4">{contractText(r.active)}</div>}
     </div>

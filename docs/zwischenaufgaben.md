@@ -14,7 +14,7 @@ Sprache Deutsch, weil Beutenamen und Beutetexte Produktsprache sind und der Owne
 Bewusste Abweichung von der Engineering-Sprache in `AGENTS.md`, wie bei `docs/skill-rework.md` und
 `docs/muenz-oekonomie.md`, und nur für dieses Dokument.
 
-**Zusammenfassung des ganzen Systems** — Ablauf, vier Stufen, alle 15 Aufgaben und alle 61
+**Zusammenfassung des ganzen Systems** (Stand 2026-09-15, noch mit vier Stufen und 15 Aufgaben) — Ablauf und alle 61
 Beutestücke mit ihren Spieltexten:
 <https://claude.ai/artifact/H3h142reTigpGDNKFkK2ha>
 
@@ -98,13 +98,18 @@ verfallen. Abgerechnet wird am **Fensterende**; erfüllt, stehen dann **drei Beu
 
 - Zwei Fenster: **D1 bis D16** und **D17 bis D32** (Owner, 2026-09-15).
 - **Drei Angebote zur Wahl**, jedes mit eigener Schwierigkeit.
-- **Jede Aufgabe hat vier Stufen** mit **eigenen Namen** und den Farben der Raritäten.
+- **Drei Stufen** — Leicht, Mittel, Schwer (Owner, 2026-09-16) — mit den Farben der Raritäten. Da es
+  ebenso viele Angebote wie Stufen gibt, zeigt jede Auslage genau eine je Stufe.
+- **Nicht jede Aufgabe bietet jede Stufe an** (Owner, 2026-09-16). Langbau hat kein Leicht: fünf
+  Karten sind die Segmentwand, alles darunter ist geschenkt.
 - **Die Stufe bestimmt ein Beute-Band aus zwei benachbarten Raritäten** (§3.2). Legendäre Beute gibt
-  es nur in der oberen Hälfte des vierten Bandes.
+  es nur in der oberen Hälfte des schweren Bandes.
+- **Die schwere Stufe kann eine Zusatzbedingung tragen** (§4.0a). Beide Bedingungen müssen im selben
+  Durchlauf stehen.
 - **Beim Wählen sieht man die Aufgabe und ihre Stufe, nicht die Beute** (Owner, 2026-09-14). Kein
   Neuwurf.
 - Beute **wirkt weiter und zahlt nie in Score**.
-- **Legendäre Beute ist schon am Ende von Fenster 1 möglich**, über das vierte Band.
+- **Legendäre Beute ist schon am Ende von Fenster 1 möglich**, über das schwere Band.
 - **Erfüllt zahlt drei Beutestücke zur Wahl** (Owner, 2026-09-15).
 - **Abgerechnet wird erst nach der letzten Runde des Fensters** — D16 und D32 (Owner, 2026-09-15).
   Die Beute wirkt ab der nächsten Phase. Siehe §3.7.
@@ -206,7 +211,7 @@ bleibt offen.
 Die Wahl fällt im ersten Fenster **nach der ersten Skill-Wahl**, im zweiten bei **D17**. Beide Male
 weiß der Spieler genug über seinen Bau, um zu beurteilen, was zu ihm passt.
 
-### 3.2 Vier Stufen, jede mit einem Beute-Band
+### 3.2 Drei Stufen, jede mit einem Beute-Band
 
 Die Aufgabenstufen tragen **eigene Namen**, die Farben bleiben die der Raritäten (Owner,
 2026-09-14). Die Namen sind literal, nicht bildhaft: die Stufe soll sagen, wie schwer die Arbeit ist,
@@ -218,26 +223,32 @@ und die Farbe sagt, was sie zahlt.
 | --- | --- | --- | --- |
 | **Leicht** | Normal | Normal oder Selten | läuft nebenbei mit, wenn man nichts dagegen tut |
 | **Mittel** | Selten | Selten oder Sehr selten | die Aufstellung muss ernst genommen werden |
-| **Schwer** | Sehr selten | Sehr selten oder Episch | man muss darauf zuspielen |
-| **Sehr schwer** | Episch | Episch oder Legendär | der Bau muss danach ausgerichtet sein |
+| **Schwer** | Sehr selten | Sehr selten oder Episch, selten Legendär | der Bau muss danach ausgerichtet sein |
 
-> **Zwei Wörter, die auf einem Chip nah beieinander liegen.** „Schwer" und „Sehr schwer"
-> unterscheiden sich in Versalien nur durch das erste Wort. Die Breite reicht (überschlagen rund
-> 70 px für „SEHR SCHWER" neben bis zu 95 px Aufgabenname in einer 246 px breiten Spalte), aber die
-> Lesbarkeit auf einen Blick ist am echten Screen zu prüfen; das kritische Paar ist
-> **Verflechtung** plus **Sehr schwer**.
+> **Von vier Stufen auf drei** (Owner, 2026-09-16). „Sehr schwer" ist entfallen und sein Anspruch in
+> „Schwer" aufgegangen. Zwei Nebenwirkungen, beide erwünscht: das Chip-Paar „Schwer" neben „Sehr
+> schwer", das sich in Versalien nur im ersten Wort unterschied, gibt es nicht mehr — und da es
+> **drei Angebote und drei Stufen** gibt, zeigt jede Auslage künftig genau eine je Stufe statt drei
+> aus vier zu ziehen. Die Wahl deckt damit immer die ganze Spannweite ab.
 
 **Das Band ist die Spannung.** Da die Beute verdeckt bleibt, weiß der Spieler beim Wählen das Band,
-aber nicht das Stück. Eine Aufgabe der dritten Stufe zahlt Sehr selten **oder** Episch, und welches
-von beiden, entscheidet sich erst beim Erfüllen. Die Stufe verspricht damit einen Korridor, keine
-Zahl.
+aber nicht das Stück. Eine schwere Aufgabe zahlt Sehr selten **oder** Episch, und welches von beiden,
+entscheidet sich erst beim Erfüllen. Die Stufe verspricht damit einen Korridor, keine Zahl.
 
-**Legendäre Beute hat damit genau ein Zuhause:** die obere Hälfte des vierten Bandes.
+**Legendäre Beute hat damit genau ein Zuhause:** die obere Hälfte des schweren Bandes.
 
-**Gesetzt (Owner, 2026-09-15): das Band ist 70 zu 30 gewichtet, zugunsten der unteren Rarität.**
-Dieselbe Zahl gilt für alle vier Stufen, ohne Sonderfall für die Spitze. Auf der vierten Stufe ist
-das zugleich der **Legendär-Satz**: 70 % Episch, 30 % Legendär. Damit bedeutet jede Stufe im
-Regelfall das, was ihr Name sagt, und Legendär bleibt der Ausreißer statt der Erwartung.
+**Gesetzt (Owner, 2026-09-15/16): das Band ist 70 zu 30 gewichtet, zugunsten der unteren Rarität**,
+und die obere Hälfte des schweren Bandes teilt sich noch einmal 70 zu 30. Je gezogenem Stück:
+
+| Stufe | Normal | Selten | Sehr selten | Episch | Legendär |
+| --- | --- | --- | --- | --- | --- |
+| Leicht | 70 % | 30 % | — | — | — |
+| Mittel | — | 70 % | 30 % | — | — |
+| Schwer | — | — | 70 % | 21 % | **9 %** |
+
+Da drei Stücke gezogen werden, liegt in rund **jedem vierten** erfüllten schweren Auftrag ein
+Legendäres in der Auslage. Damit bedeutet jede Stufe im Regelfall das, was ihr Name sagt, und
+Legendär bleibt der Ausreißer statt der Erwartung.
 
 > **Was der Satz für Legendär bedeutet.** Gerechnet, nicht gemessen, und unter zwei Annahmen: die
 > Rarität wird **je Stück** gewürfelt, und der Spieler schafft **beide** Aufgaben auf „Sehr schwer".
@@ -288,7 +299,7 @@ in **8 bis 9** Phasen jeder Sorte nach (34 Durchläufe nach D16), Beute aus Fens
 
 ### 3.5 Voraussetzungen werden genannt, nicht weggefiltert
 
-Bei sechs der fünfzehn Aufgaben sind die oberen Stufen an etwas gebunden, das man erst finden muss. Das ist
+Bei sechs der vierzehn Aufgaben sind die oberen Stufen an etwas gebunden, das man erst finden muss. Das ist
 **gewollt** (Owner, 2026-09-14): eine solche Aufgabe sagt dem Spieler, wohin er bauen soll.
 
 Ein erster Vorschlag, solche Stufen gar nicht erst anzubieten, ist damit **verworfen**: er hätte genau
@@ -302,14 +313,16 @@ er es aufmacht.
 
 1. **Gewürfelte Parameter statt einer langen Liste** — gebaut. Dasselbe Muster wie `WEEK_MODS`:
    Reinheit würfelt den Formationstyp (vier Varianten), Quartier die Gebäudekategorie (drei). Am Code
-   nachgezählt ergeben 15 Definitionen **20 unterscheidbare Angebote** und mit den vier Stufen **80**
-   mögliche Karten; bei zwei Aufgaben je Lauf sieht ein Spieler zwei davon. **Farbtreue würfelt keine
-   Farbe** (Owner, 2026-09-14): die Serie zählt, egal in welcher sie läuft. Alle drei Zahlen stehen
-   als Test, nicht als Behauptung.
+   nachgezählt ergeben 14 Definitionen **19 unterscheidbare Angebote** und mit den drei Stufen **56**
+   mögliche Karten — nicht 57, weil Langbau nur zwei Stufen anbietet. Bei zwei Aufgaben je Lauf sieht
+   ein Spieler zwei davon. **Farbtreue würfelt keine Farbe** (Owner, 2026-09-14): die Serie zählt,
+   egal in welcher sie läuft. Alle Zahlen stehen als Test, nicht als Behauptung.
 2. **Kein Angebot zweimal in einem Lauf** — gebaut, und dabei eine Lücke geschlossen: gesperrt waren
    zuerst nur die **angenommenen** Aufgaben. Damit konnte Fenster 2 genau die zwei zeigen, die man
    eben hatte verfallen lassen. Jetzt wandern **alle drei Aufsteller** beim Auslegen in `usedTasks`,
-   nicht beim Annehmen. Fünfzehn Aufgaben minus drei lassen für das zweite Fenster genug übrig.
+   nicht beim Annehmen. Vierzehn Aufgaben minus drei lassen für das zweite Fenster genug übrig.
+   Gezogen wird dabei **erst die Stufe, dann die Aufgabe** aus denen, die diese Stufe anbieten —
+   andersherum bliebe manchmal eine Stufe ohne Kandidaten übrig (Langbau hat kein Leicht).
 **Regel 3 ist gestrichen** (Owner, 2026-09-15). Sie lautete „die letzten vier Aufgaben sind
 gesperrt" und war ein Vorschlag von mir, den nie jemand aufgegriffen hat. Der Befund bleibt notiert,
 damit niemand sie später als gute Idee wiederentdeckt:
@@ -331,7 +344,7 @@ Phase.
 Vorher zahlte der Auftrag sofort bei Erfüllung. Zwei Dinge sprachen dagegen:
 
 - **Eine früh erfüllte Aufgabe der untersten Stufe zahlte fast das ganze Fenster mit.** Wer „Leicht"
-  im zweiten Durchlauf schaffte, hatte seine Beute vierzehn Runden lang, wer „Sehr schwer" erst am
+  im zweiten Durchlauf schaffte, hatte seine Beute vierzehn Runden lang, wer die schwerste erst am
   Ende schaffte, ein paar. Das Band soll die Rarität staffeln, nicht zusätzlich die Wirkdauer.
 - **Der Abrechnungszeitpunkt war unvorhersehbar.** Jetzt ist er eine feste Runde, gleich für beide
   Fenster und für alle vier Stufen.
@@ -351,27 +364,48 @@ Was daraus folgt:
 
 ## 4. Der Aufgaben-Katalog
 
-**Fünfzehn Aufgaben mit je vier Stufen.** Die Werte sind Owner-Entscheid aus Playtest-Erfahrung
-(2026-09-14), wo nicht anders vermerkt. Die Messungen darunter sagen, wo sie gegenüber dem
-Sim-Verhalten stehen.
+**Vierzehn Aufgaben mit je drei Stufen** (Owner, 2026-09-16). Alle Werte sind Owner-Entscheid,
+getroffen gegen die volle Messung von 2026-09-16 (120 Läufe, fünf Spielweisen, beide Fenster
+getrennt). Die Messungen darunter sagen, wo sie gegenüber dem Sim-Verhalten stehen.
 
-| Aufgabe | zählt | Normal · Selten · Sehr selten · Episch |
+| Aufgabe | zählt | Leicht · Mittel · Schwer |
 | --- | --- | --- |
-| **Durchmarsch** Siege in einem Durchlauf | Spitze | 22 · 26 · 30 · 34 |
-| **Sperrfeuer** Segmente mit allen fünf Stichen | Spitze | 2 · 3 · 4 · 5 |
-| **Strähne** längste Siegesserie | Spitze | 10 · 15 · 30 · 60 |
-| **Gedränge** Formationen in einer Aufstellung | Spitze | 30 · 35 · 40 · 45 |
-| **Reinheit** Formationen eines gewürfelten Typs | Spitze | siehe unten |
-| **Langbau** längste Formation | Spitze | 5 · 10 · 15 · 20 |
-| **Vollbrett** Positionen mit mindestens einer Formation | Spitze | 30 · 34 · 37 · 40 |
-| **Verflechtung** Positionen in mindestens drei Formationen | Spitze | 3 · 5 · 7 · 10 |
-| **Farbtreue** Siege derselben Farbe in Folge | Spitze | 5 · 7 · 10 · 15 |
-| **Buntspiel** Siege je Grundfarbe in einem Durchlauf | Spitze | 4 · 5 · 6 · 7 |
-| **Brecher** zehn Siege über einem Kampfwert | Summe | über 10 · 12 · 15 · 20 |
-| **Fußvolk** Siege mit Grundwert 4 oder weniger | Summe | 40 · 60 · 80 · 110 |
-| **Aufmarsch** Kampfwert über dem Gegnerdeck | Zustand | 20 · 30 · 40 · 60 |
-| **Quartier** volle Baufeld-Segmente einer Kategorie | Zustand | 1 · 2 · 3 · 4 |
-| **Säckel** Münzen gehalten | Zustand | 60 · 80 · 100 · 120 |
+| **Durchmarsch** Siege in einem Durchlauf | Spitze | 25 · 35 · **5 Durchläufe in Folge mit allen 40 Stichen** |
+| **Sperrfeuer** Segmente mit allen fünf Stichen | Spitze | 3 · 6 · 8 + Zusatz |
+| **Gedränge** gebaute Formationen | Spitze | 25 · 30 · 40 + Zusatz |
+| **Reinheit** Positionen in einem gewürfelten Typ | Spitze | siehe unten |
+| **Langbau** längste Formation | Spitze | — · 10 · 15 |
+| **Vollbrett** Positionen mit mindestens einer Formation | Spitze | 30 · 40 · 40 + Zusatz |
+| **Verflechtung** Positionen in mindestens drei Formationen | Spitze | 5 · 10 · 20 + Zusatz |
+| **Farbtreue** Farben mit einer Zehnerserie | Spitze | 1 · 2 · 3 + Zusatz |
+| **Buntspiel** Siege je Grundfarbe in einem Durchlauf | Spitze | 5 · 7 · 8 + Zusatz |
+| **Brecher** zehn Siege über einem Kampfwert | Summe | über 10 · 15 · 20 |
+| **Fußvolk** Siege mit Grundwert 4 oder weniger | Summe | 50 · 100 · 200 |
+| **Aufmarsch** Kampfwert-Vorsprung in einem Durchlauf | Spitze | 60 · 120 · 250 |
+| **Quartier** volle Baufeld-Reihen einer Kategorie | Zustand | 1 · 3 · 5 |
+| **Säckel** Münzen gehalten | Zustand | 60 · 80 · 120 |
+
+### 4.0a Die Zusatzbedingung
+
+**Sieben schwere Stufen tragen eine zweite Bedingung** (Owner, 2026-09-16). Sie steht neben dem
+Hauptzähler, nicht an seiner Stelle: erfüllt ist ein Durchlauf erst, wenn **beide** in ihm standen.
+Sechs verlangen eine Brettform, eine verbietet etwas — die einzige Verbotsbedingung des Katalogs.
+
+| Bedingung | trägt |
+| --- | --- |
+| jede Position in mindestens 2 Formationen | Sperrfeuer · Gedränge · Reinheit/Farbblock · Farbtreue |
+| 20 Positionen in mindestens 3 Formationen | Vollbrett |
+| mindestens 5 Positionen in 4 Formationen | Verflechtung |
+| **keine** Farbserie länger als 3 Stiche | Buntspiel |
+
+Zwei Folgen im Bau. Erstens hat Vollbrett auf Mittel und Schwer **dieselbe** Sprosse (40) — die
+härtere Stufe steigt nicht in der Zahl, sondern über den Zusatz; ein Wächter verlangt deshalb, dass
+eine gleiche Sprosse immer von einer Zusatzbedingung begleitet wird. Zweitens zählt die Spitze bei
+diesen Aufgaben **gesperrt**: ein Durchlauf, in dem der Zusatz nicht stand, geht gar nicht erst in
+den Bestwert ein, sonst wäre er über die Fensterlaufzeit umsonst.
+
+Die Anzeige führt den Zusatz eigens: „Zusatz erfüllt" oder „Zusatz offen" neben dem Zähler. Ohne das
+stünde der Hauptzähler am Ziel und der Auftrag bliebe offen — ein Rätsel ohne Lösung.
 
 **Brecher ist anders gebaut als die übrigen:** die Zahl der Stiche steht fest bei zehn, die Leiter
 läuft über die **Schwelle**. Zehn Siege mit einem Kampfwert über 10 sind die unterste Stufe, zehn über
@@ -381,12 +415,12 @@ läuft über die **Schwelle**. Zehn Siege mit einem Kampfwert über 10 sind die 
 der vierzig Positionen in mindestens **einer** Formation des gewürfelten Typs liegen. Eine Position in
 drei Farbblöcken zählt einmal.
 
-| Typ | Leicht · Mittel · Schwer · Sehr schwer |
+| Typ | Leicht · Mittel · Schwer |
 | --- | --- |
-| Farbblock | **25 · 30 · 35 · 40** |
-| Wiederholung | **10 · 14 · 18 · 25** |
-| Treppe | **12 · 16 · 20 · 28** |
-| Wechsel | **12 · 16 · 20 · 28** |
+| Farbblock | **20 · 30 · 40** + jede Position in mindestens 2 Formationen |
+| Wiederholung | **20 · 30 · 34** |
+| Treppe | **20 · 26 · 32** |
+| Wechsel | **20 · 26 · 32** |
 
 **Warum das Maß gewechselt hat.** Distinkte Läufe eines Typs reichen gemessen von **2 bis 8** — neun
 mögliche Werte für vier Stufen, jede Stufe also ein Sprung. Karten reichen von **6 bis 40**. Erst das
@@ -401,15 +435,19 @@ lässt sich feinjustieren, und genau das war der Auslöser: der Owner hatte „S
 > hinfällig. **Jede Zahl in §2.2 und §4.4, die Formationen zählt, stammt aus derselben Sonde und ist
 > entsprechend zu tief.**
 
-**Die neuen Leitern sind Owner-Werte**, nicht kalibriert. Gemessen (bester Durchlauf in Fenster 1,
-spielende Bauweisen, korrekt gerechnet) liegen sie so:
+**Die Leitern sind Owner-Werte**, gesetzt gegen die Messung vom 2026-09-16 (120 Läufe, Anteil der
+Fenster, die den Wert erreichen — F1 / F2):
 
-| Typ | Leicht | Mittel | Schwer | Sehr schwer |
-| --- | --- | --- | --- | --- |
-| Farbblock | 8 % | 3 % | 3 % | 1 % |
-| Wiederholung | 61 % | 23 % | 10 % | 3 % |
-| Treppe | 94 % | 68 % | 34 % | 1 % |
-| Wechsel | 99 % | 96 % | 88 % | 21 % |
+| Typ | Leicht | Mittel | Schwer |
+| --- | --- | --- | --- |
+| Farbblock | 20 → 13 % / 38 % | 30 → 3 % / 23 % | 40 → 1 % / 8 %, plus Zusatz |
+| Wiederholung | 20 → 0 % / 10 % | 30 → 0 % / 3 % | 34 → 0 % / 3 % |
+| Treppe | 20 → 36 % / 52 % | 26 → 6 % / 13 % | 32 → 2 % / 6 % |
+| Wechsel | 20 → 69 % / 74 % | 26 → 36 % / 45 % | 32 → 5 % / 8 % |
+
+Die vier Typen liegen weit auseinander, und die Leitern gleichen das nur teilweise aus: Wechsel auf
+Leicht trifft siebenmal von zehn, Wiederholung auf Leicht in Fenster 1 nie. Das ist gesehen und
+gesetzt, nicht übersehen.
 
 > Die Messung läuft über `factionPolicy`, die die Aufstellung **nicht** optimiert; ein Spieler, der
 > gezielt tauscht, liegt darüber. Sie taugt als Vergleich der vier Typen untereinander, nicht als
@@ -422,20 +460,19 @@ Gedankenstrich, kein Selbstbezug.
 
 | Aufgabe | Text |
 | --- | --- |
-| Durchmarsch | Gewinne in einem Durchlauf X Stiche. |
+| Durchmarsch | Gewinne in einem Durchlauf X Stiche. Auf Schwer: X Durchläufe in Folge ohne einen verlorenen Stich. |
 | Sperrfeuer | Gewinne in einem Durchlauf alle fünf Stiche in X Segmenten. |
-| Strähne | Gewinne X Stiche in Folge. |
 | Gedränge | Baue X Formationen in einer Aufstellung. |
 | Reinheit | Baue X Formationen vom Typ [Typ] in einer Aufstellung. |
 | Langbau | Baue eine Formation aus X Karten. |
 | Vollbrett | Bringe X der 40 Positionen in mindestens eine Formation. |
 | Verflechtung | Bringe X Positionen in mindestens drei Formationen. |
-| Farbtreue | Gewinne X Stiche derselben Farbe in Folge. |
+| Farbtreue | Schaffe eine Serie von zehn Stichen in X verschiedenen Farben. |
 | Buntspiel | Gewinne in einem Durchlauf mit jeder Farbe mindestens X Stiche. |
 | Brecher | Gewinne zehn Stiche mit einem Kampfwert über X. |
 | Fußvolk | Gewinne X Stiche mit Karten vom Grundwert 4 oder weniger. |
-| Aufmarsch | Bringe dein Deck X Kampfwert über das Gegnerdeck. |
-| Quartier | Bedecke X Baufeld-Segmente vollständig mit Gebäuden einer Kategorie. |
+| Aufmarsch | Gewinne einen Durchlauf mit X Kampfwert Vorsprung insgesamt. |
+| Quartier | Bedecke X volle Reihen des Baufelds mit Gebäuden einer Kategorie. |
 | Säckel | Halte X Münzen, bis der Auftrag endet. |
 
 **Sperrfeuer braucht eine genaue Erklärung** (Owner): ein Segment sind die festen Fünferblöcke der
@@ -527,7 +564,7 @@ nicht hatte:
 
 | wo entschieden | Aufgaben | stehende Anzeige sichtbar |
 | --- | --- | --- |
-| Stichspiel | Durchmarsch, Sperrfeuer, Strähne, Farbtreue, Buntspiel, Brecher, Fußvolk (7) | **ja** |
+| Stichspiel | Durchmarsch, Sperrfeuer, Farbtreue, Buntspiel, Brecher, Fußvolk (6) | **ja** |
 | Aufstell-Overlay | Gedränge, Reinheit, Langbau, Vollbrett, Verflechtung (5) | **nein** |
 | Architekt-Overlay | Quartier (1) | **nein** |
 | beides | Aufmarsch, Säckel (2) | teilweise |
@@ -561,7 +598,6 @@ Die Anzeigeform folgt der Art des Zählers:
 | --- | --- |
 | Durchmarsch | Siege im laufenden Durchlauf, daneben der beste Durchlauf bisher |
 | Sperrfeuer | volle Segmente im laufenden Durchlauf, daneben der beste bisher |
-| Strähne | die laufende Serie, daneben die längste bisher |
 | Gedränge | Formationen der aktuellen Aufstellung, daneben die beste bisher |
 | Reinheit | dieselbe Zahl, auf den gewürfelten Typ gefiltert |
 | Langbau | längste Formation der aktuellen Aufstellung, daneben die beste bisher |
@@ -571,8 +607,8 @@ Die Anzeigeform folgt der Art des Zählers:
 | Buntspiel | **vier Zähler, einer je Grundfarbe**, plus das Minimum daraus |
 | Brecher | laufende Summe der Siege über der Schwelle, gegen 10 |
 | Fußvolk | laufende Summe |
-| Aufmarsch | aktuelle Differenz zum Gegnerdeck |
-| Quartier | volle Segmente je Kategorie |
+| Aufmarsch | Kampfwert-Vorsprung des laufenden Durchlaufs, daneben der beste bisher |
+| Quartier | volle Reihen je Kategorie |
 | Säckel | Kontostand gegen das Ziel |
 
 Dazu bei jeder Form die **Restlaufzeit** („noch 6 Durchläufe"): sechs Durchläufe sind sechs Versuche,
@@ -600,11 +636,27 @@ sind 2. Der Greedy-Löser der Sim optimiert aber **Formationen**, nicht Segments
 also nie. Feuer erreicht bei D30 im p90 acht volle Segmente. Die Messung misst hier einen Spieler, der
 nicht danach spielt.
 
-**Aufmarsch.** Gemessen liegt die Kampfwert-Differenz bei D15 im Median bei 3,5 (naiv) bis 11 (Blitz),
-p90 bei 24. Die unterste Stufe ist 20. Vermutlich derselbe Grund: die Perk-Politik der Sim nimmt
-Wert-Perks nicht gezielt. Aufmarsch ist damit auch auf Normal ein echter Auftrag.
+**Aufmarsch — der Text versprach Kampfwert, der Code maß Kartenwert** (Owner-Befund im Playtest,
+2026-09-16). Gemessen wurde `Σ deck[].value − Σ oppDeck[].value`. Damit fielen unter den Tisch:
+Brandmal-Reduktionen auf dem Gegnerdeck, Glühende Klinge, Gebäude-Stichwert, Anker — alles, was
+nicht den Kartenwert dauerhaft hebt.
 
-**Säckel bleibt bei 60 · 80 · 100 · 120, in beiden Fenstern** (Owner, 2026-09-15).
+**Der Grund ist strukturell: ein Deck HAT keinen Kampfwert.** Er entsteht erst im Stich
+(`engine.js`: `pValue` aus elf Quellen, `oValue = max(0, Kartenwert + Schwierigkeit − Brand)`).
+Gemessen wird deshalb seit 2026-09-16 der **beste Durchlauf**: die Summe (`pValue − oValue`) über
+seine vierzig Stiche. Jede Quelle zählt mit, Gegnerdeck-Reduktionen eingeschlossen. Die Aufgabe
+wechselt damit von „Zustand" zu „Spitze" und bekommt einen neuen Satz.
+
+> **Eine Kante bleibt:** `oValue` ist bei null abgeschnitten. Drückt eine Reduktion eine Gegnerkarte
+> unter null, zählt der Überschuss nicht mehr mit. Dem Owner gemeldet, bewusst so gelassen.
+
+Gemessen (120 Läufe, Anteil der Fenster, die den Wert erreichen): **60** → F1 27 %, F2 83 % ·
+**120** → 3 % / 41 % · **250** → 0 % / 8 %. Höchster gemessener Wert 315.
+
+> Die frühere Zahl in dieser Reihe („Kampfwert-Differenz bei D15 im Median 3,5 bis 11, p90 24") maß
+> das alte, falsche Maß und ist damit hinfällig.
+
+**Säckel steht bei 60 · 80 · 120, in beiden Fenstern** (Owner, 2026-09-16; zuvor 60 · 80 · 100 · 120).
 
 > **Korrektur.** Hier stand, die Stufen 100 und 120 seien bis D15 „arithmetisch unmöglich, egal wie
 > gut jemand spielt". Das war falsch. Ich hatte den gemessenen **Kontostand** eines Sims, der normal
@@ -741,6 +793,7 @@ ergibt; der Münz-Deckel bindet ab 32 und trifft 1 % aller Durchläufe.
 | **Meisterschaft** (Skills auf hoher Stufe) | zu wenig Einfluss, zu nah am Glückswurf (Owner). Gegenmessung fürs Protokoll: bei D15 hält ein Lauf **0 Skills auf Selten oder höher** (p90: 1), bei D30 ebenso. Ohne Kaufen passiert dort nichts. |
 | **Hochbau** (Gebäude auf Stufe 3) | gestrichen (Owner). |
 | **Kaltstart** (die ersten zehn Stiche) | ging in Sperrfeuer auf. |
+| **Strähne** (längste Siegesserie) | gestrichen (Owner, 2026-09-16): dasselbe Maß wie Durchmarsch, nur anders verpackt. Der Katalog geht damit von 15 auf 14. |
 
 ---
 
@@ -1143,7 +1196,7 @@ nicht dauerhaft (§4.1).
 **Gesetzt (Owner, 2026-09-15): die Fortschrittsanzeige hat zwei Orte.** `StatusRail.jsx` als
 erstes Kind über den Multiplikatoren (der Platz aus dem Mockup bestätigt sich), **plus** eine Zeile
 im Aufstell- und im Architekt-Overlay. Am Code nachgesehen: beide Overlays decken Leiste und
-Kopfleiste zu, und dahinter werden sechs der fünfzehn Aufgaben entschieden. Die Prüfung der Tests,
+Kopfleiste zu, und dahinter werden sechs der vierzehn Aufgaben entschieden. Die Prüfung der Tests,
 der Einbaukosten und des Kopfleisten-Gegenvorschlags steht in §4.3.
 
 **Gesetzt (Owner, 2026-09-15): Reinheit läuft auf EINER Leiterform mit vier Startwerten** —
@@ -1206,13 +1259,12 @@ Engine-Primitive.
 | Stiftung | Auszahlung am Phasenbeginn |
 | Aufgaben-Gedächtnis | Profil in `storage.js`, additiv über `DEFAULT_PROFILE` |
 
-Die Zähler der fünfzehn Aufgaben, alle aus vorhandenem State:
+Die Zähler der vierzehn Aufgaben, alle aus vorhandenem State:
 
 | Aufgabe | Zähler |
 | --- | --- |
 | Durchmarsch | Siege je Durchlauf aus dem `wins`-Verlauf |
 | Sperrfeuer | Stichergebnisse je Fünferblock, `SEGMENT_SIZE` in `formations.js` |
-| Strähne | `bestStreak` |
 | Gedränge | `countBuiltFormations(state.formations)`, dieselbe Zahl, die die Münz-Einnahme zählt |
 | Reinheit | dieselbe Funktion, gefiltert auf einen Typ aus `FORMATION_TYPES` |
 | Langbau | Länge des längsten Laufs, `members.length` in `computeFormations` |
@@ -1222,8 +1274,8 @@ Die Zähler der fünfzehn Aufgaben, alle aus vorhandenem State:
 | Buntspiel | `lastTrick.pCard.suit` je Sieg, also die **Grundfarbe**, ausdrücklich nicht `effColor` |
 | Brecher | `lastTrick.pValue` je Sieg gegen die Schwelle |
 | Fußvolk | `lastTrick.pCard.baseRank` je Sieg, der unveränderte Grundwert |
-| Aufmarsch | Summe über `deck[].value` minus Summe über `oppDeck[].value` |
-| Quartier | `occupiedCells` je Zeile plus `familyDef(b.familyId).category`, wie `summarizeArchitect` es tut |
+| Aufmarsch | Summe (`lastTrick.pValue` − `lastTrick.oValue`) über die Stiche des Durchlaufs |
+| Quartier | `BUILD_LINES` (21 Reihen) gegen die bedeckten Zellen plus `familyDef(b.familyId).category` |
 | Säckel | `state.coins` am Fensterende |
 
 **Drei Zähler brauchen den Stich-Strom**, nicht nur den Rundenendstand: Buntspiel, Brecher und Fußvolk

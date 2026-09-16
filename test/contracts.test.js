@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import * as CT from "../src/game/contracts.js";
 import { DECISION_SCHEDULE } from "../src/game/constants.js";
+import * as C from "../src/game/constants.js";
 import { reducer } from "../src/game/reducer.js";
 import { SKILL_LIST, isLegendarySkill } from "../src/game/skills.js";
 import { computeFormations, openBorderInfo, FORMATION_TYPES } from "../src/game/formations.js";
@@ -46,8 +47,8 @@ describe("Aufträge · die Fenster liegen auf vollen Entscheidungsblöcken", () 
 });
 
 describe("Aufträge · Katalog und Leitern", () => {
-  it("fünfzehn Aufgaben, 61 Beutestücke (14 Familien × 4 + 5 Legendäre)", () => {
-    expect(CT.TASKS.length).toBe(15);
+  it("vierzehn Aufgaben, 61 Beutestücke (14 Familien × 4 + 5 Legendäre)", () => {
+    expect(CT.TASKS.length, "Strähne gestrichen (Owner, 2026-09-16)").toBe(14);
     expect(CT.LOOT_FAMILIES.length).toBe(14);
     expect(CT.LEGENDARIES.length).toBe(5);
     expect(CT.LOOT_FAMILIES.length * 4 + CT.LEGENDARIES.length).toBe(61);
@@ -60,29 +61,61 @@ describe("Aufträge · Katalog und Leitern", () => {
   });
 
   it("jede Leiter steigt streng — eine höhere Stufe verlangt nie weniger", () => {
+    /* Gemessen wird der Anstieg INNERHALB EINES MASSES. Wo eine Stufe den Zähler wechselt
+       (Durchmarsch schwer zählt Durchläufe statt Stiche), sind die Zahlen nicht vergleichbar —
+       dort endet die Leiter, statt dass der Wächter gelockert wird. Eine Stufe, die die Aufgabe
+       gar nicht anbietet, trägt `null` und beendet die Leiter ebenso. */
     const ladders = [];
     for (const task of CT.TASKS) {
-      if (task.rungs) ladders.push([task.id, task.rungs]);
-      for (const v of task.variants || []) if (v.rungs) ladders.push([`${task.id}/${v.id}`, v.rungs]);
+      if (task.rungs) ladders.push([task.id, task]);
+      for (const v of task.variants || []) if (v.rungs) ladders.push([`${task.id}/${v.id}`, task, v]);
     }
-    for (const [name, rungs] of ladders) {
-      expect(rungs.length, name).toBe(4);
-      for (let i = 1; i < rungs.length; i++) expect(rungs[i], `${name} Stufe ${i + 1}`).toBeGreaterThan(rungs[i - 1]);
+    for (const [name, task, variant] of ladders) {
+      const rungs = (variant && variant.rungs) || task.rungs;
+      expect(rungs.length, name).toBe(3);
+      for (let i = 1; i < rungs.length; i++) {
+        const step = CT.STEPS[i], prev = CT.STEPS[i - 1];
+        if (rungs[i] == null || rungs[i - 1] == null) continue;                 // Stufe wird nicht angeboten
+        if (CT.measureFor(task.id, step) !== CT.measureFor(task.id, prev)) continue;  // anderer Zähler
+        expect(rungs[i], `${name} Stufe ${i + 1} fordert WENIGER`).toBeGreaterThanOrEqual(rungs[i - 1]);
+        /* Gleich viel ist nur erlaubt, wenn die höhere Stufe stattdessen eine Zusatzbedingung
+           trägt — Vollbrett bleibt bei 40 und verlangt obendrein Dichte. Sonst wäre die Stufe
+           umsonst teurer bezahlt. */
+        if (rungs[i] === rungs[i - 1]) {
+          const zusatz = CT.extraFor(task.id, step, variant && variant.id);
+          expect(zusatz, `${name} Stufe ${i + 1}: gleiche Sprosse ohne Zusatzbedingung`).toBeTruthy();
+        }
+      }
     }
   });
 
-  it("Reinheit: die vier Owner-Leitern auf dem KARTEN-Maß (2026-09-15)", () => {
+  it("eine Stufe ohne Sprosse wird auch nicht angeboten", () => {
+    // Langbau hat kein Leicht: fünf Karten sind die Segmentwand, alles darunter ist geschenkt.
+    for (const task of CT.TASKS) {
+      for (const [i, step] of CT.STEPS.entries()) {
+        const hat = (task.rungs || [])[i] != null
+          || (task.variants || []).some((v) => (v.rungs || [])[i] != null);
+        expect(CT.offersStep(task.id, step), `${task.id}/${step}`).toBe(hat);
+      }
+    }
+    expect(CT.offersStep("langbau", "leicht")).toBe(false);
+    expect(CT.stepsOf("langbau")).toEqual(["mittel", "schwer"]);
+  });
+
+  it("Reinheit: die vier Owner-Leitern auf dem KARTEN-Maß (2026-09-16)", () => {
     const leitern = {
-      farbblock:    [25, 30, 35, 40],
-      wiederholung: [10, 14, 18, 25],
-      treppe:       [12, 16, 20, 28],
-      wechsel:      [12, 16, 20, 28],
+      farbblock:    [20, 30, 40],
+      wiederholung: [20, 30, 34],
+      treppe:       [20, 26, 32],
+      wechsel:      [20, 26, 32],
     };
     for (const [variant, L] of Object.entries(leitern)) {
       expect(CT.STEPS.map((st) => CT.rungFor("reinheit", st, variant)), variant).toEqual(L);
     }
-    // Karten, nicht Formationen: die oberste Farbblock-Stufe ist das ganze Brett.
-    expect(CT.rungFor("reinheit", "sehrschwer", "farbblock")).toBe(40);
+    // Karten, nicht Formationen: die oberste Farbblock-Stufe ist das ganze Brett, plus Zusatz.
+    expect(CT.rungFor("reinheit", "schwer", "farbblock")).toBe(40);
+    expect(CT.extraFor("reinheit", "schwer", "farbblock")).toEqual({ positions: 40, min: 2 });
+    expect(CT.extraFor("reinheit", "schwer", "treppe"), "nur Farbblock trägt den Zusatz").toBe(null);
   });
 
   it("Reinheit misst KARTEN — eine Position in drei Läufen desselben Typs zählt EINMAL", () => {
@@ -103,7 +136,16 @@ describe("Aufträge · Katalog und Leitern", () => {
   it("Brecher zählt zehn Stiche, die Leiter ist die Schwelle", () => {
     for (const step of CT.STEPS) expect(CT.targetFor("brecher", step)).toBe(10);
     expect(CT.rungFor("brecher", "leicht")).toBe(10);
-    expect(CT.rungFor("brecher", "sehrschwer")).toBe(20);
+    expect(CT.rungFor("brecher", "schwer")).toBe(20);
+  });
+
+  it("drei Stufen, und sehrschwer gibt es nicht mehr", () => {
+    expect(CT.STEPS).toEqual(["leicht", "mittel", "schwer"]);
+    expect(CT.STEPS.length, "so viele Stufen wie Angebote — jedes zeigt genau eine").toBe(CT.OFFERS_PER_WINDOW);
+    for (const step of CT.STEPS) expect(CT.STEP_BAND[step], step).toHaveLength(2);
+    expect(CT.STEP_BAND.leicht).toEqual([1, 2]);
+    expect(CT.STEP_BAND.mittel).toEqual([2, 3]);
+    expect(CT.STEP_BAND.schwer).toEqual([3, 4]);
   });
 });
 
@@ -132,20 +174,34 @@ describe("Aufträge · Angebot und Beute", () => {
         expect(loot.length, `${step}/${seed}`).toBe(3);
         const cats = loot.filter((p) => p.category).map((p) => p.category);
         expect(new Set(cats).size, `${step}/${seed} Kategorien`).toBe(cats.length);
-        for (const p of loot) expect(band, `${step} → ${p.id}@${p.tier}`).toContain(p.tier);
+        const erlaubt = step === CT.LEGENDARY_STEP ? [...band, CT.TIER_LEGENDARY] : band;
+        for (const p of loot) expect(erlaubt, `${step} → ${p.id}@${p.tier}`).toContain(p.tier);
       }
     }
   });
 
-  it("Legendäres hat genau EINEN Zugang: die obere Hälfte der vierten Stufe", () => {
+  it("Legendäres hat genau EINEN Zugang: die obere Hälfte der schweren Stufe", () => {
     for (const step of CT.STEPS) {
-      if (step === "sehrschwer") continue;
+      if (step === CT.LEGENDARY_STEP) continue;
       for (let seed = 1; seed <= 40; seed++) {
         for (const p of CT.rollLoot(seeded(seed * 13), step)) {
           expect(p.tier, `${step} darf nichts Legendäres tragen`).toBeLessThan(CT.TIER_LEGENDARY);
         }
       }
     }
+  });
+
+  it("die Legendär-Rate liegt bei 70/30 im oberen Teil des schweren Bandes", () => {
+    /* Gesetzt: 70 % Sehr selten, vom Rest wieder 70/30 → 21 % Episch, 9 % Legendär je Stück
+       (Owner, 2026-09-16). Gemessen über 4000 Ziehungen, Toleranz drei Punkte. */
+    const rng = seeded(4711);
+    const n = { 3: 0, 4: 0, 5: 0 };
+    for (let i = 0; i < 4000; i++) n[CT.rollTier("schwer", rng)] += 1;
+    const pct = (x) => (n[x] / 4000) * 100;
+    expect(pct(3), "Sehr selten").toBeGreaterThan(67);
+    expect(pct(3), "Sehr selten").toBeLessThan(73);
+    expect(pct(5), "Legendär").toBeGreaterThan(6);
+    expect(pct(5), "Legendär").toBeLessThan(12);
   });
 });
 
@@ -492,11 +548,54 @@ describe("Aufträge · der Aufgabentext nennt den gewürfelten Parameter", () =>
      Aufgabentext — ohne ihn fehlt die halbe Aufgabe. Genau das ist im Playtest aufgefallen
      (Owner, 2026-09-15), deshalb hängt hier ein Wächter: wer einen Parameter würfelt, muss ihn im
      Satz auch einsetzen, und wer keinen würfelt, darf keinen Platzhalter tragen. */
+  /* ALLE Sätze, die eine Aufgabe zeigen kann: der Grundtext (oder seine Pluralformen, wo die Stufe
+     die Zahl beugt) plus die Sätze der Stufen, die den Zähler wechseln. Ein Wächter, der nur
+     `.text` liest, übersieht seit dem Umbau auf drei Stufen die Hälfte davon. */
+  const saetzeVon = (task) => {
+    const keys = [];
+    const sammle = (base) => {
+      if (de[base]) keys.push(base);
+      for (const suf of ["_one", "_other"]) if (de[base + suf]) keys.push(base + suf);
+    };
+    sammle(`contract.task.${task.id}.text`);
+    for (const m of Object.values(task.measure || {})) sammle(`contract.task.${task.id}.${m}`);
+    return keys.map((k) => [k, de[k]]);
+  };
+
+  it("jede Aufgabe hat mindestens einen Satz, und jede Stufe findet ihren", () => {
+    for (const task of CT.TASKS) {
+      expect(saetzeVon(task).length, `Text fehlt: ${task.id}`).toBeGreaterThan(0);
+      for (const step of CT.stepsOf(task.id)) {
+        const m = CT.measureFor(task.id, step);
+        const base = `contract.task.${task.id}.${m === task.id ? "text" : m}`;
+        const da = de[base] || de[`${base}_one`] || de[`${base}_other`];
+        expect(da, `${task.id}/${step}: kein Satz unter ${base}`).toBeTruthy();
+      }
+    }
+  });
+
   it("genau die Aufgaben mit `variants` tragen {variant} im deutschen Text", () => {
     for (const task of CT.TASKS) {
-      const text = de[`contract.task.${task.id}.text`];
-      expect(text, `Text fehlt: ${task.id}`).toBeTruthy();
-      expect(text.includes("{variant}"), `${task.id}: {variant} im Text`).toBe(!!task.variants);
+      for (const [key, text] of saetzeVon(task)) {
+        expect(text.includes("{variant}"), `${key}: {variant} im Text`).toBe(!!task.variants);
+      }
+    }
+  });
+
+  it("jede Zusatzbedingung im Katalog hat ihren Satz", () => {
+    const alle = [];
+    for (const task of CT.TASKS) {
+      for (const step of CT.stepsOf(task.id)) {
+        alle.push(CT.extraFor(task.id, step));
+        for (const v of task.variants || []) alle.push(CT.extraFor(task.id, step, v.id));
+      }
+    }
+    const mit = alle.filter(Boolean);
+    expect(mit.length, "der Katalog trägt Zusatzbedingungen").toBeGreaterThan(0);
+    for (const e of mit) {
+      const key = e.noSuitStreak != null ? "contract.extra.noSuitStreak"
+        : e.positions >= 40 ? "contract.extra.allPositions" : "contract.extra.positions_other";
+      expect(de[key], `fehlender Satz: ${key}`).toBeTruthy();
     }
   });
 
@@ -513,23 +612,30 @@ describe("Aufträge · der Aufgabentext nennt den gewürfelten Parameter", () =>
     /* Sie wird je Aufstellphase verfeinert, nicht neu gebaut. Der Zusatz las sich wie ein Sprint in
        einer Phase (Owner, 2026-09-15). */
     for (const task of CT.TASKS) {
-      expect(de[`contract.task.${task.id}.text`], task.id).not.toContain("in einer Aufstellung");
+      for (const [key, text] of saetzeVon(task)) expect(text, key).not.toContain("in einer Aufstellung");
     }
   });
 
-  it("jede Aufgabe trägt {n} — ohne die Zahl steht keine Schwelle im Satz", () => {
+  it("jeder Satz nennt seine Schwelle — als {n} oder, wo die Leiter Farben zählt, als {streak}", () => {
+    /* Farbtreue auf Leicht sagt „eine Farbe" nicht, sie meint es: dort ist die Serienlänge die
+       Schwelle. Der Wächter verlangt deshalb EINE Zahl im Satz, nicht ausgerechnet {n}. */
     for (const task of CT.TASKS) {
-      expect(de[`contract.task.${task.id}.text`].includes("{n}"), task.id).toBe(true);
+      for (const [key, text] of saetzeVon(task)) {
+        expect(text.includes("{n}") || text.includes("{streak}"), `${key}: keine Zahl im Satz`).toBe(true);
+      }
     }
   });
 });
 
 describe("Aufträge · gegen Wiederholung (§3.6)", () => {
-  it("Regel 1: gewürfelte Parameter machen aus 15 Definitionen 20 Angebote und 80 Karten", () => {
+  it("Regel 1: gewürfelte Parameter machen aus 14 Definitionen 19 Angebote und 56 Karten", () => {
     const distinct = CT.TASKS.reduce((n, t) => n + (t.variants ? t.variants.length : 1), 0);
-    expect(CT.TASKS.length).toBe(15);
-    expect(distinct, "Reinheit würfelt vier Typen, Quartier drei Kategorien").toBe(20);
-    expect(distinct * CT.STEPS.length).toBe(80);
+    expect(CT.TASKS.length).toBe(14);
+    expect(distinct, "Reinheit würfelt vier Typen, Quartier drei Kategorien").toBe(19);
+    /* Nicht distinct × Stufen: Langbau bietet nur zwei der drei an, also 18 × 3 + 2. */
+    const karten = CT.TASKS.reduce((n, t) =>
+      n + (t.variants ? t.variants.length : 1) * CT.stepsOf(t.id).length, 0);
+    expect(karten).toBe(56);
   });
 
   it("Regel 1: Farbtreue würfelt KEINE Farbe — die Serie zählt, egal in welcher", () => {
@@ -613,6 +719,129 @@ describe("Aufträge · der normale Lauf bleibt unberührt", () => {
     expect(after.contracts.pendingLoot).toBe(null);
     expect(after.contracts.taken.length).toBe(1);
     if (piece.id === "zehrgeld") expect(after.coins).toBe((armed.coins || 0) + 15);
+  });
+});
+
+describe("Aufträge · die vier neuen Maße (2026-09-16)", () => {
+  const trick2 = (p, o, result = "win") => ({ result, pValue: p, oValue: o, pCard: { suit: "R", value: p } });
+
+  it("Durchmarsch schwer zählt SERIEN makelloser Durchläufe, ein Fehler setzt zurück", () => {
+    const c = { taskId: "durchmarsch", step: "schwer", rung: 5, target: 5 };
+    expect(CT.measureFor("durchmarsch", "schwer"), "eigener Zähler").toBe("perfectRun");
+    expect(CT.measureFor("durchmarsch", "leicht"), "sonst der alte").toBe("durchmarsch");
+    let t = CT.emptyTally();
+    const alle = C.BOARD_POSITIONS;
+    t = CT.tallyCycleEnd(t, { cycleWins: alle, formations: [] }, c);
+    t = CT.tallyCycleEnd(t, { cycleWins: alle, formations: [] }, c);
+    expect(t.perfectRun, "zwei makellose in Folge").toBe(2);
+    t = CT.tallyCycleEnd(t, { cycleWins: alle - 1, formations: [] }, c);
+    expect(t.perfectRun, "ein verlorener Stich kippt die Serie").toBe(0);
+    expect(t.bestPerfectRun, "die Spitze bleibt").toBe(2);
+    expect(CT.readBest({ contractsEnabled: true, contractTally: t, formations: [] }, c)).toBe(2);
+  });
+
+  it("Farbtreue zählt FARBEN, die die Serie geschafft haben — nicht die Serienlänge", () => {
+    const c = { taskId: "farbtreue", step: "mittel", rung: 2, target: 2 };
+    expect(CT.streakOf(c)).toBe(10);
+    let t = CT.emptyTally();
+    const serie = (suit, n, ab) => {
+      for (let i = 0; i < n; i++) t = CT.tallyTrick(t, { result: "win", pValue: 5, pCard: { suit, value: 5 } }, { trickNo: ab + i });
+    };
+    serie("R", 10, 1);
+    const s = () => ({ contractsEnabled: true, contractTally: t, formations: [] });
+    expect(CT.readLive(s(), c), "eine Farbe durch").toBe(1);
+    serie("B", 9, 21);
+    expect(CT.readLive(s(), c), "neun reichen nicht").toBe(1);
+    serie("G", 10, 41);
+    expect(CT.readLive(s(), c), "zweite Farbe durch").toBe(2);
+    expect(CT.isFulfilled(s(), c)).toBe(true);
+  });
+
+  it("Aufmarsch misst den ECHTEN Kampfwert-Vorsprung, samt Brand auf der Gegnerkarte", () => {
+    /* Der Playtest-Befund: gemessen wurde Kartenwert, also fielen Brand, Glühende Klinge und
+       Gebäude-Stichwert unter den Tisch. pValue/oValue tragen sie alle. */
+    const c = { taskId: "aufmarsch", step: "leicht", rung: 60, target: 60 };
+    let t = CT.emptyTally();
+    for (let i = 1; i <= 4; i++) t = CT.tallyTrick(t, trick2(20, 5), { trickNo: i });   // 15 Vorsprung je Stich
+    expect(t.cycleMargin).toBe(60);
+    const s = { contractsEnabled: true, contractTally: t, formations: [] };
+    expect(CT.readLive(s, c)).toBe(60);
+    expect(CT.isFulfilled(s, c)).toBe(true);
+    // Durchlaufwechsel: der laufende Wert fällt, die Spitze bleibt.
+    const nach = CT.tallyCycleEnd(t, { cycleWins: 0, formations: [] }, c);
+    expect(nach.cycleMargin).toBe(0);
+    expect(nach.bestMargin).toBe(60);
+    expect(CT.readBest({ ...s, contractTally: nach }, c)).toBe(60);
+  });
+
+  it("Quartier zählt 21 Reihen — waagerecht, senkrecht UND diagonal", () => {
+    expect(CT.BUILD_LINES.length, "8 Zeilen + 5 Spalten + 8 Diagonalen").toBe(21);
+    const laengen = CT.BUILD_LINES.map((l) => l.length).sort((a, b) => a - b);
+    expect(laengen.filter((n) => n === 5).length, "Zeilen und Diagonalen").toBe(16);
+    expect(laengen.filter((n) => n === 8).length, "Spalten").toBe(5);
+    for (const line of CT.BUILD_LINES) expect(new Set(line).size, "keine Zelle doppelt").toBe(line.length);
+
+    // Eine volle SPALTE zählt jetzt — vorher zählten nur Zeilen.
+    const spalte = CT.BUILD_LINES.find((l) => l.length === 8);
+    const bau = (footprint) => ({ architectEnabled: true, formations: [],
+      architect: { buildings: [{ familyId: "A_STUETZE", footprint }] } });
+    const c = { taskId: "quartier", step: "leicht", variantId: "value", rung: 1, target: 1 };
+    expect(CT.readLive(bau(spalte), c), "volle Spalte").toBe(1);
+    expect(CT.readLive(bau(spalte.slice(0, 7)), c), "eine Zelle fehlt").toBe(0);
+    expect(CT.readLive({ ...bau(spalte), }, { ...c, variantId: "score" }), "falsche Kategorie").toBe(0);
+  });
+});
+
+describe("Aufträge · die Zusatzbedingung der schweren Stufe", () => {
+  const formen = (n, tiefe) => Array.from({ length: C.BOARD_POSITIONS }, (_, i) => ({
+    formations: i < n ? Array.from({ length: tiefe }, (_, k) => ({ type: "farbblock", ordinal: k + 1 })) : [],
+  }));
+
+  it("ein Durchlauf ohne die Zusatzbedingung zählt nicht, auch wenn der Hauptzähler steht", () => {
+    const c = { taskId: "gedraenge", step: "schwer", rung: 40, target: 40,
+      extra: CT.extraFor("gedraenge", "schwer") };
+    expect(c.extra).toEqual({ positions: 40, min: 2 });
+    // Alle 40 Positionen, aber nur EINE Formation je Position → Zusatz hält nicht.
+    const duenn = { contractsEnabled: true, formations: formen(40, 1), contractTally: CT.emptyTally() };
+    expect(CT.extraHolds(duenn, c), "eine Formation je Position reicht nicht").toBe(false);
+    const nach = CT.tallyCycleEnd(duenn.contractTally, duenn, c);
+    expect(nach.bestGated, "der Durchlauf wird nicht gezählt").toBe(0);
+    expect(CT.readBest({ ...duenn, contractTally: nach }, c), "und gilt auch nicht als erfüllt").toBe(0);
+
+    // Dasselbe Brett mit zwei Formationen je Position → Zusatz hält, der Durchlauf zählt.
+    const dicht = { contractsEnabled: true, formations: formen(40, 2), contractTally: CT.emptyTally() };
+    expect(CT.extraHolds(dicht, c)).toBe(true);
+    const gut = CT.tallyCycleEnd(dicht.contractTally, dicht, c);
+    expect(gut.bestGated).toBeGreaterThan(0);
+  });
+
+  it("Buntspiels Zusatz VERBIETET etwas: keine Farbserie länger als drei", () => {
+    const c = { taskId: "buntspiel", step: "schwer", rung: 8, target: 8,
+      extra: CT.extraFor("buntspiel", "schwer") };
+    expect(c.extra).toEqual({ noSuitStreak: 3 });
+    const leer = { contractsEnabled: true, formations: [] };
+    expect(CT.extraHolds(leer, c, 3), "drei sind erlaubt").toBe(true);
+    expect(CT.extraHolds(leer, c, 4), "vier nicht mehr").toBe(false);
+  });
+
+  it("die Zusatzbedingung steht am Angebot, nicht erst im laufenden Auftrag", () => {
+    let gesehen = 0;
+    for (let seed = 1; seed <= 60; seed++) {
+      for (const o of CT.rollOffers(seeded(seed))) {
+        expect(o.extra || null, `${o.taskId}/${o.step}`).toEqual(CT.extraFor(o.taskId, o.step, o.variantId));
+        if (o.extra) gesehen += 1;
+      }
+    }
+    expect(gesehen, "in 60 Auslagen taucht mindestens eine auf").toBeGreaterThan(0);
+  });
+
+  it("Langbau wird nie auf Leicht ausgelegt", () => {
+    for (let seed = 1; seed <= 120; seed++) {
+      for (const o of CT.rollOffers(seeded(seed))) {
+        expect(CT.offersStep(o.taskId, o.step), `${o.taskId} darf ${o.step} nicht`).toBe(true);
+        expect(o.rung, `${o.taskId}/${o.step} ohne Sprosse`).not.toBe(null);
+      }
+    }
   });
 });
 

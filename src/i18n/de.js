@@ -1525,6 +1525,7 @@ export default {
   "contract.offer.window": "Durchlauf {from} bis {to}",
   "contract.offer.take": "Annehmen",
   "contract.offer.band": "zahlt {a} oder {b}",
+  "contract.offer.legendary": "selten legendär",
 
   "contract.loot.title": "Auftrag erfüllt",
   "contract.loot.sub": "Drei Beutestücke, keine Kategorie doppelt. Eins nimmst du, kein Neuwurf.",
@@ -1533,7 +1534,14 @@ export default {
   "contract.step.leicht": "Leicht",
   "contract.step.mittel": "Mittel",
   "contract.step.schwer": "Schwer",
-  "contract.step.sehrschwer": "Sehr schwer",
+
+  // Die Zusatzbedingung der schweren Stufe — ein zweiter Satz neben der Hauptaufgabe.
+  "contract.extra.positions_one": "Dazu: {n} Position in mindestens {min} Formationen.",
+  "contract.extra.positions_other": "Dazu: {n} Positionen in mindestens {min} Formationen.",
+  "contract.extra.allPositions": "Dazu: jede Position in mindestens {min} Formationen.",
+  "contract.extra.noSuitStreak": "Dazu: keine Farbserie länger als {n} Stiche.",
+  "contract.extra.ok": "Zusatz erfüllt",
+  "contract.extra.open": "Zusatz offen",
 
   "contract.rail.label": "Auftrag",
   "contract.rail.none": "keiner",
@@ -1553,10 +1561,11 @@ export default {
 
   "contract.task.durchmarsch.name": "Durchmarsch",
   "contract.task.durchmarsch.text": "Gewinne in einem Durchlauf {n} Stiche.",
+  // Die schwere Stufe wechselt den Zähler: nicht der beste Durchlauf, sondern eine Serie makelloser.
+  "contract.task.durchmarsch.perfectRun_one": "Gewinne {n} Durchlauf lang jeden Stich.",
+  "contract.task.durchmarsch.perfectRun_other": "Gewinne {n} Durchläufe in Folge jeden Stich.",
   "contract.task.sperrfeuer.name": "Sperrfeuer",
   "contract.task.sperrfeuer.text": "Gewinne in einem Durchlauf alle fünf Stiche in {n} Segmenten.",
-  "contract.task.straehne.name": "Strähne",
-  "contract.task.straehne.text": "Gewinne {n} Stiche in Folge.",
   "contract.task.gedraenge.name": "Gedränge",
   "contract.task.gedraenge.text": "Baue {n} Formationen.",
   "contract.task.reinheit.name": "Reinheit",
@@ -1568,7 +1577,8 @@ export default {
   "contract.task.verflechtung.name": "Verflechtung",
   "contract.task.verflechtung.text": "Bringe {n} Positionen in mindestens drei Formationen.",
   "contract.task.farbtreue.name": "Farbtreue",
-  "contract.task.farbtreue.text": "Gewinne {n} Stiche derselben Farbe in Folge.",
+  "contract.task.farbtreue.text_one": "Gewinne {streak} Stiche derselben Farbe in Folge.",
+  "contract.task.farbtreue.text_other": "Schaffe eine Serie von {streak} Stichen in {n} verschiedenen Farben.",
   "contract.task.buntspiel.name": "Buntspiel",
   "contract.task.buntspiel.text": "Gewinne in einem Durchlauf mit jeder Farbe mindestens {n} Stiche.",
   "contract.task.brecher.name": "Brecher",
@@ -1576,9 +1586,9 @@ export default {
   "contract.task.fussvolk.name": "Fußvolk",
   "contract.task.fussvolk.text": "Gewinne {n} Stiche mit Karten vom Grundwert 4 oder weniger.",
   "contract.task.aufmarsch.name": "Aufmarsch",
-  "contract.task.aufmarsch.text": "Bringe dein Deck {n} Kampfwert über das Gegnerdeck.",
+  "contract.task.aufmarsch.text": "Gewinne einen Durchlauf mit {n} Kampfwert Vorsprung insgesamt.",
   "contract.task.quartier.name": "Quartier",
-  "contract.task.quartier.text": "Bedecke {n} Baufeld-Segmente vollständig mit Gebäuden der Kategorie {variant}.",
+  "contract.task.quartier.text": "Bedecke {n} volle Reihen des Baufelds mit Gebäuden der Kategorie {variant}.",
   "contract.task.saeckel.name": "Säckel",
   "contract.task.saeckel.text": "Halte {n} Münzen, bis der Auftrag endet.",
 

@@ -27,24 +27,29 @@ export const WINDOWS = [
   { id: 2, from: 17, to: 32 },
 ];
 
-export const STEPS = ["leicht", "mittel", "schwer", "sehrschwer"];
+/* Three steps, not four (Owner, 2026-09-16). With three offers per window that means every offer
+   set now shows exactly one of each — the choice spans the full range instead of sampling it. */
+export const STEPS = ["leicht", "mittel", "schwer"];
 
 /* Rarity runs 1..4 through TIER_META (Normal · Selten · Sehr selten · Episch); 5 is legendary, which
    has no tier of its own — it is a single piece, like the legendary perks. */
 export const TIER_LEGENDARY = 5;
 export const tierLabel = (tier) => (tier >= TIER_LEGENDARY ? "Legendär" : (TIER_META[tier] || {}).label || "");
 
-/* Each step pays from a band of two neighbouring rarities, weighted toward the lower one. On the
-   fourth step the same weight IS the legendary rate — legendary has exactly this one way in. */
-export const STEP_TIER = { leicht: 1, mittel: 2, schwer: 3, sehrschwer: 4 };
-export const STEP_BAND = { leicht: [1, 2], mittel: [2, 3], schwer: [3, 4], sehrschwer: [4, TIER_LEGENDARY] };
+/* Each step pays from a band of two neighbouring rarities, weighted toward the lower one. Legendary
+   rides on the UPPER half of the hard band only, with the same 70/30 split one level deeper
+   (Owner, 2026-09-16): 70 % Sehr selten, 21 % Episch, 9 % Legendär per drawn piece. */
+export const STEP_TIER = { leicht: 1, mittel: 2, schwer: 3 };
+export const STEP_BAND = { leicht: [1, 2], mittel: [2, 3], schwer: [3, 4] };
 export const LOWER_SHARE = 0.7;
+export const LEGENDARY_SHARE = 0.3;
+export const LEGENDARY_STEP = "schwer";
 
 export const OFFERS_PER_WINDOW = 3;   // three tasks to choose from, always three different steps
 export const LOOT_PER_REWARD = 3;     // three pieces to choose from once the task is done
 
 /* ------------------------------------------------------------------------------------------------
-   The fifteen tasks
+   The fourteen tasks
    ------------------------------------------------------------------------------------------------
    kind — how the counter is read:
      "spitze"  best single occurrence in the window (best cycle, or best placement)
@@ -53,37 +58,57 @@ export const LOOT_PER_REWARD = 3;     // three pieces to choose from once the ta
 
    `variants` rolls a parameter instead of listing near-identical tasks (the same trick WEEK_MODS
    uses): Reinheit rolls the formation type, Quartier the building category. A variant may carry its
-   own rungs — Reinheit's four types are differently easy and each carries its own. */
+   own rungs — Reinheit's four types are differently easy and each carries its own.
+
+   `extra` is the hard step's SECOND condition (Owner, 2026-09-16). Both must hold in the same cycle;
+   `positions` asks for a board shape, `noSuitStreak` forbids one. `steps` narrows which steps a task
+   offers at all — Langbau has no easy step, because five cards is the segment wall and everything
+   below it is free.
+
+   `measure` swaps the counter for one step: Durchmarsch's hard step is no longer the best cycle but
+   a RUN of perfect ones, which nothing else in the catalogue measures. */
 export const TASKS = [
-  { id: "durchmarsch",  kind: "spitze",  rungs: [22, 26, 30, 34] },
-  { id: "sperrfeuer",   kind: "spitze",  rungs: [2, 3, 4, 5] },
-  { id: "straehne",     kind: "spitze",  rungs: [10, 15, 30, 60] },
-  { id: "gedraenge",    kind: "spitze",  rungs: [30, 35, 40, 45] },
+  { id: "durchmarsch",  kind: "spitze",  rungs: [25, 35, 5],
+    measure: { schwer: "perfectRun" } },
+  { id: "sperrfeuer",   kind: "spitze",  rungs: [3, 6, 8],
+    extra: { schwer: { positions: 40, min: 2 } } },
+  { id: "gedraenge",    kind: "spitze",  rungs: [25, 30, 40],
+    extra: { schwer: { positions: 40, min: 2 } } },
   /* Reinheit zählt KARTEN in einer Formation des gewürfelten Typs, nicht die Formationen selbst
      (Owner, 2026-09-15). Distinkte Läufe eines Typs reichen gemessen von 2 bis 8 — neun mögliche
      Werte für vier Stufen, jede Stufe ein Sprung. Karten reichen von 6 bis 40 und lassen sich
      überhaupt erst feinjustieren. Die Leitern sind Owner-Werte. */
   { id: "reinheit",     kind: "spitze",  variantKey: "formation",
     variants: [
-      { id: "farbblock",    rungs: [25, 30, 35, 40] },
-      { id: "wiederholung", rungs: [10, 14, 18, 25] },
-      { id: "treppe",       rungs: [12, 16, 20, 28] },
-      { id: "wechsel",      rungs: [12, 16, 20, 28] },
+      { id: "farbblock",    rungs: [20, 30, 40], extra: { schwer: { positions: 40, min: 2 } } },
+      { id: "wiederholung", rungs: [20, 30, 34] },
+      { id: "treppe",       rungs: [20, 26, 32] },
+      { id: "wechsel",      rungs: [20, 26, 32] },
     ] },
-  { id: "langbau",      kind: "spitze",  rungs: [5, 10, 15, 20] },
-  { id: "vollbrett",    kind: "spitze",  rungs: [30, 34, 37, 40] },
-  { id: "verflechtung", kind: "spitze",  rungs: [3, 5, 7, 10] },
-  { id: "farbtreue",    kind: "spitze",  rungs: [5, 7, 10, 15] },
-  { id: "buntspiel",    kind: "spitze",  rungs: [4, 5, 6, 7] },
+  { id: "langbau",      kind: "spitze",  rungs: [null, 10, 15], steps: ["mittel", "schwer"] },
+  { id: "vollbrett",    kind: "spitze",  rungs: [30, 40, 40],
+    extra: { schwer: { positions: 20, min: 3 } } },
+  { id: "verflechtung", kind: "spitze",  rungs: [5, 10, 20],
+    extra: { schwer: { positions: 5, min: 4 } } },
+  /* Farbtreue misst seit 2026-09-16 nicht mehr die LÄNGE der Serie, sondern wie viele FARBEN im
+     Fenster eine Serie von `streak` geschafft haben. Die Leiter ist damit die Zahl der Farben. */
+  { id: "farbtreue",    kind: "spitze",  rungs: [1, 2, 3], streak: 10,
+    extra: { schwer: { positions: 40, min: 2 } } },
+  { id: "buntspiel",    kind: "spitze",  rungs: [5, 7, 8],
+    extra: { schwer: { noSuitStreak: 3 } } },
   /* Brecher is the one task whose ladder runs over the THRESHOLD, not the amount: ten tricks stay
      ten, the combat value they must beat is what rises. `threshold: true` tells the display to read
      the rung as "über X" and the target as TEN. */
-  { id: "brecher",      kind: "summe",   rungs: [10, 12, 15, 20], threshold: true, need: 10 },
-  { id: "fussvolk",     kind: "summe",   rungs: [40, 60, 80, 110] },
-  { id: "aufmarsch",    kind: "zustand", rungs: [20, 30, 40, 60] },
-  { id: "quartier",     kind: "zustand", rungs: [1, 2, 3, 4], variantKey: "category",
+  { id: "brecher",      kind: "summe",   rungs: [10, 15, 20], threshold: true, need: 10 },
+  { id: "fussvolk",     kind: "summe",   rungs: [50, 100, 200] },
+  /* Aufmarsch hieß „Kampfwert" und maß Kartenwert — Brand auf dem Gegnerdeck, Glühende Klinge und
+     Gebäude-Stichwert fielen unter den Tisch (Owner-Befund im Playtest, 2026-09-16). Ein Deck HAT
+     keinen Kampfwert, nur eine gespielte Karte hat einen. Gemessen wird deshalb der beste Durchlauf:
+     die Summe (pValue − oValue) über seine vierzig Stiche. Damit zählt jede Quelle mit. */
+  { id: "aufmarsch",    kind: "spitze",  rungs: [60, 120, 250] },
+  { id: "quartier",     kind: "zustand", rungs: [1, 3, 5], variantKey: "category",
     variants: [{ id: "score" }, { id: "value" }, { id: "formation" }] },
-  { id: "saeckel",      kind: "zustand", rungs: [60, 80, 100, 120] },
+  { id: "saeckel",      kind: "zustand", rungs: [60, 80, 120] },
 ];
 
 export const TASK_BY_ID = Object.fromEntries(TASKS.map((t) => [t.id, t]));
@@ -98,6 +123,26 @@ export function rungFor(taskId, step, variantId = null) {
   const rungs = (variant && variant.rungs) || task.rungs;
   return rungs ? rungs[i] : null;
 }
+
+/* Which steps a task offers at all. Most offer all three; Langbau has no easy one. */
+export const stepsOf = (taskId) => {
+  const task = TASK_BY_ID[taskId];
+  return (task && task.steps) || STEPS;
+};
+export const offersStep = (taskId, step) => stepsOf(taskId).includes(step);
+
+/* The hard step's second condition, if the task or its variant carries one. */
+export function extraFor(taskId, step, variantId = null) {
+  const task = TASK_BY_ID[taskId];
+  if (!task) return null;
+  const variant = variantId && (task.variants || []).find((v) => v.id === variantId);
+  const src = (variant && variant.extra) || task.extra;
+  return (src && src[step]) || null;
+}
+
+/* Which counter this step reads. Only Durchmarsch swaps one, and only on its hard step. */
+export const measureFor = (taskId, step) =>
+  ((TASK_BY_ID[taskId] || {}).measure || {})[step] || taskId;
 
 /* What the counter must reach. For Brecher that is ten tricks, not the rung. */
 export const targetFor = (taskId, step, variantId = null) => {
@@ -197,22 +242,37 @@ function shuffled(arr, rng) {
 }
 
 /* Three offers, always three DIFFERENT steps — without that it is a choice between activities, not
-   between safety and rarity. `used` keeps window 2 from repeating window 1's task. */
+   between safety and rarity. With three steps and three offers that now means exactly one of each.
+   `used` keeps window 2 from repeating window 1's task.
+
+   The step is drawn FIRST and the task second, out of those that offer that step: since Langbau has
+   no easy step, picking the task first would sometimes leave a step with nobody to fill it. */
 export function rollOffers(rng = Math.random, used = [], count = OFFERS_PER_WINDOW) {
-  const pool = TASKS.filter((t) => !used.includes(t.id));
-  const tasks = shuffled(pool.length >= count ? pool : TASKS, rng).slice(0, count);
   const steps = shuffled(STEPS, rng).slice(0, count);
-  return tasks.map((task, i) => {
-    const step = steps[i];
+  const taken = new Set();
+  const out = [];
+  for (const step of steps) {
+    const eligible = (pool) => pool.filter((t) => !taken.has(t.id) && offersStep(t.id, step));
+    let free = eligible(TASKS.filter((t) => !used.includes(t.id)));
+    if (!free.length) free = eligible(TASKS);          // Notausgang: lieber wiederholen als leer lassen
+    if (!free.length) continue;
+    const task = pick(free, rng);
+    taken.add(task.id);
     const variantId = task.variants ? pick(task.variants, rng).id : null;
-    return { taskId: task.id, step, variantId, rung: rungFor(task.id, step, variantId), target: targetFor(task.id, step, variantId) };
-  });
+    out.push({ taskId: task.id, step, variantId,
+      rung: rungFor(task.id, step, variantId), target: targetFor(task.id, step, variantId),
+      extra: extraFor(task.id, step, variantId) });
+  }
+  return out;
 }
 
-/* One tier out of the step's band: the lower rarity at LOWER_SHARE, the upper at the rest. */
+/* One tier out of the step's band: the lower rarity at LOWER_SHARE, the upper at the rest. The hard
+   band splits its upper half once more, and THAT is the only door legendary loot has. */
 export const rollTier = (step, rng = Math.random) => {
   const band = STEP_BAND[step] || STEP_BAND.leicht;
-  return rng() < LOWER_SHARE ? band[0] : band[1];
+  if (rng() < LOWER_SHARE) return band[0];
+  if (step === LEGENDARY_STEP && rng() < LEGENDARY_SHARE) return TIER_LEGENDARY;
+  return band[1];
 };
 
 /* Three pieces, no category twice. A legendary tier draws from the four singles; every other tier
@@ -284,15 +344,26 @@ function positionsWith(perPosition, min) {
   return n;
 }
 
-/* Combat value of the player's deck over the opponent's — the whole run counts, read at the end. */
-function deckLead(state) {
-  const sum = (deck) => (deck || []).reduce((s, c) => s + ((c && c.value) || 0), 0);
-  return sum(state.deck) - sum(state.oppDeck);
-}
+/* Quartier zählt seit 2026-09-16 (Owner) jede volle REIHE des Baufelds, nicht nur die Zeilen:
+   waagerecht (8 × 5 Zellen), senkrecht (5 × 8) und diagonal (8 × 5). Einundzwanzig Reihen, alle
+   gleich viel wert — eine volle Spalte ist teurer als eine Zeile, zählt aber gleich (Owner). */
+export const BUILD_LINES = (() => {
+  const lines = [];
+  for (let r = 0; r < ARCH_ROWS; r++) {                    // waagerecht
+    lines.push(Array.from({ length: ARCH_COLS }, (_, c) => archPos(r, c)));
+  }
+  for (let c = 0; c < ARCH_COLS; c++) {                    // senkrecht
+    lines.push(Array.from({ length: ARCH_ROWS }, (_, r) => archPos(r, c)));
+  }
+  for (let r = 0; r + ARCH_COLS <= ARCH_ROWS; r++) {       // diagonal, beide Richtungen
+    lines.push(Array.from({ length: ARCH_COLS }, (_, i) => archPos(r + i, i)));
+    lines.push(Array.from({ length: ARCH_COLS }, (_, i) => archPos(r + i, ARCH_COLS - 1 - i)));
+  }
+  return lines;
+})();
 
-/* Fully covered building segments of one category. A segment is a ROW of the 8×5 building grid, and
-   it counts only when all five of its cells are covered by buildings of that one category — a
-   building occupies its whole `footprint`, not a single cell. */
+/* Volle Reihen einer Kategorie. Eine Reihe zählt nur, wenn JEDE ihrer Zellen von einem Gebäude
+   dieser Kategorie bedeckt ist — ein Gebäude belegt seinen ganzen `footprint`, nicht eine Zelle. */
 function fullSegments(state, category) {
   const arch = state.architect;
   if (!state.architectEnabled || !arch || !Array.isArray(arch.buildings)) return 0;
@@ -303,11 +374,7 @@ function fullSegments(state, category) {
     for (const p of b.footprint || []) cells.add(p);
   }
   let n = 0;
-  for (let r = 0; r < ARCH_ROWS; r++) {
-    let full = true;
-    for (let c = 0; c < ARCH_COLS; c++) if (!cells.has(archPos(r, c))) { full = false; break; }
-    if (full) n += 1;
-  }
+  for (const line of BUILD_LINES) if (line.every((p) => cells.has(p))) n += 1;
   return n;
 }
 
@@ -321,24 +388,49 @@ export function readLive(state, contract) {
   if (!contract) return 0;
   const tally = state.contractTally || {};
   const forms = state.formations || [];
-  switch (contract.taskId) {
+  switch (measureFor(contract.taskId, contract.step)) {
     case "durchmarsch":  return state.cycleWins || 0;
+    case "perfectRun":   return tally.perfectRun || 0;
     case "sperrfeuer":   return tally.segments || 0;
-    case "straehne":     return state.winStreak || 0;
     case "gedraenge":    return countBuiltFormations(forms);
     case "reinheit":     return cardsInType(forms, contract.variantId);
     case "langbau":      return longestFormation(forms);
     case "vollbrett":    return positionsWith(forms, 1);
     case "verflechtung": return positionsWith(forms, 3);
-    case "farbtreue":    return tally.suitStreak || 0;
+    case "farbtreue":    return suitsAtStreak(tally, streakOf(contract));
     case "buntspiel":    return minSuitWins(tally.suitWins);
     case "brecher":      return tally.overThreshold || 0;
     case "fussvolk":     return tally.lowWins || 0;
-    case "aufmarsch":    return deckLead(state);
+    case "aufmarsch":    return tally.cycleMargin || 0;
     case "quartier":     return fullSegments(state, contract.variantId);
     case "saeckel":      return state.coins || 0;
     default:             return 0;
   }
+}
+
+/* Die geforderte Serienlänge von Farbtreue — die Leiter zählt dort FARBEN, nicht Stiche. */
+export const streakOf = (contract) => (TASK_BY_ID[(contract || {}).taskId] || {}).streak || 0;
+
+/* Wie viele Farben im Fenster schon eine Serie von `n` geschafft haben. */
+export function suitsAtStreak(tally, n) {
+  if (!n) return 0;
+  const by = (tally || {}).bestStreakBySuit || {};
+  let c = 0;
+  for (const k of Object.keys(by)) if (by[k] >= n) c += 1;
+  return c;
+}
+
+/* Die Zusatzbedingung der schweren Stufe. `positions` verlangt eine Brettform, `noSuitStreak`
+   verbietet eine Farbserie — die einzige Bedingung des Katalogs, die etwas AUSSCHLIESST. */
+export function extraHolds(state, contract, cycleMaxStreak = null) {
+  const e = contract && contract.extra;
+  if (!e) return true;
+  if (e.positions) return positionsWith(state.formations || [], e.min || 1) >= e.positions;
+  if (e.noSuitStreak != null) {
+    const run = cycleMaxStreak != null ? cycleMaxStreak : (state.contractTally || {}).cycleMaxStreak || 0;
+    return run <= e.noSuitStreak;
+  }
+  return true;
 }
 
 /* Der Spitzenwert des Fensters. Für Summe und Zustand gibt es keinen Unterschied zum laufenden Wert —
@@ -347,17 +439,25 @@ export function readBest(state, contract) {
   if (!contract) return 0;
   const tally = state.contractTally || {};
   const live = readLive(state, contract);
-  switch (contract.taskId) {
+  /* Trägt die Stufe eine Zusatzbedingung, zählt nur ein Durchlauf, in dem BEIDE standen. Der
+     laufende darf mitzählen, solange die Bedingung gerade hält — sonst sähe der Spieler seinen
+     Erfolg erst eine Durchlaufgrenze später. */
+  if (contract.extra) {
+    const gated = tally.bestGated || 0;
+    return extraHolds(state, contract) ? Math.max(gated, live) : gated;
+  }
+  switch (measureFor(contract.taskId, contract.step)) {
     case "durchmarsch":  return Math.max(tally.bestCycleWins || 0, live);
+    case "perfectRun":   return Math.max(tally.bestPerfectRun || 0, live);
     case "sperrfeuer":   return Math.max(tally.bestSegments || 0, live);
-    case "straehne":     return Math.max(state.bestStreak || 0, live);
     case "gedraenge":    return Math.max(tally.bestForms || 0, live);
     case "reinheit":     return Math.max(tally.bestPure || 0, live);
     case "langbau":      return Math.max(tally.bestLong || 0, live);
     case "vollbrett":    return Math.max(tally.bestCovered || 0, live);
     case "verflechtung": return Math.max(tally.bestWoven || 0, live);
-    case "farbtreue":    return Math.max(tally.bestSuitStreak || 0, live);
+    case "farbtreue":    return live;                        // wächst ohnehin nur
     case "buntspiel":    return Math.max(tally.bestRainbow || 0, live);
+    case "aufmarsch":    return Math.max(tally.bestMargin || 0, live);
     default:             return live;
   }
 }
@@ -387,8 +487,12 @@ export const emptyTally = () => ({
   segments: 0, bestSegments: 0, segWins: 0, segIndex: 0,
   suitWins: {}, bestRainbow: 0,
   suitStreak: 0, suitStreakSuit: null, bestSuitStreak: 0,
+  bestStreakBySuit: {}, cycleMaxStreak: 0,     // Farbtreue zählt Farben · Buntspiel verbietet lange Serien
   overThreshold: 0, lowWins: 0,
+  cycleMargin: 0, bestMargin: 0,               // Aufmarsch: echter Kampfwert-Vorsprung je Durchlauf
+  perfectRun: 0, bestPerfectRun: 0,            // Durchmarsch schwer: Serie makelloser Durchläufe
   bestCycleWins: 0, bestForms: 0, bestPure: 0, bestLong: 0, bestCovered: 0, bestWoven: 0,
+  bestGated: 0,                                // Spitze nur aus Durchläufen, in denen die Zusatzbedingung stand
 });
 
 /* Called for every resolved trick of a contract run. `trick` is the engine's lastTrick shape:
@@ -420,11 +524,17 @@ export function tallyTrick(tally, trick, { trickNo = 0, threshold = null } = {})
     t.suitWins = { ...t.suitWins, [base]: (t.suitWins[base] || 0) + 1 };
 
     /* Farbtreue uses the colour STREAK and therefore the effective colour, alliance and green
-       included — there the mechanic is the subject. */
+       included — there the mechanic is the subject. Seit 2026-09-16 wird die beste Serie JE FARBE
+       behalten: die Leiter zählt, wie viele Farben die geforderte Länge geschafft haben. */
     const eff = card.green ? "G" : card.suit;
     if (eff === t.suitStreakSuit) t.suitStreak += 1;
     else { t.suitStreakSuit = eff; t.suitStreak = 1; }
     if (t.suitStreak > t.bestSuitStreak) t.bestSuitStreak = t.suitStreak;
+    if (t.suitStreak > (t.bestStreakBySuit[eff] || 0)) {
+      t.bestStreakBySuit = { ...t.bestStreakBySuit, [eff]: t.suitStreak };
+    }
+    // Buntspiels Verbotsbedingung liest die LÄNGSTE Farbserie dieses Durchlaufs, nicht des Fensters.
+    if (t.suitStreak > t.cycleMaxStreak) t.cycleMaxStreak = t.suitStreak;
 
     if (threshold != null && (trick.pValue || 0) > threshold) t.overThreshold += 1;
     if ((card.value || 0) <= 4) t.lowWins += 1;
@@ -432,12 +542,16 @@ export function tallyTrick(tally, trick, { trickNo = 0, threshold = null } = {})
     t.suitStreak = 0;
     t.suitStreakSuit = null;
   }
+
+  /* Aufmarsch: der WIRKLICHE Kampfwert-Vorsprung dieses Stichs. `oValue` trägt den Brand auf der
+     Gegnerkarte schon abgezogen, `pValue` alle Boni des Spielers — genau das, was vorher fehlte. */
+  if (trick) t.cycleMargin += (trick.pValue || 0) - (trick.oValue || 0);
   return t;
 }
 
 /* Called at each cycle boundary: freeze the peaks of the cycle that just ended and reset what is
    measured per cycle. A "Spitze" counter keeps the best window value, not the current one. */
-export function tallyCycleEnd(tally, state) {
+export function tallyCycleEnd(tally, state, contract = null) {
   const t = { ...(tally || emptyTally()) };
   const forms = state.formations || [];
   const keep = (key, value) => { if (value > (t[key] || 0)) t[key] = value; };
@@ -448,8 +562,20 @@ export function tallyCycleEnd(tally, state) {
   keep("bestLong", longestFormation(forms));
   keep("bestCovered", positionsWith(forms, 1));
   keep("bestWoven", positionsWith(forms, 3));
+  keep("bestMargin", t.cycleMargin || 0);
+  /* Durchmarsch schwer: eine Serie makelloser Durchläufe. Ein einziger verlorener Stich setzt sie
+     zurück — deshalb wird hier gezählt und nicht das Maximum gehalten. */
+  t.perfectRun = (state.cycleWins || 0) >= C.BOARD_POSITIONS ? (t.perfectRun || 0) + 1 : 0;
+  keep("bestPerfectRun", t.perfectRun);
+  /* Die gesperrte Spitze: nur ein Durchlauf, in dem die Zusatzbedingung stand, darf zählen. Sie
+     wird HIER geprüft, mit der Aufstellung und den Serien des gerade beendeten Durchlaufs. */
+  if (contract && contract.extra && extraHolds(state, contract, t.cycleMaxStreak || 0)) {
+    keep("bestGated", readLive({ ...state, contractTally: t }, contract));
+  }
   t.segments = 0; t.segWins = 0; t.segIndex = 0;
   t.suitWins = {};
+  t.cycleMargin = 0;
+  t.cycleMaxStreak = 0;
   return t;
 }
 

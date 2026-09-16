@@ -263,7 +263,9 @@ function contractStep(prev, next, rng = Math.random) {
         if (frei && frei.includes(kind)) perPhase[key] = Math.max(next[key] || 0, 1);
       }
     }
-    tally = CT.tallyCycleEnd(tally, prev);      // die Spitzen des GERADE beendeten Durchlaufs
+    /* Die Spitzen des GERADE beendeten Durchlaufs. Der Auftrag muss mit: trägt seine Stufe eine
+       Zusatzbedingung, entscheidet sich hier, ob dieser Durchlauf überhaupt zählen darf. */
+    tally = CT.tallyCycleEnd(tally, prev, active);
     const finished = prev.cycle + 1;            // 1-basierte Anzeige-Nummer des beendeten Durchlaufs
     const activeWin = active && CT.WINDOWS.find((w) => w.id === active.windowId);
     /* Abgerechnet wird ERST am Fensterende, nicht in dem Moment, in dem der Zähler die Schwelle
