@@ -112,22 +112,32 @@ sie auf drei Listen verteilt und die Werte gesetzt. Die Nummern sind stabil.
 
 ### 3.1 Minibosse — vierzehn, mit gesetzten Werten
 
+**Die Namen sind Figuren, ohne Artikel** (Owner, 2026-09-16). Jeder Zwischenboss ist jemand, der
+etwas tut, nicht eine Erscheinung, die eintritt — dieselbe Form wie Späher, Wucherer und Wärter, die
+den Ton vorgegeben haben. Verworfen als zu altbacken: Mehrer, Siegler, Markscheider. Die vier
+Endboss-Kandidaten und der optionale behalten ihre Arbeitsnamen, bis sie selbst an der Reihe sind.
+
+> **Beim Umbenennen mitgeprüft:** das Spiel führt schon Namen auf -er an anderen Stellen — **Henker**
+> und **Sammler** als legendäre Perks, **Brecher** als Auftragsaufgabe. Kollidieren tut keiner der
+> vierzehn, aber das Register ist geteilt. Ebenfalls geprüft und vermieden: **Zöllner** hätte sich
+> den Stamm mit dem Gebäude **Zollhaus** geteilt, **Wächter** mit Wärter.
+
 | Nr. | Name | Regel und Wert |
 | --- | --- | --- |
-| M01 | **Der Späher** | Die Gegnerreihenfolge ist nicht gemischt, sondern nach deiner Formationsstärke verteilt: die höchsten Gegnerkarten auf die Positionen mit dem höchsten Formations-Mult. Positionen ohne Formation stehen alle auf Mult 1 und werden untereinander gemischt. Der Anker zählt als Formation und fällt damit nicht in die Zufallsgruppe |
-| M03 | **Die Zehrung** | Alle Gegnerkarten **+1 alle 10 Durchläufe**, dauerhaft und kumulativ — bei D10, D20, D30, D40, D50 |
-| M04 | **Der Erbe** | **Alle 5 Durchläufe −1** auf die Karte, die in diesem Fenster die meisten Stiche gewonnen hat. Der Abzug bleibt bis zum Laufende |
-| M08 | **Die Drift** | Nach jedem Durchlauf rückt die Aufstellung **um eine Position** weiter; **Position 40 wandert auf 1**. Nach 40 Durchläufen steht das Brett wieder wie am Anfang |
-| M10 | **Die Quarantäne** | Vor jeder Aufstellphase rückt die Quarantäne **ein Segment** weiter. Die fünf Karten darin spielen ihre Stiche normal und zahlen auch, **können in dieser Phase aber nicht getauscht werden**. Bei acht Segmenten und einer Aufstellphase je vier Durchläufe braucht sie rund 32 Durchläufe einmal herum |
-| M11 | **Der Starrsinn** | Formations-Energie **4 → 2** je Aufstellphase |
-| M12 | **Der Kitt** | Eine getauschte Karte ist die **nächsten zwei Aufstellphasen** gesperrt. Zurücknehmen innerhalb der laufenden Phase bleibt möglich |
-| M13 | **Der Wucherer** | Die Preistreppe **verdreifacht** statt zu verdoppeln — Neuwurf 3 · 9 · 27 statt 3 · 6 · 12 |
-| M14 | **Der Schwund** | An jeder Durchlaufgrenze verfällt **ein Viertel des Kontostands, aufgerundet**. Bei 10 Münzen verfallen 3, bei 5 verfallen 2, bei 1 verfällt sie |
-| M15 | **Der Tribut** | **3 Münzen je Durchlauf**, automatisch abgezogen, solange Deckung da ist — keine Verweigerung. Reicht der Kontostand nicht, **Gegner +1** in diesem Durchlauf |
-| M16 | **Die Zersiedelung** | Der Distrikt-Bonus kehrt sein Vorzeichen um, der Betrag bleibt: **−8 %** je verschiedenem gleich-kategorigem Nachbargebäude, höchstens drei gezählt — bis −24 % statt bis +24 % |
-| M17 | **Der Enge Grund** | Baufeld-Deckel **24 → 16** Zellen. Eine volle Spalte (8) bleibt erreichbar, kostet aber das halbe Budget |
-| M18 | **Die Zehrende Gier** | **1 Münze je 2 gehaltene Perks je Durchlauf, abgerundet.** Bei Kontostand 0 passiert nichts. Break-even bei rund 6 Perks gegen ein Einkommen von etwa 3 je Durchlauf |
-| M19 | **Der Wärter** | Bei **D20 und D40** gibst du je einen gehaltenen Skill ab. Welchen, entscheidest du |
+| M01 | **Späher** | Die Gegnerreihenfolge ist nicht gemischt, sondern nach deiner Formationsstärke verteilt: die höchsten Gegnerkarten auf die Positionen mit dem höchsten Formations-Mult. Positionen ohne Formation stehen alle auf Mult 1 und werden untereinander gemischt. Der Anker zählt als Formation und fällt damit nicht in die Zufallsgruppe |
+| M03 | **Züchter** | Alle Gegnerkarten **+1 alle 10 Durchläufe**, dauerhaft und kumulativ — bei D10, D20, D30, D40, D50 |
+| M04 | **Neider** | **Alle 5 Durchläufe −1** auf die Karte, die in diesem Fenster die meisten Stiche gewonnen hat. Der Abzug bleibt bis zum Laufende |
+| M08 | **Dreher** | Nach jedem Durchlauf rückt die Aufstellung **um eine Position** weiter; **Position 40 wandert auf 1**. Nach 40 Durchläufen steht das Brett wieder wie am Anfang |
+| M10 | **Schließer** | Vor jeder Aufstellphase rückt die Sperre **ein Segment** weiter. Die fünf Karten darin spielen ihre Stiche normal und zahlen auch, **können in dieser Phase aber nicht getauscht werden**. Bei acht Segmenten und einer Aufstellphase je vier Durchläufe braucht sie rund 32 Durchläufe einmal herum |
+| M11 | **Bremser** | Formations-Energie **4 → 2** je Aufstellphase |
+| M12 | **Maurer** | Eine getauschte Karte ist die **nächsten zwei Aufstellphasen** gesperrt. Zurücknehmen innerhalb der laufenden Phase bleibt möglich |
+| M13 | **Wucherer** | Die Preistreppe **verdreifacht** statt zu verdoppeln — Neuwurf 3 · 9 · 27 statt 3 · 6 · 12 |
+| M14 | **Beutelschneider** | An jeder Durchlaufgrenze verfällt **ein Viertel des Kontostands, aufgerundet**. Bei 10 Münzen verfallen 3, bei 5 verfallen 2, bei 1 verfällt sie |
+| M15 | **Vogt** | **3 Münzen je Durchlauf**, automatisch abgezogen, solange Deckung da ist — keine Verweigerung. Reicht der Kontostand nicht, **Gegner +1** in diesem Durchlauf |
+| M16 | **Hetzer** | Der Distrikt-Bonus kehrt sein Vorzeichen um, der Betrag bleibt: **−8 %** je verschiedenem gleich-kategorigem Nachbargebäude, höchstens drei gezählt — bis −24 % statt bis +24 % |
+| M17 | **Bauaufseher** | Baufeld-Deckel **24 → 16** Zellen. Eine volle Spalte (8) bleibt erreichbar, kostet aber das halbe Budget |
+| M18 | **Schmarotzer** | **1 Münze je 2 gehaltene Perks je Durchlauf, abgerundet.** Bei Kontostand 0 passiert nichts. Break-even bei rund 6 Perks gegen ein Einkommen von etwa 3 je Durchlauf |
+| M19 | **Wärter** | Bei **D20 und D40** gibst du je einen gehaltenen Skill ab. Welchen, entscheidest du |
 
 ### 3.2 Endboss-Kandidaten — vier, geparkt
 
@@ -151,13 +161,13 @@ Nicht verworfen, sondern für den Endboss zurückgelegt (Owner, 2026-09-16). Ohn
 Minibosse treten einzeln auf; die Paare zählen erst für den Endboss und für die Frage, ob eine Ebene
 denselben Boss zweimal ziehen darf.
 
-- **M10, M11 und M12 sitzen alle drei auf der Aufstellphase.** Quarantäne sperrt fünf Positionen,
-  Starrsinn halbiert die Energie, Kitt bindet jeden Tausch für zwei Phasen. Je zwei zusammen nehmen
+- **M10, M11 und M12 sitzen alle drei auf der Aufstellphase.** Schließer sperrt fünf Positionen,
+  Bremser halbiert die Energie, Maurer bindet jeden Tausch für zwei Phasen. Je zwei zusammen nehmen
   dieselbe Handlung doppelt.
-- **M08 Drift gegen M11 oder M12** — Rotation je Durchlauf gegen wenige, gebundene Tauschzüge.
+- **M08 Dreher gegen M11 oder M12** — Rotation je Durchlauf gegen wenige, gebundene Tauschzüge.
 - **M13, M14, M15 und M18 hängen an derselben Börse.** Je zwei zusammen ziehen doppelt ab, und jede
   Tarierung verschiebt, was die anderen kosten.
-- **M16 gegen M17** — Zersiedelung verlangt Platz zum Streuen, Enge Grund nimmt ihn.
+- **M16 gegen M17** — Hetzer verlangt Platz zum Streuen, Bauaufseher nimmt ihn.
 
 ## 4. Entschieden, und was offen bleibt
 
@@ -184,7 +194,7 @@ Was danach offen bleibt:
    - **M06** — der Kampfwert **fängt bei 0 ab**, wie der Gegnerwert es heute schon tut. Eine über 10
      gehobene Karte fällt damit auf 0, nicht ins Negative.
    - **M15** — **keine Verweigerung.** Die 3 Münzen werden automatisch abgezogen, solange Deckung da
-     ist. Der Tribut ist damit eine Steuer, keine Entscheidung je Durchlauf — die Entscheidung
+     ist. Der Vogt ist damit eine Steuer, keine Entscheidung je Durchlauf — die Entscheidung
      verschiebt sich auf das Ausgeben: wer seine Börse leerkauft, zahlt die Strafe.
    - **M18** — **abgerundet**, ein Perk kostet also nichts, drei kosten eine Münze. Steht der
      Kontostand auf 0, **passiert nichts** — keine Strafe, kein Rückstand. Die Familie kann damit
