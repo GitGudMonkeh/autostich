@@ -2,7 +2,8 @@
 
 **Status: Zwischenstand einer Design-Session, keine Spezifikation.** Festgehalten ist, was der Owner
 am 2026-09-16 aus einer Sammlung von rund 35 Mechanik-Vorschlägen als Favoriten markiert hat, samt
-den Messungen, die die Auswahl begründen. Nichts darin ist gesetzt außer der Auswahl selbst.
+den Messungen, die die Auswahl begründen. Gesetzt sind nur die Auswahl selbst und der Rahmen
+in §1.
 
 Sprache Deutsch, weil die Bossnamen Produktsprache sind und der Owner hier mitschreibt. Bewusste
 Abweichung von der Engineering-Sprache in `AGENTS.md`, wie bei `docs/zwischenaufgaben.md`,
@@ -21,6 +22,8 @@ Abweichung von der Engineering-Sprache in `AGENTS.md`, wie bei `docs/zwischenauf
 - **Ein Miniboss darf jedes System anfassen** — Gegner, Brett, Karten, Rechnung, Wirtschaft,
   Entscheidungsphasen.
 - Jeder Boss trägt einen steigenden Score-Threshold.
+- **Der Boss steht beim Laufstart fest und ist sichtbar**, vor der ersten Skill-Wahl — man
+  muss sich darauf einstellen können.
 
 **Nicht Gegenstand dieses Dokuments:** Progression, Ebenen, Endbosse, Belohnungen, Threshold-Werte.
 
@@ -93,7 +96,7 @@ besteuert wird, was im jeweiligen Bau am stärksten ist.
 
 | Name | Regel | Anmerkung |
 | --- | --- | --- |
-| **Der Gleichmacher** | Alle Spielerkarten zählen mit `baseRank`; jeder dauerhafte Wertgewinn ist ignoriert | Reiner Build-Check. **Fraktionssteuer beachtet:** trifft Feuer und Eis hart (heben Kartenwert), Blitz und Pflanze kaum. Nur tragbar, wenn der Boss vorher bekannt ist |
+| **Der Gleichmacher** | Alle Spielerkarten zählen mit `baseRank`; jeder dauerhafte Wertgewinn ist ignoriert | Reiner Build-Check. Trifft Feuer und Eis hart (sie heben den Kartenwert), Blitz und Pflanze kaum — durch die Sichtbarkeit beim Laufstart ist das eine Bau-Ansage statt einer Fraktionssteuer |
 | **Die Umkehr** | Spielerwerte gespiegelt (11 − Wert) | Über einen ganzen Lauf wird aus dem Rätsel eine Bauregel — Treppe läuft rückwärts, Wechsel überlebt |
 | **Die Zehrung** | Gegner +1 alle 8 Durchläufe | Die direkte Antwort auf §2.2: der Ramp hält den Druck über den Lauf flach statt vorne. `difficulty.oppRampEvery` existiert bereits (`engine.js`) |
 | **Der Wärter** | Bei D10, D20, D30 nimmt der Boss einen gehaltenen Skill — der Spieler wählt welchen | Eskalierende Bau-Erosion, nur über einen ganzen Lauf lesbar |
@@ -112,15 +115,21 @@ nicht gesetzt** — die Anpassung steht aus und ist eine eigene Runde.
 
 ---
 
-## 4. Offen
+## 4. Entschieden, und was offen bleibt
 
-1. **Wann der Boss sichtbar wird — die wichtigste offene Frage.** Zufällig **zugewiesen** heißt nicht
-   zwangsläufig **versteckt**, und das entscheidet, ob das System trägt. Steht der Boss beim
-   Laufstart vor der ersten Skill-Wahl, ist er das Thema des Laufs: der Spieler kann ihn nicht
-   wählen, aber den Konter — Fraktion, Skills, Perks, Aufstellung. Das löst genau die Schieflage,
-   die die Aufträge nur durchs Wählen lösen konnten (`docs/zwischenaufgaben.md` §2.3). Bleibt er
-   verdeckt, ist ein Lauf in Durchlauf 1 entschieden, bevor irgendetwas getan werden konnte.
-   **Vorschlag: sichtbar beim Laufstart.** Nicht entschieden.
+**Entschieden (Owner, 2026-09-16): der Boss ist beim Laufstart sichtbar.** Zufällig
+**zugewiesen** heißt nicht **versteckt**, und daran hing, ob das System trägt. Weil der Boss vor der
+ersten Skill-Wahl steht, ist er das Thema des Laufs: der Spieler kann ihn nicht wählen, aber den
+Konter — Fraktion, Skills, Perks, Aufstellung. Das löst genau die Schieflage, die die Aufträge nur
+durchs Wählen lösen konnten (`docs/zwischenaufgaben.md` §2.3), und es macht die zweite Begegnung mit
+demselben Boss besser statt langweiliger. Verdeckt wäre ein Lauf in Durchlauf 1 entschieden gewesen,
+bevor irgendetwas getan werden konnte.
+
+Was danach offen bleibt:
+
+1. **Wo der Boss steht.** Lesbar sein muss er vor der ersten Skill-Wahl, die über `START_RUN` läuft, und
+   danach den ganzen Lauf über. Die Aufträge haben dieselbe Frage schon beantwortet — ihr Stand
+   sitzt in `src/ui/StatusRail.jsx` (`docs/zwischenaufgaben.md` §4.3). Anzeige ist Owner-Sache.
 2. **Zensus, Drift und gezielte Sperre** brauchen die Anpassungsrunde aus §3.3.
 3. **Tarierung.** Offen ist, ob der Threshold die Konstante je Ebene ist und jeder Miniboss auf
    ungefähr denselben gemessenen Score-Verlust tariert wird, oder ob der Threshold mit dem Boss
