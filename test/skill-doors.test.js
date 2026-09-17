@@ -221,7 +221,9 @@ describe("Sim — jede Policy geht durch die Türstufe", () => {
     const x = runOne(11, fixedPolicy(["SK_FIRE_06", "SK_LIGHTNING_07"]));
     expect(x.build.skills.length).toBeGreaterThan(0);
     expect(runOne(11, fixedPolicy(["SK_FIRE_06"])).score).toBe(runOne(11, fixedPolicy(["SK_FIRE_06"])).score); // deterministisch
-  });
+    // Fünf volle Läufe in einem Test: leer misst er rund 2 s, unter der Parallellast der CI riss er zweimal die
+    // 5 s, die Vitest ohne `testTimeout` vergibt. Eigenes Budget wie in contracts.test.js — die Zusicherungen bleiben.
+  }, 30_000);
   it("fixedPolicy exclude: die genannten Skills werden nie gehalten (Motor-Diagnose „ohne Verstärker“)", () => {
     const RATE = ["SK_FIRE_02", "SK_FIRE_03", "SK_FIRE_05"]; // §7.23: SK_FIRE_01 ist Feuerlinie, kein Verstärker mehr
     for (const seed of [1, 2, 3]) {
