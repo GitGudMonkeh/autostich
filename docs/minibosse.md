@@ -1,7 +1,7 @@
 # Minibosse — Mechanik-Katalog (Brainstorm-Stand)
 
 **Status: Zwischenstand einer Design-Session, keine Spezifikation.** Aus zwei Sammelrunden
-(2026-09-16) kamen neunzehn Vorschläge; ein Durchgang Boss für Boss hat daraus **vierzehn Minibosse
+(2026-09-16) kamen neunzehn Vorschläge; ein Durchgang Boss für Boss hat daraus **sechzehn Minibosse
 mit gesetzten Werten**, vier Endboss-Kandidaten und einen optionalen gemacht — §3. §2 hält die
 Messungen, gegen die tariert wurde. Die Werte sind **Owner-Entscheid am Papier, nicht simuliert**;
 die offenen Mechanikfragen sind entschieden (§4, Punkt 4).
@@ -108,9 +108,9 @@ alle Restdurchläufe.
 ## 3. Der Katalog
 
 Zwei Sammelrunden ergaben neunzehn Vorschläge; der Durchgang Boss für Boss (Owner, 2026-09-16) hat
-sie auf drei Listen verteilt und die Werte gesetzt. Die Nummern sind stabil.
+sie auf drei Listen verteilt und die Werte gesetzt. Zwei kamen am 2026-09-17 dazu, M20 und M21. Die Nummern sind stabil.
 
-### 3.1 Minibosse — vierzehn, mit gesetzten Werten
+### 3.1 Minibosse — sechzehn, mit gesetzten Werten
 
 **Die Namen sind Figuren, ohne Artikel** (Owner, 2026-09-16). Jeder Zwischenboss ist jemand, der
 etwas tut, nicht eine Erscheinung, die eintritt — dieselbe Form wie Späher, Wucherer und Wärter, die
@@ -119,7 +119,7 @@ Endboss-Kandidaten und der optionale behalten ihre Arbeitsnamen, bis sie selbst 
 
 > **Beim Umbenennen mitgeprüft:** das Spiel führt schon Namen auf -er an anderen Stellen — **Henker**
 > und **Sammler** als legendäre Perks, **Brecher** als Auftragsaufgabe. Kollidieren tut keiner der
-> vierzehn, aber das Register ist geteilt. Ebenfalls geprüft und vermieden: **Zöllner** hätte sich
+> sechzehn, aber das Register ist geteilt. Ebenfalls geprüft und vermieden: **Zöllner** hätte sich
 > den Stamm mit dem Gebäude **Zollhaus** geteilt, **Wächter** mit Wärter.
 
 | Nr. | Name | Regel und Wert |
@@ -138,6 +138,8 @@ Endboss-Kandidaten und der optionale behalten ihre Arbeitsnamen, bis sie selbst 
 | M17 | **Bauaufseher** | Baufeld-Deckel **24 → 16** Zellen. Eine volle Spalte (8) bleibt erreichbar, kostet aber das halbe Budget |
 | M18 | **Schmarotzer** | **1 Münze je 2 gehaltene Perks je Durchlauf, abgerundet.** Bei Kontostand 0 passiert nichts. Break-even bei rund 6 Perks gegen ein Einkommen von etwa 3 je Durchlauf |
 | M19 | **Wärter** | Bei **D20 und D40** gibst du je einen gehaltenen Skill ab. Welchen, entscheidest du |
+| M20 | **Besetzer** | **Acht Positionen** der Aufstellung sind gesperrt, beim Laufstart einmal gewürfelt und danach unverändert. Ihre Karten lassen sich den ganzen Lauf nicht tauschen. **Gesetzt wird so, dass innerhalb eines Segments nie zwei gesperrte Positionen nebeneinander liegen** (Owner, 2026-09-17); über eine Segmentgrenze hinweg ist es erlaubt |
+| M21 | **Denkmalpfleger** | **Sechs Zellen** des Baufelds sind gesperrt, beim Laufstart einmal gewürfelt und danach unverändert. Dort lässt sich nichts bauen. Dieselbe Setzregel wie bei M20: innerhalb einer Zeile nie zwei nebeneinander, über die Zeilengrenze hinweg schon |
 
 ### 3.2 Die Spielertexte
 
@@ -162,6 +164,13 @@ Formation, Neuwurf, Kampfwert).
 | M17 | **Bauaufseher** | Dir stehen 16 Baufeldzellen zur Verfügung statt 24. |
 | M18 | **Schmarotzer** | Je zwei gehaltene Perks kosten dich eine Münze je Durchlauf. Hast du keine Münzen, passiert nichts. |
 | M19 | **Wärter** | Nach Durchlauf 20 und nach Durchlauf 40 gibst du einen gehaltenen Skill ab. Welchen, entscheidest du. |
+| M20 | **Besetzer** | Acht Positionen deiner Aufstellung sind von Beginn an gesperrt. Ihre Karten bleiben den ganzen Lauf an ihrem Platz. |
+| M21 | **Denkmalpfleger** | Sechs Zellen des Baufelds sind gesperrt, dort baust du nicht. |
+
+> **Und er nennt nicht, wie gewürfelt wurde** (Owner, 2026-09-17). Besetzer und Denkmalpfleger
+> setzen ihre Felder so, dass innerhalb eines Segments nie zwei nebeneinander liegen. Das ist eine
+> Setzregel, keine Spielregel: der Spieler sieht die Felder, er muss nicht wissen, nach welcher
+> Bedingung sie gezogen wurden. Sie steht deshalb in §3.1 und nicht auf der Kachel.
 
 > **Ein Spielertext nennt nicht, was unverändert bleibt** (Owner, 2026-09-16). Maurer trug zuerst
 > den Nachsatz „Zurücknehmen kannst du sie in der laufenden Phase weiterhin", Schließer das
@@ -200,9 +209,15 @@ Nicht verworfen, sondern für den Endboss zurückgelegt (Owner, 2026-09-16). Ohn
 Minibosse treten einzeln auf; die Paare zählen erst für den Endboss und für die Frage, ob eine Ebene
 denselben Boss zweimal ziehen darf.
 
-- **M10, M11 und M12 sitzen alle drei auf der Aufstellphase.** Schließer sperrt fünf Positionen,
-  Bremser halbiert die Energie, Maurer bindet jeden Tausch für zwei Phasen. Je zwei zusammen nehmen
-  dieselbe Handlung doppelt.
+- **M10, M11, M12 und M20 sitzen alle vier auf der Aufstellphase.** Schließer sperrt fünf
+  Positionen wandernd, Besetzer acht fest, Bremser halbiert die Energie, Maurer bindet jeden Tausch
+  für zwei Phasen. Je zwei zusammen nehmen dieselbe Handlung doppelt.
+- **M20 ist die gewürfelte Fassung von M09.** Die gezielte Sperre sucht ihre Positionen aus und
+  wählt neu, der Besetzer würfelt einmal und bleibt liegen. Der Zufall ist der Zwischenboss, die
+  Absicht der Endboss; zusammen gehören sie nicht in einen Lauf.
+- **M16, M17 und M21 sitzen alle drei auf dem Baufeld.** Und M21 nimmt mehr als seine sechs Zellen:
+  gestreute Sperrzellen treffen volle Zeilen, Spalten und Diagonalen, und die tragen die
+  Strukturboni. Beim Tarieren ist das der Posten, nicht die Fläche.
 - **M08 Dreher gegen M11 oder M12** — Rotation je Durchlauf gegen wenige, gebundene Tauschzüge.
 - **M13, M14, M15 und M18 hängen an derselben Börse.** Je zwei zusammen ziehen doppelt ab, und jede
   Tarierung verschiebt, was die anderen kosten.
