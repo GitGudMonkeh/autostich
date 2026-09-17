@@ -56,6 +56,7 @@ document can be perfectly current while its branch references are stale.
 | `archetyp-effekte-eigenstaendig.md` | **living** | 2026-08-14 | Standalone archetype effects. Declares itself *"Lebendes Dokument … die Quelle der Wahrheit, die den Clear überlebt"* — read before working in this area |
 | `archetyp-karteneffekte.md` | **living** | 2026-08-12 | One Pixi card effect per faction; specification, decisions and implementation status |
 | `stein-fraktion.md` | **draft** / living | 2026-08-18 | Stone faction. Declares *"Status: KONZEPT. Nur Vision, Fundament und Abgrenzung. Noch keine Skills, noch keine Zahlen."* |
+| `fraktion-5-brainstorm.md` | **brainstorm** | 2026-09-17 | Fifth faction, exploration only. Maps which design levers the four existing factions occupy and which are still free, then sketches six directions. Declares *"Kein Beschluss, keine Zahlen, keine Messung."* Written in German by declared exception (product content); re-reads `stein-fraktion.md` against the `exp` measurements |
 | `eis-rework.md` | **draft** | 2026-08-15 | Ice redesign. *"Design steht auf Mechanik-Ebene"*; numbers deliberately last. Names target branch `balancing` — **gone** |
 | `gameplay-redesign.md` | **live** | 2026-08-07 | Gameplay screen rebuild. Declares *"freigegeben, Umsetzung ausstehend"* — approved, implementation pending |
 | `optionen-redesign.md` | **live** | 2026-08-23 | Options overlay rebuild (≥ 1280 px). Declares *"freigegeben, Umsetzung ausstehend"* — approved, implementation pending. Design side only; links a clickable mockup |
