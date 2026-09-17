@@ -7,7 +7,10 @@ import { SKILL_LIST, isLegendarySkill } from "../src/game/skills.js";
 import { computeFormations, openBorderInfo, FORMATION_TYPES } from "../src/game/formations.js";
 import { makeRng } from "../src/game/deck.js";
 import { randomPolicy } from "../sim/policies/random.js";
-import { stepColor, tierColor } from "../src/ui/ContractPhase.jsx";
+import { stepColor, tierColor, contractReadout, lootName, lootText } from "../src/ui/ContractPhase.jsx";
+import { rerollOffer, rerollPrice, REROLL_CAP } from "../src/game/coins.js";
+import { readFileSync, readdirSync, statSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { LEGENDARY_GOLD, STEP_BRONZE, STEP_SILVER, STEP_GOLD } from "../src/ui/indicators/vocab.js";
 import de from "../src/i18n/de.js";
 
@@ -937,6 +940,136 @@ describe("Aufträge · abgerechnet wird erst am Fensterende (§3.7)", () => {
     expect(beuteBei, "genau eine Auszahlung, am Fensterende").toEqual([16]);
     expect(Math.max(...erfuelltOhne), "die Wartezeit reicht bis an die Grenze").toBe(15);
   }, 30_000);
+});
+
+describe("Aufträge · Nachlass wirkt auch am KNOPF, nicht nur im Reducer (2026-09-17)", () => {
+  /* Playtest-Befund: der legendäre Neuwurf stand auf 30, obwohl Nachlass III ihn auf ein Viertel
+     senkt. Ursache war nicht die Beute, sondern zwei Rechenwege: der Reducer legte `rerollPriceWith`
+     über den Preis, der Knopf rief `coins.rerollOffer` roh. Damit sah der Spieler den vollen Preis
+     UND konnte den Wurf nicht auslösen, weil `can` gegen den vollen Preis prüfte — Nachlass war für
+     ALLE Neuwürfe wirkungslos, nicht nur für legendäre. */
+  const mitNachlass = (scale, coins) => ({ contractsEnabled: true, coins, coinRerolls: 0,
+    contractBoons: { rerollScale: scale }, offerRerolls: 0 });
+
+  it("der normale Neuwurf wird billiger — und zwar sichtbar", () => {
+    const roh = rerollOffer({ coins: 100, coinRerolls: 0 }, 0, false);
+    const mit = CT.rerollOfferWith(mitNachlass(0.25, 100), 0, false);
+    expect(mit.nextPrice, "ein Viertel, abgerundet, nie unter 1").toBe(Math.max(1, Math.floor(roh.nextPrice * 0.25)));
+    expect(mit.price).toBe(mit.nextPrice);
+  });
+
+  it("der LEGENDÄRE Neuwurf ebenso — genau der Fall aus dem Playtest", () => {
+    const roh = rerollOffer({ coins: 24, coinRerolls: 1 }, 0, true);
+    expect(roh.nextPrice, "ungesenkt 30, und mit 24 Münzen nicht bezahlbar").toBe(30);
+    expect(roh.can).toBe(false);
+    const mit = CT.rerollOfferWith({ ...mitNachlass(0.25, 24), coinRerolls: 1 }, 0, true);
+    expect(mit.nextPrice).toBe(7);
+    expect(mit.can, "mit 24 Münzen jetzt bezahlbar").toBe(true);
+  });
+
+  it("Knopf und Reducer nehmen denselben Preis", () => {
+    const s = { ...mitNachlass(0.5, 200), coinRerolls: 2 };
+    for (const leg of [false, true]) {
+      const knopf = CT.rerollOfferWith(s, 0, leg).nextPrice;
+      const reducer = CT.rerollPriceWith(s, rerollPrice(s.coinRerolls, leg), leg, rerollPrice(s.coinRerolls, false));
+      expect(knopf, `legendary=${leg}`).toBe(reducer);
+    }
+  });
+
+  it("gratis bleibt gratis, gedeckelt bleibt gedeckelt", () => {
+    expect(CT.rerollOfferWith(mitNachlass(0.25, 100), 2, false).price, "Gratis-Wurf kostet nichts").toBe(0);
+    const voll = { ...mitNachlass(0.25, 100), offerRerolls: REROLL_CAP };
+    expect(CT.rerollOfferWith(voll, 0, false).capped, "der Deckel steht vor dem Preis").toBe(true);
+  });
+
+  it("ohne Auftragslauf ändert sich gar nichts", () => {
+    const s = { coins: 100, coinRerolls: 1, offerRerolls: 0 };
+    expect(CT.rerollOfferWith(s, 0, true)).toEqual(rerollOffer(s, 0, true));
+  });
+
+  it("KEINE Anzeigestelle rechnet den Neuwurf-Preis an der Tür vorbei", () => {
+    /* Der eigentliche Wächter. Die Zahlen oben halten nur, solange die UI durch `rerollOfferWith`
+       geht — der Fehler entstand ja nicht in der Rechnung, sondern daran, dass eine Datei die
+       ungesenkte nahm. Gesucht wird der IMPORT, nicht ein Vorkommen im Text, damit der Wächter
+       nicht auf dem Kommentar anschlägt, der ihn begründet. */
+    const uiDir = fileURLToPath(new URL("../src/ui/", import.meta.url));
+    const walk = (dir) => readdirSync(dir).flatMap((f) => {
+      const p = `${dir}/${f}`;
+      return statSync(p).isDirectory() ? walk(p) : (/\.jsx?$/.test(f) ? [p] : []);
+    });
+    const suender = walk(uiDir).filter((p) => {
+      const src = readFileSync(p, "utf8");
+      return /import\s*\{[^}]*\brerollOffer\b[^}]*\}\s*from\s*["'][^"']*coins\.js["']/.test(src);
+    });
+    expect(suender, `rerollOffer statt rerollOfferWith: ${suender.join(", ")}`).toEqual([]);
+  });
+});
+
+describe("Aufträge · die genommene Beute ist im Lauf nachlesbar (2026-09-17)", () => {
+  /* Man sah ein Stück einmal beim Nehmen und danach nie wieder, obwohl es weiterwirkt. Der Bestand
+     merkt sich nur `{ id, tier }` — Name und Wirkung müssen sich daraus lesen lassen, sonst zeigt
+     die Leiste leere Schlüssel. */
+  it("Name und Wirkung lesen sich aus dem Bestand, auch beim Legendären", () => {
+    for (const fam of CT.LOOT_FAMILIES) {
+      for (let tier = 1; tier <= 4; tier++) {
+        const eintrag = { id: fam.id, tier };            // genau die Form aus contracts.taken
+        expect(lootName(eintrag), `${fam.id}@${tier} Name`).toBeTruthy();
+        expect(lootName(eintrag)).not.toContain("contract.");
+        expect(lootText(eintrag), `${fam.id}@${tier} Text`).toBeTruthy();
+        expect(lootText(eintrag)).not.toContain("contract.");
+      }
+    }
+    for (const leg of CT.LEGENDARIES) {
+      const eintrag = { id: leg.id, tier: CT.TIER_LEGENDARY };
+      expect(lootName(eintrag), `${leg.id} Name`).not.toContain("contract.");
+      expect(lootText(eintrag), `${leg.id} Text`).not.toContain("contract.");
+    }
+  });
+
+  it("PICK_LOOT schreibt genau diese Form in den Bestand", () => {
+    const s = reducer(undefined, { type: "START_RUN", rng: seeded(42), architect: true, seed: 7, contracts: true });
+    const stueck = CT.rollLoot(seeded(3), "leicht")[0];
+    const armed = { ...s, contracts: { ...s.contracts, pendingLoot: [stueck] } };
+    const nach = reducer(armed, { type: "PICK_LOOT", lootId: stueck.id, tier: stueck.tier });
+    expect(nach.contracts.taken).toEqual([{ id: stueck.id, tier: stueck.tier }]);
+    expect(lootName(nach.contracts.taken[0])).toBe(lootName(stueck));
+    expect(lootText(nach.contracts.taken[0])).toBe(lootText(stueck));
+  });
+});
+
+describe("Aufträge · jede Aufgabe fängt bei null an (2026-09-17)", () => {
+  /* Playtest-Befund: Fußvolk stand bei D17 schon auf 113 von 200, ohne einen Stich dafür. Die
+     Strichliste lief über den ganzen Lauf weiter, also erbte Fenster 2 das Ergebnis von Fenster 1. */
+  it("PICK_CONTRACT leert die Strichliste", () => {
+    const s = reducer(undefined, { type: "START_RUN", rng: seeded(11), architect: true, seed: 3, contracts: true });
+    const voll = { ...s, contractTally: { ...CT.emptyTally(), lowWins: 113, overThreshold: 40, bestSegments: 4 } };
+    const o = voll.contracts.offers[0];
+    const nach = reducer(voll, { type: "PICK_CONTRACT", taskId: o.taskId, step: o.step });
+    expect(nach.contractTally).toEqual(CT.emptyTally());
+    expect(CT.readLive(nach, { taskId: "fussvolk", step: "schwer" }), "Fußvolk bei null").toBe(0);
+  });
+});
+
+describe("Aufträge · ein erfüllter Auftrag fällt in der Anzeige nicht zurück (2026-09-17)", () => {
+  /* Buntspiel zeigte im nächsten Durchlauf wieder „2/7 best 7". Die 2 liest sich wie ein Rückschritt,
+     obwohl nichts mehr zu tun ist — bis zur Auszahlung steht jetzt 7/7. */
+  const s = (segments, best) => ({ contractsEnabled: true, formations: [], cycle: 4,
+    contractTally: { ...CT.emptyTally(), segments, bestSegments: best },
+    contracts: { active: { taskId: "sperrfeuer", step: "leicht", rung: 3, target: 3, windowId: 1 } } });
+
+  it("erfüllt zeigt den erfüllenden Wert, nicht den laufenden", () => {
+    const r = contractReadout(s(1, 3));
+    expect(r.done).toBe(true);
+    expect(r.live, "3/3 statt 1/3").toBe(3);
+    expect(r.peak, "und keine zweite Zahl mehr daneben").toBe(false);
+  });
+
+  it("unerfüllt zeigt weiter beide Zahlen", () => {
+    const r = contractReadout(s(1, 2));
+    expect(r.done).toBe(false);
+    expect(r.live).toBe(1);
+    expect(r.peak).toBe(true);
+  });
 });
 
 describe("Aufträge · eine Grenzwahl ohne Ziel darf nicht stehen bleiben", () => {

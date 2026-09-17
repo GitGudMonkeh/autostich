@@ -966,6 +966,8 @@ Pruning: replacing the skill permanently grants +NaN% root/bloom score (up to +N
 "contract.formation.treppe","i18n","Treppe","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "contract.formation.wechsel","i18n","Wechsel","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "contract.formation.wiederholung","i18n","Wiederholung","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
+"contract.held.label_one","i18n","Beute · {n} Stück","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
+"contract.held.label_other","i18n","Beute · {n} Stücke","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "contract.left_one","i18n","noch {n} Durchlauf","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "contract.left_other","i18n","noch {n} Durchläufe","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""
 "contract.leg.reliquiar.name","i18n","Reliquiar","","i18n-Katalog (src/i18n) — über t() aufgelöst","","new",""

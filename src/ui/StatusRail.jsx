@@ -9,7 +9,7 @@ import { ScoreSourceBar, sourceShares } from "./RunGraphs.jsx";
 import { fmtScore, fmtScoreShort } from "./format.js"; // Gameplay-Neu-Aufbau: „Bester Score" in der Analyse-Ecke
 import { DECK_BORDER } from "./modalStyle.jsx"; // #356: deck-getönter neutraler Struktur-Rahmen
 import { t, fmtNum } from "../i18n/index.js"; // #sprache
-import { ContractTile } from "./ContractPhase.jsx"; // Zwischenaufgaben: der Stand des laufenden Auftrags
+import { ContractTile, HeldLoot } from "./ContractPhase.jsx"; // Zwischenaufgaben: Stand des laufenden Auftrags + genommene Beute
 
 // #252: einklappbarer Panel-Abschnitt (Kopf mit ▸/▾ togglet; Inhalt nur bei !collapsed). Der Zustand kommt aus den
 // Optionen (über Runs gemerkt) — der Kopf ruft onToggle, das die Option persistiert.
@@ -99,6 +99,9 @@ export function StatusRail({ state, currentTraj = [], recordTraj = [], options =
       {/* Zwischenaufgaben: der Auftrag steht ÜBER den Multiplikatoren, weil er als einziges Element der
           Leiste eine Frist hat. Rendert sich selbst weg, wenn kein Auftrag läuft. */}
       <ContractTile state={state} />
+      {/* Die genommene Beute steht bei den Multiplikatoren, weil sie einer ist: sie wirkt den
+          ganzen Lauf weiter und war bisher nach dem Nehmen nicht mehr zu sehen. */}
+      <HeldLoot state={state} />
 
       {/* Multiplikatoren — die stehenden Score-Treiber (Formation/Gebäude/Crit) dauerhaft sichtbar. */}
       <div>

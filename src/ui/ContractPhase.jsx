@@ -51,11 +51,14 @@ export function contractExtraText(contract) {
 
 export const contractName = (contract) => (contract ? t(`contract.task.${contract.taskId}.name`) : "");
 
-/* The text of one piece of loot. A legendary has no tier, so it carries its own single sentence. */
+/* The text of one piece of loot. A legendary has no tier of its own, so it carries a single sentence.
+   Erkannt wird es an der STUFE, nicht an `kind`: der Bestand (`contracts.taken`) merkt sich nur
+   `{ id, tier }`, und die Anzeige des Bestands liest dieselben zwei Funktionen wie die Auslage. */
+const istLegendaer = (piece) => (piece || {}).tier >= CT.TIER_LEGENDARY;
 export const lootName = (piece) =>
-  piece.kind === "legendary" ? t(`contract.leg.${piece.id}.name`) : t(`contract.loot.${piece.id}.name`);
+  istLegendaer(piece) ? t(`contract.leg.${piece.id}.name`) : t(`contract.loot.${piece.id}.name`);
 export const lootText = (piece) =>
-  piece.kind === "legendary" ? t(`contract.leg.${piece.id}.text`) : t(`contract.loot.${piece.id}.t${piece.tier}`);
+  istLegendaer(piece) ? t(`contract.leg.${piece.id}.text`) : t(`contract.loot.${piece.id}.t${piece.tier}`);
 
 function Overlay({ children }) {
   return overlayPortal(
@@ -241,15 +244,20 @@ export function contractReadout(state) {
   const c = state && state.contracts;
   const active = c && c.active;
   if (!active) return null;
-  const live = CT.readLive(state, active);
+  const laufend = CT.readLive(state, active);
   const best = CT.readBest(state, active);
   const target = active.target || 0;
+  const done = best >= target;
+  /* Ist der Auftrag erfüllt, fällt die Anzeige NICHT mehr zurück (Owner, 2026-09-17). Vorher stand
+     bei einer Durchlauf-Aufgabe im nächsten Durchlauf wieder „2/7 best 7" — die 2 liest sich wie ein
+     Rückschritt, obwohl nichts mehr zu tun ist. Jetzt bleibt 7/7 stehen, bis die Beute kommt. */
+  const live = done ? best : laufend;
   const left = CT.cyclesLeft((state.cycle || 0) + 1, active);
   /* `peak` sagt, ob zwei Zahlen nötig sind: bei einem Spitzen-Zähler fällt der laufende Wert an der
      Durchlaufgrenze zurück, der beste nicht. Nur eine Zahl zu zeigen hieße, entweder den Rückfall zu
      verstecken oder den Fortschritt. */
-  return { active, live, best, target, left, done: best >= target,
-           peak: CT.hasPeak(active) && best > live, tone: stepColor(active.step),
+  return { active, live, best, target, left, done,
+           peak: !done && CT.hasPeak(active) && best > live, tone: stepColor(active.step),
            /* Die Zusatzbedingung hat einen eigenen Zustand: sie hält gerade oder nicht. Ohne diese
               Anzeige sähe der Spieler seinen Zähler am Ziel stehen und bekäme trotzdem nichts. */
            extra: active.extra ? contractExtraText(active) : "",
@@ -285,6 +293,51 @@ function statusLabel(r) {
   const left = t("contract.left", { count: r.left, n: r.left });
   if (!r.done) return left;
   return r.left > 0 ? `${t("contract.done")} · ${left}` : t("contract.done");
+}
+
+/* GENOMMENE BEUTE — dieselbe Frage wie bei Skills und Perks: „was trage ich eigentlich?"
+   (Owner, 2026-09-17). Sie stand bisher nirgends: man sah das Stück einmal beim Nehmen und danach
+   nie wieder, obwohl es den ganzen Lauf weiterwirkt. Zugeklappt eine Zeile mit den Namen in ihren
+   Raritätsfarben, aufgeklappt jede Wirkung im Wortlaut — dieselben zwei Funktionen wie die Auslage,
+   damit Bestand und Angebot nicht auseinanderlaufen können. */
+export function HeldLoot({ state, className = "" }) {
+  const [open, setOpen] = useState(false);
+  const taken = (state && state.contracts && state.contracts.taken) || [];
+  if (!state || !state.contractsEnabled || !taken.length) return null;
+  return (
+    <div className={`rounded-lg min-w-0 ${className}`}
+      style={{ background: "#141419", border: `1px solid ${DECK_BORDER}` }}>
+      <button type="button" onClick={() => setOpen((v) => !v)} data-sfx="none"
+        className="w-full text-left px-2.5 py-1.5 min-w-0" style={{ background: "transparent" }}
+        aria-expanded={open}>
+        <div className="text-micro-3 uppercase tracking-wide opacity-50 truncate flex items-center gap-1">
+          <span className="inline-block w-2 text-center" aria-hidden="true">{open ? "▾" : "▸"}</span>
+          {t("contract.held.label", { count: taken.length, n: taken.length })}
+        </div>
+        <div className="text-body-5 leading-tight truncate">
+          {taken.map((p, i) => (
+            <span key={`${p.id}-${p.tier}`}>
+              {i > 0 && <span className="opacity-30"> · </span>}
+              <b style={{ color: tierColor(p.tier) }}>{lootName(p)}</b>
+            </span>
+          ))}
+        </div>
+      </button>
+      {open && (
+        <div className="px-2.5 pb-2 pt-1 border-t grid gap-2" style={{ borderColor: DECK_BORDER }}>
+          {taken.map((p) => (
+            <div key={`${p.id}-${p.tier}`}>
+              <div className="text-body-5 font-bold" style={{ color: tierColor(p.tier) }}>
+                {lootName(p)}
+                <span className="text-meta-1 font-normal opacity-50 ml-1">{CT.tierLabel(p.tier)}</span>
+              </div>
+              <div className="text-body-5 opacity-80 leading-snug">{lootText(p)}</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 /* Die Kachel zeigt nur den STAND — „Reinheit 1/4" sagt nicht, was zu tun ist, und bei Reinheit und

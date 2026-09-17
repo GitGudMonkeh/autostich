@@ -1543,6 +1543,8 @@ export default {
   "contract.extra.open": "Zusatz offen",
 
   "contract.rail.label": "Auftrag",
+  "contract.held.label_one": "Beute · {n} Stück",
+  "contract.held.label_other": "Beute · {n} Stücke",
   "contract.rail.none": "keiner",
   "contract.left_one": "noch {n} Durchlauf",
   "contract.left_other": "noch {n} Durchläufe",

@@ -392,7 +392,7 @@ getrennt). Die Messungen darunter sagen, wo sie gegenüber dem Sim-Verhalten ste
 | **Farbtreue** Farben mit einer Zehnerserie | Spitze | 1 · 2 · 3 + Zusatz |
 | **Buntspiel** Siege je Grundfarbe in einem Durchlauf | Spitze | 5 · 7 · 8 + Zusatz |
 | **Brecher** zehn Siege über einem Kampfwert | Summe | über 10 · 15 · 20 |
-| **Fußvolk** Siege mit Grundwert 4 oder weniger | Summe | 50 · 100 · 200 |
+| **Fußvolk** Siege mit Grundwert 4 oder weniger | Summe | 50 · 100 · 150 |
 | **Aufmarsch** Kampfwert-Vorsprung in einem Durchlauf | Spitze | 60 · 120 · 250 |
 | **Quartier** volle Baufeld-Reihen derselben Kategorie | Zustand | 1 · 3 · 5 |
 | **Säckel** Münzen gehalten | Zustand | 60 · 80 · 120 |
@@ -815,6 +815,32 @@ ergibt. (Der damals erwähnte Münz-Deckel ist seit 2026-09-16 gestrichen.)
 > die 45 distinkten Formationen sind aus 160 Paaren — dem vollen Brett — **hochgerechnet**. Beobachtet
 > ist 32. 45 ist also der arithmetische Deckel, nicht ein erreichter Wert, und 35 liegt ebenfalls
 > darüber.
+
+### 4.4a Vier Befunde aus dem Playtest (Owner, 2026-09-17)
+
+**Jede Aufgabe fängt bei null an.** Die Strichliste lief über den ganzen Lauf weiter, also erbte
+Fenster 2 das Ergebnis von Fenster 1 — Fußvolk stand bei D17 schon auf 113 von 200, ohne einen Stich
+dafür. Geleert wird jetzt beim **Annehmen** (`PICK_CONTRACT`), nicht am Fensterrand: so fängt jede
+Aufgabe dort an, wo der Spieler sie annimmt.
+
+**Fußvolk Schwer fällt von 200 auf 150.** Folge des ersten Befunds: 200 war gegen einen mitlaufenden
+Zähler gesetzt, nicht gegen einen bei null startenden.
+
+**Ein erfüllter Auftrag fällt in der Anzeige nicht mehr zurück.** Bei einer Durchlauf-Aufgabe stand im
+nächsten Durchlauf wieder „2/7 best 7“ — die 2 liest sich wie ein Rückschritt, obwohl nichts mehr zu
+tun ist. Jetzt steht 7/7, bis die Beute kommt.
+
+**Die genommene Beute ist im Lauf nachlesbar.** Sie stand nirgends: man sah ein Stück einmal beim
+Nehmen und danach nie wieder, obwohl es weiterwirkt. Jetzt liegt sie in der Leiste bei den
+Multiplikatoren, aufklappbar mit dem vollen Wortlaut jeder Wirkung — wie die gehaltenen Skills.
+
+> **Und der teuerste Befund: Nachlass war für JEDEN Neuwurf wirkungslos**, nicht nur für den
+> legendären. Der Reducer legte `rerollPriceWith` über den Preis, die drei Anzeigestellen riefen
+> `coins.rerollOffer` roh. Der Spieler sah also den vollen Preis **und** konnte den Wurf nicht
+> auslösen, weil `can` gegen den vollen Preis prüfte. Pikant: der Kopf von `rerollOffer` nannte sich
+> selbst „die eine Quelle für Knopf und Reducer“. Beide gehen jetzt durch `CT.rerollOfferWith`, und
+> ein Quelltext-Wächter verbietet den rohen Import in `src/ui/**` — gegengeprüft: mit dem alten
+> Aufruf fällt er.
 
 ### 4.5 Verworfene Aufgaben
 

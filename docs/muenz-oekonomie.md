@@ -225,8 +225,16 @@ Neuwürfe übrig sind, zeigt er die Anzahl; danach den Preis. Kein zweiter Knopf
 > hinge die Zahl davon ab, woher der Wurf kommt.
 >
 > **Naht:** `REROLL_CAP` und `rerollsLeft` in `coins.js`, die harte Sperre in den drei Reroll-Aktionen
-> des Reducers, sichtbar über `rerollOffer(...).capped` am geteilten Knopf-Label. Der letzte freie Wurf
+> des Reducers, sichtbar über `.capped` am geteilten Knopf-Label. Der letzte freie Wurf
 > kündigt den Deckel an — ohne die Warnung merkt man ihn erst am toten Knopf.
+
+> **EINE Tür für den Preis** (2026-09-17). Anzeige und Reducer gehen beide durch
+> `contracts.rerollOfferWith`, nicht durch `coins.rerollOffer`. Der Grund ist ein Playtest-Befund:
+> der Reducer legte die Auftrags-Beute **Nachlass** über den Preis, die drei Anzeigestellen nicht.
+> Der Spieler sah den vollen Preis **und** kam nicht an den Wurf, weil die Bezahlbarkeit gegen den
+> vollen Preis prüfte — die Beute war für jeden Neuwurf wirkungslos, obwohl der Reducer sie kannte.
+> `coins.js` kann `contracts.js` nicht importieren (Zyklus über `MAX_SKILL_TIER`), deshalb liegt die
+> Tür dort und nicht hier. Ein Quelltext-Wächter verbietet den rohen Import in `src/ui/**`.
 
 #### Legendär-Neuwurf
 

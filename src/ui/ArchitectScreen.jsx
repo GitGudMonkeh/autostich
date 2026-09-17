@@ -19,7 +19,8 @@ import { formationBorder } from "./formationStyle.js";
 import { formationAbbr, formationLabel } from "./formationLabels.js";
 import { archFrameLines } from "./CardGrid.jsx"; // #UI: durchgezogene Gebäude-Kontur wie in der Aufstellungsphase
 import { fmtScore } from "./format.js";
-import { rerollOffer, coverBuy, COVER_CELLS, FORFEIT_BUILD } from "../game/coins.js"; // Münz-Ökonomie §3.1 Neuwurf · §3.4 Baufeld · §2.3 Phase ohne Hauptaktion — dieselben Rechnungen wie der Reducer
+import { coverBuy, COVER_CELLS, FORFEIT_BUILD } from "../game/coins.js"; // Münz-Ökonomie §3.4 Baufeld · §2.3 Phase ohne Hauptaktion — dieselben Rechnungen wie der Reducer
+import { rerollOfferWith } from "../game/contracts.js"; // §3.1 Neuwurf — durch DIESE Tür, sonst rechnet der Knopf ohne die Beute
 import { RerollLabel, CoinAmount, CoinReward } from "./CoinMark.jsx";  // Beschriftung: Anzahl solange gratis, danach der Preis · §2.3 was das Nichtbauen einbringt
 import { GlossaryPanel } from "./Glossary.jsx";
 import { glacierGridProps } from "./glacierBoard.js"; // Eis: Gletscher-/Firn-Marker auch am Architekt-Brett
@@ -106,7 +107,7 @@ export function ArchitectScreen({ state = {}, options = {}, onOption, onBuild, o
   // analog `hasSwaps` in der Aufstellungsphase. Gleiche Beschriftung/Look wie dort.
   const canArchUndo = (architect.phaseHistory || []).length > 0;
   // §3.1: Baupläne neu würfeln — erst der Pool, danach käuflich (kein Legendär-Grundpreis, s. Knopf unten).
-  const archReroll = rerollOffer(state, state.rerollsArch || 0, false);
+  const archReroll = rerollOfferWith(state, state.rerollsArch || 0, false);
   // §3.4: Baufeld-Kauf — Preis, Restvorrat des Laufs, Auslösbarkeit.
   const coverSale = coverBuy(state);
   const round = (state.cycle || 0) + 1;

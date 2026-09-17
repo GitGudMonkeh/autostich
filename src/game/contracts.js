@@ -13,7 +13,7 @@ import { FORMATION_TYPES, SEGMENT_SIZE, countBuiltFormations } from "./formation
 import { TIER_META } from "./rarity.js";
 import { ROWS as ARCH_ROWS, COLS as ARCH_COLS, posOf as archPos, familyDef, MAX_TIER as ARCH_MAX_TIER,
          CATEGORIES as ARCH_CATEGORIES } from "./architect.js";
-import { MAX_SKILL_TIER } from "./coins.js";
+import { MAX_SKILL_TIER, rerollOffer, rerollPrice } from "./coins.js";
 import { isLegendarySkill } from "./skills.js";
 
 /* ------------------------------------------------------------------------------------------------
@@ -101,7 +101,7 @@ export const TASKS = [
      ten, the combat value they must beat is what rises. `threshold: true` tells the display to read
      the rung as "über X" and the target as TEN. */
   { id: "brecher",      kind: "summe",   rungs: [10, 15, 20], threshold: true, need: 10 },
-  { id: "fussvolk",     kind: "summe",   rungs: [50, 100, 200] },
+  { id: "fussvolk",     kind: "summe",   rungs: [50, 100, 150] },
   /* Aufmarsch hieß „Kampfwert" und maß Kartenwert — Brand auf dem Gegnerdeck, Glühende Klinge und
      Gebäude-Stichwert fielen unter den Tisch (Owner-Befund im Playtest, 2026-09-16). Ein Deck HAT
      keinen Kampfwert, nur eine gespielte Karte hat einen. Gemessen wird deshalb der beste Durchlauf:
@@ -754,6 +754,22 @@ export function rerollPriceWith(state, base, legendary = false, normalBase = nul
   if (!b) return base;
   const start = legendary && b.legendaryRerollNormalPrice && normalBase != null ? normalBase : base;
   return contractRerollPrice(start, b);
+}
+
+/* DAS Neuwurf-Angebot für Knopf UND Reducer — beide müssen durch diese Tür.
+   `rerollOffer` aus coins.js nennt sich selbst „die eine Quelle für Knopf und Reducer", war es aber
+   nicht: der Reducer legte `rerollPriceWith` darüber, der Knopf nicht. Wer Nachlass hielt, sah den
+   vollen Preis und konnte den Wurf nicht auslösen, weil `can` gegen den vollen Preis prüfte — die
+   Beute war damit für ALLE Neuwürfe wirkungslos, nicht nur für legendäre (Owner-Befund 2026-09-17).
+   coins.js kann contracts.js nicht importieren (Zyklus über MAX_SKILL_TIER), also liegt die Tür hier. */
+export function rerollOfferWith(state, freeTokens = 0, legendary = false) {
+  const o = rerollOffer(state, freeTokens, legendary);
+  const b = boonsOf(state);
+  if (!b || o.free || o.capped) return o;      // gratis bleibt gratis, gedeckelt bleibt gedeckelt
+  const normal = rerollPrice(state.coinRerolls || 0, false);
+  const price = rerollPriceWith(state, o.nextPrice, legendary, normal);
+  if (price === o.nextPrice) return o;
+  return { ...o, price, nextPrice: price, can: (state.coins || 0) >= price };
 }
 
 /* Freilos I-IV — a free reroll that does not touch the coin pools. */
