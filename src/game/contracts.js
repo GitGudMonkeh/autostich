@@ -817,16 +817,23 @@ export function skillLegendaryWith(state, base) {
    0-based here (0 Normal … 3 Episch), the same scale skillTiers uses. */
 export function liftSkillTiers(state, tiers, cycle = state.cycle || 0, maxTier = 3) {
   const b = boonsOf(state);
-  if (!b || !Array.isArray(tiers)) return tiers;
+  if (!b || !tiers || typeof tiers !== "object") return tiers;
   const byPhase = live(b.offerLift, cycle) ? (b.offerLift.steps || 1) : 0;
   const below = b.offerLiftBelow || 0;          // 3 = alles unter Sehr selten, 4 = alles unter Episch
   if (!byPhase && !below) return tiers;
-  return tiers.map((t) => {
+  const hebe = (t) => {
     if (!Number.isInteger(t)) return t;          // Legendäre tragen keine Stufe
     let out = t + byPhase;
     if (below && t + 1 < below) out = Math.max(out, t + 1);
     return Math.min(maxTier, out);
-  });
+  };
+  /* ZWEI Formen, und das war der Fehler: die Türen halten ihre Stufen als OBJEKT je Skill-id
+     (`rollSkillOfferTiers` gibt `{ SK_… : 0 }` zurück), eine flache Auswahl als Array. Geprüft wurde
+     nur auf Array, also hob Veredelung die Türen nie — alle vier Stufen waren wirkungslos
+     (Owner-Befund 2026-09-17). Die Tests trafen es nicht, weil sie den Helfer mit Arrays fütterten,
+     also mit einer Form, die das Spiel an dieser Stelle gar nicht baut. */
+  if (Array.isArray(tiers)) return tiers.map(hebe);
+  return Object.fromEntries(Object.entries(tiers).map(([id, t]) => [id, hebe(t)]));
 }
 
 /* Die Türen tragen ihre Stufen selbst ([{ skills, tiers }]), also hebt Veredelung sie dort und nicht
@@ -834,11 +841,30 @@ export function liftSkillTiers(state, tiers, cycle = state.cycle || 0, maxTier =
 export function liftDoorTiers(state, doors, cycle = state.cycle || 0) {
   const b = boonsOf(state);
   if (!b || !Array.isArray(doors) || (!b.offerLift && !b.offerLiftBelow)) return doors;
-  return doors.map((d) => (Array.isArray(d.tiers) ? { ...d, tiers: liftSkillTiers(state, d.tiers, cycle) } : d));
+  return doors.map((d) => (d && d.tiers ? { ...d, tiers: liftSkillTiers(state, d.tiers, cycle) } : d));
 }
 
 /* Stiftung — every phase begins with coins. */
 export const coinsPerPhase = (state) => (boonsOf(state) || {}).coinsPerPhase || 0;
+
+/* Läuft dieses Stück noch, und wie lange? Vier Wirkungen sind befristet — Münzrecht I und Freizug I
+   über `cycles`, Veredelung I und II über `phases`, Freibrief I und II über eine Zielrunde. Ohne die
+   Zahl kann der Spieler nicht unterscheiden, ob eine Beute abgelaufen ist oder nie gewirkt hat; genau
+   diese Frage stand am Anfang des Beute-Audits (Owner, 2026-09-17).
+   Gibt `null` für alles Dauerhafte, sonst die verbleibenden Durchläufe (0 = abgelaufen). */
+export function lootCyclesLeft(state, piece, cycle = state.cycle || 0) {
+  const b = boonsOf(state);
+  const fam = LOOT_BY_ID[(piece || {}).id];
+  if (!b || !fam) return null;                              // Legendäre laufen alle bis zum Laufende
+  const e = fam.effects[(piece.tier || 1) - 1] || {};
+  let until = null;
+  if (e.cycles && e.income && b.income) until = b.income.until;
+  else if (e.cycles && e.energy && b.energy) until = b.energy.until;
+  else if (e.phases && e.offerLift && b.offerLift) until = b.offerLift.until;
+  else if (e.thirdDoor && e.thirdDoor !== "run" && typeof b.thirdDoor === "number") until = b.thirdDoor;
+  if (until == null) return null;
+  return Math.max(0, until - cycle);
+}
 
 /* Reroll price under Nachlass: rounded DOWN, never below one coin, and free only at scale 0. */
 export function contractRerollPrice(base, boons) {

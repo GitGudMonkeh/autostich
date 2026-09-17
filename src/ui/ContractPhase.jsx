@@ -325,15 +325,23 @@ export function HeldLoot({ state, className = "" }) {
       </button>
       {open && (
         <div className="px-2.5 pb-2 pt-1 border-t grid gap-2" style={{ borderColor: DECK_BORDER }}>
-          {taken.map((p) => (
-            <div key={`${p.id}-${p.tier}`}>
-              <div className="text-body-5 font-bold" style={{ color: tierColor(p.tier) }}>
-                {lootName(p)}
-                <span className="text-meta-1 font-normal opacity-50 ml-1">{CT.tierLabel(p.tier)}</span>
+          {taken.map((p) => {
+            const rest = CT.lootCyclesLeft(state, p);   // null = dauerhaft, 0 = abgelaufen
+            return (
+              <div key={`${p.id}-${p.tier}`}>
+                <div className="text-body-5 font-bold" style={{ color: tierColor(p.tier) }}>
+                  {lootName(p)}
+                  <span className="text-meta-1 font-normal opacity-50 ml-1">{CT.tierLabel(p.tier)}</span>
+                  {rest != null && (
+                    <span className="text-meta-1 font-normal ml-1" style={{ color: rest > 0 ? undefined : "#e0605a" }}>
+                      {rest > 0 ? t("contract.held.left", { count: rest, n: rest }) : t("contract.held.over")}
+                    </span>
+                  )}
+                </div>
+                <div className={`text-body-5 leading-snug ${rest === 0 ? "opacity-40" : "opacity-80"}`}>{lootText(p)}</div>
               </div>
-              <div className="text-body-5 opacity-80 leading-snug">{lootText(p)}</div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

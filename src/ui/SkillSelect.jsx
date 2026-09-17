@@ -505,7 +505,6 @@ export function SkillSelect({ offer = null, doors = null, onPick, onDecline, onR
             meisten Symbolen der Tür; ein Tipp öffnet sie (CHOOSE_DOOR), danach steht das Drei-Karten-Angebot unten. */}
         {atDoors && (
           <div className="mt-4">
-            <div className="text-body-5 opacity-65 text-center mb-3 max-w-md mx-auto leading-snug">{t("skill.door.hint")}</div>
             <div className="sk-doors grid sm:grid-cols-2 gap-3 items-stretch">
               {doors.map((d, i) => (d.called ? null : (
                 <DoorCard key={i} door={d} label={t("skill.door.n", { n: i + 1 })} phone={phone} onOpen={() => onChooseDoor?.(i)} />

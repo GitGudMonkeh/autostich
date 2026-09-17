@@ -36,10 +36,28 @@ ausdrücklich, weil es die Zusage ist, unter der das Feature überhaupt einziehe
 | Die beiden Overlays und der Stand | `src/ui/ContractPhase.jsx` |
 | Der Einstieg | `src/ui/StartScreen.jsx` · `.as-contract-btn` |
 
-**Die Beute wirkt vollständig** (2026-09-15). Jede Wirkung hat ihre Lesestelle. Die Zugriffe stehen
-gesammelt in `contracts.js` und haben alle dieselbe Form: sie nehmen den Wert, den das Spiel **ohne**
-Aufträge nähme, und geben den zurück, der gilt. Ein normaler Lauf zahlt eine Feldabfrage und bekommt
-seine eigene Zahl unverändert zurück — geprüft, Zugriff für Zugriff.
+**Die Beute wirkt vollständig** (nachgeprüft 2026-09-17). Jede Wirkung hat ihre Lesestelle. Die
+Zugriffe stehen gesammelt in `contracts.js` und haben alle dieselbe Form: sie nehmen den Wert, den das
+Spiel **ohne** Aufträge nähme, und geben den zurück, der gilt. Ein normaler Lauf zahlt eine
+Feldabfrage und bekommt seine eigene Zahl unverändert zurück.
+
+> **Dieser Satz stand seit 2026-09-15 hier und war falsch.** Geprüft war nur, dass der Effekt-
+> Schlüssel *geschrieben* wird — nicht, dass sich dadurch eine Zahl ändert. **Veredelung** schrieb ihn
+> und wirkte auf allen vier Stufen nie: die Türen halten ihre Stufen als **Objekt** je Skill-id
+> (`rollSkillOfferTiers`), der Heber prüfte auf `Array.isArray`. Die alten Tests trafen es nicht, weil
+> sie den Helfer mit Arrays fütterten — also mit einer Form, die das Spiel an dieser Stelle gar nicht
+> baut. Derselbe Fehler in anderer Kleidung wie die Wächter-testet-eine-Kopie-Falle aus
+> `docs/engineering/testing.md`.
+>
+> Seit 2026-09-17 läuft **jedes der 61 Stücke** durch den echten `PICK_LOOT` und wird an seiner
+> Wirkstelle nachgemessen (`test/contracts.test.js`, ein Fall je Stück). Gegengeprüft: mit dem alten
+> Heber fallen genau die vier Veredelungs-Fälle.
+
+**Befristete Beute sagt jetzt, wie lange sie noch wirkt.** Vier Wirkungen laufen ab — Münzrecht I
+(15 Durchläufe), Freizug I (5), Veredelung I und II (1 bzw. 3 Phasen), Freibrief I und II (4 bzw. 12
+Durchläufe). Die Beute-Kachel in der Leiste zeigt bei diesen „noch N Durchläufe" bzw. „abgelaufen".
+Ohne die Zahl ist nicht zu unterscheiden, ob ein Stück abgelaufen ist oder nie gewirkt hat — genau
+die Frage, mit der das Audit begann.
 
 | Familie | Lesestelle |
 | --- | --- |

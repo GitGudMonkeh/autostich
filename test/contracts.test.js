@@ -3,7 +3,7 @@ import * as CT from "../src/game/contracts.js";
 import { DECISION_SCHEDULE } from "../src/game/constants.js";
 import * as C from "../src/game/constants.js";
 import { reducer } from "../src/game/reducer.js";
-import { SKILL_LIST, isLegendarySkill } from "../src/game/skills.js";
+import { SKILL_LIST, isLegendarySkill, buildSkillDoors } from "../src/game/skills.js";
 import { computeFormations, openBorderInfo, FORMATION_TYPES } from "../src/game/formations.js";
 import { makeRng } from "../src/game/deck.js";
 import { randomPolicy } from "../sim/policies/random.js";
@@ -1069,6 +1069,147 @@ describe("Aufträge · ein erfüllter Auftrag fällt in der Anzeige nicht zurüc
     expect(r.done).toBe(false);
     expect(r.live).toBe(1);
     expect(r.peak).toBe(true);
+  });
+});
+
+describe("Aufträge · JEDES der 61 Beutestücke wirkt messbar (Audit 2026-09-17)", () => {
+  /* Der Wächter, den es früher hätte geben müssen. Bis hierher stand im Dokument „die Beute wirkt
+     vollständig, jede Wirkung hat ihre Lesestelle" — geprüft war aber nur, dass der SCHLÜSSEL
+     geschrieben wird. Veredelung schrieb ihn und wirkte trotzdem nie, weil die Türen ihre Stufen als
+     Objekt halten und der Heber auf `Array.isArray` prüfte. Hier läuft jedes Stück durch den echten
+     `PICK_LOOT` und wird an der Stelle nachgemessen, an der es wirken soll. */
+  const doors = [{ skills: ["SK_FIRE_01"], tiers: { SK_FIRE_01: 0 } }];  // die Form, die das Spiel baut
+  const basis = () => {
+    const s = reducer(undefined, { type: "START_RUN", rng: seeded(7), architect: true, seed: 3, contracts: true });
+    return { ...s, contractsEnabled: true, contractBoons: {}, coins: 500, cycle: 8,
+      skills: ["SK_FIRE_01"], skillTiers: { SK_FIRE_01: 0 },
+      architectEnabled: true,
+      architect: { ...(s.architect || {}), maxCover: 24,
+        buildings: [{ familyId: "A_STUETZE", tier: 1, footprint: [0, 1] }] },
+      contracts: { ...(s.contracts || {}), pendingLoot: null, pendingSkillPick: null, pendingBorderPick: null, taken: [] } };
+  };
+
+  // Je Effekt-Schlüssel die Messung: [nachher, vorher] — nachher MUSS größer sein.
+  const MESSER = {
+    coins: (a, b) => [b.coins, a.coins],
+    income: (a, b) => [CT.coinsPerCycleWith(b, 5, 8), CT.coinsPerCycleWith(a, 5, 8)],
+    forfeitMult: (a, b) => [CT.forfeitWith(b, 12), CT.forfeitWith(a, 12)],
+    energy: (a, b) => [CT.formationEnergyWith(b, 4, 8), CT.formationEnergyWith(a, 4, 8)],
+    unspentMult: (a, b) => [CT.unspentEnergyWith(b, 3), CT.unspentEnergyWith(a, 3)],
+    openBorders: (a, b) => [(CT.openBordersOf(b) || new Set()).size + (b.contracts?.pendingBorderPick ? 99 : 0),
+                            (CT.openBordersOf(a) || new Set()).size],
+    cover: (a, b) => [b.architect?.maxCover ?? 0, a.architect?.maxCover ?? 0],
+    coverUncapped: (a, b) => [b.architect?.maxCover ?? 0, a.architect?.maxCover ?? 0],
+    upgradeBuildings: (a, b) => [(b.architect?.buildings || []).reduce((n, x) => n + (x.tier || 0), 0),
+                                 (a.architect?.buildings || []).reduce((n, x) => n + (x.tier || 0), 0)],
+    skillUp: (a, b) => [Object.values(b.skillTiers || {}).reduce((n, x) => n + x, 0),
+                        Object.values(a.skillTiers || {}).reduce((n, x) => n + x, 0)],
+    skillToEpic: (a, b) => [b.contracts?.pendingSkillPick ? 1 : 0, a.contracts?.pendingSkillPick ? 1 : 0],
+    thirdDoor: (a, b) => [CT.skillDoorsWith(b, 2, 8), CT.skillDoorsWith(a, 2, 8)],
+    highTierChance: (a, b) => [CT.skillLegendaryWith(b, 0.035), CT.skillLegendaryWith(a, 0.035)],
+    offerLift: (a, b) => [CT.liftDoorTiers(b, doors, 8)[0].tiers.SK_FIRE_01, doors[0].tiers.SK_FIRE_01],
+    offerLiftBelow: (a, b) => [CT.liftDoorTiers(b, doors, 8)[0].tiers.SK_FIRE_01, doors[0].tiers.SK_FIRE_01],
+    perksOffered: (a, b) => [CT.perksOfferedWith(b, 3), CT.perksOfferedWith(a, 3)],
+    perkFloor: (a, b) => [CT.perkFloorWith(b, 1), CT.perkFloorWith(a, 1)],
+    legendaryChance: (a, b) => [CT.perkLegendaryWith(b, 0.07), CT.perkLegendaryWith(a, 0.07)],
+    freeRerolls: (a, b) => [b.rerollsSkill || 0, a.rerollsSkill || 0],
+    freeRerollPerPhase: (a, b) => [(CT.freeRerollPhases(b) || []).length, (CT.freeRerollPhases(a) || []).length],
+    legendaryRerollNormalPrice: (a, b) => [-CT.rerollOfferWith(b, 0, true).nextPrice, -CT.rerollOfferWith(a, 0, true).nextPrice],
+    rerollScale: (a, b) => [-CT.rerollOfferWith(b, 0, false).nextPrice, -CT.rerollOfferWith(a, 0, false).nextPrice],
+    legendaryPerkPick: (a, b) => [CT.legendaryPerkForce(b), CT.legendaryPerkForce(a)],
+    coinsPerPhase: (a, b) => [CT.coinsPerPhase(b), CT.coinsPerPhase(a)],
+    // Parameter, kein eigener Effekt — sie modulieren einen der obigen.
+    steps: null, cycles: null, phases: null, random: null, skillUpRest: null,
+  };
+
+  const alleStuecke = [
+    ...CT.LOOT_FAMILIES.flatMap((f) => [1, 2, 3, 4].map((tier) =>
+      ({ name: `${f.id} ${tier}`, kind: "family", id: f.id, category: f.category, tier, effect: f.effects[tier - 1] }))),
+    ...CT.LEGENDARIES.map((l) => ({ name: l.id, kind: "legendary", id: l.id, tier: CT.TIER_LEGENDARY, effect: l.effect })),
+  ];
+
+  it("der Katalog trägt 61 Stücke", () => {
+    expect(alleStuecke.length).toBe(61);
+  });
+
+  it.each(alleStuecke)("$name wirkt", (st) => {
+    const vor = { ...basis() };
+    vor.contracts = { ...vor.contracts, pendingLoot: [st] };
+    const nach = reducer(vor, { type: "PICK_LOOT", lootId: st.id, tier: st.tier, rng: seeded(3) });
+    expect(nach, "PICK_LOOT wirkungslos").not.toBe(vor);
+    for (const [k, v] of Object.entries(st.effect || {})) {
+      expect(k in MESSER, `unbekannter Effekt-Schlüssel ${k} — Messung fehlt`).toBe(true);
+      if (!MESSER[k]) continue;
+      const [neu, alt] = MESSER[k](vor, nach);
+      expect(neu, `${k} (${JSON.stringify(v)}): ${alt} → ${neu}`).toBeGreaterThan(alt);
+    }
+  });
+});
+
+describe("Aufträge · Veredelung hebt die Stufen der TÜREN (2026-09-17)", () => {
+  /* Der Fehler, den das Audit gefunden hat. Die Türen halten ihre Stufen als Objekt je Skill-id,
+     der Heber prüfte auf `Array.isArray` — Veredelung war auf allen vier Stufen wirkungslos. Die
+     alten Tests trafen ihn nicht, weil sie den Helfer mit ARRAYS fütterten, also mit einer Form,
+     die das Spiel an dieser Stelle gar nicht baut. */
+  const mit = (boons) => ({ contractsEnabled: true, contractBoons: boons, cycle: 4 });
+
+  it("die Objektform der Türen wird gehoben, nicht nur die Arrayform", () => {
+    const doors = [{ skills: ["A", "B"], tiers: { A: 0, B: 2 } }];
+    const s = mit({ offerLift: { steps: 1, until: 12 } });
+    expect(CT.liftDoorTiers(s, doors, 4)[0].tiers).toEqual({ A: 1, B: 3 });
+    // und die flache Arrayform weiter auch
+    expect(CT.liftSkillTiers(s, [0, 2], 4)).toEqual([1, 3]);
+  });
+
+  it("die gewürfelten Türen kommen als Objekt — genau die Form, die der Heber sehen muss", () => {
+    const gebaut = buildSkillDoors(["SK_FIRE_01"], ["fire"], seeded(5), seeded(6), {});
+    expect(gebaut.length, "der Aufbau liefert Türen").toBeGreaterThan(0);
+    for (const d of gebaut) {
+      expect(Array.isArray(d.tiers), "Türen halten ein OBJEKT, kein Array").toBe(false);
+      expect(typeof d.tiers).toBe("object");
+    }
+    const s = mit({ offerLiftBelow: 4 });
+    const gehoben = CT.liftDoorTiers(s, gebaut, 4);
+    const summe = (ds) => ds.reduce((n, d) => n + Object.values(d.tiers).filter(Number.isInteger).reduce((m, t) => m + t, 0), 0);
+    expect(summe(gehoben), "gehoben ist höher als gewürfelt").toBeGreaterThan(summe(gebaut));
+  });
+
+  it("Legendäre in einer Tür tragen keine Stufe und werden nicht gehoben", () => {
+    const doors = [{ skills: ["A", "L"], tiers: { A: 0, L: null } }];
+    const s = mit({ offerLift: { steps: 1, until: 12 } });
+    expect(CT.liftDoorTiers(s, doors, 4)[0].tiers).toEqual({ A: 1, L: null });
+  });
+});
+
+describe("Aufträge · befristete Beute sagt, wie lange sie noch wirkt", () => {
+  /* Freibrief I und II laufen ab, III und IV nicht. Ohne die Zahl kann der Spieler nicht
+     unterscheiden, ob ein Stück abgelaufen ist oder nie gewirkt hat. */
+  const nachNehmen = (id, tier, cycle = 8) => {
+    const s = { contractsEnabled: true, contractBoons: {}, cycle, architect: {}, skillTiers: {}, skills: [] };
+    const fam = CT.LOOT_BY_ID[id];
+    const patch = CT.applyLoot(s, { id, tier, effect: fam.effects[tier - 1] }, seeded(1));
+    return { ...s, ...patch };
+  };
+
+  it("Freibrief I und II sind befristet, III und IV laufen bis zum Laufende", () => {
+    expect(CT.lootCyclesLeft(nachNehmen("freibrief", 1), { id: "freibrief", tier: 1 }, 8)).toBe(4);
+    expect(CT.lootCyclesLeft(nachNehmen("freibrief", 2), { id: "freibrief", tier: 2 }, 8)).toBe(12);
+    expect(CT.lootCyclesLeft(nachNehmen("freibrief", 3), { id: "freibrief", tier: 3 }, 8), "dauerhaft").toBe(null);
+    expect(CT.lootCyclesLeft(nachNehmen("freibrief", 4), { id: "freibrief", tier: 4 }, 8)).toBe(null);
+  });
+
+  it("abgelaufen heißt 0, und dann zählt die Wirkung auch nicht mehr", () => {
+    const s = nachNehmen("freibrief", 1, 8);           // gültig bis Durchlauf 12
+    expect(CT.lootCyclesLeft(s, { id: "freibrief", tier: 1 }, 20)).toBe(0);
+    expect(CT.skillDoorsWith(s, 2, 10), "innerhalb der Frist").toBe(3);
+    expect(CT.skillDoorsWith(s, 2, 20), "danach").toBe(2);
+  });
+
+  it("Münzrecht I und Freizug I ebenso, ihre höheren Stufen nicht", () => {
+    expect(CT.lootCyclesLeft(nachNehmen("muenzrecht", 1), { id: "muenzrecht", tier: 1 }, 8)).toBe(15);
+    expect(CT.lootCyclesLeft(nachNehmen("muenzrecht", 2), { id: "muenzrecht", tier: 2 }, 8)).toBe(null);
+    expect(CT.lootCyclesLeft(nachNehmen("freizug", 1), { id: "freizug", tier: 1 }, 8)).toBe(5);
+    expect(CT.lootCyclesLeft(nachNehmen("freizug", 2), { id: "freizug", tier: 2 }, 8)).toBe(null);
   });
 });
 

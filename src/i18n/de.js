@@ -438,7 +438,6 @@ export default {
   "skill.declinePlain": "Ablehnen",
   // exp skill rework (docs/skill-rework.md §1): die Türstufe — zwei Türen, je drei Fraktionssymbole, Stufen verdeckt.
   "skill.door.title": "Wähle eine Tür",
-  "skill.door.hint": "Hinter jeder Tür liegen drei Skills. Ihre Stufen siehst du erst, wenn du sie öffnest.",
   "skill.door.n": "Tür {n}",
   "skill.door.open": "Öffnen",
   "skill.nav.prev": "vorheriger Typ",
@@ -1545,6 +1544,9 @@ export default {
   "contract.rail.label": "Auftrag",
   "contract.held.label_one": "Beute · {n} Stück",
   "contract.held.label_other": "Beute · {n} Stücke",
+  "contract.held.left_one": "· noch {n} Durchlauf",
+  "contract.held.left_other": "· noch {n} Durchläufe",
+  "contract.held.over": "· abgelaufen",
   "contract.rail.none": "keiner",
   "contract.left_one": "noch {n} Durchlauf",
   "contract.left_other": "noch {n} Durchläufe",
