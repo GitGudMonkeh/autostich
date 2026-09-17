@@ -196,17 +196,69 @@ describe("Aufträge · Angebot und Beute", () => {
     }
   });
 
-  it("die Legendär-Rate liegt bei 70/30 im oberen Teil des schweren Bandes", () => {
-    /* Gesetzt: 70 % Sehr selten, vom Rest wieder 70/30 → 21 % Episch, 9 % Legendär je Stück
-       (Owner, 2026-09-16). Gemessen über 4000 Ziehungen, Toleranz drei Punkte. */
+  it("JEDE Auslage trägt mindestens ein Stück der oberen Rarität (Owner, 2026-09-17)", () => {
+    /* Vorher würfelte jedes Stück für sich 70/30, und in rund einem Drittel der Fälle kam dreimal
+       die untere heraus — eine mittlere Aufgabe zahlte dann dreimal Selten, obwohl ihr Band Selten
+       ODER Sehr selten verspricht. Das Band war eine Aussage über die Ziehung, nicht über die Auslage. */
+    for (const step of CT.STEPS) {
+      const band = CT.STEP_BAND[step];
+      for (let seed = 1; seed <= 120; seed++) {
+        const loot = CT.rollLoot(seeded(seed * 31), step);
+        expect(loot.length, `${step}/${seed}`).toBe(3);
+        expect(loot.some((p) => p.tier >= band[1]), `${step}/${seed}: keine obere Rarität dabei`).toBe(true);
+      }
+    }
+  });
+
+  it("Legendäres ersetzt einen UNTEREN Platz, nie die Garantie", () => {
+    /* Owner, 2026-09-17: „ersetzt aber eines der niedrigeren Angebote (sehr selten)". Die Episch-
+       Garantie darf es also nicht kosten — sonst wäre ein Legendäres unterm Strich ein Rückschritt. */
+    const band = CT.STEP_BAND.schwer;
+    let mitLeg = 0;
+    for (let seed = 1; seed <= 300; seed++) {
+      const loot = CT.rollLoot(seeded(seed * 13 + 5), "schwer");
+      const legs = loot.filter((p) => p.tier >= CT.TIER_LEGENDARY);
+      expect(legs.length, `seed ${seed}: höchstens ein Legendäres`).toBeLessThanOrEqual(1);
+      if (!legs.length) continue;
+      mitLeg += 1;
+      expect(loot.some((p) => p.tier === band[1]), `seed ${seed}: Garantie überlebt das Legendäre`).toBe(true);
+    }
+    expect(mitLeg, "und es kommt überhaupt vor").toBeGreaterThan(0);
+  });
+
+  it("die Raten JE AUSLAGE — Garantie immer, Legendäres selten", () => {
+    /* Gemessen an `rollTiers`, dem Weg, den `rollLoot` wirklich geht. Die frühere Fassung maß
+       `rollTier` je Stück — eine Funktion, die es seit der Garantie-Regel nicht mehr gibt und die
+       am Ende nur noch sich selbst geprüft hätte. Zwei freie Plätze zu 70/30, dazu die
+       Legendär-Chance auf einen UNTEREN Platz (Owner, 2026-09-15/17). */
     const rng = seeded(4711);
-    const n = { 3: 0, 4: 0, 5: 0 };
-    for (let i = 0; i < 4000; i++) n[CT.rollTier("schwer", rng)] += 1;
-    const pct = (x) => (n[x] / 4000) * 100;
-    expect(pct(3), "Sehr selten").toBeGreaterThan(67);
-    expect(pct(3), "Sehr selten").toBeLessThan(73);
-    expect(pct(5), "Legendär").toBeGreaterThan(6);
-    expect(pct(5), "Legendär").toBeLessThan(12);
+    const N = 4000;
+    let mitOben = 0, mitLeg = 0, unten = 0, plaetze = 0;
+    for (let i = 0; i < N; i++) {
+      const t = CT.rollTiers("schwer", rng);
+      expect(t.length).toBe(3);
+      if (t.includes(4)) mitOben += 1;
+      if (t.includes(CT.TIER_LEGENDARY)) mitLeg += 1;
+      unten += t.filter((x) => x === 3).length;
+      plaetze += 3;
+    }
+    expect(mitOben / N, "die Episch-Garantie hält ausnahmslos").toBe(1);
+    const legPct = (mitLeg / N) * 100;
+    expect(legPct, "Legendär je Auslage").toBeGreaterThan(22);
+    expect(legPct, "Legendär je Auslage").toBeLessThan(34);
+    // Sehr selten bleibt ein guter Teil der beiden freien Plätze, sonst kippte das Band nach oben.
+    expect(unten / plaetze, "Sehr selten je Platz").toBeGreaterThan(0.3);
+  });
+
+  it("die leichten Bänder tragen nie ein Legendäres, auch mit der Garantie nicht", () => {
+    for (const step of ["leicht", "mittel"]) {
+      const rng = seeded(99);
+      for (let i = 0; i < 500; i++) {
+        for (const tier of CT.rollTiers(step, rng)) {
+          expect(tier, `${step} darf nichts Legendäres tragen`).toBeLessThan(CT.TIER_LEGENDARY);
+        }
+      }
+    }
   });
 });
 

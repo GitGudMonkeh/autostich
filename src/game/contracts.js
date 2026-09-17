@@ -270,33 +270,49 @@ export function rollOffers(rng = Math.random, used = [], count = OFFERS_PER_WIND
   return out;
 }
 
-/* One tier out of the step's band: the lower rarity at LOWER_SHARE, the upper at the rest. The hard
-   band splits its upper half once more, and THAT is the only door legendary loot has. */
-export const rollTier = (step, rng = Math.random) => {
+
+/* Die drei Stufen EINER Auslage (Owner, 2026-09-17).
+
+   MINDESTENS EINE trägt die obere Rarität des Bandes. Vorher würfelte jedes Stück für sich 70/30,
+   und in rund einem Drittel der Fälle kam dreimal die untere heraus — eine mittlere Aufgabe zahlte
+   dann dreimal Selten, obwohl ihr Band Selten ODER Sehr selten verspricht. Das Band war damit eine
+   Aussage über die Ziehung, nicht über die Auslage.
+
+   LEGENDÄR bleibt die Ausnahme und ERSETZT einen der unteren Plätze, nie den garantierten oberen.
+   Es gibt also weiterhin höchstens eins, und es kostet die Episch-Garantie nicht. */
+export function rollTiers(step, rng = Math.random, count = LOOT_PER_REWARD) {
   const band = STEP_BAND[step] || STEP_BAND.leicht;
-  if (rng() < LOWER_SHARE) return band[0];
-  if (step === LEGENDARY_STEP && rng() < LEGENDARY_SHARE) return TIER_LEGENDARY;
-  return band[1];
-};
+  const tiers = [band[1]];                                   // Platz 1: die Garantie
+  for (let i = 1; i < count; i++) tiers.push(rng() < LOWER_SHARE ? band[0] : band[1]);
+  if (step === LEGENDARY_STEP && rng() < LEGENDARY_SHARE) {
+    const i = tiers.findIndex((t, k) => k > 0 && t === band[0]);
+    if (i >= 0) tiers[i] = TIER_LEGENDARY;                   // nur ein UNTERER Platz weicht
+  }
+  return shuffled(tiers, rng);                               // die Garantie soll nicht immer oben stehen
+}
 
 /* Three pieces, no category twice. A legendary tier draws from the four singles; every other tier
-   draws a family and takes that family's piece AT that tier. */
+   draws a family and takes that family's piece AT that tier. Findet eine Stufe keine freie Familie
+   mehr, rutscht sie auf die andere des Bandes — lieber eine Rarität daneben als ein leerer Platz. */
 export function rollLoot(rng = Math.random, step = "leicht", count = LOOT_PER_REWARD) {
+  const band = STEP_BAND[step] || STEP_BAND.leicht;
   const out = [];
   const usedCategories = new Set();
   const usedIds = new Set();
-  let guard = 0;
-  while (out.length < count && guard++ < 200) {
-    const tier = rollTier(step, rng);
-    if (tier >= TIER_LEGENDARY) {
+  for (const wunsch of rollTiers(step, rng, count)) {
+    if (wunsch >= TIER_LEGENDARY) {
       const free = LEGENDARIES.filter((l) => !usedIds.has(l.id));
-      if (!free.length) continue;
-      const leg = pick(free, rng);
-      usedIds.add(leg.id);
-      out.push({ kind: "legendary", id: leg.id, tier: TIER_LEGENDARY, effect: leg.effect });
-      continue;
+      if (free.length) {
+        const leg = pick(free, rng);
+        usedIds.add(leg.id);
+        out.push({ kind: "legendary", id: leg.id, tier: TIER_LEGENDARY, effect: leg.effect });
+        continue;
+      }
     }
-    const free = LOOT_FAMILIES.filter((f) => !usedCategories.has(f.category) && !usedIds.has(`${f.id}@${tier}`));
+    const frei = (tier) => LOOT_FAMILIES.filter((f) => !usedCategories.has(f.category) && !usedIds.has(`${f.id}@${tier}`));
+    let tier = wunsch >= TIER_LEGENDARY ? band[1] : wunsch;
+    let free = frei(tier);
+    if (!free.length) { tier = tier === band[0] ? band[1] : band[0]; free = frei(tier); }
     if (!free.length) continue;
     const fam = pick(free, rng);
     usedCategories.add(fam.category);

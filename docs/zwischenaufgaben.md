@@ -275,9 +275,17 @@ und die obere Hälfte des schweren Bandes teilt sich noch einmal 70 zu 30. Je ge
 | Mittel | — | 70 % | 30 % | — | — |
 | Schwer | — | — | 70 % | 21 % | **9 %** |
 
-Da drei Stücke gezogen werden, liegt in rund **jedem vierten** erfüllten schweren Auftrag ein
-Legendäres in der Auslage. Damit bedeutet jede Stufe im Regelfall das, was ihr Name sagt, und
-Legendär bleibt der Ausreißer statt der Erwartung.
+**Mindestens ein Stück der Auslage trägt die OBERE Rarität** (Owner, 2026-09-17). Vorher würfelte
+jedes Stück für sich, und in rund einem Drittel der Fälle kam dreimal die untere heraus — eine
+mittlere Aufgabe zahlte dann dreimal Selten, obwohl ihr Band Selten **oder** Sehr selten verspricht.
+Das Band war damit eine Aussage über die Ziehung, nicht über die Auslage. Jetzt ist ein Platz
+gesetzt, die anderen zwei würfeln 70/30.
+
+**Legendär ersetzt einen UNTEREN Platz**, nie den garantierten oberen — sonst wäre ein Legendäres
+unterm Strich ein Rückschritt, weil es die Episch-Garantie köstete. Gemessen trägt damit **28 %**
+der erfüllten schweren Aufträge ein Legendäres in der Auslage, und **100 %** eine obere Rarität.
+Damit bedeutet jede Stufe im Regelfall das, was ihr Name sagt, und Legendär bleibt der Ausreißer
+statt der Erwartung.
 
 > **Was der Satz für Legendär bedeutet.** Gerechnet, nicht gemessen, und unter zwei Annahmen: die
 > Rarität wird **je Stück** gewürfelt, und der Spieler schafft **beide** Aufgaben auf „Sehr schwer".

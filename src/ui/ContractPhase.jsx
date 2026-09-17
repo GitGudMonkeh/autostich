@@ -73,7 +73,7 @@ function Overlay({ children }) {
   );
 }
 
-// `sub` ist optional: das Angebot erklärt sich über seine drei Karten, die Beute braucht den Satz.
+// `sub` ist optional — beide Overlays erklären sich über ihre drei Karten (Owner, 2026-09-16/17).
 function Head({ title, sub = null, note = null }) {
   return (
     <div className="text-center mb-4">
@@ -144,7 +144,7 @@ export function ContractOffer({ offers = [], windowId = 1, onPick }) {
 export function ContractLoot({ pieces = [], onPick }) {
   return (
     <Overlay>
-      <Head title={t("contract.loot.title")} sub={t("contract.loot.sub")} />
+      <Head title={t("contract.loot.title")} />
       <div className="grid gap-3 sm:grid-cols-3">
         {pieces.map((p) => {
           const tone = tierColor(p.tier);

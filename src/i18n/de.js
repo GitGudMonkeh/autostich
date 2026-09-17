@@ -1526,7 +1526,6 @@ export default {
   "contract.offer.legendary": "selten legendär",
 
   "contract.loot.title": "Auftrag erfüllt",
-  "contract.loot.sub": "Drei Beutestücke, keine Kategorie doppelt. Eins nimmst du, kein Neuwurf.",
   "contract.loot.take": "Nehmen",
 
   "contract.step.leicht": "Leicht",
